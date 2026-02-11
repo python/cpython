@@ -19,7 +19,7 @@ Function unified_diff(a, b):
 Class SequenceMatcher:
     A flexible class for comparing pairs of sequences of any type.
 
-Class GestaltSequenceMatcher:
+Class ExactSequenceMatcher:
     Class for comparing pairs of sequences that uses SuffixAutomaton.
     It does not have autojunk option and always calculates exact result.
     Additionally, it has balancing "knob" to improve quality of diffs.
@@ -34,7 +34,7 @@ Class HtmlDiff:
 __all__ = ['get_close_matches', 'ndiff', 'restore', 'SequenceMatcher',
            'Differ','IS_CHARACTER_JUNK', 'IS_LINE_JUNK', 'context_diff',
            'unified_diff', 'diff_bytes', 'HtmlDiff', 'Match',
-           'GestaltSequenceMatcher']
+           'ExactSequenceMatcher']
 
 from _colorize import can_colorize, get_theme
 from heapq import nlargest as _nlargest
@@ -446,10 +446,14 @@ class SequenceMatcherBase:
 
     def ratio_if_above(self, cutoff, equal_ok=False):
         """Returns ratio if it is higher than cutoff.
-            Otherwise, returns None.
-        Note, this is the main ratio function that is used by applications
-            in this module.
+
+        Otherwise, returns None.
+
+        Note, this is the main ratio function that is
+        used by applications in this module.
         """
+        # Ordering by cheapest to most expensive ratio is very
+        # valuable, most often getting out early.
         rqr = self.real_quick_ratio()
         if equal_ok:
             if rqr >= cutoff and self.quick_ratio() >= cutoff:
@@ -719,7 +723,6 @@ class SequenceMatcher(SequenceMatcherBase):
             j2len = newj2len
 
         block = besti, bestj, bestsize
-        # [2026-02-07@dgpb]: Note, expanding will happen even when no-match
         if self.autojunk:
             # Extend the best by non-junk elements on each end.  In particular,
             # "popular" non-junk elements aren't in b2j, which greatly speeds
@@ -1095,8 +1098,6 @@ class Differ:
             best_ratio = cutoff
             for i in arange:
                 set_seq1(a[i])
-                # Ordering by cheapest to most expensive ratio is very
-                # valuable, most often getting out early.
                 ratio = ratio_if_above(best_ratio, equal_ok=False)
                 if ratio is not None:
                     best_i, best_j, best_ratio = i, j, ratio
@@ -2292,13 +2293,299 @@ def restore(delta, which):
 
 
 ########################################################################
+###  DivideAndConquerMatcherMixin
+########################################################################
+
+
+class _Sentinel:
+    def __init__(self, name):
+        self.name = name
+
+    def __repr__(self):
+        return self.name
+
+    __reduce__ = None
+
+
+# Private sentinels
+_RANGE = _Sentinel('RANGE')                     # Range to process
+_BLOCK = _Sentinel('BLOCK')                     # Block to return
+_RANGEWITHBLOCKS = _Sentinel('RANGEWITHBLOCKS') # Range to process & pre-evaluated blocks
+
+# Modifier sentinels. These are returned as first tuple item from `_modifier`
+ANCHORBLOCKS = _Sentinel('ANCHORBLOCKS')    # List of blocks (not subject to balancing)
+RESULTBLOCKS = _Sentinel('RESULTBLOCKS')    # List of blocks that terminate recursion
+
+
+_ERR_MSG_DTYPE = 'Unknown data type: {!r}'
+
+
+class DivideAndConquerMatcherMixin:
+    def _process_range(self, depth, alo, ahi, blo, bhi):
+        raise NotImplementedError
+
+    def _preprocess_range(self, depth, alo, ahi, blo, bhi):
+        return None
+
+    def _validate_blocks(self, blocks, alo, ahi, blo, bhi):
+        # 2.1.1. Prepare for validation
+        blocks = list(blocks)
+        if len(blocks) > 1:
+            blocks.sort()
+
+        # 2.1.2. Validate modifier output
+        new_blocks = []
+        i0, j0 = alo, blo
+        for ii, jj, kk in blocks:
+            if not kk:
+                continue
+            if not (i0 <= ii <= ii + kk <= ahi and j0 <= jj <= jj + kk <= bhi):
+                msg = (
+                    '`self._modifier(...)` returned invalid block, which '
+                    'is either out of bounds or overlaps with a nearby one'
+                    'block={}, last_bound={}, current_interval={}'
+                )
+                raise RuntimeError(msg.format(blocks, (i0, j0), bounds))
+            yield (ii, jj, kk)
+            i0 = ii + kk
+            j0 = jj + kk
+
+    def _get_matching_blocks(self):
+        """Return list of triples describing matching subsequences.
+
+        Each triple is of the form (i, j, n), s.t. a[i:i+n] == b[j:j+n].
+
+        The last triple is a dummy, (len(a), len(b), 0), and is the only
+        triple with n==0.
+
+        >>> gsm = ExactSequenceMatcher(None, "abxcd", "abcd")
+        >>> list(gsm.get_matching_blocks())
+        [Match(a=0, b=0, size=2), Match(a=3, b=2, size=2), Match(a=5, b=4, size=0)]
+        """
+        alo, ahi, blo, bhi = 0, len(self.a), 0, len(self.b)
+        if alo >= ahi or blo >= bhi:
+            return
+
+        # 3-element tuples: (data_type, depth, data)
+        q = [(_RANGE, 1, (alo, ahi, blo, bhi))]
+        while q:
+            dtype, depth, data = q.pop()
+
+            # 1. Decision logic for q items
+            if dtype is _BLOCK:
+                # Just a block to yield
+                yield data
+                continue
+
+            elif dtype is _RANGE:
+                # Just the range to process
+                bounds = data
+                rtype, blocks, validated = self._process_range(depth, *bounds)
+
+            elif dtype is _RANGEWITHBLOCKS:
+                # Range & pre-evaluated block
+                bounds, data = data
+                rtype, blocks, validated = data
+
+            else:
+                raise RuntimeError(_ERR_MSG_DTYPE.format(dtype))
+
+            if rtype not in (ANCHORBLOCKS, RESULTBLOCKS):
+                msg = 'Unknown result type from processed range: {!r}'
+                raise RuntimeError(msg.format(rtype))
+
+            if not validated:
+                blocks = list(self._validate_blocks(blocks, *bounds))
+            if not blocks:
+                continue
+
+            if rtype is RESULTBLOCKS:
+                yield from blocks
+                continue
+
+            # 2.1. Interpolate `blocks` with ranges
+            alo, ahi, blo, bhi = bounds
+            q_tail = []
+            i0, j0 = alo, blo
+            for block in blocks:
+                i, j, k = block
+                if not k:
+                    continue
+                if i0 < i and j0 < j:
+                    q_tail.append((_RANGE, (i0, i, j0, j)))
+                q_tail.append((_BLOCK, block))
+                i0, j0 = i + k, j + k
+
+            if q_tail:
+                if i0 < ahi and j0 < bhi:
+                    q_tail.append((_RANGE, (i0, ahi, j0, bhi)))
+            else:
+                # No blocks identified. Do not recurse further.
+                continue
+
+            # 2.2. Yield what is possible straight away
+            q_tail.reverse()
+            while q_tail:
+                dtype, data = q_tail.pop()
+                if dtype is _BLOCK:
+                    yield data
+                elif dtype is _RANGE:
+                    q_tail.append((dtype, data))
+                    q_tail.reverse()
+                    break
+                else:
+                    raise RuntimeError(_ERR_MSG_DTYPE.format(dtype))
+
+            # 2.3. append to Q what is not
+            d = depth + 1
+            while q_tail:
+                dtype, data = q_tail.pop()
+                if dtype is _BLOCK:
+                    q.append((dtype, d, data))
+                elif dtype is _RANGE:
+                    # Try quick evaluation without re-building
+                    # Before cache was overriden
+                    bounds = data
+                    result = self._preprocess_range(d, *bounds)
+                    if result is not None:
+                        q.append((_RANGEWITHBLOCKS, d, (bounds, result)))
+                    else:
+                        q.append((dtype, d, data))
+                else:
+                    raise RuntimeError(_ERR_MSG_DTYPE.format(dtype))
+
+    def _modifier(self, depth, block, alo, ahi, blo, bhi):
+        """An entry point for intercepting `_get_matching_blocks` algorithm,
+            which can be implemented by derived class.
+
+        It can be used for:
+            a) quick peak into what algorithm is doing
+            b) modification of divide-and-conquer algorithm
+
+        Args:
+            depth : int
+                depth 1 is the initial one
+            block : tuple[start_in_1: int, start_in_b: int, length: int]
+                Candidate block for recursion loop. It is obtained by
+                calling find_longest_match for current recursion range
+            alo, ahi, blo, bhi : int, int, int, int
+                range of current recursion iteration
+
+        This method returns None for no action. Otherwise, a tuple of 2 items:
+            1. rtype : _Sentinel
+            2. data : object
+
+        rtype can take 2 sentinel values found in `difflib`.
+        It indicates what the type of return is and what it means:
+
+            ANCHORBLOCKS - List of anchor blocks. All ranges around
+                           these blocks are subject to further recursion.
+                           e.g. (ANCHORBLOCKS, [(0, 0, 10), (10, 10, 10)])
+
+            RESULTBLOCKS - List of blocks that terminate recursion
+                           e.g. (RESULTBLOCKS, [(0, 0, 10), (10, 10, 10)])
+
+        If data contains no blocks or only blocks of 0 length,
+            the algorithm does not recurse further.
+
+        Note, one can get `a`, `b`, `automaton`, etc from self
+        """
+        return None
+
+
+########################################################################
 ###  _LCSUBAutomaton
 ########################################################################
 
 
-class _LCSUBAutomaton:
+_EARLY_EXIT = _Sentinel('EARLY_EXIT')
+
+
+def _simple_find(pattern, text, start=0, stop=None, *, overlapping=True, stopif=None):
     """
-    Suffix Automaton for finding longest common substring.
+    Examples:
+        >>> list(_simple_find('aa', 'aaaa'))
+        [0, 1, 2]
+        >>> list(_simple_find('aa', 'aaaa', overlapping=False))
+        [0, 2]
+        >>> list(_simple_find('_____', '__x__x__x__x__x__x_____'))
+        [18]
+        >>> list(_simple_find('_____', '__x__x__x__x__x__x_____', stopif=1))
+        [EARLY_EXIT]
+    """
+    if overlapping not in (0, 1):
+        raise ValueError(f'{overlapping=} not in (0, 1)')
+    if not text or not pattern:
+        return
+    if stop is None:
+        stop = len(text)
+    n = stop - start
+    m = len(pattern)
+    if m > n:
+        return
+
+    # 1 element fast path
+    first = pattern[0]
+    if m == 1:
+        for i in range(start, stop):
+            if text[i] == first:
+                yield i
+        return
+
+    # 2 element fast path
+    last = pattern[-1]
+    inc = 1 if overlapping else m
+    i = start
+    m_m1 = m - 1
+    end = stop - m_m1
+    if m == 2:
+        while i < end:
+            if text[i] == first and text[i + 1] == last:
+                yield i
+                i += inc
+            else:
+                i += 1
+        return
+
+    # 3. Two-way
+    if stopif is not None:
+        max_miss = int(n * stopif / m)
+
+    three = m == 3
+    four = m == 4
+    if three or four:
+        mid1 = pattern[1]
+        mid2 = pattern[2]
+    else:
+        mid = pattern[1:-1]
+    k = 0
+    while i < end:
+        if text[i] != first or text[(i_last := i + m_m1)] != last:
+            i += 1
+            continue
+
+        if three:
+            hit = text[i + 1] == mid1
+        elif four:
+            hit = text[i + 1] == mid1 and text[i + 2] == mid2
+        else:
+            hit = text[i + 1:i_last] == mid
+        if hit:
+            yield i
+            if stopif is not None:
+                k = 0
+            i += inc
+        else:
+            if stopif is not None:
+                k += 1
+                if k >= max_miss:
+                    yield _EARLY_EXIT
+                    break
+            i += 1
+
+
+class _LCSUBAutomaton:
+    """Suffix Automaton for finding longest common substring.
 
     Complexity:
         T: O(n1 + n2) ~ n1 + 5 × n2
@@ -2353,121 +2640,6 @@ class _LCSUBAutomaton:
         if self.junk:
             kwstring += f', junk_size={len(self.junk)}'
         return f'<{type(self).__name__} object; {kwstring}>'
-
-    # API -----------------------------
-    # ---------------------------------
-
-    def print_states(self, slc=slice(None)):
-        assert isinstance(slc, slice)
-        nodes = self.nodes
-        if nodes is None:
-            nodes = self.build(0, self.size2)
-        if slc != slice(None):
-            nodes = [item[slc] for item in nodes]
-        for i, state in enumerate(zip(*nodes)):
-            print(i, state)
-
-    def build(self, start2=0, stop2=None):
-        """Build automaton for specified range of seq2"""
-        start2, stop2 = _adjust_indices(self.size2, start2, stop2)
-        key = (start2, stop2)
-        if self.cache != key:
-            self.nodes = None
-            self.key = (0, 0)
-            self.nodes = self._build(start2, stop2)
-            self.cache = key
-
-    def find(self, seq1, start1=0, stop1=None, start2=0, stop2=None):
-        """
-        Find leftmost longest match
-        Firstly, it will be leftmost in seq1
-        Secondly, it will be leftmost in seq2 if more than one occurrence
-
-        Returns:
-            match: (start_in_seq1, start_in_seq2, match_length)
-        """
-        start1, stop1 = _adjust_indices(len(seq1), start1, stop1)
-        start2, stop2 = _adjust_indices(self.size2, start2, stop2)
-        res = self._try_find(seq1, start1, stop1, start2, stop2)
-        if res is None:
-            res = self._find(seq1, start1, stop1, start2, stop2)
-        return res
-
-    def batchfind(self, seq1, bounds_list):
-        """
-        Performance method for many `find` calls
-        It calls `find` in order that aims to minimize builds needed
-        Also, does not evaluate same range twice
-
-        Args:
-            bounds_list : list[tuple[int, int, int, int]]
-                list of tuples: (start1, stop1, start2, stop2)
-        """
-        if not bounds_list:
-            return []
-
-        result = [None] * len(bounds_list)
-        c_lo, c_hi = self.cache
-        jobs = list(enumerate(bounds_list))
-        jobs.sort(key=lambda x: abs((b := x[1])[2] - c_lo) + abs(b[3] - c_hi))
-        evaluated = {}
-        for i, bounds in jobs:
-            res = evaluated.get(bounds)
-            if res is None:
-                res = self.find(seq1, *bounds)
-                evaluated[bounds] = res
-            result[i] = res
-        return result
-
-    # Private API ---------------------
-    # ---------------------------------
-
-    def _try_find(self, seq1, start1, stop1, start2, stop2):
-        """
-        Attempts to find match without building
-        Querying in exactly the same range will always succeed
-        Also, it might be possible if (start2, stop2) is within cached range
-
-        returns None on fail
-        """
-        if start1 >= stop1 or start2 >= stop2:
-            return (start1, start2, 0)
-
-        c_start, c_stop = self.cache
-        if c_start <= start2 and stop2 <= c_stop:
-            it = self._finditer(seq1, start1, stop1, best=True)
-            for res in it:
-                break
-            else:
-                return (start1, start2, 0)
-
-            e1, e2, k = res
-            stop_in_seq2 = e2 + 1
-            start_in_seq2 = stop_in_seq2 - k
-            if start_in_seq2 >= start2 and stop_in_seq2 <= stop2:
-                return (e1 + 1 - k, start_in_seq2, k)
-
-    def _find(self, seq1, start1, stop1, start2, stop2):
-        """
-        Returns lefmost longest match
-        Does not attempt to retrieve from inexactly built range
-        Always returns an answer
-        """
-        if start1 >= stop1 or start2 >= stop2:
-            return (start1, start2, 0)
-
-        if self.cache != (start2, stop2):
-            self.build(start2, stop2)
-
-        it = self._finditer(seq1, start1, stop1, best=True)
-        for res in it:
-            break
-        else:
-            return (start1, start2, 0)
-
-        e1, e2, k = res
-        one_mk = 1 - k
-        return (e1 + one_mk, e2 + one_mk, k)
 
     # CORE ----------------------------
     # ---------------------------------
@@ -2601,8 +2773,7 @@ class _LCSUBAutomaton:
         return nodes
 
     def _finditer(self, seq1, start1, stop1, best=False):
-        """
-        Core scanning routine
+        """Core scanning routine.
 
         Args:
             best : bool
@@ -2667,86 +2838,221 @@ class _LCSUBAutomaton:
             for i, v, k in results:
                 yield (i, eposs[v], k)
 
+    # Private API ---------------------
+    # ---------------------------------
+
+    def _try_find(self, seq1, start1, stop1, start2, stop2):
+        """Attempts to find match without building automaton.
+
+        Querying in exactly the same range will always succeed
+        Also, it might be possible if (start2, stop2) is within cached range
+
+        returns None on fail
+        """
+        if start1 >= stop1 or start2 >= stop2:
+            return (start1, start2, 0)
+
+        c_start, c_stop = self.cache
+        if c_start <= start2 and stop2 <= c_stop:
+            it = self._finditer(seq1, start1, stop1, best=True)
+            for res in it:
+                break
+            else:
+                return (start1, start2, 0)
+
+            e1, e2, k = res
+            stop_in_seq2 = e2 + 1
+            start_in_seq2 = stop_in_seq2 - k
+            if start_in_seq2 >= start2 and stop_in_seq2 <= stop2:
+                return (e1 + 1 - k, start_in_seq2, k)
+
+    def _find(self, seq1, start1, stop1, start2, stop2):
+        """Returns lefmost longest match.
+
+        Does not attempt to retrieve from inexactly built range
+        Always returns an answer
+        """
+        if start1 >= stop1 or start2 >= stop2:
+            return (start1, start2, 0)
+
+        if self.cache != (start2, stop2):
+            self.build(start2, stop2)
+
+        it = self._finditer(seq1, start1, stop1, best=True)
+        for res in it:
+            break
+        else:
+            return (start1, start2, 0)
+
+        e1, e2, k = res
+        one_mk = 1 - k
+        return (e1 + one_mk, e2 + one_mk, k)
+
+    # API -----------------------------
+    # ---------------------------------
+
+    def print_states(self, slc=slice(None)):
+        assert isinstance(slc, slice)
+        nodes = self.nodes
+        if nodes is None:
+            nodes = self.build(0, self.size2)
+        if slc != slice(None):
+            nodes = [item[slc] for item in nodes]
+        for i, state in enumerate(zip(*nodes)):
+            print(i, state)
+
+    def build(self, start2=0, stop2=None):
+        """Build automaton for specified range of seq2"""
+        start2, stop2 = _adjust_indices(self.size2, start2, stop2)
+        key = (start2, stop2)
+        if self.cache != key:
+            self.nodes = None
+            self.key = (0, 0)
+            self.nodes = self._build(start2, stop2)
+            self.cache = key
+
+    def find(self, seq1, start1=0, stop1=None, start2=0, stop2=None):
+        """Find leftmost longest match.
+
+        Firstly, it will be leftmost in seq1
+        Secondly, it will be leftmost in seq2 if more than one occurrence
+
+        Returns:
+            match: (start_in_seq1, start_in_seq2, match_length)
+        """
+        start1, stop1 = _adjust_indices(len(seq1), start1, stop1)
+        start2, stop2 = _adjust_indices(self.size2, start2, stop2)
+        res = self._try_find(seq1, start1, stop1, start2, stop2)
+        if res is None:
+            res = self._find(seq1, start1, stop1, start2, stop2)
+        return res
+
+    def batchfind(self, seq1, bounds_list):
+        """Performance method for many `find` calls.
+
+        It calls `find` in order that aims to minimize builds needed
+        Also, does not evaluate same range twice
+
+        Args:
+            bounds_list : list[tuple[int, int, int, int]]
+                list of tuples: (start1, stop1, start2, stop2)
+        """
+        if not bounds_list:
+            return []
+
+        result = [None] * len(bounds_list)
+        c_lo, c_hi = self.cache
+        jobs = list(enumerate(bounds_list))
+        jobs.sort(key=lambda x: abs((b := x[1])[2] - c_lo) + abs(b[3] - c_hi))
+        evaluated = {}
+        for i, bounds in jobs:
+            res = evaluated.get(bounds)
+            if res is None:
+                res = self.find(seq1, *bounds)
+                evaluated[bounds] = res
+            result[i] = res
+        return result
+
+    # Leftmost Sequential API ---------
+    # ---------------------------------
+
+    def _try_find_sequential(self, seq1, start1, stop1, start2, stop2):
+        if start1 >= stop1 or start2 >= stop2:
+            return []
+
+        c_start, c_stop = self.cache
+        if c_start > start2 or stop2 > c_stop:
+            return None
+
+        it = self._finditer(seq1, start1, stop1, best=True)
+        last = next(it, None)
+        if last is None:
+            return []
+
+        e1, e2, k = last
+        one_mk = 1 - k
+        j = e2 + one_mk
+        j2 = e2 + 1
+        if j < start2 or stop2 < j2:
+            return None
+
+        blocks = [(e1 + one_mk, j, k)]
+        if k * 2 > min(stop1 - e1 - 1, stop2 - e2 - 1):
+            return blocks
+
+        for block in it:
+            e1 = block[0]
+            e2 = block[1]
+            if e1 - k < last[0]:
+                continue
+            elif e2 + 1 > stop2:
+                break
+            elif e2 - k < last[1]:
+                i = e1 + one_mk
+                patt = seq1[i:i+k]
+                find_it = _simple_find(patt, self.seq2, last[1] + 1, stop2, stopif=1)
+                j = next(find_it, None)
+                if j is _EARLY_EXIT:
+                    break
+                elif j is not None:
+                    e2 = j - one_mk
+                    blocks.append((i, j, k))
+                    last = (e1, e2, k)
+            else:
+                blocks.append((e1 + one_mk, e2 + one_mk, k))
+                last = block
+        return blocks
+
+    def _find_sequential(self, seq1, start1, stop1, start2, stop2):
+        blocks = self._try_find_sequential(seq1, start1, stop1, start2, stop2)
+        if blocks is not None:
+            return blocks
+
+        if self.cache != (start2, stop2):
+            self.build(start2, stop2)
+        it = self._finditer(seq1, start1, stop1, best=True)
+        last = next(it, None)
+        if last is None:
+            return []
+
+        e1, e2, k = last
+        one_mk = 1 - k
+        blocks = [(e1 + one_mk, e2 + one_mk, k)]
+        if k * 2 > min(stop1 - e1 - 1, stop2 - e2 - 1):
+            return blocks
+
+        for block in it:
+            e1 = block[0]
+            e2 = block[1]
+            if e1 - k < last[0]:
+                continue
+            elif e2 - k < last[1]:
+                i = e1 + one_mk
+                patt = seq1[i:i+k]
+                find_it = _simple_find(patt, self.seq2, last[1] + 1, stop2, stopif=1)
+                j = next(find_it, None)
+                if j is _EARLY_EXIT:
+                    break
+                elif j is not None:
+                    e2 = j - one_mk
+                    blocks.append((i, j, k))
+                    last = (e1, e2, k)
+            else:
+                blocks.append((e1 + one_mk, e2 + one_mk, k))
+                last = block
+
+        return blocks
+
 
 ########################################################################
-###  GestaltSequenceMatcher
+###  ExactSequenceMatcher
 ########################################################################
 
 
-class _Sentinel:
-    def __init__(self, name):
-        self.name = name
 
-    def __repr__(self):
-        return self.name
-
-    __reduce__ = None
-
-
-# Private sentinels
-_RANGE = _Sentinel('RANGE')                     # Range to process
-_BLOCK = _Sentinel('BLOCK')                     # Block to return
-_RANGEWITHBLOCK = _Sentinel('RANGEWITHBLOCK')   # Range to process & pre-evaluated block
-
-# Modifier sentinels. These are returned as first tuple item from `_modifier`
-REPLACEBLOCK = _Sentinel('REPLACEBLOCK')    # Block replacement (all else continues BAU)
-ANCHORBLOCKS = _Sentinel('ANCHORBLOCKS')    # List of blocks (not subject to balancing)
-RESULTBLOCKS = _Sentinel('RESULTBLOCKS')    # List of blocks that terminate recursion
-
-
-def _calc_skew(i, j, k, alo, ahi, blo, bhi):
+class ExactSequenceMatcher(DivideAndConquerMatcherMixin, SequenceMatcherBase):
     """
-    Difference in normalized positions of block mid-points
-
-    Returns skew : float, where -1 < skew < 1
-    """
-    k_div_2 = k / 2
-    apos = (i + k_div_2 - alo) / (ahi - alo)
-    bpos = (j + k_div_2 - blo) / (bhi - blo)
-    return apos - bpos
-
-
-# s.t.: c^p == (0.9c)^p + (0.2c)^p
-_BALANCE_SCORE_POWER = 1.284320049734199
-
-
-def _calc_candidate_score(block0, block1, block2):
-    """
-    Calculates the score for 1-3 block candidates for balancing procedure
-
-    Score is calculated so that long match is preferred
-    to many small ones but not too aggressively,
-    so to be able to jump out of skewed positions.
-
-    total = ∑ length^p
-    where p is such that c^p == (0.9c)^p + (0.2c)^p
-
-    If only 1 block found, it is a definitive score.
-    Otherwise, it gets bonus for each additional block
-    as it has poential to recurse further to each side
-    """
-    k1 = block1[2]
-    if not k1:
-        raise ValueError('Middle block should not be null')
-    lengths = [k1]
-    k0 = block0[2]
-    if k0:
-        lengths.append(k0)
-    k2 = block2[2]
-    if k2:
-        lengths.append(k2)
-    total = sum(k**_BALANCE_SCORE_POWER for k in lengths)
-    nk = len(lengths)
-    if nk > 1:
-        min_len = min(lengths)
-        ratio = min(1 / 2, min_len / max(lengths))
-        total += (nk - 1) * min_len * ratio
-    return total
-
-
-class GestaltSequenceMatcher(SequenceMatcherBase):
-    """
-    GestaltSequenceMatcher is a flexible class for comparing pairs
+    ExactSequenceMatcher is a flexible class for comparing pairs
     of sequences of any type, so long as the sequence elements are hashable.
 
     It builds upon the same idea as `SequenceMatcher` and with its defaults
@@ -2757,16 +3063,14 @@ class GestaltSequenceMatcher(SequenceMatcherBase):
     it is only practical to use with `autojunk` set to False due to
     quadratic worst case complexity of Longest Common Substring algorithm.
 
-    `GestaltSequenceMatcher`, on the other hand, implements Suffix Automaton,
+    `ExactSequenceMatcher`, on the other hand, uses Suffix Automaton,
     which has O(n) complexity guaranteed, making it possible to use exact
     calculation on long sequences.
 
-    Furthermore, `GestaltSequenceMatcher` has `balancing` parameter.
-    By default it is turned off, but it can be turned on to desired level to
-    reduce the chance of greedily committing to unbalanced matches.
-    It does so by sometimes selecting shorter matches by lookin 1 step ahead.
-    It produces more concise diffs with more lines matched, while retaining
-    block-oriented nature.
+    Comparison to SequenceMatcher:
+        In terms of results, the following 2 are equivalent:
+            a) SequenceMatcher(..., autojunk=False)
+            b) ExactSequenceMatcher(...)
 
     Time Complexity:
         find_longest_match : O(n)
@@ -2781,85 +3085,11 @@ class GestaltSequenceMatcher(SequenceMatcherBase):
     Space Complexity:
         find_longest_match: c × O(n), c ~ 3x (compared to `SequenceMatcher`)
         get_matching_blocks: c × O(n), c ~ 3x (compared to `SequenceMatcher`)
+
+    NOTE:TODO:Worst case:
+        aa-bb-cc-dd-...
+        bb+aa+dd+cc-...
     """
-
-    def __init__(self, isjunk=None, a='', b='', balancing=0):
-        """
-        Args:
-            balancing : float in [0, 1]
-                a ratio that specifies the proportion of `skew` for which
-                    balancing action will be attempted.
-                If 0, it is turned off and no balancing will take place.
-
-        Balancing:
-            Balancing action will commence if abs(skew) >= 1 - balancing,
-                where -1 <= skew <= 1.
-            Recommended value is 2/3, which means that 2/3 of
-                worst possible skew values will be eligible for balancing.
-            Note for the future: balancing procedure scales to k-strings well
-
-        Balancing in action:
-            balancing = 2/3
-            seq1 = '-xx-yy-###-'
-            seq2 = '_###_xx_yy_'
-
-                    m1 = (7 + 10) / 2 = 8.5
-               A    |
-            -xx-yy-###-
-            _###_xx_yy_
-              |   B
-              m2 = (1 + 4) / 2 = 2.5
-
-            skew = 8.5 / 11 - 2.5 / 11 = 0.545
-            do_balancing = abs(skew) > 1 - balancing = 0.545 > 0.333 = True
-
-            Once it has been decided to do balancing, the procedure is:
-            1. Select a set of alternative candidate blocks
-                To do so, we find longest substring for 2 ranges
-                    that exclude matched block in one of the sequences:
-
-                a) -xx-yy-
-                   _###_xx_yy_
-
-                b) -xx-yy-###-
-                       _xx_yy_
-
-                Thus the full candidate set is:
-                    ### - initial longest block
-                    xx  - found in both ranges
-            2. For each candidate find 2 additional blocks (on each side)
-                ### - has no nearby matches
-                xx  - has another 'yy' on the right
-            3. Select a candidate for which the sum of 3 block lengths is highest
-                ### - 3 (only the candidate)
-                xx  - 4 (xx + yy)
-
-                NOTE: Selection score is slightly more involved than sum of blocks.
-                    See `_calc_candidate_score` for details.
-
-            Thus, for this example, xx is picked.
-
-        Comparison to SequenceMatcher:
-            In terms of results, the following 2 are equivalent:
-                a) SequenceMatcher(isjunk=None, autojunk=False)
-                b) GestaltSequenceMatcher(isjunk=None, balancing=0)
-
-        Examples:
-            >>> seq1 = 'aaaa_aaaa_bbbbb'
-            >>> seq2 = 'bbbbb-aaaa-aaaa'
-            >>> gsm1 = GestaltSequenceMatcher(None, seq1, seq2)
-            >>> gsm2 = GestaltSequenceMatcher(None, seq1, seq2, balancing=2/3)
-            >>> list(map(tuple, gsm1.get_matching_blocks()))
-            [(10, 0, 5), (15, 15, 0)]
-            >>> list(map(tuple, gsm2.get_matching_blocks()))
-            [(0, 6, 4), (5, 11, 4), (15, 15, 0)]
-        """
-        balancing = float(balancing)
-        if not 0 <= balancing <= 1:
-            msg = "'balancing' must be a float between 0 and 1 inclusive."
-            raise ValueError(msg)
-        self.balancing = balancing
-        super().__init__(isjunk, a, b)
 
     def _prepare_seq2(self):
         b = self.b
@@ -2868,24 +3098,16 @@ class GestaltSequenceMatcher(SequenceMatcherBase):
             bjunk.update(filter(self.isjunk, _Counter(b)))
         self.automaton = _LCSUBAutomaton(b, junk=bjunk)
 
-    def find_longest_match(self, alo=0, ahi=None, blo=0, bhi=None, *, quick_only=False):
+    def find_longest_match(self, alo=0, ahi=None, blo=0, bhi=None):
         """
         Find longest matching block in a[alo:ahi] and b[blo:bhi].
         By default it will find the longest match in the entirety of a and b.
 
         Look up docstring of SequenceMatcher.find_longest_match
         for more information.
-
-        The only difference is `quick_only` argument, which if set to True
-        might not return a value if not possible with current build
         """
         a, b, bjunk = self.a, self.b, self.bjunk
-        automaton = self.automaton
-        func = automaton._try_find if quick_only else automaton.find
-        block = func(self.a, alo, ahi, blo, bhi)
-        if block is None:
-            # For quick_only=True it might not return anything
-            return
+        block = self.automaton.find(self.a, alo, ahi, blo, bhi)
 
         if bjunk:
             # Extend match to surrounding junk
@@ -2894,268 +3116,38 @@ class GestaltSequenceMatcher(SequenceMatcherBase):
 
         return Match._make(block)
 
-    def batch_find_longest_match(self, bounds_list):
-        """
-        Performance method for many `find_longest_match` calls
-        It calls `find` in order that aims to minimize builds needed
-        Also, does not evaluate same range twice
-
-        Args:
-            bounds_list : list[tuple[int, int, int, int]]
-                list of tuples: (alo, ahi, blo, bhi)
-        """
+    def _extend_junk_for_many(self, blocks, alo, ahi, blo, bhi):
         a, b, bjunk = self.a, self.b, self.bjunk
-        bounds_list = list(bounds_list)
-        block_list = self.automaton.batchfind(a, bounds_list)
-        _make_match = Match._make
-        for block, bounds in zip(block_list, bounds_list):
-            if block[2] and bjunk:
-                block = _expand_block_to_junk(bjunk, block, a, b, *bounds)
-            yield _make_match(block)
+        if not bjunk:
+            return blocks
 
-    def _modifier(self, depth, block, alo, ahi, blo, bhi):
-        """
-        An entry point for intercepting `_get_matching_blocks` algorithm
-        It is subject to be implemented by derived class.
-        It can be used for:
-            a) quick peak into what algorithm is doing
-            b) modification of divide-and-conquer algorithm
+        if not blocks:
+            # NOTE: Backwards compatibility
+            block = (alo, blo, 0)
+            block = _expand_block_to_junk(
+                bjunk, block, a, b, alo, ahi, blo, bhi, inverse=False)
+            return [block]
 
-        Args:
-            depth : int
-                depth 1 is the initial one
-            block : tuple[start_in_1: int, start_in_b: int, length: int]
-                Candidate block for recursion loop. It is obtained by
-                calling find_longest_match for current recursion range
-            alo, ahi, blo, bhi : int, int, int, int
-                range of current recursion iteration
+        result = []
+        i0, j0 = alo, blo
+        for block in blocks:
+            block = _expand_block_to_junk(
+                bjunk, block, a, b, i0, ahi, j0, bhi, inverse=False)
+            i, j, k = block
+            i0 = i + k
+            j0 = j + k
+            result.append(block)
+        return result
 
-        This method returns None for no action. Otherwise, a tuple of 2 items:
-            1. rtype : _Sentinel
-            2. data : object
+    def _preprocess_range(self, depth, alo, ahi, blo, bhi):
+        blocks = self.automaton._try_find_sequential(self.a, alo, ahi, blo, bhi)
+        if blocks is not None:
+            if self.bjunk:
+                blocks = self._extend_junk_for_many(blocks, alo, ahi, blo, bhi)
+            return ANCHORBLOCKS, blocks, True
 
-        rtype can take 3 sentinel values found in `difflib`.
-        It indicates what is the type of return and what it means:
-
-            REPLACEBLOCK - Block replacement (all else continues BAU)
-                           e.g. (REPLACEBLOCK, (0, 0, 10))
-
-            ANCHORBLOCKS - List of blocks (not subject to balancing)
-                           All ranges around these blocks will are subject
-                           to further recursion.
-                           e.g. (ANCHORBLOCKS, [(0, 0, 10), (10, 10, 10)])
-
-            RESULTBLOCKS - List of blocks that terminate recursion
-                           e.g. (RESULTBLOCKS, [(0, 0, 10), (10, 10, 10)])
-
-        If data contains no blocks or only blocks of 0 length,
-            the algorithm does not recurse further.
-
-        Note, one can get `a`, `b`, `automaton`, etc from self
-        """
-        return None
-
-    def _get_matching_blocks(self):
-        """
-        Return list of triples describing matching subsequences.
-
-        Each triple is of the form (i, j, n), s.t. a[i:i+n] == b[j:j+n].
-
-        The last triple is a dummy, (len(a), len(b), 0), and is the only
-        triple with n==0.
-
-        >>> gsm = GestaltSequenceMatcher(None, "abxcd", "abcd")
-        >>> list(gsm.get_matching_blocks())
-        [Match(a=0, b=0, size=2), Match(a=3, b=2, size=2), Match(a=5, b=4, size=0)]
-        """
-        balancing = self.balancing
-        alo, ahi, blo, bhi = 0, len(self.a), 0, len(self.b)
-        if alo >= ahi or blo >= bhi:
-            return
-
-        skew_threshold = 1 - balancing
-        # 3-element tuples: (data_type, depth, data)
-        q = [(_RANGE, 1, (alo, ahi, blo, bhi))]
-        while q:
-            dtype, depth, data = q.pop()
-
-            # 1. Decision logic for q items
-            if dtype is _BLOCK:
-                # Just a block to yield
-                yield data
-                continue
-
-            if dtype is _RANGE:
-                # Just the range to process
-                bounds = data
-                i, j, k = init_block = self.find_longest_match(*bounds)
-            elif dtype is _RANGEWITHBLOCK:
-                # Range & pre-evaluated block
-                bounds, init_block = data
-                i, j, k = init_block
-            else:
-                msg = 'Unknown data type: {!r}'
-                raise RuntimeError(msg.format(dtype))
-
-            if not k:
-                continue
-
-            tail_blocks = None
-            alo, ahi, blo, bhi = bounds
-
-            # 2.1. Call modifier method
-            modifier_result = self._modifier(depth, init_block, *bounds)
-            if modifier_result is not None:
-                mtype, data = modifier_result
-
-                # 2.1.1. Prepare for validation
-                if mtype is REPLACEBLOCK:
-                    i, j, k = data
-                    data = [(i, j, k)]
-
-                elif mtype is ANCHORBLOCKS or mtype is RESULTBLOCKS:
-                    data = list(data)
-                    if len(data) > 1:
-                        data.sort()
-
-                else:
-                    msg = 'Unknown `self._modifier(...)` return type: {!r}'
-                    raise RuntimeError(msg.format(mtype))
-
-                # 2.1.2. Validate
-                validated = []
-                i0, j0 = alo, blo
-                for i, j, k in data:
-                    if not k:
-                        continue
-                    if not (i0 <= i <= i + k <= ahi) or not (j0 <= j <= j + k <= bhi):
-                        msg = (
-                            '`self._modifier(...)` returned invalid block, which '
-                            'is either out of bounds or overlaps with a nearby one'
-                            'block={}, last_bound={}, current_interval={}'
-                        )
-                        raise RuntimeError(msg.format(data, (i0, j0), bounds))
-                    validated.append((i, j, k))
-                    i0 = i + k
-                    j0 = j + k
-
-                if not validated:
-                    continue
-
-                # 2.1.3. Apply action
-                if mtype is REPLACEBLOCK:
-                    i, j, k = init_block = validated[0]
-
-                elif mtype is ANCHORBLOCKS:
-                    tail_blocks = validated
-
-                else:
-                    # mtype is RESULTBLOCKS
-                    yield from validated
-                    continue
-
-            # 2.2. Possibly take balancing action
-            if tail_blocks is None and balancing:
-                skew = _calc_skew(i, j, k, alo, ahi, blo, bhi)
-                if abs(skew) > skew_threshold:
-                    i2 = i + k
-                    j2 = j + k
-
-                    # 2.2.1. Select Candidates
-                    jobs = []
-                    if skew >= 0:
-                        # a: ---------####--
-                        # b: --####---------
-                        jobs.append((alo, i, blo, bhi))
-                        jobs.append((alo, ahi, j2, bhi))
-                    else:
-                        # a: --####---------
-                        # b: ---------####--
-                        jobs.append((i2, ahi, blo, bhi))
-                        jobs.append((alo, ahi, blo, j))
-
-                    candidates = {init_block}
-                    for block in self.batch_find_longest_match(jobs):
-                        if block[2]:
-                            candidates.add(block)
-
-                    # 2.2.2. Evaluate nearby matches
-                    triples = []
-                    jobs = set()
-                    for block in candidates:
-                        kk = block[2]
-                        if kk:
-                            ii = block[0]
-                            jj = block[1]
-                            lo_args = (alo, ii, blo, jj)
-                            hi_args = (ii + kk, ahi, jj + kk, bhi)
-                            jobs.add(lo_args)
-                            jobs.add(hi_args)
-                            triples.append([lo_args, block, hi_args])
-
-                    block_list = self.batch_find_longest_match(jobs)
-                    job_results = dict(zip(jobs, block_list))
-
-                    # 2.2.3. Pick middle block of the best tripple
-                    for triple in triples:
-                        triple[0] = block0 = job_results[triple[0]]
-                        triple[2] = block2 = job_results[triple[2]]
-                        block1 = triple[1]
-                        score = _calc_candidate_score(block0, block1, block2)
-                        # NOTE: secondary key is `skew` as above
-                        mid_skew = _calc_skew(*block1, *bounds)
-                        triple.append((score, -abs(mid_skew)))
-                    best = max(triples, key=lambda x: x[-1])
-                    tail_blocks = best[1:2]
-
-            # 2.3. Take the initial substring if nothing else has been set
-            if tail_blocks is None:
-                tail_blocks = [init_block]
-
-            # 3.1. Interpolate `tail_blocks` with ranges
-            q_tail = []
-            i0, j0 = alo, blo
-            for block in tail_blocks:
-                ii, jj, kk = block
-                if kk:
-                    if i0 < ii and j0 < jj:
-                        q_tail.append((_RANGE, (i0, ii, j0, jj)))
-                    q_tail.append((_BLOCK, block))
-                    i0, j0 = ii + kk, jj + kk
-            if not q_tail:
-                # No blocks identified. Do not recurse further.
-                continue
-            q_tail.append((_RANGE, (i0, ahi, j0, bhi)))
-
-            # 3.2. Yield what is possible straight away
-            q_tail.reverse()
-            while q_tail:
-                dtype, data = q_tail.pop()
-                if dtype is _BLOCK:
-                    yield data
-                elif dtype is _RANGE:
-                    q_tail.append((dtype, data))
-                    q_tail.reverse()
-                    break
-                else:
-                    msg = 'Unknown data type: {!r}'
-                    raise RuntimeError(msg.format(dtype))
-
-            # 3.3. append to Q what is not
-            d = depth + 1
-            while q_tail:
-                dtype, data = q_tail.pop()
-                if dtype is _BLOCK:
-                    q.append((dtype, d, data))
-                elif dtype is _RANGE:
-                    # Try quick evaluation without re-building
-                    # Before cache was overriden
-                    _bounds = data
-                    block = self.find_longest_match(*_bounds, quick_only=True)
-                    if block is not None:
-                        q.append((_RANGEWITHBLOCK, d, (_bounds, block)))
-                    else:
-                        q.append((dtype, d, data))
-                else:
-                    msg = 'Unknown data type: {!r}'
-                    raise RuntimeError(msg.format(dtype))
+    def _process_range(self, depth, alo, ahi, blo, bhi):
+        blocks = self.automaton._find_sequential(self.a, alo, ahi, blo, bhi)
+        if self.bjunk:
+            blocks = self._extend_junk_for_many(blocks, alo, ahi, blo, bhi)
+        return ANCHORBLOCKS, blocks, True

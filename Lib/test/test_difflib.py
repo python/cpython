@@ -3,7 +3,6 @@ from test.support import findfile, force_colorized
 import unittest
 import doctest
 import sys
-import functools
 
 
 class TestWithAscii(unittest.TestCase):
@@ -312,46 +311,6 @@ class TestDiffer(unittest.TestCase):
     def test_one_delete(self):
         m = difflib.Differ().compare('a' + 'b' * 2, 'b' * 2)
         self.assertEqual(list(m), ['- a', '  b', '  b'])
-
-    def test_differ_with_balancing_gestalt_matcher(self):
-        gsm_cls = functools.partial(difflib.GestaltSequenceMatcher, balancing=2/3)
-        d1 = difflib.Differ()
-        d2 = difflib.Differ(linematcher=gsm_cls, charmatcher=gsm_cls)
-        a = ["a\n", "b\n", "-\n", "a\n", "b\n", "close match 1\n", "a\n", "b\n", "c\n"]
-        b = ["a\n", "b\n", "c\n", "+\n", "a\n", "b\n", "close match 2\n", "a\n", "b\n"]
-        m = list(d1.compare(a, b))
-        self.assertEqual(m,
-                         ['- a\n',
-                          '- b\n',
-                          '- -\n',
-                          '- a\n',
-                          '- b\n',
-                          '- close match 1\n',
-                          '  a\n',
-                          '  b\n',
-                          '  c\n',
-                          '+ +\n',
-                          '+ a\n',
-                          '+ b\n',
-                          '+ close match 2\n',
-                          '+ a\n',
-                          '+ b\n'])
-        m = list(d2.compare(a, b))
-        self.assertEqual(m,
-                         ['  a\n',
-                          '  b\n',
-                          '- -\n',
-                          '+ c\n',
-                          '+ +\n',
-                          '  a\n',
-                          '  b\n',
-                          '- close match 1\n',
-                          '?             ^\n',
-                          '+ close match 2\n',
-                          '?             ^\n',
-                          '  a\n',
-                          '  b\n',
-                          '- c\n'])
 
 
 class TestOutputFormat(unittest.TestCase):
@@ -725,45 +684,7 @@ class TestLCSUBAutomaton(unittest.TestCase):
         self.assertEqual(results1, results2)
 
 
-seq1_skew = """
-def foo1(a, b):
-    a += 1
-    b += 1
-    return a + b
-
-def foo2(a, b):
-    a += 2
-    b += 2
-    return a + b
-
-def foo3(a, b):
-    c = a + b
-    d = c + a * b
-    r = sum(range(d))
-    return r
-"""
-
-
-seq2_skew = """
-def foo3(a, b):
-    c = a + b
-    d = c + a * b
-    r = sum(range(d))
-    return r
-#
-def foo1(a, b):
-    a += 1
-    b += 1
-    return a + b
-#
-def foo2(a, b):
-    a += 2
-    b += 2
-    return a + b
-"""
-
-
-class TestGestaltSequenceMatcher(unittest.TestCase):
+class TestExactSequenceMatcher(unittest.TestCase):
     def test_cross_test_with_autojunk_false(self):
         cases = [
             ("ABCDEFGHIJKLMNOP" * 10, "ACEGIKMOQBDFHJLNP" * 10),
@@ -779,22 +700,12 @@ class TestGestaltSequenceMatcher(unittest.TestCase):
         for seq1, seq2 in cases:
             for isjunk in [None, lambda x: x in 'aeAE']:
                 sm1 = difflib.SequenceMatcher(isjunk, seq1, seq2, autojunk=False)
-                sm2 = difflib.GestaltSequenceMatcher(isjunk, seq1, seq2)
+                sm2 = difflib.ExactSequenceMatcher(isjunk, seq1, seq2)
                 self.assertEqual(sm1.bjunk, sm2.bjunk)
                 blocks1 = sm1.get_matching_blocks()
                 blocks2 = sm2.get_matching_blocks()
                 self.assertEqual(blocks1, blocks2)
                 self.assertAlmostEqual(sm1.ratio(), sm2.ratio(), places=3)
-
-    def test_balancing(self):
-        seq1 = seq1_skew.strip().splitlines()
-        seq2 = seq2_skew.strip().splitlines()
-        sm1 = difflib.GestaltSequenceMatcher(None, seq1, seq2)
-        sm2 = difflib.GestaltSequenceMatcher(None, seq1, seq2, balancing=2/3)
-        blocks1 = list(map(tuple, sm1.get_matching_blocks()))
-        blocks2 = list(map(tuple, sm2.get_matching_blocks()))
-        self.assertEqual(blocks1, [(10, 0, 5), (15, 15, 0)])
-        self.assertEqual(blocks2, [(0, 6, 4), (5, 11, 4), (15, 15, 0)])
 
 
 def setUpModule():
