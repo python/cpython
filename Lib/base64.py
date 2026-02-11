@@ -4,7 +4,6 @@
 # Modified 30-Dec-2003 by Barry Warsaw to add full RFC 3548 support
 # Modified 22-May-2007 by Guido van Rossum to use bytes everywhere
 
-import struct
 import binascii
 
 
@@ -89,49 +88,37 @@ def b64decode(s, altchars=None, validate=_NOT_SPECIFIED, *, ignorechars=_NOT_SPE
     s = _bytes_from_decode_data(s)
     if validate is _NOT_SPECIFIED:
         validate = ignorechars is not _NOT_SPECIFIED
-    if ignorechars is _NOT_SPECIFIED:
-        ignorechars = b''
     badchar = None
-    badchar_strict = False
     if altchars is not None:
         altchars = _bytes_from_decode_data(altchars)
         if len(altchars) != 2:
             raise ValueError(f'invalid altchars: {altchars!r}')
-        for b in b'+/':
-            if b not in altchars and b in s:
-                if badchar is None:
-                    badchar = b
-                if not validate:
-                    break
-                if not isinstance(ignorechars, (bytes, bytearray)):
-                    ignorechars = memoryview(ignorechars).cast('B')
-                if b not in ignorechars:
-                    badchar_strict = True
+        if ignorechars is _NOT_SPECIFIED:
+            for b in b'+/':
+                if b not in altchars and b in s:
                     badchar = b
                     break
-        s = s.translate(bytes.maketrans(altchars, b'+/'))
+            s = s.translate(bytes.maketrans(altchars, b'+/'))
+        else:
+            trans = bytes.maketrans(b'+/' + altchars, altchars + b'+/')
+            s = s.translate(trans)
+            ignorechars = ignorechars.translate(trans)
+    if ignorechars is _NOT_SPECIFIED:
+        ignorechars = b''
     result = binascii.a2b_base64(s, strict_mode=validate,
                                  ignorechars=ignorechars)
     if badchar is not None:
         import warnings
-        if badchar_strict:
+        if validate:
             warnings.warn(f'invalid character {chr(badchar)!a} in Base64 data '
                           f'with altchars={altchars!r} and validate=True '
                           f'will be an error in future Python versions',
                           DeprecationWarning, stacklevel=2)
         else:
-            ignorechars = bytes(ignorechars)
-            if ignorechars:
-                warnings.warn(f'invalid character {chr(badchar)!a} in Base64 data '
-                              f'with altchars={altchars!r} '
-                              f'and ignorechars={ignorechars!r} '
-                              f'will be discarded in future Python versions',
-                              FutureWarning, stacklevel=2)
-            else:
-                warnings.warn(f'invalid character {chr(badchar)!a} in Base64 data '
-                              f'with altchars={altchars!r} and validate=False '
-                              f'will be discarded in future Python versions',
-                              FutureWarning, stacklevel=2)
+            warnings.warn(f'invalid character {chr(badchar)!a} in Base64 data '
+                          f'with altchars={altchars!r} and validate=False '
+                          f'will be discarded in future Python versions',
+                          FutureWarning, stacklevel=2)
     return result
 
 
@@ -351,36 +338,6 @@ def b16decode(s, casefold=False):
 #
 # Ascii85 encoding/decoding
 #
-
-_a85chars = None
-_a85chars2 = None
-_A85START = b"<~"
-_A85END = b"~>"
-
-def _85encode(b, chars, chars2, pad=False, foldnuls=False, foldspaces=False):
-    # Helper function for a85encode and b85encode
-    if not isinstance(b, bytes_types):
-        b = memoryview(b).tobytes()
-
-    padding = (-len(b)) % 4
-    if padding:
-        b = b + b'\0' * padding
-    words = struct.Struct('!%dI' % (len(b) // 4)).unpack(b)
-
-    chunks = [b'z' if foldnuls and not word else
-              b'y' if foldspaces and word == 0x20202020 else
-              (chars2[word // 614125] +
-               chars2[word // 85 % 7225] +
-               chars[word % 85])
-              for word in words]
-
-    if padding and not pad:
-        if chunks[-1] == b'z':
-            chunks[-1] = chars[0] * 5
-        chunks[-1] = chunks[-1][:-padding]
-
-    return b''.join(chunks)
-
 def a85encode(b, *, foldspaces=False, wrapcol=0, pad=False, adobe=False):
     """Encode bytes-like object b using Ascii85 and return a bytes object.
 
@@ -397,29 +354,8 @@ def a85encode(b, *, foldspaces=False, wrapcol=0, pad=False, adobe=False):
     adobe controls whether the encoded byte sequence is framed with <~ and ~>,
     which is used by the Adobe implementation.
     """
-    global _a85chars, _a85chars2
-    # Delay the initialization of tables to not waste memory
-    # if the function is never called
-    if _a85chars2 is None:
-        _a85chars = [bytes((i,)) for i in range(33, 118)]
-        _a85chars2 = [(a + b) for a in _a85chars for b in _a85chars]
-
-    result = _85encode(b, _a85chars, _a85chars2, pad, True, foldspaces)
-
-    if adobe:
-        result = _A85START + result
-    if wrapcol:
-        wrapcol = max(2 if adobe else 1, wrapcol)
-        chunks = [result[i: i + wrapcol]
-                  for i in range(0, len(result), wrapcol)]
-        if adobe:
-            if len(chunks[-1]) + 2 > wrapcol:
-                chunks.append(b'')
-        result = b'\n'.join(chunks)
-    if adobe:
-        result += _A85END
-
-    return result
+    return binascii.b2a_ascii85(b, foldspaces=foldspaces,
+                                adobe=adobe, wrapcol=wrapcol, pad=pad)
 
 def a85decode(b, *, foldspaces=False, adobe=False, ignorechars=b' \t\n\r\v'):
     """Decode the Ascii85 encoded bytes-like object or ASCII string b.
@@ -437,67 +373,8 @@ def a85decode(b, *, foldspaces=False, adobe=False, ignorechars=b' \t\n\r\v'):
 
     The result is returned as a bytes object.
     """
-    b = _bytes_from_decode_data(b)
-    if adobe:
-        if not b.endswith(_A85END):
-            raise ValueError(
-                "Ascii85 encoded byte sequences must end "
-                "with {!r}".format(_A85END)
-                )
-        if b.startswith(_A85START):
-            b = b[2:-2]  # Strip off start/end markers
-        else:
-            b = b[:-2]
-    #
-    # We have to go through this stepwise, so as to ignore spaces and handle
-    # special short sequences
-    #
-    packI = struct.Struct('!I').pack
-    decoded = []
-    decoded_append = decoded.append
-    curr = []
-    curr_append = curr.append
-    curr_clear = curr.clear
-    for x in b + b'u' * 4:
-        if b'!'[0] <= x <= b'u'[0]:
-            curr_append(x)
-            if len(curr) == 5:
-                acc = 0
-                for x in curr:
-                    acc = 85 * acc + (x - 33)
-                try:
-                    decoded_append(packI(acc))
-                except struct.error:
-                    raise ValueError('Ascii85 overflow') from None
-                curr_clear()
-        elif x == b'z'[0]:
-            if curr:
-                raise ValueError('z inside Ascii85 5-tuple')
-            decoded_append(b'\0\0\0\0')
-        elif foldspaces and x == b'y'[0]:
-            if curr:
-                raise ValueError('y inside Ascii85 5-tuple')
-            decoded_append(b'\x20\x20\x20\x20')
-        elif x in ignorechars:
-            # Skip whitespace
-            continue
-        else:
-            raise ValueError('Non-Ascii85 digit found: %c' % x)
-
-    result = b''.join(decoded)
-    padding = 4 - len(curr)
-    if padding:
-        # Throw away the extra padding
-        result = result[:-padding]
-    return result
-
-# The following code is originally taken (with permission) from Mercurial
-
-_b85alphabet = (b"0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZ"
-                b"abcdefghijklmnopqrstuvwxyz!#$%&()*+-;<=>?@^_`{|}~")
-_b85chars = None
-_b85chars2 = None
-_b85dec = None
+    return binascii.a2b_ascii85(b, foldspaces=foldspaces,
+                                adobe=adobe, ignorechars=ignorechars)
 
 def b85encode(b, pad=False):
     """Encode bytes-like object b in base85 format and return a bytes object.
@@ -505,84 +382,25 @@ def b85encode(b, pad=False):
     If pad is true, the input is padded with b'\\0' so its length is a multiple of
     4 bytes before encoding.
     """
-    global _b85chars, _b85chars2
-    # Delay the initialization of tables to not waste memory
-    # if the function is never called
-    if _b85chars2 is None:
-        _b85chars = [bytes((i,)) for i in _b85alphabet]
-        _b85chars2 = [(a + b) for a in _b85chars for b in _b85chars]
-    return _85encode(b, _b85chars, _b85chars2, pad)
+    return binascii.b2a_base85(b, pad=pad)
 
 def b85decode(b):
     """Decode the base85-encoded bytes-like object or ASCII string b
 
     The result is returned as a bytes object.
     """
-    global _b85dec
-    # Delay the initialization of tables to not waste memory
-    # if the function is never called
-    if _b85dec is None:
-        # we don't assign to _b85dec directly to avoid issues when
-        # multiple threads call this function simultaneously
-        b85dec_tmp = [None] * 256
-        for i, c in enumerate(_b85alphabet):
-            b85dec_tmp[c] = i
-        _b85dec = b85dec_tmp
-
-    b = _bytes_from_decode_data(b)
-    padding = (-len(b)) % 5
-    b = b + b'~' * padding
-    out = []
-    packI = struct.Struct('!I').pack
-    for i in range(0, len(b), 5):
-        chunk = b[i:i + 5]
-        acc = 0
-        try:
-            for c in chunk:
-                acc = acc * 85 + _b85dec[c]
-        except TypeError:
-            for j, c in enumerate(chunk):
-                if _b85dec[c] is None:
-                    raise ValueError('bad base85 character at position %d'
-                                    % (i + j)) from None
-            raise
-        try:
-            out.append(packI(acc))
-        except struct.error:
-            raise ValueError('base85 overflow in hunk starting at byte %d'
-                             % i) from None
-
-    result = b''.join(out)
-    if padding:
-        result = result[:-padding]
-    return result
-
-_z85alphabet = (b'0123456789abcdefghijklmnopqrstuvwxyz'
-                b'ABCDEFGHIJKLMNOPQRSTUVWXYZ.-:+=^!/*?&<>()[]{}@%$#')
-# Translating b85 valid but z85 invalid chars to b'\x00' is required
-# to prevent them from being decoded as b85 valid chars.
-_z85_b85_decode_diff = b';_`|~'
-_z85_decode_translation = bytes.maketrans(
-    _z85alphabet + _z85_b85_decode_diff,
-    _b85alphabet + b'\x00' * len(_z85_b85_decode_diff)
-)
-_z85_encode_translation = bytes.maketrans(_b85alphabet, _z85alphabet)
+    return binascii.a2b_base85(b)
 
 def z85encode(s, pad=False):
     """Encode bytes-like object b in z85 format and return a bytes object."""
-    return b85encode(s, pad).translate(_z85_encode_translation)
+    return binascii.b2a_z85(s, pad=pad)
 
 def z85decode(s):
     """Decode the z85-encoded bytes-like object or ASCII string b
 
     The result is returned as a bytes object.
     """
-    s = _bytes_from_decode_data(s)
-    s = s.translate(_z85_decode_translation)
-    try:
-        return b85decode(s)
-    except ValueError as e:
-        raise ValueError(e.args[0].replace('base85', 'z85')) from None
+    return binascii.a2b_z85(s)
 
 # Legacy interface.  This code could be cleaned up since I don't believe
 # binascii has any line length limitations.  It just doesn't seem worth it

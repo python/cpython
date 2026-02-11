@@ -571,6 +571,7 @@ dummy_func(
 
         macro(TO_BOOL_ALWAYS_TRUE) =
             unused/1 +
+            _RECORD_TOS_TYPE +
             _GUARD_TYPE_VERSION +
             _REPLACE_WITH_TRUE +
             POP_TOP;
@@ -940,9 +941,9 @@ dummy_func(
         }
 
         macro(BINARY_OP_SUBSCR_LIST_SLICE) =
-            _GUARD_TOS_SLICE + _GUARD_NOS_LIST + unused/5 + _BINARY_OP_SUBSCR_LIST_SLICE;
+            _GUARD_TOS_SLICE + _GUARD_NOS_LIST + unused/5 + _BINARY_OP_SUBSCR_LIST_SLICE + POP_TOP + POP_TOP;
 
-        op(_BINARY_OP_SUBSCR_LIST_SLICE, (list_st, sub_st -- res)) {
+        op(_BINARY_OP_SUBSCR_LIST_SLICE, (list_st, sub_st -- res, ls, ss)) {
             PyObject *sub = PyStackRef_AsPyObjectBorrow(sub_st);
             PyObject *list = PyStackRef_AsPyObjectBorrow(list_st);
 
@@ -951,9 +952,13 @@ dummy_func(
 
             PyObject *res_o = _PyList_SliceSubscript(list, sub);
             STAT_INC(BINARY_OP, hit);
-            DECREF_INPUTS();
-            ERROR_IF(res_o == NULL);
+            if (res_o == NULL) {
+                ERROR_NO_POP();
+            }
             res = PyStackRef_FromPyObjectSteal(res_o);
+            ls = list_st;
+            ss = sub_st;
+            INPUTS_DEAD();
         }
 
         macro(BINARY_OP_SUBSCR_STR_INT) =
@@ -1097,10 +1102,10 @@ dummy_func(
             assert(code->co_argcount == 2);
             DEOPT_IF(!_PyThreadState_HasStackSpace(tstate, code->co_framesize));
             getitem = PyStackRef_FromPyObjectNew(getitem_o);
-            STAT_INC(BINARY_OP, hit);
         }
 
         op(_BINARY_OP_SUBSCR_INIT_CALL, (container, sub, getitem -- new_frame)) {
+            STAT_INC(BINARY_OP, hit);
             _PyInterpreterFrame* pushed_frame = _PyFrame_PushUnchecked(tstate, getitem, 2, frame);
             pushed_frame->localsplus[0] = container;
             pushed_frame->localsplus[1] = sub;
@@ -1110,6 +1115,7 @@ dummy_func(
         }
 
         macro(BINARY_OP_SUBSCR_GETITEM) =
+            _RECORD_NOS +
             unused/5 + // Skip over the counter and cache
             _CHECK_PEP_523 +
             _BINARY_OP_SUBSCR_CHECK_FUNC +
@@ -1433,6 +1439,7 @@ dummy_func(
 
         macro(SEND_GEN) =
             unused/1 +
+            _RECORD_NOS_GEN_FUNC +
             _CHECK_PEP_523 +
             _SEND_GEN_FRAME +
             _PUSH_FRAME;
@@ -2392,38 +2399,15 @@ dummy_func(
             PyObject *name = GETITEM(FRAME_CO_NAMES, oparg >> 1);
             if (oparg & 1) {
                 /* Designed to work in tandem with CALL, pushes two values. */
-                _PyCStackRef method;
-                _PyThreadState_PushCStackRef(tstate, &method);
-                int is_meth = _PyObject_GetMethodStackRef(tstate, PyStackRef_AsPyObjectBorrow(owner), name, &method.ref);
-                if (is_meth) {
-                    /* We can bypass temporary bound method object.
-                       meth is unbound method and obj is self.
-                       meth | self | arg1 | ... | argN
-                     */
-                    assert(!PyStackRef_IsNull(method.ref)); // No errors on this branch
-                    self_or_null[0] = owner;  // Transfer ownership
-                    DEAD(owner);
-                    attr = _PyThreadState_PopCStackRefSteal(tstate, &method);
-                }
-                else {
-                    /* meth is not an unbound method (but a regular attr, or
-                       something was returned by a descriptor protocol).  Set
-                       the second element of the stack to NULL, to signal
-                       CALL that it's not a method call.
-                       meth | NULL | arg1 | ... | argN
-                    */
-                    PyStackRef_CLOSE(owner);
-                    self_or_null[0] = PyStackRef_NULL;
-                    attr = _PyThreadState_PopCStackRefSteal(tstate, &method);
-                    ERROR_IF(PyStackRef_IsNull(attr));
-                }
+                attr = _Py_LoadAttr_StackRefSteal(tstate, owner, name, self_or_null);
+                DEAD(owner);
+                ERROR_IF(PyStackRef_IsNull(attr));
             }
             else {
                 /* Classic, pushes one value. */
-                PyObject *attr_o = PyObject_GetAttr(PyStackRef_AsPyObjectBorrow(owner), name);
+                attr = _PyObject_GetAttrStackRef(PyStackRef_AsPyObjectBorrow(owner), name);
                 PyStackRef_CLOSE(owner);
-                ERROR_IF(attr_o == NULL);
-                attr = PyStackRef_FromPyObjectSteal(attr_o);
+                ERROR_IF(PyStackRef_IsNull(attr));
             }
         }
 
@@ -2476,6 +2460,7 @@ dummy_func(
 
         macro(LOAD_ATTR_INSTANCE_VALUE) =
             unused/1 + // Skip over the counter
+            _RECORD_TOS_TYPE +
             _GUARD_TYPE_VERSION +
             _CHECK_MANAGED_OBJECT_HAS_VALUES +
             _LOAD_ATTR_INSTANCE_VALUE +
@@ -2557,6 +2542,7 @@ dummy_func(
 
         macro(LOAD_ATTR_WITH_HINT) =
             unused/1 +
+            _RECORD_TOS_TYPE +
             _GUARD_TYPE_VERSION +
             _LOAD_ATTR_WITH_HINT +
             POP_TOP +
@@ -2582,6 +2568,7 @@ dummy_func(
 
         macro(LOAD_ATTR_SLOT) =
             unused/1 +
+            _RECORD_TOS_TYPE +
             _GUARD_TYPE_VERSION +
             _LOAD_ATTR_SLOT +  // NOTE: This action may also deopt
             POP_TOP +
@@ -2612,8 +2599,9 @@ dummy_func(
 
         macro(LOAD_ATTR_CLASS_WITH_METACLASS_CHECK) =
             unused/1 +
-            _CHECK_ATTR_CLASS +
+            _RECORD_TOS_TYPE +
             _GUARD_TYPE_VERSION +
+            _CHECK_ATTR_CLASS +
             _LOAD_ATTR_CLASS +
             _PUSH_NULL_CONDITIONAL;
 
@@ -2635,8 +2623,9 @@ dummy_func(
 
         macro(LOAD_ATTR_PROPERTY) =
             unused/1 +
-            _CHECK_PEP_523 +
+            _RECORD_TOS_TYPE +
             _GUARD_TYPE_VERSION +
+            _CHECK_PEP_523 +
             unused/2 +
             _LOAD_ATTR_PROPERTY_FRAME +
             _SAVE_RETURN_OFFSET +
@@ -2746,6 +2735,7 @@ dummy_func(
 
         macro(STORE_ATTR_WITH_HINT) =
             unused/1 +
+            _RECORD_TOS_TYPE +
             _GUARD_TYPE_VERSION +
             _STORE_ATTR_WITH_HINT +
             POP_TOP;
@@ -2766,6 +2756,7 @@ dummy_func(
 
         macro(STORE_ATTR_SLOT) =
             unused/1 +
+            _RECORD_TOS_TYPE +
             _GUARD_TYPE_VERSION +
             _STORE_ATTR_SLOT +
             POP_TOP;
@@ -3073,7 +3064,7 @@ dummy_func(
                     oparg >>= 8;
                     insert_exec_at--;
                 }
-                int succ = _PyJit_TryInitializeTracing(tstate, frame, this_instr, insert_exec_at, next_instr, STACK_LEVEL(), 0, NULL, oparg, NULL);
+                int succ = _PyJit_TryInitializeTracing(tstate, frame, this_instr, insert_exec_at, next_instr, stack_pointer, 0, NULL, oparg, NULL);
                 if (succ) {
                     ENTER_TRACING();
                 }
@@ -3558,6 +3549,7 @@ dummy_func(
         }
 
         macro(FOR_ITER_GEN) =
+            _RECORD_NOS_GEN_FUNC +
             unused/1 +
             _CHECK_PEP_523 +
             _FOR_ITER_GEN_FRAME +
@@ -3692,6 +3684,7 @@ dummy_func(
 
         macro(LOAD_ATTR_METHOD_WITH_VALUES) =
             unused/1 +
+            _RECORD_TOS_TYPE +
             _GUARD_TYPE_VERSION +
             _GUARD_DORV_VALUES_INST_ATTR_FROM_DICT +
             _GUARD_KEYS_VERSION +
@@ -3710,6 +3703,7 @@ dummy_func(
 
         macro(LOAD_ATTR_METHOD_NO_DICT) =
             unused/1 +
+            _RECORD_TOS_TYPE +
             _GUARD_TYPE_VERSION +
             unused/2 +
             _LOAD_ATTR_METHOD_NO_DICT;
@@ -3724,6 +3718,7 @@ dummy_func(
 
         macro(LOAD_ATTR_NONDESCRIPTOR_WITH_VALUES) =
             unused/1 +
+            _RECORD_TOS_TYPE +
             _GUARD_TYPE_VERSION +
             _GUARD_DORV_VALUES_INST_ATTR_FROM_DICT +
             _GUARD_KEYS_VERSION +
@@ -3740,6 +3735,7 @@ dummy_func(
 
         macro(LOAD_ATTR_NONDESCRIPTOR_NO_DICT) =
             unused/1 +
+            _RECORD_TOS_TYPE +
             _GUARD_TYPE_VERSION +
             unused/2 +
             _LOAD_ATTR_NONDESCRIPTOR_NO_DICT;
@@ -3763,6 +3759,7 @@ dummy_func(
 
         macro(LOAD_ATTR_METHOD_LAZY_DICT) =
             unused/1 +
+            _RECORD_TOS_TYPE +
             _GUARD_TYPE_VERSION +
             _CHECK_ATTR_METHOD_LAZY_DICT +
             unused/1 +
@@ -3931,6 +3928,7 @@ dummy_func(
         }
 
         macro(CALL_PY_GENERAL) =
+            _RECORD_CALLABLE +
             unused/1 + // Skip over the counter
             _CHECK_PEP_523 +
             _CHECK_FUNCTION_VERSION +
@@ -3961,6 +3959,7 @@ dummy_func(
         }
 
         macro(CALL_BOUND_METHOD_GENERAL) =
+            _RECORD_BOUND_METHOD +
             unused/1 + // Skip over the counter
             _CHECK_PEP_523 +
             _CHECK_METHOD_VERSION +
@@ -4000,6 +3999,7 @@ dummy_func(
         }
 
         macro(CALL_NON_PY_GENERAL) =
+            _RECORD_CALLABLE +
             unused/1 + // Skip over the counter
             unused/2 +
             _CHECK_IS_NOT_PY_CALLABLE +
@@ -4073,6 +4073,7 @@ dummy_func(
         }
 
         macro(CALL_BOUND_METHOD_EXACT_ARGS) =
+            _RECORD_BOUND_METHOD +
             unused/1 + // Skip over the counter
             _CHECK_PEP_523 +
             _CHECK_CALL_BOUND_METHOD_EXACT_ARGS +
@@ -4087,6 +4088,7 @@ dummy_func(
             _PUSH_FRAME;
 
         macro(CALL_PY_EXACT_ARGS) =
+            _RECORD_CALLABLE +
             unused/1 + // Skip over the counter
             _CHECK_PEP_523 +
             _CHECK_FUNCTION_VERSION +
@@ -4239,6 +4241,7 @@ dummy_func(
         }
 
         macro(CALL_ALLOC_AND_ENTER_INIT) =
+            _RECORD_CALLABLE +
             unused/1 +
             _CHECK_PEP_523 +
             _CHECK_AND_ALLOCATE_OBJECT +
@@ -4279,6 +4282,7 @@ dummy_func(
         }
 
         macro(CALL_BUILTIN_CLASS) =
+            _RECORD_CALLABLE +
             unused/1 +
             unused/2 +
             _CALL_BUILTIN_CLASS +
@@ -4314,6 +4318,7 @@ dummy_func(
         }
 
         macro(CALL_BUILTIN_O) =
+            _RECORD_CALLABLE +
             unused/1 +
             unused/2 +
             _CALL_BUILTIN_O +
@@ -4346,6 +4351,7 @@ dummy_func(
         }
 
         macro(CALL_BUILTIN_FAST) =
+            _RECORD_CALLABLE +
             unused/1 +
             unused/2 +
             _CALL_BUILTIN_FAST +
@@ -4372,6 +4378,7 @@ dummy_func(
         }
 
         macro(CALL_BUILTIN_FAST_WITH_KEYWORDS) =
+            _RECORD_CALLABLE +
             unused/1 +
             unused/2 +
             _CALL_BUILTIN_FAST_WITH_KEYWORDS +
@@ -4515,6 +4522,7 @@ dummy_func(
         }
 
         macro(CALL_METHOD_DESCRIPTOR_O) =
+            _RECORD_CALLABLE +
             unused/1 +
             unused/2 +
             _CALL_METHOD_DESCRIPTOR_O +
@@ -4557,6 +4565,7 @@ dummy_func(
         }
 
         macro(CALL_METHOD_DESCRIPTOR_FAST_WITH_KEYWORDS) =
+            _RECORD_CALLABLE +
             unused/1 +
             unused/2 +
             _CALL_METHOD_DESCRIPTOR_FAST_WITH_KEYWORDS +
@@ -4595,6 +4604,7 @@ dummy_func(
         }
 
         macro(CALL_METHOD_DESCRIPTOR_NOARGS) =
+            _RECORD_CALLABLE +
             unused/1 +
             unused/2 +
             _CALL_METHOD_DESCRIPTOR_NOARGS +
@@ -5020,6 +5030,7 @@ dummy_func(
         }
 
         macro(CALL_EX_PY) =
+            _RECORD_4OS +
             unused/1 +
             _CHECK_PEP_523 +
             _MAKE_CALLARGS_A_TUPLE +
@@ -5383,7 +5394,6 @@ dummy_func(
         tier2 op(_CHECK_STACK_SPACE_OPERAND, (framesize/2 --)) {
             assert(framesize <= INT_MAX);
             DEOPT_IF(!_PyThreadState_HasStackSpace(tstate, framesize));
-            DEOPT_IF(tstate->py_recursion_remaining <= 1);
         }
 
         op(_SAVE_RETURN_OFFSET, (--)) {
@@ -5640,7 +5650,7 @@ dummy_func(
                 // Note: it's safe to use target->op.arg here instead of the oparg given by EXTENDED_ARG.
                 // The invariant in the optimizer is the deopt target always points back to the first EXTENDED_ARG.
                 // So setting it to anything else is wrong.
-                int succ = _PyJit_TryInitializeTracing(tstate, frame, target, target, target, STACK_LEVEL(), chain_depth, exit, target->op.arg, previous_executor);
+                int succ = _PyJit_TryInitializeTracing(tstate, frame, target, target, target, stack_pointer, chain_depth, exit, target->op.arg, previous_executor);
                 exit->temperature = restart_backoff_counter(exit->temperature);
                 if (succ) {
                     GOTO_TIER_ONE_CONTINUE_TRACING(target);
@@ -5658,36 +5668,87 @@ dummy_func(
             Py_UNREACHABLE();
         }
 
+        tier2 op(_GUARD_CODE, (version/2 -- )) {
+            PyObject *code = PyStackRef_AsPyObjectBorrow(frame->f_executable);
+            EXIT_IF(code == Py_None);
+            EXIT_IF(((PyCodeObject *)code)->co_version != version);
+        }
+
         tier2 op(_GUARD_IP__PUSH_FRAME, (ip/4 --)) {
-            _Py_CODEUNIT *target = frame->instr_ptr + IP_OFFSET_OF(_PUSH_FRAME);
+            _Py_CODEUNIT *target = frame->instr_ptr;
             if (target != (_Py_CODEUNIT *)ip) {
-                frame->instr_ptr += IP_OFFSET_OF(_PUSH_FRAME);
                 EXIT_IF(true);
             }
         }
 
         tier2 op(_GUARD_IP_YIELD_VALUE, (ip/4 --)) {
-            _Py_CODEUNIT *target = frame->instr_ptr + IP_OFFSET_OF(YIELD_VALUE);
+            _Py_CODEUNIT *target = frame->instr_ptr + 1 + INLINE_CACHE_ENTRIES_SEND;
             if (target != (_Py_CODEUNIT *)ip) {
-                frame->instr_ptr += IP_OFFSET_OF(YIELD_VALUE);
+                frame->instr_ptr += 1 + INLINE_CACHE_ENTRIES_SEND;
                 EXIT_IF(true);
             }
         }
 
         tier2 op(_GUARD_IP_RETURN_VALUE, (ip/4 --)) {
-            _Py_CODEUNIT *target = frame->instr_ptr + IP_OFFSET_OF(RETURN_VALUE);
+            _Py_CODEUNIT *target = frame->instr_ptr + frame->return_offset;
             if (target != (_Py_CODEUNIT *)ip) {
-                frame->instr_ptr += IP_OFFSET_OF(RETURN_VALUE);
+                frame->instr_ptr += frame->return_offset;
                 EXIT_IF(true);
             }
         }
 
         tier2 op(_GUARD_IP_RETURN_GENERATOR, (ip/4 --)) {
-            _Py_CODEUNIT *target = frame->instr_ptr +  IP_OFFSET_OF(RETURN_GENERATOR);
+            _Py_CODEUNIT *target = frame->instr_ptr + frame->return_offset;
             if (target != (_Py_CODEUNIT *)ip) {
-                frame->instr_ptr += IP_OFFSET_OF(RETURN_GENERATOR);
+                frame->instr_ptr += frame->return_offset;
                 EXIT_IF(true);
             }
+        }
+
+        /* Record ops for jit tracer.
+         *
+         * NOTE: These uops are NOPs for normal evaluation.
+         * They are only executed during trace recording */
+
+        tier2 op(_RECORD_TOS, (tos -- tos)) {
+            RECORD_VALUE(PyStackRef_AsPyObjectBorrow(tos));
+        }
+
+        tier2 op(_RECORD_TOS_TYPE, (tos -- tos)) {
+            RECORD_VALUE(Py_TYPE(PyStackRef_AsPyObjectBorrow(tos)));
+        }
+
+        tier2 op(_RECORD_NOS, (nos, tos -- nos, tos)) {
+            RECORD_VALUE(PyStackRef_AsPyObjectBorrow(nos));
+        }
+
+        tier2 op(_RECORD_NOS_GEN_FUNC, (nos, tos -- nos, tos)) {
+            PyObject *obj = PyStackRef_AsPyObjectBorrow(nos);
+            if (PyGen_Check(obj)) {
+                PyObject *func = (PyObject *)_PyFrame_GetFunction(&((PyGenObject *)obj)->gi_iframe);
+                RECORD_VALUE(func);
+            }
+        }
+
+        tier2 op(_RECORD_4OS, (value, _3os, nos, tos -- value, _3os, nos, tos)) {
+            RECORD_VALUE(PyStackRef_AsPyObjectBorrow(value));
+        }
+
+        tier2 op(_RECORD_CALLABLE, (func, self, args[oparg] -- func, self, args[oparg])) {
+            RECORD_VALUE(PyStackRef_AsPyObjectBorrow(func));
+        }
+
+        tier2 op(_RECORD_BOUND_METHOD, (callable, self, args[oparg] -- callable, self, args[oparg])) {
+            PyObject *callable_o = PyStackRef_AsPyObjectBorrow(callable);
+            if (Py_TYPE(callable_o) == &PyMethod_Type) {
+                PyObject *func = ((PyMethodObject *)callable_o)->im_func;
+                RECORD_VALUE(func);
+            }
+        }
+
+        /* Inserted by the JIT tracer. Never executed. */
+        tier2 op(_RECORD_CODE, ( -- )) {
+            RECORD_VALUE(NULL);
         }
 
         label(pop_2_error) {
@@ -5854,6 +5915,9 @@ dummy_func(
                 opcode == INTERPRETER_EXIT ||
                 (opcode >= MIN_INSTRUMENTED_OPCODE && opcode != ENTER_EXECUTOR)
             );
+            _PyThreadStateImpl *_tstate = (_PyThreadStateImpl *)tstate;
+            _PyJitTracerState *tracer = _tstate->jit_tracer_state;
+            assert(tracer != NULL);
             int full = !_PyJit_translate_single_bytecode_to_trace(tstate, frame, next_instr, stop_tracing ? _DEOPT : 0);
             if (full) {
                 LEAVE_TRACING();
@@ -5861,13 +5925,7 @@ dummy_func(
                 ERROR_IF(err < 0);
                 DISPATCH();
             }
-            // Super instructions. Instruction deopted. There's a mismatch in what the stack expects
-            // in the optimizer. So we have to reflect in the trace correctly.
-            _PyThreadStateImpl *_tstate = (_PyThreadStateImpl *)tstate;
-            // JIT should have disabled super instructions, as we can
-            // do these optimizations ourselves in the JIT.
-            _PyJitTracerState *tracer = _tstate->jit_tracer_state;
-            assert(tracer != NULL);
+            Py_CLEAR(tracer->prev_state.recorded_value);
             tracer->prev_state.instr = next_instr;
             PyObject *prev_code = PyStackRef_AsPyObjectBorrow(frame->f_executable);
             if (tracer->prev_state.instr_code != (PyCodeObject *)prev_code) {
@@ -5879,6 +5937,12 @@ dummy_func(
             tracer->prev_state.instr_stacklevel = PyStackRef_IsNone(frame->f_executable) ? 2 : STACK_LEVEL();
             if (_PyOpcode_Caches[_PyOpcode_Deopt[opcode]]) {
                 (&next_instr[1])->counter = trigger_backoff_counter();
+            }
+
+            uint8_t record_func_index = _PyOpcode_RecordFunctionIndices[opcode];
+            if (record_func_index) {
+                _Py_RecordFuncPtr doesnt_escape = _PyOpcode_RecordFunctions[record_func_index];
+                doesnt_escape(frame, stack_pointer, oparg, &tracer->prev_state.recorded_value);
             }
             DISPATCH_GOTO_NON_TRACING();
 #else

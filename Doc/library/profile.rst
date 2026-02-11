@@ -14,10 +14,10 @@
 
 .. deprecated-removed:: 3.15 3.17
 
-The :mod:`profile` module is deprecated and will be removed in Python 3.17.
+The :mod:`!profile` module is deprecated and will be removed in Python 3.17.
 Use :mod:`profiling.tracing` instead.
 
-The :mod:`profile` module provides a pure Python implementation of a
+The :mod:`!profile` module provides a pure Python implementation of a
 deterministic profiler. While useful for understanding profiler internals or
 extending profiler behavior through subclassing, its pure Python implementation
 introduces significant overhead compared to the C-based :mod:`profiling.tracing`
@@ -32,7 +32,7 @@ For most profiling tasks, use:
 Migration
 =========
 
-Migrating from :mod:`profile` to :mod:`profiling.tracing` is straightforward.
+Migrating from :mod:`!profile` to :mod:`profiling.tracing` is straightforward.
 The APIs are compatible::
 
    # Old (deprecated)
@@ -57,7 +57,7 @@ a straightforward migration path.
 :mod:`!profile` and :mod:`!profiling.tracing` module reference
 ==============================================================
 
-Both the :mod:`profile` and :mod:`profiling.tracing` modules provide the
+Both the :mod:`!profile` and :mod:`profiling.tracing` modules provide the
 following functions:
 
 .. function:: run(command, filename=None, sort=-1)
@@ -114,7 +114,7 @@ following functions:
       print(s.getvalue())
 
    The :class:`Profile` class can also be used as a context manager (supported
-   only in :mod:`profiling.tracing`, not in the deprecated :mod:`profile`
+   only in :mod:`profiling.tracing`, not in the deprecated :mod:`!profile`
    module; see :ref:`typecontextmanager`)::
 
       import profiling.tracing
@@ -178,18 +178,18 @@ printed.
 Differences from :mod:`!profiling.tracing`
 ==========================================
 
-The :mod:`profile` module differs from :mod:`profiling.tracing` in several
+The :mod:`!profile` module differs from :mod:`profiling.tracing` in several
 ways:
 
 **Higher overhead.** The pure Python implementation is significantly slower
 than the C implementation, making it unsuitable for profiling long-running
 programs or performance-sensitive code.
 
-**Calibration support.** The :mod:`profile` module supports calibration to
+**Calibration support.** The :mod:`!profile` module supports calibration to
 compensate for profiling overhead. This is not needed in :mod:`profiling.tracing`
 because the C implementation has negligible overhead.
 
-**Custom timers.** Both modules support custom timers, but :mod:`profile`
+**Custom timers.** Both modules support custom timers, but :mod:`!profile`
 accepts timer functions that return tuples (like :func:`os.times`), while
 :mod:`profiling.tracing` requires a function returning a single number.
 
@@ -254,9 +254,9 @@ this error. The error that accumulates in this fashion is typically less than
 the accuracy of the clock (less than one clock tick), but it *can* accumulate
 and become very significant.
 
-The problem is more important with the deprecated :mod:`profile` module than
+The problem is more important with the deprecated :mod:`!profile` module than
 with the lower-overhead :mod:`profiling.tracing`.  For this reason,
-:mod:`profile` provides a means of calibrating itself for a given platform so
+:mod:`!profile` provides a means of calibrating itself for a given platform so
 that this error can be probabilistically (on the average) removed. After the
 profiler is calibrated, it will be more accurate (in a least square sense), but
 it will sometimes produce negative numbers (when call counts are exceptionally
@@ -271,7 +271,7 @@ calibration.
 Calibration
 ===========
 
-The profiler of the :mod:`profile` module subtracts a constant from each event
+The profiler of the :mod:`!profile` module subtracts a constant from each event
 handling time to compensate for the overhead of calling the time function, and
 socking away the results.  By default, the constant is 0. The following
 procedure can be used to obtain a better constant for a given platform (see

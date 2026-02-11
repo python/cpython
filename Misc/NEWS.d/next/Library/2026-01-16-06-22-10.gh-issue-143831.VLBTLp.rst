@@ -1,3 +1,0 @@
-:class:`annotationlib.ForwardRef` objects are now hashable when created from
-annotation scopes with closures. Previously, hashing such objects would
-throw an exception. Patch by Bartosz Sławecki.
