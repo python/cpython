@@ -2839,6 +2839,17 @@ PyUnstable_EnableTryIncRef(PyObject *op)
 #endif
 }
 
+int
+PyUnstable_SetImmortal(PyObject *op)
+{
+    assert(op != NULL);
+    if (!_PyObject_IsUniquelyReferenced(op) || PyUnicode_Check(op)) {
+        return 0;
+    }
+    _Py_SetImmortal(op);
+    return 1;
+}
+
 void
 _Py_ResurrectReference(PyObject *op)
 {
