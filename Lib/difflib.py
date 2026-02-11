@@ -2498,90 +2498,93 @@ class DivideAndConquerMatcherMixin:
 ########################################################################
 
 
-_EARLY_EXIT = _Sentinel('EARLY_EXIT')
+def _search_many_of_same_length(patterns, text, start=0, stop=None):
+    """Rolling hash Rabin-Karp style multiple equal-length pattern search.
+        Uses polynomial rolling hash with single modulo operation.
+        NOTE: Reurns overlapping matches.
 
-
-def _simple_find(pattern, text, start=0, stop=None, *, overlapping=True, stopif=None):
-    """
     Examples:
-        >>> list(_simple_find('aa', 'aaaa'))
-        [0, 1, 2]
-        >>> list(_simple_find('aa', 'aaaa', overlapping=False))
-        [0, 2]
-        >>> list(_simple_find('_____', '__x__x__x__x__x__x_____'))
-        [18]
-        >>> list(_simple_find('_____', '__x__x__x__x__x__x_____', stopif=1))
-        [EARLY_EXIT]
+        >>> list(_search_many_of_same_length('abc', 'a_b_c'))
+        [(0, (0,)), (2, (1,)), (4, (2,))]
+        >>> list(_search_many_of_same_length(['aaa'], 'aaa'))
+        [(0, (0,))]
+        >>> list(_search_many_of_same_length(['aaa'], 'aaaaa'))
+        [(0, (0,)), (1, (0,)), (2, (0,))]
+        >>> list(_search_many_of_same_length(['aaa'], 'aaaaa', start=1))
+        [(1, (0,)), (2, (0,))]
+        >>> list(_search_many_of_same_length(['aaa'], 'aaaaa', start=1, stop=4))
+        [(1, (0,))]
+        >>> list(_search_many_of_same_length(['ab', 'ba'], 'ababa'))
+        [(0, (0,)), (1, (1,)), (2, (0,)), (3, (1,))]
     """
-    if overlapping not in (0, 1):
-        raise ValueError(f'{overlapping=} not in (0, 1)')
-    if not text or not pattern:
+    if not text or not patterns:
         return
     if stop is None:
         stop = len(text)
     n = stop - start
-    m = len(pattern)
+    m = len(patterns[0])
     if m > n:
         return
-
-    # 1 element fast path
-    first = pattern[0]
-    if m == 1:
+    if m == n:
+        ip = []
+        if start or stop < len(text):
+            text = text[start:stop]
+        for k, p in enumerate(patterns):
+            assert len(p) == m
+            if p == text:
+                ip.append(k)
+        if ip:
+            yield start, tuple(ip)
+    elif m == 1:
+        hash_map = {}
+        for k, p in enumerate(patterns):
+            assert len(p) == m
+            hash_map.setdefault(p[0], []).append(k)
+        for k in hash_map:
+            hash_map[k] = tuple(hash_map[k])
         for i in range(start, stop):
-            if text[i] == first:
-                yield i
-        return
-
-    # 2 element fast path
-    last = pattern[-1]
-    inc = 1 if overlapping else m
-    i = start
-    m_m1 = m - 1
-    end = stop - m_m1
-    if m == 2:
-        while i < end:
-            if text[i] == first and text[i + 1] == last:
-                yield i
-                i += inc
-            else:
-                i += 1
-        return
-
-    # 3. Two-way
-    if stopif is not None:
-        max_miss = int(n * stopif / m)
-
-    three = m == 3
-    four = m == 4
-    if three or four:
-        mid1 = pattern[1]
-        mid2 = pattern[2]
+            ip = hash_map.get(text[i])
+            if ip is not None:
+                yield i, ip
     else:
-        mid = pattern[1:-1]
-    k = 0
-    while i < end:
-        if text[i] != first or text[(i_last := i + m_m1)] != last:
-            i += 1
-            continue
+        # Constants
+        BASE = 31
+        MOD = 10**9 + 7
 
-        if three:
-            hit = text[i + 1] == mid1
-        elif four:
-            hit = text[i + 1] == mid1 and text[i + 2] == mid2
-        else:
-            hit = text[i + 1:i_last] == mid
-        if hit:
-            yield i
-            if stopif is not None:
-                k = 0
-            i += inc
-        else:
-            if stopif is not None:
-                k += 1
-                if k >= max_miss:
-                    yield _EARLY_EXIT
-                    break
-            i += 1
+        # Hash all patterns
+        top_map = {}
+        for idx, p in enumerate(patterns):
+            assert len(p) == m
+            h = 0
+            for c in p:
+                h = (h * BASE + hash(c)) % MOD
+            hash_map = top_map.setdefault(h, {})
+            hash_map.setdefault(tuple(p), []).append(idx)
+
+        for hash_map in top_map.values():
+            for k in hash_map:
+                hash_map[k] = tuple(hash_map[k])
+
+        # Precompute BASE^(m-1) mod MOD for removing leading character
+        base_m = pow(BASE, m - 1, MOD)
+        # Compute initial hash for first window
+        h = 0
+        for i in range(start, start + m - 1):
+            h = (h * BASE + hash(text[i])) % MOD
+        for i in range(start + m - 1, stop):
+            i0 = i - m + 1
+            h = (h * BASE + hash(text[i])) % MOD
+            hash_map = top_map.get(h)
+            if hash_map is not None:
+                win = tuple(text[i0:i + 1])
+                ip = hash_map.get(win)
+                if ip is not None:
+                    yield i0, ip
+            # Remove leftmost character: text[i-1]
+            h = (h - hash(text[i0]) * base_m) % MOD
+
+
+_FIND_MODES = ('quick-only', 'quick-or-build', 'build')
 
 
 class _LCSUBAutomaton:
@@ -2911,35 +2914,66 @@ class _LCSUBAutomaton:
             self.nodes = self._build(start2, stop2)
             self.cache = key
 
-    def find(self, seq1, start1=0, stop1=None, start2=0, stop2=None):
-        """Find leftmost longest match.
+    # Leftmost Single Block API -------
+    # ---------------------------------
 
-        Firstly, it will be leftmost in seq1
-        Secondly, it will be leftmost in seq2 if more than one occurrence
-
+    def find(self, seq1, start1=0, stop1=None, start2=0, stop2=None, mode='quick-or-build'):
+        """Find leftmost longest match
+            Firstly, it will be leftmost in seq1
+            Secondly, it will be leftmost in seq2 if more than one occurrence
+        Args:
+            mode: str
+                quick-only (on failure return None)
+                quick-or-build (on failure build and calculate)
+                build
         Returns:
-            match: (start_in_seq1, start_in_seq2, match_length)
+            match: (start_in_seq1, start_in_seq2, match_length) or None
         """
+        mode = mode.lower()
+        if mode not in _FIND_MODES:
+            raise ValueError(f'{mode=} not in {_FIND_MODES!r}')
         start1, stop1 = _adjust_indices(len(seq1), start1, stop1)
         start2, stop2 = _adjust_indices(self.size2, start2, stop2)
-        res = self._try_find(seq1, start1, stop1, start2, stop2)
-        if res is None:
-            res = self._find(seq1, start1, stop1, start2, stop2)
-        return res
+        if start1 >= stop1 or start2 >= stop2:
+            return (start1, start2, 0)
 
-    def batchfind(self, seq1, bounds_list):
-        """Performance method for many `find` calls.
+        if mode == 'quick-or-build':
+            block = self.find(seq1, start1, stop1, start2, stop2, mode='quick-only')
+            if block is not None:
+                return block
 
-        It calls `find` in order that aims to minimize builds needed
-        Also, does not evaluate same range twice
+        if mode == 'quick-only':
+            c_start, c_stop = self.cache
+            if c_start > start2 or stop2 > c_stop:
+                return None
+        elif self.cache != (start2, stop2):
+            self.build(start2, stop2)
 
+        it = self._finditer(seq1, start1, stop1, best=True)
+        block = next(it, None)
+        if block is None:
+            return (start1, start2, 0)
+
+        e1, e2, k = block
+        if mode == 'quick-only':
+            stop_in_seq2 = e2 + 1
+            start_in_seq2 = stop_in_seq2 - k
+            if start_in_seq2 >= start2 and stop_in_seq2 <= stop2:
+                return (e1 + 1 - k, start_in_seq2, k)
+        else:
+            one_mk = 1 - k
+            return (e1 + one_mk, e2 + one_mk, k)
+
+    def batchfind(self, seq1, bounds_list, *, mode='quick-or-build'):
+        """Performance method for many `find` calls
+            It calls `find` in order that aims to minimize builds needed
+            Also, does not evaluate same range twice
         Args:
-            bounds_list : list[tuple[int, int, int, int]]
+            bounds_list : list[tuple[int, int, int, int] | None]
                 list of tuples: (start1, stop1, start2, stop2)
         """
         if not bounds_list:
             return []
-
         result = [None] * len(bounds_list)
         c_lo, c_hi = self.cache
         jobs = list(enumerate(bounds_list))
@@ -2948,99 +2982,133 @@ class _LCSUBAutomaton:
         for i, bounds in jobs:
             res = evaluated.get(bounds)
             if res is None:
-                res = self.find(seq1, *bounds)
+                res = self.find(seq1, *bounds, mode=mode)
                 evaluated[bounds] = res
             result[i] = res
         return result
 
-    # Leftmost Sequential API ---------
+    # Leftmost Sequential Longest API -
     # ---------------------------------
 
-    def _try_find_sequential(self, seq1, start1, stop1, start2, stop2):
+    def find_contiguous_best(self, seq1, start1=0, stop1=None, start2=0, stop2=None, *,
+                             if_split_lower_than=0.0, mode='quick-or-build'):
+        """Find sequential blocks of max length
+            Take the first leftmost, then the next leftmost, etc...
+            Identical to calling `find` many times recursively until all
+            blocks of same largest length are found
+        Args:
+            if_split_lower_than : float
+                will only return all if split is lower that this ratio,
+                otherwise will only return first block. Same as simple find.
+            mode: str
+                quick-only (on failure return None)
+                quick-or-build (on failure build and calculate)
+                build
+        """
+        if not 0 <= if_split_lower_than <= 1:
+            raise ValueError(f'not 0 <= {if_split_lower_than=} <= 1')
+        mode = mode.lower()
+        if mode not in _FIND_MODES:
+            raise ValueError(f'{mode=} not in {_FIND_MODES!r}')
+        start1, stop1 = _adjust_indices(len(seq1), start1, stop1)
+        start2, stop2 = _adjust_indices(self.size2, start2, stop2)
         if start1 >= stop1 or start2 >= stop2:
             return []
 
-        c_start, c_stop = self.cache
-        if c_start > start2 or stop2 > c_stop:
-            return None
+        if mode == 'quick-or-build':
+            # Try quick first anyways!
+            blocks = self.find_contiguous_best(
+                seq1, start1, stop1, start2, stop2,
+                if_split_lower_than=if_split_lower_than, mode='quick-only')
+            if blocks is not None:
+                return blocks
 
-        it = self._finditer(seq1, start1, stop1, best=True)
-        last = next(it, None)
-        if last is None:
+        if mode == 'quick-only':
+            c_start, c_stop = self.cache
+            if c_start > start2 or stop2 > c_stop:
+                return None
+        elif self.cache != (start2, stop2):
+            self.build(start2, stop2)
+
+        rest = self._finditer(seq1, start1, stop1, best=True)
+        first = next(rest, None)
+        if first is None:
             return []
 
-        e1, e2, k = last
+        e1, e2, k = first
         one_mk = 1 - k
         j = e2 + one_mk
-        j2 = e2 + 1
-        if j < start2 or stop2 < j2:
+        if mode == 'quick-only' and j < start2 or e2 + 1 > stop2:
+            # NOTE: There is still a chance that we can get result
+            #       But it is complicated and uncertain, so just give up
             return None
 
-        blocks = [(e1 + one_mk, j, k)]
-        if k * 2 > min(stop1 - e1 - 1, stop2 - e2 - 1):
+        i = e1 + one_mk
+        first = (i, j, k)
+        blocks = [first]
+        full = min(stop1 - start1, stop2 - start2)
+        right = min(stop1 - e1 - 1, stop2 - e2 - 1)
+        left = full - right
+        if left / full >= if_split_lower_than:
             return blocks
 
-        for block in it:
-            e1 = block[0]
+        # Prepare candidates with substrings
+        # NOTE: Maximum number of unique matches is n / k - O(n) memory!
+        indices = {}
+        candidates = []
+        sub_cache = {}
+        np = 0
+        sub_map = {}
+        for block in rest:
             e2 = block[1]
-            if e1 - k < last[0]:
+            if e2 + 1 > stop2:
                 continue
-            elif e2 + 1 > stop2:
-                break
-            elif e2 - k < last[1]:
-                i = e1 + one_mk
-                patt = seq1[i:i+k]
-                find_it = _simple_find(patt, self.seq2, last[1] + 1, stop2, stopif=1)
-                j = next(find_it, None)
-                if j is _EARLY_EXIT:
-                    break
-                elif j is not None:
-                    e2 = j - one_mk
-                    blocks.append((i, j, k))
-                    last = (e1, e2, k)
-            else:
-                blocks.append((e1 + one_mk, e2 + one_mk, k))
-                last = block
-        return blocks
-
-    def _find_sequential(self, seq1, start1, stop1, start2, stop2):
-        blocks = self._try_find_sequential(seq1, start1, stop1, start2, stop2)
-        if blocks is not None:
-            return blocks
-
-        if self.cache != (start2, stop2):
-            self.build(start2, stop2)
-        it = self._finditer(seq1, start1, stop1, best=True)
-        last = next(it, None)
-        if last is None:
-            return []
-
-        e1, e2, k = last
-        one_mk = 1 - k
-        blocks = [(e1 + one_mk, e2 + one_mk, k)]
-        if k * 2 > min(stop1 - e1 - 1, stop2 - e2 - 1):
-            return blocks
-
-        for block in it:
             e1 = block[0]
-            e2 = block[1]
-            if e1 - k < last[0]:
-                continue
-            elif e2 - k < last[1]:
-                i = e1 + one_mk
-                patt = seq1[i:i+k]
-                find_it = _simple_find(patt, self.seq2, last[1] + 1, stop2, stopif=1)
-                j = next(find_it, None)
-                if j is _EARLY_EXIT:
-                    break
-                elif j is not None:
-                    e2 = j - one_mk
-                    blocks.append((i, j, k))
-                    last = (e1, e2, k)
-            else:
-                blocks.append((e1 + one_mk, e2 + one_mk, k))
-                last = block
+            i = e1 + one_mk
+            j = e2 + one_mk
+            sub = sub_cache.get(j)
+            if sub is None:
+                sub = tuple(seq1[i:i + k])
+                sub_cache[j] = sub
+            ip = sub_map.get(sub)
+            if ip is None:
+                sub_map[sub] = ip = np
+                np += 1
+            candidates.append((i, j, ip))
+            indices.setdefault(ip, [])
+        if not candidates:
+            return blocks
 
+        # Collect indices in 1 Aho Corasick pass
+        patterns = tuple(sub_map)
+        indices = {ip: [] for ip in sub_map.values()}
+        for j, ips in _search_many_of_same_length(patterns, self.seq2, start2, stop2):
+            for ip in ips:
+                indices[ip].append(j)
+        for js in indices.values():
+            js.reverse()
+
+        # NOTE: By now, we know that no blocks are beyond stop2 (for try_quick case)
+        i0, j0, _ = first
+        for i, j, ip in candidates:
+            if i < i0 + k:
+                # Overlaps in seq1
+                continue
+
+            j2 = j0 + k
+            if j < j2:
+                # Overlaps in seq2
+                js = indices[ip]
+                while js:
+                    jj = js.pop()
+                    if jj >= j2:
+                        blocks.append((i, jj, k))
+                        i0 = i
+                        j0 = jj
+                        break
+            else:
+                blocks.append((i, j, k))
+                i0, j0 = i, j
         return blocks
 
 
@@ -3089,6 +3157,9 @@ class ExactSequenceMatcher(DivideAndConquerMatcherMixin, SequenceMatcherBase):
     NOTE:TODO:Worst case:
         aa-bb-cc-dd-...
         bb+aa+dd+cc-...
+    NOTE:TODO:New Worst Case O(n √n):
+        A-AA-AAA-AAAA-...
+        A+AA+AAA+AAAA-...
     """
 
     def _prepare_seq2(self):
@@ -3140,14 +3211,22 @@ class ExactSequenceMatcher(DivideAndConquerMatcherMixin, SequenceMatcherBase):
         return result
 
     def _preprocess_range(self, depth, alo, ahi, blo, bhi):
-        blocks = self.automaton._try_find_sequential(self.a, alo, ahi, blo, bhi)
+        """
+        If we split better than 1 / 8 don't bother
+        Ensures O(nlogn) with relative constant ~ ln(2) / ln(8/7) = 5.19
+        """
+        bounds = (alo, ahi, blo, bhi)
+        blocks = self.automaton.find_contiguous_best(
+            self.a, *bounds, if_split_lower_than=1/8, mode='quick-only')
         if blocks is not None:
             if self.bjunk:
-                blocks = self._extend_junk_for_many(blocks, alo, ahi, blo, bhi)
+                blocks = self._extend_junk_for_many(blocks, *bounds)
             return ANCHORBLOCKS, blocks, True
 
     def _process_range(self, depth, alo, ahi, blo, bhi):
-        blocks = self.automaton._find_sequential(self.a, alo, ahi, blo, bhi)
+        bounds = (alo, ahi, blo, bhi)
+        blocks = self.automaton.find_contiguous_best(
+            self.a, *bounds, if_split_lower_than=1/8, mode='quick-or-build')
         if self.bjunk:
-            blocks = self._extend_junk_for_many(blocks, alo, ahi, blo, bhi)
+            blocks = self._extend_junk_for_many(blocks, *bounds)
         return ANCHORBLOCKS, blocks, True
