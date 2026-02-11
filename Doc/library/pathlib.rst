@@ -1960,7 +1960,7 @@ Protocols
    :synopsis: pathlib types for static type checking
 
 
-The :mod:`pathlib.types` module provides types for static type checking.
+The :mod:`!pathlib.types` module provides types for static type checking.
 
 .. versionadded:: 3.14
 

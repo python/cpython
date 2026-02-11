@@ -279,7 +279,7 @@ processes:
           p.join()
 
    Queues are thread and process safe.
-   Any object put into a :mod:`~multiprocessing` queue will be serialized.
+   Any object put into a :mod:`!multiprocessing` queue will be serialized.
 
 **Pipes**
 
@@ -1715,13 +1715,13 @@ inherited by child processes.
    attributes which allow one to use it to store and retrieve strings.
 
 
-The :mod:`multiprocessing.sharedctypes` module
-""""""""""""""""""""""""""""""""""""""""""""""
+The :mod:`!multiprocessing.sharedctypes` module
+"""""""""""""""""""""""""""""""""""""""""""""""
 
 .. module:: multiprocessing.sharedctypes
    :synopsis: Allocate ctypes objects from shared memory.
 
-The :mod:`multiprocessing.sharedctypes` module provides functions for allocating
+The :mod:`!multiprocessing.sharedctypes` module provides functions for allocating
 :mod:`ctypes` objects from shared memory which can be inherited by child
 processes.
 
@@ -2648,7 +2648,7 @@ Usually message passing between processes is done using queues or by using
 :class:`~Connection` objects returned by
 :func:`~multiprocessing.Pipe`.
 
-However, the :mod:`multiprocessing.connection` module allows some extra
+However, the :mod:`!multiprocessing.connection` module allows some extra
 flexibility.  It basically gives a high level message oriented API for dealing
 with sockets or Windows named pipes.  It also has support for *digest
 authentication* using the :mod:`hmac` module, and for polling
@@ -2955,18 +2955,18 @@ Below is an example session with logging turned on::
 For a full table of logging levels, see the :mod:`logging` module.
 
 
-The :mod:`multiprocessing.dummy` module
-^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+The :mod:`!multiprocessing.dummy` module
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
 .. module:: multiprocessing.dummy
    :synopsis: Dumb wrapper around threading.
 
-:mod:`multiprocessing.dummy` replicates the API of :mod:`!multiprocessing` but is
+:mod:`!multiprocessing.dummy` replicates the API of :mod:`!multiprocessing` but is
 no more than a wrapper around the :mod:`threading` module.
 
 .. currentmodule:: multiprocessing.pool
 
-In particular, the ``Pool`` function provided by :mod:`multiprocessing.dummy`
+In particular, the ``Pool`` function provided by :mod:`!multiprocessing.dummy`
 returns an instance of :class:`ThreadPool`, which is a subclass of
 :class:`Pool` that supports all the same method calls but uses a pool of
 worker threads rather than worker processes.
