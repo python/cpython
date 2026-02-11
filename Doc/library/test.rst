@@ -164,7 +164,7 @@ Running tests using the command-line interface
 
 The :mod:`!test` package can be run as a script to drive Python's regression
 test suite, thanks to the :option:`-m` option: :program:`python -m test`. Under
-the hood, it uses :mod:`test.regrtest`; the call :program:`python -m
+the hood, it uses :mod:`!test.regrtest`; the call :program:`python -m
 test.regrtest` used in previous Python versions still works.  Running the
 script by itself automatically starts running all regression tests in the
 :mod:`!test` package. It does this by finding all modules in the package whose
@@ -197,19 +197,19 @@ regression tests.
    :ref:`controlled using environment variables <using-on-controlling-color>`.
 
 
-:mod:`test.support` --- Utilities for the Python test suite
-===========================================================
+:mod:`!test.support` --- Utilities for the Python test suite
+============================================================
 
 .. module:: test.support
    :synopsis: Support for Python's regression test suite.
 
 
-The :mod:`test.support` module provides support for Python's regression
+The :mod:`!test.support` module provides support for Python's regression
 test suite.
 
 .. note::
 
-   :mod:`test.support` is not a public module.  It is documented here to help
+   :mod:`!test.support` is not a public module.  It is documented here to help
    Python developers write tests.  The API of this module is subject to change
    without backwards compatibility concerns between releases.
 
@@ -230,7 +230,7 @@ This module defines the following exceptions:
    function.
 
 
-The :mod:`test.support` module defines the following constants:
+The :mod:`!test.support` module defines the following constants:
 
 .. data:: verbose
 
@@ -363,7 +363,7 @@ The :mod:`test.support` module defines the following constants:
 
 .. data:: TEST_SUPPORT_DIR
 
-   Set to the top level directory that contains :mod:`test.support`.
+   Set to the top level directory that contains :mod:`!test.support`.
 
 
 .. data:: TEST_HOME_DIR
@@ -438,7 +438,7 @@ The :mod:`test.support` module defines the following constants:
    Used to test mixed type comparison.
 
 
-The :mod:`test.support` module defines the following functions:
+The :mod:`!test.support` module defines the following functions:
 
 .. function:: busy_retry(timeout, err_msg=None, /, *, error=True)
 
@@ -1043,7 +1043,7 @@ The :mod:`test.support` module defines the following functions:
    .. versionadded:: 3.11
 
 
-The :mod:`test.support` module defines the following classes:
+The :mod:`!test.support` module defines the following classes:
 
 
 .. class:: SuppressCrashReport()
@@ -1089,14 +1089,14 @@ The :mod:`test.support` module defines the following classes:
       Try to match a single stored value (*dv*) with a supplied value (*v*).
 
 
-:mod:`test.support.socket_helper` --- Utilities for socket tests
-================================================================
+:mod:`!test.support.socket_helper` --- Utilities for socket tests
+=================================================================
 
 .. module:: test.support.socket_helper
    :synopsis: Support for socket tests.
 
 
-The :mod:`test.support.socket_helper` module provides support for socket tests.
+The :mod:`!test.support.socket_helper` module provides support for socket tests.
 
 .. versionadded:: 3.9
 
@@ -1167,14 +1167,14 @@ The :mod:`test.support.socket_helper` module provides support for socket tests.
    exceptions.
 
 
-:mod:`test.support.script_helper` --- Utilities for the Python execution tests
-==============================================================================
+:mod:`!test.support.script_helper` --- Utilities for the Python execution tests
+===============================================================================
 
 .. module:: test.support.script_helper
    :synopsis: Support for Python's script execution tests.
 
 
-The :mod:`test.support.script_helper` module provides support for Python's
+The :mod:`!test.support.script_helper` module provides support for Python's
 script execution tests.
 
 .. function:: interpreter_requires_environment()
@@ -1278,13 +1278,13 @@ script execution tests.
    path and the archive name for the zip file.
 
 
-:mod:`test.support.bytecode_helper` --- Support tools for testing correct bytecode generation
-=============================================================================================
+:mod:`!test.support.bytecode_helper` --- Support tools for testing correct bytecode generation
+==============================================================================================
 
 .. module:: test.support.bytecode_helper
    :synopsis: Support tools for testing correct bytecode generation.
 
-The :mod:`test.support.bytecode_helper` module provides support for testing
+The :mod:`!test.support.bytecode_helper` module provides support for testing
 and inspecting bytecode generation.
 
 .. versionadded:: 3.9
@@ -1310,13 +1310,13 @@ The module defines the following class:
    Throws :exc:`AssertionError` if *opname* is found.
 
 
-:mod:`test.support.threading_helper` --- Utilities for threading tests
-======================================================================
+:mod:`!test.support.threading_helper` --- Utilities for threading tests
+=======================================================================
 
 .. module:: test.support.threading_helper
    :synopsis: Support for threading tests.
 
-The :mod:`test.support.threading_helper` module provides support for threading tests.
+The :mod:`!test.support.threading_helper` module provides support for threading tests.
 
 .. versionadded:: 3.10
 
@@ -1397,13 +1397,13 @@ The :mod:`test.support.threading_helper` module provides support for threading t
     finished.
 
 
-:mod:`test.support.os_helper` --- Utilities for os tests
-========================================================================
+:mod:`!test.support.os_helper` --- Utilities for os tests
+=========================================================
 
 .. module:: test.support.os_helper
    :synopsis: Support for os tests.
 
-The :mod:`test.support.os_helper` module provides support for os tests.
+The :mod:`!test.support.os_helper` module provides support for os tests.
 
 .. versionadded:: 3.10
 
@@ -1592,13 +1592,13 @@ The :mod:`test.support.os_helper` module provides support for os tests.
    wrapped with a wait loop that checks for the existence of the file.
 
 
-:mod:`test.support.import_helper` --- Utilities for import tests
-================================================================
+:mod:`!test.support.import_helper` --- Utilities for import tests
+=================================================================
 
 .. module:: test.support.import_helper
    :synopsis: Support for import tests.
 
-The :mod:`test.support.import_helper` module provides support for import tests.
+The :mod:`!test.support.import_helper` module provides support for import tests.
 
 .. versionadded:: 3.10
 
@@ -1706,13 +1706,13 @@ The :mod:`test.support.import_helper` module provides support for import tests.
    will be reverted at the end of the block.
 
 
-:mod:`test.support.warnings_helper` --- Utilities for warnings tests
-====================================================================
+:mod:`!test.support.warnings_helper` --- Utilities for warnings tests
+=====================================================================
 
 .. module:: test.support.warnings_helper
    :synopsis: Support for warnings tests.
 
-The :mod:`test.support.warnings_helper` module provides support for warnings tests.
+The :mod:`!test.support.warnings_helper` module provides support for warnings tests.
 
 .. versionadded:: 3.10
 
