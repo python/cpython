@@ -149,7 +149,7 @@ class RaceTestBase:
             t.join()
 
     @threading_helper.reap_threads
-    def test_length_hint_used_race(self):
+    def test_length_hint_with_mutating_set(self):
         NUM_ITERS = 10
         NUM_THREADS = 10
         NUM_LOOPS = 2_000
@@ -178,24 +178,6 @@ class RaceTestBase:
             def worker():
                 while True:
                     it.__length_hint__()
-                    try:
-                        next(it)
-                    except StopIteration:
-                        break
-
-            threading_helper.run_concurrently(worker, nthreads=NUM_THREADS)
-
-    @threading_helper.reap_threads
-    def test_iternext_concurrent_exhaust_race(self):
-        NUM_ITERS = 10
-        NUM_THREADS = 10
-
-        for _ in range(NUM_ITERS):
-            s = set(range(64))
-            it = iter(s)
-
-            def worker():
-                while True:
                     try:
                         next(it)
                     except StopIteration:
