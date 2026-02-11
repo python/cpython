@@ -3717,7 +3717,10 @@ AC_MSG_CHECKING([perf trampoline])
 AS_CASE([$PLATFORM_TRIPLET],
   [x86_64-linux-gnu], [perf_trampoline=yes],
   [aarch64-linux-gnu], [perf_trampoline=yes],
-  [darwin], [perf_trampoline=yes],
+  [darwin], [AS_CASE([$MACOSX_DEPLOYMENT_TARGET],
+                [[10.[0-9]|10.1[0-1]]], [perf_trampoline=no],
+                [perf_trampoline=yes]
+            )],
   [perf_trampoline=no]
 )
 AC_MSG_RESULT([$perf_trampoline])
