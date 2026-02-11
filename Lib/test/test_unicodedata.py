@@ -170,10 +170,14 @@ class UnicodeFunctionsTest(unittest.TestCase):
 
         # New in 4.1.0
         self.assertEqual(self.db.numeric('\U0001012A', None), None if self.old else 9000)
+        # Changed in 4.1.0
+        self.assertEqual(self.db.numeric('\u5793', None), 1e20 if self.old else None)
         # New in 5.0.0
         self.assertEqual(self.db.numeric('\u07c0', None), None if self.old else 0.0)
         # New in 5.1.0
         self.assertEqual(self.db.numeric('\ua627', None), None if self.old else 7.0)
+        # Changed in 5.2.0
+        self.assertEqual(self.db.numeric('\u09f6'), 3.0 if self.old else 3/16)
         # New in 6.0.0
         self.assertEqual(self.db.numeric('\u0b72', None), None if self.old else 0.25)
         # New in 12.0.0
@@ -584,9 +588,9 @@ class UnicodeFunctionsTest(unittest.TestCase):
 class Unicode_3_2_0_FunctionsTest(UnicodeFunctionsTest):
     db = unicodedata.ucd_3_2_0
     old = True
-    expectedchecksum = ('76b126d719d52ba11788a627d058163106da7d56'
+    expectedchecksum = ('4154d8d1232837e255edf3cdcbb5ab184d71f4a4'
                         if quicktest else
-                        'ed843cb7ab5aaf149466498db27fefce81c4214c')
+                        'b0a8df4ce8cf910def4e75f2d03c93defcc9bb09')
 
 
 class UnicodeMiscTest(unittest.TestCase):
