@@ -34,12 +34,11 @@ class TestProcessChangedFiles(unittest.TestCase):
         self.assertTrue(result.run_windows_tests)
 
     def test_docs(self):
-        files = (
+        for f in (
             ".github/workflows/reusable-docs.yml",
             "Doc/library/datetime.rst",
-            "Doc/Makefile"
-        )
-        for f in files:
+            "Doc/Makefile",
+        ):
             with self.subTest(f=f):
                 result = process_changed_files({Path(f)})
                 self.assertTrue(result.run_docs)
@@ -49,7 +48,7 @@ class TestProcessChangedFiles(unittest.TestCase):
         for p in LIBRARY_FUZZER_PATHS:
             with self.subTest(p=p):
                 if p.is_dir():
-                    f = p / "comhad"
+                    f = p / "file"
                 elif p.is_file():
                     f = p
                 else:
@@ -60,7 +59,7 @@ class TestProcessChangedFiles(unittest.TestCase):
     def test_android(self):
         for d in ANDROID_DIRS:
             with self.subTest(d=d):
-                result = process_changed_files({Path(d) / "comhad"})
+                result = process_changed_files({Path(d) / "file"})
                 self.assertTrue(result.run_tests)
                 self.assertTrue(result.run_android)
                 self.assertFalse(result.run_windows_tests)
@@ -68,7 +67,7 @@ class TestProcessChangedFiles(unittest.TestCase):
     def test_ios(self):
         for d in IOS_DIRS:
             with self.subTest(d=d):
-                result = process_changed_files({Path(d) / "comhad"})
+                result = process_changed_files({Path(d) / "file"})
                 self.assertTrue(result.run_tests)
                 self.assertTrue(result.run_ios)
                 self.assertFalse(result.run_windows_tests)
@@ -81,7 +80,7 @@ class TestProcessChangedFiles(unittest.TestCase):
 
         for d in MACOS_DIRS:
             with self.subTest(d=d):
-                result = process_changed_files({Path(d) / "comhad"})
+                result = process_changed_files({Path(d) / "file"})
                 self.assertTrue(result.run_tests)
                 self.assertTrue(result.run_macos)
                 self.assertFalse(result.run_windows_tests)
@@ -94,7 +93,7 @@ class TestProcessChangedFiles(unittest.TestCase):
 
         for d in WASI_DIRS:
             with self.subTest(d=d):
-                result = process_changed_files({d / "comhad"})
+                result = process_changed_files({d / "file"})
                 self.assertTrue(result.run_tests)
                 self.assertTrue(result.run_wasi)
                 self.assertFalse(result.run_windows_tests)
@@ -107,21 +106,19 @@ class TestProcessChangedFiles(unittest.TestCase):
                 self.assertFalse(result.run_windows_tests)
 
     def test_msi(self):
-        files = (
+        for f in (
             ".github/workflows/reusable-windows-msi.yml",
             "Tools/msi/build.bat",
-        )
-        for f in files:
+        ):
             with self.subTest(f=f):
                 result = process_changed_files({Path(f)})
                 self.assertTrue(result.run_windows_msi)
 
     def test_all_run(self):
-        files = [
+        for f in (
             ".github/workflows/some-new-workflow.yml",
             ".github/workflows/build.yml",
-        ]
-        for f in files:
+        ):
             with self.subTest(f=f):
                 result = process_changed_files({Path(f)})
                 self.assertTrue(result.run_tests)
@@ -137,7 +134,7 @@ class TestProcessChangedFiles(unittest.TestCase):
                 self.assertEqual(process_changed_files({Path(f)}), Outputs())
 
     def test_wasi_and_android(self):
-        f = {Path(".github/workflows/reusable-wasi.yml"), Path("Android/comhad")}
+        f = {Path(".github/workflows/reusable-wasi.yml"), Path("Android/file")}
         result = process_changed_files(f)
         self.assertTrue(result.run_tests)
         self.assertTrue(result.run_wasi)
