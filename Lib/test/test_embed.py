@@ -643,6 +643,7 @@ class InitConfigTests(EmbeddingTestsMixin, unittest.TestCase):
         'dump_refs': False,
         'dump_refs_file': None,
         'malloc_stats': False,
+        'pymalloc_hugepages': False,
 
         'filesystem_encoding': GET_DEFAULT_CONFIG,
         'filesystem_errors': GET_DEFAULT_CONFIG,
@@ -1045,6 +1046,7 @@ class InitConfigTests(EmbeddingTestsMixin, unittest.TestCase):
             'code_debug_ranges': False,
             'show_ref_count': True,
             'malloc_stats': True,
+            'pymalloc_hugepages': True,
 
             'stdio_encoding': 'iso8859-1',
             'stdio_errors': 'replace',
@@ -1110,6 +1112,7 @@ class InitConfigTests(EmbeddingTestsMixin, unittest.TestCase):
             'import_time': 1,
             'code_debug_ranges': False,
             'malloc_stats': True,
+            'pymalloc_hugepages': True,
             'inspect': True,
             'optimization_level': 2,
             'pythonpath_env': '/my/path',
@@ -1146,6 +1149,7 @@ class InitConfigTests(EmbeddingTestsMixin, unittest.TestCase):
             'import_time': 1,
             'code_debug_ranges': False,
             'malloc_stats': True,
+            'pymalloc_hugepages': True,
             'inspect': True,
             'optimization_level': 2,
             'pythonpath_env': '/my/path',

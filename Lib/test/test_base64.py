@@ -291,6 +291,7 @@ class BaseXYTestCase(unittest.TestCase):
             eq(base64.b64decode(data_str, altchars=altchars), res)
             eq(base64.b64decode(data, altchars=altchars_str), res)
             eq(base64.b64decode(data_str, altchars=altchars_str), res)
+            eq(base64.b64decode(data, altchars=altchars, ignorechars=b'\n'), res)
 
         self.assertRaises(ValueError, base64.b64decode, b'', altchars=b'+')
         self.assertRaises(ValueError, base64.b64decode, b'', altchars=b'+/-')
@@ -305,7 +306,7 @@ class BaseXYTestCase(unittest.TestCase):
         # issue 1466065: Test some invalid characters.
         tests = ((b'%3d==', b'\xdd', b'%$'),
                  (b'$3d==', b'\xdd', b'%$'),
-                 (b'[==', b'', None),
+                 (b'[==', b'', b'[='),
                  (b'YW]3=', b'am', b']'),
                  (b'3{d==', b'\xdd', b'{}'),
                  (b'3d}==', b'\xdd', b'{}'),
@@ -313,6 +314,12 @@ class BaseXYTestCase(unittest.TestCase):
                  (b'!', b'', b'@!'),
                  (b"YWJj\n", b"abc", b'\n'),
                  (b'YWJj\nYWI=', b'abcab', b'\n'),
+                 (b'=YWJj', b'abc', b'='),
+                 (b'Y=WJj', b'abc', b'='),
+                 (b'Y==WJj', b'abc', b'='),
+                 (b'Y===WJj', b'abc', b'='),
+                 (b'YW=Jj', b'abc', b'='),
+                 (b'YWJj=', b'abc', b'='),
                  (b'YW\nJj', b'abc', b'\n'),
                  (b'YW\nJj', b'abc', bytearray(b'\n')),
                  (b'YW\nJj', b'abc', memoryview(b'\n')),
@@ -334,9 +341,8 @@ class BaseXYTestCase(unittest.TestCase):
             with self.assertRaises(binascii.Error):
                 # Even empty ignorechars enables the strict mode.
                 base64.b64decode(bstr, ignorechars=b'')
-            if ignorechars is not None:
-                r = base64.b64decode(bstr, ignorechars=ignorechars)
-                self.assertEqual(r, res)
+            r = base64.b64decode(bstr, ignorechars=ignorechars)
+            self.assertEqual(r, res)
 
         with self.assertRaises(TypeError):
             base64.b64decode(b'', ignorechars='')
@@ -370,26 +376,28 @@ class BaseXYTestCase(unittest.TestCase):
         self.assertEqual(r, b'\xff\xff\xff')
         self.assertEqual(str(cm.warning),
                          error % ('/', "altchars=b'-_' and validate=True"))
-        with self.assertWarns(FutureWarning) as cm:
-            r = base64.b64decode(b'++++', altchars=b'-_', ignorechars=b'+')
-        self.assertEqual(r, b'\xfb\xef\xbe')
-        self.assertEqual(str(cm.warning),
-                         discarded % ('+', "altchars=b'-_' and ignorechars=b'+'"))
-        with self.assertWarns(FutureWarning) as cm:
-            r = base64.b64decode(b'////', altchars=b'-_', ignorechars=b'/')
-        self.assertEqual(r, b'\xff\xff\xff')
-        self.assertEqual(str(cm.warning),
-                         discarded % ('/', "altchars=b'-_' and ignorechars=b'/'"))
-        with self.assertWarns(DeprecationWarning) as cm:
-            r = base64.b64decode(b'++++////', altchars=b'-_', ignorechars=b'+')
+        r = base64.b64decode(b'++++', altchars=b'-_', ignorechars=b'+')
+        self.assertEqual(r, b'')
+        r = base64.b64decode(b'////', altchars=b'-_', ignorechars=b'/')
+        self.assertEqual(r, b'')
+        r = base64.b64decode(b'++++////', altchars=b'-_', validate=False, ignorechars=b'')
+        self.assertEqual(r, b'')
+        with self.assertRaisesRegex(binascii.Error, 'Only base64 data is allowed'):
+            base64.b64decode(b'////', altchars=b'-_', ignorechars=b'')
+        with self.assertRaisesRegex(binascii.Error, 'Only base64 data is allowed'):
+            base64.b64decode(b'++++', altchars=b'-_', ignorechars=b'')
+        r = base64.b64decode(b'++++YWJj----____', altchars=b'-_', ignorechars=b'+')
+        self.assertEqual(r, b'abc\xfb\xef\xbe\xff\xff\xff')
+        r = base64.b64decode(b'////YWJj----____', altchars=b'-_', ignorechars=b'/')
+        self.assertEqual(r, b'abc\xfb\xef\xbe\xff\xff\xff')
+        r = base64.b64decode(b'++++,,,,', altchars=b'+,', ignorechars=b'+')
         self.assertEqual(r, b'\xfb\xef\xbe\xff\xff\xff')
-        self.assertEqual(str(cm.warning),
-                         error % ('/', "altchars=b'-_' and validate=True"))
-        with self.assertWarns(DeprecationWarning) as cm:
-            r = base64.b64decode(b'++++////', altchars=b'-_', ignorechars=b'/')
+        r = base64.b64decode(b'////YWJj++++,,,,', altchars=b'+,', ignorechars=b'/')
+        self.assertEqual(r, b'abc\xfb\xef\xbe\xff\xff\xff')
+        r = base64.b64decode(b'----////', altchars=b'-/', ignorechars=b'/')
         self.assertEqual(r, b'\xfb\xef\xbe\xff\xff\xff')
-        self.assertEqual(str(cm.warning),
-                         error % ('+', "altchars=b'-_' and validate=True"))
+        r = base64.b64decode(b'++++YWJj----////', altchars=b'-/', ignorechars=b'+')
+        self.assertEqual(r, b'abc\xfb\xef\xbe\xff\xff\xff')
 
         with self.assertWarns(FutureWarning) as cm:
             self.assertEqual(base64.urlsafe_b64decode(b'++++'), b'\xfb\xef\xbe')
@@ -737,17 +745,20 @@ class BaseXYTestCase(unittest.TestCase):
            b'<~\nGB\n\\6\n`E\n-Z\nP=\nDf\n.1\nGE\nb>\n~>')
         eq(base64.a85encode(b, wrapcol=sys.maxsize), b'GB\\6`E-ZP=Df.1GEb>')
         if check_impl_detail():
-            eq(base64.a85encode(b, wrapcol=2**1000), b'GB\\6`E-ZP=Df.1GEb>')
-            eq(base64.a85encode(b, wrapcol=-7),
-               b'G\nB\n\\\n6\n`\nE\n-\nZ\nP\n=\nD\nf\n.\n1\nG\nE\nb\n>')
-            eq(base64.a85encode(b, wrapcol=-7, adobe=True),
-               b'<~\nGB\n\\6\n`E\n-Z\nP=\nDf\n.1\nGE\nb>\n~>')
+            eq(base64.a85encode(b, wrapcol=sys.maxsize*2),
+                                b'GB\\6`E-ZP=Df.1GEb>')
+            with self.assertRaises(OverflowError):
+                base64.a85encode(b, wrapcol=2**1000)
+        with self.assertRaises(ValueError):
+            base64.a85encode(b, wrapcol=-7)
+        with self.assertRaises(ValueError):
+            base64.a85encode(b, wrapcol=-7, adobe=True)
         with self.assertRaises(TypeError):
             base64.a85encode(b, wrapcol=7.0)
         with self.assertRaises(TypeError):
             base64.a85encode(b, wrapcol='7')
-        if check_impl_detail():
-            eq(base64.a85encode(b, wrapcol=None), b'GB\\6`E-ZP=Df.1GEb>')
+        with self.assertRaises(TypeError):
+            base64.a85encode(b, wrapcol=None)
         eq(base64.a85encode(b'', wrapcol=0), b'')
         eq(base64.a85encode(b'', wrapcol=7), b'')
         eq(base64.a85encode(b'', wrapcol=1, adobe=True), b'<~\n~>')
@@ -953,6 +964,12 @@ class BaseXYTestCase(unittest.TestCase):
         eq(base64.a85decode(b'G^+H5'), b"xxx\x00")
         eq(base64.a85decode(b'G^+IX'), b"xxxx")
         eq(base64.a85decode(b'G^+IXGQ7^D'), b"xxxxx\x00\x00\x00")
+
+        eq(base64.a85encode(b"\x00", pad=True), b'z')
+        eq(base64.a85encode(b"\x00"*2, pad=True), b'z')
+        eq(base64.a85encode(b"\x00"*3, pad=True), b'z')
+        eq(base64.a85encode(b"\x00"*4, pad=True), b'z')
+        eq(base64.a85encode(b"\x00"*5, pad=True), b'zz')
 
     def test_b85_padding(self):
         eq = self.assertEqual

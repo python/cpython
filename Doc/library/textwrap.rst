@@ -11,7 +11,7 @@
 
 --------------
 
-The :mod:`textwrap` module provides some convenience functions,
+The :mod:`!textwrap` module provides some convenience functions,
 as well as :class:`TextWrapper`, the class that does all the work.
 If you're just wrapping or filling one or two text strings, the convenience
 functions should be good enough; otherwise, you should use an instance of

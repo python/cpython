@@ -17,7 +17,7 @@
 Introduction
 ------------
 
-The purpose of the :mod:`importlib` package is three-fold.
+The purpose of the :mod:`!importlib` package is three-fold.
 
 One is to provide the
 implementation of the :keyword:`import` statement (and thus, by extension, the
@@ -215,8 +215,8 @@ Functions
       in unexpected behavior. It's recommended to use the :class:`threading.Lock`
       or other synchronization primitives for thread-safe module reloading.
 
-:mod:`importlib.abc` -- Abstract base classes related to import
----------------------------------------------------------------
+:mod:`!importlib.abc` -- Abstract base classes related to import
+----------------------------------------------------------------
 
 .. module:: importlib.abc
     :synopsis: Abstract base classes related to import
@@ -226,7 +226,7 @@ Functions
 --------------
 
 
-The :mod:`importlib.abc` module contains all of the core abstract base classes
+The :mod:`!importlib.abc` module contains all of the core abstract base classes
 used by :keyword:`import`. Some subclasses of the core abstract base classes
 are also provided to help in implementing the core ABCs.
 
@@ -596,8 +596,8 @@ ABC hierarchy::
         itself does not end in ``__init__``.
 
 
-:mod:`importlib.machinery` -- Importers and path hooks
-------------------------------------------------------
+:mod:`!importlib.machinery` -- Importers and path hooks
+-------------------------------------------------------
 
 .. module:: importlib.machinery
     :synopsis: Importers and path hooks
@@ -1112,8 +1112,8 @@ find and load modules.
       Path to the ``.fwork`` file for the extension module.
 
 
-:mod:`importlib.util` -- Utility code for importers
----------------------------------------------------
+:mod:`!importlib.util` -- Utility code for importers
+----------------------------------------------------
 
 .. module:: importlib.util
     :synopsis: Utility code for importers

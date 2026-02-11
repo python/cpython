@@ -1,19 +1,14 @@
 name: Tail calling interpreter
 on:
   pull_request:
-    paths:
+    paths: &paths
       - '.github/workflows/tail-call.yml'
       - 'Python/bytecodes.c'
       - 'Python/ceval.c'
       - 'Python/ceval_macros.h'
       - 'Python/generated_cases.c.h'
   push:
-    paths:
-      - '.github/workflows/tail-call.yml'
-      - 'Python/bytecodes.c'
-      - 'Python/ceval.c'
-      - 'Python/ceval_macros.h'
-      - 'Python/generated_cases.c.h'
+    paths: *paths
   workflow_dispatch:
 
 permissions:
@@ -25,52 +20,27 @@ concurrency:
 
 env:
   FORCE_COLOR: 1
+  LLVM_VERSION: 21
 
 jobs:
-  tail-call:
+  windows:
     name: ${{ matrix.target }}
     runs-on: ${{ matrix.runner }}
-    timeout-minutes: 90
+    timeout-minutes: 60
     strategy:
       fail-fast: false
       matrix:
-        target:
-# Un-comment as we add support for more platforms for tail-calling interpreters.
-#          - i686-pc-windows-msvc/msvc
-          - x86_64-pc-windows-msvc/msvc
-#          - aarch64-pc-windows-msvc/msvc
-          - x86_64-apple-darwin/clang
-          - aarch64-apple-darwin/clang
-          - x86_64-unknown-linux-gnu/gcc
-          - aarch64-unknown-linux-gnu/gcc
-          - free-threading
-        llvm:
-          - 20
         include:
-#          - target: i686-pc-windows-msvc/msvc
-#            architecture: Win32
-#            runner: windows-2022
           - target: x86_64-pc-windows-msvc/msvc
             architecture: x64
-            runner: windows-2022
-#          - target: aarch64-pc-windows-msvc/msvc
-#            architecture: ARM64
-#            runner: windows-2022
-          - target: x86_64-apple-darwin/clang
-            architecture: x86_64
-            runner: macos-15-intel
-          - target: aarch64-apple-darwin/clang
-            architecture: aarch64
-            runner: macos-14
-          - target: x86_64-unknown-linux-gnu/gcc
-            architecture: x86_64
-            runner: ubuntu-24.04
-          - target: aarch64-unknown-linux-gnu/gcc
-            architecture: aarch64
-            runner: ubuntu-24.04-arm
-          - target: free-threading
-            architecture: x86_64
-            runner: ubuntu-24.04
+            runner: windows-2025-vs2026
+            build_flags: ""
+            run_tests: true
+          - target: x86_64-pc-windows-msvc/msvc-free-threading
+            architecture: x64
+            runner: windows-2025-vs2026
+            build_flags: --disable-gil
+            run_tests: false
     steps:
       - uses: actions/checkout@v6
         with:
@@ -78,54 +48,81 @@ jobs:
       - uses: actions/setup-python@v6
         with:
           python-version: '3.11'
-
-      - name: Native Windows MSVC (release)
-        if: runner.os == 'Windows' && matrix.architecture != 'ARM64'
+      - name: Build
         shell: pwsh
         run: |
-          choco install visualstudio2026buildtools --no-progress -y --force --params "--add Microsoft.VisualStudio.Component.VC.Tools.x86.x64  --locale en-US --passive"
-          $env:PATH = "C:\Program Files (x86)\Microsoft Visual Studio\18\BuildTools\MSBuild\Current\bin;$env:PATH"
           $env:PlatformToolset = "v145"
-          ./PCbuild/build.bat --tail-call-interp -c Release -p ${{ matrix.architecture }}
+          ./PCbuild/build.bat --tail-call-interp ${{ matrix.build_flags }} -c Release -p ${{ matrix.architecture }}
+      - name: Test
+        if: matrix.run_tests
+        shell: pwsh
+        run: |
           ./PCbuild/rt.bat -p ${{ matrix.architecture }} -q --multiprocess 0 --timeout 4500 --verbose2 --verbose3
 
-      # No tests (yet):
-      - name: Emulated Windows Clang (release)
-        if: runner.os == 'Windows' && matrix.architecture == 'ARM64'
-        shell: pwsh
-        run: |
-          choco install llvm --allow-downgrade --no-progress --version ${{ matrix.llvm }}.1.0
-          $env:PlatformToolset = "clangcl"
-          $env:LLVMToolsVersion = "${{ matrix.llvm }}.1.0"
-          $env:LLVMInstallDir = "C:\Program Files\LLVM"
-          ./PCbuild/build.bat --tail-call-interp -p ${{ matrix.architecture }}
-
-      - name: Native macOS (release)
-        if: runner.os == 'macOS'
+  macos:
+    name: ${{ matrix.target }}
+    runs-on: ${{ matrix.runner }}
+    timeout-minutes: 60
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - target: x86_64-apple-darwin/clang
+            runner: macos-15-intel
+          - target: aarch64-apple-darwin/clang
+            runner: macos-14
+    steps:
+      - uses: actions/checkout@v6
+        with:
+          persist-credentials: false
+      - uses: actions/setup-python@v6
+        with:
+          python-version: '3.11'
+      - name: Install dependencies
         run: |
           brew update
-          brew install llvm@${{ matrix.llvm }}
+          brew install llvm@${{ env.LLVM_VERSION }}
+      - name: Build
+        run: |
           export SDKROOT="$(xcrun --show-sdk-path)"
-          export PATH="/usr/local/opt/llvm@${{ matrix.llvm }}/bin:$PATH"
-          export PATH="/opt/homebrew/opt/llvm@${{ matrix.llvm }}/bin:$PATH"
-          CC=clang-20 ./configure --with-tail-call-interp
+          export PATH="/usr/local/opt/llvm@${{ env.LLVM_VERSION }}/bin:$PATH"
+          export PATH="/opt/homebrew/opt/llvm@${{ env.LLVM_VERSION }}/bin:$PATH"
+          CC=clang-${{ env.LLVM_VERSION }} ./configure --with-tail-call-interp
           make all --jobs 4
+      - name: Test
+        run: |
           ./python.exe -m test --multiprocess 0 --timeout 4500 --verbose2 --verbose3
 
-      - name: Native Linux (debug)
-        if: runner.os == 'Linux' && matrix.target != 'free-threading'
+  linux:
+    name: ${{ matrix.target }}
+    runs-on: ${{ matrix.runner }}
+    timeout-minutes: 60
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - target: x86_64-unknown-linux-gnu/gcc
+            runner: ubuntu-24.04
+            configure_flags: --with-pydebug
+          - target: x86_64-unknown-linux-gnu/gcc-free-threading
+            runner: ubuntu-24.04
+            configure_flags: --disable-gil
+          - target: aarch64-unknown-linux-gnu/gcc
+            runner: ubuntu-24.04-arm
+            configure_flags: --with-pydebug
+    steps:
+      - uses: actions/checkout@v6
+        with:
+          persist-credentials: false
+      - uses: actions/setup-python@v6
+        with:
+          python-version: '3.11'
+      - name: Build
         run: |
-          sudo bash -c "$(wget -O - https://apt.llvm.org/llvm.sh)" ./llvm.sh ${{ matrix.llvm }}
-          export PATH="$(llvm-config-${{ matrix.llvm }} --bindir):$PATH"
-          CC=clang-20 ./configure --with-tail-call-interp --with-pydebug
+          sudo bash -c "$(wget -O - https://apt.llvm.org/llvm.sh)" ./llvm.sh ${{ env.LLVM_VERSION }}
+          export PATH="$(llvm-config-${{ env.LLVM_VERSION }} --bindir):$PATH"
+          CC=clang-${{ env.LLVM_VERSION }} ./configure --with-tail-call-interp ${{ matrix.configure_flags }}
           make all --jobs 4
-          ./python -m test --multiprocess 0 --timeout 4500 --verbose2 --verbose3
-
-      - name: Native Linux with free-threading (release)
-        if: matrix.target == 'free-threading'
+      - name: Test
         run: |
-          sudo bash -c "$(wget -O - https://apt.llvm.org/llvm.sh)" ./llvm.sh ${{ matrix.llvm }}
-          export PATH="$(llvm-config-${{ matrix.llvm }} --bindir):$PATH"
-          CC=clang-20 ./configure --with-tail-call-interp --disable-gil
-          make all --jobs 4
           ./python -m test --multiprocess 0 --timeout 4500 --verbose2 --verbose3

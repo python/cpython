@@ -15,6 +15,7 @@ import sysconfig
 from asyncio import wait_for
 from contextlib import asynccontextmanager
 from datetime import datetime, timezone
+from enum import IntEnum, auto
 from glob import glob
 from os.path import abspath, basename, relpath
 from pathlib import Path
@@ -59,6 +60,19 @@ python_started = False
 # Buffer for verbose output which will be displayed only if a test fails and
 # there has been no output from Python.
 hidden_output = []
+
+
+# Based on android/log.h in the NDK.
+class LogPriority(IntEnum):
+    UNKNOWN = 0
+    DEFAULT = auto()
+    VERBOSE = auto()
+    DEBUG = auto()
+    INFO = auto()
+    WARN = auto()
+    ERROR = auto()
+    FATAL = auto()
+    SILENT = auto()
 
 
 def log_verbose(context, line, stream=sys.stdout):
@@ -505,21 +519,23 @@ async def logcat_task(context, initial_devices):
     pid = await wait_for(find_pid(serial), startup_timeout)
 
     # `--pid` requires API level 24 or higher.
-    args = [adb, "-s", serial, "logcat", "--pid", pid,  "--format", "tag"]
+    #
+    # `--binary` mode is used in order to detect which messages end with a
+    # newline, which most of the other modes don't indicate (except `--format
+    # long`). For example, every time pytest runs a test, it prints a "." and
+    # flushes the stream. Each "." becomes a separate log message, but we should
+    # show them all on the same line.
+    args = [adb, "-s", serial, "logcat", "--pid", pid,  "--binary"]
     logcat_started = False
     async with async_process(
-        *args, stdout=subprocess.PIPE, stderr=subprocess.STDOUT,
+        *args, stdout=subprocess.PIPE, stderr=None
     ) as process:
-        while line := (await process.stdout.readline()).decode(*DECODE_ARGS):
-            if match := re.fullmatch(r"([A-Z])/(.*)", line, re.DOTALL):
+        while True:
+            try:
+                priority, tag, message = await read_logcat(process.stdout)
                 logcat_started = True
-                level, message = match.groups()
-            else:
-                # If the regex doesn't match, this is either a logcat startup
-                # error, or the second or subsequent line of a multi-line
-                # message. Python won't produce multi-line messages, but other
-                # components might.
-                level, message = None, line
+            except asyncio.IncompleteReadError:
+                break
 
             # Exclude high-volume messages which are rarely useful.
             if context.verbose < 2 and "from python test_syslog" in message:
@@ -527,25 +543,23 @@ async def logcat_task(context, initial_devices):
 
             # Put high-level messages on stderr so they're highlighted in the
             # buildbot logs. This will include Python's own stderr.
-            stream = (
-                sys.stderr
-                if level in ["W", "E", "F"]  # WARNING, ERROR, FATAL (aka ASSERT)
-                else sys.stdout
-            )
+            stream = sys.stderr if priority >= LogPriority.WARN else sys.stdout
 
-            # To simplify automated processing of the output, e.g. a buildbot
-            # posting a failure notice on a GitHub PR, we strip the level and
-            # tag indicators from Python's stdout and stderr.
-            for prefix in ["python.stdout: ", "python.stderr: "]:
-                if message.startswith(prefix):
-                    global python_started
-                    python_started = True
-                    stream.write(message.removeprefix(prefix))
-                    break
+            # The app's stdout and stderr should be passed through transparently
+            # to our own corresponding streams.
+            if tag in ["python.stdout", "python.stderr"]:
+                global python_started
+                python_started = True
+                stream.write(message)
+                stream.flush()
             else:
                 # Non-Python messages add a lot of noise, but they may
-                # sometimes help explain a failure.
-                log_verbose(context, line, stream)
+                # sometimes help explain a failure. Format them in the same way
+                # as `logcat --format tag`.
+                formatted = f"{priority.name[0]}/{tag}: {message}"
+                if not formatted.endswith("\n"):
+                    formatted += "\n"
+                log_verbose(context, formatted, stream)
 
         # If the device disconnects while logcat is running, which always
         # happens in --managed mode, some versions of adb return non-zero.
@@ -554,6 +568,44 @@ async def logcat_task(context, initial_devices):
         status = await wait_for(process.wait(), timeout=1)
         if status != 0 and not logcat_started:
             raise CalledProcessError(status, args)
+
+
+# Read one binary log message from the given StreamReader. The message format is
+# described at https://android.stackexchange.com/a/74660. All supported versions
+# of Android use format version 2 or later.
+async def read_logcat(stream):
+    async def read_bytes(size):
+        return await stream.readexactly(size)
+
+    async def read_int(size):
+        return int.from_bytes(await read_bytes(size), "little")
+
+    payload_len = await read_int(2)
+    if payload_len < 2:
+        # 1 byte for priority, 1 byte for null terminator of tag.
+        raise ValueError(f"payload length {payload_len} is too short")
+
+    header_len = await read_int(2)
+    if header_len < 4:
+        raise ValueError(f"header length {header_len} is too short")
+    await read_bytes(header_len - 4)  # Ignore other header fields.
+
+    priority_int = await read_int(1)
+    try:
+        priority = LogPriority(priority_int)
+    except ValueError:
+        priority = LogPriority.UNKNOWN
+
+    payload_fields = (await read_bytes(payload_len - 1)).split(b"\0")
+    if len(payload_fields) < 2:
+        raise ValueError(
+            f"payload {payload!r} does not contain at least 2 "
+            f"null-separated fields"
+        )
+    tag, message, *_ = [
+        field.decode(*DECODE_ARGS) for field in payload_fields
+    ]
+    return priority, tag, message
 
 
 def stop_app(serial):

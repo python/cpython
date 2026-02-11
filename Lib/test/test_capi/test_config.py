@@ -64,6 +64,7 @@ class CAPITests(unittest.TestCase):
             ("isolated", bool, None),
             ("lazy_imports", int, None),
             ("malloc_stats", bool, None),
+            ("pymalloc_hugepages", bool, None),
             ("module_search_paths", list[str], "path"),
             ("optimization_level", int, None),
             ("orig_argv", list[str], "orig_argv"),
