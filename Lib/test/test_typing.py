@@ -8532,6 +8532,15 @@ class NamedTupleTests(BaseTestCase):
                 def name(self):
                     return __class__.__name__
 
+    def test_named_tuple_non_sequence_input(self):
+        field_names = ["x", "y"]
+        field_values = [int, int]
+        Point = NamedTuple("Point", zip(field_names, field_values))
+        p = Point(1, 2)
+        self.assertEqual(p.x, 1)
+        self.assertEqual(p.y, 2)
+        self.assertEqual(repr(p),"Point(x=1, y=2)")
+
 
 class TypedDictTests(BaseTestCase):
     def test_basics_functional_syntax(self):

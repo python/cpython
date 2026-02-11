@@ -3075,8 +3075,7 @@ def NamedTuple(typename, fields, /):
     """
     types = {n: _type_check(t, f"field {n} annotation must be a type")
              for n, t in fields}
-    field_names = [n for n, _ in fields]
-    nt = _make_nmtuple(typename, field_names, _make_eager_annotate(types), module=_caller())
+    nt = _make_nmtuple(typename, types, _make_eager_annotate(types), module=_caller())
     nt.__orig_bases__ = (NamedTuple,)
     return nt
 
