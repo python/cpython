@@ -18,8 +18,9 @@ jobs:
     runs-on: ubuntu-latest
     permissions:
       issues: write
+    timeout-minutes: 5
     steps:
-      - uses: actions/github-script@v7
+      - uses: actions/github-script@v8
         with:
           # language=JavaScript
           script: |

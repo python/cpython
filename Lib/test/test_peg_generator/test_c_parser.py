@@ -13,9 +13,7 @@ from test import support
 from test.support import os_helper, import_helper
 from test.support.script_helper import assert_python_ok
 
-_py_cflags_nodist = sysconfig.get_config_var("PY_CFLAGS_NODIST")
-_pgo_flag = sysconfig.get_config_var("PGO_PROF_USE_FLAG")
-if _pgo_flag and _py_cflags_nodist and _pgo_flag in _py_cflags_nodist:
+if support.check_cflags_pgo():
     raise unittest.SkipTest("peg_generator test disabled under PGO build")
 
 test_tools.skip_if_missing("peg_generator")
@@ -101,12 +99,16 @@ class TestCParser(unittest.TestCase):
         cls.addClassCleanup(shutil.rmtree, cls.library_dir)
 
         with contextlib.ExitStack() as stack:
-            python_exe = stack.enter_context(support.setup_venv_with_pip_setuptools_wheel("venv"))
-            sitepackages = subprocess.check_output(
+            python_exe = stack.enter_context(support.setup_venv_with_pip_setuptools("venv"))
+            platlib_path = subprocess.check_output(
                 [python_exe, "-c", "import sysconfig; print(sysconfig.get_path('platlib'))"],
                 text=True,
             ).strip()
-            stack.enter_context(import_helper.DirsOnSysPath(sitepackages))
+            purelib_path = subprocess.check_output(
+                [python_exe, "-c", "import sysconfig; print(sysconfig.get_path('purelib'))"],
+                text=True,
+            ).strip()
+            stack.enter_context(import_helper.DirsOnSysPath(platlib_path, purelib_path))
             cls.addClassCleanup(stack.pop_all().close)
 
     @support.requires_venv_with_pip()
@@ -389,10 +391,10 @@ class TestCParser(unittest.TestCase):
         test_source = """
         stmt = "with (\\n    a as b,\\n    c as d\\n): pass"
         the_ast = parse.parse_string(stmt, mode=1)
-        self.assertTrue(ast_dump(the_ast).startswith(
+        self.assertStartsWith(ast_dump(the_ast),
             "Module(body=[With(items=[withitem(context_expr=Name(id='a', ctx=Load()), optional_vars=Name(id='b', ctx=Store())), "
             "withitem(context_expr=Name(id='c', ctx=Load()), optional_vars=Name(id='d', ctx=Store()))]"
-        ))
+        )
         """
         self.run_test(grammar_source, test_source)
 

@@ -1,5 +1,5 @@
-:mod:`cmd` --- Support for line-oriented command interpreters
-=============================================================
+:mod:`!cmd` --- Support for line-oriented command interpreters
+==============================================================
 
 .. module:: cmd
    :synopsis: Build line-oriented command interpreters.
@@ -245,7 +245,7 @@ Cmd Example
 
 .. sectionauthor:: Raymond Hettinger <python at rcn dot com>
 
-The :mod:`cmd` module is mainly useful for building custom shells that let a
+The :mod:`!cmd` module is mainly useful for building custom shells that let a
 user work with a program interactively.
 
 This section presents a simple example of how to build a shell around a few of

@@ -6,6 +6,8 @@ Context Variables Objects
 -------------------------
 
 .. _contextvarsobjects_pointertype_change:
+.. versionadded:: 3.7
+
 .. versionchanged:: 3.7.1
 
    .. note::
@@ -23,8 +25,6 @@ Context Variables Objects
 
       See :issue:`34762` for more details.
 
-
-.. versionadded:: 3.7
 
 This section details the public C API for the :mod:`contextvars` module.
 
@@ -100,6 +100,52 @@ Context object management functions:
    Deactivate the *ctx* context and restore the previous context as the
    current context for the current thread.  Returns ``0`` on success,
    and ``-1`` on error.
+
+.. c:function:: int PyContext_AddWatcher(PyContext_WatchCallback callback)
+
+   Register *callback* as a context object watcher for the current interpreter.
+   Return an ID which may be passed to :c:func:`PyContext_ClearWatcher`.
+   In case of error (e.g. no more watcher IDs available),
+   return ``-1`` and set an exception.
+
+   .. versionadded:: 3.14
+
+.. c:function:: int PyContext_ClearWatcher(int watcher_id)
+
+   Clear watcher identified by *watcher_id* previously returned from
+   :c:func:`PyContext_AddWatcher` for the current interpreter.
+   Return ``0`` on success, or ``-1`` and set an exception on error
+   (e.g. if the given *watcher_id* was never registered.)
+
+   .. versionadded:: 3.14
+
+.. c:type:: PyContextEvent
+
+   Enumeration of possible context object watcher events:
+
+   - ``Py_CONTEXT_SWITCHED``: The :term:`current context` has switched to a
+     different context.  The object passed to the watch callback is the
+     now-current :class:`contextvars.Context` object, or None if no context is
+     current.
+
+   .. versionadded:: 3.14
+
+.. c:type:: int (*PyContext_WatchCallback)(PyContextEvent event, PyObject *obj)
+
+   Context object watcher callback function.  The object passed to the callback
+   is event-specific; see :c:type:`PyContextEvent` for details.
+
+   If the callback returns with an exception set, it must return ``-1``; this
+   exception will be printed as an unraisable exception using
+   :c:func:`PyErr_FormatUnraisable`. Otherwise it should return ``0``.
+
+   There may already be a pending exception set on entry to the callback. In
+   this case, the callback should return ``0`` with the same exception still
+   set. This means the callback may not call any other API that can set an
+   exception unless it saves and clears the exception state first, and restores
+   it before returning.
+
+   .. versionadded:: 3.14
 
 
 Context variable functions:

@@ -1,4 +1,3 @@
-#! /usr/bin/env python3
 """Interfaces for launching and remotely controlling web browsers."""
 # Maintained by Georg Brandl.
 
@@ -11,13 +10,16 @@ import threading
 
 __all__ = ["Error", "open", "open_new", "open_new_tab", "get", "register"]
 
+
 class Error(Exception):
     pass
+
 
 _lock = threading.RLock()
 _browsers = {}                  # Dictionary of available browser controllers
 _tryorder = None                # Preference order of available browsers
 _os_preferred_browser = None    # The preferred browser
+
 
 def register(name, klass, instance=None, *, preferred=False):
     """Register a browser connector."""
@@ -29,10 +31,11 @@ def register(name, klass, instance=None, *, preferred=False):
         # Preferred browsers go to the front of the list.
         # Need to match to the default browser returned by xdg-settings, which
         # may be of the form e.g. "firefox.desktop".
-        if preferred or (_os_preferred_browser and name in _os_preferred_browser):
+        if preferred or (_os_preferred_browser and f'{name}.desktop' == _os_preferred_browser):
             _tryorder.insert(0, name)
         else:
             _tryorder.append(name)
+
 
 def get(using=None):
     """Return a browser launcher instance appropriate for the environment."""
@@ -64,6 +67,7 @@ def get(using=None):
                 return command[0]()
     raise Error("could not locate runnable browser")
 
+
 # Please note: the following definition hides a builtin function.
 # It is recommended one does "import webbrowser" and uses webbrowser.open(url)
 # instead of "from webbrowser import *".
@@ -76,6 +80,9 @@ def open(url, new=0, autoraise=True):
     - 1: a new browser window.
     - 2: a new browser page ("tab").
     If possible, autoraise raises the window (the default) or not.
+
+    If opening the browser succeeds, return True.
+    If there is a problem, return False.
     """
     if _tryorder is None:
         with _lock:
@@ -87,12 +94,14 @@ def open(url, new=0, autoraise=True):
             return True
     return False
 
+
 def open_new(url):
     """Open url in a new window of the default browser.
 
     If not possible, then open url in the only browser window.
     """
     return open(url, 1)
+
 
 def open_new_tab(url):
     """Open url in a new page ("tab") of the default browser.
@@ -136,7 +145,7 @@ def _synthesize(browser, *, preferred=False):
 
 # General parent classes
 
-class BaseBrowser(object):
+class BaseBrowser:
     """Parent class for all browsers. Do not use directly."""
 
     args = ['%s']
@@ -197,7 +206,7 @@ class BackgroundBrowser(GenericBrowser):
             else:
                 p = subprocess.Popen(cmdline, close_fds=True,
                                      start_new_session=True)
-            return (p.poll() is None)
+            return p.poll() is None
         except OSError:
             return False
 
@@ -225,7 +234,8 @@ class UnixBrowser(BaseBrowser):
             # use autoraise argument only for remote invocation
             autoraise = int(autoraise)
             opt = self.raise_opts[autoraise]
-            if opt: raise_opt = [opt]
+            if opt:
+                raise_opt = [opt]
 
         cmdline = [self.name] + raise_opt + args
 
@@ -266,8 +276,8 @@ class UnixBrowser(BaseBrowser):
             else:
                 action = self.remote_action_newtab
         else:
-            raise Error("Bad 'new' parameter to open(); " +
-                        "expected 0, 1, or 2, got %s" % new)
+            raise Error("Bad 'new' parameter to open(); "
+                        f"expected 0, 1, or 2, got {new}")
 
         args = [arg.replace("%s", url).replace("%action", action)
                 for arg in self.remote_args]
@@ -302,7 +312,7 @@ class Epiphany(UnixBrowser):
 
 
 class Chrome(UnixBrowser):
-    "Launcher class for Google Chrome browser."
+    """Launcher class for Google Chrome browser."""
 
     remote_args = ['%action', '%s']
     remote_action = ""
@@ -310,11 +320,12 @@ class Chrome(UnixBrowser):
     remote_action_newtab = ""
     background = True
 
+
 Chromium = Chrome
 
 
 class Opera(UnixBrowser):
-    "Launcher class for Opera browser."
+    """Launcher class for Opera browser."""
 
     remote_args = ['%action', '%s']
     remote_action = ""
@@ -324,7 +335,7 @@ class Opera(UnixBrowser):
 
 
 class Elinks(UnixBrowser):
-    "Launcher class for Elinks browsers."
+    """Launcher class for Elinks browsers."""
 
     remote_args = ['-remote', 'openURL(%s%action)']
     remote_action = ""
@@ -387,11 +398,11 @@ class Konqueror(BaseBrowser):
         except OSError:
             return False
         else:
-            return (p.poll() is None)
+            return p.poll() is None
 
 
 class Edge(UnixBrowser):
-    "Launcher class for Microsoft Edge browser."
+    """Launcher class for Microsoft Edge browser."""
 
     remote_args = ['%action', '%s']
     remote_action = ""
@@ -418,12 +429,18 @@ def register_X_browsers():
     if shutil.which("gio"):
         register("gio", None, BackgroundBrowser(["gio", "open", "--", "%s"]))
 
-    # Equivalent of gio open before 2015
-    if "GNOME_DESKTOP_SESSION_ID" in os.environ and shutil.which("gvfs-open"):
+    xdg_desktop = os.getenv("XDG_CURRENT_DESKTOP", "").split(":")
+
+    # The default GNOME3 browser
+    if (("GNOME" in xdg_desktop or
+         "GNOME_DESKTOP_SESSION_ID" in os.environ) and
+            shutil.which("gvfs-open")):
         register("gvfs-open", None, BackgroundBrowser("gvfs-open"))
 
     # The default KDE browser
-    if "KDE_FULL_SESSION" in os.environ and shutil.which("kfmclient"):
+    if (("KDE" in xdg_desktop or
+         "KDE_FULL_SESSION" in os.environ) and
+            shutil.which("kfmclient")):
         register("kfmclient", Konqueror, Konqueror("kfmclient"))
 
     # Common symbolic link for the default X11 browser
@@ -455,7 +472,6 @@ def register_X_browsers():
     if shutil.which("opera"):
         register("opera", None, Opera("opera"))
 
-
     if shutil.which("microsoft-edge"):
         register("microsoft-edge", None, Edge("microsoft-edge"))
 
@@ -466,11 +482,14 @@ def register_standard_browsers():
 
     if sys.platform == 'darwin':
         register("MacOSX", None, MacOSXOSAScript('default'))
-        register("chrome", None, MacOSXOSAScript('chrome'))
+        register("chrome", None, MacOSXOSAScript('google chrome'))
         register("firefox", None, MacOSXOSAScript('firefox'))
         register("safari", None, MacOSXOSAScript('safari'))
-        # OS X can use below Unix support (but we prefer using the OS X
+        # macOS can use below Unix support (but we prefer using the macOS
         # specific stuff)
+
+    if sys.platform == "ios":
+        register("iosbrowser", None, IOSBrowser(), preferred=True)
 
     if sys.platform == "serenityos":
         # SerenityOS webbrowser, simply called "Browser".
@@ -505,7 +524,8 @@ def register_standard_browsers():
                 cmd = "xdg-settings get default-web-browser".split()
                 raw_result = subprocess.check_output(cmd, stderr=subprocess.DEVNULL)
                 result = raw_result.decode().strip()
-            except (FileNotFoundError, subprocess.CalledProcessError, PermissionError, NotADirectoryError) :
+            except (FileNotFoundError, subprocess.CalledProcessError,
+                    PermissionError, NotADirectoryError):
                 pass
             else:
                 global _os_preferred_browser
@@ -539,6 +559,19 @@ def register_standard_browsers():
         # Treat choices in same way as if passed into get() but do register
         # and prepend to _tryorder
         for cmdline in userchoices:
+            if all(x not in cmdline for x in " \t"):
+                # Assume this is the name of a registered command, use
+                # that unless it is a GenericBrowser.
+                try:
+                    command = _browsers[cmdline.lower()]
+                except KeyError:
+                    pass
+
+                else:
+                    if not isinstance(command[1], GenericBrowser):
+                        _tryorder.insert(0, cmdline.lower())
+                        continue
+
             if cmdline != '':
                 cmd = _synthesize(cmdline, preferred=True)
                 if cmd[1] is None:
@@ -575,15 +608,41 @@ if sys.platform == 'darwin':
 
         def open(self, url, new=0, autoraise=True):
             sys.audit("webbrowser.open", url)
+            url = url.replace('"', '%22')
             if self.name == 'default':
-                script = 'open location "%s"' % url.replace('"', '%22') # opens in default browser
+                proto, _sep, _rest = url.partition(":")
+                if _sep and proto.lower() in {"http", "https"}:
+                    # default web URL, don't need to lookup browser
+                    script = f'open location "{url}"'
+                else:
+                    # if not a web URL, need to lookup default browser to ensure a browser is launched
+                    # this should always work, but is overkill to lookup http handler
+                    # before launching http
+                    script = f"""
+                        use framework "AppKit"
+                        use AppleScript version "2.4"
+                        use scripting additions
+
+                        property NSWorkspace : a reference to current application's NSWorkspace
+                        property NSURL : a reference to current application's NSURL
+
+                        set http_url to NSURL's URLWithString:"https://python.org"
+                        set browser_url to (NSWorkspace's sharedWorkspace)'s ¬
+                            URLForApplicationToOpenURL:http_url
+                        set app_path to browser_url's relativePath as text -- NSURL to absolute path '/Applications/Safari.app'
+
+                        tell application app_path
+                            activate
+                            open location "{url}"
+                        end tell
+                    """
             else:
                 script = f'''
-                   tell application "%s"
+                   tell application "{self.name}"
                        activate
-                       open location "%s"
+                       open location "{url}"
                    end
-                   '''%(self.name, url.replace('"', '%22'))
+                   '''
 
             osapipe = os.popen("osascript", "w")
             if osapipe is None:
@@ -593,34 +652,98 @@ if sys.platform == 'darwin':
             rc = osapipe.close()
             return not rc
 
+#
+# Platform support for iOS
+#
+if sys.platform == "ios":
+    from _ios_support import objc
+    if objc:
+        # If objc exists, we know ctypes is also importable.
+        from ctypes import c_void_p, c_char_p, c_ulong
 
-def main():
-    import getopt
-    usage = """Usage: %s [-n | -t | -h] url
-    -n: open new window
-    -t: open new tab
-    -h, --help: show help""" % sys.argv[0]
-    try:
-        opts, args = getopt.getopt(sys.argv[1:], 'ntdh',['help'])
-    except getopt.error as msg:
-        print(msg, file=sys.stderr)
-        print(usage, file=sys.stderr)
-        sys.exit(1)
-    new_win = 0
-    for o, a in opts:
-        if o == '-n': new_win = 1
-        elif o == '-t': new_win = 2
-        elif o == '-h' or o == '--help':
-            print(usage, file=sys.stderr)
-            sys.exit()
-    if len(args) != 1:
-        print(usage, file=sys.stderr)
-        sys.exit(1)
+    class IOSBrowser(BaseBrowser):
+        def open(self, url, new=0, autoraise=True):
+            sys.audit("webbrowser.open", url)
+            # If ctypes isn't available, we can't open a browser
+            if objc is None:
+                return False
 
-    url = args[0]
-    open(url, new_win)
+            # All the messages in this call return object references.
+            objc.objc_msgSend.restype = c_void_p
+
+            # This is the equivalent of:
+            #    NSString url_string =
+            #        [NSString stringWithCString:url.encode("utf-8")
+            #                           encoding:NSUTF8StringEncoding];
+            NSString = objc.objc_getClass(b"NSString")
+            constructor = objc.sel_registerName(b"stringWithCString:encoding:")
+            objc.objc_msgSend.argtypes = [c_void_p, c_void_p, c_char_p, c_ulong]
+            url_string = objc.objc_msgSend(
+                NSString,
+                constructor,
+                url.encode("utf-8"),
+                4,  # NSUTF8StringEncoding = 4
+            )
+
+            # Create an NSURL object representing the URL
+            # This is the equivalent of:
+            #   NSURL *nsurl = [NSURL URLWithString:url];
+            NSURL = objc.objc_getClass(b"NSURL")
+            urlWithString_ = objc.sel_registerName(b"URLWithString:")
+            objc.objc_msgSend.argtypes = [c_void_p, c_void_p, c_void_p]
+            ns_url = objc.objc_msgSend(NSURL, urlWithString_, url_string)
+
+            # Get the shared UIApplication instance
+            # This code is the equivalent of:
+            # UIApplication shared_app = [UIApplication sharedApplication]
+            UIApplication = objc.objc_getClass(b"UIApplication")
+            sharedApplication = objc.sel_registerName(b"sharedApplication")
+            objc.objc_msgSend.argtypes = [c_void_p, c_void_p]
+            shared_app = objc.objc_msgSend(UIApplication, sharedApplication)
+
+            # Open the URL on the shared application
+            # This code is the equivalent of:
+            #   [shared_app openURL:ns_url
+            #               options:NIL
+            #     completionHandler:NIL];
+            openURL_ = objc.sel_registerName(b"openURL:options:completionHandler:")
+            objc.objc_msgSend.argtypes = [
+                c_void_p, c_void_p, c_void_p, c_void_p, c_void_p
+            ]
+            # Method returns void
+            objc.objc_msgSend.restype = None
+            objc.objc_msgSend(shared_app, openURL_, ns_url, None, None)
+
+            return True
+
+
+def parse_args(arg_list: list[str] | None):
+    import argparse
+    parser = argparse.ArgumentParser(
+        description="Open URL in a web browser.", color=True,
+    )
+    parser.add_argument("url", help="URL to open")
+
+    group = parser.add_mutually_exclusive_group()
+    group.add_argument("-n", "--new-window", action="store_const",
+                       const=1, default=0, dest="new_win",
+                       help="open new window")
+    group.add_argument("-t", "--new-tab", action="store_const",
+                       const=2, default=0, dest="new_win",
+                       help="open new tab")
+
+    args = parser.parse_args(arg_list)
+
+    return args
+
+
+def main(arg_list: list[str] | None = None):
+    args = parse_args(arg_list)
+
+    open(args.url, args.new_win)
 
     print("\a")
+
 
 if __name__ == "__main__":
     main()

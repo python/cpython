@@ -1,8 +1,14 @@
+from __future__ import annotations
+
 import collections
+import contextlib
 import itertools
 import pathlib
 import operator
+import re
+import warnings
 import zipfile
+from collections.abc import Iterator
 
 from . import abc
 
@@ -31,8 +37,10 @@ class FileReader(abc.TraversableResources):
 
 class ZipReader(abc.TraversableResources):
     def __init__(self, loader, module):
-        _, _, name = module.rpartition('.')
-        self.prefix = loader.prefix.replace('\\', '/') + name + '/'
+        self.prefix = loader.prefix.replace('\\', '/')
+        if loader.is_package(module):
+            _, _, name = module.rpartition('.')
+            self.prefix += name + '/'
         self.archive = loader.archive
 
     def open_resource(self, resource):
@@ -62,7 +70,7 @@ class MultiplexedPath(abc.Traversable):
     """
 
     def __init__(self, *paths):
-        self._paths = list(map(pathlib.Path, remove_duplicates(paths)))
+        self._paths = list(map(_ensure_traversable, remove_duplicates(paths)))
         if not self._paths:
             message = 'MultiplexedPath must contain at least one path'
             raise FileNotFoundError(message)
@@ -130,7 +138,40 @@ class NamespaceReader(abc.TraversableResources):
     def __init__(self, namespace_path):
         if 'NamespacePath' not in str(namespace_path):
             raise ValueError('Invalid path')
-        self.path = MultiplexedPath(*list(namespace_path))
+        self.path = MultiplexedPath(*filter(bool, map(self._resolve, namespace_path)))
+
+    @classmethod
+    def _resolve(cls, path_str) -> abc.Traversable | None:
+        r"""
+        Given an item from a namespace path, resolve it to a Traversable.
+
+        path_str might be a directory on the filesystem or a path to a
+        zipfile plus the path within the zipfile, e.g. ``/foo/bar`` or
+        ``/foo/baz.zip/inner_dir`` or ``foo\baz.zip\inner_dir\sub``.
+
+        path_str might also be a sentinel used by editable packages to
+        trigger other behaviors (see python/importlib_resources#311).
+        In that case, return None.
+        """
+        dirs = (cand for cand in cls._candidate_paths(path_str) if cand.is_dir())
+        return next(dirs, None)
+
+    @classmethod
+    def _candidate_paths(cls, path_str: str) -> Iterator[abc.Traversable]:
+        yield pathlib.Path(path_str)
+        yield from cls._resolve_zip_path(path_str)
+
+    @staticmethod
+    def _resolve_zip_path(path_str: str):
+        for match in reversed(list(re.finditer(r'[\\/]', path_str))):
+            with contextlib.suppress(
+                FileNotFoundError,
+                IsADirectoryError,
+                NotADirectoryError,
+                PermissionError,
+            ):
+                inner = path_str[match.end() :].replace('\\', '/') + '/'
+                yield zipfile.Path(path_str[: match.start()], inner.lstrip('/'))
 
     def resource_path(self, resource):
         """
@@ -142,3 +183,21 @@ class NamespaceReader(abc.TraversableResources):
 
     def files(self):
         return self.path
+
+
+def _ensure_traversable(path):
+    """
+    Convert deprecated string arguments to traversables (pathlib.Path).
+
+    Remove with Python 3.15.
+    """
+    if not isinstance(path, str):
+        return path
+
+    warnings.warn(
+        "String arguments are deprecated. Pass a Traversable instead.",
+        DeprecationWarning,
+        stacklevel=3,
+    )
+
+    return pathlib.Path(path)

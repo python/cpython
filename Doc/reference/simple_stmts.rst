@@ -91,11 +91,10 @@ attributes or items of mutable objects:
          : | "[" [`target_list`] "]"
          : | `attributeref`
          : | `subscription`
-         : | `slicing`
          : | "*" `target`
 
-(See section :ref:`primaries` for the syntax definitions for *attributeref*,
-*subscription*, and *slicing*.)
+(See section :ref:`primaries` for the syntax definitions for *attributeref*
+and *subscription*.)
 
 An assignment statement evaluates the expression list (remember that this can be
 a single expression or a comma-separated list, the latter yielding a tuple) and
@@ -107,8 +106,8 @@ right.
    pair: target; list
 
 Assignment is defined recursively depending on the form of the target (list).
-When a target is part of a mutable object (an attribute reference, subscription
-or slicing), the mutable object must ultimately perform the assignment and
+When a target is part of a mutable object (an attribute reference or
+subscription), the mutable object must ultimately perform the assignment and
 decide about its validity, and may raise an exception if the assignment is
 unacceptable.  The rules observed by various types and the exceptions raised are
 given with the definition of the object types (see section :ref:`types`).
@@ -189,9 +188,14 @@ Assignment of an object to a single target is recursively defined as follows.
      pair: object; mutable
 
 * If the target is a subscription: The primary expression in the reference is
-  evaluated.  It should yield either a mutable sequence object (such as a list)
-  or a mapping object (such as a dictionary).  Next, the subscript expression is
   evaluated.
+  Next, the subscript expression is evaluated.
+  Then, the primary's :meth:`~object.__setitem__` method is called with
+  two arguments: the subscript and the assigned object.
+
+  Typically, :meth:`~object.__setitem__` is defined on mutable sequence objects
+  (such as lists) and mapping objects (such as dictionaries), and behaves as
+  follows.
 
   .. index::
      pair: object; sequence
@@ -214,28 +218,19 @@ Assignment of an object to a single target is recursively defined as follows.
   object.  This can either replace an existing key/value pair with the same key
   value, or insert a new key/value pair (if no key with the same value existed).
 
-  For user-defined objects, the :meth:`~object.__setitem__` method is called with
-  appropriate arguments.
-
   .. index:: pair: slicing; assignment
 
-* If the target is a slicing: The primary expression in the reference is
-  evaluated.  It should yield a mutable sequence object (such as a list).  The
-  assigned object should be a sequence object of the same type.  Next, the lower
-  and upper bound expressions are evaluated, insofar they are present; defaults
-  are zero and the sequence's length.  The bounds should evaluate to integers.
+  If the target is a slicing: The primary expression should evaluate to
+  a mutable sequence object (such as a list).
+  The assigned object should be :term:`iterable`.
+  The slicing's lower and upper bounds should be integers; if they are ``None``
+  (or not present), the defaults are zero and the sequence's length.
   If either bound is negative, the sequence's length is added to it.  The
   resulting bounds are clipped to lie between zero and the sequence's length,
   inclusive.  Finally, the sequence object is asked to replace the slice with
   the items of the assigned sequence.  The length of the slice may be different
   from the length of the assigned sequence, thus changing the length of the
   target sequence, if the target sequence allows it.
-
-.. impl-detail::
-
-   In the current implementation, the syntax for targets is taken to be the same
-   as for expressions, and invalid syntax is rejected during the code generation
-   phase, causing less detailed error messages.
 
 Although the definition of assignment implies that overlaps between the
 left-hand side and the right-hand side are 'simultaneous' (for example ``a, b =
@@ -281,7 +276,7 @@ operation and an assignment statement:
 
 .. productionlist:: python-grammar
    augmented_assignment_stmt: `augtarget` `augop` (`expression_list` | `yield_expression`)
-   augtarget: `identifier` | `attributeref` | `subscription` | `slicing`
+   augtarget: `identifier` | `attributeref` | `subscription`
    augop: "+=" | "-=" | "*=" | "@=" | "/=" | "//=" | "%=" | "**="
         : | ">>=" | "<<=" | "&=" | "^=" | "|="
 
@@ -293,7 +288,7 @@ statements, cannot be an unpacking) and the expression list, performs the binary
 operation specific to the type of assignment on the two operands, and assigns
 the result to the original target.  The target is only evaluated once.
 
-An augmented assignment expression like ``x += 1`` can be rewritten as ``x = x +
+An augmented assignment statement like ``x += 1`` can be rewritten as ``x = x +
 1`` to achieve a similar, but not exactly equal effect. In the augmented
 version, ``x`` is only evaluated once. Also, when possible, the actual operation
 is performed *in-place*, meaning that rather than creating a new object and
@@ -333,23 +328,24 @@ statement, of a variable or attribute annotation and an optional assignment stat
 
 The difference from normal :ref:`assignment` is that only a single target is allowed.
 
-For simple names as assignment targets, if in class or module scope,
-the annotations are evaluated and stored in a special class or module
-attribute :attr:`__annotations__`
-that is a dictionary mapping from variable names (mangled if private) to
-evaluated annotations. This attribute is writable and is automatically
-created at the start of class or module body execution, if annotations
-are found statically.
+The assignment target is considered "simple" if it consists of a single
+name that is not enclosed in parentheses.
+For simple assignment targets, if in class or module scope,
+the annotations are gathered in a lazily evaluated
+:ref:`annotation scope <annotation-scopes>`. The annotations can be
+evaluated using the :attr:`~object.__annotations__` attribute of a
+class or module, or using the facilities in the :mod:`annotationlib`
+module.
 
-For expressions as assignment targets, the annotations are evaluated if
-in class or module scope, but not stored.
+If the assignment target is not simple (an attribute, subscript node, or
+parenthesized name), the annotation is never evaluated.
 
 If a name is annotated in a function scope, then this name is local for
 that scope. Annotations are never evaluated and stored in function scopes.
 
 If the right hand side is present, an annotated
-assignment performs the actual assignment before evaluating annotations
-(where applicable). If the right hand side is not present for an expression
+assignment performs the actual assignment as if there was no annotation
+present. If the right hand side is not present for an expression
 target, then the interpreter evaluates the target except for the last
 :meth:`~object.__setitem__` or :meth:`~object.__setattr__` call.
 
@@ -369,6 +365,10 @@ target, then the interpreter evaluates the target except for the last
    Now annotated assignments allow the same expressions in the right hand side as
    regular assignments. Previously, some expressions (like un-parenthesized
    tuple expressions) caused a syntax error.
+
+.. versionchanged:: 3.14
+   Annotations are now lazily evaluated in a separate :ref:`annotation scope <annotation-scopes>`.
+   If the assignment target is not simple, annotations are never evaluated.
 
 
 .. _assert:
@@ -403,9 +403,9 @@ The extended form, ``assert expression1, expression2``, is equivalent to ::
 
 These equivalences assume that :const:`__debug__` and :exc:`AssertionError` refer to
 the built-in variables with those names.  In the current implementation, the
-built-in variable :const:`__debug__` is ``True`` under normal circumstances,
+built-in variable ``__debug__`` is ``True`` under normal circumstances,
 ``False`` when optimization is requested (command line option :option:`-O`).  The current
-code generator emits no code for an assert statement when optimization is
+code generator emits no code for an :keyword:`assert` statement when optimization is
 requested at compile time.  Note that it is unnecessary to include the source
 code for the expression that failed in the error message; it will be displayed
 as part of the stack trace.
@@ -460,12 +460,12 @@ Deletion of a target list recursively deletes each target, from left to right.
 
 Deletion of a name removes the binding of that name from the local or global
 namespace, depending on whether the name occurs in a :keyword:`global` statement
-in the same code block.  If the name is unbound, a :exc:`NameError` exception
-will be raised.
+in the same code block.  Trying to delete an unbound name raises a
+:exc:`NameError` exception.
 
 .. index:: pair: attribute; deletion
 
-Deletion of attribute references, subscriptions and slicings is passed to the
+Deletion of attribute references and subscriptions is passed to the
 primary object involved; deletion of a slicing is in general equivalent to
 assignment of an empty slice of the right type (but even this is determined by
 the sliced object).
@@ -528,8 +528,8 @@ The :keyword:`!yield` statement
    yield_stmt: `yield_expression`
 
 A :keyword:`yield` statement is semantically equivalent to a :ref:`yield
-expression <yieldexpr>`. The yield statement can be used to omit the parentheses
-that would otherwise be required in the equivalent yield expression
+expression <yieldexpr>`. The ``yield`` statement can be used to omit the
+parentheses that would otherwise be required in the equivalent yield expression
 statement. For example, the yield statements ::
 
   yield <expr>
@@ -541,7 +541,7 @@ are equivalent to the yield expression statements ::
   (yield from <expr>)
 
 Yield expressions and statements are only used when defining a :term:`generator`
-function, and are only used in the body of the generator function.  Using yield
+function, and are only used in the body of the generator function.  Using :keyword:`yield`
 in a function definition is sufficient to cause that definition to create a
 generator function instead of a normal function.
 
@@ -664,8 +664,7 @@ and information about handling exceptions is in section :ref:`try`.
 .. versionchanged:: 3.3
     :const:`None` is now permitted as ``Y`` in ``raise X from Y``.
 
-.. versionadded:: 3.3
-    The :attr:`~BaseException.__suppress_context__` attribute to suppress
+    Added the :attr:`~BaseException.__suppress_context__` attribute to suppress
     automatic display of the exception context.
 
 .. versionchanged:: 3.11
@@ -827,9 +826,14 @@ where the :keyword:`import` statement occurs.
 
 .. index:: single: __all__ (optional module attribute)
 
+.. attribute:: module.__all__
+   :no-typesetting:
+
 The *public names* defined by a module are determined by checking the module's
 namespace for a variable named ``__all__``; if defined, it must be a sequence
-of strings which are names defined or imported by that module.  The names
+of strings which are names defined or imported by that module.
+Names containing non-ASCII characters must be in the `normalization form`_
+NFKC; see :ref:`lexical-names-nonascii` for details.  The names
 given in ``__all__`` are all considered public and are required to exist.  If
 ``__all__`` is not defined, the set of public names includes all names found
 in the module's namespace which do not begin with an underscore character
@@ -862,6 +866,8 @@ the :ref:`relativeimports` section.
 determine dynamically the modules to be loaded.
 
 .. audit-event:: import module,filename,sys.path,sys.meta_path,sys.path_hooks import
+
+.. _normalization form: https://www.unicode.org/reports/tr15/#Norm_Forms
 
 .. _future:
 
@@ -962,25 +968,21 @@ The :keyword:`!global` statement
 .. productionlist:: python-grammar
    global_stmt: "global" `identifier` ("," `identifier`)*
 
-The :keyword:`global` statement is a declaration which holds for the entire
-current code block.  It means that the listed identifiers are to be interpreted
-as globals.  It would be impossible to assign to a global variable without
+The :keyword:`global` statement causes the listed identifiers to be interpreted
+as globals. It would be impossible to assign to a global variable without
 :keyword:`!global`, although free variables may refer to globals without being
 declared global.
 
-Names listed in a :keyword:`global` statement must not be used in the same code
-block textually preceding that :keyword:`!global` statement.
+The :keyword:`!global` statement applies to the entire current scope
+(module, function body or class definition).
+A :exc:`SyntaxError` is raised if a variable is used or
+assigned to prior to its global declaration in the scope.
 
-Names listed in a :keyword:`global` statement must not be defined as formal
-parameters, or as targets in :keyword:`with` statements or :keyword:`except` clauses, or in a :keyword:`for` target list, :keyword:`class`
-definition, function definition, :keyword:`import` statement, or variable
-annotation.
-
-.. impl-detail::
-
-   The current implementation does not enforce some of these restrictions, but
-   programs should not abuse this freedom, as future implementations may enforce
-   them or silently change the meaning of the program.
+At the module level, all variables are global, so a :keyword:`!global`
+statement has no effect.
+However, variables must still not be used or
+assigned to prior to their :keyword:`!global` declaration.
+This requirement is relaxed in the interactive prompt (:term:`REPL`).
 
 .. index::
    pair: built-in function; exec
@@ -1007,24 +1009,28 @@ The :keyword:`!nonlocal` statement
 .. productionlist:: python-grammar
    nonlocal_stmt: "nonlocal" `identifier` ("," `identifier`)*
 
-The :keyword:`nonlocal` statement causes the listed identifiers to refer to
-previously bound variables in the nearest enclosing scope excluding globals.
-This is important because the default behavior for binding is to search the
-local namespace first.  The statement allows encapsulated code to rebind
-variables outside of the local scope besides the global (module) scope.
+When the definition of a function or class is nested (enclosed) within
+the definitions of other functions, its nonlocal scopes are the local
+scopes of the enclosing functions. The :keyword:`nonlocal` statement
+causes the listed identifiers to refer to names previously bound in
+nonlocal scopes. It allows encapsulated code to rebind such nonlocal
+identifiers.  If a name is bound in more than one nonlocal scope, the
+nearest binding is used. If a name is not bound in any nonlocal scope,
+or if there is no nonlocal scope, a :exc:`SyntaxError` is raised.
 
-Names listed in a :keyword:`nonlocal` statement, unlike those listed in a
-:keyword:`global` statement, must refer to pre-existing bindings in an
-enclosing scope (the scope in which a new binding should be created cannot
-be determined unambiguously).
-
-Names listed in a :keyword:`nonlocal` statement must not collide with
-pre-existing bindings in the local scope.
+The :keyword:`nonlocal` statement applies to the entire scope of a function or
+class body. A :exc:`SyntaxError` is raised if a variable is used or
+assigned to prior to its nonlocal declaration in the scope.
 
 .. seealso::
 
    :pep:`3104` - Access to Names in Outer Scopes
       The specification for the :keyword:`nonlocal` statement.
+
+**Programmer's note:** :keyword:`nonlocal` is a directive to the parser
+and applies only to code parsed along with it.  See the note for the
+:keyword:`global` statement.
+
 
 .. _type:
 

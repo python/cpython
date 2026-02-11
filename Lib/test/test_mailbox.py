@@ -1,7 +1,6 @@
 import os
 import sys
 import time
-import stat
 import socket
 import email
 import email.message
@@ -9,6 +8,7 @@ import re
 import io
 import tempfile
 from test import support
+from test.support import import_helper, warnings_helper
 from test.support import os_helper
 from test.support import refleak_helper
 from test.support import socket_helper
@@ -702,8 +702,7 @@ class TestMaildir(TestMailbox, unittest.TestCase):
         self.assertEqual(self._box._factory, factory)
         for subdir in '', 'tmp', 'new', 'cur':
             path = os.path.join(self._path, subdir)
-            mode = os.stat(path)[stat.ST_MODE]
-            self.assertTrue(stat.S_ISDIR(mode), "Not a directory: '%s'" % path)
+            self.assertTrue(os.path.isdir(path), f"Not a directory: {path!r}")
 
     def test_list_folders(self):
         # List folders
@@ -1082,6 +1081,47 @@ class _TestSingleFile(TestMailbox):
 
         self.assertEqual(os.stat(self._path).st_mode, mode)
 
+    @unittest.skipUnless(hasattr(os, 'chown'), 'requires os.chown')
+    def test_ownership_after_flush(self):
+        # See issue gh-117467
+
+        pwd = import_helper.import_module('pwd')
+        grp = import_helper.import_module('grp')
+        st = os.stat(self._path)
+
+        for e in pwd.getpwall():
+            if e.pw_uid != st.st_uid:
+                other_uid = e.pw_uid
+                break
+        else:
+            self.skipTest("test needs more than one user")
+
+        for e in grp.getgrall():
+            if e.gr_gid != st.st_gid:
+                other_gid = e.gr_gid
+                break
+        else:
+            self.skipTest("test needs more than one group")
+
+        try:
+            os.chown(self._path, other_uid, other_gid)
+        except OSError:
+            self.skipTest('test needs root privilege')
+        # Change permissions as in test_permissions_after_flush.
+        mode = st.st_mode | 0o666
+        os.chmod(self._path, mode)
+
+        self._box.add(self._template % 0)
+        i = self._box.add(self._template % 1)
+        # Need to remove one message to make flush() create a new file
+        self._box.remove(i)
+        self._box.flush()
+
+        st = os.stat(self._path)
+        self.assertEqual(st.st_uid, other_uid)
+        self.assertEqual(st.st_gid, other_gid)
+        self.assertEqual(st.st_mode, mode)
+
 
 class _TestMboxMMDF(_TestSingleFile):
 
@@ -1172,6 +1212,7 @@ class _TestMboxMMDF(_TestSingleFile):
             self.assertEqual(contents, f.read())
         self._box = self._factory(self._path)
 
+    @warnings_helper.ignore_fork_in_thread_deprecation_warnings()
     @support.requires_fork()
     @unittest.skipUnless(hasattr(socket, 'socketpair'), "Test needs socketpair().")
     def test_lock_conflict(self):
@@ -1263,12 +1304,12 @@ class TestMbox(_TestMboxMMDF, unittest.TestCase):
         self._box.add('From: foo\n\n0')  # No newline at the end
         with open(self._path, encoding='utf-8') as f:
             data = f.read()
-            self.assertEqual(data[-3:], '0\n\n')
+            self.assertEndsWith(data, '0\n\n')
 
         self._box.add('From: foo\n\n0\n')  # Newline at the end
         with open(self._path, encoding='utf-8') as f:
             data = f.read()
-            self.assertEqual(data[-3:], '0\n\n')
+            self.assertEndsWith(data, '0\n\n')
 
 
 class TestMMDF(_TestMboxMMDF, unittest.TestCase):
@@ -2317,7 +2358,7 @@ class MaildirTestCase(unittest.TestCase):
         # Test for regression on bug #117490:
         # Make sure the boxes attribute actually gets set.
         self.mbox = mailbox.Maildir(os_helper.TESTFN)
-        #self.assertTrue(hasattr(self.mbox, "boxes"))
+        #self.assertHasAttr(self.mbox, "boxes")
         #self.assertEqual(len(self.mbox.boxes), 0)
         self.assertIsNone(self.mbox.next())
         self.assertIsNone(self.mbox.next())

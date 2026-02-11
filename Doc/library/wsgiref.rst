@@ -1,5 +1,5 @@
-:mod:`wsgiref` --- WSGI Utilities and Reference Implementation
-==============================================================
+:mod:`!wsgiref` --- WSGI Utilities and Reference Implementation
+===============================================================
 
 .. module:: wsgiref
    :synopsis: WSGI Utilities and Reference Implementation.
@@ -11,6 +11,11 @@
 
 --------------
 
+.. warning::
+
+   :mod:`!wsgiref` is a reference implementation and is not recommended for
+   production. The module only implements basic security checks.
+
 The Web Server Gateway Interface (WSGI) is a standard interface between web
 server software and web applications written in Python. Having a standard
 interface makes it easy to use an application that supports WSGI with a number
@@ -21,7 +26,7 @@ and corner case of the WSGI design.  You don't need to understand every detail
 of WSGI just to install a WSGI application or to write a web application using
 an existing framework.
 
-:mod:`wsgiref` is a reference implementation of the WSGI specification that can
+:mod:`!wsgiref` is a reference implementation of the WSGI specification that can
 be used to add WSGI support to a web server or framework.  It provides utilities
 for manipulating WSGI environment variables and response headers, base classes
 for implementing WSGI servers, a demo HTTP server that serves WSGI applications,
@@ -35,8 +40,8 @@ to tutorials and other resources.
 .. XXX If you're just trying to write a web application...
 
 
-:mod:`wsgiref.util` -- WSGI environment utilities
--------------------------------------------------
+:mod:`!wsgiref.util` -- WSGI environment utilities
+--------------------------------------------------
 
 .. module:: wsgiref.util
    :synopsis: WSGI environment utilities.
@@ -119,7 +124,8 @@ in type annotations.
    applications to set up dummy environments.  It should NOT be used by actual WSGI
    servers or applications, since the data is fake!
 
-   Example usage::
+   Example usage (see also :func:`~wsgiref.simple_server.demo_app`
+   for another example)::
 
       from wsgiref.util import setup_testing_defaults
       from wsgiref.simple_server import make_server
@@ -143,7 +149,7 @@ in type annotations.
           httpd.serve_forever()
 
 
-In addition to the environment functions above, the :mod:`wsgiref.util` module
+In addition to the environment functions above, the :mod:`!wsgiref.util` module
 also provides these miscellaneous utilities:
 
 
@@ -183,8 +189,8 @@ also provides these miscellaneous utilities:
       Support for :meth:`~object.__getitem__` method has been removed.
 
 
-:mod:`wsgiref.headers` -- WSGI response header tools
-----------------------------------------------------
+:mod:`!wsgiref.headers` -- WSGI response header tools
+-----------------------------------------------------
 
 .. module:: wsgiref.headers
    :synopsis: WSGI response header tools.
@@ -267,8 +273,8 @@ manipulation of WSGI response headers using a mapping-like interface.
       *headers* parameter is optional.
 
 
-:mod:`wsgiref.simple_server` -- a simple WSGI HTTP server
----------------------------------------------------------
+:mod:`!wsgiref.simple_server` -- a simple WSGI HTTP server
+----------------------------------------------------------
 
 .. module:: wsgiref.simple_server
    :synopsis: A simple WSGI HTTP server.
@@ -309,8 +315,10 @@ request.  (E.g., using the :func:`shift_path_info` function from
    This function is a small but complete WSGI application that returns a text page
    containing the message "Hello world!" and a list of the key/value pairs provided
    in the *environ* parameter.  It's useful for verifying that a WSGI server (such
-   as :mod:`wsgiref.simple_server`) is able to run a simple WSGI application
+   as :mod:`!wsgiref.simple_server`) is able to run a simple WSGI application
    correctly.
+
+   The *start_response* callable should follow the :class:`.StartResponse` protocol.
 
 
 .. class:: WSGIServer(server_address, RequestHandlerClass)
@@ -379,8 +387,8 @@ request.  (E.g., using the :func:`shift_path_info` function from
       interface.
 
 
-:mod:`wsgiref.validate` --- WSGI conformance checker
-----------------------------------------------------
+:mod:`!wsgiref.validate` --- WSGI conformance checker
+-----------------------------------------------------
 
 .. module:: wsgiref.validate
    :synopsis: WSGI conformance checker.
@@ -388,7 +396,7 @@ request.  (E.g., using the :func:`shift_path_info` function from
 
 When creating new WSGI application objects, frameworks, servers, or middleware,
 it can be useful to validate the new code's conformance using
-:mod:`wsgiref.validate`.  This module provides a function that creates WSGI
+:mod:`!wsgiref.validate`.  This module provides a function that creates WSGI
 application objects that validate communications between a WSGI server or
 gateway and a WSGI application object, to check both sides for protocol
 conformance.
@@ -447,8 +455,8 @@ Paste" library.
           httpd.serve_forever()
 
 
-:mod:`wsgiref.handlers` -- server/gateway base classes
-------------------------------------------------------
+:mod:`!wsgiref.handlers` -- server/gateway base classes
+-------------------------------------------------------
 
 .. module:: wsgiref.handlers
    :synopsis: WSGI server/gateway base classes.
@@ -619,7 +627,7 @@ input, output, and error streams.
 
       The default environment variables to be included in every request's WSGI
       environment.  By default, this is a copy of ``os.environ`` at the time that
-      :mod:`wsgiref.handlers` was imported, but subclasses can either create their own
+      :mod:`!wsgiref.handlers` was imported, but subclasses can either create their own
       at the class or instance level.  Note that the dictionary should be considered
       read-only, since the default value is shared between multiple classes and
       instances.
@@ -679,7 +687,9 @@ input, output, and error streams.
 
       This method can access the current error using ``sys.exception()``,
       and should pass that information to *start_response* when calling it (as
-      described in the "Error Handling" section of :pep:`3333`).
+      described in the "Error Handling" section of :pep:`3333`). In particular,
+      the *start_response* callable should follow the :class:`.StartResponse`
+      protocol.
 
       The default implementation just uses the :attr:`error_status`,
       :attr:`error_headers`, and :attr:`error_body` attributes to generate an output
@@ -768,8 +778,8 @@ input, output, and error streams.
    .. versionadded:: 3.2
 
 
-:mod:`wsgiref.types` -- WSGI types for static type checking
------------------------------------------------------------
+:mod:`!wsgiref.types` -- WSGI types for static type checking
+------------------------------------------------------------
 
 .. module:: wsgiref.types
    :synopsis: WSGI types for static type checking
@@ -781,10 +791,10 @@ in :pep:`3333`.
 .. versionadded:: 3.11
 
 
-.. class:: StartResponse()
+.. class:: StartResponse
 
-   A :class:`typing.Protocol` describing `start_response()
-   <https://peps.python.org/pep-3333/#the-start-response-callable>`_
+   A :class:`typing.Protocol` describing :pep:`start_response()
+   <3333#the-start-response-callable>`
    callables (:pep:`3333`).
 
 .. data:: WSGIEnvironment
@@ -797,18 +807,18 @@ in :pep:`3333`.
 
 .. class:: InputStream()
 
-   A :class:`typing.Protocol` describing a `WSGI Input Stream
-   <https://peps.python.org/pep-3333/#input-and-error-streams>`_.
+   A :class:`typing.Protocol` describing a :pep:`WSGI Input Stream
+   <3333#input-and-error-streams>`.
 
 .. class:: ErrorStream()
 
-   A :class:`typing.Protocol` describing a `WSGI Error Stream
-   <https://peps.python.org/pep-3333/#input-and-error-streams>`_.
+   A :class:`typing.Protocol` describing a :pep:`WSGI Error Stream
+   <3333#input-and-error-streams>`.
 
 .. class:: FileWrapper()
 
-   A :class:`typing.Protocol` describing a `file wrapper
-   <https://peps.python.org/pep-3333/#optional-platform-specific-file-handling>`_.
+   A :class:`typing.Protocol` describing a :pep:`file wrapper
+   <3333#optional-platform-specific-file-handling>`.
    See :class:`wsgiref.util.FileWrapper` for a concrete implementation of this
    protocol.
 
@@ -816,7 +826,8 @@ in :pep:`3333`.
 Examples
 --------
 
-This is a working "Hello World" WSGI application::
+This is a working "Hello World" WSGI application, where the *start_response*
+callable should follow the :class:`.StartResponse` protocol::
 
    """
    Every WSGI application must have an application object - a callable
@@ -865,7 +876,7 @@ directory and port number (default: 8000) on the command line::
         fn = os.path.join(path, environ["PATH_INFO"][1:])
         if "." not in fn.split(os.path.sep)[-1]:
             fn = os.path.join(fn, "index.html")
-        mime_type = mimetypes.guess_type(fn)[0]
+        mime_type = mimetypes.guess_file_type(fn)[0]
 
         # Return 200 OK if file exists, otherwise 404 Not Found
         if os.path.exists(fn):

@@ -126,8 +126,7 @@
    | ((uint64_t)((p)[4]) << 32) | ((uint64_t)((p)[5]) << 40)                   \
    | ((uint64_t)((p)[6]) << 48) | ((uint64_t)((p)[7]) << 56))
 
-#define SIPHASH_INITIALIZER                                                    \
-  { 0, 0, 0, 0, {0}, 0, 0 }
+#define SIPHASH_INITIALIZER {0, 0, 0, 0, {0}, 0, 0}
 
 struct siphash {
   uint64_t v0, v1, v2, v3;

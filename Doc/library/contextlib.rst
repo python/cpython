@@ -49,7 +49,7 @@ Functions and classes provided:
 
    While many objects natively support use in with statements, sometimes a
    resource needs to be managed that isn't a context manager in its own right,
-   and doesn't implement a ``close()`` method for use with ``contextlib.closing``
+   and doesn't implement a ``close()`` method for use with ``contextlib.closing``.
 
    An abstract example would be the following to ensure correct resource
    management::
@@ -151,9 +151,9 @@ Functions and classes provided:
    created by :func:`asynccontextmanager` to meet the requirement that context
    managers support multiple invocations in order to be used as decorators.
 
-  .. versionchanged:: 3.10
-     Async context managers created with :func:`asynccontextmanager` can
-     be used as decorators.
+   .. versionchanged:: 3.10
+      Async context managers created with :func:`asynccontextmanager` can
+      be used as decorators.
 
 
 .. function:: closing(thing)
@@ -314,21 +314,23 @@ Functions and classes provided:
 
    If the code within the :keyword:`!with` block raises a
    :exc:`BaseExceptionGroup`, suppressed exceptions are removed from the
-   group.  If any exceptions in the group are not suppressed, a group containing them is re-raised.
+   group.  Any exceptions of the group which are not suppressed are re-raised in
+   a new group which is created using the original group's :meth:`~BaseExceptionGroup.derive`
+   method.
 
    .. versionadded:: 3.4
 
    .. versionchanged:: 3.12
       ``suppress`` now supports suppressing exceptions raised as
-      part of an :exc:`BaseExceptionGroup`.
+      part of a :exc:`BaseExceptionGroup`.
 
 .. function:: redirect_stdout(new_target)
 
    Context manager for temporarily redirecting :data:`sys.stdout` to
-   another file or file-like object.
+   another :term:`file object`.
 
    This tool adds flexibility to existing functions or classes whose output
-   is hardwired to stdout.
+   is hardwired to :data:`sys.stdout`.
 
    For example, the output of :func:`help` normally is sent to *sys.stdout*.
    You can capture that output in a string by redirecting the output to an
@@ -364,8 +366,8 @@ Functions and classes provided:
 
 .. function:: redirect_stderr(new_target)
 
-   Similar to :func:`~contextlib.redirect_stdout` but redirecting
-   :data:`sys.stderr` to another file or file-like object.
+   Similar to :func:`~contextlib.redirect_stdout` but redirecting the global
+   :data:`sys.stderr` to another :term:`file object`.
 
    This context manager is :ref:`reentrant <reentrant-cms>`.
 
@@ -562,6 +564,10 @@ Functions and classes provided:
          Raises :exc:`TypeError` instead of :exc:`AttributeError` if *cm*
          is not a context manager.
 
+      .. versionchanged:: 3.15
+         Added support for arbitrary descriptors :meth:`!__enter__` and
+         :meth:`!__exit__`.
+
    .. method:: push(exit)
 
       Adds a context manager's :meth:`~object.__exit__` method to the callback stack.
@@ -579,6 +585,9 @@ Functions and classes provided:
 
       The passed in object is returned from the function, allowing this
       method to be used as a function decorator.
+
+      .. versionchanged:: 3.15
+         Added support for arbitrary descriptors :meth:`!__exit__`.
 
    .. method:: callback(callback, /, *args, **kwds)
 
@@ -627,7 +636,8 @@ Functions and classes provided:
    The :meth:`~ExitStack.close` method is not implemented; :meth:`aclose` must be used
    instead.
 
-   .. coroutinemethod:: enter_async_context(cm)
+   .. method:: enter_async_context(cm)
+      :async:
 
       Similar to :meth:`ExitStack.enter_context` but expects an asynchronous context
       manager.
@@ -636,16 +646,23 @@ Functions and classes provided:
          Raises :exc:`TypeError` instead of :exc:`AttributeError` if *cm*
          is not an asynchronous context manager.
 
+      .. versionchanged:: 3.15
+         Added support for arbitrary descriptors :meth:`!__aenter__` and :meth:`!__aexit__`.
+
    .. method:: push_async_exit(exit)
 
       Similar to :meth:`ExitStack.push` but expects either an asynchronous context manager
       or a coroutine function.
 
+      .. versionchanged:: 3.15
+         Added support for arbitrary descriptors :meth:`!__aexit__`.
+
    .. method:: push_async_callback(callback, /, *args, **kwds)
 
       Similar to :meth:`ExitStack.callback` but expects a coroutine function.
 
-   .. coroutinemethod:: aclose()
+   .. method:: aclose()
+      :async:
 
       Similar to :meth:`ExitStack.close` but properly handles awaitables.
 
@@ -664,7 +681,7 @@ Examples and Recipes
 --------------------
 
 This section describes some examples and recipes for making effective use of
-the tools provided by :mod:`contextlib`.
+the tools provided by :mod:`!contextlib`.
 
 
 Supporting a variable number of context managers
@@ -796,7 +813,7 @@ executing that callback::
        if result:
            stack.pop_all()
 
-This allows the intended cleanup up behaviour to be made explicit up front,
+This allows the intended cleanup behaviour to be made explicit up front,
 rather than requiring a separate flag variable.
 
 If a particular application uses this pattern a lot, it can be simplified

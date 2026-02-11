@@ -8,6 +8,7 @@ module _suggestions
 /*[clinic end generated code: output=da39a3ee5e6b4b0d input=e58d81fafad5637b]*/
 
 /*[clinic input]
+@critical_section candidates
 _suggestions._generate_suggestions
     candidates: object
     item: unicode
@@ -18,10 +19,10 @@ Returns the candidate in candidates that's closest to item
 static PyObject *
 _suggestions__generate_suggestions_impl(PyObject *module,
                                         PyObject *candidates, PyObject *item)
-/*[clinic end generated code: output=79be7b653ae5e7ca input=ba2a8dddc654e33a]*/
+/*[clinic end generated code: output=79be7b653ae5e7ca input=92861a6c9bd8f667]*/
 {
    // Check if dir is a list
-    if (!PyList_Check(candidates)) {
+    if (!PyList_CheckExact(candidates)) {
         PyErr_SetString(PyExc_TypeError, "candidates must be a list");
         return NULL;
     }
@@ -29,7 +30,7 @@ _suggestions__generate_suggestions_impl(PyObject *module,
     // Check if all elements in the list are Unicode
     Py_ssize_t size = PyList_Size(candidates);
     for (Py_ssize_t i = 0; i < size; ++i) {
-        PyObject *elem = PyList_GetItem(candidates, i);
+        PyObject *elem = PyList_GET_ITEM(candidates, i);
         if (!PyUnicode_Check(elem)) {
             PyErr_SetString(PyExc_TypeError, "all elements in 'candidates' must be strings");
             return NULL;
@@ -49,15 +50,21 @@ static PyMethodDef module_methods[] = {
     {NULL, NULL, 0, NULL} // Sentinel
 };
 
+static PyModuleDef_Slot module_slots[] = {
+    {Py_mod_multiple_interpreters, Py_MOD_MULTIPLE_INTERPRETERS_NOT_SUPPORTED},
+    {Py_mod_gil, Py_MOD_GIL_NOT_USED},
+    {0, NULL},
+};
+
 static struct PyModuleDef suggestions_module = {
     PyModuleDef_HEAD_INIT,
     "_suggestions",
     NULL,
-    -1,
-    module_methods
+    0,
+    module_methods,
+    module_slots,
 };
 
 PyMODINIT_FUNC PyInit__suggestions(void) {
-    return PyModule_Create(&suggestions_module);
+    return PyModuleDef_Init(&suggestions_module);
 }
-

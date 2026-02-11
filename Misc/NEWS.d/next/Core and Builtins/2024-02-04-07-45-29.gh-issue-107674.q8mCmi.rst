@@ -1,1 +1,0 @@
-Improved the performance of :func:`sys.settrace` significantly

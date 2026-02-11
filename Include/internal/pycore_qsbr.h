@@ -11,7 +11,6 @@
 
 #include <stdbool.h>
 #include <stdint.h>
-#include "pycore_lock.h"        // PyMutex
 
 #ifdef __cplusplus
 extern "C" {
@@ -29,6 +28,12 @@ extern "C" {
 #define QSBR_INITIAL 1
 #define QSBR_INCR    2
 
+// Wrap-around safe comparison. This is a holdover from the FreeBSD
+// implementation, which uses 32-bit sequence numbers. We currently use 64-bit
+// sequence numbers, so wrap-around is unlikely.
+#define QSBR_LT(a, b) ((int64_t)((a)-(b)) < 0)
+#define QSBR_LEQ(a, b) ((int64_t)((a)-(b)) <= 0)
+
 struct _qsbr_shared;
 struct _PyThreadStateImpl;  // forward declare to avoid circular dependency
 
@@ -43,8 +48,21 @@ struct _qsbr_thread_state {
     // Thread state (or NULL)
     PyThreadState *tstate;
 
-    // Used to defer advancing write sequence a fixed number of times
-    int deferrals;
+    // Number of held items added by this thread since the last write sequence
+    // advance
+    int deferred_count;
+
+    // Estimate for the amount of memory that is held by this thread since
+    // the last write sequence advance
+    size_t deferred_memory;
+
+    // Amount of memory in mimalloc pages deferred from collection.  When
+    // deferred, they are prevented from being used for a different size class
+    // and in a different thread.
+    size_t deferred_page_memory;
+
+    // True if the deferred memory frees should be processed.
+    bool should_process;
 
     // Is this thread state allocated?
     bool allocated;
@@ -89,17 +107,32 @@ _Py_qsbr_quiescent_state(struct _qsbr_thread_state *qsbr)
     _Py_atomic_store_uint64_release(&qsbr->seq, seq);
 }
 
+// Have the read sequences advanced to the given goal? Like `_Py_qsbr_poll()`,
+// but does not perform a scan of threads.
+static inline bool
+_Py_qbsr_goal_reached(struct _qsbr_thread_state *qsbr, uint64_t goal)
+{
+    uint64_t rd_seq = _Py_atomic_load_uint64(&qsbr->shared->rd_seq);
+    return QSBR_LEQ(goal, rd_seq);
+}
+
 // Advance the write sequence and return the new goal. This should be called
 // after data is removed. The returned goal is used with `_Py_qsbr_poll()` to
 // determine when it is safe to reclaim (free) the memory.
 extern uint64_t
 _Py_qsbr_advance(struct _qsbr_shared *shared);
 
-// Batches requests to advance the write sequence. This advances the write
-// sequence every N calls, which reduces overhead but increases time to
-// reclamation. Returns the new goal.
+// Return the next value for the write sequence (current plus the increment).
 extern uint64_t
-_Py_qsbr_deferred_advance(struct _qsbr_thread_state *qsbr);
+_Py_qsbr_shared_next(struct _qsbr_shared *shared);
+
+// Return true if deferred memory frees held by QSBR should be processed to
+// determine if they can be safely freed.
+static inline bool
+_Py_qsbr_should_process(struct _qsbr_thread_state *qsbr)
+{
+    return qsbr->should_process;
+}
 
 // Have the read sequences advanced to the given goal? If this returns true,
 // it safe to reclaim any memory tagged with the goal (or earlier goal).
@@ -125,7 +158,7 @@ _Py_qsbr_register(struct _PyThreadStateImpl *tstate,
 
 // Disassociates a PyThreadState from the QSBR state and frees the QSBR state.
 extern void
-_Py_qsbr_unregister(struct _PyThreadStateImpl *tstate);
+_Py_qsbr_unregister(PyThreadState *tstate);
 
 extern void
 _Py_qsbr_fini(PyInterpreterState *interp);

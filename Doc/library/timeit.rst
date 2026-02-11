@@ -1,5 +1,5 @@
-:mod:`timeit` --- Measure execution time of small code snippets
-===============================================================
+:mod:`!timeit` --- Measure execution time of small code snippets
+================================================================
 
 .. module:: timeit
    :synopsis: Measure the execution time of small code snippets.
@@ -355,7 +355,7 @@ to test for missing and present object attributes:
    0.08588060699912603
 
 
-To give the :mod:`timeit` module access to functions you define, you can pass a
+To give the :mod:`!timeit` module access to functions you define, you can pass a
 *setup* parameter which contains an import statement::
 
    def test():

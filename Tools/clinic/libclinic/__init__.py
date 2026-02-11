@@ -2,6 +2,8 @@ from typing import Final
 
 from .errors import (
     ClinicError,
+    warn,
+    fail,
 )
 from .formatting import (
     SIG_END_MARKER,
@@ -23,8 +25,14 @@ from .identifiers import (
 )
 from .utils import (
     FormatCounterFormatter,
+    NULL,
+    Null,
+    Sentinels,
+    VersionTuple,
     compute_checksum,
     create_regex,
+    unknown,
+    unspecified,
     write_file,
 )
 
@@ -32,6 +40,8 @@ from .utils import (
 __all__ = [
     # Error handling
     "ClinicError",
+    "warn",
+    "fail",
 
     # Formatting helpers
     "SIG_END_MARKER",
@@ -53,8 +63,14 @@ __all__ = [
 
     # Utility functions
     "FormatCounterFormatter",
+    "NULL",
+    "Null",
+    "Sentinels",
+    "VersionTuple",
     "compute_checksum",
     "create_regex",
+    "unknown",
+    "unspecified",
     "write_file",
 ]
 
@@ -68,6 +84,7 @@ CLINIC_PREFIXED_ARGS: Final = frozenset(
         "argsbuf",
         "fastargs",
         "kwargs",
+        "kwds",
         "kwnames",
         "nargs",
         "noptargs",

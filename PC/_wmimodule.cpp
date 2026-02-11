@@ -55,12 +55,26 @@ _query_thread(LPVOID param)
     IWbemLocator *locator = NULL;
     IWbemServices *services = NULL;
     IEnumWbemClassObject* enumerator = NULL;
+    HRESULT hr = S_OK;
     BSTR bstrQuery = NULL;
-    struct _query_data *data = (struct _query_data*)param;
+    _query_data data = *(struct _query_data*)param;
 
-    HRESULT hr = CoInitializeEx(nullptr, COINIT_APARTMENTTHREADED);
+    // gh-125315: Copy the query string first, so that if the main thread gives
+    // up on waiting we aren't left with a dangling pointer (and a likely crash)
+    bstrQuery = SysAllocString(data.query);
+    if (!bstrQuery) {
+        hr = HRESULT_FROM_WIN32(ERROR_NOT_ENOUGH_MEMORY);
+    }
+
+    if (SUCCEEDED(hr)) {
+        hr = CoInitializeEx(nullptr, COINIT_APARTMENTTHREADED);
+    }
+
     if (FAILED(hr)) {
-        CloseHandle(data->writePipe);
+        CloseHandle(data.writePipe);
+        if (bstrQuery) {
+            SysFreeString(bstrQuery);
+        }
         return (DWORD)hr;
     }
 
@@ -82,7 +96,7 @@ _query_thread(LPVOID param)
             IID_IWbemLocator, (LPVOID *)&locator
         );
     }
-    if (SUCCEEDED(hr) && !SetEvent(data->initEvent)) {
+    if (SUCCEEDED(hr) && !SetEvent(data.initEvent)) {
         hr = HRESULT_FROM_WIN32(GetLastError());
     }
     if (SUCCEEDED(hr)) {
@@ -91,7 +105,7 @@ _query_thread(LPVOID param)
             NULL, NULL, 0, NULL, 0, 0, &services
         );
     }
-    if (SUCCEEDED(hr) && !SetEvent(data->connectEvent)) {
+    if (SUCCEEDED(hr) && !SetEvent(data.connectEvent)) {
         hr = HRESULT_FROM_WIN32(GetLastError());
     }
     if (SUCCEEDED(hr)) {
@@ -100,12 +114,6 @@ _query_thread(LPVOID param)
             RPC_C_AUTHN_LEVEL_CALL, RPC_C_IMP_LEVEL_IMPERSONATE,
             NULL, EOAC_NONE
         );
-    }
-    if (SUCCEEDED(hr)) {
-        bstrQuery = SysAllocString(data->query);
-        if (!bstrQuery) {
-            hr = HRESULT_FROM_WIN32(ERROR_NOT_ENOUGH_MEMORY);
-        }
     }
     if (SUCCEEDED(hr)) {
         hr = services->ExecQuery(
@@ -135,7 +143,7 @@ _query_thread(LPVOID param)
         if (FAILED(hr) || got != 1 || !value) {
             continue;
         }
-        if (!startOfEnum && !WriteFile(data->writePipe, (LPVOID)L"\0", 2, &written, NULL)) {
+        if (!startOfEnum && !WriteFile(data.writePipe, (LPVOID)L"\0", 2, &written, NULL)) {
             hr = HRESULT_FROM_WIN32(GetLastError());
             break;
         }
@@ -163,10 +171,10 @@ _query_thread(LPVOID param)
                     DWORD cbStr1, cbStr2;
                     cbStr1 = (DWORD)(wcslen(propName) * sizeof(propName[0]));
                     cbStr2 = (DWORD)(wcslen(propStr) * sizeof(propStr[0]));
-                    if (!WriteFile(data->writePipe, propName, cbStr1, &written, NULL) ||
-                        !WriteFile(data->writePipe, (LPVOID)L"=", 2, &written, NULL) ||
-                        !WriteFile(data->writePipe, propStr, cbStr2, &written, NULL) ||
-                        !WriteFile(data->writePipe, (LPVOID)L"\0", 2, &written, NULL)
+                    if (!WriteFile(data.writePipe, propName, cbStr1, &written, NULL) ||
+                        !WriteFile(data.writePipe, (LPVOID)L"=", 2, &written, NULL) ||
+                        !WriteFile(data.writePipe, propStr, cbStr2, &written, NULL) ||
+                        !WriteFile(data.writePipe, (LPVOID)L"\0", 2, &written, NULL)
                     ) {
                         hr = HRESULT_FROM_WIN32(GetLastError());
                     }
@@ -192,7 +200,7 @@ _query_thread(LPVOID param)
         locator->Release();
     }
     CoUninitialize();
-    CloseHandle(data->writePipe);
+    CloseHandle(data.writePipe);
     return (DWORD)hr;
 }
 
@@ -216,6 +224,7 @@ wait_event(HANDLE event, DWORD timeout)
 
 
 /*[clinic input]
+@permit_long_docstring_body
 _wmi.exec_query
 
     query: unicode
@@ -228,11 +237,10 @@ by null characters.
 
 static PyObject *
 _wmi_exec_query_impl(PyObject *module, PyObject *query)
-/*[clinic end generated code: output=a62303d5bb5e003f input=48d2d0a1e1a7e3c2]*/
+/*[clinic end generated code: output=a62303d5bb5e003f input=621f5c50c56d06d0]*/
 
 /*[clinic end generated code]*/
 {
-    PyObject *result = NULL;
     HANDLE hThread = NULL;
     int err = 0;
     WCHAR buffer[8192];
@@ -279,9 +287,11 @@ _wmi_exec_query_impl(PyObject *module, PyObject *query)
     // a timeout.  The initEvent will be set after COM initialization, it will
     // take a longer time when first initialized.  The connectEvent will be set
     // after connected to WMI.
-    err = wait_event(data.initEvent, 1000);
     if (!err) {
-        err = wait_event(data.connectEvent, 100);
+        err = wait_event(data.initEvent, 1000);
+        if (!err) {
+            err = wait_event(data.connectEvent, 100);
+        }
     }
 
     while (!err) {
@@ -305,28 +315,33 @@ _wmi_exec_query_impl(PyObject *module, PyObject *query)
         CloseHandle(data.readPipe);
     }
 
-    // Allow the thread some time to clean up
-    switch (WaitForSingleObject(hThread, 100)) {
-    case WAIT_OBJECT_0:
-        // Thread ended cleanly
-        if (!GetExitCodeThread(hThread, (LPDWORD)&err)) {
-            err = GetLastError();
+    if (hThread) {
+        // Allow the thread some time to clean up
+        int thread_err;
+        switch (WaitForSingleObject(hThread, 100)) {
+        case WAIT_OBJECT_0:
+            // Thread ended cleanly
+            if (!GetExitCodeThread(hThread, (LPDWORD)&thread_err)) {
+                thread_err = GetLastError();
+            }
+            break;
+        case WAIT_TIMEOUT:
+            // Probably stuck - there's not much we can do, unfortunately
+            thread_err = WAIT_TIMEOUT;
+            break;
+        default:
+            thread_err = GetLastError();
+            break;
         }
-        break;
-    case WAIT_TIMEOUT:
-        // Probably stuck - there's not much we can do, unfortunately
+        // An error on our side is more likely to be relevant than one from
+        // the thread, but if we don't have one on our side we'll take theirs.
         if (err == 0 || err == ERROR_BROKEN_PIPE) {
-            err = WAIT_TIMEOUT;
+            err = thread_err;
         }
-        break;
-    default:
-        if (err == 0 || err == ERROR_BROKEN_PIPE) {
-            err = GetLastError();
-        }
-        break;
+
+        CloseHandle(hThread);
     }
 
-    CloseHandle(hThread);
     CloseHandle(data.initEvent);
     CloseHandle(data.connectEvent);
     hThread = NULL;
@@ -355,12 +370,18 @@ static PyMethodDef wmi_functions[] = {
     { NULL, NULL, 0, NULL }
 };
 
+static PyModuleDef_Slot wmi_slots[] = {
+    {Py_mod_gil, Py_MOD_GIL_NOT_USED},
+    {0, NULL},
+};
+
 static PyModuleDef wmi_def = {
     PyModuleDef_HEAD_INIT,
     "_wmi",
-    NULL,   // doc
-    0,      // m_size
-    wmi_functions
+    NULL,          // doc
+    0,             // m_size
+    wmi_functions, // m_methods
+    wmi_slots,     // m_slots
 };
 
 extern "C" {

@@ -26,6 +26,7 @@ def _iterdump(connection, *, filter=None):
 
     writeable_schema = False
     cu = connection.cursor()
+    cu.row_factory = None  # Make sure we get predictable results.
     # Disable foreign key constraints, if there is any foreign key violation.
     violations = cu.execute("PRAGMA foreign_key_check").fetchall()
     if violations:

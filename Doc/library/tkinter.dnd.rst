@@ -1,5 +1,5 @@
-:mod:`tkinter.dnd` --- Drag and drop support
-============================================
+:mod:`!tkinter.dnd` --- Drag and drop support
+=============================================
 
 .. module:: tkinter.dnd
    :platform: Tk
@@ -12,7 +12,7 @@
 .. note:: This is experimental and due to be deprecated when it is replaced
    with the Tk DND.
 
-The :mod:`tkinter.dnd` module provides drag-and-drop support for objects within
+The :mod:`!tkinter.dnd` module provides drag-and-drop support for objects within
 a single application, within the same window or between windows. To enable an
 object to be dragged, you must create an event binding for it that starts the
 drag-and-drop process. Typically, you bind a ButtonPress event to a callback
@@ -25,8 +25,8 @@ Selection of a target object occurs as follows:
 #. Top-down search of area under mouse for target widget
 
  * Target widget should have a callable *dnd_accept* attribute
- * If *dnd_accept* is not present or returns None, search moves to parent widget
- * If no target widget is found, then the target object is None
+ * If *dnd_accept* is not present or returns ``None``, search moves to parent widget
+ * If no target widget is found, then the target object is ``None``
 
 2. Call to *<old_target>.dnd_leave(source, event)*
 #. Call to *<new_target>.dnd_enter(source, event)*

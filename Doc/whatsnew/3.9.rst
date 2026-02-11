@@ -81,13 +81,13 @@ Interpreter improvements:
 * a number of Python builtins (range, tuple, set, frozenset, list, dict) are
   now sped up using :pep:`590` vectorcall;
 * garbage collection does not block on resurrected objects;
-* a number of Python modules (:mod:`_abc`, :mod:`!audioop`, :mod:`_bz2`,
-  :mod:`_codecs`, :mod:`_contextvars`, :mod:`!_crypt`, :mod:`_functools`,
-  :mod:`_json`, :mod:`_locale`, :mod:`math`, :mod:`operator`, :mod:`resource`,
-  :mod:`time`, :mod:`_weakref`) now use multiphase initialization as defined
+* a number of Python modules (:mod:`!_abc`, :mod:`!audioop`, :mod:`!_bz2`,
+  :mod:`!_codecs`, :mod:`!_contextvars`, :mod:`!_crypt`, :mod:`!_functools`,
+  :mod:`!_json`, :mod:`!_locale`, :mod:`math`, :mod:`operator`, :mod:`resource`,
+  :mod:`time`, :mod:`!_weakref`) now use multiphase initialization as defined
   by PEP 489;
 * a number of standard library modules (:mod:`!audioop`, :mod:`ast`, :mod:`grp`,
-  :mod:`_hashlib`, :mod:`pwd`, :mod:`_posixsubprocess`, :mod:`random`,
+  :mod:`!_hashlib`, :mod:`pwd`, :mod:`!_posixsubprocess`, :mod:`random`,
   :mod:`select`, :mod:`struct`, :mod:`termios`, :mod:`zlib`) are now using
   the stable ABI defined by PEP 384.
 
@@ -203,7 +203,7 @@ The :mod:`ast` module uses the new parser and produces the same AST as
 the old parser.
 
 In Python 3.10, the old parser will be deleted and so will all
-functionality that depends on it (primarily the :mod:`parser` module,
+functionality that depends on it (primarily the :mod:`!parser` module,
 which has long been deprecated).  In Python 3.9 *only*, you can switch
 back to the LL(1) parser using a command line switch (``-X
 oldparser``) or an environment variable (``PYTHONOLDPARSER=1``).
@@ -300,11 +300,8 @@ Example::
 
 
 As a fall-back source of data for platforms that don't ship the IANA database,
-the |tzdata|_ module was released as a first-party package -- distributed via
+the :pypi:`tzdata` module was released as a first-party package -- distributed via
 PyPI and maintained by the CPython core team.
-
-.. |tzdata| replace:: ``tzdata``
-.. _tzdata: https://pypi.org/project/tzdata/
 
 .. seealso::
 
@@ -355,7 +352,7 @@ that schedules a shutdown for the default executor that waits on the
 :func:`asyncio.run` has been updated to use the new :term:`coroutine`.
 (Contributed by Kyle Stanley in :issue:`34037`.)
 
-Added :class:`asyncio.PidfdChildWatcher`, a Linux-specific child watcher
+Added :class:`!asyncio.PidfdChildWatcher`, a Linux-specific child watcher
 implementation that polls process file descriptors. (:issue:`38692`)
 
 Added a new :term:`coroutine` :func:`asyncio.to_thread`. It is mainly used for
@@ -369,7 +366,7 @@ wait until the cancellation is complete also in the case when *timeout* is
 <= 0, like it does with positive timeouts.
 (Contributed by Elvis Pranskevichus in :issue:`32751`.)
 
-:mod:`asyncio` now raises :exc:`TyperError` when calling incompatible
+:mod:`asyncio` now raises :exc:`TypeError` when calling incompatible
 methods with an :class:`ssl.SSLSocket` socket.
 (Contributed by Ido Michael in :issue:`37404`.)
 
@@ -411,8 +408,8 @@ Added :func:`curses.get_escdelay`, :func:`curses.set_escdelay`,
 
 datetime
 --------
-The :meth:`~datetime.date.isocalendar()` of :class:`datetime.date`
-and :meth:`~datetime.datetime.isocalendar()` of :class:`datetime.datetime`
+The :meth:`~datetime.date.isocalendar` of :class:`datetime.date`
+and :meth:`~datetime.datetime.isocalendar` of :class:`datetime.datetime`
 methods now returns a :func:`~collections.namedtuple` instead of a :class:`tuple`.
 (Contributed by Donghee Na in :issue:`24416`.)
 
@@ -426,8 +423,8 @@ digests. It skips MD5 on platforms that block MD5 digest.
 fcntl
 -----
 
-Added constants :const:`~fcntl.F_OFD_GETLK`, :const:`~fcntl.F_OFD_SETLK`
-and :const:`~fcntl.F_OFD_SETLKW`.
+Added constants :const:`!fcntl.F_OFD_GETLK`, :const:`!fcntl.F_OFD_SETLK`
+and :const:`!fcntl.F_OFD_SETLKW`.
 (Contributed by Donghee Na in :issue:`38602`.)
 
 ftplib
@@ -592,7 +589,7 @@ a non-blocking socket. (Contributed by Donghee Na in :issue:`39259`.)
 os
 --
 
-Added :const:`~os.CLD_KILLED` and :const:`~os.CLD_STOPPED` for :attr:`si_code`.
+Added :const:`~os.CLD_KILLED` and :const:`~os.CLD_STOPPED` for :attr:`!si_code`.
 (Contributed by Donghee Na in :issue:`38493`.)
 
 Exposed the Linux-specific :func:`os.pidfd_open` (:issue:`38692`) and
@@ -613,7 +610,7 @@ convert a wait status to an exit code.
 pathlib
 -------
 
-Added :meth:`pathlib.Path.readlink()` which acts similarly to
+Added :meth:`pathlib.Path.readlink` which acts similarly to
 :func:`os.readlink`.
 (Contributed by Girts Folkmanis in :issue:`30618`)
 
@@ -640,13 +637,14 @@ pydoc
 -----
 
 The documentation string is now shown not only for class, function,
-method etc, but for any object that has its own ``__doc__`` attribute.
+method etc, but for any object that has its own :attr:`~definition.__doc__`
+attribute.
 (Contributed by Serhiy Storchaka in :issue:`40257`.)
 
 random
 ------
 
-Added a new :attr:`random.Random.randbytes` method: generate random bytes.
+Added a new :meth:`random.Random.randbytes` method: generate random bytes.
 (Contributed by Victor Stinner in :issue:`40286`.)
 
 signal
@@ -778,7 +776,7 @@ Optimizations
   :pep:`590` vectorcall protocol.
   (Contributed by Donghee Na, Mark Shannon, Jeroen Demeyer and Petr Viktorin in :issue:`37207`.)
 
-* Optimized :func:`~set.difference_update` for the case when the other set
+* Optimized :meth:`!set.difference_update` for the case when the other set
   is much larger than the base set.
   (Suggested by Evgeny Kapun with code contributed by Michele Orrù in :issue:`8425`.)
 
@@ -864,7 +862,7 @@ Deprecated
   Python versions it will raise a :exc:`TypeError` for all floats.
   (Contributed by Serhiy Storchaka in :issue:`37315`.)
 
-* The :mod:`parser` and :mod:`symbol` modules are deprecated and will be
+* The :mod:`!parser` and :mod:`!symbol` modules are deprecated and will be
   removed in future versions of Python. For the majority of use cases,
   users can leverage the Abstract Syntax Tree (AST) generation and compilation
   stage, using the :mod:`ast` module.
@@ -892,20 +890,20 @@ Deprecated
   it for writing and silencing a warning.
   (Contributed by Serhiy Storchaka in :issue:`28286`.)
 
-* Deprecated the ``split()`` method of :class:`_tkinter.TkappType` in
+* Deprecated the ``split()`` method of :class:`!_tkinter.TkappType` in
   favour of the ``splitlist()`` method which has more consistent and
-  predicable behavior.
+  predictable behavior.
   (Contributed by Serhiy Storchaka in :issue:`38371`.)
 
 * The explicit passing of coroutine objects to :func:`asyncio.wait` has been
   deprecated and will be removed in version 3.11.
   (Contributed by Yury Selivanov and Kyle Stanley in :issue:`34790`.)
 
-* binhex4 and hexbin4 standards are now deprecated. The :mod:`binhex` module
+* binhex4 and hexbin4 standards are now deprecated. The :mod:`!binhex` module
   and the following :mod:`binascii` functions are now deprecated:
 
-  * :func:`~binascii.b2a_hqx`, :func:`~binascii.a2b_hqx`
-  * :func:`~binascii.rlecode_hqx`, :func:`~binascii.rledecode_hqx`
+  * :func:`!b2a_hqx`, :func:`!a2b_hqx`
+  * :func:`!rlecode_hqx`, :func:`!rledecode_hqx`
 
   (Contributed by Victor Stinner in :issue:`39353`.)
 
@@ -953,7 +951,7 @@ Deprecated
 Removed
 =======
 
-* The erroneous version at :data:`unittest.mock.__version__` has been removed.
+* The erroneous version at :data:`!unittest.mock.__version__` has been removed.
 
 * :class:`!nntplib.NNTP`: ``xpath()`` and ``xgtitle()`` methods have been removed.
   These methods are deprecated since Python 3.3. Generally, these extensions
@@ -986,13 +984,13 @@ Removed
   (Contributed by Victor Stinner in :issue:`37312`.)
 
 * ``aifc.openfp()`` alias to ``aifc.open()``, ``sunau.openfp()`` alias to
-  ``sunau.open()``, and ``wave.openfp()`` alias to :func:`wave.open()` have been
+  ``sunau.open()``, and ``wave.openfp()`` alias to :func:`wave.open` have been
   removed. They were deprecated since Python 3.7.
   (Contributed by Victor Stinner in :issue:`37320`.)
 
-* The :meth:`~threading.Thread.isAlive()` method of :class:`threading.Thread`
+* The :meth:`!isAlive` method of :class:`threading.Thread`
   has been removed. It was deprecated since Python 3.8.
-  Use :meth:`~threading.Thread.is_alive()` instead.
+  Use :meth:`~threading.Thread.is_alive` instead.
   (Contributed by Donghee Na in :issue:`37804`.)
 
 * Methods ``getchildren()`` and ``getiterator()`` of classes
@@ -1038,7 +1036,7 @@ Removed
   ``asyncio.Condition`` and ``asyncio.Semaphore``.
   (Contributed by Andrew Svetlov in :issue:`34793`.)
 
-* The :func:`sys.getcounts` function, the ``-X showalloccount`` command line
+* The :func:`!sys.getcounts` function, the ``-X showalloccount`` command line
   option and the ``show_alloc_count`` field of the C structure
   :c:type:`PyConfig` have been removed. They required a special Python build by
   defining ``COUNT_ALLOCS`` macro.
@@ -1049,11 +1047,11 @@ Removed
   the ``__annotations__`` attribute instead.
   (Contributed by Serhiy Storchaka in :issue:`40182`.)
 
-* The :meth:`symtable.SymbolTable.has_exec` method has been removed. It was
+* The :meth:`!symtable.SymbolTable.has_exec` method has been removed. It was
   deprecated since 2006, and only returning ``False`` when it's called.
   (Contributed by Batuhan Taskaya in :issue:`40208`)
 
-* The :meth:`asyncio.Task.current_task` and :meth:`asyncio.Task.all_tasks`
+* The :meth:`!asyncio.Task.current_task` and :meth:`!asyncio.Task.all_tasks`
   have been removed. They were deprecated since Python 3.7 and you can use
   :func:`asyncio.current_task` and :func:`asyncio.all_tasks` instead.
   (Contributed by Rémi Lapeyre in :issue:`40967`)
@@ -1126,7 +1124,7 @@ Changes in the Python API
   ``logging.getLogger(__name__)`` in some top-level module called ``'root.py'``.
   (Contributed by Vinay Sajip in :issue:`37742`.)
 
-* Division handling of :class:`~pathlib.PurePath` now returns ``NotImplemented``
+* Division handling of :class:`~pathlib.PurePath` now returns :data:`NotImplemented`
   instead of raising a :exc:`TypeError` when passed something other than an
   instance of ``str`` or :class:`~pathlib.PurePath`.  This allows creating
   compatible classes that don't inherit from those mentioned types.
@@ -1163,7 +1161,8 @@ Changes in the C API
     .. code-block:: c
 
         int
-        foo_traverse(foo_struct *self, visitproc visit, void *arg) {
+        foo_traverse(PyObject *self, visitproc visit, void *arg)
+        {
         // Rest of the traverse function
         #if PY_VERSION_HEX >= 0x03090000
             // This was not needed before Python 3.9 (Python issue 35810 and 40217)
@@ -1205,7 +1204,7 @@ Changes in the C API
 CPython bytecode changes
 ------------------------
 
-* The :opcode:`LOAD_ASSERTION_ERROR` opcode was added for handling the
+* The :opcode:`!LOAD_ASSERTION_ERROR` opcode was added for handling the
   :keyword:`assert` statement. Previously, the assert statement would not work
   correctly if the :exc:`AssertionError` exception was being shadowed.
   (Contributed by Zackery Spytz in :issue:`34880`.)
@@ -1233,7 +1232,7 @@ Build Changes
 * The ``COUNT_ALLOCS`` special build macro has been removed.
   (Contributed by Victor Stinner in :issue:`39489`.)
 
-* On non-Windows platforms, the :c:func:`setenv` and :c:func:`unsetenv`
+* On non-Windows platforms, the :c:func:`!setenv` and :c:func:`!unsetenv`
   functions are now required to build Python.
   (Contributed by Victor Stinner in :issue:`39395`.)
 
@@ -1322,7 +1321,7 @@ New Features
   the garbage collector respectively.
   (Contributed by Pablo Galindo Salgado in :issue:`40241`.)
 
-* Added :c:func:`_PyObject_FunctionStr` to get a user-friendly string
+* Added :c:func:`!_PyObject_FunctionStr` to get a user-friendly string
   representation of a function-like object.
   (Patch by Jeroen Demeyer in :issue:`37645`.)
 
@@ -1364,7 +1363,7 @@ Porting to Python 3.9
   and refers to a constant string.
   (Contributed by Serhiy Storchaka in :issue:`38650`.)
 
-* The :c:type:`PyGC_Head` structure is now opaque. It is only defined in the
+* The :c:type:`!PyGC_Head` structure is now opaque. It is only defined in the
   internal C API (``pycore_gc.h``).
   (Contributed by Victor Stinner in :issue:`40241`.)
 
@@ -1387,12 +1386,12 @@ Porting to Python 3.9
 
   * :c:func:`PyObject_IS_GC` macro was converted to a function.
 
-  * The :c:func:`PyObject_NEW` macro becomes an alias to the
-    :c:macro:`PyObject_New` macro, and the :c:func:`PyObject_NEW_VAR` macro
+  * The :c:func:`!PyObject_NEW` macro becomes an alias to the
+    :c:macro:`PyObject_New` macro, and the :c:func:`!PyObject_NEW_VAR` macro
     becomes an alias to the :c:macro:`PyObject_NewVar` macro. They no longer
     access directly the :c:member:`PyTypeObject.tp_basicsize` member.
 
-  * :c:func:`PyObject_GET_WEAKREFS_LISTPTR` macro was converted to a function:
+  * :c:func:`!PyObject_GET_WEAKREFS_LISTPTR` macro was converted to a function:
     the macro accessed directly the :c:member:`PyTypeObject.tp_weaklistoffset`
     member.
 
@@ -1592,8 +1591,7 @@ Converting between :class:`int` and :class:`str` in bases other than 2
 (binary), 4, 8 (octal), 16 (hexadecimal), or 32 such as base 10 (decimal)
 now raises a :exc:`ValueError` if the number of digits in string form is
 above a limit to avoid potential denial of service attacks due to the
-algorithmic complexity. This is a mitigation for `CVE-2020-10735
-<https://cve.mitre.org/cgi-bin/cvename.cgi?name=CVE-2020-10735>`_.
+algorithmic complexity. This is a mitigation for :cve:`2020-10735`.
 This limit can be configured or disabled by environment variable, command
 line flag, or :mod:`sys` APIs. See the :ref:`integer string conversion
 length limitation <int_max_str_digits>` documentation.  The default limit

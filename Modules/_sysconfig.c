@@ -32,6 +32,7 @@ add_string_value(PyObject *dict, const char *key, const char *str_value)
 #endif
 
 /*[clinic input]
+@permit_long_summary
 _sysconfig.config_vars
 
 Returns a dictionary containing build variables intended to be exposed by sysconfig.
@@ -39,7 +40,7 @@ Returns a dictionary containing build variables intended to be exposed by syscon
 
 static PyObject *
 _sysconfig_config_vars_impl(PyObject *module)
-/*[clinic end generated code: output=9c41cdee63ea9487 input=391ff42f3af57d01]*/
+/*[clinic end generated code: output=9c41cdee63ea9487 input=fdda9cab12ca19fe]*/
 {
     PyObject *config = PyDict_New();
     if (config == NULL) {
@@ -67,6 +68,16 @@ _sysconfig_config_vars_impl(PyObject *module)
         return NULL;
     }
 
+#ifdef Py_DEBUG
+    PyObject *py_debug = _PyLong_GetOne();
+#else
+    PyObject *py_debug = _PyLong_GetZero();
+#endif
+    if (PyDict_SetItemString(config, "Py_DEBUG", py_debug) < 0) {
+        Py_DECREF(config);
+        return NULL;
+    }
+
     return config;
 }
 
@@ -80,6 +91,7 @@ static struct PyMethodDef sysconfig_methods[] = {
 
 static PyModuleDef_Slot sysconfig_slots[] = {
     {Py_mod_multiple_interpreters, Py_MOD_PER_INTERPRETER_GIL_SUPPORTED},
+    {Py_mod_gil, Py_MOD_GIL_NOT_USED},
     {0, NULL}
 };
 

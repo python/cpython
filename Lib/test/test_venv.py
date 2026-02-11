@@ -12,17 +12,19 @@ import os.path
 import pathlib
 import re
 import shutil
-import struct
 import subprocess
 import sys
 import sysconfig
 import tempfile
+import shlex
 from test.support import (captured_stdout, captured_stderr,
                           skip_if_broken_multiprocessing_synchronize, verbose,
-                          requires_subprocess, is_apple_mobile, is_emscripten,
-                          is_wasi, requires_venv_with_pip, TEST_HOME_DIR,
+                          requires_subprocess, is_android, is_apple_mobile,
+                          is_wasm32,
+                          requires_venv_with_pip, TEST_HOME_DIR,
                           requires_resource, copy_python_src_ignore)
-from test.support.os_helper import (can_symlink, EnvironmentVarGuard, rmtree)
+from test.support.os_helper import (can_symlink, EnvironmentVarGuard, rmtree,
+                                    TESTFN, FakePath)
 import unittest
 import venv
 from unittest.mock import patch, Mock
@@ -39,10 +41,8 @@ requireVenvCreate = unittest.skipUnless(
     or sys._base_executable != sys.executable,
     'cannot run venv.create from within a venv on this platform')
 
-# Skip tests on WASM platforms, plus iOS/tvOS/watchOS
-if is_apple_mobile or is_emscripten or is_wasi:
-    raise unittest.SkipTest(f"venv tests not required on {sys.platform}")
-
+if is_android or is_apple_mobile or is_wasm32:
+    raise unittest.SkipTest("venv is not available on this platform")
 
 @requires_subprocess()
 def check_output(cmd, encoding=None):
@@ -75,7 +75,7 @@ class BaseTest(unittest.TestCase):
             self.include = 'Include'
         else:
             self.bindir = 'bin'
-            self.lib = ('lib', 'python%d.%d' % sys.version_info[:2])
+            self.lib = ('lib', f'python{sysconfig._get_python_version_abi()}')
             self.include = 'include'
         executable = sys._base_executable
         self.exe = os.path.split(executable)[-1]
@@ -125,26 +125,21 @@ class BasicTest(BaseTest):
         self.run_with_capture(venv.create, self.env_dir)
         self._check_output_of_default_create()
 
-    def test_defaults_with_pathlib_path(self):
+    def test_defaults_with_pathlike(self):
         """
-        Test the create function with default arguments and a pathlib.Path path.
+        Test the create function with default arguments and a path-like path.
         """
         rmtree(self.env_dir)
-        self.run_with_capture(venv.create, pathlib.Path(self.env_dir))
+        self.run_with_capture(venv.create, FakePath(self.env_dir))
         self._check_output_of_default_create()
 
     def _check_output_of_default_create(self):
         self.isdir(self.bindir)
         self.isdir(self.include)
         self.isdir(*self.lib)
-        # Issue 21197
         p = self.get_env_file('lib64')
-        conditions = ((struct.calcsize('P') == 8) and (os.name == 'posix') and
-                      (sys.platform != 'darwin'))
-        if conditions:
-            self.assertTrue(os.path.islink(p))
-        else:
-            self.assertFalse(os.path.exists(p))
+        if os.path.exists(p):
+            self.assertFalse(os.path.islink(p))
         data = self.get_text_file_contents('pyvenv.cfg')
         executable = sys._base_executable
         path = os.path.dirname(executable)
@@ -227,25 +222,27 @@ class BasicTest(BaseTest):
         builder = venv.EnvBuilder()
         bin_path = 'bin'
         python_exe = os.path.split(sys.executable)[1]
+        expected_exe = os.path.basename(sys._base_executable)
+
         if sys.platform == 'win32':
             bin_path = 'Scripts'
             if os.path.normcase(os.path.splitext(python_exe)[0]).endswith('_d'):
-                python_exe = 'python_d.exe'
+                expected_exe = 'python_d'
             else:
-                python_exe = 'python.exe'
+                expected_exe = 'python'
+            python_exe = expected_exe + '.exe'
+
         with tempfile.TemporaryDirectory() as fake_env_dir:
             expect_exe = os.path.normcase(
-                os.path.join(fake_env_dir, bin_path, python_exe)
+                os.path.join(fake_env_dir, bin_path, expected_exe)
             )
             if sys.platform == 'win32':
                 expect_exe = os.path.normcase(os.path.realpath(expect_exe))
 
             def pip_cmd_checker(cmd, **kwargs):
-                cmd[0] = os.path.normcase(cmd[0])
                 self.assertEqual(
-                    cmd,
+                    cmd[1:],
                     [
-                        expect_exe,
                         '-m',
                         'pip',
                         'install',
@@ -253,6 +250,9 @@ class BasicTest(BaseTest):
                         'pip',
                     ]
                 )
+                exe_dir = os.path.normcase(os.path.dirname(cmd[0]))
+                expected_dir = os.path.normcase(os.path.dirname(expect_exe))
+                self.assertEqual(exe_dir, expected_dir)
 
             fake_context = builder.ensure_directories(fake_env_dir)
             with patch('venv.subprocess.check_output', pip_cmd_checker):
@@ -274,7 +274,8 @@ class BasicTest(BaseTest):
             ('base_exec_prefix', sys.base_exec_prefix)):
             cmd[2] = 'import sys; print(sys.%s)' % prefix
             out, err = check_output(cmd)
-            self.assertEqual(out.strip(), expected.encode(), prefix)
+            self.assertEqual(pathlib.Path(out.strip().decode()),
+                             pathlib.Path(expected), prefix)
 
     @requireVenvCreate
     def test_sysconfig(self):
@@ -487,6 +488,84 @@ class BasicTest(BaseTest):
             'import sys; print(sys.executable)'])
         self.assertEqual(out.strip(), envpy.encode())
 
+    # gh-124651: test quoted strings
+    @unittest.skipIf(os.name == 'nt', 'contains invalid characters on Windows')
+    def test_special_chars_bash(self):
+        """
+        Test that the template strings are quoted properly (bash)
+        """
+        rmtree(self.env_dir)
+        bash = shutil.which('bash')
+        if bash is None:
+            self.skipTest('bash required for this test')
+        env_name = '"\';&&$e|\'"'
+        env_dir = os.path.join(os.path.realpath(self.env_dir), env_name)
+        builder = venv.EnvBuilder(clear=True)
+        builder.create(env_dir)
+        activate = os.path.join(env_dir, self.bindir, 'activate')
+        test_script = os.path.join(self.env_dir, 'test_special_chars.sh')
+        with open(test_script, "w") as f:
+            f.write(f'source {shlex.quote(activate)}\n'
+                    'python -c \'import sys; print(sys.executable)\'\n'
+                    'python -c \'import os; print(os.environ["VIRTUAL_ENV"])\'\n'
+                    'deactivate\n')
+        out, err = check_output([bash, test_script])
+        lines = out.splitlines()
+        self.assertTrue(env_name.encode() in lines[0])
+        self.assertEndsWith(lines[1], env_name.encode())
+
+    # gh-124651: test quoted strings
+    @unittest.skipIf(os.name == 'nt', 'contains invalid characters on Windows')
+    @unittest.skipIf(sys.platform.startswith('netbsd'),
+                     "NetBSD csh fails with quoted special chars; see gh-139308")
+    def test_special_chars_csh(self):
+        """
+        Test that the template strings are quoted properly (csh)
+        """
+        rmtree(self.env_dir)
+        csh = shutil.which('tcsh') or shutil.which('csh')
+        if csh is None:
+            self.skipTest('csh required for this test')
+        env_name = '"\';&&$e|\'"'
+        env_dir = os.path.join(os.path.realpath(self.env_dir), env_name)
+        builder = venv.EnvBuilder(clear=True)
+        builder.create(env_dir)
+        activate = os.path.join(env_dir, self.bindir, 'activate.csh')
+        test_script = os.path.join(self.env_dir, 'test_special_chars.csh')
+        with open(test_script, "w") as f:
+            f.write(f'source {shlex.quote(activate)}\n'
+                    'python -c \'import sys; print(sys.executable)\'\n'
+                    'python -c \'import os; print(os.environ["VIRTUAL_ENV"])\'\n'
+                    'deactivate\n')
+        out, err = check_output([csh, test_script])
+        lines = out.splitlines()
+        self.assertTrue(env_name.encode() in lines[0])
+        self.assertEndsWith(lines[1], env_name.encode())
+
+    # gh-124651: test quoted strings on Windows
+    @unittest.skipUnless(os.name == 'nt', 'only relevant on Windows')
+    def test_special_chars_windows(self):
+        """
+        Test that the template strings are quoted properly on Windows
+        """
+        rmtree(self.env_dir)
+        env_name = "'&&^$e"
+        env_dir = os.path.join(os.path.realpath(self.env_dir), env_name)
+        builder = venv.EnvBuilder(clear=True)
+        builder.create(env_dir)
+        activate = os.path.join(env_dir, self.bindir, 'activate.bat')
+        test_batch = os.path.join(self.env_dir, 'test_special_chars.bat')
+        with open(test_batch, "w") as f:
+            f.write('@echo off\n'
+                    f'"{activate}" & '
+                    f'{self.exe} -c "import sys; print(sys.executable)" & '
+                    f'{self.exe} -c "import os; print(os.environ[\'VIRTUAL_ENV\'])" & '
+                    'deactivate')
+        out, err = check_output([test_batch])
+        lines = out.splitlines()
+        self.assertTrue(env_name.encode() in lines[0])
+        self.assertEndsWith(lines[1], env_name.encode())
+
     @unittest.skipUnless(os.name == 'nt', 'only relevant on Windows')
     def test_unicode_in_batch_file(self):
         """
@@ -502,6 +581,21 @@ class BasicTest(BaseTest):
             encoding='oem',
         )
         self.assertEqual(out.strip(), '0')
+
+    @unittest.skipUnless(os.name == 'nt' and can_symlink(),
+                         'symlinks on Windows')
+    def test_failed_symlink(self):
+        """
+        Test handling of failed symlinks on Windows.
+        """
+        rmtree(self.env_dir)
+        env_dir = os.path.join(os.path.realpath(self.env_dir), 'venv')
+        with patch('os.symlink') as mock_symlink:
+            mock_symlink.side_effect = OSError()
+            builder = venv.EnvBuilder(clear=True, symlinks=True)
+            _, err = self.run_with_capture(builder.create, env_dir)
+            filepath_regex = r"'[A-Z]:\\\\(?:[^\\\\]+\\\\)*[^\\\\]+'"
+            self.assertRegex(err, rf"Unable to symlink {filepath_regex} to {filepath_regex}")
 
     @requireVenvCreate
     def test_multiprocessing(self):
@@ -532,7 +626,7 @@ class BasicTest(BaseTest):
         rmtree(self.env_dir)
         self.run_with_capture(venv.create, self.env_dir)
         script = os.path.join(TEST_HOME_DIR, '_test_venv_multiprocessing.py')
-        subprocess.check_call([self.envpy(real_env_dir=True), script])
+        subprocess.check_call([self.envpy(real_env_dir=True), "-I", script])
 
     @unittest.skipIf(os.name == 'nt', 'not relevant on Windows')
     def test_deactivate_with_strict_bash_opts(self):
@@ -571,7 +665,7 @@ class BasicTest(BaseTest):
         rmtree(self.env_dir)
         bad_itempath = self.env_dir + os.pathsep
         self.assertRaises(ValueError, venv.create, bad_itempath)
-        self.assertRaises(ValueError, venv.create, pathlib.Path(bad_itempath))
+        self.assertRaises(ValueError, venv.create, FakePath(bad_itempath))
 
     @unittest.skipIf(os.name == 'nt', 'not relevant on Windows')
     @requireVenvCreate
@@ -588,11 +682,13 @@ class BasicTest(BaseTest):
         self.addCleanup(rmtree, non_installed_dir)
         bindir = os.path.join(non_installed_dir, self.bindir)
         os.mkdir(bindir)
-        shutil.copy2(sys.executable, bindir)
+        python_exe = os.path.basename(sys.executable)
+        shutil.copy2(sys.executable, os.path.join(bindir, python_exe))
         libdir = os.path.join(non_installed_dir, platlibdir, self.lib[1])
         os.makedirs(libdir)
         landmark = os.path.join(libdir, "os.py")
-        stdlib_zip = "python%d%d.zip" % sys.version_info[:2]
+        abi_thread = "t" if sysconfig.get_config_var("Py_GIL_DISABLED") else ""
+        stdlib_zip = f"python{sys.version_info.major}{sys.version_info.minor}{abi_thread}"
         zip_landmark = os.path.join(non_installed_dir,
                                     platlibdir,
                                     stdlib_zip)
@@ -623,7 +719,7 @@ class BasicTest(BaseTest):
             else:
                 additional_pythonpath_for_non_installed.append(
                     eachpath)
-        cmd = [os.path.join(non_installed_dir, self.bindir, self.exe),
+        cmd = [os.path.join(non_installed_dir, self.bindir, python_exe),
                "-m",
                "venv",
                "--without-pip",
@@ -654,7 +750,8 @@ class BasicTest(BaseTest):
         subprocess.check_call(cmd, env=child_env)
         # Now check the venv created from the non-installed python has
         # correct zip path in pythonpath.
-        cmd = [self.envpy(), '-S', '-c', 'import sys; print(sys.path)']
+        target_python = os.path.join(self.env_dir, self.bindir, python_exe)
+        cmd = [target_python, '-S', '-c', 'import sys; print(sys.path)']
         out, err = check_output(cmd)
         self.assertTrue(zip_landmark.encode() in out)
 
@@ -673,7 +770,7 @@ class BasicTest(BaseTest):
         with open(script_path, 'rb') as script:
             for i, line in enumerate(script, 1):
                 error_message = f"CR LF found in line {i}"
-                self.assertFalse(line.endswith(b'\r\n'), error_message)
+                self.assertNotEndsWith(line, b'\r\n', error_message)
 
     @requireVenvCreate
     def test_scm_ignore_files_git(self):
@@ -743,6 +840,57 @@ class BasicTest(BaseTest):
 
         with self.assertRaises(FileNotFoundError):
             self.get_text_file_contents('.gitignore')
+
+    def test_venv_same_path(self):
+        same_path = venv.EnvBuilder._same_path
+        if sys.platform == 'win32':
+            # Case-insensitive, and handles short/long names
+            tests = [
+                (True, TESTFN, TESTFN),
+                (True, TESTFN.lower(), TESTFN.upper()),
+            ]
+            import _winapi
+            # ProgramFiles is the most reliable path that will have short/long
+            progfiles = os.getenv('ProgramFiles')
+            if progfiles:
+                tests = [
+                    *tests,
+                    (True, progfiles, progfiles),
+                    (True, _winapi.GetShortPathName(progfiles), _winapi.GetLongPathName(progfiles)),
+                ]
+        else:
+            # Just a simple case-sensitive comparison
+            tests = [
+                (True, TESTFN, TESTFN),
+                (False, TESTFN.lower(), TESTFN.upper()),
+            ]
+        for r, path1, path2 in tests:
+            with self.subTest(f"{path1}-{path2}"):
+                if r:
+                    self.assertTrue(same_path(path1, path2))
+                else:
+                    self.assertFalse(same_path(path1, path2))
+
+    # gh-126084: venvwlauncher should run pythonw, not python
+    @requireVenvCreate
+    @unittest.skipUnless(os.name == 'nt', 'only relevant on Windows')
+    def test_venvwlauncher(self):
+        """
+        Test that the GUI launcher runs the GUI python.
+        """
+        rmtree(self.env_dir)
+        venv.create(self.env_dir)
+        exename = self.exe
+        # Retain the debug suffix if present
+        if "python" in exename and not "pythonw" in exename:
+            exename = exename.replace("python", "pythonw")
+        envpyw = os.path.join(self.env_dir, self.bindir, exename)
+        try:
+            subprocess.check_call([envpyw, "-c", "import sys; "
+                "assert sys._base_executable.endswith('%s')" % exename])
+        except subprocess.CalledProcessError:
+            self.fail("venvwlauncher.exe did not run %s" % exename)
+
 
 @requireVenvCreate
 class EnsurePipTest(BaseTest):
@@ -826,7 +974,7 @@ class EnsurePipTest(BaseTest):
         self.assertEqual(err, "")
         out = out.decode("latin-1") # Force to text, prevent decoding errors
         expected_version = "pip {}".format(ensurepip.version())
-        self.assertEqual(out[:len(expected_version)], expected_version)
+        self.assertStartsWith(out, expected_version)
         env_dir = os.fsencode(self.env_dir).decode("latin-1")
         self.assertIn(env_dir, out)
 
@@ -854,6 +1002,14 @@ class EnsurePipTest(BaseTest):
         err = re.sub("^(WARNING: )?The directory .* or its parent directory "
                      "is not owned or is not writable by the current user.*$", "",
                      err, flags=re.MULTILINE)
+        # Ignore warning about missing optional module:
+        try:
+            import ssl  # noqa: F401
+        except ImportError:
+            err = re.sub(
+                "^WARNING: Disabling truststore since ssl support is missing$",
+                "",
+                err, flags=re.MULTILINE)
         self.assertEqual(err.rstrip(), "")
         # Being fairly specific regarding the expected behaviour for the
         # initial bundling phase in Python 3.4. If the output changes in

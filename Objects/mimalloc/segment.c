@@ -718,7 +718,7 @@ static mi_page_t* mi_segment_span_allocate(mi_segment_t* segment, size_t slice_i
   // set slice back pointers for the first MI_MAX_SLICE_OFFSET entries
   size_t extra = slice_count-1;
   if (extra > MI_MAX_SLICE_OFFSET) extra = MI_MAX_SLICE_OFFSET;
-  if (slice_index + extra >= segment->slice_entries) extra = segment->slice_entries - slice_index - 1;  // huge objects may have more slices than avaiable entries in the segment->slices
+  if (slice_index + extra >= segment->slice_entries) extra = segment->slice_entries - slice_index - 1;  // huge objects may have more slices than available entries in the segment->slices
 
   mi_slice_t* slice_next = slice + 1;
   for (size_t i = 1; i <= extra; i++, slice_next++) {
@@ -814,6 +814,9 @@ static mi_segment_t* mi_segment_os_alloc( size_t required, size_t page_alignment
     const size_t extra = align_offset - info_size;
     // recalculate due to potential guard pages
     *psegment_slices = mi_segment_calculate_slices(required + extra, ppre_size, pinfo_slices);
+
+    // mi_page_t.slice_count type is uint32_t
+    if (*psegment_slices > (size_t)UINT32_MAX) return NULL;
   }
 
   const size_t segment_size = (*psegment_slices) * MI_SEGMENT_SLICE_SIZE;
@@ -864,6 +867,9 @@ static mi_segment_t* mi_segment_alloc(size_t required, size_t page_alignment, mi
   size_t info_slices;
   size_t pre_size;
   size_t segment_slices = mi_segment_calculate_slices(required, &pre_size, &info_slices);
+
+  // mi_page_t.slice_count type is uint32_t
+  if (segment_slices > (size_t)UINT32_MAX) return NULL;
 
   // Commit eagerly only if not the first N lazy segments (to reduce impact of many threads that allocate just a little)
   const bool eager_delay = (// !_mi_os_has_overcommit() &&             // never delay on overcommit systems
@@ -982,6 +988,10 @@ static mi_slice_t* mi_segment_page_clear(mi_page_t* page, mi_segments_tld_t* tld
   mi_assert_internal(mi_page_all_free(page));
   mi_segment_t* segment = _mi_ptr_segment(page);
   mi_assert_internal(segment->used > 0);
+#ifdef Py_GIL_DISABLED
+  mi_assert_internal(page->qsbr_goal == 0);
+  mi_assert_internal(page->qsbr_node.next == NULL);
+#endif
 
   size_t inuse = page->capacity * mi_page_block_size(page);
   _mi_stat_decrease(&tld->stats->page_committed, inuse);
@@ -1270,10 +1280,13 @@ static bool mi_segment_check_free(mi_segment_t* segment, size_t slices_needed, s
       // ensure used count is up to date and collect potential concurrent frees
       mi_page_t* const page = mi_slice_to_page(slice);
       _mi_page_free_collect(page, false);
-      if (mi_page_all_free(page)) {
+      if (mi_page_all_free(page) && _PyMem_mi_page_is_safe_to_free(page)) {
         // if this page is all free now, free it without adding to any queues (yet)
         mi_assert_internal(page->next == NULL && page->prev==NULL);
         _mi_stat_decrease(&tld->stats->pages_abandoned, 1);
+#ifdef Py_GIL_DISABLED
+        page->qsbr_goal = 0;
+#endif
         segment->abandoned--;
         slice = mi_segment_page_clear(page, tld); // re-assign slice due to coalesce!
         mi_assert_internal(!mi_slice_is_used(slice));
@@ -1344,15 +1357,18 @@ static mi_segment_t* mi_segment_reclaim(mi_segment_t* segment, mi_heap_t* heap, 
       mi_page_set_heap(page, target_heap);
       _mi_page_use_delayed_free(page, MI_USE_DELAYED_FREE, true); // override never (after heap is set)
       _mi_page_free_collect(page, false); // ensure used count is up to date
-      if (mi_page_all_free(page)) {
+      if (mi_page_all_free(page) && _PyMem_mi_page_is_safe_to_free(page)) {
         // if everything free by now, free the page
+#ifdef Py_GIL_DISABLED
+        page->qsbr_goal = 0;
+#endif
         slice = mi_segment_page_clear(page, tld);   // set slice again due to coalesceing
       }
       else {
         // otherwise reclaim it into the heap
         _mi_page_reclaim(target_heap, page);
         if (requested_block_size == page->xblock_size && mi_page_has_any_available(page) &&
-            heap == target_heap) {
+            requested_block_size <= MI_MEDIUM_OBJ_SIZE_MAX && heap == target_heap) {
           if (right_page_reclaimed != NULL) { *right_page_reclaimed = true; }
         }
       }

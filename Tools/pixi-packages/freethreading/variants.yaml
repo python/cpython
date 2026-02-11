@@ -1,0 +1,6 @@
+variant:
+  - freethreading
+abi_tag:
+  - cp315t
+version:
+  - 3.15

@@ -314,9 +314,9 @@ class FTP:
         port = sock.getsockname()[1] # Get proper port
         host = self.sock.getsockname()[0] # Get proper host
         if self.af == socket.AF_INET:
-            resp = self.sendport(host, port)
+            self.sendport(host, port)
         else:
-            resp = self.sendeprt(host, port)
+            self.sendeprt(host, port)
         if self.timeout is not _GLOBAL_DEFAULT_TIMEOUT:
             sock.settimeout(self.timeout)
         return sock
@@ -343,7 +343,7 @@ class FTP:
         connection and the expected size of the transfer.  The
         expected size may be None if it could not be determined.
 
-        Optional `rest' argument can be a string that is sent as the
+        Optional 'rest' argument can be a string that is sent as the
         argument to a REST command.  This is essentially a server
         marker used to tell the server to skip over any data up to the
         given marker.
@@ -455,7 +455,7 @@ class FTP:
         """
         if callback is None:
             callback = print_line
-        resp = self.sendcmd('TYPE A')
+        self.sendcmd('TYPE A')
         with self.transfercmd(cmd) as conn, \
                  conn.makefile('r', encoding=self.encoding) as fp:
             while 1:
@@ -951,7 +951,7 @@ def test():
         elif file[:2] == '-d':
             cmd = 'CWD'
             if file[2:]: cmd = cmd + ' ' + file[2:]
-            resp = ftp.sendcmd(cmd)
+            ftp.sendcmd(cmd)
         elif file == '-p':
             ftp.set_pasv(not ftp.passiveserver)
         else:

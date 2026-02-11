@@ -2,6 +2,7 @@
 """
 Check the output of running Sphinx in nit-picky mode (missing references).
 """
+
 from __future__ import annotations
 
 import argparse
@@ -12,6 +13,9 @@ import subprocess
 import sys
 from pathlib import Path
 from typing import TextIO
+
+# Fail if NEWS nit found before this line number
+NEWS_NIT_THRESHOLD = 8550
 
 # Exclude these whether they're dirty or clean,
 # because they trigger a rebuild of dirty files.
@@ -203,7 +207,9 @@ def annotate_diff(
 
 
 def fail_if_regression(
-    warnings: list[str], files_with_expected_nits: set[str], files_with_nits: set[str]
+    warnings: list[str],
+    files_with_expected_nits: set[str],
+    files_with_nits: set[str],
 ) -> int:
     """
     Ensure some files always pass Sphinx nit-picky mode (no missing references).
@@ -245,6 +251,26 @@ def fail_if_improved(
     return 0
 
 
+def fail_if_new_news_nit(warnings: list[str], threshold: int) -> int:
+    """
+    Ensure no warnings are found in the NEWS file before a given line number.
+    """
+    news_nits = (warning for warning in warnings if "/build/NEWS:" in warning)
+
+    # Nits found before the threshold line
+    new_news_nits = [
+        nit for nit in news_nits if int(nit.split(":")[1]) <= threshold
+    ]
+
+    if new_news_nits:
+        print("\nError: new NEWS nits:\n")
+        for warning in new_news_nits:
+            print(warning)
+        return -1
+
+    return 0
+
+
 def main(argv: list[str] | None = None) -> int:
     parser = argparse.ArgumentParser()
     parser.add_argument(
@@ -264,6 +290,14 @@ def main(argv: list[str] | None = None) -> int:
         action="store_true",
         help="Fail if new files with no nits are found",
     )
+    parser.add_argument(
+        "--fail-if-new-news-nit",
+        metavar="threshold",
+        type=int,
+        nargs="?",
+        const=NEWS_NIT_THRESHOLD,
+        help="Fail if new NEWS nit found before threshold line number",
+    )
 
     args = parser.parse_args(argv)
     if args.annotate_diff is not None and len(args.annotate_diff) > 2:
@@ -274,10 +308,14 @@ def main(argv: list[str] | None = None) -> int:
     exit_code = 0
 
     wrong_directory_msg = "Must run this script from the repo root"
-    assert Path("Doc").exists() and Path("Doc").is_dir(), wrong_directory_msg
+    if not Path("Doc").exists() or not Path("Doc").is_dir():
+        raise RuntimeError(wrong_directory_msg)
 
-    with Path("Doc/sphinx-warnings.txt").open(encoding="UTF-8") as f:
-        warnings = f.read().splitlines()
+    warnings = (
+        Path("Doc/sphinx-warnings.txt")
+        .read_text(encoding="UTF-8")
+        .splitlines()
+    )
 
     cwd = str(Path.cwd()) + os.path.sep
     files_with_nits = {
@@ -302,7 +340,12 @@ def main(argv: list[str] | None = None) -> int:
         )
 
     if args.fail_if_improved:
-        exit_code += fail_if_improved(files_with_expected_nits, files_with_nits)
+        exit_code += fail_if_improved(
+            files_with_expected_nits, files_with_nits
+        )
+
+    if args.fail_if_new_news_nit:
+        exit_code += fail_if_new_news_nit(warnings, args.fail_if_new_news_nit)
 
     return exit_code
 

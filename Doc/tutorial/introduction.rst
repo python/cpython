@@ -13,10 +13,9 @@ end a multi-line command.
 
 .. only:: html
 
-   You can toggle the display of prompts and output by clicking on ``>>>``
-   in the upper-right corner of an example box.  If you hide the prompts
-   and output for an example, then you can easily copy and paste the input
-   lines into your interpreter.
+   You can use the "Copy" button (it appears in the upper-right corner
+   when hovering over or tapping a code example), which strips prompts
+   and omits output, to copy and paste the input lines into your interpreter.
 
 .. index:: single: # (hash); comment
 
@@ -50,7 +49,7 @@ primary prompt, ``>>>``.  (It shouldn't take long.)
 Numbers
 -------
 
-The interpreter acts as a simple calculator: you can type an expression at it
+The interpreter acts as a simple calculator: you can type an expression into it
 and it will write the value.  Expression syntax is straightforward: the
 operators ``+``, ``-``, ``*`` and ``/`` can be used to perform
 arithmetic; parentheses (``()``) can be used for grouping.
@@ -62,7 +61,7 @@ For example::
    20
    >>> (50 - 5*6) / 4
    5.0
-   >>> 8 / 5  # division always returns a floating point number
+   >>> 8 / 5  # division always returns a floating-point number
    1.6
 
 The integer numbers (e.g. ``2``, ``4``, ``20``) have type :class:`int`,
@@ -147,6 +146,8 @@ Python can manipulate text (represented by type :class:`str`, so-called
 "``Yay! :)``". They can be enclosed in single quotes (``'...'``) or double
 quotes (``"..."``) with the same result [#]_.
 
+.. code-block:: pycon
+
    >>> 'spam eggs'  # single quotes
    'spam eggs'
    >>> "Paris rabbit got your back :)! Yay!"  # double quotes
@@ -195,23 +196,21 @@ an odd number of ``\`` characters; see
 and workarounds.
 
 String literals can span multiple lines.  One way is using triple-quotes:
-``"""..."""`` or ``'''...'''``.  End of lines are automatically
+``"""..."""`` or ``'''...'''``.  End-of-line characters are automatically
 included in the string, but it's possible to prevent this by adding a ``\`` at
-the end of the line.  The following example::
+the end of the line.  In the following example, the initial newline is not
+included::
 
-   print("""\
+   >>> print("""\
+   ... Usage: thingy [OPTIONS]
+   ...      -h                        Display this usage message
+   ...      -H hostname               Hostname to connect to
+   ... """)
    Usage: thingy [OPTIONS]
         -h                        Display this usage message
         -H hostname               Hostname to connect to
-   """)
 
-produces the following output (note that the initial newline is not included):
-
-.. code-block:: text
-
-   Usage: thingy [OPTIONS]
-        -h                        Display this usage message
-        -H hostname               Hostname to connect to
+   >>>
 
 Strings can be concatenated (glued together) with the ``+`` operator, and
 repeated with ``*``::
@@ -405,13 +404,6 @@ indexed and sliced::
    >>> squares[-3:]  # slicing returns a new list
    [9, 16, 25]
 
-All slice operations return a new list containing the requested elements.  This
-means that the following slice returns a
-:ref:`shallow copy <shallow_vs_deep_copy>` of the list::
-
-   >>> squares[:]
-   [1, 4, 9, 16, 25]
-
 Lists also support operations like concatenation::
 
    >>> squares + [36, 49, 64, 81, 100]
@@ -428,12 +420,36 @@ type, i.e. it is possible to change their content::
     [1, 8, 27, 64, 125]
 
 You can also add new items at the end of the list, by using
-the :meth:`!list.append` *method* (we will see more about methods later)::
+the :meth:`list.append` *method* (we will see more about methods later)::
 
    >>> cubes.append(216)  # add the cube of 6
    >>> cubes.append(7 ** 3)  # and the cube of 7
    >>> cubes
    [1, 8, 27, 64, 125, 216, 343]
+
+Simple assignment in Python never copies data. When you assign a list
+to a variable, the variable refers to the *existing list*.
+Any changes you make to the list through one variable will be seen
+through all other variables that refer to it.::
+
+   >>> rgb = ["Red", "Green", "Blue"]
+   >>> rgba = rgb
+   >>> id(rgb) == id(rgba)  # they reference the same object
+   True
+   >>> rgba.append("Alph")
+   >>> rgb
+   ["Red", "Green", "Blue", "Alph"]
+
+All slice operations return a new list containing the requested elements.  This
+means that the following slice returns a
+:ref:`shallow copy <shallow_vs_deep_copy>` of the list::
+
+   >>> correct_rgba = rgba[:]
+   >>> correct_rgba[-1] = "Alpha"
+   >>> correct_rgba
+   ["Red", "Green", "Blue", "Alpha"]
+   >>> rgba
+   ["Red", "Green", "Blue", "Alph"]
 
 Assignment to slices is also possible, and this can even change the size of the
 list or clear it entirely::
@@ -484,8 +500,8 @@ together.  For instance, we can write an initial sub-sequence of the
 as follows::
 
    >>> # Fibonacci series:
-   ... # the sum of two elements defines the next
-   ... a, b = 0, 1
+   >>> # the sum of two elements defines the next
+   >>> a, b = 0, 1
    >>> while a < 10:
    ...     print(a)
    ...     a, b = b, a+b
@@ -527,7 +543,7 @@ This example introduces several new features.
 * The :func:`print` function writes the value of the argument(s) it is given.
   It differs from just writing the expression you want to write (as we did
   earlier in the calculator examples) in the way it handles multiple arguments,
-  floating point quantities, and strings.  Strings are printed without quotes,
+  floating-point quantities, and strings.  Strings are printed without quotes,
   and a space is inserted between items, so you can format things nicely, like
   this::
 

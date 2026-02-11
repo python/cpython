@@ -22,9 +22,11 @@ long_new(PyTypeObject *type, PyObject *args, PyObject *kwargs)
     static struct {
         PyGC_Head _this_is_not_used;
         PyObject_VAR_HEAD
+        Py_hash_t ob_hash;
         PyObject *ob_item[NUM_KEYWORDS];
     } _kwtuple = {
         .ob_base = PyVarObject_HEAD_INIT(&PyTuple_Type, NUM_KEYWORDS)
+        .ob_hash = -1,
         .ob_item = { &_Py_ID(base), },
     };
     #undef NUM_KEYWORDS
@@ -48,7 +50,8 @@ long_new(PyTypeObject *type, PyObject *args, PyObject *kwargs)
     PyObject *x = NULL;
     PyObject *obase = NULL;
 
-    fastargs = _PyArg_UnpackKeywords(_PyTuple_CAST(args)->ob_item, nargs, kwargs, NULL, &_parser, 0, 2, 0, argsbuf);
+    fastargs = _PyArg_UnpackKeywords(_PyTuple_CAST(args)->ob_item, nargs, kwargs, NULL, &_parser,
+            /*minpos*/ 0, /*maxpos*/ 2, /*minkw*/ 0, /*varpos*/ 0, argsbuf);
     if (!fastargs) {
         goto exit;
     }
@@ -116,7 +119,7 @@ exit:
 }
 
 PyDoc_STRVAR(int___round____doc__,
-"__round__($self, ndigits=<unrepresentable>, /)\n"
+"__round__($self, ndigits=None, /)\n"
 "--\n"
 "\n"
 "Rounding an Integral returns itself.\n"
@@ -133,7 +136,7 @@ static PyObject *
 int___round__(PyObject *self, PyObject *const *args, Py_ssize_t nargs)
 {
     PyObject *return_value = NULL;
-    PyObject *o_ndigits = NULL;
+    PyObject *o_ndigits = Py_None;
 
     if (!_PyArg_CheckPositional("__round__", nargs, 0, 1)) {
         goto exit;
@@ -267,7 +270,7 @@ PyDoc_STRVAR(int_to_bytes__doc__,
 "    the most significant byte is at the beginning of the byte array.  If\n"
 "    byteorder is \'little\', the most significant byte is at the end of the\n"
 "    byte array.  To request the native byte order of the host system, use\n"
-"    `sys.byteorder\' as the byte order value.  Default is to use \'big\'.\n"
+"    sys.byteorder as the byte order value.  Default is to use \'big\'.\n"
 "  signed\n"
 "    Determines whether two\'s complement is used to represent the integer.\n"
 "    If signed is False and a negative integer is given, an OverflowError\n"
@@ -290,9 +293,11 @@ int_to_bytes(PyObject *self, PyObject *const *args, Py_ssize_t nargs, PyObject *
     static struct {
         PyGC_Head _this_is_not_used;
         PyObject_VAR_HEAD
+        Py_hash_t ob_hash;
         PyObject *ob_item[NUM_KEYWORDS];
     } _kwtuple = {
         .ob_base = PyVarObject_HEAD_INIT(&PyTuple_Type, NUM_KEYWORDS)
+        .ob_hash = -1,
         .ob_item = { &_Py_ID(length), &_Py_ID(byteorder), &_Py_ID(signed), },
     };
     #undef NUM_KEYWORDS
@@ -315,7 +320,8 @@ int_to_bytes(PyObject *self, PyObject *const *args, Py_ssize_t nargs, PyObject *
     PyObject *byteorder = NULL;
     int is_signed = 0;
 
-    args = _PyArg_UnpackKeywords(args, nargs, NULL, kwnames, &_parser, 0, 2, 0, argsbuf);
+    args = _PyArg_UnpackKeywords(args, nargs, NULL, kwnames, &_parser,
+            /*minpos*/ 0, /*maxpos*/ 2, /*minkw*/ 0, /*varpos*/ 0, argsbuf);
     if (!args) {
         goto exit;
     }
@@ -334,6 +340,11 @@ int_to_bytes(PyObject *self, PyObject *const *args, Py_ssize_t nargs, PyObject *
                 goto exit;
             }
             length = ival;
+            if (length < 0) {
+                PyErr_SetString(PyExc_ValueError,
+                                "length cannot be negative");
+                goto exit;
+            }
         }
         if (!--noptargs) {
             goto skip_optional_pos;
@@ -380,7 +391,7 @@ PyDoc_STRVAR(int_from_bytes__doc__,
 "    the most significant byte is at the beginning of the byte array.  If\n"
 "    byteorder is \'little\', the most significant byte is at the end of the\n"
 "    byte array.  To request the native byte order of the host system, use\n"
-"    `sys.byteorder\' as the byte order value.  Default is to use \'big\'.\n"
+"    sys.byteorder as the byte order value.  Default is to use \'big\'.\n"
 "  signed\n"
 "    Indicates whether two\'s complement is used to represent the integer.");
 
@@ -392,7 +403,7 @@ int_from_bytes_impl(PyTypeObject *type, PyObject *bytes_obj,
                     PyObject *byteorder, int is_signed);
 
 static PyObject *
-int_from_bytes(PyTypeObject *type, PyObject *const *args, Py_ssize_t nargs, PyObject *kwnames)
+int_from_bytes(PyObject *type, PyObject *const *args, Py_ssize_t nargs, PyObject *kwnames)
 {
     PyObject *return_value = NULL;
     #if defined(Py_BUILD_CORE) && !defined(Py_BUILD_CORE_MODULE)
@@ -401,9 +412,11 @@ int_from_bytes(PyTypeObject *type, PyObject *const *args, Py_ssize_t nargs, PyOb
     static struct {
         PyGC_Head _this_is_not_used;
         PyObject_VAR_HEAD
+        Py_hash_t ob_hash;
         PyObject *ob_item[NUM_KEYWORDS];
     } _kwtuple = {
         .ob_base = PyVarObject_HEAD_INIT(&PyTuple_Type, NUM_KEYWORDS)
+        .ob_hash = -1,
         .ob_item = { &_Py_ID(bytes), &_Py_ID(byteorder), &_Py_ID(signed), },
     };
     #undef NUM_KEYWORDS
@@ -426,7 +439,8 @@ int_from_bytes(PyTypeObject *type, PyObject *const *args, Py_ssize_t nargs, PyOb
     PyObject *byteorder = NULL;
     int is_signed = 0;
 
-    args = _PyArg_UnpackKeywords(args, nargs, NULL, kwnames, &_parser, 1, 2, 0, argsbuf);
+    args = _PyArg_UnpackKeywords(args, nargs, NULL, kwnames, &_parser,
+            /*minpos*/ 1, /*maxpos*/ 2, /*minkw*/ 0, /*varpos*/ 0, argsbuf);
     if (!args) {
         goto exit;
     }
@@ -453,7 +467,7 @@ skip_optional_pos:
         goto exit;
     }
 skip_optional_kwonly:
-    return_value = int_from_bytes_impl(type, bytes_obj, byteorder, is_signed);
+    return_value = int_from_bytes_impl((PyTypeObject *)type, bytes_obj, byteorder, is_signed);
 
 exit:
     return return_value;
@@ -476,4 +490,4 @@ int_is_integer(PyObject *self, PyObject *Py_UNUSED(ignored))
 {
     return int_is_integer_impl(self);
 }
-/*[clinic end generated code: output=7e6e57246e55911f input=a9049054013a1b77]*/
+/*[clinic end generated code: output=e68f4e23ead3f649 input=a9049054013a1b77]*/

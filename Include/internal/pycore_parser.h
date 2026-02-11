@@ -13,20 +13,6 @@ extern "C" {
 #include "pycore_global_strings.h"  // _Py_DECLARE_STR()
 #include "pycore_pyarena.h"         // PyArena
 
-
-#ifdef Py_DEBUG
-#define _PYPEGEN_NSTATISTICS 2000
-#endif
-
-struct _parser_runtime_state {
-#ifdef Py_DEBUG
-    long memo_statistics[_PYPEGEN_NSTATISTICS];
-#else
-    int _not_used;
-#endif
-    struct _expr dummy_name;
-};
-
 _Py_DECLARE_STR(empty, "")
 #define _parser_runtime_state_INIT \
     { \
@@ -46,7 +32,8 @@ extern struct _mod* _PyParser_ASTFromString(
     PyObject* filename,
     int mode,
     PyCompilerFlags *flags,
-    PyArena *arena);
+    PyArena *arena,
+    PyObject *module);
 
 extern struct _mod* _PyParser_ASTFromFile(
     FILE *fp,

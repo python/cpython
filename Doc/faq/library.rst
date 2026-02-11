@@ -541,91 +541,12 @@ Thus, to read *n* bytes from a pipe *p* created with :func:`os.popen`, you need 
 use ``p.read(n)``.
 
 
-.. XXX update to use subprocess. See the :ref:`subprocess-replacements` section.
-
-   How do I run a subprocess with pipes connected to both input and output?
-   ------------------------------------------------------------------------
-
-   Use the :mod:`popen2` module.  For example::
-
-      import popen2
-      fromchild, tochild = popen2.popen2("command")
-      tochild.write("input\n")
-      tochild.flush()
-      output = fromchild.readline()
-
-   Warning: in general it is unwise to do this because you can easily cause a
-   deadlock where your process is blocked waiting for output from the child
-   while the child is blocked waiting for input from you.  This can be caused
-   by the parent expecting the child to output more text than it does or
-   by data being stuck in stdio buffers due to lack of flushing.
-   The Python parent can of course explicitly flush the data it sends to the
-   child before it reads any output, but if the child is a naive C program it
-   may have been written to never explicitly flush its output, even if it is
-   interactive, since flushing is normally automatic.
-
-   Note that a deadlock is also possible if you use :func:`popen3` to read
-   stdout and stderr. If one of the two is too large for the internal buffer
-   (increasing the buffer size does not help) and you ``read()`` the other one
-   first, there is a deadlock, too.
-
-   Note on a bug in popen2: unless your program calls ``wait()`` or
-   ``waitpid()``, finished child processes are never removed, and eventually
-   calls to popen2 will fail because of a limit on the number of child
-   processes.  Calling :func:`os.waitpid` with the :const:`os.WNOHANG` option can
-   prevent this; a good place to insert such a call would be before calling
-   ``popen2`` again.
-
-   In many cases, all you really need is to run some data through a command and
-   get the result back.  Unless the amount of data is very large, the easiest
-   way to do this is to write it to a temporary file and run the command with
-   that temporary file as input.  The standard module :mod:`tempfile` exports a
-   :func:`~tempfile.mktemp` function to generate unique temporary file names. ::
-
-      import tempfile
-      import os
-
-      class Popen3:
-          """
-          This is a deadlock-safe version of popen that returns
-          an object with errorlevel, out (a string) and err (a string).
-          (capturestderr may not work under windows.)
-          Example: print(Popen3('grep spam','\n\nhere spam\n\n').out)
-          """
-          def __init__(self,command,input=None,capturestderr=None):
-              outfile=tempfile.mktemp()
-              command="( %s ) > %s" % (command,outfile)
-              if input:
-                  infile=tempfile.mktemp()
-                  open(infile,"w").write(input)
-                  command=command+" <"+infile
-              if capturestderr:
-                  errfile=tempfile.mktemp()
-                  command=command+" 2>"+errfile
-              self.errorlevel=os.system(command) >> 8
-              self.out=open(outfile,"r").read()
-              os.remove(outfile)
-              if input:
-                  os.remove(infile)
-              if capturestderr:
-                  self.err=open(errfile,"r").read()
-                  os.remove(errfile)
-
-   Note that many interactive programs (e.g. vi) don't work well with pipes
-   substituted for standard input and output.  You will have to use pseudo ttys
-   ("ptys") instead of pipes. Or you can use a Python interface to Don Libes'
-   "expect" library.  A Python extension that interfaces to expect is called
-   "expy" and available from https://expectpy.sourceforge.net.  A pure Python
-   solution that works like expect is `pexpect
-   <https://pypi.org/project/pexpect/>`_.
-
-
 How do I access the serial (RS232) port?
 ----------------------------------------
 
 For Win32, OSX, Linux, BSD, Jython, IronPython:
 
-   https://pypi.org/project/pyserial/
+   :pypi:`pyserial`
 
 For Unix, see a Usenet post by Mitch Chapman:
 
@@ -797,12 +718,12 @@ is simple::
    import random
    random.random()
 
-This returns a random floating point number in the range [0, 1).
+This returns a random floating-point number in the range [0, 1).
 
 There are also many other specialized generators in this module, such as:
 
 * ``randrange(a, b)`` chooses an integer in the range [a, b).
-* ``uniform(a, b)`` chooses a floating point number in the range [a, b).
+* ``uniform(a, b)`` chooses a floating-point number in the range [a, b).
 * ``normalvariate(mean, sdev)`` samples the normal (Gaussian) distribution.
 
 Some higher-level functions operate on sequences directly, such as:
