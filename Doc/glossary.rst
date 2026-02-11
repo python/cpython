@@ -1022,7 +1022,8 @@ Glossary
       A :term:`function` which is defined inside a class body.  If called as an attribute
       of an instance of that class, the method will get the instance object as
       its first :term:`argument` (which is usually called ``self``).
-      See :term:`nested scope`.
+      
+      See also :term:`nested scope`.
 
    method resolution order
       Method Resolution Order is the order in which base classes are searched
