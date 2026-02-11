@@ -1,0 +1,2 @@
+Fixed syntax highlighting in :mod:`IDLE <idlelib>` where slashes at the end of lines aren't
+treated as line continuations.
