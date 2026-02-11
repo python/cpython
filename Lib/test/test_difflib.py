@@ -707,6 +707,48 @@ class TestExactSequenceMatcher(unittest.TestCase):
                 self.assertEqual(blocks1, blocks2)
                 self.assertAlmostEqual(sm1.ratio(), sm2.ratio(), places=3)
 
+    def test_issue_132166(self):
+        N = 1_000
+
+        # 2 sequences of 74K (as in the issue) now take 200ms to run
+        seq1 = ' [' + '10, ' * N
+        seq2 = seq1[1:]
+        isjunk = difflib.IS_CHARACTER_JUNK
+        sm = difflib.ExactSequenceMatcher(isjunk, seq1, seq2)
+        blocks = list(sm.get_matching_blocks())
+        self.assertEqual(list(map(tuple, blocks)), [(1, 0, 4001), (4002, 4001, 0)])
+
+    def test_pathological(self):
+        N = 1_000
+
+        # This was taking seconds to run before 1st iteration
+        chars = ['ab'[i % 2] * (1 + bool(i % 3)) for i in range(N)]
+        seq1, seq2 = ('+'.join(chars), '-'.join(chars)[::-1])
+        sm = difflib.ExactSequenceMatcher(None, seq1, seq2)
+        blocks = list(sm.get_matching_blocks())
+        self.assertEqual(list(map(tuple, blocks[:3])), [(0, 2, 1), (2, 5, 2), (5, 13, 2)])
+
+        # This was taking seconds to run before 2nd iteration
+        chars1 = [chr(i) * 2 + '+' + chr(i + 1) * 2 for i in range(0, N, 2)]
+        chars2 = [chr(i + 1) * 2 + '-' + chr(i) * 2 for i in range(0, N, 2)]
+        seq1, seq2 = ('+'.join(chars1), '-'.join(chars2))
+        sm = difflib.ExactSequenceMatcher(None, seq1, seq2)
+        blocks = list(sm.get_matching_blocks())
+        self.assertEqual(list(map(tuple, blocks[:3])), [(0, 3, 2), (6, 9, 2), (12, 15, 2)])
+
+        # This is theoretical current worst case of O(n √n)
+        chars3 = []
+        i = 0
+        s = 0
+        while s < N:
+            chars3.append(chr(i) * i)
+            s += i
+            i += 1
+        seq1, seq2 = ('+'.join(chars3), '-'.join(chars3))
+        sm = difflib.ExactSequenceMatcher(None, seq1, seq2)
+        blocks = list(sm.get_matching_blocks())
+        self.assertEqual(list(map(tuple, blocks[:3])), [(1, 1, 1), (3, 3, 2), (6, 6, 3)])
+
 
 def setUpModule():
     difflib.HtmlDiff._default_prefix = 0
