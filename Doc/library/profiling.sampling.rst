@@ -44,6 +44,23 @@ of samples over a profiling session, Tachyon constructs an accurate statistical
 estimate of where time is spent. The more samples collected, the
 more precise this estimate becomes.
 
+.. only:: html
+
+   The following interactive visualization demonstrates how sampling profiling
+   works. Press **Play** to watch a Python program execute, and observe how the
+   profiler periodically captures snapshots of the call stack. Adjust the
+   **sample interval** to see how sampling frequency affects the results.
+
+   .. raw:: html
+      :file: profiling-sampling-visualization.html
+
+.. only:: not html
+
+   .. note::
+
+      An interactive visualization of sampling profiling is available in the
+      HTML version of this documentation.
+
 
 How time is estimated
 ---------------------
@@ -354,7 +371,7 @@ Together, these determine how many samples will be collected during a profiling
 session.
 
 The :option:`--sampling-rate` option (:option:`-r`) sets how frequently samples
-are collected. The default is 1 kHz (10,000 samples per second)::
+are collected. The default is 1 kHz (1,000 samples per second)::
 
    python -m profiling.sampling run -r 20khz script.py
 
