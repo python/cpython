@@ -2840,9 +2840,7 @@ def _steal_all_trailing_WSP_if_exists(lines):
     wsp_lines = []
     while lines and lines[-1]:
         for i in range(len(lines[-1]), -1, -1):
-            if i <= 0:
-                break
-            if lines[-1][i - 1] not in WSP:
+            if i <= 0 or lines[-1][i - 1] not in WSP:
                 break
         wsp_line = lines[-1][i:]
         if not wsp_line:
@@ -2854,9 +2852,8 @@ def _steal_all_trailing_WSP_if_exists(lines):
             lines.pop()
         else:
             break
-
     if lines_popped:
-        lines.append(' ')
+        lines.append(' ' if lines else '')
     return ''.join(wsp_lines)
 
 def _refold_parse_tree(parse_tree, *, policy):
@@ -2967,7 +2964,7 @@ def _refold_parse_tree(parse_tree, *, policy):
             newline = _steal_trailing_WSP_if_exists(lines)
             if newline or part.startswith_fws():
                 lines.append(newline + tstr)
-                if not all(char in WSP for char in lines[-1]):
+                if any(char not in WSP for char in lines[-1]):
                     last_word_is_ew = False
                 last_ew = None
                 continue
