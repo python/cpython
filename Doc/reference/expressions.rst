@@ -1516,7 +1516,8 @@ This operation can be customized using the special :meth:`~object.__matmul__` an
    pair: operator; //
 
 The ``/`` (division) and ``//`` (floor division) operators yield the quotient of
-their arguments.  The numeric arguments are first converted to a common type.
+their arguments.  The numeric arguments are first
+:ref:`converted to a common type <stdtypes-mixed-arithmetic>`.
 Division of integers yields a float, while floor division of integers results in an
 integer; the result is that of mathematical division with the 'floor' function
 applied to the result.  Division by zero raises the :exc:`ZeroDivisionError`
