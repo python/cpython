@@ -120,7 +120,7 @@ argument to the various ``token_*`` functions.  That argument is taken
 as the number of bytes of randomness to use.
 
 Otherwise, if no argument is provided, or if the argument is ``None``,
-the ``token_*`` functions uses :const:`DEFAULT_ENTROPY` instead.
+the ``token_*`` functions use :const:`DEFAULT_ENTROPY` instead.
 
 .. data:: DEFAULT_ENTROPY
 

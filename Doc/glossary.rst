@@ -1281,7 +1281,7 @@ Glossary
          'email.mime.text'
 
    race condition
-      A condition of a program where the its behavior
+      A condition of a program where the behavior
       depends on the relative timing or ordering of events, particularly in
       multi-threaded programs.  Race conditions can lead to
       :term:`non-deterministic` behavior and bugs that are difficult to

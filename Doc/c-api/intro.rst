@@ -336,7 +336,7 @@ complete listing.
    avoids a warning about unreachable code.  For example, the macro is
    implemented with ``__builtin_unreachable()`` on GCC in release mode.
 
-   A use for ``Py_UNREACHABLE()`` is following a call a function that
+   A use for ``Py_UNREACHABLE()`` is following a call to a function that
    never returns but that is not declared :c:macro:`_Py_NO_RETURN`.
 
    If a code path is very unlikely code but can be reached under exceptional

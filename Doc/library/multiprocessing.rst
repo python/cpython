@@ -1189,7 +1189,7 @@ Miscellaneous
 
    Set the path of the Python interpreter to use when starting a child process.
    (By default :data:`sys.executable` is used).  Embedders will probably need to
-   do some thing like ::
+   do something like ::
 
       set_executable(os.path.join(sys.exec_prefix, 'pythonw.exe'))
 
@@ -2385,7 +2385,7 @@ with the :class:`Pool` class.
       duration of the Pool's work queue. A frequent pattern found in other
       systems (such as Apache, mod_wsgi, etc) to free resources held by
       workers is to allow a worker within a pool to complete only a set
-      amount of work before being exiting, being cleaned up and a new
+      amount of work before exiting, being cleaned up and a new
       process spawned to replace the old one. The *maxtasksperchild*
       argument to the :class:`Pool` exposes this ability to the end user.
 
