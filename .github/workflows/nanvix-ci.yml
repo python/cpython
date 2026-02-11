@@ -160,7 +160,7 @@ jobs:
           echo "Downloading SQLite from: $SQLITE_URL"
           if curl -fsSL -o "sqlite-dep/${SQLITE_ARTIFACT}" "$SQLITE_URL"; then
             tar -xjf "sqlite-dep/${SQLITE_ARTIFACT}" -C sqlite-dep
-            SQLITE_DIR=$(find sqlite-dep -maxdepth 1 -type d -name "sqlite-*" | head -1)
+            SQLITE_DIR=$(find sqlite-dep -mindepth 1 -maxdepth 1 -type d -name "sqlite-*" | head -1)
             if [[ -n "$SQLITE_DIR" ]]; then
               echo "Installing SQLite from $SQLITE_DIR to $NANVIX_HOME..."
               cp -f "$SQLITE_DIR"/lib/*.a "$NANVIX_HOME/lib/" 2>/dev/null || true
@@ -221,7 +221,7 @@ jobs:
           echo "Downloading zlib from: $ZLIB_URL"
           if curl -fsSL -o "zlib-dep/${ZLIB_ARTIFACT}" "$ZLIB_URL"; then
             tar -xjf "zlib-dep/${ZLIB_ARTIFACT}" -C zlib-dep
-            ZLIB_DIR=$(find zlib-dep -maxdepth 1 -type d -name "zlib-*" | head -1)
+            ZLIB_DIR=$(find zlib-dep -mindepth 1 -maxdepth 1 -type d -name "zlib-*" | head -1)
             if [[ -n "$ZLIB_DIR" ]]; then
               echo "Installing zlib from $ZLIB_DIR to $NANVIX_HOME..."
               cp -f "$ZLIB_DIR"/lib/*.a "$NANVIX_HOME/lib/" 2>/dev/null || true
@@ -278,7 +278,7 @@ jobs:
           echo "Downloading OpenSSL from: $OPENSSL_URL"
           if curl -fsSL -o "openssl-dep/${OPENSSL_ARTIFACT}" "$OPENSSL_URL"; then
             tar -xjf "openssl-dep/${OPENSSL_ARTIFACT}" -C openssl-dep
-            OPENSSL_DIR=$(find openssl-dep -maxdepth 1 -type d -name "openssl-*" | head -1)
+            OPENSSL_DIR=$(find openssl-dep -mindepth 1 -maxdepth 1 -type d -name "openssl-*" | head -1)
             if [[ -n "$OPENSSL_DIR" ]]; then
               echo "Installing OpenSSL from $OPENSSL_DIR to $NANVIX_HOME..."
               cp -f "$OPENSSL_DIR"/lib/*.a "$NANVIX_HOME/lib/" 2>/dev/null || true
