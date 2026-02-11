@@ -1,0 +1,3 @@
+Fix pickling error in the cProfile module when using ``multiprocessing.Process``
+or ``concurrent.futures.ProcessPoolExecutor`` script, which can not be
+properly pickled and executed.
