@@ -1105,7 +1105,7 @@ conflict.
       and kill the process.  Only enable this in environments where the
       huge-page pool is properly sized and fork-safety is not a concern.
 
-   .. versionadded:: next
+   .. versionadded:: 3.15
 
 
 .. envvar:: PYTHONLEGACYWINDOWSFSENCODING
