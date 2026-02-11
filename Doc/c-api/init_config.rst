@@ -544,9 +544,9 @@ Configuration Options
 
 Visibility:
 
-* Public: Can by get by :c:func:`PyConfig_Get` and set by
+* Public: Can be retrieved by :c:func:`PyConfig_Get` and set by
   :c:func:`PyConfig_Set`.
-* Read-only: Can by get by :c:func:`PyConfig_Get`, but cannot be set by
+* Read-only: Can be retrieved by :c:func:`PyConfig_Get`, but cannot be set by
   :c:func:`PyConfig_Set`.
 
 
@@ -1153,7 +1153,7 @@ PyConfig
 
    Most ``PyConfig`` methods :ref:`preinitialize Python <c-preinit>` if needed.
    In that case, the Python preinitialization configuration
-   (:c:type:`PyPreConfig`) in based on the :c:type:`PyConfig`. If configuration
+   (:c:type:`PyPreConfig`) is based on the :c:type:`PyConfig`. If configuration
    fields which are in common with :c:type:`PyPreConfig` are tuned, they must
    be set before calling a :c:type:`PyConfig` method:
 

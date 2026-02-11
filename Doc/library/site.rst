@@ -140,7 +140,7 @@ After these path manipulations, an attempt is made to import a module named
 It is typically created by a system administrator in the site-packages
 directory.  If this import fails with an :exc:`ImportError` or its subclass
 exception, and the exception's :attr:`~ImportError.name`
-attribute equals to ``'sitecustomize'``,
+attribute equals ``'sitecustomize'``,
 it is silently ignored.  If Python is started without output streams available, as
 with :file:`pythonw.exe` on Windows (which is used by default to start IDLE),
 attempted output from :mod:`!sitecustomize` is ignored.  Any other exception
@@ -157,7 +157,7 @@ which can perform arbitrary user-specific customizations, if
 user site-packages directory (see below), which is part of ``sys.path`` unless
 disabled by :option:`-s`.  If this import fails with an :exc:`ImportError` or
 its subclass exception, and the exception's :attr:`~ImportError.name`
-attribute equals to ``'usercustomize'``, it is silently ignored.
+attribute equals ``'usercustomize'``, it is silently ignored.
 
 Note that for some non-Unix systems, ``sys.prefix`` and ``sys.exec_prefix`` are
 empty, and the path manipulations are skipped; however the import of
@@ -173,7 +173,7 @@ Readline configuration
 On systems that support :mod:`readline`, this module will also import and
 configure the :mod:`rlcompleter` module, if Python is started in
 :ref:`interactive mode <tut-interactive>` and without the :option:`-S` option.
-The default behavior is enable tab-completion and to use
+The default behavior is to enable tab completion and to use
 :file:`~/.python_history` as the history save file.  To disable it, delete (or
 override) the :data:`sys.__interactivehook__` attribute in your
 :mod:`sitecustomize` or :mod:`usercustomize` module or your

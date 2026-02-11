@@ -519,7 +519,7 @@ The following types can be pickled:
 
 * classes accessible from the top level of a module;
 
-* instances of such classes whose the result of calling :meth:`~object.__getstate__`
+* instances of such classes for which the result of calling :meth:`~object.__getstate__`
   is picklable  (see section :ref:`pickle-inst` for details).
 
 Attempts to pickle unpicklable objects will raise the :exc:`PicklingError`
@@ -588,7 +588,7 @@ methods:
 
 .. method:: object.__getnewargs_ex__()
 
-   In protocols 2 and newer, classes that implements the
+   In protocols 2 and newer, classes that implement the
    :meth:`__getnewargs_ex__` method can dictate the values passed to the
    :meth:`__new__` method upon unpickling.  The method must return a pair
    ``(args, kwargs)`` where *args* is a tuple of positional arguments

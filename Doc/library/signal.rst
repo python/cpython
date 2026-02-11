@@ -36,7 +36,7 @@ Execution of Python signal handlers
 A Python signal handler does not get executed inside the low-level (C) signal
 handler.  Instead, the low-level signal handler sets a flag which tells the
 :term:`virtual machine` to execute the corresponding Python signal handler
-at a later point(for example at the next :term:`bytecode` instruction).
+at a later point (for example, at the next :term:`bytecode` instruction).
 This has consequences:
 
 * It makes little sense to catch synchronous errors like :const:`SIGFPE` or
@@ -92,13 +92,13 @@ The signal module defines three enums:
 
 .. class:: Handlers
 
-   :class:`enum.IntEnum` collection the constants :const:`SIG_DFL` and :const:`SIG_IGN`.
+   :class:`enum.IntEnum` collection of the constants :const:`SIG_DFL` and :const:`SIG_IGN`.
 
    .. versionadded:: 3.5
 
 .. class:: Sigmasks
 
-   :class:`enum.IntEnum` collection the constants :const:`SIG_BLOCK`, :const:`SIG_UNBLOCK` and :const:`SIG_SETMASK`.
+   :class:`enum.IntEnum` collection of the constants :const:`SIG_BLOCK`, :const:`SIG_UNBLOCK` and :const:`SIG_SETMASK`.
 
    .. availability:: Unix.
 
