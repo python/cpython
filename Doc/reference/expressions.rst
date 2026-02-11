@@ -216,13 +216,17 @@ string literals::
    Template(strings=('Hello', '!'), interpolations=(...))
 
 
+.. index::
+   single: parenthesized form
+   single: () (parentheses)
+
 .. _parenthesized:
 
 Parenthesized groups
 --------------------
 
-A :dfn:`group` is an expression enclosed in parentheses.
-The parenthesized group evaluates to the same value as the expression inside.
+A :dfn:`parenthesized group` is an expression enclosed in parentheses.
+The group evaluates to the same value as the expression inside.
 
 Groups are used to override or clarify
 :ref:`operator precedence <operator-precedence>`,
@@ -240,8 +244,14 @@ For example::
    12
    >>> 3 << (2 | 4)   # Override precedence of the bitwise OR
    192
-   >>> (3 << 2) | 4   # Same as without parentheses, but much clearer
+   >>> (3 << 2) | 4   # Same as without parentheses (but much clearer)
    12
+
+Note that not everything in parentheses is a *group*.
+Specifically, a parenthesized group must include exactly one expression,
+and cannot end with a comma.
+See :ref:`tuple displays <tuple-display>` and
+:ref:`generator expressions <genexpr>` for other parenthesized forms.
 
 Formally, the syntax for groups is:
 
@@ -251,42 +261,105 @@ Formally, the syntax for groups is:
    group: '(' `assignment_expression` ')'
 
 
+.. index::
+   single: tuple display
+
+.. _tuple-display:
 
 Tuple displays
 --------------
 
-..
+A :dfn:`tuple display` is a parenthesized expression that evaluates to a
+:class:`tuple` object.
 
-         Parenthesized forms
-         -------------------
+In the most common form, the parentheses contain two or more comma-separated
+expressions::
 
-         .. index::
-            single: parenthesized form
-            single: () (parentheses); tuple display
+   >>> (1, 2)
+   (1, 2)
+   >>> ('one', 'two', 'thr' + 'ee')
+   ('one', 'two', 'three')
 
-         A parenthesized form is an optional expression list enclosed in parentheses:
+The expressions may be followed by an additional comma, which has no effect.
+(The trailing comma is often used for tuple displays that span multiple lines,
+so when a new entry is later added at the end, the existing line does not
+need to be modified)::
 
-         .. productionlist:: python-grammar
-            parenth_form: "(" [`starred_expression`] ")"
+   >>> (1, 2,)
+   (1, 2)
+   >>> (
+   ...     'one',
+   ...     'two',
+   ...     'thr' + 'ee',
+   ... )
+   ('one', 'two', 'three')
 
-         A parenthesized expression list yields whatever that expression list yields: if
-         the list contains at least one comma, it yields a tuple; otherwise, it yields
-         the single expression that makes up the expression list.
+At runtime, evaluating a tuple display results in a tuple that contains
+the results of the expressions, in order.
+Since tuples are immutable, the same rules as for literals apply: two
+occurrences of tuples with the `same values` may or may not yield the same object.
 
-         .. index:: pair: empty; tuple
+... TODO:: Link `same values`  to "Literals and object identity" from the previous PR
 
-         An empty pair of parentheses yields an empty tuple object.  Since tuples are
-         immutable, the same rules as for literals apply (i.e., two occurrences of the empty
-         tuple may or may not yield the same object).
+A tuple display may also contain a *single* expression.
+In this case, the trailing comma is mandatory -- without it, you get a
+:ref:`parenthesized group <parenthesized>`::
 
-         .. index::
-            single: comma
-            single: , (comma)
+   >>> ('single',)
+   ('single',)
 
-         Note that tuples are not formed by the parentheses, but rather by use of the
-         comma.  The exception is the empty tuple, for which parentheses *are*
-         required --- allowing unparenthesized "nothing" in expressions would cause
-         ambiguities and allow common typos to pass uncaught.
+.. index:: pair: empty; tuple
+
+A tuple display may also contain *zero* expressions:
+empty parentheses denote the empty tuple.
+A trailing comma is *not* allowed in this case.
+
+.. code-block::
+
+   >>> ()
+   ()
+
+To put it in other words, a tuple display is a parenthesized list of either:
+
+- two or more comma-separated expressions, or
+- zero or more expressions, each followed by a comma.
+
+The formal grammar for tuple expressions is:
+
+.. grammar-snippet::
+   :group: python-grammar
+
+   tuple:
+      | '(' `flexible_expression` (',' `flexible_expression`)+ [','] ')'
+      | '(' `flexible_expression` ',' ')'
+      | '(' ')'
+
+.. note::
+
+   .. index::
+      single: comma
+      single: , (comma)
+
+   Note that tuple displays are not the only way to form tuples.
+   In several places, Python's syntax allows forming a tuple without
+   parentheses, only with a comma-separated list of expressions.
+   The most prominent example is the ``return`` statement::
+
+      >>> def gimme_a_tuple():
+      ...     return 1, 2, 3
+      ...
+      >>> gimme_a_tuple()
+      (1, 2, 3)
+
+   .. note to contributors:
+      Another prominent example is the expression statement,
+      but as of this writing, its docs imply that you need parentheses there.
+      The example can be added after the documented grammar is fixed.
+      This is tracked, broadly, in gh-127833.
+
+   These are not considered *tuple displays*, but follow similar rules.
+   The use of a comma forms a tuple; without a comma, these forms evaluate
+   to a single expression.
 
 
 .. _comprehensions:
