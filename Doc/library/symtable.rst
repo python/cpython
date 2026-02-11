@@ -184,7 +184,7 @@ Examining Symbol Tables
 
       Return a tuple containing names of :term:`cell variables <closure variable>` in this table.
 
-      .. versionadded:: next
+      .. versionadded:: 3.15
 
 
 .. class:: Class
@@ -301,7 +301,7 @@ Examining Symbol Tables
 
       Return ``True`` if the symbol is referenced but not assigned in a nested block.
 
-      .. versionadded:: next
+      .. versionadded:: 3.15
 
    .. method:: is_free_class()
 

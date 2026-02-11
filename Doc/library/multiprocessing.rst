@@ -1257,7 +1257,7 @@ Miscellaneous
 
    .. versionadded:: 3.4
 
-   .. versionchanged:: next
+   .. versionchanged:: 3.15
       Added the *on_error* parameter.
 
 .. function:: set_start_method(method, force=False)

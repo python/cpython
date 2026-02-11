@@ -1,3 +1,0 @@
-Move WASI-related files to :file:`Platforms/WASI`. Along the way, leave a
-deprecated :file:`Tools/wasm/wasi/__main__.py` behind for
-backwards-compatibility.

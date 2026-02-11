@@ -360,7 +360,7 @@ attributes (see :ref:`import-mod-attrs` for module attributes):
 
    Add ``f_generator`` attribute to frames.
 
-.. versionchanged:: next
+.. versionchanged:: 3.15
 
    Add ``gi_state`` attribute to generators, ``cr_state`` attribute to
    coroutines, and ``ag_state`` attribute to async generators.

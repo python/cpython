@@ -1,2 +1,0 @@
-Fix :func:`stat.filemode` in the pure-Python implementation to avoid misclassifying
-invalid mode values as block devices.
