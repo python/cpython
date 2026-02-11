@@ -2869,10 +2869,10 @@ class TestEvalCallback(unittest.TestCase):
 
     def setUp(self):
         self.events = []
-        _testinternalcapi.set_eval_callback_record(self.events)
+        _testcapi.set_eval_callback_record(self.events)
 
     def tearDown(self):
-        _testinternalcapi.clear_eval_callback()
+        _testcapi.clear_eval_callback()
         sys.settrace(None)
         sys.setprofile(None)
 
@@ -2923,10 +2923,10 @@ class TestEvalCallback(unittest.TestCase):
         ])
 
     def test_clear_callback_stops_events(self):
-        _testinternalcapi.clear_eval_callback()
+        _testcapi.clear_eval_callback()
         events_after_clear = []
-        _testinternalcapi.set_eval_callback_record(events_after_clear)
-        _testinternalcapi.clear_eval_callback()
+        _testcapi.set_eval_callback_record(events_after_clear)
+        _testcapi.clear_eval_callback()
 
         def dummy_trace(frame, event, arg):
             return dummy_trace

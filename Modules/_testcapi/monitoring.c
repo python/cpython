@@ -1,8 +1,7 @@
 #include "parts.h"
 #include "util.h"
 
-#define Py_BUILD_CORE
-#include "internal/pycore_instruments.h"
+#include "cpython/monitoring.h"
 
 typedef struct {
     PyObject_HEAD
@@ -488,6 +487,43 @@ exit_scope(PyObject *self, PyObject *args)
     Py_RETURN_NONE;
 }
 
+static int
+test_eval_callback(PyUnstable_EvalEvent event, void *data)
+{
+    if (data == NULL) {
+        return 0;
+    }
+    PyObject *event_int = PyLong_FromLong((long)event);
+    if (event_int == NULL) {
+        return -1;
+    }
+    int res = PyList_Append((PyObject *)data, event_int);
+    Py_DECREF(event_int);
+    return res;
+}
+
+static PyObject *
+set_eval_callback_record(PyObject *self, PyObject *list)
+{
+    if (!PyList_Check(list)) {
+        PyErr_SetString(PyExc_TypeError, "argument must be a list");
+        return NULL;
+    }
+    if (PyUnstable_SetEvalCallback(test_eval_callback, list) < 0) {
+        return NULL;
+    }
+    Py_RETURN_NONE;
+}
+
+static PyObject *
+clear_eval_callback(PyObject *self, PyObject *Py_UNUSED(args))
+{
+    if (PyUnstable_SetEvalCallback(NULL, NULL) < 0) {
+        return NULL;
+    }
+    Py_RETURN_NONE;
+}
+
 static PyMethodDef TestMethods[] = {
     {"fire_event_py_start", fire_event_py_start, METH_VARARGS},
     {"fire_event_py_resume", fire_event_py_resume, METH_VARARGS},
@@ -508,6 +544,8 @@ static PyMethodDef TestMethods[] = {
     {"fire_event_stop_iteration", fire_event_stop_iteration, METH_VARARGS},
     {"monitoring_enter_scope", enter_scope, METH_VARARGS},
     {"monitoring_exit_scope", exit_scope, METH_VARARGS},
+    {"set_eval_callback_record", set_eval_callback_record, METH_O},
+    {"clear_eval_callback", clear_eval_callback, METH_NOARGS},
     {NULL},
 };
 
