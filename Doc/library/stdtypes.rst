@@ -5561,6 +5561,146 @@ can be used interchangeably to index the same dictionary entry.
    of a :class:`dict`.
 
 
+.. _thread-safety-dict:
+
+.. rubric:: Thread safety for dict objects
+
+Creating a dictionary with the :class:`dict` constructor is atomic when the
+argument to it is a :class:`dict` or a :class:`tuple`. When using the
+:meth:`dict.fromkeys` method, dictionary creation is atomic when the
+argument is a :class:`dict`, :class:`tuple`, :class:`set` or
+:class:`frozenset`.
+
+The following operations and functions are :term:`lock-free` and
+:term:`atomic <atomic operation>`.
+
+.. code-block::
+   :class: good
+
+   d[key]       # dict.__getitem__
+   d.get(key)   # dict.get
+   key in d     # dict.__contains__
+   len(d)       # dict.__len__
+
+All other operations from here on hold the :term:`per-object lock`.
+
+Writing or removing a single item is safe to call from multiple threads
+and will not corrupt the dictionary:
+
+.. code-block::
+   :class: good
+
+   d[key] = value        # write
+   del d[key]            # delete
+   d.pop(key)            # remove and return
+   d.popitem()           # remove and return last item
+   d.setdefault(key, v)  # insert if missing
+
+These operations may compare keys using :meth:`~object.__eq__`, which can
+execute arbitrary Python code. During such comparisons, the dictionary may
+be modified by another thread. For built-in types like :class:`str`,
+:class:`int`, and :class:`float`, that implement :meth:`~object.__eq__` in C,
+the underlying lock is not released during comparisons and this is not a
+concern.
+
+The following operations return new objects and hold the :term:`per-object lock`
+for the duration of the operation:
+
+.. code-block::
+   :class: good
+
+   d.copy()      # returns a shallow copy of the dictionary
+   d | other     # merges two dicts into a new dict
+   d.keys()      # returns a new dict_keys view object
+   d.values()    # returns a new dict_values view object
+   d.items()     # returns a new dict_items view object
+
+The :meth:`~dict.clear` method holds the lock for its duration. Other
+threads cannot observe elements being removed.
+
+The following operations lock both dictionaries. For :meth:`~dict.update`
+and ``|=``, this applies only when the other operand is a :class:`dict`
+that uses the standard dict iterator (but not subclasses that override
+iteration). For equality comparison, this applies to :class:`dict` and
+its subclasses:
+
+.. code-block::
+   :class: good
+
+   d.update(other_dict)  # both locked when other_dict is a dict
+   d |= other_dict       # both locked when other_dict is a dict
+   d == other_dict       # both locked for dict and subclasses
+
+All comparison operations also compare values using :meth:`~object.__eq__`,
+so for non-built-in types the lock may be released during comparison.
+
+:meth:`~dict.fromkeys` locks both the new dictionary and the iterable
+when the iterable is exactly a :class:`dict`, :class:`set`, or
+:class:`frozenset` (not subclasses):
+
+.. code-block::
+   :class: good
+
+   dict.fromkeys(a_dict)      # locks both
+   dict.fromkeys(a_set)       # locks both
+   dict.fromkeys(a_frozenset) # locks both
+
+When updating from a non-dict iterable, only the target dictionary is
+locked. The iterable may be concurrently modified by another thread:
+
+.. code-block::
+   :class: maybe
+
+   d.update(iterable)        # iterable is not a dict: only d locked
+   d |= iterable             # iterable is not a dict: only d locked
+   dict.fromkeys(iterable)   # iterable is not a dict/set/frozenset: only result locked
+
+Operations that involve multiple accesses, as well as iteration, are never
+atomic:
+
+.. code-block::
+   :class: bad
+
+   # NOT atomic: read-modify-write
+   d[key] = d[key] + 1
+
+   # NOT atomic: check-then-act (TOCTOU)
+   if key in d:
+         del d[key]
+
+   # NOT thread-safe: iteration while modifying
+   for key, value in d.items():
+         process(key)  # another thread may modify d
+
+To avoid time-of-check to time-of-use (TOCTOU) issues, use atomic
+operations or handle exceptions:
+
+.. code-block::
+   :class: good
+
+   # Use pop() with default instead of check-then-delete
+   d.pop(key, None)
+
+   # Or handle the exception
+   try:
+         del d[key]
+   except KeyError:
+         pass
+
+To safely iterate over a dictionary that may be modified by another
+thread, iterate over a copy:
+
+.. code-block::
+   :class: good
+
+   # Make a copy to iterate safely
+   for key, value in d.copy().items():
+         process(key)
+
+Consider external synchronization when sharing :class:`dict` instances
+across threads. See :ref:`freethreading-python-howto` for more information.
+
+
 .. _dict-views:
 
 Dictionary view objects
