@@ -2117,7 +2117,6 @@ def _signature_strip_non_python_syntax(signature):
 
     lines = [l.encode('ascii') for l in signature.split('\n') if l]
     generator = iter(lines).__next__
-
     token_stream = tokenize.tokenize(generator)
 
     text = []
@@ -2154,7 +2153,9 @@ def _signature_fromstr(cls, obj, s, skip_bound_arg=True):
     and return a Signature based on it.
     """
     Parameter = cls._parameter_cls
+
     clean_signature, self_parameter = _signature_strip_non_python_syntax(s)
+
     program = "def foo" + clean_signature + ": pass"
 
     try:
