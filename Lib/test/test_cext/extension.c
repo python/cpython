@@ -76,7 +76,7 @@ static PyMethodDef _testcext_methods[] = {
 static int
 _testcext_exec(PyObject *module)
 {
-    PyObject *result;
+    PyObject *result, *obj;
 
 #ifdef __STDC_VERSION__
     if (PyModule_AddIntMacro(module, __STDC_VERSION__) < 0) {
@@ -91,6 +91,10 @@ _testcext_exec(PyObject *module)
     // test Py_BUILD_ASSERT() and Py_BUILD_ASSERT_EXPR()
     Py_BUILD_ASSERT(sizeof(int) == sizeof(unsigned int));
     assert(Py_BUILD_ASSERT_EXPR(sizeof(int) == sizeof(unsigned int)) == 0);
+
+    // Test Py_CLEAR()
+    obj = NULL;
+    Py_CLEAR(obj);
 
     return 0;
 }
