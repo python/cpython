@@ -88,6 +88,9 @@ class UnicodeNamesTest(unittest.TestCase):
         self.checkletter("HANGUL SYLLABLE HWEOK", "\ud6f8")
         self.checkletter("HANGUL SYLLABLE HIH", "\ud7a3")
 
+        self.checkletter("haNGul SYllABle WAe", '\uc65c')
+        self.checkletter("HAngUL syLLabLE waE", '\uc65c')
+
         self.assertRaises(ValueError, unicodedata.name, "\ud7a4")
 
     def test_cjk_unified_ideographs(self):
@@ -102,6 +105,11 @@ class UnicodeNamesTest(unittest.TestCase):
         self.checkletter("CJK UNIFIED IDEOGRAPH-2B740", "\U0002B740")
         self.checkletter("CJK UNIFIED IDEOGRAPH-2B81D", "\U0002B81D")
         self.checkletter("CJK UNIFIED IDEOGRAPH-3134A", "\U0003134A")
+
+        self.checkletter("cjK UniFIeD idEogRAph-3aBc", "\u3abc")
+        self.checkletter("CJk uNIfiEd IDeOGraPH-3AbC", "\u3abc")
+        self.checkletter("cjK UniFIeD idEogRAph-2aBcD", "\U0002abcd")
+        self.checkletter("CJk uNIfiEd IDeOGraPH-2AbCd", "\U0002abcd")
 
     def test_bmp_characters(self):
         for code in range(0x10000):
