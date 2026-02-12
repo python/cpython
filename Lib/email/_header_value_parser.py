@@ -2939,8 +2939,15 @@ def _refold_parse_tree(parse_tree, *, policy):
                     (last_charset == 'unknown-8bit' or
                      last_charset == 'utf-8' and charset != 'us-ascii')):
                     last_ew = None
-                last_ew = _fold_as_ew(tstr, lines, maxlen, last_ew,
-                                      part.ew_combine_allowed, charset, last_word_is_ew)
+                last_ew = _fold_as_ew(
+                    tstr,
+                    lines,
+                    maxlen,
+                    last_ew,
+                    part.ew_combine_allowed,
+                    charset,
+                    last_word_is_ew,
+                )
                 last_word_is_ew = True
                 last_charset = charset
                 want_encoding = False
