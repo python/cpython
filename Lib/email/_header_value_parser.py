@@ -2867,8 +2867,8 @@ def _refold_parse_tree(parse_tree, *, policy):
     encoding = 'utf-8' if policy.utf8 else 'us-ascii'
     lines = ['']  # Folded lines to be output
     last_word_is_ew = False
-    last_ew = None  # Points to the last encoded character if there's an ew on
-                    # the line
+    last_ew = None  # if there is an encoded word in the last line of lines,
+                    # points to the encoded word's first character
     last_charset = None
     wrap_as_ew_blocked = 0
     want_encoding = False  # This is set to True if we need to encode this part
