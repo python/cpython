@@ -4,7 +4,7 @@ import unittest
 from ctypes import (Structure, Array, ARRAY, sizeof, addressof,
                     create_string_buffer, create_unicode_buffer,
                     c_char, c_wchar, c_byte, c_ubyte, c_short, c_ushort, c_int, c_uint,
-                    c_long, c_ulonglong, c_float, c_double, c_longdouble, POINTER)
+                    c_long, c_ulonglong, c_float, c_double, c_longdouble)
 from test.support import bigmemtest, _2G, threading_helper, Py_GIL_DISABLED
 from ._support import (_CData, PyCArrayType, Py_TPFLAGS_DISALLOW_INSTANTIATION,
                        Py_TPFLAGS_IMMUTABLETYPE)
@@ -191,6 +191,7 @@ class ArrayTestCase(unittest.TestCase):
         a.__class__ = B
 
     def test_ctypes_array_class_assignment_pointer_arrays(self):
+        from ctypes import POINTER
         A = POINTER(c_int) * 2
         B = POINTER(c_int) * 2
         a = A()
@@ -198,9 +199,8 @@ class ArrayTestCase(unittest.TestCase):
 
     def test_ctypes_array_from_param_incompatible(self):
         A = c_int * 3
-        B = c_double * 3
         with self.assertRaises(TypeError):
-            A.from_param(B())
+            A.from_param(object())
 
     def test_step_overflow(self):
         a = (c_int * 5)()
