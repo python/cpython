@@ -1209,23 +1209,11 @@ def _process_class(cls, init, repr, eq, order, unsafe_hash, frozen,
     if hash_action:
         cls.__hash__ = hash_action(cls, field_list, func_builder)
 
-    # Generate the methods and add them to the class.  This needs to be done
-    # before the __doc__ logic below, since inspect will look at the __init__
-    # signature.
+    # Generate the methods and add them to the class.
     func_builder.add_fns_to_class(cls)
 
-    if not getattr(cls, '__doc__'):
-        # Create a class doc-string.
-        try:
-            # In some cases fetching a signature is not possible.
-            # But, we surely should not fail in this case.
-            text_sig = str(inspect.signature(
-                cls,
-                annotation_format=annotationlib.Format.FORWARDREF,
-            )).replace(' -> None', '')
-        except (TypeError, ValueError):
-            text_sig = ''
-        cls.__doc__ = (cls.__name__ + text_sig)
+    if not cls.__doc__:
+        cls.__doc__ = _DocDescriptor()
 
     if match_args:
         # I could probably compute this once.
@@ -1242,6 +1230,21 @@ def _process_class(cls, init, repr, eq, order, unsafe_hash, frozen,
 
     return cls
 
+
+class _DocDescriptor:
+    def __get__(self, obj, owner):
+        # Create a class doc-string.
+        try:
+            # In some cases fetching a signature is not possible.
+            # But, we surely should not fail in this case.
+            text_sig = str(inspect.signature(
+                owner,
+                annotation_format=annotationlib.Format.FORWARDREF,
+            )).replace(' -> None', '')
+        except (TypeError, ValueError):
+            text_sig = ''
+        owner.__doc__ = (owner.__name__ + text_sig)
+        return owner.__doc__
 
 # _dataclass_getstate and _dataclass_setstate are needed for pickling frozen
 # classes with slots.  These could be slightly more performant if we generated
