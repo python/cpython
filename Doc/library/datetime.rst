@@ -204,8 +204,8 @@ objects.
 
 .. _datetime-timedelta:
 
-:class:`timedelta` objects
---------------------------
+:class:`!timedelta` objects
+---------------------------
 
 A :class:`timedelta` object represents a duration, the difference between two
 :class:`.datetime` or :class:`date` instances.
@@ -459,8 +459,8 @@ Instance methods:
    .. versionadded:: 3.2
 
 
-Examples of usage: :class:`timedelta`
-^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+Examples of usage: :class:`!timedelta`
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
 An additional example of normalization::
 
@@ -493,8 +493,8 @@ Examples of :class:`timedelta` arithmetic::
 
 .. _datetime-date:
 
-:class:`date` objects
----------------------
+:class:`!date` objects
+----------------------
 
 A :class:`date` object represents a date (year, month and day) in an idealized
 calendar, the current Gregorian calendar indefinitely extended in both
@@ -847,8 +847,8 @@ Instance methods:
    See also :ref:`strftime-strptime-behavior` and :meth:`date.isoformat`.
 
 
-Examples of usage: :class:`date`
-^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+Examples of usage: :class:`!date`
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
 Example of counting days to an event::
 
@@ -917,7 +917,7 @@ More examples of working with :class:`date`:
 
 .. _datetime-datetime:
 
-:class:`.datetime` objects
+:class:`!datetime` objects
 --------------------------
 
 A :class:`.datetime` object is a single object containing all the information
@@ -1696,7 +1696,7 @@ Instance methods:
    See also :ref:`strftime-strptime-behavior` and :meth:`datetime.isoformat`.
 
 
-Examples of usage: :class:`.datetime`
+Examples of usage: :class:`!datetime`
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
 Examples of working with :class:`.datetime` objects:
@@ -1825,7 +1825,7 @@ Usage of ``KabulTz`` from above::
 
 .. _datetime-time:
 
-:class:`.time` objects
+:class:`!time` objects
 ----------------------
 
 A :class:`.time` object represents a (local) time of day, independent of any particular
@@ -2099,7 +2099,7 @@ Instance methods:
    return ``None`` or a string object.
 
 
-Examples of usage: :class:`.time`
+Examples of usage: :class:`!time`
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
 Examples of working with a :class:`.time` object::
@@ -2132,8 +2132,8 @@ Examples of working with a :class:`.time` object::
 
 .. _datetime-tzinfo:
 
-:class:`tzinfo` objects
------------------------
+:class:`!tzinfo` objects
+------------------------
 
 .. class:: tzinfo()
 
@@ -2408,8 +2408,8 @@ only EST (fixed offset -5 hours), or only EDT (fixed offset -4 hours)).
 
 .. _datetime-timezone:
 
-:class:`timezone` objects
--------------------------
+:class:`!timezone` objects
+--------------------------
 
 The :class:`timezone` class is a subclass of :class:`tzinfo`, each
 instance of which represents a time zone defined by a fixed offset from
@@ -2487,8 +2487,8 @@ Class attributes:
 
 .. _strftime-strptime-behavior:
 
-:meth:`~.datetime.strftime` and :meth:`~.datetime.strptime` behavior
---------------------------------------------------------------------
+:meth:`!strftime` and :meth:`!strptime` behavior
+------------------------------------------------
 
 :class:`date`, :class:`.datetime`, and :class:`.time` objects all support a
 ``strftime(format)`` method, to create a string representing the time under the
@@ -2514,8 +2514,8 @@ versus :meth:`~.datetime.strptime`:
 
    .. _format-codes:
 
-:meth:`~.datetime.strftime` and :meth:`~.datetime.strptime` format codes
-^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+:meth:`!strftime` and :meth:`!strptime` format codes
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
 These methods accept format codes that can be used to parse and format dates::
 
