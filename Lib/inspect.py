@@ -166,7 +166,7 @@ from _weakref import ref as make_weakref
 lazy import re
 lazy import tokenize
 
-# Create constants for the compiler flags in Include/code.h
+# Create constants for the compiler flags in Include/cpython/code.h
 # We try to get them from dis to avoid duplication
 mod_dict = globals()
 for k, v in dis.COMPILER_FLAG_NAMES.items():
