@@ -191,6 +191,12 @@ class StrTest(string_tests.StringLikeTest,
         self.assertEqual(repr("\U00010000" * 39 + "\uffff" * 4096),
                             repr("\U00010000" * 39 + "\uffff" * 4096))
 
+        # strong right-to-left character
+        self.assertEqual(repr('12\u05be34'), r"'12\u05be34'")
+        self.assertEqual(repr('12\u060834'), r"'12\u060834'")
+        self.assertEqual(repr('12\U0001080034'), r"'12\U0001080034'")
+        self.assertEqual(repr('12\U00010d0034'), r"'12\U00010d0034'")
+
         self.assertTypedEqual(repr('\U0001f40d'), "'\U0001f40d'")
         self.assertTypedEqual(repr(StrSubclass('abc')), "'abc'")
         self.assertTypedEqual(repr(WithRepr('<abc>')), '<abc>')
@@ -864,9 +870,11 @@ class StrTest(string_tests.StringLikeTest,
         for codepoint in range(sys.maxunicode + 1):
             char = chr(codepoint)
             category = unicodedata.category(char)
+            bidirectional = unicodedata.bidirectional(char)
             self.assertEqual(char.isprintable(),
-                             category[0] not in ('C', 'Z')
+                             (category[0] not in ('C', 'Z')
                              or char == ' ')
+                             and bidirectional not in ('R', 'AL'))
 
     def test_surrogates(self):
         for s in ('a\uD800b\uDFFF', 'a\uDFFFb\uD800',
