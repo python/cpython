@@ -123,6 +123,7 @@ System includes
    * ``<limits.h>``
    * ``<math.h>``
    * ``<stdarg.h>``
+   * ``<string.h>``
    * ``<wchar.h>``
    * ``<sys/types.h>`` (if present)
 
@@ -138,7 +139,6 @@ System includes
    * ``<errno.h>``
    * ``<stdio.h>``
    * ``<stdlib.h>``
-   * ``<string.h>``
 
 .. note::
 
