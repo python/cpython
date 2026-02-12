@@ -496,6 +496,13 @@ Frozen Dictionary Objects
 .. versionadded:: next
 
 
+.. c:var:: PyTypeObject PyFrozenDict_Type
+
+   This instance of :c:type:`PyTypeObject` represents the Python frozen
+   dictionary type.
+   This is the same object as :class:`frozendict` in the Python layer.
+
+
 .. c:function:: int PyAnyDict_Check(PyObject *p)
 
    Return true if *p* is a dict object, a frozendict object, or an instance of
