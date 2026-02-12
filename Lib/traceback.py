@@ -5,6 +5,7 @@ import itertools
 import linecache
 import sys
 import textwrap
+import types
 import warnings
 import codeop
 import keyword
@@ -1629,12 +1630,29 @@ def _substitution_cost(ch_a, ch_b):
     return _MOVE_COST
 
 
+def _is_lazy_import(obj, attr_name):
+    """Check if attr_name in obj's __dict__ is a lazy import.
+
+    Returns True if obj is a module and the attribute is a LazyImportType,
+    False otherwise. This avoids triggering module loading when computing
+    suggestions for AttributeError.
+    """
+    if not isinstance(obj, types.ModuleType):
+        return False
+    obj_dict = getattr(obj, '__dict__', None)
+    if obj_dict is None:
+        return False
+    attr_value = obj_dict.get(attr_name)
+    return isinstance(attr_value, types.LazyImportType)
+
+
 def _check_for_nested_attribute(obj, wrong_name, attrs):
     """Check if any attribute of obj has the wrong_name as a nested attribute.
 
     Returns the first nested attribute suggestion found, or None.
     Limited to checking 20 attributes.
     Only considers non-descriptor attributes to avoid executing arbitrary code.
+    Skips lazy imports to avoid triggering module loading.
     """
     # Check for nested attributes (only one level deep)
     attrs_to_check = [x for x in attrs if not x.startswith('_')][:20]  # Limit number of attributes to check
@@ -1644,6 +1662,10 @@ def _check_for_nested_attribute(obj, wrong_name, attrs):
             attr_from_class = getattr(type(obj), attr_name, None)
             if attr_from_class is not None and hasattr(attr_from_class, '__get__'):
                 continue  # Skip descriptors to avoid executing arbitrary code
+
+            # Skip lazy imports to avoid triggering module loading
+            if _is_lazy_import(obj, attr_name):
+                continue
 
             # Safe to get the attribute since it's not a descriptor
             attr_obj = getattr(obj, attr_name)
@@ -1675,6 +1697,8 @@ def _compute_suggestion_error(exc_value, tb, wrong_name):
             except TypeError:  # Attributes are unsortable, e.g. int and str
                 d = list(obj.__class__.__dict__.keys()) + list(obj.__dict__.keys())
             d = sorted([x for x in d if isinstance(x, str)])
+            # Filter out lazy imports to avoid triggering module loading
+            d = [x for x in d if not _is_lazy_import(obj, x)]
             hide_underscored = (wrong_name[:1] != '_')
             if hide_underscored and tb is not None:
                 while tb.tb_next is not None:
@@ -1694,6 +1718,8 @@ def _compute_suggestion_error(exc_value, tb, wrong_name):
             except TypeError:  # Attributes are unsortable, e.g. int and str
                 d = list(mod.__dict__.keys())
             d = sorted([x for x in d if isinstance(x, str)])
+            # Filter out lazy imports to avoid triggering module loading
+            d = [x for x in d if not _is_lazy_import(mod, x)]
             if wrong_name[:1] != '_':
                 d = [x for x in d if x[:1] != '_']
         except Exception:

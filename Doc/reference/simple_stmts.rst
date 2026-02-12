@@ -743,14 +743,15 @@ The :keyword:`!import` statement
    pair: name; binding
    pair: keyword; from
    pair: keyword; as
+   pair: keyword; lazy
    pair: exception; ImportError
    single: , (comma); import statement
 
 .. productionlist:: python-grammar
-   import_stmt: "import" `module` ["as" `identifier`] ("," `module` ["as" `identifier`])*
-              : | "from" `relative_module` "import" `identifier` ["as" `identifier`]
+   import_stmt: ["lazy"] "import" `module` ["as" `identifier`] ("," `module` ["as" `identifier`])*
+              : | ["lazy"] "from" `relative_module` "import" `identifier` ["as" `identifier`]
               : ("," `identifier` ["as" `identifier`])*
-              : | "from" `relative_module` "import" "(" `identifier` ["as" `identifier`]
+              : | ["lazy"] "from" `relative_module` "import" "(" `identifier` ["as" `identifier`]
               : ("," `identifier` ["as" `identifier`])* [","] ")"
               : | "from" `relative_module` "import" "*"
    module: (`identifier` ".")* `identifier`
@@ -868,6 +869,56 @@ determine dynamically the modules to be loaded.
 .. audit-event:: import module,filename,sys.path,sys.meta_path,sys.path_hooks import
 
 .. _normalization form: https://www.unicode.org/reports/tr15/#Norm_Forms
+
+.. _lazy-imports:
+.. _lazy:
+
+Lazy imports
+------------
+
+.. index::
+   pair: lazy; import
+   single: lazy import
+
+The :keyword:`lazy` keyword is a :ref:`soft keyword <soft-keywords>` that
+only has special meaning when it appears immediately before an
+:keyword:`import` or :keyword:`from` statement. When an import statement is
+preceded by the :keyword:`lazy` keyword, the import becomes *lazy*: the
+module is not loaded immediately at the import statement. Instead, a lazy
+proxy object is created and bound to the name. The actual module is loaded
+on first use of that name.
+
+Lazy imports are only permitted at module scope. Using :keyword:`lazy`
+inside a function, class body, or
+:keyword:`try`/:keyword:`except`/:keyword:`finally` block raises a
+:exc:`SyntaxError`. Star imports cannot be lazy (``lazy from module import
+*`` is a syntax error), and :ref:`future statements <future>` cannot be
+lazy.
+
+When using ``lazy from ... import``, each imported name is bound to a lazy
+proxy object. The first access to any of these names triggers loading of the
+entire module and resolves only that specific name to its actual value.
+Other names remain as lazy proxies until they are accessed.
+
+Example::
+
+   lazy import json
+   import sys
+
+   print('json' in sys.modules)  # False - json module not yet loaded
+
+   # First use triggers loading
+   result = json.dumps({"hello": "world"})
+
+   print('json' in sys.modules)  # True - now loaded
+
+If an error occurs during module loading (such as :exc:`ImportError` or
+:exc:`SyntaxError`), it is raised at the point where the lazy import is first
+used, not at the import statement itself.
+
+See :pep:`810` for the full specification of lazy imports.
+
+.. versionadded:: next
 
 .. _future:
 

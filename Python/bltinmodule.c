@@ -9,6 +9,7 @@
 #include "pycore_fileutils.h"     // _PyFile_Flush
 #include "pycore_floatobject.h"   // _PyFloat_ExactDealloc()
 #include "pycore_interp.h"        // _PyInterpreterState_GetConfig()
+#include "pycore_import.h"        // _PyImport_LazyImportModuleLevelObject  ()
 #include "pycore_long.h"          // _PyLong_CompactValue
 #include "pycore_modsupport.h"    // _PyArg_NoKwnames()
 #include "pycore_object.h"        // _Py_AddToAllObjects()
@@ -286,6 +287,61 @@ builtin___import___impl(PyObject *module, PyObject *name, PyObject *globals,
                                             fromlist, level);
 }
 
+
+/*[clinic input]
+__lazy_import__ as builtin___lazy_import__
+
+    name: object
+    globals: object(c_default="NULL") = None
+    locals: object(c_default="NULL") = None
+    fromlist: object(c_default="NULL") = ()
+    level: int = 0
+
+Lazily imports a module.
+
+Returns either the module to be imported or a imp.lazy_module object which
+indicates the module to be lazily imported.
+[clinic start generated code]*/
+
+static PyObject *
+builtin___lazy_import___impl(PyObject *module, PyObject *name,
+                             PyObject *globals, PyObject *locals,
+                             PyObject *fromlist, int level)
+/*[clinic end generated code: output=300f1771094b9e8c input=9394874f340b2948]*/
+{
+    PyObject *builtins;
+    PyThreadState *tstate = PyThreadState_GET();
+    if (globals == NULL) {
+        globals = PyEval_GetGlobals();
+    }
+    if (locals == NULL) {
+        locals = globals;
+    }
+
+    if (PyDict_GetItemRef(globals, &_Py_ID(__builtins__), &builtins) < 0) {
+        return NULL;
+    }
+    if (builtins == NULL) {
+        PyErr_SetString(PyExc_ValueError,
+                        "unable to get builtins for lazy import");
+        return NULL;
+    }
+    if (PyModule_Check(builtins)) {
+        PyObject *builtins_dict = Py_XNewRef(PyModule_GetDict(builtins));
+        if (builtins_dict == NULL) {
+            Py_DECREF(builtins);
+            PyErr_SetString(PyExc_AttributeError,
+                            "builtins module has no dict");
+            return NULL;
+        }
+        Py_SETREF(builtins, builtins_dict);
+    }
+
+    PyObject *res = _PyImport_LazyImportModuleLevelObject(
+        tstate, name, builtins, globals, locals, fromlist, level);
+    Py_DECREF(builtins);
+    return res;
+}
 
 /*[clinic input]
 abs as builtin_abs
@@ -3362,6 +3418,7 @@ static PyMethodDef builtin_methods[] = {
     {"__build_class__", _PyCFunction_CAST(builtin___build_class__),
      METH_FASTCALL | METH_KEYWORDS, build_class_doc},
     BUILTIN___IMPORT___METHODDEF
+    BUILTIN___LAZY_IMPORT___METHODDEF
     BUILTIN_ABS_METHODDEF
     BUILTIN_ALL_METHODDEF
     BUILTIN_ANY_METHODDEF

@@ -65,6 +65,8 @@ Summary -- Release highlights
 
 .. PEP-sized items next.
 
+* :pep:`810`: :ref:`Explicit lazy imports for faster startup times
+  <whatsnew315-pep810>`
 * :pep:`799`: :ref:`A dedicated profiling package for organizing Python
   profiling tools <whatsnew315-profiling-package>`
 * :pep:`799`: :ref:`Tachyon: High frequency statistical sampling profiler
@@ -81,6 +83,102 @@ Summary -- Release highlights
 
 New features
 ============
+
+.. _whatsnew315-pep810:
+
+:pep:`810`: Explicit lazy imports
+---------------------------------
+
+Large Python applications often suffer from slow startup times. A
+significant contributor to this problem is the import system: when a module
+is imported, Python must locate the file, read it from disk, compile it to
+bytecode, and execute all top-level code. For applications with deep
+dependency trees, this process can take seconds, even when most of the
+imported code is never actually used during a particular run.
+
+Developers have worked around this by moving imports inside functions, using
+:mod:`importlib` to load modules on demand, or restructuring code to avoid
+unnecessary dependencies. These approaches work but make code harder to read
+and maintain, scatter import statements throughout the codebase, and require
+discipline to apply consistently.
+
+Python now provides a cleaner solution through explicit :keyword:`lazy`
+imports using the new ``lazy`` soft keyword. When you mark an import as
+lazy, Python defers the actual module loading until the imported name is
+first used. This gives you the organizational benefits of declaring all
+imports at the top of the file while only paying the loading cost for
+modules you actually use.
+
+The ``lazy`` keyword works with both ``import`` and ``from ... import``
+statements. When you write ``lazy import heavy_module``, Python does not
+immediately load the module. Instead, it creates a lightweight proxy object.
+The actual module loading happens transparently when you first access the
+name:
+
+.. code-block:: python
+
+   lazy import json
+   lazy from datetime import datetime
+
+   print("Starting up...")  # json and datetime not loaded yet
+
+   data = json.loads('{"key": "value"}')  # json gets loads here
+   now = datetime()  # datetime loads here
+
+This mechanism is particularly useful for applications that import many
+modules at the top level but may only use a subset of them in any given run.
+The deferred loading reduces startup latency without requiring code
+restructuring or conditional imports scattered throughout the codebase.
+
+In the case where loading a lazily imported module fails (for example, if
+the module does not exist), Python raises the exception at the point of
+first use rather than at import time. The associated traceback includes both
+the location where the name was accessed and the original import statement,
+making it straightforward to diagnose & debug the failure.
+
+For cases where you want to enable lazy loading globally without modifying
+source code, Python provides the :option:`-X lazy_imports <-X>` command-line
+option and the :envvar:`PYTHON_LAZY_IMPORTS` environment variable. Both
+accept three values: ``all`` makes all imports lazy by default, ``none``
+disables lazy imports entirely (even explicit ``lazy`` statements become
+eager), and ``normal`` (the default) respects the ``lazy`` keyword in source
+code. The :func:`sys.set_lazy_imports` and :func:`sys.get_lazy_imports`
+functions allow changing and querying this mode at runtime.
+
+For more selective control, :func:`sys.set_lazy_imports_filter` accepts a
+callable that determines whether a specific module should be loaded lazily.
+The filter receives three arguments: the importing module's name (or
+``None``), the imported module's name, and the fromlist (or ``None`` for
+regular imports). It should return ``True`` to allow the import to be lazy,
+or ``False`` to force eager loading. This allows patterns like making only
+your own application's modules lazy while keeping third-party dependencies
+eager:
+
+.. code-block:: python
+
+   import sys
+
+   def myapp_filter(importing, imported, fromlist):
+       return imported.startswith("myapp.")
+   sys.set_lazy_imports_filter(myapp_filter)
+   sys.set_lazy_imports("all")
+
+   import myapp.slow_module  # lazy (matches filter)
+   import json               # eager (does not match filter)
+
+The proxy type itself is available as :data:`types.LazyImportType` for code
+that needs to detect lazy imports programmatically.
+
+There are some restrictions on where the ``lazy`` keyword can be used. Lazy
+imports are only permitted at module scope; using ``lazy`` inside a
+function, class body, or ``try``/``except``/``finally`` block raises a
+:exc:`SyntaxError`. Neither star imports nor future imports can be lazy
+(``lazy from module import *`` and ``lazy from __future__ import ...`` both
+raise :exc:`SyntaxError`).
+
+.. seealso:: :pep:`810` for the full specification and rationale.
+
+(Contributed by Pablo Galindo Salgado and Dino Viehland in :gh:`142349`.)
 
 .. _whatsnew315-profiling-package:
 
@@ -831,6 +929,13 @@ subprocess
   If none of these mechanisms are available, the function falls back to the
   traditional busy loop (non-blocking call and short sleeps).
   (Contributed by Giampaolo Rodola in :gh:`83069`).
+
+
+symtable
+--------
+
+* Add :meth:`symtable.Function.get_cells` and :meth:`symtable.Symbol.is_cell` methods.
+  (Contributed by Yashp002 in :gh:`143504`.)
 
 
 symtable

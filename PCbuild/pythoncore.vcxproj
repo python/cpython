@@ -273,6 +273,7 @@
     <ClInclude Include="..\Include\internal\pycore_interpolation.h" />
     <ClInclude Include="..\Include\internal\pycore_intrinsics.h" />
     <ClInclude Include="..\Include\internal\pycore_jit.h" />
+    <ClInclude Include="..\Include\internal\pycore_lazyimportobject.h" />
     <ClInclude Include="..\Include\internal\pycore_list.h" />
     <ClInclude Include="..\Include\internal\pycore_llist.h" />
     <ClInclude Include="..\Include\internal\pycore_lock.h" />
@@ -548,6 +549,7 @@
     <ClCompile Include="..\Objects\longobject.c" />
     <ClCompile Include="..\Objects\memoryobject.c" />
     <ClCompile Include="..\Objects\methodobject.c" />
+    <ClCompile Include="..\Objects\lazyimportobject.c" />
     <ClCompile Include="..\Objects\moduleobject.c" />
     <ClCompile Include="..\Objects\namespaceobject.c" />
     <ClCompile Include="..\Objects\object.c" />
