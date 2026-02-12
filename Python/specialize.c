@@ -1321,7 +1321,6 @@ specialize_load_global_lock_held(
     }
     if (value != NULL && PyLazyImport_CheckExact(value)) {
         SPECIALIZATION_FAIL(LOAD_GLOBAL, SPEC_FAIL_ATTR_MODULE_LAZY_VALUE);
-        Py_DECREF(value);
         goto fail;
     }
     PyInterpreterState *interp = _PyInterpreterState_GET();
