@@ -853,6 +853,12 @@ class StrTest(string_tests.StringLikeTest,
         self.assertTrue('\U0001F46F'.isprintable())
         self.assertFalse('\U000E0020'.isprintable())
 
+        # strong right-to-left character
+        self.assertFalse("\u05be".isprintable())
+        self.assertFalse("\u0608".isprintable())
+        self.assertFalse("\U00010800".isprintable())
+        self.assertFalse("\U00010d00".isprintable())
+
     @support.requires_resource('cpu')
     def test_isprintable_invariant(self):
         for codepoint in range(sys.maxunicode + 1):
