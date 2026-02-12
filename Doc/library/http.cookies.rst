@@ -11,7 +11,7 @@
 
 --------------
 
-The :mod:`http.cookies` module defines classes for abstracting the concept of
+The :mod:`!http.cookies` module defines classes for abstracting the concept of
 cookies, an HTTP state management mechanism. It supports both simple string-only
 cookies, and provides an abstraction for having any serializable data-type as
 cookie value.
@@ -67,7 +67,7 @@ in a cookie name (as :attr:`~Morsel.key`).
 
    Module :mod:`http.cookiejar`
       HTTP cookie handling for web *clients*.  The :mod:`http.cookiejar` and
-      :mod:`http.cookies` modules do not depend on each other.
+      :mod:`!http.cookies` modules do not depend on each other.
 
    :rfc:`2109` - HTTP State Management Mechanism
       This is the state management specification implemented by this module.
@@ -266,7 +266,7 @@ Morsel Objects
 Example
 -------
 
-The following example demonstrates how to use the :mod:`http.cookies` module.
+The following example demonstrates how to use the :mod:`!http.cookies` module.
 
 .. doctest::
    :options: +NORMALIZE_WHITESPACE

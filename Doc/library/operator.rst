@@ -15,7 +15,7 @@
 
 --------------
 
-The :mod:`operator` module exports a set of efficient functions corresponding to
+The :mod:`!operator` module exports a set of efficient functions corresponding to
 the intrinsic operators of Python.  For example, ``operator.add(x, y)`` is
 equivalent to the expression ``x+y``. Many function names are those used for
 special methods, without the double underscores.  For backward compatibility,
@@ -275,7 +275,7 @@ The following operation works with callables:
    .. versionadded:: 3.11
 
 
-The :mod:`operator` module also defines tools for generalized attribute and item
+The :mod:`!operator` module also defines tools for generalized attribute and item
 lookups.  These are useful for making fast field extractors as arguments for
 :func:`map`, :func:`sorted`, :meth:`itertools.groupby`, or other functions that
 expect a function argument.
@@ -390,7 +390,7 @@ Mapping Operators to Functions
 ------------------------------
 
 This table shows how abstract operations correspond to operator symbols in the
-Python syntax and the functions in the :mod:`operator` module.
+Python syntax and the functions in the :mod:`!operator` module.
 
 +-----------------------+-------------------------+---------------------------------------+
 | Operation             | Syntax                  | Function                              |

@@ -337,7 +337,7 @@ Unpacking in Lists and List Comprehensions
 ------------------------------------------
 
 The section on :ref:`tut-unpacking-arguments` describes the use of ``*`` to
-"unpack" the elements of an iterable object, providing each one seperately as
+"unpack" the elements of an iterable object, providing each one separately as
 an argument to a function.  Unpacking can also be used in other contexts, for
 example, when creating lists.  When specifying elements of a list, prefixing an
 expression by a ``*`` will unpack the result of that expression, adding each of

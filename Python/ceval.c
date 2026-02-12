@@ -1007,6 +1007,34 @@ cleanup:
     return res;
 }
 
+_PyStackRef
+_Py_LoadAttr_StackRefSteal(
+    PyThreadState *tstate, _PyStackRef owner,
+    PyObject *name, _PyStackRef *self_or_null)
+{
+    _PyCStackRef method;
+    _PyThreadState_PushCStackRef(tstate, &method);
+    int is_meth = _PyObject_GetMethodStackRef(tstate, PyStackRef_AsPyObjectBorrow(owner), name, &method.ref);
+    if (is_meth) {
+        /* We can bypass temporary bound method object.
+           meth is unbound method and obj is self.
+           meth | self | arg1 | ... | argN
+         */
+        assert(!PyStackRef_IsNull(method.ref)); // No errors on this branch
+        self_or_null[0] = owner;  // Transfer ownership
+        return _PyThreadState_PopCStackRefSteal(tstate, &method);
+    }
+    /* meth is not an unbound method (but a regular attr, or
+       something was returned by a descriptor protocol).  Set
+       the second element of the stack to NULL, to signal
+       CALL that it's not a method call.
+       meth | NULL | arg1 | ... | argN
+    */
+    PyStackRef_CLOSE(owner);
+    self_or_null[0] = PyStackRef_NULL;
+    return _PyThreadState_PopCStackRefSteal(tstate, &method);
+}
+
 #ifdef Py_DEBUG
 void
 _Py_assert_within_stack_bounds(
@@ -2000,11 +2028,16 @@ _PyEvalFramePushAndInit_Ex(PyThreadState *tstate, _PyStackRef func,
             PyStackRef_CLOSE(func);
             goto error;
         }
-        size_t total_args = nargs + PyDict_GET_SIZE(kwargs);
+        size_t nkwargs = PyDict_GET_SIZE(kwargs);
         assert(sizeof(PyObject *) == sizeof(_PyStackRef));
         newargs = (_PyStackRef *)object_array;
-        for (size_t i = 0; i < total_args; i++) {
-            newargs[i] = PyStackRef_FromPyObjectSteal(object_array[i]);
+        /* Positional args are borrowed from callargs tuple, need new reference */
+        for (Py_ssize_t i = 0; i < nargs; i++) {
+            newargs[i] = PyStackRef_FromPyObjectNew(object_array[i]);
+        }
+        /* Keyword args are owned by _PyStack_UnpackDict, steal them */
+        for (size_t i = 0; i < nkwargs; i++) {
+            newargs[nargs + i] = PyStackRef_FromPyObjectSteal(object_array[nargs + i]);
         }
     }
     else {
@@ -2883,11 +2916,13 @@ _PyEval_SliceIndexNotNone(PyObject *v, Py_ssize_t *pi)
 }
 
 PyObject *
-_PyEval_ImportName(PyThreadState *tstate, _PyInterpreterFrame *frame,
-            PyObject *name, PyObject *fromlist, PyObject *level)
+_PyEval_ImportName(PyThreadState *tstate, PyObject *builtins,
+            PyObject *globals, PyObject *locals, PyObject *name,
+            PyObject *fromlist, PyObject *level)
 {
     PyObject *import_func;
-    if (PyMapping_GetOptionalItem(frame->f_builtins, &_Py_ID(__import__), &import_func) < 0) {
+    if (PyMapping_GetOptionalItem(builtins, &_Py_ID(__import__),
+                                  &import_func) < 0) {
         return NULL;
     }
     if (import_func == NULL) {
@@ -2895,29 +2930,143 @@ _PyEval_ImportName(PyThreadState *tstate, _PyInterpreterFrame *frame,
         return NULL;
     }
 
-    PyObject *locals = frame->f_locals;
+    PyObject *res = _PyEval_ImportNameWithImport(
+        tstate, import_func, globals, locals, name, fromlist, level);
+    Py_DECREF(import_func);
+    return res;
+}
+
+PyObject *
+_PyEval_ImportNameWithImport(PyThreadState *tstate, PyObject *import_func,
+                             PyObject *globals, PyObject *locals,
+                             PyObject *name, PyObject *fromlist, PyObject *level)
+{
     if (locals == NULL) {
         locals = Py_None;
     }
 
     /* Fast path for not overloaded __import__. */
     if (_PyImport_IsDefaultImportFunc(tstate->interp, import_func)) {
-        Py_DECREF(import_func);
         int ilevel = PyLong_AsInt(level);
         if (ilevel == -1 && _PyErr_Occurred(tstate)) {
             return NULL;
         }
         return PyImport_ImportModuleLevelObject(
                         name,
-                        frame->f_globals,
+                        globals,
                         locals,
                         fromlist,
                         ilevel);
     }
 
-    PyObject* args[5] = {name, frame->f_globals, locals, fromlist, level};
+    PyObject *args[5] = {name, globals, locals, fromlist, level};
     PyObject *res = PyObject_Vectorcall(import_func, args, 5, NULL);
-    Py_DECREF(import_func);
+    return res;
+}
+
+static int
+check_lazy_import_compatibility(PyThreadState *tstate, PyObject *globals,
+                               PyObject *name, PyObject *level)
+{
+     // Check if this module should be imported lazily due to
+     // the compatibility mode support via __lazy_modules__.
+    PyObject *lazy_modules = NULL;
+    PyObject *abs_name = NULL;
+    int res = -1;
+
+    if (globals != NULL &&
+        PyMapping_GetOptionalItem(globals, &_Py_ID(__lazy_modules__),
+                                  &lazy_modules) < 0)
+    {
+        return -1;
+    }
+    if (lazy_modules == NULL) {
+        assert(!PyErr_Occurred());
+        return 0;
+    }
+
+    int ilevel = PyLong_AsInt(level);
+    if (ilevel == -1 && _PyErr_Occurred(tstate)) {
+        goto error;
+    }
+
+    abs_name = _PyImport_GetAbsName(tstate, name, globals, ilevel);
+    if (abs_name == NULL) {
+        goto error;
+    }
+
+    res = PySequence_Contains(lazy_modules, abs_name);
+error:
+    Py_XDECREF(abs_name);
+    Py_XDECREF(lazy_modules);
+    return res;
+}
+
+PyObject *
+_PyEval_LazyImportName(PyThreadState *tstate, PyObject *builtins,
+                       PyObject *globals, PyObject *locals, PyObject *name,
+                       PyObject *fromlist, PyObject *level, int lazy)
+{
+    PyObject *res = NULL;
+    // Check if global policy overrides the local syntax
+    switch (PyImport_GetLazyImportsMode()) {
+        case PyImport_LAZY_NONE:
+            lazy = 0;
+            break;
+        case PyImport_LAZY_ALL:
+            lazy = 1;
+            break;
+        case PyImport_LAZY_NORMAL:
+            break;
+    }
+
+    if (!lazy) {
+        // See if __lazy_modules__ forces this to be lazy.
+        lazy = check_lazy_import_compatibility(tstate, globals, name, level);
+        if (lazy < 0) {
+            return NULL;
+        }
+    }
+
+    if (!lazy) {
+        // Not a lazy import or lazy imports are disabled, fallback to the
+        // regular import.
+        return _PyEval_ImportName(tstate, builtins, globals, locals,
+                                  name, fromlist, level);
+    }
+
+    PyObject *lazy_import_func;
+    if (PyMapping_GetOptionalItem(builtins, &_Py_ID(__lazy_import__),
+                                  &lazy_import_func) < 0) {
+        goto error;
+    }
+    if (lazy_import_func == NULL) {
+        assert(!PyErr_Occurred());
+        _PyErr_SetString(tstate, PyExc_ImportError,
+                         "__lazy_import__ not found");
+        goto error;
+    }
+
+    if (locals == NULL) {
+        locals = Py_None;
+    }
+
+    if (_PyImport_IsDefaultLazyImportFunc(tstate->interp, lazy_import_func)) {
+        int ilevel = PyLong_AsInt(level);
+        if (ilevel == -1 && PyErr_Occurred()) {
+            goto error;
+        }
+
+        res = _PyImport_LazyImportModuleLevelObject(
+            tstate, name, builtins, globals, locals, fromlist, ilevel
+        );
+        goto error;
+    }
+
+    PyObject *args[6] = {name, globals, locals, fromlist, level, builtins};
+    res = PyObject_Vectorcall(lazy_import_func, args, 6, NULL);
+error:
+    Py_XDECREF(lazy_import_func);
     return res;
 }
 
@@ -3087,6 +3236,64 @@ done:
     Py_XDECREF(spec);
     Py_DECREF(mod_name_or_unknown);
     return NULL;
+}
+
+PyObject *
+_PyEval_LazyImportFrom(PyThreadState *tstate, _PyInterpreterFrame *frame, PyObject *v, PyObject *name)
+{
+    assert(PyLazyImport_CheckExact(v));
+    assert(name);
+    assert(PyUnicode_Check(name));
+    PyObject *ret;
+    PyLazyImportObject *d = (PyLazyImportObject *)v;
+    PyObject *mod = PyImport_GetModule(d->lz_from);
+    if (mod != NULL) {
+        // Check if the module already has the attribute, if so, resolve it
+        // eagerly.
+        if (PyModule_Check(mod)) {
+            PyObject *mod_dict = PyModule_GetDict(mod);
+            if (mod_dict != NULL) {
+                if (PyDict_GetItemRef(mod_dict, name, &ret) < 0) {
+                    Py_DECREF(mod);
+                    return NULL;
+                }
+                if (ret != NULL) {
+                    Py_DECREF(mod);
+                    return ret;
+                }
+            }
+        }
+        Py_DECREF(mod);
+    }
+
+    if (d->lz_attr != NULL) {
+        if (PyUnicode_Check(d->lz_attr)) {
+            PyObject *from = PyUnicode_FromFormat(
+                "%U.%U", d->lz_from, d->lz_attr);
+            if (from == NULL) {
+                return NULL;
+            }
+            ret = _PyLazyImport_New(frame, d->lz_builtins, from, name);
+            Py_DECREF(from);
+            return ret;
+        }
+    }
+    else {
+        Py_ssize_t dot = PyUnicode_FindChar(
+            d->lz_from, '.', 0, PyUnicode_GET_LENGTH(d->lz_from), 1
+        );
+        if (dot >= 0) {
+            PyObject *from = PyUnicode_Substring(d->lz_from, 0, dot);
+            if (from == NULL) {
+                return NULL;
+            }
+            ret = _PyLazyImport_New(frame, d->lz_builtins, from, name);
+            Py_DECREF(from);
+            return ret;
+        }
+    }
+    ret = _PyLazyImport_New(frame, d->lz_builtins, d->lz_from, name);
+    return ret;
 }
 
 #define CANNOT_CATCH_MSG "catching classes that do not inherit from "\
@@ -3376,6 +3583,24 @@ _PyEval_LoadGlobalStackRef(PyObject *globals, PyObject *builtins, PyObject *name
             }
         }
         *writeto = PyStackRef_FromPyObjectSteal(res);
+    }
+
+    PyObject *res_o = PyStackRef_AsPyObjectBorrow(*writeto);
+    if (res_o != NULL && PyLazyImport_CheckExact(res_o)) {
+        PyObject *l_v = _PyImport_LoadLazyImportTstate(PyThreadState_GET(), res_o);
+        PyStackRef_CLOSE(writeto[0]);
+        if (l_v == NULL) {
+            assert(PyErr_Occurred());
+            *writeto = PyStackRef_NULL;
+            return;
+        }
+        int err = PyDict_SetItem(globals, name, l_v);
+        if (err < 0) {
+            Py_DECREF(l_v);
+            *writeto = PyStackRef_NULL;
+            return;
+        }
+        *writeto = PyStackRef_FromPyObjectSteal(l_v);
     }
 }
 

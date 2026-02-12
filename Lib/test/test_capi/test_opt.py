@@ -978,51 +978,6 @@ class TestUopsOptimization(unittest.TestCase):
         # Constant narrowing allows constant folding for second comparison
         self.assertLessEqual(count_ops(ex, "_COMPARE_OP_FLOAT"), 1)
 
-    def test_compare_str_eq_narrows_to_constant(self):
-        def f(n):
-            def return_hello():
-                return "hello"
-
-            hits = 0
-            v = return_hello()
-            for _ in range(n):
-                if v == "hello":
-                    if v == "hello":
-                        hits += 1
-            return hits
-
-        res, ex = self._run_with_optimizer(f, TIER2_THRESHOLD)
-        self.assertEqual(res, TIER2_THRESHOLD)
-        self.assertIsNotNone(ex)
-        uops = get_opnames(ex)
-
-        # Constant narrowing allows constant folding for second comparison
-        self.assertLessEqual(count_ops(ex, "_COMPARE_OP_STR"), 1)
-
-    def test_compare_str_ne_narrows_to_constant(self):
-        def f(n):
-            def return_hello():
-                return "hello"
-
-            hits = 0
-            v = return_hello()
-            for _ in range(n):
-                if v != "hello":
-                    hits += 1000
-                else:
-                    if v == "hello":
-                        hits += 1
-            return hits
-
-        res, ex = self._run_with_optimizer(f, TIER2_THRESHOLD)
-        self.assertEqual(res, TIER2_THRESHOLD)
-        self.assertIsNotNone(ex)
-        uops = get_opnames(ex)
-
-        # Constant narrowing allows constant folding for second comparison
-        self.assertLessEqual(count_ops(ex, "_COMPARE_OP_STR"), 1)
-
-    @unittest.skip("gh-139109 WIP")
     def test_combine_stack_space_checks_sequential(self):
         def dummy12(x):
             return x - 1
@@ -1046,12 +1001,14 @@ class TestUopsOptimization(unittest.TestCase):
         self.assertEqual(uop_names.count("_PUSH_FRAME"), 2)
         self.assertEqual(uop_names.count("_RETURN_VALUE"), 2)
         self.assertEqual(uop_names.count("_CHECK_STACK_SPACE"), 0)
-        self.assertEqual(uop_names.count("_CHECK_STACK_SPACE_OPERAND"), 1)
-        # sequential calls: max(12, 13) == 13
-        largest_stack = _testinternalcapi.get_co_framesize(dummy13.__code__)
-        self.assertIn(("_CHECK_STACK_SPACE_OPERAND", largest_stack), uops_and_operands)
+        # Each call gets its own _CHECK_STACK_SPACE_OPERAND
+        self.assertEqual(uop_names.count("_CHECK_STACK_SPACE_OPERAND"), 2)
+        # Each _CHECK_STACK_SPACE_OPERAND has the framesize of its function
+        self.assertIn(("_CHECK_STACK_SPACE_OPERAND",
+                       _testinternalcapi.get_co_framesize(dummy12.__code__)), uops_and_operands)
+        self.assertIn(("_CHECK_STACK_SPACE_OPERAND",
+                       _testinternalcapi.get_co_framesize(dummy13.__code__)), uops_and_operands)
 
-    @unittest.skip("gh-139109 WIP")
     def test_combine_stack_space_checks_nested(self):
         def dummy12(x):
             return x + 3
@@ -1074,15 +1031,12 @@ class TestUopsOptimization(unittest.TestCase):
         self.assertEqual(uop_names.count("_PUSH_FRAME"), 2)
         self.assertEqual(uop_names.count("_RETURN_VALUE"), 2)
         self.assertEqual(uop_names.count("_CHECK_STACK_SPACE"), 0)
-        self.assertEqual(uop_names.count("_CHECK_STACK_SPACE_OPERAND"), 1)
-        # nested calls: 15 + 12 == 27
-        largest_stack = (
-            _testinternalcapi.get_co_framesize(dummy15.__code__) +
-            _testinternalcapi.get_co_framesize(dummy12.__code__)
-        )
-        self.assertIn(("_CHECK_STACK_SPACE_OPERAND", largest_stack), uops_and_operands)
+        self.assertEqual(uop_names.count("_CHECK_STACK_SPACE_OPERAND"), 2)
+        self.assertIn(("_CHECK_STACK_SPACE_OPERAND",
+                       _testinternalcapi.get_co_framesize(dummy15.__code__)), uops_and_operands)
+        self.assertIn(("_CHECK_STACK_SPACE_OPERAND",
+                       _testinternalcapi.get_co_framesize(dummy12.__code__)), uops_and_operands)
 
-    @unittest.skip("gh-139109 WIP")
     def test_combine_stack_space_checks_several_calls(self):
         def dummy12(x):
             return x + 3
@@ -1110,15 +1064,14 @@ class TestUopsOptimization(unittest.TestCase):
         self.assertEqual(uop_names.count("_PUSH_FRAME"), 4)
         self.assertEqual(uop_names.count("_RETURN_VALUE"), 4)
         self.assertEqual(uop_names.count("_CHECK_STACK_SPACE"), 0)
-        self.assertEqual(uop_names.count("_CHECK_STACK_SPACE_OPERAND"), 1)
-        # max(12, 18 + max(12, 13)) == 31
-        largest_stack = (
-            _testinternalcapi.get_co_framesize(dummy18.__code__) +
-            _testinternalcapi.get_co_framesize(dummy13.__code__)
-        )
-        self.assertIn(("_CHECK_STACK_SPACE_OPERAND", largest_stack), uops_and_operands)
+        self.assertEqual(uop_names.count("_CHECK_STACK_SPACE_OPERAND"), 4)
+        self.assertIn(("_CHECK_STACK_SPACE_OPERAND",
+                       _testinternalcapi.get_co_framesize(dummy12.__code__)), uops_and_operands)
+        self.assertIn(("_CHECK_STACK_SPACE_OPERAND",
+                       _testinternalcapi.get_co_framesize(dummy13.__code__)), uops_and_operands)
+        self.assertIn(("_CHECK_STACK_SPACE_OPERAND",
+                       _testinternalcapi.get_co_framesize(dummy18.__code__)), uops_and_operands)
 
-    @unittest.skip("gh-139109 WIP")
     def test_combine_stack_space_checks_several_calls_different_order(self):
         # same as `several_calls` but with top-level calls reversed
         def dummy12(x):
@@ -1147,15 +1100,15 @@ class TestUopsOptimization(unittest.TestCase):
         self.assertEqual(uop_names.count("_PUSH_FRAME"), 4)
         self.assertEqual(uop_names.count("_RETURN_VALUE"), 4)
         self.assertEqual(uop_names.count("_CHECK_STACK_SPACE"), 0)
-        self.assertEqual(uop_names.count("_CHECK_STACK_SPACE_OPERAND"), 1)
-        # max(18 + max(12, 13), 12) == 31
-        largest_stack = (
-            _testinternalcapi.get_co_framesize(dummy18.__code__) +
-            _testinternalcapi.get_co_framesize(dummy13.__code__)
-        )
-        self.assertIn(("_CHECK_STACK_SPACE_OPERAND", largest_stack), uops_and_operands)
+        self.assertEqual(uop_names.count("_CHECK_STACK_SPACE_OPERAND"), 4)
+        self.assertIn(("_CHECK_STACK_SPACE_OPERAND",
+                       _testinternalcapi.get_co_framesize(dummy12.__code__)), uops_and_operands)
+        self.assertIn(("_CHECK_STACK_SPACE_OPERAND",
+                       _testinternalcapi.get_co_framesize(dummy13.__code__)), uops_and_operands)
+        self.assertIn(("_CHECK_STACK_SPACE_OPERAND",
+                       _testinternalcapi.get_co_framesize(dummy18.__code__)), uops_and_operands)
 
-    @unittest.skip("gh-139109 WIP")
+    @unittest.skip("reopen when we combine multiple stack space checks into one")
     def test_combine_stack_space_complex(self):
         def dummy0(x):
             return x
@@ -1205,7 +1158,7 @@ class TestUopsOptimization(unittest.TestCase):
             ("_CHECK_STACK_SPACE_OPERAND", largest_stack), uops_and_operands
         )
 
-    @unittest.skip("gh-139109 WIP")
+    @unittest.skip("reopen when we combine multiple stack space checks into one")
     def test_combine_stack_space_checks_large_framesize(self):
         # Create a function with a large framesize. This ensures _CHECK_STACK_SPACE is
         # actually doing its job. Note that the resulting trace hits
@@ -1267,7 +1220,7 @@ class TestUopsOptimization(unittest.TestCase):
             ("_CHECK_STACK_SPACE_OPERAND", largest_stack), uops_and_operands
         )
 
-    @unittest.skip("gh-139109 WIP")
+    @unittest.skip("reopen when we combine multiple stack space checks into one")
     def test_combine_stack_space_checks_recursion(self):
         def dummy15(x):
             while x > 0:
@@ -2032,6 +1985,23 @@ class TestUopsOptimization(unittest.TestCase):
         self.assertIn("_UNPACK_SEQUENCE_TWO_TUPLE", uops)
         self.assertNotIn("_GUARD_NOS_TUPLE", uops)
         self.assertIn("_BINARY_OP_SUBSCR_TUPLE_INT", uops)
+
+    def test_remove_guard_for_known_type_slice(self):
+        def f(n):
+            x = 0
+            for _ in range(n):
+                l = [1, 2, 3]
+                slice_obj = slice(0, 1)
+                x += l[slice_obj][0] # guarded
+                x += l[slice_obj][0] # unguarded
+            return x
+        res, ex = self._run_with_optimizer(f, TIER2_THRESHOLD)
+        self.assertEqual(res, TIER2_THRESHOLD * 2)
+        uops = get_opnames(ex)
+
+        count = count_ops(ex, "_GUARD_TOS_SLICE")
+        self.assertEqual(count, 1)
+        self.assertIn("_BINARY_OP_SUBSCR_LIST_INT", uops)
 
     def test_remove_guard_for_tuple_bounds_check(self):
         def f(n):
@@ -3689,6 +3659,23 @@ class TestUopsOptimization(unittest.TestCase):
         self.assertLessEqual(count_ops(ex, "_POP_TOP"), 3)
         self.assertLessEqual(count_ops(ex, "_POP_TOP_INT"), 1)
         self.assertIn("_POP_TOP_NOP", uops)
+
+    def test_binary_subscr_list_slice(self):
+        def testfunc(n):
+            x = 0
+            for _ in range(n):
+                l = [1, 2, 3]
+                x += l[0:1][0]
+            return x
+
+        res, ex = self._run_with_optimizer(testfunc, TIER2_THRESHOLD)
+        self.assertEqual(res, TIER2_THRESHOLD)
+        uops = get_opnames(ex)
+
+        self.assertIn("_BINARY_OP_SUBSCR_LIST_SLICE", uops)
+        self.assertNotIn("_GUARD_TOS_LIST", uops)
+        self.assertEqual(count_ops(ex, "_POP_TOP"), 3)
+        self.assertEqual(count_ops(ex, "_POP_TOP_NOP"), 4)
 
     def test_is_op(self):
         def test_is_false(n):

@@ -65,10 +65,12 @@ Summary -- Release highlights
 
 .. PEP-sized items next.
 
+* :pep:`810`: :ref:`Explicit lazy imports for faster startup times
+  <whatsnew315-pep810>`
 * :pep:`799`: :ref:`A dedicated profiling package for organizing Python
   profiling tools <whatsnew315-profiling-package>`
 * :pep:`799`: :ref:`Tachyon: High frequency statistical sampling profiler
-  profiling tools <whatsnew315-sampling-profiler>`
+  <whatsnew315-sampling-profiler>`
 * :pep:`798`: :ref:`Unpacking in Comprehensions
   <whatsnew315-unpacking-in-comprehensions>`
 * :pep:`686`: :ref:`Python now uses UTF-8 as the default encoding
@@ -81,6 +83,102 @@ Summary -- Release highlights
 
 New features
 ============
+
+.. _whatsnew315-pep810:
+
+:pep:`810`: Explicit lazy imports
+---------------------------------
+
+Large Python applications often suffer from slow startup times. A
+significant contributor to this problem is the import system: when a module
+is imported, Python must locate the file, read it from disk, compile it to
+bytecode, and execute all top-level code. For applications with deep
+dependency trees, this process can take seconds, even when most of the
+imported code is never actually used during a particular run.
+
+Developers have worked around this by moving imports inside functions, using
+:mod:`importlib` to load modules on demand, or restructuring code to avoid
+unnecessary dependencies. These approaches work but make code harder to read
+and maintain, scatter import statements throughout the codebase, and require
+discipline to apply consistently.
+
+Python now provides a cleaner solution through explicit :keyword:`lazy`
+imports using the new ``lazy`` soft keyword. When you mark an import as
+lazy, Python defers the actual module loading until the imported name is
+first used. This gives you the organizational benefits of declaring all
+imports at the top of the file while only paying the loading cost for
+modules you actually use.
+
+The ``lazy`` keyword works with both ``import`` and ``from ... import``
+statements. When you write ``lazy import heavy_module``, Python does not
+immediately load the module. Instead, it creates a lightweight proxy object.
+The actual module loading happens transparently when you first access the
+name:
+
+.. code-block:: python
+
+   lazy import json
+   lazy from datetime import datetime
+
+   print("Starting up...")  # json and datetime not loaded yet
+
+   data = json.loads('{"key": "value"}')  # json gets loads here
+   now = datetime()  # datetime loads here
+
+This mechanism is particularly useful for applications that import many
+modules at the top level but may only use a subset of them in any given run.
+The deferred loading reduces startup latency without requiring code
+restructuring or conditional imports scattered throughout the codebase.
+
+In the case where loading a lazily imported module fails (for example, if
+the module does not exist), Python raises the exception at the point of
+first use rather than at import time. The associated traceback includes both
+the location where the name was accessed and the original import statement,
+making it straightforward to diagnose & debug the failure.
+
+For cases where you want to enable lazy loading globally without modifying
+source code, Python provides the :option:`-X lazy_imports <-X>` command-line
+option and the :envvar:`PYTHON_LAZY_IMPORTS` environment variable. Both
+accept three values: ``all`` makes all imports lazy by default, ``none``
+disables lazy imports entirely (even explicit ``lazy`` statements become
+eager), and ``normal`` (the default) respects the ``lazy`` keyword in source
+code. The :func:`sys.set_lazy_imports` and :func:`sys.get_lazy_imports`
+functions allow changing and querying this mode at runtime.
+
+For more selective control, :func:`sys.set_lazy_imports_filter` accepts a
+callable that determines whether a specific module should be loaded lazily.
+The filter receives three arguments: the importing module's name (or
+``None``), the imported module's name, and the fromlist (or ``None`` for
+regular imports). It should return ``True`` to allow the import to be lazy,
+or ``False`` to force eager loading. This allows patterns like making only
+your own application's modules lazy while keeping third-party dependencies
+eager:
+
+.. code-block:: python
+
+   import sys
+
+   def myapp_filter(importing, imported, fromlist):
+       return imported.startswith("myapp.")
+   sys.set_lazy_imports_filter(myapp_filter)
+   sys.set_lazy_imports("all")
+
+   import myapp.slow_module  # lazy (matches filter)
+   import json               # eager (does not match filter)
+
+The proxy type itself is available as :data:`types.LazyImportType` for code
+that needs to detect lazy imports programmatically.
+
+There are some restrictions on where the ``lazy`` keyword can be used. Lazy
+imports are only permitted at module scope; using ``lazy`` inside a
+function, class body, or ``try``/``except``/``finally`` block raises a
+:exc:`SyntaxError`. Neither star imports nor future imports can be lazy
+(``lazy from module import *`` and ``lazy from __future__ import ...`` both
+raise :exc:`SyntaxError`).
+
+.. seealso:: :pep:`810` for the full specification and rationale.
+
+(Contributed by Pablo Galindo Salgado and Dino Viehland in :gh:`142349`.)
 
 .. _whatsnew315-profiling-package:
 
@@ -161,13 +259,13 @@ Key features include:
     timing with direct and cumulative samples. Best for detailed analysis and integration with
     existing Python profiling tools.
   * ``--collapsed``: Generates collapsed stack traces (one line per stack). This format is
-    specifically designed for creating flamegraphs with external tools like Brendan Gregg's
+    specifically designed for creating flame graphs with external tools like Brendan Gregg's
     FlameGraph scripts or speedscope.
-  * ``--flamegraph``: Generates a self-contained interactive HTML flamegraph using D3.js.
-    Opens directly in your browser for immediate visual analysis. Flamegraphs show the call
+  * ``--flamegraph``: Generates a self-contained interactive HTML flame graph using D3.js.
+    Opens directly in your browser for immediate visual analysis. Flame graphs show the call
     hierarchy where width represents time spent, making it easy to spot bottlenecks at a glance.
-  * ``--gecko``: Generates Gecko Profiler format compatible with Firefox Profiler
-    (https://profiler.firefox.com). Upload the output to Firefox Profiler for advanced
+  * ``--gecko``: Generates Gecko Profiler format compatible with `Firefox Profiler
+    <https://profiler.firefox.com>`__. Upload the output to Firefox Profiler for advanced
     timeline-based analysis with features like stack charts, markers, and network activity.
   * ``--heatmap``: Generates an interactive HTML heatmap visualization with line-level sample
     counts. Creates a directory with per-file heatmaps showing exactly where time is spent
@@ -188,6 +286,7 @@ See :mod:`profiling.sampling` for the complete documentation, including all
 available output formats, profiling modes, and configuration options.
 
 (Contributed by Pablo Galindo and László Kiss Kollár in :gh:`135953` and :gh:`138122`.)
+
 
 .. _whatsnew315-unpacking-in-comprehensions:
 
@@ -228,6 +327,7 @@ agen() for x in a)``.
 .. seealso:: :pep:`798` for further details.
 
 (Contributed by Adam Hartz in :gh:`143055`.)
+
 
 .. _whatsnew315-improved-error-messages:
 
@@ -447,6 +547,7 @@ Other language changes
   making it a :term:`generic type`.
   (Contributed by James Hilton-Balfe in :gh:`128335`.)
 
+
 New modules
 ===========
 
@@ -476,6 +577,7 @@ argparse
   inline code when color output is enabled.
   (Contributed by Savannah Ostrowski in :gh:`142390`.)
 
+
 base64
 ------
 
@@ -488,8 +590,17 @@ base64
 * Added the *ignorechars* parameter in :func:`~base64.b64decode`.
   (Contributed by Serhiy Storchaka in :gh:`144001`.)
 
+
 binascii
 --------
+
+* Added functions for Ascii85, Base85, and Z85 encoding:
+
+  - :func:`~binascii.b2a_ascii85` and :func:`~binascii.a2b_ascii85`
+  - :func:`~binascii.b2a_base85` and :func:`~binascii.a2b_base85`
+  - :func:`~binascii.b2a_z85` and :func:`~binascii.a2b_z85`
+
+  (Contributed by James Seo and Serhiy Storchaka in :gh:`101178`.)
 
 * Added the *wrapcol* parameter in :func:`~binascii.b2a_base64`.
   (Contributed by Serhiy Storchaka in :gh:`143214`.)
@@ -517,6 +628,7 @@ collections
   :meth:`!collections.Counter.__ixor__` to compute the symmetric difference
   between :class:`~collections.Counter` objects.
   (Contributed by Raymond Hettinger in :gh:`138682`.)
+
 
 collections.abc
 ---------------
@@ -548,6 +660,16 @@ concurrent.futures
   (Contributed by Jonathan Berg in :gh:`139486`.)
 
 
+contextlib
+----------
+
+* Added support for arbitrary descriptors :meth:`!__enter__`,
+  :meth:`!__exit__`, :meth:`!__aenter__`, and :meth:`!__aexit__` in
+  :class:`~contextlib.ExitStack` and :class:`contextlib.AsyncExitStack`, for
+  consistency with the :keyword:`with` and :keyword:`async with` statements.
+  (Contributed by Serhiy Storchaka in :gh:`144386`.)
+
+
 dataclasses
 -----------
 
@@ -561,7 +683,6 @@ dbm
 * Added new :meth:`!reorganize` methods to :mod:`dbm.dumb` and :mod:`dbm.sqlite3`
   which allow to recover unused free space previously occupied by deleted entries.
   (Contributed by Andrea Oliveri in :gh:`134004`.)
-
 
 
 difflib
@@ -649,8 +770,10 @@ math
 mimetypes
 ---------
 
-* Add ``application/dicom`` MIME type for ``.dcm`` extension. (Contributed by Benedikt Johannes in :gh:`144217`.)
-* Add ``application/node`` MIME type for ``.cjs`` extension. (Contributed by John Franey in :gh:`140937`.)
+* Add ``application/dicom`` MIME type for ``.dcm`` extension.
+  (Contributed by Benedikt Johannes in :gh:`144217`.)
+* Add ``application/node`` MIME type for ``.cjs`` extension.
+  (Contributed by John Franey in :gh:`140937`.)
 * Add ``application/toml``. (Contributed by Gil Forcada in :gh:`139959`.)
 * Add ``image/jxl``. (Contributed by Foolbar in :gh:`144213`.)
 * Rename ``application/x-texinfo`` to ``application/texinfo``.
@@ -694,6 +817,13 @@ os.path
   (Contributed by Petr Viktorin for :cve:`2025-4517`.)
 
 
+pickle
+------
+
+* Add support for pickling private methods and nested classes.
+  (Contributed by Zackery Spytz and Serhiy Storchaka in :gh:`77188`.)
+
+
 resource
 --------
 
@@ -723,16 +853,16 @@ sqlite3
 
 * The :ref:`command-line interface <sqlite3-cli>` has several new features:
 
-   * SQL keyword completion on <tab>.
-     (Contributed by Long Tan in :gh:`133393`.)
+  * SQL keyword completion on <tab>.
+    (Contributed by Long Tan in :gh:`133393`.)
 
-   * Prompts, error messages, and help text are now colored.
-     This is enabled by default, see :ref:`using-on-controlling-color` for
-     details.
-     (Contributed by Stan Ulbrych and Łukasz Langa in :gh:`133461`.)
+  * Prompts, error messages, and help text are now colored.
+    This is enabled by default, see :ref:`using-on-controlling-color` for
+    details.
+    (Contributed by Stan Ulbrych and Łukasz Langa in :gh:`133461`.)
 
-   * Table, index, trigger, view, column, function, and schema completion on <tab>.
-     (Contributed by Long Tan in :gh:`136101`.)
+  * Table, index, trigger, view, column, function, and schema completion on <tab>.
+    (Contributed by Long Tan in :gh:`136101`.)
 
 
 ssl
@@ -744,21 +874,21 @@ ssl
 
 * Added new methods for managing groups used for SSL key agreement
 
-   * :meth:`ssl.SSLContext.set_groups` sets the groups allowed for doing
-     key agreement, extending the previous
-     :meth:`ssl.SSLContext.set_ecdh_curve` method.
-     This new API provides the ability to list multiple groups and
-     supports fixed-field and post-quantum groups in addition to ECDH
-     curves. This method can also be used to control what key shares
-     are sent in the TLS handshake.
-   * :meth:`ssl.SSLSocket.group` returns the group selected for doing key
-     agreement on the current connection after the TLS handshake completes.
-     This call requires OpenSSL 3.2 or later.
-   * :meth:`ssl.SSLContext.get_groups` returns a list of all available key
-     agreement groups compatible with the minimum and maximum TLS versions
-     currently set in the context. This call requires OpenSSL 3.5 or later.
+  * :meth:`ssl.SSLContext.set_groups` sets the groups allowed for doing
+    key agreement, extending the previous
+    :meth:`ssl.SSLContext.set_ecdh_curve` method.
+    This new API provides the ability to list multiple groups and
+    supports fixed-field and post-quantum groups in addition to ECDH
+    curves. This method can also be used to control what key shares
+    are sent in the TLS handshake.
+  * :meth:`ssl.SSLSocket.group` returns the group selected for doing key
+    agreement on the current connection after the TLS handshake completes.
+    This call requires OpenSSL 3.2 or later.
+  * :meth:`ssl.SSLContext.get_groups` returns a list of all available key
+    agreement groups compatible with the minimum and maximum TLS versions
+    currently set in the context. This call requires OpenSSL 3.5 or later.
 
-   (Contributed by Ron Frederick in :gh:`136306`.)
+  (Contributed by Ron Frederick in :gh:`136306`.)
 
 * Added a new method :meth:`ssl.SSLContext.set_ciphersuites` for setting TLS 1.3
   ciphers. For TLS 1.2 or earlier, :meth:`ssl.SSLContext.set_ciphers` should
@@ -782,7 +912,8 @@ ssl
     selected for the server to complete the TLS handshake on the current
     connection. This call requires OpenSSL 3.5 or later.
 
-   (Contributed by Ron Frederick in :gh:`138252`.)
+  (Contributed by Ron Frederick in :gh:`138252`.)
+
 
 subprocess
 ----------
@@ -798,6 +929,14 @@ subprocess
   If none of these mechanisms are available, the function falls back to the
   traditional busy loop (non-blocking call and short sleeps).
   (Contributed by Giampaolo Rodola in :gh:`83069`).
+
+
+symtable
+--------
+
+* Add :meth:`symtable.Function.get_cells` and :meth:`symtable.Symbol.is_cell` methods.
+  (Contributed by Yashp002 in :gh:`143504`.)
+
 
 symtable
 --------
@@ -854,18 +993,68 @@ tkinter
   arguments: *nolinestop* which allows the search to
   continue across line boundaries;
   and *strictlimits* which restricts the search to within the specified range.
-  (Contributed by Rihaan Meher in :gh:`130848`)
+  (Contributed by Rihaan Meher in :gh:`130848`.)
 
 * A new method :meth:`!tkinter.Text.search_all` has been introduced.
   This method allows for searching for all matches of a pattern
   using Tcl's ``-all`` and ``-overlap`` options.
-  (Contributed by Rihaan Meher in :gh:`130848`)
+  (Contributed by Rihaan Meher in :gh:`130848`.)
 
 * Added new methods :meth:`!pack_content`, :meth:`!place_content` and
   :meth:`!grid_content` which use Tk commands with new names (introduced
   in Tk 8.6) instead of :meth:`!*_slaves` methods which use Tk commands
   with outdated names.
-  (Contributed by Serhiy Storchaka in :gh:`143754`)
+  (Contributed by Serhiy Storchaka in :gh:`143754`.)
+
+
+.. _whatsnew315-tomllib-1-1-0:
+
+tomllib
+-------
+
+* The :mod:`tomllib` module now supports TOML 1.1.0.
+  This is a backwards compatible update, meaning that all valid TOML 1.0.0
+  documents are parsed the same way.
+
+  The changes, according to the `official TOML changelog`_, are:
+
+  - Allow newlines and trailing commas in inline tables.
+
+    Previously an inline table had to be on a single line and couldn't end
+    with a trailing comma. This is now relaxed so that the following is valid:
+
+    .. syntax highlighting needs TOML 1.1.0 support in Pygments,
+       see https://github.com/pygments/pygments/issues/3026
+
+    .. code-block:: text
+
+       tbl = {
+          key      = "a string",
+          moar-tbl =  {
+             key = 1,
+          },
+       }
+
+  - Add ``\xHH`` notation to basic strings for codepoints under 255,
+    and the ``\e`` escape for the escape character:
+
+    .. code-block:: text
+
+       null = "null byte: \x00; letter a: \x61"
+       csi = "\e["
+
+  - Seconds in datetime and time values are now optional.
+    The following are now valid:
+
+    .. code-block:: text
+
+       dt = 2010-02-03 14:15
+       t  = 14:15
+
+  (Contributed by Taneli Hukkinen in :gh:`142956`.)
+
+.. _official TOML changelog: https://github.com/toml-lang/toml/blob/main/CHANGELOG.md
+
 
 types
 ------
@@ -908,10 +1097,10 @@ unittest
 urllib.parse
 ------------
 
-* Add the *missing_as_none* parameter to :func:`~urllib.parse.urlparse`,
-  :func:`~urllib.parse.urlsplit` and :func:`~urllib.parse.urldefrag` functions.
-  Add the *keep_empty* parameter to :func:`~urllib.parse.urlunparse` and
-  :func:`~urllib.parse.urlunsplit` functions.
+* Add the *missing_as_none* parameter to :func:`~urllib.parse.urlsplit`,
+  :func:`~urllib.parse.urlparse` and :func:`~urllib.parse.urldefrag` functions.
+  Add the *keep_empty* parameter to :func:`~urllib.parse.urlunsplit` and
+  :func:`~urllib.parse.urlunparse` functions.
   This allows to distinguish between empty and not defined URI components
   and preserve empty components.
   (Contributed by Serhiy Storchaka in :gh:`67041`.)
@@ -985,12 +1174,19 @@ Optimizations
   (Contributed by Chris Eibl, Ken Jin, and Brandt Bucher in :gh:`143068`.
   Special thanks to the MSVC team including Hulon Jenkins.)
 
+
 base64 & binascii
 -----------------
 
 * CPython's underlying base64 implementation now encodes 2x faster and decodes 3x
   faster thanks to simple CPU pipelining optimizations.
   (Contributed by Gregory P. Smith and Serhiy Storchaka in :gh:`143262`.)
+
+* Implementation for Ascii85, Base85, and Z85 encoding has been rewritten in C.
+  Encoding and decoding is now two orders of magnitude faster and consumes
+  two orders of magnitude less memory.
+  (Contributed by James Seo and Serhiy Storchaka in :gh:`101178`.)
+
 
 csv
 ---
@@ -1122,7 +1318,7 @@ importlib.resources
 
 * Removed deprecated ``package`` parameter
   from :func:`importlib.resources.files` function.
-  (Contributed by Semyon Moroz in :gh:`138044`)
+  (Contributed by Semyon Moroz in :gh:`138044`.)
 
 
 pathlib
@@ -1373,7 +1569,7 @@ Changed C APIs
 
 * If the :c:macro:`Py_TPFLAGS_MANAGED_DICT` or :c:macro:`Py_TPFLAGS_MANAGED_WEAKREF`
   flag is set then :c:macro:`Py_TPFLAGS_HAVE_GC` must be set too.
-  (Contributed by Sergey Miryanov in :gh:`134786`)
+  (Contributed by Sergey Miryanov in :gh:`134786`.)
 
 
 Porting to Python 3.15
@@ -1530,7 +1726,7 @@ Build changes
   :manpage:`PR_SET_VMA_ANON_NAME <PR_SET_VMA(2const)>` (Linux 5.17 or newer).
   Annotations are visible in ``/proc/<pid>/maps`` if the kernel supports the feature
   and :option:`-X dev <-X>` is passed to the Python or Python is built in :ref:`debug mode <debug-build>`.
-  (Contributed by Donghee Na in :gh:`141770`)
+  (Contributed by Donghee Na in :gh:`141770`.)
 
 
 Porting to Python 3.15
