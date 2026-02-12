@@ -15,7 +15,7 @@ def _quote_value(value):
     return "'{0}'".format(value.replace("'", "''"))
 
 
-def _iterdump(connection):
+def _iterdump(connection, *, filter=None):
     """
     Returns an iterator to the dump of the database in an SQL text format.
 
@@ -24,18 +24,32 @@ def _iterdump(connection):
     directly but instead called from the Connection method, iterdump().
     """
 
+    writeable_schema = False
     cu = connection.cursor()
+    cu.row_factory = None  # Make sure we get predictable results.
+    # Disable foreign key constraints, if there is any foreign key violation.
+    violations = cu.execute("PRAGMA foreign_key_check").fetchall()
+    if violations:
+        yield('PRAGMA foreign_keys=OFF;')
     yield('BEGIN TRANSACTION;')
 
+    if filter:
+        # Return database objects which match the filter pattern.
+        filter_name_clause = 'AND "name" LIKE ?'
+        params = [filter]
+    else:
+        filter_name_clause = ""
+        params = []
     # sqlite_master table contains the SQL CREATE statements for the database.
-    q = """
+    q = f"""
         SELECT "name", "type", "sql"
         FROM "sqlite_master"
             WHERE "sql" NOT NULL AND
             "type" == 'table'
+            {filter_name_clause}
             ORDER BY "name"
         """
-    schema_res = cu.execute(q)
+    schema_res = cu.execute(q, params)
     sqlite_sequence = []
     for table_name, type, sql in schema_res.fetchall():
         if table_name == 'sqlite_sequence':
@@ -50,13 +64,15 @@ def _iterdump(connection):
             yield('ANALYZE "sqlite_master";')
         elif table_name.startswith('sqlite_'):
             continue
-        # NOTE: Virtual table support not implemented
-        #elif sql.startswith('CREATE VIRTUAL TABLE'):
-        #    qtable = table_name.replace("'", "''")
-        #    yield("INSERT INTO sqlite_master(type,name,tbl_name,rootpage,sql)"\
-        #        "VALUES('table','{0}','{0}',0,'{1}');".format(
-        #        qtable,
-        #        sql.replace("''")))
+        elif sql.startswith('CREATE VIRTUAL TABLE'):
+            if not writeable_schema:
+                writeable_schema = True
+                yield('PRAGMA writable_schema=ON;')
+            yield("INSERT INTO sqlite_master(type,name,tbl_name,rootpage,sql)"
+                  "VALUES('table',{0},{0},0,{1});".format(
+                      _quote_value(table_name),
+                      _quote_value(sql),
+                  ))
         else:
             yield('{0};'.format(sql))
 
@@ -75,15 +91,19 @@ def _iterdump(connection):
             yield("{0};".format(row[0]))
 
     # Now when the type is 'index', 'trigger', or 'view'
-    q = """
+    q = f"""
         SELECT "name", "type", "sql"
         FROM "sqlite_master"
             WHERE "sql" NOT NULL AND
             "type" IN ('index', 'trigger', 'view')
+            {filter_name_clause}
         """
-    schema_res = cu.execute(q)
+    schema_res = cu.execute(q, params)
     for name, type, sql in schema_res.fetchall():
         yield('{0};'.format(sql))
+
+    if writeable_schema:
+        yield('PRAGMA writable_schema=OFF;')
 
     # gh-79009: Yield statements concerning the sqlite_sequence table at the
     # end of the transaction.

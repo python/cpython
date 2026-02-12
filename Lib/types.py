@@ -1,65 +1,85 @@
 """
 Define names for built-in types that aren't directly accessible as a builtin.
 """
-import sys
 
 # Iterators in Python aren't a matter of type but of protocol.  A large
 # and changing number of builtin types implement *some* flavor of
 # iterator.  Don't check the type!  Use hasattr to check for both
 # "__iter__" and "__next__" attributes instead.
 
-def _f(): pass
-FunctionType = type(_f)
-LambdaType = type(lambda: None)         # Same as FunctionType
-CodeType = type(_f.__code__)
-MappingProxyType = type(type.__dict__)
-SimpleNamespace = type(sys.implementation)
-
-def _cell_factory():
-    a = 1
-    def f():
-        nonlocal a
-    return f.__closure__[0]
-CellType = type(_cell_factory())
-
-def _g():
-    yield 1
-GeneratorType = type(_g())
-
-async def _c(): pass
-_c = _c()
-CoroutineType = type(_c)
-_c.close()  # Prevent ResourceWarning
-
-async def _ag():
-    yield
-_ag = _ag()
-AsyncGeneratorType = type(_ag)
-
-class _C:
-    def _m(self): pass
-MethodType = type(_C()._m)
-
-BuiltinFunctionType = type(len)
-BuiltinMethodType = type([].append)     # Same as BuiltinFunctionType
-
-WrapperDescriptorType = type(object.__init__)
-MethodWrapperType = type(object().__str__)
-MethodDescriptorType = type(str.join)
-ClassMethodDescriptorType = type(dict.__dict__['fromkeys'])
-
-ModuleType = type(sys)
-
 try:
-    raise TypeError
-except TypeError as exc:
-    TracebackType = type(exc.__traceback__)
-    FrameType = type(exc.__traceback__.tb_frame)
+    from _types import *
+except ImportError:
+    import sys
 
-GetSetDescriptorType = type(FunctionType.__code__)
-MemberDescriptorType = type(FunctionType.__globals__)
+    def _f(): pass
+    FunctionType = type(_f)
+    LambdaType = type(lambda: None)  # Same as FunctionType
+    CodeType = type(_f.__code__)
+    MappingProxyType = type(type.__dict__)
+    SimpleNamespace = type(sys.implementation)
 
-del sys, _f, _g, _C, _c, _ag, _cell_factory  # Not for export
+    def _cell_factory():
+        a = 1
+        def f():
+            nonlocal a
+        return f.__closure__[0]
+    CellType = type(_cell_factory())
+
+    def _g():
+        yield 1
+    GeneratorType = type(_g())
+
+    async def _c(): pass
+    _c = _c()
+    CoroutineType = type(_c)
+    _c.close()  # Prevent ResourceWarning
+
+    async def _ag():
+        yield
+    _ag = _ag()
+    AsyncGeneratorType = type(_ag)
+
+    class _C:
+        def _m(self): pass
+    MethodType = type(_C()._m)
+
+    BuiltinFunctionType = type(len)
+    BuiltinMethodType = type([].append)  # Same as BuiltinFunctionType
+
+    WrapperDescriptorType = type(object.__init__)
+    MethodWrapperType = type(object().__str__)
+    MethodDescriptorType = type(str.join)
+    ClassMethodDescriptorType = type(dict.__dict__['fromkeys'])
+
+    ModuleType = type(sys)
+
+    try:
+        raise TypeError
+    except TypeError as exc:
+        TracebackType = type(exc.__traceback__)
+
+    _f = (lambda: sys._getframe())()
+    FrameType = type(_f)
+    FrameLocalsProxyType = type(_f.f_locals)
+
+    GetSetDescriptorType = type(FunctionType.__code__)
+    MemberDescriptorType = type(FunctionType.__globals__)
+
+    GenericAlias = type(list[int])
+    UnionType = type(int | str)
+
+    EllipsisType = type(Ellipsis)
+    NoneType = type(None)
+    NotImplementedType = type(NotImplemented)
+
+    # CapsuleType cannot be accessed from pure Python,
+    # so there is no fallback definition.
+
+    # LazyImportType in pure Python cannot be guaranteed
+    # without overriding the filter, so there is no fallback.
+
+    del sys, _f, _g, _C, _c, _ag, _cell_factory  # Not for export
 
 
 # Provide a PEP 3115 compliant mechanism for class creation
@@ -236,7 +256,6 @@ class DynamicClassAttribute:
 
 
 class _GeneratorWrapper:
-    # TODO: Implement this in C.
     def __init__(self, gen):
         self.__wrapped = gen
         self.__isgen = gen.__class__ is GeneratorType
@@ -260,10 +279,20 @@ class _GeneratorWrapper:
     @property
     def gi_yieldfrom(self):
         return self.__wrapped.gi_yieldfrom
+    @property
+    def gi_suspended(self):
+        return self.__wrapped.gi_suspended
+    @property
+    def gi_state(self):
+        return self.__wrapped.gi_state
+    @property
+    def cr_state(self):
+        return self.__wrapped.gi_state.replace('GEN_', 'CORO_')
     cr_code = gi_code
     cr_frame = gi_frame
     cr_running = gi_running
     cr_await = gi_yieldfrom
+    cr_suspended = gi_suspended
     def __next__(self):
         return next(self.__wrapped)
     def __iter__(self):
@@ -291,7 +320,6 @@ def coroutine(func):
         # Check if 'func' is a generator function.
         # (0x20 == CO_GENERATOR)
         if co_flags & 0x20:
-            # TODO: Implement this in C.
             co = func.__code__
             # 0x100 == CO_ITERABLE_COROUTINE
             func.__code__ = co.replace(co_flags=co.co_flags | 0x100)
@@ -323,11 +351,4 @@ def coroutine(func):
 
     return wrapped
 
-GenericAlias = type(list[int])
-UnionType = type(int | str)
-
-EllipsisType = type(Ellipsis)
-NoneType = type(None)
-NotImplementedType = type(NotImplemented)
-
-__all__ = [n for n in globals() if n[:1] != '_']
+__all__ = [n for n in globals() if not n.startswith('_')]  # for pydoc

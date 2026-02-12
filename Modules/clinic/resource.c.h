@@ -2,11 +2,7 @@
 preserve
 [clinic start generated code]*/
 
-#if defined(Py_BUILD_CORE) && !defined(Py_BUILD_CORE_MODULE)
-#  include "pycore_gc.h"            // PyGC_Head
-#  include "pycore_runtime.h"       // _Py_ID()
-#endif
-
+#include "pycore_modsupport.h"    // _PyArg_CheckPositional()
 
 #if defined(HAVE_GETRUSAGE)
 
@@ -178,4 +174,4 @@ exit:
 #ifndef RESOURCE_PRLIMIT_METHODDEF
     #define RESOURCE_PRLIMIT_METHODDEF
 #endif /* !defined(RESOURCE_PRLIMIT_METHODDEF) */
-/*[clinic end generated code: output=916ecf0eb1927c37 input=a9049054013a1b77]*/
+/*[clinic end generated code: output=8e905b2f5c35170e input=a9049054013a1b77]*/

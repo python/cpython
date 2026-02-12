@@ -1,1 +1,0 @@
-Improve the textual representation of IPv4-mapped IPv6 addresses (:rfc:`4291` Sections 2.2, 2.5.5.2) in :mod:`ipaddress`. Patch by Oleksandr Pavliuk.

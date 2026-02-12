@@ -87,9 +87,9 @@ within a string.  Escaped quotation marks, nested semicolons, and other
 such trickeries do not confuse it.
 
    >>> C = cookies.SimpleCookie()
-   >>> C.load('keebler="E=everybody; L=\\"Loves\\"; fudge=\\012;";')
+   >>> C.load('keebler="E=everybody; L=\\"Loves\\"; fudge=;";')
    >>> print(C)
-   Set-Cookie: keebler="E=everybody; L=\"Loves\"; fudge=\012;"
+   Set-Cookie: keebler="E=everybody; L=\"Loves\"; fudge=;"
 
 Each element of the Cookie also supports all of the RFC 2109
 Cookie attributes.  Here's an example which sets the Path
@@ -170,6 +170,15 @@ _Translator.update({
 })
 
 _is_legal_key = re.compile('[%s]+' % re.escape(_LegalChars)).fullmatch
+_control_character_re = re.compile(r'[\x00-\x1F\x7F]')
+
+
+def _has_control_character(*val):
+    """Detects control characters within a value.
+    Supports any type, as header values can be any type.
+    """
+    return any(_control_character_re.search(str(v)) for v in val)
+
 
 def _quote(str):
     r"""Quote a string for use in a cookie header.
@@ -184,8 +193,13 @@ def _quote(str):
         return '"' + str.translate(_Translator) + '"'
 
 
-_OctalPatt = re.compile(r"\\[0-3][0-7][0-7]")
-_QuotePatt = re.compile(r"[\\].")
+_unquote_sub = re.compile(r'\\(?:([0-3][0-7][0-7])|(.))').sub
+
+def _unquote_replace(m):
+    if m[1]:
+        return chr(int(m[1], 8))
+    else:
+        return m[2]
 
 def _unquote(str):
     # If there aren't any doublequotes,
@@ -205,36 +219,13 @@ def _unquote(str):
     #    \012 --> \n
     #    \"   --> "
     #
-    i = 0
-    n = len(str)
-    res = []
-    while 0 <= i < n:
-        o_match = _OctalPatt.search(str, i)
-        q_match = _QuotePatt.search(str, i)
-        if not o_match and not q_match:              # Neither matched
-            res.append(str[i:])
-            break
-        # else:
-        j = k = -1
-        if o_match:
-            j = o_match.start(0)
-        if q_match:
-            k = q_match.start(0)
-        if q_match and (not o_match or k < j):     # QuotePatt matched
-            res.append(str[i:k])
-            res.append(str[k+1])
-            i = k + 2
-        else:                                      # OctalPatt matched
-            res.append(str[i:j])
-            res.append(chr(int(str[j+1:j+4], 8)))
-            i = j + 4
-    return _nulljoin(res)
+    return _unquote_sub(_unquote_replace, str)
 
 # The _getdate() routine is used to set the expiration time in the cookie's HTTP
 # header.  By default, _getdate() returns the current time in the appropriate
 # "expires" format for a Set-Cookie header.  The one optional argument is an
 # offset from now, in seconds.  For example, an offset of -3600 means "one hour
-# ago".  The offset may be a floating point number.
+# ago".  The offset may be a floating-point number.
 #
 
 _weekdayname = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun']
@@ -282,17 +273,19 @@ class Morsel(dict):
         "httponly" : "HttpOnly",
         "version"  : "Version",
         "samesite" : "SameSite",
+        "partitioned": "Partitioned",
     }
 
-    _flags = {'secure', 'httponly'}
+    _reserved_defaults = dict.fromkeys(_reserved, "")
+
+    _flags = {'secure', 'httponly', 'partitioned'}
 
     def __init__(self):
         # Set defaults
         self._key = self._value = self._coded_value = None
 
         # Set default attributes
-        for key in self._reserved:
-            dict.__setitem__(self, key, "")
+        dict.update(self, self._reserved_defaults)
 
     @property
     def key(self):
@@ -310,12 +303,16 @@ class Morsel(dict):
         K = K.lower()
         if not K in self._reserved:
             raise CookieError("Invalid attribute %r" % (K,))
+        if _has_control_character(K, V):
+            raise CookieError(f"Control characters are not allowed in cookies {K!r} {V!r}")
         dict.__setitem__(self, K, V)
 
     def setdefault(self, key, val=None):
         key = key.lower()
         if key not in self._reserved:
             raise CookieError("Invalid attribute %r" % (key,))
+        if _has_control_character(key, val):
+            raise CookieError("Control characters are not allowed in cookies %r %r" % (key, val,))
         return dict.setdefault(self, key, val)
 
     def __eq__(self, morsel):
@@ -351,6 +348,9 @@ class Morsel(dict):
             raise CookieError('Attempt to set a reserved key %r' % (key,))
         if not _is_legal_key(key):
             raise CookieError('Illegal key %r' % (key,))
+        if _has_control_character(key, val, coded_val):
+            raise CookieError(
+                "Control characters are not allowed in cookies %r %r %r" % (key, val, coded_val,))
 
         # It's a good key, so save it.
         self._key = key
@@ -442,9 +442,11 @@ _CookiePattern = re.compile(r"""
     (                              # Optional group: there may not be a value.
     \s*=\s*                          # Equal Sign
     (?P<val>                         # Start of group 'val'
-    "(?:[^\\"]|\\.)*"                  # Any doublequoted string
+    "(?:\\"|.)*?"                    # Any double-quoted string
     |                                  # or
-    \w{3},\s[\w\d\s-]{9,11}\s[\d:]{8}\sGMT  # Special case for "expires" attr
+    # Special case for "expires" attr
+    (\w{3,6}day|\w{3}),\s              # Day of the week or abbreviated day
+    [\w\d\s-]{9,11}\s[\d:]{8}\sGMT     # Date and time in specific format
     |                                  # or
     [""" + _LegalValueChars + r"""]*      # Any word or empty string
     )                                # End of group 'val'
@@ -502,7 +504,10 @@ class BaseCookie(dict):
         result = []
         items = sorted(self.items())
         for key, value in items:
-            result.append(value.output(attrs, header))
+            value_output = value.output(attrs, header)
+            if _has_control_character(value_output):
+                raise CookieError("Control characters are not allowed in cookies")
+            result.append(value_output)
         return sep.join(result)
 
     __str__ = output

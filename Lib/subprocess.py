@@ -74,15 +74,16 @@ except ModuleNotFoundError:
 else:
     _mswindows = True
 
-# wasm32-emscripten and wasm32-wasi do not support processes
-_can_fork_exec = sys.platform not in {"emscripten", "wasi"}
+# some platforms do not support subprocesses
+_can_fork_exec = sys.platform not in {"emscripten", "wasi", "ios", "tvos", "watchos"}
 
 if _mswindows:
     import _winapi
-    from _winapi import (CREATE_NEW_CONSOLE, CREATE_NEW_PROCESS_GROUP,
+    from _winapi import (CREATE_NEW_CONSOLE, CREATE_NEW_PROCESS_GROUP,  # noqa: F401
                          STD_INPUT_HANDLE, STD_OUTPUT_HANDLE,
                          STD_ERROR_HANDLE, SW_HIDE,
                          STARTF_USESTDHANDLES, STARTF_USESHOWWINDOW,
+                         STARTF_FORCEONFEEDBACK, STARTF_FORCEOFFFEEDBACK,
                          ABOVE_NORMAL_PRIORITY_CLASS, BELOW_NORMAL_PRIORITY_CLASS,
                          HIGH_PRIORITY_CLASS, IDLE_PRIORITY_CLASS,
                          NORMAL_PRIORITY_CLASS, REALTIME_PRIORITY_CLASS,
@@ -93,6 +94,7 @@ if _mswindows:
                     "STD_INPUT_HANDLE", "STD_OUTPUT_HANDLE",
                     "STD_ERROR_HANDLE", "SW_HIDE",
                     "STARTF_USESTDHANDLES", "STARTF_USESHOWWINDOW",
+                    "STARTF_FORCEONFEEDBACK", "STARTF_FORCEOFFFEEDBACK",
                     "STARTUPINFO",
                     "ABOVE_NORMAL_PRIORITY_CLASS", "BELOW_NORMAL_PRIORITY_CLASS",
                     "HIGH_PRIORITY_CLASS", "IDLE_PRIORITY_CLASS",
@@ -103,18 +105,22 @@ else:
     if _can_fork_exec:
         from _posixsubprocess import fork_exec as _fork_exec
         # used in methods that are called by __del__
-        _waitpid = os.waitpid
-        _waitstatus_to_exitcode = os.waitstatus_to_exitcode
-        _WIFSTOPPED = os.WIFSTOPPED
-        _WSTOPSIG = os.WSTOPSIG
-        _WNOHANG = os.WNOHANG
+        class _del_safe:
+            waitpid = os.waitpid
+            waitstatus_to_exitcode = os.waitstatus_to_exitcode
+            WIFSTOPPED = os.WIFSTOPPED
+            WSTOPSIG = os.WSTOPSIG
+            WNOHANG = os.WNOHANG
+            ECHILD = errno.ECHILD
     else:
-        _fork_exec = None
-        _waitpid = None
-        _waitstatus_to_exitcode = None
-        _WIFSTOPPED = None
-        _WSTOPSIG = None
-        _WNOHANG = None
+        class _del_safe:
+            waitpid = None
+            waitstatus_to_exitcode = None
+            WIFSTOPPED = None
+            WSTOPSIG = None
+            WNOHANG = None
+            ECHILD = errno.ECHILD
+
     import select
     import selectors
 
@@ -346,7 +352,7 @@ def _args_from_interpreter_flags():
     if dev_mode:
         args.extend(('-X', 'dev'))
     for opt in ('faulthandler', 'tracemalloc', 'importtime',
-                'frozen_modules', 'showrefcount', 'utf8'):
+                'frozen_modules', 'showrefcount', 'utf8', 'gil'):
         if opt in xoptions:
             value = xoptions[opt]
             if value is True:
@@ -374,13 +380,12 @@ def _text_encoding():
 
     if sys.flags.utf8_mode:
         return "utf-8"
-    else:
-        return locale.getencoding()
+    return locale.getencoding()
 
 
 def call(*popenargs, timeout=None, **kwargs):
     """Run command with arguments.  Wait for command to complete or
-    timeout, then return the returncode attribute.
+    for timeout seconds, then return the returncode attribute.
 
     The arguments are the same as for the Popen constructor.  Example:
 
@@ -517,8 +522,8 @@ def run(*popenargs,
     in the returncode attribute, and output & stderr attributes if those streams
     were captured.
 
-    If timeout is given, and the process takes too long, a TimeoutExpired
-    exception will be raised.
+    If timeout (seconds) is given and the process takes too long,
+     a TimeoutExpired exception will be raised.
 
     There is an optional argument "input", allowing you to
     pass bytes or a string to the subprocess's stdin.  If you use this argument
@@ -709,6 +714,9 @@ def _use_posix_spawn():
         # os.posix_spawn() is not available
         return False
 
+    if ((_env := os.environ.get('_PYTHON_SUBPROCESS_USE_POSIX_SPAWN')) in ('0', '1')):
+        return bool(int(_env))
+
     if sys.platform in ('darwin', 'sunos5'):
         # posix_spawn() is a syscall on both macOS and Solaris,
         # and properly reports errors
@@ -740,10 +748,64 @@ def _use_posix_spawn():
     return False
 
 
+def _can_use_pidfd_open():
+    # Availability: Linux >= 5.3
+    if not hasattr(os, "pidfd_open"):
+        return False
+    try:
+        pidfd = os.pidfd_open(os.getpid(), 0)
+    except OSError as err:
+        if err.errno in {errno.EMFILE, errno.ENFILE}:
+            # transitory 'too many open files'
+            return True
+        # likely blocked by security policy like SECCOMP (EPERM,
+        # EACCES, ENOSYS)
+        return False
+    else:
+        os.close(pidfd)
+        return True
+
+
+def _can_use_kqueue():
+    # Availability: macOS, BSD
+    names = (
+        "kqueue",
+        "KQ_EV_ADD",
+        "KQ_EV_ONESHOT",
+        "KQ_FILTER_PROC",
+        "KQ_NOTE_EXIT",
+    )
+    if not all(hasattr(select, x) for x in names):
+        return False
+    kq = None
+    try:
+        kq = select.kqueue()
+        kev = select.kevent(
+            os.getpid(),
+            filter=select.KQ_FILTER_PROC,
+            flags=select.KQ_EV_ADD | select.KQ_EV_ONESHOT,
+            fflags=select.KQ_NOTE_EXIT,
+        )
+        kq.control([kev], 1, 0)
+        return True
+    except OSError as err:
+        if err.errno in {errno.EMFILE, errno.ENFILE}:
+            # transitory 'too many open files'
+            return True
+        return False
+    finally:
+        if kq is not None:
+            kq.close()
+
+
+_CAN_USE_PIDFD_OPEN = not _mswindows and _can_use_pidfd_open()
+_CAN_USE_KQUEUE = not _mswindows and _can_use_kqueue()
+
+
 # These are primarily fail-safe knobs for negatives. A True value does not
 # guarantee the given libc/syscall API will be used.
 _USE_POSIX_SPAWN = _use_posix_spawn()
-_USE_VFORK = True
+_HAVE_POSIX_SPAWN_CLOSEFROM = hasattr(os, 'POSIX_SPAWN_CLOSEFROM')
 
 
 class Popen:
@@ -833,6 +895,9 @@ class Popen:
             bufsize = -1  # Restore default
         if not isinstance(bufsize, int):
             raise TypeError("bufsize must be an integer")
+
+        if stdout is STDOUT:
+            raise ValueError("STDOUT can only be used for stderr")
 
         if pipesize is None:
             pipesize = -1  # Restore default
@@ -1112,10 +1177,9 @@ class Popen:
                     except TimeoutExpired:
                         pass
                 self._sigint_wait_secs = 0  # Note that this has been done.
-                return  # resume the KeyboardInterrupt
-
-            # Wait for the process to terminate, to avoid zombies.
-            self.wait()
+            else:
+                # Wait for the process to terminate, to avoid zombies.
+                self.wait()
 
     def __del__(self, _maxsize=sys.maxsize, _warn=warnings.warn):
         if not self._child_created:
@@ -1224,8 +1288,11 @@ class Popen:
 
             finally:
                 self._communication_started = True
-
-            sts = self.wait(timeout=self._remaining_time(endtime))
+            try:
+                self.wait(timeout=self._remaining_time(endtime))
+            except TimeoutExpired as exc:
+                exc.timeout = timeout
+                raise
 
         return (stdout, stderr)
 
@@ -1581,6 +1648,8 @@ class Popen:
             """Internal implementation of wait() on Windows."""
             if timeout is None:
                 timeout_millis = _winapi.INFINITE
+            elif timeout <= 0:
+                timeout_millis = 0
             else:
                 timeout_millis = int(timeout * 1000)
             if self.returncode is None:
@@ -1596,6 +1665,10 @@ class Popen:
         def _readerthread(self, fh, buffer):
             buffer.append(fh.read())
             fh.close()
+
+
+        def _writerthread(self, input):
+            self._stdin_write(input)
 
 
         def _communicate(self, input, endtime, orig_timeout):
@@ -1616,8 +1689,23 @@ class Popen:
                 self.stderr_thread.daemon = True
                 self.stderr_thread.start()
 
-            if self.stdin:
-                self._stdin_write(input)
+            # Start writer thread to send input to stdin, unless already
+            # started.  The thread writes input and closes stdin when done,
+            # or continues in the background on timeout.
+            if self.stdin and not hasattr(self, "_stdin_thread"):
+                self._stdin_thread = \
+                        threading.Thread(target=self._writerthread,
+                                         args=(input,))
+                self._stdin_thread.daemon = True
+                self._stdin_thread.start()
+
+            # Wait for the writer thread, or time out.  If we time out, the
+            # thread remains writing and the fd left open in case the user
+            # calls communicate again.
+            if hasattr(self, "_stdin_thread"):
+                self._stdin_thread.join(self._remaining_time(endtime))
+                if self._stdin_thread.is_alive():
+                    raise TimeoutExpired(self.args, orig_timeout)
 
             # Wait for the reader threads, or time out.  If we time out, the
             # threads remain reading and the fds left open in case the user
@@ -1747,14 +1835,11 @@ class Popen:
                     errread, errwrite)
 
 
-        def _posix_spawn(self, args, executable, env, restore_signals,
+        def _posix_spawn(self, args, executable, env, restore_signals, close_fds,
                          p2cread, p2cwrite,
                          c2pread, c2pwrite,
                          errread, errwrite):
             """Execute program using os.posix_spawn()."""
-            if env is None:
-                env = os.environ
-
             kwargs = {}
             if restore_signals:
                 # See _Py_RestoreSignals() in Python/pylifecycle.c
@@ -1776,6 +1861,10 @@ class Popen:
             ):
                 if fd != -1:
                     file_actions.append((os.POSIX_SPAWN_DUP2, fd, fd2))
+
+            if close_fds:
+                file_actions.append((os.POSIX_SPAWN_CLOSEFROM, 3))
+
             if file_actions:
                 kwargs['file_actions'] = file_actions
 
@@ -1823,7 +1912,7 @@ class Popen:
             if (_USE_POSIX_SPAWN
                     and os.path.dirname(executable)
                     and preexec_fn is None
-                    and not close_fds
+                    and (not close_fds or _HAVE_POSIX_SPAWN_CLOSEFROM)
                     and not pass_fds
                     and cwd is None
                     and (p2cread == -1 or p2cread > 2)
@@ -1835,7 +1924,7 @@ class Popen:
                     and gids is None
                     and uid is None
                     and umask < 0):
-                self._posix_spawn(args, executable, env, restore_signals,
+                self._posix_spawn(args, executable, env, restore_signals, close_fds,
                                   p2cread, p2cwrite,
                                   c2pread, c2pwrite,
                                   errread, errwrite)
@@ -1889,7 +1978,7 @@ class Popen:
                             errpipe_read, errpipe_write,
                             restore_signals, start_new_session,
                             process_group, gid, gids, uid, umask,
-                            preexec_fn, _USE_VFORK)
+                            preexec_fn)
                     self._child_created = True
                 finally:
                     # be sure the FD is closed no matter what
@@ -1938,33 +2027,34 @@ class Popen:
                         SubprocessError)
                 if issubclass(child_exception_type, OSError) and hex_errno:
                     errno_num = int(hex_errno, 16)
-                    child_exec_never_called = (err_msg == "noexec")
-                    if child_exec_never_called:
+                    if err_msg == "noexec:chdir":
                         err_msg = ""
                         # The error must be from chdir(cwd).
                         err_filename = cwd
+                    elif err_msg == "noexec":
+                        err_msg = ""
+                        err_filename = None
                     else:
                         err_filename = orig_executable
                     if errno_num != 0:
                         err_msg = os.strerror(errno_num)
-                    raise child_exception_type(errno_num, err_msg, err_filename)
+                    if err_filename is not None:
+                        raise child_exception_type(errno_num, err_msg, err_filename)
+                    else:
+                        raise child_exception_type(errno_num, err_msg)
                 raise child_exception_type(err_msg)
 
 
-        def _handle_exitstatus(self, sts,
-                               _waitstatus_to_exitcode=_waitstatus_to_exitcode,
-                               _WIFSTOPPED=_WIFSTOPPED,
-                               _WSTOPSIG=_WSTOPSIG):
+        def _handle_exitstatus(self, sts, _del_safe=_del_safe):
             """All callers to this function MUST hold self._waitpid_lock."""
             # This method is called (indirectly) by __del__, so it cannot
             # refer to anything outside of its local scope.
-            if _WIFSTOPPED(sts):
-                self.returncode = -_WSTOPSIG(sts)
+            if _del_safe.WIFSTOPPED(sts):
+                self.returncode = -_del_safe.WSTOPSIG(sts)
             else:
-                self.returncode = _waitstatus_to_exitcode(sts)
+                self.returncode = _del_safe.waitstatus_to_exitcode(sts)
 
-        def _internal_poll(self, _deadstate=None, _waitpid=_waitpid,
-                _WNOHANG=_WNOHANG, _ECHILD=errno.ECHILD):
+        def _internal_poll(self, _deadstate=None, _del_safe=_del_safe):
             """Check if child process has terminated.  Returns returncode
             attribute.
 
@@ -1980,13 +2070,13 @@ class Popen:
                 try:
                     if self.returncode is not None:
                         return self.returncode  # Another thread waited.
-                    pid, sts = _waitpid(self.pid, _WNOHANG)
+                    pid, sts = _del_safe.waitpid(self.pid, _del_safe.WNOHANG)
                     if pid == self.pid:
                         self._handle_exitstatus(sts)
                 except OSError as e:
                     if _deadstate is not None:
                         self.returncode = _deadstate
-                    elif e.errno == _ECHILD:
+                    elif e.errno == _del_safe.ECHILD:
                         # This happens if SIGCLD is set to be ignored or
                         # waiting for child processes has otherwise been
                         # disabled for our process.  This child is dead, we
@@ -2010,14 +2100,100 @@ class Popen:
                 sts = 0
             return (pid, sts)
 
+        def _wait_pidfd(self, timeout):
+            """Wait for PID to terminate using pidfd_open() + poll().
+            Linux >= 5.3 only.
+            """
+            if not _CAN_USE_PIDFD_OPEN:
+                return False
+            try:
+                pidfd = os.pidfd_open(self.pid, 0)
+            except OSError:
+                # May be:
+                # - ESRCH: no such process
+                # - EMFILE, ENFILE: too many open files (usually 1024)
+                # - ENODEV: anonymous inode filesystem not supported
+                # - EPERM, EACCES, ENOSYS: undocumented; may happen if
+                #   blocked by security policy like SECCOMP
+                return False
+
+            try:
+                poller = select.poll()
+                poller.register(pidfd, select.POLLIN)
+                events = poller.poll(timeout * 1000)
+                if not events:
+                    raise TimeoutExpired(self.args, timeout)
+                return True
+            finally:
+                os.close(pidfd)
+
+        def _wait_kqueue(self, timeout):
+            """Wait for PID to terminate using kqueue(). macOS and BSD only."""
+            if not _CAN_USE_KQUEUE:
+                return False
+            try:
+                kq = select.kqueue()
+            except OSError:
+                # likely EMFILE / ENFILE (too many open files)
+                return False
+
+            try:
+                kev = select.kevent(
+                    self.pid,
+                    filter=select.KQ_FILTER_PROC,
+                    flags=select.KQ_EV_ADD | select.KQ_EV_ONESHOT,
+                    fflags=select.KQ_NOTE_EXIT,
+                )
+                try:
+                    events = kq.control([kev], 1, timeout)  # wait
+                except OSError:
+                    return False
+                else:
+                    if not events:
+                        raise TimeoutExpired(self.args, timeout)
+                    return True
+            finally:
+                kq.close()
 
         def _wait(self, timeout):
-            """Internal implementation of wait() on POSIX."""
+            """Internal implementation of wait() on POSIX.
+
+            Uses efficient pidfd_open() + poll() on Linux or kqueue()
+            on macOS/BSD when available. Falls back to polling
+            waitpid(WNOHANG) otherwise.
+            """
             if self.returncode is not None:
                 return self.returncode
 
             if timeout is not None:
-                endtime = _time() + timeout
+                if timeout < 0:
+                    raise TimeoutExpired(self.args, timeout)
+                started = _time()
+                endtime = started + timeout
+
+                # Try efficient wait first.
+                if self._wait_pidfd(timeout) or self._wait_kqueue(timeout):
+                    # Process is gone. At this point os.waitpid(pid, 0)
+                    # will return immediately, but in very rare races
+                    # the PID may have been reused.
+                    # os.waitpid(pid, WNOHANG) ensures we attempt a
+                    # non-blocking reap without blocking indefinitely.
+                    with self._waitpid_lock:
+                        if self.returncode is not None:
+                            return self.returncode  # Another thread waited.
+                        (pid, sts) = self._try_wait(os.WNOHANG)
+                        assert pid == self.pid or pid == 0
+                        if pid == self.pid:
+                            self._handle_exitstatus(sts)
+                            return self.returncode
+                        # os.waitpid(pid, WNOHANG) returned 0 instead
+                        # of our PID, meaning PID has not yet exited,
+                        # even though poll() / kqueue() said so. Very
+                        # rare and mostly theoretical. Fallback to busy
+                        # polling.
+                        elapsed = _time() - started
+                        endtime -= elapsed
+
                 # Enter a busy loop if we have a timeout.  This busy loop was
                 # cribbed from Lib/threading.py in Thread.wait() at r71065.
                 delay = 0.0005 # 500 us -> initial delay of 1 ms
@@ -2049,6 +2225,7 @@ class Popen:
                         # http://bugs.python.org/issue14396.
                         if pid == self.pid:
                             self._handle_exitstatus(sts)
+
             return self.returncode
 
 
@@ -2060,6 +2237,10 @@ class Popen:
                     self.stdin.flush()
                 except BrokenPipeError:
                     pass  # communicate() must ignore BrokenPipeError.
+                except ValueError:
+                    # ignore ValueError: I/O operation on closed file.
+                    if not self.stdin.closed:
+                        raise
                 if not input:
                     try:
                         self.stdin.close()
@@ -2085,10 +2266,13 @@ class Popen:
             self._save_input(input)
 
             if self._input:
-                input_view = memoryview(self._input)
+                if not isinstance(self._input, memoryview):
+                    input_view = memoryview(self._input)
+                else:
+                    input_view = self._input.cast("b")  # byte input required
 
             with _PopenSelector() as selector:
-                if self.stdin and input:
+                if self.stdin and not self.stdin.closed and self._input:
                     selector.register(self.stdin, selectors.EVENT_WRITE)
                 if self.stdout and not self.stdout.closed:
                     selector.register(self.stdout, selectors.EVENT_READ)
@@ -2097,7 +2281,7 @@ class Popen:
 
                 while selector.get_map():
                     timeout = self._remaining_time(endtime)
-                    if timeout is not None and timeout < 0:
+                    if timeout is not None and timeout <= 0:
                         self._check_timeout(endtime, orig_timeout,
                                             stdout, stderr,
                                             skip_check_and_raise=True)
@@ -2121,7 +2305,7 @@ class Popen:
                                 selector.unregister(key.fileobj)
                                 key.fileobj.close()
                             else:
-                                if self._input_offset >= len(self._input):
+                                if self._input_offset >= len(input_view):
                                     selector.unregister(key.fileobj)
                                     key.fileobj.close()
                         elif key.fileobj in (self.stdout, self.stderr):
@@ -2130,8 +2314,11 @@ class Popen:
                                 selector.unregister(key.fileobj)
                                 key.fileobj.close()
                             self._fileobj2output[key.fileobj].append(data)
-
-            self.wait(timeout=self._remaining_time(endtime))
+            try:
+                self.wait(timeout=self._remaining_time(endtime))
+            except TimeoutExpired as exc:
+                exc.timeout = orig_timeout
+                raise
 
             # All data exchanged.  Translate lists into strings.
             if stdout is not None:

@@ -56,7 +56,10 @@ class PyCompileTestsBase:
         self.directory = tempfile.mkdtemp(dir=os.getcwd())
         self.source_path = os.path.join(self.directory, '_test.py')
         self.pyc_path = self.source_path + 'c'
-        self.cache_path = importlib.util.cache_from_source(self.source_path)
+        try:
+            self.cache_path = importlib.util.cache_from_source(self.source_path)
+        except NotImplementedError:
+            self.cache_path = None
         self.cwd_drive = os.path.splitdrive(os.getcwd())[0]
         # In these tests we compute relative paths.  When using Windows, the
         # current working directory path and the 'self.source_path' might be
@@ -73,10 +76,31 @@ class PyCompileTestsBase:
         if self.cwd_drive:
             os.chdir(self.cwd_drive)
 
+    def assert_cache_path_exists(self, should_exist=True):
+        if self.cache_path:
+            if should_exist:
+                self.assertTrue(os.path.exists(self.cache_path))
+            else:
+                self.assertFalse(os.path.exists(self.cache_path))
+            return
+        cache_dir = os.path.join(self.directory, '__pycache__')
+        if not os.path.isdir(cache_dir):
+            if should_exist:
+                self.fail('no __pycache__ directory exists')
+            return
+        for f in os.listdir(cache_dir):
+            if f.startswith('_test.') and f.endswith('.pyc'):
+                if should_exist:
+                    return
+                self.fail(f'__pycache__/{f} was created')
+        else:
+            if should_exist:
+                self.fail('no __pycache__/_test.*.pyc file exists')
+
     def test_absolute_path(self):
         py_compile.compile(self.source_path, self.pyc_path)
         self.assertTrue(os.path.exists(self.pyc_path))
-        self.assertFalse(os.path.exists(self.cache_path))
+        self.assert_cache_path_exists(False)
 
     def test_do_not_overwrite_symlinks(self):
         # In the face of a cfile argument being a symlink, bail out.
@@ -98,22 +122,24 @@ class PyCompileTestsBase:
         with self.assertRaises(FileExistsError):
             py_compile.compile(self.source_path, os.devnull)
 
+    @unittest.skipIf(sys.implementation.cache_tag is None,
+                     'requires sys.implementation.cache_tag is not None')
     def test_cache_path(self):
         py_compile.compile(self.source_path)
-        self.assertTrue(os.path.exists(self.cache_path))
+        self.assert_cache_path_exists(True)
 
     def test_cwd(self):
         with os_helper.change_cwd(self.directory):
             py_compile.compile(os.path.basename(self.source_path),
                                os.path.basename(self.pyc_path))
         self.assertTrue(os.path.exists(self.pyc_path))
-        self.assertFalse(os.path.exists(self.cache_path))
+        self.assert_cache_path_exists(False)
 
     def test_relative_path(self):
         py_compile.compile(os.path.relpath(self.source_path),
                            os.path.relpath(self.pyc_path))
         self.assertTrue(os.path.exists(self.pyc_path))
-        self.assertFalse(os.path.exists(self.cache_path))
+        self.assert_cache_path_exists(False)
 
     @os_helper.skip_if_dac_override
     @unittest.skipIf(os.name == 'nt',
@@ -132,16 +158,18 @@ class PyCompileTestsBase:
             os.chmod(self.directory, mode.st_mode)
 
     def test_bad_coding(self):
-        bad_coding = os.path.join(os.path.dirname(__file__), 'bad_coding2.py')
+        bad_coding = os.path.join(os.path.dirname(__file__),
+                                  'tokenizedata',
+                                  'bad_coding2.py')
         with support.captured_stderr():
-            self.assertIsNone(py_compile.compile(bad_coding, doraise=False))
-        self.assertFalse(os.path.exists(
-            importlib.util.cache_from_source(bad_coding)))
+            self.assertIsNone(py_compile.compile(bad_coding, self.pyc_path,
+                                                 doraise=False))
+        self.assertFalse(os.path.exists(self.pyc_path))
 
     def test_source_date_epoch(self):
         py_compile.compile(self.source_path, self.pyc_path)
         self.assertTrue(os.path.exists(self.pyc_path))
-        self.assertFalse(os.path.exists(self.cache_path))
+        self.assert_cache_path_exists(False)
         with open(self.pyc_path, 'rb') as fp:
             flags = importlib._bootstrap_external._classify_pyc(
                 fp.read(), 'test', {})
@@ -153,6 +181,8 @@ class PyCompileTestsBase:
         self.assertEqual(flags, expected_flags)
 
     @unittest.skipIf(sys.flags.optimize > 0, 'test does not work with -O')
+    @unittest.skipIf(sys.implementation.cache_tag is None,
+                     'requires sys.implementation.cache_tag is not None')
     def test_double_dot_no_clobber(self):
         # http://bugs.python.org/issue22966
         # py_compile foo.bar.py -> __pycache__/foo.cpython-34.pyc
@@ -172,6 +202,8 @@ class PyCompileTestsBase:
         self.assertTrue(os.path.exists(cache_path))
         self.assertFalse(os.path.exists(pyc_path))
 
+    @unittest.skipIf(sys.implementation.cache_tag is None,
+                     'requires sys.implementation.cache_tag is not None')
     def test_optimization_path(self):
         # Specifying optimized bytecode should lead to a path reflecting that.
         self.assertIn('opt-2', py_compile.compile(self.source_path, optimize=2))
@@ -179,29 +211,33 @@ class PyCompileTestsBase:
     def test_invalidation_mode(self):
         py_compile.compile(
             self.source_path,
+            self.pyc_path,
             invalidation_mode=py_compile.PycInvalidationMode.CHECKED_HASH,
         )
-        with open(self.cache_path, 'rb') as fp:
+        with open(self.pyc_path, 'rb') as fp:
             flags = importlib._bootstrap_external._classify_pyc(
                 fp.read(), 'test', {})
         self.assertEqual(flags, 0b11)
         py_compile.compile(
             self.source_path,
+            self.pyc_path,
             invalidation_mode=py_compile.PycInvalidationMode.UNCHECKED_HASH,
         )
-        with open(self.cache_path, 'rb') as fp:
+        with open(self.pyc_path, 'rb') as fp:
             flags = importlib._bootstrap_external._classify_pyc(
                 fp.read(), 'test', {})
         self.assertEqual(flags, 0b1)
 
     def test_quiet(self):
-        bad_coding = os.path.join(os.path.dirname(__file__), 'bad_coding2.py')
+        bad_coding = os.path.join(os.path.dirname(__file__),
+                                  'tokenizedata',
+                                  'bad_coding2.py')
         with support.captured_stderr() as stderr:
-            self.assertIsNone(py_compile.compile(bad_coding, doraise=False, quiet=2))
-            self.assertIsNone(py_compile.compile(bad_coding, doraise=True, quiet=2))
+            self.assertIsNone(py_compile.compile(bad_coding, self.pyc_path, doraise=False, quiet=2))
+            self.assertIsNone(py_compile.compile(bad_coding, self.pyc_path, doraise=True, quiet=2))
             self.assertEqual(stderr.getvalue(), '')
             with self.assertRaises(py_compile.PyCompileError):
-                py_compile.compile(bad_coding, doraise=True, quiet=1)
+                py_compile.compile(bad_coding, self.pyc_path, doraise=True, quiet=1)
 
 
 class PyCompileTestsWithSourceEpoch(PyCompileTestsBase,
@@ -223,7 +259,12 @@ class PyCompileCLITestCase(unittest.TestCase):
     def setUp(self):
         self.directory = tempfile.mkdtemp()
         self.source_path = os.path.join(self.directory, '_test.py')
-        self.cache_path = importlib.util.cache_from_source(self.source_path)
+        try:
+            self.cache_path = importlib.util.cache_from_source(self.source_path,
+                                    optimization='' if __debug__ else 1)
+        except NotImplementedError:
+            # py_compile.main() assumes legacy pyc path if there is no cache_tag
+            self.cache_path = self.source_path + 'c'
         with open(self.source_path, 'w') as file:
             file.write('x = 123\n')
 
@@ -246,6 +287,7 @@ class PyCompileCLITestCase(unittest.TestCase):
         return script_helper.assert_python_failure('-m', 'py_compile', *args)
 
     def test_stdin(self):
+        self.assertFalse(os.path.exists(self.cache_path))
         result = self.pycompilecmd('-', input=self.source_path)
         self.assertEqual(result.returncode, 0)
         self.assertEqual(result.stdout, b'')
@@ -260,14 +302,18 @@ class PyCompileCLITestCase(unittest.TestCase):
         self.assertTrue(os.path.exists(self.cache_path))
 
     def test_bad_syntax(self):
-        bad_syntax = os.path.join(os.path.dirname(__file__), 'badsyntax_3131.py')
+        bad_syntax = os.path.join(os.path.dirname(__file__),
+                                  'tokenizedata',
+                                  'badsyntax_3131.py')
         rc, stdout, stderr = self.pycompilecmd_failure(bad_syntax)
         self.assertEqual(rc, 1)
         self.assertEqual(stdout, b'')
         self.assertIn(b'SyntaxError', stderr)
 
     def test_bad_syntax_with_quiet(self):
-        bad_syntax = os.path.join(os.path.dirname(__file__), 'badsyntax_3131.py')
+        bad_syntax = os.path.join(os.path.dirname(__file__),
+                                  'tokenizedata',
+                                  'badsyntax_3131.py')
         rc, stdout, stderr = self.pycompilecmd_failure('-q', bad_syntax)
         self.assertEqual(rc, 1)
         self.assertEqual(stdout, b'')

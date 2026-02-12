@@ -1,5 +1,5 @@
-:mod:`urllib.error` --- Exception classes raised by urllib.request
-==================================================================
+:mod:`!urllib.error` --- Exception classes raised by urllib.request
+===================================================================
 
 .. module:: urllib.error
    :synopsis: Exception classes raised by urllib.request.
@@ -11,10 +11,10 @@
 
 --------------
 
-The :mod:`urllib.error` module defines the exception classes for exceptions
+The :mod:`!urllib.error` module defines the exception classes for exceptions
 raised by :mod:`urllib.request`.  The base exception class is :exc:`URLError`.
 
-The following exceptions are raised by :mod:`urllib.error` as appropriate:
+The following exceptions are raised by :mod:`!urllib.error` as appropriate:
 
 .. exception:: URLError
 
@@ -27,8 +27,8 @@ The following exceptions are raised by :mod:`urllib.error` as appropriate:
       exception instance.
 
    .. versionchanged:: 3.3
-      :exc:`URLError` has been made a subclass of :exc:`OSError` instead
-      of :exc:`IOError`.
+      :exc:`URLError` used to be a subtype of :exc:`IOError`, which is now an
+      alias of :exc:`OSError`.
 
 
 .. exception:: HTTPError(url, code, msg, hdrs, fp)

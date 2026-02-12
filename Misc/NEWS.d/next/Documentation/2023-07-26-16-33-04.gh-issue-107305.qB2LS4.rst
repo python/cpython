@@ -1,3 +1,0 @@
-Add documentation for :c:type:`PyInterpreterConfig` and
-:c:func:`Py_NewInterpreterFromConfig`.  Also clarify some of the nearby docs
-relative to per-interpreter GIL.

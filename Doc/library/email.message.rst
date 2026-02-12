@@ -1,5 +1,5 @@
-:mod:`email.message`: Representing an email message
----------------------------------------------------
+:mod:`!email.message`: Representing an email message
+----------------------------------------------------
 
 .. module:: email.message
    :synopsis: The base class representing email messages.
@@ -14,7 +14,7 @@
 .. versionadded:: 3.6 [1]_
 
 The central class in the :mod:`email` package is the :class:`EmailMessage`
-class, imported from the :mod:`email.message` module.  It is the base class for
+class, imported from the :mod:`!email.message` module.  It is the base class for
 the :mod:`email` object model.  :class:`EmailMessage` provides the core
 functionality for setting and querying header fields, for accessing message
 bodies, and for creating or modifying structured messages.
@@ -40,9 +40,9 @@ over the object tree.
 The :class:`EmailMessage` dictionary-like interface is indexed by the header
 names, which must be ASCII values.  The values of the dictionary are strings
 with some extra methods.  Headers are stored and returned in case-preserving
-form, but field names are matched case-insensitively.  Unlike a real dict,
-there is an ordering to the keys, and there can be duplicate keys.  Additional
-methods are provided for working with headers that have duplicate keys.
+form, but field names are matched case-insensitively.  The keys are ordered,
+but unlike a real dict, there can be duplicates.  Additional methods are
+provided for working with headers that have duplicate keys.
 
 The *payload* is either a string or bytes object, in the case of simple message
 objects, or a list of :class:`EmailMessage` objects, for MIME container
@@ -57,7 +57,7 @@ message objects.
    :class:`~email.policy.default` policy, which follows the rules of the email
    RFCs except for line endings (instead of the RFC mandated ``\r\n``, it uses
    the Python standard ``\n`` line endings).  For more information see the
-   :mod:`~email.policy` documentation.
+   :mod:`~email.policy` documentation. [2]_
 
    .. method:: as_string(unixfrom=False, maxheaderlen=None, policy=None)
 
@@ -124,7 +124,7 @@ message objects.
 
    .. method:: __bytes__()
 
-      Equivalent to :meth:`.as_bytes()`.  Allows ``bytes(msg)`` to produce a
+      Equivalent to :meth:`.as_bytes`.  Allows ``bytes(msg)`` to produce a
       bytes object containing the serialized message.
 
 
@@ -247,7 +247,7 @@ message objects.
    .. method:: get(name, failobj=None)
 
       Return the value of the named header field.  This is identical to
-      :meth:`__getitem__` except that optional *failobj* is returned if the
+      :meth:`~object.__getitem__` except that optional *failobj* is returned if the
       named header is missing (*failobj* defaults to ``None``).
 
 
@@ -749,3 +749,9 @@ message objects.
 .. [1] Originally added in 3.4 as a :term:`provisional module <provisional
        package>`.  Docs for legacy message class moved to
        :ref:`compat32_message`.
+
+.. [2] The :class:`EmailMessage` class requires a policy that provides a
+       ``content_manager`` attribute for content management methods like
+       ``set_content()`` and ``get_content()`` to work. The legacy
+       :const:`~email.policy.compat32` policy does not support these methods
+       and should not be used with :class:`EmailMessage`.

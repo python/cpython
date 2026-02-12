@@ -20,10 +20,15 @@ HelpFrame - Contain text, scrollbar, and table-of-contents.
 
 HelpWindow - Display HelpFrame in a standalone window.
 
-copy_strip - Copy idle.html to help.html, rstripping each line.
+copy_strip - Copy the text part of idle.html to help.html while rstripping each line.
 
 show_idlehelp - Create HelpWindow.  Called in EditorWindow.help_dialog.
+
+_get_dochome() - Return path to docs on user's system if present,
+otherwise return link to docs.python.org.
 """
+import os
+import sys
 from html.parser import HTMLParser
 from os.path import abspath, dirname, isfile, join
 from platform import python_version
@@ -33,6 +38,7 @@ from tkinter.ttk import Frame, Menubutton, Scrollbar, Style
 from tkinter import font as tkfont
 
 from idlelib.config import idleConf
+from idlelib.colorizer import color_config
 
 ## About IDLE ##
 
@@ -53,7 +59,6 @@ class HelpParser(HTMLParser):
         self.text = text         # Text widget we're rendering into.
         self.tags = ''           # Current block level text tags to apply.
         self.chartags = ''       # Current character level text tags.
-        self.show = False        # Exclude html page navigation.
         self.hdrlink = False     # Exclude html header links.
         self.level = 0           # Track indentation level.
         self.pre = False         # Displaying preformatted text?
@@ -76,11 +81,7 @@ class HelpParser(HTMLParser):
             if a == 'class':
                 class_ = v
         s = ''
-        if tag == 'section' and attrs == [('id', 'idle')]:
-            self.show = True    # Start main content.
-        elif tag == 'div' and class_ == 'clearer':
-            self.show = False   # End main content.
-        elif tag == 'p' and self.prevtag and not self.prevtag[0]:
+        if tag == 'p' and self.prevtag and not self.prevtag[0]:
             # Begin a new block for <p> tags after a closed tag.
             # Avoid extra lines, e.g. after <pre> tags.
             lastline = self.text.get('end-1c linestart', 'end-1c')
@@ -102,7 +103,7 @@ class HelpParser(HTMLParser):
             if self.level > 0:
                 self.nested_dl = True
         elif tag == 'li':
-            s = '\n* ' if self.simplelist else '\n\n* '
+            s = '\n* '
         elif tag == 'dt':
             s = '\n\n' if not self.nested_dl else '\n'  # Avoid extra line.
             self.nested_dl = False
@@ -111,31 +112,27 @@ class HelpParser(HTMLParser):
             s = '\n'
         elif tag == 'pre':
             self.pre = True
-            if self.show:
-                self.text.insert('end', '\n\n')
+            self.text.insert('end', '\n\n')
             self.tags = 'preblock'
         elif tag == 'a' and class_ == 'headerlink':
             self.hdrlink = True
         elif tag == 'h1':
             self.tags = tag
         elif tag in ['h2', 'h3']:
-            if self.show:
-                self.header = ''
-                self.text.insert('end', '\n\n')
+            self.header = ''
+            self.text.insert('end', '\n\n')
             self.tags = tag
-        if self.show:
-            self.text.insert('end', s, (self.tags, self.chartags))
+        self.text.insert('end', s, (self.tags, self.chartags))
         self.prevtag = (True, tag)
 
     def handle_endtag(self, tag):
         "Handle endtags in help.html."
         if tag in ['h1', 'h2', 'h3']:
             assert self.level == 0
-            if self.show:
-                indent = ('        ' if tag == 'h3' else
-                          '    ' if tag == 'h2' else
-                          '')
-                self.toc.append((indent+self.header, self.text.index('insert')))
+            indent = ('        ' if tag == 'h3' else
+                      '    ' if tag == 'h2' else
+                      '')
+            self.toc.append((indent+self.header, self.text.index('insert')))
             self.tags = ''
         elif tag in ['span', 'em']:
             self.chartags = ''
@@ -150,11 +147,13 @@ class HelpParser(HTMLParser):
 
     def handle_data(self, data):
         "Handle date segments in help.html."
-        if self.show and not self.hdrlink:
+        if not self.hdrlink:
             d = data if self.pre else data.replace('\n', ' ')
             if self.tags == 'h1':
                 try:
-                    self.hprefix = d[0:d.index(' ')]
+                    self.hprefix = d[:d.index(' ')]
+                    if not self.hprefix.isdigit():
+                        self.hprefix = ''
                 except ValueError:
                     self.hprefix = ''
             if self.tags in ['h1', 'h2', 'h3']:
@@ -177,14 +176,16 @@ class HelpText(Text):
 
         normalfont = self.findfont(['TkDefaultFont', 'arial', 'helvetica'])
         fixedfont = self.findfont(['TkFixedFont', 'monaco', 'courier'])
+        color_config(self)
         self['font'] = (normalfont, 12)
         self.tag_configure('em', font=(normalfont, 12, 'italic'))
         self.tag_configure('h1', font=(normalfont, 20, 'bold'))
         self.tag_configure('h2', font=(normalfont, 18, 'bold'))
         self.tag_configure('h3', font=(normalfont, 15, 'bold'))
-        self.tag_configure('pre', font=(fixedfont, 12), background='#f6f6ff')
+        self.tag_configure('pre', font=(fixedfont, 12))
+        preback = self['selectbackground']
         self.tag_configure('preblock', font=(fixedfont, 10), lmargin1=25,
-                borderwidth=1, relief='solid', background='#eeffcc')
+                           background=preback)
         self.tag_configure('l1', lmargin1=25, lmargin2=25)
         self.tag_configure('l2', lmargin1=50, lmargin2=50)
         self.tag_configure('l3', lmargin1=75, lmargin2=75)
@@ -241,13 +242,14 @@ class HelpWindow(Toplevel):
         Toplevel.__init__(self, parent)
         self.wm_title(title)
         self.protocol("WM_DELETE_WINDOW", self.destroy)
-        HelpFrame(self, filename).grid(column=0, row=0, sticky='nsew')
+        self.frame = HelpFrame(self, filename)
+        self.frame.grid(column=0, row=0, sticky='nsew')
         self.grid_columnconfigure(0, weight=1)
         self.grid_rowconfigure(0, weight=1)
 
 
-def copy_strip():
-    """Copy idle.html to idlelib/help.html, stripping trailing whitespace.
+def copy_strip():  # pragma: no cover
+    """Copy the text part of idle.html to idlelib/help.html while stripping trailing whitespace.
 
     Files with trailing whitespace cannot be pushed to the git cpython
     repository.  For 3.x (on Windows), help.html is generated, after
@@ -259,7 +261,7 @@ def copy_strip():
 
     It can be worthwhile to occasionally generate help.html without
     touching idle.rst.  Changes to the master version and to the doc
-    build system may result in changes that should not changed
+    build system may result in changes that should not change
     the displayed text, but might break HelpParser.
 
     As long as master and maintenance versions of idle.rst remain the
@@ -272,19 +274,66 @@ def copy_strip():
     src = join(abspath(dirname(dirname(dirname(__file__)))),
             'Doc', 'build', 'html', 'library', 'idle.html')
     dst = join(abspath(dirname(__file__)), 'help.html')
-    with open(src, 'rb') as inn,\
-         open(dst, 'wb') as out:
+
+    with open(src, 'r', encoding="utf-8") as inn, open(dst, 'w', encoding="utf-8") as out:
+        copy = False
         for line in inn:
-            out.write(line.rstrip() + b'\n')
+            if '<section id="idle">' in line: copy = True
+            if '<div class="clearer">' in line: break
+            if copy: out.write(line.strip() + '\n')
+
     print(f'{src} copied to {dst}')
+
 
 def show_idlehelp(parent):
     "Create HelpWindow; called from Idle Help event handler."
     filename = join(abspath(dirname(__file__)), 'help.html')
-    if not isfile(filename):
+    if not isfile(filename):  # pragma: no cover
         # Try copy_strip, present message.
         return
-    HelpWindow(parent, filename, 'IDLE Help (%s)' % python_version())
+    return HelpWindow(parent, filename, 'IDLE Doc (%s)' % python_version())
+
+
+def _get_dochome():
+    "Return path to local docs if present, otherwise link to docs.python.org."
+
+    dochome = os.path.join(sys.base_prefix, 'Doc', 'index.html')
+    if sys.platform.count('linux'):
+        # look for html docs in a couple of standard places
+        pyver = 'python-docs-' + '%s.%s.%s' % sys.version_info[:3]
+        if os.path.isdir('/var/www/html/python/'):  # rpm package manager
+            dochome = '/var/www/html/python/index.html'
+        else:
+            basepath = '/usr/share/doc/'  # dnf/apt package managers
+            dochome = os.path.join(basepath, pyver, 'Doc', 'index.html')
+
+    elif sys.platform[:3] == 'win':
+        import winreg  # Windows only, block only executed once.
+        docfile = ''
+        KEY = (rf"Software\Python\PythonCore\{sys.winver}"
+               r"\Help\Main Python Documentation")
+        try:
+            docfile = winreg.QueryValue(winreg.HKEY_CURRENT_USER, KEY)
+        except FileNotFoundError:
+            try:
+                docfile = winreg.QueryValue(winreg.HKEY_LOCAL_MACHINE, KEY)
+            except FileNotFoundError:
+                pass
+        if os.path.isfile(docfile):
+            dochome = docfile
+    elif sys.platform == 'darwin':
+        # documentation may be stored inside a python framework
+        dochome = os.path.join(sys.base_prefix,
+                               'Resources/English.lproj/Documentation/index.html')
+    dochome = os.path.normpath(dochome)
+    if os.path.isfile(dochome):
+        if sys.platform == 'darwin':
+            # Safari requires real file:-URLs
+            return 'file://' + dochome
+        return dochome
+    else:
+        return "https://docs.python.org/%d.%d/" % sys.version_info[:2]
+
 
 if __name__ == '__main__':
     from unittest import main

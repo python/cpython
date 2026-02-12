@@ -39,16 +39,6 @@
 @if defined MSBUILD @if exist %MSBUILD% (set _Py_MSBuild_Source=Visual Studio installation) & goto :found
 :skip_vswhere
 
-@rem VS 2015 and earlier register MSBuild separately, so we can find it.
-@reg query "HKEY_LOCAL_MACHINE\SOFTWARE\Microsoft\MSBuild\ToolsVersions\14.0" /v MSBuildToolsPath /reg:32 >nul 2>nul
-@if NOT ERRORLEVEL 1 @for /F "tokens=1,2*" %%i in ('reg query "HKEY_LOCAL_MACHINE\SOFTWARE\Microsoft\MSBuild\ToolsVersions\14.0" /v MSBuildToolsPath /reg:32') DO @(
-    @if "%%i"=="MSBuildToolsPath" @if exist "%%k\msbuild.exe" @(set MSBUILD="%%k\msbuild.exe")
-)
-@if exist %MSBUILD% (set _Py_MSBuild_Source=registry) & goto :found
-
-
-@exit /b 1
-
 :found
 @pushd %MSBUILD% >nul 2>nul
 @if not ERRORLEVEL 1 @(

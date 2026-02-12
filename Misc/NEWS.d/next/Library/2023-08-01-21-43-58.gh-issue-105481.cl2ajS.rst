@@ -1,2 +1,0 @@
-Remove ``opcode.is_pseudo``, ``opcode.MIN_PSEUDO_OPCODE`` and ``opcode.MAX_PSEUDO_OPCODE``,
-which were added in 3.12, were never documented and were not intended to be used externally.

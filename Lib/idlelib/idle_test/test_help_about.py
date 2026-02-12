@@ -71,7 +71,7 @@ class LiveDialogTest(unittest.TestCase):
         """Test buttons that display files."""
         dialog = self.dialog
         button_sources = [(self.dialog.readme, 'README.txt', 'readme'),
-                          (self.dialog.idle_news, 'NEWS.txt', 'news'),
+                          (self.dialog.idle_news, 'News3.txt', 'news'),
                           (self.dialog.idle_credits, 'CREDITS.txt', 'credits')]
 
         for button, filename, name in button_sources:

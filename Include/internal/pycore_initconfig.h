@@ -8,8 +8,7 @@ extern "C" {
 #  error "this header requires Py_BUILD_CORE define"
 #endif
 
-/* Forward declaration */
-struct pyruntimestate;
+#include "pycore_typedefs.h"      // _PyRuntimeState
 
 /* --- PyStatus ----------------------------------------------- */
 
@@ -22,7 +21,7 @@ struct pyruntimestate;
 #endif
 
 #define _PyStatus_OK() \
-    (PyStatus){._type = _PyStatus_TYPE_OK,}
+    (PyStatus){._type = _PyStatus_TYPE_OK}
     /* other fields are set to 0 */
 #define _PyStatus_ERR(ERR_MSG) \
     (PyStatus){ \
@@ -30,7 +29,8 @@ struct pyruntimestate;
         .func = _PyStatus_GET_FUNC(), \
         .err_msg = (ERR_MSG)}
         /* other fields are set to 0 */
-#define _PyStatus_NO_MEMORY() _PyStatus_ERR("memory allocation failed")
+#define _PyStatus_NO_MEMORY_ERRMSG "memory allocation failed"
+#define _PyStatus_NO_MEMORY() _PyStatus_ERR(_PyStatus_NO_MEMORY_ERRMSG)
 #define _PyStatus_EXIT(EXITCODE) \
     (PyStatus){ \
         ._type = _PyStatus_TYPE_EXIT, \
@@ -43,6 +43,10 @@ struct pyruntimestate;
     ((err)._type != _PyStatus_TYPE_OK)
 #define _PyStatus_UPDATE_FUNC(err) \
     do { (err).func = _PyStatus_GET_FUNC(); } while (0)
+
+// Export for '_testinternalcapi' shared extension
+PyAPI_FUNC(void) _PyErr_SetFromPyStatus(PyStatus status);
+
 
 /* --- PyWideStringList ------------------------------------------------ */
 
@@ -148,6 +152,16 @@ typedef enum {
     _PyConfig_INIT_ISOLATED = 3
 } _PyConfigInitEnum;
 
+typedef enum {
+    /* In free threaded builds, this means that the GIL is disabled at startup,
+       but may be enabled by loading an incompatible extension module. */
+    _PyConfig_GIL_DEFAULT = -1,
+
+    /* The GIL has been forced off or on, and will not be affected by module loading. */
+    _PyConfig_GIL_DISABLE = 0,
+    _PyConfig_GIL_ENABLE = 1,
+} _PyConfigGILEnum;
+
 // Export for '_testembed' program
 PyAPI_FUNC(void) _PyConfig_InitCompatConfig(PyConfig *config);
 
@@ -160,11 +174,11 @@ extern PyStatus _PyConfig_InitPathConfig(
 extern PyStatus _PyConfig_InitImportConfig(PyConfig *config);
 extern PyStatus _PyConfig_Read(PyConfig *config, int compute_path_config);
 extern PyStatus _PyConfig_Write(const PyConfig *config,
-    struct pyruntimestate *runtime);
+    _PyRuntimeState *runtime);
 extern PyStatus _PyConfig_SetPyArgv(
     PyConfig *config,
     const _PyArgv *args);
-
+extern PyObject* _PyConfig_CreateXOptionsDict(const PyConfig *config);
 
 extern void _Py_DumpPathConfig(PyThreadState *tstate);
 

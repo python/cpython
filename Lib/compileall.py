@@ -116,7 +116,8 @@ def compile_dir(dir, maxlevels=None, ddir=None, force=False,
                                            prependdir=prependdir,
                                            limit_sl_dest=limit_sl_dest,
                                            hardlink_dupes=hardlink_dupes),
-                                   files)
+                                   files,
+                                   chunksize=4)
             success = min(results, default=True)
     else:
         for file in files:
@@ -164,6 +165,14 @@ def compile_file(fullname, ddir=None, force=False, rx=None, quiet=0,
     stripdir = os.fspath(stripdir) if stripdir is not None else None
     name = os.path.basename(fullname)
 
+    # Without a cache_tag, we can only create legacy .pyc files. None of our
+    # callers seem to expect this, so the best we can do is fail without raising
+    if not legacy and sys.implementation.cache_tag is None:
+        if not quiet:
+            print("No cache tag is available to generate .pyc path for",
+                  repr(fullname))
+        return False
+
     dfile = None
 
     if ddir is not None:
@@ -172,13 +181,13 @@ def compile_file(fullname, ddir=None, force=False, rx=None, quiet=0,
     if stripdir is not None:
         fullname_parts = fullname.split(os.path.sep)
         stripdir_parts = stripdir.split(os.path.sep)
-        ddir_parts = list(fullname_parts)
 
-        for spart, opart in zip(stripdir_parts, fullname_parts):
-            if spart == opart:
-                ddir_parts.remove(spart)
-
-        dfile = os.path.join(*ddir_parts)
+        if stripdir_parts != fullname_parts[:len(stripdir_parts)]:
+            if quiet < 2:
+                print("The stripdir path {!r} is not a valid prefix for "
+                      "source path {!r}; ignoring".format(stripdir, fullname))
+        else:
+            dfile = os.path.join(*fullname_parts[len(stripdir_parts):])
 
     if prependdir is not None:
         if dfile is None:
@@ -222,7 +231,7 @@ def compile_file(fullname, ddir=None, force=False, rx=None, quiet=0,
                     cfile = importlib.util.cache_from_source(fullname)
                     opt_cfiles[opt_level] = cfile
 
-        head, tail = name[:-3], name[-3:]
+        tail = name[-3:]
         if tail == '.py':
             if not force:
                 try:
@@ -316,7 +325,9 @@ def main():
     import argparse
 
     parser = argparse.ArgumentParser(
-        description='Utilities to support installing Python libraries.')
+        description='Utilities to support installing Python libraries.',
+        color=True,
+    )
     parser.add_argument('-l', action='store_const', const=0,
                         default=None, dest='maxlevels',
                         help="don't recurse into subdirectories")

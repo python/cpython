@@ -3,9 +3,18 @@ import locale
 import os
 import sys
 import threading
+
 from test import support
 from test.support import os_helper
-from test.libregrtest.utils import print_warning
+
+from .utils import print_warning
+
+# Import termios to save and restore terminal echo.  This is only available on
+# Unix, and it's fine if the module can't be found.
+try:
+    import termios                                # noqa: F401
+except ModuleNotFoundError:
+    pass
 
 
 class SkipTestEnvironment(Exception):
@@ -23,7 +32,7 @@ class SkipTestEnvironment(Exception):
 class saved_test_environment:
     """Save bits of the test environment and restore them at block exit.
 
-        with saved_test_environment(testname, verbose, quiet):
+        with saved_test_environment(test_name, verbose, quiet):
             #stuff
 
     Unless quiet is True, a warning is printed to stderr if any of
@@ -34,8 +43,8 @@ class saved_test_environment:
     items is also printed.
     """
 
-    def __init__(self, testname, verbose=0, quiet=False, *, pgo=False):
-        self.testname = testname
+    def __init__(self, test_name, verbose, quiet, *, pgo):
+        self.test_name = test_name
         self.verbose = verbose
         self.quiet = quiet
         self.pgo = pgo
@@ -63,6 +72,7 @@ class saved_test_environment:
                  'shutil_archive_formats', 'shutil_unpack_formats',
                  'asyncio.events._event_loop_policy',
                  'urllib.requests._url_tempfiles', 'urllib.requests._opener',
+                 'stty_echo',
                 )
 
     def get_module(self, name):
@@ -95,7 +105,7 @@ class saved_test_environment:
         return support.maybe_get_event_loop_policy()
     def restore_asyncio_events__event_loop_policy(self, policy):
         asyncio = self.get_module('asyncio')
-        asyncio.set_event_loop_policy(policy)
+        asyncio.events._set_event_loop_policy(policy)
 
     def get_sys_argv(self):
         return id(sys.argv), sys.argv, sys.argv[:]
@@ -290,6 +300,24 @@ class saved_test_environment:
         warnings = self.get_module('warnings')
         warnings.showwarning = fxn
 
+    def get_stty_echo(self):
+        termios = self.try_get_module('termios')
+        if not os.isatty(fd := sys.__stdin__.fileno()):
+            return None
+        attrs = termios.tcgetattr(fd)
+        lflags = attrs[3]
+        return bool(lflags & termios.ECHO)
+    def restore_stty_echo(self, echo):
+        termios = self.get_module('termios')
+        attrs = termios.tcgetattr(fd := sys.__stdin__.fileno())
+        if echo:
+            # Turn echo on.
+            attrs[3] |= termios.ECHO
+        else:
+            # Turn echo off.
+            attrs[3] &= ~termios.ECHO
+        termios.tcsetattr(fd, termios.TCSADRAIN, attrs)
+
     def resource_info(self):
         for name in self.resources:
             method_suffix = name.replace('.', '_')
@@ -323,7 +351,7 @@ class saved_test_environment:
                 restore(original)
                 if not self.quiet and not self.pgo:
                     print_warning(
-                        f"{name} was modified by {self.testname}\n"
+                        f"{name} was modified by {self.test_name}\n"
                         f"  Before: {original}\n"
                         f"  After:  {current} ")
         return False

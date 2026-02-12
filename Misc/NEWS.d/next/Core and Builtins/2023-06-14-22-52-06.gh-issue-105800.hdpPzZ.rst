@@ -1,2 +1,0 @@
-Correctly issue :exc:`SyntaxWarning` in f-strings if invalid sequences are
-used. Patch by Pablo Galindo

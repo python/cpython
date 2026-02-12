@@ -71,18 +71,9 @@ class ConnectionFactoryTests(unittest.TestCase):
             def __init__(self, *args, **kwargs):
                 super(Factory, self).__init__(*args, **kwargs)
 
-        regex = (
-            r"Passing more than 1 positional argument to _sqlite3.Connection\(\) "
-            r"is deprecated. Parameters 'timeout', 'detect_types', "
-            r"'isolation_level', 'check_same_thread', 'factory', "
-            r"'cached_statements' and 'uri' will become keyword-only "
-            r"parameters in Python 3.15."
-        )
-        with self.assertWarnsRegex(DeprecationWarning, regex) as cm:
-            with memory_database(5.0, 0, None, True, Factory) as con:
-                self.assertIsNone(con.isolation_level)
-                self.assertIsInstance(con, Factory)
-        self.assertEqual(cm.filename, __file__)
+        with self.assertRaisesRegex(TypeError,
+                r'connect\(\) takes at most 1 positional arguments'):
+            memory_database(5.0, 0, None, True, Factory)
 
 
 class CursorFactoryTests(MemoryDatabaseMixin, unittest.TestCase):
@@ -116,13 +107,16 @@ class RowFactoryTestsBackwardsCompat(MemoryDatabaseMixin, unittest.TestCase):
 
 class RowFactoryTests(MemoryDatabaseMixin, unittest.TestCase):
 
+    def setUp(self):
+        super().setUp()
+        self.con.row_factory = sqlite.Row
+
     def test_custom_factory(self):
         self.con.row_factory = lambda cur, row: list(row)
         row = self.con.execute("select 1, 2").fetchone()
         self.assertIsInstance(row, list)
 
     def test_sqlite_row_index(self):
-        self.con.row_factory = sqlite.Row
         row = self.con.execute("select 1 as a_1, 2 as b").fetchone()
         self.assertIsInstance(row, sqlite.Row)
 
@@ -153,7 +147,6 @@ class RowFactoryTests(MemoryDatabaseMixin, unittest.TestCase):
             row[complex()]  # index must be int or string
 
     def test_sqlite_row_index_unicode(self):
-        self.con.row_factory = sqlite.Row
         row = self.con.execute("select 1 as \xff").fetchone()
         self.assertEqual(row["\xff"], 1)
         with self.assertRaises(IndexError):
@@ -163,7 +156,6 @@ class RowFactoryTests(MemoryDatabaseMixin, unittest.TestCase):
 
     def test_sqlite_row_slice(self):
         # A sqlite.Row can be sliced like a list.
-        self.con.row_factory = sqlite.Row
         row = self.con.execute("select 1, 2, 3, 4").fetchone()
         self.assertEqual(row[0:0], ())
         self.assertEqual(row[0:1], (1,))
@@ -180,8 +172,7 @@ class RowFactoryTests(MemoryDatabaseMixin, unittest.TestCase):
         self.assertEqual(row[3:0:-2], (4, 2))
 
     def test_sqlite_row_iter(self):
-        """Checks if the row object is iterable"""
-        self.con.row_factory = sqlite.Row
+        # Checks if the row object is iterable.
         row = self.con.execute("select 1 as a, 2 as b").fetchone()
 
         # Is iterable in correct order and produces valid results:
@@ -193,23 +184,20 @@ class RowFactoryTests(MemoryDatabaseMixin, unittest.TestCase):
         self.assertEqual(items, [1, 2])
 
     def test_sqlite_row_as_tuple(self):
-        """Checks if the row object can be converted to a tuple"""
-        self.con.row_factory = sqlite.Row
+        # Checks if the row object can be converted to a tuple.
         row = self.con.execute("select 1 as a, 2 as b").fetchone()
         t = tuple(row)
         self.assertEqual(t, (row['a'], row['b']))
 
     def test_sqlite_row_as_dict(self):
-        """Checks if the row object can be correctly converted to a dictionary"""
-        self.con.row_factory = sqlite.Row
+        # Checks if the row object can be correctly converted to a dictionary.
         row = self.con.execute("select 1 as a, 2 as b").fetchone()
         d = dict(row)
         self.assertEqual(d["a"], row["a"])
         self.assertEqual(d["b"], row["b"])
 
     def test_sqlite_row_hash_cmp(self):
-        """Checks if the row object compares and hashes correctly"""
-        self.con.row_factory = sqlite.Row
+        # Checks if the row object compares and hashes correctly.
         row_1 = self.con.execute("select 1 as a, 2 as b").fetchone()
         row_2 = self.con.execute("select 1 as a, 2 as b").fetchone()
         row_3 = self.con.execute("select 1 as a, 3 as b").fetchone()
@@ -242,13 +230,17 @@ class RowFactoryTests(MemoryDatabaseMixin, unittest.TestCase):
         self.assertEqual(hash(row_1), hash(row_2))
 
     def test_sqlite_row_as_sequence(self):
-        """ Checks if the row object can act like a sequence """
-        self.con.row_factory = sqlite.Row
+        # Checks if the row object can act like a sequence.
         row = self.con.execute("select 1 as a, 2 as b").fetchone()
 
         as_tuple = tuple(row)
         self.assertEqual(list(reversed(row)), list(reversed(as_tuple)))
         self.assertIsInstance(row, Sequence)
+
+    def test_sqlite_row_keys(self):
+        # Checks if the row object can return a list of columns as strings.
+        row = self.con.execute("select 1 as a, 2 as b").fetchone()
+        self.assertEqual(row.keys(), ['a', 'b'])
 
     def test_fake_cursor_class(self):
         # Issue #24257: Incorrect use of PyObject_IsInstance() caused
@@ -256,7 +248,6 @@ class RowFactoryTests(MemoryDatabaseMixin, unittest.TestCase):
         # Issue #27861: Also applies for cursor factory.
         class FakeCursor(str):
             __class__ = sqlite.Cursor
-        self.con.row_factory = sqlite.Row
         self.assertRaises(TypeError, self.con.cursor, FakeCursor)
         self.assertRaises(TypeError, sqlite.Row, FakeCursor(), ())
 
@@ -280,7 +271,7 @@ class TextFactoryTests(MemoryDatabaseMixin, unittest.TestCase):
         austria = "Österreich"
         row = self.con.execute("select ?", (austria,)).fetchone()
         self.assertEqual(type(row[0]), str, "type of row[0] must be unicode")
-        self.assertTrue(row[0].endswith("reich"), "column must contain original data")
+        self.assertEndsWith(row[0], "reich", "column must contain original data")
 
 
 class TextFactoryTestsWithEmbeddedZeroBytes(unittest.TestCase):

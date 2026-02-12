@@ -1,3 +1,0 @@
-Harmonized the pure Python version of :class:`~collections.OrderedDict` with the C version. Now,
-both versions set up their internal state in ``__new__``.  Formerly, the pure
-Python version did the set up in ``__init__``.

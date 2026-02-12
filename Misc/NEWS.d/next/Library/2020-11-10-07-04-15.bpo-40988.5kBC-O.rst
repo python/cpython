@@ -1,3 +1,0 @@
-Improve performance of :class:`functools.singledispatchmethod` by caching the
-generated dispatch wrapper. Optimization suggested by frederico. Patch by
-@mental32, Alex Waygood and Pieter Eendebak.

@@ -1,6 +1,7 @@
 /* Wrap void * pointers to be passed between C modules */
 
 #include "Python.h"
+#include "pycore_capsule.h"       // export _PyCapsule_SetTraverse()
 #include "pycore_gc.h"            // _PyObject_GC_IS_TRACKED()
 #include "pycore_object.h"        // _PyObject_GC_TRACK()
 
@@ -16,6 +17,8 @@ typedef struct {
     inquiry clear_func;
 } PyCapsule;
 
+
+#define _PyCapsule_CAST(op)     ((PyCapsule *)(op))
 
 
 static int
@@ -283,7 +286,7 @@ EXIT:
 static void
 capsule_dealloc(PyObject *op)
 {
-    PyCapsule *capsule = (PyCapsule *)op;
+    PyCapsule *capsule = _PyCapsule_CAST(op);
     PyObject_GC_UnTrack(op);
     if (capsule->destructor) {
         capsule->destructor(op);
@@ -295,7 +298,7 @@ capsule_dealloc(PyObject *op)
 static PyObject *
 capsule_repr(PyObject *o)
 {
-    PyCapsule *capsule = (PyCapsule *)o;
+    PyCapsule *capsule = _PyCapsule_CAST(o);
     const char *name;
     const char *quote;
 
@@ -313,24 +316,27 @@ capsule_repr(PyObject *o)
 
 
 static int
-capsule_traverse(PyCapsule *capsule, visitproc visit, void *arg)
+capsule_traverse(PyObject *self, visitproc visit, void *arg)
 {
     // Capsule object is only tracked by the GC
-    // if _PyCapsule_SetTraverse() is called
-    assert(capsule->traverse_func != NULL);
-
-    return capsule->traverse_func((PyObject*)capsule, visit, arg);
+    // if _PyCapsule_SetTraverse() is called, but
+    // this can still be manually triggered by gc.get_referents()
+    PyCapsule *capsule = _PyCapsule_CAST(self);
+    if (capsule->traverse_func != NULL) {
+        return capsule->traverse_func(self, visit, arg);
+    }
+    return 0;
 }
 
 
 static int
-capsule_clear(PyCapsule *capsule)
+capsule_clear(PyObject *self)
 {
     // Capsule object is only tracked by the GC
     // if _PyCapsule_SetTraverse() is called
+    PyCapsule *capsule = _PyCapsule_CAST(self);
     assert(capsule->clear_func != NULL);
-
-    return capsule->clear_func((PyObject*)capsule);
+    return capsule->clear_func(self);
 }
 
 
@@ -353,8 +359,8 @@ PyTypeObject PyCapsule_Type = {
     .tp_dealloc = capsule_dealloc,
     .tp_repr = capsule_repr,
     .tp_doc = PyCapsule_Type__doc__,
-    .tp_traverse = (traverseproc)capsule_traverse,
-    .tp_clear = (inquiry)capsule_clear,
+    .tp_traverse = capsule_traverse,
+    .tp_clear = capsule_clear,
 };
 
 

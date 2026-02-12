@@ -59,8 +59,9 @@ Effects of the Python Development Mode:
   ``default``.
 
 * Call :func:`faulthandler.enable` at Python startup to install handlers for
-  the :const:`SIGSEGV`, :const:`SIGFPE`, :const:`SIGABRT`, :const:`SIGBUS` and
-  :const:`SIGILL` signals to dump the Python traceback on a crash.
+  the :const:`~signal.SIGSEGV`, :const:`~signal.SIGFPE`,
+  :const:`~signal.SIGABRT`, :const:`~signal.SIGBUS` and
+  :const:`~signal.SIGILL` signals to dump the Python traceback on a crash.
 
   It behaves as if the :option:`-X faulthandler <-X>` command line option is
   used or if the :envvar:`PYTHONFAULTHANDLER` environment variable is set to
