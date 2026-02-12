@@ -3,9 +3,6 @@ name: Reusable macOS
 on:
   workflow_call:
     inputs:
-      config_hash:
-        required: true
-        type: string
       free-threading:
         required: false
         type: boolean
@@ -31,16 +28,11 @@ jobs:
       PYTHONSTRICTEXTENSIONBUILD: 1
       TERM: linux
     steps:
-    - uses: actions/checkout@v4
+    - uses: actions/checkout@v6
       with:
         persist-credentials: false
     - name: Runner image version
       run: echo "IMAGE_OS_VERSION=${ImageOS}-${ImageVersion}" >> "$GITHUB_ENV"
-    - name: Restore config.cache
-      uses: actions/cache@v4
-      with:
-        path: config.cache
-        key: ${{ github.job }}-${{ env.IMAGE_OS_VERSION }}-${{ inputs.config_hash }}
     - name: Install Homebrew dependencies
       run: |
         brew install pkg-config openssl@3.0 xz gdbm tcl-tk@9 make

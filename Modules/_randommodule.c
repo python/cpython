@@ -522,7 +522,7 @@ _random_Random_getrandbits_impl(RandomObject *self, uint64_t k)
         PyErr_NoMemory();
         return NULL;
     }
-    words = (k - 1u) / 32u + 1u;
+    words = (Py_ssize_t)((k - 1u) / 32u + 1u);
     wordarray = (uint32_t *)PyMem_Malloc(words * 4);
     if (wordarray == NULL) {
         PyErr_NoMemory();

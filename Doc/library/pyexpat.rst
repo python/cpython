@@ -24,7 +24,7 @@
 
 .. index:: single: Expat
 
-The :mod:`xml.parsers.expat` module is a Python interface to the Expat
+The :mod:`!xml.parsers.expat` module is a Python interface to the Expat
 non-validating XML parser. The module provides a single extension type,
 :class:`xmlparser`, that represents the current state of an XML parser.  After
 an :class:`xmlparser` object has been created, various attributes of the object
@@ -55,7 +55,7 @@ This module provides one exception and one type object:
 
    The type of the return values from the :func:`ParserCreate` function.
 
-The :mod:`xml.parsers.expat` module contains two functions:
+The :mod:`!xml.parsers.expat` module contains two functions:
 
 
 .. function:: ErrorString(errno)
@@ -485,7 +485,7 @@ otherwise stated.
    ...``).  The *doctypeName* is provided exactly as presented.  The *systemId* and
    *publicId* parameters give the system and public identifiers if specified, or
    ``None`` if omitted.  *has_internal_subset* will be true if the document
-   contains and internal document declaration subset. This requires Expat version
+   contains an internal document declaration subset. This requires Expat version
    1.2 or newer.
 
 
@@ -634,6 +634,15 @@ otherwise stated.
 
 .. method:: xmlparser.ExternalEntityRefHandler(context, base, systemId, publicId)
 
+   .. warning::
+
+      Implementing a handler that accesses local files and/or the network
+      may create a vulnerability to
+      `external entity attacks <https://en.wikipedia.org/wiki/XML_external_entity_attack>`_
+      if :class:`xmlparser` is used with user-provided XML content.
+      Please reflect on your `threat model <https://en.wikipedia.org/wiki/Threat_model>`_
+      before implementing this handler.
+
    Called for references to external entities.  *base* is the current base, as set
    by a previous call to :meth:`SetBase`.  The public and system identifiers,
    *systemId* and *publicId*, are strings if given; if the public identifier is not
@@ -750,7 +759,7 @@ values: the type, the quantifier, the name, and a tuple of children.  Children
 are simply additional content model descriptions.
 
 The values of the first two fields are constants defined in the
-:mod:`xml.parsers.expat.model` module.  These constants can be collected in two
+:mod:`!xml.parsers.expat.model` module.  These constants can be collected in two
 groups: the model type group and the quantifier group.
 
 The constants in the model type group are:
@@ -824,7 +833,7 @@ Expat error constants
 
 .. module:: xml.parsers.expat.errors
 
-The following constants are provided in the :mod:`xml.parsers.expat.errors`
+The following constants are provided in the :mod:`!xml.parsers.expat.errors`
 module.  These constants are useful in interpreting some of the attributes of
 the :exc:`ExpatError` exception objects raised when an error has occurred.
 Since for backwards compatibility reasons, the constants' value is the error
@@ -971,7 +980,7 @@ The ``errors`` module has the following attributes:
 
    An operation was requested that requires DTD support to be compiled in, but
    Expat was configured without DTD support.  This should never be reported by a
-   standard build of the :mod:`xml.parsers.expat` module.
+   standard build of the :mod:`!xml.parsers.expat` module.
 
 
 .. data:: XML_ERROR_CANT_CHANGE_FEATURE_ONCE_PARSING

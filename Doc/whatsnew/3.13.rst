@@ -1861,6 +1861,7 @@ New Deprecations
   * Deprecate the non-standard and undocumented :class:`~decimal.Decimal`
     format specifier ``'N'``,
     which is only supported in the :mod:`!decimal` module's C implementation.
+    Scheduled to be removed in Python 3.18.
     (Contributed by Serhiy Storchaka in :gh:`89902`.)
 
 * :mod:`dis`:
@@ -2023,6 +2024,8 @@ New Deprecations
 .. include:: ../deprecations/pending-removal-in-3.16.rst
 
 .. include:: ../deprecations/pending-removal-in-3.17.rst
+
+.. include:: ../deprecations/pending-removal-in-3.18.rst
 
 .. include:: ../deprecations/pending-removal-in-3.19.rst
 
@@ -2337,7 +2340,7 @@ Limited C API Changes
   * :c:func:`PySys_AuditTuple`
   * :c:func:`PyType_GetModuleByDef`
 
-  (Contributed by Victor Stinner in :gh:`85283`, :gh:`85283`, and :gh:`116936`.)
+  (Contributed by Victor Stinner in :gh:`85283` and :gh:`116936`.)
 
 * Python built with :option:`--with-trace-refs` (tracing references)
   now supports the :ref:`Limited API <limited-c-api>`.

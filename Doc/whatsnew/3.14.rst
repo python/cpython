@@ -2265,6 +2265,15 @@ pdb
   (Contributed by Tian Gao in :gh:`124533`.)
 
 
+textwrap
+--------
+
+* Optimize the :func:`~textwrap.dedent` function, improving performance by
+  an average of 2.4x, with larger improvements for bigger inputs,
+  and fix a bug with incomplete normalization of blank lines with whitespace
+  characters other than space and tab.
+
+
 uuid
 ----
 
@@ -2709,6 +2718,8 @@ New deprecations
 
 .. include:: ../deprecations/pending-removal-in-3.17.rst
 
+.. include:: ../deprecations/pending-removal-in-3.18.rst
+
 .. include:: ../deprecations/pending-removal-in-3.19.rst
 
 .. include:: ../deprecations/pending-removal-in-3.20.rst
@@ -3045,7 +3056,7 @@ Deprecated C APIs
 -----------------
 
 * The :c:macro:`!Py_HUGE_VAL` macro is now :term:`soft deprecated`.
-  Use :c:macro:`!Py_INFINITY` instead.
+  Use :c:macro:`!INFINITY` instead.
   (Contributed by Sergey B Kirpichev in :gh:`120026`.)
 
 * The :c:macro:`!Py_IS_NAN`, :c:macro:`!Py_IS_INFINITY`,

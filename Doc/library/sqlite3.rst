@@ -31,7 +31,9 @@ PostgreSQL or Oracle.
 
 The :mod:`!sqlite3` module was written by Gerhard Häring.  It provides an SQL interface
 compliant with the DB-API 2.0 specification described by :pep:`249`, and
-requires SQLite 3.15.2 or newer.
+requires the third-party `SQLite <https://sqlite.org/>`_ library.
+
+.. include:: ../includes/optional-module.rst
 
 This document includes four main sections:
 
@@ -289,7 +291,7 @@ Module functions
        Set it to any combination (using ``|``, bitwise or) of
        :const:`PARSE_DECLTYPES` and :const:`PARSE_COLNAMES`
        to enable this.
-       Column names takes precedence over declared types if both flags are set.
+       Column names take precedence over declared types if both flags are set.
        By default (``0``), type detection is disabled.
 
    :param isolation_level:

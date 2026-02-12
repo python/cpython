@@ -1209,7 +1209,7 @@ If a new entry overwrites an existing entry, the
 original insertion position is changed and moved to the end::
 
     class LastUpdatedOrderedDict(OrderedDict):
-        'Store items in the order the keys were last added'
+        'Store items in the order that the keys were last updated.'
 
         def __setitem__(self, key, value):
             super().__setitem__(key, value)

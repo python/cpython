@@ -150,33 +150,42 @@ class ForwardRef:
         if globals is None:
             globals = {}
 
+        if type_params is None and owner is not None:
+            type_params = getattr(owner, "__type_params__", None)
+
         if locals is None:
             locals = {}
             if isinstance(owner, type):
                 locals.update(vars(owner))
+        elif (
+            type_params is not None
+            or isinstance(self.__cell__, dict)
+            or self.__extra_names__
+        ):
+            # Create a new locals dict if necessary,
+            # to avoid mutating the argument.
+            locals = dict(locals)
 
-        if type_params is None and owner is not None:
-            # "Inject" type parameters into the local namespace
-            # (unless they are shadowed by assignments *in* the local namespace),
-            # as a way of emulating annotation scopes when calling `eval()`
-            type_params = getattr(owner, "__type_params__", None)
-
-        # Type parameters exist in their own scope, which is logically
-        # between the locals and the globals. We simulate this by adding
-        # them to the globals. Similar reasoning applies to nonlocals stored in cells.
-        if type_params is not None or isinstance(self.__cell__, dict):
-            globals = dict(globals)
+        # "Inject" type parameters into the local namespace
+        # (unless they are shadowed by assignments *in* the local namespace),
+        # as a way of emulating annotation scopes when calling `eval()`
         if type_params is not None:
             for param in type_params:
-                globals[param.__name__] = param
+                locals.setdefault(param.__name__, param)
+
+        # Similar logic can be used for nonlocals, which should not
+        # override locals.
         if isinstance(self.__cell__, dict):
-            for cell_name, cell_value in self.__cell__.items():
+            for cell_name, cell in self.__cell__.items():
                 try:
-                    globals[cell_name] = cell_value.cell_contents
+                    cell_value = cell.cell_contents
                 except ValueError:
                     pass
+                else:
+                    locals.setdefault(cell_name, cell_value)
+
         if self.__extra_names__:
-            locals = {**locals, **self.__extra_names__}
+            locals.update(self.__extra_names__)
 
         arg = self.__forward_arg__
         if arg.isidentifier() and not keyword.iskeyword(arg):
@@ -270,7 +279,13 @@ class ForwardRef:
             # because dictionaries are not hashable.
             and self.__globals__ is other.__globals__
             and self.__forward_is_class__ == other.__forward_is_class__
-            and self.__cell__ == other.__cell__
+            # Two separate cells are always considered unequal in forward refs.
+            and (
+                {name: id(cell) for name, cell in self.__cell__.items()}
+                == {name: id(cell) for name, cell in other.__cell__.items()}
+                if isinstance(self.__cell__, dict) and isinstance(other.__cell__, dict)
+                else self.__cell__ is other.__cell__
+            )
             and self.__owner__ == other.__owner__
             and (
                 (tuple(sorted(self.__extra_names__.items())) if self.__extra_names__ else None) ==
@@ -284,7 +299,10 @@ class ForwardRef:
             self.__forward_module__,
             id(self.__globals__),  # dictionaries are not hashable, so hash by identity
             self.__forward_is_class__,
-            tuple(sorted(self.__cell__.items())) if isinstance(self.__cell__, dict) else self.__cell__,
+            (  # cells are not hashable as well
+                tuple(sorted([(name, id(cell)) for name, cell in self.__cell__.items()]))
+                if isinstance(self.__cell__, dict) else id(self.__cell__),
+            ),
             self.__owner__,
             tuple(sorted(self.__extra_names__.items())) if self.__extra_names__ else None,
         ))
@@ -835,14 +853,9 @@ def call_annotate_function(annotate, format, *, owner=None, _is_evaluate=False):
 def _build_closure(annotate, owner, is_class, stringifier_dict, *, allow_evaluation):
     if not annotate.__closure__:
         return None, None
-    freevars = annotate.__code__.co_freevars
     new_closure = []
     cell_dict = {}
-    for i, cell in enumerate(annotate.__closure__):
-        if i < len(freevars):
-            name = freevars[i]
-        else:
-            name = "__cell__"
+    for name, cell in zip(annotate.__code__.co_freevars, annotate.__closure__, strict=True):
         cell_dict[name] = cell
         new_cell = None
         if allow_evaluation:
@@ -1092,7 +1105,7 @@ def _rewrite_star_unpack(arg):
     """If the given argument annotation expression is a star unpack e.g. `'*Ts'`
        rewrite it to a valid expression.
        """
-    if arg.startswith("*"):
+    if arg.lstrip().startswith("*"):
         return f"({arg},)[0]"  # E.g. (*Ts,)[0] or (*tuple[int, int],)[0]
     else:
         return arg

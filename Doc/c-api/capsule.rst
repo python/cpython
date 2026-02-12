@@ -22,6 +22,12 @@ Refer to :ref:`using-capsules` for more information on using these objects.
    loaded modules.
 
 
+.. c:var:: PyTypeObject PyCapsule_Type
+
+   The type object corresponding to capsule objects. This is the same object
+   as :class:`types.CapsuleType` in the Python layer.
+
+
 .. c:type:: PyCapsule_Destructor
 
    The type of a destructor callback for a capsule.  Defined as::

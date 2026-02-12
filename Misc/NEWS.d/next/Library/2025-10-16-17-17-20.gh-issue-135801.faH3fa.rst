@@ -1,6 +1,0 @@
-Improve filtering by module in :func:`warnings.warn_explicit` if no *module*
-argument is passed. It now tests the module regular expression in the
-warnings filter not only against the filename with ``.py`` stripped, but
-also against module names constructed starting from different parent
-directories of the filename (with ``/__init__.py``, ``.py`` and, on Windows,
-``.pyw`` stripped).

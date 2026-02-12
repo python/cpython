@@ -16,7 +16,7 @@ error handlers, entity resolvers and lexical handlers. Applications normally
 only need to implement those interfaces whose events they are interested in;
 they can implement the interfaces in a single object or in multiple objects.
 Handler implementations should inherit from the base classes provided in the
-module :mod:`xml.sax.handler`, so that all methods get default implementations.
+module :mod:`!xml.sax.handler`, so that all methods get default implementations.
 
 
 .. class:: ContentHandler
@@ -53,7 +53,7 @@ module :mod:`xml.sax.handler`, so that all methods get default implementations.
    Interface used by the parser to represent low frequency events which may not
    be of interest to many applications.
 
-In addition to these classes, :mod:`xml.sax.handler` provides symbolic constants
+In addition to these classes, :mod:`!xml.sax.handler` provides symbolic constants
 for the feature and property names.
 
 
@@ -95,6 +95,14 @@ for the feature and property names.
 
 
 .. data:: feature_external_ges
+
+   .. warning::
+
+      Enabling opens a vulnerability to
+      `external entity attacks <https://en.wikipedia.org/wiki/XML_external_entity_attack>`_
+      if the parser is used with user-provided XML content.
+      Please reflect on your `threat model <https://en.wikipedia.org/wiki/Threat_model>`_
+      before enabling this feature.
 
    | value: ``"http://xml.org/sax/features/external-general-entities"``
    | true: Include all external general (text) entities.
