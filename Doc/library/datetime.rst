@@ -2690,6 +2690,12 @@ the default value is ``1900-01-01T00:00:00.000``: any components not specified
 in the format string will be pulled from the default value.
 
 .. note::
+   Format strings without separators can be ambiguous for parsing. For
+   example, with ``%Y%m%d``, the string ``2026111`` may be parsed either as
+   ``2026-11-01`` or as ``2026-01-11``.
+   Use separators to ensure the input is parsed as intended.
+
+.. note::
    When used to parse partial dates lacking a year, :meth:`.datetime.strptime`
    and :meth:`.date.strptime` will raise when encountering February 29 because
    the default year of 1900 is *not* a leap year.  Always add a default leap
