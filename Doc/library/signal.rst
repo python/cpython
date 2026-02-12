@@ -71,8 +71,7 @@ Besides, only the main thread of the main interpreter is allowed to set a new si
 .. warning::
 
    Synchronization primitives such as :class:`threading.Lock` should not be used
-   within signal handlers.  Because blocking synchronization calls can be
-   interrupted by signals, such usage can lead to surprising dead locks.
+   within signal handlers.  Doing so can lead to unexpected deadlocks.
 
 
 Module contents
