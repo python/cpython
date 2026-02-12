@@ -74,10 +74,10 @@ jobs:
         include:
           - target: i686-pc-windows-msvc/msvc
             architecture: Win32
-            runner: windows-2022
+            runner: windows-2025
           - target: x86_64-pc-windows-msvc/msvc
             architecture: x64
-            runner: windows-2022
+            runner: windows-2025
           - target: aarch64-pc-windows-msvc/msvc
             architecture: ARM64
             runner: windows-11-arm
