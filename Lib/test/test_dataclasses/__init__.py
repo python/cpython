@@ -27,10 +27,20 @@ import typing       # Needed for the string "typing.ClassVar[int]" to work as an
 import dataclasses  # Needed for the string "dataclasses.InitVar[int]" to work as an annotation.
 
 from test import support
-from test.support import import_helper
+from test.support import cpython_only, import_helper
 
 # Just any custom exception we can catch.
 class CustomError(Exception): pass
+
+
+class TestImportTime(unittest.TestCase):
+
+    @cpython_only
+    def test_lazy_import(self):
+        import_helper.ensure_lazy_imports(
+            "dataclasses", {"inspect"}
+        )
+
 
 class TestCase(unittest.TestCase):
     def test_no_fields(self):
