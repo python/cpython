@@ -6292,7 +6292,8 @@ dictitems_xor_lock_held(PyObject *d1, PyObject *d2)
             }
         }
         else {
-            PyObject *pair = PyTuple_Pack(2, key, val2);
+            PyObject *items[] = {key, val2};
+            PyObject *pair = PyTuple_FromArray(items, 2);
             if (pair == NULL) {
                 goto error;
             }
