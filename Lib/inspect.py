@@ -145,6 +145,7 @@ __all__ = [
 import abc
 from annotationlib import Format, ForwardRef
 from annotationlib import get_annotations  # re-exported
+import ast
 import dis
 import collections.abc
 import enum
@@ -2155,8 +2156,6 @@ def _signature_fromstr(cls, obj, s, skip_bound_arg=True):
     """Private helper to parse content of '__text_signature__'
     and return a Signature based on it.
     """
-    import ast
-
     Parameter = cls._parameter_cls
     clean_signature, self_parameter = _signature_strip_non_python_syntax(s)
     program = "def foo" + clean_signature + ": pass"
