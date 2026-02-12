@@ -80,7 +80,8 @@ from email import utils
 # Useful constants and functions
 #
 
-WSP = set(' \t')
+_WSP = ' \t'
+WSP = set(_WSP)
 CFWS_LEADER = WSP | set('(')
 SPECIALS = set(r'()<>@,:;.\"[]')
 ATOM_ENDS = SPECIALS | WSP
@@ -2858,6 +2859,12 @@ def _steal_all_trailing_WSP_if_exists(lines):
     return ''.join(wsp_lines)
 
 
+def _last_word_is_sill_ew(_last_word_is_ew, added_str):
+    # If the last word is an encoded word, and the added string is all WSP,
+    # then (and only then) is the last word is still an encoded word.
+    return _last_word_is_ew and not bool(added_str.strip(_WSP))
+
+
 def _refold_parse_tree(parse_tree, *, policy):
     """Return string of contents of parse_tree folded according to RFC rules.
 
@@ -2961,8 +2968,7 @@ def _refold_parse_tree(parse_tree, *, policy):
 
         if len(tstr) <= maxlen - len(lines[-1]):
             lines[-1] += tstr
-            if any(char not in WSP for char in tstr):
-                last_word_is_ew = False
+            last_word_is_ew = _last_word_is_sill_ew(last_word_is_ew, tstr)
             continue
 
         # This part is too long to fit.  The RFC wants us to break at
@@ -2973,8 +2979,9 @@ def _refold_parse_tree(parse_tree, *, policy):
             newline = _steal_trailing_WSP_if_exists(lines)
             if newline or part.startswith_fws():
                 lines.append(newline + tstr)
-                if any(char not in WSP for char in lines[-1]):
-                    last_word_is_ew = False
+                last_word_is_ew = _last_word_is_sill_ew(
+                    last_word_is_ew, lines[-1]
+                )
                 last_ew = None
                 continue
         if not hasattr(part, 'encode'):
@@ -3014,8 +3021,7 @@ def _refold_parse_tree(parse_tree, *, policy):
         else:
             # We can't fold it onto the next line either...
             lines[-1] += tstr
-        if any(char not in WSP for char in tstr):
-            last_word_is_ew = False
+        last_word_is_ew = _last_word_is_sill_ew(last_word_is_ew, tstr)
 
     return policy.linesep.join(lines) + policy.linesep
 
