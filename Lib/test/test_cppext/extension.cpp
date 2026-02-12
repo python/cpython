@@ -15,11 +15,20 @@
 
 #ifdef TEST_INTERNAL_C_API
    // gh-135906: Check for compiler warnings in the internal C API
+   // - Cython uses pycore_critical_section.h, pycore_frame.h and
+   //   pycore_template.h.
+   // - greenlet uses pycore_frame.h, pycore_interpframe_structs.h and
+   //   pycore_interpframe.h.
 #  include "internal/pycore_frame.h"
+#  include "internal/pycore_interpframe_structs.h"
+#  include "internal/pycore_template.h"
+
    // mimalloc emits compiler warnings on Windows.
 #  if !defined(MS_WINDOWS)
 #    include "internal/pycore_backoff.h"
 #    include "internal/pycore_cell.h"
+#    include "internal/pycore_critical_section.h"
+#    include "internal/pycore_interpframe.h"
 #  endif
 #endif
 
