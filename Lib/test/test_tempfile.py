@@ -328,10 +328,6 @@ def _mock_candidate_names(*names):
 
 
 class TestBadTempdir:
-
-    @unittest.skipIf(
-        support.is_emscripten, "Emscripten cannot remove write bits."
-    )
     def test_read_only_directory(self):
         with _inside_empty_temp_dir():
             oldmode = mode = os.stat(tempfile.tempdir).st_mode
@@ -520,11 +516,11 @@ class TestMkstempInner(TestBadTempdir, BaseTestCase):
              _mock_candidate_names('aaa', 'aaa', 'bbb'):
             (fd1, name1) = self.make_temp()
             os.close(fd1)
-            self.assertTrue(name1.endswith('aaa'))
+            self.assertEndsWith(name1, 'aaa')
 
             (fd2, name2) = self.make_temp()
             os.close(fd2)
-            self.assertTrue(name2.endswith('bbb'))
+            self.assertEndsWith(name2, 'bbb')
 
     def test_collision_with_existing_directory(self):
         # _mkstemp_inner tries another name when a directory with
@@ -532,11 +528,11 @@ class TestMkstempInner(TestBadTempdir, BaseTestCase):
         with _inside_empty_temp_dir(), \
              _mock_candidate_names('aaa', 'aaa', 'bbb'):
             dir = tempfile.mkdtemp()
-            self.assertTrue(dir.endswith('aaa'))
+            self.assertEndsWith(dir, 'aaa')
 
             (fd, name) = self.make_temp()
             os.close(fd)
-            self.assertTrue(name.endswith('bbb'))
+            self.assertEndsWith(name, 'bbb')
 
 
 class TestGetTempPrefix(BaseTestCase):
@@ -832,9 +828,9 @@ class TestMkdtemp(TestBadTempdir, BaseTestCase):
              _mock_candidate_names('aaa', 'aaa', 'bbb'):
             file = tempfile.NamedTemporaryFile(delete=False)
             file.close()
-            self.assertTrue(file.name.endswith('aaa'))
+            self.assertEndsWith(file.name, 'aaa')
             dir = tempfile.mkdtemp()
-            self.assertTrue(dir.endswith('bbb'))
+            self.assertEndsWith(dir, 'bbb')
 
     def test_collision_with_existing_directory(self):
         # mkdtemp tries another name when a directory with
@@ -842,9 +838,9 @@ class TestMkdtemp(TestBadTempdir, BaseTestCase):
         with _inside_empty_temp_dir(), \
              _mock_candidate_names('aaa', 'aaa', 'bbb'):
             dir1 = tempfile.mkdtemp()
-            self.assertTrue(dir1.endswith('aaa'))
+            self.assertEndsWith(dir1, 'aaa')
             dir2 = tempfile.mkdtemp()
-            self.assertTrue(dir2.endswith('bbb'))
+            self.assertEndsWith(dir2, 'bbb')
 
     def test_for_tempdir_is_bytes_issue40701_api_warts(self):
         orig_tempdir = tempfile.tempdir
@@ -1116,11 +1112,14 @@ class TestNamedTemporaryFile(BaseTestCase):
             # Testing extreme case, where the file is not explicitly closed
             # f.close()
             return tmp_name
-        # Make sure that the garbage collector has finalized the file object.
-        gc.collect()
         dir = tempfile.mkdtemp()
         try:
-            tmp_name = my_func(dir)
+            with self.assertWarnsRegex(
+                expected_warning=ResourceWarning,
+                expected_regex=r"Implicitly cleaning up <_TemporaryFileWrapper file=.*>",
+            ):
+                tmp_name = my_func(dir)
+                support.gc_collect()
             self.assertFalse(os.path.exists(tmp_name),
                         f"NamedTemporaryFile {tmp_name!r} "
                         f"exists after finalizer ")
@@ -1240,9 +1239,6 @@ class TestSpooledTemporaryFile(BaseTestCase):
         with self.assertWarns(ResourceWarning):
             f.__del__()
 
-    @unittest.skipIf(
-        support.is_emscripten, "Emscripten cannot fstat renamed files."
-    )
     def test_del_rolled_file(self):
         # The rolled file should be deleted when the SpooledTemporaryFile
         # object is deleted. This should raise a ResourceWarning since the file
@@ -1287,6 +1283,34 @@ class TestSpooledTemporaryFile(BaseTestCase):
         self.assertEqual(pos, 0)
         buf = f.read()
         self.assertEqual(buf, b'xyz')
+
+    def test_writelines_rollover(self):
+        # Verify writelines rolls over before exhausting the iterator
+        f = self.do_create(max_size=2)
+
+        def it():
+            yield b'xy'
+            self.assertFalse(f._rolled)
+            yield b'z'
+            self.assertTrue(f._rolled)
+
+        f.writelines(it())
+        pos = f.seek(0)
+        self.assertEqual(pos, 0)
+        buf = f.read()
+        self.assertEqual(buf, b'xyz')
+
+    def test_writelines_fast_path(self):
+        f = self.do_create(max_size=2)
+        f.write(b'abc')
+        self.assertTrue(f._rolled)
+
+        f.writelines([b'd', b'e', b'f'])
+        pos = f.seek(0)
+        self.assertEqual(pos, 0)
+        buf = f.read()
+        self.assertEqual(buf, b'abcdef')
+
 
     def test_writelines_sequential(self):
         # A SpooledTemporaryFile should hold exactly max_size bytes, and roll
@@ -1362,7 +1386,7 @@ class TestSpooledTemporaryFile(BaseTestCase):
 
         f.write(b'x')
         self.assertTrue(f._rolled)
-        self.assertEqual(f.mode, 'rb+')
+        self.assertEqual(f.mode, 'wb+')
         self.assertIsNotNone(f.name)
         with self.assertRaises(AttributeError):
             f.newlines
@@ -1468,9 +1492,6 @@ class TestSpooledTemporaryFile(BaseTestCase):
                 pass
         self.assertRaises(ValueError, use_closed)
 
-    @unittest.skipIf(
-        support.is_emscripten, "Emscripten cannot fstat renamed files."
-    )
     def test_truncate_with_size_parameter(self):
         # A SpooledTemporaryFile can be truncated to zero size
         f = tempfile.SpooledTemporaryFile(max_size=10)

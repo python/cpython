@@ -1,2 +1,0 @@
-Fix performance regression in the :mod:`tokenize` module by caching the ``line``
-token attribute and calculating the column offset more efficiently.

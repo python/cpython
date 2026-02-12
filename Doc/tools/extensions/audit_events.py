@@ -13,7 +13,7 @@ from sphinx.util import logging
 from sphinx.util.docutils import SphinxDirective
 
 if TYPE_CHECKING:
-    from collections.abc import Iterator
+    from collections.abc import Iterator, Set
 
     from sphinx.application import Sphinx
     from sphinx.builders import Builder
@@ -33,7 +33,7 @@ _SYNONYMS = [
 class AuditEvents:
     def __init__(self) -> None:
         self.events: dict[str, list[str]] = {}
-        self.sources: dict[str, list[tuple[str, str]]] = {}
+        self.sources: dict[str, set[tuple[str, str]]] = {}
 
     def __iter__(self) -> Iterator[tuple[str, list[str], tuple[str, str]]]:
         for name, args in self.events.items():
@@ -47,7 +47,7 @@ class AuditEvents:
             self._check_args_match(name, args)
         else:
             self.events[name] = args
-        self.sources.setdefault(name, []).append(source)
+        self.sources.setdefault(name, set()).add(source)
 
     def _check_args_match(self, name: str, args: list[str]) -> None:
         current_args = self.events[name]
@@ -69,11 +69,11 @@ class AuditEvents:
             return
 
     def id_for(self, name) -> str:
-        source_count = len(self.sources.get(name, ()))
+        source_count = len(self.sources.get(name, set()))
         name_clean = re.sub(r"\W", "_", name)
         return f"audit_event_{name_clean}_{source_count}"
 
-    def rows(self) -> Iterator[tuple[str, list[str], list[tuple[str, str]]]]:
+    def rows(self) -> Iterator[tuple[str, list[str], Set[tuple[str, str]]]]:
         for name in sorted(self.events.keys()):
             yield name, self.events[name], self.sources[name]
 
@@ -218,7 +218,7 @@ class AuditEventListTransform(SphinxPostTransform):
         docname: str,
         name: str,
         args: list[str],
-        sources: list[tuple[str, str]],
+        sources: Set[tuple[str, str]],
     ) -> nodes.row:
         row = nodes.row()
         name_node = nodes.paragraph("", nodes.Text(name))
@@ -233,7 +233,7 @@ class AuditEventListTransform(SphinxPostTransform):
         row += nodes.entry("", args_node)
 
         backlinks_node = nodes.paragraph()
-        backlinks = enumerate(sorted(set(sources)), start=1)
+        backlinks = enumerate(sorted(sources), start=1)
         for i, (doc, label) in backlinks:
             if isinstance(label, str):
                 ref = nodes.reference("", f"[{i}]", internal=True)
@@ -258,7 +258,7 @@ def setup(app: Sphinx):
     app.connect("env-purge-doc", audit_events_purge)
     app.connect("env-merge-info", audit_events_merge)
     return {
-        "version": "1.0",
+        "version": "2.0",
         "parallel_read_safe": True,
         "parallel_write_safe": True,
     }

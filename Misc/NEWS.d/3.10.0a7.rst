@@ -81,7 +81,7 @@ instruction dispatch a bit.
 .. bpo: 40645
 .. date: 2021-03-29-11-55-06
 .. nonce: PhaT-B
-.. section: Core and Builtins
+.. section: Library
 
 Fix reference leak in the :mod:`!_hashopenssl` extension. Patch by Pablo
 Galindo.
@@ -715,7 +715,7 @@ this situation.  Also ensures that the :func:`tempfile.gettempdir` and
 Expose ``X509_V_FLAG_ALLOW_PROXY_CERTS`` as
 :const:`~ssl.VERIFY_ALLOW_PROXY_CERTS` to allow proxy certificate validation
 as explained in
-https://www.openssl.org/docs/man1.1.1/man7/proxy-certificates.html.
+https://docs.openssl.org/1.1.1/man7/proxy-certificates/.
 
 ..
 

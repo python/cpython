@@ -1,3 +1,0 @@
-Eliminate type version guards in the tier two interpreter.
-
-Note that setting the ``tp_version_tag`` manually (which has never been supported) may result in crashes.

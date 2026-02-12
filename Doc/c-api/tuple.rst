@@ -37,6 +37,19 @@ Tuple Objects
    or ``NULL`` with an exception set on failure.
 
 
+.. c:function:: PyObject* PyTuple_FromArray(PyObject *const *array, Py_ssize_t size)
+
+   Create a tuple of *size* items and copy references from *array* to the new
+   tuple.
+
+   *array* can be NULL if *size* is ``0``.
+
+   On success, return a new reference.
+   On error, set an exception and return ``NULL``.
+
+   .. versionadded:: 3.15
+
+
 .. c:function:: PyObject* PyTuple_Pack(Py_ssize_t n, ...)
 
    Return a new tuple object of size *n*,
@@ -48,7 +61,7 @@ Tuple Objects
 .. c:function:: Py_ssize_t PyTuple_Size(PyObject *p)
 
    Take a pointer to a tuple object, and return the size of that tuple.
-   On error, return ``-1`` and with an exception set.
+   On error, return ``-1`` with an exception set.
 
 
 .. c:function:: Py_ssize_t PyTuple_GET_SIZE(PyObject *p)
@@ -135,8 +148,11 @@ Tuple Objects
 Struct Sequence Objects
 -----------------------
 
-Struct sequence objects are the C equivalent of :func:`~collections.namedtuple`
-objects, i.e. a sequence whose items can also be accessed through attributes.
+A struct sequence object is a :term:`named tuple`, that is, a sequence
+whose items can also be accessed through attributes.
+It is similar to :func:`collections.namedtuple`, but provides a slightly
+different interface.
+
 To create a struct sequence, you first have to create a specific struct sequence
 type.
 
@@ -167,7 +183,8 @@ type.
 
    .. c:member:: const char *name
 
-      Name of the struct sequence type.
+      Fully qualified name of the type; null-terminated UTF-8 encoded.
+      The name must contain the module name.
 
    .. c:member:: const char *doc
 

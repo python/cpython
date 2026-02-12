@@ -1,7 +1,7 @@
 """Manage HTTP Response Headers
 
 Much of this module is red-handedly pilfered from email.message in the stdlib,
-so portions are Copyright (C) 2001,2002 Python Software Foundation, and were
+so portions are Copyright (C) 2001 Python Software Foundation, and were
 written by Barry Warsaw.
 """
 
@@ -9,6 +9,7 @@ written by Barry Warsaw.
 # existence of which force quoting of the parameter value.
 import re
 tspecials = re.compile(r'[ \(\)<>@,;:\\"/\[\]\?=]')
+_control_chars_re = re.compile(r'[\x00-\x1F\x7F]')
 
 def _formatparam(param, value=None, quote=1):
     """Convenience function to format and return a key=value pair.
@@ -41,6 +42,8 @@ class Headers:
     def _convert_string_type(self, value):
         """Convert/check value type."""
         if type(value) is str:
+            if _control_chars_re.search(value):
+                raise ValueError("Control characters not allowed in headers")
             return value
         raise AssertionError("Header names/values must be"
             " of type str (got {0})".format(repr(value)))

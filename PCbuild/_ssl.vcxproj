@@ -99,9 +99,6 @@
   </ItemDefinitionGroup>
   <ItemGroup>
     <ClCompile Include="..\Modules\_ssl.c" />
-    <ClCompile Include="$(opensslIncludeDir)\applink.c">
-      <PreprocessorDefinitions>_CRT_SECURE_NO_WARNINGS;$(PreprocessorDefinitions)</PreprocessorDefinitions>
-    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ResourceCompile Include="..\PC\python_nt.rc" />

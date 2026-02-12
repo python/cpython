@@ -1,8 +1,8 @@
-# Copyright (C) 2001-2007 Python Software Foundation
+# Copyright (C) 2001 Python Software Foundation
 # Author: Barry Warsaw, Thomas Wouters, Anthony Baxter
 # Contact: email-sig@python.org
 
-"""A parser of RFC 2822 and MIME email messages."""
+"""A parser of RFC 5322 and MIME email messages."""
 
 __all__ = ['Parser', 'HeaderParser', 'BytesParser', 'BytesHeaderParser',
            'FeedParser', 'BytesFeedParser']
@@ -15,13 +15,13 @@ from email._policybase import compat32
 
 class Parser:
     def __init__(self, _class=None, *, policy=compat32):
-        """Parser of RFC 2822 and MIME email messages.
+        """Parser of RFC 5322 and MIME email messages.
 
         Creates an in-memory object tree representing the email message, which
         can then be manipulated and turned over to a Generator to return the
         textual representation of the message.
 
-        The string must be formatted as a block of RFC 2822 headers and header
+        The string must be formatted as a block of RFC 5322 headers and header
         continuation lines, optionally preceded by a 'Unix-from' header.  The
         header block is terminated either by the end of the string or by a
         blank line.
@@ -75,13 +75,13 @@ class HeaderParser(Parser):
 class BytesParser:
 
     def __init__(self, *args, **kw):
-        """Parser of binary RFC 2822 and MIME email messages.
+        """Parser of binary RFC 5322 and MIME email messages.
 
         Creates an in-memory object tree representing the email message, which
         can then be manipulated and turned over to a Generator to return the
         textual representation of the message.
 
-        The input must be formatted as a block of RFC 2822 headers and header
+        The input must be formatted as a block of RFC 5322 headers and header
         continuation lines, optionally preceded by a 'Unix-from' header.  The
         header block is terminated either by the end of the input or by a
         blank line.

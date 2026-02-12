@@ -84,6 +84,7 @@ CLINIC_PREFIXED_ARGS: Final = frozenset(
         "argsbuf",
         "fastargs",
         "kwargs",
+        "kwds",
         "kwnames",
         "nargs",
         "noptargs",

@@ -43,6 +43,7 @@ _PyTokenizer_tok_new(void)
     tok->encoding = NULL;
     tok->cont_line = 0;
     tok->filename = NULL;
+    tok->module = NULL;
     tok->decoding_readline = NULL;
     tok->decoding_buffer = NULL;
     tok->readline = NULL;
@@ -54,7 +55,7 @@ _PyTokenizer_tok_new(void)
     tok->tok_extra_tokens = 0;
     tok->comment_newline = 0;
     tok->implicit_newline = 0;
-    tok->tok_mode_stack[0] = (tokenizer_mode){.kind =TOK_REGULAR_MODE, .f_string_quote='\0', .f_string_quote_size = 0, .f_string_debug=0};
+    tok->tok_mode_stack[0] = (tokenizer_mode){.kind =TOK_REGULAR_MODE, .quote='\0', .quote_size = 0, .in_debug=0};
     tok->tok_mode_stack_index = 0;
 #ifdef Py_DEBUG
     tok->debug = _Py_GetConfig()->parser_debug;
@@ -91,6 +92,7 @@ _PyTokenizer_Free(struct tok_state *tok)
     Py_XDECREF(tok->decoding_buffer);
     Py_XDECREF(tok->readline);
     Py_XDECREF(tok->filename);
+    Py_XDECREF(tok->module);
     if ((tok->readline != NULL || tok->fp != NULL ) && tok->buf != NULL) {
         PyMem_Free(tok->buf);
     }

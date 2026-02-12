@@ -8,11 +8,18 @@
 .. moduleauthor:: Toby Dickenson <htrd90@zepler.org>
 .. sectionauthor:: Fred L. Drake, Jr. <fdrake@acm.org>
 
+**Source code:** :source:`PC/winsound.c`
+
 --------------
 
-The :mod:`winsound` module provides access to the basic sound-playing machinery
+The :mod:`!winsound` module provides access to the basic sound-playing machinery
 provided by Windows platforms.  It includes functions and several constants.
 
+.. availability:: Windows.
+
+
+Functions
+---------
 
 .. function:: Beep(frequency, duration)
 
@@ -43,6 +50,9 @@ provided by Windows platforms.  It includes functions and several constants.
    fallback if a sound cannot be played otherwise.  If the system indicates an
    error, :exc:`RuntimeError` is raised.
 
+
+Constants
+---------
 
 .. data:: SND_FILENAME
 
@@ -135,6 +145,34 @@ provided by Windows platforms.  It includes functions and several constants.
       This flag is not supported on modern Windows platforms.
 
 
+.. data:: SND_APPLICATION
+
+   The *sound* parameter is an application-specific alias in the registry.
+   This flag can be combined with the :const:`SND_ALIAS` flag
+   to specify an application-defined sound alias.
+
+
+.. data:: SND_SENTRY
+
+   Triggers a SoundSentry event when the sound is played.
+
+   .. versionadded:: 3.14
+
+
+.. data:: SND_SYNC
+
+   The sound is played synchronously.  This is the default behavior.
+
+   .. versionadded:: 3.14
+
+
+.. data:: SND_SYSTEM
+
+   Assign the sound to the audio session for system notification sounds.
+
+   .. versionadded:: 3.14
+
+
 .. data:: MB_ICONASTERISK
 
    Play the ``SystemDefault`` sound.
@@ -159,3 +197,30 @@ provided by Windows platforms.  It includes functions and several constants.
 
    Play the ``SystemDefault`` sound.
 
+
+.. data:: MB_ICONERROR
+
+   Play the ``SystemHand`` sound.
+
+   .. versionadded:: 3.14
+
+
+.. data:: MB_ICONINFORMATION
+
+   Play the ``SystemDefault`` sound.
+
+   .. versionadded:: 3.14
+
+
+.. data:: MB_ICONSTOP
+
+   Play the ``SystemHand`` sound.
+
+   .. versionadded:: 3.14
+
+
+.. data:: MB_ICONWARNING
+
+   Play the ``SystemExclamation`` sound.
+
+   .. versionadded:: 3.14
