@@ -15,6 +15,7 @@
 #include "pycore_initconfig.h"    // _PyStatus_OK()
 #include "pycore_interpolation.h" // _PyInterpolation_InitTypes()
 #include "pycore_long.h"          // _PyLong_InitTypes()
+#include "pycore_moduleobject.h"  // _PyModule_InitModuleDictWatcher()
 #include "pycore_object.h"        // _PyDebug_PrintTotalRefs()
 #include "pycore_obmalloc.h"      // _PyMem_init_obmalloc()
 #include "pycore_optimizer.h"     // _Py_Executors_InvalidateAll
@@ -631,6 +632,11 @@ pycore_create_interpreter(_PyRuntimeState *runtime,
     assert(_Py_IsMainInterpreter(interp));
     _PyInterpreterState_SetWhence(interp, _PyInterpreterState_WHENCE_RUNTIME);
     interp->_ready = 1;
+
+    /* Initialize the module dict watcher early, before any modules are created */
+    if (_PyModule_InitModuleDictWatcher(interp) != 0) {
+        return _PyStatus_ERR("failed to initialize module dict watcher");
+    }
 
     status = _PyConfig_Copy(&interp->config, src_config);
     if (_PyStatus_EXCEPTION(status)) {
@@ -1335,6 +1341,22 @@ init_interp_main(PyThreadState *tstate)
         }
     }
 
+    // Initialize lazy imports based on configuration. Do this after site
+    // module is imported to avoid circular imports during startup.
+    if (config->lazy_imports != -1) {
+        PyImport_LazyImportsMode lazy_mode;
+        if (config->lazy_imports == 1) {
+            lazy_mode = PyImport_LAZY_ALL;
+        }
+        else {
+            lazy_mode = PyImport_LAZY_NONE;
+        }
+        if (PyImport_SetLazyImportsMode(lazy_mode) < 0) {
+            return _PyStatus_ERR("failed to set lazy imports mode");
+        }
+    }
+    // If config->lazy_imports == -1, use the default mode, no change needed.
+
     if (is_main_interp) {
 #ifndef MS_WINDOWS
         emit_stderr_warning_for_legacy_locale(interp->runtime);
@@ -1801,6 +1823,9 @@ finalize_modules(PyThreadState *tstate)
     // clear PyModuleDef.m_base.m_copy (of extensions not using the multi-phase
     // initialization API)
     _PyImport_ClearModulesByIndex(interp);
+
+    // Clear the dict of lazily loaded module nname to submodule names
+    _PyImport_ClearLazyModules(interp);
 
     // Clear and delete the modules directory.  Actual modules will
     // still be there only if imported during the execution of some
@@ -2448,6 +2473,11 @@ new_interpreter(PyThreadState **tstate_p,
     }
     _PyInterpreterState_SetWhence(interp, whence);
     interp->_ready = 1;
+
+    /* Initialize the module dict watcher early, before any modules are created */
+    if (_PyModule_InitModuleDictWatcher(interp) != 0) {
+        goto error;
+    }
 
     /* From this point until the init_interp_create_gil() call,
        we must not do anything that requires that the GIL be held
