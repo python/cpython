@@ -840,6 +840,12 @@ the lock to an unlocked state and allows another thread blocked in
 must have a release in the thread that has acquired the lock. Failing to
 call release as many times the lock has been acquired can lead to deadlock.
 
+.. tip::
+
+   Because lock acquisition can be interrupted by signals, sharing reentrant
+   locks between :mod:`signal` handlers and the main thread can lead to
+   surprising behavior. Therefore, this is generally not recommended.
+
 
 .. class:: RLock()
 
