@@ -161,8 +161,8 @@ Subclass relationships:
 .. figure:: datetime-inheritance.svg
    :class: invert-in-dark-mode
    :align: center
-   :alt: timedelta, tzinfo, time, and date inherit from object, timezone inherits
-         from tzinfo, and datetime inherits from date.
+   :alt: timedelta, tzinfo, time, and date inherit from object; timezone inherits
+         from tzinfo; and datetime inherits from date.
 
 
 Common properties
