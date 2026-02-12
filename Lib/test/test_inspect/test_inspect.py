@@ -173,6 +173,15 @@ class custom_descriptor:
         return self.func.__get__(instance, owner)
 
 
+class TestImportTime(unittest.TestCase):
+
+    @cpython_only
+    def test_lazy_import(self):
+        import_helper.ensure_lazy_imports(
+            "inspect", {"re", "tokenize"}
+        )
+
+
 class TestPredicates(IsTestBase):
 
     def test_excluding_predicates(self):
