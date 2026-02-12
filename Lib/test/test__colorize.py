@@ -1,5 +1,4 @@
 import contextlib
-import dataclasses
 import io
 import sys
 import unittest
@@ -26,10 +25,26 @@ class TestTheme(unittest.TestCase):
 
     def test_attributes(self):
         # only theme configurations attributes by default
-        for field in dataclasses.fields(_colorize.Theme):
-            with self.subTest(field.name):
-                self.assertIsSubclass(field.type, _colorize.ThemeSection)
-                self.assertIsNotNone(field.default_factory)
+        for field in _colorize.Theme._fields:
+            with self.subTest(field):
+                section = getattr(_colorize.default_theme, field)
+                self.assertIsInstance(section, _colorize.ThemeSection)
+
+    def test_fields_match_init_parameters(self):
+        classes = [
+            _colorize.Argparse,
+            _colorize.Difflib,
+            _colorize.LiveProfiler,
+            _colorize.Syntax,
+            _colorize.Traceback,
+            _colorize.Unittest,
+        ]
+        for cls in classes:
+            with self.subTest(cls=cls.__name__):
+                code = cls.__init__.__code__
+                # All __init__ params are keyword-only (after self)
+                params = set(code.co_varnames[1 : 1 + code.co_kwonlyargcount])
+                self.assertEqual(params, set(cls._fields))
 
     def test_copy_with(self):
         theme = _colorize.Theme()
@@ -52,10 +67,11 @@ class TestTheme(unittest.TestCase):
         self.assertEqual(theme_no_colors, theme_no_colors_no_colors)
 
         # attributes check
-        for section in dataclasses.fields(_colorize.Theme):
-            with self.subTest(section.name):
-                section_theme = getattr(theme_no_colors, section.name)
-                self.assertEqual(section_theme, section.type.no_colors())
+        for section in _colorize.Theme._fields:
+            with self.subTest(section):
+                section_theme = getattr(theme_no_colors, section)
+                section_cls = type(section_theme)
+                self.assertEqual(section_theme, section_cls.no_colors())
 
 
 class TestColorizeFunction(unittest.TestCase):
