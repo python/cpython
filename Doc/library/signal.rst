@@ -68,6 +68,13 @@ the synchronization primitives from the :mod:`threading` module instead.
 
 Besides, only the main thread of the main interpreter is allowed to set a new signal handler.
 
+.. warning::
+
+   Synchronization primitives such as :class:`threading.Lock` must not be shared
+   between between signal handlers and other threads.
+   Because blocking synchronization calls can be interrupted by signals,
+   such sharing can lead to surprising dead locks.
+
 
 Module contents
 ---------------

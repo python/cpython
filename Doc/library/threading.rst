@@ -13,14 +13,6 @@ level :mod:`_thread` module.
 
 .. include:: ../includes/wasm-notavail.rst
 
-.. warning::
-
-   Syncrhonization primitives must not be shared between between :mod:`signal`
-   handlers and the main thread.
-   Because blocking syncrhonizations calls can be interrupted by signals,
-   such sharing can lead to surprising dead locks.
-
-
 Introduction
 ------------
 
