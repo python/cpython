@@ -68,7 +68,7 @@ jobs:
             process-mode: multi-process
     name: ${{ matrix.platform }}-${{ matrix.process-mode }}
     container:
-      image: nanvix/toolchain:v0.11.x-minimal
+      image: nanvix/toolchain:latest-minimal
       options: --device /dev/kvm
     defaults:
       run:

@@ -16,7 +16,7 @@
 #   - OpenSSL (libssl.a, libcrypto.a in NANVIX_HOME/lib)
 
 # Nanvix Docker image for cross-compilation (used as fallback if native toolchain not found)
-NANVIX_DOCKER_IMAGE ?= nanvix/toolchain:v0.11.x-minimal
+NANVIX_DOCKER_IMAGE ?= nanvix/toolchain:latest-minimal
 
 # Nanvix cross-compilation configuration
 ifdef CONFIG_NANVIX
