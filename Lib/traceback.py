@@ -1128,7 +1128,16 @@ class TracebackException:
                 self._str += (". Site initialization is disabled, did you forget to "
                     + "add the site-packages directory to sys.path "
                     + "or to enable your virtual environment?")
-        elif exc_type and issubclass(exc_type, (NameError, AttributeError)) and \
+        elif exc_type and issubclass(exc_type, AttributeError) and \
+                getattr(exc_value, "name", None) is not None:
+            wrong_name = getattr(exc_value, "name", None)
+            suggestion = _compute_suggestion_error(exc_value, exc_traceback, wrong_name)
+            if suggestion:
+                if suggestion.isascii():
+                    self._str += f". Did you mean '.{suggestion}' instead of '.{wrong_name}'?"
+                else:
+                    self._str += f". Did you mean '.{suggestion}' ({suggestion!a}) instead of '.{wrong_name}' ({wrong_name!a})?"
+        elif exc_type and issubclass(exc_type, NameError) and \
                 getattr(exc_value, "name", None) is not None:
             wrong_name = getattr(exc_value, "name", None)
             suggestion = _compute_suggestion_error(exc_value, exc_traceback, wrong_name)
@@ -1137,13 +1146,11 @@ class TracebackException:
                     self._str += f". Did you mean: '{suggestion}'?"
                 else:
                     self._str += f". Did you mean: '{suggestion}' ({suggestion!a})?"
-            if issubclass(exc_type, NameError):
-                wrong_name = getattr(exc_value, "name", None)
-                if wrong_name is not None and wrong_name in sys.stdlib_module_names:
-                    if suggestion:
-                        self._str += f" Or did you forget to import '{wrong_name}'?"
-                    else:
-                        self._str += f". Did you forget to import '{wrong_name}'?"
+            if wrong_name is not None and wrong_name in sys.stdlib_module_names:
+                if suggestion:
+                    self._str += f" Or did you forget to import '{wrong_name}'?"
+                else:
+                    self._str += f". Did you forget to import '{wrong_name}'?"
         if lookup_lines:
             self._load_lines()
         self.__suppress_context__ = \
