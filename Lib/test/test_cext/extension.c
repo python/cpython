@@ -15,9 +15,11 @@
 
 #ifdef TEST_INTERNAL_C_API
    // gh-135906: Check for compiler warnings in the internal C API.
-   // - Cython uses pycore_frame.h.
+   // - Cython uses pycore_critical_section.h, pycore_frame.h and
+   //   pycore_template.h.
    // - greenlet uses pycore_frame.h, pycore_interpframe_structs.h and
    //   pycore_interpframe.h.
+#  include "internal/pycore_critical_section.h"
 #  include "internal/pycore_frame.h"
 #  include "internal/pycore_gc.h"
 #  include "internal/pycore_interp.h"
@@ -25,6 +27,7 @@
 #  include "internal/pycore_interpframe_structs.h"
 #  include "internal/pycore_object.h"
 #  include "internal/pycore_pystate.h"
+#  include "internal/pycore_template.h"
 #endif
 
 #ifndef MODULE_NAME
