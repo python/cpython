@@ -91,7 +91,7 @@ PyAPI_FUNC(int) PyImport_AppendInittab(
 typedef enum {
     PyImport_LAZY_NORMAL,
     PyImport_LAZY_ALL,
-    PyImport_LAZY_NONE,
+    PyImport_LAZY_NONE
 } PyImport_LazyImportsMode;
 
 #ifndef Py_LIMITED_API
