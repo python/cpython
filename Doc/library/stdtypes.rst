@@ -5305,8 +5305,8 @@ frozenset, a temporary one is created from *elem*.
 
 .. _typesmapping:
 
-Mapping Types --- :class:`dict`
-===============================
+Mapping Types --- :class:`dict`, :class:`frozendict`
+====================================================
 
 .. index::
    pair: object; mapping
@@ -5317,8 +5317,9 @@ Mapping Types --- :class:`dict`
    pair: built-in function; len
 
 A :term:`mapping` object maps :term:`hashable` values to arbitrary objects.
-Mappings are mutable objects.  There is currently only one standard mapping
-type, the :dfn:`dictionary`.  (For other containers see the built-in
+There are currently two standard mapping types, the :dfn:`dictionary` and
+:class:`frozendict`.
+(For other containers see the built-in
 :class:`list`, :class:`set`, and :class:`tuple` classes, and the
 :mod:`collections` module.)
 
@@ -5586,6 +5587,15 @@ can be used interchangeably to index the same dictionary entry.
 
    .. versionchanged:: 3.8
       Dictionaries are now reversible.
+
+.. class:: frozendict(**kwargs)
+           frozendict(mapping, /, **kwargs)
+           frozendict(iterable, /, **kwargs)
+
+   Return a new frozen dictionary initialized from an optional positional
+   argument and a possibly empty set of keyword arguments.
+
+   .. versionadded:: next
 
 
 .. seealso::
@@ -6062,6 +6072,7 @@ list is non-exhaustive.
 * :class:`list`
 * :class:`dict`
 * :class:`set`
+* :class:`frozendict`
 * :class:`frozenset`
 * :class:`type`
 * :class:`asyncio.Future`

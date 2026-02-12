@@ -490,6 +490,46 @@ Dictionary View Objects
    always succeeds.
 
 
+Frozen Dictionary Objects
+^^^^^^^^^^^^^^^^^^^^^^^^^
+
+.. versionadded:: next
+
+
+.. c:function:: int PyAnyDict_Check(PyObject *p)
+
+   Return true if *p* is a dict object, a frozendict object, or an instance of
+   a subtype of the dict or frozendict type.
+   This function always succeeds.
+
+
+.. c:function:: int PyAnyDict_CheckExact(PyObject *p)
+
+   Return true if *p* is a dict object or a frozendict object, but not an
+   instance of a subtype of the dict or frozendict type.
+   This function always succeeds.
+
+
+.. c:function:: int PyFrozenDict_Check(PyObject *p)
+
+   Return true if *p* is a frozendict object or an instance of a subtype of the
+   frozendict type.
+   This function always succeeds.
+
+
+.. c:function:: int PyFrozenDict_CheckExact(PyObject *p)
+
+   Return true if *p* is a frozendict object, but not an instance of a subtype
+   of the frozendict type.
+   This function always succeeds.
+
+
+.. c:function:: PyObject* PyFrozenDict_New(PyObject *iterable)
+
+   Return a new frozendict from an iterable, or ``NULL`` on failure with an
+   exception set.
+
+
 Ordered Dictionaries
 ^^^^^^^^^^^^^^^^^^^^
 
