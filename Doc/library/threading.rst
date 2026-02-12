@@ -13,6 +13,14 @@ level :mod:`_thread` module.
 
 .. include:: ../includes/wasm-notavail.rst
 
+.. warning::
+
+   Syncrhonization primitives must not be shared between between :mod:`signal`
+   handlers and the main thread.
+   Because blocking syncrhonizations calls can be interrupted by signals,
+   such sharing can lead to surprising dead locks.
+
+
 Introduction
 ------------
 
@@ -839,12 +847,6 @@ the lock to an unlocked state and allows another thread blocked in
 :meth:`~RLock.acquire`/:meth:`~RLock.release` must be used in pairs: each acquire
 must have a release in the thread that has acquired the lock. Failing to
 call release as many times the lock has been acquired can lead to deadlock.
-
-.. tip::
-
-   Because lock acquisition can be interrupted by signals, sharing reentrant
-   locks between :mod:`signal` handlers and the main thread can lead to
-   surprising behavior. Therefore, this is generally not recommended.
 
 
 .. class:: RLock()
