@@ -2307,25 +2307,16 @@ class _Sentinel:
     __reduce__ = None
 
 
-# Private sentinels
-_RANGE = _Sentinel('RANGE')                     # Range to process
-_BLOCK = _Sentinel('BLOCK')                     # Block to return
-_RANGEWITHBLOCKS = _Sentinel('RANGEWITHBLOCKS') # Range to process & pre-evaluated blocks
-
-# Modifier sentinels. These are returned as first tuple item from `_modifier`
+_RANGE = _Sentinel('RANGE')                 # Range to process (private)
 ANCHORBLOCKS = _Sentinel('ANCHORBLOCKS')    # List of blocks (not subject to balancing)
 RESULTBLOCKS = _Sentinel('RESULTBLOCKS')    # List of blocks that terminate recursion
-
 
 _ERR_MSG_DTYPE = 'Unknown data type: {!r}'
 
 
 class DivideAndConquerMatcherMixin:
-    def _process_range(self, depth, alo, ahi, blo, bhi):
+    def _process_range(self, depth, alo, ahi, blo, bhi, try_quick=False):
         raise NotImplementedError
-
-    def _preprocess_range(self, depth, alo, ahi, blo, bhi):
-        return None
 
     def _validate_blocks(self, blocks, alo, ahi, blo, bhi):
         # 2.1.1. Prepare for validation
@@ -2367,40 +2358,30 @@ class DivideAndConquerMatcherMixin:
             return
 
         # 3-element tuples: (data_type, depth, data)
-        q = [(_RANGE, 1, (alo, ahi, blo, bhi))]
+        q = [(_RANGE, 1, (alo, ahi, blo, bhi), None)]
         while q:
-            dtype, depth, data = q.pop()
+            dtype, depth, bounds, data = q.pop()
 
             # 1. Decision logic for q items
-            if dtype is _BLOCK:
+            if dtype is RESULTBLOCKS:
                 # Just a block to yield
-                yield data
+                yield from data
                 continue
 
-            elif dtype is _RANGE:
+            if dtype is _RANGE:
                 # Just the range to process
-                bounds = data
-                rtype, blocks, validated = self._process_range(depth, *bounds)
-
-            elif dtype is _RANGEWITHBLOCKS:
+                dtype, blocks, validated = self._process_range(depth, *bounds, try_quick=False)
+                if not blocks:
+                    continue
+                if not validated:
+                    blocks = list(self._validate_blocks(blocks, *bounds))
+            elif dtype is ANCHORBLOCKS:
                 # Range & pre-evaluated block
-                bounds, data = data
-                rtype, blocks, validated = data
-
+                blocks = data
             else:
                 raise RuntimeError(_ERR_MSG_DTYPE.format(dtype))
 
-            if rtype not in (ANCHORBLOCKS, RESULTBLOCKS):
-                msg = 'Unknown result type from processed range: {!r}'
-                raise RuntimeError(msg.format(rtype))
-
-            if not validated:
-                blocks = list(self._validate_blocks(blocks, *bounds))
             if not blocks:
-                continue
-
-            if rtype is RESULTBLOCKS:
-                yield from blocks
                 continue
 
             # 2.1. Interpolate `blocks` with ranges
@@ -2413,22 +2394,20 @@ class DivideAndConquerMatcherMixin:
                     continue
                 if i0 < i and j0 < j:
                     q_tail.append((_RANGE, (i0, i, j0, j)))
-                q_tail.append((_BLOCK, block))
+                q_tail.append((RESULTBLOCKS, [block]))
                 i0, j0 = i + k, j + k
-
-            if q_tail:
-                if i0 < ahi and j0 < bhi:
-                    q_tail.append((_RANGE, (i0, ahi, j0, bhi)))
-            else:
+            if not q_tail:
                 # No blocks identified. Do not recurse further.
                 continue
+            elif i0 < ahi and j0 < bhi:
+                q_tail.append((_RANGE, (i0, ahi, j0, bhi)))
 
             # 2.2. Yield what is possible straight away
             q_tail.reverse()
             while q_tail:
                 dtype, data = q_tail.pop()
-                if dtype is _BLOCK:
-                    yield data
+                if dtype is RESULTBLOCKS:
+                    yield from data
                 elif dtype is _RANGE:
                     q_tail.append((dtype, data))
                     q_tail.reverse()
@@ -2437,20 +2416,24 @@ class DivideAndConquerMatcherMixin:
                     raise RuntimeError(_ERR_MSG_DTYPE.format(dtype))
 
             # 2.3. append to Q what is not
-            d = depth + 1
+            depth_p1 = depth + 1
             while q_tail:
                 dtype, data = q_tail.pop()
-                if dtype is _BLOCK:
-                    q.append((dtype, d, data))
+                if dtype is RESULTBLOCKS:
+                    q.append((RESULTBLOCKS, depth_p1, None, data))
                 elif dtype is _RANGE:
                     # Try quick evaluation without re-building
                     # Before cache was overriden
-                    bounds = data
-                    result = self._preprocess_range(d, *bounds)
+                    result = self._process_range(depth_p1, *data, try_quick=True)
                     if result is not None:
-                        q.append((_RANGEWITHBLOCKS, d, (bounds, result)))
+                        dtype, blocks, validated = result
+                        if blocks:
+                            if not validated:
+                                blocks = list(self._validate_blocks(blocks, *bounds))
+                            if blocks:
+                                q.append((dtype, depth_p1, data, blocks))
                     else:
-                        q.append((dtype, d, data))
+                        q.append((_RANGE, depth_p1, data, None))
                 else:
                     raise RuntimeError(_ERR_MSG_DTYPE.format(dtype))
 
@@ -2584,7 +2567,7 @@ def _search_many_of_same_length(patterns, text, start=0, stop=None):
             h = (h - hash(text[i0]) * base_m) % MOD
 
 
-_FIND_MODES = ('quick-only', 'quick-or-build', 'build')
+_FIND_MODES = ('try-quick', 'quick-or-build', 'build')
 
 
 class _LCSUBAutomaton:
@@ -2923,7 +2906,7 @@ class _LCSUBAutomaton:
             Secondly, it will be leftmost in seq2 if more than one occurrence
         Args:
             mode: str
-                quick-only (on failure return None)
+                try-quick (on failure return None)
                 quick-or-build (on failure build and calculate)
                 build
         Returns:
@@ -2938,11 +2921,11 @@ class _LCSUBAutomaton:
             return (start1, start2, 0)
 
         if mode == 'quick-or-build':
-            block = self.find(seq1, start1, stop1, start2, stop2, mode='quick-only')
+            block = self.find(seq1, start1, stop1, start2, stop2, mode='try-quick')
             if block is not None:
                 return block
 
-        if mode == 'quick-only':
+        if mode == 'try-quick':
             c_start, c_stop = self.cache
             if c_start > start2 or stop2 > c_stop:
                 return None
@@ -2955,7 +2938,7 @@ class _LCSUBAutomaton:
             return (start1, start2, 0)
 
         e1, e2, k = block
-        if mode == 'quick-only':
+        if mode == 'try-quick':
             stop_in_seq2 = e2 + 1
             start_in_seq2 = stop_in_seq2 - k
             if start_in_seq2 >= start2 and stop_in_seq2 <= stop2:
@@ -3001,7 +2984,7 @@ class _LCSUBAutomaton:
                 will only return all if split is lower that this ratio,
                 otherwise will only return first block. Same as simple find.
             mode: str
-                quick-only (on failure return None)
+                try-quick (on failure return None)
                 quick-or-build (on failure build and calculate)
                 build
         """
@@ -3019,11 +3002,11 @@ class _LCSUBAutomaton:
             # Try quick first anyways!
             blocks = self.find_contiguous_best(
                 seq1, start1, stop1, start2, stop2,
-                if_split_lower_than=if_split_lower_than, mode='quick-only')
+                if_split_lower_than=if_split_lower_than, mode='try-quick')
             if blocks is not None:
                 return blocks
 
-        if mode == 'quick-only':
+        if mode == 'try-quick':
             c_start, c_stop = self.cache
             if c_start > start2 or stop2 > c_stop:
                 return None
@@ -3038,7 +3021,7 @@ class _LCSUBAutomaton:
         e1, e2, k = first
         one_mk = 1 - k
         j = e2 + one_mk
-        if mode == 'quick-only' and j < start2 or e2 + 1 > stop2:
+        if mode == 'try-quick' and j < start2 or e2 + 1 > stop2:
             # NOTE: There is still a chance that we can get result
             #       But it is complicated and uncertain, so just give up
             return None
@@ -3210,23 +3193,17 @@ class ExactSequenceMatcher(DivideAndConquerMatcherMixin, SequenceMatcherBase):
             result.append(block)
         return result
 
-    def _preprocess_range(self, depth, alo, ahi, blo, bhi):
+    def _process_range(self, depth, alo, ahi, blo, bhi, try_quick=False):
         """
         If we split better than 1 / 8 don't bother
         Ensures O(nlogn) with relative constant ~ ln(2) / ln(8/7) = 5.19
         """
         bounds = (alo, ahi, blo, bhi)
+        mode = 'try-quick' if try_quick else 'quick-or-build'
         blocks = self.automaton.find_contiguous_best(
-            self.a, *bounds, if_split_lower_than=1/8, mode='quick-only')
-        if blocks is not None:
-            if self.bjunk:
-                blocks = self._extend_junk_for_many(blocks, *bounds)
-            return ANCHORBLOCKS, blocks, True
-
-    def _process_range(self, depth, alo, ahi, blo, bhi):
-        bounds = (alo, ahi, blo, bhi)
-        blocks = self.automaton.find_contiguous_best(
-            self.a, *bounds, if_split_lower_than=1/8, mode='quick-or-build')
+            self.a, *bounds, if_split_lower_than=1/8, mode=mode)
+        if try_quick and blocks is None:
+            return None
         if self.bjunk:
             blocks = self._extend_junk_for_many(blocks, *bounds)
         return ANCHORBLOCKS, blocks, True
