@@ -578,6 +578,8 @@ _queue_kill_and_wait(_queue *queue)
     PyThread_acquire_lock(queue->mutex, WAIT_LOCK);
     assert(queue->alive);
     queue->alive = 0;
+    queue->space_available = (PyEvent){1};
+    queue->has_item = (PyEvent){1};
     PyThread_release_lock(queue->mutex);
 
     // Wait for all waiters to fail.
@@ -1147,7 +1149,9 @@ queue_put(_queues *queues, int64_t qid, PyObject *obj, unboundop_t unboundop,
 
     // Wait for the queue to have space
     if (block == 1) {
+        _queue_mark_waiter(queue, queues->mutex);
         PyEvent_Wait(&queue->space_available);
+        _queue_unmark_waiter(queue, queues->mutex);
     }
 
     // Convert the object to cross-interpreter data.
@@ -1198,7 +1202,12 @@ queue_get(_queues *queues, int64_t qid,
 
     // Wait for the queue to have some value
     if (block == 1) {
+        _queue_mark_waiter(queue, queues->mutex);
         PyEvent_Wait(&queue->has_item);
+        _queue_unmark_waiter(queue, queues->mutex);
+        if (!queue->alive) {
+            return ERR_QUEUE_NOT_FOUND;
+        }
     }
 
     // Pop off the next item from the queue.
