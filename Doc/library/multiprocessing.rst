@@ -279,7 +279,7 @@ processes:
           p.join()
 
    Queues are thread and process safe.
-   Any object put into a :mod:`~multiprocessing` queue will be serialized.
+   Any object put into a :mod:`!multiprocessing` queue will be serialized.
 
 **Pipes**
 
@@ -1222,7 +1222,7 @@ Miscellaneous
 
    Set the path of the Python interpreter to use when starting a child process.
    (By default :data:`sys.executable` is used).  Embedders will probably need to
-   do some thing like ::
+   do something like ::
 
       set_executable(os.path.join(sys.exec_prefix, 'pythonw.exe'))
 
@@ -1257,7 +1257,7 @@ Miscellaneous
 
    .. versionadded:: 3.4
 
-   .. versionchanged:: next
+   .. versionchanged:: 3.15
       Added the *on_error* parameter.
 
 .. function:: set_start_method(method, force=False)
@@ -1725,13 +1725,13 @@ inherited by child processes.
    attributes which allow one to use it to store and retrieve strings.
 
 
-The :mod:`multiprocessing.sharedctypes` module
-""""""""""""""""""""""""""""""""""""""""""""""
+The :mod:`!multiprocessing.sharedctypes` module
+"""""""""""""""""""""""""""""""""""""""""""""""
 
 .. module:: multiprocessing.sharedctypes
    :synopsis: Allocate ctypes objects from shared memory.
 
-The :mod:`multiprocessing.sharedctypes` module provides functions for allocating
+The :mod:`!multiprocessing.sharedctypes` module provides functions for allocating
 :mod:`ctypes` objects from shared memory which can be inherited by child
 processes.
 
@@ -2473,7 +2473,7 @@ with the :class:`Pool` class.
       duration of the Pool's work queue. A frequent pattern found in other
       systems (such as Apache, mod_wsgi, etc) to free resources held by
       workers is to allow a worker within a pool to complete only a set
-      amount of work before being exiting, being cleaned up and a new
+      amount of work before exiting, being cleaned up and a new
       process spawned to replace the old one. The *maxtasksperchild*
       argument to the :class:`Pool` exposes this ability to the end user.
 
@@ -2658,7 +2658,7 @@ Usually message passing between processes is done using queues or by using
 :class:`~Connection` objects returned by
 :func:`~multiprocessing.Pipe`.
 
-However, the :mod:`multiprocessing.connection` module allows some extra
+However, the :mod:`!multiprocessing.connection` module allows some extra
 flexibility.  It basically gives a high level message oriented API for dealing
 with sockets or Windows named pipes.  It also has support for *digest
 authentication* using the :mod:`hmac` module, and for polling
@@ -2965,18 +2965,18 @@ Below is an example session with logging turned on::
 For a full table of logging levels, see the :mod:`logging` module.
 
 
-The :mod:`multiprocessing.dummy` module
-^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+The :mod:`!multiprocessing.dummy` module
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
 .. module:: multiprocessing.dummy
    :synopsis: Dumb wrapper around threading.
 
-:mod:`multiprocessing.dummy` replicates the API of :mod:`!multiprocessing` but is
+:mod:`!multiprocessing.dummy` replicates the API of :mod:`!multiprocessing` but is
 no more than a wrapper around the :mod:`threading` module.
 
 .. currentmodule:: multiprocessing.pool
 
-In particular, the ``Pool`` function provided by :mod:`multiprocessing.dummy`
+In particular, the ``Pool`` function provided by :mod:`!multiprocessing.dummy`
 returns an instance of :class:`ThreadPool`, which is a subclass of
 :class:`Pool` that supports all the same method calls but uses a pool of
 worker threads rather than worker processes.

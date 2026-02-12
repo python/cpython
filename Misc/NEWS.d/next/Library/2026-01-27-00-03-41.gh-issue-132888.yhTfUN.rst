@@ -1,2 +1,0 @@
-Fix incorrect use of :func:`ctypes.GetLastError` and add missing error
-checks for Windows API calls in :mod:`!_pyrepl.windows_console`.

@@ -291,7 +291,7 @@ Module functions
        Set it to any combination (using ``|``, bitwise or) of
        :const:`PARSE_DECLTYPES` and :const:`PARSE_COLNAMES`
        to enable this.
-       Column names takes precedence over declared types if both flags are set.
+       Column names take precedence over declared types if both flags are set.
        By default (``0``), type detection is disabled.
 
    :param isolation_level:

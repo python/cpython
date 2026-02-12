@@ -5319,5 +5319,47 @@ class TestColorizedTraceback(unittest.TestCase):
         ]
         self.assertEqual(actual, expected(**colors))
 
+
+class TestLazyImportSuggestions(unittest.TestCase):
+    """Test that lazy imports are not reified when computing AttributeError suggestions."""
+
+    def test_attribute_error_does_not_reify_lazy_imports(self):
+        """Printing an AttributeError should not trigger lazy import reification."""
+        # pkg.bar prints "BAR_MODULE_LOADED" when imported.
+        # If lazy import is reified during suggestion computation, we'll see it.
+        code = textwrap.dedent("""
+            lazy import test.test_import.data.lazy_imports.pkg.bar
+            test.test_import.data.lazy_imports.pkg.nonexistent
+        """)
+        rc, stdout, stderr = assert_python_failure('-c', code)
+        self.assertNotIn(b"BAR_MODULE_LOADED", stdout)
+
+    def test_traceback_formatting_does_not_reify_lazy_imports(self):
+        """Formatting a traceback should not trigger lazy import reification."""
+        code = textwrap.dedent("""
+            import traceback
+            lazy import test.test_import.data.lazy_imports.pkg.bar
+            try:
+                test.test_import.data.lazy_imports.pkg.nonexistent
+            except AttributeError:
+                traceback.format_exc()
+            print("OK")
+        """)
+        rc, stdout, stderr = assert_python_ok('-c', code)
+        self.assertIn(b"OK", stdout)
+        self.assertNotIn(b"BAR_MODULE_LOADED", stdout)
+
+    def test_suggestion_still_works_for_non_lazy_attributes(self):
+        """Suggestions should still work for non-lazy module attributes."""
+        code = textwrap.dedent("""
+            lazy import test.test_import.data.lazy_imports.pkg.bar
+            # Typo for __name__
+            test.test_import.data.lazy_imports.pkg.__nme__
+        """)
+        rc, stdout, stderr = assert_python_failure('-c', code)
+        self.assertIn(b"__name__", stderr)
+        self.assertNotIn(b"BAR_MODULE_LOADED", stdout)
+
+
 if __name__ == "__main__":
     unittest.main()

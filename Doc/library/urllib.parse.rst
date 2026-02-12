@@ -217,7 +217,7 @@ or on combining URL components into a URL string.
    .. versionchanged:: 3.12
       Leading WHATWG C0 control and space characters are stripped from the URL.
 
-   .. versionchanged:: next
+   .. versionchanged:: 3.15
       Added the *missing_as_none* parameter.
 
 .. _WHATWG spec: https://url.spec.whatwg.org/#concept-basic-url-parser
@@ -333,7 +333,7 @@ or on combining URL components into a URL string.
    By default, *keep_empty* is true if *parts* is the result of the
    :func:`urlsplit` call with ``missing_as_none=True``.
 
-   .. versionchanged:: next
+   .. versionchanged:: 3.15
       Added the *keep_empty* parameter.
 
 
@@ -371,7 +371,7 @@ or on combining URL components into a URL string.
    By default, *keep_empty* is true if *parts* is the result of the
    :func:`urlparse` call with ``missing_as_none=True``.
 
-   .. versionchanged:: next
+   .. versionchanged:: 3.15
       Added the *keep_empty* parameter.
 
 
@@ -444,7 +444,7 @@ or on combining URL components into a URL string.
    .. versionchanged:: 3.2
       Result is a structured object rather than a simple 2-tuple.
 
-   .. versionchanged:: next
+   .. versionchanged:: 3.15
       Added the *missing_as_none* parameter.
 
 .. function:: unwrap(url)

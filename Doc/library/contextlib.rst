@@ -564,7 +564,7 @@ Functions and classes provided:
          Raises :exc:`TypeError` instead of :exc:`AttributeError` if *cm*
          is not a context manager.
 
-      .. versionchanged:: next
+      .. versionchanged:: 3.15
          Added support for arbitrary descriptors :meth:`!__enter__` and
          :meth:`!__exit__`.
 
@@ -586,7 +586,7 @@ Functions and classes provided:
       The passed in object is returned from the function, allowing this
       method to be used as a function decorator.
 
-      .. versionchanged:: next
+      .. versionchanged:: 3.15
          Added support for arbitrary descriptors :meth:`!__exit__`.
 
    .. method:: callback(callback, /, *args, **kwds)
@@ -646,7 +646,7 @@ Functions and classes provided:
          Raises :exc:`TypeError` instead of :exc:`AttributeError` if *cm*
          is not an asynchronous context manager.
 
-      .. versionchanged:: next
+      .. versionchanged:: 3.15
          Added support for arbitrary descriptors :meth:`!__aenter__` and :meth:`!__aexit__`.
 
    .. method:: push_async_exit(exit)
@@ -654,7 +654,7 @@ Functions and classes provided:
       Similar to :meth:`ExitStack.push` but expects either an asynchronous context manager
       or a coroutine function.
 
-      .. versionchanged:: next
+      .. versionchanged:: 3.15
          Added support for arbitrary descriptors :meth:`!__aexit__`.
 
    .. method:: push_async_callback(callback, /, *args, **kwds)
