@@ -68,6 +68,11 @@ the synchronization primitives from the :mod:`threading` module instead.
 
 Besides, only the main thread of the main interpreter is allowed to set a new signal handler.
 
+.. warning::
+
+   Synchronization primitives such as :class:`threading.Lock` should not be used
+   within signal handlers.  Doing so can lead to unexpected deadlocks.
+
 
 Module contents
 ---------------
