@@ -8,6 +8,7 @@ import annotationlib
 import abc
 from reprlib import recursive_repr
 
+lazy import inspect
 
 __all__ = ['dataclass',
            'field',
@@ -981,15 +982,12 @@ _hash_action = {(False, False, False, False): None,
 # See https://bugs.python.org/issue32929#msg312829 for an if-statement
 # version of this table.
 
-class AutoDocstring:
-    """A non-data descriptor to autogenerate class docstring
-    from the signature of its __init__ method.
-    """
+# A non-data descriptor to autogenerate class docstring
+# from the signature of its __init__ method on demand.
+# The primary reason is to be able to lazy import `inspect` module.
+class _AutoDocstring:
 
     def __get__(self, _obj, cls):
-        # TODO: Make this top-level lazy import once PEP810 lands
-        import inspect
-
         try:
             # In some cases fetching a signature is not possible.
             # But, we surely should not fail in this case.
@@ -1237,7 +1235,7 @@ def _process_class(cls, init, repr, eq, order, unsafe_hash, frozen,
     if not getattr(cls, '__doc__'):
         # Create a class doc-string lazily via descriptor protocol
         # to avoid importing `inspect` module.
-        cls.__doc__ = AutoDocstring()
+        cls.__doc__ = _AutoDocstring()
 
     if match_args:
         # I could probably compute this once.
@@ -1392,8 +1390,6 @@ def _add_slots(cls, is_frozen, weakref_slot, defined_fields):
 
         # If this is a wrapped function, unwrap it.
         if not isinstance(member, type) and hasattr(member, '__wrapped__'):
-            # TODO: Make this top-level lazy import once PEP810 lands
-            import inspect
             member = inspect.unwrap(member)
 
         if isinstance(member, types.FunctionType):
