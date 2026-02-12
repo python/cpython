@@ -304,8 +304,8 @@ check_decoded(PyObject *decoded)
         return -1;
     if (!PyUnicode_Check(decoded)) {
         PyErr_Format(PyExc_TypeError,
-                     "decoder should return a string result, not '%.200s'",
-                     Py_TYPE(decoded)->tp_name);
+                     "decoder must return a str object, not %T",
+                     decoded);
         Py_DECREF(decoded);
         return -1;
     }
@@ -1718,8 +1718,8 @@ _io_TextIOWrapper_write_impl(textio *self, PyObject *text)
         return NULL;
     if (b != text && !PyBytes_Check(b)) {
         PyErr_Format(PyExc_TypeError,
-                     "encoder should return a bytes object, not '%.200s'",
-                     Py_TYPE(b)->tp_name);
+                     "encoder must return a bytes object, not %T",
+                     b);
         Py_DECREF(b);
         return NULL;
     }

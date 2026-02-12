@@ -996,7 +996,9 @@ _io__RawIOBase_readall_impl(PyObject *self)
         }
         if (!PyBytes_Check(data)) {
             Py_DECREF(data);
-            PyErr_SetString(PyExc_TypeError, "read() should return bytes");
+            PyErr_Format(PyExc_TypeError,
+                         "read() must return a bytes object, not %T",
+                         data);
             PyBytesWriter_Discard(writer);
             return NULL;
         }
