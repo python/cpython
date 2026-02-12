@@ -5041,17 +5041,22 @@ PyCArray_setattro(PyObject *self, PyObject *key, PyObject *value)
         }
 
         /* Only care about array to array */
-        if (old_info->length >= 0 && new_info->length >= 0) {
-            if (old_info->length != new_info->length ||
-                old_info->size != new_info->size ||
-                old_info->proto != new_info->proto)
-            {
-                PyErr_SetString(
-                    PyExc_TypeError,
-                    "cannot assign incompatible ctypes array type"
-                );
-                return -1;
-            }
+        if (old_info->length < 0 || new_info->length < 0) {
+            PyErr_SetString(
+                PyExc_TypeError,
+                "cannot assign incompatible ctypes array type");
+            return -1;
+        }
+
+        /* Must match layout */
+        if (old_info->length != new_info->length ||
+            old_info->size != new_info->size ||
+            old_info->proto != new_info->proto)
+        {
+            PyErr_SetString(
+                PyExc_TypeError,
+                "cannot assign incompatible ctypes array type");
+            return -1;
         }
     }
 

@@ -4,7 +4,7 @@ import unittest
 from ctypes import (Structure, Array, ARRAY, sizeof, addressof,
                     create_string_buffer, create_unicode_buffer,
                     c_char, c_wchar, c_byte, c_ubyte, c_short, c_ushort, c_int, c_uint,
-                    c_long, c_ulonglong, c_float, c_double, c_longdouble)
+                    c_long, c_ulonglong, c_float, c_double, c_longdouble, POINTER)
 from test.support import bigmemtest, _2G, threading_helper, Py_GIL_DISABLED
 from ._support import (_CData, PyCArrayType, Py_TPFLAGS_DISALLOW_INSTANTIATION,
                        Py_TPFLAGS_IMMUTABLETYPE)
@@ -146,6 +146,61 @@ class ArrayTestCase(unittest.TestCase):
 
         with self.assertRaises(TypeError):
             a.__class__ = B
+
+    def test_ctypes_array_class_assignment_compatible(self):
+        A = c_int * 3
+        class SameArray(Array):
+            _type_ = c_int
+            _length_ = 3
+        a = A(1, 2, 3)
+        a.__class__ = SameArray
+
+    def test_ctypes_array_class_assignment_non_ctypes_target(self):
+        A = c_int * 3
+        a = A()
+        class Dummy:
+            pass
+
+        with self.assertRaises(TypeError):
+            a.__class__ = Dummy
+
+    def test_ctypes_array_class_assignment_abstract_target(self):
+        A = c_int * 3
+        a = A()
+        AbstractArray = PyCArrayType.__new__(PyCArrayType, "AbstractArray", (Array,), {})
+
+        with self.assertRaises(TypeError):
+            a.__class__ = AbstractArray
+
+    def test_ctypes_array_class_assignment_same_size_ints(self):
+        if sizeof(c_int) != sizeof(c_long):
+            self.skipTest("sizes differ on this platform")
+        A = c_int * 3
+        B = c_long * 3
+        a = A(1, 2, 3)
+        a.__class__ = B
+
+    def test_ctypes_array_class_assignment_structs(self):
+        class S1(Structure):
+            _fields_ = [("x", c_int)]
+        class S2(Structure):
+            _fields_ = [("x", c_int)]
+        A = S1 * 2
+        B = S2 * 2
+        a = A()
+        a.__class__ = B
+
+    def test_ctypes_array_class_assignment_pointer_arrays(self):
+        A = POINTER(c_int) * 2
+        B = POINTER(c_int) * 2
+        a = A()
+        a.__class__ = B
+
+    def test_ctypes_array_from_param_incompatible(self):
+        A = c_int * 3
+        B = c_double * 3
+        with self.assertRaises(TypeError):
+            A.from_param(B())
 
     def test_step_overflow(self):
         a = (c_int * 5)()
