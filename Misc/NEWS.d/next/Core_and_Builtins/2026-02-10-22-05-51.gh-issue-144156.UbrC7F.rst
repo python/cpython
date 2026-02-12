@@ -1,3 +1,3 @@
 Fix folding of email headers violating `RFC 2047`_ with two consecutive encoded words without separating linear-white-space.
 
-.. _RFC 2047: https://www.rfc-editor.org/rfc/rfc2047
+Fix the folding of headers by the :mod:`email` library when :rfc:`2047` encoded words are used.  Now whitespace is correctly preserved and also correctly added between adjacent encoded words.  The latter property was broken by the fix for gh-92081, which mostly fixed previous failures to preserve whitespace.
