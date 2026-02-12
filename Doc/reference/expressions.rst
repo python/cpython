@@ -13,7 +13,7 @@ This chapter explains the meaning of the elements of expressions in Python.
 :ref:`grammar notation <notation>` will be used to describe syntax,
 not lexical analysis.
 
-When (one alternative of) a syntax rule has the form
+When (one alternative of) a syntax rule has the form:
 
 .. productionlist:: python-grammar
    name: othername
@@ -31,7 +31,7 @@ Arithmetic conversions
 
 When a description of an arithmetic operator below uses the phrase "the numeric
 arguments are converted to a common real type", this means that the operator
-implementation for built-in numeric types works as described in
+implementation for built-in numeric types works as described in the
 :ref:`Numeric Types <stdtypes-mixed-arithmetic>` section of the standard
 library documentation.
 
