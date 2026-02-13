@@ -1,0 +1,1 @@
+Optimize :meth:`dict.items` symmetric difference by using :c:func:`PyTuple_FromArray` instead of :c:func:`PyTuple_Pack`.
