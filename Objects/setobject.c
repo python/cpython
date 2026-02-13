@@ -1057,21 +1057,13 @@ setiter_len(PyObject *op, PyObject *Py_UNUSED(ignored))
     setiterobject *si = (setiterobject*)op;
     Py_ssize_t len = 0;
 
-#ifdef Py_GIL_DISABLED
     PySetObject *so = si->si_set;
-    assert(so != NULL);
 
-    Py_BEGIN_CRITICAL_SECTION2(op, so);
-    if (si->si_pos >= 0 && si->si_used == so->used) {
-        len = si->len;
+    Py_BEGIN_CRITICAL_SECTION(op);
+    if (si->si_pos >= 0 && si->si_used == FT_ATOMIC_LOAD_SSIZE_RELAXED(so->used)) {
+len = si->len;
     }
-    Py_END_CRITICAL_SECTION2();
-#else
-    if (si->si_set != NULL && si->si_used == si->si_set->used) {
-        len = si->len;
-    }
-#endif
-
+    Py_END_CRITICAL_SECTION();
     return PyLong_FromSsize_t(len);
 }
 
