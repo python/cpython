@@ -1441,108 +1441,111 @@ application).
          list appear empty for the duration, and raises :exc:`ValueError` if it can
          detect that the list has been mutated during a sort.
 
-.. admonition:: Thread safety
+.. _thread-safety-list:
 
-   Reading a single element from a :class:`list` is
-   :term:`atomic <atomic operation>`:
+.. rubric:: Thread safety for list objects
 
-   .. code-block::
-      :class: green
+Reading a single element from a :class:`list` is
+:term:`atomic <atomic operation>`:
 
-      lst[i]   # list.__getitem__
+.. code-block::
+   :class: green
 
-   The following methods traverse the list and use :term:`atomic <atomic operation>`
-   reads of each item to perform their function. That means that they may
-   return results affected by concurrent modifications:
+   lst[i]   # list.__getitem__
 
-   .. code-block::
-      :class: maybe
+The following methods traverse the list and use :term:`atomic <atomic operation>`
+reads of each item to perform their function. That means that they may
+return results affected by concurrent modifications:
 
-      item in lst
-      lst.index(item)
-      lst.count(item)
+.. code-block::
+   :class: maybe
 
-   All of the above methods/operations are also lock-free. They do not block
-   concurrent modifications. Other operations that hold a lock will not block
-   these from observing intermediate states.
+   item in lst
+   lst.index(item)
+   lst.count(item)
 
-   All other operations from here on block using the per-object lock.
+All of the above operations avoid acquiring :term:`per-object locks
+<per-object lock>`. They do not block concurrent modifications. Other
+operations that hold a lock will not block these from observing intermediate
+states.
 
-   Writing a single item via ``lst[i] = x`` is safe to call from multiple
-   threads and will not corrupt the list.
+All other operations from here on block using the :term:`per-object lock`.
 
-   The following operations return new objects and appear
-   :term:`atomic <atomic operation>` to other threads:
+Writing a single item via ``lst[i] = x`` is safe to call from multiple
+threads and will not corrupt the list.
 
-   .. code-block::
-      :class: good
+The following operations return new objects and appear
+:term:`atomic <atomic operation>` to other threads:
 
-      lst1 + lst2    # concatenates two lists into a new list
-      x * lst        # repeats lst x times into a new list
-      lst.copy()     # returns a shallow copy of the list
+.. code-block::
+   :class: good
 
-   Methods that only operate on a single elements with no shifting required are
-   :term:`atomic <atomic operation>`:
+   lst1 + lst2    # concatenates two lists into a new list
+   x * lst        # repeats lst x times into a new list
+   lst.copy()     # returns a shallow copy of the list
 
-   .. code-block::
-      :class: good
+The following methods that only operate on a single element with no shifting
+required are :term:`atomic <atomic operation>`:
 
-      lst.append(x)  # append to the end of the list, no shifting required
-      lst.pop()      # pop element from the end of the list, no shifting required
+.. code-block::
+   :class: good
 
-   The :meth:`~list.clear` method is also :term:`atomic <atomic operation>`.
-   Other threads cannot observe elements being removed.
+   lst.append(x)  # append to the end of the list, no shifting required
+   lst.pop()      # pop element from the end of the list, no shifting required
 
-   The :meth:`~list.sort` method is not :term:`atomic <atomic operation>`.
-   Other threads cannot observe intermediate states during sorting, but the
-   list appears empty for the duration of the sort.
+The :meth:`~list.clear` method is also :term:`atomic <atomic operation>`.
+Other threads cannot observe elements being removed.
 
-   The following operations may allow lock-free operations to observe
-   intermediate states since they modify multiple elements in place:
+The :meth:`~list.sort` method is not :term:`atomic <atomic operation>`.
+Other threads cannot observe intermediate states during sorting, but the
+list appears empty for the duration of the sort.
 
-   .. code-block::
-      :class: maybe
+The following operations may allow :term:`lock-free` operations to observe
+intermediate states since they modify multiple elements in place:
 
-      lst.insert(idx, item)  # shifts elements
-      lst.pop(idx)           # idx not at the end of the list, shifts elements
-      lst *= x               # copies elements in place
+.. code-block::
+   :class: maybe
 
-   The :meth:`~list.remove` method may allow concurrent modifications since
-   element comparison may execute arbitrary Python code (via
-   :meth:`~object.__eq__`).
+   lst.insert(idx, item)  # shifts elements
+   lst.pop(idx)           # idx not at the end of the list, shifts elements
+   lst *= x               # copies elements in place
 
-   :meth:`~list.extend` is safe to call from multiple threads.  However, its
-   guarantees depend on the iterable passed to it. If it is a :class:`list`, a
-   :class:`tuple`, a :class:`set`, a :class:`frozenset`, a :class:`dict` or a
-   :ref:`dictionary view object <dict-views>` (but not their subclasses), the
-   ``extend`` operation is safe from concurrent modifications to the iterable.
-   Otherwise, an iterator is created which can be concurrently modified by
-   another thread.  The same applies to inplace concatenation of a list with
-   other iterables when using ``lst += iterable``.
+The :meth:`~list.remove` method may allow concurrent modifications since
+element comparison may execute arbitrary Python code (via
+:meth:`~object.__eq__`).
 
-   Similarly, assigning to a list slice with ``lst[i:j] = iterable`` is safe
-   to call from multiple threads, but ``iterable`` is only locked when it is
-   also a :class:`list` (but not its subclasses).
+:meth:`~list.extend` is safe to call from multiple threads.  However, its
+guarantees depend on the iterable passed to it. If it is a :class:`list`, a
+:class:`tuple`, a :class:`set`, a :class:`frozenset`, a :class:`dict` or a
+:ref:`dictionary view object <dict-views>` (but not their subclasses), the
+``extend`` operation is safe from concurrent modifications to the iterable.
+Otherwise, an iterator is created which can be concurrently modified by
+another thread.  The same applies to inplace concatenation of a list with
+other iterables when using ``lst += iterable``.
 
-   Operations that involve multiple accesses, as well as iteration, are never
-   atomic. For example:
+Similarly, assigning to a list slice with ``lst[i:j] = iterable`` is safe
+to call from multiple threads, but ``iterable`` is only locked when it is
+also a :class:`list` (but not its subclasses).
 
-   .. code-block::
-      :class: bad
+Operations that involve multiple accesses, as well as iteration, are never
+atomic. For example:
 
-      # NOT atomic: read-modify-write
-      lst[i] = lst[i] + 1
+.. code-block::
+   :class: bad
 
-      # NOT atomic: check-then-act
-      if lst:
-          item = lst.pop()
+   # NOT atomic: read-modify-write
+   lst[i] = lst[i] + 1
 
-      # NOT thread-safe: iteration while modifying
-      for item in lst:
-          process(item)  # another thread may modify lst
+   # NOT atomic: check-then-act
+   if lst:
+         item = lst.pop()
 
-   Consider external synchronization when sharing :class:`list` instances
-   across threads.  See :ref:`freethreading-python-howto` for more information.
+   # NOT thread-safe: iteration while modifying
+   for item in lst:
+         process(item)  # another thread may modify lst
+
+Consider external synchronization when sharing :class:`list` instances
+across threads.  See :ref:`freethreading-python-howto` for more information.
 
 
 .. _typesseq-tuple:
@@ -2163,6 +2166,8 @@ expression support in the :mod:`re` module).
 
    .. doctest::
 
+      >>> 'spam, spam, spam'.index('spam')
+      0
       >>> 'spam, spam, spam'.index('eggs')
       Traceback (most recent call last):
         File "<python-input-0>", line 1, in <module>
@@ -2178,7 +2183,18 @@ expression support in the :mod:`re` module).
    Return ``True`` if all characters in the string are alphanumeric and there is at
    least one character, ``False`` otherwise.  A character ``c`` is alphanumeric if one
    of the following returns ``True``: ``c.isalpha()``, ``c.isdecimal()``,
-   ``c.isdigit()``, or ``c.isnumeric()``.
+   ``c.isdigit()``, or ``c.isnumeric()``. For example:
+
+   .. doctest::
+
+      >>> 'abc123'.isalnum()
+      True
+      >>> 'abc123!@#'.isalnum()
+      False
+      >>> ''.isalnum()
+      False
+      >>> ' '.isalnum()
+      False
 
 
 .. method:: str.isalpha()
@@ -2470,6 +2486,19 @@ expression support in the :mod:`re` module).
    after the separator.  If the separator is not found, return a 3-tuple containing
    the string itself, followed by two empty strings.
 
+   For example:
+
+   .. doctest::
+
+      >>> 'Monty Python'.partition(' ')
+      ('Monty', ' ', 'Python')
+      >>> "Monty Python's Flying Circus".partition(' ')
+      ('Monty', ' ', "Python's Flying Circus")
+      >>> 'Monty Python'.partition('-')
+      ('Monty Python', '', '')
+
+   See also :meth:`rpartition`.
+
 
 .. method:: str.removeprefix(prefix, /)
 
@@ -2546,6 +2575,20 @@ expression support in the :mod:`re` module).
 
    Like :meth:`rfind` but raises :exc:`ValueError` when the substring *sub* is not
    found.
+   For example:
+
+   .. doctest::
+
+      >>> 'spam, spam, spam'.rindex('spam')
+      12
+      >>> 'spam, spam, spam'.rindex('eggs')
+      Traceback (most recent call last):
+        File "<stdin-0>", line 1, in <module>
+          'spam, spam, spam'.rindex('eggs')
+          ~~~~~~~~~~~~~~~~~~~~~~~~~^^^^^^^^
+      ValueError: substring not found
+
+   See also :meth:`index` and :meth:`find`.
 
 
 .. method:: str.rjust(width, fillchar=' ', /)
@@ -2590,20 +2633,26 @@ expression support in the :mod:`re` module).
    Return a copy of the string with trailing characters removed.  The *chars*
    argument is a string specifying the set of characters to be removed.  If omitted
    or ``None``, the *chars* argument defaults to removing whitespace.  The *chars*
-   argument is not a suffix; rather, all combinations of its values are stripped::
+   argument is not a suffix; rather, all combinations of its values are stripped.
+   For example:
+
+   .. doctest::
 
       >>> '   spacious   '.rstrip()
       '   spacious'
       >>> 'mississippi'.rstrip('ipz')
       'mississ'
 
-   See :meth:`str.removesuffix` for a method that will remove a single suffix
+   See :meth:`removesuffix` for a method that will remove a single suffix
    string rather than all of a set of characters.  For example::
 
       >>> 'Monty Python'.rstrip(' Python')
       'M'
       >>> 'Monty Python'.removesuffix(' Python')
       'Monty'
+
+   See also :meth:`strip`.
+
 
 .. method:: str.split(sep=None, maxsplit=-1)
 
@@ -2735,6 +2784,19 @@ expression support in the :mod:`re` module).
    test string beginning at that position.  With optional *end*, stop comparing
    string at that position.
 
+   For example:
+
+   .. doctest::
+
+      >>> 'Python'.startswith('Py')
+      True
+      >>> 'a tuple of prefixes'.startswith(('at', 'a'))
+      True
+      >>> 'Python is amazing'.startswith('is', 7)
+      True
+
+   See also :meth:`endswith` and :meth:`removeprefix`.
+
 
 .. method:: str.strip(chars=None, /)
 
@@ -2742,7 +2804,11 @@ expression support in the :mod:`re` module).
    The *chars* argument is a string specifying the set of characters to be removed.
    If omitted or ``None``, the *chars* argument defaults to removing whitespace.
    The *chars* argument is not a prefix or suffix; rather, all combinations of its
-   values are stripped::
+   values are stripped.
+
+   For example:
+
+   .. doctest::
 
       >>> '   spacious   '.strip()
       'spacious'
@@ -2753,11 +2819,16 @@ expression support in the :mod:`re` module).
    from the string. Characters are removed from the leading end until
    reaching a string character that is not contained in the set of
    characters in *chars*. A similar action takes place on the trailing end.
-   For example::
+
+   For example:
+
+   .. doctest::
 
       >>> comment_string = '#....... Section 3.2.1 Issue #32 .......'
       >>> comment_string.strip('.#! ')
       'Section 3.2.1 Issue #32'
+
+   See also :meth:`rstrip`.
 
 
 .. method:: str.swapcase()
@@ -2816,6 +2887,14 @@ expression support in the :mod:`re` module).
 
    You can use :meth:`str.maketrans` to create a translation map from
    character-to-character mappings in different formats.
+
+   The following example uses a mapping to replace ``'a'`` with ``'X'``,
+   ``'b'`` with ``'Y'``, and delete ``'c'``:
+
+   .. doctest::
+
+      >>> 'abc123'.translate({ord('a'): 'X', ord('b'): 'Y', ord('c'): None})
+      'XY123'
 
    See also the :mod:`codecs` module for a more flexible approach to custom
    character mappings.
@@ -5512,6 +5591,146 @@ can be used interchangeably to index the same dictionary entry.
 .. seealso::
    :class:`types.MappingProxyType` can be used to create a read-only view
    of a :class:`dict`.
+
+
+.. _thread-safety-dict:
+
+.. rubric:: Thread safety for dict objects
+
+Creating a dictionary with the :class:`dict` constructor is atomic when the
+argument to it is a :class:`dict` or a :class:`tuple`. When using the
+:meth:`dict.fromkeys` method, dictionary creation is atomic when the
+argument is a :class:`dict`, :class:`tuple`, :class:`set` or
+:class:`frozenset`.
+
+The following operations and functions are :term:`lock-free` and
+:term:`atomic <atomic operation>`.
+
+.. code-block::
+   :class: good
+
+   d[key]       # dict.__getitem__
+   d.get(key)   # dict.get
+   key in d     # dict.__contains__
+   len(d)       # dict.__len__
+
+All other operations from here on hold the :term:`per-object lock`.
+
+Writing or removing a single item is safe to call from multiple threads
+and will not corrupt the dictionary:
+
+.. code-block::
+   :class: good
+
+   d[key] = value        # write
+   del d[key]            # delete
+   d.pop(key)            # remove and return
+   d.popitem()           # remove and return last item
+   d.setdefault(key, v)  # insert if missing
+
+These operations may compare keys using :meth:`~object.__eq__`, which can
+execute arbitrary Python code. During such comparisons, the dictionary may
+be modified by another thread. For built-in types like :class:`str`,
+:class:`int`, and :class:`float`, that implement :meth:`~object.__eq__` in C,
+the underlying lock is not released during comparisons and this is not a
+concern.
+
+The following operations return new objects and hold the :term:`per-object lock`
+for the duration of the operation:
+
+.. code-block::
+   :class: good
+
+   d.copy()      # returns a shallow copy of the dictionary
+   d | other     # merges two dicts into a new dict
+   d.keys()      # returns a new dict_keys view object
+   d.values()    # returns a new dict_values view object
+   d.items()     # returns a new dict_items view object
+
+The :meth:`~dict.clear` method holds the lock for its duration. Other
+threads cannot observe elements being removed.
+
+The following operations lock both dictionaries. For :meth:`~dict.update`
+and ``|=``, this applies only when the other operand is a :class:`dict`
+that uses the standard dict iterator (but not subclasses that override
+iteration). For equality comparison, this applies to :class:`dict` and
+its subclasses:
+
+.. code-block::
+   :class: good
+
+   d.update(other_dict)  # both locked when other_dict is a dict
+   d |= other_dict       # both locked when other_dict is a dict
+   d == other_dict       # both locked for dict and subclasses
+
+All comparison operations also compare values using :meth:`~object.__eq__`,
+so for non-built-in types the lock may be released during comparison.
+
+:meth:`~dict.fromkeys` locks both the new dictionary and the iterable
+when the iterable is exactly a :class:`dict`, :class:`set`, or
+:class:`frozenset` (not subclasses):
+
+.. code-block::
+   :class: good
+
+   dict.fromkeys(a_dict)      # locks both
+   dict.fromkeys(a_set)       # locks both
+   dict.fromkeys(a_frozenset) # locks both
+
+When updating from a non-dict iterable, only the target dictionary is
+locked. The iterable may be concurrently modified by another thread:
+
+.. code-block::
+   :class: maybe
+
+   d.update(iterable)        # iterable is not a dict: only d locked
+   d |= iterable             # iterable is not a dict: only d locked
+   dict.fromkeys(iterable)   # iterable is not a dict/set/frozenset: only result locked
+
+Operations that involve multiple accesses, as well as iteration, are never
+atomic:
+
+.. code-block::
+   :class: bad
+
+   # NOT atomic: read-modify-write
+   d[key] = d[key] + 1
+
+   # NOT atomic: check-then-act (TOCTOU)
+   if key in d:
+         del d[key]
+
+   # NOT thread-safe: iteration while modifying
+   for key, value in d.items():
+         process(key)  # another thread may modify d
+
+To avoid time-of-check to time-of-use (TOCTOU) issues, use atomic
+operations or handle exceptions:
+
+.. code-block::
+   :class: good
+
+   # Use pop() with default instead of check-then-delete
+   d.pop(key, None)
+
+   # Or handle the exception
+   try:
+         del d[key]
+   except KeyError:
+         pass
+
+To safely iterate over a dictionary that may be modified by another
+thread, iterate over a copy:
+
+.. code-block::
+   :class: good
+
+   # Make a copy to iterate safely
+   for key, value in d.copy().items():
+         process(key)
+
+Consider external synchronization when sharing :class:`dict` instances
+across threads. See :ref:`freethreading-python-howto` for more information.
 
 
 .. _dict-views:

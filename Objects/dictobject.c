@@ -1615,7 +1615,9 @@ lookup_threadsafe_unicode(PyDictKeysObject *dk, PyObject *key, Py_hash_t hash, _
 Py_ssize_t
 _Py_dict_lookup_threadsafe_stackref(PyDictObject *mp, PyObject *key, Py_hash_t hash, _PyStackRef *value_addr)
 {
-    PyDictKeysObject *dk = _Py_atomic_load_ptr(&mp->ma_keys);
+    ensure_shared_on_read(mp);
+
+    PyDictKeysObject *dk = _Py_atomic_load_ptr_acquire(&mp->ma_keys);
     if (dk->dk_kind == DICT_KEYS_UNICODE && PyUnicode_CheckExact(key)) {
         Py_ssize_t ix = lookup_threadsafe_unicode(dk, key, hash, value_addr);
         if (ix != DKIX_KEY_CHANGED) {
@@ -1669,19 +1671,27 @@ _PyDict_GetMethodStackRef(PyDictObject *mp, PyObject *key, _PyStackRef *method)
     Py_hash_t hash = hash_unicode_key(key);
 
 #ifdef Py_GIL_DISABLED
-    PyDictKeysObject *dk = _Py_atomic_load_ptr_acquire(&mp->ma_keys);
-    if (dk->dk_kind == DICT_KEYS_UNICODE) {
-        _PyStackRef ref;
-        Py_ssize_t ix = lookup_threadsafe_unicode(dk, key, hash, &ref);
-        if (ix >= 0) {
-            assert(!PyStackRef_IsNull(ref));
-            PyStackRef_XSETREF(*method, ref);
-            return 1;
+    // NOTE: We can only do the fast-path lookup if we are on the owning
+    // thread or if the dict is already marked as shared so that the load
+    // of ma_keys is safe without a lock. We cannot call ensure_shared_on_read()
+    // in this code path without incref'ing the dict because the dict is a
+    // borrowed reference protected by QSBR, and acquiring the lock could lead
+    // to a quiescent state (allowing the dict to be freed).
+    if (_Py_IsOwnedByCurrentThread((PyObject *)mp) || IS_DICT_SHARED(mp)) {
+        PyDictKeysObject *dk = _Py_atomic_load_ptr_acquire(&mp->ma_keys);
+        if (dk->dk_kind == DICT_KEYS_UNICODE) {
+            _PyStackRef ref;
+            Py_ssize_t ix = lookup_threadsafe_unicode(dk, key, hash, &ref);
+            if (ix >= 0) {
+                assert(!PyStackRef_IsNull(ref));
+                PyStackRef_XSETREF(*method, ref);
+                return 1;
+            }
+            else if (ix == DKIX_EMPTY) {
+                return 0;
+            }
+            assert(ix == DKIX_KEY_CHANGED);
         }
-        else if (ix == DKIX_EMPTY) {
-            return 0;
-        }
-        assert(ix == DKIX_KEY_CHANGED);
     }
 #endif
 
@@ -4683,6 +4693,14 @@ _PyDict_SizeOf_LockHeld(PyDictObject *mp)
     return (Py_ssize_t)res;
 }
 
+void
+_PyDict_ClearKeysVersionLockHeld(PyObject *mp)
+{
+    ASSERT_DICT_LOCKED(mp);
+
+    FT_ATOMIC_STORE_UINT32_RELAXED(((PyDictObject *)mp)->ma_keys->dk_version, 0);
+}
+
 Py_ssize_t
 _PyDict_SizeOf(PyDictObject *mp)
 {
@@ -7645,8 +7663,8 @@ PyDict_AddWatcher(PyDict_WatchCallback callback)
 {
     PyInterpreterState *interp = _PyInterpreterState_GET();
 
-    /* Start at 2, as 0 and 1 are reserved for CPython */
-    for (int i = 2; i < DICT_MAX_WATCHERS; i++) {
+    /* Some watchers are reserved for CPython, start at the first available one */
+    for (int i = FIRST_AVAILABLE_WATCHER; i < DICT_MAX_WATCHERS; i++) {
         if (!interp->dict_state.watchers[i]) {
             interp->dict_state.watchers[i] = callback;
             return i;

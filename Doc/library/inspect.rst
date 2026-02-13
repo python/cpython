@@ -16,7 +16,7 @@
 
 --------------
 
-The :mod:`inspect` module provides several useful functions to help get
+The :mod:`!inspect` module provides several useful functions to help get
 information about live objects such as modules, classes, methods, functions,
 tracebacks, frame objects, and code objects.  For example, it can help you
 examine the contents of a class, retrieve the source code of a method, extract
@@ -262,6 +262,12 @@ attributes (see :ref:`import-mod-attrs` for module attributes):
 |                 |                   | ``yield from``, or        |
 |                 |                   | ``None``                  |
 +-----------------+-------------------+---------------------------+
+|                 | gi_state          | state of the generator,   |
+|                 |                   | one of ``GEN_CREATED``,   |
+|                 |                   | ``GEN_RUNNING``,          |
+|                 |                   | ``GEN_SUSPENDED``, or     |
+|                 |                   | ``GEN_CLOSED``            |
++-----------------+-------------------+---------------------------+
 | async generator | __name__          | name                      |
 +-----------------+-------------------+---------------------------+
 |                 | __qualname__      | qualified name            |
@@ -277,6 +283,13 @@ attributes (see :ref:`import-mod-attrs` for module attributes):
 |                 |                   | suspended?                |
 +-----------------+-------------------+---------------------------+
 |                 | ag_code           | code                      |
++-----------------+-------------------+---------------------------+
+|                 | ag_state          | state of the async        |
+|                 |                   | generator, one of         |
+|                 |                   | ``AGEN_CREATED``,         |
+|                 |                   | ``AGEN_RUNNING``,         |
+|                 |                   | ``AGEN_SUSPENDED``, or    |
+|                 |                   | ``AGEN_CLOSED``           |
 +-----------------+-------------------+---------------------------+
 | coroutine       | __name__          | name                      |
 +-----------------+-------------------+---------------------------+
@@ -297,6 +310,12 @@ attributes (see :ref:`import-mod-attrs` for module attributes):
 |                 | cr_origin         | where coroutine was       |
 |                 |                   | created, or ``None``. See |
 |                 |                   | |coroutine-origin-link|   |
++-----------------+-------------------+---------------------------+
+|                 | cr_state          | state of the coroutine,   |
+|                 |                   | one of ``CORO_CREATED``,  |
+|                 |                   | ``CORO_RUNNING``,         |
+|                 |                   | ``CORO_SUSPENDED``, or    |
+|                 |                   | ``CORO_CLOSED``           |
 +-----------------+-------------------+---------------------------+
 | builtin         | __doc__           | documentation string      |
 +-----------------+-------------------+---------------------------+
@@ -340,6 +359,11 @@ attributes (see :ref:`import-mod-attrs` for module attributes):
 .. versionchanged:: 3.14
 
    Add ``f_generator`` attribute to frames.
+
+.. versionchanged:: 3.15
+
+   Add ``gi_state`` attribute to generators, ``cr_state`` attribute to
+   coroutines, and ``ag_state`` attribute to async generators.
 
 .. function:: getmembers(object[, predicate])
 
@@ -1767,7 +1791,7 @@ which is a bitmap of the following flags:
    The flags are specific to CPython, and may not be defined in other
    Python implementations.  Furthermore, the flags are an implementation
    detail, and can be removed or deprecated in future Python releases.
-   It's recommended to use public APIs from the :mod:`inspect` module
+   It's recommended to use public APIs from the :mod:`!inspect` module
    for any introspection needs.
 
 
@@ -1809,7 +1833,7 @@ Buffer flags
 Command-line interface
 ----------------------
 
-The :mod:`inspect` module also provides a basic introspection capability
+The :mod:`!inspect` module also provides a basic introspection capability
 from the command line.
 
 .. program:: inspect

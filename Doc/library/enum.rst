@@ -307,6 +307,28 @@ Data Types
       No longer used, kept for backward compatibility.
       (class attribute, removed during class creation).
 
+      The :attr:`~Enum._order_` attribute can be provided to help keep Python 2 / Python 3 code in sync.
+      It will be checked against the actual order of the enumeration and raise an error if the two do not match::
+
+         >>> class Color(Enum):
+         ...     _order_ = 'RED GREEN BLUE'
+         ...     RED = 1
+         ...     BLUE = 3
+         ...     GREEN = 2
+         ...
+         Traceback (most recent call last):
+         ...
+         TypeError: member order does not match _order_:
+            ['RED', 'BLUE', 'GREEN']
+            ['RED', 'GREEN', 'BLUE']
+
+      .. note::
+
+         In Python 2 code the :attr:`~Enum._order_` attribute is necessary as definition
+         order is lost before it can be recorded.
+
+      .. versionadded:: 3.6
+
    .. attribute:: Enum._ignore_
 
       ``_ignore_`` is only used during creation and is removed from the
@@ -315,6 +337,8 @@ Data Types
       ``_ignore_`` is a list of names that will not become members, and whose
       names will also be removed from the completed enumeration.  See
       :ref:`TimePeriod <enum-time-period>` for an example.
+
+      .. versionadded:: 3.7
 
    .. method:: Enum.__dir__(self)
 
@@ -346,7 +370,16 @@ Data Types
          :last_values: A list of the previous values.
 
       A *staticmethod* that is used to determine the next value returned by
-      :class:`auto`::
+      :class:`auto`.
+
+      .. note::
+         For standard :class:`Enum` classes the next value chosen is the highest
+         value seen incremented by one.
+
+         For :class:`Flag` classes the next value chosen will be the next highest
+         power-of-two.
+
+      This method may be overridden, e.g.::
 
          >>> from enum import auto, Enum
          >>> class PowersOfThree(Enum):
@@ -358,6 +391,10 @@ Data Types
          ...
          >>> PowersOfThree.SECOND.value
          9
+
+      .. versionadded:: 3.6
+      .. versionchanged:: 3.13
+         Prior versions would use the last seen value instead of the highest value.
 
    .. method:: Enum.__init__(self, *args, **kwds)
 
@@ -396,6 +433,8 @@ Data Types
          'debug'
          >>> Build('deBUG')
          <Build.DEBUG: 'debug'>
+
+      .. versionadded:: 3.6
 
    .. method:: Enum.__new__(cls, *args, **kwds)
 
@@ -490,7 +529,8 @@ Data Types
          >>> Color(42)
          <Color.RED: 1>
 
-      Raises a :exc:`ValueError` if the value is already linked with a different member.
+      | Raises a :exc:`ValueError` if the value is already linked with a different member.
+      | See :ref:`multi-value-enum` for an example.
 
       .. versionadded:: 3.13
 
@@ -889,6 +929,8 @@ Data Types
 
 ---------------
 
+.. _enum-dunder-sunder:
+
 Supported ``__dunder__`` names
 """"""""""""""""""""""""""""""
 
@@ -896,7 +938,7 @@ Supported ``__dunder__`` names
 items.  It is only available on the class.
 
 :meth:`~Enum.__new__`, if specified, must create and return the enum members;
-it is also a very good idea to set the member's :attr:`!_value_` appropriately.
+it is also a very good idea to set the member's :attr:`~Enum._value_` appropriately.
 Once all the members are created it is no longer used.
 
 
@@ -912,16 +954,9 @@ Supported ``_sunder_`` names
   from the final class
 - :attr:`~Enum._order_` -- no longer used, kept for backward
   compatibility (class attribute, removed during class creation)
+
 - :meth:`~Enum._generate_next_value_` -- used to get an appropriate value for
   an enum member; may be overridden
-
-  .. note::
-
-     For standard :class:`Enum` classes the next value chosen is the highest
-     value seen incremented by one.
-
-     For :class:`Flag` classes the next value chosen will be the next highest
-     power-of-two.
 
 - :meth:`~Enum._add_alias_` -- adds a new name as an alias to an existing
   member.
@@ -1053,7 +1088,7 @@ Utilities and Decorators
       >>> enum.bin(~10)   # ~10 is -11
       '0b1 0101'
 
-   .. versionadded:: 3.10
+   .. versionadded:: 3.11
 
 ---------------
 

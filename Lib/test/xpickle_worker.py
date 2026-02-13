@@ -2,6 +2,7 @@
 # pickles in a different Python version.
 import os
 import pickle
+import struct
 import sys
 
 
@@ -24,16 +25,38 @@ else:
         sources = f.read()
     exec(sources, vars(test_module))
 
+def read_exact(f, n):
+    buf = b''
+    while len(buf) < n:
+        chunk = f.read(n - len(buf))
+        if not chunk:
+            raise EOFError
+        buf += chunk
+    return buf
 
 in_stream = getattr(sys.stdin, 'buffer', sys.stdin)
 out_stream = getattr(sys.stdout, 'buffer', sys.stdout)
 
 try:
-    message = pickle.load(in_stream)
-    protocol, obj = message
-    pickle.dump(obj, out_stream, protocol)
-except Exception as e:
+    while True:
+        size, = struct.unpack('!i', read_exact(in_stream, 4))
+        if not size:
+            break
+        data = read_exact(in_stream, size)
+        protocol, = struct.unpack('!i', data[:4])
+        obj = pickle.loads(data[4:])
+        data = pickle.dumps(obj, protocol)
+        out_stream.write(struct.pack('!i', len(data)) + data)
+        out_stream.flush()
+except Exception as exc:
     # dump the exception to stdout and write to stderr, then exit
-    pickle.dump(e, out_stream)
-    sys.stderr.write(repr(e))
+    try:
+        data = pickle.dumps(exc)
+        out_stream.write(struct.pack('!i', -len(data)) + data)
+        out_stream.flush()
+    except Exception:
+        out_stream.write(struct.pack('!i', 0))
+        out_stream.flush()
+        sys.stderr.write(repr(exc))
+        sys.stderr.flush()
     sys.exit(1)

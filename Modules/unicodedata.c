@@ -270,9 +270,9 @@ unicodedata_UCD_numeric_impl(PyObject *self, int chr,
             have_old = 1;
             rc = -1.0;
         }
-        else if (old->decimal_changed != 0xFF) {
+        else if (old->numeric_changed != 0.0) {
             have_old = 1;
-            rc = old->decimal_changed;
+            rc = old->numeric_changed;
         }
     }
 
@@ -1405,7 +1405,7 @@ find_syllable(const char *str, int *len, int *pos, int count, int column)
         len1 = Py_SAFE_DOWNCAST(strlen(s), size_t, int);
         if (len1 <= *len)
             continue;
-        if (strncmp(str, s, len1) == 0) {
+        if (PyOS_strnicmp(str, s, len1) == 0) {
             *len = len1;
             *pos = i;
         }
@@ -1437,7 +1437,7 @@ _getcode(const char* name, int namelen, Py_UCS4* code)
      * PUA */
 
     /* Check for hangul syllables. */
-    if (strncmp(name, "HANGUL SYLLABLE ", 16) == 0) {
+    if (PyOS_strnicmp(name, "HANGUL SYLLABLE ", 16) == 0) {
         int len, L = -1, V = -1, T = -1;
         const char *pos = name + 16;
         find_syllable(pos, &len, &L, LCount, 0);
@@ -1455,7 +1455,7 @@ _getcode(const char* name, int namelen, Py_UCS4* code)
     }
 
     /* Check for unified ideographs. */
-    if (strncmp(name, "CJK UNIFIED IDEOGRAPH-", 22) == 0) {
+    if (PyOS_strnicmp(name, "CJK UNIFIED IDEOGRAPH-", 22) == 0) {
         /* Four or five hexdigits must follow. */
         unsigned int v;
         v = 0;
@@ -1465,10 +1465,11 @@ _getcode(const char* name, int namelen, Py_UCS4* code)
             return 0;
         while (namelen--) {
             v *= 16;
-            if (*name >= '0' && *name <= '9')
-                v += *name - '0';
-            else if (*name >= 'A' && *name <= 'F')
-                v += *name - 'A' + 10;
+            Py_UCS1 c = Py_TOUPPER(*name);
+            if (c >= '0' && c <= '9')
+                v += c - '0';
+            else if (c >= 'A' && c <= 'F')
+                v += c - 'A' + 10;
             else
                 return 0;
             name++;

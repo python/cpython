@@ -4517,7 +4517,8 @@ load_cert_chain_lock_held(PySSLContext *self, _PySSLPasswordInfo *pw_info,
             /* the password callback has already set the error information */
         }
         else if (errno != 0) {
-            PyErr_SetFromErrno(PyExc_OSError);
+            PyErr_SetFromErrnoWithFilename(PyExc_OSError,
+                PyBytes_AS_STRING(certfile_bytes));
             ERR_clear_error();
         }
         else {
@@ -4537,7 +4538,8 @@ load_cert_chain_lock_held(PySSLContext *self, _PySSLPasswordInfo *pw_info,
             /* the password callback has already set the error information */
         }
         else if (errno != 0) {
-            PyErr_SetFromErrno(PyExc_OSError);
+            PyErr_SetFromErrnoWithFilename(PyExc_OSError,
+                PyBytes_AS_STRING(keyfile_bytes ? keyfile_bytes : certfile_bytes));
             ERR_clear_error();
         }
         else {
