@@ -800,6 +800,26 @@ _PyCompile_TopFBlock(compiler *c)
     return &c->u->u_fblock[c->u->u_nfblocks - 1];
 }
 
+bool
+_PyCompile_InExceptionHandler(compiler *c)
+{
+    for (Py_ssize_t i = 0; i < c->u->u_nfblocks; i++) {
+        fblockinfo *block = &c->u->u_fblock[i];
+        switch (block->fb_type) {
+            case COMPILE_FBLOCK_TRY_EXCEPT:
+            case COMPILE_FBLOCK_FINALLY_TRY:
+            case COMPILE_FBLOCK_FINALLY_END:
+            case COMPILE_FBLOCK_EXCEPTION_HANDLER:
+            case COMPILE_FBLOCK_EXCEPTION_GROUP_HANDLER:
+            case COMPILE_FBLOCK_HANDLER_CLEANUP:
+                return true;
+            default:
+                break;
+        }
+    }
+    return false;
+}
+
 void
 _PyCompile_DeferredAnnotations(compiler *c,
                                PyObject **deferred_annotations,
@@ -1443,7 +1463,7 @@ optimize_and_assemble_code_unit(struct compiler_unit *u, PyObject *const_cache,
 
     int stackdepth;
     int nlocalsplus;
-    if (_PyCfg_OptimizedCfgToInstructionSequence(g, &u->u_metadata, code_flags,
+    if (_PyCfg_OptimizedCfgToInstructionSequence(g, &u->u_metadata,
                                                  &stackdepth, &nlocalsplus,
                                                  &optimized_instrs) < 0) {
         goto error;
@@ -1718,7 +1738,7 @@ _PyCompile_Assemble(_PyCompile_CodeUnitMetadata *umd, PyObject *filename,
 
     int code_flags = 0;
     int stackdepth, nlocalsplus;
-    if (_PyCfg_OptimizedCfgToInstructionSequence(g, umd, code_flags,
+    if (_PyCfg_OptimizedCfgToInstructionSequence(g, umd,
                                                  &stackdepth, &nlocalsplus,
                                                  &optimized_instrs) < 0) {
         goto error;

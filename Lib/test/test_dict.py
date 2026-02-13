@@ -12,6 +12,15 @@ from test import support
 from test.support import import_helper
 
 
+class CustomHash:
+    def __init__(self, hash):
+        self.hash = hash
+    def __hash__(self):
+        return self.hash
+    def __repr__(self):
+        return f'<CustomHash {self.hash} at {id(self):#x}>'
+
+
 class DictTest(unittest.TestCase):
 
     def test_invalid_keyword_arguments(self):
@@ -1647,6 +1656,29 @@ class DictTest(unittest.TestCase):
         d = obj2.__dict__
         d[MyStr("attr1")] = 2
         self.assertIsInstance(list(d)[0], MyStr)
+
+    def test_hash_collision_remove_add(self):
+        self.maxDiff = None
+        # There should be enough space, so all elements with unique hash
+        # will be placed in corresponding cells without collision.
+        n = 64
+        items = [(CustomHash(h), h) for h in range(n)]
+        # Keys with hash collision.
+        a = CustomHash(n)
+        b = CustomHash(n)
+        items += [(a, 'a'), (b, 'b')]
+        d = dict(items)
+        self.assertEqual(len(d), len(items), d)
+        del d[a]
+        # "a" has been replaced with a dummy.
+        del items[n]
+        self.assertEqual(len(d), len(items), d)
+        self.assertEqual(d, dict(items))
+        d[b] = 'c'
+        # "b" should not replace the dummy.
+        items[n] = (b, 'c')
+        self.assertEqual(len(d), len(items), d)
+        self.assertEqual(d, dict(items))
 
 
 class CAPITest(unittest.TestCase):

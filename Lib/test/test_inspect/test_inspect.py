@@ -2811,6 +2811,30 @@ class TestGetGeneratorState(unittest.TestCase):
         # Running after the first yield
         next(self.generator)
 
+    def test_types_coroutine_wrapper_state(self):
+        def gen():
+            yield 1
+            yield 2
+
+        @types.coroutine
+        def wrapped_generator_coro():
+            # return a generator iterator so types.coroutine
+            # wraps it into types._GeneratorWrapper.
+            return gen()
+
+        g = wrapped_generator_coro()
+        self.addCleanup(g.close)
+        self.assertIs(type(g), types._GeneratorWrapper)
+
+        # _GeneratorWrapper must provide gi_suspended/cr_suspended
+        # so inspect.get*state() doesn't raise AttributeError.
+        self.assertEqual(inspect.getgeneratorstate(g), inspect.GEN_CREATED)
+        self.assertEqual(inspect.getcoroutinestate(g), inspect.CORO_CREATED)
+
+        next(g)
+        self.assertEqual(inspect.getgeneratorstate(g), inspect.GEN_SUSPENDED)
+        self.assertEqual(inspect.getcoroutinestate(g), inspect.CORO_SUSPENDED)
+
     def test_easy_debugging(self):
         # repr() and str() of a generator state should contain the state name
         names = 'GEN_CREATED GEN_RUNNING GEN_SUSPENDED GEN_CLOSED'.split()
@@ -6272,6 +6296,10 @@ class TestSignatureDefinitions(unittest.TestCase):
         import stat
         self._test_module_has_signatures(stat)
 
+    def test_struct_module_has_signatures(self):
+        import struct
+        self._test_module_has_signatures(struct)
+
     def test_string_module_has_signatures(self):
         import string
         self._test_module_has_signatures(string)
@@ -6505,7 +6533,8 @@ class TestMain(unittest.TestCase):
         self.assertIn(module.__name__, output)
         self.assertIn(module.__spec__.origin, output)
         self.assertIn(module.__file__, output)
-        self.assertIn(module.__spec__.cached, output)
+        if module.__spec__.cached:
+            self.assertIn(module.__spec__.cached, output)
         self.assertEqual(err, b'')
 
 

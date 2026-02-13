@@ -1,2 +1,0 @@
-:func:`_thread.stack_size` now raises :exc:`ValueError` if the stack size is
-too small. Patch by Victor Stinner.

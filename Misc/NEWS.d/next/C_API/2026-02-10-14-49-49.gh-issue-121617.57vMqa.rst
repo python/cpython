@@ -1,0 +1,3 @@
+``Python.h`` now also includes ``<string.h>`` in the limited C API version 3.11
+and newer to fix the :c:macro:`Py_CLEAR` macro which uses ``memcpy()``. Patch
+by Victor Stinner.

@@ -793,6 +793,17 @@ Exception Classes
    Return :c:member:`~PyTypeObject.tp_name` of the exception class *ob*.
 
 
+.. c:macro:: PyException_HEAD
+
+   This is a :term:`soft deprecated` macro including the base fields for an
+   exception object.
+
+   This was included in Python's C API by mistake and is not designed for use
+   in extensions. For creating custom exception objects, use
+   :c:func:`PyErr_NewException` or otherwise create a class inheriting from
+   :c:data:`PyExc_BaseException`.
+
+
 Exception Objects
 =================
 
@@ -1108,6 +1119,8 @@ Exception types
      * :exc:`FloatingPointError`
    * * .. c:var:: PyObject *PyExc_GeneratorExit
      * :exc:`GeneratorExit`
+   * * .. c:var:: PyObject *PyExc_ImportCycleError
+     * :exc:`ImportCycleError`
    * * .. c:var:: PyObject *PyExc_ImportError
      * :exc:`ImportError`
    * * .. c:var:: PyObject *PyExc_IndentationError

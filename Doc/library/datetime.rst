@@ -2495,79 +2495,105 @@ These methods accept format codes that can be used to parse and format dates::
    >>> _.strftime('%a %d %b %Y, %I:%M%p')
    'Mon 31 Jan 2022, 11:59PM'
 
-The following is a list of all the format codes that the 1989 C standard
-requires, and these work on all platforms with a standard C implementation.
+The following is a list of all the format codes that the 2011 C standard
+requires, and these work on all supported platforms.
 
 +-----------+--------------------------------+------------------------+-------+
-| Directive | Meaning                        | Example                | Notes |
+| Directive |           Meaning              |        Example         | Notes |
+|           |                                |                        |       |
 +===========+================================+========================+=======+
-| ``%a``    | Weekday as locale's            || Sun, Mon, ..., Sat    | \(1)  |
+|  ``%a``   | Weekday as locale's            || Sun, Mon, ..., Sat    | \(1)  |
 |           | abbreviated name.              |  (en_US);              |       |
 |           |                                || So, Mo, ..., Sa       |       |
 |           |                                |  (de_DE)               |       |
 +-----------+--------------------------------+------------------------+-------+
-| ``%A``    | Weekday as locale's full name. || Sunday, Monday, ...,  | \(1)  |
+|  ``%A``   | Weekday as locale's full name. || Sunday, Monday, ...,  | \(1)  |
 |           |                                |  Saturday (en_US);     |       |
 |           |                                || Sonntag, Montag, ..., |       |
 |           |                                |  Samstag (de_DE)       |       |
 +-----------+--------------------------------+------------------------+-------+
-| ``%w``    | Weekday as a decimal number,   | 0, 1, ..., 6           |       |
-|           | where 0 is Sunday and 6 is     |                        |       |
-|           | Saturday.                      |                        |       |
-+-----------+--------------------------------+------------------------+-------+
-| ``%d``    | Day of the month as a          | 01, 02, ..., 31        | \(9)  |
-|           | zero-padded decimal number.    |                        |       |
-+-----------+--------------------------------+------------------------+-------+
-| ``%b``    | Month as locale's abbreviated  || Jan, Feb, ..., Dec    | \(1)  |
+|  ``%b``   | Month as locale's abbreviated  || Jan, Feb, ..., Dec    | \(1)  |
 |           | name.                          |  (en_US);              |       |
 |           |                                || Jan, Feb, ..., Dez    |       |
 |           |                                |  (de_DE)               |       |
 +-----------+--------------------------------+------------------------+-------+
-| ``%B``    | Month as locale's full name.   || January, February,    | \(1)  |
+|  ``%B``   | Month as locale's full name.   || January, February,    | \(1)  |
 |           |                                |  ..., December (en_US);|       |
 |           |                                || Januar, Februar, ..., |       |
 |           |                                |  Dezember (de_DE)      |       |
 +-----------+--------------------------------+------------------------+-------+
-| ``%m``    | Month as a zero-padded         | 01, 02, ..., 12        | \(9)  |
+|  ``%c``   | Locale's appropriate date and  || Tue Aug 16 21:30:00   | \(1)  |
+|           | time representation.           |  1988 (en_US);         |       |
+|           |                                || Di 16 Aug 21:30:00    |       |
+|           |                                |  1988 (de_DE)          |       |
++-----------+--------------------------------+------------------------+-------+
+|  ``%C``   | The year divided by 100 and    | 01, 02, ..., 99        | \(0)  |
+|           | truncated to an integer as a   |                        |       |
+|           | zero-padded decimal number.    |                        |       |
++-----------+--------------------------------+------------------------+-------+
+|  ``%d``   | Day of the month as a          | 01, 02, ..., 31        | \(9)  |
+|           | zero-padded decimal number.    |                        |       |
++-----------+--------------------------------+------------------------+-------+
+|  ``%D``   | Equivalent to ``%m/%d/%y``.    | 11/10/2025             | \(9), |
+|           |                                |                        | \(0)  |
++-----------+--------------------------------+------------------------+-------+
+|  ``%e``   | The day of the month as a      | ␣1, ␣2, ..., 31        |       |
+|           | space-padded decimal number.   |                        |       |
++-----------+--------------------------------+------------------------+-------+
+|  ``%F``   | Equivalent to ``%Y-%m-%d``,    | 2025-10-11,            |       |
+|           | the ISO 8601 format.           | 1001-12-30             |       |
++-----------+--------------------------------+------------------------+-------+
+|  ``%g``   | Last 2 digits of ISO 8601 year | 00, 01, ..., 99        | \(0)  |
+|           | representing the year that     |                        |       |
+|           | contains the greater part of   |                        |       |
+|           | the ISO week (``%V``).         |                        |       |
++-----------+--------------------------------+------------------------+-------+
+|  ``%G``   | ISO 8601 year with century     | 0001, 0002, ..., 2013, | \(8)  |
+|           | representing the year that     | 2014, ..., 9998, 9999  |       |
+|           | contains the greater part of   |                        |       |
+|           | the ISO week (``%V``).         |                        |       |
++-----------+--------------------------------+------------------------+-------+
+|  ``%h``   | Equivalent to ``%b``.          | See ``%b``.            | \(0)  |
++-----------+--------------------------------+------------------------+-------+
+|  ``%H``   | Hour (24-hour clock) as a      | 00, 01, ..., 23        | \(9)  |
+|           | zero-padded decimal number.    |                        |       |
++-----------+--------------------------------+------------------------+-------+
+|  ``%I``   | Hour (12-hour clock) as a      | 01, 02, ..., 12        | \(9)  |
+|           | zero-padded decimal number.    |                        |       |
++-----------+--------------------------------+------------------------+-------+
+|  ``%j``   | Day of the year as a           | 001, 002, ..., 366     | \(9)  |
+|           | zero-padded decimal number.    |                        |       |
++-----------+--------------------------------+------------------------+-------+
+|  ``%m``   | Month as a zero-padded         | 01, 02, ..., 12        | \(9)  |
 |           | decimal number.                |                        |       |
 +-----------+--------------------------------+------------------------+-------+
-| ``%y``    | Year without century as a      | 00, 01, ..., 99        | \(9)  |
-|           | zero-padded decimal number.    |                        |       |
+|  ``%M``   | Minute as a zero-padded        | 00, 01, ..., 59        | \(9)  |
+|           | decimal number.                |                        |       |
 +-----------+--------------------------------+------------------------+-------+
-| ``%Y``    | Year with century as a decimal | 0001, 0002, ..., 2013, | \(2)  |
-|           | number.                        | 2014, ..., 9998, 9999  |       |
+|  ``%n``   | The newline character          | ``\n``                 | \(0)  |
+|           | (``'\n'``).                    |                        |       |
 +-----------+--------------------------------+------------------------+-------+
-| ``%H``    | Hour (24-hour clock) as a      | 00, 01, ..., 23        | \(9)  |
-|           | zero-padded decimal number.    |                        |       |
-+-----------+--------------------------------+------------------------+-------+
-| ``%I``    | Hour (12-hour clock) as a      | 01, 02, ..., 12        | \(9)  |
-|           | zero-padded decimal number.    |                        |       |
-+-----------+--------------------------------+------------------------+-------+
-| ``%p``    | Locale's equivalent of either  || AM, PM (en_US);       | \(1), |
+|  ``%p``   | Locale's equivalent of either  || AM, PM (en_US);       | \(1), |
 |           | AM or PM.                      || am, pm (de_DE)        | \(3)  |
 +-----------+--------------------------------+------------------------+-------+
-| ``%M``    | Minute as a zero-padded        | 00, 01, ..., 59        | \(9)  |
-|           | decimal number.                |                        |       |
+|  ``%r``   | Locale's 12-hour clock time.   | 12:00:00 AM            | \(1), |
+|           |                                |                        | \(0)  |
 +-----------+--------------------------------+------------------------+-------+
-| ``%S``    | Second as a zero-padded        | 00, 01, ..., 59        | \(4), |
+|  ``%R``   | Equivalent to ``%H:%M``.       | 10:01                  |       |
++-----------+--------------------------------+------------------------+-------+
+|  ``%S``   | Second as a zero-padded        | 00, 01, ..., 59        | \(4), |
 |           | decimal number.                |                        | \(9)  |
 +-----------+--------------------------------+------------------------+-------+
-| ``%f``    | Microsecond as a decimal       | 000000, 000001, ...,   | \(5)  |
-|           | number, zero-padded to 6       | 999999                 |       |
-|           | digits.                        |                        |       |
+|  ``%t``   | The tab character              | ``\t``                 | \(0)  |
+|           | (``'\t'``).                    |                        |       |
 +-----------+--------------------------------+------------------------+-------+
-| ``%z``    | UTC offset in the form         | (empty), +0000,        | \(6)  |
-|           | ``±HHMM[SS[.ffffff]]`` (empty  | -0400, +1030,          |       |
-|           | string if the object is        | +063415,               |       |
-|           | naive).                        | -030712.345216         |       |
+|  ``%T``   | ISO 8601 time format,          | 10:01:59               |       |
+|           | equivalent to ``%H:%M:%S``.    |                        |       |
 +-----------+--------------------------------+------------------------+-------+
-| ``%Z``    | Time zone name (empty string   | (empty), UTC, GMT      | \(6)  |
-|           | if the object is naive).       |                        |       |
+|  ``%u``   | ISO 8601 weekday as a decimal  | 1, 2, ..., 7           |       |
+|           | number where 1 is Monday.      |                        |       |
 +-----------+--------------------------------+------------------------+-------+
-| ``%j``    | Day of the year as a           | 001, 002, ..., 366     | \(9)  |
-|           | zero-padded decimal number.    |                        |       |
-+-----------+--------------------------------+------------------------+-------+
-| ``%U``    | Week number of the year        | 00, 01, ..., 53        | \(7), |
+|  ``%U``   | Week number of the year        | 00, 01, ..., 53        | \(7), |
 |           | (Sunday as the first day of    |                        | \(9)  |
 |           | the week) as a zero-padded     |                        |       |
 |           | decimal number. All days in a  |                        |       |
@@ -2575,7 +2601,17 @@ requires, and these work on all platforms with a standard C implementation.
 |           | Sunday are considered to be in |                        |       |
 |           | week 0.                        |                        |       |
 +-----------+--------------------------------+------------------------+-------+
-| ``%W``    | Week number of the year        | 00, 01, ..., 53        | \(7), |
+|  ``%V``   | ISO 8601 week as a decimal     | 01, 02, ..., 53        | \(8), |
+|           | number with Monday as          |                        | \(9)  |
+|           | the first day of the week.     |                        |       |
+|           | Week 01 is the week containing |                        |       |
+|           | Jan 4.                         |                        |       |
++-----------+--------------------------------+------------------------+-------+
+|  ``%w``   | Weekday as a decimal number,   | 0, 1, ..., 6           |       |
+|           | where 0 is Sunday and 6 is     |                        |       |
+|           | Saturday.                      |                        |       |
++-----------+--------------------------------+------------------------+-------+
+|  ``%W``   | Week number of the year        | 00, 01, ..., 53        | \(7), |
 |           | (Monday as the first day of    |                        | \(9)  |
 |           | the week) as a zero-padded     |                        |       |
 |           | decimal number. All days in a  |                        |       |
@@ -2583,51 +2619,49 @@ requires, and these work on all platforms with a standard C implementation.
 |           | Monday are considered to be in |                        |       |
 |           | week 0.                        |                        |       |
 +-----------+--------------------------------+------------------------+-------+
-| ``%c``    | Locale's appropriate date and  || Tue Aug 16 21:30:00   | \(1)  |
-|           | time representation.           |  1988 (en_US);         |       |
-|           |                                || Di 16 Aug 21:30:00    |       |
-|           |                                |  1988 (de_DE)          |       |
-+-----------+--------------------------------+------------------------+-------+
-| ``%x``    | Locale's appropriate date      || 08/16/88 (None);      | \(1)  |
+|  ``%x``   | Locale's appropriate date      || 08/16/88 (None);      | \(1)  |
 |           | representation.                || 08/16/1988 (en_US);   |       |
 |           |                                || 16.08.1988 (de_DE)    |       |
 +-----------+--------------------------------+------------------------+-------+
-| ``%X``    | Locale's appropriate time      || 21:30:00 (en_US);     | \(1)  |
+|  ``%X``   | Locale's appropriate time      || 21:30:00 (en_US);     | \(1)  |
 |           | representation.                || 21:30:00 (de_DE)      |       |
 +-----------+--------------------------------+------------------------+-------+
-| ``%%``    | A literal ``'%'`` character.   | %                      |       |
+|  ``%y``   | Year without century as a      | 00, 01, ..., 99        | \(9)  |
+|           | zero-padded decimal number.    |                        |       |
++-----------+--------------------------------+------------------------+-------+
+|  ``%Y``   | Year with century as a decimal | 0001, 0002, ..., 2013, | \(2)  |
+|           | number.                        | 2014, ..., 9998, 9999  |       |
++-----------+--------------------------------+------------------------+-------+
+|  ``%z``   | UTC offset in the form         | (empty), +0000,        | \(6)  |
+|           | ``±HHMM[SS[.ffffff]]`` (empty  | -0400, +1030,          |       |
+|           | string if the object is        | +063415,               |       |
+|           | naive).                        | -030712.345216         |       |
++-----------+--------------------------------+------------------------+-------+
+|  ``%Z``   | Time zone name (empty string   | (empty), UTC, GMT      | \(6)  |
+|           | if the object is naive).       |                        |       |
++-----------+--------------------------------+------------------------+-------+
+|  ``%%``   | A literal ``'%'`` character.   | %                      |       |
 +-----------+--------------------------------+------------------------+-------+
 
-Several additional directives not required by the C89 standard are included for
-convenience. These parameters all correspond to ISO 8601 date values.
+The ISO 8601 year and ISO 8601 week directives are not interchangeable
+with the year and week number directives above. Calling :meth:`~.datetime.strptime` with
+incomplete or ambiguous ISO 8601 directives will raise a :exc:`ValueError`.
+
+Several additional directives not required by the C11 standard are included for
+convenience.
 
 +-----------+--------------------------------+------------------------+-------+
 | Directive | Meaning                        | Example                | Notes |
 +===========+================================+========================+=======+
-| ``%G``    | ISO 8601 year with century     | 0001, 0002, ..., 2013, | \(8)  |
-|           | representing the year that     | 2014, ..., 9998, 9999  |       |
-|           | contains the greater part of   |                        |       |
-|           | the ISO week (``%V``).         |                        |       |
-+-----------+--------------------------------+------------------------+-------+
-| ``%u``    | ISO 8601 weekday as a decimal  | 1, 2, ..., 7           |       |
-|           | number where 1 is Monday.      |                        |       |
-+-----------+--------------------------------+------------------------+-------+
-| ``%V``    | ISO 8601 week as a decimal     | 01, 02, ..., 53        | \(8), |
-|           | number with Monday as          |                        | \(9)  |
-|           | the first day of the week.     |                        |       |
-|           | Week 01 is the week containing |                        |       |
-|           | Jan 4.                         |                        |       |
+|  ``%f``   | Microsecond as a decimal       | 000000, 000001, ...,   | \(5)  |
+|           | number, zero-padded to 6       | 999999                 |       |
+|           | digits.                        |                        |       |
 +-----------+--------------------------------+------------------------+-------+
 | ``%:z``   | UTC offset in the form         | (empty), +00:00,       | \(6)  |
 |           | ``±HH:MM[:SS[.ffffff]]``       | -04:00, +10:30,        |       |
 |           | (empty string if the object is | +06:34:15,             |       |
 |           | naive).                        | -03:07:12.345216       |       |
 +-----------+--------------------------------+------------------------+-------+
-
-These may not be available on all platforms when used with the :meth:`~.datetime.strftime`
-method. The ISO 8601 year and ISO 8601 week directives are not interchangeable
-with the year and week number directives above. Calling :meth:`~.datetime.strptime` with
-incomplete or ambiguous ISO 8601 directives will raise a :exc:`ValueError`.
 
 The full set of format codes supported varies across platforms, because Python
 calls the platform C library's :c:func:`strftime` function, and platform
@@ -2639,10 +2673,10 @@ differences between platforms in handling of unsupported format specifiers.
    ``%G``, ``%u`` and ``%V`` were added.
 
 .. versionadded:: 3.12
-   ``%:z`` was added for :meth:`~.datetime.strftime`
+   ``%:z`` was added for :meth:`~.datetime.strftime`.
 
 .. versionadded:: 3.15
-   ``%:z`` was added for :meth:`~.datetime.strptime`
+   ``%:z`` and ``%F`` were added for :meth:`~.datetime.strptime`.
 
 Technical Detail
 ^^^^^^^^^^^^^^^^
@@ -2654,6 +2688,12 @@ Broadly speaking, ``d.strftime(fmt)`` acts like the :mod:`time` module's
 For the :meth:`.datetime.strptime` and :meth:`.date.strptime` class methods,
 the default value is ``1900-01-01T00:00:00.000``: any components not specified
 in the format string will be pulled from the default value.
+
+.. note::
+   Format strings without separators can be ambiguous for parsing. For
+   example, with ``%Y%m%d``, the string ``2026111`` may be parsed either as
+   ``2026-11-01`` or as ``2026-01-11``.
+   Use separators to ensure the input is parsed as intended.
 
 .. note::
    When used to parse partial dates lacking a year, :meth:`.datetime.strptime`
@@ -2711,6 +2751,9 @@ the output, while on others ``strftime`` may raise :exc:`UnicodeError` or return
 an empty string instead.
 
 Notes:
+
+(0)
+   This format code is currently unsupported by :meth:`~.datetime.strptime`.
 
 (1)
    Because the format depends on the current locale, care should be taken when
