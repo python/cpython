@@ -1075,8 +1075,8 @@ static int
 is_tangut_ideograph(Py_UCS4 code)
 {
     return
-        (0x17000 <= code && code <= 0x187F7) || /* Tangut */
-        (0x18D00 <= code && code <= 0x18D08);   /* Tangut Supplement */
+        (0x17000 <= code && code <= 0x187FF) || /* Tangut */
+        (0x18D00 <= code && code <= 0x18D1E);   /* Tangut Supplement */
 }
 
 /* macros used to determine if the given code point is in the PUA range that
@@ -1500,7 +1500,7 @@ _getcode(const char* name, int namelen, Py_UCS4* code)
     /* Check for Tangut ideographs. */
     if (strncmp(name, "TANGUT IDEOGRAPH-", 17) == 0) {
         /* Five hexdigits must follow. */
-        v = 0;
+        unsigned int v = 0;
         name += 17;
         namelen -= 17;
         if (namelen != 5)

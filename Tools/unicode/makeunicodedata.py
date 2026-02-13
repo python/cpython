@@ -126,8 +126,8 @@ cjk_ranges = [
 
 # these ranges need to match unicodedata.c:is_tangut_ideograph
 tangut_ranges = [
-    ('17000', '187F7'),
-    ('18D00', '18D08')
+    ('17000', '187FF'),
+    ('18D00', '18D1E')
 ]
 
 

@@ -128,50 +128,6 @@ class BaseUnicodeFunctionsTest:
         result = h.hexdigest()
         self.assertEqual(result, self.expectedchecksum)
 
-    @requires_resource('network')
-    def test_name(self):
-        TESTBASEURL = "https://www.unicode.org/Public"
-        TESTDATAFILE = "extracted/DerivedName.txt"
-        TESTDATAURL = f"{TESTBASEURL}/{unicodedata.unidata_version}/ucd/{TESTDATAFILE}"
-
-        # Hit the exception early
-        try:
-            testdata = open_urlresource(TESTDATAURL, encoding="utf-8")
-        except PermissionError:
-            self.skipTest(f"Permission error when downloading {TESTDATAURL} "
-                          f"into the test data directory")
-        except (OSError, HTTPException) as exc:
-            self.skipTest(f"Failed to download {TESTDATAURL}: {exc}")
-
-        with testdata:
-            self.run_name_tests(testdata)
-
-    def run_name_tests(self, testdata):
-        names_ref = {}
-
-        def parse_cp(s):
-            return int(s, 16)
-
-        # Parse data
-        for line in testdata:
-            line = line.strip()
-            if not line or line.startswith("#"):
-                continue
-            raw_cp, name = line.split("; ")
-            # Check for a range
-            if ".." in raw_cp:
-                cp1, cp2 = map(parse_cp, raw_cp.split(".."))
-                # remove ‘*’ at the end
-                name = name[:-1]
-                for cp in range(cp1, cp2 + 1):
-                    names_ref[cp] = f"{name}{cp:0>4X}"
-            else:
-                cp = parse_cp(raw_cp)
-                names_ref[cp] = name
-
-        for cp in range(0, sys.maxunicode + 1):
-            self.assertEqual(self.db.name(chr(cp), None), names_ref.get(cp))
-
     @requires_resource('cpu')
     def test_name_inverse_lookup(self):
         for char in iterallchars():
@@ -658,7 +614,47 @@ class UnicodeFunctionsTest(unittest.TestCase, BaseUnicodeFunctionsTest):
     # (e.g. 'make distclean && make') to get the correct checksum.
     expectedchecksum = ('83cc43a2fbb779185832b4c049217d80b05bf349'
                         if quicktest else
-                        '65670ae03a324c5f9e826a4de3e25bae4d73c9b7')
+                        '180bdc91143d8aa2eb9dd6726e66d37606205942')
+
+    @requires_resource('network')
+    def test_name(self):
+        TESTDATAFILE = "DerivedName.txt"
+        testdata = download_test_data_file(TESTDATAFILE)
+
+        with testdata:
+            self.run_name_tests(testdata)
+
+    def run_name_tests(self, testdata):
+        names_ref = {}
+
+        def parse_cp(s):
+            return int(s, 16)
+
+        # Parse data
+        for line in testdata:
+            line = line.strip()
+            if not line or line.startswith("#"):
+                continue
+            raw_cp, name = line.split("; ")
+            # Check for a range
+            if ".." in raw_cp:
+                cp1, cp2 = map(parse_cp, raw_cp.split(".."))
+                # remove ‘*’ at the end
+                assert name[-1] == '*', (raw_cp, name)
+                name = name[:-1]
+                for cp in range(cp1, cp2 + 1):
+                    names_ref[cp] = f"{name}{cp:04X}"
+            elif name[-1] == '*':
+                cp = parse_cp(raw_cp)
+                name = name[:-1]
+                names_ref[cp] = f"{name}{cp:04X}"
+            else:
+                assert '*' not in name, (raw_cp, name)
+                cp = parse_cp(raw_cp)
+                names_ref[cp] = name
+
+        for cp in range(0, sys.maxunicode + 1):
+            self.assertEqual(self.db.name(chr(cp), None), names_ref.get(cp))
 
     def test_isxidstart(self):
         self.assertTrue(self.db.isxidstart('S'))
