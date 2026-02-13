@@ -574,7 +574,7 @@ jobs:
       run: |
         echo "PATH=/usr/lib/ccache:$PATH" >> "$GITHUB_ENV"
     - name: Configure CPython
-      run: ./configure --config-cache --with-address-sanitizer --without-pymalloc
+      run: ./configure --config-cache --with-address-sanitizer --without-pymalloc --with-openssl="$OPENSSL_DIR"
     - name: Build CPython
       run: make -j4
     - name: Display build info
