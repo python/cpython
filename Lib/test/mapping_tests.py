@@ -129,10 +129,10 @@ class BasicTestImmutableMappingProtocol(unittest.TestCase):
 
     def test_get(self):
         d = self._empty_mapping()
-        self.assertTrue(d.get(list(self.other.keys())[0]) is None)
+        self.assertIsNone(d.get(list(self.other.keys())[0]))
         self.assertEqual(d.get(list(self.other.keys())[0], 3), 3)
         d = self.reference
-        self.assertTrue(d.get(list(self.other.keys())[0]) is None)
+        self.assertIsNone(d.get(list(self.other.keys())[0]))
         self.assertEqual(d.get(list(self.other.keys())[0], 3), 3)
         self.assertEqual(d.get(list(self.inmapping.keys())[0]),
                          list(self.inmapping.values())[0])
