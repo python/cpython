@@ -669,18 +669,22 @@ class ComplexTest(ComplexesAreIdenticalMixin, unittest.TestCase):
         check(complex("1"), 1.0, 0.0)
         check(complex("1j"), 0.0, 1.0)
         check(complex("-1"), -1.0, 0.0)
+        check(complex("\N{MINUS SIGN}1"), -1.0, 0.0)
         check(complex("+1"), 1.0, 0.0)
         check(complex("1+2j"), 1.0, 2.0)
         check(complex("(1+2j)"), 1.0, 2.0)
         check(complex("(1.5+4.25j)"), 1.5, 4.25)
         check(complex("4.25+1J"), 4.25, 1.0)
         check(complex(" ( +4.25-6J )"), 4.25, -6.0)
+        check(complex(" ( +4.25\N{MINUS SIGN}6J )"), 4.25, -6.0)
         check(complex(" ( +4.25-J )"), 4.25, -1.0)
+        check(complex(" ( +4.25\N{MINUS SIGN}J )"), 4.25, -1.0)
         check(complex(" ( +4.25+j )"), 4.25, 1.0)
         check(complex("J"), 0.0, 1.0)
         check(complex("( j )"), 0.0, 1.0)
         check(complex("+J"), 0.0, 1.0)
         check(complex("( -j)"), 0.0, -1.0)
+        check(complex("( \N{MINUS SIGN}j)"), 0.0, -1.0)
         check(complex('1-1j'), 1.0, -1.0)
         check(complex('1J'), 0.0, 1.0)
 
@@ -690,6 +694,7 @@ class ComplexTest(ComplexesAreIdenticalMixin, unittest.TestCase):
         check(complex('-1e-500+1e-500j'), -0.0, 0.0)
         check(complex('1e-500-1e-500j'), 0.0, -0.0)
         check(complex('-1e-500-1e-500j'), -0.0, -0.0)
+        check(complex('\N{MINUS SIGN}1e\N{MINUS SIGN}500\N{MINUS SIGN}1e\N{MINUS SIGN}500j'), -0.0, -0.0)
 
         # SF bug 543840:  complex(string) accepts strings with \0
         # Fixed in 2.3.
@@ -700,6 +705,8 @@ class ComplexTest(ComplexesAreIdenticalMixin, unittest.TestCase):
         self.assertRaises(ValueError, complex, "1+")
         self.assertRaises(ValueError, complex, "1+1j+1j")
         self.assertRaises(ValueError, complex, "--")
+        self.assertRaises(ValueError, complex, "-\N{MINUS SIGN}")
+        self.assertRaises(ValueError, complex, "\N{MINUS SIGN}\N{MINUS SIGN}")
         self.assertRaises(ValueError, complex, "(1+2j")
         self.assertRaises(ValueError, complex, "1+2j)")
         self.assertRaises(ValueError, complex, "1+(2j)")
@@ -726,7 +733,9 @@ class ComplexTest(ComplexesAreIdenticalMixin, unittest.TestCase):
         self.assertEqual(copysign(1., complex("-nan").real), -1.)
         self.assertEqual(copysign(1., complex("-nanj").imag), -1.)
         self.assertEqual(copysign(1., complex("-nan-nanj").real), -1.)
+        self.assertEqual(copysign(1., complex("-nan\N{MINUS SIGN}nanj").real), -1.)
         self.assertEqual(copysign(1., complex("-nan-nanj").imag), -1.)
+        self.assertEqual(copysign(1., complex("\N{MINUS SIGN}nan\N{MINUS SIGN}nanj").imag), -1.)
 
     def test_underscores(self):
         # check underscores

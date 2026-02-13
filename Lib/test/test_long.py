@@ -328,7 +328,7 @@ class LongTest(unittest.TestCase):
                 ('1' + '0'*100, 10**100)
         ]
         for s, v in LL:
-            for sign in "", "+", "-":
+            for sign in "", "+", "-", "\N{MINUS SIGN}":
                 for prefix in "", " ", "\t", "  \t\t  ":
                     ss = prefix + sign + s
                     vv = v
@@ -360,9 +360,11 @@ class LongTest(unittest.TestCase):
         self.assertEqual(int('0', 0), 0)
         self.assertEqual(int('+0', 0), 0)
         self.assertEqual(int('-0', 0), 0)
+        self.assertEqual(int('\N{MINUS SIGN}0', 0), 0)
         self.assertEqual(int('00', 0), 0)
         self.assertRaises(ValueError, int, '08', 0)
         self.assertRaises(ValueError, int, '-012395', 0)
+        self.assertRaises(ValueError, int, '\N{MINUS SIGN}012395', 0)
 
         # invalid bases
         invalid_bases = [-909,
