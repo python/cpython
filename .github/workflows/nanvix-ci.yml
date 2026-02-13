@@ -327,8 +327,16 @@ jobs:
           # Copy libraries
           cp -f libpython*.a "${DIST_DIR}/lib/" 2>/dev/null || true
           # Copy Python stdlib (required for interpreter to boot - encodings, os, etc.)
-          if [ -d "$NANVIX_HOME/lib/python3.12" ]; then
-            cp -rf "$NANVIX_HOME/lib/python3.12" "${DIST_DIR}/lib/"
+          if [ -d "Lib" ]; then
+            mkdir -p "${DIST_DIR}/lib/python3.12"
+            cp -rf Lib/* "${DIST_DIR}/lib/python3.12/"
+            # Remove test directories to reduce artifact size
+            rm -rf "${DIST_DIR}/lib/python3.12/test" "${DIST_DIR}/lib/python3.12/tests"
+            rm -rf "${DIST_DIR}/lib/python3.12/idlelib" "${DIST_DIR}/lib/python3.12/tkinter"
+            rm -rf "${DIST_DIR}/lib/python3.12/turtledemo" "${DIST_DIR}/lib/python3.12/turtle.py"
+            rm -rf "${DIST_DIR}/lib/python3.12/__pycache__"
+            find "${DIST_DIR}/lib/python3.12" -name "__pycache__" -type d -exec rm -rf {} + 2>/dev/null || true
+            find "${DIST_DIR}/lib/python3.12" -name "test" -type d -exec rm -rf {} + 2>/dev/null || true
             echo "Included stdlib: $(find ${DIST_DIR}/lib/python3.12 -type f | wc -l) files"
           fi
           # Copy headers (main include directory)
