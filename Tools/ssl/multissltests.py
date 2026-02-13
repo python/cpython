@@ -112,6 +112,7 @@ parser.add_argument(
     '--aws-lc',
     # Soft-deprecated alias
     '--awslc',
+    dest='awslc',
     nargs='+',
     default=(),
     help=(
