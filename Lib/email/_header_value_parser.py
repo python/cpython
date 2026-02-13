@@ -1425,7 +1425,7 @@ def get_word(value):
     parse tree is more confusing than it is helpful.
 
     """
-    if value[0] in CFWS_LEADER:
+    if value and value[0] in CFWS_LEADER:
         leader, value = get_cfws(value)
     else:
         leader = None
