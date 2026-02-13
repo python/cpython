@@ -317,7 +317,7 @@ and writing to platform dependent files:
 Codec Base Classes
 ------------------
 
-The :mod:`codecs` module defines a set of base classes which define the
+The :mod:`!codecs` module defines a set of base classes which define the
 interfaces for working with codec objects, and can also be used as the basis
 for custom codec implementations.
 
@@ -1551,8 +1551,8 @@ mapping. It is not supported by :meth:`str.encode` (which only produces
    Restoration of the ``rot13`` alias.
 
 
-:mod:`encodings` --- Encodings package
---------------------------------------
+:mod:`!encodings` --- Encodings package
+---------------------------------------
 
 .. module:: encodings
    :synopsis: Encodings package
@@ -1611,8 +1611,8 @@ This module implements the following exception:
    Raised when a codec is invalid or incompatible.
 
 
-:mod:`encodings.idna` --- Internationalized Domain Names in Applications
-------------------------------------------------------------------------
+:mod:`!encodings.idna` --- Internationalized Domain Names in Applications
+-------------------------------------------------------------------------
 
 .. module:: encodings.idna
    :synopsis: Internationalized Domain Names implementation
@@ -1654,7 +1654,7 @@ When receiving host names from the wire (such as in reverse name lookup), no
 automatic conversion to Unicode is performed: applications wishing to present
 such host names to the user should decode them to Unicode.
 
-The module :mod:`encodings.idna` also implements the nameprep procedure, which
+The module :mod:`!encodings.idna` also implements the nameprep procedure, which
 performs certain normalizations on host names, to achieve case-insensitivity of
 international domain names, and to unify similar characters. The nameprep
 functions can be used directly if desired.
@@ -1677,8 +1677,8 @@ functions can be used directly if desired.
    Convert a label to Unicode, as specified in :rfc:`3490`.
 
 
-:mod:`encodings.mbcs` --- Windows ANSI codepage
------------------------------------------------
+:mod:`!encodings.mbcs` --- Windows ANSI codepage
+------------------------------------------------
 
 .. module:: encodings.mbcs
    :synopsis: Windows ANSI codepage
@@ -1695,8 +1695,8 @@ This module implements the ANSI codepage (CP_ACP).
    Support any error handler.
 
 
-:mod:`encodings.utf_8_sig` --- UTF-8 codec with BOM signature
--------------------------------------------------------------
+:mod:`!encodings.utf_8_sig` --- UTF-8 codec with BOM signature
+--------------------------------------------------------------
 
 .. module:: encodings.utf_8_sig
    :synopsis: UTF-8 codec with BOM signature

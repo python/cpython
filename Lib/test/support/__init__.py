@@ -1459,11 +1459,6 @@ def requires_specialization(test):
         _opcode.ENABLE_SPECIALIZATION, "requires specialization")(test)
 
 
-def requires_specialization_ft(test):
-    return unittest.skipUnless(
-        _opcode.ENABLE_SPECIALIZATION_FT, "requires specialization")(test)
-
-
 def reset_code(f: types.FunctionType) -> types.FunctionType:
     """Clear all specializations, local instrumentation, and JIT code for the given function."""
     f.__code__ = f.__code__.replace()
@@ -3120,6 +3115,10 @@ def get_signal_name(exitcode):
         return WINDOWS_STATUS[exitcode]
     except KeyError:
         pass
+
+    # Format Windows exit status as hexadecimal
+    if 0xC0000000 <= exitcode:
+        return f"0x{exitcode:X}"
 
     return None
 

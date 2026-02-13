@@ -10,7 +10,6 @@ import typing
 
 import _targets
 
-
 _LLVM_VERSION = "21"
 _EXTERNALS_LLVM_TAG = "llvm-21.1.4.0"
 

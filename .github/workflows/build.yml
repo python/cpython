@@ -262,11 +262,11 @@ jobs:
           # unsupported as it most resembles other 1.1.1-work-a-like ssl APIs
           # supported by important vendors such as AWS-LC.
           - { ssl: openssl, ssl_ver: 1.1.1w }
-          - { ssl: openssl, ssl_ver: 3.0.18 }
-          - { ssl: openssl, ssl_ver: 3.3.5 }
-          - { ssl: openssl, ssl_ver: 3.4.3 }
-          - { ssl: openssl, ssl_ver: 3.5.4 }
-          - { ssl: openssl, ssl_ver: 3.6.0 }
+          - { ssl: openssl, ssl_ver: 3.0.19 }
+          - { ssl: openssl, ssl_ver: 3.3.6 }
+          - { ssl: openssl, ssl_ver: 3.4.4 }
+          - { ssl: openssl, ssl_ver: 3.5.5 }
+          - { ssl: openssl, ssl_ver: 3.6.1 }
           - { ssl: awslc,   ssl_ver: 1.55.0 }
         # See Tools/ssl/make_ssl_data.py for notes on adding a new version
     env:
@@ -610,11 +610,14 @@ jobs:
       matrix:
         sanitizer:
         - address
-        - undefined
-        - memory
         oss-fuzz-project-name:
         - cpython3
         - python3-libraries
+        include:
+        - sanitizer: undefined
+          oss-fuzz-project-name: cpython3
+        - sanitizer: memory
+          oss-fuzz-project-name: cpython3
         exclude:
         # Note that the 'no-exclude' sentinel below is to prevent
         # an empty string value from excluding all jobs and causing
