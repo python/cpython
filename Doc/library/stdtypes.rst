@@ -5865,6 +5865,9 @@ An example of dictionary view usage::
    * ``frozendict |= other`` does not modify the :class:`!frozendict` in-place but
      creates a new frozen dictionary.
 
+   :class:`!frozendict` is not a :class:`!dict` subclass but inherits directly
+   from ``object``.
+
    .. versionadded:: next
 
 
