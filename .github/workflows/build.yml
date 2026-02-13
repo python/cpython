@@ -261,26 +261,18 @@ jobs:
         ssllib:
           # See Tools/ssl/make_ssl_data.py for notes on adding a new version
           ## OpenSSL
-          - name: openssl
-            # Keep 1.1.1w in our list despite it being upstream EOL and otherwise
-            # unsupported as it most resembles other 1.1.1-work-a-like ssl APIs
-            # supported by important vendors such as AWS-LC.
-            version: 1.1.1w
-          - name: openssl
-            version: 3.0.19
-          - name: openssl
-            version: 3.3.6
-          - name: openssl
-            version: 3.4.4
-          - name: openssl
-            version: 3.5.5
-          - name: openssl
-            version: 3.6.1
+          # Keep 1.1.1w in our list despite it being upstream EOL and otherwise
+          # unsupported as it most resembles other 1.1.1-work-a-like ssl APIs
+          # supported by important vendors such as AWS-LC.
+          - { name: openssl, version: 1.1.1w }
+          - { name: openssl, version: 3.0.19 }
+          - { name: openssl, version: 3.3.6 }
+          - { name: openssl, version: 3.4.4 }
+          - { name: openssl, version: 3.5.5 }
+          - { name: openssl, version: 3.6.1 }
           ## AWS-LC
-          - name: aws-lc
-            version: 1.55.0
-          - name: aws-lc
-            version: 1.67.0
+          - { name: aws-lc, version: 1.55.0 }
+          - { name: aws-lc, version: 1.67.0 }
     env:
       SSLLIB_VER: ${{ matrix.ssllib.version }}
       MULTISSL_DIR: ${{ github.workspace }}/multissl
