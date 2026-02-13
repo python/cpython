@@ -153,7 +153,9 @@ import importlib.machinery
 import itertools
 import linecache
 import os
+lazy import re
 import sys
+lazy import tokenize
 import token
 import types
 import functools
@@ -162,9 +164,6 @@ from keyword import iskeyword
 from operator import attrgetter
 from collections import namedtuple, OrderedDict
 from _weakref import ref as make_weakref
-
-lazy import re
-lazy import tokenize
 
 # Create constants for the compiler flags in Include/cpython/code.h
 # We try to get them from dis to avoid duplication
