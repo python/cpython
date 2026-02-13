@@ -2,13 +2,13 @@ import re
 import sys
 import copy
 import types
+lazy import inspect
 import keyword
 import itertools
 import annotationlib
 import abc
 from reprlib import recursive_repr
 
-lazy import inspect
 
 __all__ = ['dataclass',
            'field',
