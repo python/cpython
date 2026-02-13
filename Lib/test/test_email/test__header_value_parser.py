@@ -2577,31 +2577,72 @@ class TestParser(TestParserMixin, TestEmailBase):
         )
 
 
-    # get_word (if this were black box we'd repeat all the qs/atom tests)
+    # get_word
 
-    def test_get_word_atom_yields_atom(self):
-        word = self._test_get_x(parser.get_word,
-            ' (foo) bar (bang) :ah', ' (foo) bar (bang) ', ' bar ', [], ':ah')
-        self.assertEqual(word.token_type, 'atom')
-        self.assertEqual(word[0].token_type, 'cfws')
+    @params
+    def test_get_word(
+            self,
+            s,
+            *args,
+            quoted_value=None,
+            content=None,
+            tokenlisttype,
+            **kw,
+            ):
+        word = self._test_parse(parser.get_word, C(s), *args, **kw)
+        if 'exception' in kw:
+            return
+        self.assertIsInstance(word, tokenlisttype)
+        if quoted_value is not None:
+            self.assertEqual(word.quoted_value, quoted_value)
+        if content is not None:
+            self.assertEqual(word.content, content)
+        self.verify_terminal_types(word, 'dot', 'atext', 'ptext', 'fws', 'vtext')
 
-    def test_get_word_all_CFWS(self):
-        # bpo-29412: Test that we don't raise IndexError when parsing CFWS only
-        # token.
-        with self.assertRaises(errors.HeaderParseError):
-            parser.get_word('(Recipients list suppressed')
+    @params_map
+    def adapt_get_atom_tests_for_get_word(*args, **kw):
+        kw['tokenlisttype'] = parser.TokenList
+        yield '', C(*args, **kw)
 
-    def test_get_word_qs_yields_qs(self):
-        word = self._test_get_x(parser.get_word,
-            '"bar " (bang) ah', '"bar " (bang) ', 'bar  ', [], 'ah')
-        self.assertEqual(word.token_type, 'quoted-string')
-        self.assertEqual(word[0].token_type, 'bare-quoted-string')
-        self.assertEqual(word[0].value, 'bar ')
-        self.assertEqual(word.content, 'bar ')
+    @params_map
+    def adapt_get_quoted_string_tests_for_get_word(*args, **kw):
+        kw['tokenlisttype'] = parser.QuotedString
+        yield '', C(*args, **kw)
 
-    def test_get_word_ends_at_dot(self):
-        self._test_get_x(parser.get_word,
-            'foo.', 'foo', 'foo', [], '.')
+    params_test_get_word = old_api_only(
+
+        # A word can be an atom, so get_word should pass many of the atom tests.
+        adapt_get_atom_tests_for_get_word(
+            include_unless(
+                lambda n, *a, **k:
+                    # For get_atom a leading quotation mark means there is no
+                    # atom and is therefor an error, but get_word will treat it
+                    # as a quoted_string.  Quoted strings are tested below.
+                    n.has_any(
+                        'no_atom_before_special',
+                        'no_atext_before_special_or_wsp',
+                        )
+                    and 'quotation_mark' in n,
+                label='from_test_get_atom',
+                )(params_test_get_atom),
+            ),
+
+        # Or it can be a quoted string, so should pass most quoted_string tests.
+        adapt_get_quoted_string_tests_for_get_word(
+            include_unless(
+                lambda n, *a, **k:
+                    # These tests have an atom first; get_quoted_string raises
+                    # for that, but get_word parses it. Atoms are tested above.
+                    n.has_any(
+                        'no_quoted_string',
+                        'no_leading_dquote_before_non_ws',
+                        ),
+                label='from_test_get_quoted_string',
+                )(params_test_get_quoted_string),
+            ),
+
+        )
+
 
     # get_phrase
 
