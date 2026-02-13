@@ -246,7 +246,7 @@ class BaseHandler:
         status = self._convert_string_type(status, "Status")
 
         regex = (_name_disallowed_re if name else _value_disallowed_re)
-        if regex.search(value):
+        if regex.search(status):
             raise ValueError("Control characters are not allowed in headers and status")
 
         self._validate_status(status)
