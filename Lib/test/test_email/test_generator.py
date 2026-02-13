@@ -413,6 +413,30 @@ class TestBytesGenerator(TestGeneratorBase, TestEmailBase):
         g.flatten(msg)
         self.assertEqual(s.getvalue(), expected)
 
+    def test_ew_folding_round_trip_1(self):
+        print()
+        source = "aaaaaaaaa фффффффф "
+        msg = EmailMessage()
+        msg['Subject'] = source
+        s = io.BytesIO()
+        g = BytesGenerator(s, maxheaderlen=30)
+        g.flatten(msg)
+        flat = s.getvalue()
+        reparsed = message_from_bytes(flat, policy=policy.default)['Subject']
+        self.assertMultiLineEqual(reparsed, source)
+
+    def test_ew_folding_round_trip_2(self):
+        print()
+        source = "aaa aaaaaaa   aaa ффф фффф  "
+        msg = EmailMessage()
+        msg['Subject'] = source
+        s = io.BytesIO()
+        g = BytesGenerator(s, maxheaderlen=30)
+        g.flatten(msg)
+        flat = s.getvalue()
+        reparsed = message_from_bytes(flat, policy=policy.default)['Subject']
+        self.assertMultiLineEqual(reparsed, source)
+
     def test_cte_type_7bit_handles_unknown_8bit(self):
         source = ("Subject: Maintenant je vous présente mon "
                  "collègue\n\n").encode('utf-8')

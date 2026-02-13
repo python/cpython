@@ -3058,7 +3058,9 @@ def _fold_as_ew(to_encode, lines, maxlen, last_ew, ew_combine_allowed, charset, 
         remaining_space = maxlen - len(lines[-1])
         text_space = remaining_space - chrome_len
         if text_space <= 0:
-            lines.append(' ')
+            newline = _steal_trailing_WSP_if_exists(lines)
+            lines.append(newline or ' ')
+            new_last_ew = len(lines[-1])
             continue
 
         to_encode_word = to_encode[:text_space]
