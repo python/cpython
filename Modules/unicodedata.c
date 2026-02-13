@@ -1445,6 +1445,35 @@ _check_alias_and_seq(Py_UCS4* code, int with_named_seq)
     return 1;
 }
 
+static Py_UCS4
+parse_hex_code(const char *name, int namelen)
+{
+    if (namelen < 4 || namelen > 6) {
+        return (Py_UCS4)-1;
+    }
+    if (*name == '0') {
+        return (Py_UCS4)-1;
+    }
+    int v = 0;
+    while (namelen--) {
+        v *= 16;
+        Py_UCS1 c = Py_TOUPPER(*name);
+        if (c >= '0' && c <= '9') {
+            v += c - '0';
+        }
+        else if (c >= 'A' && c <= 'F') {
+            v += c - 'A' + 10;
+        }
+        else {
+            return (Py_UCS4)-1;
+        }
+        name++;
+    }
+    if (v > 0x10ffff) {
+        return (Py_UCS4)-1;
+    }
+    return v;
+}
 
 static int
 _getcode(const char* name, int namelen, Py_UCS4* code)
@@ -1474,25 +1503,10 @@ _getcode(const char* name, int namelen, Py_UCS4* code)
     /* Check for CJK unified ideographs. */
     if (PyOS_strnicmp(name, "CJK UNIFIED IDEOGRAPH-", 22) == 0) {
         /* Four or five hexdigits must follow. */
-        unsigned int v;
-        v = 0;
-        name += 22;
-        namelen -= 22;
-        if (namelen != 4 && namelen != 5)
+        Py_UCS4 v = parse_hex_code(name + 22, namelen - 22);
+        if (!is_cjk_unified_ideograph(v)) {
             return 0;
-        while (namelen--) {
-            v *= 16;
-            Py_UCS1 c = Py_TOUPPER(*name);
-            if (c >= '0' && c <= '9')
-                v += c - '0';
-            else if (c >= 'A' && c <= 'F')
-                v += c - 'A' + 10;
-            else
-                return 0;
-            name++;
         }
-        if (!is_cjk_unified_ideograph(v))
-            return 0;
         *code = v;
         return 1;
     }
@@ -1500,24 +1514,10 @@ _getcode(const char* name, int namelen, Py_UCS4* code)
     /* Check for Tangut ideographs. */
     if (PyOS_strnicmp(name, "TANGUT IDEOGRAPH-", 17) == 0) {
         /* Five hexdigits must follow. */
-        unsigned int v = 0;
-        name += 17;
-        namelen -= 17;
-        if (namelen != 5)
+        Py_UCS4 v = parse_hex_code(name + 17, namelen - 17);
+        if (!is_tangut_ideograph(v)) {
             return 0;
-        while (namelen--) {
-            v *= 16;
-            Py_UCS1 c = Py_TOUPPER(*name);
-            if (c >= '0' && c <= '9')
-                v += c - '0';
-            else if (c >= 'A' && c <= 'F')
-                v += c - 'A' + 10;
-            else
-                return 0;
-            name++;
         }
-        if (!is_tangut_ideograph(v))
-            return 0;
         *code = v;
         return 1;
     }
