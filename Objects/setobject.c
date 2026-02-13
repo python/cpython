@@ -1157,7 +1157,6 @@ setiter_iternext(PyObject *self)
     else {
         /* exhausted */
         si->si_pos = -1;
-        si->len = 0;
 #ifndef Py_GIL_DISABLED
         si->si_set = NULL;
 #endif
