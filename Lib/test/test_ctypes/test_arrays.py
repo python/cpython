@@ -184,7 +184,7 @@ class ArrayTestCase(unittest.TestCase):
         class S1(Structure):
             _fields_ = [("x", c_int)]
         A = S1 * 2
-        B = S1 * 2   
+        B = S1 * 2
         a = A()
         a.__class__ = B
 
