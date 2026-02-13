@@ -2837,28 +2837,6 @@ def _steal_trailing_WSP_if_exists(lines):
     return wsp
 
 
-def _steal_all_trailing_WSP_if_exists(lines):
-    lines_popped = False
-    wsp_lines = []
-    while lines and lines[-1]:
-        for i in range(len(lines[-1]), -1, -1):
-            if i <= 0 or lines[-1][i - 1] not in WSP:
-                break
-        wsp_line = lines[-1][i:]
-        if not wsp_line:
-            break
-        wsp_lines.insert(0, wsp_line)
-        lines[-1] = lines[-1][:i]
-        if not lines[-1]:
-            lines_popped = True
-            lines.pop()
-        else:
-            break
-    if lines_popped:
-        lines.append(' ' if lines else '')
-    return ''.join(wsp_lines)
-
-
 def _last_word_is_sill_ew(_last_word_is_ew, added_str):
     # If the last word is an encoded word, and the added string is all WSP,
     # then (and only then) is the last word is still an encoded word.
@@ -3053,7 +3031,10 @@ def _fold_as_ew(to_encode, lines, maxlen, last_ew, ew_combine_allowed, charset, 
         # any white space between the two will be ignored when decoded.
         # Therefore, we encode all to-be-displayed whitespace in the second
         # encoded word.
-        leading_whitespace = _steal_all_trailing_WSP_if_exists(lines)
+        len_without_wsp = len(lines[-1].rstrip(_WSP))
+        leading_whitespace = lines[-1][len_without_wsp:]
+        lines[-1] = (lines[-1][:len_without_wsp]
+                     + (' ' if leading_whitespace else ''))
         to_encode = leading_whitespace + to_encode
 
     trailing_wsp = ''
