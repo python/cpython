@@ -1,1 +1,3 @@
-Disallow usage of control characters in header names, values and statuses in ``Lib/wsgiref/handlers.py`` for security. Patch by Benedikt Johannes.
+Disallow usage of control characters in headers and status
+in :mod:`wsgiref.handlers`` to prevent header injection.
+Patch by Benedikt Johannes.
