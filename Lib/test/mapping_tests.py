@@ -91,8 +91,8 @@ class BasicTestImmutableMappingProtocol(unittest.TestCase):
     def test_bool(self):
         self.assertTrue(not self._empty_mapping())
         self.assertTrue(self.reference)
-        self.assertTrue(bool(self._empty_mapping()) is False)
-        self.assertTrue(bool(self.reference) is True)
+        self.assertFalse(bool(self._empty_mapping()))
+        self.assertTrue(bool(self.reference))
 
     def test_keys(self):
         d = self._empty_mapping()

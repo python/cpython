@@ -5305,8 +5305,8 @@ frozenset, a temporary one is created from *elem*.
 
 .. _typesmapping:
 
-Mapping Types --- :class:`dict`, :class:`frozendict`
-====================================================
+Mapping types --- :class:`!dict`, :class:`!frozendict`
+======================================================
 
 .. index::
    pair: object; mapping
@@ -5846,23 +5846,23 @@ An example of dictionary view usage::
    Return a new frozen dictionary initialized from an optional positional
    argument and a possibly empty set of keyword arguments.
 
-   A frozendict has a similar API than the :class:`dict` API, with the
+   A :class:`!frozendict` has a similar API than the :class:`dict` API, with the
    following differences:
 
-   * :class:`dict` has more methods than :class:`frozendict`:
+   * :class:`!dict` has more methods than :class:`!frozendict`:
 
-      * :meth:`~!dict.__delitem__`
-      * :meth:`~!dict.__setitem__`
+      * :meth:`!__delitem__`
+      * :meth:`!__setitem__`
       * :meth:`~dict.clear`
       * :meth:`~dict.pop`
       * :meth:`~dict.popitem`
       * :meth:`~dict.setdefault`
       * :meth:`~dict.update`
 
-   * A frozendict can be hashed with ``hash(frozendict)`` if all keys and
+   * A :class:`!frozendict` can be hashed with ``hash(frozendict)`` if all keys and
      values can be hashed.
 
-   * ``frozendict |= other`` does not modify the frozendict in-place but
+   * ``frozendict |= other`` does not modify the :class:`!frozendict` in-place but
      creates a new frozen dictionary.
 
    .. versionadded:: next
