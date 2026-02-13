@@ -236,14 +236,25 @@ class BaseHandler:
             raise AssertionError("Headers already set!")
 
         self.status = status
+
+        # Do not change the next line unless you know you are
+        # doing because it indirectly prevents injections via C0 control
+        # characters in the following lines via raising a ValueError
+        # inside headers_class.
         self.headers = self.headers_class(headers)
-        status = self._convert_string_type(status, "Status", name=True)
+
+        status = self._convert_string_type(status, "Status")
+
+        regex = (_name_disallowed_re if name else _value_disallowed_re)
+        if regex.search(value):
+            raise ValueError("Control characters are not allowed in headers and status")
+
         self._validate_status(status)
 
         if __debug__:
             for name, val in headers:
-                name = self._convert_string_type(name, "Header name", name=True)
-                val = self._convert_string_type(val, "Header value", name=False)
+                name = self._convert_string_type(name, "Header name")
+                val = self._convert_string_type(val, "Header value")
                 assert not is_hop_by_hop(name),\
                        f"Hop-by-hop header, '{name}: {val}', not allowed"
 
@@ -260,9 +271,6 @@ class BaseHandler:
     def _convert_string_type(self, value, title, *, name):
         """Convert/check value type."""
         if type(value) is str:
-            regex = (_name_disallowed_re if name else _value_disallowed_re)
-            if regex.search(value):
-                raise ValueError("Control characters not allowed in headers and status")
             return value
         raise AssertionError(
             "{0} must be of type str (got {1})".format(title, repr(value))
