@@ -5851,19 +5851,19 @@ An example of dictionary view usage::
 
    * :class:`dict` has more methods than :class:`frozendict`:
 
-      * :meth:`~dict.__delitem__`
-      * :meth:`~dict.__setitem__`
+      * :meth:`~!dict.__delitem__`
+      * :meth:`~!dict.__setitem__`
       * :meth:`~dict.clear`
       * :meth:`~dict.pop`
       * :meth:`~dict.popitem`
       * :meth:`~dict.setdefault`
       * :meth:`~dict.update`
 
-    * A frozendict can be hashed with ``hash(frozendict)`` if all keys and
-      values can be hashed.
+   * A frozendict can be hashed with ``hash(frozendict)`` if all keys and
+     values can be hashed.
 
-    * ``frozendict |= other`` does not modify the frozendict in-place but
-      creates a new frozen dictionary.
+   * ``frozendict |= other`` does not modify the frozendict in-place but
+     creates a new frozen dictionary.
 
    .. versionadded:: next
 
