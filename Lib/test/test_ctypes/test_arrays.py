@@ -183,10 +183,8 @@ class ArrayTestCase(unittest.TestCase):
     def test_ctypes_array_class_assignment_structs(self):
         class S1(Structure):
             _fields_ = [("x", c_int)]
-        class S2(Structure):
-            _fields_ = [("x", c_int)]
         A = S1 * 2
-        B = S2 * 2
+        B = S1 * 2   
         a = A()
         a.__class__ = B
 
