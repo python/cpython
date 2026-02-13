@@ -536,6 +536,8 @@ Frozen Dictionary Objects
    Return a new frozendict from an iterable, or ``NULL`` on failure with an
    exception set.
 
+   Create an empty dictionary if *iterable* is ``NULL``.
+
 
 Ordered Dictionaries
 ^^^^^^^^^^^^^^^^^^^^

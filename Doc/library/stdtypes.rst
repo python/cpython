@@ -5588,20 +5588,10 @@ can be used interchangeably to index the same dictionary entry.
    .. versionchanged:: 3.8
       Dictionaries are now reversible.
 
-.. class:: frozendict(**kwargs)
-           frozendict(mapping, /, **kwargs)
-           frozendict(iterable, /, **kwargs)
 
-   Return a new frozen dictionary initialized from an optional positional
-   argument and a possibly empty set of keyword arguments.
-
-   .. versionadded:: next
-
-
-.. seealso::
-   :class:`types.MappingProxyType` can be used to create a read-only view
-   of a :class:`dict`.
-
+   .. seealso::
+      :class:`types.MappingProxyType` can be used to create a read-only view
+      of a :class:`dict`.
 
 .. _thread-safety-dict:
 
@@ -5847,6 +5837,35 @@ An example of dictionary view usage::
    mappingproxy({'bacon': 1, 'spam': 500})
    >>> values.mapping['spam']
    500
+
+
+.. class:: frozendict(**kwargs)
+           frozendict(mapping, /, **kwargs)
+           frozendict(iterable, /, **kwargs)
+
+   Return a new frozen dictionary initialized from an optional positional
+   argument and a possibly empty set of keyword arguments.
+
+   A frozendict has a similar API than the :class:`dict` API, with the
+   following differences:
+
+   * :class:`dict` has more methods than :class:`frozendict`:
+
+      * :meth:`~dict.__delitem__`
+      * :meth:`~dict.__setitem__`
+      * :meth:`~dict.clear`
+      * :meth:`~dict.pop`
+      * :meth:`~dict.popitem`
+      * :meth:`~dict.setdefault`
+      * :meth:`~dict.update`
+
+    * A frozendict can be hashed with ``hash(frozendict)`` if all keys and
+      values can be hashed.
+
+    * ``frozendict |= other`` does not modify the frozendict in-place but
+      creates a new frozen dictionary.
+
+   .. versionadded:: next
 
 
 .. _typecontextmanager:
