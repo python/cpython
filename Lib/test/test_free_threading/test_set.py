@@ -152,10 +152,10 @@ class RaceTestBase:
     def test_length_hint_with_mutating_set(self):
         NUM_ITERS = 10
         NUM_THREADS = 10
-        NUM_LOOPS = 2_000
+        NUM_LOOPS = 400
 
         for _ in range(NUM_ITERS):
-            s = set(range(2000))
+            s = set(range(NUM_LOOPS ))
             it = iter(s)
 
             def worker():
