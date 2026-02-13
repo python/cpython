@@ -80,6 +80,25 @@ class StdStreamTest(unittest.TestCase):
                 self.assertRegex(mocked_stderr.getvalue(), r'usage:')
 
 
+class TestArgumentParserPickleable(unittest.TestCase):
+
+    @mock.patch.dict(os.environ, {'NO_COLOR': 'true'})
+    def test_pickle_roundtrip(self):
+        import pickle
+        parser = argparse.ArgumentParser()
+        parser.add_argument('--foo', type=int, default=42)
+        parser.add_argument('bar', nargs='?', default='baz')
+        # Try to pickle and unpickle the parser
+        parser2 = pickle.loads(pickle.dumps(parser))
+        # Check that the round-tripped parser still works
+        ns = parser2.parse_args(['--foo', '123', 'quux'])
+        self.assertEqual(ns.foo, 123)
+        self.assertEqual(ns.bar, 'quux')
+        ns2 = parser2.parse_args([])
+        self.assertEqual(ns2.foo, 42)
+        self.assertEqual(ns2.bar, 'baz')
+
+
 class TestCase(unittest.TestCase):
 
     def setUp(self):
