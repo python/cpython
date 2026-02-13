@@ -1112,7 +1112,12 @@ class ContextTests(unittest.TestCase):
         ctx.maximum_version = ssl.TLSVersion.MINIMUM_SUPPORTED
         self.assertIn(
             ctx.maximum_version,
-            {ssl.TLSVersion.TLSv1, ssl.TLSVersion.TLSv1_1, ssl.TLSVersion.SSLv3}
+            {
+                ssl.TLSVersion.TLSv1,
+                ssl.TLSVersion.TLSv1_1,
+                ssl.TLSVersion.TLSv1_2,
+                ssl.TLSVersion.SSLv3,
+            }
         )
 
         ctx.minimum_version = ssl.TLSVersion.MAXIMUM_SUPPORTED
