@@ -870,7 +870,8 @@ _PyTraceMalloc_Stop(void)
     TABLES_LOCK();
 
     if (!tracemalloc_config.tracing) {
-        goto done;
+        TABLES_UNLOCK();
+        return;
     }
 
     /* stop tracing Python memory allocations */
@@ -887,10 +888,12 @@ _PyTraceMalloc_Stop(void)
     raw_free(tracemalloc_traceback);
     tracemalloc_traceback = NULL;
 
-    (void)PyRefTracer_SetTracer(NULL, NULL);
-
-done:
     TABLES_UNLOCK();
+
+    // Call it after TABLES_UNLOCK() since it calls _PyEval_StopTheWorldAll()
+    // which would lead to a deadlock with TABLES_LOCK() which doesn't release
+    // the GIL.
+    (void)PyRefTracer_SetTracer(NULL, NULL);
 }
 
 
