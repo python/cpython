@@ -65,6 +65,7 @@ LIBRESSL_RECENT_VERSIONS = [
 
 AWSLC_RECENT_VERSIONS = [
     "1.55.0",
+    "1.67.0",
 ]
 
 # store files in ../multissl
@@ -108,6 +109,8 @@ parser.add_argument(
     ).format(LIBRESSL_RECENT_VERSIONS, LIBRESSL_OLD_VERSIONS)
 )
 parser.add_argument(
+    '--aws-lc',
+    # Soft-deprecated alias
     '--awslc',
     nargs='+',
     default=(),
