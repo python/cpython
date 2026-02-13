@@ -70,6 +70,11 @@ struct _Py_hashtable_t {
     _Py_hashtable_allocator_t alloc;
 };
 
+// Export _Py_hashtable functions for '_testinternalcapi' shared extension
+PyAPI_FUNC(_Py_hashtable_t *) _Py_hashtable_new(
+    _Py_hashtable_hash_func hash_func,
+    _Py_hashtable_compare_func compare_func);
+
 /* Hash a pointer (void*) */
 PyAPI_FUNC(Py_uhash_t) _Py_hashtable_hash_ptr(const void *key);
 
@@ -77,10 +82,6 @@ PyAPI_FUNC(Py_uhash_t) _Py_hashtable_hash_ptr(const void *key);
 PyAPI_FUNC(int) _Py_hashtable_compare_direct(
     const void *key1,
     const void *key2);
-
-PyAPI_FUNC(_Py_hashtable_t *) _Py_hashtable_new(
-    _Py_hashtable_hash_func hash_func,
-    _Py_hashtable_compare_func compare_func);
 
 PyAPI_FUNC(_Py_hashtable_t *) _Py_hashtable_new_full(
     _Py_hashtable_hash_func hash_func,
@@ -106,6 +107,7 @@ PyAPI_FUNC(int) _Py_hashtable_foreach(
     void *user_data);
 
 PyAPI_FUNC(size_t) _Py_hashtable_size(const _Py_hashtable_t *ht);
+PyAPI_FUNC(size_t) _Py_hashtable_len(const _Py_hashtable_t *ht);
 
 /* Add a new entry to the hash. The key must not be present in the hash table.
    Return 0 on success, -1 on memory error. */

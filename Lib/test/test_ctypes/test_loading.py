@@ -1,5 +1,4 @@
 import _ctypes
-import _ctypes_test
 import ctypes
 import os
 import shutil
@@ -10,6 +9,7 @@ import unittest
 from ctypes import CDLL, cdll, addressof, c_void_p, c_char_p
 from ctypes.util import find_library
 from test.support import import_helper, os_helper
+_ctypes_test = import_helper.import_module("_ctypes_test")
 
 
 libc_name = None
@@ -42,10 +42,7 @@ class LoaderTest(unittest.TestCase):
                 self.skipTest('could not find library to load')
         CDLL(test_lib)
         CDLL(os.path.basename(test_lib))
-        class CTypesTestPathLikeCls:
-            def __fspath__(self):
-                return test_lib
-        CDLL(CTypesTestPathLikeCls())
+        CDLL(os_helper.FakePath(test_lib))
         self.assertRaises(OSError, CDLL, self.unknowndll)
 
     def test_load_version(self):
@@ -59,11 +56,15 @@ class LoaderTest(unittest.TestCase):
         self.assertRaises(OSError, cdll.LoadLibrary, self.unknowndll)
 
     def test_find(self):
+        found = False
         for name in ("c", "m"):
             lib = find_library(name)
             if lib:
+                found = True
                 cdll.LoadLibrary(lib)
                 CDLL(lib)
+        if not found:
+            self.skipTest("Could not find c and m libraries")
 
     @unittest.skipUnless(os.name == "nt",
                          'test specific to Windows')
@@ -100,6 +101,12 @@ class LoaderTest(unittest.TestCase):
         self.assertRaises(AttributeError, dll.__getitem__, 1234)
 
     @unittest.skipUnless(os.name == "nt", 'Windows-specific test')
+    def test_load_without_name_and_with_handle(self):
+        handle = ctypes.windll.kernel32._handle
+        lib = ctypes.WinDLL(name=None, handle=handle)
+        self.assertIs(handle, lib._handle)
+
+    @unittest.skipUnless(os.name == "nt", 'Windows-specific test')
     def test_1703286_A(self):
         # On winXP 64-bit, advapi32 loads at an address that does
         # NOT fit into a 32-bit integer.  FreeLibrary must be able
@@ -134,14 +141,14 @@ class LoaderTest(unittest.TestCase):
                          'test specific to Windows')
     def test_load_hasattr(self):
         # bpo-34816: shouldn't raise OSError
-        self.assertFalse(hasattr(ctypes.windll, 'test'))
+        self.assertNotHasAttr(ctypes.windll, 'test')
 
     @unittest.skipUnless(os.name == "nt",
                          'test specific to Windows')
     def test_load_dll_with_flags(self):
         _sqlite3 = import_helper.import_module("_sqlite3")
         src = _sqlite3.__file__
-        if src.lower().endswith("_d.pyd"):
+        if os.path.basename(src).partition(".")[0].lower().endswith("_d"):
             ext = "_d.dll"
         else:
             ext = ".dll"

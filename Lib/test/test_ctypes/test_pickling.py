@@ -1,9 +1,10 @@
-import _ctypes_test
 import pickle
 import unittest
 from ctypes import (CDLL, Structure, CFUNCTYPE, pointer,
                     c_void_p, c_char_p, c_wchar_p,
                     c_char, c_wchar, c_int, c_double)
+from test.support import import_helper, thread_unsafe
+_ctypes_test = import_helper.import_module("_ctypes_test")
 
 
 dll = CDLL(_ctypes_test.__file__)
@@ -19,7 +20,6 @@ class X(Structure):
 
 class Y(X):
     _fields_ = [("str", c_char_p)]
-
 
 class PickleTest:
     def dumps(self, item):
@@ -38,6 +38,7 @@ class PickleTest:
             self.assertEqual(memoryview(src).tobytes(),
                                  memoryview(dst).tobytes())
 
+    @thread_unsafe('not thread safe')
     def test_struct(self):
         X.init_called = 0
 

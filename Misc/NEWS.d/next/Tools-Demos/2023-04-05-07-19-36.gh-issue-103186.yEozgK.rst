@@ -1,2 +1,0 @@
-``freeze`` now fetches ``CONFIG_ARGS`` from the original CPython instance
-the Makefile uses to call utility scripts. Patch by Ijtaba Hussain.

@@ -1,5 +1,5 @@
-:mod:`tkinter.scrolledtext` --- Scrolled Text Widget
-====================================================
+:mod:`!tkinter.scrolledtext` --- Scrolled Text Widget
+=====================================================
 
 .. module:: tkinter.scrolledtext
    :platform: Tk
@@ -11,7 +11,7 @@
 
 --------------
 
-The :mod:`tkinter.scrolledtext` module provides a class of the same name which
+The :mod:`!tkinter.scrolledtext` module provides a class of the same name which
 implements a basic text widget which has a vertical scroll bar configured to do
 the "right thing."  Using the :class:`ScrolledText` class is a lot easier than
 setting up a text widget and scroll bar directly.

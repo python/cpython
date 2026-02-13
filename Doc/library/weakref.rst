@@ -1,7 +1,7 @@
 .. _mod-weakref:
 
-:mod:`weakref` --- Weak references
-==================================
+:mod:`!weakref` --- Weak references
+===================================
 
 .. module:: weakref
    :synopsis: Support for weak references and weak dictionaries.
@@ -15,7 +15,7 @@
 
 --------------
 
-The :mod:`weakref` module allows the Python programmer to create :dfn:`weak
+The :mod:`!weakref` module allows the Python programmer to create :dfn:`weak
 references` to objects.
 
 .. When making changes to the examples in this file, be sure to update
@@ -39,7 +39,7 @@ associate a name with each.  If you used a Python dictionary to map names to
 images, or images to names, the image objects would remain alive just because
 they appeared as values or keys in the dictionaries.  The
 :class:`WeakKeyDictionary` and :class:`WeakValueDictionary` classes supplied by
-the :mod:`weakref` module are an alternative, using weak references to construct
+the :mod:`!weakref` module are an alternative, using weak references to construct
 mappings that don't keep objects alive solely because they appear in the mapping
 objects.  If, for example, an image object is a value in a
 :class:`WeakValueDictionary`, then when the last remaining references to that
@@ -63,7 +63,7 @@ remains alive until the object is collected.
 Most programs should find that using one of these weak container types
 or :class:`finalize` is all they need -- it's not usually necessary to
 create your own weak references directly.  The low-level machinery is
-exposed by the :mod:`weakref` module for the benefit of advanced uses.
+exposed by the :mod:`!weakref` module for the benefit of advanced uses.
 
 Not all objects can be weakly referenced. Objects which support weak references
 include class instances, functions written in Python (but not in C), instance methods,
@@ -111,7 +111,7 @@ See :ref:`__slots__ documentation <slots>` for details.
 
    Exceptions raised by the callback will be noted on the standard error output,
    but cannot be propagated; they are handled in exactly the same way as exceptions
-   raised from an object's :meth:`__del__` method.
+   raised from an object's :meth:`~object.__del__` method.
 
    Weak references are :term:`hashable` if the *object* is hashable.  They will
    maintain their hash value even after the *object* was deleted.  If
@@ -197,7 +197,7 @@ See :ref:`__slots__ documentation <slots>` for details.
       >>> del k1      # d = {k2: 2}
 
    .. versionchanged:: 3.9
-      Added support for ``|`` and ``|=`` operators, specified in :pep:`584`.
+      Added support for ``|`` and ``|=`` operators, as specified in :pep:`584`.
 
 :class:`WeakKeyDictionary` objects have an additional method that
 exposes the internal references directly.  The references are not guaranteed to
@@ -221,8 +221,7 @@ than needed.
       Added support for ``|`` and ``|=`` operators, as specified in :pep:`584`.
 
 :class:`WeakValueDictionary` objects have an additional method that has the
-same issues as the :meth:`keyrefs` method of :class:`WeakKeyDictionary`
-objects.
+same issues as the :meth:`WeakKeyDictionary.keyrefs` method.
 
 
 .. method:: WeakValueDictionary.valuerefs()
@@ -281,7 +280,7 @@ objects.
    Exceptions raised by finalizer callbacks during garbage collection
    will be shown on the standard error output, but cannot be
    propagated.  They are handled in the same way as exceptions raised
-   from an object's :meth:`__del__` method or a weak reference's
+   from an object's :meth:`~object.__del__` method or a weak reference's
    callback.
 
    When the program exits, each remaining live finalizer is called
@@ -523,18 +522,18 @@ is still alive.  For instance
    obj dead or exiting
 
 
-Comparing finalizers with :meth:`__del__` methods
--------------------------------------------------
+Comparing finalizers with :meth:`~object.__del__` methods
+---------------------------------------------------------
 
 Suppose we want to create a class whose instances represent temporary
 directories.  The directories should be deleted with their contents
 when the first of the following events occurs:
 
 * the object is garbage collected,
-* the object's :meth:`remove` method is called, or
+* the object's :meth:`!remove` method is called, or
 * the program exits.
 
-We might try to implement the class using a :meth:`__del__` method as
+We might try to implement the class using a :meth:`~object.__del__` method as
 follows::
 
     class TempDir:
@@ -553,12 +552,12 @@ follows::
         def __del__(self):
             self.remove()
 
-Starting with Python 3.4, :meth:`__del__` methods no longer prevent
+Starting with Python 3.4, :meth:`~object.__del__` methods no longer prevent
 reference cycles from being garbage collected, and module globals are
 no longer forced to :const:`None` during :term:`interpreter shutdown`.
 So this code should work without any issues on CPython.
 
-However, handling of :meth:`__del__` methods is notoriously implementation
+However, handling of :meth:`~object.__del__` methods is notoriously implementation
 specific, since it depends on internal details of the interpreter's garbage
 collector implementation.
 

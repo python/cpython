@@ -1,4 +1,0 @@
-Improve performance of :meth:`pathlib.Path.glob` when expanding a pattern with
-a non-terminal "``**``" component by filtering walked paths through a regular
-expression, rather than calling :func:`os.scandir` more than once on each
-directory.

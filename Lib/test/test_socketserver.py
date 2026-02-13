@@ -17,6 +17,7 @@ from test.support import reap_children, verbose
 from test.support import os_helper
 from test.support import socket_helper
 from test.support import threading_helper
+from test.support import warnings_helper
 
 
 test.support.requires("network")
@@ -32,11 +33,6 @@ requires_unix_sockets = unittest.skipUnless(HAVE_UNIX_SOCKETS,
 HAVE_FORKING = test.support.has_fork_support
 requires_forking = unittest.skipUnless(HAVE_FORKING, 'requires forking')
 
-def signal_alarm(n):
-    """Call signal.alarm when it exists (i.e. not on Windows)."""
-    if hasattr(signal, 'alarm'):
-        signal.alarm(n)
-
 # Remember real select() to avoid interferences with mocking
 _real_select = select.select
 
@@ -48,6 +44,7 @@ def receive(sock, n, timeout=test.support.SHORT_TIMEOUT):
         raise RuntimeError("timed out on %r" % (sock,))
 
 
+@warnings_helper.ignore_fork_in_thread_deprecation_warnings()
 @test.support.requires_fork()
 @contextlib.contextmanager
 def simple_subprocess(testcase):
@@ -68,12 +65,10 @@ class SocketServerTest(unittest.TestCase):
     """Test all socket servers."""
 
     def setUp(self):
-        signal_alarm(60)  # Kill deadlocks after 60 seconds.
         self.port_seed = 0
         self.test_files = []
 
     def tearDown(self):
-        signal_alarm(0)  # Didn't deadlock.
         reap_children()
 
         for fn in self.test_files:
@@ -180,6 +175,7 @@ class SocketServerTest(unittest.TestCase):
                         socketserver.StreamRequestHandler,
                         self.stream_examine)
 
+    @warnings_helper.ignore_fork_in_thread_deprecation_warnings()
     @requires_forking
     def test_ForkingTCPServer(self):
         with simple_subprocess(self):
@@ -199,6 +195,7 @@ class SocketServerTest(unittest.TestCase):
                         socketserver.StreamRequestHandler,
                         self.stream_examine)
 
+    @warnings_helper.ignore_fork_in_thread_deprecation_warnings()
     @requires_unix_sockets
     @requires_forking
     def test_ForkingUnixStreamServer(self):
@@ -217,6 +214,7 @@ class SocketServerTest(unittest.TestCase):
                         socketserver.DatagramRequestHandler,
                         self.dgram_examine)
 
+    @warnings_helper.ignore_fork_in_thread_deprecation_warnings()
     @requires_forking
     def test_ForkingUDPServer(self):
         with simple_subprocess(self):
@@ -225,17 +223,22 @@ class SocketServerTest(unittest.TestCase):
                             self.dgram_examine)
 
     @requires_unix_sockets
+    @unittest.skipIf(test.support.is_apple_mobile and test.support.on_github_actions,
+                     "gh-140702: Test fails regularly on iOS simulator on GitHub Actions")
     def test_UnixDatagramServer(self):
         self.run_server(socketserver.UnixDatagramServer,
                         socketserver.DatagramRequestHandler,
                         self.dgram_examine)
 
     @requires_unix_sockets
+    @unittest.skipIf(test.support.is_apple_mobile and test.support.on_github_actions,
+                     "gh-140702: Test fails regularly on iOS simulator on GitHub Actions")
     def test_ThreadingUnixDatagramServer(self):
         self.run_server(socketserver.ThreadingUnixDatagramServer,
                         socketserver.DatagramRequestHandler,
                         self.dgram_examine)
 
+    @warnings_helper.ignore_fork_in_thread_deprecation_warnings()
     @requires_unix_sockets
     @requires_forking
     def test_ForkingUnixDatagramServer(self):
@@ -321,11 +324,13 @@ class ErrorHandlerTest(unittest.TestCase):
 
             self.assertIs(cm.exc_type, SystemExit)
 
+    @warnings_helper.ignore_fork_in_thread_deprecation_warnings()
     @requires_forking
     def test_forking_handled(self):
         ForkingErrorTestServer(ValueError)
         self.check_result(handled=True)
 
+    @warnings_helper.ignore_fork_in_thread_deprecation_warnings()
     @requires_forking
     def test_forking_not_handled(self):
         ForkingErrorTestServer(SystemExit)
@@ -508,6 +513,16 @@ class MiscTestCase(unittest.TestCase):
                 server.handle_request()
         self.assertLess(len(server._threads), 10)
         server.server_close()
+
+
+class TestModule(unittest.TestCase):
+    def test_deprecated__version__(self):
+        with self.assertWarnsRegex(
+            DeprecationWarning,
+            "'__version__' is deprecated and slated for removal in Python 3.20",
+        ) as cm:
+            getattr(socketserver, "__version__")
+        self.assertEqual(cm.filename, __file__)
 
 
 if __name__ == "__main__":

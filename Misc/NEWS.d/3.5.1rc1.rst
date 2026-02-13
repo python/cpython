@@ -189,7 +189,7 @@ comprehensions correspond to the opening brace.
 .. nonce: 0Gh-Ty
 .. section: Core and Builtins
 
-Hide the private _Py_atomic_xxx symbols from the public Python.h header to
+Hide the private :samp:`_Py_atomic_{xxx}` symbols from the public Python.h header to
 fix a compilation error with OpenMP. PyThreadState_GET() becomes an alias to
 PyThreadState_Get() to avoid ABI incompatibilities.
 

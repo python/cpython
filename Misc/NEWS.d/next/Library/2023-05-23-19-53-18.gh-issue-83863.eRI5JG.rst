@@ -1,4 +1,0 @@
-Support for using :class:`pathlib.Path` objects as context managers has been
-removed. Before Python 3.9, exiting the context manager marked a path as
-"closed", which caused some (but not all!) methods to raise when called.
-Since Python 3.9, using a path as a context manager does nothing.

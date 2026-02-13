@@ -30,6 +30,16 @@ familiar with writing an extension before  attempting to embed Python in a real
 application.
 
 
+Language version compatibility
+==============================
+
+Python's C API is compatible with C11 and C++11 versions of C and C++.
+
+This is a lower limit: the C API does not require features from later
+C/C++ versions.
+You do *not* need to enable your compiler's "c11 mode".
+
+
 Coding standards
 ================
 
@@ -97,100 +107,201 @@ header files properly declare the entry points to be ``extern "C"``. As a result
 there is no need to do anything special to use the API from C++.
 
 
+.. _capi-system-includes:
+
+System includes
+---------------
+
+   :file:`Python.h` includes several standard header files.
+   C extensions should include the standard headers that they use,
+   and should not rely on these implicit includes.
+   The implicit includes are:
+
+   * ``<assert.h>``
+   * ``<intrin.h>`` (on Windows)
+   * ``<inttypes.h>``
+   * ``<limits.h>``
+   * ``<math.h>``
+   * ``<stdarg.h>``
+   * ``<string.h>``
+   * ``<wchar.h>``
+   * ``<sys/types.h>`` (if present)
+
+   The following are included for backwards compatibility, unless using
+   :ref:`Limited API <limited-c-api>` 3.13 or newer:
+
+   * ``<ctype.h>``
+   * ``<unistd.h>`` (on POSIX)
+
+   The following are included for backwards compatibility, unless using
+   :ref:`Limited API <limited-c-api>` 3.11 or newer:
+
+   * ``<errno.h>``
+   * ``<stdio.h>``
+   * ``<stdlib.h>``
+
+.. note::
+
+   Since Python may define some pre-processor definitions which affect the standard
+   headers on some systems, you *must* include :file:`Python.h` before any standard
+   headers are included.
+
+
 Useful macros
 =============
 
 Several useful macros are defined in the Python header files.  Many are
-defined closer to where they are useful (e.g. :c:macro:`Py_RETURN_NONE`).
+defined closer to where they are useful (for example, :c:macro:`Py_RETURN_NONE`,
+:c:macro:`PyMODINIT_FUNC`).
 Others of a more general utility are defined here.  This is not necessarily a
 complete listing.
+
+.. c:macro:: Py_CAN_START_THREADS
+
+   If this macro is defined, then the current system is able to start threads.
+
+   Currently, all systems supported by CPython (per :pep:`11`), with the
+   exception of some WebAssembly platforms, support starting threads.
+
+   .. versionadded:: 3.13
+
+.. c:macro:: Py_GETENV(s)
+
+   Like :samp:`getenv({s})`, but returns ``NULL`` if :option:`-E` was passed
+   on the command line (see :c:member:`PyConfig.use_environment`).
+
+
+Docstring macros
+----------------
+
+.. c:macro:: PyDoc_STRVAR(name, str)
+
+   Creates a variable with name *name* that can be used in docstrings.
+   If Python is built without docstrings (:option:`--without-doc-strings`),
+   the value will be an empty string.
+
+   Example::
+
+      PyDoc_STRVAR(pop_doc, "Remove and return the rightmost element.");
+
+      static PyMethodDef deque_methods[] = {
+          // ...
+          {"pop", (PyCFunction)deque_pop, METH_NOARGS, pop_doc},
+          // ...
+      }
+
+   Expands to :samp:`PyDoc_VAR({name}) = PyDoc_STR({str})`.
+
+.. c:macro:: PyDoc_STR(str)
+
+   Expands to the given input string, or an empty string
+   if docstrings are disabled (:option:`--without-doc-strings`).
+
+   Example::
+
+      static PyMethodDef pysqlite_row_methods[] = {
+          {"keys", (PyCFunction)pysqlite_row_keys, METH_NOARGS,
+              PyDoc_STR("Returns the keys of the row.")},
+          {NULL, NULL}
+      };
+
+.. c:macro:: PyDoc_VAR(name)
+
+   Declares a static character array variable with the given *name*.
+   Expands to :samp:`static const char {name}[]`
+
+   For example::
+
+      PyDoc_VAR(python_doc) = PyDoc_STR(
+         "A genus of constricting snakes in the Pythonidae family native "
+         "to the tropics and subtropics of the Eastern Hemisphere.");
+
+
+General utility macros
+----------------------
+
+The following macros are for common tasks not specific to Python.
+
+.. c:macro:: Py_UNUSED(arg)
+
+   Use this for unused arguments in a function definition to silence compiler
+   warnings. Example: ``int func(int a, int Py_UNUSED(b)) { return a; }``.
+
+   .. versionadded:: 3.4
+
+.. c:macro:: Py_GCC_ATTRIBUTE(name)
+
+   Use a GCC attribute *name*, hiding it from compilers that don't support GCC
+   attributes (such as MSVC).
+
+   This expands to :samp:`__attribute__(({name)})` on a GCC compiler,
+   and expands to nothing on compilers that don't support GCC attributes.
+
+
+Numeric utilities
+^^^^^^^^^^^^^^^^^
 
 .. c:macro:: Py_ABS(x)
 
    Return the absolute value of ``x``.
 
+   The argument may be evaluated more than once.
+   Consequently, do not pass an expression with side-effects directly
+   to this macro.
+
+   If the result cannot be represented (for example, if ``x`` has
+   :c:macro:`!INT_MIN` value for :c:expr:`int` type), the behavior is
+   undefined.
+
+   Corresponds roughly to :samp:`(({x}) < 0 ? -({x}) : ({x}))`
+
    .. versionadded:: 3.3
 
-.. c:macro:: Py_ALWAYS_INLINE
+.. c:macro:: Py_MAX(x, y)
+             Py_MIN(x, y)
 
-   Ask the compiler to always inline a static inline function. The compiler can
-   ignore it and decides to not inline the function.
+   Return the larger or smaller of the arguments, respectively.
 
-   It can be used to inline performance critical static inline functions when
-   building Python in debug mode with function inlining disabled. For example,
-   MSC disables function inlining when building in debug mode.
+   Any arguments may be evaluated more than once.
+   Consequently, do not pass an expression with side-effects directly
+   to this macro.
 
-   Marking blindly a static inline function with Py_ALWAYS_INLINE can result in
-   worse performances (due to increased code size for example). The compiler is
-   usually smarter than the developer for the cost/benefit analysis.
+   :c:macro:`!Py_MAX` corresponds roughly to
+   :samp:`((({x}) > ({y})) ? ({x}) : ({y}))`.
 
-   If Python is :ref:`built in debug mode <debug-build>` (if the ``Py_DEBUG``
-   macro is defined), the :c:macro:`Py_ALWAYS_INLINE` macro does nothing.
+   .. versionadded:: 3.3
 
-   It must be specified before the function return type. Usage::
+.. c:macro:: Py_ARITHMETIC_RIGHT_SHIFT(type, integer, positions)
 
-       static inline Py_ALWAYS_INLINE int random(void) { return 4; }
+   Similar to :samp:`{integer} >> {positions}`, but forces sign extension,
+   as the C standard does not define whether a right-shift of a signed
+   integer will perform sign extension or a zero-fill.
 
-   .. versionadded:: 3.11
+   *integer* should be any signed integer type.
+   *positions* is the number of positions to shift to the right.
+
+   Both *integer* and *positions* can be evaluated more than once;
+   consequently, avoid directly passing a function call or some other
+   operation with side-effects to this macro. Instead, store the result as a
+   variable and then pass it.
+
+   *type* is unused and only kept for backwards compatibility. Historically,
+   *type* was used to cast *integer*.
+
+   .. versionchanged:: 3.1
+
+      This macro is now valid for all signed integer types, not just those for
+      which ``unsigned type`` is legal. As a result, *type* is no longer
+      used.
 
 .. c:macro:: Py_CHARMASK(c)
 
    Argument must be a character or an integer in the range [-128, 127] or [0,
    255].  This macro returns ``c`` cast to an ``unsigned char``.
 
-.. c:macro:: Py_DEPRECATED(version)
 
-   Use this for deprecated declarations.  The macro must be placed before the
-   symbol name.
-
-   Example::
-
-      Py_DEPRECATED(3.8) PyAPI_FUNC(int) Py_OldFunction(void);
-
-   .. versionchanged:: 3.8
-      MSVC support was added.
-
-.. c:macro:: Py_GETENV(s)
-
-   Like ``getenv(s)``, but returns ``NULL`` if :option:`-E` was passed on the
-   command line (see :c:member:`PyConfig.use_environment`).
-
-.. c:macro:: Py_MAX(x, y)
-
-   Return the maximum value between ``x`` and ``y``.
-
-   .. versionadded:: 3.3
-
-.. c:macro:: Py_MEMBER_SIZE(type, member)
-
-   Return the size of a structure (``type``) ``member`` in bytes.
-
-   .. versionadded:: 3.6
-
-.. c:macro:: Py_MIN(x, y)
-
-   Return the minimum value between ``x`` and ``y``.
-
-   .. versionadded:: 3.3
-
-.. c:macro:: Py_NO_INLINE
-
-   Disable inlining on a function. For example, it reduces the C stack
-   consumption: useful on LTO+PGO builds which heavily inline code (see
-   :issue:`33720`).
-
-   Usage::
-
-       Py_NO_INLINE static int random(void) { return 4; }
-
-   .. versionadded:: 3.11
-
-.. c:macro:: Py_STRINGIFY(x)
-
-   Convert ``x`` to a C string.  E.g. ``Py_STRINGIFY(123)`` returns
-   ``"123"``.
-
-   .. versionadded:: 3.4
+Assertion utilities
+^^^^^^^^^^^^^^^^^^^
 
 .. c:macro:: Py_UNREACHABLE()
 
@@ -203,8 +314,11 @@ complete listing.
    avoids a warning about unreachable code.  For example, the macro is
    implemented with ``__builtin_unreachable()`` on GCC in release mode.
 
-   A use for ``Py_UNREACHABLE()`` is following a call a function that
-   never returns but that is not declared :c:macro:`_Py_NO_RETURN`.
+   In debug mode, and on unsupported compilers, the macro expands to a call to
+   :c:func:`Py_FatalError`.
+
+   A use for ``Py_UNREACHABLE()`` is following a call to a function that
+   never returns but that is not declared ``_Noreturn``.
 
    If a code path is very unlikely code but can be reached under exceptional
    case, this macro must not be used.  For example, under low memory condition
@@ -214,46 +328,241 @@ complete listing.
 
    .. versionadded:: 3.7
 
-.. c:macro:: Py_UNUSED(arg)
+.. c:macro:: Py_SAFE_DOWNCAST(value, larger, smaller)
 
-   Use this for unused arguments in a function definition to silence compiler
-   warnings. Example: ``int func(int a, int Py_UNUSED(b)) { return a; }``.
+   Cast *value* to type *smaller* from type *larger*, validating that no
+   information was lost.
+
+   On release builds of Python, this is roughly equivalent to
+   :samp:`(({smaller}) {value})`
+   (in C++, :samp:`static_cast<{smaller}>({value})` will be used instead).
+
+   On debug builds (implying that :c:macro:`Py_DEBUG` is defined), this asserts
+   that no information was lost with the cast from *larger* to *smaller*.
+
+   *value*, *larger*, and *smaller* may all be evaluated more than once in the
+   expression; consequently, do not pass an expression with side-effects
+   directly to this macro.
+
+.. c:macro:: Py_BUILD_ASSERT(cond)
+
+   Asserts a compile-time condition *cond*, as a statement.
+   The build will fail if the condition is false or cannot be evaluated at compile time.
+
+   Corresponds roughly to :samp:`static_assert({cond})` on C23 and above.
+
+   For example::
+
+      Py_BUILD_ASSERT(sizeof(PyTime_t) == sizeof(int64_t));
+
+   .. versionadded:: 3.3
+
+.. c:macro:: Py_BUILD_ASSERT_EXPR(cond)
+
+   Asserts a compile-time condition *cond*, as an expression that evaluates to ``0``.
+   The build will fail if the condition is false or cannot be evaluated at compile time.
+
+   For example::
+
+      #define foo_to_char(foo) \
+          ((char *)(foo) + Py_BUILD_ASSERT_EXPR(offsetof(struct foo, string) == 0))
+
+   .. versionadded:: 3.3
+
+
+Type size utilities
+^^^^^^^^^^^^^^^^^^^
+
+.. c:macro:: Py_ARRAY_LENGTH(array)
+
+   Compute the length of a statically allocated C array at compile time.
+
+   The *array* argument must be a C array with a size known at compile time.
+   Passing an array with an unknown size, such as a heap-allocated array,
+   will result in a compilation error on some compilers, or otherwise produce
+   incorrect results.
+
+   This is roughly equivalent to::
+
+      sizeof(array) / sizeof((array)[0])
+
+.. c:macro:: Py_MEMBER_SIZE(type, member)
+
+   Return the size of a structure (*type*) *member* in bytes.
+
+   Corresponds roughly to :samp:`sizeof((({type} *)NULL)->{member})`.
+
+   .. versionadded:: 3.6
+
+
+Macro definition utilities
+^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+.. c:macro:: Py_FORCE_EXPANSION(X)
+
+   This is equivalent to :samp:`{X}`, which is useful for token-pasting in
+   macros, as macro expansions in *X* are forcefully evaluated by the
+   preprocessor.
+
+.. c:macro:: Py_STRINGIFY(x)
+
+   Convert ``x`` to a C string.  For example, ``Py_STRINGIFY(123)`` returns
+   ``"123"``.
 
    .. versionadded:: 3.4
 
-.. c:macro:: PyDoc_STRVAR(name, str)
 
-   Creates a variable with name ``name`` that can be used in docstrings.
-   If Python is built without docstrings, the value will be empty.
+Declaration utilities
+---------------------
 
-   Use :c:macro:`PyDoc_STRVAR` for docstrings to support building
-   Python without docstrings, as specified in :pep:`7`.
+The following macros can be used in declarations.
+They are most useful for defining the C API itself, and have limited use
+for extension authors.
+Most of them expand to compiler-specific spellings of common extensions
+to the C language.
+
+.. c:macro:: Py_ALWAYS_INLINE
+
+   Ask the compiler to always inline a static inline function. The compiler can
+   ignore it and decide to not inline the function.
+
+   Corresponds to ``always_inline`` attribute in GCC and ``__forceinline``
+   in MSVC.
+
+   It can be used to inline performance critical static inline functions when
+   building Python in debug mode with function inlining disabled. For example,
+   MSC disables function inlining when building in debug mode.
+
+   Marking blindly a static inline function with Py_ALWAYS_INLINE can result in
+   worse performances (due to increased code size for example). The compiler is
+   usually smarter than the developer for the cost/benefit analysis.
+
+   If Python is :ref:`built in debug mode <debug-build>` (if the :c:macro:`Py_DEBUG`
+   macro is defined), the :c:macro:`Py_ALWAYS_INLINE` macro does nothing.
+
+   It must be specified before the function return type. Usage::
+
+       static inline Py_ALWAYS_INLINE int random(void) { return 4; }
+
+   .. versionadded:: 3.11
+
+.. c:macro:: Py_NO_INLINE
+
+   Disable inlining on a function. For example, it reduces the C stack
+   consumption: useful on LTO+PGO builds which heavily inline code (see
+   :issue:`33720`).
+
+   Corresponds to the ``noinline`` attribute/specification on GCC and MSVC.
+
+   Usage::
+
+       Py_NO_INLINE static int random(void) { return 4; }
+
+   .. versionadded:: 3.11
+
+.. c:macro:: Py_DEPRECATED(version)
+
+   Use this to declare APIs that were deprecated in a specific CPython version.
+   The macro must be placed before the symbol name.
 
    Example::
 
-      PyDoc_STRVAR(pop_doc, "Remove and return the rightmost element.");
+      Py_DEPRECATED(3.8) PyAPI_FUNC(int) Py_OldFunction(void);
 
-      static PyMethodDef deque_methods[] = {
-          // ...
-          {"pop", (PyCFunction)deque_pop, METH_NOARGS, pop_doc},
-          // ...
-      }
+   .. versionchanged:: 3.8
+      MSVC support was added.
 
-.. c:macro:: PyDoc_STR(str)
+.. c:macro:: Py_LOCAL(type)
 
-   Creates a docstring for the given input string or an empty string
-   if docstrings are disabled.
+   Declare a function returning the specified *type* using a fast-calling
+   qualifier for functions that are local to the current file.
+   Semantically, this is equivalent to :samp:`static {type}`.
 
-   Use :c:macro:`PyDoc_STR` in specifying docstrings to support
-   building Python without docstrings, as specified in :pep:`7`.
+.. c:macro:: Py_LOCAL_INLINE(type)
 
-   Example::
+   Equivalent to :c:macro:`Py_LOCAL` but additionally requests the function
+   be inlined.
 
-      static PyMethodDef pysqlite_row_methods[] = {
-          {"keys", (PyCFunction)pysqlite_row_keys, METH_NOARGS,
-              PyDoc_STR("Returns the keys of the row.")},
-          {NULL, NULL}
-      };
+.. c:macro:: Py_LOCAL_SYMBOL
+
+   Macro used to declare a symbol as local to the shared library (hidden).
+   On supported platforms, it ensures the symbol is not exported.
+
+   On compatible versions of GCC/Clang, it
+   expands to ``__attribute__((visibility("hidden")))``.
+
+.. c:macro:: Py_EXPORTED_SYMBOL
+
+   Macro used to declare a symbol (function or data) as exported.
+   On Windows, this expands to ``__declspec(dllexport)``.
+   On compatible versions of GCC/Clang, it
+   expands to ``__attribute__((visibility("default")))``.
+   This macro is for defining the C API itself; extension modules should not use it.
+
+
+.. c:macro:: Py_IMPORTED_SYMBOL
+
+   Macro used to declare a symbol as imported.
+   On Windows, this expands to ``__declspec(dllimport)``.
+   This macro is for defining the C API itself; extension modules should not use it.
+
+
+.. c:macro:: PyAPI_FUNC(type)
+
+   Macro used by CPython to declare a function as part of the C API.
+   Its expansion depends on the platform and build configuration.
+   This macro is intended for defining CPython's C API itself;
+   extension modules should not use it for their own symbols.
+
+
+.. c:macro:: PyAPI_DATA(type)
+
+   Macro used by CPython to declare a public global variable as part of the C API.
+   Its expansion depends on the platform and build configuration.
+   This macro is intended for defining CPython's C API itself;
+   extension modules should not use it for their own symbols.
+
+
+Outdated macros
+---------------
+
+The following macros have been used to features that have been standardized
+in C11.
+
+.. c:macro:: Py_ALIGNED(num)
+
+   Specify alignment to *num* bytes on compilers that support it.
+
+   Consider using the C11 standard ``_Alignas`` specifier over this macro.
+
+.. c:macro:: Py_LL(number)
+             Py_ULL(number)
+
+   Use *number* as a ``long long`` or ``unsigned long long`` integer literal,
+   respectively.
+
+   Expands to *number* followed by ``LL`` or ``LLU``, respectively, but will
+   expand to some compiler-specific suffixes on some older compilers.
+
+   Consider using the C99 standard suffixes ``LL`` and ``LLU`` directly.
+
+.. c:macro:: Py_MEMCPY(dest, src, n)
+
+   This is a :term:`soft deprecated` alias to :c:func:`!memcpy`.
+   Use :c:func:`!memcpy` directly instead.
+
+   .. deprecated:: 3.14
+      The macro is :term:`soft deprecated`.
+
+.. c:macro:: Py_VA_COPY
+
+   This is a :term:`soft deprecated` alias to the C99-standard ``va_copy``
+   function.
+
+   Historically, this would use a compiler-specific method to copy a ``va_list``.
+
+   .. versionchanged:: 3.6
+      This is now an alias to ``va_copy``.
 
 
 .. _api-objects:
@@ -287,52 +596,58 @@ true if (and only if) the object pointed to by *a* is a Python list.
 Reference Counts
 ----------------
 
-The reference count is important because today's computers have a  finite (and
-often severely limited) memory size; it counts how many  different places there
-are that have a reference to an object.  Such a  place could be another object,
-or a global (or static) C variable, or  a local variable in some C function.
-When an object's reference count  becomes zero, the object is deallocated.  If
-it contains references to  other objects, their reference count is decremented.
-Those other  objects may be deallocated in turn, if this decrement makes their
-reference count become zero, and so on.  (There's an obvious problem  with
-objects that reference each other here; for now, the solution is  "don't do
-that.")
+The reference count is important because today's computers have a  finite
+(and often severely limited) memory size; it counts how many different
+places there are that have a :term:`strong reference` to an object.
+Such a place could be another object, or a global (or static) C variable,
+or a local variable in some C function.
+When the last :term:`strong reference` to an object is released
+(i.e. its reference count becomes zero), the object is deallocated.
+If it contains references to other objects, those references are released.
+Those other objects may be deallocated in turn, if there are no more
+references to them, and so on.  (There's an obvious problem  with
+objects that reference each other here; for now, the solution
+is "don't do that.")
 
 .. index::
-   single: Py_INCREF()
-   single: Py_DECREF()
+   single: Py_INCREF (C function)
+   single: Py_DECREF (C function)
 
-Reference counts are always manipulated explicitly.  The normal way is  to use
-the macro :c:func:`Py_INCREF` to increment an object's reference count by one,
-and :c:func:`Py_DECREF` to decrement it by   one.  The :c:func:`Py_DECREF` macro
+Reference counts are always manipulated explicitly.  The normal way is
+to use the macro :c:func:`Py_INCREF` to take a new reference to an
+object (i.e. increment its reference count by one),
+and :c:func:`Py_DECREF` to release that reference (i.e. decrement the
+reference count by one).  The :c:func:`Py_DECREF` macro
 is considerably more complex than the incref one, since it must check whether
 the reference count becomes zero and then cause the object's deallocator to be
-called. The deallocator is a function pointer contained in the object's type
-structure.  The type-specific deallocator takes care of decrementing the
-reference counts for other objects contained in the object if this is a compound
+called.  The deallocator is a function pointer contained in the object's type
+structure.  The type-specific deallocator takes care of releasing references
+for other objects contained in the object if this is a compound
 object type, such as a list, as well as performing any additional finalization
 that's needed.  There's no chance that the reference count can overflow; at
 least as many bits are used to hold the reference count as there are distinct
 memory locations in virtual memory (assuming ``sizeof(Py_ssize_t) >= sizeof(void*)``).
 Thus, the reference count increment is a simple operation.
 
-It is not necessary to increment an object's reference count for every  local
-variable that contains a pointer to an object.  In theory, the  object's
+It is not necessary to hold a :term:`strong reference` (i.e. increment
+the reference count) for every local variable that contains a pointer
+to an object.  In theory, the  object's
 reference count goes up by one when the variable is made to  point to it and it
 goes down by one when the variable goes out of  scope.  However, these two
 cancel each other out, so at the end the  reference count hasn't changed.  The
 only real reason to use the  reference count is to prevent the object from being
 deallocated as  long as our variable is pointing to it.  If we know that there
 is at  least one other reference to the object that lives at least as long as
-our variable, there is no need to increment the reference count  temporarily.
+our variable, there is no need to take a new :term:`strong reference`
+(i.e. increment the reference count) temporarily.
 An important situation where this arises is in objects  that are passed as
 arguments to C functions in an extension module  that are called from Python;
 the call mechanism guarantees to hold a  reference to every argument for the
 duration of the call.
 
 However, a common pitfall is to extract an object from a list and hold on to it
-for a while without incrementing its reference count. Some other operation might
-conceivably remove the object from the list, decrementing its reference count
+for a while without taking a new reference.  Some other operation might
+conceivably remove the object from the list, releasing that reference,
 and possibly deallocating it. The real danger is that innocent-looking
 operations may invoke arbitrary Python code which could do this; there is a code
 path which allows control to flow back to the user from a :c:func:`Py_DECREF`, so
@@ -340,7 +655,8 @@ almost any operation is potentially dangerous.
 
 A safe approach is to always use the generic operations (functions  whose name
 begins with ``PyObject_``, ``PyNumber_``, ``PySequence_`` or ``PyMapping_``).
-These operations always increment the reference count of the object they return.
+These operations always create a new :term:`strong reference`
+(i.e. increment the reference count) of the object they return.
 This leaves the caller with the responsibility to call :c:func:`Py_DECREF` when
 they are done with the result; this soon becomes second nature.
 
@@ -356,7 +672,7 @@ to objects (objects are not owned: they are always shared).  "Owning a
 reference" means being responsible for calling Py_DECREF on it when the
 reference is no longer needed.  Ownership can also be transferred, meaning that
 the code that receives ownership of the reference then becomes responsible for
-eventually decref'ing it by calling :c:func:`Py_DECREF` or :c:func:`Py_XDECREF`
+eventually releasing it by calling :c:func:`Py_DECREF` or :c:func:`Py_XDECREF`
 when it's no longer needed---or passing on this responsibility (usually to its
 caller). When a function passes ownership of a reference on to its caller, the
 caller is said to receive a *new* reference.  When no ownership is transferred,
@@ -370,8 +686,8 @@ function, that function assumes that it now owns that reference, and you are not
 responsible for it any longer.
 
 .. index::
-   single: PyList_SetItem()
-   single: PyTuple_SetItem()
+   single: PyList_SetItem (C function)
+   single: PyTuple_SetItem (C function)
 
 Few functions steal references; the two notable exceptions are
 :c:func:`PyList_SetItem` and :c:func:`PyTuple_SetItem`, which  steal a reference
@@ -414,9 +730,9 @@ For example, the above two blocks of code could be replaced by the following
 
 It is much more common to use :c:func:`PyObject_SetItem` and friends with items
 whose references you are only borrowing, like arguments that were passed in to
-the function you are writing.  In that case, their behaviour regarding reference
-counts is much saner, since you don't have to increment a reference count so you
-can give a reference away ("have it be stolen").  For example, this function
+the function you are writing.  In that case, their behaviour regarding references
+is much saner, since you don't have to take a new reference just so you
+can give that reference away ("have it be stolen").  For example, this function
 sets all items of a list (actually, any mutable sequence) to a given item::
 
    int
@@ -460,8 +776,8 @@ using :c:func:`PySequence_GetItem` (which happens to take exactly the same
 arguments), you do own a reference to the returned object.
 
 .. index::
-   single: PyList_GetItem()
-   single: PySequence_GetItem()
+   single: PyList_GetItem (C function)
+   single: PySequence_GetItem (C function)
 
 Here is an example of how you could write a function that computes the sum of
 the items in a list of integers; once using  :c:func:`PyList_GetItem`, and once
@@ -556,7 +872,7 @@ caller, then to the caller's caller, and so on, until they reach the top-level
 interpreter, where they are reported to the  user accompanied by a stack
 traceback.
 
-.. index:: single: PyErr_Occurred()
+.. index:: single: PyErr_Occurred (C function)
 
 For C programmers, however, error checking always has to be explicit.  All
 functions in the Python/C API can raise exceptions, unless an explicit claim is
@@ -570,8 +886,8 @@ ambiguous return value, and require explicit testing for errors with
 :c:func:`PyErr_Occurred`.  These exceptions are always explicitly documented.
 
 .. index::
-   single: PyErr_SetString()
-   single: PyErr_Clear()
+   single: PyErr_SetString (C function)
+   single: PyErr_Clear (C function)
 
 Exception state is maintained in per-thread storage (this is  equivalent to
 using global storage in an unthreaded application).  A  thread can be in one of
@@ -593,7 +909,7 @@ an exception is being passed on between C functions until it reaches the Python
 bytecode interpreter's  main loop, which takes care of transferring it to
 ``sys.exc_info()`` and friends.
 
-.. index:: single: exc_info() (in module sys)
+.. index:: single: exc_info (in module sys)
 
 Note that starting with Python 1.5, the preferred, thread-safe way to access the
 exception state from Python code is to call the function :func:`sys.exc_info`,
@@ -616,7 +932,7 @@ and lose important information about the exact cause of the error.
 .. index:: single: sum_sequence()
 
 A simple example of detecting exceptions and passing them on is shown in the
-:c:func:`sum_sequence` example above.  It so happens that this example doesn't
+:c:func:`!sum_sequence` example above.  It so happens that this example doesn't
 need to clean up any owned references when it detects an error.  The following
 example function shows some error cleanup.  First, to remind you why you like
 Python, we show the equivalent Python code::
@@ -678,9 +994,9 @@ Here is the corresponding C code, in all its glory::
 .. index:: single: incr_item()
 
 .. index::
-   single: PyErr_ExceptionMatches()
-   single: PyErr_Clear()
-   single: Py_XDECREF()
+   single: PyErr_ExceptionMatches (C function)
+   single: PyErr_Clear (C function)
+   single: Py_XDECREF (C function)
 
 This example represents an endorsed use of the ``goto`` statement  in C!
 It illustrates the use of :c:func:`PyErr_ExceptionMatches` and
@@ -704,7 +1020,7 @@ the finalization, of the Python interpreter.  Most functionality of the
 interpreter can only be used after the interpreter has been initialized.
 
 .. index::
-   single: Py_Initialize()
+   single: Py_Initialize (C function)
    pair: module; builtins
    pair: module; __main__
    pair: module; sys
@@ -738,22 +1054,13 @@ found along :envvar:`PATH`.)  The user can override this behavior by setting the
 environment variable :envvar:`PYTHONHOME`, or insert additional directories in
 front of the standard path by setting :envvar:`PYTHONPATH`.
 
-.. index::
-   single: Py_GetPath()
-   single: Py_GetPrefix()
-   single: Py_GetExecPrefix()
-   single: Py_GetProgramFullPath()
-
 The embedding application can steer the search by setting
 :c:member:`PyConfig.program_name` *before* calling
 :c:func:`Py_InitializeFromConfig`. Note that
 :envvar:`PYTHONHOME` still overrides this and :envvar:`PYTHONPATH` is still
-inserted in front of the standard path.  An application that requires total
-control has to provide its own implementation of :c:func:`Py_GetPath`,
-:c:func:`Py_GetPrefix`, :c:func:`Py_GetExecPrefix`, and
-:c:func:`Py_GetProgramFullPath` (all defined in :file:`Modules/getpath.c`).
+inserted in front of the standard path.
 
-.. index:: single: Py_IsInitialized()
+.. index:: single: Py_IsInitialized (C function)
 
 Sometimes, it is desirable to "uninitialize" Python.  For instance,  the
 application may want to start over (make another call to
@@ -781,16 +1088,21 @@ available that support tracing of reference counts, debugging the memory
 allocator, or low-level profiling of the main interpreter loop.  Only the most
 frequently used builds will be described in the remainder of this section.
 
-Compiling the interpreter with the :c:macro:`Py_DEBUG` macro defined produces
+.. c:macro:: Py_DEBUG
+
+Compiling the interpreter with the :c:macro:`!Py_DEBUG` macro defined produces
 what is generally meant by :ref:`a debug build of Python <debug-build>`.
-:c:macro:`Py_DEBUG` is enabled in the Unix build by adding
-:option:`--with-pydebug` to the :file:`./configure` command.
-It is also implied by the presence of the
-not-Python-specific :c:macro:`_DEBUG` macro.  When :c:macro:`Py_DEBUG` is enabled
-in the Unix build, compiler optimization is disabled.
+
+On Unix, :c:macro:`!Py_DEBUG` can be enabled by adding :option:`--with-pydebug`
+to the :file:`./configure` command. This will also disable compiler optimization.
+
+On Windows, selecting a debug build (e.g., by passing the :option:`-d` option to
+:file:`PCbuild/build.bat`) automatically enables :c:macro:`!Py_DEBUG`.
+Additionally, the presence of the not-Python-specific :c:macro:`!_DEBUG` macro,
+when defined by the compiler, will also implicitly enable :c:macro:`!Py_DEBUG`.
 
 In addition to the reference count debugging described below, extra checks are
-performed, see :ref:`Python Debug Build <debug-build>`.
+performed. See :ref:`Python Debug Build <debug-build>` for more details.
 
 Defining :c:macro:`Py_TRACE_REFS` enables reference tracing
 (see the :option:`configure --with-trace-refs option <--with-trace-refs>`).
@@ -802,3 +1114,40 @@ after every statement run by the interpreter.)
 Please refer to :file:`Misc/SpecialBuilds.txt` in the Python source distribution
 for more detailed information.
 
+
+.. _c-api-tools:
+
+Recommended third party tools
+=============================
+
+The following third party tools offer both simpler and more sophisticated
+approaches to creating C, C++ and Rust extensions for Python:
+
+* `Cython <https://cython.org/>`_
+* `cffi <https://cffi.readthedocs.io>`_
+* `HPy <https://hpyproject.org/>`_
+* `nanobind <https://github.com/wjakob/nanobind>`_ (C++)
+* `Numba <https://numba.pydata.org/>`_
+* `pybind11 <https://pybind11.readthedocs.io/>`_ (C++)
+* `PyO3 <https://pyo3.rs/>`_ (Rust)
+* `SWIG <https://www.swig.org>`_
+
+Using tools such as these can help avoid writing code that is tightly bound to
+a particular version of CPython, avoid reference counting errors, and focus
+more on your own code than on using the CPython API. In general, new versions
+of Python can be supported by updating the tool, and your code will often use
+newer and more efficient APIs automatically. Some tools also support compiling
+for other implementations of Python from a single set of sources.
+
+These projects are not supported by the same people who maintain Python, and
+issues need to be raised with the projects directly. Remember to check that the
+project is still maintained and supported, as the list above may become
+outdated.
+
+.. seealso::
+
+   `Python Packaging User Guide: Binary Extensions <https://packaging.python.org/guides/packaging-binary-extensions/>`_
+      The Python Packaging User Guide not only covers several available
+      tools that simplify the creation of binary extensions, but also
+      discusses the various reasons why creating an extension module may be
+      desirable in the first place.

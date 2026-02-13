@@ -1,2 +1,0 @@
-Add option to :func:`traceback.format_exception_only` to recurse into the
-nested exception of a :exc:`BaseExceptionGroup`.

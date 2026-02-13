@@ -1,8 +1,8 @@
 Tkinter Dialogs
 ===============
 
-:mod:`tkinter.simpledialog` --- Standard Tkinter input dialogs
-^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+:mod:`!tkinter.simpledialog` --- Standard Tkinter input dialogs
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
 .. module:: tkinter.simpledialog
    :platform: Tk
@@ -12,7 +12,7 @@ Tkinter Dialogs
 
 --------------
 
-The :mod:`tkinter.simpledialog` module contains convenience classes and
+The :mod:`!tkinter.simpledialog` module contains convenience classes and
 functions for creating simple modal dialogs to get a value from the user.
 
 
@@ -27,20 +27,20 @@ functions for creating simple modal dialogs to get a value from the user.
 
    The base class for custom dialogs.
 
-    .. method:: body(master)
+   .. method:: body(master)
 
-       Override to construct the dialog's interface and return the widget that
-       should have initial focus.
+      Override to construct the dialog's interface and return the widget that
+      should have initial focus.
 
-    .. method:: buttonbox()
+   .. method:: buttonbox()
 
-       Default behaviour adds OK and Cancel buttons. Override for custom button
-       layouts.
+      Default behaviour adds OK and Cancel buttons. Override for custom button
+      layouts.
 
 
 
-:mod:`tkinter.filedialog` --- File selection dialogs
-^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+:mod:`!tkinter.filedialog` --- File selection dialogs
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
 .. module:: tkinter.filedialog
    :platform: Tk
@@ -50,7 +50,7 @@ functions for creating simple modal dialogs to get a value from the user.
 
 --------------
 
-The :mod:`tkinter.filedialog` module provides classes and factory functions for
+The :mod:`!tkinter.filedialog` module provides classes and factory functions for
 creating file/directory selection windows.
 
 Native Load/Save Dialogs
@@ -204,8 +204,8 @@ These do not emulate the native look-and-feel of the platform.
       directory. Confirmation is required if an already existing file is
       selected.
 
-:mod:`tkinter.commondialog` --- Dialog window templates
-^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+:mod:`!tkinter.commondialog` --- Dialog window templates
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
 .. module:: tkinter.commondialog
    :platform: Tk
@@ -215,12 +215,12 @@ These do not emulate the native look-and-feel of the platform.
 
 --------------
 
-The :mod:`tkinter.commondialog` module provides the :class:`Dialog` class that
+The :mod:`!tkinter.commondialog` module provides the :class:`Dialog` class that
 is the base class for dialogs defined in other supporting modules.
 
 .. class:: Dialog(master=None, **options)
 
-   .. method:: show(color=None, **options)
+   .. method:: show(**options)
 
       Render the Dialog window.
 

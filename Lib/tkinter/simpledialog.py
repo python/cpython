@@ -23,9 +23,12 @@ askfloat -- get a float from the user
 askstring -- get a string from the user
 """
 
-from tkinter import *
+from tkinter import Button, Entry, Frame, Label, Message, Tk, Toplevel
 from tkinter import _get_temp_root, _destroy_temp_root
 from tkinter import messagebox
+from tkinter.constants import ACTIVE, BOTH, END, LEFT, RIDGE, W, E
+
+__all__ = ["SimpleDialog", "Dialog", "askinteger", "askfloat", "askstring"]
 
 
 class SimpleDialog:
@@ -262,7 +265,7 @@ def _setup_dialog(w):
         w.tk.call("::tk::unsupported::MacWindowStyle", "style",
                   w, "moveableModal", "")
     elif w._windowingsystem == "x11":
-        w.wm_attributes("-type", "dialog")
+        w.wm_attributes(type="dialog")
 
 # --------------------------------------------------------------------
 # convenience dialogues
@@ -357,7 +360,7 @@ def askinteger(title, prompt, **kw):
 
 
 class _QueryFloat(_QueryDialog):
-    errormessage = "Not a floating point value."
+    errormessage = "Not a floating-point value."
 
     def getresult(self):
         return self.getdouble(self.entry.get())

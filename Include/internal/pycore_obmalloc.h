@@ -208,7 +208,11 @@ typedef unsigned int pymem_uint;  /* assuming >= 16 bits */
  * mappings to reduce heap fragmentation.
  */
 #ifdef USE_LARGE_ARENAS
-#define ARENA_BITS              20                    /* 1 MiB */
+#  ifdef PYMALLOC_USE_HUGEPAGES
+#    define ARENA_BITS            21                    /* 2 MiB */
+#  else
+#    define ARENA_BITS            20                    /* 1 MiB */
+#  endif
 #else
 #define ARENA_BITS              18                    /* 256 KiB */
 #endif
@@ -255,8 +259,8 @@ struct pool_header {
     union { pymem_block *_padding;
             uint count; } ref;          /* number of allocated blocks    */
     pymem_block *freeblock;             /* pool's free list head         */
-    struct pool_header *nextpool;       /* next pool of this size class  */
-    struct pool_header *prevpool;       /* previous pool       ""        */
+    struct pool_header *nextpool;       /* see "Pool table" for meaning  */
+    struct pool_header *prevpool;       /* "                             */
     uint arenaindex;                    /* index into arenas of base adr */
     uint szidx;                         /* block size class index        */
     uint nextoffset;                    /* bytes to virgin block         */
@@ -469,7 +473,7 @@ nfp free pools in usable_arenas.
 */
 
 /* How many arena_objects do we initially allocate?
- * 16 = can allocate 16 arenas = 16 * ARENA_SIZE = 4MB before growing the
+ * 16 = can allocate 16 arenas = 16 * ARENA_SIZE before growing the
  * `arenas` vector.
  */
 #define INITIAL_ARENA_OBJECTS 16
@@ -512,11 +516,23 @@ struct _obmalloc_mgmt {
 
    memory address bit allocation for keys
 
-   64-bit pointers, IGNORE_BITS=0 and 2^20 arena size:
+   ARENA_BITS is configurable: 20 (1 MiB) by default on 64-bit, or
+   21 (2 MiB) when PYMALLOC_USE_HUGEPAGES is enabled.  All bit widths
+   below are derived from ARENA_BITS automatically.
+
+   64-bit pointers, IGNORE_BITS=0 and 2^20 arena size (default):
      15 -> MAP_TOP_BITS
      15 -> MAP_MID_BITS
      14 -> MAP_BOT_BITS
      20 -> ideal aligned arena
+   ----
+     64
+
+   64-bit pointers, IGNORE_BITS=0 and 2^21 arena size (hugepages):
+     15 -> MAP_TOP_BITS
+     15 -> MAP_MID_BITS
+     13 -> MAP_BOT_BITS
+     21 -> ideal aligned arena
    ----
      64
 
@@ -665,7 +681,9 @@ struct _obmalloc_global_state {
 struct _obmalloc_state {
     struct _obmalloc_pools pools;
     struct _obmalloc_mgmt mgmt;
+#if WITH_PYMALLOC_RADIX_TREE
     struct _obmalloc_usage usage;
+#endif
 };
 
 
@@ -684,10 +702,12 @@ extern Py_ssize_t _Py_GetGlobalAllocatedBlocks(void);
     _Py_GetGlobalAllocatedBlocks()
 extern Py_ssize_t _PyInterpreterState_GetAllocatedBlocks(PyInterpreterState *);
 extern void _PyInterpreterState_FinalizeAllocatedBlocks(PyInterpreterState *);
+extern int _PyMem_init_obmalloc(PyInterpreterState *interp);
+extern bool _PyMem_obmalloc_state_on_heap(PyInterpreterState *interp);
 
 
 #ifdef WITH_PYMALLOC
-// Export the symbol for the 3rd party guppy3 project
+// Export the symbol for the 3rd party 'guppy3' project
 PyAPI_FUNC(int) _PyObject_DebugMallocStats(FILE *out);
 #endif
 

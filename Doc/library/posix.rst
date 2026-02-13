@@ -1,5 +1,5 @@
-:mod:`posix` --- The most common POSIX system calls
-===================================================
+:mod:`!posix` --- The most common POSIX system calls
+====================================================
 
 .. module:: posix
    :platform: Unix
@@ -11,14 +11,16 @@ This module provides access to operating system functionality that is
 standardized by the C Standard and the POSIX standard (a thinly disguised Unix
 interface).
 
+.. availability:: Unix.
+
 .. index:: pair: module; os
 
 **Do not import this module directly.**  Instead, import the module :mod:`os`,
 which provides a *portable* version of this interface.  On Unix, the :mod:`os`
-module provides a superset of the :mod:`posix` interface.  On non-Unix operating
-systems the :mod:`posix` module is not available, but a subset is always
+module provides a superset of the :mod:`!posix` interface.  On non-Unix operating
+systems the :mod:`!posix` module is not available, but a subset is always
 available through the :mod:`os` interface.  Once :mod:`os` is imported, there is
-*no* performance penalty in using it instead of :mod:`posix`.  In addition,
+*no* performance penalty in using it instead of :mod:`!posix`.  In addition,
 :mod:`os` provides some additional functionality, such as automatically calling
 :func:`~os.putenv` when an entry in ``os.environ`` is changed.
 
@@ -65,7 +67,7 @@ Notable Module Contents
 -----------------------
 
 In addition to many functions described in the :mod:`os` module documentation,
-:mod:`posix` defines the following data item:
+:mod:`!posix` defines the following data item:
 
 .. data:: environ
 
@@ -89,4 +91,4 @@ In addition to many functions described in the :mod:`os` module documentation,
       which updates the environment on modification. Note also that updating
       :data:`os.environ` will render this dictionary obsolete. Use of the
       :mod:`os` module version of this is recommended over direct access to the
-      :mod:`posix` module.
+      :mod:`!posix` module.

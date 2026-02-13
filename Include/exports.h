@@ -1,6 +1,30 @@
 #ifndef Py_EXPORTS_H
 #define Py_EXPORTS_H
 
+/* Declarations for symbol visibility.
+
+  PyAPI_FUNC(type): Declares a public Python API function and return type
+  PyAPI_DATA(type): Declares public Python data and its type
+  PyMODINIT_FUNC:   A Python module init function.  If these functions are
+                    inside the Python core, they are private to the core.
+                    If in an extension module, it may be declared with
+                    external linkage depending on the platform.
+  PyMODEXPORT_FUNC: Like PyMODINIT_FUNC, but for a slots array
+
+  As a number of platforms support/require "__declspec(dllimport/dllexport)",
+  we support a HAVE_DECLSPEC_DLL macro to save duplication.
+*/
+
+/*
+  All windows ports, except cygwin, are handled in PC/pyconfig.h.
+
+  Cygwin is the only other autoconf platform requiring special
+  linkage handling and it uses __declspec().
+*/
+#if defined(__CYGWIN__)
+#       define HAVE_DECLSPEC_DLL
+#endif
+
 #if defined(_WIN32) || defined(__CYGWIN__)
     #if defined(Py_ENABLE_SHARED)
         #define Py_IMPORTED_SYMBOL __declspec(dllimport)
@@ -11,6 +35,12 @@
         #define Py_EXPORTED_SYMBOL
         #define Py_LOCAL_SYMBOL
     #endif
+    /* module init functions outside the core must be exported */
+    #if defined(Py_BUILD_CORE)
+        #define _PyINIT_EXPORTED_SYMBOL Py_EXPORTED_SYMBOL
+    #else
+        #define _PyINIT_EXPORTED_SYMBOL __declspec(dllexport)
+    #endif
 #else
 /*
  * If we only ever used gcc >= 5, we could use __has_attribute(visibility)
@@ -18,11 +48,8 @@
  * we may still need to support gcc >= 4, as some Ubuntu LTS and Centos versions
  * have 4 < gcc < 5.
  */
-    #ifndef __has_attribute
-      #define __has_attribute(x) 0  // Compatibility with non-clang compilers.
-    #endif
     #if (defined(__GNUC__) && (__GNUC__ >= 4)) ||\
-        (defined(__clang__) && __has_attribute(visibility))
+        (defined(__clang__) && _Py__has_attribute(visibility))
         #define Py_IMPORTED_SYMBOL __attribute__ ((visibility ("default")))
         #define Py_EXPORTED_SYMBOL __attribute__ ((visibility ("default")))
         #define Py_LOCAL_SYMBOL  __attribute__ ((visibility ("hidden")))
@@ -31,6 +58,52 @@
         #define Py_EXPORTED_SYMBOL
         #define Py_LOCAL_SYMBOL
     #endif
+    #define _PyINIT_EXPORTED_SYMBOL Py_EXPORTED_SYMBOL
+#endif
+
+/* only get special linkage if built as shared or platform is Cygwin */
+#if defined(Py_ENABLE_SHARED) || defined(__CYGWIN__)
+#       if defined(HAVE_DECLSPEC_DLL)
+#               if defined(Py_BUILD_CORE) && !defined(Py_BUILD_CORE_MODULE)
+        /* module init functions inside the core need no external linkage */
+        /* except for Cygwin to handle embedding */
+#                       if !defined(__CYGWIN__)
+#                               define _PyINIT_FUNC_DECLSPEC
+#                       endif /* __CYGWIN__ */
+#               else /* Py_BUILD_CORE */
+        /* Building an extension module, or an embedded situation */
+        /* public Python functions and data are imported */
+        /* Under Cygwin, auto-import functions to prevent compilation */
+        /* failures similar to those described at the bottom of 4.1: */
+        /* http://docs.python.org/extending/windows.html#a-cookbook-approach */
+#                       if !defined(__CYGWIN__)
+#                               define PyAPI_FUNC(RTYPE) Py_IMPORTED_SYMBOL RTYPE
+#                       endif /* !__CYGWIN__ */
+#                       define PyAPI_DATA(RTYPE) extern Py_IMPORTED_SYMBOL RTYPE
+#               endif /* Py_BUILD_CORE */
+#       endif /* HAVE_DECLSPEC_DLL */
+#endif /* Py_ENABLE_SHARED */
+
+/* If no external linkage macros defined by now, create defaults */
+#ifndef PyAPI_FUNC
+#       define PyAPI_FUNC(RTYPE) Py_EXPORTED_SYMBOL RTYPE
+#endif
+#ifndef PyAPI_DATA
+#       define PyAPI_DATA(RTYPE) extern Py_EXPORTED_SYMBOL RTYPE
+#endif
+#ifndef _PyINIT_FUNC_DECLSPEC
+#       if defined(__cplusplus)
+#               define _PyINIT_FUNC_DECLSPEC extern "C" _PyINIT_EXPORTED_SYMBOL
+#       else /* __cplusplus */
+#               define _PyINIT_FUNC_DECLSPEC _PyINIT_EXPORTED_SYMBOL
+#       endif /* __cplusplus */
+#endif
+
+#ifndef PyMODINIT_FUNC
+    #define PyMODINIT_FUNC _PyINIT_FUNC_DECLSPEC PyObject*
+#endif
+#ifndef PyMODEXPORT_FUNC
+    #define PyMODEXPORT_FUNC _PyINIT_FUNC_DECLSPEC PyModuleDef_Slot*
 #endif
 
 #endif /* Py_EXPORTS_H */
