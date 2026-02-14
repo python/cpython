@@ -332,7 +332,7 @@ class LongTest(unittest.TestCase):
                 for prefix in "", " ", "\t", "  \t\t  ":
                     ss = prefix + sign + s
                     vv = v
-                    if sign == "-" and v is not ValueError:
+                    if sign in ("-", "\N{MINUS SIGN}") and v is not ValueError:
                         vv = -v
                     try:
                         self.assertEqual(int(ss), vv)
