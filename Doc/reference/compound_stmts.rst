@@ -154,7 +154,7 @@ The :keyword:`for` statement is used to iterate over the elements of a sequence
 (such as a string, tuple or list) or other iterable object:
 
 .. productionlist:: python-grammar
-   for_stmt: "for" `target_list` "in" `starred_list` ":" `suite`
+   for_stmt: "for" `target_list` "in" `!starred_list` ":" `suite`
            : ["else" ":" `suite`]
 
 The ``starred_list`` expression is evaluated once; it should yield an
@@ -844,7 +844,7 @@ A literal pattern corresponds to most
    literal_pattern: `signed_number`
                   : | `signed_number` "+" NUMBER
                   : | `signed_number` "-" NUMBER
-                  : | `strings`
+                  : | `!strings`
                   : | "None"
                   : | "True"
                   : | "False"
