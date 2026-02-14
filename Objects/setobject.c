@@ -1056,7 +1056,6 @@ setiter_len(PyObject *op, PyObject *Py_UNUSED(ignored))
 {
     setiterobject *si = (setiterobject*)op;
     Py_ssize_t len = 0;
-
     PySetObject *so = si->si_set;
 
     Py_BEGIN_CRITICAL_SECTION(op);
