@@ -3891,7 +3891,7 @@ class TestUopsOptimization(unittest.TestCase):
         self.assertIn("_UNARY_INVERT", uops)
         self.assertIn("_POP_TOP_NOP", uops)
         self.assertLessEqual(count_ops(ex, "_POP_TOP"), 2)
-    
+
     def test_match_class(self):
         def testfunc(n):
             class A:
