@@ -237,8 +237,8 @@ class BaseHandler:
 
         self.status = status
 
-        # Do not change the next line unless you know you are
-        # doing because it indirectly prevents injections via C0 control
+        # The next line should not be changed because it
+        # indirectly prevents injections via C0 control
         # characters in the following lines via raising a ValueError
         # inside headers_class.
         self.headers = self.headers_class(headers)
