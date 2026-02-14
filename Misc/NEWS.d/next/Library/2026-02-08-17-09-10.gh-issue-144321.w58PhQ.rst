@@ -1,0 +1,3 @@
+The functional syntax for creating :class:`typing.NamedTuple`
+classes now supports passing any :term:`iterable` of fields and types.
+Previously, only sequences were supported.

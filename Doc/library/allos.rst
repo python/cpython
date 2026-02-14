@@ -15,14 +15,9 @@ but they are available on most other systems as well.  Here's an overview:
    os.rst
    io.rst
    time.rst
-   argparse.rst
    logging.rst
    logging.config.rst
    logging.handlers.rst
-   getpass.rst
-   curses.rst
-   curses.ascii.rst
-   curses.panel.rst
    platform.rst
    errno.rst
    ctypes.rst

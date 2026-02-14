@@ -18,7 +18,7 @@ displayed.  Panels can be added, moved up or down in the stack, and removed.
 Functions
 ---------
 
-The module :mod:`curses.panel` defines the following functions:
+The module :mod:`!curses.panel` defines the following functions:
 
 
 .. function:: bottom_panel()

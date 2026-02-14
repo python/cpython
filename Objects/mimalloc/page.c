@@ -481,7 +481,7 @@ void _mi_page_retire(mi_page_t* page) mi_attr_noexcept {
       if (index < heap->page_retired_min) heap->page_retired_min = index;
       if (index > heap->page_retired_max) heap->page_retired_max = index;
       mi_assert_internal(mi_page_all_free(page));
-      return; // dont't free after all
+      return; // don't free after all
     }
   }
   _PyMem_mi_page_maybe_free(page, pq, false);

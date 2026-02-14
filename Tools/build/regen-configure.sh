@@ -2,15 +2,13 @@
 
 set -e -x
 
-# The check_generated_files job of .github/workflows/build.yml must kept in
+# The check_autoconf_regen job of .github/workflows/build.yml must kept in
 # sync with this script. Use the same container image than the job so the job
 # doesn't need to run autoreconf in a container.
-IMAGE="ubuntu:22.04"
-DEPENDENCIES="autotools-dev autoconf autoconf-archive pkg-config"
+IMAGE="ghcr.io/python/autoconf:2025.01.02.12581854023"
 AUTORECONF="autoreconf -ivf -Werror"
 
 WORK_DIR="/src"
-SHELL_CMD="apt-get update && apt-get -yq install $DEPENDENCIES && cd $WORK_DIR && $AUTORECONF"
 
 abs_srcdir=$(cd $(dirname $0)/../..; pwd)
 
@@ -28,4 +26,4 @@ if command -v selinuxenabled >/dev/null && selinuxenabled; then
     PATH_OPT=":Z"
 fi
 
-"$RUNTIME" run --rm -v "$abs_srcdir:$WORK_DIR$PATH_OPT" "$IMAGE" /usr/bin/bash -c "$SHELL_CMD"
+"$RUNTIME" run --rm -v "$abs_srcdir:$WORK_DIR$PATH_OPT" "$IMAGE"

@@ -294,7 +294,7 @@ variant, :attr:`~.BaseHeader.max_count` is set to 1.
        ``inline`` and ``attachment`` are the only valid values in common use.
 
 
-.. class:: ContentTransferEncoding
+.. class:: ContentTransferEncodingHeader
 
    Handles the :mailheader:`Content-Transfer-Encoding` header.
 
@@ -317,7 +317,7 @@ variant, :attr:`~.BaseHeader.max_count` is set to 1.
     class.  When *use_default_map* is ``True`` (the default), the standard
     mapping of header names to classes is copied in to the registry during
     initialization.  *base_class* is always the last class in the generated
-    class's ``__bases__`` list.
+    class's :class:`~type.__bases__` list.
 
     The default mappings are:
 

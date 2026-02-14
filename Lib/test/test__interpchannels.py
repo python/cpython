@@ -9,7 +9,7 @@ import unittest
 from test.support import import_helper
 
 _channels = import_helper.import_module('_interpchannels')
-from test.support.interpreters import _crossinterp
+from concurrent.interpreters import _crossinterp
 from test.test__interpreters import (
     _interpreters,
     _run_output,
@@ -247,7 +247,7 @@ def _run_action(cid, action, end, state):
 
 
 def clean_up_channels():
-    for cid, _ in _channels.list_all():
+    for cid, _, _ in _channels.list_all():
         try:
             _channels.destroy(cid)
         except _channels.ChannelNotFoundError:
@@ -372,11 +372,11 @@ class ChannelTests(TestBase):
         self.assertIsInstance(cid, _channels.ChannelID)
 
     def test_sequential_ids(self):
-        before = [cid for cid, _ in _channels.list_all()]
+        before = [cid for cid, _, _ in _channels.list_all()]
         id1 = _channels.create(REPLACE)
         id2 = _channels.create(REPLACE)
         id3 = _channels.create(REPLACE)
-        after = [cid for cid, _ in _channels.list_all()]
+        after = [cid for cid, _, _ in _channels.list_all()]
 
         self.assertEqual(id2, int(id1) + 1)
         self.assertEqual(id3, int(id2) + 1)

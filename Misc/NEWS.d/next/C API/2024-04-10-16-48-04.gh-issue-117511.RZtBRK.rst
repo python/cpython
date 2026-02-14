@@ -1,1 +1,0 @@
-Make the :c:type:`PyMutex` public in the non-limited C API.

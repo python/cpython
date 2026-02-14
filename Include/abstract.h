@@ -138,7 +138,12 @@ extern "C" {
    Delete attribute named attr_name, for object o. Returns
    -1 on failure.
 
-   This is the equivalent of the Python statement: del o.attr_name. */
+   This is the equivalent of the Python statement: del o.attr_name.
+
+   Implemented as a macro in the limited C API 3.12 and older. */
+#if defined(Py_LIMITED_API) && Py_LIMITED_API+0 < 0x030d0000
+#  define PyObject_DelAttrString(O, A) PyObject_SetAttrString((O), (A), NULL)
+#endif
 
 
 /* Implemented elsewhere:
@@ -147,7 +152,12 @@ extern "C" {
 
    Delete attribute named attr_name, for object o. Returns -1
    on failure.  This is the equivalent of the Python
-   statement: del o.attr_name. */
+   statement: del o.attr_name.
+
+   Implemented as a macro in the limited C API 3.12 and older. */
+#if defined(Py_LIMITED_API) && Py_LIMITED_API+0 < 0x030d0000
+#  define PyObject_DelAttr(O, A) PyObject_SetAttr((O), (A), NULL)
+#endif
 
 
 /* Implemented elsewhere:
@@ -734,22 +744,6 @@ PyAPI_FUNC(PyObject *) PySequence_List(PyObject *o);
    Returns NULL on failure.  If the object does not support iteration, raises a
    TypeError exception with 'm' as the message text. */
 PyAPI_FUNC(PyObject *) PySequence_Fast(PyObject *o, const char* m);
-
-/* Return the size of the sequence 'o', assuming that 'o' was returned by
-   PySequence_Fast and is not NULL. */
-#define PySequence_Fast_GET_SIZE(o) \
-    (PyList_Check(o) ? PyList_GET_SIZE(o) : PyTuple_GET_SIZE(o))
-
-/* Return the 'i'-th element of the sequence 'o', assuming that o was returned
-   by PySequence_Fast, and that i is within bounds. */
-#define PySequence_Fast_GET_ITEM(o, i)\
-     (PyList_Check(o) ? PyList_GET_ITEM((o), (i)) : PyTuple_GET_ITEM((o), (i)))
-
-/* Return a pointer to the underlying item array for
-   an object returned by PySequence_Fast */
-#define PySequence_Fast_ITEMS(sf) \
-    (PyList_Check(sf) ? ((PyListObject *)(sf))->ob_item \
-                      : ((PyTupleObject *)(sf))->ob_item)
 
 /* Return the number of occurrences on value on 'o', that is, return
    the number of keys for which o[key] == value.

@@ -1,1 +1,0 @@
-:mod:`csv` now correctly parses numeric fields (when used with :const:`csv.QUOTE_NONNUMERIC` or :const:`csv.QUOTE_STRINGS`) which start with an escape character.
