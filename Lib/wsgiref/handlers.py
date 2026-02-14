@@ -244,10 +244,6 @@ class BaseHandler:
         self.headers = self.headers_class(headers)
 
         status = self._convert_string_type(status, "Status")
-
-        if _name_disallowed_re.search(status):
-            raise ValueError("Control characters are not allowed in statuses")
-
         self._validate_status(status)
 
         if __debug__:
@@ -266,6 +262,8 @@ class BaseHandler:
             raise AssertionError("Status message must begin w/3-digit code")
         if status[3] != " ":
             raise AssertionError("Status message must have a space after code")
+        if _name_disallowed_re.search(status):
+            raise ValueError("Control characters are not allowed in statuses")
 
     def _convert_string_type(self, value, title):
         """Convert/check value type."""
