@@ -1,3 +1,2 @@
-Disallow usage of control characters in headers and status
-in :mod:`wsgiref.handlers` to prevent injections.
+Disallow usage of control characters in statuses in :mod:`wsgiref.handlers` to prevent injections.
 Patch by Benedikt Johannes.
