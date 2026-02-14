@@ -2201,10 +2201,10 @@ class TestDate(HarmlessMixedComparison, unittest.TestCase):
         )
 
     def test_strptime_D_format(self):
-        test_date = "11/28/2025"
+        test_date = "11/28/25"
         self.assertEqual(
             self.theclass.strptime(test_date, "%D"),
-            self.theclass.strptime(test_date, "%m/%d/%Y")
+            self.theclass.strptime(test_date, "%m/%d/%y")
         )
 
 
