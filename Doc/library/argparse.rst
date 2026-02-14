@@ -137,6 +137,9 @@ ArgumentParser objects
    .. versionchanged:: 3.15
       *suggest_on_error* default changed to ``True``.
 
+   .. versionchanged:: next
+      :class:`~argparse.ArgumentParser` objects are now :mod:`pickleable <pickle>`.
+
 The following sections describe how each of these are used.
 
 
