@@ -82,10 +82,10 @@ class StdStreamTest(unittest.TestCase):
 
 class TestArgumentParserPickleable(unittest.TestCase):
 
-    @mock.patch.dict(os.environ, {'NO_COLOR': 'true'})
+    @force_not_colorized
     def test_pickle_roundtrip(self):
         import pickle
-        parser = argparse.ArgumentParser()
+        parser = argparse.ArgumentParser(exit_on_error=False)
         parser.add_argument('--foo', type=int, default=42)
         parser.add_argument('bar', nargs='?', default='baz')
         # Try to pickle and unpickle the parser
