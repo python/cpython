@@ -1,1 +1,1 @@
-Make sure that :class:`argparse.ArgumentParser` is pickleable.
+Make :class:`argparse.ArgumentParser` is :mod:`pickleable <pickle>`.
