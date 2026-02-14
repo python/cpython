@@ -1045,7 +1045,7 @@ _PyJit_TryInitializeTracing(
     tracer->initial_state.func = (PyFunctionObject *)Py_NewRef(func);
     tracer->initial_state.executor = (_PyExecutorObject *)Py_XNewRef(current_executor);
     tracer->initial_state.exit = exit;
-    tracer->initial_state.stack_depth = (int)((uintptr_t)stack_pointer - (uintptr_t)_PyFrame_Stackbase(frame));
+    tracer->initial_state.stack_depth = (int)(stack_pointer - _PyFrame_Stackbase(frame));
     tracer->initial_state.chain_depth = chain_depth;
     tracer->prev_state.dependencies_still_valid = true;
     tracer->prev_state.instr_code = (PyCodeObject *)Py_NewRef(_PyFrame_GetCode(frame));
@@ -1487,7 +1487,7 @@ stack_allocate(_PyUOpInstruction *buffer, _PyUOpInstruction *output, int length)
         write++;
         depth = _PyUop_Caching[uop].entries[depth].output;
     }
-    return (int)((uintptr_t)write - (uintptr_t)output);
+    return (int)(write - output);
 }
 
 static int
