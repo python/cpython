@@ -417,7 +417,7 @@ are always available.  They are listed here in alphabetical order.
    parts (the sign of the imaginary part is mandatory in this case).
    The string can optionally be surrounded by whitespaces and the round
    parentheses ``'('`` and ``')'``, which are ignored.
-   The string must not contain whitespace between ``'+'``, ``'-'``, the
+   The string must not contain whitespace between ``'+'``, ``'-'``, ``'−'`` (U+2212), the
    ``'j'`` or ``'J'`` suffix, and the decimal number.
    For example, ``complex('1+2j')`` is fine, but ``complex('1 + 2j')`` raises
    :exc:`ValueError`.
@@ -465,6 +465,10 @@ are always available.  They are listed here in alphabetical order.
    .. deprecated:: 3.14
       Passing a complex number as the *real* or *imag* argument is now
       deprecated; it should only be passed as a single positional argument.
+
+   .. versionchanged:: 3.15
+      Unicode minus sign ``'−'`` (U+2212) can be now used as an alternative to ASCII
+      hyphen minus ``'-'`` for denoting negative sign.
 
 
 .. function:: delattr(object, name, /)
