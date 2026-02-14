@@ -1,0 +1,1 @@
+Eliminate redundant ref-counting for ``MATCH_CLASS`` in the JIT.
