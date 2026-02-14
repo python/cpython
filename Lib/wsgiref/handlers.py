@@ -1,7 +1,7 @@
 """Base classes for server/gateway implementations"""
 
 from .util import FileWrapper, guess_scheme, is_hop_by_hop
-from .headers import Headers, _name_disallowed_re, _value_disallowed_re
+from .headers import Headers, _name_disallowed_re
 
 import sys, os, time
 
@@ -245,8 +245,7 @@ class BaseHandler:
 
         status = self._convert_string_type(status, "Status")
 
-        regex = (_name_disallowed_re if name else _value_disallowed_re)
-        if regex.search(status):
+        if _name_disallowed_re.search(status):
             raise ValueError("Control characters are not allowed in headers and status")
 
         self._validate_status(status)
