@@ -467,8 +467,9 @@ are always available.  They are listed here in alphabetical order.
       deprecated; it should only be passed as a single positional argument.
 
    .. versionchanged:: 3.15
-      Unicode minus sign ``'−'`` (U+2212) can be now used as an alternative to ASCII
-      hyphen minus ``'-'`` for denoting negative sign.
+      ``'−'`` (Unicode minus sign, U+2212) can be now used as an 
+      alternative to ``'-'`` (ASCII hyphen minus) for denoting
+      negative sign.
 
 
 .. function:: delattr(object, name, /)
@@ -1091,8 +1092,9 @@ are always available.  They are listed here in alphabetical order.
       :func:`int` no longer delegates to the :meth:`~object.__trunc__` method.
 
    .. versionchanged:: 3.15
-      :func:`int` now supports Unicode minus sign ``−`` (U+2212) as an alternative
-      to ASCII hyphen minus ``-`` for denoting negative integers.
+      :func:`int` now supports ``−`` (Unicode minus sign, U+2212)
+      as an alternative to ``-`` (ASCII hyphen minus) for denoting
+      negative integers.
 
 .. function:: isinstance(object, classinfo, /)
 
