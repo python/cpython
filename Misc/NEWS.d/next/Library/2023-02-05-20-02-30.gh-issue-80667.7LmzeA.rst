@@ -1,1 +1,1 @@
-unicodedata: Fix missing Tangut Ideographs names.
+Add support for Tangut Ideographs names in :mod:`unicodedata`.
