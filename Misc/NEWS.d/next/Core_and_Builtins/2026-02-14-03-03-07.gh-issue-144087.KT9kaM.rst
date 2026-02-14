@@ -1,3 +1,3 @@
-:class:`int`, :class:`float` and :class:`complex` constructors now support
-strings with unicode MINUS SIGN ``−`` (U+2212) as an alternative to ASCII
+:func:`int`, :func:`float` and :func:`complex` now support strings
+with unicode MINUS SIGN ``−`` (U+2212) as an alternative to ASCII
 HYPHEN-SIGN ``-`` (U+002D). Contributed by Bartosz Sławecki.
