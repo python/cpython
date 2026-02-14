@@ -256,14 +256,14 @@ class BaseHandler:
         return self.write
 
     def _validate_status(self, status):
+        if _name_disallowed_re.search(status):
+            raise ValueError("Control characters are not allowed in statuses")
         if len(status) < 4:
             raise AssertionError("Status must be at least 4 characters")
         if not status[:3].isdigit():
             raise AssertionError("Status message must begin w/3-digit code")
         if status[3] != " ":
             raise AssertionError("Status message must have a space after code")
-        if _name_disallowed_re.search(status):
-            raise ValueError("Control characters are not allowed in statuses")
 
     def _convert_string_type(self, value, title):
         """Convert/check value type."""
