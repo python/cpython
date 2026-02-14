@@ -1,0 +1,1 @@
+Fix :mod:`math.integer` not being suggested in the :term:`REPL` auto-completion of imports.
