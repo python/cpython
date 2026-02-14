@@ -1,2 +1,2 @@
-Slightly improved performance in `codegen.c` via removing an indirect double check through `Py_XDECREF(co);`.
+Slightly improve performance in `codegen.c` via removing an indirect double check through `Py_XDECREF(co);`.
 Contributed by Benedikt Johannes.
