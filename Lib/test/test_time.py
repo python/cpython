@@ -379,7 +379,7 @@ class TimeTestCase(unittest.TestCase):
     def test_strptime_exception_context(self):
         # check that this doesn't chain exceptions needlessly (see #17572)
         with self.assertRaises(ValueError) as e:
-            time.strptime('', '%D')
+            time.strptime('', '%!')
         self.assertTrue(e.exception.__suppress_context__)
         # additional check for stray % branch
         with self.assertRaises(ValueError) as e:
