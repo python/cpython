@@ -425,6 +425,7 @@ class TimeRE(dict):
         base.__setitem__('X', self.pattern(self.locale_time.LC_time))
         base.__setitem__('x', self.pattern(self.locale_time.LC_date))
         base.__setitem__('c', self.pattern(self.locale_time.LC_date_time))
+        base.__setitem__('D', self.pattern('%m/%d/%Y'))
 
     def __seqToRE(self, to_convert, directive, altregex=None):
         """Convert a list to a regex string for matching a directive.
