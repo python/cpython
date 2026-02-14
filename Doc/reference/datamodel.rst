@@ -2833,7 +2833,7 @@ The appropriate metaclass for a class definition is determined in two steps:
      as candidate;
    * if an explicit metaclass is given and it is an instance of :func:`type`,
      then it is used as candidate;
-   * if bases are defined but no explicit metaclass, the metaclass of the first
+   * if bases are defined but no explicit metaclass, the class of the first
      base is used as candidate;
    * if an explicit metaclass is given and it is *not* an instance of
      :func:`type`, then it is used directly as the metaclass and step 2 is skipped.
@@ -2841,11 +2841,10 @@ The appropriate metaclass for a class definition is determined in two steps:
 2) bases, if present, are traversed left-to-right, and the most derived
    metaclass is determined as follows:
 
-   * if the metaclass of the current candidate is a subtype of the metaclass of
-     the current base, update the candidate to the metaclass of the base and
-     continue to the next base;
-   * if the current candidate is a subtype of the metaclass of the current base,
-     continue to the next base;
+   * if the current candidate is a subclass of the class of the current base,
+     continue with the next base;
+   * if the class of the current base is a subclass of the current candidate ,
+     continue with the next base;
    * else raise a :exc:`TypeError`.
 
 
