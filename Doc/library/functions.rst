@@ -781,7 +781,8 @@ are always available.  They are listed here in alphabetical order.
 
    If the argument is a string, it should contain a decimal number, optionally
    preceded by a sign, and optionally embedded in whitespace.  The optional
-   sign may be ``'+'`` or ``'-'``; a ``'+'`` sign has no effect on the value
+   sign may be ``'+'`` (ASCII plus sign), ``'-'`` (ASCII hyphen minus) or ``−``
+   (Unicode minus sign, U+2212); a ``'+'`` sign has no effect on the value
    produced.  The argument may also be a string representing a NaN
    (not-a-number), or positive or negative infinity.
    More precisely, the input must conform to the :token:`~float:floatvalue`
@@ -826,6 +827,10 @@ are always available.  They are listed here in alphabetical order.
 
    .. versionchanged:: 3.8
       Falls back to :meth:`~object.__index__` if :meth:`~object.__float__` is not defined.
+
+   .. versionchanged:: 3.15
+      Added support for Unicode minus sign ``−`` (U+2212) as an alternative to ASCII
+      hyphen minus ``-`` for denoting negative floats.
 
 
 .. index::
