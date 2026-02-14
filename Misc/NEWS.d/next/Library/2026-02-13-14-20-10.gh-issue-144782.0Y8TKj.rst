@@ -1,1 +1,1 @@
-Make :class:`argparse.ArgumentParser` is :mod:`pickleable <pickle>`.
+Make :class:`argparse.ArgumentParser` :mod:`pickleable <pickle>`.
