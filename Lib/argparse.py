@@ -149,7 +149,6 @@ def _copy_items(items):
 
 
 def _identity(value):
-    # Defined at module scope so that ArgumentParser instances are pickleable.
     return value
 
 
