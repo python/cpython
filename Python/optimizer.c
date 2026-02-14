@@ -8,7 +8,6 @@
 #include "pycore_bitutils.h"        // _Py_popcount32()
 #include "pycore_ceval.h"       // _Py_set_eval_breaker_bit
 #include "pycore_code.h"            // _Py_GetBaseCodeUnit
-#include "pycore_function.h"        // _PyFunction_LookupByVersion()
 #include "pycore_interpframe.h"
 #include "pycore_object.h"          // _PyObject_GC_UNTRACK()
 #include "pycore_opcode_metadata.h" // _PyOpcode_OpName[]
