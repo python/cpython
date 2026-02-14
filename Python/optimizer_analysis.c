@@ -504,7 +504,7 @@ optimize_uops(
             stack_pointer = ctx->frame->stack_pointer;
         }
 
-        DUMP_UOP(ctx, "abs", this_instr - trace, this_instr, stack_pointer);
+        DUMP_UOP(ctx, "abs", (int)(this_instr - trace), this_instr, stack_pointer);
 
         _PyUOpInstruction *out_ptr = ctx->out_buffer.next;
 
