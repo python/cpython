@@ -1052,31 +1052,18 @@ static const char * const hangul_syllables[][3] = {
     { 0,    0,     "H"  }
 };
 
-/* These ranges need to match makeunicodedata.py:cjk_ranges. */
 static int
-is_cjk_unified_ideograph(Py_UCS4 code)
+find_prefix_id(Py_UCS4 code)
 {
-    return
-        (0x3400 <= code && code <= 0x4DBF)   || /* CJK Ideograph Extension A */
-        (0x4E00 <= code && code <= 0x9FFF)   || /* CJK Ideograph */
-        (0x20000 <= code && code <= 0x2A6DF) || /* CJK Ideograph Extension B */
-        (0x2A700 <= code && code <= 0x2B73F) || /* CJK Ideograph Extension C */
-        (0x2B740 <= code && code <= 0x2B81D) || /* CJK Ideograph Extension D */
-        (0x2B820 <= code && code <= 0x2CEAD) || /* CJK Ideograph Extension E */
-        (0x2CEB0 <= code && code <= 0x2EBE0) || /* CJK Ideograph Extension F */
-        (0x2EBF0 <= code && code <= 0x2EE5D) || /* CJK Ideograph Extension I */
-        (0x30000 <= code && code <= 0x3134A) || /* CJK Ideograph Extension G */
-        (0x31350 <= code && code <= 0x323AF) || /* CJK Ideograph Extension H */
-        (0x323B0 <= code && code <= 0x33479);   /* CJK Ideograph Extension J */
-}
-
-/* These ranges need to match makeunicodedata.py:tangut_ranges. */
-static int
-is_tangut_ideograph(Py_UCS4 code)
-{
-    return
-        (0x17000 <= code && code <= 0x187FF) || /* Tangut */
-        (0x18D00 <= code && code <= 0x18D1E);   /* Tangut Supplement */
+    for (int i = 0; i < (int)Py_ARRAY_LENGTH(derived_name_ranges); i++) {
+        if (code < derived_name_ranges[i].first) {
+            return -1;
+        }
+        if (code <= derived_name_ranges[i].last) {
+            return derived_name_ranges[i].prefixid;
+        }
+    }
+    return -1;
 }
 
 /* macros used to determine if the given code point is in the PUA range that
@@ -1354,7 +1341,9 @@ _getucname(PyObject *self,
         }
     }
 
-    if (SBase <= code && code < SBase+SCount) {
+    int prefixid = find_prefix_id(code);
+    if (prefixid == 0) {
+        assert(SBase <= code && code < SBase+SCount);
         /* Hangul syllable. */
         int SIndex = code - SBase;
         int L = SIndex / NCount;
@@ -1376,19 +1365,11 @@ _getucname(PyObject *self,
         return 1;
     }
 
-    if (is_cjk_unified_ideograph(code)) {
-        if (buflen < 28)
-            /* Worst case: CJK UNIFIED IDEOGRAPH-20000 */
+    if (prefixid > 0) {
+        const char *prefix = derived_name_prefixes[prefixid];
+        if (snprintf(buffer, buflen, "%s%04X", prefix, code) >= buflen) {
             return 0;
-        sprintf(buffer, "CJK UNIFIED IDEOGRAPH-%X", code);
-        return 1;
-    }
-
-    if (is_tangut_ideograph(code)) {
-        if (buflen < 23)
-            /* Worst case: TANGUT IDEOGRAPH-18D08 */
-            return 0;
-        sprintf(buffer, "TANGUT IDEOGRAPH-%X", code);
+        }
         return 1;
     }
 
@@ -1482,8 +1463,19 @@ _getcode(const char* name, int namelen, Py_UCS4* code)
      * Named aliases are not resolved, they are returned as a code point in the
      * PUA */
 
-    /* Check for hangul syllables. */
-    if (PyOS_strnicmp(name, "HANGUL SYLLABLE ", 16) == 0) {
+    int i = 0;
+    size_t prefixlen;
+    for (; i < (int)Py_ARRAY_LENGTH(derived_name_prefixes); i++) {
+        const char *prefix = derived_name_prefixes[i];
+        prefixlen = strlen(derived_name_prefixes[i]);
+        if (PyOS_strnicmp(name, prefix, prefixlen) == 0) {
+            break;
+        }
+    }
+
+    if (i == 0) {
+        /* Hangul syllables. */
+        assert(PyOS_strnicmp(name, "HANGUL SYLLABLE ", 16) == 0);
         int len, L = -1, V = -1, T = -1;
         const char *pos = name + 16;
         find_syllable(pos, &len, &L, LCount, 0);
@@ -1500,22 +1492,9 @@ _getcode(const char* name, int namelen, Py_UCS4* code)
         return 0;
     }
 
-    /* Check for CJK unified ideographs. */
-    if (PyOS_strnicmp(name, "CJK UNIFIED IDEOGRAPH-", 22) == 0) {
-        /* Four or five hexdigits must follow. */
-        Py_UCS4 v = parse_hex_code(name + 22, namelen - 22);
-        if (!is_cjk_unified_ideograph(v)) {
-            return 0;
-        }
-        *code = v;
-        return 1;
-    }
-
-    /* Check for Tangut ideographs. */
-    if (PyOS_strnicmp(name, "TANGUT IDEOGRAPH-", 17) == 0) {
-        /* Five hexdigits must follow. */
-        Py_UCS4 v = parse_hex_code(name + 17, namelen - 17);
-        if (!is_tangut_ideograph(v)) {
+    if (i < (int)Py_ARRAY_LENGTH(derived_name_prefixes)) {
+        Py_UCS4 v = parse_hex_code(name + prefixlen, namelen - prefixlen);
+        if (find_prefix_id(v) != i) {
             return 0;
         }
         *code = v;
