@@ -2842,7 +2842,7 @@ The appropriate metaclass for a class definition is determined in two steps:
    metaclass is determined as follows:
 
    * if the metaclass of the current candidate is a subtype of the metaclass of
-     the current base, updated the candidate to the metaclass of the base and
+     the current base, update the candidate to the metaclass of the base and
      continue to the next base;
    * if the current candidate is a subtype of the metaclass of the current base,
      continue to the next base;
