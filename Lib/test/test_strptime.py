@@ -664,7 +664,7 @@ class StrptimeTests(unittest.TestCase):
         )
 
     def test_strptime_D_format(self):
-        test_date = "10/26/2025"
+        test_date = "11/28/2025"
         self.assertEqual(
             time.strptime(test_date, "%D"),
             time.strptime(test_date, "%m/%d/%Y")
