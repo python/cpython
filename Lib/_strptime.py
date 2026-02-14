@@ -24,6 +24,11 @@ from datetime import (date as datetime_date,
                       timezone as datetime_timezone)
 from _thread import allocate_lock as _thread_allocate_lock
 
+try:
+    from _strptime_impl import _strptime_parse as _c_strptime_parse
+except ImportError:
+    _c_strptime_parse = None
+
 __all__ = []
 
 def _getlang():
@@ -553,6 +558,12 @@ def _strptime(data_string, format="%a %b %d %H:%M:%S %Y"):
             locale_time = _TimeRE_cache.locale_time
         if len(_regex_cache) > _CACHE_MAX_SIZE:
             _regex_cache.clear()
+        if _c_strptime_parse is not None:
+            result = _c_strptime_parse(data_string, format)
+            if result is not None:
+                if format not in _regex_cache:
+                    _regex_cache[format] = None
+                return result
         format_regex = _regex_cache.get(format)
         if not format_regex:
             try:
