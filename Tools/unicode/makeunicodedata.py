@@ -29,6 +29,7 @@
 import dataclasses
 import os
 import sys
+import re
 import zipfile
 
 from functools import partial
@@ -49,6 +50,7 @@ UNICODE_DATA = "UnicodeData%s.txt"
 COMPOSITION_EXCLUSIONS = "CompositionExclusions%s.txt"
 EASTASIAN_WIDTH = "EastAsianWidth%s.txt"
 UNIHAN = "Unihan%s.zip"
+DERIVED_BIDI_CLASS = "extracted/DerivedBidiClass%s.txt"
 DERIVED_CORE_PROPERTIES = "DerivedCoreProperties%s.txt"
 DERIVEDNORMALIZATION_PROPS = "DerivedNormalizationProps%s.txt"
 LINE_BREAK = "LineBreak%s.txt"
@@ -78,6 +80,33 @@ CATEGORY_NAMES = [ "Cn", "Lu", "Ll", "Lt", "Mn", "Mc", "Me", "Nd",
 BIDIRECTIONAL_NAMES = [ "", "L", "LRE", "LRO", "R", "AL", "RLE", "RLO",
     "PDF", "EN", "ES", "ET", "AN", "CS", "NSM", "BN", "B", "S", "WS",
     "ON", "LRI", "RLI", "FSI", "PDI" ]
+
+# https://www.unicode.org/reports/tr44/#BC_Values_Table
+BIDI_LONG_NAMES = {
+    'Left_To_Right': 'L',
+    'Right_To_Left': 'R',
+    'Arabic_Letter': 'AL',
+    'European_Number': 'EN',
+    'European_Separator': 'ES',
+    'European_Terminator': 'ET',
+    'Arabic_Number': 'AN',
+    'Common_Separator': 'CS',
+    'Nonspacing_Mark': 'NSM',
+    'Boundary_Neutral': 'BN',
+    'Paragraph_Separator': 'B',
+    'Segment_Separator': 'S',
+    'White_Space': 'WS',
+    'Other_Neutral': 'ON',
+    'Left_To_Right_Embedding': 'LRE',
+    'Left_To_Right_Override': 'LRO',
+    'Right_To_Left_Embedding': 'RLE',
+    'Right_To_Left_Override': 'RLO',
+    'Pop_Directional_Format': 'PDF',
+    'Left_To_Right_Isolate': 'LRI',
+    'Right_To_Left_Isolate': 'RLI',
+    'First_Strong_Isolate': 'FSI',
+    'Pop_Directional_Isolate': 'PDI',
+}
 
 # "Other" needs to be the first entry, see the comment in makeunicodedata
 GRAPHEME_CLUSTER_NAMES = [ 'Other', 'Prepend', 'CR', 'LF', 'Control',
@@ -187,12 +216,16 @@ def makeunicodedata(unicode, trace):
                 category, combining, bidirectional, mirrored, eastasianwidth,
                 normalizationquickcheck, graphemebreak, incb, extpict,
                 )
-        elif eastasianwidth or graphemebreak or extpict:
-            # an unassigned but reserved character, with a known
-            # east_asian_width or grapheme_break or ext_pict
-            item = (0, 0, 0, 0, eastasianwidth, 0, graphemebreak, 0, extpict)
         else:
-            continue
+            if unicode.bidi_defaults is not None:
+                bidirectional = BIDIRECTIONAL_NAMES.index(unicode.bidi_defaults[char])
+            else:
+                bidirectional = 0
+            if eastasianwidth or graphemebreak or extpict or bidirectional:
+                item = (0, 0, bidirectional, 0, eastasianwidth,
+                        0, graphemebreak, 0, extpict)
+            else:
+                continue
 
         # add entry to index and item tables
         i = cache.get(item)
@@ -1030,6 +1063,28 @@ class UnicodeData:
             if table[i] is not None:
                 table[i].east_asian_width = widths[i]
         self.widths = widths
+
+        # Read DerivedBidiClass.txt for bidi defaults of unassigned codepoints
+        # see https://www.unicode.org/reports/tr44/#Missing_Conventions
+        if version != '3.2.0':
+            bidi_defaults = [None] * 0x110000
+            missing_re = re.compile(
+                r'# @missing: ([\dA-F]+)\.\.([\dA-F]+); (\w+)'
+            )
+            with open_data(DERIVED_BIDI_CLASS, version) as f:
+                for l in f:
+                    m = missing_re.search(l)
+                    if not m:
+                        continue
+                    start, end = int(m[1], 16), int(m[2], 16)
+                    name = BIDI_LONG_NAMES[m[3]]
+                    for i in range(start, end + 1):
+                        bidi_defaults[i] = name
+            for char, (bidi,) in UcdFile(DERIVED_BIDI_CLASS, version).expanded():
+                bidi_defaults[char] = bidi
+            self.bidi_defaults = bidi_defaults
+        else:
+            self.bidi_defaults = None
 
         for char, (propname, *propinfo) in UcdFile(DERIVED_CORE_PROPERTIES, version).expanded():
             if not propinfo:
