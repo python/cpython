@@ -417,10 +417,10 @@ are always available.  They are listed here in alphabetical order.
    parts (the sign of the imaginary part is mandatory in this case).
    The string can optionally be surrounded by whitespaces and the round
    parentheses ``'('`` and ``')'``, which are ignored.
-   The string must not contain whitespace between ASCII plus sign ``'+'`` or ASCII hyphen minus
-   ``'-'`` or Unicode minus sign ``'−'`` (U+2212), the ``'j'`` or ``'J'`` suffix, and the decimal
-   number. For example, ``complex('1+2j')`` is fine, but ``complex('1 + 2j')`` raises
-   :exc:`ValueError`.
+   The string must not contain whitespace between ``'+'`` (ASCII plus sign),
+   ``'-'`` (ASCII hyphen minus), ``'−'`` (Unicode minus sign, U+2212), the
+   ``'j'`` or ``'J'`` suffix, and the decimal number. For example,
+   ``complex('1+2j')`` is fine, but ``complex('1 + 2j')`` raises :exc:`ValueError`.
    More precisely, the input must conform to the :token:`~float:complexvalue`
    production rule in the following grammar, after parentheses and leading and
    trailing whitespace characters are removed:
@@ -1046,8 +1046,8 @@ are always available.  They are listed here in alphabetical order.
    If the argument is not a number or if *base* is given, then it must be a string,
    :class:`bytes`, or :class:`bytearray` instance representing an integer
    in radix *base*.  Optionally, the string can be directly preceded (with no whitespaces
-   in between) by ASCII plus sign ``+``, ASCII hyphen minus ``-`` or Unicode minus sign
-   ``−`` (U+2212), have leading zeros, be surrounded by whitespace,
+   in between) by ``+`` (ASCII plus sign), ``-`` (ASCII hyphen minus) or ``−`` (Unicode
+   minus sign, U+2212), have leading zeros, be surrounded by whitespace,
    and have single underscores interspersed between digits.
 
    A base-n integer string contains digits, each representing a value from 0 to
