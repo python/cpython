@@ -358,6 +358,29 @@ _PyObject_MiFree(void *ctx, void *ptr)
     mi_free(ptr);
 }
 
+void *
+_PyMem_MiRawMalloc(void *, size_t size)
+{
+    return mi_malloc(size);
+}
+
+void *
+_PyMem_MiRawCalloc(void *, size_t nelem, size_t elsize)
+{
+    return mi_calloc(nelem, elsize);
+}
+
+void *
+_PyMem_MiRawRealloc(void *, void *ptr, size_t size)
+{
+    return mi_realloc(ptr, size);
+}
+
+void
+_PyMem_MiRawFree(void *, void *ptr)
+{
+    mi_free(ptr);
+}
 #endif // WITH_MIMALLOC
 
 
@@ -365,7 +388,8 @@ _PyObject_MiFree(void *ctx, void *ptr)
 
 
 #ifdef WITH_MIMALLOC
-#  define MIMALLOC_ALLOC {NULL, _PyMem_MiMalloc, _PyMem_MiCalloc, _PyMem_MiRealloc, _PyMem_MiFree}
+#  define MIMALLOC_ALLOC    {NULL, _PyMem_MiMalloc, _PyMem_MiCalloc, _PyMem_MiRealloc, _PyMem_MiFree}
+#  define MIMALLOC_RAWALLOC {NULL, _PyMem_MiRawMalloc, _PyMem_MiRawCalloc, _PyMem_MiRawRealloc, _PyMem_MiRawFree}
 #  define MIMALLOC_OBJALLOC {NULL, _PyObject_MiMalloc, _PyObject_MiCalloc, _PyObject_MiRealloc, _PyObject_MiFree}
 #endif
 
@@ -383,7 +407,7 @@ void* _PyObject_Realloc(void *ctx, void *ptr, size_t size);
 
 #if defined(Py_GIL_DISABLED)
 // Py_GIL_DISABLED requires using mimalloc for "mem" and "obj" domains.
-#  define PYRAW_ALLOC MALLOC_ALLOC
+#  define PYRAW_ALLOC MIMALLOC_RAWALLOC
 #  define PYMEM_ALLOC MIMALLOC_ALLOC
 #  define PYOBJ_ALLOC MIMALLOC_OBJALLOC
 #elif defined(WITH_PYMALLOC)
@@ -758,7 +782,7 @@ set_up_allocators_unlocked(PyMemAllocatorName allocator)
     case PYMEM_ALLOCATOR_MIMALLOC:
     case PYMEM_ALLOCATOR_MIMALLOC_DEBUG:
     {
-        PyMemAllocatorEx malloc_alloc = MALLOC_ALLOC;
+        PyMemAllocatorEx malloc_alloc = MIMALLOC_RAWALLOC;
         set_allocator_unlocked(PYMEM_DOMAIN_RAW, &malloc_alloc);
 
         PyMemAllocatorEx pymalloc = MIMALLOC_ALLOC;

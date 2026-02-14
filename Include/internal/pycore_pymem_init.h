@@ -29,6 +29,11 @@ extern void* _PyMem_MiMalloc(void *, size_t);
 extern void* _PyMem_MiCalloc(void *, size_t, size_t);
 extern void _PyMem_MiFree(void *, void *);
 extern void* _PyMem_MiRealloc(void *, void *, size_t);
+extern void* _PyMem_MiRawMalloc(void *, size_t);
+extern void* _PyMem_MiRawCalloc(void *, size_t, size_t);
+extern void _PyMem_MiRawFree(void *, void *);
+extern void* _PyMem_MiRawRealloc(void *, void *, size_t);
+#  define PYRAW_ALLOC {NULL, _PyMem_MiRawMalloc, _PyMem_MiRawCalloc, _PyMem_MiRawRealloc, _PyMem_MiRawFree}
 #  define PYMEM_ALLOC {NULL, _PyMem_MiMalloc, _PyMem_MiCalloc, _PyMem_MiRealloc, _PyMem_MiFree}
 #elif defined(WITH_PYMALLOC)
 extern void* _PyObject_Malloc(void *, size_t);
