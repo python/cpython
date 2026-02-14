@@ -1114,30 +1114,40 @@ class InfNanTest(unittest.TestCase):
         self.assertTrue(isnan(float("nan")))
         self.assertTrue(isnan(float("+nan")))
         self.assertTrue(isnan(float("-nan")))
+        self.assertTrue(isnan(float("\N{MINUS SIGN}nan")))
 
         self.assertEqual(repr(float("nan")), "nan")
         self.assertEqual(repr(float("+nan")), "nan")
         self.assertEqual(repr(float("-nan")), "nan")
+        self.assertEqual(repr(float("\N{MINUS SIGN}nan")), "nan")
 
         self.assertEqual(repr(float("NAN")), "nan")
         self.assertEqual(repr(float("+NAn")), "nan")
         self.assertEqual(repr(float("-NaN")), "nan")
+        self.assertEqual(repr(float("\N{MINUS SIGN}NaN")), "nan")
 
         self.assertEqual(str(float("nan")), "nan")
         self.assertEqual(str(float("+nan")), "nan")
         self.assertEqual(str(float("-nan")), "nan")
+        self.assertEqual(str(float("\N{MINUS SIGN}nan")), "nan")
 
         self.assertRaises(ValueError, float, "nana")
         self.assertRaises(ValueError, float, "+nana")
         self.assertRaises(ValueError, float, "-nana")
+        self.assertRaises(ValueError, float, "\N{MINUS SIGN}nana")
         self.assertRaises(ValueError, float, "na")
         self.assertRaises(ValueError, float, "+na")
         self.assertRaises(ValueError, float, "-na")
+        self.assertRaises(ValueError, float, "\N{MINUS SIGN}na")
 
         self.assertRaises(ValueError, float, "++nan")
         self.assertRaises(ValueError, float, "-+NAN")
         self.assertRaises(ValueError, float, "+-NaN")
         self.assertRaises(ValueError, float, "--nAn")
+        self.assertRaises(ValueError, float, "\N{MINUS SIGN}+NAN")
+        self.assertRaises(ValueError, float, "-\N{MINUS SIGN}nAn")
+        self.assertRaises(ValueError, float, "\N{MINUS SIGN}-nAn")
+        self.assertRaises(ValueError, float, "\N{MINUS SIGN}\N{MINUS SIGN}nAn")
 
     def test_nan_as_str(self):
         self.assertEqual(repr(1e300 * 1e300 * 0), "nan")
@@ -1149,11 +1159,13 @@ class InfNanTest(unittest.TestCase):
     def test_inf_signs(self):
         self.assertEqual(copysign(1.0, float('inf')), 1.0)
         self.assertEqual(copysign(1.0, float('-inf')), -1.0)
+        self.assertEqual(copysign(1.0, float('\N{MINUS SIGN}inf')), -1.0)
 
     def test_nan_signs(self):
         # The sign of float('nan') should be predictable.
         self.assertEqual(copysign(1.0, float('nan')), 1.0)
         self.assertEqual(copysign(1.0, float('-nan')), -1.0)
+        self.assertEqual(copysign(1.0, float('\N{MINUS SIGN}nan')), -1.0)
 
 
 fromHex = float.fromhex
