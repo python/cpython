@@ -1036,8 +1036,9 @@ are always available.  They are listed here in alphabetical order.
 
    If the argument is not a number or if *base* is given, then it must be a string,
    :class:`bytes`, or :class:`bytearray` instance representing an integer
-   in radix *base*.  Optionally, the string can be preceded by ``+`` or ``-``
-   (with no space in between), have leading zeros, be surrounded by whitespace,
+   in radix *base*.  Optionally, the string can be directly preceded (with no whitespaces
+   in between) by ASCII plus sign ``+``, ASCII hyphen minus ``-`` or Unicode minus sign
+   ``−`` (U+2212), have leading zeros, be surrounded by whitespace,
    and have single underscores interspersed between digits.
 
    A base-n integer string contains digits, each representing a value from 0 to
@@ -1079,6 +1080,10 @@ are always available.  They are listed here in alphabetical order.
 
    .. versionchanged:: 3.14
       :func:`int` no longer delegates to the :meth:`~object.__trunc__` method.
+
+   .. versionchanged:: 3.15
+      :func:`int` now supports Unicode minus sign ``−`` (U+2212) as an alternative
+      to ASCII hyphen minus ``-`` for denoting negative integers.
 
 .. function:: isinstance(object, classinfo, /)
 
