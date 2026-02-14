@@ -1422,7 +1422,6 @@ codegen_function_body(compiler *c, stmt_ty s, int is_async, Py_ssize_t funcflags
     PyCodeObject *co = _PyCompile_OptimizeAndAssemble(c, 1);
     _PyCompile_ExitScope(c);
     if (co == NULL) {
-        Py_XDECREF(co);
         return ERROR;
     }
     int ret = codegen_make_closure(c, LOC(s), co, funcflags);
