@@ -417,8 +417,8 @@ are always available.  They are listed here in alphabetical order.
    parts (the sign of the imaginary part is mandatory in this case).
    The string can optionally be surrounded by whitespaces and the round
    parentheses ``'('`` and ``')'``, which are ignored.
-   The string must not contain whitespace between ASCII plus sign ``'+'``, ASCII hyphen minus
-   ``'-'``, Unicode minus sign ``'−'`` (U+2212), the ``'j'`` or ``'J'`` suffix, and the decimal
+   The string must not contain whitespace between ASCII plus sign ``'+'`` or ASCII hyphen minus
+   ``'-'`` or Unicode minus sign ``'−'`` (U+2212), the ``'j'`` or ``'J'`` suffix, and the decimal
    number. For example, ``complex('1+2j')`` is fine, but ``complex('1 + 2j')`` raises
    :exc:`ValueError`.
    More precisely, the input must conform to the :token:`~float:complexvalue`
