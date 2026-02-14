@@ -205,6 +205,17 @@ class BaseUnicodeFunctionsTest:
             "HANDBUG",
             "MODIFIER LETTER CYRILLIC SMALL QUESTION MARK",
             "???",
+            "CJK UNIFIED IDEOGRAPH-03400",
+            "CJK UNIFIED IDEOGRAPH-020000",
+            "CJK UNIFIED IDEOGRAPH-33FF",
+            "CJK UNIFIED IDEOGRAPH-F900",
+            "CJK UNIFIED IDEOGRAPH-13460",
+            "CJK UNIFIED IDEOGRAPH-17000",
+            "CJK UNIFIED IDEOGRAPH-18B00",
+            "CJK UNIFIED IDEOGRAPH-1B170",
+            "CJK COMPATIBILITY IDEOGRAPH-3400",
+            "TANGUT IDEOGRAPH-3400",
+            "HANGUL SYLLABLE AC00",
         ]:
             self.assertRaises(KeyError, self.db.lookup, nonexistent)
 
