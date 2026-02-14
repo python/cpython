@@ -1,2 +1,0 @@
-Remove an indirect double check in ``codegen.c`` through ``co == NULL`` and ``Py_XDECREF(co);``.
-Contributed by Benedikt Johannes.
