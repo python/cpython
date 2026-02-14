@@ -418,6 +418,7 @@ class TimeRE(dict):
         mapping['W'] = mapping['U'].replace('U', 'W')
 
         base.__init__(mapping)
+        base.__setitem__('D', self.pattern('%m/%d/%y'))
         base.__setitem__('F', self.pattern('%Y-%m-%d'))
         base.__setitem__('T', self.pattern('%H:%M:%S'))
         base.__setitem__('R', self.pattern('%H:%M'))
@@ -425,7 +426,6 @@ class TimeRE(dict):
         base.__setitem__('X', self.pattern(self.locale_time.LC_time))
         base.__setitem__('x', self.pattern(self.locale_time.LC_date))
         base.__setitem__('c', self.pattern(self.locale_time.LC_date_time))
-        base.__setitem__('D', self.pattern('%m/%d/%y'))
 
     def __seqToRE(self, to_convert, directive, altregex=None):
         """Convert a list to a regex string for matching a directive.
