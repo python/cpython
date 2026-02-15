@@ -23,6 +23,8 @@ document the API functions in detail.
    concrete.rst
    interp-lifecycle.rst
    threads.rst
+   synchronization.rst
+   tls.rst
    subinterpreters.rst
    profiling.rst
    init_config.rst
