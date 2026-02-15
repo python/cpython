@@ -21,7 +21,10 @@ document the API functions in detail.
    utilities.rst
    abstract.rst
    concrete.rst
-   init.rst
+   interp-lifecycle.rst
+   threads.rst
+   subinterpreters.rst
+   profiling.rst
    init_config.rst
    memory.rst
    objimpl.rst
