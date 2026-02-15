@@ -637,6 +637,11 @@ The Packer
 
 .. index:: single: packing (widgets)
 
+.. note::
+   For new code, using the :meth:`grid` geometry manager is recommended over
+   :meth:`pack`. While :meth:`pack` is equally powerful, :meth:`grid` is easier
+   to use and makes it less onerous to create layouts that look appealing.
+
 The packer is one of Tk's geometry-management mechanisms.    Geometry managers
 are used to specify the relative positioning of widgets within their container.
 In contrast to the more cumbersome *placer* (which is
