@@ -919,6 +919,107 @@ class TestDiscovery(unittest.TestCase):
                                      'don\'t know how to discover from {!r}'
                                      .format(package))
 
+    def test_valid_module_name(self):
+        # gh-68451: _valid_module_name should accept Unicode module names
+        from unittest.loader import _valid_module_name
+
+        # Valid ASCII module names
+        self.assertTrue(_valid_module_name('test_foo.py'))
+        self.assertTrue(_valid_module_name('Test_foo.py'))
+        self.assertTrue(_valid_module_name('_test.py'))
+        self.assertTrue(_valid_module_name('a.py'))
+
+        # Valid Unicode module names (gh-68451)
+        self.assertTrue(_valid_module_name('café.py'))
+        self.assertTrue(_valid_module_name('tëst_foo.py'))
+        self.assertTrue(_valid_module_name('測試.py'))
+        self.assertTrue(_valid_module_name('テスト.py'))
+
+        # Invalid module names
+        self.assertFalse(_valid_module_name('123.py'))
+        self.assertFalse(_valid_module_name('test-foo.py'))
+        self.assertFalse(_valid_module_name('test.foo'))
+        self.assertFalse(_valid_module_name('test'))
+        self.assertFalse(_valid_module_name('.py'))
+
+    def test_find_tests_with_unicode_modules(self):
+        # gh-68451: test discovery should find modules with Unicode names
+        loader = unittest.TestLoader()
+
+        original_listdir = os.listdir
+        original_isfile = os.path.isfile
+        original_isdir = os.path.isdir
+
+        path_lists = [['test2.py', 'test1.py', '測試1.py', 'tëst_três.py',
+                       'not_a_test.py', 'test_dir', 'test.foo',
+                       'test-not-a-module.py', '123bad.py', 'another_dir'],
+                      ['test3.py']]
+        os.listdir = lambda path: path_lists.pop(0)
+        self.addCleanup(setattr, os, 'listdir', original_listdir)
+
+        def isdir(path):
+            return path.endswith('dir')
+        os.path.isdir = isdir
+        self.addCleanup(setattr, os.path, 'isdir', original_isdir)
+
+        def isfile(path):
+            return not path.endswith('dir') and 'another_dir' not in path
+        os.path.isfile = isfile
+        self.addCleanup(setattr, os.path, 'isfile', original_isfile)
+
+        loader._get_module_from_name = lambda path: path + ' module'
+        orig_load_tests = loader.loadTestsFromModule
+        def loadTestsFromModule(module, pattern=None):
+            base = orig_load_tests(module, pattern=pattern)
+            return base + [module + ' tests']
+        loader.loadTestsFromModule = loadTestsFromModule
+        loader.suiteClass = lambda thing: thing
+
+        top_level = os.path.abspath('/foo')
+        loader._top_level_dir = top_level
+        suite = list(loader._find_tests(top_level, '*.py'))
+
+        # Unicode modules should be discovered alongside ASCII ones.
+        # test-not-a-module.py and 123bad.py should be excluded;
+        # test.foo should be excluded (wrong extension).
+        # Sorted by Unicode code points: test_dir (and its children) come
+        # before tëst_três since '_' (U+005F) < 'ë' (U+00EB).
+        expected = [[name + ' module tests'] for name in
+                    ('not_a_test', 'test1', 'test2')]
+        expected.append(['test_dir module tests'])
+        expected.extend([[('test_dir.%s' % name) + ' module tests']
+                         for name in ('test3',)])
+        expected.extend([[name + ' module tests'] for name in
+                         ('tëst_três', '測試1')])
+        self.assertEqual(suite, expected)
+
+    def test_find_test_path_rejects_invalid_dir_name(self):
+        # gh-68451: directories with invalid identifier names should be
+        # skipped during package discovery.
+        loader = unittest.TestLoader()
+
+        original_isfile = os.path.isfile
+        original_isdir = os.path.isdir
+
+        os.path.isdir = lambda path: True
+        self.addCleanup(setattr, os.path, 'isdir', original_isdir)
+        os.path.isfile = lambda path: path.endswith('__init__.py')
+        self.addCleanup(setattr, os.path, 'isfile', original_isfile)
+
+        loader._top_level_dir = '/foo'
+
+        # A directory with hyphens is not a valid identifier
+        tests, should_recurse = loader._find_test_path(
+            '/foo/not-a-package', 'test*.py')
+        self.assertIsNone(tests)
+        self.assertFalse(should_recurse)
+
+        # A directory starting with a digit is not a valid identifier
+        tests, should_recurse = loader._find_test_path(
+            '/foo/123bad', 'test*.py')
+        self.assertIsNone(tests)
+        self.assertFalse(should_recurse)
+
 
 if __name__ == '__main__':
     unittest.main()

@@ -1,0 +1,4 @@
+:mod:`unittest` test discovery now correctly finds test modules whose names
+start with non-ASCII Unicode letters (e.g., ``café.py``, ``測試.py``).
+Previously, discovery only accepted module names starting with ASCII letters
+or underscores.
