@@ -11,9 +11,11 @@
 #include "pycore_floatobject.h"
 #include "pycore_frame.h"
 #include "pycore_function.h"
+#include "pycore_import.h"
 #include "pycore_interpframe.h"
 #include "pycore_interpolation.h"
 #include "pycore_intrinsics.h"
+#include "pycore_lazyimportobject.h"
 #include "pycore_list.h"
 #include "pycore_long.h"
 #include "pycore_mmap.h"
@@ -162,7 +164,7 @@ mark_executable(unsigned char *memory, size_t size)
         jit_error("unable to flush instruction cache");
         return -1;
     }
-    int old;
+    DWORD old;
     int failed = !VirtualProtect(memory, size, PAGE_EXECUTE_READ, &old);
 #else
     __builtin___clear_cache((char *)memory, (char *)memory + size);

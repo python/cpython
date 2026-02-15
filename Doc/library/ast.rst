@@ -15,7 +15,7 @@
 
 --------------
 
-The :mod:`ast` module helps Python applications to process trees of the Python
+The :mod:`!ast` module helps Python applications to process trees of the Python
 abstract syntax grammar.  The abstract syntax itself might change with each
 Python release; this module helps to find out programmatically what the current
 grammar looks like.
@@ -46,7 +46,7 @@ Node classes
    This is the base of all AST node classes.  The actual node classes are
    derived from the :file:`Parser/Python.asdl` file, which is reproduced
    :ref:`above <abstract-grammar>`.  They are defined in the :mod:`!_ast` C
-   module and re-exported in :mod:`ast`.
+   module and re-exported in :mod:`!ast`.
 
    There is one class defined for each left-hand side symbol in the abstract
    grammar (for example, :class:`ast.stmt` or :class:`ast.expr`).  In addition,
@@ -1114,7 +1114,8 @@ Imports
                     names=[
                         alias(name='x'),
                         alias(name='y'),
-                        alias(name='z')])])
+                        alias(name='z')],
+                    is_lazy=0)])
 
 
 .. class:: ImportFrom(module, names, level)
@@ -1135,7 +1136,8 @@ Imports
                         alias(name='x'),
                         alias(name='y'),
                         alias(name='z')],
-                    level=0)])
+                    level=0,
+                    is_lazy=0)])
 
 
 .. class:: alias(name, asname)
@@ -1153,7 +1155,8 @@ Imports
                     names=[
                         alias(name='a', asname='b'),
                         alias(name='c')],
-                    level=2)])
+                    level=2,
+                    is_lazy=0)])
 
 Control flow
 ^^^^^^^^^^^^
@@ -2200,10 +2203,10 @@ Async and await
    occurrences of the same value (for example, :class:`ast.Add`).
 
 
-:mod:`ast` helpers
-------------------
+:mod:`!ast` helpers
+-------------------
 
-Apart from the node classes, the :mod:`ast` module defines these utility functions
+Apart from the node classes, the :mod:`!ast` module defines these utility functions
 and classes for traversing abstract syntax trees:
 
 .. function:: parse(source, filename='<unknown>', mode='exec', *, type_comments=False, feature_version=None, optimize=-1, module=None)
@@ -2576,7 +2579,7 @@ Command-line usage
 
 .. versionadded:: 3.9
 
-The :mod:`ast` module can be executed as a script from the command line.
+The :mod:`!ast` module can be executed as a script from the command line.
 It is as simple as:
 
 .. code-block:: sh

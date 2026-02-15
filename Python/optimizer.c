@@ -8,7 +8,6 @@
 #include "pycore_bitutils.h"        // _Py_popcount32()
 #include "pycore_ceval.h"       // _Py_set_eval_breaker_bit
 #include "pycore_code.h"            // _Py_GetBaseCodeUnit
-#include "pycore_function.h"        // _PyFunction_LookupByVersion()
 #include "pycore_interpframe.h"
 #include "pycore_object.h"          // _PyObject_GC_UNTRACK()
 #include "pycore_opcode_metadata.h" // _PyOpcode_OpName[]
@@ -928,22 +927,8 @@ _PyJit_translate_single_bytecode_to_trace(
                 }
                 if (uop == _PUSH_FRAME || uop == _RETURN_VALUE || uop == _RETURN_GENERATOR || uop == _YIELD_VALUE) {
                     PyCodeObject *new_code = (PyCodeObject *)PyStackRef_AsPyObjectBorrow(frame->f_executable);
-                    PyFunctionObject *new_func = (PyFunctionObject *)PyStackRef_AsPyObjectBorrow(frame->f_funcobj);
-
-                    operand = 0;
-                    if (frame->owner < FRAME_OWNED_BY_INTERPRETER) {
-                        // Don't add nested code objects to the dependency.
-                        // It causes endless re-traces.
-                        if (new_func != NULL && !Py_IsNone((PyObject*)new_func) && !(new_code->co_flags & CO_NESTED)) {
-                            operand = (uintptr_t)new_func;
-                            DPRINTF(2, "Adding %p func to op\n", (void *)operand);
-                            _Py_BloomFilter_Add(dependencies, new_func);
-                        }
-                        else if (new_code != NULL && !Py_IsNone((PyObject*)new_code)) {
-                            operand = (uintptr_t)new_code | 1;
-                            DPRINTF(2, "Adding %p code to op\n", (void *)operand);
-                            _Py_BloomFilter_Add(dependencies, new_code);
-                        }
+                    if (new_code != NULL && !Py_IsNone((PyObject*)new_code)) {
+                        _Py_BloomFilter_Add(dependencies, new_code);
                     }
                     ADD_TO_TRACE(uop, oparg, operand, target);
                     uop_buffer_last(trace)->operand1 = PyStackRef_IsNone(frame->f_executable) ? 2 : ((int)(frame->stackpointer - _PyFrame_Stackbase(frame)));
@@ -974,7 +959,13 @@ _PyJit_translate_single_bytecode_to_trace(
             DPRINTF(1, "Unknown uop needing guard ip %s\n", _PyOpcode_uop_name[uop_buffer_last(trace)->opcode]);
             Py_UNREACHABLE();
         }
+        PyObject *code = PyStackRef_AsPyObjectBorrow(frame->f_executable);
+        Py_INCREF(code);
+        ADD_TO_TRACE(_RECORD_CODE, 0, (uintptr_t)code, 0);
         ADD_TO_TRACE(guard_ip, 0, (uintptr_t)next_instr, 0);
+        if (PyCode_Check(code)) {
+            ADD_TO_TRACE(_GUARD_CODE, 0, ((PyCodeObject *)code)->co_version, 0);
+        }
     }
     // Loop back to the start
     int is_first_instr = tracer->initial_state.close_loop_instr == next_instr ||
@@ -1053,7 +1044,7 @@ _PyJit_TryInitializeTracing(
     tracer->initial_state.func = (PyFunctionObject *)Py_NewRef(func);
     tracer->initial_state.executor = (_PyExecutorObject *)Py_XNewRef(current_executor);
     tracer->initial_state.exit = exit;
-    tracer->initial_state.stack_depth = stack_pointer - _PyFrame_Stackbase(frame);
+    tracer->initial_state.stack_depth = (int)(stack_pointer - _PyFrame_Stackbase(frame));
     tracer->initial_state.chain_depth = chain_depth;
     tracer->prev_state.dependencies_still_valid = true;
     tracer->prev_state.instr_code = (PyCodeObject *)Py_NewRef(_PyFrame_GetCode(frame));
@@ -1224,7 +1215,8 @@ prepare_for_execution(_PyUOpInstruction *buffer, int length)
                 base_opcode == _GUARD_IP__PUSH_FRAME ||
                 base_opcode == _GUARD_IP_RETURN_VALUE ||
                 base_opcode == _GUARD_IP_YIELD_VALUE ||
-                base_opcode == _GUARD_IP_RETURN_GENERATOR
+                base_opcode == _GUARD_IP_RETURN_GENERATOR ||
+                base_opcode == _GUARD_CODE
             ) {
                 base_exit_op = _DYNAMIC_EXIT;
             }
@@ -1494,7 +1486,7 @@ stack_allocate(_PyUOpInstruction *buffer, _PyUOpInstruction *output, int length)
         write++;
         depth = _PyUop_Caching[uop].entries[depth].output;
     }
-    return write - output;
+    return (int)(write - output);
 }
 
 static int
@@ -2138,6 +2130,7 @@ executor_to_gv(_PyExecutorObject *executor, FILE *out)
             assert(inst->format == UOP_FORMAT_JUMP);
             _PyUOpInstruction const *exit_inst = &executor->trace[inst->jump_target];
             uint16_t base_exit_opcode = _PyUop_Uncached[exit_inst->opcode];
+            (void)base_exit_opcode;
             assert(base_exit_opcode == _EXIT_TRACE || base_exit_opcode == _DYNAMIC_EXIT);
             exit = (_PyExitData *)exit_inst->operand0;
         }

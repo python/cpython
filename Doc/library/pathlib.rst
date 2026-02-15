@@ -486,6 +486,10 @@ Pure paths provide the following methods and properties:
       >>> PurePosixPath('my/library').stem
       'library'
 
+   .. versionchanged:: 3.14
+
+      A single dot ("``.``") is considered a valid suffix.
+
 
 .. method:: PurePath.as_posix()
 
@@ -1883,7 +1887,7 @@ Below is a table mapping various :mod:`os` functions to their corresponding
 :class:`PurePath`/:class:`Path` equivalent.
 
 =====================================   ==============================================
-:mod:`os` and :mod:`os.path`            :mod:`pathlib`
+:mod:`os` and :mod:`os.path`            :mod:`!pathlib`
 =====================================   ==============================================
 :func:`os.path.dirname`                 :attr:`PurePath.parent`
 :func:`os.path.basename`                :attr:`PurePath.name`
@@ -1942,7 +1946,7 @@ Protocols
    :synopsis: pathlib types for static type checking
 
 
-The :mod:`pathlib.types` module provides types for static type checking.
+The :mod:`!pathlib.types` module provides types for static type checking.
 
 .. versionadded:: 3.14
 

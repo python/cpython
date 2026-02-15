@@ -18,7 +18,7 @@ support writing TOML.
 .. versionadded:: 3.11
    The module was added with support for TOML 1.0.0.
 
-.. versionchanged:: next
+.. versionchanged:: 3.15
    Added TOML 1.1.0 support.
    See the :ref:`What's New <whatsnew315-tomllib-1-1-0>` for details.
 
