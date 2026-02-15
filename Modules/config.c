@@ -38,6 +38,16 @@ extern PyObject* PyInit__philox(void);
 extern PyObject* PyInit__sfc64(void);
 extern PyObject* PyInit_bit_generator(void);
 extern PyObject* PyInit_mtrand(void);
+extern PyObject* PyInit_mrmr(void);
+extern PyObject* PyInit_cymem(void);
+extern PyObject* PyInit_maps(void);
+extern PyObject* PyInit_counter(void);
+extern PyObject* PyInit_bloom(void);
+extern PyObject* PyInit_ujson(void);
+extern PyObject* PyInit__packer(void);
+extern PyObject* PyInit__unpacker(void);
+extern PyObject* PyInit__epoch(void);
+extern PyObject* PyInit__cext(void);
 extern PyObject* PyInit_array(void);
 extern PyObject* PyInit__asyncio(void);
 extern PyObject* PyInit__bisect(void);
@@ -129,6 +139,16 @@ struct _inittab _PyImport_Inittab[] = {
     {"numpy.random._sfc64", PyInit__sfc64},
     {"numpy.random.bit_generator", PyInit_bit_generator},
     {"numpy.random.mtrand", PyInit_mtrand},
+    {"murmurhash.mrmr", PyInit_mrmr},
+    {"cymem.cymem", PyInit_cymem},
+    {"preshed.maps", PyInit_maps},
+    {"preshed.counter", PyInit_counter},
+    {"preshed.bloom", PyInit_bloom},
+    {"srsly.ujson.ujson", PyInit_ujson},
+    {"srsly.msgpack._packer", PyInit__packer},
+    {"srsly.msgpack._unpacker", PyInit__unpacker},
+    {"srsly.msgpack._epoch", PyInit__epoch},
+    {"kiwisolver._cext", PyInit__cext},
     {"array", PyInit_array},
     {"_asyncio", PyInit__asyncio},
     {"_bisect", PyInit__bisect},

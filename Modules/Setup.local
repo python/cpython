@@ -20,3 +20,17 @@ _philox numpy_builtin/_philox_dummy.c /home/ppenna/src/nanvix/packages/nanvix/sy
 _sfc64 numpy_builtin/_sfc64_dummy.c /home/ppenna/src/nanvix/packages/nanvix/sysroot-release/lib/numpy/lib_random__sfc64.a /home/ppenna/src/nanvix/packages/nanvix/sysroot-release/lib/numpy/libnpyrandom.a
 bit_generator numpy_builtin/bit_generator_dummy.c /home/ppenna/src/nanvix/packages/nanvix/sysroot-release/lib/numpy/lib_random_bit_generator.a /home/ppenna/src/nanvix/packages/nanvix/sysroot-release/lib/numpy/libnpyrandom.a
 mtrand numpy_builtin/mtrand_dummy.c /home/ppenna/src/nanvix/packages/nanvix/sysroot-release/lib/numpy/lib_random_mtrand.a /home/ppenna/src/nanvix/packages/nanvix/sysroot-release/lib/numpy/libnpyrandom.a
+
+# spaCy stack — C extensions compiled as static built-in modules
+mrmr cext_builtin/mrmr_dummy.c /home/ppenna/src/nanvix/packages/nanvix/sysroot-release/lib/cext/libmurmurhash.a -lstdc++
+cymem cext_builtin/cymem_dummy.c /home/ppenna/src/nanvix/packages/nanvix/sysroot-release/lib/cext/libcymem.a
+maps cext_builtin/maps_dummy.c /home/ppenna/src/nanvix/packages/nanvix/sysroot-release/lib/cext/libpreshed.a
+counter cext_builtin/counter_dummy.c /home/ppenna/src/nanvix/packages/nanvix/sysroot-release/lib/cext/libpreshed.a
+bloom cext_builtin/bloom_dummy.c /home/ppenna/src/nanvix/packages/nanvix/sysroot-release/lib/cext/libpreshed.a
+ujson cext_builtin/ujson_dummy.c /home/ppenna/src/nanvix/packages/nanvix/sysroot-release/lib/cext/libsrsly_ujson.a
+_packer cext_builtin/_packer_dummy.c /home/ppenna/src/nanvix/packages/nanvix/sysroot-release/lib/cext/libsrsly_msgpack_packer.a -lstdc++
+_unpacker cext_builtin/_unpacker_dummy.c /home/ppenna/src/nanvix/packages/nanvix/sysroot-release/lib/cext/libsrsly_msgpack_unpacker.a -lstdc++
+_epoch cext_builtin/_epoch_dummy.c /home/ppenna/src/nanvix/packages/nanvix/sysroot-release/lib/cext/libsrsly_msgpack_epoch.a -lstdc++
+
+# kiwisolver — C++ constraint solver
+_cext cext_builtin/_cext_dummy.c /home/ppenna/src/nanvix/packages/nanvix/sysroot-release/lib/cext/libkiwisolver.a -lstdc++
