@@ -2,9 +2,8 @@
 
 .. _initialization:
 
-*******************************************
 Interpreter Initialization and Finalization
-*******************************************
+===========================================
 
 See :ref:`Python Initialization Configuration <init-config>` for details
 on how to configure the interpreter prior to initialization.
@@ -12,7 +11,7 @@ on how to configure the interpreter prior to initialization.
 .. _pre-init-safe:
 
 Before Python Initialization
-============================
+----------------------------
 
 In an application embedding  Python, the :c:func:`Py_Initialize` function must
 be called before using any other Python/C API functions; with the exception of
@@ -82,7 +81,7 @@ The following functions can be safely called before Python is initialized:
 .. _global-conf-vars:
 
 Global configuration variables
-==============================
+------------------------------
 
 Python has variables for the global configuration to control different features
 and options. By default, these flags are controlled by :ref:`command line
@@ -91,6 +90,7 @@ options <using-on-interface-options>`.
 When a flag is set by an option, the value of the flag is the number of times
 that the option was set. For example, ``-b`` sets :c:data:`Py_BytesWarningFlag`
 to 1 and ``-bb`` sets :c:data:`Py_BytesWarningFlag` to 2.
+
 
 .. c:var:: int Py_BytesWarningFlag
 
@@ -106,6 +106,7 @@ to 1 and ``-bb`` sets :c:data:`Py_BytesWarningFlag` to 2.
 
    .. deprecated-removed:: 3.12 3.15
 
+
 .. c:var:: int Py_DebugFlag
 
    This API is kept for backward compatibility: setting
@@ -119,6 +120,7 @@ to 1 and ``-bb`` sets :c:data:`Py_BytesWarningFlag` to 2.
    variable.
 
    .. deprecated-removed:: 3.12 3.15
+
 
 .. c:var:: int Py_DontWriteBytecodeFlag
 
@@ -134,6 +136,7 @@ to 1 and ``-bb`` sets :c:data:`Py_BytesWarningFlag` to 2.
 
    .. deprecated-removed:: 3.12 3.15
 
+
 .. c:var:: int Py_FrozenFlag
 
    This API is kept for backward compatibility: setting
@@ -143,6 +146,7 @@ to 1 and ``-bb`` sets :c:data:`Py_BytesWarningFlag` to 2.
    Private flag used by ``_freeze_module`` and ``frozenmain`` programs.
 
    .. deprecated-removed:: 3.12 3.15
+
 
 .. c:var:: int Py_HashRandomizationFlag
 
@@ -159,6 +163,7 @@ to 1 and ``-bb`` sets :c:data:`Py_BytesWarningFlag` to 2.
 
    .. deprecated-removed:: 3.12 3.15
 
+
 .. c:var:: int Py_IgnoreEnvironmentFlag
 
    This API is kept for backward compatibility: setting
@@ -171,6 +176,7 @@ to 1 and ``-bb`` sets :c:data:`Py_BytesWarningFlag` to 2.
    Set by the :option:`-E` and :option:`-I` options.
 
    .. deprecated-removed:: 3.12 3.15
+
 
 .. c:var:: int Py_InspectFlag
 
@@ -187,6 +193,7 @@ to 1 and ``-bb`` sets :c:data:`Py_BytesWarningFlag` to 2.
 
    .. deprecated-removed:: 3.12 3.15
 
+
 .. c:var:: int Py_InteractiveFlag
 
    This API is kept for backward compatibility: setting
@@ -196,6 +203,7 @@ to 1 and ``-bb`` sets :c:data:`Py_BytesWarningFlag` to 2.
    Set by the :option:`-i` option.
 
    .. deprecated-removed:: 3.12 3.15
+
 
 .. c:var:: int Py_IsolatedFlag
 
@@ -211,6 +219,7 @@ to 1 and ``-bb`` sets :c:data:`Py_BytesWarningFlag` to 2.
    .. versionadded:: 3.4
 
    .. deprecated-removed:: 3.12 3.15
+
 
 .. c:var:: int Py_LegacyWindowsFSEncodingFlag
 
@@ -231,6 +240,7 @@ to 1 and ``-bb`` sets :c:data:`Py_BytesWarningFlag` to 2.
 
    .. deprecated-removed:: 3.12 3.15
 
+
 .. c:var:: int Py_LegacyWindowsStdioFlag
 
    This API is kept for backward compatibility: setting
@@ -249,6 +259,7 @@ to 1 and ``-bb`` sets :c:data:`Py_BytesWarningFlag` to 2.
 
    .. deprecated-removed:: 3.12 3.15
 
+
 .. c:var:: int Py_NoSiteFlag
 
    This API is kept for backward compatibility: setting
@@ -264,6 +275,7 @@ to 1 and ``-bb`` sets :c:data:`Py_BytesWarningFlag` to 2.
 
    .. deprecated-removed:: 3.12 3.15
 
+
 .. c:var:: int Py_NoUserSiteDirectory
 
    This API is kept for backward compatibility: setting
@@ -278,6 +290,7 @@ to 1 and ``-bb`` sets :c:data:`Py_BytesWarningFlag` to 2.
 
    .. deprecated-removed:: 3.12 3.15
 
+
 .. c:var:: int Py_OptimizeFlag
 
    This API is kept for backward compatibility: setting
@@ -288,6 +301,7 @@ to 1 and ``-bb`` sets :c:data:`Py_BytesWarningFlag` to 2.
    variable.
 
    .. deprecated-removed:: 3.12 3.15
+
 
 .. c:var:: int Py_QuietFlag
 
@@ -303,6 +317,7 @@ to 1 and ``-bb`` sets :c:data:`Py_BytesWarningFlag` to 2.
 
    .. deprecated-removed:: 3.12 3.15
 
+
 .. c:var:: int Py_UnbufferedStdioFlag
 
    This API is kept for backward compatibility: setting
@@ -315,6 +330,7 @@ to 1 and ``-bb`` sets :c:data:`Py_BytesWarningFlag` to 2.
    environment variable.
 
    .. deprecated-removed:: 3.12 3.15
+
 
 .. c:var:: int Py_VerboseFlag
 
@@ -334,8 +350,7 @@ to 1 and ``-bb`` sets :c:data:`Py_BytesWarningFlag` to 2.
 
 
 Initializing and finalizing the interpreter
-===========================================
-
+-------------------------------------------
 
 .. c:function:: void Py_Initialize()
 
@@ -555,9 +570,9 @@ Initializing and finalizing the interpreter
 
    .. versionadded:: 3.13
 
-Process-wide parameters
-=======================
 
+Process-wide parameters
+-----------------------
 
 .. c:function:: void Py_SetProgramName(const wchar_t *name)
 
@@ -754,6 +769,7 @@ Process-wide parameters
    :c:expr:`wchar_t*` string.
 
    .. deprecated-removed:: 3.11 3.15
+
 
 .. _cautions-regarding-runtime-finalization:
 

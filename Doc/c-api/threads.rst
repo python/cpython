@@ -109,6 +109,45 @@ to be released to attach their thread state, allowing true multi-core parallelis
    For example, the standard :mod:`zlib` and :mod:`hashlib` modules detach the
    :term:`thread state <attached thread state>` when compressing or hashing data.
 
+APIs
+^^^^
+
+The following macros are normally used without a trailing semicolon; look for
+example usage in the Python source distribution.
+
+.. note::
+
+    These macros are still necessary on the :term:`free-threaded build` to prevent
+    deadlocks.
+
+.. c:macro:: Py_BEGIN_ALLOW_THREADS
+
+   This macro expands to ``{ PyThreadState *_save; _save = PyEval_SaveThread();``.
+   Note that it contains an opening brace; it must be matched with a following
+   :c:macro:`Py_END_ALLOW_THREADS` macro.  See above for further discussion of this
+   macro.
+
+
+.. c:macro:: Py_END_ALLOW_THREADS
+
+   This macro expands to ``PyEval_RestoreThread(_save); }``. Note that it contains
+   a closing brace; it must be matched with an earlier
+   :c:macro:`Py_BEGIN_ALLOW_THREADS` macro.  See above for further discussion of
+   this macro.
+
+
+.. c:macro:: Py_BLOCK_THREADS
+
+   This macro expands to ``PyEval_RestoreThread(_save);``: it is equivalent to
+   :c:macro:`Py_END_ALLOW_THREADS` without the closing brace.
+
+
+.. c:macro:: Py_UNBLOCK_THREADS
+
+   This macro expands to ``_save = PyEval_SaveThread();``: it is equivalent to
+   :c:macro:`Py_BEGIN_ALLOW_THREADS` without the opening brace and variable
+   declaration.
+
 
 .. _gilstate:
 
@@ -177,6 +216,7 @@ the :term:`thread state` is targeting the correct interpreter::
    /* Destroy the thread state. No Python API allowed beyond this point. */
    PyThreadState_Clear(tstate);
    PyThreadState_DeleteCurrent();
+
 
 .. _fork-and-threads:
 
@@ -317,45 +357,6 @@ C extensions.
       Similar to :c:func:`PyGILState_Ensure`, this function will hang the
       thread if the runtime is finalizing.
 
-
-Releasing the GIL
------------------
-
-The following macros are normally used without a trailing semicolon; look for
-example usage in the Python source distribution.
-
-.. note::
-
-    These macros are still necessary on the :term:`free-threaded build` to prevent
-    deadlocks.
-
-.. c:macro:: Py_BEGIN_ALLOW_THREADS
-
-   This macro expands to ``{ PyThreadState *_save; _save = PyEval_SaveThread();``.
-   Note that it contains an opening brace; it must be matched with a following
-   :c:macro:`Py_END_ALLOW_THREADS` macro.  See above for further discussion of this
-   macro.
-
-
-.. c:macro:: Py_END_ALLOW_THREADS
-
-   This macro expands to ``PyEval_RestoreThread(_save); }``. Note that it contains
-   a closing brace; it must be matched with an earlier
-   :c:macro:`Py_BEGIN_ALLOW_THREADS` macro.  See above for further discussion of
-   this macro.
-
-
-.. c:macro:: Py_BLOCK_THREADS
-
-   This macro expands to ``PyEval_RestoreThread(_save);``: it is equivalent to
-   :c:macro:`Py_END_ALLOW_THREADS` without the closing brace.
-
-
-.. c:macro:: Py_UNBLOCK_THREADS
-
-   This macro expands to ``_save = PyEval_SaveThread();``: it is equivalent to
-   :c:macro:`Py_BEGIN_ALLOW_THREADS` without the opening brace and variable
-   declaration.
 
 GIL-state APIs
 --------------
@@ -626,7 +627,7 @@ Low-level APIs
 
 
 Asynchronous Notifications
---------------------------
+==========================
 
 A mechanism is provided to make asynchronous notifications to the main
 interpreter thread.  These notifications take the form of a function
@@ -708,7 +709,8 @@ pointer and a void pointer argument.
 
    .. versionchanged:: 3.7
       The type of the *id* parameter changed from :c:expr:`long` to
-      :c:expr:`unsigned long`.
+      :c:expr:`unsigned long`
+.
 
 .. _thread-local-storage:
 

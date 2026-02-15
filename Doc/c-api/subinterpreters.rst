@@ -433,7 +433,7 @@ All of the following functions must be called after :c:func:`Py_Initialize`.
 .. _advanced-debugging:
 
 Advanced Debugger Support
-=========================
+-------------------------
 
 These functions are only intended to be used by advanced debugging tools.
 
