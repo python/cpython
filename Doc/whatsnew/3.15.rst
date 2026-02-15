@@ -1563,6 +1563,8 @@ New features
   thread state.
   (Contributed by Victor Stinner in :gh:`139653`.)
 
+* Add :c:func:`PyUnstable_SetImmortal` C-API function to mark objects as :term:`immortal`.
+  (Contributed by Kumar Aditya in :gh:`143300`.)
 
 Changed C APIs
 --------------
@@ -1571,6 +1573,9 @@ Changed C APIs
   flag is set then :c:macro:`Py_TPFLAGS_HAVE_GC` must be set too.
   (Contributed by Sergey Miryanov in :gh:`134786`.)
 
+* :c:macro:`PyDateTime_IMPORT` is now thread safe. Code that directly checks ``PyDateTimeAPI``
+  for ``NULL`` should be updated to call :c:macro:`PyDateTime_IMPORT` instead.
+  (Contributed by Kumar Aditya in :gh:`141563`.)
 
 Porting to Python 3.15
 ----------------------
