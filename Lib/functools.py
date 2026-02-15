@@ -1100,9 +1100,20 @@ class _singledispatchmethod_get:
             method = self._dispatch(args[1].__class__)
         else:
             method = self._dispatch(args[0].__class__)
+
         if hasattr(method, "__get__"):
+            # If the method is a descriptor, it might be necessary
+            # to drop the first argument before calling
+            # as it can be no longer expected after descriptor access.
+            skip_first_arg = False
+            if isinstance(method, staticmethod):
+                skip_first_arg = self._skip_bound_arg
+
             method = method.__get__(self._obj, self._cls)
-            if self._skip_bound_arg and isinstance(method, MethodType):
+            if isinstance(method, MethodType):
+                skip_first_arg = self._skip_bound_arg
+
+            if skip_first_arg:
                 return method(*args[1:], **kwargs)
         return method(*args, **kwargs)
 

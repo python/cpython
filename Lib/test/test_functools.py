@@ -3023,7 +3023,7 @@ class TestSingleDispatch(unittest.TestCase):
 
             @generic.register
             @staticmethod
-            def special3(self, x: complex):
+            def special3(x: complex):
                 return "special3"
 
             def special4(self, x):
