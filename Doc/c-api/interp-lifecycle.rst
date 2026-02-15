@@ -752,9 +752,6 @@ Process-wide parameters
 
    .. versionadded:: 3.1.3
 
-   .. XXX impl. doesn't seem consistent in allowing ``0``/``NULL`` for the params;
-      check w/ Guido.
-
    .. deprecated-removed:: 3.11 3.15
 
 
