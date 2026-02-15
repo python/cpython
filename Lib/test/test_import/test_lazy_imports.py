@@ -8,6 +8,8 @@ import textwrap
 import threading
 import types
 import unittest
+import tempfile
+import os
 
 try:
     import _testcapi
@@ -597,6 +599,39 @@ class ErrorHandlingTests(unittest.TestCase):
         )
         self.assertEqual(result.returncode, 0, f"stdout: {result.stdout}, stderr: {result.stderr}")
         self.assertIn("OK", result.stdout)
+
+    def test_circular_lazy_import_does_not_crash_for_gh_144727(self):
+        with tempfile.TemporaryDirectory() as tmpdir:
+            a_path = os.path.join(tmpdir, "a.py")
+            b_path = os.path.join(tmpdir, "b.py")
+
+            with open(a_path, "w") as f:
+                f.write(textwrap.dedent("""\
+                    lazy import b
+
+                    def something():
+                        b.hello()
+
+                    something()
+                """))
+
+            with open(b_path, "w") as f:
+                f.write(textwrap.dedent("""\
+                    lazy import a
+
+                    def hello():
+                        print(a)
+                """))
+
+            result = subprocess.run(
+                [sys.executable, a_path],
+                capture_output=True,
+                text=True,
+                cwd=tmpdir,
+            )
+            # Should get a proper Python error, not a crash
+            self.assertEqual(result.returncode, 1)
+            self.assertIn("Error", result.stderr)
 
 
 class GlobalsAndDictTests(unittest.TestCase):
