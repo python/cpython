@@ -25,6 +25,14 @@ def glob(pathname, *, root_dir=None, dir_fd=None, recursive=False,
     The order of the returned list is undefined. Sort it if you need a
     particular order.
 
+    If root_dir is not None, it should be a path-like object specifying the
+    root directory for searching. It has the same effect as changing the
+    current directory before calling it. If pathname is relative, the
+    result will contain paths relative to root_dir.
+
+    If dir_fd is not None, it should be a file descriptor referring to a
+    directory, and paths will then be relative to that directory.
+
     If `include_hidden` is true, the patterns '*', '?', '**'  will match hidden
     directories.
 
@@ -45,6 +53,17 @@ def iglob(pathname, *, root_dir=None, dir_fd=None, recursive=False,
 
     The order of the returned paths is undefined. Sort them if you need a
     particular order.
+
+    If root_dir is not None, it should be a path-like object specifying the
+    root directory for searching. It has the same effect as changing the
+    current directory before calling it. If pathname is relative, the
+    result will contain paths relative to root_dir.
+
+    If dir_fd is not None, it should be a file descriptor referring to a
+    directory, and paths will then be relative to that directory.
+
+    If `include_hidden` is true, the patterns '*', '?', '**'  will match hidden
+    directories.
 
     If recursive is true, the pattern '**' will match any files and
     zero or more directories and subdirectories.
