@@ -843,8 +843,8 @@ undefined if the given :c:type:`Py_tss_t` has not been initialized by
 
 .. _thread-local-storage-api:
 
-Legacy API
-----------
+Legacy APIs
+-----------
 
 .. deprecated:: 3.7
    This API is superseded by

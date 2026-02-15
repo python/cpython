@@ -571,6 +571,35 @@ Initializing and finalizing the interpreter
    .. versionadded:: 3.13
 
 
+.. _cautions-regarding-runtime-finalization:
+
+Cautions regarding runtime finalization
+---------------------------------------
+
+In the late stage of :term:`interpreter shutdown`, after attempting to wait for
+non-daemon threads to exit (though this can be interrupted by
+:class:`KeyboardInterrupt`) and running the :mod:`atexit` functions, the runtime
+is marked as *finalizing*: :c:func:`Py_IsFinalizing` and
+:func:`sys.is_finalizing` return true.  At this point, only the *finalization
+thread* that initiated finalization (typically the main thread) is allowed to
+acquire the :term:`GIL`.
+
+If any thread, other than the finalization thread, attempts to attach a :term:`thread state`
+during finalization, either explicitly or
+implicitly, the thread enters **a permanently blocked state**
+where it remains until the program exits.  In most cases this is harmless, but this can result
+in deadlock if a later stage of finalization attempts to acquire a lock owned by the
+blocked thread, or otherwise waits on the blocked thread.
+
+Gross? Yes. This prevents random crashes and/or unexpectedly skipped C++
+finalizations further up the call stack when such threads were forcibly exited
+here in CPython 3.13 and earlier. The CPython runtime :term:`thread state` C APIs
+have never had any error reporting or handling expectations at :term:`thread state`
+attachment time that would've allowed for graceful exit from this situation. Changing that
+would require new stable C APIs and rewriting the majority of C code in the
+CPython ecosystem to use those with error handling.
+
+
 Process-wide parameters
 -----------------------
 
@@ -769,32 +798,3 @@ Process-wide parameters
    :c:expr:`wchar_t*` string.
 
    .. deprecated-removed:: 3.11 3.15
-
-
-.. _cautions-regarding-runtime-finalization:
-
-Cautions regarding runtime finalization
----------------------------------------
-
-In the late stage of :term:`interpreter shutdown`, after attempting to wait for
-non-daemon threads to exit (though this can be interrupted by
-:class:`KeyboardInterrupt`) and running the :mod:`atexit` functions, the runtime
-is marked as *finalizing*: :c:func:`Py_IsFinalizing` and
-:func:`sys.is_finalizing` return true.  At this point, only the *finalization
-thread* that initiated finalization (typically the main thread) is allowed to
-acquire the :term:`GIL`.
-
-If any thread, other than the finalization thread, attempts to attach a :term:`thread state`
-during finalization, either explicitly or
-implicitly, the thread enters **a permanently blocked state**
-where it remains until the program exits.  In most cases this is harmless, but this can result
-in deadlock if a later stage of finalization attempts to acquire a lock owned by the
-blocked thread, or otherwise waits on the blocked thread.
-
-Gross? Yes. This prevents random crashes and/or unexpectedly skipped C++
-finalizations further up the call stack when such threads were forcibly exited
-here in CPython 3.13 and earlier. The CPython runtime :term:`thread state` C APIs
-have never had any error reporting or handling expectations at :term:`thread state`
-attachment time that would've allowed for graceful exit from this situation. Changing that
-would require new stable C APIs and rewriting the majority of C code in the
-CPython ecosystem to use those with error handling.
