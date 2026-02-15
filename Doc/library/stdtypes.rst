@@ -2437,6 +2437,20 @@ expression support in the :mod:`re` module).
       >>> 'Lower Method Example'.lower()
       'lower method example'
 
+   Note that ``s.lower().islower()`` might be ``False`` if ``s``
+   contains uncased characters or if the Unicode category of the resulting
+   character(s) is not "Lu" (Letter, uppercase), but e.g. "Lt" (Letter,
+   titlecase).
+
+   For example, see the word "Python" written in Punjabi, the most spoken
+   language in Pakistan:
+
+   .. doctest::
+
+      >>> 'ازگر'.lower().islower()
+      False
+
+
    The lowercasing algorithm used is `described in section 3.13.2 'Default Case
    Conversion' of the Unicode Standard
    <https://www.unicode.org/versions/Unicode17.0.0/core-spec/chapter-3/#G34078>`__.
