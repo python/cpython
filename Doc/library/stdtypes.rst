@@ -2289,12 +2289,14 @@ expression support in the :mod:`re` module).
    Return ``True`` if all cased characters [4]_ in the string are lowercase and
    there is at least one cased character, ``False`` otherwise.
 
-   For example::
+   For example:
 
-      >>> 'BANANA'.islower()
-      False
+   .. doctest::
+
       >>> 'banana'.islower()
       True
+      >>> 'BANANA'.islower()
+      False
       >>> 'baNana'.islower()
       False
       >>> ' '.islower()
@@ -2302,7 +2304,8 @@ expression support in the :mod:`re` module).
       >>> ''.islower()
       False
 
-   See also :meth:`isupper`.
+   See also :meth:`isupper` and :meth:`lower`.
+
 
 .. method:: str.isnumeric()
 
