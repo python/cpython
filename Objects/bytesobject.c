@@ -273,7 +273,7 @@ PyBytes_FromFormatV(const char *format, va_list vargs)
                 sprintf(buffer, "%ld", va_arg(vargs, long));
             }
             else if (size_tflag) {
-                sprintf(buffer, "%zd", va_arg(vargs, Py_ssize_t));
+                sprintf(buffer, "%ld", (long)va_arg(vargs, Py_ssize_t));
             }
             else {
                 sprintf(buffer, "%d", va_arg(vargs, int));
@@ -287,7 +287,7 @@ PyBytes_FromFormatV(const char *format, va_list vargs)
                 sprintf(buffer, "%lu", va_arg(vargs, unsigned long));
             }
             else if (size_tflag) {
-                sprintf(buffer, "%zu", va_arg(vargs, size_t));
+                sprintf(buffer, "%lu", (unsigned long)va_arg(vargs, size_t));
             }
             else {
                 sprintf(buffer, "%u", va_arg(vargs, unsigned int));

@@ -3407,8 +3407,8 @@ then
 		LDSHARED="gcc -shared -Wl,--enable-auto-image-base"
 		LDCXXSHARED="g++ -shared -Wl,--enable-auto-image-base";;
   Nanvix*)
-		dnl not iplemented yet
-      ;;
+		LDSHARED='$(CC) -shared'
+		LDCXXSHARED='$(CXX) -shared';;
 	*)	LDSHARED="ld";;
 	esac
 fi
@@ -3450,6 +3450,7 @@ then
 		]);;
 	FreeBSD*|NetBSD*|OpenBSD*|DragonFly*) CCSHARED="-fPIC";;
 	Haiku*) CCSHARED="-fPIC";;
+	Nanvix*) CCSHARED="-fPIC";;
 	OpenUNIX*|UnixWare*)
 		if test "$GCC" = "yes"
 		then CCSHARED="-fPIC"
@@ -7268,11 +7269,8 @@ AS_CASE([$ac_sys_system],
     PY_STDLIB_MOD_SET_NA(
       [_lsprof],
       [_multiprocessing],
-      [_zoneinfo],
       [audioop],
       [mmap],
-      [_elementtree],
-      [pyexpat],
       [_posixshmem],
       [fcntl],
       [grp],
@@ -7284,7 +7282,6 @@ AS_CASE([$ac_sys_system],
       [termios],
       [_crypt],
       [nis],
-      [_bz2],
       [_ctypes],
       [_dbm],
       [_gdbm],

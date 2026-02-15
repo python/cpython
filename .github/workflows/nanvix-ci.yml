@@ -284,8 +284,9 @@ jobs:
           echo "Downloading OpenSSL from: $OPENSSL_URL"
           if curl -fsSL -o "openssl-dep/${OPENSSL_ARTIFACT}" "$OPENSSL_URL"; then
             tar -xjf "openssl-dep/${OPENSSL_ARTIFACT}" -C openssl-dep
-            OPENSSL_DIR=$(find openssl-dep -mindepth 1 -maxdepth 1 -type d -name "openssl-*" | head -1)
-            if [[ -n "$OPENSSL_DIR" ]]; then
+            # New tarball format: sysroot/{lib,include}/...
+            OPENSSL_DIR="openssl-dep/sysroot"
+            if [[ -d "$OPENSSL_DIR" ]]; then
               echo "Installing OpenSSL from $OPENSSL_DIR to $NANVIX_HOME..."
               cp -f "$OPENSSL_DIR"/lib/*.a "$NANVIX_HOME/lib/" 2>/dev/null || true
               mkdir -p "$NANVIX_HOME/include/openssl"
@@ -315,7 +316,7 @@ jobs:
 
       - name: Build
         run: |
-          make -f Makefile.nanvix CONFIG_NANVIX=y NANVIX_HOME="$NANVIX_HOME" NANVIX_TOOLCHAIN="/opt/nanvix" all
+          make -f Makefile.nanvix CONFIG_NANVIX=y NANVIX_HOME="$NANVIX_HOME" NANVIX_TOOLCHAIN="/opt/nanvix" INSTALL_PREFIX="/sysroot" all
 
       - name: Test
         run: |
@@ -325,30 +326,16 @@ jobs:
         run: |
           set -euo pipefail
           ARTIFACT_NAME="cpython-${{ matrix.platform }}-${{ matrix.process-mode }}"
-          DIST_DIR="dist/${ARTIFACT_NAME}"
-          mkdir -p "${DIST_DIR}/bin" "${DIST_DIR}/lib" "${DIST_DIR}/include"
-          # Copy executables
-          cp -f python.elf "${DIST_DIR}/bin/" 2>/dev/null || cp -f python "${DIST_DIR}/bin/python.elf" 2>/dev/null || true
-          # Copy libraries
-          cp -f libpython*.a "${DIST_DIR}/lib/" 2>/dev/null || true
-          # Copy Python stdlib (required for interpreter to boot - encodings, os, etc.)
-          if [ -d "Lib" ]; then
-            mkdir -p "${DIST_DIR}/lib/python3.12"
-            cp -rf Lib/* "${DIST_DIR}/lib/python3.12/"
-            # Remove test directories to reduce artifact size
-            rm -rf "${DIST_DIR}/lib/python3.12/test" "${DIST_DIR}/lib/python3.12/tests"
-            rm -rf "${DIST_DIR}/lib/python3.12/idlelib" "${DIST_DIR}/lib/python3.12/tkinter"
-            rm -rf "${DIST_DIR}/lib/python3.12/turtledemo" "${DIST_DIR}/lib/python3.12/turtle.py"
-            rm -rf "${DIST_DIR}/lib/python3.12/__pycache__"
-            find "${DIST_DIR}/lib/python3.12" -name "__pycache__" -type d -exec rm -rf {} + 2>/dev/null || true
-            find "${DIST_DIR}/lib/python3.12" -name "test" -type d -exec rm -rf {} + 2>/dev/null || true
-            echo "Included stdlib: $(find ${DIST_DIR}/lib/python3.12 -type f | wc -l) files"
-          fi
-          # Copy headers (main include directory)
-          cp -rf Include/* "${DIST_DIR}/include/" 2>/dev/null || true
-          cp -f pyconfig.h "${DIST_DIR}/include/" 2>/dev/null || true
-          # Create tarball
-          tar -cjf "dist/${ARTIFACT_NAME}.tar.bz2" -C dist "${ARTIFACT_NAME}"
+          STAGING="$(pwd)/staging"
+          make -f Makefile.nanvix CONFIG_NANVIX=y NANVIX_HOME="$NANVIX_HOME" NANVIX_TOOLCHAIN="/opt/nanvix" install DESTDIR="$STAGING"
+          # Clean up test and cache directories to reduce artifact size
+          find "$STAGING" -name "__pycache__" -type d -exec rm -rf {} + 2>/dev/null || true
+          find "$STAGING" -path "*/test" -type d -exec rm -rf {} + 2>/dev/null || true
+          find "$STAGING" -path "*/tests" -type d -exec rm -rf {} + 2>/dev/null || true
+          rm -rf "$STAGING/sysroot/lib/python3.12/idlelib" "$STAGING/sysroot/lib/python3.12/tkinter"
+          rm -rf "$STAGING/sysroot/lib/python3.12/turtledemo" "$STAGING/sysroot/lib/python3.12/turtle.py"
+          mkdir -p dist
+          tar -cjf "dist/${ARTIFACT_NAME}.tar.bz2" -C "$STAGING" sysroot
           echo "ARTIFACT_TARBALL=dist/${ARTIFACT_NAME}.tar.bz2" >> "$GITHUB_ENV"
 
       - name: Upload Build Artifacts

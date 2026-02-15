@@ -99,6 +99,11 @@ ifdef CONFIG_NANVIX
     LIBCRYPTO := $(abspath $(NANVIX_HOME))/lib/libcrypto.a
     BUILD_PYTHON := $(NANVIX_TOOLCHAIN)/bin/python3
   endif
+
+  # INSTALL_PREFIX: the prefix baked into the python binary (sys.prefix, sys.path).
+  # Local builds default to SYSROOT_PATH; CI overrides to /sysroot so that
+  # release artifacts don't contain ephemeral runner paths.
+  INSTALL_PREFIX ?= $(SYSROOT_PATH)
 else
   # Allow clean target without CONFIG_NANVIX
   ifneq ($(MAKECMDGOALS),clean)
@@ -116,13 +121,15 @@ CONFIGURE_ENV = \
 	LD="$(TOOLCHAIN_PREFIX)/bin/i686-nanvix-ld" \
 	AR="$(TOOLCHAIN_PREFIX)/bin/i686-nanvix-ar" \
 	RANLIB="$(TOOLCHAIN_PREFIX)/bin/i686-nanvix-ranlib" \
-	CFLAGS="-static -L$(SYSROOT_PATH)/lib -I$(SYSROOT_PATH)/include" \
+	CFLAGS="-L$(SYSROOT_PATH)/lib -I$(SYSROOT_PATH)/include" \
 	LDFLAGS="-static -T$(SYSROOT_PATH)/lib/user.ld" \
-	LIBS="-Wl,--start-group $(LIBPOSIX) $(LIBC) $(LIBM) -lsqlite3 -lssl -lcrypto -lz -Wl,--end-group" \
+	LIBS="-Wl,--start-group $(LIBPOSIX) $(LIBC) $(LIBM) -lsqlite3 -lssl -lcrypto -lz -lbz2 -Wl,--end-group" \
 	LIBSQLITE3_LIBS="-L$(SYSROOT_PATH)/lib -lsqlite3" \
 	LIBSQLITE3_CFLAGS="-I$(SYSROOT_PATH)/include" \
 	ZLIB_LIBS="-L$(SYSROOT_PATH)/lib -lz" \
-	ZLIB_CFLAGS="-I$(SYSROOT_PATH)/include"
+	ZLIB_CFLAGS="-I$(SYSROOT_PATH)/include" \
+	BZIP2_LIBS="-L$(SYSROOT_PATH)/lib -lbz2" \
+	BZIP2_CFLAGS="-I$(SYSROOT_PATH)/include"
 
 # Configure options for Nanvix
 CONFIGURE_OPTS = \
@@ -133,8 +140,8 @@ CONFIGURE_OPTS = \
 	--disable-test-modules \
 	--with-libc="$(LIBC)" \
 	--with-libm="$(LIBM)" \
-	--prefix="$(SYSROOT_PATH)" \
-	--exec-prefix="$(SYSROOT_PATH)" \
+	--prefix="$(INSTALL_PREFIX)" \
+	--exec-prefix="$(INSTALL_PREFIX)" \
 	--with-ensurepip=no \
 	--with-pkg-config=no \
 	--with-openssl="$(SYSROOT_PATH)" \
@@ -201,11 +208,12 @@ distclean: clean
 	git clean -fdx -e Makefile.nanvix -e NANVIX.md -e .github -e nanvix-artifacts -e z 2>/dev/null || true
 
 # Install target (for Nanvix sysroot)
+# Use DESTDIR for staged installs: make install DESTDIR=/path/to/staging
 install: build
 ifdef CONFIG_NANVIX_DOCKER
-	$(DOCKER_RUN) make install
+	$(DOCKER_RUN) make install DESTDIR="$(DESTDIR)"
 else
-	make install
+	make install DESTDIR="$(DESTDIR)"
 endif
 
 .PHONY: all configure build clean distclean test install

@@ -129,7 +129,15 @@ typedef intptr_t        Py_intptr_t;
 
 #elif HAVE_SSIZE_T
 typedef ssize_t         Py_ssize_t;
-#   define PY_SSIZE_T_MAX SSIZE_MAX
+/* Nanvix's Newlib defines SSIZE_MAX as (__SIZE_MAX__ >> 1) which retains
+   unsigned type from __SIZE_MAX__. This causes signed/unsigned comparison
+   bugs (e.g., `x < -PY_SSIZE_T_MAX` is always true for positive x).
+   Define PY_SSIZE_T_MAX with a signed suffix to fix this. */
+#   ifdef __nanvix__
+#       define PY_SSIZE_T_MAX 0x7FFFFFFFL
+#   else
+#       define PY_SSIZE_T_MAX SSIZE_MAX
+#   endif
 #elif SIZEOF_VOID_P == SIZEOF_SIZE_T
 typedef Py_intptr_t     Py_ssize_t;
 #   define PY_SSIZE_T_MAX INTPTR_MAX

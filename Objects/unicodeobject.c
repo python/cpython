@@ -2441,11 +2441,22 @@ unicode_fromformat_write_wcstr(_PyUnicodeWriter *writer, const wchar_t *str,
 #define F_SIZE 3
 #define F_PTRDIFF 4
 #define F_INTMAX 5
+#ifdef __nanvix__
+/* Nanvix uses Newlib which does not support %zd/%zu/%zx format specifiers.
+   On i686-nanvix, sizeof(size_t) == sizeof(long) == 4, so %ld/%lu/%lx
+   are safe substitutes. */
+static const char * const formats[] = {"%d", "%ld", "%lld", "%ld", "%td", "%jd"};
+static const char * const formats_o[] = {"%o", "%lo", "%llo", "%lo", "%to", "%jo"};
+static const char * const formats_u[] = {"%u", "%lu", "%llu", "%lu", "%tu", "%ju"};
+static const char * const formats_x[] = {"%x", "%lx", "%llx", "%lx", "%tx", "%jx"};
+static const char * const formats_X[] = {"%X", "%lX", "%llX", "%lX", "%tX", "%jX"};
+#else
 static const char * const formats[] = {"%d", "%ld", "%lld", "%zd", "%td", "%jd"};
 static const char * const formats_o[] = {"%o", "%lo", "%llo", "%zo", "%to", "%jo"};
 static const char * const formats_u[] = {"%u", "%lu", "%llu", "%zu", "%tu", "%ju"};
 static const char * const formats_x[] = {"%x", "%lx", "%llx", "%zx", "%tx", "%jx"};
 static const char * const formats_X[] = {"%X", "%lX", "%llX", "%zX", "%tX", "%jX"};
+#endif
 
 static const char*
 unicode_fromformat_arg(_PyUnicodeWriter *writer,
