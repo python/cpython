@@ -1320,6 +1320,29 @@ class _TestQueue(BaseTestCase):
         self.assertEqual(q.qsize(), 0)
         close_queue(q)
 
+    def test_empty_uses_semaphore_count(self):
+        if self.TYPE != 'processes':
+            self.skipTest(f'test not appropriate for {self.TYPE}')
+
+        q = self.Queue()
+        try:
+            q._sem.get_value()
+        except NotImplementedError:
+            close_queue(q)
+            self.skipTest('sem_getvalue not implemented on this platform')
+
+        q.put('sentinel')
+        original_poll = q._poll
+        q._poll = lambda timeout=0.0: False
+        try:
+            self.assertFalse(q.empty())
+        finally:
+            q._poll = original_poll
+
+        self.assertEqual(q.get(timeout=support.SHORT_TIMEOUT), 'sentinel')
+        self.assertTrue(q.empty())
+        close_queue(q)
+
     @classmethod
     def _test_task_done(cls, q):
         for obj in iter(q.get, None):

@@ -869,10 +869,13 @@ Note that one can also create a shared queue by using a manager object -- see
    bother you then you can instead use a queue created with a
    :ref:`manager <multiprocessing-managers>`.
 
-   (1) After putting an object on an empty queue there may be an
-       infinitesimal delay before the queue's :meth:`~Queue.empty`
-       method returns :const:`False` and :meth:`~Queue.get_nowait` can
-       return without raising :exc:`queue.Empty`.
+   (1) After putting an object on an empty queue there may be a delay
+       before :meth:`~Queue.get_nowait` can return without raising
+       :exc:`queue.Empty`, because the feeder thread flushes objects to
+       the underlying pipe asynchronously. On platforms where
+       ``sem_getvalue()`` is not implemented (for example macOS), the
+       queue's :meth:`~Queue.empty` method may also remain :const:`True`
+       during this delay.
 
    (2) If multiple processes are enqueuing objects, it is possible for
        the objects to be received at the other end out-of-order.
@@ -947,7 +950,16 @@ For an example of the usage of queues for interprocess communication see
       Return ``True`` if the queue is empty, ``False`` otherwise.  Because of
       multithreading/multiprocessing semantics, this is not reliable.
 
+      On platforms where ``sem_getvalue()`` is implemented, this method
+      uses the same approximate size accounting as :meth:`~Queue.qsize`.
+      Otherwise, it may report ``True`` while items are still buffered and
+      waiting to be flushed to the underlying pipe.
+
       May raise an :exc:`OSError` on closed queues. (not guaranteed)
+
+      .. versionchanged:: 3.15
+         On platforms where ``sem_getvalue()`` is implemented, this method
+         now uses semaphore-based queue size accounting.
 
    .. method:: full()
 
