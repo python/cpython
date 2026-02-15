@@ -1,3 +1,22 @@
 # Edit this file for local setup changes
 _regex _regex/_regex.c _regex/_regex_unicode.c
 _cffi_backend _cffi_backend/_cffi_backend.c -I$(srcdir)/Modules/_cffi_backend -lffi
+
+# NumPy 1.26.4 — C extensions compiled as static built-in modules
+# Core (_multiarray_umath: 114 .o files in single archive)
+_multiarray_umath numpy_builtin/_multiarray_umath_dummy.c /home/ppenna/src/nanvix/packages/nanvix/sysroot-release/lib/numpy/lib_multiarray_umath_all.a /home/ppenna/src/nanvix/packages/nanvix/sysroot-release/lib/numpy/libnpymath.a -lstdc++
+# FFT
+_pocketfft_internal numpy_builtin/_pocketfft_internal_dummy.c /home/ppenna/src/nanvix/packages/nanvix/sysroot-release/lib/numpy/lib_pocketfft_internal.a
+# Linear algebra
+lapack_lite numpy_builtin/lapack_lite_dummy.c /home/ppenna/src/nanvix/packages/nanvix/sysroot-release/lib/numpy/liblapack_lite.a
+_umath_linalg numpy_builtin/_umath_linalg_dummy.c /home/ppenna/src/nanvix/packages/nanvix/sysroot-release/lib/numpy/lib_umath_linalg.a -lstdc++
+# Random
+_bounded_integers numpy_builtin/_bounded_integers_dummy.c /home/ppenna/src/nanvix/packages/nanvix/sysroot-release/lib/numpy/lib_random__bounded_integers.a /home/ppenna/src/nanvix/packages/nanvix/sysroot-release/lib/numpy/libnpyrandom.a
+_common numpy_builtin/_common_dummy.c /home/ppenna/src/nanvix/packages/nanvix/sysroot-release/lib/numpy/lib_random__common.a /home/ppenna/src/nanvix/packages/nanvix/sysroot-release/lib/numpy/libnpyrandom.a
+_generator numpy_builtin/_generator_dummy.c /home/ppenna/src/nanvix/packages/nanvix/sysroot-release/lib/numpy/lib_random__generator.a /home/ppenna/src/nanvix/packages/nanvix/sysroot-release/lib/numpy/libnpyrandom.a
+_mt19937 numpy_builtin/_mt19937_dummy.c /home/ppenna/src/nanvix/packages/nanvix/sysroot-release/lib/numpy/lib_random__mt19937.a /home/ppenna/src/nanvix/packages/nanvix/sysroot-release/lib/numpy/libnpyrandom.a
+_pcg64 numpy_builtin/_pcg64_dummy.c /home/ppenna/src/nanvix/packages/nanvix/sysroot-release/lib/numpy/lib_random__pcg64.a /home/ppenna/src/nanvix/packages/nanvix/sysroot-release/lib/numpy/libnpyrandom.a
+_philox numpy_builtin/_philox_dummy.c /home/ppenna/src/nanvix/packages/nanvix/sysroot-release/lib/numpy/lib_random__philox.a /home/ppenna/src/nanvix/packages/nanvix/sysroot-release/lib/numpy/libnpyrandom.a
+_sfc64 numpy_builtin/_sfc64_dummy.c /home/ppenna/src/nanvix/packages/nanvix/sysroot-release/lib/numpy/lib_random__sfc64.a /home/ppenna/src/nanvix/packages/nanvix/sysroot-release/lib/numpy/libnpyrandom.a
+bit_generator numpy_builtin/bit_generator_dummy.c /home/ppenna/src/nanvix/packages/nanvix/sysroot-release/lib/numpy/lib_random_bit_generator.a /home/ppenna/src/nanvix/packages/nanvix/sysroot-release/lib/numpy/libnpyrandom.a
+mtrand numpy_builtin/mtrand_dummy.c /home/ppenna/src/nanvix/packages/nanvix/sysroot-release/lib/numpy/lib_random_mtrand.a /home/ppenna/src/nanvix/packages/nanvix/sysroot-release/lib/numpy/libnpyrandom.a
