@@ -398,7 +398,7 @@ get_test_bit_for_bools(void) {
     uintptr_t true_bits = (uintptr_t)&_Py_TrueStruct;
 #endif
     for (int i = 4; i < 8; i++) {
-        if ((true_bits ^ false_bits) & (1 << i)) {
+        if ((true_bits ^ false_bits) & (uintptr_t)(1 << i)) {
             return i;
         }
     }
@@ -412,8 +412,8 @@ test_bit_set_in_true(int bit) {
 #else
     uintptr_t true_bits = (uintptr_t)&_Py_TrueStruct;
 #endif
-    assert((true_bits ^ ((uintptr_t)&_Py_FalseStruct)) & (1 << bit));
-    return true_bits & (1 << bit);
+    assert((true_bits ^ ((uintptr_t)&_Py_FalseStruct)) & (uintptr_t)(1 << bit));
+    return true_bits & (uintptr_t)(1 << bit);
 }
 
 #ifdef Py_DEBUG
@@ -504,7 +504,7 @@ optimize_uops(
             stack_pointer = ctx->frame->stack_pointer;
         }
 
-        DUMP_UOP(ctx, "abs", this_instr - trace, this_instr, stack_pointer);
+        DUMP_UOP(ctx, "abs", (int)(this_instr - trace), this_instr, stack_pointer);
 
         _PyUOpInstruction *out_ptr = ctx->out_buffer.next;
 
