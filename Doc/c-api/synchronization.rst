@@ -1,5 +1,7 @@
 .. highlight:: c
 
+.. _synchronization:
+
 Synchronization Primitives
 ==========================
 
