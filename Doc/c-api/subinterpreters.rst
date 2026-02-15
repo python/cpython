@@ -246,6 +246,8 @@ function. You can create and destroy them using the following functions:
 A Per-Interpreter GIL
 ---------------------
 
+.. versionadded:: 3.12
+
 Using :c:func:`Py_NewInterpreterFromConfig` you can create
 a sub-interpreter that is completely isolated from other interpreters,
 including having its own GIL.  The most important benefit of this
@@ -278,8 +280,6 @@ isolation) and efficiently.  The runtime and stdlib do not provide
 any standard approach to this yet.  A future stdlib module would help
 mitigate the effort of preserving isolation and expose effective tools
 for communicating (and sharing) data between interpreters.
-
-.. versionadded:: 3.12
 
 
 Bugs and caveats
@@ -332,6 +332,7 @@ High-level APIs
       of a :ref:`per-interpreter GIL <per-interpreter-gil>`.
       See :c:func:`Py_NewInterpreterFromConfig`.
 
+
 .. c:function:: PyInterpreterState* PyInterpreterState_Get(void)
 
    Get the current interpreter.
@@ -380,6 +381,7 @@ High-level APIs
    .. versionchanged:: 3.11
       The *frame* parameter changed from ``PyFrameObject*`` to ``_PyInterpreterFrame*``.
 
+
 .. c:function:: _PyFrameEvalFunction _PyInterpreterState_GetEvalFrameFunc(PyInterpreterState *interp)
 
    Get the frame evaluation function.
@@ -387,6 +389,7 @@ High-level APIs
    See the :pep:`523` "Adding a frame evaluation API to CPython".
 
    .. versionadded:: 3.9
+
 
 .. c:function:: void _PyInterpreterState_SetEvalFrameFunc(PyInterpreterState *interp, _PyFrameEvalFunction eval_frame)
 
@@ -429,6 +432,7 @@ All of the following functions must be called after :c:func:`Py_Initialize`.
    Destroy an interpreter state object.  There **should not** be an
    :term:`attached thread state` for the target interpreter. The interpreter
    state must have been reset with a previous call to :c:func:`PyInterpreterState_Clear`.
+
 
 .. _advanced-debugging:
 

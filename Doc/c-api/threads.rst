@@ -710,7 +710,7 @@ pointer and a void pointer argument.
    .. versionchanged:: 3.7
       The type of the *id* parameter changed from :c:expr:`long` to
       :c:expr:`unsigned long`
-.
+
 
 .. _thread-local-storage:
 
@@ -768,7 +768,7 @@ CPython interpreter.  This API uses a new type :c:type:`Py_tss_t` instead of
 
 
 Dynamic Allocation
-~~~~~~~~~~~~~~~~~~
+------------------
 
 Dynamic allocation of the :c:type:`Py_tss_t`, required in extension modules
 built with :ref:`Py_LIMITED_API <stable>`, where static allocation of this type
@@ -795,7 +795,7 @@ is not possible due to its implementation being opaque at build time.
 
 
 Methods
-~~~~~~~
+-------
 
 The parameter *key* of these functions must not be ``NULL``.  Moreover, the
 behaviors of :c:func:`PyThread_tss_set` and :c:func:`PyThread_tss_get` are
@@ -843,8 +843,8 @@ undefined if the given :c:type:`Py_tss_t` has not been initialized by
 
 .. _thread-local-storage-api:
 
-Thread Local Storage (TLS) API
-------------------------------
+Legacy API
+----------
 
 .. deprecated:: 3.7
    This API is superseded by

@@ -5,7 +5,6 @@
 Profiling and Tracing
 =====================
 
-
 The Python interpreter provides some low-level support for attaching profiling
 and execution tracing facilities.  These are used for profiling, debugging, and
 coverage analysis tools.
@@ -123,6 +122,7 @@ Python-level trace functions in previous versions.
 
    The caller must have an :term:`attached thread state`.
 
+
 .. c:function:: void PyEval_SetProfileAllThreads(Py_tracefunc func, PyObject *obj)
 
    Like :c:func:`PyEval_SetProfile` but sets the profile function in all running threads
@@ -149,6 +149,7 @@ Python-level trace functions in previous versions.
 
    The caller must have an :term:`attached thread state`.
 
+
 .. c:function:: void PyEval_SetTraceAllThreads(Py_tracefunc func, PyObject *obj)
 
    Like :c:func:`PyEval_SetTrace` but sets the tracing function in all running threads
@@ -161,10 +162,12 @@ Python-level trace functions in previous versions.
 
 .. versionadded:: 3.12
 
+
 Reference tracing
 =================
 
 .. versionadded:: 3.13
+
 
 .. c:type:: int (*PyRefTracer)(PyObject *, int event, void* data)
 
@@ -181,15 +184,18 @@ Reference tracing
 
 .. versionadded:: 3.13
 
+
 .. c:var:: int PyRefTracer_CREATE
 
    The value for the *event* parameter to :c:type:`PyRefTracer` functions when a Python
    object has been created.
 
+
 .. c:var:: int PyRefTracer_DESTROY
 
    The value for the *event* parameter to :c:type:`PyRefTracer` functions when a Python
    object has been destroyed.
+
 
 .. c:var:: int PyRefTracer_TRACKER_REMOVED
 
@@ -197,6 +203,7 @@ Reference tracing
    current tracer is about to be replaced by a new one.
 
    .. versionadded:: 3.14
+
 
 .. c:function:: int PyRefTracer_SetTracer(PyRefTracer tracer, void *data)
 
@@ -218,6 +225,7 @@ Reference tracing
    the new function is registered.
 
 .. versionadded:: 3.13
+
 
 .. c:function:: PyRefTracer PyRefTracer_GetTracer(void** data)
 
