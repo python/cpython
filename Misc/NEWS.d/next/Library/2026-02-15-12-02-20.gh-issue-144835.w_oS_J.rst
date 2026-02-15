@@ -1,2 +1,2 @@
-Added missing explanations for some parameters in `glob.glob` and
-`glob.iglob`.
+Added missing explanations for some parameters in :func:`glob.glob` and
+:func:`glob.iglob`.
