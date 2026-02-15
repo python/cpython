@@ -803,11 +803,15 @@ class TestPytime(unittest.TestCase):
         if lt.tm_gmtoff is None:
             self.assertNotHasAttr(time, "timezone")
         else:
-            self.assertEqual(lt.tm_gmtoff, -[time.timezone, time.altzone][lt.tm_isdst])
+            # Ireland standard time is during the summer, so it's the opposite to everything else
+            if time.tzname[lt.tm_isdst] != "IST":
+                self.assertEqual(lt.tm_gmtoff, -[time.timezone, time.altzone][lt.tm_isdst])
         if lt.tm_zone is None:
             self.assertNotHasAttr(time, "tzname")
         else:
-            self.assertEqual(lt.tm_zone, time.tzname[lt.tm_isdst])
+            # IST = GMT but lt.tm_zone is GMT
+            if time.tzname[lt.tm_isdst] != "IST":
+                self.assertEqual(lt.tm_zone, time.tzname[lt.tm_isdst])
 
         # Try and make UNIX times from the localtime and a 9-tuple
         # created from the localtime. Test to see that the times are
