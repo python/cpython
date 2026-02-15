@@ -7908,15 +7908,15 @@ _PyObject_GetNewArguments(PyObject *obj, PyObject **args, PyObject **kwargs)
         }
         if (!PyTuple_Check(newargs)) {
             PyErr_Format(PyExc_TypeError,
-                         "__getnewargs_ex__ should return a tuple, "
-                         "not '%.200s'", Py_TYPE(newargs)->tp_name);
+                         "%T.__getnewargs_ex__() must return a tuple, "
+                         "not %T", obj, newargs);
             Py_DECREF(newargs);
             return -1;
         }
         if (PyTuple_GET_SIZE(newargs) != 2) {
             PyErr_Format(PyExc_ValueError,
-                         "__getnewargs_ex__ should return a tuple of "
-                         "length 2, not %zd", PyTuple_GET_SIZE(newargs));
+                         "%T.__getnewargs_ex__() must return a tuple of "
+                         "length 2, not %zd", obj, PyTuple_GET_SIZE(newargs));
             Py_DECREF(newargs);
             return -1;
         }
@@ -7928,8 +7928,8 @@ _PyObject_GetNewArguments(PyObject *obj, PyObject **args, PyObject **kwargs)
         if (!PyTuple_Check(*args)) {
             PyErr_Format(PyExc_TypeError,
                          "first item of the tuple returned by "
-                         "__getnewargs_ex__ must be a tuple, not '%.200s'",
-                         Py_TYPE(*args)->tp_name);
+                         "%T.__getnewargs_ex__() must be a tuple, not %T",
+                         obj, *args);
             Py_CLEAR(*args);
             Py_CLEAR(*kwargs);
             return -1;
@@ -7937,8 +7937,8 @@ _PyObject_GetNewArguments(PyObject *obj, PyObject **args, PyObject **kwargs)
         if (!PyDict_Check(*kwargs)) {
             PyErr_Format(PyExc_TypeError,
                          "second item of the tuple returned by "
-                         "__getnewargs_ex__ must be a dict, not '%.200s'",
-                         Py_TYPE(*kwargs)->tp_name);
+                         "%T.__getnewargs_ex__() must be a dict, not %T",
+                         obj, *kwargs);
             Py_CLEAR(*args);
             Py_CLEAR(*kwargs);
             return -1;
@@ -7959,8 +7959,8 @@ _PyObject_GetNewArguments(PyObject *obj, PyObject **args, PyObject **kwargs)
         }
         if (!PyTuple_Check(*args)) {
             PyErr_Format(PyExc_TypeError,
-                         "__getnewargs__ should return a tuple, "
-                         "not '%.200s'", Py_TYPE(*args)->tp_name);
+                         "%T.__getnewargs__() must return a tuple, "
+                         "not %T", obj, *args);
             Py_CLEAR(*args);
             return -1;
         }
@@ -10713,9 +10713,10 @@ slot_tp_hash(PyObject *self)
         return PyObject_HashNotImplemented(self);
     }
     if (!PyLong_Check(res)) {
+        PyErr_Format(PyExc_TypeError,
+                     "%T.__hash__() must return an integer, not %T",
+                     self, res);
         Py_DECREF(res);
-        PyErr_SetString(PyExc_TypeError,
-                        "__hash__ method should return an integer");
         return -1;
     }
     /* Transform the PyLong `res` to a Py_hash_t `h`.  For an existing
@@ -10975,8 +10976,8 @@ slot_tp_init(PyObject *self, PyObject *args, PyObject *kwds)
         return -1;
     if (res != Py_None) {
         PyErr_Format(PyExc_TypeError,
-                     "__init__() should return None, not '%.200s'",
-                     Py_TYPE(res)->tp_name);
+                     "%T.__init__() must return None, not %T",
+                     self, res);
         Py_DECREF(res);
         return -1;
     }

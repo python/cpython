@@ -1,0 +1,3 @@
+Add type information to error messages for ``__getnewargs__``,
+``__getnewargs_ex__``, ``__hash__``, and ``__init__`` when they return the wrong
+type. Error messages now use the format ``Type.__method__() must return ...``.
