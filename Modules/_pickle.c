@@ -3758,7 +3758,8 @@ fix_imports(PickleState *st, PyObject **module_name, PyObject **global_name)
     PyObject *key;
     PyObject *item;
 
-    key = PyTuple_Pack(2, *module_name, *global_name);
+    PyObject *key_items[] = {*module_name, *global_name};
+    key = PyTuple_FromArray(key_items, 2);
     if (key == NULL)
         return -1;
     item = PyDict_GetItemWithError(st->name_mapping_3to2, key);
@@ -3864,7 +3865,8 @@ save_global(PickleState *st, PicklerObject *self, PyObject *obj,
         char pdata[5];
         Py_ssize_t n;
 
-        extension_key = PyTuple_Pack(2, module_name, global_name);
+        PyObject *ext_key_items[] = {module_name, global_name};
+        extension_key = PyTuple_FromArray(ext_key_items, 2);
         if (extension_key == NULL) {
             goto error;
         }
@@ -7307,7 +7309,8 @@ _pickle_Unpickler_find_class_impl(UnpicklerObject *self, PyTypeObject *cls,
 
         /* Check if the global (i.e., a function or a class) was renamed
            or moved to another module. */
-        key = PyTuple_Pack(2, module_name, global_name);
+        PyObject *find_key_items[] = {module_name, global_name};
+        key = PyTuple_FromArray(find_key_items, 2);
         if (key == NULL)
             return NULL;
         item = PyDict_GetItemWithError(st->name_mapping_2to3, key);
