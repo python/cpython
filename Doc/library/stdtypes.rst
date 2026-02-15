@@ -2407,6 +2407,7 @@ expression support in the :mod:`re` module).
 
    See also :meth:`islower`.
 
+
 .. _meth-str-join:
 
 .. method:: str.join(iterable, /)
