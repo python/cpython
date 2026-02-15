@@ -123,13 +123,15 @@ CONFIGURE_ENV = \
 	RANLIB="$(TOOLCHAIN_PREFIX)/bin/i686-nanvix-ranlib" \
 	CFLAGS="-L$(SYSROOT_PATH)/lib -I$(SYSROOT_PATH)/include" \
 	LDFLAGS="-static -T$(SYSROOT_PATH)/lib/user.ld" \
-	LIBS="-Wl,--start-group $(LIBPOSIX) $(LIBC) $(LIBM) -lsqlite3 -lssl -lcrypto -lz -lbz2 -Wl,--end-group" \
+	LIBS="-Wl,--start-group $(LIBPOSIX) $(LIBC) $(LIBM) -lsqlite3 -lssl -lcrypto -lz -lbz2 -lffi -Wl,--end-group" \
 	LIBSQLITE3_LIBS="-L$(SYSROOT_PATH)/lib -lsqlite3" \
 	LIBSQLITE3_CFLAGS="-I$(SYSROOT_PATH)/include" \
 	ZLIB_LIBS="-L$(SYSROOT_PATH)/lib -lz" \
 	ZLIB_CFLAGS="-I$(SYSROOT_PATH)/include" \
 	BZIP2_LIBS="-L$(SYSROOT_PATH)/lib -lbz2" \
-	BZIP2_CFLAGS="-I$(SYSROOT_PATH)/include"
+	BZIP2_CFLAGS="-I$(SYSROOT_PATH)/include" \
+	LIBFFI_LIBS="-L$(SYSROOT_PATH)/lib -lffi" \
+	LIBFFI_CFLAGS="-I$(SYSROOT_PATH)/include"
 
 # Configure options for Nanvix
 CONFIGURE_OPTS = \
