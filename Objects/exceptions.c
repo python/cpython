@@ -16,7 +16,7 @@
 
 #include "osdefs.h"               // SEP
 #include "clinic/exceptions.c.h"
-
+#include "pycore_critical_section.h"
 
 /*[clinic input]
 class BaseException "PyBaseExceptionObject *" "&PyExc_BaseException"
@@ -243,8 +243,7 @@ BaseException___setstate___impl(PyBaseExceptionObject *self, PyObject *state)
             return NULL;
         }
         PyCriticalSection cs;
-        PyThreadState *tstate = _PyThreadState_GET();
-        _PyCriticalSection_Begin(tstate, &cs, state);
+        PyCriticalSection_Begin(&cs, state);
         while (PyDict_Next(state, &i, &d_key, &d_value)) {
             Py_INCREF(d_key);
             Py_INCREF(d_value);
@@ -252,11 +251,11 @@ BaseException___setstate___impl(PyBaseExceptionObject *self, PyObject *state)
             Py_DECREF(d_value);
             Py_DECREF(d_key);
             if (res < 0) {
-                _PyCriticalSection_End(tstate, &cs);
+                PyCriticalSection_End(&cs);
                 return NULL;
             }
         }
-        _PyCriticalSection_End(tstate, &cs);
+        PyCriticalSection_End(&cs);
     }
     Py_RETURN_NONE;
 }
