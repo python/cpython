@@ -466,7 +466,7 @@ are always available.  They are listed here in alphabetical order.
       Passing a complex number as the *real* or *imag* argument is now
       deprecated; it should only be passed as a single positional argument.
 
-   .. versionchanged:: 3.15
+   .. versionchanged:: next
       ``'−'`` (Unicode minus sign, U+2212) can be now used as an
       alternative to ``'-'`` (ASCII hyphen minus) for denoting
       negative sign.
@@ -833,7 +833,7 @@ are always available.  They are listed here in alphabetical order.
    .. versionchanged:: 3.8
       Falls back to :meth:`~object.__index__` if :meth:`~object.__float__` is not defined.
 
-   .. versionchanged:: 3.15
+   .. versionchanged:: next
       Added support for ``−`` (Unicode minus sign, U+2212) as an
       alternative to ``-`` (ASCII hyphen minus) for denoting negative
       floats.
@@ -1092,7 +1092,7 @@ are always available.  They are listed here in alphabetical order.
    .. versionchanged:: 3.14
       :func:`int` no longer delegates to the :meth:`~object.__trunc__` method.
 
-   .. versionchanged:: 3.15
+   .. versionchanged:: next
       :func:`int` now supports ``−`` (Unicode minus sign, U+2212)
       as an alternative to ``-`` (ASCII hyphen minus) for denoting
       negative integers.
