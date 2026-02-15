@@ -1,2 +1,2 @@
-Fix pickling error in the cProfile module when using ``multiprocessing.Process``
+Fix pickling error in the :mode:`cProfile` module when using :class:`multiprocessing.Process`
 script, which can not be properly pickled and executed.
