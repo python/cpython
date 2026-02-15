@@ -2,7 +2,7 @@
 
 .. _sub-interpreter-support:
 
-Multiple Interpreters in a Python Process
+Multiple interpreters in a Python process
 =========================================
 
 While in most uses, you will only embed a single Python interpreter, there
@@ -243,7 +243,7 @@ function. You can create and destroy them using the following functions:
 
 .. _per-interpreter-gil:
 
-A Per-Interpreter GIL
+A per-interpreter GIL
 ---------------------
 
 .. versionadded:: 3.12
@@ -287,7 +287,7 @@ Bugs and caveats
 
 Because sub-interpreters (and the main interpreter) are part of the same
 process, the insulation between them isn't perfect --- for example, using
-low-level file operations like  :func:`os.close` they can
+low-level file operations like :func:`os.close` they can
 (accidentally or maliciously) affect each other's open files.  Because of the
 way extensions are shared between (sub-)interpreters, some extensions may not
 work properly; this is especially likely when using single-phase initialization
@@ -436,7 +436,7 @@ All of the following functions must be called after :c:func:`Py_Initialize`.
 
 .. _advanced-debugging:
 
-Advanced Debugger Support
+Advanced debugger support
 -------------------------
 
 These functions are only intended to be used by advanced debugging tools.

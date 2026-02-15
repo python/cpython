@@ -2,7 +2,7 @@
 
 .. _profiling:
 
-Profiling and Tracing
+Profiling and tracing
 =====================
 
 The Python interpreter provides some low-level support for attaching profiling
@@ -177,7 +177,7 @@ Reference tracing
    is set to :c:data:`PyRefTracer_DESTROY`). The **data** argument is the opaque pointer
    that was provided when :c:func:`PyRefTracer_SetTracer` was called.
 
-   If a new tracing function is registered replacing the current a call to the
+   If a new tracing function is registered replacing the current one, a call to the
    trace function will be made with the object set to **NULL** and **event** set to
    :c:data:`PyRefTracer_TRACKER_REMOVED`. This will happen just before the new
    function is registered.
@@ -208,7 +208,7 @@ Reference tracing
 .. c:function:: int PyRefTracer_SetTracer(PyRefTracer tracer, void *data)
 
    Register a reference tracer function. The function will be called when a new
-   Python has been created or when an object is going to be destroyed. If
+   Python object has been created or when an object is going to be destroyed. If
    **data** is provided it must be an opaque pointer that will be provided when
    the tracer function is called. Return ``0`` on success. Set an exception and
    return ``-1`` on error.

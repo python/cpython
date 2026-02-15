@@ -1,7 +1,7 @@
 .. _c-api-index:
 
 ##################################
-  Python/C API Reference Manual
+  Python/C API reference manual
 ##################################
 
 This manual documents the API used by C and C++ programmers who want to write

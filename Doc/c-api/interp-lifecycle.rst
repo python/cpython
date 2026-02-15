@@ -2,7 +2,7 @@
 
 .. _initialization:
 
-Interpreter Initialization and Finalization
+Interpreter initialization and finalization
 ===========================================
 
 See :ref:`Python Initialization Configuration <init-config>` for details
@@ -10,10 +10,10 @@ on how to configure the interpreter prior to initialization.
 
 .. _pre-init-safe:
 
-Before Python Initialization
+Before Python initialization
 ----------------------------
 
-In an application embedding  Python, the :c:func:`Py_Initialize` function must
+In an application embedding Python, the :c:func:`Py_Initialize` function must
 be called before using any other Python/C API functions; with the exception of
 a few functions and the :ref:`global configuration variables
 <global-conf-vars>`.
@@ -364,7 +364,7 @@ Initializing and finalizing the interpreter
       triple: module; search; path
       single: Py_FinalizeEx (C function)
 
-   Initialize the Python interpreter.  In an application embedding  Python,
+   Initialize the Python interpreter.  In an application embedding Python,
    this should be called before using any other Python/C API functions; see
    :ref:`Before Python Initialization <pre-init-safe>` for the few exceptions.
 
@@ -688,7 +688,7 @@ Process-wide parameters
 
 .. c:function:: const char* Py_GetBuildInfo()
 
-   Return information about the sequence number and build date and time  of the
+   Return information about the sequence number and build date and time of the
    current Python interpreter instance, for example ::
 
       "#67, Aug  1 1997, 22:34:28"

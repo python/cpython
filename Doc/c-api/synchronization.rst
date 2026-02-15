@@ -2,7 +2,7 @@
 
 .. _synchronization:
 
-Synchronization Primitives
+Synchronization primitives
 ==========================
 
 The C-API provides a basic mutual exclusion lock.
@@ -55,7 +55,7 @@ The C-API provides a basic mutual exclusion lock.
 
 .. _python-critical-section-api:
 
-Python Critical Section API
+Python critical section API
 ---------------------------
 
 The critical section API provides a deadlock avoidance layer on top of
@@ -206,7 +206,7 @@ code triggered by the finalizer blocks and calls :c:func:`PyEval_SaveThread`.
    .. versionadded:: 3.13
 
 
-Legacy Locking APIs
+Legacy locking APIs
 -------------------
 
 These APIs are obsolete since Python 3.13 with the introduction of

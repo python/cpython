@@ -2,7 +2,7 @@
 
 .. _threads:
 
-Thread States and the Global Interpreter Lock
+Thread states and the global interpreter lock
 =============================================
 
 .. index::
@@ -40,7 +40,7 @@ A thread can only have one :term:`attached thread state` at a time. An attached
 thread state is typically analogous with holding the :term:`GIL`, except on
 :term:`free-threaded <free threading>` builds.  On builds with the :term:`GIL` enabled,
 :term:`attaching <attached thread state>` a thread state will block until the :term:`GIL`
-can be acquired. However,  even on builds with the :term:`GIL` disabled, it is still required
+can be acquired. However, even on builds with the :term:`GIL` disabled, it is still required
 to have an attached thread state to call most of the C API.
 
 In general, there will always be an :term:`attached thread state` when using Python's C API.
@@ -156,7 +156,7 @@ Non-Python created threads
 
 When threads are created using the dedicated Python APIs (such as the
 :mod:`threading` module), a thread state is automatically associated to them
-and the code showed above is therefore correct.  However, when threads are
+and the code shown above is therefore correct.  However, when threads are
 created from C (for example by a third-party library with its own thread
 management), they don't hold the :term:`GIL`, because they don't have an
 :term:`attached thread state`.
@@ -626,7 +626,7 @@ Low-level APIs
    available (even when threads have not been initialized).
 
 
-Asynchronous Notifications
+Asynchronous notifications
 ==========================
 
 A mechanism is provided to make asynchronous notifications to the main
@@ -709,10 +709,10 @@ pointer and a void pointer argument.
 
    .. versionchanged:: 3.7
       The type of the *id* parameter changed from :c:expr:`long` to
-      :c:expr:`unsigned long`
+      :c:expr:`unsigned long`.
 
 
-Operating System Thread APIs
+Operating system thread APIs
 ============================
 
 .. c:macro:: PYTHREAD_INVALID_THREAD_ID

@@ -1,6 +1,6 @@
 :orphan:
 
-Initialization, Finalization, and Threads
+Initialization, finalization, and threads
 =========================================
 
 This page has been split up into the following:

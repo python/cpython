@@ -2,12 +2,12 @@
 
 .. _thread-local-storage:
 
-Thread Local Storage Support
+Thread-local storage support
 ============================
 
 The Python interpreter provides low-level support for thread-local storage
 (TLS) which wraps the underlying native TLS implementation to support the
-Python-level thread local storage API (:class:`threading.local`).  The
+Python-level thread-local storage API (:class:`threading.local`).  The
 CPython C level APIs are similar to those offered by pthreads and Windows:
 use a thread key and functions to associate a :c:expr:`void*` value per
 thread.
@@ -26,10 +26,10 @@ you need to include :file:`pythread.h` to use thread-local storage.
 
 .. _thread-specific-storage-api:
 
-Thread Specific Storage (TSS) API
----------------------------------
+Thread-specific storage API
+---------------------------
 
-TSS API is introduced to supersede the use of the existing TLS API within the
+The thread-specific storage (TSS) API was introduced to supersede the use of the existing TLS API within the
 CPython interpreter.  This API uses a new type :c:type:`Py_tss_t` instead of
 :c:expr:`int` to represent thread keys.
 
@@ -55,7 +55,7 @@ CPython interpreter.  This API uses a new type :c:type:`Py_tss_t` instead of
    Note that this macro won't be defined with :ref:`Py_LIMITED_API <stable>`.
 
 
-Dynamic Allocation
+Dynamic allocation
 ------------------
 
 Dynamic allocation of the :c:type:`Py_tss_t`, required in extension modules
@@ -135,8 +135,8 @@ Legacy APIs
 -----------
 
 .. deprecated:: 3.7
-   This API is superseded by
-   :ref:`Thread Specific Storage (TSS) API <thread-specific-storage-api>`.
+   This API is superseded by the
+   :ref:`thread-specific storage (TSS) API <thread-specific-storage-api>`.
 
 .. note::
    This version of the API does not support platforms where the native TLS key
