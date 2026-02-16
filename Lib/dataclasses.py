@@ -1002,6 +1002,8 @@ class _AutoDocstring:
         setattr(cls, '__doc__', doc)
         return doc
 
+_auto_docstring = _AutoDocstring()
+
 
 def _process_class(cls, init, repr, eq, order, unsafe_hash, frozen,
                    match_args, kw_only, slots, weakref_slot):
@@ -1235,7 +1237,7 @@ def _process_class(cls, init, repr, eq, order, unsafe_hash, frozen,
     if not getattr(cls, '__doc__'):
         # Create a class doc-string lazily via descriptor protocol
         # to avoid importing `inspect` module.
-        cls.__doc__ = _AutoDocstring()
+        cls.__doc__ = _auto_docstring
 
     if match_args:
         # I could probably compute this once.
