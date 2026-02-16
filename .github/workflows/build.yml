@@ -261,10 +261,6 @@ jobs:
         ssllib:
           # See Tools/ssl/make_ssl_data.py for notes on adding a new version
           ## OpenSSL
-          # Keep 1.1.1w in our list despite it being upstream EOL and otherwise
-          # unsupported as it most resembles other 1.1.1-work-a-like ssl APIs
-          # supported by important vendors such as AWS-LC.
-          - { name: openssl, version: 1.1.1w }
           - { name: openssl, version: 3.0.19 }
           - { name: openssl, version: 3.3.6 }
           - { name: openssl, version: 3.4.4 }
