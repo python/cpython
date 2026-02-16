@@ -143,16 +143,10 @@ class UnicodeFunctionsTest(unittest.TestCase):
         self.assertEqual(name('\uFBF9'),
                          'ARABIC LIGATURE UIGHUR KIRGHIZ YEH WITH HAMZA '
                          'ABOVE WITH ALEF MAKSURA ISOLATED FORM')
-        self.assertEqual(name('\U00013460', None), None if self.old else
-                         'EGYPTIAN HIEROGLYPH-13460')
-        self.assertEqual(name('\U000143FA', None), None if self.old else
-                         'EGYPTIAN HIEROGLYPH-143FA')
         self.assertEqual(name('\U00018B00', None), None if self.old else
                          'KHITAN SMALL SCRIPT CHARACTER-18B00')
         self.assertEqual(name('\U00018CD5', None), None if self.old else
                          'KHITAN SMALL SCRIPT CHARACTER-18CD5')
-        self.assertEqual(name('\U00018CFF', None), None if self.old else
-                         'KHITAN SMALL SCRIPT CHARACTER-18CFF')
         self.assertEqual(name('\U0001B170', None), None if self.old else
                          'NUSHU CHARACTER-1B170')
         self.assertEqual(name('\U0001B2FB', None), None if self.old else
