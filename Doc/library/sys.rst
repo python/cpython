@@ -1792,8 +1792,6 @@ always available. Unless explicitly noted otherwise, all variables are read-only
    * *fromlist* is the tuple of names being imported (for ``from ... import``
      statements), or ``None`` for regular imports
 
-   and all of them are positional arguments.
-
    The filter should return ``True`` to allow the import to be lazy, or
    ``False`` to force an eager import.
 
