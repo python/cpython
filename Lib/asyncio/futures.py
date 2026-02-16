@@ -72,6 +72,8 @@ class Future:
 
     __log_traceback = False
 
+    _eager_result = False
+
     def __init__(self, *, loop=None):
         """Initialize the future.
 
@@ -167,6 +169,30 @@ class Future:
         self._cancel_message = msg
         self.__schedule_callbacks()
         return True
+
+    def __execute_callbacks(self):
+        callbacks = self._callbacks[:]
+        if not callbacks:
+            return
+
+        self._callbacks[:] = []
+        for callback, ctx in callbacks:
+            # TODO: run_in_context
+            try:
+                callback(self)
+            except BaseException as exc:
+                cb = format_helpers._format_callback_source(
+                    callback, (self,),
+                    debug=self._loop.get_debug())
+                msg = f'Exception in callback {cb}'
+                context = {
+                    'message': msg,
+                    'exception': exc,
+                    'handle': self,
+                }
+                if self._source_traceback:
+                    context['source_traceback'] = self._source_traceback
+                self._loop.call_exception_handler(context)
 
     def __schedule_callbacks(self):
         """Internal: Ask the event loop to call all callbacks.
@@ -269,6 +295,19 @@ class Future:
         self._result = result
         self._state = _FINISHED
         self.__schedule_callbacks()
+
+    def eager_set_result(self, result):
+        """Mark the future done and set its result.
+
+        If the future is already done when this method is called, raises
+        InvalidStateError.
+        """
+        if self._state != _PENDING:
+            raise exceptions.InvalidStateError(f'{self._state}: {self!r}')
+        self._result = result
+        self._state = _FINISHED
+        self._eager_result = True
+        self.__execute_callbacks()
 
     def set_exception(self, exception):
         """Mark the future done and set an exception.

@@ -370,7 +370,10 @@ class Task(futures._PyFuture):  # Inherit Python Task implementation
             # Python eval loop would use `.send(value)` method call,
             # instead of `__next__()`, which is slower for futures
             # that return non-generator iterators from their `__iter__`.
-            self.__step()
+            if future._eager_result:
+                self.__eager_start()
+            else:
+                self.__step()
         self = None  # Needed to break cycles when an exception occurs.
 
 
