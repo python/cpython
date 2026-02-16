@@ -4952,11 +4952,13 @@ sock_sendmsg(PyObject *self, PyObject *args)
     if (cmsg_arg == NULL)
         ncmsgs = 0;
     else {
-        if ((cmsg_fast = PySequence_Fast(cmsg_arg,
-                                         "sendmsg() argument 2 must be an "
-                                         "iterable")) == NULL)
+        cmsg_fast = PySequence_Tuple(cmsg_arg);
+        if (cmsg_fast == NULL) {
+            PyErr_SetString(PyExc_TypeError,
+                "sendmsg() argument 2 must be an iterable");
             goto finally;
-        ncmsgs = PySequence_Fast_GET_SIZE(cmsg_fast);
+        }
+        ncmsgs = PyTuple_GET_SIZE(cmsg_fast);
     }
 
 #ifndef CMSG_SPACE
@@ -4976,8 +4978,9 @@ sock_sendmsg(PyObject *self, PyObject *args)
     controllen = controllen_last = 0;
     while (ncmsgbufs < ncmsgs) {
         size_t bufsize, space;
+        PyObject *item = PyTuple_GET_ITEM(cmsg_fast, ncmsgbufs);
 
-        if (!PyArg_Parse(PySequence_Fast_GET_ITEM(cmsg_fast, ncmsgbufs),
+        if (!PyArg_Parse(item,
                          "(iiy*):[sendmsg() ancillary data items]",
                          &cmsgs[ncmsgbufs].level,
                          &cmsgs[ncmsgbufs].type,
