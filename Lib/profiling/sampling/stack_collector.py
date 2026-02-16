@@ -373,7 +373,9 @@ class FlamegraphCollector(StackTraceCollector):
 
         html_template = (template_dir / "_flamegraph_assets" / "flamegraph_template.html").read_text(encoding="utf-8")
         css_content = get_combined_css("flamegraph")
-        js_content = (template_dir /  "_flamegraph_assets" / "flamegraph.js").read_text(encoding="utf-8")
+        base_js = (template_dir / "_shared_assets" / "base.js").read_text(encoding="utf-8")
+        component_js = (template_dir / "_flamegraph_assets" / "flamegraph.js").read_text(encoding="utf-8")
+        js_content = f"{base_js}\n{component_js}"
 
         # Inline first-party CSS/JS
         html_template = html_template.replace(

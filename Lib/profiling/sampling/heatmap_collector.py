@@ -204,7 +204,9 @@ class _TemplateLoader:
             self.file_css = css_content
 
             # Load JS
-            shared_js = (assets_dir / "heatmap_shared.js").read_text(encoding="utf-8")
+            base_js = (template_dir / "_shared_assets" / "base.js").read_text(encoding="utf-8")
+            heatmap_shared_js = (assets_dir / "heatmap_shared.js").read_text(encoding="utf-8")
+            shared_js = f"{base_js}\n{heatmap_shared_js}"
             self.index_js = f"{shared_js}\n{(assets_dir / 'heatmap_index.js').read_text(encoding='utf-8')}"
             self.file_js = f"{shared_js}\n{(assets_dir / 'heatmap.js').read_text(encoding='utf-8')}"
 
