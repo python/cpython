@@ -909,6 +909,21 @@ class UnionTests(unittest.TestCase):
         self.assertIsSubclass(int, x)
         self.assertRaises(ZeroDivisionError, issubclass, list, x)
 
+    def test_custom_instancecheck(self):
+        class CustomIsInstanceMeta(type):
+            def __instancecheck__(cls, instance):
+                return type(instance) is int
+
+        class CustomIsInstance(metaclass=CustomIsInstanceMeta):
+            ...
+
+        class CustomIsInstanceSubclass(CustomIsInstance):
+            ...
+
+        self.assertTrue(isinstance(5, CustomIsInstance))
+        self.assertFalse(isinstance(CustomIsInstance(), CustomIsInstance))
+        self.assertFalse(isinstance(CustomIsInstanceSubclass(), CustomIsInstance))
+
     def test_or_type_operator_with_TypeVar(self):
         TV = typing.TypeVar('T')
         self.assertEqual(TV | str, typing.Union[TV, str])
