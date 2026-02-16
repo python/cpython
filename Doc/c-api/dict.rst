@@ -2,7 +2,7 @@
 
 .. _dictobjects:
 
-Dictionary Objects
+Dictionary objects
 ------------------
 
 .. index:: pair: object; dictionary
@@ -444,7 +444,7 @@ Dictionary Objects
    .. versionadded:: 3.12
 
 
-Dictionary View Objects
+Dictionary view objects
 ^^^^^^^^^^^^^^^^^^^^^^^
 
 .. c:function:: int PyDictViewSet_Check(PyObject *op)
@@ -514,14 +514,14 @@ Frozen dictionary objects
 .. c:function:: int PyAnyDict_CheckExact(PyObject *p)
 
    Return true if *p* is a :class:`dict` object or a :class:`frozendict` object,
-   but not an instance of a subtype of the :class:`!dict` or 
+   but not an instance of a subtype of the :class:`!dict` or
    :class:`!frozendict` type.
    This function always succeeds.
 
 
 .. c:function:: int PyFrozenDict_Check(PyObject *p)
 
-   Return true if *p* is a :class:`frozendict` object or an instance of a 
+   Return true if *p* is a :class:`frozendict` object or an instance of a
    subtype of the :class:`!frozendict` type.
    This function always succeeds.
 

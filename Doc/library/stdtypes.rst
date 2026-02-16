@@ -5839,6 +5839,9 @@ An example of dictionary view usage::
    500
 
 
+Frozen dictionaries
+-------------------
+
 .. class:: frozendict(**kwargs)
            frozendict(mapping, /, **kwargs)
            frozendict(iterable, /, **kwargs)
