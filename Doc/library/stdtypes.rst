@@ -5846,7 +5846,7 @@ An example of dictionary view usage::
    Return a new frozen dictionary initialized from an optional positional
    argument and a possibly empty set of keyword arguments.
 
-   A :class:`!frozendict` has a similar API than the :class:`dict` API, with the
+   A :class:`!frozendict` has a similar API to the :class:`dict` API, with the
    following differences:
 
    * :class:`!dict` has more methods than :class:`!frozendict`:
