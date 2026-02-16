@@ -251,7 +251,7 @@ class BaseHandler:
 
     def _validate_status(self, status):
         if _name_disallowed_re.search(status):
-            raise ValueError("Control characters are not allowed in statuses")
+            raise ValueError("Control characters are not allowed in status")
         if len(status) < 4:
             raise AssertionError("Status must be at least 4 characters")
         if not status[:3].isdigit():
