@@ -858,19 +858,21 @@ class HandlerTests(TestCase):
     def testRaisesControlCharacters(self):
         for c0 in control_characters_c0():
             with self.subTest(c0):
-                base1, base2, base3 = [BaseHandler() for _ in range(3)]
-                statusLegit = '200 OK'
-                statusWithControlCharacters1 = c0
-                headersLegit = [('x', 'y')]
-                headersWithControlCharacters1 = [(c0, 'y')]
-                headersWithControlCharacters2 = [('x', c0)]
-                self.assertRaises(ValueError, base1.start_response, c0, headersLegit)
-                self.assertRaises(ValueError, base2.start_response, statusLegit, headersWithControlCharacters1)
+                base = BaseHandler()
+                with self.assertRaises(ValueError):
+                    base.start_response(c0, [('x', 'y')])
+
+                base = BaseHandler()
+                with self.assertRaises(ValueError):
+                    base.start_response('200 OK', [(c0, 'y')])
+
                 # HTAB (\x09) is allowed in header values, but not in names.
+                base = BaseHandler()
                 if c0 != "\t":
-                    self.assertRaises(ValueError, base3.start_response, statusLegit, headersWithControlCharacters2)
+                    with self.assertRaises(ValueError):
+                        base.start_response('200 OK', [('x', c0)])
                 else:
-                    base3.start_response(statusLegit, headersWithControlCharacters2)
+                    base.start_response('200 OK', [('x', c0)])
 
 
 class TestModule(unittest.TestCase):
