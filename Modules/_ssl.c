@@ -917,8 +917,8 @@ newPySSLSocket(PySSLContext *sslctx, PySocketSockObject *sock,
     self->ssl = SSL_new(ctx);
     PySSL_END_ALLOW_THREADS(sslctx)
     if (self->ssl == NULL) {
+        _setSSLError(get_state_ctx(sslctx), NULL, 0, __FILE__, __LINE__);
         Py_DECREF(self);
-        _setSSLError(get_state_ctx(self), NULL, 0, __FILE__, __LINE__);
         return NULL;
     }
 
