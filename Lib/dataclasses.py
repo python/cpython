@@ -1,6 +1,6 @@
 import re
 import sys
-import copy
+lazy import copy
 import types
 import inspect
 import keyword
