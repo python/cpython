@@ -64,7 +64,6 @@ LIBRESSL_RECENT_VERSIONS = [
 ]
 
 AWSLC_RECENT_VERSIONS = [
-    "1.55.0",
     "1.67.0",
 ]
 
