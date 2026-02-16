@@ -1063,10 +1063,7 @@ class _singledispatchmethod_get:
 
         # Dispatch on the second argument if a generic method turns into
         # a bound method on instance-level access. See GH-143535.
-        if obj is None and isinstance(func, FunctionType):
-            self._skip_bound_arg = True
-        else:
-            self._skip_bound_arg = False
+        self._skip_bound_arg = obj is None and isinstance(func, FunctionType)
 
         try:
             self.__module__ = func.__module__
