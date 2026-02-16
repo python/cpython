@@ -644,7 +644,12 @@ specialize_dict_access_hint(
         SPECIALIZATION_FAIL(base_op, SPEC_FAIL_ATTR_SPLIT_DICT);
         return 0;
     }
+#ifdef Py_GIL_DISABLED
+    PyObject *value;
+    Py_ssize_t index = _PyDict_LookupIndexAndValue((PyDictObject *)globals, name, &value);
+#else
     Py_ssize_t index = _PyDict_LookupIndex(dict, name);
+#endif
     if (index != (uint16_t)index) {
         SPECIALIZATION_FAIL(base_op,
                             index == DKIX_EMPTY ?
@@ -652,6 +657,9 @@ specialize_dict_access_hint(
                             SPEC_FAIL_OUT_OF_RANGE);
         return 0;
     }
+#ifdef Py_GIL_DISABLED
+    maybe_enable_deferred_ref_count(value);
+#endif
     cache->index = (uint16_t)index;
     write_u32(cache->version, tp_version);
     specialize(instr, hint_op);
