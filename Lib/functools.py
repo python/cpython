@@ -1063,7 +1063,7 @@ class _singledispatchmethod_get:
 
         # Dispatch on the second argument if a generic method turns into
         # a bound method on instance-level access. See GH-143535.
-        self._skip_bound_arg = obj is None and isinstance(func, FunctionType)
+        self._skip_first_arg = obj is None and isinstance(func, FunctionType)
 
         try:
             self.__module__ = func.__module__
@@ -1093,22 +1093,22 @@ class _singledispatchmethod_get:
                                'singledispatchmethod method')
             raise TypeError(f'{funcname} requires at least '
                             '1 positional argument')
-        index = 1 if self._skip_bound_arg else 0
+        index = 1 if self._skip_first_arg else 0
         method = self._dispatch(args[index].__class__)
 
         if hasattr(method, "__get__"):
             # If the method is a descriptor, it might be necessary
             # to drop the first argument before calling
             # as it can be no longer expected after descriptor access.
-            skip_first_arg = False
+            skip_bound_arg = False
             if isinstance(method, staticmethod):
-                skip_first_arg = self._skip_bound_arg
+                skip_bound_arg = self._skip_first_arg
 
             method = method.__get__(self._obj, self._cls)
             if isinstance(method, MethodType):
-                skip_first_arg = self._skip_bound_arg
+                skip_bound_arg = self._skip_first_arg
 
-            if skip_first_arg:
+            if skip_bound_arg:
                 return method(*args[1:], **kwargs)
         return method(*args, **kwargs)
 
