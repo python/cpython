@@ -924,6 +924,25 @@ class UnionTests(unittest.TestCase):
         self.assertFalse(isinstance(CustomIsInstance(), CustomIsInstance))
         self.assertFalse(isinstance(CustomIsInstanceSubclass(), CustomIsInstance))
 
+    def test_custom_subclasscheck(self):
+        class CustomIsSubclassMeta(type):
+            def __subclasscheck__(cls, subcls):
+                return subcls is int
+
+        class CustomIsSubclass(metaclass=CustomIsSubclassMeta):
+            ...
+
+        class CustomIsSubclassSubclass(CustomIsSubclass):
+            ...
+
+        self.assertTrue(issubclass(int, CustomIsSubclass))
+        self.assertFalse(isinstance(4, CustomIsSubclass))
+        self.assertFalse(issubclass(CustomIsSubclass, CustomIsSubclass))
+        self.assertTrue(isinstance(CustomIsSubclass(), CustomIsSubclass))
+        self.assertFalse(issubclass(CustomIsSubclassSubclass, CustomIsSubclass))
+        self.assertTrue(isinstance(CustomIsSubclassSubclass(), CustomIsSubclass))
+
+
     def test_or_type_operator_with_TypeVar(self):
         TV = typing.TypeVar('T')
         self.assertEqual(TV | str, typing.Union[TV, str])
