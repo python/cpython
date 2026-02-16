@@ -824,6 +824,19 @@ pickle
   (Contributed by Zackery Spytz and Serhiy Storchaka in :gh:`77188`.)
 
 
+re
+--
+
+* :func:`re.prefixmatch` and a corresponding :meth:`~re.Pattern.prefixmatch`
+  have been added as alternate more explicit names for the existing
+  :func:`re.match` and :meth:`~re.Pattern.match` APIs. These are intended
+  to be used to alleviate confusion around what *match* means by following the
+  Zen of Python's *"Explicit is better than implicit"* mantra. Most other
+  language regular expression libraries use an API named *match* to mean what
+  Python has always called *search*.
+  (Contributed by Gregory P. Smith in :gh:`86519`.)
+
+
 resource
 --------
 
@@ -1285,7 +1298,7 @@ Diego Russo in :gh:`140683` and :gh:`142305`.)
 
 
 Removed
-=======
+========
 
 ctypes
 ------

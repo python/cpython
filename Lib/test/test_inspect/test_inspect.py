@@ -6277,7 +6277,10 @@ class TestSignatureDefinitions(unittest.TestCase):
 
     def test_re_module_has_signatures(self):
         import re
-        methods_no_signature = {'Match': {'group'}}
+        methods_no_signature = {
+                'Match': {'group'},
+                'Pattern': {'match'},  # It is now an alias for prefixmatch
+        }
         self._test_module_has_signatures(re,
                 methods_no_signature=methods_no_signature,
                 good_exceptions={'error', 'PatternError'})

@@ -837,7 +837,7 @@ Flags
    value::
 
       def myfunc(text, flag=re.NOFLAG):
-          return re.match(text, flag)
+          return re.search(text, flag)
 
    .. versionadded:: 3.11
 
@@ -893,8 +893,8 @@ Functions
 
    Compile a regular expression pattern into a :ref:`regular expression object
    <re-objects>`, which can be used for matching using its
-   :func:`~Pattern.match`, :func:`~Pattern.search` and other methods, described
-   below.
+   :func:`~Pattern.prefixmatch`,
+   :func:`~Pattern.search`, and other methods, described below.
 
    The expression's behaviour can be modified by specifying a *flags* value.
    Values can be any of the `flags`_ variables, combined using bitwise OR
@@ -903,11 +903,11 @@ Functions
    The sequence ::
 
       prog = re.compile(pattern)
-      result = prog.match(string)
+      result = prog.search(string)
 
    is equivalent to ::
 
-      result = re.match(pattern, string)
+      result = re.search(pattern, string)
 
    but using :func:`re.compile` and saving the resulting regular expression
    object for reuse is more efficient when the expression will be used several
@@ -933,6 +933,7 @@ Functions
    (the ``|`` operator).
 
 
+.. function:: prefixmatch(pattern, string, flags=0)
 .. function:: match(pattern, string, flags=0)
 
    If zero or more characters at the beginning of *string* match the regular
@@ -940,8 +941,10 @@ Functions
    ``None`` if the string does not match the pattern; note that this is
    different from a zero-length match.
 
-   Note that even in :const:`MULTILINE` mode, :func:`re.match` will only match
-   at the beginning of the string and not at the beginning of each line.
+   .. note::
+
+      Even in :const:`MULTILINE` mode, this will only match at the
+      beginning of the string and not at the beginning of each line.
 
    If you want to locate a match anywhere in *string*, use :func:`search`
    instead (see also :ref:`search-vs-match`).
@@ -949,6 +952,18 @@ Functions
    The expression's behaviour can be modified by specifying a *flags* value.
    Values can be any of the `flags`_ variables, combined using bitwise OR
    (the ``|`` operator).
+
+   This function now has two names and has long been known as
+   :func:`~re.match`.  Use that name when you need to retain compatibility with
+   older Python versions.
+
+   .. versionchanged:: next
+      The alternate :func:`~re.prefixmatch` name of this API was added as a
+      more explicitly descriptive name than :func:`~re.match`. Use it to better
+      express intent. The norm in other languages and regular expression
+      implementations is to use the term *match* to refer to the behavior of
+      what Python has always called :func:`~re.search`.
+      See :ref:`prefixmatch-vs-match`.
 
 
 .. function:: fullmatch(pattern, string, flags=0)
@@ -1271,6 +1286,7 @@ Regular Expression Objects
       >>> pattern.search("dog", 1)  # No match; search doesn't include the "d"
 
 
+.. method:: Pattern.prefixmatch(string[, pos[, endpos]])
 .. method:: Pattern.match(string[, pos[, endpos]])
 
    If zero or more characters at the *beginning* of *string* match this regular
@@ -1278,16 +1294,31 @@ Regular Expression Objects
    string does not match the pattern; note that this is different from a
    zero-length match.
 
+   Note that even in :const:`MULTILINE` mode, this will only match at the
+   beginning of the string and not at the beginning of each line.
+
    The optional *pos* and *endpos* parameters have the same meaning as for the
    :meth:`~Pattern.search` method. ::
 
       >>> pattern = re.compile("o")
-      >>> pattern.match("dog")      # No match as "o" is not at the start of "dog".
-      >>> pattern.match("dog", 1)   # Match as "o" is the 2nd character of "dog".
+      >>> pattern.prefixmatch("dog")     # No match as "o" is not at the start of "dog".
+      >>> pattern.prefixmatch("dog", 1)  # Match as "o" is the 2nd character of "dog".
       <re.Match object; span=(1, 2), match='o'>
 
    If you want to locate a match anywhere in *string*, use
    :meth:`~Pattern.search` instead (see also :ref:`search-vs-match`).
+
+   This method now has two names and has long been known as
+   :meth:`~Pattern.match`.  Use that name when you need to retain compatibility
+   with older Python versions.
+
+   .. versionchanged:: next
+      The alternate :meth:`~Pattern.prefixmatch` name of this API was added as
+      a more explicitly descriptive name than :meth:`~Pattern.match`. Use it to
+      better express intent. The norm in other languages and regular expression
+      implementations is to use the term *match* to refer to the behavior of
+      what Python has always called :meth:`~Pattern.search`.
+      See :ref:`prefixmatch-vs-match`.
 
 
 .. method:: Pattern.fullmatch(string[, pos[, endpos]])
@@ -1376,8 +1407,7 @@ Since :meth:`~Pattern.match` and :meth:`~Pattern.search` return ``None``
 when there is no match, you can test whether there was a match with a simple
 ``if`` statement::
 
-   match = re.search(pattern, string)
-   if match:
+   if match := re.search(pattern, string):
        process(match)
 
 .. class:: Match
@@ -1415,15 +1445,15 @@ when there is no match, you can test whether there was a match with a simple
    If a group is contained in a part of the pattern that matched multiple times,
    the last match is returned. ::
 
-      >>> m = re.match(r"(\w+) (\w+)", "Isaac Newton, physicist")
+      >>> m = re.search(r"\A(\w+) (\w+)", "Norwegian Blue, pining for the fjords")
       >>> m.group(0)       # The entire match
-      'Isaac Newton'
+      'Norwegian Blue'
       >>> m.group(1)       # The first parenthesized subgroup.
-      'Isaac'
+      'Norwegian'
       >>> m.group(2)       # The second parenthesized subgroup.
-      'Newton'
+      'Blue'
       >>> m.group(1, 2)    # Multiple arguments give us a tuple.
-      ('Isaac', 'Newton')
+      ('Norwegian', 'Blue')
 
    If the regular expression uses the ``(?P<name>...)`` syntax, the *groupN*
    arguments may also be strings identifying groups by their group name.  If a
@@ -1432,23 +1462,23 @@ when there is no match, you can test whether there was a match with a simple
 
    A moderately complicated example::
 
-      >>> m = re.match(r"(?P<first_name>\w+) (?P<last_name>\w+)", "Malcolm Reynolds")
-      >>> m.group('first_name')
-      'Malcolm'
-      >>> m.group('last_name')
-      'Reynolds'
+      >>> m = re.search(r"(?P<adjective>\w+) (?P<animal>\w+)", "killer rabbit")
+      >>> m.group('adjective')
+      'killer'
+      >>> m.group('animal')
+      'rabbit'
 
    Named groups can also be referred to by their index::
 
       >>> m.group(1)
-      'Malcolm'
+      'killer'
       >>> m.group(2)
-      'Reynolds'
+      'rabbit'
 
    If a group matches multiple times, only the last match is accessible::
 
-      >>> m = re.match(r"(..)+", "a1b2c3")  # Matches 3 times.
-      >>> m.group(1)                        # Returns only the last match.
+      >>> m = re.search(r"(..)+", "a1b2c3")  # Matches 3 times.
+      >>> m.group(1)                         # Returns only the last match.
       'c3'
 
 
@@ -1457,21 +1487,21 @@ when there is no match, you can test whether there was a match with a simple
    This is identical to ``m.group(g)``.  This allows easier access to
    an individual group from a match::
 
-      >>> m = re.match(r"(\w+) (\w+)", "Isaac Newton, physicist")
+      >>> m = re.search(r"(\w+) (\w+)", "Norwegian Blue, pining for the fjords")
       >>> m[0]       # The entire match
-      'Isaac Newton'
+      'Norwegian Blue'
       >>> m[1]       # The first parenthesized subgroup.
-      'Isaac'
+      'Norwegian'
       >>> m[2]       # The second parenthesized subgroup.
-      'Newton'
+      'Blue'
 
    Named groups are supported as well::
 
-      >>> m = re.match(r"(?P<first_name>\w+) (?P<last_name>\w+)", "Isaac Newton")
-      >>> m['first_name']
-      'Isaac'
-      >>> m['last_name']
-      'Newton'
+      >>> m = re.search(r"(?P<adjective>\w+) (?P<animal>\w+)", "killer rabbit")
+      >>> m['adjective']
+      'killer'
+      >>> m['animal']
+      'rabbit'
 
    .. versionadded:: 3.6
 
@@ -1484,7 +1514,7 @@ when there is no match, you can test whether there was a match with a simple
 
    For example::
 
-      >>> m = re.match(r"(\d+)\.(\d+)", "24.1632")
+      >>> m = re.search(r"(\d+)\.(\d+)", "24.1632")
       >>> m.groups()
       ('24', '1632')
 
@@ -1492,7 +1522,7 @@ when there is no match, you can test whether there was a match with a simple
    might participate in the match.  These groups will default to ``None`` unless
    the *default* argument is given::
 
-      >>> m = re.match(r"(\d+)\.?(\d+)?", "24")
+      >>> m = re.search(r"(\d+)\.?(\d+)?", "24")
       >>> m.groups()      # Second group defaults to None.
       ('24', None)
       >>> m.groups('0')   # Now, the second group defaults to '0'.
@@ -1505,9 +1535,9 @@ when there is no match, you can test whether there was a match with a simple
    the subgroup name.  The *default* argument is used for groups that did not
    participate in the match; it defaults to ``None``.  For example::
 
-      >>> m = re.match(r"(?P<first_name>\w+) (?P<last_name>\w+)", "Malcolm Reynolds")
+      >>> m = re.search(r"(?P<adjective>\w+) (?P<animal>\w+)", "killer rabbit")
       >>> m.groupdict()
-      {'first_name': 'Malcolm', 'last_name': 'Reynolds'}
+      {'adjective': 'killer', 'animal': 'rabbit'}
 
 
 .. method:: Match.start([group])
@@ -1610,41 +1640,40 @@ representing the card with that value.
 
 To see if a given string is a valid hand, one could do the following::
 
-   >>> valid = re.compile(r"^[a2-9tjqk]{5}$")
-   >>> displaymatch(valid.match("akt5q"))  # Valid.
+   >>> valid_hand_re = re.compile(r"^[a2-9tjqk]{5}$")
+   >>> displaymatch(valid_hand_re.search("akt5q"))  # Valid.
    "<Match: 'akt5q', groups=()>"
-   >>> displaymatch(valid.match("akt5e"))  # Invalid.
-   >>> displaymatch(valid.match("akt"))    # Invalid.
-   >>> displaymatch(valid.match("727ak"))  # Valid.
+   >>> displaymatch(valid_hand_re.search("akt5e"))  # Invalid.
+   >>> displaymatch(valid_hand_re.search("akt"))    # Invalid.
+   >>> displaymatch(valid_hand_re.search("727ak"))  # Valid.
    "<Match: '727ak', groups=()>"
 
 That last hand, ``"727ak"``, contained a pair, or two of the same valued cards.
 To match this with a regular expression, one could use backreferences as such::
 
-   >>> pair = re.compile(r".*(.).*\1")
-   >>> displaymatch(pair.match("717ak"))     # Pair of 7s.
+   >>> pair_re = re.compile(r".*(.).*\1")
+   >>> displaymatch(pair_re.prefixmatch("717ak"))     # Pair of 7s.
    "<Match: '717', groups=('7',)>"
-   >>> displaymatch(pair.match("718ak"))     # No pairs.
-   >>> displaymatch(pair.match("354aa"))     # Pair of aces.
+   >>> displaymatch(pair_re.prefixmatch("718ak"))     # No pairs.
+   >>> displaymatch(pair_re.prefixmatch("354aa"))     # Pair of aces.
    "<Match: '354aa', groups=('a',)>"
 
 To find out what card the pair consists of, one could use the
 :meth:`~Match.group` method of the match object in the following manner::
 
-   >>> pair = re.compile(r".*(.).*\1")
-   >>> pair.match("717ak").group(1)
+   >>> pair_re = re.compile(r".*(.).*\1")
+   >>> pair_re.prefixmatch("717ak").group(1)
    '7'
 
-   # Error because re.match() returns None, which doesn't have a group() method:
-   >>> pair.match("718ak").group(1)
+   # Error because prefixmatch() returns None, which doesn't have a group() method:
+   >>> pair_re.prefixmatch("718ak").group(1)
    Traceback (most recent call last):
      File "<pyshell#23>", line 1, in <module>
-       re.match(r".*(.).*\1", "718ak").group(1)
+       pair_re.prefixmatch("718ak").group(1)
    AttributeError: 'NoneType' object has no attribute 'group'
 
-   >>> pair.match("354aa").group(1)
+   >>> pair_re.prefixmatch("354aa").group(1)
    'a'
-
 
 Simulating scanf()
 ^^^^^^^^^^^^^^^^^^
@@ -1694,23 +1723,22 @@ The equivalent regular expression would be ::
 
 .. _search-vs-match:
 
-search() vs. match()
-^^^^^^^^^^^^^^^^^^^^
+search() vs. prefixmatch()
+^^^^^^^^^^^^^^^^^^^^^^^^^^
 
 .. sectionauthor:: Fred L. Drake, Jr. <fdrake@acm.org>
 
 Python offers different primitive operations based on regular expressions:
 
-+ :func:`re.match` checks for a match only at the beginning of the string
++ :func:`re.prefixmatch` checks for a match only at the beginning of the string
 + :func:`re.search` checks for a match anywhere in the string
   (this is what Perl does by default)
 + :func:`re.fullmatch` checks for entire string to be a match
 
-
 For example::
 
-   >>> re.match("c", "abcdef")    # No match
-   >>> re.search("c", "abcdef")   # Match
+   >>> re.prefixmatch("c", "abcdef")  # No match
+   >>> re.search("c", "abcdef")       # Match
    <re.Match object; span=(2, 3), match='c'>
    >>> re.fullmatch("p.*n", "python") # Match
    <re.Match object; span=(0, 6), match='python'>
@@ -1719,19 +1747,46 @@ For example::
 Regular expressions beginning with ``'^'`` can be used with :func:`search` to
 restrict the match at the beginning of the string::
 
-   >>> re.match("c", "abcdef")    # No match
-   >>> re.search("^c", "abcdef")  # No match
-   >>> re.search("^a", "abcdef")  # Match
+   >>> re.prefixmatch("c", "abcdef")  # No match
+   >>> re.search("^c", "abcdef")      # No match
+   >>> re.search("^a", "abcdef")      # Match
    <re.Match object; span=(0, 1), match='a'>
 
-Note however that in :const:`MULTILINE` mode :func:`match` only matches at the
+Note however that in :const:`MULTILINE` mode :func:`prefixmatch` only matches at the
 beginning of the string, whereas using :func:`search` with a regular expression
 beginning with ``'^'`` will match at the beginning of each line. ::
 
-   >>> re.match("X", "A\nB\nX", re.MULTILINE)  # No match
+   >>> re.prefixmatch("X", "A\nB\nX", re.MULTILINE)  # No match
    >>> re.search("^X", "A\nB\nX", re.MULTILINE)  # Match
    <re.Match object; span=(4, 5), match='X'>
 
+.. _prefixmatch-vs-match:
+
+prefixmatch() vs. match()
+^^^^^^^^^^^^^^^^^^^^^^^^^
+
+Why is the :func:`~re.match` function and method discouraged in
+favor of the longer :func:`~re.prefixmatch` spelling?
+
+Many other languages have gained regex support libraries since regular
+expressions were added to Python. However in the most popular of those, they
+use the term *match* in their APIs to mean the unanchored behavior provided in
+Python by :func:`~re.search`. Thus use of the plain term *match* can be
+unclear to those used to other languages when reading or writing code and
+not familiar with the Python API's divergence from what otherwise become the
+industry norm.
+
+Quoting from the Zen Of Python (``python3 -m this``): *"Explicit is better than
+implicit"*. Anyone reading the name :func:`~re.prefixmatch` is likely to
+understand the intended semantics. When reading :func:`~re.match` there remains
+a seed of doubt about the intended behavior to anyone not already familiar with
+this old Python gotcha.
+
+We **do not** plan to deprecate and remove the older *match* name,
+as it has been used in code for over 30 years.
+Code supporting older versions of Python should continue to use *match*.
+
+.. versionadded:: next
 
 Making a Phonebook
 ^^^^^^^^^^^^^^^^^^
@@ -1851,9 +1906,9 @@ every backslash (``'\'``) in a regular expression would have to be prefixed with
 another one to escape it.  For example, the two following lines of code are
 functionally identical::
 
-   >>> re.match(r"\W(.)\1\W", " ff ")
+   >>> re.search(r"\W(.)\1\W", " ff ")
    <re.Match object; span=(0, 4), match=' ff '>
-   >>> re.match("\\W(.)\\1\\W", " ff ")
+   >>> re.search("\\W(.)\\1\\W", " ff ")
    <re.Match object; span=(0, 4), match=' ff '>
 
 When one wants to match a literal backslash, it must be escaped in the regular
@@ -1861,9 +1916,9 @@ expression.  With raw string notation, this means ``r"\\"``.  Without raw string
 notation, one must use ``"\\\\"``, making the following lines of code
 functionally identical::
 
-   >>> re.match(r"\\", r"\\")
+   >>> re.search(r"\\", r"\\")
    <re.Match object; span=(0, 1), match='\\'>
-   >>> re.match("\\\\", r"\\")
+   >>> re.search("\\\\", r"\\")
    <re.Match object; span=(0, 1), match='\\'>
 
 
