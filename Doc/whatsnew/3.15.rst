@@ -66,7 +66,7 @@ Summary -- Release highlights
 .. PEP-sized items next.
 
 * :pep:`810`: :ref:`Explicit lazy imports for faster startup times
-  <whatsnew315-pep810>`
+  <whatsnew315-lazy-imports>`
 * :pep:`814`: :ref:`Add frozendict built-in type
   <whatsnew315-frozendict>`
 * :pep:`799`: :ref:`A dedicated profiling package for organizing Python
@@ -86,7 +86,7 @@ Summary -- Release highlights
 New features
 ============
 
-.. _whatsnew315-pep810:
+.. _whatsnew315-lazy-imports:
 
 :pep:`810`: Explicit lazy imports
 ---------------------------------
