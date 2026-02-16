@@ -2439,7 +2439,7 @@ expression support in the :mod:`re` module).
 
    Note that ``s.lower().islower()`` might be ``False`` if ``s``
    contains uncased characters or if the Unicode category of the resulting
-   character(s) is not "Lu" (Letter, uppercase), but e.g. "Lt" (Letter,
+   character(s) is not "Lu" (Letter, uppercase), but for instance "Lt" (Letter,
    titlecase).
 
    For example, see the word "Python" written in Punjabi, the most spoken
