@@ -6,6 +6,8 @@
 Lifted directly from rfc822.py.  This should eventually be rewritten.
 """
 
+lazy import calendar
+
 __all__ = [
     'mktime_tz',
     'parsedate',
@@ -196,7 +198,6 @@ def mktime_tz(data):
         return time.mktime(data[:8] + (-1,))
     else:
         # Delay the import, since mktime_tz is rarely used
-        import calendar
 
         t = calendar.timegm(data)
         return t - data[9]

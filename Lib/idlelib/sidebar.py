@@ -1,6 +1,8 @@
 """Line numbering implementation for IDLE as an extension.
 Includes BaseSideBar which can be extended for other sidebar based extensions
 """
+lazy from idlelib.idle_test.test_sidebar import Dummy_editwin
+
 import contextlib
 import functools
 import itertools
@@ -514,7 +516,6 @@ class ShellSidebar(BaseSideBar):
 
 
 def _sidebar_number_scrolling(parent):  # htest #
-    from idlelib.idle_test.test_sidebar import Dummy_editwin
 
     top = tk.Toplevel(parent)
     text_frame = tk.Frame(top)

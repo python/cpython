@@ -1,3 +1,5 @@
+lazy from . import resource_tracker
+
 import io
 import os
 
@@ -36,7 +38,6 @@ class Popen(popen_fork.Popen):
         return fd
 
     def _launch(self, process_obj):
-        from . import resource_tracker
         tracker_fd = resource_tracker.getfd()
         self._fds.append(tracker_fd)
         prep_data = spawn.get_preparation_data(process_obj._name)

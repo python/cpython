@@ -22,6 +22,11 @@ and opendir), and leave all pathname manipulation to os.path
 """
 
 #'
+lazy import warnings
+lazy import subprocess
+lazy import io
+lazy import nt
+
 import abc
 import sys
 import stat as st
@@ -669,7 +674,6 @@ def get_exec_path(env=None):
     # Use a local import instead of a global import to limit the number of
     # modules loaded at startup: the os module is always loaded at startup by
     # Python. It may also avoid a bootstrap issue.
-    import warnings
 
     if env is None:
         env = environ
@@ -1046,7 +1050,6 @@ if sys.platform != 'vxworks':
             raise ValueError("invalid mode %r" % mode)
         if buffering == 0 or buffering is None:
             raise ValueError("popen() does not support unbuffered streams")
-        import subprocess
         if mode == "r":
             proc = subprocess.Popen(cmd,
                                     shell=True, text=True,
@@ -1089,7 +1092,6 @@ if sys.platform != 'vxworks':
 def fdopen(fd, mode="r", buffering=-1, encoding=None, *args, **kwargs):
     if not isinstance(fd, int):
         raise TypeError("invalid fd type (%s, expected integer)" % type(fd))
-    import io
     if "b" not in mode:
         encoding = io.text_encoding(encoding)
     return io.open(fd, mode, buffering, encoding, *args, **kwargs)
@@ -1187,7 +1189,6 @@ if name == 'nt':
         Remove the directory by calling close() on the returned object or
         using it in a with statement.
         """
-        import nt
         cookie = nt._add_dll_directory(path)
         return _AddedDllDirectory(
             path,

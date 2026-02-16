@@ -1,5 +1,7 @@
 """Base classes for server/gateway implementations"""
 
+lazy from warnings import warn
+
 from .util import FileWrapper, guess_scheme, is_hop_by_hop
 from .headers import Headers
 
@@ -473,7 +475,6 @@ class SimpleHandler(BaseHandler):
         result = self.stdout.write(data)
         if result is None or result == len(data):
             return
-        from warnings import warn
         warn("SimpleHandler.stdout.write() should not do partial writes",
             DeprecationWarning)
         while data := data[result:]:

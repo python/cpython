@@ -3,6 +3,8 @@ A library of useful helper classes to the SAX classes, for the
 convenience of application and driver writers.
 """
 
+lazy import sys
+
 import os, urllib.parse, urllib.request
 import io
 import codecs
@@ -70,7 +72,6 @@ def quoteattr(data, entities={}):
 
 def _gettextwriter(out, encoding):
     if out is None:
-        import sys
         return sys.stdout
 
     if isinstance(out, io.TextIOBase):

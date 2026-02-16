@@ -44,6 +44,8 @@ AND THERE IS NO OBLIGATION WHATSOEVER TO PROVIDE MAINTENANCE,
 SUPPORT, UPDATES, ENHANCEMENTS, OR MODIFICATIONS.
 """
 
+lazy from .async_case import IsolatedAsyncioTestCase
+
 __all__ = ['TestResult', 'TestCase', 'IsolatedAsyncioTestCase', 'TestSuite',
            'TextTestRunner', 'TestLoader', 'FunctionTestCase', 'main',
            'defaultTestLoader', 'SkipTest', 'skip', 'skipIf', 'skipUnless',
@@ -75,6 +77,5 @@ def __dir__():
 def __getattr__(name):
     if name == 'IsolatedAsyncioTestCase':
         global IsolatedAsyncioTestCase
-        from .async_case import IsolatedAsyncioTestCase
         return IsolatedAsyncioTestCase
     raise AttributeError(f"module {__name__!r} has no attribute {name!r}")

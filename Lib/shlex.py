@@ -7,6 +7,9 @@
 # iterator interface by Gustavo Niemeyer, April 2003.
 # changes to tokenize more like Posix shells by Vinay Sajip, July 2016.
 
+lazy from collections import deque
+lazy import os.path
+
 import sys
 from io import StringIO
 
@@ -16,7 +19,6 @@ class shlex:
     "A lexical analyzer class for simple shell-like syntaxes."
     def __init__(self, instream=None, infile=None, posix=False,
                  punctuation_chars=False):
-        from collections import deque  # deferred import for performance
 
         if isinstance(instream, str):
             instream = StringIO(instream)
@@ -276,7 +278,6 @@ class shlex:
 
     def sourcehook(self, newfile):
         "Hook called on a filename to be sourced."
-        import os.path
         if newfile[0] == '"':
             newfile = newfile[1:-1]
         # This implements cpp-like semantics for relative-path inclusion.

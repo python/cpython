@@ -81,6 +81,14 @@ f = urllib.request.urlopen('https://www.python.org/')
 # complex proxies  XXX not sure what exactly was meant by this
 # abstract factory for opener
 
+lazy import warnings
+lazy import http.cookiejar
+lazy import email.utils
+lazy import mimetypes
+lazy import ftplib
+lazy from fnmatch import fnmatch
+lazy from ipaddress import AddressValueError, IPv4Address
+
 import base64
 import bisect
 import contextlib
@@ -940,7 +948,6 @@ class AbstractBasicAuthHandler:
         for mo in AbstractBasicAuthHandler.rx.finditer(header):
             scheme, quote, realm = mo.groups()
             if quote not in ['"', "'"]:
-                import warnings
                 warnings.warn("Basic Auth Realm was unquoted",
                               UserWarning, 3)
 
@@ -1377,7 +1384,6 @@ if hasattr(http.client, 'HTTPSConnection'):
 
 class HTTPCookieProcessor(BaseHandler):
     def __init__(self, cookiejar=None):
-        import http.cookiejar
         if cookiejar is None:
             cookiejar = http.cookiejar.CookieJar()
         self.cookiejar = cookiejar
@@ -1466,8 +1472,6 @@ class FileHandler(BaseHandler):
 
     # not entirely sure what the rules are here
     def open_local_file(self, req):
-        import email.utils
-        import mimetypes
         localfile = url2pathname(req.full_url, require_scheme=True, resolve_host=True)
         try:
             stats = os.stat(localfile)
@@ -1506,8 +1510,6 @@ def _is_local_authority(authority, resolve):
 
 class FTPHandler(BaseHandler):
     def ftp_open(self, req):
-        import ftplib
-        import mimetypes
         host = req.host
         if not host:
             raise URLError('ftp error: no host given')
@@ -1758,7 +1760,6 @@ def ftperrors():
     """Return the set of errors raised by the FTP class."""
     global _ftperrors
     if _ftperrors is None:
-        import ftplib
         _ftperrors = ftplib.all_errors
     return _ftperrors
 
@@ -1793,7 +1794,6 @@ class ftpwrapper:
             raise
 
     def init(self):
-        import ftplib
         self.busy = 0
         self.ftp = ftplib.FTP()
         self.ftp.connect(self.host, self.port, self.timeout)
@@ -1802,7 +1802,6 @@ class ftpwrapper:
         self.ftp.cwd(_target)
 
     def retrfile(self, file, type):
-        import ftplib
         self.endtransfer()
         if type in ('d', 'D'): cmd = 'TYPE A'; isdir = 1
         else: cmd = 'TYPE ' + type; isdir = 0
@@ -1957,8 +1956,6 @@ def _proxy_bypass_macosx_sysconf(host, proxy_settings):
       'exceptions': ['foo.bar', '*.bar.com', '127.0.0.1', '10.1', '10.0/16']
     }
     """
-    from fnmatch import fnmatch
-    from ipaddress import AddressValueError, IPv4Address
 
     hostonly, port = _splitport(host)
 
@@ -2018,7 +2015,6 @@ def _proxy_bypass_winreg_override(host, override):
     An example of a proxy override value is:
     "www.example.com;*.example.net; 192.168.0.1"
     """
-    from fnmatch import fnmatch
 
     host, _ = _splitport(host)
     proxy_override = override.split(';')

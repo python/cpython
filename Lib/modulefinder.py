@@ -1,5 +1,7 @@
 """Find modules used by a script, using introspection."""
 
+lazy import getopt
+
 import dis
 import importlib._bootstrap_external
 import importlib.machinery
@@ -616,7 +618,6 @@ class ModuleFinder:
 
 def test():
     # Parse command line
-    import getopt
     try:
         opts, args = getopt.getopt(sys.argv[1:], "dmp:qx:")
     except getopt.error as msg:

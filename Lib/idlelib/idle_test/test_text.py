@@ -2,6 +2,9 @@
 
 Run same tests with both by creating a mixin class.
 '''
+lazy from idlelib.idle_test.mock_tk import Text
+lazy from tkinter import Tk, Text
+
 import unittest
 from test.support import requires
 from _tkinter import TclError
@@ -195,7 +198,6 @@ class MockTextTest(TextTest, unittest.TestCase):
 
     @classmethod
     def setUpClass(cls):
-        from idlelib.idle_test.mock_tk import Text
         cls.Text = Text
 
     def setUp(self):
@@ -219,7 +221,6 @@ class TkTextTest(TextTest, unittest.TestCase):
     @classmethod
     def setUpClass(cls):
         requires('gui')
-        from tkinter import Tk, Text
         cls.Text = Text
         cls.root = Tk()
 

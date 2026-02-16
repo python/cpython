@@ -36,6 +36,13 @@ This can be overridden by setting the PYTHONDOCS environment variable
 to a different URL or to a local directory containing the Library
 Reference Manual pages.
 """
+lazy import http.server
+lazy import email.message
+lazy import select
+lazy import threading
+lazy import webbrowser
+lazy import getopt
+
 __all__ = ['help']
 __author__ = "Ka-Ping Yee <ping@lfw.org>"
 __date__ = "26 February 2001"
@@ -2317,10 +2324,6 @@ def _start_server(urlhandler, hostname, port):
         >>> print(serverthread.error)
         None
    """
-    import http.server
-    import email.message
-    import select
-    import threading
 
     class DocHandler(http.server.BaseHTTPRequestHandler):
 
@@ -2656,7 +2659,6 @@ def browse(port=0, *, open_browser=True, hostname='localhost'):
     Use port '0' to start the server on an arbitrary port.
     Set open_browser to False to suppress opening a browser.
     """
-    import webbrowser
     serverthread = _start_server(_url_handler, hostname, port)
     if serverthread.error:
         print(serverthread.error)
@@ -2730,7 +2732,6 @@ def _adjust_cli_sys_path():
 
 def cli():
     """Command-line interface (looks at sys.argv to decide what to do)."""
-    import getopt
     class BadUsage(Exception): pass
 
     _adjust_cli_sys_path()

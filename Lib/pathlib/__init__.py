@@ -5,6 +5,13 @@ paths with operations that have semantics appropriate for different
 operating systems.
 """
 
+lazy import warnings
+lazy from urllib.parse import quote_from_bytes
+lazy import shutil
+lazy from urllib.request import pathname2url
+lazy from urllib.error import URLError
+lazy from urllib.request import url2pathname
+
 import io
 import ntpath
 import operator
@@ -520,7 +527,6 @@ class PurePath:
 
     def as_uri(self):
         """Return the path as a URI."""
-        import warnings
         msg = ("pathlib.PurePath.as_uri() is deprecated and scheduled "
                "for removal in Python 3.19. Use pathlib.Path.as_uri().")
         warnings._deprecated("pathlib.PurePath.as_uri", msg, remove=(3, 19))
@@ -540,7 +546,6 @@ class PurePath:
             # It's a posix path => 'file:///etc/hosts'
             prefix = 'file://'
             path = str(self)
-        from urllib.parse import quote_from_bytes
         return prefix + quote_from_bytes(os.fsencode(path))
 
     def full_match(self, pattern, *, case_sensitive=None):
@@ -1256,7 +1261,6 @@ class Path(PurePath):
             self.unlink()
         elif self.is_dir():
             # Lazy import to improve module import time
-            import shutil
             shutil.rmtree(self)
         else:
             self.unlink()
@@ -1463,14 +1467,11 @@ class Path(PurePath):
         """Return the path as a URI."""
         if not self.is_absolute():
             raise ValueError("relative paths can't be expressed as file URIs")
-        from urllib.request import pathname2url
         return pathname2url(str(self), add_scheme=True)
 
     @classmethod
     def from_uri(cls, uri):
         """Return a new path from the given 'file' URI."""
-        from urllib.error import URLError
-        from urllib.request import url2pathname
         try:
             path = cls(url2pathname(uri, require_scheme=True))
         except URLError as exc:

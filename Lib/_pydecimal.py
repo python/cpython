@@ -15,6 +15,9 @@
 
 """Python decimal arithmetic module"""
 
+lazy from itertools import chain as _chain, repeat as _repeat
+lazy from warnings import _deprecated as _warnings_deprecated
+
 __all__ = [
     # Two major classes
     'Decimal', 'Context',
@@ -6279,11 +6282,10 @@ def _group_lengths(grouping):
     #   (2) nonempty list of positive integers + [0]
     #   (3) list of positive integers + [locale.CHAR_MAX], or
 
-    from itertools import chain, repeat
     if not grouping:
         return []
     elif grouping[-1] == 0 and len(grouping) >= 2:
-        return chain(grouping[:-1], repeat(grouping[-2]))
+        return _chain(grouping[:-1], _repeat(grouping[-2]))
     elif grouping[-1] == _locale.CHAR_MAX:
         return grouping[:-1]
     else:
@@ -6405,8 +6407,7 @@ del sys
 
 def __getattr__(name):
     if name == "__version__":
-        from warnings import _deprecated
 
-        _deprecated("__version__", remove=(3, 20))
+        _warnings_deprecated("__version__", remove=(3, 20))
         return SPEC_VERSION
     raise AttributeError(f"module {__name__!r} has no attribute {name!r}")

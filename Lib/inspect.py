@@ -28,6 +28,9 @@ Here are some of the useful functions provided by this module:
 
 # This module is in the public domain.  No warranties.
 
+lazy import argparse
+lazy import importlib
+
 __author__ = ('Ka-Ping Yee <ping@lfw.org>',
               'Yury Selivanov <yselivanov@sprymix.com>')
 
@@ -3354,8 +3357,6 @@ class BufferFlags(enum.IntFlag):
 
 def _main():
     """ Logic for inspecting an object given at command line """
-    import argparse
-    import importlib
 
     parser = argparse.ArgumentParser(color=True)
     parser.add_argument(

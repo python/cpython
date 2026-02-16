@@ -10,6 +10,9 @@ For example usage, see the 'if __name__=="__main__"' block at the end of the
 module.  See also the BaseHTTPServer module docs for other API information.
 """
 
+lazy from io import StringIO
+lazy from warnings import _deprecated
+
 from http.server import BaseHTTPRequestHandler, HTTPServer
 import sys
 import urllib.parse
@@ -131,7 +134,6 @@ class WSGIRequestHandler(BaseHTTPRequestHandler):
 
 
 def demo_app(environ,start_response):
-    from io import StringIO
     stdout = StringIO()
     print("Hello world!", file=stdout)
     print(file=stdout)
@@ -153,7 +155,6 @@ def make_server(
 
 def __getattr__(name):
     if name == "__version__":
-        from warnings import _deprecated
 
         _deprecated("__version__", remove=(3, 20))
         return "0.2"  # Do not change

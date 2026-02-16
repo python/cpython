@@ -28,6 +28,9 @@ extensions for multiline input.
 
 from __future__ import annotations
 
+lazy import warnings
+lazy import builtins
+
 import warnings
 from dataclasses import dataclass, field
 
@@ -570,7 +573,6 @@ _get_reader = _wrapper.get_reader
 
 def _make_stub(_name: str, _ret: object) -> None:
     def stub(*args: object, **kwds: object) -> None:
-        import warnings
 
         warnings.warn("readline.%s() not implemented" % _name, stacklevel=2)
 
@@ -612,7 +614,6 @@ def _setup(namespace: Mapping[str, Any]) -> None:
     _wrapper.config.readline_completer = RLCompleter(namespace).complete
 
     # this is not really what readline.c does.  Better than nothing I guess
-    import builtins
     raw_input = builtins.input
     builtins.input = _wrapper.input
 

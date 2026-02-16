@@ -4,6 +4,13 @@ Simplified, pyshell.ModifiedInterpreter spawns a subprocess with
 f'''{sys.executable} -c "__import__('idlelib.run').run.main()"'''
 '.run' is needed because __import__ returns idlelib, not idlelib.run.
 """
+lazy import tkinter
+lazy from tkinter.messagebox import showerror
+lazy import linecache
+lazy import atexit
+lazy import tkinter.font
+lazy import pydoc
+
 import contextlib
 import functools
 import io
@@ -213,8 +220,6 @@ def manage_socket(address):
 
 def show_socket_error(err, address):
     "Display socket error from manage_socket."
-    import tkinter
-    from tkinter.messagebox import showerror
     root = tkinter.Tk()
     fix_scaling(root)
     root.withdraw()
@@ -241,7 +246,6 @@ def get_message_lines(typ, exc, tb):
 
 
 def print_exception():
-    import linecache
     linecache.checkcache()
     flush_stdout()
     efile = sys.stderr
@@ -320,7 +324,6 @@ def exit():
 
     """
     if no_exitfunc:
-        import atexit
         atexit._clear()
     capture_warnings(False)
     sys.exit(0)
@@ -328,7 +331,6 @@ def exit():
 
 def fix_scaling(root):
     """Scale fonts on HiDPI displays."""
-    import tkinter.font
     scaling = float(root.tk.call('tk', 'scaling'))
     if scaling > 1.4:
         for name in tkinter.font.names(root):
@@ -541,7 +543,6 @@ class MyHandler(rpc.RPCHandler):
 
         sys.displayhook = rpc.displayhook
         # page help() text to shell.
-        import pydoc # import must be done here to capture i/o binding
         pydoc.pager = pydoc.plainpager
 
         # Keep a reference to stdin so that it won't try to exit IDLE if

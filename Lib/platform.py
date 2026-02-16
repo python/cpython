@@ -89,6 +89,12 @@
 #
 #    If that URL should fail, try contacting the author.
 
+lazy import subprocess
+lazy import _ios_support
+lazy import struct
+lazy import argparse
+lazy from warnings import _deprecated
+
 __copyright__ = """
     Copyright (c) 1999-2000, Marc-Andre Lemburg; mailto:mal@lemburg.com
     Copyright (c) 2000-2010, eGenix.com Software GmbH; mailto:info@egenix.com
@@ -296,7 +302,6 @@ def _syscmd_ver(system='', release='', version='',
         return system, release, version
 
     # Try some common cmd strings
-    import subprocess
     for cmd in ('ver', 'command /c ver', 'cmd /c ver'):
         try:
             info = subprocess.check_output(cmd,
@@ -528,7 +533,6 @@ def ios_ver(system="", release="", model="", is_simulator=False):
     parameters.
     """
     if sys.platform == "ios":
-        import _ios_support
         result = _ios_support.get_platform_ios()
         if result is not None:
             return IOSVersionInfo(*result)
@@ -735,7 +739,6 @@ def architecture(executable=sys.executable, bits='', linkage=''):
     # Use the sizeof(pointer) as default number of bits if nothing
     # else is given as default.
     if not bits:
-        import struct
         size = struct.calcsize('P')
         bits = str(size * 8) + 'bit'
 
@@ -1398,7 +1401,6 @@ def invalidate_caches():
 ### Command line interface
 
 def _parse_args(args: list[str] | None):
-    import argparse
 
     parser = argparse.ArgumentParser(color=True)
     parser.add_argument("args", nargs="*", choices=["nonaliased", "terse"])
@@ -1435,7 +1437,6 @@ def _main(args: list[str] | None = None):
 
 def __getattr__(name):
     if name == "__version__":
-        from warnings import _deprecated
 
         _deprecated("__version__", remove=(3, 20))
         return "1.1.0"  # Do not change

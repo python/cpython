@@ -61,6 +61,10 @@ XXX To do:
 # (Actually, the latter is only true if you know the server configuration
 # at the time the request was made!)
 
+lazy import argparse
+lazy import contextlib
+lazy from warnings import _deprecated
+
 __all__ = [
     "HTTPServer", "ThreadingHTTPServer",
     "HTTPSServer", "ThreadingHTTPSServer",
@@ -1006,8 +1010,6 @@ def test(HandlerClass=BaseHTTPRequestHandler,
 
 
 def _main(args=None):
-    import argparse
-    import contextlib
 
     parser = argparse.ArgumentParser(color=True)
     parser.add_argument('-b', '--bind', metavar='ADDRESS',
@@ -1080,7 +1082,6 @@ def _main(args=None):
 
 def __getattr__(name):
     if name == "__version__":
-        from warnings import _deprecated
 
         _deprecated("__version__", remove=(3, 20))
         return "0.6"  # Do not change

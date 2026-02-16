@@ -9,6 +9,12 @@
 #   Copyright (C) 2006 Python Software Foundation.
 # See C source code for _functools credits/copyright
 
+lazy import weakref
+lazy from typing import get_type_hints
+lazy from annotationlib import Format, ForwardRef
+lazy import os
+lazy import warnings
+
 __all__ = ['update_wrapper', 'wraps', 'WRAPPER_ASSIGNMENTS', 'WRAPPER_UPDATES',
            'total_ordering', 'cache', 'cmp_to_key', 'lru_cache', 'reduce',
            'partial', 'partialmethod', 'singledispatch', 'singledispatchmethod',
@@ -905,7 +911,6 @@ def singledispatch(func):
     # There are many programs that use functools without singledispatch, so we
     # trade-off making singledispatch marginally slower for the benefit of
     # making start-up of such applications slightly faster.
-    import weakref
 
     registry = {}
     dispatch_cache = weakref.WeakKeyDictionary()
@@ -966,8 +971,6 @@ def singledispatch(func):
             func = cls
 
             # only import typing if annotation parsing is necessary
-            from typing import get_type_hints
-            from annotationlib import Format, ForwardRef
             argname, cls = next(iter(get_type_hints(func, format=Format.FORWARDREF).items()))
             if not _is_valid_dispatch_type(cls):
                 if isinstance(cls, UnionType):
@@ -1165,8 +1168,6 @@ def _warn_python_reduce_kwargs(py_reduce):
     @wraps(py_reduce)
     def wrapper(*args, **kwargs):
         if 'function' in kwargs or 'sequence' in kwargs:
-            import os
-            import warnings
             warnings.warn(
                 'Calling functools.reduce with keyword arguments '
                 '"function" or "sequence" '

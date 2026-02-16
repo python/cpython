@@ -7,6 +7,9 @@
 # Licensed to PSF under a Contributor Agreement.
 #
 
+lazy from .synchronize import SEM_VALUE_MAX as _SEM_VALUE_MAX
+lazy import traceback
+
 __all__ = ['Queue', 'SimpleQueue', 'JoinableQueue']
 
 import sys
@@ -35,7 +38,7 @@ class Queue(object):
     def __init__(self, maxsize=0, *, ctx):
         if maxsize <= 0:
             # Can raise ImportError (see issues #3770 and #23400)
-            from .synchronize import SEM_VALUE_MAX as maxsize
+            maxsize = _SEM_VALUE_MAX
         self._maxsize = maxsize
         self._reader, self._writer = connection.Pipe(duplex=False)
         self._rlock = ctx.Lock()
@@ -295,7 +298,6 @@ class Queue(object):
         Private API hook called when feeding data in the background thread
         raises an exception.  For overriding by concurrent.futures.
         """
-        import traceback
         traceback.print_exc()
 
     __class_getitem__ = classmethod(types.GenericAlias)

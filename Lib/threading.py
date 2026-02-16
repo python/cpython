@@ -1,5 +1,7 @@
 """Thread module emulating a subset of Java's threading model."""
 
+lazy import warnings
+
 import os as _os
 import sys as _sys
 import _thread
@@ -443,7 +445,6 @@ class Condition:
         This method is deprecated, use notify_all() instead.
 
         """
-        import warnings
         warnings.warn('notifyAll() is deprecated, use notify_all() instead',
                       DeprecationWarning, stacklevel=2)
         self.notify_all()
@@ -615,7 +616,6 @@ class Event:
         This method is deprecated, use is_set() instead.
 
         """
-        import warnings
         warnings.warn('isSet() is deprecated, use is_set() instead',
                       DeprecationWarning, stacklevel=2)
         return self.is_set()
@@ -1209,7 +1209,6 @@ class Thread:
         This method is deprecated, use the daemon attribute instead.
 
         """
-        import warnings
         warnings.warn('isDaemon() is deprecated, get the daemon attribute instead',
                       DeprecationWarning, stacklevel=2)
         return self.daemon
@@ -1220,7 +1219,6 @@ class Thread:
         This method is deprecated, use the .daemon property instead.
 
         """
-        import warnings
         warnings.warn('setDaemon() is deprecated, set the daemon attribute instead',
                       DeprecationWarning, stacklevel=2)
         self.daemon = daemonic
@@ -1231,7 +1229,6 @@ class Thread:
         This method is deprecated, use the name attribute instead.
 
         """
-        import warnings
         warnings.warn('getName() is deprecated, get the name attribute instead',
                       DeprecationWarning, stacklevel=2)
         return self.name
@@ -1242,7 +1239,6 @@ class Thread:
         This method is deprecated, use the name attribute instead.
 
         """
-        import warnings
         warnings.warn('setName() is deprecated, set the name attribute instead',
                       DeprecationWarning, stacklevel=2)
         self.name = name
@@ -1478,7 +1474,6 @@ def currentThread():
     This function is deprecated, use current_thread() instead.
 
     """
-    import warnings
     warnings.warn('currentThread() is deprecated, use current_thread() instead',
                   DeprecationWarning, stacklevel=2)
     return current_thread()
@@ -1501,7 +1496,6 @@ def activeCount():
     This function is deprecated, use active_count() instead.
 
     """
-    import warnings
     warnings.warn('activeCount() is deprecated, use active_count() instead',
                   DeprecationWarning, stacklevel=2)
     return active_count()

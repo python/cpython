@@ -2,6 +2,8 @@
 Python implementation of the io module.
 """
 
+lazy import warnings
+
 import os
 import abc
 import codecs
@@ -59,7 +61,6 @@ def text_encoding(encoding, stacklevel=2):
         else:
             encoding = "locale"
         if sys.flags.warn_default_encoding:
-            import warnings
             warnings.warn("'encoding' argument not specified.",
                           EncodingWarning, stacklevel + 1)
     return encoding
@@ -225,7 +226,6 @@ def open(file, mode="r", buffering=-1, encoding=None, errors=None,
     if binary and newline is not None:
         raise ValueError("binary mode doesn't take a newline argument")
     if binary and buffering == 1:
-        import warnings
         warnings.warn("line buffering (buffering=1) isn't supported in binary "
                       "mode, the default buffer size will be used",
                       RuntimeWarning, 2)
@@ -283,7 +283,6 @@ def _open_code_with_warning(path):
     in order to allow embedders more control over code files.
     This functionality is not supported on the current runtime.
     """
-    import warnings
     warnings.warn("_pyio.open_code() may not be using hooks",
                   RuntimeWarning, 2)
     return open(path, "rb")
@@ -1530,7 +1529,6 @@ class FileIO(RawIOBase):
             raise TypeError('integer argument expected, got float')
         if isinstance(file, int):
             if isinstance(file, bool):
-                import warnings
                 warnings.warn("bool is used as a file descriptor",
                               RuntimeWarning, stacklevel=2)
                 file = int(file)
@@ -1633,7 +1631,6 @@ class FileIO(RawIOBase):
 
     def _dealloc_warn(self, source):
         if self._fd >= 0 and self._closefd and not self.closed:
-            import warnings
             warnings.warn(f'unclosed file {source!r}', ResourceWarning,
                           stacklevel=2, source=self)
 

@@ -32,6 +32,9 @@ Unit tests are in test_collections.
 #
 #######################################################################
 
+lazy from annotationlib import type_repr
+lazy import warnings
+
 from abc import ABCMeta, abstractmethod
 import sys
 
@@ -485,7 +488,6 @@ class _CallableGenericAlias(GenericAlias):
     def __repr__(self):
         if len(self.__args__) == 2 and _is_param_expr(self.__args__[0]):
             return super().__repr__()
-        from annotationlib import type_repr
         return (f'collections.abc.Callable'
                 f'[[{", ".join([type_repr(a) for a in self.__args__[:-1]])}], '
                 f'{type_repr(self.__args__[-1])}]')
@@ -1064,7 +1066,6 @@ Sequence.register(memoryview)
 class _DeprecateByteStringMeta(ABCMeta):
     def __new__(cls, name, bases, namespace, **kwargs):
         if name != "ByteString":
-            import warnings
 
             warnings._deprecated(
                 "collections.abc.ByteString",
@@ -1073,7 +1074,6 @@ class _DeprecateByteStringMeta(ABCMeta):
         return super().__new__(cls, name, bases, namespace, **kwargs)
 
     def __instancecheck__(cls, instance):
-        import warnings
 
         warnings._deprecated(
             "collections.abc.ByteString",
@@ -1170,7 +1170,6 @@ _deprecated_ByteString = globals().pop("ByteString")
 
 def __getattr__(attr):
     if attr == "ByteString":
-        import warnings
         warnings._deprecated("collections.abc.ByteString", remove=(3, 17))
         globals()["ByteString"] = _deprecated_ByteString
         return _deprecated_ByteString

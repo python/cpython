@@ -7,6 +7,13 @@
 # Licensed to PSF under a Contributor Agreement.
 #
 
+lazy import logging
+lazy import shutil, tempfile
+lazy import _posixsubprocess
+lazy from test import support
+lazy from multiprocessing import forkserver
+lazy from multiprocessing import resource_tracker
+
 import os
 import itertools
 import sys
@@ -67,7 +74,6 @@ def get_logger():
     Returns logger used by multiprocessing
     '''
     global _logger
-    import logging
 
     with logging._lock:
         if not _logger:
@@ -90,7 +96,6 @@ def log_to_stderr(level=None):
     Turn on logging and add a handler which prints to stderr
     '''
     global _log_to_stderr
-    import logging
 
     logger = get_logger()
     formatter = logging.Formatter(DEFAULT_LOGGING_FORMAT)
@@ -212,7 +217,6 @@ def get_temp_dir():
     # get name of a temp directory which will be automatically cleaned up
     tempdir = process.current_process()._config.get('tempdir')
     if tempdir is None:
-        import shutil, tempfile
         base_tempdir = _get_base_temp_dir(tempfile)
         tempdir = tempfile.mkdtemp(prefix='pymp-', dir=base_tempdir)
         info('created temp directory %s', tempdir)
@@ -516,7 +520,6 @@ def _flush_std_streams():
 #
 
 def spawnv_passfds(path, args, passfds):
-    import _posixsubprocess
     passfds = tuple(sorted(map(int, passfds)))
     errpipe_read, errpipe_write = os.pipe()
     try:
@@ -539,17 +542,14 @@ def _cleanup_tests():
     """Cleanup multiprocessing resources when multiprocessing tests
     completed."""
 
-    from test import support
 
     # cleanup multiprocessing
     process._cleanup()
 
     # Stop the ForkServer process if it's running
-    from multiprocessing import forkserver
     forkserver._forkserver._stop()
 
     # Stop the ResourceTracker process if it's running
-    from multiprocessing import resource_tracker
     resource_tracker._resource_tracker._stop()
 
     # bpo-37421: Explicitly call _run_finalizers() to remove immediately

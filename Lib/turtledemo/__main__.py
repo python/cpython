@@ -83,6 +83,8 @@
      raised when the user presses the STOP button.  (Paint is not such
      a demo; it only acts in response to mouse clicks and movements.)
 """
+lazy import subprocess
+
 import sys
 import os
 
@@ -131,7 +133,6 @@ class DemoWindow(object):
         root.wm_protocol("WM_DELETE_WINDOW", self._destroy)
 
         if darwin:
-            import subprocess
             # Make sure we are the currently activated OS X application
             # so that our menu bar appears.
             subprocess.run(

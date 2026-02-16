@@ -2,6 +2,10 @@
 
 # (Dec 1991 version).
 
+lazy from io import BytesIO
+lazy import sys
+lazy import getopt
+
 __all__ = ["encode", "decode", "encodestring", "decodestring"]
 
 ESCAPE = b'='
@@ -101,7 +105,6 @@ def encode(input, output, quotetabs, header=False):
 def encodestring(s, quotetabs=False, header=False):
     if b2a_qp is not None:
         return b2a_qp(s, quotetabs=quotetabs, header=header)
-    from io import BytesIO
     infp = BytesIO(s)
     outfp = BytesIO()
     encode(infp, outfp, quotetabs, header)
@@ -153,7 +156,6 @@ def decode(input, output, header=False):
 def decodestring(s, header=False):
     if a2b_qp is not None:
         return a2b_qp(s, header=header)
-    from io import BytesIO
     infp = BytesIO(s)
     outfp = BytesIO()
     decode(infp, outfp, header=header)
@@ -186,8 +188,6 @@ def unhex(s):
 
 
 def main():
-    import sys
-    import getopt
     try:
         opts, args = getopt.getopt(sys.argv[1:], 'td')
     except getopt.error as msg:

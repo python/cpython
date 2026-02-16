@@ -7,6 +7,8 @@
 # Licensed to PSF under a Contributor Agreement.
 #
 
+lazy from .dummy import Process
+
 __all__ = ['Pool', 'ThreadPool']
 
 #
@@ -923,7 +925,6 @@ class ThreadPool(Pool):
 
     @staticmethod
     def Process(ctx, *args, **kwds):
-        from .dummy import Process
         return Process(*args, **kwds)
 
     def __init__(self, processes=None, initializer=None, initargs=()):

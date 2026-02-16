@@ -94,6 +94,9 @@ ALERT_DESCRIPTION_BAD_CERTIFICATE_HASH_VALUE
 ALERT_DESCRIPTION_UNKNOWN_PSK_IDENTITY
 """
 
+lazy from time import strptime
+lazy from calendar import timegm
+
 import sys
 import os
 from collections import namedtuple
@@ -1507,8 +1510,6 @@ def cert_time_to_seconds(cert_time):
     Month is one of: Jan Feb Mar Apr May Jun Jul Aug Sep Oct Nov Dec
     UTC should be specified as GMT (see ASN1_TIME_print())
     """
-    from time import strptime
-    from calendar import timegm
 
     months = (
         "Jan","Feb","Mar","Apr","May","Jun",

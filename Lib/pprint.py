@@ -34,6 +34,10 @@ saferepr()
 
 """
 
+lazy from dataclasses import is_dataclass
+lazy from dataclasses import fields as dataclass_fields
+lazy import re
+
 import collections as _collections
 import sys as _sys
 import types as _types
@@ -186,7 +190,6 @@ class PrettyPrinter:
         if len(rep) > max_width:
             p = self._dispatch.get(type(object).__repr__, None)
             # Lazy import to improve module import time
-            from dataclasses import is_dataclass
 
             if p is not None:
                 context[objid] = 1
@@ -207,7 +210,6 @@ class PrettyPrinter:
 
     def _pprint_dataclass(self, object, stream, indent, allowance, context, level):
         # Lazy import to improve module import time
-        from dataclasses import fields as dataclass_fields
 
         cls_name = object.__class__.__name__
         indent += len(cls_name) + 1
@@ -347,7 +349,6 @@ class PrettyPrinter:
                 chunks.append(rep)
             else:
                 # Lazy import to improve module import time
-                import re
 
                 # A list of alternating (non-space, space) strings
                 parts = re.findall(r'\S*\s*', line)

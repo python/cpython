@@ -3,6 +3,11 @@ Read and write ZIP files.
 
 XXX references to utf-8 need further investigation.
 """
+lazy import warnings
+lazy import importlib._bootstrap_external
+lazy import importlib.machinery
+lazy import argparse
+
 import binascii
 import importlib.util
 import io
@@ -1668,7 +1673,6 @@ class ZipFile:
             raise TypeError("comment: expected bytes, got %s" % type(comment).__name__)
         # check for valid comment length
         if len(comment) > ZIP_MAX_COMMENT:
-            import warnings
             warnings.warn('Archive comment is too long; truncating to %d bytes'
                           % ZIP_MAX_COMMENT, stacklevel=2)
             comment = comment[:ZIP_MAX_COMMENT]
@@ -1933,7 +1937,6 @@ class ZipFile:
     def _writecheck(self, zinfo):
         """Check for errors before writing a file to the archive."""
         if zinfo.filename in self.NameToInfo:
-            import warnings
             warnings.warn('Duplicate name: %r' % zinfo.filename, stacklevel=3)
         if self.mode not in ('w', 'x', 'a'):
             raise ValueError("write() requires mode 'w', 'x', or 'a'")
@@ -2279,8 +2282,6 @@ class PyZipFile(ZipFile):
         name.  For example, given /python/lib/string, return
         ('string', b'<bytecode of string>').
         """
-        import importlib._bootstrap_external
-        import importlib.machinery
 
         file_py  = pathname + ".py"
         file_pyc = pathname + ".pyc"
@@ -2314,7 +2315,6 @@ class PyZipFile(ZipFile):
 
 
 def main(args=None):
-    import argparse
 
     description = 'A simple command-line interface for zipfile module.'
     parser = argparse.ArgumentParser(description=description, color=True)

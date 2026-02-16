@@ -4,6 +4,10 @@
 
 """Basic message object for the email package object model."""
 
+lazy from email.generator import Generator
+lazy from email.generator import BytesGenerator
+lazy from email.policy import default
+
 __all__ = ['Message', 'EmailMessage']
 
 import binascii
@@ -184,7 +188,6 @@ class Message:
         according to RFC standards, the non-compliant data will be replaced by
         unicode "unknown character" code points.
         """
-        from email.generator import Generator
         policy = self.policy if policy is None else policy
         fp = StringIO()
         g = Generator(fp,
@@ -207,7 +210,6 @@ class Message:
         serialize the message; if not specified the policy associated with
         the message instance is used.
         """
-        from email.generator import BytesGenerator
         policy = self.policy if policy is None else policy
         fp = BytesIO()
         g = BytesGenerator(fp, mangle_from_=False, policy=policy)
@@ -990,7 +992,6 @@ class MIMEPart(Message):
 
     def __init__(self, policy=None):
         if policy is None:
-            from email.policy import default
             policy = default
         super().__init__(policy)
 

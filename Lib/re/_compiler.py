@@ -10,6 +10,8 @@
 
 """Internal support module for sre"""
 
+lazy import sys
+
 import _sre
 from . import _parser
 from ._constants import *
@@ -606,7 +608,6 @@ def _hex_code(code):
     return '[%s]' % ', '.join('%#0*x' % (_sre.CODESIZE*2+2, x) for x in code)
 
 def dis(code):
-    import sys
 
     labels = set()
     level = 0

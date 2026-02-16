@@ -4,6 +4,8 @@
 # Backport for other versions of Python available from
 # https://pypi.org/project/mock
 
+lazy import _io
+
 __all__ = (
     'Mock',
     'MagicMock',
@@ -3008,12 +3010,10 @@ def mock_open(mock=None, read_data=''):
 
     global file_spec
     if file_spec is None:
-        import _io
         file_spec = list(set(dir(_io.TextIOWrapper)).union(set(dir(_io.BytesIO))))
 
     global open_spec
     if open_spec is None:
-        import _io
         open_spec = list(set(dir(_io.open)))
     if mock is None:
         mock = MagicMock(name='open', spec=open_spec)

@@ -10,6 +10,9 @@ also includes default encodings for all supported locale names.
 
 """
 
+lazy import re
+lazy import os
+
 import sys
 import encodings
 import encodings.aliases
@@ -217,7 +220,6 @@ def format_string(f, val, grouping=False, monetary=False):
     fourth parameter monetary is true."""
     global _percent_re
     if _percent_re is None:
-        import re
 
         _percent_re = re.compile(r'%(?:\((?P<key>.*?)\))?(?P<modifiers'
                                  r'>[-#0-9 +*.hlL]*?)[eEfFgGdiouxXcrs%]')
@@ -579,7 +581,6 @@ def _getdefaultlocale(envvars=('LC_ALL', 'LC_CTYPE', 'LANG', 'LANGUAGE')):
         return code, encoding
 
     # fall back on POSIX behaviour
-    import os
     lookup = os.environ.get
     for variable in envvars:
         localename = lookup(variable,None)

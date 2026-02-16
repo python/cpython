@@ -10,6 +10,11 @@ packages -- for now, you'll have to deal with packages separately.)
 
 See module py_compile for details of the actual byte-compilation.
 """
+lazy from concurrent.futures.process import _check_system_limits
+lazy import multiprocessing
+lazy import argparse
+lazy import re
+
 import os
 import sys
 import importlib.util
@@ -85,7 +90,6 @@ def compile_dir(dir, maxlevels=None, ddir=None, force=False,
         raise ValueError('workers must be greater or equal to 0')
     if workers != 1:
         # Check if this is a system where ProcessPoolExecutor can function.
-        from concurrent.futures.process import _check_system_limits
         try:
             _check_system_limits()
         except NotImplementedError:
@@ -97,7 +101,6 @@ def compile_dir(dir, maxlevels=None, ddir=None, force=False,
     files = _walk_dir(dir, quiet=quiet, maxlevels=maxlevels)
     success = True
     if workers != 1 and ProcessPoolExecutor is not None:
-        import multiprocessing
         if multiprocessing.get_start_method() == 'fork':
             mp_context = multiprocessing.get_context('forkserver')
         else:
@@ -322,7 +325,6 @@ def compile_path(skip_curdir=1, maxlevels=0, force=False, quiet=0,
 
 def main():
     """Script main program."""
-    import argparse
 
     parser = argparse.ArgumentParser(
         description='Utilities to support installing Python libraries.',
@@ -397,7 +399,6 @@ def main():
     compile_dests = args.compile_dest
 
     if args.rx:
-        import re
         args.rx = re.compile(args.rx)
 
     if args.limit_sl_dest == "":

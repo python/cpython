@@ -1,5 +1,7 @@
 """Support for template string literals (t-strings)."""
 
+lazy import itertools
+
 t = t"{0}"
 Template = type(t)
 Interpolation = type(t.interpolations[0])
@@ -18,7 +20,6 @@ def convert(obj, /, conversion):
     raise ValueError(f'invalid conversion specifier: {conversion}')
 
 def _template_unpickle(*args):
-    import itertools
 
     if len(args) != 2:
         raise ValueError('Template expects tuple of length 2 to unpickle')

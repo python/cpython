@@ -1,5 +1,10 @@
 """Extract, format and print information about Python stack traces."""
 
+lazy import ast
+lazy import unicodedata
+lazy import difflib
+lazy from unicodedata import normalize
+
 import collections.abc
 import itertools
 import linecache
@@ -724,7 +729,6 @@ class StackSummary(list):
 
     def _should_show_carets(self, start_offset, end_offset, all_lines, anchors):
         with suppress(SyntaxError, ImportError):
-            import ast
             tree = ast.parse('\n'.join(all_lines))
             if not tree.body:
                 return False
@@ -829,7 +833,6 @@ def _extract_caret_anchors_from_line_segment(segment):
         - for indexing and function calls, the location of the brackets.
     `segment` is expected to be a valid Python expression.
     """
-    import ast
 
     try:
         # Without parentheses, `segment` is parsed as a statement.
@@ -982,7 +985,6 @@ def _display_width(line, offset=None):
     if line.isascii():
         return offset
 
-    import unicodedata
 
     return sum(
         2 if unicodedata.east_asian_width(char) in _WIDE_CHAR_SPECIFIERS else 1
@@ -1366,7 +1368,6 @@ class TracebackException:
         error_lines = error_code.splitlines()
         tokens = tokenize.generate_tokens(io.StringIO(error_code).readline)
         tokens_left_to_process = 10
-        import difflib
         for token in tokens:
             start, end = token.start, token.end
             if token.type != tokenize.NAME:
@@ -1691,7 +1692,6 @@ def _compute_suggestion_error(exc_value, tb, wrong_name):
         return None
     not_normalized = False
     if not wrong_name.isascii():
-        from unicodedata import normalize
         normalized_name = normalize('NFKC', wrong_name)
         if normalized_name != wrong_name:
             not_normalized = True

@@ -193,7 +193,6 @@ class HelpFormatter(object):
 
     def _set_color(self, color, *, file=None):
         from _colorize import can_colorize, decolor, get_theme
-
         if color and can_colorize(file=file):
             self._theme = get_theme(force_color=True).argparse
             self._decolor = decolor
@@ -1821,6 +1820,7 @@ class _ActionsContainer(object):
             try:
                 formatter._expand_help(action)
             except (ValueError, TypeError, KeyError) as exc:
+                import warnings
                 raise ValueError('badly formed help string') from exc
 
 
@@ -2855,7 +2855,6 @@ class ArgumentParser(_AttributeHolder, _ActionsContainer):
 
     def _get_theme(self, file=None):
         from _colorize import can_colorize, get_theme
-
         if self.color and can_colorize(file=file):
             return get_theme(force_color=True).argparse
         else:
@@ -2899,7 +2898,6 @@ class ArgumentParser(_AttributeHolder, _ActionsContainer):
 def __getattr__(name):
     if name == "__version__":
         from warnings import _deprecated
-
         _deprecated("__version__", remove=(3, 20))
         return "1.1"  # Do not change
     raise AttributeError(f"module {__name__!r} has no attribute {name!r}")

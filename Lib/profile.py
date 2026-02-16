@@ -23,6 +23,12 @@
 # governing permissions and limitations under the License.
 
 
+lazy import pstats
+lazy import __main__
+lazy import os
+lazy from optparse import OptionParser
+lazy import runpy
+
 import importlib.machinery
 import io
 import sys
@@ -394,7 +400,6 @@ class Profile:
 
 
     def print_stats(self, sort=-1):
-        import pstats
         if not isinstance(sort, tuple):
             sort = (sort,)
         pstats.Stats(self).strip_dirs().sort_stats(*sort).print_stats()
@@ -422,7 +427,6 @@ class Profile:
     # a profiler to profile a statement, given as a string.
 
     def run(self, cmd):
-        import __main__
         dict = __main__.__dict__
         return self.runctx(cmd, dict, dict)
 
@@ -561,8 +565,6 @@ class Profile:
 #****************************************************************************
 
 def main():
-    import os
-    from optparse import OptionParser
 
     usage = "profile.py [-o output_file_path] [-s sort] [-m module | scriptfile] [arg] ..."
     parser = OptionParser(usage=usage)
@@ -589,7 +591,6 @@ def main():
 
     if len(args) > 0:
         if options.module:
-            import runpy
             code = "run_module(modname, run_name='__main__')"
             globs = {
                 'run_module': runpy.run_module,

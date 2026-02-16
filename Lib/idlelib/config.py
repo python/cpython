@@ -25,6 +25,8 @@ configuration problem notification and resolution.
 """
 # TODOs added Oct 2014, tjr
 
+lazy from zlib import crc32
+
 from configparser import ConfigParser
 import os
 import sys
@@ -879,7 +881,6 @@ class ConfigChanges(dict):
 
 # TODO Revise test output, write expanded unittest
 def _dump():  # htest # (not really, but ignore in coverage)
-    from zlib import crc32
     line, crc = 0, 0
 
     def sprint(obj):

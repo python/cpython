@@ -3,6 +3,8 @@
 
 """Fraction, infinite-precision, rational numbers."""
 
+lazy from decimal import Decimal
+
 import functools
 import math
 import numbers
@@ -349,7 +351,6 @@ class Fraction(numbers.Rational):
     @classmethod
     def from_decimal(cls, dec):
         """Converts a finite Decimal instance to a rational number, exactly."""
-        from decimal import Decimal
         if isinstance(dec, numbers.Integral):
             dec = Decimal(int(dec))
         elif not isinstance(dec, Decimal):

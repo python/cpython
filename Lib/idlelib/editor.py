@@ -1,3 +1,8 @@
+lazy from idlelib.runscript import ScriptBinding
+lazy from idlelib import browser
+lazy from idlelib import pathbrowser
+lazy import subprocess
+
 import importlib.abc
 import importlib.util
 import os
@@ -60,7 +65,6 @@ class EditorWindow:
 
     def __init__(self, flist=None, filename=None, key=None, root=None):
         # Delay import: runscript imports pyshell imports EditorWindow.
-        from idlelib.runscript import ScriptBinding
 
         if EditorWindow.help_url is None:
             EditorWindow.help_url = _get_dochome()
@@ -728,17 +732,14 @@ class EditorWindow:
             filename = self.open_module()
             if filename is None:
                 return "break"
-        from idlelib import browser
         browser.ModuleBrowser(self.root, filename)
         return "break"
 
     def open_path_browser(self, event=None):
-        from idlelib import pathbrowser
         pathbrowser.PathBrowser(self.root)
         return "break"
 
     def open_turtle_demo(self, event = None):
-        import subprocess
 
         cmd = [sys.executable,
                '-c',

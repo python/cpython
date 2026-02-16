@@ -24,6 +24,10 @@ Copyright (C) 2001-2022 Vinay Sajip. All Rights Reserved.
 To use, simply 'import logging' and log away!
 """
 
+lazy import configparser
+lazy from multiprocessing.queues import Queue as MPQueue
+lazy import select
+
 import errno
 import functools
 import io
@@ -59,7 +63,6 @@ def fileConfig(fname, defaults=None, disable_existing_loggers=True, encoding=Non
     developer provides a mechanism to present the choices and load the chosen
     configuration).
     """
-    import configparser
 
     if isinstance(fname, str):
         if not os.path.exists(fname):
@@ -502,7 +505,6 @@ def _is_queue_like_object(obj):
     if isinstance(obj, (queue.Queue, queue.SimpleQueue)):
         return True
     # defer importing multiprocessing as much as possible
-    from multiprocessing.queues import Queue as MPQueue
     if isinstance(obj, MPQueue):
         return True
     # Depending on the multiprocessing start context, we cannot create
@@ -1030,7 +1032,6 @@ def listen(port=DEFAULT_LOGGING_CONFIG_PORT, verify=None):
             self.verify = verify
 
         def serve_until_stopped(self):
-            import select
             abort = 0
             while not abort:
                 rd, wr, ex = select.select([self.socket.fileno()],

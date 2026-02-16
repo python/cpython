@@ -15,6 +15,9 @@ Todo:
  * SAX 2 namespaces
 """
 
+lazy from xml.dom import expatbuilder
+lazy from xml.dom import pulldom
+
 import io
 import xml.dom
 
@@ -1997,20 +2000,16 @@ def _do_pulldom_parse(func, args, kwargs):
 def parse(file, parser=None, bufsize=None):
     """Parse a file into a DOM by filename or file object."""
     if parser is None and not bufsize:
-        from xml.dom import expatbuilder
         return expatbuilder.parse(file)
     else:
-        from xml.dom import pulldom
         return _do_pulldom_parse(pulldom.parse, (file,),
             {'parser': parser, 'bufsize': bufsize})
 
 def parseString(string, parser=None):
     """Parse a file into a DOM from a string."""
     if parser is None:
-        from xml.dom import expatbuilder
         return expatbuilder.parseString(string)
     else:
-        from xml.dom import pulldom
         return _do_pulldom_parse(pulldom.parseString, (string,),
                                  {'parser': parser})
 

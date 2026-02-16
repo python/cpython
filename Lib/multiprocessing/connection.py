@@ -7,6 +7,10 @@
 # Licensed to PSF under a Contributor Agreement.
 #
 
+lazy import hmac
+lazy import xmlrpc.client as xmlrpclib
+lazy from . import resource_sharer
+
 __all__ = [ 'Client', 'Listener', 'Pipe', 'wait' ]
 
 import errno
@@ -898,7 +902,6 @@ def _create_response(authkey, message):
 
     Note: The MAC protects the entire message including the digest_name prefix.
     """
-    import hmac
     digest_name = _get_digest_name_and_payload(message)[0]
     # The MAC protects the entire message: digest header and payload.
     if not digest_name:
@@ -926,7 +929,6 @@ def _verify_challenge(authkey, message, response):
     algorithm, because the MAC is calculated over the entire message
     including the '{digest_name}' prefix.
     """
-    import hmac
     response_digest, response_mac = _get_digest_name_and_payload(response)
     response_digest = response_digest or 'md5'
     try:
@@ -1008,13 +1010,11 @@ def _xml_loads(s):
 class XmlListener(Listener):
     def accept(self):
         global xmlrpclib
-        import xmlrpc.client as xmlrpclib
         obj = Listener.accept(self)
         return ConnectionWrapper(obj, _xml_dumps, _xml_loads)
 
 def XmlClient(*args, **kwds):
     global xmlrpclib
-    import xmlrpc.client as xmlrpclib
     return ConnectionWrapper(Client(*args, **kwds), _xml_dumps, _xml_loads)
 
 #
@@ -1178,7 +1178,6 @@ if sys.platform == 'win32':
     def reduce_connection(conn):
         handle = conn.fileno()
         with socket.fromfd(handle, socket.AF_INET, socket.SOCK_STREAM) as s:
-            from . import resource_sharer
             ds = resource_sharer.DupSocket(s)
             return rebuild_connection, (ds, conn.readable, conn.writable)
     def rebuild_connection(ds, readable, writable):

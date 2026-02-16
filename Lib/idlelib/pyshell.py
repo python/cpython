@@ -1,5 +1,16 @@
 #! /usr/bin/env python3
 
+lazy from idlelib import debugobj_r
+lazy from idlelib.tree import ScrolledCanvas, TreeNode
+lazy from idlelib import iomenu
+lazy import tkinter
+lazy from idlelib.stackviewer import StackBrowser
+lazy import getopt
+lazy from platform import system
+lazy from idlelib import testing
+lazy from idlelib import macosx
+lazy from idlelib.run import fix_scaling
+
 import sys
 if __name__ == "__main__":
     sys.modules['idlelib.pyshell'] = sys.modules['__main__']
@@ -634,13 +645,11 @@ class ModifiedInterpreter(InteractiveInterpreter):
         return
 
     def remote_stack_viewer(self):
-        from idlelib import debugobj_r
         oid = self.rpcclt.remotequeue("exec", "stackviewer", ("flist",), {})
         if oid is None:
             self.tkconsole.root.bell()
             return
         item = debugobj_r.StubObjectTreeItem(self.rpcclt, oid)
-        from idlelib.tree import ScrolledCanvas, TreeNode
         top = Toplevel(self.tkconsole.root)
         theme = idleConf.CurrentTheme()
         background = idleConf.GetHighlight(theme, 'normal')['background']
@@ -917,7 +926,6 @@ class PyShell(OutputWindow):
         self.save_stdout = sys.stdout
         self.save_stderr = sys.stderr
         self.save_stdin = sys.stdin
-        from idlelib import iomenu
         self.stdin = StdInputFile(self, "stdin",
                                   iomenu.encoding, iomenu.errors)
         self.stdout = StdOutputFile(self, "stdout",
@@ -1158,7 +1166,6 @@ class PyShell(OutputWindow):
         self.text.focus_force()
         self.showprompt()
         # User code should use separate default Tk root window
-        import tkinter
         tkinter._support_default_root = True
         tkinter._default_root = None
         return True
@@ -1365,7 +1372,6 @@ class PyShell(OutputWindow):
         if self.interp.rpcclt:
             return self.interp.remote_stack_viewer()
 
-        from idlelib.stackviewer import StackBrowser
         try:
             StackBrowser(self.root, sys.last_exc, self.flist)
         except:
@@ -1516,10 +1522,6 @@ echo "import sys; print(sys.argv)" | idle - "foobar"
 """
 
 def main():
-    import getopt
-    from platform import system
-    from idlelib import testing  # bool value
-    from idlelib import macosx
 
     global flist, root, use_subprocess
 
@@ -1605,7 +1607,6 @@ def main():
         NoDefaultRoot()
     root = Tk(className="Idle")
     root.withdraw()
-    from idlelib.run import fix_scaling
     fix_scaling(root)
 
     # set application icon

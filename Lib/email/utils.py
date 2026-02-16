@@ -4,6 +4,9 @@
 
 """Miscellaneous utilities."""
 
+lazy import random
+lazy import socket
+
 __all__ = [
     'collapse_rfc2231_value',
     'decode_params',
@@ -296,8 +299,6 @@ def make_msgid(idstring=None, domain=None):
     """
     # Lazy imports to speedup module import time
     # (no other functions in email.utils need these modules)
-    import random
-    import socket
 
     timeval = int(time.time()*100)
     pid = os.getpid()

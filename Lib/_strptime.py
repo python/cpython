@@ -10,6 +10,8 @@ FUNCTIONS:
     strptime -- Calculates the time struct represented by the passed-in string
 
 """
+lazy import warnings
+
 import os
 import time
 import locale
@@ -473,7 +475,6 @@ class TimeRE(dict):
             return self[directive]
         format = re_sub(r'%[-_0^#]*[0-9]*([OE]?[:\\]?.?)', repl, format)
         if day_of_month_in_format and not year_in_format:
-            import warnings
             warnings.warn("""\
 Parsing dates involving a day of month without a year specified is ambiguous
 and fails to parse leap day. The default behavior will change in Python 3.15

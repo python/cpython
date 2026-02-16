@@ -1,3 +1,5 @@
+lazy from tkinter import Toplevel, Text
+
 from tkinter import TclError
 
 class WidgetRedirector:
@@ -150,7 +152,6 @@ class OriginalCommand:
 
 
 def _widget_redirector(parent):  # htest #
-    from tkinter import Toplevel, Text
 
     top = Toplevel(parent)
     top.title("Test WidgetRedirector")

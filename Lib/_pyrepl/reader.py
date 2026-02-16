@@ -21,6 +21,8 @@
 
 from __future__ import annotations
 
+lazy from ._threading_handler import install_threading_hook
+
 import sys
 import _colorize
 
@@ -683,7 +685,6 @@ class Reader:
     def run_hooks(self) -> None:
         threading_hook = self.threading_hook
         if threading_hook is None and 'threading' in sys.modules:
-            from ._threading_handler import install_threading_hook
             install_threading_hook(self)
         if threading_hook is not None:
             try:

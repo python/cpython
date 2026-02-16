@@ -41,6 +41,8 @@ are recognized and imported modules are scanned as well, this
 shouldn't happen often.
 """
 
+lazy import os
+
 import ast
 import sys
 import importlib.util
@@ -273,7 +275,6 @@ def _create_tree(fullmodule, path, fname, source, tree, inpackage):
 
 def _main():
     "Print module output (default this file) for quick visual check."
-    import os
     try:
         mod = sys.argv[1]
     except:

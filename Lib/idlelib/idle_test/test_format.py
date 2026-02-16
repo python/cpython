@@ -1,5 +1,7 @@
 "Test format, coverage 99%."
 
+lazy from idlelib.idle_test.mock_tk import Text
+
 from idlelib import format as ft
 import unittest
 from unittest import mock
@@ -52,7 +54,6 @@ class FindTest(unittest.TestCase):
 
     @classmethod
     def setUpClass(cls):
-        from idlelib.idle_test.mock_tk import Text
         cls.text = Text()
 
     def runcase(self, inserttext, stopline, expected):

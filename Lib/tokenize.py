@@ -20,6 +20,8 @@ operators.  Additionally, all token lists start with an ENCODING token
 which tells you which encoding was used to decode the bytes stream.
 """
 
+lazy import argparse
+
 __author__ = 'Ka-Ping Yee <ping@lfw.org>'
 __credits__ = ('GvR, ESR, Tim Peters, Thomas Wouters, Fred Drake, '
                'Skip Montanaro, Raymond Hettinger, Trent Nelson, '
@@ -506,7 +508,6 @@ def generate_tokens(readline):
     return _generate_tokens_from_c_tokenizer(readline, extra_tokens=True)
 
 def _main(args=None):
-    import argparse
 
     # Helper error handling routines
     def perror(message):

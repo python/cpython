@@ -4,6 +4,9 @@
 
 """A package for parsing, handling, and generating email messages."""
 
+lazy from email.parser import Parser
+lazy from email.parser import BytesParser
+
 __all__ = [
     'base64mime',
     'charset',
@@ -33,7 +36,6 @@ def message_from_string(s, *args, **kws):
 
     Optional _class and strict are passed to the Parser constructor.
     """
-    from email.parser import Parser
     return Parser(*args, **kws).parsestr(s)
 
 def message_from_bytes(s, *args, **kws):
@@ -41,7 +43,6 @@ def message_from_bytes(s, *args, **kws):
 
     Optional _class and strict are passed to the Parser constructor.
     """
-    from email.parser import BytesParser
     return BytesParser(*args, **kws).parsebytes(s)
 
 def message_from_file(fp, *args, **kws):
@@ -49,7 +50,6 @@ def message_from_file(fp, *args, **kws):
 
     Optional _class and strict are passed to the Parser constructor.
     """
-    from email.parser import Parser
     return Parser(*args, **kws).parse(fp)
 
 def message_from_binary_file(fp, *args, **kws):
@@ -57,5 +57,4 @@ def message_from_binary_file(fp, *args, **kws):
 
     Optional _class and strict are passed to the Parser constructor.
     """
-    from email.parser import BytesParser
     return BytesParser(*args, **kws).parse(fp)

@@ -1,5 +1,8 @@
 '''Define SearchDialogBase used by Search, Replace, and Grep dialogs.'''
 
+lazy import re
+lazy from idlelib import searchengine
+
 from tkinter import Toplevel
 from tkinter.ttk import Frame, Entry, Label, Button, Checkbutton, Radiobutton
 from tkinter.simpledialog import _setup_dialog
@@ -189,8 +192,6 @@ class _searchbase(SearchDialogBase):  # htest #
     "Create auto-opening dialog with no text connection."
 
     def __init__(self, parent):
-        import re
-        from idlelib import searchengine
 
         self.root = parent
         self.engine = searchengine.get(parent)

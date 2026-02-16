@@ -9,6 +9,9 @@ https://peps.python.org/pep-0205/
 # they are called this instead of "ref" to avoid name collisions with
 # the module-global ref() function imported from _weakref.
 
+lazy from copy import deepcopy
+lazy import atexit
+
 from _weakref import (
      getweakrefcount,
      getweakrefs,
@@ -149,7 +152,6 @@ class WeakValueDictionary(_collections_abc.MutableMapping):
     __copy__ = copy
 
     def __deepcopy__(self, memo):
-        from copy import deepcopy
         new = self.__class__()
         for key, wr in self.data.copy().items():
             o = wr()
@@ -345,7 +347,6 @@ class WeakKeyDictionary(_collections_abc.MutableMapping):
     __copy__ = copy
 
     def __deepcopy__(self, memo):
-        from copy import deepcopy
         new = self.__class__()
         for key, value in self.data.copy().items():
             o = key()
@@ -469,7 +470,6 @@ class finalize:
         if not self._registered_with_atexit:
             # We may register the exit function more than once because
             # of a thread race, but that is harmless
-            import atexit
             atexit.register(self._exitfunc)
             finalize._registered_with_atexit = True
         info = self._Info()

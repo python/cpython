@@ -20,6 +20,12 @@ that work tightly with the python syntax (template engines for example).
 :copyright: Copyright 2008 by Armin Ronacher.
 :license: Python License.
 """
+lazy import inspect
+lazy import re
+lazy from collections import deque
+lazy import argparse
+lazy import sys
+
 from _ast import *
 
 
@@ -324,7 +330,6 @@ def get_docstring(node, clean=True):
     else:
         return None
     if clean:
-        import inspect
         text = inspect.cleandoc(text)
     return text
 
@@ -338,7 +343,6 @@ def _splitlines_no_ff(source, maxlines=None):
     global _line_pattern
     if _line_pattern is None:
         # lazily computed to speedup import time of `ast`
-        import re
         _line_pattern = re.compile(r"(.*?(?:\r\n|\n|\r|$))")
 
     lines = []
@@ -403,7 +407,6 @@ def walk(node):
     (including *node* itself), in no specified order.  This is useful if you
     only want to modify nodes in place and don't care about the context.
     """
-    from collections import deque
     todo = deque([node])
     while todo:
         node = todo.popleft()
@@ -639,8 +642,6 @@ def unparse(ast_obj):
 
 
 def main(args=None):
-    import argparse
-    import sys
 
     parser = argparse.ArgumentParser(color=True)
     parser.add_argument('infile', nargs='?', default='-',

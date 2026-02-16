@@ -5,6 +5,10 @@ but random access is not allowed."""
 
 # based on Andrew Kuchling's minigzip.py distributed with the zlib module
 
+lazy import errno
+lazy import warnings
+lazy from argparse import ArgumentParser
+
 import builtins
 import io
 import os
@@ -310,7 +314,6 @@ class GzipFile(_streams.BaseStream):
     def write(self,data):
         self._check_not_closed()
         if self.mode != WRITE:
-            import errno
             raise OSError(errno.EBADF, "write() on read-only GzipFile object")
 
         if self.fileobj is None:
@@ -337,7 +340,6 @@ class GzipFile(_streams.BaseStream):
 
     def _check_read(self, caller):
         if self.mode != READ:
-            import errno
             msg = f"{caller}() on write-only GzipFile object"
             raise OSError(errno.EBADF, msg)
 
@@ -462,7 +464,6 @@ class GzipFile(_streams.BaseStream):
 
     def __del__(self):
         if self.mode == WRITE and not self.closed:
-            import warnings
             warnings.warn("unclosed GzipFile",
                           ResourceWarning, source=self, stacklevel=2)
 
@@ -662,7 +663,6 @@ def decompress(data):
 
 
 def main():
-    from argparse import ArgumentParser
     parser = ArgumentParser(description=
         "A simple command line interface for the gzip module: act like gzip, "
         "but do not delete the input file.",

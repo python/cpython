@@ -36,6 +36,9 @@ python ftplib.py -d localhost -l -p -l
 # Modified by Giampaolo Rodola' to add TLS support.
 #
 
+lazy import re
+lazy import netrc
+
 import sys
 import socket
 from socket import _GLOBAL_DEFAULT_TIMEOUT
@@ -798,7 +801,6 @@ def parse150(resp):
         raise error_reply(resp)
     global _150_re
     if _150_re is None:
-        import re
         _150_re = re.compile(
             r"150 .* \((\d+) bytes\)", re.IGNORECASE | re.ASCII)
     m = _150_re.match(resp)
@@ -817,7 +819,6 @@ def parse227(resp):
         raise error_reply(resp)
     global _227_re
     if _227_re is None:
-        import re
         _227_re = re.compile(r'(\d+),(\d+),(\d+),(\d+),(\d+),(\d+)', re.ASCII)
     m = _227_re.search(resp)
     if not m:
@@ -917,7 +918,6 @@ def test():
         print(test.__doc__)
         sys.exit(0)
 
-    import netrc
 
     debugging = 0
     rcfile = None

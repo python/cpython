@@ -5,6 +5,10 @@ default, these calendars have Monday as the first day of the week, and
 Sunday as the last (the European convention). Use setfirstweekday() to
 set the first day of the week (0=Monday, 6=Sunday)."""
 
+lazy import warnings
+lazy from _colorize import get_colors
+lazy import argparse
+
 import sys
 import datetime
 from enum import IntEnum, global_enum
@@ -46,7 +50,6 @@ class IllegalWeekdayError(ValueError):
 
 def __getattr__(name):
     if name in ('January', 'February'):
-        import warnings
         warnings.warn(f"The '{name}' attribute is deprecated, use '{name.upper()}' instead",
                       DeprecationWarning, stacklevel=2)
         if name == 'January':
@@ -691,7 +694,6 @@ class _CLIDemoCalendar(TextCalendar):
         Returns a single week in a string (no newline).
         """
         if highlight_day:
-            from _colorize import get_colors
 
             ansi = get_colors()
             highlight = f"{ansi.BLACK}{ansi.BACKGROUND_YELLOW}"
@@ -842,7 +844,6 @@ def timegm(tuple):
 
 
 def main(args=None):
-    import argparse
     parser = argparse.ArgumentParser(color=True)
     textgroup = parser.add_argument_group('text only arguments')
     htmlgroup = parser.add_argument_group('html only arguments')

@@ -6,6 +6,8 @@ registerDOMImplementation should be imported from xml.dom."""
 # should be published by posting to xml-sig@python.org, and are
 # subsequently recorded in this file.
 
+lazy import os
+
 import sys
 
 well_known_implementations = {
@@ -49,7 +51,6 @@ def getDOMImplementation(name=None, features=()):
     be found, raise an ImportError. The features list must be a sequence
     of (feature, version) pairs which are passed to hasFeature."""
 
-    import os
     creator = None
     mod = well_known_implementations.get(name)
     if mod:

@@ -50,6 +50,11 @@ General notes on the underlying Mersenne Twister core generator:
 # Adrian Baddeley.  Adapted by Raymond Hettinger for use with
 # the Mersenne Twister  and os.urandom() core generators.
 
+lazy from warnings import warn
+lazy from statistics import stdev, fmean as mean
+lazy from time import perf_counter
+lazy import argparse
+
 from math import log as _log, exp as _exp, pi as _pi, e as _e, ceil as _ceil
 from math import sqrt as _sqrt, acos as _acos, cos as _cos, sin as _sin
 from math import tau as TWOPI, floor as _floor, isfinite as _isfinite
@@ -259,7 +264,6 @@ class Random(_random.Random):
 
         random = self.random
         if n >= maxsize:
-            from warnings import warn
             warn("Underlying random() generator does not supply \n"
                  "enough bits to choose from a population range this large.\n"
                  "To remove the range limitation, add a getrandbits() method.")
@@ -961,8 +965,6 @@ randbytes = _inst.randbytes
 ## ----------------- test program -----------------------
 
 def _test_generator(n, func, args):
-    from statistics import stdev, fmean as mean
-    from time import perf_counter
 
     t0 = perf_counter()
     data = [func(*args) for i in _repeat(None, n)]
@@ -1010,7 +1012,6 @@ if hasattr(_os, "fork"):
 
 
 def _parse_args(arg_list: list[str] | None):
-    import argparse
     parser = argparse.ArgumentParser(
         formatter_class=argparse.RawTextHelpFormatter, color=True)
     group = parser.add_mutually_exclusive_group()

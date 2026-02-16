@@ -5,6 +5,9 @@ for urllib.requests, thus do not use directly.
 """
 # Testing is done through test_nturl2path.
 
+lazy import urllib.parse
+lazy import ntpath
+
 import warnings
 
 
@@ -22,7 +25,6 @@ def url2pathname(url):
     #   ///C:/foo/bar/spam.foo
     # become
     #   C:\foo\bar\spam.foo
-    import urllib.parse
     if url[:3] == '///':
         # URL has an empty authority section, so the path begins on the third
         # character.
@@ -49,8 +51,6 @@ def pathname2url(p):
     #   C:\foo\bar\spam.foo
     # becomes
     #   ///C:/foo/bar/spam.foo
-    import ntpath
-    import urllib.parse
     # First, clean up some special forms. We are going to sacrifice
     # the additional information anyway
     p = p.replace('\\', '/')

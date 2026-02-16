@@ -43,6 +43,14 @@ internationalized, to the local language and cultural habits.
 #   you'll need to study the GNU gettext code to do this.
 
 
+lazy import re
+lazy import warnings
+lazy import locale
+lazy import builtins
+lazy from struct import unpack
+lazy from errno import ENOENT
+lazy import copy
+
 import operator
 import os
 import sys
@@ -71,7 +79,6 @@ _token_pattern = None
 def _tokenize(plural):
     global _token_pattern
     if _token_pattern is None:
-        import re
         _token_pattern = re.compile(r"""
                 (?P<WHITESPACES>[ \t]+)                    | # spaces and horizontal tabs
                 (?P<NUMBER>[0-9]+\b)                       | # decimal integer
@@ -179,7 +186,6 @@ def _as_int2(n):
     except TypeError:
         pass
 
-    import warnings
     frame = sys._getframe(1)
     stacklevel = 2
     while frame.f_back is not None and frame.f_globals.get('__name__') == __name__:
@@ -229,7 +235,6 @@ def c2py(plural):
 
 
 def _expand_lang(loc):
-    import locale
     loc = locale.normalize(loc)
     COMPONENT_CODESET   = 1 << 0
     COMPONENT_TERRITORY = 1 << 1
@@ -322,7 +327,6 @@ class NullTranslations:
         return self._charset
 
     def install(self, names=None):
-        import builtins
         builtins.__dict__['_'] = self.gettext
         if names is not None:
             allowed = {'gettext', 'ngettext', 'npgettext', 'pgettext'}
@@ -350,7 +354,6 @@ class GNUTranslations(NullTranslations):
         """Override this method to support alternative .mo formats."""
         # Delay struct import for speeding up gettext import when .mo files
         # are not used.
-        from struct import unpack
         filename = getattr(fp, 'name', '')
         # Parse the .mo file header, which consists of 5 little endian 32
         # bit words.
@@ -533,7 +536,6 @@ def translation(domain, localedir=None, languages=None,
     if not mofiles:
         if fallback:
             return NullTranslations()
-        from errno import ENOENT
         raise FileNotFoundError(ENOENT,
                                 'No translation file found for domain', domain)
     # Avoid opening, reading, and parsing the .mo file after it's been done
@@ -550,7 +552,6 @@ def translation(domain, localedir=None, languages=None,
         # cached object.
         # Delay copy import for speeding up gettext import when .mo files
         # are not used.
-        import copy
         t = copy.copy(t)
         if result is None:
             result = t

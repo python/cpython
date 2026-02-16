@@ -25,6 +25,9 @@ http://wwwsearch.sf.net/):
 
 """
 
+lazy import logging
+lazy import io, warnings, traceback
+
 __all__ = ['Cookie', 'CookieJar', 'CookiePolicy', 'DefaultCookiePolicy',
            'FileCookieJar', 'LWPCookieJar', 'LoadError', 'MozillaCookieJar']
 
@@ -46,7 +49,6 @@ def _debug(*args):
         return
     global logger
     if not logger:
-        import logging
         logger = logging.getLogger("http.cookiejar")
     return logger.debug(*args)
 
@@ -67,7 +69,6 @@ def _warn_unhandled_exception():
     # There are a few catch-all except: statements in this module, for
     # catching input that's bad in unexpected ways.  Warn if any
     # exceptions are caught there.
-    import io, warnings, traceback
     f = io.StringIO()
     traceback.print_exc(None, f)
     msg = f.getvalue()

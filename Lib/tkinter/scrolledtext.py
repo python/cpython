@@ -11,6 +11,8 @@ Most methods calls are inherited from the Text widget; Pack, Grid and
 Place methods are redirected to the Frame widget however.
 """
 
+lazy from tkinter.constants import END
+
 from tkinter import Frame, Text, Scrollbar, Pack, Grid, Place
 from tkinter.constants import RIGHT, LEFT, Y, BOTH
 
@@ -43,7 +45,6 @@ class ScrolledText(Text):
 
 
 def example():
-    from tkinter.constants import END
 
     stext = ScrolledText(bg='white', height=10)
     stext.insert(END, __doc__)

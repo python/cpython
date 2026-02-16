@@ -21,6 +21,9 @@ Simple usage example:
    (options, args) = parser.parse_args()
 """
 
+lazy import textwrap
+lazy from warnings import _deprecated
+
 __all__ = ['Option',
            'make_option',
            'SUPPRESS_HELP',
@@ -249,7 +252,6 @@ class HelpFormatter:
         Format a paragraph of free-form text for inclusion in the
         help output at the current indentation level.
         """
-        import textwrap
         text_width = max(self.width - self.current_indent, 11)
         indent = " "*self.current_indent
         return textwrap.fill(text,
@@ -306,7 +308,6 @@ class HelpFormatter:
             indent_first = 0
         result.append(opts)
         if option.help:
-            import textwrap
             help_text = self.expand_default(option)
             help_lines = textwrap.wrap(help_text, self.help_width)
             result.append("%*s%s\n" % (indent_first, "", help_lines[0]))
@@ -1671,7 +1672,6 @@ make_option = Option
 
 def __getattr__(name):
     if name == "__version__":
-        from warnings import _deprecated
 
         _deprecated("__version__", remove=(3, 20))
         return "1.5.3"  # Do not change

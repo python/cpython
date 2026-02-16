@@ -1,3 +1,5 @@
+lazy from inspect import Parameter, Signature
+
 import sys
 import builtins as bltns
 from types import MappingProxyType, DynamicClassAttribute
@@ -1115,7 +1117,6 @@ class EnumType(type):
 
     @property
     def __signature__(cls):
-        from inspect import Parameter, Signature
         if cls._member_names_:
             return Signature([Parameter('values', Parameter.VAR_POSITIONAL)])
         else:

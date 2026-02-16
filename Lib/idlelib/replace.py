@@ -3,6 +3,9 @@ Uses idlelib.searchengine.SearchEngine for search capability.
 Defines various replace related functions like replace, replace all,
 and replace+find.
 """
+lazy from tkinter import Toplevel, Text, END, SEL
+lazy from tkinter.ttk import Frame, Button
+
 import re
 
 from tkinter import StringVar, TclError
@@ -258,8 +261,6 @@ class ReplaceDialog(SearchDialogBase):
 
 
 def _replace_dialog(parent):  # htest #
-    from tkinter import Toplevel, Text, END, SEL
-    from tkinter.ttk import Frame, Button
 
     top = Toplevel(parent)
     top.title("Test ReplaceDialog")

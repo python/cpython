@@ -1,3 +1,7 @@
+lazy from xml.dom import XML_NAMESPACE
+lazy import xml.dom.minidom
+lazy from io import StringIO
+
 import xml.sax
 import xml.sax.handler
 
@@ -15,7 +19,6 @@ class PullDOM(xml.sax.ContentHandler):
     document = None
 
     def __init__(self, documentFactory=None):
-        from xml.dom import XML_NAMESPACE
         self.documentFactory = documentFactory
         self.firstEvent = [None, None]
         self.lastEvent = self.firstEvent
@@ -158,7 +161,6 @@ class PullDOM(xml.sax.ContentHandler):
 
     def startDocument(self):
         if self.documentFactory is None:
-            import xml.dom.minidom
             self.documentFactory = xml.dom.minidom.Document.implementation
 
     def buildDocument(self, uri, tagname):
@@ -327,7 +329,6 @@ def parse(stream_or_string, parser=None, bufsize=None):
     return DOMEventStream(stream, parser, bufsize)
 
 def parseString(string, parser=None):
-    from io import StringIO
 
     bufsize = len(string)
     buf = StringIO(string)

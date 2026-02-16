@@ -4,6 +4,9 @@
    Inherits from SearchDialogBase for GUI and uses searchengine
    to prepare search pattern.
 """
+lazy from tkinter import Toplevel, Text
+lazy from tkinter.ttk import Frame, Button
+
 from tkinter import TclError
 
 from idlelib import searchengine
@@ -134,8 +137,6 @@ class SearchDialog(SearchDialogBase):
 
 def _search_dialog(parent):  # htest #
     "Display search test box."
-    from tkinter import Toplevel, Text
-    from tkinter.ttk import Frame, Button
 
     top = Toplevel(parent)
     top.title("Test SearchDialog")

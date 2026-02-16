@@ -28,6 +28,9 @@
 """Read from and write to tar format archives.
 """
 
+lazy import warnings
+lazy import argparse
+
 version     = "0.9.0"
 __author__  = "Lars Gust\u00e4bel (lars@gustaebel.de)"
 __credits__ = "Gustavo Niemeyer, Niels Gust\u00e4bel, Richard Townsend."
@@ -937,7 +940,6 @@ class TarInfo(object):
 
     @property
     def tarfile(self):
-        import warnings
         warnings.warn(
             'The undocumented "tarfile" attribute of TarInfo objects '
             + 'is deprecated and will be removed in Python 3.16',
@@ -946,7 +948,6 @@ class TarInfo(object):
 
     @tarfile.setter
     def tarfile(self, tarfile):
-        import warnings
         warnings.warn(
             'The undocumented "tarfile" attribute of TarInfo objects '
             + 'is deprecated and will be removed in Python 3.16',
@@ -3040,7 +3041,6 @@ open = TarFile.open
 
 
 def main():
-    import argparse
 
     description = 'A simple command-line interface for tarfile module.'
     parser = argparse.ArgumentParser(description=description, color=True)

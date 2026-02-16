@@ -4,6 +4,10 @@ XXX The functions here don't copy the resource fork or other metadata on Mac.
 
 """
 
+lazy import tarfile
+lazy import zipfile
+lazy import warnings
+
 import os
 import sys
 import stat
@@ -1019,7 +1023,6 @@ def _make_tarball(base_name, base_dir, compress="gzip", verbose=0, dry_run=0,
         raise ValueError("bad value for 'compress', or compression format not "
                          "supported : {0}".format(compress))
 
-    import tarfile  # late import for breaking circular dependency
 
     compress_ext = '.' + tar_compression if compress else ''
     archive_name = base_name + '.tar' + compress_ext
@@ -1068,7 +1071,6 @@ def _make_zipfile(base_name, base_dir, verbose=0, dry_run=0,
     The output zip file will be named 'base_name' + ".zip".  Returns the
     name of the output zip file.
     """
-    import zipfile  # late import for breaking circular dependency
 
     zip_filename = base_name + ".zip"
     archive_dir = os.path.dirname(base_name)
@@ -1309,7 +1311,6 @@ def _ensure_directory(path):
 def _unpack_zipfile(filename, extract_dir):
     """Unpack zip `filename` to `extract_dir`
     """
-    import zipfile  # late import for breaking circular dependency
 
     if not zipfile.is_zipfile(filename):
         raise ReadError("%s is not a zip file" % filename)
@@ -1339,7 +1340,6 @@ def _unpack_zipfile(filename, extract_dir):
 def _unpack_tarfile(filename, extract_dir, *, filter=None):
     """Unpack tar/tar.gz/tar.bz2/tar.xz/tar.zst `filename` to `extract_dir`
     """
-    import tarfile  # late import for breaking circular dependency
     try:
         tarobj = tarfile.open(filename)
     except tarfile.TarError:
@@ -1656,7 +1656,6 @@ def which(cmd, mode=os.F_OK | os.X_OK, path=None):
 
 def __getattr__(name):
     if name == "ExecError":
-        import warnings
         warnings._deprecated(
             "shutil.ExecError",
             f"{warnings._DEPRECATED_MSG}; it "

@@ -12,6 +12,8 @@ integers with a huge number of digits.  Saving a few microseconds with
 tricky or non-obvious code is not worth it.  For people looking for
 maximum performance, they should use something like gmpy2."""
 
+lazy from decimal import Decimal as D
+
 import re
 import decimal
 try:
@@ -149,7 +151,6 @@ def int_to_decimal(n):
     # "clever" recursive way.  If we want a string representation, we
     # apply str to _that_.
 
-    from decimal import Decimal as D
     BITLIM = 200
 
     # Don't bother caching the "lo" mask in this; the time to compute it is

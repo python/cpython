@@ -19,6 +19,8 @@ arguments and return values that cannot be transported through the RPC
 barrier, in particular frame and traceback objects.
 
 """
+lazy import __main__
+
 import reprlib
 import types
 from idlelib import debugger
@@ -102,7 +104,6 @@ class IdbAdapter:
         return stack, i
 
     def run(self, cmd):
-        import __main__
         self.idb.run(cmd, __main__.__dict__)
 
     def set_break(self, filename, lineno):

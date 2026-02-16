@@ -23,6 +23,9 @@ Copyright (C) 2001-2022 Vinay Sajip. All Rights Reserved.
 To use, simply 'import logging' and log away!
 """
 
+lazy import pickle
+lazy from warnings import _deprecated
+
 import sys, os, time, io, re, traceback, warnings, weakref, collections.abc
 
 from types import GenericAlias
@@ -1819,7 +1822,6 @@ class Logger(Filterer):
 
     def __reduce__(self):
         if getLogger(self.name) is not self:
-            import pickle
             raise pickle.PicklingError('logger cannot be pickled')
         return getLogger, (self.name,)
 
@@ -2343,7 +2345,6 @@ def captureWarnings(capture):
 
 def __getattr__(name):
     if name in ("__version__", "__date__"):
-        from warnings import _deprecated
 
         _deprecated(name, remove=(3, 20))
         return {  # Do not change

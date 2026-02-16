@@ -1,3 +1,5 @@
+lazy import pickle
+
 import bisect
 import calendar
 import collections
@@ -206,7 +208,6 @@ class ZoneInfo(tzinfo):
         return (self.__class__._unpickle, (self._key, self._from_cache))
 
     def _file_reduce(self):
-        import pickle
 
         raise pickle.PicklingError(
             "Cannot pickle a ZoneInfo file created from a file stream."

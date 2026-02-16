@@ -10,6 +10,8 @@ the package, and perhaps a particular module inside it.
 
 """
 
+lazy import _curses, curses
+
 from _curses import *
 import os as _os
 import sys as _sys
@@ -23,7 +25,6 @@ import sys as _sys
 # curses import *' if you'll be needing the ACS_* constants.
 
 def initscr():
-    import _curses, curses
     # we call setupterm() here because it raises an error
     # instead of calling exit() in error cases.
     setupterm(term=_os.environ.get("TERM", "unknown"),
@@ -39,7 +40,6 @@ def initscr():
 # called.
 
 def start_color():
-    import _curses, curses
     _curses.start_color()
     curses.COLORS = _curses.COLORS
     curses.COLOR_PAIRS = _curses.COLOR_PAIRS

@@ -35,6 +35,8 @@
 
 from __future__ import annotations
 
+lazy from .keymap import compile_keymap, parse_keys
+
 from abc import ABC, abstractmethod
 import unicodedata
 from collections import deque
@@ -62,7 +64,6 @@ class InputTranslator(ABC):
 class KeymapTranslator(InputTranslator):
     def __init__(self, keymap, verbose=False, invalid_cls=None, character_cls=None):
         self.verbose = verbose
-        from .keymap import compile_keymap, parse_keys
 
         self.keymap = keymap
         self.invalid_cls = invalid_cls

@@ -8,6 +8,10 @@
 # Licensed to PSF under a Contributor Agreement.
 #
 
+lazy import msvcrt
+lazy import _winapi
+lazy from . import resource_tracker
+
 import os
 import sys
 import runpy
@@ -101,8 +105,6 @@ def spawn_main(pipe_handle, parent_pid=None, tracker_fd=None):
     '''
     assert is_forking(sys.argv), "Not forking"
     if sys.platform == 'win32':
-        import msvcrt
-        import _winapi
 
         if parent_pid is not None:
             source_process = _winapi.OpenProcess(
@@ -115,7 +117,6 @@ def spawn_main(pipe_handle, parent_pid=None, tracker_fd=None):
         fd = msvcrt.open_osfhandle(new_handle, os.O_RDONLY)
         parent_sentinel = source_process
     else:
-        from . import resource_tracker
         resource_tracker._resource_tracker._fd = tracker_fd
         fd = pipe_handle
         parent_sentinel = os.dup(pipe_handle)

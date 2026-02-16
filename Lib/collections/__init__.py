@@ -14,6 +14,9 @@ list, set, and tuple.
 
 '''
 
+lazy import heapq
+lazy import copy
+
 __all__ = [
     'ChainMap',
     'Counter',
@@ -634,11 +637,9 @@ class Counter(dict):
         if n is None:
             return sorted(self.items(), key=_itemgetter(1), reverse=True)
 
-        # Lazy import to speedup Python startup time
         global heapq
         if heapq is None:
             import heapq
-
         return heapq.nlargest(n, self.items(), key=_itemgetter(1))
 
     def elements(self):
@@ -1249,7 +1250,6 @@ class UserDict(_collections_abc.MutableMapping):
     def copy(self):
         if self.__class__ is UserDict:
             return UserDict(self.data.copy())
-        import copy
         data = self.data
         try:
             self.data = {}

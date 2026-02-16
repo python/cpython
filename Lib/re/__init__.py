@@ -123,6 +123,10 @@ backward compatibility.
 
 """
 
+lazy import warnings
+lazy from ._constants import BRANCH, SUBPATTERN
+lazy from warnings import _deprecated
+
 import enum
 from . import _compiler, _parser
 import functools
@@ -201,7 +205,6 @@ def sub(pattern, repl, string, *args, count=_zero_sentinel, flags=_zero_sentinel
                 raise TypeError("sub() takes from 3 to 5 positional arguments "
                                 "but %d were given" % (5 + len(args)))
 
-        import warnings
         warnings.warn(
             "'count' is passed as positional argument",
             DeprecationWarning, stacklevel=2
@@ -231,7 +234,6 @@ def subn(pattern, repl, string, *args, count=_zero_sentinel, flags=_zero_sentine
                 raise TypeError("subn() takes from 3 to 5 positional arguments "
                                 "but %d were given" % (5 + len(args)))
 
-        import warnings
         warnings.warn(
             "'count' is passed as positional argument",
             DeprecationWarning, stacklevel=2
@@ -260,7 +262,6 @@ def split(pattern, string, *args, maxsplit=_zero_sentinel, flags=_zero_sentinel)
                 raise TypeError("split() takes from 2 to 4 positional arguments "
                                 "but %d were given" % (4 + len(args)))
 
-        import warnings
         warnings.warn(
             "'maxsplit' is passed as positional argument",
             DeprecationWarning, stacklevel=2
@@ -392,7 +393,6 @@ copyreg.pickle(Pattern, _pickle, _compile)
 
 class Scanner:
     def __init__(self, lexicon, flags=0):
-        from ._constants import BRANCH, SUBPATTERN
         if isinstance(flags, RegexFlag):
             flags = flags.value
         self.lexicon = lexicon
@@ -435,7 +435,6 @@ class Scanner:
 
 def __getattr__(name):
     if name == "__version__":
-        from warnings import _deprecated
 
         _deprecated("__version__", remove=(3, 20))
         return "2.2.1"  # Do not change

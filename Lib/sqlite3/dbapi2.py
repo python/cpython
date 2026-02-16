@@ -20,6 +20,8 @@
 #    misrepresented as being the original software.
 # 3. This notice may not be removed or altered from any source distribution.
 
+lazy from warnings import warn
+
 import datetime
 import time
 import collections.abc
@@ -52,7 +54,6 @@ Binary = memoryview
 collections.abc.Sequence.register(Row)
 
 def register_adapters_and_converters():
-    from warnings import warn
 
     msg = ("The default {what} is deprecated as of Python 3.12; "
            "see the sqlite3 documentation for suggested replacement recipes")

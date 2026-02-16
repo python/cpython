@@ -4,6 +4,9 @@
 # SPDX-License-Identifier: PSF-2.0 AND (MIT OR Apache-2.0)
 # SPDX-FileCopyrightText: Copyright (c) 2015-2021 MagicStack Inc.  http://magic.io
 
+lazy from .windows_events import _DefaultEventLoopPolicy
+lazy from .unix_events import _DefaultEventLoopPolicy
+
 __all__ = (
     "AbstractEventLoop",
     "AbstractServer",
@@ -788,10 +791,6 @@ def _init_event_loop_policy():
     global _event_loop_policy
     with _lock:
         if _event_loop_policy is None:  # pragma: no branch
-            if sys.platform == 'win32':
-                from .windows_events import _DefaultEventLoopPolicy
-            else:
-                from .unix_events import _DefaultEventLoopPolicy
             _event_loop_policy = _DefaultEventLoopPolicy()
 
 

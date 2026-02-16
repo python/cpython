@@ -20,6 +20,11 @@
 # CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
 
 from __future__ import annotations
+lazy import signal
+lazy import _sitebuiltins
+lazy from .pager import get_pager
+lazy from site import gethistoryfile
+
 import os
 import time
 
@@ -215,7 +220,6 @@ class yank_pop(YankCommand):
 
 class interrupt(FinishCommand):
     def do(self) -> None:
-        import signal
 
         self.reader.console.finish()
         self.reader.finish()
@@ -231,7 +235,6 @@ class ctrl_c(Command):
 
 class suspend(Command):
     def do(self) -> None:
-        import signal
 
         r = self.reader
         p = r.pos
@@ -446,7 +449,6 @@ class accept(FinishCommand):
 
 class help(Command):
     def do(self) -> None:
-        import _sitebuiltins
 
         with self.reader.suspend():
             self.reader.msg = _sitebuiltins._Helper()()  # type: ignore[assignment]
@@ -467,8 +469,6 @@ class invalid_command(Command):
 
 class show_history(Command):
     def do(self) -> None:
-        from .pager import get_pager
-        from site import gethistoryfile
 
         history = os.linesep.join(self.reader.history[:])
         self.reader.console.restore()

@@ -16,6 +16,9 @@ releases; such changes may not be backward compatible.
 # XXX The API needs to undergo changes however; the current code is too
 # XXX script-like.  This will be addressed later.
 
+lazy import getopt
+lazy from warnings import _deprecated
+
 import os
 import sys
 import tokenize
@@ -34,7 +37,6 @@ def errprint(*args):
     sys.exit(1)
 
 def main():
-    import getopt
 
     global verbose, filename_only
     try:
@@ -334,7 +336,6 @@ def _process_tokens(tokens):
 
 def __getattr__(name):
     if name == "__version__":
-        from warnings import _deprecated
 
         _deprecated("__version__", remove=(3, 20))
         return "6"  # Do not change

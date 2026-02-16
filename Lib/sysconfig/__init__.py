@@ -1,5 +1,15 @@
 """Access to Python's configuration information."""
 
+lazy import importlib.machinery
+lazy import importlib.util
+lazy import importlib
+lazy import _winapi
+lazy import _sysconfig
+lazy import re
+lazy import _osx_support
+lazy from _aix_support import aix_platform
+lazy import warnings
+
 import os
 import sys
 import threading
@@ -335,8 +345,6 @@ def get_makefile_filename():
 
 def _import_from_directory(path, name):
     if name not in sys.modules:
-        import importlib.machinery
-        import importlib.util
 
         spec = importlib.machinery.PathFinder.find_spec(name, [path])
         module = importlib.util.module_from_spec(spec)
@@ -354,7 +362,6 @@ def _get_sysconfigdata_name():
 
 
 def _get_sysconfigdata():
-    import importlib
 
     name = _get_sysconfigdata_name()
     path = os.environ.get('_PYTHON_SYSCONFIGDATA_PATH')
@@ -384,8 +391,6 @@ def _init_posix(vars):
 def _init_non_posix(vars):
     """Initialize the module as appropriate for NT"""
     # set basic install directories
-    import _winapi
-    import _sysconfig
     vars['LIBDEST'] = get_path('stdlib')
     vars['BINLIBDEST'] = get_path('platstdlib')
     vars['INCLUDEPY'] = get_path('include')
@@ -434,7 +439,6 @@ def parse_config_h(fp, vars=None):
     """
     if vars is None:
         vars = {}
-    import re
     define_rx = re.compile("#define ([A-Z][A-Za-z0-9_]+) (.*)\n")
     undef_rx = re.compile("/[*] #undef ([A-Z][A-Za-z0-9_]+) [*]/\n")
 
@@ -579,7 +583,6 @@ def _init_config_vars():
     # OS X platforms require special customization to handle
     # multi-architecture, multi-os-version installers
     if sys.platform == 'darwin':
-        import _osx_support
         _osx_support.customize_config_vars(_CONFIG_VARS)
 
     global _CONFIG_VARS_INITIALIZED
@@ -718,11 +721,9 @@ def get_platform():
             machine += f".{bitness[sys.maxsize]}"
         # fall through to standard osname-release-machine representation
     elif osname[:3] == "aix":
-        from _aix_support import aix_platform
         return aix_platform()
     elif osname[:6] == "cygwin":
         osname = "cygwin"
-        import re
         rel_re = re.compile(r'[\d.]+')
         m = rel_re.match(release)
         if m:
@@ -733,7 +734,6 @@ def get_platform():
             osname = sys.platform
             machine = sys.implementation._multiarch
         else:
-            import _osx_support
             osname, release, machine = _osx_support.get_platform_osx(
                                                 get_config_vars(),
                                                 osname, release, machine)
@@ -758,7 +758,6 @@ def expand_makefile_vars(s, vars):
     you're fine.  Returns a variable-expanded version of 's'.
     """
 
-    import warnings
     warnings.warn(
         'sysconfig.expand_makefile_vars is deprecated and will be removed in '
         'Python 3.16. Use sysconfig.get_paths(vars=...) instead.',
@@ -766,7 +765,6 @@ def expand_makefile_vars(s, vars):
         stacklevel=2,
     )
 
-    import re
 
     _findvar1_rx = r"\$\(([A-Za-z][A-Za-z0-9_]*)\)"
     _findvar2_rx = r"\${([A-Za-z][A-Za-z0-9_]*)}"

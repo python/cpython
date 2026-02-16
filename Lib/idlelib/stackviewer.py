@@ -1,5 +1,7 @@
 # Rename to stackbrowser or possibly consolidate with browser.
 
+lazy from idlelib.pyshell import PyShellFileList
+
 import linecache
 import os
 
@@ -114,7 +116,6 @@ class VariablesTreeItem(ObjectTreeItem):
 
 
 def _stackbrowser(parent):  # htest #
-    from idlelib.pyshell import PyShellFileList
     top = tk.Toplevel(parent)
     top.title("Test StackViewer")
     x, y = map(int, parent.geometry().split('+')[1:])

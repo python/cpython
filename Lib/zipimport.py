@@ -10,6 +10,8 @@ used by the builtin import mechanism for sys.path items that are paths
 to Zip archives.
 """
 
+lazy from importlib.readers import ZipReader
+
 import _frozen_importlib_external as _bootstrap_external
 from _frozen_importlib_external import _unpack_uint16, _unpack_uint32, _unpack_uint64
 import _frozen_importlib as _bootstrap  # for _verbose_message
@@ -207,7 +209,6 @@ class zipimporter(_bootstrap_external._LoaderBasics):
 
     def get_resource_reader(self, fullname):
         """Return the ResourceReader for a module in a zip file."""
-        from importlib.readers import ZipReader
 
         return ZipReader(self, fullname)
 

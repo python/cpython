@@ -1,3 +1,5 @@
+lazy from _pyrepl.simple_interact import _get_reader
+
 import argparse
 import ast
 import asyncio
@@ -142,7 +144,6 @@ class REPLThread(threading.Thread):
         if not CAN_USE_PYREPL:
             return
 
-        from _pyrepl.simple_interact import _get_reader
         r = _get_reader()
         if r.threading_hook is not None:
             r.threading_hook.add("")  # type: ignore

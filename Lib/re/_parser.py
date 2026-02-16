@@ -12,6 +12,8 @@
 
 # XXX: show string offset and offending character for all errors
 
+lazy import warnings
+
 from ._constants import *
 
 SPECIAL_CHARS = ".\\[{()*+?^$|"
@@ -554,7 +556,6 @@ def _parse(source, state, verbose, nested, first=False):
 ##          if sourcematch(":"):
 ##              pass # handle character classes
             if source.next == '[':
-                import warnings
                 warnings.warn(
                     'Possible nested set at position %d' % source.tell(),
                     FutureWarning, stacklevel=nested + 6
@@ -572,7 +573,6 @@ def _parse(source, state, verbose, nested, first=False):
                     code1 = _class_escape(source, this)
                 else:
                     if set and this in '-&~|' and source.next == this:
-                        import warnings
                         warnings.warn(
                             'Possible set %s at position %d' % (
                                 'difference' if this == '-' else
@@ -599,7 +599,6 @@ def _parse(source, state, verbose, nested, first=False):
                         code2 = _class_escape(source, that)
                     else:
                         if that == '-':
-                            import warnings
                             warnings.warn(
                                 'Possible set difference at position %d' % (
                                     source.tell() - 2),

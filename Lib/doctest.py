@@ -45,6 +45,9 @@ of doctest's default behaviors.  See the Library Reference Manual for
 details.
 """
 
+lazy import pdb
+lazy import argparse
+
 __docformat__ = 'reStructuredText en'
 
 __all__ = [
@@ -2821,7 +2824,6 @@ def debug_src(src, pm=False, globs=None):
 
 def debug_script(src, pm=False, globs=None):
     "Debug a test script.  `src` is the script, as a string."
-    import pdb
 
     if globs:
         globs = globs.copy()
@@ -2949,7 +2951,6 @@ __test__ = {"_TestClass": _TestClass,
 
 
 def _test():
-    import argparse
 
     parser = argparse.ArgumentParser(description="doctest runner", color=True)
     parser.add_argument('-v', '--verbose', action='store_true', default=False,

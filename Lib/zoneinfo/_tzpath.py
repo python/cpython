@@ -1,3 +1,6 @@
+lazy import warnings
+lazy from importlib import resources
+
 import os
 import sysconfig
 
@@ -49,7 +52,6 @@ def _parse_python_tzpath(env_var, stacklevel):
 
     # If anything has been filtered out, we will warn about it
     if len(new_tzpath) != len(raw_tzpath):
-        import warnings
 
         msg = _get_invalid_paths_message(raw_tzpath)
 
@@ -124,7 +126,6 @@ def available_timezones():
         determine if a given file on the time zone search path is to open it
         and check for the "magic string" at the beginning.
     """
-    from importlib import resources
 
     valid_zones = set()
 

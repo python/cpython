@@ -19,6 +19,8 @@
 
 from __future__ import annotations
 
+lazy import traceback
+
 import _colorize
 
 from abc import ABC, abstractmethod
@@ -170,7 +172,6 @@ class InteractiveColoredConsole(code.InteractiveConsole):
         super().showsyntaxerror(filename=filename, **kwargs)
 
     def _excepthook(self, typ, value, tb):
-        import traceback
         lines = traceback.format_exception(
                 typ, value, tb,
                 colorize=self.can_colorize,

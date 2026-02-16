@@ -23,6 +23,12 @@ init([files]) -- parse a list of files, default knownfiles (on Windows, the
 read_mime_types(file) -- parse one file, return a dictionary or None
 """
 
+lazy from warnings import _deprecated
+lazy import os
+lazy import urllib.parse
+lazy import posixpath
+lazy from argparse import ArgumentParser
+
 try:
     from _winapi import _mimetypes_read_windows_registry
 except ImportError:
@@ -93,7 +99,6 @@ class MimeTypes:
         Valid extensions are empty or start with a '.'.
         """
         if ext and not ext.startswith('.'):
-            from warnings import _deprecated
 
             _deprecated(
                 "Undotted extensions",
@@ -129,8 +134,6 @@ class MimeTypes:
         but non-standard types.
         """
         # Lazy import to improve module import time
-        import os
-        import urllib.parse
 
         # TODO: Deprecate accepting file paths (in particular path-like objects).
         url = os.fspath(url)
@@ -161,7 +164,6 @@ class MimeTypes:
             return type, None           # never compressed, so encoding is None
 
         # Lazy import to improve module import time
-        import posixpath
 
         return self._guess_file_type(url, strict, posixpath.splitext)
 
@@ -171,7 +173,6 @@ class MimeTypes:
         Similar to guess_type(), but takes file path instead of URL.
         """
         # Lazy import to improve module import time
-        import os
 
         path = os.fsdecode(path)
         path = os.path.splitdrive(path)[1]
@@ -420,7 +421,6 @@ def init(files=None):
         db = _db
 
     # Lazy import to improve module import time
-    import os
 
     for file in files:
         if os.path.isfile(file):
@@ -698,7 +698,6 @@ _default_mime_types()
 
 
 def _parse_args(args):
-    from argparse import ArgumentParser
 
     parser = ArgumentParser(
         description='map filename extensions to MIME types', color=True

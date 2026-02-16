@@ -1,5 +1,9 @@
 "idlelib.filelist"
 
+lazy from tkinter import Tk
+lazy from idlelib.editor import fixwordbreaks
+lazy from idlelib.run import fix_scaling
+
 import os
 from tkinter import messagebox
 
@@ -112,9 +116,6 @@ class FileList:
 
 
 def _test():  # TODO check and convert to htest
-    from tkinter import Tk
-    from idlelib.editor import fixwordbreaks
-    from idlelib.run import fix_scaling
     root = Tk()
     fix_scaling(root)
     fixwordbreaks(root)

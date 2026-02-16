@@ -7,6 +7,11 @@
 # Licensed to PSF under a Contributor Agreement.
 #
 
+lazy from . import util, context
+lazy from . import util
+lazy from .context import get_spawning_popen
+lazy from multiprocessing.connection import wait
+
 __all__ = ['BaseProcess', 'current_process', 'active_children',
            'parent_process']
 
@@ -295,7 +300,6 @@ class BaseProcess(object):
     ##
 
     def _bootstrap(self, parent_sentinel=None):
-        from . import util, context
         global _current_process, _parent_process, _process_counter, _children
 
         try:
@@ -341,7 +345,6 @@ class BaseProcess(object):
 
     @staticmethod
     def _after_fork():
-        from . import util
         util._finalizer_registry.clear()
         util._run_after_forkers()
 
@@ -352,7 +355,6 @@ class BaseProcess(object):
 
 class AuthenticationString(bytes):
     def __reduce__(self):
-        from .context import get_spawning_popen
         if get_spawning_popen() is None:
             raise TypeError(
                 'Pickling an AuthenticationString object is '
@@ -378,7 +380,6 @@ class _ParentProcess(BaseProcess):
         self._config = {}
 
     def is_alive(self):
-        from multiprocessing.connection import wait
         return not wait([self._sentinel], timeout=0)
 
     @property
@@ -389,7 +390,6 @@ class _ParentProcess(BaseProcess):
         '''
         Wait until parent process terminates
         '''
-        from multiprocessing.connection import wait
         wait([self._sentinel], timeout=timeout)
 
     pid = ident

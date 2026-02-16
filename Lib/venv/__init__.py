@@ -4,6 +4,9 @@ Virtual environment (venv) package for Python. Based on PEP 405.
 Copyright (C) 2011-2014 Vinay Sajip.
 Licensed to the PSF under a contributor agreement.
 """
+lazy import _winapi
+lazy import argparse
+
 import logging
 import os
 import shutil
@@ -118,7 +121,6 @@ class EnvBuilder:
             if os.path.normcase(path1) == os.path.normcase(path2):
                 return True
             # gh-90329: Don't display a warning for short/long names
-            import _winapi
             try:
                 path1 = _winapi.GetLongPathName(os.fsdecode(path1))
             except OSError:
@@ -607,7 +609,6 @@ def create(env_dir, system_site_packages=False, clear=False,
 
 
 def main(args=None):
-    import argparse
 
     parser = argparse.ArgumentParser(description='Creates virtual Python '
                                                  'environments in one or '

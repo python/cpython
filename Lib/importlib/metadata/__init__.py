@@ -9,6 +9,12 @@ for more detail.
 
 from __future__ import annotations
 
+lazy from . import _adapters
+lazy import csv
+lazy import json
+lazy import zipfile
+lazy import inspect
+
 import abc
 import collections
 import email
@@ -532,7 +538,6 @@ class Distribution(metaclass=abc.ABCMeta):
     @pass_none
     def _assemble_message(text: str) -> _meta.PackageMetadata:
         # deferred for performance (python/cpython#109829)
-        from . import _adapters
 
         return _adapters.Message(email.message_from_string(text))
 
@@ -588,7 +593,6 @@ class Distribution(metaclass=abc.ABCMeta):
         def make_files(lines):
             # Delay csv import, since Distribution.files is not as widely used
             # as other parts of importlib.metadata
-            import csv
 
             return starmap(make_file, csv.reader(lines))
 
@@ -712,7 +716,6 @@ class Distribution(metaclass=abc.ABCMeta):
 
     def _load_json(self, filename):
         # Deferred for performance (python/importlib_metadata#503)
-        import json
 
         return pass_none(json.loads)(
             self.read_text(filename),
@@ -817,7 +820,6 @@ class FastPath:
 
     def zip_children(self):
         # deferred for performance (python/importlib_metadata#502)
-        import zipfile
 
         zip_path = zipfile.Path(self.root)
         names = zip_path.root.namelist()
@@ -1155,7 +1157,6 @@ def _get_toplevel_name(name: PackagePath) -> str:
     'foo.dist-info'
     """
     # Defer import of inspect for performance (python/cpython#118761)
-    import inspect
 
     return _topmost(name) or inspect.getmodulename(name) or str(name)
 

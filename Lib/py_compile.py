@@ -3,6 +3,8 @@
 This module has intimate knowledge of the format of .pyc files.
 """
 
+lazy import argparse
+
 import enum
 import importlib._bootstrap_external
 import importlib.machinery
@@ -174,7 +176,6 @@ def compile(file, cfile=None, dfile=None, doraise=False, optimize=-1,
 
 
 def main():
-    import argparse
 
     description = 'A simple command-line interface for py_compile module.'
     parser = argparse.ArgumentParser(description=description, color=True)

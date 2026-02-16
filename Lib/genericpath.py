@@ -3,6 +3,8 @@ Path operations common to more than one OS
 Do not use directly.  The OS specific modules import the appropriate
 functions from this module themselves.
 """
+lazy import warnings
+
 import os
 import stat
 
@@ -105,7 +107,6 @@ def getctime(filename, /):
 # Return the longest prefix of all list elements.
 def commonprefix(m, /):
     "Given a list of pathnames, returns the longest common leading component"
-    import warnings
     warnings.warn('os.path.commonprefix() is deprecated. Use '
                   'os.path.commonpath() for longest path prefix.',
                   category=DeprecationWarning,

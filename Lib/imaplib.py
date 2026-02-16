@@ -21,6 +21,10 @@ Public functions:       Internaldate2tuple
 # GET/SETANNOTATION contributed by Tomas Lindroos <skitta@abo.fi> June 2005.
 # IDLE contributed by Forest <forestix@nom.one> August 2024.
 
+lazy import warnings
+lazy import hmac
+lazy from warnings import _deprecated
+
 import binascii, errno, random, re, socket, subprocess, sys, time, calendar
 from datetime import datetime, timezone, timedelta
 from io import DEFAULT_BUFFER_SIZE
@@ -325,7 +329,6 @@ class IMAP4:
         # Nevertheless, we provide this property for now, to avoid suddenly
         # breaking any code in the wild that might have been using it in a
         # harmless way.
-        import warnings
         warnings.warn(
             'IMAP4.file is unsupported, can cause errors, and may be removed.',
             RuntimeWarning,
@@ -719,7 +722,6 @@ class IMAP4:
 
     def _CRAM_MD5_AUTH(self, challenge):
         """ Authobject to use with CRAM-MD5 authentication. """
-        import hmac
 
         if isinstance(self.password, str):
             password = self.password.encode('utf-8')
@@ -1968,7 +1970,6 @@ try: %s -d5
 
 def __getattr__(name):
     if name == "__version__":
-        from warnings import _deprecated
 
         _deprecated("__version__", remove=(3, 20))
         return "2.60"  # Do not change

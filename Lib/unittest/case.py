@@ -1,5 +1,8 @@
 """Test case implementation"""
 
+lazy import inspect
+lazy from ._log import _AssertLogsContext
+
 import sys
 import functools
 import difflib
@@ -612,7 +615,6 @@ class TestCase(object):
     def _callTestMethod(self, method):
         result = method()
         if result is not None:
-            import inspect
             msg = (
                 f'It is deprecated to return a value that is not None '
                 f'from a test case ({method} returned {type(result).__name__!r})'
@@ -872,7 +874,6 @@ class TestCase(object):
                                          'ERROR:foo.bar:second message'])
         """
         # Lazy import to avoid importing logging if it is not needed.
-        from ._log import _AssertLogsContext
         return _AssertLogsContext(self, logger, level, no_logs=False, formatter=formatter)
 
     def assertNoLogs(self, logger=None, level=None):
@@ -881,7 +882,6 @@ class TestCase(object):
 
         This method must be used as a context manager.
         """
-        from ._log import _AssertLogsContext
         return _AssertLogsContext(self, logger, level, no_logs=True)
 
     def _getAssertEqualityFunc(self, first, second):

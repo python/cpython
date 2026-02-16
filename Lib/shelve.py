@@ -56,6 +56,8 @@ entries in the cache, and empty the cache (d.sync() also synchronizes
 the persistent dictionary on disk, if feasible).
 """
 
+lazy import dbm
+
 from pickle import DEFAULT_PROTOCOL, dumps, loads
 
 import collections.abc
@@ -237,7 +239,6 @@ class DbfilenameShelf(Shelf):
 
     def __init__(self, filename, flag='c', protocol=None, writeback=False, *,
                  serializer=None, deserializer=None):
-        import dbm
         Shelf.__init__(self, dbm.open(filename, flag), protocol, writeback,
                        serializer=serializer, deserializer=deserializer)
 

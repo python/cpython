@@ -30,6 +30,11 @@ button.pack(side=BOTTOM)
 tk.mainloop()
 """
 
+lazy import re
+lazy import warnings
+lazy import os
+lazy import traceback
+
 import collections
 import enum
 import sys
@@ -157,7 +162,6 @@ class _VersionInfoType(collections.namedtuple('_VersionInfoType',
             return f'{self.major}.{self.minor}{self.releaselevel[0]}{self.serial}'
 
 def _parse_version(version):
-    import re
     m = re.fullmatch(r'(\d+)\.(\d+)([ab.])(\d+)', version)
     major, minor, releaselevel, serial = m.groups()
     major, minor, serial = int(major), int(minor), int(serial)
@@ -503,7 +507,6 @@ class Variable:
         This deprecated method wraps a deprecated Tcl method removed
         in Tcl 9.0.  Use trace_add() instead.
         """
-        import warnings
         warnings.warn(
                 "trace_variable() is deprecated and not supported with Tcl 9; "
                 "use trace_add() instead.",
@@ -523,7 +526,6 @@ class Variable:
         This deprecated method wraps a deprecated Tcl method removed
         in Tcl 9.0.  Use trace_remove() instead.
         """
-        import warnings
         warnings.warn(
                 "trace_vdelete() is deprecated and not supported with Tcl 9; "
                 "use trace_remove() instead.",
@@ -546,7 +548,6 @@ class Variable:
         This deprecated method wraps a deprecated Tcl method removed
         in Tcl 9.0.  Use trace_info() instead.
         """
-        import warnings
         warnings.warn(
                 "trace_vinfo() is deprecated and not supported with Tcl 9; "
                 "use trace_info() instead.",
@@ -2513,7 +2514,6 @@ class Tk(Misc, Wm):
         # ensure that self.tk is always _something_.
         self.tk = None
         if baseName is None:
-            import os
             baseName = os.path.basename(sys.argv[0])
             baseName, ext = os.path.splitext(baseName)
             if ext not in ('.py', '.pyc'):
@@ -2573,7 +2573,6 @@ class Tk(Misc, Wm):
         """Internal function. It reads .BASENAME.tcl and .CLASSNAME.tcl into
         the Tcl Interpreter and calls exec on the contents of .BASENAME.py and
         .CLASSNAME.py if such a file exists in the home directory."""
-        import os
         if 'HOME' in os.environ: home = os.environ['HOME']
         else: home = os.curdir
         class_tcl = os.path.join(home, '.%s.tcl' % className)
@@ -2596,7 +2595,6 @@ class Tk(Misc, Wm):
 
         Applications may want to override this internal function, and
         should when sys.stderr is None."""
-        import traceback
         print("Exception in Tkinter callback", file=sys.stderr)
         sys.last_exc = val
         sys.last_type = exc

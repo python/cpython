@@ -63,6 +63,10 @@ SETTINGS:
         written as two quotes
 """
 
+lazy import re
+lazy from collections import Counter, defaultdict
+lazy from warnings import _deprecated
+
 import types
 from _csv import Error, writer, reader, register_dialect, \
                  unregister_dialect, get_dialect, list_dialects, \
@@ -278,7 +282,6 @@ class Sniffer:
         If there is no quotechar the delimiter can't be determined
         this way.
         """
-        import re
 
         matches = []
         for restr in (r'(?P<delim>[^\w\n"\'])(?P<space> ?)(?P<quote>["\']).*?(?P=quote)(?P=delim)', # ,".*?",
@@ -362,7 +365,6 @@ class Sniffer:
         try and evaluate the smallest portion of the data possible, evaluating
         additional chunks as necessary.
         """
-        from collections import Counter, defaultdict
 
         data = list(filter(None, data.split('\n')))
 
@@ -515,7 +517,6 @@ class Sniffer:
 
 def __getattr__(name):
     if name == "__version__":
-        from warnings import _deprecated
 
         _deprecated("__version__", remove=(3, 20))
         return "1.0"  # Do not change

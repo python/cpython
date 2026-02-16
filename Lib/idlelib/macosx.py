@@ -1,6 +1,15 @@
 """
 A number of functions that enhance IDLE on macOS.
 """
+lazy from idlelib.__init__ import testing
+lazy from test.support import requires, ResourceDenied
+lazy from tkinter import Menu
+lazy from idlelib import mainmenu
+lazy from idlelib import window
+lazy from idlelib import help_about
+lazy from idlelib import configdialog
+lazy from idlelib import help
+
 from os.path import expanduser
 import plistlib
 from sys import platform  # Used in _init_tk_type, changed by test.
@@ -24,9 +33,7 @@ def _init_tk_type():
         # When running IDLE, GUI is present, test/* may not be.
         # When running tests, test/* is present, GUI may not be.
         # If not, guess most common.  Does not matter for testing.
-        from idlelib.__init__ import testing
         if testing:
-            from test.support import requires, ResourceDenied
             try:
                 requires('gui')
             except ResourceDenied:
@@ -154,9 +161,6 @@ def overrideRootMenu(root, flist):
     #
     # Due to a (mis-)feature of TkAqua the user will also see an empty Help
     # menu.
-    from tkinter import Menu
-    from idlelib import mainmenu
-    from idlelib import window
 
     closeItem = mainmenu.menudefs[0][1][-2]
 
@@ -191,13 +195,11 @@ def overrideRootMenu(root, flist):
     def about_dialog(event=None):
         "Handle Help 'About IDLE' event."
         # Synchronize with editor.EditorWindow.about_dialog.
-        from idlelib import help_about
         help_about.AboutDialog(root)
 
     def config_dialog(event=None):
         "Handle Options 'Configure IDLE' event."
         # Synchronize with editor.EditorWindow.config_dialog.
-        from idlelib import configdialog
 
         # Ensure that the root object has an instance_dict attribute,
         # mirrors code in EditorWindow (although that sets the attribute
@@ -209,7 +211,6 @@ def overrideRootMenu(root, flist):
     def help_dialog(event=None):
         "Handle Help 'IDLE Help' event."
         # Synchronize with editor.EditorWindow.help_dialog.
-        from idlelib import help
         help.show_idlehelp(root)
 
     root.bind('<<about-idle>>', about_dialog)

@@ -46,6 +46,12 @@ Functions:
     default_timer() -> float
 """
 
+lazy import linecache, traceback
+lazy import getopt
+lazy import _colorize
+lazy import os
+lazy import warnings
+
 import gc
 import itertools
 import sys
@@ -155,7 +161,6 @@ class Timer:
         usage. When used from the command line, this is automatically
         set based on terminal capabilities.
         """
-        import linecache, traceback
         if self.src is not None:
             linecache.cache[dummy_src_name] = (len(self.src),
                                                None,
@@ -263,10 +268,8 @@ def main(args=None, *, _wrap_timer=None):
     is not None, it must be a callable that accepts a timer function
     and returns another timer function (used for unit testing).
     """
-    import getopt
     if args is None:
         args = sys.argv[1:]
-    import _colorize
     colorize = _colorize.can_colorize()
 
     try:
@@ -317,7 +320,6 @@ def main(args=None, *, _wrap_timer=None):
     # Include the current directory, so that local imports work (sys.path
     # contains the directory of this script, rather than the current
     # directory)
-    import os
     sys.path.insert(0, os.curdir)
     if _wrap_timer is not None:
         timer = _wrap_timer(timer)
@@ -374,7 +376,6 @@ def main(args=None, *, _wrap_timer=None):
     best = min(timings)
     worst = max(timings)
     if worst >= best * 4:
-        import warnings
         warnings.warn_explicit("The test results are likely unreliable. "
                                "The worst time (%s) was more than four times "
                                "slower than the best time (%s)."

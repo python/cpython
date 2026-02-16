@@ -1,6 +1,9 @@
 """Interfaces for launching and remotely controlling web browsers."""
 # Maintained by Georg Brandl.
 
+lazy import copy
+lazy import argparse
+
 import os
 import shlex
 import shutil
@@ -134,7 +137,6 @@ def _synthesize(browser, *, preferred=False):
     # now attempt to clone to fit the new name:
     controller = command[1]
     if controller and name.lower() == controller.basename:
-        import copy
         controller = copy.copy(controller)
         controller.name = browser
         controller.basename = os.path.basename(browser)
@@ -718,7 +720,6 @@ if sys.platform == "ios":
 
 
 def parse_args(arg_list: list[str] | None):
-    import argparse
     parser = argparse.ArgumentParser(
         description="Open URL in a web browser.", color=True,
     )

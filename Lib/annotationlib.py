@@ -1,5 +1,8 @@
 """Helpers for introspecting and wrapping annotations."""
 
+lazy import typing
+lazy import warnings
+
 import ast
 import builtins
 import enum
@@ -225,8 +228,6 @@ class ForwardRef:
                 return result
 
     def _evaluate(self, globalns, localns, type_params=_sentinel, *, recursive_guard):
-        import typing
-        import warnings
 
         if type_params is _sentinel:
             typing._deprecation_warning_for_no_type_params_passed(

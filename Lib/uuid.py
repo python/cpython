@@ -56,6 +56,13 @@ Typical usage:
     UUID('ffffffff-ffff-ffff-ffff-ffffffffffff')
 """
 
+lazy import io, os, shutil, subprocess
+lazy import os, socket
+lazy import random
+lazy import hashlib
+lazy import time
+lazy import argparse
+
 import os
 import sys
 import time
@@ -422,7 +429,6 @@ class UUID:
 
 
 def _get_command_stdout(command, *args):
-    import io, os, shutil, subprocess
 
     try:
         path_dirs = os.environ.get('PATH', os.defpath).split(os.pathsep)
@@ -592,7 +598,6 @@ def _ip_getnode():
 
 def _arp_getnode():
     """Get the hardware address on Unix by running arp."""
-    import os, socket
     if not hasattr(socket, "gethostbyname"):
         return None
     try:
@@ -749,7 +754,6 @@ def uuid1(node=None, clock_seq=None):
         timestamp = _last_timestamp + 1
     _last_timestamp = timestamp
     if clock_seq is None:
-        import random
         clock_seq = random.getrandbits(14) # instead of stable storage
     time_low = timestamp & 0xffffffff
     time_mid = (timestamp >> 32) & 0xffff
@@ -765,7 +769,6 @@ def uuid3(namespace, name):
     """Generate a UUID from the MD5 hash of a namespace UUID and a name."""
     if isinstance(name, str):
         name = bytes(name, "utf-8")
-    import hashlib
     h = hashlib.md5(namespace.bytes + name, usedforsecurity=False)
     int_uuid_3 = int.from_bytes(h.digest())
     int_uuid_3 &= _RFC_4122_CLEARFLAGS_MASK
@@ -783,7 +786,6 @@ def uuid5(namespace, name):
     """Generate a UUID from the SHA-1 hash of a namespace UUID and a name."""
     if isinstance(name, str):
         name = bytes(name, "utf-8")
-    import hashlib
     h = hashlib.sha1(namespace.bytes + name, usedforsecurity=False)
     int_uuid_5 = int.from_bytes(h.digest()[:16])
     int_uuid_5 &= _RFC_4122_CLEARFLAGS_MASK
@@ -803,7 +805,6 @@ def uuid6(node=None, clock_seq=None):
     of the original 60-bit timestamp.
     """
     global _last_timestamp_v6
-    import time
     nanoseconds = time.time_ns()
     # 0x01b21dd213814000 is the number of 100-ns intervals between the
     # UUID epoch 1582-10-15 00:00:00 and the Unix epoch 1970-01-01 00:00:00.
@@ -812,7 +813,6 @@ def uuid6(node=None, clock_seq=None):
         timestamp = _last_timestamp_v6 + 1
     _last_timestamp_v6 = timestamp
     if clock_seq is None:
-        import random
         clock_seq = random.getrandbits(14)  # instead of stable storage
     time_hi_and_mid = (timestamp >> 12) & 0xffff_ffff_ffff
     time_lo = timestamp & 0x0fff  # keep 12 bits and clear version bits
@@ -916,13 +916,10 @@ def uuid8(a=None, b=None, c=None):
     When a value is not specified, a pseudo-random value is generated.
     """
     if a is None:
-        import random
         a = random.getrandbits(48)
     if b is None:
-        import random
         b = random.getrandbits(12)
     if c is None:
-        import random
         c = random.getrandbits(62)
     int_uuid_8 = (a & 0xffff_ffff_ffff) << 80
     int_uuid_8 |= (b & 0xfff) << 64
@@ -951,7 +948,6 @@ def main():
         "@x500": NAMESPACE_X500
     }
 
-    import argparse
     parser = argparse.ArgumentParser(
         formatter_class=argparse.ArgumentDefaultsHelpFormatter,
         description="Generate a UUID using the selected UUID function.",

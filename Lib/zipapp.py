@@ -1,3 +1,5 @@
+lazy import argparse
+
 import contextlib
 import os
 import pathlib
@@ -185,7 +187,6 @@ def main(args=None):
     Omitting ARGS (or setting it to None) works as for argparse, using
     sys.argv[1:] as the argument list.
     """
-    import argparse
 
     parser = argparse.ArgumentParser(color=True)
     parser.add_argument('--output', '-o', default=None,

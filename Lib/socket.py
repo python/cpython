@@ -49,6 +49,9 @@ Many other constants may be defined; these may be used in calls to
 the setsockopt() and getsockopt() methods.
 """
 
+lazy import selectors
+lazy import array
+
 import _socket
 from _socket import *
 
@@ -354,7 +357,6 @@ class socket(_socket.socket):
         """
         Send a file using a zero-copy function.
         """
-        import selectors
 
         self._check_sendfile_params(file, offset, count)
         sockno = self.fileno()
@@ -569,7 +571,6 @@ if hasattr(_socket.socket, "sendmsg"):
 
         Send the list of file descriptors fds over an AF_UNIX socket.
         """
-        import array
 
         return sock.sendmsg(buffers, [(_socket.SOL_SOCKET,
             _socket.SCM_RIGHTS, array.array("i", fds))])
@@ -583,7 +584,6 @@ if hasattr(_socket.socket, "recvmsg"):
         Receive up to maxfds file descriptors returning the message
         data and a list containing the descriptors.
         """
-        import array
 
         # Array of ints
         fds = array.array("i")

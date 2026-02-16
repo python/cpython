@@ -27,6 +27,8 @@ show_idlehelp - Create HelpWindow.  Called in EditorWindow.help_dialog.
 _get_dochome() - Return path to docs on user's system if present,
 otherwise return link to docs.python.org.
 """
+lazy import winreg
+
 import os
 import sys
 from html.parser import HTMLParser
@@ -308,7 +310,6 @@ def _get_dochome():
             dochome = os.path.join(basepath, pyver, 'Doc', 'index.html')
 
     elif sys.platform[:3] == 'win':
-        import winreg  # Windows only, block only executed once.
         docfile = ''
         KEY = (rf"Software\Python\PythonCore\{sys.winver}"
                r"\Help\Main Python Documentation")

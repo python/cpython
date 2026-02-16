@@ -22,6 +22,9 @@ Cultures
 # Mini Lindenmayer tool
 ###############################
 
+lazy from time import sleep
+lazy from math import sqrt
+
 from turtle import *
 
 def replace( seq, replacementRules, n ):
@@ -73,7 +76,6 @@ def main():
     down()
     draw(drawing, snake_rules)
 
-    from time import sleep
     sleep(3)
 
     ################################
@@ -85,7 +87,6 @@ def main():
         circle(10,90)
 
     def B():
-        from math import sqrt
         color("black")
         l = 5/sqrt(2)
         forward(l)

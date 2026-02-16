@@ -7,6 +7,9 @@
 # Licensed to PSF under a Contributor Agreement.
 #
 
+lazy from . import resource_sharer
+lazy from .resource_sharer import DupSocket
+
 from abc import ABCMeta
 import copyreg
 import functools
@@ -194,7 +197,6 @@ else:
         if popen_obj is not None:
             return popen_obj.DupFd(popen_obj.duplicate_for_child(fd))
         elif HAVE_SEND_HANDLE:
-            from . import resource_sharer
             return resource_sharer.DupFd(fd)
         else:
             raise ValueError('SCM_RIGHTS appears not to be available')
@@ -232,7 +234,6 @@ register(functools.partial, _reduce_partial)
 
 if sys.platform == 'win32':
     def _reduce_socket(s):
-        from .resource_sharer import DupSocket
         return _rebuild_socket, (DupSocket(s),)
     def _rebuild_socket(ds):
         return ds.detach()

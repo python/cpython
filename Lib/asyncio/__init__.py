@@ -2,6 +2,8 @@
 
 # flake8: noqa
 
+lazy import warnings
+
 import sys
 
 # This relies on each of the submodules having an __all__ variable.
@@ -49,7 +51,6 @@ else:
     __all__ += unix_events.__all__
 
 def __getattr__(name: str):
-    import warnings
 
     match name:
         case "AbstractEventLoopPolicy":

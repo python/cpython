@@ -45,6 +45,9 @@ Sample use, programmatically
   r = tracer.results()
   r.write_results(show_missing=True, coverdir="/tmp")
 """
+lazy import __main__
+lazy import argparse
+
 __all__ = ['Trace', 'CoverageResults']
 
 import io
@@ -439,7 +442,6 @@ class Trace:
             self.donothing = 1
 
     def run(self, cmd):
-        import __main__
         dict = __main__.__dict__
         self.runctx(cmd, dict, dict)
 
@@ -602,7 +604,6 @@ class Trace:
                                callers=self._callers)
 
 def main():
-    import argparse
 
     parser = argparse.ArgumentParser(color=True)
     parser.add_argument('--version', action='version', version='trace 2.0')

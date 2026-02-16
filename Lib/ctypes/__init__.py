@@ -1,5 +1,10 @@
 """create and manipulate C data types in Python"""
 
+lazy from struct import calcsize
+lazy import warnings
+lazy import nt as _nt
+lazy from warnings import _deprecated
+
 import os as _os
 import sys as _sys
 import sysconfig as _sysconfig
@@ -142,7 +147,6 @@ from _ctypes import _SimpleCData
 def _check_size(typ, typecode=None):
     # Check if sizeof(ctypes_type) against struct.calcsize.  This
     # should protect somewhat against a misconfigured libffi.
-    from struct import calcsize
     if typecode is None:
         # Most _type_ codes are the same as used in struct
         typecode = typ._type_
@@ -276,7 +280,6 @@ def POINTER(cls):
         pass
     if isinstance(cls, str):
         # handle old-style incomplete types (see test_ctypes.test_incomplete)
-        import warnings
         warnings._deprecated("ctypes.POINTER with string", remove=(3, 19))
         try:
             return _pointer_type_cache_fallback[cls]
@@ -300,7 +303,6 @@ def pointer(obj):
 
 class _PointerTypeCache:
     def __setitem__(self, cls, pointer_type):
-        import warnings
         warnings._deprecated("ctypes._pointer_type_cache", remove=(3, 19))
         try:
             cls.__pointer_type__ = pointer_type
@@ -308,7 +310,6 @@ class _PointerTypeCache:
             _pointer_type_cache_fallback[cls] = pointer_type
 
     def __getitem__(self, cls):
-        import warnings
         warnings._deprecated("ctypes._pointer_type_cache", remove=(3, 19))
         try:
             return cls.__pointer_type__
@@ -316,7 +317,6 @@ class _PointerTypeCache:
             return _pointer_type_cache_fallback[cls]
 
     def get(self, cls, default=None):
-        import warnings
         warnings._deprecated("ctypes._pointer_type_cache", remove=(3, 19))
         try:
             return cls.__pointer_type__
@@ -423,7 +423,6 @@ class CDLL(object):
     if _os.name == "nt":
         def _load_library(self, name, mode, handle, winmode):
             if winmode is None:
-                import nt as _nt
                 winmode = _nt._LOAD_LIBRARY_SEARCH_DEFAULT_DIRS
                 # WINAPI LoadLibrary searches for a DLL if the given name
                 # is not fully qualified with an explicit drive. For POSIX
@@ -671,7 +670,6 @@ _reset_cache()
 
 def __getattr__(name):
     if name == "__version__":
-        from warnings import _deprecated
 
         _deprecated("__version__", remove=(3, 20))
         return "1.1.0"  # Do not change

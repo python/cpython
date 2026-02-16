@@ -7,6 +7,11 @@
 # Licensed to PSF under a Contributor Agreement.
 #
 
+lazy from .resource_tracker import register
+lazy from .resource_tracker import unregister
+lazy import struct
+lazy from .heap import BufferWrapper
+
 __all__ = [
     'Lock', 'RLock', 'Semaphore', 'BoundedSemaphore', 'Condition', 'Event'
     ]
@@ -75,14 +80,12 @@ class SemLock(object):
             # We only get here if we are on Unix with forking
             # disabled.  When the object is garbage collected or the
             # process shuts down we unlink the semaphore name
-            from .resource_tracker import register
             register(self._semlock.name, "semaphore")
             util.Finalize(self, SemLock._cleanup, (self._semlock.name,),
                           exitpriority=0)
 
     @staticmethod
     def _cleanup(name):
-        from .resource_tracker import unregister
         sem_unlink(name)
         unregister(name, "semaphore")
 
@@ -377,8 +380,6 @@ class Event(object):
 class Barrier(threading.Barrier):
 
     def __init__(self, parties, action=None, timeout=None, *, ctx):
-        import struct
-        from .heap import BufferWrapper
         wrapper = BufferWrapper(struct.calcsize('i') * 2)
         cond = ctx.Condition()
         self.__setstate__((parties, action, timeout, cond, wrapper))

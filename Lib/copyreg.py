@@ -4,6 +4,8 @@ This is only useful to add pickle support for extension types defined in
 C, not for instances of user-defined classes.
 """
 
+lazy import typing, operator
+
 __all__ = ["pickle", "constructor",
            "add_extension", "remove_extension", "clear_extension_cache"]
 
@@ -31,7 +33,6 @@ def pickle_complex(c):
 pickle(complex, pickle_complex, complex)
 
 def pickle_union(obj):
-    import typing, operator
     return operator.getitem, (typing.Union, obj.__args__)
 
 pickle(type(int | str), pickle_union)

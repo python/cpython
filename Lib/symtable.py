@@ -1,5 +1,8 @@
 """Interface to the compiler's internal symbol tables"""
 
+lazy import warnings
+lazy import sys
+
 import _symtable
 from _symtable import (
     USE,
@@ -246,7 +249,6 @@ class Class(SymbolTable):
     def get_methods(self):
         """Return a tuple of methods declared in the class.
         """
-        import warnings
         typename = f'{self.__class__.__module__}.{self.__class__.__name__}'
         warnings.warn(f'{typename}.get_methods() is deprecated '
                       f'and will be removed in Python 3.16.',
@@ -418,7 +420,6 @@ _scopes_value_to_name = {globals()[n]: n for n in _scopes_names}
 
 
 def main(args):
-    import sys
     def print_symbols(table, level=0):
         indent = '    ' * level
         nested = "nested " if table.is_nested() else ""

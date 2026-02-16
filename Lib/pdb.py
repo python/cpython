@@ -65,6 +65,12 @@ Debugger commands
 # NOTE: the actual command documentation is collected from docstrings of the
 # commands and is appended to __doc__ after the class has been defined.
 
+lazy import runpy
+lazy import shlex
+lazy import __main__
+lazy import pydoc
+lazy import argparse
+
 import os
 import io
 import re
@@ -242,7 +248,6 @@ class _ModuleTarget(_ExecutableTarget):
     def __init__(self, target):
         self._target = target
 
-        import runpy
         try:
             _, self._spec, self._code = runpy._get_module_details(self._target)
         except ImportError as e:
@@ -277,7 +282,6 @@ class _ModuleTarget(_ExecutableTarget):
 
 class _ZipTarget(_ExecutableTarget):
     def __init__(self, target):
-        import runpy
 
         self._target = os.path.realpath(target)
         sys.path.insert(0, self._target)
@@ -1915,7 +1919,6 @@ class Pdb(bdb.Bdb, cmd.Cmd):
                        'e.g. "python -m pdb myscript.py"')
             return
         if arg:
-            import shlex
             argv0 = sys.argv[0:1]
             try:
                 sys.argv = shlex.split(arg)
@@ -2575,7 +2578,6 @@ class Pdb(bdb.Bdb, cmd.Cmd):
         # The target has to run in __main__ namespace (or imports from
         # __main__ will break). Clear __main__ and replace with
         # the target namespace.
-        import __main__
         __main__.__dict__.clear()
         __main__.__dict__.update(target.namespace)
 
@@ -3550,7 +3552,6 @@ def test():
 
 # print help
 def help():
-    import pydoc
     pydoc.pager(__doc__)
 
 _usage = """\
@@ -3591,7 +3592,6 @@ def parse_args():
     # "python -m pdb -m foo -m bar" should pass "-m bar" to "foo".
     # This require some customized parsing logic to find the actual debug target.
 
-    import argparse
 
     parser = argparse.ArgumentParser(
         usage="%(prog)s [-h] [-c command] (-m module | -p pid | pyfile) [args ...]",

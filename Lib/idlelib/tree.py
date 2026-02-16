@@ -14,6 +14,8 @@
 # - keep track of object ids to allow more careful cleaning
 # - optimize tree redraw after expand of subnode
 
+lazy import glob
+
 import os
 
 from tkinter import *
@@ -37,7 +39,6 @@ elif not os.path.isdir(ICONDIR):
 def listicons(icondir=ICONDIR):
     """Utility to display the available icons."""
     root = Tk()
-    import glob
     list = glob.glob(os.path.join(glob.escape(icondir), "*.gif"))
     list.sort()
     images = []

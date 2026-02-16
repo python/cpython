@@ -8,6 +8,9 @@
 # the resource.
 #
 
+lazy from .connection import Client
+lazy from .connection import Listener
+
 import os
 import signal
 import socket
@@ -81,7 +84,6 @@ class _ResourceSharer(object):
     @staticmethod
     def get_connection(ident):
         '''Return connection from which to receive identified resource.'''
-        from .connection import Client
         address, key = ident
         c = Client(address, authkey=process.current_process().authkey)
         c.send((key, os.getpid()))
@@ -89,7 +91,6 @@ class _ResourceSharer(object):
 
     def stop(self, timeout=None):
         '''Stop the background thread and clear registered resources.'''
-        from .connection import Client
         with self._lock:
             if self._address is not None:
                 c = Client(self._address,
@@ -120,7 +121,6 @@ class _ResourceSharer(object):
         self._thread = None
 
     def _start(self):
-        from .connection import Listener
         assert self._listener is None, "Already have Listener"
         util.debug('starting listener and thread for sending handles')
         self._listener = Listener(authkey=process.current_process().authkey, backlog=128)

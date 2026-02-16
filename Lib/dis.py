@@ -1,5 +1,7 @@
 """Disassembler of Python byte code into mnemonics."""
 
+lazy import argparse
+
 import sys
 import types
 import collections
@@ -1137,7 +1139,6 @@ class Bytecode:
 
 
 def main(args=None):
-    import argparse
 
     parser = argparse.ArgumentParser(color=True)
     parser.add_argument('-C', '--show-caches', action='store_true',

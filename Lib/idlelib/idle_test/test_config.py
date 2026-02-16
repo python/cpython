@@ -3,6 +3,10 @@
 * Exception is OSError clause in Save method.
 Much of IdleConf is also exercised by ConfigDialog and test_configdialog.
 """
+lazy from test.support import requires
+lazy from tkinter import Tk
+lazy from tkinter.font import Font
+
 from idlelib import config
 import sys
 import os
@@ -552,9 +556,6 @@ class IdleConfTest(unittest.TestCase):
             conf.GetExtraHelpSourceList('default') + conf.GetExtraHelpSourceList('user'))
 
     def test_get_font(self):
-        from test.support import requires
-        from tkinter import Tk
-        from tkinter.font import Font
         conf = self.mock_config()
 
         requires('gui')

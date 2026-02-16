@@ -10,6 +10,10 @@ importers when locating support scripts as well as when importing modules.
 #    to implement PEP 338 (Executing Modules as Scripts)
 
 
+lazy from warnings import warn
+lazy from pkgutil import read_code
+lazy from pkgutil import get_importer
+
 import sys
 import importlib.machinery # importlib first so we can test #15386 via -m
 import importlib.util
@@ -119,7 +123,6 @@ def _get_module_details(mod_name, error=ImportError):
         # Warn if the module has already been imported under its normal name
         existing = sys.modules.get(mod_name)
         if existing is not None and not hasattr(existing, "__path__"):
-            from warnings import warn
             msg = "{mod_name!r} found in sys.modules after import of " \
                 "package {pkg_name!r}, but prior to execution of " \
                 "{mod_name!r}; this may result in unpredictable " \
@@ -247,7 +250,6 @@ def _get_main_module_details(error=ImportError):
 
 def _get_code_from_file(fname, module):
     # Check for a compiled file first
-    from pkgutil import read_code
     code_path = os.path.abspath(fname)
     with io.open_code(code_path) as f:
         code = read_code(f)
@@ -275,7 +277,6 @@ def run_path(path_name, init_globals=None, run_name=None):
     if run_name is None:
         run_name = "<run_path>"
     pkg_name = run_name.rpartition(".")[0]
-    from pkgutil import get_importer
     importer = get_importer(path_name)
     path_name = os.fsdecode(path_name)
     if isinstance(importer, type(None)):

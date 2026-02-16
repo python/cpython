@@ -10,6 +10,8 @@ dis(pickle, out=None, memo=None, indentlevel=4)
    Print a symbolic disassembly of a pickle.
 '''
 
+lazy import argparse
+
 import codecs
 import io
 import pickle
@@ -2840,7 +2842,6 @@ __test__ = {'disassembler_test': _dis_test,
 
 
 def _main(args=None):
-    import argparse
     parser = argparse.ArgumentParser(
         description='disassemble one or more pickle files',
         color=True,

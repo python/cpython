@@ -25,6 +25,8 @@ allowing multiline input and multiline history entries.
 
 from __future__ import annotations
 
+lazy from .readline import _setup
+
 import _sitebuiltins
 import functools
 import os
@@ -102,7 +104,6 @@ def run_multiline_interactive_console(
     *,
     future_flags: int = 0,
 ) -> None:
-    from .readline import _setup
     _setup(console.locals)
     if future_flags:
         console.compile.compiler.flags |= future_flags

@@ -1,3 +1,7 @@
+lazy from tkinter import Toplevel, Text
+lazy from idlelib.idle_test.test_colorizer import source
+lazy from idlelib.percolator import Percolator
+
 import builtins
 import keyword
 import re
@@ -362,9 +366,6 @@ class ColorDelegator(Delegator):
 
 
 def _color_delegator(parent):  # htest #
-    from tkinter import Toplevel, Text
-    from idlelib.idle_test.test_colorizer import source
-    from idlelib.percolator import Percolator
 
     top = Toplevel(parent)
     top.title("Test ColorDelegator")

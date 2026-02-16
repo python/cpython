@@ -1,3 +1,27 @@
+lazy from .managers import SyncManager
+lazy from .connection import Pipe
+lazy from .synchronize import Lock
+lazy from .synchronize import RLock
+lazy from .synchronize import Condition
+lazy from .synchronize import Semaphore
+lazy from .synchronize import BoundedSemaphore
+lazy from .synchronize import Event
+lazy from .synchronize import Barrier
+lazy from .queues import Queue
+lazy from .queues import JoinableQueue
+lazy from .queues import SimpleQueue
+lazy from .pool import Pool
+lazy from .sharedctypes import RawValue
+lazy from .sharedctypes import RawArray
+lazy from .sharedctypes import Value
+lazy from .sharedctypes import Array
+lazy from .spawn import freeze_support
+lazy from .util import get_logger
+lazy from .util import log_to_stderr
+lazy from . import connection
+lazy from .spawn import set_executable
+lazy from .forkserver import set_forkserver_preload
+
 import os
 import sys
 import threading
@@ -52,92 +76,75 @@ class BaseContext(object):
         The managers methods such as `Lock()`, `Condition()` and `Queue()`
         can be used to create shared objects.
         '''
-        from .managers import SyncManager
         m = SyncManager(ctx=self.get_context())
         m.start()
         return m
 
     def Pipe(self, duplex=True):
         '''Returns two connection object connected by a pipe'''
-        from .connection import Pipe
         return Pipe(duplex)
 
     def Lock(self):
         '''Returns a non-recursive lock object'''
-        from .synchronize import Lock
         return Lock(ctx=self.get_context())
 
     def RLock(self):
         '''Returns a recursive lock object'''
-        from .synchronize import RLock
         return RLock(ctx=self.get_context())
 
     def Condition(self, lock=None):
         '''Returns a condition object'''
-        from .synchronize import Condition
         return Condition(lock, ctx=self.get_context())
 
     def Semaphore(self, value=1):
         '''Returns a semaphore object'''
-        from .synchronize import Semaphore
         return Semaphore(value, ctx=self.get_context())
 
     def BoundedSemaphore(self, value=1):
         '''Returns a bounded semaphore object'''
-        from .synchronize import BoundedSemaphore
         return BoundedSemaphore(value, ctx=self.get_context())
 
     def Event(self):
         '''Returns an event object'''
-        from .synchronize import Event
         return Event(ctx=self.get_context())
 
     def Barrier(self, parties, action=None, timeout=None):
         '''Returns a barrier object'''
-        from .synchronize import Barrier
         return Barrier(parties, action, timeout, ctx=self.get_context())
 
     def Queue(self, maxsize=0):
         '''Returns a queue object'''
-        from .queues import Queue
         return Queue(maxsize, ctx=self.get_context())
 
     def JoinableQueue(self, maxsize=0):
         '''Returns a queue object'''
-        from .queues import JoinableQueue
         return JoinableQueue(maxsize, ctx=self.get_context())
 
     def SimpleQueue(self):
         '''Returns a queue object'''
-        from .queues import SimpleQueue
         return SimpleQueue(ctx=self.get_context())
 
     def Pool(self, processes=None, initializer=None, initargs=(),
              maxtasksperchild=None):
         '''Returns a process pool object'''
-        from .pool import Pool
         return Pool(processes, initializer, initargs, maxtasksperchild,
                     context=self.get_context())
 
     def RawValue(self, typecode_or_type, *args):
         '''Returns a shared object'''
-        from .sharedctypes import RawValue
         return RawValue(typecode_or_type, *args)
 
     def RawArray(self, typecode_or_type, size_or_initializer):
         '''Returns a shared array'''
-        from .sharedctypes import RawArray
         return RawArray(typecode_or_type, size_or_initializer)
 
     def Value(self, typecode_or_type, *args, lock=True):
         '''Returns a synchronized shared object'''
-        from .sharedctypes import Value
         return Value(typecode_or_type, *args, lock=lock,
                      ctx=self.get_context())
 
     def Array(self, typecode_or_type, size_or_initializer, *, lock=True):
         '''Returns a synchronized shared array'''
-        from .sharedctypes import Array
         return Array(typecode_or_type, size_or_initializer, lock=lock,
                      ctx=self.get_context())
 
@@ -146,19 +153,16 @@ class BaseContext(object):
         If so then run code specified by commandline and exit.
         '''
         if self.get_start_method() == 'spawn' and getattr(sys, 'frozen', False):
-            from .spawn import freeze_support
             freeze_support()
 
     def get_logger(self):
         '''Return package logger -- if it does not already exist then
         it is created.
         '''
-        from .util import get_logger
         return get_logger()
 
     def log_to_stderr(self, level=None):
         '''Turn on logging and add a handler which prints to stderr'''
-        from .util import log_to_stderr
         return log_to_stderr(level)
 
     def allow_connection_pickling(self):
@@ -167,14 +171,12 @@ class BaseContext(object):
         '''
         # This is undocumented.  In previous versions of multiprocessing
         # its only effect was to make socket objects inheritable on Windows.
-        from . import connection  # noqa: F401
 
     def set_executable(self, executable):
         '''Sets the path to a python.exe or pythonw.exe binary used to run
         child processes instead of sys.executable when using the 'spawn'
         start method.  Useful for people embedding Python.
         '''
-        from .spawn import set_executable
         set_executable(executable)
 
     def set_forkserver_preload(self, module_names, *, on_error='ignore'):
@@ -184,7 +186,6 @@ class BaseContext(object):
         "ignore" (default) silently ignores failures, "warn" emits warnings,
         and "fail" raises exceptions breaking the forkserver context.
         '''
-        from .forkserver import set_forkserver_preload
         set_forkserver_preload(module_names, on_error=on_error)
 
     def get_context(self, method=None):

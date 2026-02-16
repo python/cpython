@@ -31,6 +31,8 @@ it either due to existing user code API behavior expectations (Hyrum's Law).
 It serves as a useful guide when making changes.
 """
 
+lazy import unicodedata
+
 from collections import namedtuple
 import functools
 import math
@@ -511,7 +513,6 @@ def _checknetloc(netloc):
         return
     # looking for characters like \u2100 that expand to 'a/c'
     # IDNA uses NFKC equivalence, so normalize for this check
-    import unicodedata
     n = netloc.replace('@', '')   # ignore characters already included
     n = n.replace(':', '')        # but not the surrounding text
     n = n.replace('#', '')

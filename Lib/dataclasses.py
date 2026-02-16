@@ -1,3 +1,5 @@
+lazy from typing import Any
+
 import re
 import sys
 import copy
@@ -1705,7 +1707,6 @@ def make_dataclass(cls_name, fields, *, bases=(), namespace=None, init=True,
                 case annotationlib.Format.VALUE:
                     if value_blocked:
                         raise NotImplementedError
-                    from typing import Any
                     return Any
                 case _:
                     raise NotImplementedError

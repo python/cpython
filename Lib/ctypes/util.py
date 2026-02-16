@@ -1,3 +1,8 @@
+lazy import importlib.machinery
+lazy import struct
+lazy from ctypes import cdll
+lazy from ctypes import CDLL
+
 import os
 import shutil
 import subprocess
@@ -47,7 +52,6 @@ if os.name == "nt":
             return None
 
         # If python was built with in debug mode
-        import importlib.machinery
         if '_d.pyd' in importlib.machinery.EXTENSION_SUFFIXES:
             clibname += 'd'
         return clibname+'.dll'
@@ -374,7 +378,6 @@ elif os.name == "posix":
     else:
 
         def _findSoname_ldconfig(name):
-            import struct
             if struct.calcsize('l') == 4:
                 machine = os.uname().machine + '-32'
             else:
@@ -488,7 +491,6 @@ if (os.name == "posix" and
 # test code
 
 def test():
-    from ctypes import cdll
     if os.name == "nt":
         print(cdll.msvcrt)
         print(cdll.load("msvcrt"))
@@ -508,7 +510,6 @@ def test():
             print(cdll.LoadLibrary("System.framework/System"))
         # issue-26439 - fix broken test call for AIX
         elif sys.platform.startswith("aix"):
-            from ctypes import CDLL
             if sys.maxsize < 2**32:
                 print(f"Using CDLL(name, os.RTLD_MEMBER): {CDLL('libc.a(shr.o)', os.RTLD_MEMBER)}")
                 print(f"Using cdll.LoadLibrary(): {cdll.LoadLibrary('libc.a(shr.o)')}")

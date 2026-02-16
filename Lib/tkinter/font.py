@@ -3,6 +3,8 @@
 # written by Fredrik Lundh, February 1998
 #
 
+lazy from warnings import _deprecated
+
 import itertools
 import tkinter
 
@@ -201,7 +203,6 @@ def names(root=None):
 
 def __getattr__(name):
     if name == "__version__":
-        from warnings import _deprecated
 
         _deprecated("__version__", remove=(3, 20))
         return "0.9"  # Do not change

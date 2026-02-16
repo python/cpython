@@ -1,5 +1,7 @@
 from __future__ import annotations
 
+lazy import threading
+
 from dataclasses import dataclass, field
 import traceback
 
@@ -28,7 +30,6 @@ if TYPE_CHECKING:
 
 
 def install_threading_hook(reader: Reader) -> None:
-    import threading
 
     @dataclass
     class ExceptHookHandler:

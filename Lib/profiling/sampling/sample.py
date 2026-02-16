@@ -1,3 +1,5 @@
+lazy import curses
+
 import _remote_debugging
 import contextlib
 import os
@@ -468,7 +470,6 @@ def sample_live(
     Returns:
         The collector with collected samples
     """
-    import curses
 
     # Check if process is alive before doing any heavy initialization
     if not _is_process_running(pid):

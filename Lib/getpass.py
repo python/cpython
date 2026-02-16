@@ -15,6 +15,8 @@ On Windows, the msvcrt module will be used.
 #          Guido van Rossum (Windows support and cleanup)
 #          Gregory P. Smith (tty support & GetPassWarning)
 
+lazy import warnings
+
 import contextlib
 import io
 import os
@@ -134,7 +136,6 @@ def win_getpass(prompt='Password: ', stream=None, *, echo_char=None):
 
 def fallback_getpass(prompt='Password: ', stream=None, *, echo_char=None):
     _check_echo_char(echo_char)
-    import warnings
     warnings.warn("Can not control echo on the terminal.", GetPassWarning,
                   stacklevel=2)
     if not stream:

@@ -23,6 +23,10 @@ Copyright (C) 2001-2021 Vinay Sajip. All Rights Reserved.
 To use, simply 'import logging.handlers' and log away!
 """
 
+lazy import _winapi
+lazy import winreg
+lazy import http.client
+
 import copy
 import io
 import logging
@@ -1137,7 +1141,6 @@ class NTEventLogHandler(logging.Handler):
     """
     def __init__(self, appname, dllname=None, logtype="Application"):
         logging.Handler.__init__(self)
-        import _winapi
         self._winapi = _winapi
         self.appname = appname
         if not dllname:
@@ -1169,7 +1172,6 @@ class NTEventLogHandler(logging.Handler):
 
     @staticmethod
     def _add_source_to_registry(appname, dllname, logtype):
-        import winreg
 
         key_path = f"SYSTEM\\CurrentControlSet\\Services\\EventLog\\{logtype}\\{appname}"
 
@@ -1285,7 +1287,6 @@ class HTTPHandler(logging.Handler):
         Override when a custom connection is required, for example if
         there is a proxy.
         """
-        import http.client
         if secure:
             connection = http.client.HTTPSConnection(host, context=self.context)
         else:

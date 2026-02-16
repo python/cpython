@@ -4,6 +4,10 @@
 # Modified 30-Dec-2003 by Barry Warsaw to add full RFC 3548 support
 # Modified 22-May-2007 by Guido van Rossum to use bytes everywhere
 
+lazy import warnings
+lazy import sys, getopt
+lazy import io
+
 import binascii
 
 
@@ -108,7 +112,6 @@ def b64decode(s, altchars=None, validate=_NOT_SPECIFIED, *, ignorechars=_NOT_SPE
     result = binascii.a2b_base64(s, strict_mode=validate,
                                  ignorechars=ignorechars)
     if badchar is not None:
-        import warnings
         if validate:
             warnings.warn(f'invalid character {chr(badchar)!a} in Base64 data '
                           f'with altchars={altchars!r} and validate=True '
@@ -172,7 +175,6 @@ def urlsafe_b64decode(s):
     s = s.translate(_urlsafe_decode_translation)
     result = binascii.a2b_base64(s, strict_mode=False)
     if badchar is not None:
-        import warnings
         warnings.warn(f'invalid character {chr(badchar)!a} in URL-safe Base64 data '
                       f'will be discarded in future Python versions',
                       FutureWarning, stacklevel=2)
@@ -459,7 +461,6 @@ def decodebytes(s):
 # Usable as a script...
 def main():
     """Small main program"""
-    import sys, getopt
     usage = f"""usage: {sys.argv[0]} [-h|-d|-e|-u] [file|-]
         -h: print this help message and exit
         -d, -u: decode
@@ -483,7 +484,6 @@ def main():
     else:
         if sys.stdin.isatty():
             # gh-138775: read terminal input data all at once to detect EOF
-            import io
             data = sys.stdin.buffer.read()
             buffer = io.BytesIO(data)
         else:

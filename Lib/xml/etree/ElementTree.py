@@ -70,6 +70,8 @@
 # OF THIS SOFTWARE.
 # --------------------------------------------------------------------
 
+lazy from warnings import _deprecated
+
 __all__ = [
     # public symbols
     "Comment",
@@ -2110,7 +2112,6 @@ else:
 
 def __getattr__(name):
     if name == "VERSION":
-        from warnings import _deprecated
 
         _deprecated("VERSION", remove=(3, 20))
         return "1.3.0"  # Do not change

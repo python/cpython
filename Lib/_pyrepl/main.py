@@ -1,3 +1,8 @@
+lazy from .trace import trace
+lazy import tokenize
+lazy from .console import InteractiveColoredConsole
+lazy from .simple_interact import run_multiline_interactive_console
+
 import errno
 import os
 import sys
@@ -25,7 +30,6 @@ else:
 def interactive_console(mainmodule=None, quiet=False, pythonstartup=False):
     if not CAN_USE_PYREPL:
         if not os.getenv('PYTHON_BASIC_REPL') and FAIL_REASON:
-            from .trace import trace
             trace(FAIL_REASON)
             print(FAIL_REASON, file=sys.stderr)
         return sys._baserepl()
@@ -40,7 +44,6 @@ def interactive_console(mainmodule=None, quiet=False, pythonstartup=False):
     if pythonstartup and startup_path:
         sys.audit("cpython.run_startup", startup_path)
 
-        import tokenize
         with tokenize.open(startup_path) as f:
             startup_code = compile(f.read(), startup_path, "exec")
             exec(startup_code, namespace)
@@ -52,7 +55,5 @@ def interactive_console(mainmodule=None, quiet=False, pythonstartup=False):
     if not hasattr(sys, "ps2"):
         sys.ps2 = "... "
 
-    from .console import InteractiveColoredConsole
-    from .simple_interact import run_multiline_interactive_console
     console = InteractiveColoredConsole(namespace, filename="<stdin>")
     run_multiline_interactive_console(console)

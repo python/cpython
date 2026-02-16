@@ -10,6 +10,9 @@
 
 # XXX TO DO:
 # - for classes/modules, add "open source" to object browser
+lazy import sys
+lazy from tkinter import Toplevel
+
 from reprlib import Repr
 
 from idlelib.tree import TreeItem, TreeNode, ScrolledCanvas
@@ -123,8 +126,6 @@ def make_objecttreeitem(labeltext, object_, setfunction=None):
 
 
 def _debug_object_browser(parent):  # htest #
-    import sys
-    from tkinter import Toplevel
     top = Toplevel(parent)
     top.title("Test debug object browser")
     x, y = map(int, parent.geometry().split('+')[1:])

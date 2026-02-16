@@ -3,6 +3,11 @@
    Inherits from SearchDialogBase for GUI and uses searchengine
    to prepare search pattern.
 """
+lazy from idlelib.outwin import OutputWindow
+lazy from tkinter import Toplevel, Text, SEL
+lazy from tkinter.ttk import Frame, Button
+lazy from idlelib.pyshell import PyShellFileList
+
 import fnmatch
 import os
 import sys
@@ -141,7 +146,6 @@ class GrepDialog(SearchDialogBase):
         if not path:
             self.top.bell()
             return
-        from idlelib.outwin import OutputWindow  # leave here!
         save = sys.stdout
         try:
             sys.stdout = OutputWindow(self.flist)
@@ -190,9 +194,6 @@ class GrepDialog(SearchDialogBase):
 
 
 def _grep_dialog(parent):  # htest #
-    from tkinter import Toplevel, Text, SEL
-    from tkinter.ttk import Frame, Button
-    from idlelib.pyshell import PyShellFileList
 
     top = Toplevel(parent)
     top.title("Test GrepDialog")

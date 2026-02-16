@@ -7,6 +7,8 @@
 # Licensed to PSF under a Contributor Agreement.
 #
 
+lazy from ..pool import ThreadPool
+
 __all__ = [
     'Process', 'current_process', 'active_children', 'freeze_support',
     'Lock', 'RLock', 'Semaphore', 'BoundedSemaphore', 'Condition',
@@ -120,7 +122,6 @@ def shutdown():
     pass
 
 def Pool(processes=None, initializer=None, initargs=()):
-    from ..pool import ThreadPool
     return ThreadPool(processes, initializer, initargs)
 
 JoinableQueue = Queue

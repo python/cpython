@@ -5,6 +5,8 @@ is not found, it will look down the module search path for a file by
 that name.
 """
 
+lazy import warnings
+
 __all__ = ["getline", "clearcache", "checkcache", "lazycache"]
 
 
@@ -261,7 +263,6 @@ def _bless_my_loader(module_globals):
 
     spec_loader = getattr(spec, 'loader', None)
     if spec_loader is None:
-        import warnings
         warnings.warn(
             'Module globals is missing a __spec__.loader',
             DeprecationWarning)
@@ -269,7 +270,6 @@ def _bless_my_loader(module_globals):
 
     assert spec_loader is not None
     if loader is not None and loader != spec_loader:
-        import warnings
         warnings.warn(
             'Module globals; __loader__ != __spec__.loader',
             DeprecationWarning)

@@ -65,6 +65,11 @@ disabled when standard input is read.  XXX The current implementation
 does not work for MS-DOS 8+3 filesystems.
 """
 
+lazy import warnings
+lazy import gzip
+lazy import bz2
+lazy import getopt
+
 import io
 import sys, os
 from types import GenericAlias
@@ -212,7 +217,6 @@ class FileInput:
         # take encoding parameter.
         if (sys.flags.warn_default_encoding and
                 "b" not in mode and encoding is None and openhook is None):
-            import warnings
             warnings.warn("'encoding' argument not specified.",
                           EncodingWarning, 2)
 
@@ -403,10 +407,8 @@ def hook_compressed(filename, mode, *, encoding=None, errors=None):
         encoding = "locale"
     ext = os.path.splitext(filename)[1]
     if ext == '.gz':
-        import gzip
         stream = gzip.open(filename, mode)
     elif ext == '.bz2':
-        import bz2
         stream = bz2.BZ2File(filename, mode)
     else:
         return open(filename, mode, encoding=encoding, errors=errors)
@@ -424,7 +426,6 @@ def hook_encoded(encoding, errors=None):
 
 
 def _test():
-    import getopt
     inplace = False
     backup = False
     opts, args = getopt.getopt(sys.argv[1:], "ib:")

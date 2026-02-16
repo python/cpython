@@ -98,6 +98,8 @@ Behind the scenes there are some features included with possible
 extensions in mind. These will be commented and documented elsewhere.
 """
 
+lazy import re
+
 import tkinter as TK
 import types
 import math
@@ -4066,7 +4068,6 @@ def getmethparlist(ob):
 def _turtle_docrevise(docstr):
     """To reduce docstrings from RawTurtle class for functions
     """
-    import re
     if docstr is None:
         return None
     turtlename = _CFG["exampleturtle"]
@@ -4078,7 +4079,6 @@ def _turtle_docrevise(docstr):
 def _screen_docrevise(docstr):
     """To reduce docstrings from TurtleScreen class for functions
     """
-    import re
     if docstr is None:
         return None
     screenname = _CFG["examplescreen"]

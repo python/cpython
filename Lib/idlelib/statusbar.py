@@ -1,3 +1,6 @@
+lazy from tkinter import Toplevel, Text
+lazy from tkinter.ttk import Frame, Button
+
 from tkinter.ttk import Label, Frame
 
 
@@ -20,8 +23,6 @@ class MultiStatusBar(Frame):
 
 
 def _multistatus_bar(parent):  # htest #
-    from tkinter import Toplevel, Text
-    from tkinter.ttk import Frame, Button
     top = Toplevel(parent)
     x, y = map(int, parent.geometry().split('+')[1:])
     top.geometry("+%d+%d" %(x, y + 175))

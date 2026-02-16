@@ -4,6 +4,14 @@ This module provides deterministic profiling of Python programs by tracing
 every function call and return.
 """
 
+lazy import pstats
+lazy import marshal
+lazy import __main__
+lazy import os
+lazy import sys
+lazy import runpy
+lazy from optparse import OptionParser
+
 __all__ = ("run", "runctx", "Profile")
 
 import _lsprof
@@ -53,13 +61,11 @@ class Profile(_lsprof.Profiler):
     # This subclass only adds convenient and backward-compatible methods.
 
     def print_stats(self, sort=-1):
-        import pstats
         if not isinstance(sort, tuple):
             sort = (sort,)
         pstats.Stats(self).strip_dirs().sort_stats(*sort).print_stats()
 
     def dump_stats(self, file):
-        import marshal
         with open(file, 'wb') as f:
             self.create_stats()
             marshal.dump(self.stats, f)
@@ -107,7 +113,6 @@ class Profile(_lsprof.Profiler):
     # a profiler to profile a statement, given as a string.
 
     def run(self, cmd):
-        import __main__
         dict = __main__.__dict__
         return self.runctx(cmd, dict, dict)
 
@@ -145,11 +150,6 @@ def label(code):
 # ____________________________________________________________
 
 def main():
-    import os
-    import sys
-    import runpy
-    import pstats
-    from optparse import OptionParser
     usage = "cProfile.py [-o output_file_path] [-s sort] [-m module | scriptfile] [arg] ..."
     parser = OptionParser(usage=usage)
     parser.allow_interspersed_args = False

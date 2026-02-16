@@ -8,6 +8,10 @@ The objects used by the site module to add custom builtins.
 # Note this means this module should also avoid keep things alive in its
 # globals.
 
+lazy import os
+lazy from _pyrepl.pager import get_pager
+lazy import pydoc
+
 import sys
 
 class Quitter(object):
@@ -33,7 +37,6 @@ class _Printer(object):
     MAXLINES = 23
 
     def __init__(self, name, data, files=(), dirs=()):
-        import os
         self.__name = name
         self.__data = data
         self.__lines = []
@@ -65,7 +68,6 @@ class _Printer(object):
             return "Type %s() to see the full %s text" % ((self.__name,)*2)
 
     def __call__(self):
-        from _pyrepl.pager import get_pager
         self.__setup()
 
         pager = get_pager()
@@ -87,5 +89,4 @@ class _Helper(object):
         return "Type help() for interactive help, " \
                "or help(object) for help about object."
     def __call__(self, *args, **kwds):
-        import pydoc
         return pydoc.help(*args, **kwds)

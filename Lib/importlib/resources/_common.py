@@ -1,3 +1,5 @@
+lazy from ._adapters import wrap_spec
+
 import os
 import pathlib
 import tempfile
@@ -77,7 +79,6 @@ def from_package(package: types.ModuleType):
 
     """
     # deferred for performance (python/cpython#109829)
-    from ._adapters import wrap_spec
 
     spec = wrap_spec(package)
     reader = spec.loader.get_resource_reader(spec.name)

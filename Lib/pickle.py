@@ -22,6 +22,9 @@ Misc variables:
 
 """
 
+lazy import argparse
+lazy import pprint
+
 from types import FunctionType
 from copyreg import dispatch_table
 from copyreg import _extension_registry, _inverted_registry, _extension_cache
@@ -1939,8 +1942,6 @@ except ImportError:
 
 
 def _main(args=None):
-    import argparse
-    import pprint
     parser = argparse.ArgumentParser(
         description='display contents of the pickle files',
         color=True,

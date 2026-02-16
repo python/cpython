@@ -14,6 +14,9 @@ printable -- a string containing all ASCII characters considered printable
 
 """
 
+lazy import re
+lazy from collections import ChainMap
+
 __all__ = ["ascii_letters", "ascii_lowercase", "ascii_uppercase", "capwords",
            "digits", "hexdigits", "octdigits", "printable", "punctuation",
            "whitespace", "Formatter", "Template"]
@@ -81,7 +84,6 @@ class Template:
 
     @classmethod
     def _compile_pattern(cls):
-        import re  # deferred import, for performance
 
         pattern = cls.__dict__.get('pattern', _TemplatePattern)
         if pattern is _TemplatePattern:
@@ -122,7 +124,6 @@ class Template:
         if mapping is _sentinel_dict:
             mapping = kws
         elif kws:
-            from collections import ChainMap
             mapping = ChainMap(kws, mapping)
         # Helper function for .sub()
         def convert(mo):
@@ -142,7 +143,6 @@ class Template:
         if mapping is _sentinel_dict:
             mapping = kws
         elif kws:
-            from collections import ChainMap
             mapping = ChainMap(kws, mapping)
         # Helper function for .sub()
         def convert(mo):

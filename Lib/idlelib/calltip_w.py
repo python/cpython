@@ -3,6 +3,8 @@
 After tooltip.py, which uses ideas gleaned from PySol.
 Used by calltip.py.
 """
+lazy from tkinter import Toplevel, Text, LEFT, BOTH
+
 from tkinter import Label, LEFT, SOLID, TclError
 
 from idlelib.tooltip import TooltipBase
@@ -170,7 +172,6 @@ class CalltipWindow(TooltipBase):
 
 
 def _calltip_window(parent):  # htest #
-    from tkinter import Toplevel, Text, LEFT, BOTH
 
     top = Toplevel(parent)
     top.title("Test call-tips")

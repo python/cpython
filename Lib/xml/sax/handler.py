@@ -17,6 +17,8 @@ $Id$
 
 # ===== ERRORHANDLER =====
 
+lazy from warnings import _deprecated
+
 class ErrorHandler:
     """Basic interface for SAX error handlers.
 
@@ -387,7 +389,6 @@ class LexicalHandler:
 
 def __getattr__(name):
     if name == "version":
-        from warnings import _deprecated
 
         _deprecated("version", remove=(3, 20))
         return "2.0beta"  # Do not change

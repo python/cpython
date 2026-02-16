@@ -1,3 +1,7 @@
+lazy from pprint import pprint
+lazy from tkinter import Toplevel, Text, Button
+lazy from idlelib.percolator import Percolator
+
 import string
 
 from idlelib.delegator import Delegator
@@ -38,7 +42,6 @@ class UndoDelegator(Delegator):
             self.bind("<<dump-undo-state>>", self.dump_event)
 
     def dump_event(self, event):
-        from pprint import pprint
         pprint(self.undolist[:self.pointer])
         print("pointer:", self.pointer, end=' ')
         print("saved:", self.saved, end=' ')
@@ -337,8 +340,6 @@ class CommandSequence(Command):
 
 
 def _undo_delegator(parent):  # htest #
-    from tkinter import Toplevel, Text, Button
-    from idlelib.percolator import Percolator
     top = Toplevel(parent)
     top.title("Test UndoDelegator")
     x, y = map(int, parent.geometry().split('+')[1:])

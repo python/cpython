@@ -13,6 +13,8 @@ Based on the J. Myers POP3 draft, Jan. 96
 
 # Imports
 
+lazy import hashlib
+
 import errno
 import re
 import socket
@@ -343,7 +345,6 @@ class POP3:
         m = self.timestamp.match(self.welcome)
         if not m:
             raise error_proto('-ERR APOP not supported by server')
-        import hashlib
         digest = m.group(1)+secret
         digest = hashlib.md5(digest).hexdigest()
         return self._shortcmd('APOP %s %s' % (user, digest))

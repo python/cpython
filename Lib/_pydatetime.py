@@ -1,5 +1,8 @@
 """Pure Python implementation of the datetime module."""
 
+lazy import _strptime
+lazy import warnings
+
 __all__ = ("date", "datetime", "time", "timedelta", "timezone", "tzinfo",
            "MINYEAR", "MAXYEAR", "UTC")
 
@@ -1077,7 +1080,6 @@ class date:
         For a list of supported format codes, see the documentation:
             https://docs.python.org/3/library/datetime.html#format-codes
         """
-        import _strptime
         return _strptime._strptime_datetime_date(cls, date_string, format)
 
     # Conversions to string
@@ -1469,7 +1471,6 @@ class time:
         For a list of supported format codes, see the documentation:
             https://docs.python.org/3/library/datetime.html#format-codes
         """
-        import _strptime
         return _strptime._strptime_datetime_time(cls, date_string, format)
 
     # Read-only field accessors
@@ -1908,7 +1909,6 @@ class datetime(date):
     @classmethod
     def utcfromtimestamp(cls, t):
         """Construct a naive UTC datetime from a POSIX timestamp."""
-        import warnings
         warnings.warn("datetime.datetime.utcfromtimestamp() is deprecated and scheduled "
                       "for removal in a future version. Use timezone-aware "
                       "objects to represent datetimes in UTC: "
@@ -1926,7 +1926,6 @@ class datetime(date):
     @classmethod
     def utcnow(cls):
         "Construct a UTC datetime from time.time()."
-        import warnings
         warnings.warn("datetime.datetime.utcnow() is deprecated and scheduled for "
                       "removal in a future version. Use timezone-aware "
                       "objects to represent datetimes in UTC: "
@@ -2217,7 +2216,6 @@ class datetime(date):
         For a list of supported format codes, see the documentation:
             https://docs.python.org/3/library/datetime.html#format-codes
         """
-        import _strptime
         return _strptime._strptime_datetime_datetime(cls, date_string, format)
 
     def utcoffset(self):

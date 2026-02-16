@@ -13,6 +13,8 @@ for manipulation of the pathname component of URLs.
 # Strings representing various path-related bits and pieces.
 # These are primarily for export; internally, they are hardcoded.
 # Should be set before imports for resolving cyclic dependency.
+lazy import re
+
 curdir = '.'
 pardir = '..'
 extsep = '.'
@@ -298,7 +300,6 @@ def expandvars(path):
         if b'$' not in path:
             return path
         if not _varsubb:
-            import re
             _varsubb = re.compile(_varpattern.encode(), re.ASCII).sub
         sub = _varsubb
         start = b'{'
@@ -308,7 +309,6 @@ def expandvars(path):
         if '$' not in path:
             return path
         if not _varsub:
-            import re
             _varsub = re.compile(_varpattern, re.ASCII).sub
         sub = _varsub
         start = '{'

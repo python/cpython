@@ -1,5 +1,9 @@
 """Utilities to support packages."""
 
+lazy import marshal
+lazy import inspect
+lazy import re
+
 from collections import namedtuple
 from functools import singledispatch as simplegeneric
 import importlib
@@ -24,7 +28,6 @@ ModuleInfo.__doc__ = 'A namedtuple with minimal info about a module.'
 def read_code(stream):
     # This helper is needed in order for the PEP 302 emulation to
     # correctly handle compiled files
-    import marshal
 
     magic = stream.read(4)
     if magic != importlib.util.MAGIC_NUMBER:
@@ -130,7 +133,6 @@ def _iter_file_finder_modules(importer, prefix=''):
         return
 
     yielded = {}
-    import inspect
     try:
         filenames = os.listdir(importer.path)
     except OSError:
@@ -435,7 +437,6 @@ def resolve_name(name):
     global _NAME_PATTERN
     if _NAME_PATTERN is None:
         # Lazy import to speedup Python startup time
-        import re
         dotted_words = r'(?!\d)(\w+)(\.(?!\d)(\w+))*'
         _NAME_PATTERN = re.compile(f'^(?P<pkg>{dotted_words})'
                                    f'(?P<cln>:(?P<obj>{dotted_words})?)?$',

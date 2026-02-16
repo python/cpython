@@ -1,5 +1,11 @@
 """Debugger basics"""
 
+lazy import functools
+lazy import dis
+lazy import linecache
+lazy import linecache, reprlib
+lazy import __main__
+
 import fnmatch
 import sys
 import threading
@@ -83,7 +89,6 @@ class _MonitoringTracer:
             sys.monitoring.restart_events()
 
     def callback_wrapper(self, func, event):
-        import functools
 
         @functools.wraps(func)
         def wrapper(*args):
@@ -168,7 +173,6 @@ class _MonitoringTracer:
             frame = frame.f_back
 
     def _get_lineno(self, code, offset):
-        import dis
         last_lineno = None
         for start, lineno in dis.findlinestarts(code):
             if offset < start:
@@ -243,7 +247,6 @@ class Bdb:
 
     def reset(self):
         """Set values of attributes as ready to start debugging."""
-        import linecache
         linecache.checkcache()
         self.botframe = None
         self._set_stopinfo(None, None)
@@ -667,7 +670,6 @@ class Bdb:
         The filename should be in canonical form.
         """
         filename = self.canonic(filename)
-        import linecache # Import as late as possible
         line = linecache.getline(filename, lineno)
         if not line:
             return 'Line %s:%d does not exist' % (filename, lineno)
@@ -851,7 +853,6 @@ class Bdb:
         line of code (if it exists).
 
         """
-        import linecache, reprlib
         frame, lineno = frame_lineno
         filename = self.canonic(frame.f_code.co_filename)
         s = '%s(%r)' % (filename, lineno)
@@ -892,7 +893,6 @@ class Bdb:
         globals defaults to __main__.dict; locals defaults to globals.
         """
         if globals is None:
-            import __main__
             globals = __main__.__dict__
         if locals is None:
             locals = globals
@@ -914,7 +914,6 @@ class Bdb:
         globals defaults to __main__.dict; locals defaults to globals.
         """
         if globals is None:
-            import __main__
             globals = __main__.__dict__
         if locals is None:
             locals = globals
@@ -1171,7 +1170,6 @@ class Tdb(Bdb):
         if not name: name = '???'
         print('+++ call', name, args)
     def user_line(self, frame):
-        import linecache
         name = frame.f_code.co_name
         if not name: name = '???'
         fn = self.canonic(frame.f_code.co_filename)

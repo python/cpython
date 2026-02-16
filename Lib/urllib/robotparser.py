@@ -10,6 +10,8 @@
     http://www.robotstxt.org/norobots-rfc.txt
 """
 
+lazy import time
+
 import collections
 import re
 import urllib.error
@@ -63,7 +65,6 @@ class RobotFileParser:
         current time.
 
         """
-        import time
         self.last_checked = time.time()
 
     def set_url(self, url):

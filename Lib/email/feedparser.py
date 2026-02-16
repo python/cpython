@@ -19,6 +19,8 @@ the current message.  Defects are just instances that live on the message
 object's .defects attribute.
 """
 
+lazy from email.message import Message
+
 __all__ = ['FeedParser', 'BytesFeedParser']
 
 import re
@@ -148,7 +150,6 @@ class FeedParser:
         self._old_style_factory = False
         if _factory is None:
             if policy.message_factory is None:
-                from email.message import Message
                 self._factory = Message
             else:
                 self._factory = policy.message_factory

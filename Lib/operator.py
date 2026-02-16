@@ -10,6 +10,8 @@ for convenience.
 This is the pure Python implementation of the module.
 """
 
+lazy from functools import partial
+
 __all__ = ['abs', 'add', 'and_', 'attrgetter', 'call', 'concat', 'contains', 'countOf',
            'delitem', 'eq', 'floordiv', 'ge', 'getitem', 'gt', 'iadd', 'iand',
            'iconcat', 'ifloordiv', 'ilshift', 'imatmul', 'imod', 'imul',
@@ -338,7 +340,6 @@ class methodcaller:
         if not self._kwargs:
             return self.__class__, (self._name,) + self._args
         else:
-            from functools import partial
             return partial(self.__class__, self._name, **self._kwargs), self._args
 
 

@@ -1,5 +1,7 @@
 """Shared OS X support functions."""
 
+lazy import contextlib
+
 import os
 import re
 import sys
@@ -58,7 +60,6 @@ def _read_output(commandstring, capture_stderr=False):
     # but without actually using os.popen because that
     # function is not usable during python bootstrap.
     # tempfile is also not available then.
-    import contextlib
     try:
         import tempfile
         fp = tempfile.NamedTemporaryFile()

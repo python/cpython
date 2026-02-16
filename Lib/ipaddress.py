@@ -8,6 +8,9 @@ and networks.
 
 """
 
+lazy import re
+lazy from warnings import _deprecated
+
 import functools
 
 IPV4LENGTH = 32
@@ -630,7 +633,6 @@ class _BaseAddress(_IPAddressBase):
         # From here on down, support for 'bnXx'
         global _address_fmt_re
         if _address_fmt_re is None:
-            import re
             _address_fmt_re = re.compile('(#?)(_?)([xbnX])')
 
         m = _address_fmt_re.fullmatch(fmt)
@@ -2420,7 +2422,6 @@ IPv6Network._constants = _IPv6Constants
 
 def __getattr__(name):
     if name == "__version__":
-        from warnings import _deprecated
 
         _deprecated("__version__", remove=(3, 20))
         return "1.0"  # Do not change

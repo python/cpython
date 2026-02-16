@@ -1,5 +1,8 @@
 from __future__ import annotations
 
+lazy import tempfile
+lazy import subprocess
+
 import io
 import os
 import re
@@ -41,7 +44,6 @@ def get_pager() -> Pager:
     if hasattr(os, 'system') and os.system('(less) 2>/dev/null') == 0:
         return lambda text, title='': pipe_pager(text, 'less', title)
 
-    import tempfile
     (fd, filename) = tempfile.mkstemp()
     os.close(fd)
     try:
@@ -126,7 +128,6 @@ def plain_pager(text: str, title: str = '') -> None:
 
 def pipe_pager(text: str, cmd: str, title: str = '') -> None:
     """Page through text by feeding it to another program."""
-    import subprocess
     env = os.environ.copy()
     if title:
         title += ' '
@@ -164,7 +165,6 @@ def pipe_pager(text: str, cmd: str, title: str = '') -> None:
 
 def tempfile_pager(text: str, cmd: str, title: str = '') -> None:
     """Page through text by invoking a program on a temporary file."""
-    import tempfile
     with tempfile.TemporaryDirectory() as tempdir:
         filename = os.path.join(tempdir, 'pydoc.out')
         with open(filename, 'w', errors='backslashreplace',

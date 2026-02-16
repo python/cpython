@@ -10,6 +10,9 @@ Functions:
 
 """
 
+lazy import sys
+lazy import getopt
+
 import os
 import stat
 from itertools import filterfalse
@@ -305,8 +308,6 @@ def _filter(flist, skip):
 # Demonstration and testing.
 #
 def demo():
-    import sys
-    import getopt
     options, args = getopt.getopt(sys.argv[1:], 'r')
     if len(args) != 2:
         raise getopt.GetoptError('need exactly two args', None)

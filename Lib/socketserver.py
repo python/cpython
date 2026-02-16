@@ -120,6 +120,10 @@ BaseServer:
 
 # Author of the BaseServer patch: Luke Kenneth Casson Leighton
 
+lazy import traceback
+lazy from io import BytesIO
+lazy from warnings import _deprecated
+
 import socket
 import selectors
 import os
@@ -375,7 +379,6 @@ class BaseServer:
         print('-'*40, file=sys.stderr)
         print('Exception occurred during processing of request from',
             client_address, file=sys.stderr)
-        import traceback
         traceback.print_exc()
         print('-'*40, file=sys.stderr)
 
@@ -851,7 +854,6 @@ class DatagramRequestHandler(BaseRequestHandler):
     """Define self.rfile and self.wfile for datagram sockets."""
 
     def setup(self):
-        from io import BytesIO
         self.packet, self.socket = self.request
         self.rfile = BytesIO(self.packet)
         self.wfile = BytesIO()
@@ -862,7 +864,6 @@ class DatagramRequestHandler(BaseRequestHandler):
 
 def __getattr__(name):
     if name == "__version__":
-        from warnings import _deprecated
 
         _deprecated("__version__", remove=(3, 20))
         return "0.4"  # Do not change

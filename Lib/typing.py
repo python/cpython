@@ -18,6 +18,12 @@ Any name not present in __all__ is an implementation detail
 that may be changed without notice. Use at your own risk!
 """
 
+lazy import annotationlib
+lazy import warnings
+lazy from inspect import getattr_static
+lazy import re
+lazy import contextlib
+
 from abc import abstractmethod, ABCMeta
 import collections
 from collections import defaultdict
@@ -164,7 +170,6 @@ __all__ = [
 class _LazyAnnotationLib:
     def __getattr__(self, attr):
         global _lazy_annotationlib
-        import annotationlib
         _lazy_annotationlib = annotationlib
         return getattr(annotationlib, attr)
 
@@ -441,7 +446,6 @@ def _rebuild_generic_alias(alias: GenericAlias, args: tuple[object, ...]) -> Gen
 
 
 def _deprecation_warning_for_no_type_params_passed(funcname: str) -> None:
-    import warnings
 
     depr_message = (
         f"Failing to pass a value to the 'type_params' parameter "
@@ -1680,17 +1684,14 @@ class _TupleType(_SpecialGenericAlias, _root=True):
 
 class _UnionGenericAliasMeta(type):
     def __instancecheck__(self, inst: object) -> bool:
-        import warnings
         warnings._deprecated("_UnionGenericAlias", remove=(3, 17))
         return isinstance(inst, Union)
 
     def __subclasscheck__(self, inst: type) -> bool:
-        import warnings
         warnings._deprecated("_UnionGenericAlias", remove=(3, 17))
         return issubclass(inst, Union)
 
     def __eq__(self, other):
-        import warnings
         warnings._deprecated("_UnionGenericAlias", remove=(3, 17))
         if other is _UnionGenericAlias or other is Union:
             return True
@@ -1710,7 +1711,6 @@ class _UnionGenericAlias(metaclass=_UnionGenericAliasMeta):
 
     """
     def __new__(cls, self_cls, parameters, /, *, name=None):
-        import warnings
         warnings._deprecated("_UnionGenericAlias", remove=(3, 17))
         return Union[parameters]
 
@@ -1932,7 +1932,6 @@ _PROTO_ALLOWLIST = {
 def _lazy_load_getattr_static():
     # Import getattr_static lazily so as not to slow down the import of typing.py
     # Cache the result so we don't slow down _ProtocolMeta.__instancecheck__ unnecessarily
-    from inspect import getattr_static
     return getattr_static
 
 
@@ -2018,7 +2017,6 @@ class _ProtocolMeta(ABCMeta):
                 )
             if getattr(cls, '__typing_is_deprecated_inherited_runtime_protocol__', False):
                 # See GH-132604.
-                import warnings
                 depr_message = (
                     f"{cls!r} isn't explicitly decorated with @runtime_checkable but "
                     "it is used in issubclass() or isinstance(). Instance and class "
@@ -2057,7 +2055,6 @@ class _ProtocolMeta(ABCMeta):
 
         if getattr(cls, '__typing_is_deprecated_inherited_runtime_protocol__', False):
             # See GH-132604.
-            import warnings
 
             depr_message = (
                 f"{cls!r} isn't explicitly decorated with @runtime_checkable but "
@@ -3850,13 +3847,10 @@ def __getattr__(attr):
     if attr == "ForwardRef":
         obj = _lazy_annotationlib.ForwardRef
     elif attr in {"Pattern", "Match"}:
-        import re
         obj = _alias(getattr(re, attr), 1)
     elif attr in {"ContextManager", "AsyncContextManager"}:
-        import contextlib
         obj = _alias(getattr(contextlib, f"Abstract{attr}"), 2, name=attr, defaults=(bool | None,))
     elif attr == "_collect_parameters":
-        import warnings
 
         depr_message = (
             "The private _collect_parameters function is deprecated and will be"
@@ -3866,7 +3860,6 @@ def __getattr__(attr):
         warnings.warn(depr_message, category=DeprecationWarning, stacklevel=2)
         obj = _collect_type_parameters
     elif attr == "ByteString":
-        import warnings
 
         warnings._deprecated(
             "typing.ByteString",
@@ -3885,14 +3878,12 @@ def __getattr__(attr):
                 self._removal_version = removal_version
 
             def __instancecheck__(self, inst):
-                import warnings
                 warnings._deprecated(
                     f"{self.__module__}.{self._name}", remove=self._removal_version
                 )
                 return super().__instancecheck__(inst)
 
             def __subclasscheck__(self, cls):
-                import warnings
                 warnings._deprecated(
                     f"{self.__module__}.{self._name}", remove=self._removal_version
                 )

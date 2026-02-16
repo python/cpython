@@ -1,3 +1,5 @@
+lazy import tkinter as tk
+
 from idlelib.delegator import Delegator
 from idlelib.redirector import WidgetRedirector
 
@@ -71,7 +73,6 @@ class Percolator:
 
 
 def _percolator(parent):  # htest #
-    import tkinter as tk
 
     class Tracer(Delegator):
         def __init__(self, name):

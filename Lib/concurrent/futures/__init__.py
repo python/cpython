@@ -3,6 +3,9 @@
 
 """Execute computations asynchronously using threads or processes."""
 
+lazy from .process import ProcessPoolExecutor
+lazy from .thread import ThreadPoolExecutor
+
 __author__ = 'Brian Quinlan (brian@sweetapp.com)'
 
 from concurrent.futures._base import (FIRST_COMPLETED,
@@ -48,14 +51,12 @@ def __dir__():
 
 
 def __getattr__(name):
-    global ProcessPoolExecutor, ThreadPoolExecutor, InterpreterPoolExecutor
+    global ProcessPoolExecutor, ThreadPoolExecutor
 
     if name == 'ProcessPoolExecutor':
-        from .process import ProcessPoolExecutor
         return ProcessPoolExecutor
 
     if name == 'ThreadPoolExecutor':
-        from .thread import ThreadPoolExecutor
         return ThreadPoolExecutor
 
     if _interpreters and name == 'InterpreterPoolExecutor':

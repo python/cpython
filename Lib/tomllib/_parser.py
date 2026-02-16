@@ -4,6 +4,8 @@
 
 from __future__ import annotations
 
+lazy import warnings
+
 from types import MappingProxyType
 
 from ._re import (
@@ -85,7 +87,6 @@ class TOMLDecodeError(ValueError):
             or not isinstance(doc, str)
             or not isinstance(pos, int)
         ):
-            import warnings
 
             warnings.warn(
                 "Free-form arguments for TOMLDecodeError are deprecated. "

@@ -1,3 +1,5 @@
+lazy import re
+
 import json
 import os
 import sys
@@ -33,7 +35,6 @@ def _parse_makefile(filename, vars=None, keep_unresolved=True):
     optional dictionary is passed in as the second argument, it is
     used instead of a new dictionary.
     """
-    import re
 
     if vars is None:
         vars = {}

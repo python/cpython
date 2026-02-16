@@ -3,6 +3,9 @@
 Implements the HMAC algorithm as described by RFC 2104.
 """
 
+lazy import hashlib
+lazy import warnings
+
 try:
     import _hashlib as _hashopenssl
 except ImportError:
@@ -41,7 +44,6 @@ def _get_digest_constructor(digest_like):
         return digest_like
     if isinstance(digest_like, str):
         def digest_wrapper(d=b''):
-            import hashlib
             return hashlib.new(digest_like, d)
     else:
         def digest_wrapper(d=b''):
@@ -116,7 +118,6 @@ class HMAC:
         self.block_size = self._hmac.block_size
 
     def _init_old(self, key, msg, digestmod):
-        import warnings
 
         digest_cons = _get_digest_constructor(digestmod)
         if _is_shake_constructor(digest_cons):

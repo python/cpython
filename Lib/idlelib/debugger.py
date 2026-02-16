@@ -15,6 +15,9 @@ which calls Idb with a gui proxy.  Then Debugger is called in the IDLE
 for more.
 """
 
+lazy import linecache
+lazy import reprlib
+
 import bdb
 import os
 
@@ -448,7 +451,6 @@ class StackViewer(ScrolledList):
             code = frame.f_code
             filename = code.co_filename
             funcname = code.co_name
-            import linecache
             sourceline = linecache.getline(filename, lineno)
             sourceline = sourceline.strip()
             if funcname in ("?", "", None):
@@ -515,7 +517,6 @@ class NamespaceViewer:
             height = 20*len(odict) # XXX 20 == observed height of Entry widget
         self.master = master
         self.title = title
-        import reprlib
         self.repr = reprlib.Repr()
         self.repr.maxstring = 60
         self.repr.maxother = 60

@@ -1,3 +1,5 @@
+lazy from tkinter import Toplevel, Text
+
 import io
 import os
 import shlex
@@ -396,7 +398,6 @@ class IOBinding:
 
 
 def _io_binding(parent):  # htest #
-    from tkinter import Toplevel, Text
 
     top = Toplevel(parent)
     top.title("Test IOBinding")
