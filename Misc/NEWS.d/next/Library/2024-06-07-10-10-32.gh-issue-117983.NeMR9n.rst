@@ -1,2 +1,0 @@
-Defer the ``threading`` import in ``importlib.util`` until lazy loading is
-used.

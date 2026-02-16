@@ -1,4 +1,0 @@
-:c:macro:`Py_RELATIVE_OFFSET` is now allowed in :c:type:`PyMemberDef` for
-the special offset member ``"__vectorcalloffset__"``, as well as the
-discouraged special offset members ``"__dictoffset__"`` and
-``"__weaklistoffset__"``

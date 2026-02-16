@@ -1,6 +1,7 @@
 "Test the functionality of Python classes implementing operators."
 
 import unittest
+from test import support
 from test.support import cpython_only, import_helper, script_helper
 
 testmeths = [
@@ -134,6 +135,7 @@ for method in testmeths:
 AllTests = type("AllTests", (object,), d)
 del d, statictests, method, method_template
 
+@support.thread_unsafe("callLst is shared between threads")
 class ClassTests(unittest.TestCase):
     def setUp(self):
         callLst[:] = []
@@ -503,7 +505,59 @@ class ClassTests(unittest.TestCase):
 
         self.assertRaises(TypeError, hash, C2())
 
+    def testPredefinedAttrs(self):
+        o = object()
 
+        class Custom:
+            pass
+
+        c = Custom()
+
+        methods = (
+            '__class__', '__delattr__', '__dir__', '__eq__', '__format__',
+            '__ge__', '__getattribute__', '__getstate__', '__gt__', '__hash__',
+            '__init__', '__init_subclass__', '__le__', '__lt__', '__ne__',
+            '__new__', '__reduce__', '__reduce_ex__', '__repr__',
+            '__setattr__', '__sizeof__', '__str__', '__subclasshook__'
+        )
+        for name in methods:
+            with self.subTest(name):
+                self.assertTrue(callable(getattr(object, name, None)))
+                self.assertTrue(callable(getattr(o, name, None)))
+                self.assertTrue(callable(getattr(Custom, name, None)))
+                self.assertTrue(callable(getattr(c, name, None)))
+
+        not_defined = [
+            '__abs__', '__aenter__', '__aexit__', '__aiter__', '__anext__',
+            '__await__', '__bool__', '__bytes__', '__ceil__',
+            '__complex__', '__contains__', '__del__', '__delete__',
+            '__delitem__', '__divmod__', '__enter__', '__exit__',
+            '__float__', '__floor__', '__get__', '__getattr__', '__getitem__',
+            '__index__', '__int__', '__invert__', '__iter__', '__len__',
+            '__length_hint__', '__missing__', '__neg__', '__next__',
+            '__objclass__', '__pos__', '__rdivmod__', '__reversed__',
+            '__round__', '__set__', '__setitem__', '__trunc__'
+        ]
+        augment = (
+            'add', 'and', 'floordiv', 'lshift', 'matmul', 'mod', 'mul', 'pow',
+            'rshift', 'sub', 'truediv', 'xor'
+        )
+        not_defined.extend(map("__{}__".format, augment))
+        not_defined.extend(map("__r{}__".format, augment))
+        not_defined.extend(map("__i{}__".format, augment))
+        for name in not_defined:
+            with self.subTest(name):
+                self.assertFalse(hasattr(object, name))
+                self.assertFalse(hasattr(o, name))
+                self.assertFalse(hasattr(Custom, name))
+                self.assertFalse(hasattr(c, name))
+
+        # __call__() is defined on the metaclass but not the class
+        self.assertFalse(hasattr(o, "__call__"))
+        self.assertFalse(hasattr(c, "__call__"))
+
+    @support.skip_emscripten_stack_overflow()
+    @support.skip_wasi_stack_overflow()
     def testSFBug532646(self):
         # Test for SF bug 532646
 
@@ -598,6 +652,7 @@ class ClassTests(unittest.TestCase):
         a = A(hash(A.f)^(-1))
         hash(a.f)
 
+    @cpython_only
     def testSetattrWrapperNameIntern(self):
         # Issue #25794: __setattr__ should intern the attribute name
         class A:
@@ -804,7 +859,12 @@ class ClassTests(unittest.TestCase):
 
 from _testinternalcapi import has_inline_values
 
-Py_TPFLAGS_MANAGED_DICT = (1 << 2)
+Py_TPFLAGS_INLINE_VALUES = (1 << 2)
+Py_TPFLAGS_MANAGED_DICT = (1 << 4)
+
+class NoManagedDict:
+    __slots__ = ('a',)
+
 
 class Plain:
     pass
@@ -819,11 +879,31 @@ class WithAttrs:
         self.d = 4
 
 
+class VarSizedSubclass(tuple):
+    pass
+
+
 class TestInlineValues(unittest.TestCase):
 
-    def test_flags(self):
-        self.assertEqual(Plain.__flags__ & Py_TPFLAGS_MANAGED_DICT, Py_TPFLAGS_MANAGED_DICT)
-        self.assertEqual(WithAttrs.__flags__ & Py_TPFLAGS_MANAGED_DICT, Py_TPFLAGS_MANAGED_DICT)
+    def test_no_flags_for_slots_class(self):
+        flags = NoManagedDict.__flags__
+        self.assertEqual(flags & Py_TPFLAGS_MANAGED_DICT, 0)
+        self.assertEqual(flags & Py_TPFLAGS_INLINE_VALUES, 0)
+        self.assertFalse(has_inline_values(NoManagedDict()))
+
+    def test_both_flags_for_regular_class(self):
+        for cls in (Plain, WithAttrs):
+            with self.subTest(cls=cls.__name__):
+                flags = cls.__flags__
+                self.assertEqual(flags & Py_TPFLAGS_MANAGED_DICT, Py_TPFLAGS_MANAGED_DICT)
+                self.assertEqual(flags & Py_TPFLAGS_INLINE_VALUES, Py_TPFLAGS_INLINE_VALUES)
+                self.assertTrue(has_inline_values(cls()))
+
+    def test_managed_dict_only_for_varsized_subclass(self):
+        flags = VarSizedSubclass.__flags__
+        self.assertEqual(flags & Py_TPFLAGS_MANAGED_DICT, Py_TPFLAGS_MANAGED_DICT)
+        self.assertEqual(flags & Py_TPFLAGS_INLINE_VALUES, 0)
+        self.assertFalse(has_inline_values(VarSizedSubclass()))
 
     def test_has_inline_values(self):
         c = Plain()

@@ -367,9 +367,11 @@ Several mathematical operations are provided for combining :class:`Counter`
 objects to produce multisets (counters that have counts greater than zero).
 Addition and subtraction combine counters by adding or subtracting the counts
 of corresponding elements.  Intersection and union return the minimum and
-maximum of corresponding counts.  Equality and inclusion compare
-corresponding counts.  Each operation can accept inputs with signed
-counts, but the output will exclude results with counts of zero or less.
+maximum of corresponding counts.  Symmetric difference returns the difference
+between the maximum and minimum of the corresponding counts. Equality and
+inclusion compare corresponding counts.  Each operation can accept inputs
+with signed counts, but the output will exclude results with counts of zero
+or below.
 
 .. doctest::
 
@@ -383,6 +385,8 @@ counts, but the output will exclude results with counts of zero or less.
     Counter({'a': 1, 'b': 1})
     >>> c | d                       # union:  max(c[x], d[x])
     Counter({'a': 3, 'b': 2})
+    >>> c ^ d                       # max(c[x], d[x]) - min(c[x], d[x])
+    Counter({'a': 2, 'b': 1})
     >>> c == d                      # equality:  c[x] == d[x]
     False
     >>> c <= d                      # inclusion:  c[x] <= d[x]
@@ -399,6 +403,9 @@ or subtracting from an empty counter.
 
 .. versionadded:: 3.3
     Added support for unary plus, unary minus, and in-place multiset operations.
+
+.. versionadded:: 3.15
+    Added support for the symmetric difference multiset operation, ``c ^ d``.
 
 .. note::
 
@@ -748,8 +755,8 @@ stack manipulations such as ``dup``, ``drop``, ``swap``, ``over``, ``pick``,
         returns or raises is then returned or raised by :meth:`~object.__getitem__`.
 
         Note that :meth:`__missing__` is *not* called for any operations besides
-        :meth:`~object.__getitem__`. This means that :meth:`get` will, like normal
-        dictionaries, return ``None`` as a default rather than using
+        :meth:`~object.__getitem__`. This means that :meth:`~dict.get` will, like
+        normal dictionaries, return ``None`` as a default rather than using
         :attr:`default_factory`.
 
 
@@ -758,9 +765,9 @@ stack manipulations such as ``dup``, ``drop``, ``swap``, ``over``, ``pick``,
 
     .. attribute:: default_factory
 
-        This attribute is used by the :meth:`__missing__` method; it is
-        initialized from the first argument to the constructor, if present, or to
-        ``None``, if absent.
+        This attribute is used by the :meth:`~defaultdict.__missing__` method;
+        it is initialized from the first argument to the constructor, if present,
+        or to ``None``, if absent.
 
     .. versionchanged:: 3.9
        Added merge (``|``) and update (``|=``) operators, specified in
@@ -849,8 +856,9 @@ they add the ability to access fields by name instead of position index.
     Returns a new tuple subclass named *typename*.  The new subclass is used to
     create tuple-like objects that have fields accessible by attribute lookup as
     well as being indexable and iterable.  Instances of the subclass also have a
-    helpful docstring (with typename and field_names) and a helpful :meth:`__repr__`
-    method which lists the tuple contents in a ``name=value`` format.
+    helpful docstring (with *typename* and *field_names*) and a helpful
+    :meth:`~object.__repr__` method which lists the tuple contents in a ``name=value``
+    format.
 
     The *field_names* are a sequence of strings such as ``['x', 'y']``.
     Alternatively, *field_names* can be a single string with each fieldname
@@ -894,10 +902,10 @@ they add the ability to access fields by name instead of position index.
        Added the *module* parameter.
 
     .. versionchanged:: 3.7
-       Removed the *verbose* parameter and the :attr:`_source` attribute.
+       Removed the *verbose* parameter and the :attr:`!_source` attribute.
 
     .. versionchanged:: 3.7
-       Added the *defaults* parameter and the :attr:`_field_defaults`
+       Added the *defaults* parameter and the :attr:`~somenamedtuple._field_defaults`
        attribute.
 
 .. doctest::
@@ -1109,7 +1117,7 @@ Some differences from :class:`dict` still remain:
   A regular :class:`dict` can emulate the order sensitive equality test with
   ``p == q and all(k1 == k2 for k1, k2 in zip(p, q))``.
 
-* The :meth:`popitem` method of :class:`OrderedDict` has a different
+* The :meth:`~OrderedDict.popitem` method of :class:`OrderedDict` has a different
   signature.  It accepts an optional argument to specify which item is popped.
 
   A regular :class:`dict` can emulate OrderedDict's ``od.popitem(last=True)``
@@ -1119,7 +1127,7 @@ Some differences from :class:`dict` still remain:
   with ``(k := next(iter(d)), d.pop(k))`` which will return and remove the
   leftmost (first) item if it exists.
 
-* :class:`OrderedDict` has a :meth:`move_to_end` method to efficiently
+* :class:`OrderedDict` has a :meth:`~OrderedDict.move_to_end` method to efficiently
   reposition an element to an endpoint.
 
   A regular :class:`dict` can emulate OrderedDict's ``od.move_to_end(k,
@@ -1130,7 +1138,7 @@ Some differences from :class:`dict` still remain:
   OrderedDict's ``od.move_to_end(k, last=False)`` which moves the key
   and its associated value to the leftmost (first) position.
 
-* Until Python 3.8, :class:`dict` lacked a :meth:`__reversed__` method.
+* Until Python 3.8, :class:`dict` lacked a :meth:`~object.__reversed__` method.
 
 
 .. class:: OrderedDict([items])
@@ -1185,7 +1193,7 @@ anywhere a regular dictionary is used.
 
 .. versionchanged:: 3.6
    With the acceptance of :pep:`468`, order is retained for keyword arguments
-   passed to the :class:`OrderedDict` constructor and its :meth:`update`
+   passed to the :class:`OrderedDict` constructor and its :meth:`~dict.update`
    method.
 
 .. versionchanged:: 3.9
@@ -1201,7 +1209,7 @@ If a new entry overwrites an existing entry, the
 original insertion position is changed and moved to the end::
 
     class LastUpdatedOrderedDict(OrderedDict):
-        'Store items in the order the keys were last added'
+        'Store items in the order that the keys were last updated.'
 
         def __setitem__(self, key, value):
             super().__setitem__(key, value)

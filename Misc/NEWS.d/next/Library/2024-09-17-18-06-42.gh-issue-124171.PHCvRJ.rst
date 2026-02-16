@@ -1,3 +1,0 @@
-Add workaround for broken :c:func:`!fmod()` implementations on Windows, that
-loose zero sign (e.g. ``fmod(-10, 1)`` returns ``0.0``).  Patch by Sergey B
-Kirpichev.

@@ -8,7 +8,7 @@ import re
 import io
 import tempfile
 from test import support
-from test.support import import_helper
+from test.support import import_helper, warnings_helper
 from test.support import os_helper
 from test.support import refleak_helper
 from test.support import socket_helper
@@ -541,6 +541,11 @@ class TestMailbox(TestBase):
         for key in keys:
             self.assertIn(self._box.get_string(key), contents)
         oldbox.close()
+
+    def test_use_context_manager(self):
+        # Mailboxes are usable as a context manager
+        with self._box as box:
+            self.assertIs(self._box, box)
 
     def test_dump_message(self):
         # Write message representations to disk
@@ -1122,6 +1127,16 @@ class _TestSingleFile(TestMailbox):
         self.assertEqual(st.st_gid, other_gid)
         self.assertEqual(st.st_mode, mode)
 
+    def test_context_manager_locks_and_closes(self):
+        # Context manager locks/unlocks and closes.
+        # (This test uses an implementation detail to get the state.)
+        self.assertFalse(self._box._locked)
+        with self._box as context_object:
+            self.assertIs(self._box, context_object)
+            self.assertTrue(self._box._locked)
+            self.assertFalse(self._box._file.closed)
+        self.assertFalse(self._box._locked)
+        self.assertTrue(self._box._file.closed)
 
 class _TestMboxMMDF(_TestSingleFile):
 
@@ -1212,6 +1227,7 @@ class _TestMboxMMDF(_TestSingleFile):
             self.assertEqual(contents, f.read())
         self._box = self._factory(self._path)
 
+    @warnings_helper.ignore_fork_in_thread_deprecation_warnings()
     @support.requires_fork()
     @unittest.skipUnless(hasattr(socket, 'socketpair'), "Test needs socketpair().")
     def test_lock_conflict(self):
@@ -1303,12 +1319,12 @@ class TestMbox(_TestMboxMMDF, unittest.TestCase):
         self._box.add('From: foo\n\n0')  # No newline at the end
         with open(self._path, encoding='utf-8') as f:
             data = f.read()
-            self.assertEqual(data[-3:], '0\n\n')
+            self.assertEndsWith(data, '0\n\n')
 
         self._box.add('From: foo\n\n0\n')  # Newline at the end
         with open(self._path, encoding='utf-8') as f:
             data = f.read()
-            self.assertEqual(data[-3:], '0\n\n')
+            self.assertEndsWith(data, '0\n\n')
 
 
 class TestMMDF(_TestMboxMMDF, unittest.TestCase):
@@ -2357,7 +2373,7 @@ class MaildirTestCase(unittest.TestCase):
         # Test for regression on bug #117490:
         # Make sure the boxes attribute actually gets set.
         self.mbox = mailbox.Maildir(os_helper.TESTFN)
-        #self.assertTrue(hasattr(self.mbox, "boxes"))
+        #self.assertHasAttr(self.mbox, "boxes")
         #self.assertEqual(len(self.mbox.boxes), 0)
         self.assertIsNone(self.mbox.next())
         self.assertIsNone(self.mbox.next())

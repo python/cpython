@@ -75,10 +75,11 @@ extern "C" {
 
 /* Type declarations */
 
-typedef struct {
+typedef struct PyCursesWindowObject {
     PyObject_HEAD
     WINDOW *win;
     char *encoding;
+    struct PyCursesWindowObject *orig;
 } PyCursesWindowObject;
 
 #define PyCurses_CAPSULE_NAME "_curses._C_API"
@@ -107,6 +108,13 @@ static void **PyCurses_API;
 /* general error messages */
 static const char catchall_ERR[]  = "curses function returned ERR";
 static const char catchall_NULL[] = "curses function returned NULL";
+
+#if defined(CURSES_MODULE) || defined(CURSES_PANEL_MODULE)
+/* Error messages shared by the curses package */
+#  define CURSES_ERROR_FORMAT           "%s() returned %s"
+#  define CURSES_ERROR_VERBOSE_FORMAT   "%s() (called by %s()) returned %s"
+#  define CURSES_ERROR_MUST_CALL_FORMAT "must call %s() first"
+#endif
 
 #ifdef __cplusplus
 }

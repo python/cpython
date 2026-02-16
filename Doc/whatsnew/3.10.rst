@@ -551,11 +551,12 @@ Patterns and classes
 
 If you are using classes to structure your data, you can use as a pattern
 the class name followed by an argument list resembling a constructor. This
-pattern has the ability to capture class attributes into variables::
+pattern has the ability to capture instance attributes into variables::
 
     class Point:
-        x: int
-        y: int
+        def __init__(self, x, y):
+            self.x = x
+            self.y = y
 
     def location(point):
         match point:
@@ -722,10 +723,10 @@ PEP 604: New Type Union Operator
 
 A new type union operator was introduced which enables the syntax ``X | Y``.
 This provides a cleaner way of expressing 'either type X or type Y' instead of
-using :data:`typing.Union`, especially in type hints.
+using :class:`typing.Union`, especially in type hints.
 
 In previous versions of Python, to apply a type hint for functions accepting
-arguments of multiple types, :data:`typing.Union` was used::
+arguments of multiple types, :class:`typing.Union` was used::
 
    def square(number: Union[int, float]) -> Union[int, float]:
        return number ** 2
@@ -846,8 +847,8 @@ Other Language Changes
   respectively.
   (Contributed by Joshua Bronson, Daniel Pope, and Justin Wang in :issue:`31861`.)
 
-* Static methods (:func:`@staticmethod <staticmethod>`) and class methods
-  (:func:`@classmethod <classmethod>`) now inherit the method attributes
+* Static methods (:deco:`staticmethod`) and class methods
+  (:deco:`classmethod`) now inherit the method attributes
   (``__module__``, ``__name__``, ``__qualname__``, ``__doc__``,
   ``__annotations__``) and have a new ``__wrapped__`` attribute.
   Moreover, static methods are now callable as regular functions.
@@ -900,7 +901,7 @@ Improved Modules
 asyncio
 -------
 
-Add missing :meth:`~asyncio.events.AbstractEventLoop.connect_accepted_socket`
+Add missing :meth:`~asyncio.loop.connect_accepted_socket`
 method.
 (Contributed by Alex Grönholm in :issue:`41332`.)
 
@@ -932,7 +933,7 @@ Base32 Encoding with Extended Hex Alphabet.
 bdb
 ---
 
-Add :meth:`~bdb.Breakpoint.clearBreakpoints` to reset all set breakpoints.
+Add :meth:`!clearBreakpoints` to reset all set breakpoints.
 (Contributed by Irit Katriel in :issue:`24160`.)
 
 bisect
@@ -1397,7 +1398,7 @@ A new verify flag :const:`~ssl.VERIFY_X509_PARTIAL_CHAIN` has been added.
 sqlite3
 -------
 
-Add audit events for :func:`~sqlite3.connect/handle`,
+Add audit events for :func:`~sqlite3.connect`,
 :meth:`~sqlite3.Connection.enable_load_extension`, and
 :meth:`~sqlite3.Connection.load_extension`.
 (Contributed by Erlend E. Aasland in :issue:`43762`.)
@@ -1621,7 +1622,7 @@ Deprecated
   compatibility. Specifically,
   :meth:`!find_loader`/:meth:`!find_module`
   (superseded by :meth:`~importlib.abc.MetaPathFinder.find_spec`),
-  :meth:`~importlib.abc.Loader.load_module`
+  ``importlib.abc.Loader.load_module``
   (superseded by :meth:`~importlib.abc.Loader.exec_module`),
   :meth:`!module_repr` (which the import system
   takes care of for you), the ``__package__`` attribute
@@ -1651,7 +1652,7 @@ Deprecated
   preference for :meth:`~zipimport.zipimporter.exec_module`.
   (Contributed by Brett Cannon in :issue:`26131`.)
 
-* The use of :meth:`~importlib.abc.Loader.load_module` by the import
+* The use of ``importlib.abc.Loader.load_module`` by the import
   system now triggers an :exc:`ImportWarning` as
   :meth:`~importlib.abc.Loader.exec_module` is preferred.
   (Contributed by Brett Cannon in :issue:`26131`.)
@@ -2176,9 +2177,9 @@ Porting to Python 3.10
   ``unicodedata.ucnhash_CAPI`` has been moved to the internal C API.
   (Contributed by Victor Stinner in :issue:`42157`.)
 
-* :c:func:`Py_GetPath`, :c:func:`Py_GetPrefix`, :c:func:`Py_GetExecPrefix`,
-  :c:func:`Py_GetProgramFullPath`, :c:func:`Py_GetPythonHome` and
-  :c:func:`Py_GetProgramName` functions now return ``NULL`` if called before
+* :c:func:`!Py_GetPath`, :c:func:`!Py_GetPrefix`, :c:func:`!Py_GetExecPrefix`,
+  :c:func:`!Py_GetProgramFullPath`, :c:func:`!Py_GetPythonHome` and
+  :c:func:`!Py_GetProgramName` functions now return ``NULL`` if called before
   :c:func:`Py_Initialize` (before Python is initialized). Use the new
   :ref:`init-config` API to get the :ref:`init-path-config`.
   (Contributed by Victor Stinner in :issue:`42260`.)

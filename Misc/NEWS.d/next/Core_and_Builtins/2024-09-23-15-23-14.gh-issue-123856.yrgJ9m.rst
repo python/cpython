@@ -1,2 +1,0 @@
-Fix PyREPL failure when a keyboard interrupt is triggered after using a
-history search

@@ -1,7 +1,8 @@
 #!/bin/sh
 set -e
 
-# NOTE: to be removed once no longer used in https://github.com/python/buildmaster-config/blob/main/master/custom/factories.py .
+# NOTE: to be removed once no longer used in https://github.com/python/buildmaster-config/blob/main/master/custom/factories.py ;
+#       expected in Python 3.18 as 3.13 is when `wasi.py` was introduced.
 
 # function
 usage() {

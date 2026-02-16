@@ -93,7 +93,7 @@ The :mod:`!datetime` module exports the following constants:
    The largest year number allowed in a :class:`date` or :class:`.datetime` object.
    :const:`MAXYEAR` is 9999.
 
-.. attribute:: UTC
+.. data:: UTC
 
    Alias for the UTC time zone singleton :attr:`datetime.timezone.utc`.
 
@@ -180,19 +180,19 @@ Objects of the :class:`date` type are always naive.
 
 An object of type :class:`.time` or :class:`.datetime` may be aware or naive.
 
-A :class:`.datetime` object *d* is aware if both of the following hold:
+A :class:`.datetime` object ``d`` is aware if both of the following hold:
 
 1. ``d.tzinfo`` is not ``None``
 2. ``d.tzinfo.utcoffset(d)`` does not return ``None``
 
-Otherwise, *d* is naive.
+Otherwise, ``d`` is naive.
 
-A :class:`.time` object *t* is aware if both of the following hold:
+A :class:`.time` object ``t`` is aware if both of the following hold:
 
 1. ``t.tzinfo`` is not ``None``
 2. ``t.tzinfo.utcoffset(None)`` does not return ``None``.
 
-Otherwise, *t* is naive.
+Otherwise, ``t`` is naive.
 
 The distinction between aware and naive doesn't apply to :class:`timedelta`
 objects.
@@ -261,6 +261,22 @@ A :class:`timedelta` object represents a duration, the difference between two
       >>> (d.days, d.seconds, d.microseconds)
       (-1, 86399, 999999)
 
+   Since the string representation of :class:`!timedelta` objects can be confusing,
+   use the following recipe to produce a more readable format:
+
+   .. code-block:: pycon
+
+      >>> def pretty_timedelta(td):
+      ...     if td.days >= 0:
+      ...         return str(td)
+      ...     return f'-({-td!s})'
+      ...
+      >>> d = timedelta(hours=-1)
+      >>> str(d)  # not human-friendly
+      '-1 day, 23:00:00'
+      >>> pretty_timedelta(d)
+      '-(1:00:00)'
+
 
 Class attributes:
 
@@ -295,6 +311,20 @@ Instance attributes (read-only):
 
    Between 0 and 86,399 inclusive.
 
+   .. caution::
+
+      It is a somewhat common bug for code to unintentionally use this attribute
+      when it is actually intended to get a :meth:`~timedelta.total_seconds`
+      value instead:
+
+      .. doctest::
+
+         >>> from datetime import timedelta
+         >>> duration = timedelta(seconds=11235813)
+         >>> duration.days, duration.seconds
+         (130, 3813)
+         >>> duration.total_seconds()
+         11235813.0
 
 .. attribute:: timedelta.microseconds
 
@@ -344,14 +374,14 @@ Supported operations:
 +--------------------------------+-----------------------------------------------+
 | ``q, r = divmod(t1, t2)``      | Computes the quotient and the remainder:      |
 |                                | ``q = t1 // t2`` (3) and ``r = t1 % t2``.     |
-|                                | q is an integer and r is a :class:`timedelta` |
-|                                | object.                                       |
+|                                | ``q`` is an integer and ``r`` is a            |
+|                                | :class:`timedelta` object.                    |
 +--------------------------------+-----------------------------------------------+
 | ``+t1``                        | Returns a :class:`timedelta` object with the  |
 |                                | same value. (2)                               |
 +--------------------------------+-----------------------------------------------+
 | ``-t1``                        | Equivalent to ``timedelta(-t1.days,           |
-|                                | -t1.seconds*, -t1.microseconds)``,            |
+|                                | -t1.seconds, -t1.microseconds)``,             |
 |                                | and to ``t1 * -1``. (1)(4)                    |
 +--------------------------------+-----------------------------------------------+
 | ``abs(t)``                     | Equivalent to ``+t`` when ``t.days >= 0``,    |
@@ -505,6 +535,9 @@ Other constructors, all class methods:
       :c:func:`localtime` function. Raise :exc:`OSError` instead of
       :exc:`ValueError` on :c:func:`localtime` failure.
 
+   .. versionchanged:: 3.15
+      Accepts any real number as *timestamp*, not only integer or float.
+
 
 .. classmethod:: date.fromordinal(ordinal)
 
@@ -512,7 +545,7 @@ Other constructors, all class methods:
    January 1 of year 1 has ordinal 1.
 
    :exc:`ValueError` is raised unless ``1 <= ordinal <=
-   date.max.toordinal()``. For any date *d*,
+   date.max.toordinal()``. For any date ``d``,
    ``date.fromordinal(d.toordinal()) == d``.
 
 
@@ -685,8 +718,8 @@ Instance methods:
 
 .. method:: date.replace(year=self.year, month=self.month, day=self.day)
 
-   Return a date with the same value, except for those parameters given new
-   values by whichever keyword arguments are specified.
+   Return a new :class:`date` object with the same values, but with specified
+   parameters updated.
 
    Example::
 
@@ -695,8 +728,8 @@ Instance methods:
        >>> d.replace(day=26)
        datetime.date(2002, 12, 26)
 
-   :class:`date` objects are also supported by generic function
-   :func:`copy.replace`.
+   The generic function :func:`copy.replace` also supports :class:`date`
+   objects.
 
 
 .. method:: date.timetuple()
@@ -716,7 +749,7 @@ Instance methods:
 .. method:: date.toordinal()
 
    Return the proleptic Gregorian ordinal of the date, where January 1 of year 1
-   has ordinal 1. For any :class:`date` object *d*,
+   has ordinal 1. For any :class:`date` object ``d``,
    ``date.fromordinal(d.toordinal()) == d``.
 
 
@@ -768,7 +801,7 @@ Instance methods:
 
 .. method:: date.__str__()
 
-   For a date *d*, ``str(d)`` is equivalent to ``d.isoformat()``.
+   For a date ``d``, ``str(d)`` is equivalent to ``d.isoformat()``.
 
 
 .. method:: date.ctime()
@@ -934,6 +967,10 @@ Other constructors, all class methods:
 
    This function is preferred over :meth:`today` and :meth:`utcnow`.
 
+   .. note::
+
+      Subsequent calls to :meth:`!datetime.now` may return the same
+      instant depending on the precision of the underlying clock.
 
 .. classmethod:: datetime.utcnow()
 
@@ -952,7 +989,7 @@ Other constructors, all class methods:
 
    .. deprecated:: 3.12
 
-      Use :meth:`datetime.now` with :attr:`UTC` instead.
+      Use :meth:`datetime.now` with :const:`UTC` instead.
 
 
 .. classmethod:: datetime.fromtimestamp(timestamp, tz=None)
@@ -985,6 +1022,10 @@ Other constructors, all class methods:
 
    .. versionchanged:: 3.6
       :meth:`fromtimestamp` may return instances with :attr:`.fold` set to 1.
+
+   .. versionchanged:: 3.15
+      Accepts any real number as *timestamp*, not only integer or float.
+
 
 .. classmethod:: datetime.utcfromtimestamp(timestamp)
 
@@ -1024,7 +1065,10 @@ Other constructors, all class methods:
 
    .. deprecated:: 3.12
 
-      Use :meth:`datetime.fromtimestamp` with :attr:`UTC` instead.
+      Use :meth:`datetime.fromtimestamp` with :const:`UTC` instead.
+
+   .. versionchanged:: 3.15
+      Accepts any real number as *timestamp*, not only integer or float.
 
 
 .. classmethod:: datetime.fromordinal(ordinal)
@@ -1045,7 +1089,7 @@ Other constructors, all class methods:
    is used.  If the *date* argument is a :class:`.datetime` object, its time components
    and :attr:`.tzinfo` attributes are ignored.
 
-   For any :class:`.datetime` object *d*,
+   For any :class:`.datetime` object ``d``,
    ``d == datetime.combine(d.date(), d.time(), d.tzinfo)``.
 
    .. versionchanged:: 3.6
@@ -1252,11 +1296,11 @@ Supported operations:
 
    If both are naive, or both are aware and have the same :attr:`~.datetime.tzinfo` attribute,
    the :attr:`~.datetime.tzinfo` attributes are ignored, and the result is a :class:`timedelta`
-   object *t* such that ``datetime2 + t == datetime1``. No time zone adjustments
+   object ``t`` such that ``datetime2 + t == datetime1``. No time zone adjustments
    are done in this case.
 
    If both are aware and have different :attr:`~.datetime.tzinfo` attributes, ``a-b`` acts
-   as if *a* and *b* were first converted to naive UTC datetimes. The
+   as if ``a`` and ``b`` were first converted to naive UTC datetimes. The
    result is ``(a.replace(tzinfo=None) - a.utcoffset()) - (b.replace(tzinfo=None)
    - b.utcoffset())`` except that the implementation never overflows.
 
@@ -1330,10 +1374,10 @@ Instance methods:
    hour=self.hour, minute=self.minute, second=self.second, microsecond=self.microsecond, \
    tzinfo=self.tzinfo, *, fold=0)
 
-   Return a datetime with the same attributes, except for those attributes given
-   new values by whichever keyword arguments are specified. Note that
-   ``tzinfo=None`` can be specified to create a naive datetime from an aware
-   datetime with no conversion of date and time data.
+   Return a new :class:`datetime` object with the same attributes, but with
+   specified parameters updated. Note that ``tzinfo=None`` can be specified to
+   create a naive datetime from an aware datetime with no conversion of date
+   and time data.
 
    :class:`.datetime` objects are also supported by generic function
    :func:`copy.replace`.
@@ -1436,11 +1480,11 @@ Instance methods:
 
 .. method:: datetime.utctimetuple()
 
-   If :class:`.datetime` instance *d* is naive, this is the same as
+   If :class:`.datetime` instance ``d`` is naive, this is the same as
    ``d.timetuple()`` except that :attr:`~.time.struct_time.tm_isdst` is forced to 0 regardless of what
    ``d.dst()`` returns. DST is never in effect for a UTC time.
 
-   If *d* is aware, *d* is normalized to UTC time, by subtracting
+   If ``d`` is aware, ``d`` is normalized to UTC time, by subtracting
    ``d.utcoffset()``, and a :class:`time.struct_time` for the
    normalized time is returned. :attr:`!tm_isdst` is forced to 0. Note
    that an :exc:`OverflowError` may be raised if ``d.year`` was
@@ -1468,11 +1512,11 @@ Instance methods:
    returned by :func:`time.time`.
 
    Naive :class:`.datetime` instances are assumed to represent local
-   time and this method relies on the platform C :c:func:`mktime`
-   function to perform the conversion. Since :class:`.datetime`
-   supports wider range of values than :c:func:`mktime` on many
-   platforms, this method may raise :exc:`OverflowError` or :exc:`OSError`
-   for times far in the past or far in the future.
+   time and this method relies on platform C functions to perform
+   the conversion. Since :class:`.datetime` supports a wider range of
+   values than the platform C functions on many platforms, this
+   method may raise :exc:`OverflowError` or :exc:`OSError` for times
+   far in the past or far in the future.
 
    For aware :class:`.datetime` instances, the return value is computed
    as::
@@ -1484,6 +1528,10 @@ Instance methods:
    .. versionchanged:: 3.6
       The :meth:`timestamp` method uses the :attr:`.fold` attribute to
       disambiguate the times during a repeated interval.
+
+   .. versionchanged:: 3.6
+      This method no longer relies on the platform C :c:func:`mktime`
+      function to perform conversions.
 
    .. note::
 
@@ -1588,7 +1636,7 @@ Instance methods:
 
 .. method:: datetime.__str__()
 
-   For a :class:`.datetime` instance *d*, ``str(d)`` is equivalent to
+   For a :class:`.datetime` instance ``d``, ``str(d)`` is equivalent to
    ``d.isoformat(' ')``.
 
 
@@ -1835,7 +1883,7 @@ Instance attributes (read-only):
    .. versionadded:: 3.6
 
 :class:`.time` objects support equality and order comparisons,
-where *a* is considered less than *b* when *a* precedes *b* in time.
+where ``a`` is considered less than ``b`` when ``a`` precedes ``b`` in time.
 
 Naive and aware :class:`!time` objects are never equal.
 Order comparison between naive and aware :class:`!time` objects raises
@@ -1924,10 +1972,10 @@ Instance methods:
 .. method:: time.replace(hour=self.hour, minute=self.minute, second=self.second, \
    microsecond=self.microsecond, tzinfo=self.tzinfo, *, fold=0)
 
-   Return a :class:`.time` with the same value, except for those attributes given
-   new values by whichever keyword arguments are specified. Note that
-   ``tzinfo=None`` can be specified to create a naive :class:`.time` from an
-   aware :class:`.time`, without conversion of the time data.
+   Return a new :class:`.time` with the same values, but with specified
+   parameters updated. Note that ``tzinfo=None`` can be specified to create a
+   naive :class:`.time` from an aware :class:`.time`, without conversion of the
+   time data.
 
    :class:`.time` objects are also supported by generic function
    :func:`copy.replace`.
@@ -1982,7 +2030,7 @@ Instance methods:
 
 .. method:: time.__str__()
 
-   For a time *t*, ``str(t)`` is equivalent to ``t.isoformat()``.
+   For a time ``t``, ``str(t)`` is equivalent to ``t.isoformat()``.
 
 
 .. method:: time.strftime(format)
@@ -2345,7 +2393,7 @@ locations where different offsets are used in different days of the year or
 where historical changes have been made to civil time.
 
 
-.. class:: timezone(offset, name=None)
+.. class:: timezone(offset[, name])
 
   The *offset* argument must be specified as a :class:`timedelta`
   object representing the difference between the local time and UTC. It must
@@ -2447,79 +2495,105 @@ These methods accept format codes that can be used to parse and format dates::
    >>> _.strftime('%a %d %b %Y, %I:%M%p')
    'Mon 31 Jan 2022, 11:59PM'
 
-The following is a list of all the format codes that the 1989 C standard
-requires, and these work on all platforms with a standard C implementation.
+The following is a list of all the format codes that the 2011 C standard
+requires, and these work on all supported platforms.
 
 +-----------+--------------------------------+------------------------+-------+
-| Directive | Meaning                        | Example                | Notes |
+| Directive |           Meaning              |        Example         | Notes |
+|           |                                |                        |       |
 +===========+================================+========================+=======+
-| ``%a``    | Weekday as locale's            || Sun, Mon, ..., Sat    | \(1)  |
+|  ``%a``   | Weekday as locale's            || Sun, Mon, ..., Sat    | \(1)  |
 |           | abbreviated name.              |  (en_US);              |       |
 |           |                                || So, Mo, ..., Sa       |       |
 |           |                                |  (de_DE)               |       |
 +-----------+--------------------------------+------------------------+-------+
-| ``%A``    | Weekday as locale's full name. || Sunday, Monday, ...,  | \(1)  |
+|  ``%A``   | Weekday as locale's full name. || Sunday, Monday, ...,  | \(1)  |
 |           |                                |  Saturday (en_US);     |       |
 |           |                                || Sonntag, Montag, ..., |       |
 |           |                                |  Samstag (de_DE)       |       |
 +-----------+--------------------------------+------------------------+-------+
-| ``%w``    | Weekday as a decimal number,   | 0, 1, ..., 6           |       |
-|           | where 0 is Sunday and 6 is     |                        |       |
-|           | Saturday.                      |                        |       |
-+-----------+--------------------------------+------------------------+-------+
-| ``%d``    | Day of the month as a          | 01, 02, ..., 31        | \(9)  |
-|           | zero-padded decimal number.    |                        |       |
-+-----------+--------------------------------+------------------------+-------+
-| ``%b``    | Month as locale's abbreviated  || Jan, Feb, ..., Dec    | \(1)  |
+|  ``%b``   | Month as locale's abbreviated  || Jan, Feb, ..., Dec    | \(1)  |
 |           | name.                          |  (en_US);              |       |
 |           |                                || Jan, Feb, ..., Dez    |       |
 |           |                                |  (de_DE)               |       |
 +-----------+--------------------------------+------------------------+-------+
-| ``%B``    | Month as locale's full name.   || January, February,    | \(1)  |
+|  ``%B``   | Month as locale's full name.   || January, February,    | \(1)  |
 |           |                                |  ..., December (en_US);|       |
 |           |                                || Januar, Februar, ..., |       |
 |           |                                |  Dezember (de_DE)      |       |
 +-----------+--------------------------------+------------------------+-------+
-| ``%m``    | Month as a zero-padded         | 01, 02, ..., 12        | \(9)  |
+|  ``%c``   | Locale's appropriate date and  || Tue Aug 16 21:30:00   | \(1)  |
+|           | time representation.           |  1988 (en_US);         |       |
+|           |                                || Di 16 Aug 21:30:00    |       |
+|           |                                |  1988 (de_DE)          |       |
++-----------+--------------------------------+------------------------+-------+
+|  ``%C``   | The year divided by 100 and    | 01, 02, ..., 99        | \(0)  |
+|           | truncated to an integer as a   |                        |       |
+|           | zero-padded decimal number.    |                        |       |
++-----------+--------------------------------+------------------------+-------+
+|  ``%d``   | Day of the month as a          | 01, 02, ..., 31        | \(9)  |
+|           | zero-padded decimal number.    |                        |       |
++-----------+--------------------------------+------------------------+-------+
+|  ``%D``   | Equivalent to ``%m/%d/%y``.    | 11/10/2025             | \(9), |
+|           |                                |                        | \(0)  |
++-----------+--------------------------------+------------------------+-------+
+|  ``%e``   | The day of the month as a      | ␣1, ␣2, ..., 31        |       |
+|           | space-padded decimal number.   |                        |       |
++-----------+--------------------------------+------------------------+-------+
+|  ``%F``   | Equivalent to ``%Y-%m-%d``,    | 2025-10-11,            |       |
+|           | the ISO 8601 format.           | 1001-12-30             |       |
++-----------+--------------------------------+------------------------+-------+
+|  ``%g``   | Last 2 digits of ISO 8601 year | 00, 01, ..., 99        | \(0)  |
+|           | representing the year that     |                        |       |
+|           | contains the greater part of   |                        |       |
+|           | the ISO week (``%V``).         |                        |       |
++-----------+--------------------------------+------------------------+-------+
+|  ``%G``   | ISO 8601 year with century     | 0001, 0002, ..., 2013, | \(8)  |
+|           | representing the year that     | 2014, ..., 9998, 9999  |       |
+|           | contains the greater part of   |                        |       |
+|           | the ISO week (``%V``).         |                        |       |
++-----------+--------------------------------+------------------------+-------+
+|  ``%h``   | Equivalent to ``%b``.          | See ``%b``.            | \(0)  |
++-----------+--------------------------------+------------------------+-------+
+|  ``%H``   | Hour (24-hour clock) as a      | 00, 01, ..., 23        | \(9)  |
+|           | zero-padded decimal number.    |                        |       |
++-----------+--------------------------------+------------------------+-------+
+|  ``%I``   | Hour (12-hour clock) as a      | 01, 02, ..., 12        | \(9)  |
+|           | zero-padded decimal number.    |                        |       |
++-----------+--------------------------------+------------------------+-------+
+|  ``%j``   | Day of the year as a           | 001, 002, ..., 366     | \(9)  |
+|           | zero-padded decimal number.    |                        |       |
++-----------+--------------------------------+------------------------+-------+
+|  ``%m``   | Month as a zero-padded         | 01, 02, ..., 12        | \(9)  |
 |           | decimal number.                |                        |       |
 +-----------+--------------------------------+------------------------+-------+
-| ``%y``    | Year without century as a      | 00, 01, ..., 99        | \(9)  |
-|           | zero-padded decimal number.    |                        |       |
+|  ``%M``   | Minute as a zero-padded        | 00, 01, ..., 59        | \(9)  |
+|           | decimal number.                |                        |       |
 +-----------+--------------------------------+------------------------+-------+
-| ``%Y``    | Year with century as a decimal | 0001, 0002, ..., 2013, | \(2)  |
-|           | number.                        | 2014, ..., 9998, 9999  |       |
+|  ``%n``   | The newline character          | ``\n``                 | \(0)  |
+|           | (``'\n'``).                    |                        |       |
 +-----------+--------------------------------+------------------------+-------+
-| ``%H``    | Hour (24-hour clock) as a      | 00, 01, ..., 23        | \(9)  |
-|           | zero-padded decimal number.    |                        |       |
-+-----------+--------------------------------+------------------------+-------+
-| ``%I``    | Hour (12-hour clock) as a      | 01, 02, ..., 12        | \(9)  |
-|           | zero-padded decimal number.    |                        |       |
-+-----------+--------------------------------+------------------------+-------+
-| ``%p``    | Locale's equivalent of either  || AM, PM (en_US);       | \(1), |
+|  ``%p``   | Locale's equivalent of either  || AM, PM (en_US);       | \(1), |
 |           | AM or PM.                      || am, pm (de_DE)        | \(3)  |
 +-----------+--------------------------------+------------------------+-------+
-| ``%M``    | Minute as a zero-padded        | 00, 01, ..., 59        | \(9)  |
-|           | decimal number.                |                        |       |
+|  ``%r``   | Locale's 12-hour clock time.   | 12:00:00 AM            | \(1), |
+|           |                                |                        | \(0)  |
 +-----------+--------------------------------+------------------------+-------+
-| ``%S``    | Second as a zero-padded        | 00, 01, ..., 59        | \(4), |
+|  ``%R``   | Equivalent to ``%H:%M``.       | 10:01                  |       |
++-----------+--------------------------------+------------------------+-------+
+|  ``%S``   | Second as a zero-padded        | 00, 01, ..., 59        | \(4), |
 |           | decimal number.                |                        | \(9)  |
 +-----------+--------------------------------+------------------------+-------+
-| ``%f``    | Microsecond as a decimal       | 000000, 000001, ...,   | \(5)  |
-|           | number, zero-padded to 6       | 999999                 |       |
-|           | digits.                        |                        |       |
+|  ``%t``   | The tab character              | ``\t``                 | \(0)  |
+|           | (``'\t'``).                    |                        |       |
 +-----------+--------------------------------+------------------------+-------+
-| ``%z``    | UTC offset in the form         | (empty), +0000,        | \(6)  |
-|           | ``±HHMM[SS[.ffffff]]`` (empty  | -0400, +1030,          |       |
-|           | string if the object is        | +063415,               |       |
-|           | naive).                        | -030712.345216         |       |
+|  ``%T``   | ISO 8601 time format,          | 10:01:59               |       |
+|           | equivalent to ``%H:%M:%S``.    |                        |       |
 +-----------+--------------------------------+------------------------+-------+
-| ``%Z``    | Time zone name (empty string   | (empty), UTC, GMT      | \(6)  |
-|           | if the object is naive).       |                        |       |
+|  ``%u``   | ISO 8601 weekday as a decimal  | 1, 2, ..., 7           |       |
+|           | number where 1 is Monday.      |                        |       |
 +-----------+--------------------------------+------------------------+-------+
-| ``%j``    | Day of the year as a           | 001, 002, ..., 366     | \(9)  |
-|           | zero-padded decimal number.    |                        |       |
-+-----------+--------------------------------+------------------------+-------+
-| ``%U``    | Week number of the year        | 00, 01, ..., 53        | \(7), |
+|  ``%U``   | Week number of the year        | 00, 01, ..., 53        | \(7), |
 |           | (Sunday as the first day of    |                        | \(9)  |
 |           | the week) as a zero-padded     |                        |       |
 |           | decimal number. All days in a  |                        |       |
@@ -2527,7 +2601,17 @@ requires, and these work on all platforms with a standard C implementation.
 |           | Sunday are considered to be in |                        |       |
 |           | week 0.                        |                        |       |
 +-----------+--------------------------------+------------------------+-------+
-| ``%W``    | Week number of the year        | 00, 01, ..., 53        | \(7), |
+|  ``%V``   | ISO 8601 week as a decimal     | 01, 02, ..., 53        | \(8), |
+|           | number with Monday as          |                        | \(9)  |
+|           | the first day of the week.     |                        |       |
+|           | Week 01 is the week containing |                        |       |
+|           | Jan 4.                         |                        |       |
++-----------+--------------------------------+------------------------+-------+
+|  ``%w``   | Weekday as a decimal number,   | 0, 1, ..., 6           |       |
+|           | where 0 is Sunday and 6 is     |                        |       |
+|           | Saturday.                      |                        |       |
++-----------+--------------------------------+------------------------+-------+
+|  ``%W``   | Week number of the year        | 00, 01, ..., 53        | \(7), |
 |           | (Monday as the first day of    |                        | \(9)  |
 |           | the week) as a zero-padded     |                        |       |
 |           | decimal number. All days in a  |                        |       |
@@ -2535,51 +2619,49 @@ requires, and these work on all platforms with a standard C implementation.
 |           | Monday are considered to be in |                        |       |
 |           | week 0.                        |                        |       |
 +-----------+--------------------------------+------------------------+-------+
-| ``%c``    | Locale's appropriate date and  || Tue Aug 16 21:30:00   | \(1)  |
-|           | time representation.           |  1988 (en_US);         |       |
-|           |                                || Di 16 Aug 21:30:00    |       |
-|           |                                |  1988 (de_DE)          |       |
-+-----------+--------------------------------+------------------------+-------+
-| ``%x``    | Locale's appropriate date      || 08/16/88 (None);      | \(1)  |
+|  ``%x``   | Locale's appropriate date      || 08/16/88 (None);      | \(1)  |
 |           | representation.                || 08/16/1988 (en_US);   |       |
 |           |                                || 16.08.1988 (de_DE)    |       |
 +-----------+--------------------------------+------------------------+-------+
-| ``%X``    | Locale's appropriate time      || 21:30:00 (en_US);     | \(1)  |
+|  ``%X``   | Locale's appropriate time      || 21:30:00 (en_US);     | \(1)  |
 |           | representation.                || 21:30:00 (de_DE)      |       |
 +-----------+--------------------------------+------------------------+-------+
-| ``%%``    | A literal ``'%'`` character.   | %                      |       |
+|  ``%y``   | Year without century as a      | 00, 01, ..., 99        | \(9)  |
+|           | zero-padded decimal number.    |                        |       |
++-----------+--------------------------------+------------------------+-------+
+|  ``%Y``   | Year with century as a decimal | 0001, 0002, ..., 2013, | \(2)  |
+|           | number.                        | 2014, ..., 9998, 9999  |       |
++-----------+--------------------------------+------------------------+-------+
+|  ``%z``   | UTC offset in the form         | (empty), +0000,        | \(6)  |
+|           | ``±HHMM[SS[.ffffff]]`` (empty  | -0400, +1030,          |       |
+|           | string if the object is        | +063415,               |       |
+|           | naive).                        | -030712.345216         |       |
++-----------+--------------------------------+------------------------+-------+
+|  ``%Z``   | Time zone name (empty string   | (empty), UTC, GMT      | \(6)  |
+|           | if the object is naive).       |                        |       |
++-----------+--------------------------------+------------------------+-------+
+|  ``%%``   | A literal ``'%'`` character.   | %                      |       |
 +-----------+--------------------------------+------------------------+-------+
 
-Several additional directives not required by the C89 standard are included for
-convenience. These parameters all correspond to ISO 8601 date values.
+The ISO 8601 year and ISO 8601 week directives are not interchangeable
+with the year and week number directives above. Calling :meth:`~.datetime.strptime` with
+incomplete or ambiguous ISO 8601 directives will raise a :exc:`ValueError`.
+
+Several additional directives not required by the C11 standard are included for
+convenience.
 
 +-----------+--------------------------------+------------------------+-------+
 | Directive | Meaning                        | Example                | Notes |
 +===========+================================+========================+=======+
-| ``%G``    | ISO 8601 year with century     | 0001, 0002, ..., 2013, | \(8)  |
-|           | representing the year that     | 2014, ..., 9998, 9999  |       |
-|           | contains the greater part of   |                        |       |
-|           | the ISO week (``%V``).         |                        |       |
-+-----------+--------------------------------+------------------------+-------+
-| ``%u``    | ISO 8601 weekday as a decimal  | 1, 2, ..., 7           |       |
-|           | number where 1 is Monday.      |                        |       |
-+-----------+--------------------------------+------------------------+-------+
-| ``%V``    | ISO 8601 week as a decimal     | 01, 02, ..., 53        | \(8), |
-|           | number with Monday as          |                        | \(9)  |
-|           | the first day of the week.     |                        |       |
-|           | Week 01 is the week containing |                        |       |
-|           | Jan 4.                         |                        |       |
+|  ``%f``   | Microsecond as a decimal       | 000000, 000001, ...,   | \(5)  |
+|           | number, zero-padded to 6       | 999999                 |       |
+|           | digits.                        |                        |       |
 +-----------+--------------------------------+------------------------+-------+
 | ``%:z``   | UTC offset in the form         | (empty), +00:00,       | \(6)  |
 |           | ``±HH:MM[:SS[.ffffff]]``       | -04:00, +10:30,        |       |
 |           | (empty string if the object is | +06:34:15,             |       |
 |           | naive).                        | -03:07:12.345216       |       |
 +-----------+--------------------------------+------------------------+-------+
-
-These may not be available on all platforms when used with the :meth:`~.datetime.strftime`
-method. The ISO 8601 year and ISO 8601 week directives are not interchangeable
-with the year and week number directives above. Calling :meth:`~.datetime.strptime` with
-incomplete or ambiguous ISO 8601 directives will raise a :exc:`ValueError`.
 
 The full set of format codes supported varies across platforms, because Python
 calls the platform C library's :c:func:`strftime` function, and platform
@@ -2591,7 +2673,10 @@ differences between platforms in handling of unsupported format specifiers.
    ``%G``, ``%u`` and ``%V`` were added.
 
 .. versionadded:: 3.12
-   ``%:z`` was added.
+   ``%:z`` was added for :meth:`~.datetime.strftime`.
+
+.. versionadded:: 3.15
+   ``%:z`` and ``%F`` were added for :meth:`~.datetime.strptime`.
 
 Technical Detail
 ^^^^^^^^^^^^^^^^
@@ -2600,9 +2685,48 @@ Broadly speaking, ``d.strftime(fmt)`` acts like the :mod:`time` module's
 ``time.strftime(fmt, d.timetuple())`` although not all objects support a
 :meth:`~date.timetuple` method.
 
-For the :meth:`.datetime.strptime` class method, the default value is
-``1900-01-01T00:00:00.000``: any components not specified in the format string
-will be pulled from the default value. [#]_
+For the :meth:`.datetime.strptime` and :meth:`.date.strptime` class methods,
+the default value is ``1900-01-01T00:00:00.000``: any components not specified
+in the format string will be pulled from the default value.
+
+.. note::
+   Format strings without separators can be ambiguous for parsing. For
+   example, with ``%Y%m%d``, the string ``2026111`` may be parsed either as
+   ``2026-11-01`` or as ``2026-01-11``.
+   Use separators to ensure the input is parsed as intended.
+
+.. note::
+   When used to parse partial dates lacking a year, :meth:`.datetime.strptime`
+   and :meth:`.date.strptime` will raise when encountering February 29 because
+   the default year of 1900 is *not* a leap year.  Always add a default leap
+   year to partial date strings before parsing.
+
+
+.. testsetup::
+
+    # doctest seems to turn the warning into an error which makes it
+    # show up and require matching and prevents the actual interesting
+    # exception from being raised.
+    # Manually apply the catch_warnings context manager
+    import warnings
+    catch_warnings = warnings.catch_warnings()
+    catch_warnings.__enter__()
+    warnings.simplefilter("ignore")
+
+.. testcleanup::
+
+    catch_warnings.__exit__()
+
+.. doctest::
+
+    >>> from datetime import datetime
+    >>> value = "2/29"
+    >>> datetime.strptime(value, "%m/%d")
+    Traceback (most recent call last):
+    ...
+    ValueError: day 29 must be in range 1..28 for month 2 in year 1900
+    >>> datetime.strptime(f"1904 {value}", "%Y %m/%d")
+    datetime.datetime(1904, 2, 29, 0, 0)
 
 Using ``datetime.strptime(date_string, format)`` is equivalent to::
 
@@ -2627,6 +2751,9 @@ the output, while on others ``strftime`` may raise :exc:`UnicodeError` or return
 an empty string instead.
 
 Notes:
+
+(0)
+   This format code is currently unsupported by :meth:`~.datetime.strptime`.
 
 (1)
    Because the format depends on the current locale, care should be taken when
@@ -2686,12 +2813,18 @@ Notes:
       When the ``%z`` directive is provided to the  :meth:`~.datetime.strptime` method,
       the UTC offsets can have a colon as a separator between hours, minutes
       and seconds.
-      For example, ``'+01:00:00'`` will be parsed as an offset of one hour.
-      In addition, providing ``'Z'`` is identical to ``'+00:00'``.
+      For example, both ``'+010000'`` and ``'+01:00:00'`` will be parsed as an offset
+      of one hour. In addition, providing ``'Z'`` is identical to ``'+00:00'``.
 
    ``%:z``
-      Behaves exactly as ``%z``, but has a colon separator added between
-      hours, minutes and seconds.
+      When used with :meth:`~.datetime.strftime`, behaves exactly as ``%z``,
+      except that a colon separator is added between hours, minutes and seconds.
+
+      When used with :meth:`~.datetime.strptime`, the UTC offset is *required*
+      to have a colon as a separator between hours, minutes and seconds.
+      For example, ``'+01:00:00'`` (but *not* ``'+010000'``) will be parsed as
+      an offset of one hour. In addition, providing ``'Z'`` is identical to
+      ``'+00:00'``.
 
    ``%Z``
       In :meth:`~.datetime.strftime`, ``%Z`` is replaced by an empty string if
@@ -2733,7 +2866,7 @@ Notes:
    include a year in the format.  If the value you need to parse lacks a year,
    append an explicit dummy leap year.  Otherwise your code will raise an
    exception when it encounters leap day because the default year used by the
-   parser is not a leap year.  Users run into this bug every four years...
+   parser (1900) is not a leap year.  Users run into that bug every leap year.
 
    .. doctest::
 
@@ -2760,5 +2893,3 @@ Notes:
 .. [#] See R. H. van Gent's `guide to the mathematics of the ISO 8601 calendar
        <https://web.archive.org/web/20220531051136/https://webspace.science.uu.nl/~gent0113/calendar/isocalendar.htm>`_
        for a good explanation.
-
-.. [#] Passing ``datetime.strptime('Feb 29', '%b %d')`` will fail since 1900 is not a leap year.

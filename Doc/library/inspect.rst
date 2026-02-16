@@ -16,7 +16,7 @@
 
 --------------
 
-The :mod:`inspect` module provides several useful functions to help get
+The :mod:`!inspect` module provides several useful functions to help get
 information about live objects such as modules, classes, methods, functions,
 tracebacks, frame objects, and code objects.  For example, it can help you
 examine the contents of a class, retrieve the source code of a method, extract
@@ -150,6 +150,12 @@ attributes (see :ref:`import-mod-attrs` for module attributes):
 |                 | f_locals          | local namespace seen by   |
 |                 |                   | this frame                |
 +-----------------+-------------------+---------------------------+
+|                 | f_generator       | returns the generator or  |
+|                 |                   | coroutine object that     |
+|                 |                   | owns this frame, or       |
+|                 |                   | ``None`` if the frame is  |
+|                 |                   | of a regular function     |
++-----------------+-------------------+---------------------------+
 |                 | f_trace           | tracing function for this |
 |                 |                   | frame, or ``None``        |
 +-----------------+-------------------+---------------------------+
@@ -247,11 +253,20 @@ attributes (see :ref:`import-mod-attrs` for module attributes):
 +-----------------+-------------------+---------------------------+
 |                 | gi_running        | is the generator running? |
 +-----------------+-------------------+---------------------------+
+|                 | gi_suspended      | is the generator          |
+|                 |                   | suspended?                |
++-----------------+-------------------+---------------------------+
 |                 | gi_code           | code                      |
 +-----------------+-------------------+---------------------------+
 |                 | gi_yieldfrom      | object being iterated by  |
 |                 |                   | ``yield from``, or        |
 |                 |                   | ``None``                  |
++-----------------+-------------------+---------------------------+
+|                 | gi_state          | state of the generator,   |
+|                 |                   | one of ``GEN_CREATED``,   |
+|                 |                   | ``GEN_RUNNING``,          |
+|                 |                   | ``GEN_SUSPENDED``, or     |
+|                 |                   | ``GEN_CLOSED``            |
 +-----------------+-------------------+---------------------------+
 | async generator | __name__          | name                      |
 +-----------------+-------------------+---------------------------+
@@ -264,7 +279,17 @@ attributes (see :ref:`import-mod-attrs` for module attributes):
 +-----------------+-------------------+---------------------------+
 |                 | ag_running        | is the generator running? |
 +-----------------+-------------------+---------------------------+
+|                 | ag_suspended      | is the generator          |
+|                 |                   | suspended?                |
++-----------------+-------------------+---------------------------+
 |                 | ag_code           | code                      |
++-----------------+-------------------+---------------------------+
+|                 | ag_state          | state of the async        |
+|                 |                   | generator, one of         |
+|                 |                   | ``AGEN_CREATED``,         |
+|                 |                   | ``AGEN_RUNNING``,         |
+|                 |                   | ``AGEN_SUSPENDED``, or    |
+|                 |                   | ``AGEN_CLOSED``           |
 +-----------------+-------------------+---------------------------+
 | coroutine       | __name__          | name                      |
 +-----------------+-------------------+---------------------------+
@@ -277,11 +302,20 @@ attributes (see :ref:`import-mod-attrs` for module attributes):
 +-----------------+-------------------+---------------------------+
 |                 | cr_running        | is the coroutine running? |
 +-----------------+-------------------+---------------------------+
+|                 | cr_suspended      | is the coroutine          |
+|                 |                   | suspended?                |
++-----------------+-------------------+---------------------------+
 |                 | cr_code           | code                      |
 +-----------------+-------------------+---------------------------+
 |                 | cr_origin         | where coroutine was       |
 |                 |                   | created, or ``None``. See |
 |                 |                   | |coroutine-origin-link|   |
++-----------------+-------------------+---------------------------+
+|                 | cr_state          | state of the coroutine,   |
+|                 |                   | one of ``CORO_CREATED``,  |
+|                 |                   | ``CORO_RUNNING``,         |
+|                 |                   | ``CORO_SUSPENDED``, or    |
+|                 |                   | ``CORO_CLOSED``           |
 +-----------------+-------------------+---------------------------+
 | builtin         | __doc__           | documentation string      |
 +-----------------+-------------------+---------------------------+
@@ -309,6 +343,27 @@ attributes (see :ref:`import-mod-attrs` for module attributes):
 .. versionchanged:: 3.10
 
    Add ``__builtins__`` attribute to functions.
+
+.. versionchanged:: 3.11
+
+   Add ``gi_suspended`` attribute to generators.
+
+.. versionchanged:: 3.11
+
+   Add ``cr_suspended`` attribute to coroutines.
+
+.. versionchanged:: 3.12
+
+   Add ``ag_suspended`` attribute to async generators.
+
+.. versionchanged:: 3.14
+
+   Add ``f_generator`` attribute to frames.
+
+.. versionchanged:: 3.15
+
+   Add ``gi_state`` attribute to generators, ``cr_state`` attribute to
+   coroutines, and ``ag_state`` attribute to async generators.
 
 .. function:: getmembers(object[, predicate])
 
@@ -372,6 +427,13 @@ attributes (see :ref:`import-mod-attrs` for module attributes):
 .. function:: ismethod(object)
 
    Return ``True`` if the object is a bound method written in Python.
+
+
+.. function:: ispackage(object)
+
+   Return ``True`` if the object is a :term:`package`.
+
+   .. versionadded:: 3.14
 
 
 .. function:: isfunction(object)
@@ -486,7 +548,7 @@ attributes (see :ref:`import-mod-attrs` for module attributes):
 
    .. versionchanged:: 3.13
       Functions wrapped in :func:`functools.partialmethod` now return ``True``
-      if the wrapped function is a :term:`coroutine function`.
+      if the wrapped function is a :term:`asynchronous generator` function.
 
 .. function:: isasyncgen(object)
 
@@ -599,16 +661,28 @@ attributes (see :ref:`import-mod-attrs` for module attributes):
 Retrieving source code
 ----------------------
 
-.. function:: getdoc(object)
+.. function:: getdoc(object, *, inherit_class_doc=True, fallback_to_class_doc=True)
 
    Get the documentation string for an object, cleaned up with :func:`cleandoc`.
-   If the documentation string for an object is not provided and the object is
-   a class, a method, a property or a descriptor, retrieve the documentation
-   string from the inheritance hierarchy.
+   If the documentation string for an object is not provided:
+
+   * if the object is a class and *inherit_class_doc* is true (by default),
+     retrieve the documentation string from the inheritance hierarchy;
+   * if the object is a method, a property or a descriptor, retrieve
+     the documentation string from the inheritance hierarchy;
+   * otherwise, if *fallback_to_class_doc* is true (by default), retrieve
+     the documentation string from the class of the object.
+
    Return ``None`` if the documentation string is invalid or missing.
 
    .. versionchanged:: 3.5
       Documentation strings are now inherited if not overridden.
+
+   .. versionchanged:: 3.15
+      Added parameters *inherit_class_doc* and *fallback_to_class_doc*.
+
+      Documentation strings on :class:`~functools.cached_property`
+      objects are now inherited if not overridden.
 
 
 .. function:: getcomments(object)
@@ -694,7 +768,7 @@ and its return annotation. To retrieve a :class:`!Signature` object,
 use the :func:`!signature`
 function.
 
-.. function:: signature(callable, *, follow_wrapped=True, globals=None, locals=None, eval_str=False)
+.. function:: signature(callable, *, follow_wrapped=True, globals=None, locals=None, eval_str=False, annotation_format=Format.VALUE)
 
    Return a :class:`Signature` object for the given *callable*:
 
@@ -725,7 +799,12 @@ function.
    *globals*, *locals*, and *eval_str* parameters are passed
    into :func:`!annotationlib.get_annotations` when resolving the
    annotations; see the documentation for :func:`!annotationlib.get_annotations`
-   for instructions on how to use these parameters.
+   for instructions on how to use these parameters. A member of the
+   :class:`annotationlib.Format` enum can be passed to the
+   *annotation_format* parameter to control the format of the returned
+   annotations. For example, use
+   ``annotation_format=annotationlib.Format.STRING`` to return annotations in string
+   format.
 
    Raises :exc:`ValueError` if no signature can be provided, and
    :exc:`TypeError` if that type of object is not supported.  Also,
@@ -733,7 +812,7 @@ function.
    the ``eval()`` call(s) to un-stringize the annotations in :func:`annotationlib.get_annotations`
    could potentially raise any kind of exception.
 
-   A slash(/) in the signature of a function denotes that the parameters prior
+   A slash (/) in the signature of a function denotes that the parameters prior
    to it are positional-only. For more info, see
    :ref:`the FAQ entry on positional-only parameters <faq-positional-only-arguments>`.
 
@@ -745,6 +824,9 @@ function.
 
    .. versionchanged:: 3.10
       The *globals*, *locals*, and *eval_str* parameters were added.
+
+   .. versionchanged:: 3.14
+      The *annotation_format* parameter was added.
 
    .. note::
 
@@ -838,7 +920,7 @@ function.
       :class:`Signature` objects are also supported by the generic function
       :func:`copy.replace`.
 
-   .. method:: format(*, max_width=None)
+   .. method:: format(*, max_width=None, quote_annotation_strings=True)
 
       Create a string representation of the :class:`Signature` object.
 
@@ -847,7 +929,16 @@ function.
       If the signature is longer than *max_width*,
       all parameters will be on separate lines.
 
+      If *quote_annotation_strings* is False, :term:`annotations <annotation>`
+      in the signature are displayed without opening and closing quotation
+      marks if they are strings. This is useful if the signature was created with the
+      :attr:`~annotationlib.Format.STRING` format or if
+      ``from __future__ import annotations`` was used.
+
       .. versionadded:: 3.13
+
+      .. versionchanged:: 3.14
+         The *unquote_annotations* parameter was added.
 
    .. classmethod:: Signature.from_callable(obj, *, follow_wrapped=True, globals=None, locals=None, eval_str=False)
 
@@ -1145,7 +1236,7 @@ Classes and functions
       :func:`signature` in Python 3.5, but that decision has been reversed
       in order to restore a clearly supported standard interface for
       single-source Python 2/3 code migrating away from the legacy
-      :func:`getargspec` API.
+      :func:`!getargspec` API.
 
    .. versionchanged:: 3.7
       Python only explicitly guaranteed that it preserved the declaration
@@ -1254,6 +1345,11 @@ Classes and functions
 
    This is an alias for :func:`annotationlib.get_annotations`; see the documentation
    of that function for more information.
+
+   .. caution::
+
+      This function may execute arbitrary code contained in annotations.
+      See :ref:`annotationlib-security` for more information.
 
    .. versionadded:: 3.10
 
@@ -1676,11 +1772,26 @@ which is a bitmap of the following flags:
 
    .. versionadded:: 3.6
 
+.. data:: CO_HAS_DOCSTRING
+
+   The flag is set when there is a docstring for the code object in
+   the source code. If set, it will be the first item in
+   :attr:`~codeobject.co_consts`.
+
+   .. versionadded:: 3.14
+
+.. data:: CO_METHOD
+
+   The flag is set when the code object is a function defined in class
+   scope.
+
+   .. versionadded:: 3.14
+
 .. note::
    The flags are specific to CPython, and may not be defined in other
    Python implementations.  Furthermore, the flags are an implementation
    detail, and can be removed or deprecated in future Python releases.
-   It's recommended to use public APIs from the :mod:`inspect` module
+   It's recommended to use public APIs from the :mod:`!inspect` module
    for any introspection needs.
 
 
@@ -1719,10 +1830,10 @@ Buffer flags
 
 .. _inspect-module-cli:
 
-Command Line Interface
+Command-line interface
 ----------------------
 
-The :mod:`inspect` module also provides a basic introspection capability
+The :mod:`!inspect` module also provides a basic introspection capability
 from the command line.
 
 .. program:: inspect

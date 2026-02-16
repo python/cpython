@@ -220,6 +220,12 @@ unicode_copycharacters(PyObject *self, PyObject *args)
     return Py_BuildValue("(Nn)", to_copy, copied);
 }
 
+static PyObject*
+unicode_GET_CACHED_HASH(PyObject *self, PyObject *arg)
+{
+    return PyLong_FromSsize_t(PyUnstable_Unicode_GET_CACHED_HASH(arg));
+}
+
 
 // --- PyUnicodeWriter type -------------------------------------------------
 
@@ -326,6 +332,27 @@ writer_write_utf8(PyObject *self_raw, PyObject *args)
     }
 
     if (PyUnicodeWriter_WriteUTF8(self->writer, str, size) < 0) {
+        return NULL;
+    }
+    Py_RETURN_NONE;
+}
+
+
+static PyObject*
+writer_write_ascii(PyObject *self_raw, PyObject *args)
+{
+    WriterObject *self = (WriterObject *)self_raw;
+    if (writer_check(self) < 0) {
+        return NULL;
+    }
+
+    char *str;
+    Py_ssize_t size;
+    if (!PyArg_ParseTuple(args, "yn", &str, &size)) {
+        return NULL;
+    }
+
+    if (PyUnicodeWriter_WriteASCII(self->writer, str, size) < 0) {
         return NULL;
     }
     Py_RETURN_NONE;
@@ -513,6 +540,7 @@ writer_finish(PyObject *self_raw, PyObject *Py_UNUSED(args))
 static PyMethodDef writer_methods[] = {
     {"write_char", _PyCFunction_CAST(writer_write_char), METH_VARARGS},
     {"write_utf8", _PyCFunction_CAST(writer_write_utf8), METH_VARARGS},
+    {"write_ascii", _PyCFunction_CAST(writer_write_ascii), METH_VARARGS},
     {"write_widechar", _PyCFunction_CAST(writer_write_widechar), METH_VARARGS},
     {"write_ucs4", _PyCFunction_CAST(writer_write_ucs4), METH_VARARGS},
     {"write_str", _PyCFunction_CAST(writer_write_str), METH_VARARGS},
@@ -548,6 +576,7 @@ static PyMethodDef TestMethods[] = {
     {"unicode_asucs4copy",       unicode_asucs4copy,             METH_VARARGS},
     {"unicode_asutf8",           unicode_asutf8,                 METH_VARARGS},
     {"unicode_copycharacters",   unicode_copycharacters,         METH_VARARGS},
+    {"unicode_GET_CACHED_HASH",  unicode_GET_CACHED_HASH,        METH_O},
     {NULL},
 };
 

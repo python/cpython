@@ -19,7 +19,7 @@
 
 This module provides a single class, :class:`RobotFileParser`, which answers
 questions about whether or not a particular user agent can fetch a URL on the
-web site that published the :file:`robots.txt` file.  For more details on the
+website that published the :file:`robots.txt` file.  For more details on the
 structure of :file:`robots.txt` files, see http://www.robotstxt.org/orig.html.
 
 
@@ -91,16 +91,16 @@ class::
 
    >>> import urllib.robotparser
    >>> rp = urllib.robotparser.RobotFileParser()
-   >>> rp.set_url("http://www.musi-cal.com/robots.txt")
+   >>> rp.set_url("http://www.pythontest.net/robots.txt")
    >>> rp.read()
    >>> rrate = rp.request_rate("*")
    >>> rrate.requests
-   3
+   1
    >>> rrate.seconds
-   20
+   1
    >>> rp.crawl_delay("*")
    6
-   >>> rp.can_fetch("*", "http://www.musi-cal.com/cgi-bin/search?city=San+Francisco")
-   False
-   >>> rp.can_fetch("*", "http://www.musi-cal.com/")
+   >>> rp.can_fetch("*", "http://www.pythontest.net/")
    True
+   >>> rp.can_fetch("*", "http://www.pythontest.net/no-robots-here/")
+   False

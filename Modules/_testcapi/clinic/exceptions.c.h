@@ -78,9 +78,11 @@ _testcapi_make_exception_with_doc(PyObject *module, PyObject *const *args, Py_ss
     static struct {
         PyGC_Head _this_is_not_used;
         PyObject_VAR_HEAD
+        Py_hash_t ob_hash;
         PyObject *ob_item[NUM_KEYWORDS];
     } _kwtuple = {
         .ob_base = PyVarObject_HEAD_INIT(&PyTuple_Type, NUM_KEYWORDS)
+        .ob_hash = -1,
         .ob_item = { &_Py_ID(name), &_Py_ID(doc), &_Py_ID(base), &_Py_ID(dict), },
     };
     #undef NUM_KEYWORDS
@@ -104,7 +106,8 @@ _testcapi_make_exception_with_doc(PyObject *module, PyObject *const *args, Py_ss
     PyObject *base = NULL;
     PyObject *dict = NULL;
 
-    args = _PyArg_UnpackKeywords(args, nargs, NULL, kwnames, &_parser, 1, 4, 0, argsbuf);
+    args = _PyArg_UnpackKeywords(args, nargs, NULL, kwnames, &_parser,
+            /*minpos*/ 1, /*maxpos*/ 4, /*minkw*/ 0, /*varpos*/ 0, argsbuf);
     if (!args) {
         goto exit;
     }
@@ -456,4 +459,4 @@ _testcapi_unstable_exc_prep_reraise_star(PyObject *module, PyObject *const *args
 exit:
     return return_value;
 }
-/*[clinic end generated code: output=0b11ef105030a48e input=a9049054013a1b77]*/
+/*[clinic end generated code: output=357caea020348789 input=a9049054013a1b77]*/

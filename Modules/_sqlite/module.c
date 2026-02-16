@@ -32,8 +32,7 @@
 #include "microprotocols.h"
 #include "row.h"
 #include "blob.h"
-
-#include "pycore_import.h"        // _PyImport_GetModuleAttrString()
+#include "util.h"
 
 #if SQLITE_VERSION_NUMBER < 3015002
 #error "SQLite 3.15.2 or higher required"
@@ -62,26 +61,16 @@ pysqlite_connect(PyObject *module, PyObject *const *args, Py_ssize_t nargsf,
     pysqlite_state *state = pysqlite_get_state(module);
     PyObject *factory = (PyObject *)state->ConnectionType;
 
-    static const int FACTORY_POS = 5;
     Py_ssize_t nargs = PyVectorcall_NARGS(nargsf);
-    if (nargs > 1 && nargs <= 8) {
-        if (PyErr_WarnEx(PyExc_DeprecationWarning,
-                "Passing more than 1 positional argument to sqlite3.connect()"
-                " is deprecated. Parameters 'timeout', 'detect_types', "
-                "'isolation_level', 'check_same_thread', 'factory', "
-                "'cached_statements' and 'uri' will become keyword-only "
-                "parameters in Python 3.15.", 1))
-        {
-                return NULL;
-        }
+    if (nargs > 1) {
+        PyErr_Format(PyExc_TypeError,
+            "connect() takes at most 1 positional arguments (%zd given)", nargs);
+        return NULL;
     }
-    if (nargs > FACTORY_POS) {
-        factory = args[FACTORY_POS];
-    }
-    else if (kwnames != NULL) {
+    if (kwnames != NULL) {
         for (Py_ssize_t i = 0; i < PyTuple_GET_SIZE(kwnames); i++) {
             PyObject *item = PyTuple_GET_ITEM(kwnames, i);  // borrowed ref.
-            if (PyUnicode_CompareWithASCIIString(item, "factory") == 0) {
+            if (PyUnicode_EqualToUTF8(item, "factory")) {
                 factory = args[nargs + i];
                 break;
             }
@@ -234,7 +223,7 @@ static int
 load_functools_lru_cache(PyObject *module)
 {
     pysqlite_state *state = pysqlite_get_state(module);
-    state->lru_cache = _PyImport_GetModuleAttrString("functools", "lru_cache");
+    state->lru_cache = PyImport_ImportModuleAttrString("functools", "lru_cache");
     if (state->lru_cache == NULL) {
         return -1;
     }
@@ -414,6 +403,40 @@ pysqlite_error_name(int rc)
     }
     // No error code matched.
     return NULL;
+}
+
+static int
+add_keyword_tuple(PyObject *module)
+{
+#if SQLITE_VERSION_NUMBER >= 3024000
+    int count = sqlite3_keyword_count();
+    PyObject *keywords = PyTuple_New(count);
+    if (keywords == NULL) {
+        return -1;
+    }
+    for (int i = 0; i < count; i++) {
+        const char *keyword;
+        int size;
+        int result = sqlite3_keyword_name(i, &keyword, &size);
+        if (result != SQLITE_OK) {
+            pysqlite_state *state = pysqlite_get_state(module);
+            set_error_from_code(state, result);
+            goto error;
+        }
+        PyObject *kwd = PyUnicode_FromStringAndSize(keyword, size);
+        if (!kwd) {
+            goto error;
+        }
+        PyTuple_SET_ITEM(keywords, i, kwd);
+    }
+    return PyModule_Add(module, "SQLITE_KEYWORDS", keywords);
+
+error:
+    Py_DECREF(keywords);
+    return -1;
+#else
+    return 0;
+#endif
 }
 
 static int
@@ -619,7 +642,7 @@ module_clear(PyObject *module)
 static void
 module_free(void *module)
 {
-    module_clear((PyObject *)module);
+    (void)module_clear((PyObject *)module);
 }
 
 #define ADD_TYPE(module, type)                 \
@@ -714,6 +737,10 @@ module_exec(PyObject *module)
         goto error;
     }
 
+    if (add_keyword_tuple(module) < 0) {
+        goto error;
+    }
+
     if (PyModule_AddStringConstant(module, "sqlite_version", sqlite3_libversion())) {
         goto error;
     }
@@ -747,7 +774,6 @@ module_exec(PyObject *module)
     return 0;
 
 error:
-    sqlite3_shutdown();
     return -1;
 }
 
