@@ -161,7 +161,7 @@ code triggered by the finalizer blocks and calls :c:func:`PyEval_SaveThread`.
 
 .. c:macro:: Py_BEGIN_CRITICAL_SECTION2(a, b)
 
-   Acquires the per-objects locks for the objects *a* and *b* and begins a
+   Acquires the per-object locks for the objects *a* and *b* and begins a
    critical section.  The locks are acquired in a consistent order (lowest
    address first) to avoid lock ordering deadlocks.
 
