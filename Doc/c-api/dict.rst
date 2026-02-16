@@ -490,7 +490,7 @@ Dictionary View Objects
    always succeeds.
 
 
-Frozen Dictionary Objects
+Frozen dictionary objects
 ^^^^^^^^^^^^^^^^^^^^^^^^^
 
 .. versionadded:: next
@@ -505,41 +505,43 @@ Frozen Dictionary Objects
 
 .. c:function:: int PyAnyDict_Check(PyObject *p)
 
-   Return true if *p* is a dict object, a frozendict object, or an instance of
-   a subtype of the dict or frozendict type.
+   Return true if *p* is a :class:`dict` object, a :class:`frozendict` object,
+   or an instance of a subtype of the :class:`!dict` or :class:`!frozendict`
+   type.
    This function always succeeds.
 
 
 .. c:function:: int PyAnyDict_CheckExact(PyObject *p)
 
-   Return true if *p* is a dict object or a frozendict object, but not an
-   instance of a subtype of the dict or frozendict type.
+   Return true if *p* is a :class:`dict` object or a :class:`frozendict` object,
+   but not an instance of a subtype of the :class:`!dict` or 
+   :class:`!frozendict` type.
    This function always succeeds.
 
 
 .. c:function:: int PyFrozenDict_Check(PyObject *p)
 
-   Return true if *p* is a frozendict object or an instance of a subtype of the
-   frozendict type.
+   Return true if *p* is a :class:`frozendict` object or an instance of a 
+   subtype of the :class:`!frozendict` type.
    This function always succeeds.
 
 
 .. c:function:: int PyFrozenDict_CheckExact(PyObject *p)
 
-   Return true if *p* is a frozendict object, but not an instance of a subtype
-   of the frozendict type.
+   Return true if *p* is a :class:`frozendict` object, but not an instance of a
+   subtype of the :class:`!frozendict` type.
    This function always succeeds.
 
 
 .. c:function:: PyObject* PyFrozenDict_New(PyObject *iterable)
 
-   Return a new frozendict from an iterable, or ``NULL`` on failure with an
-   exception set.
+   Return a new :class:`frozendict` from an iterable, or ``NULL`` on failure
+   with an exception set.
 
    Create an empty dictionary if *iterable* is ``NULL``.
 
 
-Ordered Dictionaries
+Ordered dictionaries
 ^^^^^^^^^^^^^^^^^^^^
 
 Python's C API provides interface for :class:`collections.OrderedDict` from C.
