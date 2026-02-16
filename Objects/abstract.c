@@ -2638,11 +2638,6 @@ object_isinstance(PyObject *inst, PyObject *cls)
 static int
 object_recursive_isinstance(PyThreadState *tstate, PyObject *inst, PyObject *cls)
 {
-    /* Quick test for an exact match */
-    if (Py_IS_TYPE(inst, (PyTypeObject *)cls)) {
-        return 1;
-    }
-
     /* We know what type's __instancecheck__ does. */
     if (PyType_CheckExact(cls)) {
         return object_isinstance(inst, cls);
