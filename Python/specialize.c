@@ -646,7 +646,7 @@ specialize_dict_access_hint(
     }
 #ifdef Py_GIL_DISABLED
     PyObject *value;
-    Py_ssize_t index = _PyDict_LookupIndexAndValue((PyDictObject *)globals, name, &value);
+    Py_ssize_t index = _PyDict_LookupIndexAndValue(dict, name, &value);
 #else
     Py_ssize_t index = _PyDict_LookupIndex(dict, name);
 #endif
