@@ -870,7 +870,7 @@ class HandlerTests(TestCase):
                 if c0 != "\t":
                     self.assertRaises(ValueError, base3.start_response, statusLegit, headersWithControlCharacters2)
                 else:
-                    base.start_response(statusLegit, headersWithControlCharacters2)
+                    base3.start_response(statusLegit, headersWithControlCharacters2)
 
 
 class TestModule(unittest.TestCase):
