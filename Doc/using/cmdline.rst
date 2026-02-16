@@ -524,8 +524,10 @@ Miscellaneous options
    This can be used to turn a Python script into a Windows batch file.
    Similarly to adding a shebang line and setting the executable bit on Unix,
    the extension of the Python script can be changed to ``.bat`` and the
-   following line can be added at the start of the script::
+   following line can be added at the start of the script:
 
+   .. code-block:: batch
+   
       @py -x "%~f0" %* & exit /b
 
    Or, to specify the path to the Python interpreter explicitly:
