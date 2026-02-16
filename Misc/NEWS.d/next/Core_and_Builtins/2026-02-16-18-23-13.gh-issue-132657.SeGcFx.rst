@@ -1,0 +1,2 @@
+In the free-threaded build, dictionary access hint specializations now attempt to enable deferred reference counting for resolved values owned by a different thread, reducing cross-thread reference count traffic and improving multi-threaded scalability.
+Patch by Benedikt Johannes.
