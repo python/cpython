@@ -164,7 +164,7 @@ class Element:
 
     """
 
-    def __init__(self, tag, attrib={}, **extra):
+    def __init__(self, tag, /, attrib={}, **extra):
         if not isinstance(attrib, dict):
             raise TypeError("attrib must be dict, not %s" % (
                 attrib.__class__.__name__,))

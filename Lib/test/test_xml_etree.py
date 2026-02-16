@@ -381,6 +381,22 @@ class ElementTreeTest(unittest.TestCase):
         self.serialize_check(element,
                 '<tag key="value"><subtag /><subtag /></tag>')
 
+    def test_positional_only_parameter(self):
+        # Test Element positional-only parameters (gh-144846).
+
+        # 'tag' is positional-only
+        with self.assertRaises(TypeError):
+            ET.Element(tag='fail')
+
+        # 'attrib' can be passed as keyword
+        e = ET.Element('e', attrib={'key': 'value'})
+        self.assertEqual(e.get('key'), 'value')
+
+        # 'tag' as kwarg becomes an XML attribute, not the element tag
+        e = ET.Element('e', tag='foo')
+        self.assertEqual(e.tag, 'e')
+        self.assertEqual(e.get('tag'), 'foo')
+
     def test_cdata(self):
         # Test CDATA handling (etc).
 
