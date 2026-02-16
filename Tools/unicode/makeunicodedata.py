@@ -109,19 +109,13 @@ CASE_IGNORABLE_MASK = 0x1000
 CASED_MASK = 0x2000
 EXTENDED_CASE_MASK = 0x4000
 
-# these ranges need to match unicodedata.c:is_unified_ideograph
-cjk_ranges = [
-    ('3400', '4DBF'),    # CJK Ideograph Extension A CJK
-    ('4E00', '9FFF'),    # CJK Ideograph
-    ('20000', '2A6DF'),  # CJK Ideograph Extension B
-    ('2A700', '2B73F'),  # CJK Ideograph Extension C
-    ('2B740', '2B81D'),  # CJK Ideograph Extension D
-    ('2B820', '2CEAD'),  # CJK Ideograph Extension E
-    ('2CEB0', '2EBE0'),  # CJK Ideograph Extension F
-    ('2EBF0', '2EE5D'),  # CJK Ideograph Extension I
-    ('30000', '3134A'),  # CJK Ideograph Extension G
-    ('31350', '323AF'),  # CJK Ideograph Extension H
-    ('323B0', '33479'),  # CJK Ideograph Extension J
+# Maps the range names in UnicodeData.txt to prefixes for
+# derived names specified by rule NR2.
+# Hangul should always be at index 0, since it uses special format.
+derived_name_range_names = [
+    ("Hangul Syllable", "HANGUL SYLLABLE "),
+    ("CJK Ideograph", "CJK UNIFIED IDEOGRAPH-"),
+    ("Tangut Ideograph", "TANGUT IDEOGRAPH-"),
 ]
 
 
@@ -135,7 +129,7 @@ def maketables(trace=0):
 
     for version in old_versions:
         print("--- Reading", UNICODE_DATA % ("-"+version), "...")
-        old_unicode = UnicodeData(version, cjk_check=False)
+        old_unicode = UnicodeData(version, ideograph_check=False)
         print(len(list(filter(None, old_unicode.table))), "characters")
         merge_old_version(version, unicode, old_unicode)
 
@@ -731,6 +725,23 @@ def makeunicodename(unicode, trace):
             fprint('    {%d, {%s}},' % (len(sequence), seq_str))
         fprint('};')
 
+        fprint(dedent("""
+            typedef struct {
+                Py_UCS4 first;
+                Py_UCS4 last;
+                int prefixid;
+            } derived_name_range;
+            """))
+
+        fprint('static const derived_name_range derived_name_ranges[] = {')
+        for name_range in unicode.derived_name_ranges:
+            fprint('    {0x%s, 0x%s, %d},' % name_range)
+        fprint('};')
+
+        fprint('static const char * const derived_name_prefixes[] = {')
+        for _, prefix in derived_name_range_names:
+            fprint('    "%s",' % prefix)
+        fprint('};')
 
 def merge_old_version(version, new, old):
     # Changes to exclusion file not implemented yet
@@ -946,14 +957,14 @@ def from_row(row: List[str]) -> UcdRecord:
 class UnicodeData:
     # table: List[Optional[UcdRecord]]  # index is codepoint; None means unassigned
 
-    def __init__(self, version, cjk_check=True):
+    def __init__(self, version, ideograph_check=True):
         self.changed = []
         table = [None] * 0x110000
         for s in UcdFile(UNICODE_DATA, version):
             char = int(s[0], 16)
             table[char] = from_row(s)
 
-        cjk_ranges_found = []
+        self.derived_name_ranges = []
 
         # expand first-last ranges
         field = None
@@ -967,15 +978,15 @@ class UnicodeData:
                     s.name = ""
                     field = dataclasses.astuple(s)[:15]
                 elif s.name[-5:] == "Last>":
-                    if s.name.startswith("<CJK Ideograph"):
-                        cjk_ranges_found.append((field[0],
-                                                 s.codepoint))
+                    for j, (rangename, _) in enumerate(derived_name_range_names):
+                        if s.name.startswith("<" + rangename):
+                            self.derived_name_ranges.append(
+                                (field[0], s.codepoint, j))
+                            break
                     s.name = ""
                     field = None
             elif field:
                 table[i] = from_row(('%X' % i,) + field[1:])
-        if cjk_check and cjk_ranges != cjk_ranges_found:
-            raise ValueError("CJK ranges deviate: have %r" % cjk_ranges_found)
 
         # public attributes
         self.filename = UNICODE_DATA % ''
