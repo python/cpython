@@ -68,7 +68,7 @@ Summary -- Release highlights
 * :pep:`810`: :ref:`Explicit lazy imports for faster startup times
   <whatsnew315-pep810>`
 * :pep:`814`: :ref:`Add frozendict built-in type
-  <whatsnew315-pep814>`
+  <whatsnew315-frozendict>`
 * :pep:`799`: :ref:`A dedicated profiling package for organizing Python
   profiling tools <whatsnew315-profiling-package>`
 * :pep:`799`: :ref:`Tachyon: High frequency statistical sampling profiler
@@ -183,7 +183,7 @@ raise :exc:`SyntaxError`).
 (Contributed by Pablo Galindo Salgado and Dino Viehland in :gh:`142349`.)
 
 
-.. _whatsnew315-pep814:
+.. _whatsnew315-frozendict:
 
 :pep:`814`: Add frozendict built-in type
 ----------------------------------------
