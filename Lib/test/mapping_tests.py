@@ -20,7 +20,7 @@ class BasicTestImmutableMappingProtocol(unittest.TestCase):
         """Return an empty mapping object"""
         return self.type2test()
     def _full_mapping(self, data):
-        """Return a mapping object with the value contained in data
+        """Return a mapping object with the values contained in data
         dictionary"""
         return self.type2test(data)
 
@@ -144,7 +144,7 @@ class BasicTestImmutableMappingProtocol(unittest.TestCase):
 
 class BasicTestMappingProtocol(BasicTestImmutableMappingProtocol):
     def _full_mapping(self, data):
-        """Return a mapping object with the value contained in data
+        """Return a mapping object with the values contained in data
         dictionary"""
         x = self._empty_mapping()
         for key, value in data.items():
