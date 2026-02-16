@@ -647,8 +647,8 @@ specialize_dict_access_hint(
     PyObject *value;
     Py_ssize_t index = _PyDict_LookupIndexAndValue(dict, name, &value);
     if (value != NULL && PyLazyImport_CheckExact(value)) {
-        SPECIALIZATION_FAIL(LOAD_ATTR, SPEC_FAIL_ATTR_MODULE_LAZY_VALUE);
-        return -1;
+        SPECIALIZATION_FAIL(base_op, SPEC_FAIL_ATTR_MODULE_LAZY_VALUE);
+        return 0;
     }
     if (index != (uint16_t)index) {
         SPECIALIZATION_FAIL(base_op,
