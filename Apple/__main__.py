@@ -316,7 +316,7 @@ def unpack_deps(
     for name_ver in [
         "BZip2-1.0.8-2",
         "libFFI-3.4.7-2",
-        "OpenSSL-3.0.18-1",
+        "OpenSSL-3.0.19-1",
         "XZ-5.6.4-2",
         "mpdecimal-4.0.0-2",
         "zstd-1.5.7-1",
