@@ -11,9 +11,8 @@ on:
       - nanvix/**
   workflow_dispatch:
   repository_dispatch:
-    # Triggered by sqlite or openssl when they complete a release (dependency chain)
-    # sqlite already depends on zlib, so zlib is guaranteed to be ready
-    types: [sqlite-release, openssl-release]
+    # Triggered by dependencies when they complete a release
+    types: [sqlite-release, openssl-release, bzip2-release, expat-release, libffi-release]
 
 permissions:
   contents: write
@@ -451,6 +450,23 @@ jobs:
           - openssl: [\`${OPENSSL_TAG}\`](https://github.com/nanvix/openssl/releases/tag/${OPENSSL_TAG})" \
             --latest \
             release-assets/*.tar.bz2
+
+      # Trigger dependent workflows (C extensions and numpy depend on cpython headers)
+      - name: Trigger Dependent Workflows
+        if: success()
+        env:
+          GH_TOKEN: ${{ secrets.DISPATCH_TOKEN }}
+        run: |
+          RELEASE_TAG="${GITHUB_SHA::7}-nanvix-${NANVIX_SHA}"
+          for repo in cymem murmurhash preshed srsly kiwi numpy; do
+            echo "Triggering nanvix/$repo..."
+            gh api repos/nanvix/$repo/dispatches \
+              -X POST \
+              -H "Accept: application/vnd.github+json" \
+              -f event_type="cpython-release" \
+              -f "client_payload[nanvix_sha]=${NANVIX_SHA}" \
+              -f "client_payload[cpython_tag]=${RELEASE_TAG}" || echo "::warning::Failed to trigger $repo"
+          done
 
   report-failure:
     needs:

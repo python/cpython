@@ -124,7 +124,7 @@ extern PyObject* PyInit__string(void);
 
 struct _inittab _PyImport_Inittab[] = {
 
-    {"_regex", PyInit__regex},
+    {"regex._regex", PyInit__regex},
     {"_cffi_backend", PyInit__cffi_backend},
     {"numpy.core._multiarray_umath", PyInit__multiarray_umath},
     {"numpy.fft._pocketfft_internal", PyInit__pocketfft_internal},

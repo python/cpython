@@ -100,6 +100,11 @@ ifdef CONFIG_NANVIX
     BUILD_PYTHON := $(NANVIX_TOOLCHAIN)/bin/python3
   endif
 
+  # NANVIX_SYSROOT: exported so that Modules/Setup.local can reference
+  # archive paths portably (e.g. $(NANVIX_SYSROOT)/lib/numpy/*.a).
+  NANVIX_SYSROOT := $(SYSROOT_PATH)
+  export NANVIX_SYSROOT
+
   # INSTALL_PREFIX: the prefix baked into the python binary (sys.prefix, sys.path).
   # Local builds default to SYSROOT_PATH; CI overrides to /sysroot so that
   # release artifacts don't contain ephemeral runner paths.
