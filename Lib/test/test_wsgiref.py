@@ -859,8 +859,14 @@ class HandlerTests(TestCase):
         for c0 in control_characters_c0():
             with self.subTest(c0):
                 base = BaseHandler()
-                headers = [('x','y')]
-                self.assertRaises(ValueError, base.start_response, c0, headers)
+                statusLegit = '200 OK'
+                statusWithControlCharacters1 = c0
+                headersLegit = [('x', 'y')]
+                headersWithControlCharacters1 = [(c0, 'y')]
+                headersWithControlCharacters2 = [('x', c0)]
+                self.assertRaises(ValueError, base.start_response, c0, headersLegit)
+                self.assertRaises(ValueError, base.start_response, statusLegit, headersWithControlCharacters1)
+                self.assertRaises(ValueError, base.start_response, statusLegit, headersWithControlCharacters2)
 
 
 class TestModule(unittest.TestCase):
