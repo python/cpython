@@ -1,4 +1,4 @@
-import re
+lazy import re
 import sys
 lazy import copy
 import types
@@ -217,9 +217,8 @@ _PARAMS = '__dataclass_params__'
 _POST_INIT_NAME = '__post_init__'
 
 # String regex that string annotations for ClassVar or InitVar must match.
-# Allows "identifier.identifier[" or "identifier[".
-# https://bugs.python.org/issue33453 for details.
-_MODULE_IDENTIFIER_RE = re.compile(r'^(?:\s*(\w+)\s*\.)?\s*(\w+)')
+# This regular expression is compiled on demand so that 're' module can be imported lazily
+_MODULE_IDENTIFIER_RE = None
 
 # Atomic immutable types which don't require any recursive handling and for which deepcopy
 # returns the same object. We can provide a fast-path for these types in asdict and astuple.
@@ -803,6 +802,13 @@ def _is_type(annotation, cls, a_module, a_type, is_type_predicate):
     # correct global and local namespaces.  However that would involve
     # a eval() penalty for every single field of every dataclass
     # that's defined.  It was judged not worth it.
+
+    # String regex that string annotations for ClassVar or InitVar must match.
+    # Allows "identifier.identifier[" or "identifier[".
+    # https://bugs.python.org/issue33453 for details.
+    global _MODULE_IDENTIFIER_RE
+    if _MODULE_IDENTIFIER_RE is None:
+        _MODULE_IDENTIFIER_RE = re.compile(r'^(?:\s*(\w+)\s*\.)?\s*(\w+)')
 
     match = _MODULE_IDENTIFIER_RE.match(annotation)
     if match:
