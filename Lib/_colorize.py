@@ -8,6 +8,7 @@ COLORIZE = True
 if False:
     from collections.abc import Iterator
     from typing import IO, Literal, Self, ClassVar
+    _theme: Theme
 
 
 class ANSIColors:
@@ -152,7 +153,7 @@ class ThemeSection:
 
     def __getitem__(self, key: str) -> str:
         if key in self._fields:
-            return getattr(self, key)
+            return getattr(self, key)  # type: ignore[no-any-return]
         raise KeyError(key)
 
     def __len__(self) -> int:
@@ -164,18 +165,18 @@ class ThemeSection:
     def __contains__(self, key: object) -> bool:
         return key in self._fields
 
-    def keys(self):
+    def keys(self) -> tuple[str, ...]:
         return self._fields
 
-    def values(self):
+    def values(self) -> tuple[str, ...]:
         return tuple(getattr(self, f) for f in self._fields)
 
-    def items(self):
+    def items(self) -> tuple[tuple[str, str], ...]:
         return tuple((f, getattr(self, f)) for f in self._fields)
 
     def get(self, key: str, default: str | None = None) -> str | None:
         if key in self._fields:
-            return getattr(self, key)
+            return getattr(self, key)  # type: ignore[no-any-return]
         return default
 
     def __repr__(self) -> str:
