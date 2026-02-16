@@ -3634,19 +3634,12 @@ class TestParser(TestParserMixin, TestEmailBase):
         kw['tokenlisttype'] = parser.TokenList
         yield '', C(*args, **kw)
 
-    @params_map(with_namelist=True)
-    def adapt_get_quoted_string_tests_for_get_word(nl, *args, **kw):
+    @params_map
+    def adapt_get_quoted_string_tests_for_get_word(*args, **kw):
         kw['tokenlisttype'] = parser.QuotedString
-        # XXX XXX Compensate for the fact that get_word is currently peeling
-        # off the first cfws without copying the indexes, and is only passing
-        # get_quoted_string the truncated value.
-        if ('adapted_from_get_cfws' in nl
-                and (idxs := kw.get('ew_indexes'))
-            ):
-            kw['ew_indexes'] = [x + 6 for x in idxs[:len(idxs)//2]]
         yield '', C(*args, **kw)
 
-    params_test_get_word = old_api_only(
+    params_test_get_word = for_each_api(
 
         # A word can be an atom, so get_word should pass many of the atom tests.
         adapt_get_atom_tests_for_get_word(
@@ -3659,9 +3652,7 @@ class TestParser(TestParserMixin, TestEmailBase):
                         'no_atom_before_special',
                         'no_atext_before_special_or_wsp',
                         )
-                    and 'quotation_mark' in n
-                    # XXX XXX disable the ew tests until get_word is refactored
-                    or 'ew_' in str(n),
+                    and 'quotation_mark' in n,
                 label='from_test_get_atom',
                 )(params_test_get_atom),
             ),
@@ -4133,7 +4124,7 @@ class TestParser(TestParserMixin, TestEmailBase):
             local_part="foo . bar.bird",
             comments=['test'],
             # XXX XXX the indexes will change during refactor
-            ew_indexes=[0, 0],
+            ew_indexes=[0, 2, 20],
             ),
 
         )

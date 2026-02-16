@@ -1903,39 +1903,40 @@ def get_dot_atom(value, start):
         dot_atom.append(token)
     return dot_atom, start
 
-def get_word(value):
+@_deprecate_old_api
+def get_word(value, start):
     """word = atom / quoted-string
 
-    Either atom or quoted-string may start with CFWS.  We have to peel off this
-    CFWS first to determine which type of word to parse.  Afterward we splice
-    the leading CFWS, if any, into the parsed sub-token.
-
-    If neither an atom or a quoted-string is found before the next special, a
-    HeaderParseError is raised.
-
-    The token returned is either an Atom or a QuotedString, as appropriate.
-    This means the 'word' level of the formal grammar is not represented in the
-    parse tree; this is because having that extra layer when manipulating the
-    parse tree is more confusing than it is helpful.
+    Return either an Atom or a QuotedString, as appropriate, containing any
+    leading or trailing whitespace, up to the next non-whitespace
+    non-special character, and a pointer to the special or the len of value.
+    If no quoted string or atom is found, raise a HeaderParseError.
 
     """
-    if value and value[0] in CFWS_LEADER:
-        leader, value = get_cfws(value)
+    # The 'word' level of the RFC grammar is not represented in the parse tree;
+    # having that extra layer when manipulating the parse tree is more
+    # confusing than it is helpful, and would not affect re-folding.
+    vlen = len(value)
+    if start < vlen and value[start] in CFWS_LEADER:
+        leader, start = get_cfws(value, start)
     else:
         leader = None
-    if not value:
+    if start >= vlen:
         raise errors.HeaderParseError(
             "Expected 'atom' or 'quoted-string' but found nothing.")
-    if value[0]=='"':
-        token, value = get_quoted_string(value)
-    elif value[0] in SPECIALS:
-        raise errors.HeaderParseError("Expected 'atom' or 'quoted-string' "
-                                      "but found '{}'".format(value))
+    if value[start]=='"':
+        token, start = get_quoted_string(value, start)
+    elif value[start] in SPECIALS:
+        raise errors.HeaderParseError(
+            f"Expected 'atom' or 'quoted-string' but found {value[start:]!r}"
+            )
     else:
-        token, value = get_atom(value)
+        token, start = get_atom(value, start)
     if leader is not None:
-        token[:0] = [leader]
-    return token, value
+        if not leader.endswith_fws() and token[0].token_type == 'encoded-word':
+            token.defects.append(_MissingWhitespaceBeforeEWDefect)
+        token.push(leader)
+    return token, start
 
 def get_phrase(value):
     """ phrase = 1*word / obs-phrase
