@@ -866,7 +866,11 @@ class HandlerTests(TestCase):
                 headersWithControlCharacters2 = [('x', c0)]
                 self.assertRaises(ValueError, base1.start_response, c0, headersLegit)
                 self.assertRaises(ValueError, base2.start_response, statusLegit, headersWithControlCharacters1)
-                self.assertRaises(ValueError, base3.start_response, statusLegit, headersWithControlCharacters2)
+                # HTAB (\x09) is allowed in header values, but not in names.
+                if c0 != "\t":
+                    self.assertRaises(ValueError, base3.start_response, statusLegit, headersWithControlCharacters2)
+                else:
+                    base.start_response(statusLegit, headersWithControlCharacters2)
 
 
 class TestModule(unittest.TestCase):
