@@ -1223,23 +1223,6 @@ function generateInvertedFlamegraph(data) {
   return invertedRoot;
 }
 
-function updateToggleUI(toggleId, isOn) {
-  const toggle = document.getElementById(toggleId);
-  if (toggle) {
-    const track = toggle.querySelector('.toggle-track');
-    const labels = toggle.querySelectorAll('.toggle-label');
-    if (isOn) {
-      track.classList.add('on');
-      labels[0].classList.remove('active');
-      labels[1].classList.add('active');
-    } else {
-      track.classList.remove('on');
-      labels[0].classList.add('active');
-      labels[1].classList.remove('active');
-    }
-  }
-}
-
 function toggleInvert() {
   isInverted = !isInverted;
   updateToggleUI('toggle-invert', isInverted);
