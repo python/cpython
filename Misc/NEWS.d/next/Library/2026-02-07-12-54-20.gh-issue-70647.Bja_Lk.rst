@@ -1,0 +1,2 @@
+Include the ``%e`` format code in the :meth:`~datetime.datetime.strptime`
+deprecation for day-of-month format codes used without a year.
