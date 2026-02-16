@@ -236,9 +236,7 @@ class BaseHandler:
             raise AssertionError("Headers already set!")
 
         self.status = status
-
         self.headers = self.headers_class(headers)
-
         status = self._convert_string_type(status, "Status")
         self._validate_status(status)
 
