@@ -237,10 +237,6 @@ class BaseHandler:
 
         self.status = status
 
-        # The next line should not be changed because it
-        # indirectly prevents injections via C0 control
-        # characters in the following lines via raising a ValueError
-        # inside headers_class.
         self.headers = self.headers_class(headers)
 
         status = self._convert_string_type(status, "Status")
