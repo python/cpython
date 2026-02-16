@@ -1235,7 +1235,18 @@ class _TestQueue(BaseTestCase):
                 break
         self.assertEqual(queue_empty(queue), False)
 
-        self.assertEqual(queue.get_nowait(), 1)
+        for _ in support.sleeping_retry(support.SHORT_TIMEOUT):
+            try:
+                value = queue.get_nowait()
+            except pyqueue.Empty:
+                # Queue.empty() may become false before the feeder thread
+                # flushes objects to the pipe.
+                continue
+            else:
+                break
+        else:
+            self.fail("queue.get_nowait() unexpectedly raised Empty")
+        self.assertEqual(value, 1)
         self.assertEqual(queue.get(True, None), 2)
         self.assertEqual(queue.get(True), 3)
         self.assertEqual(queue.get(timeout=1), 4)
