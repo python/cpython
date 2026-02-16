@@ -1093,10 +1093,8 @@ class _singledispatchmethod_get:
                                'singledispatchmethod method')
             raise TypeError(f'{funcname} requires at least '
                             '1 positional argument')
-        if self._skip_bound_arg:
-            method = self._dispatch(args[1].__class__)
-        else:
-            method = self._dispatch(args[0].__class__)
+        index = 1 if self._skip_bound_arg else 0
+        method = self._dispatch(args[index].__class__)
 
         if hasattr(method, "__get__"):
             # If the method is a descriptor, it might be necessary
