@@ -852,6 +852,7 @@ get_current_allocator_name_unlocked(void)
 #ifdef WITH_MIMALLOC
     PyMemAllocatorEx mimalloc = MIMALLOC_ALLOC;
     PyMemAllocatorEx mimalloc_obj = MIMALLOC_OBJALLOC;
+    PyMemAllocatorEx mimalloc_raw = MIMALLOC_RAWALLOC;
 #endif
 
     if (pymemallocator_eq(&_PyMem_Raw, &malloc_alloc) &&
@@ -869,7 +870,7 @@ get_current_allocator_name_unlocked(void)
     }
 #endif
 #ifdef WITH_MIMALLOC
-    if (pymemallocator_eq(&_PyMem_Raw, &malloc_alloc) &&
+    if (pymemallocator_eq(&_PyMem_Raw, &mimalloc_raw) &&
         pymemallocator_eq(&_PyMem, &mimalloc) &&
         pymemallocator_eq(&_PyObject, &mimalloc_obj))
     {
@@ -901,7 +902,7 @@ get_current_allocator_name_unlocked(void)
         }
 #endif
 #ifdef WITH_MIMALLOC
-        if (pymemallocator_eq(&_PyMem_Debug.raw.alloc, &malloc_alloc) &&
+        if (pymemallocator_eq(&_PyMem_Debug.raw.alloc, &mimalloc_raw) &&
             pymemallocator_eq(&_PyMem_Debug.mem.alloc, &mimalloc) &&
             pymemallocator_eq(&_PyMem_Debug.obj.alloc, &mimalloc_obj))
         {
