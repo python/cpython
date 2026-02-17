@@ -242,11 +242,18 @@ jobs:
         # BOLT currently crashes during instrumentation on aarch64
         - os: ubuntu-24.04-arm
           bolt: true
+        include:
+        # Enable CPU-intensive tests on ARM (default build only)
+        - os: ubuntu-24.04-arm
+          bolt: false
+          free-threading: false
+          test-opts: '-u cpu'
     uses: ./.github/workflows/reusable-ubuntu.yml
     with:
       bolt-optimizations: ${{ matrix.bolt }}
       free-threading: ${{ matrix.free-threading }}
       os: ${{ matrix.os }}
+      test-opts: ${{ matrix.test-opts || '' }}
 
   build-ubuntu-ssltests-openssl:
     name: 'Ubuntu SSL tests with OpenSSL'
