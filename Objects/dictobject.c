@@ -2671,10 +2671,8 @@ _PyDict_LoadBuiltinsFromGlobals(PyObject *globals)
 
 /* Consumes references to key and value */
 static int
-setitem_take2_lock_held(PyDictObject *mp, PyObject *key, PyObject *value)
+anydict_setitem_take2(PyDictObject *mp, PyObject *key, PyObject *value)
 {
-    ASSERT_DICT_LOCKED(mp);
-
     assert(key);
     assert(value);
     assert(PyAnyDict_Check(mp));
@@ -2691,6 +2689,14 @@ setitem_take2_lock_held(PyDictObject *mp, PyObject *key, PyObject *value)
     }
     /* insertdict() handles any resizing that might be necessary */
     return insertdict(mp, key, hash, value);
+}
+
+/* Consumes references to key and value */
+static int
+setitem_take2_lock_held(PyDictObject *mp, PyObject *key, PyObject *value)
+{
+    ASSERT_DICT_LOCKED(mp);
+    return anydict_setitem_take2(mp, key, value);
 }
 
 int
@@ -3352,7 +3358,19 @@ _PyDict_FromKeys(PyObject *cls, PyObject *iterable, PyObject *value)
         }
 dict_iter_exit:;
         Py_END_CRITICAL_SECTION();
-    } else {
+    }
+    else if (PyFrozenDict_CheckExact(d)) {
+        while ((key = PyIter_Next(it)) != NULL) {
+            status = anydict_setitem_take2((PyDictObject *)d,
+                                           Py_NewRef(key), Py_NewRef(value));
+            Py_DECREF(key);
+            if (status < 0) {
+                assert(PyErr_Occurred());
+                goto Fail;
+            }
+        }
+    }
+    else {
         while ((key = PyIter_Next(it)) != NULL) {
             status = PyObject_SetItem(d, key, value);
             Py_DECREF(key);
