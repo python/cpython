@@ -3482,6 +3482,12 @@ dict_length(PyObject *self)
     return GET_USED(_PyAnyDict_CAST(self));
 }
 
+static Py_ssize_t
+frozendict_length(PyObject *self)
+{
+    return _PyAnyDict_CAST(self)->ma_used;
+}
+
 static PyObject *
 dict_subscript(PyObject *self, PyObject *key)
 {
@@ -7833,7 +7839,7 @@ static PyNumberMethods frozendict_as_number = {
 };
 
 static PyMappingMethods frozendict_as_mapping = {
-    .mp_length = dict_length,
+    .mp_length = frozendict_length,
     .mp_subscript = dict_subscript,
 };
 
