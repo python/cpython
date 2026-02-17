@@ -1899,6 +1899,8 @@ insertdict(PyDictObject *mp,
     PyObject *old_value = NULL;
     Py_ssize_t ix;
 
+    ASSERT_DICT_LOCKED(mp);
+
     if (_PyDict_HasSplitTable(mp) && PyUnicode_CheckExact(key)) {
         ix = insert_split_key(mp->ma_keys, key, hash);
         if (ix != DKIX_EMPTY) {
@@ -1966,6 +1968,7 @@ insert_to_emptydict(PyDictObject *mp,
                     PyObject *key, Py_hash_t hash, PyObject *value)
 {
     assert(mp->ma_keys == Py_EMPTY_KEYS);
+    ASSERT_DICT_LOCKED(mp);
 
     int unicode = PyUnicode_CheckExact(key);
     PyDictKeysObject *newkeys = new_keys_object(PyDict_LOG_MINSIZE, unicode);
@@ -2749,7 +2752,6 @@ int
 _PyDict_SetItem_KnownHash_LockHeld(PyDictObject *mp, PyObject *key, PyObject *value,
                                    Py_hash_t hash)
 {
-    ASSERT_DICT_LOCKED(mp);
     if (mp->ma_keys == Py_EMPTY_KEYS) {
         return insert_to_emptydict(mp, Py_NewRef(key), hash, Py_NewRef(value));
     }
