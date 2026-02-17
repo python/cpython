@@ -152,10 +152,79 @@ class CProfileTest(ProfileTest):
 
 
 class TestCommandLine(unittest.TestCase):
-    def test_sort(self):
-        rc, out, err = assert_python_failure('-m', 'cProfile', '-s', 'demo')
-        self.assertGreater(rc, 0)
+    def test_help(self):
+        for flag in ('-h', '--help'):
+            with self.subTest(flag=flag):
+                _, out, _ = assert_python_ok('-m', 'cProfile', flag)
+                self.assertIn(b'Usage: cProfile.py', out)
+                self.assertIn(b'-o OUTFILE', out)
+                self.assertIn(b'-s SORT', out)
+
+    def test_no_args(self):
+        rc, out, _ = assert_python_failure('-m', 'cProfile')
+        self.assertEqual(rc, 2)
+        self.assertIn(b'Usage: cProfile.py', out)
+
+    def test_unknown_option(self):
+        rc, _, err = assert_python_failure('-m', 'cProfile', '--unknown')
+        self.assertEqual(rc, 2)
+        self.assertIn(b'no such option', err)
+
+    def test_invalid_sort(self):
+        rc, _, err = assert_python_failure('-m', 'cProfile', '-s', 'demo')
+        self.assertEqual(rc, 2)
         self.assertIn(b"option -s: invalid choice: 'demo'", err)
+
+    def test_valid_sort(self):
+        with tempfile.NamedTemporaryFile("w", suffix=".py",
+                                         delete_on_close=False) as f:
+            f.write("def f(): pass\nf()\n")
+            f.close()
+            for sort_key in ('calls', 'cumtime', 'tottime', 'name'):
+                for flag in ('-s', '--sort'):
+                    with self.subTest(sort_key=sort_key, flag=flag):
+                        _, out, _ = assert_python_ok(
+                            '-m', 'cProfile', flag, sort_key, f.name
+                        )
+                        self.assertIn(b'function calls', out)
+
+    def test_outfile(self):
+        with tempfile.NamedTemporaryFile("w", suffix=".py",
+                                         delete_on_close=False) as script:
+            script.write("def f(): pass\nf()\n")
+            script.close()
+            outfile = tempfile.NamedTemporaryFile(delete=False)
+            outfile.close()
+            self.addCleanup(support.os_helper.unlink, outfile.name)
+            for flag in ('-o', '--outfile'):
+                with self.subTest(flag=flag):
+                    assert_python_ok(
+                        '-m', 'cProfile', flag, outfile.name, script.name
+                    )
+                    with open(outfile.name, 'rb') as f:
+                        self.assertGreater(len(f.read()), 0)
+
+    def test_profile_script(self):
+        with tempfile.NamedTemporaryFile("w", suffix=".py",
+                                         delete_on_close=False) as f:
+            f.write("def f(): pass\nf()\n")
+            f.close()
+            _, out, _ = assert_python_ok('-m', 'cProfile', f.name)
+            self.assertIn(b'function calls', out)
+            self.assertIn(b'Ordered by', out)
+
+    def test_profile_module(self):
+        _, out, _ = assert_python_ok(
+            '-m', 'cProfile', '-m', 'timeit', '-n', '1', 'pass'
+        )
+        self.assertIn(b'function calls', out)
+
+    def test_nonexistent_script(self):
+        rc, _, err = assert_python_failure(
+            '-m', 'cProfile', 'nonexistent_script.py'
+        )
+        self.assertEqual(rc, 1)
+        self.assertIn(b'No such file or directory', err)
 
     def test_profile_script_importing_main(self):
         """Check that scripts that reference __main__ see their own namespace
