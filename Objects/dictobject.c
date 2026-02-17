@@ -3362,8 +3362,7 @@ dict_iter_exit:;
     else if (PyFrozenDict_CheckExact(d)) {
         while ((key = PyIter_Next(it)) != NULL) {
             status = anydict_setitem_take2((PyDictObject *)d,
-                                           Py_NewRef(key), Py_NewRef(value));
-            Py_DECREF(key);
+                                           key, Py_NewRef(value));
             if (status < 0) {
                 assert(PyErr_Occurred());
                 goto Fail;
