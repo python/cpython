@@ -7907,7 +7907,7 @@ frozendict_hash(PyObject *op)
     /* Factor in the number of active entries */
     hash ^= ((Py_uhash_t)mp->ma_used + 1) * 1927868237UL;
 
-    /* Disperse patterns arising in nested frozensets */
+    /* Disperse patterns arising in nested frozendicts */
     hash ^= (hash >> 11) ^ (hash >> 25);
     hash = hash * 69069U + 907133923UL;
 
