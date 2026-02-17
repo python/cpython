@@ -7881,33 +7881,55 @@ frozendict_repr(PyObject *self)
     return res;
 }
 
+static Py_uhash_t
+_shuffle_bits(Py_uhash_t h)
+{
+    return ((h ^ 89869747UL) ^ (h << 16)) * 3644798167UL;
+}
+
+// Code copied from frozenset_hash()
 static Py_hash_t
 frozendict_hash(PyObject *op)
 {
     PyFrozenDictObject *self = _PyFrozenDictObject_CAST(op);
-    Py_hash_t hash = FT_ATOMIC_LOAD_SSIZE_RELAXED(self->ma_hash);
-    if (hash != -1) {
-        return hash;
+    Py_hash_t shash = FT_ATOMIC_LOAD_SSIZE_RELAXED(self->ma_hash);
+    if (shash != -1) {
+        return shash;
     }
 
-    PyObject *items = _PyDictView_New(op, &PyDictItems_Type);
-    if (items == NULL) {
-        return -1;
-    }
-    PyObject *frozenset = PyFrozenSet_New(items);
-    Py_DECREF(items);
-    if (frozenset == NULL) {
-        return -1;
+    PyDictObject *mp = _PyAnyDict_CAST(op);
+    Py_uhash_t hash = 0;
+
+    PyObject *key, *value;  // borrowed refs
+    Py_ssize_t pos = 0;
+    while (PyDict_Next(op, &pos, &key, &value)) {
+        Py_hash_t key_hash = PyObject_Hash(key);
+        if (key_hash == -1) {
+            return -1;
+        }
+        hash ^= _shuffle_bits(key_hash);
+
+        Py_hash_t value_hash = PyObject_Hash(value);
+        if (value_hash == -1) {
+            return -1;
+        }
+        hash ^= _shuffle_bits(value_hash);
     }
 
-    hash = PyObject_Hash(frozenset);
-    Py_DECREF(frozenset);
-    if (hash == -1) {
-        return -1;
+    /* Factor in the number of active entries */
+    hash ^= ((Py_uhash_t)mp->ma_used + 1) * 1927868237UL;
+
+    /* Disperse patterns arising in nested frozendicts */
+    hash ^= (hash >> 11) ^ (hash >> 25);
+    hash = hash * 69069U + 907133923UL;
+
+    /* -1 is reserved as an error code */
+    if (hash == (Py_uhash_t)-1) {
+        hash = 590923713UL;
     }
 
-    FT_ATOMIC_STORE_SSIZE_RELAXED(self->ma_hash, hash);
-    return hash;
+    FT_ATOMIC_STORE_SSIZE_RELAXED(self->ma_hash, (Py_hash_t)hash);
+    return (Py_hash_t)hash;
 }
 
 
