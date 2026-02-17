@@ -2584,7 +2584,7 @@ requires, and these work on all supported platforms.
 |  ``%S``   | Second as a zero-padded        | 00, 01, ..., 59        | \(4), |
 |           | decimal number.                |                        | \(9)  |
 +-----------+--------------------------------+------------------------+-------+
-|  ``%t``   | The tab character              | ``\t``                 | \(0)  |
+|  ``%t``   | The tab character              | ``\t``                 |       |
 |           | (``'\t'``).                    |                        |       |
 +-----------+--------------------------------+------------------------+-------+
 |  ``%T``   | ISO 8601 time format,          | 10:01:59               |       |
