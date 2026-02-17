@@ -30,7 +30,6 @@ _PyFunction_IsVersionValid(uint32_t version)
 extern uint32_t _PyFunction_GetVersionForCurrentState(PyFunctionObject *func);
 PyAPI_FUNC(void) _PyFunction_SetVersion(PyFunctionObject *func, uint32_t version);
 void _PyFunction_ClearCodeByVersion(uint32_t version);
-PyFunctionObject *_PyFunction_LookupByVersion(uint32_t version, PyObject **p_code);
 
 extern PyObject *_Py_set_function_type_params(
     PyThreadState* unused, PyObject *func, PyObject *type_params);

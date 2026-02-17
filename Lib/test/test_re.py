@@ -90,10 +90,13 @@ class ReTests(unittest.TestCase):
         self.assertEqual(re.search('x+', 'axx').span(), (1, 3))
         self.assertIsNone(re.search('x', 'aaa'))
         self.assertEqual(re.match('a*', 'xxx').span(0), (0, 0))
+        self.assertEqual(re.prefixmatch('a*', 'xxx').span(0), (0, 0))
         self.assertEqual(re.match('a*', 'xxx').span(), (0, 0))
         self.assertEqual(re.match('x*', 'xxxa').span(0), (0, 3))
+        self.assertEqual(re.prefixmatch('x*', 'xxxa').span(0), (0, 3))
         self.assertEqual(re.match('x*', 'xxxa').span(), (0, 3))
         self.assertIsNone(re.match('a+', 'xxx'))
+        self.assertIsNone(re.prefixmatch('a+', 'xxx'))
 
     def test_branching(self):
         """Test Branching
@@ -180,6 +183,7 @@ class ReTests(unittest.TestCase):
     def test_bug_1661(self):
         # Verify that flags do not get silently ignored with compiled patterns
         pattern = re.compile('.')
+        self.assertRaises(ValueError, re.prefixmatch, pattern, 'A', re.I)
         self.assertRaises(ValueError, re.match, pattern, 'A', re.I)
         self.assertRaises(ValueError, re.search, pattern, 'A', re.I)
         self.assertRaises(ValueError, re.findall, pattern, 'A', re.I)
@@ -517,6 +521,8 @@ class ReTests(unittest.TestCase):
             self.assertEqual(re.match(b'(a)', string).group(0), b'a')
             self.assertEqual(re.match(b'(a)', string).group(1), b'a')
             self.assertEqual(re.match(b'(a)', string).group(1, 1), (b'a', b'a'))
+            self.assertEqual(re.prefixmatch(b'(a)', string).group(1, 1),
+                             (b'a', b'a'))
         for a in ("\xe0", "\u0430", "\U0001d49c"):
             self.assertEqual(re.match(a, a).groups(), ())
             self.assertEqual(re.match('(%s)' % a, a).groups(), (a,))
@@ -558,10 +564,8 @@ class ReTests(unittest.TestCase):
         self.assertEqual(m.group(2, 1), ('b', 'a'))
         self.assertEqual(m.group(Index(2), Index(1)), ('b', 'a'))
 
-    def test_match_getitem(self):
-        pat = re.compile('(?:(?P<a1>a)|(?P<b2>b))(?P<c3>c)?')
-
-        m = pat.match('a')
+    def do_test_match_getitem(self, match_fn):
+        m = match_fn('a')
         self.assertEqual(m['a1'], 'a')
         self.assertEqual(m['b2'], None)
         self.assertEqual(m['c3'], None)
@@ -585,7 +589,7 @@ class ReTests(unittest.TestCase):
         with self.assertRaisesRegex(IndexError, 'no such group'):
             'a1={a2}'.format_map(m)
 
-        m = pat.match('ac')
+        m = match_fn('ac')
         self.assertEqual(m['a1'], 'a')
         self.assertEqual(m['b2'], None)
         self.assertEqual(m['c3'], 'c')
@@ -601,6 +605,14 @@ class ReTests(unittest.TestCase):
 
         # No len().
         self.assertRaises(TypeError, len, m)
+
+    def test_match_getitem(self):
+        pat = re.compile('(?:(?P<a1>a)|(?P<b2>b))(?P<c3>c)?')
+        self.do_test_match_getitem(pat.match)
+
+    def test_prefixmatch_getitem(self):
+        pat = re.compile('(?:(?P<a1>a)|(?P<b2>b))(?P<c3>c)?')
+        self.do_test_match_getitem(pat.prefixmatch)
 
     def test_re_fullmatch(self):
         # Issue 16203: Proposal: add re.fullmatch() method.

@@ -58,7 +58,7 @@ _PyObject_CheckConsistency(PyObject *op, int check_content)
     if (PyUnicode_Check(op)) {
         _PyUnicode_CheckConsistency(op, check_content);
     }
-    else if (PyDict_Check(op)) {
+    else if (PyAnyDict_Check(op)) {
         _PyDict_CheckConsistency(op, check_content);
     }
     return 1;
@@ -2532,8 +2532,9 @@ static PyTypeObject* static_types[] = {
     &PyEnum_Type,
     &PyFilter_Type,
     &PyFloat_Type,
-    &PyFrame_Type,
     &PyFrameLocalsProxy_Type,
+    &PyFrame_Type,
+    &PyFrozenDict_Type,
     &PyFrozenSet_Type,
     &PyFunction_Type,
     &PyGen_Type,

@@ -78,6 +78,14 @@ Supported mailbox formats are Maildir, mbox, MH, Babyl, and MMDF.
       message.  Failing to lock the mailbox runs the risk of losing messages or
       corrupting the entire mailbox.
 
+   The :class:`!Mailbox` class supports the :keyword:`with` statement.  When used
+   as a context manager, :class:`!Mailbox` calls :meth:`lock` when the context is entered,
+   returns the mailbox object as the context object, and at context end calls :meth:`close`,
+   thereby releasing the lock.
+
+   .. versionchanged:: next
+      Support for the :keyword:`with` statement was added.
+
    :class:`!Mailbox` instances have the following methods:
 
 

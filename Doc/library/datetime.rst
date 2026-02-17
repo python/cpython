@@ -2534,8 +2534,8 @@ requires, and these work on all supported platforms.
 |  ``%d``   | Day of the month as a          | 01, 02, ..., 31        | \(9)  |
 |           | zero-padded decimal number.    |                        |       |
 +-----------+--------------------------------+------------------------+-------+
-|  ``%D``   | Equivalent to ``%m/%d/%y``.    | 11/10/2025             | \(9), |
-|           |                                |                        | \(0)  |
+|  ``%D``   | Equivalent to ``%m/%d/%y``.    | 11/28/25               | \(9)  |
+|           |                                |                        |       |
 +-----------+--------------------------------+------------------------+-------+
 |  ``%e``   | The day of the month as a      | ␣1, ␣2, ..., 31        |       |
 |           | space-padded decimal number.   |                        |       |
@@ -2676,7 +2676,7 @@ differences between platforms in handling of unsupported format specifiers.
    ``%:z`` was added for :meth:`~.datetime.strftime`.
 
 .. versionadded:: 3.15
-   ``%:z`` and ``%F`` were added for :meth:`~.datetime.strptime`.
+   ``%:z``, ``%F``, and ``%D`` were added for :meth:`~.datetime.strptime`.
 
 Technical Detail
 ^^^^^^^^^^^^^^^^
