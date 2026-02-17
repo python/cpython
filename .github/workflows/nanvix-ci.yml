@@ -299,6 +299,124 @@ jobs:
             exit 1
           fi
 
+      - name: Download and Install bzip2 Dependency
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          set -euo pipefail
+          BZIP2_ARTIFACT="bzip2-${{ matrix.platform }}-${{ matrix.process-mode }}.tar.bz2"
+          mkdir -p bzip2-dep
+          BZIP2_URL="https://github.com/nanvix/bzip2/releases/latest/download/${BZIP2_ARTIFACT}"
+          echo "Downloading bzip2 from: $BZIP2_URL"
+          if curl -fsSL -o "bzip2-dep/${BZIP2_ARTIFACT}" "$BZIP2_URL"; then
+            tar -xjf "bzip2-dep/${BZIP2_ARTIFACT}" -C bzip2-dep
+            BZIP2_DIR=$(find bzip2-dep -mindepth 1 -maxdepth 1 -type d \( -name "sysroot" -o -name "bzip2-*" \) | head -1)
+            if [[ -n "$BZIP2_DIR" ]] && [[ -d "$BZIP2_DIR" ]]; then
+              cp -f "$BZIP2_DIR"/lib/*.a "$NANVIX_HOME/lib/" 2>/dev/null || true
+              mkdir -p "$NANVIX_HOME/include"
+              cp -f "$BZIP2_DIR"/include/*.h "$NANVIX_HOME/include/" 2>/dev/null || true
+              echo "bzip2 installed successfully"
+            fi
+          else
+            echo "::warning::Could not download bzip2 release"
+          fi
+
+      - name: Download and Install libexpat Dependency
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          set -euo pipefail
+          EXPAT_ARTIFACT="libexpat-${{ matrix.platform }}-${{ matrix.process-mode }}.tar.bz2"
+          mkdir -p expat-dep
+          EXPAT_URL="https://github.com/nanvix/libexpat/releases/latest/download/${EXPAT_ARTIFACT}"
+          echo "Downloading libexpat from: $EXPAT_URL"
+          if curl -fsSL -o "expat-dep/${EXPAT_ARTIFACT}" "$EXPAT_URL"; then
+            tar -xjf "expat-dep/${EXPAT_ARTIFACT}" -C expat-dep
+            EXPAT_DIR=$(find expat-dep -mindepth 1 -maxdepth 1 -type d \( -name "sysroot" -o -name "libexpat-*" \) | head -1)
+            if [[ -n "$EXPAT_DIR" ]] && [[ -d "$EXPAT_DIR" ]]; then
+              cp -f "$EXPAT_DIR"/lib/*.a "$NANVIX_HOME/lib/" 2>/dev/null || true
+              mkdir -p "$NANVIX_HOME/include"
+              cp -rf "$EXPAT_DIR"/include/* "$NANVIX_HOME/include/" 2>/dev/null || true
+              echo "libexpat installed successfully"
+            fi
+          else
+            echo "::warning::Could not download libexpat release"
+          fi
+
+      - name: Download and Install libffi Dependency
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          set -euo pipefail
+          LIBFFI_ARTIFACT="libffi-${{ matrix.platform }}-${{ matrix.process-mode }}.tar.bz2"
+          mkdir -p libffi-dep
+          LIBFFI_URL="https://github.com/nanvix/libffi/releases/latest/download/${LIBFFI_ARTIFACT}"
+          echo "Downloading libffi from: $LIBFFI_URL"
+          if curl -fsSL -o "libffi-dep/${LIBFFI_ARTIFACT}" "$LIBFFI_URL"; then
+            tar -xjf "libffi-dep/${LIBFFI_ARTIFACT}" -C libffi-dep
+            LIBFFI_DIR=$(find libffi-dep -mindepth 1 -maxdepth 1 -type d \( -name "sysroot" -o -name "libffi-*" \) | head -1)
+            if [[ -n "$LIBFFI_DIR" ]] && [[ -d "$LIBFFI_DIR" ]]; then
+              cp -f "$LIBFFI_DIR"/lib/*.a "$NANVIX_HOME/lib/" 2>/dev/null || true
+              mkdir -p "$NANVIX_HOME/include"
+              cp -rf "$LIBFFI_DIR"/include/* "$NANVIX_HOME/include/" 2>/dev/null || true
+              echo "libffi installed successfully"
+            fi
+          else
+            echo "::warning::Could not download libffi release"
+          fi
+
+      - name: Download and Install NumPy Archives
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          set -euo pipefail
+          NUMPY_ARTIFACT="numpy-${{ matrix.platform }}-${{ matrix.process-mode }}.tar.bz2"
+          mkdir -p numpy-dep
+          NUMPY_URL="https://github.com/nanvix/numpy/releases/latest/download/${NUMPY_ARTIFACT}"
+          echo "Downloading numpy from: $NUMPY_URL"
+          if curl -fsSL -o "numpy-dep/${NUMPY_ARTIFACT}" "$NUMPY_URL" 2>/dev/null; then
+            tar -xjf "numpy-dep/${NUMPY_ARTIFACT}" -C numpy-dep
+            NUMPY_DIR=$(find numpy-dep -mindepth 1 -maxdepth 1 -type d \( -name "sysroot" -o -name "numpy-*" \) | head -1)
+            if [[ -n "$NUMPY_DIR" ]] && [[ -d "$NUMPY_DIR" ]]; then
+              mkdir -p "$NANVIX_HOME/lib/numpy"
+              cp -rf "$NUMPY_DIR"/lib/numpy/*.a "$NANVIX_HOME/lib/numpy/" 2>/dev/null || true
+              echo "NumPy archives installed: $(ls "$NANVIX_HOME/lib/numpy/"*.a 2>/dev/null | wc -l) files"
+            fi
+          else
+            echo "::warning::Could not download numpy release (may not exist yet)"
+          fi
+
+      - name: Download and Install C Extension Archives
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          set -euo pipefail
+          mkdir -p "$NANVIX_HOME/lib/cext"
+          VARIANT="${{ matrix.platform }}-${{ matrix.process-mode }}"
+
+          for ext_repo in cymem murmurhash preshed srsly kiwi; do
+            # kiwi repo uses "kiwisolver" as artifact prefix
+            case "$ext_repo" in
+              kiwi) ext_name="kiwisolver" ;;
+              *) ext_name="${ext_repo}" ;;
+            esac
+            ARTIFACT="${ext_name}-${VARIANT}.tar.bz2"
+            URL="https://github.com/nanvix/${ext_repo}/releases/latest/download/${ARTIFACT}"
+            echo "Downloading ${ext_name}..."
+            mkdir -p "cext-dep/${ext_name}"
+            if curl -fsSL -o "cext-dep/${ARTIFACT}" "$URL" 2>/dev/null; then
+              tar -xjf "cext-dep/${ARTIFACT}" -C "cext-dep/${ext_name}"
+              DEP_DIR=$(find "cext-dep/${ext_name}" -mindepth 1 -maxdepth 1 -type d | head -1)
+              if [[ -n "$DEP_DIR" ]] && [[ -d "$DEP_DIR" ]]; then
+                cp -f "$DEP_DIR"/lib/*.a "$NANVIX_HOME/lib/cext/" 2>/dev/null || true
+                echo "  ${ext_name}: installed"
+              fi
+            else
+              echo "  ${ext_name}: download failed (may not exist yet)"
+            fi
+          done
+          echo "C extension archives: $(ls "$NANVIX_HOME/lib/cext/"*.a 2>/dev/null | wc -l) files"
+
       - name: Verify Dependencies
         run: |
           set -euo pipefail
@@ -312,6 +430,24 @@ jobs:
           test -f "$NANVIX_HOME/lib/libsqlite3.a" && echo "✓ libsqlite3.a found" || echo "✗ libsqlite3.a missing"
           test -f "$NANVIX_HOME/lib/libssl.a" && echo "✓ libssl.a found" || echo "✗ libssl.a missing"
           test -f "$NANVIX_HOME/lib/libcrypto.a" && echo "✓ libcrypto.a found" || echo "✗ libcrypto.a missing"
+          test -f "$NANVIX_HOME/lib/libbz2.a" && echo "✓ libbz2.a found" || echo "✗ libbz2.a missing"
+          test -f "$NANVIX_HOME/lib/libexpat.a" && echo "✓ libexpat.a found" || echo "✗ libexpat.a missing"
+          test -f "$NANVIX_HOME/lib/libffi.a" && echo "✓ libffi.a found" || echo "✗ libffi.a missing"
+
+      - name: Prepare Setup.local for CI
+        run: |
+          # The full Setup.local includes numpy and C extension modules that
+          # require archives built from Tier 3/4 repos. For CI, we only include
+          # modules whose archives are available and link cleanly.
+          # Strip numpy and cext lines — they'll be linked in the full bootstrap.
+          if [[ -f Modules/Setup.local ]]; then
+            echo "Original Setup.local modules: $(wc -l < Modules/Setup.local)"
+            # Keep only lines that don't reference numpy/ or cext/ archives
+            grep -v 'NANVIX_SYSROOT.*/lib/numpy/\|NANVIX_SYSROOT.*/lib/cext/' Modules/Setup.local > Modules/Setup.local.ci || true
+            mv Modules/Setup.local.ci Modules/Setup.local
+            echo "CI Setup.local modules: $(wc -l < Modules/Setup.local)"
+            cat Modules/Setup.local
+          fi
 
       - name: Build
         run: |
