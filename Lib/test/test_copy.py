@@ -426,7 +426,7 @@ class TestCopy(unittest.TestCase):
         self.assertIsNot(x["foo"], y["foo"])
 
     def test_deepcopy_frozendict(self):
-        x = {"foo": [1, 2], "bar": 3}
+        x = frozendict({"foo": [1, 2], "bar": 3})
         y = copy.deepcopy(x)
         self.assertEqual(y, x)
         self.assertIsNot(x, y)
