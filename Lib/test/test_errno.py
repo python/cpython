@@ -19,6 +19,10 @@ class ErrnoAttributeTests(unittest.TestCase):
         for value in errno.errorcode.values():
             self.assertHasAttr(errno, value)
 
+    def test_readonly_errorcode(self):
+        with self.assertRaises(TypeError):
+            errno.errorcode[1] = 'hack'
+
 
 class ErrorcodeTests(unittest.TestCase):
 

@@ -18,6 +18,9 @@ all-inclusive.
    underlying system.  For instance, ``errno.errorcode[errno.EPERM]`` maps to
    ``'EPERM'``.
 
+   .. versionchanged:: next
+      The dictionary type is now a :class:`frozendict`.
+
 To translate a numeric error code to an error message, use :func:`os.strerror`.
 
 Of the following list, symbols that are not used on the current platform are not

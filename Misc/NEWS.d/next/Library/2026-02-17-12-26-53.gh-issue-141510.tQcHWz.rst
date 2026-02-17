@@ -1,0 +1,2 @@
+:data:`errno.errorcode` is now read-only: use :class:`frozendict` type
+instead of :class:`dict`. Patch by Victor Stinner.
