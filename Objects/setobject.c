@@ -1186,9 +1186,11 @@ set_update_dict_lock_held(PySetObject *so, PyObject *other)
     assert(PyAnyDict_CheckExact(other));
 
     _Py_CRITICAL_SECTION_ASSERT_OBJECT_LOCKED(so);
+#ifdef Py_DEBUG
     if (!PyFrozenDict_CheckExact(other)) {
         _Py_CRITICAL_SECTION_ASSERT_OBJECT_LOCKED(other);
     }
+#endif
 
     /* Do one big resize at the start, rather than
     * incrementally resizing as we insert new keys.  Expect
@@ -2181,9 +2183,11 @@ static int
 set_symmetric_difference_update_dict(PySetObject *so, PyObject *other)
 {
     _Py_CRITICAL_SECTION_ASSERT_OBJECT_LOCKED(so);
+#ifdef Py_DEBUG
     if (!PyFrozenDict_CheckExact(other)) {
         _Py_CRITICAL_SECTION_ASSERT_OBJECT_LOCKED(other);
     }
+#endif
 
     Py_ssize_t pos = 0;
     PyObject *key, *value;
