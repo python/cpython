@@ -5871,16 +5871,6 @@ Frozen dictionaries
    :class:`!frozendict` is not a :class:`!dict` subclass but inherits directly
    from ``object``.
 
-   .. classmethod:: fromkeys(iterable, value=None, /)
-
-      Create a new frozen dictionary with keys from *iterable* and values set to
-      *value*.
-
-      :meth:`fromkeys` is a class method that returns a new frozen dictionary.
-      *value* defaults to ``None``.  All of the values refer to just a single
-      instance, so it generally doesn't make sense for *value* to be a mutable
-      object such as an empty list.
-
    .. versionadded:: next
 
 
