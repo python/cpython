@@ -2565,7 +2565,7 @@ _collections__count_elements_impl(PyObject *module, PyObject *mapping,
             if (key == NULL)
                 break;
 
-            hash = _PyObject_HashFast(key);
+            hash = _PyObject_HashDictKey(key);
             if (hash == -1) {
                 goto done;
             }
