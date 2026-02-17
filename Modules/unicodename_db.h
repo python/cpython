@@ -19684,3 +19684,31 @@ static const named_sequence named_sequences[] = {
     {2, {0x02E5, 0x02E9}},
     {2, {0x02E9, 0x02E5}},
 };
+
+typedef struct {
+    Py_UCS4 first;
+    Py_UCS4 last;
+    int prefixid;
+} derived_name_range;
+
+static const derived_name_range derived_name_ranges[] = {
+    {0x3400, 0x4DBF, 1},
+    {0x4E00, 0x9FFF, 1},
+    {0xAC00, 0xD7A3, 0},
+    {0x17000, 0x187FF, 2},
+    {0x18D00, 0x18D1E, 2},
+    {0x20000, 0x2A6DF, 1},
+    {0x2A700, 0x2B73F, 1},
+    {0x2B740, 0x2B81D, 1},
+    {0x2B820, 0x2CEAD, 1},
+    {0x2CEB0, 0x2EBE0, 1},
+    {0x2EBF0, 0x2EE5D, 1},
+    {0x30000, 0x3134A, 1},
+    {0x31350, 0x323AF, 1},
+    {0x323B0, 0x33479, 1},
+};
+static const char * const derived_name_prefixes[] = {
+    "HANGUL SYLLABLE ",
+    "CJK UNIFIED IDEOGRAPH-",
+    "TANGUT IDEOGRAPH-",
+};

@@ -8,7 +8,6 @@
 #include "pycore_bitutils.h"        // _Py_popcount32()
 #include "pycore_ceval.h"       // _Py_set_eval_breaker_bit
 #include "pycore_code.h"            // _Py_GetBaseCodeUnit
-#include "pycore_function.h"        // _PyFunction_LookupByVersion()
 #include "pycore_interpframe.h"
 #include "pycore_object.h"          // _PyObject_GC_UNTRACK()
 #include "pycore_opcode_metadata.h" // _PyOpcode_OpName[]
@@ -1045,7 +1044,7 @@ _PyJit_TryInitializeTracing(
     tracer->initial_state.func = (PyFunctionObject *)Py_NewRef(func);
     tracer->initial_state.executor = (_PyExecutorObject *)Py_XNewRef(current_executor);
     tracer->initial_state.exit = exit;
-    tracer->initial_state.stack_depth = stack_pointer - _PyFrame_Stackbase(frame);
+    tracer->initial_state.stack_depth = (int)(stack_pointer - _PyFrame_Stackbase(frame));
     tracer->initial_state.chain_depth = chain_depth;
     tracer->prev_state.dependencies_still_valid = true;
     tracer->prev_state.instr_code = (PyCodeObject *)Py_NewRef(_PyFrame_GetCode(frame));
@@ -1487,7 +1486,7 @@ stack_allocate(_PyUOpInstruction *buffer, _PyUOpInstruction *output, int length)
         write++;
         depth = _PyUop_Caching[uop].entries[depth].output;
     }
-    return write - output;
+    return (int)(write - output);
 }
 
 static int
@@ -2131,6 +2130,7 @@ executor_to_gv(_PyExecutorObject *executor, FILE *out)
             assert(inst->format == UOP_FORMAT_JUMP);
             _PyUOpInstruction const *exit_inst = &executor->trace[inst->jump_target];
             uint16_t base_exit_opcode = _PyUop_Uncached[exit_inst->opcode];
+            (void)base_exit_opcode;
             assert(base_exit_opcode == _EXIT_TRACE || base_exit_opcode == _DYNAMIC_EXIT);
             exit = (_PyExitData *)exit_inst->operand0;
         }

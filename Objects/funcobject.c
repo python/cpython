@@ -373,32 +373,6 @@ _PyFunction_ClearCodeByVersion(uint32_t version)
 #endif
 }
 
-PyFunctionObject *
-_PyFunction_LookupByVersion(uint32_t version, PyObject **p_code)
-{
-#ifdef Py_GIL_DISABLED
-    return NULL;
-#else
-    PyInterpreterState *interp = _PyInterpreterState_GET();
-    struct _func_version_cache_item *slot = get_cache_item(interp, version);
-    if (slot->code) {
-        assert(PyCode_Check(slot->code));
-        PyCodeObject *code = (PyCodeObject *)slot->code;
-        if (code->co_version == version) {
-            *p_code = slot->code;
-        }
-    }
-    else {
-        *p_code = NULL;
-    }
-    if (slot->func && slot->func->func_version == version) {
-        assert(slot->func->func_code == slot->code);
-        return slot->func;
-    }
-    return NULL;
-#endif
-}
-
 uint32_t
 _PyFunction_GetVersionForCurrentState(PyFunctionObject *func)
 {
