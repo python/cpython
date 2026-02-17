@@ -371,6 +371,9 @@ class TimeRE(dict):
             # W is set below by using 'U'
             'y': r"(?P<y>\d\d)",
             'Y': r"(?P<Y>\d\d\d\d)",
+            # follow C99 specification of only parsing two digits for
+            # first hundred centuries
+            'C': r"(?P<C>\d\d)",
             # See gh-121237: "z" must support colons for backwards compatibility.
             'z': r"(?P<z>([+-]\d\d:?[0-5]\d(:?[0-5]\d(\.\d{1,6})?)?)|(?-i:Z))?",
             ':z': r"(?P<colon_z>([+-]\d\d:[0-5]\d(:[0-5]\d(\.\d{1,6})?)?)|(?-i:Z))?",
@@ -415,7 +418,6 @@ class TimeRE(dict):
             'Op': mapping['p'],
             'W': mapping['U'].replace('U', 'W'),
         })
-        mapping['W'] = mapping['U'].replace('U', 'W')
 
         base.__init__(mapping)
         base.__setitem__('D', self.pattern('%m/%d/%y'))
@@ -621,6 +623,15 @@ def _strptime(data_string, format="%a %b %d %H:%M:%S %Y"):
             month = locale_time.f_month.index(found_dict['B'].lower())
         elif group_key == 'b':
             month = locale_time.a_month.index(found_dict['b'].lower())
+        elif group_key == 'C' and 'y' not in found_dict:
+            # C99 support for century in [0,99] (years 0-9999).
+            century = parse_int(found_dict[group_key])
+            year = century * 100
+            if century > 0:
+                year = century * 100
+            else:
+                # ValueError fix, since MINYEAR = 1 in Lib/_pydatetime.py
+                year = 1
         elif group_key == 'd':
             day = parse_int(found_dict['d'])
         elif group_key == 'H':
