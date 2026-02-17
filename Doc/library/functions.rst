@@ -1612,7 +1612,7 @@ are always available.  They are listed here in alphabetical order.
 
    When *pretty* is given, it signals that the objects should be "pretty
    printed".  *pretty* can be ``True`` or an object implementing the
-   :meth:`PrettyPrinter.pprint` API which takes an object and returns a
+   :meth:`pprint.PrettyPrinter.pformat` API which takes an object and returns a
    formatted representation of the object.  When *pretty* is ``True``, then it
    calls ``PrettyPrinter.pformat()`` explicitly.
 
