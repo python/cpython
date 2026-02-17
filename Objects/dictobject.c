@@ -3290,7 +3290,7 @@ _PyDict_FromKeys(PyObject *cls, PyObject *iterable, PyObject *value)
         return NULL;
 
 
-    if (PyAnyDict_CheckExact(d)) {
+    if (PyDict_CheckExact(d)) {
         if (PyDict_CheckExact(iterable)) {
             PyDictObject *mp = (PyDictObject *)d;
 
