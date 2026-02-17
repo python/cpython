@@ -148,6 +148,10 @@ def _copy_items(items):
     return copy.copy(items)
 
 
+def _identity(value):
+    return value
+
+
 # ===============
 # Formatting Help
 # ===============
@@ -199,7 +203,7 @@ class HelpFormatter(object):
             self._decolor = decolor
         else:
             self._theme = get_theme(force_no_color=True).argparse
-            self._decolor = lambda text: text
+            self._decolor = _identity
 
     # ===============================
     # Section and indentation methods
@@ -1981,9 +1985,7 @@ class ArgumentParser(_AttributeHolder, _ActionsContainer):
         self._subparsers = None
 
         # register types
-        def identity(string):
-            return string
-        self.register('type', None, identity)
+        self.register('type', None, _identity)
 
         # add help argument if necessary
         # (using explicit default to override global argument_default)
