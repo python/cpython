@@ -398,19 +398,15 @@ critical section API** (:c:macro:`Py_BEGIN_CRITICAL_SECTION` /
 
    Do **not** lock ``ob_mutex`` directly with ``PyMutex_Lock(&obj->ob_mutex)``.
    Mixing direct ``PyMutex_Lock`` calls with the critical section API on the
-   same mutex can cause deadlocks, because the critical section implementation
-   may suspend and release its locks when contention is detected.
+   same mutex can cause deadlocks.
 
 Even if your own code never uses critical sections on a particular object type,
 **CPython internals may use the critical section API on any Python object**.
-For example, the garbage collector or other interpreter internals may enter a
-critical section on your object.  If your code holds ``ob_mutex`` directly at
-that point, a deadlock can occur.
 
 If your extension type needs its own lock, add a separate :c:type:`PyMutex`
 field (or another synchronization primitive) to your object struct.
-:c:type:`PyMutex` is very lightweight — it is only one byte — so there is
-negligible cost to having an additional one.
+:c:type:`PyMutex` is very lightweight, so there is negligible cost to having
+an additional one.
 
 
 Building Extensions for the Free-Threaded Build
