@@ -408,6 +408,15 @@ _Py_DECREF_BUILTINS(PyObject *op)
 }
 #endif
 
+/* frozendict */
+typedef struct {
+    PyDictObject ob_base;
+    Py_hash_t ma_hash;
+} PyFrozenDictObject;
+
+#define _PyFrozenDictObject_CAST(op) \
+    (assert(PyFrozenDict_Check(op)), _Py_CAST(PyFrozenDictObject*, (op)))
+
 #ifdef __cplusplus
 }
 #endif

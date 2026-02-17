@@ -67,6 +67,8 @@ Summary -- Release highlights
 
 * :pep:`810`: :ref:`Explicit lazy imports for faster startup times
   <whatsnew315-pep810>`
+* :pep:`814`: :ref:`Add frozendict built-in type
+  <whatsnew315-frozendict>`
 * :pep:`799`: :ref:`A dedicated profiling package for organizing Python
   profiling tools <whatsnew315-profiling-package>`
 * :pep:`799`: :ref:`Tachyon: High frequency statistical sampling profiler
@@ -179,6 +181,21 @@ raise :exc:`SyntaxError`).
 .. seealso:: :pep:`810` for the full specification and rationale.
 
 (Contributed by Pablo Galindo Salgado and Dino Viehland in :gh:`142349`.)
+
+
+.. _whatsnew315-frozendict:
+
+:pep:`814`: Add frozendict built-in type
+----------------------------------------
+
+A new public immutable type :class:`frozendict` is added to the :mod:`builtins`
+module. It is not a ``dict`` subclass but inherits directly from ``object``.
+
+A ``frozendict`` can be hashed with ``hash(frozendict)`` if all keys and values
+can be hashed.
+
+.. seealso:: :pep:`814` for the full specification and rationale.
+
 
 .. _whatsnew315-profiling-package:
 
@@ -1524,6 +1541,16 @@ C API changes
 
 New features
 ------------
+
+* Add the following functions for the new :class:`frozendict` type:
+
+  * :c:func:`PyAnyDict_Check`
+  * :c:func:`PyAnyDict_CheckExact`
+  * :c:func:`PyFrozenDict_Check`
+  * :c:func:`PyFrozenDict_CheckExact`
+  * :c:func:`PyFrozenDict_New`
+
+  (Contributed by Victor Stinner in :gh:`141510`.)
 
 * Add :c:func:`PySys_GetAttr`, :c:func:`PySys_GetAttrString`,
   :c:func:`PySys_GetOptionalAttr`, and :c:func:`PySys_GetOptionalAttrString`
