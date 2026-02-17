@@ -38,7 +38,7 @@ class TestImportTime(unittest.TestCase):
     @cpython_only
     def test_lazy_import(self):
         import_helper.ensure_lazy_imports(
-            "dataclasses", {"inspect"}
+            "dataclasses", {"inspect", "re", "copy"}
         )
 
 
@@ -2311,6 +2311,13 @@ class TestDocString(unittest.TestCase):
             x: int
 
         self.assertDocStrEqual(C.__doc__, "C(x:int)")
+
+    def test_docstring_recursive(self):
+        @dataclass()
+        class C:
+            x: list[C]
+
+        self.assertDocStrEqual(C.__doc__, "C(x:list[test.test_dataclasses.TestDocString.test_docstring_recursive.<locals>.C])")
 
     def test_docstring_one_field(self):
         @dataclass
