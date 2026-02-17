@@ -1050,6 +1050,15 @@ _PyEval_MakePendingCalls(PyThreadState *tstate)
         return res;
     }
 
+    /* Check for async exceptions (PyThreadState_SetAsyncExc) */
+    if (tstate->async_exc != NULL) {
+        PyObject *exc = tstate->async_exc;
+        tstate->async_exc = NULL;
+        PyErr_SetNone(exc);
+        Py_DECREF(exc);
+        return -1;
+    }
+
     return 0;
 }
 

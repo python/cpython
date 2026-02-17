@@ -1,0 +1,2 @@
+Fix PyThreadState_SetAsyncExc not interrupting threads blocked in EINTR
+retry paths such as time.sleep().

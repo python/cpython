@@ -22,6 +22,7 @@ import signal
 import textwrap
 import traceback
 import warnings
+import ctypes
 
 from unittest import mock
 from test import lock_tests
@@ -411,6 +412,39 @@ class ThreadTests(BaseTestCase):
         if t.finished:
             t.join()
         # else the thread is still running, and we have no way to kill it
+
+    @cpython_only
+    @unittest.skipIf(not hasattr(signal, "pthread_kill"), "requires pthread_kill (Unix only)")
+    def test_PyThreadState_SetAsyncExc_interrupts_sleep(self):
+        set_async_exc = ctypes.pythonapi.PyThreadState_SetAsyncExc
+        set_async_exc.argtypes = (ctypes.c_ulong, ctypes.py_object)
+
+        class AsyncExc(Exception):
+            pass
+
+        exception = ctypes.py_object(AsyncExc)
+        signal.signal(signal.SIGUSR1, lambda *_: None)
+        worker_started = threading.Event()
+        worker_finished = threading.Event()
+
+        def worker():
+            tid = threading.get_ident()
+            worker_started.set()
+            try:
+                time.sleep(10)  # blocked in EINTR retry path
+            except AsyncExc:
+                worker_finished.set()
+
+        t = threading.Thread(target=worker)
+        t.start()
+        worker_started.wait()
+        time.sleep(0.2)
+        result = set_async_exc(t.ident, exception)
+        self.assertEqual(result, 1)
+        signal.pthread_kill(t.ident, signal.SIGUSR1)
+        worker_finished.wait(timeout=3)
+        self.assertTrue(worker_finished.is_set())
+        t.join(timeout=3)
 
     def test_limbo_cleanup(self):
         # Issue 7481: Failure to start thread should cleanup the limbo map.
