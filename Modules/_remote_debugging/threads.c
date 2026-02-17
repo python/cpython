@@ -11,6 +11,12 @@
 #include <unistd.h>
 #endif
 
+#ifdef __linux__
+#include <dirent.h>
+#include <sys/ptrace.h>
+#include <sys/wait.h>
+#endif
+
 /* ============================================================================
  * THREAD ITERATION FUNCTIONS
  * ============================================================================ */
@@ -501,3 +507,292 @@ error:
     cleanup_stack_chunks(&chunks);
     return NULL;
 }
+
+/* ============================================================================
+ * PROCESS STOP FUNCTIONS
+ * ============================================================================ */
+
+#if defined(__APPLE__) && TARGET_OS_OSX
+
+void
+_Py_RemoteDebug_InitThreadsState(RemoteUnwinderObject *unwinder, _Py_RemoteDebug_ThreadsState *st)
+{
+    st->task = MACH_PORT_NULL;
+    st->suspended = 0;
+}
+
+int
+_Py_RemoteDebug_StopAllThreads(RemoteUnwinderObject *unwinder, _Py_RemoteDebug_ThreadsState *st)
+{
+    kern_return_t kr = task_suspend(unwinder->handle.task);
+    if (kr != KERN_SUCCESS) {
+        if (kr == MACH_SEND_INVALID_DEST) {
+            PyErr_Format(PyExc_ProcessLookupError,
+                "Process %d has terminated", unwinder->handle.pid);
+        } else {
+            PyErr_Format(PyExc_RuntimeError,
+                "task_suspend failed for PID %d: kern_return_t %d",
+                unwinder->handle.pid, kr);
+        }
+        return -1;
+    }
+
+    st->task = unwinder->handle.task;
+    st->suspended = 1;
+    _Py_RemoteDebug_ClearCache(&unwinder->handle);
+    return 0;
+}
+
+void
+_Py_RemoteDebug_ResumeAllThreads(RemoteUnwinderObject *unwinder, _Py_RemoteDebug_ThreadsState *st)
+{
+    if (!st->suspended || st->task == MACH_PORT_NULL) {
+        return;
+    }
+    task_resume(st->task);
+    st->task = MACH_PORT_NULL;
+    st->suspended = 0;
+}
+
+#elif defined(__linux__)
+
+void
+_Py_RemoteDebug_InitThreadsState(RemoteUnwinderObject *unwinder, _Py_RemoteDebug_ThreadsState *st)
+{
+    st->tids = NULL;
+    st->count = 0;
+}
+
+static int
+read_thread_ids(RemoteUnwinderObject *unwinder, _Py_RemoteDebug_ThreadsState *st)
+{
+    char task_path[64];
+    snprintf(task_path, sizeof(task_path), "/proc/%d/task", unwinder->handle.pid);
+
+    DIR *dir = opendir(task_path);
+    if (dir == NULL) {
+        st->tids = NULL;
+        st->count = 0;
+        if (errno == ENOENT || errno == ESRCH) {
+            PyErr_Format(PyExc_ProcessLookupError,
+                "Process %d has terminated", unwinder->handle.pid);
+        } else {
+            PyErr_SetFromErrnoWithFilename(PyExc_OSError, task_path);
+        }
+        return -1;
+    }
+
+    st->count = 0;
+
+    struct dirent *entry;
+    while ((entry = readdir(dir)) != NULL) {
+        if (entry->d_name[0] < '1' || entry->d_name[0] > '9') {
+            continue;
+        }
+        char *endptr;
+        long tid = strtol(entry->d_name, &endptr, 10);
+        if (*endptr != '\0' || tid <= 0) {
+            continue;
+        }
+        if (st->count >= unwinder->thread_tids_capacity) {
+            size_t new_cap = unwinder->thread_tids_capacity == 0 ? 64 : unwinder->thread_tids_capacity * 2;
+            pid_t *new_tids = PyMem_RawRealloc(unwinder->thread_tids, new_cap * sizeof(pid_t));
+            if (new_tids == NULL) {
+                closedir(dir);
+                st->tids = NULL;
+                st->count = 0;
+                PyErr_NoMemory();
+                return -1;
+            }
+            unwinder->thread_tids = new_tids;
+            unwinder->thread_tids_capacity = new_cap;
+        }
+        unwinder->thread_tids[st->count++] = (pid_t)tid;
+    }
+
+    st->tids = unwinder->thread_tids;
+    closedir(dir);
+    return 0;
+}
+
+static inline void
+detach_threads(_Py_RemoteDebug_ThreadsState *st, size_t up_to)
+{
+    for (size_t j = 0; j < up_to; j++) {
+        ptrace(PTRACE_DETACH, st->tids[j], NULL, NULL);
+    }
+}
+
+static int
+seize_thread(pid_t tid)
+{
+    if (ptrace(PTRACE_SEIZE, tid, NULL, 0) == 0) {
+        return 0;
+    }
+    if (errno == ESRCH) {
+        return 1;  // Thread gone, skip
+    }
+    if (errno == EPERM) {
+        // Thread may have exited, be in a special state, or already be traced.
+        // Skip rather than fail - this avoids endless retry loops when
+        // threads transiently become inaccessible.
+        return 1;
+    }
+    if (errno == EINVAL || errno == EIO) {
+        // Fallback for older kernels
+        if (ptrace(PTRACE_ATTACH, tid, NULL, NULL) == 0) {
+            int status;
+            waitpid(tid, &status, __WALL);
+            return 0;
+        }
+        if (errno == ESRCH || errno == EPERM) {
+            return 1;  // Thread gone or inaccessible
+        }
+    }
+    return -1;  // Real error
+}
+
+int
+_Py_RemoteDebug_StopAllThreads(RemoteUnwinderObject *unwinder, _Py_RemoteDebug_ThreadsState *st)
+{
+    if (read_thread_ids(unwinder, st) < 0) {
+        return -1;
+    }
+
+    for (size_t i = 0; i < st->count; i++) {
+        pid_t tid = st->tids[i];
+
+        int ret = seize_thread(tid);
+        if (ret == 1) {
+            continue;  // Thread gone, skip
+        }
+        if (ret < 0) {
+            detach_threads(st, i);
+            PyErr_Format(PyExc_RuntimeError, "Failed to seize thread %d: %s", tid, strerror(errno));
+            st->tids = NULL;
+            st->count = 0;
+            return -1;
+        }
+
+        if (ptrace(PTRACE_INTERRUPT, tid, NULL, NULL) == -1 && errno != ESRCH) {
+            detach_threads(st, i + 1);
+            PyErr_Format(PyExc_RuntimeError, "Failed to interrupt thread %d: %s", tid, strerror(errno));
+            st->tids = NULL;
+            st->count = 0;
+            return -1;
+        }
+
+        int status;
+        if (waitpid(tid, &status, __WALL) == -1 && errno != ECHILD && errno != ESRCH) {
+            detach_threads(st, i + 1);
+            PyErr_Format(PyExc_RuntimeError, "waitpid failed for thread %d: %s", tid, strerror(errno));
+            st->tids = NULL;
+            st->count = 0;
+            return -1;
+        }
+    }
+
+    return 0;
+}
+
+void
+_Py_RemoteDebug_ResumeAllThreads(RemoteUnwinderObject *unwinder, _Py_RemoteDebug_ThreadsState *st)
+{
+    if (st->tids == NULL || st->count == 0) {
+        return;
+    }
+    detach_threads(st, st->count);
+    st->tids = NULL;
+    st->count = 0;
+}
+
+#elif defined(MS_WINDOWS)
+
+void
+_Py_RemoteDebug_InitThreadsState(RemoteUnwinderObject *unwinder, _Py_RemoteDebug_ThreadsState *st)
+{
+    st->hProcess = NULL;
+    st->suspended = 0;
+}
+
+int
+_Py_RemoteDebug_StopAllThreads(RemoteUnwinderObject *unwinder, _Py_RemoteDebug_ThreadsState *st)
+{
+    static NtSuspendProcessFunc pNtSuspendProcess = NULL;
+    static int tried_load = 0;
+
+    if (!tried_load) {
+        HMODULE hNtdll = GetModuleHandleW(L"ntdll.dll");
+        if (hNtdll) {
+            pNtSuspendProcess = (NtSuspendProcessFunc)GetProcAddress(hNtdll, "NtSuspendProcess");
+        }
+        tried_load = 1;
+    }
+
+    if (pNtSuspendProcess == NULL) {
+        PyErr_SetString(PyExc_RuntimeError, "NtSuspendProcess not available");
+        return -1;
+    }
+
+    NTSTATUS status = pNtSuspendProcess(unwinder->handle.hProcess);
+    if (status >= 0) {
+        st->hProcess = unwinder->handle.hProcess;
+        st->suspended = 1;
+        _Py_RemoteDebug_ClearCache(&unwinder->handle);
+        return 0;
+    }
+
+    PyErr_Format(PyExc_RuntimeError, "NtSuspendProcess failed: 0x%lx", status);
+    return -1;
+}
+
+void
+_Py_RemoteDebug_ResumeAllThreads(RemoteUnwinderObject *unwinder, _Py_RemoteDebug_ThreadsState *st)
+{
+    if (!st->suspended || st->hProcess == NULL) {
+        return;
+    }
+
+    static NtResumeProcessFunc pNtResumeProcess = NULL;
+    static int tried_load = 0;
+
+    if (!tried_load) {
+        HMODULE hNtdll = GetModuleHandleW(L"ntdll.dll");
+        if (hNtdll) {
+            pNtResumeProcess = (NtResumeProcessFunc)GetProcAddress(hNtdll, "NtResumeProcess");
+        }
+        tried_load = 1;
+    }
+
+    if (pNtResumeProcess != NULL) {
+        pNtResumeProcess(st->hProcess);
+    }
+    st->hProcess = NULL;
+    st->suspended = 0;
+}
+
+#else
+
+void
+_Py_RemoteDebug_InitThreadsState(RemoteUnwinderObject *unwinder, _Py_RemoteDebug_ThreadsState *st)
+{
+    (void)unwinder;
+    (void)st;
+}
+
+int
+_Py_RemoteDebug_StopAllThreads(RemoteUnwinderObject *unwinder, _Py_RemoteDebug_ThreadsState *st)
+{
+    (void)unwinder;
+    (void)st;
+    return 0;
+}
+
+void
+_Py_RemoteDebug_ResumeAllThreads(RemoteUnwinderObject *unwinder, _Py_RemoteDebug_ThreadsState *st)
+{
+    (void)unwinder;
+    (void)st;
+}
+
+#endif

@@ -9,14 +9,18 @@
 #define Py_REMOTE_DEBUGGING_H
 
 /* _GNU_SOURCE must be defined before any system headers */
+#ifndef _GNU_SOURCE
 #define _GNU_SOURCE
+#endif
 
 #ifdef __cplusplus
 extern "C" {
 #endif
 
 #ifndef Py_BUILD_CORE_BUILTIN
+#  ifndef Py_BUILD_CORE_MODULE
 #    define Py_BUILD_CORE_MODULE 1
+#  endif
 #endif
 
 #include "Python.h"
@@ -54,9 +58,49 @@ extern "C" {
 #  endif
 #endif
 
+// Platforms that support pausing/resuming threads for accurate stack sampling
+#if defined(MS_WINDOWS) || defined(__linux__) || (defined(__APPLE__) && TARGET_OS_OSX)
+#  define Py_REMOTE_DEBUG_SUPPORTS_BLOCKING 1
+#endif
+
 #ifdef MS_WINDOWS
 #include <windows.h>
 #include <winternl.h>
+#endif
+
+#if defined(__APPLE__) && TARGET_OS_OSX
+
+typedef struct {
+    mach_port_t task;
+    int suspended;
+} _Py_RemoteDebug_ThreadsState;
+
+#elif defined(__linux__)
+
+typedef struct {
+    pid_t *tids;      // Points to unwinder's reusable buffer
+    size_t count;     // Number of threads currently seized
+} _Py_RemoteDebug_ThreadsState;
+
+#elif defined(MS_WINDOWS)
+
+typedef NTSTATUS (NTAPI *NtSuspendProcessFunc)(HANDLE ProcessHandle);
+typedef NTSTATUS (NTAPI *NtResumeProcessFunc)(HANDLE ProcessHandle);
+
+typedef struct {
+    HANDLE hProcess;
+    int suspended;
+} _Py_RemoteDebug_ThreadsState;
+
+#else
+
+typedef struct {
+    int dummy;
+} _Py_RemoteDebug_ThreadsState;
+
+#endif
+
+#ifdef MS_WINDOWS
 #define STATUS_SUCCESS                   ((NTSTATUS)0x00000000L)
 #define STATUS_INFO_LENGTH_MISMATCH      ((NTSTATUS)0xC0000004L)
 typedef enum _WIN32_THREADSTATE {
@@ -95,6 +139,11 @@ typedef enum _WIN32_THREADSTATE {
 #define SIZEOF_LONG_OBJ sizeof(PyLongObject)
 #define SIZEOF_GC_RUNTIME_STATE sizeof(struct _gc_runtime_state)
 #define SIZEOF_INTERPRETER_STATE sizeof(PyInterpreterState)
+
+/* Maximum sizes for validation to prevent buffer overflows from corrupted data */
+#define MAX_STACK_CHUNK_SIZE (16 * 1024 * 1024)  /* 16 MB max for stack chunks */
+#define MAX_LONG_DIGITS 64  /* Allows values up to ~2^1920 */
+#define MAX_SET_TABLE_SIZE (1 << 20)  /* 1 million entries max for set iteration */
 
 #ifndef MAX
 #define MAX(a, b) ((a) > (b) ? (a) : (b))
@@ -205,6 +254,8 @@ typedef struct {
     PyTypeObject *ThreadInfo_Type;
     PyTypeObject *InterpreterInfo_Type;
     PyTypeObject *AwaitedInfo_Type;
+    PyTypeObject *BinaryWriter_Type;
+    PyTypeObject *BinaryReader_Type;
 } RemoteDebuggingState;
 
 enum _ThreadState {
@@ -257,6 +308,15 @@ typedef struct {
     PVOID win_process_buffer;
     ULONG win_process_buffer_size;
 #endif
+    // Thread stopping state (only on platforms that support it)
+#ifdef Py_REMOTE_DEBUG_SUPPORTS_BLOCKING
+    _Py_RemoteDebug_ThreadsState threads_state;
+    int threads_stopped;  // 1 if threads are currently stopped
+#endif
+#ifdef __linux__
+    pid_t *thread_tids;           // Reusable buffer for thread IDs
+    size_t thread_tids_capacity;  // Current capacity of thread_tids buffer
+#endif
 } RemoteUnwinderObject;
 
 #define RemoteUnwinder_CAST(op) ((RemoteUnwinderObject *)(op))
@@ -289,6 +349,7 @@ typedef struct {
     uintptr_t gc_frame;             // GC frame address (0 if not tracking)
     uintptr_t last_profiled_frame;  // Last cached frame (0 if no cache)
     StackChunkList *chunks;         // Pre-copied stack chunks
+    int skip_first_frame;           // Skip frame_addr itself (continue from its caller)
 
     /* Outputs */
     PyObject *frame_info;           // List to append FrameInfo objects
@@ -395,6 +456,7 @@ extern PyObject *make_frame_info(
 extern bool parse_linetable(
     const uintptr_t addrq,
     const char* linetable,
+    Py_ssize_t linetable_size,
     int firstlineno,
     LocationInfo* info
 );
@@ -511,6 +573,11 @@ extern PyObject* unwind_stack_for_thread(
     uintptr_t gil_holder_tstate,
     uintptr_t gc_frame
 );
+
+/* Thread stopping functions (for blocking mode) */
+extern void _Py_RemoteDebug_InitThreadsState(RemoteUnwinderObject *unwinder, _Py_RemoteDebug_ThreadsState *st);
+extern int _Py_RemoteDebug_StopAllThreads(RemoteUnwinderObject *unwinder, _Py_RemoteDebug_ThreadsState *st);
+extern void _Py_RemoteDebug_ResumeAllThreads(RemoteUnwinderObject *unwinder, _Py_RemoteDebug_ThreadsState *st);
 
 /* ============================================================================
  * ASYNCIO FUNCTION DECLARATIONS

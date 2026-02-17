@@ -3764,7 +3764,8 @@ _decimal_Decimal___format___impl(PyObject *dec, PyTypeObject *cls,
 
     if (size > 0 && fmt[size-1] == 'N') {
         if (PyErr_WarnEx(PyExc_DeprecationWarning,
-                         "Format specifier 'N' is deprecated", 1) < 0) {
+                         "Format specifier 'N' is deprecated and "
+                         "slated for removal in Python 3.18", 1) < 0) {
             return NULL;
         }
     }
@@ -6990,7 +6991,7 @@ _decimal_Context_apply_impl(PyObject *context, PyTypeObject *cls,
                             PyObject *x)
 /*[clinic end generated code: output=f8a7142d47ad4ff3 input=388e66ca82733516]*/
 {
-    return _decimal_Context__apply(context, v);
+    return _decimal_Context__apply(context, x);
 }
 #endif
 

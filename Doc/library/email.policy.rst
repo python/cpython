@@ -602,7 +602,7 @@ The header objects and their attributes are described in
 
    This concrete :class:`Policy` is the backward compatibility policy.  It
    replicates the behavior of the email package in Python 3.2.  The
-   :mod:`~email.policy` module also defines an instance of this class,
+   :mod:`!policy` module also defines an instance of this class,
    :const:`compat32`, that is used as the default policy.  Thus the default
    behavior of the email package is to maintain compatibility with Python 3.2.
 
@@ -661,6 +661,13 @@ The header objects and their attributes are described in
 
    An instance of :class:`Compat32`, providing  backward compatibility with the
    behavior of the email package in Python 3.2.
+
+   .. note::
+
+      The :const:`compat32` policy should not be used as a policy for
+      :class:`~email.message.EmailMessage` objects, and should only be used
+      to serialize messages that were created using the :const:`compat32`
+      policy.
 
 
 .. rubric:: Footnotes

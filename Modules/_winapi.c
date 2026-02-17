@@ -2982,6 +2982,103 @@ _winapi_CopyFile2_impl(PyObject *module, LPCWSTR existing_file_name,
     Py_RETURN_NONE;
 }
 
+/*[clinic input]
+_winapi.RegisterEventSource -> HANDLE
+
+    unc_server_name: LPCWSTR(accept={str, NoneType})
+        The UNC name of the server on which the event source should be registered.
+        If None, registers the event source on the local computer.
+    source_name: LPCWSTR
+        The name of the event source to register.
+    /
+
+Retrieves a registered handle to the specified event log.
+[clinic start generated code]*/
+
+static HANDLE
+_winapi_RegisterEventSource_impl(PyObject *module, LPCWSTR unc_server_name,
+                                 LPCWSTR source_name)
+/*[clinic end generated code: output=e376c8950a89ae8f input=9d01059ac2156d0c]*/
+{
+    HANDLE handle;
+
+    Py_BEGIN_ALLOW_THREADS
+    handle = RegisterEventSourceW(unc_server_name, source_name);
+    Py_END_ALLOW_THREADS
+
+    if (handle == NULL) {
+        PyErr_SetFromWindowsErr(0);
+        return INVALID_HANDLE_VALUE;
+    }
+
+    return handle;
+}
+
+/*[clinic input]
+_winapi.DeregisterEventSource
+
+    handle: HANDLE
+        The handle to the event log to be deregistered.
+    /
+
+Closes the specified event log.
+[clinic start generated code]*/
+
+static PyObject *
+_winapi_DeregisterEventSource_impl(PyObject *module, HANDLE handle)
+/*[clinic end generated code: output=7387ff34c7358bce input=947593cf67641f16]*/
+{
+    BOOL success;
+
+    Py_BEGIN_ALLOW_THREADS
+    success = DeregisterEventSource(handle);
+    Py_END_ALLOW_THREADS
+
+    if (!success) {
+        return PyErr_SetFromWindowsErr(0);
+    }
+
+    Py_RETURN_NONE;
+}
+
+/*[clinic input]
+_winapi.ReportEvent
+
+    handle: HANDLE
+        The handle to the event log.
+    type: unsigned_short(bitwise=False)
+        The type of event being reported.
+    category: unsigned_short(bitwise=False)
+        The event category.
+    event_id: unsigned_int(bitwise=False)
+        The event identifier.
+    string: LPCWSTR
+        A string to be inserted into the event message.
+    /
+
+Writes an entry at the end of the specified event log.
+[clinic start generated code]*/
+
+static PyObject *
+_winapi_ReportEvent_impl(PyObject *module, HANDLE handle,
+                         unsigned short type, unsigned short category,
+                         unsigned int event_id, LPCWSTR string)
+/*[clinic end generated code: output=4281230b70a2470a input=8fb3385b8e7a6d3d]*/
+{
+    BOOL success;
+
+    Py_BEGIN_ALLOW_THREADS
+    success = ReportEventW(handle, type, category, event_id, NULL, 1, 0,
+                           &string, NULL);
+    Py_END_ALLOW_THREADS
+
+    if (!success) {
+        return PyErr_SetFromWindowsErr(0);
+    }
+
+    Py_RETURN_NONE;
+}
+
 
 static PyMethodDef winapi_functions[] = {
     _WINAPI_CLOSEHANDLE_METHODDEF
@@ -2994,6 +3091,7 @@ static PyMethodDef winapi_functions[] = {
     _WINAPI_CREATEPIPE_METHODDEF
     _WINAPI_CREATEPROCESS_METHODDEF
     _WINAPI_CREATEJUNCTION_METHODDEF
+    _WINAPI_DEREGISTEREVENTSOURCE_METHODDEF
     _WINAPI_DUPLICATEHANDLE_METHODDEF
     _WINAPI_EXITPROCESS_METHODDEF
     _WINAPI_GETCURRENTPROCESS_METHODDEF
@@ -3010,6 +3108,8 @@ static PyMethodDef winapi_functions[] = {
     _WINAPI_OPENMUTEXW_METHODDEF
     _WINAPI_OPENPROCESS_METHODDEF
     _WINAPI_PEEKNAMEDPIPE_METHODDEF
+    _WINAPI_REGISTEREVENTSOURCE_METHODDEF
+    _WINAPI_REPORTEVENT_METHODDEF
     _WINAPI_LCMAPSTRINGEX_METHODDEF
     _WINAPI_READFILE_METHODDEF
     _WINAPI_RELEASEMUTEX_METHODDEF
@@ -3073,15 +3173,18 @@ static int winapi_exec(PyObject *m)
     WINAPI_CONSTANT(F_DWORD, ERROR_MORE_DATA);
     WINAPI_CONSTANT(F_DWORD, ERROR_NETNAME_DELETED);
     WINAPI_CONSTANT(F_DWORD, ERROR_NO_SYSTEM_RESOURCES);
-    WINAPI_CONSTANT(F_DWORD, ERROR_MORE_DATA);
-    WINAPI_CONSTANT(F_DWORD, ERROR_NETNAME_DELETED);
     WINAPI_CONSTANT(F_DWORD, ERROR_NO_DATA);
-    WINAPI_CONSTANT(F_DWORD, ERROR_NO_SYSTEM_RESOURCES);
     WINAPI_CONSTANT(F_DWORD, ERROR_OPERATION_ABORTED);
     WINAPI_CONSTANT(F_DWORD, ERROR_PIPE_BUSY);
     WINAPI_CONSTANT(F_DWORD, ERROR_PIPE_CONNECTED);
     WINAPI_CONSTANT(F_DWORD, ERROR_PRIVILEGE_NOT_HELD);
     WINAPI_CONSTANT(F_DWORD, ERROR_SEM_TIMEOUT);
+    WINAPI_CONSTANT(F_DWORD, EVENTLOG_SUCCESS);
+    WINAPI_CONSTANT(F_DWORD, EVENTLOG_AUDIT_FAILURE);
+    WINAPI_CONSTANT(F_DWORD, EVENTLOG_AUDIT_SUCCESS);
+    WINAPI_CONSTANT(F_DWORD, EVENTLOG_ERROR_TYPE);
+    WINAPI_CONSTANT(F_DWORD, EVENTLOG_INFORMATION_TYPE);
+    WINAPI_CONSTANT(F_DWORD, EVENTLOG_WARNING_TYPE);
     WINAPI_CONSTANT(F_DWORD, FILE_FLAG_FIRST_PIPE_INSTANCE);
     WINAPI_CONSTANT(F_DWORD, FILE_FLAG_OVERLAPPED);
     WINAPI_CONSTANT(F_DWORD, FILE_GENERIC_READ);

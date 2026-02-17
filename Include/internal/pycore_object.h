@@ -252,35 +252,10 @@ _Py_DECREF_SPECIALIZED(PyObject *op, const destructor destruct)
     }
 }
 
-static inline void
-_Py_DECREF_NO_DEALLOC(PyObject *op)
-{
-    if (_Py_IsImmortal(op)) {
-        _Py_DECREF_IMMORTAL_STAT_INC();
-        return;
-    }
-    _Py_DECREF_STAT_INC();
-#ifdef Py_REF_DEBUG
-    _Py_DEC_REFTOTAL(PyInterpreterState_Get());
-#endif
-    op->ob_refcnt--;
-#ifdef Py_DEBUG
-    if (op->ob_refcnt <= 0) {
-        _Py_FatalRefcountError("Expected a positive remaining refcount");
-    }
-#endif
-}
-
 #else
 // TODO: implement Py_DECREF specializations for Py_GIL_DISABLED build
 static inline void
 _Py_DECREF_SPECIALIZED(PyObject *op, const destructor destruct)
-{
-    Py_DECREF(op);
-}
-
-static inline void
-_Py_DECREF_NO_DEALLOC(PyObject *op)
 {
     Py_DECREF(op);
 }
@@ -922,6 +897,10 @@ _PyType_LookupStackRefAndVersion(PyTypeObject *type, PyObject *name, _PyStackRef
 
 PyAPI_FUNC(int) _PyObject_GetMethodStackRef(PyThreadState *ts, PyObject *obj,
                                        PyObject *name, _PyStackRef *method);
+
+// Like PyObject_GetAttr but returns a _PyStackRef. For types, this can
+// return a deferred reference to reduce reference count contention.
+PyAPI_FUNC(_PyStackRef) _PyObject_GetAttrStackRef(PyObject *obj, PyObject *name);
 
 // Cache the provided init method in the specialization cache of type if the
 // provided type version matches the current version of the type.
