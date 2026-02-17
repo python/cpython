@@ -860,11 +860,11 @@ def data_filter(member, dest_path):
         return member.replace(**new_attrs, deep=False)
     return member
 
-_NAMED_FILTERS = {
+_NAMED_FILTERS = frozendict({
     "fully_trusted": fully_trusted_filter,
     "tar": tar_filter,
     "data": data_filter,
-}
+})
 
 #------------------
 # Exported Classes
