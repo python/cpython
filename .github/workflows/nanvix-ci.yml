@@ -468,6 +468,15 @@ jobs:
               -f "client_payload[cpython_tag]=${RELEASE_TAG}" || echo "::warning::Failed to trigger $repo"
           done
 
+          # Also trigger nanvix-python integration build
+          echo "Triggering nanvix/nanvix-python..."
+          gh api repos/nanvix/nanvix-python/dispatches \
+            -X POST \
+            -H "Accept: application/vnd.github+json" \
+            -f event_type="cpython-release" \
+            -f "client_payload[nanvix_sha]=${NANVIX_SHA}" \
+            -f "client_payload[cpython_tag]=${RELEASE_TAG}" || echo "::warning::Failed to trigger nanvix-python"
+
   report-failure:
     needs:
       - build
