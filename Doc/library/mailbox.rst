@@ -78,6 +78,14 @@ Supported mailbox formats are Maildir, mbox, MH, Babyl, and MMDF.
       message.  Failing to lock the mailbox runs the risk of losing messages or
       corrupting the entire mailbox.
 
+   The :class:`!Mailbox` class supports the :keyword:`with` statement.  When used
+   as a context manager, :class:`!Mailbox` calls :meth:`lock` when the context is entered,
+   returns the mailbox object as the context object, and at context end calls :meth:`close`,
+   thereby releasing the lock.
+
+   .. versionchanged:: next
+      Support for the :keyword:`with` statement was added.
+
    :class:`!Mailbox` instances have the following methods:
 
 
@@ -917,7 +925,7 @@ Supported mailbox formats are Maildir, mbox, MH, Babyl, and MMDF.
    copied; furthermore, any format-specific information is converted insofar as
    possible if *message* is a :class:`!Message` instance. If *message* is a string,
    a byte string,
-   or a file, it should contain an :rfc:`2822`\ -compliant message, which is read
+   or a file, it should contain an :rfc:`5322`\ -compliant message, which is read
    and parsed.  Files should be open in binary mode, but text mode files
    are accepted for backward compatibility.
 
@@ -1025,7 +1033,7 @@ Supported mailbox formats are Maildir, mbox, MH, Babyl, and MMDF.
    .. method:: remove_flag(flag)
 
       Unset the flag(s) specified by *flag* without changing other flags. To
-      remove more than one flag at a time, *flag* maybe a string of more than
+      remove more than one flag at a time, *flag* may be a string of more than
       one character.  If "info" contains experimental information rather than
       flags, the current "info" is not modified.
 
@@ -1190,7 +1198,7 @@ When a :class:`!MaildirMessage` instance is created based upon a
    .. method:: remove_flag(flag)
 
       Unset the flag(s) specified by *flag* without changing other flags. To
-      remove more than one flag at a time, *flag* maybe a string of more than
+      remove more than one flag at a time, *flag* may be a string of more than
       one character.
 
 When an :class:`!mboxMessage` instance is created based upon a
@@ -1562,7 +1570,7 @@ When a :class:`!BabylMessage` instance is created based upon an
    .. method:: remove_flag(flag)
 
       Unset the flag(s) specified by *flag* without changing other flags. To
-      remove more than one flag at a time, *flag* maybe a string of more than
+      remove more than one flag at a time, *flag* may be a string of more than
       one character.
 
 When an :class:`!MMDFMessage` instance is created based upon a
@@ -1641,7 +1649,7 @@ The following exception classes are defined in the :mod:`!mailbox` module:
 
 .. exception:: Error()
 
-   The based class for all other module-specific exceptions.
+   The base class for all other module-specific exceptions.
 
 
 .. exception:: NoSuchMailboxError()
@@ -1661,7 +1669,7 @@ The following exception classes are defined in the :mod:`!mailbox` module:
 
    Raised when some mailbox-related condition beyond the control of the program
    causes it to be unable to proceed, such as when failing to acquire a lock that
-   another program already holds a lock, or when a uniquely generated file name
+   another program already holds, or when a uniquely generated file name
    already exists.
 
 

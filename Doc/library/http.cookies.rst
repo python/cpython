@@ -11,7 +11,7 @@
 
 --------------
 
-The :mod:`http.cookies` module defines classes for abstracting the concept of
+The :mod:`!http.cookies` module defines classes for abstracting the concept of
 cookies, an HTTP state management mechanism. It supports both simple string-only
 cookies, and provides an abstraction for having any serializable data-type as
 cookie value.
@@ -28,8 +28,10 @@ The character set, :data:`string.ascii_letters`, :data:`string.digits` and
 in a cookie name (as :attr:`~Morsel.key`).
 
 .. versionchanged:: 3.3
-   Allowed ':' as a valid cookie name character.
+   Allowed '``:``' as a valid cookie name character.
 
+.. versionchanged:: 3.15
+   Allowed '``"``' as a valid cookie value character.
 
 .. note::
 
@@ -65,7 +67,7 @@ in a cookie name (as :attr:`~Morsel.key`).
 
    Module :mod:`http.cookiejar`
       HTTP cookie handling for web *clients*.  The :mod:`http.cookiejar` and
-      :mod:`http.cookies` modules do not depend on each other.
+      :mod:`!http.cookies` modules do not depend on each other.
 
    :rfc:`2109` - HTTP State Management Mechanism
       This is the state management specification implemented by this module.
@@ -148,9 +150,12 @@ Morsel Objects
    in HTTP requests, and is not accessible through JavaScript. This is intended
    to mitigate some forms of cross-site scripting.
 
-   The attribute :attr:`samesite` specifies that the browser is not allowed to
-   send the cookie along with cross-site requests. This helps to mitigate CSRF
-   attacks. Valid values for this attribute are "Strict" and "Lax".
+   The attribute :attr:`samesite` controls when the browser sends the cookie with
+   cross-site requests. This helps to mitigate CSRF attacks. Valid values are
+   "Strict" (only sent with same-site requests), "Lax" (sent with same-site
+   requests and top-level navigations), and "None" (sent with same-site and
+   cross-site requests). When using "None", the "secure" attribute must also
+   be set, as required by modern browsers.
 
    The attribute :attr:`partitioned` indicates to user agents that these
    cross-site cookies *should* only be available in the same top-level context
@@ -261,7 +266,7 @@ Morsel Objects
 Example
 -------
 
-The following example demonstrates how to use the :mod:`http.cookies` module.
+The following example demonstrates how to use the :mod:`!http.cookies` module.
 
 .. doctest::
    :options: +NORMALIZE_WHITESPACE
@@ -289,9 +294,9 @@ The following example demonstrates how to use the :mod:`http.cookies` module.
    Set-Cookie: chips=ahoy
    Set-Cookie: vienna=finger
    >>> C = cookies.SimpleCookie()
-   >>> C.load('keebler="E=everybody; L=\\"Loves\\"; fudge=\\012;";')
+   >>> C.load('keebler="E=everybody; L=\\"Loves\\"; fudge=;";')
    >>> print(C)
-   Set-Cookie: keebler="E=everybody; L=\"Loves\"; fudge=\012;"
+   Set-Cookie: keebler="E=everybody; L=\"Loves\"; fudge=;"
    >>> C = cookies.SimpleCookie()
    >>> C["oreo"] = "doublestuff"
    >>> C["oreo"]["path"] = "/"
@@ -311,3 +316,10 @@ The following example demonstrates how to use the :mod:`http.cookies` module.
    >>> print(C)
    Set-Cookie: number=7
    Set-Cookie: string=seven
+   >>> import json
+   >>> C = cookies.SimpleCookie()
+   >>> C.load(f'cookies=7; mixins="{json.dumps({"chips": "dark chocolate"})}"; state=gooey')
+   >>> print(C)
+   Set-Cookie: cookies=7
+   Set-Cookie: mixins="{"chips": "dark chocolate"}"
+   Set-Cookie: state=gooey

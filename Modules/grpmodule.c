@@ -55,6 +55,11 @@ get_grp_state(PyObject *module)
 
 static struct PyModuleDef grpmodule;
 
+/* Mutex to protect calls to getgrgid(), getgrnam(), and getgrent().
+ * These functions return pointer to static data structure, which
+ * may be overwritten by any subsequent calls. */
+static PyMutex group_db_mutex = {0};
+
 #define DEFAULT_BUFFER_SIZE 1024
 
 static PyObject *
@@ -168,9 +173,15 @@ grp_getgrgid_impl(PyObject *module, PyObject *id)
 
     Py_END_ALLOW_THREADS
 #else
+    PyMutex_Lock(&group_db_mutex);
+    // The getgrgid() function need not be thread-safe.
+    // https://pubs.opengroup.org/onlinepubs/9699919799/functions/getgrgid.html
     p = getgrgid(gid);
 #endif
     if (p == NULL) {
+#ifndef HAVE_GETGRGID_R
+        PyMutex_Unlock(&group_db_mutex);
+#endif
         PyMem_RawFree(buf);
         if (nomem == 1) {
             return PyErr_NoMemory();
@@ -185,6 +196,8 @@ grp_getgrgid_impl(PyObject *module, PyObject *id)
     retval = mkgrent(module, p);
 #ifdef HAVE_GETGRGID_R
     PyMem_RawFree(buf);
+#else
+    PyMutex_Unlock(&group_db_mutex);
 #endif
     return retval;
 }
@@ -249,9 +262,15 @@ grp_getgrnam_impl(PyObject *module, PyObject *name)
 
     Py_END_ALLOW_THREADS
 #else
+    PyMutex_Lock(&group_db_mutex);
+    // The getgrnam() function need not be thread-safe.
+    // https://pubs.opengroup.org/onlinepubs/9699919799/functions/getgrnam.html
     p = getgrnam(name_chars);
 #endif
     if (p == NULL) {
+#ifndef HAVE_GETGRNAM_R
+        PyMutex_Unlock(&group_db_mutex);
+#endif
         if (nomem == 1) {
             PyErr_NoMemory();
         }
@@ -261,6 +280,9 @@ grp_getgrnam_impl(PyObject *module, PyObject *name)
         goto out;
     }
     retval = mkgrent(module, p);
+#ifndef HAVE_GETGRNAM_R
+    PyMutex_Unlock(&group_db_mutex);
+#endif
 out:
     PyMem_RawFree(buf);
     Py_DECREF(bytes);
@@ -285,8 +307,7 @@ grp_getgrall_impl(PyObject *module)
         return NULL;
     }
 
-    static PyMutex getgrall_mutex = {0};
-    PyMutex_Lock(&getgrall_mutex);
+    PyMutex_Lock(&group_db_mutex);
     setgrent();
 
     struct group *p;
@@ -306,7 +327,7 @@ grp_getgrall_impl(PyObject *module)
 
 done:
     endgrent();
-    PyMutex_Unlock(&getgrall_mutex);
+    PyMutex_Unlock(&group_db_mutex);
     return d;
 }
 

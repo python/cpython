@@ -1,7 +1,7 @@
 .. _mod-weakref:
 
-:mod:`weakref` --- Weak references
-==================================
+:mod:`!weakref` --- Weak references
+===================================
 
 .. module:: weakref
    :synopsis: Support for weak references and weak dictionaries.
@@ -15,7 +15,7 @@
 
 --------------
 
-The :mod:`weakref` module allows the Python programmer to create :dfn:`weak
+The :mod:`!weakref` module allows the Python programmer to create :dfn:`weak
 references` to objects.
 
 .. When making changes to the examples in this file, be sure to update
@@ -39,7 +39,7 @@ associate a name with each.  If you used a Python dictionary to map names to
 images, or images to names, the image objects would remain alive just because
 they appeared as values or keys in the dictionaries.  The
 :class:`WeakKeyDictionary` and :class:`WeakValueDictionary` classes supplied by
-the :mod:`weakref` module are an alternative, using weak references to construct
+the :mod:`!weakref` module are an alternative, using weak references to construct
 mappings that don't keep objects alive solely because they appear in the mapping
 objects.  If, for example, an image object is a value in a
 :class:`WeakValueDictionary`, then when the last remaining references to that
@@ -63,7 +63,7 @@ remains alive until the object is collected.
 Most programs should find that using one of these weak container types
 or :class:`finalize` is all they need -- it's not usually necessary to
 create your own weak references directly.  The low-level machinery is
-exposed by the :mod:`weakref` module for the benefit of advanced uses.
+exposed by the :mod:`!weakref` module for the benefit of advanced uses.
 
 Not all objects can be weakly referenced. Objects which support weak references
 include class instances, functions written in Python (but not in C), instance methods,

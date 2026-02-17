@@ -397,20 +397,20 @@ class ReprTests(unittest.TestCase):
                 'object': {
                     1: 'two',
                     b'three': [
-                        (4.5, 6.7),
+                        (4.5, 6.25),
                         [set((8, 9)), frozenset((10, 11))],
                     ],
                 },
                 'tests': (
                     (dict(indent=None), '''\
-                        {1: 'two', b'three': [(4.5, 6.7), [{8, 9}, frozenset({10, 11})]]}'''),
+                        {1: 'two', b'three': [(4.5, 6.25), [{8, 9}, frozenset({10, 11})]]}'''),
                     (dict(indent=False), '''\
                         {
                         1: 'two',
                         b'three': [
                         (
                         4.5,
-                        6.7,
+                        6.25,
                         ),
                         [
                         {
@@ -430,7 +430,7 @@ class ReprTests(unittest.TestCase):
                          b'three': [
                           (
                            4.5,
-                           6.7,
+                           6.25,
                           ),
                           [
                            {
@@ -450,7 +450,7 @@ class ReprTests(unittest.TestCase):
                         b'three': [
                         (
                         4.5,
-                        6.7,
+                        6.25,
                         ),
                         [
                         {
@@ -470,7 +470,7 @@ class ReprTests(unittest.TestCase):
                          b'three': [
                           (
                            4.5,
-                           6.7,
+                           6.25,
                           ),
                           [
                            {
@@ -490,7 +490,7 @@ class ReprTests(unittest.TestCase):
                             b'three': [
                                 (
                                     4.5,
-                                    6.7,
+                                    6.25,
                                 ),
                                 [
                                     {
@@ -518,7 +518,7 @@ class ReprTests(unittest.TestCase):
                         b'three': [
                         (
                         4.5,
-                        6.7,
+                        6.25,
                         ),
                         [
                         {
@@ -538,7 +538,7 @@ class ReprTests(unittest.TestCase):
                         -->b'three': [
                         -->-->(
                         -->-->-->4.5,
-                        -->-->-->6.7,
+                        -->-->-->6.25,
                         -->-->),
                         -->-->[
                         -->-->-->{
@@ -558,7 +558,7 @@ class ReprTests(unittest.TestCase):
                         ....b'three': [
                         ........(
                         ............4.5,
-                        ............6.7,
+                        ............6.25,
                         ........),
                         ........[
                         ............{
@@ -695,8 +695,11 @@ class LongReprTest(unittest.TestCase):
         source_path_len += 2 * (len(self.longname) + 1)
         # a path separator + `module_name` + ".py"
         source_path_len += len(module_name) + 1 + len(".py")
-        cached_path_len = (source_path_len +
-            len(importlib.util.cache_from_source("x.py")) - len("x.py"))
+        try:
+            cached_path_len = (source_path_len +
+                len(importlib.util.cache_from_source("x.py")) - len("x.py"))
+        except NotImplementedError:
+            cached_path_len = source_path_len
         if os.name == 'nt' and cached_path_len >= 258:
             # Under Windows, the max path len is 260 including C's terminating
             # NUL character.

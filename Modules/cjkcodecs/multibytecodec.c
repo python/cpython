@@ -590,6 +590,7 @@ errorexit:
 }
 
 /*[clinic input]
+@permit_long_docstring_body
 _multibytecodec.MultibyteCodec.encode
 
   input: object
@@ -607,7 +608,7 @@ static PyObject *
 _multibytecodec_MultibyteCodec_encode_impl(MultibyteCodecObject *self,
                                            PyObject *input,
                                            const char *errors)
-/*[clinic end generated code: output=7b26652045ba56a9 input=2841745b95ed338f]*/
+/*[clinic end generated code: output=7b26652045ba56a9 input=0980aede2c564df8]*/
 {
     MultibyteCodec_State state;
     PyObject *errorcb, *r, *ucvt;
@@ -655,6 +656,7 @@ errorexit:
 }
 
 /*[clinic input]
+@permit_long_docstring_body
 _multibytecodec.MultibyteCodec.decode
 
   input: Py_buffer
@@ -672,7 +674,7 @@ static PyObject *
 _multibytecodec_MultibyteCodec_decode_impl(MultibyteCodecObject *self,
                                            Py_buffer *input,
                                            const char *errors)
-/*[clinic end generated code: output=ff419f65bad6cc77 input=e0c78fc7ab190def]*/
+/*[clinic end generated code: output=ff419f65bad6cc77 input=2c657ef914600c7c]*/
 {
     MultibyteCodec_State state;
     MultibyteDecodeBuffer buf;

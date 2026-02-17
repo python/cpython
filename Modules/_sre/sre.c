@@ -45,6 +45,7 @@ static const char copyright[] =
 #include "pycore_moduleobject.h"     // _PyModule_GetState()
 #include "pycore_modsupport.h"       // _PyArg_NoKeywords()
 #include "pycore_unicodeobject.h"    // _PyUnicode_Copy
+#include "pycore_weakref.h"          // FT_CLEAR_WEAKREFS()
 
 #include "sre.h"                     // SRE_CODE
 
@@ -737,10 +738,7 @@ pattern_dealloc(PyObject *self)
 {
     PyTypeObject *tp = Py_TYPE(self);
     PyObject_GC_UnTrack(self);
-    PatternObject *obj = _PatternObject_CAST(self);
-    if (obj->weakreflist != NULL) {
-        PyObject_ClearWeakRefs(self);
-    }
+    FT_CLEAR_WEAKREFS(self, _PatternObject_CAST(self)->weakreflist);
     (void)pattern_clear(self);
     tp->tp_free(self);
     Py_DECREF(tp);
@@ -769,7 +767,7 @@ sre_search(SRE_STATE* state, SRE_CODE* pattern)
 }
 
 /*[clinic input]
-_sre.SRE_Pattern.match
+_sre.SRE_Pattern.prefixmatch
 
     cls: defining_class
     /
@@ -781,10 +779,10 @@ Matches zero or more characters at the beginning of the string.
 [clinic start generated code]*/
 
 static PyObject *
-_sre_SRE_Pattern_match_impl(PatternObject *self, PyTypeObject *cls,
-                            PyObject *string, Py_ssize_t pos,
-                            Py_ssize_t endpos)
-/*[clinic end generated code: output=ec6208ea58a0cca0 input=4bdb9c3e564d13ac]*/
+_sre_SRE_Pattern_prefixmatch_impl(PatternObject *self, PyTypeObject *cls,
+                                  PyObject *string, Py_ssize_t pos,
+                                  Py_ssize_t endpos)
+/*[clinic end generated code: output=a0e079fb4f875240 input=e2a7e68ea47d048c]*/
 {
     _sremodulestate *module_state = get_sre_module_state_by_class(cls);
     SRE_STATE state;
@@ -811,6 +809,7 @@ _sre_SRE_Pattern_match_impl(PatternObject *self, PyTypeObject *cls,
     state_fini(&state);
     return match;
 }
+
 
 /*[clinic input]
 _sre.SRE_Pattern.fullmatch
@@ -858,6 +857,7 @@ _sre_SRE_Pattern_fullmatch_impl(PatternObject *self, PyTypeObject *cls,
 }
 
 /*[clinic input]
+@permit_long_summary
 _sre.SRE_Pattern.search
 
     cls: defining_class
@@ -875,7 +875,7 @@ static PyObject *
 _sre_SRE_Pattern_search_impl(PatternObject *self, PyTypeObject *cls,
                              PyObject *string, Py_ssize_t pos,
                              Py_ssize_t endpos)
-/*[clinic end generated code: output=bd7f2d9d583e1463 input=afa9afb66a74a4b3]*/
+/*[clinic end generated code: output=bd7f2d9d583e1463 input=05e9feee0334c156]*/
 {
     _sremodulestate *module_state = get_sre_module_state_by_class(cls);
     SRE_STATE state;
@@ -1000,6 +1000,7 @@ error:
 }
 
 /*[clinic input]
+@permit_long_summary
 _sre.SRE_Pattern.finditer
 
     cls: defining_class
@@ -1017,7 +1018,7 @@ static PyObject *
 _sre_SRE_Pattern_finditer_impl(PatternObject *self, PyTypeObject *cls,
                                PyObject *string, Py_ssize_t pos,
                                Py_ssize_t endpos)
-/*[clinic end generated code: output=1791dbf3618ade56 input=812e332a4848cbaf]*/
+/*[clinic end generated code: output=1791dbf3618ade56 input=ee28865796048023]*/
 {
     _sremodulestate *module_state = get_sre_module_state_by_class(cls);
     PyObject* scanner;
@@ -1421,6 +1422,7 @@ error:
 }
 
 /*[clinic input]
+@permit_long_summary
 _sre.SRE_Pattern.sub
 
     cls: defining_class
@@ -1435,7 +1437,7 @@ Return the string obtained by replacing the leftmost non-overlapping occurrences
 static PyObject *
 _sre_SRE_Pattern_sub_impl(PatternObject *self, PyTypeObject *cls,
                           PyObject *repl, PyObject *string, Py_ssize_t count)
-/*[clinic end generated code: output=4be141ab04bca60d input=d8d1d4ac2311a07c]*/
+/*[clinic end generated code: output=4be141ab04bca60d input=eba511fd1c4908b7]*/
 {
     _sremodulestate *module_state = get_sre_module_state_by_class(cls);
 
@@ -1443,6 +1445,7 @@ _sre_SRE_Pattern_sub_impl(PatternObject *self, PyTypeObject *cls,
 }
 
 /*[clinic input]
+@permit_long_summary
 _sre.SRE_Pattern.subn
 
     cls: defining_class
@@ -1458,7 +1461,7 @@ static PyObject *
 _sre_SRE_Pattern_subn_impl(PatternObject *self, PyTypeObject *cls,
                            PyObject *repl, PyObject *string,
                            Py_ssize_t count)
-/*[clinic end generated code: output=da02fd85258b1e1f input=8b78a65b8302e58d]*/
+/*[clinic end generated code: output=da02fd85258b1e1f input=6a5bb5b61717abf0]*/
 {
     _sremodulestate *module_state = get_sre_module_state_by_class(cls);
 
@@ -1966,7 +1969,7 @@ _validate_inner(SRE_CODE *code, SRE_CODE *end, Py_ssize_t groups)
                sre_match() code is robust even if they don't, and the worst
                you can get is nonsensical match results. */
             GET_ARG;
-            if (arg > 2 * (size_t)groups + 1) {
+            if (arg >= 2 * (size_t)groups) {
                 VTRACE(("arg=%d, groups=%d\n", (int)arg, (int)groups));
                 FAIL;
             }
@@ -2379,7 +2382,7 @@ match_getindex(MatchObject* self, PyObject* index)
     }
 
     // Check that i*2 cannot overflow to make static analyzers happy
-    assert(i <= SRE_MAXGROUPS);
+    assert((size_t)i <= SRE_MAXGROUPS);
     return i;
 }
 
@@ -2396,6 +2399,7 @@ match_getslice(MatchObject* self, PyObject* index, PyObject* def)
 }
 
 /*[clinic input]
+@permit_long_summary
 _sre.SRE_Match.expand
 
     template: object
@@ -2405,7 +2409,7 @@ Return the string obtained by doing backslash substitution on the string templat
 
 static PyObject *
 _sre_SRE_Match_expand_impl(MatchObject *self, PyObject *template)
-/*[clinic end generated code: output=931b58ccc323c3a1 input=4bfdb22c2f8b146a]*/
+/*[clinic end generated code: output=931b58ccc323c3a1 input=dc74d81265376ac3]*/
 {
     _sremodulestate *module_state = get_sre_module_state_by_class(Py_TYPE(self));
     PyObject *filter = compile_template(module_state, self->pattern, template);
@@ -2494,6 +2498,7 @@ _sre_SRE_Match_groups_impl(MatchObject *self, PyObject *default_value)
 }
 
 /*[clinic input]
+@permit_long_summary
 _sre.SRE_Match.groupdict
 
     default: object = None
@@ -2504,7 +2509,7 @@ Return a dictionary containing all the named subgroups of the match, keyed by th
 
 static PyObject *
 _sre_SRE_Match_groupdict_impl(MatchObject *self, PyObject *default_value)
-/*[clinic end generated code: output=29917c9073e41757 input=0ded7960b23780aa]*/
+/*[clinic end generated code: output=29917c9073e41757 input=a8d3a1dc80336872]*/
 {
     PyObject *result;
     PyObject *key;
@@ -2689,7 +2694,7 @@ _sre_SRE_Match___deepcopy___impl(MatchObject *self, PyObject *memo)
 }
 
 PyDoc_STRVAR(match_doc,
-"The result of re.match() and re.search().\n\
+"The result of re.search(), re.prefixmatch(), and re.fullmatch().\n\
 Match objects always have a boolean value of True.");
 
 PyDoc_STRVAR(match_group_doc,
@@ -2859,24 +2864,29 @@ scanner_dealloc(PyObject *self)
 static int
 scanner_begin(ScannerObject* self)
 {
-    if (self->executing) {
+#ifdef Py_GIL_DISABLED
+    int was_executing = _Py_atomic_exchange_int(&self->executing, 1);
+#else
+    int was_executing = self->executing;
+    self->executing = 1;
+#endif
+    if (was_executing) {
         PyErr_SetString(PyExc_ValueError,
                         "regular expression scanner already executing");
         return 0;
     }
-    self->executing = 1;
     return 1;
 }
 
 static void
 scanner_end(ScannerObject* self)
 {
-    assert(self->executing);
-    self->executing = 0;
+    assert(FT_ATOMIC_LOAD_INT_RELAXED(self->executing));
+    FT_ATOMIC_STORE_INT(self->executing, 0);
 }
 
 /*[clinic input]
-_sre.SRE_Scanner.match
+_sre.SRE_Scanner.prefixmatch
 
     cls: defining_class
     /
@@ -2884,8 +2894,8 @@ _sre.SRE_Scanner.match
 [clinic start generated code]*/
 
 static PyObject *
-_sre_SRE_Scanner_match_impl(ScannerObject *self, PyTypeObject *cls)
-/*[clinic end generated code: output=6e22c149dc0f0325 input=b5146e1f30278cb7]*/
+_sre_SRE_Scanner_prefixmatch_impl(ScannerObject *self, PyTypeObject *cls)
+/*[clinic end generated code: output=02b3b9d2954a2157 input=3049b20466c56a8e]*/
 {
     _sremodulestate *module_state = get_sre_module_state_by_class(cls);
     SRE_STATE* state = &self->state;
@@ -3202,7 +3212,12 @@ pattern_richcompare(PyObject *lefto, PyObject *righto, int op)
 #include "clinic/sre.c.h"
 
 static PyMethodDef pattern_methods[] = {
-    _SRE_SRE_PATTERN_MATCH_METHODDEF
+    _SRE_SRE_PATTERN_PREFIXMATCH_METHODDEF
+    /* "match" reuses the prefixmatch Clinic-generated parser and impl
+     * to avoid duplicating the argument parsing boilerplate code. */
+    {"match", _PyCFunction_CAST(_sre_SRE_Pattern_prefixmatch),
+     METH_METHOD|METH_FASTCALL|METH_KEYWORDS,
+     _sre_SRE_Pattern_prefixmatch__doc__},
     _SRE_SRE_PATTERN_FULLMATCH_METHODDEF
     _SRE_SRE_PATTERN_SEARCH_METHODDEF
     _SRE_SRE_PATTERN_SUB_METHODDEF
@@ -3330,7 +3345,12 @@ static PyType_Spec match_spec = {
 };
 
 static PyMethodDef scanner_methods[] = {
-    _SRE_SRE_SCANNER_MATCH_METHODDEF
+    _SRE_SRE_SCANNER_PREFIXMATCH_METHODDEF
+    /* "match" reuses the prefixmatch Clinic-generated parser and impl
+     * to avoid duplicating the argument parsing boilerplate code. */
+    {"match", _PyCFunction_CAST(_sre_SRE_Scanner_prefixmatch),
+     METH_METHOD|METH_FASTCALL|METH_KEYWORDS,
+     _sre_SRE_Scanner_prefixmatch__doc__},
     _SRE_SRE_SCANNER_SEARCH_METHODDEF
     {NULL, NULL}
 };
@@ -3443,10 +3463,30 @@ do {                                                                \
         }                                                 \
 } while (0)
 
+
+#ifdef Py_DEBUG
+static void
+_assert_match_aliases_prefixmatch(PyMethodDef *methods)
+{
+    PyMethodDef *prefixmatch_md = &methods[0];
+    PyMethodDef *match_md = &methods[1];
+    assert(strcmp(prefixmatch_md->ml_name, "prefixmatch") == 0);
+    assert(strcmp(match_md->ml_name, "match") == 0);
+    assert(match_md->ml_meth == prefixmatch_md->ml_meth);
+    assert(match_md->ml_flags == prefixmatch_md->ml_flags);
+    assert(match_md->ml_doc == prefixmatch_md->ml_doc);
+}
+#endif
+
 static int
 sre_exec(PyObject *m)
 {
     _sremodulestate *state;
+
+#ifdef Py_DEBUG
+    _assert_match_aliases_prefixmatch(pattern_methods);
+    _assert_match_aliases_prefixmatch(scanner_methods);
+#endif
 
     /* Create heap types */
     state = get_sre_module_state(m);
