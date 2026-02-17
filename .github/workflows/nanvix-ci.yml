@@ -463,8 +463,9 @@ jobs:
           ARTIFACT_NAME="cpython-${{ matrix.platform }}-${{ matrix.process-mode }}"
           STAGING="$(pwd)/staging"
           make -f Makefile.nanvix CONFIG_NANVIX=y NANVIX_HOME="$NANVIX_HOME" NANVIX_TOOLCHAIN="/opt/nanvix" install DESTDIR="$STAGING"
-          # Clean up test and cache directories to reduce artifact size
-          find "$STAGING" -name "__pycache__" -type d -exec rm -rf {} + 2>/dev/null || true
+          # Precompile .pyc files (essential: Nanvix cannot compile .py → .pyc at runtime)
+          /opt/nanvix/bin/python3 -m compileall -q "$STAGING/sysroot/lib/python3.12/" 2>/dev/null || true
+          # Clean up test directories to reduce artifact size (keep __pycache__!)
           find "$STAGING" -path "*/test" -type d -exec rm -rf {} + 2>/dev/null || true
           find "$STAGING" -path "*/tests" -type d -exec rm -rf {} + 2>/dev/null || true
           rm -rf "$STAGING/sysroot/lib/python3.12/idlelib" "$STAGING/sysroot/lib/python3.12/tkinter"
