@@ -1296,7 +1296,11 @@ set_update_internal(PySetObject *so, PyObject *other)
         return rv;
     }
     else if (PyFrozenDict_CheckExact(other)) {
-        return set_update_dict_lock_held(so, other);
+        int rv;
+        Py_BEGIN_CRITICAL_SECTION(so);
+        rv = set_update_dict_lock_held(so, other);
+        Py_END_CRITICAL_SECTION();
+        return rv;
     }
     else {
         int rv;
@@ -2177,7 +2181,9 @@ static int
 set_symmetric_difference_update_dict(PySetObject *so, PyObject *other)
 {
     _Py_CRITICAL_SECTION_ASSERT_OBJECT_LOCKED(so);
-    _Py_CRITICAL_SECTION_ASSERT_OBJECT_LOCKED(other);
+    if (!PyFrozenDict_CheckExact(other)) {
+        _Py_CRITICAL_SECTION_ASSERT_OBJECT_LOCKED(other);
+    }
 
     Py_ssize_t pos = 0;
     PyObject *key, *value;
@@ -2252,7 +2258,9 @@ set_symmetric_difference_update_impl(PySetObject *so, PyObject *other)
         Py_END_CRITICAL_SECTION2();
     }
     else if (PyFrozenDict_CheckExact(other)) {
+        Py_BEGIN_CRITICAL_SECTION(so);
         rv = set_symmetric_difference_update_dict(so, other);
+        Py_END_CRITICAL_SECTION();
     }
     else if (PyAnySet_Check(other)) {
         Py_BEGIN_CRITICAL_SECTION2(so, other);
