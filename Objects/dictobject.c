@@ -3307,7 +3307,7 @@ _PyDict_FromKeys(PyObject *cls, PyObject *iterable, PyObject *value)
         else if (PyAnySet_CheckExact(iterable)) {
             PyDictObject *mp = (PyDictObject *)d;
 
-            Py_BEGIN_CRITICAL_SECTION(iterable);
+            Py_BEGIN_CRITICAL_SECTION(d);
             d = (PyObject *)dict_set_fromkeys(mp, iterable, value);
             Py_END_CRITICAL_SECTION();
             return d;
