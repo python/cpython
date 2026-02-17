@@ -2207,6 +2207,13 @@ class TestDate(HarmlessMixedComparison, unittest.TestCase):
             self.theclass.strptime(test_date, "%m/%d/%y")
         )
 
+    def test_strptime_t_format(self):
+        test_date = "2026\t02\t16"
+        self.assertEqual(
+            self.theclass.strptime(test_date, "%Y%t%m%t%d"),
+            self.theclass.strptime(test_date, "%Y\t%m\t%d")
+        )
+
 
 #############################################################################
 # datetime tests

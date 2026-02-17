@@ -670,6 +670,13 @@ class StrptimeTests(unittest.TestCase):
             time.strptime(test_date, "%m/%d/%y")
         )
 
+    def test_strptime_t_format(self):
+        test_date = "2026\t02\t16"
+        self.assertEqual(
+            time.strptime(test_date, "%Y%t%m%t%d"),
+            time.strptime(test_date, "%Y\t%m\t%d")
+        )
+
 class Strptime12AMPMTests(unittest.TestCase):
     """Test a _strptime regression in '%I %p' at 12 noon (12 PM)"""
 
