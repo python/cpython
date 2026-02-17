@@ -3361,6 +3361,7 @@ dict_iter_exit:;
     }
     else if (PyFrozenDict_CheckExact(d)) {
         while ((key = PyIter_Next(it)) != NULL) {
+            // anydict_setitem_take2 consumes a reference to key
             status = anydict_setitem_take2((PyDictObject *)d,
                                            key, Py_NewRef(value));
             if (status < 0) {
