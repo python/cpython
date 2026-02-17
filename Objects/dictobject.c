@@ -2069,8 +2069,6 @@ dictresize(PyDictObject *mp,
     PyDictKeysObject *oldkeys, *newkeys;
     PyDictValues *oldvalues;
 
-    ASSERT_DICT_LOCKED(mp);
-
     if (log2_newsize >= SIZEOF_SIZE_T*8) {
         PyErr_NoMemory();
         return -1;
