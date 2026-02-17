@@ -3322,7 +3322,8 @@ _PyDict_FromKeys(PyObject *cls, PyObject *iterable, PyObject *value)
 
     if (PyAnyDict_CheckExact(d)) {
         while ((key = PyIter_Next(it)) != NULL) {
-            status = anydict_setitem_take2((PyDictObject *)d, key, Py_NewRef(value));
+            status = anydict_setitem_take2((PyDictObject *)d,
+                                           key, Py_NewRef(value));
             if (status < 0) {
                 assert(PyErr_Occurred());
                 goto Fail;
