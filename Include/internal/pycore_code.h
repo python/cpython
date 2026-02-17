@@ -21,6 +21,9 @@ extern "C" {
  * 2**32 - 1, rather than INT_MAX.
  */
 
+#ifdef _AIX
+#pragma pack(push, 1)
+#endif
 typedef union {
     uint16_t cache;
     struct {
@@ -29,6 +32,9 @@ typedef union {
     } op;
     _Py_BackoffCounter counter;  // First cache entry of specializable op
 } _Py_CODEUNIT;
+#ifdef _AIX
+#pragma pack(pop)
+#endif
 
 #define _PyCode_CODE(CO) _Py_RVALUE((_Py_CODEUNIT *)(CO)->co_code_adaptive)
 #define _PyCode_NBYTES(CO) (Py_SIZE(CO) * (Py_ssize_t)sizeof(_Py_CODEUNIT))
