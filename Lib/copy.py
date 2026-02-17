@@ -166,7 +166,7 @@ _atomic_types = frozenset({types.NoneType, types.EllipsisType, types.NotImplemen
           int, float, bool, complex, bytes, str, types.CodeType, type, range,
           types.BuiltinFunctionType, types.FunctionType, weakref.ref, property})
 
-d = {}
+_deepcopy_dispatch = d = {}
 
 
 def _deepcopy_list(x, memo, deepcopy=deepcopy):
@@ -212,7 +212,6 @@ def _deepcopy_method(x, memo): # Copy instance methods
     return type(x)(x.__func__, deepcopy(x.__self__, memo))
 d[types.MethodType] = _deepcopy_method
 
-_deepcopy_dispatch = frozendict(d)
 del d
 
 def _keep_alive(x, memo):
