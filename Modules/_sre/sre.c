@@ -1247,7 +1247,7 @@ pattern_subx(_sremodulestate* module_state,
     Py_buffer view;
 
     if (PyCallable_Check(ptemplate)) {
-        /* sub/subn takes either a function or a template */
+        /* sub/subn takes either a callable or a replacement string */
         filter = Py_NewRef(ptemplate);
         filter_type = (Py_TYPE(filter) == module_state->Template_Type)
             ? TEMPLATE

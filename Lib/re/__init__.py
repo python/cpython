@@ -380,8 +380,6 @@ def _compile(pattern, flags):
 @functools.lru_cache(_MAXCACHE)
 def _compile_template(pattern, repl):
     # internal: compile replacement pattern
-    if isinstance(repl, Template):
-        return repr
     return _sre.template(pattern, _parser.parse_template(repl, pattern))
 
 # register myself for pickling

@@ -2954,7 +2954,7 @@ class TemplateTests(unittest.TestCase):
         self.assertEqual(re.sub(p, t, b'xyzt'), b'[y-x][t-z]')
         self.assertEqual(p.sub(t, b'xyzt'), b'[y-x][t-z]')
 
-    def test_group_refs_emplty_literals(self):
+    def test_group_refs_empty_literals(self):
         p = re.compile(r'(\w)(\w)')
         t = p.compile_template(r'\2\1')
         self.assertIsInstance(t, re.Template)
