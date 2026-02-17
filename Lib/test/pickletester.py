@@ -2860,6 +2860,9 @@ class AbstractPickleTests:
     def test_recursive_dict_and_inst(self):
         self._test_recursive_collection_and_inst(dict.fromkeys, oldminproto=0)
 
+    def test_recursive_frozendict_and_inst(self):
+        self._test_recursive_collection_and_inst(frozendict.fromkeys, oldminproto=0)
+
     def test_recursive_set_and_inst(self):
         self._test_recursive_collection_and_inst(set)
 

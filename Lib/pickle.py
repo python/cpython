@@ -185,6 +185,7 @@ FRAME            = b'\x95'  # indicate the beginning of a new frame
 BYTEARRAY8       = b'\x96'  # push bytearray
 NEXT_BUFFER      = b'\x97'  # push next out-of-band buffer
 READONLY_BUFFER  = b'\x98'  # make top of stack readonly
+FROZENDICT       = b'\x99'  # A Python frozendict object
 
 __all__.extend(x for x in dir() if x.isupper() and not x.startswith('_'))
 
@@ -1081,6 +1082,30 @@ class _Pickler:
 
     dispatch[dict] = save_dict
 
+    def save_frozendict(self, obj):
+        if self.proto < 4:
+            items = list(obj.items())
+            self.save_reduce(frozendict, (items,), obj=obj)
+            return
+
+        self.write(MARK)
+
+        save = self.save
+        for key, value in obj.items():
+            save(key)
+            save(value)
+
+        if id(obj) in self.memo:
+            # If the object is already in the memo, this means it is
+            # recursive. In this case, throw away everything we put on the
+            # stack, and fetch the object back from the memo.
+            self.write(POP_MARK + self.get(self.memo[id(obj)][0]))
+            return
+
+        self.write(FROZENDICT)
+        self.memoize(obj)
+    dispatch[frozendict] = save_frozendict
+
     def _batch_setitems(self, items, obj):
         # Helper to batch up SETITEMS sequences; proto >= 1 only
         save = self.save
@@ -1620,6 +1645,13 @@ class _Unpickler:
              for i in range(0, len(items), 2)}
         self.append(d)
     dispatch[DICT[0]] = load_dict
+
+    def load_frozendict(self):
+        items = self.pop_mark()
+        d = frozendict((items[i], items[i+1])
+                       for i in range(0, len(items), 2))
+        self.append(d)
+    dispatch[FROZENDICT[0]] = load_frozendict
 
     # INST and OBJ differ only in how they get a class object.  It's not
     # only sensible to do the rest in a common routine, the two routines

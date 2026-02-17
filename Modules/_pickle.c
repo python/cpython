@@ -137,7 +137,8 @@ enum opcode {
     /* Protocol 5 */
     BYTEARRAY8       = '\x96',
     NEXT_BUFFER      = '\x97',
-    READONLY_BUFFER  = '\x98'
+    READONLY_BUFFER  = '\x98',
+    FROZENDICT       = '\x99',
 };
 
 enum {
@@ -591,6 +592,34 @@ Pdata_poplist(Pdata *self, Py_ssize_t start)
         return NULL;
     for (i = start, j = 0; j < len; i++, j++)
         PyList_SET_ITEM(list, j, self->data[i]);
+
+    Py_SET_SIZE(self, start);
+    return list;
+}
+
+static PyObject *
+Pdata_poplist2(PickleState *state, Pdata *self, Py_ssize_t start)
+{
+    if (start < self->fence) {
+        Pdata_stack_underflow(state, self);
+        return NULL;
+    }
+
+    Py_ssize_t len = (Py_SIZE(self) - start) >> 1;
+
+    PyObject *list = PyList_New(len);
+    if (list == NULL) {
+        return NULL;
+    }
+
+    for (Py_ssize_t i = start, j = 0; j < len; i+=2, j++) {
+        PyObject *subtuple = PyTuple_Pack(2, self->data[i], self->data[i+1]);
+        if (subtuple == NULL) {
+            Py_DECREF(list);
+            return NULL;
+        }
+        PyList_SET_ITEM(list, j, subtuple);
+    }
 
     Py_SET_SIZE(self, start);
     return list;
@@ -3595,6 +3624,63 @@ save_dict(PickleState *state, PicklerObject *self, PyObject *obj)
 }
 
 static int
+save_frozendict(PickleState *state, PicklerObject *self, PyObject *obj)
+{
+    if (self->fast && !fast_save_enter(self, obj)) {
+        return -1;
+    }
+
+    if (self->proto < 4) {
+        PyObject *items = PyDict_Items(obj);
+        if (items == NULL) {
+            return -1;
+        }
+
+        PyObject *reduce_value;
+        reduce_value = Py_BuildValue("(O(O))", (PyObject*)&PyFrozenDict_Type,
+                                     items);
+        Py_DECREF(items);
+        if (reduce_value == NULL) {
+            return -1;
+        }
+
+        /* save_reduce() will memoize the object automatically */
+        int status = save_reduce(state, self, reduce_value, obj);
+        Py_DECREF(reduce_value);
+        return status;
+    }
+
+    const char mark_op = MARK;
+    if (_Pickler_Write(self, &mark_op, 1) < 0) {
+        return -1;
+    }
+
+    PyObject *key = NULL, *value = NULL;
+    Py_ssize_t pos = 0;
+    while (PyDict_Next(obj, &pos, &key, &value)) {
+        int res = save(state, self, key, 0);
+        if (res < 0) {
+            return -1;
+        }
+
+        res = save(state, self, value, 0);
+        if (res < 0) {
+            return -1;
+        }
+    }
+
+    const char frozendict_op = FROZENDICT;
+    if (_Pickler_Write(self, &frozendict_op, 1) < 0) {
+        return -1;
+    }
+
+    if (memo_put(state, self, obj) < 0) {
+        return -1;
+    }
+    return 0;
+}
+
+static int
 save_set(PickleState *state, PicklerObject *self, PyObject *obj)
 {
     PyObject *item;
@@ -4567,6 +4653,10 @@ save(PickleState *st, PicklerObject *self, PyObject *obj, int pers_save)
 
     if (type == &PyDict_Type) {
         status = save_dict(st, self, obj);
+        goto done;
+    }
+    else if (type == &PyFrozenDict_Type) {
+        status = save_frozendict(st, self, obj);
         goto done;
     }
     else if (type == &PySet_Type) {
@@ -6030,6 +6120,30 @@ load_dict(PickleState *st, UnpicklerObject *self)
     return 0;
 }
 
+
+static int
+load_frozendict(PickleState *st, UnpicklerObject *self)
+{
+    Py_ssize_t i = marker(st, self);
+    if (i < 0) {
+        return -1;
+    }
+
+    PyObject *items = Pdata_poplist2(st, self->stack, i);
+    if (items == NULL) {
+        return -1;
+    }
+
+    PyObject *frozendict = PyFrozenDict_New(items);
+    Py_DECREF(items);
+    if (frozendict == NULL) {
+        return -1;
+    }
+
+    PDATA_PUSH(self->stack, frozendict, -1);
+    return 0;
+}
+
 static int
 load_frozenset(PickleState *state, UnpicklerObject *self)
 {
@@ -7130,6 +7244,7 @@ load(PickleState *st, UnpicklerObject *self)
         OP(LIST, load_list)
         OP(EMPTY_DICT, load_empty_dict)
         OP(DICT, load_dict)
+        OP(FROZENDICT, load_frozendict)
         OP(EMPTY_SET, load_empty_set)
         OP(ADDITEMS, load_additems)
         OP(FROZENSET, load_frozenset)
