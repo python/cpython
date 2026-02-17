@@ -14,7 +14,6 @@ Improve a documentation page
 
       <script>
          function applyReplacements(text, params) {
-            console.log('Applying replacements to:', text);
             return text
                .replace(/PAGETITLE/g, params.get('pagetitle'))
                .replace(/PAGEURL/g, params.get('pageurl'))
