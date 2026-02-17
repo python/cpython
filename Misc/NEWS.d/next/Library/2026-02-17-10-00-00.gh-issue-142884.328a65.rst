@@ -1,0 +1,3 @@
+Fix crash in :meth:`array.array.tofile` when a reentrant ``write()``
+callback mutates the array. The function now re-checks the array size on
+every iteration instead of caching it once at the start.

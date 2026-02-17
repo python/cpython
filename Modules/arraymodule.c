@@ -1659,31 +1659,34 @@ static PyObject *
 array_array_tofile_impl(arrayobject *self, PyTypeObject *cls, PyObject *f)
 /*[clinic end generated code: output=4560c628d9c18bc2 input=5a24da7a7b407b52]*/
 {
-    Py_ssize_t nbytes = Py_SIZE(self) * self->ob_descr->itemsize;
     /* Write 64K blocks at a time */
     /* XXX Make the block size settable */
     int BLOCKSIZE = 64*1024;
-    Py_ssize_t nblocks = (nbytes + BLOCKSIZE - 1) / BLOCKSIZE;
     Py_ssize_t i;
 
     if (Py_SIZE(self) == 0)
         goto done;
 
-
     array_state *state = get_array_state_by_class(cls);
     assert(state != NULL);
 
-    for (i = 0; i < nblocks; i++) {
-        char* ptr = self->ob_item + i*BLOCKSIZE;
-        Py_ssize_t size = BLOCKSIZE;
-        PyObject *bytes, *res;
+    /* Re-check Py_SIZE() on every iteration because f.write() could
+       execute arbitrary Python code that modifies or clears the array. */
+    for (i = 0; ; i++) {
+        Py_ssize_t nbytes = Py_SIZE(self) * self->ob_descr->itemsize;
+        Py_ssize_t offset = (Py_ssize_t)i * BLOCKSIZE;
+        if (offset >= nbytes)
+            break;
 
-        if (i*BLOCKSIZE + size > nbytes)
-            size = nbytes - i*BLOCKSIZE;
-        bytes = PyBytes_FromStringAndSize(ptr, size);
+        Py_ssize_t size = BLOCKSIZE;
+        if (offset + size > nbytes)
+            size = nbytes - offset;
+
+        char *ptr = self->ob_item + offset;
+        PyObject *bytes = PyBytes_FromStringAndSize(ptr, size);
         if (bytes == NULL)
             return NULL;
-        res = PyObject_CallMethodOneArg(f, state->str_write, bytes);
+        PyObject *res = PyObject_CallMethodOneArg(f, state->str_write, bytes);
         Py_DECREF(bytes);
         if (res == NULL)
             return NULL;

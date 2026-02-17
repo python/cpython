@@ -1737,6 +1737,58 @@ class LargeArrayTest(unittest.TestCase):
         self.assertRaises(IndexError, victim.__setitem__, 1, Float())
         self.assertEqual(len(victim), 0)
 
+    # Tests for use-after-free in array.tofile() when the writer
+    # callback mutates the array.
+    # See: https://github.com/python/cpython/issues/142884.
+
+    def test_tofile_reentrant_write_clear(self):
+        # tofile() must not crash when f.write() clears the array.
+        # Needs >64 KB so tofile() uses multiple blocks.
+        BLOCKSIZE = 64 * 1024
+        victim = array.array('B', b'\0' * (BLOCKSIZE * 2))
+
+        class Writer:
+            armed = True
+            def write(self, data):
+                if Writer.armed:
+                    Writer.armed = False
+                    victim.clear()
+                return len(data)
+
+        victim.tofile(Writer())  # must not crash
+
+    def test_tofile_reentrant_write_shrink(self):
+        # tofile() must not crash when f.write() shrinks the array.
+        BLOCKSIZE = 64 * 1024
+        victim = array.array('B', b'\0' * (BLOCKSIZE * 2))
+
+        class Writer:
+            armed = True
+            def write(self, data):
+                if Writer.armed:
+                    Writer.armed = False
+                    victim[:] = array.array('B', b'\0')
+                return len(data)
+
+        victim.tofile(Writer())  # must not crash
+
+    def test_tofile_reentrant_write_reallocate(self):
+        # tofile() must not crash when f.write() clears and
+        # reallocates the array to a smaller buffer.
+        BLOCKSIZE = 64 * 1024
+        victim = array.array('B', b'\0' * (BLOCKSIZE * 2))
+
+        class Writer:
+            armed = True
+            def write(self, data):
+                if Writer.armed:
+                    Writer.armed = False
+                    victim.clear()
+                    victim.append(0)
+                return len(data)
+
+        victim.tofile(Writer())  # must not crash
+
 
 if __name__ == "__main__":
     unittest.main()
