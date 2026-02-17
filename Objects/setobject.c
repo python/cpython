@@ -1186,7 +1186,9 @@ set_update_dict_lock_held(PySetObject *so, PyObject *other)
     assert(PyAnyDict_CheckExact(other));
 
     _Py_CRITICAL_SECTION_ASSERT_OBJECT_LOCKED(so);
-    _Py_CRITICAL_SECTION_ASSERT_OBJECT_LOCKED(other);
+    if (!PyFrozenDict_CheckExact(other)) {
+        _Py_CRITICAL_SECTION_ASSERT_OBJECT_LOCKED(other);
+    }
 
     /* Do one big resize at the start, rather than
     * incrementally resizing as we insert new keys.  Expect
@@ -1260,12 +1262,15 @@ set_update_local(PySetObject *so, PyObject *other)
         Py_END_CRITICAL_SECTION();
         return rv;
     }
-    else if (PyAnyDict_CheckExact(other)) {
+    else if (PyDict_CheckExact(other)) {
         int rv;
         Py_BEGIN_CRITICAL_SECTION(other);
         rv = set_update_dict_lock_held(so, other);
         Py_END_CRITICAL_SECTION();
         return rv;
+    }
+    else if (PyFrozenDict_CheckExact(other)) {
+        return set_update_dict_lock_held(so, other);
     }
     return set_update_iterable_lock_held(so, other);
 }
@@ -1283,12 +1288,15 @@ set_update_internal(PySetObject *so, PyObject *other)
         Py_END_CRITICAL_SECTION2();
         return rv;
     }
-    else if (PyAnyDict_CheckExact(other)) {
+    else if (PyDict_CheckExact(other)) {
         int rv;
         Py_BEGIN_CRITICAL_SECTION2(so, other);
         rv = set_update_dict_lock_held(so, other);
         Py_END_CRITICAL_SECTION2();
         return rv;
+    }
+    else if (PyFrozenDict_CheckExact(other)) {
+        return set_update_dict_lock_held(so, other);
     }
     else {
         int rv;
@@ -2238,10 +2246,13 @@ set_symmetric_difference_update_impl(PySetObject *so, PyObject *other)
     }
 
     int rv;
-    if (PyAnyDict_CheckExact(other)) {
+    if (PyDict_CheckExact(other)) {
         Py_BEGIN_CRITICAL_SECTION2(so, other);
         rv = set_symmetric_difference_update_dict(so, other);
         Py_END_CRITICAL_SECTION2();
+    }
+    else if (PyFrozenDict_CheckExact(other)) {
+        rv = set_symmetric_difference_update_dict(so, other);
     }
     else if (PyAnySet_Check(other)) {
         Py_BEGIN_CRITICAL_SECTION2(so, other);
