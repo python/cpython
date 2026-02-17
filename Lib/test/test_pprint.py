@@ -330,6 +330,16 @@ class QueryTestCase(unittest.TestCase):
         for type in [dict, dict2]:
             self.assertEqual(pprint.pformat(type(o)), exp)
 
+        exp = """\
+frozendict({'RPM_cal': 0,
+            'RPM_cal2': 48059,
+            'Speed_cal': 0,
+            'controldesk_runtime_us': 0,
+            'main_code_runtime_us': 0,
+            'read_io_runtime_us': 0,
+            'write_io_runtime_us': 43690})"""
+        self.assertEqual(pprint.pformat(frozendict(o)), exp)
+
         o = range(100)
         exp = 'dict_keys([%s])' % ',\n '.join(map(str, o))
         keys = dict.fromkeys(o).keys()
