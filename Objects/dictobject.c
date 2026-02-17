@@ -3381,19 +3381,18 @@ dict_dealloc(PyObject *self)
 
 
 static PyObject *
-dict_repr_lock_held(PyObject *self)
+anydict_repr_impl(PyObject *self)
 {
     PyDictObject *mp = (PyDictObject *)self;
     PyObject *key = NULL, *value = NULL;
-    ASSERT_DICT_LOCKED(mp);
 
-    int res = Py_ReprEnter((PyObject *)mp);
+    int res = Py_ReprEnter(self);
     if (res != 0) {
         return (res > 0 ? PyUnicode_FromString("{...}") : NULL);
     }
 
     if (mp->ma_used == 0) {
-        Py_ReprLeave((PyObject *)mp);
+        Py_ReprLeave(self);
         return PyUnicode_FromString("{}");
     }
 
@@ -3412,7 +3411,7 @@ dict_repr_lock_held(PyObject *self)
        Note that repr may mutate the dict. */
     Py_ssize_t i = 0;
     int first = 1;
-    while (_PyDict_Next((PyObject *)mp, &i, &key, &value, NULL)) {
+    while (_PyDict_Next(self, &i, &key, &value, NULL)) {
         // Prevent repr from deleting key or value during key format.
         Py_INCREF(key);
         Py_INCREF(value);
@@ -3454,16 +3453,23 @@ dict_repr_lock_held(PyObject *self)
         goto error;
     }
 
-    Py_ReprLeave((PyObject *)mp);
+    Py_ReprLeave(self);
 
     return PyUnicodeWriter_Finish(writer);
 
 error:
-    Py_ReprLeave((PyObject *)mp);
+    Py_ReprLeave(self);
     PyUnicodeWriter_Discard(writer);
     Py_XDECREF(key);
     Py_XDECREF(value);
     return NULL;
+}
+
+static PyObject *
+dict_repr_lock_held(PyObject *self)
+{
+    ASSERT_DICT_LOCKED((PyDictObject *)self);
+    return anydict_repr_impl(self);
 }
 
 static PyObject *
@@ -7862,7 +7868,7 @@ static PyMethodDef frozendict_methods[] = {
 static PyObject *
 frozendict_repr(PyObject *self)
 {
-    PyObject *repr = dict_repr(self);
+    PyObject *repr = anydict_repr_impl(self);
     if (repr == NULL) {
         return NULL;
     }
