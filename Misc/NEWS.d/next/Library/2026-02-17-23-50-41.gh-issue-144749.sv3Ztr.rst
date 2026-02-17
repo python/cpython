@@ -1,0 +1,3 @@
+Previously descriptors that return themselves from calls to  `__get__` were 
+treated as default values in a dataclass. Now, a `TypeError` is raised if no 
+initial value is provided to the dataclass constructor.
