@@ -161,8 +161,13 @@ jobs:
           echo "Downloading SQLite from: $SQLITE_URL"
           if curl -fsSL -o "sqlite-dep/${SQLITE_ARTIFACT}" "$SQLITE_URL"; then
             tar -xjf "sqlite-dep/${SQLITE_ARTIFACT}" -C sqlite-dep
-            SQLITE_DIR=$(find sqlite-dep -mindepth 1 -maxdepth 1 -type d -name "sqlite-*" | head -1)
-            if [[ -n "$SQLITE_DIR" ]]; then
+            # Try new tarball format first: sysroot/{lib,include}/...
+            SQLITE_DIR="sqlite-dep/sysroot"
+            if [[ ! -d "$SQLITE_DIR" ]]; then
+              # Fall back to old format: sqlite-<platform>-<mode>/{lib,include}/...
+              SQLITE_DIR=$(find sqlite-dep -mindepth 1 -maxdepth 1 -type d -name "sqlite-*" | head -1)
+            fi
+            if [[ -n "$SQLITE_DIR" ]] && [[ -d "$SQLITE_DIR" ]]; then
               echo "Installing SQLite from $SQLITE_DIR to $NANVIX_HOME..."
               cp -f "$SQLITE_DIR"/lib/*.a "$NANVIX_HOME/lib/" 2>/dev/null || true
               cp -f "$SQLITE_DIR"/include/*.h "$NANVIX_HOME/include/" 2>/dev/null || true
