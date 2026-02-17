@@ -689,7 +689,7 @@ class UnicodeFunctionsTest(unittest.TestCase, BaseUnicodeFunctionsTest):
     # (e.g. 'make distclean && make') to get the correct checksum.
     expectedchecksum = ('668dbbea1136e69d4f00677a5988b23bc78aefc6'
                         if quicktest else
-                        '506a5f2dab2e3d9018a5620f016973bc8c7df0d9')
+                        'b869af769bd8fe352c04622ab90533dc54df5cf3')
 
     @requires_resource('network')
     def test_all_names(self):
