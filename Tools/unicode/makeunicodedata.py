@@ -208,7 +208,7 @@ def makeunicodedata(unicode, trace):
             # extract database properties
             category = CATEGORY_NAMES.index(record.general_category)
             combining = int(record.canonical_combining_class)
-            bidirectional = BIDIRECTIONAL_NAMES.index(record.bidi_class)
+            bidirectional = BIDIRECTIONAL_NAMES.index(unicode.bidi_classes[char])
             mirrored = record.bidi_mirrored == "Y"
             normalizationquickcheck = record.quick_check
             incb = INDIC_CONJUNCT_BREAK_NAMES.index(record.incb)
@@ -217,10 +217,7 @@ def makeunicodedata(unicode, trace):
                 normalizationquickcheck, graphemebreak, incb, extpict,
                 )
         else:
-            if unicode.bidi_defaults is not None:
-                bidirectional = BIDIRECTIONAL_NAMES.index(unicode.bidi_defaults[char])
-            else:
-                bidirectional = 0
+            bidirectional = BIDIRECTIONAL_NAMES.index(unicode.bidi_classes[char])
             if eastasianwidth or graphemebreak or extpict or bidirectional:
                 item = (0, 0, bidirectional, 0, eastasianwidth,
                         0, graphemebreak, 0, extpict)
@@ -496,7 +493,7 @@ def makeunicodetype(unicode, trace):
         if record:
             # extract database properties
             category = record.general_category
-            bidirectional = record.bidi_class
+            bidirectional = unicode.bidi_classes[char]
             properties = record.binary_properties
             flags = 0
             if category in ["Lm", "Lt", "Lu", "Ll", "Lo"]:
@@ -792,6 +789,8 @@ def merge_old_version(version, new, old):
             # category 0 is "unassigned"
             category_changes[i] = 0
             continue
+        if old.bidi_classes[i] != new.bidi_classes[i]:
+            bidir_changes[i] = BIDIRECTIONAL_NAMES.index(old.bidi_classes[i])
         # check characters that differ
         if old.table[i] != new.table[i]:
             for k, field in enumerate(dataclasses.fields(UcdRecord)):
@@ -805,50 +804,48 @@ def merge_old_version(version, new, old):
                     elif k == 2:
                         category_changes[i] = CATEGORY_NAMES.index(value)
                     elif k == 4:
-                        bidir_changes[i] = BIDIRECTIONAL_NAMES.index(value)
-                    elif k == 5:
                         # We assume that all normalization changes are in 1:1 mappings
                         assert " " not in value
                         normalization_changes.append((i, value))
-                    elif k == 6:
+                    elif k == 5:
                         # we only support changes where the old value is a single digit
                         assert value in "0123456789"
                         decimal_changes[i] = int(value)
-                    elif k == 8:
+                    elif k == 7:
                         # Since 0 encodes "no change", the old value is better not 0
                         if not value:
                             numeric_changes[i] = -1
                         else:
                             numeric_changes[i] = float(value)
                             assert numeric_changes[i] not in (0, -1)
-                    elif k == 9:
+                    elif k == 8:
                         if value == 'Y':
                             mirrored_changes[i] = '1'
                         else:
                             mirrored_changes[i] = '0'
-                    elif k == 11:
+                    elif k == 10:
                         # change to ISO comment, ignore
                         pass
-                    elif k == 12:
+                    elif k == 11:
                         # change to simple uppercase mapping; ignore
                         pass
-                    elif k == 13:
+                    elif k == 12:
                         # change to simple lowercase mapping; ignore
                         pass
-                    elif k == 14:
+                    elif k == 13:
                         # change to simple titlecase mapping; ignore
                         pass
-                    elif k == 15:
+                    elif k == 14:
                         # change to east asian width
                         east_asian_width_changes[i] = EASTASIANWIDTH_NAMES.index(value)
-                    elif k == 16:
+                    elif k == 15:
                         # derived property changes; not yet
                         pass
-                    elif k == 17:
+                    elif k == 16:
                         # normalization quickchecks are not performed
                         # for older versions
                         pass
-                    elif k == 18:
+                    elif k == 17:
                         # The Indic_Conjunct_Break property did not exist for
                         # older versions
                         pass
@@ -935,7 +932,7 @@ class UcdRecord:
     name: str
     general_category: str
     canonical_combining_class: str
-    bidi_class: str
+    # UnicodeData.bidi_classes
     decomposition_type: str
     decomposition_mapping: str
     numeric_type: str
@@ -967,7 +964,7 @@ class UcdRecord:
 
 
 def from_row(row: List[str]) -> UcdRecord:
-    return UcdRecord(*row, None, set(), 0, "None")
+    return UcdRecord(*row[:4], *row[5:], None, set(), 0, "None")
 
 
 # --------------------------------------------------------------------
@@ -982,14 +979,17 @@ class UnicodeData:
     def __init__(self, version, cjk_check=True):
         self.changed = []
         table = [None] * 0x110000
+        bidi_classes = [None] * 0x110000
         for s in UcdFile(UNICODE_DATA, version):
             char = int(s[0], 16)
+            bidi_classes[char] = s[4]
             table[char] = from_row(s)
 
         cjk_ranges_found = []
 
         # expand first-last ranges
         field = None
+        bidi_val = None
         for i in range(0, 0x110000):
             # The file UnicodeData.txt has its own distinct way of
             # expressing ranges.  See:
@@ -998,7 +998,8 @@ class UnicodeData:
             if s:
                 if s.name[-6:] == "First>":
                     s.name = ""
-                    field = dataclasses.astuple(s)[:15]
+                    field = dataclasses.astuple(s)[:14]
+                    bidi_val = bidi_classes[i]
                 elif s.name[-5:] == "Last>":
                     if s.name.startswith("<CJK Ideograph"):
                         cjk_ranges_found.append((field[0],
@@ -1006,7 +1007,8 @@ class UnicodeData:
                     s.name = ""
                     field = None
             elif field:
-                table[i] = from_row(('%X' % i,) + field[1:])
+                bidi_classes[i] = bidi_val
+                table[i] = UcdRecord('%X' % i, *field[1:], None, set(), 0, "None")
         if cjk_check and cjk_ranges != cjk_ranges_found:
             raise ValueError("CJK ranges deviate: have %r" % cjk_ranges_found)
 
@@ -1064,27 +1066,24 @@ class UnicodeData:
                 table[i].east_asian_width = widths[i]
         self.widths = widths
 
-        # Read DerivedBidiClass.txt for bidi defaults of unassigned codepoints
+        # Read DerivedBidiClass.txt for bidi classes
         # see https://www.unicode.org/reports/tr44/#Missing_Conventions
         if version != '3.2.0':
-            bidi_defaults = [None] * 0x110000
             missing_re = re.compile(
                 r'# @missing: ([\dA-F]+)\.\.([\dA-F]+); (\w+)'
             )
             with open_data(DERIVED_BIDI_CLASS, version) as f:
                 for l in f:
-                    m = missing_re.search(l)
+                    m = missing_re.match(l)
                     if not m:
                         continue
                     start, end = int(m[1], 16), int(m[2], 16)
                     name = BIDI_LONG_NAMES[m[3]]
                     for i in range(start, end + 1):
-                        bidi_defaults[i] = name
+                        bidi_classes[i] = name
             for char, (bidi,) in UcdFile(DERIVED_BIDI_CLASS, version).expanded():
-                bidi_defaults[char] = bidi
-            self.bidi_defaults = bidi_defaults
-        else:
-            self.bidi_defaults = None
+                bidi_classes[char] = bidi
+        self.bidi_classes = bidi_classes
 
         for char, (propname, *propinfo) in UcdFile(DERIVED_CORE_PROPERTIES, version).expanded():
             if not propinfo:
