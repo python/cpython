@@ -3290,7 +3290,33 @@ _PyDict_FromKeys(PyObject *cls, PyObject *iterable, PyObject *value)
         return NULL;
 
 
-    if (PyAnyDict_CheckExact(d)) {
+    if (PyDict_CheckExact(d)) {
+        if (PyDict_CheckExact(iterable)) {
+            PyDictObject *mp = (PyDictObject *)d;
+
+            Py_BEGIN_CRITICAL_SECTION2(d, iterable);
+            d = (PyObject *)dict_dict_fromkeys(mp, iterable, value);
+            Py_END_CRITICAL_SECTION2();
+            return d;
+        }
+        else if (PyFrozenDict_CheckExact(iterable)) {
+            PyDictObject *mp = (PyDictObject *)d;
+
+            Py_BEGIN_CRITICAL_SECTION(d);
+            d = (PyObject *)dict_dict_fromkeys(mp, iterable, value);
+            Py_END_CRITICAL_SECTION();
+            return d;
+        }
+        else if (PyAnySet_CheckExact(iterable)) {
+            PyDictObject *mp = (PyDictObject *)d;
+
+            Py_BEGIN_CRITICAL_SECTION2(d, iterable);
+            d = (PyObject *)dict_set_fromkeys(mp, iterable, value);
+            Py_END_CRITICAL_SECTION2();
+            return d;
+        }
+    }
+    else if (PyFrozenDict_CheckExact(d)) {
         if (PyDict_CheckExact(iterable)) {
             PyDictObject *mp = (PyDictObject *)d;
 
@@ -3307,7 +3333,7 @@ _PyDict_FromKeys(PyObject *cls, PyObject *iterable, PyObject *value)
         else if (PyAnySet_CheckExact(iterable)) {
             PyDictObject *mp = (PyDictObject *)d;
 
-            Py_BEGIN_CRITICAL_SECTION(d);
+            Py_BEGIN_CRITICAL_SECTION(iterable);
             d = (PyObject *)dict_set_fromkeys(mp, iterable, value);
             Py_END_CRITICAL_SECTION();
             return d;
@@ -3320,7 +3346,20 @@ _PyDict_FromKeys(PyObject *cls, PyObject *iterable, PyObject *value)
         return NULL;
     }
 
-    if (PyAnyDict_CheckExact(d)) {
+    if (PyDict_CheckExact(d)) {
+        Py_BEGIN_CRITICAL_SECTION(d);
+        while ((key = PyIter_Next(it)) != NULL) {
+            status = setitem_lock_held((PyDictObject *)d, key, value);
+            Py_DECREF(key);
+            if (status < 0) {
+                assert(PyErr_Occurred());
+                goto dict_iter_exit;
+            }
+        }
+dict_iter_exit:;
+        Py_END_CRITICAL_SECTION();
+    }
+    else if (PyFrozenDict_CheckExact(d)) {
         while ((key = PyIter_Next(it)) != NULL) {
             status = anydict_setitem_take2((PyDictObject *)d,
                                            key, Py_NewRef(value));
