@@ -191,17 +191,45 @@ else
 endif
 
 # Test target: run tests using nanvixd.elf
+# Requires install to have been run first (python needs its stdlib at PREFIX).
 test: build
 	@echo "Running CPython tests on Nanvix..."
-	@echo "Testing Python interpreter basic functionality..."
-	cd "$(abspath $(NANVIX_HOME))" && echo "print('Hello, Nanvix!')" | ./bin/nanvixd.elf -- $(abspath python$(EXE)) 2>/dev/null || true
-	@echo "Testing Python version..."
-	cd "$(abspath $(NANVIX_HOME))" && ./bin/nanvixd.elf -- $(abspath python$(EXE)) --version 2>/dev/null || true
-	@echo "Testing basic arithmetic..."
-	cd "$(abspath $(NANVIX_HOME))" && echo "print(2 + 2)" | ./bin/nanvixd.elf -- $(abspath python$(EXE)) 2>/dev/null || true
-	@echo "Testing import sys..."
-	cd "$(abspath $(NANVIX_HOME))" && echo "import sys; print(sys.platform)" | ./bin/nanvixd.elf -- $(abspath python$(EXE)) 2>/dev/null || true
-	@echo "		*** CPython tests OK ***"
+	@# Install python and stdlib into a test staging area
+	$(MAKE) install DESTDIR=/tmp/cpython_test_staging 2>/dev/null
+	@# Copy test scripts into the staging sysroot
+	@echo "import sys; print('CPYTHON_TEST_HELLO: Hello from Python', sys.version_info[:2])" > /tmp/cpython_test_staging/sysroot/test_hello.py
+	@echo "print('CPYTHON_TEST_ARITH:', 2 + 2)" > /tmp/cpython_test_staging/sysroot/test_arith.py
+	@echo "import sys; print('CPYTHON_TEST_PLATFORM:', sys.platform)" > /tmp/cpython_test_staging/sysroot/test_platform.py
+	@# Copy nanvixd.elf into the staging sysroot
+	@mkdir -p /tmp/cpython_test_staging/sysroot/bin
+	@cp "$(abspath $(NANVIX_HOME))/bin/nanvixd.elf" /tmp/cpython_test_staging/sysroot/bin/ 2>/dev/null || true
+	@cp "$(abspath $(NANVIX_HOME))/bin/kernel.elf" /tmp/cpython_test_staging/sysroot/bin/ 2>/dev/null || true
+	@echo "Test 1: Hello world..."
+	cd /tmp/cpython_test_staging/sysroot && \
+		timeout 120 ./bin/nanvixd.elf -- ./bin/python3.12 ./test_hello.py > /tmp/cpython_test.log 2>&1; \
+		if grep -q 'CPYTHON_TEST_HELLO:' /tmp/cpython_test.log; then \
+			echo "  PASS: $$(grep 'CPYTHON_TEST_HELLO:' /tmp/cpython_test.log)"; \
+		else \
+			echo "  FAIL: Hello test did not produce expected output"; cat /tmp/cpython_test.log; exit 1; \
+		fi
+	@echo "Test 2: Arithmetic..."
+	cd /tmp/cpython_test_staging/sysroot && \
+		timeout 120 ./bin/nanvixd.elf -- ./bin/python3.12 ./test_arith.py > /tmp/cpython_test.log 2>&1; \
+		if grep -q 'CPYTHON_TEST_ARITH: 4' /tmp/cpython_test.log; then \
+			echo "  PASS: 2 + 2 = 4"; \
+		else \
+			echo "  FAIL: Arithmetic test did not produce expected output"; cat /tmp/cpython_test.log; exit 1; \
+		fi
+	@echo "Test 3: sys.platform..."
+	cd /tmp/cpython_test_staging/sysroot && \
+		timeout 120 ./bin/nanvixd.elf -- ./bin/python3.12 ./test_platform.py > /tmp/cpython_test.log 2>&1; \
+		if grep -q 'CPYTHON_TEST_PLATFORM:' /tmp/cpython_test.log; then \
+			echo "  PASS: $$(grep 'CPYTHON_TEST_PLATFORM:' /tmp/cpython_test.log)"; \
+		else \
+			echo "  FAIL: Platform test did not produce expected output"; cat /tmp/cpython_test.log; exit 1; \
+		fi
+	@rm -rf /tmp/cpython_test_staging /tmp/cpython_test.log
+	@echo "		*** CPython tests PASSED ***"
 
 # Clean target
 clean:
