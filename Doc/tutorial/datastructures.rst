@@ -21,7 +21,7 @@ of the methods of list objects:
    Add an item to the end of the list.  Similar to ``a[len(a):] = [x]``.
 
 
-.. method:: list.extend(iterable)
+.. method:: list.extend(iterable, /)
    :noindex:
 
    Extend the list by appending all the items from the iterable.  Similar to
@@ -43,7 +43,7 @@ of the methods of list objects:
    :exc:`ValueError` if there is no such item.
 
 
-.. method:: list.pop([i])
+.. method:: list.pop(index=-1, /)
    :noindex:
 
    Remove the item at the given position in the list, and return it.  If no index

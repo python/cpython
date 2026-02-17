@@ -149,7 +149,7 @@ The module defines the following type:
       Return the number of occurrences of *x* in the array.
 
 
-   .. method:: extend(iterable)
+   .. method:: extend(iterable, /)
 
       Append items from *iterable* to the end of the array.  If *iterable* is another
       array, it must have *exactly* the same type code; if not, :exc:`TypeError` will
@@ -206,7 +206,7 @@ The module defines the following type:
       values are treated as being relative to the end of the array.
 
 
-   .. method:: pop([i])
+   .. method:: pop(index=-1, /)
 
       Removes the item with the index *i* from the array and returns it. The optional
       argument defaults to ``-1``, so that by default the last item is removed and

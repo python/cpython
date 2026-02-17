@@ -513,7 +513,7 @@ or subtracting from an empty counter.
         .. versionadded:: 3.2
 
 
-    .. method:: extend(iterable)
+    .. method:: extend(iterable, /)
 
         Extend the right side of the deque by appending elements from the iterable
         argument.
