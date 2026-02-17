@@ -359,25 +359,25 @@ _PyObject_MiFree(void *ctx, void *ptr)
 }
 
 void *
-_PyMem_MiRawMalloc(void *, size_t size)
+_PyMem_MiRawMalloc(void *ctx, size_t size)
 {
     return mi_malloc(size);
 }
 
 void *
-_PyMem_MiRawCalloc(void *, size_t nelem, size_t elsize)
+_PyMem_MiRawCalloc(void *ctx, size_t nelem, size_t elsize)
 {
     return mi_calloc(nelem, elsize);
 }
 
 void *
-_PyMem_MiRawRealloc(void *, void *ptr, size_t size)
+_PyMem_MiRawRealloc(void *ctx, void *ptr, size_t size)
 {
     return mi_realloc(ptr, size);
 }
 
 void
-_PyMem_MiRawFree(void *, void *ptr)
+_PyMem_MiRawFree(void *ctx, void *ptr)
 {
     mi_free(ptr);
 }
