@@ -1775,6 +1775,15 @@ class FrozenDictTests(unittest.TestCase):
         d = MyFrozenDict(x=1, y=2)
         self.assertEqual(repr(d), "MyFrozenDict({'x': 1, 'y': 2})")
 
+    def test_hash(self):
+        # hash() doesn't rely on the items order
+        self.assertEqual(hash(frozendict(x=1, y=2)),
+                         hash(frozendict(y=2, x=1)))
+
+        fd = frozendict(x=[1], y=[2])
+        with self.assertRaisesRegex(TypeError, "unhashable type: 'list'"):
+            hash(fd)
+
 
 if __name__ == "__main__":
     unittest.main()
