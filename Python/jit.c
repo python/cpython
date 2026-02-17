@@ -164,7 +164,7 @@ mark_executable(unsigned char *memory, size_t size)
         jit_error("unable to flush instruction cache");
         return -1;
     }
-    int old;
+    DWORD old;
     int failed = !VirtualProtect(memory, size, PAGE_EXECUTE_READ, &old);
 #else
     __builtin___clear_cache((char *)memory, (char *)memory + size);
