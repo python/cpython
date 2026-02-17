@@ -373,9 +373,7 @@ class OperatorsTest(unittest.TestCase):
         for i in iter(d):
             l.append(i)
         self.assertEqual(l, l1)
-
         l = []
-
         for i in d.__iter__():
             l.append(i)
         self.assertEqual(l, l1)
@@ -389,7 +387,6 @@ class OperatorsTest(unittest.TestCase):
         self.unop_test(spamd, repr(straightd), "repr(a)", "__repr__")
         self.set2op_test(spamdict({1:2,3:4}), 2, 3, spamdict({1:2,2:3,3:4}),
                    "a[b]=c", "__setitem__")
-
         # Test subclassing
         class C(spam.spamdict):
             def foo(self): return 1
