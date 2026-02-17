@@ -2671,10 +2671,8 @@ _PyDict_LoadBuiltinsFromGlobals(PyObject *globals)
 
 /* Consumes references to key and value */
 static int
-setitem_take2_lock_held(PyDictObject *mp, PyObject *key, PyObject *value)
+anydict_setitem_take2(PyDictObject *mp, PyObject *key, PyObject *value)
 {
-    ASSERT_DICT_LOCKED(mp);
-
     assert(key);
     assert(value);
     assert(PyAnyDict_Check(mp));
@@ -2691,6 +2689,14 @@ setitem_take2_lock_held(PyDictObject *mp, PyObject *key, PyObject *value)
     }
     /* insertdict() handles any resizing that might be necessary */
     return insertdict(mp, key, hash, value);
+}
+
+/* Consumes references to key and value */
+static int
+setitem_take2_lock_held(PyDictObject *mp, PyObject *key, PyObject *value)
+{
+    ASSERT_DICT_LOCKED(mp);
+    return anydict_setitem_take2(mp, key, value);
 }
 
 int
@@ -3284,13 +3290,21 @@ _PyDict_FromKeys(PyObject *cls, PyObject *iterable, PyObject *value)
         return NULL;
 
 
-    if (PyAnyDict_CheckExact(d)) {
-        if (PyAnyDict_CheckExact(iterable)) {
+    if (PyDict_CheckExact(d)) {
+        if (PyDict_CheckExact(iterable)) {
             PyDictObject *mp = (PyDictObject *)d;
 
             Py_BEGIN_CRITICAL_SECTION2(d, iterable);
             d = (PyObject *)dict_dict_fromkeys(mp, iterable, value);
             Py_END_CRITICAL_SECTION2();
+            return d;
+        }
+        else if (PyFrozenDict_CheckExact(iterable)) {
+            PyDictObject *mp = (PyDictObject *)d;
+
+            Py_BEGIN_CRITICAL_SECTION(d);
+            d = (PyObject *)dict_dict_fromkeys(mp, iterable, value);
+            Py_END_CRITICAL_SECTION();
             return d;
         }
         else if (PyAnySet_CheckExact(iterable)) {
@@ -3302,6 +3316,29 @@ _PyDict_FromKeys(PyObject *cls, PyObject *iterable, PyObject *value)
             return d;
         }
     }
+    else if (PyFrozenDict_CheckExact(d)) {
+        if (PyDict_CheckExact(iterable)) {
+            PyDictObject *mp = (PyDictObject *)d;
+
+            Py_BEGIN_CRITICAL_SECTION(iterable);
+            d = (PyObject *)dict_dict_fromkeys(mp, iterable, value);
+            Py_END_CRITICAL_SECTION();
+            return d;
+        }
+        else if (PyFrozenDict_CheckExact(iterable)) {
+            PyDictObject *mp = (PyDictObject *)d;
+            d = (PyObject *)dict_dict_fromkeys(mp, iterable, value);
+            return d;
+        }
+        else if (PyAnySet_CheckExact(iterable)) {
+            PyDictObject *mp = (PyDictObject *)d;
+
+            Py_BEGIN_CRITICAL_SECTION(iterable);
+            d = (PyObject *)dict_set_fromkeys(mp, iterable, value);
+            Py_END_CRITICAL_SECTION();
+            return d;
+        }
+    }
 
     it = PyObject_GetIter(iterable);
     if (it == NULL){
@@ -3309,7 +3346,7 @@ _PyDict_FromKeys(PyObject *cls, PyObject *iterable, PyObject *value)
         return NULL;
     }
 
-    if (PyAnyDict_CheckExact(d)) {
+    if (PyDict_CheckExact(d)) {
         Py_BEGIN_CRITICAL_SECTION(d);
         while ((key = PyIter_Next(it)) != NULL) {
             status = setitem_lock_held((PyDictObject *)d, key, value);
@@ -3321,7 +3358,19 @@ _PyDict_FromKeys(PyObject *cls, PyObject *iterable, PyObject *value)
         }
 dict_iter_exit:;
         Py_END_CRITICAL_SECTION();
-    } else {
+    }
+    else if (PyFrozenDict_CheckExact(d)) {
+        while ((key = PyIter_Next(it)) != NULL) {
+            // anydict_setitem_take2 consumes a reference to key
+            status = anydict_setitem_take2((PyDictObject *)d,
+                                           key, Py_NewRef(value));
+            if (status < 0) {
+                assert(PyErr_Occurred());
+                goto Fail;
+            }
+        }
+    }
+    else {
         while ((key = PyIter_Next(it)) != NULL) {
             status = PyObject_SetItem(d, key, value);
             Py_DECREF(key);
