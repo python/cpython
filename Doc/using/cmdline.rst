@@ -1113,6 +1113,14 @@ conflict.
       and kill the process.  Only enable this in environments where the
       huge-page pool is properly sized and fork-safety is not a concern.
 
+      On Windows you need a special privilege. See the
+      `Windows documentation for large pages
+      <https://learn.microsoft.com/windows/win32/memory/large-page-support>`_
+      for details. Python will fail on startup if the required privilege
+      `SeLockMemoryPrivilege
+      <https://learn.microsoft.com/previous-versions/windows/it-pro/windows-10/security/threat-protection/security-policy-settings/lock-pages-in-memory>`_
+      is not held by the user.
+
    .. versionadded:: 3.15
 
 

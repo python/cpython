@@ -40,6 +40,10 @@
 #include "pycore_jit.h"           // _PyJIT_Fini()
 #endif
 
+#if defined(PYMALLOC_USE_HUGEPAGES) && defined(MS_WINDOWS)
+#include <Windows.h>
+#endif
+
 #include "opcode.h"
 
 #include <locale.h>               // setlocale()
@@ -485,6 +489,39 @@ pyinit_core_reconfigure(_PyRuntimeState *runtime,
     return _PyStatus_OK();
 }
 
+#if defined(PYMALLOC_USE_HUGEPAGES) && defined(MS_WINDOWS)
+static PyStatus
+get_huge_pages_privilege(void)
+{
+    HANDLE hToken;
+    if (!OpenProcessToken(GetCurrentProcess(), TOKEN_ADJUST_PRIVILEGES | TOKEN_QUERY, &hToken))
+    {
+        return _PyStatus_ERR("failed to open process token");
+    }
+    TOKEN_PRIVILEGES tp;
+    if (!LookupPrivilegeValue(NULL, SE_LOCK_MEMORY_NAME, &tp.Privileges[0].Luid))
+    {
+        CloseHandle(hToken);
+        return _PyStatus_ERR("failed to lookup SeLockMemoryPrivilege for huge pages");
+    }
+    tp.PrivilegeCount = 1;
+    tp.Privileges[0].Attributes = SE_PRIVILEGE_ENABLED;
+    // AdjustTokenPrivileges can return with nonzero status (i.e. success)
+    // but without having all privileges adjusted (ERROR_NOT_ALL_ASSIGNED).
+    BOOL status = AdjustTokenPrivileges(hToken, FALSE, &tp, sizeof(TOKEN_PRIVILEGES), NULL, NULL);
+    DWORD error = GetLastError();
+    if (!status || (error != ERROR_SUCCESS))
+    {
+        CloseHandle(hToken);
+        return _PyStatus_ERR("failed to obtain SeLockMemoryPrivilege for huge pages");
+    }
+    if (!CloseHandle(hToken))
+    {
+        return _PyStatus_ERR("failed to close process token handle");
+    }
+    return _PyStatus_OK();
+}
+#endif
 
 static PyStatus
 pycore_init_runtime(_PyRuntimeState *runtime,
@@ -498,6 +535,15 @@ pycore_init_runtime(_PyRuntimeState *runtime,
     if (_PyStatus_EXCEPTION(status)) {
         return status;
     }
+
+#if defined(PYMALLOC_USE_HUGEPAGES) && defined(MS_WINDOWS)
+    if (runtime->allocators.use_hugepages) {
+        status = get_huge_pages_privilege();
+        if (_PyStatus_EXCEPTION(status)) {
+            return status;
+        }
+    }
+#endif
 
     /* Py_Finalize leaves _Py_Finalizing set in order to help daemon
      * threads behave a little more gracefully at interpreter shutdown.
