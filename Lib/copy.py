@@ -101,7 +101,7 @@ def copy(x):
 
 
 _copy_atomic_types = frozenset({types.NoneType, int, float, bool, complex, str, tuple,
-          bytes, frozenset, type, range, slice, property,
+          bytes, frozendict, frozenset, type, range, slice, property,
           types.BuiltinFunctionType, types.EllipsisType,
           types.NotImplementedType, types.FunctionType, types.CodeType,
           weakref.ref, super})
@@ -166,7 +166,7 @@ _atomic_types = frozenset({types.NoneType, types.EllipsisType, types.NotImplemen
           int, float, bool, complex, bytes, str, types.CodeType, type, range,
           types.BuiltinFunctionType, types.FunctionType, weakref.ref, property})
 
-_deepcopy_dispatch = d = {}
+d = {}
 
 
 def _deepcopy_list(x, memo, deepcopy=deepcopy):
@@ -203,10 +203,16 @@ def _deepcopy_dict(x, memo, deepcopy=deepcopy):
     return y
 d[dict] = _deepcopy_dict
 
+def _deepcopy_frozendict(x, memo, deepcopy=deepcopy):
+    y = _deepcopy_dict(x, memo, deepcopy)
+    return frozendict(y)
+d[frozendict] = _deepcopy_frozendict
+
 def _deepcopy_method(x, memo): # Copy instance methods
     return type(x)(x.__func__, deepcopy(x.__self__, memo))
 d[types.MethodType] = _deepcopy_method
 
+_deepcopy_dispatch = frozendict(d)
 del d
 
 def _keep_alive(x, memo):
