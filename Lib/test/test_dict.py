@@ -1767,6 +1767,9 @@ class FrozenDictTests(unittest.TestCase):
         self.assertEqual(copy, frozendict({'x': 1}))
 
     def test_repr(self):
+        d = frozendict()
+        self.assertEqual(repr(d), "frozendict()")
+
         d = frozendict(x=1, y=2)
         self.assertEqual(repr(d), "frozendict({'x': 1, 'y': 2})")
 

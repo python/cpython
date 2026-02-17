@@ -7868,6 +7868,11 @@ static PyMethodDef frozendict_methods[] = {
 static PyObject *
 frozendict_repr(PyObject *self)
 {
+    PyDictObject *mp = _PyAnyDict_CAST(self);
+    if (mp->ma_used == 0) {
+        return PyUnicode_FromFormat("%s()", Py_TYPE(self)->tp_name);
+    }
+
     PyObject *repr = anydict_repr_impl(self);
     if (repr == NULL) {
         return NULL;
