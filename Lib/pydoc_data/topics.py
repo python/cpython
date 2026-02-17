@@ -3676,8 +3676,8 @@ less likely to be able to resolve annotations at runtime.
 
     * a class that inherits from any of the above
 
-    The standard library classes "dict" and "types.MappingProxyType"
-    are mappings.
+    The standard library classes "dict", "frozendict"
+    and "types.MappingProxyType" are mappings.
 
 [4] A string literal appearing as the first statement in the function
     body is transformed into the function’s "__doc__" attribute and
@@ -13620,8 +13620,8 @@ class dict(iterable, /, **kwargs)
 
 See also:
 
-  "types.MappingProxyType" can be used to create a read-only view of a
-  "dict".
+  "frozendict" and "types.MappingProxyType" can be used to create a read-only
+  view of a "dict".
 
 
 Dictionary view objects

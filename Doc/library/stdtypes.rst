@@ -5590,8 +5590,8 @@ can be used interchangeably to index the same dictionary entry.
 
 
    .. seealso::
-      :class:`types.MappingProxyType` can be used to create a read-only view
-      of a :class:`dict`.
+      :class:`frozendict` and :class:`types.MappingProxyType` can be used to
+      create a read-only view of a :class:`dict`.
 
 .. _thread-safety-dict:
 
