@@ -311,12 +311,7 @@ class OperatorsTest(unittest.TestCase):
         # Testing spamlist operations...
         import copy, xxsubtype as spam
 
-        def spamlist(l, memo=None):
-            import xxsubtype as spam
-            return spam.spamlist(l)
-
-        # This is an ugly hack:
-        copy._deepcopy_dispatch[spam.spamlist] = spamlist
+        spamlist = spam.spamlist
 
         self.binop_test(spamlist([1]), spamlist([2]), spamlist([1,2]), "a+b",
                        "__add__")
@@ -350,19 +345,22 @@ class OperatorsTest(unittest.TestCase):
         a.setstate(42)
         self.assertEqual(a.getstate(), 42)
 
+        # test deepcopy makes a deep copy of the elements of a spamlist
+        a.append([])
+        a_copy = copy.deepcopy(a)
+        assert a_copy is not a
+        assert a_copy[-1] is not a[-1]
+        assert a_copy == a
+        # the spamlist does not explictly implement deepcopy, the state is not copied
+        assert a_copy.getstate() != a.getstate()
+
     @support.impl_detail("the module 'xxsubtype' is internal")
     @unittest.skipIf(xxsubtype is None, "requires xxsubtype module")
     def test_spam_dicts(self):
         # Testing spamdict operations...
         import copy, xxsubtype as spam
-        def spamdict(d, memo=None):
-            import xxsubtype as spam
-            sd = spam.spamdict()
-            for k, v in list(d.items()):
-                sd[k] = v
-            return sd
-        # This is an ugly hack:
-        copy._deepcopy_dispatch[spam.spamdict] = spamdict
+
+        spamdict = spam.spamdict
 
         self.binop_test(spamdict({1:2,3:4}), 1, 1, "b in a", "__contains__")
         self.binop_test(spamdict({1:2,3:4}), 2, 0, "b in a", "__contains__")
@@ -375,7 +373,9 @@ class OperatorsTest(unittest.TestCase):
         for i in iter(d):
             l.append(i)
         self.assertEqual(l, l1)
+
         l = []
+
         for i in d.__iter__():
             l.append(i)
         self.assertEqual(l, l1)
@@ -389,6 +389,7 @@ class OperatorsTest(unittest.TestCase):
         self.unop_test(spamd, repr(straightd), "repr(a)", "__repr__")
         self.set2op_test(spamdict({1:2,3:4}), 2, 3, spamdict({1:2,2:3,3:4}),
                    "a[b]=c", "__setitem__")
+
         # Test subclassing
         class C(spam.spamdict):
             def foo(self): return 1
@@ -400,6 +401,15 @@ class OperatorsTest(unittest.TestCase):
         self.assertEqual(a.getstate(), 0)
         a.setstate(100)
         self.assertEqual(a.getstate(), 100)
+
+        # test deepcopy makes a deep copy of the elements of a spamdict
+        a[-1] = []
+        a_copy = copy.deepcopy(a)
+        assert a_copy is not a
+        assert a_copy[-1] is not a[-1]
+        assert a_copy == a
+        # the spamdict does not explictly implement deepcopy, the state is not copied
+        assert a_copy.getstate() != a.getstate()
 
     def test_wrap_lenfunc_bad_cast(self):
         self.assertEqual(range(sys.maxsize).__len__(), sys.maxsize)
