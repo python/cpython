@@ -1917,14 +1917,14 @@ def _allow_reckless_class_checks(depth=2):
 
 
 _PROTO_ALLOWLIST = frozendict({
-    'collections.abc': [
+    'collections.abc': (
         'Callable', 'Awaitable', 'Iterable', 'Iterator', 'AsyncIterable',
         'AsyncIterator', 'Hashable', 'Sized', 'Container', 'Collection',
         'Reversible', 'Buffer',
-    ],
-    'contextlib': ['AbstractContextManager', 'AbstractAsyncContextManager'],
-    'io': ['Reader', 'Writer'],
-    'os': ['PathLike'],
+    ),
+    'contextlib': ('AbstractContextManager', 'AbstractAsyncContextManager'),
+    'io': ('Reader', 'Writer'),
+    'os': ('PathLike',),
 })
 
 
