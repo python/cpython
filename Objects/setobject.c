@@ -964,7 +964,10 @@ _shuffle_bits(Py_uhash_t h)
 
    This hash algorithm can be used on either a frozenset or a set.
    When it is used on a set, it computes the hash value of the equivalent
-   frozenset without creating a new frozenset object. */
+   frozenset without creating a new frozenset object.
+
+   If you update this code, update also frozendict_hash() which copied this
+   code. */
 
 static Py_hash_t
 frozenset_hash_impl(PyObject *self)
