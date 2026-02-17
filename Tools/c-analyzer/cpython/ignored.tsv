@@ -332,6 +332,9 @@ Objects/complexobject.c	-	c_1	-
 Objects/exceptions.c	-	static_exceptions	-
 Objects/genobject.c	-	ASYNC_GEN_IGNORED_EXIT_MSG	-
 Objects/genobject.c	-	NON_INIT_CORO_MSG	-
+Objects/genobject.c	gen_getstate	state_strings	-
+Objects/genobject.c	cr_getstate	state_strings	-
+Objects/genobject.c	ag_getstate	state_strings	-
 Objects/longobject.c	-	_PyLong_DigitValue	-
 Objects/longobject.c	-	PyLong_LAYOUT	-
 Objects/object.c	-	_Py_SwappedOp	-
@@ -567,6 +570,10 @@ Modules/_testimportmultiple.c	-	_barmodule	-
 Modules/_testimportmultiple.c	-	_foomodule	-
 Modules/_testimportmultiple.c	-	_testimportmultiple	-
 Modules/_testinternalcapi.c	-	pending_identify_result	-
+Modules/_testinternalcapi.c	-	Test_EvalFrame_Resumes	-
+Modules/_testinternalcapi.c	-	Test_EvalFrame_Loads	-
+Modules/_testinternalcapi/interpreter.c	-	Test_EvalFrame_Resumes	-
+Modules/_testinternalcapi/interpreter.c	-	Test_EvalFrame_Loads	-
 Modules/_testmultiphase.c	-	Example_Type_slots	-
 Modules/_testmultiphase.c	-	Example_Type_spec	-
 Modules/_testmultiphase.c	-	Example_methods	-
@@ -762,6 +769,7 @@ Modules/clinic/md5module.c.h	_md5_md5	_keywords	-
 Modules/clinic/grpmodule.c.h	grp_getgrgid	_keywords	-
 Modules/clinic/grpmodule.c.h	grp_getgrnam	_keywords	-
 Objects/object.c	-	constants	static PyObject*[]
+Objects/dictobject.c	-	PyFrozenDict_Type	-
 
 
 ## False positives

@@ -2157,6 +2157,13 @@ class TestLRU:
                 with self.assertRaises(RecursionError):
                     fib(support.exceeds_recursion_limit())
 
+    def test_lru_checks_arg_is_callable(self):
+        with self.assertRaisesRegex(
+            TypeError,
+            "the first argument must be callable",
+        ):
+            self.module.lru_cache(1)('hello')
+
 
 @py_functools.lru_cache()
 def py_cached_func(x, y):
@@ -3450,16 +3457,11 @@ class TestSingleDispatch(unittest.TestCase):
 
     def test_method_signatures(self):
         class A:
-            def m(self, item, arg: int) -> str:
-                return str(item)
-            @classmethod
-            def cm(cls, item, arg: int) -> str:
-                return str(item)
             @functools.singledispatchmethod
             def func(self, item, arg: int) -> str:
                 return str(item)
             @func.register
-            def _(self, item, arg: bytes) -> str:
+            def _(self, item: int, arg: bytes) -> str:
                 return str(item)
 
             @functools.singledispatchmethod
@@ -3468,7 +3470,7 @@ class TestSingleDispatch(unittest.TestCase):
                 return str(arg)
             @func.register
             @classmethod
-            def _(cls, item, arg: bytes) -> str:
+            def _(cls, item: int, arg: bytes) -> str:
                 return str(item)
 
             @functools.singledispatchmethod
@@ -3477,7 +3479,7 @@ class TestSingleDispatch(unittest.TestCase):
                 return str(arg)
             @func.register
             @staticmethod
-            def _(item, arg: bytes) -> str:
+            def _(item: int, arg: bytes) -> str:
                 return str(item)
 
         self.assertEqual(str(Signature.from_callable(A.func)),

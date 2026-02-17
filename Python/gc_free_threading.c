@@ -506,6 +506,10 @@ gc_visit_thread_stacks(PyInterpreterState *interp, struct collection_state *stat
 static bool
 gc_maybe_untrack(PyObject *op)
 {
+    if (_PyObject_HasDeferredRefcount(op)) {
+        // deferred refcounting only works if the object is tracked
+        return false;
+    }
     // Currently we only check for tuples containing only non-GC objects.  In
     // theory we could check other immutable objects that contain references
     // to non-GC objects.
@@ -1018,7 +1022,7 @@ update_refs(const mi_heap_t *heap, const mi_heap_area_t *area,
     }
     _PyObject_ASSERT(op, refcount >= 0);
 
-    if (refcount > 0 && !_PyObject_HasDeferredRefcount(op)) {
+    if (refcount > 0) {
         if (gc_maybe_untrack(op)) {
             gc_restore_refs(op);
             return true;
