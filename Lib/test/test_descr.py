@@ -4691,6 +4691,33 @@ class ClassPropertiesAndMethods(unittest.TestCase):
         else:
             self.fail("Carlo Verre __delattr__ succeeded!")
 
+    def test_object_setattr_delattr_reentrant_name_hash_does_not_crash(self):
+        code = textwrap.dedent("""
+            import gc
+
+            class Victim:
+                pass
+
+            class Evil(str):
+                def __hash__(self):
+                    old = target.__dict__
+                    target.__dict__ = {}
+                    del old
+                    for _ in range(32):
+                        dict.fromkeys(range(4), 1)
+                    gc.collect()
+                    return hash(str(self))
+
+            for _ in range(2000):
+                target = Victim()
+                object.__setattr__(target, Evil("name"), 1)
+                try:
+                    object.__delattr__(target, Evil("missing"))
+                except AttributeError:
+                    pass
+        """)
+        assert_python_ok("-c", code)
+
     def test_carloverre_multi_inherit_valid(self):
         class A(type):
             def __setattr__(cls, key, value):

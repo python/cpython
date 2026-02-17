@@ -643,6 +643,32 @@ class BuiltinTest(ComplexesAreIdenticalMixin, unittest.TestCase):
         msg = r"^attribute name must be string, not 'int'$"
         self.assertRaisesRegex(TypeError, msg, delattr, sys, 1)
 
+    def test_delattr_reentrant_name_hash_does_not_crash(self):
+        code = dedent("""
+            import gc
+
+            class Victim:
+                pass
+
+            class Evil(str):
+                def __hash__(self):
+                    old = target.__dict__
+                    target.__dict__ = {}
+                    del old
+                    for _ in range(32):
+                        dict.fromkeys(range(4), 1)
+                    gc.collect()
+                    return hash(str(self))
+
+            for _ in range(2000):
+                target = Victim()
+                try:
+                    delattr(target, Evil("missing"))
+                except AttributeError:
+                    pass
+        """)
+        assert_python_ok("-c", code)
+
     def test_dir(self):
         # dir(wrong number of arguments)
         self.assertRaises(TypeError, dir, 42, 42)
@@ -1993,6 +2019,29 @@ class BuiltinTest(ComplexesAreIdenticalMixin, unittest.TestCase):
         self.assertRaises(TypeError, setattr, sys, 'spam')
         msg = r"^attribute name must be string, not 'int'$"
         self.assertRaisesRegex(TypeError, msg, setattr, sys, 1, 'spam')
+
+    def test_setattr_reentrant_name_hash_does_not_crash(self):
+        code = dedent("""
+            import gc
+
+            class Victim:
+                pass
+
+            class Evil(str):
+                def __hash__(self):
+                    old = target.__dict__
+                    target.__dict__ = {}
+                    del old
+                    for _ in range(32):
+                        dict.fromkeys(range(4), 1)
+                    gc.collect()
+                    return hash(str(self))
+
+            for _ in range(2000):
+                target = Victim()
+                setattr(target, Evil("name"), 1)
+        """)
+        assert_python_ok("-c", code)
 
     # test_str(): see test_str.py and test_bytes.py for str() tests.
 

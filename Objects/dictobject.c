@@ -7108,6 +7108,8 @@ store_instance_attr_dict(PyObject *obj, PyDictObject *dict, PyObject *name, PyOb
 {
     PyDictValues *values = _PyObject_InlineValues(obj);
     int res;
+    // Keep the dict alive across potentially re-entrant hashing of 'name'.
+    Py_INCREF(dict);
     Py_BEGIN_CRITICAL_SECTION(dict);
     if (dict->ma_values == values) {
         res = store_instance_attr_lock_held(obj, values, name, value);
@@ -7116,6 +7118,7 @@ store_instance_attr_dict(PyObject *obj, PyDictObject *dict, PyObject *name, PyOb
         res = _PyDict_SetItem_LockHeld(dict, name, value);
     }
     Py_END_CRITICAL_SECTION();
+    Py_DECREF(dict);
     return res;
 }
 
@@ -7696,10 +7699,13 @@ _PyObjectDict_SetItem(PyTypeObject *tp, PyObject *obj, PyObject **dictptr,
         return -1;
     }
 
+    // Keep the dict alive across potentially re-entrant hashing of 'key'.
+    Py_INCREF(dict);
     Py_BEGIN_CRITICAL_SECTION(dict);
     res = _PyDict_SetItem_LockHeld((PyDictObject *)dict, key, value);
     ASSERT_CONSISTENT(dict);
     Py_END_CRITICAL_SECTION();
+    Py_DECREF(dict);
     return res;
 }
 

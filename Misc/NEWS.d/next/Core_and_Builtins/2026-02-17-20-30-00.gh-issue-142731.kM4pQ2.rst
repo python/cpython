@@ -1,0 +1,2 @@
+Fix a use-after-free in instance attribute setting/deletion when a str subclass
+attribute name has a re-entrant ``__hash__`` that replaces ``__dict__``.
