@@ -1,0 +1,3 @@
+:meth:`wave.Wave_write.setframerate` now validates the frame rate after
+rounding to an integer, preventing values like ``0.5`` from being accepted
+and causing confusing errors later. Patch by Michiel Beijen.
