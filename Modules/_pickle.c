@@ -6663,8 +6663,6 @@ do_append(PickleState *state, UnpicklerObject *self, Py_ssize_t x)
     len = Py_SIZE(self->stack);
     if (x > len || x <= self->stack->fence)
         return Pdata_stack_underflow(state, self->stack);
-    if (len == x)  /* nothing to do */
-        return 0;
 
     list = self->stack->data[x - 1];
 
@@ -6754,8 +6752,6 @@ do_setitems(PickleState *st, UnpicklerObject *self, Py_ssize_t x)
     len = Py_SIZE(self->stack);
     if (x > len || x <= self->stack->fence)
         return Pdata_stack_underflow(st, self->stack);
-    if (len == x)  /* nothing to do */
-        return 0;
     if ((len - x) % 2 != 0) {
         /* Corrupt or hostile pickle -- we never write one like this. */
         PyErr_SetString(st->UnpicklingError,
@@ -6807,8 +6803,6 @@ load_additems(PickleState *state, UnpicklerObject *self)
     len = Py_SIZE(self->stack);
     if (mark > len || mark <= self->stack->fence)
         return Pdata_stack_underflow(state, self->stack);
-    if (len == mark)  /* nothing to do */
-        return 0;
 
     set = self->stack->data[mark - 1];
 
