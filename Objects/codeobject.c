@@ -1575,6 +1575,12 @@ typedef struct {
 } _PyCodeObjectExtra;
 
 
+static inline size_t
+code_extra_size(Py_ssize_t n)
+{
+    return sizeof(_PyCodeObjectExtra) + (n - 1) * sizeof(void *);
+}
+
 int
 PyUnstable_Code_GetExtra(PyObject *code, Py_ssize_t index, void **extra)
 {
@@ -1583,15 +1589,19 @@ PyUnstable_Code_GetExtra(PyObject *code, Py_ssize_t index, void **extra)
         return -1;
     }
 
-    PyCodeObject *o = (PyCodeObject*) code;
-    _PyCodeObjectExtra *co_extra = (_PyCodeObjectExtra*) o->co_extra;
+    PyCodeObject *o = (PyCodeObject *)code;
+    *extra = NULL;
 
-    if (co_extra == NULL || index < 0 || co_extra->ce_size <= index) {
-        *extra = NULL;
+    if (index < 0) {
         return 0;
     }
 
-    *extra = co_extra->ce_extras[index];
+    // Lock-free read; pairs with release store in SetExtra.
+    _PyCodeObjectExtra *co_extra = FT_ATOMIC_LOAD_PTR_ACQUIRE(o->co_extra);
+    if (co_extra != NULL && index < co_extra->ce_size) {
+        *extra = co_extra->ce_extras[index];
+    }
+
     return 0;
 }
 
@@ -1601,40 +1611,81 @@ PyUnstable_Code_SetExtra(PyObject *code, Py_ssize_t index, void *extra)
 {
     PyInterpreterState *interp = _PyInterpreterState_GET();
 
-    if (!PyCode_Check(code) || index < 0 ||
-            index >= interp->co_extra_user_count) {
+    // co_extra_user_count increases monotonically and is published with a
+    // release store, so once an index is valid it remains valid.
+    Py_ssize_t user_count = FT_ATOMIC_LOAD_SSIZE_ACQUIRE(
+        interp->co_extra_user_count);
+
+    if (!PyCode_Check(code) || index < 0 || index >= user_count) {
         PyErr_BadInternalCall();
         return -1;
     }
 
-    PyCodeObject *o = (PyCodeObject*) code;
-    _PyCodeObjectExtra *co_extra = (_PyCodeObjectExtra *) o->co_extra;
+    PyCodeObject *o = (PyCodeObject *) code;
+    int res = 0;
 
-    if (co_extra == NULL || co_extra->ce_size <= index) {
-        Py_ssize_t i = (co_extra == NULL ? 0 : co_extra->ce_size);
-        co_extra = PyMem_Realloc(
-                co_extra,
-                sizeof(_PyCodeObjectExtra) +
-                (interp->co_extra_user_count-1) * sizeof(void*));
-        if (co_extra == NULL) {
-            return -1;
-        }
-        for (; i < interp->co_extra_user_count; i++) {
-            co_extra->ce_extras[i] = NULL;
-        }
-        co_extra->ce_size = interp->co_extra_user_count;
-        o->co_extra = co_extra;
+    Py_BEGIN_CRITICAL_SECTION(o);
+
+    _PyCodeObjectExtra *old_extra = (_PyCodeObjectExtra *) o->co_extra;
+    Py_ssize_t old_size = (old_extra == NULL) ? 0 : old_extra->ce_size;
+
+    // user_count > index is checked above.
+    Py_ssize_t new_size = old_size > index ? old_size : user_count;
+    assert(new_size > 0 && new_size > index);
+
+    // Free-threaded builds require copy-on-write to avoid mutating
+    // co_extra while lock-free readers in GetExtra may be traversing it.
+    // GIL builds could realloc in place, but SetExtra is called rarely
+    // and co_extra is small, so use the same path for simplicity.
+    _PyCodeObjectExtra *co_extra = PyMem_Malloc(code_extra_size(new_size));
+    if (co_extra == NULL) {
+        PyErr_NoMemory();
+        res = -1;
+        goto done;
     }
 
-    if (co_extra->ce_extras[index] != NULL) {
+    co_extra->ce_size = new_size;
+
+    // Copy existing extras from the old buffer.
+    if (old_size > 0) {
+        memcpy(co_extra->ce_extras, old_extra->ce_extras,
+               old_size * sizeof(void *));
+    }
+
+    // NULL-initialize new slots.
+    for (Py_ssize_t i = old_size; i < new_size; i++) {
+        co_extra->ce_extras[i] = NULL;
+    }
+
+    if (old_extra != NULL && index < old_size &&
+        old_extra->ce_extras[index] != NULL)
+    {
+        // Free the old extra value if a free function was registered.
+        // We assume the caller ensures no other thread is concurrently
+        // using the old value.
         freefunc free = interp->co_extra_freefuncs[index];
         if (free != NULL) {
-            free(co_extra->ce_extras[index]);
+            free(old_extra->ce_extras[index]);
         }
     }
 
     co_extra->ce_extras[index] = extra;
-    return 0;
+
+    // Publish pointer and slot writes to lock-free readers.
+    FT_ATOMIC_STORE_PTR_RELEASE(o->co_extra, co_extra);
+
+    if (old_extra != NULL) {
+#ifdef Py_GIL_DISABLED
+        // Defer container free for lock-free readers.
+        _PyMem_FreeDelayed(old_extra, code_extra_size(old_size));
+#else
+        PyMem_Free(old_extra);
+#endif
+    }
+
+done:;
+    Py_END_CRITICAL_SECTION();
+    return res;
 }
 
 
