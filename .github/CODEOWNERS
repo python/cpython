@@ -473,8 +473,9 @@ Lib/test/test_functools.py    @rhettinger
 Modules/_functoolsmodule.c    @rhettinger
 
 # Garbage collector
-Modules/gcmodule.c            @pablogsal
-Doc/library/gc.rst            @pablogsal
+Modules/gcmodule.c                @pablogsal
+Doc/library/gc.rst                @pablogsal
+InternalDocs/garbage_collector.md @pablogsal
 
 # Gettext
 Doc/library/gettext.rst       @tomasr8
