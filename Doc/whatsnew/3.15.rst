@@ -188,7 +188,7 @@ raise :exc:`SyntaxError`).
 :pep:`814`: Add frozendict built-in type
 ----------------------------------------
 
-A new public immutable type, :class:`frozendict`, has been added to the :mod:`builtins` module.
+A new public immutable type, :class:`frozendict`, is added to the :mod:`builtins` module.
 It does not allow modification after creation. A ``frozendict`` is not a subclass of ``dict``;
 it inherits directly from ``object``. A ``frozendict`` is hashable (i.e., ``hash(frozendict)`` works)
 as long as all of its keys and values are hashable.
