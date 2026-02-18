@@ -47,7 +47,11 @@ class ZoneInfo(tzinfo):
         cls._strong_cache[key] = cls._strong_cache.pop(key, instance)
 
         if len(cls._strong_cache) > cls._strong_cache_size:
-            cls._strong_cache.popitem(last=False)
+            try:
+                cls._strong_cache.popitem(last=False)
+            except KeyError:
+                # another thread may have already emptied the cache
+                pass
 
         return instance
 

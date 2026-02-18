@@ -1,0 +1,3 @@
+Fix a race condition in :class:`zoneinfo.ZoneInfo` cache eviction that could
+raise :exc:`KeyError` when multiple threads create :class:`~zoneinfo.ZoneInfo`
+instances concurrently.
