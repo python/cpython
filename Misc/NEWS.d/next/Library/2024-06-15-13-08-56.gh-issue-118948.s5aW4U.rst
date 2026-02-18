@@ -1,0 +1,4 @@
+The :meth:`date.isoformat <datetime.date.isoformat>`,
+:meth:`datetime.isoformat <datetime.datetime.isoformat>` and
+:meth:`time.isoformat <datetime.time.isoformat>` methods now
+support ISO 8601 basic format. Patch by Bénédikt Tran.
