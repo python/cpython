@@ -3011,14 +3011,6 @@ def _fold_as_ew(to_encode, lines, maxlen, last_ew, ew_combine_allowed, charset, 
         to_encode = str(
             get_unstructured(lines[-1][last_ew:] + to_encode))
         lines[-1] = lines[-1][:last_ew]
-    elif to_encode[0] in WSP and not last_word_is_ew:
-        # We're joining this to non-encoded text, so don't encode
-        # the leading blank.
-        leading_wsp = to_encode[0]
-        to_encode = to_encode[1:]
-        if (len(lines[-1]) == maxlen):
-            lines.append(_steal_trailing_WSP_if_exists(lines))
-        lines[-1] += leading_wsp
     elif last_word_is_ew:
         # If we are following up an encoded word with another encoded word,
         # any white space between the two will be ignored when decoded.
@@ -3029,6 +3021,14 @@ def _fold_as_ew(to_encode, lines, maxlen, last_ew, ew_combine_allowed, charset, 
         lines[-1] = (lines[-1][:len_without_wsp]
                      + (' ' if leading_whitespace else ''))
         to_encode = leading_whitespace + to_encode
+    elif to_encode[0] in WSP:
+        # We're joining this to non-encoded text, so don't encode
+        # the leading blank.
+        leading_wsp = to_encode[0]
+        to_encode = to_encode[1:]
+        if (len(lines[-1]) == maxlen):
+            lines.append(_steal_trailing_WSP_if_exists(lines))
+        lines[-1] += leading_wsp
 
     trailing_wsp = ''
     if to_encode[-1] in WSP:
