@@ -138,6 +138,7 @@ As a consequence of this, split keys have a maximum size of 16.
 // Forward declarations
 static PyObject* frozendict_new(PyTypeObject *type, PyObject *args,
                                 PyObject *kwds);
+static PyObject* dict_new(PyTypeObject *type, PyObject *args, PyObject *kwds);
 static int dict_merge(PyObject *a, PyObject *b, int override);
 
 
@@ -3305,15 +3306,18 @@ _PyDict_FromKeys(PyObject *cls, PyObject *iterable, PyObject *value)
         return NULL;
     }
 
-    // If cls is a frozendict subclass with overridden constructor,
+    // If cls is a dict or frozendict subclass with overridden constructor,
     // copy the frozendict.
     PyTypeObject *cls_type = _PyType_CAST(cls);
-    if (PyFrozenDict_Check(d)
-        && PyObject_IsSubclass(cls, (PyObject*)&PyFrozenDict_Type)
-        && cls_type->tp_new != frozendict_new)
-    {
+    if (PyFrozenDict_Check(d) && cls_type->tp_new != frozendict_new) {
         // Subclass-friendly copy
-        PyObject *copy = frozendict_new(cls_type, NULL, NULL);
+        PyObject *copy;
+        if (PyObject_IsSubclass(cls, (PyObject*)&PyFrozenDict_Type)) {
+            copy = frozendict_new(cls_type, NULL, NULL);
+        }
+        else {
+            copy = dict_new(cls_type, NULL, NULL);
+        }
         if (copy == NULL) {
             Py_DECREF(d);
             return NULL;

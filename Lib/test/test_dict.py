@@ -1815,6 +1815,16 @@ class FrozenDictTests(unittest.TestCase):
         self.assertEqual(fd, frozendict(a=None, b=None, c=None))
         self.assertEqual(type(fd), FrozenDictSubclass2)
 
+        # Dict subclass which overrides the constructor
+        class DictSubclass(dict):
+            def __new__(self):
+                return created
+
+        fd = DictSubclass.fromkeys("abc")
+        self.assertEqual(fd, frozendict(x=1, a=None, b=None, c=None))
+        self.assertEqual(type(fd), DictSubclass)
+        self.assertEqual(created, frozendict(x=1))
+
 
 if __name__ == "__main__":
     unittest.main()
