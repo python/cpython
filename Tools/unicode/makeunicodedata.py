@@ -29,6 +29,7 @@
 import dataclasses
 import os
 import sys
+import re
 import zipfile
 
 from functools import partial
@@ -49,6 +50,7 @@ UNICODE_DATA = "UnicodeData%s.txt"
 COMPOSITION_EXCLUSIONS = "CompositionExclusions%s.txt"
 EASTASIAN_WIDTH = "EastAsianWidth%s.txt"
 UNIHAN = "Unihan%s.zip"
+DERIVED_BIDI_CLASS = "extracted/DerivedBidiClass%s.txt"
 DERIVED_CORE_PROPERTIES = "DerivedCoreProperties%s.txt"
 DERIVEDNORMALIZATION_PROPS = "DerivedNormalizationProps%s.txt"
 LINE_BREAK = "LineBreak%s.txt"
@@ -78,6 +80,33 @@ CATEGORY_NAMES = [ "Cn", "Lu", "Ll", "Lt", "Mn", "Mc", "Me", "Nd",
 BIDIRECTIONAL_NAMES = [ "", "L", "LRE", "LRO", "R", "AL", "RLE", "RLO",
     "PDF", "EN", "ES", "ET", "AN", "CS", "NSM", "BN", "B", "S", "WS",
     "ON", "LRI", "RLI", "FSI", "PDI" ]
+
+# https://www.unicode.org/reports/tr44/#BC_Values_Table
+BIDI_LONG_NAMES = {
+    'Left_To_Right': 'L',
+    'Right_To_Left': 'R',
+    'Arabic_Letter': 'AL',
+    'European_Number': 'EN',
+    'European_Separator': 'ES',
+    'European_Terminator': 'ET',
+    'Arabic_Number': 'AN',
+    'Common_Separator': 'CS',
+    'Nonspacing_Mark': 'NSM',
+    'Boundary_Neutral': 'BN',
+    'Paragraph_Separator': 'B',
+    'Segment_Separator': 'S',
+    'White_Space': 'WS',
+    'Other_Neutral': 'ON',
+    'Left_To_Right_Embedding': 'LRE',
+    'Left_To_Right_Override': 'LRO',
+    'Right_To_Left_Embedding': 'RLE',
+    'Right_To_Left_Override': 'RLO',
+    'Pop_Directional_Format': 'PDF',
+    'Left_To_Right_Isolate': 'LRI',
+    'Right_To_Left_Isolate': 'RLI',
+    'First_Strong_Isolate': 'FSI',
+    'Pop_Directional_Isolate': 'PDI',
+}
 
 # "Other" needs to be the first entry, see the comment in makeunicodedata
 GRAPHEME_CLUSTER_NAMES = [ 'Other', 'Prepend', 'CR', 'LF', 'Control',
@@ -169,11 +198,11 @@ def makeunicodedata(unicode, trace):
         eastasianwidth = EASTASIANWIDTH_NAMES.index(unicode.widths[char] or 'N')
         graphemebreak = GRAPHEME_CLUSTER_NAMES.index(unicode.grapheme_breaks[char] or 'Other')
         extpict = unicode.ext_picts[char]
+        bidirectional = BIDIRECTIONAL_NAMES.index(unicode.bidi_classes[char])
         if record:
             # extract database properties
             category = CATEGORY_NAMES.index(record.general_category)
             combining = int(record.canonical_combining_class)
-            bidirectional = BIDIRECTIONAL_NAMES.index(record.bidi_class)
             mirrored = record.bidi_mirrored == "Y"
             normalizationquickcheck = record.quick_check
             incb = INDIC_CONJUNCT_BREAK_NAMES.index(record.incb)
@@ -181,12 +210,12 @@ def makeunicodedata(unicode, trace):
                 category, combining, bidirectional, mirrored, eastasianwidth,
                 normalizationquickcheck, graphemebreak, incb, extpict,
                 )
-        elif eastasianwidth or graphemebreak or extpict:
-            # an unassigned but reserved character, with a known
-            # east_asian_width or grapheme_break or ext_pict
-            item = (0, 0, 0, 0, eastasianwidth, 0, graphemebreak, 0, extpict)
         else:
-            continue
+            if eastasianwidth or graphemebreak or extpict or bidirectional:
+                item = (0, 0, bidirectional, 0, eastasianwidth,
+                        0, graphemebreak, 0, extpict)
+            else:
+                continue
 
         # add entry to index and item tables
         i = cache.get(item)
@@ -457,7 +486,7 @@ def makeunicodetype(unicode, trace):
         if record:
             # extract database properties
             category = record.general_category
-            bidirectional = record.bidi_class
+            bidirectional = unicode.bidi_classes[char]
             properties = record.binary_properties
             flags = 0
             if category in ["Lm", "Lt", "Lu", "Ll", "Lo"]:
@@ -735,11 +764,11 @@ def makeunicodename(unicode, trace):
 
         fprint('static const derived_name_range derived_name_ranges[] = {')
         for name_range in unicode.derived_name_ranges:
-            fprint('    {0x%s, 0x%s, %d},' % name_range)
+            fprint('    {0x%s, 0x%s, %d},' % tuple(name_range))
         fprint('};')
 
         fprint('static const char * const derived_name_prefixes[] = {')
-        for _, prefix in derived_name_range_names:
+        for prefix in unicode.derived_name_prefixes:
             fprint('    "%s",' % prefix)
         fprint('};')
 
@@ -770,6 +799,8 @@ def merge_old_version(version, new, old):
             # category 0 is "unassigned"
             category_changes[i] = 0
             continue
+        if old.bidi_classes[i] != new.bidi_classes[i]:
+            bidir_changes[i] = BIDIRECTIONAL_NAMES.index(old.bidi_classes[i])
         # check characters that differ
         if old.table[i] != new.table[i]:
             for k, field in enumerate(dataclasses.fields(UcdRecord)):
@@ -783,7 +814,8 @@ def merge_old_version(version, new, old):
                     elif k == 2:
                         category_changes[i] = CATEGORY_NAMES.index(value)
                     elif k == 4:
-                        bidir_changes[i] = BIDIRECTIONAL_NAMES.index(value)
+                        # bidi_class changes handled via bidi_classes
+                        pass
                     elif k == 5:
                         # We assume that all normalization changes are in 1:1 mappings
                         assert " " not in value
@@ -965,6 +997,10 @@ class UnicodeData:
             table[char] = from_row(s)
 
         self.derived_name_ranges = []
+        self.derived_name_prefixes = {
+            prefix: i
+            for i, (_, prefix) in enumerate(derived_name_range_names)
+        }
 
         # expand first-last ranges
         field = None
@@ -985,8 +1021,24 @@ class UnicodeData:
                             break
                     s.name = ""
                     field = None
+                else:
+                    codepoint = s.codepoint
+                    if s.name.endswith(codepoint):
+                        prefix = s.name[:-len(codepoint)]
+                        j = self.derived_name_prefixes.get(prefix)
+                        if j is None:
+                            j = len(self.derived_name_prefixes)
+                            self.derived_name_prefixes[prefix] = j
+                        if (self.derived_name_ranges
+                                and self.derived_name_ranges[-1][2] == j
+                                and int(self.derived_name_ranges[-1][1], 16) == i - 1):
+                            self.derived_name_ranges[-1][1] = codepoint
+                        else:
+                            self.derived_name_ranges.append(
+                                [codepoint, codepoint, j])
+                        s.name = ""
             elif field:
-                table[i] = from_row(('%X' % i,) + field[1:])
+                table[i] = from_row(('%04X' % i,) + field[1:])
 
         # public attributes
         self.filename = UNICODE_DATA % ''
@@ -1041,6 +1093,28 @@ class UnicodeData:
             if table[i] is not None:
                 table[i].east_asian_width = widths[i]
         self.widths = widths
+
+        # Read DerivedBidiClass.txt for bidi classes
+        # see https://www.unicode.org/reports/tr44/#Missing_Conventions
+        bidi_classes = [None] * 0x110000
+        for i in range(0, 0x110000):
+            if table[i] is not None:
+                bidi_classes[i] = table[i].bidi_class
+        if version != '3.2.0':
+            missing_re = re.compile(
+                r'# @missing: ([\dA-F]+\.\.[\dA-F]+); (\w+)'
+            )
+            with open_data(DERIVED_BIDI_CLASS, version) as f:
+                for l in f:
+                    m = missing_re.match(l)
+                    if not m:
+                        continue
+                    name = BIDI_LONG_NAMES[m[2]]
+                    for i in expand_range(m[1]):
+                        bidi_classes[i] = name
+            for char, (bidi,) in UcdFile(DERIVED_BIDI_CLASS, version).expanded():
+                bidi_classes[char] = bidi
+        self.bidi_classes = bidi_classes
 
         for char, (propname, *propinfo) in UcdFile(DERIVED_CORE_PROPERTIES, version).expanded():
             if not propinfo:
