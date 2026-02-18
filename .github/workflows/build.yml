@@ -242,11 +242,18 @@ jobs:
         # BOLT currently crashes during instrumentation on aarch64
         - os: ubuntu-24.04-arm
           bolt: true
+        include:
+        # Enable CPU-intensive tests on ARM (default build only)
+        - os: ubuntu-24.04-arm
+          bolt: false
+          free-threading: false
+          test-opts: '-u cpu'
     uses: ./.github/workflows/reusable-ubuntu.yml
     with:
       bolt-optimizations: ${{ matrix.bolt }}
       free-threading: ${{ matrix.free-threading }}
       os: ${{ matrix.os }}
+      test-opts: ${{ matrix.test-opts || '' }}
 
   build-ubuntu-ssltests-openssl:
     name: 'Ubuntu SSL tests with OpenSSL'
@@ -261,7 +268,7 @@ jobs:
         # Keep 1.1.1w in our list despite it being upstream EOL and otherwise
         # unsupported as it most resembles other 1.1.1-work-a-like ssl APIs
         # supported by important vendors such as AWS-LC.
-        openssl_ver: [1.1.1w, 3.0.18, 3.3.5, 3.4.3, 3.5.4, 3.6.0]
+        openssl_ver: [1.1.1w, 3.0.19, 3.3.6, 3.4.4, 3.5.5, 3.6.1]
         # See Tools/ssl/make_ssl_data.py for notes on adding a new version
     env:
       OPENSSL_VER: ${{ matrix.openssl_ver }}
@@ -428,7 +435,7 @@ jobs:
     needs: build-context
     if: needs.build-context.outputs.run-ubuntu == 'true'
     env:
-      OPENSSL_VER: 3.0.18
+      OPENSSL_VER: 3.5.5
       PYTHONSTRICTEXTENSIONBUILD: 1
     steps:
     - uses: actions/checkout@v6
@@ -539,7 +546,7 @@ jobs:
       matrix:
         os: [ubuntu-24.04]
     env:
-      OPENSSL_VER: 3.0.18
+      OPENSSL_VER: 3.5.5
       PYTHONSTRICTEXTENSIONBUILD: 1
       ASAN_OPTIONS: detect_leaks=0:allocator_may_return_null=1:handle_segv=0
     steps:
@@ -574,7 +581,7 @@ jobs:
       run: |
         echo "PATH=/usr/lib/ccache:$PATH" >> "$GITHUB_ENV"
     - name: Configure CPython
-      run: ./configure --config-cache --with-address-sanitizer --without-pymalloc
+      run: ./configure --config-cache --with-address-sanitizer --without-pymalloc --with-openssl="$OPENSSL_DIR"
     - name: Build CPython
       run: make -j4
     - name: Display build info
@@ -655,11 +662,14 @@ jobs:
       matrix:
         sanitizer:
         - address
-        - undefined
-        - memory
         oss-fuzz-project-name:
         - cpython3
         - python3-libraries
+        include:
+        - sanitizer: undefined
+          oss-fuzz-project-name: cpython3
+        - sanitizer: memory
+          oss-fuzz-project-name: cpython3
         exclude:
         # Note that the 'no-exclude' sentinel below is to prevent
         # an empty string value from excluding all jobs and causing

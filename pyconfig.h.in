@@ -1739,6 +1739,9 @@
 /* Define as the preferred size in bits of long digits */
 #undef PYLONG_BITS_IN_DIGIT
 
+/* Define to use huge pages for pymalloc arenas */
+#undef PYMALLOC_USE_HUGEPAGES
+
 /* enabled builtin hash modules */
 #undef PY_BUILTIN_HASHLIB_HASHES
 
@@ -2039,7 +2042,7 @@
 /* Define on NetBSD to activate all library features */
 #undef _NETBSD_SOURCE
 
-/* Define to activate features from IEEE Stds 1003.1-2008 */
+/* Define to activate features from IEEE Std 1003.1-2024 */
 #undef _POSIX_C_SOURCE
 
 /* Define if you have POSIX threads, and your system does not define that. */
