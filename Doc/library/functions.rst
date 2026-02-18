@@ -594,7 +594,7 @@ are always available.  They are listed here in alphabetical order.
 
    :param globals:
       The global namespace (default: ``None``).
-   :type globals: :class:`dict` | ``None``
+   :type globals: :class:`dict` | :class:`frozendict` | ``None``
 
    :param locals:
       The local namespace (default: ``None``).
@@ -643,6 +643,10 @@ are always available.  They are listed here in alphabetical order.
    If the given source is a string, then leading and trailing spaces and tabs
    are stripped.
 
+   It's possible to pass :class:`frozendict` to *globals* if the
+   :class:`!frozendict` has a ``__builtins__`` item. In this case, it's not
+   possible to assign or reassign global variables.
+
    See :func:`ast.literal_eval` for a function that can safely evaluate strings
    with expressions containing only literals.
 
@@ -659,6 +663,10 @@ are always available.  They are listed here in alphabetical order.
 
       The semantics of the default *locals* namespace have been adjusted as
       described for the :func:`locals` builtin.
+
+   .. versionchanged:: next
+
+      *globals* can now be a :class:`frozendict`.
 
 .. index:: pair: built-in function; exec
 
@@ -687,6 +695,10 @@ are always available.  They are listed here in alphabetical order.
    *locals* are given, they are used for the global and local variables,
    respectively.  If provided, *locals* can be any mapping object.  Remember
    that at the module level, globals and locals are the same dictionary.
+
+   It's possible to pass :class:`frozendict` to *globals* if the
+   :class:`!frozendict` has a ``__builtins__`` item. In this case, it's not
+   possible to assign or reassign global variables.
 
    .. note::
 
@@ -736,6 +748,10 @@ are always available.  They are listed here in alphabetical order.
 
       The semantics of the default *locals* namespace have been adjusted as
       described for the :func:`locals` builtin.
+
+   .. versionchanged:: next
+
+      *globals* can now be a :class:`frozendict`.
 
 
 .. function:: filter(function, iterable, /)

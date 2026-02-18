@@ -784,6 +784,12 @@ class BuiltinTest(ComplexesAreIdenticalMixin, unittest.TestCase):
                 raise ValueError
         self.assertRaises(ValueError, eval, "foo", {}, X())
 
+        # Pass frozenset to globals
+        ns = frozendict(x=1, data=[], __builtins__=__builtins__)
+        code = "data.append(x)"
+        eval(code, ns, ns)
+        self.assertEqual(ns['data'], [1])
+
     def test_eval_kwargs(self):
         data = {"A_GLOBAL_VALUE": 456}
         self.assertEqual(eval("globals()['A_GLOBAL_VALUE']", globals=data), 456)
@@ -881,6 +887,18 @@ class BuiltinTest(ComplexesAreIdenticalMixin, unittest.TestCase):
         if '__builtins__' in l:
             del l['__builtins__']
         self.assertEqual((g, l), ({'a': 1}, {'b': 2}))
+
+        # Pass frozenset to globals
+        ns = frozendict(x=1, data=[], __builtins__=__builtins__)
+        code = "data.append(x)"
+        exec(code, ns, ns)
+        self.assertEqual(ns['data'], [1])
+
+        ns = frozendict(__builtins__=__builtins__)
+        code = "x = 1"
+        errmsg = "'frozendict' object does not support item assignment"
+        with self.assertRaisesRegex(TypeError, errmsg):
+            exec(code, ns, ns)
 
     def test_exec_kwargs(self):
         g = {}

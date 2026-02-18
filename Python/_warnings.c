@@ -1045,7 +1045,7 @@ setup_context(Py_ssize_t stack_level,
 
     /* Setup registry. */
     assert(globals != NULL);
-    assert(PyDict_Check(globals));
+    assert(PyAnyDict_Check(globals));
     int rc = PyDict_GetItemRef(globals, &_Py_ID(__warningregistry__),
                                registry);
     if (rc < 0) {
@@ -1269,7 +1269,7 @@ warnings_warn_explicit_impl(PyObject *module, PyObject *message,
     }
 
     if (module_globals && module_globals != Py_None) {
-        if (!PyDict_Check(module_globals)) {
+        if (!PyAnyDict_Check(module_globals)) {
             PyErr_Format(PyExc_TypeError,
                          "module_globals must be a dict, not '%.200s'",
                          Py_TYPE(module_globals)->tp_name);

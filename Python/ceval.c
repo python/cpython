@@ -2717,7 +2717,7 @@ static PyObject *
 get_globals_builtins(PyObject *globals)
 {
     PyObject *builtins = NULL;
-    if (PyDict_Check(globals)) {
+    if (PyAnyDict_Check(globals)) {
         if (PyDict_GetItemRef(globals, &_Py_ID(__builtins__), &builtins) < 0) {
             return NULL;
         }
@@ -3572,7 +3572,7 @@ _PyEval_GetANext(PyObject *aiter)
 void
 _PyEval_LoadGlobalStackRef(PyObject *globals, PyObject *builtins, PyObject *name, _PyStackRef *writeto)
 {
-    if (PyDict_CheckExact(globals) && PyDict_CheckExact(builtins)) {
+    if (PyAnyDict_CheckExact(globals) && PyAnyDict_CheckExact(builtins)) {
         _PyDict_LoadGlobalStackRef((PyDictObject *)globals,
                                     (PyDictObject *)builtins,
                                     name, writeto);

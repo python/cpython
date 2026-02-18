@@ -3728,7 +3728,7 @@ resolve_name(PyThreadState *tstate, PyObject *name, PyObject *globals, int level
         _PyErr_SetString(tstate, PyExc_KeyError, "'__name__' not in globals");
         goto error;
     }
-    if (!PyDict_Check(globals)) {
+    if (!PyAnyDict_Check(globals)) {
         _PyErr_SetString(tstate, PyExc_TypeError, "globals must be a dict");
         goto error;
     }
