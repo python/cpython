@@ -317,7 +317,6 @@ class TestIsInstanceIsSubclass(unittest.TestCase):
             self.assertRaises(RecursionError, issubclass, int, X())
             self.assertRaises(RecursionError, isinstance, 1, X())
 
-    @support.skip_if_unlimited_stack_size
     @support.skip_emscripten_stack_overflow()
     @support.skip_wasi_stack_overflow()
     def test_infinite_recursion_via_bases_tuple(self):
@@ -329,7 +328,6 @@ class TestIsInstanceIsSubclass(unittest.TestCase):
             with self.assertRaises(RecursionError):
                 issubclass(Failure(), int)
 
-    @support.skip_if_unlimited_stack_size
     @support.skip_emscripten_stack_overflow()
     @support.skip_wasi_stack_overflow()
     def test_infinite_cycle_in_bases(self):
@@ -354,6 +352,29 @@ class TestIsInstanceIsSubclass(unittest.TestCase):
                 return (A(), B())
         with support.infinite_recursion(25):
             self.assertRaises(RecursionError, issubclass, X(), int)
+
+    def test_custom_subclasses_are_ignored(self):
+        class A: pass
+        class B: pass
+
+        # this is only ABC classes thing
+        class Parent1:
+            @classmethod
+            def __subclasses__(cls):
+                return [A, B]
+
+        class Parent2:
+            __subclasses__ = lambda: [A, B]
+
+        self.assertNotIsInstance(A(), Parent1)
+        self.assertNotIsInstance(B(), Parent1)
+        self.assertNotIsSubclass(A, Parent1)
+        self.assertNotIsSubclass(B, Parent1)
+
+        self.assertNotIsInstance(A(), Parent2)
+        self.assertNotIsInstance(B(), Parent2)
+        self.assertNotIsSubclass(A, Parent2)
+        self.assertNotIsSubclass(B, Parent2)
 
 
 def blowstack(fxn, arg, compare_to):
