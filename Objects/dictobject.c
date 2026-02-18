@@ -3311,7 +3311,7 @@ _PyDict_FromKeys(PyObject *cls, PyObject *iterable, PyObject *value)
         }
         Py_SETREF(d, copy);
     }
-    assert(!PyFrozenDict_Check(d) || Py_REFCNT(d) == 1);
+    assert(!PyFrozenDict_Check(d) || PyUnstable_Object_IsUniquelyReferenced(d));
 
     if (PyDict_CheckExact(d)) {
         if (PyDict_CheckExact(iterable)) {
@@ -8017,7 +8017,7 @@ frozendict_new(PyTypeObject *type, PyObject *args, PyObject *kwds)
     if (d == NULL) {
         return NULL;
     }
-    assert(Py_REFCNT(d) == 1);
+    assert(PyUnstable_Object_IsUniquelyReferenced(d));
 
     PyFrozenDictObject *self = _PyFrozenDictObject_CAST(d);
     self->ma_hash = -1;
