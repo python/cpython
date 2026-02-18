@@ -32,14 +32,14 @@ def get_specialized(analysis: Analysis) -> set[str]:
 def generate_specializations(analysis: Analysis, out: CWriter) -> None:
     out.emit("_specializations = frozendict(\n")
     for family in analysis.families.values():
-        out.emit(f'{family.name}=[\n')
+        out.emit(f'{family.name}=(\n')
         seen = set()
         for member in family.members:
             if member.name in seen:
                 continue
             seen.add(member.name)
             out.emit(f'    "{member.name}",\n')
-        out.emit("],\n")
+        out.emit("),\n")
     out.emit(")\n\n")
 
 
