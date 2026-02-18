@@ -1792,11 +1792,9 @@ class FrozenDictTests(unittest.TestCase):
                          frozendict(a=None, b=None, c=None))
 
         # Subclass which overrides the constructor
-        created = None
+        created = frozendict(x=1)
         class FrozenDictSubclass(frozendict):
             def __new__(self):
-                nonlocal created
-                created = frozendict(x=1)
                 return created
 
         fd = FrozenDictSubclass.fromkeys("abc")
@@ -1804,7 +1802,6 @@ class FrozenDictTests(unittest.TestCase):
         self.assertEqual(type(fd), FrozenDictSubclass)
         self.assertEqual(created, frozendict(x=1))
 
-        created = None
         fd = FrozenDictSubclass.fromkeys(frozendict(y=2))
         self.assertEqual(fd, frozendict(x=1, y=None))
         self.assertEqual(type(fd), FrozenDictSubclass)
