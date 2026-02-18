@@ -1058,12 +1058,12 @@ dummy_func(
 
         op(_GUARD_NOS_DICT, (nos, unused -- nos, unused)) {
             PyObject *o = PyStackRef_AsPyObjectBorrow(nos);
-            EXIT_IF(!PyDict_CheckExact(o));
+            EXIT_IF(!PyAnyDict_CheckExact(o));
         }
 
         op(_GUARD_TOS_DICT, (tos -- tos)) {
             PyObject *o = PyStackRef_AsPyObjectBorrow(tos);
-            EXIT_IF(!PyDict_CheckExact(o));
+            EXIT_IF(!PyAnyDict_CheckExact(o));
         }
 
         macro(BINARY_OP_SUBSCR_DICT) =
@@ -1073,7 +1073,7 @@ dummy_func(
             PyObject *sub = PyStackRef_AsPyObjectBorrow(sub_st);
             PyObject *dict = PyStackRef_AsPyObjectBorrow(dict_st);
 
-            assert(PyDict_CheckExact(dict));
+            assert(PyAnyDict_CheckExact(dict));
             STAT_INC(BINARY_OP, hit);
             PyObject *res_o;
             int rc = PyDict_GetItemRef(dict, sub, &res_o);
@@ -2940,7 +2940,7 @@ dummy_func(
             PyObject *left_o = PyStackRef_AsPyObjectBorrow(left);
             PyObject *right_o = PyStackRef_AsPyObjectBorrow(right);
 
-            assert(PyDict_CheckExact(right_o));
+            assert(PyAnyDict_CheckExact(right_o));
             STAT_INC(CONTAINS_OP, hit);
             int res = PyDict_Contains(right_o, left_o);
             if (res < 0) {
