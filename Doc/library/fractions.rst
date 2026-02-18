@@ -11,7 +11,7 @@
 
 --------------
 
-The :mod:`fractions` module provides support for rational number arithmetic.
+The :mod:`!fractions` module provides support for rational number arithmetic.
 
 
 A Fraction instance can be constructed from a pair of rational numbers, from

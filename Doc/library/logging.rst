@@ -1551,7 +1551,7 @@ Module-Level Attributes
 Integration with the warnings module
 ------------------------------------
 
-The :func:`captureWarnings` function can be used to integrate :mod:`logging`
+The :func:`captureWarnings` function can be used to integrate :mod:`!logging`
 with the :mod:`warnings` module.
 
 .. function:: captureWarnings(capture)
@@ -1582,7 +1582,7 @@ with the :mod:`warnings` module.
       library.
 
    `Original Python logging package <https://old.red-dove.com/python_logging.html>`_
-      This is the original source for the :mod:`logging` package.  The version of the
+      This is the original source for the :mod:`!logging` package.  The version of the
       package available from this site is suitable for use with Python 1.5.2, 2.1.x
-      and 2.2.x, which do not include the :mod:`logging` package in the standard
+      and 2.2.x, which do not include the :mod:`!logging` package in the standard
       library.
