@@ -5920,7 +5920,7 @@
             _PyStackRef nos;
             nos = stack_pointer[-2];
             PyObject *o = PyStackRef_AsPyObjectBorrow(nos);
-            if (!PyDict_CheckExact(o)) {
+            if (!PyAnyDict_CheckExact(o)) {
                 UOP_STAT_INC(uopcode, miss);
                 SET_CURRENT_CACHED_VALUES(0);
                 JUMP_TO_JUMP_TARGET();
@@ -5941,7 +5941,7 @@
             _PyStackRef _stack_item_0 = _tos_cache0;
             nos = stack_pointer[-1];
             PyObject *o = PyStackRef_AsPyObjectBorrow(nos);
-            if (!PyDict_CheckExact(o)) {
+            if (!PyAnyDict_CheckExact(o)) {
                 UOP_STAT_INC(uopcode, miss);
                 _tos_cache0 = _stack_item_0;
                 SET_CURRENT_CACHED_VALUES(1);
@@ -5964,7 +5964,7 @@
             _PyStackRef _stack_item_1 = _tos_cache1;
             nos = _stack_item_0;
             PyObject *o = PyStackRef_AsPyObjectBorrow(nos);
-            if (!PyDict_CheckExact(o)) {
+            if (!PyAnyDict_CheckExact(o)) {
                 UOP_STAT_INC(uopcode, miss);
                 _tos_cache1 = _stack_item_1;
                 _tos_cache0 = nos;
@@ -5987,7 +5987,7 @@
             _PyStackRef _stack_item_2 = _tos_cache2;
             nos = _stack_item_1;
             PyObject *o = PyStackRef_AsPyObjectBorrow(nos);
-            if (!PyDict_CheckExact(o)) {
+            if (!PyAnyDict_CheckExact(o)) {
                 UOP_STAT_INC(uopcode, miss);
                 _tos_cache2 = _stack_item_2;
                 _tos_cache1 = nos;
@@ -6009,7 +6009,7 @@
             _PyStackRef tos;
             tos = stack_pointer[-1];
             PyObject *o = PyStackRef_AsPyObjectBorrow(tos);
-            if (!PyDict_CheckExact(o)) {
+            if (!PyAnyDict_CheckExact(o)) {
                 UOP_STAT_INC(uopcode, miss);
                 SET_CURRENT_CACHED_VALUES(0);
                 JUMP_TO_JUMP_TARGET();
@@ -6029,7 +6029,7 @@
             _PyStackRef _stack_item_0 = _tos_cache0;
             tos = _stack_item_0;
             PyObject *o = PyStackRef_AsPyObjectBorrow(tos);
-            if (!PyDict_CheckExact(o)) {
+            if (!PyAnyDict_CheckExact(o)) {
                 UOP_STAT_INC(uopcode, miss);
                 _tos_cache0 = tos;
                 SET_CURRENT_CACHED_VALUES(1);
@@ -6049,7 +6049,7 @@
             _PyStackRef _stack_item_1 = _tos_cache1;
             tos = _stack_item_1;
             PyObject *o = PyStackRef_AsPyObjectBorrow(tos);
-            if (!PyDict_CheckExact(o)) {
+            if (!PyAnyDict_CheckExact(o)) {
                 UOP_STAT_INC(uopcode, miss);
                 _tos_cache1 = tos;
                 _tos_cache0 = _stack_item_0;
@@ -6072,7 +6072,7 @@
             _PyStackRef _stack_item_2 = _tos_cache2;
             tos = _stack_item_2;
             PyObject *o = PyStackRef_AsPyObjectBorrow(tos);
-            if (!PyDict_CheckExact(o)) {
+            if (!PyAnyDict_CheckExact(o)) {
                 UOP_STAT_INC(uopcode, miss);
                 _tos_cache2 = tos;
                 _tos_cache1 = _stack_item_1;
@@ -6102,7 +6102,7 @@
             dict_st = _stack_item_0;
             PyObject *sub = PyStackRef_AsPyObjectBorrow(sub_st);
             PyObject *dict = PyStackRef_AsPyObjectBorrow(dict_st);
-            assert(PyDict_CheckExact(dict));
+            assert(PyAnyDict_CheckExact(dict));
             STAT_INC(BINARY_OP, hit);
             PyObject *res_o;
             stack_pointer[0] = dict_st;
@@ -10393,7 +10393,7 @@
             left = _stack_item_0;
             PyObject *left_o = PyStackRef_AsPyObjectBorrow(left);
             PyObject *right_o = PyStackRef_AsPyObjectBorrow(right);
-            assert(PyDict_CheckExact(right_o));
+            assert(PyAnyDict_CheckExact(right_o));
             STAT_INC(CONTAINS_OP, hit);
             stack_pointer[0] = left;
             stack_pointer[1] = right;
