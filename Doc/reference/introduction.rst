@@ -145,10 +145,6 @@ The definition to the right of the colon uses the following syntax elements:
 * ``e?``: A question mark has exactly the same meaning as square brackets:
   the preceding item is optional.
 * ``(e)``: Parentheses are used for grouping.
-* ``s.e+``:   Match one or more occurrences of ``e``, separated by ``s``.
-   This is identical to ``(e (s e)*)``.
-* ``# ...``: As in Python, ``#`` introduces a comment that continues until the
-  end of the line.
 
 The following notation is only used in
 :ref:`lexical definitions <notation-lexical-vs-syntactic>`.

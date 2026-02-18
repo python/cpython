@@ -36,21 +36,6 @@ class snippet_string_node(nodes.inline):  # noqa: N801 (snake_case is fine)
         self['classes'].append('sx')
 
 
-class snippet_comment_node(nodes.inline):  # noqa: N801 (snake_case is fine)
-    """Node for a comment in a grammar snippet."""
-
-    def __init__(
-        self,
-        rawsource: str = '',
-        text: str = '',
-        *children: Node,
-        **attributes: Any,
-    ) -> None:
-        super().__init__(rawsource, text, *children, **attributes)
-        # Use the Pygments highlight class for `Comment.Single`
-        self['classes'].append('c1')
-
-
 class GrammarSnippetBase(SphinxDirective):
     """Common functionality for GrammarSnippetDirective & CompatProductionList."""
 
@@ -66,8 +51,6 @@ class GrammarSnippetBase(SphinxDirective):
             (?P<single_quoted>'[^']*')        # string in 'quotes'
         |
             (?P<double_quoted>"[^"]*")        # string in "quotes"
-        |
-            (?P<comment>[#].*)                # comment
         """,
         re.VERBOSE,
     )
@@ -164,8 +147,6 @@ class GrammarSnippetBase(SphinxDirective):
                     production_node += token_xrefs(content, group_name)
                 case 'single_quoted' | 'double_quoted':
                     production_node += snippet_string_node('', content)
-                case 'comment':
-                    production_node += snippet_comment_node('', content)
                 case 'text':
                     production_node += nodes.Text(content)
                 case _:

@@ -48,9 +48,16 @@ Atoms
 .. index:: atom
 
 Atoms are the most basic elements of expressions.
-The simplest atoms are :ref:`names <identifiers>` or literals.
-Forms enclosed in parentheses, brackets or braces are also categorized
-syntactically as atoms.
+The simplest atoms are :ref:`builtin constants <atom-singletons>`,
+:ref:`names <identifiers>` and :ref:`literals <atom-literals>`.
+More complex atoms are enclosed in paired delimiters:
+
+- ``()`` (parentheses): :ref:`groups <parenthesized>`,
+  :ref:`tuple displays <tuple-display>`,
+  :ref:`yield atoms <yieldexpr>`, and
+  :ref:`generator expressions <genexpr>`;
+- ``[]`` (square brackets): :ref:`list displays <lists>`;
+- ``{}`` (curly braces): :ref:`dictionary <dict>` and :ref:`set <set>` displays.
 
 Formally, the syntax for atoms is:
 
@@ -58,15 +65,20 @@ Formally, the syntax for atoms is:
    :group: python-grammar
 
    atom:
+      | `builtin_constant`
+      | `identifier`
+      | `literal`
+      | `enclosure`
+   builtin_constant:
       | 'True'
       | 'False'
       | 'None'
       | '...'
-      | `identifier`
-      | `literal`
-      | `enclosure`
    enclosure:
-      | (`group` | `tuple` | `yield_atom` | `generator_expression`)  # in (parentheses)
+      | `group`
+      | `tuple`
+      | `yield_atom`
+      | `generator_expression`
       | `list_display`
       | `dict_display`
       | `set_display`
@@ -199,6 +211,7 @@ The formal grammar for literals is:
 
    literal: `strings` | `NUMBER`
 
+.. _literals-identity:
 
 .. index::
    triple: immutable; data; type
@@ -324,18 +337,11 @@ Groups are used to override or clarify
 in the same way as in math notation.
 For example::
 
-   >>> 3 + 2 * 4
-   11
-   >>> (3 + 2) * 4    # Override precedence of the addition
-   20
-   >>> 3 + (2 * 4)    # Same effect as without parentheses
-   11
-
    >>> 3 << 2 | 4
    12
-   >>> 3 << (2 | 4)   # Override precedence of the bitwise OR
+   >>> 3 << (2 | 4)   # Override precedence of the | (bitwise OR)
    192
-   >>> (3 << 2) | 4   # Same as without parentheses (but much clearer)
+   >>> (3 << 2) | 4   # Same as without parentheses (but more clear)
    12
 
 Note that not everything in parentheses is a *group*.
@@ -354,6 +360,8 @@ Formally, the syntax for groups is:
 
 .. index::
    single: tuple display
+   single: comma
+   single: , (comma)
 
 .. _tuple-display:
 
@@ -371,33 +379,39 @@ expressions::
    >>> ('one', 'two', 'thr' + 'ee')
    ('one', 'two', 'three')
 
-The expressions may be followed by an additional comma, which has no effect.
-(The trailing comma is often used for tuple displays that span multiple lines,
-so when a new entry is later added at the end, the existing line does not
-need to be modified)::
+The expressions may be followed by an additional comma, which has no effect::
 
    >>> (1, 2,)
    (1, 2)
-   >>> (
-   ...     'one',
-   ...     'two',
-   ...     'thr' + 'ee',
-   ... )
-   ('one', 'two', 'three')
+
+.. note::
+
+   The trailing comma is often used for tuple displays that span multiple lines
+   (using :ref:`implicit line joining <implicit-joining>`),
+   so when a new entry is later added at the end, the existing line does not
+   need to be modified::
+
+      >>> (
+      ...     'one',
+      ...     'two',
+      ...     'three',
+      ... )
+      ('one', 'two', 'three')
 
 At runtime, evaluating a tuple display results in a tuple that contains
 the results of the expressions, in order.
-Since tuples are immutable, the same rules as for literals apply: two
-occurrences of tuples with the `same values` may or may not yield the same object.
-
-... TODO:: Link `same values`  to "Literals and object identity" from the previous PR
+Since tuples are immutable, :ref:`object identity rules for literals <literals-identity>`
+also apply to tuples: two occurrences of tuples with the same values may
+or may not yield the same object.
 
 A tuple display may also contain a *single* expression.
 In this case, the trailing comma is mandatory -- without it, you get a
 :ref:`parenthesized group <parenthesized>`::
 
-   >>> ('single',)
+   >>> ('single',)  # single-element tuple
    ('single',)
+   >>> ('single')   # no comma: single string
+   'single'
 
 .. index:: pair: empty; tuple
 
@@ -415,6 +429,33 @@ To put it in other words, a tuple display is a parenthesized list of either:
 - two or more comma-separated expressions, or
 - zero or more expressions, each followed by a comma.
 
+.. note::
+
+   Python's syntax also includes :ref:`expression lists <exprlists>`,
+   where a comma-separated list of expressions is *not* enclosed in parentheses
+   but evaluates to tuple.
+
+   In other words, when it comes to tuple syntax, the comma is more important
+   that the use of parentheses.
+   Only the empty tuple is spelled without a comma.
+
+.. index::
+   pair: iterable; unpacking
+   single: * (asterisk); in expression lists
+
+Any expression in a tuple display may be prefixed with an asterisk (``*``).
+This denotes :ref:`iterable unpacking as in expression lists <iterable-unpacking>`:
+
+
+   >>> numbers = (1, 2)
+   >>> (*numbers, 'word', *numbers)
+   (1, 2, 'word', 1, 2)
+
+.. versionadded:: 3.5
+   Iterable unpacking in tuple displays, originally proposed by :pep:`448`.
+
+.. index:: pair: trailing; comma
+
 The formal grammar for tuple expressions is:
 
 .. grammar-snippet::
@@ -424,33 +465,6 @@ The formal grammar for tuple expressions is:
       | '(' `flexible_expression` (',' `flexible_expression`)+ [','] ')'
       | '(' `flexible_expression` ',' ')'
       | '(' ')'
-
-.. note::
-
-   .. index::
-      single: comma
-      single: , (comma)
-
-   Note that tuple displays are not the only way to form tuples.
-   In several places, Python's syntax allows forming a tuple without
-   parentheses, only with a comma-separated list of expressions.
-   The most prominent example is the ``return`` statement::
-
-      >>> def gimme_a_tuple():
-      ...     return 1, 2, 3
-      ...
-      >>> gimme_a_tuple()
-      (1, 2, 3)
-
-   .. note to contributors:
-      Another prominent example is the expression statement,
-      but as of this writing, its docs imply that you need parentheses there.
-      The example can be added after the documented grammar is fixed.
-      This is tracked, broadly, in gh-127833.
-
-   These are not considered *tuple displays*, but follow similar rules.
-   The use of a comma forms a tuple; without a comma, these forms evaluate
-   to a single expression.
 
 
 .. _comprehensions:
@@ -2288,6 +2302,10 @@ functions created with lambda expressions cannot contain statements or
 annotations.
 
 
+.. index::
+   single: comma
+   single: , (comma)
+
 .. _exprlists:
 
 Expression lists
@@ -2312,21 +2330,6 @@ containing at least one comma yields a tuple.  The length of
 the tuple is the number of expressions in the list.  The expressions are
 evaluated from left to right.
 
-.. index::
-   pair: iterable; unpacking
-   single: * (asterisk); in expression lists
-
-An asterisk ``*`` denotes :dfn:`iterable unpacking`.  Its operand must be
-an :term:`iterable`.  The iterable is expanded into a sequence of items,
-which are included in the new tuple, list, or set, at the site of
-the unpacking.
-
-.. versionadded:: 3.5
-   Iterable unpacking in expression lists, originally proposed by :pep:`448`.
-
-.. versionadded:: 3.11
-   Any item in an expression list may be starred. See :pep:`646`.
-
 .. index:: pair: trailing; comma
 
 A trailing comma is required only to create a one-item tuple,
@@ -2335,6 +2338,32 @@ A single expression without a
 trailing comma doesn't create a tuple, but rather yields the value of that
 expression. (To create an empty tuple, use an empty pair of parentheses:
 ``()``.)
+
+
+.. _iterable-unpacking:
+
+.. index::
+   pair: iterable; unpacking
+   single: * (asterisk); in expression lists
+
+Iterable unpacking
+------------------
+
+In an expression list or tuple, list or set display, any expression
+may be prefixed with an asterisk (``*``).
+This denotes :dfn:`iterable unpacking`.
+
+At runtime, the asterisk-prefixed expression must evaluate
+to an :term:`iterable`.
+The iterable is expanded into a sequence of items,
+which are included in the new tuple, list, or set, at the site of
+the unpacking.
+
+.. versionadded:: 3.5
+   Iterable unpacking in expression lists, originally proposed by :pep:`448`.
+
+.. versionadded:: 3.11
+   Any item in an expression list may be starred. See :pep:`646`.
 
 
 .. _evalorder:
