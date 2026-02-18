@@ -295,6 +295,8 @@ can_modify_dict(PyDictObject *mp)
         return PyUnstable_Object_IsUniquelyReferenced(_PyObject_CAST(mp));
     }
     else {
+        // Locking is only required if the dictionary is not
+        // uniquely referenced.
         ASSERT_DICT_LOCKED(mp);
         return 1;
     }
@@ -3239,6 +3241,8 @@ _PyDict_Pop(PyObject *dict, PyObject *key, PyObject *default_value)
 static PyDictObject *
 dict_dict_fromkeys(PyDictObject *mp, PyObject *iterable, PyObject *value)
 {
+    assert(can_modify_dict(mp));
+
     PyObject *oldvalue;
     Py_ssize_t pos = 0;
     PyObject *key;
@@ -3264,6 +3268,8 @@ dict_dict_fromkeys(PyDictObject *mp, PyObject *iterable, PyObject *value)
 static PyDictObject *
 dict_set_fromkeys(PyDictObject *mp, PyObject *iterable, PyObject *value)
 {
+    assert(can_modify_dict(mp));
+
     Py_ssize_t pos = 0;
     PyObject *key;
     Py_hash_t hash;
@@ -3319,7 +3325,7 @@ _PyDict_FromKeys(PyObject *cls, PyObject *iterable, PyObject *value)
         }
         Py_SETREF(d, copy);
     }
-    assert(!PyFrozenDict_Check(d) || PyUnstable_Object_IsUniquelyReferenced(d));
+    assert(!PyFrozenDict_Check(d) || can_modify_dict((PyDictObject*)d));
 
     if (PyDict_CheckExact(d)) {
         if (PyDict_CheckExact(iterable)) {
@@ -8025,7 +8031,7 @@ frozendict_new(PyTypeObject *type, PyObject *args, PyObject *kwds)
     if (d == NULL) {
         return NULL;
     }
-    assert(PyUnstable_Object_IsUniquelyReferenced(d));
+    assert(can_modify_dict(_PyAnyDict_CAST(d)));
 
     PyFrozenDictObject *self = _PyFrozenDictObject_CAST(d);
     self->ma_hash = -1;
