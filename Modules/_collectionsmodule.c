@@ -1991,7 +1991,7 @@ dequeiter_next(PyObject *op)
     // it mid-iteration. The one-object critical section avoids this
     // because it keeps the deque locked across calls when it's already
     // held, due to a fast-path optimization.
-    if (_PyObject_IsUniquelyReferenced(it)) {
+    if (_PyObject_IsUniquelyReferenced((PyObject *)it)) {
         Py_BEGIN_CRITICAL_SECTION(deque);
         result = dequeiter_next_lock_held(it, deque);
         Py_END_CRITICAL_SECTION();

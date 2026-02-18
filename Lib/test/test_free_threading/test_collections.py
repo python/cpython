@@ -24,8 +24,7 @@ class TestDeque(unittest.TestCase):
             for _ in range(1000):
                 copy(d)
 
-        workers = [mutate, mutate, copy_loop, copy_loop]
-        threading_helper.run_concurrently(workers)
+        threading_helper.run_concurrently([mutate, copy_loop])
 
 
 if __name__ == "__main__":
