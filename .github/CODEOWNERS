@@ -161,6 +161,7 @@ Doc/c-api/module.rst          @ericsnowcurrently
 # Dates and times
 **/*datetime*                 @pganssle @abalkin
 **/*str*time*                 @pganssle @abalkin
+Doc/library/datetime-*        @pganssle
 Doc/library/time.rst          @pganssle @abalkin
 Lib/test/test_time.py         @pganssle @abalkin
 Modules/timemodule.c          @pganssle @abalkin
