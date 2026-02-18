@@ -3571,9 +3571,17 @@
         }
 
         case _MAKE_FUNCTION: {
+            JitOptRef codeobj_st;
             JitOptRef func;
-            func = sym_new_not_null(ctx);
+            JitOptRef co;
+            codeobj_st = stack_pointer[-1];
+            func = sym_new_type(ctx, &PyFunction_Type);
+            co = codeobj_st;
+            CHECK_STACK_BOUNDS(1);
             stack_pointer[-1] = func;
+            stack_pointer[0] = co;
+            stack_pointer += 1;
+            ASSERT_WITHIN_STACK_BOUNDS(__FILE__, __LINE__);
             break;
         }
 

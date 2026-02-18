@@ -9885,26 +9885,32 @@
             INSTRUCTION_STATS(MAKE_FUNCTION);
             _PyStackRef codeobj_st;
             _PyStackRef func;
-            codeobj_st = stack_pointer[-1];
-            PyObject *codeobj = PyStackRef_AsPyObjectBorrow(codeobj_st);
-            _PyFrame_SetStackPointer(frame, stack_pointer);
-            PyFunctionObject *func_obj = (PyFunctionObject *)
-            PyFunction_New(codeobj, GLOBALS());
-            stack_pointer = _PyFrame_GetStackPointer(frame);
-            stack_pointer += -1;
-            ASSERT_WITHIN_STACK_BOUNDS(__FILE__, __LINE__);
-            _PyFrame_SetStackPointer(frame, stack_pointer);
-            PyStackRef_CLOSE(codeobj_st);
-            stack_pointer = _PyFrame_GetStackPointer(frame);
-            if (func_obj == NULL) {
-                JUMP_TO_LABEL(error);
-            }
-            _PyFunction_SetVersion(
+            _PyStackRef co;
+            _PyStackRef value;
+            // _MAKE_FUNCTION
+            {
+                codeobj_st = stack_pointer[-1];
+                PyObject *codeobj = PyStackRef_AsPyObjectBorrow(codeobj_st);
+                _PyFrame_SetStackPointer(frame, stack_pointer);
+                PyFunctionObject *func_obj = (PyFunctionObject *)
+                PyFunction_New(codeobj, GLOBALS());
+                stack_pointer = _PyFrame_GetStackPointer(frame);
+                co = codeobj_st;
+                if (func_obj == NULL) {
+                    JUMP_TO_LABEL(error);
+                }
+                _PyFunction_SetVersion(
                                    func_obj, ((PyCodeObject *)codeobj)->co_version);
-            func = PyStackRef_FromPyObjectSteal((PyObject *)func_obj);
-            stack_pointer[0] = func;
-            stack_pointer += 1;
-            ASSERT_WITHIN_STACK_BOUNDS(__FILE__, __LINE__);
+                func = PyStackRef_FromPyObjectSteal((PyObject *)func_obj);
+            }
+            // _POP_TOP
+            {
+                value = co;
+                stack_pointer[-1] = func;
+                _PyFrame_SetStackPointer(frame, stack_pointer);
+                PyStackRef_XCLOSE(value);
+                stack_pointer = _PyFrame_GetStackPointer(frame);
+            }
             DISPATCH();
         }
 

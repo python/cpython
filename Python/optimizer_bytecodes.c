@@ -1626,6 +1626,11 @@ dummy_func(void) {
         ss = sub_st;
     }
 
+    op(_MAKE_FUNCTION, (codeobj_st -- func, co)) {
+        func = sym_new_type(ctx, &PyFunction_Type);
+        co = codeobj_st;
+    }
+
     op(_RECORD_TOS, (tos -- tos)) {
         sym_set_recorded_value(tos, (PyObject *)this_instr->operand0);
     }
