@@ -3285,10 +3285,17 @@ _PyDict_FromKeys(PyObject *cls, PyObject *iterable, PyObject *value)
     PyObject *d;
     int status;
 
-    d = _PyObject_CallNoArgs(cls);
-    if (d == NULL)
+    if (PyObject_IsSubclass(cls, (PyObject*)&PyFrozenDict_Type)) {
+        // Never call frozendict subclass constructor which would call
+        // arbitrary Python code.
+        d = frozendict_new(_PyType_CAST(cls), NULL, NULL);
+    }
+    else {
+        d = _PyObject_CallNoArgs(cls);
+    }
+    if (d == NULL) {
         return NULL;
-
+    }
 
     if (PyDict_CheckExact(d)) {
         if (PyDict_CheckExact(iterable)) {
@@ -3359,7 +3366,7 @@ _PyDict_FromKeys(PyObject *cls, PyObject *iterable, PyObject *value)
 dict_iter_exit:;
         Py_END_CRITICAL_SECTION();
     }
-    else if (PyFrozenDict_CheckExact(d)) {
+    else if (PyFrozenDict_Check(d)) {
         while ((key = PyIter_Next(it)) != NULL) {
             // anydict_setitem_take2 consumes a reference to key
             status = anydict_setitem_take2((PyDictObject *)d,
@@ -7994,6 +8001,8 @@ frozendict_new(PyTypeObject *type, PyObject *args, PyObject *kwds)
     if (d == NULL) {
         return NULL;
     }
+    assert(Py_REFCNT(d) == 1);
+
     PyFrozenDictObject *self = _PyFrozenDictObject_CAST(d);
     self->ma_hash = -1;
 

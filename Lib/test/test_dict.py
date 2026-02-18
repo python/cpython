@@ -1787,6 +1787,23 @@ class FrozenDictTests(unittest.TestCase):
         with self.assertRaisesRegex(TypeError, "unhashable type: 'list'"):
             hash(fd)
 
+    def test_fromkeys(self):
+        self.assertEqual(frozendict.fromkeys('abc'),
+                         frozendict(a=None, b=None, c=None))
+
+        # frozendict.fromkeys() must not call subclass constructor
+        class FrozenDictSubclass(frozendict):
+            def __new__(self):
+                raise ValueError("must not be called")
+
+        fd = FrozenDictSubclass.fromkeys("abc")
+        self.assertEqual(fd, frozendict(a=None, b=None, c=None))
+        self.assertEqual(type(fd), FrozenDictSubclass)
+
+        fd = FrozenDictSubclass.fromkeys(frozendict(x=1))
+        self.assertEqual(fd, frozendict(x=None))
+        self.assertEqual(type(fd), FrozenDictSubclass)
+
 
 if __name__ == "__main__":
     unittest.main()
