@@ -1643,7 +1643,7 @@ dummy_func(void) {
     op(_GUARD_IP__PUSH_FRAME, (ip/4 --)) {
         stack_pointer = sym_set_stack_depth(this_instr->operand1, stack_pointer);
         // TO DO
-        // Normal function calls to a known functions
+        // Normal function calls to known functions
         // do not need an IP guard.
     }
 
@@ -1663,7 +1663,6 @@ dummy_func(void) {
             REPLACE_OP(this_instr, _NOP, 0, 0);
         }
         stack_pointer = sym_set_stack_depth(this_instr->operand1, stack_pointer);
-        assert(stack_pointer != NULL);
     }
 
     op(_GUARD_IP_RETURN_VALUE, (ip/4 --)) {
@@ -1671,7 +1670,6 @@ dummy_func(void) {
             REPLACE_OP(this_instr, _NOP, 0, 0);
         }
         stack_pointer = sym_set_stack_depth(this_instr->operand1, stack_pointer);
-        assert(stack_pointer != NULL);
     }
 
     op(_GUARD_IP_RETURN_GENERATOR, (ip/4 --)) {
@@ -1679,7 +1677,6 @@ dummy_func(void) {
             REPLACE_OP(this_instr, _NOP, 0, 0);
         }
         stack_pointer = sym_set_stack_depth(this_instr->operand1, stack_pointer);
-        assert(stack_pointer != NULL);
     }
 
 

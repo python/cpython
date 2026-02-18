@@ -4169,7 +4169,6 @@
                 REPLACE_OP(this_instr, _NOP, 0, 0);
             }
             stack_pointer = sym_set_stack_depth(this_instr->operand1, stack_pointer);
-            assert(stack_pointer != NULL);
             break;
         }
 
@@ -4179,7 +4178,6 @@
                 REPLACE_OP(this_instr, _NOP, 0, 0);
             }
             stack_pointer = sym_set_stack_depth(this_instr->operand1, stack_pointer);
-            assert(stack_pointer != NULL);
             break;
         }
 
@@ -4189,7 +4187,6 @@
                 REPLACE_OP(this_instr, _NOP, 0, 0);
             }
             stack_pointer = sym_set_stack_depth(this_instr->operand1, stack_pointer);
-            assert(stack_pointer != NULL);
             break;
         }
 

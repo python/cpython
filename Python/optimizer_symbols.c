@@ -1371,9 +1371,14 @@ _Py_uop_sym_set_stack_depth(JitOptContext *ctx, int stack_depth, JitOptRef *curr
     JitOptRef *new_stack_pointer = frame->stack + stack_depth;
     if (current_sp > new_stack_pointer) {
         ctx->done = true;
-        ctx->contradiction = "inconsistent recorded stack depths";
-         return NULL;
-     }
+        ctx->contradiction = true;
+        return NULL;
+    }
+    if (new_stack_pointer > ctx->stack.end) {
+        ctx->done = true;
+        ctx->out_of_space = true;
+        return NULL;
+    }
     int delta = (int)(new_stack_pointer - current_sp);
     assert(delta >= 0);
     if (delta) {
@@ -1406,15 +1411,18 @@ _Py_uop_abstractcontext_fini(JitOptContext *ctx)
     }
 }
 
+// Leave a bit of space to push values before checking that there is space for a new frame
+#define STACK_HEADROOM 2
+
 void
 _Py_uop_abstractcontext_init(JitOptContext *ctx, _PyBloomFilter *dependencies)
 {
     static_assert(sizeof(JitOptSymbol) <= 3 * sizeof(uint64_t), "JitOptSymbol has grown");
 
     ctx->stack.used = ctx->stack_array;
-    ctx->stack.end = &ctx->stack_array[ABSTRACT_INTERP_STACK_SIZE];
+    ctx->stack.end = &ctx->stack_array[ABSTRACT_INTERP_STACK_SIZE-STACK_HEADROOM];
     ctx->locals.used = ctx->locals_array;
-    ctx->locals.end = &ctx->locals_array[ABSTRACT_INTERP_LOCALS_SIZE];
+    ctx->locals.end = &ctx->locals_array[ABSTRACT_INTERP_LOCALS_SIZE-STACK_HEADROOM];
 #ifdef Py_DEBUG // Aids debugging a little. There should never be NULL in the abstract interpreter.
     for (int i = 0 ; i < ABSTRACT_INTERP_STACK_SIZE; i++) {
         ctx->stack_array[i] = PyJitRef_NULL;
