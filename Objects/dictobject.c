@@ -8016,7 +8016,7 @@ frozendict_new(PyTypeObject *type, PyObject *args, PyObject *kwds)
     if (d == NULL) {
         return NULL;
     }
-    assert(Py_REFCNT(self) == 1);
+    assert(Py_REFCNT(d) == 1);
 
     PyFrozenDictObject *self = _PyFrozenDictObject_CAST(d);
     self->ma_hash = -1;
