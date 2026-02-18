@@ -1787,6 +1787,24 @@ class FrozenDictTests(unittest.TestCase):
         with self.assertRaisesRegex(TypeError, "unhashable type: 'list'"):
             hash(fd)
 
+    def test_fromkeys(self):
+        self.assertEqual(frozendict.fromkeys('abc'),
+                         frozendict(a=None, b=None, c=None))
+
+        # special class which keeps a reference to the created dictionary
+        fd = None
+        class SpecialDict(frozendict):
+            def __new__(self):
+                nonlocal fd
+                fd = frozendict()
+                return fd
+
+        errmsg = "cannot mutate frozendict already exposed in Python"
+        with self.assertRaisesRegex(RuntimeError, errmsg):
+            SpecialDict.fromkeys(frozendict(x=1))
+        with self.assertRaisesRegex(RuntimeError, errmsg):
+            SpecialDict.fromkeys("def")
+
 
 if __name__ == "__main__":
     unittest.main()

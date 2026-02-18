@@ -138,6 +138,7 @@ As a consequence of this, split keys have a maximum size of 16.
 // Forward declarations
 static PyObject* frozendict_new(PyTypeObject *type, PyObject *args,
                                 PyObject *kwds);
+static int frozendict_check_mutable(PyObject *self);
 
 
 /*[clinic input]
@@ -3317,6 +3318,11 @@ _PyDict_FromKeys(PyObject *cls, PyObject *iterable, PyObject *value)
         }
     }
     else if (PyFrozenDict_CheckExact(d)) {
+        // Check if the class constructor kept a reference to the frozendict
+        if (frozendict_check_mutable(d) < 0) {
+            return NULL;
+        }
+
         if (PyDict_CheckExact(iterable)) {
             PyDictObject *mp = (PyDictObject *)d;
 
@@ -3360,6 +3366,11 @@ dict_iter_exit:;
         Py_END_CRITICAL_SECTION();
     }
     else if (PyFrozenDict_CheckExact(d)) {
+        // Check if the class constructor kept a reference to the frozendict
+        if (frozendict_check_mutable(d) < 0) {
+            goto Fail;
+        }
+
         while ((key = PyIter_Next(it)) != NULL) {
             // anydict_setitem_take2 consumes a reference to key
             status = anydict_setitem_take2((PyDictObject *)d,
@@ -7889,6 +7900,17 @@ _PyObject_InlineValuesConsistencyCheck(PyObject *obj)
 
 // --- frozendict implementation ---------------------------------------------
 
+static int
+frozendict_check_mutable(PyObject *self)
+{
+    if (Py_REFCNT(self) > 1) {
+        PyErr_SetString(PyExc_RuntimeError,
+                        "cannot mutate frozendict already exposed in Python");
+        return -1;
+    }
+    return 0;
+}
+
 static PyNumberMethods frozendict_as_number = {
     .nb_or = frozendict_or,
 };
@@ -7994,6 +8016,8 @@ frozendict_new(PyTypeObject *type, PyObject *args, PyObject *kwds)
     if (d == NULL) {
         return NULL;
     }
+    assert(Py_REFCNT(self) == 1);
+
     PyFrozenDictObject *self = _PyFrozenDictObject_CAST(d);
     self->ma_hash = -1;
 
