@@ -252,6 +252,9 @@ class MyList(list):
 class MyDict(dict):
     sample = {"a": 1, "b": 2}
 
+class MyFrozenDict(dict):
+    sample = frozendict({"a": 1, "b": 2})
+
 class MySet(set):
     sample = {"a", "b"}
 
@@ -261,7 +264,7 @@ class MyFrozenSet(frozenset):
 myclasses = [MyInt, MyLong, MyFloat,
              MyComplex,
              MyStr, MyUnicode,
-             MyTuple, MyList, MyDict, MySet, MyFrozenSet]
+             MyTuple, MyList, MyDict, MyFrozenDict, MySet, MyFrozenSet]
 
 # For test_newobj_overridden_new
 class MyIntWithNew(int):

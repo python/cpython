@@ -2839,11 +2839,13 @@ class AbstractPickleTests:
             self.assertEqual(list(x[0].attr.keys()), [1])
             self.assertIs(x[0].attr[1], x)
 
-    def _test_recursive_collection_and_inst(self, factory, oldminproto=None):
+    def _test_recursive_collection_and_inst(self, factory, oldminproto=None,
+                                            minprotocol=0):
         if self.py_version < (3, 0):
             self.skipTest('"classic" classes are not interoperable with Python 2')
         # Mutable object containing a collection containing the original
         # object.
+        protocols = range(minprotocol, pickle.HIGHEST_PROTOCOL + 1)
         o = Object()
         o.attr = factory([o])
         t = type(o.attr)
@@ -2882,6 +2884,9 @@ class AbstractPickleTests:
 
     def test_recursive_dict_and_inst(self):
         self._test_recursive_collection_and_inst(dict.fromkeys, oldminproto=0)
+
+    def test_recursive_frozendict_and_inst(self):
+        self._test_recursive_collection_and_inst(frozendict.fromkeys, minprotocol=2)
 
     def test_recursive_set_and_inst(self):
         self._test_recursive_collection_and_inst(set)
