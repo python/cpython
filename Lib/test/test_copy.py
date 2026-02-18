@@ -133,6 +133,12 @@ class TestCopy(unittest.TestCase):
         self.assertEqual(y, x)
         self.assertIsNot(y, x)
 
+    def test_copy_frozendict(self):
+        x = frozendict(x=1, y=2)
+        self.assertIs(copy.copy(x), x)
+        x = frozendict()
+        self.assertIs(copy.copy(x), x)
+
     def test_copy_set(self):
         x = {1, 2, 3}
         y = copy.copy(x)
@@ -414,6 +420,13 @@ class TestCopy(unittest.TestCase):
 
     def test_deepcopy_dict(self):
         x = {"foo": [1, 2], "bar": 3}
+        y = copy.deepcopy(x)
+        self.assertEqual(y, x)
+        self.assertIsNot(x, y)
+        self.assertIsNot(x["foo"], y["foo"])
+
+    def test_deepcopy_frozendict(self):
+        x = frozendict({"foo": [1, 2], "bar": 3})
         y = copy.deepcopy(x)
         self.assertEqual(y, x)
         self.assertIsNot(x, y)
