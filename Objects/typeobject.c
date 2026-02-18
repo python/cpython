@@ -10925,15 +10925,19 @@ static PyObject *
 slot_tp_descr_get(PyObject *self, PyObject *obj, PyObject *type)
 {
     PyTypeObject *tp = Py_TYPE(self);
-    PyObject *get;
+    PyThreadState *tstate = _PyThreadState_GET();
+    _PyCStackRef cref;
+    _PyThreadState_PushCStackRef(tstate, &cref);
 
-    get = _PyType_LookupRef(tp, &_Py_ID(__get__));
+    _PyType_LookupStackRefAndVersion(tp, &_Py_ID(__get__), &cref.ref);
+    PyObject *get = PyStackRef_AsPyObjectBorrow(cref.ref);
     if (get == NULL) {
 #ifndef Py_GIL_DISABLED
         /* Avoid further slowdowns */
         if (tp->tp_descr_get == slot_tp_descr_get)
             tp->tp_descr_get = NULL;
 #endif
+        _PyThreadState_PopCStackRef(tstate, &cref);
         return Py_NewRef(self);
     }
     if (obj == NULL)
@@ -10942,7 +10946,7 @@ slot_tp_descr_get(PyObject *self, PyObject *obj, PyObject *type)
         type = Py_None;
     PyObject *stack[3] = {self, obj, type};
     PyObject *res = PyObject_Vectorcall(get, stack, 3, NULL);
-    Py_DECREF(get);
+    _PyThreadState_PopCStackRef(tstate, &cref);
     return res;
 }
 

@@ -1052,6 +1052,26 @@ sys__is_immortal_impl(PyObject *module, PyObject *op)
     return PyUnstable_IsImmortal(op);
 }
 
+/*[clinic input]
+sys._enable_deferred_refcount -> bool
+
+  op: object
+  /
+
+Enable deferred reference counting on the object.
+
+Return True if deferred reference counting was successfully enabled, and
+False otherwise. This is primarily useful for avoiding reference count
+contention on objects that are shared between multiple threads.
+[clinic start generated code]*/
+
+static int
+sys__enable_deferred_refcount_impl(PyObject *module, PyObject *op)
+/*[clinic end generated code: output=d19c0f74be9da2a8 input=92d197248dcfb1f7]*/
+{
+    return PyUnstable_Object_EnableDeferredRefcount(op);
+}
+
 /*
  * Cached interned string objects used for calling the profile and
  * trace functions.
@@ -2942,6 +2962,7 @@ static PyMethodDef sys_methods[] = {
     SYS_GETWINDOWSVERSION_METHODDEF
     SYS__ENABLELEGACYWINDOWSFSENCODING_METHODDEF
     SYS__IS_IMMORTAL_METHODDEF
+    SYS__ENABLE_DEFERRED_REFCOUNT_METHODDEF
     SYS_INTERN_METHODDEF
     SYS__IS_INTERNED_METHODDEF
     SYS_IS_FINALIZING_METHODDEF

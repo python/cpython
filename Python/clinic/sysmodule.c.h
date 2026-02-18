@@ -404,6 +404,38 @@ exit:
     return return_value;
 }
 
+PyDoc_STRVAR(sys__enable_deferred_refcount__doc__,
+"_enable_deferred_refcount($module, op, /)\n"
+"--\n"
+"\n"
+"Enable deferred reference counting on the object.\n"
+"\n"
+"Return True if deferred reference counting was successfully enabled, and\n"
+"False otherwise. This is primarily useful for avoiding reference count\n"
+"contention on objects that are shared between multiple threads.");
+
+#define SYS__ENABLE_DEFERRED_REFCOUNT_METHODDEF    \
+    {"_enable_deferred_refcount", (PyCFunction)sys__enable_deferred_refcount, METH_O, sys__enable_deferred_refcount__doc__},
+
+static int
+sys__enable_deferred_refcount_impl(PyObject *module, PyObject *op);
+
+static PyObject *
+sys__enable_deferred_refcount(PyObject *module, PyObject *op)
+{
+    PyObject *return_value = NULL;
+    int _return_value;
+
+    _return_value = sys__enable_deferred_refcount_impl(module, op);
+    if ((_return_value == -1) && PyErr_Occurred()) {
+        goto exit;
+    }
+    return_value = PyBool_FromLong((long)_return_value);
+
+exit:
+    return return_value;
+}
+
 PyDoc_STRVAR(sys_settrace__doc__,
 "settrace($module, function, /)\n"
 "--\n"
@@ -2121,4 +2153,4 @@ exit:
 #ifndef SYS_GETANDROIDAPILEVEL_METHODDEF
     #define SYS_GETANDROIDAPILEVEL_METHODDEF
 #endif /* !defined(SYS_GETANDROIDAPILEVEL_METHODDEF) */
-/*[clinic end generated code: output=adbadb629b98eabf input=a9049054013a1b77]*/
+/*[clinic end generated code: output=08032972fc990952 input=a9049054013a1b77]*/
