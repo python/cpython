@@ -265,9 +265,17 @@ The constructors :func:`int`, :func:`float`, and
    pair: operator; % (percent)
    pair: operator; **
 
+.. _stdtypes-mixed-arithmetic:
+
 Python fully supports mixed arithmetic: when a binary arithmetic operator has
-operands of different numeric types, the operand with the "narrower" type is
-widened to that of the other, where integer is narrower than floating point.
+operands of different built-in numeric types, the operand with the "narrower"
+type is widened to that of the other:
+
+* If both arguments are complex numbers, no conversion is performed;
+* if either argument is a complex or a floating-point number, the other is
+  converted to a floating-point number;
+* otherwise, both must be integers and no conversion is necessary.
+
 Arithmetic with complex and real operands is defined by the usual mathematical
 formula, for example::
 
@@ -5305,8 +5313,8 @@ frozenset, a temporary one is created from *elem*.
 
 .. _typesmapping:
 
-Mapping Types --- :class:`dict`
-===============================
+Mapping types --- :class:`!dict`, :class:`!frozendict`
+======================================================
 
 .. index::
    pair: object; mapping
@@ -5317,8 +5325,9 @@ Mapping Types --- :class:`dict`
    pair: built-in function; len
 
 A :term:`mapping` object maps :term:`hashable` values to arbitrary objects.
-Mappings are mutable objects.  There is currently only one standard mapping
-type, the :dfn:`dictionary`.  (For other containers see the built-in
+There are currently two standard mapping types, the :dfn:`dictionary` and
+:class:`frozendict`.
+(For other containers see the built-in
 :class:`list`, :class:`set`, and :class:`tuple` classes, and the
 :mod:`collections` module.)
 
@@ -5588,10 +5597,9 @@ can be used interchangeably to index the same dictionary entry.
       Dictionaries are now reversible.
 
 
-.. seealso::
-   :class:`types.MappingProxyType` can be used to create a read-only view
-   of a :class:`dict`.
-
+   .. seealso::
+      :class:`frozendict` and :class:`types.MappingProxyType` can be used to
+      create a read-only view of a :class:`dict`.
 
 .. _thread-safety-dict:
 
@@ -5839,6 +5847,41 @@ An example of dictionary view usage::
    500
 
 
+Frozen dictionaries
+-------------------
+
+.. class:: frozendict(**kwargs)
+           frozendict(mapping, /, **kwargs)
+           frozendict(iterable, /, **kwargs)
+
+   Return a new frozen dictionary initialized from an optional positional
+   argument and a possibly empty set of keyword arguments.
+
+   A :class:`!frozendict` has a similar API to the :class:`dict` API, with the
+   following differences:
+
+   * :class:`!dict` has more methods than :class:`!frozendict`:
+
+      * :meth:`!__delitem__`
+      * :meth:`!__setitem__`
+      * :meth:`~dict.clear`
+      * :meth:`~dict.pop`
+      * :meth:`~dict.popitem`
+      * :meth:`~dict.setdefault`
+      * :meth:`~dict.update`
+
+   * A :class:`!frozendict` can be hashed with ``hash(frozendict)`` if all keys and
+     values can be hashed.
+
+   * ``frozendict |= other`` does not modify the :class:`!frozendict` in-place but
+     creates a new frozen dictionary.
+
+   :class:`!frozendict` is not a :class:`!dict` subclass but inherits directly
+   from ``object``.
+
+   .. versionadded:: next
+
+
 .. _typecontextmanager:
 
 Context Manager Types
@@ -6062,6 +6105,7 @@ list is non-exhaustive.
 * :class:`list`
 * :class:`dict`
 * :class:`set`
+* :class:`frozendict`
 * :class:`frozenset`
 * :class:`type`
 * :class:`asyncio.Future`
