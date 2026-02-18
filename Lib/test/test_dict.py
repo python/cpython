@@ -1767,6 +1767,9 @@ class FrozenDictTests(unittest.TestCase):
         self.assertEqual(copy, frozendict({'x': 1}))
 
     def test_repr(self):
+        d = frozendict()
+        self.assertEqual(repr(d), "frozendict()")
+
         d = frozendict(x=1, y=2)
         self.assertEqual(repr(d), "frozendict({'x': 1, 'y': 2})")
 
@@ -1774,6 +1777,53 @@ class FrozenDictTests(unittest.TestCase):
             pass
         d = MyFrozenDict(x=1, y=2)
         self.assertEqual(repr(d), "MyFrozenDict({'x': 1, 'y': 2})")
+
+    def test_hash(self):
+        # hash() doesn't rely on the items order
+        self.assertEqual(hash(frozendict(x=1, y=2)),
+                         hash(frozendict(y=2, x=1)))
+
+        fd = frozendict(x=[1], y=[2])
+        with self.assertRaisesRegex(TypeError, "unhashable type: 'list'"):
+            hash(fd)
+
+    def test_fromkeys(self):
+        self.assertEqual(frozendict.fromkeys('abc'),
+                         frozendict(a=None, b=None, c=None))
+
+        # Subclass which overrides the constructor
+        created = frozendict(x=1)
+        class FrozenDictSubclass(frozendict):
+            def __new__(self):
+                return created
+
+        fd = FrozenDictSubclass.fromkeys("abc")
+        self.assertEqual(fd, frozendict(x=1, a=None, b=None, c=None))
+        self.assertEqual(type(fd), FrozenDictSubclass)
+        self.assertEqual(created, frozendict(x=1))
+
+        fd = FrozenDictSubclass.fromkeys(frozendict(y=2))
+        self.assertEqual(fd, frozendict(x=1, y=None))
+        self.assertEqual(type(fd), FrozenDictSubclass)
+        self.assertEqual(created, frozendict(x=1))
+
+        # Subclass which doesn't override the constructor
+        class FrozenDictSubclass2(frozendict):
+            pass
+
+        fd = FrozenDictSubclass2.fromkeys("abc")
+        self.assertEqual(fd, frozendict(a=None, b=None, c=None))
+        self.assertEqual(type(fd), FrozenDictSubclass2)
+
+        # Dict subclass which overrides the constructor
+        class DictSubclass(dict):
+            def __new__(self):
+                return created
+
+        fd = DictSubclass.fromkeys("abc")
+        self.assertEqual(fd, frozendict(x=1, a=None, b=None, c=None))
+        self.assertEqual(type(fd), DictSubclass)
+        self.assertEqual(created, frozendict(x=1))
 
 
 if __name__ == "__main__":
