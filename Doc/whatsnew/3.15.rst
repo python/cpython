@@ -1204,6 +1204,11 @@ Optimizations
   (Contributed by Chris Eibl, Ken Jin, and Brandt Bucher in :gh:`143068`.
   Special thanks to the MSVC team including Hulon Jenkins.)
 
+* ``mimalloc`` is now used as the default allocator for
+  for raw memory allocations such as via :c:func:`PyMem_RawMalloc`
+  for better performance on :term:`free-threaded builds <free-threaded build>`.
+  (Contributed by Kumar Aditya in :gh:`144914`.)
+
 
 base64 & binascii
 -----------------
