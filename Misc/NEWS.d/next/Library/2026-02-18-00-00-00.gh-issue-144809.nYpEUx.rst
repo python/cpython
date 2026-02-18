@@ -1,0 +1,1 @@
+Make :class:`collections.deque` copy atomic in the free-threaded build.

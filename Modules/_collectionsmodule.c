@@ -1983,6 +1983,22 @@ dequeiter_next(PyObject *op)
     // It's safe to access it->deque without holding the per-object lock for it
     // here; it->deque is only assigned during construction of it.
     dequeobject *deque = it->deque;
+
+#ifdef Py_GIL_DISABLED
+    // gh-144809: When called from deque_copy(), the deque is already
+    // locked. The two-object critical section below would unlock and
+    // re-lock the deque between calls, allowing another thread to modify
+    // it mid-iteration. The one-object critical section avoids this
+    // because it keeps the deque locked across calls when it's already
+    // held, due to a fast-path optimization.
+    if (_PyObject_IsUniquelyReferenced(it)) {
+        Py_BEGIN_CRITICAL_SECTION(deque);
+        result = dequeiter_next_lock_held(it, deque);
+        Py_END_CRITICAL_SECTION();
+        return result;
+    }
+#endif
+
     Py_BEGIN_CRITICAL_SECTION2(it, deque);
     result = dequeiter_next_lock_held(it, deque);
     Py_END_CRITICAL_SECTION2();
