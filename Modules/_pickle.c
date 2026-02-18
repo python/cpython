@@ -3671,11 +3671,12 @@ save_frozendict(PickleState *state, PicklerObject *self, PyObject *obj)
        stack, and fetch the object back from the memo. */
     if (PyMemoTable_Get(self->memo, obj)) {
         const char pop_mark_op = POP_MARK;
-
-        if (_Pickler_Write(self, &pop_mark_op, 1) < 0)
+        if (_Pickler_Write(self, &pop_mark_op, 1) < 0) {
             return -1;
-        if (memo_get(state, self, obj) < 0)
+        }
+        if (memo_get(state, self, obj) < 0) {
             return -1;
+        }
         return 0;
     }
 
