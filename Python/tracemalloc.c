@@ -891,8 +891,8 @@ _PyTraceMalloc_Stop(void)
     TABLES_UNLOCK();
 
     // Call it after TABLES_UNLOCK() since it calls _PyEval_StopTheWorldAll()
-    // which would lead to a deadlock with TABLES_LOCK() which doesn't release
-    // the GIL.
+    // which would lead to a deadlock with TABLES_LOCK() which doesn't detaches 
+    // the thread state.
     (void)PyRefTracer_SetTracer(NULL, NULL);
 }
 
