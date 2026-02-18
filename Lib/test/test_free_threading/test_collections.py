@@ -13,12 +13,10 @@ class TestDeque(unittest.TestCase):
         d = deque(range(100))
 
         def mutate():
-            i = 0
-            for _ in range(1000):
+            for i in range(1000):
                 d.append(i)
                 if len(d) > 200:
                     d.popleft()
-                i += 1
 
         def copy_loop():
             for _ in range(1000):
