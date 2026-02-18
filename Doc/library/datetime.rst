@@ -1556,10 +1556,6 @@ Instance methods:
       The :meth:`timestamp` method uses the :attr:`.fold` attribute to
       disambiguate the times during a repeated interval.
 
-   .. versionchanged:: 3.6
-      This method no longer relies on the platform C :c:func:`mktime`
-      function to perform conversions.
-
 
 .. method:: datetime.weekday()
 
