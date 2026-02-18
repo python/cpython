@@ -3100,6 +3100,15 @@ class AbstractPickleTests:
         # make sure that floats are formatted locale independent with proto 0
         self.assertEqual(self.dumps(1.2, 0)[0:3], b'F1.')
 
+    def test_frozendict(self):
+        for proto in range(2, pickle.HIGHEST_PROTOCOL + 1):
+            for fd in (
+                frozendict(),
+                frozendict(x=1, y=2),
+            ):
+                p = self.dumps(fd, proto)
+                self.assert_is_copy(fd, self.loads(p))
+
     def test_reduce(self):
         for proto in protocols:
             with self.subTest(proto=proto):
