@@ -764,11 +764,11 @@ def makeunicodename(unicode, trace):
 
         fprint('static const derived_name_range derived_name_ranges[] = {')
         for name_range in unicode.derived_name_ranges:
-            fprint('    {0x%s, 0x%s, %d},' % name_range)
+            fprint('    {0x%s, 0x%s, %d},' % tuple(name_range))
         fprint('};')
 
         fprint('static const char * const derived_name_prefixes[] = {')
-        for _, prefix in derived_name_range_names:
+        for prefix in unicode.derived_name_prefixes:
             fprint('    "%s",' % prefix)
         fprint('};')
 
@@ -997,6 +997,10 @@ class UnicodeData:
             table[char] = from_row(s)
 
         self.derived_name_ranges = []
+        self.derived_name_prefixes = {
+            prefix: i
+            for i, (_, prefix) in enumerate(derived_name_range_names)
+        }
 
         # expand first-last ranges
         field = None
@@ -1017,8 +1021,24 @@ class UnicodeData:
                             break
                     s.name = ""
                     field = None
+                else:
+                    codepoint = s.codepoint
+                    if s.name.endswith(codepoint):
+                        prefix = s.name[:-len(codepoint)]
+                        j = self.derived_name_prefixes.get(prefix)
+                        if j is None:
+                            j = len(self.derived_name_prefixes)
+                            self.derived_name_prefixes[prefix] = j
+                        if (self.derived_name_ranges
+                                and self.derived_name_ranges[-1][2] == j
+                                and int(self.derived_name_ranges[-1][1], 16) == i - 1):
+                            self.derived_name_ranges[-1][1] = codepoint
+                        else:
+                            self.derived_name_ranges.append(
+                                [codepoint, codepoint, j])
+                        s.name = ""
             elif field:
-                table[i] = from_row(('%X' % i,) + field[1:])
+                table[i] = from_row(('%04X' % i,) + field[1:])
 
         # public attributes
         self.filename = UNICODE_DATA % ''
