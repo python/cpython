@@ -4,8 +4,6 @@
 .. module:: tkinter
    :synopsis: Interface to Tcl/Tk for graphical user interfaces
 
-.. moduleauthor:: Guido van Rossum <guido@Python.org>
-
 **Source code:** :source:`Lib/tkinter/__init__.py`
 
 --------------

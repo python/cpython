@@ -4,8 +4,6 @@
 .. module:: readline
    :synopsis: GNU readline support for Python.
 
-.. sectionauthor:: Skip Montanaro <skip.montanaro@gmail.com>
-
 --------------
 
 The :mod:`!readline` module defines a number of functions to facilitate
