@@ -2,7 +2,6 @@
 ======================================================
 
 .. module:: tkinter.colorchooser
-   :platform: Tk
    :synopsis: Color choosing dialog
 
 **Source code:** :source:`Lib/tkinter/colorchooser.py`
