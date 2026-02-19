@@ -2757,8 +2757,14 @@ class ArgumentParser(_AttributeHolder, _ActionsContainer):
             choices = iter(choices)
 
         if value not in choices:
+            def _format_choice(choice):
+                # For enum members, use repr of the value, not the enum itself
+                if hasattr(choice, 'value'):
+                    return repr(choice.value)
+                return repr(choice)
+
             args = {'value': str(value),
-                    'choices': ', '.join(map(str, action.choices))}
+                    'choices': ', '.join(map(_format_choice, action.choices))}
             msg = _('invalid choice: %(value)r (choose from %(choices)s)')
 
             if self.suggest_on_error and isinstance(value, str):
