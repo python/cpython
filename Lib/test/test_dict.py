@@ -1731,6 +1731,12 @@ class FrozenDict(frozendict):
     pass
 
 
+class FrozenDictSlots(frozendict):
+    __slots__ = ('attr',)
+    def __init__(self, *args, **kwargs):
+        self.attr = 123
+
+
 class FrozenDictTests(unittest.TestCase):
     def test_copy(self):
         d = frozendict(x=1, y=2)
@@ -1773,10 +1779,8 @@ class FrozenDictTests(unittest.TestCase):
         d = frozendict(x=1, y=2)
         self.assertEqual(repr(d), "frozendict({'x': 1, 'y': 2})")
 
-        class MyFrozenDict(frozendict):
-            pass
-        d = MyFrozenDict(x=1, y=2)
-        self.assertEqual(repr(d), "MyFrozenDict({'x': 1, 'y': 2})")
+        d = FrozenDict(x=1, y=2)
+        self.assertEqual(repr(d), "FrozenDict({'x': 1, 'y': 2})")
 
     def test_hash(self):
         # hash() doesn't rely on the items order
@@ -1826,13 +1830,23 @@ class FrozenDictTests(unittest.TestCase):
         self.assertEqual(created, frozendict(x=1))
 
     def test_pickle(self):
-        for proto in range(2, pickle.HIGHEST_PROTOCOL + 1):
+        for proto in range(pickle.HIGHEST_PROTOCOL + 1):
             for fd in (
                 frozendict(),
                 frozendict(x=1, y=2),
+                FrozenDict(x=1, y=2),
+                FrozenDictSlots(x=1, y=2),
             ):
-                p = pickle.dumps(fd, proto)
-                self.assertEqual(fd, pickle.loads(p))
+                with self.subTest(fd=fd, proto=proto):
+                    if proto >= 2:
+                        p = pickle.dumps(fd, proto)
+                        fd2 = pickle.loads(p)
+                        self.assertEqual(fd2, fd)
+                        self.assertEqual(type(fd2), type(fd))
+                    else:
+                        # protocol 0 and 1 don't support frozendict
+                        with self.assertRaises(TypeError):
+                            pickle.dumps(fd, proto)
 
 
 if __name__ == "__main__":
