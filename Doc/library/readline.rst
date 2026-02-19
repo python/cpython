@@ -2,7 +2,6 @@
 ===========================================
 
 .. module:: readline
-   :platform: Unix
    :synopsis: GNU readline support for Python.
 
 .. sectionauthor:: Skip Montanaro <skip.montanaro@gmail.com>

@@ -161,7 +161,6 @@ The individual submodules are described in the following sections.
 ----------------------------------------------
 
 .. module:: dbm.sqlite3
-   :platform: All
    :synopsis: SQLite backend for dbm
 
 .. versionadded:: 3.13
@@ -224,7 +223,6 @@ or any other SQLite browser, including the SQLite CLI.
 ----------------------------------------
 
 .. module:: dbm.gnu
-   :platform: Unix
    :synopsis: GNU database manager
 
 **Source code:** :source:`Lib/dbm/gnu.py`
@@ -347,7 +345,6 @@ functionality like crash tolerance.
 -----------------------------------------
 
 .. module:: dbm.ndbm
-   :platform: Unix
    :synopsis: The New Database Manager
 
 **Source code:** :source:`Lib/dbm/ndbm.py`

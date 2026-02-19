@@ -2,7 +2,6 @@
 ========================================================
 
 .. module:: winsound
-   :platform: Windows
    :synopsis: Access to the sound-playing machinery for Windows.
 
 .. moduleauthor:: Toby Dickenson <htrd90@zepler.org>
