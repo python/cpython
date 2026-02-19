@@ -432,6 +432,14 @@ class TestCopy(unittest.TestCase):
         self.assertIsNot(x, y)
         self.assertIsNot(x["foo"], y["foo"])
 
+        # recursive frozendict
+        x = frozendict(foo=[])
+        x['foo'].append(x)
+        y = copy.deepcopy(x)
+        self.assertEqual(y.keys(), x.keys())
+        self.assertIsNot(x, y)
+        self.assertIsNot(x["foo"], y["foo"])
+
     @support.skip_emscripten_stack_overflow()
     @support.skip_wasi_stack_overflow()
     def test_deepcopy_reflexive_dict(self):
