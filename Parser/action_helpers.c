@@ -1724,7 +1724,7 @@ _build_concatenated_unicode(Parser *p, asdl_expr_seq *strings, int lineno,
     if (final == NULL) {
         return NULL;
     }
-    if (_PyArena_AddPyObject(arena, final) < 0) {
+    if (_PyArena_AddPyObject(p->arena, final) < 0) {
         Py_DECREF(final);
         return NULL;
     }
@@ -1895,7 +1895,7 @@ _build_concatenated_joined_str(Parser *p, asdl_expr_seq *strings,
 {
     asdl_expr_seq *values = _build_concatenated_str(p, strings, lineno,
         col_offset, end_lineno, end_col_offset, arena);
-    return _PyAST_JoinedStr(values, lineno, col_offset, end_lineno, end_col_offset, arena);
+    return _PyAST_JoinedStr(values, lineno, col_offset, end_lineno, end_col_offset, p->arena);
 }
 
 expr_ty
