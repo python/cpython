@@ -191,7 +191,8 @@ raise :exc:`SyntaxError`).
 A new :term:`immutable` type, :class:`frozendict`, is added to the :mod:`builtins` module.
 It does not allow modification after creation. A ``frozendict`` is not a subclass of ``dict``;
 it inherits directly from ``object``. A ``frozendict`` is :term:`hashable`
-as long as all of its keys and values are hashable.
+as long as all of its keys and values are hashable. A ``frozendict`` preserves
+insertion order, but comparison does not take order into account.
 
 For example::
 
