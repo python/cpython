@@ -15,7 +15,6 @@ import sys
 import textwrap
 import unittest
 import warnings
-import platform
 
 from array import array
 
