@@ -2,7 +2,6 @@
 ===============================================
 
 .. module:: resource
-   :platform: Unix
    :synopsis: An interface to provide resource usage information on the current process.
 
 .. moduleauthor:: Jeremy Hylton <jeremy@alum.mit.edu>

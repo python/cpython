@@ -4,7 +4,6 @@
 .. module:: curses
    :synopsis: An interface to the curses library, providing portable
               terminal handling.
-   :platform: Unix
 
 .. sectionauthor:: Moshe Zadka <moshez@zadka.site.co.il>
 .. sectionauthor:: Eric Raymond <esr@thyrsus.com>
@@ -24,6 +23,8 @@ Linux and the BSD variants of Unix.
 .. include:: ../includes/wasm-mobile-notavail.rst
 
 .. include:: ../includes/optional-module.rst
+
+.. availability:: Unix.
 
 .. note::
 

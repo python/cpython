@@ -2,7 +2,6 @@
 ==========================================================
 
 .. module:: fcntl
-   :platform: Unix
    :synopsis: The fcntl() and ioctl() system calls.
 
 .. sectionauthor:: Jaap Vermeulen
