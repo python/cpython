@@ -3101,6 +3101,25 @@ cmp_rec(const char *p, const char *q,
     return 1;
 }
 
+static int
+is_float_format(const char *format)
+{
+    if (format == NULL) {
+        return 0;
+    }
+    if (strcmp("d", format) == 0) {
+        return 1;
+    }
+    if (strcmp("f", format) == 0) {
+        return 1;
+    }
+    if (strcmp("e", format) == 0) {
+        return 1;
+    }
+    return 0;
+}
+
+
 static PyObject *
 memory_richcompare(PyObject *v, PyObject *w, int op)
 {
@@ -3121,6 +3140,14 @@ memory_richcompare(PyObject *v, PyObject *w, int op)
         goto result;
     }
     vv = VIEW_ADDR(v);
+
+    // A memoryview is equal to itself: there is no need to compare individual
+    // values. This is not true for float values since they can be NaN, and NaN
+    // is not equal to itself.
+    if (v == w && !is_float_format(vv->format)) {
+        equal = 1;
+        goto result;
+    }
 
     if (PyMemoryView_Check(w)) {
         if (BASE_INACCESSIBLE(w)) {

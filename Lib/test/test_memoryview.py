@@ -575,6 +575,27 @@ class ArrayMemoryviewTest(unittest.TestCase,
         m[:] = new_a
         self.assertEqual(a, new_a)
 
+    def test_compare_equal(self):
+        # A memoryview is equal to itself: there is no need to compare
+        # individual values. This is not true for float values since they can
+        # be NaN, and NaN is not equal to itself.
+        for int_format in 'bBhHiIlLqQ':
+            with self.subTest(format=int_format):
+                a = array.array(int_format, [1, 2, 3])
+                m = memoryview(a)
+                self.assertTrue(m == m)
+
+        for float_format in 'fd':
+            with self.subTest(format=int_format):
+                a = array.array(float_format, [1.0, 2.0, float('nan')])
+                m = memoryview(a)
+                # nan is not equal to nan
+                self.assertFalse(m == m)
+
+                a = array.array(float_format, [1.0, 2.0, 3.0])
+                m = memoryview(a)
+                self.assertTrue(m == m)
+
 
 class BytesMemorySliceTest(unittest.TestCase,
     BaseMemorySliceTests, BaseBytesMemoryTests):
