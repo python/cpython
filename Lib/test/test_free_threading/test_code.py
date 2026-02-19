@@ -32,6 +32,8 @@ if ctypes is not None:
     )
     GetExtra.restype = ctypes.c_int
 
+# Note: each call to RequestCodeExtraIndex permanently allocates a slot
+# (the counter is monotonically increasing), up to MAX_CO_EXTRA_USERS (255).
 NTHREADS = 20
 
 
@@ -86,11 +88,13 @@ class TestCode(TestCase):
             self.assertGreaterEqual(idx, 0)
 
             for i in range(LOOP):
-                SetExtra(code, idx, ctypes.c_voidp(i + 1))
+                ret = SetExtra(code, idx, ctypes.c_voidp(i + 1))
+                self.assertEqual(ret, 0)
 
             for _ in range(LOOP):
                 extra = ctypes.c_voidp()
-                GetExtra(code, idx, extra)
+                ret = GetExtra(code, idx, extra)
+                self.assertEqual(ret, 0)
                 # The slot was set by this thread, so the value must
                 # be the last one written.
                 self.assertEqual(extra.value, LOOP)
@@ -112,11 +116,13 @@ class TestCode(TestCase):
 
         def worker():
             for i in range(LOOP):
-                SetExtra(code, idx, ctypes.c_voidp(i + 1))
+                ret = SetExtra(code, idx, ctypes.c_voidp(i + 1))
+                self.assertEqual(ret, 0)
 
             for _ in range(LOOP):
                 extra = ctypes.c_voidp()
-                GetExtra(code, idx, extra)
+                ret = GetExtra(code, idx, extra)
+                self.assertEqual(ret, 0)
                 # Value is set by any writer thread.
                 self.assertTrue(1 <= extra.value <= LOOP)
 
@@ -124,7 +130,8 @@ class TestCode(TestCase):
 
         # Every thread's last write is LOOP, so the final value must be LOOP.
         extra = ctypes.c_voidp()
-        GetExtra(code, idx, extra)
+        ret = GetExtra(code, idx, extra)
+        self.assertEqual(ret, 0)
         self.assertEqual(extra.value, LOOP)
 
 
