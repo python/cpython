@@ -1916,9 +1916,6 @@ pointer and a void pointer argument.
 Profiling and Tracing
 =====================
 
-.. sectionauthor:: Fred L. Drake, Jr. <fdrake@acm.org>
-
-
 The Python interpreter provides some low-level support for attaching profiling
 and execution tracing facilities.  These are used for profiling, debugging, and
 coverage analysis tools.
@@ -2148,9 +2145,6 @@ Reference tracing
 Advanced Debugger Support
 =========================
 
-.. sectionauthor:: Fred L. Drake, Jr. <fdrake@acm.org>
-
-
 These functions are only intended to be used by advanced debugging tools.
 
 
@@ -2186,8 +2180,6 @@ These functions are only intended to be used by advanced debugging tools.
 
 Thread Local Storage Support
 ============================
-
-.. sectionauthor:: Masayuki Yamamoto <ma3yuki.8mamo10@gmail.com>
 
 The Python interpreter provides low-level support for thread-local storage
 (TLS) which wraps the underlying native TLS implementation to support the

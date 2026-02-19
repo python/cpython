@@ -4,9 +4,6 @@
 .. module:: dataclasses
     :synopsis: Generate special methods on user-defined classes.
 
-.. moduleauthor:: Eric V. Smith <eric@trueblade.com>
-.. sectionauthor:: Eric V. Smith <eric@trueblade.com>
-
 **Source code:** :source:`Lib/dataclasses.py`
 
 --------------

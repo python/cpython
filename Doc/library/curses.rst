@@ -5,9 +5,6 @@
    :synopsis: An interface to the curses library, providing portable
               terminal handling.
 
-.. sectionauthor:: Moshe Zadka <moshez@zadka.site.co.il>
-.. sectionauthor:: Eric Raymond <esr@thyrsus.com>
-
 **Source code:** :source:`Lib/curses`
 
 --------------
@@ -1830,9 +1827,6 @@ The following table lists the predefined colors:
 
 .. module:: curses.textpad
    :synopsis: Emacs-like input editing in a curses window.
-.. moduleauthor:: Eric Raymond <esr@thyrsus.com>
-.. sectionauthor:: Eric Raymond <esr@thyrsus.com>
-
 
 The :mod:`!curses.textpad` module provides a :class:`Textbox` class that handles
 elementary text editing in a curses window, supporting a set of keybindings

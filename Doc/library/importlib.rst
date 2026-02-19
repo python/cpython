@@ -4,9 +4,6 @@
 .. module:: importlib
    :synopsis: The implementation of the import machinery.
 
-.. moduleauthor:: Brett Cannon <brett@python.org>
-.. sectionauthor:: Brett Cannon <brett@python.org>
-
 .. versionadded:: 3.1
 
 **Source code:** :source:`Lib/importlib/__init__.py`
