@@ -1,4 +1,4 @@
-"""Tests to cover the Tools/build/compite-changes.py script."""
+"""Tests to cover the Tools/build/compute-changes.py script."""
 
 import importlib
 import os
