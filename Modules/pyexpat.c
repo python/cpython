@@ -1097,12 +1097,14 @@ pyexpat_xmlparser_ExternalEntityParserCreate_impl(xmlparseobject *self,
     if (self->buffer != NULL) {
         new_parser->buffer = PyMem_Malloc(new_parser->buffer_size);
         if (new_parser->buffer == NULL) {
+            new_parser->parent = NULL;
             Py_DECREF(new_parser);
             Py_DECREF(self);
             return PyErr_NoMemory();
         }
     }
     if (!new_parser->itself) {
+        new_parser->parent = NULL;
         Py_DECREF(new_parser);
         Py_DECREF(self);
         return PyErr_NoMemory();
@@ -1117,6 +1119,7 @@ pyexpat_xmlparser_ExternalEntityParserCreate_impl(xmlparseobject *self,
 
     new_parser->handlers = PyMem_New(PyObject *, i);
     if (!new_parser->handlers) {
+        new_parser->parent = NULL;
         Py_DECREF(new_parser);
         Py_DECREF(self);
         return PyErr_NoMemory();
@@ -2489,6 +2492,9 @@ PyInit_pyexpat(void)
 static void
 clear_handlers(xmlparseobject *self, int initial)
 {
+    if (self->handlers == NULL) {
+        return;
+    }
     for (size_t i = 0; handler_info[i].name != NULL; i++) {
         if (initial) {
             self->handlers[i] = NULL;
