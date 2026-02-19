@@ -240,6 +240,8 @@ functionality like crash tolerance.
 
 .. include:: ../includes/wasm-mobile-notavail.rst
 
+.. availability:: Unix.
+
 .. exception:: error
 
    Raised on :mod:`!dbm.gnu`-specific errors, such as I/O errors. :exc:`KeyError` is
@@ -369,6 +371,8 @@ This module can be used with the "classic" NDBM interface or the
    result in a hard crash (segmentation fault).
 
 .. include:: ../includes/wasm-mobile-notavail.rst
+
+.. availability:: Unix.
 
 .. exception:: error
 

@@ -24,6 +24,8 @@ Linux and the BSD variants of Unix.
 
 .. include:: ../includes/optional-module.rst
 
+.. availability:: Unix.
+
 .. note::
 
    Whenever the documentation mentions a *character* it can be specified

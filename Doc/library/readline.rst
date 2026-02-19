@@ -27,6 +27,8 @@ Readline library in general.
 
 .. include:: ../includes/optional-module.rst
 
+.. availability:: Unix.
+
 .. note::
 
   The underlying Readline library API may be implemented by
