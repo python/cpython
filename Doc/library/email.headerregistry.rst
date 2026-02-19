@@ -269,6 +269,10 @@ variant, :attr:`~.BaseHeader.max_count` is set to 1.
 
        A dictionary mapping parameter names to parameter values.
 
+       .. versionchanged:: next
+          It is now a :class:`frozendict` instead of a
+          :class:`types.MappingProxyType`.
+
 
 .. class:: ContentTypeHeader
 
