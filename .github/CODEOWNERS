@@ -63,9 +63,10 @@
 .azure-pipelines/             @AA-Turner
 
 # GitHub & related scripts
-.github/                               @ezio-melotti @hugovk @AA-Turner @webknjaz
-Tools/build/compute-changes.py         @AA-Turner @hugovk @webknjaz
-Tools/build/verify_ensurepip_wheels.py @AA-Turner @pfmoore @pradyunsg
+.github/                                    @ezio-melotti @hugovk @AA-Turner @webknjaz
+Tools/build/compute-changes.py              @AA-Turner @hugovk @webknjaz
+Lib/test/test_tools/test_compute_changes.py @AA-Turner @hugovk @webknjaz
+Tools/build/verify_ensurepip_wheels.py      @AA-Turner @pfmoore @pradyunsg
 
 # Pre-commit
 .pre-commit-config.yaml       @hugovk

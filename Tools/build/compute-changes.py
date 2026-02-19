@@ -225,19 +225,27 @@ def process_changed_files(changed_files: Set[Path]) -> Outputs:
 
         if file.parent == GITHUB_WORKFLOWS_PATH:
             if file.name in ("build.yml", "reusable-cifuzz.yml"):
-                run_tests = run_ci_fuzz = run_ci_fuzz_stdlib = True
+                run_tests = run_ci_fuzz = run_ci_fuzz_stdlib = run_windows_tests = True
                 has_platform_specific_change = False
+                continue
             if file.name == "reusable-docs.yml":
                 run_docs = True
+                continue
+            if file.name == "reusable-windows.yml":
+                run_tests = True
+                run_windows_tests = True
+                continue
             if file.name == "reusable-windows-msi.yml":
                 run_windows_msi = True
+                continue
             if file.name == "reusable-macos.yml":
                 run_tests = True
                 platforms_changed.add("macos")
+                continue
             if file.name == "reusable-wasi.yml":
                 run_tests = True
                 platforms_changed.add("wasi")
-            continue
+                continue
 
         if not doc_file and file not in RUN_TESTS_IGNORE:
             run_tests = True
