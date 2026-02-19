@@ -9,11 +9,14 @@ import sys
 import re
 
 
-IGNORED_ID_RE = re.compile(r"""
+IGNORED_ID_RE = re.compile(
+    r"""
     index-\d+
     | id\d+
     | [_a-z]+_\d+
-""", re.VERBOSE)
+""",
+    re.VERBOSE,
+)
 
 
 class IDGatherer(html.parser.HTMLParser):
@@ -82,7 +85,8 @@ def do_check(baseline, checked, excluded, *, verbose_print):
             missing_ids = set(baseline_ids) - set(checked_ids)
             if missing_ids:
                 missing_ids = {
-                    a for a in missing_ids
+                    a
+                    for a in missing_ids
                     if not IGNORED_ID_RE.fullmatch(a)
                     and (name, a) not in excluded
                 }
@@ -97,38 +101,43 @@ def do_check(baseline, checked, excluded, *, verbose_print):
 def main(argv):
     parser = argparse.ArgumentParser()
     parser.add_argument(
-        '-v', '--verbose', action='store_true',
-        help='print out more information')
+        '-v',
+        '--verbose',
+        action='store_true',
+        help='print out more information',
+    )
     subparsers = parser.add_subparsers(dest='command', required=True)
 
     collect = subparsers.add_parser(
-        'collect',
-        help='collect IDs from a set of HTML files')
+        'collect', help='collect IDs from a set of HTML files'
+    )
     collect.add_argument(
-        'htmldir', type=Path,
-        help='directory with HTML documentation')
+        'htmldir', type=Path, help='directory with HTML documentation'
+    )
     collect.add_argument(
-        '-o', '--outfile',
-        help='File to save the result in; default <htmldir>/html-ids.json.gz')
+        '-o',
+        '--outfile',
+        help='File to save the result in; default <htmldir>/html-ids.json.gz',
+    )
 
-    check = subparsers.add_parser(
-        'check',
-        help='check two archives of IDs')
+    check = subparsers.add_parser('check', help='check two archives of IDs')
     check.add_argument(
-        'baseline_file', type=Path,
-        help='file with baseline IDs')
+        'baseline_file', type=Path, help='file with baseline IDs'
+    )
+    check.add_argument('checked_file', type=Path, help='file with checked IDs')
     check.add_argument(
-        'checked_file', type=Path,
-        help='file with checked IDs')
-    check.add_argument(
-        '-x', '--exclude-file', type=Path,
-        help='file with IDs to exclude from the check')
+        '-x',
+        '--exclude-file',
+        type=Path,
+        help='file with IDs to exclude from the check',
+    )
 
     args = parser.parse_args(argv[1:])
 
     if args.verbose:
         verbose_print = functools.partial(print, file=sys.stderr)
     else:
+
         def verbose_print(*args, **kwargs):
             """do nothing"""
 
@@ -162,7 +171,8 @@ def main(argv):
                 'The above HTML IDs were removed from the documentation, '
                 + 'resulting in broken links. Please add them back.',
                 sep='\n',
-                file=sys.stderr)
+                file=sys.stderr,
+            )
             if args.exclude_file:
                 print(f'Alternatively, add them to {args.exclude_file}.')
 
