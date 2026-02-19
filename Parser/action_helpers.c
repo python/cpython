@@ -1683,7 +1683,7 @@ _build_concatenated_bytes(Parser *p, asdl_expr_seq *strings, int lineno,
         Py_DECREF(res);
         return NULL;
     }
-    return _PyAST_Constant(res, kind, lineno, col_offset, end_lineno, end_col_offset, arena);
+    return _PyAST_Constant(res, kind, lineno, col_offset, end_lineno, end_col_offset, p->arena);
 }
 
 static expr_ty
