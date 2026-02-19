@@ -1,0 +1,1 @@
+Fix a bug when calling certain methods at the recursion limit which manifested as a corruption of Python's operand stack. Patch by Ken Jin.
