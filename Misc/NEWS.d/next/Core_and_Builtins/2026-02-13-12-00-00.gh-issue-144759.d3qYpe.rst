@@ -1,0 +1,4 @@
+Fix undefined behavior in the lexer when ``start`` and ``multi_line_start``
+pointers are ``NULL`` in ``_PyLexer_remember_fstring_buffers()`` and
+``_PyLexer_restore_fstring_buffers()``. The ``NULL`` pointer arithmetic
+(``NULL - valid_pointer``) is now guarded with explicit ``NULL`` checks.
