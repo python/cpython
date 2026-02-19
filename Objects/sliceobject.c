@@ -177,9 +177,7 @@ _PySlice_FromIndices(Py_ssize_t istart, Py_ssize_t istop)
         return NULL;
     }
 
-    slice = PySlice_New(start, end, NULL);
-    Py_DECREF(start);
-    Py_DECREF(end);
+    slice = _PyBuildSlice_ConsumeRefs(start, end);
     return slice;
 }
 
