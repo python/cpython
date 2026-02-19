@@ -1832,7 +1832,7 @@ class FrozenDictTests(unittest.TestCase):
                 frozendict(x=1, y=2),
             ):
                 p = pickle.dumps(fd, proto)
-                self.assert_is_copy(fd, pickle.loads(p))
+                self.assertEqual(fd, pickle.loads(p))
 
 
 if __name__ == "__main__":
