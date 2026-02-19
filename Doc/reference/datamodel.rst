@@ -2965,7 +2965,11 @@ ABCs.
 
    Return true if *instance* should be considered a (direct or indirect)
    instance of *class*. If defined, called to implement ``isinstance(instance,
-   class)``.
+   cls)``.
+
+   .. note::
+      If ``type(instance) is cls`` then ``isinstance(instance, cls)`` is
+      always ``True`` and ``__instancecheck__`` is not called.
 
 
 .. method:: type.__subclasscheck__(self, subclass)
