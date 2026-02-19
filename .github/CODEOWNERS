@@ -113,6 +113,7 @@ Doc/tools/                    @AA-Turner @hugovk
 # Sections
 Doc/reference/                @willingc @AA-Turner
 Doc/whatsnew/                 @AA-Turner
+Doc/c-api/                    @ZeroIntensity
 
 
 # ----------------------------------------------------------------------------
