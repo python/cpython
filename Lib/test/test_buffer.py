@@ -4519,24 +4519,16 @@ class TestBufferProtocol(unittest.TestCase):
     @support.cpython_only
     @unittest.skipIf(_testcapi is None, "requires _testcapi")
     def test_array_alignment(self):
-        # gh-140557: pointer alignment of buffers including empty allocation
-        # should match the maximum array alignment.
-        formats = [fmt for fmt in ARRAY
-                   if struct.calcsize(fmt) <= struct.calcsize('P')]
-        align = max(struct.calcsize(fmt) for fmt in formats)
-        cases = [array.array(fmt) for fmt in formats]
-        # Empty arrays
-        self.assertEqual(
-            [_testcapi.buffer_pointer_as_int(case) % align for case in cases],
-            [0] * len(cases),
-        )
-        for case in cases:
-            case.append(0)
-        # Allocated arrays
-        self.assertEqual(
-            [_testcapi.buffer_pointer_as_int(case) % align for case in cases],
-            [0] * len(cases),
-        )
+        # gh-140557: buffer pointers, including for empty arrays, must be
+        # aligned to at least the alignment of the element type.
+        for fmt in ARRAY:
+            with self.subTest(fmt=fmt):
+                # A zero repeat count pads to the alignment of the type, so
+                # this is the native alignment of `fmt`.
+                align = struct.calcsize(f"B0{fmt}")
+                for case in (array.array(fmt), array.array(fmt, [0])):
+                    ptr = _testcapi.buffer_pointer_as_int(case)
+                    self.assertEqual(ptr % align, 0)
 
     @support.cpython_only
     def test_pybuffer_size_from_format(self):
