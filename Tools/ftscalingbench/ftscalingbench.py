@@ -180,6 +180,12 @@ def create_dict():
             "key": "value",
         }
 
+if hasattr(__builtins__, "frozendict"):
+    @register_benchmark
+    def create_frozendict():
+        for i in range(1000 * WORK_SCALE):
+            d = frozendict(key="value")
+
 thread_local = threading.local()
 
 @register_benchmark
