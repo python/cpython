@@ -1,8 +1,10 @@
 """Extract, format and print information about Python stack traces."""
 
 import collections.abc
+import functools
 import itertools
 import linecache
+import re
 import sys
 import textwrap
 import types
@@ -978,6 +980,37 @@ def _zip_display_width(line, carets):
         yield char, "".join(itertools.islice(carets, char_width))
 
 
+@functools.cache
+def _str_width(c: str) -> int:
+    import unicodedata
+    if ord(c) < 128:
+        return 1
+    # gh-139246 for zero-width joiner and combining characters
+    if unicodedata.combining(c):
+        return 0
+    category = unicodedata.category(c)
+    if category == "Cf" and c != "\u00ad":
+        return 0
+    w = unicodedata.east_asian_width(c)
+    if w in ("N", "Na", "H", "A"):
+        return 1
+    return 2
+
+
+ANSI_ESCAPE_SEQUENCE = re.compile(r"\x1b\[[ -@]*[A-~]")
+
+
+def _wlen(s: str) -> int:
+    if len(s) == 1 and s != "\x1a":
+        return _str_width(s)
+    length = sum(_str_width(i) for i in s)
+    # remove lengths of any escape sequences
+    sequence = ANSI_ESCAPE_SEQUENCE.findall(s)
+    ctrl_z_cnt = s.count("\x1a")
+    return length - sum(len(i) for i in sequence) + ctrl_z_cnt
+
+
+
 def _display_width(line, offset=None):
     """Calculate the extra amount of width space the given source
     code segment might take if it were to be displayed on a fixed
@@ -990,9 +1023,7 @@ def _display_width(line, offset=None):
     if line.isascii():
         return offset
 
-    from _pyrepl.utils import wlen
-
-    return wlen(line[:offset])
+    return _wlen(line[:offset])
 
 
 class _ExceptionPrintContext:
