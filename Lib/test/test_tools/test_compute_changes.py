@@ -17,7 +17,6 @@ with patch.dict(os.environ, {"GITHUB_DEFAULT_BRANCH": "main"}):
 process_changed_files = compute_changes.process_changed_files
 Outputs = compute_changes.Outputs
 ANDROID_DIRS = compute_changes.ANDROID_DIRS
-IOS_DIRS = compute_changes.IOS_DIRS
 MACOS_DIRS = compute_changes.MACOS_DIRS
 WASI_DIRS = compute_changes.WASI_DIRS
 RUN_TESTS_IGNORE = compute_changes.RUN_TESTS_IGNORE
@@ -62,14 +61,6 @@ class TestProcessChangedFiles(unittest.TestCase):
                 result = process_changed_files({Path(d) / "file"})
                 self.assertTrue(result.run_tests)
                 self.assertTrue(result.run_android)
-                self.assertFalse(result.run_windows_tests)
-
-    def test_ios(self):
-        for d in IOS_DIRS:
-            with self.subTest(d=d):
-                result = process_changed_files({Path(d) / "file"})
-                self.assertTrue(result.run_tests)
-                self.assertTrue(result.run_ios)
                 self.assertFalse(result.run_windows_tests)
 
     def test_macos(self):
@@ -123,7 +114,7 @@ class TestProcessChangedFiles(unittest.TestCase):
                 result = process_changed_files({Path(f)})
                 self.assertTrue(result.run_tests)
                 self.assertTrue(result.run_android)
-                self.assertTrue(result.run_ios)
+                self.assertTrue(result.run_docs)
                 self.assertTrue(result.run_macos)
                 self.assertTrue(result.run_ubuntu)
                 self.assertTrue(result.run_wasi)
