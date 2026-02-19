@@ -285,14 +285,19 @@ def ismount(path):
     path = abspath(path)
     drive, root, rest = splitroot(path)
     if drive and drive[0] in seps:
+        # Share path is a mount point if it conforms to UNC.
         return not rest
     if root and not rest:
-        return True
-
+        # Drive root is a mount point if it exists.
+        return exists(path)
     if _getvolumepathname:
-        x = path.rstrip(seps)
-        y =_getvolumepathname(path).rstrip(seps)
-        return x.casefold() == y.casefold()
+        try:
+            # The path is a mount point if it's a mounted volume.
+            x = path.rstrip(seps)
+            y = _getvolumepathname(path).rstrip(seps)
+            return x.casefold() == y.casefold()
+        except (OSError, FileNotFoundError):
+            return False
     else:
         return False
 

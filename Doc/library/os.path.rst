@@ -312,8 +312,8 @@ the :mod:`glob` module.)
    i-node on the same device --- this should detect mount points for all Unix
    and POSIX variants.  It is not able to reliably detect bind mounts on the
    same filesystem. On Linux systems, it will always return ``True`` for btrfs
-   subvolumes, even if they aren't mount points. On Windows, a drive letter root
-   and a share UNC are always mount points, and for any other path
+   subvolumes, even if they aren't mount points. On Windows, a existent drive
+   letter root and a share UNC are always mount points, and for any other path
    ``GetVolumePathName`` is called to see if it is different from the input path.
 
    .. versionchanged:: 3.4
