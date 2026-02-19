@@ -3122,16 +3122,17 @@ memory_richcompare(PyObject *v, PyObject *w, int op)
     }
     vv = VIEW_ADDR(v);
 
-    // A memoryview is equal to itself: there is no need to compare individual
-    // values. This is not true for float values since they can be NaN, and NaN
-    // is not equal to itself. So only use this optimization on format known to
+    // For formats supported by the struct module a memoryview is equal to
+    // itself: there is no need to compare individual values.
+    // This is not true for float values since they can be NaN, and NaN
+    // is not equal to itself.  So only use this optimization on format known to
     // not use floats.
     if (v == w) {
         int can_compare_ptr;
         const char *format = vv->format;
         if (format != NULL) {
-            // Exclude formats "d" (double), "f" (float), "e" (16-bit float)
-            // and "P" (void*)
+            // Include only formats known by struct, exclude formats "d" (double),
+            // "f" (float), "e" (16-bit float) and "P" (void*)
             can_compare_ptr = (strchr("bBchHiIlLnNqQ?", format[0]) != NULL
                                && format[1] == 0);
         }
