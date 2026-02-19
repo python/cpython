@@ -644,12 +644,16 @@ specialize_dict_access_hint(
         SPECIALIZATION_FAIL(base_op, SPEC_FAIL_ATTR_SPLIT_DICT);
         return 0;
     }
+#ifdef PY_GIL_DISABLED
     PyObject *value;
     Py_ssize_t index = _PyDict_LookupIndexAndValue(dict, name, &value);
     if (value != NULL && PyLazyImport_CheckExact(value)) {
         SPECIALIZATION_FAIL(base_op, SPEC_FAIL_ATTR_MODULE_LAZY_VALUE);
         return 0;
     }
+#else
+    Py_ssize_t index = _PyDict_LookupIndex(dict, name);
+#endif
     if (index != (uint16_t)index) {
         SPECIALIZATION_FAIL(base_op,
                             index == DKIX_EMPTY ?
