@@ -188,13 +188,32 @@ raise :exc:`SyntaxError`).
 :pep:`814`: Add frozendict built-in type
 ----------------------------------------
 
-A new public immutable type :class:`frozendict` is added to the :mod:`builtins`
-module. It is not a ``dict`` subclass but inherits directly from ``object``.
+A new :term:`immutable` type, :class:`frozendict`, is added to the :mod:`builtins` module.
+It does not allow modification after creation. A ``frozendict`` is not a subclass of ``dict``;
+it inherits directly from ``object``. A ``frozendict`` is :term:`hashable`
+as long as all of its keys and values are hashable. A ``frozendict`` preserves
+insertion order, but comparison does not take order into account.
 
-A ``frozendict`` can be hashed with ``hash(frozendict)`` if all keys and values
-can be hashed.
+For example::
+
+    >>> a = frozendict(x=1, y=2)
+    >>> a
+    frozendict({'x': 1, 'y': 2})
+    >>> a['z'] = 3
+    Traceback (most recent call last):
+      File "<python-input-2>", line 1, in <module>
+        a['z'] = 3
+        ~^^^^^
+    TypeError: 'frozendict' object does not support item assignment
+    >>> b = frozendict(y=2, x=1)
+    >>> hash(a) == hash(b)
+    True
+    >>> a == b
+    True
 
 .. seealso:: :pep:`814` for the full specification and rationale.
+
+(Contributed by Victor Stinner and Donghee Na in :gh:`141510`.)
 
 
 .. _whatsnew315-profiling-package:
