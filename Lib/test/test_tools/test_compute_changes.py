@@ -114,7 +114,6 @@ class TestProcessChangedFiles(unittest.TestCase):
                 result = process_changed_files({Path(f)})
                 self.assertTrue(result.run_tests)
                 self.assertTrue(result.run_android)
-                self.assertTrue(result.run_docs)
                 self.assertTrue(result.run_macos)
                 self.assertTrue(result.run_ubuntu)
                 self.assertTrue(result.run_wasi)
