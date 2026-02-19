@@ -3243,7 +3243,7 @@ dummy_func(
             _CHECK_PEP_523 +
             // gh-145008: We must check recursion before expanding method,
             // otherwise we may leave the stack in an inconsistent state in 3.13.
-            _CHECK_RECURSION_REMAINING +            
+            _CHECK_RECURSION_REMAINING +
             _CHECK_METHOD_VERSION +
             _EXPAND_METHOD +
             _PY_FRAME_GENERAL +
