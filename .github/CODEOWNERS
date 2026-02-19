@@ -111,9 +111,9 @@ Doc/tools/                    @AA-Turner @hugovk
 .readthedocs.yml              @AA-Turner
 
 # Sections
+Doc/c-api/                    @ZeroIntensity
 Doc/reference/                @willingc @AA-Turner
 Doc/whatsnew/                 @AA-Turner
-Doc/c-api/                    @ZeroIntensity
 
 
 # ----------------------------------------------------------------------------
