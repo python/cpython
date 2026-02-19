@@ -686,8 +686,9 @@ Signal Handling
    other pending signals may not have been handled yet: they will be on the
    next :c:func:`PyErr_CheckSignals()` invocation).
 
-   If the function is called from a non-main thread, or under a non-main
-   Python interpreter, it does nothing and returns ``0``.
+   This function may invoke the garbage collector or execute a :ref:`remote
+   debugger <remote-debugging>` script, regardless of the calling thread
+   or Python interpreter.
 
    This function can be called by long-running C code that wants to
    be interruptible by user requests (such as by pressing Ctrl-C).
@@ -695,6 +696,13 @@ Signal Handling
    .. note::
       The default Python signal handler for :c:macro:`!SIGINT` raises the
       :exc:`KeyboardInterrupt` exception.
+
+   .. versionchanged:: 3.12
+      This function may now invoke the garbage collector.
+
+   .. versionchanged:: 3.14
+      This function may now execute a remote debugger script, if remote
+      debugging is enabled.
 
 
 .. c:function:: void PyErr_SetInterrupt()
