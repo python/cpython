@@ -3125,10 +3125,10 @@ dummy_func(
             assert(executor->vm_data.code == code);
             assert(executor->vm_data.valid);
             assert(tstate->current_executor == NULL);
-            /* If the eval breaker is set then stay in tier 1.
-             * This avoids any potentially infinite loops
-             * involving _RESUME_CHECK */
-            if (_Py_atomic_load_uintptr_relaxed(&tstate->eval_breaker) & _PY_EVAL_EVENTS_MASK) {
+            /* If the eval breaker is set, or instrumentation is needed, then stay in tier 1.
+             * This avoids any potentially infinite loops involving _RESUME_CHECK */
+            uintptr_t iversion = FT_ATOMIC_LOAD_UINTPTR_ACQUIRE(code->_co_instrumentation_version);
+            if (_Py_atomic_load_uintptr_relaxed(&tstate->eval_breaker) != iversion) {
                 opcode = executor->vm_data.opcode;
                 oparg = (oparg & ~255) | executor->vm_data.oparg;
                 next_instr = this_instr;
@@ -5616,9 +5616,9 @@ dummy_func(
             HANDLE_PENDING_AND_DEOPT_IF(_Py_emscripten_signal_clock == 0);
             _Py_emscripten_signal_clock -= Py_EMSCRIPTEN_SIGNAL_HANDLING;
 #endif
+            uintptr_t iversion = FT_ATOMIC_LOAD_UINTPTR_ACQUIRE(_PyFrame_GetCode(frame)->_co_instrumentation_version);
             uintptr_t eval_breaker = _Py_atomic_load_uintptr_relaxed(&tstate->eval_breaker);
-            HANDLE_PENDING_AND_DEOPT_IF(eval_breaker & _PY_EVAL_EVENTS_MASK);
-            assert(tstate->tracing || eval_breaker == FT_ATOMIC_LOAD_UINTPTR_ACQUIRE(_PyFrame_GetCode(frame)->_co_instrumentation_version));
+            HANDLE_PENDING_AND_DEOPT_IF(eval_breaker != iversion);
         }
 
         tier2 op(_COLD_EXIT, ( -- )) {
@@ -5668,9 +5668,9 @@ dummy_func(
             Py_UNREACHABLE();
         }
 
-        tier2 op(_GUARD_CODE, (version/2 -- )) {
+        tier2 op(_GUARD_CODE_VERSION, (version/2 -- )) {
             PyObject *code = PyStackRef_AsPyObjectBorrow(frame->f_executable);
-            EXIT_IF(code == Py_None);
+            assert(PyCode_Check(code));
             EXIT_IF(((PyCodeObject *)code)->co_version != version);
         }
 

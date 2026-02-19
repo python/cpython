@@ -110,6 +110,7 @@ class TestExecutorInvalidation(unittest.TestCase):
             for exe in executors[:i]:
                 self.assertTrue(exe.is_valid())
 
+    @unittest.skipIf(os.getenv("PYTHON_UOPS_OPTIMIZE") == "0", "Needs uop optimizer to run.")
     def test_uop_optimizer_invalidation(self):
         # Generate a new function at each call
         ns = {}

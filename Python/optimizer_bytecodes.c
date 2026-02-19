@@ -46,6 +46,7 @@ typedef struct _Py_UOpsAbstractFrame _Py_UOpsAbstractFrame;
 #define sym_set_recorded_gen_func(SYM, VAL) _Py_uop_sym_set_recorded_gen_func(ctx, SYM, VAL)
 #define sym_get_probable_func_code _Py_uop_sym_get_probable_func_code
 #define sym_get_probable_value _Py_uop_sym_get_probable_value
+#define sym_set_stack_depth(DEPTH, SP) _Py_uop_sym_set_stack_depth(ctx, DEPTH, SP)
 
 extern int
 optimize_to_bool(
@@ -362,7 +363,7 @@ dummy_func(void) {
     }
 
     op(_BINARY_OP_SUBSCR_INIT_CALL, (container, sub, getitem -- new_frame)) {
-        _Py_UOpsAbstractFrame *f = frame_new_from_symbol(ctx, getitem, 0, NULL, 0);
+        _Py_UOpsAbstractFrame *f = frame_new_from_symbol(ctx, getitem, NULL, 0);
         if (f == NULL) {
             break;
         }
@@ -833,7 +834,7 @@ dummy_func(void) {
         // + 1 for _SAVE_RETURN_OFFSET
         // FIX ME -- This needs a version check and function watcher
         PyCodeObject *co = (PyCodeObject *)((PyFunctionObject *)fget)->func_code;
-        _Py_UOpsAbstractFrame *f = frame_new(ctx, co, 0, NULL, 0);
+        _Py_UOpsAbstractFrame *f = frame_new(ctx, co, NULL, 0);
         if (f == NULL) {
             break;
         }
@@ -894,9 +895,9 @@ dummy_func(void) {
         }
 
         if (sym_is_null(self_or_null) || sym_is_not_null(self_or_null)) {
-            new_frame = PyJitRef_WrapInvalid(frame_new_from_symbol(ctx, callable, 0, args, argcount));
+            new_frame = PyJitRef_WrapInvalid(frame_new_from_symbol(ctx, callable, args, argcount));
         } else {
-            new_frame = PyJitRef_WrapInvalid(frame_new_from_symbol(ctx, callable, 0, NULL, 0));
+            new_frame = PyJitRef_WrapInvalid(frame_new_from_symbol(ctx, callable, NULL, 0));
         }
     }
 
@@ -907,15 +908,15 @@ dummy_func(void) {
     }
 
     op(_PY_FRAME_GENERAL, (callable, self_or_null, args[oparg] -- new_frame)) {
-        new_frame = PyJitRef_WrapInvalid(frame_new_from_symbol(ctx, callable, 0, NULL, 0));
+        new_frame = PyJitRef_WrapInvalid(frame_new_from_symbol(ctx, callable, NULL, 0));
     }
 
     op(_PY_FRAME_KW, (callable, self_or_null, args[oparg], kwnames -- new_frame)) {
-        new_frame = PyJitRef_WrapInvalid(frame_new_from_symbol(ctx, callable, 0, NULL, 0));
+        new_frame = PyJitRef_WrapInvalid(frame_new_from_symbol(ctx, callable, NULL, 0));
     }
 
     op(_PY_FRAME_EX, (func_st, null, callargs_st, kwargs_st -- ex_frame)) {
-        ex_frame = PyJitRef_WrapInvalid(frame_new_from_symbol(ctx, func_st, 0, NULL, 0));
+        ex_frame = PyJitRef_WrapInvalid(frame_new_from_symbol(ctx, func_st, NULL, 0));
     }
 
     op(_CHECK_AND_ALLOCATE_OBJECT, (type_version/2, callable, self_or_null, args[oparg] -- callable, self_or_null, args[oparg])) {
@@ -927,18 +928,18 @@ dummy_func(void) {
 
     op(_CREATE_INIT_FRAME, (init, self, args[oparg] -- init_frame)) {
         ctx->frame->stack_pointer = stack_pointer - oparg - 2;
-        _Py_UOpsAbstractFrame *shim = frame_new(ctx, (PyCodeObject *)&_Py_InitCleanup, 0, NULL, 0);
+        _Py_UOpsAbstractFrame *shim = frame_new(ctx, (PyCodeObject *)&_Py_InitCleanup, NULL, 0);
         if (shim == NULL) {
             break;
         }
         /* Push self onto stack of shim */
-        shim->stack[0] = self;
+        shim->stack_pointer[0] = self;
         shim->stack_pointer++;
         assert((int)(shim->stack_pointer - shim->stack) == 1);
         ctx->frame = shim;
         ctx->curr_frame_depth++;
         assert((this_instr + 1)->opcode == _PUSH_FRAME);
-        init_frame = PyJitRef_WrapInvalid(frame_new_from_symbol(ctx, init, 0, args-1, oparg+1));
+        init_frame = PyJitRef_WrapInvalid(frame_new_from_symbol(ctx, init, args-1, oparg+1));
     }
 
     op(_RETURN_VALUE, (retval -- res)) {
@@ -954,15 +955,7 @@ dummy_func(void) {
             ctx->done = true;
             break;
         }
-        int returning_stacklevel = (int)this_instr->operand1;
-        if (ctx->curr_frame_depth >= 2) {
-            PyCodeObject *expected_code = ctx->frames[ctx->curr_frame_depth - 2].code;
-            if (expected_code == returning_code) {
-                assert(this_instr[2].opcode == _GUARD_IP_RETURN_VALUE);
-                REPLACE_OP((this_instr + 2), _NOP, 0, 0);
-            }
-        }
-        if (frame_pop(ctx, returning_code, returning_stacklevel)) {
+        if (frame_pop(ctx, returning_code)) {
             break;
         }
         stack_pointer = ctx->frame->stack_pointer;
@@ -976,14 +969,12 @@ dummy_func(void) {
         ctx->frame->stack_pointer = stack_pointer;
         assert(this_instr[1].opcode == _RECORD_CODE);
         PyCodeObject *returning_code = (PyCodeObject *)this_instr[1].operand0;
-        assert(PyCode_Check(returning_code));
         if (returning_code == NULL) {
             ctx->done = true;
             break;
         }
-        _Py_BloomFilter_Add(dependencies, returning_code);
-        int returning_stacklevel = (int)this_instr->operand1;
-        if (frame_pop(ctx, returning_code, returning_stacklevel)) {
+        assert(PyCode_Check(returning_code));
+        if (frame_pop(ctx, returning_code)) {
             break;
         }
         stack_pointer = ctx->frame->stack_pointer;
@@ -998,14 +989,12 @@ dummy_func(void) {
         ctx->frame->stack_pointer = stack_pointer;
         assert(this_instr[1].opcode == _RECORD_CODE);
         PyCodeObject *returning_code = (PyCodeObject *)this_instr[1].operand0;
-        assert(PyCode_Check(returning_code));
         if (returning_code == NULL) {
             ctx->done = true;
             break;
         }
-        _Py_BloomFilter_Add(dependencies, returning_code);
-        int returning_stacklevel = (int)this_instr->operand1;
-        if (frame_pop(ctx, returning_code, returning_stacklevel)) {
+        assert(PyCode_Check(returning_code));
+        if (frame_pop(ctx, returning_code)) {
             break;
         }
         stack_pointer = ctx->frame->stack_pointer;
@@ -1025,22 +1014,24 @@ dummy_func(void) {
     }
 
     op(_FOR_ITER_GEN_FRAME, (iter, unused -- iter, unused, gen_frame)) {
-        _Py_UOpsAbstractFrame *new_frame = frame_new_from_symbol(ctx, iter, 1, NULL, 0);
+        _Py_UOpsAbstractFrame *new_frame = frame_new_from_symbol(ctx, iter, NULL, 0);
         if (new_frame == NULL) {
             ctx->done = true;
             break;
         }
-        new_frame->stack[0] = sym_new_const(ctx, Py_None);
+        new_frame->stack_pointer[0] = sym_new_const(ctx, Py_None);
+        new_frame->stack_pointer++;
         gen_frame = PyJitRef_WrapInvalid(new_frame);
     }
 
     op(_SEND_GEN_FRAME, (receiver, v -- receiver, gen_frame)) {
-        _Py_UOpsAbstractFrame *new_frame = frame_new_from_symbol(ctx, receiver, 1, NULL, 0);
+        _Py_UOpsAbstractFrame *new_frame = frame_new_from_symbol(ctx, receiver, NULL, 0);
         if (new_frame == NULL) {
             ctx->done = true;
             break;
         }
-        new_frame->stack[0] = PyJitRef_StripReferenceInfo(v);
+        new_frame->stack_pointer[0] = PyJitRef_StripReferenceInfo(v);
+        new_frame->stack_pointer++;
         gen_frame = PyJitRef_WrapInvalid(new_frame);
     }
 
@@ -1062,14 +1053,10 @@ dummy_func(void) {
         if (!CURRENT_FRAME_IS_INIT_SHIM()) {
             ctx->frame->stack_pointer = stack_pointer;
         }
+        ctx->frame->caller = true;
         ctx->frame = (_Py_UOpsAbstractFrame *)PyJitRef_Unwrap(new_frame);
         ctx->curr_frame_depth++;
         stack_pointer = ctx->frame->stack_pointer;
-        // Fixed calls don't need IP guards.
-        if ((this_instr-1)->opcode == _CREATE_INIT_FRAME) {
-            assert((this_instr+1)->opcode == _GUARD_IP__PUSH_FRAME);
-            REPLACE_OP(this_instr+1, _NOP, 0, 0);
-        }
         assert(ctx->frame->locals != NULL);
     }
 
@@ -1652,6 +1639,47 @@ dummy_func(void) {
         assert(func == NULL || PyFunction_Check(func));
         sym_set_recorded_gen_func(nos, func);
     }
+
+    op(_GUARD_IP__PUSH_FRAME, (ip/4 --)) {
+        stack_pointer = sym_set_stack_depth(this_instr->operand1, stack_pointer);
+        // TO DO
+        // Normal function calls to known functions
+        // do not need an IP guard.
+    }
+
+    op(_GUARD_CODE_VERSION, (version/2 -- )) {
+        PyCodeObject *co = get_current_code_object(ctx);
+        if (co->co_version == version) {
+            _Py_BloomFilter_Add(dependencies, co);
+            REPLACE_OP(this_instr, _NOP, 0, 0);
+        }
+        else {
+            ctx->done = true;
+        }
+    }
+
+    op(_GUARD_IP_YIELD_VALUE, (ip/4 --)) {
+        if (ctx->frame->caller) {
+            REPLACE_OP(this_instr, _NOP, 0, 0);
+        }
+        stack_pointer = sym_set_stack_depth(this_instr->operand1, stack_pointer);
+    }
+
+    op(_GUARD_IP_RETURN_VALUE, (ip/4 --)) {
+        if (ctx->frame->caller) {
+            REPLACE_OP(this_instr, _NOP, 0, 0);
+        }
+        stack_pointer = sym_set_stack_depth(this_instr->operand1, stack_pointer);
+    }
+
+    op(_GUARD_IP_RETURN_GENERATOR, (ip/4 --)) {
+        if (ctx->frame->caller) {
+            REPLACE_OP(this_instr, _NOP, 0, 0);
+        }
+        stack_pointer = sym_set_stack_depth(this_instr->operand1, stack_pointer);
+    }
+
+
 
 // END BYTECODES //
 
