@@ -703,6 +703,44 @@ Signal Handling
    .. versionchanged:: 3.14
       This function may now execute a remote debugger script, if remote
       debugging is enabled.
+   Handle external interruptions, such as signals (including :kbd:`Ctrl-C`),
+   or activating a debugger, whose processing has been delayed until it is safe
+   to run Python code and/or raise exceptions.
+   The function should be called by long-running C code frequently
+   enough so that the response appears immediate to humans.
+
+   Handlers invoked by this function currently include:
+
+   - Signal handlers, including Python functions registered using
+     the :mod:`signal` module.
+
+     Signal handlers are only run in the main thread of the main interpreter.
+
+     (This is where the function got the name: originally, signals
+     were the only way to interrupt the interpreter.)
+
+   - Running the garbage collector, if necessary.
+
+   - Execuing a pending :ref:`remote debugger <remote-debugging>` script.
+
+   If any handler raises an exception, immediately return ``-1`` with that
+   exception set.
+   Any remaining interruptions are left to be processed on the next
+   :c:func:`PyErr_CheckSignals()` invocation, if appropriate.
+
+   If all handlers finish successfully, or there are no handlers to run,
+   return ``0``.
+
+   .. note::
+      The default Python signal handler for :py:data:`signal.SIGINT` raises the
+      :exc:`KeyboardInterrupt` exception.
+
+   .. versionchanged:: 3.12
+      This function may now invoke the garbage collector.
+
+   .. versionchanged:: 3.14
+      This function may now execute a remote debugger script, if remote
+      debugging is enabled.
 
 
 .. c:function:: void PyErr_SetInterrupt()
