@@ -710,7 +710,7 @@ class TypesTests(unittest.TestCase):
         self.assertIsInstance(exc.__traceback__, types.TracebackType)
         self.assertIsInstance(exc.__traceback__.tb_frame, types.FrameType)
 
-    @unittest.skipUnless(_datetime, "requires _datetime module")
+    @unittest.skipUnless(_types and _datetime, "requires _datetime module")
     def test_capsule_type(self):
         self.assertIsInstance(_datetime.datetime_CAPI, types.CapsuleType)
 
