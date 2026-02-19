@@ -788,6 +788,8 @@ def cflags(p: Properties) -> str:
         flags.append("HAS_UNPREDICTABLE_JUMP_FLAG")
     if p.needs_guard_ip:
         flags.append("HAS_NEEDS_GUARD_IP_FLAG")
+    if p.records_value:
+        flags.append("HAS_RECORDS_VALUE_FLAG")
     if flags:
         return " | ".join(flags)
     else:

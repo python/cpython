@@ -111,7 +111,11 @@ fcntl_fcntl_impl(PyObject *module, int fd, int code, PyObject *arg)
                 return !async_err ? PyErr_SetFromErrno(PyExc_OSError) : NULL;
             }
             if (memcmp(buf + len, guard, GUARDSZ) != 0) {
-                PyErr_SetString(PyExc_SystemError, "buffer overflow");
+                PyErr_SetString(PyExc_SystemError,
+                        "Possible stack corruption in fcntl() due to "
+                        "buffer overflow. "
+                        "Provide an argument of sufficient size as "
+                        "determined by the operation.");
                 return NULL;
             }
             return PyBytes_FromStringAndSize(buf, len);
@@ -139,7 +143,11 @@ fcntl_fcntl_impl(PyObject *module, int fd, int code, PyObject *arg)
                 return NULL;
             }
             if (ptr[len] != '\0') {
-                PyErr_SetString(PyExc_SystemError, "buffer overflow");
+                PyErr_SetString(PyExc_SystemError,
+                        "Memory corruption in fcntl() due to "
+                        "buffer overflow. "
+                        "Provide an argument of sufficient size as "
+                        "determined by the operation.");
                 PyBytesWriter_Discard(writer);
                 return NULL;
             }
@@ -264,7 +272,12 @@ fcntl_ioctl_impl(PyObject *module, int fd, unsigned long code, PyObject *arg,
                 }
                 PyBuffer_Release(&view);
                 if (ptr == buf && memcmp(buf + len, guard, GUARDSZ) != 0) {
-                    PyErr_SetString(PyExc_SystemError, "buffer overflow");
+                    PyErr_SetString(PyExc_SystemError,
+                            "Possible stack corruption in ioctl() due to "
+                            "buffer overflow. "
+                            "Provide a writable buffer argument of "
+                            "sufficient size as determined by "
+                            "the operation.");
                     return NULL;
                 }
                 return PyLong_FromLong(ret);
@@ -293,7 +306,11 @@ fcntl_ioctl_impl(PyObject *module, int fd, unsigned long code, PyObject *arg,
                 return !async_err ? PyErr_SetFromErrno(PyExc_OSError) : NULL;
             }
             if (memcmp(buf + len, guard, GUARDSZ) != 0) {
-                PyErr_SetString(PyExc_SystemError, "buffer overflow");
+                PyErr_SetString(PyExc_SystemError,
+                        "Possible stack corruption in ioctl() due to "
+                        "buffer overflow. "
+                        "Provide an argument of sufficient size as "
+                        "determined by the operation.");
                 return NULL;
             }
             return PyBytes_FromStringAndSize(buf, len);
@@ -321,7 +338,11 @@ fcntl_ioctl_impl(PyObject *module, int fd, unsigned long code, PyObject *arg,
                 return NULL;
             }
             if (ptr[len] != '\0') {
-                PyErr_SetString(PyExc_SystemError, "buffer overflow");
+                PyErr_SetString(PyExc_SystemError,
+                        "Memory corruption in ioctl() due to "
+                        "buffer overflow. "
+                        "Provide an argument of sufficient size as "
+                        "determined by the operation.");
                 PyBytesWriter_Discard(writer);
                 return NULL;
             }

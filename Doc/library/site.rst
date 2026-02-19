@@ -34,7 +34,7 @@ For the head part, it uses ``sys.prefix`` and ``sys.exec_prefix``; empty heads
 are skipped.  For the tail part, it uses the empty string and then
 :file:`lib/site-packages` (on Windows) or
 :file:`lib/python{X.Y[t]}/site-packages` (on Unix and macOS). (The
-optional suffix "t" indicates the :term:`free threading` build, and is
+optional suffix "t" indicates the :term:`free-threaded build`, and is
 appended if ``"t"`` is present in the :data:`sys.abiflags` constant.)
 For each
 of the distinct head-tail combinations, it sees if it refers to an existing
@@ -51,11 +51,11 @@ added path for configuration files.
 
 .. versionchanged:: 3.14
 
-   :mod:`site` is no longer responsible for updating :data:`sys.prefix` and
+   :mod:`!site` is no longer responsible for updating :data:`sys.prefix` and
    :data:`sys.exec_prefix` on :ref:`sys-path-init-virtual-environments`. This is
    now done during the :ref:`path initialization <sys-path-init>`. As a result,
    under :ref:`sys-path-init-virtual-environments`, :data:`sys.prefix` and
-   :data:`sys.exec_prefix` no longer depend on the :mod:`site` initialization,
+   :data:`sys.exec_prefix` no longer depend on the :mod:`!site` initialization,
    and are therefore unaffected by :option:`-S`.
 
 .. _site-virtual-environments-configuration:
@@ -130,38 +130,38 @@ directory precedes the :file:`foo` directory because :file:`bar.pth` comes
 alphabetically before :file:`foo.pth`; and :file:`spam` is omitted because it is
 not mentioned in either path configuration file.
 
-:mod:`sitecustomize`
---------------------
+:mod:`!sitecustomize`
+---------------------
 
 .. module:: sitecustomize
 
 After these path manipulations, an attempt is made to import a module named
-:mod:`sitecustomize`, which can perform arbitrary site-specific customizations.
+:mod:`!sitecustomize`, which can perform arbitrary site-specific customizations.
 It is typically created by a system administrator in the site-packages
 directory.  If this import fails with an :exc:`ImportError` or its subclass
 exception, and the exception's :attr:`~ImportError.name`
-attribute equals to ``'sitecustomize'``,
+attribute equals ``'sitecustomize'``,
 it is silently ignored.  If Python is started without output streams available, as
 with :file:`pythonw.exe` on Windows (which is used by default to start IDLE),
-attempted output from :mod:`sitecustomize` is ignored.  Any other exception
+attempted output from :mod:`!sitecustomize` is ignored.  Any other exception
 causes a silent and perhaps mysterious failure of the process.
 
-:mod:`usercustomize`
---------------------
+:mod:`!usercustomize`
+---------------------
 
 .. module:: usercustomize
 
-After this, an attempt is made to import a module named :mod:`usercustomize`,
+After this, an attempt is made to import a module named :mod:`!usercustomize`,
 which can perform arbitrary user-specific customizations, if
 :data:`~site.ENABLE_USER_SITE` is true.  This file is intended to be created in the
 user site-packages directory (see below), which is part of ``sys.path`` unless
 disabled by :option:`-s`.  If this import fails with an :exc:`ImportError` or
 its subclass exception, and the exception's :attr:`~ImportError.name`
-attribute equals to ``'usercustomize'``, it is silently ignored.
+attribute equals ``'usercustomize'``, it is silently ignored.
 
 Note that for some non-Unix systems, ``sys.prefix`` and ``sys.exec_prefix`` are
 empty, and the path manipulations are skipped; however the import of
-:mod:`sitecustomize` and :mod:`usercustomize` is still attempted.
+:mod:`sitecustomize` and :mod:`!usercustomize` is still attempted.
 
 .. currentmodule:: site
 
@@ -173,7 +173,7 @@ Readline configuration
 On systems that support :mod:`readline`, this module will also import and
 configure the :mod:`rlcompleter` module, if Python is started in
 :ref:`interactive mode <tut-interactive>` and without the :option:`-S` option.
-The default behavior is enable tab-completion and to use
+The default behavior is to enable tab completion and to use
 :file:`~/.python_history` as the history save file.  To disable it, delete (or
 override) the :data:`sys.__interactivehook__` attribute in your
 :mod:`sitecustomize` or :mod:`usercustomize` module or your
@@ -275,7 +275,7 @@ Command-line interface
 
 .. program:: site
 
-The :mod:`site` module also provides a way to get the user directories from the
+The :mod:`!site` module also provides a way to get the user directories from the
 command line:
 
 .. code-block:: shell-session

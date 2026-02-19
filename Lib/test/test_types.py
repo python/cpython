@@ -48,7 +48,7 @@ def clear_typing_caches():
 class TypesTests(unittest.TestCase):
 
     def check_types_names(self, module_types, *, c_extension=False):
-        c_only_names = {'CapsuleType'}
+        c_only_names = {'CapsuleType', 'LazyImportType'}
         ignored = {'new_class', 'resolve_bases', 'prepare_class',
                    'get_original_bases', 'DynamicClassAttribute', 'coroutine'}
         all_names = ignored | {
@@ -57,10 +57,11 @@ class TypesTests(unittest.TestCase):
             'CoroutineType', 'EllipsisType', 'FrameType', 'FunctionType',
             'FrameLocalsProxyType',
             'GeneratorType', 'GenericAlias', 'GetSetDescriptorType',
-            'LambdaType', 'MappingProxyType', 'MemberDescriptorType',
-            'MethodDescriptorType', 'MethodType', 'MethodWrapperType',
-            'ModuleType', 'NoneType', 'NotImplementedType', 'SimpleNamespace',
-            'TracebackType', 'UnionType', 'WrapperDescriptorType',
+            'LambdaType', 'LazyImportType', 'MappingProxyType',
+            'MemberDescriptorType', 'MethodDescriptorType', 'MethodType',
+            'MethodWrapperType', 'ModuleType', 'NoneType',
+            'NotImplementedType', 'SimpleNamespace', 'TracebackType',
+            'UnionType', 'WrapperDescriptorType',
         }
         expected = all_names if c_extension else all_names - c_only_names
         self.assertEqual(expected, set(module_types.__all__))
@@ -74,7 +75,7 @@ class TypesTests(unittest.TestCase):
 
     @unittest.skipUnless(_types, "requires C _types module")
     def test_types_names_consistency(self):
-        c_only_names = {'CapsuleType'}
+        c_only_names = {'CapsuleType', 'LazyImportType'}
         ignored = {'new_class', 'resolve_bases', 'prepare_class',
                    'get_original_bases', 'DynamicClassAttribute', 'coroutine'}
         for name in c_types.__all__:
@@ -2313,8 +2314,8 @@ class CoroutineTests(unittest.TestCase):
         self.assertIs(wrapper.__name__, gen.__name__)
 
         # Test AttributeErrors
-        for name in {'gi_running', 'gi_frame', 'gi_code', 'gi_yieldfrom',
-                     'cr_running', 'cr_frame', 'cr_code', 'cr_await'}:
+        for name in {'gi_running', 'gi_frame', 'gi_code', 'gi_yieldfrom', 'gi_suspended',
+                     'cr_running', 'cr_frame', 'cr_code', 'cr_await', 'cr_suspended'}:
             with self.assertRaises(AttributeError):
                 getattr(wrapper, name)
 
@@ -2323,14 +2324,17 @@ class CoroutineTests(unittest.TestCase):
         gen.gi_frame = object()
         gen.gi_code = object()
         gen.gi_yieldfrom = object()
+        gen.gi_suspended = object()
         self.assertIs(wrapper.gi_running, gen.gi_running)
         self.assertIs(wrapper.gi_frame, gen.gi_frame)
         self.assertIs(wrapper.gi_code, gen.gi_code)
         self.assertIs(wrapper.gi_yieldfrom, gen.gi_yieldfrom)
+        self.assertIs(wrapper.gi_suspended, gen.gi_suspended)
         self.assertIs(wrapper.cr_running, gen.gi_running)
         self.assertIs(wrapper.cr_frame, gen.gi_frame)
         self.assertIs(wrapper.cr_code, gen.gi_code)
         self.assertIs(wrapper.cr_await, gen.gi_yieldfrom)
+        self.assertIs(wrapper.cr_suspended, gen.gi_suspended)
 
         wrapper.close()
         gen.close.assert_called_once_with()
@@ -2449,7 +2453,7 @@ class CoroutineTests(unittest.TestCase):
         self.assertIs(wrapper.__await__(), gen)
 
         for name in ('__name__', '__qualname__', 'gi_code',
-                     'gi_running', 'gi_frame'):
+                     'gi_running', 'gi_frame', 'gi_suspended'):
             self.assertIs(getattr(foo(), name),
                           getattr(gen, name))
         self.assertIs(foo().cr_code, gen.gi_code)
@@ -2512,8 +2516,8 @@ class CoroutineTests(unittest.TestCase):
         self.assertEqual(repr(wrapper), str(wrapper))
         self.assertTrue(set(dir(wrapper)).issuperset({
             '__await__', '__iter__', '__next__', 'cr_code', 'cr_running',
-            'cr_frame', 'gi_code', 'gi_frame', 'gi_running', 'send',
-            'close', 'throw'}))
+            'cr_frame', 'cr_suspended', 'gi_code', 'gi_frame', 'gi_running',
+            'gi_suspended', 'send', 'close', 'throw'}))
 
 
 class FunctionTests(unittest.TestCase):

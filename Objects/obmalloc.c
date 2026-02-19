@@ -13,6 +13,7 @@
 
 #include <stdlib.h>               // malloc()
 #include <stdbool.h>
+#include <stdio.h>                // fopen(), fgets(), sscanf()
 #ifdef WITH_MIMALLOC
 // Forward declarations of functions used in our mimalloc modifications
 static void _PyMem_mi_page_clear_qsbr(mi_page_t *page);
@@ -357,6 +358,29 @@ _PyObject_MiFree(void *ctx, void *ptr)
     mi_free(ptr);
 }
 
+void *
+_PyMem_MiRawMalloc(void *ctx, size_t size)
+{
+    return mi_malloc(size);
+}
+
+void *
+_PyMem_MiRawCalloc(void *ctx, size_t nelem, size_t elsize)
+{
+    return mi_calloc(nelem, elsize);
+}
+
+void *
+_PyMem_MiRawRealloc(void *ctx, void *ptr, size_t size)
+{
+    return mi_realloc(ptr, size);
+}
+
+void
+_PyMem_MiRawFree(void *ctx, void *ptr)
+{
+    mi_free(ptr);
+}
 #endif // WITH_MIMALLOC
 
 
@@ -364,7 +388,8 @@ _PyObject_MiFree(void *ctx, void *ptr)
 
 
 #ifdef WITH_MIMALLOC
-#  define MIMALLOC_ALLOC {NULL, _PyMem_MiMalloc, _PyMem_MiCalloc, _PyMem_MiRealloc, _PyMem_MiFree}
+#  define MIMALLOC_ALLOC    {NULL, _PyMem_MiMalloc, _PyMem_MiCalloc, _PyMem_MiRealloc, _PyMem_MiFree}
+#  define MIMALLOC_RAWALLOC {NULL, _PyMem_MiRawMalloc, _PyMem_MiRawCalloc, _PyMem_MiRawRealloc, _PyMem_MiRawFree}
 #  define MIMALLOC_OBJALLOC {NULL, _PyObject_MiMalloc, _PyObject_MiCalloc, _PyObject_MiRealloc, _PyObject_MiFree}
 #endif
 
@@ -382,7 +407,7 @@ void* _PyObject_Realloc(void *ctx, void *ptr, size_t size);
 
 #if defined(Py_GIL_DISABLED)
 // Py_GIL_DISABLED requires using mimalloc for "mem" and "obj" domains.
-#  define PYRAW_ALLOC MALLOC_ALLOC
+#  define PYRAW_ALLOC MIMALLOC_RAWALLOC
 #  define PYMEM_ALLOC MIMALLOC_ALLOC
 #  define PYOBJ_ALLOC MIMALLOC_OBJALLOC
 #elif defined(WITH_PYMALLOC)
@@ -492,14 +517,86 @@ _PyMem_DefaultRawWcsdup(const wchar_t *str)
 #  endif
 #endif
 
+/* Return the system's default huge page size in bytes, or 0 if it
+ * cannot be determined.  The result is cached after the first call.
+ *
+ * This is Linux-only (/proc/meminfo).  On other systems that define
+ * MAP_HUGETLB the caller should skip huge pages gracefully. */
+#if defined(PYMALLOC_USE_HUGEPAGES) && defined(ARENAS_USE_MMAP) && defined(MAP_HUGETLB)
+static size_t
+_pymalloc_system_hugepage_size(void)
+{
+    static size_t hp_size = 0;
+    static int initialized = 0;
+
+    if (initialized) {
+        return hp_size;
+    }
+
+#ifdef __linux__
+    FILE *f = fopen("/proc/meminfo", "r");
+    if (f != NULL) {
+        char line[256];
+        while (fgets(line, sizeof(line), f)) {
+            unsigned long size_kb;
+            if (sscanf(line, "Hugepagesize: %lu kB", &size_kb) == 1) {
+                hp_size = (size_t)size_kb * 1024;
+                break;
+            }
+        }
+        fclose(f);
+    }
+#endif
+
+    initialized = 1;
+    return hp_size;
+}
+#endif
+
 void *
 _PyMem_ArenaAlloc(void *Py_UNUSED(ctx), size_t size)
 {
 #ifdef MS_WINDOWS
+#  ifdef PYMALLOC_USE_HUGEPAGES
+    if (_PyRuntime.allocators.use_hugepages) {
+        SIZE_T lp_size = GetLargePageMinimum();
+        if (lp_size > 0 && size % lp_size == 0) {
+            void *ptr = VirtualAlloc(NULL, size,
+                            MEM_COMMIT | MEM_RESERVE | MEM_LARGE_PAGES,
+                            PAGE_READWRITE);
+            if (ptr != NULL)
+                return ptr;
+        }
+    }
+    /* Fall back to regular pages */
+#  endif
     return VirtualAlloc(NULL, size,
                         MEM_COMMIT | MEM_RESERVE, PAGE_READWRITE);
 #elif defined(ARENAS_USE_MMAP)
     void *ptr;
+#  ifdef PYMALLOC_USE_HUGEPAGES
+#    ifdef MAP_HUGETLB
+    if (_PyRuntime.allocators.use_hugepages) {
+        size_t hp_size = _pymalloc_system_hugepage_size();
+        /* Only use huge pages if the arena size is a multiple of the
+         * system's default huge page size.  When the arena is smaller
+         * than the huge page, mmap still succeeds but silently
+         * allocates an entire huge page; the subsequent munmap with
+         * the smaller arena size then fails with EINVAL, leaking
+         * all of that memory. */
+        if (hp_size > 0 && size % hp_size == 0) {
+            ptr = mmap(NULL, size, PROT_READ|PROT_WRITE,
+                       MAP_PRIVATE|MAP_ANONYMOUS|MAP_HUGETLB, -1, 0);
+            if (ptr != MAP_FAILED) {
+                assert(ptr != NULL);
+                (void)_PyAnnotateMemoryMap(ptr, size, "cpython:pymalloc:hugepage");
+                return ptr;
+            }
+        }
+    }
+    /* Fall back to regular pages */
+#    endif
+#  endif
     ptr = mmap(NULL, size, PROT_READ|PROT_WRITE,
                MAP_PRIVATE|MAP_ANONYMOUS, -1, 0);
     if (ptr == MAP_FAILED)
@@ -685,7 +782,7 @@ set_up_allocators_unlocked(PyMemAllocatorName allocator)
     case PYMEM_ALLOCATOR_MIMALLOC:
     case PYMEM_ALLOCATOR_MIMALLOC_DEBUG:
     {
-        PyMemAllocatorEx malloc_alloc = MALLOC_ALLOC;
+        PyMemAllocatorEx malloc_alloc = MIMALLOC_RAWALLOC;
         set_allocator_unlocked(PYMEM_DOMAIN_RAW, &malloc_alloc);
 
         PyMemAllocatorEx pymalloc = MIMALLOC_ALLOC;
@@ -755,6 +852,7 @@ get_current_allocator_name_unlocked(void)
 #ifdef WITH_MIMALLOC
     PyMemAllocatorEx mimalloc = MIMALLOC_ALLOC;
     PyMemAllocatorEx mimalloc_obj = MIMALLOC_OBJALLOC;
+    PyMemAllocatorEx mimalloc_raw = MIMALLOC_RAWALLOC;
 #endif
 
     if (pymemallocator_eq(&_PyMem_Raw, &malloc_alloc) &&
@@ -772,7 +870,7 @@ get_current_allocator_name_unlocked(void)
     }
 #endif
 #ifdef WITH_MIMALLOC
-    if (pymemallocator_eq(&_PyMem_Raw, &malloc_alloc) &&
+    if (pymemallocator_eq(&_PyMem_Raw, &mimalloc_raw) &&
         pymemallocator_eq(&_PyMem, &mimalloc) &&
         pymemallocator_eq(&_PyObject, &mimalloc_obj))
     {
@@ -804,7 +902,7 @@ get_current_allocator_name_unlocked(void)
         }
 #endif
 #ifdef WITH_MIMALLOC
-        if (pymemallocator_eq(&_PyMem_Debug.raw.alloc, &malloc_alloc) &&
+        if (pymemallocator_eq(&_PyMem_Debug.raw.alloc, &mimalloc_raw) &&
             pymemallocator_eq(&_PyMem_Debug.mem.alloc, &mimalloc) &&
             pymemallocator_eq(&_PyMem_Debug.obj.alloc, &mimalloc_obj))
         {

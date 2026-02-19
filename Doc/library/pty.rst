@@ -2,7 +2,6 @@
 =========================================
 
 .. module:: pty
-   :platform: Unix
    :synopsis: Pseudo-Terminal Handling for Unix.
 
 .. moduleauthor:: Steen Lumholt
@@ -12,7 +11,7 @@
 
 --------------
 
-The :mod:`pty` module defines operations for handling the pseudo-terminal
+The :mod:`!pty` module defines operations for handling the pseudo-terminal
 concept: starting another process and being able to write to and read from its
 controlling terminal programmatically.
 
@@ -22,7 +21,7 @@ Pseudo-terminal handling is highly platform dependent. This code is mainly
 tested on Linux, FreeBSD, and macOS (it is supposed to work on other POSIX
 platforms but it's not been thoroughly tested).
 
-The :mod:`pty` module defines the following functions:
+The :mod:`!pty` module defines the following functions:
 
 
 .. function:: fork()
