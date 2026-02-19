@@ -118,7 +118,7 @@ PyObject _Py_EllipsisObject = _PyObject_HEAD_INIT(&PyEllipsis_Type);
 */
 
 static PySliceObject *
-_PyBuildSlice_Consume2(PyObject *start, PyObject *stop, PyObject *step)
+_PyBuildSlice_Consume3(PyObject *start, PyObject *stop, PyObject *step)
 {
     assert(start != NULL && stop != NULL && step != NULL);
     PySliceObject *obj = _Py_FREELIST_POP(PySliceObject, slices);
@@ -131,13 +131,14 @@ _PyBuildSlice_Consume2(PyObject *start, PyObject *stop, PyObject *step)
 
     obj->start = start;
     obj->stop = stop;
-    obj->step = Py_NewRef(step);
+    obj->step = step;
 
     _PyObject_GC_TRACK(obj);
     return obj;
 error:
     Py_DECREF(start);
     Py_DECREF(stop);
+    Py_DECREF(step);
     return NULL;
 }
 
@@ -153,15 +154,15 @@ PySlice_New(PyObject *start, PyObject *stop, PyObject *step)
     if (stop == NULL) {
         stop = Py_None;
     }
-    return (PyObject *)_PyBuildSlice_Consume2(Py_NewRef(start),
-                                              Py_NewRef(stop), step);
+    return (PyObject *)_PyBuildSlice_Consume3(Py_NewRef(start),
+                                              Py_NewRef(stop), Py_NewRef(step));
 }
 
 PyObject *
 _PyBuildSlice_ConsumeRefs(PyObject *start, PyObject *stop)
 {
     assert(start != NULL && stop != NULL);
-    return (PyObject *)_PyBuildSlice_Consume2(start, stop, Py_None);
+    return (PyObject *)_PyBuildSlice_Consume3(start, stop, Py_None);
 }
 
 PyObject *
