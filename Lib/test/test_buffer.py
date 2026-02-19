@@ -4465,9 +4465,9 @@ class TestBufferProtocol(unittest.TestCase):
     @support.cpython_only
     @unittest.skipIf(_testcapi is None, "requires _testcapi")
     def test_array_alignment(self):
-        # gh-140557: pointer alignment of buffers including empty allocation
-        # should match the maximum array alignment.
-        align = max(struct.calcsize(fmt) for fmt in ARRAY)
+        # gh-140557: pointer alignment of empty buffers should be at least
+        # to `size_t`.
+        align = struct.calcsize("N")
         cases = [array.array(fmt) for fmt in ARRAY]
         # Empty arrays
         self.assertEqual(
@@ -4476,9 +4476,11 @@ class TestBufferProtocol(unittest.TestCase):
         )
         for case in cases:
             case.append(0)
-        # Allocated arrays
+        # Allocated arrays. The minimum alignment is now governed by regular
+        # allocator rules; aligned for any type that fits in the allocation.
         self.assertEqual(
-            [_testcapi.buffer_pointer_as_int(case) % align for case in cases],
+            [_testcapi.buffer_pointer_as_int(case) % case.itemsize
+             for case in cases],
             [0] * len(cases),
         )
 
