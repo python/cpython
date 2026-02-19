@@ -378,6 +378,12 @@ class BaseUnicodeFunctionsTest:
         # New in 17.0.0
         self.assertEqual(self.db.decomposition('\uA7F1'), '' if self.old else '<super> 0053')
 
+        # Hangul characters
+        self.assertEqual(self.db.decomposition('\uAC00'), '1100 1161')
+        self.assertEqual(self.db.decomposition('\uAC01'), '1100 1161 11A8')
+        self.assertEqual(self.db.decomposition('\uC2F8'), '110A 1161')
+        self.assertEqual(self.db.decomposition('\uD7A3'), '1112 1175 11C2')
+
         self.assertRaises(TypeError, self.db.decomposition)
         self.assertRaises(TypeError, self.db.decomposition, 'xx')
 
@@ -689,7 +695,7 @@ class UnicodeFunctionsTest(unittest.TestCase, BaseUnicodeFunctionsTest):
     # (e.g. 'make distclean && make') to get the correct checksum.
     expectedchecksum = ('668dbbea1136e69d4f00677a5988b23bc78aefc6'
                         if quicktest else
-                        'b869af769bd8fe352c04622ab90533dc54df5cf3')
+                        'ebfc9dd281c2226998fd435744dd2e9321899beb')
 
     @requires_resource('network')
     def test_all_names(self):
@@ -979,7 +985,7 @@ class Unicode_3_2_0_FunctionsTest(unittest.TestCase, BaseUnicodeFunctionsTest):
     old = True
     expectedchecksum = ('2164a66700e03cba9c9f5ed9e9a8d594d2da136a'
                         if quicktest else
-                        'a8276cec9b6991779c5bdaa46c1ae7cc50bc2403')
+                        '74936dffe949d99203a47e6a66565b2fc337bae7')
 
 
 class UnicodeMiscTest(unittest.TestCase):
