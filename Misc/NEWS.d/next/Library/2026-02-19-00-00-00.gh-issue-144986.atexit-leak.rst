@@ -1,2 +1,2 @@
-Fix memory leak in :func:`atexit.register` caused by missing :c:func:`Py_DECREF`
-for the arguments tuple. Patch by Shamil Abdulaev.
+Fix a memory leak in :func:`atexit.register.
+Patch by Shamil Abdulaev.
