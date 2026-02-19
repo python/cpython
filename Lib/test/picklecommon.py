@@ -243,6 +243,9 @@ else:
     class MyUnicode(unicode):
         sample = unicode(r"hello \u1234", "raw-unicode-escape")
 
+class DictKey:
+    pass
+
 class MyTuple(tuple):
     sample = (1, 2, 3)
 

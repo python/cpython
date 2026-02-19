@@ -2911,6 +2911,54 @@ class AbstractPickleTests:
     def test_recursive_frozenset_subclass_and_inst(self):
         self._test_recursive_collection_and_inst(MyFrozenSet)
 
+    def _test_recursive_collection_in_key(self, factory, minprotocol=0):
+        protocols = range(minprotocol, pickle.HIGHEST_PROTOCOL + 1)
+        key = DictKey()
+        o = factory({key: 1})
+        key.attr = o
+        for proto in protocols:
+            with self.subTest(proto=proto):
+                s = self.dumps(o, proto)
+                x = self.loads(s)
+                keys = list(x.keys())
+                self.assertEqual(len(keys), 1)
+                self.assertIs(keys[0].attr, x)
+
+    def test_recursive_dict_in_key(self):
+        self._test_recursive_collection_in_key(dict)
+
+    def test_recursive_dict_subclass_in_key(self):
+        self._test_recursive_collection_in_key(MyDict)
+
+    def test_recursive_frozendict_in_key(self):
+        self._test_recursive_collection_in_key(frozendict, minprotocol=2)
+
+    def test_recursive_frozendict_subclass_in_key(self):
+        self._test_recursive_collection_in_key(MyFrozenDict)
+
+    def _test_recursive_collection_in_value(self, factory, minprotocol=0):
+        protocols = range(minprotocol, pickle.HIGHEST_PROTOCOL + 1)
+        o = factory(key=[])
+        o['key'].append(o)
+        for proto in protocols:
+            with self.subTest(proto=proto):
+                s = self.dumps(o, proto)
+                x = self.loads(s)
+                self.assertEqual(len(x['key']), 1)
+                self.assertIs(x['key'][0], x)
+
+    def test_recursive_dict_in_value(self):
+        self._test_recursive_collection_in_value(dict)
+
+    def test_recursive_dict_subclass_in_value(self):
+        self._test_recursive_collection_in_value(MyDict)
+
+    def test_recursive_frozendict_in_value(self):
+        self._test_recursive_collection_in_value(frozendict, minprotocol=2)
+
+    def test_recursive_frozendict_subclass_in_value(self):
+        self._test_recursive_collection_in_value(MyFrozenDict)
+
     def test_recursive_inst_state(self):
         # Mutable object containing itself.
         y = REX_state()
