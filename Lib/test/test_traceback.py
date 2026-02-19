@@ -13,6 +13,7 @@ import re
 import tempfile
 import random
 import string
+import importlib.machinery
 from test import support
 import shutil
 from test.support import (Error, captured_output, cpython_only, ALWAYS_EQ,
@@ -5193,6 +5194,16 @@ class MiscTest(unittest.TestCase):
             self.assertIn("Unsupported platform for Windows-only standard library module 'msvcrt'", formatted)
         else:
             self.fail("ModuleNotFoundError was not raised")
+
+    def test_find_incompatible_extension_modules(self):
+        """_find_incompatible_extension_modules assumes the last extension in
+        importlib.machinery.EXTENSION_SUFFIXES (defined in Python/dynload_*.c)
+        is untagged (eg. .so, .pyd).
+
+        This test exists to make sure that assumption is correct.
+        """
+        if importlib.machinery.EXTENSION_SUFFIXES:
+            self.assertEqual(len(importlib.machinery.EXTENSION_SUFFIXES[-1].split('.')), 2)
 
 
 class TestColorizedTraceback(unittest.TestCase):
