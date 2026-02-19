@@ -1,0 +1,43 @@
+name: Reusable check IDLE help
+
+on:
+  workflow_call:
+    inputs:
+      idle-html-artifact-id:
+        description: 'Artifact ID for the built idle.html'
+        required: true
+        type: string
+
+permissions: {}
+
+env:
+  FORCE_COLOR: 1
+
+jobs:
+  check-idle-doc-sync:
+    name: 'Check if IDLE help needs regenerating'
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+    - uses: actions/checkout@v6
+      with:
+        persist-credentials: false
+    - name: 'Download built idle.html'
+      uses: actions/download-artifact@v7
+      with:
+        artifact-ids: ${{ inputs.idle-html-artifact-id }}
+        path: Doc/build/html/library
+    - name: 'Set up Python'
+      uses: actions/setup-python@v6
+      with:
+        python-version: '3'
+    - name: 'Regenerate Lib/idlelib/help.html'
+      run: make idlehelp
+      working-directory: Doc
+    - name: 'Check for changes'
+      run: |
+        git diff --exit-code Lib/idlelib/help.html || {
+          echo "Lib/idlelib/help.html is not up to date."
+          echo "Run make idlehelp in the Doc directory."
+          exit 1
+        }
