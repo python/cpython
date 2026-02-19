@@ -1732,9 +1732,7 @@ class FrozenDict(frozendict):
 
 
 class FrozenDictSlots(frozendict):
-    __slots__ = ('attr',)
-    def __init__(self, *args, **kwargs):
-        self.attr = 123
+    __slots__ = ('slot_attr',)
 
 
 class FrozenDictTests(unittest.TestCase):
@@ -1837,16 +1835,31 @@ class FrozenDictTests(unittest.TestCase):
                 FrozenDict(x=1, y=2),
                 FrozenDictSlots(x=1, y=2),
             ):
+                if type(fd) == FrozenDict:
+                    fd.attr = 123
+                if type(fd) == FrozenDictSlots:
+                    fd.slot_attr = 456
                 with self.subTest(fd=fd, proto=proto):
                     if proto >= 2:
                         p = pickle.dumps(fd, proto)
                         fd2 = pickle.loads(p)
                         self.assertEqual(fd2, fd)
                         self.assertEqual(type(fd2), type(fd))
+                        if type(fd) == FrozenDict:
+                            self.assertEqual(fd2.attr, 123)
+                        if type(fd) == FrozenDictSlots:
+                            self.assertEqual(fd2.slot_attr, 456)
                     else:
                         # protocol 0 and 1 don't support frozendict
                         with self.assertRaises(TypeError):
                             pickle.dumps(fd, proto)
+
+    def test_pickle_iter(self):
+        it = iter(frozendict(x=1, y=2))
+        for proto in range(pickle.HIGHEST_PROTOCOL + 1):
+            p = pickle.dumps(it, proto)
+            it2 = pickle.loads(p)
+            self.assertEqual(list(it2), ['x', 'y'])
 
 
 if __name__ == "__main__":
