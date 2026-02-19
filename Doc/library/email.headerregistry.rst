@@ -4,9 +4,6 @@
 .. module:: email.headerregistry
    :synopsis: Automatic Parsing of headers based on the field name
 
-.. moduleauthor:: R. David Murray <rdmurray@bitdance.com>
-.. sectionauthor:: R. David Murray <rdmurray@bitdance.com>
-
 **Source code:** :source:`Lib/email/headerregistry.py`
 
 --------------

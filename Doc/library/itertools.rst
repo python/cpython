@@ -4,9 +4,6 @@
 .. module:: itertools
    :synopsis: Functions creating iterators for efficient looping.
 
-.. moduleauthor:: Raymond Hettinger <python@rcn.com>
-.. sectionauthor:: Raymond Hettinger <python@rcn.com>
-
 .. testsetup::
 
    from itertools import *

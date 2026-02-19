@@ -4,9 +4,6 @@
 .. module:: ssl
    :synopsis: TLS/SSL wrapper for socket objects
 
-.. moduleauthor:: Bill Janssen <bill.janssen@gmail.com>
-.. sectionauthor::  Bill Janssen <bill.janssen@gmail.com>
-
 **Source code:** :source:`Lib/ssl.py`
 
 .. index:: single: OpenSSL; (use in module ssl)

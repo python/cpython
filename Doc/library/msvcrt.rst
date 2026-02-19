@@ -4,8 +4,6 @@
 .. module:: msvcrt
    :synopsis: Miscellaneous useful routines from the MS VC++ runtime.
 
-.. sectionauthor:: Fred L. Drake, Jr. <fdrake@acm.org>
-
 **Source code:** :source:`PC/msvcrtmodule.c`
 
 --------------

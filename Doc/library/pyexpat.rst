@@ -4,8 +4,6 @@
 .. module:: xml.parsers.expat
    :synopsis: An interface to the Expat non-validating XML parser.
 
-.. moduleauthor:: Paul Prescod <paul@prescod.net>
-
 --------------
 
 .. Markup notes:
@@ -666,9 +664,6 @@ otherwise stated.
 ExpatError Exceptions
 ---------------------
 
-.. sectionauthor:: Fred L. Drake, Jr. <fdrake@acm.org>
-
-
 :exc:`ExpatError` exceptions have a number of interesting attributes:
 
 
@@ -751,8 +746,6 @@ Content Model Descriptions
 --------------------------
 
 .. module:: xml.parsers.expat.model
-
-.. sectionauthor:: Fred L. Drake, Jr. <fdrake@acm.org>
 
 Content models are described using nested tuples.  Each tuple contains four
 values: the type, the quantifier, the name, and a tuple of children.  Children

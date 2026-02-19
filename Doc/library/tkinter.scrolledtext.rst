@@ -4,8 +4,6 @@
 .. module:: tkinter.scrolledtext
    :synopsis: Text widget with a vertical scroll bar.
 
-.. sectionauthor:: Fred L. Drake, Jr. <fdrake@acm.org>
-
 **Source code:** :source:`Lib/tkinter/scrolledtext.py`
 
 --------------
