@@ -292,6 +292,12 @@ Python/jit.c                  @brandtbucher @savannahostrowski @diegorusso
 Tools/jit/                    @brandtbucher @savannahostrowski @diegorusso
 InternalDocs/jit.md           @brandtbucher @savannahostrowski @diegorusso @AA-Turner
 
+# Lazy imports (PEP 810)
+Objects/lazyimportobject.c                  @twouters @DinoV @pablogsal
+Include/internal/pycore_lazyimportobject.h  @twouters @DinoV @pablogsal
+Lib/test/test_import/test_lazy_imports.py   @twouters @DinoV @pablogsal
+Lib/test/test_import/data/lazy_imports/     @twouters @DinoV @pablogsal
+
 # Micro-op / μop / Tier 2 Optimiser
 Python/optimizer.c            @markshannon @Fidget-Spinner
 Python/optimizer_analysis.c   @markshannon @tomasr8 @Fidget-Spinner @savannahostrowski
@@ -418,6 +424,7 @@ Lib/test/test_dataclasses/    @ericvsmith
 
 # Dates and times
 Doc/**/*time.rst                 @pganssle @abalkin
+Doc/library/datetime-*           @pganssle
 Doc/library/zoneinfo.rst         @pganssle
 Include/datetime.h               @pganssle @abalkin
 Include/internal/pycore_time.h   @pganssle @abalkin
@@ -467,8 +474,9 @@ Lib/test/test_functools.py    @rhettinger
 Modules/_functoolsmodule.c    @rhettinger
 
 # Garbage collector
-Modules/gcmodule.c            @pablogsal
-Doc/library/gc.rst            @pablogsal
+Modules/gcmodule.c                @pablogsal
+Doc/library/gc.rst                @pablogsal
+InternalDocs/garbage_collector.md @pablogsal
 
 # Gettext
 Doc/library/gettext.rst       @tomasr8

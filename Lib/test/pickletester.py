@@ -1484,6 +1484,29 @@ class AbstractUnpickleTests:
         # bad hashable dict key
         self.check_unpickling_error(CustomError, base + b'}c__main__\nBadKey1\n)\x81Nsb.')
 
+    def test_bad_types(self):
+        # APPEND
+        self.assertEqual(self.loads(b']Na.'), [None])
+        self.check_unpickling_error(AttributeError, b'NNa.')  # non-list
+        # APPENDS
+        self.assertEqual(self.loads(b'](Ne.'), [None])
+        self.check_unpickling_error(AttributeError, b'N(Ne.')  # non-list
+        self.check_unpickling_error(AttributeError, b'N(e.')
+        # SETITEM
+        self.assertEqual(self.loads(b'}NNs.'), {None: None})
+        self.check_unpickling_error(TypeError, b'NNNs.')  # non-dict
+        self.check_unpickling_error(TypeError, b'}]Ns.')  # non-hashable key
+        # SETITEMS
+        self.assertEqual(self.loads(b'}(NNu.'), {None: None})
+        self.check_unpickling_error(TypeError, b'N(NNu.')  # non-dict
+        self.assertEqual(self.loads(b'N(u.'), None)  # no validation for empty items
+        self.check_unpickling_error(TypeError, b'}(]Nu.')  # non-hashable key
+        # ADDITEMS
+        self.assertEqual(self.loads(b'\x8f(N\x90.'), {None})
+        self.check_unpickling_error(AttributeError, b'N(N\x90.')  # non-set
+        self.check_unpickling_error(AttributeError, b'N(\x90.')
+        self.check_unpickling_error(TypeError, b'\x8f(]\x90.')  # non-hashable element
+
     def test_bad_stack(self):
         badpickles = [
             b'.',                       # STOP
@@ -3167,6 +3190,7 @@ class AbstractPickleTests:
             'bytes': (3, 0),
             'BuiltinImporter': (3, 3),
             'str': (3, 4),  # not interoperable with Python < 3.4
+            'frozendict': (3, 15),
         }
         for t in builtins.__dict__.values():
             if isinstance(t, type) and not issubclass(t, BaseException):
@@ -3202,6 +3226,7 @@ class AbstractPickleTests:
             'ExceptionGroup': (3, 11),
             '_IncompleteInputError': (3, 13),
             'PythonFinalizationError': (3, 13),
+            'ImportCycleError': (3, 15),
         }
         for t in builtins.__dict__.values():
             if isinstance(t, type) and issubclass(t, BaseException):
@@ -3228,6 +3253,7 @@ class AbstractPickleTests:
             'breakpoint': (3, 7),
             'aiter': (3, 10),
             'anext': (3, 10),
+            '__lazy_import__': (3, 15),
         }
         for t in builtins.__dict__.values():
             if isinstance(t, types.BuiltinFunctionType):

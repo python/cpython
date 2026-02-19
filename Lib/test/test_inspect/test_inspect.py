@@ -6127,7 +6127,8 @@ class TestSignatureDefinitions(unittest.TestCase):
                 self.assertRaises(ValueError, inspect.signature, getattr(cls, name))
 
     def test_builtins_have_signatures(self):
-        no_signature = {'type', 'super', 'bytearray', 'bytes', 'dict', 'int', 'str'}
+        no_signature = {'type', 'super', 'bytearray', 'bytes',
+                        'dict', 'frozendict', 'int', 'str'}
         # These need PEP 457 groups
         needs_groups = {"range", "slice", "dir", "getattr",
                         "next", "iter", "vars"}
@@ -6277,7 +6278,10 @@ class TestSignatureDefinitions(unittest.TestCase):
 
     def test_re_module_has_signatures(self):
         import re
-        methods_no_signature = {'Match': {'group'}}
+        methods_no_signature = {
+                'Match': {'group'},
+                'Pattern': {'match'},  # It is now an alias for prefixmatch
+        }
         self._test_module_has_signatures(re,
                 methods_no_signature=methods_no_signature,
                 good_exceptions={'error', 'PatternError'})
