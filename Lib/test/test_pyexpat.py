@@ -833,7 +833,7 @@ class ExternalEntityParserCreateErrorTest(unittest.TestCase):
 
     @classmethod
     def setUpClass(cls):
-        cls._testcapi = import_helper.import_module('_testcapi')
+        cls.testcapi = import_helper.import_module('_testcapi')
 
     def test_error_path_no_crash(self):
         # When an allocation inside ExternalEntityParserCreate fails,
@@ -844,14 +844,17 @@ class ExternalEntityParserCreateErrorTest(unittest.TestCase):
         parser.buffer_text = True
         rc_before = sys.getrefcount(parser)
 
-        self._testcapi.set_nomemory(1, 10)
+        # We avoid self.assertRaises(MemoryError) here because the
+        # context manager itself needs memory allocations that fail
+        # while the nomemory hook is active.
+        self.testcapi.set_nomemory(1, 10)
         raised = False
         try:
             parser.ExternalEntityParserCreate(None)
         except MemoryError:
             raised = True
         finally:
-            self._testcapi.remove_mem_hooks()
+            self.testcapi.remove_mem_hooks()
         self.assertTrue(raised, "MemoryError not raised")
 
         rc_after = sys.getrefcount(parser)
