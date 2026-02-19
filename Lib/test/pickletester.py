@@ -2886,6 +2886,8 @@ class AbstractPickleTests:
         self._test_recursive_collection_and_inst(dict.fromkeys, oldminproto=0)
 
     def test_recursive_frozendict_and_inst(self):
+        if self.py_version < (3, 15):
+            self.skipTest('need frozendict')
         self._test_recursive_collection_and_inst(frozendict.fromkeys, minprotocol=2)
 
     def test_recursive_set_and_inst(self):
@@ -3099,15 +3101,6 @@ class AbstractPickleTests:
     def test_float_format(self):
         # make sure that floats are formatted locale independent with proto 0
         self.assertEqual(self.dumps(1.2, 0)[0:3], b'F1.')
-
-    def test_frozendict(self):
-        for proto in range(2, pickle.HIGHEST_PROTOCOL + 1):
-            for fd in (
-                frozendict(),
-                frozendict(x=1, y=2),
-            ):
-                p = self.dumps(fd, proto)
-                self.assert_is_copy(fd, self.loads(p))
 
     def test_reduce(self):
         for proto in protocols:

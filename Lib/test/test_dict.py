@@ -1825,6 +1825,15 @@ class FrozenDictTests(unittest.TestCase):
         self.assertEqual(type(fd), DictSubclass)
         self.assertEqual(created, frozendict(x=1))
 
+    def test_pickle(self):
+        for proto in range(2, pickle.HIGHEST_PROTOCOL + 1):
+            for fd in (
+                frozendict(),
+                frozendict(x=1, y=2),
+            ):
+                p = pickle.dumps(fd, proto)
+                self.assert_is_copy(fd, pickle.loads(p))
+
 
 if __name__ == "__main__":
     unittest.main()
