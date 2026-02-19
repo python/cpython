@@ -693,7 +693,7 @@ class UnicodeFunctionsTest(unittest.TestCase, BaseUnicodeFunctionsTest):
 
     # Update this if the database changes. Make sure to do a full rebuild
     # (e.g. 'make distclean && make') to get the correct checksum.
-    expectedchecksum = ('668dbbea1136e69d4f00677a5988b23bc78aefc6'
+    expectedchecksum = ('00b13fa975a60b1d3f490f1fc8c126ab24990c75'
                         if quicktest else
                         'ebfc9dd281c2226998fd435744dd2e9321899beb')
 
@@ -983,7 +983,7 @@ class UnicodeFunctionsTest(unittest.TestCase, BaseUnicodeFunctionsTest):
 class Unicode_3_2_0_FunctionsTest(unittest.TestCase, BaseUnicodeFunctionsTest):
     db = unicodedata.ucd_3_2_0
     old = True
-    expectedchecksum = ('2164a66700e03cba9c9f5ed9e9a8d594d2da136a'
+    expectedchecksum = ('cb5bbbd1f55b67371e18222b90a8e21c87f16b72'
                         if quicktest else
                         '74936dffe949d99203a47e6a66565b2fc337bae7')
 
