@@ -608,7 +608,8 @@ when the choices specified are strings::
    >>> parser = argparse.ArgumentParser(suggest_on_error=True)
    >>> parser.add_argument('--action', choices=['debug', 'dryrun'])
    >>> parser.parse_args(['--action', 'debugg'])
-   error: argument --action: invalid choice: 'debugg', maybe you meant 'debug'? (choose from 'debug', 'dryrun')
+   usage: tester.py [-h] [--action {debug,dryrun}]
+   tester.py: error: argument --action: invalid choice: 'debugg', maybe you meant 'debug'? (choose from debug, dryrun)
 
 You can disable suggestions by setting ``suggest_on_error`` to ``False``.
 
