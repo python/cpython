@@ -644,7 +644,7 @@ specialize_dict_access_hint(
         SPECIALIZATION_FAIL(base_op, SPEC_FAIL_ATTR_SPLIT_DICT);
         return 0;
     }
-#ifdef PY_GIL_DISABLED
+#ifdef Py_GIL_DISABLED
     PyObject *value;
     Py_ssize_t index = _PyDict_LookupIndexAndValue(dict, name, &value);
     if (value != NULL && PyLazyImport_CheckExact(value)) {
