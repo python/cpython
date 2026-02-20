@@ -253,23 +253,24 @@ Output in debug mode::
 Asynchronous generators best practices
 ======================================
 
-By :term:`asynchronous generator` in this section we will mean
-an :term:`asynchronous generator iterator` that is returned by an
-:term:`asynchronous generator` function.
+Writing correct and efficient asyncio code requires avoiding some known gotchas.
+This section outlines the best practices you need to know.
+Following these practices will save you hours of debugging.
 
 
 Manually close the generator
 ----------------------------
 
-If an asynchronous generator happens to exit early by :keyword:`break`, the caller
-task being cancelled, or other exceptions, the generator's async cleanup code
-will run in an unexpected context -- perhaps after the lifetime of tasks it depends on, or
-during the event loop shutdown when the async-generator garbage collection hook
-is called.
+It is recommended to manually close the
+:term:`asynchronous generator <asynchronous generator iterator>`. If the generator
+exits early by exception raised in the for-loop body, for example,
+the generator's async cleanup code will run in an unexpected context. This could
+happen after the lifetime of tasks it depends on, or during the event loop
+shutdown when the async-generator garbage collection hook is called.
 
 To prevent this, it is recommended to explicitly close the async generator by
-calling the :meth:`~agen.aclose` method, or using a :func:`contextlib.aclosing` context
-manager::
+calling the :meth:`~agen.aclose` method, or by using a :func:`contextlib.aclosing`
+context manager::
 
   import asyncio
   import contextlib
@@ -289,8 +290,9 @@ manager::
 Only create a generator when a loop is already running
 ------------------------------------------------------
 
-It is recommended to create asynchronous generators only after the event loop
-has already been created.
+It is recommended to create
+:term:`asynchronous generators <asynchronous generator iterator>` only after
+the event loop has already been created.
 
 To ensure that asynchronous generators close reliably, the event loop uses the
 :func:`sys.set_asyncgen_hooks` function to register callback functions. These
