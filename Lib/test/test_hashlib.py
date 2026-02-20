@@ -134,8 +134,11 @@ class HashLibTestCase(unittest.TestCase):
             algorithms.add(algorithm.lower())
 
         _blake2 = self._conditional_import_module('_blake2')
+        blake2_hashes = {'blake2b', 'blake2s'}
         if _blake2:
-            algorithms.update({'blake2b', 'blake2s'})
+            algorithms.update(blake2_hashes)
+        else:
+            algorithms.difference_update(blake2_hashes)
 
         self.constructors_to_test = {}
         for algorithm in algorithms:
@@ -232,7 +235,14 @@ class HashLibTestCase(unittest.TestCase):
         # all available algorithms must be loadable, bpo-47101
         self.assertNotIn("undefined", hashlib.algorithms_available)
         for name in hashlib.algorithms_available:
-            digest = hashlib.new(name, usedforsecurity=False)
+            with self.subTest(name):
+                try:
+                    digest = hashlib.new(name, usedforsecurity=False)
+                    assert digest is not None
+                except ValueError as verr:
+                    # builtins may be absent if python built with
+                    # a subset of --with-builtin-hashlib-hashes or none.
+                    self.skipTest(verr)
 
     def test_usedforsecurity_true(self):
         hashlib.new("sha256", usedforsecurity=True)
@@ -504,6 +514,7 @@ class HashLibTestCase(unittest.TestCase):
         self.assertEqual(h.hexdigest(), "e2d4535e3b613135c14f2fe4e026d7ad8d569db44901740beffa30d430acb038")
 
     @requires_resource('cpu')
+    @requires_blake2
     def test_blake2_update_over_4gb(self):
         # blake2s or blake2b doesn't matter based on how our C code is structured, this tests the
         # common loop macro logic.
@@ -1052,7 +1063,9 @@ class HashLibTestCase(unittest.TestCase):
         # for multithreaded operation. Currently, all cryptographic modules
         # have the same constant value (2048) but in the future it might not
         # be the case.
-        mods = ['_md5', '_sha1', '_sha2', '_sha3', '_blake2', '_hashlib']
+        mods = ['_md5', '_sha1', '_sha2', '_sha3', '_hashlib']
+        if _blake2:
+            mods.append('_blake2')
         gil_minsize = hashlib_helper.find_gil_minsize(mods)
         for cons in self.hash_constructors:
             # constructors belong to one of the above modules
@@ -1080,7 +1093,10 @@ class HashLibTestCase(unittest.TestCase):
     def test_threaded_hashing_fast(self):
         # Same as test_threaded_hashing_slow() but only tests some functions
         # since otherwise test_hashlib.py becomes too slow during development.
-        for name in ['md5', 'sha1', 'sha256', 'sha3_256', 'blake2s']:
+        algos = ['md5', 'sha1', 'sha256', 'sha3_256']
+        if _blake2:
+            algos.append('blake2s')
+        for name in algos:
             if constructor := getattr(hashlib, name, None):
                 with self.subTest(name):
                     self.do_test_threaded_hashing(constructor, is_shake=False)
