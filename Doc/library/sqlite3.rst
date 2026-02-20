@@ -4,8 +4,6 @@
 .. module:: sqlite3
    :synopsis: A DB-API 2.0 implementation using SQLite 3.x.
 
-.. sectionauthor:: Gerhard Häring <gh@ghaering.de>
-
 **Source code:** :source:`Lib/sqlite3/`
 
 .. Make sure we always doctest the tutorial with an empty database.
