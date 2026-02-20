@@ -4,9 +4,6 @@
 .. module:: shutil
    :synopsis: High-level file operations, including copying.
 
-.. sectionauthor:: Fred L. Drake, Jr. <fdrake@acm.org>
-.. partly based on the docstrings
-
 **Source code:** :source:`Lib/shutil.py`
 
 .. index::
@@ -540,12 +537,12 @@ On Solaris :func:`os.sendfile` is used.
 
 On Windows :func:`shutil.copyfile` uses a bigger default buffer size (1 MiB
 instead of 64 KiB) and a :func:`memoryview`-based variant of
-:func:`shutil.copyfileobj` is used, which is still reads and writes in a loop.
+:func:`shutil.copyfileobj` is used, which still reads and writes in a loop.
 :func:`shutil.copy2` uses the native ``CopyFile2`` call on Windows, which is the most
 efficient method, supports copy-on-write, and preserves metadata.
 
 If the fast-copy operation fails and no data was written in the destination
-file then shutil will silently fallback on using less efficient
+file then shutil will silently fall back to less efficient
 :func:`copyfileobj` function internally.
 
 .. versionchanged:: 3.8
