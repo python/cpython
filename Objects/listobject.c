@@ -2774,8 +2774,8 @@ unsafe_object_compare(PyObject *v, PyObject *w, MergeState *ms)
     }
     else {
         res = PyObject_IsTrue(res_obj);
+        Py_DECREF(res_obj);
     }
-    Py_DECREF(res_obj);
 
     /* Note that we can't assert
      *     res == PyObject_RichCompareBool(v, w, Py_LT);
