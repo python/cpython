@@ -234,6 +234,7 @@ class HashLibTestCase(unittest.TestCase):
                             issubset(hashlib.algorithms_available))
         # all available algorithms must be loadable, bpo-47101
         self.assertNotIn("undefined", hashlib.algorithms_available)
+        algorithms_builtin = sysconfig.get_config_var("PY_BUILTIN_HASHLIB_HASHES").split(",")
         for name in hashlib.algorithms_available:
             with self.subTest(name):
                 try:
@@ -243,7 +244,7 @@ class HashLibTestCase(unittest.TestCase):
                     # builtins may be absent if python built with
                     # a subset of --with-builtin-hashlib-hashes or none.
                     if ("blake2" in name and
-                        "blake2" not in sysconfig.get_config_var("PY_BUILTIN_HASHLIB_HASHES").split(",")):
+                        "blake2" not in algorithms_builtin):
                         self.skipTest(verr)
                     else:
                         raise
@@ -1067,9 +1068,7 @@ class HashLibTestCase(unittest.TestCase):
         # for multithreaded operation. Currently, all cryptographic modules
         # have the same constant value (2048) but in the future it might not
         # be the case.
-        mods = ['_md5', '_sha1', '_sha2', '_sha3', '_hashlib']
-        if _blake2:
-            mods.append('_blake2')
+        mods = ['_md5', '_sha1', '_sha2', '_sha3', '_blake2', '_hashlib']
         gil_minsize = hashlib_helper.find_gil_minsize(mods)
         for cons in self.hash_constructors:
             # constructors belong to one of the above modules
