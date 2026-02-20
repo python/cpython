@@ -1,0 +1,1 @@
+Fix :class:`argparse.ArgumentParser` to be :mod:`pickleable <pickle>`.

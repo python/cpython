@@ -101,7 +101,7 @@ def copy(x):
 
 
 _copy_atomic_types = frozenset({types.NoneType, int, float, bool, complex, str, tuple,
-          bytes, frozenset, type, range, slice, property,
+          bytes, frozendict, frozenset, type, range, slice, property,
           types.BuiltinFunctionType, types.EllipsisType,
           types.NotImplementedType, types.FunctionType, types.CodeType,
           weakref.ref, super})
@@ -203,6 +203,11 @@ def _deepcopy_dict(x, memo, deepcopy=deepcopy):
     return y
 d[dict] = _deepcopy_dict
 
+def _deepcopy_frozendict(x, memo, deepcopy=deepcopy):
+    y = _deepcopy_dict(x, memo, deepcopy)
+    return frozendict(y)
+d[frozendict] = _deepcopy_frozendict
+
 def _deepcopy_method(x, memo): # Copy instance methods
     return type(x)(x.__func__, deepcopy(x.__self__, memo))
 d[types.MethodType] = _deepcopy_method
@@ -230,7 +235,7 @@ def _reconstruct(x, memo, func, args,
                  *, deepcopy=deepcopy):
     deep = memo is not None
     if deep and args:
-        args = (deepcopy(arg, memo) for arg in args)
+        args = [deepcopy(arg, memo) for arg in args]
     y = func(*args)
     if deep:
         memo[id(x)] = y

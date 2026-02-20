@@ -509,9 +509,15 @@ extern "C" {
 #  define Py_CAN_START_THREADS 1
 #endif
 
-#ifdef WITH_THREAD
-// HAVE_THREAD_LOCAL is just defined here for compatibility's sake
+
+/* gh-142163: Some libraries rely on HAVE_THREAD_LOCAL being undefined, so
+ * we can only define it only when Py_BUILD_CORE is set.*/
+#ifdef Py_BUILD_CORE
+// This is no longer coupled to _Py_thread_local.
 #  define HAVE_THREAD_LOCAL 1
+#endif
+
+#ifdef WITH_THREAD
 #  ifdef thread_local
 #    define _Py_thread_local thread_local
 #  elif __STDC_VERSION__ >= 201112L && !defined(__STDC_NO_THREADS__)
@@ -561,8 +567,11 @@ extern "C" {
 //
 // Example: _Py_TYPEOF(x) x_copy = (x);
 //
-// The macro is only defined if GCC or clang compiler is used.
-#if defined(__GNUC__) || defined(__clang__)
+// On C23, use typeof(). Otherwise, the macro is only defined
+// if GCC or clang compiler is used.
+#if defined (__STDC_VERSION__) && __STDC_VERSION__ >= 202311L
+#  define _Py_TYPEOF(expr) typeof(expr)
+#elif defined(__GNUC__) || defined(__clang__)
 #  define _Py_TYPEOF(expr) __typeof__(expr)
 #endif
 

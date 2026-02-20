@@ -10,21 +10,50 @@ found in the dictionary of type objects.
 
 .. XXX document these!
 
-.. c:var:: PyTypeObject PyProperty_Type
-
-   The type object for the built-in descriptor types.
-
-
 .. c:function:: PyObject* PyDescr_NewGetSet(PyTypeObject *type, struct PyGetSetDef *getset)
 
 
 .. c:function:: PyObject* PyDescr_NewMember(PyTypeObject *type, struct PyMemberDef *meth)
 
 
+.. c:var:: PyTypeObject PyMemberDescr_Type
+
+   The type object for member descriptor objects created from
+   :c:type:`PyMemberDef` structures. These descriptors expose fields of a
+   C struct as attributes on a type, and correspond
+   to :class:`types.MemberDescriptorType` objects in Python.
+
+
+
+.. c:var:: PyTypeObject PyGetSetDescr_Type
+
+   The type object for get/set descriptor objects created from
+   :c:type:`PyGetSetDef` structures. These descriptors implement attributes
+   whose value is computed by C getter and setter functions, and are used
+   for many built-in type attributes.
+
+
 .. c:function:: PyObject* PyDescr_NewMethod(PyTypeObject *type, struct PyMethodDef *meth)
 
 
+.. c:var:: PyTypeObject PyMethodDescr_Type
+
+   The type object for method descriptor objects created from
+   :c:type:`PyMethodDef` structures. These descriptors expose C functions as
+   methods on a type, and correspond to :class:`types.MemberDescriptorType`
+   objects in Python.
+
+
 .. c:function:: PyObject* PyDescr_NewWrapper(PyTypeObject *type, struct wrapperbase *wrapper, void *wrapped)
+
+
+.. c:var:: PyTypeObject PyWrapperDescr_Type
+
+   The type object for wrapper descriptor objects created by
+   :c:func:`PyDescr_NewWrapper` and :c:func:`PyWrapper_New`. Wrapper
+   descriptors are used internally to expose special methods implemented
+   via wrapper structures, and appear in Python as
+   :class:`types.WrapperDescriptorType` objects.
 
 
 .. c:function:: PyObject* PyDescr_NewClassMethod(PyTypeObject *type, PyMethodDef *method)
@@ -40,8 +69,25 @@ found in the dictionary of type objects.
 .. c:function:: PyObject* PyWrapper_New(PyObject *, PyObject *)
 
 
+.. c:macro:: PyDescr_COMMON
+
+   This is a :term:`soft deprecated` macro including the common fields for a
+   descriptor object.
+
+   This was included in Python's C API by mistake; do not use it in extensions.
+   For creating custom descriptor objects, create a class implementing the
+   descriptor protocol (:c:member:`~PyTypeObject.tp_descr_get` and
+   :c:member:`~PyTypeObject.tp_descr_set`).
+
+
 Built-in descriptors
 ^^^^^^^^^^^^^^^^^^^^
+
+.. c:var:: PyTypeObject PyProperty_Type
+
+   The type object for property objects. This is the same object as
+   :class:`property` in the Python layer.
+
 
 .. c:var:: PyTypeObject PySuper_Type
 
@@ -53,6 +99,14 @@ Built-in descriptors
 
    The type of class method objects. This is the same object as
    :class:`classmethod` in the Python layer.
+
+
+.. c:var:: PyTypeObject PyClassMethodDescr_Type
+
+   The type object for C-level class method descriptor objects.
+   This is the type of the descriptors created for :func:`classmethod` defined in
+   C extension types, and is the same object as :class:`classmethod`
+   in Python.
 
 
 .. c:function:: PyObject *PyClassMethod_New(PyObject *callable)

@@ -9,7 +9,7 @@
 --------------
 
 This module defines an object type which can compactly represent an array of
-basic values: characters, integers, floating-point numbers.  Arrays are sequence
+basic values: characters, integers, floating-point numbers.  Arrays are mutable :term:`sequence`
 types and behave very much like lists, except that the type of objects stored in
 them is constrained.  The type is specified at object creation time by using a
 :dfn:`type code`, which is a single character.  The following type codes are
@@ -93,7 +93,7 @@ The module defines the following type:
    otherwise, the initializer's iterator is passed to the :meth:`extend` method
    to add initial items to the array.
 
-   Array objects support the ordinary sequence operations of indexing, slicing,
+   Array objects support the ordinary :ref:`mutable <typesseq-mutable>` :term:`sequence` operations of indexing, slicing,
    concatenation, and multiplication.  When using slice assignment, the assigned
    value must be an array object with the same type code; in all other cases,
    :exc:`TypeError` is raised. Array objects also implement the buffer interface,

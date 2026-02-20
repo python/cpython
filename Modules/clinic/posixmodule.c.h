@@ -8692,6 +8692,7 @@ PyDoc_STRVAR(os_pwritev__doc__,
 "- RWF_SYNC\n"
 "- RWF_APPEND\n"
 "- RWF_DONTCACHE\n"
+"- RWF_ATOMIC\n"
 "\n"
 "Using non-zero flags requires Linux 4.7 or newer.");
 
@@ -9417,7 +9418,7 @@ exit:
 
 #endif /* (defined HAVE_TRUNCATE || defined MS_WINDOWS) */
 
-#if (defined(HAVE_POSIX_FALLOCATE) && !defined(POSIX_FADVISE_AIX_BUG) && !defined(__wasi__))
+#if (defined(HAVE_POSIX_FALLOCATE) && !defined(__wasi__))
 
 PyDoc_STRVAR(os_posix_fallocate__doc__,
 "posix_fallocate($module, fd, offset, length, /)\n"
@@ -9462,9 +9463,9 @@ exit:
     return return_value;
 }
 
-#endif /* (defined(HAVE_POSIX_FALLOCATE) && !defined(POSIX_FADVISE_AIX_BUG) && !defined(__wasi__)) */
+#endif /* (defined(HAVE_POSIX_FALLOCATE) && !defined(__wasi__)) */
 
-#if (defined(HAVE_POSIX_FADVISE) && !defined(POSIX_FADVISE_AIX_BUG))
+#if defined(HAVE_POSIX_FADVISE)
 
 PyDoc_STRVAR(os_posix_fadvise__doc__,
 "posix_fadvise($module, fd, offset, length, advice, /)\n"
@@ -9519,7 +9520,7 @@ exit:
     return return_value;
 }
 
-#endif /* (defined(HAVE_POSIX_FADVISE) && !defined(POSIX_FADVISE_AIX_BUG)) */
+#endif /* defined(HAVE_POSIX_FADVISE) */
 
 #if defined(MS_WINDOWS)
 
@@ -13610,4 +13611,4 @@ exit:
 #ifndef OS__EMSCRIPTEN_LOG_METHODDEF
     #define OS__EMSCRIPTEN_LOG_METHODDEF
 #endif /* !defined(OS__EMSCRIPTEN_LOG_METHODDEF) */
-/*[clinic end generated code: output=82f60940338c70e4 input=a9049054013a1b77]*/
+/*[clinic end generated code: output=89c21e2151ac7316 input=a9049054013a1b77]*/
