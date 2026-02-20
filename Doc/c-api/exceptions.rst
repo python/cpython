@@ -673,13 +673,17 @@ Signal Handling
       single: SIGINT (C macro)
       single: KeyboardInterrupt (built-in exception)
 
-
-
-   Handle external interruptions, such as signals (including :kbd:`Ctrl-C`),
-   or activating a debugger, whose processing has been delayed until it is safe
+   Handle external interruptions, such as signals or activating a debugger,
+   whose processing has been delayed until it is safe
    to run Python code and/or raise exceptions.
-   The function should be called by long-running C code frequently
-   enough so that the response appears immediate to humans.
+
+   For example, pressing :kbd:`Ctrl-C` causes a terminal to send the
+   :py:data:`signal.SIGINT` signal.
+   This function executes the corresponding Python signal handler, which,
+   by default, raises the :exc:`KeyboardInterrupt` exception.
+
+   :c:func:`!PyErr_CheckSignals` should be called by long-running C code
+   frequently enough so that the response appears immediate to humans.
 
    Handlers invoked by this function currently include:
 
@@ -702,10 +706,6 @@ Signal Handling
 
    If all handlers finish successfully, or there are no handlers to run,
    return ``0``.
-
-   .. note::
-      The default Python signal handler for :py:data:`signal.SIGINT` raises the
-      :exc:`KeyboardInterrupt` exception.
 
    .. versionchanged:: 3.12
       This function may now invoke the garbage collector.
