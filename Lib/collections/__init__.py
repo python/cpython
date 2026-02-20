@@ -28,7 +28,7 @@ __all__ = [
 
 import _collections_abc
 import sys as _sys
-lazy import copy
+lazy import copy as _copy
 lazy import heapq as _heapq
 
 _sys.modules['collections.abc'] = _collections_abc
