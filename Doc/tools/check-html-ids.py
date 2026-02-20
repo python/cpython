@@ -61,7 +61,7 @@ def gather_ids(htmldir, *, verbose_print):
     for relative_path, future in tasks.items():
         verbose_print(relative_path)
         ids = future.result()
-        ids_by_page[str(relative_path)] = future.result()
+        ids_by_page[str(relative_path)] = ids
         verbose_print(f'    - {len(ids)} ids found')
 
     common = set.intersection(*ids_by_page.values())
