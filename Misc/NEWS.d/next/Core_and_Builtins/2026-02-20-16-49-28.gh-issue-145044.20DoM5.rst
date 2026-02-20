@@ -1,0 +1,2 @@
+The function :func:`unsafe_object_compare()` in :file:`Objects/listobject.c` has been optimized to avoid unnecessary reference count decrements on boolean results. This reduces overhead on tight comparison loops, improving :class:`list` sort performance by approximately 1%.
+Patch by Benedikt Johannes.
