@@ -30,7 +30,7 @@ jobs:
   interpreter:
     name: Interpreter (Debug)
     runs-on: ubuntu-24.04
-    timeout-minutes: 90
+    timeout-minutes: 60
     steps:
       - uses: actions/checkout@v6
         with:
@@ -47,7 +47,7 @@ jobs:
     name: ${{ matrix.target }} (${{ matrix.debug && 'Debug' || 'Release' }})
     needs: interpreter
     runs-on: ${{ matrix.runner }}
-    timeout-minutes: 90
+    timeout-minutes: 60
     strategy:
       fail-fast: false
       matrix:
@@ -87,7 +87,7 @@ jobs:
     name: ${{ matrix.target }} (${{ matrix.debug && 'Debug' || 'Release' }})
     needs: interpreter
     runs-on: ${{ matrix.runner }}
-    timeout-minutes: 90
+    timeout-minutes: 60
     strategy:
       fail-fast: false
       matrix:
@@ -130,7 +130,7 @@ jobs:
     name: ${{ matrix.target }} (${{ matrix.debug && 'Debug' || 'Release' }})
     needs: interpreter
     runs-on: ${{ matrix.runner }}
-    timeout-minutes: 90
+    timeout-minutes: 60
     strategy:
       fail-fast: false
       matrix:
@@ -166,7 +166,7 @@ jobs:
     name: ${{ matrix.name }}
     needs: interpreter
     runs-on: ubuntu-24.04
-    timeout-minutes: 90
+    timeout-minutes: 60
     strategy:
       fail-fast: false
       matrix:
@@ -197,7 +197,7 @@ jobs:
           fi
           ./configure ${{ matrix.configure_flags }}
           make all --jobs 4
-      - name: Run tests
+      - name: Test
         if: matrix.run_tests != false
         run: |
           ${{ matrix.test_env }} ./python -m test --multiprocess 0 --timeout 4500 --verbose2 --verbose3
