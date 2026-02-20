@@ -906,6 +906,11 @@ _pysqlite_query_execute(pysqlite_Cursor* self, int multiple, PyObject* operation
         }
 
         rc = stmt_step(self->statement->st);
+        if (self->connection->db == NULL) {
+            PyErr_SetString(state->ProgrammingError,
+                            "Cannot operate on a closed database.");
+            goto error;
+        }
         if (rc != SQLITE_DONE && rc != SQLITE_ROW) {
             if (PyErr_Occurred()) {
                 /* there was an error that occurred in a user-defined callback */
@@ -967,7 +972,7 @@ _pysqlite_query_execute(pysqlite_Cursor* self, int multiple, PyObject* operation
         Py_XDECREF(parameters);
     }
 
-    if (!multiple) {
+    if (!multiple && self->connection->db) {
         sqlite_int64 lastrowid;
 
         Py_BEGIN_ALLOW_THREADS

@@ -723,6 +723,29 @@ class AggregateTests(unittest.TestCase):
                 'takes exactly 3 positional arguments'):
             self.con.create_aggregate("test", 1, aggregate_class=AggrText)
 
+    def test_aggr_close_conn_in_step(self):
+        """Connection.close() in an aggregate step callback must not crash."""
+        con = sqlite.connect(":memory:", autocommit=True)
+        cur = con.cursor()
+        cur.execute("CREATE TABLE t(x INTEGER)")
+        for i in range(50):
+            cur.execute("INSERT INTO t VALUES (?)", (i,))
+
+        class CloseConnAgg:
+            def __init__(self):
+                self.total = 0
+
+            def step(self, value):
+                self.total += value
+                con.close()
+
+            def finalize(self):
+                return self.total
+
+        con.create_aggregate("agg_close", 1, CloseConnAgg)
+        with self.assertRaises(sqlite.ProgrammingError):
+            con.execute("SELECT agg_close(x) FROM t")
+
 
 class AuthorizerTests(unittest.TestCase):
     @staticmethod
