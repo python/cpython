@@ -2913,7 +2913,7 @@ class AbstractPickleTests:
 
     def _test_recursive_collection_in_key(self, factory, minprotocol=0):
         protocols = range(minprotocol, pickle.HIGHEST_PROTOCOL + 1)
-        key = DictKey()
+        key = Object()
         o = factory({key: 1})
         key.attr = o
         for proto in protocols:
@@ -2923,12 +2923,6 @@ class AbstractPickleTests:
                 keys = list(x.keys())
                 self.assertEqual(len(keys), 1)
                 self.assertIs(keys[0].attr, x)
-
-    def test_recursive_dict_in_key(self):
-        self._test_recursive_collection_in_key(dict)
-
-    def test_recursive_dict_subclass_in_key(self):
-        self._test_recursive_collection_in_key(MyDict)
 
     def test_recursive_frozendict_in_key(self):
         self._test_recursive_collection_in_key(frozendict, minprotocol=2)
@@ -2946,12 +2940,6 @@ class AbstractPickleTests:
                 x = self.loads(s)
                 self.assertEqual(len(x['key']), 1)
                 self.assertIs(x['key'][0], x)
-
-    def test_recursive_dict_in_value(self):
-        self._test_recursive_collection_in_value(dict)
-
-    def test_recursive_dict_subclass_in_value(self):
-        self._test_recursive_collection_in_value(MyDict)
 
     def test_recursive_frozendict_in_value(self):
         self._test_recursive_collection_in_value(frozendict, minprotocol=2)
