@@ -697,7 +697,7 @@ Signal Handling
 
    - Running the garbage collector, if necessary.
 
-   - Execuing a pending :ref:`remote debugger <remote-debugging>` script.
+   - Executing a pending :ref:`remote debugger <remote-debugging>` script.
 
    If any handler raises an exception, immediately return ``-1`` with that
    exception set.
