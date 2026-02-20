@@ -1855,11 +1855,21 @@ class FrozenDictTests(unittest.TestCase):
                             pickle.dumps(fd, proto)
 
     def test_pickle_iter(self):
-        it = iter(frozendict(x=1, y=2))
-        for proto in range(pickle.HIGHEST_PROTOCOL + 1):
-            p = pickle.dumps(it, proto)
-            it2 = pickle.loads(p)
-            self.assertEqual(list(it2), ['x', 'y'])
+        fd = frozendict(c=1, b=2, a=3, d=4, e=5, f=6)
+        for method_name in (None, 'keys', 'values', 'items'):
+            if method_name is not None:
+                meth = getattr(fd, method_name)
+            else:
+                meth = lambda: fd
+            expected = list(meth())[1:]
+            for proto in range(pickle.HIGHEST_PROTOCOL + 1):
+                with self.subTest(method_name=method_name, protocol=proto):
+                    it = iter(meth())
+                    next(it)
+                    p = pickle.dumps(it, proto)
+                    unpickled = pickle.loads(p)
+                    self.assertEqual(list(unpickled), expected)
+                    self.assertEqual(list(it), expected)
 
 
 if __name__ == "__main__":
