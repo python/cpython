@@ -673,36 +673,8 @@ Signal Handling
       single: SIGINT (C macro)
       single: KeyboardInterrupt (built-in exception)
 
-   This function interacts with Python's signal handling.
 
-   If the function is called from the main thread and under the main Python
-   interpreter, it checks whether a signal has been sent to the processes
-   and if so, invokes the corresponding signal handler.  If the :mod:`signal`
-   module is supported, this can invoke a signal handler written in Python.
 
-   The function attempts to handle all pending signals, and then returns ``0``.
-   However, if a Python signal handler raises an exception, the error
-   indicator is set and the function returns ``-1`` immediately (such that
-   other pending signals may not have been handled yet: they will be on the
-   next :c:func:`PyErr_CheckSignals()` invocation).
-
-   This function may invoke the garbage collector or execute a :ref:`remote
-   debugger <remote-debugging>` script, regardless of the calling thread
-   or Python interpreter.
-
-   This function can be called by long-running C code that wants to
-   be interruptible by user requests (such as by pressing Ctrl-C).
-
-   .. note::
-      The default Python signal handler for :c:macro:`!SIGINT` raises the
-      :exc:`KeyboardInterrupt` exception.
-
-   .. versionchanged:: 3.12
-      This function may now invoke the garbage collector.
-
-   .. versionchanged:: 3.14
-      This function may now execute a remote debugger script, if remote
-      debugging is enabled.
    Handle external interruptions, such as signals (including :kbd:`Ctrl-C`),
    or activating a debugger, whose processing has been delayed until it is safe
    to run Python code and/or raise exceptions.
