@@ -19,6 +19,10 @@ repos:
         args: [--exit-non-zero-on-fix, --config=Tools/build/.ruff.toml]
         files: ^Tools/build/
       - id: ruff-check
+        name: Run Ruff (lint) on Platforms/WASI/
+        args: [--exit-non-zero-on-fix, --config=Platforms/WASI/.ruff.toml]
+        files: ^Platforms/WASI/
+      - id: ruff-check
         name: Run Ruff (lint) on Tools/i18n/
         args: [--exit-non-zero-on-fix, --config=Tools/i18n/.ruff.toml]
         files: ^Tools/i18n/
@@ -42,6 +46,10 @@ repos:
         name: Run Ruff (format) on Doc/
         args: [--exit-non-zero-on-fix]
         files: ^Doc/
+      - id: ruff-format
+        name: Run Ruff (format) on Platforms/WASI/
+        args: [--exit-non-zero-on-fix, --config=Platforms/WASI/.ruff.toml]
+        files: ^Platforms/WASI/
       - id: ruff-format
         name: Run Ruff (format) on Tools/build/check_warnings.py
         args: [--exit-non-zero-on-fix, --config=Tools/build/.ruff.toml]
