@@ -2646,6 +2646,62 @@ class TestParser(TestParserMixin, TestEmailBase):
 
     # get_phrase
 
+    @params
+    def test_get_phrase(self, s, *args, **kw):
+        phrase = self._test_parse(parser.get_phrase, C(s), *args, **kw)
+        if 'exception' in kw:
+            return
+        self.assertIsInstance(phrase, parser.Phrase)
+        self.verify_terminal_types(phrase, 'dot', 'atext', 'ptext', 'fws', 'vtext')
+
+    @params_map(with_namelist=True)
+    def adapt_get_word_tests_for_get_phrase(nl, *args, **kw):
+        kw.pop('tokenlisttype')
+        kw.pop('quoted_value', None)
+        kw.pop('content', None)
+        # XXX XXX A phrase has to have at least one word, but the current code
+        # does not enforce this.  We'll fix this in the refactor, but for now
+        # we skip the parameters that expect a raise on a value with no
+        # content.
+        if nl.has_any(
+                'empty',
+                'no_atom_before_special',
+                'no_atom',
+                'no_atext_before_special_or_wsp',
+                'cfws_only_raises',
+                'empty_input',
+            ):
+            return
+        yield '', C(*args, **kw)
+
+    params_test_get_phrase = old_api_only(
+
+        # A phrase is a series of words, and single words are valid,
+        # so get_phrase should pass many of the get_word tests.
+        adapt_get_word_tests_for_get_phrase(
+            include_unless(
+                lambda n, *a, remainder=False, **k:
+                    n.has_any(
+                        # A phrase only ends at specials other than " and .
+                        'atom_ends_at_noncfws',
+                        'qs_ends_at_noncfws',
+                        'ew_after_dquote',
+                        'encoded_word_after_dquote_with_no_ws',
+                        'end_dquote_mid_word',
+                        # XXX XXX This test should pass after refactoring.
+                        'multiple_ew_no_ws',
+                        )
+                    # A phrase does *not* end at a period or a quotation mark.
+                    or remainder and n.has_any(
+                        'full_stop',
+                        'quotation_mark',
+                        ),
+                label='from_test_get_word',
+                )(params_test_get_word),
+            ),
+
+        )
+
     def test_get_phrase_simple(self):
         phrase = self._test_get_x(parser.get_phrase,
             '"Fred A. Johnson" is his name, oh.',
