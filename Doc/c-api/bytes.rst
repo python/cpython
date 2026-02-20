@@ -180,10 +180,11 @@ called with a non-bytes parameter.
 .. c:function:: void PyBytes_Concat(PyObject **bytes, PyObject *newpart)
 
    Create a new bytes object in *\*bytes* containing the contents of *newpart*
-   appended to *bytes*; the caller will own the new reference.  The reference to
-   the old value of *bytes* will be stolen.  If the new object cannot be
-   created, the old reference to *bytes* will still be discarded and the value
-   of *\*bytes* will be set to ``NULL``; the appropriate exception will be set.
+   appended to *bytes*; the caller will own the new reference.
+   The reference to the old value of *bytes* will be ":term:`stolen <steal>`".
+   If the new object cannot be created, the old reference to *bytes* will still
+   be "stolen", the value of *\*bytes* will be set to ``NULL``, and
+   the appropriate exception will be set.
 
 
 .. c:function:: void PyBytes_ConcatAndDel(PyObject **bytes, PyObject *newpart)

@@ -681,9 +681,12 @@ the caller is said to *borrow* the reference. Nothing needs to be done for a
 
 Conversely, when a calling function passes in a reference to an  object, there
 are two possibilities: the function *steals* a  reference to the object, or it
-does not.  *Stealing a reference* means that when you pass a reference to a
-function, that function assumes that it now owns that reference, and you are not
-responsible for it any longer.
+does not.
+
+*Stealing a reference* means that when you pass a reference to a
+function, that function assumes that it now owns that reference.
+Since the new owner can use :c:func:`!Py_DECREF` at its discretion,
+you (the caller) must not use that reference after the call.
 
 .. index::
    single: PyList_SetItem (C function)

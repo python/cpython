@@ -103,8 +103,9 @@ Tuple Objects
 
    .. note::
 
-      This function "steals" a reference to *o* and discards a reference to
-      an item already in the tuple at the affected position.
+      This function ":term:`steals <steal>`" a reference to *o* and discards
+      a reference to an item already in the tuple at the affected position
+      (unless it was NULL).
 
 
 .. c:function:: void PyTuple_SET_ITEM(PyObject *p, Py_ssize_t pos, PyObject *o)
@@ -117,7 +118,7 @@ Tuple Objects
 
    .. note::
 
-      This function "steals" a reference to *o*, and, unlike
+      This function ":term:`steals <steal>`" a reference to *o*, and, unlike
       :c:func:`PyTuple_SetItem`, does *not* discard a reference to any item that
       is being replaced; any reference in the tuple at position *pos* will be
       leaked.
@@ -260,7 +261,7 @@ type.
 
    .. note::
 
-      This function "steals" a reference to *o*.
+      This function ":term:`steals <steal>`" a reference to *o*.
 
 
 .. c:function:: void PyStructSequence_SET_ITEM(PyObject *p, Py_ssize_t *pos, PyObject *o)
