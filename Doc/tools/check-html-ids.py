@@ -34,7 +34,7 @@ class IDGatherer(html.parser.HTMLParser):
 def get_ids_from_file(path):
     ids = set()
     gatherer = IDGatherer(ids)
-    with path.open() as file:
+    with path.open(encoding='utf-8') as file:
         while chunk := file.read(4096):
             gatherer.feed(chunk)
     return ids
@@ -145,7 +145,7 @@ def main(argv):
         ids = gather_ids(args.htmldir, verbose_print=verbose_print)
         if args.outfile is None:
             args.outfile = args.htmldir / 'html-ids.json.gz'
-        with gzip.open(args.outfile, 'wt') as zfile:
+        with gzip.open(args.outfile, 'wt', encoding='utf-8') as zfile:
             json.dump({'ids_by_page': ids}, zfile)
 
     if args.command == 'check':
@@ -155,7 +155,7 @@ def main(argv):
             checked = json.load(zfile)['ids_by_page']
         excluded = set()
         if args.exclude_file:
-            with open(args.exclude_file) as file:
+            with open(args.exclude_file, encoding='utf-8') as file:
                 for line in file:
                     line = line.strip()
                     if line and not line.startswith('#'):
