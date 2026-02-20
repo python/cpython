@@ -1338,11 +1338,11 @@ attribute.
 
     Class that simulates a dictionary.  The instance's contents are kept in a
     regular dictionary, which is accessible via the :attr:`data` attribute of
-    :class:`UserDict` instances.  If arguments are provided, they are used to
+    :class:`!UserDict` instances.  If arguments are provided, they are used to
     initialize :attr:`data`, like a regular dictionary.
 
     In addition to supporting the methods and operations of mappings,
-    :class:`UserDict` instances provide the following attribute:
+    :class:`!UserDict` instances provide the following attribute:
 
     .. attribute:: data
 
