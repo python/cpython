@@ -58,7 +58,7 @@ of the methods of list objects:
    Remove all items from the list.  Similar to ``del a[:]``.
 
 
-.. method:: list.index(value[, start[, stop])
+.. method:: list.index(value[, start[, stop]])
    :noindex:
 
    Return zero-based index of the first occurrence of *value* in the list.
