@@ -3493,11 +3493,27 @@ PyUnstable_Eval_RequestCodeExtraIndex(freefunc free)
     PyInterpreterState *interp = _PyInterpreterState_GET();
     Py_ssize_t new_index;
 
-    if (interp->co_extra_user_count == MAX_CO_EXTRA_USERS - 1) {
+#ifdef Py_GIL_DISABLED
+    struct _py_code_state *state = &interp->code_state;
+    FT_MUTEX_LOCK(&state->mutex);
+#endif
+
+    if (interp->co_extra_user_count >= MAX_CO_EXTRA_USERS - 1) {
+#ifdef Py_GIL_DISABLED
+        FT_MUTEX_UNLOCK(&state->mutex);
+#endif
         return -1;
     }
-    new_index = interp->co_extra_user_count++;
+
+    new_index = interp->co_extra_user_count;
     interp->co_extra_freefuncs[new_index] = free;
+
+    // Publish freefuncs[new_index] before making the index visible.
+    FT_ATOMIC_STORE_SSIZE_RELEASE(interp->co_extra_user_count, new_index + 1);
+
+#ifdef Py_GIL_DISABLED
+    FT_MUTEX_UNLOCK(&state->mutex);
+#endif
     return new_index;
 }
 
