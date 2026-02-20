@@ -1014,6 +1014,11 @@ struct _is {
 #endif
 #endif
 
+    struct {
+        PyUnstable_EvalCallback callback;
+        void *data;
+    } eval_callback;
+
     /* the initial PyInterpreterState.threads.head */
     _PyThreadStateImpl _initial_thread;
     // _initial_thread should be the last field of PyInterpreterState.

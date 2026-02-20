@@ -7,6 +7,7 @@
 #include "pycore_ceval.h"         // export _PyEval_SetProfile()
 #include "pycore_frame.h"         // PyFrameObject members
 #include "pycore_interpframe.h"   // _PyFrame_GetCode()
+#include "pycore_instruments.h"   // PyUnstable_SetEvalCallback
 
 #include "opcode.h"
 #include <stddef.h>
@@ -522,6 +523,39 @@ set_monitoring_profile_events(PyInterpreterState *interp)
 }
 
 int
+PyUnstable_SetEvalCallback(PyUnstable_EvalCallback callback, void *data)
+{
+    PyInterpreterState *interp = _PyInterpreterState_GET();
+    interp->eval_callback.callback = callback;
+    interp->eval_callback.data = data;
+    return 0;
+}
+
+PyUnstable_EvalCallback
+PyUnstable_GetEvalCallback(void **data)
+{
+    PyInterpreterState *interp = _PyInterpreterState_GET();
+    if (data != NULL) {
+        *data = interp->eval_callback.data;
+    }
+    return interp->eval_callback.callback;
+}
+
+static inline void
+notify_eval_callback(PyInterpreterState *interp, PyUnstable_EvalEvent event)
+{
+    if (interp->eval_callback.callback != NULL) {
+        void *data = interp->eval_callback.data;
+        if (interp->eval_callback.callback(event, data) < 0) {
+            PyErr_FormatUnraisable(
+                "Exception ignored in %s eval callback",
+                (event == PyUnstable_EVAL_TRACE_SET || event == PyUnstable_EVAL_TRACE_CLEAR)
+                    ? "trace" : "profile");
+        }
+    }
+}
+
+int
 _PyEval_SetProfile(PyThreadState *tstate, Py_tracefunc func, PyObject *arg)
 {
     assert(is_tstate_valid(tstate));
@@ -546,6 +580,10 @@ _PyEval_SetProfile(PyThreadState *tstate, Py_tracefunc func, PyObject *arg)
     int ret = set_monitoring_profile_events(interp);
     _PyEval_StartTheWorld(interp);
     Py_XDECREF(old_profileobj);  // needs to be decref'd outside of stop-the-world
+
+    PyUnstable_EvalEvent event = (func != NULL) ? PyUnstable_EVAL_PROFILE_SET : PyUnstable_EVAL_PROFILE_CLEAR;
+    notify_eval_callback(interp, event);
+
     return ret;
 }
 
@@ -586,6 +624,10 @@ _PyEval_SetProfileAllThreads(PyInterpreterState *interp, Py_tracefunc func, PyOb
     int ret = set_monitoring_profile_events(interp);
     _PyEval_StartTheWorld(interp);
     Py_XDECREF(old_profileobjs);  // needs to be decref'd outside of stop-the-world
+
+    PyUnstable_EvalEvent event = (func != NULL) ? PyUnstable_EVAL_PROFILE_SET : PyUnstable_EVAL_PROFILE_CLEAR;
+    notify_eval_callback(interp, event);
+
     return ret;
 }
 
@@ -719,6 +761,10 @@ _PyEval_SetTrace(PyThreadState *tstate, Py_tracefunc func, PyObject *arg)
 done:
     _PyEval_StartTheWorld(interp);
     Py_XDECREF(old_traceobj);  // needs to be decref'd outside stop-the-world
+
+    PyUnstable_EvalEvent event = (func != NULL) ? PyUnstable_EVAL_TRACE_SET : PyUnstable_EVAL_TRACE_CLEAR;
+    notify_eval_callback(interp, event);
+
     return err;
 }
 
@@ -770,5 +816,9 @@ _PyEval_SetTraceAllThreads(PyInterpreterState *interp, Py_tracefunc func, PyObje
     int err = set_monitoring_trace_events(interp);
     _PyEval_StartTheWorld(interp);
     Py_XDECREF(old_trace_objs);  // needs to be decref'd outside of stop-the-world
+
+    PyUnstable_EvalEvent event = (func != NULL) ? PyUnstable_EVAL_TRACE_SET : PyUnstable_EVAL_TRACE_CLEAR;
+    notify_eval_callback(interp, event);
+
     return err;
 }

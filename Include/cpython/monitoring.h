@@ -274,6 +274,20 @@ PyMonitoring_FireStopIterationEvent(PyMonitoringState *state, PyObject *codelike
 
 #undef _PYMONITORING_IF_ACTIVE
 
+
+/* Callback API for notifications when sys.settrace/sys.setprofile are called. */
+typedef enum {
+    PyUnstable_EVAL_TRACE_SET = 0,
+    PyUnstable_EVAL_TRACE_CLEAR = 1,
+    PyUnstable_EVAL_PROFILE_SET = 2,
+    PyUnstable_EVAL_PROFILE_CLEAR = 3,
+} PyUnstable_EvalEvent;
+
+typedef int (*PyUnstable_EvalCallback)(PyUnstable_EvalEvent event, void *data);
+
+PyAPI_FUNC(int) PyUnstable_SetEvalCallback(PyUnstable_EvalCallback callback, void *data);
+PyAPI_FUNC(PyUnstable_EvalCallback) PyUnstable_GetEvalCallback(void **data);
+
 #ifdef __cplusplus
 }
 #endif
