@@ -28,12 +28,12 @@ __all__ = [
 
 import _collections_abc
 import sys as _sys
-lazy import copy as _copy
-lazy import heapq as _heapq
 
 _sys.modules['collections.abc'] = _collections_abc
 abc = _collections_abc
 
+lazy from copy import copy as _copy
+lazy from heapq import nlargest as _nlargest
 from itertools import chain as _chain
 from itertools import repeat as _repeat
 from itertools import starmap as _starmap
@@ -634,7 +634,7 @@ class Counter(dict):
         if n is None:
             return sorted(self.items(), key=_itemgetter(1), reverse=True)
 
-        return _heapq.nlargest(n, self.items(), key=_itemgetter(1))
+        return _nlargest(n, self.items(), key=_itemgetter(1))
 
     def elements(self):
         '''Iterator over elements repeating each as many times as its count.
@@ -1247,7 +1247,7 @@ class UserDict(_collections_abc.MutableMapping):
         data = self.data
         try:
             self.data = {}
-            c = _copy.copy(self)
+            c = _copy(self)
         finally:
             self.data = data
         c.update(self)
