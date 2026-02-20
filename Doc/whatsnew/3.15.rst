@@ -67,6 +67,8 @@ Summary -- Release highlights
 
 * :pep:`810`: :ref:`Explicit lazy imports for faster startup times
   <whatsnew315-pep810>`
+* :pep:`814`: :ref:`Add frozendict built-in type
+  <whatsnew315-frozendict>`
 * :pep:`799`: :ref:`A dedicated profiling package for organizing Python
   profiling tools <whatsnew315-profiling-package>`
 * :pep:`799`: :ref:`Tachyon: High frequency statistical sampling profiler
@@ -179,6 +181,40 @@ raise :exc:`SyntaxError`).
 .. seealso:: :pep:`810` for the full specification and rationale.
 
 (Contributed by Pablo Galindo Salgado and Dino Viehland in :gh:`142349`.)
+
+
+.. _whatsnew315-frozendict:
+
+:pep:`814`: Add frozendict built-in type
+----------------------------------------
+
+A new :term:`immutable` type, :class:`frozendict`, is added to the :mod:`builtins` module.
+It does not allow modification after creation. A ``frozendict`` is not a subclass of ``dict``;
+it inherits directly from ``object``. A ``frozendict`` is :term:`hashable`
+as long as all of its keys and values are hashable. A ``frozendict`` preserves
+insertion order, but comparison does not take order into account.
+
+For example::
+
+    >>> a = frozendict(x=1, y=2)
+    >>> a
+    frozendict({'x': 1, 'y': 2})
+    >>> a['z'] = 3
+    Traceback (most recent call last):
+      File "<python-input-2>", line 1, in <module>
+        a['z'] = 3
+        ~^^^^^
+    TypeError: 'frozendict' object does not support item assignment
+    >>> b = frozendict(y=2, x=1)
+    >>> hash(a) == hash(b)
+    True
+    >>> a == b
+    True
+
+.. seealso:: :pep:`814` for the full specification and rationale.
+
+(Contributed by Victor Stinner and Donghee Na in :gh:`141510`.)
+
 
 .. _whatsnew315-profiling-package:
 
@@ -824,6 +860,19 @@ pickle
   (Contributed by Zackery Spytz and Serhiy Storchaka in :gh:`77188`.)
 
 
+re
+--
+
+* :func:`re.prefixmatch` and a corresponding :meth:`~re.Pattern.prefixmatch`
+  have been added as alternate more explicit names for the existing
+  :func:`re.match` and :meth:`~re.Pattern.match` APIs. These are intended
+  to be used to alleviate confusion around what *match* means by following the
+  Zen of Python's *"Explicit is better than implicit"* mantra. Most other
+  language regular expression libraries use an API named *match* to mean what
+  Python has always called *search*.
+  (Contributed by Gregory P. Smith in :gh:`86519`.)
+
+
 resource
 --------
 
@@ -1174,6 +1223,11 @@ Optimizations
   (Contributed by Chris Eibl, Ken Jin, and Brandt Bucher in :gh:`143068`.
   Special thanks to the MSVC team including Hulon Jenkins.)
 
+* ``mimalloc`` is now used as the default allocator for
+  for raw memory allocations such as via :c:func:`PyMem_RawMalloc`
+  for better performance on :term:`free-threaded builds <free-threaded build>`.
+  (Contributed by Kumar Aditya in :gh:`144914`.)
+
 
 base64 & binascii
 -----------------
@@ -1285,7 +1339,7 @@ Diego Russo in :gh:`140683` and :gh:`142305`.)
 
 
 Removed
-=======
+========
 
 ctypes
 ------
@@ -1512,6 +1566,16 @@ C API changes
 New features
 ------------
 
+* Add the following functions for the new :class:`frozendict` type:
+
+  * :c:func:`PyAnyDict_Check`
+  * :c:func:`PyAnyDict_CheckExact`
+  * :c:func:`PyFrozenDict_Check`
+  * :c:func:`PyFrozenDict_CheckExact`
+  * :c:func:`PyFrozenDict_New`
+
+  (Contributed by Victor Stinner in :gh:`141510`.)
+
 * Add :c:func:`PySys_GetAttr`, :c:func:`PySys_GetAttrString`,
   :c:func:`PySys_GetOptionalAttr`, and :c:func:`PySys_GetOptionalAttrString`
   functions as replacements for :c:func:`PySys_GetObject`.
@@ -1563,6 +1627,8 @@ New features
   thread state.
   (Contributed by Victor Stinner in :gh:`139653`.)
 
+* Add :c:func:`PyUnstable_SetImmortal` C-API function to mark objects as :term:`immortal`.
+  (Contributed by Kumar Aditya in :gh:`143300`.)
 
 Changed C APIs
 --------------
@@ -1571,6 +1637,9 @@ Changed C APIs
   flag is set then :c:macro:`Py_TPFLAGS_HAVE_GC` must be set too.
   (Contributed by Sergey Miryanov in :gh:`134786`.)
 
+* :c:macro:`PyDateTime_IMPORT` is now thread safe. Code that directly checks ``PyDateTimeAPI``
+  for ``NULL`` should be updated to call :c:macro:`PyDateTime_IMPORT` instead.
+  (Contributed by Kumar Aditya in :gh:`141563`.)
 
 Porting to Python 3.15
 ----------------------

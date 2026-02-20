@@ -6,7 +6,6 @@ import inspect
 import unittest
 import unittest.mock
 from test.support import import_helper
-from types import MappingProxyType
 
 
 def _parse_fullname(fullname, *, strict=False):
@@ -351,7 +350,7 @@ class _HashInfo:
         )
 
 
-_HASHINFO_DATABASE = MappingProxyType({
+_HASHINFO_DATABASE = frozendict({
     _HashId.md5: _HashInfo(
         _HashId.md5,
         "_md5.MD5Type",
@@ -500,7 +499,7 @@ _HMACINFO_DATABASE[_HashId.shake_256] = _HashInfoItem()
 # keyed hash function. However, as it's exposed by HACL*, we test it.
 _HMACINFO_DATABASE[_HashId.blake2s] = _HashInfoItem('_hmac.compute_blake2s_32')
 _HMACINFO_DATABASE[_HashId.blake2b] = _HashInfoItem('_hmac.compute_blake2b_32')
-_HMACINFO_DATABASE = MappingProxyType(_HMACINFO_DATABASE)
+_HMACINFO_DATABASE = frozendict(_HMACINFO_DATABASE)
 assert _HMACINFO_DATABASE.keys() == CANONICAL_DIGEST_NAMES
 
 
