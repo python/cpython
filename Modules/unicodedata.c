@@ -96,27 +96,6 @@ _getrecord_ex(Py_UCS4 code)
     return &_PyUnicode_Database_Records[index];
 }
 
-static const char *
-_getrecord_block(Py_UCS4 code)
-{
-    int l = 0, h = BLOCK_COUNT - 1;
-    while (l <= h) {
-        int m = (l + h) / 2;
-        if (code < _PyUnicode_Blocks[m].s) {
-            h = m - 1;
-        }
-        else if (code > _PyUnicode_Blocks[m].e) {
-            l = m + 1;
-        }
-        else {
-            return _PyUnicode_BlockNames[_PyUnicode_Blocks[m].name];
-        }
-    }
-    // Otherwise, return the deefault value per
-    // https://www.unicode.org/versions/latest/core-spec/chapter-3/#G64189
-    return "No_Block";
-}
-
 typedef struct {
     PyObject *SegmentType;
     PyObject *GraphemeBreakIteratorType;
@@ -2101,7 +2080,22 @@ unicodedata_block_impl(PyObject *module, int chr)
 /*[clinic end generated code: output=5f8b40c49eaec75a input=0834cf2642d6eaae]*/
 {
     Py_UCS4 c = (Py_UCS4)chr;
-    return PyUnicode_FromString(_getrecord_block(c));
+    int l = 0, h = BLOCK_COUNT - 1;
+    while (l <= h) {
+        int m = (l + h) / 2;
+        if (c < _PyUnicode_Blocks[m].s) {
+            h = m - 1;
+        }
+        else if (c > _PyUnicode_Blocks[m].e) {
+            l = m + 1;
+        }
+        else {
+            return PyUnicode_FromString(_PyUnicode_BlockNames[_PyUnicode_Blocks[m].name]);
+        }
+    }
+    // Otherwise, return the deefault value per
+    // https://www.unicode.org/versions/latest/core-spec/chapter-3/#G64189
+    return PyUnicode_FromString("No_Block");
 }
 
 /*[clinic input]
