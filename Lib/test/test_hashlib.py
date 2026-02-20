@@ -242,7 +242,11 @@ class HashLibTestCase(unittest.TestCase):
                 except ValueError as verr:
                     # builtins may be absent if python built with
                     # a subset of --with-builtin-hashlib-hashes or none.
-                    self.skipTest(verr)
+                    if ("blake2" in name and
+                        "blake2" not in sysconfig.get_config_var("PY_BUILTIN_HASHLIB_HASHES").split(",")):
+                        self.skipTest(verr)
+                    else:
+                        raise
 
     def test_usedforsecurity_true(self):
         hashlib.new("sha256", usedforsecurity=True)
