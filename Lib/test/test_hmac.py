@@ -21,7 +21,6 @@ import functools
 import hmac
 import hashlib
 import random
-import types
 import unittest
 import warnings
 from _operator import _compare_digest as operator_compare_digest
@@ -303,7 +302,7 @@ class AssertersMixin(CreatorMixin, DigestMixin, ObjectCheckerMixin):
 
     def check_hmac_new(
         self, key, msg, hexdigest, hashname, digest_size, block_size,
-        hmac_new_func, hmac_new_kwds=types.MappingProxyType({}),
+        hmac_new_func, hmac_new_kwds=frozendict(),
     ):
         """Check that HMAC(key, msg) == digest.
 
@@ -349,7 +348,7 @@ class AssertersMixin(CreatorMixin, DigestMixin, ObjectCheckerMixin):
 
     def check_hmac_hexdigest(
         self, key, msg, hexdigest, digest_size,
-        hmac_digest_func, hmac_digest_kwds=types.MappingProxyType({}),
+        hmac_digest_func, hmac_digest_kwds=frozendict(),
     ):
         """Check and return a HMAC digest computed by hmac_digest_func().
 

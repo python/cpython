@@ -424,7 +424,7 @@ Initializing and finalizing the interpreter
 
    Note that Python will do a best effort at freeing all memory allocated by the Python
    interpreter.  Therefore, any C-Extension should make sure to correctly clean up all
-   of the preveiously allocated PyObjects before using them in subsequent calls to
+   of the previously allocated PyObjects before using them in subsequent calls to
    :c:func:`Py_Initialize`.  Otherwise it could introduce vulnerabilities and incorrect
    behavior.
 
@@ -1407,7 +1407,7 @@ All of the following functions must be called after :c:func:`Py_Initialize`.
 
    Get the current interpreter.
 
-   Issue a fatal error if there no :term:`attached thread state`.
+   Issue a fatal error if there is no :term:`attached thread state`.
    It cannot return NULL.
 
    .. versionadded:: 3.9
@@ -1916,9 +1916,6 @@ pointer and a void pointer argument.
 Profiling and Tracing
 =====================
 
-.. sectionauthor:: Fred L. Drake, Jr. <fdrake@acm.org>
-
-
 The Python interpreter provides some low-level support for attaching profiling
 and execution tracing facilities.  These are used for profiling, debugging, and
 coverage analysis tools.
@@ -1979,7 +1976,7 @@ Python-level trace functions in previous versions.
    *what* when after any bytecode is processed after which the exception becomes
    set within the frame being executed.  The effect of this is that as exception
    propagation causes the Python stack to unwind, the callback is called upon
-   return to each frame as the exception propagates.  Only trace functions receives
+   return to each frame as the exception propagates.  Only trace functions receive
    these events; they are not needed by the profiler.
 
 
@@ -2119,7 +2116,7 @@ Reference tracing
    the tracer function is called. Return ``0`` on success. Set an exception and
    return ``-1`` on error.
 
-   Not that tracer functions **must not** create Python objects inside or
+   Note that tracer functions **must not** create Python objects inside or
    otherwise the call will be re-entrant. The tracer also **must not** clear
    any existing exception or set an exception.  A :term:`thread state` will be active
    every time the tracer function is called.
@@ -2147,9 +2144,6 @@ Reference tracing
 
 Advanced Debugger Support
 =========================
-
-.. sectionauthor:: Fred L. Drake, Jr. <fdrake@acm.org>
-
 
 These functions are only intended to be used by advanced debugging tools.
 
@@ -2186,8 +2180,6 @@ These functions are only intended to be used by advanced debugging tools.
 
 Thread Local Storage Support
 ============================
-
-.. sectionauthor:: Masayuki Yamamoto <ma3yuki.8mamo10@gmail.com>
 
 The Python interpreter provides low-level support for thread-local storage
 (TLS) which wraps the underlying native TLS implementation to support the
