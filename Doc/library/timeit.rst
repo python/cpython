@@ -145,10 +145,10 @@ The module defines three convenience functions and a public class:
 
    .. method:: Timer.autorange(callback=None)
 
-      Call :meth:`.timeit` automatically determined number of times.
+      Call :meth:`.timeit` an automatically determined number of times.
 
-      This is a convenience function that calls :meth:`.timeit` repeatedly
-      with increasing numbers from the sequence 1, 2, 5, 10, 20, 50, ...
+      This is a convenience function that repeatedly calls :meth:`.timeit`
+      with an increasing amount of iterations from the sequence 1, 2, 5, 10, 20, 50, ...
       until the time taken is at least 0.2 seconds, returning the eventual
       (number of loops, time taken for that number of loops).
 
