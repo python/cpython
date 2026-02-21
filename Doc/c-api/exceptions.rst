@@ -673,28 +673,46 @@ Signal Handling
       single: SIGINT (C macro)
       single: KeyboardInterrupt (built-in exception)
 
-   This function interacts with Python's signal handling.
+   Handle external interruptions, such as signals or activating a debugger,
+   whose processing has been delayed until it is safe
+   to run Python code and/or raise exceptions.
 
-   If the function is called from the main thread and under the main Python
-   interpreter, it checks whether a signal has been sent to the processes
-   and if so, invokes the corresponding signal handler.  If the :mod:`signal`
-   module is supported, this can invoke a signal handler written in Python.
+   For example, pressing :kbd:`Ctrl-C` causes a terminal to send the
+   :py:data:`signal.SIGINT` signal.
+   This function executes the corresponding Python signal handler, which,
+   by default, raises the :exc:`KeyboardInterrupt` exception.
 
-   The function attempts to handle all pending signals, and then returns ``0``.
-   However, if a Python signal handler raises an exception, the error
-   indicator is set and the function returns ``-1`` immediately (such that
-   other pending signals may not have been handled yet: they will be on the
-   next :c:func:`PyErr_CheckSignals()` invocation).
+   :c:func:`!PyErr_CheckSignals` should be called by long-running C code
+   frequently enough so that the response appears immediate to humans.
 
-   If the function is called from a non-main thread, or under a non-main
-   Python interpreter, it does nothing and returns ``0``.
+   Handlers invoked by this function currently include:
 
-   This function can be called by long-running C code that wants to
-   be interruptible by user requests (such as by pressing Ctrl-C).
+   - Signal handlers, including Python functions registered using
+     the :mod:`signal` module.
 
-   .. note::
-      The default Python signal handler for :c:macro:`!SIGINT` raises the
-      :exc:`KeyboardInterrupt` exception.
+     Signal handlers are only run in the main thread of the main interpreter.
+
+     (This is where the function got the name: originally, signals
+     were the only way to interrupt the interpreter.)
+
+   - Running the garbage collector, if necessary.
+
+   - Executing a pending :ref:`remote debugger <remote-debugging>` script.
+
+   If any handler raises an exception, immediately return ``-1`` with that
+   exception set.
+   Any remaining interruptions are left to be processed on the next
+   :c:func:`PyErr_CheckSignals()` invocation, if appropriate.
+
+   If all handlers finish successfully, or there are no handlers to run,
+   return ``0``.
+
+   .. versionchanged:: 3.12
+      This function may now invoke the garbage collector.
+
+   .. versionchanged:: 3.14
+      This function may now execute a remote debugger script, if remote
+      debugging is enabled.
 
 
 .. c:function:: void PyErr_SetInterrupt()
