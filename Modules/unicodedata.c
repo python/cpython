@@ -2067,6 +2067,39 @@ unicodedata_iter_graphemes_impl(PyObject *module, PyObject *unistr,
 }
 
 /*[clinic input]
+unicodedata.block
+
+    chr: int(accept={str})
+    /
+
+Return block assigned to the character chr.
+[clinic start generated code]*/
+
+static PyObject *
+unicodedata_block_impl(PyObject *module, int chr)
+/*[clinic end generated code: output=5f8b40c49eaec75a input=0834cf2642d6eaae]*/
+{
+    Py_UCS4 c = (Py_UCS4)chr;
+    int lo = 0, hi = BLOCK_COUNT - 1;
+    while (lo <= hi) {
+        int mid = (lo + hi) / 2;
+        if (c < _PyUnicode_Blocks[mid].start) {
+            hi = mid - 1;
+        }
+        else if (c > _PyUnicode_Blocks[mid].end) {
+            lo = mid + 1;
+        }
+        else {
+            size_t name = _PyUnicode_Blocks[mid].name;
+            return PyUnicode_FromString(_PyUnicode_BlockNames[name]);
+        }
+    }
+    // Otherwise, return the default value per
+    // https://www.unicode.org/versions/latest/core-spec/chapter-3/#G64189
+    return PyUnicode_FromString("No_Block");
+}
+
+/*[clinic input]
 unicodedata.grapheme_cluster_break
 
     chr: int(accept={str})
@@ -2128,6 +2161,7 @@ unicodedata_extended_pictographic_impl(PyObject *module, int chr)
 // an UCD instance.
 static PyMethodDef unicodedata_functions[] = {
     // Module only functions.
+    UNICODEDATA_BLOCK_METHODDEF
     UNICODEDATA_GRAPHEME_CLUSTER_BREAK_METHODDEF
     UNICODEDATA_INDIC_CONJUNCT_BREAK_METHODDEF
     UNICODEDATA_EXTENDED_PICTOGRAPHIC_METHODDEF
@@ -2137,7 +2171,7 @@ static PyMethodDef unicodedata_functions[] = {
 
     // The following definitions are shared between the module
     // and the UCD class.
-#define DB_methods (unicodedata_functions + 6)
+#define DB_methods (unicodedata_functions + 7)
 
     UNICODEDATA_UCD_DECIMAL_METHODDEF
     UNICODEDATA_UCD_DIGIT_METHODDEF

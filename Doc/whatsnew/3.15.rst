@@ -1134,6 +1134,11 @@ unicodedata
   of the character which are related to the above algorithm.
   (Contributed by Serhiy Storchaka and Guillaume Sanchez in :gh:`74902`.)
 
+* Add :func:`~unicodedata.block` function to return the `Unicode block
+  <https://www.unicode.org/versions/Unicode17.0.0/core-spec/chapter-3/#G64189>`_
+  assigned to a character.
+  (Contributed by Stan Ulbrych in :gh:`66802`.)
+
 
 unittest
 --------

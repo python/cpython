@@ -973,6 +973,97 @@ class UnicodeFunctionsTest(unittest.TestCase, BaseUnicodeFunctionsTest):
             'a\U0001F1FA\U0001F1E6\U0001F1FA\U0001F1F3'),
             ['a', '\U0001F1FA\U0001F1E6', '\U0001F1FA\U0001F1F3'])
 
+    def test_block(self):
+        self.assertEqual(self.db.block('\u0000'), 'Basic Latin')
+        self.assertEqual(self.db.block('\u0041'), 'Basic Latin')
+        self.assertEqual(self.db.block('\u007F'), 'Basic Latin')
+        self.assertEqual(self.db.block('\u0080'), 'Latin-1 Supplement')
+        self.assertEqual(self.db.block('\u00FF'), 'Latin-1 Supplement')
+        self.assertEqual(self.db.block('\u1159'), 'Hangul Jamo')
+        self.assertEqual(self.db.block('\u11F9'), 'Hangul Jamo')
+        self.assertEqual(self.db.block('\uD788'), 'Hangul Syllables')
+        self.assertEqual(self.db.block('\uD7A3'), 'Hangul Syllables')
+        # New in 5.0.0
+        self.assertEqual(self.db.block('\u05BA'), 'Hebrew')
+        self.assertEqual(self.db.block('\u20EF'), 'Combining Diacritical Marks for Symbols')
+        # New in 5.1.0
+        self.assertEqual(self.db.block('\u2064'), 'General Punctuation')
+        self.assertEqual(self.db.block('\uAA4D'), 'Cham')
+        # New in 5.2.0
+        self.assertEqual(self.db.block('\u0816'), 'Samaritan')
+        self.assertEqual(self.db.block('\uA97C'), 'Hangul Jamo Extended-A')
+        self.assertEqual(self.db.block('\uD7C6'), 'Hangul Jamo Extended-B')
+        self.assertEqual(self.db.block('\uD7FB'), 'Hangul Jamo Extended-B')
+        # New in 6.0.0
+        self.assertEqual(self.db.block('\u093A'), 'Devanagari')
+        self.assertEqual(self.db.block('\U00011002'), 'Brahmi')
+        # New in 6.1.0
+        self.assertEqual(self.db.block('\U000E0FFF'), 'No_Block')
+        self.assertEqual(self.db.block('\U00016F7E'), 'Miao')
+        # New in 6.2.0
+        self.assertEqual(self.db.block('\U0001F1E6'), 'Enclosed Alphanumeric Supplement')
+        self.assertEqual(self.db.block('\U0001F1FF'), 'Enclosed Alphanumeric Supplement')
+        # New in 6.3.0
+        self.assertEqual(self.db.block('\u180E'), 'Mongolian')
+        self.assertEqual(self.db.block('\u1A1B'), 'Buginese')
+        # New in 7.0.0
+        self.assertEqual(self.db.block('\u0E33'), 'Thai')
+        self.assertEqual(self.db.block('\u0EB3'), 'Lao')
+        self.assertEqual(self.db.block('\U0001BCA3'), 'Shorthand Format Controls')
+        self.assertEqual(self.db.block('\U0001E8D6'), 'Mende Kikakui')
+        self.assertEqual(self.db.block('\U0001163E'), 'Modi')
+        # New in 8.0.0
+        self.assertEqual(self.db.block('\u08E3'), 'Arabic Extended-A')
+        self.assertEqual(self.db.block('\U00011726'), 'Ahom')
+        # New in 9.0.0
+        self.assertEqual(self.db.block('\u0600'), 'Arabic')
+        self.assertEqual(self.db.block('\U000E007F'), 'Tags')
+        self.assertEqual(self.db.block('\U00011CB4'), 'Marchen')
+        self.assertEqual(self.db.block('\u200D'), 'General Punctuation')
+        # New in 10.0.0
+        self.assertEqual(self.db.block('\U00011D46'), 'Masaram Gondi')
+        self.assertEqual(self.db.block('\U00011D47'), 'Masaram Gondi')
+        self.assertEqual(self.db.block('\U00011A97'), 'Soyombo')
+        # New in 11.0.0
+        self.assertEqual(self.db.block('\U000110CD'), 'Kaithi')
+        self.assertEqual(self.db.block('\u07FD'), 'NKo')
+        self.assertEqual(self.db.block('\U00011EF6'), 'Makasar')
+        # New in 12.0.0
+        self.assertEqual(self.db.block('\U00011A84'), 'Soyombo')
+        self.assertEqual(self.db.block('\U00013438'), 'Egyptian Hieroglyph Format Controls')
+        self.assertEqual(self.db.block('\U0001E2EF'), 'Wancho')
+        self.assertEqual(self.db.block('\U00016F87'), 'Miao')
+        # New in 13.0.0
+        self.assertEqual(self.db.block('\U00011941'), 'Dives Akuru')
+        self.assertEqual(self.db.block('\U00016FE4'), 'Ideographic Symbols and Punctuation')
+        self.assertEqual(self.db.block('\U00011942'), 'Dives Akuru')
+        # New in 14.0.0
+        self.assertEqual(self.db.block('\u0891'), 'Arabic Extended-B')
+        self.assertEqual(self.db.block('\U0001E2AE'), 'Toto')
+        # New in 15.0.0
+        self.assertEqual(self.db.block('\U00011F02'), 'Kawi')
+        self.assertEqual(self.db.block('\U0001343F'), 'Egyptian Hieroglyph Format Controls')
+        self.assertEqual(self.db.block('\U0001E4EF'), 'Nag Mundari')
+        self.assertEqual(self.db.block('\U00011F3F'), 'Kawi')
+        # New in 16.0.0
+        self.assertEqual(self.db.block('\U000113D1'), 'Tulu-Tigalari')
+        self.assertEqual(self.db.block('\U0001E5EF'), 'Ol Onal')
+        self.assertEqual(self.db.block('\U0001612C'), 'Gurung Khema')
+        self.assertEqual(self.db.block('\U00016D63'), 'Kirat Rai')
+        # New in 17.0.0
+        self.assertEqual(self.db.block('\u1AEB'), 'Combining Diacritical Marks Extended')
+        self.assertEqual(self.db.block('\U00011B67'), 'Sharada Supplement')
+        # Unassigned
+        self.assertEqual(self.db.block('\U00100000'), 'Supplementary Private Use Area-B')
+        self.assertEqual(self.db.block('\U0010FFFF'), 'Supplementary Private Use Area-B')
+
+    def test_block_invalid_input(self):
+        self.assertRaises(TypeError, self.db.block)
+        self.assertRaises(TypeError, self.db.block, b'x')
+        self.assertRaises(TypeError, self.db.block, 120)
+        self.assertRaises(TypeError, self.db.block, '')
+        self.assertRaises(TypeError, self.db.block, 'xx')
+
 
 class Unicode_3_2_0_FunctionsTest(unittest.TestCase, BaseUnicodeFunctionsTest):
     db = unicodedata.ucd_3_2_0
