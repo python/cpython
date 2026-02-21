@@ -4,10 +4,6 @@
 .. module:: unicodedata
    :synopsis: Access the Unicode Database.
 
-.. moduleauthor:: Marc-André Lemburg <mal@lemburg.com>
-.. sectionauthor:: Marc-André Lemburg <mal@lemburg.com>
-.. sectionauthor:: Martin v. Löwis <martin@v.loewis.de>
-
 .. index::
    single: Unicode
    single: character

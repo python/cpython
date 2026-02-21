@@ -7930,6 +7930,18 @@ _PyObject_InlineValuesConsistencyCheck(PyObject *obj)
 
 // --- frozendict implementation ---------------------------------------------
 
+static PyObject *
+frozendict_getnewargs(PyObject *op, PyObject *Py_UNUSED(dummy))
+{
+    // Call dict(op): convert 'op' frozendict to a dict
+    PyObject *arg = PyObject_CallOneArg((PyObject*)&PyDict_Type, op);
+    if (arg == NULL) {
+        return NULL;
+    }
+    return Py_BuildValue("(N)", arg);
+}
+
+
 static PyNumberMethods frozendict_as_number = {
     .nb_or = frozendict_or,
 };
@@ -7951,6 +7963,7 @@ static PyMethodDef frozendict_methods[] = {
     DICT_COPY_METHODDEF
     DICT___REVERSED___METHODDEF
     {"__class_getitem__", Py_GenericAlias, METH_O|METH_CLASS, PyDoc_STR("See PEP 585")},
+    {"__getnewargs__", frozendict_getnewargs, METH_NOARGS},
     {NULL,              NULL}   /* sentinel */
 };
 

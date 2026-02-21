@@ -4,9 +4,6 @@
 .. module:: xml.sax.saxutils
    :synopsis: Convenience functions and classes for use with SAX.
 
-.. moduleauthor:: Lars Marius Garshol <larsga@garshol.priv.no>
-.. sectionauthor:: Martin v. Löwis <martin@v.loewis.de>
-
 **Source code:** :source:`Lib/xml/sax/saxutils.py`
 
 --------------

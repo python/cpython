@@ -4,8 +4,6 @@
 .. module:: fcntl
    :synopsis: The fcntl() and ioctl() system calls.
 
-.. sectionauthor:: Jaap Vermeulen
-
 .. index::
    pair: UNIX; file control
    pair: UNIX; I/O control
