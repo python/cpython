@@ -393,6 +393,15 @@ class DunderLazyImportTests(unittest.TestCase):
         import test.test_import.data.lazy_imports.dunder_lazy_import_used
         self.assertIn("test.test_import.data.lazy_imports.basic2", sys.modules)
 
+    def test_dunder_lazy_import_non_string_name(self):
+        """__lazy_import__ should reject non-string name arguments."""
+        with self.assertRaises(TypeError):
+            __lazy_import__(b"")
+        with self.assertRaises(TypeError):
+            __lazy_import__(123)
+        with self.assertRaises(TypeError):
+            __lazy_import__(None)
+
     def test_dunder_lazy_import_builtins(self):
         """__lazy_import__ should use module's __builtins__ for __import__."""
         from test.test_import.data.lazy_imports import dunder_lazy_import_builtins

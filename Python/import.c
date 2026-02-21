@@ -4468,6 +4468,20 @@ _PyImport_LazyImportModuleLevelObject(PyThreadState *tstate,
                                       PyObject *globals, PyObject *locals,
                                       PyObject *fromlist, int level)
 {
+    if (name == NULL) {
+        _PyErr_SetString(tstate, PyExc_ValueError, "Empty module name");
+        return NULL;
+    }
+    if (!PyUnicode_Check(name)) {
+        _PyErr_SetString(tstate, PyExc_TypeError,
+                         "module name must be a string");
+        return NULL;
+    }
+    if (level < 0) {
+        _PyErr_SetString(tstate, PyExc_ValueError, "level must be >= 0");
+        return NULL;
+    }
+
     PyObject *abs_name = get_abs_name(tstate, name, globals, level);
     if (abs_name == NULL) {
         return NULL;
