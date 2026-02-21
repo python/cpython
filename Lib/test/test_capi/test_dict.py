@@ -26,6 +26,19 @@ def gen():
     yield 'c'
 
 
+class FrozenDictSubclass(frozendict):
+    pass
+
+
+DICT_TYPES = (dict, DictSubclass, OrderedDict)
+FROZENDICT_TYPES = (frozendict, FrozenDictSubclass)
+ANYDICT_TYPES = DICT_TYPES + FROZENDICT_TYPES
+MAPPING_TYPES = (UserDict,)
+NOT_FROZENDICT_TYPES = DICT_TYPES + MAPPING_TYPES
+NOT_ANYDICT_TYPES = MAPPING_TYPES
+OTHER_TYPES = (lambda: [1], lambda: 42, object)  # (list, int, object)
+
+
 class CAPITest(unittest.TestCase):
 
     def test_dict_check(self):
@@ -544,6 +557,61 @@ class CAPITest(unittest.TestCase):
         # CRASHES dict_popstring(NULL, "key")
         # CRASHES dict_popstring({}, NULL)
         # CRASHES dict_popstring({"a": 1}, NULL)
+
+    def test_frozendict_check(self):
+        # Test PyFrozenDict_Check()
+        check = _testcapi.frozendict_check
+        for dict_type in FROZENDICT_TYPES:
+            self.assertTrue(check(dict_type(x=1)))
+        for dict_type in NOT_FROZENDICT_TYPES + OTHER_TYPES:
+            self.assertFalse(check(dict_type()))
+        # CRASHES check(NULL)
+
+    def test_frozendict_checkexact(self):
+        # Test PyFrozenDict_CheckExact()
+        check = _testcapi.frozendict_checkexact
+        for dict_type in FROZENDICT_TYPES:
+            self.assertEqual(check(dict_type(x=1)), dict_type == frozendict)
+        for dict_type in NOT_FROZENDICT_TYPES + OTHER_TYPES:
+            self.assertFalse(check(dict_type()))
+        # CRASHES check(NULL)
+
+    def test_anydict_check(self):
+        # Test PyAnyDict_Check()
+        check = _testcapi.anydict_check
+        for dict_type in ANYDICT_TYPES:
+            self.assertTrue(check(dict_type({1: 2})))
+        for test_type in NOT_ANYDICT_TYPES + OTHER_TYPES:
+            self.assertFalse(check(test_type()))
+        # CRASHES check(NULL)
+
+    def test_anydict_checkexact(self):
+        # Test PyAnyDict_CheckExact()
+        check = _testcapi.anydict_checkexact
+        for dict_type in ANYDICT_TYPES:
+            self.assertEqual(check(dict_type(x=1)),
+                             dict_type in (dict, frozendict))
+        for test_type in NOT_ANYDICT_TYPES + OTHER_TYPES:
+            self.assertFalse(check(test_type()))
+        # CRASHES check(NULL)
+
+    def test_frozendict_new(self):
+        # Test PyFrozenDict_New()
+        frozendict_new = _testcapi.frozendict_new
+
+        for dict_type in ANYDICT_TYPES:
+            dct = frozendict_new(dict_type({'x': 1}))
+            self.assertEqual(dct, frozendict(x=1))
+            self.assertIs(type(dct), frozendict)
+
+        dct = frozendict_new([('x', 1), ('y', 2)])
+        self.assertEqual(dct, frozendict(x=1, y=2))
+        self.assertIs(type(dct), frozendict)
+
+        # PyFrozenDict_New(NULL) creates an empty dictionary
+        dct = frozendict_new(NULL)
+        self.assertEqual(dct, frozendict())
+        self.assertIs(type(dct), frozendict)
 
 
 if __name__ == "__main__":
