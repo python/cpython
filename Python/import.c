@@ -4473,8 +4473,8 @@ _PyImport_LazyImportModuleLevelObject(PyThreadState *tstate,
         return NULL;
     }
     if (!PyUnicode_Check(name)) {
-        _PyErr_SetString(tstate, PyExc_TypeError,
-                         "module name must be a string");
+        _PyErr_Format(tstate, PyExc_TypeError,
+                      "module name must be a string, got %T", name);
         return NULL;
     }
     if (level < 0) {
