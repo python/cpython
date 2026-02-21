@@ -4,9 +4,6 @@
 .. module:: logging.config
    :synopsis: Configuration of the logging module.
 
-.. moduleauthor:: Vinay Sajip <vinay_sajip@red-dove.com>
-.. sectionauthor:: Vinay Sajip <vinay_sajip@red-dove.com>
-
 **Source code:** :source:`Lib/logging/config.py`
 
 .. sidebar:: Important

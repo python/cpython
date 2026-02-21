@@ -486,6 +486,10 @@ Pure paths provide the following methods and properties:
       >>> PurePosixPath('my/library').stem
       'library'
 
+   .. versionchanged:: 3.14
+
+      A single dot ("``.``") is considered a valid suffix.
+
 
 .. method:: PurePath.as_posix()
 
@@ -1942,7 +1946,7 @@ Protocols
    :synopsis: pathlib types for static type checking
 
 
-The :mod:`pathlib.types` module provides types for static type checking.
+The :mod:`!pathlib.types` module provides types for static type checking.
 
 .. versionadded:: 3.14
 

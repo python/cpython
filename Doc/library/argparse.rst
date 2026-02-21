@@ -4,9 +4,6 @@
 .. module:: argparse
    :synopsis: Command-line option and argument parsing library.
 
-.. moduleauthor:: Steven Bethard <steven.bethard@gmail.com>
-.. sectionauthor:: Steven Bethard <steven.bethard@gmail.com>
-
 .. versionadded:: 3.2
 
 **Source code:** :source:`Lib/argparse.py`
@@ -1896,7 +1893,7 @@ Subcommands
       the main parser.
 
 
-.. method:: _SubParsersAction.add_parser(name, *, help=None, aliases=None,
+.. method:: _SubParsersAction.add_parser(name, *, help=None, aliases=None, \
                                          deprecated=False, **kwargs)
 
    Create and return a new :class:`ArgumentParser` object for the

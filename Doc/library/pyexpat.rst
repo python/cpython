@@ -4,8 +4,6 @@
 .. module:: xml.parsers.expat
    :synopsis: An interface to the Expat non-validating XML parser.
 
-.. moduleauthor:: Paul Prescod <paul@prescod.net>
-
 --------------
 
 .. Markup notes:
@@ -485,7 +483,7 @@ otherwise stated.
    ...``).  The *doctypeName* is provided exactly as presented.  The *systemId* and
    *publicId* parameters give the system and public identifiers if specified, or
    ``None`` if omitted.  *has_internal_subset* will be true if the document
-   contains and internal document declaration subset. This requires Expat version
+   contains an internal document declaration subset. This requires Expat version
    1.2 or newer.
 
 
@@ -666,9 +664,6 @@ otherwise stated.
 ExpatError Exceptions
 ---------------------
 
-.. sectionauthor:: Fred L. Drake, Jr. <fdrake@acm.org>
-
-
 :exc:`ExpatError` exceptions have a number of interesting attributes:
 
 
@@ -752,14 +747,12 @@ Content Model Descriptions
 
 .. module:: xml.parsers.expat.model
 
-.. sectionauthor:: Fred L. Drake, Jr. <fdrake@acm.org>
-
 Content models are described using nested tuples.  Each tuple contains four
 values: the type, the quantifier, the name, and a tuple of children.  Children
 are simply additional content model descriptions.
 
 The values of the first two fields are constants defined in the
-:mod:`xml.parsers.expat.model` module.  These constants can be collected in two
+:mod:`!xml.parsers.expat.model` module.  These constants can be collected in two
 groups: the model type group and the quantifier group.
 
 The constants in the model type group are:
@@ -833,7 +826,7 @@ Expat error constants
 
 .. module:: xml.parsers.expat.errors
 
-The following constants are provided in the :mod:`xml.parsers.expat.errors`
+The following constants are provided in the :mod:`!xml.parsers.expat.errors`
 module.  These constants are useful in interpreting some of the attributes of
 the :exc:`ExpatError` exception objects raised when an error has occurred.
 Since for backwards compatibility reasons, the constants' value is the error

@@ -1,1 +1,0 @@
-Fix building the tail calling interpreter on Visual Studio 2026 with free-threading.

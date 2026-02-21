@@ -12,8 +12,6 @@
  Using Python on Windows
 *************************
 
-.. sectionauthor:: Steve Dower <steve.dower@python.org>
-
 This document aims to give an overview of Windows-specific behaviour you should
 know about when using Python on Microsoft Windows.
 

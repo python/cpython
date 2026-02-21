@@ -1,3 +1,0 @@
-Speed up Base64 decoding of data containing ignored characters (both in
-non-strict mode and with an explicit *ignorechars* argument).
-It is now up to 2 times faster for multiline Base64 data.
