@@ -223,6 +223,7 @@ class CAPITest(unittest.TestCase):
         # CRASHES getitem(NULL, 'a')
 
     def test_dict_contains(self):
+        # Test PyDict_Contains()
         contains = _testlimitedcapi.dict_contains
         dct = {'a': 1, '\U0001f40d': 2}
         self.assertTrue(contains(dct, 'a'))
@@ -235,11 +236,12 @@ class CAPITest(unittest.TestCase):
 
         self.assertRaises(TypeError, contains, {}, [])  # unhashable
         # CRASHES contains({}, NULL)
-        # CRASHES contains(UserDict(), 'a')
-        # CRASHES contains(42, 'a')
+        self.assertRaises(SystemError, contains, UserDict(), 'a')
+        self.assertRaises(SystemError, contains, 42, 'a')
         # CRASHES contains(NULL, 'a')
 
     def test_dict_contains_string(self):
+        # Test PyDict_ContainsString()
         contains_string = _testcapi.dict_containsstring
         dct = {'a': 1, '\U0001f40d': 2}
         self.assertTrue(contains_string(dct, b'a'))
@@ -251,6 +253,8 @@ class CAPITest(unittest.TestCase):
         self.assertTrue(contains_string(dct2, b'a'))
         self.assertFalse(contains_string(dct2, b'b'))
 
+        self.assertRaises(SystemError, contains_string, UserDict(), 'a')
+        self.assertRaises(SystemError, contains_string, 42, 'a')
         # CRASHES contains({}, NULL)
         # CRASHES contains(NULL, b'a')
 

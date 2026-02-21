@@ -140,6 +140,7 @@ static PyObject* frozendict_new(PyTypeObject *type, PyObject *args,
                                 PyObject *kwds);
 static PyObject* dict_new(PyTypeObject *type, PyObject *args, PyObject *kwds);
 static int dict_merge(PyObject *a, PyObject *b, int override);
+static int dict_contains(PyObject *op, PyObject *key);
 static int dict_merge_from_seq2(PyObject *d, PyObject *seq2, int override);
 
 
@@ -4126,7 +4127,7 @@ dict_merge(PyObject *a, PyObject *b, int override)
 
         for (key = PyIter_Next(iter); key; key = PyIter_Next(iter)) {
             if (override != 1) {
-                status = PyDict_Contains(a, key);
+                status = dict_contains(a, key);
                 if (status != 0) {
                     if (status > 0) {
                         if (override == 0) {
@@ -4484,7 +4485,7 @@ static PyObject *
 dict___contains___impl(PyDictObject *self, PyObject *key)
 /*[clinic end generated code: output=1b314e6da7687dae input=fe1cb42ad831e820]*/
 {
-    int contains = PyDict_Contains((PyObject *)self, key);
+    int contains = dict_contains((PyObject *)self, key);
     if (contains < 0) {
         return NULL;
     }
@@ -4984,9 +4985,8 @@ static PyMethodDef mapp_methods[] = {
     {NULL,              NULL}   /* sentinel */
 };
 
-/* Return 1 if `key` is in dict `op`, 0 if not, and -1 on error. */
-int
-PyDict_Contains(PyObject *op, PyObject *key)
+static int
+dict_contains(PyObject *op, PyObject *key)
 {
     Py_hash_t hash = _PyObject_HashFast(key);
     if (hash == -1) {
@@ -4995,6 +4995,18 @@ PyDict_Contains(PyObject *op, PyObject *key)
     }
 
     return _PyDict_Contains_KnownHash(op, key, hash);
+}
+
+/* Return 1 if `key` is in dict `op`, 0 if not, and -1 on error. */
+int
+PyDict_Contains(PyObject *op, PyObject *key)
+{
+    if (!PyAnyDict_Check(op)) {
+        PyErr_BadInternalCall();
+        return -1;
+    }
+
+    return dict_contains(op, key);
 }
 
 int
@@ -5013,7 +5025,7 @@ PyDict_ContainsString(PyObject *op, const char *key)
 int
 _PyDict_Contains_KnownHash(PyObject *op, PyObject *key, Py_hash_t hash)
 {
-    PyDictObject *mp = (PyDictObject *)op;
+    PyDictObject *mp = _PyAnyDict_CAST(op);
     PyObject *value;
     Py_ssize_t ix;
 
@@ -5042,7 +5054,7 @@ static PySequenceMethods dict_as_sequence = {
     0,                          /* sq_slice */
     0,                          /* sq_ass_item */
     0,                          /* sq_ass_slice */
-    PyDict_Contains,            /* sq_contains */
+    dict_contains,              /* sq_contains */
     0,                          /* sq_inplace_concat */
     0,                          /* sq_inplace_repeat */
 };
@@ -6292,7 +6304,7 @@ dictkeys_contains(PyObject *self, PyObject *obj)
     _PyDictViewObject *dv = (_PyDictViewObject *)self;
     if (dv->dv_dict == NULL)
         return 0;
-    return PyDict_Contains((PyObject *)dv->dv_dict, obj);
+    return dict_contains((PyObject *)dv->dv_dict, obj);
 }
 
 static PySequenceMethods dictkeys_as_sequence = {
