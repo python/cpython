@@ -579,6 +579,8 @@ class ArrayMemoryviewTest(unittest.TestCase,
         # A memoryview is equal to itself: there is no need to compare
         # individual values. This is not true for float values since they can
         # be NaN, and NaN is not equal to itself.
+
+        # Test integer formats
         for int_format in 'bBhHiIlLqQ':
             with self.subTest(format=int_format):
                 a = array.array(int_format, [1, 2, 3])
@@ -586,8 +588,31 @@ class ArrayMemoryviewTest(unittest.TestCase,
                 self.assertTrue(m == m)
                 self.assertFalse(m != m)
 
+                if int_format in 'bB':
+                    m2 = m.cast('@' + m.format)
+                    self.assertTrue(m2 == m2)
+                    self.assertFalse(m2 != m2)
+
+        # Test '?' format
+        m = memoryview(b'\0\1\2').cast('?')
+        self.assertTrue(m == m)
+        self.assertFalse(m != m)
+
+        # Test 'P' format
+        if struct.calcsize('L') == struct.calcsize('P'):
+            int_format = 'L'
+        elif struct.calcsize('Q') == struct.calcsize('P'):
+            int_format = 'Q'
+        else:
+            raise ValueError('unable to get void* format in struct')
+        a = array.array(int_format, [1, 2, 3])
+        m = memoryview(a.tobytes()).cast('P')
+        self.assertTrue(m == m)
+        self.assertFalse(m != m)
+
+        # Test float formats
         for float_format in 'fd':
-            with self.subTest(format=int_format):
+            with self.subTest(format=float_format):
                 a = array.array(float_format, [1.0, 2.0, float('nan')])
                 m = memoryview(a)
                 # nan is not equal to nan
