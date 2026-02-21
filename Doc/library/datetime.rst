@@ -2584,8 +2584,11 @@ requires, and these work on all supported platforms.
 |  ``%S``   | Second as a zero-padded        | 00, 01, ..., 59        | \(4), |
 |           | decimal number.                |                        | \(9)  |
 +-----------+--------------------------------+------------------------+-------+
-|  ``%t``   | The tab character              | ``\t``                 |       |
-|           | (``'\t'``).                    |                        |       |
+|  ``%t``   | The tab character, ``'\t'``,   | ``\t``                 | \(11) |
+|           | for ``strftime``, else         |                        |       |
+|           | for ``strptime``, any          |                        |       |
+|           | blank-space character(s),      |                        |       |
+|           | i.e., ``'\s+'``.               |                        |       |
 +-----------+--------------------------------+------------------------+-------+
 |  ``%T``   | ISO 8601 time format,          | 10:01:59               |       |
 |           | equivalent to ``%H:%M:%S``.    |                        |       |
@@ -2880,6 +2883,12 @@ Notes:
       a day of month without a year now emit a
       :exc:`DeprecationWarning`. In 3.15 or later we may change this into
       an error or change the default year to a leap year. See :gh:`70647`.
+
+(11)
+   See `The Open Group Base Specifications Issue 8 IEEE Std 1003.1-2024
+   documentation for strptime
+   <https://pubs.opengroup.org/onlinepubs/9799919799/functions/strptime.html>`_
+   for details on the :meth: `~.datetime.strptime` invocation.
 
 .. rubric:: Footnotes
 
