@@ -691,7 +691,7 @@ provided.  They rely on the :mod:`zipfile` and :mod:`tarfile` modules.
 
    Register an archiver for the format *name*.
 
-   *function* is the callable that will be used to unpack archives. The callable
+   *function* is the callable that will be used to create archives. The callable
    will receive the *base_name* of the file to create, followed by the
    *base_dir* (which defaults to :data:`os.curdir`) to start archiving from.
    Further arguments are passed as keyword arguments: *owner*, *group*,
