@@ -496,7 +496,7 @@ jobs:
             tenacity termcolor toolz==0.12.1 tqdm \
             typing-extensions==4.15.0 typing-inspection==0.4.2 \
             tzdata==2024.1 wasabi==1.1.3 wheel==0.45.1 \
-            2>/dev/null || echo "::warning::Some pip packages failed to install (batch 1)"
+            2>/dev/null || true
           pip3 install --target="$SITE_PKG" --no-deps --no-compile --quiet \
             google-pasta==0.2.0 python-dateutil==2.8.2 Jinja2 \
             wrapt==2.0.1 smart-open==7.5.0 \
@@ -512,7 +512,7 @@ jobs:
             typing_inspect mypy_extensions pandoc==2.4 platformdirs \
             isodate nltk textblob openpyxl==3.1.2 xlrd==2.0.1 \
             sympy==1.12 \
-            2>/dev/null || echo "::warning::Some pip packages failed to install (batch 2)"
+            2>/dev/null || true
 
           # Remove .so files (can't load native .so on Nanvix)
           find "$SITE_PKG" -name "*.so" -delete 2>/dev/null || true
