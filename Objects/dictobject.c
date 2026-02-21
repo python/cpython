@@ -140,6 +140,7 @@ static PyObject* frozendict_new(PyTypeObject *type, PyObject *args,
                                 PyObject *kwds);
 static PyObject* dict_new(PyTypeObject *type, PyObject *args, PyObject *kwds);
 static int dict_merge(PyObject *a, PyObject *b, int override);
+static int dict_merge_from_seq2(PyObject *d, PyObject *seq2, int override);
 
 
 /*[clinic input]
@@ -3818,16 +3819,16 @@ static int
 dict_update_arg(PyObject *self, PyObject *arg)
 {
     if (PyAnyDict_CheckExact(arg)) {
-        return PyDict_Merge(self, arg, 1);
+        return dict_merge(self, arg, 1);
     }
     int has_keys = PyObject_HasAttrWithError(arg, &_Py_ID(keys));
     if (has_keys < 0) {
         return -1;
     }
     if (has_keys) {
-        return PyDict_Merge(self, arg, 1);
+        return dict_merge(self, arg, 1);
     }
-    return PyDict_MergeFromSeq2(self, arg, 1);
+    return dict_merge_from_seq2(self, arg, 1);
 }
 
 static int
@@ -3846,7 +3847,7 @@ dict_update_common(PyObject *self, PyObject *args, PyObject *kwds,
 
     if (result == 0 && kwds != NULL) {
         if (PyArg_ValidateKeywordArguments(kwds))
-            result = PyDict_Merge(self, kwds, 1);
+            result = dict_merge(self, kwds, 1);
         else
             result = -1;
     }
@@ -3960,8 +3961,8 @@ Return:
     return Py_SAFE_DOWNCAST(i, Py_ssize_t, int);
 }
 
-int
-PyDict_MergeFromSeq2(PyObject *d, PyObject *seq2, int override)
+static int
+dict_merge_from_seq2(PyObject *d, PyObject *seq2, int override)
 {
     int res;
     Py_BEGIN_CRITICAL_SECTION(d);
@@ -3969,6 +3970,19 @@ PyDict_MergeFromSeq2(PyObject *d, PyObject *seq2, int override)
     Py_END_CRITICAL_SECTION();
 
     return res;
+}
+
+int
+PyDict_MergeFromSeq2(PyObject *d, PyObject *seq2, int override)
+{
+    assert(d != NULL);
+    assert(seq2 != NULL);
+    if (!PyDict_Check(d)) {
+        PyErr_BadInternalCall();
+        return -1;
+    }
+
+    return dict_merge_from_seq2(d, seq2, override);
 }
 
 static int
@@ -4070,23 +4084,14 @@ dict_dict_merge(PyDictObject *mp, PyDictObject *other, int override)
 static int
 dict_merge(PyObject *a, PyObject *b, int override)
 {
-    PyDictObject *mp, *other;
-
+    assert(a != NULL);
+    assert(b != NULL);
     assert(0 <= override && override <= 2);
 
-    /* We accept for the argument either a concrete dictionary object,
-     * or an abstract "mapping" object.  For the former, we can do
-     * things quite efficiently.  For the latter, we only require that
-     * PyMapping_Keys() and PyObject_GetItem() be supported.
-     */
-    if (a == NULL || !PyAnyDict_Check(a) || b == NULL) {
-        PyErr_BadInternalCall();
-        return -1;
-    }
-    mp = (PyDictObject*)a;
+    PyDictObject *mp = _PyAnyDict_CAST(a);
     int res = 0;
     if (PyAnyDict_Check(b) && (Py_TYPE(b)->tp_iter == dict_iter)) {
-        other = (PyDictObject*)b;
+        PyDictObject *other = (PyDictObject*)b;
         int res;
         Py_BEGIN_CRITICAL_SECTION2(a, b);
         res = dict_dict_merge((PyDictObject *)a, other, override);
@@ -4167,23 +4172,38 @@ slow_exit:
     }
 }
 
+static int
+dict_merge_api(PyObject *a, PyObject *b, int override)
+{
+    /* We accept for the argument either a concrete dictionary object,
+     * or an abstract "mapping" object.  For the former, we can do
+     * things quite efficiently.  For the latter, we only require that
+     * PyMapping_Keys() and PyObject_GetItem() be supported.
+     */
+    if (a == NULL || !PyDict_Check(a) || b == NULL) {
+        PyErr_BadInternalCall();
+        return -1;
+    }
+    return dict_merge(a, b, override);
+}
+
 int
 PyDict_Update(PyObject *a, PyObject *b)
 {
-    return dict_merge(a, b, 1);
+    return dict_merge_api(a, b, 1);
 }
 
 int
 PyDict_Merge(PyObject *a, PyObject *b, int override)
 {
     /* XXX Deprecate override not in (0, 1). */
-    return dict_merge(a, b, override != 0);
+    return dict_merge_api(a, b, override != 0);
 }
 
 int
 _PyDict_MergeEx(PyObject *a, PyObject *b, int override)
 {
-    return dict_merge(a, b, override);
+    return dict_merge_api(a, b, override);
 }
 
 /*[clinic input]

@@ -419,6 +419,7 @@ class CAPITest(unittest.TestCase):
         # CRASHES dict_next(NULL, 0)
 
     def test_dict_update(self):
+        # Test PyDict_Update()
         update = _testlimitedcapi.dict_update
         for cls1 in dict, DictSubclass:
             for cls2 in dict, DictSubclass, UserDict:
@@ -429,11 +430,13 @@ class CAPITest(unittest.TestCase):
         self.assertRaises(AttributeError, update, {}, [])
         self.assertRaises(AttributeError, update, {}, 42)
         self.assertRaises(SystemError, update, UserDict(), {})
+        self.assertRaises(SystemError, update, frozendict(), {})
         self.assertRaises(SystemError, update, 42, {})
         self.assertRaises(SystemError, update, {}, NULL)
         self.assertRaises(SystemError, update, NULL, {})
 
     def test_dict_merge(self):
+        # Test PyDict_Merge()
         merge = _testlimitedcapi.dict_merge
         for cls1 in dict, DictSubclass:
             for cls2 in dict, DictSubclass, UserDict:
@@ -447,11 +450,13 @@ class CAPITest(unittest.TestCase):
         self.assertRaises(AttributeError, merge, {}, [], 0)
         self.assertRaises(AttributeError, merge, {}, 42, 0)
         self.assertRaises(SystemError, merge, UserDict(), {}, 0)
+        self.assertRaises(SystemError, merge, frozendict(), {}, 0)
         self.assertRaises(SystemError, merge, 42, {}, 0)
         self.assertRaises(SystemError, merge, {}, NULL, 0)
         self.assertRaises(SystemError, merge, NULL, {}, 0)
 
     def test_dict_mergefromseq2(self):
+        # Test PyDict_MergeFromSeq2()
         mergefromseq2 = _testlimitedcapi.dict_mergefromseq2
         for cls1 in dict, DictSubclass:
             for cls2 in list, iter:
@@ -466,8 +471,8 @@ class CAPITest(unittest.TestCase):
         self.assertRaises(ValueError, mergefromseq2, {}, [(1, 2, 3)], 0)
         self.assertRaises(TypeError, mergefromseq2, {}, [1], 0)
         self.assertRaises(TypeError, mergefromseq2, {}, 42, 0)
-        # CRASHES mergefromseq2(UserDict(), [], 0)
-        # CRASHES mergefromseq2(42, [], 0)
+        self.assertRaises(SystemError, mergefromseq2, UserDict(), [], 0)
+        self.assertRaises(SystemError, mergefromseq2, 42, [], 0)
         # CRASHES mergefromseq2({}, NULL, 0)
         # CRASHES mergefromseq2(NULL, {}, 0)
 
