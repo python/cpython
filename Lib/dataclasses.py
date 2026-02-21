@@ -904,6 +904,13 @@ def _get_field(cls, a_name, a_type, default_kw_only):
 
         if not isinstance(default, Field):
             f.default = default
+        else:
+            # Extremely weird case: the Field comes from __get__() of
+            # a descriptor.
+            default._field_type = f._field_type
+            default.name = f.name
+            default.type = f.type
+            f = default
 
         # For real and InitVar fields, if kw_only wasn't specified use the
         # default value.
