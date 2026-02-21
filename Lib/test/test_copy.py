@@ -445,6 +445,8 @@ class TestCopy(unittest.TestCase):
         x['foo'].append(x)
         x = x['foo']
         y = copy.deepcopy(x)
+        self.assertIsNot(x, y)
+        self.assertIsNot(x[0], y[0])
         self.assertIs(y[0]['foo'], y)
 
     @support.skip_emscripten_stack_overflow()
