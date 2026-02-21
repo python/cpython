@@ -1226,13 +1226,13 @@ This converts the list into a set, thereby removing duplicates, and then back
 into a list.
 
 
-How do you remove multiple items from a list
---------------------------------------------
+How do you remove multiple items from a list?
+---------------------------------------------
 
 As with removing duplicates, explicitly iterating in reverse with a
 delete condition is one possibility.  However, it is easier and faster
 to use slice replacement with an implicit or explicit forward iteration.
-Here are three variations.::
+Here are three variations::
 
    mylist[:] = filter(keep_function, mylist)
    mylist[:] = (x for x in mylist if keep_condition)
@@ -1851,6 +1851,8 @@ to the object:
 >>> id(b) # doctest: +SKIP
 13891296
 
+
+.. _faq-identity-with-is:
 
 When can I rely on identity tests with the *is* operator?
 ---------------------------------------------------------

@@ -249,8 +249,8 @@ class TestSpecifics(unittest.TestCase):
             d = -281474976710656  # 1 << 48
             e = +4611686018427387904  # 1 << 62
             f = -4611686018427387904  # 1 << 62
-            g = +9223372036854775807  # 1 << 63 - 1
-            h = -9223372036854775807  # 1 << 63 - 1
+            g = +9223372036854775807  # (1 << 63) - 1
+            h = -9223372036854775807  # (1 << 63) - 1
 
             for variable in self.test_32_63_bit_values.__code__.co_consts:
                 if variable is not None:
@@ -1298,7 +1298,7 @@ class TestSpecifics(unittest.TestCase):
                     x
                     in
                     y)
-        genexp_lines = [0, 4, 2, 0, 4]
+        genexp_lines = [4, 0, 4, 2, 0, 4]
 
         genexp_code = return_genexp.__code__.co_consts[0]
         code_lines = self.get_code_lines(genexp_code)

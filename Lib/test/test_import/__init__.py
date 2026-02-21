@@ -45,6 +45,7 @@ from test.support import (
     Py_GIL_DISABLED,
     no_rerun,
     force_not_colorized_test_class,
+    catch_unraisable_exception
 )
 from test.support.import_helper import (
     forget, make_legacy_pyc, unlink, unload, ready_to_import,
@@ -76,7 +77,7 @@ except ImportError:
 
 
 skip_if_dont_write_bytecode = unittest.skipIf(
-        sys.dont_write_bytecode,
+        sys.dont_write_bytecode or sys.implementation.cache_tag is None,
         "test meaningful only when writing bytecode")
 
 
@@ -504,7 +505,7 @@ class ImportTests(unittest.TestCase):
         try:
             # Compile & remove .py file; we only need .pyc.
             # Bytecode must be relocated from the PEP 3147 bytecode-only location.
-            py_compile.compile(filename)
+            make_legacy_pyc(filename, allow_compile=True)
         finally:
             unlink(filename)
 
@@ -514,7 +515,6 @@ class ImportTests(unittest.TestCase):
 
         namespace = {}
         try:
-            make_legacy_pyc(filename)
             # This used to crash.
             exec('import ' + module, None, namespace)
         finally:
@@ -1399,7 +1399,10 @@ func_filename = func.__code__.co_filename
 """
     dir_name = os.path.abspath(TESTFN)
     file_name = os.path.join(dir_name, module_name) + os.extsep + "py"
-    compiled_name = importlib.util.cache_from_source(file_name)
+    try:
+        compiled_name = importlib.util.cache_from_source(file_name)
+    except NotImplementedError:
+        compiled_name = None
 
     def setUp(self):
         self.sys_path = sys.path[:]
@@ -1417,7 +1420,8 @@ func_filename = func.__code__.co_filename
         else:
             unload(self.module_name)
         unlink(self.file_name)
-        unlink(self.compiled_name)
+        if self.compiled_name:
+            unlink(self.compiled_name)
         rmtree(self.dir_name)
 
     def import_module(self):
@@ -1436,6 +1440,8 @@ func_filename = func.__code__.co_filename
         self.assertEqual(mod.code_filename, self.file_name)
         self.assertEqual(mod.func_filename, self.file_name)
 
+    @unittest.skipIf(sys.implementation.cache_tag is None,
+                     'requires sys.implementation.cache_tag is not None')
     def test_incorrect_code_name(self):
         py_compile.compile(self.file_name, dfile="another_module.py")
         mod = self.import_module()
@@ -1445,9 +1451,9 @@ func_filename = func.__code__.co_filename
 
     def test_module_without_source(self):
         target = "another_module.py"
-        py_compile.compile(self.file_name, dfile=target)
+        pyc_file = self.file_name + 'c'
+        py_compile.compile(self.file_name, pyc_file, dfile=target)
         os.remove(self.file_name)
-        pyc_file = make_legacy_pyc(self.file_name)
         importlib.invalidate_caches()
         mod = self.import_module()
         self.assertEqual(mod.module_filename, pyc_file)
@@ -1455,8 +1461,9 @@ func_filename = func.__code__.co_filename
         self.assertEqual(mod.func_filename, target)
 
     def test_foreign_code(self):
-        py_compile.compile(self.file_name)
-        with open(self.compiled_name, "rb") as f:
+        compiled_name = self.compiled_name or (self.file_name + 'c')
+        py_compile.compile(self.file_name, compiled_name)
+        with open(compiled_name, "rb") as f:
             header = f.read(16)
             code = marshal.load(f)
         constants = list(code.co_consts)
@@ -1464,9 +1471,11 @@ func_filename = func.__code__.co_filename
         pos = constants.index(1000)
         constants[pos] = foreign_code
         code = code.replace(co_consts=tuple(constants))
-        with open(self.compiled_name, "wb") as f:
+        with open(compiled_name, "wb") as f:
             f.write(header)
             marshal.dump(code, f)
+        if not self.compiled_name:
+            os.remove(self.file_name)
         mod = self.import_module()
         self.assertEqual(mod.constant.co_filename, foreign_code.co_filename)
 
@@ -2516,6 +2525,32 @@ class SubinterpImportTests(unittest.TestCase):
 
         excsnap = _interpreters.run_string(interpid, script)
         self.assertIsNot(excsnap, None)
+
+    @requires_subinterpreters
+    def test_pyinit_function_raises_exception(self):
+        # gh-144601: PyInit functions that raised exceptions would cause a
+        # crash when imported from a subinterpreter.
+        import _testsinglephase
+        filename = _testsinglephase.__file__
+        script = f"""if True:
+        from test.test_import import import_extension_from_file
+
+        import_extension_from_file('_testsinglephase_raise_exception', {filename!r})"""
+
+        interp = _interpreters.create()
+        try:
+            with catch_unraisable_exception() as cm:
+                exception = _interpreters.run_string(interp, script)
+                unraisable = cm.unraisable
+        finally:
+            _interpreters.destroy(interp)
+
+        self.assertIsNotNone(exception)
+        self.assertIsNotNone(exception.type.__name__, "ImportError")
+        self.assertIsNotNone(exception.msg, "failed to import from subinterpreter due to exception")
+        self.assertIsNotNone(unraisable)
+        self.assertIs(unraisable.exc_type, RuntimeError)
+        self.assertEqual(str(unraisable.exc_value), "evil")
 
 
 class TestSinglePhaseSnapshot(ModuleSnapshot):
