@@ -55,23 +55,21 @@
 static void
 dump_abstract_stack(_Py_UOpsAbstractFrame *frame, JitOptRef *stack_pointer)
 {
-    JitOptRef *stack_base = frame->stack;
-    JitOptRef *locals_base = frame->locals;
     printf("    locals=[");
-    for (JitOptRef *ptr = locals_base; ptr < stack_base; ptr++) {
-        if (ptr != locals_base) {
+    for (int i = 0 ; i < frame->locals_len; i++) {
+        if (i > 0) {
             printf(", ");
         }
-        _PyUOpSymPrint(*ptr);
+        _PyUOpSymPrint(frame->locals[i]);
     }
     printf("]\n");
-    if (stack_pointer < stack_base) {
-        printf("    stack=%d\n", (int)(stack_pointer - stack_base));
+    if (stack_pointer < frame->stack) {
+        printf("    stack=%d\n", (int)(stack_pointer - frame->stack));
     }
     else {
         printf("    stack=[");
-        for (JitOptRef *ptr = stack_base; ptr < stack_pointer; ptr++) {
-            if (ptr != stack_base) {
+        for (JitOptRef *ptr = frame->stack; ptr < stack_pointer; ptr++) {
+            if (ptr != frame->stack) {
                 printf(", ");
             }
             _PyUOpSymPrint(*ptr);
@@ -83,7 +81,7 @@ dump_abstract_stack(_Py_UOpsAbstractFrame *frame, JitOptRef *stack_pointer)
 
 static void
 dump_uop(JitOptContext *ctx, const char *label, int index,
-         const _PyUOpInstruction *instr, JitOptRef *stack_pointer)
+              const _PyUOpInstruction *instr, JitOptRef *stack_pointer)
 {
     if (get_lltrace() >= 3) {
         printf("%4d %s: ", index, label);
@@ -95,11 +93,24 @@ dump_uop(JitOptContext *ctx, const char *label, int index,
     }
 }
 
+static void
+dump_uops(JitOptContext *ctx, const char *label,
+          _PyUOpInstruction *start, JitOptRef *stack_pointer)
+{
+    int current_len = uop_buffer_length(&ctx->out_buffer);
+    int added_count = (int)(ctx->out_buffer.next - start);
+    for (int j = 0; j < added_count; j++) {
+        dump_uop(ctx, label, current_len - added_count + j, &start[j], stack_pointer);
+    }
+}
+
 #define DUMP_UOP dump_uop
+#define DUMP_UOPS dump_uops
 
 #else
     #define DPRINTF(level, ...)
     #define DUMP_UOP(ctx, label, index, instr, stack_pointer)
+    #define DUMP_UOPS(ctx, label, start, stack_pointer)
 #endif
 
 static int
@@ -278,6 +289,7 @@ add_op(JitOptContext *ctx, _PyUOpInstruction *this_instr,
 #define sym_set_recorded_gen_func(SYM, VAL) _Py_uop_sym_set_recorded_gen_func(ctx, SYM, VAL)
 #define sym_get_probable_func_code _Py_uop_sym_get_probable_func_code
 #define sym_get_probable_value _Py_uop_sym_get_probable_value
+#define sym_set_stack_depth(DEPTH, SP) _Py_uop_sym_set_stack_depth(ctx, DEPTH, SP)
 
 /* Comparison oparg masks */
 #define COMPARE_LT_MASK 2
@@ -385,7 +397,7 @@ get_test_bit_for_bools(void) {
     uintptr_t true_bits = (uintptr_t)&_Py_TrueStruct;
 #endif
     for (int i = 4; i < 8; i++) {
-        if ((true_bits ^ false_bits) & (1 << i)) {
+        if ((true_bits ^ false_bits) & (uintptr_t)(1 << i)) {
             return i;
         }
     }
@@ -399,8 +411,8 @@ test_bit_set_in_true(int bit) {
 #else
     uintptr_t true_bits = (uintptr_t)&_Py_TrueStruct;
 #endif
-    assert((true_bits ^ ((uintptr_t)&_Py_FalseStruct)) & (1 << bit));
-    return true_bits & (1 << bit);
+    assert((true_bits ^ ((uintptr_t)&_Py_FalseStruct)) & (uintptr_t)(1 << bit));
+    return true_bits & (uintptr_t)(1 << bit);
 }
 
 #ifdef Py_DEBUG
@@ -460,14 +472,15 @@ optimize_uops(
         interp->type_watchers[TYPE_WATCHER_ID] = type_watcher_callback;
     }
 
-    _Py_uop_abstractcontext_init(ctx);
-    _Py_UOpsAbstractFrame *frame = _Py_uop_frame_new(ctx, (PyCodeObject *)func->func_code, curr_stacklen, NULL, 0);
+    _Py_uop_abstractcontext_init(ctx, dependencies);
+    _Py_UOpsAbstractFrame *frame = _Py_uop_frame_new(ctx, (PyCodeObject *)func->func_code, NULL, 0);
     if (frame == NULL) {
         return 0;
     }
     frame->func = func;
     ctx->curr_frame_depth++;
     ctx->frame = frame;
+    _Py_uop_sym_set_stack_depth(ctx, curr_stacklen, frame->stack_pointer);
 
     _PyUOpInstruction *this_instr = NULL;
     JitOptRef *stack_pointer = ctx->frame->stack_pointer;
@@ -491,7 +504,7 @@ optimize_uops(
             stack_pointer = ctx->frame->stack_pointer;
         }
 
-        DUMP_UOP(ctx, "abs", this_instr - trace, this_instr, stack_pointer);
+        DUMP_UOP(ctx, "abs", (int)(this_instr - trace), this_instr, stack_pointer);
 
         _PyUOpInstruction *out_ptr = ctx->out_buffer.next;
 
@@ -508,7 +521,7 @@ optimize_uops(
             *(ctx->out_buffer.next++) = *this_instr;
         }
         assert(ctx->frame != NULL);
-        DUMP_UOP(ctx, "out", uop_buffer_length(&ctx->out_buffer) - 1, out_ptr, stack_pointer);
+        DUMP_UOPS(ctx, "out", out_ptr, stack_pointer);
         if (!CURRENT_FRAME_IS_INIT_SHIM() && !ctx->done) {
             DPRINTF(3, " stack_level %d\n", STACK_LEVEL());
             ctx->frame->stack_pointer = stack_pointer;
@@ -705,8 +718,7 @@ _Py_uop_analyze_and_optimize(
     OPT_STAT_INC(optimizer_attempts);
 
     length = optimize_uops(
-         tstate, buffer, length, curr_stacklen,
-         output, dependencies);
+        tstate, buffer, length, curr_stacklen, output, dependencies);
 
     if (length == 0) {
         return length;

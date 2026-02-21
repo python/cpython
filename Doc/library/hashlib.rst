@@ -4,9 +4,6 @@
 .. module:: hashlib
    :synopsis: Secure hash and message digest algorithms.
 
-.. moduleauthor:: Gregory P. Smith <greg@krypto.org>
-.. sectionauthor:: Gregory P. Smith <greg@krypto.org>
-
 **Source code:** :source:`Lib/hashlib.py`
 
 .. index::
@@ -61,7 +58,7 @@ if you are using a rare "FIPS compliant" build of Python.
 These correspond to :data:`algorithms_guaranteed`.
 
 Additional algorithms may also be available if your Python distribution's
-:mod:`hashlib` was linked against a build of OpenSSL that provides others.
+:mod:`!hashlib` was linked against a build of OpenSSL that provides others.
 Others *are not guaranteed available* on all installations and will only be
 accessible by name via :func:`new`.  See :data:`algorithms_available`.
 
@@ -379,8 +376,6 @@ include a `salt <https://en.wikipedia.org/wiki/Salt_%28cryptography%29>`_.
 BLAKE2
 ------
 
-.. sectionauthor:: Dmitry Chestnykh
-
 .. index::
    single: blake2b, blake2s
 
@@ -397,7 +392,7 @@ BLAKE2 supports **keyed mode** (a faster and simpler replacement for HMAC_),
 **salted hashing**, **personalization**, and **tree hashing**.
 
 Hash objects from this module follow the API of standard library's
-:mod:`hashlib` objects.
+:mod:`!hashlib` objects.
 
 
 Creating hash objects
