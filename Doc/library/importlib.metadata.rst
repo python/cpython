@@ -413,10 +413,10 @@ Distributions
 =============
 
 While the module level API described above is the most common and convenient usage,
-you can get all of that information from the :class:`Distribution` class.
+all that information is accessible from the :class:`Distribution` class.
 :class:`!Distribution` is an abstract object that represents the metadata for
 a Python `Distribution Package <https://packaging.python.org/en/latest/glossary/#term-Distribution-Package>`_.
-You can get the concrete :class:`!Distribution` subclass instance for an installed
+Get the concrete :class:`!Distribution` subclass instance for an installed
 distribution package by calling the :func:`distribution` function::
 
     >>> from importlib.metadata import distribution  # doctest: +SKIP
