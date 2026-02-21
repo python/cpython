@@ -318,6 +318,12 @@ builtin___lazy_import___impl(PyObject *module, PyObject *name,
         locals = globals;
     }
 
+    if (!PyDict_Check(globals)) {
+        PyErr_Format(PyExc_TypeError,
+                     "expect dict for globals, got %T", globals);
+        return NULL;
+    }
+
     if (PyDict_GetItemRef(globals, &_Py_ID(__builtins__), &builtins) < 0) {
         return NULL;
     }

@@ -401,6 +401,8 @@ class DunderLazyImportTests(unittest.TestCase):
 
         with self.assertRaises(ValueError):
             __lazy_import__("sys", level=-1)
+        with self.assertRaises(TypeError):
+            __lazy_import__("sys", globals=1)
 
     def test_dunder_lazy_import_builtins(self):
         """__lazy_import__ should use module's __builtins__ for __import__."""
