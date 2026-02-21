@@ -557,6 +557,9 @@ def getdefaultlocale(envvars=('LC_ALL', 'LC_CTYPE', 'LANG', 'LANGUAGE')):
         1766.  code and encoding can be None in case the values cannot
         be determined.
 
+        Raises OSError on Windows if failed to get locale info (unlikely
+        to happen on modern Windows).
+
     """
 
     return _getdefaultlocale(envvars)
@@ -572,12 +575,7 @@ def _getdefaultlocale(envvars=('LC_ALL', 'LC_CTYPE', 'LANG', 'LANGUAGE')):
     else:
         # add other platform-specific processing here, if
         # necessary...
-        # for Windows, for any reason if the code was
-        # not avaliable, fall back to POSIX behaviour
-        if sys.platform == "win32" and code is None:
-            pass
-        else:
-            return code, encoding
+        return code, encoding
 
     # fall back on POSIX behaviour
     import os

@@ -29,6 +29,7 @@ This software comes with no warranty. Use at your own risk.
 #    define WIN32_LEAN_AND_MEAN
 #  endif
 #  include <windows.h>
+#  include "pyerrors.h"             // PyErr_SetFromWindowsErr()
 #endif
 
 PyDoc_STRVAR(locale__doc__, "Support for POSIX locales.");
@@ -556,8 +557,8 @@ _locale__getdefaultlocale_impl(PyObject *module)
     }
 
     /* cannot determine the language code (very unlikely) */
-    Py_INCREF(Py_None);
-    return Py_BuildValue("Os", Py_None, encoding);
+    /* if any of GetLocaleInfoA above failed */
+    return PyErr_SetFromWindowsErr(0);
 }
 #endif
 
