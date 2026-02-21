@@ -2093,7 +2093,7 @@ unicodedata_block_impl(PyObject *module, int chr)
             return PyUnicode_FromString(_PyUnicode_BlockNames[_PyUnicode_Blocks[m].name]);
         }
     }
-    // Otherwise, return the deefault value per
+    // Otherwise, return the default value per
     // https://www.unicode.org/versions/latest/core-spec/chapter-3/#G64189
     return PyUnicode_FromString("No_Block");
 }
