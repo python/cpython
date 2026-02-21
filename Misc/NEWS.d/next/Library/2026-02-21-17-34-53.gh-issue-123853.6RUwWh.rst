@@ -1,0 +1,2 @@
+Removed Windows 95 compatibility code from :func:`_locale._getdefaultlocale`.
+Instead, if ``LOCALE_SISO639LANGNAME`` or ``LOCALE_SISO3166CTRYNAME`` cannot be retrieved, an :class:`OSError` is raised.
