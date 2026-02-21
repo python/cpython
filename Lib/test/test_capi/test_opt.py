@@ -1473,6 +1473,24 @@ class TestUopsOptimization(unittest.TestCase):
         # Removed guard
         self.assertNotIn("_CHECK_FUNCTION_EXACT_ARGS", uops)
 
+    def test_guard_func_callable_removed(self):
+        def testfunc(n):
+
+            def func(a):
+                return a + 1
+            x = 0
+            for i in range(n):
+                x = func(i) # guarded
+                x = func(i) # unguarded
+
+            return x
+        res, ex = self._run_with_optimizer(testfunc, TIER2_THRESHOLD)
+        self.assertEqual(res, TIER2_THRESHOLD)
+        uops = get_opnames(ex)
+
+        self.assertIn("_CHECK_FUNCTION_VERSION", uops)
+        self.assertEqual(count_ops(ex, "_GUARD_CALLABLE_FUNCTION"), 1)
+
     def test_method_guards_removed_or_reduced(self):
         def testfunc(n):
             result = 0
