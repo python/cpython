@@ -403,7 +403,7 @@ Improved error messages
      File "/home/pablogsal/github/python/main/lel.py", line 42, in <module>
         print(container.area)
               ^^^^^^^^^^^^^^
-     AttributeError: 'Container' object has no attribute 'area'. Did you mean: 'inner.area'?
+     AttributeError: 'Container' object has no attribute 'area'. Did you mean '.inner.area' instead of '.area'?
 
 
 Other language changes
