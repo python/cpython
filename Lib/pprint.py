@@ -239,10 +239,12 @@ class PrettyPrinter:
         write = stream.write
         cls = object.__class__
         stream.write(cls.__name__ + '(')
-        self._pprint_dict(object, stream,
-                          indent + len(cls.__name__) + 1,
-                          allowance + 1,
-                          context, level)
+        length = len(object)
+        if length:
+            self._pprint_dict(object, stream,
+                              indent + len(cls.__name__) + 1,
+                              allowance + 1,
+                              context, level)
         write(')')
 
     _dispatch[frozendict.__repr__] = _pprint_frozendict
