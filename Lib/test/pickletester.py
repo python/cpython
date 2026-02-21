@@ -2925,9 +2925,13 @@ class AbstractPickleTests:
                 self.assertIs(keys[0].attr, x)
 
     def test_recursive_frozendict_in_key(self):
+        if self.py_version < (3, 15):
+            self.skipTest('need frozendict')
         self._test_recursive_collection_in_key(frozendict, minprotocol=2)
 
     def test_recursive_frozendict_subclass_in_key(self):
+        if self.py_version < (3, 15):
+            self.skipTest('need frozendict')
         self._test_recursive_collection_in_key(MyFrozenDict)
 
     def _test_recursive_collection_in_value(self, factory, minprotocol=0):
@@ -2942,9 +2946,13 @@ class AbstractPickleTests:
                 self.assertIs(x['key'][0], x)
 
     def test_recursive_frozendict_in_value(self):
+        if self.py_version < (3, 15):
+            self.skipTest('need frozendict')
         self._test_recursive_collection_in_value(frozendict, minprotocol=2)
 
     def test_recursive_frozendict_subclass_in_value(self):
+        if self.py_version < (3, 15):
+            self.skipTest('need frozendict')
         self._test_recursive_collection_in_value(MyFrozenDict)
 
     def test_recursive_inst_state(self):
@@ -3437,6 +3445,8 @@ class AbstractPickleTests:
                         self.skipTest('int and str subclasses are not interoperable with Python 2')
                     if (3, 0) <= self.py_version < (3, 4) and proto < 2 and C in (MyStr, MyUnicode):
                         self.skipTest('str subclasses are not interoperable with Python < 3.4')
+                    if self.py_version < (3, 15) and C == MyFrozenDict:
+                        self.skipTest('frozendict is not available on Python < 3.15')
                     B = C.__base__
                     x = C(C.sample)
                     x.foo = 42
@@ -3458,6 +3468,8 @@ class AbstractPickleTests:
                 with self.subTest(proto=proto, C=C):
                     if self.py_version < (3, 4) and proto < 3 and C in (MyStr, MyUnicode):
                         self.skipTest('str subclasses are not interoperable with Python < 3.4')
+                    if self.py_version < (3, 15) and C == MyFrozenDict:
+                        self.skipTest('frozendict is not available on Python < 3.15')
                     B = C.__base__
                     x = C(C.sample)
                     x.foo = 42
