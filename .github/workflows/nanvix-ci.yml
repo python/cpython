@@ -417,21 +417,28 @@ jobs:
           make -f Makefile.nanvix CONFIG_NANVIX=y NANVIX_HOME="$NANVIX_HOME" NANVIX_TOOLCHAIN="/opt/nanvix" install DESTDIR="$STAGING"
           echo "STAGING=$STAGING" >> "$GITHUB_ENV"
 
-      - name: Download Test Scripts
+      - name: Verify Local Test Scripts
         run: |
           set -euo pipefail
-          # Download L2 test scripts from the nanvix-python repository
-          TESTS_BASE="https://raw.githubusercontent.com/nanvix/nanvix-python/refs/heads/main/tests"
-          mkdir -p nanvix-tests
-          # Smoke test
-          curl -fsSL -o nanvix-tests/smoke_test_l2.py "${TESTS_BASE}/smoke_test_l2.py"
-          # Functional test batches (1-21, excluding 11 and 12 which are L3-only)
+          TESTS_DIR="$(pwd)/nanvix-tests"
+          if [[ ! -d "$TESTS_DIR" ]]; then
+            echo "::error::Missing local test directory: $TESTS_DIR"
+            exit 1
+          fi
+
+          if [[ ! -f "$TESTS_DIR/smoke_test_l2.py" ]]; then
+            echo "::error::Missing smoke test script: $TESTS_DIR/smoke_test_l2.py"
+            exit 1
+          fi
+
           for batch in $(seq 1 21); do
             [[ $batch -eq 11 || $batch -eq 12 ]] && continue
-            curl -fsSL -o "nanvix-tests/test_func_batch${batch}.py" \
-              "${TESTS_BASE}/test_func_batch${batch}.py" 2>/dev/null || true
+            if [[ ! -f "$TESTS_DIR/test_func_batch${batch}.py" ]]; then
+              echo "::error::Missing functional test script: $TESTS_DIR/test_func_batch${batch}.py"
+              exit 1
+            fi
           done
-          echo "Downloaded test scripts: $(ls nanvix-tests/*.py | wc -l) files"
+          echo "Local test scripts verified: $(ls "$TESTS_DIR"/*.py | wc -l) files"
 
       - name: Test (smoke — L1 built-in modules)
         run: |
