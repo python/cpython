@@ -406,6 +406,11 @@ Other language changes
   making it a :term:`generic type`.
   (Contributed by James Hilton-Balfe in :gh:`128335`.)
 
+* :func:`int`, :func:`float` and :func:`complex` now support strings
+  with ``−`` (Unicode minus sign, U+2212) as an alternative to ``-``
+  (ASCII hyphen minus, U+002D).
+  (Contributed by Bartosz Sławecki in :gh:`144087`.)
+
 New modules
 ===========
 
