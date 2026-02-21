@@ -580,23 +580,30 @@ class ArrayMemoryviewTest(unittest.TestCase,
         # individual values. This is not true for float values since they can
         # be NaN, and NaN is not equal to itself.
 
+        def check_equal(view, is_equal):
+            self.assertEqual(view == view, is_equal)
+            self.assertEqual(view != view, not is_equal)
+
+            # Comparison with a different memoryview doesn't use
+            # the optimization and should give the same result.
+            view2 = memoryview(view)
+            self.assertEqual(view2 == view, is_equal)
+            self.assertEqual(view2 != view2, not is_equal)
+
         # Test integer formats
         for int_format in 'bBhHiIlLqQ':
             with self.subTest(format=int_format):
                 a = array.array(int_format, [1, 2, 3])
                 m = memoryview(a)
-                self.assertTrue(m == m)
-                self.assertFalse(m != m)
+                check_equal(m, True)
 
                 if int_format in 'bB':
                     m2 = m.cast('@' + m.format)
-                    self.assertTrue(m2 == m2)
-                    self.assertFalse(m2 != m2)
+                    check_equal(m2, True)
 
         # Test '?' format
         m = memoryview(b'\0\1\2').cast('?')
-        self.assertTrue(m == m)
-        self.assertFalse(m != m)
+        check_equal(m, True)
 
         # Test 'P' format
         if struct.calcsize('L') == struct.calcsize('P'):
@@ -607,8 +614,7 @@ class ArrayMemoryviewTest(unittest.TestCase,
             raise ValueError('unable to get void* format in struct')
         a = array.array(int_format, [1, 2, 3])
         m = memoryview(a.tobytes()).cast('P')
-        self.assertTrue(m == m)
-        self.assertFalse(m != m)
+        check_equal(m, True)
 
         # Test float formats
         for float_format in 'fd':
@@ -616,13 +622,11 @@ class ArrayMemoryviewTest(unittest.TestCase,
                 a = array.array(float_format, [1.0, 2.0, float('nan')])
                 m = memoryview(a)
                 # nan is not equal to nan
-                self.assertFalse(m == m)
-                self.assertTrue(m != m)
+                check_equal(m, False)
 
                 a = array.array(float_format, [1.0, 2.0, 3.0])
                 m = memoryview(a)
-                self.assertTrue(m == m)
-                self.assertFalse(m != m)
+                check_equal(m, True)
 
 
 class BytesMemorySliceTest(unittest.TestCase,
