@@ -1,0 +1,1 @@
+Fix a JIT crash in ``_Py_uop_frame_new()`` when tracing starts from non-function frames (for example ``_Py_InitCleanup`` shims) by using the traced code object directly and only storing function metadata when available.

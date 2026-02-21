@@ -146,7 +146,7 @@ _PyOptimizer_Optimize(
     assert(!interp->compiling);
     assert(_tstate->jit_tracer_state->initial_state.stack_depth >= 0);
 #ifndef Py_GIL_DISABLED
-    assert(_tstate->jit_tracer_state->initial_state.func != NULL);
+    assert(_tstate->jit_tracer_state->initial_state.code != NULL);
     interp->compiling = true;
     // The first executor in a chain and the MAX_CHAIN_DEPTH'th executor *must*
     // make progress in order to avoid infinite loops or excessively-long
@@ -1020,7 +1020,10 @@ _PyJit_TryInitializeTracing(
     tracer->initial_state.start_instr = start_instr;
     tracer->initial_state.close_loop_instr = close_loop_instr;
     tracer->initial_state.code = (PyCodeObject *)Py_NewRef(code);
-    tracer->initial_state.func = (PyFunctionObject *)Py_NewRef(func);
+    // Tracing can start in shim frames (e.g. _Py_InitCleanup), where
+    // frame->f_funcobj is not a PyFunctionObject.
+    tracer->initial_state.func = PyFunction_Check(func) ?
+        (PyFunctionObject *)Py_NewRef(func) : NULL;
     tracer->initial_state.executor = (_PyExecutorObject *)Py_XNewRef(current_executor);
     tracer->initial_state.exit = exit;
     tracer->initial_state.stack_depth = (int)(stack_pointer - _PyFrame_Stackbase(frame));

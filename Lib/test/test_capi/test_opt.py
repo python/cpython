@@ -4065,6 +4065,24 @@ class TestUopsOptimization(unittest.TestCase):
         self.assertNotIn('_PyJit_TryInitializeTracing', stderr,
                          f"JIT tracer memory leak detected:\n{stderr}")
 
+    def test_145064(self):
+        # https://github.com/python/cpython/issues/145064
+        result = script_helper.run_python_until_end('-c', textwrap.dedent(f"""
+        SRC = '''
+        class A:
+            def __init__(self, x):
+                self.x = x
+
+        for i in range(8):
+            A(i)
+        '''
+
+        for _ in range({TIER2_THRESHOLD * 6}):
+            ns = {{}}
+            exec(SRC, ns, ns)
+        """), PYTHON_JIT="1", PYTHON_JIT_STRESS="1")
+        self.assertEqual(result[0].rc, 0, result)
+
 def global_identity(x):
     return x
 

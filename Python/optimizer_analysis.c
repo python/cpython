@@ -458,6 +458,8 @@ optimize_uops(
 {
     assert(!PyErr_Occurred());
     assert(tstate->jit_tracer_state != NULL);
+    PyCodeObject *co = tstate->jit_tracer_state->initial_state.code;
+    assert(co != NULL);
     PyFunctionObject *func = tstate->jit_tracer_state->initial_state.func;
 
     JitOptContext *ctx = &tstate->jit_tracer_state->opt_context;
@@ -473,11 +475,13 @@ optimize_uops(
     }
 
     _Py_uop_abstractcontext_init(ctx, dependencies);
-    _Py_UOpsAbstractFrame *frame = _Py_uop_frame_new(ctx, (PyCodeObject *)func->func_code, NULL, 0);
+    _Py_UOpsAbstractFrame *frame = _Py_uop_frame_new(ctx, co, NULL, 0);
     if (frame == NULL) {
         return 0;
     }
-    frame->func = func;
+    if (func != NULL) {
+        frame->func = func;
+    }
     ctx->curr_frame_depth++;
     ctx->frame = frame;
     _Py_uop_sym_set_stack_depth(ctx, curr_stacklen, frame->stack_pointer);
