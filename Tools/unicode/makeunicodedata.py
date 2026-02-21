@@ -1237,12 +1237,8 @@ class UnicodeData:
             # See https://www.unicode.org/versions/Unicode17.0.0/core-spec/chapter-3/#G64189
             self.blocks = []
             for record in UcdFile(BLOCKS, version).records():
-                rng = record[0]
-                name = record[1]
-                if '..' in rng:
-                    s, e = [int(c, 16) for c in rng.split('..')]
-                else:
-                    s = e = int(rng, 16)
+                start_end, name = record
+                s, e = [int(c, 16) for c in start_end.split('..')]
                 self.blocks.append((s, e, name))
             self.blocks.sort()
 

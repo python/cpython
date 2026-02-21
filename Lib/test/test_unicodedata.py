@@ -974,6 +974,11 @@ class UnicodeFunctionsTest(unittest.TestCase, BaseUnicodeFunctionsTest):
             ['a', '\U0001F1FA\U0001F1E6', '\U0001F1FA\U0001F1F3'])
 
     def test_block(self):
+        self.assertEqual(self.db.block('\u0000'), 'Basic Latin')
+        self.assertEqual(self.db.block('\u0041'), 'Basic Latin')
+        self.assertEqual(self.db.block('\u007F'), 'Basic Latin')
+        self.assertEqual(self.db.block('\u0080'), 'Latin-1 Supplement')
+        self.assertEqual(self.db.block('\u00FF'), 'Latin-1 Supplement')
         self.assertEqual(self.db.block('\u1159'), 'Hangul Jamo')
         self.assertEqual(self.db.block('\u11F9'), 'Hangul Jamo')
         self.assertEqual(self.db.block('\uD788'), 'Hangul Syllables')
@@ -1048,6 +1053,9 @@ class UnicodeFunctionsTest(unittest.TestCase, BaseUnicodeFunctionsTest):
         # New in 17.0.0
         self.assertEqual(self.db.block('\u1AEB'), 'Combining Diacritical Marks Extended')
         self.assertEqual(self.db.block('\U00011B67'), 'Sharada Supplement')
+        # Unassigned
+        self.assertEqual(self.db.block('\U00100000'), 'Supplementary Private Use Area-B')
+        self.assertEqual(self.db.block('\U0010FFFF'), 'Supplementary Private Use Area-B')
 
         self.assertRaises(TypeError, self.db.block)
         self.assertRaises(TypeError, self.db.block, b'x')
