@@ -2080,17 +2080,18 @@ unicodedata_block_impl(PyObject *module, int chr)
 /*[clinic end generated code: output=5f8b40c49eaec75a input=0834cf2642d6eaae]*/
 {
     Py_UCS4 c = (Py_UCS4)chr;
-    int l = 0, h = BLOCK_COUNT - 1;
-    while (l <= h) {
-        int m = (l + h) / 2;
-        if (c < _PyUnicode_Blocks[m].s) {
-            h = m - 1;
+    int lo = 0, hi = BLOCK_COUNT - 1;
+    while (lo <= hi) {
+        int mid = (lo + hi) / 2;
+        if (c < _PyUnicode_Blocks[mid].start) {
+            hi = mid - 1;
         }
-        else if (c > _PyUnicode_Blocks[m].e) {
-            l = m + 1;
+        else if (c > _PyUnicode_Blocks[mid].end) {
+            lo = mid + 1;
         }
         else {
-            return PyUnicode_FromString(_PyUnicode_BlockNames[_PyUnicode_Blocks[m].name]);
+            size_t name = _PyUnicode_Blocks[mid].name;
+            return PyUnicode_FromString(_PyUnicode_BlockNames[name]);
         }
     }
     // Otherwise, return the default value per

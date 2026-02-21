@@ -133,7 +133,7 @@ following functions:
 .. function:: block(chr, /)
 
    Returns the `block
-   <https://www.unicode.org/versions/17.0.0/core-spec/chapter-3/#G64189>`_
+   <https://www.unicode.org/versions/Unicode17.0.0/core-spec/chapter-3/#G64189>`_
    assigned to the character *chr*. For example::
 
       >>> unicodedata.block('S')

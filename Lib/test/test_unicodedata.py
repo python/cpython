@@ -1057,6 +1057,7 @@ class UnicodeFunctionsTest(unittest.TestCase, BaseUnicodeFunctionsTest):
         self.assertEqual(self.db.block('\U00100000'), 'Supplementary Private Use Area-B')
         self.assertEqual(self.db.block('\U0010FFFF'), 'Supplementary Private Use Area-B')
 
+    def test_block_invalid_input(self):
         self.assertRaises(TypeError, self.db.block)
         self.assertRaises(TypeError, self.db.block, b'x')
         self.assertRaises(TypeError, self.db.block, 120)

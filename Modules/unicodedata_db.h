@@ -1145,8 +1145,8 @@ static const char * const _PyUnicode_BlockNames[] = {
     "Supplementary Private Use Area-B",
 };
 typedef struct {
-    Py_UCS4 s;
-    Py_UCS4 e;
+    Py_UCS4 start;
+    Py_UCS4 end;
     unsigned short name;
 } _PyUnicode_Block;
 static const _PyUnicode_Block _PyUnicode_Blocks[] = {

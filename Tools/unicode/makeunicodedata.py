@@ -397,11 +397,11 @@ def makeunicodedata(unicode, trace):
         names = []
         name_to_index = {}
         blocks = []
-        for s, e, name in unicode.blocks:
+        for start, end, name in unicode.blocks:
             if name not in name_to_index:
                 name_to_index[name] = len(names)
                 names.append(name)
-            blocks.append((s, e, name_to_index[name]))
+            blocks.append((start, end, name_to_index[name]))
 
         fprint("static const char * const _PyUnicode_BlockNames[] = {")
         for name in names:
@@ -409,14 +409,14 @@ def makeunicodedata(unicode, trace):
         fprint("};")
 
         fprint("typedef struct {")
-        fprint("    Py_UCS4 s;")
-        fprint("    Py_UCS4 e;")
+        fprint("    Py_UCS4 start;")
+        fprint("    Py_UCS4 end;")
         fprint("    unsigned short name;")
         fprint("} _PyUnicode_Block;")
 
         fprint("static const _PyUnicode_Block _PyUnicode_Blocks[] = {")
-        for s, e, name in blocks:
-            fprint("    {0x%04X, 0x%04X, %d}," % (s, e, name))
+        for start, end, name in blocks:
+            fprint("    {0x%04X, 0x%04X, %d}," % (start, end, name))
         fprint("};")
         fprint(f"#define BLOCK_COUNT {len(blocks)}")
         fprint()
@@ -1238,8 +1238,8 @@ class UnicodeData:
             self.blocks = []
             for record in UcdFile(BLOCKS, version).records():
                 start_end, name = record
-                s, e = [int(c, 16) for c in start_end.split('..')]
-                self.blocks.append((s, e, name))
+                start, end = [int(c, 16) for c in start_end.split('..')]
+                self.blocks.append((start, end, name))
             self.blocks.sort()
 
     def uselatin1(self):
