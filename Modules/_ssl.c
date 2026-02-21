@@ -2345,18 +2345,11 @@ static int
 PySSL_clear(PyObject *op)
 {
     PySSLSocket *self = PySSLSocket_CAST(op);
-    Py_CLEAR(self->exc);
-    return 0;
-}
-
-static int
-PySSL_clear(PyObject *op)
-{
-    PySSLSocket *self = PySSLSocket_CAST(op);
     Py_CLEAR(self->Socket);
     Py_CLEAR(self->ctx);
     Py_CLEAR(self->owner);
     Py_CLEAR(self->server_hostname);
+    Py_CLEAR(self->exc);
     return 0;
 }
 
