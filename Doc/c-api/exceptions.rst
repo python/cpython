@@ -710,10 +710,6 @@ Signal Handling
    .. versionchanged:: 3.12
       This function may now invoke the garbage collector.
 
-   .. versionchanged:: 3.14
-      This function may now execute a remote debugger script, if remote
-      debugging is enabled.
-
 
 .. c:function:: void PyErr_SetInterrupt()
 
