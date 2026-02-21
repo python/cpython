@@ -1101,16 +1101,6 @@
             break;
         }
 
-        case _GUARD_TOS_DICT: {
-            JitOptRef tos;
-            tos = stack_pointer[-1];
-            if (sym_matches_type(tos, &PyDict_Type)) {
-                ADD_OP(_NOP, 0, 0);
-            }
-            sym_set_type(tos, &PyDict_Type);
-            break;
-        }
-
         case _GUARD_NOS_ANY_DICT: {
             JitOptRef nos;
             nos = stack_pointer[-2];

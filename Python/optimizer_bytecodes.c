@@ -1348,13 +1348,6 @@ dummy_func(void) {
         sym_set_type(nos, &PyTuple_Type);
     }
 
-    op(_GUARD_TOS_DICT, (tos -- tos)) {
-        if (sym_matches_type(tos, &PyDict_Type)) {
-            ADD_OP(_NOP, 0, 0);
-        }
-        sym_set_type(tos, &PyDict_Type);
-    }
-
     op(_GUARD_NOS_DICT, (nos, unused -- nos, unused)) {
         if (sym_matches_type(nos, &PyDict_Type)) {
             ADD_OP(_NOP, 0, 0);

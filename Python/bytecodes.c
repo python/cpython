@@ -1061,11 +1061,6 @@ dummy_func(
             EXIT_IF(!PyDict_CheckExact(o));
         }
 
-        op(_GUARD_TOS_DICT, (tos -- tos)) {
-            PyObject *o = PyStackRef_AsPyObjectBorrow(tos);
-            EXIT_IF(!PyDict_CheckExact(o));
-        }
-
         op(_GUARD_NOS_ANY_DICT, (nos, unused -- nos, unused)) {
             PyObject *o = PyStackRef_AsPyObjectBorrow(nos);
             EXIT_IF(!PyAnyDict_CheckExact(o));
