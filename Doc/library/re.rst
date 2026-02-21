@@ -1434,10 +1434,10 @@ when there is no match, you can test whether there was a match with a simple
    result is a single string; if there are multiple arguments, the result is a
    tuple with one item per argument. Without arguments, *group1* defaults to zero
    (the whole match is returned). If a *groupN* argument is zero, the corresponding
-   return value is the entire matching string; if it is in the inclusive range
-   [1..99], it is the string matching the corresponding parenthesized group.  If a
-   group number is negative or larger than the number of groups defined in the
-   pattern, an :exc:`IndexError` exception is raised. If a group is contained in a
+   return value is the entire matching string; if it is a positive integer, it is
+   the string matching the corresponding parenthesized group.  If a group number is
+   negative or larger than the number of groups defined in the pattern, an
+   :exc:`IndexError` exception is raised. If a group is contained in a
    part of the pattern that did not match, the corresponding result is ``None``.
    If a group is contained in a part of the pattern that matched multiple times,
    the last match is returned. ::
