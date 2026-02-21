@@ -1871,6 +1871,35 @@ class FrozenDictTests(unittest.TestCase):
                     self.assertEqual(list(unpickled), expected)
                     self.assertEqual(list(it), expected)
 
+    def test_unhashable_key(self):
+        d = frozendict(a=1)
+        key = [1, 2, 3]
+
+        def check_unhashable_key():
+            msg = "cannot use 'list' as a frozendict key (unhashable type: 'list')"
+            return self.assertRaisesRegex(TypeError, re.escape(msg))
+
+        with check_unhashable_key():
+            key in d
+        with check_unhashable_key():
+            d[key]
+        with check_unhashable_key():
+            d.get(key)
+
+        # Only TypeError exception is overridden,
+        # other exceptions are left unchanged.
+        class HashError:
+            def __hash__(self):
+                raise KeyError('error')
+
+        key2 = HashError()
+        with self.assertRaises(KeyError):
+            key2 in d
+        with self.assertRaises(KeyError):
+            d[key2]
+        with self.assertRaises(KeyError):
+            d.get(key2)
+
 
 if __name__ == "__main__":
     unittest.main()
