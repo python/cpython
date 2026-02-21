@@ -905,8 +905,8 @@ def _get_field(cls, a_name, a_type, default_kw_only):
         if not isinstance(default, Field):
             f.default = default
         else:
-            # Extremely weird case: the Field comes from __get__() of
-            # a descriptor.
+            # Exceptional case retained for backward compatibility:
+            # the Field comes from __get__() of a descriptor. See GH-144619.
             default._field_type = f._field_type
             default.name = f.name
             default.type = f.type
