@@ -542,7 +542,7 @@ jobs:
 
             LOG="/tmp/batch${batch}.log"
             cd "$TEST_SYSROOT"
-            timeout 300 ./bin/nanvixd.elf -- ./bin/python3.12 ./test_func_batch${batch}.py > "$LOG" 2>&1 || true
+            timeout 300 ./bin/nanvixd.elf -- env PYTHONPATH=./lib/python3.12/site-packages ./bin/python3.12 ./test_func_batch${batch}.py > "$LOG" 2>&1 || true
 
             PASS=$(grep -c 'PASS' "$LOG" 2>/dev/null || echo 0)
             FAIL=$(grep -c 'FAIL' "$LOG" 2>/dev/null || echo 0)
