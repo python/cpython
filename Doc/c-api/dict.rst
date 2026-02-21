@@ -58,6 +58,9 @@ Dictionary objects
 
    Empty an existing dictionary of all key-value pairs.
 
+   Do nothing if the argument is not a :class:`dict` or a :class:`!dict`
+   subclass.
+
 
 .. c:function:: int PyDict_Contains(PyObject *p, PyObject *key)
 
