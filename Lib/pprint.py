@@ -220,9 +220,7 @@ class PrettyPrinter:
 
     def _pprint_dict(self, object, stream, indent, allowance, context, level):
         write = stream.write
-        typ = object.__class__
         write('{')
-        end = '}'
         if self._indent_per_level > 1:
             write((self._indent_per_level - 1) * ' ')
         length = len(object)
@@ -233,7 +231,9 @@ class PrettyPrinter:
                 items = object.items()
             self._format_dict_items(items, stream, indent, allowance + 1,
                                     context, level)
-        write(end)
+        write('}')
+
+    _dispatch[dict.__repr__] = _pprint_dict
 
     def _pprint_frozendict(self, object, stream, indent, allowance, context, level):
         write = stream.write
@@ -245,7 +245,6 @@ class PrettyPrinter:
                           context, level)
         write(')')
 
-    _dispatch[dict.__repr__] = _pprint_dict
     _dispatch[frozendict.__repr__] = _pprint_frozendict
 
     def _pprint_ordered_dict(self, object, stream, indent, allowance, context, level):
