@@ -1,5 +1,6 @@
-Fixed a crash in the :mod:`sqlite3` module when
-:meth:`~sqlite3.Connection.close` is called on the connection during an
-aggregate callback (e.g., in the ``step`` method). The interpreter now raises
-:exc:`~sqlite3.ProgrammingError` instead of crashing with a segmentation
-fault.
+Fixed a crash in the :mod:`sqlite3` module caused by closing the database
+connection from within a callback function invoked during
+:func:`sqlite3_step` (e.g., an aggregate ``step``, a user-defined function
+via :meth:`~sqlite3.Connection.create_function`, a progress handler, or a
+collation callback). Raise :exc:`~sqlite3.ProgrammingError` instead of
+crashing.

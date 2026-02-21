@@ -587,6 +587,33 @@ class WindowFunctionTests(unittest.TestCase):
         self.assertRaisesRegex(sqlite.DataError, "string or blob too big",
                                self.cur.execute, self.query % "err_val_ret")
 
+    def test_close_conn_in_window_func_value(self):
+        """gh-145040: closing connection in window function value() callback."""
+        con = sqlite.connect(":memory:", autocommit=True)
+        con.execute("CREATE TABLE t(x INTEGER)")
+        con.executemany("INSERT INTO t VALUES(?)",
+                        [(i,) for i in range(20)])
+
+        class CloseConnWindow:
+            def step(self, value):
+                pass
+            def finalize(self):
+                return 0
+            def value(self):
+                con.close()
+                return 0
+            def inverse(self, value):
+                pass
+
+        con.create_window_function("evil_win", 1, CloseConnWindow)
+        msg = "from within a callback"
+        with self.assertRaisesRegex(sqlite.ProgrammingError, msg):
+            cursor = con.execute(
+                "SELECT evil_win(x) OVER "
+                "(ROWS BETWEEN 1 PRECEDING AND 1 FOLLOWING) FROM t"
+            )
+            list(cursor)
+
 
 class AggregateTests(unittest.TestCase):
     def setUp(self):
@@ -743,8 +770,77 @@ class AggregateTests(unittest.TestCase):
                 return self.total
 
         con.create_aggregate("agg_close", 1, CloseConnAgg)
-        with self.assertRaises(sqlite.ProgrammingError):
+        msg = "from within a callback"
+        with self.assertRaisesRegex(sqlite.ProgrammingError, msg):
             con.execute("SELECT agg_close(x) FROM t")
+
+    def test_close_conn_in_udf_during_executemany(self):
+        """gh-145040: closing connection in UDF during executemany."""
+        con = sqlite.connect(":memory:", autocommit=True)
+        con.execute("CREATE TABLE t(x)")
+
+        def close_conn(x):
+            con.close()
+            return x
+
+        con.create_function("close_conn", 1, close_conn)
+        msg = "from within a callback"
+        with self.assertRaisesRegex(sqlite.ProgrammingError, msg):
+            con.executemany("INSERT INTO t VALUES(close_conn(?))",
+                            [(i,) for i in range(10)])
+
+    def test_close_conn_in_progress_handler_during_iternext(self):
+        """gh-145040: closing connection in progress handler during iteration."""
+        con = sqlite.connect(":memory:", autocommit=True)
+        con.execute("CREATE TABLE t(x)")
+        con.executemany("INSERT INTO t VALUES(?)",
+                        [(i,) for i in range(100)])
+
+        count = 0
+        def close_progress():
+            nonlocal count
+            count += 1
+            if count >= 5:
+                con.close()
+                return 1
+            return 0
+
+        cursor = con.execute("SELECT * FROM t")
+        con.set_progress_handler(close_progress, 1)
+        msg = "from within a callback"
+        import test.support
+        with test.support.catch_unraisable_exception():
+            with self.assertRaisesRegex(sqlite.ProgrammingError, msg):
+                for row in cursor:
+                    pass
+            del cursor
+            gc_collect()
+
+    def test_close_conn_in_collation_callback(self):
+        """gh-145040: closing connection in collation callback."""
+        con = sqlite.connect(":memory:", autocommit=True)
+        con.execute("CREATE TABLE t(x TEXT)")
+        con.executemany("INSERT INTO t VALUES(?)",
+                        [(f"item_{i}",) for i in range(50)])
+
+        count = 0
+        def evil_collation(a, b):
+            nonlocal count
+            count += 1
+            if count == 10:
+                con.close()
+            if a < b:
+                return -1
+            elif a > b:
+                return 1
+            return 0
+
+        con.create_collation("evil_coll", evil_collation)
+        msg = "from within a callback"
+        with self.assertRaisesRegex(sqlite.ProgrammingError, msg):
+            con.execute(
+                "SELECT * FROM t ORDER BY x COLLATE evil_coll"
+            )
 
 
 class AuthorizerTests(unittest.TestCase):

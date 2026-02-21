@@ -908,7 +908,8 @@ _pysqlite_query_execute(pysqlite_Cursor* self, int multiple, PyObject* operation
         rc = stmt_step(self->statement->st);
         if (self->connection->db == NULL) {
             PyErr_SetString(state->ProgrammingError,
-                            "Cannot operate on a closed database.");
+                            "Cannot close the database connection "
+                            "from within a callback function.");
             goto error;
         }
         if (rc != SQLITE_DONE && rc != SQLITE_ROW) {
@@ -972,7 +973,7 @@ _pysqlite_query_execute(pysqlite_Cursor* self, int multiple, PyObject* operation
         Py_XDECREF(parameters);
     }
 
-    if (!multiple && self->connection->db) {
+    if (!multiple) {
         sqlite_int64 lastrowid;
 
         Py_BEGIN_ALLOW_THREADS
@@ -1161,6 +1162,14 @@ pysqlite_cursor_iternext(PyObject *op)
         return NULL;
     }
     int rc = stmt_step(stmt);
+    if (self->connection->db == NULL) {
+        Py_DECREF(row);
+        Py_CLEAR(self->statement);
+        PyErr_SetString(self->connection->state->ProgrammingError,
+                        "Cannot close the database connection "
+                        "from within a callback function.");
+        return NULL;
+    }
     if (rc == SQLITE_DONE) {
         if (self->statement->is_dml) {
             self->rowcount = (long)sqlite3_changes(self->connection->db);
