@@ -237,10 +237,9 @@ class HashLibTestCase(unittest.TestCase):
         for name in hashlib.algorithms_available:
             with self.subTest(name):
                 try:
-                    digest = hashlib.new(name, usedforsecurity=False)
-                    assert digest is not None
-                except ValueError as verr:
-                    self.skip_if_blake2_not_builtin(name, verr)
+                    _ = hashlib.new(name, usedforsecurity=False)
+                except ValueError as exc:
+                    self.skip_if_blake2_not_builtin(name, exc)
                     raise
 
     def test_usedforsecurity_true(self):
@@ -1102,8 +1101,8 @@ class HashLibTestCase(unittest.TestCase):
                 with self.subTest(name):
                     try:
                         self.do_test_threaded_hashing(constructor, is_shake=False)
-                    except ValueError as verr:
-                        self.skip_if_blake2_not_builtin(name, verr)
+                    except ValueError as exc:
+                        self.skip_if_blake2_not_builtin(name, exc)
                         raise
 
         if shake_128 := getattr(hashlib, 'shake_128', None):
