@@ -4468,10 +4468,7 @@ _PyImport_LazyImportModuleLevelObject(PyThreadState *tstate,
                                       PyObject *globals, PyObject *locals,
                                       PyObject *fromlist, int level)
 {
-    if (name == NULL) {
-        _PyErr_SetString(tstate, PyExc_ValueError, "Empty module name");
-        return NULL;
-    }
+    assert(name != NULL);
     if (!PyUnicode_Check(name)) {
         _PyErr_Format(tstate, PyExc_TypeError,
                       "module name must be a string, got %T", name);
