@@ -1723,6 +1723,108 @@ class Dict(dict):
 class SubclassMappingTests(mapping_tests.BasicTestMappingProtocol):
     type2test = Dict
 
+class FrozenDictMappingTests(mapping_tests.BasicTestImmutableMappingProtocol):
+    type2test = frozendict
+
+
+class FrozenDict(frozendict):
+    pass
+
+
+class FrozenDictTests(unittest.TestCase):
+    def test_copy(self):
+        d = frozendict(x=1, y=2)
+        d2 = d.copy()
+        self.assertIs(d2, d)
+
+        d = FrozenDict(x=1, y=2)
+        d2 = d.copy()
+        self.assertIsNot(d2, d)
+        self.assertEqual(d2, frozendict(x=1, y=2))
+        self.assertEqual(type(d2), frozendict)
+
+    def test_merge(self):
+        # test "a | b" operator
+        self.assertEqual(frozendict(x=1) | frozendict(y=2),
+                         frozendict({'x': 1, 'y': 2}))
+        self.assertEqual(frozendict(x=1) | dict(y=2),
+                         frozendict({'x': 1, 'y': 2}))
+        self.assertEqual(frozendict(x=1, y=2) | frozendict(y=5),
+                         frozendict({'x': 1, 'y': 5}))
+        fd = frozendict(x=1, y=2)
+        self.assertIs(fd | frozendict(), fd)
+        self.assertIs(fd | {}, fd)
+        self.assertIs(frozendict() | fd, fd)
+
+    def test_update(self):
+        # test "a |= b" operator
+        d = frozendict(x=1)
+        copy = d
+        self.assertIs(copy, d)
+        d |= frozendict(y=2)
+        self.assertIsNot(copy, d)
+        self.assertEqual(d, frozendict({'x': 1, 'y': 2}))
+        self.assertEqual(copy, frozendict({'x': 1}))
+
+    def test_repr(self):
+        d = frozendict()
+        self.assertEqual(repr(d), "frozendict()")
+
+        d = frozendict(x=1, y=2)
+        self.assertEqual(repr(d), "frozendict({'x': 1, 'y': 2})")
+
+        class MyFrozenDict(frozendict):
+            pass
+        d = MyFrozenDict(x=1, y=2)
+        self.assertEqual(repr(d), "MyFrozenDict({'x': 1, 'y': 2})")
+
+    def test_hash(self):
+        # hash() doesn't rely on the items order
+        self.assertEqual(hash(frozendict(x=1, y=2)),
+                         hash(frozendict(y=2, x=1)))
+
+        fd = frozendict(x=[1], y=[2])
+        with self.assertRaisesRegex(TypeError, "unhashable type: 'list'"):
+            hash(fd)
+
+    def test_fromkeys(self):
+        self.assertEqual(frozendict.fromkeys('abc'),
+                         frozendict(a=None, b=None, c=None))
+
+        # Subclass which overrides the constructor
+        created = frozendict(x=1)
+        class FrozenDictSubclass(frozendict):
+            def __new__(self):
+                return created
+
+        fd = FrozenDictSubclass.fromkeys("abc")
+        self.assertEqual(fd, frozendict(x=1, a=None, b=None, c=None))
+        self.assertEqual(type(fd), FrozenDictSubclass)
+        self.assertEqual(created, frozendict(x=1))
+
+        fd = FrozenDictSubclass.fromkeys(frozendict(y=2))
+        self.assertEqual(fd, frozendict(x=1, y=None))
+        self.assertEqual(type(fd), FrozenDictSubclass)
+        self.assertEqual(created, frozendict(x=1))
+
+        # Subclass which doesn't override the constructor
+        class FrozenDictSubclass2(frozendict):
+            pass
+
+        fd = FrozenDictSubclass2.fromkeys("abc")
+        self.assertEqual(fd, frozendict(a=None, b=None, c=None))
+        self.assertEqual(type(fd), FrozenDictSubclass2)
+
+        # Dict subclass which overrides the constructor
+        class DictSubclass(dict):
+            def __new__(self):
+                return created
+
+        fd = DictSubclass.fromkeys("abc")
+        self.assertEqual(fd, frozendict(x=1, a=None, b=None, c=None))
+        self.assertEqual(type(fd), DictSubclass)
+        self.assertEqual(created, frozendict(x=1))
+
 
 if __name__ == "__main__":
     unittest.main()

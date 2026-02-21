@@ -1484,6 +1484,29 @@ class AbstractUnpickleTests:
         # bad hashable dict key
         self.check_unpickling_error(CustomError, base + b'}c__main__\nBadKey1\n)\x81Nsb.')
 
+    def test_bad_types(self):
+        # APPEND
+        self.assertEqual(self.loads(b']Na.'), [None])
+        self.check_unpickling_error(AttributeError, b'NNa.')  # non-list
+        # APPENDS
+        self.assertEqual(self.loads(b'](Ne.'), [None])
+        self.check_unpickling_error(AttributeError, b'N(Ne.')  # non-list
+        self.check_unpickling_error(AttributeError, b'N(e.')
+        # SETITEM
+        self.assertEqual(self.loads(b'}NNs.'), {None: None})
+        self.check_unpickling_error(TypeError, b'NNNs.')  # non-dict
+        self.check_unpickling_error(TypeError, b'}]Ns.')  # non-hashable key
+        # SETITEMS
+        self.assertEqual(self.loads(b'}(NNu.'), {None: None})
+        self.check_unpickling_error(TypeError, b'N(NNu.')  # non-dict
+        self.assertEqual(self.loads(b'N(u.'), None)  # no validation for empty items
+        self.check_unpickling_error(TypeError, b'}(]Nu.')  # non-hashable key
+        # ADDITEMS
+        self.assertEqual(self.loads(b'\x8f(N\x90.'), {None})
+        self.check_unpickling_error(AttributeError, b'N(N\x90.')  # non-set
+        self.check_unpickling_error(AttributeError, b'N(\x90.')
+        self.check_unpickling_error(TypeError, b'\x8f(]\x90.')  # non-hashable element
+
     def test_bad_stack(self):
         badpickles = [
             b'.',                       # STOP
@@ -3167,6 +3190,7 @@ class AbstractPickleTests:
             'bytes': (3, 0),
             'BuiltinImporter': (3, 3),
             'str': (3, 4),  # not interoperable with Python < 3.4
+            'frozendict': (3, 15),
         }
         for t in builtins.__dict__.values():
             if isinstance(t, type) and not issubclass(t, BaseException):
@@ -3202,6 +3226,7 @@ class AbstractPickleTests:
             'ExceptionGroup': (3, 11),
             '_IncompleteInputError': (3, 13),
             'PythonFinalizationError': (3, 13),
+            'ImportCycleError': (3, 15),
         }
         for t in builtins.__dict__.values():
             if isinstance(t, type) and issubclass(t, BaseException):
@@ -3228,6 +3253,7 @@ class AbstractPickleTests:
             'breakpoint': (3, 7),
             'aiter': (3, 10),
             'anext': (3, 10),
+            '__lazy_import__': (3, 15),
         }
         for t in builtins.__dict__.values():
             if isinstance(t, types.BuiltinFunctionType):
@@ -4117,6 +4143,109 @@ class AbstractPickleTests:
             for descr in descriptors:
                 with self.subTest(proto=proto, descr=descr):
                     self.assertRaises(TypeError, self.dumps, descr, proto)
+
+    def test_private_methods(self):
+        if self.py_version < (3, 15):
+            self.skipTest('not supported in Python < 3.15')
+        obj = PrivateMethods(42)
+        for proto in protocols:
+            with self.subTest(proto=proto):
+                unpickled = self.loads(self.dumps(obj.get_method(), proto))
+                self.assertEqual(unpickled(), 42)
+                unpickled = self.loads(self.dumps(obj.get_unbound_method(), proto))
+                self.assertEqual(unpickled(obj), 42)
+                unpickled = self.loads(self.dumps(obj.get_classmethod(), proto))
+                self.assertEqual(unpickled(), 43)
+                unpickled = self.loads(self.dumps(obj.get_staticmethod(), proto))
+                self.assertEqual(unpickled(), 44)
+
+    def test_private_nested_classes(self):
+        if self.py_version < (3, 15):
+            self.skipTest('not supported in Python < 3.15')
+        cls1 = PrivateNestedClasses.get_nested()
+        cls2 = cls1.get_nested2()
+        for proto in protocols:
+            with self.subTest(proto=proto):
+                unpickled = self.loads(self.dumps(cls1, proto))
+                self.assertIs(unpickled, cls1)
+                unpickled = self.loads(self.dumps(cls2, proto))
+                self.assertIs(unpickled, cls2)
+
+    def test_object_with_attrs(self):
+        obj = Object()
+        obj.a = 1
+        for proto in protocols:
+            with self.subTest(proto=proto):
+                unpickled = self.loads(self.dumps(obj, proto))
+                self.assertEqual(unpickled.a, obj.a)
+
+    def test_object_with_slots(self):
+        obj = WithSlots()
+        obj.a = 1
+        self.assertRaises(TypeError, self.dumps, obj, 0)
+        self.assertRaises(TypeError, self.dumps, obj, 1)
+        for proto in protocols[2:]:
+            with self.subTest(proto=proto):
+                unpickled = self.loads(self.dumps(obj, proto))
+                self.assertEqual(unpickled.a, obj.a)
+                self.assertNotHasAttr(unpickled, 'b')
+
+        obj = WithSlotsSubclass()
+        obj.a = 1
+        obj.c = 2
+        self.assertRaises(TypeError, self.dumps, obj, 0)
+        self.assertRaises(TypeError, self.dumps, obj, 1)
+        for proto in protocols[2:]:
+            with self.subTest(proto=proto):
+                unpickled = self.loads(self.dumps(obj, proto))
+                self.assertEqual(unpickled.a, obj.a)
+                self.assertEqual(unpickled.c, obj.c)
+                self.assertNotHasAttr(unpickled, 'b')
+
+        obj = WithSlotsAndDict()
+        obj.a = 1
+        obj.c = 2
+        self.assertRaises(TypeError, self.dumps, obj, 0)
+        self.assertRaises(TypeError, self.dumps, obj, 1)
+        for proto in protocols[2:]:
+            with self.subTest(proto=proto):
+                unpickled = self.loads(self.dumps(obj, proto))
+                self.assertEqual(unpickled.a, obj.a)
+                self.assertEqual(unpickled.c, obj.c)
+                self.assertEqual(unpickled.__dict__, obj.__dict__)
+                self.assertNotHasAttr(unpickled, 'b')
+
+    def test_object_with_private_attrs(self):
+        obj = WithPrivateAttrs(1)
+        for proto in protocols:
+            with self.subTest(proto=proto):
+                unpickled = self.loads(self.dumps(obj, proto))
+                self.assertEqual(unpickled.get(), obj.get())
+
+        obj = WithPrivateAttrsSubclass(1, 2)
+        for proto in protocols:
+            with self.subTest(proto=proto):
+                unpickled = self.loads(self.dumps(obj, proto))
+                self.assertEqual(unpickled.get(), obj.get())
+                self.assertEqual(unpickled.get2(), obj.get2())
+
+    def test_object_with_private_slots(self):
+        obj = WithPrivateSlots(1)
+        self.assertRaises(TypeError, self.dumps, obj, 0)
+        self.assertRaises(TypeError, self.dumps, obj, 1)
+        for proto in protocols[2:]:
+            with self.subTest(proto=proto):
+                unpickled = self.loads(self.dumps(obj, proto))
+                self.assertEqual(unpickled.get(), obj.get())
+
+        obj = WithPrivateSlotsSubclass(1, 2)
+        self.assertRaises(TypeError, self.dumps, obj, 0)
+        self.assertRaises(TypeError, self.dumps, obj, 1)
+        for proto in protocols[2:]:
+            with self.subTest(proto=proto):
+                unpickled = self.loads(self.dumps(obj, proto))
+                self.assertEqual(unpickled.get(), obj.get())
+                self.assertEqual(unpickled.get2(), obj.get2())
 
     def test_compat_pickle(self):
         if self.py_version < (3, 4):
