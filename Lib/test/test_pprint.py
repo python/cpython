@@ -344,15 +344,21 @@ frozendict({'RPM_cal': 0,
         exp = 'dict_keys([%s])' % ',\n '.join(map(str, o))
         keys = dict.fromkeys(o).keys()
         self.assertEqual(pprint.pformat(keys), exp)
+        keys = frozendict.fromkeys(o).keys()
+        self.assertEqual(pprint.pformat(keys), exp)
 
         o = range(100)
         exp = 'dict_values([%s])' % ',\n '.join(map(str, o))
         values = {v: v for v in o}.values()
         self.assertEqual(pprint.pformat(values), exp)
+        values = frozendict({v: v for v in o}).values()
+        self.assertEqual(pprint.pformat(values), exp)
 
         o = range(100)
         exp = 'dict_items([%s])' % ',\n '.join("(%s, %s)" % (i, i) for i in o)
         items = {v: v for v in o}.items()
+        self.assertEqual(pprint.pformat(items), exp)
+        items = frozendict({v: v for v in o}).items()
         self.assertEqual(pprint.pformat(items), exp)
 
         o = range(100)
