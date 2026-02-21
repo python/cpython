@@ -3131,9 +3131,12 @@ memory_richcompare(PyObject *v, PyObject *w, int op)
         int can_compare_ptr;
         const char *format = vv->format;
         if (format != NULL) {
+            if (*format == '@') {
+                format++;
+            }
             // Include only formats known by struct, exclude formats "d" (double),
-            // "f" (float), "e" (16-bit float) and "P" (void*)
-            can_compare_ptr = (strchr("bBchHiIlLnNqQ?", format[0]) != NULL
+            // "f" (float), "e" (16-bit float)
+            can_compare_ptr = (strchr("bBchHiIlLnNPqQ?", format[0]) != NULL
                                && format[1] == 0);
         }
         else {

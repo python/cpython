@@ -584,6 +584,7 @@ class ArrayMemoryviewTest(unittest.TestCase,
                 a = array.array(int_format, [1, 2, 3])
                 m = memoryview(a)
                 self.assertTrue(m == m)
+                self.assertFalse(m != m)
 
         for float_format in 'fd':
             with self.subTest(format=int_format):
@@ -591,10 +592,12 @@ class ArrayMemoryviewTest(unittest.TestCase,
                 m = memoryview(a)
                 # nan is not equal to nan
                 self.assertFalse(m == m)
+                self.assertTrue(m != m)
 
                 a = array.array(float_format, [1.0, 2.0, 3.0])
                 m = memoryview(a)
                 self.assertTrue(m == m)
+                self.assertFalse(m != m)
 
 
 class BytesMemorySliceTest(unittest.TestCase,
