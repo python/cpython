@@ -92,12 +92,12 @@ dummy_func(void) {
         if (sym_is_null(value)) {
             ctx->done = true;
         }
-        value = PyJitRef_RemoveUnique(value);
+        assert(!PyJitRef_IsUnique(value));
     }
 
     op(_LOAD_FAST, (-- value)) {
         value = GETLOCAL(oparg);
-        value = PyJitRef_RemoveUnique(value);
+        assert(!PyJitRef_IsUnique(value));
     }
 
     op(_LOAD_FAST_BORROW, (-- value)) {
@@ -109,7 +109,7 @@ dummy_func(void) {
         value = GETLOCAL(oparg);
         JitOptRef temp = sym_new_null(ctx);
         GETLOCAL(oparg) = temp;
-        value = PyJitRef_RemoveUnique(value);
+        assert(!PyJitRef_IsUnique(value));
     }
 
     op(_STORE_ATTR_INSTANCE_VALUE, (offset/1, value, owner -- o)) {
