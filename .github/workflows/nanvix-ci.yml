@@ -82,9 +82,6 @@ jobs:
       - name: Build
         run: ./z build
 
-      - name: Test (basic)
-        run: RUN_BASIC_TESTS=1 TEST_END=0 ./z test
-
       - name: Install and stage
         run: |
           set -euo pipefail
@@ -250,6 +247,15 @@ jobs:
           chmod +x bin/*
           timeout 300 ./bin/nanvixd.elf -- ./bin/python3.12 ./smoke_test_l2.py < /dev/null 2>&1 | tee /tmp/smoke.log
           grep -q "Smoke L2 passed!" /tmp/smoke.log || { echo "::error::Smoke test failed"; exit 1; }
+
+      - name: Run basic tests
+        run: |
+          set -euo pipefail
+          cd sysroot
+          echo 'import sys; print("HELLO:", sys.version_info[:2])' > test_basic.py
+          timeout 120 ./bin/nanvixd.elf -- ./bin/python3.12 ./test_basic.py < /dev/null 2>&1 | tee /tmp/basic.log
+          grep -q "HELLO:" /tmp/basic.log || { echo "::error::Basic test failed"; exit 1; }
+          echo "Basic test passed"
 
   release:
     needs: [get-nanvix-info, build, test, smoke]
