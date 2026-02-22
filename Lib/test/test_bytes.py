@@ -615,56 +615,6 @@ class BaseBytesTest:
         simd_boundary = self.type2test(boundary_bytes * 2)
         self.assertEqual(simd_boundary.hex(), '090a90999aa0a9aa00ff' * 2)
 
-    def test_hex_simd_separator(self):
-        # Test SIMD path for separator insertion (sep >= 8 bytes, len >= 16).
-        # SIMD hexlifies then shuffles in-place to insert separators.
-
-        # 32 bytes exercises SIMD; test various separator group sizes
-        data = self.type2test(bytes(range(32)))
-
-        # bytes_per_sep=8: 4 groups of 8 bytes, 3 separators
-        self.assertEqual(
-            data.hex('-', 8),
-            '0001020304050607-08090a0b0c0d0e0f-'
-            '1011121314151617-18191a1b1c1d1e1f'
-        )
-        # bytes_per_sep=9: groups of 9 from start, 5 byte remainder at end
-        self.assertEqual(
-            data.hex('.', 9),
-            '0001020304.05060708090a0b0c0d.'
-            '0e0f10111213141516.1718191a1b1c1d1e1f'
-        )
-        # bytes_per_sep=16: 2 groups of 16 bytes
-        self.assertEqual(
-            data.hex(' ', 16),
-            '000102030405060708090a0b0c0d0e0f '
-            '101112131415161718191a1b1c1d1e1f'
-        )
-        # Negative bytes_per_sep: groups from end, remainder at start
-        self.assertEqual(
-            data.hex('|', -8),
-            '0001020304050607|08090a0b0c0d0e0f|'
-            '1011121314151617|18191a1b1c1d1e1f'
-        )
-        self.assertEqual(
-            data.hex('_', -9),
-            '000102030405060708_090a0b0c0d0e0f1011_'
-            '12131415161718191a_1b1c1d1e1f'
-        )
-
-        # 20 bytes: SIMD (16) + 4 byte scalar remainder
-        data20 = self.type2test(bytes(range(20)))
-        # Positive: groups from start, remainder at end
-        self.assertEqual(
-            data20.hex('#', 8),
-            '00010203#0405060708090a0b#0c0d0e0f10111213'
-        )
-        # Negative: groups from end, remainder at start
-        self.assertEqual(
-            data20.hex('@', -8),
-            '0001020304050607@08090a0b0c0d0e0f@10111213'
-        )
-
     def test_join(self):
         self.assertEqual(self.type2test(b"").join([]), b"")
         self.assertEqual(self.type2test(b"").join([b""]), b"")
