@@ -45,9 +45,12 @@ single-phase initialization.
 Multi-Phase Initialization
 ..........................
 
-Extensions that use multi-phase initialization (i.e.,
-:c:func:`PyModuleDef_Init`) should add a :c:data:`Py_mod_gil` slot in the
-module definition.  If your extension supports older versions of CPython,
+Extensions that use :ref:`multi-phase initialization <multi-phase-initialization>`
+(functions like :c:func:`PyModuleDef_Init`,
+:c:func:`PyModExport_* <PyModExport_modulename>` export hook,
+:c:func:`PyModule_FromSlotsAndSpec`) should add a
+:c:data:`Py_mod_gil` slot in the module definition.
+If your extension supports older versions of CPython,
 you should guard the slot with a :c:data:`PY_VERSION_HEX` check.
 
 ::
@@ -60,18 +63,12 @@ you should guard the slot with a :c:data:`PY_VERSION_HEX` check.
         {0, NULL}
     };
 
-    static struct PyModuleDef moduledef = {
-        PyModuleDef_HEAD_INIT,
-        .m_slots = module_slots,
-        ...
-    };
-
 
 Single-Phase Initialization
 ...........................
 
-Extensions that use single-phase initialization (i.e.,
-:c:func:`PyModule_Create`) should call :c:func:`PyUnstable_Module_SetGIL` to
+Extensions that use legacy :ref:`single-phase initialization <single-phase-initialization>`
+(that is, :c:func:`PyModule_Create`) should call :c:func:`PyUnstable_Module_SetGIL` to
 indicate that they support running with the GIL disabled.  The function is
 only defined in the free-threaded build, so you should guard the call with
 ``#ifdef Py_GIL_DISABLED`` to avoid compilation errors in the regular build.

@@ -1,6 +1,5 @@
 import builtins
 import codecs
-import _datetime
 import gc
 import io
 import locale
@@ -494,7 +493,7 @@ class SysModuleTest(unittest.TestCase):
             self.assertIs(f, f2)
         self.assertIsNone(sys._getframemodulename(i))
 
-    # sys._current_frames() is a CPython-only gimmick.
+    @support.cpython_only  # sys._current_frames() is a CPython-only gimmick.
     @threading_helper.reap_threads
     @threading_helper.requires_working_threading()
     def test_current_frames(self):
@@ -866,7 +865,8 @@ class SysModuleTest(unittest.TestCase):
                  "dont_write_bytecode", "no_user_site", "no_site",
                  "ignore_environment", "verbose", "bytes_warning", "quiet",
                  "hash_randomization", "isolated", "dev_mode", "utf8_mode",
-                 "warn_default_encoding", "safe_path", "int_max_str_digits")
+                 "warn_default_encoding", "safe_path", "int_max_str_digits",
+                 "lazy_imports")
         for attr in attrs:
             self.assertHasAttr(sys.flags, attr)
             attr_type = bool if attr in ("dev_mode", "safe_path") else int
@@ -1350,7 +1350,7 @@ class SysModuleTest(unittest.TestCase):
 
 
 @test.support.cpython_only
-@force_not_colorized
+@test.support.force_not_colorized_test_class
 class UnraisableHookTest(unittest.TestCase):
     def test_original_unraisablehook(self):
         _testcapi = import_helper.import_module('_testcapi')
@@ -1492,6 +1492,7 @@ class UnraisableHookTest(unittest.TestCase):
     def test_custom_unraisablehook_fail(self):
         _testcapi = import_helper.import_module('_testcapi')
         from _testcapi import err_writeunraisable
+
         def hook_func(*args):
             raise Exception("hook_func failed")
 
@@ -1741,7 +1742,12 @@ class SizeofTest(unittest.TestCase):
             x = property(getx, setx, delx, "")
             check(x, size('5Pi'))
         # PyCapsule
-        check(_datetime.datetime_CAPI, size('6P'))
+        try:
+            import _datetime
+        except ModuleNotFoundError:
+            pass
+        else:
+            check(_datetime.datetime_CAPI, size('6P'))
         # rangeiterator
         check(iter(range(1)), size('3l'))
         check(iter(range(2**65)), size('3P'))
@@ -1875,7 +1881,10 @@ class SizeofTest(unittest.TestCase):
         check(S(), set(), '3P')
         class FS(frozenset):
             __slots__ = 'a', 'b', 'c'
-        check(FS(), frozenset(), '3P')
+
+        class mytuple(tuple):
+            pass
+        check(FS([mytuple()]), frozenset([mytuple()]), '3P')
         from collections import OrderedDict
         class OD(OrderedDict):
             __slots__ = 'a', 'b', 'c'
@@ -2255,7 +2264,7 @@ class TestSysJIT(unittest.TestCase):
                 # 1 extra iteration for tracing.
                 for i in range(_testinternalcapi.TIER2_THRESHOLD + 2):
                     # Careful, doing this in the reverse order breaks tracing:
-                    expected = {enabled} and i >= _testinternalcapi.TIER2_THRESHOLD + 1
+                    expected = {enabled} and i >= _testinternalcapi.TIER2_THRESHOLD
                     assert sys._jit.is_active() is expected
                     frame_2_jit(expected)
                     assert sys._jit.is_active() is expected

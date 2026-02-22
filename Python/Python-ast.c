@@ -223,6 +223,7 @@ void _PyAST_Fini(PyInterpreterState *interp)
     Py_CLEAR(state->id);
     Py_CLEAR(state->ifs);
     Py_CLEAR(state->is_async);
+    Py_CLEAR(state->is_lazy);
     Py_CLEAR(state->items);
     Py_CLEAR(state->iter);
     Py_CLEAR(state->key);
@@ -328,6 +329,7 @@ static int init_identifiers(struct ast_state *state)
     if ((state->id = PyUnicode_InternFromString("id")) == NULL) return -1;
     if ((state->ifs = PyUnicode_InternFromString("ifs")) == NULL) return -1;
     if ((state->is_async = PyUnicode_InternFromString("is_async")) == NULL) return -1;
+    if ((state->is_lazy = PyUnicode_InternFromString("is_lazy")) == NULL) return -1;
     if ((state->items = PyUnicode_InternFromString("items")) == NULL) return -1;
     if ((state->iter = PyUnicode_InternFromString("iter")) == NULL) return -1;
     if ((state->key = PyUnicode_InternFromString("key")) == NULL) return -1;
@@ -528,11 +530,13 @@ static const char * const Assert_fields[]={
 };
 static const char * const Import_fields[]={
     "names",
+    "is_lazy",
 };
 static const char * const ImportFrom_fields[]={
     "module",
     "names",
     "level",
+    "is_lazy",
 };
 static const char * const Global_fields[]={
     "names",
@@ -2255,6 +2259,21 @@ add_ast_annotations(struct ast_state *state)
             return 0;
         }
     }
+    {
+        PyObject *type = (PyObject *)&PyLong_Type;
+        type = _Py_union_type_or(type, Py_None);
+        cond = type != NULL;
+        if (!cond) {
+            Py_DECREF(Import_annotations);
+            return 0;
+        }
+        cond = PyDict_SetItemString(Import_annotations, "is_lazy", type) == 0;
+        Py_DECREF(type);
+        if (!cond) {
+            Py_DECREF(Import_annotations);
+            return 0;
+        }
+    }
     cond = PyObject_SetAttrString(state->Import_type, "_field_types",
                                   Import_annotations) == 0;
     if (!cond) {
@@ -2310,6 +2329,22 @@ add_ast_annotations(struct ast_state *state)
             return 0;
         }
         cond = PyDict_SetItemString(ImportFrom_annotations, "level", type) == 0;
+        Py_DECREF(type);
+        if (!cond) {
+            Py_DECREF(ImportFrom_annotations);
+            return 0;
+        }
+    }
+    {
+        PyObject *type = (PyObject *)&PyLong_Type;
+        type = _Py_union_type_or(type, Py_None);
+        cond = type != NULL;
+        if (!cond) {
+            Py_DECREF(ImportFrom_annotations);
+            return 0;
+        }
+        cond = PyDict_SetItemString(ImportFrom_annotations, "is_lazy", type) ==
+                                    0;
         Py_DECREF(type);
         if (!cond) {
             Py_DECREF(ImportFrom_annotations);
@@ -2865,7 +2900,12 @@ add_ast_annotations(struct ast_state *state)
     }
     {
         PyObject *type = state->expr_type;
-        Py_INCREF(type);
+        type = _Py_union_type_or(type, Py_None);
+        cond = type != NULL;
+        if (!cond) {
+            Py_DECREF(DictComp_annotations);
+            return 0;
+        }
         cond = PyDict_SetItemString(DictComp_annotations, "value", type) == 0;
         Py_DECREF(type);
         if (!cond) {
@@ -5241,7 +5281,7 @@ ast_type_init(PyObject *self, PyObject *args, PyObject *kw)
                 }
                 if (p == 0) {
                     PyErr_Format(PyExc_TypeError,
-                        "%.400s got multiple values for argument '%U'",
+                        "%.400s got multiple values for argument %R",
                         Py_TYPE(self)->tp_name, key);
                     res = -1;
                     goto cleanup;
@@ -5264,7 +5304,7 @@ ast_type_init(PyObject *self, PyObject *args, PyObject *kw)
                 else if (contains == 0) {
                     if (PyErr_WarnFormat(
                         PyExc_DeprecationWarning, 1,
-                        "%.400s.__init__ got an unexpected keyword argument '%U'. "
+                        "%.400s.__init__ got an unexpected keyword argument %R. "
                         "Support for arbitrary keyword arguments is deprecated "
                         "and will be removed in Python 3.15.",
                         Py_TYPE(self)->tp_name, key
@@ -5506,7 +5546,7 @@ ast_type_replace_check(PyObject *self,
             if (rc == 0) {
                 PyErr_Format(PyExc_TypeError,
                              "%.400s.__replace__ got an unexpected keyword "
-                             "argument '%U'.", Py_TYPE(self)->tp_name, key);
+                             "argument %R.", Py_TYPE(self)->tp_name, key);
                 Py_DECREF(expecting);
                 return -1;
             }
@@ -6241,8 +6281,8 @@ init_types(void *arg)
         "     | Try(stmt* body, excepthandler* handlers, stmt* orelse, stmt* finalbody)\n"
         "     | TryStar(stmt* body, excepthandler* handlers, stmt* orelse, stmt* finalbody)\n"
         "     | Assert(expr test, expr? msg)\n"
-        "     | Import(alias* names)\n"
-        "     | ImportFrom(identifier? module, alias* names, int? level)\n"
+        "     | Import(alias* names, int? is_lazy)\n"
+        "     | ImportFrom(identifier? module, alias* names, int? level, int? is_lazy)\n"
         "     | Global(identifier* names)\n"
         "     | Nonlocal(identifier* names)\n"
         "     | Expr(expr value)\n"
@@ -6372,16 +6412,20 @@ init_types(void *arg)
     if (PyObject_SetAttr(state->Assert_type, state->msg, Py_None) == -1)
         return -1;
     state->Import_type = make_type(state, "Import", state->stmt_type,
-                                   Import_fields, 1,
-        "Import(alias* names)");
+                                   Import_fields, 2,
+        "Import(alias* names, int? is_lazy)");
     if (!state->Import_type) return -1;
+    if (PyObject_SetAttr(state->Import_type, state->is_lazy, Py_None) == -1)
+        return -1;
     state->ImportFrom_type = make_type(state, "ImportFrom", state->stmt_type,
-                                       ImportFrom_fields, 3,
-        "ImportFrom(identifier? module, alias* names, int? level)");
+                                       ImportFrom_fields, 4,
+        "ImportFrom(identifier? module, alias* names, int? level, int? is_lazy)");
     if (!state->ImportFrom_type) return -1;
     if (PyObject_SetAttr(state->ImportFrom_type, state->module, Py_None) == -1)
         return -1;
     if (PyObject_SetAttr(state->ImportFrom_type, state->level, Py_None) == -1)
+        return -1;
+    if (PyObject_SetAttr(state->ImportFrom_type, state->is_lazy, Py_None) == -1)
         return -1;
     state->Global_type = make_type(state, "Global", state->stmt_type,
                                    Global_fields, 1,
@@ -6416,7 +6460,7 @@ init_types(void *arg)
         "     | Set(expr* elts)\n"
         "     | ListComp(expr elt, comprehension* generators)\n"
         "     | SetComp(expr elt, comprehension* generators)\n"
-        "     | DictComp(expr key, expr value, comprehension* generators)\n"
+        "     | DictComp(expr key, expr? value, comprehension* generators)\n"
         "     | GeneratorExp(expr elt, comprehension* generators)\n"
         "     | Await(expr value)\n"
         "     | Yield(expr? value)\n"
@@ -6485,8 +6529,10 @@ init_types(void *arg)
     if (!state->SetComp_type) return -1;
     state->DictComp_type = make_type(state, "DictComp", state->expr_type,
                                      DictComp_fields, 3,
-        "DictComp(expr key, expr value, comprehension* generators)");
+        "DictComp(expr key, expr? value, comprehension* generators)");
     if (!state->DictComp_type) return -1;
+    if (PyObject_SetAttr(state->DictComp_type, state->value, Py_None) == -1)
+        return -1;
     state->GeneratorExp_type = make_type(state, "GeneratorExp",
                                          state->expr_type, GeneratorExp_fields,
                                          2,
@@ -6846,7 +6892,7 @@ init_types(void *arg)
         return -1;
     state->arguments_type = make_type(state, "arguments", state->AST_type,
                                       arguments_fields, 7,
-        "arguments(arg* posonlyargs, arg* args, arg? vararg, arg* kwonlyargs, expr* kw_defaults, arg? kwarg, expr* defaults)");
+        "arguments(arg* posonlyargs, arg* args, arg? vararg, arg* kwonlyargs, expr?* kw_defaults, arg? kwarg, expr* defaults)");
     if (!state->arguments_type) return -1;
     if (add_attributes(state, state->arguments_type, NULL, 0) < 0) return -1;
     if (PyObject_SetAttr(state->arguments_type, state->vararg, Py_None) == -1)
@@ -7635,8 +7681,8 @@ _PyAST_Assert(expr_ty test, expr_ty msg, int lineno, int col_offset, int
 }
 
 stmt_ty
-_PyAST_Import(asdl_alias_seq * names, int lineno, int col_offset, int
-              end_lineno, int end_col_offset, PyArena *arena)
+_PyAST_Import(asdl_alias_seq * names, int is_lazy, int lineno, int col_offset,
+              int end_lineno, int end_col_offset, PyArena *arena)
 {
     stmt_ty p;
     p = (stmt_ty)_PyArena_Malloc(arena, sizeof(*p));
@@ -7644,6 +7690,7 @@ _PyAST_Import(asdl_alias_seq * names, int lineno, int col_offset, int
         return NULL;
     p->kind = Import_kind;
     p->v.Import.names = names;
+    p->v.Import.is_lazy = is_lazy;
     p->lineno = lineno;
     p->col_offset = col_offset;
     p->end_lineno = end_lineno;
@@ -7653,8 +7700,8 @@ _PyAST_Import(asdl_alias_seq * names, int lineno, int col_offset, int
 
 stmt_ty
 _PyAST_ImportFrom(identifier module, asdl_alias_seq * names, int level, int
-                  lineno, int col_offset, int end_lineno, int end_col_offset,
-                  PyArena *arena)
+                  is_lazy, int lineno, int col_offset, int end_lineno, int
+                  end_col_offset, PyArena *arena)
 {
     stmt_ty p;
     p = (stmt_ty)_PyArena_Malloc(arena, sizeof(*p));
@@ -7664,6 +7711,7 @@ _PyAST_ImportFrom(identifier module, asdl_alias_seq * names, int level, int
     p->v.ImportFrom.module = module;
     p->v.ImportFrom.names = names;
     p->v.ImportFrom.level = level;
+    p->v.ImportFrom.is_lazy = is_lazy;
     p->lineno = lineno;
     p->col_offset = col_offset;
     p->end_lineno = end_lineno;
@@ -8042,11 +8090,6 @@ _PyAST_DictComp(expr_ty key, expr_ty value, asdl_comprehension_seq *
     if (!key) {
         PyErr_SetString(PyExc_ValueError,
                         "field 'key' is required for DictComp");
-        return NULL;
-    }
-    if (!value) {
-        PyErr_SetString(PyExc_ValueError,
-                        "field 'value' is required for DictComp");
         return NULL;
     }
     p = (expr_ty)_PyArena_Malloc(arena, sizeof(*p));
@@ -9502,6 +9545,11 @@ ast2obj_stmt(struct ast_state *state, void* _o)
         if (PyObject_SetAttr(result, state->names, value) == -1)
             goto failed;
         Py_DECREF(value);
+        value = ast2obj_int(state, o->v.Import.is_lazy);
+        if (!value) goto failed;
+        if (PyObject_SetAttr(result, state->is_lazy, value) == -1)
+            goto failed;
+        Py_DECREF(value);
         break;
     case ImportFrom_kind:
         tp = (PyTypeObject *)state->ImportFrom_type;
@@ -9521,6 +9569,11 @@ ast2obj_stmt(struct ast_state *state, void* _o)
         value = ast2obj_int(state, o->v.ImportFrom.level);
         if (!value) goto failed;
         if (PyObject_SetAttr(result, state->level, value) == -1)
+            goto failed;
+        Py_DECREF(value);
+        value = ast2obj_int(state, o->v.ImportFrom.is_lazy);
+        if (!value) goto failed;
+        if (PyObject_SetAttr(result, state->is_lazy, value) == -1)
             goto failed;
         Py_DECREF(value);
         break;
@@ -13518,6 +13571,7 @@ obj2ast_stmt(struct ast_state *state, PyObject* obj, stmt_ty* out, PyArena*
     }
     if (isinstance) {
         asdl_alias_seq* names;
+        int is_lazy;
 
         if (PyObject_GetOptionalAttr(obj, state->names, &tmp) < 0) {
             return -1;
@@ -13557,7 +13611,24 @@ obj2ast_stmt(struct ast_state *state, PyObject* obj, stmt_ty* out, PyArena*
             }
             Py_CLEAR(tmp);
         }
-        *out = _PyAST_Import(names, lineno, col_offset, end_lineno,
+        if (PyObject_GetOptionalAttr(obj, state->is_lazy, &tmp) < 0) {
+            return -1;
+        }
+        if (tmp == NULL || tmp == Py_None) {
+            Py_CLEAR(tmp);
+            is_lazy = 0;
+        }
+        else {
+            int res;
+            if (_Py_EnterRecursiveCall(" while traversing 'Import' node")) {
+                goto failed;
+            }
+            res = obj2ast_int(state, tmp, &is_lazy, arena);
+            _Py_LeaveRecursiveCall();
+            if (res != 0) goto failed;
+            Py_CLEAR(tmp);
+        }
+        *out = _PyAST_Import(names, is_lazy, lineno, col_offset, end_lineno,
                              end_col_offset, arena);
         if (*out == NULL) goto failed;
         return 0;
@@ -13571,6 +13642,7 @@ obj2ast_stmt(struct ast_state *state, PyObject* obj, stmt_ty* out, PyArena*
         identifier module;
         asdl_alias_seq* names;
         int level;
+        int is_lazy;
 
         if (PyObject_GetOptionalAttr(obj, state->module, &tmp) < 0) {
             return -1;
@@ -13644,8 +13716,25 @@ obj2ast_stmt(struct ast_state *state, PyObject* obj, stmt_ty* out, PyArena*
             if (res != 0) goto failed;
             Py_CLEAR(tmp);
         }
-        *out = _PyAST_ImportFrom(module, names, level, lineno, col_offset,
-                                 end_lineno, end_col_offset, arena);
+        if (PyObject_GetOptionalAttr(obj, state->is_lazy, &tmp) < 0) {
+            return -1;
+        }
+        if (tmp == NULL || tmp == Py_None) {
+            Py_CLEAR(tmp);
+            is_lazy = 0;
+        }
+        else {
+            int res;
+            if (_Py_EnterRecursiveCall(" while traversing 'ImportFrom' node")) {
+                goto failed;
+            }
+            res = obj2ast_int(state, tmp, &is_lazy, arena);
+            _Py_LeaveRecursiveCall();
+            if (res != 0) goto failed;
+            Py_CLEAR(tmp);
+        }
+        *out = _PyAST_ImportFrom(module, names, level, is_lazy, lineno,
+                                 col_offset, end_lineno, end_col_offset, arena);
         if (*out == NULL) goto failed;
         return 0;
     }
@@ -14563,9 +14652,9 @@ obj2ast_expr(struct ast_state *state, PyObject* obj, expr_ty* out, PyArena*
         if (PyObject_GetOptionalAttr(obj, state->value, &tmp) < 0) {
             return -1;
         }
-        if (tmp == NULL) {
-            PyErr_SetString(PyExc_TypeError, "required field \"value\" missing from DictComp");
-            return -1;
+        if (tmp == NULL || tmp == Py_None) {
+            Py_CLEAR(tmp);
+            value = NULL;
         }
         else {
             int res;

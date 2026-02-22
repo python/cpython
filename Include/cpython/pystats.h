@@ -29,7 +29,7 @@
 #  error "this header file must not be included directly"
 #endif
 
-#define PYSTATS_MAX_UOP_ID 1024
+#define PYSTATS_MAX_UOP_ID 2000
 
 #define SPECIALIZATION_FAILURE_KINDS 60
 
@@ -142,6 +142,7 @@ typedef struct _optimization_stats {
     uint64_t recursive_call;
     uint64_t low_confidence;
     uint64_t unknown_callee;
+    uint64_t trace_immediately_deopts;
     uint64_t executors_invalidated;
     UOpStats opcode[PYSTATS_MAX_UOP_ID + 1];
     uint64_t unsupported_opcode[256];

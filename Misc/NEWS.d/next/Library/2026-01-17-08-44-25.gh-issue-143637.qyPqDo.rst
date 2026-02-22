@@ -1,0 +1,1 @@
+Fixed a crash in socket.sendmsg() that could occur if ancillary data is mutated re-entrantly during argument parsing.

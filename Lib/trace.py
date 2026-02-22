@@ -721,7 +721,6 @@ def main():
                 '__package__': mod_spec.parent,
                 '__loader__': mod_spec.loader,
                 '__spec__': mod_spec,
-                '__cached__': None,
             }
         else:
             sys.argv = [opts.progname, *opts.arguments]
@@ -734,7 +733,6 @@ def main():
                 '__file__': opts.progname,
                 '__name__': '__main__',
                 '__package__': None,
-                '__cached__': None,
             }
         t.runctx(code, globs, globs)
     except OSError as err:

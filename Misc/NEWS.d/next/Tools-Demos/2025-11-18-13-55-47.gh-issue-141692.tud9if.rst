@@ -1,3 +1,0 @@
-Each slice of an iOS XCframework now contains a ``lib`` folder that contains
-a symlink to the libpython dylib. This allows binary modules to be compiled
-for iOS using dynamic libreary linking, rather than Framework linking.

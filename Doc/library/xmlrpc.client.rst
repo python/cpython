@@ -4,9 +4,6 @@
 .. module:: xmlrpc.client
    :synopsis: XML-RPC client access.
 
-.. moduleauthor:: Fredrik Lundh <fredrik@pythonware.com>
-.. sectionauthor:: Eric S. Raymond <esr@snark.thyrsus.com>
-
 **Source code:** :source:`Lib/xmlrpc/client.py`
 
 .. XXX Not everything is documented yet.  It might be good to describe
@@ -23,13 +20,13 @@ between conformable Python objects and XML on the wire.
 
 .. warning::
 
-   The :mod:`xmlrpc.client` module is not secure against maliciously
+   The :mod:`!xmlrpc.client` module is not secure against maliciously
    constructed data.  If you need to parse untrusted or unauthenticated data,
    see :ref:`xml-security`.
 
 .. versionchanged:: 3.5
 
-   For HTTPS URIs, :mod:`xmlrpc.client` now performs all the necessary
+   For HTTPS URIs, :mod:`!xmlrpc.client` now performs all the necessary
    certificate and hostname checks by default.
 
 .. include:: ../includes/wasm-notavail.rst
@@ -472,7 +469,7 @@ remote server into a single request [#]_.
 
    Create an object used to boxcar method calls. *server* is the eventual target of
    the call. Calls can be made to the result object, but they will immediately
-   return ``None``, and only store the call name and parameters in the
+   return ``None``, and only store the call name and arguments in the
    :class:`MultiCall` object. Calling the object itself causes all stored calls to
    be transmitted as a single ``system.multicall`` request. The result of this call
    is a :term:`generator`; iterating over this generator yields the individual

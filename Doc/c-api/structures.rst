@@ -280,6 +280,8 @@ Implementing functions and methods
 
       Name of the method.
 
+      A ``NULL`` *ml_name* marks the end of a :c:type:`!PyMethodDef` array.
+
    .. c:member:: PyCFunction ml_meth
 
       Pointer to the C implementation.
@@ -408,7 +410,7 @@ There are these calling conventions:
 
 
 These two constants are not used to indicate the calling convention but the
-binding when use with methods of classes.  These may not be used for functions
+binding when used with methods of classes.  These may not be used for functions
 defined for modules.  At most one of these flags may be set for any given
 method.
 
