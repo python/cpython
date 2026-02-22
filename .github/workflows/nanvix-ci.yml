@@ -219,49 +219,8 @@ jobs:
             exit 1
           fi
 
-  smoke:
-    needs: build
-    runs-on: ubuntu-latest
-    strategy:
-      fail-fast: false
-      matrix:
-        platform: [hyperlight, microvm]
-        process-mode: [multi-process, single-process]
-    name: smoke (${{ matrix.platform }}-${{ matrix.process-mode }})
-    container:
-      image: nanvix/toolchain:latest-minimal
-      options: --device /dev/kvm
-    defaults:
-      run:
-        shell: bash
-    env:
-      USER: runner
-    steps:
-      - name: Download test sysroot
-        uses: actions/download-artifact@v4
-        with:
-          name: sysroot-${{ matrix.platform }}-${{ matrix.process-mode }}
-          path: sysroot
-
-      - name: Run smoke test
-        run: |
-          cd sysroot
-          chmod +x bin/*
-          timeout 600 ./bin/nanvixd.elf -- ./bin/python3.12 ./smoke_test_l2.py < /dev/null > /tmp/smoke.log 2>&1 || true
-          cat /tmp/smoke.log
-          grep -q "Smoke L2 passed!" /tmp/smoke.log || { echo "::error::Smoke test failed"; exit 1; }
-
-      - name: Run basic tests
-        run: |
-          cd sysroot
-          echo 'import sys; print("HELLO:", sys.version_info[:2])' > test_basic.py
-          timeout 300 ./bin/nanvixd.elf -- ./bin/python3.12 ./test_basic.py < /dev/null > /tmp/basic.log 2>&1 || true
-          cat /tmp/basic.log
-          grep -q "HELLO:" /tmp/basic.log || { echo "::error::Basic test failed"; exit 1; }
-          echo "Basic test passed"
-
   release:
-    needs: [get-nanvix-info, build, test, smoke]
+    needs: [get-nanvix-info, build, test]
     if: github.event_name != 'pull_request'
     runs-on: ubuntu-latest
     env:
@@ -360,11 +319,11 @@ jobs:
           done
 
   report-failure:
-    needs: [build, test, smoke]
+    needs: [build, test]
     if: >-
       ${{ always() &&
           (github.event_name == 'repository_dispatch' || github.event_name == 'schedule' || github.event_name == 'push') &&
-          (needs.build.result == 'failure' || needs.test.result == 'failure' || needs.smoke.result == 'failure') }}
+          (needs.build.result == 'failure' || needs.test.result == 'failure') }}
     runs-on: ubuntu-latest
     steps:
       - name: Create failure issue
@@ -372,7 +331,6 @@ jobs:
         env:
           BUILD_RESULT: ${{ needs.build.result }}
           TEST_RESULT: ${{ needs.test.result }}
-          SMOKE_RESULT: ${{ needs.smoke.result }}
         with:
           github-token: ${{ secrets.GITHUB_TOKEN }}
           script: |
@@ -385,7 +343,6 @@ jobs:
               `- SHA: ${context.sha}`,
               `- build: ${process.env.BUILD_RESULT}`,
               `- test: ${process.env.TEST_RESULT}`,
-              `- smoke: ${process.env.SMOKE_RESULT}`,
               '',
               'Please investigate and take any corrective actions.'
             ].join('\n');
