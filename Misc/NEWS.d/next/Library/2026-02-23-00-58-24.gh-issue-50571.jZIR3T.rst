@@ -1,0 +1,3 @@
+:mod:`bdb` will reports an error when set breakpoint on a line with no
+associated bytecode, such as :keyword:`global` or :keyword:`nonlocal`
+statements.
