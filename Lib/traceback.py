@@ -1778,6 +1778,19 @@ def _compute_suggestion_error(exc_value, tb, wrong_name):
 
     if not_normalized and wrong_name in d:
         return wrong_name
+
+    suggestion = _calculate_closed_name(wrong_name, d)
+
+    # If no direct attribute match found, check for nested attributes
+    if not suggestion and isinstance(exc_value, AttributeError):
+        with suppress(Exception):
+            nested_suggestion = _check_for_nested_attribute(exc_value.obj, wrong_name, d)
+            if nested_suggestion:
+                return nested_suggestion
+
+    return suggestion
+
+def _calculate_closed_name(wrong_name, d):
     try:
         import _suggestions
     except ImportError:
@@ -1810,14 +1823,6 @@ def _compute_suggestion_error(exc_value, tb, wrong_name):
         if not suggestion or current_distance < best_distance:
             suggestion = possible_name
             best_distance = current_distance
-
-    # If no direct attribute match found, check for nested attributes
-    if not suggestion and isinstance(exc_value, AttributeError):
-        with suppress(Exception):
-            nested_suggestion = _check_for_nested_attribute(exc_value.obj, wrong_name, d)
-            if nested_suggestion:
-                return nested_suggestion
-
     return suggestion
 
 

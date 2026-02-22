@@ -100,6 +100,20 @@ def _run_module_code(code, init_globals=None,
     # may be cleared when the temporary module goes away
     return mod_globals.copy()
 
+def _get_possible_name_list(wrong_name):
+    try:
+        if parent_name := wrong_name.rpartition('.')[0]:
+            parent = importlib.util.find_spec(parent_name)
+        else:
+            parent = None
+        d = []
+        for finder in sys.meta_path:
+            if discover := getattr(finder, 'discover', None):
+                d += [spec.name for spec in discover(parent)]
+        return d
+    except Exception:
+        return None
+
 # Helper to get the full name, spec and code for a module
 def _get_module_details(mod_name, error=ImportError):
     if mod_name.startswith("."):
@@ -138,7 +152,12 @@ def _get_module_details(mod_name, error=ImportError):
                     f"'{mod_name}' as the module name.")
         raise error(msg.format(mod_name, type(ex).__name__, ex)) from ex
     if spec is None:
-        raise error("No module named %s" % mod_name)
+        message = "No module named %r" % mod_name
+        if (d := _get_possible_name_list(mod_name)):
+            from traceback import _calculate_closed_name
+            if (suggestion := _calculate_closed_name(mod_name, d)):
+                message += ". Did you mean: %r" % suggestion
+        raise error(message)
     if spec.submodule_search_locations is not None:
         if mod_name == "__main__" or mod_name.endswith(".__main__"):
             raise error("Cannot use package as __main__ module")
