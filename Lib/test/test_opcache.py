@@ -1907,6 +1907,7 @@ class TestSpecializer(TestBase):
         with self.assertRaises(TypeError):
             store_subscr_frozen_dict()
         self.assert_specialized(store_subscr_frozen_dict, "STORE_SUBSCR_DICT")
+        self.assert_no_opcode(store_subscr_frozen_dict, "STORE_SUBSCR")
 
     @cpython_only
     @requires_specialization
