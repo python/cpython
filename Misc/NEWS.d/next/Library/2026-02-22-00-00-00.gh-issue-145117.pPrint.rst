@@ -1,0 +1,5 @@
+Fix :func:`pprint.isreadable` to return ``False`` for ``float('inf')``,
+``float('-inf')``, and ``float('nan')``. Their string representations
+(``inf``, ``-inf``, ``nan``) are not valid Python literals and cannot
+be reconstructed via :func:`eval`, violating the documented contract of
+:func:`~pprint.isreadable`.
