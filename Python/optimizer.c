@@ -995,7 +995,7 @@ _PyJit_TryInitializeTracing(
         return 0;
     }
     PyObject *func = PyStackRef_AsPyObjectBorrow(frame->f_funcobj);
-    if (func == NULL) {
+    if (func == NULL || !PyFunction_Check(func)) {
         return 0;
     }
     PyCodeObject *code = _PyFrame_GetCode(frame);
