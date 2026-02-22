@@ -1,0 +1,1 @@
+simplify asyncio's ``staggered_race`` using ``eager_start=False``
