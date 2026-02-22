@@ -1493,7 +1493,7 @@ _getcode(const char* name, int namelen, Py_UCS4* code)
     }
 
     if (i < (int)Py_ARRAY_LENGTH(derived_name_prefixes)) {
-        Py_UCS4 v = parse_hex_code(name + prefixlen, namelen - prefixlen);
+        Py_UCS4 v = parse_hex_code(name + prefixlen, namelen - (int)prefixlen);
         if (find_prefix_id(v) != i) {
             return 0;
         }
