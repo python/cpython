@@ -1,6 +1,5 @@
 import math
 import random
-import platform
 import sys
 import unittest
 import warnings
@@ -215,8 +214,8 @@ class CAPIFloatTest(unittest.TestCase):
                     # PyFloat_Pack/Unpack*() API.  See also gh-130317 and
                     # e.g. https://developercommunity.visualstudio.com/t/155064
                     signaling = 0
-                    if platform.machine().startswith('parisc'):
-                        # HP PA RISC uses 0 for quiet, see:
+                    if _testcapi.nan_msb_is_signaling:
+                        # HP PA RISC and some MIPS CPUs use 0 for quiet, see:
                         # https://en.wikipedia.org/wiki/NaN#Encoding
                         signaling = 1
                 i = make_nan(size, sign, not signaling)

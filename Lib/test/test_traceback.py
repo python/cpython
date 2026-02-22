@@ -18,7 +18,7 @@ import shutil
 from test.support import (Error, captured_output, cpython_only, ALWAYS_EQ,
                           requires_debug_ranges, has_no_debug_ranges,
                           requires_subprocess)
-from test.support.os_helper import TESTFN, unlink
+from test.support.os_helper import TESTFN, temp_dir, unlink
 from test.support.script_helper import assert_python_ok, assert_python_failure, make_script
 from test.support.import_helper import forget
 from test.support import force_not_colorized, force_not_colorized_test_class
@@ -88,6 +88,12 @@ class TracebackCases(unittest.TestCase):
     def tokenizer_error_with_caret_range(self):
         compile("blech  (  ", "?", "exec")
 
+    def syntax_error_with_caret_wide_char(self):
+        compile("女女女=1; 女女女/", "?", "exec")
+
+    def syntax_error_with_caret_wide_char_range(self):
+        compile("f(x, 女女女 for 女女女 in range(30), z)", "?", "exec")
+
     def test_caret(self):
         err = self.get_exception_format(self.syntax_error_with_caret,
                                         SyntaxError)
@@ -124,6 +130,20 @@ class TracebackCases(unittest.TestCase):
         self.assertEqual(err[2].count('\n'), 1)   # and no additional newline
         self.assertEqual(err[1].find("("), err[2].find("^"))  # in the right place
         self.assertEqual(err[2].count("^"), 1)
+
+    def test_caret_wide_char(self):
+        err = self.get_exception_format(self.syntax_error_with_caret_wide_char,
+                                        SyntaxError)
+        self.assertIn("^", err[2])
+        # "女女女=1; 女女女/" has display width 17
+        self.assertEqual(err[2].find("^"), 4 + 17)
+
+        err = self.get_exception_format(self.syntax_error_with_caret_wide_char_range,
+                                        SyntaxError)
+        self.assertIn("^", err[2])
+        self.assertEqual(err[2].find("^"), 4 + 5)
+        # "女女女 for 女女女 in range(30)" has display width 30
+        self.assertEqual(err[2].count("^"), 30)
 
     def test_nocaret(self):
         exc = SyntaxError("error", ("x.py", 23, None, "bad syntax"))
@@ -502,6 +522,33 @@ class TracebackCases(unittest.TestCase):
                     b'    x = 1 / 0',
                     b'        ^^^^^',
                     b'ZeroDivisionError: division by zero']
+        self.assertEqual(stderr.splitlines(), expected)
+
+    @cpython_only
+    def test_lost_io_open(self):
+        # GH-142737: Display the traceback even if io.open is lost
+        crasher = textwrap.dedent("""\
+            import io
+            import traceback
+            # Trigger fallback mode
+            traceback._print_exception_bltin = None
+            del io.open
+            raise RuntimeError("should not crash")
+        """)
+
+        # Create a temporary script to exercise _Py_FindSourceFile
+        with temp_dir() as script_dir:
+            script = make_script(
+                script_dir=script_dir,
+                script_basename='tb_test_no_io_open',
+                source=crasher)
+            rc, stdout, stderr = assert_python_failure(script)
+
+        self.assertEqual(rc, 1)  # Make sure it's not a crash
+
+        expected = [b'Traceback (most recent call last):',
+                    f'  File "{script}", line 6, in <module>'.encode(),
+                    b'RuntimeError: should not crash']
         self.assertEqual(stderr.splitlines(), expected)
 
     def test_print_exception(self):
@@ -1783,6 +1830,23 @@ class TestKeywordTypoSuggestions(unittest.TestCase):
                 rc, stdout, stderr = assert_python_failure('-c', source)
                 stderr_text = stderr.decode('utf-8')
                 self.assertIn(f"Did you mean '{expected_kw}'", stderr_text)
+
+    def test_no_keyword_suggestion_for_comma_errors(self):
+        # When the parser identifies a missing comma, don't suggest
+        # bogus keyword replacements like 'print' -> 'not'
+        code = '''\
+import sys
+print(
+    "line1"
+    "line2"
+    file=sys.stderr
+)
+'''
+        source = textwrap.dedent(code).strip()
+        rc, stdout, stderr = assert_python_failure('-c', source)
+        stderr_text = stderr.decode('utf-8')
+        self.assertIn("Perhaps you forgot a comma", stderr_text)
+        self.assertNotIn("Did you mean", stderr_text)
 
 @requires_debug_ranges()
 @force_not_colorized_test_class
@@ -4112,25 +4176,25 @@ class BaseSuggestionTests(SuggestionFormattingTestMixin):
             BLuch = None
 
         for cls, suggestion in [
-            (Addition, "'bluchin'?"),
-            (Substitution, "'blech'?"),
-            (Elimination, "'blch'?"),
-            (Addition, "'bluchin'?"),
-            (SubstitutionOverElimination, "'blach'?"),
-            (SubstitutionOverAddition, "'blach'?"),
-            (EliminationOverAddition, "'bluc'?"),
-            (CaseChangeOverSubstitution, "'BLuch'?"),
+            (Addition, "'.bluchin'"),
+            (Substitution, "'.blech'"),
+            (Elimination, "'.blch'"),
+            (Addition, "'.bluchin'"),
+            (SubstitutionOverElimination, "'.blach'"),
+            (SubstitutionOverAddition, "'.blach'"),
+            (EliminationOverAddition, "'.bluc'"),
+            (CaseChangeOverSubstitution, "'.BLuch'"),
         ]:
             actual = self.get_suggestion(cls(), 'bluch')
-            self.assertIn(suggestion, actual)
+            self.assertIn('Did you mean ' + suggestion, actual)
 
     def test_suggestions_underscored(self):
         class A:
             bluch = None
 
-        self.assertIn("'bluch'", self.get_suggestion(A(), 'blach'))
-        self.assertIn("'bluch'", self.get_suggestion(A(), '_luch'))
-        self.assertIn("'bluch'", self.get_suggestion(A(), '_bluch'))
+        self.assertIn("'.bluch'", self.get_suggestion(A(), 'blach'))
+        self.assertIn("'.bluch'", self.get_suggestion(A(), '_luch'))
+        self.assertIn("'.bluch'", self.get_suggestion(A(), '_bluch'))
 
         attr_function = self.attr_function
         class B:
@@ -4138,13 +4202,13 @@ class BaseSuggestionTests(SuggestionFormattingTestMixin):
             def method(self, name):
                 attr_function(self, name)
 
-        self.assertIn("'_bluch'", self.get_suggestion(B(), '_blach'))
-        self.assertIn("'_bluch'", self.get_suggestion(B(), '_luch'))
-        self.assertNotIn("'_bluch'", self.get_suggestion(B(), 'bluch'))
+        self.assertIn("'._bluch'", self.get_suggestion(B(), '_blach'))
+        self.assertIn("'._bluch'", self.get_suggestion(B(), '_luch'))
+        self.assertNotIn("'._bluch'", self.get_suggestion(B(), 'bluch'))
 
-        self.assertIn("'_bluch'", self.get_suggestion(partial(B().method, '_blach')))
-        self.assertIn("'_bluch'", self.get_suggestion(partial(B().method, '_luch')))
-        self.assertIn("'_bluch'", self.get_suggestion(partial(B().method, 'bluch')))
+        self.assertIn("'._bluch'", self.get_suggestion(partial(B().method, '_blach')))
+        self.assertIn("'._bluch'", self.get_suggestion(partial(B().method, '_luch')))
+        self.assertIn("'._bluch'", self.get_suggestion(partial(B().method, 'bluch')))
 
 
     def test_do_not_trigger_for_long_attributes(self):
@@ -4185,6 +4249,26 @@ class BaseSuggestionTests(SuggestionFormattingTestMixin):
                 return ['blech']
         actual = self.get_suggestion(A(), 'blech')
         self.assertNotIn("Did you mean", actual)
+
+    def test_suggestions_not_normalized(self):
+        class A:
+            analization = None
+            ﬁⁿₐˡᵢᶻₐᵗᵢᵒₙ = None
+
+        suggestion = self.get_suggestion(A(), 'ﬁⁿₐˡᵢᶻₐᵗᵢᵒₙ')
+        self.assertIn("'.finalization'", suggestion)
+        self.assertNotIn("analization", suggestion)
+
+        class B:
+            attr_a = None
+            attr_µ = None  # attr_\xb5
+
+        suggestion = self.get_suggestion(B(), 'attr_\xb5')
+        self.assertIn(
+            "'.attr_\u03bc' ('attr_\\u03bc') "
+            "instead of '.attr_\xb5' ('attr_\\xb5')",
+            suggestion)
+        self.assertNotIn("attr_a", suggestion)
 
 
 class GetattrSuggestionTests(BaseSuggestionTests):
@@ -4289,11 +4373,11 @@ class SuggestionFormattingTestBase(SuggestionFormattingTestMixin):
 
         # Should suggest 'inner.value'
         actual = self.get_suggestion(Outer(), 'value')
-        self.assertIn("Did you mean: 'inner.value'", actual)
+        self.assertIn("Did you mean '.inner.value' instead of '.value'", actual)
 
         # Should suggest 'inner.data'
         actual = self.get_suggestion(Outer(), 'data')
-        self.assertIn("Did you mean: 'inner.data'", actual)
+        self.assertIn("Did you mean '.inner.data' instead of '.data'", actual)
 
     def test_getattr_nested_prioritizes_direct_matches(self):
         # Test that direct attribute matches are prioritized over nested ones
@@ -4308,7 +4392,7 @@ class SuggestionFormattingTestBase(SuggestionFormattingTestMixin):
 
         # Should suggest 'fooo' (direct) not 'inner.foo' (nested)
         actual = self.get_suggestion(Outer(), 'foo')
-        self.assertIn("Did you mean: 'fooo'", actual)
+        self.assertIn("Did you mean '.fooo'", actual)
         self.assertNotIn("inner.foo", actual)
 
     def test_getattr_nested_with_property(self):
@@ -4405,7 +4489,7 @@ class SuggestionFormattingTestBase(SuggestionFormattingTestMixin):
 
         # Should suggest only the first match (alphabetically)
         actual = self.get_suggestion(Outer(), 'value')
-        self.assertIn("'a_inner.value'", actual)
+        self.assertIn("'.a_inner.value'", actual)
         # Verify it's a single suggestion, not multiple
         self.assertEqual(actual.count("Did you mean"), 1)
 
@@ -4428,10 +4512,10 @@ class SuggestionFormattingTestBase(SuggestionFormattingTestMixin):
                 self.exploder = ExplodingProperty()  # Accessing attributes will raise
                 self.safe_inner = SafeInner()
 
-        # Should still suggest 'safe_inner.target' without crashing
+        # Should still suggest '.safe_inner.target' without crashing
         # even though accessing exploder.target would raise an exception
         actual = self.get_suggestion(Outer(), 'target')
-        self.assertIn("'safe_inner.target'", actual)
+        self.assertIn("'.safe_inner.target'", actual)
 
     def test_getattr_nested_handles_hasattr_exceptions(self):
         # Test that exceptions in hasattr don't crash the system
@@ -4452,7 +4536,7 @@ class SuggestionFormattingTestBase(SuggestionFormattingTestMixin):
 
         # Should still find 'normal.target' even though weird.target check fails
         actual = self.get_suggestion(Outer(), 'target')
-        self.assertIn("'normal.target'", actual)
+        self.assertIn("'.normal.target'", actual)
 
     def make_module(self, code):
         tmpdir = Path(tempfile.mkdtemp())
@@ -4807,6 +4891,34 @@ class SuggestionFormattingTestBase(SuggestionFormattingTestMixin):
         instance = A()
         actual = self.get_suggestion(instance.foo)
         self.assertIn("self.blech", actual)
+
+    def test_name_error_with_instance_not_normalized(self):
+        class A:
+            def __init__(self):
+                self.ﬁⁿₐˡᵢᶻₐᵗᵢᵒₙ = None
+            def foo(self):
+                analization = 1
+                x = ﬁⁿₐˡᵢᶻₐᵗᵢᵒₙ
+
+        instance = A()
+        actual = self.get_suggestion(instance.foo)
+        self.assertIn("self.finalization", actual)
+        self.assertNotIn("ﬁⁿₐˡᵢᶻₐᵗᵢᵒₙ", actual)
+        self.assertNotIn("analization", actual)
+
+        class B:
+            def __init__(self):
+                self.attr_µ = None  # attr_\xb5
+            def foo(self):
+                attr_a = 1
+                x = attr_µ  # attr_\xb5
+
+        instance = B()
+        actual = self.get_suggestion(instance.foo)
+        self.assertIn("self.attr_\u03bc", actual)
+        self.assertIn(r"self.attr_\u03bc", actual)
+        self.assertNotIn("attr_\xb5", actual)
+        self.assertNotIn("attr_a", actual)
 
     def test_unbound_local_error_with_instance(self):
         class A:
@@ -5208,6 +5320,48 @@ class TestColorizedTraceback(unittest.TestCase):
                 f'    +------------------------------------',
         ]
         self.assertEqual(actual, expected(**colors))
+
+
+class TestLazyImportSuggestions(unittest.TestCase):
+    """Test that lazy imports are not reified when computing AttributeError suggestions."""
+
+    def test_attribute_error_does_not_reify_lazy_imports(self):
+        """Printing an AttributeError should not trigger lazy import reification."""
+        # pkg.bar prints "BAR_MODULE_LOADED" when imported.
+        # If lazy import is reified during suggestion computation, we'll see it.
+        code = textwrap.dedent("""
+            lazy import test.test_import.data.lazy_imports.pkg.bar
+            test.test_import.data.lazy_imports.pkg.nonexistent
+        """)
+        rc, stdout, stderr = assert_python_failure('-c', code)
+        self.assertNotIn(b"BAR_MODULE_LOADED", stdout)
+
+    def test_traceback_formatting_does_not_reify_lazy_imports(self):
+        """Formatting a traceback should not trigger lazy import reification."""
+        code = textwrap.dedent("""
+            import traceback
+            lazy import test.test_import.data.lazy_imports.pkg.bar
+            try:
+                test.test_import.data.lazy_imports.pkg.nonexistent
+            except AttributeError:
+                traceback.format_exc()
+            print("OK")
+        """)
+        rc, stdout, stderr = assert_python_ok('-c', code)
+        self.assertIn(b"OK", stdout)
+        self.assertNotIn(b"BAR_MODULE_LOADED", stdout)
+
+    def test_suggestion_still_works_for_non_lazy_attributes(self):
+        """Suggestions should still work for non-lazy module attributes."""
+        code = textwrap.dedent("""
+            lazy import test.test_import.data.lazy_imports.pkg.bar
+            # Typo for __name__
+            test.test_import.data.lazy_imports.pkg.__nme__
+        """)
+        rc, stdout, stderr = assert_python_failure('-c', code)
+        self.assertIn(b"__name__", stderr)
+        self.assertNotIn(b"BAR_MODULE_LOADED", stdout)
+
 
 if __name__ == "__main__":
     unittest.main()

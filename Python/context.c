@@ -190,21 +190,25 @@ context_switched(PyThreadState *ts)
 }
 
 
-static int
+int
 _PyContext_Enter(PyThreadState *ts, PyObject *octx)
 {
     ENSURE_Context(octx, -1)
     PyContext *ctx = (PyContext *)octx;
+#ifdef Py_GIL_DISABLED
+    int already_entered = _Py_atomic_exchange_int(&ctx->ctx_entered, 1);
+#else
+    int already_entered = ctx->ctx_entered;
+    ctx->ctx_entered = 1;
+#endif
 
-    if (ctx->ctx_entered) {
+    if (already_entered) {
         _PyErr_Format(ts, PyExc_RuntimeError,
                       "cannot enter context: %R is already entered", ctx);
         return -1;
     }
 
     ctx->ctx_prev = (PyContext *)ts->context;  /* borrow */
-    ctx->ctx_entered = 1;
-
     ts->context = Py_NewRef(ctx);
     context_switched(ts);
     return 0;
@@ -220,13 +224,14 @@ PyContext_Enter(PyObject *octx)
 }
 
 
-static int
+int
 _PyContext_Exit(PyThreadState *ts, PyObject *octx)
 {
     ENSURE_Context(octx, -1)
     PyContext *ctx = (PyContext *)octx;
+    int already_entered = FT_ATOMIC_LOAD_INT_RELAXED(ctx->ctx_entered);
 
-    if (!ctx->ctx_entered) {
+    if (!already_entered) {
         PyErr_Format(PyExc_RuntimeError,
                      "cannot exit context: %R has not been entered", ctx);
         return -1;
@@ -243,7 +248,7 @@ _PyContext_Exit(PyThreadState *ts, PyObject *octx)
     Py_SETREF(ts->context, (PyObject *)ctx->ctx_prev);
 
     ctx->ctx_prev = NULL;
-    ctx->ctx_entered = 0;
+    FT_ATOMIC_STORE_INT(ctx->ctx_entered, 0);
     context_switched(ts);
     return 0;
 }
@@ -342,12 +347,6 @@ PyContextVar_Set(PyObject *ovar, PyObject *val)
 {
     ENSURE_ContextVar(ovar, NULL)
     PyContextVar *var = (PyContextVar *)ovar;
-
-    if (!PyContextVar_CheckExact(var)) {
-        PyErr_SetString(
-            PyExc_TypeError, "an instance of ContextVar was expected");
-        return NULL;
-    }
 
     PyContext *ctx = context_get();
     if (ctx == NULL) {
@@ -1025,12 +1024,6 @@ static PyObject *
 _contextvars_ContextVar_get_impl(PyContextVar *self, PyObject *default_value)
 /*[clinic end generated code: output=0746bd0aa2ced7bf input=da66664d5d0af4ad]*/
 {
-    if (!PyContextVar_CheckExact(self)) {
-        PyErr_SetString(
-            PyExc_TypeError, "an instance of ContextVar was expected");
-        return NULL;
-    }
-
     PyObject *val;
     if (PyContextVar_Get((PyObject *)self, default_value, &val) < 0) {
         return NULL;

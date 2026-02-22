@@ -1,7 +1,14 @@
 #!/usr/bin/env python
-# Script checking that all symbols exported by libpython start with Py or _Py
+"""Check exported symbols
 
-import os.path
+Check that all symbols exported by CPython (libpython, stdlib extension
+modules, and similar) start with Py or _Py, or are covered by an exception.
+"""
+
+import argparse
+import dataclasses
+import functools
+import pathlib
 import subprocess
 import sys
 import sysconfig
@@ -23,150 +30,167 @@ EXCEPTIONS = frozenset({
 IGNORED_EXTENSION = "_ctypes_test"
 
 
-def is_local_symbol_type(symtype):
-    # Ignore local symbols.
+@dataclasses.dataclass
+class Library:
+    path: pathlib.Path
+    is_dynamic: bool
 
-    # If lowercase, the symbol is usually local; if uppercase, the symbol
-    # is global (external).  There are however a few lowercase symbols that
-    # are shown for special global symbols ("u", "v" and "w").
-    if symtype.islower() and symtype not in "uvw":
+    @functools.cached_property
+    def is_ignored(self):
+        name_without_extemnsions = self.path.name.partition('.')[0]
+        return name_without_extemnsions == IGNORED_EXTENSION
+
+
+@dataclasses.dataclass
+class Symbol:
+    name: str
+    type: str
+    library: str
+
+    def __str__(self):
+        return f"{self.name!r} (type {self.type}) from {self.library.path}"
+
+    @functools.cached_property
+    def is_local(self):
+        # If lowercase, the symbol is usually local; if uppercase, the symbol
+        # is global (external).  There are however a few lowercase symbols that
+        # are shown for special global symbols ("u", "v" and "w").
+        if self.type.islower() and self.type not in "uvw":
+            return True
+
+        return False
+
+    @functools.cached_property
+    def is_smelly(self):
+        if self.is_local:
+            return False
+        if self.name.startswith(ALLOWED_PREFIXES):
+            return False
+        if self.name in EXCEPTIONS:
+            return False
+        if not self.library.is_dynamic and self.name.startswith(
+                ALLOWED_STATIC_PREFIXES):
+            return False
+        if self.library.is_ignored:
+            return False
         return True
 
-    return False
+    @functools.cached_property
+    def _sort_key(self):
+        return self.name, self.library.path
+
+    def __lt__(self, other_symbol):
+        return self._sort_key < other_symbol._sort_key
 
 
-def get_exported_symbols(library, dynamic=False):
-    print(f"Check that {library} only exports symbols starting with Py or _Py")
-
+def get_exported_symbols(library):
+    # Only look at dynamic symbols
     args = ['nm', '--no-sort']
-    if dynamic:
+    if library.is_dynamic:
         args.append('--dynamic')
-    args.append(library)
-    print(f"+ {' '.join(args)}")
+    args.append(library.path)
     proc = subprocess.run(args, stdout=subprocess.PIPE, encoding='utf-8')
     if proc.returncode:
+        print("+", args)
         sys.stdout.write(proc.stdout)
         sys.exit(proc.returncode)
 
     stdout = proc.stdout.rstrip()
     if not stdout:
         raise Exception("command output is empty")
-    return stdout
 
-
-def get_smelly_symbols(stdout, dynamic=False):
-    smelly_symbols = []
-    python_symbols = []
-    local_symbols = []
-
+    symbols = []
     for line in stdout.splitlines():
-        # Split line '0000000000001b80 D PyTextIOWrapper_Type'
         if not line:
             continue
 
+        # Split lines like  '0000000000001b80 D PyTextIOWrapper_Type'
         parts = line.split(maxsplit=2)
+        # Ignore lines like '                 U PyDict_SetItemString'
+        # and headers like 'pystrtod.o:'
         if len(parts) < 3:
             continue
 
-        symtype = parts[1].strip()
-        symbol = parts[-1]
-        result = f'{symbol} (type: {symtype})'
+        symbol = Symbol(name=parts[-1], type=parts[1], library=library)
+        if not symbol.is_local:
+            symbols.append(symbol)
 
-        if (symbol.startswith(ALLOWED_PREFIXES) or
-            symbol in EXCEPTIONS or
-            (not dynamic and symbol.startswith(ALLOWED_STATIC_PREFIXES))):
-            python_symbols.append(result)
-            continue
-
-        if is_local_symbol_type(symtype):
-            local_symbols.append(result)
-        else:
-            smelly_symbols.append(result)
-
-    if local_symbols:
-        print(f"Ignore {len(local_symbols)} local symbols")
-    return smelly_symbols, python_symbols
+    return symbols
 
 
-def check_library(library, dynamic=False):
-    nm_output = get_exported_symbols(library, dynamic)
-    smelly_symbols, python_symbols = get_smelly_symbols(nm_output, dynamic)
-
-    if not smelly_symbols:
-        print(f"OK: no smelly symbol found ({len(python_symbols)} Python symbols)")
-        return 0
-
-    print()
-    smelly_symbols.sort()
-    for symbol in smelly_symbols:
-        print(f"Smelly symbol: {symbol}")
-
-    print()
-    print(f"ERROR: Found {len(smelly_symbols)} smelly symbols!")
-    return len(smelly_symbols)
-
-
-def check_extensions():
-    print(__file__)
+def get_extension_libraries():
     # This assumes pybuilddir.txt is in same directory as pyconfig.h.
     # In the case of out-of-tree builds, we can't assume pybuilddir.txt is
     # in the source folder.
-    config_dir = os.path.dirname(sysconfig.get_config_h_filename())
-    filename = os.path.join(config_dir, "pybuilddir.txt")
+    config_dir = pathlib.Path(sysconfig.get_config_h_filename()).parent
     try:
-        with open(filename, encoding="utf-8") as fp:
-            pybuilddir = fp.readline()
-    except FileNotFoundError:
-        print(f"Cannot check extensions because {filename} does not exist")
-        return True
+        config_dir = config_dir.relative_to(pathlib.Path.cwd(), walk_up=True)
+    except ValueError:
+        pass
+    filename = config_dir / "pybuilddir.txt"
+    pybuilddir = filename.read_text().strip()
 
-    print(f"Check extension modules from {pybuilddir} directory")
-    builddir = os.path.join(config_dir, pybuilddir)
-    nsymbol = 0
-    for name in os.listdir(builddir):
-        if not name.endswith(".so"):
+    builddir = config_dir / pybuilddir
+    result = []
+    for path in sorted(builddir.glob('**/*.so')):
+        if path.stem == IGNORED_EXTENSION:
             continue
-        if IGNORED_EXTENSION in name:
-            print()
-            print(f"Ignore extension: {name}")
-            continue
+        result.append(Library(path, is_dynamic=True))
 
-        print()
-        filename = os.path.join(builddir, name)
-        nsymbol += check_library(filename, dynamic=True)
-
-    return nsymbol
+    return result
 
 
 def main():
-    nsymbol = 0
+    parser = argparse.ArgumentParser(
+        description=__doc__.split('\n', 1)[-1])
+    parser.add_argument('-v', '--verbose', action='store_true',
+                        help='be verbose (currently: print out all symbols)')
+    args = parser.parse_args()
+
+    libraries = []
 
     # static library
-    LIBRARY = sysconfig.get_config_var('LIBRARY')
-    if not LIBRARY:
-        raise Exception("failed to get LIBRARY variable from sysconfig")
-    if os.path.exists(LIBRARY):
-        nsymbol += check_library(LIBRARY)
+    try:
+        LIBRARY = pathlib.Path(sysconfig.get_config_var('LIBRARY'))
+    except TypeError as exc:
+        raise Exception("failed to get LIBRARY sysconfig variable") from exc
+    LIBRARY = pathlib.Path(LIBRARY)
+    if LIBRARY.exists():
+        libraries.append(Library(LIBRARY, is_dynamic=False))
 
     # dynamic library
-    LDLIBRARY = sysconfig.get_config_var('LDLIBRARY')
-    if not LDLIBRARY:
-        raise Exception("failed to get LDLIBRARY variable from sysconfig")
+    try:
+        LDLIBRARY = pathlib.Path(sysconfig.get_config_var('LDLIBRARY'))
+    except TypeError as exc:
+        raise Exception("failed to get LDLIBRARY sysconfig variable") from exc
     if LDLIBRARY != LIBRARY:
-        print()
-        nsymbol += check_library(LDLIBRARY, dynamic=True)
+        libraries.append(Library(LDLIBRARY, is_dynamic=True))
 
     # Check extension modules like _ssl.cpython-310d-x86_64-linux-gnu.so
-    nsymbol += check_extensions()
+    libraries.extend(get_extension_libraries())
 
-    if nsymbol:
-        print()
-        print(f"ERROR: Found {nsymbol} smelly symbols in total!")
-        sys.exit(1)
+    smelly_symbols = []
+    for library in libraries:
+        symbols = get_exported_symbols(library)
+        if args.verbose:
+            print(f"{library.path}: {len(symbols)} symbol(s) found")
+        for symbol in sorted(symbols):
+            if args.verbose:
+                print("    -", symbol.name)
+            if symbol.is_smelly:
+                smelly_symbols.append(symbol)
 
     print()
-    print(f"OK: all exported symbols of all libraries "
-          f"are prefixed with {' or '.join(map(repr, ALLOWED_PREFIXES))}")
+
+    if smelly_symbols:
+        print(f"Found {len(smelly_symbols)} smelly symbols in total!")
+        for symbol in sorted(smelly_symbols):
+            print(f"    - {symbol.name} from {symbol.library.path}")
+        sys.exit(1)
+
+    print(f"OK: all exported symbols of all libraries",
+          f"are prefixed with {' or '.join(map(repr, ALLOWED_PREFIXES))}",
+          f"or are covered by exceptions")
 
 
 if __name__ == "__main__":

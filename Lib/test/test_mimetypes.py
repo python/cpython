@@ -226,6 +226,7 @@ class MimeTypesTestCase(unittest.TestCase):
             for mime_type, ext in (
                 ("application/epub+zip", ".epub"),
                 ("application/octet-stream", ".bin"),
+                ("application/dicom", ".dcm"),
                 ("application/gzip", ".gz"),
                 ("application/ogg", ".ogx"),
                 ("application/pdf", ".pdf"),
@@ -270,6 +271,7 @@ class MimeTypesTestCase(unittest.TestCase):
                 ("image/jp2", ".jp2"),
                 ("image/jpeg", ".jpg"),
                 ("image/jpm", ".jpm"),
+                ("image/jxl", ".jxl"),
                 ("image/t38", ".t38"),
                 ("image/tiff", ".tiff"),
                 ("image/tiff-fx", ".tfx"),

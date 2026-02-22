@@ -1,0 +1,1 @@
+Fix :meth:`!unicodedata.ucd_3_2_0.numeric` for non-decimal values.
