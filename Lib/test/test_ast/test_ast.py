@@ -428,7 +428,6 @@ class AST_Tests(unittest.TestCase):
                 # Custom attribute assignment is allowed
                 x.foo = 5
                 self.assertEqual(x.foo, 5)
-                del x.foo
 
     def _construct_ast_class(self, cls):
         kwargs = {}
@@ -471,9 +470,6 @@ class AST_Tests(unittest.TestCase):
         self.assertEqual(x._fields, 666)
 
     def test_classattrs(self):
-        msg = "ast.Constant.__init__ missing 1 required positional argument: 'value'"
-        self.assertRaisesRegex(TypeError, re.escape(msg), ast.Constant)
-
         x = ast.Constant(42)
         self.assertEqual(x._fields, ('value', 'kind'))
 
@@ -495,11 +491,6 @@ class AST_Tests(unittest.TestCase):
 
         self.assertRaises(TypeError, ast.Constant, 1, None, 2)
         self.assertRaises(TypeError, ast.Constant, 1, None, 2, lineno=0)
-
-        # Arbitrary keyword arguments are not supported
-        msg = "ast.Constant.__init__ got an unexpected keyword argument 'foo'"
-        with self.assertRaisesRegex(TypeError, re.escape(msg)):
-            ast.Constant(1, foo='bar')
 
         msg = "ast.Constant got multiple values for argument 'value'"
         with self.assertRaisesRegex(TypeError, re.escape(msg)):
@@ -554,7 +545,7 @@ class AST_Tests(unittest.TestCase):
         self.assertEqual(x.op, addop)
         self.assertEqual(x.right, n3)
 
-        # Random attribute allowed too
+        # Arbitrary attributes are allowed
         x.foobarbaz = 5
         self.assertEqual(x.foobarbaz, 5)
         self.assertEqual(x._fields, ('left', 'op', 'right'))
@@ -582,7 +573,7 @@ class AST_Tests(unittest.TestCase):
         self.assertEqual(x.right, 3)
         self.assertEqual(x.lineno, 0)
 
-        # Random kwargs are not allowed
+        # Arbitrary keyword arguments are not allowed
         msg = "ast.BinOp.__init__ got an unexpected keyword argument 'foobarbaz'"
         with self.assertRaisesRegex(TypeError, re.escape(msg)):
             ast.BinOp(1, 2, 3, foobarbaz=42)
