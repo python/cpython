@@ -191,7 +191,6 @@ static PyObject *_Py_strhex_impl(const char* argbuf, const Py_ssize_t arglen,
     if (bytes_per_sep_group == 0) {
 #ifdef HAVE_EFFICIENT_BUILTIN_SHUFFLEVECTOR
         if (arglen >= 16) {
-            // little vector units go brrrr...
             _Py_hexlify_simd((const unsigned char *)argbuf, retbuf, arglen);
         }
         else
