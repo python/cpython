@@ -2743,6 +2743,11 @@ int
 PyDict_SetItem(PyObject *op, PyObject *key, PyObject *value)
 {
     if (!PyDict_Check(op)) {
+        if (PyFrozenDict_Check(op)) {
+            PyErr_SetString(PyExc_TypeError,
+                            "'frozendict' object does not support item assignment");
+            return -1;
+        }
         PyErr_BadInternalCall();
         return -1;
     }
@@ -2883,6 +2888,11 @@ _PyDict_DelItem_KnownHash_LockHeld(PyObject *op, PyObject *key, Py_hash_t hash)
     PyObject *old_value;
 
     if (!PyDict_Check(op)) {
+        if (PyFrozenDict_Check(op)) {
+            PyErr_SetString(PyExc_TypeError,
+                            "'frozendict' object does not support item deletion");
+            return -1;
+        }
         PyErr_BadInternalCall();
         return -1;
     }
@@ -7064,6 +7074,17 @@ int
 _PyDict_SetItem_LockHeld(PyDictObject *dict, PyObject *name, PyObject *value)
 {
     if (!PyDict_Check(dict)) {
+        if (PyFrozenDict_Check((PyObject *)dict)) {
+            if (value == NULL) {
+                PyErr_SetString(PyExc_TypeError,
+                                "'frozendict' object does not support item deletion");
+            }
+            else {
+                PyErr_SetString(PyExc_TypeError,
+                                "'frozendict' object does not support item assignment");
+            }
+            return -1;
+        }
         PyErr_BadInternalCall();
         return -1;
     }

@@ -3570,6 +3570,45 @@ class ClassPropertiesAndMethods(unittest.TestCase):
             self.assertEqual(e.a, 1)
             self.assertEqual(can_delete_dict(e), can_delete_dict(ValueError()))
 
+    def test_set_dict_to_frozendict(self):
+        # gh-145119: __dict__ accepts frozendict.
+        class C:
+            pass
+
+        obj = C()
+        obj.__dict__ = frozendict(x=1, y=2)
+        self.assertEqual(obj.x, 1)
+        self.assertEqual(obj.y, 2)
+        self.assertIn("x", dir(obj))
+        self.assertIn("y", dir(obj))
+        self.assertEqual(type(vars(obj)), frozendict)
+
+        with self.assertRaises(TypeError):
+            obj.z = 3
+        with self.assertRaises(TypeError):
+            del obj.x
+
+        class MyFrozenDict(frozendict):
+            pass
+
+        obj.__dict__ = MyFrozenDict(a=10)
+        self.assertEqual(obj.a, 10)
+        self.assertIn("a", dir(obj))
+
+        obj.__dict__ = {"w": 50}
+        obj.q = 99
+        self.assertEqual(obj.q, 99)
+
+        # Ensure internal PyDict_SetItem/DelItem paths raise TypeError,
+        # not SystemError, when __dict__ is a frozendict.
+        cm = classmethod(lambda: None)
+        cm.__dict__ = frozendict()
+        with self.assertRaises(TypeError):
+            cm.__annotations__ = {"x": int}
+        cm.__dict__ = frozendict(__annotations__={"x": int})
+        with self.assertRaises(TypeError):
+            del cm.__annotations__
+
     def test_binary_operator_override(self):
         # Testing overrides of binary operations...
         class I(int):

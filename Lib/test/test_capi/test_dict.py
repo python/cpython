@@ -273,7 +273,9 @@ class CAPITest(unittest.TestCase):
             self.assertEqual(dct, {'a': 5, '\U0001f40d': 8})
 
         self.assertRaises(TypeError, setitem, {}, [], 5)  # unhashable
-        for test_type in NOT_DICT_TYPES + OTHER_TYPES:
+        for test_type in FROZENDICT_TYPES:
+            self.assertRaises(TypeError, setitem, test_type(), 'a', 5)
+        for test_type in MAPPING_TYPES + OTHER_TYPES:
             self.assertRaises(SystemError, setitem, test_type(), 'a', 5)
         # CRASHES setitem({}, NULL, 5)
         # CRASHES setitem({}, 'a', NULL)
@@ -290,7 +292,9 @@ class CAPITest(unittest.TestCase):
             self.assertEqual(dct, {'a': 5, '\U0001f40d': 8})
 
         self.assertRaises(UnicodeDecodeError, setitemstring, {}, INVALID_UTF8, 5)
-        for test_type in NOT_DICT_TYPES + OTHER_TYPES:
+        for test_type in FROZENDICT_TYPES:
+            self.assertRaises(TypeError, setitemstring, test_type(), b'a', 5)
+        for test_type in MAPPING_TYPES + OTHER_TYPES:
             self.assertRaises(SystemError, setitemstring, test_type(), b'a', 5)
         # CRASHES setitemstring({}, NULL, 5)
         # CRASHES setitemstring({}, b'a', NULL)
@@ -308,7 +312,9 @@ class CAPITest(unittest.TestCase):
             self.assertEqual(dct, {'c': 2})
 
         self.assertRaises(TypeError, delitem, {}, [])  # unhashable
-        for test_type in NOT_DICT_TYPES:
+        for test_type in FROZENDICT_TYPES:
+            self.assertRaises(TypeError, delitem, test_type({'a': 1}), 'a')
+        for test_type in MAPPING_TYPES:
             self.assertRaises(SystemError, delitem, test_type({'a': 1}), 'a')
         for test_type in OTHER_TYPES:
             self.assertRaises(SystemError, delitem, test_type(), 'a')
@@ -327,7 +333,9 @@ class CAPITest(unittest.TestCase):
             self.assertEqual(dct, {'c': 2})
 
         self.assertRaises(UnicodeDecodeError, delitemstring, {}, INVALID_UTF8)
-        for test_type in NOT_DICT_TYPES:
+        for test_type in FROZENDICT_TYPES:
+            self.assertRaises(TypeError, delitemstring, test_type({'a': 1}), b'a')
+        for test_type in MAPPING_TYPES:
             self.assertRaises(SystemError, delitemstring, test_type({'a': 1}), b'a')
         for test_type in OTHER_TYPES:
             self.assertRaises(SystemError, delitemstring, test_type(), b'a')

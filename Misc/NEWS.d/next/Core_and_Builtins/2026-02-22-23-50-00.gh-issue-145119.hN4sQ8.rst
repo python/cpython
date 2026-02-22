@@ -1,0 +1,2 @@
+Allow :class:`frozendict` to be assigned to an instance's
+:attr:`~object.__dict__`, enabling immutable instances.

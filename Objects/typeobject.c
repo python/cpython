@@ -3999,7 +3999,7 @@ subtype_dict(PyObject *obj, void *context)
 int
 _PyObject_SetDict(PyObject *obj, PyObject *value)
 {
-    if (value != NULL && !PyDict_Check(value)) {
+    if (value != NULL && !PyAnyDict_Check(value)) {
         PyErr_Format(PyExc_TypeError,
                      "__dict__ must be set to a dictionary, "
                      "not a '%.200s'", Py_TYPE(value)->tp_name);
@@ -8305,14 +8305,23 @@ object___dir___impl(PyObject *self)
     if (dict == NULL) {
         dict = PyDict_New();
     }
-    else if (!PyDict_Check(dict)) {
-        Py_DECREF(dict);
-        dict = PyDict_New();
-    }
-    else {
+    else if (PyDict_Check(dict)) {
         /* Copy __dict__ to avoid mutating it. */
         PyObject *temp = PyDict_Copy(dict);
         Py_SETREF(dict, temp);
+    }
+    else if (PyFrozenDict_Check(dict)) {
+        /* Convert frozendict to a mutable dict for merging. */
+        PyObject *temp = PyDict_New();
+        if (temp != NULL && PyDict_Update(temp, dict) < 0) {
+            Py_DECREF(temp);
+            temp = NULL;
+        }
+        Py_SETREF(dict, temp);
+    }
+    else {
+        Py_DECREF(dict);
+        dict = PyDict_New();
     }
 
     if (dict == NULL)
