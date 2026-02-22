@@ -4159,34 +4159,38 @@
 
         case _GUARD_IP__PUSH_FRAME: {
             PyObject *ip = (PyObject *)this_instr->operand0;
-            stack_pointer = sym_set_stack_depth(this_instr->operand1, stack_pointer);
+            (void)ip;
+            stack_pointer = sym_set_stack_depth((int)this_instr->operand1, stack_pointer);
             break;
         }
 
         case _GUARD_IP_YIELD_VALUE: {
             PyObject *ip = (PyObject *)this_instr->operand0;
+            (void)ip;
             if (ctx->frame->caller) {
                 REPLACE_OP(this_instr, _NOP, 0, 0);
             }
-            stack_pointer = sym_set_stack_depth(this_instr->operand1, stack_pointer);
+            stack_pointer = sym_set_stack_depth((int)this_instr->operand1, stack_pointer);
             break;
         }
 
         case _GUARD_IP_RETURN_VALUE: {
             PyObject *ip = (PyObject *)this_instr->operand0;
+            (void)ip;
             if (ctx->frame->caller) {
                 REPLACE_OP(this_instr, _NOP, 0, 0);
             }
-            stack_pointer = sym_set_stack_depth(this_instr->operand1, stack_pointer);
+            stack_pointer = sym_set_stack_depth((int)this_instr->operand1, stack_pointer);
             break;
         }
 
         case _GUARD_IP_RETURN_GENERATOR: {
             PyObject *ip = (PyObject *)this_instr->operand0;
+            (void)ip;
             if (ctx->frame->caller) {
                 REPLACE_OP(this_instr, _NOP, 0, 0);
             }
-            stack_pointer = sym_set_stack_depth(this_instr->operand1, stack_pointer);
+            stack_pointer = sym_set_stack_depth((int)this_instr->operand1, stack_pointer);
             break;
         }
 
