@@ -126,6 +126,10 @@
 /* Has builtin __atomic_load_n() and __atomic_store_n() functions */
 #undef HAVE_BUILTIN_ATOMIC
 
+/* Define if compiler supports __builtin_shufflevector with 128-bit vectors on
+   an architecture with native SIMD */
+#undef HAVE_BUILTIN_SHUFFLEVECTOR_AND_IT_IS_WORTH_USING
+
 /* Define to 1 if you have the <bzlib.h> header file. */
 #undef HAVE_BZLIB_H
 

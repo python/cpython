@@ -41,15 +41,7 @@ _Py_hexlify_scalar(const unsigned char *src, Py_UCS1 *dst, Py_ssize_t len)
 
    Speeding up the 16-64 byte cases fits nicely with md5 through sha512.
 */
-#if (defined(__x86_64__) || defined(__aarch64__) || \
-     (defined(__arm__) && defined(__ARM_NEON))) && \
-    (defined(__clang__) || (defined(__GNUC__) && __GNUC__ >= 12))
-#  define PY_HEXLIFY_CAN_COMPILE_SIMD 1
-#else
-#  define PY_HEXLIFY_CAN_COMPILE_SIMD 0
-#endif
-
-#if PY_HEXLIFY_CAN_COMPILE_SIMD
+#ifdef HAVE_BUILTIN_SHUFFLEVECTOR_AND_IT_IS_WORTH_USING
 
 /* 128-bit vector of 16 unsigned bytes */
 typedef unsigned char v16u8 __attribute__((vector_size(16)));
@@ -122,7 +114,7 @@ _Py_hexlify_simd(const unsigned char *src, Py_UCS1 *dst, Py_ssize_t len)
     _Py_hexlify_scalar(src + i, dst, len - i);
 }
 
-#endif /* PY_HEXLIFY_CAN_COMPILE_SIMD */
+#endif /* HAVE_BUILTIN_SHUFFLEVECTOR_AND_IT_IS_WORTH_USING */
 
 static PyObject *_Py_strhex_impl(const char* argbuf, const Py_ssize_t arglen,
                                  PyObject* sep, int bytes_per_sep_group,
@@ -202,7 +194,7 @@ static PyObject *_Py_strhex_impl(const char* argbuf, const Py_ssize_t arglen,
     unsigned char c;
 
     if (bytes_per_sep_group == 0) {
-#if PY_HEXLIFY_CAN_COMPILE_SIMD
+#ifdef HAVE_BUILTIN_SHUFFLEVECTOR_AND_IT_IS_WORTH_USING
         if (arglen >= 16) {
             // little vector units go brrrr...
             _Py_hexlify_simd((const unsigned char *)argbuf, retbuf, arglen);
