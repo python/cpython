@@ -357,10 +357,20 @@ verify_tests_present() {
 
 install_site_packages() {
   local site_pkg="$1"
+  local pip_cmd=""
 
-  require_cmd pip3
+  if command -v pip3 >/dev/null 2>&1; then
+    pip_cmd="pip3"
+  elif command -v python3 >/dev/null 2>&1 && python3 -m pip --version >/dev/null 2>&1; then
+    pip_cmd="python3 -m pip"
+  elif [[ -n "$NANVIX_TOOLCHAIN" && -x "$NANVIX_TOOLCHAIN/bin/python3" ]] && "$NANVIX_TOOLCHAIN/bin/python3" -m pip --version >/dev/null 2>&1; then
+    pip_cmd="$NANVIX_TOOLCHAIN/bin/python3 -m pip"
+  else
+    log "pip3 not found; skipping site-packages installation"
+    return 0
+  fi
 
-  pip3 install --target="$site_pkg" --no-deps --no-compile --quiet \
+  $pip_cmd install --target="$site_pkg" --no-deps --no-compile --quiet \
     absl-py==2.3.1 annotated-types==0.7.0 attrs==23.2.0 certifi \
     charset-normalizer==3.4.4 chess==1.9.2 click==8.3.0 \
     click-plugins==1.1.1.2 cligj==0.7.2 cloudpathlib==0.23.0 \
@@ -379,7 +389,7 @@ install_site_packages() {
     tzdata==2024.1 wasabi==1.1.3 wheel==0.45.1 \
     2>/dev/null || true
 
-  pip3 install --target="$site_pkg" --no-deps --no-compile --quiet \
+  $pip_cmd install --target="$site_pkg" --no-deps --no-compile --quiet \
     google-pasta==0.2.0 python-dateutil==2.8.2 Jinja2 \
     wrapt==2.0.1 smart-open==7.5.0 \
     pylatex==1.4.2 werkzeug rich pypdf PyPDF2==3.0.1 \
