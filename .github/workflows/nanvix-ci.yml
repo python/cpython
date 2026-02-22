@@ -231,6 +231,9 @@ jobs:
     container:
       image: nanvix/toolchain:latest-minimal
       options: --device /dev/kvm
+    defaults:
+      run:
+        shell: bash
     env:
       USER: runner
     steps:
