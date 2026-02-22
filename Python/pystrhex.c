@@ -26,20 +26,15 @@ _Py_hexlify_scalar(const unsigned char *src, Py_UCS1 *dst, Py_ssize_t len)
    native SIMD instructions (SSE2 punpcklbw/punpckhbw on x86-64 [always],
    NEON zip1/zip2 on ARM64 [always], & vzip on ARM32 when compiler flags
    for the target microarch allow it [try -march=native if running 32-bit
-   on an rpi3 or later]).
-
-   Requirements:
-   - GCC 12+ or Clang 3.0+ (for __builtin_shufflevector)
-   - x86-64, ARM64, or ARM32 with NEON
+   on an RPi3 or later]).
 
    Performance:
-   - Up to 11x faster on larger data than the scalar code.
    - For more common small data it varies between 1.1-3x faster.
+   - Up to 11x faster on larger data than the scalar code.
 
-   Even faster is possible for big data using AVX2 or AVX512 but
-   that adds complication. Honestly, who really hexes _huge_ data?!
-
-   Speeding up the 16-64 byte cases fits nicely with md5 through sha512.
+   While faster is possible for big data using AVX2 or AVX512, that
+   adds a ton of complication. Who ever really hexes huge data?
+   The 16-64 byte boosts align nicely with md5 - sha512 hexdigests.
 */
 #ifdef HAVE_BUILTIN_SHUFFLEVECTOR_AND_IT_IS_WORTH_USING
 
