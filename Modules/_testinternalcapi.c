@@ -1913,11 +1913,13 @@ dict_index_bytes_for_keys(PyDictKeysObject *keys)
     if (index_shift == 1) {
         return 2;
     }
-#if SIZEOF_VOID_P > 4
     if (index_shift == 3) {
+#if SIZEOF_VOID_P > 4
         return 8;
-    }
 #endif
+        /* Py_EMPTY_KEYS uses dk_log2_index_bytes=3 even on 32-bit builds. */
+        return 4;
+    }
     assert(index_shift == 2);
     return 4;
 }

@@ -648,9 +648,6 @@ static _PyDict_EmptyKeysStorage empty_keys_storage = {
     }
 };
 
-static_assert(offsetof(_PyDict_EmptyKeysStorage, keys) == 8,
-              "empty_keys_storage layout mismatch");
-
 #define Py_EMPTY_KEYS (&empty_keys_storage.keys)
 
 /* Uncomment to check the dict content in _PyDict_CheckConsistency() */
@@ -665,6 +662,7 @@ static_assert(offsetof(_PyDict_EmptyKeysStorage, keys) == 8,
 static inline int
 get_index_from_order(PyDictObject *mp, Py_ssize_t i)
 {
+    Py_BUILD_ASSERT(offsetof(_PyDict_EmptyKeysStorage, keys) == 8);
     assert(mp->ma_used <= SHARED_KEYS_MAX_SIZE);
     assert(i < mp->ma_values->size);
     uint8_t *array = get_insertion_order_array(mp->ma_values);
