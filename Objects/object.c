@@ -863,6 +863,26 @@ PyObject_ASCII(PyObject *v)
 }
 
 PyObject *
+PyObject_Pretty(PyObject *v)
+{
+    /* Call `pprint.pformat` */
+    PyObject *printer = PyImport_ImportModuleAttrString("pprint", "pformat");
+    if (!printer) {
+        return NULL;
+    }
+
+    PyObject *prettified = PyObject_CallOneArg(printer, v);
+
+    if (!prettified) {
+        Py_DECREF(printer);
+        return NULL;
+    }
+
+    Py_DECREF(printer);
+    return prettified;
+}
+
+PyObject *
 PyObject_Bytes(PyObject *v)
 {
     PyObject *result, *func;
