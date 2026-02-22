@@ -100,6 +100,7 @@ def _run_module_code(code, init_globals=None,
     # may be cleared when the temporary module goes away
     return mod_globals.copy()
 
+
 def _get_possible_name_list(wrong_name):
     try:
         if parent_name := wrong_name.rpartition('.')[0]:
@@ -113,6 +114,7 @@ def _get_possible_name_list(wrong_name):
         return d
     except Exception:
         return None
+
 
 # Helper to get the full name, spec and code for a module
 def _get_module_details(mod_name, error=ImportError):
