@@ -4210,7 +4210,7 @@ def bœr():
         stdout, stderr = self._run_pdb(
             ['-m', module_name], "", expected_returncode=1
         )
-        self.assertIn("ImportError: No module named t_main.__main__;", stdout)
+        self.assertIn("ImportError: No module named 't_main.__main__'", stdout)
 
     def test_package_without_a_main(self):
         pkg_name = 't_pkg'
@@ -4231,7 +4231,7 @@ def bœr():
     def test_nonexistent_module(self):
         assert not os.path.exists(os_helper.TESTFN)
         stdout, stderr = self._run_pdb(["-m", os_helper.TESTFN], "", expected_returncode=1)
-        self.assertIn(f"ImportError: No module named {os_helper.TESTFN}", stdout)
+        self.assertIn(f"ImportError: No module named {os_helper.TESTFN!r}", stdout)
 
     def test_dir_as_script(self):
         with os_helper.temp_dir() as temp_dir:

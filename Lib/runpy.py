@@ -156,7 +156,7 @@ def _get_module_details(mod_name, error=ImportError):
         if (d := _get_possible_name_list(mod_name)):
             from traceback import _calculate_closed_name
             if (suggestion := _calculate_closed_name(mod_name, d)):
-                message += ". Did you mean: %r" % suggestion
+                message += ". Did you mean: %r?" % suggestion
         raise error(message)
     if spec.submodule_search_locations is not None:
         if mod_name == "__main__" or mod_name.endswith(".__main__"):

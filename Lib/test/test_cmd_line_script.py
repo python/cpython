@@ -771,7 +771,7 @@ class CmdLineTest(unittest.TestCase):
                 "-Im", "script_pkg", cwd=work_dir
             )
             traceback_lines = stderr.decode().splitlines()
-            self.assertIn("No module named script_pkg", traceback_lines[-1])
+            self.assertIn("No module named 'script_pkg'", traceback_lines[-1])
 
     def test_nonexisting_script(self):
         # bpo-34783: "./python script.py" must not crash
@@ -829,6 +829,11 @@ class CmdLineTest(unittest.TestCase):
             )
             self.assertEqual(err.count(b': SyntaxWarning: '), 12)
 
+    def test_typo_in_module_name_suggests_similar_module(self):
+        # python -m randon  -> expect suggestion for 'random'
+        rc, out, err = assert_python_failure("-m", "randon")
+        self.assertIn(b"No module named 'randon'", err)
+        self.assertIn(b"Did you mean: 'random'?", err)
 
 def tearDownModule():
     support.reap_children()
