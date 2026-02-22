@@ -1,0 +1,1 @@
+suggest possible module in `python -m module` if the module name is wrong
