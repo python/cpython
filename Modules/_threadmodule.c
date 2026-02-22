@@ -140,7 +140,7 @@ typedef struct {
 
     PyMutex mutex;
 
-    PyEvent thread_is_bootstrapped;
+    PyEvent thread_is_running;
     // Set immediately before `thread_run` returns to indicate that the OS
     // thread is about to exit. This is used to avoid false positives when
     // detecting self-join attempts. See the comment in `ThreadHandle_join()`
@@ -233,7 +233,7 @@ ThreadHandle_new(void)
     self->os_handle = 0;
     self->has_os_handle = 0;
     self->thread_is_exiting = (PyEvent){0};
-    self->thread_is_bootstrapped = (PyEvent){0};
+    self->thread_is_running = (PyEvent){0};
     self->mutex = (PyMutex){_Py_UNLOCKED};
     self->once = (_PyOnceFlag){0};
     self->state = THREAD_HANDLE_NOT_STARTED;
@@ -326,7 +326,7 @@ _PyThread_AfterFork(struct _pythread_runtime_state *state)
         handle->once = (_PyOnceFlag){_Py_ONCE_INITIALIZED};
         handle->mutex = (PyMutex){_Py_UNLOCKED};
         _PyEvent_Notify(&handle->thread_is_exiting);
-        _PyEvent_Notify(&handle->thread_is_bootstrapped);
+        _PyEvent_Notify(&handle->thread_is_running);
         llist_remove(node);
         remove_from_shutdown_handles(handle);
     }
@@ -400,7 +400,7 @@ thread_run(void *boot_raw)
         }
         // Notify that bootstrap is done and failed (e.g. Memory error).
         set_thread_handle_state(handle, THREAD_HANDLE_FAILED);
-        _PyEvent_Notify(&handle->thread_is_bootstrapped);
+        _PyEvent_Notify(&handle->thread_is_running);
     }
     else {
         Py_DECREF(res);
@@ -719,10 +719,10 @@ PyThreadHandleObject_join(PyObject *op, PyObject *args)
 }
 
 static PyObject *
-PyThreadHandleObject_is_bootstrapped(PyObject *op, PyObject *Py_UNUSED(dummy))
+PyThreadHandleObject_is_running(PyObject *op, PyObject *Py_UNUSED(dummy))
 {
     PyThreadHandleObject *self = PyThreadHandleObject_CAST(op);
-    if (_PyEvent_IsSet(&self->handle->thread_is_bootstrapped)) {
+    if (_PyEvent_IsSet(&self->handle->thread_is_running)) {
         Py_RETURN_TRUE;
     }
     else {
@@ -731,31 +731,24 @@ PyThreadHandleObject_is_bootstrapped(PyObject *op, PyObject *Py_UNUSED(dummy))
 }
 
 static PyObject *
-PyThreadHandleObject_wait_bootstrapped(PyObject *op, PyObject *Py_UNUSED(dummy))
+PyThreadHandleObject_wait_running(PyObject *op, PyObject *Py_UNUSED(dummy))
 {
     PyThreadHandleObject *self = PyThreadHandleObject_CAST(op);
-    PyEvent_Wait(&self->handle->thread_is_bootstrapped);
-    Py_RETURN_NONE;
-}
-
-static PyObject *
-PyThreadHandleObject_set_bootstrapped(PyObject *op, PyObject *Py_UNUSED(dummy))
-{
-    PyThreadHandleObject *self = PyThreadHandleObject_CAST(op);
-    _PyEvent_Notify(&self->handle->thread_is_bootstrapped);
-    Py_RETURN_NONE;
-}
-
-static PyObject *
-PyThreadHandleObject_is_failed(PyObject *op, PyObject *Py_UNUSED(dummy))
-{
-    PyThreadHandleObject *self = PyThreadHandleObject_CAST(op);
+    PyEvent_Wait(&self->handle->thread_is_running);
     if (get_thread_handle_state(self->handle) == THREAD_HANDLE_FAILED) {
-        Py_RETURN_TRUE;
-    }
-    else {
         Py_RETURN_FALSE;
     }
+    else {
+        Py_RETURN_TRUE;
+    }
+}
+
+static PyObject *
+PyThreadHandleObject_set_running(PyObject *op, PyObject *Py_UNUSED(dummy))
+{
+    PyThreadHandleObject *self = PyThreadHandleObject_CAST(op);
+    _PyEvent_Notify(&self->handle->thread_is_running);
+    Py_RETURN_NONE;
 }
 
 static PyObject *
@@ -791,10 +784,9 @@ static PyGetSetDef ThreadHandle_getsetlist[] = {
 static PyMethodDef ThreadHandle_methods[] = {
     {"join", PyThreadHandleObject_join, METH_VARARGS, NULL},
     {"_set_done", PyThreadHandleObject_set_done, METH_NOARGS, NULL},
-    {"wait_bootstrapped", PyThreadHandleObject_wait_bootstrapped, METH_NOARGS, NULL},
-    {"set_bootstrapped", PyThreadHandleObject_set_bootstrapped, METH_NOARGS, NULL},
-    {"is_bootstrapped", PyThreadHandleObject_is_bootstrapped, METH_NOARGS, NULL},
-    {"is_failed", PyThreadHandleObject_is_failed, METH_NOARGS, NULL},
+    {"wait_running", PyThreadHandleObject_wait_running, METH_NOARGS, NULL},
+    {"set_running", PyThreadHandleObject_set_running, METH_NOARGS, NULL},
+    {"is_running", PyThreadHandleObject_is_running, METH_NOARGS, NULL},
     {"is_done", PyThreadHandleObject_is_done, METH_NOARGS, NULL},
     {0, 0}
 };
@@ -2522,7 +2514,7 @@ thread__make_thread_handle(PyObject *module, PyObject *identobj)
     hobj->handle->ident = ident;
     hobj->handle->state = THREAD_HANDLE_RUNNING;
     PyMutex_Unlock(&hobj->handle->mutex);
-    _PyEvent_Notify(&hobj->handle->thread_is_bootstrapped);
+    _PyEvent_Notify(&hobj->handle->thread_is_running);
     return (PyObject*) hobj;
 }
 
