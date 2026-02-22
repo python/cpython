@@ -45,7 +45,7 @@ jobs:
 
   windows:
     name: ${{ matrix.target }} (${{ matrix.debug && 'Debug' || 'Release' }})
-    needs: interpreter
+
     runs-on: ${{ matrix.runner }}
     timeout-minutes: 60
     strategy:
@@ -85,7 +85,7 @@ jobs:
 
   macos:
     name: ${{ matrix.target }} (${{ matrix.debug && 'Debug' || 'Release' }})
-    needs: interpreter
+
     runs-on: ${{ matrix.runner }}
     timeout-minutes: 60
     strategy:
@@ -128,7 +128,7 @@ jobs:
 
   linux:
     name: ${{ matrix.target }} (${{ matrix.debug && 'Debug' || 'Release' }})
-    needs: interpreter
+
     runs-on: ${{ matrix.runner }}
     timeout-minutes: 60
     strategy:
@@ -164,7 +164,7 @@ jobs:
 
   linux-extras:
     name: ${{ matrix.name }}
-    needs: interpreter
+
     runs-on: ubuntu-24.04
     timeout-minutes: 60
     strategy:
