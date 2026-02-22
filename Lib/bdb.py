@@ -177,6 +177,17 @@ class _MonitoringTracer:
         return last_lineno
 
 
+def _get_executable_linenos(code):
+    linenos = set()
+    for _, _, lineno in code.co_lines():
+        if lineno is not None:
+            linenos.add(lineno)
+    for const in code.co_consts:
+        if hasattr(const, 'co_lines'):
+            linenos |= _get_executable_linenos(const)
+    return linenos
+
+
 class Bdb:
     """Generic Python debugger base class.
 
@@ -671,6 +682,15 @@ class Bdb:
         line = linecache.getline(filename, lineno)
         if not line:
             return 'Line %s:%d does not exist' % (filename, lineno)
+        source = ''.join(linecache.getlines(filename))
+        if source:
+            try:
+                code = compile(source, filename, 'exec')
+                executable_lines = _get_executable_linenos(code)
+                if executable_lines and lineno not in executable_lines:
+                    return 'Line %d has no code associated with it' % lineno
+            except SyntaxError:
+                pass
         self._add_to_breaks(filename, lineno)
         bp = Breakpoint(filename, lineno, temporary, cond, funcname)
         # After we set a new breakpoint, we need to search through all frames
