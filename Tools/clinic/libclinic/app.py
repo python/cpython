@@ -121,6 +121,7 @@ impl_definition block
             'impl_prototype': d('file'),
             'parser_prototype': d('suppress'),
             'parser_definition': d('file'),
+            'vectorcall_definition': d('file'),
             'cpp_endif': d('file'),
             'methoddef_ifndef': d('file', 1),
             'impl_definition': d('block'),

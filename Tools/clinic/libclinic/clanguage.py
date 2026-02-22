@@ -14,7 +14,7 @@ from libclinic.language import Language
 from libclinic.function import (
     Module, Class, Function, Parameter,
     permute_optional_groups,
-    GETTER, SETTER, METHOD_INIT)
+    GETTER, SETTER, METHOD_INIT, METHOD_NEW)
 from libclinic.converters import self_converter
 from libclinic.parse_args import ParseArgsCodeGen
 if TYPE_CHECKING:
@@ -477,6 +477,24 @@ class CLanguage(Language):
         template_dict['impl_parameters'] = ", ".join(data.impl_parameters)
         template_dict['parser_parameters'] = ", ".join(data.impl_parameters[1:])
         template_dict['impl_arguments'] = ", ".join(data.impl_arguments)
+
+        # Vectorcall impl arguments: replace self/type with the appropriate
+        # expression for the vectorcall calling convention.
+        if f.vectorcall and f.cls:
+            if f.kind is METHOD_INIT:
+                # For __init__: self is a locally-allocated PyObject*
+                vc_first = f"({f.cls.typedef})self"
+            elif f.kind is METHOD_NEW:
+                # For __new__: type is PyObject* in vectorcall, need cast
+                vc_first = "_PyType_CAST(type)"
+            else:
+                raise AssertionError(
+                    f"Unhandled function kind for vectorcall: {f.kind!r}"
+                )
+            vc_impl_args = [vc_first] + data.impl_arguments[1:]
+            template_dict['vc_impl_arguments'] = ", ".join(vc_impl_args)
+        else:
+            template_dict['vc_impl_arguments'] = ""
 
         template_dict['return_conversion'] = libclinic.format_escape("".join(data.return_conversion).rstrip())
         template_dict['post_parsing'] = libclinic.format_escape("".join(data.post_parsing).rstrip())

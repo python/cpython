@@ -302,6 +302,9 @@ class DSLParser:
         self.critical_section = False
         self.target_critical_section = []
         self.disable_fastcall = False
+        self.vectorcall = False
+        self.vectorcall_exact_only = False
+        self.vectorcall_zero_arg = ''
         self.permit_long_summary = False
         self.permit_long_docstring_body = False
 
@@ -466,6 +469,24 @@ class DSLParser:
             fail("Can't set @staticmethod, function is not a normal callable")
         self.kind = STATIC_METHOD
 
+    def at_vectorcall(self, *args: str) -> None:
+        if self.vectorcall:
+            fail("Called @vectorcall twice!")
+        self.vectorcall = True
+        for arg in args:
+            if '=' in arg:
+                key, value = arg.split('=', 1)
+            else:
+                key, value = arg, ''
+            if key == 'exact_only':
+                self.vectorcall_exact_only = True
+            elif key == 'zero_arg':
+                if not value:
+                    fail("@vectorcall zero_arg requires a value")
+                self.vectorcall_zero_arg = value
+            else:
+                fail(f"@vectorcall: unknown argument {key!r}")
+
     def at_coexist(self) -> None:
         if self.coexist:
             fail("Called @coexist twice!")
@@ -599,6 +620,10 @@ class DSLParser:
         elif name == '__init__':
             self.kind = METHOD_INIT
 
+        # Validate @vectorcall usage.
+        if self.vectorcall and not self.kind.new_or_init:
+            fail("@vectorcall can only be used with __init__ and __new__ methods currently")
+
     def resolve_return_converter(
         self, full_name: str, forced_converter: str
     ) -> CReturnConverter:
@@ -723,7 +748,10 @@ class DSLParser:
             critical_section=self.critical_section,
             disable_fastcall=self.disable_fastcall,
             target_critical_section=self.target_critical_section,
-            forced_text_signature=self.forced_text_signature
+            forced_text_signature=self.forced_text_signature,
+            vectorcall=self.vectorcall,
+            vectorcall_exact_only=self.vectorcall_exact_only,
+            vectorcall_zero_arg=self.vectorcall_zero_arg,
         )
         self.add_function(func)
 
