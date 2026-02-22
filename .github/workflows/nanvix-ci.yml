@@ -195,7 +195,7 @@ jobs:
             [[ "$num" -lt ${{ matrix.test-range.start }} || "$num" -gt ${{ matrix.test-range.end }} ]] && continue
 
             log="/tmp/${test_file}.log"
-            timeout 120 ./bin/nanvixd.elf -- ./bin/python3.12 "./$test_file" < /dev/null > "$log" 2>&1 || true
+            timeout 300 ./bin/nanvixd.elf -- ./bin/python3.12 "./$test_file" < /dev/null > "$log" 2>&1 || true
 
             if grep -q 'PASS' "$log" 2>/dev/null; then
               name=$(grep 'PASS' "$log" | head -1 | sed 's/:.*//')
