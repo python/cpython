@@ -16,8 +16,8 @@ EXTRACT_DIR="$WORK_DIR/extracted"
 ENV_FILE="$WORK_DIR/env.sh"
 STAGING="${STAGING:-$WORK_DIR/staging}"
 RUN_BASIC_TESTS="${RUN_BASIC_TESTS:-1}"
-BATCH_START="${BATCH_START:-1}"
-BATCH_END="${BATCH_END:-21}"
+TEST_START="${TEST_START:-1}"
+TEST_END="${TEST_END:-999}"
 TIMEOUT_SECONDS="${TIMEOUT_SECONDS:-300}"
 
 log() {
@@ -353,6 +353,11 @@ cmd_build() {
 verify_tests_present() {
   [[ -d "$WORK_DIR/tests" ]] || die "missing directory: $WORK_DIR/tests"
   [[ -f "$WORK_DIR/tests/smoke_test_l2.py" ]] || die "missing smoke test: $WORK_DIR/tests/smoke_test_l2.py"
+  [[ -d "$WORK_DIR/tests/func" ]] || die "missing directory: $WORK_DIR/tests/func"
+  local count
+  count=$(find "$WORK_DIR/tests/func" -name 'test_*.py' | wc -l)
+  [[ "$count" -gt 0 ]] || die "no functional tests found in $WORK_DIR/tests/func"
+  log "found $count functional tests"
 }
 
 install_site_packages() {
@@ -445,12 +450,12 @@ run_functional_tests() {
   local total_pass=0
   local total_fail=0
   local total_skip=0
-  local failed_batches=""
+  local failed_tests=""
 
-  for batch_file in "$WORK_DIR"/tests/test_func_batch*.py; do
-    cp "$batch_file" "$test_sysroot/" 2>/dev/null || true
-  done
+  # Copy individual test files into the test sysroot
+  cp "$WORK_DIR"/tests/func/test_*.py "$test_sysroot/" 2>/dev/null || true
 
+  # Optionally precompile stdlib and tests
   local host_python=""
   if [[ -n "$NANVIX_TOOLCHAIN" && -x "$NANVIX_TOOLCHAIN/bin/python3" ]]; then
     host_python="$NANVIX_TOOLCHAIN/bin/python3"
@@ -459,37 +464,37 @@ run_functional_tests() {
   fi
   if [[ -n "$host_python" ]]; then
     "$host_python" -m compileall -q "$test_sysroot/lib/python3.12/" 2>/dev/null || true
-    "$host_python" -m compileall -q "$test_sysroot"/test_func_batch*.py 2>/dev/null || true
+    "$host_python" -m compileall -q "$test_sysroot"/test_*.py 2>/dev/null || true
   fi
 
-  for batch in $(seq "$BATCH_START" "$BATCH_END"); do
-    [[ $batch -eq 11 || $batch -eq 12 ]] && continue
-
-    local test_file="$test_sysroot/test_func_batch${batch}.py"
+  # Run each test individually
+  for test_file in "$test_sysroot"/test_[0-9]*.py; do
     [[ ! -f "$test_file" ]] && continue
+    local test_basename
+    test_basename=$(basename "$test_file")
 
-    local log_file="/tmp/batch${batch}.log"
+    # Extract test number for range filtering
+    local test_num
+    test_num=$(echo "$test_basename" | grep -oP '(?<=test_)\d+' | sed 's/^0*//' )
+    [[ -z "$test_num" ]] && test_num=0
+    [[ "$test_num" -lt "$TEST_START" || "$test_num" -gt "$TEST_END" ]] && continue
+
+    local log_file="/tmp/${test_basename}.log"
     cd "$test_sysroot"
-    timeout "$TIMEOUT_SECONDS" ./bin/nanvixd.elf -- ./bin/python3.12 "./test_func_batch${batch}.py" < /dev/null > "$log_file" 2>&1 || true
+    timeout "$TIMEOUT_SECONDS" ./bin/nanvixd.elf -- ./bin/python3.12 "./$test_basename" < /dev/null > "$log_file" 2>&1 || true
 
-    local pass_count fail_count
-    pass_count=$(grep -c 'PASS' "$log_file" 2>/dev/null || echo 0)
-    fail_count=$(grep -c 'FAIL' "$log_file" 2>/dev/null || echo 0)
-    pass_count=$(echo "$pass_count" | tr -d '[:space:]')
-    fail_count=$(echo "$fail_count" | tr -d '[:space:]')
-
-    if [[ ! -s "$log_file" ]] || ! grep -qE 'PASS|FAIL' "$log_file" 2>/dev/null; then
-      echo "batch ${batch}: SKIP"
-      total_skip=$((total_skip + 1))
-    elif [[ "$fail_count" -gt 0 ]]; then
-      echo "batch ${batch}: ${pass_count} PASS, ${fail_count} FAIL"
+    if grep -q 'PASS' "$log_file" 2>/dev/null; then
+      local test_name
+      test_name=$(grep 'PASS' "$log_file" | head -1 | sed 's/:.*//')
+      echo "  $test_name: PASS"
+      total_pass=$((total_pass + 1))
+    elif grep -q 'FAIL' "$log_file" 2>/dev/null; then
       grep 'FAIL' "$log_file" 2>/dev/null || true
-      total_pass=$((total_pass + pass_count))
-      total_fail=$((total_fail + fail_count))
-      failed_batches="${failed_batches}batch${batch} "
+      total_fail=$((total_fail + 1))
+      failed_tests="${failed_tests}${test_basename} "
     else
-      echo "batch ${batch}: ${pass_count} PASS"
-      total_pass=$((total_pass + pass_count))
+      echo "  ${test_basename}: SKIP"
+      total_skip=$((total_skip + 1))
     fi
 
     rm -f "$log_file"
@@ -498,7 +503,7 @@ run_functional_tests() {
   echo "Results: ${total_pass} passed, ${total_fail} failed, ${total_skip} skipped"
 
   if [[ "$total_fail" -gt 0 ]]; then
-    echo "Failed batches: ${failed_batches}"
+    echo "Failed tests: ${failed_tests}"
     exit 1
   fi
 
