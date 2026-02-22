@@ -182,6 +182,14 @@ class QueryTestCase(unittest.TestCase):
             self.assertTrue(pp.isreadable(safe),
                             "expected isreadable for %r" % (safe,))
 
+    def test_isreadable_float_specials(self):
+        # inf, -inf, nan are not valid Python literals so isreadable should be False
+        for v in (float("inf"), float("-inf"), float("nan")):
+            self.assertFalse(pprint.isreadable(v),
+                             "expected not isreadable for %r" % (v,))
+            self.assertFalse(pprint.PrettyPrinter().isreadable(v),
+                             "expected not isreadable for %r" % (v,))
+
     def test_stdout_is_None(self):
         with contextlib.redirect_stdout(None):
             # smoke test - there is no output to check

@@ -627,7 +627,10 @@ class PrettyPrinter:
         # Return triple (repr_string, isreadable, isrecursive).
         typ = type(object)
         if typ in _builtin_scalars:
-            return repr(object), True, False
+            rep = repr(object)
+            if typ is float and rep in ("inf", "-inf", "nan"):
+                return rep, False, False
+            return rep, True, False
 
         r = getattr(typ, "__repr__", None)
 
