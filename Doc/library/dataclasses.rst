@@ -371,8 +371,8 @@ Module contents
    Converts the dataclass *obj* to a dict (by using the
    factory function *dict_factory*).  Each dataclass is converted
    to a dict of its fields, as ``name: value`` pairs.  dataclasses, dicts,
-   lists, and tuples are recursed into.  Other objects are copied with
-   :func:`copy.deepcopy`.
+   frozendicts, lists, and tuples are recursed into.  Other objects are copied
+   with :func:`copy.deepcopy`.
 
    Example of using :func:`!asdict` on nested dataclasses::
 
@@ -402,8 +402,8 @@ Module contents
 
    Converts the dataclass *obj* to a tuple (by using the
    factory function *tuple_factory*).  Each dataclass is converted
-   to a tuple of its field values.  dataclasses, dicts, lists, and
-   tuples are recursed into. Other objects are copied with
+   to a tuple of its field values.  dataclasses, dicts, frozendicts, lists,
+   and tuples are recursed into. Other objects are copied with
    :func:`copy.deepcopy`.
 
    Continuing from the previous example::
