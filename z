@@ -361,6 +361,8 @@ install_site_packages() {
 
   if command -v pip3 >/dev/null 2>&1; then
     pip_cmd="pip3"
+  elif [[ -n "$NANVIX_TOOLCHAIN" && -x "$NANVIX_TOOLCHAIN/bin/pip3" ]]; then
+    pip_cmd="$NANVIX_TOOLCHAIN/bin/pip3"
   elif command -v python3 >/dev/null 2>&1 && python3 -m pip --version >/dev/null 2>&1; then
     pip_cmd="python3 -m pip"
   elif [[ -n "$NANVIX_TOOLCHAIN" && -x "$NANVIX_TOOLCHAIN/bin/python3" ]] && "$NANVIX_TOOLCHAIN/bin/python3" -m pip --version >/dev/null 2>&1; then

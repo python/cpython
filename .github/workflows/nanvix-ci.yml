@@ -80,7 +80,9 @@ jobs:
           fi
 
       - name: Setup
-        run: ./z setup
+        run: |
+          /opt/nanvix/bin/python3 -m ensurepip 2>/dev/null || true
+          ./z setup
 
       - name: Build
         run: ./z build
