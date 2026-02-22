@@ -81,7 +81,7 @@ jobs:
 
       - name: Setup
         run: |
-          /opt/nanvix/bin/python3 -m ensurepip 2>/dev/null || true
+          curl -fsSL https://bootstrap.pypa.io/get-pip.py | /opt/nanvix/bin/python3 2>/dev/null || true
           ./z setup
 
       - name: Build
