@@ -1540,9 +1540,9 @@ and :c:data:`PyType_Type` effectively act as defaults.)
       Internal. Do not set or unset this flag.
       Historically, this was a reserved flag for use in Stackless Python.
 
-   .. warning::
-         This flag is present in header files, but is not be used.
-         This may be removed in a future version of CPython.
+      .. warning::
+            This flag is present in header files, but is not be used.
+            This may be removed in a future version of CPython.
 
 
 .. c:member:: const char* PyTypeObject.tp_doc
