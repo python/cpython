@@ -1903,6 +1903,53 @@ dict_getitem_knownhash(PyObject *self, PyObject *args)
     return Py_XNewRef(result);
 }
 
+static size_t
+dict_index_bytes_for_keys(PyDictKeysObject *keys)
+{
+    int index_shift = keys->dk_log2_index_bytes - DK_LOG_SIZE(keys);
+    if (index_shift == 0) {
+        return 1;
+    }
+    if (index_shift == 1) {
+        return 2;
+    }
+#if SIZEOF_VOID_P > 4
+    if (index_shift == 3) {
+        return 8;
+    }
+#endif
+    assert(index_shift == 2);
+    return 4;
+}
+
+static PyObject*
+dict_check_indices_layout(PyObject *self, PyObject *arg)
+{
+    if (!PyAnyDict_Check(arg)) {
+        PyErr_SetString(PyExc_TypeError, "expected a dict");
+        return NULL;
+    }
+
+    PyDictObject *mp = (PyDictObject *)arg;
+    PyDictKeysObject *keys = mp->ma_keys;
+
+    size_t indices_size = (size_t)1 << keys->dk_log2_index_bytes;
+    char *base = (char *)_DK_ALLOC_BASE(keys);
+    char *header = (char *)keys;
+    char *entries = (char *)_DK_ENTRIES(keys);
+
+    bool ok = true;
+    ok &= (header == base + indices_size);
+    ok &= (entries == header + sizeof(PyDictKeysObject));
+
+    size_t index_bytes = dict_index_bytes_for_keys(keys);
+    char *idx_base = (char *)_DK_INDICES_BASE(keys);
+    /* Index 0 is stored immediately before the header. */
+    char *idx0 = (char *)_DK_INDICES_END(keys) - (ptrdiff_t)index_bytes;
+    ok &= (idx0 == idx_base + indices_size - (ptrdiff_t)index_bytes);
+
+    return PyBool_FromLong(ok);
+}
 
 static int
 _init_interp_config_from_object(PyInterpreterConfig *config, PyObject *obj)
@@ -2902,6 +2949,7 @@ static PyMethodDef module_functions[] = {
     {"get_object_dict_values", get_object_dict_values, METH_O},
     {"hamt", new_hamt, METH_NOARGS},
     {"dict_getitem_knownhash",  dict_getitem_knownhash,          METH_VARARGS},
+    {"dict_check_indices_layout", dict_check_indices_layout,     METH_O},
     {"create_interpreter", _PyCFunction_CAST(create_interpreter),
      METH_VARARGS | METH_KEYWORDS},
     {"destroy_interpreter", _PyCFunction_CAST(destroy_interpreter),

@@ -1,0 +1,4 @@
+Restructure ``PyDictKeysObject`` memory layout so the indices array is stored
+before the object header, and update dict index access accordingly. In local
+dict-operation microbenchmarks this was about 1.4% faster overall, with most
+operations improving by roughly 1-2% (:gh:`142889`).

@@ -835,19 +835,8 @@ class PyDictObjectPtr(PyObjectPtr):
     @staticmethod
     def _get_entries(keys):
         dk_nentries = int(keys['dk_nentries'])
-        dk_size = 1<<int(keys['dk_log2_size'])
-
-        if dk_size <= 0xFF:
-            offset = dk_size
-        elif dk_size <= 0xFFFF:
-            offset = 2 * dk_size
-        elif dk_size <= 0xFFFFFFFF:
-            offset = 4 * dk_size
-        else:
-            offset = 8 * dk_size
 
         ent_addr = keys['dk_indices'].address
-        ent_addr = ent_addr.cast(_type_unsigned_char_ptr()) + offset
         if int(keys['dk_kind']) == 0:  # DICT_KEYS_GENERAL
             ent_ptr_t = gdb.lookup_type('PyDictKeyEntry').pointer()
         else:

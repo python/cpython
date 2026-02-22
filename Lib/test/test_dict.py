@@ -1711,6 +1711,21 @@ class CAPITest(unittest.TestCase):
         self.assertEqual(dict_getitem_knownhash(d, k1, hash(k1)), 1)
         self.assertRaises(Exc, dict_getitem_knownhash, d, k2, hash(k2))
 
+    @support.cpython_only
+    def test_indices_layout(self):
+        _testinternalcapi = import_helper.import_module('_testinternalcapi')
+        check_layout = _testinternalcapi.dict_check_indices_layout
+
+        dicts = [
+            {},
+            {i: i for i in range(10)},
+            {i: i for i in range(200)},
+            {i: i for i in range(2000)},
+            {i: i for i in range(70000)},
+        ]
+        for d in dicts:
+            with self.subTest(size=len(d)):
+                self.assertTrue(check_layout(d))
 
 from test import mapping_tests
 
