@@ -1546,7 +1546,7 @@ def _asdict_inner(obj, dict_factory):
             return obj_type(*[_asdict_inner(v, dict_factory) for v in obj])
         else:
             return obj_type(_asdict_inner(v, dict_factory) for v in obj)
-    elif issubclass(obj_type, dict):
+    elif issubclass(obj_type, (dict, frozendict)):
         if hasattr(obj_type, 'default_factory'):
             # obj is a defaultdict, which has a different constructor from
             # dict as it requires the default_factory as its first arg.
@@ -1610,7 +1610,7 @@ def _astuple_inner(obj, tuple_factory):
         # generator (which is not true for namedtuples, handled
         # above).
         return type(obj)(_astuple_inner(v, tuple_factory) for v in obj)
-    elif isinstance(obj, dict):
+    elif isinstance(obj, (dict, frozendict)):
         obj_type = type(obj)
         if hasattr(obj_type, 'default_factory'):
             # obj is a defaultdict, which has a different constructor from

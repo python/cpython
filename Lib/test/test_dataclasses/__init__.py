@@ -1693,17 +1693,24 @@ class TestCase(unittest.TestCase):
         class GroupDict:
             id: int
             users: Dict[str, User]
+        @dataclass
+        class GroupFrozenDict:
+            id: int
+            users: frozendict[str, User]
         a = User('Alice', 1)
         b = User('Bob', 2)
         gl = GroupList(0, [a, b])
         gt = GroupTuple(0, (a, b))
         gd = GroupDict(0, {'first': a, 'second': b})
+        gfd = GroupFrozenDict(0, frozendict({'first': a, 'second': b}))
         self.assertEqual(asdict(gl), {'id': 0, 'users': [{'name': 'Alice', 'id': 1},
                                                          {'name': 'Bob', 'id': 2}]})
         self.assertEqual(asdict(gt), {'id': 0, 'users': ({'name': 'Alice', 'id': 1},
                                                          {'name': 'Bob', 'id': 2})})
-        self.assertEqual(asdict(gd), {'id': 0, 'users': {'first': {'name': 'Alice', 'id': 1},
-                                                         'second': {'name': 'Bob', 'id': 2}}})
+        expected_dict = {'id': 0, 'users': {'first': {'name': 'Alice', 'id': 1},
+                                            'second': {'name': 'Bob', 'id': 2}}}
+        self.assertEqual(asdict(gd), expected_dict)
+        self.assertEqual(asdict(gfd), expected_dict)
 
     def test_helper_asdict_builtin_object_containers(self):
         @dataclass
@@ -1884,14 +1891,21 @@ class TestCase(unittest.TestCase):
         class GroupDict:
             id: int
             users: Dict[str, User]
+        @dataclass
+        class GroupFrozenDict:
+            id: int
+            users: frozendict[str, User]
         a = User('Alice', 1)
         b = User('Bob', 2)
         gl = GroupList(0, [a, b])
         gt = GroupTuple(0, (a, b))
         gd = GroupDict(0, {'first': a, 'second': b})
+        gfd = GroupFrozenDict(0, frozendict({'first': a, 'second': b}))
         self.assertEqual(astuple(gl), (0, [('Alice', 1), ('Bob', 2)]))
         self.assertEqual(astuple(gt), (0, (('Alice', 1), ('Bob', 2))))
-        self.assertEqual(astuple(gd), (0, {'first': ('Alice', 1), 'second': ('Bob', 2)}))
+        d = {'first': ('Alice', 1), 'second': ('Bob', 2)}
+        self.assertEqual(astuple(gd), (0, d))
+        self.assertEqual(astuple(gfd), (0, frozendict(d)))
 
     def test_helper_astuple_builtin_object_containers(self):
         @dataclass
