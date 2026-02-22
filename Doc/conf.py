@@ -39,6 +39,7 @@ extensions = [
     'sphinx.ext.coverage',
     'sphinx.ext.doctest',
     'sphinx.ext.extlinks',
+    'linklint.ext',
 ]
 
 # Skip if downstream redistributors haven't installed them
