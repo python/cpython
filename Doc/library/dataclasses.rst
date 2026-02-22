@@ -4,9 +4,6 @@
 .. module:: dataclasses
     :synopsis: Generate special methods on user-defined classes.
 
-.. moduleauthor:: Eric V. Smith <eric@trueblade.com>
-.. sectionauthor:: Eric V. Smith <eric@trueblade.com>
-
 **Source code:** :source:`Lib/dataclasses.py`
 
 --------------
@@ -332,6 +329,10 @@ Module contents
    The class attribute :attr:`!C.z` will be ``10``, the class attribute
    :attr:`!C.t` will be ``20``, and the class attributes :attr:`!C.x` and
    :attr:`!C.y` will not be set.
+
+   .. versionchanged:: next
+      If *metadata* is ``None``, use an empty :class:`frozendict`, instead
+      of a :func:`~types.MappingProxyType` of an empty :class:`dict`.
 
 .. class:: Field
 

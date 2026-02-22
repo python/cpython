@@ -13,7 +13,7 @@ jobs:
     timeout-minutes: 60
     env:
       WASMTIME_VERSION: 38.0.3
-      WASI_SDK_VERSION: 29
+      WASI_SDK_VERSION: 30
       WASI_SDK_PATH: /opt/wasi-sdk
       CROSS_BUILD_PYTHON: cross-build/build
       CROSS_BUILD_WASI: cross-build/wasm32-wasip1

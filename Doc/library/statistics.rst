@@ -4,9 +4,6 @@
 .. module:: statistics
    :synopsis: Mathematical statistics functions
 
-.. moduleauthor:: Steven D'Aprano <steve+python@pearwood.info>
-.. sectionauthor:: Steven D'Aprano <steve+python@pearwood.info>
-
 .. versionadded:: 3.4
 
 **Source code:** :source:`Lib/statistics.py`

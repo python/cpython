@@ -75,7 +75,7 @@ The :mod:`!binascii` module defines the following functions:
    .. versionchanged:: 3.11
       Added the *strict_mode* parameter.
 
-   .. versionchanged:: next
+   .. versionchanged:: 3.15
       Added the *ignorechars* parameter.
 
 
@@ -122,7 +122,7 @@ The :mod:`!binascii` module defines the following functions:
 
    Invalid Ascii85 data will raise :exc:`binascii.Error`.
 
-   .. versionadded:: next
+   .. versionadded:: 3.15
 
 
 .. function:: b2a_ascii85(data, /, *, foldspaces=False, wrapcol=0, pad=False, adobe=False)
@@ -145,7 +145,7 @@ The :mod:`!binascii` module defines the following functions:
    *adobe* controls whether the encoded byte sequence is framed with ``<~``
    and ``~>``, which is used by the Adobe implementation.
 
-   .. versionadded:: next
+   .. versionadded:: 3.15
 
 
 .. function:: a2b_base85(string, /)
@@ -160,7 +160,7 @@ The :mod:`!binascii` module defines the following functions:
 
    Invalid Base85 data will raise :exc:`binascii.Error`.
 
-   .. versionadded:: next
+   .. versionadded:: 3.15
 
 
 .. function:: b2a_base85(data, /, *, pad=False)
@@ -171,7 +171,7 @@ The :mod:`!binascii` module defines the following functions:
    If *pad* is true, the input is padded with ``b'\0'`` so its length is a
    multiple of 4 bytes before encoding.
 
-   .. versionadded:: next
+   .. versionadded:: 3.15
 
 
 .. function:: a2b_z85(string, /)
@@ -188,7 +188,7 @@ The :mod:`!binascii` module defines the following functions:
 
    Invalid Z85 data will raise :exc:`binascii.Error`.
 
-   .. versionadded:: next
+   .. versionadded:: 3.15
 
 
 .. function:: b2a_z85(data, /, *, pad=False)
@@ -201,7 +201,7 @@ The :mod:`!binascii` module defines the following functions:
 
    See `Z85 specification <https://rfc.zeromq.org/spec/32/>`_ for more information.
 
-   .. versionadded:: next
+   .. versionadded:: 3.15
 
 
 .. function:: a2b_qp(data, header=False)
