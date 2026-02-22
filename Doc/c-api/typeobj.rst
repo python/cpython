@@ -1498,11 +1498,13 @@ and :c:data:`PyType_Type` effectively act as defaults.)
          This flag is present in header files, but is not be used.
          It will be removed in a future version of CPython
 
+
    .. c:macro:: Py_TPFLAGS_HAVE_VERSION_TAG
          This is a :term:`soft deprecated` macro that does nothing.
          Historically, this would indicate that the
          :c:member:`~PyTypeObject.tp_version_tag` field was available and
          initialized.
+
 
    .. c:macro:: Py_TPFLAGS_INLINE_VALUES
          This bit indicates that instances of this type will have an "inline values"
@@ -1517,6 +1519,7 @@ and :c:data:`PyType_Type` effectively act as defaults.)
 
          .. versionadded:: 3.13
 
+
    .. c:macro:: Py_TPFLAGS_IS_ABSTRACT
       This bit indicates that this is an abstract type and therefore cannot
       be instantiated.
@@ -1527,6 +1530,7 @@ and :c:data:`PyType_Type` effectively act as defaults.)
 
       .. seealso::
          :mod:`abc`
+
 
    .. c:macro:: Py_TPFLAGS_HAVE_STACKLESS_EXTENSION
 
