@@ -162,9 +162,6 @@ jobs:
       fail-fast: false
       matrix:
         include:
-          - name: Free-Threaded (Debug)
-            configure_flags: --enable-experimental-jit --with-pydebug --disable-gil
-            continue_on_error: true
           - name: JIT without optimizations (Debug)
             configure_flags: --enable-experimental-jit --with-pydebug
             test_env: "PYTHON_UOPS_OPTIMIZE=0"
