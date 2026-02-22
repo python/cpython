@@ -62,7 +62,7 @@ def generate_recorder_functions(filenames: list[str], analysis: Analysis, out: C
     emitter = RecorderEmitter(out)
     func_count = 0
     nop = analysis.instructions["NOP"]
-    function_table: dict[str, int] = dict()
+    function_table: dict[str, int] = {}
     for name, uop in analysis.uops.items():
         if not uop.properties.records_value:
             continue
@@ -80,7 +80,7 @@ def generate_recorder_functions(filenames: list[str], analysis: Analysis, out: C
         out.emit("\n\n")
 
 def generate_recorder_tables(analysis: Analysis, out: CWriter) -> None:
-    record_function_indexes: dict[str, int] = dict()
+    record_function_indexes: dict[str, int] = {}
     record_table: dict[str, str] = {}
     index = 1
     for inst in analysis.instructions.values():
