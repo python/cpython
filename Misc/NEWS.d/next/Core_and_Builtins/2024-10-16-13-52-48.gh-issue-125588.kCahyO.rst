@@ -1,2 +1,0 @@
-The Python PEG generator can now use f-strings in the grammar actions. Patch
-by Pablo Galindo

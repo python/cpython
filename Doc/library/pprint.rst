@@ -4,14 +4,11 @@
 .. module:: pprint
    :synopsis: Data pretty printer.
 
-.. moduleauthor:: Fred L. Drake, Jr. <fdrake@acm.org>
-.. sectionauthor:: Fred L. Drake, Jr. <fdrake@acm.org>
-
 **Source code:** :source:`Lib/pprint.py`
 
 --------------
 
-The :mod:`pprint` module provides a capability to "pretty-print" arbitrary
+The :mod:`!pprint` module provides a capability to "pretty-print" arbitrary
 Python data structures in a form which can be used as input to the interpreter.
 If the formatted structures include objects which are not fundamental Python
 types, the representation may not be loadable.  This may be the case if objects
@@ -21,8 +18,6 @@ objects which are not representable as Python literals.
 The formatted representation keeps objects on a single line if it can, and
 breaks them onto multiple lines if they don't fit within the allowed width,
 adjustable by the *width* parameter defaulting to 80 characters.
-
-Dictionaries are sorted by key before the display is computed.
 
 .. versionchanged:: 3.9
    Added support for pretty-printing :class:`types.SimpleNamespace`.
@@ -267,7 +262,7 @@ let's fetch information about a project from `PyPI <https://pypi.org>`_::
    >>> import json
    >>> import pprint
    >>> from urllib.request import urlopen
-   >>> with urlopen('https://pypi.org/pypi/sampleproject/json') as resp:
+   >>> with urlopen('https://pypi.org/pypi/sampleproject/1.2.0/json') as resp:
    ...     project_info = json.load(resp)['info']
 
 In its basic form, :func:`~pprint.pp` shows the whole object::

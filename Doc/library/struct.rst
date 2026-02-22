@@ -36,7 +36,7 @@ and the C layer.
    responsible for defining byte ordering and padding between elements.
    See :ref:`struct-alignment` for details.
 
-Several :mod:`struct` functions (and methods of :class:`Struct`) take a *buffer*
+Several :mod:`!struct` functions (and methods of :class:`Struct`) take a *buffer*
 argument.  This refers to objects that implement the :ref:`bufferobjects` and
 provide either a readable or read-writable buffer.  The most common types used
 for that purpose are :class:`bytes` and :class:`bytearray`, but many other types
@@ -260,22 +260,15 @@ platform-dependent.
 +--------+--------------------------+--------------------+----------------+------------+
 | ``d``  | :c:expr:`double`         | float              | 8              | \(4)       |
 +--------+--------------------------+--------------------+----------------+------------+
+| ``F``  | :c:expr:`float complex`  | complex            | 8              | \(10)      |
++--------+--------------------------+--------------------+----------------+------------+
+| ``D``  | :c:expr:`double complex` | complex            | 16             | \(10)      |
++--------+--------------------------+--------------------+----------------+------------+
 | ``s``  | :c:expr:`char[]`         | bytes              |                | \(9)       |
 +--------+--------------------------+--------------------+----------------+------------+
 | ``p``  | :c:expr:`char[]`         | bytes              |                | \(8)       |
 +--------+--------------------------+--------------------+----------------+------------+
 | ``P``  | :c:expr:`void \*`        | integer            |                | \(5)       |
-+--------+--------------------------+--------------------+----------------+------------+
-
-Additionally, if IEC 60559 compatible complex arithmetic (Annex G of the
-C11 standard) is supported, the following format characters are available:
-
-+--------+--------------------------+--------------------+----------------+------------+
-| Format | C Type                   | Python type        | Standard size  | Notes      |
-+========+==========================+====================+================+============+
-| ``E``  | :c:expr:`float complex`  | complex            | 8              | \(10)      |
-+--------+--------------------------+--------------------+----------------+------------+
-| ``C``  | :c:expr:`double complex` | complex            | 16             | \(10)      |
 +--------+--------------------------+--------------------+----------------+------------+
 
 .. versionchanged:: 3.3
@@ -285,7 +278,7 @@ C11 standard) is supported, the following format characters are available:
    Added support for the ``'e'`` format.
 
 .. versionchanged:: 3.14
-   Added support for the ``'E'`` and ``'C'`` formats.
+   Added support for the ``'F'`` and ``'D'`` formats.
 
 
 Notes:
@@ -364,9 +357,14 @@ Notes:
    ``'0c'`` means 0 characters).
 
 (10)
-   For the ``'E'`` and ``'C'`` format characters, the packed representation uses
+   For the ``'F'`` and ``'D'`` format characters, the packed representation uses
    the IEEE 754 binary32 and binary64 format for components of the complex
    number, regardless of the floating-point format used by the platform.
+   Note that complex types (``F`` and ``D``) are available unconditionally,
+   despite complex types being an optional feature in C.
+   As specified in the C11 standard, each complex type is represented by a
+   two-element C array containing, respectively, the real and imaginary parts.
+
 
 A format character may be preceded by an integral repeat count.  For example,
 the format string ``'4h'`` means exactly the same as ``'hhhh'``.
@@ -481,7 +479,7 @@ at the end, assuming the platform's longs are aligned on 4-byte boundaries::
 Applications
 ------------
 
-Two main applications for the :mod:`struct` module exist, data
+Two main applications for the :mod:`!struct` module exist, data
 interchange between Python and C code within an application or another
 application compiled using the same compiler (:ref:`native formats<struct-native-formats>`), and
 data interchange between applications using agreed upon data layout
@@ -573,7 +571,7 @@ below were executed on a 32-bit machine::
 Classes
 -------
 
-The :mod:`struct` module also defines the following type:
+The :mod:`!struct` module also defines the following type:
 
 
 .. class:: Struct(format)

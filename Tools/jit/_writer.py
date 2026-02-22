@@ -20,13 +20,14 @@ def _dump_footer(
     yield "    size_t code_size;"
     yield "    size_t data_size;"
     yield "    symbol_mask trampoline_mask;"
+    yield "    symbol_mask got_mask;"
     yield "} StencilGroup;"
     yield ""
-    yield f"static const StencilGroup trampoline = {groups['trampoline'].as_c('trampoline')};"
+    yield f"static const StencilGroup shim = {groups['shim'].as_c('shim')};"
     yield ""
-    yield "static const StencilGroup stencil_groups[MAX_UOP_ID + 1] = {"
+    yield "static const StencilGroup stencil_groups[MAX_UOP_REGS_ID + 1] = {"
     for opname, group in sorted(groups.items()):
-        if opname == "trampoline":
+        if opname == "shim":
             continue
         yield f"    [{opname}] = {group.as_c(opname)},"
     yield "};"
@@ -49,15 +50,16 @@ def _dump_stencil(opname: str, group: _stencils.StencilGroup) -> typing.Iterator
     for part, stencil in [("code", group.code), ("data", group.data)]:
         for line in stencil.disassembly:
             yield f"    // {line}"
-        if stencil.body:
+        stripped = stencil.body.rstrip(b"\x00")
+        if stripped:
             yield f"    const unsigned char {part}_body[{len(stencil.body)}] = {{"
-            for i in range(0, len(stencil.body), 8):
-                row = " ".join(f"{byte:#04x}," for byte in stencil.body[i : i + 8])
+            for i in range(0, len(stripped), 8):
+                row = " ".join(f"{byte:#04x}," for byte in stripped[i : i + 8])
                 yield f"        {row}"
             yield "    };"
     # Data is written first (so relaxations in the code work properly):
     for part, stencil in [("data", group.data), ("code", group.code)]:
-        if stencil.body:
+        if stencil.body.rstrip(b"\x00"):
             yield f"    memcpy({part}, {part}_body, sizeof({part}_body));"
         skip = False
         stencil.holes.sort(key=lambda hole: hole.offset)
@@ -77,6 +79,6 @@ def dump(
     groups: dict[str, _stencils.StencilGroup], symbols: dict[str, int]
 ) -> typing.Iterator[str]:
     """Yield a JIT compiler line-by-line as a C header file."""
-    for opname, group in sorted(groups.items()):
+    for opname, group in groups.items():
         yield from _dump_stencil(opname, group)
     yield from _dump_footer(groups, symbols)

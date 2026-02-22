@@ -10,11 +10,6 @@
 Buffer Protocol
 ---------------
 
-.. sectionauthor:: Greg Stein <gstein@lyra.org>
-.. sectionauthor:: Benjamin Peterson
-.. sectionauthor:: Stefan Krah
-
-
 Certain objects available in Python wrap access to an underlying memory
 array or *buffer*.  Such objects include the built-in :class:`bytes` and
 :class:`bytearray`, and some extension types like :class:`array.array`.
@@ -26,17 +21,19 @@ characteristic of being backed by a possibly large memory buffer.  It is
 then desirable, in some situations, to access that buffer directly and
 without intermediate copying.
 
-Python provides such a facility at the C level in the form of the :ref:`buffer
-protocol <bufferobjects>`.  This protocol has two sides:
+Python provides such a facility at the C and Python level in the form of the
+:ref:`buffer protocol <bufferobjects>`.  This protocol has two sides:
 
 .. index:: single: PyBufferProcs (C type)
 
 - on the producer side, a type can export a "buffer interface" which allows
   objects of that type to expose information about their underlying buffer.
-  This interface is described in the section :ref:`buffer-structs`;
+  This interface is described in the section :ref:`buffer-structs`; for
+  Python see :ref:`python-buffer-protocol`.
 
 - on the consumer side, several means are available to obtain a pointer to
-  the raw underlying data of an object (for example a method parameter).
+  the raw underlying data of an object (for example a method parameter). For
+  Python see :class:`memoryview`.
 
 Simple objects such as :class:`bytes` and :class:`bytearray` expose their
 underlying buffer in byte-oriented form.  Other forms are possible; for example,
@@ -62,6 +59,10 @@ In both cases, :c:func:`PyBuffer_Release` must be called when the buffer
 isn't needed anymore.  Failure to do so could lead to various issues such as
 resource leaks.
 
+.. versionadded:: 3.12
+
+   The buffer protocol is now accessible in Python, see
+   :ref:`python-buffer-protocol` and :class:`memoryview`.
 
 .. _buffer-structure:
 
@@ -254,6 +255,10 @@ readonly, format
       exporter MAY provide either a read-only or writable buffer, but the choice
       MUST be consistent for all consumers. For example, :c:expr:`PyBUF_SIMPLE | PyBUF_WRITABLE`
       can be used to request a simple writable buffer.
+
+   .. c:macro:: PyBUF_WRITEABLE
+
+      This is a :term:`soft deprecated` alias to :c:macro:`PyBUF_WRITABLE`.
 
    .. c:macro:: PyBUF_FORMAT
 

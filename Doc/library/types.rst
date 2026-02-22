@@ -314,6 +314,10 @@ Standard names are defined for the following types:
 
    .. versionadded:: 3.10
 
+   .. versionchanged:: 3.14
+
+      This is now an alias for :class:`typing.Union`.
+
 .. class:: TracebackType(tb_next, tb_frame, tb_lasti, tb_lineno)
 
    The type of traceback objects such as found in ``sys.exception().__traceback__``.
@@ -327,6 +331,28 @@ Standard names are defined for the following types:
 
    The type of :ref:`frame objects <frame-objects>` such as found in
    :attr:`tb.tb_frame <traceback.tb_frame>` if ``tb`` is a traceback object.
+
+
+.. data:: FrameLocalsProxyType
+
+   The type of frame locals proxy objects, as found on the
+   :attr:`frame.f_locals` attribute.
+
+   .. versionadded:: 3.15
+
+   .. seealso:: :pep:`667`
+
+
+.. data:: LazyImportType
+
+   The type of lazy import proxy objects. These objects are created when a
+   module is lazily imported and serve as placeholders until the module is
+   actually accessed. This type can be used to detect lazy imports
+   programmatically.
+
+   .. versionadded:: next
+
+   .. seealso:: :pep:`810`
 
 
 .. data:: GetSetDescriptorType

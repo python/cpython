@@ -77,7 +77,7 @@ make_sized_heaptypes(PyObject *module, PyObject *args)
 static PyObject *
 var_heaptype_set_data_to_3s(
     PyObject *self, PyTypeObject *defining_class,
-    PyObject **args, Py_ssize_t nargs, PyObject *kwnames)
+    PyObject *const *args, Py_ssize_t nargs, PyObject *kwnames)
 {
     void *data_ptr = PyObject_GetTypeData(self, defining_class);
     if (!data_ptr) {
@@ -93,7 +93,7 @@ var_heaptype_set_data_to_3s(
 
 static PyObject *
 var_heaptype_get_data(PyObject *self, PyTypeObject *defining_class,
-                      PyObject **args, Py_ssize_t nargs, PyObject *kwnames)
+                      PyObject *const *args, Py_ssize_t nargs, PyObject *kwnames)
 {
     void *data_ptr = PyObject_GetTypeData(self, defining_class);
     if (!data_ptr) {

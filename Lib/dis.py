@@ -35,6 +35,7 @@ SET_FUNCTION_ATTRIBUTE = opmap['SET_FUNCTION_ATTRIBUTE']
 FUNCTION_ATTR_FLAGS = ('defaults', 'kwdefaults', 'annotations', 'closure', 'annotate')
 
 ENTER_EXECUTOR = opmap['ENTER_EXECUTOR']
+IMPORT_NAME = opmap['IMPORT_NAME']
 LOAD_GLOBAL = opmap['LOAD_GLOBAL']
 LOAD_SMALL_INT = opmap['LOAD_SMALL_INT']
 BINARY_OP = opmap['BINARY_OP']
@@ -48,10 +49,12 @@ CALL_INTRINSIC_2 = opmap['CALL_INTRINSIC_2']
 LOAD_COMMON_CONSTANT = opmap['LOAD_COMMON_CONSTANT']
 LOAD_SPECIAL = opmap['LOAD_SPECIAL']
 LOAD_FAST_LOAD_FAST = opmap['LOAD_FAST_LOAD_FAST']
+LOAD_FAST_BORROW_LOAD_FAST_BORROW = opmap['LOAD_FAST_BORROW_LOAD_FAST_BORROW']
 STORE_FAST_LOAD_FAST = opmap['STORE_FAST_LOAD_FAST']
 STORE_FAST_STORE_FAST = opmap['STORE_FAST_STORE_FAST']
 IS_OP = opmap['IS_OP']
 CONTAINS_OP = opmap['CONTAINS_OP']
+END_ASYNC_FOR = opmap['END_ASYNC_FOR']
 
 CACHE = opmap["CACHE"]
 
@@ -162,6 +165,7 @@ COMPILER_FLAG_NAMES = {
           256: "ITERABLE_COROUTINE",
           512: "ASYNC_GENERATOR",
     0x4000000: "HAS_DOCSTRING",
+    0x8000000: "METHOD",
 }
 
 def pretty_flags(flags):
@@ -375,6 +379,14 @@ class Instruction(_Instruction):
                         entries (if any)
     """
 
+    @staticmethod
+    def make(
+        opname, arg, argval, argrepr, offset, start_offset, starts_line,
+        line_number, label=None, positions=None, cache_info=None
+    ):
+        return Instruction(opname, _all_opmap[opname], arg, argval, argrepr, offset,
+                           start_offset, starts_line, line_number, label, positions, cache_info)
+
     @property
     def oparg(self):
         """Alias for Instruction.arg."""
@@ -519,7 +531,6 @@ class Formatter:
         fields.append(instr.opname.ljust(_OPNAME_WIDTH))
         # Column: Opcode argument
         if instr.arg is not None:
-            arg = repr(instr.arg)
             # If opname is longer than _OPNAME_WIDTH, we allow it to overflow into
             # the space reserved for oparg. This results in fewer misaligned opargs
             # in the disassembly output.
@@ -590,14 +601,21 @@ class ArgResolver:
                     argval, argrepr = _get_name_info(arg//4, get_name)
                     if (arg & 1) and argrepr:
                         argrepr = f"{argrepr} + NULL|self"
+                elif deop == IMPORT_NAME:
+                    argval, argrepr = _get_name_info(arg//4, get_name)
+                    if (arg & 1) and argrepr:
+                        argrepr = f"{argrepr} + lazy"
+                    elif (arg & 2) and argrepr:
+                        argrepr = f"{argrepr} + eager"
                 else:
                     argval, argrepr = _get_name_info(arg, get_name)
             elif deop in hasjump or deop in hasexc:
                 argval = self.offset_from_jump_arg(op, arg, offset)
                 lbl = self.get_label_for_offset(argval)
                 assert lbl is not None
-                argrepr = f"to L{lbl}"
-            elif deop in (LOAD_FAST_LOAD_FAST, STORE_FAST_LOAD_FAST, STORE_FAST_STORE_FAST):
+                preposition = "from" if deop == END_ASYNC_FOR else "to"
+                argrepr = f"{preposition} L{lbl}"
+            elif deop in (LOAD_FAST_LOAD_FAST, LOAD_FAST_BORROW_LOAD_FAST_BORROW, STORE_FAST_LOAD_FAST, STORE_FAST_STORE_FAST):
                 arg1 = arg >> 4
                 arg2 = arg & 15
                 val1, argrepr1 = _get_name_info(arg1, self.varname_from_oparg)
@@ -736,7 +754,8 @@ def _parse_exception_table(code):
 
 def _is_backward_jump(op):
     return opname[op] in ('JUMP_BACKWARD',
-                          'JUMP_BACKWARD_NO_INTERRUPT')
+                          'JUMP_BACKWARD_NO_INTERRUPT',
+                          'END_ASYNC_FOR') # Not really a jump, but it has a "target"
 
 def _get_instructions_bytes(code, linestarts=None, line_offset=0, co_positions=None,
                             original_code=None, arg_resolver=None):
@@ -1000,7 +1019,9 @@ def _find_imports(co):
                 (level_op[0] in hasconst or level_op[0] == LOAD_SMALL_INT)):
                 level = _get_const_value(level_op[0], level_op[1], consts)
                 fromlist = _get_const_value(from_op[0], from_op[1], consts)
-                yield (names[oparg], level, fromlist)
+                # IMPORT_NAME encodes lazy/eager flags in bits 0-1,
+                # name index in bits 2+.
+                yield (names[oparg >> 2], level, fromlist)
 
 def _find_store_names(co):
     """Find names of variables which are written in the code
@@ -1115,18 +1136,20 @@ class Bytecode:
             return output.getvalue()
 
 
-def main():
+def main(args=None):
     import argparse
 
-    parser = argparse.ArgumentParser()
+    parser = argparse.ArgumentParser(color=True)
     parser.add_argument('-C', '--show-caches', action='store_true',
                         help='show inline caches')
     parser.add_argument('-O', '--show-offsets', action='store_true',
                         help='show instruction offsets')
     parser.add_argument('-P', '--show-positions', action='store_true',
                         help='show instruction positions')
+    parser.add_argument('-S', '--specialized', action='store_true',
+                        help='show specialized bytecode')
     parser.add_argument('infile', nargs='?', default='-')
-    args = parser.parse_args()
+    args = parser.parse_args(args=args)
     if args.infile == '-':
         name = '<stdin>'
         source = sys.stdin.buffer.read()
@@ -1135,7 +1158,8 @@ def main():
         with open(args.infile, 'rb') as infile:
             source = infile.read()
     code = compile(source, name, "exec")
-    dis(code, show_caches=args.show_caches, show_offsets=args.show_offsets, show_positions=args.show_positions)
+    dis(code, show_caches=args.show_caches, adaptive=args.specialized,
+        show_offsets=args.show_offsets, show_positions=args.show_positions)
 
 if __name__ == "__main__":
     main()

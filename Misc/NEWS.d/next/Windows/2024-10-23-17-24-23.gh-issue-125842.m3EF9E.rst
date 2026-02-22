@@ -1,2 +1,0 @@
-Fix a :exc:`SystemError` when :func:`sys.exit` is called with ``0xffffffff``
-on Windows.

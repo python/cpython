@@ -103,8 +103,6 @@ class EnvBuilder:
         vars = {
             'base': env_dir,
             'platbase': env_dir,
-            'installed_base': env_dir,
-            'installed_platbase': env_dir,
         }
         return sysconfig.get_path(name, scheme='venv', vars=vars)
 
@@ -175,19 +173,27 @@ class EnvBuilder:
         context.python_dir = dirname
         context.python_exe = exename
         binpath = self._venv_path(env_dir, 'scripts')
-        incpath = self._venv_path(env_dir, 'include')
         libpath = self._venv_path(env_dir, 'purelib')
+        platlibpath = self._venv_path(env_dir, 'platlib')
+
+        # PEP 405 says venvs should create a local include directory.
+        # See https://peps.python.org/pep-0405/#include-files
+        # XXX: This directory is not exposed in sysconfig or anywhere else, and
+        #      doesn't seem to be utilized by modern packaging tools. We keep it
+        #      for backwards-compatibility, and to follow the PEP, but I would
+        #      recommend against using it, as most tooling does not pass it to
+        #      compilers. Instead, until we standardize a site-specific include
+        #      directory, I would recommend installing headers as package data,
+        #      and providing some sort of API to get the include directories.
+        #      Example: https://numpy.org/doc/2.1/reference/generated/numpy.get_include.html
+        incpath = os.path.join(env_dir, 'Include' if os.name == 'nt' else 'include')
 
         context.inc_path = incpath
         create_if_needed(incpath)
         context.lib_path = libpath
         create_if_needed(libpath)
-        # Issue 21197: create lib64 as a symlink to lib on 64-bit non-OS X POSIX
-        if ((sys.maxsize > 2**32) and (os.name == 'posix') and
-            (sys.platform != 'darwin')):
-            link_path = os.path.join(env_dir, 'lib64')
-            if not os.path.exists(link_path):   # Issue #21643
-                os.symlink('lib', link_path)
+        context.platlib_path = platlibpath
+        create_if_needed(platlibpath)
         context.bin_path = binpath
         context.bin_name = os.path.relpath(binpath, env_dir)
         context.env_exe = os.path.join(binpath, exename)
@@ -300,15 +306,11 @@ class EnvBuilder:
             binpath = context.bin_path
             path = context.env_exe
             copier = self.symlink_or_copy
-            dirname = context.python_dir
             copier(context.executable, path)
             if not os.path.islink(path):
                 os.chmod(path, 0o755)
-
-            suffixes = ['python', 'python3', f'python3.{sys.version_info[1]}']
-            if sys.version_info[:2] == (3, 14):
-                suffixes.append('𝜋thon')
-            for suffix in suffixes:
+            for suffix in ('python', 'python3',
+                           f'python3.{sys.version_info[1]}'):
                 path = os.path.join(binpath, suffix)
                 if not os.path.exists(path):
                     # Issue 18807: make copies if
@@ -615,7 +617,9 @@ def main(args=None):
                                             'created, you may wish to '
                                             'activate it, e.g. by '
                                             'sourcing an activate script '
-                                            'in its bin directory.')
+                                            'in its bin directory.',
+                                     color=True,
+                                     )
     parser.add_argument('dirs', metavar='ENV_DIR', nargs='+',
                         help='A directory to create the environment in.')
     parser.add_argument('--system-site-packages', default=False,

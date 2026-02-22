@@ -224,7 +224,7 @@ When the collecting space becomes empty, the two spaces are swapped.
 .. date: 2023-10-14-00-05-17
 .. gh-issue: 109870
 .. nonce: oKpJ3P
-.. section: Core and Builtins
+.. section: Library
 
 Dataclasses now calls :func:`exec` once per dataclass, instead of once per
 method being added.  This can speed up dataclass creation by up to 20%.
@@ -234,7 +234,7 @@ method being added.  This can speed up dataclass creation by up to 20%.
 .. date: 2022-10-05-09-33-48
 .. gh-issue: 97901
 .. nonce: BOLluU
-.. section: Core and Builtins
+.. section: Library
 
 Mime type ``text/rtf`` is now supported by :mod:`mimetypes`.
 
@@ -264,7 +264,8 @@ Improve performance of :func:`os.path.join` and :func:`os.path.expanduser`.
 .. nonce: hqk9Hn
 .. section: Library
 
-Raise :exc:`TypeError` for non-paths in :func:`posixpath.relpath`.
+Raise :exc:`TypeError` for non-paths in :func:`posixpath.relpath
+<os.path.relpath>`.
 
 ..
 
@@ -273,7 +274,8 @@ Raise :exc:`TypeError` for non-paths in :func:`posixpath.relpath`.
 .. nonce: l6rWlj
 .. section: Library
 
-Preserve mailbox ownership when rewriting in :func:`mailbox.mbox.flush`.
+Preserve mailbox ownership when rewriting in :func:`mailbox.mbox.flush
+<mailbox.Mailbox.flush>`.
 Patch by Tony Mountifield.
 
 ..
@@ -642,7 +644,7 @@ Also in the corresponding :class:`ipaddress.IPv4Network` and
 .. nonce: OToJnG
 .. section: Library
 
-In :mod:`encodings.idna`, any capitalization of the the ACE prefix
+In :mod:`encodings.idna`, any capitalization of the ACE prefix
 (``xn--``) is now acceptable. Patch by Pepijn de Vos and Zackery Spytz.
 
 ..

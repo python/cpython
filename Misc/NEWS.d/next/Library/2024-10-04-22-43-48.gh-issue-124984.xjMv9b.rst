@@ -1,1 +1,0 @@
-Fixed thread safety in :mod:`ssl` in the free-threaded build. OpenSSL operations are now protected by a per-object lock.

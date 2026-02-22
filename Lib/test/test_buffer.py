@@ -2879,11 +2879,11 @@ class TestBufferProtocol(unittest.TestCase):
     def test_memoryview_repr(self):
         m = memoryview(bytearray(9))
         r = m.__repr__()
-        self.assertTrue(r.startswith("<memory"))
+        self.assertStartsWith(r, "<memory")
 
         m.release()
         r = m.__repr__()
-        self.assertTrue(r.startswith("<released"))
+        self.assertStartsWith(r, "<released")
 
     def test_memoryview_sequence(self):
 
@@ -3910,6 +3910,8 @@ class TestBufferProtocol(unittest.TestCase):
         self.assertRaises(ValueError, memoryview, m)
         # memoryview.cast()
         self.assertRaises(ValueError, m.cast, 'c')
+        # memoryview.__iter__()
+        self.assertRaises(ValueError, m.__iter__)
         # getbuffer()
         self.assertRaises(ValueError, ndarray, m)
         # memoryview.tolist()
@@ -4437,12 +4439,70 @@ class TestBufferProtocol(unittest.TestCase):
         x = ndarray([1,2,3], shape=[3], flags=ND_GETBUF_FAIL)
         self.assertRaises(BufferError, memoryview, x)
 
+    def test_bytearray_release_buffer_read_flag(self):
+        # See https://github.com/python/cpython/issues/126980
+        obj = bytearray(b'abc')
+        with self.assertRaises(SystemError):
+            obj.__buffer__(inspect.BufferFlags.READ)
+        with self.assertRaises(SystemError):
+            obj.__buffer__(inspect.BufferFlags.WRITE)
+
+    @support.cpython_only
+    @unittest.skipIf(_testcapi is None, "requires _testcapi")
+    def test_bytearray_alignment(self):
+        # gh-140557: pointer alignment of buffers including empty allocation
+        # should be at least to `size_t`.
+        align = struct.calcsize("N")
+        cases = [
+            bytearray(),
+            bytearray(1),
+            bytearray(b"0123456789abcdef"),
+            bytearray(16),
+        ]
+        ptrs = [_testcapi.buffer_pointer_as_int(array) for array in cases]
+        self.assertEqual([ptr % align for ptr in ptrs], [0]*len(ptrs))
+
+    @support.cpython_only
+    @unittest.skipIf(_testcapi is None, "requires _testcapi")
+    def test_array_alignment(self):
+        # gh-140557: pointer alignment of buffers including empty allocation
+        # should match the maximum array alignment.
+        align = max(struct.calcsize(fmt) for fmt in ARRAY)
+        cases = [array.array(fmt) for fmt in ARRAY]
+        # Empty arrays
+        self.assertEqual(
+            [_testcapi.buffer_pointer_as_int(case) % align for case in cases],
+            [0] * len(cases),
+        )
+        for case in cases:
+            case.append(0)
+        # Allocated arrays
+        self.assertEqual(
+            [_testcapi.buffer_pointer_as_int(case) % align for case in cases],
+            [0] * len(cases),
+        )
+
     @support.cpython_only
     def test_pybuffer_size_from_format(self):
         # basic tests
         for format in ('', 'ii', '3s'):
             self.assertEqual(_testcapi.PyBuffer_SizeFromFormat(format),
                              struct.calcsize(format))
+
+    @support.cpython_only
+    def test_flags_overflow(self):
+        # gh-126594: Check for integer overlow on large flags
+        try:
+            from _testcapi import INT_MIN, INT_MAX
+        except ImportError:
+            INT_MIN = -(2 ** 31)
+            INT_MAX = 2 ** 31 - 1
+
+        obj = b'abc'
+        for flags in (INT_MIN - 1, INT_MAX + 1):
+            with self.subTest(flags=flags):
+                with self.assertRaises(OverflowError):
+                    obj.__buffer__(flags)
 
 
 class TestPythonBufferProtocol(unittest.TestCase):

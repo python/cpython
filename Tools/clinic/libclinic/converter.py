@@ -274,7 +274,7 @@ class CConverter(metaclass=CConverterAutoRegister):
             data.modifications.append('/* modifications for ' + name + ' */\n' + modifications.rstrip())
 
         # keywords
-        if parameter.is_vararg():
+        if parameter.is_variable_length():
             pass
         elif parameter.is_positional_only():
             data.keywords.append('')
@@ -312,7 +312,7 @@ class CConverter(metaclass=CConverterAutoRegister):
     def length_name(self) -> str:
         """Computes the name of the associated "length" variable."""
         assert self.length is not None
-        return self.parser_name + "_length"
+        return self.name + "_length"
 
     # Why is this one broken out separately?
     # For "positional-only" function parsing,

@@ -9,6 +9,8 @@ from test import support
 import time
 import unittest
 
+from test.support import warnings_helper
+
 if not hasattr(select, "kqueue"):
     raise unittest.SkipTest("test works only on BSD")
 
@@ -257,6 +259,7 @@ class TestKQueue(unittest.TestCase):
         self.addCleanup(kqueue.close)
         self.assertEqual(os.get_inheritable(kqueue.fileno()), False)
 
+    @warnings_helper.ignore_fork_in_thread_deprecation_warnings()
     @support.requires_fork()
     def test_fork(self):
         # gh-110395: kqueue objects must be closed after fork

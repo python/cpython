@@ -4,10 +4,6 @@
 .. module:: plistlib
    :synopsis: Generate and parse Apple plist files.
 
-.. moduleauthor:: Jack Jansen
-.. sectionauthor:: Georg Brandl <georg@python.org>
-.. (harvested from docstrings in the original file)
-
 **Source code:** :source:`Lib/plistlib.py`
 
 .. index::
@@ -71,15 +67,14 @@ This module defines the following functions:
 
    When *aware_datetime* is true, fields with type ``datetime.datetime`` will
    be created as :ref:`aware object <datetime-naive-aware>`, with
-   :attr:`!tzinfo` as :attr:`datetime.UTC`.
+   :attr:`!tzinfo` as :const:`datetime.UTC`.
 
    XML data for the :data:`FMT_XML` format is parsed using the Expat parser
    from :mod:`xml.parsers.expat` -- see its documentation for possible
    exceptions on ill-formed XML.  Unknown elements will simply be ignored
    by the plist parser.
 
-   The parser for the binary format raises :exc:`InvalidFileException`
-   when the file cannot be parsed.
+   The parser raises :exc:`InvalidFileException` when the file cannot be parsed.
 
    .. versionadded:: 3.4
 
@@ -99,7 +94,7 @@ This module defines the following functions:
 
 .. function:: dump(value, fp, *, fmt=FMT_XML, sort_keys=True, skipkeys=False, aware_datetime=False)
 
-   Write *value* to a plist file. *Fp* should be a writable, binary
+   Write *value* to a plist file. *fp* should be a writable, binary
    file object.
 
    The *fmt* argument specifies the format of the plist file and can be
@@ -148,8 +143,9 @@ The following classes are available:
    Wraps an :class:`int`.  This is used when reading or writing NSKeyedArchiver
    encoded data, which contains UID (see PList manual).
 
-   It has one attribute, :attr:`data`, which can be used to retrieve the int value
-   of the UID.  :attr:`data` must be in the range ``0 <= data < 2**64``.
+   .. attribute:: data
+
+      Int value of the UID.  It must be in the range ``0 <= data < 2**64``.
 
    .. versionadded:: 3.8
 
@@ -166,6 +162,15 @@ The following constants are available:
 .. data:: FMT_BINARY
 
    The binary format for plist files
+
+   .. versionadded:: 3.4
+
+
+The module defines the following exceptions:
+
+.. exception:: InvalidFileException
+
+   Raised when a file cannot be parsed.
 
    .. versionadded:: 3.4
 

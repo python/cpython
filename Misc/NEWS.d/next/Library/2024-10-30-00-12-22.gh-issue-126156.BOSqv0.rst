@@ -1,1 +1,0 @@
-Improved performances of creating :py:class:`~http.cookies.Morsel` objects by a factor of 3.8x.

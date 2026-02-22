@@ -165,6 +165,14 @@ def compile_file(fullname, ddir=None, force=False, rx=None, quiet=0,
     stripdir = os.fspath(stripdir) if stripdir is not None else None
     name = os.path.basename(fullname)
 
+    # Without a cache_tag, we can only create legacy .pyc files. None of our
+    # callers seem to expect this, so the best we can do is fail without raising
+    if not legacy and sys.implementation.cache_tag is None:
+        if not quiet:
+            print("No cache tag is available to generate .pyc path for",
+                  repr(fullname))
+        return False
+
     dfile = None
 
     if ddir is not None:
@@ -223,7 +231,7 @@ def compile_file(fullname, ddir=None, force=False, rx=None, quiet=0,
                     cfile = importlib.util.cache_from_source(fullname)
                     opt_cfiles[opt_level] = cfile
 
-        head, tail = name[:-3], name[-3:]
+        tail = name[-3:]
         if tail == '.py':
             if not force:
                 try:
@@ -317,7 +325,9 @@ def main():
     import argparse
 
     parser = argparse.ArgumentParser(
-        description='Utilities to support installing Python libraries.')
+        description='Utilities to support installing Python libraries.',
+        color=True,
+    )
     parser.add_argument('-l', action='store_const', const=0,
                         default=None, dest='maxlevels',
                         help="don't recurse into subdirectories")

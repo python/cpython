@@ -15,7 +15,7 @@ from libclinic.function import (
     Module, Class, Function, Parameter,
     permute_optional_groups,
     GETTER, SETTER, METHOD_INIT)
-from libclinic.converters import defining_class_converter, self_converter
+from libclinic.converters import self_converter
 from libclinic.parse_args import ParseArgsCodeGen
 if TYPE_CHECKING:
     from libclinic.app import Clinic
@@ -396,12 +396,6 @@ class CLanguage(Language):
         first_optional = len(selfless)
         positional = selfless and selfless[-1].is_positional_only()
         has_option_groups = False
-        requires_defining_class = (len(selfless)
-                                   and isinstance(selfless[0].converter,
-                                                  defining_class_converter))
-        pass_vararg_directly = (all(p.is_positional_only() or p.is_vararg()
-                                    for p in selfless)
-                                and not requires_defining_class)
 
         # offset i by -1 because first_optional needs to ignore self
         for i, p in enumerate(parameters, -1):
@@ -409,9 +403,6 @@ class CLanguage(Language):
 
             if (i != -1) and (p.default is not unspecified):
                 first_optional = min(first_optional, i)
-
-            if p.is_vararg() and not pass_vararg_directly:
-                data.cleanup.append(f"Py_XDECREF({c.parser_name});")
 
             # insert group variable
             group = p.group
@@ -424,11 +415,6 @@ class CLanguage(Language):
                     data.impl_parameters.append("int " + group_name)
                     has_option_groups = True
 
-            if p.is_vararg() and pass_vararg_directly:
-                data.impl_arguments.append('nvararg')
-                data.impl_parameters.append('Py_ssize_t nargs')
-                p.converter.type = 'PyObject *const *'
-
             c.render(p, data)
 
         if has_option_groups and (not positional):
@@ -437,14 +423,14 @@ class CLanguage(Language):
 
         # HACK
         # when we're METH_O, but have a custom return converter,
-        # we use "impl_parameters" for the parsing function
+        # we use "parser_parameters" for the parsing function
         # because that works better.  but that means we must
         # suppress actually declaring the impl's parameters
         # as variables in the parsing function.  but since it's
         # METH_O, we have exactly one anyway, so we know exactly
         # where it is.
         if ("METH_O" in templates['methoddef_define'] and
-            '{impl_parameters}' in templates['parser_prototype']):
+            '{parser_parameters}' in templates['parser_prototype']):
             data.declarations.pop(0)
 
         full_name = f.full_name
@@ -489,6 +475,7 @@ class CLanguage(Language):
         else:
             template_dict['parse_arguments_comma'] = '';
         template_dict['impl_parameters'] = ", ".join(data.impl_parameters)
+        template_dict['parser_parameters'] = ", ".join(data.impl_parameters[1:])
         template_dict['impl_arguments'] = ", ".join(data.impl_arguments)
 
         template_dict['return_conversion'] = libclinic.format_escape("".join(data.return_conversion).rstrip())

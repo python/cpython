@@ -1,2 +1,0 @@
-``locale.nl_langinfo(locale.ALT_DIGITS)`` now returns a string again. The
-returned value consists of up to 100 semicolon-separated symbols.

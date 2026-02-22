@@ -1,1 +1,0 @@
-Fix the canvas not clearing after running turtledemo clock.

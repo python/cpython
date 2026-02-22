@@ -3,6 +3,7 @@ import types
 import typing
 import unittest
 import warnings
+from test import support
 
 
 def global_function():
@@ -458,6 +459,24 @@ class BuiltinFunctionPropertiesTest(unittest.TestCase):
     # XXX Not sure where this should really go since I can't find a
     # test module specifically for builtin_function_or_method.
 
+    def test_builtin__module__(self):
+        import math
+
+        # builtin function:
+        self.assertEqual(len.__module__, 'builtins')
+        self.assertEqual(math.sin.__module__, 'math')
+
+        # instance method:
+        self.assertRaises(AttributeError, getattr, int.to_bytes, '__module__')
+        self.assertEqual(int.to_bytes.__objclass__.__module__, 'builtins')
+
+        # builtin classmethod:
+        self.assertEqual(int.from_bytes.__module__, None)
+        self.assertEqual(int.from_bytes.__self__.__module__, 'builtins')
+
+        # builtin staticmethod:
+        self.assertEqual(bytes.maketrans.__module__, 'builtins')
+
     def test_builtin__qualname__(self):
         import time
 
@@ -477,6 +496,33 @@ class BuiltinFunctionPropertiesTest(unittest.TestCase):
         # builtin bound instance method:
         self.assertEqual([1, 2, 3].append.__qualname__, 'list.append')
         self.assertEqual({'foo': 'bar'}.pop.__qualname__, 'dict.pop')
+
+    @support.cpython_only
+    def test_builtin__self__(self):
+        # See https://github.com/python/cpython/issues/58211.
+        import builtins
+        import time
+
+        # builtin function:
+        self.assertIs(len.__self__, builtins)
+        self.assertIs(time.sleep.__self__, time)
+
+        # builtin classmethod:
+        self.assertIs(dict.fromkeys.__self__, dict)
+        self.assertIs(float.__getformat__.__self__, float)
+
+        # builtin staticmethod:
+        self.assertIsNone(str.maketrans.__self__)
+        self.assertIsNone(bytes.maketrans.__self__)
+
+        # builtin bound instance method:
+        l = [1, 2, 3]
+        self.assertIs(l.append.__self__, l)
+
+        d = {'foo': 'bar'}
+        self.assertEqual(d.pop.__self__, d)
+
+        self.assertIsNone(None.__repr__.__self__)
 
 
 if __name__ == "__main__":
