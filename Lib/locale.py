@@ -557,8 +557,7 @@ def getdefaultlocale(envvars=('LC_ALL', 'LC_CTYPE', 'LANG', 'LANGUAGE')):
         1766.  code and encoding can be None in case the values cannot
         be determined.
 
-        Raises OSError on Windows if failed to get locale info (unlikely
-        to happen on modern Windows).
+        Returns `None` on Windows if failed to get locale info.
 
     """
 
@@ -572,6 +571,8 @@ def _getdefaultlocale(envvars=('LC_ALL', 'LC_CTYPE', 'LANG', 'LANGUAGE')):
         code, encoding = _locale._getdefaultlocale()
     except (ImportError, AttributeError):
         pass
+    except OSError:
+        return None
     else:
         # add other platform-specific processing here, if
         # necessary...
