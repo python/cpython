@@ -130,6 +130,18 @@ following functions:
    `Unicode Standard Annex #11 <https://www.unicode.org/reports/tr11/>`_.
 
 
+.. function:: block(chr, /)
+
+   Returns the `block
+   <https://www.unicode.org/versions/Unicode17.0.0/core-spec/chapter-3/#G64189>`_
+   assigned to the character *chr*. For example::
+
+      >>> unicodedata.block('S')
+      'Basic Latin'
+
+   .. versionadded:: next
+
+
 .. function:: mirrored(chr, /)
 
    Returns the mirrored property assigned to the character *chr* as

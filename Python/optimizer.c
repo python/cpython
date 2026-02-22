@@ -40,6 +40,7 @@
 
 #define _PyExecutorObject_CAST(op)  ((_PyExecutorObject *)(op))
 
+#ifndef Py_GIL_DISABLED
 static bool
 has_space_for_executor(PyCodeObject *code, _Py_CODEUNIT *instr)
 {
@@ -110,6 +111,7 @@ insert_executor(PyCodeObject *code, _Py_CODEUNIT *instr, int index, _PyExecutorO
     instr->op.code = ENTER_EXECUTOR;
     instr->op.arg = index;
 }
+#endif // Py_GIL_DISABLED
 
 static _PyExecutorObject *
 make_executor_from_uops(_PyThreadStateImpl *tstate, _PyUOpInstruction *buffer, int length, const _PyBloomFilter *dependencies);
@@ -128,7 +130,6 @@ _PyOptimizer_Optimize(
     _PyInterpreterFrame *frame, PyThreadState *tstate)
 {
     _PyThreadStateImpl *_tstate = (_PyThreadStateImpl *)tstate;
-    int chain_depth = _tstate->jit_tracer_state->initial_state.chain_depth;
     PyInterpreterState *interp = _PyInterpreterState_GET();
     if (!interp->jit) {
         // gh-140936: It is possible that interp->jit will become false during
@@ -152,6 +153,7 @@ _PyOptimizer_Optimize(
     // make progress in order to avoid infinite loops or excessively-long
     // side-exit chains. We can only insert the executor into the bytecode if
     // this is true, since a deopt won't infinitely re-enter the executor:
+    int chain_depth = _tstate->jit_tracer_state->initial_state.chain_depth;
     chain_depth %= MAX_CHAIN_DEPTH;
     bool progress_needed = chain_depth == 0;
     PyCodeObject *code = (PyCodeObject *)_tstate->jit_tracer_state->initial_state.code;
@@ -993,7 +995,7 @@ _PyJit_TryInitializeTracing(
         return 0;
     }
     PyObject *func = PyStackRef_AsPyObjectBorrow(frame->f_funcobj);
-    if (func == NULL) {
+    if (func == NULL || !PyFunction_Check(func)) {
         return 0;
     }
     PyCodeObject *code = _PyFrame_GetCode(frame);

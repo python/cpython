@@ -140,6 +140,8 @@ static PyObject* frozendict_new(PyTypeObject *type, PyObject *args,
                                 PyObject *kwds);
 static PyObject* dict_new(PyTypeObject *type, PyObject *args, PyObject *kwds);
 static int dict_merge(PyObject *a, PyObject *b, int override);
+static int dict_contains(PyObject *op, PyObject *key);
+static int dict_merge_from_seq2(PyObject *d, PyObject *seq2, int override);
 
 
 /*[clinic input]
@@ -2375,7 +2377,7 @@ PyDict_GetItem(PyObject *op, PyObject *key)
 }
 
 static void
-dict_unhashable_type(PyObject *key)
+dict_unhashable_type(PyObject *op, PyObject *key)
 {
     PyObject *exc = PyErr_GetRaisedException();
     assert(exc != NULL);
@@ -2384,9 +2386,14 @@ dict_unhashable_type(PyObject *key)
         return;
     }
 
-    PyErr_Format(PyExc_TypeError,
-                 "cannot use '%T' as a dict key (%S)",
-                 key, exc);
+    const char *errmsg;
+    if (PyObject_IsInstance(op, (PyObject*)&PyFrozenDict_Type)) {
+        errmsg = "cannot use '%T' as a frozendict key (%S)";
+    }
+    else {
+        errmsg = "cannot use '%T' as a dict key (%S)";
+    }
+    PyErr_Format(PyExc_TypeError, errmsg, key, exc);
     Py_DECREF(exc);
 }
 
@@ -2399,7 +2406,7 @@ _PyDict_LookupIndexAndValue(PyDictObject *mp, PyObject *key, PyObject **value)
 
     Py_hash_t hash = _PyObject_HashFast(key);
     if (hash == -1) {
-        dict_unhashable_type(key);
+        dict_unhashable_type((PyObject*)mp, key);
         return -1;
     }
 
@@ -2503,7 +2510,7 @@ PyDict_GetItemRef(PyObject *op, PyObject *key, PyObject **result)
 
     Py_hash_t hash = _PyObject_HashFast(key);
     if (hash == -1) {
-        dict_unhashable_type(key);
+        dict_unhashable_type(op, key);
         *result = NULL;
         return -1;
     }
@@ -2519,7 +2526,7 @@ _PyDict_GetItemRef_Unicode_LockHeld(PyDictObject *op, PyObject *key, PyObject **
 
     Py_hash_t hash = _PyObject_HashFast(key);
     if (hash == -1) {
-        dict_unhashable_type(key);
+        dict_unhashable_type((PyObject*)op, key);
         *result = NULL;
         return -1;
     }
@@ -2557,7 +2564,7 @@ PyDict_GetItemWithError(PyObject *op, PyObject *key)
     }
     hash = _PyObject_HashFast(key);
     if (hash == -1) {
-        dict_unhashable_type(key);
+        dict_unhashable_type(op, key);
         return NULL;
     }
 
@@ -2703,7 +2710,7 @@ setitem_take2_lock_held(PyDictObject *mp, PyObject *key, PyObject *value)
 
     Py_hash_t hash = _PyObject_HashFast(key);
     if (hash == -1) {
-        dict_unhashable_type(key);
+        dict_unhashable_type((PyObject*)mp, key);
         Py_DECREF(key);
         Py_DECREF(value);
         return -1;
@@ -2862,7 +2869,7 @@ PyDict_DelItem(PyObject *op, PyObject *key)
     assert(key);
     Py_hash_t hash = _PyObject_HashFast(key);
     if (hash == -1) {
-        dict_unhashable_type(key);
+        dict_unhashable_type(op, key);
         return -1;
     }
 
@@ -3181,7 +3188,7 @@ pop_lock_held(PyObject *op, PyObject *key, PyObject **result)
 
     Py_hash_t hash = _PyObject_HashFast(key);
     if (hash == -1) {
-        dict_unhashable_type(key);
+        dict_unhashable_type(op, key);
         if (result) {
             *result = NULL;
         }
@@ -3594,7 +3601,7 @@ dict_subscript(PyObject *self, PyObject *key)
 
     hash = _PyObject_HashFast(key);
     if (hash == -1) {
-        dict_unhashable_type(key);
+        dict_unhashable_type(self, key);
         return NULL;
     }
     ix = _Py_dict_lookup_threadsafe(mp, key, hash, &value);
@@ -3818,16 +3825,16 @@ static int
 dict_update_arg(PyObject *self, PyObject *arg)
 {
     if (PyAnyDict_CheckExact(arg)) {
-        return PyDict_Merge(self, arg, 1);
+        return dict_merge(self, arg, 1);
     }
     int has_keys = PyObject_HasAttrWithError(arg, &_Py_ID(keys));
     if (has_keys < 0) {
         return -1;
     }
     if (has_keys) {
-        return PyDict_Merge(self, arg, 1);
+        return dict_merge(self, arg, 1);
     }
-    return PyDict_MergeFromSeq2(self, arg, 1);
+    return dict_merge_from_seq2(self, arg, 1);
 }
 
 static int
@@ -3846,7 +3853,7 @@ dict_update_common(PyObject *self, PyObject *args, PyObject *kwds,
 
     if (result == 0 && kwds != NULL) {
         if (PyArg_ValidateKeywordArguments(kwds))
-            result = PyDict_Merge(self, kwds, 1);
+            result = dict_merge(self, kwds, 1);
         else
             result = -1;
     }
@@ -3960,8 +3967,8 @@ Return:
     return Py_SAFE_DOWNCAST(i, Py_ssize_t, int);
 }
 
-int
-PyDict_MergeFromSeq2(PyObject *d, PyObject *seq2, int override)
+static int
+dict_merge_from_seq2(PyObject *d, PyObject *seq2, int override)
 {
     int res;
     Py_BEGIN_CRITICAL_SECTION(d);
@@ -3969,6 +3976,19 @@ PyDict_MergeFromSeq2(PyObject *d, PyObject *seq2, int override)
     Py_END_CRITICAL_SECTION();
 
     return res;
+}
+
+int
+PyDict_MergeFromSeq2(PyObject *d, PyObject *seq2, int override)
+{
+    assert(d != NULL);
+    assert(seq2 != NULL);
+    if (!PyDict_Check(d)) {
+        PyErr_BadInternalCall();
+        return -1;
+    }
+
+    return dict_merge_from_seq2(d, seq2, override);
 }
 
 static int
@@ -4070,23 +4090,14 @@ dict_dict_merge(PyDictObject *mp, PyDictObject *other, int override)
 static int
 dict_merge(PyObject *a, PyObject *b, int override)
 {
-    PyDictObject *mp, *other;
-
+    assert(a != NULL);
+    assert(b != NULL);
     assert(0 <= override && override <= 2);
 
-    /* We accept for the argument either a concrete dictionary object,
-     * or an abstract "mapping" object.  For the former, we can do
-     * things quite efficiently.  For the latter, we only require that
-     * PyMapping_Keys() and PyObject_GetItem() be supported.
-     */
-    if (a == NULL || !PyAnyDict_Check(a) || b == NULL) {
-        PyErr_BadInternalCall();
-        return -1;
-    }
-    mp = (PyDictObject*)a;
+    PyDictObject *mp = _PyAnyDict_CAST(a);
     int res = 0;
     if (PyAnyDict_Check(b) && (Py_TYPE(b)->tp_iter == dict_iter)) {
-        other = (PyDictObject*)b;
+        PyDictObject *other = (PyDictObject*)b;
         int res;
         Py_BEGIN_CRITICAL_SECTION2(a, b);
         res = dict_dict_merge((PyDictObject *)a, other, override);
@@ -4121,7 +4132,7 @@ dict_merge(PyObject *a, PyObject *b, int override)
 
         for (key = PyIter_Next(iter); key; key = PyIter_Next(iter)) {
             if (override != 1) {
-                status = PyDict_Contains(a, key);
+                status = dict_contains(a, key);
                 if (status != 0) {
                     if (status > 0) {
                         if (override == 0) {
@@ -4167,23 +4178,38 @@ slow_exit:
     }
 }
 
+static int
+dict_merge_api(PyObject *a, PyObject *b, int override)
+{
+    /* We accept for the argument either a concrete dictionary object,
+     * or an abstract "mapping" object.  For the former, we can do
+     * things quite efficiently.  For the latter, we only require that
+     * PyMapping_Keys() and PyObject_GetItem() be supported.
+     */
+    if (a == NULL || !PyDict_Check(a) || b == NULL) {
+        PyErr_BadInternalCall();
+        return -1;
+    }
+    return dict_merge(a, b, override);
+}
+
 int
 PyDict_Update(PyObject *a, PyObject *b)
 {
-    return dict_merge(a, b, 1);
+    return dict_merge_api(a, b, 1);
 }
 
 int
 PyDict_Merge(PyObject *a, PyObject *b, int override)
 {
     /* XXX Deprecate override not in (0, 1). */
-    return dict_merge(a, b, override != 0);
+    return dict_merge_api(a, b, override != 0);
 }
 
 int
 _PyDict_MergeEx(PyObject *a, PyObject *b, int override)
 {
-    return dict_merge(a, b, override);
+    return dict_merge_api(a, b, override);
 }
 
 /*[clinic input]
@@ -4464,7 +4490,7 @@ static PyObject *
 dict___contains___impl(PyDictObject *self, PyObject *key)
 /*[clinic end generated code: output=1b314e6da7687dae input=fe1cb42ad831e820]*/
 {
-    int contains = PyDict_Contains((PyObject *)self, key);
+    int contains = dict_contains((PyObject *)self, key);
     if (contains < 0) {
         return NULL;
     }
@@ -4494,7 +4520,7 @@ dict_get_impl(PyDictObject *self, PyObject *key, PyObject *default_value)
 
     hash = _PyObject_HashFast(key);
     if (hash == -1) {
-        dict_unhashable_type(key);
+        dict_unhashable_type((PyObject*)self, key);
         return NULL;
     }
     ix = _Py_dict_lookup_threadsafe(self, key, hash, &val);
@@ -4526,7 +4552,7 @@ dict_setdefault_ref_lock_held(PyObject *d, PyObject *key, PyObject *default_valu
 
     hash = _PyObject_HashFast(key);
     if (hash == -1) {
-        dict_unhashable_type(key);
+        dict_unhashable_type(d, key);
         if (result) {
             *result = NULL;
         }
@@ -4964,17 +4990,28 @@ static PyMethodDef mapp_methods[] = {
     {NULL,              NULL}   /* sentinel */
 };
 
-/* Return 1 if `key` is in dict `op`, 0 if not, and -1 on error. */
-int
-PyDict_Contains(PyObject *op, PyObject *key)
+static int
+dict_contains(PyObject *op, PyObject *key)
 {
     Py_hash_t hash = _PyObject_HashFast(key);
     if (hash == -1) {
-        dict_unhashable_type(key);
+        dict_unhashable_type(op, key);
         return -1;
     }
 
     return _PyDict_Contains_KnownHash(op, key, hash);
+}
+
+/* Return 1 if `key` is in dict `op`, 0 if not, and -1 on error. */
+int
+PyDict_Contains(PyObject *op, PyObject *key)
+{
+    if (!PyAnyDict_Check(op)) {
+        PyErr_BadInternalCall();
+        return -1;
+    }
+
+    return dict_contains(op, key);
 }
 
 int
@@ -4993,7 +5030,7 @@ PyDict_ContainsString(PyObject *op, const char *key)
 int
 _PyDict_Contains_KnownHash(PyObject *op, PyObject *key, Py_hash_t hash)
 {
-    PyDictObject *mp = (PyDictObject *)op;
+    PyDictObject *mp = _PyAnyDict_CAST(op);
     PyObject *value;
     Py_ssize_t ix;
 
@@ -5022,7 +5059,7 @@ static PySequenceMethods dict_as_sequence = {
     0,                          /* sq_slice */
     0,                          /* sq_ass_item */
     0,                          /* sq_ass_slice */
-    PyDict_Contains,            /* sq_contains */
+    dict_contains,              /* sq_contains */
     0,                          /* sq_inplace_concat */
     0,                          /* sq_inplace_repeat */
 };
@@ -6272,7 +6309,7 @@ dictkeys_contains(PyObject *self, PyObject *obj)
     _PyDictViewObject *dv = (_PyDictViewObject *)self;
     if (dv->dv_dict == NULL)
         return 0;
-    return PyDict_Contains((PyObject *)dv->dv_dict, obj);
+    return dict_contains((PyObject *)dv->dv_dict, obj);
 }
 
 static PySequenceMethods dictkeys_as_sequence = {
@@ -7034,7 +7071,7 @@ _PyDict_SetItem_LockHeld(PyDictObject *dict, PyObject *name, PyObject *value)
     if (value == NULL) {
         Py_hash_t hash = _PyObject_HashFast(name);
         if (hash == -1) {
-            dict_unhashable_type(name);
+            dict_unhashable_type((PyObject*)dict, name);
             return -1;
         }
         return _PyDict_DelItem_KnownHash_LockHeld((PyObject *)dict, name, hash);
@@ -7930,6 +7967,18 @@ _PyObject_InlineValuesConsistencyCheck(PyObject *obj)
 
 // --- frozendict implementation ---------------------------------------------
 
+static PyObject *
+frozendict_getnewargs(PyObject *op, PyObject *Py_UNUSED(dummy))
+{
+    // Call dict(op): convert 'op' frozendict to a dict
+    PyObject *arg = PyObject_CallOneArg((PyObject*)&PyDict_Type, op);
+    if (arg == NULL) {
+        return NULL;
+    }
+    return Py_BuildValue("(N)", arg);
+}
+
+
 static PyNumberMethods frozendict_as_number = {
     .nb_or = frozendict_or,
 };
@@ -7951,6 +8000,7 @@ static PyMethodDef frozendict_methods[] = {
     DICT_COPY_METHODDEF
     DICT___REVERSED___METHODDEF
     {"__class_getitem__", Py_GenericAlias, METH_O|METH_CLASS, PyDoc_STR("See PEP 585")},
+    {"__getnewargs__", frozendict_getnewargs, METH_NOARGS},
     {NULL,              NULL}   /* sentinel */
 };
 
