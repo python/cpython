@@ -6,16 +6,13 @@
 
 .. versionadded:: 3.9
 
-.. moduleauthor:: Paul Ganssle <paul@ganssle.io>
-.. sectionauthor:: Paul Ganssle <paul@ganssle.io>
-
 **Source code:** :source:`Lib/zoneinfo`
 
 --------------
 
-The :mod:`zoneinfo` module provides a concrete time zone implementation to
+The :mod:`!zoneinfo` module provides a concrete time zone implementation to
 support the IANA time zone database as originally specified in :pep:`615`. By
-default, :mod:`zoneinfo` uses the system's time zone data if available; if no
+default, :mod:`!zoneinfo` uses the system's time zone data if available; if no
 system time zone data is available, the library will fall back to using the
 first-party :pypi:`tzdata` package available on PyPI.
 

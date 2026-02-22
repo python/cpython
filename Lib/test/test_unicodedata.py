@@ -30,6 +30,26 @@ def iterallchars():
     maxunicode = 0xffff if quicktest else sys.maxunicode
     return map(chr, range(maxunicode + 1))
 
+
+def check_version(testfile):
+    hdr = testfile.readline()
+    return unicodedata.unidata_version in hdr
+
+
+def download_test_data_file(filename):
+    TESTDATAURL = f"http://www.pythontest.net/unicode/{unicodedata.unidata_version}/{filename}"
+
+    try:
+        return open_urlresource(TESTDATAURL, encoding="utf-8", check=check_version)
+    except PermissionError:
+        raise unittest.SkipTest(
+            f"Permission error when downloading {TESTDATAURL} "
+            f"into the test data directory"
+        )
+    except (OSError, HTTPException) as exc:
+        raise unittest.SkipTest(f"Failed to download {TESTDATAURL}: {exc}")
+
+
 class UnicodeMethodsTest(unittest.TestCase):
 
     # update this, if the database changes
@@ -83,15 +103,7 @@ class UnicodeMethodsTest(unittest.TestCase):
         self.assertEqual(result, self.expectedchecksum)
 
 
-class UnicodeFunctionsTest(unittest.TestCase):
-    db = unicodedata
-    old = False
-
-    # Update this if the database changes. Make sure to do a full rebuild
-    # (e.g. 'make distclean && make') to get the correct checksum.
-    expectedchecksum = ('83cc43a2fbb779185832b4c049217d80b05bf349'
-                        if quicktest else
-                        '65670ae03a324c5f9e826a4de3e25bae4d73c9b7')
+class BaseUnicodeFunctionsTest:
 
     def test_function_checksum(self):
         db = self.db
@@ -116,6 +128,60 @@ class UnicodeFunctionsTest(unittest.TestCase):
         result = h.hexdigest()
         self.assertEqual(result, self.expectedchecksum)
 
+    def test_name(self):
+        name = self.db.name
+        self.assertRaises(ValueError, name, '\0')
+        self.assertRaises(ValueError, name, '\n')
+        self.assertRaises(ValueError, name, '\x1F')
+        self.assertRaises(ValueError, name, '\x7F')
+        self.assertRaises(ValueError, name, '\x9F')
+        self.assertRaises(ValueError, name, '\uFFFE')
+        self.assertRaises(ValueError, name, '\uFFFF')
+        self.assertRaises(ValueError, name, '\U0010FFFF')
+        self.assertEqual(name('\U0010FFFF', 42), 42)
+
+        self.assertEqual(name(' '), 'SPACE')
+        self.assertEqual(name('1'), 'DIGIT ONE')
+        self.assertEqual(name('A'), 'LATIN CAPITAL LETTER A')
+        self.assertEqual(name('\xA0'), 'NO-BREAK SPACE')
+        self.assertEqual(name('\u0221', None), None if self.old else
+                         'LATIN SMALL LETTER D WITH CURL')
+        self.assertEqual(name('\u3400'), 'CJK UNIFIED IDEOGRAPH-3400')
+        self.assertEqual(name('\u9FA5'), 'CJK UNIFIED IDEOGRAPH-9FA5')
+        self.assertEqual(name('\uAC00'), 'HANGUL SYLLABLE GA')
+        self.assertEqual(name('\uD7A3'), 'HANGUL SYLLABLE HIH')
+        self.assertEqual(name('\uF900'), 'CJK COMPATIBILITY IDEOGRAPH-F900')
+        self.assertEqual(name('\uFA6A'), 'CJK COMPATIBILITY IDEOGRAPH-FA6A')
+        self.assertEqual(name('\uFBF9'),
+                         'ARABIC LIGATURE UIGHUR KIRGHIZ YEH WITH HAMZA '
+                         'ABOVE WITH ALEF MAKSURA ISOLATED FORM')
+        self.assertEqual(name('\U00013460', None), None if self.old else
+                         'EGYPTIAN HIEROGLYPH-13460')
+        self.assertEqual(name('\U000143FA', None), None if self.old else
+                         'EGYPTIAN HIEROGLYPH-143FA')
+        self.assertEqual(name('\U00017000', None), None if self.old else
+                         'TANGUT IDEOGRAPH-17000')
+        self.assertEqual(name('\U00018B00', None), None if self.old else
+                         'KHITAN SMALL SCRIPT CHARACTER-18B00')
+        self.assertEqual(name('\U00018CD5', None), None if self.old else
+                         'KHITAN SMALL SCRIPT CHARACTER-18CD5')
+        self.assertEqual(name('\U00018CFF', None), None if self.old else
+                         'KHITAN SMALL SCRIPT CHARACTER-18CFF')
+        self.assertEqual(name('\U00018D1E', None), None if self.old else
+                         'TANGUT IDEOGRAPH-18D1E')
+        self.assertEqual(name('\U0001B170', None), None if self.old else
+                         'NUSHU CHARACTER-1B170')
+        self.assertEqual(name('\U0001B2FB', None), None if self.old else
+                         'NUSHU CHARACTER-1B2FB')
+        self.assertEqual(name('\U0001FBA8', None), None if self.old else
+                         'BOX DRAWINGS LIGHT DIAGONAL UPPER CENTRE TO '
+                         'MIDDLE LEFT AND MIDDLE RIGHT TO LOWER CENTRE')
+        self.assertEqual(name('\U0002A6D6'), 'CJK UNIFIED IDEOGRAPH-2A6D6')
+        self.assertEqual(name('\U0002FA1D'), 'CJK COMPATIBILITY IDEOGRAPH-2FA1D')
+        self.assertEqual(name('\U00033479', None), None if self.old else
+                         'CJK UNIFIED IDEOGRAPH-33479')
+
+    @requires_resource('cpu')
     def test_name_inverse_lookup(self):
         for char in iterallchars():
             looked_name = self.db.name(char, None)
@@ -139,6 +205,17 @@ class UnicodeFunctionsTest(unittest.TestCase):
             "HANDBUG",
             "MODIFIER LETTER CYRILLIC SMALL QUESTION MARK",
             "???",
+            "CJK UNIFIED IDEOGRAPH-03400",
+            "CJK UNIFIED IDEOGRAPH-020000",
+            "CJK UNIFIED IDEOGRAPH-33FF",
+            "CJK UNIFIED IDEOGRAPH-F900",
+            "CJK UNIFIED IDEOGRAPH-13460",
+            "CJK UNIFIED IDEOGRAPH-17000",
+            "CJK UNIFIED IDEOGRAPH-18B00",
+            "CJK UNIFIED IDEOGRAPH-1B170",
+            "CJK COMPATIBILITY IDEOGRAPH-3400",
+            "TANGUT IDEOGRAPH-3400",
+            "HANGUL SYLLABLE AC00",
         ]:
             self.assertRaises(KeyError, self.db.lookup, nonexistent)
 
@@ -170,10 +247,14 @@ class UnicodeFunctionsTest(unittest.TestCase):
 
         # New in 4.1.0
         self.assertEqual(self.db.numeric('\U0001012A', None), None if self.old else 9000)
+        # Changed in 4.1.0
+        self.assertEqual(self.db.numeric('\u5793', None), 1e20 if self.old else None)
         # New in 5.0.0
         self.assertEqual(self.db.numeric('\u07c0', None), None if self.old else 0.0)
         # New in 5.1.0
         self.assertEqual(self.db.numeric('\ua627', None), None if self.old else 7.0)
+        # Changed in 5.2.0
+        self.assertEqual(self.db.numeric('\u09f6'), 3.0 if self.old else 3/16)
         # New in 6.0.0
         self.assertEqual(self.db.numeric('\u0b72', None), None if self.old else 0.25)
         # New in 12.0.0
@@ -238,7 +319,7 @@ class UnicodeFunctionsTest(unittest.TestCase):
         self.assertRaises(TypeError, self.db.category, 'xx')
 
     def test_bidirectional(self):
-        self.assertEqual(self.db.bidirectional('\uFFFE'), '')
+        self.assertEqual(self.db.bidirectional('\uFFFE'), 'BN')
         self.assertEqual(self.db.bidirectional(' '), 'WS')
         self.assertEqual(self.db.bidirectional('A'), 'L')
         self.assertEqual(self.db.bidirectional('\U00020000'), 'L')
@@ -265,6 +346,17 @@ class UnicodeFunctionsTest(unittest.TestCase):
 
         self.assertRaises(TypeError, self.db.bidirectional)
         self.assertRaises(TypeError, self.db.bidirectional, 'xx')
+
+    def test_bidirectional_unassigned(self):
+        if self.old:
+            return
+        self.assertEqual(self.db.bidirectional('\u0378'), 'L')
+        self.assertEqual(self.db.bidirectional('\u077F'), 'AL')
+        self.assertEqual(self.db.bidirectional('\u20CF'), 'ET')
+        self.assertEqual(self.db.bidirectional('\u0590'), 'R')
+        self.assertEqual(self.db.bidirectional('\uFFFF'), 'BN')
+        self.assertEqual(self.db.bidirectional('\U0001FFFE'), 'BN')
+        self.assertEqual(self.db.bidirectional('\U00010D01'), 'AL')
 
     def test_decomposition(self):
         self.assertEqual(self.db.decomposition('\uFFFE'),'')
@@ -589,6 +681,56 @@ class UnicodeFunctionsTest(unittest.TestCase):
             self.assertEqual(eaw(char), 'A')
             self.assertIs(self.db.name(char, None), None)
 
+class UnicodeFunctionsTest(unittest.TestCase, BaseUnicodeFunctionsTest):
+    db = unicodedata
+    old = False
+
+    # Update this if the database changes. Make sure to do a full rebuild
+    # (e.g. 'make distclean && make') to get the correct checksum.
+    expectedchecksum = ('668dbbea1136e69d4f00677a5988b23bc78aefc6'
+                        if quicktest else
+                        'b869af769bd8fe352c04622ab90533dc54df5cf3')
+
+    @requires_resource('network')
+    def test_all_names(self):
+        TESTDATAFILE = "DerivedName.txt"
+        testdata = download_test_data_file(TESTDATAFILE)
+
+        with testdata:
+            self.run_name_tests(testdata)
+
+    def run_name_tests(self, testdata):
+        names_ref = {}
+
+        def parse_cp(s):
+            return int(s, 16)
+
+        # Parse data
+        for line in testdata:
+            line = line.strip()
+            if not line or line.startswith("#"):
+                continue
+            raw_cp, name = line.split("; ")
+            # Check for a range
+            if ".." in raw_cp:
+                cp1, cp2 = map(parse_cp, raw_cp.split(".."))
+                # remove ‘*’ at the end
+                assert name[-1] == '*', (raw_cp, name)
+                name = name[:-1]
+                for cp in range(cp1, cp2 + 1):
+                    names_ref[cp] = f"{name}{cp:04X}"
+            elif name[-1] == '*':
+                cp = parse_cp(raw_cp)
+                name = name[:-1]
+                names_ref[cp] = f"{name}{cp:04X}"
+            else:
+                assert '*' not in name, (raw_cp, name)
+                cp = parse_cp(raw_cp)
+                names_ref[cp] = name
+
+        for cp in range(0, sys.maxunicode + 1):
+            self.assertEqual(self.db.name(chr(cp), None), names_ref.get(cp))
+
     def test_isxidstart(self):
         self.assertTrue(self.db.isxidstart('S'))
         self.assertTrue(self.db.isxidstart('\u0AD0'))  # GUJARATI OM
@@ -831,18 +973,104 @@ class UnicodeFunctionsTest(unittest.TestCase):
             'a\U0001F1FA\U0001F1E6\U0001F1FA\U0001F1F3'),
             ['a', '\U0001F1FA\U0001F1E6', '\U0001F1FA\U0001F1F3'])
 
+    def test_block(self):
+        self.assertEqual(self.db.block('\u0000'), 'Basic Latin')
+        self.assertEqual(self.db.block('\u0041'), 'Basic Latin')
+        self.assertEqual(self.db.block('\u007F'), 'Basic Latin')
+        self.assertEqual(self.db.block('\u0080'), 'Latin-1 Supplement')
+        self.assertEqual(self.db.block('\u00FF'), 'Latin-1 Supplement')
+        self.assertEqual(self.db.block('\u1159'), 'Hangul Jamo')
+        self.assertEqual(self.db.block('\u11F9'), 'Hangul Jamo')
+        self.assertEqual(self.db.block('\uD788'), 'Hangul Syllables')
+        self.assertEqual(self.db.block('\uD7A3'), 'Hangul Syllables')
+        # New in 5.0.0
+        self.assertEqual(self.db.block('\u05BA'), 'Hebrew')
+        self.assertEqual(self.db.block('\u20EF'), 'Combining Diacritical Marks for Symbols')
+        # New in 5.1.0
+        self.assertEqual(self.db.block('\u2064'), 'General Punctuation')
+        self.assertEqual(self.db.block('\uAA4D'), 'Cham')
+        # New in 5.2.0
+        self.assertEqual(self.db.block('\u0816'), 'Samaritan')
+        self.assertEqual(self.db.block('\uA97C'), 'Hangul Jamo Extended-A')
+        self.assertEqual(self.db.block('\uD7C6'), 'Hangul Jamo Extended-B')
+        self.assertEqual(self.db.block('\uD7FB'), 'Hangul Jamo Extended-B')
+        # New in 6.0.0
+        self.assertEqual(self.db.block('\u093A'), 'Devanagari')
+        self.assertEqual(self.db.block('\U00011002'), 'Brahmi')
+        # New in 6.1.0
+        self.assertEqual(self.db.block('\U000E0FFF'), 'No_Block')
+        self.assertEqual(self.db.block('\U00016F7E'), 'Miao')
+        # New in 6.2.0
+        self.assertEqual(self.db.block('\U0001F1E6'), 'Enclosed Alphanumeric Supplement')
+        self.assertEqual(self.db.block('\U0001F1FF'), 'Enclosed Alphanumeric Supplement')
+        # New in 6.3.0
+        self.assertEqual(self.db.block('\u180E'), 'Mongolian')
+        self.assertEqual(self.db.block('\u1A1B'), 'Buginese')
+        # New in 7.0.0
+        self.assertEqual(self.db.block('\u0E33'), 'Thai')
+        self.assertEqual(self.db.block('\u0EB3'), 'Lao')
+        self.assertEqual(self.db.block('\U0001BCA3'), 'Shorthand Format Controls')
+        self.assertEqual(self.db.block('\U0001E8D6'), 'Mende Kikakui')
+        self.assertEqual(self.db.block('\U0001163E'), 'Modi')
+        # New in 8.0.0
+        self.assertEqual(self.db.block('\u08E3'), 'Arabic Extended-A')
+        self.assertEqual(self.db.block('\U00011726'), 'Ahom')
+        # New in 9.0.0
+        self.assertEqual(self.db.block('\u0600'), 'Arabic')
+        self.assertEqual(self.db.block('\U000E007F'), 'Tags')
+        self.assertEqual(self.db.block('\U00011CB4'), 'Marchen')
+        self.assertEqual(self.db.block('\u200D'), 'General Punctuation')
+        # New in 10.0.0
+        self.assertEqual(self.db.block('\U00011D46'), 'Masaram Gondi')
+        self.assertEqual(self.db.block('\U00011D47'), 'Masaram Gondi')
+        self.assertEqual(self.db.block('\U00011A97'), 'Soyombo')
+        # New in 11.0.0
+        self.assertEqual(self.db.block('\U000110CD'), 'Kaithi')
+        self.assertEqual(self.db.block('\u07FD'), 'NKo')
+        self.assertEqual(self.db.block('\U00011EF6'), 'Makasar')
+        # New in 12.0.0
+        self.assertEqual(self.db.block('\U00011A84'), 'Soyombo')
+        self.assertEqual(self.db.block('\U00013438'), 'Egyptian Hieroglyph Format Controls')
+        self.assertEqual(self.db.block('\U0001E2EF'), 'Wancho')
+        self.assertEqual(self.db.block('\U00016F87'), 'Miao')
+        # New in 13.0.0
+        self.assertEqual(self.db.block('\U00011941'), 'Dives Akuru')
+        self.assertEqual(self.db.block('\U00016FE4'), 'Ideographic Symbols and Punctuation')
+        self.assertEqual(self.db.block('\U00011942'), 'Dives Akuru')
+        # New in 14.0.0
+        self.assertEqual(self.db.block('\u0891'), 'Arabic Extended-B')
+        self.assertEqual(self.db.block('\U0001E2AE'), 'Toto')
+        # New in 15.0.0
+        self.assertEqual(self.db.block('\U00011F02'), 'Kawi')
+        self.assertEqual(self.db.block('\U0001343F'), 'Egyptian Hieroglyph Format Controls')
+        self.assertEqual(self.db.block('\U0001E4EF'), 'Nag Mundari')
+        self.assertEqual(self.db.block('\U00011F3F'), 'Kawi')
+        # New in 16.0.0
+        self.assertEqual(self.db.block('\U000113D1'), 'Tulu-Tigalari')
+        self.assertEqual(self.db.block('\U0001E5EF'), 'Ol Onal')
+        self.assertEqual(self.db.block('\U0001612C'), 'Gurung Khema')
+        self.assertEqual(self.db.block('\U00016D63'), 'Kirat Rai')
+        # New in 17.0.0
+        self.assertEqual(self.db.block('\u1AEB'), 'Combining Diacritical Marks Extended')
+        self.assertEqual(self.db.block('\U00011B67'), 'Sharada Supplement')
+        # Unassigned
+        self.assertEqual(self.db.block('\U00100000'), 'Supplementary Private Use Area-B')
+        self.assertEqual(self.db.block('\U0010FFFF'), 'Supplementary Private Use Area-B')
 
-class Unicode_3_2_0_FunctionsTest(UnicodeFunctionsTest):
+    def test_block_invalid_input(self):
+        self.assertRaises(TypeError, self.db.block)
+        self.assertRaises(TypeError, self.db.block, b'x')
+        self.assertRaises(TypeError, self.db.block, 120)
+        self.assertRaises(TypeError, self.db.block, '')
+        self.assertRaises(TypeError, self.db.block, 'xx')
+
+
+class Unicode_3_2_0_FunctionsTest(unittest.TestCase, BaseUnicodeFunctionsTest):
     db = unicodedata.ucd_3_2_0
     old = True
-    expectedchecksum = ('f4526159891a4b766dd48045646547178737ba09'
+    expectedchecksum = ('2164a66700e03cba9c9f5ed9e9a8d594d2da136a'
                         if quicktest else
-                        'f217b8688d7bdff31db4207e078a96702f091597')
-
-    test_grapheme_cluster_break = None
-    test_indic_conjunct_break = None
-    test_extended_pictographic = None
-    test_grapheme_break = None
+                        'a8276cec9b6991779c5bdaa46c1ae7cc50bc2403')
 
 
 class UnicodeMiscTest(unittest.TestCase):
@@ -960,11 +1188,6 @@ class UnicodeMiscTest(unittest.TestCase):
 
 class NormalizationTest(unittest.TestCase):
     @staticmethod
-    def check_version(testfile):
-        hdr = testfile.readline()
-        return unicodedata.unidata_version in hdr
-
-    @staticmethod
     def unistr(data):
         data = [int(x, 16) for x in data.split(" ")]
         return "".join([chr(x) for x in data])
@@ -973,17 +1196,7 @@ class NormalizationTest(unittest.TestCase):
     @requires_resource('cpu')
     def test_normalization(self):
         TESTDATAFILE = "NormalizationTest.txt"
-        TESTDATAURL = f"http://www.pythontest.net/unicode/{unicodedata.unidata_version}/{TESTDATAFILE}"
-
-        # Hit the exception early
-        try:
-            testdata = open_urlresource(TESTDATAURL, encoding="utf-8",
-                                        check=self.check_version)
-        except PermissionError:
-            self.skipTest(f"Permission error when downloading {TESTDATAURL} "
-                          f"into the test data directory")
-        except (OSError, HTTPException) as exc:
-            self.skipTest(f"Failed to download {TESTDATAURL}: {exc}")
+        testdata = download_test_data_file(TESTDATAFILE)
 
         with testdata:
             self.run_normalization_tests(testdata, unicodedata)
@@ -1080,25 +1293,10 @@ class NormalizationTest(unittest.TestCase):
 
 
 class GraphemeBreakTest(unittest.TestCase):
-    @staticmethod
-    def check_version(testfile):
-        hdr = testfile.readline()
-        return unicodedata.unidata_version in hdr
-
     @requires_resource('network')
     def test_grapheme_break(self):
-        TESTDATAFILE = "auxiliary/GraphemeBreakTest.txt"
-        TESTDATAURL = f"https://www.unicode.org/Public/{unicodedata.unidata_version}/ucd/{TESTDATAFILE}"
-
-        # Hit the exception early
-        try:
-            testdata = open_urlresource(TESTDATAURL, encoding="utf-8",
-                                        check=self.check_version)
-        except PermissionError:
-            self.skipTest(f"Permission error when downloading {TESTDATAURL} "
-                          f"into the test data directory")
-        except (OSError, HTTPException) as exc:
-            self.skipTest(f"Failed to download {TESTDATAURL}: {exc}")
+        TESTDATAFILE = "GraphemeBreakTest.txt"
+        testdata = download_test_data_file(TESTDATAFILE)
 
         with testdata:
             self.run_grapheme_break_tests(testdata)

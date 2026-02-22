@@ -539,6 +539,7 @@ OBJECT_OBJS=	\
 		Objects/funcobject.o \
 		Objects/interpolationobject.o \
 		Objects/iterobject.o \
+		Objects/lazyimportobject.o \
 		Objects/listobject.o \
 		Objects/longobject.o \
 		Objects/dictobject.o \
@@ -1372,6 +1373,7 @@ PYTHON_HEADERS= \
 		$(srcdir)/Include/internal/pycore_interpolation.h \
 		$(srcdir)/Include/internal/pycore_intrinsics.h \
 		$(srcdir)/Include/internal/pycore_jit.h \
+		$(srcdir)/Include/internal/pycore_lazyimportobject.h \
 		$(srcdir)/Include/internal/pycore_list.h \
 		$(srcdir)/Include/internal/pycore_llist.h \
 		$(srcdir)/Include/internal/pycore_lock.h \
@@ -2149,7 +2151,7 @@ Objects/mimalloc/page.o: $(srcdir)/Objects/mimalloc/page-queue.c
 .PHONY: regen-cases
 regen-cases: \
         regen-opcode-ids regen-opcode-targets regen-uop-ids regen-opcode-metadata-py \
-		regen-generated-cases regen-executor-cases regen-optimizer-cases \
+		regen-generated-cases regen-executor-cases regen-optimizer-cases regen-record-functions \
 		regen-opcode-metadata regen-uop-metadata regen-test-cases regen-test-opcode-targets
 
 .PHONY: regen-opcode-ids
@@ -2181,6 +2183,12 @@ regen-generated-cases:
 	$(PYTHON_FOR_REGEN) $(srcdir)/Tools/cases_generator/tier1_generator.py \
 	    -o $(srcdir)/Python/generated_cases.c.h.new $(srcdir)/Python/bytecodes.c
 	$(UPDATE_FILE) $(srcdir)/Python/generated_cases.c.h $(srcdir)/Python/generated_cases.c.h.new
+
+.PHONY: regen-record-functions
+regen-record-functions:
+	$(PYTHON_FOR_REGEN) $(srcdir)/Tools/cases_generator/record_function_generator.py \
+	    -o $(srcdir)/Python/record_functions.c.h.new $(srcdir)/Python/bytecodes.c
+	$(UPDATE_FILE) $(srcdir)/Python/record_functions.c.h $(srcdir)/Python/record_functions.c.h.new
 
 .PHONY: regen-test-cases
 regen-test-cases:
@@ -2234,7 +2242,8 @@ Python/ceval.o: \
 		$(srcdir)/Python/condvar.h \
 		$(srcdir)/Python/generated_cases.c.h \
 		$(srcdir)/Python/executor_cases.c.h \
-		$(srcdir)/Python/opcode_targets.h
+		$(srcdir)/Python/opcode_targets.h \
+		$(srcdir)/Python/record_functions.c.h
 
 Python/flowgraph.o: \
 		$(srcdir)/Include/internal/pycore_opcode_metadata.h
@@ -2669,6 +2678,8 @@ TESTSUBDIRS=	idlelib/idle_test \
 		test/test_import/data/package3 \
 		test/test_import/data/package4 \
 		test/test_import/data/unwritable \
+		test/test_import/data/lazy_imports \
+		test/test_import/data/lazy_imports/pkg \
 		test/test_importlib \
 		test/test_importlib/builtin \
 		test/test_importlib/extension \
@@ -2741,6 +2752,7 @@ TESTSUBDIRS=	idlelib/idle_test \
 		test/test_tomllib/data/valid \
 		test/test_tomllib/data/valid/array \
 		test/test_tomllib/data/valid/dates-and-times \
+		test/test_tomllib/data/valid/inline-table \
 		test/test_tomllib/data/valid/multiline-basic-str \
 		test/test_tools \
 		test/test_tools/i18n_data \
