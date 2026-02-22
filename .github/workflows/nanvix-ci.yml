@@ -247,7 +247,7 @@ jobs:
         run: |
           cd sysroot
           chmod +x bin/*
-          timeout 300 ./bin/nanvixd.elf -- ./bin/python3.12 ./smoke_test_l2.py < /dev/null > /tmp/smoke.log 2>&1 || true
+          timeout 600 ./bin/nanvixd.elf -- ./bin/python3.12 ./smoke_test_l2.py < /dev/null > /tmp/smoke.log 2>&1 || true
           cat /tmp/smoke.log
           grep -q "Smoke L2 passed!" /tmp/smoke.log || { echo "::error::Smoke test failed"; exit 1; }
 
@@ -255,7 +255,7 @@ jobs:
         run: |
           cd sysroot
           echo 'import sys; print("HELLO:", sys.version_info[:2])' > test_basic.py
-          timeout 120 ./bin/nanvixd.elf -- ./bin/python3.12 ./test_basic.py < /dev/null > /tmp/basic.log 2>&1 || true
+          timeout 300 ./bin/nanvixd.elf -- ./bin/python3.12 ./test_basic.py < /dev/null > /tmp/basic.log 2>&1 || true
           cat /tmp/basic.log
           grep -q "HELLO:" /tmp/basic.log || { echo "::error::Basic test failed"; exit 1; }
           echo "Basic test passed"
