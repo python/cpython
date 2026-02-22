@@ -5,7 +5,7 @@ import sys
 import threading
 import os
 import weakref
-from contextlib import contextmanager
+from contextlib import contextmanager, suppress
 from inspect import CO_GENERATOR, CO_COROUTINE, CO_ASYNC_GENERATOR
 
 __all__ = ["BdbQuit", "Bdb", "Breakpoint"]
@@ -684,13 +684,11 @@ class Bdb:
             return 'Line %s:%d does not exist' % (filename, lineno)
         source = ''.join(linecache.getlines(filename))
         if source:
-            try:
+            with suppress(SyntaxError):
                 code = compile(source, filename, 'exec')
                 executable_lines = _get_executable_linenos(code)
                 if executable_lines and lineno not in executable_lines:
                     return 'Line %d has no code associated with it' % lineno
-            except SyntaxError:
-                pass
         self._add_to_breaks(filename, lineno)
         bp = Breakpoint(filename, lineno, temporary, cond, funcname)
         # After we set a new breakpoint, we need to search through all frames
