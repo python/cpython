@@ -1,0 +1,1 @@
+Add support for `frozendict` in :meth:`dataclassses.astype` and :meth:`dataclasses.asdict`.
