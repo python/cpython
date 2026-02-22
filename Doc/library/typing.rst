@@ -813,7 +813,7 @@ For example, this conforms to :pep:`484`::
        def __len__(self) -> int: ...
        def __iter__(self) -> Iterator[int]: ...
 
-:pep:`544` allows to solve this problem by allowing users to write
+:pep:`544` solves this problem by allowing users to write
 the above code without explicit base classes in the class definition,
 allowing ``Bucket`` to be implicitly considered a subtype of both ``Sized``
 and ``Iterable[int]`` by static type checkers. This is known as
@@ -2442,6 +2442,10 @@ types.
       Removed the ``_field_types`` attribute in favor of the more
       standard ``__annotations__`` attribute which has the same information.
 
+   .. versionchanged:: 3.9
+      ``NamedTuple`` is now a function rather than a class.
+      It can still be used as a class base, as described above.
+
    .. versionchanged:: 3.11
       Added support for generic namedtuples.
 
@@ -2523,6 +2527,12 @@ types.
 
    .. versionadded:: 3.8
 
+   .. deprecated-removed:: 3.15 3.20
+      It is deprecated to call :func:`isinstance` and :func:`issubclass` checks on
+      protocol classes that were not explicitly decorated with :func:`!runtime_checkable`
+      but that inherit from a runtime-checkable protocol class. This will throw
+      a :exc:`TypeError` in Python 3.20.
+
 .. decorator:: runtime_checkable
 
    Mark a protocol class as a runtime protocol.
@@ -2543,6 +2553,18 @@ types.
 
       import threading
       assert isinstance(threading.Thread(name='Bob'), Named)
+
+   Runtime checkability of protocols is not inherited. A subclass of a runtime-checkable protocol
+   is only runtime-checkable if it is explicitly marked as such, regardless of class hierarchy::
+
+      @runtime_checkable
+      class Iterable(Protocol):
+          def __iter__(self): ...
+
+      # Without @runtime_checkable, Reversible would no longer be runtime-checkable.
+      @runtime_checkable
+      class Reversible(Iterable, Protocol):
+          def __reversed__(self): ...
 
    This decorator raises :exc:`TypeError` when applied to a non-protocol class.
 
@@ -2584,11 +2606,16 @@ types.
       protocol. See :ref:`What's new in Python 3.12 <whatsnew-typing-py312>`
       for more details.
 
+   .. deprecated-removed:: 3.15 3.20
+      It is deprecated to call :func:`isinstance` and :func:`issubclass` checks on
+      protocol classes that were not explicitly decorated with :func:`!runtime_checkable`
+      but that inherit from a runtime-checkable protocol class. This will throw
+      a :exc:`TypeError` in Python 3.20.
 
 .. class:: TypedDict(dict)
 
    Special construct to add type hints to a dictionary.
-   At runtime it is a plain :class:`dict`.
+   At runtime ":class:`!TypedDict` instances" are simply :class:`dicts <dict>`.
 
    ``TypedDict`` declares a dictionary type that expects all of its
    instances to have a certain set of keys, where each key is
@@ -2811,6 +2838,10 @@ types.
 
    .. versionadded:: 3.8
 
+   .. versionchanged:: 3.9
+      ``TypedDict`` is now a function rather than a class.
+      It can still be used as a class base, as described above.
+
    .. versionchanged:: 3.11
       Added support for marking individual keys as :data:`Required` or :data:`NotRequired`.
       See :pep:`655`.
@@ -2869,8 +2900,8 @@ ABCs and Protocols for working with I/O
 ---------------------------------------
 
 .. class:: IO[AnyStr]
-           TextIO[AnyStr]
-           BinaryIO[AnyStr]
+           TextIO
+           BinaryIO
 
    Generic class ``IO[AnyStr]`` and its subclasses ``TextIO(IO[str])``
    and ``BinaryIO(IO[bytes])``

@@ -1006,7 +1006,7 @@ ast_type_init(PyObject *self, PyObject *args, PyObject *kw)
                 }
                 if (p == 0) {
                     PyErr_Format(PyExc_TypeError,
-                        "%T got multiple values for argument '%U'",
+                        "%T got multiple values for argument %R",
                         self, key);
                     res = -1;
                     goto cleanup;
@@ -1028,7 +1028,7 @@ ast_type_init(PyObject *self, PyObject *args, PyObject *kw)
                 }
                 else if (contains == 0) {
                     PyErr_Format(PyExc_TypeError,
-                        "%T.__init__ got an unexpected keyword argument '%U'",
+                        "%T.__init__ got an unexpected keyword argument %R",
                         self, key);
                     res = -1;
                     goto cleanup;

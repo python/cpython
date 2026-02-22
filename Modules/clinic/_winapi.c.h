@@ -2184,7 +2184,154 @@ exit:
     return return_value;
 }
 
+PyDoc_STRVAR(_winapi_RegisterEventSource__doc__,
+"RegisterEventSource($module, unc_server_name, source_name, /)\n"
+"--\n"
+"\n"
+"Retrieves a registered handle to the specified event log.\n"
+"\n"
+"  unc_server_name\n"
+"    The UNC name of the server on which the event source should be registered.\n"
+"    If None, registers the event source on the local computer.\n"
+"  source_name\n"
+"    The name of the event source to register.");
+
+#define _WINAPI_REGISTEREVENTSOURCE_METHODDEF    \
+    {"RegisterEventSource", _PyCFunction_CAST(_winapi_RegisterEventSource), METH_FASTCALL, _winapi_RegisterEventSource__doc__},
+
+static HANDLE
+_winapi_RegisterEventSource_impl(PyObject *module, LPCWSTR unc_server_name,
+                                 LPCWSTR source_name);
+
+static PyObject *
+_winapi_RegisterEventSource(PyObject *module, PyObject *const *args, Py_ssize_t nargs)
+{
+    PyObject *return_value = NULL;
+    LPCWSTR unc_server_name = NULL;
+    LPCWSTR source_name = NULL;
+    HANDLE _return_value;
+
+    if (!_PyArg_CheckPositional("RegisterEventSource", nargs, 2, 2)) {
+        goto exit;
+    }
+    if (args[0] == Py_None) {
+        unc_server_name = NULL;
+    }
+    else if (PyUnicode_Check(args[0])) {
+        unc_server_name = PyUnicode_AsWideCharString(args[0], NULL);
+        if (unc_server_name == NULL) {
+            goto exit;
+        }
+    }
+    else {
+        _PyArg_BadArgument("RegisterEventSource", "argument 1", "str or None", args[0]);
+        goto exit;
+    }
+    if (!PyUnicode_Check(args[1])) {
+        _PyArg_BadArgument("RegisterEventSource", "argument 2", "str", args[1]);
+        goto exit;
+    }
+    source_name = PyUnicode_AsWideCharString(args[1], NULL);
+    if (source_name == NULL) {
+        goto exit;
+    }
+    _return_value = _winapi_RegisterEventSource_impl(module, unc_server_name, source_name);
+    if ((_return_value == INVALID_HANDLE_VALUE) && PyErr_Occurred()) {
+        goto exit;
+    }
+    if (_return_value == NULL) {
+        Py_RETURN_NONE;
+    }
+    return_value = HANDLE_TO_PYNUM(_return_value);
+
+exit:
+    /* Cleanup for unc_server_name */
+    PyMem_Free((void *)unc_server_name);
+    /* Cleanup for source_name */
+    PyMem_Free((void *)source_name);
+
+    return return_value;
+}
+
+PyDoc_STRVAR(_winapi_DeregisterEventSource__doc__,
+"DeregisterEventSource($module, handle, /)\n"
+"--\n"
+"\n"
+"Closes the specified event log.\n"
+"\n"
+"  handle\n"
+"    The handle to the event log to be deregistered.");
+
+#define _WINAPI_DEREGISTEREVENTSOURCE_METHODDEF    \
+    {"DeregisterEventSource", (PyCFunction)_winapi_DeregisterEventSource, METH_O, _winapi_DeregisterEventSource__doc__},
+
+static PyObject *
+_winapi_DeregisterEventSource_impl(PyObject *module, HANDLE handle);
+
+static PyObject *
+_winapi_DeregisterEventSource(PyObject *module, PyObject *arg)
+{
+    PyObject *return_value = NULL;
+    HANDLE handle;
+
+    if (!PyArg_Parse(arg, "" F_HANDLE ":DeregisterEventSource", &handle)) {
+        goto exit;
+    }
+    return_value = _winapi_DeregisterEventSource_impl(module, handle);
+
+exit:
+    return return_value;
+}
+
+PyDoc_STRVAR(_winapi_ReportEvent__doc__,
+"ReportEvent($module, handle, type, category, event_id, string, /)\n"
+"--\n"
+"\n"
+"Writes an entry at the end of the specified event log.\n"
+"\n"
+"  handle\n"
+"    The handle to the event log.\n"
+"  type\n"
+"    The type of event being reported.\n"
+"  category\n"
+"    The event category.\n"
+"  event_id\n"
+"    The event identifier.\n"
+"  string\n"
+"    A string to be inserted into the event message.");
+
+#define _WINAPI_REPORTEVENT_METHODDEF    \
+    {"ReportEvent", _PyCFunction_CAST(_winapi_ReportEvent), METH_FASTCALL, _winapi_ReportEvent__doc__},
+
+static PyObject *
+_winapi_ReportEvent_impl(PyObject *module, HANDLE handle,
+                         unsigned short type, unsigned short category,
+                         unsigned int event_id, LPCWSTR string);
+
+static PyObject *
+_winapi_ReportEvent(PyObject *module, PyObject *const *args, Py_ssize_t nargs)
+{
+    PyObject *return_value = NULL;
+    HANDLE handle;
+    unsigned short type;
+    unsigned short category;
+    unsigned int event_id;
+    LPCWSTR string = NULL;
+
+    if (!_PyArg_ParseStack(args, nargs, "" F_HANDLE "O&O&O&O&:ReportEvent",
+        &handle, _PyLong_UnsignedShort_Converter, &type, _PyLong_UnsignedShort_Converter, &category, _PyLong_UnsignedInt_Converter, &event_id, _PyUnicode_WideCharString_Converter, &string)) {
+        goto exit;
+    }
+    return_value = _winapi_ReportEvent_impl(module, handle, type, category, event_id, string);
+
+exit:
+    /* Cleanup for string */
+    PyMem_Free((void *)string);
+
+    return return_value;
+}
+
 #ifndef _WINAPI_GETSHORTPATHNAME_METHODDEF
     #define _WINAPI_GETSHORTPATHNAME_METHODDEF
 #endif /* !defined(_WINAPI_GETSHORTPATHNAME_METHODDEF) */
-/*[clinic end generated code: output=4581fd481c3c6293 input=a9049054013a1b77]*/
+/*[clinic end generated code: output=4ab94eaee93a0a90 input=a9049054013a1b77]*/

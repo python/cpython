@@ -544,9 +544,19 @@ groupby_next(PyObject *op)
         else if (gbo->tgtkey == NULL)
             break;
         else {
-            int rcmp;
+            /* A user-defined __eq__ can re-enter groupby and advance the iterator,
+               mutating gbo->tgtkey / gbo->currkey while we are comparing them.
+               Take local snapshots and hold strong references so INCREF/DECREF
+               apply to the same objects even under re-entrancy. */
+            PyObject *tgtkey = gbo->tgtkey;
+            PyObject *currkey = gbo->currkey;
 
-            rcmp = PyObject_RichCompareBool(gbo->tgtkey, gbo->currkey, Py_EQ);
+            Py_INCREF(tgtkey);
+            Py_INCREF(currkey);
+            int rcmp = PyObject_RichCompareBool(tgtkey, currkey, Py_EQ);
+            Py_DECREF(tgtkey);
+            Py_DECREF(currkey);
+
             if (rcmp == -1)
                 return NULL;
             else if (rcmp == 0)
@@ -2587,7 +2597,7 @@ cwr_traverse(PyObject *op, visitproc visit, void *arg)
 }
 
 static PyObject *
-cwr_next(PyObject *op)
+cwr_next_lock_held(PyObject *op)
 {
     cwrobject *co = cwrobject_CAST(op);
     PyObject *elem;
@@ -2664,6 +2674,16 @@ cwr_next(PyObject *op)
 empty:
     co->stopped = 1;
     return NULL;
+}
+
+static PyObject *
+cwr_next(PyObject *op)
+{
+    PyObject *result;
+    Py_BEGIN_CRITICAL_SECTION(op);
+    result = cwr_next_lock_held(op);
+    Py_END_CRITICAL_SECTION()
+    return result;
 }
 
 static PyMethodDef cwr_methods[] = {
@@ -2846,7 +2866,7 @@ permutations_traverse(PyObject *op, visitproc visit, void *arg)
 }
 
 static PyObject *
-permutations_next(PyObject *op)
+permutations_next_lock_held(PyObject *op)
 {
     permutationsobject *po = permutationsobject_CAST(op);
     PyObject *elem;
@@ -2934,6 +2954,16 @@ permutations_next(PyObject *op)
 empty:
     po->stopped = 1;
     return NULL;
+}
+
+static PyObject *
+permutations_next(PyObject *op)
+{
+    PyObject *result;
+    Py_BEGIN_CRITICAL_SECTION(op);
+    result = permutations_next_lock_held(op);
+    Py_END_CRITICAL_SECTION()
+    return result;
 }
 
 static PyMethodDef permuations_methods[] = {
