@@ -14,6 +14,12 @@ class TupleSubclass(tuple):
 
 
 class CAPITest(unittest.TestCase):
+    def _not_tracked(self, t):
+        self.assertFalse(gc.is_tracked(t), t)
+
+    def _tracked(self, t):
+        self.assertTrue(gc.is_tracked(t), t)
+
     def test_check(self):
         # Test PyTuple_Check()
         check = _testlimitedcapi.tuple_check
@@ -52,11 +58,14 @@ class CAPITest(unittest.TestCase):
         self.assertEqual(tup1, ())
         self.assertEqual(size(tup1), 0)
         self.assertIs(type(tup1), tuple)
+        self._not_tracked(tup1)
+
         tup2 = tuple_new(1)
         self.assertIs(type(tup2), tuple)
         self.assertEqual(size(tup2), 1)
         self.assertIsNot(tup2, tup1)
         self.assertTrue(checknull(tup2, 0))
+        self._tracked(tup2)
 
         self.assertRaises(SystemError, tuple_new, -1)
         self.assertRaises(SystemError, tuple_new, PY_SSIZE_T_MIN)
@@ -69,6 +78,12 @@ class CAPITest(unittest.TestCase):
         tup = tuple([i] for i in range(5))
         copy = tuple_fromarray(tup)
         self.assertEqual(copy, tup)
+        self._tracked(copy)
+
+        tup = tuple(42**i for i in range(5))
+        copy = tuple_fromarray(tup)
+        self.assertEqual(copy, tup)
+        self._not_tracked(copy)
 
         tup = ()
         copy = tuple_fromarray(tup)
@@ -91,6 +106,10 @@ class CAPITest(unittest.TestCase):
         self.assertEqual(pack(0), ())
         self.assertEqual(pack(1, [1]), ([1],))
         self.assertEqual(pack(2, [1], [2]), ([1], [2]))
+
+        self._tracked(pack(1, [1]))
+        self._tracked(pack(2, [1], b'abc'))
+        self._not_tracked(pack(2, 42, b'abc'))
 
         self.assertRaises(SystemError, pack, PY_SSIZE_T_MIN)
         self.assertRaises(SystemError, pack, -1)

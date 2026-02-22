@@ -46,7 +46,8 @@ install_stdlib() {
         rsync -au --delete "$PROJECT_DIR/$PYTHON_XCFRAMEWORK_PATH/lib/" "$CODESIGNING_FOLDER_PATH/python/lib/"
         rsync -au "$PROJECT_DIR/$PYTHON_XCFRAMEWORK_PATH/$SLICE_FOLDER/lib-$ARCHS/" "$CODESIGNING_FOLDER_PATH/python/lib/"
     else
-        rsync -au --delete "$PROJECT_DIR/$PYTHON_XCFRAMEWORK_PATH/$SLICE_FOLDER/lib/" "$CODESIGNING_FOLDER_PATH/python/lib/"
+        # A single-arch framework will have a libpython symlink; that can't be included at runtime
+        rsync -au --delete "$PROJECT_DIR/$PYTHON_XCFRAMEWORK_PATH/$SLICE_FOLDER/lib/" "$CODESIGNING_FOLDER_PATH/python/lib/" --exclude 'libpython*.dylib'
     fi
 }
 

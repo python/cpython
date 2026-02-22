@@ -114,6 +114,8 @@ class Font:
     def __setitem__(self, key, value):
         self.configure(**{key: value})
 
+    __iter__ = None  # prevent using __getitem__ for iteration
+
     def __del__(self):
         try:
             if self.delete_font:

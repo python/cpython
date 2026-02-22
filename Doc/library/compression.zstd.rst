@@ -33,6 +33,8 @@ The :mod:`!compression.zstd` module contains:
 * The :class:`CompressionParameter`, :class:`DecompressionParameter`, and
   :class:`Strategy` classes for setting advanced (de)compression parameters.
 
+.. include:: ../includes/optional-module.rst
+
 
 Exceptions
 ----------
@@ -71,7 +73,7 @@ Reading and writing compressed files
    argument is not None, a :exc:`!TypeError` will be raised.
 
    When writing, the *options* argument can be a dictionary
-   providing advanced decompression parameters; see
+   providing advanced compression parameters; see
    :class:`CompressionParameter` for detailed information about supported
    parameters. The *level* argument is the compression level to use when
    writing compressed data. Only one of *level* or *options* may be non-None.
@@ -115,7 +117,7 @@ Reading and writing compressed files
    argument is not None, a :exc:`!TypeError` will be raised.
 
    When writing, the *options* argument can be a dictionary
-   providing advanced decompression parameters; see
+   providing advanced compression parameters; see
    :class:`CompressionParameter` for detailed information about supported
    parameters. The *level* argument is the compression level to use when
    writing compressed data. Only one of *level* or *options* may be passed. The
