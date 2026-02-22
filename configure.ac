@@ -5020,7 +5020,7 @@ AS_VAR_IF([ac_cv_builtin_atomic], [yes], [
 # Check for __builtin_shufflevector with 128-bit vector support on an
 # architecture where it compiles to worthwhile native SIMD instructions.
 # Used for SIMD-accelerated bytes.hex() in Python/pystrhex.c.
-AC_CACHE_CHECK([for __builtin_shufflevector], [ac_cv_builtin_shufflevector], [
+AC_CACHE_CHECK([for __builtin_shufflevector], [ac_cv_efficient_builtin_shufflevector], [
 AC_LINK_IFELSE([
   AC_LANG_PROGRAM([[
     /* __builtin_shufflevector is available on many platforms, but 128-bit
@@ -5042,10 +5042,10 @@ AC_LINK_IFELSE([
     (void)c;
     return 0;
   ]])
-],[ac_cv_builtin_shufflevector=yes],[ac_cv_builtin_shufflevector=no])
+],[ac_cv_efficient_builtin_shufflevector=yes],[ac_cv_efficient_builtin_shufflevector=no])
 ])
 
-AS_VAR_IF([ac_cv_builtin_shufflevector], [yes], [
+AS_VAR_IF([ac_cv_efficient_builtin_shufflevector], [yes], [
     AC_DEFINE([HAVE_EFFICIENT_BUILTIN_SHUFFLEVECTOR], [1],
               [Define if compiler supports __builtin_shufflevector with 128-bit
                vectors AND the target architecture has native SIMD (not just API

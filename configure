@@ -18896,7 +18896,7 @@ fi
 # Used for SIMD-accelerated bytes.hex() in Python/pystrhex.c.
 { printf "%s\n" "$as_me:${as_lineno-$LINENO}: checking for __builtin_shufflevector" >&5
 printf %s "checking for __builtin_shufflevector... " >&6; }
-if test ${ac_cv_builtin_shufflevector+y}
+if test ${ac_cv_efficient_builtin_shufflevector+y}
 then :
   printf %s "(cached) " >&6
 else case e in #(
@@ -18935,9 +18935,9 @@ main (void)
 _ACEOF
 if ac_fn_c_try_link "$LINENO"
 then :
-  ac_cv_builtin_shufflevector=yes
+  ac_cv_efficient_builtin_shufflevector=yes
 else case e in #(
-  e) ac_cv_builtin_shufflevector=no ;;
+  e) ac_cv_efficient_builtin_shufflevector=no ;;
 esac
 fi
 rm -f core conftest.err conftest.$ac_objext conftest.beam \
@@ -18945,10 +18945,10 @@ rm -f core conftest.err conftest.$ac_objext conftest.beam \
  ;;
 esac
 fi
-{ printf "%s\n" "$as_me:${as_lineno-$LINENO}: result: $ac_cv_builtin_shufflevector" >&5
-printf "%s\n" "$ac_cv_builtin_shufflevector" >&6; }
+{ printf "%s\n" "$as_me:${as_lineno-$LINENO}: result: $ac_cv_efficient_builtin_shufflevector" >&5
+printf "%s\n" "$ac_cv_efficient_builtin_shufflevector" >&6; }
 
-if test "x$ac_cv_builtin_shufflevector" = xyes
+if test "x$ac_cv_efficient_builtin_shufflevector" = xyes
 then :
 
 
