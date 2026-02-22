@@ -5043,9 +5043,10 @@ AC_LINK_IFELSE([
 ])
 
 AS_VAR_IF([ac_cv_builtin_shufflevector], [yes], [
-    AC_DEFINE([HAVE_BUILTIN_SHUFFLEVECTOR_AND_IT_IS_WORTH_USING], [1],
-              [Define if compiler supports __builtin_shufflevector with
-               128-bit vectors on an architecture with native SIMD])
+    AC_DEFINE([HAVE_EFFICIENT_BUILTIN_SHUFFLEVECTOR], [1],
+              [Define if compiler supports __builtin_shufflevector with 128-bit
+               vectors AND the target architecture has native SIMD (not just API
+               availability)])
 ])
 
 # --with-mimalloc

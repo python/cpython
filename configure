@@ -18942,7 +18942,7 @@ if test "x$ac_cv_builtin_shufflevector" = xyes
 then :
 
 
-printf "%s\n" "#define HAVE_BUILTIN_SHUFFLEVECTOR_AND_IT_IS_WORTH_USING 1" >>confdefs.h
+printf "%s\n" "#define HAVE_EFFICIENT_BUILTIN_SHUFFLEVECTOR 1" >>confdefs.h
 
 
 fi
