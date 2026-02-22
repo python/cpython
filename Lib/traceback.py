@@ -1790,6 +1790,7 @@ def _compute_suggestion_error(exc_value, tb, wrong_name):
 
     return suggestion
 
+ 
 def _calculate_closed_name(wrong_name, d):
     try:
         import _suggestions
