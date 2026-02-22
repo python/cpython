@@ -198,8 +198,18 @@ struct _dictkeysobject {
     /* Number of used entries in dk_entries. */
     Py_ssize_t dk_nentries;
 
-    /* Actual hash table of dk_size entries. It holds indices in dk_entries,
-       or DKIX_EMPTY(-1) or DKIX_DUMMY(-2).
+    /* Offset to entries within this allocation.
+
+       PyDictKeysObject * points to dk_refcnt.  The actual hash table
+       (dk_indices) is stored immediately before the struct in memory;
+       see _DK_INDICES_END() and _DK_INDICES_BASE().
+
+       dk_indices marks the start of the entries array and is used by
+       DK_ENTRIES() / DK_UNICODE_ENTRIES(). */
+    char dk_indices[];  /* char is required to avoid strict aliasing. */
+
+    /* dk_indices is the actual hash table of dk_size entries. It holds
+       indices in dk_entries, or DKIX_EMPTY(-1) or DKIX_DUMMY(-2).
 
        Indices must be: 0 <= indice < USABLE_FRACTION(dk_size).
 
@@ -211,10 +221,6 @@ struct _dictkeysobject {
        - 8 bytes otherwise (int64_t*)
 
        Dynamically sized, SIZEOF_VOID_P is minimum. */
-    char dk_indices[];  /* char is required to avoid strict aliasing. */
-
-    /* "PyDictKeyEntry or PyDictUnicodeEntry dk_entries[USABLE_FRACTION(DK_SIZE(dk))];" array follows:
-       see the DK_ENTRIES() / DK_UNICODE_ENTRIES() functions below */
 };
 
 /* This must be no more than 250, for the prefix size to fit in one byte. */

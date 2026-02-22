@@ -16,6 +16,10 @@ As of Python 3.6, this is compact and ordered. Basic idea is described here:
 
 layout:
 
++---------------------+
+| dk_indices[]        |
+|                     |
++---------------------+
 | dk_refcnt           |
 | dk_log2_size        |
 | dk_log2_index_bytes |
@@ -24,12 +28,15 @@ layout:
 | dk_usable           |
 | dk_nentries         |
 +---------------------+
-| dk_indices[]        |
-|                     |
-+---------------------+
 | dk_entries[]        |
 |                     |
 +---------------------+
+
+PyDictKeysObject * points to the start of the struct (dk_refcnt).  The
+dk_indices table is stored immediately before this struct in memory.
+
+NOTE: dk_mutex is present in free-threaded builds, in between dk_kind and
+dk_version.
 
 dk_indices is actual hashtable.  It holds index in entries, or DKIX_EMPTY(-1)
 or DKIX_DUMMY(-2).
