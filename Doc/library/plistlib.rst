@@ -4,10 +4,6 @@
 .. module:: plistlib
    :synopsis: Generate and parse Apple plist files.
 
-.. moduleauthor:: Jack Jansen
-.. sectionauthor:: Georg Brandl <georg@python.org>
-.. (harvested from docstrings in the original file)
-
 **Source code:** :source:`Lib/plistlib.py`
 
 .. index::

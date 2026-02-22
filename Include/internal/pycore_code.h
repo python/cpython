@@ -292,17 +292,7 @@ extern int _PyCode_SafeAddr2Line(PyCodeObject *co, int addr);
 extern void _PyCode_Clear_Executors(PyCodeObject *code);
 
 
-#ifdef Py_GIL_DISABLED
-// gh-115999 tracks progress on addressing this.
-#define ENABLE_SPECIALIZATION 0
-// Use this to enable specialization families once they are thread-safe. All
-// uses will be replaced with ENABLE_SPECIALIZATION once all families are
-// thread-safe.
-#define ENABLE_SPECIALIZATION_FT 1
-#else
 #define ENABLE_SPECIALIZATION 1
-#define ENABLE_SPECIALIZATION_FT ENABLE_SPECIALIZATION
-#endif
 
 /* Specialization functions, these are exported only for other re-generated
  * interpreters to call */
