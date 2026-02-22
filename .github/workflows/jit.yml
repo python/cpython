@@ -162,6 +162,7 @@ jobs:
       fail-fast: false
       matrix:
         include:
+
           - name: JIT without optimizations (Debug)
             configure_flags: --enable-experimental-jit --with-pydebug
             test_env: "PYTHON_UOPS_OPTIMIZE=0"
@@ -189,4 +190,3 @@ jobs:
         if: matrix.run_tests != false
         run: |
           ${{ matrix.test_env }} ./python -m test --multiprocess 0 --timeout 4500 --verbose2 --verbose3
-        continue-on-error: ${{ matrix.continue_on_error }}
