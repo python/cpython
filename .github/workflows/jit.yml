@@ -43,7 +43,7 @@ jobs:
         run: |
           ./python -m test --multiprocess 0 --timeout 4500 --verbose2 --verbose3
 
-  jit-windows:
+  windows:
     name: ${{ matrix.target }} (${{ matrix.debug && 'Debug' || 'Release' }})
     needs: interpreter
     runs-on: ${{ matrix.runner }}
@@ -83,7 +83,7 @@ jobs:
         run: |
           ./PCbuild/rt.bat ${{ matrix.debug && '-d' || '' }} -p ${{ matrix.architecture }} -q --multiprocess 0 --timeout 4500 --verbose2 --verbose3
 
-  jit-macos:
+  macos:
     name: ${{ matrix.target }} (${{ matrix.debug && 'Debug' || 'Release' }})
     needs: interpreter
     runs-on: ${{ matrix.runner }}
@@ -126,7 +126,7 @@ jobs:
         run: |
           ./python.exe -m test --multiprocess 0 --timeout 4500 --verbose2 --verbose3
 
-  jit-linux:
+  linux:
     name: ${{ matrix.target }} (${{ matrix.debug && 'Debug' || 'Release' }})
     needs: interpreter
     runs-on: ${{ matrix.runner }}
@@ -162,7 +162,7 @@ jobs:
         run: |
           ./python -m test --multiprocess 0 --timeout 4500 --verbose2 --verbose3
 
-  jit-linux-extras:
+  linux-extras:
     name: ${{ matrix.name }}
     needs: interpreter
     runs-on: ubuntu-24.04
