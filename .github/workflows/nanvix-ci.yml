@@ -37,7 +37,7 @@ jobs:
           echo "sha=$NANVIX_SHA" >> "$GITHUB_OUTPUT"
           echo "sha_full=$NANVIX_SHA_FULL" >> "$GITHUB_OUTPUT"
 
-  build:
+  build-and-test:
     needs: get-nanvix-info
     runs-on: ubuntu-latest
     strategy:
@@ -52,9 +52,10 @@ jobs:
             process-mode: single-process
           - platform: microvm
             process-mode: multi-process
-    name: build (${{ matrix.platform }}-${{ matrix.process-mode }})
+    name: ${{ matrix.platform }}-${{ matrix.process-mode }}
     container:
       image: nanvix/toolchain:latest-minimal
+      options: --device /dev/kvm
     defaults:
       run:
         shell: bash
@@ -82,145 +83,35 @@ jobs:
       - name: Build
         run: ./z build
 
-      - name: Install and stage
+      - name: Test
+        run: ./z test
+
+      - name: Package
         run: |
           set -euo pipefail
           STAGING=".nanvix/staging"
-          rm -rf "$STAGING"
-          make -f Makefile.nanvix CONFIG_NANVIX=y NANVIX_HOME="$(cat .nanvix/env.sh | grep NANVIX_HOME | cut -d'"' -f2)" \
-            NANVIX_TOOLCHAIN=/opt/nanvix install DESTDIR="$STAGING"
-          # Install site-packages for functional tests
-          SITE_PKG="$STAGING/sysroot/lib/python3.12/site-packages"
-          mkdir -p "$SITE_PKG" "$STAGING/sysroot/bin"
-          source .nanvix/env.sh
-          cp "$NANVIX_HOME/bin/nanvixd.elf" "$STAGING/sysroot/bin/" 2>/dev/null || true
-          cp "$NANVIX_HOME/bin/kernel.elf" "$STAGING/sysroot/bin/" 2>/dev/null || true
-          for f in linuxd.elf uservm.elf; do
-            [[ -f "$NANVIX_HOME/bin/$f" ]] && cp "$NANVIX_HOME/bin/$f" "$STAGING/sysroot/bin/" || true
-          done
-          pip3 install --target="$SITE_PKG" --no-deps --no-compile --quiet \
-            absl-py==2.3.1 annotated-types==0.7.0 attrs==23.2.0 certifi \
-            charset-normalizer==3.4.4 chess==1.9.2 click==8.3.0 \
-            click-plugins==1.1.1.2 cligj==0.7.2 cloudpathlib==0.23.0 \
-            cycler==0.12.1 entrypoints==0.4 et-xmlfile==2.0.0 \
-            filelock==3.20.0 flatbuffers fpdf==1.7.2 fsspec \
-            gast==0.6.0 idna==3.11 immutabledict joblib==1.3.2 \
-            langcodes==3.5.0 markdown lazy-loader==0.4 \
-            markdown-it-py==4.0.0 MarkupSafe==2.1.5 mdurl==0.1.2 \
-            mpmath==1.3.0 namex==0.1.0 networkx==3.4.2 opt-einsum==3.4.0 \
-            ordered-set==4.1.0 packaging==23.2 ply==3.11 pycparser==2.23 \
-            pygments pyparsing==3.1.1 pytz==2024.1 setuptools==75.8.0 \
-            shellingham==1.5.4 six==1.16.0 spacy-legacy==3.0.12 \
-            spacy-loggers==1.0.5 striprtf==0.0.20 tabulate==0.8.10 \
-            tenacity termcolor toolz==0.12.1 tqdm \
-            typing-extensions==4.15.0 typing-inspection==0.4.2 \
-            tzdata==2024.1 wasabi==1.1.3 wheel==0.45.1 \
-            2>/dev/null || true
-          pip3 install --target="$SITE_PKG" --no-deps --no-compile --quiet \
-            google-pasta==0.2.0 python-dateutil==2.8.2 Jinja2 \
-            wrapt==2.0.1 smart-open==7.5.0 \
-            pylatex==1.4.2 werkzeug rich pypdf PyPDF2==3.0.1 \
-            xlsxwriter catalogue==2.0.10 fonttools==4.49.0 \
-            plotly==5.20.0 urllib3 requests chardet==5.2.0 \
-            cffi==1.17.1 itsdangerous colorama decorator \
-            defusedxml pyyaml flask plumbum==1.9.0 msgpack \
-            blinker tomli more-itertools python-dotenv \
-            beautifulsoup4 soupsieve html5lib webencodings \
-            jsonpointer jsonpatch jmespath docutils marshmallow \
-            dataclasses-json reportlab threadpoolctl==3.3.0 \
-            typing_inspect mypy_extensions pandoc==2.4 platformdirs \
-            isodate nltk textblob openpyxl==3.1.2 xlrd==2.0.1 \
-            sympy==1.12 \
-            2>/dev/null || true
-          find "$SITE_PKG" -name "*.so" -delete 2>/dev/null || true
-          rm -f "$SITE_PKG/distutils-precedence.pth" 2>/dev/null || true
-          # Copy test files
-          cp .nanvix/tests/func/test_*.py "$STAGING/sysroot/" 2>/dev/null || true
-          cp .nanvix/tests/smoke_test_l2.py "$STAGING/sysroot/" 2>/dev/null || true
-          # Precompile
-          /opt/nanvix/bin/python3 -m compileall -q "$STAGING/sysroot/lib/python3.12/" 2>/dev/null || true
-          /opt/nanvix/bin/python3 -m compileall -q "$STAGING/sysroot"/test_*.py 2>/dev/null || true
+          ARTIFACT_NAME="cpython-${{ matrix.platform }}-${{ matrix.process-mode }}"
+          rm -f "$STAGING/sysroot/smoke_test"*.py "$STAGING/sysroot"/test_*.py
+          find "$STAGING" -path "*/test" -type d -exec rm -rf {} + 2>/dev/null || true
+          find "$STAGING" -path "*/tests" -type d -exec rm -rf {} + 2>/dev/null || true
+          rm -rf "$STAGING/sysroot/lib/python3.12/idlelib" \
+                 "$STAGING/sysroot/lib/python3.12/tkinter" \
+                 "$STAGING/sysroot/lib/python3.12/turtledemo" \
+                 "$STAGING/sysroot/lib/python3.12/turtle.py" \
+                 "$STAGING/sysroot/lib/python3.12/site-packages"
+          mkdir -p dist
+          tar -cjf "dist/${ARTIFACT_NAME}.tar.bz2" -C "$STAGING" sysroot
+          echo "ARTIFACT_TARBALL=dist/${ARTIFACT_NAME}.tar.bz2" >> "$GITHUB_ENV"
 
-      - name: Upload test sysroot
+      - name: Upload Artifacts
         uses: actions/upload-artifact@v4
         with:
-          name: sysroot-${{ matrix.platform }}-${{ matrix.process-mode }}
-          path: .nanvix/staging/sysroot/
-          retention-days: 1
-
-  test:
-    needs: build
-    runs-on: ubuntu-latest
-    strategy:
-      fail-fast: false
-      matrix:
-        platform: [hyperlight, microvm]
-        process-mode: [multi-process, single-process]
-        test-range:
-          - { start: 1, end: 20, label: "001-020" }
-          - { start: 21, end: 40, label: "021-040" }
-          - { start: 41, end: 60, label: "041-060" }
-          - { start: 61, end: 80, label: "061-080" }
-          - { start: 81, end: 99, label: "081-099" }
-    name: test ${{ matrix.test-range.label }} (${{ matrix.platform }}-${{ matrix.process-mode }})
-    container:
-      image: nanvix/toolchain:latest-minimal
-      options: --device /dev/kvm
-    defaults:
-      run:
-        shell: bash
-    env:
-      USER: runner
-    steps:
-      - name: Download test sysroot
-        uses: actions/download-artifact@v4
-        with:
-          name: sysroot-${{ matrix.platform }}-${{ matrix.process-mode }}
-          path: sysroot
-
-      - name: Run functional tests (${{ matrix.test-range.label }})
-        run: |
-          set -euo pipefail
-          cd sysroot
-          chmod +x bin/*
-          total_pass=0
-          total_fail=0
-          total_skip=0
-          failed=""
-
-          for test_file in test_[0-9]*.py; do
-            [[ ! -f "$test_file" ]] && continue
-            num=$(echo "$test_file" | grep -oP '(?<=test_)\d+' | sed 's/^0*//')
-            [[ -z "$num" ]] && num=0
-            [[ "$num" -lt ${{ matrix.test-range.start }} || "$num" -gt ${{ matrix.test-range.end }} ]] && continue
-
-            log="/tmp/${test_file}.log"
-            timeout 300 ./bin/nanvixd.elf -- ./bin/python3.12 "./$test_file" < /dev/null > "$log" 2>&1 || true
-
-            if grep -q 'PASS' "$log" 2>/dev/null; then
-              name=$(grep 'PASS' "$log" | head -1 | sed 's/:.*//')
-              echo "  $name: PASS"
-              total_pass=$((total_pass + 1))
-            elif grep -q 'FAIL' "$log" 2>/dev/null; then
-              grep 'FAIL' "$log" || true
-              total_fail=$((total_fail + 1))
-              failed="${failed}${test_file} "
-            else
-              echo "  ${test_file}: SKIP"
-              total_skip=$((total_skip + 1))
-            fi
-            rm -f "$log"
-          done
-
-          echo ""
-          echo "Results: ${total_pass} passed, ${total_fail} failed, ${total_skip} skipped"
-          if [[ "$total_fail" -gt 0 ]]; then
-            echo "::error::Failed tests: ${failed}"
-            exit 1
-          fi
+          name: cpython-${{ matrix.platform }}-${{ matrix.process-mode }}
+          path: ${{ env.ARTIFACT_TARBALL }}
+          retention-days: 7
 
   release:
-    needs: [get-nanvix-info, build, test]
+    needs: [get-nanvix-info, build-and-test]
     if: github.event_name != 'pull_request'
     runs-on: ubuntu-latest
     env:
@@ -229,27 +120,17 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
-      - name: Download Build Sysroots
+      - name: Download All Artifacts
         uses: actions/download-artifact@v4
         with:
-          path: release-sysroots
-          pattern: sysroot-*
+          path: release-artifacts
+          pattern: cpython-*
 
-      - name: Package Release Assets
+      - name: Prepare Release Assets
         run: |
           set -euo pipefail
           mkdir -p release-assets
-          for dir in release-sysroots/sysroot-*; do
-            name=$(basename "$dir" | sed 's/^sysroot-/cpython-/')
-            # Clean test artifacts
-            rm -f "$dir/smoke_test"*.py "$dir"/test_*.py
-            find "$dir" -path "*/test" -type d -exec rm -rf {} + 2>/dev/null || true
-            find "$dir" -path "*/tests" -type d -exec rm -rf {} + 2>/dev/null || true
-            rm -rf "$dir/lib/python3.12/idlelib" "$dir/lib/python3.12/tkinter" \
-                   "$dir/lib/python3.12/turtledemo" "$dir/lib/python3.12/turtle.py" \
-                   "$dir/lib/python3.12/site-packages"
-            tar -cjf "release-assets/${name}.tar.bz2" -C "$(dirname "$dir")" "$(basename "$dir")"
-          done
+          find release-artifacts -name "*.tar.bz2" -exec cp {} release-assets/ \\;
           ls -la release-assets/
 
       - name: Get Release Metadata
@@ -319,18 +200,17 @@ jobs:
           done
 
   report-failure:
-    needs: [build, test]
+    needs: [build-and-test]
     if: >-
       ${{ always() &&
           (github.event_name == 'repository_dispatch' || github.event_name == 'schedule' || github.event_name == 'push') &&
-          (needs.build.result == 'failure' || needs.test.result == 'failure') }}
+          needs.build-and-test.result == 'failure' }}
     runs-on: ubuntu-latest
     steps:
       - name: Create failure issue
         uses: actions/github-script@v7
         env:
-          BUILD_RESULT: ${{ needs.build.result }}
-          TEST_RESULT: ${{ needs.test.result }}
+          BUILD_RESULT: ${{ needs.build-and-test.result }}
         with:
           github-token: ${{ secrets.GITHUB_TOKEN }}
           script: |
@@ -341,8 +221,7 @@ jobs:
               `- Trigger: ${context.eventName}`,
               `- Run: [#${context.runNumber}](${runUrl})`,
               `- SHA: ${context.sha}`,
-              `- build: ${process.env.BUILD_RESULT}`,
-              `- test: ${process.env.TEST_RESULT}`,
+              `- build-and-test: ${process.env.BUILD_RESULT}`,
               '',
               'Please investigate and take any corrective actions.'
             ].join('\n');

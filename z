@@ -507,6 +507,10 @@ run_functional_tests() {
     exit 1
   fi
 
+  if [[ "$total_pass" -eq 0 ]]; then
+    die "no tests passed (all skipped or none found)"
+  fi
+
   echo "All functional tests passed"
 }
 
