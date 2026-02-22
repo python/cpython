@@ -1,0 +1,4 @@
+Speed up :meth:`bytes.hex`, :meth:`bytearray.hex`, and
+:func:`binascii.hexlify` with SIMD on x86-64, ARM64, and ARM32 with NEON.
+Around 1.1-3x faster for common 16-64 byte inputs such as hashlib hex
+digests, and up to 11x faster for large data (1KB+).
