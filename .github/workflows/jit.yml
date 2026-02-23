@@ -42,6 +42,7 @@ jobs:
 
   windows:
     name: ${{ matrix.target }} (${{ matrix.debug && 'Debug' || 'Release' }})
+
     runs-on: ${{ matrix.runner }}
     timeout-minutes: 60
     strategy:
@@ -81,6 +82,7 @@ jobs:
 
   macos:
     name: ${{ matrix.target }} (${{ matrix.debug && 'Debug' || 'Release' }})
+
     runs-on: ${{ matrix.runner }}
     timeout-minutes: 60
     strategy:
@@ -123,6 +125,7 @@ jobs:
 
   linux:
     name: ${{ matrix.target }} (${{ matrix.debug && 'Debug' || 'Release' }})
+
     runs-on: ${{ matrix.runner }}
     timeout-minutes: 60
     strategy:
@@ -152,10 +155,13 @@ jobs:
           export PATH="$(llvm-config-${{ env.LLVM_VERSION }} --bindir):$PATH"
           ./configure --enable-experimental-jit ${{ matrix.debug && '--with-pydebug' || '' }}
           make all --jobs 4
+      - name: Test
+        run: |
           ./python -m test --multiprocess 0 --timeout 4500 --verbose2 --verbose3
 
   linux-extras:
     name: ${{ matrix.name }}
+
     runs-on: ubuntu-24.04
     timeout-minutes: 60
     strategy:
