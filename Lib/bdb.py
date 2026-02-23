@@ -189,6 +189,9 @@ def _get_executable_linenos(code):
     return linenos
 
 
+_executable_linenos_cache = {}
+
+
 class Bdb:
     """Generic Python debugger base class.
 
@@ -683,13 +686,15 @@ class Bdb:
         line = linecache.getline(filename, lineno)
         if not line:
             return 'Line %s:%d does not exist' % (filename, lineno)
-        source = ''.join(linecache.getlines(filename))
-        if source:
-            with suppress(SyntaxError):
-                code = compile(source, filename, 'exec')
-                executable_lines = _get_executable_linenos(code)
-                if executable_lines and lineno not in executable_lines:
-                    return 'Line %d has no code associated with it' % lineno
+        if filename not in _executable_linenos_cache:
+            source = ''.join(linecache.getlines(filename))
+            if source:
+                with suppress(SyntaxError):
+                    code = compile(source, filename, 'exec')
+                    _executable_linenos_cache[filename] = _get_executable_linenos(code)
+        executable_lines = _executable_linenos_cache.get(filename)
+        if executable_lines and lineno not in executable_lines:
+            return 'Line %d has no code associated with it' % lineno
         self._add_to_breaks(filename, lineno)
         bp = Breakpoint(filename, lineno, temporary, cond, funcname)
         # After we set a new breakpoint, we need to search through all frames
