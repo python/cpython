@@ -148,8 +148,11 @@ Tuple Objects
 Struct Sequence Objects
 -----------------------
 
-Struct sequence objects are the C equivalent of :func:`~collections.namedtuple`
-objects, i.e. a sequence whose items can also be accessed through attributes.
+A struct sequence object is a :term:`named tuple`, that is, a sequence
+whose items can also be accessed through attributes.
+It is similar to :func:`collections.namedtuple`, but provides a slightly
+different interface.
+
 To create a struct sequence, you first have to create a specific struct sequence
 type.
 

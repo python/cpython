@@ -1,7 +1,7 @@
 .. _debugger:
 
-:mod:`pdb` --- The Python Debugger
-==================================
+:mod:`!pdb` --- The Python Debugger
+===================================
 
 .. module:: pdb
    :synopsis: The Python debugger for interactive interpreters.
@@ -12,7 +12,7 @@
 
 --------------
 
-The module :mod:`pdb` defines an interactive source code debugger for Python
+The module :mod:`!pdb` defines an interactive source code debugger for Python
 programs.  It supports setting (conditional) breakpoints and single stepping at
 the source line level, inspection of stack frames, source code listing, and
 evaluation of arbitrary Python code in the context of any stack frame.  It also
@@ -82,7 +82,7 @@ Command-line interface
 
 .. program:: pdb
 
-You can also invoke :mod:`pdb` from the command line to debug other scripts.  For
+You can also invoke :mod:`!pdb` from the command line to debug other scripts.  For
 example::
 
    python -m pdb [-c command] (-m module | -p pid | pyfile) [args ...]
@@ -520,7 +520,8 @@ can be overridden by the local file.
    To remove all commands from a breakpoint, type ``commands`` and follow it
    immediately with ``end``; that is, give no commands.
 
-   With no *bpnumber* argument, ``commands`` refers to the last breakpoint set.
+   With no *bpnumber* argument, ``commands`` refers to the most recently set
+   breakpoint that still exists.
 
    You can use breakpoint commands to start your program up again.  Simply use
    the :pdbcmd:`continue` command, or :pdbcmd:`step`,

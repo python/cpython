@@ -1,2 +1,0 @@
-Remove data copy from :mod:`encodings.idna` :meth:`~codecs.Codec.encode` and
-:meth:`~codecs.IncrementalEncoder.encode` by using :func:`bytearray.take_bytes`.
