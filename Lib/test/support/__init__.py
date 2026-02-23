@@ -3024,7 +3024,7 @@ def force_color(color: bool):
 
     if color:
         try:
-            import _pyrepl
+            import _pyrepl  # noqa: F401
         except ModuleNotFoundError:
             # Can't force enable color without _pyrepl, so just skip.
             raise unittest.SkipTest("_pyrepl is missing")

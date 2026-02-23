@@ -427,7 +427,7 @@ class TestAsyncioREPL(unittest.TestCase):
         p.stdin.write(user_input)
         user_input2 = "async def set_var(): var.set('ok')\n"
         try:
-            import _pyrepl
+            import _pyrepl # noqa: F401
         except ModuleNotFoundError:
             # If we're going to be forced into the regular REPL, then we need an
             # extra newline here. Omit it by default to catch any breakage to
