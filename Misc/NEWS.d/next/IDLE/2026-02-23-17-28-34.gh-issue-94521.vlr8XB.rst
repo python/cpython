@@ -1,1 +1,1 @@
-Copy or cut current line while no selection. Patch by Shixian Li.
+Copy or cut the current line when no text is selected in IDLE. Patch by Shixian Li.
