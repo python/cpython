@@ -10,6 +10,7 @@ Define names for built-in types that aren't directly accessible as a builtin.
 try:
     from _types import *
 except ImportError:
+    import inspect
     import sys
 
     def _f(): pass
@@ -79,7 +80,37 @@ except ImportError:
     # LazyImportType in pure Python cannot be guaranteed
     # without overriding the filter, so there is no fallback.
 
-    del sys, _f, _g, _C, _c, _ag, _cell_factory  # Not for export
+    def enclose_lookup_special():
+        _sentinel = object()
+    
+        def lookup_special(object, name, default=_sentinel):
+            """Lookup method name `name` on `object` skipping the instance
+            dictionary.
+    
+            `name` must be a string. If the named special attribute does not exist,
+            `default` is returned if provided, otherwise AttributeError is raised.
+            """
+    
+            cls = type(object)
+            if not isinstance(name, str):
+                raise TypeError(
+                    f"attribute name must be string, not '{type(name).__name__}'"
+                )
+            try:
+                descr = inspect.getattr_static(cls, name)
+            except AttributeError:
+                if not default is _sentinel:
+                    return default
+                raise
+            if hasattr(descr, "__get__"):
+                return descr.__get__(object, cls)
+            return descr
+    
+        return lookup_special
+
+    lookup_special = enclose_lookup_special()
+
+    del sys, inspect _f, _g, _C, _c, _ag, _cell_factory  # Not for export
 
     def lookup_special(object, name, *args):
         """Lookup method name `name` on `object` skipping the instance
