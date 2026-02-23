@@ -189,7 +189,6 @@ def _get_executable_linenos(code):
     return linenos
 
 
-
 class Bdb:
     """Generic Python debugger base class.
 
