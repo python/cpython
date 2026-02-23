@@ -6,6 +6,7 @@
 
 # GitHub
 .github/**                    @ezio-melotti @hugovk @AA-Turner @webknjaz
+.github/workflows/jit.yml     @savannahostrowski
 Tools/build/compute-changes.py              @AA-Turner @hugovk @webknjaz
 Lib/test/test_tools/test_compute_changes.py @AA-Turner @hugovk @webknjaz
 
