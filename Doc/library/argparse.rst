@@ -4,9 +4,6 @@
 .. module:: argparse
    :synopsis: Command-line option and argument parsing library.
 
-.. moduleauthor:: Steven Bethard <steven.bethard@gmail.com>
-.. sectionauthor:: Steven Bethard <steven.bethard@gmail.com>
-
 .. versionadded:: 3.2
 
 **Source code:** :source:`Lib/argparse.py`
