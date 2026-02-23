@@ -310,7 +310,19 @@ PyAPI_FUNC(void) _PyEval_FormatExcCheckArg(PyThreadState *tstate, PyObject *exc,
 PyAPI_FUNC(void) _PyEval_FormatExcUnbound(PyThreadState *tstate, PyCodeObject *co, int oparg);
 PyAPI_FUNC(void) _PyEval_FormatKwargsError(PyThreadState *tstate, PyObject *func, PyObject *kwargs);
 PyAPI_FUNC(PyObject *) _PyEval_ImportFrom(PyThreadState *, PyObject *, PyObject *);
-PyAPI_FUNC(PyObject *) _PyEval_ImportName(PyThreadState *, _PyInterpreterFrame *, PyObject *, PyObject *, PyObject *);
+
+PyAPI_FUNC(PyObject *) _PyEval_LazyImportName(
+    PyThreadState *tstate, PyObject *builtins, PyObject *globals,
+    PyObject *locals, PyObject *name, PyObject *fromlist, PyObject *level,
+    int lazy);
+PyAPI_FUNC(PyObject *) _PyEval_LazyImportFrom(
+    PyThreadState *tstate, _PyInterpreterFrame *frame, PyObject *v, PyObject *name);
+PyAPI_FUNC(PyObject *) _PyEval_ImportName(
+    PyThreadState *tstate, PyObject *builtins, PyObject *globals,
+    PyObject *locals, PyObject *name, PyObject *fromlist, PyObject *level);
+PyObject * _PyEval_ImportNameWithImport(
+    PyThreadState *tstate, PyObject *import_func, PyObject *globals,
+    PyObject *locals, PyObject *name, PyObject *fromlist, PyObject *level);
 PyAPI_FUNC(PyObject *)_PyEval_MatchClass(PyThreadState *tstate, PyObject *subject, PyObject *type, Py_ssize_t nargs, PyObject *kwargs);
 PyAPI_FUNC(PyObject *)_PyEval_MatchKeys(PyThreadState *tstate, PyObject *map, PyObject *keys);
 PyAPI_FUNC(void) _PyEval_MonitorRaise(PyThreadState *tstate, _PyInterpreterFrame *frame, _Py_CODEUNIT *instr);
@@ -473,6 +485,11 @@ PyAPI_FUNC(void)
 _Py_assert_within_stack_bounds(
     _PyInterpreterFrame *frame, _PyStackRef *stack_pointer,
     const char *filename, int lineno);
+
+PyAPI_FUNC(_PyStackRef)
+_Py_LoadAttr_StackRefSteal(
+    PyThreadState *tstate, _PyStackRef owner,
+    PyObject *name, _PyStackRef *self_or_null);
 
 // Like PyMapping_GetOptionalItem, but returns the PyObject* instead of taking
 // it as an out parameter. This helps MSVC's escape analysis when used with

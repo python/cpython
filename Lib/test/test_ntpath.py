@@ -10,6 +10,7 @@ import warnings
 from ntpath import ALL_BUT_LAST, ALLOW_MISSING
 from test import support
 from test.support import os_helper
+from test.support import warnings_helper
 from test.support.os_helper import FakePath
 from test import test_genericpath
 from tempfile import TemporaryFile
@@ -298,6 +299,10 @@ class TestNtpath(NtpathTestCase):
         tester('ntpath.isabs("\\\\.\\C:")', 1)
 
     def test_commonprefix(self):
+        with warnings_helper.check_warnings((".*commonpath().*", DeprecationWarning)):
+            self.do_test_commonprefix()
+
+    def do_test_commonprefix(self):
         tester('ntpath.commonprefix(["/home/swenson/spam", "/home/swen/spam"])',
                "/home/swen")
         tester('ntpath.commonprefix(["\\home\\swen\\spam", "\\home\\swen\\eggs"])',

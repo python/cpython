@@ -6375,93 +6375,13 @@ _PyType_SetFlagsRecursive(PyTypeObject *self, unsigned long mask, unsigned long 
 
    */
 PyObject *
-_Py_type_getattro_impl(PyTypeObject *type, PyObject *name, int * suppress_missing_attribute)
+_Py_type_getattro_impl(PyTypeObject *type, PyObject *name, int *suppress_missing_attribute)
 {
-    PyTypeObject *metatype = Py_TYPE(type);
-    PyObject *meta_attribute, *attribute;
-    descrgetfunc meta_get;
-    PyObject* res;
-
-    if (!PyUnicode_Check(name)) {
-        PyErr_Format(PyExc_TypeError,
-                     "attribute name must be string, not '%.200s'",
-                     Py_TYPE(name)->tp_name);
+    _PyStackRef ref = _Py_type_getattro_stackref(type, name, suppress_missing_attribute);
+    if (PyStackRef_IsNull(ref)) {
         return NULL;
     }
-
-    /* Initialize this type (we'll assume the metatype is initialized) */
-    if (!_PyType_IsReady(type)) {
-        if (PyType_Ready(type) < 0)
-            return NULL;
-    }
-
-    /* No readable descriptor found yet */
-    meta_get = NULL;
-
-    /* Look for the attribute in the metatype */
-    meta_attribute = _PyType_LookupRef(metatype, name);
-
-    if (meta_attribute != NULL) {
-        meta_get = Py_TYPE(meta_attribute)->tp_descr_get;
-
-        if (meta_get != NULL && PyDescr_IsData(meta_attribute)) {
-            /* Data descriptors implement tp_descr_set to intercept
-             * writes. Assume the attribute is not overridden in
-             * type's tp_dict (and bases): call the descriptor now.
-             */
-            res = meta_get(meta_attribute, (PyObject *)type,
-                           (PyObject *)metatype);
-            Py_DECREF(meta_attribute);
-            return res;
-        }
-    }
-
-    /* No data descriptor found on metatype. Look in tp_dict of this
-     * type and its bases */
-    attribute = _PyType_LookupRef(type, name);
-    if (attribute != NULL) {
-        /* Implement descriptor functionality, if any */
-        descrgetfunc local_get = Py_TYPE(attribute)->tp_descr_get;
-
-        Py_XDECREF(meta_attribute);
-
-        if (local_get != NULL) {
-            /* NULL 2nd argument indicates the descriptor was
-             * found on the target object itself (or a base)  */
-            res = local_get(attribute, (PyObject *)NULL,
-                            (PyObject *)type);
-            Py_DECREF(attribute);
-            return res;
-        }
-
-        return attribute;
-    }
-
-    /* No attribute found in local __dict__ (or bases): use the
-     * descriptor from the metatype, if any */
-    if (meta_get != NULL) {
-        PyObject *res;
-        res = meta_get(meta_attribute, (PyObject *)type,
-                       (PyObject *)metatype);
-        Py_DECREF(meta_attribute);
-        return res;
-    }
-
-    /* If an ordinary attribute was found on the metatype, return it now */
-    if (meta_attribute != NULL) {
-        return meta_attribute;
-    }
-
-    /* Give up */
-    if (suppress_missing_attribute == NULL) {
-        PyErr_Format(PyExc_AttributeError,
-                        "type object '%.100s' has no attribute '%U'",
-                        type->tp_name, name);
-    } else {
-        // signal the caller we have not set an PyExc_AttributeError and gave up
-        *suppress_missing_attribute = 1;
-    }
-    return NULL;
+    return PyStackRef_AsPyObjectSteal(ref);
 }
 
 /* This is similar to PyObject_GenericGetAttr(),
@@ -6471,6 +6391,137 @@ _Py_type_getattro(PyObject *tp, PyObject *name)
 {
     PyTypeObject *type = PyTypeObject_CAST(tp);
     return _Py_type_getattro_impl(type, name, NULL);
+}
+
+/* Like _Py_type_getattro but returns a _PyStackRef.
+   This can return a deferred reference in the free-threaded build
+   when the attribute is found without going through a descriptor.
+
+   suppress_missing_attribute (optional):
+   * NULL: do not suppress the exception
+   * Non-zero pointer: suppress the PyExc_AttributeError and
+     set *suppress_missing_attribute to 1 to signal we are returning NULL while
+     having suppressed the exception (other exceptions are not suppressed)
+*/
+_PyStackRef
+_Py_type_getattro_stackref(PyTypeObject *type, PyObject *name,
+                           int *suppress_missing_attribute)
+{
+    PyTypeObject *metatype = Py_TYPE(type);
+    descrgetfunc meta_get = NULL;
+
+    if (!PyUnicode_Check(name)) {
+        PyErr_Format(PyExc_TypeError,
+                     "attribute name must be string, not '%.200s'",
+                     Py_TYPE(name)->tp_name);
+        return PyStackRef_NULL;
+    }
+
+    /* Initialize this type (we'll assume the metatype is initialized) */
+    if (!_PyType_IsReady(type)) {
+        if (PyType_Ready(type) < 0)
+            return PyStackRef_NULL;
+    }
+
+    /* Set up GC-visible stack refs */
+    _PyCStackRef result_ref, meta_attribute_ref, attribute_ref;
+    PyThreadState *tstate = _PyThreadState_GET();
+    _PyThreadState_PushCStackRef(tstate, &result_ref);
+    _PyThreadState_PushCStackRef(tstate, &meta_attribute_ref);
+    _PyThreadState_PushCStackRef(tstate, &attribute_ref);
+
+    /* Look for the attribute in the metatype */
+    _PyType_LookupStackRefAndVersion(metatype, name, &meta_attribute_ref.ref);
+
+    if (!PyStackRef_IsNull(meta_attribute_ref.ref)) {
+        PyObject *meta_attr_obj = PyStackRef_AsPyObjectBorrow(meta_attribute_ref.ref);
+        meta_get = Py_TYPE(meta_attr_obj)->tp_descr_get;
+
+        if (meta_get != NULL && PyDescr_IsData(meta_attr_obj)) {
+            /* Data descriptors implement tp_descr_set to intercept
+             * writes. Assume the attribute is not overridden in
+             * type's tp_dict (and bases): call the descriptor now.
+             */
+            PyObject *res = meta_get(meta_attr_obj, (PyObject *)type,
+                                     (PyObject *)metatype);
+            if (res != NULL) {
+                result_ref.ref = PyStackRef_FromPyObjectSteal(res);
+            }
+            goto done;
+        }
+    }
+
+    /* No data descriptor found on metatype. Look in tp_dict of this
+     * type and its bases */
+    _PyType_LookupStackRefAndVersion(type, name, &attribute_ref.ref);
+    if (!PyStackRef_IsNull(attribute_ref.ref)) {
+        /* Implement descriptor functionality, if any */
+        PyObject *attr_obj = PyStackRef_AsPyObjectBorrow(attribute_ref.ref);
+        descrgetfunc local_get = Py_TYPE(attr_obj)->tp_descr_get;
+
+        /* Release meta_attribute early since we found in local dict */
+        PyStackRef_CLEAR(meta_attribute_ref.ref);
+
+        if (local_get != NULL) {
+            /* Special case staticmethod to avoid descriptor call overhead.
+             * staticmethod.__get__ just returns the wrapped callable. */
+            if (Py_TYPE(attr_obj) == &PyStaticMethod_Type) {
+                PyObject *callable = _PyStaticMethod_GetFunc(attr_obj);
+                if (callable) {
+                    result_ref.ref = PyStackRef_FromPyObjectNew(callable);
+                    goto done;
+                }
+            }
+            /* NULL 2nd argument indicates the descriptor was
+             * found on the target object itself (or a base)  */
+            PyObject *res = local_get(attr_obj, (PyObject *)NULL,
+                                      (PyObject *)type);
+            if (res != NULL) {
+                result_ref.ref = PyStackRef_FromPyObjectSteal(res);
+            }
+            goto done;
+        }
+
+        /* No descriptor, return the attribute directly */
+        result_ref.ref = attribute_ref.ref;
+        attribute_ref.ref = PyStackRef_NULL;
+        goto done;
+    }
+
+    /* No attribute found in local __dict__ (or bases): use the
+     * descriptor from the metatype, if any */
+    if (meta_get != NULL) {
+        PyObject *meta_attr_obj = PyStackRef_AsPyObjectBorrow(meta_attribute_ref.ref);
+        PyObject *res = meta_get(meta_attr_obj, (PyObject *)type,
+                                 (PyObject *)metatype);
+        if (res != NULL) {
+            result_ref.ref = PyStackRef_FromPyObjectSteal(res);
+        }
+        goto done;
+    }
+
+    /* If an ordinary attribute was found on the metatype, return it now */
+    if (!PyStackRef_IsNull(meta_attribute_ref.ref)) {
+        result_ref.ref = meta_attribute_ref.ref;
+        meta_attribute_ref.ref = PyStackRef_NULL;
+        goto done;
+    }
+
+    /* Give up */
+    if (suppress_missing_attribute == NULL) {
+        PyErr_Format(PyExc_AttributeError,
+                     "type object '%.100s' has no attribute '%U'",
+                     type->tp_name, name);
+    }
+    else {
+        // signal the caller we have not set an PyExc_AttributeError and gave up
+        *suppress_missing_attribute = 1;
+    }
+
+done:
+    _PyThreadState_PopCStackRef(tstate, &attribute_ref);
+    _PyThreadState_PopCStackRef(tstate, &meta_attribute_ref);
+    return _PyThreadState_PopCStackRefSteal(tstate, &result_ref);
 }
 
 // Called by type_setattro().  Updates both the type dict and
@@ -10937,15 +10988,19 @@ static PyObject *
 slot_tp_new(PyTypeObject *type, PyObject *args, PyObject *kwds)
 {
     PyThreadState *tstate = _PyThreadState_GET();
-    PyObject *func, *result;
+    PyObject *result;
 
-    func = PyObject_GetAttr((PyObject *)type, &_Py_ID(__new__));
-    if (func == NULL) {
+    _PyCStackRef func_ref;
+    _PyThreadState_PushCStackRef(tstate, &func_ref);
+    func_ref.ref = _PyObject_GetAttrStackRef((PyObject *)type, &_Py_ID(__new__));
+    if (PyStackRef_IsNull(func_ref.ref)) {
+        _PyThreadState_PopCStackRef(tstate, &func_ref);
         return NULL;
     }
 
+    PyObject *func = PyStackRef_AsPyObjectBorrow(func_ref.ref);
     result = _PyObject_Call_Prepend(tstate, func, (PyObject *)type, args, kwds);
-    Py_DECREF(func);
+    _PyThreadState_PopCStackRef(tstate, &func_ref);
     return result;
 }
 

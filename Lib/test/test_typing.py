@@ -51,7 +51,7 @@ import types
 
 from test.support import (
     captured_stderr, cpython_only, requires_docstrings, import_helper, run_code,
-    EqualToForwardRef,
+    subTests, EqualToForwardRef,
 )
 from test.typinganndata import (
     ann_module695, mod_generics_cache, _typed_dict_helper,
@@ -3885,8 +3885,8 @@ class ProtocolTests(BaseTestCase):
         self.assertIsNot(get_protocol_members(PR), P.__protocol_attrs__)
 
         acceptable_extra_attrs = {
-            '_is_protocol', '_is_runtime_protocol', '__parameters__',
-            '__init__', '__annotations__', '__subclasshook__', '__annotate__',
+            '_is_protocol', '_is_runtime_protocol', '__typing_is_deprecated_inherited_runtime_protocol__',
+            '__parameters__', '__init__', '__annotations__', '__subclasshook__', '__annotate__',
             '__annotations_cache__', '__annotate_func__',
         }
         self.assertLessEqual(vars(NonP).keys(), vars(C).keys() | acceptable_extra_attrs)
@@ -4457,6 +4457,70 @@ class ProtocolTests(BaseTestCase):
 
         with self.assertRaisesRegex(TypeError, "@runtime_checkable"):
             isinstance(1, P)
+
+    @subTests(['check_obj', 'check_func'], ([42, isinstance], [frozenset, issubclass]))
+    def test_inherited_runtime_protocol_deprecated(self, check_obj, check_func):
+        """See GH-132604."""
+
+        class BareProto(Protocol):
+            """I am not runtime-checkable."""
+
+        @runtime_checkable
+        class RCProto1(Protocol):
+            """I am runtime-checkable."""
+
+        class InheritedRCProto1(RCProto1, Protocol):
+            """I am accidentally runtime-checkable (by inheritance)."""
+
+        @runtime_checkable
+        class RCProto2(InheritedRCProto1, Protocol):
+            """Explicit RC -> inherited RC -> explicit RC."""
+            def spam(self): ...
+
+        @runtime_checkable
+        class RCProto3(BareProto, Protocol):
+            """Not RC -> explicit RC."""
+
+        class InheritedRCProto2(RCProto3, Protocol):
+            """Not RC -> explicit RC -> inherited RC."""
+            def eggs(self): ...
+
+        class InheritedRCProto3(RCProto2, Protocol):
+            """Explicit RC -> inherited RC -> explicit RC -> inherited RC."""
+
+        class Concrete1(BareProto):
+            pass
+
+        class Concrete2(InheritedRCProto2):
+            pass
+
+        class Concrete3(InheritedRCProto3):
+            pass
+
+        depr_message_re = (
+            r"<class .+\.InheritedRCProto\d'> isn't explicitly decorated "
+            r"with @runtime_checkable but it is used in issubclass\(\) or "
+            r"isinstance\(\). Instance and class checks can only be used with "
+            r"@runtime_checkable protocols. This will raise a TypeError in Python 3.20."
+        )
+
+        for inherited_runtime_proto in InheritedRCProto1, InheritedRCProto2, InheritedRCProto3:
+            with self.assertWarnsRegex(DeprecationWarning, depr_message_re):
+                check_func(check_obj, inherited_runtime_proto)
+
+        # Don't warn for explicitly checkable protocols and concrete implementations.
+        with warnings.catch_warnings():
+            warnings.simplefilter("error", DeprecationWarning)
+
+            for checkable in RCProto1, RCProto2, RCProto3, Concrete1, Concrete2, Concrete3:
+                check_func(check_obj, checkable)
+
+        # Don't warn for uncheckable protocols.
+        with warnings.catch_warnings():
+            warnings.simplefilter("error", DeprecationWarning)
+
+            with self.assertRaises(TypeError):  # Self-test. Protocol below can't be runtime-checkable.
+                check_func(check_obj, BareProto)
 
     def test_super_call_init(self):
         class P(Protocol):
@@ -8467,6 +8531,15 @@ class NamedTupleTests(BaseTestCase):
                 @property
                 def name(self):
                     return __class__.__name__
+
+    def test_named_tuple_non_sequence_input(self):
+        field_names = ["x", "y"]
+        field_values = [int, int]
+        Point = NamedTuple("Point", zip(field_names, field_values))
+        p = Point(1, 2)
+        self.assertEqual(p.x, 1)
+        self.assertEqual(p.y, 2)
+        self.assertEqual(repr(p),"Point(x=1, y=2)")
 
 
 class TypedDictTests(BaseTestCase):
