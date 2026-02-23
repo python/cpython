@@ -273,7 +273,7 @@ class PolicyAPITests(unittest.TestCase):
         actual = policy.fold('Subject', 'ą' * 12)
         self.assertEqual(
             actual,
-            'Subject: \n' +
+            'Subject:\n' +
             12 * ' =?utf-8?q?=C4=85?=\n')
 
     def test_short_maxlen_error(self):

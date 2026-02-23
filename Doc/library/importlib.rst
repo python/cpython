@@ -4,9 +4,6 @@
 .. module:: importlib
    :synopsis: The implementation of the import machinery.
 
-.. moduleauthor:: Brett Cannon <brett@python.org>
-.. sectionauthor:: Brett Cannon <brett@python.org>
-
 .. versionadded:: 3.1
 
 **Source code:** :source:`Lib/importlib/__init__.py`
@@ -17,7 +14,7 @@
 Introduction
 ------------
 
-The purpose of the :mod:`importlib` package is three-fold.
+The purpose of the :mod:`!importlib` package is three-fold.
 
 One is to provide the
 implementation of the :keyword:`import` statement (and thus, by extension, the
@@ -215,8 +212,8 @@ Functions
       in unexpected behavior. It's recommended to use the :class:`threading.Lock`
       or other synchronization primitives for thread-safe module reloading.
 
-:mod:`importlib.abc` -- Abstract base classes related to import
----------------------------------------------------------------
+:mod:`!importlib.abc` -- Abstract base classes related to import
+----------------------------------------------------------------
 
 .. module:: importlib.abc
     :synopsis: Abstract base classes related to import
@@ -226,7 +223,7 @@ Functions
 --------------
 
 
-The :mod:`importlib.abc` module contains all of the core abstract base classes
+The :mod:`!importlib.abc` module contains all of the core abstract base classes
 used by :keyword:`import`. Some subclasses of the core abstract base classes
 are also provided to help in implementing the core ABCs.
 
@@ -275,6 +272,28 @@ ABC hierarchy::
       .. versionchanged:: 3.4
          Returns ``None`` when called instead of :data:`NotImplemented`.
 
+   .. method:: discover(parent=None)
+
+      An optional method which searches for possible specs with given *parent*
+      module spec. If *parent* is *None*, :meth:`MetaPathFinder.discover` will
+      search for top-level modules.
+
+      Returns an iterable of possible specs.
+
+      Raises :exc:`ValueError` if *parent* is not a package module.
+
+      .. warning::
+         This method can potentially yield a very large number of objects, and
+         it may carry out IO operations when computing these values.
+
+         Because of this, it will generaly be desirable to compute the result
+         values on-the-fly, as they are needed. As such, the returned object is
+         only guaranteed to be an :class:`iterable <collections.abc.Iterable>`,
+         instead of a :class:`list` or other
+         :class:`collection <collections.abc.Collection>` type.
+
+      .. versionadded:: next
+
 
 .. class:: PathEntryFinder
 
@@ -306,6 +325,28 @@ ABC hierarchy::
       cache used by the finder. Used by
       :meth:`importlib.machinery.PathFinder.invalidate_caches`
       when invalidating the caches of all cached finders.
+
+   .. method:: discover(parent=None)
+
+      An optional method which searches for possible specs with given *parent*
+      module spec. If *parent* is *None*, :meth:`PathEntryFinder.discover` will
+      search for top-level modules.
+
+      Returns an iterable of possible specs.
+
+      Raises :exc:`ValueError` if *parent* is not a package module.
+
+      .. warning::
+         This method can potentially yield a very large number of objects, and
+         it may carry out IO operations when computing these values.
+
+         Because of this, it will generaly be desirable to compute the result
+         values on-the-fly, as they are needed. As such, the returned object is
+         only guaranteed to be an :class:`iterable <collections.abc.Iterable>`,
+         instead of a :class:`list` or other
+         :class:`collection <collections.abc.Collection>` type.
+
+      .. versionadded:: next
 
 
 .. class:: Loader
@@ -596,8 +637,8 @@ ABC hierarchy::
         itself does not end in ``__init__``.
 
 
-:mod:`importlib.machinery` -- Importers and path hooks
-------------------------------------------------------
+:mod:`!importlib.machinery` -- Importers and path hooks
+-------------------------------------------------------
 
 .. module:: importlib.machinery
     :synopsis: Importers and path hooks
@@ -1112,8 +1153,8 @@ find and load modules.
       Path to the ``.fwork`` file for the extension module.
 
 
-:mod:`importlib.util` -- Utility code for importers
----------------------------------------------------
+:mod:`!importlib.util` -- Utility code for importers
+----------------------------------------------------
 
 .. module:: importlib.util
     :synopsis: Utility code for importers

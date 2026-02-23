@@ -1,3 +1,0 @@
-Fixed a crash in ctypes when using a deprecated ``POINTER(str)`` type in
-``argtypes``. Instead of aborting, ctypes now raises a proper Python
-exception when the pointer target type is unresolved.

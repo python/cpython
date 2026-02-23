@@ -4,9 +4,6 @@
 .. module:: poplib
    :synopsis: POP3 protocol client (requires sockets).
 
-.. sectionauthor:: Andrew T. Csillag
-.. revised by ESR, January 2000
-
 **Source code:** :source:`Lib/poplib.py`
 
 .. index:: pair: POP3; protocol
@@ -30,7 +27,7 @@ mailserver supports IMAP, you would be better off using the
 
 .. include:: ../includes/wasm-notavail.rst
 
-The :mod:`poplib` module provides two classes:
+The :mod:`!poplib` module provides two classes:
 
 
 .. class:: POP3(host, port=POP3_PORT[, timeout])
@@ -86,7 +83,7 @@ The :mod:`poplib` module provides two classes:
    .. versionchanged:: 3.12
       The deprecated *keyfile* and *certfile* parameters have been removed.
 
-One exception is defined as an attribute of the :mod:`poplib` module:
+One exception is defined as an attribute of the :mod:`!poplib` module:
 
 
 .. exception:: error_proto

@@ -4,13 +4,6 @@
 .. module:: functools
    :synopsis: Higher-order functions and operations on callable objects.
 
-.. moduleauthor:: Peter Harris <scav@blueyonder.co.uk>
-.. moduleauthor:: Raymond Hettinger <python@rcn.com>
-.. moduleauthor:: Nick Coghlan <ncoghlan@gmail.com>
-.. moduleauthor:: Łukasz Langa <lukasz@langa.pl>
-.. moduleauthor:: Pablo Galindo <pablogsal@gmail.com>
-.. sectionauthor:: Peter Harris <scav@blueyonder.co.uk>
-
 **Source code:** :source:`Lib/functools.py`
 
 .. testsetup:: default
@@ -20,11 +13,11 @@
 
 --------------
 
-The :mod:`functools` module is for higher-order functions: functions that act on
+The :mod:`!functools` module is for higher-order functions: functions that act on
 or return other functions. In general, any callable object can be treated as a
 function for the purposes of this module.
 
-The :mod:`functools` module defines the following functions:
+The :mod:`!functools` module defines the following functions:
 
 .. decorator:: cache(user_function)
 
