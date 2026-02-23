@@ -976,6 +976,9 @@ class BreakpointTestCase(BaseTestCase):
         reset_Breakpoint()
         db1 = Bdb()
         fname = db1.canonic(__file__)
+        # These line numbers are sensitive to this test file itself.
+        # They must have associated bytecode, so update them if the file header
+        # changes.
         db1.set_break(__file__, 51)
         self.assertEqual(db1.get_all_breaks(), {fname: [51]})
 
