@@ -289,6 +289,7 @@ Programs/_bootstrap_python.c  @ericsnowcurrently
 Programs/python.c             @ericsnowcurrently
 
 # JIT
+.github/workflows/jit.yml     @savannahostrowski
 Include/internal/pycore_jit.h @brandtbucher @savannahostrowski @diegorusso
 Python/jit.c                  @brandtbucher @savannahostrowski @diegorusso
 Tools/jit/                    @brandtbucher @savannahostrowski @diegorusso
