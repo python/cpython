@@ -872,6 +872,7 @@ PyObject_Pretty(PyObject *v)
     }
 
     PyObject *prettified = PyObject_CallOneArg(printer, v);
+    Py_DECREF(printer);
 
     if (!prettified) {
         Py_DECREF(printer);
