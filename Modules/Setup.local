@@ -1,3 +1,0 @@
-# Edit this file for local setup changes
-_regex _regex/_regex.c _regex/_regex_unicode.c
-_cffi_backend _cffi_backend/_cffi_backend.c -I$(srcdir)/Modules/_cffi_backend -lffi

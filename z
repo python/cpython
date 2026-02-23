@@ -37,6 +37,7 @@ Commands:
   setup    Download Nanvix build pre-requisites and dependencies.
   build    Build CPython for Nanvix.
   test     Run smoke and functional tests on nanvixd.elf.
+  cleanup  Remove all build artifacts and restore a fresh state.
 
 Environment:
   NANVIX_HOME         Nanvix sysroot path. Auto-populated by 'setup'.
@@ -514,6 +515,51 @@ run_functional_tests() {
   echo "All functional tests passed"
 }
 
+cmd_cleanup() {
+  log "cleaning build artifacts and restoring fresh state"
+
+  # Run make distclean if possible (cleans compiled objects, config, etc.)
+  if [[ -f Makefile ]]; then
+    make distclean 2>/dev/null || true
+  fi
+
+  # Remove the .nanvix work directory (downloads, extracted deps, staging, env)
+  # but preserve .nanvix/tests
+  if [[ -d "$WORK_DIR" ]]; then
+    log "removing $WORK_DIR (preserving tests)"
+    find "$WORK_DIR" -mindepth 1 -maxdepth 1 -not -name 'tests' -exec rm -rf {} +
+  fi
+
+  # Remove build output directory
+  rm -rf "$ROOT_DIR/build" "$ROOT_DIR/dist"
+
+  # Remove generated config/build files
+  rm -f "$ROOT_DIR/config.status" "$ROOT_DIR/config.log"
+  rm -f "$ROOT_DIR/pyconfig.h" "$ROOT_DIR/pybuilddir.txt"
+  rm -f "$ROOT_DIR/Makefile" "$ROOT_DIR/Makefile.pre"
+  rm -f "$ROOT_DIR/python" "$ROOT_DIR/python-config"
+
+  # Remove any compiled Python files and shared objects
+  find "$ROOT_DIR" -name '*.pyc' -delete 2>/dev/null || true
+  find "$ROOT_DIR" -name '__pycache__' -type d -exec rm -rf {} + 2>/dev/null || true
+  find "$ROOT_DIR" -name '*.o' -not -path '*/.git/*' -delete 2>/dev/null || true
+  find "$ROOT_DIR" -name '*.so' -not -path '*/.git/*' -delete 2>/dev/null || true
+
+  # Clean any untracked files via git, preserving key project files
+  if command -v git >/dev/null 2>&1 && git rev-parse --is-inside-work-tree >/dev/null 2>&1; then
+    log "running git clean"
+    git clean -fdx \
+      -e Makefile.nanvix \
+      -e NANVIX.md \
+      -e .github \
+      -e .nanvix/tests \
+      -e z \
+      2>/dev/null || true
+  fi
+
+  log "cleanup complete"
+}
+
 cmd_test() {
   require_nanvix_runtime
   verify_tests_present
@@ -565,6 +611,9 @@ case "$COMMAND" in
     ;;
   test)
     cmd_test "${EXTRA_ARGS[@]}"
+    ;;
+  cleanup)
+    cmd_cleanup
     ;;
   *)
     usage
