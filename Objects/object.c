@@ -875,7 +875,6 @@ PyObject_Pretty(PyObject *v)
     Py_DECREF(printer);
 
     if (!prettified) {
-        Py_DECREF(printer);
         return NULL;
     }
 
