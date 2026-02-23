@@ -7,6 +7,7 @@ import os
 import weakref
 from contextlib import contextmanager, suppress
 from inspect import CO_GENERATOR, CO_COROUTINE, CO_ASYNC_GENERATOR
+from types import CodeType
 
 __all__ = ["BdbQuit", "Bdb", "Breakpoint"]
 
@@ -183,7 +184,7 @@ def _get_executable_linenos(code):
         if lineno is not None:
             linenos.add(lineno)
     for const in code.co_consts:
-        if hasattr(const, 'co_lines'):
+        if isinstance(const, CodeType):
             linenos |= _get_executable_linenos(const)
     return linenos
 
