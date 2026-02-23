@@ -63,9 +63,10 @@
 .azure-pipelines/             @AA-Turner
 
 # GitHub & related scripts
-.github/                               @ezio-melotti @hugovk @AA-Turner @webknjaz
-Tools/build/compute-changes.py         @AA-Turner @hugovk @webknjaz
-Tools/build/verify_ensurepip_wheels.py @AA-Turner @pfmoore @pradyunsg
+.github/                                    @ezio-melotti @hugovk @AA-Turner @webknjaz
+Tools/build/compute-changes.py              @AA-Turner @hugovk @webknjaz
+Lib/test/test_tools/test_compute_changes.py @AA-Turner @hugovk @webknjaz
+Tools/build/verify_ensurepip_wheels.py      @AA-Turner @pfmoore @pradyunsg
 
 # Pre-commit
 .pre-commit-config.yaml       @hugovk
@@ -110,6 +111,7 @@ Doc/tools/                    @AA-Turner @hugovk
 .readthedocs.yml              @AA-Turner
 
 # Sections
+Doc/c-api/                    @ZeroIntensity
 Doc/reference/                @willingc @AA-Turner
 Doc/whatsnew/                 @AA-Turner
 
@@ -293,10 +295,10 @@ Tools/jit/                    @brandtbucher @savannahostrowski @diegorusso
 InternalDocs/jit.md           @brandtbucher @savannahostrowski @diegorusso @AA-Turner
 
 # Lazy imports (PEP 810)
-Objects/lazyimportobject.c                  @twouters @DinoV @pablogsal
-Include/internal/pycore_lazyimportobject.h  @twouters @DinoV @pablogsal
-Lib/test/test_import/test_lazy_imports.py   @twouters @DinoV @pablogsal
-Lib/test/test_import/data/lazy_imports/     @twouters @DinoV @pablogsal
+Objects/lazyimportobject.c                  @yhg1s @DinoV @pablogsal
+Include/internal/pycore_lazyimportobject.h  @yhg1s @DinoV @pablogsal
+Lib/test/test_import/test_lazy_imports.py   @yhg1s @DinoV @pablogsal
+Lib/test/test_import/data/lazy_imports/     @yhg1s @DinoV @pablogsal
 
 # Micro-op / μop / Tier 2 Optimiser
 Python/optimizer.c            @markshannon @Fidget-Spinner

@@ -12,7 +12,7 @@
 #include "pycore_setobject.h"     // _PySet_NextEntry()
 #include "pycore_stats.h"
 #include "pycore_weakref.h"       // FT_CLEAR_WEAKREFS()
-#include "pycore_optimizer.h"     // _PyJit_Tracer_InvalidateDependency
+#include "pycore_optimizer.h"     // _Py_Executors_InvalidateDependency
 
 static const char *
 func_event_name(PyFunction_WatchEvent event) {

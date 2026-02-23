@@ -5017,6 +5017,41 @@ AS_VAR_IF([ac_cv_builtin_atomic], [yes], [
     AC_DEFINE(HAVE_BUILTIN_ATOMIC, 1, [Has builtin __atomic_load_n() and __atomic_store_n() functions])
 ])
 
+# Check for __builtin_shufflevector with 128-bit vector support on an
+# architecture where it compiles to worthwhile native SIMD instructions.
+# Used for SIMD-accelerated bytes.hex() in Python/pystrhex.c.
+AC_CACHE_CHECK([for __builtin_shufflevector], [ac_cv_efficient_builtin_shufflevector], [
+AC_LINK_IFELSE([
+  AC_LANG_PROGRAM([[
+    /* __builtin_shufflevector is available on many platforms, but 128-bit
+       vector code is only worthwhile on architectures with native SIMD:
+       x86-64 (SSE2, always available), ARM64 (NEON, always available),
+       or ARM32 when NEON is enabled via compiler flags (e.g. -march=native
+       on RPi3+).  On ARM32 without NEON (e.g. armv6 builds), the compiler
+       has the builtin but generates slow scalar code instead. */
+    #if !defined(__x86_64__) && !defined(__aarch64__) && \
+        !(defined(__arm__) && defined(__ARM_NEON))
+    #  error "128-bit vector SIMD not worthwhile on this architecture"
+    #endif
+    typedef unsigned char v16u8 __attribute__((vector_size(16)));
+  ]], [[
+    v16u8 a = {0,1,2,3,4,5,6,7,8,9,10,11,12,13,14,15};
+    v16u8 b = {16,17,18,19,20,21,22,23,24,25,26,27,28,29,30,31};
+    v16u8 c = __builtin_shufflevector(a, b,
+        0, 16, 1, 17, 2, 18, 3, 19, 4, 20, 5, 21, 6, 22, 7, 23);
+    (void)c;
+    return 0;
+  ]])
+],[ac_cv_efficient_builtin_shufflevector=yes],[ac_cv_efficient_builtin_shufflevector=no])
+])
+
+AS_VAR_IF([ac_cv_efficient_builtin_shufflevector], [yes], [
+    AC_DEFINE([HAVE_EFFICIENT_BUILTIN_SHUFFLEVECTOR], [1],
+              [Define if compiler supports __builtin_shufflevector with 128-bit
+               vectors AND the target architecture has native SIMD (not just API
+               availability)])
+])
+
 # --with-mimalloc
 AC_MSG_CHECKING([for --with-mimalloc])
 AC_ARG_WITH([mimalloc],

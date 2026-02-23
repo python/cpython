@@ -7,10 +7,6 @@
 Memory Management
 *****************
 
-.. sectionauthor:: Vladimir Marangozov <Vladimir.Marangozov@inrialpes.fr>
-
-
-
 .. _memoryoverview:
 
 Overview
