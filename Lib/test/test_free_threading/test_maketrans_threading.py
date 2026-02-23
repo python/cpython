@@ -11,7 +11,7 @@ class TestUnicodeFreeThreading(unittest.TestCase):
         number_of_attempts = 100
         for _ in range(number_of_iterations):
             d = {2000: 'a'}
-            
+
             def work_iterator(dct):
                 for i in range(number_of_attempts):
                     str.maketrans(dct)
