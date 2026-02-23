@@ -263,6 +263,12 @@ or request "multi-phase initialization" by returning the definition struct itsel
       .. versionchanged:: 3.9
          No longer called before the module state is allocated.
 
+
+.. c:var:: PyTypeObject PyModuleDef_Type
+
+   The type of ``PyModuleDef`` objects.
+
+
 Single-phase initialization
 ...........................
 
