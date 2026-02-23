@@ -74,11 +74,11 @@ class _Printer(object):
                 def get_pager():
                     def _print(text, title=None):
                         print(text)
+                    return _print
 
         self.__setup()
 
         pager = get_pager()
-
         text = "\n".join(self.__lines)
         pager(text, title=self.__name)
 
