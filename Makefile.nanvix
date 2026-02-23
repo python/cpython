@@ -14,6 +14,8 @@
 #   - zlib (libz.a in NANVIX_HOME/lib)
 #   - SQLite (libsqlite3.a in NANVIX_HOME/lib)
 #   - OpenSSL (libssl.a, libcrypto.a in NANVIX_HOME/lib)
+#   - bzip2 (libbz2.a in NANVIX_HOME/lib)
+#   - libffi (libffi.a in NANVIX_HOME/lib)
 
 # Nanvix Docker image for cross-compilation (used as fallback if native toolchain not found)
 NANVIX_DOCKER_IMAGE ?= nanvix/toolchain:latest-minimal
@@ -106,9 +108,9 @@ ifdef CONFIG_NANVIX
   export NANVIX_SYSROOT
 
   # INSTALL_PREFIX: the prefix baked into the python binary (sys.prefix, sys.path).
-  # Local builds default to SYSROOT_PATH; CI overrides to /sysroot so that
-  # release artifacts don't contain ephemeral runner paths.
-  INSTALL_PREFIX ?= $(SYSROOT_PATH)
+  # Defaults to /sysroot which matches the runtime layout on Nanvix and keeps
+  # DESTDIR installs predictable (files land under DESTDIR/sysroot/...).
+  INSTALL_PREFIX ?= /sysroot
 else
   # Allow clean target without CONFIG_NANVIX
   ifneq ($(MAKECMDGOALS),clean)
@@ -190,45 +192,52 @@ else
 	@if [ -f python ] && [ ! -f python$(EXE) ]; then mv python python$(EXE); fi
 endif
 
+# Staging directory for tests (inside workspace so Docker can access it)
+TEST_STAGING = $(CURDIR)/.nanvix/_test_staging
+
 # Test target: run tests using nanvixd.elf
-# Requires install to have been run first (python needs its stdlib at PREFIX).
 test: build
 	@echo "Running CPython tests on Nanvix..."
+	@rm -rf $(TEST_STAGING)
 	@# Install python and stdlib into a test staging area
-	$(MAKE) install DESTDIR=/tmp/cpython_test_staging 2>/dev/null
+ifdef CONFIG_NANVIX_DOCKER
+	$(DOCKER_RUN) make install DESTDIR="$(DOCKER_WORKSPACE_PATH)/.nanvix/_test_staging"
+else
+	make install DESTDIR="$(TEST_STAGING)"
+endif
 	@# Copy test scripts into the staging sysroot
-	@echo "import sys; print('CPYTHON_TEST_HELLO: Hello from Python', sys.version_info[:2])" > /tmp/cpython_test_staging/sysroot/test_hello.py
-	@echo "print('CPYTHON_TEST_ARITH:', 2 + 2)" > /tmp/cpython_test_staging/sysroot/test_arith.py
-	@echo "import sys; print('CPYTHON_TEST_PLATFORM:', sys.platform)" > /tmp/cpython_test_staging/sysroot/test_platform.py
+	@echo "import sys; print('CPYTHON_TEST_HELLO: Hello from Python', sys.version_info[:2])" > $(TEST_STAGING)/sysroot/test_hello.py
+	@echo "print('CPYTHON_TEST_ARITH:', 2 + 2)" > $(TEST_STAGING)/sysroot/test_arith.py
+	@echo "import sys; print('CPYTHON_TEST_PLATFORM:', sys.platform)" > $(TEST_STAGING)/sysroot/test_platform.py
 	@# Copy nanvixd.elf into the staging sysroot
-	@mkdir -p /tmp/cpython_test_staging/sysroot/bin
-	@cp "$(abspath $(NANVIX_HOME))/bin/nanvixd.elf" /tmp/cpython_test_staging/sysroot/bin/ 2>/dev/null || true
-	@cp "$(abspath $(NANVIX_HOME))/bin/kernel.elf" /tmp/cpython_test_staging/sysroot/bin/ 2>/dev/null || true
+	@mkdir -p $(TEST_STAGING)/sysroot/bin
+	@cp "$(abspath $(NANVIX_HOME))/bin/nanvixd.elf" $(TEST_STAGING)/sysroot/bin/ 2>/dev/null || true
+	@cp "$(abspath $(NANVIX_HOME))/bin/kernel.elf" $(TEST_STAGING)/sysroot/bin/ 2>/dev/null || true
 	@echo "Test 1: Hello world..."
-	cd /tmp/cpython_test_staging/sysroot && \
-		timeout 120 ./bin/nanvixd.elf -- ./bin/python3.12 ./test_hello.py > /tmp/cpython_test.log 2>&1; \
+	cd $(TEST_STAGING)/sysroot && \
+		timeout 120 ./bin/nanvixd.elf -- ./bin/python3.12 ./test_hello.py < /dev/null > /tmp/cpython_test.log 2>&1; \
 		if grep -q 'CPYTHON_TEST_HELLO:' /tmp/cpython_test.log; then \
 			echo "  PASS: $$(grep 'CPYTHON_TEST_HELLO:' /tmp/cpython_test.log)"; \
 		else \
 			echo "  FAIL: Hello test did not produce expected output"; cat /tmp/cpython_test.log; exit 1; \
 		fi
 	@echo "Test 2: Arithmetic..."
-	cd /tmp/cpython_test_staging/sysroot && \
-		timeout 120 ./bin/nanvixd.elf -- ./bin/python3.12 ./test_arith.py > /tmp/cpython_test.log 2>&1; \
+	cd $(TEST_STAGING)/sysroot && \
+		timeout 120 ./bin/nanvixd.elf -- ./bin/python3.12 ./test_arith.py < /dev/null > /tmp/cpython_test.log 2>&1; \
 		if grep -q 'CPYTHON_TEST_ARITH: 4' /tmp/cpython_test.log; then \
 			echo "  PASS: 2 + 2 = 4"; \
 		else \
 			echo "  FAIL: Arithmetic test did not produce expected output"; cat /tmp/cpython_test.log; exit 1; \
 		fi
 	@echo "Test 3: sys.platform..."
-	cd /tmp/cpython_test_staging/sysroot && \
-		timeout 120 ./bin/nanvixd.elf -- ./bin/python3.12 ./test_platform.py > /tmp/cpython_test.log 2>&1; \
+	cd $(TEST_STAGING)/sysroot && \
+		timeout 120 ./bin/nanvixd.elf -- ./bin/python3.12 ./test_platform.py < /dev/null > /tmp/cpython_test.log 2>&1; \
 		if grep -q 'CPYTHON_TEST_PLATFORM:' /tmp/cpython_test.log; then \
 			echo "  PASS: $$(grep 'CPYTHON_TEST_PLATFORM:' /tmp/cpython_test.log)"; \
 		else \
 			echo "  FAIL: Platform test did not produce expected output"; cat /tmp/cpython_test.log; exit 1; \
 		fi
-	@rm -rf /tmp/cpython_test_staging /tmp/cpython_test.log
+	@rm -rf $(TEST_STAGING) /tmp/cpython_test.log
 	@echo "		*** CPython tests PASSED ***"
 
 # Clean target
@@ -236,17 +245,21 @@ clean:
 	-make clean 2>/dev/null || true
 	rm -f $(CONFIGURED_MARKER)
 	rm -f python$(EXE)
+	rm -rf $(TEST_STAGING)
+	rm -rf $(CURDIR)/_test_staging $(CURDIR)/staging
 
 # Distclean target - full cleanup
 distclean: clean
 	-make distclean 2>/dev/null || true
-	git clean -fdx -e Makefile.nanvix -e NANVIX.md -e .github -e nanvix-artifacts -e z 2>/dev/null || true
+	git clean -fdx -e Makefile.nanvix -e NANVIX.md -e .github -e .nanvix/tests -e z 2>/dev/null || true
 
 # Install target (for Nanvix sysroot)
 # Use DESTDIR for staged installs: make install DESTDIR=/path/to/staging
+# When using Docker, DESTDIR must be under $(CURDIR) so it's accessible via the
+# workspace volume mount.  The path is translated to its Docker-internal equivalent.
 install: build
 ifdef CONFIG_NANVIX_DOCKER
-	$(DOCKER_RUN) make install DESTDIR="$(DESTDIR)"
+	$(DOCKER_RUN) make install DESTDIR="$(patsubst $(CURDIR)%,$(DOCKER_WORKSPACE_PATH)%,$(abspath $(DESTDIR)))"
 else
 	make install DESTDIR="$(DESTDIR)"
 endif

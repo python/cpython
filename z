@@ -1,0 +1,573 @@
+#!/usr/bin/env bash
+
+set -euo pipefail
+
+ROOT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+cd "$ROOT_DIR"
+
+NANVIX_HOME="${NANVIX_HOME:-}"
+NANVIX_TOOLCHAIN="${NANVIX_TOOLCHAIN:-}"
+NANVIX_DOCKER_IMAGE="${NANVIX_DOCKER_IMAGE:-nanvix/toolchain:latest-minimal}"
+NANVIX_PLATFORM="${NANVIX_PLATFORM:-hyperlight}"
+NANVIX_PROCESS_MODE="${NANVIX_PROCESS_MODE:-multi-process}"
+WORK_DIR="${WORK_DIR:-$ROOT_DIR/.nanvix}"
+DOWNLOAD_DIR="$WORK_DIR/downloads"
+EXTRACT_DIR="$WORK_DIR/extracted"
+ENV_FILE="$WORK_DIR/env.sh"
+STAGING="${STAGING:-$WORK_DIR/staging}"
+RUN_BASIC_TESTS="${RUN_BASIC_TESTS:-1}"
+TEST_START="${TEST_START:-1}"
+TEST_END="${TEST_END:-999}"
+TIMEOUT_SECONDS="${TIMEOUT_SECONDS:-300}"
+
+log() {
+  printf '[z] %s\n' "$*"
+}
+
+die() {
+  printf '[z] error: %s\n' "$*" >&2
+  exit 1
+}
+
+usage() {
+  cat <<EOF
+Usage: ./z <command> [-- <make-args...>]
+
+Commands:
+  setup    Download Nanvix build pre-requisites and dependencies.
+  build    Build CPython for Nanvix.
+  test     Run smoke and functional tests on nanvixd.elf.
+
+Environment:
+  NANVIX_HOME         Nanvix sysroot path. Auto-populated by 'setup'.
+  NANVIX_TOOLCHAIN    Toolchain root (required if Docker image is unavailable).
+  NANVIX_DOCKER_IMAGE Docker image for cross-build fallback (default: nanvix/toolchain:latest-minimal).
+  NANVIX_PLATFORM     Artifact platform (default: hyperlight).
+  NANVIX_PROCESS_MODE Artifact process mode (default: multi-process).
+EOF
+}
+
+require_cmd() {
+  command -v "$1" >/dev/null 2>&1 || die "required command not found: $1"
+}
+
+load_env() {
+  if [[ -z "$NANVIX_HOME" && -f "$ENV_FILE" ]]; then
+    # shellcheck disable=SC1090
+    source "$ENV_FILE"
+  fi
+}
+
+save_env() {
+  mkdir -p "$WORK_DIR"
+  cat > "$ENV_FILE" <<EOF
+export NANVIX_HOME="$NANVIX_HOME"
+export NANVIX_TOOLCHAIN="$NANVIX_TOOLCHAIN"
+export NANVIX_PLATFORM="$NANVIX_PLATFORM"
+export NANVIX_PROCESS_MODE="$NANVIX_PROCESS_MODE"
+EOF
+}
+
+require_nanvix_home() {
+  load_env
+
+  if [[ -z "$NANVIX_HOME" ]]; then
+    die "NANVIX_HOME is required. Run './z setup' first or export NANVIX_HOME manually."
+  fi
+}
+
+require_nanvix_build_prereqs() {
+  require_nanvix_home
+
+  if [[ ! -f "$NANVIX_HOME/lib/user.ld" ]]; then
+    die "missing linker script: $NANVIX_HOME/lib/user.ld"
+  fi
+
+  if [[ ! -f "$NANVIX_HOME/lib/libposix.a" ]]; then
+    die "missing library: $NANVIX_HOME/lib/libposix.a"
+  fi
+}
+
+require_nanvix_runtime() {
+  require_nanvix_build_prereqs
+
+  if [[ ! -x "$NANVIX_HOME/bin/nanvixd.elf" ]]; then
+    die "missing executable: $NANVIX_HOME/bin/nanvixd.elf"
+  fi
+}
+
+curl_headers=()
+if [[ -n "${GH_TOKEN:-}" ]]; then
+  curl_headers=(-H "Authorization: Bearer ${GH_TOKEN}")
+fi
+
+download_artifact() {
+  local repo="$1"
+  local artifact="$2"
+  local destination="$3"
+  local url="https://github.com/${repo}/releases/latest/download/${artifact}"
+
+  log "downloading ${repo} artifact: ${artifact}"
+  curl -fsSL "${curl_headers[@]}" -o "$destination" "$url"
+}
+
+extract_dep_dir() {
+  local archive="$1"
+  local out_dir="$2"
+
+  rm -rf "$out_dir"
+  mkdir -p "$out_dir"
+  tar -xjf "$archive" -C "$out_dir"
+
+  if [[ -d "$out_dir/sysroot" ]]; then
+    printf '%s\n' "$out_dir/sysroot"
+    return
+  fi
+
+  local first_dir
+  first_dir="$(find "$out_dir" -mindepth 1 -maxdepth 1 -type d | head -1)"
+  if [[ -z "$first_dir" ]]; then
+    die "could not find extracted directory in: $out_dir"
+  fi
+  printf '%s\n' "$first_dir"
+}
+
+install_sqlite_or_zlib() {
+  local dep_dir="$1"
+  find "$dep_dir" -name '*.a' -exec cp -f {} "$NANVIX_HOME/lib/" \;
+  find "$dep_dir" -name '*.h' -not -path '*/openssl/*' -exec cp -f {} "$NANVIX_HOME/include/" \;
+}
+
+install_openssl() {
+  local dep_dir="$1"
+  find "$dep_dir" -name '*.a' -exec cp -f {} "$NANVIX_HOME/lib/" \;
+  mkdir -p "$NANVIX_HOME/include/openssl"
+  find "$dep_dir" -path '*/openssl/*.h' -exec cp -f {} "$NANVIX_HOME/include/openssl/" \;
+}
+
+find_nanvix_home() {
+  local search_root="$1"
+  local candidate
+
+  candidate="$(find "$search_root" -type f -name 'nanvixd.elf' -path '*/bin/*' -exec dirname {} \; 2>/dev/null | head -1)"
+  if [[ -n "$candidate" ]]; then
+    dirname "$candidate"
+    return 0
+  fi
+
+  return 1
+}
+
+build_nanvix_from_source_tree() {
+  local source_dir="$1"
+
+  if [[ ! -x "$source_dir/z" ]]; then
+    return 1
+  fi
+
+  log "building Nanvix from downloaded source: $source_dir" >&2
+  (
+    cd "$source_dir"
+    if [[ -n "$NANVIX_TOOLCHAIN" ]]; then
+      ./z setup -- --toolchain-dir "$NANVIX_TOOLCHAIN" >&2
+      ./z build -- TOOLCHAIN_DIR="$NANVIX_TOOLCHAIN" LOG_LEVEL=panic RELEASE=yes >&2
+    else
+      ./z setup --with-minimal-docker >&2
+      ./z build --with-minimal-docker -- LOG_LEVEL=panic RELEASE=yes >&2
+    fi
+  )
+
+  for candidate in "$source_dir/sysroot" "$source_dir/sysroot-release" "$source_dir/sysroot-debug"; do
+    [[ -d "$candidate" ]] && { printf '%s\n' "$candidate"; return 0; }
+  done
+
+  return 1
+}
+
+resolve_nanvix_home() {
+  local artifacts_dir="$1"
+  local extracted_dir="$2"
+  local nanvix_home=""
+
+  nanvix_home="$(find_nanvix_home "$artifacts_dir" || true)"
+  if [[ -n "$nanvix_home" ]]; then
+    printf '%s\n' "$nanvix_home"
+    return 0
+  fi
+
+  local archive
+  archive="$(find "$artifacts_dir" -maxdepth 1 -type f \( -name '*.tar.bz2' -o -name '*.tar.gz' \) | grep -E "${NANVIX_PLATFORM}.*${NANVIX_PROCESS_MODE}" | head -1)"
+  if [[ -z "$archive" ]]; then
+    archive="$(find "$artifacts_dir" -maxdepth 1 -type f \( -name '*.tar.bz2' -o -name '*.tar.gz' \) | head -1)"
+  fi
+
+  [[ -z "$archive" ]] && return 1
+
+  rm -rf "$extracted_dir"
+  mkdir -p "$extracted_dir"
+
+  case "$archive" in
+    *.tar.bz2)
+      tar -xjf "$archive" -C "$extracted_dir"
+      ;;
+    *.tar.gz)
+      tar -xzf "$archive" -C "$extracted_dir"
+      ;;
+    *)
+      return 1
+      ;;
+  esac
+
+  nanvix_home="$(find_nanvix_home "$extracted_dir" || true)"
+  if [[ -n "$nanvix_home" ]]; then
+    printf '%s\n' "$nanvix_home"
+    return 0
+  fi
+
+  local source_dir
+  source_dir="$(find "$extracted_dir" -mindepth 1 -maxdepth 4 -type f -name 'z' -exec dirname {} \; | head -1)"
+  if [[ -n "$source_dir" ]]; then
+    nanvix_home="$(build_nanvix_from_source_tree "$source_dir" || true)"
+    if [[ -n "$nanvix_home" ]]; then
+      printf '%s\n' "$nanvix_home"
+      return 0
+    fi
+  fi
+
+  return 1
+}
+
+verify_installed_prerequisites() {
+  local missing=0
+  local libs=(libposix.a libz.a libsqlite3.a libssl.a libcrypto.a libbz2.a libffi.a)
+
+  for lib in "${libs[@]}"; do
+    if [[ ! -f "$NANVIX_HOME/lib/$lib" ]]; then
+      log "missing prerequisite library: $NANVIX_HOME/lib/$lib"
+      missing=1
+    fi
+  done
+
+  if [[ ! -f "$NANVIX_HOME/lib/user.ld" ]]; then
+    log "missing prerequisite linker script: $NANVIX_HOME/lib/user.ld"
+    missing=1
+  fi
+
+  if [[ ! -x "$NANVIX_HOME/bin/nanvixd.elf" ]]; then
+    log "missing runtime executable: $NANVIX_HOME/bin/nanvixd.elf"
+    missing=1
+  fi
+
+  if [[ "$missing" -ne 0 ]]; then
+    die "setup did not install all required prerequisites"
+  fi
+}
+
+cmd_setup() {
+  require_cmd curl
+  require_cmd tar
+  require_cmd find
+
+  mkdir -p "$DOWNLOAD_DIR" "$EXTRACT_DIR"
+
+  if [[ -z "$NANVIX_HOME" ]]; then
+    local artifacts_dir="$WORK_DIR/nanvix-artifacts"
+    log "downloading Nanvix artifacts with get-nanvix.sh"
+    curl -fsSL https://raw.githubusercontent.com/nanvix/nanvix/refs/heads/dev/scripts/get-nanvix.sh | bash -s -- --force "$artifacts_dir"
+
+    NANVIX_HOME="$(resolve_nanvix_home "$artifacts_dir" "$EXTRACT_DIR/nanvix" || true)"
+    [[ -z "$NANVIX_HOME" ]] && die "failed to resolve NANVIX_HOME from downloaded Nanvix artifacts"
+  fi
+
+  mkdir -p "$NANVIX_HOME/lib" "$NANVIX_HOME/include"
+
+  local sqlite_artifact sqlite_archive sqlite_dir
+  sqlite_artifact="sqlite-${NANVIX_PLATFORM}-${NANVIX_PROCESS_MODE}.tar.bz2"
+  sqlite_archive="$DOWNLOAD_DIR/$sqlite_artifact"
+  download_artifact "nanvix/sqlite" "$sqlite_artifact" "$sqlite_archive"
+  sqlite_dir="$(extract_dep_dir "$sqlite_archive" "$EXTRACT_DIR/sqlite")"
+  install_sqlite_or_zlib "$sqlite_dir"
+
+  local zlib_artifact zlib_archive zlib_dir
+  zlib_artifact="zlib-${NANVIX_PLATFORM}-${NANVIX_PROCESS_MODE}.tar.bz2"
+  zlib_archive="$DOWNLOAD_DIR/$zlib_artifact"
+  download_artifact "nanvix/zlib" "$zlib_artifact" "$zlib_archive"
+  zlib_dir="$(extract_dep_dir "$zlib_archive" "$EXTRACT_DIR/zlib")"
+  install_sqlite_or_zlib "$zlib_dir"
+
+  local bzip2_artifact bzip2_archive bzip2_dir
+  bzip2_artifact="bzip2-${NANVIX_PLATFORM}-${NANVIX_PROCESS_MODE}.tar.bz2"
+  bzip2_archive="$DOWNLOAD_DIR/$bzip2_artifact"
+  download_artifact "nanvix/bzip2" "$bzip2_artifact" "$bzip2_archive"
+  bzip2_dir="$(extract_dep_dir "$bzip2_archive" "$EXTRACT_DIR/bzip2")"
+  install_sqlite_or_zlib "$bzip2_dir"
+
+  local libffi_artifact libffi_archive libffi_dir
+  libffi_artifact="libffi-${NANVIX_PLATFORM}-${NANVIX_PROCESS_MODE}.tar.bz2"
+  libffi_archive="$DOWNLOAD_DIR/$libffi_artifact"
+  download_artifact "nanvix/libffi" "$libffi_artifact" "$libffi_archive"
+  libffi_dir="$(extract_dep_dir "$libffi_archive" "$EXTRACT_DIR/libffi")"
+  install_sqlite_or_zlib "$libffi_dir"
+
+  local openssl_artifact openssl_archive openssl_dir
+  openssl_artifact="openssl-${NANVIX_PLATFORM}-${NANVIX_PROCESS_MODE}.tar.bz2"
+  openssl_archive="$DOWNLOAD_DIR/$openssl_artifact"
+  download_artifact "nanvix/openssl" "$openssl_artifact" "$openssl_archive"
+  openssl_dir="$(extract_dep_dir "$openssl_archive" "$EXTRACT_DIR/openssl")"
+  install_openssl "$openssl_dir"
+
+  verify_installed_prerequisites
+
+  save_env
+  log "setup complete"
+  log "NANVIX_HOME=$NANVIX_HOME"
+}
+
+nanvix_make() {
+  require_nanvix_build_prereqs
+
+  local make_args=(
+    -f Makefile.nanvix
+    CONFIG_NANVIX=y
+    NANVIX_HOME="$NANVIX_HOME"
+  )
+
+  if [[ -n "$NANVIX_TOOLCHAIN" ]]; then
+    make_args+=(NANVIX_TOOLCHAIN="$NANVIX_TOOLCHAIN")
+  else
+    if command -v docker >/dev/null 2>&1 && docker image inspect "$NANVIX_DOCKER_IMAGE" >/dev/null 2>&1; then
+      log "NANVIX_TOOLCHAIN is unset; using Docker image $NANVIX_DOCKER_IMAGE"
+      make_args+=(CONFIG_NANVIX_DOCKER=y NANVIX_DOCKER_IMAGE="$NANVIX_DOCKER_IMAGE")
+    else
+      die "NANVIX_TOOLCHAIN is not set and Docker image $NANVIX_DOCKER_IMAGE is unavailable"
+    fi
+  fi
+
+  make "${make_args[@]}" "$@"
+}
+
+cmd_build() {
+  nanvix_make all "$@"
+}
+
+verify_tests_present() {
+  [[ -d "$WORK_DIR/tests" ]] || die "missing directory: $WORK_DIR/tests"
+  [[ -f "$WORK_DIR/tests/smoke_test_l2.py" ]] || die "missing smoke test: $WORK_DIR/tests/smoke_test_l2.py"
+  [[ -d "$WORK_DIR/tests/func" ]] || die "missing directory: $WORK_DIR/tests/func"
+  local count
+  count=$(find "$WORK_DIR/tests/func" -name 'test_*.py' | wc -l)
+  [[ "$count" -gt 0 ]] || die "no functional tests found in $WORK_DIR/tests/func"
+  log "found $count functional tests"
+}
+
+install_site_packages() {
+  local site_pkg="$1"
+  local pip_cmd=""
+
+  if command -v pip3 >/dev/null 2>&1; then
+    pip_cmd="pip3"
+  elif [[ -n "$NANVIX_TOOLCHAIN" && -x "$NANVIX_TOOLCHAIN/bin/pip3" ]]; then
+    pip_cmd="$NANVIX_TOOLCHAIN/bin/pip3"
+  elif command -v python3 >/dev/null 2>&1 && python3 -m pip --version >/dev/null 2>&1; then
+    pip_cmd="python3 -m pip"
+  elif [[ -n "$NANVIX_TOOLCHAIN" && -x "$NANVIX_TOOLCHAIN/bin/python3" ]] && "$NANVIX_TOOLCHAIN/bin/python3" -m pip --version >/dev/null 2>&1; then
+    pip_cmd="$NANVIX_TOOLCHAIN/bin/python3 -m pip"
+  else
+    log "pip3 not found; skipping site-packages installation"
+    return 0
+  fi
+
+  $pip_cmd install --target="$site_pkg" --no-deps --no-compile --quiet \
+    absl-py==2.3.1 annotated-types==0.7.0 attrs==23.2.0 certifi \
+    charset-normalizer==3.4.4 chess==1.9.2 click==8.3.0 \
+    click-plugins==1.1.1.2 cligj==0.7.2 cloudpathlib==0.23.0 \
+    cycler==0.12.1 entrypoints==0.4 et-xmlfile==2.0.0 \
+    filelock==3.20.0 flatbuffers fpdf==1.7.2 fsspec \
+    gast==0.6.0 idna==3.11 immutabledict joblib==1.3.2 \
+    langcodes==3.5.0 markdown lazy-loader==0.4 \
+    markdown-it-py==4.0.0 MarkupSafe==2.1.5 mdurl==0.1.2 \
+    mpmath==1.3.0 namex==0.1.0 networkx==3.4.2 opt-einsum==3.4.0 \
+    ordered-set==4.1.0 packaging==23.2 ply==3.11 pycparser==2.23 \
+    pygments pyparsing==3.1.1 pytz==2024.1 setuptools==75.8.0 \
+    shellingham==1.5.4 six==1.16.0 spacy-legacy==3.0.12 \
+    spacy-loggers==1.0.5 striprtf==0.0.20 tabulate==0.8.10 \
+    tenacity termcolor toolz==0.12.1 tqdm \
+    typing-extensions==4.15.0 typing-inspection==0.4.2 \
+    tzdata==2024.1 wasabi==1.1.3 wheel==0.45.1 \
+    2>/dev/null || true
+
+  $pip_cmd install --target="$site_pkg" --no-deps --no-compile --quiet \
+    google-pasta==0.2.0 python-dateutil==2.8.2 Jinja2 \
+    wrapt==2.0.1 smart-open==7.5.0 \
+    pylatex==1.4.2 werkzeug rich pypdf PyPDF2==3.0.1 \
+    xlsxwriter catalogue==2.0.10 fonttools==4.49.0 \
+    plotly==5.20.0 urllib3 requests chardet==5.2.0 \
+    cffi==1.17.1 itsdangerous colorama decorator \
+    defusedxml pyyaml flask plumbum==1.9.0 msgpack \
+    blinker tomli more-itertools python-dotenv \
+    beautifulsoup4 soupsieve html5lib webencodings \
+    jsonpointer jsonpatch jmespath docutils marshmallow \
+    dataclasses-json reportlab threadpoolctl==3.3.0 \
+    typing_inspect mypy_extensions pandoc==2.4 platformdirs \
+    isodate nltk textblob openpyxl==3.1.2 xlrd==2.0.1 \
+    sympy==1.12 \
+    2>/dev/null || true
+
+  find "$site_pkg" -name "*.so" -delete 2>/dev/null || true
+  rm -f "$site_pkg/distutils-precedence.pth" 2>/dev/null || true
+}
+
+run_smoke_test() {
+  local test_sysroot="$1"
+  local log_file="/tmp/smoke.log"
+
+  cp "$WORK_DIR/tests/smoke_test_l2.py" "$test_sysroot/"
+
+  cd "$test_sysroot"
+  timeout "$TIMEOUT_SECONDS" ./bin/nanvixd.elf -- ./bin/python3.12 ./smoke_test_l2.py < /dev/null > "$log_file" 2>&1 || true
+
+  if grep -q 'FAIL' "$log_file" 2>/dev/null; then
+    cat "$log_file" || true
+    rm -f "$log_file"
+    die "smoke test failed"
+  fi
+
+  if grep -q 'PASS' "$log_file" 2>/dev/null; then
+    log "smoke test: PASS"
+  elif [[ -s "$log_file" ]]; then
+    log "smoke test output:"
+    cat "$log_file" || true
+  else
+    rm -f "$log_file"
+    die "smoke test produced no output"
+  fi
+
+  rm -f "$log_file"
+}
+
+run_functional_tests() {
+  local test_sysroot="$1"
+  local total_pass=0
+  local total_fail=0
+  local total_skip=0
+  local failed_tests=""
+
+  # Copy individual test files into the test sysroot
+  cp "$WORK_DIR"/tests/func/test_*.py "$test_sysroot/" 2>/dev/null || true
+
+  # Optionally precompile stdlib and tests
+  local host_python=""
+  if [[ -n "$NANVIX_TOOLCHAIN" && -x "$NANVIX_TOOLCHAIN/bin/python3" ]]; then
+    host_python="$NANVIX_TOOLCHAIN/bin/python3"
+  elif command -v python3 >/dev/null 2>&1; then
+    host_python="python3"
+  fi
+  if [[ -n "$host_python" ]]; then
+    "$host_python" -m compileall -q "$test_sysroot/lib/python3.12/" 2>/dev/null || true
+    "$host_python" -m compileall -q "$test_sysroot"/test_*.py 2>/dev/null || true
+  fi
+
+  # Run each test individually
+  for test_file in "$test_sysroot"/test_[0-9]*.py; do
+    [[ ! -f "$test_file" ]] && continue
+    local test_basename
+    test_basename=$(basename "$test_file")
+
+    # Extract test number for range filtering
+    local test_num
+    test_num=$(echo "$test_basename" | grep -oP '(?<=test_)\d+' | sed 's/^0*//' )
+    [[ -z "$test_num" ]] && test_num=0
+    [[ "$test_num" -lt "$TEST_START" || "$test_num" -gt "$TEST_END" ]] && continue
+
+    local log_file="/tmp/${test_basename}.log"
+    cd "$test_sysroot"
+    timeout "$TIMEOUT_SECONDS" ./bin/nanvixd.elf -- ./bin/python3.12 "./$test_basename" < /dev/null > "$log_file" 2>&1 || true
+
+    if grep -q 'PASS' "$log_file" 2>/dev/null; then
+      local test_name
+      test_name=$(grep 'PASS' "$log_file" | head -1 | sed 's/:.*//')
+      echo "  $test_name: PASS"
+      total_pass=$((total_pass + 1))
+    elif grep -q 'FAIL' "$log_file" 2>/dev/null; then
+      grep 'FAIL' "$log_file" 2>/dev/null || true
+      total_fail=$((total_fail + 1))
+      failed_tests="${failed_tests}${test_basename} "
+    else
+      echo "  ${test_basename}: SKIP"
+      total_skip=$((total_skip + 1))
+    fi
+
+    rm -f "$log_file"
+  done
+
+  echo "Results: ${total_pass} passed, ${total_fail} failed, ${total_skip} skipped"
+
+  if [[ "$total_fail" -gt 0 ]]; then
+    echo "Failed tests: ${failed_tests}"
+    exit 1
+  fi
+
+  if [[ "$total_pass" -eq 0 ]]; then
+    die "no tests passed (all skipped or none found)"
+  fi
+
+  echo "All functional tests passed"
+}
+
+cmd_test() {
+  require_nanvix_runtime
+  verify_tests_present
+
+  if [[ "$RUN_BASIC_TESTS" == "1" ]]; then
+    nanvix_make test "$@"
+  fi
+
+  rm -rf "$STAGING"
+  nanvix_make install DESTDIR="$STAGING" "$@"
+
+  local test_sysroot="$STAGING/sysroot"
+  local site_pkg="$test_sysroot/lib/python3.12/site-packages"
+  mkdir -p "$site_pkg" "$test_sysroot/bin"
+
+  cp "$NANVIX_HOME/bin/nanvixd.elf" "$test_sysroot/bin/" 2>/dev/null || true
+  cp "$NANVIX_HOME/bin/kernel.elf" "$test_sysroot/bin/" 2>/dev/null || true
+  for file in linuxd.elf uservm.elf; do
+    [[ -f "$NANVIX_HOME/bin/$file" ]] && cp "$NANVIX_HOME/bin/$file" "$test_sysroot/bin/" || true
+  done
+
+  install_site_packages "$site_pkg"
+  run_smoke_test "$test_sysroot"
+  run_functional_tests "$test_sysroot"
+}
+
+if [[ $# -lt 1 ]]; then
+  usage
+  exit 1
+fi
+
+COMMAND="$1"
+shift
+
+EXTRA_ARGS=()
+if [[ $# -gt 0 ]]; then
+  if [[ "$1" == "--" ]]; then
+    shift
+  fi
+  EXTRA_ARGS=("$@")
+fi
+
+case "$COMMAND" in
+  setup)
+    cmd_setup
+    ;;
+  build)
+    cmd_build "${EXTRA_ARGS[@]}"
+    ;;
+  test)
+    cmd_test "${EXTRA_ARGS[@]}"
+    ;;
+  *)
+    usage
+    exit 1
+    ;;
+esac

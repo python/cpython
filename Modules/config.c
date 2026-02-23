@@ -25,29 +25,6 @@ extern "C" {
 
 extern PyObject* PyInit__regex(void);
 extern PyObject* PyInit__cffi_backend(void);
-extern PyObject* PyInit__multiarray_umath(void);
-extern PyObject* PyInit__pocketfft_internal(void);
-extern PyObject* PyInit_lapack_lite(void);
-extern PyObject* PyInit__umath_linalg(void);
-extern PyObject* PyInit__bounded_integers(void);
-extern PyObject* PyInit__common(void);
-extern PyObject* PyInit__generator(void);
-extern PyObject* PyInit__mt19937(void);
-extern PyObject* PyInit__pcg64(void);
-extern PyObject* PyInit__philox(void);
-extern PyObject* PyInit__sfc64(void);
-extern PyObject* PyInit_bit_generator(void);
-extern PyObject* PyInit_mtrand(void);
-extern PyObject* PyInit_mrmr(void);
-extern PyObject* PyInit_cymem(void);
-extern PyObject* PyInit_maps(void);
-extern PyObject* PyInit_counter(void);
-extern PyObject* PyInit_bloom(void);
-extern PyObject* PyInit_ujson(void);
-extern PyObject* PyInit__packer(void);
-extern PyObject* PyInit__unpacker(void);
-extern PyObject* PyInit__epoch(void);
-extern PyObject* PyInit__cext(void);
 extern PyObject* PyInit_array(void);
 extern PyObject* PyInit__asyncio(void);
 extern PyObject* PyInit__bisect(void);
@@ -124,31 +101,8 @@ extern PyObject* PyInit__string(void);
 
 struct _inittab _PyImport_Inittab[] = {
 
-    {"regex._regex", PyInit__regex},
+    {"_regex", PyInit__regex},
     {"_cffi_backend", PyInit__cffi_backend},
-    {"numpy.core._multiarray_umath", PyInit__multiarray_umath},
-    {"numpy.fft._pocketfft_internal", PyInit__pocketfft_internal},
-    {"numpy.linalg.lapack_lite", PyInit_lapack_lite},
-    {"numpy.linalg._umath_linalg", PyInit__umath_linalg},
-    {"numpy.random._bounded_integers", PyInit__bounded_integers},
-    {"numpy.random._common", PyInit__common},
-    {"numpy.random._generator", PyInit__generator},
-    {"numpy.random._mt19937", PyInit__mt19937},
-    {"numpy.random._pcg64", PyInit__pcg64},
-    {"numpy.random._philox", PyInit__philox},
-    {"numpy.random._sfc64", PyInit__sfc64},
-    {"numpy.random.bit_generator", PyInit_bit_generator},
-    {"numpy.random.mtrand", PyInit_mtrand},
-    {"murmurhash.mrmr", PyInit_mrmr},
-    {"cymem.cymem", PyInit_cymem},
-    {"preshed.maps", PyInit_maps},
-    {"preshed.counter", PyInit_counter},
-    {"preshed.bloom", PyInit_bloom},
-    {"srsly.ujson.ujson", PyInit_ujson},
-    {"srsly.msgpack._packer", PyInit__packer},
-    {"srsly.msgpack._unpacker", PyInit__unpacker},
-    {"srsly.msgpack._epoch", PyInit__epoch},
-    {"kiwisolver._cext", PyInit__cext},
     {"array", PyInit_array},
     {"_asyncio", PyInit__asyncio},
     {"_bisect", PyInit__bisect},

@@ -11,7 +11,6 @@ on:
       - nanvix/**
   workflow_dispatch:
   repository_dispatch:
-    # Triggered by dependencies when they complete a release
     types: [sqlite-release, openssl-release, bzip2-release, expat-release, libffi-release]
 
 permissions:
@@ -20,7 +19,6 @@ permissions:
   issues: write
 
 jobs:
-  # Extract Nanvix SHA once - all matrix builds use the same Nanvix release
   get-nanvix-info:
     runs-on: ubuntu-latest
     outputs:
@@ -31,28 +29,17 @@ jobs:
         id: extract
         run: |
           set -euo pipefail
-          # Download Nanvix release artifacts list
           curl -fsSL https://raw.githubusercontent.com/nanvix/nanvix/refs/heads/dev/scripts/get-nanvix.sh | bash -s -- --force nanvix-artifacts
-          # Find any artifact to extract the SHA
           ARTIFACT_FILE=$(find nanvix-artifacts -maxdepth 1 -type f -name "*.tar.bz2" | head -1)
-          if [[ -z "$ARTIFACT_FILE" ]]; then
-            echo "::error::No Nanvix artifact found"
-            exit 1
-          fi
-          # Extract Nanvix commit SHA from artifact filename
+          [[ -z "$ARTIFACT_FILE" ]] && { echo "::error::No Nanvix artifact found"; exit 1; }
           NANVIX_SHA_FULL=$(basename "$ARTIFACT_FILE" | sed -E 's/.*-([a-f0-9]{40})\.tar\.bz2$/\1/')
           NANVIX_SHA="${NANVIX_SHA_FULL::7}"
-          echo "Nanvix commit SHA: $NANVIX_SHA_FULL (short: $NANVIX_SHA)"
           echo "sha=$NANVIX_SHA" >> "$GITHUB_OUTPUT"
           echo "sha_full=$NANVIX_SHA_FULL" >> "$GITHUB_OUTPUT"
 
-  build:
+  build-and-test:
     needs: get-nanvix-info
     runs-on: ubuntu-latest
-    outputs:
-      zlib_tag: ${{ steps.zlib-dep.outputs.zlib_tag }}
-      sqlite_tag: ${{ steps.sqlite-dep.outputs.sqlite_tag }}
-      openssl_tag: ${{ steps.openssl-dep.outputs.openssl_tag }}
     strategy:
       fail-fast: false
       matrix:
@@ -73,408 +60,50 @@ jobs:
       run:
         shell: bash
     env:
-      NANVIX_SHA: ${{ needs.get-nanvix-info.outputs.sha }}
-      NANVIX_SHA_FULL: ${{ needs.get-nanvix-info.outputs.sha_full }}
+      NANVIX_TOOLCHAIN: /opt/nanvix
+      NANVIX_PLATFORM: ${{ matrix.platform }}
+      NANVIX_PROCESS_MODE: ${{ matrix.process-mode }}
       USER: runner
     steps:
       - uses: actions/checkout@v4
 
-      - name: Download and Extract Nanvix Release
+      - name: Prepare Setup.local for L2
         run: |
-          set -euo pipefail
-          # Download all Nanvix release artifacts
-          curl -fsSL https://raw.githubusercontent.com/nanvix/nanvix/refs/heads/dev/scripts/get-nanvix.sh | bash -s -- --force nanvix-artifacts
-          # Find and extract the artifact matching platform and process-mode
-          ARTIFACT_PATTERN="${{ matrix.platform }}.*${{ matrix.process-mode }}.*\.tar\.bz2"
-          ARTIFACT_FILE=$(find nanvix-artifacts -maxdepth 1 -type f -name "*.tar.bz2" | grep -E "$ARTIFACT_PATTERN" | head -1)
-          if [[ -z "$ARTIFACT_FILE" ]]; then
-            echo "::error::No ${{ matrix.platform }} ${{ matrix.process-mode }} artifact found"
-            exit 1
-          fi
-          mkdir -p nanvix-artifacts/extracted
-          tar -xjf "$ARTIFACT_FILE" -C nanvix-artifacts/extracted
-          NANVIX_HOME=$(find nanvix-artifacts/extracted -maxdepth 2 -type d -name "bin" -exec dirname {} \; | head -1)
-          mkdir -p "$NANVIX_HOME/include"
-          echo "NANVIX_HOME=$NANVIX_HOME" >> "$GITHUB_ENV"
-
-      # NOTE: Download SQLite FIRST to extract the zlib tag it used for transitive dependency consistency
-      - name: Download and Install SQLite Dependency
-        id: sqlite-dep
-        env:
-          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-        run: |
-          set -euo pipefail
-          echo "Downloading SQLite for ${{ matrix.platform }}-${{ matrix.process-mode }} (Nanvix SHA: $NANVIX_SHA)..."
-
-          SQLITE_ARTIFACT="sqlite-${{ matrix.platform }}-${{ matrix.process-mode }}.tar.bz2"
-          mkdir -p sqlite-dep
-
-          # Get list of SQLite releases and find one built with matching Nanvix SHA
-          # Release tags follow format: {commit-sha}-nanvix-{nanvix-sha}
-          echo "Looking for SQLite release built with Nanvix SHA $NANVIX_SHA..."
-          SQLITE_RELEASES=$(curl -fsSL -H "Authorization: Bearer ${GH_TOKEN}" \
-            "https://api.github.com/repos/nanvix/sqlite/releases?per_page=50" 2>/dev/null || echo "[]")
-
-          # Find a release with tag ending in -nanvix-{NANVIX_SHA}
-          MATCHING_RELEASE_TAG=""
-          for tag in $(echo "$SQLITE_RELEASES" | jq -r '.[].tag_name' 2>/dev/null); do
-            if [[ "$tag" == *"-nanvix-${NANVIX_SHA}" ]]; then
-              MATCHING_RELEASE_TAG="$tag"
-              echo "Found matching SQLite release: $tag"
-              break
-            fi
-          done
-
-          # If no matching release found, fall back to latest
-          if [[ -z "$MATCHING_RELEASE_TAG" ]]; then
-            echo "::warning::No SQLite release found matching Nanvix SHA $NANVIX_SHA, falling back to latest"
-            SQLITE_URL="https://github.com/nanvix/sqlite/releases/latest/download/${SQLITE_ARTIFACT}"
-            # Get the actual tag for metadata parsing
-            MATCHING_RELEASE_TAG=$(curl -fsSL -H "Authorization: Bearer ${GH_TOKEN}" \
-              "https://api.github.com/repos/nanvix/sqlite/releases/latest" 2>/dev/null | jq -r '.tag_name // "latest"')
-          else
-            SQLITE_URL="https://github.com/nanvix/sqlite/releases/download/${MATCHING_RELEASE_TAG}/${SQLITE_ARTIFACT}"
-          fi
-
-          echo "SQLITE_TAG=${MATCHING_RELEASE_TAG}" >> "$GITHUB_ENV"
-          echo "sqlite_tag=${MATCHING_RELEASE_TAG}" >> "$GITHUB_OUTPUT"
-
-          # Parse SQLite's release body to get the exact zlib tag it used
-          # This ensures transitive dependency consistency
-          echo "Fetching SQLite release metadata to get zlib dependency tag..."
-          SQLITE_RELEASE_BODY=$(curl -fsSL -H "Authorization: Bearer ${GH_TOKEN}" \
-            "https://api.github.com/repos/nanvix/sqlite/releases/tags/${MATCHING_RELEASE_TAG}" 2>/dev/null | jq -r '.body // ""')
-
-          # Extract zlib tag from release body.
-          ZLIB_TAG_FROM_SQLITE=$(echo "$SQLITE_RELEASE_BODY" | grep -oP '(?<=- zlib: \[`)[^`]+' || echo "")
-          if [[ -n "$ZLIB_TAG_FROM_SQLITE" ]]; then
-            echo "Found zlib tag from SQLite release: $ZLIB_TAG_FROM_SQLITE"
-            echo "ZLIB_TAG=${ZLIB_TAG_FROM_SQLITE}" >> "$GITHUB_ENV"
-            echo "zlib_tag=${ZLIB_TAG_FROM_SQLITE}" >> "$GITHUB_OUTPUT"
-          else
-            echo "::warning::Could not extract zlib tag from SQLite release body, will search by Nanvix SHA"
-            echo "ZLIB_TAG=" >> "$GITHUB_ENV"
-            echo "zlib_tag=" >> "$GITHUB_OUTPUT"
-          fi
-
-          echo "Downloading SQLite from: $SQLITE_URL"
-          if curl -fsSL -o "sqlite-dep/${SQLITE_ARTIFACT}" "$SQLITE_URL"; then
-            tar -xjf "sqlite-dep/${SQLITE_ARTIFACT}" -C sqlite-dep
-            # Try new tarball format first: sysroot/{lib,include}/...
-            SQLITE_DIR="sqlite-dep/sysroot"
-            if [[ ! -d "$SQLITE_DIR" ]]; then
-              # Fall back to old format: sqlite-<platform>-<mode>/{lib,include}/...
-              SQLITE_DIR=$(find sqlite-dep -mindepth 1 -maxdepth 1 -type d -name "sqlite-*" | head -1)
-            fi
-            if [[ -n "$SQLITE_DIR" ]] && [[ -d "$SQLITE_DIR" ]]; then
-              echo "Installing SQLite from $SQLITE_DIR to $NANVIX_HOME..."
-              cp -f "$SQLITE_DIR"/lib/*.a "$NANVIX_HOME/lib/" 2>/dev/null || true
-              cp -f "$SQLITE_DIR"/include/*.h "$NANVIX_HOME/include/" 2>/dev/null || true
-              echo "SQLite installed successfully"
-            else
-              echo "::warning::Could not find extracted SQLite directory"
-            fi
-          else
-            echo "::error::Could not download SQLite release"
-            exit 1
-          fi
-
-      - name: Download and Install zlib Dependency
-        id: zlib-dep
-        env:
-          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-        run: |
-          set -euo pipefail
-          echo "Downloading zlib for ${{ matrix.platform }}-${{ matrix.process-mode }}..."
-
-          ZLIB_ARTIFACT="zlib-${{ matrix.platform }}-${{ matrix.process-mode }}.tar.bz2"
-          mkdir -p zlib-dep
-
-          # Use the exact zlib tag from SQLite if available (transitive dependency consistency)
-          # Otherwise, search for a release matching Nanvix SHA
-          if [[ -n "${ZLIB_TAG:-}" ]]; then
-            echo "Using zlib tag from SQLite release for transitive dependency consistency: $ZLIB_TAG"
-            MATCHING_RELEASE_TAG="$ZLIB_TAG"
-          else
-            echo "Looking for zlib release built with Nanvix SHA $NANVIX_SHA..."
-            ZLIB_RELEASES=$(curl -fsSL -H "Authorization: Bearer ${GH_TOKEN}" \
-              "https://api.github.com/repos/nanvix/zlib/releases?per_page=50" 2>/dev/null || echo "[]")
-
-            MATCHING_RELEASE_TAG=""
-            for tag in $(echo "$ZLIB_RELEASES" | jq -r '.[].tag_name' 2>/dev/null); do
-              if [[ "$tag" == *"-nanvix-${NANVIX_SHA}" ]]; then
-                MATCHING_RELEASE_TAG="$tag"
-                echo "Found matching zlib release: $tag"
-                break
-              fi
-            done
-          fi
-
-          # Download zlib
-          if [[ -z "$MATCHING_RELEASE_TAG" ]]; then
-            echo "::warning::No zlib release found matching Nanvix SHA $NANVIX_SHA, falling back to latest"
-            ZLIB_URL="https://github.com/nanvix/zlib/releases/latest/download/${ZLIB_ARTIFACT}"
-            MATCHING_RELEASE_TAG=$(curl -fsSL -H "Authorization: Bearer ${GH_TOKEN}" \
-              "https://api.github.com/repos/nanvix/zlib/releases/latest" 2>/dev/null | jq -r '.tag_name // "latest"')
-          else
-            ZLIB_URL="https://github.com/nanvix/zlib/releases/download/${MATCHING_RELEASE_TAG}/${ZLIB_ARTIFACT}"
-          fi
-
-          echo "ZLIB_TAG=${MATCHING_RELEASE_TAG}" >> "$GITHUB_ENV"
-          echo "zlib_tag=${MATCHING_RELEASE_TAG}" >> "$GITHUB_OUTPUT"
-
-          echo "Downloading zlib from: $ZLIB_URL"
-          if curl -fsSL -o "zlib-dep/${ZLIB_ARTIFACT}" "$ZLIB_URL"; then
-            tar -xjf "zlib-dep/${ZLIB_ARTIFACT}" -C zlib-dep
-            ZLIB_DIR=$(find zlib-dep -mindepth 1 -maxdepth 1 -type d -name "zlib-*" | head -1)
-            if [[ -n "$ZLIB_DIR" ]]; then
-              echo "Installing zlib from $ZLIB_DIR to $NANVIX_HOME..."
-              cp -f "$ZLIB_DIR"/lib/*.a "$NANVIX_HOME/lib/" 2>/dev/null || true
-              cp -f "$ZLIB_DIR"/include/*.h "$NANVIX_HOME/include/" 2>/dev/null || true
-              echo "zlib installed successfully"
-            else
-              echo "::warning::Could not find extracted zlib directory"
-            fi
-          else
-            echo "::error::Could not download zlib release"
-            exit 1
-          fi
-
-      - name: Download and Install OpenSSL Dependency
-        id: openssl-dep
-        env:
-          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-        run: |
-          set -euo pipefail
-          echo "Downloading OpenSSL for ${{ matrix.platform }}-${{ matrix.process-mode }} (Nanvix SHA: $NANVIX_SHA)..."
-
-          OPENSSL_ARTIFACT="openssl-${{ matrix.platform }}-${{ matrix.process-mode }}.tar.bz2"
-          mkdir -p openssl-dep
-
-          # Get list of OpenSSL releases and find one built with matching Nanvix SHA
-          # Release tags follow format: {commit-sha}-nanvix-{nanvix-sha}
-          echo "Looking for OpenSSL release built with Nanvix SHA $NANVIX_SHA..."
-          OPENSSL_RELEASES=$(curl -fsSL -H "Authorization: Bearer ${GH_TOKEN}" \
-            "https://api.github.com/repos/nanvix/openssl/releases?per_page=50" 2>/dev/null || echo "[]")
-
-          # Find a release with tag ending in -nanvix-{NANVIX_SHA}
-          MATCHING_RELEASE_TAG=""
-          for tag in $(echo "$OPENSSL_RELEASES" | jq -r '.[].tag_name' 2>/dev/null); do
-            if [[ "$tag" == *"-nanvix-${NANVIX_SHA}" ]]; then
-              MATCHING_RELEASE_TAG="$tag"
-              echo "Found matching OpenSSL release: $tag"
-              break
-            fi
-          done
-
-          # If no matching release found, fall back to latest
-          if [[ -z "$MATCHING_RELEASE_TAG" ]]; then
-            echo "::warning::No OpenSSL release found matching Nanvix SHA $NANVIX_SHA, falling back to latest"
-            OPENSSL_URL="https://github.com/nanvix/openssl/releases/latest/download/${OPENSSL_ARTIFACT}"
-            MATCHING_RELEASE_TAG=$(curl -fsSL -H "Authorization: Bearer ${GH_TOKEN}" \
-              "https://api.github.com/repos/nanvix/openssl/releases/latest" 2>/dev/null | jq -r '.tag_name // "latest"')
-          else
-            OPENSSL_URL="https://github.com/nanvix/openssl/releases/download/${MATCHING_RELEASE_TAG}/${OPENSSL_ARTIFACT}"
-          fi
-
-          echo "OPENSSL_TAG=${MATCHING_RELEASE_TAG}" >> "$GITHUB_ENV"
-          echo "openssl_tag=${MATCHING_RELEASE_TAG}" >> "$GITHUB_OUTPUT"
-
-          echo "Downloading OpenSSL from: $OPENSSL_URL"
-          if curl -fsSL -o "openssl-dep/${OPENSSL_ARTIFACT}" "$OPENSSL_URL"; then
-            tar -xjf "openssl-dep/${OPENSSL_ARTIFACT}" -C openssl-dep
-            # New tarball format: sysroot/{lib,include}/...
-            OPENSSL_DIR="openssl-dep/sysroot"
-            if [[ -d "$OPENSSL_DIR" ]]; then
-              echo "Installing OpenSSL from $OPENSSL_DIR to $NANVIX_HOME..."
-              cp -f "$OPENSSL_DIR"/lib/*.a "$NANVIX_HOME/lib/" 2>/dev/null || true
-              mkdir -p "$NANVIX_HOME/include/openssl"
-              cp -f "$OPENSSL_DIR"/include/openssl/*.h "$NANVIX_HOME/include/openssl/" 2>/dev/null || true
-              echo "OpenSSL installed successfully"
-            else
-              echo "::warning::Could not find extracted OpenSSL directory"
-            fi
-          else
-            echo "::error::Could not download OpenSSL release"
-            exit 1
-          fi
-
-      - name: Download and Install bzip2 Dependency
-        env:
-          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-        run: |
-          set -euo pipefail
-          BZIP2_ARTIFACT="bzip2-${{ matrix.platform }}-${{ matrix.process-mode }}.tar.bz2"
-          mkdir -p bzip2-dep
-          BZIP2_URL="https://github.com/nanvix/bzip2/releases/latest/download/${BZIP2_ARTIFACT}"
-          echo "Downloading bzip2 from: $BZIP2_URL"
-          if curl -fsSL -o "bzip2-dep/${BZIP2_ARTIFACT}" "$BZIP2_URL"; then
-            tar -xjf "bzip2-dep/${BZIP2_ARTIFACT}" -C bzip2-dep
-            BZIP2_DIR=$(find bzip2-dep -mindepth 1 -maxdepth 1 -type d \( -name "sysroot" -o -name "bzip2-*" \) | head -1)
-            if [[ -n "$BZIP2_DIR" ]] && [[ -d "$BZIP2_DIR" ]]; then
-              cp -f "$BZIP2_DIR"/lib/*.a "$NANVIX_HOME/lib/" 2>/dev/null || true
-              mkdir -p "$NANVIX_HOME/include"
-              cp -f "$BZIP2_DIR"/include/*.h "$NANVIX_HOME/include/" 2>/dev/null || true
-              echo "bzip2 installed successfully"
-            fi
-          else
-            echo "::warning::Could not download bzip2 release"
-          fi
-
-      - name: Download and Install libexpat Dependency
-        env:
-          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-        run: |
-          set -euo pipefail
-          EXPAT_ARTIFACT="libexpat-${{ matrix.platform }}-${{ matrix.process-mode }}.tar.bz2"
-          mkdir -p expat-dep
-          EXPAT_URL="https://github.com/nanvix/libexpat/releases/latest/download/${EXPAT_ARTIFACT}"
-          echo "Downloading libexpat from: $EXPAT_URL"
-          if curl -fsSL -o "expat-dep/${EXPAT_ARTIFACT}" "$EXPAT_URL"; then
-            tar -xjf "expat-dep/${EXPAT_ARTIFACT}" -C expat-dep
-            EXPAT_DIR=$(find expat-dep -mindepth 1 -maxdepth 1 -type d \( -name "sysroot" -o -name "libexpat-*" \) | head -1)
-            if [[ -n "$EXPAT_DIR" ]] && [[ -d "$EXPAT_DIR" ]]; then
-              cp -f "$EXPAT_DIR"/lib/*.a "$NANVIX_HOME/lib/" 2>/dev/null || true
-              mkdir -p "$NANVIX_HOME/include"
-              cp -rf "$EXPAT_DIR"/include/* "$NANVIX_HOME/include/" 2>/dev/null || true
-              echo "libexpat installed successfully"
-            fi
-          else
-            echo "::warning::Could not download libexpat release"
-          fi
-
-      - name: Download and Install libffi Dependency
-        env:
-          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-        run: |
-          set -euo pipefail
-          LIBFFI_ARTIFACT="libffi-${{ matrix.platform }}-${{ matrix.process-mode }}.tar.bz2"
-          mkdir -p libffi-dep
-          LIBFFI_URL="https://github.com/nanvix/libffi/releases/latest/download/${LIBFFI_ARTIFACT}"
-          echo "Downloading libffi from: $LIBFFI_URL"
-          if curl -fsSL -o "libffi-dep/${LIBFFI_ARTIFACT}" "$LIBFFI_URL"; then
-            tar -xjf "libffi-dep/${LIBFFI_ARTIFACT}" -C libffi-dep
-            LIBFFI_DIR=$(find libffi-dep -mindepth 1 -maxdepth 1 -type d \( -name "sysroot" -o -name "libffi-*" \) | head -1)
-            if [[ -n "$LIBFFI_DIR" ]] && [[ -d "$LIBFFI_DIR" ]]; then
-              cp -f "$LIBFFI_DIR"/lib/*.a "$NANVIX_HOME/lib/" 2>/dev/null || true
-              mkdir -p "$NANVIX_HOME/include"
-              cp -rf "$LIBFFI_DIR"/include/* "$NANVIX_HOME/include/" 2>/dev/null || true
-              echo "libffi installed successfully"
-            fi
-          else
-            echo "::warning::Could not download libffi release"
-          fi
-
-      - name: Download and Install NumPy Archives
-        env:
-          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-        run: |
-          set -euo pipefail
-          NUMPY_ARTIFACT="numpy-${{ matrix.platform }}-${{ matrix.process-mode }}.tar.bz2"
-          mkdir -p numpy-dep
-          NUMPY_URL="https://github.com/nanvix/numpy/releases/latest/download/${NUMPY_ARTIFACT}"
-          echo "Downloading numpy from: $NUMPY_URL"
-          if curl -fsSL -o "numpy-dep/${NUMPY_ARTIFACT}" "$NUMPY_URL" 2>/dev/null; then
-            tar -xjf "numpy-dep/${NUMPY_ARTIFACT}" -C numpy-dep
-            NUMPY_DIR=$(find numpy-dep -mindepth 1 -maxdepth 1 -type d \( -name "sysroot" -o -name "numpy-*" \) | head -1)
-            if [[ -n "$NUMPY_DIR" ]] && [[ -d "$NUMPY_DIR" ]]; then
-              mkdir -p "$NANVIX_HOME/lib/numpy"
-              cp -rf "$NUMPY_DIR"/lib/numpy/*.a "$NANVIX_HOME/lib/numpy/" 2>/dev/null || true
-              echo "NumPy archives installed: $(ls "$NANVIX_HOME/lib/numpy/"*.a 2>/dev/null | wc -l) files"
-            fi
-          else
-            echo "::warning::Could not download numpy release (may not exist yet)"
-          fi
-
-      - name: Download and Install C Extension Archives
-        env:
-          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-        run: |
-          set -euo pipefail
-          mkdir -p "$NANVIX_HOME/lib/cext"
-          VARIANT="${{ matrix.platform }}-${{ matrix.process-mode }}"
-
-          for ext_repo in cymem murmurhash preshed srsly kiwi; do
-            # kiwi repo uses "kiwisolver" as artifact prefix
-            case "$ext_repo" in
-              kiwi) ext_name="kiwisolver" ;;
-              *) ext_name="${ext_repo}" ;;
-            esac
-            ARTIFACT="${ext_name}-${VARIANT}.tar.bz2"
-            URL="https://github.com/nanvix/${ext_repo}/releases/latest/download/${ARTIFACT}"
-            echo "Downloading ${ext_name}..."
-            mkdir -p "cext-dep/${ext_name}"
-            if curl -fsSL -o "cext-dep/${ARTIFACT}" "$URL" 2>/dev/null; then
-              tar -xjf "cext-dep/${ARTIFACT}" -C "cext-dep/${ext_name}"
-              DEP_DIR=$(find "cext-dep/${ext_name}" -mindepth 1 -maxdepth 1 -type d | head -1)
-              if [[ -n "$DEP_DIR" ]] && [[ -d "$DEP_DIR" ]]; then
-                cp -f "$DEP_DIR"/lib/*.a "$NANVIX_HOME/lib/cext/" 2>/dev/null || true
-                echo "  ${ext_name}: installed"
-              fi
-            else
-              echo "  ${ext_name}: download failed (may not exist yet)"
-            fi
-          done
-          echo "C extension archives: $(ls "$NANVIX_HOME/lib/cext/"*.a 2>/dev/null | wc -l) files"
-
-      - name: Verify Dependencies
-        run: |
-          set -euo pipefail
-          echo "Verifying installed dependencies..."
-          echo "=== Libraries ==="
-          ls -la "$NANVIX_HOME/lib/"*.a || true
-          echo "=== Headers ==="
-          ls -la "$NANVIX_HOME/include/" || true
-          # Check for required libraries
-          test -f "$NANVIX_HOME/lib/libz.a" && echo "✓ libz.a found" || echo "✗ libz.a missing"
-          test -f "$NANVIX_HOME/lib/libsqlite3.a" && echo "✓ libsqlite3.a found" || echo "✗ libsqlite3.a missing"
-          test -f "$NANVIX_HOME/lib/libssl.a" && echo "✓ libssl.a found" || echo "✗ libssl.a missing"
-          test -f "$NANVIX_HOME/lib/libcrypto.a" && echo "✓ libcrypto.a found" || echo "✗ libcrypto.a missing"
-          test -f "$NANVIX_HOME/lib/libbz2.a" && echo "✓ libbz2.a found" || echo "✗ libbz2.a missing"
-          test -f "$NANVIX_HOME/lib/libexpat.a" && echo "✓ libexpat.a found" || echo "✗ libexpat.a missing"
-          test -f "$NANVIX_HOME/lib/libffi.a" && echo "✓ libffi.a found" || echo "✗ libffi.a missing"
-
-      - name: Prepare Setup.local for CI
-        run: |
-          # The full Setup.local includes numpy and C extension modules that
-          # require archives built from Tier 3/4 repos. For CI, we only include
-          # modules whose archives are available and link cleanly.
-          # Strip numpy and cext lines — they'll be linked in the full bootstrap.
           if [[ -f Modules/Setup.local ]]; then
-            echo "Original Setup.local modules: $(wc -l < Modules/Setup.local)"
-            # Keep only lines that don't reference numpy/ or cext/ archives
-            grep -v 'NANVIX_SYSROOT.*/lib/numpy/\|NANVIX_SYSROOT.*/lib/cext/' Modules/Setup.local > Modules/Setup.local.ci || true
-            mv Modules/Setup.local.ci Modules/Setup.local
-            echo "CI Setup.local modules: $(wc -l < Modules/Setup.local)"
-            cat Modules/Setup.local
+            grep -v '_regex\|_cffi_backend\|NANVIX_SYSROOT.*/lib/numpy/\|NANVIX_SYSROOT.*/lib/cext/' \
+              Modules/Setup.local > Modules/Setup.local.l2 || true
+            mv Modules/Setup.local.l2 Modules/Setup.local
           fi
+
+      - name: Setup
+        run: |
+          curl -fsSL https://bootstrap.pypa.io/get-pip.py | python3 - --break-system-packages
+          ./z setup
 
       - name: Build
-        run: |
-          make -f Makefile.nanvix CONFIG_NANVIX=y NANVIX_HOME="$NANVIX_HOME" NANVIX_TOOLCHAIN="/opt/nanvix" INSTALL_PREFIX="/sysroot" all
+        run: ./z build
 
       - name: Test
-        run: |
-          make -f Makefile.nanvix CONFIG_NANVIX=y NANVIX_HOME="$NANVIX_HOME" NANVIX_TOOLCHAIN="/opt/nanvix" test
+        run: ./z test
 
-      - name: Package Artifacts
+      - name: Package
         run: |
           set -euo pipefail
+          STAGING=".nanvix/staging"
           ARTIFACT_NAME="cpython-${{ matrix.platform }}-${{ matrix.process-mode }}"
-          STAGING="$(pwd)/staging"
-          make -f Makefile.nanvix CONFIG_NANVIX=y NANVIX_HOME="$NANVIX_HOME" NANVIX_TOOLCHAIN="/opt/nanvix" install DESTDIR="$STAGING"
-          # Precompile .pyc files (essential: Nanvix cannot compile .py → .pyc at runtime)
-          /opt/nanvix/bin/python3 -m compileall -q "$STAGING/sysroot/lib/python3.12/" 2>/dev/null || true
-          # Clean up test directories to reduce artifact size (keep __pycache__!)
+          rm -f "$STAGING/sysroot/smoke_test"*.py "$STAGING/sysroot"/test_*.py
           find "$STAGING" -path "*/test" -type d -exec rm -rf {} + 2>/dev/null || true
           find "$STAGING" -path "*/tests" -type d -exec rm -rf {} + 2>/dev/null || true
-          rm -rf "$STAGING/sysroot/lib/python3.12/idlelib" "$STAGING/sysroot/lib/python3.12/tkinter"
-          rm -rf "$STAGING/sysroot/lib/python3.12/turtledemo" "$STAGING/sysroot/lib/python3.12/turtle.py"
+          rm -rf "$STAGING/sysroot/lib/python3.12/idlelib" \
+                 "$STAGING/sysroot/lib/python3.12/tkinter" \
+                 "$STAGING/sysroot/lib/python3.12/turtledemo" \
+                 "$STAGING/sysroot/lib/python3.12/turtle.py" \
+                 "$STAGING/sysroot/lib/python3.12/site-packages"
           mkdir -p dist
           tar -cjf "dist/${ARTIFACT_NAME}.tar.bz2" -C "$STAGING" sysroot
           echo "ARTIFACT_TARBALL=dist/${ARTIFACT_NAME}.tar.bz2" >> "$GITHUB_ENV"
 
-      - name: Upload Build Artifacts
+      - name: Upload Artifacts
         uses: actions/upload-artifact@v4
         with:
           name: cpython-${{ matrix.platform }}-${{ matrix.process-mode }}
@@ -482,7 +111,7 @@ jobs:
           retention-days: 7
 
   release:
-    needs: [get-nanvix-info, build]
+    needs: [get-nanvix-info, build-and-test]
     if: github.event_name != 'pull_request'
     runs-on: ubuntu-latest
     env:
@@ -501,72 +130,38 @@ jobs:
         run: |
           set -euo pipefail
           mkdir -p release-assets
-          find release-artifacts -name "*.tar.bz2" -exec cp {} release-assets/ \;
+          find release-artifacts -name "*.tar.bz2" -exec cp {} release-assets/ \\;
           ls -la release-assets/
 
-      - name: Get Dependency Tags
-        id: deps
-        env:
-          ZLIB_TAG: ${{ needs.build.outputs.zlib_tag }}
-          SQLITE_TAG: ${{ needs.build.outputs.sqlite_tag }}
-          OPENSSL_TAG: ${{ needs.build.outputs.openssl_tag }}
-        run: |
-          set -euo pipefail
-          # Dependency tags come from job outputs (all matrix builds use the same)
-          echo "Using dependency tags from job outputs:"
-          echo "  zlib: ${ZLIB_TAG}"
-          echo "  sqlite: ${SQLITE_TAG}"
-          echo "  openssl: ${OPENSSL_TAG}"
-          # Extract commit SHA from each tag (format: {commit-sha}-nanvix-{nanvix-sha})
-          ZLIB_SHA=$(echo "$ZLIB_TAG" | sed -E 's/^([a-f0-9]+)-nanvix-.*$/\1/')
-          SQLITE_SHA=$(echo "$SQLITE_TAG" | sed -E 's/^([a-f0-9]+)-nanvix-.*$/\1/')
-          OPENSSL_SHA=$(echo "$OPENSSL_TAG" | sed -E 's/^([a-f0-9]+)-nanvix-.*$/\1/')
-          echo "zlib_tag=${ZLIB_TAG}" >> "$GITHUB_OUTPUT"
-          echo "zlib_sha=${ZLIB_SHA}" >> "$GITHUB_OUTPUT"
-          echo "sqlite_tag=${SQLITE_TAG}" >> "$GITHUB_OUTPUT"
-          echo "sqlite_sha=${SQLITE_SHA}" >> "$GITHUB_OUTPUT"
-          echo "openssl_tag=${OPENSSL_TAG}" >> "$GITHUB_OUTPUT"
-          echo "openssl_sha=${OPENSSL_SHA}" >> "$GITHUB_OUTPUT"
-
-      - name: Get Nanvix Release Info
-        id: nanvix-release
+      - name: Get Release Metadata
+        id: meta
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
           set -euo pipefail
-          echo "Using Nanvix SHA from job outputs: $NANVIX_SHA (full: $NANVIX_SHA_FULL)"
+          for repo in zlib sqlite openssl; do
+            tag=$(curl -fsSL -H "Authorization: Bearer ${GH_TOKEN}" \
+              "https://api.github.com/repos/nanvix/${repo}/releases/latest" | jq -r '.tag_name // "latest"')
+            echo "${repo}_tag=${tag}" >> "$GITHUB_OUTPUT"
+          done
+          RELEASE_INFO=$(curl -fsSL -H "Authorization: Bearer ${GH_TOKEN}" \
+            "https://api.github.com/repos/nanvix/nanvix/releases/tags/latest")
+          echo "nanvix_name=$(echo "$RELEASE_INFO" | jq -r '.name // "latest"')" >> "$GITHUB_OUTPUT"
+          echo "nanvix_published=$(echo "$RELEASE_INFO" | jq -r '.published_at')" >> "$GITHUB_OUTPUT"
 
-          # Query Nanvix release API for additional metadata
-          API_URL="https://api.github.com/repos/nanvix/nanvix/releases/tags/latest"
-          RELEASE_INFO=$(curl -fsSL -H "Authorization: Bearer ${GH_TOKEN}" "$API_URL")
-          NANVIX_NAME=$(echo "$RELEASE_INFO" | jq -r '.name // "latest"')
-          NANVIX_PUBLISHED=$(echo "$RELEASE_INFO" | jq -r '.published_at')
-
-          echo "name=${NANVIX_NAME}" >> "$GITHUB_OUTPUT"
-          echo "published=${NANVIX_PUBLISHED}" >> "$GITHUB_OUTPUT"
-
-      - name: Create Latest Release
+      - name: Create Release
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-          NANVIX_NAME: ${{ steps.nanvix-release.outputs.name }}
-          NANVIX_PUBLISHED: ${{ steps.nanvix-release.outputs.published }}
-          ZLIB_TAG: ${{ steps.deps.outputs.zlib_tag }}
-          ZLIB_SHA: ${{ steps.deps.outputs.zlib_sha }}
-          SQLITE_TAG: ${{ steps.deps.outputs.sqlite_tag }}
-          SQLITE_SHA: ${{ steps.deps.outputs.sqlite_sha }}
-          OPENSSL_TAG: ${{ steps.deps.outputs.openssl_tag }}
-          OPENSSL_SHA: ${{ steps.deps.outputs.openssl_sha }}
+          NANVIX_NAME: ${{ steps.meta.outputs.nanvix_name }}
+          NANVIX_PUBLISHED: ${{ steps.meta.outputs.nanvix_published }}
+          ZLIB_TAG: ${{ steps.meta.outputs.zlib_tag }}
+          SQLITE_TAG: ${{ steps.meta.outputs.sqlite_tag }}
+          OPENSSL_TAG: ${{ steps.meta.outputs.openssl_tag }}
         run: |
-          # Release tag format: {commit-sha}-nanvix-{nanvix-sha}
-          # This enables easy lookup of releases built with a specific Nanvix version
           RELEASE_TAG="${GITHUB_SHA::7}-nanvix-${NANVIX_SHA}"
-
-          # Delete existing release if it exists (idempotent re-runs)
           if gh release view "$RELEASE_TAG" &>/dev/null; then
-            echo "Deleting existing release: $RELEASE_TAG"
             gh release delete "$RELEASE_TAG" --yes --cleanup-tag || true
           fi
-
           gh release create "$RELEASE_TAG" \
             --title "Build ${GITHUB_SHA::7}" \
             --notes "Automated build from branch ${{ github.ref_name }} at commit ${{ github.sha }}.
@@ -588,14 +183,13 @@ jobs:
             --latest \
             release-assets/*.tar.bz2
 
-      # Trigger dependent workflows (C extensions and numpy depend on cpython headers)
       - name: Trigger Dependent Workflows
         if: success()
         env:
           GH_TOKEN: ${{ secrets.DISPATCH_TOKEN }}
         run: |
           RELEASE_TAG="${GITHUB_SHA::7}-nanvix-${NANVIX_SHA}"
-          for repo in cymem murmurhash preshed srsly kiwi numpy; do
+          for repo in cymem murmurhash preshed srsly kiwi numpy nanvix-python; do
             echo "Triggering nanvix/$repo..."
             gh api repos/nanvix/$repo/dispatches \
               -X POST \
@@ -605,47 +199,35 @@ jobs:
               -f "client_payload[cpython_tag]=${RELEASE_TAG}" || echo "::warning::Failed to trigger $repo"
           done
 
-          # Also trigger nanvix-python integration build
-          echo "Triggering nanvix/nanvix-python..."
-          gh api repos/nanvix/nanvix-python/dispatches \
-            -X POST \
-            -H "Accept: application/vnd.github+json" \
-            -f event_type="cpython-release" \
-            -f "client_payload[nanvix_sha]=${NANVIX_SHA}" \
-            -f "client_payload[cpython_tag]=${RELEASE_TAG}" || echo "::warning::Failed to trigger nanvix-python"
-
   report-failure:
-    needs:
-      - build
+    needs: [build-and-test]
     if: >-
       ${{ always() &&
           (github.event_name == 'repository_dispatch' || github.event_name == 'schedule' || github.event_name == 'push') &&
-          needs.build.result == 'failure' }}
+          needs.build-and-test.result == 'failure' }}
     runs-on: ubuntu-latest
     steps:
       - name: Create failure issue
         uses: actions/github-script@v7
         env:
-          BUILD_RESULT: ${{ needs.build.result }}
+          BUILD_RESULT: ${{ needs.build-and-test.result }}
         with:
           github-token: ${{ secrets.GITHUB_TOKEN }}
           script: |
             const runUrl = `${context.serverUrl}/${context.repo.owner}/${context.repo.repo}/actions/runs/${context.runId}`;
-            const owner = context.repo.owner;
-            const repo = context.repo.repo;
             const title = `CI failure (run ${context.runNumber})`;
             const body = [
               `The cpython CI workflow failed.`,
               `- Trigger: ${context.eventName}`,
               `- Run: [#${context.runNumber}](${runUrl})`,
               `- SHA: ${context.sha}`,
-              `- build: ${process.env.BUILD_RESULT}`,
+              `- build-and-test: ${process.env.BUILD_RESULT}`,
               '',
               'Please investigate and take any corrective actions.'
             ].join('\n');
             await github.rest.issues.create({
-              owner,
-              repo,
+              owner: context.repo.owner,
+              repo: context.repo.repo,
               title,
               body,
               assignees: ['ppenna']
