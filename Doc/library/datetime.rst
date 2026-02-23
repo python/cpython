@@ -4,10 +4,6 @@
 .. module:: datetime
    :synopsis: Basic date and time types.
 
-.. moduleauthor:: Tim Peters <tim@zope.com>
-.. sectionauthor:: Tim Peters <tim@zope.com>
-.. sectionauthor:: A.M. Kuchling <amk@amk.ca>
-
 **Source code:** :source:`Lib/datetime.py`
 
 --------------

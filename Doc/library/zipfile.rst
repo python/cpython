@@ -4,9 +4,6 @@
 .. module:: zipfile
    :synopsis: Read and write ZIP-format archive files.
 
-.. moduleauthor:: James C. Ahlstrom <jim@interet.com>
-.. sectionauthor:: James C. Ahlstrom <jim@interet.com>
-
 **Source code:** :source:`Lib/zipfile/`
 
 --------------
