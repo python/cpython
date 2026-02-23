@@ -33,8 +33,9 @@
 
 /*[clinic input]
 module _interpreters
+class _interpreters.SharedObjectProxy "SharedObjectProxy *" "&PyType_Type"
 [clinic start generated code]*/
-/*[clinic end generated code: output=da39a3ee5e6b4b0d input=bfd967980a0de892]*/
+/*[clinic end generated code: output=da39a3ee5e6b4b0d input=4bb543de3f19aa0b]*/
 
 static PyInterpreterState *
 _get_current_interp(void)
@@ -458,17 +459,44 @@ _sharedobjectproxy_exit(SharedObjectProxy *self, _PyXI_proxy_state *state)
     return 0;
 }
 
-static PyObject *
-sharedobjectproxy_new(PyTypeObject *type, PyObject *args, PyObject *kwds)
+static SharedObjectProxy *
+sharedobjectproxy_alloc(PyTypeObject *type)
 {
-    SharedObjectProxy *self = (SharedObjectProxy *)type->tp_alloc(type, 0);
+    assert(type != NULL);
+    assert(PyType_Check(type));
+    SharedObjectProxy *self = SharedObjectProxy_CAST(type->tp_alloc(type, 0));
     if (self == NULL) {
         return NULL;
     }
 
-    self->object = Py_None;
     self->interp = _PyInterpreterState_GET();
+#ifndef NDEBUG
+    self->object = NULL;
+#endif
 
+    return self;
+}
+
+/*[clinic input]
+@classmethod
+_interpreters.SharedObjectProxy.__new__ as sharedobjectproxy_new
+
+    obj: object,
+    /
+
+Create a new cross-interpreter proxy.
+[clinic start generated code]*/
+
+static PyObject *
+sharedobjectproxy_new_impl(PyTypeObject *type, PyObject *obj)
+/*[clinic end generated code: output=42ed0a0bc47ecedf input=fce004d93517c6df]*/
+{
+    SharedObjectProxy *self = sharedobjectproxy_alloc(type);
+    if (self == NULL) {
+        return NULL;
+    }
+
+    self->object = Py_NewRef(obj);
     return (PyObject *)self;
 }
 
@@ -483,8 +511,7 @@ _sharedobjectproxy_create(PyObject *object, PyInterpreterState *owning_interp)
         return NULL;
     }
     assert(Py_TYPE(object) != type);
-    SharedObjectProxy *proxy = SharedObjectProxy_CAST(sharedobjectproxy_new(type,
-                                                                            NULL, NULL));
+    SharedObjectProxy *proxy = sharedobjectproxy_alloc(type);
     if (proxy == NULL) {
         return NULL;
     }
@@ -1278,8 +1305,7 @@ static PyType_Slot SharedObjectProxy_slots[] = {
 static PyType_Spec SharedObjectProxy_spec = {
     .name = MODULE_NAME_STR ".SharedObjectProxy",
     .basicsize = sizeof(SharedObjectProxy),
-    .flags = (Py_TPFLAGS_DEFAULT | Py_TPFLAGS_BASETYPE |
-              Py_TPFLAGS_DISALLOW_INSTANTIATION | Py_TPFLAGS_IMMUTABLETYPE
+    .flags = (Py_TPFLAGS_DEFAULT | Py_TPFLAGS_IMMUTABLETYPE
               | Py_TPFLAGS_HAVE_GC),
     .slots = SharedObjectProxy_slots,
 };
@@ -2521,6 +2547,32 @@ finally:
     return captured;
 }
 
+static PyObject *
+call_share_method_steal(PyObject *method)
+{
+    assert(method != NULL);
+    PyObject *result = PyObject_CallNoArgs(method);
+    Py_DECREF(method);
+    if (result == NULL) {
+        return NULL;
+    }
+
+    PyThreadState *tstate = _PyThreadState_GET();
+    assert(tstate != NULL);
+
+    if (_PyObject_CheckXIData(tstate, result) < 0) {
+        PyObject *exc = _PyErr_GetRaisedException(tstate);
+        _PyXIData_FormatNotShareableError(tstate, "__share__() returned unshareable object: %R", result);
+        PyObject *new_exc = _PyErr_GetRaisedException(tstate);
+        PyException_SetCause(new_exc, exc);
+        PyErr_SetRaisedException(new_exc);
+        Py_DECREF(result);
+        return NULL;
+    }
+
+    return result;
+}
+
 /*[clinic input]
 _interpreters.share
     op: object,
@@ -2528,15 +2580,20 @@ _interpreters.share
 
 
 Wrap an object in a shareable proxy that allows cross-interpreter access.
-
-The proxy will be assigned a context and may have its references cleared by
-_interpreters.close_proxy().
 [clinic start generated code]*/
 
 static PyObject *
 _interpreters_share(PyObject *module, PyObject *op)
-/*[clinic end generated code: output=e2ce861ae3b58508 input=d333c93f128faf93]*/
+/*[clinic end generated code: output=e2ce861ae3b58508 input=5fb300b5598bb7d2]*/
 {
+    PyObject *share_method;
+    if (PyObject_GetOptionalAttrString(op, "__share__", &share_method) < 0) {
+        return NULL;
+    }
+    if (share_method != NULL) {
+        return call_share_method_steal(share_method /* stolen */);
+    }
+
     return _sharedobjectproxy_create(op, _PyInterpreterState_GET());
 }
 

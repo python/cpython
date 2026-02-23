@@ -6,7 +6,37 @@ preserve
 #  include "pycore_gc.h"          // PyGC_Head
 #  include "pycore_runtime.h"     // _Py_ID()
 #endif
-#include "pycore_modsupport.h"    // _PyArg_UnpackKeywords()
+#include "pycore_modsupport.h"    // _PyArg_CheckPositional()
+
+PyDoc_STRVAR(sharedobjectproxy_new__doc__,
+"SharedObjectProxy(obj, /)\n"
+"--\n"
+"\n"
+"Create a new cross-interpreter proxy.");
+
+static PyObject *
+sharedobjectproxy_new_impl(PyTypeObject *type, PyObject *obj);
+
+static PyObject *
+sharedobjectproxy_new(PyTypeObject *type, PyObject *args, PyObject *kwargs)
+{
+    PyObject *return_value = NULL;
+    PyTypeObject *base_tp = &PyType_Type;
+    PyObject *obj;
+
+    if ((type == base_tp || type->tp_init == base_tp->tp_init) &&
+        !_PyArg_NoKeywords("SharedObjectProxy", kwargs)) {
+        goto exit;
+    }
+    if (!_PyArg_CheckPositional("SharedObjectProxy", PyTuple_GET_SIZE(args), 1, 1)) {
+        goto exit;
+    }
+    obj = PyTuple_GET_ITEM(args, 0);
+    return_value = sharedobjectproxy_new_impl(type, obj);
+
+exit:
+    return return_value;
+}
 
 PyDoc_STRVAR(_interpreters_create__doc__,
 "create($module, /, config=\'isolated\', *, reqrefs=False)\n"
@@ -1203,11 +1233,8 @@ PyDoc_STRVAR(_interpreters_share__doc__,
 "share($module, op, /)\n"
 "--\n"
 "\n"
-"Wrap an object in a shareable proxy that allows cross-interpreter access.\n"
-"\n"
-"The proxy will be assigned a context and may have its references cleared by\n"
-"_interpreters.close_proxy().");
+"Wrap an object in a shareable proxy that allows cross-interpreter access.");
 
 #define _INTERPRETERS_SHARE_METHODDEF    \
     {"share", (PyCFunction)_interpreters_share, METH_O, _interpreters_share__doc__},
-/*[clinic end generated code: output=c1a117cea9045d1c input=a9049054013a1b77]*/
+/*[clinic end generated code: output=24102c5dcbc26a72 input=a9049054013a1b77]*/
