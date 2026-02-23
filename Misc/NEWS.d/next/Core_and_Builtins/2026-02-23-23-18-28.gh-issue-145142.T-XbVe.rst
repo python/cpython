@@ -1,0 +1,3 @@
+Fix a crash in free-threaded builds when str.maketrans() iterates over a
+dictionary that is concurrently modified. Wrap PyDict_Next iteration in a
+critical section.

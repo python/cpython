@@ -13154,8 +13154,14 @@ unicode_maketrans_impl(PyObject *x, PyObject *y, PyObject *z)
                             "to maketrans it must be a dict");
             goto err;
         }
+        PyObject *items = PyDict_Items(x);
+        if(items == NULL) goto err;
+        Py_ssize_t n = PyList_GET_SIZE(items);
         /* copy entries into the new dict, converting string keys to int keys */
-        while (PyDict_Next(x, &i, &key, &value)) {
+        for (i = 0; i < n; i++) {
+            PyObject *pair = PyList_GET_ITEM(items, i);
+            key = PyTuple_GET_ITEM(pair, 0);
+            value = PyTuple_GET_ITEM(pair, 1);
             if (PyUnicode_Check(key)) {
                 /* convert string keys to integer keys */
                 PyObject *newkey;
@@ -13183,6 +13189,7 @@ unicode_maketrans_impl(PyObject *x, PyObject *y, PyObject *z)
                 goto err;
             }
         }
+        Py_DECREF(items);
     }
     return new;
   err:
