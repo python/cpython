@@ -421,6 +421,7 @@ class BaseEventLoop(events.AbstractEventLoop):
         self._closed = False
         self._stopping = False
         self._ready = collections.deque()
+        self._callback_total_time_cap = None
         self._scheduled = []
         self._default_executor = None
         self._internal_fds = 0
@@ -2022,16 +2023,34 @@ class BaseEventLoop(events.AbstractEventLoop):
 
         # This is the only place where callbacks are actually *called*.
         # All other places just add them to ready.
-        # Note: We run all currently scheduled callbacks, but not any
-        # callbacks scheduled by callbacks run this time around --
-        # they will be run the next time (after another I/O poll).
+        #
+        # If self._callback_total_time_cap is None:
+        # We run all currently scheduled callbacks, but not any callbacks
+        # scheduled by callbacks run this time around, they will be run the
+        # next time (after another I/O poll).
+        #
+        # If self._callback_total_time_cap is not None:
+        # We run callbacks until callback queue is empty or we total processing
+        # time reached self._callback_total_time_cap
+        #
         # Use an idiom that is thread-safe without using locks.
-        ntodo = len(self._ready)
-        for i in range(ntodo):
+
+        num_handles_to_process = len(self._ready) \
+            if self._callback_total_time_cap is None else sys.maxsize
+        num_handles_processed = 0
+        t_start = self.time()
+        t_curr = t_start
+
+        while (self._ready and
+               num_handles_processed < num_handles_to_process and
+               (self._callback_total_time_cap is None or
+                t_curr - t_start < self._callback_total_time_cap)):
             handle = self._ready.popleft()
             if handle._cancelled:
-                continue
-            if self._debug:
+                pass
+            elif not self._debug:
+                handle._run()
+            else:
                 try:
                     self._current_handle = handle
                     t0 = self.time()
@@ -2042,8 +2061,12 @@ class BaseEventLoop(events.AbstractEventLoop):
                                        _format_handle(handle), dt)
                 finally:
                     self._current_handle = None
-            else:
-                handle._run()
+            num_handles_processed += 1
+            # Detect if someone set callback_total_time_cap to None
+            # Then we proceed with callback execution at the next loop iteration
+            if self._callback_total_time_cap is None and num_handles_to_process == sys.maxsize:
+                break
+            t_curr = self.time()
         handle = None  # Needed to break cycles when an exception occurs.
 
     def _set_coroutine_origin_tracking(self, enabled):
@@ -2069,3 +2092,9 @@ class BaseEventLoop(events.AbstractEventLoop):
 
         if self.is_running():
             self.call_soon_threadsafe(self._set_coroutine_origin_tracking, enabled)
+
+    def set_callback_total_time_cap(self, cap):
+        self._callback_total_time_cap = cap
+
+    def get_callback_total_time_cap(self):
+        return self._callback_total_time_cap
