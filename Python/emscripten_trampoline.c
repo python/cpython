@@ -2,6 +2,7 @@
 
 #include <emscripten.h>             // EM_JS, EM_JS_DEPS
 #include <Python.h>
+#include "pycore_runtime.h"         // _PyRuntime
 
 // We use the _PyRuntime.emscripten_trampoline field to store a function pointer
 // for a wasm-gc based trampoline if it works. Otherwise fall back to JS
@@ -41,7 +42,7 @@
 EMSCRIPTEN_KEEPALIVE const int _PyEM_EMSCRIPTEN_TRAMPOLINE_OFFSET = offsetof(_PyRuntimeState, emscripten_trampoline);
 
 typedef PyObject* (*TrampolineFunc)(int* success,
-                                    void* func,
+                                    PyCFunctionWithKeywords func,
                                     PyObject* self,
                                     PyObject* args,
                                     PyObject* kw);
@@ -103,6 +104,7 @@ _PyEM_TrampolineCall(PyCFunctionWithKeywords func,
     if (trampoline == 0) {
         return _PyEM_TrampolineCall_JS(func, self, args, kw);
     }
+    int success = 1;
     PyObject *result = trampoline(&success, func, self, args, kw);
     if (!success) {
         PyErr_SetString(PyExc_SystemError, "Handler takes too many arguments");

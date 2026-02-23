@@ -276,9 +276,13 @@ struct pyruntimestate {
     struct _Py_time_runtime_state time;
 
 #if defined(__EMSCRIPTEN__) && defined(PY_CALL_TRAMPOLINE)
-    // Used in "Python/emscripten_trampoline.c" to choose between type
-    // reflection trampoline and EM_JS trampoline.
-    int (*emscripten_trampoline)(PyCFunctionWithKeywords func);
+    // Used in "Python/emscripten_trampoline.c" to choose between wasm-gc
+    // trampoline and JavaScript trampoline.
+    PyObject* (*emscripten_trampoline)(int* success,
+                                       PyCFunctionWithKeywords func,
+                                       PyObject* self,
+                                       PyObject* args,
+                                       PyObject* kw);
 #endif
 
     /* All the objects that are shared by the runtime's interpreters. */
