@@ -447,6 +447,9 @@ class BaseEventLoop(events.AbstractEventLoop):
         self._asyncgens_shutdown_called = False
         # Set to True when `loop.shutdown_default_executor` is called.
         self._executor_shutdown_called = False
+        # Set up eager behavior for processing ready handlers
+        self._settings = events.EventLoopSettings(eager_timeout=1e-6,
+                                                  eager_bunch_size=100)
 
     def __repr__(self):
         return (
@@ -2029,22 +2032,39 @@ class BaseEventLoop(events.AbstractEventLoop):
         ntodo = len(self._ready)
         for i in range(ntodo):
             handle = self._ready.popleft()
-            if handle._cancelled:
-                continue
-            if self._debug:
-                try:
-                    self._current_handle = handle
-                    t0 = self.time()
-                    handle._run()
-                    dt = self.time() - t0
-                    if dt >= self.slow_callback_duration:
-                        logger.warning('Executing %s took %.3f seconds',
-                                       _format_handle(handle), dt)
-                finally:
-                    self._current_handle = None
-            else:
-                handle._run()
+            self._run_handle(handle)
+
+        if self._settings.eager_timeout > 0 and self._ready:
+            deadline = (self.time() + self._settings.eager_timeout
+                        + self._clock_resolution)
+            while True:
+                ntodo = min(self._settings.eager_bunch_size, len(self._ready))
+                for i in range(ntodo):
+                    handle = self._ready.popleft()
+                    self._run_handle(handle)
+                if not self._ready:
+                    break
+                if self.time() > deadline:
+                    break
+
         handle = None  # Needed to break cycles when an exception occurs.
+
+    def _run_handle(self, handle):
+        if handle._cancelled:
+            return
+        if self._debug:
+            try:
+                self._current_handle = handle
+                t0 = self.time()
+                handle._run()
+                dt = self.time() - t0
+                if dt >= self.slow_callback_duration:
+                    logger.warning('Executing %s took %.3f seconds',
+                                   _format_handle(handle), dt)
+            finally:
+                self._current_handle = None
+        else:
+            handle._run()
 
     def _set_coroutine_origin_tracking(self, enabled):
         if bool(enabled) == bool(self._coroutine_origin_tracking_enabled):
@@ -2069,3 +2089,12 @@ class BaseEventLoop(events.AbstractEventLoop):
 
         if self.is_running():
             self.call_soon_threadsafe(self._set_coroutine_origin_tracking, enabled)
+
+    def get_settings(self):
+        return self._settings
+
+    def set_settings(self, settings):
+        self._settings = settings
+
+        # Wake up the loop to apply settings immediatelly
+        self.call_soon_threadsafe(lambda: None)

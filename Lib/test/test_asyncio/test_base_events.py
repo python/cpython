@@ -425,7 +425,28 @@ class BaseEventLoopTests(test_utils.TestCase):
         self.loop.set_debug(False)
         self.assertFalse(self.loop.get_debug())
 
-    def test__run_once_schedule_handle(self):
+    def test__run_once_schedule_handle_non_eager(self):
+        handle = None
+        processed = False
+        self.loop._settings = asyncio.EventLoopSettings(eager_timeout=0,
+                                                        eager_bunch_size=0)
+
+        def cb(loop):
+            nonlocal processed, handle
+            processed = True
+            handle = loop.call_soon(lambda: True)
+
+        h = asyncio.TimerHandle(time.monotonic() - 1, cb, (self.loop,),
+                                self.loop, None)
+
+        self.loop._process_events = mock.Mock()
+        self.loop._scheduled.append(h)
+        self.loop._run_once()
+
+        self.assertTrue(processed)
+        self.assertEqual([handle], list(self.loop._ready))
+
+    def test__run_once_schedule_handle_eager(self):
         handle = None
         processed = False
 
@@ -442,7 +463,7 @@ class BaseEventLoopTests(test_utils.TestCase):
         self.loop._run_once()
 
         self.assertTrue(processed)
-        self.assertEqual([handle], list(self.loop._ready))
+        self.assertEqual([], list(self.loop._ready))
 
     def test__run_once_cancelled_event_cleanup(self):
         self.loop._process_events = mock.Mock()
