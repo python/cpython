@@ -277,6 +277,11 @@ data stored in module state.
          No longer called before the module state is allocated.
 
 
+.. c:var:: PyTypeObject PyModuleDef_Type
+
+   The type of ``PyModuleDef`` objects.
+
+
 Module slots
 ............
 

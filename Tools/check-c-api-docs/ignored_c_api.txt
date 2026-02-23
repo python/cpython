@@ -20,8 +20,6 @@ Py_UTF8Mode
 Py_HASH_EXTERNAL
 # modsupport.h
 PyABIInfo_FREETHREADING_AGNOSTIC
-# moduleobject.h
-PyModuleDef_Type
 # object.h
 Py_INVALID_SIZE
 Py_TPFLAGS_HAVE_VERSION_TAG
