@@ -2548,17 +2548,15 @@ finally:
 }
 
 static PyObject *
-call_share_method_steal(PyObject *method)
+call_share_method_steal(PyThreadState *tstate, PyObject *method)
 {
+    assert(tstate != NULL);
     assert(method != NULL);
     PyObject *result = PyObject_CallNoArgs(method);
     Py_DECREF(method);
     if (result == NULL) {
         return NULL;
     }
-
-    PyThreadState *tstate = _PyThreadState_GET();
-    assert(tstate != NULL);
 
     if (_PyObject_CheckXIData(tstate, result) < 0) {
         PyObject *exc = _PyErr_GetRaisedException(tstate);
@@ -2586,12 +2584,18 @@ static PyObject *
 _interpreters_share(PyObject *module, PyObject *op)
 /*[clinic end generated code: output=e2ce861ae3b58508 input=5fb300b5598bb7d2]*/
 {
+    PyThreadState *tstate = _PyThreadState_GET();
+    if (_PyObject_CheckXIData(tstate, op) == 0) {
+        return Py_NewRef(op);
+    }
+    PyErr_Clear();
+
     PyObject *share_method;
     if (PyObject_GetOptionalAttrString(op, "__share__", &share_method) < 0) {
         return NULL;
     }
     if (share_method != NULL) {
-        return call_share_method_steal(share_method /* stolen */);
+        return call_share_method_steal(tstate, share_method /* stolen */);
     }
 
     return _sharedobjectproxy_create(op, _PyInterpreterState_GET());

@@ -5,7 +5,7 @@ from test.support import threading_helper
 
 # Raise SkipTest if subinterpreters not supported.
 import_helper.import_module("_interpreters")
-from concurrent.interpreters import share, SharedObjectProxy
+from concurrent.interpreters import NotShareableError, share, SharedObjectProxy
 from test.test_interpreters.utils import TestBase
 from threading import Barrier, Thread, Lock, local
 from concurrent import interpreters
@@ -287,6 +287,56 @@ class SharedObjectProxyTests(TestBase):
 
         self.assertTrue(called)
 
+    def test_proxy_reshare_does_not_copy(self):
+        class Test:
+            pass
+
+        proxy = share(Test())
+        reproxy = share(proxy)
+        self.assertIs(proxy, reproxy)
+
+    def test_object_share_method(self):
+        class Test:
+            def __share__(self):
+                return 42
+
+        shared = share(Test())
+        self.assertEqual(shared, 42)
+
+    def test_object_share_method_failure(self):
+        class Test:
+            def __share__(self):
+                return self
+
+        exception = RuntimeError("ouch")
+        class Evil:
+            def __share__(self):
+                raise exception
+
+        with self.assertRaises(NotShareableError):
+            share(Test())
+
+        with self.assertRaises(RuntimeError) as exc:
+            share(Evil())
+
+        self.assertIs(exc.exception, exception)
+
+    def test_proxy_manual_construction(self):
+        called = False
+
+        class Test:
+            def __init__(self):
+                self.attr = 24
+
+            def __share__(self):
+                nonlocal called
+                called = True
+                return 42
+
+        proxy = SharedObjectProxy(Test())
+        self.assertIsInstance(proxy, SharedObjectProxy)
+        self.assertFalse(called)
+        self.assertEqual(proxy.attr, 24)
 
 if __name__ == "__main__":
     unittest.main()

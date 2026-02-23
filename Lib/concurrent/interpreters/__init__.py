@@ -7,7 +7,7 @@ import _interpreters
 # aliases:
 from _interpreters import (
     InterpreterError, InterpreterNotFoundError, NotShareableError,
-    is_shareable, SharedObjectProxy
+    is_shareable, SharedObjectProxy, share
 )
 from ._queues import (
     create as create_queue,
@@ -245,19 +245,3 @@ class Interpreter:
         t = threading.Thread(target=self._call, args=(callable, args, kwargs))
         t.start()
         return t
-
-
-def _can_natively_share(obj):
-    if isinstance(obj, SharedObjectProxy):
-        return False
-
-    return _interpreters.is_shareable(obj)
-
-
-def share(obj):
-    """Wrap the object in a shareable object proxy that allows cross-interpreter
-    access.
-    """
-    if _can_natively_share(obj):
-        return obj
-    return _interpreters.share(obj)
