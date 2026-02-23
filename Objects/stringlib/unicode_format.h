@@ -760,7 +760,7 @@ MarkupIterator_next(MarkupIterator *self, SubString *literal,
 }
 
 
-/* do the !r or !s conversion on obj */
+/* do the !r, !s, !a, or !p conversion on obj */
 static PyObject *
 do_conversion(PyObject *obj, Py_UCS4 conversion)
 {
@@ -773,6 +773,8 @@ do_conversion(PyObject *obj, Py_UCS4 conversion)
         return PyObject_Str(obj);
     case 'a':
         return PyObject_ASCII(obj);
+    case 'p':
+        return PyObject_Pretty(obj);
     default:
         if (conversion > 32 && conversion < 127) {
                 /* It's the ASCII subrange; casting to char is safe

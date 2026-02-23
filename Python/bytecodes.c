@@ -5135,7 +5135,7 @@ dummy_func(
 
         inst(CONVERT_VALUE, (value -- result)) {
             conversion_func conv_fn;
-            assert(oparg >= FVC_STR && oparg <= FVC_ASCII);
+            assert(oparg >= FVC_STR && oparg <= FVC_PRETTY);
             conv_fn = _PyEval_ConversionFuncs[oparg];
             PyObject *result_o = conv_fn(PyStackRef_AsPyObjectBorrow(value));
             PyStackRef_CLOSE(value);

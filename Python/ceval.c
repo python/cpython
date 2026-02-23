@@ -350,10 +350,11 @@ const binaryfunc _PyEval_BinaryOps[] = {
     [NB_SUBSCR] = PyObject_GetItem,
 };
 
-const conversion_func _PyEval_ConversionFuncs[4] = {
+const conversion_func _PyEval_ConversionFuncs[5] = {
     [FVC_STR] = PyObject_Str,
     [FVC_REPR] = PyObject_Repr,
-    [FVC_ASCII] = PyObject_ASCII
+    [FVC_ASCII] = PyObject_ASCII,
+    [FVC_PRETTY] = PyObject_Pretty
 };
 
 const _Py_SpecialMethod _Py_SpecialMethods[] = {

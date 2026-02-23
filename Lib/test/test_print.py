@@ -239,6 +239,9 @@ class TestPrettyPrinting(unittest.TestCase):
         with self.assertRaises(AttributeError):
             print('one', PPrintable(), 2, file=self.file, pretty=object())
 
+    def test_fstring(self):
+        self.assertEqual(f'{PPrintable()!p}', "PPrintable('I feel pretty')")
+
 
 if __name__ == "__main__":
     unittest.main()
