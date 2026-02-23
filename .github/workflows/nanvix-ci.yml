@@ -130,7 +130,7 @@ jobs:
         run: |
           set -euo pipefail
           mkdir -p release-assets
-          find release-artifacts -name "*.tar.bz2" -exec cp {} release-assets/ \\;
+          find release-artifacts -name "*.tar.bz2" -exec cp {} release-assets/ \;
           ls -la release-assets/
 
       - name: Get Release Metadata
