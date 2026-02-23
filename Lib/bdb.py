@@ -189,8 +189,6 @@ def _get_executable_linenos(code):
     return linenos
 
 
-_executable_linenos_cache = {}
-
 
 class Bdb:
     """Generic Python debugger base class.
@@ -210,6 +208,7 @@ class Bdb:
         self.skip = set(skip) if skip else None
         self.breaks = {}
         self.fncache = {}
+        self._executable_linenos_cache = {}
         self.frame_trace_lines_opcodes = {}
         self.frame_returning = None
         self.trace_opcodes = False
@@ -686,13 +685,13 @@ class Bdb:
         line = linecache.getline(filename, lineno)
         if not line:
             return 'Line %s:%d does not exist' % (filename, lineno)
-        if filename not in _executable_linenos_cache:
+        if filename not in self._executable_linenos_cache:
             source = ''.join(linecache.getlines(filename))
             if source:
                 with suppress(SyntaxError):
                     code = compile(source, filename, 'exec')
-                    _executable_linenos_cache[filename] = _get_executable_linenos(code)
-        executable_lines = _executable_linenos_cache.get(filename)
+                    self._executable_linenos_cache[filename] = _get_executable_linenos(code)
+        executable_lines = self._executable_linenos_cache.get(filename)
         if executable_lines and lineno not in executable_lines:
             return 'Line %d has no code associated with it' % lineno
         self._add_to_breaks(filename, lineno)
