@@ -1736,6 +1736,16 @@ class FrozenDictSlots(frozendict):
 
 
 class FrozenDictTests(unittest.TestCase):
+    def test_constructor(self):
+        # frozendict.__init__() has no effect
+        d = frozendict(a=1, b=2, c=3)
+        d.__init__(x=1)
+        self.assertEqual(d, frozendict(a=1, b=2, c=3))
+
+        # dict constructor cannot be used on frozendict
+        with self.assertRaises(TypeError):
+            dict.__init__(d, x=1)
+
     def test_copy(self):
         d = frozendict(x=1, y=2)
         d2 = d.copy()
