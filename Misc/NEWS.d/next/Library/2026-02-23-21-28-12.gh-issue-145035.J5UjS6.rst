@@ -1,0 +1,3 @@
+Allows omitting the internal library ``_pyrepl`` with limited loss of
+functionality. This allows complete removal of the modern REPL, which is an
+unsupported configuration, but still desirable for some distributions.

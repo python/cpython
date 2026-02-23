@@ -426,6 +426,13 @@ class TestAsyncioREPL(unittest.TestCase):
         p = spawn_asyncio_repl()
         p.stdin.write(user_input)
         user_input2 = "async def set_var(): var.set('ok')\n"
+        try:
+            import _pyrepl
+        except ModuleNotFoundError:
+            # If we're going to be forced into the regular REPL, then we need an
+            # extra newline here. Omit it by default to catch any breakage to
+            # the new REPL's behavior.
+            user_input2 += "\n"
         p.stdin.write(user_input2)
         user_input3 = "await set_var()\n"
         p.stdin.write(user_input3)
