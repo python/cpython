@@ -4,13 +4,6 @@
 .. module:: configparser
    :synopsis: Configuration file parser.
 
-.. moduleauthor:: Ken Manheimer <klm@zope.com>
-.. moduleauthor:: Barry Warsaw <bwarsaw@python.org>
-.. moduleauthor:: Eric S. Raymond <esr@thyrsus.com>
-.. moduleauthor:: Łukasz Langa <lukasz@langa.pl>
-.. sectionauthor:: Christopher G. Petrilli <petrilli@amber.org>
-.. sectionauthor:: Łukasz Langa <lukasz@langa.pl>
-
 **Source code:** :source:`Lib/configparser.py`
 
 .. index::

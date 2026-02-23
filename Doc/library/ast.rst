@@ -4,9 +4,6 @@
 .. module:: ast
    :synopsis: Abstract Syntax Tree classes and manipulation.
 
-.. sectionauthor:: Martin v. Löwis <martin@v.loewis.de>
-.. sectionauthor:: Georg Brandl <georg@python.org>
-
 .. testsetup::
 
     import ast
