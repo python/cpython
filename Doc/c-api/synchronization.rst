@@ -212,9 +212,6 @@ Legacy locking APIs
 These APIs are obsolete since Python 3.13 with the introduction of
 :c:type:`PyMutex`.
 
-.. versionchanged:: 3.15
-   These APIs are now a simple wrapper around ``PyMutex``.
-
 
 .. c:type:: PyThread_type_lock
 
@@ -248,10 +245,6 @@ These APIs are obsolete since Python 3.13 with the introduction of
    function returns ``0`` without an exception set.
 
    The caller does not need to hold an :term:`attached thread state`.
-
-   .. versionchanged:: 3.15
-      This function now always uses :c:type:`PyMutex`. In prior versions, this
-      would use a lock provided by the operating system.
 
 
 .. c:function:: void PyThread_free_lock(PyThread_type_lock lock)
