@@ -1,4 +1,5 @@
 import codecs
+import io
 import threading
 from unittest import TestCase
 from test.support import threading_helper
