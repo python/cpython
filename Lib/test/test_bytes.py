@@ -2363,12 +2363,19 @@ class FixedStringTest(test.string_tests.BaseTest):
 
     contains_bytes = True
 
+    def test_mixed_cmp(self):
+        a = self.type2test(b'ab')
+        for t in bytes, bytearray, BytesSubclass, ByteArraySubclass:
+            with self.subTest(t.__name__):
+                self._assert_cmp(a, t(b'ab'), 0)
+                self._assert_cmp(a, t(b'a'), 1)
+                self._assert_cmp(a, t(b'ac'), -1)
+
 class ByteArrayAsStringTest(FixedStringTest, unittest.TestCase):
     type2test = bytearray
 
 class BytesAsStringTest(FixedStringTest, unittest.TestCase):
     type2test = bytes
-
 
 class SubclassTest:
 
