@@ -915,6 +915,7 @@ UNIVERSAL_ARCH_FLAGS
 WASM_STDLIB
 WASM_ASSETS_DIR
 LDFLAGS_NOLTO
+EXE_LDFLAGS
 LDFLAGS_NODIST
 CFLAGS_NODIST
 BASECFLAGS
@@ -9737,6 +9738,7 @@ case $enable_wasm_dynamic_linking in #(
   *) :
      ;;
 esac
+
 
 
 

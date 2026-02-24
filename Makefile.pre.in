@@ -123,7 +123,11 @@ PY_STDMODULE_CFLAGS= $(PY_CFLAGS) $(PY_CFLAGS_NODIST) $(PY_CPPFLAGS) $(CFLAGSFOR
 PY_BUILTIN_MODULE_CFLAGS= $(PY_STDMODULE_CFLAGS) -DPy_BUILD_CORE_BUILTIN
 PY_CORE_CFLAGS=	$(PY_STDMODULE_CFLAGS) -DPy_BUILD_CORE
 # Linker flags used for building the interpreter object files
+# In particular, EXE_LDFLAGS is an extra flag to provide fine grain distinction between
+# LDFLAGS used to build executables and shared targets.
 PY_CORE_LDFLAGS=$(PY_LDFLAGS) $(PY_LDFLAGS_NODIST)
+CONFIGURE_EXE_LDFLAGS=@EXE_LDFLAGS@
+PY_CORE_EXE_LDFLAGS:= $(if $(CONFIGURE_EXE_LDFLAGS), $(CONFIGURE_EXE_LDFLAGS) $(PY_LDFLAGS_NODIST), $(PY_CORE_LDFLAGS))
 # Strict or non-strict aliasing flags used to compile dtoa.c, see above
 CFLAGS_ALIASING=@CFLAGS_ALIASING@
 
@@ -986,7 +990,7 @@ clinic-tests: check-clean-src $(srcdir)/Lib/test/clinic.test.c
 
 # Build the interpreter
 $(BUILDPYTHON):	Programs/python.o $(LINK_PYTHON_DEPS)
-	$(LINKCC) $(PY_CORE_LDFLAGS) $(LINKFORSHARED) -o $@ Programs/python.o $(LINK_PYTHON_OBJS) $(LIBS) $(MODLIBS) $(SYSLIBS)
+	$(LINKCC) $(PY_CORE_EXE_LDFLAGS) $(LINKFORSHARED) -o $@ Programs/python.o $(LINK_PYTHON_OBJS) $(LIBS) $(MODLIBS) $(SYSLIBS)
 
 platform: $(PYTHON_FOR_BUILD_DEPS) pybuilddir.txt
 	$(RUNSHARED) $(PYTHON_FOR_BUILD) -c 'import sys ; from sysconfig import get_platform ; print("%s-%d.%d" % (get_platform(), *sys.version_info[:2]))' >platform
@@ -1676,7 +1680,7 @@ regen-re: $(BUILDPYTHON)
 	$(RUNSHARED) ./$(BUILDPYTHON) $(srcdir)/Tools/build/generate_re_casefix.py $(srcdir)/Lib/re/_casefix.py
 
 Programs/_testembed: Programs/_testembed.o $(LINK_PYTHON_DEPS)
-	$(LINKCC) $(PY_CORE_LDFLAGS) $(LINKFORSHARED) -o $@ Programs/_testembed.o $(LINK_PYTHON_OBJS) $(LIBS) $(MODLIBS) $(SYSLIBS)
+	$(LINKCC) $(PY_CORE_EXE_LDFLAGS) $(LINKFORSHARED) -o $@ Programs/_testembed.o $(LINK_PYTHON_OBJS) $(LIBS) $(MODLIBS) $(SYSLIBS)
 
 ############################################################################
 # "Bootstrap Python" used to run Programs/_freeze_module.py
