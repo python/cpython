@@ -2343,13 +2343,23 @@ builtin_print_impl(PyObject *module, PyObject * const *objects,
     if (pretty == Py_True) {
         /* Use default `pprint.PrettyPrinter` */
         PyObject *printer_factory = PyImport_ImportModuleAttrString("pprint", "PrettyPrinter");
+        PyObject *printer_instance = NULL;
 
         if (!printer_factory) {
             Py_DECREF(file);
             return NULL;
         }
-        printer = PyObject_CallNoArgs(printer_factory);
+
+        printer_instance = PyObject_CallNoArgs(printer_factory);
         Py_DECREF(printer_factory);
+
+        if (!printer_instance) {
+            Py_DECREF(file);
+            return NULL;
+        }
+
+        printer = PyObject_GetAttrString(printer_instance, "pformat");
+        Py_DECREF(printer_instance);
 
         if (!printer) {
             Py_DECREF(file);
@@ -2381,7 +2391,7 @@ builtin_print_impl(PyObject *module, PyObject * const *objects,
         }
 
         if (printer) {
-            PyObject *prettified = PyObject_CallMethod(printer, "pformat", "O", objects[i]);
+            PyObject *prettified = PyObject_CallOneArg(printer, objects[i]);
 
             if (!prettified) {
                 Py_DECREF(file);

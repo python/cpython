@@ -205,6 +205,9 @@ class PPrintable:
     def __pprint__(self):
         yield 'I feel pretty'
 
+    def __str__(self):
+        return 'Pretty, pretty, pretty good'
+
 
 class PrettySmart(PrettyPrinter):
     def pformat(self, obj):
@@ -232,11 +235,15 @@ class TestPrettyPrinting(unittest.TestCase):
         self.assertEqual(self.file.getvalue(), "'one' PPrintable('I feel pretty') 2\n")
 
     def test_custom_pprinter(self):
-        print('one', PPrintable(), 2, file=self.file, pretty=PrettySmart())
+        print('one', PPrintable(), 2, file=self.file, pretty=PrettySmart().pformat)
         self.assertEqual(self.file.getvalue(), "one PPrintable('I feel pretty') 2\n")
 
+    def test_callable_pprinter(self):
+        print('one', PPrintable(), 2, file=self.file, pretty=str)
+        self.assertEqual(self.file.getvalue(), "one Pretty, pretty, pretty good 2\n")
+
     def test_bad_pprinter(self):
-        with self.assertRaises(AttributeError):
+        with self.assertRaises(TypeError):
             print('one', PPrintable(), 2, file=self.file, pretty=object())
 
     def test_fstring(self):
