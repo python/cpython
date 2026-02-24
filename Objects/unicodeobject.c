@@ -13084,6 +13084,51 @@ character at the same position in y. If there is a third argument, it
 must be a string, whose characters will be mapped to None in the result.
 [clinic start generated code]*/
 
+static int
+unicode_maketrans_from_dict(PyObject *x, PyObject *newdict)
+{
+    PyObject *key, *value;
+    Py_ssize_t i = 0;
+    int res;
+
+    Py_BEGIN_CRITICAL_SECTION(x);
+    while (PyDict_Next(x, &i, &key, &value)) {
+        if (PyUnicode_Check(key)) {
+            PyObject *newkey;
+            int kind;
+            const void *data;
+            if (PyUnicode_GET_LENGTH(key) != 1) {
+                PyErr_SetString(PyExc_ValueError, "string keys in translate "
+                                "table must be of length 1");
+                goto error;
+            }
+            kind = PyUnicode_KIND(key);
+            data = PyUnicode_DATA(key);
+            newkey = PyLong_FromLong(PyUnicode_READ(kind, data, 0));
+            if (!newkey)
+                goto error;
+            res = PyDict_SetItem(newdict, newkey, value);
+            Py_DECREF(newkey);
+            if(res < 0)
+                goto error;
+        }
+        else if (PyLong_Check(key)) {
+            if (PyDict_SetItem(newdict, key, value) < 0)
+                goto error;
+        }
+        else {
+            PyErr_SetString(PyExc_TypeError, "keys in translate table must "
+                            "be strings or integers");
+            goto error;
+        }
+    }
+    Py_END_CRITICAL_SECTION();
+    return 0;
+  error:
+    Py_END_CRITICAL_SECTION();
+    return -1;
+}
+
 static PyObject *
 unicode_maketrans_impl(PyObject *x, PyObject *y, PyObject *z)
 /*[clinic end generated code: output=a925c89452bd5881 input=7bfbf529a293c6c5]*/
@@ -13145,9 +13190,6 @@ unicode_maketrans_impl(PyObject *x, PyObject *y, PyObject *z)
             }
         }
     } else {
-        int kind;
-        const void *data;
-
         /* x must be a dict */
         if (!PyAnyDict_CheckExact(x)) {
             PyErr_SetString(PyExc_TypeError, "if you give only one argument "
@@ -13155,41 +13197,8 @@ unicode_maketrans_impl(PyObject *x, PyObject *y, PyObject *z)
             goto err;
         }
         /* copy entries into the new dict, converting string keys to int keys */
-        Py_BEGIN_CRITICAL_SECTION(x);
-        while (PyDict_Next(x, &i, &key, &value)) {
-            if (PyUnicode_Check(key)) {
-                /* convert string keys to integer keys */
-                PyObject *newkey;
-                if (PyUnicode_GET_LENGTH(key) != 1) {
-                    PyErr_SetString(PyExc_ValueError, "string keys in translate "
-                                    "table must be of length 1");
-                    goto error;
-                }
-                kind = PyUnicode_KIND(key);
-                data = PyUnicode_DATA(key);
-                newkey = PyLong_FromLong(PyUnicode_READ(kind, data, 0));
-                if (!newkey)
-                    goto error;
-                res = PyDict_SetItem(new, newkey, value);
-                Py_DECREF(newkey);
-                if (res < 0)
-                    goto error;
-            } else if (PyLong_Check(key)) {
-                /* just keep integer keys */
-                if (PyDict_SetItem(new, key, value) < 0)
-                    goto error;
-            } else {
-                PyErr_SetString(PyExc_TypeError, "keys in translate table must "
-                                "be strings or integers");
-                goto error;
-            }
-        }
-        goto done;
-    error:
-        Py_CLEAR(new);
-    done:
-        Py_END_CRITICAL_SECTION();
-        return new;
+        if(unicode_maketrans_from_dict(x, new) < 0)
+            goto err;
     }
     return new;
   err:
