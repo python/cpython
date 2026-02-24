@@ -1611,10 +1611,10 @@ are always available.  They are listed here in alphabetical order.
    given, :func:`print` will just write *end*.
 
    When *pretty* is given, it signals that the objects should be "pretty
-   printed".  *pretty* can be ``True`` or an object implementing the
-   :meth:`pprint.PrettyPrinter.pformat` API which takes an object and returns a
-   formatted representation of the object.  When *pretty* is ``True``, then it
-   calls ``PrettyPrinter.pformat()`` explicitly.
+   printed".  *pretty* can be ``True`` or a callable object taking a single
+   argument, the object to pretty, and returning a formatted representation of
+   the object.  When *pretty* is ``True``, then it calls
+   :meth:`pprint.PrettyPrinter.pformat` to get the formatted representation.
 
    The *file* argument must be an object with a ``write(string)`` method; if it
    is not present or ``None``, :data:`sys.stdout` will be used.  Since printed
