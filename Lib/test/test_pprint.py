@@ -1602,6 +1602,46 @@ ValuesView({'a': 6,
         self.assertTrue(pprint.isreadable(Readable()))
         self.assertFalse(pprint.isreadable(Unreadable()))
 
+    def test_pprint_protocol_falsey_names(self):
+        # Any 2-tuple form with a falsey name gets treated as a positional argument.
+        class IsFalse:
+            def __bool__(self):
+                return False
+
+        # 2-tuple form with falsey names are treated as positional.
+        class PositionalTuples:
+            def __pprint__(self):
+                yield None, (1, 2)
+                yield False, (3, 4)
+                yield 0, (5, 6)
+                yield IsFalse(), (7, 8)
+
+        stream = io.StringIO()
+        pprint.pprint(PositionalTuples(), stream=stream)
+        self.assertEqual(
+            stream.getvalue(),
+            'PositionalTuples((1, 2), (3, 4), (5, 6), (7, 8))\n'
+        )
+
+    def test_pprint_protocol_truthy_nonstring_names(self):
+        # 2-tuple form with truthy, non-str name is an error.
+        class BrokenPrinter_1:
+            def __pprint__(self):
+                yield 7, 'hello'
+
+        self.assertRaises(ValueError, pprint.pprint, BrokenPrinter_1())
+
+        # The name argument must be exactly a str.
+        class Strable:
+            def __str__(self):
+                yield 'strable'
+
+        class BrokenPrinter_2:
+            def __pprint__(self):
+                yield Strable(), 'hello'
+
+        self.assertRaises(ValueError, pprint.pprint, BrokenPrinter_2())
+
 
 class DottedPrettyPrinter(pprint.PrettyPrinter):
 

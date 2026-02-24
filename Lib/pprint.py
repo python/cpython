@@ -643,11 +643,22 @@ class PrettyPrinter:
                         formatted, is_readable, _ = self.format(value, context, maxlevels, level + 1)
                         parts.append(f"{name}={formatted}")
                         readable = readable and is_readable
-                case (name, value):
+                case (str() as name, value) if name:
                     # Keyword argument.  Always show.
                     formatted, is_readable, _ = self.format(value, context, maxlevels, level + 1)
                     parts.append(f"{name}={formatted}")
                     readable = readable and is_readable
+                case (name, value) if not name:
+                    # 2-tuple with a false-y name: treat as positional.
+                    formatted, is_readable, _ = self.format(value, context, maxlevels, level + 1)
+                    parts.append(formatted)
+                    readable = readable and is_readable
+                case (name, value):
+                    # Truthy non-string name is an error.
+                    raise ValueError(
+                        f"__pprint__ yielded a 2-tuple with "
+                        f"non-string name: {name!r}"
+                    )
                 case _:
                     # Positional argument.
                     formatted, is_readable, _ = self.format(item, context, maxlevels, level + 1)
