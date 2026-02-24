@@ -544,6 +544,7 @@ SYMBOL_NAMES = (
     "PyOS_strtoul",
     "PyOS_vsnprintf",
     "PyObject_ASCII",
+    "PyObject_Pretty",
     "PyObject_AsCharBuffer",
     "PyObject_AsFileDescriptor",
     "PyObject_AsReadBuffer",

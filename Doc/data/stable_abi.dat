@@ -560,6 +560,7 @@ type,PyObject,3.2,,members
 member,PyObject.ob_refcnt,3.2,,
 member,PyObject.ob_type,3.2,,
 func,PyObject_ASCII,3.2,,
+func,PyObject_Pretty,3.15,,
 func,PyObject_AsFileDescriptor,3.2,,
 func,PyObject_Bytes,3.2,,
 func,PyObject_Call,3.2,,

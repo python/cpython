@@ -1138,6 +1138,8 @@
     added = '3.2'
 [function.PyObject_ASCII]
     added = '3.2'
+[function.PyObject_Pretty]
+    added = '3.15'
 [function.PyObject_AsFileDescriptor]
     added = '3.2'
 [function.PyObject_Bytes]

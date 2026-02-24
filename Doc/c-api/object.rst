@@ -380,6 +380,15 @@ Object Protocol
    .. index:: string; PyObject_Str (C function)
 
 
+.. c:function:: PyObject* PyObject_Pretty(PyObject *o)
+
+   Return the "pretty" representation of an object *o*, which must not be
+   ``NULL``. This is used by the ``!p`` specifier for both f-strings and
+   :func:`str.format`.  This function is not directly exposed in Python.
+
+   .. versionadded:: 3.15
+
+
 .. c:function:: PyObject* PyObject_Str(PyObject *o)
 
    Compute a string representation of object *o*.  Returns the string

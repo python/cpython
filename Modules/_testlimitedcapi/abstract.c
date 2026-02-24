@@ -24,6 +24,12 @@ object_str(PyObject *self, PyObject *arg)
 }
 
 static PyObject *
+object_pretty(PyObject *self, PyObject *arg)
+{
+    return PyObject_Pretty(arg);
+}
+
+static PyObject *
 object_bytes(PyObject *self, PyObject *arg)
 {
     NULLABLE(arg);
@@ -533,6 +539,7 @@ static PyMethodDef test_methods[] = {
     {"object_repr", object_repr, METH_O},
     {"object_ascii", object_ascii, METH_O},
     {"object_str", object_str, METH_O},
+    {"object_pretty", object_pretty, METH_O},
     {"object_bytes", object_bytes, METH_O},
 
     {"object_getattr", object_getattr, METH_VARARGS},
