@@ -11,7 +11,7 @@ from _interpqueues import (
     QueueError, QueueNotFoundError,
 )
 from ._crossinterp import (
-    UNBOUND_ERROR, UNBOUND_REMOVE,
+    UNBOUND, UNBOUND_ERROR, UNBOUND_REMOVE,
 )
 
 __all__ = [
@@ -42,24 +42,12 @@ class ItemInterpreterDestroyed(QueueError,
     """Raised from get() and get_nowait()."""
 
 
+def _resolve_unbound(flag):
+    return _crossinterp.resolve_unbound(flag, ItemInterpreterDestroyed)
+
+
 _SHARED_ONLY = 0
 _PICKLED = 1
-
-
-UNBOUND = _crossinterp.UnboundItem.singleton('queue', __name__)
-
-
-def _serialize_unbound(unbound):
-    if unbound is UNBOUND:
-        unbound = _crossinterp.UNBOUND
-    return _crossinterp.serialize_unbound(unbound)
-
-
-def _resolve_unbound(flag):
-    resolved = _crossinterp.resolve_unbound(flag, ItemInterpreterDestroyed)
-    if resolved is _crossinterp.UNBOUND:
-        resolved = UNBOUND
-    return resolved
 
 
 def create(maxsize=0, *, unbounditems=UNBOUND):
@@ -71,8 +59,7 @@ def create(maxsize=0, *, unbounditems=UNBOUND):
     supported values.  The default value is UNBOUND, which replaces
     the unbound item.
     """
-    unbound = _serialize_unbound(unbounditems)
-    unboundop, = unbound
+    unboundop = _crossinterp.unbound_to_flag(unbounditems)
     qid = _queues.create(maxsize, unboundop, -1)
     self = Queue(qid)
     self._set_unbound(unboundop, unbounditems)
@@ -211,10 +198,7 @@ class Queue:
         """
         if not block:
             return self.put_nowait(obj, unbounditems=unbounditems)
-        if unbounditems is None:
-            unboundop = -1
-        else:
-            unboundop, = _serialize_unbound(unbounditems)
+        unboundop = _crossinterp.unbound_to_flag(unbounditems)
         if timeout is not None:
             timeout = int(timeout)
             if timeout < 0:
@@ -231,10 +215,7 @@ class Queue:
                 break
 
     def put_nowait(self, obj, *, unbounditems=None):
-        if unbounditems is None:
-            unboundop = -1
-        else:
-            unboundop, = _serialize_unbound(unbounditems)
+        unboundop = _crossinterp.unbound_to_flag(unbounditems)
         _queues.put(self._id, obj, unboundop)
 
     def get(self, block=True, timeout=None, *,

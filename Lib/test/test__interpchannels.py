@@ -17,7 +17,7 @@ from test.test__interpreters import (
 )
 
 
-REPLACE = _crossinterp._UNBOUND_CONSTANT_TO_FLAG[_crossinterp.UNBOUND]
+REPLACE = _crossinterp.UNBOUND._unboundop
 
 
 # Additional tests are found in Lib/test/test_interpreters/test_channels.py.

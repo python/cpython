@@ -10,7 +10,7 @@ from _interpchannels import (
     ChannelEmptyError, ChannelNotEmptyError,  # noqa: F401
 )
 from concurrent.interpreters._crossinterp import (
-    UNBOUND_ERROR, UNBOUND_REMOVE,
+    UNBOUND, UNBOUND_ERROR, UNBOUND_REMOVE,
 )
 
 
@@ -28,20 +28,8 @@ class ItemInterpreterDestroyed(ChannelError,
     """Raised from get() and get_nowait()."""
 
 
-UNBOUND = _crossinterp.UnboundItem.singleton('queue', __name__)
-
-
-def _serialize_unbound(unbound):
-    if unbound is UNBOUND:
-        unbound = _crossinterp.UNBOUND
-    return _crossinterp.serialize_unbound(unbound)
-
-
 def _resolve_unbound(flag):
-    resolved = _crossinterp.resolve_unbound(flag, ItemInterpreterDestroyed)
-    if resolved is _crossinterp.UNBOUND:
-        resolved = UNBOUND
-    return resolved
+    return _crossinterp.resolve_unbound(flag, ItemInterpreterDestroyed)
 
 
 def create(*, unbounditems=UNBOUND):
@@ -53,8 +41,9 @@ def create(*, unbounditems=UNBOUND):
     See SendChannel.send() for supported values.  The default value
     is UNBOUND, which replaces the unbound item when received.
     """
-    unbound = _serialize_unbound(unbounditems)
-    unboundop, = unbound
+    if unbounditems is None:
+        raise TypeError(f'unbounditems must not be None')
+    unboundop = _crossinterp.unbound_to_flag(unbounditems)
     cid = _channels.create(unboundop, -1)
     recv, send = RecvChannel(cid), SendChannel(cid)
     send._set_unbound(unboundop, unbounditems)
@@ -179,17 +168,6 @@ class SendChannel(_ChannelEnd):
 
     _end = 'send'
 
-#    def __new__(cls, cid, *, _unbound=None):
-#        if _unbound is None:
-#            try:
-#                op = _channels.get_channel_defaults(cid)
-#                _unbound = (op,)
-#            except ChannelNotFoundError:
-#                _unbound = _serialize_unbound(UNBOUND)
-#        self = super().__new__(cls, cid)
-#        self._unbound = _unbound
-#        return self
-
     def _set_unbound(self, op, items=None):
         assert not hasattr(self, '_unbound')
         if items is None:
@@ -219,10 +197,7 @@ class SendChannel(_ChannelEnd):
 
         This blocks until the object is received.
         """
-        if unbounditems is None:
-            unboundop = -1
-        else:
-            unboundop, = _serialize_unbound(unbounditems)
+        unboundop = _crossinterp.unbound_to_flag(unbounditems)
         _channels.send(self._id, obj, unboundop, timeout=timeout, blocking=True)
 
     def send_nowait(self, obj, *,
@@ -233,10 +208,7 @@ class SendChannel(_ChannelEnd):
         If the object is immediately received then return True
         (else False).  Otherwise this is the same as send().
         """
-        if unbounditems is None:
-            unboundop = -1
-        else:
-            unboundop, = _serialize_unbound(unbounditems)
+        unboundop = _crossinterp.unbound_to_flag(unbounditems)
         # XXX Note that at the moment channel_send() only ever returns
         # None.  This should be fixed when channel_send_wait() is added.
         # See bpo-32604 and gh-19829.
@@ -249,10 +221,7 @@ class SendChannel(_ChannelEnd):
 
         This blocks until the object is received.
         """
-        if unbounditems is None:
-            unboundop = -1
-        else:
-            unboundop, = _serialize_unbound(unbounditems)
+        unboundop = _crossinterp.unbound_to_flag(unbounditems)
         _channels.send_buffer(self._id, obj, unboundop,
                               timeout=timeout, blocking=True)
 
@@ -264,10 +233,7 @@ class SendChannel(_ChannelEnd):
         If the object is immediately received then return True
         (else False).  Otherwise this is the same as send().
         """
-        if unbounditems is None:
-            unboundop = -1
-        else:
-            unboundop, = _serialize_unbound(unbounditems)
+        unboundop = _crossinterp.unbound_to_flag(unbounditems)
         return _channels.send_buffer(self._id, obj, unboundop, blocking=False)
 
     def close(self):

@@ -29,79 +29,39 @@ class classonly:
         return self.getter(None, cls)
 
 
-class UnboundItem:
-    """Represents a cross-interpreter item no longer bound to an interpreter.
+class UnboundBehavior:
+    __slots__ = ('name', '_unboundop')
 
-    An item is unbound when the interpreter that added it to the
-    cross-interpreter container is destroyed.
-    """
-
-    __slots__ = ()
-
-    @classonly
-    def singleton(cls, kind, module, name='UNBOUND'):
-        doc = cls.__doc__
-        if doc:
-            doc = doc.replace(
-                'cross-interpreter container', kind,
-            ).replace(
-                'cross-interpreter', kind,
-            )
-        subclass = type(
-            f'Unbound{kind.capitalize()}Item',
-            (cls,),
-            {
-                "_MODULE": module,
-                "_NAME": name,
-                "__doc__": doc,
-            },
-        )
-        return object.__new__(subclass)
-
-    _MODULE = __name__
-    _NAME = 'UNBOUND'
-
-    def __new__(cls):
-        raise Exception(f'use {cls._MODULE}.{cls._NAME}')
+    def __init__(self, name, *, _unboundop):
+        self.name = name
+        self._unboundop = _unboundop
 
     def __repr__(self):
-        return f'{self._MODULE}.{self._NAME}'
-#        return f'interpreters._queues.UNBOUND'
+        return f'<{self.name}>'
 
 
-UNBOUND = object.__new__(UnboundItem)
-UNBOUND_ERROR = object()
-UNBOUND_REMOVE = object()
-
-_UNBOUND_CONSTANT_TO_FLAG = {
-    UNBOUND_REMOVE: 1,
-    UNBOUND_ERROR: 2,
-    UNBOUND: 3,
-}
-_UNBOUND_FLAG_TO_CONSTANT = {v: k
-                             for k, v in _UNBOUND_CONSTANT_TO_FLAG.items()}
+UNBOUND = UnboundBehavior('UNBOUND', _unboundop=3)
+UNBOUND_ERROR = UnboundBehavior('UNBOUND_ERROR', _unboundop=2)
+UNBOUND_REMOVE = UnboundBehavior('UNBOUND_REMOVE', _unboundop=1)
 
 
-def serialize_unbound(unbound):
-    op = unbound
+def unbound_to_flag(unbounditems):
+    if unbounditems is None:
+        return -1
     try:
-        flag = _UNBOUND_CONSTANT_TO_FLAG[op]
-    except KeyError:
-        raise NotImplementedError(f'unsupported unbound replacement op {op!r}')
-    return flag,
-
+        return unbounditems._unboundop
+    except AttributeError:
+        raise NotImplementedError(
+            f'unsupported unbound replacement object {unbounditems!r}')
 
 def resolve_unbound(flag, exctype_destroyed):
-    try:
-        op = _UNBOUND_FLAG_TO_CONSTANT[flag]
-    except KeyError:
-        raise NotImplementedError(f'unsupported unbound replacement op {flag!r}')
-    if op is UNBOUND_REMOVE:
+    if flag == UNBOUND_REMOVE._unboundop:
         # "remove" not possible here
         raise NotImplementedError
-    elif op is UNBOUND_ERROR:
+    elif flag == UNBOUND_ERROR._unboundop:
         raise exctype_destroyed("item's original interpreter destroyed")
-    elif op is UNBOUND:
+    elif flag == UNBOUND._unboundop:
         return UNBOUND
     else:
-        raise NotImplementedError(repr(op))
+        raise NotImplementedError(
+            f'unsupported unbound replacement op {flag!r}')

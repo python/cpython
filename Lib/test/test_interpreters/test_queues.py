@@ -12,7 +12,7 @@ from concurrent.interpreters import _queues as queues, _crossinterp
 from .utils import _run_output, TestBase as _TestBase
 
 HUGE_TIMEOUT = 3600
-REPLACE = _crossinterp._UNBOUND_CONSTANT_TO_FLAG[_crossinterp.UNBOUND]
+REPLACE = _crossinterp.UNBOUND._unboundop
 
 
 def get_num_queues():
