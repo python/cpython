@@ -13,6 +13,7 @@ import keyword
 import tokenize
 import io
 import importlib.util
+import pathlib
 import _colorize
 
 from contextlib import suppress
@@ -1905,7 +1906,7 @@ def _find_incompatible_extension_module(module_name):
         traversable = importlib.resources.files(parent)
     else:
         traversable = importlib.resources.readers.MultiplexedPath(
-            *filter(os.path.isdir, sys.path)
+            *map(pathlib.Path, filter(os.path.isdir, sys.path))
         )
 
     for entry in traversable.iterdir():
