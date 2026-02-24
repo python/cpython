@@ -13154,42 +13154,42 @@ unicode_maketrans_impl(PyObject *x, PyObject *y, PyObject *z)
                             "to maketrans it must be a dict");
             goto err;
         }
-        PyObject *items = PyDict_Items(x);
-        if(items == NULL) goto err;
-        Py_ssize_t n = PyList_GET_SIZE(items);
         /* copy entries into the new dict, converting string keys to int keys */
-        for (i = 0; i < n; i++) {
-            PyObject *pair = PyList_GET_ITEM(items, i);
-            key = PyTuple_GET_ITEM(pair, 0);
-            value = PyTuple_GET_ITEM(pair, 1);
+        Py_BEGIN_CRITICAL_SECTION(x);
+        while (PyDict_Next(x, &i, &key, &value)) {
             if (PyUnicode_Check(key)) {
                 /* convert string keys to integer keys */
                 PyObject *newkey;
                 if (PyUnicode_GET_LENGTH(key) != 1) {
                     PyErr_SetString(PyExc_ValueError, "string keys in translate "
                                     "table must be of length 1");
-                    goto err;
+                    goto err_in_cs;
                 }
                 kind = PyUnicode_KIND(key);
                 data = PyUnicode_DATA(key);
                 newkey = PyLong_FromLong(PyUnicode_READ(kind, data, 0));
                 if (!newkey)
-                    goto err;
+                    goto err_in_cs;
                 res = PyDict_SetItem(new, newkey, value);
                 Py_DECREF(newkey);
                 if (res < 0)
-                    goto err;
+                    goto err_in_cs;
             } else if (PyLong_Check(key)) {
                 /* just keep integer keys */
                 if (PyDict_SetItem(new, key, value) < 0)
-                    goto err;
+                    goto err_in_cs;
             } else {
                 PyErr_SetString(PyExc_TypeError, "keys in translate table must "
                                 "be strings or integers");
-                goto err;
+                goto err_in_cs;
             }
         }
-        Py_DECREF(items);
+        goto done;
+      err_in_cs:
+        Py_CLEAR(new);
+      done:
+        Py_END_CRITICAL_SECTION();
+        return new;
     }
     return new;
   err:
