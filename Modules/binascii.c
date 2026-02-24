@@ -785,22 +785,21 @@ binascii_b2a_base64_impl(PyObject *module, Py_buffer *data, size_t wrapcol,
      * Use unsigned integer arithmetic to avoid signed integer overflow.
      */
     size_t out_len = ((size_t)bin_len + 2u) / 3u * 4u;
-    if (out_len > PY_SSIZE_T_MAX) {
-        goto toolong;
-    }
     if (wrapcol && out_len) {
         /* Each line should encode a whole number of bytes. */
         wrapcol = wrapcol < 4 ? 4 : wrapcol / 4 * 4;
         out_len += (out_len - 1u) / wrapcol;
-        if (out_len > PY_SSIZE_T_MAX) {
-            goto toolong;
-        }
     }
     if (newline) {
         out_len++;
-        if (out_len > PY_SSIZE_T_MAX) {
-            goto toolong;
+    }
+    if (out_len > PY_SSIZE_T_MAX) {
+        binascii_state *state = get_binascii_state(module);
+        if (state == NULL) {
+            return NULL;
         }
+        PyErr_SetString(state->Error, "Too much data for base64");
+        return NULL;
     }
     PyBytesWriter *writer = PyBytesWriter_Create(out_len);
     if (writer == NULL) {
@@ -841,14 +840,6 @@ binascii_b2a_base64_impl(PyObject *module, Py_buffer *data, size_t wrapcol,
         *ascii_data++ = '\n';       /* Append a courtesy newline */
 
     return PyBytesWriter_FinishWithPointer(writer, ascii_data);
-
-toolong:;
-    binascii_state *state = get_binascii_state(module);
-    if (state == NULL) {
-        return NULL;
-    }
-    PyErr_SetString(state->Error, "Too much data for base64");
-    return NULL;
 }
 
 /*[clinic input]
@@ -1046,7 +1037,7 @@ binascii_b2a_ascii85_impl(PyObject *module, Py_buffer *data, int foldspaces,
     if (!pad && (bin_len % 4)) {
         out_len -= 4 - (bin_len % 4);
     }
-    if (wrapcol && out_len) {
+    if (wrapcol && out_len && out_len <= PY_SSIZE_T_MAX) {
         out_len += (out_len - 1) / wrapcol;
     }
     if (out_len > PY_SSIZE_T_MAX) {
