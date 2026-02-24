@@ -4,8 +4,6 @@
 .. module:: tempfile
    :synopsis: Generate temporary files and directories.
 
-.. sectionauthor:: Zack Weinberg <zack@codesourcery.com>
-
 **Source code:** :source:`Lib/tempfile.py`
 
 .. index::

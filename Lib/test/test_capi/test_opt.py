@@ -110,6 +110,7 @@ class TestExecutorInvalidation(unittest.TestCase):
             for exe in executors[:i]:
                 self.assertTrue(exe.is_valid())
 
+    @unittest.skipIf(os.getenv("PYTHON_UOPS_OPTIMIZE") == "0", "Needs uop optimizer to run.")
     def test_uop_optimizer_invalidation(self):
         # Generate a new function at each call
         ns = {}
@@ -3660,6 +3661,23 @@ class TestUopsOptimization(unittest.TestCase):
         self.assertLessEqual(count_ops(ex, "_POP_TOP_INT"), 1)
         self.assertIn("_POP_TOP_NOP", uops)
 
+    def test_binary_subscr_list_slice(self):
+        def testfunc(n):
+            x = 0
+            for _ in range(n):
+                l = [1, 2, 3]
+                x += l[0:1][0]
+            return x
+
+        res, ex = self._run_with_optimizer(testfunc, TIER2_THRESHOLD)
+        self.assertEqual(res, TIER2_THRESHOLD)
+        uops = get_opnames(ex)
+
+        self.assertIn("_BINARY_OP_SUBSCR_LIST_SLICE", uops)
+        self.assertNotIn("_GUARD_TOS_LIST", uops)
+        self.assertEqual(count_ops(ex, "_POP_TOP"), 3)
+        self.assertEqual(count_ops(ex, "_POP_TOP_NOP"), 4)
+
     def test_is_op(self):
         def test_is_false(n):
             a = object()
@@ -4046,6 +4064,55 @@ class TestUopsOptimization(unittest.TestCase):
                          f"Memory leak detected by ASan:\n{stderr}")
         self.assertNotIn('_PyJit_TryInitializeTracing', stderr,
                          f"JIT tracer memory leak detected:\n{stderr}")
+
+    def test_cold_exit_on_init_cleanup_frame(self):
+
+        result = script_helper.run_python_until_end('-c', textwrap.dedent("""
+        class A:
+            __slots__ = ('x', 'y', 'z', 'w')
+            def __init__(self):
+                self.x = self.y = -1
+                self.z = self.w = None
+
+        class B(A):
+            __slots__ = ('a', 'b', 'c', 'd', 'e')
+            def __init__(self):
+                super().__init__()
+                self.a = self.b = None
+                self.c = ""
+                self.d = self.e = False
+
+        class C(B):
+            __slots__ = ('name', 'flag')
+            def __init__(self, name):
+                super().__init__()
+                self.name = name
+                self.flag = False
+
+        funcs = []
+        for n in range(20, 80):
+            lines = [f"def f{n}(names, info):"]
+            for j in range(n):
+                lines.append(f"    v{j} = names[{j % 3}]")
+                if j % 3 == 0:
+                    lines.append(f"    if v{j} in info:")
+                    lines.append(f"        v{j} = info[v{j}]")
+                elif j % 5 == 0:
+                    lines.append(f"    v{j} = len(v{j}) if isinstance(v{j}, str) else 0")
+            lines.append("    return C(names[0])")
+            ns = {'C': C}
+            exec("\\n".join(lines), ns)
+            funcs.append(ns[f"f{n}"])
+
+        names = ['alpha', 'beta', 'gamma']
+        info = {'alpha': 'x', 'beta': 'y', 'gamma': 'z'}
+
+        for f in funcs:
+            for _ in range(10):
+                f(names, info)
+        """), PYTHON_JIT="1", PYTHON_JIT_STRESS="1",
+             PYTHON_JIT_SIDE_EXIT_INITIAL_VALUE="1")
+        self.assertEqual(result[0].rc, 0, result)
 
 def global_identity(x):
     return x

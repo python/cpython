@@ -4,8 +4,6 @@
 .. module:: mimetypes
    :synopsis: Mapping of filename extensions to MIME types.
 
-.. sectionauthor:: Fred L. Drake, Jr. <fdrake@acm.org>
-
 **Source code:** :source:`Lib/mimetypes.py`
 
 .. index:: pair: MIME; content type
