@@ -5133,6 +5133,68 @@ class TestDateTimeTZ(TestDateTime, TZInfoBase, unittest.TestCase):
             self.assertEqual(derived.tzname(), 'cookie')
         self.assertEqual(orig.__reduce__(), orig.__reduce_ex__(2))
 
+    def test_fromutc_subclass_new_returns_non_datetime(self):
+        call_count = 0
+
+        class EvilDatetime(self.theclass):
+            def __new__(cls, *args, **kwargs):
+                nonlocal call_count
+                call_count += 1
+                if call_count > 1:
+                    return bytearray(b'\x00' * 200)
+                return super().__new__(cls, *args, **kwargs)
+
+        class SimpleTZ(tzinfo):
+            def utcoffset(self, dt): return timedelta(hours=1)
+            def dst(self, dt):       return timedelta(hours=1)
+            def tzname(self, dt):    return "Test"
+
+        tz = SimpleTZ()
+        dt = EvilDatetime(2000, 1, 1, 12, 0, 0, tzinfo=tz)
+        with self.assertRaises(TypeError):
+            tz.fromutc(dt)
+
+    def test_fromutc_subclass_new_returns_non_datetime_with_delta(self):
+        call_count = 0
+
+        class EvilDatetime(self.theclass):
+            def __new__(cls, *args, **kwargs):
+                nonlocal call_count
+                call_count += 1
+                if call_count > 1:
+                    return bytearray(b'\x00' * 200)
+                return super().__new__(cls, *args, **kwargs)
+        class SimpleTZ(tzinfo):
+            def utcoffset(self, dt): return timedelta(hours=2)
+            def dst(self, dt):       return timedelta(hours=1)
+            def tzname(self, dt):    return "Test"
+
+        tz = SimpleTZ()
+        dt = EvilDatetime(2000, 1, 1, 12, 0, 0, tzinfo=tz)
+        with self.assertRaises(TypeError):
+            tz.fromutc(dt)
+
+    def test_utctimetuple_subclass_new_returns_non_datetime(self):
+        call_count = 0
+
+        class EvilDatetime(self.theclass):
+            def __new__(cls, *args, **kwargs):
+                nonlocal call_count
+                call_count += 1
+                if call_count > 1:
+                    return bytearray(b'\x00' * 200)
+                return super().__new__(cls, *args, **kwargs)
+
+        class SimpleTZ(tzinfo):
+            def utcoffset(self, dt): return timedelta(hours=5)
+            def dst(self, dt):       return timedelta(0)
+            def tzname(self, dt):    return "Test"
+
+        tz = SimpleTZ()
+        dt = EvilDatetime(2000, 6, 15, 12, 0, 0, tzinfo=tz)
+        with self.assertRaises(TypeError):
+            dt.utctimetuple()
+
     def test_compat_unpickle(self):
         tests = [
             b'cdatetime\ndatetime\n'
