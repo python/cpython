@@ -28,6 +28,7 @@ import textwrap
 import traceback
 from functools import partial
 from pathlib import Path
+from traceback import _str_width, _wlen
 import _colorize
 
 MODULE_PREFIX = f'{__name__}.' if __name__ == '__main__' else ''
@@ -1786,6 +1787,50 @@ class TracebackErrorLocationCaretTestBase:
             "    ~^~"
         ]
         self.assertEqual(result_lines, expected)
+
+    def test_str_width(self):
+        characters = [
+            'a',
+            '1',
+            '_',
+            '!',
+            '\x1a',
+            '\u263A',
+            '\uffb9',
+            '\N{LATIN SMALL LETTER E WITH ACUTE}',  # é
+            '\N{LATIN SMALL LETTER E WITH CEDILLA}', # ȩ
+            '\u00ad',
+        ]
+        for c in characters:
+            self.assertEqual(_str_width(c), 1)
+
+        zero_width_characters = [
+            '\N{COMBINING ACUTE ACCENT}',
+            '\N{ZERO WIDTH JOINER}',
+        ]
+        for c in zero_width_characters:
+            with self.subTest(character=c):
+                self.assertEqual(_str_width(c), 0)
+
+        characters = [chr(99989), chr(99999)]
+        for c in characters:
+            self.assertEqual(_str_width(c), 2)
+
+    def test_wlen(self):
+        for c in ['a', 'b', '1', '!', '_']:
+            self.assertEqual(_wlen(c), 1)
+        self.assertEqual(_wlen('\x1a'), 2)
+
+        char_east_asian_width_N = chr(3800)
+        self.assertEqual(_wlen(char_east_asian_width_N), 1)
+        char_east_asian_width_W = chr(4352)
+        self.assertEqual(_wlen(char_east_asian_width_W), 2)
+
+        self.assertEqual(_wlen('hello'), 5)
+        self.assertEqual(_wlen('hello' + '\x1a'), 7)
+        self.assertEqual(_wlen('e\N{COMBINING ACUTE ACCENT}'), 1)
+        self.assertEqual(_wlen('a\N{ZERO WIDTH JOINER}b'), 2)
+
 
 class TestKeywordTypoSuggestions(unittest.TestCase):
     TYPO_CASES = [
@@ -5321,6 +5366,32 @@ class TestColorizedTraceback(unittest.TestCase):
         ]
         self.assertEqual(actual, expected(**colors))
 
+    def test_colorized_traceback_unicode(self):
+        try:
+            啊哈=1; 啊哈/0####
+        except Exception as e:
+            exc = traceback.TracebackException.from_exception(e)
+
+        actual = "".join(exc.format(colorize=True)).splitlines()
+        def expected(t, m, fn, l, f, E, e, z):
+            return [
+                f"    啊哈=1; {e}啊哈{z}{E}/{z}{e}0{z}####",
+                f"            {e}~~~~{z}{E}^{z}{e}~{z}",
+            ]
+        self.assertEqual(actual[2:4], expected(**colors))
+
+        try:
+            ééééé/0
+        except Exception as e:
+            exc = traceback.TracebackException.from_exception(e)
+
+        actual = "".join(exc.format(colorize=True)).splitlines()
+        def expected(t, m, fn, l, f, E, e, z):
+            return [
+                f"    {E}ééééé{z}/0",
+                f"    {E}^^^^^{z}",
+            ]
+        self.assertEqual(actual[2:4], expected(**colors))
 
 class TestLazyImportSuggestions(unittest.TestCase):
     """Test that lazy imports are not reified when computing AttributeError suggestions."""

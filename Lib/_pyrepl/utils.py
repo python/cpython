@@ -1,6 +1,5 @@
 from __future__ import annotations
 import builtins
-import functools
 import keyword
 import re
 import token as T
@@ -11,12 +10,12 @@ import _colorize
 from collections import deque
 from io import StringIO
 from tokenize import TokenInfo as TI
+from traceback import _str_width as str_width, _wlen as wlen
 from typing import Iterable, Iterator, Match, NamedTuple, Self
 
 from .types import CharBuffer, CharWidths
 from .trace import trace
 
-ANSI_ESCAPE_SEQUENCE = re.compile(r"\x1b\[[ -@]*[A-~]")
 ZERO_WIDTH_BRACKET = re.compile(r"\x01.*?\x02")
 ZERO_WIDTH_TRANS = str.maketrans({"\x01": "", "\x02": ""})
 IDENTIFIERS_AFTER = {"def", "class"}
@@ -57,32 +56,6 @@ class Span(NamedTuple):
 class ColorSpan(NamedTuple):
     span: Span
     tag: str
-
-
-@functools.cache
-def str_width(c: str) -> int:
-    if ord(c) < 128:
-        return 1
-    # gh-139246 for zero-width joiner and combining characters
-    if unicodedata.combining(c):
-        return 0
-    category = unicodedata.category(c)
-    if category == "Cf" and c != "\u00ad":
-        return 0
-    w = unicodedata.east_asian_width(c)
-    if w in ("N", "Na", "H", "A"):
-        return 1
-    return 2
-
-
-def wlen(s: str) -> int:
-    if len(s) == 1 and s != "\x1a":
-        return str_width(s)
-    length = sum(str_width(i) for i in s)
-    # remove lengths of any escape sequences
-    sequence = ANSI_ESCAPE_SEQUENCE.findall(s)
-    ctrl_z_cnt = s.count("\x1a")
-    return length - sum(len(i) for i in sequence) + ctrl_z_cnt
 
 
 def unbracket(s: str, including_content: bool = False) -> str:

@@ -1,12 +1,13 @@
 from code import InteractiveConsole
 from functools import partial
+from traceback import ANSI_ESCAPE_SEQUENCE
 from typing import Iterable
 from unittest.mock import MagicMock
 
 from _pyrepl.console import Console, Event
 from _pyrepl.readline import ReadlineAlikeReader, ReadlineConfig
 from _pyrepl.simple_interact import _strip_final_indent
-from _pyrepl.utils import unbracket, ANSI_ESCAPE_SEQUENCE
+from _pyrepl.utils import unbracket
 
 
 class ScreenEqualMixin:
