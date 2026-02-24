@@ -213,13 +213,7 @@ def _get_default_tempdir(dirlist=None):
             except FileExistsError:
                 pass
             except PermissionError:
-                # On Posix, this exception is raised when the user has no
-                # write access to the parent directory.
-                # On Windows, it is also raised when a directory with
-                # the chosen name already exists, or if the parent directory
-                # is not a directory.
-                # We cannot distinguish between "directory-exists-error" and
-                # "access-denied-error".
+                # See the comment in mkdtemp().
                 if _os.name == 'nt' and _os.path.isdir(dir):
                     continue
                 break   # no point trying more names in this directory
@@ -262,13 +256,7 @@ def _mkstemp_inner(dir, pre, suf, flags, output_type):
         except FileExistsError:
             continue    # try again
         except PermissionError:
-            # On Posix, this exception is raised when the user has no
-            # write access to the parent directory.
-            # On Windows, it is also raised when a directory with
-            # the chosen name already exists, or if the parent directory
-            # is not a directory.
-            # We cannot distinguish between "directory-exists-error" and
-            # "access-denied-error".
+            # See the comment in mkdtemp().
             if _os.name == 'nt' and _os.path.isdir(dir) and seq < TMP_MAX - 1:
                 continue
             else:
