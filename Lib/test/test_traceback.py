@@ -5209,8 +5209,17 @@ class MiscTest(unittest.TestCase):
         if shlib_suffix := sysconfig.get_config_var('SHLIB_SUFFIX'):
             self.assertEqual(last_extension_suffix, shlib_suffix)
         else:
-            dot, *extensions = last_extension_suffix.split('.')
-            self.assertEqual(dot, '')  # sanity check
+            before_dot, *extensions = last_extension_suffix.split('.')
+            expected_prefixes = ['']
+            if os.name == 'nt':
+                # Windows puts the debug tag in the module file stem (eg. foo_d.pyd)
+                expected_prefixes.append('_d')
+            self.assertIn(before_dot, expected_prefixes, msg=(
+                f'Unexpected prefix {before_dot!r} in extension module '
+                f'suffix {last_extension_suffix!r}. '
+                'traceback._find_incompatible_extension_module needs to be '
+                'updated to take this into account!'
+            ))
             # if SHLIB_SUFFIX is not define, we assume the native
             # shared library suffix only contains one extension
             # (eg. '.so', bad eg. '.cpython-315-x86_64-linux-gnu.so')
