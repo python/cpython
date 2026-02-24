@@ -8,6 +8,8 @@ import textwrap
 import threading
 import types
 import unittest
+import tempfile
+import os
 
 try:
     import _testcapi
@@ -391,6 +393,17 @@ class DunderLazyImportTests(unittest.TestCase):
         import test.test_import.data.lazy_imports.dunder_lazy_import_used
         self.assertIn("test.test_import.data.lazy_imports.basic2", sys.modules)
 
+    def test_dunder_lazy_import_invalid_arguments(self):
+        """__lazy_import__ should reject invalid arguments."""
+        for invalid_name in (b"", 123, None):
+            with self.assertRaises(TypeError):
+                __lazy_import__(invalid_name)
+
+        with self.assertRaises(ValueError):
+            __lazy_import__("sys", level=-1)
+        with self.assertRaises(TypeError):
+            __lazy_import__("sys", globals=1)
+
     def test_dunder_lazy_import_builtins(self):
         """__lazy_import__ should use module's __builtins__ for __import__."""
         from test.test_import.data.lazy_imports import dunder_lazy_import_builtins
@@ -597,6 +610,39 @@ class ErrorHandlingTests(unittest.TestCase):
         )
         self.assertEqual(result.returncode, 0, f"stdout: {result.stdout}, stderr: {result.stderr}")
         self.assertIn("OK", result.stdout)
+
+    def test_circular_lazy_import_does_not_crash_for_gh_144727(self):
+        with tempfile.TemporaryDirectory() as tmpdir:
+            a_path = os.path.join(tmpdir, "a.py")
+            b_path = os.path.join(tmpdir, "b.py")
+
+            with open(a_path, "w") as f:
+                f.write(textwrap.dedent("""\
+                    lazy import b
+
+                    def something():
+                        b.hello()
+
+                    something()
+                """))
+
+            with open(b_path, "w") as f:
+                f.write(textwrap.dedent("""\
+                    lazy import a
+
+                    def hello():
+                        print(a)
+                """))
+
+            result = subprocess.run(
+                [sys.executable, a_path],
+                capture_output=True,
+                text=True,
+                cwd=tmpdir,
+            )
+            # Should get a proper Python error, not a crash
+            self.assertEqual(result.returncode, 1)
+            self.assertIn("Error", result.stderr)
 
 
 class GlobalsAndDictTests(unittest.TestCase):
