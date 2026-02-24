@@ -19,12 +19,18 @@ class UserListTest(list_tests.CommonTest):
     def test_data(self):
         u = UserList()
         self.assertEqual(u.data, [])
+        self.assertIs(type(u.data), list)
         a = [1, 2]
         u = UserList(a)
         self.assertEqual(u.data, a)
         self.assertIsNot(u.data, a)
+        self.assertIs(type(u.data), list)
+        u = UserList(u)
+        self.assertEqual(u.data, a)
+        self.assertIs(type(u.data), list)
         u = UserList("spam")
         self.assertEqual(u.data, list("spam"))
+        self.assertIs(type(u.data), list)
 
     def test_getslice(self):
         super().test_getslice()

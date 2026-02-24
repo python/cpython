@@ -49,6 +49,17 @@ class UserStringTest(
         # we don't fix the arguments, because UserString can't cope with it
         getattr(object, methodname)(*args)
 
+    def test_data(self):
+        u = UserString("spam")
+        self.assertEqual(u.data, "spam")
+        self.assertIs(type(u.data), str)
+        u = UserString(u)
+        self.assertEqual(u.data, "spam")
+        self.assertIs(type(u.data), str)
+        u = UserString(42)
+        self.assertEqual(u.data, "42")
+        self.assertIs(type(u.data), str)
+
     def test_mixed_add(self):
         u = UserString("spam") + "eggs"
         self.assertEqual(u, "spameggs")

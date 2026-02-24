@@ -168,14 +168,21 @@ class UserDictTest(mapping_tests.TestHashMappingProtocol):
     def test_data(self):
         u = UserDict()
         self.assertEqual(u.data, {})
+        self.assertIs(type(u.data), dict)
         d = {'a': 1, 'b': 2}
         u = UserDict(d)
         self.assertEqual(u.data, d)
         self.assertIsNot(u.data, d)
+        self.assertIs(type(u.data), dict)
+        u = UserDict(u)
+        self.assertEqual(u.data, d)
+        self.assertIs(type(u.data), dict)
         u = UserDict([('a', 1), ('b', 2)])
         self.assertEqual(u.data, d)
+        self.assertIs(type(u.data), dict)
         u = UserDict(a=1, b=2)
         self.assertEqual(u.data, d)
+        self.assertIs(type(u.data), dict)
 
     def test_update(self):
         for kw in 'self', 'dict', 'other', 'iterable':
