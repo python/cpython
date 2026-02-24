@@ -1612,9 +1612,8 @@ are always available.  They are listed here in alphabetical order.
 
    When *pretty* is given, it signals that the objects should be "pretty
    printed".  *pretty* can be ``True`` or a callable object taking a single
-   argument, the object to pretty, and returning a formatted representation of
-   the object.  When *pretty* is ``True``, then it calls
-   :meth:`pprint.PrettyPrinter.pformat` to get the formatted representation.
+   argument, the object to format..  When *pretty* is ``True``, it calls
+   :c:func:`PyObject_Pretty` to get the formatted representation.
 
    The *file* argument must be an object with a ``write(string)`` method; if it
    is not present or ``None``, :data:`sys.stdout` will be used.  Since printed
