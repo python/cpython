@@ -4,9 +4,6 @@
 .. module:: json
    :synopsis: Encode and decode the JSON format.
 
-.. moduleauthor:: Bob Ippolito <bob@redivi.com>
-.. sectionauthor:: Bob Ippolito <bob@redivi.com>
-
 **Source code:** :source:`Lib/json/__init__.py`
 
 --------------

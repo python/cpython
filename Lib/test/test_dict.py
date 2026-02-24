@@ -1731,7 +1731,21 @@ class FrozenDict(frozendict):
     pass
 
 
+class FrozenDictSlots(frozendict):
+    __slots__ = ('slot_attr',)
+
+
 class FrozenDictTests(unittest.TestCase):
+    def test_constructor(self):
+        # frozendict.__init__() has no effect
+        d = frozendict(a=1, b=2, c=3)
+        d.__init__(x=1)
+        self.assertEqual(d, frozendict(a=1, b=2, c=3))
+
+        # dict constructor cannot be used on frozendict
+        with self.assertRaises(TypeError):
+            dict.__init__(d, x=1)
+
     def test_copy(self):
         d = frozendict(x=1, y=2)
         d2 = d.copy()
@@ -1767,13 +1781,134 @@ class FrozenDictTests(unittest.TestCase):
         self.assertEqual(copy, frozendict({'x': 1}))
 
     def test_repr(self):
+        d = frozendict()
+        self.assertEqual(repr(d), "frozendict()")
+
         d = frozendict(x=1, y=2)
         self.assertEqual(repr(d), "frozendict({'x': 1, 'y': 2})")
 
-        class MyFrozenDict(frozendict):
+        d = FrozenDict(x=1, y=2)
+        self.assertEqual(repr(d), "FrozenDict({'x': 1, 'y': 2})")
+
+    def test_hash(self):
+        # hash() doesn't rely on the items order
+        self.assertEqual(hash(frozendict(x=1, y=2)),
+                         hash(frozendict(y=2, x=1)))
+
+        fd = frozendict(x=[1], y=[2])
+        with self.assertRaisesRegex(TypeError, "unhashable type: 'list'"):
+            hash(fd)
+
+    def test_fromkeys(self):
+        self.assertEqual(frozendict.fromkeys('abc'),
+                         frozendict(a=None, b=None, c=None))
+
+        # Subclass which overrides the constructor
+        created = frozendict(x=1)
+        class FrozenDictSubclass(frozendict):
+            def __new__(self):
+                return created
+
+        fd = FrozenDictSubclass.fromkeys("abc")
+        self.assertEqual(fd, frozendict(x=1, a=None, b=None, c=None))
+        self.assertEqual(type(fd), FrozenDictSubclass)
+        self.assertEqual(created, frozendict(x=1))
+
+        fd = FrozenDictSubclass.fromkeys(frozendict(y=2))
+        self.assertEqual(fd, frozendict(x=1, y=None))
+        self.assertEqual(type(fd), FrozenDictSubclass)
+        self.assertEqual(created, frozendict(x=1))
+
+        # Subclass which doesn't override the constructor
+        class FrozenDictSubclass2(frozendict):
             pass
-        d = MyFrozenDict(x=1, y=2)
-        self.assertEqual(repr(d), "MyFrozenDict({'x': 1, 'y': 2})")
+
+        fd = FrozenDictSubclass2.fromkeys("abc")
+        self.assertEqual(fd, frozendict(a=None, b=None, c=None))
+        self.assertEqual(type(fd), FrozenDictSubclass2)
+
+        # Dict subclass which overrides the constructor
+        class DictSubclass(dict):
+            def __new__(self):
+                return created
+
+        fd = DictSubclass.fromkeys("abc")
+        self.assertEqual(fd, frozendict(x=1, a=None, b=None, c=None))
+        self.assertEqual(type(fd), DictSubclass)
+        self.assertEqual(created, frozendict(x=1))
+
+    def test_pickle(self):
+        for proto in range(pickle.HIGHEST_PROTOCOL + 1):
+            for fd in (
+                frozendict(),
+                frozendict(x=1, y=2),
+                FrozenDict(x=1, y=2),
+                FrozenDictSlots(x=1, y=2),
+            ):
+                if type(fd) == FrozenDict:
+                    fd.attr = 123
+                if type(fd) == FrozenDictSlots:
+                    fd.slot_attr = 456
+                with self.subTest(fd=fd, proto=proto):
+                    if proto >= 2:
+                        p = pickle.dumps(fd, proto)
+                        fd2 = pickle.loads(p)
+                        self.assertEqual(fd2, fd)
+                        self.assertEqual(type(fd2), type(fd))
+                        if type(fd) == FrozenDict:
+                            self.assertEqual(fd2.attr, 123)
+                        if type(fd) == FrozenDictSlots:
+                            self.assertEqual(fd2.slot_attr, 456)
+                    else:
+                        # protocol 0 and 1 don't support frozendict
+                        with self.assertRaises(TypeError):
+                            pickle.dumps(fd, proto)
+
+    def test_pickle_iter(self):
+        fd = frozendict(c=1, b=2, a=3, d=4, e=5, f=6)
+        for method_name in (None, 'keys', 'values', 'items'):
+            if method_name is not None:
+                meth = getattr(fd, method_name)
+            else:
+                meth = lambda: fd
+            expected = list(meth())[1:]
+            for proto in range(pickle.HIGHEST_PROTOCOL + 1):
+                with self.subTest(method_name=method_name, protocol=proto):
+                    it = iter(meth())
+                    next(it)
+                    p = pickle.dumps(it, proto)
+                    unpickled = pickle.loads(p)
+                    self.assertEqual(list(unpickled), expected)
+                    self.assertEqual(list(it), expected)
+
+    def test_unhashable_key(self):
+        d = frozendict(a=1)
+        key = [1, 2, 3]
+
+        def check_unhashable_key():
+            msg = "cannot use 'list' as a frozendict key (unhashable type: 'list')"
+            return self.assertRaisesRegex(TypeError, re.escape(msg))
+
+        with check_unhashable_key():
+            key in d
+        with check_unhashable_key():
+            d[key]
+        with check_unhashable_key():
+            d.get(key)
+
+        # Only TypeError exception is overridden,
+        # other exceptions are left unchanged.
+        class HashError:
+            def __hash__(self):
+                raise KeyError('error')
+
+        key2 = HashError()
+        with self.assertRaises(KeyError):
+            key2 in d
+        with self.assertRaises(KeyError):
+            d[key2]
+        with self.assertRaises(KeyError):
+            d.get(key2)
 
 
 if __name__ == "__main__":
