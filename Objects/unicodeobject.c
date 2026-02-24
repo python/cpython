@@ -13090,8 +13090,6 @@ unicode_maketrans_from_dict(PyObject *x, PyObject *newdict)
     PyObject *key, *value;
     Py_ssize_t i = 0;
     int res;
-    int ret = -1;
-    Py_BEGIN_CRITICAL_SECTION(x);
     while (PyDict_Next(x, &i, &key, &value)) {
         if (PyUnicode_Check(key)) {
             PyObject *newkey;
@@ -13100,33 +13098,29 @@ unicode_maketrans_from_dict(PyObject *x, PyObject *newdict)
             if (PyUnicode_GET_LENGTH(key) != 1) {
                 PyErr_SetString(PyExc_ValueError, "string keys in translate"
                                 "table must be of length 1");
-                break;
+                return -1;
             }
             kind = PyUnicode_KIND(key);
             data = PyUnicode_DATA(key);
             newkey = PyLong_FromLong(PyUnicode_READ(kind, data, 0));
             if (!newkey)
-                break;
+                return -1;
             res = PyDict_SetItem(newdict, newkey, value);
             Py_DECREF(newkey);
             if (res < 0)
-                break;
+                return -1;
         }
         else if (PyLong_Check(key)) {
             if (PyDict_SetItem(newdict, key, value) < 0)
-                break;
+                return -1;
         }
         else {
             PyErr_SetString(PyExc_TypeError, "keys in translate table must"
                             "be strings or integers");
-            break;
+            return -1;
         }
     }
-    if (!PyErr_Occurred()) {
-        ret = 0;
-    }
-    Py_END_CRITICAL_SECTION();
-    return ret;
+    return 0;
 }
 
 static PyObject *
@@ -13197,7 +13191,11 @@ unicode_maketrans_impl(PyObject *x, PyObject *y, PyObject *z)
             goto err;
         }
         /* copy entries into the new dict, converting string keys to int keys */
-        if(unicode_maketrans_from_dict(x, new) < 0)
+        int errcode;
+        Py_BEGIN_CRITICAL_SECTION(x);
+        errcode = unicode_maketrans_from_dict(x, new);
+        Py_END_CRITICAL_SECTION();
+        if (errcode < 0)
             goto err;
     }
     return new;
