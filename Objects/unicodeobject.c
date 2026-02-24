@@ -13090,6 +13090,7 @@ unicode_maketrans_from_dict(PyObject *x, PyObject *newdict)
     PyObject *key, *value;
     Py_ssize_t i = 0;
     int res;
+    int ret = -1;  /* assume failure */
 
     Py_BEGIN_CRITICAL_SECTION(x);
     while (PyDict_Next(x, &i, &key, &value)) {
@@ -13098,35 +13099,34 @@ unicode_maketrans_from_dict(PyObject *x, PyObject *newdict)
             int kind;
             const void *data;
             if (PyUnicode_GET_LENGTH(key) != 1) {
-                PyErr_SetString(PyExc_ValueError, "string keys in translate "
+                PyErr_SetString(PyExc_ValueError, "string keys in translate"
                                 "table must be of length 1");
-                goto error;
+                goto done;
             }
             kind = PyUnicode_KIND(key);
             data = PyUnicode_DATA(key);
             newkey = PyLong_FromLong(PyUnicode_READ(kind, data, 0));
             if (!newkey)
-                goto error;
+                goto done;
             res = PyDict_SetItem(newdict, newkey, value);
             Py_DECREF(newkey);
-            if(res < 0)
-                goto error;
+            if (res < 0)
+                goto done;
         }
         else if (PyLong_Check(key)) {
             if (PyDict_SetItem(newdict, key, value) < 0)
-                goto error;
+                goto done;
         }
         else {
-            PyErr_SetString(PyExc_TypeError, "keys in translate table must "
+            PyErr_SetString(PyExc_TypeError, "keys in translate table must"
                             "be strings or integers");
-            goto error;
+            goto done;
         }
     }
+    ret = 0;
+  done:
     Py_END_CRITICAL_SECTION();
-    return 0;
-  error:
-    Py_END_CRITICAL_SECTION();
-    return -1;
+    return ret;
 }
 
 static PyObject *
