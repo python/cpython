@@ -1356,24 +1356,18 @@ dummy_func(void) {
     }
 
     op(_GUARD_NOS_ANY_DICT, (nos, unused -- nos, unused)) {
-        if (sym_matches_type(nos, &PyDict_Type)) {
+        PyTypeObject *tp = sym_get_type(nos);
+        if (tp == &PyDict_Type || tp == &PyFrozenDict_Type) {
             ADD_OP(_NOP, 0, 0);
-            sym_set_type(nos, &PyDict_Type);
-        }
-        else if (sym_matches_type(nos, &PyFrozenDict_Type)) {
-            ADD_OP(_NOP, 0, 0);
-            sym_set_type(nos, &PyFrozenDict_Type);
+            sym_set_type(nos, tp);
         }
     }
 
     op(_GUARD_TOS_ANY_DICT, (tos -- tos)) {
-        if (sym_matches_type(tos, &PyDict_Type)) {
+        PyTypeObject *tp = sym_get_type(tos);
+        if (tp == &PyDict_Type || tp == &PyFrozenDict_Type) {
             ADD_OP(_NOP, 0, 0);
-            sym_set_type(tos, &PyDict_Type);
-        }
-        else if (sym_matches_type(tos, &PyFrozenDict_Type)) {
-            ADD_OP(_NOP, 0, 0);
-            sym_set_type(tos, &PyFrozenDict_Type);
+            sym_set_type(tos, tp);
         }
     }
 
