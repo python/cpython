@@ -14,6 +14,7 @@ import tempfile
 import random
 import string
 import importlib.machinery
+import sysconfig
 from test import support
 import shutil
 from test.support import (Error, captured_output, cpython_only, ALWAYS_EQ,
@@ -5195,6 +5196,7 @@ class MiscTest(unittest.TestCase):
         else:
             self.fail("ModuleNotFoundError was not raised")
 
+    @unittest.skipIf(not importlib.machinery.EXTENSION_SUFFIXES, 'Platform does not support extension modules')
     def test_find_incompatible_extension_modules(self):
         """_find_incompatible_extension_modules assumes the last extension in
         importlib.machinery.EXTENSION_SUFFIXES (defined in Python/dynload_*.c)
@@ -5202,8 +5204,21 @@ class MiscTest(unittest.TestCase):
 
         This test exists to make sure that assumption is correct.
         """
-        if importlib.machinery.EXTENSION_SUFFIXES:
-            self.assertEqual(len(importlib.machinery.EXTENSION_SUFFIXES[-1].split('.')), 2)
+        last_extension_suffix = importlib.machinery.EXTENSION_SUFFIXES[-1]
+        if shlib_suffix := sysconfig.get_config_var('SHLIB_SUFFIX'):
+            self.assertEqual(last_extension_suffix, shlib_suffix)
+        else:
+            dot, *extensions = last_extension_suffix.split('.')
+            self.assertEqual(dot, '')  # sanity check
+            # if SHLIB_SUFFIX is not define, we assume the native
+            # shared library suffix only contains one extension
+            # (eg. '.so', bad eg. '.cpython-315-x86_64-linux-gnu.so')
+            self.assertEqual(len(extensions), 1, msg=(
+                'The last suffix in importlib.machinery.EXTENSION_SUFFIXES '
+                'contains more than one extension, so it is probably different '
+                'than SHLIB_SUFFIX. It probably contains an ABI tag! '
+                'If this is a false positive, define SHLIB_SUFFIX in sysconfig.'
+            ))
 
 
 class TestColorizedTraceback(unittest.TestCase):
