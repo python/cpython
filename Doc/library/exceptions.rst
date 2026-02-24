@@ -1032,7 +1032,7 @@ their subgroups based on the types of the contained exceptions.
 
    .. method:: derive(excs)
 
-      Returns an exception group with the same :attr:`message`, but which
+      Returns an exception group with the same :attr:`message` which
       wraps the exceptions in ``excs``.
 
       This method is used by :meth:`subgroup` and :meth:`split`, which
