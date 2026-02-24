@@ -39,13 +39,13 @@ extensions = [
     'sphinx.ext.coverage',
     'sphinx.ext.doctest',
     'sphinx.ext.extlinks',
-    'linklint.ext',
 ]
 
 # Skip if downstream redistributors haven't installed them
 _OPTIONAL_EXTENSIONS = (
     'notfound.extension',
     'sphinxext.opengraph',
+    'linklint.ext',
 )
 for optional_ext in _OPTIONAL_EXTENSIONS:
     try:
