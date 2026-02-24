@@ -4,8 +4,6 @@
 .. module:: ctypes
    :synopsis: A foreign function library for Python.
 
-.. moduleauthor:: Thomas Heller <theller@python.net>
-
 **Source code:** :source:`Lib/ctypes`
 
 --------------

@@ -4,9 +4,6 @@
 .. module:: mailbox
    :synopsis: Manipulate mailboxes in various formats
 
-.. moduleauthor:: Gregory K. Johnson <gkj@gregorykjohnson.com>
-.. sectionauthor:: Gregory K. Johnson <gkj@gregorykjohnson.com>
-
 **Source code:** :source:`Lib/mailbox.py`
 
 --------------

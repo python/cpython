@@ -2228,11 +2228,11 @@ class GeneralModuleTests(unittest.TestCase):
         class Mut:
             def __index__(self):
                 seq.clear()
-                return 0
+                return socket.SCM_RIGHTS
 
         seq = [
-            (socket.SOL_SOCKET, Mut(), b'x'),
-            (socket.SOL_SOCKET, 0, b'x'),
+            (socket.SOL_SOCKET, Mut(), b'xxxx'),
+            (socket.SOL_SOCKET, socket.SCM_RIGHTS, b'xxxx'),
         ]
 
         left, right = socket.socketpair()
