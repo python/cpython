@@ -13163,31 +13163,27 @@ unicode_maketrans_impl(PyObject *x, PyObject *y, PyObject *z)
                 if (PyUnicode_GET_LENGTH(key) != 1) {
                     PyErr_SetString(PyExc_ValueError, "string keys in translate "
                                     "table must be of length 1");
-                    goto err_in_cs;
+                    return NULL;
                 }
                 kind = PyUnicode_KIND(key);
                 data = PyUnicode_DATA(key);
                 newkey = PyLong_FromLong(PyUnicode_READ(kind, data, 0));
                 if (!newkey)
-                    goto err_in_cs;
+                    return NULL;
                 res = PyDict_SetItem(new, newkey, value);
                 Py_DECREF(newkey);
                 if (res < 0)
-                    goto err_in_cs;
+                    return NULL;
             } else if (PyLong_Check(key)) {
                 /* just keep integer keys */
                 if (PyDict_SetItem(new, key, value) < 0)
-                    goto err_in_cs;
+                    return NULL;
             } else {
                 PyErr_SetString(PyExc_TypeError, "keys in translate table must "
                                 "be strings or integers");
-                goto err_in_cs;
+                return NULL;
             }
         }
-        goto done;
-      err_in_cs:
-        Py_CLEAR(new);
-      done:
         Py_END_CRITICAL_SECTION();
         return new;
     }
