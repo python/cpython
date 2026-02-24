@@ -5235,8 +5235,8 @@ class MiscTest(unittest.TestCase):
         untagged_suffix = importlib.machinery.EXTENSION_SUFFIXES[-1]
         with os_helper.temp_dir() as tmp:
             # create a module with a incompatible ABI tag
-            incompatible_module = os.path.join(tmp, f'foo.some-abi{untagged_suffix}')
-            open(incompatible_module, "wb").close()
+            incompatible_module = f'foo.some-abi{untagged_suffix}'
+            open(os.path.join(tmp, incompatible_module), "wb").close()
             # try importing it
             code = f'''
                 import sys
@@ -5244,8 +5244,8 @@ class MiscTest(unittest.TestCase):
                 import foo
             '''
             _, _, stderr = assert_python_failure('-c', code, __cwd=tmp)
-        hint = b'Although a module with this name was found for a different Python version (some-abi).'
-        self.assertIn(hint, stderr)
+        hint = f'Although a module with this name was found for a different Python version ({incompatible_module}).'
+        self.assertIn(hint, stderr.decode())
 
 
 class TestColorizedTraceback(unittest.TestCase):

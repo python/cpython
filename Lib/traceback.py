@@ -1915,4 +1915,4 @@ def _find_incompatible_extension_module(module_name):
 
     for entry in traversable.iterdir():
         if entry.name.startswith(child + '.') and entry.name.endswith(untagged_suffix):
-            return entry.name.removeprefix(child + '.').removesuffix(untagged_suffix)
+            return entry.name
