@@ -58,9 +58,6 @@ if hasattr(_os, 'O_BINARY'):
     _bin_openflags |= _os.O_BINARY
 
 # This is more than enough.
-# Each name contains more than 40 random bits.  Even with a million of
-# temporary files, a chance of conflict is less than 1 per million,
-# and with 20 attempts it is less than 1e-120.
 # Each name contains over 40 random bits.  Even with a million temporary
 # files, the chance of a conflict is less than 1 in a million, and with
 # 20 attempts, it is less than 1e-120.
