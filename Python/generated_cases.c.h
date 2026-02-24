@@ -638,7 +638,7 @@
             _PyStackRef ds;
             _PyStackRef ss;
             _PyStackRef value;
-            // _GUARD_NOS_DICT
+            // _GUARD_NOS_ANY_DICT
             {
                 nos = stack_pointer[-2];
                 PyObject *o = PyStackRef_AsPyObjectBorrow(nos);
@@ -5135,7 +5135,7 @@
             _PyStackRef l;
             _PyStackRef r;
             _PyStackRef value;
-            // _GUARD_TOS_DICT
+            // _GUARD_TOS_ANY_DICT
             {
                 tos = stack_pointer[-1];
                 PyObject *o = PyStackRef_AsPyObjectBorrow(tos);
@@ -11480,7 +11480,7 @@
             {
                 nos = stack_pointer[-2];
                 PyObject *o = PyStackRef_AsPyObjectBorrow(nos);
-                if (!PyAnyDict_CheckExact(o)) {
+                if (!PyDict_CheckExact(o)) {
                     UPDATE_MISS_STATS(STORE_SUBSCR);
                     assert(_PyOpcode_Deopt[opcode] == (STORE_SUBSCR));
                     JUMP_TO_PREDICTED(STORE_SUBSCR);
