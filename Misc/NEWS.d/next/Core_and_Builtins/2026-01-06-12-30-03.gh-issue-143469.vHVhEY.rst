@@ -1,1 +1,0 @@
-Enable :opcode:`!LOAD_ATTR_MODULE` specialization even if :func:`!__getattr__` is defined in module.

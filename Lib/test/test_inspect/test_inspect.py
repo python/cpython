@@ -2804,6 +2804,30 @@ class TestGetGeneratorState(unittest.TestCase):
         # Running after the first yield
         next(self.generator)
 
+    def test_types_coroutine_wrapper_state(self):
+        def gen():
+            yield 1
+            yield 2
+
+        @types.coroutine
+        def wrapped_generator_coro():
+            # return a generator iterator so types.coroutine
+            # wraps it into types._GeneratorWrapper.
+            return gen()
+
+        g = wrapped_generator_coro()
+        self.addCleanup(g.close)
+        self.assertIs(type(g), types._GeneratorWrapper)
+
+        # _GeneratorWrapper must provide gi_suspended/cr_suspended
+        # so inspect.get*state() doesn't raise AttributeError.
+        self.assertEqual(inspect.getgeneratorstate(g), inspect.GEN_CREATED)
+        self.assertEqual(inspect.getcoroutinestate(g), inspect.CORO_CREATED)
+
+        next(g)
+        self.assertEqual(inspect.getgeneratorstate(g), inspect.GEN_SUSPENDED)
+        self.assertEqual(inspect.getcoroutinestate(g), inspect.CORO_SUSPENDED)
+
     def test_easy_debugging(self):
         # repr() and str() of a generator state should contain the state name
         names = 'GEN_CREATED GEN_RUNNING GEN_SUSPENDED GEN_CLOSED'.split()
@@ -6103,7 +6127,8 @@ class TestSignatureDefinitions(unittest.TestCase):
                 self.assertRaises(ValueError, inspect.signature, getattr(cls, name))
 
     def test_builtins_have_signatures(self):
-        no_signature = {'type', 'super', 'bytearray', 'bytes', 'dict', 'int', 'str'}
+        no_signature = {'type', 'super', 'bytearray', 'bytes',
+                        'dict', 'frozendict', 'int', 'str'}
         # These need PEP 457 groups
         needs_groups = {"range", "slice", "dir", "getattr",
                         "next", "iter", "vars"}
@@ -6242,8 +6267,7 @@ class TestSignatureDefinitions(unittest.TestCase):
     def test_os_module_has_signatures(self):
         unsupported_signature = {'chmod', 'utime'}
         unsupported_signature |= {name for name in
-            ['get_terminal_size', 'link', 'posix_spawn', 'posix_spawnp',
-             'register_at_fork', 'startfile']
+            ['get_terminal_size', 'link', 'register_at_fork', 'startfile']
             if hasattr(os, name)}
         self._test_module_has_signatures(os, unsupported_signature=unsupported_signature)
 
@@ -6253,7 +6277,10 @@ class TestSignatureDefinitions(unittest.TestCase):
 
     def test_re_module_has_signatures(self):
         import re
-        methods_no_signature = {'Match': {'group'}}
+        methods_no_signature = {
+                'Match': {'group'},
+                'Pattern': {'match'},  # It is now an alias for prefixmatch
+        }
         self._test_module_has_signatures(re,
                 methods_no_signature=methods_no_signature,
                 good_exceptions={'error', 'PatternError'})
@@ -6265,6 +6292,10 @@ class TestSignatureDefinitions(unittest.TestCase):
     def test_stat_module_has_signatures(self):
         import stat
         self._test_module_has_signatures(stat)
+
+    def test_struct_module_has_signatures(self):
+        import struct
+        self._test_module_has_signatures(struct)
 
     def test_string_module_has_signatures(self):
         import string
@@ -6499,7 +6530,8 @@ class TestMain(unittest.TestCase):
         self.assertIn(module.__name__, output)
         self.assertIn(module.__spec__.origin, output)
         self.assertIn(module.__file__, output)
-        self.assertIn(module.__spec__.cached, output)
+        if module.__spec__.cached:
+            self.assertIn(module.__spec__.cached, output)
         self.assertEqual(err, b'')
 
 

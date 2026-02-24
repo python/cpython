@@ -4,10 +4,6 @@
 .. module:: unicodedata
    :synopsis: Access the Unicode Database.
 
-.. moduleauthor:: Marc-André Lemburg <mal@lemburg.com>
-.. sectionauthor:: Marc-André Lemburg <mal@lemburg.com>
-.. sectionauthor:: Martin v. Löwis <martin@v.loewis.de>
-
 .. index::
    single: Unicode
    single: character
@@ -134,6 +130,18 @@ following functions:
    `Unicode Standard Annex #11 <https://www.unicode.org/reports/tr11/>`_.
 
 
+.. function:: block(chr, /)
+
+   Returns the `block
+   <https://www.unicode.org/versions/Unicode17.0.0/core-spec/chapter-3/#G64189>`_
+   assigned to the character *chr*. For example::
+
+      >>> unicodedata.block('S')
+      'Basic Latin'
+
+   .. versionadded:: next
+
+
 .. function:: mirrored(chr, /)
 
    Returns the mirrored property assigned to the character *chr* as
@@ -184,6 +192,28 @@ following functions:
       '0041 0303'
 
 
+.. function:: grapheme_cluster_break(chr, /)
+
+   Returns the Grapheme_Cluster_Break property assigned to the character.
+
+   .. versionadded:: 3.15
+
+
+.. function:: indic_conjunct_break(chr, /)
+
+   Returns the Indic_Conjunct_Break property assigned to the character.
+
+   .. versionadded:: 3.15
+
+
+.. function:: extended_pictographic(chr, /)
+
+   Returns ``True`` if the character has the Extended_Pictographic property,
+   ``False`` otherwise.
+
+   .. versionadded:: 3.15
+
+
 .. function:: normalize(form, unistr, /)
 
    Return the normal form *form* for the Unicode string *unistr*. Valid values for
@@ -225,6 +255,24 @@ following functions:
    .. versionadded:: 3.8
 
 
+.. function:: iter_graphemes(unistr, start=0, end=sys.maxsize, /)
+
+   Returns an iterator to iterate over grapheme clusters.
+   With optional *start*, iteration begins at that position.
+   With optional *end*, iteration stops at that position.
+
+   Converting an emitted item to string returns a substring corresponding to
+   the grapheme cluster.
+   Its ``start`` and ``end`` attributes denote the start and end of
+   the grapheme cluster.
+
+   It uses extended grapheme cluster rules defined by Unicode
+   Standard Annex #29, `"Unicode Text Segmentation"
+   <https://www.unicode.org/reports/tr29/>`_.
+
+   .. versionadded:: 3.15
+
+
 In addition, the module exposes the following constant:
 
 .. data:: unidata_version
@@ -234,7 +282,7 @@ In addition, the module exposes the following constant:
 
 .. data:: ucd_3_2_0
 
-   This is an object that has the same methods as the entire module, but uses the
+   This is an object that has most of the methods of the entire module, but uses the
    Unicode database version 3.2 instead, for applications that require this
    specific version of the Unicode database (such as IDNA).
 

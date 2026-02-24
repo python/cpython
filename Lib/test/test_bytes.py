@@ -584,6 +584,37 @@ class BaseBytesTest:
         self.assertEqual(six_bytes.hex(':', -6), '0306090c0f12')
         self.assertEqual(six_bytes.hex(' ', -95), '0306090c0f12')
 
+    def test_hex_simd_boundaries(self):
+        # Test lengths around the SIMD threshold (16 bytes).
+        # SIMD processes 16 bytes at a time; smaller inputs use scalar code.
+        for length in (14, 15, 16, 17, 31, 32, 33, 64, 65):
+            data = self.type2test(bytes(range(length)))
+            expected = ''.join(f'{b:02x}' for b in range(length))
+            with self.subTest(length=length):
+                self.assertEqual(data.hex(), expected)
+
+    def test_hex_nibble_boundaries(self):
+        # Test the nibble value boundary at 9/10 (where '9' becomes 'a').
+        # SIMD uses signed comparison for efficiency; verify correctness
+        # at this boundary for various nibble combinations.
+        boundary_bytes = self.type2test(bytes([
+            0x09,  # both nibbles: 0, 9
+            0x0a,  # both nibbles: 0, 10
+            0x90,  # both nibbles: 9, 0
+            0x99,  # both nibbles: 9, 9 (max all-digit)
+            0x9a,  # both nibbles: 9, 10
+            0xa0,  # both nibbles: 10, 0
+            0xa9,  # both nibbles: 10, 9
+            0xaa,  # both nibbles: 10, 10 (min all-letter)
+            0x00,  # min value
+            0xff,  # max value
+        ]))
+        self.assertEqual(boundary_bytes.hex(), '090a90999aa0a9aa00ff')
+
+        # Repeat with 16+ bytes to exercise SIMD path
+        simd_boundary = self.type2test(boundary_bytes * 2)
+        self.assertEqual(simd_boundary.hex(), '090a90999aa0a9aa00ff' * 2)
+
     def test_join(self):
         self.assertEqual(self.type2test(b"").join([]), b"")
         self.assertEqual(self.type2test(b"").join([b""]), b"")
@@ -792,16 +823,16 @@ class BaseBytesTest:
         pi = PseudoFloat(3.1415)
 
         exceptions_params = [
-            ('%x format: an integer is required, not float', b'%x', 3.14),
-            ('%X format: an integer is required, not float', b'%X', 2.11),
-            ('%o format: an integer is required, not float', b'%o', 1.79),
-            ('%x format: an integer is required, not PseudoFloat', b'%x', pi),
-            ('%x format: an integer is required, not complex', b'%x', 3j),
-            ('%X format: an integer is required, not complex', b'%X', 2j),
-            ('%o format: an integer is required, not complex', b'%o', 1j),
-            ('%u format: a real number is required, not complex', b'%u', 3j),
-            ('%i format: a real number is required, not complex', b'%i', 2j),
-            ('%d format: a real number is required, not complex', b'%d', 2j),
+            ('%x requires an integer, not float', b'%x', 3.14),
+            ('%X requires an integer, not float', b'%X', 2.11),
+            ('%o requires an integer, not float', b'%o', 1.79),
+            (r'%x requires an integer, not .*\.PseudoFloat', b'%x', pi),
+            ('%x requires an integer, not complex', b'%x', 3j),
+            ('%X requires an integer, not complex', b'%X', 2j),
+            ('%o requires an integer, not complex', b'%o', 1j),
+            ('%u requires a real number, not complex', b'%u', 3j),
+            ('%i requires a real number, not complex', b'%i', 2j),
+            ('%d requires a real number, not complex', b'%d', 2j),
             (
                 r'%c requires an integer in range\(256\)'
                 r' or a single byte, not .*\.PseudoFloat',
@@ -810,7 +841,7 @@ class BaseBytesTest:
         ]
 
         for msg, format_bytes, value in exceptions_params:
-            with self.assertRaisesRegex(TypeError, msg):
+            with self.assertRaisesRegex(TypeError, 'format argument: ' + msg):
                 operator.mod(format_bytes, value)
 
     def test_memory_leak_gh_140939(self):

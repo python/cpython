@@ -1373,6 +1373,9 @@ and :c:data:`PyType_Type` effectively act as defaults.)
          type structure.
 
 
+   .. c:macro:: _Py_TPFLAGS_HAVE_VECTORCALL
+      :no-typesetting:
+
    .. c:macro:: Py_TPFLAGS_HAVE_VECTORCALL
 
       This bit is set when the class implements
@@ -1384,7 +1387,12 @@ and :c:data:`PyType_Type` effectively act as defaults.)
       This bit is inherited if :c:member:`~PyTypeObject.tp_call` is also
       inherited.
 
-      .. versionadded:: 3.9
+      .. versionadded:: 3.8 as ``_Py_TPFLAGS_HAVE_VECTORCALL``
+
+      .. versionchanged:: 3.9
+
+      Renamed to the current name, without the leading underscore.
+      The old provisional name is :term:`soft deprecated`.
 
       .. versionchanged:: 3.12
 
@@ -2624,9 +2632,6 @@ This is done by filling a :c:type:`PyType_Spec` structure and calling
 Number Object Structures
 ------------------------
 
-.. sectionauthor:: Amaury Forgeot d'Arc
-
-
 .. c:type:: PyNumberMethods
 
    This structure holds pointers to the functions which an object uses to
@@ -2844,9 +2849,6 @@ Number Object Structures
 Mapping Object Structures
 -------------------------
 
-.. sectionauthor:: Amaury Forgeot d'Arc
-
-
 .. c:type:: PyMappingMethods
 
    This structure holds pointers to the functions which an object uses to
@@ -2886,9 +2888,6 @@ Mapping Object Structures
 
 Sequence Object Structures
 --------------------------
-
-.. sectionauthor:: Amaury Forgeot d'Arc
-
 
 .. c:type:: PySequenceMethods
 
@@ -2982,10 +2981,6 @@ Sequence Object Structures
 
 Buffer Object Structures
 ------------------------
-
-.. sectionauthor:: Greg J. Stein <greg@lyra.org>
-.. sectionauthor:: Benjamin Peterson
-.. sectionauthor:: Stefan Krah
 
 .. c:type:: PyBufferProcs
 
@@ -3081,8 +3076,6 @@ Buffer Object Structures
 
 Async Object Structures
 -----------------------
-
-.. sectionauthor:: Yury Selivanov <yselivanov@sprymix.com>
 
 .. versionadded:: 3.5
 
