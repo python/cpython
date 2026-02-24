@@ -7842,12 +7842,18 @@ validate_watcher_id(PyInterpreterState *interp, int watcher_id)
         PyErr_Format(PyExc_ValueError, "Invalid dict watcher ID %d", watcher_id);
         return -1;
     }
-    if (!interp->dict_state.watchers[watcher_id]) {
+    PyDict_WatchCallback cb = FT_ATOMIC_LOAD_PTR_RELAXED(
+        interp->dict_state.watchers[watcher_id]);
+    if (cb == NULL) {
         PyErr_Format(PyExc_ValueError, "No dict watcher set for ID %d", watcher_id);
         return -1;
     }
     return 0;
 }
+
+// In free-threaded builds, Add/Clear serialize on watcher_mutex and publish
+// callbacks with release stores. SendEvent reads them lock-free using
+// acquire loads.
 
 int
 PyDict_Watch(int watcher_id, PyObject* dict)
@@ -7860,7 +7866,9 @@ PyDict_Watch(int watcher_id, PyObject* dict)
     if (validate_watcher_id(interp, watcher_id)) {
         return -1;
     }
-    ((PyDictObject*)dict)->_ma_watcher_tag |= (1LL << watcher_id);
+    Py_BEGIN_CRITICAL_SECTION(dict);
+    ((PyDictObject*)dict)->_ma_watcher_tag |= (1ULL << watcher_id);
+    Py_END_CRITICAL_SECTION();
     return 0;
 }
 
@@ -7875,36 +7883,47 @@ PyDict_Unwatch(int watcher_id, PyObject* dict)
     if (validate_watcher_id(interp, watcher_id)) {
         return -1;
     }
-    ((PyDictObject*)dict)->_ma_watcher_tag &= ~(1LL << watcher_id);
+    Py_BEGIN_CRITICAL_SECTION(dict);
+    ((PyDictObject*)dict)->_ma_watcher_tag &= ~(1ULL << watcher_id);
+    Py_END_CRITICAL_SECTION();
     return 0;
 }
 
 int
 PyDict_AddWatcher(PyDict_WatchCallback callback)
 {
+    int watcher_id = -1;
     PyInterpreterState *interp = _PyInterpreterState_GET();
 
+    FT_MUTEX_LOCK(&interp->dict_state.watcher_mutex);
     /* Some watchers are reserved for CPython, start at the first available one */
     for (int i = FIRST_AVAILABLE_WATCHER; i < DICT_MAX_WATCHERS; i++) {
         if (!interp->dict_state.watchers[i]) {
-            interp->dict_state.watchers[i] = callback;
-            return i;
+            FT_ATOMIC_STORE_PTR_RELEASE(interp->dict_state.watchers[i], callback);
+            watcher_id = i;
+            goto done;
         }
     }
-
     PyErr_SetString(PyExc_RuntimeError, "no more dict watcher IDs available");
-    return -1;
+done:
+    FT_MUTEX_UNLOCK(&interp->dict_state.watcher_mutex);
+    return watcher_id;
 }
 
 int
 PyDict_ClearWatcher(int watcher_id)
 {
+    int res = 0;
     PyInterpreterState *interp = _PyInterpreterState_GET();
+    FT_MUTEX_LOCK(&interp->dict_state.watcher_mutex);
     if (validate_watcher_id(interp, watcher_id)) {
-        return -1;
+        res = -1;
+        goto done;
     }
-    interp->dict_state.watchers[watcher_id] = NULL;
-    return 0;
+    FT_ATOMIC_STORE_PTR_RELEASE(interp->dict_state.watchers[watcher_id], NULL);
+done:
+    FT_MUTEX_UNLOCK(&interp->dict_state.watcher_mutex);
+    return res;
 }
 
 static const char *
@@ -7929,7 +7948,8 @@ _PyDict_SendEvent(int watcher_bits,
     PyInterpreterState *interp = _PyInterpreterState_GET();
     for (int i = 0; i < DICT_MAX_WATCHERS; i++) {
         if (watcher_bits & 1) {
-            PyDict_WatchCallback cb = interp->dict_state.watchers[i];
+            PyDict_WatchCallback cb = FT_ATOMIC_LOAD_PTR_ACQUIRE(
+                interp->dict_state.watchers[i]);
             if (cb && (cb(event, (PyObject*)mp, key, value) < 0)) {
                 // We don't want to resurrect the dict by potentially having an
                 // unraisablehook keep a reference to it, so we don't pass the
