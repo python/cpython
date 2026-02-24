@@ -744,6 +744,10 @@ functools
   callables.
   (Contributed by Serhiy Storchaka in :gh:`140873`.)
 
+* :func:`~functools.singledispatchmethod` now dispatches on the second argument
+  if it wraps a regular method and is called as a class attribute.
+  (Contributed by Bartosz Sławecki in :gh:`143535`.)
+
 
 hashlib
 -------
