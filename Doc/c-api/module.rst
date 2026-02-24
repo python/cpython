@@ -755,6 +755,11 @@ remove it.
          functions are no longer called before the module state is allocated.
 
 
+.. c:var:: PyTypeObject PyModuleDef_Type
+
+   The type of ``PyModuleDef`` objects.
+
+
 .. _moduledef-dynamic:
 
 The following API can be used to create modules from a :c:type:`!PyModuleDef`
