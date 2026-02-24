@@ -13149,7 +13149,7 @@ unicode_maketrans_impl(PyObject *x, PyObject *y, PyObject *z)
         const void *data;
 
         /* x must be a dict */
-        if (!PyDict_CheckExact(x)) {
+        if (!PyAnyDict_CheckExact(x)) {
             PyErr_SetString(PyExc_TypeError, "if you give only one argument "
                             "to maketrans it must be a dict");
             goto err;

@@ -1548,6 +1548,27 @@ class TestSpecializer(TestBase):
         self.assert_specialized(contains_op_dict, "CONTAINS_OP_DICT")
         self.assert_no_opcode(contains_op_dict, "CONTAINS_OP")
 
+        def contains_op_frozen_dict():
+            for _ in range(_testinternalcapi.SPECIALIZATION_THRESHOLD):
+                a, b = 1, frozendict({1: 2, 2: 5})
+                self.assertTrue(a in b)
+                self.assertFalse(3 in b)
+
+        contains_op_frozen_dict()
+        self.assert_specialized(contains_op_frozen_dict, "CONTAINS_OP_DICT")
+        self.assert_no_opcode(contains_op_frozen_dict, "CONTAINS_OP")
+
+        def contains_op_frozen_dict_subclass():
+            class MyFrozenDict(frozendict):
+                pass
+            for _ in range(_testinternalcapi.SPECIALIZATION_THRESHOLD):
+                a, b = 1, MyFrozenDict({1: 2, 2: 5})
+                self.assertTrue(a in b)
+                self.assertFalse(3 in b)
+
+        contains_op_frozen_dict_subclass()
+        self.assert_no_opcode(contains_op_frozen_dict_subclass, "CONTAINS_OP_DICT")
+
         def contains_op_set():
             for _ in range(_testinternalcapi.SPECIALIZATION_THRESHOLD):
                 a, b = 1, {1, 2}
@@ -1808,6 +1829,27 @@ class TestSpecializer(TestBase):
         self.assert_specialized(binary_subscr_dict, "BINARY_OP_SUBSCR_DICT")
         self.assert_no_opcode(binary_subscr_dict, "BINARY_OP")
 
+        def binary_subscr_frozen_dict():
+            for _ in range(_testinternalcapi.SPECIALIZATION_THRESHOLD):
+                a = frozendict({1: 2, 2: 3})
+                self.assertEqual(a[1], 2)
+                self.assertEqual(a[2], 3)
+
+        binary_subscr_frozen_dict()
+        self.assert_specialized(binary_subscr_frozen_dict, "BINARY_OP_SUBSCR_DICT")
+        self.assert_no_opcode(binary_subscr_frozen_dict, "BINARY_OP")
+
+        def binary_subscr_frozen_dict_subclass():
+            class MyFrozenDict(frozendict):
+                pass
+            for _ in range(_testinternalcapi.SPECIALIZATION_THRESHOLD):
+                a = MyFrozenDict({1: 2, 2: 3})
+                self.assertEqual(a[1], 2)
+                self.assertEqual(a[2], 3)
+
+        binary_subscr_frozen_dict_subclass()
+        self.assert_no_opcode(binary_subscr_frozen_dict_subclass, "BINARY_OP_SUBSCR_DICT")
+
         def binary_subscr_str_int():
             for _ in range(_testinternalcapi.SPECIALIZATION_THRESHOLD):
                 a = "foobar"
@@ -1842,6 +1884,30 @@ class TestSpecializer(TestBase):
         binary_subscr_getitems()
         self.assert_specialized(binary_subscr_getitems, "BINARY_OP_SUBSCR_GETITEM")
         self.assert_no_opcode(binary_subscr_getitems, "BINARY_OP")
+
+    @cpython_only
+    @requires_specialization
+    def test_store_subscr(self):
+        def store_subscr_dict():
+            for _ in range(_testinternalcapi.SPECIALIZATION_THRESHOLD):
+                a = {1: 2, 2: 3}
+                a[1] = 4
+                self.assertEqual(a[1], 4)
+
+        store_subscr_dict()
+        self.assert_specialized(store_subscr_dict, "STORE_SUBSCR_DICT")
+        self.assert_no_opcode(store_subscr_dict, "STORE_SUBSCR")
+
+        def store_subscr_frozen_dict():
+            dicts = [{1: 2}, frozendict({1: 2})]
+            for i in range(_testinternalcapi.SPECIALIZATION_THRESHOLD + 1):
+                d = dicts[i == _testinternalcapi.SPECIALIZATION_THRESHOLD]
+                d[1] = 3
+
+        with self.assertRaises(TypeError):
+            store_subscr_frozen_dict()
+        self.assert_specialized(store_subscr_frozen_dict, "STORE_SUBSCR_DICT")
+        self.assert_no_opcode(store_subscr_frozen_dict, "STORE_SUBSCR")
 
     @cpython_only
     @requires_specialization

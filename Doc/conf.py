@@ -227,10 +227,6 @@ nitpick_ignore = [
 # Temporary undocumented names.
 # In future this list must be empty.
 nitpick_ignore += [
-    # Do not error nit-picky mode builds when _SubParsersAction.add_parser cannot
-    # be resolved, as the method is currently undocumented. For context, see
-    # https://github.com/python/cpython/pull/103289.
-    ('py:meth', '_SubParsersAction.add_parser'),
     # Attributes/methods/etc. that definitely should be documented better,
     # but are deferred for now:
     ('py:attr', '__wrapped__'),
