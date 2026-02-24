@@ -1894,9 +1894,21 @@ class Misc:
 
     propagate = pack_propagate
 
-    def pack_slaves(self):
+    def pack_content(self):
         """Returns a list of all of the content widgets in the packing order
         for this container."""
+        try:
+            res = self.tk.call('pack', 'content', self._w)
+        except TclError:
+            if self.info_patchlevel() >= (8, 6):
+                raise
+            res = self.tk.call('pack', 'slaves', self._w)
+        return [self._nametowidget(x) for x in self.tk.splitlist(res)]
+
+    content = pack_content
+
+    def pack_slaves(self):
+        """Synonym for pack_content()."""
         return [self._nametowidget(x) for x in
                 self.tk.splitlist(
                    self.tk.call('pack', 'slaves', self._w))]
@@ -1904,9 +1916,19 @@ class Misc:
     slaves = pack_slaves
 
     # Place method that applies to the container widget
-    def place_slaves(self):
+    def place_content(self):
         """Returns a list of all the content widgets for which this widget is
         the container."""
+        try:
+            res = self.tk.call('place', 'content', self._w)
+        except TclError:
+            if self.info_patchlevel() >= (8, 6):
+                raise
+            res = self.tk.call('place', 'slaves', self._w)
+        return [self._nametowidget(x) for x in self.tk.splitlist(res)]
+
+    def place_slaves(self):
+        """Synonym for place_content()."""
         return [self._nametowidget(x) for x in
                 self.tk.splitlist(
                    self.tk.call(
@@ -2027,7 +2049,7 @@ class Misc:
 
     size = grid_size
 
-    def grid_slaves(self, row=None, column=None):
+    def grid_content(self, row=None, column=None):
         """Returns a list of the content widgets.
 
         If no arguments are supplied, a list of all of the content in this
@@ -2035,6 +2057,21 @@ class Misc:
         If ROW or COLUMN is specified, only the content in the row or
         column is returned.
         """
+        args = ()
+        if row is not None:
+            args = args + ('-row', row)
+        if column is not None:
+            args = args + ('-column', column)
+        try:
+            res = self.tk.call('grid', 'content', self._w, *args)
+        except TclError:
+            if self.info_patchlevel() >= (8, 6):
+                raise
+            res = self.tk.call('grid', 'slaves', self._w, *args)
+        return [self._nametowidget(x) for x in self.tk.splitlist(res)]
+
+    def grid_slaves(self, row=None, column=None):
+        """Synonym for grid_content()."""
         args = ()
         if row is not None:
             args = args + ('-row', row)
@@ -2650,6 +2687,7 @@ class Pack:
 
     info = pack_info
     propagate = pack_propagate = Misc.pack_propagate
+    content = pack_content = Misc.pack_content
     slaves = pack_slaves = Misc.pack_slaves
 
 
@@ -2707,6 +2745,7 @@ class Place:
         return d
 
     info = place_info
+    content = place_content = Misc.place_content
     slaves = place_slaves = Misc.place_slaves
 
 
@@ -2762,6 +2801,7 @@ class Grid:
     propagate = grid_propagate = Misc.grid_propagate
     rowconfigure = grid_rowconfigure = Misc.grid_rowconfigure
     size = grid_size = Misc.grid_size
+    content = grid_content = Misc.grid_content
     slaves = grid_slaves = Misc.grid_slaves
 
 

@@ -208,7 +208,11 @@ typedef unsigned int pymem_uint;  /* assuming >= 16 bits */
  * mappings to reduce heap fragmentation.
  */
 #ifdef USE_LARGE_ARENAS
-#define ARENA_BITS              20                    /* 1 MiB */
+#  ifdef PYMALLOC_USE_HUGEPAGES
+#    define ARENA_BITS            21                    /* 2 MiB */
+#  else
+#    define ARENA_BITS            20                    /* 1 MiB */
+#  endif
 #else
 #define ARENA_BITS              18                    /* 256 KiB */
 #endif
@@ -469,7 +473,7 @@ nfp free pools in usable_arenas.
 */
 
 /* How many arena_objects do we initially allocate?
- * 16 = can allocate 16 arenas = 16 * ARENA_SIZE = 4MB before growing the
+ * 16 = can allocate 16 arenas = 16 * ARENA_SIZE before growing the
  * `arenas` vector.
  */
 #define INITIAL_ARENA_OBJECTS 16
@@ -512,11 +516,23 @@ struct _obmalloc_mgmt {
 
    memory address bit allocation for keys
 
-   64-bit pointers, IGNORE_BITS=0 and 2^20 arena size:
+   ARENA_BITS is configurable: 20 (1 MiB) by default on 64-bit, or
+   21 (2 MiB) when PYMALLOC_USE_HUGEPAGES is enabled.  All bit widths
+   below are derived from ARENA_BITS automatically.
+
+   64-bit pointers, IGNORE_BITS=0 and 2^20 arena size (default):
      15 -> MAP_TOP_BITS
      15 -> MAP_MID_BITS
      14 -> MAP_BOT_BITS
      20 -> ideal aligned arena
+   ----
+     64
+
+   64-bit pointers, IGNORE_BITS=0 and 2^21 arena size (hugepages):
+     15 -> MAP_TOP_BITS
+     15 -> MAP_MID_BITS
+     13 -> MAP_BOT_BITS
+     21 -> ideal aligned arena
    ----
      64
 

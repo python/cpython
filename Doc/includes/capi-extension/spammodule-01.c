@@ -12,7 +12,7 @@
 static PyObject *
 spam_system(PyObject *self, PyObject *arg)
 {
-   const char *command = PyUnicode_AsUTF8(arg);
+   const char *command = PyUnicode_AsUTF8AndSize(arg, NULL);
    if (command == NULL) {
       return NULL;
    }

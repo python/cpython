@@ -332,6 +332,9 @@ Objects/complexobject.c	-	c_1	-
 Objects/exceptions.c	-	static_exceptions	-
 Objects/genobject.c	-	ASYNC_GEN_IGNORED_EXIT_MSG	-
 Objects/genobject.c	-	NON_INIT_CORO_MSG	-
+Objects/genobject.c	gen_getstate	state_strings	-
+Objects/genobject.c	cr_getstate	state_strings	-
+Objects/genobject.c	ag_getstate	state_strings	-
 Objects/longobject.c	-	_PyLong_DigitValue	-
 Objects/longobject.c	-	PyLong_LAYOUT	-
 Objects/object.c	-	_Py_SwappedOp	-
@@ -766,6 +769,7 @@ Modules/clinic/md5module.c.h	_md5_md5	_keywords	-
 Modules/clinic/grpmodule.c.h	grp_getgrgid	_keywords	-
 Modules/clinic/grpmodule.c.h	grp_getgrnam	_keywords	-
 Objects/object.c	-	constants	static PyObject*[]
+Objects/dictobject.c	-	PyFrozenDict_Type	-
 
 
 ## False positives

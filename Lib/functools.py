@@ -19,7 +19,7 @@ from collections import namedtuple
 # import weakref  # Deferred to single_dispatch()
 from operator import itemgetter
 from reprlib import recursive_repr
-from types import GenericAlias, MethodType, MappingProxyType, UnionType
+from types import FunctionType, GenericAlias, MethodType, MappingProxyType, UnionType
 from _thread import RLock
 
 ################################################################################
@@ -602,6 +602,9 @@ def lru_cache(maxsize=128, typed=False):
     return decorating_function
 
 def _lru_cache_wrapper(user_function, maxsize, typed, _CacheInfo):
+    if not callable(user_function):
+        raise TypeError("the first argument must be callable")
+
     # Constants shared by all lru cache instances:
     sentinel = object()          # unique object used to signal cache misses
     make_key = _make_key         # build a key from the function arguments
@@ -1057,6 +1060,11 @@ class _singledispatchmethod_get:
         # Set instance attributes which cannot be handled in __getattr__()
         # because they conflict with type descriptors.
         func = unbound.func
+
+        # Dispatch on the second argument if a generic method turns into
+        # a bound method on instance-level access. See GH-143535.
+        self._dispatch_arg_index = 1 if obj is None and isinstance(func, FunctionType) else 0
+
         try:
             self.__module__ = func.__module__
         except AttributeError:
@@ -1085,9 +1093,22 @@ class _singledispatchmethod_get:
                                'singledispatchmethod method')
             raise TypeError(f'{funcname} requires at least '
                             '1 positional argument')
-        method = self._dispatch(args[0].__class__)
+        method = self._dispatch(args[self._dispatch_arg_index].__class__)
+
         if hasattr(method, "__get__"):
+            # If the method is a descriptor, it might be necessary
+            # to drop the first argument before calling
+            # as it can be no longer expected after descriptor access.
+            skip_bound_arg = False
+            if isinstance(method, staticmethod):
+                skip_bound_arg = self._dispatch_arg_index == 1
+
             method = method.__get__(self._obj, self._cls)
+            if isinstance(method, MethodType):
+                skip_bound_arg = self._dispatch_arg_index == 1
+
+            if skip_bound_arg:
+                return method(*args[1:], **kwargs)
         return method(*args, **kwargs)
 
     def __getattr__(self, name):
