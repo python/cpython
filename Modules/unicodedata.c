@@ -472,7 +472,8 @@ unicodedata_UCD_decomposition_impl(PyObject *self, int chr)
     }
 
     // Hangul Decomposition.
-    // See https://www.unicode.org/versions/latest/core-spec/chapter-3/#G56669
+    // See section 3.12.2, "Hangul Syllable Decomposition"
+    // https://www.unicode.org/versions/latest/core-spec/chapter-3/#G56669
     if (SBase <= code && code < (SBase + SCount)) {
         int SIndex = code - SBase;
         int L = LBase + SIndex / NCount;
@@ -481,7 +482,8 @@ unicodedata_UCD_decomposition_impl(PyObject *self, int chr)
         if (T != TBase) {
             PyOS_snprintf(decomp, sizeof(decomp),
                           "%04X %04X %04X", L, V, T);
-        } else {
+        }
+        else {
             PyOS_snprintf(decomp, sizeof(decomp),
                           "%04X %04X", L, V);
         }
@@ -604,7 +606,8 @@ nfd_nfkd(PyObject *self, PyObject *input, int k)
                 output = new_output;
             }
             // Hangul Decomposition.
-            // See https://www.unicode.org/versions/latest/core-spec/chapter-3/#G56669
+            // See section 3.12.2, "Hangul Syllable Decomposition"
+            // https://www.unicode.org/versions/latest/core-spec/chapter-3/#G56669
             if (SBase <= code && code < (SBase+SCount)) {
                 int SIndex = code - SBase;
                 int L = LBase + SIndex / NCount;

@@ -380,7 +380,7 @@ class BaseUnicodeFunctionsTest:
 
         # Hangul characters
         self.assertEqual(self.db.decomposition('\uAC00'), '1100 1161')
-        self.assertEqual(self.db.decomposition('\uAC01'), '1100 1161 11A8')
+        self.assertEqual(self.db.decomposition('\uD4DB'), '1111 1171 11B6')
         self.assertEqual(self.db.decomposition('\uC2F8'), '110A 1161')
         self.assertEqual(self.db.decomposition('\uD7A3'), '1112 1175 11C2')
 
