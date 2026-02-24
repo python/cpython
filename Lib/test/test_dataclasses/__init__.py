@@ -71,7 +71,7 @@ class TestCase(unittest.TestCase):
         expected_output = "Field(name='id',type=None," \
                            f"default=1,default_factory={MISSING!r}," \
                            "init=True,repr=False,hash=None," \
-                           "compare=True,metadata=mappingproxy({})," \
+                           "compare=True,metadata=frozendict()," \
                            f"kw_only={MISSING!r}," \
                            "doc='Docstring'," \
                            "_field_type=None)"

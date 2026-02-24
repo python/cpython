@@ -4,9 +4,6 @@
 .. module:: importlib
    :synopsis: The implementation of the import machinery.
 
-.. moduleauthor:: Brett Cannon <brett@python.org>
-.. sectionauthor:: Brett Cannon <brett@python.org>
-
 .. versionadded:: 3.1
 
 **Source code:** :source:`Lib/importlib/__init__.py`
@@ -275,6 +272,28 @@ ABC hierarchy::
       .. versionchanged:: 3.4
          Returns ``None`` when called instead of :data:`NotImplemented`.
 
+   .. method:: discover(parent=None)
+
+      An optional method which searches for possible specs with given *parent*
+      module spec. If *parent* is *None*, :meth:`MetaPathFinder.discover` will
+      search for top-level modules.
+
+      Returns an iterable of possible specs.
+
+      Raises :exc:`ValueError` if *parent* is not a package module.
+
+      .. warning::
+         This method can potentially yield a very large number of objects, and
+         it may carry out IO operations when computing these values.
+
+         Because of this, it will generaly be desirable to compute the result
+         values on-the-fly, as they are needed. As such, the returned object is
+         only guaranteed to be an :class:`iterable <collections.abc.Iterable>`,
+         instead of a :class:`list` or other
+         :class:`collection <collections.abc.Collection>` type.
+
+      .. versionadded:: next
+
 
 .. class:: PathEntryFinder
 
@@ -306,6 +325,28 @@ ABC hierarchy::
       cache used by the finder. Used by
       :meth:`importlib.machinery.PathFinder.invalidate_caches`
       when invalidating the caches of all cached finders.
+
+   .. method:: discover(parent=None)
+
+      An optional method which searches for possible specs with given *parent*
+      module spec. If *parent* is *None*, :meth:`PathEntryFinder.discover` will
+      search for top-level modules.
+
+      Returns an iterable of possible specs.
+
+      Raises :exc:`ValueError` if *parent* is not a package module.
+
+      .. warning::
+         This method can potentially yield a very large number of objects, and
+         it may carry out IO operations when computing these values.
+
+         Because of this, it will generaly be desirable to compute the result
+         values on-the-fly, as they are needed. As such, the returned object is
+         only guaranteed to be an :class:`iterable <collections.abc.Iterable>`,
+         instead of a :class:`list` or other
+         :class:`collection <collections.abc.Collection>` type.
+
+      .. versionadded:: next
 
 
 .. class:: Loader
