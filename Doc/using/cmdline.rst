@@ -527,13 +527,13 @@ Miscellaneous options
    following line can be added at the start of the script:
 
    .. code-block:: batch
-   
+
       @py -x "%~f0" %* & exit /b
 
    Or, to specify the path to the Python interpreter explicitly:
 
    .. code-block:: batch
-   
+
       @"C:\Path\to\python.exe" -x "%~f0" %* & exit /b
 
    Unlike a shebang line which is a Python comment, this line is not valid
