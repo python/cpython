@@ -2341,30 +2341,10 @@ builtin_print_impl(PyObject *module, PyObject * const *objects,
         return NULL;
     }
     if (pretty == Py_True) {
-        /* Use default `pprint.PrettyPrinter` */
-        PyObject *printer_factory = PyImport_ImportModuleAttrString("pprint", "PrettyPrinter");
-        PyObject *printer_instance = NULL;
-
-        if (!printer_factory) {
-            Py_DECREF(file);
-            return NULL;
-        }
-
-        printer_instance = PyObject_CallNoArgs(printer_factory);
-        Py_DECREF(printer_factory);
-
-        if (!printer_instance) {
-            Py_DECREF(file);
-            return NULL;
-        }
-
-        printer = PyObject_GetAttrString(printer_instance, "pformat");
-        Py_DECREF(printer_instance);
-
-        if (!printer) {
-            Py_DECREF(file);
-            return NULL;
-        }
+        /* Set a marker for the the loop below to use PyObject_Pretty().  Even though Py_True is
+           immortal, we increment the reference count to make the loop logic below easier. */
+        printer = Py_True;
+        Py_INCREF(printer);
     }
     else if (pretty == Py_None) {
         /* Don't use a pretty printer */
@@ -2391,7 +2371,12 @@ builtin_print_impl(PyObject *module, PyObject * const *objects,
         }
 
         if (printer) {
-            PyObject *prettified = PyObject_CallOneArg(printer, objects[i]);
+            /* We're using Py_True as a sentinel to mean "use the default pretty printer".  See above for
+               the reference counting rationale. */
+            PyObject *prettified = (
+                printer == Py_True
+                ? PyObject_Pretty(objects[i])
+                : PyObject_CallOneArg(printer, objects[i]));
 
             if (!prettified) {
                 Py_DECREF(file);
