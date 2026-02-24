@@ -4,6 +4,7 @@
 
 from functools import partial
 from test import support, test_tools
+from test.support import force_not_colorized_test_class
 from test.support import os_helper
 from test.support.os_helper import TESTFN, unlink, rmtree
 from textwrap import dedent
@@ -356,6 +357,32 @@ class ClinicWholeFileTest(TestCase):
             [clinic start generated code]*/
         """
         self.expect_failure(block, err, lineno=6)
+
+    def test_double_star_after_var_keyword(self):
+        err = "Function 'my_test_func' has an invalid parameter declaration (**kwargs?): '**kwds: dict'"
+        block = """
+            /*[clinic input]
+            my_test_func
+
+                pos_arg: object
+                **kwds: dict
+                **
+            [clinic start generated code]*/
+        """
+        self.expect_failure(block, err, lineno=5)
+
+    def test_var_keyword_after_star(self):
+        err = "Function 'my_test_func' has an invalid parameter declaration: '**'"
+        block = """
+            /*[clinic input]
+            my_test_func
+
+                pos_arg: object
+                **
+                **kwds: dict
+            [clinic start generated code]*/
+        """
+        self.expect_failure(block, err, lineno=5)
 
     def test_module_already_got_one(self):
         err = "Already defined module 'm'!"
@@ -748,6 +775,16 @@ class ClinicWholeFileTest(TestCase):
             """)
             self.clinic.parse(raw)
 
+    def test_var_keyword_non_dict(self):
+        err = "'var_keyword_object' is not a valid converter"
+        block = """
+            /*[clinic input]
+            my_test_func
+
+                **kwds: object
+            [clinic start generated code]*/
+        """
+        self.expect_failure(block, err, lineno=4)
 
 class ParseFileUnitTest(TestCase):
     def expect_parsing_failure(
@@ -1608,6 +1645,11 @@ class ClinicParserTest(TestCase):
                 [
                 a: object
                 ]
+        """, """
+            with_kwds
+                [
+                **kwds: dict
+                ]
         """)
         err = (
             "You cannot use optional groups ('[' and ']') unless all "
@@ -1991,6 +2033,44 @@ class ClinicParserTest(TestCase):
         err = "Function 'bar': '/' must precede '*'"
         self.expect_failure(block, err)
 
+    def test_slash_after_var_keyword(self):
+        block = """
+            module foo
+            foo.bar
+               x: int
+               y: int
+               **kwds: dict
+               z: int
+               /
+        """
+        err = "Function 'bar' has an invalid parameter declaration (**kwargs?): '**kwds: dict'"
+        self.expect_failure(block, err)
+
+    def test_star_after_var_keyword(self):
+        block = """
+            module foo
+            foo.bar
+               x: int
+               y: int
+               **kwds: dict
+               z: int
+               *
+        """
+        err = "Function 'bar' has an invalid parameter declaration (**kwargs?): '**kwds: dict'"
+        self.expect_failure(block, err)
+
+    def test_parameter_after_var_keyword(self):
+        block = """
+            module foo
+            foo.bar
+               x: int
+               y: int
+               **kwds: dict
+               z: int
+        """
+        err = "Function 'bar' has an invalid parameter declaration (**kwargs?): '**kwds: dict'"
+        self.expect_failure(block, err)
+
     def test_depr_star_must_come_after_slash(self):
         block = """
             module foo
@@ -2076,6 +2156,16 @@ class ClinicParserTest(TestCase):
             foo.bar
                *vararg1: tuple
                *vararg2: tuple
+        """
+        self.expect_failure(block, err, lineno=3)
+
+    def test_parameters_no_more_than_one_var_keyword(self):
+        err = "Encountered parameter line when not expecting parameters: **var_keyword_2: dict"
+        block = """
+            module foo
+            foo.bar
+               **var_keyword_1: dict
+               **var_keyword_2: dict
         """
         self.expect_failure(block, err, lineno=3)
 
@@ -2513,6 +2603,14 @@ class ClinicParserTest(TestCase):
         """
         self.expect_failure(block, err, lineno=1)
 
+    def test_var_keyword_cannot_take_default_value(self):
+        err = "Function 'fn' has an invalid parameter declaration:"
+        block = """
+            fn
+                **kwds: dict = None
+        """
+        self.expect_failure(block, err, lineno=1)
+
     def test_default_is_not_of_correct_type(self):
         err = ("int_converter: default value 2.5 for field 'a' "
                "is not of type 'int'")
@@ -2610,7 +2708,58 @@ class ClinicParserTest(TestCase):
         """
         self.expect_failure(block, err, lineno=2)
 
+    def test_var_keyword_with_pos_or_kw(self):
+        block = """
+            module foo
+            foo.bar
+               x: int
+               **kwds: dict
+        """
+        err = "Function 'bar' has an invalid parameter declaration (**kwargs?): '**kwds: dict'"
+        self.expect_failure(block, err)
 
+    def test_var_keyword_with_kw_only(self):
+        block = """
+            module foo
+            foo.bar
+               x: int
+               /
+               *
+               y: int
+               **kwds: dict
+        """
+        err = "Function 'bar' has an invalid parameter declaration (**kwargs?): '**kwds: dict'"
+        self.expect_failure(block, err)
+
+    def test_var_keyword_with_pos_or_kw_and_kw_only(self):
+        block = """
+            module foo
+            foo.bar
+               x: int
+               /
+               y: int
+               *
+               z: int
+               **kwds: dict
+        """
+        err = "Function 'bar' has an invalid parameter declaration (**kwargs?): '**kwds: dict'"
+        self.expect_failure(block, err)
+
+    def test_allow_negative_accepted_by_py_ssize_t_converter_only(self):
+        errmsg = re.escape("converter_init() got an unexpected keyword argument 'allow_negative'")
+        unsupported_converters = [converter_name for converter_name in converters.keys()
+                                  if converter_name != "Py_ssize_t"]
+        for converter in unsupported_converters:
+            with self.subTest(converter=converter):
+                block = f"""
+                    module m
+                    m.func
+                        a: {converter}(allow_negative=True)
+                """
+                with self.assertRaisesRegex((AssertionError, TypeError), errmsg):
+                    self.parse_function(block)
+
+@force_not_colorized_test_class
 class ClinicExternalTest(TestCase):
     maxDiff = None
 
@@ -2833,6 +2982,8 @@ class ClinicExternalTest(TestCase):
             "uint64",
             "uint8",
             "unicode",
+            "unicode_fs_decoded",
+            "unicode_fs_encoded",
             "unsigned_char",
             "unsigned_int",
             "unsigned_long",
@@ -3194,8 +3345,12 @@ class ClinicFunctionalTest(unittest.TestCase):
             ac_tester.py_ssize_t_converter(PY_SSIZE_T_MAX + 1)
         with self.assertRaises(TypeError):
             ac_tester.py_ssize_t_converter([])
-        self.assertEqual(ac_tester.py_ssize_t_converter(), (12, 34, 56))
-        self.assertEqual(ac_tester.py_ssize_t_converter(1, 2, None), (1, 2, 56))
+        with self.assertRaises(ValueError):
+            ac_tester.py_ssize_t_converter(12, 34, 56, -1)
+        with self.assertRaises(ValueError):
+            ac_tester.py_ssize_t_converter(12, 34, 56, 78, -1)
+        self.assertEqual(ac_tester.py_ssize_t_converter(), (12, 34, 56, 78, 90, -12, -34))
+        self.assertEqual(ac_tester.py_ssize_t_converter(1, 2, None, 3, None, 4, None), (1, 2, 56, 3, 90, 4, -34))
 
     def test_slice_index_converter(self):
         from _testcapi import PY_SSIZE_T_MIN, PY_SSIZE_T_MAX
@@ -3936,6 +4091,49 @@ class ClinicFunctionalTest(unittest.TestCase):
         check("a", "b", c="c", d="d", e="e", f="f", g="g")
         check("a", b="b", c="c", d="d", e="e", f="f", g="g")
         self.assertRaises(TypeError, fn, a="a", b="b", c="c", d="d", e="e", f="f", g="g")
+
+    def test_lone_kwds(self):
+        with self.assertRaises(TypeError):
+            ac_tester.lone_kwds(1, 2)
+        self.assertEqual(ac_tester.lone_kwds(), ({},))
+        self.assertEqual(ac_tester.lone_kwds(y='y'), ({'y': 'y'},))
+        kwds = {'y': 'y', 'z': 'z'}
+        self.assertEqual(ac_tester.lone_kwds(y='y', z='z'), (kwds,))
+        self.assertEqual(ac_tester.lone_kwds(**kwds), (kwds,))
+
+    def test_kwds_with_pos_only(self):
+        with self.assertRaises(TypeError):
+            ac_tester.kwds_with_pos_only()
+        with self.assertRaises(TypeError):
+            ac_tester.kwds_with_pos_only(y='y')
+        with self.assertRaises(TypeError):
+            ac_tester.kwds_with_pos_only(1, y='y')
+        self.assertEqual(ac_tester.kwds_with_pos_only(1, 2), (1, 2, {}))
+        self.assertEqual(ac_tester.kwds_with_pos_only(1, 2, y='y'), (1, 2, {'y': 'y'}))
+        kwds = {'y': 'y', 'z': 'z'}
+        self.assertEqual(ac_tester.kwds_with_pos_only(1, 2, y='y', z='z'), (1, 2, kwds))
+        self.assertEqual(ac_tester.kwds_with_pos_only(1, 2, **kwds), (1, 2, kwds))
+
+    def test_kwds_with_stararg(self):
+        self.assertEqual(ac_tester.kwds_with_stararg(), ((), {}))
+        self.assertEqual(ac_tester.kwds_with_stararg(1, 2), ((1, 2), {}))
+        self.assertEqual(ac_tester.kwds_with_stararg(y='y'), ((), {'y': 'y'}))
+        args = (1, 2)
+        kwds = {'y': 'y', 'z': 'z'}
+        self.assertEqual(ac_tester.kwds_with_stararg(1, 2, y='y', z='z'), (args, kwds))
+        self.assertEqual(ac_tester.kwds_with_stararg(*args, **kwds), (args, kwds))
+
+    def test_kwds_with_pos_only_and_stararg(self):
+        with self.assertRaises(TypeError):
+            ac_tester.kwds_with_pos_only_and_stararg()
+        with self.assertRaises(TypeError):
+            ac_tester.kwds_with_pos_only_and_stararg(y='y')
+        self.assertEqual(ac_tester.kwds_with_pos_only_and_stararg(1, 2), (1, 2, (), {}))
+        self.assertEqual(ac_tester.kwds_with_pos_only_and_stararg(1, 2, y='y'), (1, 2, (), {'y': 'y'}))
+        args = ('lobster', 'thermidor')
+        kwds = {'y': 'y', 'z': 'z'}
+        self.assertEqual(ac_tester.kwds_with_pos_only_and_stararg(1, 2, 'lobster', 'thermidor', y='y', z='z'), (1, 2, args, kwds))
+        self.assertEqual(ac_tester.kwds_with_pos_only_and_stararg(1, 2, *args, **kwds), (1, 2, args, kwds))
 
 
 class LimitedCAPIOutputTests(unittest.TestCase):
