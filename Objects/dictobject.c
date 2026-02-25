@@ -8143,7 +8143,6 @@ PyTypeObject PyFrozenDict_Type = {
     .tp_richcompare = dict_richcompare,
     .tp_iter = dict_iter,
     .tp_methods = frozendict_methods,
-    .tp_init = dict_init,
     .tp_alloc = _PyType_AllocNoTrack,
     .tp_new = frozendict_new,
     .tp_free = PyObject_GC_Del,

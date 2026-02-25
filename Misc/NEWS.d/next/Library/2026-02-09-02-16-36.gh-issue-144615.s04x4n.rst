@@ -1,0 +1,3 @@
+Methods directly decorated with :deco:`functools.singledispatchmethod` now
+dispatch on the second argument when called after being accessed as class
+attributes. Patch by Bartosz Sławecki.

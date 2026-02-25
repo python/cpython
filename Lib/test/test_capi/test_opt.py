@@ -4065,6 +4065,55 @@ class TestUopsOptimization(unittest.TestCase):
         self.assertNotIn('_PyJit_TryInitializeTracing', stderr,
                          f"JIT tracer memory leak detected:\n{stderr}")
 
+    def test_cold_exit_on_init_cleanup_frame(self):
+
+        result = script_helper.run_python_until_end('-c', textwrap.dedent("""
+        class A:
+            __slots__ = ('x', 'y', 'z', 'w')
+            def __init__(self):
+                self.x = self.y = -1
+                self.z = self.w = None
+
+        class B(A):
+            __slots__ = ('a', 'b', 'c', 'd', 'e')
+            def __init__(self):
+                super().__init__()
+                self.a = self.b = None
+                self.c = ""
+                self.d = self.e = False
+
+        class C(B):
+            __slots__ = ('name', 'flag')
+            def __init__(self, name):
+                super().__init__()
+                self.name = name
+                self.flag = False
+
+        funcs = []
+        for n in range(20, 80):
+            lines = [f"def f{n}(names, info):"]
+            for j in range(n):
+                lines.append(f"    v{j} = names[{j % 3}]")
+                if j % 3 == 0:
+                    lines.append(f"    if v{j} in info:")
+                    lines.append(f"        v{j} = info[v{j}]")
+                elif j % 5 == 0:
+                    lines.append(f"    v{j} = len(v{j}) if isinstance(v{j}, str) else 0")
+            lines.append("    return C(names[0])")
+            ns = {'C': C}
+            exec("\\n".join(lines), ns)
+            funcs.append(ns[f"f{n}"])
+
+        names = ['alpha', 'beta', 'gamma']
+        info = {'alpha': 'x', 'beta': 'y', 'gamma': 'z'}
+
+        for f in funcs:
+            for _ in range(10):
+                f(names, info)
+        """), PYTHON_JIT="1", PYTHON_JIT_STRESS="1",
+             PYTHON_JIT_SIDE_EXIT_INITIAL_VALUE="1")
+        self.assertEqual(result[0].rc, 0, result)
+
 def global_identity(x):
     return x
 

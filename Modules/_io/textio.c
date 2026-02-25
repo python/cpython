@@ -519,6 +519,7 @@ _PyIncrementalNewlineDecoder_decode(PyObject *myself,
 }
 
 /*[clinic input]
+@critical_section
 _io.IncrementalNewlineDecoder.decode
     input: object
     final: bool = False
@@ -527,18 +528,19 @@ _io.IncrementalNewlineDecoder.decode
 static PyObject *
 _io_IncrementalNewlineDecoder_decode_impl(nldecoder_object *self,
                                           PyObject *input, int final)
-/*[clinic end generated code: output=0d486755bb37a66e input=90e223c70322c5cd]*/
+/*[clinic end generated code: output=0d486755bb37a66e input=9475d16a73168504]*/
 {
     return _PyIncrementalNewlineDecoder_decode((PyObject *) self, input, final);
 }
 
 /*[clinic input]
+@critical_section
 _io.IncrementalNewlineDecoder.getstate
 [clinic start generated code]*/
 
 static PyObject *
 _io_IncrementalNewlineDecoder_getstate_impl(nldecoder_object *self)
-/*[clinic end generated code: output=f0d2c9c136f4e0d0 input=f8ff101825e32e7f]*/
+/*[clinic end generated code: output=f0d2c9c136f4e0d0 input=dc3e1f27aa850f12]*/
 {
     PyObject *buffer;
     unsigned long long flag;
@@ -576,6 +578,7 @@ _io_IncrementalNewlineDecoder_getstate_impl(nldecoder_object *self)
 }
 
 /*[clinic input]
+@critical_section
 _io.IncrementalNewlineDecoder.setstate
     state: object
     /
@@ -584,7 +587,7 @@ _io.IncrementalNewlineDecoder.setstate
 static PyObject *
 _io_IncrementalNewlineDecoder_setstate_impl(nldecoder_object *self,
                                             PyObject *state)
-/*[clinic end generated code: output=09135cb6e78a1dc8 input=c53fb505a76dbbe2]*/
+/*[clinic end generated code: output=09135cb6e78a1dc8 input=275fd3982d2b08cb]*/
 {
     PyObject *buffer;
     unsigned long long flag;
@@ -614,12 +617,13 @@ _io_IncrementalNewlineDecoder_setstate_impl(nldecoder_object *self,
 }
 
 /*[clinic input]
+@critical_section
 _io.IncrementalNewlineDecoder.reset
 [clinic start generated code]*/
 
 static PyObject *
 _io_IncrementalNewlineDecoder_reset_impl(nldecoder_object *self)
-/*[clinic end generated code: output=32fa40c7462aa8ff input=728678ddaea776df]*/
+/*[clinic end generated code: output=32fa40c7462aa8ff input=31bd8ae4e36cec83]*/
 {
     CHECK_INITIALIZED_DECODER(self);
 

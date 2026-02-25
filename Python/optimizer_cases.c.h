@@ -1101,13 +1101,25 @@
             break;
         }
 
-        case _GUARD_TOS_DICT: {
+        case _GUARD_NOS_ANY_DICT: {
+            JitOptRef nos;
+            nos = stack_pointer[-2];
+            PyTypeObject *tp = sym_get_type(nos);
+            if (tp == &PyDict_Type || tp == &PyFrozenDict_Type) {
+                ADD_OP(_NOP, 0, 0);
+                sym_set_type(nos, tp);
+            }
+            break;
+        }
+
+        case _GUARD_TOS_ANY_DICT: {
             JitOptRef tos;
             tos = stack_pointer[-1];
-            if (sym_matches_type(tos, &PyDict_Type)) {
+            PyTypeObject *tp = sym_get_type(tos);
+            if (tp == &PyDict_Type || tp == &PyFrozenDict_Type) {
                 ADD_OP(_NOP, 0, 0);
+                sym_set_type(tos, tp);
             }
-            sym_set_type(tos, &PyDict_Type);
             break;
         }
 
@@ -4159,34 +4171,38 @@
 
         case _GUARD_IP__PUSH_FRAME: {
             PyObject *ip = (PyObject *)this_instr->operand0;
-            stack_pointer = sym_set_stack_depth(this_instr->operand1, stack_pointer);
+            (void)ip;
+            stack_pointer = sym_set_stack_depth((int)this_instr->operand1, stack_pointer);
             break;
         }
 
         case _GUARD_IP_YIELD_VALUE: {
             PyObject *ip = (PyObject *)this_instr->operand0;
+            (void)ip;
             if (ctx->frame->caller) {
                 REPLACE_OP(this_instr, _NOP, 0, 0);
             }
-            stack_pointer = sym_set_stack_depth(this_instr->operand1, stack_pointer);
+            stack_pointer = sym_set_stack_depth((int)this_instr->operand1, stack_pointer);
             break;
         }
 
         case _GUARD_IP_RETURN_VALUE: {
             PyObject *ip = (PyObject *)this_instr->operand0;
+            (void)ip;
             if (ctx->frame->caller) {
                 REPLACE_OP(this_instr, _NOP, 0, 0);
             }
-            stack_pointer = sym_set_stack_depth(this_instr->operand1, stack_pointer);
+            stack_pointer = sym_set_stack_depth((int)this_instr->operand1, stack_pointer);
             break;
         }
 
         case _GUARD_IP_RETURN_GENERATOR: {
             PyObject *ip = (PyObject *)this_instr->operand0;
+            (void)ip;
             if (ctx->frame->caller) {
                 REPLACE_OP(this_instr, _NOP, 0, 0);
             }
-            stack_pointer = sym_set_stack_depth(this_instr->operand1, stack_pointer);
+            stack_pointer = sym_set_stack_depth((int)this_instr->operand1, stack_pointer);
             break;
         }
 
