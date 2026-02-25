@@ -115,7 +115,6 @@ _config_dict_get_bool(PyObject *dict, const char *name, int *p_flag)
         config_dict_invalid_type(name);
         return -1;
     }
-    Py_DECREF(item);
     *p_flag = flag;
     return 0;
 }
