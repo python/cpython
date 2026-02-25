@@ -1273,7 +1273,7 @@ csv
 .. _whatsnew315-jit:
 
 Upgraded JIT compiler
-=====================
+---------------------
 
 Results from the `pyperformance <https://github.com/python/pyperformance>`__
 benchmark suite report
