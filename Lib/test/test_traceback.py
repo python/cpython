@@ -9,15 +9,18 @@ import inspect
 import builtins
 import unittest
 import unittest.mock
+import os
 import re
 import tempfile
 import random
 import string
+import importlib.machinery
+import sysconfig
 from test import support
 import shutil
 from test.support import (Error, captured_output, cpython_only, ALWAYS_EQ,
                           requires_debug_ranges, has_no_debug_ranges,
-                          requires_subprocess)
+                          requires_subprocess, os_helper)
 from test.support.os_helper import TESTFN, temp_dir, unlink
 from test.support.script_helper import assert_python_ok, assert_python_failure, make_script
 from test.support.import_helper import forget
@@ -5193,6 +5196,56 @@ class MiscTest(unittest.TestCase):
             self.assertIn("Unsupported platform for Windows-only standard library module 'msvcrt'", formatted)
         else:
             self.fail("ModuleNotFoundError was not raised")
+
+    @unittest.skipIf(not importlib.machinery.EXTENSION_SUFFIXES, 'Platform does not support extension modules')
+    def test_find_incompatible_extension_modules(self):
+        """_find_incompatible_extension_modules assumes the last extension in
+        importlib.machinery.EXTENSION_SUFFIXES (defined in Python/dynload_*.c)
+        is untagged (eg. .so, .pyd).
+
+        This test exists to make sure that assumption is correct.
+        """
+        last_extension_suffix = importlib.machinery.EXTENSION_SUFFIXES[-1]
+        if shlib_suffix := sysconfig.get_config_var('SHLIB_SUFFIX'):
+            self.assertEqual(last_extension_suffix, shlib_suffix)
+        else:
+            before_dot, *extensions = last_extension_suffix.split('.')
+            expected_prefixes = ['']
+            if os.name == 'nt':
+                # Windows puts the debug tag in the module file stem (eg. foo_d.pyd)
+                expected_prefixes.append('_d')
+            self.assertIn(before_dot, expected_prefixes, msg=(
+                f'Unexpected prefix {before_dot!r} in extension module '
+                f'suffix {last_extension_suffix!r}. '
+                'traceback._find_incompatible_extension_module needs to be '
+                'updated to take this into account!'
+            ))
+            # if SHLIB_SUFFIX is not define, we assume the native
+            # shared library suffix only contains one extension
+            # (eg. '.so', bad eg. '.cpython-315-x86_64-linux-gnu.so')
+            self.assertEqual(len(extensions), 1, msg=(
+                'The last suffix in importlib.machinery.EXTENSION_SUFFIXES '
+                'contains more than one extension, so it is probably different '
+                'than SHLIB_SUFFIX. It probably contains an ABI tag! '
+                'If this is a false positive, define SHLIB_SUFFIX in sysconfig.'
+            ))
+
+    @unittest.skipIf(not importlib.machinery.EXTENSION_SUFFIXES, 'Platform does not support extension modules')
+    def test_incompatible_extension_modules_hint(self):
+        untagged_suffix = importlib.machinery.EXTENSION_SUFFIXES[-1]
+        with os_helper.temp_dir() as tmp:
+            # create a module with a incompatible ABI tag
+            incompatible_module = f'foo.some-abi{untagged_suffix}'
+            open(os.path.join(tmp, incompatible_module), "wb").close()
+            # try importing it
+            code = f'''
+                import sys
+                sys.path.insert(0, {tmp!r})
+                import foo
+            '''
+            _, _, stderr = assert_python_failure('-c', code, __cwd=tmp)
+        hint = f'Although a module with this name was found for a different Python version ({incompatible_module}).'
+        self.assertIn(hint, stderr.decode())
 
 
 class TestColorizedTraceback(unittest.TestCase):

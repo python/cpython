@@ -1101,13 +1101,25 @@
             break;
         }
 
-        case _GUARD_TOS_DICT: {
+        case _GUARD_NOS_ANY_DICT: {
+            JitOptRef nos;
+            nos = stack_pointer[-2];
+            PyTypeObject *tp = sym_get_type(nos);
+            if (tp == &PyDict_Type || tp == &PyFrozenDict_Type) {
+                ADD_OP(_NOP, 0, 0);
+                sym_set_type(nos, tp);
+            }
+            break;
+        }
+
+        case _GUARD_TOS_ANY_DICT: {
             JitOptRef tos;
             tos = stack_pointer[-1];
-            if (sym_matches_type(tos, &PyDict_Type)) {
+            PyTypeObject *tp = sym_get_type(tos);
+            if (tp == &PyDict_Type || tp == &PyFrozenDict_Type) {
                 ADD_OP(_NOP, 0, 0);
+                sym_set_type(tos, tp);
             }
-            sym_set_type(tos, &PyDict_Type);
             break;
         }
 
