@@ -336,3 +336,9 @@ autobuild-stable-html:
 		exit 1;; \
 	esac
 	@$(MAKE) autobuild-dev-html
+
+# Collect HTML IDs to a JSON document
+.PHONY: html-ids
+html-ids:
+	$(PYTHON) tools/check-html-ids.py collect build/html \
+		-o build/html/html-ids.json.gz
