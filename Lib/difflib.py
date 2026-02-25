@@ -71,7 +71,7 @@ def _expand_block(block, a, b, alo, ahi, blo, bhi, *, pred=None):
     return (i, j, k)
 
 def _collapse_adjacent_blocks(blocks):
-    """Collapses adjacent blocks and remove null blocks
+    """Collapses adjacent blocks and removes null blocks
 
     Examples:
         >>> blocks = [(1, 1, 2), (3, 3, 2), (6, 6, 0), (10, 10, 1)]
