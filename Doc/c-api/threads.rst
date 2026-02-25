@@ -755,7 +755,8 @@ Operating system thread APIs
    :term:`attached thread state`.
 
    .. seealso::
-      :py:func:`threading.get_ident`
+      :py:func:`threading.get_ident` and :py:attr:`threading.Thread.ident`
+      expose this identifier to Python.
 
 
 .. c:function:: PyObject *PyThread_GetInfo(void)
