@@ -119,12 +119,12 @@ class GlobalLazyImportModeTests(unittest.TestCase):
 
     def test_global_filter_from(self):
         """Filter should work with 'from' imports."""
-        import test.test_import.data.lazy_imports.global_filter
+        import test.test_import.data.lazy_imports.global_filter_from
         self.assertIn("test.test_import.data.lazy_imports.basic2", sys.modules)
 
     def test_global_filter_from_true(self):
         """Filter returning True should allow lazy 'from' imports."""
-        import test.test_import.data.lazy_imports.global_filter_true
+        import test.test_import.data.lazy_imports.global_filter_from_true
         self.assertNotIn("test.test_import.data.lazy_imports.basic2", sys.modules)
 
 
