@@ -2103,6 +2103,7 @@ hashlib_HMAC_CTX_new_from_digestmod(_hashlibstate *state,
     PY_EVP_MD_free(md);
 #endif
     if (r == 0) {
+        hashlib_openssl_HMAC_CTX_free(ctx);
         if (is_xof) {
             /* use a better default error message if an XOF is used */
             raise_unsupported_algorithm_error(state, digestmod);
