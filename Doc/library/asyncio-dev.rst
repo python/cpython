@@ -286,6 +286,67 @@ context manager::
 
   asyncio.run(func())
 
+As said above, the cleanup code for these asynchronous generators is defered.
+We can construct an example program to show that the finalization of the
+asynchronous generator is executed in an unexpected order::
+
+  import asyncio
+  work_done = False
+
+  async def cursor():
+      try:
+          yield 1
+      finally:
+          assert work_done
+
+  async def rows():
+      global work_done
+      try:
+          yield 2
+      finally:
+          await asyncio.sleep(0.1) # immitate some async work
+          work_done = True
+
+
+  async def main():
+      async for c in cursor():
+          async for r in rows():
+              break
+          break
+
+  asyncio.run(main())
+
+For this example we get the following output::
+
+  unhandled exception during asyncio.run() shutdown
+  task: <Task finished name='Task-3' coro=<<async_generator_athrow without __name__>()> exception=AssertionError()>
+  Traceback (most recent call last):
+    File "example.py", line 6, in cursor
+      yield 1
+  asyncio.exceptions.CancelledError
+
+  During handling of the above exception, another exception occurred:
+
+  Traceback (most recent call last):
+    File "example.py", line 8, in cursor
+      assert work_done
+             ^^^^^^^^^
+  AssertionError
+
+The ``cursor()`` asynchronous generator was finalized before the ``rows``
+generator, which we did not expect.
+
+Example can be fixed by explicitly closing the
+``cursor`` and ``rows`` async-generators::
+
+  async def main():
+      async with contextlib.aclosing(cursor()) as cursor_gen:
+          async for c in cursor_gen:
+              async with contextlib.aclosing(rows()) as rows_gen:
+                  async for r in rows_gen:
+                      break
+              break
+
 
 Only create a generator when a loop is already running
 ------------------------------------------------------
@@ -349,13 +410,13 @@ Output::
     File "test.py", line 38, in <module>
       asyncio.run(amain())
       ~~~~~~~~~~~^^^^^^^^^
-    File "Lib\asyncio\runners.py", line 204, in run
+    File "Lib/asyncio/runners.py", line 204, in run
       return runner.run(main)
              ~~~~~~~~~~^^^^^^
-    File "Lib\asyncio\runners.py", line 127, in run
+    File "Lib/asyncio/runners.py", line 127, in run
       return self._loop.run_until_complete(task)
              ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~^^^^^^
-    File "Lib\asyncio\base_events.py", line 719, in run_until_complete
+    File "Lib/asyncio/base_events.py", line 719, in run_until_complete
       return future.result()
              ~~~~~~~~~~~~~^^
     File "test.py", line 36, in amain
