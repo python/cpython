@@ -37,6 +37,7 @@ Commands:
   setup    Download Nanvix build pre-requisites and dependencies.
   build    Build CPython for Nanvix.
   test     Run smoke and functional tests on nanvixd.elf.
+  release  Package CPython build artifacts into a release tarball.
   cleanup  Remove all build artifacts and restore a fresh state.
 
 Environment:
@@ -515,6 +516,58 @@ run_functional_tests() {
   echo "All functional tests passed"
 }
 
+cmd_release() {
+  local release_staging="$WORK_DIR/release"
+  local release_sysroot="$release_staging/sysroot"
+  local artifact_name="cpython-${NANVIX_PLATFORM}-${NANVIX_PROCESS_MODE}"
+  local dist_dir="$ROOT_DIR/dist"
+  local tarball="$dist_dir/${artifact_name}.tar.bz2"
+
+  # Build and install into a clean staging area
+  rm -rf "$release_staging"
+  nanvix_make install DESTDIR="$release_staging" "$@"
+
+  [[ -d "$release_sysroot" ]] || die "install did not produce a sysroot at $release_sysroot"
+
+  # Strip debug symbols from the python binary to reduce size
+  local strip_cmd=""
+  if [[ -n "$NANVIX_TOOLCHAIN" && -x "$NANVIX_TOOLCHAIN/bin/i686-nanvix-strip" ]]; then
+    strip_cmd="$NANVIX_TOOLCHAIN/bin/i686-nanvix-strip"
+  fi
+  if [[ -n "$strip_cmd" ]]; then
+    find "$release_sysroot" -name 'python3.*' -type f -executable -exec "$strip_cmd" --strip-debug {} \; 2>/dev/null || true
+  fi
+
+  # Remove __pycache__ directories to slim down the package
+  find "$release_sysroot" -name '__pycache__' -type d -exec rm -rf {} + 2>/dev/null || true
+
+  # Remove test directories from stdlib (not needed at runtime)
+  find "$release_sysroot" -type d -name 'test' -path '*/lib/python3.12/*' -exec rm -rf {} + 2>/dev/null || true
+  find "$release_sysroot" -type d -name 'tests' -path '*/lib/python3.12/*' -exec rm -rf {} + 2>/dev/null || true
+
+  # Precompile stdlib .py files to .pyc for faster startup
+  local host_python=""
+  if [[ -n "$NANVIX_TOOLCHAIN" && -x "$NANVIX_TOOLCHAIN/bin/python3" ]]; then
+    host_python="$NANVIX_TOOLCHAIN/bin/python3"
+  elif command -v python3 >/dev/null 2>&1; then
+    host_python="python3"
+  fi
+  if [[ -n "$host_python" ]]; then
+    log "precompiling stdlib"
+    "$host_python" -m compileall -q "$release_sysroot/lib/python3.12/" 2>/dev/null || true
+  fi
+
+  # Create the release tarball
+  mkdir -p "$dist_dir"
+  tar -cjf "$tarball" -C "$release_staging" sysroot
+
+  rm -rf "$release_staging"
+
+  local size
+  size=$(du -h "$tarball" | cut -f1)
+  log "release tarball created: $tarball ($size)"
+}
+
 cmd_cleanup() {
   log "cleaning build artifacts and restoring fresh state"
 
@@ -611,6 +664,9 @@ case "$COMMAND" in
     ;;
   test)
     cmd_test "${EXTRA_ARGS[@]}"
+    ;;
+  release)
+    cmd_release "${EXTRA_ARGS[@]}"
     ;;
   cleanup)
     cmd_cleanup

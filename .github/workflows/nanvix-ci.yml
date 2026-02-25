@@ -89,18 +89,8 @@ jobs:
       - name: Package
         run: |
           set -euo pipefail
-          STAGING=".nanvix/staging"
+          ./z release
           ARTIFACT_NAME="cpython-${{ matrix.platform }}-${{ matrix.process-mode }}"
-          rm -f "$STAGING/sysroot/smoke_test"*.py "$STAGING/sysroot"/test_*.py
-          find "$STAGING" -path "*/test" -type d -exec rm -rf {} + 2>/dev/null || true
-          find "$STAGING" -path "*/tests" -type d -exec rm -rf {} + 2>/dev/null || true
-          rm -rf "$STAGING/sysroot/lib/python3.12/idlelib" \
-                 "$STAGING/sysroot/lib/python3.12/tkinter" \
-                 "$STAGING/sysroot/lib/python3.12/turtledemo" \
-                 "$STAGING/sysroot/lib/python3.12/turtle.py" \
-                 "$STAGING/sysroot/lib/python3.12/site-packages"
-          mkdir -p dist
-          tar -cjf "dist/${ARTIFACT_NAME}.tar.bz2" -C "$STAGING" sysroot
           echo "ARTIFACT_TARBALL=dist/${ARTIFACT_NAME}.tar.bz2" >> "$GITHUB_ENV"
 
       - name: Upload Artifacts
@@ -139,7 +129,7 @@ jobs:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
           set -euo pipefail
-          for repo in zlib sqlite openssl; do
+          for repo in zlib sqlite openssl bzip2 libffi; do
             tag=$(curl -fsSL -H "Authorization: Bearer ${GH_TOKEN}" \
               "https://api.github.com/repos/nanvix/${repo}/releases/latest" | jq -r '.tag_name // "latest"')
             echo "${repo}_tag=${tag}" >> "$GITHUB_OUTPUT"
@@ -157,6 +147,8 @@ jobs:
           ZLIB_TAG: ${{ steps.meta.outputs.zlib_tag }}
           SQLITE_TAG: ${{ steps.meta.outputs.sqlite_tag }}
           OPENSSL_TAG: ${{ steps.meta.outputs.openssl_tag }}
+          BZIP2_TAG: ${{ steps.meta.outputs.bzip2_tag }}
+          LIBFFI_TAG: ${{ steps.meta.outputs.libffi_tag }}
         run: |
           RELEASE_TAG="${GITHUB_SHA::7}-nanvix-${NANVIX_SHA}"
           if gh release view "$RELEASE_TAG" &>/dev/null; then
@@ -176,10 +168,34 @@ jobs:
           - Published: ${NANVIX_PUBLISHED}
           - Commit: [${NANVIX_SHA_FULL}](https://github.com/nanvix/nanvix/commit/${NANVIX_SHA_FULL})
 
-          **Dependencies:**
-          - zlib: [\`${ZLIB_TAG}\`](https://github.com/nanvix/zlib/releases/tag/${ZLIB_TAG})
-          - sqlite: [\`${SQLITE_TAG}\`](https://github.com/nanvix/sqlite/releases/tag/${SQLITE_TAG})
-          - openssl: [\`${OPENSSL_TAG}\`](https://github.com/nanvix/openssl/releases/tag/${OPENSSL_TAG})" \
+          **Build Dependencies (statically linked, not needed at runtime):**
+          | Dependency | Version | Source |
+          |---|---|---|
+          | zlib | \`${ZLIB_TAG}\` | [release](https://github.com/nanvix/zlib/releases/tag/${ZLIB_TAG}) |
+          | sqlite | \`${SQLITE_TAG}\` | [release](https://github.com/nanvix/sqlite/releases/tag/${SQLITE_TAG}) |
+          | openssl | \`${OPENSSL_TAG}\` | [release](https://github.com/nanvix/openssl/releases/tag/${OPENSSL_TAG}) |
+          | bzip2 | \`${BZIP2_TAG}\` | [release](https://github.com/nanvix/bzip2/releases/tag/${BZIP2_TAG}) |
+          | libffi | \`${LIBFFI_TAG}\` | [release](https://github.com/nanvix/libffi/releases/tag/${LIBFFI_TAG}) |
+
+          **Quick Start (only Nanvix runtime required):**
+          \`\`\`bash
+          # Pick your platform and process mode
+          PLATFORM=hyperlight  # or microvm
+          MODE=multi-process   # or single-process
+
+          # 1. Download & extract Nanvix runtime
+          mkdir -p sysroot
+          curl -fsSL https://raw.githubusercontent.com/nanvix/nanvix/refs/heads/dev/scripts/get-nanvix.sh | bash -s -- nanvix-artifacts
+          tar -xjf nanvix-artifacts/nanvix-\${PLATFORM}-\${MODE}-*.tar.bz2 -C sysroot
+
+          # 2. Download & overlay CPython release
+          curl -fsSL -o cpython.tar.bz2 <this-release-cpython-PLATFORM-MODE.tar.bz2-url>
+          tar -xjf cpython.tar.bz2
+
+          # 3. Run
+          echo 'import sys; print(\"Hello from Nanvix CPython!\", sys.version)' > sysroot/hello.py
+          cd sysroot && ./bin/nanvixd.elf -- ./bin/python3.12 ./hello.py
+          \`\`\`" \
             --latest \
             release-assets/*.tar.bz2
 
