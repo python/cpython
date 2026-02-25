@@ -565,6 +565,8 @@ class Wave_write:
         try:
             if self._file:
                 self._ensure_header_written(0)
+                if self._datawritten & 1:
+                    self._file.write(b'\x00')
                 if self._datalength != self._datawritten:
                     self._patchheader()
                 self._file.flush()
@@ -600,7 +602,7 @@ class Wave_write:
         except (AttributeError, OSError):
             self._form_length_pos = None
         self._file.write(struct.pack('<L4s4sLHHLLHH4s',
-            36 + self._datalength, b'WAVE', b'fmt ', 16,
+            36 + self._datalength + (self._datalength & 1), b'WAVE', b'fmt ', 16,
             WAVE_FORMAT_PCM, self._nchannels, self._framerate,
             self._nchannels * self._framerate * self._sampwidth,
             self._nchannels * self._sampwidth,
@@ -616,7 +618,7 @@ class Wave_write:
             return
         curpos = self._file.tell()
         self._file.seek(self._form_length_pos, 0)
-        self._file.write(struct.pack('<L', 36 + self._datawritten))
+        self._file.write(struct.pack('<L', 36 + self._datawritten + (self._datawritten & 1)))
         self._file.seek(self._data_length_pos, 0)
         self._file.write(struct.pack('<L', self._datawritten))
         self._file.seek(curpos, 0)
