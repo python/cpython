@@ -42,26 +42,23 @@ from types import GenericAlias
 ###  Utilities
 ########################################################################
 
-def _expand_block_to_junk(junk, block, a, b, alo, ahi, blo, bhi, *, inverse=False):
-    """
-    Expands block for consecutive matches at both sides if:
-        a) characters match
-        b) matching characters are in junk
-    If inverse == True, (b) condition is inverted to: "are not in junk"
+def _expand_block(block, a, b, alo, ahi, blo, bhi, *, pred=None):
+    """Expands block for consecutive matches at both sides if characters match
+
+    pred: callable
+        additionally, only expand if pred(matching_element) returns True
     """
     i, j, k = block
     while i > alo and j > blo:
         el2 = b[j - 1]
-        ok = el2 not in junk if inverse else el2 in junk
-        if not ok or a[i - 1] != el2:
+        if a[i - 1] != el2 or pred is not None and not pred(el2):
             break
         i -= 1
         j -= 1
         k += 1
     while i + k < ahi and j + k < bhi:
         el2 = b[j + k]
-        ok = el2 not in junk if inverse else el2 in junk
-        if not ok or a[i + k] != el2:
+        if a[i + k] != el2 or pred is not None and not pred(el2):
             break
         k += 1
     return (i, j, k)
@@ -722,7 +719,8 @@ class SequenceMatcher(SequenceMatcherBase):
             # "popular" non-junk elements aren't in b2j, which greatly speeds
             # the inner loop above, but also means "the best" match so far
             # doesn't contain any junk *or* popular non-junk elements.
-            block = _expand_block_to_junk(bpopular, block, a, b, alo, ahi, blo, bhi)
+            block = _expand_block(block, a, b, alo, ahi, blo, bhi,
+                                  pred=bpopular.__contains__)
 
         if bjunk:
             # Now that we have a wholly interesting match (albeit possibly
@@ -732,7 +730,8 @@ class SequenceMatcher(SequenceMatcherBase):
             # figuring out what to do with it.  In the case of an empty
             # interesting match, this is clearly the right thing to do,
             # because no other kind of match is possible in the regions.
-            block = _expand_block_to_junk(bjunk, block, a, b, alo, ahi, blo, bhi)
+            block = _expand_block(block, a, b, alo, ahi, blo, bhi,
+                                  pred=bjunk.__contains__)
 
         return Match._make(block)
 
