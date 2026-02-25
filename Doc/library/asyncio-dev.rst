@@ -378,7 +378,7 @@ Avoid iterating and closing the same generator concurrently
 -----------------------------------------------------------
 
 Async generators may to be reentered while another
-:meth:`~agen.anext` / :meth:`~agen.athrow` / :meth:`~agen.aclose` call is in
+:meth:`~agen.__anext__` / :meth:`~agen.athrow` / :meth:`~agen.aclose` call is in
 progress. This may lead to an inconsistent state of the async generator
 and can cause errors.
 
