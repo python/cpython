@@ -1913,7 +1913,7 @@ Segment_dealloc(PyObject *self)
 {
     PyTypeObject *tp = Py_TYPE(self);
     PyObject_GC_UnTrack(self);
-    Py_DECREF(((SegmentObject *)self)->string);
+    Py_XDECREF(((SegmentObject *)self)->string);
     tp->tp_free(self);
     Py_DECREF(tp);
 }
@@ -1989,7 +1989,7 @@ GBI_dealloc(PyObject *self)
 {
     PyTypeObject *tp = Py_TYPE(self);
     PyObject_GC_UnTrack(self);
-    Py_DECREF(((GraphemeBreakIterator *)self)->iter.str);
+    Py_XDECREF(((GraphemeBreakIterator *)self)->iter.str);
     tp->tp_free(self);
     Py_DECREF(tp);
 }
