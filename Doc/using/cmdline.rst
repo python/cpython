@@ -694,6 +694,14 @@ Miscellaneous options
 
      .. versionadded:: 3.14
 
+   * :samp:`-X lazy_imports={all,none,normal}` controls lazy import behavior.
+     ``all`` makes all imports lazy by default, ``none`` disables lazy imports
+     entirely (even explicit ``lazy`` statements become eager), and ``normal``
+     (the default) respects the ``lazy`` keyword in source code.
+     See also :envvar:`PYTHON_LAZY_IMPORTS`.
+
+     .. versionadded:: next
+
    It also allows passing arbitrary values and retrieving them through the
    :data:`sys._xoptions` dictionary.
 
@@ -1105,7 +1113,7 @@ conflict.
       and kill the process.  Only enable this in environments where the
       huge-page pool is properly sized and fork-safety is not a concern.
 
-   .. versionadded:: next
+   .. versionadded:: 3.15
 
 
 .. envvar:: PYTHONLEGACYWINDOWSFSENCODING
@@ -1359,6 +1367,17 @@ conflict.
    See also the :option:`-X tlbc <-X>` command-line option.
 
    .. versionadded:: 3.14
+
+.. envvar:: PYTHON_LAZY_IMPORTS
+
+   Controls lazy import behavior. Accepts three values: ``all`` makes all
+   imports lazy by default, ``none`` disables lazy imports entirely (even
+   explicit ``lazy`` statements become eager), and ``normal`` (the default)
+   respects the ``lazy`` keyword in source code.
+
+   See also the :option:`-X lazy_imports <-X>` command-line option.
+
+   .. versionadded:: next
 
 Debug-mode variables
 ~~~~~~~~~~~~~~~~~~~~

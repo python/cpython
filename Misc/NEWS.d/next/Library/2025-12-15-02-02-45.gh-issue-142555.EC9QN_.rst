@@ -1,3 +1,0 @@
-:mod:`array`: fix a crash in ``a[i] = v`` when converting *i* to
-an index via :meth:`i.__index__ <object.__index__>` or :meth:`i.__float__
-<object.__float__>` mutates the array.

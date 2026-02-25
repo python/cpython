@@ -4,14 +4,11 @@
 .. module:: pprint
    :synopsis: Data pretty printer.
 
-.. moduleauthor:: Fred L. Drake, Jr. <fdrake@acm.org>
-.. sectionauthor:: Fred L. Drake, Jr. <fdrake@acm.org>
-
 **Source code:** :source:`Lib/pprint.py`
 
 --------------
 
-The :mod:`pprint` module provides a capability to "pretty-print" arbitrary
+The :mod:`!pprint` module provides a capability to "pretty-print" arbitrary
 Python data structures in a form which can be used as input to the interpreter.
 If the formatted structures include objects which are not fundamental Python
 types, the representation may not be loadable.  This may be the case if objects
