@@ -802,6 +802,14 @@ class StructTest(ComplexesAreIdenticalMixin, unittest.TestCase):
             my_struct = MyStruct()
         self.assertEqual(my_struct.pack(12345), b'\x30\x39')
 
+        class MyStruct(struct.Struct):
+            def __new__(cls, arg):
+                self = super().__new__(cls, '>h')
+                return self
+
+        my_struct = MyStruct(5)
+        self.assertEqual(my_struct.pack(123), b'\x00{')
+
     def test_repr(self):
         s = struct.Struct('=i2H')
         self.assertEqual(repr(s), f'Struct({s.format!r})')
