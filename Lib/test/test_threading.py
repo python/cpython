@@ -445,8 +445,13 @@ class ThreadTests(BaseTestCase):
         self.assertEqual(result, 1)
 
         for _ in support.sleeping_retry(support.SHORT_TIMEOUT):
-            signal.pthread_kill(thread.ident, signal.SIGUSR1)
             if not thread.is_alive():
+                break
+            try:
+                signal.pthread_kill(thread.ident, signal.SIGUSR1)
+            except OSError:
+                # The thread might have terminated between the is_alive check
+                # and the pthread_kill
                 break
 
         thread.join()
