@@ -241,13 +241,17 @@ class SequenceMatcherBase:
     # ---------------------------------
 
     def _get_matching_blocks(self):
-        """Return list of triples describing matching subsequences.
+        """Returns list of tuples of the form (start_in_a, start_in_b, length)
+            describing matching subsequences.
 
-        Implement this to return list[tuple[int, int, int]] and
-        let `get_matching_blocks` take care of maintenance and caching
+        Validity of whether blocks actually match is not checked
+        and it is up to the user to make sure of result's correctness.
 
-        Note, that validity of whether blocks actually match is not checked
-        and it is up to the user to make sure of correctness of the result.
+        This method implements the core matching logic, while
+        `get_matching_blocks` takes care of the maintenance and caching.
+
+        For custom maintenance and caching, get_matching_blocks can be
+        overriden by derived class without making use of this method.
         """
         raise NotImplementedError
 

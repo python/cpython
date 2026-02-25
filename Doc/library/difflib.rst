@@ -461,6 +461,21 @@ The :class:`SequenceMatcherBase` class has this constructor:
       Set the second sequence to be compared.  The first sequence to be compared
       is not changed.
 
+   .. method:: _get_matching_blocks()
+      :abstractmethod:
+
+      Returns list of tuples of the form ``(start_in_a, start_in_b, length)``
+      describing matching subsequences.
+
+      Validity of whether blocks actually match is not checked
+      and it is up to the user to make sure of result's correctness.
+
+      This method implements the core matching logic, while
+      :meth:`get_matching_blocks` takes care of the maintenance and caching.
+
+      For custom maintenance and caching, :meth:`get_matching_blocks` can be
+      overriden by derived class without making use of this method.
+
    .. method:: get_matching_blocks()
 
       Return list of triples describing non-overlapping matching subsequences.
@@ -580,8 +595,8 @@ The :class:`SequenceMatcherBase` class has this constructor:
 
 The three methods that return the ratio of matching to total characters can give
 different results due to differing levels of approximation, although
-:meth:`~SequenceMatcher.quick_ratio` and :meth:`~SequenceMatcher.real_quick_ratio`
-are always at least as large as :meth:`~SequenceMatcher.ratio`:
+:meth:`~SequenceMatcherBase.quick_ratio` and :meth:`~SequenceMatcherBase.real_quick_ratio`
+are always at least as large as :meth:`~SequenceMatcherBase.ratio`:
 
    >>> s = SequenceMatcher(None, "abcd", "bcde")
    >>> s.ratio()
@@ -620,8 +635,9 @@ The :class:`SequenceMatcher` class has this constructor:
 
    :class:`SequenceMatcher` computes and caches detailed information about the
    second sequence, so if you want to compare one sequence against many
-   sequences, use :meth:`set_seq2` to set the commonly used sequence once and
-   call :meth:`set_seq1` repeatedly, once for each of the other sequences.
+   sequences, use :meth:`~SequenceMatcherBase.set_seq2` to set the commonly used
+   sequence once and call :meth:`~SequenceMatcherBase.set_seq1` repeatedly,
+   once for each of the other sequences.
 
    In addition to methods implemented by :class:`SequenceMatcherBase`,
    :class:`SequenceMatcher` objects have the following methods:
@@ -684,9 +700,9 @@ This example compares two strings, considering blanks to be "junk":
    ...                     "private Thread currentThread;",
    ...                     "private volatile Thread currentThread;")
 
-:meth:`~SequenceMatcher.ratio` returns a float in [0, 1], measuring the similarity of the
-sequences.  As a rule of thumb, a :meth:`~SequenceMatcher.ratio` value over 0.6 means the
-sequences are close matches:
+:meth:`~SequenceMatcherBase.ratio` returns a float in [0, 1], measuring
+the similarity of the sequences.  As a rule of thumb, a :meth:`~SequenceMatcherBase.ratio`
+value over 0.6 means the sequences are close matches:
 
    >>> print(round(s.ratio(), 3))
    0.866
@@ -700,12 +716,12 @@ If you're only interested in where the sequences match,
    a[8] and b[17] match for 21 elements
    a[29] and b[38] match for 0 elements
 
-Note that the last tuple returned by :meth:`~SequenceMatcher.get_matching_blocks`
+Note that the last tuple returned by :meth:`~SequenceMatcherBase.get_matching_blocks`
 is always a dummy, ``(len(a), len(b), 0)``, and this is the only case in which the last
 tuple element (number of elements matched) is ``0``.
 
 If you want to know how to change the first sequence into the second, use
-:meth:`~SequenceMatcher.get_opcodes`:
+:meth:`~SequenceMatcherBase.get_opcodes`:
 
    >>> for opcode in s.get_opcodes():
    ...     print("%6s a[%d:%d] b[%d:%d]" % opcode)
