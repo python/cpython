@@ -1438,6 +1438,8 @@ _Py_HandlePending(PyThreadState *tstate)
 int
 _PyEval_RaiseAsyncExc(PyThreadState *tstate)
 {
+    assert(tstate != NULL);
+    assert(tstate == _PyThreadState_GET());
     _Py_unset_eval_breaker_bit(tstate, _PY_ASYNC_EXCEPTION_BIT);
     PyObject *exc = _Py_atomic_exchange_ptr(&tstate->async_exc, NULL);
     if (exc != NULL) {
