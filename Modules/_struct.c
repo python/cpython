@@ -1778,11 +1778,11 @@ s_init(PyStructObject *self, PyObject *format)
         Py_INCREF(format);
     }
     if (!PyBytes_Check(format)) {
-        Py_DECREF(format);
         PyErr_Format(PyExc_TypeError,
                      "Struct() argument 1 must be a str or bytes object, "
                      "not %T",
                      format);
+        Py_DECREF(format);
         return -1;
     }
     Py_SETREF(self->s_format, format);
