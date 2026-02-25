@@ -289,6 +289,7 @@ _testinternalcapi.benchmark_locks
     total_iters: Py_ssize_t = 0
     num_locks: Py_ssize_t = 1
     random_locks: bool = False
+    /
 
 [clinic start generated code]*/
 
@@ -300,7 +301,7 @@ _testinternalcapi_benchmark_locks_impl(PyObject *module,
                                        Py_ssize_t total_iters,
                                        Py_ssize_t num_locks,
                                        int random_locks)
-/*[clinic end generated code: output=6258dc9de8cb9af1 input=6d3b65d51a6fd46e]*/
+/*[clinic end generated code: output=6258dc9de8cb9af1 input=d622cf4e1c4d008b]*/
 {
     // Run from Tools/lockbench/lockbench.py
     // Based on the WebKit lock benchmarks:
