@@ -1,0 +1,1 @@
+Users can now implement and/or provide custom ``Matcher`` and ``Diff`` classes in :module:`difflib`.
