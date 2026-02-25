@@ -170,8 +170,7 @@ diffs. For comparing directories and files, see the :mod:`filecmp` module.
 
 
 
-.. function:: context_diff(a, b, fromfile='', tofile='', fromfiledate='', tofiledate='',
-                           n=3, lineterm='\n', matcher=None)
+.. function:: context_diff(a, b, fromfile='', tofile='', fromfiledate='', tofiledate='', n=3, lineterm='\n', matcher=None)
 
    Compare *a* and *b* (lists of strings); return a delta (a :term:`generator`
    generating the delta lines) in context diff format.
@@ -323,8 +322,7 @@ diffs. For comparing directories and files, see the :mod:`filecmp` module.
       emu
 
 
-.. function:: unified_diff(a, b, fromfile='', tofile='', fromfiledate='', tofiledate='',
-                           n=3, lineterm='\n', *, color=False, matcher=None)
+.. function:: unified_diff(a, b, fromfile='', tofile='', fromfiledate='', tofiledate='', n=3, lineterm='\n', *, color=False, matcher=None)
 
    Compare *a* and *b* (lists of strings); return a delta (a :term:`generator`
    generating the delta lines) in unified diff format.
@@ -415,7 +413,7 @@ diffs. For comparing directories and files, see the :mod:`filecmp` module.
       was published in Dr. Dobb's Journal in July, 1988.
 
 
-.. _sequence-matcher-base:
+.. _sequencematcher-base:
 
 SequenceMatcherBase
 -------------------
