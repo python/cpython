@@ -6,7 +6,7 @@ Pending removal in Python 3.20
   :meth:`~object.__init__` method on initialized :class:`~struct.Struct`
   objects is deprecated and will be removed in Python 3.20.
 
-  (Contributed by Sergey B Kirpichev in :gh:`78724`.)
+  (Contributed by Sergey B Kirpichev in :gh:`143715`.)
 
 * The ``__version__``, ``version`` and ``VERSION`` attributes have been
   deprecated in these standard library modules and will be removed in
