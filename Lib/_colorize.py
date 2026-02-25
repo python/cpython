@@ -202,39 +202,26 @@ class Difflib(ThemeSection):
 
 @dataclass(frozen=True, kw_only=True)
 class Dis(ThemeSection):
-    label_bg: str = ANSIColors.BACKGROUND_BLUE
+    label_bg: str = ANSIColors.BACKGROUND_CYAN
     label_fg: str = ANSIColors.BLACK
-    exception_label: str = ANSIColors.CYAN
-    argument_detail: str = ANSIColors.GREY
 
-    op_stack: str = ANSIColors.BOLD_YELLOW
-    op_load_store: str = ANSIColors.BOLD_CYAN
-    op_call_return: str = ANSIColors.BOLD_MAGENTA
-    op_binary_unary: str = ANSIColors.BOLD_BLUE
+    L:str = ANSIColors.BOLD_RED
+    exception_label: str = ANSIColors.CYAN
+    argument_detail: str = ANSIColors.CYAN
+
+    op_load: str = ANSIColors.BOLD_BLUE
+    op_pop: str = ANSIColors.BOLD_MAGENTA
+    op_call_return: str = ANSIColors.BOLD_YELLOW
     op_control_flow: str = ANSIColors.BOLD_GREEN
-    op_build: str = ANSIColors.BOLD_WHITE
-    op_exceptions: str = ANSIColors.BOLD_RED
-    op_other: str = ANSIColors.GREY
 
     reset: str = ANSIColors.RESET
 
     def color_by_opname(self, opname: str) -> str:
-        if opname in (
-            "POP_TOP",
-            "POP_ITER",
-            "END_FOR",
-            "END_SEND",
-            "COPY",
-            "SWAP",
-            "PUSH_NULL",
-            "PUSH_EXC_INFO",
-            "NOP",
-            "CACHE",
-        ):
-            return self.op_stack
+        if opname.startswith("LOAD_"):
+            return self.op_load
 
-        if opname.startswith(("LOAD_", "STORE_", "DELETE_", "IMPORT_")):
-            return self.op_load_store
+        if opname.startswith("POP_"):
+            return self.op_pop
 
         if opname.startswith(("CALL", "RETURN")) or opname in (
             "YIELD_VALUE",
@@ -243,17 +230,6 @@ class Dis(ThemeSection):
             "RESUME",
         ):
             return self.op_call_return
-
-        if opname.startswith(("BINARY_", "UNARY_")) or opname in (
-            "COMPARE_OP",
-            "IS_OP",
-            "CONTAINS_OP",
-            "GET_ITER",
-            "GET_YIELD_FROM_ITER",
-            "TO_BOOL",
-            "DELETE_SUBSCR",
-        ):
-            return self.op_binary_unary
 
         if opname.startswith(("JUMP_", "POP_JUMP_", "FOR_ITER")) or opname in (
             "SEND",
@@ -265,21 +241,8 @@ class Dis(ThemeSection):
         ):
             return self.op_control_flow
 
-        if opname.startswith(
-            ("BUILD_", "LIST_", "DICT_", "UNPACK_")
-        ) or opname in ("SET_ADD", "MAP_ADD", "SET_UPDATE"):
-            return self.op_build
 
-        if opname.startswith(("SETUP_", "CHECK_")) or opname in (
-            "POP_EXCEPT",
-            "RERAISE",
-            "WITH_EXCEPT_START",
-            "RAISE_VARARGS",
-            "POP_BLOCK",
-        ):
-            return self.op_exceptions
-
-        return self.op_other
+        return self.reset
 
 
 @dataclass(frozen=True, kw_only=True)
