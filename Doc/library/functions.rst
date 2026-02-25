@@ -834,9 +834,9 @@ are always available.  They are listed here in alphabetical order.
       Falls back to :meth:`~object.__index__` if :meth:`~object.__float__` is not defined.
 
    .. versionchanged:: next
-      Added support for ``−`` (Unicode minus sign, U+2212) as an
-      alternative to ``-`` (ASCII hyphen minus) for denoting negative
-      floats.
+      ``'−'`` (Unicode minus sign, U+2212) can be now used as an
+      alternative to ``'-'`` (ASCII hyphen minus) for denoting
+      negative sign.
 
 
 .. index::
