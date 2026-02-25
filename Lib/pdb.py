@@ -91,6 +91,7 @@ import builtins
 import tempfile
 import textwrap
 import tokenize
+import functools
 import itertools
 import traceback
 import linecache
@@ -348,6 +349,37 @@ def get_default_backend():
     return _default_backend
 
 
+class PdbPyReplInput:
+    def __init__(self, pdb_instance, prompt):
+        from _pyrepl.readline import _setup
+        self.pdb_instance = pdb_instance
+        self.prompt = prompt
+        self.console = code.InteractiveConsole()
+        _setup({})
+
+    def readline(self):
+        from _pyrepl.simple_interact import _more_lines
+        from _pyrepl.readline import get_completer, multiline_input, set_completer
+
+        def more_lines(text):
+            cmd, _, line = self.pdb_instance.parseline(text)
+            if not line or not cmd:
+                return False
+            func = getattr(self.pdb_instance, 'do_' + cmd, None)
+            if func is not None:
+                return False
+            return _more_lines(self.console, text)
+
+        try:
+            pyrepl_completer = get_completer()
+            set_completer(self.pdb_instance.complete)
+            return multiline_input(more_lines, self.prompt, '... ') + '\n'
+        except EOFError:
+            return 'EOF'
+        finally:
+            set_completer(pyrepl_completer)
+
+
 class Pdb(bdb.Bdb, cmd.Cmd):
     _previous_sigint_handler = None
 
@@ -382,6 +414,10 @@ class Pdb(bdb.Bdb, cmd.Cmd):
         except ImportError:
             pass
 
+        if self.use_rawinput and stdin is None:
+            self.pyrepl_input = PdbPyReplInput(self, self.prompt)
+        else:
+            self.pyrepl_input = None
         self.allow_kbdint = False
         self.nosigint = nosigint
         # Consider these characters as part of the command so when the users type
@@ -620,6 +656,31 @@ class Pdb(bdb.Bdb, cmd.Cmd):
         self.message('%s%s' % (prefix, self._format_exc(exc_value)))
         self.interaction(frame, exc_traceback)
 
+    @contextmanager
+    def _replace_attribute(self, attrs):
+        original_attrs = {}
+        for attr, value in attrs.items():
+            original_attrs[attr] = getattr(self, attr)
+            setattr(self, attr, value)
+        try:
+            yield
+        finally:
+            for attr, value in original_attrs.items():
+                setattr(self, attr, value)
+
+    @contextmanager
+    def _maybe_use_pyrepl_as_stdin(self):
+        if self.pyrepl_input is None:
+            yield
+            return
+
+        with self._replace_attribute({
+            'stdin': self.pyrepl_input,
+            'use_rawinput': False,
+            'prompt': '',
+        }):
+            yield
+
     # General interaction function
     def _cmdloop(self):
         while True:
@@ -627,7 +688,8 @@ class Pdb(bdb.Bdb, cmd.Cmd):
                 # keyboard interrupts allow for an easy way to cancel
                 # the current command, so allow them during interactive input
                 self.allow_kbdint = True
-                self.cmdloop()
+                with self._maybe_use_pyrepl_as_stdin():
+                    self.cmdloop()
                 self.allow_kbdint = False
                 break
             except KeyboardInterrupt:
