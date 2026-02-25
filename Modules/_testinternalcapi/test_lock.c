@@ -194,56 +194,78 @@ test_lock_counter_slow(PyObject *self, PyObject *obj)
     Py_RETURN_NONE;
 }
 
-struct bench_data_locks {
-    int stop;
-    int work_inside;
-    int work_outside;
-    int num_acquisitions;
-    Py_ssize_t target_iters;
+struct bench_lock {
     char padding[200];
     PyMutex m;
     double value;
 };
 
+struct bench_config {
+    int stop;
+    int work_inside;
+    int work_outside;
+    int num_acquisitions;
+    int random_locks;
+    Py_ssize_t target_iters;
+    Py_ssize_t num_locks;
+    struct bench_lock *locks;
+};
+
 struct bench_thread_data {
-    struct bench_data_locks *bench_data;
+    struct bench_config *config;
+    struct bench_lock *lock;
+    uint64_t rng_state;
     Py_ssize_t iters;
     PyEvent done;
 };
 
+static uint64_t
+splitmix64(uint64_t *state)
+{
+    uint64_t z = (*state += 0x9e3779b97f4a7c15);
+    z = (z ^ (z >> 30)) * 0xbf58476d1ce4e5b9;
+    z = (z ^ (z >> 27)) * 0x94d049bb133111eb;
+    return z ^ (z >> 31);
+}
+
 static void
 thread_benchmark_locks(void *arg)
 {
-    struct bench_thread_data *thread_data = arg;
-    struct bench_data_locks *bench_data = thread_data->bench_data;
-    int work_inside = bench_data->work_inside;
-    int work_outside = bench_data->work_outside;
-    int num_acquisitions = bench_data->num_acquisitions;
-    Py_ssize_t target_iters = bench_data->target_iters;
+    struct bench_thread_data *td = arg;
+    struct bench_config *config = td->config;
+    int work_inside = config->work_inside;
+    int work_outside = config->work_outside;
+    int num_acquisitions = config->num_acquisitions;
+    Py_ssize_t target_iters = config->target_iters;
+    uint64_t rng_state = td->rng_state;
 
     double local_value = 0.0;
     double my_value = 1.0;
     Py_ssize_t iters = 0;
     for (;;) {
         if (target_iters > 0) {
-            // Fixed iteration mode: each thread runs for target_iters
             if (iters >= target_iters) {
                 break;
             }
         }
-        else {
-            // Time-based mode: stop when signaled
-            if (_Py_atomic_load_int_relaxed(&bench_data->stop)) {
-                break;
-            }
+        else if (_Py_atomic_load_int_relaxed(&config->stop)) {
+            break;
+        }
+        struct bench_lock *lock = td->lock;
+        if (config->random_locks) {
+            uint32_t r = (uint32_t)splitmix64(&rng_state);
+            // Fast modulo reduction to pick a random lock, adapted from:
+            // https://lemire.me/blog/2016/06/27/a-fast-alternative-to-the-modulo-reduction/
+            Py_ssize_t idx = ((uint64_t)r * (uint32_t)config->num_locks) >> 32;
+            lock = &config->locks[idx];
         }
         for (int acq = 0; acq < num_acquisitions; acq++) {
-            PyMutex_Lock(&bench_data->m);
+            PyMutex_Lock(&lock->m);
             for (int i = 0; i < work_inside; i++) {
-                bench_data->value += my_value;
-                my_value = bench_data->value;
+                lock->value += my_value;
+                my_value = lock->value;
             }
-            PyMutex_Unlock(&bench_data->m);
+            PyMutex_Unlock(&lock->m);
         }
         for (int i = 0; i < work_outside; i++) {
             local_value += my_value;
@@ -252,8 +274,8 @@ thread_benchmark_locks(void *arg)
         iters += num_acquisitions;
     }
 
-    thread_data->iters = iters;
-    _PyEvent_Notify(&thread_data->done);
+    td->iters = iters;
+    _PyEvent_Notify(&td->done);
 }
 
 /*[clinic input]
@@ -266,7 +288,7 @@ _testinternalcapi.benchmark_locks
     num_acquisitions: int = 1
     total_iters: Py_ssize_t = 0
     num_locks: Py_ssize_t = 1
-    /
+    random_locks: bool = False
 
 [clinic start generated code]*/
 
@@ -276,8 +298,9 @@ _testinternalcapi_benchmark_locks_impl(PyObject *module,
                                        int work_inside, int work_outside,
                                        int time_ms, int num_acquisitions,
                                        Py_ssize_t total_iters,
-                                       Py_ssize_t num_locks)
-/*[clinic end generated code: output=942723d0d7194f36 input=d21190b0d7cf00b9]*/
+                                       Py_ssize_t num_locks,
+                                       int random_locks)
+/*[clinic end generated code: output=6258dc9de8cb9af1 input=6d3b65d51a6fd46e]*/
 {
     // Run from Tools/lockbench/lockbench.py
     // Based on the WebKit lock benchmarks:
@@ -285,19 +308,21 @@ _testinternalcapi_benchmark_locks_impl(PyObject *module,
     // See also https://webkit.org/blog/6161/locking-in-webkit/
     PyObject *thread_iters = NULL;
     PyObject *res = NULL;
-    struct bench_data_locks *bench_data = NULL;
     struct bench_thread_data *thread_data = NULL;
 
-    bench_data = PyMem_Calloc(num_locks, sizeof(*bench_data));
-    if (bench_data == NULL) {
+    struct bench_config config = {
+        .work_inside = work_inside,
+        .work_outside = work_outside,
+        .num_acquisitions = num_acquisitions,
+        .target_iters = total_iters,
+        .num_locks = num_locks,
+        .random_locks = random_locks,
+    };
+
+    config.locks = PyMem_Calloc(num_locks, sizeof(*config.locks));
+    if (config.locks == NULL) {
         PyErr_NoMemory();
         goto exit;
-    }
-    for (Py_ssize_t i = 0; i < num_locks; i++) {
-        bench_data[i].work_inside = work_inside;
-        bench_data[i].work_outside = work_outside;
-        bench_data[i].num_acquisitions = num_acquisitions;
-        bench_data[i].target_iters = total_iters;
     }
 
     thread_data = PyMem_Calloc(num_threads, sizeof(*thread_data));
@@ -316,19 +341,17 @@ _testinternalcapi_benchmark_locks_impl(PyObject *module,
     }
 
     for (Py_ssize_t i = 0; i < num_threads; i++) {
-        thread_data[i].bench_data = &bench_data[i % num_locks];
+        thread_data[i].config = &config;
+        thread_data[i].lock = &config.locks[i % num_locks];
+        thread_data[i].rng_state = (uint64_t)i + 1;
         PyThread_start_new_thread(thread_benchmark_locks, &thread_data[i]);
     }
 
     if (total_iters == 0) {
-        // Time-based mode: let the threads run for `time_ms` milliseconds
         pysleep(time_ms);
-        for (Py_ssize_t i = 0; i < num_locks; i++) {
-            _Py_atomic_store_int(&bench_data[i].stop, 1);
-        }
+        _Py_atomic_store_int(&config.stop, 1);
     }
 
-    // Wait for lock threads to finish
     for (Py_ssize_t i = 0; i < num_threads; i++) {
         PyEvent_Wait(&thread_data[i].done);
     }
@@ -337,8 +360,6 @@ _testinternalcapi_benchmark_locks_impl(PyObject *module,
         goto exit;
     }
 
-    // Return the total number of acquisitions, the number of acquisitions
-    // for each thread, and elapsed time.
     Py_ssize_t sum_iters = 0;
     for (Py_ssize_t i = 0; i < num_threads; i++) {
         PyObject *iter = PyLong_FromSsize_t(thread_data[i].iters);
@@ -356,7 +377,7 @@ _testinternalcapi_benchmark_locks_impl(PyObject *module,
                         (long long)elapsed_ns);
 
 exit:
-    PyMem_Free(bench_data);
+    PyMem_Free(config.locks);
     PyMem_Free(thread_data);
     Py_XDECREF(thread_iters);
     return res;
@@ -367,7 +388,7 @@ test_lock_benchmark(PyObject *module, PyObject *obj)
 {
     // Just make sure the benchmark runs without crashing
     PyObject *res = _testinternalcapi_benchmark_locks_impl(
-        module, 1, 1, 0, 100, 1, 0, 1);
+        module, 1, 1, 0, 100, 1, 0, 1, 0);
     if (res == NULL) {
         return NULL;
     }

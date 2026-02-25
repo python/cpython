@@ -2,10 +2,20 @@
 #
 # Usage: python Tools/lockbench/lockbench.py [options]
 #
-# The --work-inside and --work-outside options control the amount of work
-# performed inside and outside the critical section, respectively. Each unit
-# of work is a single dependent floating-point addition, which takes about
-# 0.4 ns on modern Intel / AMD processors.
+# Options:
+#   --work-inside N    Units of work inside the critical section (default: 1).
+#   --work-outside N   Units of work outside the critical section (default: 0).
+#                      Each unit of work is a dependent floating-point
+#                      addition, which takes about 0.4 ns on modern
+#                      Intel / AMD processors.
+#   --num-locks N      Number of independent locks (default: 1). Threads are
+#                      assigned to locks round-robin.
+#   --random-locks     Each thread picks a random lock per acquisition instead
+#                      of using a fixed assignment. Requires --num-locks > 1.
+#   --acquisitions N   Lock acquisitions per loop iteration (default: 1).
+#   --total-iters N    Fixed iterations per thread (default: 0 = time-based).
+#                      Useful for measuring fairness: the benchmark runs until
+#                      the slowest thread finishes.
 #
 # How to interpret the results:
 #
@@ -41,15 +51,17 @@ def jains_fairness(values):
 def main():
     parser = argparse.ArgumentParser(description="Benchmark PyMutex locks")
     parser.add_argument("--work-inside", type=int, default=1,
-                        help="Amount of work inside the critical section")
+                        help="units of work inside the critical section")
     parser.add_argument("--work-outside", type=int, default=0,
-                        help="Amount of work outside the critical section")
+                        help="units of work outside the critical section")
     parser.add_argument("--acquisitions", type=int, default=1,
-                        help="Lock acquisitions per loop iteration")
+                        help="lock acquisitions per loop iteration")
     parser.add_argument("--total-iters", type=int, default=0,
-                        help="Fixed iterations per thread (0 = time-based)")
+                        help="fixed iterations per thread (0 = time-based)")
     parser.add_argument("--num-locks", type=int, default=1,
-                        help="Number of locks (threads assigned round-robin)")
+                        help="number of independent locks (round-robin assignment)")
+    parser.add_argument("--random-locks", action="store_true",
+                        help="pick a random lock per acquisition")
     parser.add_argument("threads", type=parse_threads, nargs='?',
                         default=range(1, 11),
                         help="Number of threads: N or MIN-MAX (default: 1-10)")
@@ -64,7 +76,7 @@ def main():
             benchmark_locks(
                 num_threads, args.work_inside, args.work_outside,
                 1000, args.acquisitions, args.total_iters,
-                args.num_locks)
+                args.num_locks, args.random_locks)
 
         wall_ms = elapsed_ns / 1e6
         acquisitions /= 1000  # report in kHz for readability
