@@ -47,6 +47,13 @@ def _expand_block(block, a, b, alo, ahi, blo, bhi, *, pred=None):
 
     pred: callable
         additionally, only expand if pred(matching_element) returns True
+
+    Examples:
+        >>> a, b = '_cabbac_', '.cabbac.'
+        >>> _expand_block((3, 3, 2), a, b, 0, 8, 0, 8)
+        (1, 1, 6)
+        >>> _expand_block((3, 3, 2), a, b, 0, 8, 0, 8, pred='a'.__contains__)
+        (2, 2, 4)
     """
     i, j, k = block
     while i > alo and j > blo:
@@ -63,13 +70,16 @@ def _expand_block(block, a, b, alo, ahi, blo, bhi, *, pred=None):
         k += 1
     return (i, j, k)
 
-def _collapse_adjacent_blocks(blocks, remove_zero_length=True):
-    """Collapses adjacent blocks
+def _collapse_adjacent_blocks(blocks):
+    """Collapses adjacent blocks and remove null blocks
+
+    Examples:
+        >>> blocks = [(1, 1, 2), (3, 3, 2), (6, 6, 0), (10, 10, 1)]
+        >>> list(_collapse_adjacent_blocks(blocks))
+        [(1, 1, 4), (10, 10, 1)]
     """
     i1 = j1 = k1 = 0
     for i2, j2, k2 in blocks:
-        if remove_zero_length and not k2:
-            continue
         # Is this block adjacent to i1, j1, k1?
         if i1 + k1 == i2 and j1 + k1 == j2:
             # Yes, so collapse them -- this just increases the length of
@@ -282,7 +292,7 @@ class SequenceMatcherBase:
         blocks = self.matching_blocks
         if blocks is None:
             blocks = self._get_matching_blocks()
-            blocks = _collapse_adjacent_blocks(blocks, remove_zero_length=True)
+            blocks = _collapse_adjacent_blocks(blocks)
             blocks = list(map(Match._make, blocks))
             # Append dummy at the end
             blocks.append(Match(len(self.a), len(self.b), 0))
