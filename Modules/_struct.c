@@ -1797,11 +1797,11 @@ s_new(PyTypeObject *type, PyObject *args, PyObject *kwds)
 {
     PyStructObject *self;
 
-    if ((PyTuple_GET_SIZE(args) != 1 || kwds)
-        && PyErr_WarnEx(PyExc_DeprecationWarning,
-                        "Struct.__new__() has one positional argument", 1))
-    {
-        return NULL;
+    if (PyTuple_GET_SIZE(args) != 1 || kwds) {
+        if (PyErr_WarnEx(PyExc_DeprecationWarning,
+                         "Struct.__new__() has one positional argument", 1)) {
+            return NULL;
+        }
     }
     assert(type != NULL);
     allocfunc alloc_func = PyType_GetSlot(type, Py_tp_alloc);
