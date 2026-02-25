@@ -30,9 +30,10 @@ select = [
 ]
 ignore = [
     "E501",  # Ignore line length errors (we use auto-formatting)
-    "I001",  # Import block is un-sorted or un-formatted
 ]
 
+[lint.per-file-ignores]
+"Doc/tools/check-html-ids.py" = ["I001"]  # Unsorted imports
 [format]
 preview = true
 quote-style = "preserve"
