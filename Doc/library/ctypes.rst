@@ -20,10 +20,6 @@ used to wrap these libraries in pure Python.
 ctypes tutorial
 ---------------
 
-Note: The code samples in this tutorial use :mod:`doctest` to make sure that
-they actually work.  Since some code samples behave differently under Linux,
-Windows, or macOS, they contain doctest directives in comments.
-
 Note: Some code samples reference the ctypes :class:`c_int` type.  On platforms
 where ``sizeof(long) == sizeof(int)`` it is an alias to :class:`c_long`.
 So, you should not be confused if :class:`c_long` is printed if you would expect
@@ -34,13 +30,16 @@ So, you should not be confused if :class:`c_long` is printed if you would expect
 Loading dynamic link libraries
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-:mod:`!ctypes` exports the *cdll*, and on Windows *windll* and *oledll*
+:mod:`!ctypes` exports the :py:data:`~ctypes.cdll`, and on Windows
+:py:data:`~ctypes.windll` and :py:data:`~ctypes.oledll`
 objects, for loading dynamic link libraries.
 
-You load libraries by accessing them as attributes of these objects. *cdll*
-loads libraries which export functions using the standard ``cdecl`` calling
-convention, while *windll* libraries call functions using the ``stdcall``
-calling convention. *oledll* also uses the ``stdcall`` calling convention, and
+You load libraries by accessing them as attributes of these objects.
+:py:data:`!cdll` loads libraries which export functions using the
+standard ``cdecl`` calling convention, while :py:data:`!windll`
+libraries call functions using the ``stdcall``
+calling convention.
+:py:data:`~oledll` also uses the ``stdcall`` calling convention, and
 assumes the functions return a Windows :c:type:`!HRESULT` error code. The error
 code is used to automatically raise an :class:`OSError` exception when the
 function call fails.
@@ -70,11 +69,13 @@ Windows appends the usual ``.dll`` file suffix automatically.
     being used by Python. Where possible, use native Python functionality,
     or else import and use the ``msvcrt`` module.
 
-On Linux, it is required to specify the filename *including* the extension to
+Other systems require the filename *including* the extension to
 load a library, so attribute access can not be used to load libraries. Either the
 :meth:`~LibraryLoader.LoadLibrary` method of the dll loaders should be used,
-or you should load the library by creating an instance of CDLL by calling
-the constructor::
+or you should load the library by creating an instance of :py:class:`CDLL`
+by calling the constructor.
+
+For example, on Linux::
 
    >>> cdll.LoadLibrary("libc.so.6")  # doctest: +LINUX
    <CDLL 'libc.so.6', handle ... at ...>
@@ -83,7 +84,14 @@ the constructor::
    <CDLL 'libc.so.6', handle ... at ...>
    >>>
 
-.. XXX Add section for macOS.
+On macOS::
+
+   >>> cdll.LoadLibrary("libc.dylib")  # doctest: +MACOS
+   <CDLL 'libc.dylib', handle ... at ...>
+   >>> libc = CDLL("libc.dylib")       # doctest: +MACOS
+   >>> libc                            # doctest: +MACOS
+   <CDLL 'libc.dylib', handle ... at ...>
+
 
 
 .. _ctypes-accessing-functions-from-loaded-dlls:
@@ -1456,14 +1464,82 @@ Loading shared libraries
 ^^^^^^^^^^^^^^^^^^^^^^^^
 
 There are several ways to load shared libraries into the Python process.  One
-way is to instantiate one of the following classes:
+way is to instantiate :py:class:`CDLL` or one of its subclasses:
 
 
 .. class:: CDLL(name, mode=DEFAULT_MODE, handle=None, use_errno=False, use_last_error=False, winmode=None)
 
-   Instances of this class represent loaded shared libraries. Functions in these
-   libraries use the standard C calling convention, and are assumed to return
-   :c:expr:`int`.
+   Represents a loaded shared library.
+
+   Functions in this library use the standard C calling convention, and are
+   assumed to return :c:expr:`int`.
+   The Python :term:`global interpreter lock` is released before calling any
+   function exported by these libraries, and reacquired afterwards.
+   For different function behavior, use a subclass: :py:class:`~ctypes.OleDLL`,
+   :py:class:`~ctypes.WinDLL`, or :py:class:`~ctypes.PyDLL`.
+
+   If you have an existing :py:attr:`handle <ctypes.CDLL._handle>` to an already
+   loaded shared library, it can be passed as the *handle* argument to wrap
+   the opened library in a new :py:class:`!CDLL` object.
+   In this case, *name* is only used to set the :py:attr:`~ctypes.CDLL._name`
+   attribute, but it may be adjusted and/or validated.
+
+   If *handle* is ``None``, the underlying platform's :manpage:`dlopen(3)` or
+   :c:func:`!LoadLibrary` function is used to load the library into
+   the process, and to get a handle to it.
+
+   *name* is the pathname of the shared library to open.
+   If *name* does not contain a path separator, the library is found
+   in a platform-specific way.
+
+   On non-Windows systems, *name* can  be ``None``. In this case,
+   :c:func:`!dlopen` is called with ``NULL``, which opens the main program
+   as a "library".
+   (Some systems do the same is *name* is empty; ``None``/``NULL`` is more
+   portable.)
+
+   .. admonition:: CPython implementation detail
+
+      Since CPython is linked to ``libc``, a ``None`` *name* is often used
+      to access the C standard library::
+
+         >>> printf = ctypes.CDLL(None).printf
+         >>> printf.argtypes = [ctypes.c_char_p]
+         >>> printf(b"hello\n")
+         hello
+         6
+
+      To access the Python C API, prefer :py:data:`ctypes.pythonapi` which
+      works across platforms.
+
+   The *mode* parameter can be used to specify how the library is loaded.  For
+   details, consult the :manpage:`dlopen(3)` manpage.  On Windows, *mode* is
+   ignored.  On posix systems, RTLD_NOW is always added, and is not
+   configurable.
+
+   The *use_errno* parameter, when set to true, enables a ctypes mechanism that
+   allows accessing the system :data:`errno` error number in a safe way.
+   :mod:`!ctypes` maintains a thread-local copy of the system's :data:`errno`
+   variable; if you call foreign functions created with ``use_errno=True`` then the
+   :data:`errno` value before the function call is swapped with the ctypes private
+   copy, the same happens immediately after the function call.
+
+   The function :func:`ctypes.get_errno` returns the value of the ctypes private
+   copy, and the function :func:`ctypes.set_errno` changes the ctypes private copy
+   to a new value and returns the former value.
+
+   The *use_last_error* parameter, when set to true, enables the same mechanism for
+   the Windows error code which is managed by the :func:`GetLastError` and
+   :func:`!SetLastError` Windows API functions; :func:`ctypes.get_last_error` and
+   :func:`ctypes.set_last_error` are used to request and change the ctypes private
+   copy of the windows error code.
+
+   The *winmode* parameter is used on Windows to specify how the library is loaded
+   (since *mode* is ignored). It takes any value that is valid for the Win32 API
+   ``LoadLibraryEx`` flags parameter. When omitted, the default is to use the
+   flags that result in the most secure DLL load, which avoids issues such as DLL
+   hijacking. Passing the full path to the DLL is the safest way to ensure the
+   correct library and dependencies are loaded.
 
    On Windows creating a :class:`CDLL` instance may fail even if the DLL name
    exists. When a dependent DLL of the loaded DLL is not found, a
@@ -1475,20 +1551,47 @@ way is to instantiate one of the following classes:
    DLLs and determine which one is not found using Windows debugging and
    tracing tools.
 
+   .. seealso::
+
+      `Microsoft DUMPBIN tool <https://learn.microsoft.com/en-us/cpp/build/reference/dumpbin-reference?view=msvc-170>`_
+      -- A tool to find DLL dependents.
+
+   .. versionchanged:: 3.8
+      Added *winmode* parameter.
+
    .. versionchanged:: 3.12
 
       The *name* parameter can now be a :term:`path-like object`.
 
-.. seealso::
+   Instances of this class have no public methods.  Functions exported by the
+   shared library can be accessed as attributes or by index.  Please note that
+   accessing the function through an attribute caches the result and therefore
+   accessing it repeatedly returns the same object each time.  On the other hand,
+   accessing it through an index returns a new object each time::
 
-    `Microsoft DUMPBIN tool <https://docs.microsoft.com/cpp/build/reference/dependents>`_
-    -- A tool to find DLL dependents.
+      >>> from ctypes import CDLL
+      >>> libc = CDLL("libc.so.6")  # On Linux
+      >>> libc.time == libc.time
+      True
+      >>> libc['time'] == libc['time']
+      False
 
+   The following public attributes are available. Their name starts with an
+   underscore to not clash with exported function names:
+
+   .. attribute:: _handle
+
+      The system handle used to access the library.
+
+   .. attribute:: _name
+
+      The name of the library passed in the constructor.
 
 .. class:: OleDLL(name, mode=DEFAULT_MODE, handle=None, use_errno=False, use_last_error=False, winmode=None)
 
-   Instances of this class represent loaded shared libraries,
-   functions in these libraries use the ``stdcall`` calling convention, and are
+   See :py:class:`~ctypes.CDLL`, the superclass, for common information.
+
+   Functions in this library use the ``stdcall`` calling convention, and are
    assumed to return the windows specific :class:`HRESULT` code.  :class:`HRESULT`
    values contain information specifying whether the function call failed or
    succeeded, together with additional error code.  If the return value signals a
@@ -1500,155 +1603,50 @@ way is to instantiate one of the following classes:
       :exc:`WindowsError` used to be raised,
       which is now an alias of :exc:`OSError`.
 
-   .. versionchanged:: 3.12
-
-      The *name* parameter can now be a :term:`path-like object`.
-
 
 .. class:: WinDLL(name, mode=DEFAULT_MODE, handle=None, use_errno=False, use_last_error=False, winmode=None)
 
-   Instances of this class represent loaded shared libraries,
-   functions in these libraries use the ``stdcall`` calling convention, and are
+   See :py:class:`~ctypes.CDLL`, the superclass, for common information.
+
+   Functions in these libraries use the ``stdcall`` calling convention, and are
    assumed to return :c:expr:`int` by default.
 
    .. availability:: Windows
 
-   .. versionchanged:: 3.12
-
-      The *name* parameter can now be a :term:`path-like object`.
-
-
-The Python :term:`global interpreter lock` is released before calling any
-function exported by these libraries, and reacquired afterwards.
-
-
 .. class:: PyDLL(name, mode=DEFAULT_MODE, handle=None)
 
-   Instances of this class behave like :class:`CDLL` instances, except that the
+   See :py:class:`~ctypes.CDLL`, the superclass, for common information.
+
+   When functions in this library are called, the
    Python GIL is *not* released during the function call, and after the function
    execution the Python error flag is checked. If the error flag is set, a Python
    exception is raised.
 
-   Thus, this is only useful to call Python C api functions directly.
-
-   .. versionchanged:: 3.12
-
-      The *name* parameter can now be a :term:`path-like object`.
-
-All these classes can be instantiated by calling them with at least one
-argument, the pathname of the shared library.
-
-If you have an existing :py:attr:`handle <ctypes.PyDLL._handle>` to an already
-loaded shared library, it can be passed as the *handle* argument.
-
-If *handle* is ``None``, the underlying platform's :c:func:`!dlopen` or
-:c:func:`!LoadLibrary` function is used to load the library into
-the process, and to get a handle to it.
-
-On systems that use :c:func:`!dlopen` (that is, not Windows), if *name* is
-``None``, :c:func:`!dlopen` is called with ``NULL``, which opens the "library"
-corresponding to the main program.
-(Some systems do the same is *name* is empty; ``None``/``NULL`` is more
-portable.)
-
-.. admonition:: CPython implementation detail
-
-   Since CPython is linked to ``libc``, a *name* of ``None`` is often used
-   to access the C standard library::
-
-      >>> printf = ctypes.CDLL(None).printf
-      >>> printf.argtypes = [ctypes.c_char_p]
-      >>> printf(b"hello\n")
-      hello
-      6
-
-   To access the Python C API, see :py:data:`~ctypes.pythonapi` which works
-   across platforms.
-
-The *mode* parameter can be used to specify how the library is loaded.  For
-details, consult the :manpage:`dlopen(3)` manpage.  On Windows, *mode* is
-ignored.  On posix systems, RTLD_NOW is always added, and is not
-configurable.
-
-The *use_errno* parameter, when set to true, enables a ctypes mechanism that
-allows accessing the system :data:`errno` error number in a safe way.
-:mod:`!ctypes` maintains a thread-local copy of the system's :data:`errno`
-variable; if you call foreign functions created with ``use_errno=True`` then the
-:data:`errno` value before the function call is swapped with the ctypes private
-copy, the same happens immediately after the function call.
-
-The function :func:`ctypes.get_errno` returns the value of the ctypes private
-copy, and the function :func:`ctypes.set_errno` changes the ctypes private copy
-to a new value and returns the former value.
-
-The *use_last_error* parameter, when set to true, enables the same mechanism for
-the Windows error code which is managed by the :func:`GetLastError` and
-:func:`!SetLastError` Windows API functions; :func:`ctypes.get_last_error` and
-:func:`ctypes.set_last_error` are used to request and change the ctypes private
-copy of the windows error code.
-
-The *winmode* parameter is used on Windows to specify how the library is loaded
-(since *mode* is ignored). It takes any value that is valid for the Win32 API
-``LoadLibraryEx`` flags parameter. When omitted, the default is to use the
-flags that result in the most secure DLL load, which avoids issues such as DLL
-hijacking. Passing the full path to the DLL is the safest way to ensure the
-correct library and dependencies are loaded.
-
-.. versionchanged:: 3.8
-   Added *winmode* parameter.
+   Thus, this is only useful to call Python C API functions directly.
 
 
 .. data:: RTLD_GLOBAL
-   :noindex:
 
    Flag to use as *mode* parameter.  On platforms where this flag is not available,
    it is defined as the integer zero.
 
 
 .. data:: RTLD_LOCAL
-   :noindex:
 
    Flag to use as *mode* parameter.  On platforms where this is not available, it
    is the same as *RTLD_GLOBAL*.
 
 
 .. data:: DEFAULT_MODE
-   :noindex:
 
    The default mode which is used to load shared libraries.  On OSX 10.3, this is
    *RTLD_GLOBAL*, otherwise it is the same as *RTLD_LOCAL*.
 
-Instances of these classes have no public methods.  Functions exported by the
-shared library can be accessed as attributes or by index.  Please note that
-accessing the function through an attribute caches the result and therefore
-accessing it repeatedly returns the same object each time.  On the other hand,
-accessing it through an index returns a new object each time::
-
-   >>> from ctypes import CDLL
-   >>> libc = CDLL("libc.so.6")  # On Linux
-   >>> libc.time == libc.time
-   True
-   >>> libc['time'] == libc['time']
-   False
-
-The following public attributes are available, their name starts with an
-underscore to not clash with exported function names:
-
-
-.. attribute:: PyDLL._handle
-
-   The system handle used to access the library.
-
-
-.. attribute:: PyDLL._name
-
-   The name of the library passed in the constructor.
 
 Shared libraries can also be loaded by using one of the prefabricated objects,
 which are instances of the :class:`LibraryLoader` class, either by calling the
 :meth:`~LibraryLoader.LoadLibrary` method, or by retrieving the library as
 attribute of the loader instance.
-
 
 .. class:: LibraryLoader(dlltype)
 
@@ -1668,13 +1666,11 @@ attribute of the loader instance.
 These prefabricated library loaders are available:
 
 .. data:: cdll
-   :noindex:
 
    Creates :class:`CDLL` instances.
 
 
 .. data:: windll
-   :noindex:
 
    Creates :class:`WinDLL` instances.
 
@@ -1682,7 +1678,6 @@ These prefabricated library loaders are available:
 
 
 .. data:: oledll
-   :noindex:
 
    Creates :class:`OleDLL` instances.
 
@@ -1690,7 +1685,6 @@ These prefabricated library loaders are available:
 
 
 .. data:: pydll
-   :noindex:
 
    Creates :class:`PyDLL` instances.
 
@@ -1699,7 +1693,6 @@ For accessing the C Python api directly, a ready-to-use Python shared library
 object is available:
 
 .. data:: pythonapi
-   :noindex:
 
    An instance of :class:`PyDLL` that exposes Python C API functions as
    attributes.  Note that all these functions are assumed to return C
