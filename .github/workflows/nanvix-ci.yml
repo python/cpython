@@ -11,7 +11,7 @@ on:
       - nanvix/**
   workflow_dispatch:
   repository_dispatch:
-    types: [sqlite-release, openssl-release, bzip2-release, expat-release, libffi-release]
+    types: [sqlite-release, openssl-release, bzip2-release, libffi-release]
 
 permissions:
   contents: write
