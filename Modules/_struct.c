@@ -1797,7 +1797,7 @@ s_new(PyTypeObject *type, PyObject *args, PyObject *kwds)
 {
     PyStructObject *self;
 
-    if (PyTuple_GET_SIZE(args) != 1 || kwds) {
+    if (PyTuple_GET_SIZE(args) != 1) {
         if (PyErr_WarnEx(PyExc_DeprecationWarning,
                          "Struct.__new__() has one positional argument", 1)) {
             return NULL;
@@ -1815,7 +1815,7 @@ s_new(PyTypeObject *type, PyObject *args, PyObject *kwds)
     self->s_size = -1;
     self->s_len = -1;
     self->init_called = false;
-    if (PyTuple_GET_SIZE(args) > 0) {
+    if (PyTuple_GET_SIZE(args) == 1) {
         if (s_init(self, PyTuple_GET_ITEM(args, 0))) {
             Py_DECREF(self);
             return NULL;
