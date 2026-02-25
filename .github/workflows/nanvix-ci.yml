@@ -25,15 +25,24 @@ jobs:
       sha: ${{ steps.extract.outputs.sha }}
       sha_full: ${{ steps.extract.outputs.sha_full }}
     steps:
-      - name: Download Nanvix Release Info
+      - name: Download Nanvix Release Artifacts
         id: extract
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
           set -euo pipefail
+          # Download all Nanvix release artifacts (authenticated to avoid API rate limits)
           curl -fsSL https://raw.githubusercontent.com/nanvix/nanvix/refs/heads/dev/scripts/get-nanvix.sh | bash -s -- --force nanvix-artifacts
+          # Find any artifact to extract the SHA
           ARTIFACT_FILE=$(find nanvix-artifacts -maxdepth 1 -type f -name "*.tar.bz2" | head -1)
-          [[ -z "$ARTIFACT_FILE" ]] && { echo "::error::No Nanvix artifact found"; exit 1; }
+          if [[ -z "$ARTIFACT_FILE" ]]; then
+            echo "::error::No Nanvix artifact found"
+            exit 1
+          fi
+          # Extract Nanvix commit SHA from artifact filename
           NANVIX_SHA_FULL=$(basename "$ARTIFACT_FILE" | sed -E 's/.*-([a-f0-9]{40})\.tar\.bz2$/\1/')
           NANVIX_SHA="${NANVIX_SHA_FULL::7}"
+          echo "Nanvix commit SHA: $NANVIX_SHA_FULL (short: $NANVIX_SHA)"
           echo "sha=$NANVIX_SHA" >> "$GITHUB_OUTPUT"
           echo "sha_full=$NANVIX_SHA_FULL" >> "$GITHUB_OUTPUT"
 
