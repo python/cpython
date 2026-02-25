@@ -1,0 +1,2 @@
+The function ``_config_dict_get_bool()`` in :file:`Python/interpconfig.c` has been optimized to avoid unnecessary reference count decrements on boolean results.
+Patch by Benedikt Johannes.
