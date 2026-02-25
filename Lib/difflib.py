@@ -1067,7 +1067,7 @@ class Differ:
         dump_i, dump_j = alo, blo # smallest indices not yet resolved
         for j in range(blo, bhi):
             cruncher.set_seq2(b[j])
-            # Search the corresponding i's within WINDOW for rhe highest
+            # Search the corresponding i's within WINDOW for the highest
             # ratio greater than `cutoff`.
             aequiv = alo + (j - blo)
             arange = range(max(aequiv - WINDOW, dump_i),
@@ -1197,8 +1197,8 @@ def IS_LINE_JUNK(line, pat=None):
     if pat is None:
         # Default: match '#' or the empty string
         return line.strip() in '#'
-   # Previous versions used the undocumented parameter 'pat' as a
-   # match function. Retain this behaviour for compatibility.
+    # Previous versions used the undocumented parameter 'pat' as a
+    # match function. Retain this behaviour for compatibility.
     return pat(line) is not None
 
 def IS_CHARACTER_JUNK(ch, ws=" \t"):
