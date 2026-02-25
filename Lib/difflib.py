@@ -114,16 +114,16 @@ class SequenceMatcherBase:
     """Base class for implementing sequence matchers.
 
     At minimum, derived classes must implement `_get_matching_blocks` method,
-    which returns a list of blocks tuple[start_in_a, start_in_b, length].
+    which returns a list of tuples of the form (start_in_a, start_in_b, length).
     See `_get_matching_blocks` and `get_matching_blocks` for more information.
 
-    Once implemented, the following methods make use of it and are available:
-        get_matching_blocks
-        get_opcodes
-        get_grouped_opcodes
-        ratio
-        quick_ratio
-        real_quick_ratio
+    Once implemented, the following methods are available:
+        - get_matching_blocks
+        - get_opcodes
+        - get_grouped_opcodes
+        - ratio
+        - quick_ratio
+        - real_quick_ratio
 
     See `SequenceMatcher` for example implementation.
     """
@@ -217,10 +217,10 @@ class SequenceMatcherBase:
         1.0
         >>>
 
-        SequenceMatcherBase inends to cache detailed information about the
+        SequenceMatcherBase caches detailed information about the
         second sequence. set_seq2 clears cache of quick_ratio method.
         In addition _prepare_seq2, which is called at the end of set_seq2,
-        can be implemented by derrived class for alignment algorithm cache logic.
+        can be implemented by derived class for alignment algorithm cache logic.
 
         See also set_seqs() and set_seq1().
         """
@@ -235,7 +235,7 @@ class SequenceMatcherBase:
     def _prepare_seq2(self):
         """Preparation method that is called at the end of `set_seq2`.
 
-        By default it does nothing, but can be implemented by derrived class
+        By default it does nothing, but can be implemented by derived class
         for alignment algorithm cache logic.
         """
         pass
@@ -688,7 +688,8 @@ class SequenceMatcher(SequenceMatcherBase):
         # Windiff ends up at the same place as diff, but by pairing up
         # the unique 'b's and then matching the first two 'a's.
 
-        a, b, b2j, bjunk = self.a, self.b, self.b2j, self.bjunk
+        a, b, b2j = self.a, self.b, self.b2j
+        bjunk, bpopular = self.bjunk, self.bpopular
         if ahi is None:
             ahi = len(a)
         if bhi is None:
@@ -716,13 +717,12 @@ class SequenceMatcher(SequenceMatcherBase):
             j2len = newj2len
 
         block = besti, bestj, bestsize
-        if self.autojunk:
+        if bpopular:
             # Extend the best by non-junk elements on each end.  In particular,
             # "popular" non-junk elements aren't in b2j, which greatly speeds
             # the inner loop above, but also means "the best" match so far
             # doesn't contain any junk *or* popular non-junk elements.
-            block = _expand_block_to_junk(
-                bjunk, block, a, b, alo, ahi, blo, bhi, inverse=True)
+            block = _expand_block_to_junk(bpopular, block, a, b, alo, ahi, blo, bhi)
 
         if bjunk:
             # Now that we have a wholly interesting match (albeit possibly
@@ -732,8 +732,7 @@ class SequenceMatcher(SequenceMatcherBase):
             # figuring out what to do with it.  In the case of an empty
             # interesting match, this is clearly the right thing to do,
             # because no other kind of match is possible in the regions.
-            block = _expand_block_to_junk(
-                bjunk, block, a, b, alo, ahi, blo, bhi, inverse=False)
+            block = _expand_block_to_junk(bjunk, block, a, b, alo, ahi, blo, bhi)
 
         return Match._make(block)
 
@@ -1478,7 +1477,7 @@ def ndiff(a, b, linejunk=None, charjunk=IS_CHARACTER_JUNK, differ=None):
     functions, or can be None:
 
     - linejunk: A function that should accept a single string argument and
-      return true iff the string is junk.  The default is None, and is
+      returns true iff the string is junk.  The default is None, and is
       recommended; the underlying SequenceMatcher class has an adaptive
       notion of "noise" lines.
 

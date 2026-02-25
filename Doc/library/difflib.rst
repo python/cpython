@@ -14,9 +14,9 @@
 --------------
 
 This module provides classes and functions for comparing sequences. It
-can be used for example, for comparing files, and can produce information
+can be used, for example, for comparing files, and can produce information
 about file differences in various formats, including HTML and context and unified
-diffs. For comparing directories and files, see also, the :mod:`filecmp` module.
+diffs. For comparing directories and files, see the :mod:`filecmp` module.
 
 
 .. class:: SequenceMatcherBase
@@ -25,16 +25,17 @@ diffs. For comparing directories and files, see also, the :mod:`filecmp` module.
    Base class for implementing sequence matchers.
 
    At minimum, derived classes must implement ``_get_matching_blocks`` method,
-   which returns a list of blocks tuple[start_in_a, start_in_b, length].
-   See ``_get_matching_blocks`` and ``get_matching_blocks`` for more information.
+   which returns a list of tuples of the form ``(start_in_a, start_in_b, length)``.
+   See :meth:`~SequenceMatcherBase._get_matching_blocks` and
+   :meth:`~SequenceMatcherBase.get_matching_blocks` for more information.
 
-   Once implemented, the following methods make use of it and are available:
-      :meth:`~SequenceMatcherBase.get_matching_blocks`
-      :meth:`~SequenceMatcherBase.get_opcodes`
-      :meth:`~SequenceMatcherBase.get_grouped_opcodes`
-      :meth:`~SequenceMatcherBase.ratio`
-      :meth:`~SequenceMatcherBase.quick_ratio`
-      :meth:`~SequenceMatcherBase.real_quick_ratio`
+   Once implemented, the following methods are available:
+      - :meth:`~SequenceMatcherBase.get_matching_blocks`
+      - :meth:`~SequenceMatcherBase.get_opcodes`
+      - :meth:`~SequenceMatcherBase.get_grouped_opcodes`
+      - :meth:`~SequenceMatcherBase.ratio`
+      - :meth:`~SequenceMatcherBase.quick_ratio`
+      - :meth:`~SequenceMatcherBase.real_quick_ratio`
 
    See :class:`SequenceMatcher` for example implementation.
 
@@ -272,7 +273,7 @@ diffs. For comparing directories and files, see also, the :mod:`filecmp` module.
    usually works better than using this function.
 
    *charjunk*: A function that accepts a character (a string of length 1), and
-   returns if the character is junk, or false if not. The default is module-level
+   returns true if the character is junk, or false if not. The default is module-level
    function :func:`IS_CHARACTER_JUNK`, which filters out whitespace characters (a
    blank or tab; it's a bad idea to include newline in this!).
 
@@ -444,10 +445,10 @@ The :class:`SequenceMatcherBase` class has this constructor:
 
       Set the two sequences to be compared.
 
-   :class:`SequenceMatcherBase` inends to cache detailed information about the
+   :class:`SequenceMatcherBase` caches detailed information about the
    second sequence. :meth:`set_seq2` clears cache of :meth:`quick_ratio` method.
    In addition :meth:`_prepare_seq2`, which is called at the end of :meth:`set_seq2`,
-   can be implemented by derrived class for alignment algorithm cache logic.
+   can be implemented by derived class for alignment algorithm cache logic.
 
    .. method:: set_seq1(a)
 
@@ -460,7 +461,7 @@ The :class:`SequenceMatcherBase` class has this constructor:
       Set the second sequence to be compared.  The first sequence to be compared
       is not changed.
 
-      .. method:: get_matching_blocks()
+   .. method:: get_matching_blocks()
 
       Return list of triples describing non-overlapping matching subsequences.
       Each triple is of the form ``(i, j, n)``,
@@ -486,7 +487,7 @@ The :class:`SequenceMatcherBase` class has this constructor:
 
       Preparation method that is called at the end of :meth:`set_seq2`.
 
-      By default it does nothing, but can be implemented by derrived class
+      By default it does nothing, but can be implemented by derived class
       for alignment algorithm cache logic.
 
 
