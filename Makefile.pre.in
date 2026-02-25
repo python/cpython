@@ -2684,6 +2684,7 @@ TESTSUBDIRS=	idlelib/idle_test \
 		test/test_import/data/unwritable \
 		test/test_import/data/lazy_imports \
 		test/test_import/data/lazy_imports/pkg \
+		test/test_import/data/lazy_imports/badsyntax \
 		test/test_importlib \
 		test/test_importlib/builtin \
 		test/test_importlib/extension \
