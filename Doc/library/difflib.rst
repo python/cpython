@@ -630,7 +630,7 @@ The :class:`SequenceMatcher` class has this constructor:
    non-junk elements considered popular by the heuristic (if it is not
    disabled); *b2j* is a dict mapping the remaining elements of *b* to a list
    of positions where they occur. All three are reset whenever *b* is reset
-   with :meth:`set_seqs` or :meth:`set_seq2`.
+   with :meth:`~SequenceMatcherBase.set_seqs` or :meth:`~SequenceMatcherBase.set_seq2`.
 
    .. versionchanged:: 3.2
       Added the *autojunk* parameter.
@@ -710,7 +710,7 @@ value over 0.6 means the sequences are close matches:
    0.866
 
 If you're only interested in where the sequences match,
-:meth:`~SequenceMatcher.get_matching_blocks` is handy:
+:meth:`~SequenceMatcherBase.get_matching_blocks` is handy:
 
    >>> for block in s.get_matching_blocks():
    ...     print("a[%d] and b[%d] match for %d elements" % block)
