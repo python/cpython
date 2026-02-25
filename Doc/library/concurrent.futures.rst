@@ -12,7 +12,7 @@ and :source:`Lib/concurrent/futures/interpreter.py`
 
 --------------
 
-The :mod:`concurrent.futures` module provides a high-level interface for
+The :mod:`!concurrent.futures` module provides a high-level interface for
 asynchronously executing callables.
 
 The asynchronous execution can be performed with threads, using

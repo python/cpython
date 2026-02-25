@@ -478,9 +478,9 @@ class StructTest(ComplexesAreIdenticalMixin, unittest.TestCase):
             pack_into(writable_buf, None, test_string)
         with self.assertRaises(TypeError):
             pack_into(writable_buf, 0.0, test_string)
-        with self.assertRaises((IndexError, OverflowError)):
+        with self.assertRaises(OverflowError):
             pack_into(writable_buf, 2**1000, test_string)
-        with self.assertRaises((IndexError, OverflowError)):
+        with self.assertRaises(OverflowError):
             pack_into(writable_buf, -2**1000, test_string)
 
     def test_pack_into(self):
@@ -551,6 +551,9 @@ class StructTest(ComplexesAreIdenticalMixin, unittest.TestCase):
 
         hugecount2 = '{}b{}H'.format(sys.maxsize//2, sys.maxsize//2)
         self.assertRaises(struct.error, struct.calcsize, hugecount2)
+
+        hugecount3 = '{}i{}q'.format(sys.maxsize // 4, sys.maxsize // 8)
+        self.assertRaises(struct.error, struct.calcsize, hugecount3)
 
     def test_trailing_counter(self):
         store = array.array('b', b' '*100)

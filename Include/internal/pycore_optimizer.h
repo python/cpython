@@ -22,6 +22,10 @@ typedef struct _PyJitUopBuffer {
     _PyUOpInstruction *end;
 } _PyJitUopBuffer;
 
+typedef struct _JitOptRefBuffer {
+    JitOptRef *used;
+    JitOptRef *end;
+} _JitOptRefBuffer;
 
 typedef struct _JitOptContext {
     char done;
@@ -37,10 +41,15 @@ typedef struct _JitOptContext {
     // Arena for the symbolic types.
     ty_arena t_arena;
 
-    JitOptRef *n_consumed;
-    JitOptRef *limit;
-    JitOptRef locals_and_stack[MAX_ABSTRACT_INTERP_SIZE];
+    /* To do -- We could make this more space efficient
+     * by using a single array and growing the stack and
+     * locals toward each other. */
+    _JitOptRefBuffer locals;
+    _JitOptRefBuffer stack;
+    JitOptRef locals_array[ABSTRACT_INTERP_LOCALS_SIZE];
+    JitOptRef stack_array[ABSTRACT_INTERP_STACK_SIZE];
     _PyJitUopBuffer out_buffer;
+    _PyBloomFilter *dependencies;
 } JitOptContext;
 
 
@@ -83,13 +92,12 @@ typedef struct _PyJitTracerInitialState {
 } _PyJitTracerInitialState;
 
 typedef struct _PyJitTracerPreviousState {
-    bool dependencies_still_valid;
     int instr_oparg;
     int instr_stacklevel;
     _Py_CODEUNIT *instr;
     PyCodeObject *instr_code; // Strong
     struct _PyInterpreterFrame *instr_frame;
-    _PyBloomFilter dependencies;
+    PyObject *recorded_value; // Strong, may be NULL
 } _PyJitTracerPreviousState;
 
 typedef struct _PyJitTracerTranslatorState {
@@ -297,17 +305,29 @@ extern JitOptRef _Py_uop_sym_new_compact_int(JitOptContext *ctx);
 extern void _Py_uop_sym_set_compact_int(JitOptContext *ctx,  JitOptRef sym);
 extern JitOptRef _Py_uop_sym_new_predicate(JitOptContext *ctx, JitOptRef lhs_ref, JitOptRef rhs_ref, JitOptPredicateKind kind);
 extern void _Py_uop_sym_apply_predicate_narrowing(JitOptContext *ctx, JitOptRef sym, bool branch_is_true);
+extern void _Py_uop_sym_set_recorded_value(JitOptContext *ctx, JitOptRef sym, PyObject *value);
+extern void _Py_uop_sym_set_recorded_type(JitOptContext *ctx, JitOptRef sym, PyTypeObject *type);
+extern void _Py_uop_sym_set_recorded_gen_func(JitOptContext *ctx, JitOptRef ref, PyFunctionObject *value);
+extern PyCodeObject *_Py_uop_sym_get_probable_func_code(JitOptRef sym);
+extern PyObject *_Py_uop_sym_get_probable_value(JitOptRef sym);
+extern JitOptRef *_Py_uop_sym_set_stack_depth(JitOptContext *ctx, int stack_depth, JitOptRef *current_sp);
 
-extern void _Py_uop_abstractcontext_init(JitOptContext *ctx);
+extern void _Py_uop_abstractcontext_init(JitOptContext *ctx, _PyBloomFilter *dependencies);
 extern void _Py_uop_abstractcontext_fini(JitOptContext *ctx);
 
 extern _Py_UOpsAbstractFrame *_Py_uop_frame_new(
     JitOptContext *ctx,
     PyCodeObject *co,
-    int curr_stackentries,
     JitOptRef *args,
     int arg_len);
-extern int _Py_uop_frame_pop(JitOptContext *ctx, PyCodeObject *co, int curr_stackentries);
+
+extern _Py_UOpsAbstractFrame *_Py_uop_frame_new_from_symbol(
+    JitOptContext *ctx,
+    JitOptRef callable,
+    JitOptRef *args,
+    int arg_len);
+
+extern int _Py_uop_frame_pop(JitOptContext *ctx, PyCodeObject *co);
 
 PyAPI_FUNC(PyObject *) _Py_uop_symbols_test(PyObject *self, PyObject *ignored);
 
@@ -336,13 +356,18 @@ PyAPI_FUNC(int) _PyJit_translate_single_bytecode_to_trace(PyThreadState *tstate,
 PyAPI_FUNC(int)
 _PyJit_TryInitializeTracing(PyThreadState *tstate, _PyInterpreterFrame *frame,
     _Py_CODEUNIT *curr_instr, _Py_CODEUNIT *start_instr,
-    _Py_CODEUNIT *close_loop_instr, int curr_stackdepth, int chain_depth, _PyExitData *exit,
+    _Py_CODEUNIT *close_loop_instr, _PyStackRef *stack_pointer, int chain_depth, _PyExitData *exit,
     int oparg, _PyExecutorObject *current_executor);
 
 PyAPI_FUNC(void) _PyJit_FinalizeTracing(PyThreadState *tstate, int err);
+void _PyPrintExecutor(_PyExecutorObject *executor, const _PyUOpInstruction *marker);
 void _PyJit_TracerFree(_PyThreadStateImpl *_tstate);
 
-void _PyJit_Tracer_InvalidateDependency(PyThreadState *old_tstate, void *obj);
+#ifdef _Py_TIER2
+typedef void (*_Py_RecordFuncPtr)(_PyInterpreterFrame *frame, _PyStackRef *stackpointer, int oparg, PyObject **recorded_value);
+PyAPI_DATA(const _Py_RecordFuncPtr) _PyOpcode_RecordFunctions[];
+PyAPI_DATA(const uint8_t) _PyOpcode_RecordFunctionIndices[256];
+#endif
 
 #ifdef __cplusplus
 }

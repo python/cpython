@@ -106,6 +106,7 @@ Python/executor_cases.c.h                           generated
 Python/generated_cases.c.h                          generated
 Python/optimizer_cases.c.h                          generated
 Python/opcode_targets.h                             generated
+Python/record_functions.c.h                         generated
 Python/stdlib_module_names.h                        generated
 Tools/peg_generator/pegen/grammar_parser.py         generated
 aclocal.m4                                          generated

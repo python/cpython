@@ -8,7 +8,7 @@ import types
 import unittest
 
 from test import support
-from test.support import findfile
+from test.support import findfile, MS_WINDOWS
 
 
 if not support.has_subprocess_support:
@@ -103,6 +103,7 @@ class SystemTapBackend(TraceBackend):
     COMMAND = ["stap", "-g"]
 
 
+@unittest.skipIf(MS_WINDOWS, "Tests not compliant with trace on Windows.")
 class TraceTests:
     # unittest.TestCase options
     maxDiff = None

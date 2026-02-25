@@ -324,6 +324,14 @@ struct _import_state {
     int dlopenflags;
 #endif
     PyObject *import_func;
+    PyObject *lazy_import_func;
+    int lazy_imports_mode;
+    PyObject *lazy_imports_filter;
+    PyObject *lazy_importing_modules;
+    PyObject *lazy_modules;
+#ifdef Py_GIL_DISABLED
+    PyMutex lazy_mutex;
+#endif
     /* The global import lock. */
     _PyRecursiveMutex lock;
     /* diagnostic info in PyImport_ImportModuleLevelObject() */
@@ -488,7 +496,7 @@ struct _py_func_state {
 
 /* For now we hard-code this to a value for which we are confident
    all the static builtin types will fit (for all builds). */
-#define _Py_MAX_MANAGED_STATIC_BUILTIN_TYPES 200
+#define _Py_MAX_MANAGED_STATIC_BUILTIN_TYPES 201
 #define _Py_MAX_MANAGED_STATIC_EXT_TYPES 10
 #define _Py_MAX_MANAGED_STATIC_TYPES \
     (_Py_MAX_MANAGED_STATIC_BUILTIN_TYPES + _Py_MAX_MANAGED_STATIC_EXT_TYPES)

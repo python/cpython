@@ -1,0 +1,3 @@
+Introduced :meth:`importlib.abc.MetaPathFinder.discover`
+and :meth:`importlib.abc.PathEntryFinder.discover` to allow module and submodule
+name discovery without assuming the use of traditional filesystem based imports.
