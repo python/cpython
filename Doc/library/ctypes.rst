@@ -1536,11 +1536,34 @@ function exported by these libraries, and reacquired afterwards.
       The *name* parameter can now be a :term:`path-like object`.
 
 All these classes can be instantiated by calling them with at least one
-argument, the pathname of the shared library.  If you have an existing handle to
-an already loaded shared library, it can be passed as the ``handle`` named
-parameter, otherwise the underlying platform's :c:func:`!dlopen` or
+argument, the pathname of the shared library.
+
+If you have an existing :py:attr:`handle <ctypes.PyDLL._handle>` to an already
+loaded shared library, it can be passed as the *handle* argument.
+
+If *handle* is ``None``, the underlying platform's :c:func:`!dlopen` or
 :c:func:`!LoadLibrary` function is used to load the library into
 the process, and to get a handle to it.
+
+On systems that use :c:func:`!dlopen` (that is, not Windows), if *name* is
+``None``, :c:func:`!dlopen` is called with ``NULL``, which opens the "library"
+corresponding to the main program.
+(Some systems do the same is *name* is empty; ``None``/``NULL`` is more
+portable.)
+
+.. admonition:: CPython implementation detail
+
+   Since CPython is linked to ``libc``, a *name* of ``None`` is often used
+   to access the C standard library::
+
+      >>> printf = ctypes.CDLL(None).printf
+      >>> printf.argtypes = [ctypes.c_char_p]
+      >>> printf(b"hello\n")
+      hello
+      6
+
+   To access the Python C API, see :py:data:`~ctypes.pythonapi` which works
+   across platforms.
 
 The *mode* parameter can be used to specify how the library is loaded.  For
 details, consult the :manpage:`dlopen(3)` manpage.  On Windows, *mode* is
