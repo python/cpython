@@ -63,11 +63,13 @@ def _expand_block(block, a, b, alo, ahi, blo, bhi, *, pred=None):
         k += 1
     return (i, j, k)
 
-def _collapse_adjacent_blocks(blocks):
+def _collapse_adjacent_blocks(blocks, remove_zero_length=True):
     """Collapses adjacent blocks
     """
     i1 = j1 = k1 = 0
     for i2, j2, k2 in blocks:
+        if remove_zero_length and not k2:
+            continue
         # Is this block adjacent to i1, j1, k1?
         if i1 + k1 == i2 and j1 + k1 == j2:
             # Yes, so collapse them -- this just increases the length of
@@ -274,13 +276,13 @@ class SequenceMatcherBase:
 
         When `_get_matching_blocks` is implemented, this method takes care of:
             1. Appending last dummy tripple
-            2. Collapsing adjacent blocks
+            2. Collapsing adjacent blocks (after removing empty blocks)
             3. Caching
         """
         blocks = self.matching_blocks
         if blocks is None:
             blocks = self._get_matching_blocks()
-            blocks = _collapse_adjacent_blocks(blocks)
+            blocks = _collapse_adjacent_blocks(blocks, remove_zero_length=True)
             blocks = list(map(Match._make, blocks))
             # Append dummy at the end
             blocks.append(Match(len(self.a), len(self.b), 0))
