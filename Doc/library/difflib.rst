@@ -19,6 +19,26 @@ about file differences in various formats, including HTML and context and unifie
 diffs. For comparing directories and files, see also, the :mod:`filecmp` module.
 
 
+.. class:: SequenceMatcherBase
+   :noindex:
+
+   Base class for implementing sequence matchers.
+
+   At minimum, derived classes must implement ``_get_matching_blocks`` method,
+   which returns a list of blocks tuple[start_in_a, start_in_b, length].
+   See ``_get_matching_blocks`` and ``get_matching_blocks`` for more information.
+
+   Once implemented, the following methods make use of it and are available:
+      :meth:`~SequenceMatcherBase.get_matching_blocks`
+      :meth:`~SequenceMatcherBase.get_opcodes`
+      :meth:`~SequenceMatcherBase.get_grouped_opcodes`
+      :meth:`~SequenceMatcherBase.ratio`
+      :meth:`~SequenceMatcherBase.quick_ratio`
+      :meth:`~SequenceMatcherBase.real_quick_ratio`
+
+   See :class:`SequenceMatcher` for example implementation.
+
+
 .. class:: SequenceMatcher
    :noindex:
 
@@ -88,7 +108,8 @@ diffs. For comparing directories and files, see also, the :mod:`filecmp` module.
    The constructor for this class is:
 
 
-   .. method:: __init__(tabsize=8, wrapcolumn=None, linejunk=None, charjunk=IS_CHARACTER_JUNK)
+   .. method:: __init__(tabsize=8, wrapcolumn=None,
+                        linejunk=None, charjunk=IS_CHARACTER_JUNK, differ=None)
 
       Initializes instance of :class:`HtmlDiff`.
 
@@ -98,9 +119,12 @@ diffs. For comparing directories and files, see also, the :mod:`filecmp` module.
       *wrapcolumn* is an optional keyword to specify column number where lines are
       broken and wrapped, defaults to ``None`` where lines are not wrapped.
 
-      *linejunk* and *charjunk* are optional keyword arguments passed into :func:`ndiff`
-      (used by :class:`HtmlDiff` to generate the side by side HTML differences).  See
-      :func:`ndiff` documentation for argument default values and descriptions.
+      *linejunk*, *charjunk* and *differ* are optional keyword arguments passed into
+      :func:`ndiff` (used by :class:`HtmlDiff` to generate the side by side HTML differences).
+      See :func:`ndiff` documentation for argument default values and descriptions.
+
+      .. versionchanged:: 3.15
+         Added *differ* argument.
 
    The following methods are public:
 
@@ -143,7 +167,8 @@ diffs. For comparing directories and files, see also, the :mod:`filecmp` module.
 
 
 
-.. function:: context_diff(a, b, fromfile='', tofile='', fromfiledate='', tofiledate='', n=3, lineterm='\n')
+.. function:: context_diff(a, b, fromfile='', tofile='', fromfiledate='', tofiledate='',
+                           n=3, lineterm='\n', matcher=None)
 
    Compare *a* and *b* (lists of strings); return a delta (a :term:`generator`
    generating the delta lines) in context diff format.
@@ -160,6 +185,10 @@ diffs. For comparing directories and files, see also, the :mod:`filecmp` module.
 
    For inputs that do not have trailing newlines, set the *lineterm* argument to
    ``""`` so that the output will be uniformly newline free.
+
+   Optional argument *matcher* is a callable with 3 optional arguments and returns
+   :class:`SequenceMatcherBase` instance. i.e. ``matcher(isjunk=None, a='', b='')``.
+   Default (if ``None``) is a :class:`SequenceMatcher` class.
 
    The context diff format normally has a header for filenames and modification
    times.  Any or all of these may be specified using strings for *fromfile*,
@@ -189,8 +218,11 @@ diffs. For comparing directories and files, see also, the :mod:`filecmp` module.
 
    See :ref:`difflib-interface` for a more detailed example.
 
+   .. versionchanged:: 3.15
+      Added *matcher* argument.
 
-.. function:: get_close_matches(word, possibilities, n=3, cutoff=0.6)
+
+.. function:: get_close_matches(word, possibilities, n=3, cutoff=0.6, matcher=None)
 
    Return a list of the best "good enough" matches.  *word* is a sequence for which
    close matches are desired (typically a string), and *possibilities* is a list of
@@ -201,6 +233,10 @@ diffs. For comparing directories and files, see also, the :mod:`filecmp` module.
 
    Optional argument *cutoff* (default ``0.6``) is a float in the range [0, 1].
    Possibilities that don't score at least that similar to *word* are ignored.
+
+   Optional argument *matcher* is a callable with 3 optional arguments and returns
+   :class:`SequenceMatcherBase` instance. i.e. ``matcher(isjunk=None, a='', b='')``.
+   Default (if ``None``) is a :class:`SequenceMatcher` class.
 
    The best (no more than *n*) matches among the possibilities are returned in a
    list, sorted by similarity score, most similar first.
@@ -215,8 +251,11 @@ diffs. For comparing directories and files, see also, the :mod:`filecmp` module.
       >>> get_close_matches('accept', keyword.kwlist)
       ['except']
 
+   .. versionchanged:: 3.15
+      Added *matcher* argument.
 
-.. function:: ndiff(a, b, linejunk=None, charjunk=IS_CHARACTER_JUNK)
+
+.. function:: ndiff(a, b, linejunk=None, charjunk=IS_CHARACTER_JUNK, differ=None)
 
    Compare *a* and *b* (lists of strings); return a :class:`Differ`\ -style
    delta (a :term:`generator` generating the delta lines).
@@ -237,6 +276,10 @@ diffs. For comparing directories and files, see also, the :mod:`filecmp` module.
    function :func:`IS_CHARACTER_JUNK`, which filters out whitespace characters (a
    blank or tab; it's a bad idea to include newline in this!).
 
+   *differ*: callable that takes 2 optional arguments and returns
+   :class:`Differ` instance. i.e. ``differ(linejunk=None, charjunk=None)``.
+   Default (if ``None``) is a :class:`Differ` class.
+
       >>> diff = ndiff('one\ntwo\nthree\n'.splitlines(keepends=True),
       ...              'ore\ntree\nemu\n'.splitlines(keepends=True))
       >>> print(''.join(diff), end="")
@@ -249,6 +292,9 @@ diffs. For comparing directories and files, see also, the :mod:`filecmp` module.
       ?  -
       + tree
       + emu
+
+   .. versionchanged:: 3.15
+      Added *differ* argument.
 
 
 .. function:: restore(sequence, which)
@@ -274,7 +320,8 @@ diffs. For comparing directories and files, see also, the :mod:`filecmp` module.
       emu
 
 
-.. function:: unified_diff(a, b, fromfile='', tofile='', fromfiledate='', tofiledate='', n=3, lineterm='\n', *, color=False)
+.. function:: unified_diff(a, b, fromfile='', tofile='', fromfiledate='', tofiledate='',
+                           n=3, lineterm='\n', *, color=False, matcher=None)
 
    Compare *a* and *b* (lists of strings); return a delta (a :term:`generator`
    generating the delta lines) in unified diff format.
@@ -296,6 +343,10 @@ diffs. For comparing directories and files, see also, the :mod:`filecmp` module.
    Set *color* to ``True`` to enable output in color, similar to
    :program:`git diff --color`. Even if enabled, it can be
    :ref:`controlled using environment variables <using-on-controlling-color>`.
+
+   Optional argument *matcher* is a callable with 3 optional arguments and returns
+   :class:`SequenceMatcherBase` instance. i.e. ``matcher(isjunk=None, a='', b='')``.
+   Default (if ``None``) is a :class:`SequenceMatcher` class.
 
    The unified diff format normally has a header for filenames and modification
    times.  Any or all of these may be specified using strings for *fromfile*,
@@ -321,6 +372,7 @@ diffs. For comparing directories and files, see also, the :mod:`filecmp` module.
 
    .. versionchanged:: 3.15
       Added the *color* parameter.
+      Added *matcher* argument.
 
 
 .. function:: diff_bytes(dfunc, a, b, fromfile=b'', tofile=b'', fromfiledate=b'', tofiledate=b'', n=3, lineterm=b'\n')
@@ -360,15 +412,14 @@ diffs. For comparing directories and files, see also, the :mod:`filecmp` module.
       was published in Dr. Dobb's Journal in July, 1988.
 
 
-.. _sequence-matcher:
+.. _sequence-matcher-base:
 
-SequenceMatcher Objects
------------------------
+SequenceMatcherBase
+-------------------
 
-The :class:`SequenceMatcher` class has this constructor:
+The :class:`SequenceMatcherBase` class has this constructor:
 
-
-.. class:: SequenceMatcher(isjunk=None, a='', b='', autojunk=True)
+.. class:: SequenceMatcherBase(isjunk=None, a='', b='')
 
    Optional argument *isjunk* must be ``None`` (the default) or a one-argument
    function that takes a sequence element and returns true if and only if the
@@ -384,33 +435,19 @@ The :class:`SequenceMatcher` class has this constructor:
    The optional arguments *a* and *b* are sequences to be compared; both default to
    empty strings.  The elements of both sequences must be :term:`hashable`.
 
-   The optional argument *autojunk* can be used to disable the automatic junk
-   heuristic.
-
-   .. versionchanged:: 3.2
-      Added the *autojunk* parameter.
-
-   SequenceMatcher objects get three data attributes: *bjunk* is the
-   set of elements of *b* for which *isjunk* is ``True``; *bpopular* is the set of
-   non-junk elements considered popular by the heuristic (if it is not
-   disabled); *b2j* is a dict mapping the remaining elements of *b* to a list
-   of positions where they occur. All three are reset whenever *b* is reset
-   with :meth:`set_seqs` or :meth:`set_seq2`.
-
    .. versionadded:: 3.2
       The *bjunk* and *bpopular* attributes.
 
-   :class:`SequenceMatcher` objects have the following methods:
+   :class:`SequenceMatcherBase` objects have the following methods:
 
    .. method:: set_seqs(a, b)
 
       Set the two sequences to be compared.
 
-   :class:`SequenceMatcher` computes and caches detailed information about the
-   second sequence, so if you want to compare one sequence against many
-   sequences, use :meth:`set_seq2` to set the commonly used sequence once and
-   call :meth:`set_seq1` repeatedly, once for each of the other sequences.
-
+   :class:`SequenceMatcherBase` inends to cache detailed information about the
+   second sequence. :meth:`set_seq2` clears cache of :meth:`quick_ratio` method.
+   In addition :meth:`_prepare_seq2`, which is called at the end of :meth:`set_seq2`,
+   can be implemented by derrived class for alignment algorithm cache logic.
 
    .. method:: set_seq1(a)
 
@@ -423,49 +460,7 @@ The :class:`SequenceMatcher` class has this constructor:
       Set the second sequence to be compared.  The first sequence to be compared
       is not changed.
 
-
-   .. method:: find_longest_match(alo=0, ahi=None, blo=0, bhi=None)
-
-      Find longest matching block in ``a[alo:ahi]`` and ``b[blo:bhi]``.
-
-      If *isjunk* was omitted or ``None``, :meth:`find_longest_match` returns
-      ``(i, j, k)`` such that ``a[i:i+k]`` is equal to ``b[j:j+k]``, where ``alo
-      <= i <= i+k <= ahi`` and ``blo <= j <= j+k <= bhi``. For all ``(i', j',
-      k')`` meeting those conditions, the additional conditions ``k >= k'``, ``i
-      <= i'``, and if ``i == i'``, ``j <= j'`` are also met. In other words, of
-      all maximal matching blocks, return one that starts earliest in *a*, and
-      of all those maximal matching blocks that start earliest in *a*, return
-      the one that starts earliest in *b*.
-
-         >>> s = SequenceMatcher(None, " abcd", "abcd abcd")
-         >>> s.find_longest_match(0, 5, 0, 9)
-         Match(a=0, b=4, size=5)
-
-      If *isjunk* was provided, first the longest matching block is determined
-      as above, but with the additional restriction that no junk element appears
-      in the block.  Then that block is extended as far as possible by matching
-      (only) junk elements on both sides. So the resulting block never matches
-      on junk except as identical junk happens to be adjacent to an interesting
-      match.
-
-      Here's the same example as before, but considering blanks to be junk. That
-      prevents ``' abcd'`` from matching the ``' abcd'`` at the tail end of the
-      second sequence directly.  Instead only the ``'abcd'`` can match, and
-      matches the leftmost ``'abcd'`` in the second sequence:
-
-         >>> s = SequenceMatcher(lambda x: x==" ", " abcd", "abcd abcd")
-         >>> s.find_longest_match(0, 5, 0, 9)
-         Match(a=1, b=0, size=4)
-
-      If no blocks match, this returns ``(alo, blo, 0)``.
-
-      This method returns a :term:`named tuple` ``Match(a, b, size)``.
-
-      .. versionchanged:: 3.9
-         Added default arguments.
-
-
-   .. method:: get_matching_blocks()
+      .. method:: get_matching_blocks()
 
       Return list of triples describing non-overlapping matching subsequences.
       Each triple is of the form ``(i, j, n)``,
@@ -485,6 +480,14 @@ The :class:`SequenceMatcher` class has this constructor:
          >>> s = SequenceMatcher(None, "abxcd", "abcd")
          >>> s.get_matching_blocks()
          [Match(a=0, b=0, size=2), Match(a=3, b=2, size=2), Match(a=5, b=4, size=0)]
+
+
+   .. method:: _prepare_seq2()
+
+      Preparation method that is called at the end of :meth:`set_seq2`.
+
+      By default it does nothing, but can be implemented by derrived class
+      for alignment algorithm cache logic.
 
 
    .. method:: get_opcodes()
@@ -588,6 +591,87 @@ are always at least as large as :meth:`~SequenceMatcher.ratio`:
    1.0
 
 
+.. _sequence-matcher:
+
+SequenceMatcher Objects
+-----------------------
+
+The :class:`SequenceMatcher` class has this constructor:
+
+
+.. class:: SequenceMatcher(isjunk=None, a='', b='', autojunk=True)
+
+   *isjunk*, *a* and *b* are passed on to ``SequenceMatcherBase`` constructor.
+   See :class:`SequenceMatcherBase` documentation.
+
+   The optional argument *autojunk* can be used to disable the automatic junk
+   heuristic.
+
+   SequenceMatcher objects get three data attributes: *bjunk* is the
+   set of elements of *b* for which *isjunk* is ``True``; *bpopular* is the set of
+   non-junk elements considered popular by the heuristic (if it is not
+   disabled); *b2j* is a dict mapping the remaining elements of *b* to a list
+   of positions where they occur. All three are reset whenever *b* is reset
+   with :meth:`set_seqs` or :meth:`set_seq2`.
+
+   .. versionchanged:: 3.2
+      Added the *autojunk* parameter.
+
+   :class:`SequenceMatcher` computes and caches detailed information about the
+   second sequence, so if you want to compare one sequence against many
+   sequences, use :meth:`set_seq2` to set the commonly used sequence once and
+   call :meth:`set_seq1` repeatedly, once for each of the other sequences.
+
+   In addition to methods implemented by :class:`SequenceMatcherBase`,
+   :class:`SequenceMatcher` objects have the following methods:
+
+
+   .. method:: _prepare_seq2()
+
+      Implemented to prepare *b2j*, *bjunk* and *bpopular* caches.
+
+
+   .. method:: find_longest_match(alo=0, ahi=None, blo=0, bhi=None)
+
+      Find longest matching block in ``a[alo:ahi]`` and ``b[blo:bhi]``.
+
+      If *isjunk* was omitted or ``None``, :meth:`find_longest_match` returns
+      ``(i, j, k)`` such that ``a[i:i+k]`` is equal to ``b[j:j+k]``, where ``alo
+      <= i <= i+k <= ahi`` and ``blo <= j <= j+k <= bhi``. For all ``(i', j',
+      k')`` meeting those conditions, the additional conditions ``k >= k'``, ``i
+      <= i'``, and if ``i == i'``, ``j <= j'`` are also met. In other words, of
+      all maximal matching blocks, return one that starts earliest in *a*, and
+      of all those maximal matching blocks that start earliest in *a*, return
+      the one that starts earliest in *b*.
+
+         >>> s = SequenceMatcher(None, " abcd", "abcd abcd")
+         >>> s.find_longest_match(0, 5, 0, 9)
+         Match(a=0, b=4, size=5)
+
+      If *isjunk* was provided, first the longest matching block is determined
+      as above, but with the additional restriction that no junk element appears
+      in the block.  Then that block is extended as far as possible by matching
+      (only) junk elements on both sides. So the resulting block never matches
+      on junk except as identical junk happens to be adjacent to an interesting
+      match.
+
+      Here's the same example as before, but considering blanks to be junk. That
+      prevents ``' abcd'`` from matching the ``' abcd'`` at the tail end of the
+      second sequence directly.  Instead only the ``'abcd'`` can match, and
+      matches the leftmost ``'abcd'`` in the second sequence:
+
+         >>> s = SequenceMatcher(lambda x: x==" ", " abcd", "abcd abcd")
+         >>> s.find_longest_match(0, 5, 0, 9)
+         Match(a=1, b=0, size=4)
+
+      If no blocks match, this returns ``(alo, blo, 0)``.
+
+      This method returns a :term:`named tuple` ``Match(a, b, size)``.
+
+      .. versionchanged:: 3.9
+         Added default arguments.
+
+
 .. _sequencematcher-examples:
 
 SequenceMatcher Examples
@@ -653,7 +737,7 @@ locality, at the occasional cost of producing a longer diff.
 The :class:`Differ` class has this constructor:
 
 
-.. class:: Differ(linejunk=None, charjunk=None)
+.. class:: Differ(linejunk=None, charjunk=None, linematcher=None, charmatcher=None)
    :noindex:
 
    Optional keyword parameters *linejunk* and *charjunk* are for filter functions
@@ -672,6 +756,14 @@ The :class:`Differ` class has this constructor:
    be ignored.  Read the description of the
    :meth:`~SequenceMatcher.find_longest_match` method's *isjunk*
    parameter for an explanation.
+
+   *linematcher*: callable with 3 optional arguments which returns
+   :class:`~SequenceMatcherBase` instance. i.e. ``matcher(isjunk=None, a='', b='')``.
+   Default (if ``None``) is a :class:`SequenceMatcher` class.
+
+   *charmatcher*: callable with 3 optional arguments which returns
+   :class:`~SequenceMatcherBase` instance. i.e. ``matcher(isjunk=None, a='', b='')``.
+   Default (if ``None``) is a :class:`SequenceMatcher` class.
 
    :class:`Differ` objects are used (deltas generated) via a single method:
 

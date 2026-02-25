@@ -16,6 +16,9 @@ Function restore(delta, which):
 Function unified_diff(a, b):
     For two lists of strings, return a delta in unified diff format.
 
+class SequenceMatcherBase:
+    Base class for implementing sequence matchers.
+
 Class SequenceMatcher:
     A flexible class for comparing pairs of sequences of any type.
 
@@ -35,6 +38,59 @@ from heapq import nlargest as _nlargest
 from collections import namedtuple as _namedtuple
 from types import GenericAlias
 
+########################################################################
+###  Utilities
+########################################################################
+
+def _expand_block_to_junk(junk, block, a, b, alo, ahi, blo, bhi, *, inverse=False):
+    """
+    Expands block for consecutive matches at both sides if:
+        a) characters match
+        b) matching characters are in junk
+    If inverse == True, (b) condition is inverted to: "are not in junk"
+    """
+    i, j, k = block
+    while i > alo and j > blo:
+        el2 = b[j - 1]
+        ok = el2 not in junk if inverse else el2 in junk
+        if not ok or a[i - 1] != el2:
+            break
+        i -= 1
+        j -= 1
+        k += 1
+    while i + k < ahi and j + k < bhi:
+        el2 = b[j + k]
+        ok = el2 not in junk if inverse else el2 in junk
+        if not ok or a[i + k] != el2:
+            break
+        k += 1
+    return (i, j, k)
+
+def _collapse_adjacent_blocks(blocks):
+    """Collapses adjacent blocks
+    """
+    i1 = j1 = k1 = 0
+    for i2, j2, k2 in blocks:
+        # Is this block adjacent to i1, j1, k1?
+        if i1 + k1 == i2 and j1 + k1 == j2:
+            # Yes, so collapse them -- this just increases the length of
+            # the first block by the length of the second, and the first
+            # block so lengthened remains the block to compare against.
+            k1 += k2
+        else:
+            # Not adjacent.  Remember the first block (k1==0 means it's
+            # the dummy we started with), and make the second block the
+            # new block to compare against.
+            if k1:
+                yield (i1, j1, k1)
+            i1, j1, k1 = i2, j2, k2
+    if k1:
+        yield (i1, j1, k1)
+
+########################################################################
+###  SequenceMatcherBase
+########################################################################
+
 Match = _namedtuple('Match', 'a b size')
 
 def _calculate_ratio(matches, length):
@@ -42,85 +98,38 @@ def _calculate_ratio(matches, length):
         return 2.0 * matches / length
     return 1.0
 
-class SequenceMatcher:
+def _process_matcher_arg(matcher, argname='matcher'):
+    if matcher is None:
+        return SequenceMatcher
+    elif callable(matcher):
+        test_inst = matcher()
+        if not isinstance(test_inst, SequenceMatcherBase):
+            msg = "%r must return SequenceMatcherBase instance. Returned: %r"
+            raise TypeError(msg % (argname, test_inst))
+        return matcher
+    else:
+        raise TypeError("%r must be a callable. Got %r" % (argname, matcher))
 
-    """
-    SequenceMatcher is a flexible class for comparing pairs of sequences of
-    any type, so long as the sequence elements are hashable.  The basic
-    algorithm predates, and is a little fancier than, an algorithm
-    published in the late 1980's by Ratcliff and Obershelp under the
-    hyperbolic name "gestalt pattern matching".  The basic idea is to find
-    the longest contiguous matching subsequence that contains no "junk"
-    elements (R-O doesn't address junk).  The same idea is then applied
-    recursively to the pieces of the sequences to the left and to the right
-    of the matching subsequence.  This does not yield minimal edit
-    sequences, but does tend to yield matches that "look right" to people.
+class SequenceMatcherBase:
+    """Base class for implementing sequence matchers.
 
-    SequenceMatcher tries to compute a "human-friendly diff" between two
-    sequences.  Unlike e.g. UNIX(tm) diff, the fundamental notion is the
-    longest *contiguous* & junk-free matching subsequence.  That's what
-    catches peoples' eyes.  The Windows(tm) windiff has another interesting
-    notion, pairing up elements that appear uniquely in each sequence.
-    That, and the method here, appear to yield more intuitive difference
-    reports than does diff.  This method appears to be the least vulnerable
-    to syncing up on blocks of "junk lines", though (like blank lines in
-    ordinary text files, or maybe "<P>" lines in HTML files).  That may be
-    because this is the only method of the 3 that has a *concept* of
-    "junk" <wink>.
+    At minimum, derived classes must implement `_get_matching_blocks` method,
+    which returns a list of blocks tuple[start_in_a, start_in_b, length].
+    See `_get_matching_blocks` and `get_matching_blocks` for more information.
 
-    Example, comparing two strings, and considering blanks to be "junk":
+    Once implemented, the following methods make use of it and are available:
+        get_matching_blocks
+        get_opcodes
+        get_grouped_opcodes
+        ratio
+        quick_ratio
+        real_quick_ratio
 
-    >>> s = SequenceMatcher(lambda x: x == " ",
-    ...                     "private Thread currentThread;",
-    ...                     "private volatile Thread currentThread;")
-    >>>
-
-    .ratio() returns a float in [0, 1], measuring the "similarity" of the
-    sequences.  As a rule of thumb, a .ratio() value over 0.6 means the
-    sequences are close matches:
-
-    >>> print(round(s.ratio(), 2))
-    0.87
-    >>>
-
-    If you're only interested in where the sequences match,
-    .get_matching_blocks() is handy:
-
-    >>> for block in s.get_matching_blocks():
-    ...     print("a[%d] and b[%d] match for %d elements" % block)
-    a[0] and b[0] match for 8 elements
-    a[8] and b[17] match for 21 elements
-    a[29] and b[38] match for 0 elements
-
-    Note that the last tuple returned by .get_matching_blocks() is always a
-    dummy, (len(a), len(b), 0), and this is the only case in which the last
-    tuple element (number of elements matched) is 0.
-
-    If you want to know how to change the first sequence into the second,
-    use .get_opcodes():
-
-    >>> for opcode in s.get_opcodes():
-    ...     print("%6s a[%d:%d] b[%d:%d]" % opcode)
-     equal a[0:8] b[0:8]
-    insert a[8:8] b[8:17]
-     equal a[8:29] b[17:38]
-
-    See the Differ class for a fancy human-friendly file differencer, which
-    uses SequenceMatcher both to compare sequences of lines, and to compare
-    sequences of characters within similar (near-matching) lines.
-
-    See also function get_close_matches() in this module, which shows how
-    simple code building on SequenceMatcher can be used to do useful work.
-
-    Timing:  Basic R-O is cubic time worst case and quadratic time expected
-    case.  SequenceMatcher is quadratic time for the worst case and has
-    expected-case behavior dependent in a complicated way on how many
-    elements the sequences have in common; best case time is linear.
+    See `SequenceMatcher` for example implementation.
     """
 
-    def __init__(self, isjunk=None, a='', b='', autojunk=True):
-        """Construct a SequenceMatcher.
-
+    def __init__(self, isjunk=None, a='', b=''):
+        """
         Optional arg isjunk is None (the default), or a one-argument
         function that takes a sequence element and returns true iff the
         element is junk.  None is equivalent to passing "lambda x: 0", i.e.
@@ -137,60 +146,35 @@ class SequenceMatcher:
         default, an empty string.  The elements of b must be hashable. See
         also .set_seqs() and .set_seq2().
 
-        Optional arg autojunk should be set to False to disable the
-        "automatic junk heuristic" that treats popular elements as junk
-        (see module documentation for more information).
+        Members:
+            a : Sequence
+                first sequence
+            b : Sequence
+                second sequence; differences are computed as "what do
+                we need to do to 'a' to change it into 'b'?"
+            isjunk : Callable | None
+                a user-supplied function taking a sequence element and
+                returning true iff the element is "junk"
+                "junk" elements are unmatchable elements
+            matching_blocks : list
+                a list of (i, j, k) triples, where a[i:i+k] == b[j:j+k];
+                ascending & non-overlapping in i and in j; terminated by
+                a dummy (len(a), len(b), 0) sentinel
+            opcodes : list
+                a list of (tag, i1, i2, j1, j2) tuples, where tag is
+                one of
+                    'replace'   a[i1:i2] should be replaced by b[j1:j2]
+                    'delete'    a[i1:i2] should be deleted
+                    'insert'    b[j1:j2] should be inserted
+                    'equal'     a[i1:i2] == b[j1:j2]
         """
-
-        # Members:
-        # a
-        #      first sequence
-        # b
-        #      second sequence; differences are computed as "what do
-        #      we need to do to 'a' to change it into 'b'?"
-        # b2j
-        #      for x in b, b2j[x] is a list of the indices (into b)
-        #      at which x appears; junk and popular elements do not appear
-        # fullbcount
-        #      for x in b, fullbcount[x] == the number of times x
-        #      appears in b; only materialized if really needed (used
-        #      only for computing quick_ratio())
-        # matching_blocks
-        #      a list of (i, j, k) triples, where a[i:i+k] == b[j:j+k];
-        #      ascending & non-overlapping in i and in j; terminated by
-        #      a dummy (len(a), len(b), 0) sentinel
-        # opcodes
-        #      a list of (tag, i1, i2, j1, j2) tuples, where tag is
-        #      one of
-        #          'replace'   a[i1:i2] should be replaced by b[j1:j2]
-        #          'delete'    a[i1:i2] should be deleted
-        #          'insert'    b[j1:j2] should be inserted
-        #          'equal'     a[i1:i2] == b[j1:j2]
-        # isjunk
-        #      a user-supplied function taking a sequence element and
-        #      returning true iff the element is "junk" -- this has
-        #      subtle but helpful effects on the algorithm, which I'll
-        #      get around to writing up someday <0.9 wink>.
-        #      DON'T USE!  Only __chain_b uses this.  Use "in self.bjunk".
-        # bjunk
-        #      the items in b for which isjunk is True.
-        # bpopular
-        #      nonjunk items in b treated as junk by the heuristic (if used).
-
         self.isjunk = isjunk
-        self.a = self.b = None
-        self.autojunk = autojunk
+        self.a = None
+        self.b = None
         self.set_seqs(a, b)
 
     def set_seqs(self, a, b):
-        """Set the two sequences to be compared.
-
-        >>> s = SequenceMatcher()
-        >>> s.set_seqs("abcd", "bcde")
-        >>> s.ratio()
-        0.75
-        """
-
+        """Set the two sequences to be compared."""
         self.set_seq1(a)
         self.set_seq2(b)
 
@@ -233,10 +217,10 @@ class SequenceMatcher:
         1.0
         >>>
 
-        SequenceMatcher computes and caches detailed information about the
-        second sequence, so if you want to compare one sequence S against
-        many sequences, use .set_seq2(S) once and call .set_seq1(x)
-        repeatedly for each of the other sequences.
+        SequenceMatcherBase inends to cache detailed information about the
+        second sequence. set_seq2 clears cache of quick_ratio method.
+        In addition _prepare_seq2, which is called at the end of set_seq2,
+        can be implemented by derrived class for alignment algorithm cache logic.
 
         See also set_seqs() and set_seq1().
         """
@@ -246,178 +230,32 @@ class SequenceMatcher:
         self.b = b
         self.matching_blocks = self.opcodes = None
         self.fullbcount = None
-        self.__chain_b()
+        self._prepare_seq2()
 
-    # For each element x in b, set b2j[x] to a list of the indices in
-    # b where x appears; the indices are in increasing order; note that
-    # the number of times x appears in b is len(b2j[x]) ...
-    # when self.isjunk is defined, junk elements don't show up in this
-    # map at all, which stops the central find_longest_match method
-    # from starting any matching block at a junk element ...
-    # b2j also does not contain entries for "popular" elements, meaning
-    # elements that account for more than 1 + 1% of the total elements, and
-    # when the sequence is reasonably large (>= 200 elements); this can
-    # be viewed as an adaptive notion of semi-junk, and yields an enormous
-    # speedup when, e.g., comparing program files with hundreds of
-    # instances of "return NULL;" ...
-    # note that this is only called when b changes; so for cross-product
-    # kinds of matches, it's best to call set_seq2 once, then set_seq1
-    # repeatedly
+    def _prepare_seq2(self):
+        """Preparation method that is called at the end of `set_seq2`.
 
-    def __chain_b(self):
-        # Because isjunk is a user-defined (not C) function, and we test
-        # for junk a LOT, it's important to minimize the number of calls.
-        # Before the tricks described here, __chain_b was by far the most
-        # time-consuming routine in the whole module!  If anyone sees
-        # Jim Roskind, thank him again for profile.py -- I never would
-        # have guessed that.
-        # The first trick is to build b2j ignoring the possibility
-        # of junk.  I.e., we don't call isjunk at all yet.  Throwing
-        # out the junk later is much cheaper than building b2j "right"
-        # from the start.
-        b = self.b
-        self.b2j = b2j = {}
-
-        for i, elt in enumerate(b):
-            indices = b2j.setdefault(elt, [])
-            indices.append(i)
-
-        # Purge junk elements
-        self.bjunk = junk = set()
-        isjunk = self.isjunk
-        if isjunk:
-            for elt in b2j.keys():
-                if isjunk(elt):
-                    junk.add(elt)
-            for elt in junk: # separate loop avoids separate list of keys
-                del b2j[elt]
-
-        # Purge popular elements that are not junk
-        self.bpopular = popular = set()
-        n = len(b)
-        if self.autojunk and n >= 200:
-            ntest = n // 100 + 1
-            for elt, idxs in b2j.items():
-                if len(idxs) > ntest:
-                    popular.add(elt)
-            for elt in popular: # ditto; as fast for 1% deletion
-                del b2j[elt]
-
-    def find_longest_match(self, alo=0, ahi=None, blo=0, bhi=None):
-        """Find longest matching block in a[alo:ahi] and b[blo:bhi].
-
-        By default it will find the longest match in the entirety of a and b.
-
-        If isjunk is not defined:
-
-        Return (i,j,k) such that a[i:i+k] is equal to b[j:j+k], where
-            alo <= i <= i+k <= ahi
-            blo <= j <= j+k <= bhi
-        and for all (i',j',k') meeting those conditions,
-            k >= k'
-            i <= i'
-            and if i == i', j <= j'
-
-        In other words, of all maximal matching blocks, return one that
-        starts earliest in a, and of all those maximal matching blocks that
-        start earliest in a, return the one that starts earliest in b.
-
-        >>> s = SequenceMatcher(None, " abcd", "abcd abcd")
-        >>> s.find_longest_match(0, 5, 0, 9)
-        Match(a=0, b=4, size=5)
-
-        If isjunk is defined, first the longest matching block is
-        determined as above, but with the additional restriction that no
-        junk element appears in the block.  Then that block is extended as
-        far as possible by matching (only) junk elements on both sides.  So
-        the resulting block never matches on junk except as identical junk
-        happens to be adjacent to an "interesting" match.
-
-        Here's the same example as before, but considering blanks to be
-        junk.  That prevents " abcd" from matching the " abcd" at the tail
-        end of the second sequence directly.  Instead only the "abcd" can
-        match, and matches the leftmost "abcd" in the second sequence:
-
-        >>> s = SequenceMatcher(lambda x: x==" ", " abcd", "abcd abcd")
-        >>> s.find_longest_match(0, 5, 0, 9)
-        Match(a=1, b=0, size=4)
-
-        If no blocks match, return (alo, blo, 0).
-
-        >>> s = SequenceMatcher(None, "ab", "c")
-        >>> s.find_longest_match(0, 2, 0, 1)
-        Match(a=0, b=0, size=0)
+        By default it does nothing, but can be implemented by derrived class
+        for alignment algorithm cache logic.
         """
+        pass
 
-        # CAUTION:  stripping common prefix or suffix would be incorrect.
-        # E.g.,
-        #    ab
-        #    acab
-        # Longest matching block is "ab", but if common prefix is
-        # stripped, it's "a" (tied with "b").  UNIX(tm) diff does so
-        # strip, so ends up claiming that ab is changed to acab by
-        # inserting "ca" in the middle.  That's minimal but unintuitive:
-        # "it's obvious" that someone inserted "ac" at the front.
-        # Windiff ends up at the same place as diff, but by pairing up
-        # the unique 'b's and then matching the first two 'a's.
+    # Abstract Methods ----------------
+    # ---------------------------------
 
-        a, b, b2j, isbjunk = self.a, self.b, self.b2j, self.bjunk.__contains__
-        if ahi is None:
-            ahi = len(a)
-        if bhi is None:
-            bhi = len(b)
-        besti, bestj, bestsize = alo, blo, 0
-        # find longest junk-free match
-        # during an iteration of the loop, j2len[j] = length of longest
-        # junk-free match ending with a[i-1] and b[j]
-        j2len = {}
-        nothing = []
-        for i in range(alo, ahi):
-            # look at all instances of a[i] in b; note that because
-            # b2j has no junk keys, the loop is skipped if a[i] is junk
-            j2lenget = j2len.get
-            newj2len = {}
-            for j in b2j.get(a[i], nothing):
-                # a[i] matches b[j]
-                if j < blo:
-                    continue
-                if j >= bhi:
-                    break
-                k = newj2len[j] = j2lenget(j-1, 0) + 1
-                if k > bestsize:
-                    besti, bestj, bestsize = i-k+1, j-k+1, k
-            j2len = newj2len
+    def _get_matching_blocks(self):
+        """Return list of triples describing matching subsequences.
 
-        # Extend the best by non-junk elements on each end.  In particular,
-        # "popular" non-junk elements aren't in b2j, which greatly speeds
-        # the inner loop above, but also means "the best" match so far
-        # doesn't contain any junk *or* popular non-junk elements.
-        while besti > alo and bestj > blo and \
-              not isbjunk(b[bestj-1]) and \
-              a[besti-1] == b[bestj-1]:
-            besti, bestj, bestsize = besti-1, bestj-1, bestsize+1
-        while besti+bestsize < ahi and bestj+bestsize < bhi and \
-              not isbjunk(b[bestj+bestsize]) and \
-              a[besti+bestsize] == b[bestj+bestsize]:
-            bestsize += 1
+        Implement this to return list[tuple[int, int, int]] and
+        let `get_matching_blocks` take care of maintenance and caching
 
-        # Now that we have a wholly interesting match (albeit possibly
-        # empty!), we may as well suck up the matching junk on each
-        # side of it too.  Can't think of a good reason not to, and it
-        # saves post-processing the (possibly considerable) expense of
-        # figuring out what to do with it.  In the case of an empty
-        # interesting match, this is clearly the right thing to do,
-        # because no other kind of match is possible in the regions.
-        while besti > alo and bestj > blo and \
-              isbjunk(b[bestj-1]) and \
-              a[besti-1] == b[bestj-1]:
-            besti, bestj, bestsize = besti-1, bestj-1, bestsize+1
-        while besti+bestsize < ahi and bestj+bestsize < bhi and \
-              isbjunk(b[bestj+bestsize]) and \
-              a[besti+bestsize] == b[bestj+bestsize]:
-            bestsize = bestsize + 1
+        Note, that validity of whether blocks actually match is not checked
+        and it is up to the user to make sure of correctness of the result.
+        """
+        raise NotImplementedError
 
-        return Match(besti, bestj, bestsize)
+    # Implemented Methods -------------
+    # ---------------------------------
 
     def get_matching_blocks(self):
         """Return list of triples describing matching subsequences.
@@ -431,64 +269,23 @@ class SequenceMatcher:
         blocks.
 
         The last triple is a dummy, (len(a), len(b), 0), and is the only
-        triple with n==0.
+            triple with n==0.
 
-        >>> s = SequenceMatcher(None, "abxcd", "abcd")
-        >>> list(s.get_matching_blocks())
-        [Match(a=0, b=0, size=2), Match(a=3, b=2, size=2), Match(a=5, b=4, size=0)]
+        When `_get_matching_blocks` is implemented, this method takes care of:
+            1. Appending last dummy tripple
+            2. Collapsing adjacent blocks
+            3. Caching
         """
-
-        if self.matching_blocks is not None:
-            return self.matching_blocks
-        la, lb = len(self.a), len(self.b)
-
-        # This is most naturally expressed as a recursive algorithm, but
-        # at least one user bumped into extreme use cases that exceeded
-        # the recursion limit on their box.  So, now we maintain a list
-        # ('queue`) of blocks we still need to look at, and append partial
-        # results to `matching_blocks` in a loop; the matches are sorted
-        # at the end.
-        queue = [(0, la, 0, lb)]
-        matching_blocks = []
-        while queue:
-            alo, ahi, blo, bhi = queue.pop()
-            i, j, k = x = self.find_longest_match(alo, ahi, blo, bhi)
-            # a[alo:i] vs b[blo:j] unknown
-            # a[i:i+k] same as b[j:j+k]
-            # a[i+k:ahi] vs b[j+k:bhi] unknown
-            if k:   # if k is 0, there was no matching block
-                matching_blocks.append(x)
-                if alo < i and blo < j:
-                    queue.append((alo, i, blo, j))
-                if i+k < ahi and j+k < bhi:
-                    queue.append((i+k, ahi, j+k, bhi))
-        matching_blocks.sort()
-
-        # It's possible that we have adjacent equal blocks in the
-        # matching_blocks list now.  Starting with 2.5, this code was added
-        # to collapse them.
-        i1 = j1 = k1 = 0
-        non_adjacent = []
-        for i2, j2, k2 in matching_blocks:
-            # Is this block adjacent to i1, j1, k1?
-            if i1 + k1 == i2 and j1 + k1 == j2:
-                # Yes, so collapse them -- this just increases the length of
-                # the first block by the length of the second, and the first
-                # block so lengthened remains the block to compare against.
-                k1 += k2
-            else:
-                # Not adjacent.  Remember the first block (k1==0 means it's
-                # the dummy we started with), and make the second block the
-                # new block to compare against.
-                if k1:
-                    non_adjacent.append((i1, j1, k1))
-                i1, j1, k1 = i2, j2, k2
-        if k1:
-            non_adjacent.append((i1, j1, k1))
-
-        non_adjacent.append( (la, lb, 0) )
-        self.matching_blocks = list(map(Match._make, non_adjacent))
-        return self.matching_blocks
+        blocks = self.matching_blocks
+        if blocks is None:
+            blocks = self._get_matching_blocks()
+            blocks = _collapse_adjacent_blocks(blocks)
+            blocks = list(map(Match._make, blocks))
+            # Append dummy at the end
+            blocks.append(Match(len(self.a), len(self.b), 0))
+            # Cache
+            self.matching_blocks = blocks
+        return blocks
 
     def get_opcodes(self):
         """Return list of 5-tuples describing how to turn a into b.
@@ -663,8 +460,332 @@ class SequenceMatcher:
 
     __class_getitem__ = classmethod(GenericAlias)
 
+########################################################################
+###  SequenceMatcher
+########################################################################
 
-def get_close_matches(word, possibilities, n=3, cutoff=0.6):
+class SequenceMatcher(SequenceMatcherBase):
+
+    """
+    SequenceMatcher is a flexible class for comparing pairs of sequences of
+    any type, so long as the sequence elements are hashable.  The basic
+    algorithm predates, and is a little fancier than, an algorithm
+    published in the late 1980's by Ratcliff and Obershelp under the
+    hyperbolic name "gestalt pattern matching".  The basic idea is to find
+    the longest contiguous matching subsequence that contains no "junk"
+    elements (R-O doesn't address junk).  The same idea is then applied
+    recursively to the pieces of the sequences to the left and to the right
+    of the matching subsequence.  This does not yield minimal edit
+    sequences, but does tend to yield matches that "look right" to people.
+
+    SequenceMatcher tries to compute a "human-friendly diff" between two
+    sequences.  Unlike e.g. UNIX(tm) diff, the fundamental notion is the
+    longest *contiguous* & junk-free matching subsequence.  That's what
+    catches peoples' eyes.  The Windows(tm) windiff has another interesting
+    notion, pairing up elements that appear uniquely in each sequence.
+    That, and the method here, appear to yield more intuitive difference
+    reports than does diff.  This method appears to be the least vulnerable
+    to syncing up on blocks of "junk lines", though (like blank lines in
+    ordinary text files, or maybe "<P>" lines in HTML files).  That may be
+    because this is the only method of the 3 that has a *concept* of
+    "junk" <wink>.
+
+    Example, comparing two strings, and considering blanks to be "junk":
+
+    >>> s = SequenceMatcher(lambda x: x == " ",
+    ...                     "private Thread currentThread;",
+    ...                     "private volatile Thread currentThread;")
+    >>>
+
+    .ratio() returns a float in [0, 1], measuring the "similarity" of the
+    sequences.  As a rule of thumb, a .ratio() value over 0.6 means the
+    sequences are close matches:
+
+    >>> print(round(s.ratio(), 2))
+    0.87
+    >>>
+
+    If you're only interested in where the sequences match,
+    .get_matching_blocks() is handy:
+
+    >>> for block in s.get_matching_blocks():
+    ...     print("a[%d] and b[%d] match for %d elements" % block)
+    a[0] and b[0] match for 8 elements
+    a[8] and b[17] match for 21 elements
+    a[29] and b[38] match for 0 elements
+
+    Note that the last tuple returned by .get_matching_blocks() is always a
+    dummy, (len(a), len(b), 0), and this is the only case in which the last
+    tuple element (number of elements matched) is 0.
+
+    If you want to know how to change the first sequence into the second,
+    use .get_opcodes():
+
+    >>> for opcode in s.get_opcodes():
+    ...     print("%6s a[%d:%d] b[%d:%d]" % opcode)
+     equal a[0:8] b[0:8]
+    insert a[8:8] b[8:17]
+     equal a[8:29] b[17:38]
+
+    See the Differ class for a fancy human-friendly file differencer, which
+    uses SequenceMatcher both to compare sequences of lines, and to compare
+    sequences of characters within similar (near-matching) lines.
+
+    See also function get_close_matches() in this module, which shows how
+    simple code building on SequenceMatcher can be used to do useful work.
+
+    Timing:  Basic R-O is cubic time worst case and quadratic time expected
+    case.  SequenceMatcher is quadratic time for the worst case and has
+    expected-case behavior dependent in a complicated way on how many
+    elements the sequences have in common; best case time is linear.
+    """
+
+    def __init__(self, isjunk=None, a='', b='', autojunk=True):
+        """Construct a SequenceMatcher.
+
+        isjunk,a,b are passed on to `SequenceMatcherBase` constructor.
+        See `SequenceMatcherBase` documentation.
+
+        Optional arg autojunk should be set to False to disable the
+        "automatic junk heuristic" that treats popular elements as junk
+        (see module documentation for more information).
+        """
+
+        # Members specific to Sequence Matcher:
+        # b2j
+        #      for x in b, b2j[x] is a list of the indices (into b)
+        #      at which x appears; junk and popular elements do not appear
+        # fullbcount
+        #      for x in b, fullbcount[x] == the number of times x
+        #      appears in b; only materialized if really needed (used
+        #      only for computing quick_ratio())
+        # isjunk
+        #      a user-supplied function taking a sequence element and
+        #      returning true iff the element is "junk" -- this has
+        #      subtle but helpful effects on the algorithm, which I'll
+        #      get around to writing up someday <0.9 wink>.
+        #      DON'T USE!  Only __chain_b uses this.  Use "in self.bjunk".
+        # bjunk
+        #      the items in b for which isjunk is True.
+        # bpopular
+        #      nonjunk items in b treated as junk by the heuristic (if used).
+        self.autojunk = autojunk
+        super().__init__(isjunk, a, b)
+
+    # For each element x in b, set b2j[x] to a list of the indices in
+    # b where x appears; the indices are in increasing order; note that
+    # the number of times x appears in b is len(b2j[x]) ...
+    # when self.isjunk is defined, junk elements don't show up in this
+    # map at all, which stops the central find_longest_match method
+    # from starting any matching block at a junk element ...
+    # b2j also does not contain entries for "popular" elements, meaning
+    # elements that account for more than 1 + 1% of the total elements, and
+    # when the sequence is reasonably large (>= 200 elements); this can
+    # be viewed as an adaptive notion of semi-junk, and yields an enormous
+    # speedup when, e.g., comparing program files with hundreds of
+    # instances of "return NULL;" ...
+    # note that this is only called when b changes; so for cross-product
+    # kinds of matches, it's best to call set_seq2 once, then set_seq1
+    # repeatedly
+
+    def _prepare_seq2(self):
+        self.__chain_b()
+
+    def __chain_b(self):
+        # Because isjunk is a user-defined (not C) function, and we test
+        # for junk a LOT, it's important to minimize the number of calls.
+        # Before the tricks described here, __chain_b was by far the most
+        # time-consuming routine in the whole module!  If anyone sees
+        # Jim Roskind, thank him again for profile.py -- I never would
+        # have guessed that.
+        # The first trick is to build b2j ignoring the possibility
+        # of junk.  I.e., we don't call isjunk at all yet.  Throwing
+        # out the junk later is much cheaper than building b2j "right"
+        # from the start.
+        b = self.b
+        self.b2j = b2j = {}
+
+        for i, elt in enumerate(b):
+            indices = b2j.setdefault(elt, [])
+            indices.append(i)
+
+        # Purge junk elements
+        self.bjunk = junk = set()
+        isjunk = self.isjunk
+        if isjunk:
+            for elt in b2j.keys():
+                if isjunk(elt):
+                    junk.add(elt)
+            for elt in junk: # separate loop avoids separate list of keys
+                del b2j[elt]
+
+        # Purge popular elements that are not junk
+        self.bpopular = popular = set()
+        n = len(b)
+        if self.autojunk and n >= 200:
+            ntest = n // 100 + 1
+            for elt, idxs in b2j.items():
+                if len(idxs) > ntest:
+                    popular.add(elt)
+            for elt in popular: # ditto; as fast for 1% deletion
+                del b2j[elt]
+
+    def find_longest_match(self, alo=0, ahi=None, blo=0, bhi=None):
+        """Find longest matching block in a[alo:ahi] and b[blo:bhi].
+
+        By default it will find the longest match in the entirety of a and b.
+
+        If isjunk is not defined:
+
+        Return (i,j,k) such that a[i:i+k] is equal to b[j:j+k], where
+            alo <= i <= i+k <= ahi
+            blo <= j <= j+k <= bhi
+        and for all (i',j',k') meeting those conditions,
+            k >= k'
+            i <= i'
+            and if i == i', j <= j'
+
+        In other words, of all maximal matching blocks, return one that
+        starts earliest in a, and of all those maximal matching blocks that
+        start earliest in a, return the one that starts earliest in b.
+
+        >>> s = SequenceMatcher(None, " abcd", "abcd abcd")
+        >>> s.find_longest_match(0, 5, 0, 9)
+        Match(a=0, b=4, size=5)
+
+        If isjunk is defined, first the longest matching block is
+        determined as above, but with the additional restriction that no
+        junk element appears in the block.  Then that block is extended as
+        far as possible by matching (only) junk elements on both sides.  So
+        the resulting block never matches on junk except as identical junk
+        happens to be adjacent to an "interesting" match.
+
+        Here's the same example as before, but considering blanks to be
+        junk.  That prevents " abcd" from matching the " abcd" at the tail
+        end of the second sequence directly.  Instead only the "abcd" can
+        match, and matches the leftmost "abcd" in the second sequence:
+
+        >>> s = SequenceMatcher(lambda x: x==" ", " abcd", "abcd abcd")
+        >>> s.find_longest_match(0, 5, 0, 9)
+        Match(a=1, b=0, size=4)
+
+        If no blocks match, return (alo, blo, 0).
+
+        >>> s = SequenceMatcher(None, "ab", "c")
+        >>> s.find_longest_match(0, 2, 0, 1)
+        Match(a=0, b=0, size=0)
+        """
+
+        # CAUTION:  stripping common prefix or suffix would be incorrect.
+        # E.g.,
+        #    ab
+        #    acab
+        # Longest matching block is "ab", but if common prefix is
+        # stripped, it's "a" (tied with "b").  UNIX(tm) diff does so
+        # strip, so ends up claiming that ab is changed to acab by
+        # inserting "ca" in the middle.  That's minimal but unintuitive:
+        # "it's obvious" that someone inserted "ac" at the front.
+        # Windiff ends up at the same place as diff, but by pairing up
+        # the unique 'b's and then matching the first two 'a's.
+
+        a, b, b2j, bjunk = self.a, self.b, self.b2j, self.bjunk
+        if ahi is None:
+            ahi = len(a)
+        if bhi is None:
+            bhi = len(b)
+        besti, bestj, bestsize = alo, blo, 0
+        # find longest junk-free match
+        # during an iteration of the loop, j2len[j] = length of longest
+        # junk-free match ending with a[i-1] and b[j]
+        j2len = {}
+        nothing = []
+        for i in range(alo, ahi):
+            # look at all instances of a[i] in b; note that because
+            # b2j has no junk keys, the loop is skipped if a[i] is junk
+            j2lenget = j2len.get
+            newj2len = {}
+            for j in b2j.get(a[i], nothing):
+                # a[i] matches b[j]
+                if j < blo:
+                    continue
+                if j >= bhi:
+                    break
+                k = newj2len[j] = j2lenget(j-1, 0) + 1
+                if k > bestsize:
+                    besti, bestj, bestsize = i-k+1, j-k+1, k
+            j2len = newj2len
+
+        block = besti, bestj, bestsize
+        if self.autojunk:
+            # Extend the best by non-junk elements on each end.  In particular,
+            # "popular" non-junk elements aren't in b2j, which greatly speeds
+            # the inner loop above, but also means "the best" match so far
+            # doesn't contain any junk *or* popular non-junk elements.
+            block = _expand_block_to_junk(
+                bjunk, block, a, b, alo, ahi, blo, bhi, inverse=True)
+
+        if bjunk:
+            # Now that we have a wholly interesting match (albeit possibly
+            # empty!), we may as well suck up the matching junk on each
+            # side of it too.  Can't think of a good reason not to, and it
+            # saves post-processing the (possibly considerable) expense of
+            # figuring out what to do with it.  In the case of an empty
+            # interesting match, this is clearly the right thing to do,
+            # because no other kind of match is possible in the regions.
+            block = _expand_block_to_junk(
+                bjunk, block, a, b, alo, ahi, blo, bhi, inverse=False)
+
+        return Match._make(block)
+
+    def _get_matching_blocks(self):
+        """Return list of triples describing matching subsequences.
+
+        Each triple is of the form (i, j, n), and means that
+        a[i:i+n] == b[j:j+n].  The triples are monotonically increasing in
+        i and in j.  New in Python 2.5, it's also guaranteed that if
+        (i, j, n) and (i', j', n') are adjacent triples in the list, and
+        the second is not the last triple in the list, then i+n != i' or
+        j+n != j'.  IOW, adjacent triples never describe adjacent equal
+        blocks.
+
+        The last triple is a dummy, (len(a), len(b), 0), and is the only
+        triple with n==0.
+
+        >>> s = SequenceMatcher(None, "abxcd", "abcd")
+        >>> list(s.get_matching_blocks())
+        [Match(a=0, b=0, size=2), Match(a=3, b=2, size=2), Match(a=5, b=4, size=0)]
+        """
+
+        la, lb = len(self.a), len(self.b)
+
+        # This is most naturally expressed as a recursive algorithm, but
+        # at least one user bumped into extreme use cases that exceeded
+        # the recursion limit on their box.  So, now we maintain a list
+        # ('queue`) of blocks we still need to look at, and append partial
+        # results to `matching_blocks` in a loop; the matches are sorted
+        # at the end.
+        queue = [(0, la, 0, lb)]
+        matching_blocks = []
+        while queue:
+            alo, ahi, blo, bhi = queue.pop()
+            i, j, k = x = self.find_longest_match(alo, ahi, blo, bhi)
+            # a[alo:i] vs b[blo:j] unknown
+            # a[i:i+k] same as b[j:j+k]
+            # a[i+k:ahi] vs b[j+k:bhi] unknown
+            if k:   # if k is 0, there was no matching block
+                matching_blocks.append(x)
+                if alo < i and blo < j:
+                    queue.append((alo, i, blo, j))
+                if i+k < ahi and j+k < bhi:
+                    queue.append((i+k, ahi, j+k, bhi))
+        matching_blocks.sort()
+        return matching_blocks
+
+########################################################################
+###  get_close_matches
+########################################################################
+
+def get_close_matches(word, possibilities, n=3, cutoff=0.6, matcher=None):
     """Use SequenceMatcher to return list of the best "good enough" matches.
 
     word is a sequence for which close matches are desired (typically a
@@ -678,6 +799,10 @@ def get_close_matches(word, possibilities, n=3, cutoff=0.6):
 
     Optional arg cutoff (default 0.6) is a float in [0, 1].  Possibilities
     that don't score at least that similar to word are ignored.
+
+    Optional arg matcher is a callable with 3 optional arguments and returns
+    SequenceMatcherBase instance. i.e. matcher(isjunk=None, a='', b='').
+    Default (if None) is a SequenceMatcher class.
 
     The best (no more than n) matches among the possibilities are returned
     in a list, sorted by similarity score, most similar first.
@@ -693,12 +818,14 @@ def get_close_matches(word, possibilities, n=3, cutoff=0.6):
     ['except']
     """
 
-    if not n >  0:
+    if not n > 0:
         raise ValueError("n must be > 0: %r" % (n,))
     if not 0.0 <= cutoff <= 1.0:
         raise ValueError("cutoff must be in [0.0, 1.0]: %r" % (cutoff,))
+    matcher = _process_matcher_arg(matcher, 'matcher')
+
     result = []
-    s = SequenceMatcher()
+    s = matcher()
     s.set_seq2(word)
     for x in possibilities:
         s.set_seq1(x)
@@ -714,6 +841,9 @@ def get_close_matches(word, possibilities, n=3, cutoff=0.6):
     # Strip scores for the best n matches
     return [x for score, x in result]
 
+########################################################################
+###  Differ
+########################################################################
 
 def _keep_original_ws(s, tag_s):
     """Replace whitespace with the original whitespace characters in `s`"""
@@ -721,8 +851,6 @@ def _keep_original_ws(s, tag_s):
         c if tag_c == " " and c.isspace() else tag_c
         for c, tag_c in zip(s, tag_s)
     )
-
-
 
 class Differ:
     r"""
@@ -810,7 +938,8 @@ class Differ:
     +   5. Flat is better than nested.
     """
 
-    def __init__(self, linejunk=None, charjunk=None):
+    def __init__(self, linejunk=None, charjunk=None,
+                 linematcher=None, charmatcher=None):
         """
         Construct a text differencer, with optional filters.
 
@@ -828,10 +957,19 @@ class Differ:
           module-level function `IS_CHARACTER_JUNK` may be used to filter out
           whitespace characters (a blank or tab; **note**: bad idea to include
           newline in this!).  Use of IS_CHARACTER_JUNK is recommended.
-        """
 
+        - `linematcher`: callable with 3 optional arguments which returns
+          SequenceMatcherBase instance. i.e. matcher(isjunk=None, a='', b='').
+          Default (if None) is a SequenceMatcher class.
+
+        - `charmatcher`: callable with 3 optional arguments which returns
+          SequenceMatcherBase instance. i.e. matcher(isjunk=None, a='', b='').
+          Default (if None) is a SequenceMatcher class.
+        """
         self.linejunk = linejunk
         self.charjunk = charjunk
+        self.linematcher = _process_matcher_arg(linematcher, 'linematcher')
+        self.charmatcher = _process_matcher_arg(charmatcher, 'charmatcher')
 
     def compare(self, a, b):
         r"""
@@ -859,7 +997,7 @@ class Differ:
         + emu
         """
 
-        cruncher = SequenceMatcher(self.linejunk, a, b)
+        cruncher = self.linematcher(self.linejunk, a, b)
         for tag, alo, ahi, blo, bhi in cruncher.get_opcodes():
             if tag == 'replace':
                 g = self._fancy_replace(a, alo, ahi, b, blo, bhi)
@@ -920,7 +1058,7 @@ class Differ:
         # Later, more pathological cases prompted removing recursion
         # entirely.
         cutoff = 0.74999
-        cruncher = SequenceMatcher(self.charjunk)
+        cruncher = self.charmatcher(self.charjunk)
         crqr = cruncher.real_quick_ratio
         cqr = cruncher.quick_ratio
         cr = cruncher.ratio
@@ -1099,7 +1237,8 @@ def _format_range_unified(start, stop):
     return '{},{}'.format(beginning, length)
 
 def unified_diff(a, b, fromfile='', tofile='', fromfiledate='',
-                 tofiledate='', n=3, lineterm='\n', *, color=False):
+                 tofiledate='', n=3, lineterm='\n', *, color=False,
+                 matcher=None):
     r"""
     Compare two sequences of lines; generate the delta as a unified diff.
 
@@ -1119,6 +1258,10 @@ def unified_diff(a, b, fromfile='', tofile='', fromfiledate='',
     Set 'color' to True to enable output in color, similar to
     'git diff --color'. Even if enabled, it can be
     controlled using environment variables such as 'NO_COLOR'.
+
+    Optional arg matcher is a callable with 3 optional arguments and returns
+    SequenceMatcherBase instance. i.e. matcher(isjunk=None, a='', b='').
+    Default (if None) is a SequenceMatcher class.
 
     The unidiff format normally has a header for filenames and modification
     times.  Any or all of these may be specified using strings for
@@ -1142,6 +1285,7 @@ def unified_diff(a, b, fromfile='', tofile='', fromfiledate='',
     +tree
      four
     """
+    matcher = _process_matcher_arg(matcher, 'matcher')
 
     if color and can_colorize():
         t = get_theme(force_color=True).difflib
@@ -1150,7 +1294,7 @@ def unified_diff(a, b, fromfile='', tofile='', fromfiledate='',
 
     _check_types(a, b, fromfile, tofile, fromfiledate, tofiledate, lineterm)
     started = False
-    for group in SequenceMatcher(None,a,b).get_grouped_opcodes(n):
+    for group in matcher(None,a,b).get_grouped_opcodes(n):
         if not started:
             started = True
             fromdate = '\t{}'.format(fromfiledate) if fromfiledate else ''
@@ -1192,8 +1336,8 @@ def _format_range_context(start, stop):
     return '{},{}'.format(beginning, beginning + length - 1)
 
 # See http://www.unix.org/single_unix_specification/
-def context_diff(a, b, fromfile='', tofile='',
-                 fromfiledate='', tofiledate='', n=3, lineterm='\n'):
+def context_diff(a, b, fromfile='', tofile='', fromfiledate='', tofiledate='',
+                 n=3, lineterm='\n', matcher=None):
     r"""
     Compare two sequences of lines; generate the delta as a context diff.
 
@@ -1209,6 +1353,10 @@ def context_diff(a, b, fromfile='', tofile='',
 
     For inputs that do not have trailing newlines, set the lineterm
     argument to "" so that the output will be uniformly newline free.
+
+    Optional arg matcher is a callable with 3 optional arguments and returns
+    SequenceMatcherBase instance. i.e. matcher(isjunk=None, a='', b='').
+    Default (if None) is a SequenceMatcher class.
 
     The context diff format normally has a header for filenames and
     modification times.  Any or all of these may be specified using
@@ -1236,10 +1384,11 @@ def context_diff(a, b, fromfile='', tofile='',
       four
     """
 
+    matcher = _process_matcher_arg(matcher, 'matcher')
     _check_types(a, b, fromfile, tofile, fromfiledate, tofiledate, lineterm)
     prefix = dict(insert='+ ', delete='- ', replace='! ', equal='  ')
     started = False
-    for group in SequenceMatcher(None,a,b).get_grouped_opcodes(n):
+    for group in matcher(None,a,b).get_grouped_opcodes(n):
         if not started:
             started = True
             fromdate = '\t{}'.format(fromfiledate) if fromfiledate else ''
@@ -1321,7 +1470,7 @@ def diff_bytes(dfunc, a, b, fromfile=b'', tofile=b'',
     for line in lines:
         yield line.encode('ascii', 'surrogateescape')
 
-def ndiff(a, b, linejunk=None, charjunk=IS_CHARACTER_JUNK):
+def ndiff(a, b, linejunk=None, charjunk=IS_CHARACTER_JUNK, differ=None):
     r"""
     Compare `a` and `b` (lists of strings); return a `Differ`-style delta.
 
@@ -1338,6 +1487,10 @@ def ndiff(a, b, linejunk=None, charjunk=IS_CHARACTER_JUNK):
       the module-level function IS_CHARACTER_JUNK, which filters out
       whitespace characters (a blank or tab; note: it's a bad idea to
       include newline in this!).
+
+    - differ: callable that takes 2 optional arguments and returns
+      Differ instance. i.e. differ(linejunk=None, charjunk=None).
+      Default (if None) is a Differ class.
 
     Tools/scripts/ndiff.py is a command-line front-end to this function.
 
@@ -1356,10 +1509,20 @@ def ndiff(a, b, linejunk=None, charjunk=IS_CHARACTER_JUNK):
     + tree
     + emu
     """
-    return Differ(linejunk, charjunk).compare(a, b)
+    if differ is None:
+        differ = Differ
+    elif not callable(differ):
+        raise TypeError("'differ' must be a callable. Got %r" % (differ,))
 
-def _mdiff(fromlines, tolines, context=None, linejunk=None,
-           charjunk=IS_CHARACTER_JUNK):
+    differ_inst = differ(linejunk, charjunk)
+    if not isinstance(differ_inst, Differ):
+        msg = "'differ' must return Differ instance. Returned: %r"
+        raise TypeError(msg % (differ_inst,))
+
+    return differ_inst.compare(a, b)
+
+def _mdiff(fromlines, tolines, context=None,
+           linejunk=None, charjunk=IS_CHARACTER_JUNK, differ=None):
     r"""Returns generator yielding marked up from/to side by side differences.
 
     Arguments:
@@ -1369,6 +1532,7 @@ def _mdiff(fromlines, tolines, context=None, linejunk=None,
                if None, all from/to text lines will be generated.
     linejunk -- passed on to ndiff (see ndiff documentation)
     charjunk -- passed on to ndiff (see ndiff documentation)
+    differ -- passed on to ndiff (see ndiff documentation)
 
     This function returns an iterator which returns a tuple:
     (from line tuple, to line tuple, boolean flag)
@@ -1398,7 +1562,7 @@ def _mdiff(fromlines, tolines, context=None, linejunk=None,
     change_re = re.compile(r'(\++|\-+|\^+)')
 
     # create the difference iterator to generate the differences
-    diff_lines_iterator = ndiff(fromlines,tolines,linejunk,charjunk)
+    diff_lines_iterator = ndiff(fromlines,tolines,linejunk,charjunk,differ)
 
     def _make_line(lines, format_key, side, num_lines=[0,0]):
         """Returns line of text with user's change markup and line formatting.
@@ -1627,6 +1791,9 @@ def _mdiff(fromlines, tolines, context=None, linejunk=None,
                 # Catch exception from next() and return normally
                 return
 
+########################################################################
+###  HtmlDiff
+########################################################################
 
 _file_template = """
 <!DOCTYPE html>
@@ -1737,15 +1904,15 @@ class HtmlDiff(object):
     _legend = _legend
     _default_prefix = 0
 
-    def __init__(self,tabsize=8,wrapcolumn=None,linejunk=None,
-                 charjunk=IS_CHARACTER_JUNK):
+    def __init__(self, tabsize=8, wrapcolumn=None,
+                 linejunk=None, charjunk=IS_CHARACTER_JUNK, differ=None):
         """HtmlDiff instance initializer
 
         Arguments:
         tabsize -- tab stop spacing, defaults to 8.
         wrapcolumn -- column number where lines are broken and wrapped,
             defaults to None where lines are not wrapped.
-        linejunk,charjunk -- keyword arguments passed into ndiff() (used by
+        linejunk,charjunk,differ -- keyword arguments passed into ndiff() (used by
             HtmlDiff() to generate the side by side HTML differences).  See
             ndiff() documentation for argument default values and descriptions.
         """
@@ -1753,6 +1920,7 @@ class HtmlDiff(object):
         self._wrapcolumn = wrapcolumn
         self._linejunk = linejunk
         self._charjunk = charjunk
+        self._differ = differ
 
     def make_file(self, fromlines, tolines, fromdesc='', todesc='',
                   context=False, numlines=5, *, charset='utf-8'):
@@ -2024,7 +2192,7 @@ class HtmlDiff(object):
         else:
             context_lines = None
         diffs = _mdiff(fromlines,tolines,context_lines,linejunk=self._linejunk,
-                      charjunk=self._charjunk)
+                      charjunk=self._charjunk,differ=self._differ)
 
         # set up iterator to wrap lines that exceed desired width
         if self._wrapcolumn:

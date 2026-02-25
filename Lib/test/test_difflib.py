@@ -1,4 +1,5 @@
 import difflib
+from functools import partial
 from test.support import findfile, force_colorized
 import unittest
 import doctest
@@ -211,6 +212,8 @@ class TestSFpatches(unittest.TestCase):
         t2 = patch914575_to2.splitlines()
         f3 = patch914575_from3
         t3 = patch914575_to3
+        # Set prefix manually so that other tests are indepedent
+        difflib.HtmlDiff._default_prefix = 0
         i = difflib.HtmlDiff()
         j = difflib.HtmlDiff(tabsize=2)
         k = difflib.HtmlDiff(wrapcolumn=14)
@@ -638,6 +641,78 @@ class TestRestore(unittest.TestCase):
             ''.join(difflib.restore([], 0))
         with self.assertRaises(ValueError):
             ''.join(difflib.restore([], 3))
+
+
+class NullMatcher(difflib.SequenceMatcherBase):
+    def _get_matching_blocks(self):
+        return []
+
+
+class TestMatcherDifferArgs(unittest.TestCase):
+    def test_process_matcher_arg(self):
+        matcher = difflib._process_matcher_arg(None, 'matcher')
+        self.assertEqual(matcher, difflib.SequenceMatcher)
+        with self.assertRaisesRegex(TypeError, "^'matcher' must be a callable. Got"):
+            difflib._process_matcher_arg(0, 'matcher')
+
+        func = lambda j=None, s1='', s2='': None
+        regex = "must return SequenceMatcherBase instance. Returned: None$"
+        with self.assertRaisesRegex(TypeError, regex):
+            difflib._process_matcher_arg(func, 'matcher')
+
+    def test_get_close_matches(self):
+        results = difflib.get_close_matches('a', ['a', 'aa'], matcher=NullMatcher)
+        self.assertEqual(results, [])
+
+    def test_differ(self):
+        result = difflib.Differ().compare(['a', 'a'], ['a', 'a'])
+        self.assertEqual(list(result), ['  a', '  a'])
+
+        null_differ = difflib.Differ(linematcher=NullMatcher, charmatcher=NullMatcher)
+        result = null_differ.compare(['a', 'a'], ['a', 'a'])
+        self.assertEqual(list(result), ['- a', '- a', '+ a', '+ a'])
+
+        # although linematcher matches nothing, charmatcher compensates
+        differ = difflib.Differ(linematcher=NullMatcher)
+        result = differ.compare(['a', 'a'], ['a', 'a'])
+        self.assertEqual(list(result), ['  a', '  a'])
+
+    def test_unified_diff(self):
+        result = difflib.unified_diff(['a'], ['a'], matcher=NullMatcher)
+        self.assertEqual(list(result), ['--- \n', '+++ \n', '@@ -1 +1 @@\n', '-a', '+a'])
+
+    def test_context_diff(self):
+        result = difflib.context_diff(['a'], ['a'], matcher=NullMatcher)
+        self.assertEqual(list(result), ['*** \n',
+                                        '--- \n',
+                                        '***************\n',
+                                        '*** 1 ****\n',
+                                        '! a',
+                                        '--- 1 ----\n',
+                                        '! a'])
+
+    def test_ndiff(self):
+        with self.assertRaisesRegex(TypeError, "^'differ' must be a callable. Got"):
+            difflib.ndiff([], [], differ=0)
+
+        dfunc = lambda j1=None, j2=None: None
+        regex = "'differ' must return Differ instance. Returned: None"
+        with self.assertRaisesRegex(TypeError, regex):
+            difflib.ndiff([], [], differ=dfunc)
+
+        null_differ = partial(difflib.Differ, linematcher=NullMatcher, charmatcher=NullMatcher)
+        result = difflib.ndiff(['a'], ['a'], differ=null_differ)
+        self.assertEqual(list(result), ['- a', '+ a'])
+
+    def test_html_diff(self):
+        difflib.HtmlDiff._default_prefix = 0
+        table = difflib.HtmlDiff().make_table(['a'], ['a'])
+        null_differ = partial(difflib.Differ, linematcher=NullMatcher, charmatcher=NullMatcher)
+        difflib.HtmlDiff._default_prefix = 0
+        hdiff = difflib.HtmlDiff(differ=null_differ)
+        null_table = hdiff.make_table(['a'], ['a'])
+        self.assertEqual(len(table), 599)
+        self.assertEqual(len(null_table), 725)
 
 
 def setUpModule():
