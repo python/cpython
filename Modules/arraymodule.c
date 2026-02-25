@@ -37,7 +37,7 @@ struct arraydescr {
     char typecode;
     int itemsize;
     PyObject * (*getitem)(char *, Py_ssize_t);
-    int (*setitem)(char *, Py_ssize_t, PyObject *);
+    int (*setitem)(struct arrayobject *, char *, Py_ssize_t, PyObject *);
     int (*compareitems)(const void *, const void *, Py_ssize_t);
     const char *formats;
     int is_integer_type;
@@ -318,7 +318,7 @@ in bounds; that's the responsibility of the caller.
 */
 #define CHECK_ARRAY_BOUNDS(OP, IDX)                         \
     do {                                                    \
-        if ((IDX) >= 0 && ((OP)->ob_item == NULL ||         \
+        if ((IDX) >= 0 && ((OP)->data == NULL ||         \
                   (IDX) >= Py_SIZE((OP)))) {                \
             PyErr_SetString(PyExc_IndexError,               \
                     "array assignment index out of range"); \
@@ -328,7 +328,7 @@ in bounds; that's the responsibility of the caller.
 
 #define CHECK_ARRAY_BOUNDS_WITH_CLEANUP(OP, IDX, VAL, CLEANUP)  \
     do {                                                        \
-        if ((IDX) >= 0 && ((OP)->ob_item == NULL ||             \
+        if ((IDX) >= 0 && ((OP)->data == NULL ||             \
                   (IDX) >= Py_SIZE((OP)))) {                    \
             PyErr_SetString(PyExc_IndexError,                   \
                     "array assignment index out of range");     \
@@ -347,7 +347,7 @@ b_getitem(char *items, Py_ssize_t i)
 }
 
 static int
-b_setitem(char *items, Py_ssize_t i, PyObject *v)
+b_setitem(arrayobject *ap, char *items, Py_ssize_t i, PyObject *v)
 {
     short x;
     /* PyArg_Parse's 'b' formatter is for an unsigned char, therefore
@@ -381,7 +381,7 @@ BB_getitem(char *items, Py_ssize_t i)
 }
 
 static int
-BB_setitem(char *items, Py_ssize_t i, PyObject *v)
+BB_setitem(arrayobject *ap, char *items, Py_ssize_t i, PyObject *v)
 {
     unsigned char x;
     /* 'B' == unsigned char, maps to PyArg_Parse's 'b' formatter */
@@ -402,7 +402,7 @@ u_getitem(char *items, Py_ssize_t i)
 }
 
 static int
-u_setitem(char *items, Py_ssize_t i, PyObject *v)
+u_setitem(arrayobject *ap, char *items, Py_ssize_t i, PyObject *v)
 {
     if (!PyUnicode_Check(v)) {
         PyErr_Format(PyExc_TypeError,
@@ -445,7 +445,7 @@ w_getitem(char *items, Py_ssize_t i)
 }
 
 static int
-w_setitem(char *items, Py_ssize_t i, PyObject *v)
+w_setitem(arrayobject *ap, char *items, Py_ssize_t i, PyObject *v)
 {
     if (!PyUnicode_Check(v)) {
         PyErr_Format(PyExc_TypeError,
@@ -476,7 +476,7 @@ h_getitem(char *items, Py_ssize_t i)
 
 
 static int
-h_setitem(char *items, Py_ssize_t i, PyObject *v)
+h_setitem(arrayobject *ap, char *items, Py_ssize_t i, PyObject *v)
 {
     short x;
     /* 'h' == signed short, maps to PyArg_Parse's 'h' formatter */
@@ -497,7 +497,7 @@ HH_getitem(char *items, Py_ssize_t i)
 }
 
 static int
-HH_setitem(char *items, Py_ssize_t i, PyObject *v)
+HH_setitem(arrayobject *ap, char *items, Py_ssize_t i, PyObject *v)
 {
     int x;
     /* PyArg_Parse's 'h' formatter is for a signed short, therefore
@@ -529,7 +529,7 @@ i_getitem(char *items, Py_ssize_t i)
 }
 
 static int
-i_setitem(char *items, Py_ssize_t i, PyObject *v)
+i_setitem(arrayobject *ap, char *items, Py_ssize_t i, PyObject *v)
 {
     int x;
     /* 'i' == signed int, maps to PyArg_Parse's 'i' formatter */
@@ -551,7 +551,7 @@ II_getitem(char *items, Py_ssize_t i)
 }
 
 static int
-II_setitem(char *items, Py_ssize_t i, PyObject *v)
+II_setitem(arrayobject *ap, char *items, Py_ssize_t i, PyObject *v)
 {
     unsigned long x;
     int do_decref = 0; /* if nb_int was called */
@@ -600,7 +600,7 @@ l_getitem(char *items, Py_ssize_t i)
 }
 
 static int
-l_setitem(char *items, Py_ssize_t i, PyObject *v)
+l_setitem(arrayobject *ap, char *items, Py_ssize_t i, PyObject *v)
 {
     long x;
     if (!PyArg_Parse(v, "l;array item must be integer", &x))
@@ -620,7 +620,7 @@ LL_getitem(char *items, Py_ssize_t i)
 }
 
 static int
-LL_setitem(char *items, Py_ssize_t i, PyObject *v)
+LL_setitem(arrayobject *ap, char *items, Py_ssize_t i, PyObject *v)
 {
     unsigned long x;
     int do_decref = 0; /* if nb_int was called */
@@ -661,7 +661,7 @@ q_getitem(char *items, Py_ssize_t i)
 }
 
 static int
-q_setitem(char *items, Py_ssize_t i, PyObject *v)
+q_setitem(arrayobject *ap, char *items, Py_ssize_t i, PyObject *v)
 {
     long long x;
     if (!PyArg_Parse(v, "L;array item must be integer", &x))
@@ -682,7 +682,7 @@ QQ_getitem(char *items, Py_ssize_t i)
 }
 
 static int
-QQ_setitem(char *items, Py_ssize_t i, PyObject *v)
+QQ_setitem(arrayobject *ap, char *items, Py_ssize_t i, PyObject *v)
 {
     unsigned long long x;
     int do_decref = 0; /* if nb_int was called */
@@ -723,7 +723,7 @@ f_getitem(char *items, Py_ssize_t i)
 }
 
 static int
-f_setitem(char *items, Py_ssize_t i, PyObject *v)
+f_setitem(arrayobject *ap, char *items, Py_ssize_t i, PyObject *v)
 {
     float x;
     if (!PyArg_Parse(v, "f;array item must be float", &x))
@@ -743,7 +743,7 @@ d_getitem(char *items, Py_ssize_t i)
 }
 
 static int
-d_setitem(char *items, Py_ssize_t i, PyObject *v)
+d_setitem(arrayobject *ap, char *items, Py_ssize_t i, PyObject *v)
 {
     double x;
     if (!PyArg_Parse(v, "d;array item must be float", &x))
@@ -935,7 +935,7 @@ setarrayitem(arrayobject *ap, Py_ssize_t i, PyObject *v, arraydata *data)
 #endif
     }
 #endif
-    return (*ap->ob_descr->setitem)(data == NULL ? NULL : data->items, i, v);
+    return (*ap->ob_descr->setitem)(ap, data == NULL ? NULL : data->items, i, v);
 }
 
 static int
@@ -3112,7 +3112,6 @@ array_ass_subscr(PyObject *op, PyObject* item, PyObject* value)
     return ret;
 }
 
-static const void *emptybuf = "";
 static const _Py_ALIGNED_DEF(ALIGNOF_MAX_ALIGN_T, char) emptybuf[] = "";
 
 static int
