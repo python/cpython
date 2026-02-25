@@ -232,22 +232,22 @@ class SyntaxRestrictionTests(unittest.TestCase):
     def test_lazy_try_except(self):
         """lazy import inside try/except should raise SyntaxError."""
         with self.assertRaises(SyntaxError):
-            import test.test_import.data.lazy_imports.lazy_try_except
+            import test.test_import.data.lazy_imports.badsyntax.lazy_try_except
 
     def test_lazy_try_except_from(self):
         """lazy from import inside try/except should raise SyntaxError."""
         with self.assertRaises(SyntaxError):
-            import test.test_import.data.lazy_imports.lazy_try_except_from
+            import test.test_import.data.lazy_imports.badsyntax.lazy_try_except_from
 
     def test_lazy_try_except_from_star(self):
         """lazy from import * should raise SyntaxError."""
         with self.assertRaises(SyntaxError):
-            import test.test_import.data.lazy_imports.lazy_try_except_from_star
+            import test.test_import.data.lazy_imports.badsyntax.lazy_try_except_from_star
 
     def test_lazy_future_import(self):
         """lazy from __future__ import should raise SyntaxError."""
         with self.assertRaises(SyntaxError) as cm:
-            import test.test_import.data.lazy_imports.lazy_future_import
+            import test.test_import.data.lazy_imports.badsyntax.lazy_future_import
         # Check we highlight 'lazy' (column offset 0, end offset 4)
         self.assertEqual(cm.exception.offset, 1)
         self.assertEqual(cm.exception.end_offset, 5)
@@ -255,7 +255,7 @@ class SyntaxRestrictionTests(unittest.TestCase):
     def test_lazy_import_func(self):
         """lazy import inside function should raise SyntaxError."""
         with self.assertRaises(SyntaxError):
-            import test.test_import.data.lazy_imports.lazy_import_func
+            import test.test_import.data.lazy_imports.badsyntax.lazy_import_func
 
     def test_lazy_import_exec_in_function(self):
         """lazy import via exec() inside a function should raise SyntaxError."""
@@ -1223,7 +1223,7 @@ class AdditionalSyntaxRestrictionTests(unittest.TestCase):
         # PEP 810: "The soft keyword is only allowed at the global (module) level,
         # not inside functions, class bodies, try blocks, or import *"
         with self.assertRaises(SyntaxError):
-            import test.test_import.data.lazy_imports.lazy_class_body
+            import test.test_import.data.lazy_imports.badsyntax.lazy_class_body
 
 
 class MixedLazyEagerImportTests(unittest.TestCase):
