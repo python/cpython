@@ -438,9 +438,6 @@ The :class:`SequenceMatcherBase` class has this constructor:
    The optional arguments *a* and *b* are sequences to be compared; both default to
    empty strings.  The elements of both sequences must be :term:`hashable`.
 
-   .. versionadded:: 3.2
-      The *bjunk* and *bpopular* attributes.
-
    :class:`SequenceMatcherBase` objects have the following methods:
 
    .. method:: set_seqs(a, b)
@@ -640,6 +637,9 @@ The :class:`SequenceMatcher` class has this constructor:
    sequences, use :meth:`~SequenceMatcherBase.set_seq2` to set the commonly used
    sequence once and call :meth:`~SequenceMatcherBase.set_seq1` repeatedly,
    once for each of the other sequences.
+
+   .. versionadded:: 3.2
+      The *bjunk* and *bpopular* attributes.
 
    In addition to methods implemented by :class:`SequenceMatcherBase`,
    :class:`SequenceMatcher` objects have the following methods:
