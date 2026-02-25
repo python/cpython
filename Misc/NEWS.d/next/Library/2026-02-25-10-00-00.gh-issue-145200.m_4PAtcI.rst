@@ -1,3 +1,2 @@
-Fix memory leak in :mod:`hashlib` HMAC when ``EVP_MAC_init()`` or
-``HMAC_Init_ex()`` fails (e.g., with an XOF digest such as SHAKE). The
-``EVP_MAC_CTX`` is now freed on the error path.
+Fix memory leak in :mod:`hashlib` HMAC when allocating
+or initializing the HMAC context fails.
