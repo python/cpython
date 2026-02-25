@@ -468,6 +468,8 @@ class SequenceMatcherBase:
 class SequenceMatcher(SequenceMatcherBase):
 
     """
+    Implementation of SequenceMatcherBase.
+
     SequenceMatcher is a flexible class for comparing pairs of sequences of
     any type, so long as the sequence elements are hashable.  The basic
     algorithm predates, and is a little fancier than, an algorithm

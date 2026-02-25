@@ -43,6 +43,8 @@ diffs. For comparing directories and files, see the :mod:`filecmp` module.
 .. class:: SequenceMatcher
    :noindex:
 
+   Implementation of :class:`SequenceMatcherBase`.
+
    This is a flexible class for comparing pairs of sequences of any type, so long
    as the sequence elements are :term:`hashable`.  The basic algorithm predates, and is a
    little fancier than, an algorithm published in the late 1980's by Ratcliff and
