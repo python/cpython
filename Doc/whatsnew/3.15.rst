@@ -1059,6 +1059,11 @@ tkinter
   with outdated names.
   (Contributed by Serhiy Storchaka in :gh:`143754`.)
 
+* Added :class:`!Event` attributes :attr:`!user_data` for Tk virtual events
+  and :attr:`!detail` for ``Enter``, ``Leave``, ``FocusIn``, ``FocusOut``,
+  and ``ConfigureRequest`` events.
+  (Contributed by Matthias Kievernagel and Serhiy Storchaka in :gh:`47655`.)
+
 
 .. _whatsnew315-tomllib-1-1-0:
 
