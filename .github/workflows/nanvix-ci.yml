@@ -18,6 +18,10 @@ permissions:
   actions: write
   issues: write
 
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref_name || github.ref || 'default' }}
+  cancel-in-progress: ${{ github.event_name == 'repository_dispatch' }}
+
 jobs:
   get-nanvix-info:
     runs-on: ubuntu-latest
