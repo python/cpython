@@ -688,7 +688,7 @@ Miscellaneous options
      .. versionadded:: 3.14
 
    * :samp:`-X pathconfig_warnings={0,1}` if true (``1``) then
-     :ref:`sys_path_init` is allowed to log warnings into stderr.
+     :ref:`sys-path-init` is allowed to log warnings into stderr.
      If false (``0``) suppress these warnings. Set to true by default.
      See also :envvar:`PYTHON_PATHCONFIG_WARNINGS`.
 
@@ -1359,7 +1359,7 @@ conflict.
 
 .. envvar:: PYTHON_PATHCONFIG_WARNINGS
 
-   If true (``1``) then :ref:`sys_path_init` is allowed to log warnings into
+   If true (``1``) then :ref:`sys-path-init` is allowed to log warnings into
    stderr. If false (``0``) suppress these warnings. Set to true by default.
    See also :option:`-X pathconfig_warnings<-X>`.
 
