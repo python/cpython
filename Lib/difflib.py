@@ -861,6 +861,19 @@ def get_close_matches(word, possibilities, n=3, cutoff=0.6, matcher=None):
 ###  Differ
 ########################################################################
 
+def _get_differ(differ, linejunk=None, charjunk=None, argname='differ'):
+    if differ is None:
+        differ = Differ
+    elif not callable(differ):
+        msg = "%r must be a callable. Got %r"
+        raise TypeError(msg % (argname, differ))
+
+    differ_inst = differ(linejunk, charjunk)
+    if not isinstance(differ_inst, Differ):
+        msg = "%r must return Differ instance. Returned: %r"
+        raise TypeError(msg % (argname, differ_inst))
+    return differ_inst
+
 def _keep_original_ws(s, tag_s):
     """Replace whitespace with the original whitespace characters in `s`"""
     return ''.join(
@@ -1525,16 +1538,7 @@ def ndiff(a, b, linejunk=None, charjunk=IS_CHARACTER_JUNK, differ=None):
     + tree
     + emu
     """
-    if differ is None:
-        differ = Differ
-    elif not callable(differ):
-        raise TypeError("'differ' must be a callable. Got %r" % (differ,))
-
-    differ_inst = differ(linejunk, charjunk)
-    if not isinstance(differ_inst, Differ):
-        msg = "'differ' must return Differ instance. Returned: %r"
-        raise TypeError(msg % (differ_inst,))
-
+    differ_inst = _get_differ(differ, linejunk, charjunk, 'differ')
     return differ_inst.compare(a, b)
 
 def _mdiff(fromlines, tolines, context=None,
