@@ -910,7 +910,7 @@ Reassigning them to new values is unsupported:
 
 .. attribute:: Popen.stdin
 
-   If the *stdin* argument was :data:`PIPE`, this attribute is a writeable
+   If the *stdin* argument was :data:`PIPE`, this attribute is a writable
    stream object as returned by :func:`open`. If the *encoding* or *errors*
    arguments were specified or the *text* or *universal_newlines* argument
    was ``True``, the stream is a text stream, otherwise it is a byte stream.

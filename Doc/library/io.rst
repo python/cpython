@@ -789,7 +789,7 @@ than raw I/O does.
 
 .. class:: BufferedWriter(raw, buffer_size=DEFAULT_BUFFER_SIZE)
 
-   A buffered binary stream providing higher-level access to a writeable, non
+   A buffered binary stream providing higher-level access to a writable, non
    seekable :class:`RawIOBase` raw binary stream.  It inherits from
    :class:`BufferedIOBase`.
 
@@ -802,7 +802,7 @@ than raw I/O does.
    * when a :meth:`~IOBase.seek` is requested (for :class:`BufferedRandom` objects);
    * when the :class:`BufferedWriter` object is closed or destroyed.
 
-   The constructor creates a :class:`BufferedWriter` for the given writeable
+   The constructor creates a :class:`BufferedWriter` for the given writable
    *raw* stream.  If the *buffer_size* is not given, it defaults to
    :data:`DEFAULT_BUFFER_SIZE`.
 
@@ -840,11 +840,11 @@ than raw I/O does.
 .. class:: BufferedRWPair(reader, writer, buffer_size=DEFAULT_BUFFER_SIZE, /)
 
    A buffered binary stream providing higher-level access to two non seekable
-   :class:`RawIOBase` raw binary streams---one readable, the other writeable.
+   :class:`RawIOBase` raw binary streams---one readable, the other writable.
    It inherits from :class:`BufferedIOBase`.
 
    *reader* and *writer* are :class:`RawIOBase` objects that are readable and
-   writeable respectively.  If the *buffer_size* is omitted it defaults to
+   writable respectively.  If the *buffer_size* is omitted it defaults to
    :data:`DEFAULT_BUFFER_SIZE`.
 
    :class:`BufferedRWPair` implements all of :class:`BufferedIOBase`\'s methods

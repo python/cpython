@@ -367,7 +367,7 @@ ZipFile objects
       Previously, a :exc:`RuntimeError` was raised.
 
    .. versionchanged:: 3.13
-      Added attributes :attr:`!name` and :attr:`!mode` for the writeable
+      Added attributes :attr:`!name` and :attr:`!mode` for the writable
       file-like object.
       The value of the :attr:`!mode` attribute for the readable file-like
       object was changed from ``'r'`` to ``'rb'``.

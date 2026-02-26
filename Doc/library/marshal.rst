@@ -78,7 +78,7 @@ The module defines these functions:
 .. function:: dump(value, file, version=version, /, *, allow_code=True)
 
    Write the value on the open file.  The value must be a supported type.  The
-   file must be a writeable :term:`binary file`.
+   file must be a writable :term:`binary file`.
 
    If the value has (or contains an object that has) an unsupported type, a
    :exc:`ValueError` exception is raised --- but garbage data will also be written

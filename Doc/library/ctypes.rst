@@ -2348,7 +2348,7 @@ Data types
    .. method:: _CData.from_buffer(source[, offset])
 
       This method returns a ctypes instance that shares the buffer of the
-      *source* object.  The *source* object must support the writeable buffer
+      *source* object.  The *source* object must support the writable buffer
       interface.  The optional *offset* parameter specifies an offset into the
       source buffer in bytes; the default is zero.  If the source buffer is not
       large enough a :exc:`ValueError` is raised.

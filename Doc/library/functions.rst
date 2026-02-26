@@ -1704,7 +1704,7 @@ are always available.  They are listed here in alphabetical order.
       ``fdel`` corresponding to the constructor arguments.
 
    .. versionchanged:: 3.5
-      The docstrings of property objects are now writeable.
+      The docstrings of property objects are now writable.
 
    .. attribute:: __name__
 

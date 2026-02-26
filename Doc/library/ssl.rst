@@ -880,7 +880,7 @@ Constants
 
    Whether the OpenSSL library has built-in support not checking subject
    common name and :attr:`SSLContext.hostname_checks_common_name` is
-   writeable.
+   writable.
 
    .. versionadded:: 3.7
 
