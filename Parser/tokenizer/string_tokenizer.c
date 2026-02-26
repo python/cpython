@@ -120,6 +120,7 @@ decode_str(const char *input, int single, struct tok_state *tok, int preserve_cr
         str = translated;
         Py_CLEAR(utf8);
     }
+    tok->str = str;
     assert(tok->decoding_buffer == NULL);
     tok->decoding_buffer = utf8; /* CAUTION */
     return str;
