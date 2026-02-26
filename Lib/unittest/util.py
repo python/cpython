@@ -98,8 +98,8 @@ def sorted_list_difference(expected, actual):
                     while actual[j] == a:
                         j += 1
         except IndexError:
-            missing.extend(expected[i:])
-            unexpected.extend(actual[j:])
+            missing.extend(dict.fromkeys(expected[i:]))
+            unexpected.extend(dict.fromkeys(actual[j:]))
             break
     return missing, unexpected
 
