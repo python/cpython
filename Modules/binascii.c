@@ -640,36 +640,24 @@ fastpath:
         */
         if (this_ch == BASE64_PAD) {
             pads++;
-
-            if (strict_mode) {
-                if (quad_pos >= 2 && quad_pos + pads <= 4) {
-                    continue;
-                }
-                if (ignorechar(BASE64_PAD, ignorechars, ignorecache)) {
-                    continue;
-                }
-                if (quad_pos == 1) {
-                    /* Set an error below. */
-                    break;
-                }
-                state = get_binascii_state(module);
-                if (state) {
-                    PyErr_SetString(state->Error,
-                                    (quad_pos == 0 && ascii_data == data->buf)
-                                    ? "Leading padding not allowed"
-                                    : "Excess padding not allowed");
-                }
-                goto error_end;
-            }
-            else {
-                if (quad_pos >= 2 && quad_pos + pads >= 4) {
-                    /* A pad sequence means we should not parse more input.
-                    ** We've already interpreted the data from the quad at this point.
-                    */
-                    goto done;
-                }
+            if (quad_pos >= 2 && quad_pos + pads <= 4) {
                 continue;
             }
+            if (!strict_mode || ignorechar(BASE64_PAD, ignorechars, ignorecache)) {
+                continue;
+            }
+            if (quad_pos == 1) {
+                /* Set an error below. */
+                break;
+            }
+            state = get_binascii_state(module);
+            if (state) {
+                PyErr_SetString(state->Error,
+                                (quad_pos == 0 && ascii_data == data->buf)
+                                ? "Leading padding not allowed"
+                                : "Excess padding not allowed");
+            }
+            goto error_end;
         }
 
         unsigned char v = table_a2b_base64[this_ch];
@@ -748,7 +736,6 @@ fastpath:
         goto error_end;
     }
 
-done:
     return PyBytesWriter_FinishWithPointer(writer, bin_data);
 
 error_end:
