@@ -100,7 +100,7 @@ Please refer to :mod:`site`'s
 
 .. note::
 
-   There are many ways how "virtual environments" could be implemented.
+   There are other ways virtual environments" could be implemented.
    This documentation refers to implementations based on the ``pyvenv.cfg``
    mechanism, such as :mod:`venv`, that many virtual environment implementations
    follow.
