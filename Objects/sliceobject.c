@@ -117,8 +117,8 @@ PyObject _Py_EllipsisObject = _PyObject_HEAD_INIT(&PyEllipsis_Type);
    index is present.
 */
 
-static PySliceObject *
-_PyBuildSlice_Consume3(PyObject *start, PyObject *stop, PyObject *step)
+PyObject *
+_PyBuildSlice_ConsumeRefs(PyObject *start, PyObject *stop, PyObject *step)
 {
     assert(start != NULL && stop != NULL && step != NULL);
     PySliceObject *obj = _Py_FREELIST_POP(PySliceObject, slices);
@@ -134,7 +134,7 @@ _PyBuildSlice_Consume3(PyObject *start, PyObject *stop, PyObject *step)
     obj->step = step;
 
     _PyObject_GC_TRACK(obj);
-    return obj;
+    return (PyObject *)obj;
 error:
     Py_DECREF(start);
     Py_DECREF(stop);
@@ -154,15 +154,8 @@ PySlice_New(PyObject *start, PyObject *stop, PyObject *step)
     if (stop == NULL) {
         stop = Py_None;
     }
-    return (PyObject *)_PyBuildSlice_Consume3(Py_NewRef(start),
+    return _PyBuildSlice_ConsumeRefs(Py_NewRef(start),
                                               Py_NewRef(stop), Py_NewRef(step));
-}
-
-PyObject *
-_PyBuildSlice_ConsumeRefs(PyObject *start, PyObject *stop)
-{
-    assert(start != NULL && stop != NULL);
-    return (PyObject *)_PyBuildSlice_Consume3(start, stop, Py_None);
 }
 
 PyObject *
@@ -178,7 +171,7 @@ _PySlice_FromIndices(Py_ssize_t istart, Py_ssize_t istop)
         return NULL;
     }
 
-    slice = _PyBuildSlice_ConsumeRefs(start, end);
+    slice = _PyBuildSlice_ConsumeRefs(start, end, Py_None);
     return slice;
 }
 

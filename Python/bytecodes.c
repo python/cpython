@@ -867,7 +867,8 @@ dummy_func(
 
         op(_BINARY_SLICE, (container, start, stop -- res)) {
             PyObject *slice = _PyBuildSlice_ConsumeRefs(PyStackRef_AsPyObjectSteal(start),
-                                                        PyStackRef_AsPyObjectSteal(stop));
+                                                        PyStackRef_AsPyObjectSteal(stop),
+                                                        Py_None);
             PyObject *res_o;
             // Can't use ERROR_IF() here, because we haven't
             // DECREF'ed container yet, and we still own slice.
@@ -894,7 +895,8 @@ dummy_func(
 
         op(_STORE_SLICE, (v, container, start, stop -- )) {
             PyObject *slice = _PyBuildSlice_ConsumeRefs(PyStackRef_AsPyObjectSteal(start),
-                                                        PyStackRef_AsPyObjectSteal(stop));
+                                                        PyStackRef_AsPyObjectSteal(stop),
+                                                        Py_None);
             int err;
             if (slice == NULL) {
                 err = 1;

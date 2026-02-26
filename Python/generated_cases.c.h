@@ -1398,7 +1398,8 @@
                 container = stack_pointer[-3];
                 _PyFrame_SetStackPointer(frame, stack_pointer);
                 PyObject *slice = _PyBuildSlice_ConsumeRefs(PyStackRef_AsPyObjectSteal(start),
-                    PyStackRef_AsPyObjectSteal(stop));
+                    PyStackRef_AsPyObjectSteal(stop),
+                    Py_None);
                 stack_pointer = _PyFrame_GetStackPointer(frame);
                 PyObject *res_o;
                 if (slice == NULL) {
@@ -11367,7 +11368,8 @@
                 v = stack_pointer[-4];
                 _PyFrame_SetStackPointer(frame, stack_pointer);
                 PyObject *slice = _PyBuildSlice_ConsumeRefs(PyStackRef_AsPyObjectSteal(start),
-                    PyStackRef_AsPyObjectSteal(stop));
+                    PyStackRef_AsPyObjectSteal(stop),
+                    Py_None);
                 stack_pointer = _PyFrame_GetStackPointer(frame);
                 int err;
                 if (slice == NULL) {
