@@ -139,10 +139,11 @@ The :mod:`!gc` module provides the following functions:
    by 10% since the last collection and the net number of object allocations
    has not exceeded 40 times *threshold0*, the collection is not run.
 
-   The fraction of the old generation that is collected is **inversely** proportional
-   to *threshold1*. The larger *threshold1* is, the slower objects in the old generation
-   are collected.
-   For the default value of 10, 1% of the old generation is scanned during each collection.
+   The fraction of the old generation that is scanned during each collection is
+   ``1 / (10 * threshold1)``, making it **inversely** proportional to *threshold1*.
+   The larger *threshold1* is, the slower objects in the old generation are collected.
+   For the default value of 10, this means approximately 1% of the old generation is
+   scanned during each collection.
 
    *threshold2* is ignored.
 
