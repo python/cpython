@@ -6295,8 +6295,7 @@ class TestSignatureDefinitions(unittest.TestCase):
 
     def test_struct_module_has_signatures(self):
         import struct
-        unsupported_signature = {'Struct'}
-        self._test_module_has_signatures(struct, unsupported_signature=unsupported_signature)
+        self._test_module_has_signatures(struct)
 
     def test_string_module_has_signatures(self):
         import string

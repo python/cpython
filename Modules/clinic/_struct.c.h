@@ -10,7 +10,7 @@ preserve
 #include "pycore_modsupport.h"    // _PyArg_UnpackKeywords()
 
 PyDoc_STRVAR(Struct___init____doc__,
-"Struct(format=<unrepresentable>)\n"
+"Struct(format)\n"
 "--\n"
 "\n"
 "Create a compiled struct object.\n"
@@ -669,4 +669,4 @@ exit:
 
     return return_value;
 }
-/*[clinic end generated code: output=2fe0686dd99b557e input=a9049054013a1b77]*/
+/*[clinic end generated code: output=e61298fe6714a259 input=a9049054013a1b77]*/

@@ -1825,6 +1825,7 @@ s_new(PyTypeObject *type, PyObject *args, PyObject *kwds)
 }
 
 /*[clinic input]
+@text_signature "(format)"
 Struct.__init__
 
     format: object = NULL
@@ -1837,7 +1838,7 @@ to the format string.  See help(struct) for more on format strings.
 
 static int
 Struct___init___impl(PyStructObject *self, PyObject *format)
-/*[clinic end generated code: output=b8e80862444e92d0 input=6275ff3f85752dd7]*/
+/*[clinic end generated code: output=b8e80862444e92d0 input=dcf0b5a00eb0dbd9]*/
 {
     if (!format && !self->s_codes) {
         PyErr_SetString(PyExc_TypeError,
