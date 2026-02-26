@@ -1,4 +1,4 @@
 The :mod:`encodings` is now partially frozen, including
-:mod:`encodings.aliases` and :mod:`encodings.utf_8`.
+the ``aliases`` and ``utf_8`` submodules.
 
 The :mod:`linecache` is now frozen.
