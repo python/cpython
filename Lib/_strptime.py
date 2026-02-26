@@ -382,7 +382,7 @@ class TimeRE(dict):
             'Z': self.__seqToRE((tz for tz_names in self.locale_time.timezone
                                         for tz in tz_names),
                                 'Z'),
-            't': r'\s+',
+            't': r'\s*',
             '%': '%'
         }
         if self.locale_time.LC_alt_digits is None:
