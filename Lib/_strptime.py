@@ -382,6 +382,7 @@ class TimeRE(dict):
             'Z': self.__seqToRE((tz for tz_names in self.locale_time.timezone
                                         for tz in tz_names),
                                 'Z'),
+            'n': r'\s*',
             't': r'\s*',
             '%': '%'
         }
