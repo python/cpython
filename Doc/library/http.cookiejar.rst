@@ -26,7 +26,7 @@ introduced with RFC 2965.
 .. note::
 
    The various named parameters found in :mailheader:`Set-Cookie` and
-   :mailheader:`Set-Cookie2` headers (eg. ``domain`` and ``expires``) are
+   :mailheader:`Set-Cookie2` headers (e.g. ``domain`` and ``expires``) are
    conventionally referred to as :dfn:`attributes`.  To distinguish them from
    Python attributes, the documentation for this module uses the term
    :dfn:`cookie-attribute` instead.
@@ -574,7 +574,7 @@ both flags are set).
 
 .. attribute:: DefaultCookiePolicy.DomainStrictNoDots
 
-   When setting cookies, the 'host prefix' must not contain a dot (eg.
+   When setting cookies, the 'host prefix' must not contain a dot (e.g.
    ``www.foo.bar.com`` can't set a cookie for ``.bar.com``, because ``www.foo``
    contains a dot).
 
@@ -582,7 +582,7 @@ both flags are set).
 .. attribute:: DefaultCookiePolicy.DomainStrictNonDomain
 
    Cookies that did not explicitly specify a ``domain`` cookie-attribute can only
-   be returned to a domain equal to the domain that set the cookie (eg.
+   be returned to a domain equal to the domain that set the cookie (e.g.
    ``spam.example.com`` won't be returned cookies from ``example.com`` that had no
    ``domain`` cookie-attribute).
 
@@ -642,7 +642,7 @@ internal consistency, so you should know what you're doing if you do that.
 
 .. attribute:: Cookie.port
 
-   String representing a port or a set of ports (eg. '80', or '80,8080'), or
+   String representing a port or a set of ports (e.g. '80', or '80,8080'), or
    :const:`None`.
 
 
@@ -653,7 +653,7 @@ internal consistency, so you should know what you're doing if you do that.
 
 .. attribute:: Cookie.path
 
-   Cookie path (a string, eg. ``'/acme/rocket_launchers'``).
+   Cookie path (a string, e.g. ``'/acme/rocket_launchers'``).
 
 
 .. attribute:: Cookie.secure

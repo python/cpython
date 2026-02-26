@@ -1770,13 +1770,13 @@ where
    you can access some other interesting data through its instance attributes:
 
    ``parser.largs``
-      the current list of leftover arguments, ie. arguments that have been
+      the current list of leftover arguments, i.e. arguments that have been
       consumed but are neither options nor option arguments. Feel free to modify
       ``parser.largs``, e.g. by adding more arguments to it.  (This list will
       become ``args``, the second return value of :meth:`~OptionParser.parse_args`.)
 
    ``parser.rargs``
-      the current list of remaining arguments, ie. with ``opt_str`` and
+      the current list of remaining arguments, i.e. with ``opt_str`` and
       ``value`` (if applicable) removed, and only the arguments following them
       still there.  Feel free to modify ``parser.rargs``, e.g. by consuming more
       arguments.
