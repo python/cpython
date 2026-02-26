@@ -155,6 +155,17 @@ type_watcher_callback(PyTypeObject* type)
     return 0;
 }
 
+static int
+_setup_optimizer_watchers(void *Py_UNUSED(arg))
+{
+    PyInterpreterState *interp = _PyInterpreterState_GET();
+    FT_ATOMIC_STORE_PTR_RELEASE(
+        interp->dict_state.watchers[GLOBALS_WATCHER_ID],
+        globals_watcher_callback);
+    interp->type_watchers[TYPE_WATCHER_ID] = type_watcher_callback;
+    return 0;
+}
+
 static PyObject *
 convert_global_to_const(_PyUOpInstruction *inst, PyObject *obj, bool pop, bool insert)
 {
@@ -469,12 +480,8 @@ optimize_uops(
 
     // Make sure that watchers are set up
     PyInterpreterState *interp = _PyInterpreterState_GET();
-    if (FT_ATOMIC_LOAD_PTR_RELAXED(interp->dict_state.watchers[GLOBALS_WATCHER_ID]) == NULL) {
-        FT_ATOMIC_STORE_PTR_RELEASE(
-            interp->dict_state.watchers[GLOBALS_WATCHER_ID],
-            globals_watcher_callback);
-        interp->type_watchers[TYPE_WATCHER_ID] = type_watcher_callback;
-    }
+    _PyOnceFlag_CallOnce(&interp->dict_state.watcher_setup_once,
+                         _setup_optimizer_watchers, NULL);
 
     _Py_uop_abstractcontext_init(ctx, dependencies);
     _Py_UOpsAbstractFrame *frame = _Py_uop_frame_new(ctx, (PyCodeObject *)func->func_code, NULL, 0);

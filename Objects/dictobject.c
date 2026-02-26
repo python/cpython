@@ -7866,9 +7866,8 @@ PyDict_Watch(int watcher_id, PyObject* dict)
     if (validate_watcher_id(interp, watcher_id)) {
         return -1;
     }
-    Py_BEGIN_CRITICAL_SECTION(dict);
-    ((PyDictObject*)dict)->_ma_watcher_tag |= (1ULL << watcher_id);
-    Py_END_CRITICAL_SECTION();
+    FT_ATOMIC_OR_UINT64(((PyDictObject*)dict)->_ma_watcher_tag,
+                        1ULL << watcher_id);
     return 0;
 }
 
@@ -7883,9 +7882,8 @@ PyDict_Unwatch(int watcher_id, PyObject* dict)
     if (validate_watcher_id(interp, watcher_id)) {
         return -1;
     }
-    Py_BEGIN_CRITICAL_SECTION(dict);
-    ((PyDictObject*)dict)->_ma_watcher_tag &= ~(1ULL << watcher_id);
-    Py_END_CRITICAL_SECTION();
+    FT_ATOMIC_AND_UINT64(((PyDictObject*)dict)->_ma_watcher_tag,
+                         ~(1ULL << watcher_id));
     return 0;
 }
 
@@ -7895,7 +7893,8 @@ PyDict_AddWatcher(PyDict_WatchCallback callback)
     int watcher_id = -1;
     PyInterpreterState *interp = _PyInterpreterState_GET();
 
-    FT_MUTEX_LOCK(&interp->dict_state.watcher_mutex);
+    FT_MUTEX_LOCK_FLAGS(&interp->dict_state.watcher_mutex,
+                        _Py_LOCK_DONT_DETACH);
     /* Some watchers are reserved for CPython, start at the first available one */
     for (int i = FIRST_AVAILABLE_WATCHER; i < DICT_MAX_WATCHERS; i++) {
         if (!interp->dict_state.watchers[i]) {
@@ -7915,7 +7914,8 @@ PyDict_ClearWatcher(int watcher_id)
 {
     int res = 0;
     PyInterpreterState *interp = _PyInterpreterState_GET();
-    FT_MUTEX_LOCK(&interp->dict_state.watcher_mutex);
+    FT_MUTEX_LOCK_FLAGS(&interp->dict_state.watcher_mutex,
+                        _Py_LOCK_DONT_DETACH);
     if (validate_watcher_id(interp, watcher_id)) {
         res = -1;
         goto done;
