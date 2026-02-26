@@ -9,7 +9,7 @@
 --------------
 
 This module implements the HMAC algorithm as described by :rfc:`2104`.
-The interface allows to use any hash function with a *fixed* digest size.
+The interface allows using any hash function with a *fixed* digest size.
 In particular, extendable output functions such as SHAKE-128 or SHAKE-256
 cannot be used with HMAC.
 

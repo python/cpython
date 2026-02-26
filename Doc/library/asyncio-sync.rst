@@ -361,7 +361,7 @@ Barrier
 
    A barrier object.  Not thread-safe.
 
-   A barrier is a simple synchronization primitive that allows to block until
+   A barrier is a simple synchronization primitive that allows blocking until
    *parties* number of tasks are waiting on it.
    Tasks can wait on the :meth:`~Barrier.wait` method and would be blocked until
    the specified number of tasks end up waiting on :meth:`~Barrier.wait`.
