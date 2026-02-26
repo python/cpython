@@ -1555,7 +1555,7 @@ class InitConfigTests(EmbeddingTestsMixin, unittest.TestCase):
                           exec_prefix=exec_prefix, base_exec_prefix=exec_prefix)
         self.check_all_configs("test_init_is_python_build", config,
                                api=API_COMPAT, env=env,
-                               ignore_stderr=True)  # ignore missing stdlib warning)
+                               ignore_stderr=True)  # ignore missing stdlib warning
 
     def copy_paths_by_env(self, config):
         all_configs = self._get_expected_config()
@@ -1578,6 +1578,8 @@ class InitConfigTests(EmbeddingTestsMixin, unittest.TestCase):
             # The stdlib dir is dirname(executable) + VPATH + 'Lib'
             stdlibdir = os.path.normpath(os.path.join(tmpdir, vpath, 'Lib'))
             os.mkdir(libdir)
+            # Create the directory to avoid the bad stdlib dir warning
+            os.makedirs(stdlibdir)
 
             filename = os.path.join(tmpdir, 'pybuilddir.txt')
             with open(filename, "w", encoding="utf8") as fp:
@@ -1615,6 +1617,9 @@ class InitConfigTests(EmbeddingTestsMixin, unittest.TestCase):
             prefix = os.path.normpath(os.path.join(tmpdir, vpath))
             # The stdlib dir is dirname(executable) + VPATH + 'Lib'
             stdlibdir = os.path.normpath(os.path.join(tmpdir, vpath, 'Lib'))
+
+            # Create the directory to avoid the bad stdlib dir warning
+            os.makedirs(stdlibdir)
 
             filename = os.path.join(tmpdir, 'pybuilddir.txt')
             with open(filename, "w", encoding="utf8") as fp:
