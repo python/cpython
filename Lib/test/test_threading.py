@@ -151,6 +151,12 @@ class ThreadTests(BaseTestCase):
             thread = threading.Thread(target=func)
             self.assertEqual(thread.name, "Thread-5 (func)")
 
+    def test_invalid_args(self):
+        with self.assertRaisesRegex(TypeError, "group argument must be None"):
+            threading.Thread(group="not None")
+        with self.assertRaisesRegex(TypeError, "target must be callable"):
+            threading.Thread(target=123)
+
     def test_args_argument(self):
         # bpo-45735: Using list or tuple as *args* in constructor could
         # achieve the same effect.

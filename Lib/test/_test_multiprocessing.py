@@ -326,6 +326,12 @@ class _TestProcess(BaseTestCase):
         self.assertEqual(current.ident, os.getpid())
         self.assertEqual(current.exitcode, None)
 
+    def test_invalid_args(self):
+        with self.assertRaisesRegex(TypeError, "group argument must be None"):
+            self.Process(group="not None")
+        with self.assertRaisesRegex(TypeError, "target must be callable"):
+            self.Process(target=123)
+
     @warnings_helper.ignore_fork_in_thread_deprecation_warnings()
     def test_set_executable(self):
         if self.TYPE == 'threads':

@@ -901,7 +901,10 @@ class Thread:
         else to the thread.
 
         """
-        assert group is None, "group argument must be None for now"
+        if group is not None:
+            raise TypeError("group argument must be None for now")
+        if target is not None and not callable(target):
+            raise TypeError("target must be callable")
         if kwargs is None:
             kwargs = {}
         if name:

@@ -79,7 +79,10 @@ class BaseProcess(object):
 
     def __init__(self, group=None, target=None, name=None, args=(), kwargs=None,
                  *, daemon=None):
-        assert group is None, 'group argument must be None for now'
+        if group is not None:
+            raise TypeError("group argument must be None for now")
+        if target is not None and not callable(target):
+            raise TypeError("target must be callable")
         count = next(_process_counter)
         self._identity = _current_process._identity + (count,)
         self._config = _current_process._config.copy()
