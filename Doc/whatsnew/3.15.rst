@@ -1164,7 +1164,7 @@ urllib.parse
   :func:`~urllib.parse.urlparse` and :func:`~urllib.parse.urldefrag` functions.
   Add the *keep_empty* parameter to :func:`~urllib.parse.urlunsplit` and
   :func:`~urllib.parse.urlunparse` functions.
-  This allows to distinguish between empty and not defined URI components
+  This allows distinguishing between empty and not defined URI components
   and preserve empty components.
   (Contributed by Serhiy Storchaka in :gh:`67041`.)
 
