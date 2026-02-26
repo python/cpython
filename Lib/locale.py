@@ -571,8 +571,9 @@ def _getdefaultlocale(envvars=('LC_ALL', 'LC_CTYPE', 'LANG', 'LANGUAGE')):
         code, encoding = _locale._getdefaultlocale()
     except (ImportError, AttributeError):
         pass
-    except OSError:
-        return None
+    except OSError as e:
+        if sys.platform == "win32" and isinstance(e, WindowsError):
+            raise
     else:
         # add other platform-specific processing here, if
         # necessary...
