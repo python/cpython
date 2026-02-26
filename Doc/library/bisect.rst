@@ -201,7 +201,7 @@ based on a set of ordered numeric breakpoints: 90 and up is an 'A', 80 to 89 is
 a 'B', and so on::
 
    >>> def grade(score)
-   ...     i = bisect([60, 70, 80, 90, score)
+   ...     i = bisect([60, 70, 80, 90], score)
    ...     return "FDCBA"[i]
    ...
    >>> [grade(score) for score in [33, 99, 77, 70, 89, 90, 100]]
