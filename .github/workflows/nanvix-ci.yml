@@ -218,15 +218,18 @@ jobs:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
           RELEASE_TAG="${GITHUB_SHA::7}-nanvix-${NANVIX_SHA}"
-          for repo in cymem murmurhash preshed srsly kiwi numpy nanvix-python; do
-            echo "Triggering nanvix/$repo..."
-            gh api repos/nanvix/$repo/dispatches \
-              -X POST \
-              -H "Accept: application/vnd.github+json" \
-              -f event_type="cpython-release" \
-              -f "client_payload[nanvix_sha]=${NANVIX_SHA}" \
-              -f "client_payload[cpython_tag]=${RELEASE_TAG}" || echo "::warning::Failed to trigger $repo"
+          for repo in cymem murmurhash preshed srsly kiwi numpy; do
+            echo "Dispatching workflow run for nanvix/$repo..."
+            gh workflow run nanvix-ci.yml \
+              --repo "nanvix/$repo" \
+              -r main || echo "::warning::Failed to dispatch $repo"
           done
+          # nanvix-python uses ci.yml and accepts cpython_tag input
+          echo "Dispatching workflow run for nanvix/nanvix-python..."
+          gh workflow run ci.yml \
+            --repo nanvix/nanvix-python \
+            -r main \
+            -f "cpython_tag=${RELEASE_TAG}" || echo "::warning::Failed to dispatch nanvix-python"
 
   report-failure:
     needs: [build-and-test]
