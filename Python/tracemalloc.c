@@ -224,13 +224,20 @@ tracemalloc_get_frame(_PyInterpreterFrame *pyframe, frame_t *frame)
     assert(PyStackRef_CodeCheck(pyframe->f_executable));
     frame->filename = &_Py_STR(anon_unknown);
 
-    int lineno = PyUnstable_InterpreterFrame_GetLine(pyframe);
+    int lineno = -1;
+    PyCodeObject *code = _PyFrame_GetCode(pyframe);
+    // PyUnstable_InterpreterFrame_GetLine() cannot but used, since it uses
+    // a critical section which can trigger a deadlock.
+    int lasti = _PyFrame_SafeGetLasti(pyframe);
+    if (lasti >= 0) {
+        lineno = _PyCode_SafeAddr2Line(code, lasti);
+    }
     if (lineno < 0) {
         lineno = 0;
     }
     frame->lineno = (unsigned int)lineno;
 
-    PyObject *filename = filename = _PyFrame_GetCode(pyframe)->co_filename;
+    PyObject *filename = code->co_filename;
     if (filename == NULL) {
 #ifdef TRACE_DEBUG
         tracemalloc_error("failed to get the filename of the code object");
@@ -840,7 +847,7 @@ _PyTraceMalloc_Start(int max_nframe)
 
     /* everything is ready: start tracing Python memory allocations */
     TABLES_LOCK();
-    tracemalloc_config.tracing = 1;
+    _Py_atomic_store_int_relaxed(&tracemalloc_config.tracing, 1);
     TABLES_UNLOCK();
 
     return 0;
@@ -853,11 +860,12 @@ _PyTraceMalloc_Stop(void)
     TABLES_LOCK();
 
     if (!tracemalloc_config.tracing) {
-        goto done;
+        TABLES_UNLOCK();
+        return;
     }
 
     /* stop tracing Python memory allocations */
-    tracemalloc_config.tracing = 0;
+    _Py_atomic_store_int_relaxed(&tracemalloc_config.tracing, 0);
 
     /* unregister the hook on memory allocators */
     PyMem_SetAllocator(PYMEM_DOMAIN_RAW, &allocators.raw);
@@ -870,10 +878,12 @@ _PyTraceMalloc_Stop(void)
     raw_free(tracemalloc_traceback);
     tracemalloc_traceback = NULL;
 
-    (void)PyRefTracer_SetTracer(NULL, NULL);
-
-done:
     TABLES_UNLOCK();
+
+    // Call it after TABLES_UNLOCK() since it calls _PyEval_StopTheWorldAll()
+    // which would lead to a deadlock with TABLES_LOCK() which doesn't detach
+    // the thread state.
+    (void)PyRefTracer_SetTracer(NULL, NULL);
 }
 
 
@@ -1197,6 +1207,10 @@ int
 PyTraceMalloc_Track(unsigned int domain, uintptr_t ptr,
                     size_t size)
 {
+    if (_Py_atomic_load_int_relaxed(&tracemalloc_config.tracing) == 0) {
+        /* tracemalloc is not tracing: do nothing */
+        return -2;
+    }
     PyGILState_STATE gil_state = PyGILState_Ensure();
     TABLES_LOCK();
 
@@ -1218,6 +1232,11 @@ PyTraceMalloc_Track(unsigned int domain, uintptr_t ptr,
 int
 PyTraceMalloc_Untrack(unsigned int domain, uintptr_t ptr)
 {
+    if (_Py_atomic_load_int_relaxed(&tracemalloc_config.tracing) == 0) {
+        /* tracemalloc is not tracing: do nothing */
+        return -2;
+    }
+
     TABLES_LOCK();
 
     int result;

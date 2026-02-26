@@ -1358,6 +1358,9 @@ and :c:data:`PyType_Type` effectively act as defaults.)
          type structure.
 
 
+   .. c:macro:: _Py_TPFLAGS_HAVE_VECTORCALL
+      :no-typesetting:
+
    .. c:macro:: Py_TPFLAGS_HAVE_VECTORCALL
 
       This bit is set when the class implements
@@ -1369,7 +1372,12 @@ and :c:data:`PyType_Type` effectively act as defaults.)
       This bit is inherited if :c:member:`~PyTypeObject.tp_call` is also
       inherited.
 
-      .. versionadded:: 3.9
+      .. versionadded:: 3.8 as ``_Py_TPFLAGS_HAVE_VECTORCALL``
+
+      .. versionchanged:: 3.9
+
+      Renamed to the current name, without the leading underscore.
+      The old provisional name is :term:`soft deprecated`.
 
       .. versionchanged:: 3.12
 

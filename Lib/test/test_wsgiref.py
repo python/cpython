@@ -1,6 +1,6 @@
 from unittest import mock
 from test import support
-from test.support import socket_helper
+from test.support import socket_helper, control_characters_c0
 from test.test_httpservers import NoLogRequestHandler
 from unittest import TestCase
 from wsgiref.util import setup_testing_defaults
@@ -502,6 +502,22 @@ class HeaderTests(TestCase):
             'Foo: bar; cheese\r\n'
             '\r\n'
         )
+
+    def testRaisesControlCharacters(self):
+        for c0 in control_characters_c0():
+            with self.subTest(c0):
+                headers = Headers()
+                self.assertRaises(ValueError, headers.__setitem__, f"key{c0}", "val")
+                self.assertRaises(ValueError, headers.add_header, f"key{c0}", "val", param="param")
+                # HTAB (\x09) is allowed in values, not names.
+                if c0 == "\t":
+                    headers["key"] = f"val{c0}"
+                    headers.add_header("key", f"val{c0}")
+                    headers.setdefault(f"key", f"val{c0}")
+                else:
+                    self.assertRaises(ValueError, headers.__setitem__, "key", f"val{c0}")
+                    self.assertRaises(ValueError, headers.add_header, "key", f"val{c0}", param="param")
+                    self.assertRaises(ValueError, headers.add_header, "key", "val", param=f"param{c0}")
 
 class ErrorHandler(BaseCGIHandler):
     """Simple handler subclass for testing BaseHandler"""

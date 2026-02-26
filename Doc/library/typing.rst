@@ -813,7 +813,7 @@ For example, this conforms to :pep:`484`::
        def __len__(self) -> int: ...
        def __iter__(self) -> Iterator[int]: ...
 
-:pep:`544` allows to solve this problem by allowing users to write
+:pep:`544` solves this problem by allowing users to write
 the above code without explicit base classes in the class definition,
 allowing ``Bucket`` to be implicitly considered a subtype of both ``Sized``
 and ``Iterable[int]`` by static type checkers. This is known as
@@ -2428,6 +2428,10 @@ types.
       Removed the ``_field_types`` attribute in favor of the more
       standard ``__annotations__`` attribute which has the same information.
 
+   .. versionchanged:: 3.9
+      ``NamedTuple`` is now a function rather than a class.
+      It can still be used as a class base, as described above.
+
    .. versionchanged:: 3.11
       Added support for generic namedtuples.
 
@@ -2587,7 +2591,7 @@ types.
 .. class:: TypedDict(dict)
 
    Special construct to add type hints to a dictionary.
-   At runtime it is a plain :class:`dict`.
+   At runtime ":class:`!TypedDict` instances" are simply :class:`dicts <dict>`.
 
    ``TypedDict`` declares a dictionary type that expects all of its
    instances to have a certain set of keys, where each key is
@@ -2809,6 +2813,10 @@ types.
    See the `TypedDict <https://typing.python.org/en/latest/spec/typeddict.html#typeddict>`_ section in the typing documentation for more examples and detailed rules.
 
    .. versionadded:: 3.8
+
+   .. versionchanged:: 3.9
+      ``TypedDict`` is now a function rather than a class.
+      It can still be used as a class base, as described above.
 
    .. versionchanged:: 3.11
       Added support for marking individual keys as :data:`Required` or :data:`NotRequired`.
@@ -3339,8 +3347,8 @@ Introspection helpers
 
 .. function:: get_type_hints(obj, globalns=None, localns=None, include_extras=False)
 
-   Return a dictionary containing type hints for a function, method, module
-   or class object.
+   Return a dictionary containing type hints for a function, method, module,
+   class object, or other callable object.
 
    This is often the same as ``obj.__annotations__``, but this function makes
    the following changes to the annotations dictionary:
@@ -3381,6 +3389,13 @@ Introspection helpers
       :ref:`type aliases <type-aliases>` that include forward references,
       or with names imported under :data:`if TYPE_CHECKING <TYPE_CHECKING>`.
 
+   .. note::
+
+      Calling :func:`get_type_hints` on an instance is not supported.
+      To retrieve annotations for an instance, call
+      :func:`get_type_hints` on the instance's class instead
+      (for example, ``get_type_hints(type(obj))``).
+
    .. versionchanged:: 3.9
       Added ``include_extras`` parameter as part of :pep:`593`.
       See the documentation on :data:`Annotated` for more information.
@@ -3389,6 +3404,11 @@ Introspection helpers
       Previously, ``Optional[t]`` was added for function and method annotations
       if a default value equal to ``None`` was set.
       Now the annotation is returned unchanged.
+
+   .. versionchanged:: 3.14
+      Calling :func:`get_type_hints` on instances is no longer supported.
+      Some instances were accepted in earlier versions as an undocumented
+      implementation detail.
 
 .. function:: get_origin(tp)
 

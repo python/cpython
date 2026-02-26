@@ -129,7 +129,7 @@ def show_flag_values(value):
 def bin(num, max_bits=None):
     """
     Like built-in bin(), except negative values are represented in
-    twos-compliment, and the leading bit always indicates sign
+    twos-complement, and the leading bit always indicates sign
     (0=positive, 1=negative).
 
     >>> bin(10)
@@ -138,6 +138,7 @@ def bin(num, max_bits=None):
     '0b1 0101'
     """
 
+    num = num.__index__()
     ceiling = 2 ** (num).bit_length()
     if num >= 0:
         s = bltns.bin(num + ceiling).replace('1', '0', 1)

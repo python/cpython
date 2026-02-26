@@ -4,10 +4,12 @@ import linecache
 import unittest
 import os.path
 import tempfile
+import threading
 import tokenize
 from importlib.machinery import ModuleSpec
 from test import support
 from test.support import os_helper
+from test.support import threading_helper
 from test.support.script_helper import assert_python_ok
 
 
@@ -372,6 +374,41 @@ class LineCacheInvalidationTests(unittest.TestCase):
         self.assertNotIn(self.deleted_file, linecache.cache)
         self.assertNotIn(self.modified_file, linecache.cache)
         self.assertIn(self.unchanged_file, linecache.cache)
+
+
+class MultiThreadingTest(unittest.TestCase):
+    @threading_helper.reap_threads
+    @threading_helper.requires_working_threading()
+    def test_read_write_safety(self):
+
+        with tempfile.TemporaryDirectory() as tmpdirname:
+            filenames = []
+            for i in range(10):
+                name = os.path.join(tmpdirname, f"test_{i}.py")
+                with open(name, "w") as h:
+                    h.write("import time\n")
+                    h.write("import system\n")
+                filenames.append(name)
+
+            def linecache_get_line(b):
+                b.wait()
+                for _ in range(100):
+                    for name in filenames:
+                        linecache.getline(name, 1)
+
+            def check(funcs):
+                barrier = threading.Barrier(len(funcs))
+                threads = []
+
+                for func in funcs:
+                    thread = threading.Thread(target=func, args=(barrier,))
+
+                    threads.append(thread)
+
+                with threading_helper.start_threads(threads):
+                    pass
+
+            check([linecache_get_line] * 20)
 
 
 if __name__ == "__main__":

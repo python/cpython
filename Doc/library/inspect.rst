@@ -16,7 +16,7 @@
 
 --------------
 
-The :mod:`inspect` module provides several useful functions to help get
+The :mod:`!inspect` module provides several useful functions to help get
 information about live objects such as modules, classes, methods, functions,
 tracebacks, frame objects, and code objects.  For example, it can help you
 examine the contents of a class, retrieve the source code of a method, extract
@@ -273,6 +273,9 @@ attributes (see :ref:`import-mod-attrs` for module attributes):
 +-----------------+-------------------+---------------------------+
 |                 | ag_running        | is the generator running? |
 +-----------------+-------------------+---------------------------+
+|                 | ag_suspended      | is the generator          |
+|                 |                   | suspended?                |
++-----------------+-------------------+---------------------------+
 |                 | ag_code           | code                      |
 +-----------------+-------------------+---------------------------+
 | coroutine       | __name__          | name                      |
@@ -285,6 +288,9 @@ attributes (see :ref:`import-mod-attrs` for module attributes):
 |                 | cr_frame          | frame                     |
 +-----------------+-------------------+---------------------------+
 |                 | cr_running        | is the coroutine running? |
++-----------------+-------------------+---------------------------+
+|                 | cr_suspended      | is the coroutine          |
+|                 |                   | suspended?                |
 +-----------------+-------------------+---------------------------+
 |                 | cr_code           | code                      |
 +-----------------+-------------------+---------------------------+
@@ -318,6 +324,18 @@ attributes (see :ref:`import-mod-attrs` for module attributes):
 .. versionchanged:: 3.10
 
    Add ``__builtins__`` attribute to functions.
+
+.. versionchanged:: 3.11
+
+   Add ``gi_suspended`` attribute to generators.
+
+.. versionchanged:: 3.11
+
+   Add ``cr_suspended`` attribute to coroutines.
+
+.. versionchanged:: 3.12
+
+   Add ``ag_suspended`` attribute to async generators.
 
 .. versionchanged:: 3.14
 
@@ -506,7 +524,7 @@ attributes (see :ref:`import-mod-attrs` for module attributes):
 
    .. versionchanged:: 3.13
       Functions wrapped in :func:`functools.partialmethod` now return ``True``
-      if the wrapped function is a :term:`coroutine function`.
+      if the wrapped function is a :term:`asynchronous generator` function.
 
 .. function:: isasyncgen(object)
 
@@ -1737,7 +1755,7 @@ which is a bitmap of the following flags:
    The flags are specific to CPython, and may not be defined in other
    Python implementations.  Furthermore, the flags are an implementation
    detail, and can be removed or deprecated in future Python releases.
-   It's recommended to use public APIs from the :mod:`inspect` module
+   It's recommended to use public APIs from the :mod:`!inspect` module
    for any introspection needs.
 
 
@@ -1779,7 +1797,7 @@ Buffer flags
 Command-line interface
 ----------------------
 
-The :mod:`inspect` module also provides a basic introspection capability
+The :mod:`!inspect` module also provides a basic introspection capability
 from the command line.
 
 .. program:: inspect

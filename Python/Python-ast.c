@@ -5226,7 +5226,7 @@ ast_type_init(PyObject *self, PyObject *args, PyObject *kw)
                 }
                 if (p == 0) {
                     PyErr_Format(PyExc_TypeError,
-                        "%.400s got multiple values for argument '%U'",
+                        "%.400s got multiple values for argument %R",
                         Py_TYPE(self)->tp_name, key);
                     res = -1;
                     goto cleanup;
@@ -5249,7 +5249,7 @@ ast_type_init(PyObject *self, PyObject *args, PyObject *kw)
                 else if (contains == 0) {
                     if (PyErr_WarnFormat(
                         PyExc_DeprecationWarning, 1,
-                        "%.400s.__init__ got an unexpected keyword argument '%U'. "
+                        "%.400s.__init__ got an unexpected keyword argument %R. "
                         "Support for arbitrary keyword arguments is deprecated "
                         "and will be removed in Python 3.15.",
                         Py_TYPE(self)->tp_name, key
@@ -5491,7 +5491,7 @@ ast_type_replace_check(PyObject *self,
             if (rc == 0) {
                 PyErr_Format(PyExc_TypeError,
                              "%.400s.__replace__ got an unexpected keyword "
-                             "argument '%U'.", Py_TYPE(self)->tp_name, key);
+                             "argument %R.", Py_TYPE(self)->tp_name, key);
                 Py_DECREF(expecting);
                 return -1;
             }
@@ -6813,7 +6813,7 @@ init_types(void *arg)
         return -1;
     state->arguments_type = make_type(state, "arguments", state->AST_type,
                                       arguments_fields, 7,
-        "arguments(arg* posonlyargs, arg* args, arg? vararg, arg* kwonlyargs, expr* kw_defaults, arg? kwarg, expr* defaults)");
+        "arguments(arg* posonlyargs, arg* args, arg? vararg, arg* kwonlyargs, expr?* kw_defaults, arg? kwarg, expr* defaults)");
     if (!state->arguments_type) return -1;
     if (add_attributes(state, state->arguments_type, NULL, 0) < 0) return -1;
     if (PyObject_SetAttr(state->arguments_type, state->vararg, Py_None) == -1)

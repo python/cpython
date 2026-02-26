@@ -711,7 +711,7 @@ _PyObject_IsFreed(PyObject *op)
 }
 
 
-/* For debugging convenience.  See Misc/gdbinit for some useful gdb hooks */
+/* For debugging convenience. */
 void
 _PyObject_Dump(PyObject* op)
 {

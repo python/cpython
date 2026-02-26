@@ -2182,7 +2182,6 @@ bytearray_extend_impl(PyByteArrayObject *self, PyObject *iterable_of_ints)
             Py_DECREF(bytearray_obj);
             return NULL;
         }
-        buf[len++] = value;
         Py_DECREF(item);
 
         if (len >= buf_size) {
@@ -2192,7 +2191,7 @@ bytearray_extend_impl(PyByteArrayObject *self, PyObject *iterable_of_ints)
                 Py_DECREF(bytearray_obj);
                 return PyErr_NoMemory();
             }
-            addition = len >> 1;
+            addition = len ? len >> 1 : 1;
             if (addition > PY_SSIZE_T_MAX - len - 1)
                 buf_size = PY_SSIZE_T_MAX;
             else
@@ -2206,6 +2205,7 @@ bytearray_extend_impl(PyByteArrayObject *self, PyObject *iterable_of_ints)
                have invalidated it. */
             buf = PyByteArray_AS_STRING(bytearray_obj);
         }
+        buf[len++] = value;
     }
     Py_DECREF(it);
 
@@ -2616,7 +2616,13 @@ bytearray_hex_impl(PyByteArrayObject *self, PyObject *sep, int bytes_per_sep)
 {
     char* argbuf = PyByteArray_AS_STRING(self);
     Py_ssize_t arglen = PyByteArray_GET_SIZE(self);
-    return _Py_strhex_with_sep(argbuf, arglen, sep, bytes_per_sep);
+    // Prevent 'self' from being freed if computing len(sep) mutates 'self'
+    // in _Py_strhex_with_sep().
+    // See: https://github.com/python/cpython/issues/143195.
+    self->ob_exports++;
+    PyObject *res = _Py_strhex_with_sep(argbuf, arglen, sep, bytes_per_sep);
+    self->ob_exports--;
+    return res;
 }
 
 static PyObject *
@@ -2784,7 +2790,15 @@ bytearray_mod_lock_held(PyObject *v, PyObject *w)
     _Py_CRITICAL_SECTION_ASSERT_OBJECT_LOCKED(v);
     if (!PyByteArray_Check(v))
         Py_RETURN_NOTIMPLEMENTED;
-    return _PyBytes_FormatEx(PyByteArray_AS_STRING(v), PyByteArray_GET_SIZE(v), w, 1);
+
+    PyByteArrayObject *self = _PyByteArray_CAST(v);
+    /* Increase exports to prevent bytearray storage from changing during op. */
+    self->ob_exports++;
+    PyObject *res = _PyBytes_FormatEx(
+        PyByteArray_AS_STRING(v), PyByteArray_GET_SIZE(v), w, 1
+    );
+    self->ob_exports--;
+    return res;
 }
 
 static PyObject *

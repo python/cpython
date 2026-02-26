@@ -15,7 +15,7 @@ import sys
 import tempfile
 import types
 
-_testsinglephase = import_helper.import_module("_testsinglephase")
+import_helper.import_module("_testmultiphase")
 
 
 BUILTINS = types.SimpleNamespace()

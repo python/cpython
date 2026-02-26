@@ -46,6 +46,8 @@ See :ref:`stable` for a discussion of API and ABI stability across versions.
    Use this for numeric comparisons, for example,
    ``#if PY_VERSION_HEX >= ...``.
 
+These macros are defined in :source:`Include/patchlevel.h`.
+
 
 Run-time version
 ----------------

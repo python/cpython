@@ -834,9 +834,7 @@ entirely with a custom meta path hook.
 
 If it is acceptable to only alter the behaviour of import statements
 without affecting other APIs that access the import system, then replacing
-the builtin :func:`__import__` function may be sufficient. This technique
-may also be employed at the module level to only alter the behaviour of
-import statements within that module.
+the builtin :func:`__import__` function may be sufficient.
 
 To selectively prevent the import of some modules from a hook early on the
 meta path (rather than disabling the standard import system entirely),

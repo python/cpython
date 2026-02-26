@@ -277,6 +277,11 @@ data stored in module state.
          No longer called before the module state is allocated.
 
 
+.. c:var:: PyTypeObject PyModuleDef_Type
+
+   The type of ``PyModuleDef`` objects.
+
+
 Module slots
 ............
 
@@ -674,6 +679,9 @@ or code that creates modules dynamically.
    This function is called automatically when creating a module from
    ``PyModuleDef`` (such as when using :ref:`multi-phase-initialization`,
    ``PyModule_Create``, or ``PyModule_FromDefAndSpec``).
+
+   Return ``0`` on success.
+   Return ``-1`` with an exception set on error.
 
    .. versionadded:: 3.5
 

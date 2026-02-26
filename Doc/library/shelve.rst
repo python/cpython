@@ -61,11 +61,11 @@ lots of shared  sub-objects.  The keys are ordinary strings.
 
 .. warning::
 
-   Because the :mod:`shelve` module is backed by :mod:`pickle`, it is insecure
+   Because the :mod:`!shelve` module is backed by :mod:`pickle`, it is insecure
    to load a shelf from an untrusted source.  Like with pickle, loading a shelf
    can execute arbitrary code.
 
-Shelf objects support most of methods and operations supported by dictionaries
+Shelf objects support most of the methods and operations supported by dictionaries
 (except copying, constructors and operators ``|`` and ``|=``).  This eases the
 transition from dictionary based scripts to those requiring persistent storage.
 
@@ -106,7 +106,7 @@ Restrictions
   database should be fairly small, and in rare cases key collisions may cause
   the database to refuse updates.
 
-* The :mod:`shelve` module does not support *concurrent* read/write access to
+* The :mod:`!shelve` module does not support *concurrent* read/write access to
   shelved objects.  (Multiple simultaneous read accesses are safe.)  When a
   program has a shelf open for writing, no other program should have it open for
   reading or writing.  Unix file locking can be used to solve this, but this
@@ -219,5 +219,5 @@ object)::
       Generic interface to ``dbm``-style databases.
 
    Module :mod:`pickle`
-      Object serialization used by :mod:`shelve`.
+      Object serialization used by :mod:`!shelve`.
 

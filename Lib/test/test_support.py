@@ -662,6 +662,7 @@ class TestSupport(unittest.TestCase):
         """)
         script_helper.assert_python_ok("-c", code)
 
+    @support.skip_if_unlimited_stack_size
     def test_recursion(self):
         # Test infinite_recursion() and get_recursion_available() functions.
         def recursive_function(depth):
@@ -777,6 +778,7 @@ class TestSupport(unittest.TestCase):
             (128 + int(signal.SIGABRT), 'SIGABRT'),
             (3221225477, "STATUS_ACCESS_VIOLATION"),
             (0xC00000FD, "STATUS_STACK_OVERFLOW"),
+            (0xC0000906, "0xC0000906"),
         ):
             self.assertEqual(support.get_signal_name(exitcode), expected,
                              exitcode)

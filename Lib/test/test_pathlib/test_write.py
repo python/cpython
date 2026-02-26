@@ -59,15 +59,17 @@ class WriteTestBase:
 
     def test_write_bytes(self):
         p = self.root / 'fileA'
-        p.write_bytes(b'abcdefg')
-        self.assertEqual(self.ground.readbytes(p), b'abcdefg')
+        data = b'abcdefg'
+        self.assertEqual(len(data), p.write_bytes(data))
+        self.assertEqual(self.ground.readbytes(p), data)
         # Check that trying to write str does not truncate the file.
         self.assertRaises(TypeError, p.write_bytes, 'somestr')
-        self.assertEqual(self.ground.readbytes(p), b'abcdefg')
+        self.assertEqual(self.ground.readbytes(p), data)
 
     def test_write_text(self):
         p = self.root / 'fileA'
-        p.write_text('äbcdefg', encoding='latin-1')
+        data = 'äbcdefg'
+        self.assertEqual(len(data), p.write_text(data, encoding='latin-1'))
         self.assertEqual(self.ground.readbytes(p), b'\xe4bcdefg')
         # Check that trying to write bytes does not truncate the file.
         self.assertRaises(TypeError, p.write_text, b'somebytes', encoding='utf-8')
