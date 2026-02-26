@@ -714,7 +714,7 @@ NON_ESCAPING_FUNCTIONS = (
     "trigger_backoff_counter",
     "_PyThreadState_PopCStackRefSteal",
     "doesnt_escape",
-
+    "_Py_GatherStats_GetIter",
 )
 
 

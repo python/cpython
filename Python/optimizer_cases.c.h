@@ -209,9 +209,9 @@
         case _END_SEND: {
             JitOptRef val;
             val = sym_new_not_null(ctx);
-            CHECK_STACK_BOUNDS(-1);
-            stack_pointer[-2] = val;
-            stack_pointer += -1;
+            CHECK_STACK_BOUNDS(-2);
+            stack_pointer[-3] = val;
+            stack_pointer += -2;
             ASSERT_WITHIN_STACK_BOUNDS(__FILE__, __LINE__);
             break;
         }
@@ -1385,7 +1385,7 @@
             JitOptRef receiver;
             JitOptRef gen_frame;
             v = stack_pointer[-1];
-            receiver = stack_pointer[-2];
+            receiver = stack_pointer[-3];
             _Py_UOpsAbstractFrame *new_frame = frame_new_from_symbol(ctx, receiver, NULL, 0);
             if (new_frame == NULL) {
                 ctx->done = true;
@@ -2727,13 +2727,6 @@
             stack_pointer[0] = index_or_null;
             stack_pointer += 1;
             ASSERT_WITHIN_STACK_BOUNDS(__FILE__, __LINE__);
-            break;
-        }
-
-        case _GET_YIELD_FROM_ITER: {
-            JitOptRef iter;
-            iter = sym_new_not_null(ctx);
-            stack_pointer[-1] = iter;
             break;
         }
 
@@ -4380,6 +4373,15 @@
             PyFunctionObject *func = (PyFunctionObject *)this_instr->operand0;
             assert(func == NULL || PyFunction_Check(func));
             sym_set_recorded_gen_func(nos, func);
+            break;
+        }
+
+        case _RECORD_3OS_GEN_FUNC: {
+            JitOptRef gen;
+            gen = stack_pointer[-3];
+            PyFunctionObject *func = (PyFunctionObject *)this_instr->operand0;
+            assert(func == NULL || PyFunction_Check(func));
+            sym_set_recorded_gen_func(gen, func);
             break;
         }
 
