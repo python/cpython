@@ -672,16 +672,19 @@ class StrptimeTests(unittest.TestCase):
 
     def test_strptime_t_format(self):
         test_year,test_month,test_day = 2026,2,20
-        self.assertEqual(
-            time.strptime(
-                f'{test_year} \r {test_month}\t \n{test_day}', 
-                "%Y%t%m%t%d"
-            ),
-            time.strptime(
-                f'{test_year}-{test_month}-{test_day}', 
-                "%Y-%m-%d"
-            )
-        )
+        whitespaces = ('',' ','\t','\r','\v','\n','\f')
+        for ws in (*whitespaces,''.join(whitespaces)):
+            with self.subTest(whitespace=ws):
+                self.assertEqual(
+                    time.strptime(
+                        f'{test_year:04d}{ws}{test_month:02d}{ws}{test_day:02d}',
+                        "%Y%t%m%t%d"
+                    ),
+                    time.strptime(
+                        f'{test_year:04d}-{test_month:02d}-{test_day:02d}',
+                        "%Y-%m-%d"
+                    )
+                )
 
 class Strptime12AMPMTests(unittest.TestCase):
     """Test a _strptime regression in '%I %p' at 12 noon (12 PM)"""
