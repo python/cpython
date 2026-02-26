@@ -81,9 +81,10 @@ Dictionary objects
 .. c:function:: PyObject* PyDict_Copy(PyObject *p)
 
    Return a new dictionary that contains the same key-value pairs as *p*.
-   If *p* is a subclass of :class:`frozendict`, the result will be
-   a :class:`frozendict` instance.
 
+   .. versionchanged:: next
+      If *p* is a subclass of :class:`frozendict`, the result will be a
+      :class:`frozendict` instance instead of a :class:`dict` instance.
 
 .. c:function:: int PyDict_SetItem(PyObject *p, PyObject *key, PyObject *val)
 
