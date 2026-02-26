@@ -373,6 +373,49 @@ will not be able to add it to its list of active generators because the hooks
 will be set after the generator tries to call it. Consequently, the event loop
 will not be able to terminate the generator if necessary.
 
+Consider following example::
+
+  import asyncio
+
+  async def agenfn():
+      try:
+          yield 10
+      finally:
+          await asyncio.sleep(0)
+
+
+  with asyncio.Runner() as runner:
+      agen = agenfn()
+      print(runner.run(anext(agen)))
+      del agen
+
+Output::
+
+  10
+  Exception ignored while closing generator <async_generator object agenfn at 0x000002F71CD10D70>:
+  Traceback (most recent call last):
+    File "example.py", line 13, in <module>
+      del agen
+          ^^^^
+  RuntimeError: async generator ignored GeneratorExit
+
+This example can be fixed as follow::
+
+  import asyncio
+
+  async def agenfn():
+      try:
+          yield 10
+      finally:
+          await asyncio.sleep(0)
+
+  async def main():
+      agen = agenfn()
+      print(await anext(agen))
+      del agen
+
+  asyncio.run(main())
+
 
 Avoid iterating and closing the same generator concurrently
 -----------------------------------------------------------
