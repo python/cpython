@@ -570,7 +570,7 @@ def _getdefaultlocale(envvars=('LC_ALL', 'LC_CTYPE', 'LANG', 'LANGUAGE')):
     except (ImportError, AttributeError):
         pass
     else:
-        # add other platform-specific processing here, if
+        # ...add other platform-specific processing here, if
         # necessary...
         return code, encoding
 
