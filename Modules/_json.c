@@ -1774,24 +1774,21 @@ _encoder_iterate_dict_lock_held(PyEncoderObject *s, PyUnicodeWriter *writer,
     PyObject *key, *value;
     Py_ssize_t pos = 0;
     while (PyDict_Next(dct, &pos, &key, &value)) {
-#ifdef Py_GIL_DISABLED
-        // gh-119438: in the free-threading build the critical section on dct can get suspended
+        // gh-119438, gh-145244: key and value are borrowed refs from
+        // PyDict_Next(). encoder_encode_key_value() may invoke user
+        // Python code (the 'default' callback) that can mutate or
+        // clear the dict, so we must hold strong references.
         Py_INCREF(key);
         Py_INCREF(value);
-#endif
         if (encoder_encode_key_value(s, writer, first, dct, key, value,
                                     indent_level, indent_cache,
                                     separator) < 0) {
-#ifdef Py_GIL_DISABLED
             Py_DECREF(key);
             Py_DECREF(value);
-#endif
             return -1;
         }
-#ifdef Py_GIL_DISABLED
         Py_DECREF(key);
         Py_DECREF(value);
-#endif
     }
     return 0;
 }
