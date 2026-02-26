@@ -286,7 +286,7 @@ class StrptimeTests(unittest.TestCase):
     def test_strptime_exception_context(self):
         # check that this doesn't chain exceptions needlessly (see #17572)
         with self.assertRaises(ValueError) as e:
-            _strptime._strptime_time('', '%D')
+            _strptime._strptime_time('', '%!')
         self.assertTrue(e.exception.__suppress_context__)
         # additional check for stray % branch
         with self.assertRaises(ValueError) as e:
@@ -661,6 +661,13 @@ class StrptimeTests(unittest.TestCase):
         self.assertEqual(
             time.strptime(test_time, "%T"),
             time.strptime(test_time, "%H:%M:%S")
+        )
+
+    def test_strptime_D_format(self):
+        test_date = "11/28/25"
+        self.assertEqual(
+            time.strptime(test_date, "%D"),
+            time.strptime(test_date, "%m/%d/%y")
         )
 
 class Strptime12AMPMTests(unittest.TestCase):

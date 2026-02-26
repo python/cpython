@@ -7611,6 +7611,7 @@ parse_posix_spawn_flags(PyObject *module, const char *func_name, PyObject *setpg
                         PyObject *setsigdef, PyObject *scheduler,
                         posix_spawnattr_t *attrp)
 {
+    assert(scheduler == NULL || scheduler == Py_None || PyTuple_Check(scheduler));
     long all_flags = 0;
 
     errno = posix_spawnattr_init(attrp);
@@ -7619,7 +7620,7 @@ parse_posix_spawn_flags(PyObject *module, const char *func_name, PyObject *setpg
         return -1;
     }
 
-    if (setpgroup) {
+    if (setpgroup && setpgroup != Py_None) {
         pid_t pgid = PyLong_AsPid(setpgroup);
         if (pgid == (pid_t)-1 && PyErr_Occurred()) {
             goto fail;
@@ -7692,7 +7693,7 @@ parse_posix_spawn_flags(PyObject *module, const char *func_name, PyObject *setpg
     }
 #endif
 
-    if (scheduler) {
+    if (scheduler && scheduler != Py_None) {
 #ifdef POSIX_SPAWN_SETSCHEDULER
         PyObject *py_schedpolicy;
         PyObject *schedparam_obj;
@@ -7917,6 +7918,12 @@ py_posix_spawn(int use_posix_spawnp, PyObject *module, path_t *path, PyObject *a
         goto exit;
     }
 
+    if (scheduler && !PyTuple_Check(scheduler) && scheduler != Py_None) {
+        PyErr_Format(PyExc_TypeError,
+                     "%s: scheduler must be a tuple or None", func_name);
+        goto exit;
+    }
+
     argvlist = parse_arglist(argv, &argc);
     if (argvlist == NULL) {
         goto exit;
@@ -8028,7 +8035,7 @@ os.posix_spawn
     *
     file_actions: object(c_default='NULL') = ()
         A sequence of file action tuples.
-    setpgroup: object = NULL
+    setpgroup: object(c_default='NULL') = None
         The pgroup to use with the POSIX_SPAWN_SETPGROUP flag.
     resetids: bool = False
         If the value is `true` the POSIX_SPAWN_RESETIDS will be activated.
@@ -8038,7 +8045,7 @@ os.posix_spawn
         The sigmask to use with the POSIX_SPAWN_SETSIGMASK flag.
     setsigdef: object(c_default='NULL') = ()
         The sigmask to use with the POSIX_SPAWN_SETSIGDEF flag.
-    scheduler: object = NULL
+    scheduler: object(c_default='NULL') = None
         A tuple with the scheduler policy (optional) and parameters.
 
 Execute the program specified by path in a new process.
@@ -8050,7 +8057,7 @@ os_posix_spawn_impl(PyObject *module, path_t *path, PyObject *argv,
                     PyObject *setpgroup, int resetids, int setsid,
                     PyObject *setsigmask, PyObject *setsigdef,
                     PyObject *scheduler)
-/*[clinic end generated code: output=14a1098c566bc675 input=808aed1090d84e33]*/
+/*[clinic end generated code: output=14a1098c566bc675 input=69e7c9ebbdcf94a5]*/
 {
     return py_posix_spawn(0, module, path, argv, env, file_actions,
                           setpgroup, resetids, setsid, setsigmask, setsigdef,
@@ -8074,7 +8081,7 @@ os.posix_spawnp
     *
     file_actions: object(c_default='NULL') = ()
         A sequence of file action tuples.
-    setpgroup: object = NULL
+    setpgroup: object(c_default='NULL') = None
         The pgroup to use with the POSIX_SPAWN_SETPGROUP flag.
     resetids: bool = False
         If the value is `True` the POSIX_SPAWN_RESETIDS will be activated.
@@ -8084,7 +8091,7 @@ os.posix_spawnp
         The sigmask to use with the POSIX_SPAWN_SETSIGMASK flag.
     setsigdef: object(c_default='NULL') = ()
         The sigmask to use with the POSIX_SPAWN_SETSIGDEF flag.
-    scheduler: object = NULL
+    scheduler: object(c_default='NULL') = None
         A tuple with the scheduler policy (optional) and parameters.
 
 Execute the program specified by path in a new process.
@@ -8096,7 +8103,7 @@ os_posix_spawnp_impl(PyObject *module, path_t *path, PyObject *argv,
                      PyObject *setpgroup, int resetids, int setsid,
                      PyObject *setsigmask, PyObject *setsigdef,
                      PyObject *scheduler)
-/*[clinic end generated code: output=7b9aaefe3031238d input=9e89e616116752a1]*/
+/*[clinic end generated code: output=7b9aaefe3031238d input=a5c057527c6881a5]*/
 {
     return py_posix_spawn(1, module, path, argv, env, file_actions,
                           setpgroup, resetids, setsid, setsigmask, setsigdef,
@@ -13376,19 +13383,9 @@ os_truncate_impl(PyObject *module, path_t *path, Py_off_t length)
 #endif /* HAVE_TRUNCATE || MS_WINDOWS */
 
 
-/* Issue #22396: On 32-bit AIX platform, the prototypes of os.posix_fadvise()
-   and os.posix_fallocate() in system headers are wrong if _LARGE_FILES is
-   defined, which is the case in Python on AIX. AIX bug report:
-   http://www-01.ibm.com/support/docview.wss?uid=isg1IV56170 */
-#if defined(_AIX) && defined(_LARGE_FILES) && !defined(__64BIT__)
-#  define POSIX_FADVISE_AIX_BUG
-#endif
-
-
 /* GH-111804: Due to posix_fallocate() not having consistent semantics across
    OSs, support was dropped in WASI preview2. */
-#if defined(HAVE_POSIX_FALLOCATE) && !defined(POSIX_FADVISE_AIX_BUG) && \
-    !defined(__wasi__)
+#if defined(HAVE_POSIX_FALLOCATE) && !defined(__wasi__)
 /*[clinic input]
 os.posix_fallocate
 
@@ -13426,10 +13423,10 @@ os_posix_fallocate_impl(PyObject *module, int fd, Py_off_t offset,
     errno = result;
     return posix_error();
 }
-#endif /* HAVE_POSIX_FALLOCATE) && !POSIX_FADVISE_AIX_BUG && !defined(__wasi__) */
+#endif /* HAVE_POSIX_FALLOCATE && !defined(__wasi__) */
 
 
-#if defined(HAVE_POSIX_FADVISE) && !defined(POSIX_FADVISE_AIX_BUG)
+#if defined(HAVE_POSIX_FADVISE)
 /*[clinic input]
 os.posix_fadvise
 
@@ -13473,7 +13470,7 @@ os_posix_fadvise_impl(PyObject *module, int fd, Py_off_t offset,
     errno = result;
     return posix_error();
 }
-#endif /* HAVE_POSIX_FADVISE && !POSIX_FADVISE_AIX_BUG */
+#endif /* HAVE_POSIX_FADVISE */
 
 
 #ifdef MS_WINDOWS

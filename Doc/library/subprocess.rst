@@ -4,9 +4,6 @@
 .. module:: subprocess
    :synopsis: Subprocess management.
 
-.. moduleauthor:: Peter Åstrand <astrand@lysator.liu.se>
-.. sectionauthor:: Peter Åstrand <astrand@lysator.liu.se>
-
 **Source code:** :source:`Lib/subprocess.py`
 
 --------------

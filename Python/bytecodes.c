@@ -11,12 +11,15 @@
 #include "pycore_audit.h"         // _PySys_Audit()
 #include "pycore_backoff.h"
 #include "pycore_cell.h"          // PyCell_GetRef()
+#include "pycore_ceval.h"         // _PyEval_LazyImportName(), _PyEval_LazyImportFrom()
 #include "pycore_code.h"
 #include "pycore_emscripten_signal.h"  // _Py_CHECK_EMSCRIPTEN_SIGNALS
 #include "pycore_function.h"
+#include "pycore_import.h"        // _PyImport_LoadLazyImportTstate()
 #include "pycore_instruments.h"
 #include "pycore_interpolation.h" // _PyInterpolation_Build()
 #include "pycore_intrinsics.h"
+#include "pycore_lazyimportobject.h"  // PyLazyImport_CheckExact()
 #include "pycore_long.h"          // _PyLong_ExactDealloc(), _PyLong_GetZero()
 #include "pycore_moduleobject.h"  // PyModuleObject
 #include "pycore_object.h"        // _PyObject_GC_TRACK()
@@ -1058,19 +1061,24 @@ dummy_func(
             EXIT_IF(!PyDict_CheckExact(o));
         }
 
-        op(_GUARD_TOS_DICT, (tos -- tos)) {
+        op(_GUARD_NOS_ANY_DICT, (nos, unused -- nos, unused)) {
+            PyObject *o = PyStackRef_AsPyObjectBorrow(nos);
+            EXIT_IF(!PyAnyDict_CheckExact(o));
+        }
+
+        op(_GUARD_TOS_ANY_DICT, (tos -- tos)) {
             PyObject *o = PyStackRef_AsPyObjectBorrow(tos);
-            EXIT_IF(!PyDict_CheckExact(o));
+            EXIT_IF(!PyAnyDict_CheckExact(o));
         }
 
         macro(BINARY_OP_SUBSCR_DICT) =
-            _GUARD_NOS_DICT + unused/5 + _BINARY_OP_SUBSCR_DICT + POP_TOP + POP_TOP;
+            _GUARD_NOS_ANY_DICT + unused/5 + _BINARY_OP_SUBSCR_DICT + POP_TOP + POP_TOP;
 
         op(_BINARY_OP_SUBSCR_DICT, (dict_st, sub_st -- res, ds, ss)) {
             PyObject *sub = PyStackRef_AsPyObjectBorrow(sub_st);
             PyObject *dict = PyStackRef_AsPyObjectBorrow(dict_st);
 
-            assert(PyDict_CheckExact(dict));
+            assert(PyAnyDict_CheckExact(dict));
             STAT_INC(BINARY_OP, hit);
             PyObject *res_o;
             int rc = PyDict_GetItemRef(dict, sub, &res_o);
@@ -1795,6 +1803,12 @@ dummy_func(
                         }
                         ERROR_NO_POP();
                     }
+
+                    if (PyLazyImport_CheckExact(v_o)) {
+                        PyObject *l_v = _PyImport_LoadLazyImportTstate(tstate, v_o);
+                        Py_SETREF(v_o, l_v);
+                        ERROR_IF(v_o == NULL);
+                    }
                 }
                 else {
                     /* Slow-path if globals or builtins is not a dict */
@@ -1812,6 +1826,11 @@ dummy_func(
                             ERROR_IF(true);
                         }
                     }
+                    if (PyLazyImport_CheckExact(v_o)) {
+                        PyObject *l_v = _PyImport_LoadLazyImportTstate(tstate, v_o);
+                        Py_SETREF(v_o, l_v);
+                        ERROR_IF(v_o == NULL);
+                    }
                 }
             }
             v = PyStackRef_FromPyObjectSteal(v_o);
@@ -1821,6 +1840,22 @@ dummy_func(
             PyObject *name = GETITEM(FRAME_CO_NAMES, oparg);
             PyObject *v_o = _PyEval_LoadName(tstate, frame, name);
             ERROR_IF(v_o == NULL);
+            if (PyLazyImport_CheckExact(v_o)) {
+                PyObject *l_v = _PyImport_LoadLazyImportTstate(tstate, v_o);
+                // cannot early-decref v_o as it may cause a side-effect on l_v
+                if (l_v == NULL) {
+                    Py_DECREF(v_o);
+                    ERROR_IF(true);
+                }
+                int err = PyDict_SetItem(GLOBALS(), name, l_v);
+                if (err < 0) {
+                    Py_DECREF(v_o);
+                    Py_DECREF(l_v);
+                    ERROR_IF(true);
+                }
+                Py_SETREF(v_o, l_v);
+            }
+
             v = PyStackRef_FromPyObjectSteal(v_o);
         }
 
@@ -1846,6 +1881,7 @@ dummy_func(
         op(_LOAD_GLOBAL, ( -- res[1])) {
             PyObject *name = GETITEM(FRAME_CO_NAMES, oparg>>1);
             _PyEval_LoadGlobalStackRef(GLOBALS(), BUILTINS(), name, res);
+
             ERROR_IF(PyStackRef_IsNull(*res));
         }
 
@@ -2903,13 +2939,13 @@ dummy_func(
             INPUTS_DEAD();
         }
 
-        macro(CONTAINS_OP_DICT) = _GUARD_TOS_DICT + unused/1 + _CONTAINS_OP_DICT + POP_TOP + POP_TOP;
+        macro(CONTAINS_OP_DICT) = _GUARD_TOS_ANY_DICT + unused/1 + _CONTAINS_OP_DICT + POP_TOP + POP_TOP;
 
         op(_CONTAINS_OP_DICT, (left, right -- b, l, r)) {
             PyObject *left_o = PyStackRef_AsPyObjectBorrow(left);
             PyObject *right_o = PyStackRef_AsPyObjectBorrow(right);
 
-            assert(PyDict_CheckExact(right_o));
+            assert(PyAnyDict_CheckExact(right_o));
             STAT_INC(CONTAINS_OP, hit);
             int res = PyDict_Contains(right_o, left_o);
             if (res < 0) {
@@ -2962,11 +2998,23 @@ dummy_func(
             b = res ? PyStackRef_True : PyStackRef_False;
         }
 
-         inst(IMPORT_NAME, (level, fromlist -- res)) {
-            PyObject *name = GETITEM(FRAME_CO_NAMES, oparg);
-            PyObject *res_o = _PyEval_ImportName(tstate, frame, name,
-                              PyStackRef_AsPyObjectBorrow(fromlist),
-                              PyStackRef_AsPyObjectBorrow(level));
+        inst(IMPORT_NAME, (level, fromlist -- res)) {
+            PyObject *name = GETITEM(FRAME_CO_NAMES, oparg >> 2);
+            PyObject *res_o;
+            if (!(oparg & 0x02)) {
+                res_o = _PyEval_LazyImportName(tstate, BUILTINS(), GLOBALS(),
+                                LOCALS(), name,
+                                PyStackRef_AsPyObjectBorrow(fromlist),
+                                PyStackRef_AsPyObjectBorrow(level),
+                                oparg & 0x01);
+
+            }
+            else {
+                res_o = _PyEval_ImportName(tstate, BUILTINS(), GLOBALS(),
+                                LOCALS(), name,
+                                PyStackRef_AsPyObjectBorrow(fromlist),
+                                PyStackRef_AsPyObjectBorrow(level));
+            }
             DECREF_INPUTS();
             ERROR_IF(res_o == NULL);
             res = PyStackRef_FromPyObjectSteal(res_o);
@@ -2974,7 +3022,16 @@ dummy_func(
 
         inst(IMPORT_FROM, (from -- from, res)) {
             PyObject *name = GETITEM(FRAME_CO_NAMES, oparg);
-            PyObject *res_o = _PyEval_ImportFrom(tstate, PyStackRef_AsPyObjectBorrow(from), name);
+            PyObject *res_o;
+            if (PyLazyImport_CheckExact(PyStackRef_AsPyObjectBorrow(from))) {
+                res_o = _PyEval_LazyImportFrom(
+                    tstate, frame, PyStackRef_AsPyObjectBorrow(from), name);
+            }
+            else {
+                res_o = _PyEval_ImportFrom(
+                    tstate, PyStackRef_AsPyObjectBorrow(from), name);
+            }
+
             ERROR_IF(res_o == NULL);
             res = PyStackRef_FromPyObjectSteal(res_o);
         }
@@ -3073,10 +3130,10 @@ dummy_func(
             assert(executor->vm_data.code == code);
             assert(executor->vm_data.valid);
             assert(tstate->current_executor == NULL);
-            /* If the eval breaker is set then stay in tier 1.
-             * This avoids any potentially infinite loops
-             * involving _RESUME_CHECK */
-            if (_Py_atomic_load_uintptr_relaxed(&tstate->eval_breaker) & _PY_EVAL_EVENTS_MASK) {
+            /* If the eval breaker is set, or instrumentation is needed, then stay in tier 1.
+             * This avoids any potentially infinite loops involving _RESUME_CHECK */
+            uintptr_t iversion = FT_ATOMIC_LOAD_UINTPTR_ACQUIRE(code->_co_instrumentation_version);
+            if (_Py_atomic_load_uintptr_relaxed(&tstate->eval_breaker) != iversion) {
                 opcode = executor->vm_data.opcode;
                 oparg = (oparg & ~255) | executor->vm_data.oparg;
                 next_instr = this_instr;
@@ -5564,9 +5621,9 @@ dummy_func(
             HANDLE_PENDING_AND_DEOPT_IF(_Py_emscripten_signal_clock == 0);
             _Py_emscripten_signal_clock -= Py_EMSCRIPTEN_SIGNAL_HANDLING;
 #endif
+            uintptr_t iversion = FT_ATOMIC_LOAD_UINTPTR_ACQUIRE(_PyFrame_GetCode(frame)->_co_instrumentation_version);
             uintptr_t eval_breaker = _Py_atomic_load_uintptr_relaxed(&tstate->eval_breaker);
-            HANDLE_PENDING_AND_DEOPT_IF(eval_breaker & _PY_EVAL_EVENTS_MASK);
-            assert(tstate->tracing || eval_breaker == FT_ATOMIC_LOAD_UINTPTR_ACQUIRE(_PyFrame_GetCode(frame)->_co_instrumentation_version));
+            HANDLE_PENDING_AND_DEOPT_IF(eval_breaker != iversion);
         }
 
         tier2 op(_COLD_EXIT, ( -- )) {
@@ -5616,9 +5673,9 @@ dummy_func(
             Py_UNREACHABLE();
         }
 
-        tier2 op(_GUARD_CODE, (version/2 -- )) {
+        tier2 op(_GUARD_CODE_VERSION, (version/2 -- )) {
             PyObject *code = PyStackRef_AsPyObjectBorrow(frame->f_executable);
-            EXIT_IF(code == Py_None);
+            assert(PyCode_Check(code));
             EXIT_IF(((PyCodeObject *)code)->co_version != version);
         }
 
@@ -5673,8 +5730,11 @@ dummy_func(
         tier2 op(_RECORD_NOS_GEN_FUNC, (nos, tos -- nos, tos)) {
             PyObject *obj = PyStackRef_AsPyObjectBorrow(nos);
             if (PyGen_Check(obj)) {
-                PyObject *func = (PyObject *)_PyFrame_GetFunction(&((PyGenObject *)obj)->gi_iframe);
-                RECORD_VALUE(func);
+                PyGenObject *gen = (PyGenObject *)obj;
+                _PyStackRef func = gen->gi_iframe.f_funcobj;
+                if (!PyStackRef_IsNull(func)) {
+                    RECORD_VALUE(PyStackRef_AsPyObjectBorrow(func));
+                }
             }
         }
 

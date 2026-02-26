@@ -911,6 +911,35 @@ always available. Unless explicitly noted otherwise, all variables are read-only
 
    .. versionadded:: 3.11
 
+
+.. function:: get_lazy_imports()
+
+   Returns the current lazy imports mode as a string.
+
+   * ``"normal"``: Only imports explicitly marked with the ``lazy`` keyword
+     are lazy
+   * ``"all"``: All top-level imports are potentially lazy
+   * ``"none"``: All lazy imports are suppressed (even explicitly marked
+     ones)
+
+   See also :func:`set_lazy_imports` and :pep:`810`.
+
+   .. versionadded:: next
+
+
+.. function:: get_lazy_imports_filter()
+
+   Returns the current lazy imports filter function, or ``None`` if no
+   filter is set.
+
+   The filter function is called for every potentially lazy import to
+   determine whether it should actually be lazy. See
+   :func:`set_lazy_imports_filter` for details on the filter function
+   signature.
+
+   .. versionadded:: next
+
+
 .. function:: getrefcount(object)
 
    Return the reference count of the *object*.  The count returned is generally one
@@ -1718,6 +1747,61 @@ always available. Unless explicitly noted otherwise, all variables are read-only
    :func:`get_int_max_str_digits`.
 
    .. versionadded:: 3.11
+
+
+.. function:: set_lazy_imports(mode)
+
+   Sets the global lazy imports mode. The *mode* parameter must be one of
+   the following strings:
+
+   * ``"normal"``: Only imports explicitly marked with the ``lazy`` keyword
+     are lazy
+   * ``"all"``: All top-level imports become potentially lazy
+   * ``"none"``: All lazy imports are suppressed (even explicitly marked
+     ones)
+
+   This function is intended for advanced users who need to control lazy
+   imports across their entire application. Library developers should
+   generally not use this function as it affects the runtime execution of
+   applications.
+
+   In addition to the mode, lazy imports can be controlled via the filter
+   provided by :func:`set_lazy_imports_filter`.
+
+   See also :func:`get_lazy_imports` and :pep:`810`.
+
+   .. versionadded:: next
+
+
+.. function:: set_lazy_imports_filter(filter)
+
+   Sets the lazy imports filter callback. The *filter* parameter must be a
+   callable or ``None`` to clear the filter.
+
+   The filter function is called for every potentially lazy import to
+   determine whether it should actually be lazy. It must have the following
+   signature::
+
+      def filter(importing_module: str, imported_module: str,
+                 fromlist: tuple[str, ...] | None) -> bool
+
+   Where:
+
+   * *importing_module* is the name of the module doing the import
+   * *imported_module* is the name of the module being imported
+   * *fromlist* is the tuple of names being imported (for ``from ... import``
+     statements), or ``None`` for regular imports
+
+   The filter should return ``True`` to allow the import to be lazy, or
+   ``False`` to force an eager import.
+
+   This is an advanced feature intended for specialized users who need
+   fine-grained control over lazy import behavior.
+
+   See also :func:`get_lazy_imports_filter` and :pep:`810`.
+
+   .. versionadded:: next
+
 
 .. function:: setprofile(profilefunc)
 
