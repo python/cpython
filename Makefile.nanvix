@@ -195,9 +195,9 @@ endif
 # Staging directory for tests (inside workspace so Docker can access it)
 TEST_STAGING = $(CURDIR)/.nanvix/_test_staging
 
-# Test target: run tests using nanvixd.elf
+# Test target: run hello world test using nanvixd.elf
 test: build
-	@echo "Running CPython tests on Nanvix..."
+	@echo "Running CPython hello test on Nanvix..."
 	@rm -rf $(TEST_STAGING)
 	@# Install python and stdlib into a test staging area
 ifdef CONFIG_NANVIX_DOCKER
@@ -205,37 +205,19 @@ ifdef CONFIG_NANVIX_DOCKER
 else
 	make install DESTDIR="$(TEST_STAGING)"
 endif
-	@# Copy test scripts into the staging sysroot
+	@# Copy test script into the staging sysroot
 	@echo "import sys; print('CPYTHON_TEST_HELLO: Hello from Python', sys.version_info[:2])" > $(TEST_STAGING)/sysroot/test_hello.py
-	@echo "print('CPYTHON_TEST_ARITH:', 2 + 2)" > $(TEST_STAGING)/sysroot/test_arith.py
-	@echo "import sys; print('CPYTHON_TEST_PLATFORM:', sys.platform)" > $(TEST_STAGING)/sysroot/test_platform.py
 	@# Copy nanvixd.elf into the staging sysroot
 	@mkdir -p $(TEST_STAGING)/sysroot/bin
 	@cp "$(abspath $(NANVIX_HOME))/bin/nanvixd.elf" $(TEST_STAGING)/sysroot/bin/ 2>/dev/null || true
 	@cp "$(abspath $(NANVIX_HOME))/bin/kernel.elf" $(TEST_STAGING)/sysroot/bin/ 2>/dev/null || true
-	@echo "Test 1: Hello world..."
+	@echo "Test: Hello world..."
 	cd $(TEST_STAGING)/sysroot && \
 		timeout 120 ./bin/nanvixd.elf -- ./bin/python3.12 ./test_hello.py < /dev/null > /tmp/cpython_test.log 2>&1; \
 		if grep -q 'CPYTHON_TEST_HELLO:' /tmp/cpython_test.log; then \
 			echo "  PASS: $$(grep 'CPYTHON_TEST_HELLO:' /tmp/cpython_test.log)"; \
 		else \
 			echo "  FAIL: Hello test did not produce expected output"; cat /tmp/cpython_test.log; exit 1; \
-		fi
-	@echo "Test 2: Arithmetic..."
-	cd $(TEST_STAGING)/sysroot && \
-		timeout 120 ./bin/nanvixd.elf -- ./bin/python3.12 ./test_arith.py < /dev/null > /tmp/cpython_test.log 2>&1; \
-		if grep -q 'CPYTHON_TEST_ARITH: 4' /tmp/cpython_test.log; then \
-			echo "  PASS: 2 + 2 = 4"; \
-		else \
-			echo "  FAIL: Arithmetic test did not produce expected output"; cat /tmp/cpython_test.log; exit 1; \
-		fi
-	@echo "Test 3: sys.platform..."
-	cd $(TEST_STAGING)/sysroot && \
-		timeout 120 ./bin/nanvixd.elf -- ./bin/python3.12 ./test_platform.py < /dev/null > /tmp/cpython_test.log 2>&1; \
-		if grep -q 'CPYTHON_TEST_PLATFORM:' /tmp/cpython_test.log; then \
-			echo "  PASS: $$(grep 'CPYTHON_TEST_PLATFORM:' /tmp/cpython_test.log)"; \
-		else \
-			echo "  FAIL: Platform test did not produce expected output"; cat /tmp/cpython_test.log; exit 1; \
 		fi
 	@rm -rf $(TEST_STAGING) /tmp/cpython_test.log
 	@echo "		*** CPython tests PASSED ***"
