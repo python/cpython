@@ -557,7 +557,7 @@ def getdefaultlocale(envvars=('LC_ALL', 'LC_CTYPE', 'LANG', 'LANGUAGE')):
         1766.  code and encoding can be None in case the values cannot
         be determined.
 
-        Returns `None` on Windows if failed to get locale info.
+        On Windows, raise a `WindowsError` if retrieving the locale fails.
 
     """
 
