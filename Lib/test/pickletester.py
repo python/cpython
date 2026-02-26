@@ -1484,6 +1484,29 @@ class AbstractUnpickleTests:
         # bad hashable dict key
         self.check_unpickling_error(CustomError, base + b'}c__main__\nBadKey1\n)\x81Nsb.')
 
+    def test_bad_types(self):
+        # APPEND
+        self.assertEqual(self.loads(b']Na.'), [None])
+        self.check_unpickling_error(AttributeError, b'NNa.')  # non-list
+        # APPENDS
+        self.assertEqual(self.loads(b'](Ne.'), [None])
+        self.check_unpickling_error(AttributeError, b'N(Ne.')  # non-list
+        self.check_unpickling_error(AttributeError, b'N(e.')
+        # SETITEM
+        self.assertEqual(self.loads(b'}NNs.'), {None: None})
+        self.check_unpickling_error(TypeError, b'NNNs.')  # non-dict
+        self.check_unpickling_error(TypeError, b'}]Ns.')  # non-hashable key
+        # SETITEMS
+        self.assertEqual(self.loads(b'}(NNu.'), {None: None})
+        self.check_unpickling_error(TypeError, b'N(NNu.')  # non-dict
+        self.assertEqual(self.loads(b'N(u.'), None)  # no validation for empty items
+        self.check_unpickling_error(TypeError, b'}(]Nu.')  # non-hashable key
+        # ADDITEMS
+        self.assertEqual(self.loads(b'\x8f(N\x90.'), {None})
+        self.check_unpickling_error(AttributeError, b'N(N\x90.')  # non-set
+        self.check_unpickling_error(AttributeError, b'N(\x90.')
+        self.check_unpickling_error(TypeError, b'\x8f(]\x90.')  # non-hashable element
+
     def test_bad_stack(self):
         badpickles = [
             b'.',                       # STOP
@@ -2816,11 +2839,13 @@ class AbstractPickleTests:
             self.assertEqual(list(x[0].attr.keys()), [1])
             self.assertIs(x[0].attr[1], x)
 
-    def _test_recursive_collection_and_inst(self, factory, oldminproto=None):
+    def _test_recursive_collection_and_inst(self, factory, oldminproto=None,
+                                            minprotocol=0):
         if self.py_version < (3, 0):
             self.skipTest('"classic" classes are not interoperable with Python 2')
         # Mutable object containing a collection containing the original
         # object.
+        protocols = range(minprotocol, pickle.HIGHEST_PROTOCOL + 1)
         o = Object()
         o.attr = factory([o])
         t = type(o.attr)
@@ -2860,6 +2885,11 @@ class AbstractPickleTests:
     def test_recursive_dict_and_inst(self):
         self._test_recursive_collection_and_inst(dict.fromkeys, oldminproto=0)
 
+    def test_recursive_frozendict_and_inst(self):
+        if self.py_version < (3, 15):
+            self.skipTest('need frozendict')
+        self._test_recursive_collection_and_inst(frozendict.fromkeys, minprotocol=2)
+
     def test_recursive_set_and_inst(self):
         self._test_recursive_collection_and_inst(set)
 
@@ -2880,6 +2910,50 @@ class AbstractPickleTests:
 
     def test_recursive_frozenset_subclass_and_inst(self):
         self._test_recursive_collection_and_inst(MyFrozenSet)
+
+    def _test_recursive_collection_in_key(self, factory, minprotocol=0):
+        protocols = range(minprotocol, pickle.HIGHEST_PROTOCOL + 1)
+        key = Object()
+        o = factory({key: 1})
+        key.attr = o
+        for proto in protocols:
+            with self.subTest(proto=proto):
+                s = self.dumps(o, proto)
+                x = self.loads(s)
+                keys = list(x.keys())
+                self.assertEqual(len(keys), 1)
+                self.assertIs(keys[0].attr, x)
+
+    def test_recursive_frozendict_in_key(self):
+        if self.py_version < (3, 15):
+            self.skipTest('need frozendict')
+        self._test_recursive_collection_in_key(frozendict, minprotocol=2)
+
+    def test_recursive_frozendict_subclass_in_key(self):
+        if self.py_version < (3, 15):
+            self.skipTest('need frozendict')
+        self._test_recursive_collection_in_key(MyFrozenDict)
+
+    def _test_recursive_collection_in_value(self, factory, minprotocol=0):
+        protocols = range(minprotocol, pickle.HIGHEST_PROTOCOL + 1)
+        o = factory(key=[])
+        o['key'].append(o)
+        for proto in protocols:
+            with self.subTest(proto=proto):
+                s = self.dumps(o, proto)
+                x = self.loads(s)
+                self.assertEqual(len(x['key']), 1)
+                self.assertIs(x['key'][0], x)
+
+    def test_recursive_frozendict_in_value(self):
+        if self.py_version < (3, 15):
+            self.skipTest('need frozendict')
+        self._test_recursive_collection_in_value(frozendict, minprotocol=2)
+
+    def test_recursive_frozendict_subclass_in_value(self):
+        if self.py_version < (3, 15):
+            self.skipTest('need frozendict')
+        self._test_recursive_collection_in_value(MyFrozenDict)
 
     def test_recursive_inst_state(self):
         # Mutable object containing itself.
@@ -3167,6 +3241,7 @@ class AbstractPickleTests:
             'bytes': (3, 0),
             'BuiltinImporter': (3, 3),
             'str': (3, 4),  # not interoperable with Python < 3.4
+            'frozendict': (3, 15),
         }
         for t in builtins.__dict__.values():
             if isinstance(t, type) and not issubclass(t, BaseException):
@@ -3202,6 +3277,7 @@ class AbstractPickleTests:
             'ExceptionGroup': (3, 11),
             '_IncompleteInputError': (3, 13),
             'PythonFinalizationError': (3, 13),
+            'ImportCycleError': (3, 15),
         }
         for t in builtins.__dict__.values():
             if isinstance(t, type) and issubclass(t, BaseException):
@@ -3228,6 +3304,7 @@ class AbstractPickleTests:
             'breakpoint': (3, 7),
             'aiter': (3, 10),
             'anext': (3, 10),
+            '__lazy_import__': (3, 15),
         }
         for t in builtins.__dict__.values():
             if isinstance(t, types.BuiltinFunctionType):
@@ -3368,6 +3445,8 @@ class AbstractPickleTests:
                         self.skipTest('int and str subclasses are not interoperable with Python 2')
                     if (3, 0) <= self.py_version < (3, 4) and proto < 2 and C in (MyStr, MyUnicode):
                         self.skipTest('str subclasses are not interoperable with Python < 3.4')
+                    if self.py_version < (3, 15) and C == MyFrozenDict:
+                        self.skipTest('frozendict is not available on Python < 3.15')
                     B = C.__base__
                     x = C(C.sample)
                     x.foo = 42
@@ -3389,6 +3468,8 @@ class AbstractPickleTests:
                 with self.subTest(proto=proto, C=C):
                     if self.py_version < (3, 4) and proto < 3 and C in (MyStr, MyUnicode):
                         self.skipTest('str subclasses are not interoperable with Python < 3.4')
+                    if self.py_version < (3, 15) and C == MyFrozenDict:
+                        self.skipTest('frozendict is not available on Python < 3.15')
                     B = C.__base__
                     x = C(C.sample)
                     x.foo = 42
