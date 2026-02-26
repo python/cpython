@@ -36,7 +36,7 @@ the :mod:`glob` module.)
 
    Since different operating systems have different path name conventions, there
    are several versions of this module in the standard library.  The
-   :mod:`os.path` module is always the path module suitable for the operating
+   :mod:`!os.path` module is always the path module suitable for the operating
    system Python is running on, and therefore usable for local paths.  However,
    you can also import and use the individual modules if you want to manipulate
    a path that is *always* in one of the different formats.  They all have the

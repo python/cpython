@@ -805,7 +805,7 @@ _Py_RemoteDebug_GetAsyncioDebugAddress(proc_handle_t* handle)
 
 #ifdef MS_WINDOWS
     // On Windows, search for asyncio debug in executable or DLL
-    address = search_windows_map_for_section(handle, "AsyncioD", L"_asyncio");
+    address = search_windows_map_for_section(handle, "AsyncioD", L"_asyncio", NULL);
     if (address == 0) {
         // Error out: 'python' substring covers both executable and DLL
         PyObject *exc = PyErr_GetRaisedException();
@@ -814,7 +814,7 @@ _Py_RemoteDebug_GetAsyncioDebugAddress(proc_handle_t* handle)
     }
 #elif defined(__linux__)
     // On Linux, search for asyncio debug in executable or DLL
-    address = search_linux_map_for_section(handle, "AsyncioDebug", "_asyncio.cpython");
+    address = search_linux_map_for_section(handle, "AsyncioDebug", "_asyncio.cpython", NULL);
     if (address == 0) {
         // Error out: 'python' substring covers both executable and DLL
         PyObject *exc = PyErr_GetRaisedException();
@@ -823,10 +823,10 @@ _Py_RemoteDebug_GetAsyncioDebugAddress(proc_handle_t* handle)
     }
 #elif defined(__APPLE__) && TARGET_OS_OSX
     // On macOS, try libpython first, then fall back to python
-    address = search_map_for_section(handle, "AsyncioDebug", "_asyncio.cpython");
+    address = search_map_for_section(handle, "AsyncioDebug", "_asyncio.cpython", NULL);
     if (address == 0) {
         PyErr_Clear();
-        address = search_map_for_section(handle, "AsyncioDebug", "_asyncio.cpython");
+        address = search_map_for_section(handle, "AsyncioDebug", "_asyncio.cpython", NULL);
     }
     if (address == 0) {
         // Error out: 'python' substring covers both executable and DLL

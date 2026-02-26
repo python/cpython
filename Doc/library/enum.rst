@@ -1053,7 +1053,7 @@ Utilities and Decorators
       >>> enum.bin(~10)   # ~10 is -11
       '0b1 0101'
 
-   .. versionadded:: 3.10
+   .. versionadded:: 3.11
 
 ---------------
 

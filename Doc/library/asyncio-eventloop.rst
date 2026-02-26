@@ -297,8 +297,9 @@ clocks to track time.
    are called is undefined.
 
    The optional positional *args* will be passed to the callback when
-   it is called. If you want the callback to be called with keyword
-   arguments use :func:`functools.partial`.
+   it is called. Use :func:`functools.partial`
+   :ref:`to pass keyword arguments <asyncio-pass-keywords>` to
+   *callback*.
 
    An optional keyword-only *context* argument allows specifying a
    custom :class:`contextvars.Context` for the *callback* to run in.
@@ -1034,8 +1035,8 @@ Watching file descriptors
 .. method:: loop.add_writer(fd, callback, *args)
 
    Start monitoring the *fd* file descriptor for write availability and
-   invoke *callback* with the specified arguments once *fd* is available for
-   writing.
+   invoke *callback* with the specified arguments *args* once *fd* is
+   available for writing.
 
    Any preexisting callback registered for *fd* is cancelled and replaced by
    *callback*.
@@ -1308,7 +1309,8 @@ Unix signals
 
 .. method:: loop.add_signal_handler(signum, callback, *args)
 
-   Set *callback* as the handler for the *signum* signal.
+   Set *callback* as the handler for the *signum* signal,
+   passing *args* as positional arguments.
 
    The callback will be invoked by *loop*, along with other queued callbacks
    and runnable coroutines of that event loop. Unlike signal handlers
@@ -1343,7 +1345,8 @@ Executing code in thread or process pools
 
 .. awaitablemethod:: loop.run_in_executor(executor, func, *args)
 
-   Arrange for *func* to be called in the specified executor.
+   Arrange for *func* to be called in the specified executor
+   passing *args* as positional arguments.
 
    The *executor* argument should be an :class:`concurrent.futures.Executor`
    instance. The default executor is used if *executor* is ``None``.
