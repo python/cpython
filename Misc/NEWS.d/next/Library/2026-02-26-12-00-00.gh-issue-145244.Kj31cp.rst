@@ -1,4 +1,2 @@
 Fixed a use-after-free in :mod:`json` encoder when a ``default`` callback
-mutates the dictionary being serialized. Borrowed references to dictionary
-keys from ``PyDict_Next()`` are now properly held with strong references
-during encoding.
+mutates the dictionary being serialized.
