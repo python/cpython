@@ -2570,8 +2570,10 @@ requires, and these work on all supported platforms.
 |  ``%M``   | Minute as a zero-padded        | 00, 01, ..., 59        | \(9)  |
 |           | decimal number.                |                        |       |
 +-----------+--------------------------------+------------------------+-------+
-|  ``%n``   | The newline character          | ``\n``                 | \(0)  |
-|           | (``'\n'``).                    |                        |       |
+|  ``%n``   | The newline character          | ``\n``                 |       |
+|           | (``'\n'``). For                |                        |       |
+|           | :meth:`!strptime`, arbitrary   |                        |       |
+|           | whitespace.                    |                        |       |
 +-----------+--------------------------------+------------------------+-------+
 |  ``%p``   | Locale's equivalent of either  || AM, PM (en_US);       | \(1), |
 |           | AM or PM.                      || am, pm (de_DE)        | \(3)  |
@@ -2677,7 +2679,7 @@ differences between platforms in handling of unsupported format specifiers.
    ``%:z`` was added for :meth:`~.datetime.strftime`.
 
 .. versionadded:: 3.15
-   ``%D``, ``%F``, ``%t``, and ``%:z`` were added for
+   ``%D``, ``%F``, ``%n``, ``%t``, and ``%:z`` were added for
    :meth:`~.datetime.strptime`.
 
 Technical Detail
