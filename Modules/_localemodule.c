@@ -556,8 +556,8 @@ _locale__getdefaultlocale_impl(PyObject *module)
     }
 
     /* cannot determine the language code (very unlikely) */
-    /* if any of GetLocaleInfoA above failed */
-    return PyErr_SetFromWindowsErr(0);
+    Py_INCREF(Py_None);
+    return Py_BuildValue("Os", Py_None, encoding);
 }
 #endif
 
