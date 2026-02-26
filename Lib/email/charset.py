@@ -50,7 +50,7 @@ CHARSETS = {
     'iso-8859-15': (QP,        QP,      None),
     'iso-8859-16': (QP,        QP,      None),
     'windows-1252':(QP,        QP,      None),
-    'viscii':      (QP,        QP,      None),
+    # 'viscii' removed - no Python codec exists
     'us-ascii':    (None,      None,    None),
     'big5':        (BASE64,    BASE64,  None),
     'gb2312':      (BASE64,    BASE64,  None),
