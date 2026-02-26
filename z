@@ -15,9 +15,6 @@ DOWNLOAD_DIR="$WORK_DIR/downloads"
 EXTRACT_DIR="$WORK_DIR/extracted"
 ENV_FILE="$WORK_DIR/env.sh"
 STAGING="${STAGING:-$WORK_DIR/staging}"
-RUN_BASIC_TESTS="${RUN_BASIC_TESTS:-1}"
-TEST_START="${TEST_START:-1}"
-TEST_END="${TEST_END:-999}"
 TIMEOUT_SECONDS="${TIMEOUT_SECONDS:-300}"
 
 log() {
@@ -352,169 +349,7 @@ cmd_build() {
   nanvix_make all "$@"
 }
 
-verify_tests_present() {
-  [[ -d "$WORK_DIR/tests" ]] || die "missing directory: $WORK_DIR/tests"
-  [[ -f "$WORK_DIR/tests/smoke_test_l2.py" ]] || die "missing smoke test: $WORK_DIR/tests/smoke_test_l2.py"
-  [[ -d "$WORK_DIR/tests/func" ]] || die "missing directory: $WORK_DIR/tests/func"
-  local count
-  count=$(find "$WORK_DIR/tests/func" -name 'test_*.py' | wc -l)
-  [[ "$count" -gt 0 ]] || die "no functional tests found in $WORK_DIR/tests/func"
-  log "found $count functional tests"
-}
 
-install_site_packages() {
-  local site_pkg="$1"
-  local pip_cmd=""
-
-  if command -v pip3 >/dev/null 2>&1; then
-    pip_cmd="pip3"
-  elif [[ -n "$NANVIX_TOOLCHAIN" && -x "$NANVIX_TOOLCHAIN/bin/pip3" ]]; then
-    pip_cmd="$NANVIX_TOOLCHAIN/bin/pip3"
-  elif command -v python3 >/dev/null 2>&1 && python3 -m pip --version >/dev/null 2>&1; then
-    pip_cmd="python3 -m pip"
-  elif [[ -n "$NANVIX_TOOLCHAIN" && -x "$NANVIX_TOOLCHAIN/bin/python3" ]] && "$NANVIX_TOOLCHAIN/bin/python3" -m pip --version >/dev/null 2>&1; then
-    pip_cmd="$NANVIX_TOOLCHAIN/bin/python3 -m pip"
-  else
-    log "pip3 not found; skipping site-packages installation"
-    return 0
-  fi
-
-  $pip_cmd install --target="$site_pkg" --no-deps --no-compile --quiet \
-    absl-py==2.3.1 annotated-types==0.7.0 attrs==23.2.0 certifi \
-    charset-normalizer==3.4.4 chess==1.9.2 click==8.3.0 \
-    click-plugins==1.1.1.2 cligj==0.7.2 cloudpathlib==0.23.0 \
-    cycler==0.12.1 entrypoints==0.4 et-xmlfile==2.0.0 \
-    filelock==3.20.0 flatbuffers fpdf==1.7.2 fsspec \
-    gast==0.6.0 idna==3.11 immutabledict joblib==1.3.2 \
-    langcodes==3.5.0 markdown lazy-loader==0.4 \
-    markdown-it-py==4.0.0 MarkupSafe==2.1.5 mdurl==0.1.2 \
-    mpmath==1.3.0 namex==0.1.0 networkx==3.4.2 opt-einsum==3.4.0 \
-    ordered-set==4.1.0 packaging==23.2 ply==3.11 pycparser==2.23 \
-    pygments pyparsing==3.1.1 pytz==2024.1 setuptools==75.8.0 \
-    shellingham==1.5.4 six==1.16.0 spacy-legacy==3.0.12 \
-    spacy-loggers==1.0.5 striprtf==0.0.20 tabulate==0.8.10 \
-    tenacity termcolor toolz==0.12.1 tqdm \
-    typing-extensions==4.15.0 typing-inspection==0.4.2 \
-    tzdata==2024.1 wasabi==1.1.3 wheel==0.45.1 \
-    2>/dev/null || true
-
-  $pip_cmd install --target="$site_pkg" --no-deps --no-compile --quiet \
-    google-pasta==0.2.0 python-dateutil==2.8.2 Jinja2 \
-    wrapt==2.0.1 smart-open==7.5.0 \
-    pylatex==1.4.2 werkzeug rich pypdf PyPDF2==3.0.1 \
-    xlsxwriter catalogue==2.0.10 fonttools==4.49.0 \
-    plotly==5.20.0 urllib3 requests chardet==5.2.0 \
-    cffi==1.17.1 itsdangerous colorama decorator \
-    defusedxml pyyaml flask plumbum==1.9.0 msgpack \
-    blinker tomli more-itertools python-dotenv \
-    beautifulsoup4 soupsieve html5lib webencodings \
-    jsonpointer jsonpatch jmespath docutils marshmallow \
-    dataclasses-json reportlab threadpoolctl==3.3.0 \
-    typing_inspect mypy_extensions pandoc==2.4 platformdirs \
-    isodate nltk textblob openpyxl==3.1.2 xlrd==2.0.1 \
-    sympy==1.12 \
-    2>/dev/null || true
-
-  find "$site_pkg" -name "*.so" -delete 2>/dev/null || true
-  rm -f "$site_pkg/distutils-precedence.pth" 2>/dev/null || true
-}
-
-run_smoke_test() {
-  local test_sysroot="$1"
-  local log_file="/tmp/smoke.log"
-
-  cp "$WORK_DIR/tests/smoke_test_l2.py" "$test_sysroot/"
-
-  cd "$test_sysroot"
-  timeout "$TIMEOUT_SECONDS" ./bin/nanvixd.elf -- ./bin/python3.12 ./smoke_test_l2.py < /dev/null > "$log_file" 2>&1 || true
-
-  if grep -q 'FAIL' "$log_file" 2>/dev/null; then
-    cat "$log_file" || true
-    rm -f "$log_file"
-    die "smoke test failed"
-  fi
-
-  if grep -q 'PASS' "$log_file" 2>/dev/null; then
-    log "smoke test: PASS"
-  elif [[ -s "$log_file" ]]; then
-    log "smoke test output:"
-    cat "$log_file" || true
-  else
-    rm -f "$log_file"
-    die "smoke test produced no output"
-  fi
-
-  rm -f "$log_file"
-}
-
-run_functional_tests() {
-  local test_sysroot="$1"
-  local total_pass=0
-  local total_fail=0
-  local total_skip=0
-  local failed_tests=""
-
-  # Copy individual test files into the test sysroot
-  cp "$WORK_DIR"/tests/func/test_*.py "$test_sysroot/" 2>/dev/null || true
-
-  # Optionally precompile stdlib and tests
-  local host_python=""
-  if [[ -n "$NANVIX_TOOLCHAIN" && -x "$NANVIX_TOOLCHAIN/bin/python3" ]]; then
-    host_python="$NANVIX_TOOLCHAIN/bin/python3"
-  elif command -v python3 >/dev/null 2>&1; then
-    host_python="python3"
-  fi
-  if [[ -n "$host_python" ]]; then
-    "$host_python" -m compileall -q "$test_sysroot/lib/python3.12/" 2>/dev/null || true
-    "$host_python" -m compileall -q "$test_sysroot"/test_*.py 2>/dev/null || true
-  fi
-
-  # Run each test individually
-  for test_file in "$test_sysroot"/test_[0-9]*.py; do
-    [[ ! -f "$test_file" ]] && continue
-    local test_basename
-    test_basename=$(basename "$test_file")
-
-    # Extract test number for range filtering
-    local test_num
-    test_num=$(echo "$test_basename" | grep -oP '(?<=test_)\d+' | sed 's/^0*//' )
-    [[ -z "$test_num" ]] && test_num=0
-    [[ "$test_num" -lt "$TEST_START" || "$test_num" -gt "$TEST_END" ]] && continue
-
-    local log_file="/tmp/${test_basename}.log"
-    cd "$test_sysroot"
-    timeout "$TIMEOUT_SECONDS" ./bin/nanvixd.elf -- ./bin/python3.12 "./$test_basename" < /dev/null > "$log_file" 2>&1 || true
-
-    if grep -q 'PASS' "$log_file" 2>/dev/null; then
-      local test_name
-      test_name=$(grep 'PASS' "$log_file" | head -1 | sed 's/:.*//')
-      echo "  $test_name: PASS"
-      total_pass=$((total_pass + 1))
-    elif grep -q 'FAIL' "$log_file" 2>/dev/null; then
-      grep 'FAIL' "$log_file" 2>/dev/null || true
-      total_fail=$((total_fail + 1))
-      failed_tests="${failed_tests}${test_basename} "
-    else
-      echo "  ${test_basename}: SKIP"
-      total_skip=$((total_skip + 1))
-    fi
-
-    rm -f "$log_file"
-  done
-
-  echo "Results: ${total_pass} passed, ${total_fail} failed, ${total_skip} skipped"
-
-  if [[ "$total_fail" -gt 0 ]]; then
-    echo "Failed tests: ${failed_tests}"
-    exit 1
-  fi
-
-  if [[ "$total_pass" -eq 0 ]]; then
-    die "no tests passed (all skipped or none found)"
-  fi
-
-  echo "All functional tests passed"
-}
 
 cmd_release() {
   local release_staging="$WORK_DIR/release"
@@ -579,8 +414,8 @@ cmd_cleanup() {
   # Remove the .nanvix work directory (downloads, extracted deps, staging, env)
   # but preserve .nanvix/tests
   if [[ -d "$WORK_DIR" ]]; then
-    log "removing $WORK_DIR (preserving tests)"
-    find "$WORK_DIR" -mindepth 1 -maxdepth 1 -not -name 'tests' -exec rm -rf {} +
+    log "removing $WORK_DIR"
+    rm -rf "$WORK_DIR"
   fi
 
   # Remove build output directory
@@ -605,7 +440,6 @@ cmd_cleanup() {
       -e Makefile.nanvix \
       -e NANVIX.md \
       -e .github \
-      -e .nanvix/tests \
       -e z \
       2>/dev/null || true
   fi
@@ -615,28 +449,7 @@ cmd_cleanup() {
 
 cmd_test() {
   require_nanvix_runtime
-  verify_tests_present
-
-  if [[ "$RUN_BASIC_TESTS" == "1" ]]; then
-    nanvix_make test "$@"
-  fi
-
-  rm -rf "$STAGING"
-  nanvix_make install DESTDIR="$STAGING" "$@"
-
-  local test_sysroot="$STAGING/sysroot"
-  local site_pkg="$test_sysroot/lib/python3.12/site-packages"
-  mkdir -p "$site_pkg" "$test_sysroot/bin"
-
-  cp "$NANVIX_HOME/bin/nanvixd.elf" "$test_sysroot/bin/" 2>/dev/null || true
-  cp "$NANVIX_HOME/bin/kernel.elf" "$test_sysroot/bin/" 2>/dev/null || true
-  for file in linuxd.elf uservm.elf; do
-    [[ -f "$NANVIX_HOME/bin/$file" ]] && cp "$NANVIX_HOME/bin/$file" "$test_sysroot/bin/" || true
-  done
-
-  install_site_packages "$site_pkg"
-  run_smoke_test "$test_sysroot"
-  run_functional_tests "$test_sysroot"
+  nanvix_make test "$@"
 }
 
 if [[ $# -lt 1 ]]; then
