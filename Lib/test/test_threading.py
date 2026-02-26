@@ -1473,10 +1473,10 @@ class ThreadTests(BaseTestCase):
             thread = threading.Thread(target=nothing)
             thread._set_ident = _set_ident_error
             thread.start()
-            thread.join()
-            self.assertFalse(thread.is_alive())
-            self.assertFalse(thread in threading._limbo)
-            self.assertFalse(thread in threading._active)
+
+        self.assertFalse(thread.is_alive())
+        self.assertFalse(thread in threading._limbo)
+        self.assertFalse(thread in threading._active)
 
 class ThreadJoinOnShutdown(BaseTestCase):
 
