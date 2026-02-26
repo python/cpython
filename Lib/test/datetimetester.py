@@ -2211,7 +2211,7 @@ class TestDate(HarmlessMixedComparison, unittest.TestCase):
         test_year,test_month,test_day = 2026,2,20
         self.assertEqual(
             self.theclass.strptime(
-                f'{test_year} \r {test_month}\t \n{test_day}', 
+                f'{test_year} \r {test_month}\t \n{test_day}',
                 "%Y%t%m%t%d"
             ),
             self.theclass(test_year,test_month,test_day)
