@@ -1,2 +1,0 @@
-Clarify that the :exc:`OSError` subclass raised by :func:`os.remove` when the
-path is a directory is platform-dependent.
