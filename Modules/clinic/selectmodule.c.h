@@ -70,7 +70,7 @@ exit:
     return return_value;
 }
 
-#if (defined(HAVE_POLL) && !defined(HAVE_BROKEN_POLL))
+#if ((defined(HAVE_POLL) || defined(HAVE_PPOLL)) && !defined(HAVE_BROKEN_POLL))
 
 PyDoc_STRVAR(select_poll_register__doc__,
 "register($self, fd,\n"
@@ -119,9 +119,9 @@ exit:
     return return_value;
 }
 
-#endif /* (defined(HAVE_POLL) && !defined(HAVE_BROKEN_POLL)) */
+#endif /* ((defined(HAVE_POLL) || defined(HAVE_PPOLL)) && !defined(HAVE_BROKEN_POLL)) */
 
-#if (defined(HAVE_POLL) && !defined(HAVE_BROKEN_POLL))
+#if ((defined(HAVE_POLL) || defined(HAVE_PPOLL)) && !defined(HAVE_BROKEN_POLL))
 
 PyDoc_STRVAR(select_poll_modify__doc__,
 "modify($self, fd, eventmask, /)\n"
@@ -166,9 +166,9 @@ exit:
     return return_value;
 }
 
-#endif /* (defined(HAVE_POLL) && !defined(HAVE_BROKEN_POLL)) */
+#endif /* ((defined(HAVE_POLL) || defined(HAVE_PPOLL)) && !defined(HAVE_BROKEN_POLL)) */
 
-#if (defined(HAVE_POLL) && !defined(HAVE_BROKEN_POLL))
+#if ((defined(HAVE_POLL) || defined(HAVE_PPOLL)) && !defined(HAVE_BROKEN_POLL))
 
 PyDoc_STRVAR(select_poll_unregister__doc__,
 "unregister($self, fd, /)\n"
@@ -200,9 +200,9 @@ exit:
     return return_value;
 }
 
-#endif /* (defined(HAVE_POLL) && !defined(HAVE_BROKEN_POLL)) */
+#endif /* ((defined(HAVE_POLL) || defined(HAVE_PPOLL)) && !defined(HAVE_BROKEN_POLL)) */
 
-#if (defined(HAVE_POLL) && !defined(HAVE_BROKEN_POLL))
+#if ((defined(HAVE_POLL) || defined(HAVE_PPOLL)) && !defined(HAVE_BROKEN_POLL))
 
 PyDoc_STRVAR(select_poll_poll__doc__,
 "poll($self, timeout=None, /)\n"
@@ -245,9 +245,9 @@ exit:
     return return_value;
 }
 
-#endif /* (defined(HAVE_POLL) && !defined(HAVE_BROKEN_POLL)) */
+#endif /* ((defined(HAVE_POLL) || defined(HAVE_PPOLL)) && !defined(HAVE_BROKEN_POLL)) */
 
-#if (defined(HAVE_POLL) && !defined(HAVE_BROKEN_POLL)) && defined(HAVE_SYS_DEVPOLL_H)
+#if ((defined(HAVE_POLL) || defined(HAVE_PPOLL)) && !defined(HAVE_BROKEN_POLL)) && defined(HAVE_SYS_DEVPOLL_H)
 
 PyDoc_STRVAR(select_devpoll_register__doc__,
 "register($self, fd,\n"
@@ -298,9 +298,9 @@ exit:
     return return_value;
 }
 
-#endif /* (defined(HAVE_POLL) && !defined(HAVE_BROKEN_POLL)) && defined(HAVE_SYS_DEVPOLL_H) */
+#endif /* ((defined(HAVE_POLL) || defined(HAVE_PPOLL)) && !defined(HAVE_BROKEN_POLL)) && defined(HAVE_SYS_DEVPOLL_H) */
 
-#if (defined(HAVE_POLL) && !defined(HAVE_BROKEN_POLL)) && defined(HAVE_SYS_DEVPOLL_H)
+#if ((defined(HAVE_POLL) || defined(HAVE_PPOLL)) && !defined(HAVE_BROKEN_POLL)) && defined(HAVE_SYS_DEVPOLL_H)
 
 PyDoc_STRVAR(select_devpoll_modify__doc__,
 "modify($self, fd,\n"
@@ -351,9 +351,9 @@ exit:
     return return_value;
 }
 
-#endif /* (defined(HAVE_POLL) && !defined(HAVE_BROKEN_POLL)) && defined(HAVE_SYS_DEVPOLL_H) */
+#endif /* ((defined(HAVE_POLL) || defined(HAVE_PPOLL)) && !defined(HAVE_BROKEN_POLL)) && defined(HAVE_SYS_DEVPOLL_H) */
 
-#if (defined(HAVE_POLL) && !defined(HAVE_BROKEN_POLL)) && defined(HAVE_SYS_DEVPOLL_H)
+#if ((defined(HAVE_POLL) || defined(HAVE_PPOLL)) && !defined(HAVE_BROKEN_POLL)) && defined(HAVE_SYS_DEVPOLL_H)
 
 PyDoc_STRVAR(select_devpoll_unregister__doc__,
 "unregister($self, fd, /)\n"
@@ -385,9 +385,9 @@ exit:
     return return_value;
 }
 
-#endif /* (defined(HAVE_POLL) && !defined(HAVE_BROKEN_POLL)) && defined(HAVE_SYS_DEVPOLL_H) */
+#endif /* ((defined(HAVE_POLL) || defined(HAVE_PPOLL)) && !defined(HAVE_BROKEN_POLL)) && defined(HAVE_SYS_DEVPOLL_H) */
 
-#if (defined(HAVE_POLL) && !defined(HAVE_BROKEN_POLL)) && defined(HAVE_SYS_DEVPOLL_H)
+#if ((defined(HAVE_POLL) || defined(HAVE_PPOLL)) && !defined(HAVE_BROKEN_POLL)) && defined(HAVE_SYS_DEVPOLL_H)
 
 PyDoc_STRVAR(select_devpoll_poll__doc__,
 "poll($self, timeout=None, /)\n"
@@ -430,9 +430,9 @@ exit:
     return return_value;
 }
 
-#endif /* (defined(HAVE_POLL) && !defined(HAVE_BROKEN_POLL)) && defined(HAVE_SYS_DEVPOLL_H) */
+#endif /* ((defined(HAVE_POLL) || defined(HAVE_PPOLL)) && !defined(HAVE_BROKEN_POLL)) && defined(HAVE_SYS_DEVPOLL_H) */
 
-#if (defined(HAVE_POLL) && !defined(HAVE_BROKEN_POLL)) && defined(HAVE_SYS_DEVPOLL_H)
+#if ((defined(HAVE_POLL) || defined(HAVE_PPOLL)) && !defined(HAVE_BROKEN_POLL)) && defined(HAVE_SYS_DEVPOLL_H)
 
 PyDoc_STRVAR(select_devpoll_close__doc__,
 "close($self, /)\n"
@@ -460,9 +460,9 @@ select_devpoll_close(PyObject *self, PyObject *Py_UNUSED(ignored))
     return return_value;
 }
 
-#endif /* (defined(HAVE_POLL) && !defined(HAVE_BROKEN_POLL)) && defined(HAVE_SYS_DEVPOLL_H) */
+#endif /* ((defined(HAVE_POLL) || defined(HAVE_PPOLL)) && !defined(HAVE_BROKEN_POLL)) && defined(HAVE_SYS_DEVPOLL_H) */
 
-#if (defined(HAVE_POLL) && !defined(HAVE_BROKEN_POLL)) && defined(HAVE_SYS_DEVPOLL_H)
+#if ((defined(HAVE_POLL) || defined(HAVE_PPOLL)) && !defined(HAVE_BROKEN_POLL)) && defined(HAVE_SYS_DEVPOLL_H)
 
 PyDoc_STRVAR(select_devpoll_fileno__doc__,
 "fileno($self, /)\n"
@@ -488,9 +488,9 @@ select_devpoll_fileno(PyObject *self, PyObject *Py_UNUSED(ignored))
     return return_value;
 }
 
-#endif /* (defined(HAVE_POLL) && !defined(HAVE_BROKEN_POLL)) && defined(HAVE_SYS_DEVPOLL_H) */
+#endif /* ((defined(HAVE_POLL) || defined(HAVE_PPOLL)) && !defined(HAVE_BROKEN_POLL)) && defined(HAVE_SYS_DEVPOLL_H) */
 
-#if (defined(HAVE_POLL) && !defined(HAVE_BROKEN_POLL))
+#if ((defined(HAVE_POLL) || defined(HAVE_PPOLL)) && !defined(HAVE_BROKEN_POLL))
 
 PyDoc_STRVAR(select_poll__doc__,
 "poll($module, /)\n"
@@ -513,9 +513,9 @@ select_poll(PyObject *module, PyObject *Py_UNUSED(ignored))
     return select_poll_impl(module);
 }
 
-#endif /* (defined(HAVE_POLL) && !defined(HAVE_BROKEN_POLL)) */
+#endif /* ((defined(HAVE_POLL) || defined(HAVE_PPOLL)) && !defined(HAVE_BROKEN_POLL)) */
 
-#if (defined(HAVE_POLL) && !defined(HAVE_BROKEN_POLL)) && defined(HAVE_SYS_DEVPOLL_H)
+#if ((defined(HAVE_POLL) || defined(HAVE_PPOLL)) && !defined(HAVE_BROKEN_POLL)) && defined(HAVE_SYS_DEVPOLL_H)
 
 PyDoc_STRVAR(select_devpoll__doc__,
 "devpoll($module, /)\n"
@@ -538,7 +538,7 @@ select_devpoll(PyObject *module, PyObject *Py_UNUSED(ignored))
     return select_devpoll_impl(module);
 }
 
-#endif /* (defined(HAVE_POLL) && !defined(HAVE_BROKEN_POLL)) && defined(HAVE_SYS_DEVPOLL_H) */
+#endif /* ((defined(HAVE_POLL) || defined(HAVE_PPOLL)) && !defined(HAVE_BROKEN_POLL)) && defined(HAVE_SYS_DEVPOLL_H) */
 
 #if defined(HAVE_EPOLL)
 
@@ -1399,4 +1399,4 @@ exit:
 #ifndef SELECT_KQUEUE_CONTROL_METHODDEF
     #define SELECT_KQUEUE_CONTROL_METHODDEF
 #endif /* !defined(SELECT_KQUEUE_CONTROL_METHODDEF) */
-/*[clinic end generated code: output=ae54d65938513132 input=a9049054013a1b77]*/
+/*[clinic end generated code: output=52e3be5cc66cf1b6 input=a9049054013a1b77]*/

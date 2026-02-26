@@ -547,7 +547,7 @@ unicode_check_encoding_errors(const char *encoding, const char *errors)
     }
 
     /* Disable checks during Python finalization. For example, it allows to
-     * call PyUnstable_Object_Dump() during finalization for debugging purpose.
+     * call PyObject_Dump() during finalization for debugging purpose.
      */
     if (_PyInterpreterState_GetFinalizing(interp) != NULL) {
         return 0;
@@ -13149,7 +13149,7 @@ unicode_maketrans_impl(PyObject *x, PyObject *y, PyObject *z)
         const void *data;
 
         /* x must be a dict */
-        if (!PyDict_CheckExact(x)) {
+        if (!PyAnyDict_CheckExact(x)) {
             PyErr_SetString(PyExc_TypeError, "if you give only one argument "
                             "to maketrans it must be a dict");
             goto err;

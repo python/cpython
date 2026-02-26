@@ -858,6 +858,8 @@ HAVE_GETHOSTBYNAME_R_3_ARG
 HAVE_GETHOSTBYNAME_R_5_ARG
 HAVE_GETHOSTBYNAME_R_6_ARG
 LIBOBJS
+REMOTE_DEBUGGING_LIBS
+REMOTE_DEBUGGING_CFLAGS
 LIBZSTD_LIBS
 LIBZSTD_CFLAGS
 LIBLZMA_LIBS
@@ -913,6 +915,7 @@ UNIVERSAL_ARCH_FLAGS
 WASM_STDLIB
 WASM_ASSETS_DIR
 LDFLAGS_NOLTO
+EXE_LDFLAGS
 LDFLAGS_NODIST
 CFLAGS_NODIST
 BASECFLAGS
@@ -1126,6 +1129,7 @@ enable_ipv6
 with_doc_strings
 with_mimalloc
 with_pymalloc
+with_pymalloc_hugepages
 with_c_locale_coercion
 with_valgrind
 with_dtrace
@@ -1933,6 +1937,9 @@ Optional Packages:
   --with-mimalloc         build with mimalloc memory allocator (default is yes
                           if C11 stdatomic.h is available.)
   --with-pymalloc         enable specialized mallocs (default is yes)
+  --with-pymalloc-hugepages
+                          enable huge page support for pymalloc arenas
+                          (default is no)
   --with-c-locale-coercion
                           enable C locale coercion to a UTF-8 based locale
                           (default is yes)
@@ -4751,9 +4758,9 @@ esac
 
 if test $define_xopen_source = yes
 then
-  # X/Open 7, incorporating POSIX.1-2008
+  # X/Open 8, incorporating POSIX.1-2024
 
-printf "%s\n" "#define _XOPEN_SOURCE 700" >>confdefs.h
+printf "%s\n" "#define _XOPEN_SOURCE 800" >>confdefs.h
 
 
   # On Tru64 Unix 4.0F, defining _XOPEN_SOURCE also requires
@@ -4765,7 +4772,7 @@ printf "%s\n" "#define _XOPEN_SOURCE_EXTENDED 1" >>confdefs.h
 
 
 
-printf "%s\n" "#define _POSIX_C_SOURCE 200809L" >>confdefs.h
+printf "%s\n" "#define _POSIX_C_SOURCE 202405L" >>confdefs.h
 
 fi
 
@@ -9644,7 +9651,7 @@ fi
 
         as_fn_append LINKFORSHARED " -sFORCE_FILESYSTEM -lidbfs.js -lnodefs.js -lproxyfs.js -lworkerfs.js"
     as_fn_append LINKFORSHARED " -sEXPORTED_RUNTIME_METHODS=FS,callMain,ENV,HEAPU32,TTY"
-    as_fn_append LINKFORSHARED " -sEXPORTED_FUNCTIONS=_main,_Py_Version,__PyRuntime,_PyGILState_GetThisThreadState,__Py_DumpTraceback"
+    as_fn_append LINKFORSHARED " -sEXPORTED_FUNCTIONS=_main,_Py_Version,__PyRuntime,_PyGILState_GetThisThreadState,__Py_DumpTraceback,__PyEM_EMSCRIPTEN_TRAMPOLINE_OFFSET"
     as_fn_append LINKFORSHARED " -sSTACK_SIZE=5MB"
         as_fn_append LINKFORSHARED " -sTEXTDECODER=2"
 
@@ -9731,6 +9738,7 @@ case $enable_wasm_dynamic_linking in #(
   *) :
      ;;
 esac
+
 
 
 
@@ -13867,7 +13875,13 @@ case $PLATFORM_TRIPLET in #(
   aarch64-linux-gnu) :
     perf_trampoline=yes ;; #(
   darwin) :
-    perf_trampoline=yes ;; #(
+    case $MACOSX_DEPLOYMENT_TARGET in #(
+  10.[0-9]|10.1[0-1]) :
+    perf_trampoline=no ;; #(
+  *) :
+    perf_trampoline=yes
+             ;;
+esac ;; #(
   *) :
     perf_trampoline=no
  ;;
@@ -18188,6 +18202,7 @@ else case e in #(
         if (pthread_attr_init(&attr)) return (-1);
         if (pthread_attr_setscope(&attr, PTHREAD_SCOPE_SYSTEM)) return (-1);
         if (pthread_create(&id, &attr, foo, NULL)) return (-1);
+        if (pthread_join(id, NULL)) return (-1);
         return (0);
       }
 _ACEOF
@@ -18878,6 +18893,72 @@ printf "%s\n" "#define HAVE_BUILTIN_ATOMIC 1" >>confdefs.h
 
 fi
 
+# Check for __builtin_shufflevector with 128-bit vector support on an
+# architecture where it compiles to worthwhile native SIMD instructions.
+# Used for SIMD-accelerated bytes.hex() in Python/pystrhex.c.
+{ printf "%s\n" "$as_me:${as_lineno-$LINENO}: checking for __builtin_shufflevector" >&5
+printf %s "checking for __builtin_shufflevector... " >&6; }
+if test ${ac_cv_efficient_builtin_shufflevector+y}
+then :
+  printf %s "(cached) " >&6
+else case e in #(
+  e)
+cat confdefs.h - <<_ACEOF >conftest.$ac_ext
+/* end confdefs.h.  */
+
+
+    /* __builtin_shufflevector is available on many platforms, but 128-bit
+       vector code is only worthwhile on architectures with native SIMD:
+       x86-64 (SSE2, always available), ARM64 (NEON, always available),
+       or ARM32 when NEON is enabled via compiler flags (e.g. -march=native
+       on RPi3+).  On ARM32 without NEON (e.g. armv6 builds), the compiler
+       has the builtin but generates slow scalar code instead. */
+    #if !defined(__x86_64__) && !defined(__aarch64__) && \
+        !(defined(__arm__) && defined(__ARM_NEON))
+    #  error "128-bit vector SIMD not worthwhile on this architecture"
+    #endif
+    typedef unsigned char v16u8 __attribute__((vector_size(16)));
+
+int
+main (void)
+{
+
+    v16u8 a = {0,1,2,3,4,5,6,7,8,9,10,11,12,13,14,15};
+    v16u8 b = {16,17,18,19,20,21,22,23,24,25,26,27,28,29,30,31};
+    v16u8 c = __builtin_shufflevector(a, b,
+        0, 16, 1, 17, 2, 18, 3, 19, 4, 20, 5, 21, 6, 22, 7, 23);
+    (void)c;
+    return 0;
+
+  ;
+  return 0;
+}
+
+_ACEOF
+if ac_fn_c_try_link "$LINENO"
+then :
+  ac_cv_efficient_builtin_shufflevector=yes
+else case e in #(
+  e) ac_cv_efficient_builtin_shufflevector=no ;;
+esac
+fi
+rm -f core conftest.err conftest.$ac_objext conftest.beam \
+    conftest$ac_exeext conftest.$ac_ext
+ ;;
+esac
+fi
+{ printf "%s\n" "$as_me:${as_lineno-$LINENO}: result: $ac_cv_efficient_builtin_shufflevector" >&5
+printf "%s\n" "$ac_cv_efficient_builtin_shufflevector" >&6; }
+
+if test "x$ac_cv_efficient_builtin_shufflevector" = xyes
+then :
+
+
+printf "%s\n" "#define HAVE_EFFICIENT_BUILTIN_SHUFFLEVECTOR 1" >>confdefs.h
+
+
+fi
+
 # --with-mimalloc
 { printf "%s\n" "$as_me:${as_lineno-$LINENO}: checking for --with-mimalloc" >&5
 printf %s "checking for --with-mimalloc... " >&6; }
@@ -18945,6 +19026,49 @@ printf "%s\n" "#define WITH_PYMALLOC 1" >>confdefs.h
 fi
 { printf "%s\n" "$as_me:${as_lineno-$LINENO}: result: $with_pymalloc" >&5
 printf "%s\n" "$with_pymalloc" >&6; }
+
+{ printf "%s\n" "$as_me:${as_lineno-$LINENO}: checking for --with-pymalloc-hugepages" >&5
+printf %s "checking for --with-pymalloc-hugepages... " >&6; }
+
+# Check whether --with-pymalloc-hugepages was given.
+if test ${with_pymalloc_hugepages+y}
+then :
+  withval=$with_pymalloc_hugepages;
+fi
+
+if test "$with_pymalloc_hugepages" = "yes"
+then
+            cat confdefs.h - <<_ACEOF >conftest.$ac_ext
+/* end confdefs.h.  */
+
+#include <sys/mman.h>
+
+int
+main (void)
+{
+
+int flags = MAP_PRIVATE | MAP_ANONYMOUS | MAP_HUGETLB;
+(void)flags;
+
+  ;
+  return 0;
+}
+_ACEOF
+if ac_fn_c_try_compile "$LINENO"
+then :
+
+printf "%s\n" "#define PYMALLOC_USE_HUGEPAGES 1" >>confdefs.h
+
+else case e in #(
+  e) { printf "%s\n" "$as_me:${as_lineno-$LINENO}: WARNING: --with-pymalloc-hugepages requested but MAP_HUGETLB not found" >&5
+printf "%s\n" "$as_me: WARNING: --with-pymalloc-hugepages requested but MAP_HUGETLB not found" >&2;}
+       with_pymalloc_hugepages=no ;;
+esac
+fi
+rm -f core conftest.err conftest.$ac_objext conftest.beam conftest.$ac_ext
+fi
+{ printf "%s\n" "$as_me:${as_lineno-$LINENO}: result: ${with_pymalloc_hugepages:-no}" >&5
+printf "%s\n" "${with_pymalloc_hugepages:-no}" >&6; }
 
 # Check for --with-c-locale-coercion
 { printf "%s\n" "$as_me:${as_lineno-$LINENO}: checking for --with-c-locale-coercion" >&5
@@ -19807,6 +19931,12 @@ ac_fn_c_check_func "$LINENO" "poll" "ac_cv_func_poll"
 if test "x$ac_cv_func_poll" = xyes
 then :
   printf "%s\n" "#define HAVE_POLL 1" >>confdefs.h
+
+fi
+ac_fn_c_check_func "$LINENO" "ppoll" "ac_cv_func_ppoll"
+if test "x$ac_cv_func_ppoll" = xyes
+then :
+  printf "%s\n" "#define HAVE_PPOLL 1" >>confdefs.h
 
 fi
 ac_fn_c_check_func "$LINENO" "posix_fadvise" "ac_cv_func_posix_fadvise"
@@ -23023,6 +23153,22 @@ printf "%s\n" "yes" >&6; }
         have_libzstd=yes
 fi
 
+if test "x$have_libzstd" = xyes
+then :
+
+  REMOTE_DEBUGGING_CFLAGS="-DHAVE_ZSTD $LIBZSTD_CFLAGS"
+  REMOTE_DEBUGGING_LIBS="$LIBZSTD_LIBS"
+
+else case e in #(
+  e)
+  REMOTE_DEBUGGING_CFLAGS=""
+  REMOTE_DEBUGGING_LIBS=""
+ ;;
+esac
+fi
+
+
+
 
 
 
@@ -23947,6 +24093,9 @@ printf "%s\n" "#define HAVE_UT_NAMESIZE 1" >>confdefs.h
 
 fi
 
+# musl libc redefines struct prctl_mm_map and conflicts with linux/prctl.h
+if test "$ac_cv_libc" != musl
+then :
 
 ac_fn_check_decl "$LINENO" "PR_SET_VMA_ANON_NAME" "ac_cv_have_decl_PR_SET_VMA_ANON_NAME" "#include <linux/prctl.h>
                #include <sys/prctl.h>
@@ -23967,6 +24116,7 @@ printf "%s\n" "#define HAVE_PR_SET_VMA_ANON_NAME 1" >>confdefs.h
 fi
 
 
+fi
 # check for openpty, login_tty, and forkpty
 
 
@@ -31644,8 +31794,8 @@ fi
   if test "x$py_cv_module__remote_debugging" = xyes
 then :
 
-
-
+    as_fn_append MODULE_BLOCK "MODULE__REMOTE_DEBUGGING_CFLAGS=$REMOTE_DEBUGGING_CFLAGS$as_nl"
+    as_fn_append MODULE_BLOCK "MODULE__REMOTE_DEBUGGING_LDFLAGS=$REMOTE_DEBUGGING_LIBS$as_nl"
 
 fi
 

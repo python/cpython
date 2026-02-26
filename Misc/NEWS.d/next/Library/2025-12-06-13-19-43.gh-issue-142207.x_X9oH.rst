@@ -1,2 +1,0 @@
-Fix: profiling.sampling may cause assertion ``!(has_gil &&
-gil_requested)``

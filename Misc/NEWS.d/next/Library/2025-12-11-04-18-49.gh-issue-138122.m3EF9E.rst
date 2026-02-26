@@ -1,3 +1,0 @@
-Add ``--mode=exception`` to the sampling profiler to capture samples only from
-threads with an active exception, useful for analyzing exception handling
-overhead. Patch by Pablo Galindo.

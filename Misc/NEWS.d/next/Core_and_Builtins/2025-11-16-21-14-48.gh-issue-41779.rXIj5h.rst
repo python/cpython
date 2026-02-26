@@ -1,2 +1,0 @@
-Allowed defining the *__dict__* and *__weakref__* :ref:`__slots__ <slots>`
-for any class.

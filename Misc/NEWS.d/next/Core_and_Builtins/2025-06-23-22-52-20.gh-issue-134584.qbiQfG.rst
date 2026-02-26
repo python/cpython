@@ -1,1 +1,0 @@
-Eliminate redundant refcounting from ``_CALL_TUPLE_1``. Patch by Noam Cohen

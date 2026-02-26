@@ -1,0 +1,5 @@
+Speed up :meth:`bytes.hex`, :meth:`bytearray.hex`, :func:`binascii.hexlify`,
+and :mod:`hashlib` ``.hexdigest()`` operations with SIMD on x86-64, ARM64,
+and ARM32 with NEON when built with gcc (version 12 or higher) or clang
+(version 3 or higher) compilers.  Around 1.1-3x faster for common 16-64 byte
+inputs such as hashlib hex digests, and up to 8x faster for larger data.

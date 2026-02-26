@@ -1320,6 +1320,18 @@ class ClassPropertiesAndMethods(unittest.TestCase):
         with self.assertRaisesRegex(AttributeError, "'X' object has no attribute 'a'"):
             X().a
 
+    def test_slots_after_items(self):
+        class C(tuple):
+            __slots__ = ['a']
+        x = C((1, 2, 3))
+        self.assertNotHasAttr(x, "__dict__")
+        self.assertNotHasAttr(x, "a")
+        x.a = 42
+        self.assertEqual(x.a, 42)
+        del x.a
+        self.assertNotHasAttr(x, "a")
+        self.assertEqual(x, (1, 2, 3))
+
     def test_slots_special(self):
         # Testing __dict__ and __weakref__ in __slots__...
         class D(object):
@@ -1422,6 +1434,9 @@ class ClassPropertiesAndMethods(unittest.TestCase):
         self.assertIs(weakref.ref(a)(), a)
         self.assertEqual(a, base(arg))
 
+    @support.subTests('base', [int, bytes] +
+                      ([_testcapi.HeapCCollection] if _testcapi else []))
+    def test_unsupported_slots(self, base):
         with self.assertRaises(TypeError):
             class X(base):
                 __slots__ = ['x']
@@ -1712,6 +1727,18 @@ class ClassPropertiesAndMethods(unittest.TestCase):
                     del method.__annotate__
                     self.assertIs(method.__annotate__, original_annotate)
 
+    def test_classmethod_without_dict_access(self):
+        class Spam:
+            @classmethod
+            def method(cls, x, y):
+                pass
+
+        obj = Spam.__dict__['method']
+        self.assertIsInstance(obj, classmethod)
+        self.assertEqual(obj.__annotations__, {})
+        self.assertEqual(obj.__name__, 'method')
+        self.assertEqual(obj.__module__, __name__)
+
     def test_staticmethod_annotations_without_dict_access(self):
         # gh-125017: this used to crash
         class Spam:
@@ -1722,15 +1749,8 @@ class ClassPropertiesAndMethods(unittest.TestCase):
         obj = Spam.__dict__['__new__']
         self.assertIsInstance(obj, staticmethod)
         self.assertEqual(obj.__annotations__, {})
-
-    @support.refcount_test
-    def test_refleaks_in_classmethod___init__(self):
-        gettotalrefcount = support.get_attribute(sys, 'gettotalrefcount')
-        cm = classmethod(None)
-        refs_before = gettotalrefcount()
-        for i in range(100):
-            cm.__init__(None)
-        self.assertAlmostEqual(gettotalrefcount() - refs_before, 0, delta=10)
+        self.assertEqual(obj.__name__, '__new__')
+        self.assertEqual(obj.__module__, __name__)
 
     @support.impl_detail("the module 'xxsubtype' is internal")
     @unittest.skipIf(xxsubtype is None, "requires xxsubtype module")
@@ -1806,15 +1826,6 @@ class ClassPropertiesAndMethods(unittest.TestCase):
         self.assertEqual(sm.__dict__, {"x" : 42, '__doc__': None.__doc__})
         del sm.x
         self.assertNotHasAttr(sm, "x")
-
-    @support.refcount_test
-    def test_refleaks_in_staticmethod___init__(self):
-        gettotalrefcount = support.get_attribute(sys, 'gettotalrefcount')
-        sm = staticmethod(None)
-        refs_before = gettotalrefcount()
-        for i in range(100):
-            sm.__init__(None)
-        self.assertAlmostEqual(gettotalrefcount() - refs_before, 0, delta=10)
 
     @support.impl_detail("the module 'xxsubtype' is internal")
     @unittest.skipIf(xxsubtype is None, "requires xxsubtype module")
