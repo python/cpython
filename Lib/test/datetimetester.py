@@ -48,7 +48,11 @@ import _strptime
 try:
     import _pydatetime
 except ImportError:
-    pass
+    _pydatetime = None
+try:
+    import _datetime
+except ImportError:
+    _datetime = None
 #
 
 pickle_loads = {pickle.loads, pickle._loads}
