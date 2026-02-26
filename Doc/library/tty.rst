@@ -2,7 +2,6 @@
 ==========================================
 
 .. module:: tty
-   :platform: Unix
    :synopsis: Utility functions that perform common terminal control operations.
 
 .. moduleauthor:: Steen Lumholt

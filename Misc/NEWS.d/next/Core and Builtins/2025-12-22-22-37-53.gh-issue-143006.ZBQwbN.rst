@@ -1,2 +1,0 @@
-Fix a possible assertion error when comparing negative non-integer ``float``
-and ``int`` with the same number of bits in the integer part.

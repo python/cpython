@@ -1,3 +1,0 @@
-Fix crash when inserting a non-:class:`str` key into a split table
-dictionary when the key matches an existing key in the split table
-but has no corresponding value in the dict.

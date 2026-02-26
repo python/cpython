@@ -1478,7 +1478,15 @@ prepare_s(PyStructObject *self)
             case 's': /* fall through */
             case 'p': len++; ncodes++; break;
             case 'x': break;
-            default: len += num; if (num) ncodes++; break;
+            default:
+                if (num > PY_SSIZE_T_MAX - len) {
+                    goto overflow;
+                }
+                len += num;
+                if (num) {
+                    ncodes++;
+                }
+                break;
         }
 
         itemsize = e->size;

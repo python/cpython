@@ -2,7 +2,6 @@
 ==========================================
 
 .. module:: winreg
-   :platform: Windows
    :synopsis: Routines and objects for manipulating the Windows registry.
 
 .. sectionauthor:: Mark Hammond <MarkH@ActiveState.com>
