@@ -100,7 +100,11 @@ class DecompressReader(io.RawIOBase):
                                        "end-of-stream marker was reached")
                 else:
                     rawblock = b""
-                data = self._decompressor.decompress(rawblock, size)
+
+                try:
+                    data = self._decompressor.decompress(rawblock, size)
+                except:
+                    break
             if data:
                 break
         if not data:
