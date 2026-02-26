@@ -2732,7 +2732,9 @@ features:
 .. function:: remove(path, *, dir_fd=None)
 
    Remove (delete) the file *path*.  If *path* is a directory, an
-   :exc:`OSError` is raised.  Use :func:`rmdir` to remove directories.
+   :exc:`OSError` is raised.  The exact exception type depends on the platform:
+   for example, :exc:`IsADirectoryError` or :exc:`PermissionError`.
+   Use :func:`rmdir` to remove directories.
    If the file does not exist, a :exc:`FileNotFoundError` is raised.
 
    This function can support :ref:`paths relative to directory descriptors
