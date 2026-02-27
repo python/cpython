@@ -1315,6 +1315,7 @@ def _unpack_zipfile(filename, extract_dir):
         raise ReadError("%s is not a zip file" % filename)
 
     with zipfile.ZipFile(filename) as zip:
+        zip._ignore_invalid_names = True
         zip.extractall(extract_dir)
 
 def _unpack_tarfile(filename, extract_dir, *, filter=None):

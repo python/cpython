@@ -2173,12 +2173,13 @@ class TestArchives(BaseTest, unittest.TestCase):
         with zipfile.ZipFile(zipname, 'w') as zf:
             zf.writestr(abspath, 'badfile')
             zf.writestr(os.sep + abspath, 'badfile')
-            zf.writestr('/abspath2', 'badfile')
-            if os.name == 'nt':
-                zf.writestr('C:/abspath3', 'badfile')
-                zf.writestr('C:\\abspath4', 'badfile')
-                zf.writestr('C:abspath5', 'badfile')
-                zf.writestr('C:/C:/abspath6', 'badfile')
+            zf.writestr('/abspath', 'badfile')
+            zf.writestr('C:/abspath', 'badfile')
+            zf.writestr('D:\\abspath', 'badfile')
+            zf.writestr('E:abspath', 'badfile')
+            zf.writestr('F:/G:/abspath', 'badfile')
+            zf.writestr('//server/share/abspath', 'badfile')
+            zf.writestr('\\\\server2\\share\\abspath', 'badfile')
             zf.writestr('../relpath', 'badfile')
             zf.writestr(os.pardir + os.sep + 'relpath2', 'badfile')
             zf.writestr('good/file', 'goodfile')
@@ -2189,16 +2190,22 @@ class TestArchives(BaseTest, unittest.TestCase):
         self.assertTrue(os.path.isfile(os.path.join(dstdir, 'good', 'file')))
         self.assertTrue(os.path.isfile(os.path.join(dstdir, 'good..file')))
         self.assertFalse(os.path.exists(abspath))
-        self.assertTrue(os.path.exists(os.path.join(dstdir, 'abspath2')))
-        if os.name == 'nt':
-            self.assertTrue(os.path.exists(os.path.join(dstdir, 'abspath3')))
-            self.assertTrue(os.path.exists(os.path.join(dstdir, 'abspath4')))
-            self.assertTrue(os.path.exists(os.path.join(dstdir, 'abspath5')))
-            self.assertTrue(os.path.exists(os.path.join(dstdir, 'C_', 'abspath6')))
-        self.assertFalse(os.path.exists(os.path.join(dstdir, '..', 'relpath')))
-        self.assertTrue(os.path.exists(os.path.join(dstdir, 'relpath')))
+        self.assertFalse(os.path.exists(os.path.join(dstdir, 'abspath')))
+        self.assertFalse(os.path.exists(os.path.join(dstdir, 'G_')))
+        self.assertFalse(os.path.exists(os.path.join(dstdir, 'server')))
+        if os.name != 'nt':
+            self.assertTrue(os.path.isfile(os.path.join(dstdir, 'C:', 'abspath')))
+            self.assertTrue(os.path.isfile(os.path.join(dstdir, 'D:\\abspath')))
+            self.assertTrue(os.path.isfile(os.path.join(dstdir, 'E:abspath')))
+            self.assertTrue(os.path.isfile(os.path.join(dstdir, 'F:', 'G:', 'abspath')))
+            self.assertTrue(os.path.isfile(os.path.join(dstdir, '\\\\server2\\share\\abspath')))
+        if os.pardir == '..':
+            self.assertFalse(os.path.exists(os.path.join(dstdir, '..', 'relpath')))
+            self.assertFalse(os.path.exists(os.path.join(dstdir, 'relpath')))
+        else:
+            self.assertTrue(os.path.isfile(os.path.join(dstdir, '..', 'relpath')))
         self.assertFalse(os.path.exists(os.path.join(dstdir, os.pardir, 'relpath2')))
-        self.assertTrue(os.path.exists(os.path.join(dstdir, 'relpath2')))
+        self.assertFalse(os.path.exists(os.path.join(dstdir, 'relpath2')))
 
         dstdir2 = os.path.join(self.mkdtemp(), 'dst')
         os.mkdir(dstdir2)
@@ -2207,16 +2214,22 @@ class TestArchives(BaseTest, unittest.TestCase):
             self.assertTrue(os.path.isfile(os.path.join('good', 'file')))
             self.assertTrue(os.path.isfile('good..file'))
             self.assertFalse(os.path.exists(abspath))
-            self.assertTrue(os.path.exists('abspath2'))
-            if os.name == 'nt':
-                self.assertTrue(os.path.exists('abspath3'))
-                self.assertTrue(os.path.exists('abspath4'))
-                self.assertTrue(os.path.exists('abspath5'))
-                self.assertTrue(os.path.exists(os.path.join('c_', 'abspath6')))
-            self.assertFalse(os.path.exists(os.path.join('..', 'relpath')))
-            self.assertTrue(os.path.exists('relpath'))
+            self.assertFalse(os.path.exists('abspath'))
+            self.assertFalse(os.path.exists('C_'))
+            self.assertFalse(os.path.exists('server'))
+            if os.name != 'nt':
+                self.assertTrue(os.path.isfile(os.path.join('C:', 'abspath')))
+                self.assertTrue(os.path.isfile('D:\\abspath'))
+                self.assertTrue(os.path.isfile('E:abspath'))
+                self.assertTrue(os.path.isfile(os.path.join('F:', 'G:', 'abspath')))
+                self.assertTrue(os.path.isfile('\\\\server2\\share\\abspath'))
+            if os.pardir == '..':
+                self.assertFalse(os.path.exists(os.path.join('..', 'relpath')))
+                self.assertFalse(os.path.exists('relpath'))
+            else:
+                self.assertTrue(os.path.isfile(os.path.join('..', 'relpath')))
             self.assertFalse(os.path.exists(os.path.join(os.pardir, 'relpath2')))
-            self.assertTrue(os.path.exists('relpath2'))
+            self.assertFalse(os.path.exists('relpath2'))
 
     def test_unpack_registry(self):
 
