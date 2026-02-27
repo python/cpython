@@ -5730,8 +5730,11 @@ dummy_func(
         tier2 op(_RECORD_NOS_GEN_FUNC, (nos, tos -- nos, tos)) {
             PyObject *obj = PyStackRef_AsPyObjectBorrow(nos);
             if (PyGen_Check(obj)) {
-                PyObject *func = (PyObject *)_PyFrame_GetFunction(&((PyGenObject *)obj)->gi_iframe);
-                RECORD_VALUE(func);
+                PyGenObject *gen = (PyGenObject *)obj;
+                _PyStackRef func = gen->gi_iframe.f_funcobj;
+                if (!PyStackRef_IsNull(func)) {
+                    RECORD_VALUE(PyStackRef_AsPyObjectBorrow(func));
+                }
             }
         }
 
