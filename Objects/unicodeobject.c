@@ -13060,30 +13060,6 @@ unicode_swapcase_impl(PyObject *self)
     return case_operation(self, do_swapcase);
 }
 
-/*[clinic input]
-
-@staticmethod
-str.maketrans as unicode_maketrans
-
-  x: object
-
-  y: unicode=NULL
-
-  z: unicode=NULL
-
-  /
-
-Return a translation table usable for str.translate().
-
-If there is only one argument, it must be a dictionary mapping Unicode
-ordinals (integers) or characters to Unicode ordinals, strings or None.
-Character keys will be then converted to ordinals.
-If there are two arguments, they must be strings of equal length, and
-in the resulting dictionary, each character in x will be mapped to the
-character at the same position in y. If there is a third argument, it
-must be a string, whose characters will be mapped to None in the result.
-[clinic start generated code]*/
-
 static int
 unicode_maketrans_from_dict(PyObject *x, PyObject *newdict)
 {
@@ -13122,6 +13098,30 @@ unicode_maketrans_from_dict(PyObject *x, PyObject *newdict)
     }
     return 0;
 }
+
+/*[clinic input]
+
+@staticmethod
+str.maketrans as unicode_maketrans
+
+  x: object
+
+  y: unicode=NULL
+
+  z: unicode=NULL
+
+  /
+
+Return a translation table usable for str.translate().
+
+If there is only one argument, it must be a dictionary mapping Unicode
+ordinals (integers) or characters to Unicode ordinals, strings or None.
+Character keys will be then converted to ordinals.
+If there are two arguments, they must be strings of equal length, and
+in the resulting dictionary, each character in x will be mapped to the
+character at the same position in y. If there is a third argument, it
+must be a string, whose characters will be mapped to None in the result.
+[clinic start generated code]*/
 
 static PyObject *
 unicode_maketrans_impl(PyObject *x, PyObject *y, PyObject *z)
