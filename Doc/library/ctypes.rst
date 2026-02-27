@@ -1587,7 +1587,7 @@ way is to instantiate :py:class:`CDLL` or one of its subclasses:
 
       The name of the library passed in the constructor.
 
-.. class:: OleDLL(name, mode=DEFAULT_MODE, handle=None, use_errno=False, use_last_error=False, winmode=None)
+.. class:: OleDLL
 
    See :py:class:`~ctypes.CDLL`, the superclass, for common information.
 
@@ -1604,7 +1604,7 @@ way is to instantiate :py:class:`CDLL` or one of its subclasses:
       which is now an alias of :exc:`OSError`.
 
 
-.. class:: WinDLL(name, mode=DEFAULT_MODE, handle=None, use_errno=False, use_last_error=False, winmode=None)
+.. class:: WinDLL
 
    See :py:class:`~ctypes.CDLL`, the superclass, for common information.
 
@@ -1613,7 +1613,7 @@ way is to instantiate :py:class:`CDLL` or one of its subclasses:
 
    .. availability:: Windows
 
-.. class:: PyDLL(name, mode=DEFAULT_MODE, handle=None)
+.. class:: PyDLL
 
    See :py:class:`~ctypes.CDLL`, the superclass, for common information.
 
