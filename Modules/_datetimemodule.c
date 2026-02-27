@@ -4168,6 +4168,7 @@ tzinfo_fromutc(PyObject *self, PyObject *dt)
     result = add_datetime_timedelta((PyDateTime_DateTime *)dt, delta, 1);
     if (result == NULL)
         goto Fail;
+
     Py_DECREF(dst);
     dst = call_dst(GET_DT_TZINFO(dt), result);
     if (dst == NULL)
@@ -6210,14 +6211,14 @@ add_datetime_timedelta(PyDateTime_DateTime *date, PyDateTime_Delta *delta,
     }
 
     PyObject *result = new_datetime_subclass_ex(year, month, day,
-                                        hour, minute, second, microsecond,
-                                        HASTZINFO(date) ? date->tzinfo : Py_None,
-                                        Py_TYPE(date));
-        if (result != NULL && !PyDateTime_Check(result)) {
-            PyErr_Format(PyExc_TypeError,
-                        "datetime arithmetic on a subclass returned "
-                        "non-datetime (type %.200s)",
-                        Py_TYPE(result)->tp_name);
+                                                hour, minute, second, microsecond,
+                                                HASTZINFO(date) ? date->tzinfo : Py_None,
+                                                Py_TYPE(date));
+    if (result != NULL && !PyDateTime_Check(result)) {
+        PyErr_Format(PyExc_TypeError,
+                     "datetime arithmetic on a subclass returned "
+                     "non-datetime (type %.200s)",
+                     Py_TYPE(result)->tp_name);
             Py_DECREF(result);
             return NULL;
         }

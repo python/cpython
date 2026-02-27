@@ -5133,16 +5133,17 @@ class TestDateTimeTZ(TestDateTime, TZInfoBase, unittest.TestCase):
             self.assertEqual(derived.tzname(), 'cookie')
         self.assertEqual(orig.__reduce__(), orig.__reduce_ex__(2))
 
-    def test_fromutc_subclass_new_returns_non_datetime(self):
-        call_count = 0
-
+    def _make_evil_datetime_class(self):
         class EvilDatetime(self.theclass):
+            sabotage = False
             def __new__(cls, *args, **kwargs):
-                nonlocal call_count
-                call_count += 1
-                if call_count > 1:
+                if cls.sabotage:
                     return bytearray(b'\x00' * 200)
                 return super().__new__(cls, *args, **kwargs)
+        return EvilDatetime
+
+    def test_fromutc_subclass_new_returns_non_datetime(self):
+        EvilDatetime = self._make_evil_datetime_class()
 
         class SimpleTZ(tzinfo):
             def utcoffset(self, dt): return timedelta(hours=1)
@@ -5151,19 +5152,13 @@ class TestDateTimeTZ(TestDateTime, TZInfoBase, unittest.TestCase):
 
         tz = SimpleTZ()
         dt = EvilDatetime(2000, 1, 1, 12, 0, 0, tzinfo=tz)
+        EvilDatetime.sabotage = True
         with self.assertRaises(TypeError):
             tz.fromutc(dt)
 
     def test_fromutc_subclass_new_returns_non_datetime_with_delta(self):
-        call_count = 0
+        EvilDatetime = self._make_evil_datetime_class()
 
-        class EvilDatetime(self.theclass):
-            def __new__(cls, *args, **kwargs):
-                nonlocal call_count
-                call_count += 1
-                if call_count > 1:
-                    return bytearray(b'\x00' * 200)
-                return super().__new__(cls, *args, **kwargs)
         class SimpleTZ(tzinfo):
             def utcoffset(self, dt): return timedelta(hours=2)
             def dst(self, dt):       return timedelta(hours=1)
@@ -5171,19 +5166,12 @@ class TestDateTimeTZ(TestDateTime, TZInfoBase, unittest.TestCase):
 
         tz = SimpleTZ()
         dt = EvilDatetime(2000, 1, 1, 12, 0, 0, tzinfo=tz)
+        EvilDatetime.sabotage = True
         with self.assertRaises(TypeError):
             tz.fromutc(dt)
 
     def test_utctimetuple_subclass_new_returns_non_datetime(self):
-        call_count = 0
-
-        class EvilDatetime(self.theclass):
-            def __new__(cls, *args, **kwargs):
-                nonlocal call_count
-                call_count += 1
-                if call_count > 1:
-                    return bytearray(b'\x00' * 200)
-                return super().__new__(cls, *args, **kwargs)
+        EvilDatetime = self._make_evil_datetime_class()
 
         class SimpleTZ(tzinfo):
             def utcoffset(self, dt): return timedelta(hours=5)
@@ -5192,6 +5180,7 @@ class TestDateTimeTZ(TestDateTime, TZInfoBase, unittest.TestCase):
 
         tz = SimpleTZ()
         dt = EvilDatetime(2000, 6, 15, 12, 0, 0, tzinfo=tz)
+        EvilDatetime.sabotage = True
         with self.assertRaises(TypeError):
             dt.utctimetuple()
 
