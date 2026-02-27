@@ -474,8 +474,8 @@ class Reader:
             return pos
         line = "".join(self.buffer[bol:pos])
         # Find the last grapheme cluster in the line up to pos
-        *_, last = unicodedata.iter_graphemes(line)
-        return bol + last.start
+        *_, last = unicodedata.iter_graphemes(line)  # type: ignore[attr-defined]
+        return bol + last.start  # type: ignore[no-any-return]
 
     def next_grapheme_boundary(self, pos: int | None = None) -> int:
         """Return the position just past the grapheme cluster starting
@@ -490,8 +490,8 @@ class Reader:
         if pos >= eol:
             return pos
         tail = "".join(self.buffer[pos:eol])
-        first = next(unicodedata.iter_graphemes(tail))
-        return pos + first.end
+        first = next(unicodedata.iter_graphemes(tail))  # type: ignore[attr-defined]
+        return pos + first.end  # type: ignore[no-any-return]
 
     def max_column(self, y: int) -> int:
         """Return the last x-offset for line y"""
