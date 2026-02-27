@@ -588,7 +588,7 @@ class WindowFunctionTests(unittest.TestCase):
                                self.cur.execute, self.query % "err_val_ret")
 
     def test_close_conn_in_window_func_value(self):
-        """gh-145040: closing connection in window function value() callback."""
+        # gh-145040: closing connection in window function value() callback.
         con = sqlite.connect(":memory:", autocommit=True)
         con.execute("CREATE TABLE t(x INTEGER)")
         con.executemany("INSERT INTO t VALUES(?)",
@@ -751,7 +751,7 @@ class AggregateTests(unittest.TestCase):
             self.con.create_aggregate("test", 1, aggregate_class=AggrText)
 
     def test_aggr_close_conn_in_step(self):
-        """Connection.close() in an aggregate step callback must not crash."""
+        # Connection.close() in an aggregate step callback must not crash.
         con = sqlite.connect(":memory:", autocommit=True)
         cur = con.cursor()
         cur.execute("CREATE TABLE t(x INTEGER)")
@@ -774,8 +774,31 @@ class AggregateTests(unittest.TestCase):
         with self.assertRaisesRegex(sqlite.ProgrammingError, msg):
             con.execute("SELECT agg_close(x) FROM t")
 
+    def test_close_conn_in_nested_callback(self):
+        # gh-145040: close() must be prevented even in nested callbacks.
+        con = sqlite.connect(":memory:", autocommit=True)
+        con.execute("CREATE TABLE t(x INTEGER)")
+        for i in range(5):
+            con.execute("INSERT INTO t VALUES(?)", (i,))
+
+        def outer_func(x):
+            con.close()
+            return x
+
+        def inner_func(x):
+            return x * 10
+
+        con.create_function("outer_func", 1, outer_func)
+        con.create_function("inner_func", 1, inner_func)
+        msg = "from within a callback"
+        with self.assertRaisesRegex(sqlite.ProgrammingError, msg):
+            con.execute("SELECT outer_func(inner_func(x)) FROM t")
+        # Connection must still be usable after the failed close attempt.
+        self.assertEqual(con.execute("SELECT 1").fetchone(), (1,))
+        con.close()
+
     def test_close_conn_in_udf_during_executemany(self):
-        """gh-145040: closing connection in UDF during executemany."""
+        # gh-145040: closing connection in UDF during executemany.
         con = sqlite.connect(":memory:", autocommit=True)
         con.execute("CREATE TABLE t(x)")
 
@@ -790,7 +813,7 @@ class AggregateTests(unittest.TestCase):
                             [(i,) for i in range(10)])
 
     def test_close_conn_in_progress_handler_during_iternext(self):
-        """gh-145040: closing connection in progress handler during iteration."""
+        # gh-145040: closing connection in progress handler during iteration.
         con = sqlite.connect(":memory:", autocommit=True)
         con.execute("CREATE TABLE t(x)")
         con.executemany("INSERT INTO t VALUES(?)",
@@ -817,7 +840,7 @@ class AggregateTests(unittest.TestCase):
             gc_collect()
 
     def test_close_conn_in_collation_callback(self):
-        """gh-145040: closing connection in collation callback."""
+        # gh-145040: closing connection in collation callback.
         con = sqlite.connect(":memory:", autocommit=True)
         con.execute("CREATE TABLE t(x TEXT)")
         con.executemany("INSERT INTO t VALUES(?)",

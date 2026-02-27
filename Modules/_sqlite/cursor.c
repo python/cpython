@@ -905,8 +905,12 @@ _pysqlite_query_execute(pysqlite_Cursor* self, int multiple, PyObject* operation
             goto error;
         }
 
+        self->connection->in_callback++;
         rc = stmt_step(self->statement->st);
-        if (self->connection->db == NULL) {
+        self->connection->in_callback--;
+        if (self->connection->close_attempted_in_callback) {
+            self->connection->close_attempted_in_callback = 0;
+            PyErr_Clear();
             PyErr_SetString(state->ProgrammingError,
                             "Cannot close the database connection "
                             "from within a callback function.");
@@ -1161,10 +1165,14 @@ pysqlite_cursor_iternext(PyObject *op)
     if (row == NULL) {
         return NULL;
     }
+    self->connection->in_callback++;
     int rc = stmt_step(stmt);
-    if (self->connection->db == NULL) {
+    self->connection->in_callback--;
+    if (self->connection->close_attempted_in_callback) {
+        self->connection->close_attempted_in_callback = 0;
         Py_DECREF(row);
         Py_CLEAR(self->statement);
+        PyErr_Clear();
         PyErr_SetString(self->connection->state->ProgrammingError,
                         "Cannot close the database connection "
                         "from within a callback function.");

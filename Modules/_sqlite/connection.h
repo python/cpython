@@ -65,6 +65,15 @@ typedef struct
 
     int initialized;
 
+    /* set to 1 while a SQLite callback (UDF, aggregate, progress handler,
+     * etc.) is executing; used to prevent closing the connection from
+     * within a callback, which is illegal per the SQLite C API docs */
+    int in_callback;
+
+    /* set to 1 when close() is attempted during a callback; checked after
+     * stmt_step() returns to raise the appropriate ProgrammingError */
+    int close_attempted_in_callback;
+
     /* thread identification of the thread the connection was created in */
     unsigned long thread_ident;
 

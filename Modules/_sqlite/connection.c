@@ -302,6 +302,8 @@ pysqlite_connection_init_impl(pysqlite_Connection *self, PyObject *database,
     self->blobs = blobs;
     self->row_factory = Py_NewRef(Py_None);
     self->text_factory = Py_NewRef(&PyUnicode_Type);
+    self->in_callback = 0;
+    self->close_attempted_in_callback = 0;
     self->trace_ctx = NULL;
     self->progress_ctx = NULL;
     self->authorizer_ctx = NULL;
@@ -652,6 +654,16 @@ pysqlite_connection_close_impl(pysqlite_Connection *self)
         pysqlite_state *state = pysqlite_get_state_by_type(tp);
         PyErr_SetString(state->ProgrammingError,
                         "Base Connection.__init__ not called.");
+        return NULL;
+    }
+
+    if (self->in_callback > 0) {
+        self->close_attempted_in_callback = 1;
+        PyTypeObject *tp = Py_TYPE(self);
+        pysqlite_state *state = pysqlite_get_state_by_type(tp);
+        PyErr_SetString(state->ProgrammingError,
+                        "Cannot close the database connection "
+                        "from within a callback function.");
         return NULL;
     }
 
