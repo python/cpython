@@ -1,0 +1,2 @@
+:class:`mailbox.Mailbox` instances can now be used as a context manager.
+The Mailbox is locked on context entry and unlocked and closed at context exit.

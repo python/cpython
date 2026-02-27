@@ -104,11 +104,13 @@ typedef struct _PyCompiler {
                                   * (including instructions for nested code objects)
                                   */
     int c_disable_warning;
+    PyObject *c_module;
 } compiler;
 
 static int
 compiler_setup(compiler *c, mod_ty mod, PyObject *filename,
-               PyCompilerFlags *flags, int optimize, PyArena *arena)
+               PyCompilerFlags *flags, int optimize, PyArena *arena,
+               PyObject *module)
 {
     PyCompilerFlags local_flags = _PyCompilerFlags_INIT;
 
@@ -126,6 +128,7 @@ compiler_setup(compiler *c, mod_ty mod, PyObject *filename,
     if (!_PyFuture_FromAST(mod, filename, &c->c_future)) {
         return ERROR;
     }
+    c->c_module = Py_XNewRef(module);
     if (!flags) {
         flags = &local_flags;
     }
@@ -136,7 +139,9 @@ compiler_setup(compiler *c, mod_ty mod, PyObject *filename,
     c->c_optimize = (optimize == -1) ? _Py_GetConfig()->optimization_level : optimize;
     c->c_save_nested_seqs = false;
 
-    if (!_PyAST_Preprocess(mod, arena, filename, c->c_optimize, merged, 0)) {
+    if (!_PyAST_Preprocess(mod, arena, filename, c->c_optimize, merged,
+                           0, 1, module))
+    {
         return ERROR;
     }
     c->c_st = _PySymtable_Build(mod, filename, &c->c_future);
@@ -156,6 +161,7 @@ compiler_free(compiler *c)
         _PySymtable_Free(c->c_st);
     }
     Py_XDECREF(c->c_filename);
+    Py_XDECREF(c->c_module);
     Py_XDECREF(c->c_const_cache);
     Py_XDECREF(c->c_stack);
     PyMem_Free(c);
@@ -163,13 +169,13 @@ compiler_free(compiler *c)
 
 static compiler*
 new_compiler(mod_ty mod, PyObject *filename, PyCompilerFlags *pflags,
-             int optimize, PyArena *arena)
+             int optimize, PyArena *arena, PyObject *module)
 {
     compiler *c = PyMem_Calloc(1, sizeof(compiler));
     if (c == NULL) {
         return NULL;
     }
-    if (compiler_setup(c, mod, filename, pflags, optimize, arena) < 0) {
+    if (compiler_setup(c, mod, filename, pflags, optimize, arena, module) < 0) {
         compiler_free(c);
         return NULL;
     }
@@ -628,7 +634,7 @@ _PyCompile_EnterScope(compiler *c, identifier name, int scope_type,
         }
     }
     if (u->u_ste->ste_has_conditional_annotations) {
-        /* Cook up an implicit __conditional__annotations__ cell */
+        /* Cook up an implicit __conditional_annotations__ cell */
         Py_ssize_t res;
         assert(u->u_scope_type == COMPILE_SCOPE_CLASS || u->u_scope_type == COMPILE_SCOPE_MODULE);
         res = _PyCompile_DictAddObj(u->u_metadata.u_cellvars, &_Py_ID(__conditional_annotations__));
@@ -792,6 +798,26 @@ _PyCompile_TopFBlock(compiler *c)
         return NULL;
     }
     return &c->u->u_fblock[c->u->u_nfblocks - 1];
+}
+
+bool
+_PyCompile_InExceptionHandler(compiler *c)
+{
+    for (Py_ssize_t i = 0; i < c->u->u_nfblocks; i++) {
+        fblockinfo *block = &c->u->u_fblock[i];
+        switch (block->fb_type) {
+            case COMPILE_FBLOCK_TRY_EXCEPT:
+            case COMPILE_FBLOCK_FINALLY_TRY:
+            case COMPILE_FBLOCK_FINALLY_END:
+            case COMPILE_FBLOCK_EXCEPTION_HANDLER:
+            case COMPILE_FBLOCK_EXCEPTION_GROUP_HANDLER:
+            case COMPILE_FBLOCK_HANDLER_CLEANUP:
+                return true;
+            default:
+                break;
+        }
+    }
+    return false;
 }
 
 void
@@ -1221,7 +1247,8 @@ _PyCompile_Warn(compiler *c, location loc, const char *format, ...)
         return ERROR;
     }
     int ret = _PyErr_EmitSyntaxWarning(msg, c->c_filename, loc.lineno, loc.col_offset + 1,
-                                       loc.end_lineno, loc.end_col_offset + 1);
+                                       loc.end_lineno, loc.end_col_offset + 1,
+                                       c->c_module);
     Py_DECREF(msg);
     return ret;
 }
@@ -1436,7 +1463,7 @@ optimize_and_assemble_code_unit(struct compiler_unit *u, PyObject *const_cache,
 
     int stackdepth;
     int nlocalsplus;
-    if (_PyCfg_OptimizedCfgToInstructionSequence(g, &u->u_metadata, code_flags,
+    if (_PyCfg_OptimizedCfgToInstructionSequence(g, &u->u_metadata,
                                                  &stackdepth, &nlocalsplus,
                                                  &optimized_instrs) < 0) {
         goto error;
@@ -1476,10 +1503,10 @@ _PyCompile_OptimizeAndAssemble(compiler *c, int addNone)
 
 PyCodeObject *
 _PyAST_Compile(mod_ty mod, PyObject *filename, PyCompilerFlags *pflags,
-               int optimize, PyArena *arena)
+               int optimize, PyArena *arena, PyObject *module)
 {
     assert(!PyErr_Occurred());
-    compiler *c = new_compiler(mod, filename, pflags, optimize, arena);
+    compiler *c = new_compiler(mod, filename, pflags, optimize, arena, module);
     if (c == NULL) {
         return NULL;
     }
@@ -1492,7 +1519,8 @@ _PyAST_Compile(mod_ty mod, PyObject *filename, PyCompilerFlags *pflags,
 
 int
 _PyCompile_AstPreprocess(mod_ty mod, PyObject *filename, PyCompilerFlags *cf,
-                         int optimize, PyArena *arena, int no_const_folding)
+                         int optimize, PyArena *arena, int no_const_folding,
+                         PyObject *module)
 {
     _PyFutureFeatures future;
     if (!_PyFuture_FromAST(mod, filename, &future)) {
@@ -1502,7 +1530,9 @@ _PyCompile_AstPreprocess(mod_ty mod, PyObject *filename, PyCompilerFlags *cf,
     if (optimize == -1) {
         optimize = _Py_GetConfig()->optimization_level;
     }
-    if (!_PyAST_Preprocess(mod, arena, filename, optimize, flags, no_const_folding)) {
+    if (!_PyAST_Preprocess(mod, arena, filename, optimize, flags,
+                           no_const_folding, 0, module))
+    {
         return -1;
     }
     return 0;
@@ -1627,7 +1657,7 @@ _PyCompile_CodeGen(PyObject *ast, PyObject *filename, PyCompilerFlags *pflags,
         return NULL;
     }
 
-    compiler *c = new_compiler(mod, filename, pflags, optimize, arena);
+    compiler *c = new_compiler(mod, filename, pflags, optimize, arena, NULL);
     if (c == NULL) {
         _PyArena_Free(arena);
         return NULL;
@@ -1708,7 +1738,7 @@ _PyCompile_Assemble(_PyCompile_CodeUnitMetadata *umd, PyObject *filename,
 
     int code_flags = 0;
     int stackdepth, nlocalsplus;
-    if (_PyCfg_OptimizedCfgToInstructionSequence(g, umd, code_flags,
+    if (_PyCfg_OptimizedCfgToInstructionSequence(g, umd,
                                                  &stackdepth, &nlocalsplus,
                                                  &optimized_instrs) < 0) {
         goto error;

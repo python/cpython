@@ -99,7 +99,6 @@ def main():
     # Define _Py_OPAQUE_PYOBJECT macro
     if opaque_pyobject:
         cflags.append(f'-D_Py_OPAQUE_PYOBJECT')
-        sources.append('create_moduledef.c')
 
     if internal:
         cflags.append('-DTEST_INTERNAL_C_API=1')
@@ -119,7 +118,7 @@ def main():
             print(f"Add PCbuild directory: {pcbuild}")
 
     # Display information to help debugging
-    for env_name in ('CC', 'CFLAGS'):
+    for env_name in ('CC', 'CFLAGS', 'CPPFLAGS'):
         if env_name in os.environ:
             print(f"{env_name} env var: {os.environ[env_name]!r}")
         else:

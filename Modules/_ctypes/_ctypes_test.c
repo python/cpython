@@ -989,13 +989,10 @@ EXPORT(RECT) ReturnRect(int i, RECT ar, RECT* br, POINT cp, RECT dr,
     {
     case 0:
         return ar;
-        break;
     case 1:
         return dr;
-        break;
     case 2:
         return gr;
-        break;
 
     }
     return ar;

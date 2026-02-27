@@ -33,6 +33,7 @@ extensions = [
     'issue_role',
     'lexers',
     'misc_news',
+    'profiling_trace',
     'pydoc_topics',
     'pyspecific',
     'sphinx.ext.coverage',
@@ -226,13 +227,6 @@ nitpick_ignore = [
 # Temporary undocumented names.
 # In future this list must be empty.
 nitpick_ignore += [
-    # Undocumented public C macros
-    ('c:macro', 'Py_BUILD_ASSERT'),
-    ('c:macro', 'Py_BUILD_ASSERT_EXPR'),
-    # Do not error nit-picky mode builds when _SubParsersAction.add_parser cannot
-    # be resolved, as the method is currently undocumented. For context, see
-    # https://github.com/python/cpython/pull/103289.
-    ('py:meth', '_SubParsersAction.add_parser'),
     # Attributes/methods/etc. that definitely should be documented better,
     # but are deferred for now:
     ('py:attr', '__wrapped__'),
@@ -359,11 +353,12 @@ latex_elements = {
     'papersize': 'a4paper',
     # The font size ('10pt', '11pt' or '12pt').
     'pointsize': '10pt',
+    'maxlistdepth': '8',  # See https://github.com/python/cpython/issues/139588
 }
 
 # Grouping the document tree into LaTeX files. List of tuples
 # (source start file, target name, title, author, document class [howto/manual]).
-_stdauthor = 'Guido van Rossum and the Python development team'
+_stdauthor = 'The Python development team'
 latex_documents = [
     ('c-api/index', 'c-api.tex', 'The Python/C API', _stdauthor, 'manual'),
     (
@@ -438,7 +433,12 @@ latex_appendices = ['glossary', 'about', 'license', 'copyright']
 
 epub_author = 'Python Documentation Authors'
 epub_publisher = 'Python Software Foundation'
-epub_exclude_files = ('index.xhtml', 'download.xhtml')
+epub_exclude_files = (
+    'index.xhtml',
+    'download.xhtml',
+    '_static/tachyon-example-flamegraph.html',
+    '_static/tachyon-example-heatmap.html',
+)
 
 # index pages are not valid xhtml
 # https://github.com/sphinx-doc/sphinx/issues/12359

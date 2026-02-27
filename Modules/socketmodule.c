@@ -2769,6 +2769,12 @@ getsockaddrlen(PySocketSockObject *s, socklen_t *len_ret)
        _Py_FALLTHROUGH;
 #endif /* AF_RDS */
 
+#ifdef AF_DIVERT
+    case AF_DIVERT:
+        /* FreeBSD divert(4) sockets use sockaddr_in: fall-through */
+       _Py_FALLTHROUGH;
+#endif /* AF_DIVERT */
+
     case AF_INET:
     {
         *len_ret = sizeof (struct sockaddr_in);
@@ -4977,11 +4983,13 @@ _socket_socket_sendmsg_impl(PySocketSockObject *s, PyObject *data_arg,
     if (cmsg_arg == NULL)
         ncmsgs = 0;
     else {
-        if ((cmsg_fast = PySequence_Fast(cmsg_arg,
-                                         "sendmsg() argument 2 must be an "
-                                         "iterable")) == NULL)
+        cmsg_fast = PySequence_Tuple(cmsg_arg);
+        if (cmsg_fast == NULL) {
+            PyErr_SetString(PyExc_TypeError,
+                "sendmsg() argument 2 must be an iterable");
             goto finally;
-        ncmsgs = PySequence_Fast_GET_SIZE(cmsg_fast);
+        }
+        ncmsgs = PyTuple_GET_SIZE(cmsg_fast);
     }
 
 #ifndef CMSG_SPACE
@@ -5001,8 +5009,9 @@ _socket_socket_sendmsg_impl(PySocketSockObject *s, PyObject *data_arg,
     controllen = controllen_last = 0;
     while (ncmsgbufs < ncmsgs) {
         size_t bufsize, space;
+        PyObject *item = PyTuple_GET_ITEM(cmsg_fast, ncmsgbufs);
 
-        if (!PyArg_Parse(PySequence_Fast_GET_ITEM(cmsg_fast, ncmsgbufs),
+        if (!PyArg_Parse(item,
                          "(iiy*):[sendmsg() ancillary data items]",
                          &cmsgs[ncmsgbufs].level,
                          &cmsgs[ncmsgbufs].type,
@@ -7294,10 +7303,10 @@ _socket_if_nametoindex_impl(PyObject *module, PyObject *oname)
     unsigned long index;
 #endif
 
+    errno = ENODEV;  // in case 'if_nametoindex' does not set errno
     index = if_nametoindex(PyBytes_AS_STRING(oname));
     if (index == 0) {
-        /* if_nametoindex() doesn't set errno */
-        PyErr_SetString(PyExc_OSError, "no interface with this name");
+        PyErr_SetFromErrno(PyExc_OSError);
         return NULL;
     }
 
@@ -7317,6 +7326,7 @@ static PyObject *
 _socket_if_indextoname_impl(PyObject *module, NET_IFINDEX index)
 /*[clinic end generated code: output=e48bc324993052e0 input=c93f753d0cf6d7d1]*/
 {
+    errno = ENXIO;  // in case 'if_indextoname' does not set errno
     char name[IF_NAMESIZE + 1];
     if (if_indextoname(index, name) == NULL) {
         PyErr_SetFromErrno(PyExc_OSError);
@@ -8899,6 +8909,9 @@ socket_exec(PyObject *m)
 #endif
 #ifdef IPV6_HOPLIMIT
     ADD_INT_MACRO(m, IPV6_HOPLIMIT);
+#endif
+#ifdef IPV6_HDRINCL
+    ADD_INT_MACRO(m, IPV6_HDRINCL);
 #endif
 #ifdef IPV6_HOPOPTS
     ADD_INT_MACRO(m, IPV6_HOPOPTS);

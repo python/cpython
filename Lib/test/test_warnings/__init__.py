@@ -249,10 +249,23 @@ class FilterTests(BaseTest):
             self.module.warn_explicit('msg', UserWarning, 'filename', 42,
                                       module='package.module')
             self.assertEqual(len(w), 1)
+            self.module.warn_explicit('msg', UserWarning, '/path/to/package/module', 42)
+            self.assertEqual(len(w), 2)
+            self.module.warn_explicit('msg', UserWarning, '/path/to/package/module.py', 42)
+            self.assertEqual(len(w), 3)
+            self.module.warn_explicit('msg', UserWarning, '/path/to/package/module/__init__.py', 42)
+            self.assertEqual(len(w), 4)
             with self.assertRaises(UserWarning):
-                self.module.warn_explicit('msg', UserWarning, '/path/to/package/module', 42)
-            with self.assertRaises(UserWarning):
-                self.module.warn_explicit('msg', UserWarning, '/path/to/package/module.py', 42)
+                self.module.warn_explicit('msg', UserWarning, '/path/to/package/module/__init__', 42)
+            if MS_WINDOWS:
+                self.module.warn_explicit('msg', UserWarning, r'C:\path\to\package\module.PY', 42)
+                self.assertEqual(len(w), 5)
+                self.module.warn_explicit('msg', UserWarning, r'C:\path\to\package\module\__INIT__.PY', 42)
+                self.assertEqual(len(w), 6)
+                self.module.warn_explicit('msg', UserWarning, r'C:\path\to\package\module.PYW', 42)
+                self.assertEqual(len(w), 7)
+                self.module.warn_explicit('msg', UserWarning, r'C:\path\to\package\module\__INIT__.PYW', 42)
+                self.assertEqual(len(w), 8)
 
         with self.module.catch_warnings(record=True) as w:
             self.module.simplefilter('error')
@@ -276,9 +289,8 @@ class FilterTests(BaseTest):
             with self.assertRaises(UserWarning):
                 self.module.warn_explicit('msg', UserWarning, '/PATH/TO/PACKAGE/MODULE', 42)
             if MS_WINDOWS:
-                if self.module is py_warnings:
-                    self.module.warn_explicit('msg', UserWarning, r'/path/to/package/module.PY', 42)
-                    self.assertEqual(len(w), 3)
+                self.module.warn_explicit('msg', UserWarning, r'/path/to/package/module.PY', 42)
+                self.assertEqual(len(w), 3)
                 with self.assertRaises(UserWarning):
                     self.module.warn_explicit('msg', UserWarning, r'/path/to/package/module/__init__.py', 42)
                 with self.assertRaises(UserWarning):
@@ -302,9 +314,8 @@ class FilterTests(BaseTest):
                 self.assertEqual(len(w), 1)
                 self.module.warn_explicit('msg', UserWarning, r'C:\path\to\package\module.py', 42)
                 self.assertEqual(len(w), 2)
-                if self.module is py_warnings:
-                    self.module.warn_explicit('msg', UserWarning, r'C:\path\to\package\module.PY', 42)
-                    self.assertEqual(len(w), 3)
+                self.module.warn_explicit('msg', UserWarning, r'C:\path\to\package\module.PY', 42)
+                self.assertEqual(len(w), 3)
                 with self.assertRaises(UserWarning):
                     self.module.warn_explicit('msg', UserWarning, r'C:\path\to\package\module.pyw', 42)
                 with self.assertRaises(UserWarning):
@@ -399,7 +410,7 @@ class FilterTests(BaseTest):
 
     def test_mutate_filter_list(self):
         class X:
-            def match(self, a):
+            def match(self, a, start=0):
                 L[:] = []
 
         L = [("default",X(),UserWarning,X(),0) for i in range(2)]
@@ -716,7 +727,7 @@ class WarnTests(BaseTest):
 
     def check_module_globals_error(self, module_globals, errmsg, errtype=ValueError):
         if self.module is py_warnings:
-            self.check_module_globals(module_globals)
+            self.check_module_globals_deprecated(module_globals, errmsg)
             return
         with self.module.catch_warnings(record=True) as w:
             self.module.filterwarnings('always')
@@ -727,9 +738,6 @@ class WarnTests(BaseTest):
         self.assertEqual(len(w), 0)
 
     def check_module_globals_deprecated(self, module_globals, msg):
-        if self.module is py_warnings:
-            self.check_module_globals(module_globals)
-            return
         with self.module.catch_warnings(record=True) as w:
             self.module.filterwarnings('always')
             self.module.warn_explicit(
