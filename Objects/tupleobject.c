@@ -203,7 +203,7 @@ PyTuple_Pack(Py_ssize_t n, ...)
 }
 
 static PyTupleObject *
-tuple_alloc_2()
+tuple_alloc_2(void)
 {
     Py_ssize_t size = 2;
     Py_ssize_t index = size - 1;
