@@ -802,6 +802,13 @@ class StructTest(ComplexesAreIdenticalMixin, unittest.TestCase):
             my_struct = MyStruct()
         self.assertEqual(my_struct.pack(12345), b'\x30\x39')
 
+        # New way, no warnings:
+        class MyStruct(struct.Struct):
+            def __new__(cls):
+                return super().__new__(cls, '>h')
+        my_struct = MyStruct()
+        self.assertEqual(my_struct.pack(12345), b'\x30\x39')
+
         class MyStruct(struct.Struct):
             def __new__(cls, arg):
                 self = super().__new__(cls, '>h')
