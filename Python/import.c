@@ -4502,6 +4502,7 @@ _PyImport_LazyImportModuleLevelObject(PyThreadState *tstate,
             modname = Py_NewRef(Py_None);
         }
         if (fromlist == NULL) {
+            assert(!PyErr_Occurred());
             fromlist = Py_NewRef(Py_None);
         }
         PyObject *args[] = {modname, name, fromlist};
