@@ -85,14 +85,16 @@ if os.name == "nt":
         wintypes.DWORD,
     )
 
+    # gh-145307: We defer loading psapi.dll until _get_module_handles is called.
+    # Loading additional DLLs at startup for functionality that may never be
+    # uses is wasteful.
+    _enum_process_modules = None
+
     def _get_module_filename(module: wintypes.HMODULE):
         name = (wintypes.WCHAR * 32767)() # UNICODE_STRING_MAX_CHARS
         if _k32_get_module_file_name(module, name, len(name)):
             return name.value
         return None
-
-
-    _enum_process_modules = None
 
     def _get_module_handles():
         global _enum_process_modules
