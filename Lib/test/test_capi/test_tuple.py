@@ -1,9 +1,11 @@
 import unittest
 import gc
+from sys import getrefcount
 from test.support import import_helper
 
 _testcapi = import_helper.import_module('_testcapi')
 _testlimitedcapi = import_helper.import_module('_testlimitedcapi')
+_testinternalcapi = import_helper.import_module('_testinternalcapi')
 
 NULL = None
 PY_SSIZE_T_MIN = _testcapi.PY_SSIZE_T_MIN
@@ -117,6 +119,61 @@ class CAPITest(unittest.TestCase):
 
         # CRASHES pack(1, NULL)
         # CRASHES pack(2, [1])
+
+    def test_tuple_from_pair(self):
+        # Test _PyTuple_FromPair()
+        tuple_from_pair = _testinternalcapi._tuple_from_pair
+
+        self.assertEqual(tuple_from_pair(1, 2), (1, 2))
+        self.assertEqual(tuple_from_pair(None, None), (None, None))
+        self.assertEqual(tuple_from_pair(True, False), (True, False))
+
+        # user class supports gc
+        class Temp:
+            pass
+        temp = Temp()
+        temp_rc = getrefcount(temp)
+        self.assertEqual(tuple_from_pair(temp, temp), (temp, temp))
+        self.assertEqual(getrefcount(temp), temp_rc)
+
+        self.assertRaises(TypeError, tuple_from_pair, 1, 2, 3)
+        self.assertRaises(TypeError, tuple_from_pair, 1)
+        self.assertRaises(TypeError, tuple_from_pair)
+
+        self.assertFalse(gc.is_tracked(tuple_from_pair(1, 2)))
+        self.assertFalse(gc.is_tracked(tuple_from_pair(None, None)))
+        self.assertFalse(gc.is_tracked(tuple_from_pair(True, False)))
+        self.assertTrue(gc.is_tracked(tuple_from_pair(temp, (1, 2))))
+        self.assertTrue(gc.is_tracked(tuple_from_pair(temp, 1)))
+        self.assertTrue(gc.is_tracked(tuple_from_pair([], {})))
+
+    def test_tuple_from_pair_steal(self):
+        # Test _PyTuple_FromPairSteal()
+        tuple_from_pair = _testinternalcapi._tuple_from_pair_steal
+
+        self.assertEqual(tuple_from_pair(1, 2), (1, 2))
+        self.assertEqual(tuple_from_pair(None, None), (None, None))
+        self.assertEqual(tuple_from_pair(True, False), (True, False))
+
+        # user class supports gc
+        class Temp:
+            pass
+        temp = Temp()
+        temp_rc = getrefcount(temp)
+        self.assertEqual(tuple_from_pair(temp, temp), (temp, temp))
+        self.assertEqual(getrefcount(temp), temp_rc)
+
+        self.assertRaises(TypeError, tuple_from_pair, 1, 2, 3)
+        self.assertRaises(TypeError, tuple_from_pair, 1)
+        self.assertRaises(TypeError, tuple_from_pair)
+
+        self.assertFalse(gc.is_tracked(tuple_from_pair(1, 2)))
+        self.assertFalse(gc.is_tracked(tuple_from_pair(None, None)))
+        self.assertFalse(gc.is_tracked(tuple_from_pair(True, False)))
+        self.assertTrue(gc.is_tracked(tuple_from_pair(temp, (1, 2))))
+        self.assertTrue(gc.is_tracked(tuple_from_pair(temp, 1)))
+        self.assertTrue(gc.is_tracked(tuple_from_pair([], {})))
+
 
     def test_tuple_size(self):
         # Test PyTuple_Size()
