@@ -50,7 +50,6 @@ See also :ref:`Reflection <reflection>`.
 
    Return a :term:`strong reference`, or ``NULL`` if *frame* has no outer
    frame.
-   Does not raise an exception, even if the return value is ``NULL``.
    Preserves exception that was set before the call.
 
    .. versionadded:: 3.9
