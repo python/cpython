@@ -26,6 +26,9 @@ extern PyStatus _PyTuple_InitGlobalObjects(PyInterpreterState *);
 PyAPI_FUNC(PyObject *)_PyTuple_FromStackRefStealOnSuccess(const union _PyStackRef *, Py_ssize_t);
 PyAPI_FUNC(PyObject *)_PyTuple_FromArraySteal(PyObject *const *, Py_ssize_t);
 
+PyAPI_FUNC(PyObject *)_PyTuple_FromPair(PyObject *, PyObject *);
+PyAPI_FUNC(PyObject *)_PyTuple_FromPairSteal(PyObject *, PyObject *);
+
 typedef struct {
     PyObject_HEAD
     Py_ssize_t it_index;
