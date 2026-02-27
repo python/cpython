@@ -85,16 +85,6 @@ if os.name == "nt":
         wintypes.DWORD,
     )
 
-    _psapi = ctypes.WinDLL('psapi', use_last_error=True)
-    _enum_process_modules = _psapi["EnumProcessModules"]
-    _enum_process_modules.restype = wintypes.BOOL
-    _enum_process_modules.argtypes = (
-        wintypes.HANDLE,
-        ctypes.POINTER(wintypes.HMODULE),
-        wintypes.DWORD,
-        wintypes.LPDWORD,
-    )
-
     def _get_module_filename(module: wintypes.HMODULE):
         name = (wintypes.WCHAR * 32767)() # UNICODE_STRING_MAX_CHARS
         if _k32_get_module_file_name(module, name, len(name)):
@@ -102,7 +92,21 @@ if os.name == "nt":
         return None
 
 
+    _enum_process_modules = None
+
     def _get_module_handles():
+        global _enum_process_modules
+        if _enum_process_modules is None:
+            _psapi = ctypes.WinDLL('psapi', use_last_error=True)
+            _enum_process_modules = _psapi["EnumProcessModules"]
+            _enum_process_modules.restype = wintypes.BOOL
+            _enum_process_modules.argtypes = (
+                wintypes.HANDLE,
+                ctypes.POINTER(wintypes.HMODULE),
+                wintypes.DWORD,
+                wintypes.LPDWORD,
+            )
+
         process = _get_current_process()
         space_needed = wintypes.DWORD()
         n = 1024
