@@ -3136,6 +3136,7 @@ def main():
         if args.verbose:
             print('{!r} file created.'.format(tar_name))
 
+
 def __getattr__(name):
     if name == "version":
         from warnings import _deprecated
@@ -3143,6 +3144,7 @@ def __getattr__(name):
         _deprecated("version", remove=(3, 20))
         return "0.9.0"  # Do not change
     raise AttributeError(f"module {__name__!r} has no attribute {name!r}")
+
 
 if __name__ == '__main__':
     main()

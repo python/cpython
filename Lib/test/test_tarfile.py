@@ -4840,9 +4840,9 @@ class TestModule(unittest.TestCase):
     def test_deprecated_version(self):
         with self.assertWarnsRegex(
                 DeprecationWarning,
-                r"'version' is deprecated and slated for removal in Python 3.20",
+                "'version' is deprecated and slated for removal in Python 3.20",
         ) as cm:
-            getattr(tarfile, 'version')
+            getattr(tarfile, "version")
         self.assertEqual(cm.filename, __file__)
 
 
