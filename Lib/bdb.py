@@ -197,7 +197,7 @@ def _check_executable_linenos_cache(filename=None):
     if filename is None:
         filenames = tuple(_executable_linenos_cache)
     else:
-        filenames = tuple(filename)
+        filenames = (filename,)
 
     for filename in filenames:
         if (entry := _executable_linenos_cache.get(filename)) is None:
