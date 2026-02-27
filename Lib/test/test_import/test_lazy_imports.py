@@ -381,6 +381,9 @@ class DunderLazyImportTests(unittest.TestCase):
         sys.set_lazy_imports_filter(None)
         sys.set_lazy_imports("normal")
 
+    def test_that_fails(self):
+        self.assertTrue(False)
+
     def test_dunder_lazy_import(self):
         """__lazy_import__ should create lazy import proxy."""
         import test.test_import.data.lazy_imports.dunder_lazy_import
