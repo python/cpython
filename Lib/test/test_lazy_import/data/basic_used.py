@@ -1,3 +1,3 @@
-lazy import test.test_import.data.lazy_imports.basic2 as basic2
+lazy import test.test_lazy_import.data.basic2 as basic2
 
 basic2.f()

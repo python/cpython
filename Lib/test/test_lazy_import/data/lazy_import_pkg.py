@@ -1,2 +1,2 @@
-lazy import test.test_import.data.lazy_imports.pkg.bar
-x = test.test_import.data.lazy_imports.pkg.bar.f
+lazy import test.test_lazy_import.data.pkg.bar
+x = test.test_lazy_import.data.pkg.bar.f

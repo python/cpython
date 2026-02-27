@@ -1,4 +1,4 @@
 try:
-    import test.test_import.data.lazy_imports.basic2
+    import test.test_lazy_import.data.basic2
 except:
     pass
