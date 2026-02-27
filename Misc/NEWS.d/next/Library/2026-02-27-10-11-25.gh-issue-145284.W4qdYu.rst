@@ -1,0 +1,4 @@
+Updated Compression Lib to handle exceptions for failures/bad blocks during
+raw block decompression while not EOF. The prior propagated upstream
+affecting graceful handling of errors originating from the block
+decrompressin method.

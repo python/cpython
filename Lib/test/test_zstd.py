@@ -1954,7 +1954,7 @@ class FileTestCase(unittest.TestCase):
 
     def test_read_bad_data(self):
         with ZstdFile(io.BytesIO(COMPRESSED_BOGUS)) as f:
-            self.assertGreaterEqual(len(f.read()),0) 
+            self.assertGreaterEqual(len(f.read()),0)
 
     def test_read_exception(self):
         class C:
