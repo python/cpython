@@ -558,3 +558,87 @@ class TestReaderInColor(ScreenEqualMixin, TestCase):
         reader, _ = handle_all_events(events)
         self.assert_screen_equal(reader, 'flag = "🏳️\\u200d🌈"', clean=True)
         self.assert_screen_equal(reader, 'flag {o}={z} {s}"🏳️\\u200d🌈"{z}'.format(**colors))
+
+    # -- grapheme cluster (combining character) tests --
+
+    def test_backspace_combining_character(self):
+        # 'e' + combining acute accent U+0301 = one visual char
+        events = itertools.chain(
+            code_to_events("e\u0301"),
+            [Event(evt="key", data="backspace", raw=bytearray(b"\x7f"))],
+        )
+        reader, _ = handle_all_events(events)
+        self.assertEqual(reader.buffer, [])
+        self.assertEqual(reader.pos, 0)
+
+    def test_backspace_combining_in_middle(self):
+        # "ae\u0301z" → backspace should remove "e\u0301", leaving "az"
+        events = itertools.chain(
+            code_to_events("ae\u0301z"),
+            [
+                Event(evt="key", data="left", raw=bytearray(b"\x1bOD")),
+                Event(evt="key", data="backspace", raw=bytearray(b"\x7f")),
+            ],
+        )
+        reader, _ = handle_all_events(events)
+        self.assertEqual(reader.buffer, ["a", "z"])
+        self.assertEqual(reader.pos, 1)
+
+    def test_delete_combining_character(self):
+        # Cursor at start, delete should remove entire "e\u0301"
+        events = itertools.chain(
+            code_to_events("e\u0301"),
+            [
+                Event(evt="key", data="home", raw=bytearray(b"\x1b[H")),
+                Event(evt="key", data="delete", raw=bytearray(b"\x7f")),
+            ],
+        )
+        reader, _ = handle_all_events(events)
+        self.assertEqual(reader.buffer, [])
+        self.assertEqual(reader.pos, 0)
+
+    def test_left_skips_combining_character(self):
+        # After typing "e\u0301", left should move past both codepoints
+        events = itertools.chain(
+            code_to_events("ae\u0301"),
+            [Event(evt="key", data="left", raw=bytearray(b"\x1bOD"))],
+        )
+        reader, _ = handle_all_events(events)
+        # Should land before 'e', not between 'e' and combining accent
+        self.assertEqual(reader.pos, 1)
+
+    def test_right_skips_combining_character(self):
+        # Move to start, then right should skip "e\u0301" as one unit
+        events = itertools.chain(
+            code_to_events("e\u0301z"),
+            [
+                Event(evt="key", data="home", raw=bytearray(b"\x1b[H")),
+                Event(evt="key", data="right", raw=bytearray(b"\x1bOC")),
+            ],
+        )
+        reader, _ = handle_all_events(events)
+        # Should be past both 'e' and combining accent, before 'z'
+        self.assertEqual(reader.pos, 2)
+
+    def test_backspace_plain_ascii(self):
+        # Regression: plain ASCII should still work as before
+        events = itertools.chain(
+            code_to_events("abc"),
+            [Event(evt="key", data="backspace", raw=bytearray(b"\x7f"))],
+        )
+        reader, _ = handle_all_events(events)
+        self.assertEqual(reader.buffer, ["a", "b"])
+        self.assertEqual(reader.pos, 2)
+
+    def test_left_right_plain_ascii(self):
+        # Regression: plain ASCII left/right still move one char at a time
+        events = itertools.chain(
+            code_to_events("abc"),
+            [
+                Event(evt="key", data="left", raw=bytearray(b"\x1bOD")),
+                Event(evt="key", data="left", raw=bytearray(b"\x1bOD")),
+                Event(evt="key", data="right", raw=bytearray(b"\x1bOC")),
+            ],
+        )
+        reader, _ = handle_all_events(events)
+        self.assertEqual(reader.pos, 2)

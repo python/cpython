@@ -334,8 +334,14 @@ class backspace_dedent(commands.Command):
                         if pi is not None and pi < indent:
                             repeat = indent - pi
                             break
-            r.pos -= repeat
-            del b[r.pos : r.pos + repeat]
+            if repeat == 1:
+                # Use grapheme-aware deletion for non-dedent case
+                prev = r.prev_grapheme_boundary()
+                del b[prev:r.pos]
+                r.pos = prev
+            else:
+                r.pos -= repeat
+                del b[r.pos : r.pos + repeat]
             r.dirty = True
         else:
             self.reader.error("can't backspace at start")

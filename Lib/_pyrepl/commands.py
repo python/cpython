@@ -312,9 +312,8 @@ class left(MotionCommand):
     def do(self) -> None:
         r = self.reader
         for _ in range(r.get_arg()):
-            p = r.pos - 1
-            if p >= 0:
-                r.pos = p
+            if r.pos > 0:
+                r.pos = r.prev_grapheme_boundary()
             else:
                 self.reader.error("start of buffer")
 
@@ -324,9 +323,8 @@ class right(MotionCommand):
         r = self.reader
         b = r.buffer
         for _ in range(r.get_arg()):
-            p = r.pos + 1
-            if p <= len(b):
-                r.pos = p
+            if r.pos < len(b):
+                r.pos = r.next_grapheme_boundary()
             else:
                 self.reader.error("end of buffer")
 
@@ -409,8 +407,9 @@ class backspace(EditCommand):
         b = r.buffer
         for i in range(r.get_arg()):
             if r.pos > 0:
-                r.pos -= 1
-                del b[r.pos]
+                prev = r.prev_grapheme_boundary()
+                del b[prev:r.pos]
+                r.pos = prev
                 r.dirty = True
             else:
                 self.reader.error("can't backspace at start")
@@ -433,7 +432,8 @@ class delete(EditCommand):
 
         for i in range(r.get_arg()):
             if r.pos != len(b):
-                del b[r.pos]
+                next_pos = r.next_grapheme_boundary()
+                del b[r.pos:next_pos]
                 r.dirty = True
             else:
                 self.reader.error("end of buffer")

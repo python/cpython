@@ -22,6 +22,7 @@
 from __future__ import annotations
 
 import sys
+import unicodedata
 import _colorize
 
 from contextlib import contextmanager
@@ -457,6 +458,40 @@ class Reader:
         while p < len(b) and b[p] != "\n":
             p += 1
         return p
+
+    def prev_grapheme_boundary(self, pos: int | None = None) -> int:
+        """Return the position at the start of the grapheme cluster
+        preceding pos (or self.pos).
+
+        For plain ASCII this is just pos - 1.  For combining characters
+        (e.g. 'e' + U+0301 COMBINING ACUTE ACCENT) it skips the whole
+        cluster so that one Backspace/Left deletes the visual character.
+        """
+        if pos is None:
+            pos = self.pos
+        bol = self.bol(pos)
+        if pos <= bol:
+            return pos
+        line = "".join(self.buffer[bol:pos])
+        # Find the last grapheme cluster in the line up to pos
+        *_, last = unicodedata.iter_graphemes(line)
+        return bol + last.start
+
+    def next_grapheme_boundary(self, pos: int | None = None) -> int:
+        """Return the position just past the grapheme cluster starting
+        at pos (or self.pos).
+
+        For plain ASCII this is just pos + 1.  For combining characters
+        it skips the whole cluster.
+        """
+        if pos is None:
+            pos = self.pos
+        eol = self.eol(pos)
+        if pos >= eol:
+            return pos
+        tail = "".join(self.buffer[pos:eol])
+        first = next(unicodedata.iter_graphemes(tail))
+        return pos + first.end
 
     def max_column(self, y: int) -> int:
         """Return the last x-offset for line y"""
