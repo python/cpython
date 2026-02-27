@@ -1479,6 +1479,10 @@ class InitConfigTests(EmbeddingTestsMixin, unittest.TestCase):
             stdlib = os.path.join(home, sys.platlibdir, f'python{version}{ABI_THREAD}')
             expected_paths = self.module_search_paths(prefix=home, exec_prefix=home)
 
+        # Create the expected paths to avoid the bad stdlib dir warning
+        for entry in expected_paths:
+            os.makedirs(entry, exist_ok=True)
+
         config = {
             'home': home,
             'module_search_paths': expected_paths,
@@ -1492,8 +1496,7 @@ class InitConfigTests(EmbeddingTestsMixin, unittest.TestCase):
         self.default_program_name(config)
         env = {'TESTHOME': home, 'PYTHONPATH': paths_str}
         self.check_all_configs("test_init_setpythonhome", config,
-                               api=API_COMPAT, env=env,
-                               ignore_stderr=True)  # ignore missing stdlib warning
+                               api=API_COMPAT, env=env)
 
     def test_init_is_python_build_with_home(self):
         # Test _Py_path_config._is_python_build configuration (gh-91985)
@@ -1521,6 +1524,10 @@ class InitConfigTests(EmbeddingTestsMixin, unittest.TestCase):
             stdlib = os.path.join(home, sys.platlibdir, f'python{version}{ABI_THREAD}')
             expected_paths = self.module_search_paths(prefix=home, exec_prefix=home)
 
+        # Create the expected paths to avoid the bad stdlib dir warning
+        for entry in expected_paths:
+            os.makedirs(entry, exist_ok=True)
+
         config = {
             'home': home,
             'module_search_paths': expected_paths,
@@ -1537,8 +1544,7 @@ class InitConfigTests(EmbeddingTestsMixin, unittest.TestCase):
         env['NEGATIVE_ISPYTHONBUILD'] = '1'
         config['_is_python_build'] = 0
         self.check_all_configs("test_init_is_python_build", config,
-                               api=API_COMPAT, env=env,
-                               ignore_stderr=True)  # ignore missing stdlib warning
+                               api=API_COMPAT, env=env)
 
         env['NEGATIVE_ISPYTHONBUILD'] = '0'
         config['_is_python_build'] = 1
@@ -1554,8 +1560,7 @@ class InitConfigTests(EmbeddingTestsMixin, unittest.TestCase):
             config.update(prefix=prefix, base_prefix=prefix,
                           exec_prefix=exec_prefix, base_exec_prefix=exec_prefix)
         self.check_all_configs("test_init_is_python_build", config,
-                               api=API_COMPAT, env=env,
-                               ignore_stderr=True)  # ignore missing stdlib warning
+                               api=API_COMPAT, env=env)
 
     def copy_paths_by_env(self, config):
         all_configs = self._get_expected_config()
