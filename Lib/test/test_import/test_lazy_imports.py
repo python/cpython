@@ -85,6 +85,22 @@ class LazyImportTests(unittest.TestCase):
         import test.test_import.data.lazy_imports.basic_used
         self.assertIn("test.test_import.data.lazy_imports.basic2", sys.modules)
 
+    def test_lazy_import_with_getattr(self):
+        """Lazy imports work with module __getattr__ (gh-144957)."""
+        code = textwrap.dedent("""
+            import sys
+            sys.set_lazy_imports("normal")
+            lazy from typing import Match
+            print(Match)
+        """)
+        result = subprocess.run(
+            [sys.executable, "-c", code],
+            capture_output=True,
+            text=True
+        )
+        self.assertEqual(result.returncode, 0, result.stderr)
+        self.assertIn("typing.Match", result.stdout)
+
 
 class GlobalLazyImportModeTests(unittest.TestCase):
     """Tests for sys.set_lazy_imports() global mode control."""
