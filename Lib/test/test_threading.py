@@ -1474,6 +1474,9 @@ class ThreadTests(BaseTestCase):
             thread._set_ident = _set_ident_error
             thread.start()
 
+        # Give the thread a moment to clean up after itself
+        # specially in free-threading builds.
+        time.sleep(0.1)
         self.assertFalse(thread.is_alive())
         self.assertFalse(thread in threading._limbo)
         self.assertFalse(thread in threading._active)
