@@ -797,6 +797,33 @@ class AggregateTests(unittest.TestCase):
         self.assertEqual(con.execute("SELECT 1").fetchone(), (1,))
         con.close()
 
+    def test_close_conn_in_nested_callback_caught(self):
+        # gh-145040: close attempt must propagate even if the exception
+        # is caught inside the callback and a nested execute consumes
+        # the flag.
+        con = sqlite.connect(":memory:", autocommit=True)
+        con.execute("CREATE TABLE t(x INTEGER)")
+        con.execute("INSERT INTO t VALUES(1)")
+
+        def swallow_close(x):
+            try:
+                con.close()
+            except sqlite.ProgrammingError:
+                pass
+            try:
+                con.execute("SELECT 1")
+            except sqlite.ProgrammingError:
+                pass
+            return x
+
+        con.create_function("swallow_close", 1, swallow_close)
+        msg = "from within a callback"
+        with self.assertRaisesRegex(sqlite.ProgrammingError, msg):
+            con.execute("SELECT swallow_close(x) FROM t")
+        # Connection must still be usable.
+        self.assertEqual(con.execute("SELECT 1").fetchone(), (1,))
+        con.close()
+
     def test_close_conn_in_udf_during_executemany(self):
         # gh-145040: closing connection in UDF during executemany.
         con = sqlite.connect(":memory:", autocommit=True)

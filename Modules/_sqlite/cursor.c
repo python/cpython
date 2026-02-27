@@ -908,7 +908,9 @@ _pysqlite_query_execute(pysqlite_Cursor* self, int multiple, PyObject* operation
         self->connection->in_callback++;
         rc = stmt_step(self->statement->st);
         self->connection->in_callback--;
-        if (self->connection->close_attempted_in_callback) {
+        if (self->connection->close_attempted_in_callback
+            && self->connection->in_callback == 0)
+        {
             self->connection->close_attempted_in_callback = 0;
             PyErr_Clear();
             PyErr_SetString(state->ProgrammingError,
@@ -1168,7 +1170,9 @@ pysqlite_cursor_iternext(PyObject *op)
     self->connection->in_callback++;
     int rc = stmt_step(stmt);
     self->connection->in_callback--;
-    if (self->connection->close_attempted_in_callback) {
+    if (self->connection->close_attempted_in_callback
+        && self->connection->in_callback == 0)
+    {
         self->connection->close_attempted_in_callback = 0;
         Py_DECREF(row);
         Py_CLEAR(self->statement);
