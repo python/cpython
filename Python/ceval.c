@@ -3084,6 +3084,24 @@ _PyEval_ImportFrom(PyThreadState *tstate, PyObject *v, PyObject *name)
     PyObject *fullmodname, *mod_name, *origin, *mod_name_or_unknown, *errmsg, *spec;
 
     if (PyObject_GetOptionalAttr(v, name, &x) != 0) {
+        // gh-144957: If we got a lazy import object, the module might have
+        // __getattr__ that should be tried first
+        if (x != NULL && PyLazyImport_CheckExact(x)) {
+            PyObject *getattr_func;
+            if (PyObject_GetOptionalAttr(v, &_Py_ID(__getattr__), &getattr_func) < 0) {
+                Py_DECREF(x);
+                return NULL;
+            }
+            if (getattr_func != NULL) {
+                PyObject *result = PyObject_CallOneArg(getattr_func, name);
+                Py_DECREF(getattr_func);
+                if (result != NULL) {
+                    Py_DECREF(x);
+                    return result;
+                }
+                PyErr_Clear();
+            }
+        }
         return x;
     }
     /* Issue #17636: in case this failed because of a circular relative
