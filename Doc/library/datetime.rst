@@ -2658,7 +2658,7 @@ requires, and these work on all supported platforms.
 |  ``%Y``   | Year with century as a decimal | 0001, 0002, ..., 2013, | \(2)  |
 |           | number.                        | 2014, ..., 9998, 9999  |       |
 +-----------+--------------------------------+------------------------+-------+
-| ``%z``    | UTC offset in the form         | (empty), +0000,        | \(6)  |
+|  ``%z``   | UTC offset in the form         | (empty), +0000,        | \(6)  |
 |           | ``±HH[MM[SS[.ffffff]]]``       | -0400, +1030,          |       |
 |           | (empty string if the object is | +063415, +04,          |       |
 |           | naive).                        | -030712.345216         |       |
