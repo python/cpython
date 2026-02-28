@@ -468,6 +468,7 @@ class Wave_write:
         self._nframeswritten = 0
         self._datawritten = 0
         self._datalength = 0
+        self._fact_sample_count_pos = None
         self._headerwritten = False
 
     def __del__(self):
@@ -615,6 +616,9 @@ class Wave_write:
                 raise Error('sampling rate not specified')
             self._write_header(datasize)
 
+    def _needs_fact_chunk(self):
+        return self._format == WAVE_FORMAT_IEEE_FLOAT
+
     def _write_header(self, initlength):
         assert not self._headerwritten
         self._file.write(b'RIFF')
@@ -625,12 +629,23 @@ class Wave_write:
             self._form_length_pos = self._file.tell()
         except (AttributeError, OSError):
             self._form_length_pos = None
-        self._file.write(struct.pack('<L4s4sLHHLLHH4s',
-            36 + self._datalength, b'WAVE', b'fmt ', 16,
+        has_fact = self._needs_fact_chunk()
+        header_overhead = 36 + (12 if has_fact else 0)
+        self._file.write(struct.pack('<L4s4sLHHLLHH',
+            header_overhead + self._datalength, b'WAVE', b'fmt ', 16,
             self._format, self._nchannels, self._framerate,
             self._nchannels * self._framerate * self._sampwidth,
             self._nchannels * self._sampwidth,
-            self._sampwidth * 8, b'data'))
+            self._sampwidth * 8))
+        if has_fact:
+            self._file.write(b'fact')
+            self._file.write(struct.pack('<L', 4))
+            try:
+                self._fact_sample_count_pos = self._file.tell()
+            except (AttributeError, OSError):
+                self._fact_sample_count_pos = None
+            self._file.write(struct.pack('<L', self._nframes))
+        self._file.write(b'data')
         if self._form_length_pos is not None:
             self._data_length_pos = self._file.tell()
         self._file.write(struct.pack('<L', self._datalength))
@@ -641,8 +656,13 @@ class Wave_write:
         if self._datawritten == self._datalength:
             return
         curpos = self._file.tell()
+        header_overhead = 36 + (12 if self._needs_fact_chunk() else 0)
         self._file.seek(self._form_length_pos, 0)
-        self._file.write(struct.pack('<L', 36 + self._datawritten))
+        self._file.write(struct.pack('<L', header_overhead + self._datawritten))
+        if self._fact_sample_count_pos is not None:
+            self._file.seek(self._fact_sample_count_pos, 0)
+            nframes = self._datawritten // (self._nchannels * self._sampwidth)
+            self._file.write(struct.pack('<L', nframes))
         self._file.seek(self._data_length_pos, 0)
         self._file.write(struct.pack('<L', self._datawritten))
         self._file.seek(curpos, 0)
