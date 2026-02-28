@@ -1108,6 +1108,16 @@ _asyncio_Task__current_cancel_scope_get(PyObject *self, void *Py_UNUSED(context)
     return return_value;
 }
 
+#if !defined(_asyncio_Task__current_cancel_scope_DOCSTR)
+#  define _asyncio_Task__current_cancel_scope_DOCSTR NULL
+#endif
+#if defined(_ASYNCIO_TASK__CURRENT_CANCEL_SCOPE_GETSETDEF)
+#  undef _ASYNCIO_TASK__CURRENT_CANCEL_SCOPE_GETSETDEF
+#  define _ASYNCIO_TASK__CURRENT_CANCEL_SCOPE_GETSETDEF {"_current_cancel_scope", (getter)_asyncio_Task__current_cancel_scope_get, (setter)_asyncio_Task__current_cancel_scope_set, _asyncio_Task__current_cancel_scope_DOCSTR},
+#else
+#  define _ASYNCIO_TASK__CURRENT_CANCEL_SCOPE_GETSETDEF {"_current_cancel_scope", NULL, (setter)_asyncio_Task__current_cancel_scope_set, NULL},
+#endif
+
 static int
 _asyncio_Task__current_cancel_scope_set_impl(TaskObj *self, PyObject *value);
 
@@ -1122,8 +1132,6 @@ _asyncio_Task__current_cancel_scope_set(PyObject *self, PyObject *value, void *P
 
     return return_value;
 }
-
-#define _ASYNCIO_TASK__CURRENT_CANCEL_SCOPE_GETSETDEF {"_current_cancel_scope", (getter)_asyncio_Task__current_cancel_scope_get, (setter)_asyncio_Task__current_cancel_scope_set, _asyncio_Task__current_cancel_scope_DOCSTR},
 
 PyDoc_STRVAR(_asyncio_Task__make_cancelled_error__doc__,
 "_make_cancelled_error($self, /)\n"
@@ -2274,4 +2282,4 @@ _asyncio_future_discard_from_awaited_by(PyObject *module, PyObject *const *args,
 exit:
     return return_value;
 }
-/*[clinic end generated code: output=b69948ed810591d9 input=a9049054013a1b77]*/
+/*[clinic end generated code: output=46c804efacf0be43 input=a9049054013a1b77]*/

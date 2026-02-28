@@ -2540,7 +2540,7 @@ _asyncio.Task._current_cancel_scope
 
 static PyObject *
 _asyncio_Task__current_cancel_scope_get_impl(TaskObj *self)
-/*[clinic end generated code: output=15046cb0fcee9abf input=07be6e2e1497d228]*/
+/*[clinic end generated code: output=24575703fbc10903 input=14b2f1b260514c03]*/
 {
     if (self->task_cancel_scope) {
         return Py_NewRef(self->task_cancel_scope);
@@ -2556,7 +2556,7 @@ _asyncio.Task._current_cancel_scope
 
 static int
 _asyncio_Task__current_cancel_scope_set_impl(TaskObj *self, PyObject *value)
-/*[clinic end generated code: output=5765aaca52153089 input=c0c3e38a37538b5c]*/
+/*[clinic end generated code: output=fe5839e86e66c3eb input=369024f3887ac2ce]*/
 {
     if (value == NULL) {
         Py_CLEAR(self->task_cancel_scope);
