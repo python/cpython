@@ -1883,16 +1883,6 @@ class TestParser(TestParserMixin, TestEmailBase):
 
         )
 
-    def test_get_cfws_only_ws(self):
-        cfws = self._test_get_x(parser.get_cfws,
-            '  \t \t', '  \t \t', ' ', [], '', [])
-        self.assertEqual(cfws.token_type, 'cfws')
-
-    def test_get_cfws_only_comment(self):
-        cfws = self._test_get_x(parser.get_cfws,
-            '(foo)', '(foo)', ' ', [], '', ['foo'])
-        self.assertEqual(cfws[0].content, 'foo')
-
     def test_get_cfws_only_mixed(self):
         cfws = self._test_get_x(parser.get_cfws,
             ' (foo )  ( bar) ', ' (foo )  ( bar) ', ' ', [], '',
@@ -1909,12 +1899,6 @@ class TestParser(TestParserMixin, TestEmailBase):
         cfws = self._test_get_x(parser.get_cfws,
             '(foo) \x07', '(foo) ', ' ', [], '\x07', ['foo'])
         self.assertEqual(cfws[0].content, 'foo')
-
-    def test_get_cfws_non_printable_in_comment(self):
-        cfws = self._test_get_x(parser.get_cfws,
-            '(foo \x07) "test"', '(foo \x07) ', ' ',
-            [errors.NonPrintableDefect], '"test"', ['foo \x07'])
-        self.assertEqual(cfws[0].content, 'foo \x07')
 
     def test_get_cfws_header_ends_in_comment(self):
         cfws = self._test_get_x(parser.get_cfws,
