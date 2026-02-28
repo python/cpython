@@ -92,7 +92,7 @@ _WHATWG_C0_CONTROL_OR_SPACE = '\x00\x01\x02\x03\x04\x05\x06\x07\x08\t\n\x0b\x0c\
 _UNSAFE_URL_BYTES_TO_REMOVE = ['\t', '\r', '\n']
 
 # Zone ID regex as defined in RFC 6874
-zone_id_regex = re.compile(r"(%[a-fA-F0-9]{2}|[\w\.~-])+")
+zone_id_regex = re.compile(r"(%[a-fA-F0-9]{2}|[\w\.~-])+", flags=re.ASCII)
 
 def clear_cache():
     """Clear internal performance caches. Undocumented; some tests want it."""
@@ -469,7 +469,7 @@ def _check_bracketed_host(hostname):
         ip = ipaddress.ip_address(hostname) # Throws Value Error if not IPv6 or IPv4
         if isinstance(ip, ipaddress.IPv4Address):
             raise ValueError("An IPv4 address cannot be in brackets")
-        if "%" in hostname and not zone_id_regex.fullmatch(hostname.split("%", 1)[1], flags=re.ASCII):
+        if "%" in hostname and not zone_id_regex.fullmatch(hostname.split("%", 1)[1]):
             raise ValueError("IPv6 ZoneID is invalid")
 
 # typed=True avoids BytesWarnings being emitted during cache key
