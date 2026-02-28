@@ -457,6 +457,7 @@ Some names are only reserved under specific contexts. These are known as
 
 - ``match``, ``case``, and ``_``, when used in the :keyword:`match` statement.
 - ``type``, when used in the :keyword:`type` statement.
+- ``lazy``, when used before an :keyword:`import` statement.
 
 These syntactically act as keywords in their specific contexts,
 but this distinction is done at the parser level, not when tokenizing.
@@ -467,6 +468,9 @@ identifier names.
 
 .. versionchanged:: 3.12
    ``type`` is now a soft keyword.
+
+.. versionchanged:: next
+   ``lazy`` is now a soft keyword.
 
 .. index::
    single: _, identifiers
@@ -1227,7 +1231,7 @@ Whitespace is significant in these situations:
   string contents.
 * In ``fstring_replacement_field``, if ``f_debug_specifier`` is present,
   all whitespace after the opening brace until the ``f_debug_specifier``,
-  as well as whitespace immediatelly following ``f_debug_specifier``,
+  as well as whitespace immediately following ``f_debug_specifier``,
   is retained as part of the expression.
 
   .. impl-detail::

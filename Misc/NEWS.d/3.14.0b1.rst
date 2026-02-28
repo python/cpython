@@ -747,7 +747,7 @@ caches.
 .. nonce: APBFCw
 .. section: Library
 
-Fixed the :exc:`SystemError` in :mod:`cProfile` when locating the actual C
+Fixed the :exc:`SystemError` in :mod:`!cProfile` when locating the actual C
 function of a method raises an exception.
 
 ..
@@ -1325,7 +1325,7 @@ Add new utilities of observing JIT compilation:
 .. date: 2025-04-30-13-09-20
 .. gh-issue: 133194
 .. nonce: 25_G5c
-.. section: Core and Builtins
+.. section: Library
 
 :func:`ast.parse` will no longer parse new :pep:`758` syntax with older
 *feature_version* passed.
@@ -1498,7 +1498,7 @@ helpful fix suggestion for the typo.  Contributed by Pablo Galindo Salgado.
 .. date: 2025-04-19-18-07-34
 .. gh-issue: 132737
 .. nonce: 9mW1il
-.. section: Core and Builtins
+.. section: Library
 
 Support profiling code that requires ``__main__``, such as :mod:`pickle`.
 
@@ -1891,7 +1891,7 @@ Steven Sun)
 .. date: 2022-12-29-19-10-36
 .. gh-issue: 89562
 .. nonce: g8m8RC
-.. section: Core and Builtins
+.. section: Library
 
 Remove ``hostflags`` member from ``PySSLContext`` struct.
 

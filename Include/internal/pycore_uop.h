@@ -40,9 +40,8 @@ typedef struct _PyUOpInstruction{
     // With asserts, the stencils are a lot larger
 #define UOP_MAX_TRACE_LENGTH 1000
 #else
-#define UOP_MAX_TRACE_LENGTH 3000
+#define UOP_MAX_TRACE_LENGTH 2500
 #endif
-#define UOP_BUFFER_SIZE (UOP_MAX_TRACE_LENGTH * sizeof(_PyUOpInstruction))
 
 /* Bloom filter with m = 256
  * https://en.wikipedia.org/wiki/Bloom_filter */

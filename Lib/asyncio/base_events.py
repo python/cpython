@@ -949,7 +949,7 @@ class BaseEventLoop(events.AbstractEventLoop):
         try:
             return await self._sock_sendfile_native(sock, file,
                                                     offset, count)
-        except exceptions.SendfileNotAvailableError as exc:
+        except exceptions.SendfileNotAvailableError:
             if not fallback:
                 raise
         return await self._sock_sendfile_fallback(sock, file,
@@ -1270,7 +1270,7 @@ class BaseEventLoop(events.AbstractEventLoop):
             try:
                 return await self._sendfile_native(transport, file,
                                                    offset, count)
-            except exceptions.SendfileNotAvailableError as exc:
+            except exceptions.SendfileNotAvailableError:
                 if not fallback:
                     raise
 
@@ -1344,6 +1344,17 @@ class BaseEventLoop(events.AbstractEventLoop):
         # Pause early so that "ssl_protocol.data_received()" doesn't
         # have a chance to get called before "ssl_protocol.connection_made()".
         transport.pause_reading()
+
+        # gh-142352: move buffered StreamReader data to SSLProtocol
+        if server_side:
+            from .streams import StreamReaderProtocol
+            if isinstance(protocol, StreamReaderProtocol):
+                stream_reader = getattr(protocol, '_stream_reader', None)
+                if stream_reader is not None:
+                    buffer = stream_reader._buffer
+                    if buffer:
+                        ssl_protocol._incoming.write(buffer)
+                        buffer.clear()
 
         transport.set_protocol(ssl_protocol)
         conmade_cb = self.call_soon(ssl_protocol.connection_made, transport)

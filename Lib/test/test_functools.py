@@ -438,6 +438,7 @@ class TestPartial:
         self.assertIs(type(r[0]), tuple)
 
     @support.skip_if_sanitizer("thread sanitizer crashes in __tsan::FuncEntry", thread=True)
+    @support.skip_if_unlimited_stack_size
     @support.skip_emscripten_stack_overflow()
     def test_recursive_pickle(self):
         with replaced_module('functools', self.module):
@@ -2139,6 +2140,7 @@ class TestLRU:
     @support.skip_on_s390x
     @unittest.skipIf(support.is_wasi, "WASI has limited C stack")
     @support.skip_if_sanitizer("requires deep stack", ub=True, thread=True)
+    @support.skip_if_unlimited_stack_size
     @support.skip_emscripten_stack_overflow()
     def test_lru_recursion(self):
 
@@ -2154,6 +2156,13 @@ class TestLRU:
             with support.infinite_recursion():
                 with self.assertRaises(RecursionError):
                     fib(support.exceeds_recursion_limit())
+
+    def test_lru_checks_arg_is_callable(self):
+        with self.assertRaisesRegex(
+            TypeError,
+            "the first argument must be callable",
+        ):
+            self.module.lru_cache(1)('hello')
 
 
 @py_functools.lru_cache()
@@ -2996,6 +3005,57 @@ class TestSingleDispatch(unittest.TestCase):
         self.assertEqual(A.static_func.__name__, 'static_func')
         self.assertEqual(A().static_func.__name__, 'static_func')
 
+    def test_method_classlevel_calls(self):
+        """Regression test for GH-143535."""
+        class C:
+            @functools.singledispatchmethod
+            def generic(self, x: object):
+                return "generic"
+
+            @generic.register
+            def special1(self, x: int):
+                return "special1"
+
+            @generic.register
+            @classmethod
+            def special2(self, x: float):
+                return "special2"
+
+            @generic.register
+            @staticmethod
+            def special3(x: complex):
+                return "special3"
+
+            def special4(self, x):
+                return "special4"
+
+            class D1:
+                def __get__(self, _, owner):
+                    return lambda inst, x: owner.special4(inst, x)
+
+            generic.register(D1, D1())
+
+            def special5(self, x):
+                return "special5"
+
+            class D2:
+                def __get__(self, inst, owner):
+                    # Different instance bound to the returned method
+                    # doesn't cause it to receive the original instance
+                    # as a separate argument.
+                    # To work around this, wrap the returned bound method
+                    # with `functools.partial`.
+                    return C().special5
+
+            generic.register(D2, D2())
+
+        self.assertEqual(C.generic(C(), "foo"), "generic")
+        self.assertEqual(C.generic(C(), 1), "special1")
+        self.assertEqual(C.generic(C(), 2.0), "special2")
+        self.assertEqual(C.generic(C(), 3j), "special3")
+        self.assertEqual(C.generic(C(), C.D1()), "special4")
+        self.assertEqual(C.generic(C(), C.D2()), "special5")
+
     def test_method_repr(self):
         class Callable:
             def __call__(self, *args):
@@ -3448,16 +3508,11 @@ class TestSingleDispatch(unittest.TestCase):
 
     def test_method_signatures(self):
         class A:
-            def m(self, item, arg: int) -> str:
-                return str(item)
-            @classmethod
-            def cm(cls, item, arg: int) -> str:
-                return str(item)
             @functools.singledispatchmethod
             def func(self, item, arg: int) -> str:
                 return str(item)
             @func.register
-            def _(self, item, arg: bytes) -> str:
+            def _(self, item: int, arg: bytes) -> str:
                 return str(item)
 
             @functools.singledispatchmethod
@@ -3466,7 +3521,7 @@ class TestSingleDispatch(unittest.TestCase):
                 return str(arg)
             @func.register
             @classmethod
-            def _(cls, item, arg: bytes) -> str:
+            def _(cls, item: int, arg: bytes) -> str:
                 return str(item)
 
             @functools.singledispatchmethod
@@ -3475,7 +3530,7 @@ class TestSingleDispatch(unittest.TestCase):
                 return str(arg)
             @func.register
             @staticmethod
-            def _(item, arg: bytes) -> str:
+            def _(item: int, arg: bytes) -> str:
                 return str(item)
 
         self.assertEqual(str(Signature.from_callable(A.func)),

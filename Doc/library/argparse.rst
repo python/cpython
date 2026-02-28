@@ -4,16 +4,13 @@
 .. module:: argparse
    :synopsis: Command-line option and argument parsing library.
 
-.. moduleauthor:: Steven Bethard <steven.bethard@gmail.com>
-.. sectionauthor:: Steven Bethard <steven.bethard@gmail.com>
-
 .. versionadded:: 3.2
 
 **Source code:** :source:`Lib/argparse.py`
 
 .. note::
 
-   While :mod:`argparse` is the default recommended standard library module
+   While :mod:`!argparse` is the default recommended standard library module
    for implementing basic command line applications, authors with more
    exacting requirements for exactly how their command line applications
    behave may find it doesn't provide the necessary level of control.
@@ -605,18 +602,13 @@ choices (if specified) or subparser names, along with a "maybe you meant"
 suggestion if a close match is found. Note that this only applies for arguments
 when the choices specified are strings::
 
-   >>> parser = argparse.ArgumentParser(description='Process some integers.',
-                                        suggest_on_error=True)
-   >>> parser.add_argument('--action', choices=['sum', 'max'])
-   >>> parser.add_argument('integers', metavar='N', type=int, nargs='+',
-   ...                     help='an integer for the accumulator')
-   >>> parser.parse_args(['--action', 'sumn', 1, 2, 3])
-   tester.py: error: argument --action: invalid choice: 'sumn', maybe you meant 'sum'? (choose from 'sum', 'max')
+   >>> parser = argparse.ArgumentParser(suggest_on_error=True)
+   >>> parser.add_argument('--action', choices=['debug', 'dryrun'])
+   >>> parser.parse_args(['--action', 'debugg'])
+   usage: tester.py [-h] [--action {debug,dryrun}]
+   tester.py: error: argument --action: invalid choice: 'debugg', maybe you meant 'debug'? (choose from debug, dryrun)
 
-You can disable suggestions by setting ``suggest_on_error`` to ``False``::
-
-   >>> parser = argparse.ArgumentParser(description='Process some integers.',
-                                        suggest_on_error=False)
+You can disable suggestions by setting ``suggest_on_error`` to ``False``.
 
 .. versionadded:: 3.14
 .. versionchanged:: 3.15
@@ -644,6 +636,27 @@ output is always disabled, even if environment variables like ``FORCE_COLOR``
 are set.
 
 .. versionadded:: 3.14
+
+To highlight inline code in your description or epilog text, you can use
+backticks::
+
+   >>> parser = argparse.ArgumentParser(
+   ...     formatter_class=argparse.RawDescriptionHelpFormatter,
+   ...     epilog='''Examples:
+   ...   `python -m myapp --verbose`
+   ...   `python -m myapp --config settings.json`
+   ... ''')
+
+When colors are enabled, the text inside backticks will be displayed in a
+distinct color to help examples stand out. When colors are disabled, backticks
+are preserved as-is, which is readable in plain text.
+
+.. note::
+
+   Backtick markup only applies to description and epilog text. It does not
+   apply to individual argument ``help`` strings.
+
+.. versionadded:: 3.15
 
 
 The add_argument() method
@@ -732,7 +745,7 @@ upper-cased name. For example::
 
    >>> parser = argparse.ArgumentParser(prog='PROG')
    >>> parser.add_argument('--foo-bar')
-   >>> parser.parse_args(['--foo-bar', 'FOO-BAR']
+   >>> parser.parse_args(['--foo-bar', 'FOO-BAR'])
    Namespace(foo_bar='FOO-BAR')
    >>> parser.print_help()
    usage:  [-h] [--foo-bar FOO-BAR]
@@ -1349,7 +1362,7 @@ behavior::
    >>> parser.parse_args('--foo XXX'.split())
    Namespace(bar='XXX')
 
-.. versionchanged:: next
+.. versionchanged:: 3.15
    Single-dash long option now takes precedence over short options.
 
 
@@ -1452,7 +1465,7 @@ this API may be passed as the ``action`` parameter to
 
    .. versionadded:: 3.9
 
-   .. versionchanged:: next
+   .. versionchanged:: 3.15
       Added support for single-dash options.
 
       Added support for alternate prefix_chars_.
@@ -1679,7 +1692,7 @@ The Namespace object
 Other utilities
 ---------------
 
-Sub-commands
+Subcommands
 ^^^^^^^^^^^^
 
 .. method:: ArgumentParser.add_subparsers(*, [title], [description], [prog], \
@@ -1708,7 +1721,7 @@ Sub-commands
    * *description* - description for the sub-parser group in help output, by
      default ``None``
 
-   * *prog* - usage information that will be displayed with sub-command help,
+   * *prog* - usage information that will be displayed with subcommand help,
      by default the name of the program and any positional arguments before the
      subparser argument
 
@@ -1718,7 +1731,7 @@ Sub-commands
    * action_ - the basic type of action to be taken when this argument is
      encountered at the command line
 
-   * dest_ - name of the attribute under which sub-command name will be
+   * dest_ - name of the attribute under which subcommand name will be
      stored; by default ``None`` and no value is stored
 
    * required_ - Whether or not a subcommand must be provided, by default
@@ -1750,7 +1763,7 @@ Sub-commands
      >>> parser.parse_args(['--foo', 'b', '--baz', 'Z'])
      Namespace(baz='Z', foo=True)
 
-   Note that the object returned by :meth:`parse_args` will only contain
+   Note that the object returned by :meth:`~ArgumentParser.parse_args` will only contain
    attributes for the main parser and the subparser that was selected by the
    command line (and not any other subparsers).  So in the example above, when
    the ``a`` command is specified, only the ``foo`` and ``bar`` attributes are
@@ -1793,7 +1806,7 @@ Sub-commands
        -h, --help     show this help message and exit
        --baz {X,Y,Z}  baz help
 
-   The :meth:`add_subparsers` method also supports ``title`` and ``description``
+   The :meth:`~ArgumentParser.add_subparsers` method also supports ``title`` and ``description``
    keyword arguments.  When either is present, the subparser's commands will
    appear in their own group in the help output.  For example::
 
@@ -1814,34 +1827,8 @@ Sub-commands
 
        {foo,bar}   additional help
 
-   Furthermore, :meth:`~_SubParsersAction.add_parser` supports an additional
-   *aliases* argument,
-   which allows multiple strings to refer to the same subparser. This example,
-   like ``svn``, aliases ``co`` as a shorthand for ``checkout``::
-
-     >>> parser = argparse.ArgumentParser()
-     >>> subparsers = parser.add_subparsers()
-     >>> checkout = subparsers.add_parser('checkout', aliases=['co'])
-     >>> checkout.add_argument('foo')
-     >>> parser.parse_args(['co', 'bar'])
-     Namespace(foo='bar')
-
-   :meth:`~_SubParsersAction.add_parser` supports also an additional
-   *deprecated* argument, which allows to deprecate the subparser.
-
-      >>> import argparse
-      >>> parser = argparse.ArgumentParser(prog='chicken.py')
-      >>> subparsers = parser.add_subparsers()
-      >>> run = subparsers.add_parser('run')
-      >>> fly = subparsers.add_parser('fly', deprecated=True)
-      >>> parser.parse_args(['fly'])  # doctest: +SKIP
-      chicken.py: warning: command 'fly' is deprecated
-      Namespace()
-
-   .. versionadded:: 3.13
-
    One particularly effective way of handling subcommands is to combine the use
-   of the :meth:`add_subparsers` method with calls to :meth:`set_defaults` so
+   of the :meth:`~ArgumentParser.add_subparsers` method with calls to :meth:`~ArgumentParser.set_defaults` so
    that each subparser knows which Python function it should execute.  For
    example::
 
@@ -1877,12 +1864,12 @@ Sub-commands
      >>> args.func(args)
      ((XYZYX))
 
-   This way, you can let :meth:`parse_args` do the job of calling the
+   This way, you can let :meth:`~ArgumentParser.parse_args` do the job of calling the
    appropriate function after argument parsing is complete.  Associating
    functions with actions like this is typically the easiest way to handle the
    different actions for each of your subparsers.  However, if it is necessary
    to check the name of the subparser that was invoked, the ``dest`` keyword
-   argument to the :meth:`add_subparsers` call will work::
+   argument to the :meth:`~ArgumentParser.add_subparsers` call will work::
 
      >>> parser = argparse.ArgumentParser()
      >>> subparsers = parser.add_subparsers(dest='subparser_name')
@@ -1899,6 +1886,43 @@ Sub-commands
    .. versionchanged:: 3.14
       Subparser's *prog* is no longer affected by a custom usage message in
       the main parser.
+
+
+.. method:: _SubParsersAction.add_parser(name, *, help=None, aliases=None, \
+                                         deprecated=False, **kwargs)
+
+   Create and return a new :class:`ArgumentParser` object for the
+   subcommand *name*.
+
+   The *name* argument is the name of the sub-command.
+
+   The *help* argument provides a short description for this sub-command.
+
+   The *aliases* argument allows providing alternative names for this
+   sub-command. For example::
+
+      >>> parser = argparse.ArgumentParser()
+      >>> subparsers = parser.add_subparsers()
+      >>> checkout = subparsers.add_parser('checkout', aliases=['co'])
+      >>> checkout.add_argument('foo')
+      >>> parser.parse_args(['co', 'bar'])
+      Namespace(foo='bar')
+
+   The *deprecated* argument, if ``True``, marks the sub-command as
+   deprecated and will issue a warning when used. For example::
+
+      >>> parser = argparse.ArgumentParser(prog='chicken.py')
+      >>> subparsers = parser.add_subparsers()
+      >>> fly = subparsers.add_parser('fly', deprecated=True)
+      >>> args = parser.parse_args(['fly'])
+      chicken.py: warning: command 'fly' is deprecated
+      Namespace()
+
+   All other keyword arguments are passed directly to the
+   :class:`!ArgumentParser` constructor.
+
+   .. versionadded:: 3.13
+      Added the *deprecated* parameter.
 
 
 FileType objects

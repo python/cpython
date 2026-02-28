@@ -160,8 +160,8 @@ PyCField_new_impl(PyTypeObject *type, PyObject *name, PyObject *proto,
         if ((bitfield_size + bit_offset) > byte_size * 8) {
             PyErr_Format(
                 PyExc_ValueError,
-                "bit field %R overflows its type (%zd + %zd >= %zd)",
-                name, bit_offset, byte_size*8);
+                "bit field %R overflows its type (%zd + %zd > %zd)",
+                name, bit_offset, bitfield_size, byte_size * 8);
             goto error;
         }
     }

@@ -454,6 +454,13 @@ class StrTest(string_tests.StringLikeTest,
         self.assertEqual("[a\xe9]".translate(str.maketrans({'a': '<\u20ac>'})),
                          "[<\u20ac>\xe9]")
 
+        # with frozendict
+        tbl = self.type2test.maketrans(frozendict({'s': 'S', 'T': 't'}))
+        self.assertEqual(tbl, {ord('s'): 'S', ord('T'): 't'})
+        self.assertEqual('sTan'.translate(tbl), 'Stan')
+        tbl = self.type2test.maketrans(frozendict({'a': None, 'b': '<i>'}))
+        self.checkequalnofix('<i><i><i>c', 'abababc', 'translate', tbl)
+
         # invalid Unicode characters
         invalid_char = 0x10ffff+1
         for before in "a\xe9\u20ac\U0010ffff":
@@ -1578,17 +1585,40 @@ class StrTest(string_tests.StringLikeTest,
         self.assertEqual('%X' % letter_m, '6D')
         self.assertEqual('%o' % letter_m, '155')
         self.assertEqual('%c' % letter_m, 'm')
-        self.assertRaisesRegex(TypeError, '%x format: an integer is required, not float', operator.mod, '%x', 3.14)
-        self.assertRaisesRegex(TypeError, '%X format: an integer is required, not float', operator.mod, '%X', 2.11)
-        self.assertRaisesRegex(TypeError, '%o format: an integer is required, not float', operator.mod, '%o', 1.79)
-        self.assertRaisesRegex(TypeError, '%x format: an integer is required, not PseudoFloat', operator.mod, '%x', pi)
-        self.assertRaisesRegex(TypeError, '%x format: an integer is required, not complex', operator.mod, '%x', 3j)
-        self.assertRaisesRegex(TypeError, '%X format: an integer is required, not complex', operator.mod, '%X', 2j)
-        self.assertRaisesRegex(TypeError, '%o format: an integer is required, not complex', operator.mod, '%o', 1j)
-        self.assertRaisesRegex(TypeError, '%u format: a real number is required, not complex', operator.mod, '%u', 3j)
-        self.assertRaisesRegex(TypeError, '%i format: a real number is required, not complex', operator.mod, '%i', 2j)
-        self.assertRaisesRegex(TypeError, '%d format: a real number is required, not complex', operator.mod, '%d', 1j)
-        self.assertRaisesRegex(TypeError, r'%c requires an int or a unicode character, not .*\.PseudoFloat', operator.mod, '%c', pi)
+        with self.assertRaisesRegex(TypeError,
+                'format argument: %x requires an integer, not float'):
+            '%x' % 3.14
+        with self.assertRaisesRegex(TypeError,
+                'format argument: %X requires an integer, not float'):
+            '%X' % 2.11
+        with self.assertRaisesRegex(TypeError,
+                'format argument: %o requires an integer, not float'):
+            '%o' % 1.79
+        with self.assertRaisesRegex(TypeError,
+                r'format argument: %x requires an integer, not .*\.PseudoFloat'):
+            '%x' % pi
+        with self.assertRaisesRegex(TypeError,
+                'format argument: %x requires an integer, not complex'):
+            '%x' % 3j
+        with self.assertRaisesRegex(TypeError,
+                'format argument: %X requires an integer, not complex'):
+            '%X' % 2j
+        with self.assertRaisesRegex(TypeError,
+                'format argument: %o requires an integer, not complex'):
+            '%o' % 1j
+        with self.assertRaisesRegex(TypeError,
+                'format argument: %u requires a real number, not complex'):
+            '%u' % 3j
+        with self.assertRaisesRegex(TypeError,
+                'format argument: %i requires a real number, not complex'):
+            '%i' % 2j
+        with self.assertRaisesRegex(TypeError,
+                'format argument: %d requires a real number, not complex'):
+            '%d' % 1j
+        with self.assertRaisesRegex(TypeError,
+                r'format argument: %c requires an integer or a unicode character, '
+                r'not .*\.PseudoFloat'):
+            '%c' % pi
 
         class RaisingNumber:
             def __int__(self):

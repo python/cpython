@@ -1622,7 +1622,7 @@ Deprecated
   compatibility. Specifically,
   :meth:`!find_loader`/:meth:`!find_module`
   (superseded by :meth:`~importlib.abc.MetaPathFinder.find_spec`),
-  :meth:`~importlib.abc.Loader.load_module`
+  ``importlib.abc.Loader.load_module``
   (superseded by :meth:`~importlib.abc.Loader.exec_module`),
   :meth:`!module_repr` (which the import system
   takes care of for you), the ``__package__`` attribute
@@ -1652,7 +1652,7 @@ Deprecated
   preference for :meth:`~zipimport.zipimporter.exec_module`.
   (Contributed by Brett Cannon in :issue:`26131`.)
 
-* The use of :meth:`~importlib.abc.Loader.load_module` by the import
+* The use of ``importlib.abc.Loader.load_module`` by the import
   system now triggers an :exc:`ImportWarning` as
   :meth:`~importlib.abc.Loader.exec_module` is preferred.
   (Contributed by Brett Cannon in :issue:`26131`.)
