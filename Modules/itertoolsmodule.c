@@ -1660,6 +1660,35 @@ empty:
     return NULL;
 }
 
+static PyObject *
+islice_length_hint(PyObject *op, PyObject *Py_UNUSED(dummy))
+{
+    isliceobject *lz = isliceobject_CAST(op);
+
+    if (lz->stop >= 0 && lz->stop <= lz->next) {
+        return PyLong_FromSsize_t(0);
+    }
+
+    Py_ssize_t remaining;
+    if (lz->stop == -1) {
+        Py_ssize_t hint = PyObject_LengthHint(lz->it, 0);
+        if (hint < 0) {
+            /* propagate exception */
+            return NULL;
+        }
+        remaining = hint - lz->next;
+    } else {
+        remaining = lz->stop - lz->next;
+    }
+
+    if (remaining <= 0) {
+        return PyLong_FromSsize_t(0);
+    }
+
+    Py_ssize_t steps = (remaining + lz->step - 1) / lz->step;
+    return PyLong_FromSsize_t(steps);
+}
+
 PyDoc_STRVAR(islice_doc,
 "islice(iterable, stop) --> islice object\n\
 islice(iterable, start, stop[, step]) --> islice object\n\
@@ -1671,6 +1700,11 @@ specified as another value, step determines how many values are\n\
 skipped between successive calls.  Works like a slice() on a list\n\
 but returns an iterator.");
 
+static PyMethodDef islice_methods[] = {
+    {"__length_hint__", islice_length_hint, METH_NOARGS, NULL},
+    {NULL, NULL},
+};
+
 static PyType_Slot islice_slots[] = {
     {Py_tp_dealloc, islice_dealloc},
     {Py_tp_getattro, PyObject_GenericGetAttr},
@@ -1680,6 +1714,7 @@ static PyType_Slot islice_slots[] = {
     {Py_tp_iternext, islice_next},
     {Py_tp_new, islice_new},
     {Py_tp_free, PyObject_GC_Del},
+    {Py_tp_methods, islice_methods},
     {0, NULL},
 };
 

@@ -1213,6 +1213,16 @@ class TestBasicOps(unittest.TestCase):
         self.assertEqual(list(islice(range(100), IntLike(10), IntLike(50), IntLike(5))),
                          list(range(10,50,5)))
 
+        # Test __length_hint__
+        self.assertEqual(islice(range(10), 1).__length_hint__(), 1)
+        self.assertEqual(islice(range(10), 1, 2).__length_hint__(), 1)
+        self.assertEqual(islice(range(10), 1, 2, 2).__length_hint__(), 1)
+        self.assertEqual(islice(range(10), 0, 4, 2).__length_hint__(), 2)
+        self.assertEqual(islice(range(10), 2, None, 1).__length_hint__(), 8)
+        self.assertEqual(islice(range(10), 2, None, 2).__length_hint__(), 4)
+        self.assertEqual(islice(range(10), 3, None, 2).__length_hint__(), 4)
+        self.assertEqual(islice(range(10), 2, 2, 1).__length_hint__(), 0)
+
     def test_takewhile(self):
         data = [1, 3, 5, 20, 2, 4, 6, 8]
         self.assertEqual(list(takewhile(underten, data)), [1, 3, 5])
