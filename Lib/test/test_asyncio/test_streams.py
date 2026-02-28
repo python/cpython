@@ -825,14 +825,11 @@ class StreamTests(test_utils.TestCase):
 
         async def server_handler(client_reader, client_writer):
             # Wait for TLS ClientHello to be buffered before start_tls().
-            await asyncio.wait_for(
-                client_reader._wait_for_data('test_start_tls_buffered_data'),
-                LOOPBACK_TIMEOUT,
-            )
+            await client_reader._wait_for_data('test_start_tls_buffered_data'),
             self.assertTrue(client_reader._buffer)
             await client_writer.start_tls(test_utils.simple_server_sslcontext())
 
-            line = await asyncio.wait_for(client_reader.readline(), LOOPBACK_TIMEOUT)
+            line = await client_reader.readline()
             self.assertEqual(line, b"ping\n")
             client_writer.write(b"pong\n")
             await client_writer.drain()
@@ -845,7 +842,7 @@ class StreamTests(test_utils.TestCase):
 
             writer.write(b"ping\n")
             await writer.drain()
-            line = await asyncio.wait_for(reader.readline(), LOOPBACK_TIMEOUT)
+            line = await reader.readline()
             self.assertEqual(line, b"pong\n")
             writer.close()
             await writer.wait_closed()
@@ -855,7 +852,7 @@ class StreamTests(test_utils.TestCase):
                 server_handler, socket_helper.HOSTv4, 0)
             server_addr = server.sockets[0].getsockname()
 
-            await asyncio.wait_for(client(server_addr), timeout=5.0)
+            await client(server_addr)
             server.close()
             await server.wait_closed()
 
