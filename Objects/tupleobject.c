@@ -207,7 +207,6 @@ tuple_alloc_2(void)
 {
     Py_ssize_t size = 2;
     Py_ssize_t index = size - 1;
-    assert(index < PyTuple_MAXSAVESIZE);
     PyTupleObject *result = _Py_FREELIST_POP(PyTupleObject, tuples[index]);
     if (result == NULL) {
         result = PyObject_GC_NewVar(PyTupleObject, &PyTuple_Type, size);
