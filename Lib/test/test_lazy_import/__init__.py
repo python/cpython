@@ -11,6 +11,8 @@ import unittest
 import tempfile
 import os
 
+from test import support
+
 try:
     import _testcapi
 except ImportError:
@@ -268,6 +270,7 @@ class SyntaxRestrictionTests(unittest.TestCase):
             f()
         self.assertIn("only allowed at module level", str(cm.exception))
 
+    @support.requires_subprocess()
     def test_lazy_import_exec_at_module_level(self):
         """lazy import via exec() at module level should work."""
         # exec() at module level (globals == locals) should allow lazy imports
@@ -469,6 +472,7 @@ class SysLazyImportsAPITests(unittest.TestCase):
         """sys.lazy_modules should be a set per PEP 810."""
         self.assertIsInstance(sys.lazy_modules, dict)
 
+    @support.requires_subprocess()
     def test_lazy_modules_tracks_lazy_imports(self):
         """sys.lazy_modules should track lazily imported module names."""
         code = textwrap.dedent("""
@@ -489,6 +493,7 @@ class SysLazyImportsAPITests(unittest.TestCase):
         self.assertIn("OK", result.stdout)
 
 
+@support.requires_subprocess()
 class ErrorHandlingTests(unittest.TestCase):
     """Tests for error handling during lazy import reification.
 
@@ -645,6 +650,7 @@ class ErrorHandlingTests(unittest.TestCase):
             self.assertIn("Error", result.stderr)
 
 
+@support.requires_subprocess()
 class GlobalsAndDictTests(unittest.TestCase):
     """Tests for globals() and __dict__ behavior with lazy imports.
 
@@ -814,6 +820,7 @@ class GlobalsAndDictTests(unittest.TestCase):
         self.assertIn("OK", result.stdout)
 
 
+@support.requires_subprocess()
 class MultipleNameFromImportTests(unittest.TestCase):
     """Tests for lazy from ... import with multiple names.
 
@@ -894,6 +901,7 @@ class MultipleNameFromImportTests(unittest.TestCase):
         self.assertIn("OK", result.stdout)
 
 
+@support.requires_subprocess()
 class SysLazyModulesTrackingTests(unittest.TestCase):
     """Tests for sys.lazy_modules tracking behavior.
 
@@ -946,6 +954,7 @@ class SysLazyModulesTrackingTests(unittest.TestCase):
         self.assertIsInstance(sys.lazy_modules, dict)
 
 
+@support.requires_subprocess()
 class CommandLineAndEnvVarTests(unittest.TestCase):
     """Tests for command-line and environment variable control.
 
@@ -1107,6 +1116,7 @@ class CommandLineAndEnvVarTests(unittest.TestCase):
         self.assertIn("EAGER", result.stdout)
 
 
+@support.requires_subprocess()
 class FilterFunctionSignatureTests(unittest.TestCase):
     """Tests for the filter function signature per PEP 810.
 
@@ -1226,6 +1236,7 @@ class AdditionalSyntaxRestrictionTests(unittest.TestCase):
             import test.test_lazy_import.data.badsyntax.lazy_class_body
 
 
+@support.requires_subprocess()
 class MixedLazyEagerImportTests(unittest.TestCase):
     """Tests for mixing lazy and eager imports of the same module.
 
@@ -1350,6 +1361,7 @@ class LazyModulesCompatibilityFromImportTests(unittest.TestCase):
         self.assertIn("test.test_lazy_import.data.basic2", sys.modules)
 
 
+@support.requires_subprocess()
 class ImportStateAtReificationTests(unittest.TestCase):
     """Tests for import system state at reification time.
 
@@ -1408,6 +1420,7 @@ class ImportStateAtReificationTests(unittest.TestCase):
         self.assertIn("OK", result.stdout)
 
 
+@support.requires_subprocess()
 class ThreadSafetyTests(unittest.TestCase):
     """Tests for thread-safety of lazy imports."""
 
