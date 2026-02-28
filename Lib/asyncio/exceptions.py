@@ -1,10 +1,13 @@
 """asyncio exceptions."""
 
 
-__all__ = ('BrokenBarrierError',
-           'CancelledError', 'InvalidStateError', 'TimeoutError',
+__all__ = ('BrokenBarrierError', 'BrokenResourceError',
+           'CancelledError', 'ClosedResourceError',
+           'EndOfChannel',
+           'InvalidStateError', 'TimeoutError',
            'IncompleteReadError', 'LimitOverrunError',
-           'SendfileNotAvailableError')
+           'SendfileNotAvailableError',
+           'WouldBlock')
 
 
 class CancelledError(BaseException):
@@ -60,3 +63,19 @@ class LimitOverrunError(Exception):
 
 class BrokenBarrierError(RuntimeError):
     """Barrier is broken by barrier.abort() call."""
+
+
+class WouldBlock(Exception):
+    """Raised by nowait functions when the operation would block."""
+
+
+class EndOfChannel(Exception):
+    """Raised when all send channels have been closed."""
+
+
+class ClosedResourceError(Exception):
+    """Raised when trying to use a channel that has been closed."""
+
+
+class BrokenResourceError(Exception):
+    """Raised when trying to send on a channel with no open receivers."""
