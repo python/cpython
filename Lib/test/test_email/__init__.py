@@ -23,6 +23,11 @@ def openfile(filename, *args, **kws):
 # Base test class
 class TestEmailBase(ParamsMixin, unittest.TestCase):
 
+    # XXX XXX temporary usability hack, edit this out before publishing PR.
+    def __str__(self):
+        from unittest.util import strclass
+        return "%s.%s" % (strclass(self.__class__), self._testMethodName)
+
     maxDiff = None
     # Currently the default policy is compat32.  By setting that as the default
     # here we make minimal changes in the test_email tests compared to their
