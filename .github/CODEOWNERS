@@ -425,19 +425,19 @@ Lib/dataclasses.py            @ericvsmith
 Lib/test/test_dataclasses/    @ericvsmith
 
 # Dates and times
-Doc/**/*time.rst                 @pganssle @abalkin
-Doc/library/datetime-*           @pganssle
-Doc/library/zoneinfo.rst         @pganssle
-Include/datetime.h               @pganssle @abalkin
-Include/internal/pycore_time.h   @pganssle @abalkin
-Lib/test/test_zoneinfo/          @pganssle
-Lib/zoneinfo/                    @pganssle
-Lib/*time.py                     @pganssle @abalkin
-Lib/test/datetimetester.py       @pganssle @abalkin
-Lib/test/test_*time.py           @pganssle @abalkin
-Modules/*zoneinfo*               @pganssle
-Modules/*time*                   @pganssle @abalkin
-Python/pytime.c                  @pganssle @abalkin
+Doc/**/*time.rst                 @pganssle @abalkin @StanFromIreland
+Doc/library/datetime-*           @pganssle @StanFromIreland
+Doc/library/zoneinfo.rst         @pganssle @StanFromIreland
+Include/datetime.h               @pganssle @abalkin @StanFromIreland
+Include/internal/pycore_time.h   @pganssle @abalkin @StanFromIreland
+Lib/test/test_zoneinfo/          @pganssle @StanFromIreland
+Lib/zoneinfo/                    @pganssle @StanFromIreland
+Lib/*time.py                     @pganssle @abalkin @StanFromIreland
+Lib/test/datetimetester.py       @pganssle @abalkin @StanFromIreland
+Lib/test/test_*time.py           @pganssle @abalkin @StanFromIreland
+Modules/*zoneinfo*               @pganssle @StanFromIreland
+Modules/*time*                   @pganssle @abalkin @StanFromIreland
+Python/pytime.c                  @pganssle @abalkin @StanFromIreland
 
 # Dbm
 Doc/library/dbm.rst           @corona10 @erlend-aasland @serhiy-storchaka
