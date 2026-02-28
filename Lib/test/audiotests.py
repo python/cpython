@@ -38,13 +38,14 @@ class AudioTests:
 
         params = f.getparams()
         self.assertEqual(params,
-                (nchannels, sampwidth, framerate, nframes, comptype, compname))
+                (nchannels, sampwidth, framerate, nframes, comptype, compname, format))
         self.assertEqual(params.nchannels, nchannels)
         self.assertEqual(params.sampwidth, sampwidth)
         self.assertEqual(params.framerate, framerate)
         self.assertEqual(params.nframes, nframes)
         self.assertEqual(params.comptype, comptype)
         self.assertEqual(params.compname, compname)
+        self.assertEqual(params.format, format)
 
         for proto in range(pickle.HIGHEST_PROTOCOL + 1):
             dump = pickle.dumps(params, proto)
@@ -304,6 +305,8 @@ class AudioTestsWithSourceFile(AudioTests):
             f.setpos(f.getnframes() + 1)
 
     def test_copy(self):
+        if self.readonly:
+            self.skipTest('Read only file format')
         f = self.f = self.module.open(self.sndfilepath)
         fout = self.fout = self.module.open(TESTFN, 'wb')
         fout.setparams(f.getparams())
