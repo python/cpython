@@ -1479,10 +1479,6 @@ class InitConfigTests(EmbeddingTestsMixin, unittest.TestCase):
             stdlib = os.path.join(home, sys.platlibdir, f'python{version}{ABI_THREAD}')
             expected_paths = self.module_search_paths(prefix=home, exec_prefix=home)
 
-        # Create the expected paths to avoid the bad stdlib dir warning
-        for entry in expected_paths:
-            os.makedirs(entry, exist_ok=True)
-
         config = {
             'home': home,
             'module_search_paths': expected_paths,
@@ -1523,10 +1519,6 @@ class InitConfigTests(EmbeddingTestsMixin, unittest.TestCase):
             version = f'{sys.version_info.major}.{sys.version_info.minor}'
             stdlib = os.path.join(home, sys.platlibdir, f'python{version}{ABI_THREAD}')
             expected_paths = self.module_search_paths(prefix=home, exec_prefix=home)
-
-        # Create the expected paths to avoid the bad stdlib dir warning
-        for entry in expected_paths:
-            os.makedirs(entry, exist_ok=True)
 
         config = {
             'home': home,
