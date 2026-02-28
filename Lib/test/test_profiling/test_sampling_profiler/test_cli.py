@@ -4,6 +4,7 @@ import io
 import subprocess
 import sys
 import unittest
+from types import SimpleNamespace
 from unittest import mock
 
 try:
@@ -15,7 +16,7 @@ except ImportError:
 
 from test.support import is_emscripten, requires_remote_subprocess_debugging
 
-from profiling.sampling.cli import main
+from profiling.sampling.cli import _handle_output, _handle_replay, main
 from profiling.sampling.errors import SamplingScriptNotFoundError, SamplingModuleNotFoundError, SamplingUnknownProcessError
 
 class TestSampleProfilerCLI(unittest.TestCase):
@@ -699,6 +700,106 @@ class TestSampleProfilerCLI(unittest.TestCase):
         error_msg = mock_stderr.getvalue()
         self.assertIn("--all-threads", error_msg)
         self.assertIn("incompatible with --async-aware", error_msg)
+
+    def test_handle_output_browser_not_opened_when_export_fails(self):
+        collector = mock.MagicMock()
+        collector.export.return_value = False
+        args = SimpleNamespace(
+            format="flamegraph",
+            outfile="profile.html",
+            browser=True,
+        )
+
+        with (
+            mock.patch("profiling.sampling.cli.os.path.isdir", return_value=False),
+            mock.patch("profiling.sampling.cli._open_in_browser") as mock_open,
+        ):
+            _handle_output(collector, args, pid=12345, mode=0)
+
+        collector.export.assert_called_once_with("profile.html")
+        mock_open.assert_not_called()
+
+    def test_handle_output_browser_opened_when_export_succeeds(self):
+        collector = mock.MagicMock()
+        collector.export.return_value = True
+        args = SimpleNamespace(
+            format="flamegraph",
+            outfile="profile.html",
+            browser=True,
+        )
+
+        with (
+            mock.patch("profiling.sampling.cli.os.path.isdir", return_value=False),
+            mock.patch("profiling.sampling.cli._open_in_browser") as mock_open,
+        ):
+            _handle_output(collector, args, pid=12345, mode=0)
+
+        collector.export.assert_called_once_with("profile.html")
+        mock_open.assert_called_once_with("profile.html")
+
+    def test_replay_browser_not_opened_when_export_fails(self):
+        args = SimpleNamespace(
+            input_file="profile.bin",
+            format="flamegraph",
+            outfile="profile.html",
+            browser=True,
+            sort=None,
+            limit=None,
+            no_summary=False,
+        )
+        collector = mock.MagicMock()
+        collector.export.return_value = False
+
+        with (
+            mock.patch("profiling.sampling.cli.os.path.exists", return_value=True),
+            mock.patch("profiling.sampling.cli.BinaryReader") as mock_reader_cls,
+            mock.patch("profiling.sampling.cli._create_collector", return_value=collector),
+            mock.patch("profiling.sampling.cli._open_in_browser") as mock_open,
+        ):
+            reader = mock_reader_cls.return_value.__enter__.return_value
+            reader.get_info.return_value = {
+                "sample_count": 1,
+                "sample_interval_us": 1000,
+                "compression_type": 0,
+            }
+            reader.replay_samples.return_value = 1
+
+            _handle_replay(args)
+
+        collector.export.assert_called_once_with("profile.html")
+        mock_open.assert_not_called()
+
+    def test_replay_browser_opened_when_export_succeeds(self):
+        args = SimpleNamespace(
+            input_file="profile.bin",
+            format="flamegraph",
+            outfile="profile.html",
+            browser=True,
+            sort=None,
+            limit=None,
+            no_summary=False,
+        )
+        collector = mock.MagicMock()
+        collector.export.return_value = True
+
+        with (
+            mock.patch("profiling.sampling.cli.os.path.exists", return_value=True),
+            mock.patch("profiling.sampling.cli.BinaryReader") as mock_reader_cls,
+            mock.patch("profiling.sampling.cli._create_collector", return_value=collector),
+            mock.patch("profiling.sampling.cli._open_in_browser") as mock_open,
+        ):
+            reader = mock_reader_cls.return_value.__enter__.return_value
+            reader.get_info.return_value = {
+                "sample_count": 1,
+                "sample_interval_us": 1000,
+                "compression_type": 0,
+            }
+            reader.replay_samples.return_value = 1
+
+            _handle_replay(args)
+
+        collector.export.assert_called_once_with("profile.html")
+        mock_open.assert_called_once_with("profile.html")
 
     @unittest.skipIf(is_emscripten, "subprocess not available")
     def test_run_nonexistent_script_exits_cleanly(self):

@@ -701,6 +701,7 @@ class GeckoCollector(Collector):
         print(
             f"Open in Firefox Profiler: https://profiler.firefox.com/"
         )
+        return True
 
     def _build_marker_schema(self):
         """Build marker schema definitions for Firefox Profiler."""

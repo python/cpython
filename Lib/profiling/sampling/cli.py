@@ -660,10 +660,14 @@ def _handle_output(collector, args, pid, mode):
             filename = os.path.join(args.outfile, _generate_output_filename(args.format, pid))
         else:
             filename = args.outfile or _generate_output_filename(args.format, pid)
-        collector.export(filename)
+        export_ok = collector.export(filename)
 
         # Auto-open browser for HTML output if --browser flag is set
-        if args.format in ('flamegraph', 'heatmap') and getattr(args, 'browser', False):
+        if (
+            export_ok
+            and args.format in ('flamegraph', 'heatmap')
+            and getattr(args, 'browser', False)
+        ):
             _open_in_browser(filename)
 
 
@@ -1203,10 +1207,14 @@ def _handle_replay(args):
                 collector.print_stats(sort_mode, limit, not args.no_summary, PROFILING_MODE_WALL)
         else:
             filename = args.outfile or _generate_output_filename(args.format, os.getpid())
-            collector.export(filename)
+            export_ok = collector.export(filename)
 
             # Auto-open browser for HTML output if --browser flag is set
-            if args.format in ('flamegraph', 'heatmap') and getattr(args, 'browser', False):
+            if (
+                export_ok
+                and args.format in ('flamegraph', 'heatmap')
+                and getattr(args, 'browser', False)
+            ):
                 _open_in_browser(filename)
 
         print(f"Replayed {count} samples")

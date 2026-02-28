@@ -714,7 +714,7 @@ class HeatmapCollector(StackTraceCollector):
         """
         if not self.file_samples:
             print("Warning: No heatmap data to export")
-            return
+            return False
 
         try:
             output_dir = self._prepare_output_directory(output_path)
@@ -728,6 +728,7 @@ class HeatmapCollector(StackTraceCollector):
             self._generate_index_html(output_dir / 'index.html', file_stats)
 
             self._print_export_summary(output_dir, file_stats)
+            return True
 
         except Exception as e:
             print(f"Error: Failed to export heatmap: {e}")

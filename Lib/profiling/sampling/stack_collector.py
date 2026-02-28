@@ -61,6 +61,7 @@ class CollapsedStackCollector(StackTraceCollector):
             for stack, count in lines:
                 f.write(f"{stack} {count}\n")
         print(f"Collapsed stack output written to {filename}")
+        return True
 
 
 class FlamegraphCollector(StackTraceCollector):
@@ -153,7 +154,7 @@ class FlamegraphCollector(StackTraceCollector):
             print(
                 "Warning: No functions found in profiling data. Check if sampling captured any data."
             )
-            return
+            return False
 
         html_content = self._create_flamegraph_html(flamegraph_data)
 
@@ -161,6 +162,7 @@ class FlamegraphCollector(StackTraceCollector):
             f.write(html_content)
 
         print(f"Flamegraph saved to: {filename}")
+        return True
 
     @staticmethod
     @functools.lru_cache(maxsize=None)
