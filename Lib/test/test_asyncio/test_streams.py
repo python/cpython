@@ -14,7 +14,7 @@ except ImportError:
 
 import asyncio
 from test.test_asyncio import utils as test_utils
-from test.support import socket_helper, LOOPBACK_TIMEOUT
+from test.support import socket_helper
 
 
 def tearDownModule():
