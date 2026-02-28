@@ -119,12 +119,12 @@ class GlobalLazyImportModeTests(unittest.TestCase):
 
     def test_global_filter_from(self):
         """Filter should work with 'from' imports."""
-        import test.test_import.data.lazy_imports.global_filter
+        import test.test_import.data.lazy_imports.global_filter_from
         self.assertIn("test.test_import.data.lazy_imports.basic2", sys.modules)
 
     def test_global_filter_from_true(self):
         """Filter returning True should allow lazy 'from' imports."""
-        import test.test_import.data.lazy_imports.global_filter_true
+        import test.test_import.data.lazy_imports.global_filter_from_true
         self.assertNotIn("test.test_import.data.lazy_imports.basic2", sys.modules)
 
 
@@ -232,22 +232,22 @@ class SyntaxRestrictionTests(unittest.TestCase):
     def test_lazy_try_except(self):
         """lazy import inside try/except should raise SyntaxError."""
         with self.assertRaises(SyntaxError):
-            import test.test_import.data.lazy_imports.lazy_try_except
+            import test.test_import.data.lazy_imports.badsyntax.lazy_try_except
 
     def test_lazy_try_except_from(self):
         """lazy from import inside try/except should raise SyntaxError."""
         with self.assertRaises(SyntaxError):
-            import test.test_import.data.lazy_imports.lazy_try_except_from
+            import test.test_import.data.lazy_imports.badsyntax.lazy_try_except_from
 
     def test_lazy_try_except_from_star(self):
         """lazy from import * should raise SyntaxError."""
         with self.assertRaises(SyntaxError):
-            import test.test_import.data.lazy_imports.lazy_try_except_from_star
+            import test.test_import.data.lazy_imports.badsyntax.lazy_try_except_from_star
 
     def test_lazy_future_import(self):
         """lazy from __future__ import should raise SyntaxError."""
         with self.assertRaises(SyntaxError) as cm:
-            import test.test_import.data.lazy_imports.lazy_future_import
+            import test.test_import.data.lazy_imports.badsyntax.lazy_future_import
         # Check we highlight 'lazy' (column offset 0, end offset 4)
         self.assertEqual(cm.exception.offset, 1)
         self.assertEqual(cm.exception.end_offset, 5)
@@ -255,7 +255,7 @@ class SyntaxRestrictionTests(unittest.TestCase):
     def test_lazy_import_func(self):
         """lazy import inside function should raise SyntaxError."""
         with self.assertRaises(SyntaxError):
-            import test.test_import.data.lazy_imports.lazy_import_func
+            import test.test_import.data.lazy_imports.badsyntax.lazy_import_func
 
     def test_lazy_import_exec_in_function(self):
         """lazy import via exec() inside a function should raise SyntaxError."""
@@ -392,6 +392,17 @@ class DunderLazyImportTests(unittest.TestCase):
         """Using __lazy_import__ result should trigger module load."""
         import test.test_import.data.lazy_imports.dunder_lazy_import_used
         self.assertIn("test.test_import.data.lazy_imports.basic2", sys.modules)
+
+    def test_dunder_lazy_import_invalid_arguments(self):
+        """__lazy_import__ should reject invalid arguments."""
+        for invalid_name in (b"", 123, None):
+            with self.assertRaises(TypeError):
+                __lazy_import__(invalid_name)
+
+        with self.assertRaises(ValueError):
+            __lazy_import__("sys", level=-1)
+        with self.assertRaises(TypeError):
+            __lazy_import__("sys", globals=1)
 
     def test_dunder_lazy_import_builtins(self):
         """__lazy_import__ should use module's __builtins__ for __import__."""
@@ -1212,7 +1223,7 @@ class AdditionalSyntaxRestrictionTests(unittest.TestCase):
         # PEP 810: "The soft keyword is only allowed at the global (module) level,
         # not inside functions, class bodies, try blocks, or import *"
         with self.assertRaises(SyntaxError):
-            import test.test_import.data.lazy_imports.lazy_class_body
+            import test.test_import.data.lazy_imports.badsyntax.lazy_class_body
 
 
 class MixedLazyEagerImportTests(unittest.TestCase):
