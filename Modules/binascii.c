@@ -643,6 +643,10 @@ fastpath:
             if (quad_pos >= 2 && quad_pos + pads <= 4) {
                 continue;
             }
+            // See RFC 4648, section-3.3: "specifications MAY ignore the
+            // pad character, "=", treating it as non-alphabet data, if
+            // it is present before the end of the encoded data" and
+            // "the excess pad characters MAY also be ignored."
             if (!strict_mode || ignorechar(BASE64_PAD, ignorechars, ignorecache)) {
                 continue;
             }
@@ -662,6 +666,7 @@ fastpath:
 
         unsigned char v = table_a2b_base64[this_ch];
         if (v >= 64) {
+            // See RFC 4648, section-3.3.
             if (strict_mode && !ignorechar(this_ch, ignorechars, ignorecache)) {
                 state = get_binascii_state(module);
                 if (state) {
@@ -672,7 +677,8 @@ fastpath:
             continue;
         }
 
-        // Characters that are not '=', in the middle of the padding, are not allowed
+        // Characters that are not '=', in the middle of the padding, are
+        // not allowed (except when they are). See RFC 4648, section-3.3.
         if (pads && strict_mode &&
             !ignorechar(BASE64_PAD, ignorechars, ignorecache))
         {

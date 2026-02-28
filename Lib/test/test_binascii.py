@@ -240,17 +240,17 @@ class BinASCIITest(unittest.TestCase):
 
     def test_base64_excess_data(self):
         # Test excess data exceptions
-        def assertExcessData(data, non_strict_expected):
+        def assertExcessData(data, expected):
             assert_regex = r'(?i)Excess data'
             data = self.type2test(data)
             with self.assertRaisesRegex(binascii.Error, assert_regex):
                 binascii.a2b_base64(data, strict_mode=True)
             self.assertEqual(binascii.a2b_base64(data, strict_mode=False),
-                             non_strict_expected)
+                             expected)
             self.assertEqual(binascii.a2b_base64(data, strict_mode=True,
                                                  ignorechars=b'='),
-                             non_strict_expected)
-            self.assertEqual(binascii.a2b_base64(data), non_strict_expected)
+                             expected)
+            self.assertEqual(binascii.a2b_base64(data), expected)
 
         assertExcessData(b'ab==c=', b'i\xb7')
         assertExcessData(b'ab==cd', b'i\xb7\x1d')
