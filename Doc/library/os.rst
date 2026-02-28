@@ -2380,6 +2380,8 @@ features:
    entries ``'.'`` and ``'..'`` even if they are present in the directory.
    If a file is removed from or added to the directory during the call of
    this function, whether a name for that file be included is unspecified.
+   *path* must refer to an existing directory. Passing ``''`` raises
+   :exc:`FileNotFoundError`; use ``'.'`` to list the current directory.
 
    *path* may be a :term:`path-like object`.  If *path* is of type ``bytes``
    (directly or indirectly through the :class:`PathLike` interface),
