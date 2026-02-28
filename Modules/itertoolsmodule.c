@@ -1685,7 +1685,7 @@ islice_length_hint(PyObject *op, PyObject *Py_UNUSED(dummy))
         return PyLong_FromSsize_t(0);
     }
 
-    Py_ssize_t steps = (remaining + lz->step - 1) / lz->step;
+    Py_ssize_t steps = 1 + (remaining - 1) / lz->step;
     return PyLong_FromSsize_t(steps);
 }
 
