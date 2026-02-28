@@ -218,6 +218,31 @@ Running and stopping the loop
    .. versionchanged:: 3.12
       Added the *timeout* parameter.
 
+Decomposing event loop iteration
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+The following methods decompose a single :meth:`~asyncio.BaseEventLoop._run_once`
+iteration into independently callable steps.  They are used internally by
+:func:`asyncio.start_guest_run`; see :ref:`asyncio-guest` for full documentation.
+
+.. method:: loop.poll_events()
+
+   Poll for I/O events and return the raw event list.
+
+   .. versionadded:: 3.15
+
+.. method:: loop.process_events(event_list)
+
+   Process I/O events returned by :meth:`poll_events`.
+
+   .. versionadded:: 3.15
+
+.. method:: loop.process_ready()
+
+   Process expired timers and execute ready callbacks.
+
+   .. versionadded:: 3.15
+
 Scheduling callbacks
 ^^^^^^^^^^^^^^^^^^^^
 
