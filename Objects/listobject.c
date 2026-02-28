@@ -3558,8 +3558,14 @@ list___sizeof___impl(PyListObject *self)
 /*[clinic end generated code: output=3417541f95f9a53e input=b8030a5d5ce8a187]*/
 {
     size_t res = _PyObject_SIZE(Py_TYPE(self));
-    Py_ssize_t allocated = FT_ATOMIC_LOAD_SSIZE_RELAXED(self->allocated);
-    res += (size_t)allocated * sizeof(void*);
+#ifdef Py_GIL_DISABLED
+    PyObject **ob_item = _Py_atomic_load_ptr(&self->ob_item);
+    if (ob_item != NULL) {
+        res += list_capacity(ob_item) * sizeof(PyObject *);
+    }
+#else
+    res += (size_t)self->allocated * sizeof(PyObject *);
+#endif
     return PyLong_FromSize_t(res);
 }
 

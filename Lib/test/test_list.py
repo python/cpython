@@ -6,6 +6,7 @@ from test.support import cpython_only
 from test.support.import_helper import import_module
 from test.support.script_helper import assert_python_failure, assert_python_ok
 import pickle
+from threading import Thread
 import unittest
 
 class ListTest(list_tests.CommonTest):
@@ -381,6 +382,30 @@ class ListTest(list_tests.CommonTest):
 
         self.assertEqual(foo(list(range(10))), 45)
 
+    # gh-145036: race condition with list.__sizeof__()
+    def test_list_sizeof_free_threaded_build(self):
+        L = []
+
+        def test1():
+            for _ in range(100):
+                L.append(1)
+                L.pop()
+
+        def test2():
+            for _ in range(100):
+                L.__sizeof__()
+
+        threads = []
+        for _ in range(4):
+            threads.append(Thread(target=test1))
+            threads.append(Thread(target=test2))
+
+        for t in threads:
+            t.start()
+        for t in threads:
+            t.join()
+
+        self.assertEqual(len(L), 0)
 
 if __name__ == "__main__":
     unittest.main()
