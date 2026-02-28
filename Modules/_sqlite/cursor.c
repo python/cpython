@@ -58,6 +58,31 @@ check_cursor_locked(pysqlite_Cursor *cur)
     return 1;
 }
 
+/*
+ * Check if any cursor other than 'exclude' is locked on this connection.
+ * Used to determine if we're in a nested callback scenario.
+ */
+static int
+any_other_cursor_locked(pysqlite_Connection *conn, pysqlite_Cursor *exclude)
+{
+    assert(PyList_CheckExact(conn->cursors));
+    Py_ssize_t n = PyList_GET_SIZE(conn->cursors);
+    for (Py_ssize_t i = 0; i < n; i++) {
+        PyObject *weakref = PyList_GET_ITEM(conn->cursors, i);
+        PyObject *obj;
+        if (!PyWeakref_GetRef(weakref, &obj)) {
+            continue;
+        }
+        pysqlite_Cursor *cursor = (pysqlite_Cursor *)obj;
+        int locked = cursor->locked;
+        Py_DECREF(obj);
+        if (locked && cursor != exclude) {
+            return 1;
+        }
+    }
+    return 0;
+}
+
 static pysqlite_state *
 get_module_state_by_cursor(pysqlite_Cursor *cursor)
 {
@@ -99,6 +124,28 @@ class _sqlite3.Cursor "pysqlite_Cursor *" "clinic_state()->CursorType"
 [clinic start generated code]*/
 /*[clinic end generated code: output=da39a3ee5e6b4b0d input=3c5b8115c5cf30f1]*/
 
+/*
+ * Registers a cursor with the connection.
+ *
+ * 0 => error; 1 => ok
+ */
+static int
+register_cursor(pysqlite_Connection *connection, PyObject *cursor)
+{
+    PyObject *weakref = PyWeakref_NewRef(cursor, NULL);
+    if (weakref == NULL) {
+        return 0;
+    }
+
+    if (PyList_Append(connection->cursors, weakref) < 0) {
+        Py_DECREF(weakref);
+        return 0;
+    }
+
+    Py_DECREF(weakref);
+    return 1;
+}
+
 /*[clinic input]
 _sqlite3.Cursor.__init__ as pysqlite_cursor_init
 
@@ -135,6 +182,10 @@ pysqlite_cursor_init_impl(pysqlite_Cursor *self,
     Py_XSETREF(self->row_factory, Py_None);
 
     if (!pysqlite_check_thread(self->connection)) {
+        return -1;
+    }
+
+    if (!register_cursor(connection, (PyObject *)self)) {
         return -1;
     }
 
@@ -905,13 +956,12 @@ _pysqlite_query_execute(pysqlite_Cursor* self, int multiple, PyObject* operation
             goto error;
         }
 
-        self->connection->in_callback++;
         rc = stmt_step(self->statement->st);
-        self->connection->in_callback--;
-        if (self->connection->close_attempted_in_callback
-            && self->connection->in_callback == 0)
-        {
-            self->connection->close_attempted_in_callback = 0;
+        if (self->connection->close_attempted_in_callback) {
+            /* Only clear the flag if no other cursor is locked (outermost) */
+            if (!any_other_cursor_locked(self->connection, self)) {
+                self->connection->close_attempted_in_callback = 0;
+            }
             PyErr_Clear();
             PyErr_SetString(state->ProgrammingError,
                             "Cannot close the database connection "
@@ -1163,18 +1213,19 @@ pysqlite_cursor_iternext(PyObject *op)
 
     self->locked = 1;  // GH-80254: Prevent recursive use of cursors.
     PyObject *row = _pysqlite_fetch_one_row(self);
-    self->locked = 0;
     if (row == NULL) {
+        self->locked = 0;
         return NULL;
     }
-    self->connection->in_callback++;
     int rc = stmt_step(stmt);
-    self->connection->in_callback--;
-    if (self->connection->close_attempted_in_callback
-        && self->connection->in_callback == 0)
-    {
-        self->connection->close_attempted_in_callback = 0;
+    self->locked = 0;
+    if (self->connection->close_attempted_in_callback) {
+        /* Only clear the flag if no other cursor is locked (outermost) */
+        if (!any_other_cursor_locked(self->connection, self)) {
+            self->connection->close_attempted_in_callback = 0;
+        }
         Py_DECREF(row);
+        stmt_reset(self->statement);
         Py_CLEAR(self->statement);
         PyErr_Clear();
         PyErr_SetString(self->connection->state->ProgrammingError,

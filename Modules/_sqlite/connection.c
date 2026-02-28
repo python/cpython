@@ -38,6 +38,7 @@
 #include "pycore_pyerrors.h"      // _PyErr_ChainExceptions1()
 #include "pycore_pylifecycle.h"   // _Py_IsInterpreterFinalizing()
 #include "pycore_unicodeobject.h" // _PyUnicode_AsUTF8NoNUL
+#include "pycore_weakref.h"
 
 #include <stdbool.h>
 
@@ -283,10 +284,17 @@ pysqlite_connection_init_impl(pysqlite_Connection *self, PyObject *database,
         goto error;
     }
 
-    /* Create lists of weak references to blobs */
+    /* Create lists of weak references to cursors and blobs */
+    PyObject *cursors = PyList_New(0);
+    if (cursors == NULL) {
+        Py_DECREF(statement_cache);
+        goto error;
+    }
+
     PyObject *blobs = PyList_New(0);
     if (blobs == NULL) {
         Py_DECREF(statement_cache);
+        Py_DECREF(cursors);
         goto error;
     }
 
@@ -299,11 +307,11 @@ pysqlite_connection_init_impl(pysqlite_Connection *self, PyObject *database,
     self->check_same_thread = check_same_thread;
     self->thread_ident = PyThread_get_thread_ident();
     self->statement_cache = statement_cache;
+    self->cursors = cursors;
     self->blobs = blobs;
+    self->close_attempted_in_callback = 0;
     self->row_factory = Py_NewRef(Py_None);
     self->text_factory = Py_NewRef(&PyUnicode_Type);
-    self->in_callback = 0;
-    self->close_attempted_in_callback = 0;
     self->trace_ctx = NULL;
     self->progress_ctx = NULL;
     self->authorizer_ctx = NULL;
@@ -383,6 +391,7 @@ connection_traverse(PyObject *op, visitproc visit, void *arg)
     pysqlite_Connection *self = _pysqlite_Connection_CAST(op);
     Py_VISIT(Py_TYPE(self));
     Py_VISIT(self->statement_cache);
+    Py_VISIT(self->cursors);
     Py_VISIT(self->blobs);
     Py_VISIT(self->row_factory);
     Py_VISIT(self->text_factory);
@@ -407,6 +416,7 @@ connection_clear(PyObject *op)
 {
     pysqlite_Connection *self = _pysqlite_Connection_CAST(op);
     Py_CLEAR(self->statement_cache);
+    Py_CLEAR(self->cursors);
     Py_CLEAR(self->blobs);
     Py_CLEAR(self->row_factory);
     Py_CLEAR(self->text_factory);
@@ -657,14 +667,30 @@ pysqlite_connection_close_impl(pysqlite_Connection *self)
         return NULL;
     }
 
-    if (self->in_callback > 0) {
-        self->close_attempted_in_callback = 1;
-        PyTypeObject *tp = Py_TYPE(self);
-        pysqlite_state *state = pysqlite_get_state_by_type(tp);
-        PyErr_SetString(state->ProgrammingError,
-                        "Cannot close the database connection "
-                        "from within a callback function.");
-        return NULL;
+    /* Check if any cursor is locked (actively executing a query);
+     * closing during a callback is illegal per the SQLite C API docs. */
+    assert(PyList_CheckExact(self->cursors));
+    Py_ssize_t n = PyList_GET_SIZE(self->cursors);
+    for (Py_ssize_t i = 0; i < n; i++) {
+        PyObject *weakref = PyList_GET_ITEM(self->cursors, i);
+        if (_PyWeakref_IsDead(weakref)) {
+            continue;
+        }
+        PyObject *obj;
+        if (!PyWeakref_GetRef(weakref, &obj)) {
+            continue;
+        }
+        int locked = ((pysqlite_Cursor *)obj)->locked;
+        Py_DECREF(obj);
+        if (locked) {
+            self->close_attempted_in_callback = 1;
+            PyTypeObject *tp = Py_TYPE(self);
+            pysqlite_state *state = pysqlite_get_state_by_type(tp);
+            PyErr_SetString(state->ProgrammingError,
+                            "Cannot close the database connection "
+                            "from within a callback function.");
+            return NULL;
+        }
     }
 
     pysqlite_close_all_blobs(self);
