@@ -1084,15 +1084,6 @@ this approach.
    :ref:`import system <importsystem>` may opt to leave it unset if it
    has no semantic meaning (for example, a module loaded from a database).
 
-   .. deprecated-removed:: 3.13 3.15
-      Setting ``__cached__`` on a module while failing to set
-      :attr:`!__spec__.cached` is deprecated. In Python 3.15,
-      ``__cached__`` will cease to be set or taken into consideration by
-      the import system or standard library.
-
-   .. versionchanged:: 3.15
-      ``__cached__`` is no longer set.
-
 Other writable attributes on module objects
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
