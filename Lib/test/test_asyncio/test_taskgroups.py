@@ -1103,6 +1103,108 @@ class BaseTestTaskGroup:
         await asyncio.sleep(0)
 
 
+    # -- TaskGroup.start() / TaskStatus ------------------------------------
+
+    async def test_start_basic(self):
+        """start() returns the value passed to task_status.started()."""
+        async def server(task_status):
+            task_status.started(42)
+            await asyncio.sleep(0)
+
+        async with taskgroups.TaskGroup() as tg:
+            value = await tg.start(server)
+        self.assertEqual(value, 42)
+
+    async def test_start_none_value(self):
+        """started() with no arg returns None."""
+        async def worker(task_status):
+            task_status.started()
+            await asyncio.sleep(0)
+
+        async with taskgroups.TaskGroup() as tg:
+            value = await tg.start(worker)
+        self.assertIsNone(value)
+
+    async def test_start_task_continues(self):
+        """Task keeps running after started() is called."""
+        finished = False
+
+        async def worker(task_status):
+            nonlocal finished
+            task_status.started("ready")
+            await asyncio.sleep(0)
+            finished = True
+
+        async with taskgroups.TaskGroup() as tg:
+            value = await tg.start(worker)
+            self.assertEqual(value, "ready")
+        # TaskGroup waits for the task to finish
+        self.assertTrue(finished)
+
+    async def test_start_error_before_started(self):
+        """Exception before started() propagates through the group."""
+        async def failing(task_status):
+            raise RuntimeError("boom")
+
+        with self.assertRaises(ExceptionGroup) as cm:
+            async with taskgroups.TaskGroup() as tg:
+                await tg.start(failing)
+
+        self.assertEqual(len(cm.exception.exceptions), 1)
+        self.assertIsInstance(cm.exception.exceptions[0], RuntimeError)
+
+    async def test_start_cancelled_before_started(self):
+        """If the task is cancelled before started(), cancellation propagates."""
+        async def slow_start(task_status):
+            await asyncio.sleep(100)
+            task_status.started()
+
+        with self.assertRaises(TimeoutError):
+            async with asyncio.timeout(0.01):
+                async with taskgroups.TaskGroup() as tg:
+                    await tg.start(slow_start)
+
+    async def test_start_already_started_error(self):
+        """Calling started() twice raises RuntimeError."""
+        async def double_start(task_status):
+            task_status.started(1)
+            with self.assertRaises(RuntimeError):
+                task_status.started(2)
+
+        async with taskgroups.TaskGroup() as tg:
+            value = await tg.start(double_start)
+        self.assertEqual(value, 1)
+
+    async def test_start_multiple_tasks(self):
+        """Multiple start() calls in the same group."""
+        async def worker(n, task_status):
+            task_status.started(n * 10)
+            await asyncio.sleep(0)
+
+        async with taskgroups.TaskGroup() as tg:
+            v1 = await tg.start(worker, 1)
+            v2 = await tg.start(worker, 2)
+            v3 = await tg.start(worker, 3)
+
+        self.assertEqual(v1, 10)
+        self.assertEqual(v2, 20)
+        self.assertEqual(v3, 30)
+
+    async def test_start_with_name(self):
+        """start() passes name= to create_task."""
+        task_name = None
+
+        async def worker(task_status):
+            nonlocal task_name
+            task_name = asyncio.current_task().get_name()
+            task_status.started()
+
+        async with taskgroups.TaskGroup() as tg:
+            await tg.start(worker, name="my-worker")
+
+        self.assertEqual(task_name, "my-worker")
+
+
 class TestTaskGroup(BaseTestTaskGroup, unittest.IsolatedAsyncioTestCase):
     loop_factory = asyncio.EventLoop
 

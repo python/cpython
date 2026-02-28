@@ -2,12 +2,38 @@
 # license: PSFL.
 
 
-__all__ = ("TaskGroup",)
+__all__ = ("TaskGroup", "TaskStatus")
 
 from . import events
 from . import exceptions
 from . import futures
 from . import tasks
+
+
+class TaskStatus:
+    """Status object passed to tasks started via :meth:`TaskGroup.start`.
+
+    The task calls :meth:`started` to signal readiness, passing an
+    optional value back to the ``start()`` caller.
+    """
+
+    def __init__(self):
+        self._future = None   # set by TaskGroup.start()
+        self._started = False
+
+    def started(self, value=None):
+        """Signal that the task is ready.
+
+        *value* is returned to the ``await TaskGroup.start(...)`` caller.
+        May only be called once.
+        """
+        if self._started:
+            raise RuntimeError("task already signalled readiness")
+        if self._future is None or self._future.done():
+            raise RuntimeError(
+                "TaskStatus is not associated with a pending start()")
+        self._started = True
+        self._future.set_result(value)
 
 
 class TaskGroup:
@@ -209,6 +235,39 @@ class TaskGroup:
             # gh-128552: prevent a refcycle of
             # task.exception().__traceback__->TaskGroup.create_task->task
             del task
+
+    async def start(self, coro_fn, *args, name=None, context=None):
+        """Start a task and wait until it signals readiness.
+
+        *coro_fn* is called as ``coro_fn(*args, task_status=task_status)``.
+        The coroutine must call ``task_status.started(value)`` to signal
+        readiness.  The *value* passed to ``started()`` is returned by
+        this method.  The task continues running in the group after
+        ``started()`` is called.
+        """
+        if not self._entered:
+            raise RuntimeError(f"TaskGroup {self!r} has not been entered")
+        if self._exiting and not self._tasks:
+            raise RuntimeError(f"TaskGroup {self!r} is finished")
+        if self._aborting:
+            raise RuntimeError(f"TaskGroup {self!r} is shutting down")
+
+        task_status = TaskStatus()
+        task_status._future = self._loop.create_future()
+
+        coro = coro_fn(*args, task_status=task_status)
+        kwargs = {}
+        if name is not None:
+            kwargs['name'] = name
+        if context is not None:
+            kwargs['context'] = context
+        task = self.create_task(coro, **kwargs)
+
+        try:
+            return await task_status._future
+        except BaseException:
+            task.cancel()
+            raise
 
     # Since Python 3.8 Tasks propagate all exceptions correctly,
     # except for KeyboardInterrupt and SystemExit which are
