@@ -4,9 +4,6 @@
 .. module:: poplib
    :synopsis: POP3 protocol client (requires sockets).
 
-.. sectionauthor:: Andrew T. Csillag
-.. revised by ESR, January 2000
-
 **Source code:** :source:`Lib/poplib.py`
 
 .. index:: pair: POP3; protocol

@@ -950,7 +950,7 @@ class ZipExtFile(io.BufferedIOBase):
     """
 
     # Max size supported by decompressor.
-    MAX_N = 1 << 31 - 1
+    MAX_N = (1 << 31) - 1
 
     # Read from compressed files in 4k blocks.
     MIN_READ_SIZE = 4096

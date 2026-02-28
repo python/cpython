@@ -4,10 +4,6 @@
 .. module:: urllib.request
    :synopsis: Extensible library for opening URLs.
 
-.. moduleauthor:: Jeremy Hylton <jeremy@alum.mit.edu>
-.. sectionauthor:: Moshe Zadka <moshez@users.sourceforge.net>
-.. sectionauthor:: Senthil Kumaran <senthil@uthcode.com>
-
 **Source code:** :source:`Lib/urllib/request.py`
 
 --------------
