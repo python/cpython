@@ -1766,8 +1766,10 @@ prepare_s(PyStructObject *self)
     return -1;
 }
 
+/* This should be moved to s_new() when Struct___init__() will
+   be removed (see gh-143715 and gh-94532). */
 static int
-s_init(PyStructObject *self, PyObject *format)
+s_create(PyStructObject *self, PyObject *format)
 {
     if (PyUnicode_Check(format)) {
         format = PyUnicode_AsASCIIString(format);
@@ -1780,8 +1782,7 @@ s_init(PyStructObject *self, PyObject *format)
     if (!PyBytes_Check(format)) {
         PyErr_Format(PyExc_TypeError,
                      "Struct() argument 1 must be a str or bytes object, "
-                     "not %T",
-                     format);
+                     "not %T", format);
         Py_DECREF(format);
         return -1;
     }
@@ -1797,12 +1798,6 @@ s_new(PyTypeObject *type, PyObject *args, PyObject *kwds)
 {
     PyStructObject *self;
 
-    if (PyTuple_GET_SIZE(args) != 1) {
-        if (PyErr_WarnEx(PyExc_DeprecationWarning,
-                         "Struct.__new__() has one positional argument", 1)) {
-            return NULL;
-        }
-    }
     assert(type != NULL);
     allocfunc alloc_func = PyType_GetSlot(type, Py_tp_alloc);
     assert(alloc_func != NULL);
@@ -1815,13 +1810,21 @@ s_new(PyTypeObject *type, PyObject *args, PyObject *kwds)
     self->s_size = -1;
     self->s_len = -1;
     self->init_called = false;
-    if (PyTuple_GET_SIZE(args) == 1) {
-        if (s_init(self, PyTuple_GET_ITEM(args, 0))) {
-            Py_DECREF(self);
-            return NULL;
+    if (PyTuple_GET_SIZE(args) != 1) {
+        if (PyErr_WarnEx(PyExc_DeprecationWarning,
+                         "Struct.__new__() has one positional argument", 1)) {
+            goto err;
+        }
+    }
+    else {
+        if (s_create(self, PyTuple_GET_ITEM(args, 0))) {
+            goto err;
         }
     }
     return (PyObject *)self;
+err:
+    Py_DECREF(self);
+    return NULL;
 }
 
 /*[clinic input]
@@ -1845,21 +1848,23 @@ Struct___init___impl(PyStructObject *self, PyObject *format)
                         "Struct() missing required argument 'format' (pos 1)");
         return -1;
     }
-    if (!self->init_called) {
-        if (!self->s_codes && s_init(self, format)) {
+    if (self->init_called) {
+        if (self->s_codes
+            && PyErr_WarnEx(PyExc_DeprecationWarning,
+                            ("Explicit call of __init__() on "
+                             "initialized Struct() is deprecated"), 1))
+        {
+            return -1;
+        }
+        return s_create(self, format);
+    }
+    else {
+        if (!self->s_codes && s_create(self, format)) {
             return -1;
         }
         self->init_called = true;
         return 0;
     }
-    if ((self->s_codes && self->init_called)
-        && PyErr_WarnEx(PyExc_DeprecationWarning,
-                        ("Explicit call of __init__() on "
-                         "initialized Struct() is deprecated"), 1))
-    {
-        return -1;
-    }
-    return s_init(self, format);
 }
 
 static int
