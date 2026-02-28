@@ -1604,22 +1604,22 @@ class TestParser(TestParserMixin, TestEmailBase):
 
     params_test_get_comment = old_api_only(
 
-        only = C(
+        simple_comment_only = C(
             '(comment)',
             comments=['comment'],
             ),
 
-        must_start_with_paren_no_ws = C(
-            'foo"',
+        non_wsp_before_left_paren_is_error = C(
+            'foo(',
             exception=(errors.HeaderParseError, '.*'),
             ),
 
-        must_start_with_paren_ws = C(
+        wsp_before_left_paren_is_error = C(
             '  (foo"',
             exception=(errors.HeaderParseError, '.*'),
             ),
 
-        following_wsp_preserved = C(
+        wsp_after_right_paren = C(
             '(comment)  \t',
             remainder='  \t',
             comments=['comment'],
@@ -1631,13 +1631,13 @@ class TestParser(TestParserMixin, TestEmailBase):
             comments=['foo bar'],
             ),
 
-        multiple_words_wsp_preserved = C(
+        wsp_runs_inside_comment = C(
             '( foo  bar\t )  \t',
             remainder='  \t',
             comments=[' foo  bar\t '],
             ),
 
-        end_paren_mid_word = C(
+        non_wsp_after_right_paren = C(
             '(foo)bar',
             remainder='bar',
             comments=['foo'],
@@ -1654,14 +1654,14 @@ class TestParser(TestParserMixin, TestEmailBase):
             comments=['foo\x7Fbar'],
             ),
 
-        no_end_paren_after_non_ws = C(
+        no_right_paren_after_non_ws = C(
             '(foo bar',
             stringified='(foo bar)',
             defects=[errors.InvalidHeaderDefect],
             comments=['foo bar'],
             ),
 
-        no_end_paren_after_ws = C(
+        no_right_paren_after_ws = C(
             '(foo bar  ',
             stringified='(foo bar  )',
             defects=[errors.InvalidHeaderDefect],
@@ -1694,14 +1694,14 @@ class TestParser(TestParserMixin, TestEmailBase):
             #    comment = comment[0]
             #self.assertEqual(comment.content, 'foo')
 
-        missing_end_of_nesting = C(
+        multiple_mesting_missing_two_right_parens = C(
             '(((((foo)))',
             stringified='(((((foo)))))',
             defects=[errors.InvalidHeaderDefect]*2,
             comments=['((((foo))))'],
             ),
 
-        qs_in_nested_comment = C(
+        quoted_paren_in_nested_comment = C(
             r'(foo (b\)))',
             comments=[r'foo (b\))']
             ),
