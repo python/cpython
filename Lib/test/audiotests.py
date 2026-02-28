@@ -27,14 +27,14 @@ class AudioTests:
         unlink(TESTFN)
 
     def check_params(self, f, nchannels, sampwidth, framerate, nframes,
-                     comptype, compname, encoding):
+                     comptype, compname, format):
         self.assertEqual(f.getnchannels(), nchannels)
         self.assertEqual(f.getsampwidth(), sampwidth)
         self.assertEqual(f.getframerate(), framerate)
         self.assertEqual(f.getnframes(), nframes)
         self.assertEqual(f.getcomptype(), comptype)
         self.assertEqual(f.getcompname(), compname)
-        self.assertEqual(f.getencoding(), encoding)
+        self.assertEqual(f.getformat(), format)
 
         params = f.getparams()
         self.assertEqual(params,
@@ -62,7 +62,7 @@ class AudioWriteTests(AudioTests):
         f.setsampwidth(self.sampwidth)
         f.setframerate(self.framerate)
         f.setcomptype(self.comptype, self.compname)
-        f.setencoding(self.encoding)
+        f.setformat(self.format)
         return f
 
     def check_file(self, testfile, nframes, frames):
@@ -72,14 +72,14 @@ class AudioWriteTests(AudioTests):
             self.assertEqual(f.getframerate(), self.framerate)
             self.assertEqual(f.getnframes(), nframes)
             self.assertEqual(f.readframes(nframes), frames)
-            self.assertEqual(f.getencoding(), self.encoding)
+            self.assertEqual(f.getformat(), self.format)
 
     def test_write_params(self):
         f = self.create_file(TESTFN)
         f.setnframes(self.nframes)
         f.writeframes(self.frames)
         self.check_params(f, self.nchannels, self.sampwidth, self.framerate,
-                          self.nframes, self.comptype, self.compname, self.encoding)
+                          self.nframes, self.comptype, self.compname, self.format)
         f.close()
 
     def test_write_context_manager_calls_close(self):
@@ -263,7 +263,7 @@ class AudioTestsWithSourceFile(AudioTests):
         f = self.f = self.module.open(self.sndfilepath)
         #self.assertEqual(f.getfp().name, self.sndfilepath)
         self.check_params(f, self.nchannels, self.sampwidth, self.framerate,
-                          self.sndfilenframes, self.comptype, self.compname, self.encoding)
+                          self.sndfilenframes, self.comptype, self.compname, self.format)
 
     def test_close(self):
         with open(self.sndfilepath, 'rb') as testfile:

@@ -1,7 +1,7 @@
 import unittest
 from test import audiotests
 from test import support
-from test.support.os_helper import FakePath
+from test.support.os_helper import FakePath, unlink
 import io
 import os
 import struct
@@ -22,7 +22,7 @@ class WavePCM8Test(WaveTest, unittest.TestCase):
     sampwidth = 1
     framerate = 11025
     nframes = 48
-    encoding = wave.WAVE_FORMAT_PCM
+    format = wave.WAVE_FORMAT_PCM
     comptype = 'NONE'
     compname = 'not compressed'
     frames = bytes.fromhex("""\
@@ -40,7 +40,7 @@ class WavePCM16Test(WaveTest, unittest.TestCase):
     sampwidth = 2
     framerate = 11025
     nframes = 48
-    encoding = wave.WAVE_FORMAT_PCM
+    format = wave.WAVE_FORMAT_PCM
     comptype = 'NONE'
     compname = 'not compressed'
     frames = bytes.fromhex("""\
@@ -62,7 +62,7 @@ class WavePCM24Test(WaveTest, unittest.TestCase):
     sampwidth = 3
     framerate = 11025
     nframes = 48
-    encoding = wave.WAVE_FORMAT_PCM
+    format = wave.WAVE_FORMAT_PCM
     comptype = 'NONE'
     compname = 'not compressed'
     frames = bytes.fromhex("""\
@@ -90,7 +90,7 @@ class WavePCM24ExtTest(WaveTest, unittest.TestCase):
     sampwidth = 3
     framerate = 11025
     nframes = 48
-    encoding = wave.WAVE_FORMAT_EXTENSIBLE
+    format = wave.WAVE_FORMAT_EXTENSIBLE
     readonly = True  # Writing EXTENSIBLE wave format is not supported.
     comptype = 'NONE'
     compname = 'not compressed'
@@ -119,7 +119,7 @@ class WavePCM32Test(WaveTest, unittest.TestCase):
     sampwidth = 4
     framerate = 11025
     nframes = 48
-    encoding = wave.WAVE_FORMAT_PCM
+    format = wave.WAVE_FORMAT_PCM
     comptype = 'NONE'
     compname = 'not compressed'
     frames = bytes.fromhex("""\
@@ -147,7 +147,7 @@ class WaveIeeeFloatingPointTest(WaveTest, unittest.TestCase):
     sampwidth = 4
     framerate = 11025
     nframes = 48
-    encoding = wave.WAVE_FORMAT_IEEE_FLOAT
+    format = wave.WAVE_FORMAT_IEEE_FLOAT
     comptype = 'NONE'
     compname = 'not compressed'
     frames = bytes.fromhex("""\
@@ -172,6 +172,26 @@ class MiscTestCase(unittest.TestCase):
 
 
 class WaveLowLevelTest(unittest.TestCase):
+
+    def test_getformat_setformat(self):
+        with tempfile.NamedTemporaryFile(delete_on_close=False) as fp:
+            filename = fp.name
+        self.addCleanup(unlink, filename)
+
+        with wave.open(filename, 'wb') as w:
+            w.setnchannels(1)
+            w.setsampwidth(2)
+            w.setframerate(22050)
+            self.assertEqual(w.getformat(), wave.WAVE_FORMAT_PCM)
+            w.setformat(wave.WAVE_FORMAT_IEEE_FLOAT)
+            self.assertEqual(w.getformat(), wave.WAVE_FORMAT_IEEE_FLOAT)
+
+    def test_read_getformat(self):
+        b = b'RIFF' + struct.pack('<L', 36) + b'WAVE'
+        b += b'fmt ' + struct.pack('<LHHLLHH', 16, 1, 1, 11025, 11025, 1, 8)
+        b += b'data' + struct.pack('<L', 0)
+        with wave.open(io.BytesIO(b), 'rb') as r:
+            self.assertEqual(r.getformat(), wave.WAVE_FORMAT_PCM)
 
     def test_read_no_chunks(self):
         b = b'SPAM'
