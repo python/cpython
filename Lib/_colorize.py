@@ -412,6 +412,7 @@ class Theme:
         syntax: Syntax | None = None,
         traceback: Traceback | None = None,
         unittest: Unittest | None = None,
+        dis: Dis | None = None
     ) -> Self:
         """Return a new Theme based on this instance with some sections replaced.
 
@@ -425,6 +426,7 @@ class Theme:
             syntax=syntax or self.syntax,
             traceback=traceback or self.traceback,
             unittest=unittest or self.unittest,
+            dis=dis or self.dis
         )
 
     @classmethod
