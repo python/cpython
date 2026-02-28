@@ -2682,9 +2682,6 @@ TESTSUBDIRS=	idlelib/idle_test \
 		test/test_import/data/package3 \
 		test/test_import/data/package4 \
 		test/test_import/data/unwritable \
-		test/test_import/data/lazy_imports \
-		test/test_import/data/lazy_imports/pkg \
-		test/test_import/data/lazy_imports/badsyntax \
 		test/test_importlib \
 		test/test_importlib/builtin \
 		test/test_importlib/extension \
@@ -2725,6 +2722,10 @@ TESTSUBDIRS=	idlelib/idle_test \
 		test/test_interpreters \
 		test/test_io \
 		test/test_json \
+		test/test_lazy_import \
+		test/test_lazy_import/data \
+		test/test_lazy_import/data/pkg \
+		test/test_lazy_import/data/badsyntax \
 		test/test_module \
 		test/test_multiprocessing_fork \
 		test/test_multiprocessing_forkserver \
