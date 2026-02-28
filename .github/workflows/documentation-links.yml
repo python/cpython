@@ -8,6 +8,7 @@ on:
       - opened
     paths:
     - 'Doc/**'
+    - '.github/workflows/documentation-links.sh'
     - '.github/workflows/reusable-docs.yml'
 
 concurrency:
