@@ -64,7 +64,7 @@ LIBRESSL_RECENT_VERSIONS = [
 ]
 
 AWSLC_RECENT_VERSIONS = [
-    "1.67.0",
+    "1.68.0",
 ]
 
 # store files in ../multissl
