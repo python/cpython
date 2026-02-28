@@ -5,9 +5,6 @@
         "dnf",
         "install",
         "-y",
-        "which",
-        "zsh",
-        "fish",
         // For umask fix below.
         "/usr/bin/setfacl"
     ],

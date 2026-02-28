@@ -3,6 +3,88 @@
 Remote debugging attachment protocol
 ====================================
 
+This protocol enables external tools to attach to a running CPython process and
+execute Python code remotely.
+
+Most platforms require elevated privileges to attach to another Python process.
+
+Disabling remote debugging
+--------------------------
+
+To disable remote debugging support, use any of the following:
+
+* Set the :envvar:`PYTHON_DISABLE_REMOTE_DEBUG` environment variable to ``1`` before
+  starting the interpreter.
+* Use the :option:`-X disable_remote_debug` command-line option.
+* Compile Python with the :option:`--without-remote-debug` build flag.
+
+.. _permission-requirements:
+
+Permission requirements
+=======================
+
+Attaching to a running Python process for remote debugging requires elevated
+privileges on most platforms. The specific requirements and troubleshooting
+steps depend on your operating system:
+
+.. rubric:: Linux
+
+The tracer process must have the ``CAP_SYS_PTRACE`` capability or equivalent
+privileges. You can only trace processes you own and can signal. Tracing may
+fail if the process is already being traced, or if it is running with
+set-user-ID or set-group-ID. Security modules like Yama may further restrict
+tracing.
+
+To temporarily relax ptrace restrictions (until reboot), run:
+
+  ``echo 0 | sudo tee /proc/sys/kernel/yama/ptrace_scope``
+
+.. note::
+
+   Disabling ``ptrace_scope`` reduces system hardening and should only be done
+   in trusted environments.
+
+If running inside a container, use ``--cap-add=SYS_PTRACE`` or
+``--privileged``, and run as root if needed.
+
+Try re-running the command with elevated privileges:
+
+  ``sudo -E !!``
+
+
+.. rubric:: macOS
+
+To attach to another process, you typically need to run your debugging tool
+with elevated privileges. This can be done by using ``sudo`` or running as
+root.
+
+Even when attaching to processes you own, macOS may block debugging unless
+the debugger is run with root privileges due to system security restrictions.
+
+
+.. rubric:: Windows
+
+To attach to another process, you usually need to run your debugging tool
+with administrative privileges. Start the command prompt or terminal as
+Administrator.
+
+Some processes may still be inaccessible even with Administrator rights,
+unless you have the ``SeDebugPrivilege`` privilege enabled.
+
+To resolve file or folder access issues, adjust the security permissions:
+
+  1. Right-click the file or folder and select **Properties**.
+  2. Go to the **Security** tab to view users and groups with access.
+  3. Click **Edit** to modify permissions.
+  4. Select your user account.
+  5. In **Permissions**, check **Read** or **Full control** as needed.
+  6. Click **Apply**, then **OK** to confirm.
+
+
+.. note::
+
+   Ensure you've satisfied all :ref:`permission-requirements` before proceeding.
+
 This section describes the low-level protocol that enables external tools to
 inject and execute a Python script within a running CPython process.
 
@@ -542,4 +624,3 @@ To inject and execute a Python script in a remote process:
 6. Set ``_PY_EVAL_PLEASE_STOP_BIT`` in the ``eval_breaker`` field.
 7. Resume the process (if suspended). The script will execute at the next safe
    evaluation point.
-

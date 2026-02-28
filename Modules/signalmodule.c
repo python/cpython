@@ -1183,7 +1183,13 @@ signal_sigwaitinfo_impl(PyObject *module, sigset_t sigset)
         err = sigwaitinfo(&sigset, &si);
         Py_END_ALLOW_THREADS
     } while (err == -1
-             && errno == EINTR && !(async_err = PyErr_CheckSignals()));
+             && (errno == EINTR
+#if defined(__NetBSD__)
+                 /* NetBSD's implementation violates POSIX by setting
+                  * errno to ECANCELED instead of EINTR. */
+                 || errno == ECANCELED
+#endif
+            ) && !(async_err = PyErr_CheckSignals()));
     if (err == -1)
         return (!async_err) ? PyErr_SetFromErrno(PyExc_OSError) : NULL;
 
@@ -1204,13 +1210,13 @@ signal.sigtimedwait
 
 Like sigwaitinfo(), but with a timeout.
 
-The timeout is specified in seconds, with floating-point numbers allowed.
+The timeout is specified in seconds, rounded up to nanoseconds.
 [clinic start generated code]*/
 
 static PyObject *
 signal_sigtimedwait_impl(PyObject *module, sigset_t sigset,
                          PyObject *timeout_obj)
-/*[clinic end generated code: output=59c8971e8ae18a64 input=955773219c1596cd]*/
+/*[clinic end generated code: output=59c8971e8ae18a64 input=f89af57d645e48e0]*/
 {
     PyTime_t timeout;
     if (_PyTime_FromSecondsObject(&timeout,
@@ -1943,7 +1949,7 @@ signal_install_handlers(void)
 /* Restore signals that the interpreter has called SIG_IGN on to SIG_DFL.
  *
  * All of the code in this function must only use async-signal-safe functions,
- * listed at `man 7 signal` or
+ * listed at `man 7 signal-safety` or
  * http://www.opengroup.org/onlinepubs/009695399/functions/xsh_chap02_04.html.
  *
  * If this function is updated, update also _posix_spawn() of subprocess.py.

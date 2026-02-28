@@ -1,2 +1,0 @@
-Short-circuit the processing of long IPv6 addresses early in :mod:`ipaddress` to prevent excessive
-memory consumption and a minor denial-of-service.

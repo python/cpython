@@ -1298,12 +1298,12 @@ _curses.window.attron
     attr: long
     /
 
-Add attribute attr from the "background" set.
+Add attribute attr to the "background" set.
 [clinic start generated code]*/
 
 static PyObject *
 _curses_window_attron_impl(PyCursesWindowObject *self, long attr)
-/*[clinic end generated code: output=7afea43b237fa870 input=5a88fba7b1524f32]*/
+/*[clinic end generated code: output=7afea43b237fa870 input=b57f824e1bf58326]*/
 {
     int rtn = wattron(self->win, (attr_t)attr);
     return curses_window_check_err(self, rtn, "wattron", "attron");
@@ -1932,7 +1932,6 @@ PyCursesWindow_getstr(PyObject *op, PyObject *args)
     int rtn, use_xy = 0, y = 0, x = 0;
     unsigned int max_buf_size = 2048;
     unsigned int n = max_buf_size - 1;
-    PyObject *res;
 
     if (!curses_clinic_parse_optional_xy_n(args, &y, &x, &n, &use_xy,
                                            "_curses.window.instr"))
@@ -1941,11 +1940,11 @@ PyCursesWindow_getstr(PyObject *op, PyObject *args)
     }
 
     n = Py_MIN(n, max_buf_size - 1);
-    res = PyBytes_FromStringAndSize(NULL, n + 1);
-    if (res == NULL) {
+    PyBytesWriter *writer = PyBytesWriter_Create(n + 1);
+    if (writer == NULL) {
         return NULL;
     }
-    char *buf = PyBytes_AS_STRING(res);
+    char *buf = PyBytesWriter_GetData(writer);
 
     if (use_xy) {
         Py_BEGIN_ALLOW_THREADS
@@ -1965,11 +1964,10 @@ PyCursesWindow_getstr(PyObject *op, PyObject *args)
     }
 
     if (rtn == ERR) {
-        Py_DECREF(res);
+        PyBytesWriter_Discard(writer);
         return Py_GetConstant(Py_CONSTANT_EMPTY_BYTES);
     }
-    _PyBytes_Resize(&res, strlen(buf));  // 'res' is set to NULL on failure
-    return res;
+    return PyBytesWriter_FinishWithSize(writer, strlen(buf));
 }
 
 /*[clinic input]
@@ -2130,7 +2128,6 @@ PyCursesWindow_instr(PyObject *op, PyObject *args)
     int rtn, use_xy = 0, y = 0, x = 0;
     unsigned int max_buf_size = 2048;
     unsigned int n = max_buf_size - 1;
-    PyObject *res;
 
     if (!curses_clinic_parse_optional_xy_n(args, &y, &x, &n, &use_xy,
                                            "_curses.window.instr"))
@@ -2139,11 +2136,11 @@ PyCursesWindow_instr(PyObject *op, PyObject *args)
     }
 
     n = Py_MIN(n, max_buf_size - 1);
-    res = PyBytes_FromStringAndSize(NULL, n + 1);
-    if (res == NULL) {
+    PyBytesWriter *writer = PyBytesWriter_Create(n + 1);
+    if (writer == NULL) {
         return NULL;
     }
-    char *buf = PyBytes_AS_STRING(res);
+    char *buf = PyBytesWriter_GetData(writer);
 
     if (use_xy) {
         rtn = mvwinnstr(self->win, y, x, buf, n);
@@ -2153,11 +2150,10 @@ PyCursesWindow_instr(PyObject *op, PyObject *args)
     }
 
     if (rtn == ERR) {
-        Py_DECREF(res);
+        PyBytesWriter_Discard(writer);
         return Py_GetConstant(Py_CONSTANT_EMPTY_BYTES);
     }
-    _PyBytes_Resize(&res, strlen(buf));  // 'res' is set to NULL on failure
-    return res;
+    return PyBytesWriter_FinishWithSize(writer, strlen(buf));
 }
 
 /*[clinic input]

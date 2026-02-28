@@ -2,6 +2,7 @@
 
 import asyncio
 import argparse
+import json
 import os
 import platform
 import re
@@ -14,6 +15,7 @@ import sysconfig
 from asyncio import wait_for
 from contextlib import asynccontextmanager
 from datetime import datetime, timezone
+from enum import IntEnum, auto
 from glob import glob
 from os.path import abspath, basename, relpath
 from pathlib import Path
@@ -28,6 +30,7 @@ in_source_tree = (
     ANDROID_DIR.name == "Android" and (PYTHON_DIR / "pyconfig.h.in").exists()
 )
 
+ENV_SCRIPT = ANDROID_DIR / "android-env.sh"
 TESTBED_DIR = ANDROID_DIR / "testbed"
 CROSS_BUILD_DIR = PYTHON_DIR / "cross-build"
 
@@ -57,6 +60,19 @@ python_started = False
 # Buffer for verbose output which will be displayed only if a test fails and
 # there has been no output from Python.
 hidden_output = []
+
+
+# Based on android/log.h in the NDK.
+class LogPriority(IntEnum):
+    UNKNOWN = 0
+    DEFAULT = auto()
+    VERBOSE = auto()
+    DEBUG = auto()
+    INFO = auto()
+    WARN = auto()
+    ERROR = auto()
+    FATAL = auto()
+    SILENT = auto()
 
 
 def log_verbose(context, line, stream=sys.stdout):
@@ -128,12 +144,11 @@ def android_env(host):
         sysconfig_filename = next(sysconfig_files).name
         host = re.fullmatch(r"_sysconfigdata__android_(.+).py", sysconfig_filename)[1]
 
-    env_script = ANDROID_DIR / "android-env.sh"
     env_output = subprocess.run(
         f"set -eu; "
         f"HOST={host}; "
         f"PREFIX={prefix}; "
-        f". {env_script}; "
+        f". {ENV_SCRIPT}; "
         f"export",
         check=True, shell=True, capture_output=True, encoding='utf-8',
     ).stdout
@@ -150,7 +165,7 @@ def android_env(host):
                 env[key] = value
 
     if not env:
-        raise ValueError(f"Found no variables in {env_script.name} output:\n"
+        raise ValueError(f"Found no variables in {ENV_SCRIPT.name} output:\n"
                          + env_output)
     return env
 
@@ -184,10 +199,16 @@ def make_build_python(context):
     run(["make", "-j", str(os.cpu_count())])
 
 
+# To create new builds of these dependencies, usually all that's necessary is to
+# push a tag to the cpython-android-source-deps repository, and GitHub Actions
+# will do the rest.
+#
+# If you're a member of the Python core team, and you'd like to be able to push
+# these tags yourself, please contact Malcolm Smith or Russell Keith-Magee.
 def unpack_deps(host, prefix_dir):
     os.chdir(prefix_dir)
     deps_url = "https://github.com/beeware/cpython-android-source-deps/releases/download"
-    for name_ver in ["bzip2-1.0.8-3", "libffi-3.4.4-3", "openssl-3.0.15-4",
+    for name_ver in ["bzip2-1.0.8-3", "libffi-3.4.4-3", "openssl-3.0.19-1",
                      "sqlite-3.50.4-0", "xz-5.4.6-1", "zstd-1.5.7-1"]:
         filename = f"{name_ver}-{host}.tar.gz"
         download(f"{deps_url}/{name_ver}/{filename}")
@@ -274,15 +295,30 @@ def clean_all(context):
 
 
 def setup_ci():
-    # https://github.blog/changelog/2024-04-02-github-actions-hardware-accelerated-android-virtualization-now-available/
-    if "GITHUB_ACTIONS" in os.environ and platform.system() == "Linux":
-        run(
-            ["sudo", "tee", "/etc/udev/rules.d/99-kvm4all.rules"],
-            input='KERNEL=="kvm", GROUP="kvm", MODE="0666", OPTIONS+="static_node=kvm"\n',
-            text=True,
-        )
-        run(["sudo", "udevadm", "control", "--reload-rules"])
-        run(["sudo", "udevadm", "trigger", "--name-match=kvm"])
+    if "GITHUB_ACTIONS" in os.environ:
+        # Enable emulator hardware acceleration
+        # (https://github.blog/changelog/2024-04-02-github-actions-hardware-accelerated-android-virtualization-now-available/).
+        if platform.system() == "Linux":
+            run(
+                ["sudo", "tee", "/etc/udev/rules.d/99-kvm4all.rules"],
+                input='KERNEL=="kvm", GROUP="kvm", MODE="0666", OPTIONS+="static_node=kvm"\n',
+                text=True,
+            )
+            run(["sudo", "udevadm", "control", "--reload-rules"])
+            run(["sudo", "udevadm", "trigger", "--name-match=kvm"])
+
+        # Free up disk space by deleting unused versions of the NDK
+        # (https://github.com/freakboy3742/pyspamsum/pull/108).
+        for line in ENV_SCRIPT.read_text().splitlines():
+            if match := re.fullmatch(r"ndk_version=(.+)", line):
+                ndk_version = match[1]
+                break
+        else:
+            raise ValueError(f"Failed to find NDK version in {ENV_SCRIPT.name}")
+
+        for item in (android_home / "ndk").iterdir():
+            if item.name[0].isdigit() and item.name != ndk_version:
+                delete_glob(item)
 
 
 def setup_sdk():
@@ -483,21 +519,23 @@ async def logcat_task(context, initial_devices):
     pid = await wait_for(find_pid(serial), startup_timeout)
 
     # `--pid` requires API level 24 or higher.
-    args = [adb, "-s", serial, "logcat", "--pid", pid,  "--format", "tag"]
+    #
+    # `--binary` mode is used in order to detect which messages end with a
+    # newline, which most of the other modes don't indicate (except `--format
+    # long`). For example, every time pytest runs a test, it prints a "." and
+    # flushes the stream. Each "." becomes a separate log message, but we should
+    # show them all on the same line.
+    args = [adb, "-s", serial, "logcat", "--pid", pid,  "--binary"]
     logcat_started = False
     async with async_process(
-        *args, stdout=subprocess.PIPE, stderr=subprocess.STDOUT,
+        *args, stdout=subprocess.PIPE, stderr=None
     ) as process:
-        while line := (await process.stdout.readline()).decode(*DECODE_ARGS):
-            if match := re.fullmatch(r"([A-Z])/(.*)", line, re.DOTALL):
+        while True:
+            try:
+                priority, tag, message = await read_logcat(process.stdout)
                 logcat_started = True
-                level, message = match.groups()
-            else:
-                # If the regex doesn't match, this is either a logcat startup
-                # error, or the second or subsequent line of a multi-line
-                # message. Python won't produce multi-line messages, but other
-                # components might.
-                level, message = None, line
+            except asyncio.IncompleteReadError:
+                break
 
             # Exclude high-volume messages which are rarely useful.
             if context.verbose < 2 and "from python test_syslog" in message:
@@ -505,25 +543,23 @@ async def logcat_task(context, initial_devices):
 
             # Put high-level messages on stderr so they're highlighted in the
             # buildbot logs. This will include Python's own stderr.
-            stream = (
-                sys.stderr
-                if level in ["W", "E", "F"]  # WARNING, ERROR, FATAL (aka ASSERT)
-                else sys.stdout
-            )
+            stream = sys.stderr if priority >= LogPriority.WARN else sys.stdout
 
-            # To simplify automated processing of the output, e.g. a buildbot
-            # posting a failure notice on a GitHub PR, we strip the level and
-            # tag indicators from Python's stdout and stderr.
-            for prefix in ["python.stdout: ", "python.stderr: "]:
-                if message.startswith(prefix):
-                    global python_started
-                    python_started = True
-                    stream.write(message.removeprefix(prefix))
-                    break
+            # The app's stdout and stderr should be passed through transparently
+            # to our own corresponding streams.
+            if tag in ["python.stdout", "python.stderr"]:
+                global python_started
+                python_started = True
+                stream.write(message)
+                stream.flush()
             else:
                 # Non-Python messages add a lot of noise, but they may
-                # sometimes help explain a failure.
-                log_verbose(context, line, stream)
+                # sometimes help explain a failure. Format them in the same way
+                # as `logcat --format tag`.
+                formatted = f"{priority.name[0]}/{tag}: {message}"
+                if not formatted.endswith("\n"):
+                    formatted += "\n"
+                log_verbose(context, formatted, stream)
 
         # If the device disconnects while logcat is running, which always
         # happens in --managed mode, some versions of adb return non-zero.
@@ -532,6 +568,44 @@ async def logcat_task(context, initial_devices):
         status = await wait_for(process.wait(), timeout=1)
         if status != 0 and not logcat_started:
             raise CalledProcessError(status, args)
+
+
+# Read one binary log message from the given StreamReader. The message format is
+# described at https://android.stackexchange.com/a/74660. All supported versions
+# of Android use format version 2 or later.
+async def read_logcat(stream):
+    async def read_bytes(size):
+        return await stream.readexactly(size)
+
+    async def read_int(size):
+        return int.from_bytes(await read_bytes(size), "little")
+
+    payload_len = await read_int(2)
+    if payload_len < 2:
+        # 1 byte for priority, 1 byte for null terminator of tag.
+        raise ValueError(f"payload length {payload_len} is too short")
+
+    header_len = await read_int(2)
+    if header_len < 4:
+        raise ValueError(f"header length {header_len} is too short")
+    await read_bytes(header_len - 4)  # Ignore other header fields.
+
+    priority_int = await read_int(1)
+    try:
+        priority = LogPriority(priority_int)
+    except ValueError:
+        priority = LogPriority.UNKNOWN
+
+    payload_fields = (await read_bytes(payload_len - 1)).split(b"\0")
+    if len(payload_fields) < 2:
+        raise ValueError(
+            f"payload {payload!r} does not contain at least 2 "
+            f"null-separated fields"
+        )
+    tag, message, *_ = [
+        field.decode(*DECODE_ARGS) for field in payload_fields
+    ]
+    return priority, tag, message
 
 
 def stop_app(serial):
@@ -546,27 +620,33 @@ async def gradle_task(context):
         task_prefix = "connected"
         env["ANDROID_SERIAL"] = context.connected
 
-    if context.command:
-        mode = "-c"
-        module = context.command
-    else:
-        mode = "-m"
-        module = context.module or "test"
+    if context.ci_mode:
+        context.args[0:0] = [
+            # See _add_ci_python_opts in libregrtest/main.py.
+            "-W", "error", "-bb", "-E",
+
+            # Randomization is disabled because order-dependent failures are
+            # much less likely to pass on a rerun in single-process mode.
+            "-m", "test",
+            f"--{context.ci_mode}-ci", "--single-process", "--no-randomize"
+        ]
+
+    if not any(arg in context.args for arg in ["-c", "-m"]):
+        context.args[0:0] = ["-m", "test"]
 
     args = [
         gradlew, "--console", "plain", f"{task_prefix}DebugAndroidTest",
     ] + [
-        # Build-time properties
-        f"-Ppython.{name}={value}"
+        f"-P{name}={value}"
         for name, value in [
-            ("sitePackages", context.site_packages), ("cwd", context.cwd)
-        ] if value
-    ] + [
-        # Runtime properties
-        f"-Pandroid.testInstrumentationRunnerArguments.python{name}={value}"
-        for name, value in [
-            ("Mode", mode), ("Module", module), ("Args", join_command(context.args))
-        ] if value
+            ("python.sitePackages", context.site_packages),
+            ("python.cwd", context.cwd),
+            (
+                "android.testInstrumentationRunnerArguments.pythonArgs",
+                json.dumps(context.args),
+            ),
+        ]
+        if value
     ]
     if context.verbose >= 2:
         args.append("--info")
@@ -734,17 +814,14 @@ def ci(context):
     else:
         with TemporaryDirectory(prefix=SCRIPT_NAME) as temp_dir:
             print("::group::Tests")
+
             # Prove the package is self-contained by using it to run the tests.
             shutil.unpack_archive(package_path, temp_dir)
-
-            # Arguments are similar to --fast-ci, but in single-process mode.
-            launcher_args = ["--managed", "maxVersion", "-v"]
-            test_args = [
-                "--single-process", "--fail-env-changed", "--rerun", "--slowest",
-                "--verbose3", "-u", "all,-cpu", "--timeout=600"
+            launcher_args = [
+                "--managed", "maxVersion", "-v", f"--{context.ci_mode}-ci"
             ]
             run(
-                ["./android.py", "test", *launcher_args, "--", *test_args],
+                ["./android.py", "test", *launcher_args],
                 cwd=temp_dir
             )
             print("::endgroup::")
@@ -827,24 +904,27 @@ def parse_args():
     test.add_argument(
         "--cwd", metavar="DIR", type=abspath,
         help="Directory to copy as the app's working directory.")
-
-    mode_group = test.add_mutually_exclusive_group()
-    mode_group.add_argument(
-        "-c", dest="command", help="Execute the given Python code.")
-    mode_group.add_argument(
-        "-m", dest="module", help="Execute the module with the given name.")
-    test.epilog = (
-        "If neither -c nor -m are passed, the default is '-m test', which will "
-        "run Python's own test suite.")
     test.add_argument(
-        "args", nargs="*", help=f"Arguments to add to sys.argv. "
-        f"Separate them from {SCRIPT_NAME}'s own arguments with `--`.")
+        "args", nargs="*", help=f"Python command-line arguments. "
+        f"Separate them from {SCRIPT_NAME}'s own arguments with `--`. "
+        f"If neither -c nor -m are included, `-m test` will be prepended, "
+        f"which will run Python's own test suite.")
 
     # Package arguments.
     for subcommand in [package, ci]:
         subcommand.add_argument(
             "-g", action="store_true", default=False, dest="debug",
             help="Include debug information in package")
+
+    # CI arguments
+    for subcommand in [test, ci]:
+        group = subcommand.add_mutually_exclusive_group(required=subcommand is ci)
+        group.add_argument(
+            "--fast-ci", action="store_const", dest="ci_mode", const="fast",
+            help="Add test arguments for GitHub Actions")
+        group.add_argument(
+            "--slow-ci", action="store_const", dest="ci_mode", const="slow",
+            help="Add test arguments for buildbots")
 
     return parser.parse_args()
 

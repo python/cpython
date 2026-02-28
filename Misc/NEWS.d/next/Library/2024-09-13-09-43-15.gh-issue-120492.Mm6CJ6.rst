@@ -1,2 +1,0 @@
-``importlib.metadata`` now prioritizes valid dists to invalid dists when
-retrieving by name.
