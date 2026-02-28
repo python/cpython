@@ -1,0 +1,1 @@
+In free-threaded build, no longer change of race condition when calling :meth:`__sizeof__` on a :class:`list`
