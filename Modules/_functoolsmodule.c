@@ -689,9 +689,9 @@ partial_repr(PyObject *self)
     partialobject *pto = partialobject_CAST(self);
     PyObject *result = NULL;
     PyObject *fn, *args, *kw;
-    PyObject *arglist;
-    PyObject *mod;
-    PyObject *name;
+    PyObject *arglist = NULL;
+    PyObject *mod = NULL;
+    PyObject *name = NULL;
     Py_ssize_t i, n;
     PyObject *key, *value;
     int status;
@@ -712,7 +712,7 @@ partial_repr(PyObject *self)
 
     arglist = Py_GetConstant(Py_CONSTANT_EMPTY_STR);
     if (arglist == NULL) {
-        goto arglist_error;
+        goto done;
     }
     /* Pack positional arguments */
     n = PyTuple_GET_SIZE(args);
@@ -720,7 +720,7 @@ partial_repr(PyObject *self)
         Py_SETREF(arglist, PyUnicode_FromFormat("%U, %R", arglist,
                                         PyTuple_GET_ITEM(args, i)));
         if (arglist == NULL) {
-            goto arglist_error;
+            goto done;
         }
     }
     /* Pack keyword arguments */
@@ -731,27 +731,25 @@ partial_repr(PyObject *self)
                                                 key, value));
         Py_DECREF(value);
         if (arglist == NULL) {
-            goto arglist_error;
+            goto done;
         }
     }
 
     mod = PyType_GetModuleName(Py_TYPE(pto));
     if (mod == NULL) {
-        goto mod_error;
+        goto done;
     }
 
     name = PyType_GetQualName(Py_TYPE(pto));
     if (name == NULL) {
-        goto name_error;
+        goto done;
     }
 
     result = PyUnicode_FromFormat("%S.%S(%R%U)", mod, name, fn, arglist);
-    Py_DECREF(name);
- name_error:
-    Py_DECREF(mod);
- mod_error:
-    Py_DECREF(arglist);
- arglist_error:
+done:
+    Py_XDECREF(name);
+    Py_XDECREF(mod);
+    Py_XDECREF(arglist);
     Py_DECREF(fn);
     Py_DECREF(args);
     Py_DECREF(kw);
