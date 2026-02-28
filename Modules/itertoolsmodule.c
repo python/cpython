@@ -1665,7 +1665,7 @@ islice_length_hint(PyObject *op, PyObject *Py_UNUSED(dummy))
 {
     isliceobject *lz = isliceobject_CAST(op);
 
-    if (lz->stop >= 0 && lz->stop <= lz->next) {
+    if (lz->it == NULL || (lz->stop >= 0 && lz->stop <= lz->next)) {
         return PyLong_FromSsize_t(0);
     }
 
