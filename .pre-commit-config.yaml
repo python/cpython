@@ -49,6 +49,22 @@ repos:
         types: [python]
         exclude: ^Tools/c-analyzer/cpython/_parser.py
 
+  - repo: local
+    hooks:
+      - id: blurb-no-space-c-api
+        name: Check C API news entries
+        language: fail
+        entry: Space found in path, move to Misc/NEWS.d/next/C_API/
+        files: Misc/NEWS.d/next/C API/20.*.rst
+
+  - repo: local
+    hooks:
+      - id: blurb-no-space-core-and-builtins
+        name: Check Core and Builtins news entries
+        language: fail
+        entry: Space found in path, move to Misc/NEWS.d/next/Core_and_Builtins/
+        files: Misc/NEWS.d/next/Core and Builtins/20.*.rst
+
   - repo: https://github.com/pre-commit/pre-commit-hooks
     rev: v6.0.0
     hooks:
