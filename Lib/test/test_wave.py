@@ -258,6 +258,58 @@ class WaveLowLevelTest(unittest.TestCase):
             support.gc_collect()
             self.assertIsNone(cm.unraisable)
 
+    def test_ieee_float_has_fact_chunk(self):
+        nframes = 100
+        with tempfile.NamedTemporaryFile(delete_on_close=False) as fp:
+            filename = fp.name
+        self.addCleanup(unlink, filename)
+
+        with wave.open(filename, 'wb') as w:
+            w.setnchannels(1)
+            w.setsampwidth(2)
+            w.setframerate(22050)
+            w.setformat(wave.WAVE_FORMAT_IEEE_FLOAT)
+            w.writeframes(b'\x00\x00' * nframes)
+
+        with open(filename, 'rb') as f:
+            f.read(12)
+            fact_found = False
+            fact_samples = None
+            while True:
+                chunk_id = f.read(4)
+                if len(chunk_id) < 4:
+                    break
+                chunk_size = struct.unpack('<L', f.read(4))[0]
+                if chunk_id == b'fact':
+                    fact_found = True
+                    fact_samples = struct.unpack('<L', f.read(4))[0]
+                    break
+                f.seek(chunk_size + (chunk_size & 1), 1)
+
+        self.assertTrue(fact_found)
+        self.assertEqual(fact_samples, nframes)
+
+    def test_pcm_has_no_fact_chunk(self):
+        with tempfile.NamedTemporaryFile(delete_on_close=False) as fp:
+            filename = fp.name
+        self.addCleanup(unlink, filename)
+
+        with wave.open(filename, 'wb') as w:
+            w.setnchannels(1)
+            w.setsampwidth(2)
+            w.setframerate(22050)
+            w.writeframes(b'\x00\x00' * 100)
+
+        with open(filename, 'rb') as f:
+            f.read(12)
+            while True:
+                chunk_id = f.read(4)
+                if len(chunk_id) < 4:
+                    break
+                chunk_size = struct.unpack('<L', f.read(4))[0]
+                self.assertNotEqual(chunk_id, b'fact')
+                f.seek(chunk_size + (chunk_size & 1), 1)
+
 
 class WaveOpen(unittest.TestCase):
     def test_open_pathlike(self):
