@@ -1491,8 +1491,12 @@ class InitConfigTests(EmbeddingTestsMixin, unittest.TestCase):
         }
         self.default_program_name(config)
         env = {'TESTHOME': home, 'PYTHONPATH': paths_str}
+        # When running from source, TESTHOME will be the build directory, which
+        # isn't a valid home unless _is_python_build is set. getpath will then
+        # fail to find the standard library and show a warning, so we need to
+        # ignore stderr.
         self.check_all_configs("test_init_setpythonhome", config,
-                               api=API_COMPAT, env=env)
+                               api=API_COMPAT, env=env, ignore_stderr=True)
 
     def test_init_is_python_build_with_home(self):
         # Test _Py_path_config._is_python_build configuration (gh-91985)
