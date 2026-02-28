@@ -613,6 +613,7 @@ class WindowFunctionTests(unittest.TestCase):
                 "(ROWS BETWEEN 1 PRECEDING AND 1 FOLLOWING) FROM t"
             )
             list(cursor)
+        con.close()
 
 
 class AggregateTests(unittest.TestCase):
@@ -773,6 +774,7 @@ class AggregateTests(unittest.TestCase):
         msg = "from within a callback"
         with self.assertRaisesRegex(sqlite.ProgrammingError, msg):
             con.execute("SELECT agg_close(x) FROM t")
+        con.close()
 
     def test_close_conn_in_nested_callback(self):
         # gh-145040: close() must be prevented even in nested callbacks.
@@ -838,6 +840,7 @@ class AggregateTests(unittest.TestCase):
         with self.assertRaisesRegex(sqlite.ProgrammingError, msg):
             con.executemany("INSERT INTO t VALUES(close_conn(?))",
                             [(i,) for i in range(10)])
+        con.close()
 
     def test_close_conn_in_progress_handler_during_iternext(self):
         # gh-145040: closing connection in progress handler during iteration.
@@ -865,6 +868,7 @@ class AggregateTests(unittest.TestCase):
                     pass
             del cursor
             gc_collect()
+        con.close()
 
     def test_close_conn_in_collation_callback(self):
         # gh-145040: closing connection in collation callback.
@@ -891,6 +895,7 @@ class AggregateTests(unittest.TestCase):
             con.execute(
                 "SELECT * FROM t ORDER BY x COLLATE evil_coll"
             )
+        con.close()
 
 
 class AuthorizerTests(unittest.TestCase):
