@@ -1,1 +1,0 @@
-Fix the partial evaluation of annotations that use ``typing.Annotated[T, x]`` where ``T`` is a forward reference.

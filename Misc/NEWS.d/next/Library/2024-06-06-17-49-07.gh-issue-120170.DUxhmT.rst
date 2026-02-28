@@ -1,3 +1,0 @@
-Fix an issue in the :mod:`!_pickle` extension module in which importing
-:mod:`multiprocessing` could change how pickle identifies which module an
-object belongs to, potentially breaking the unpickling of those objects.

@@ -3,6 +3,7 @@ import bisect
 import contextlib
 import copy
 import decimal
+import fractions
 import io
 import itertools
 import os
@@ -2192,6 +2193,20 @@ class TestDate(HarmlessMixedComparison, unittest.TestCase):
                 with self.assertRaises(TypeError):
                     self.theclass.fromisocalendar(*isocal)
 
+    def test_strptime_F_format(self):
+        test_date = "2025-10-26"
+        self.assertEqual(
+            self.theclass.strptime(test_date, "%F"),
+            self.theclass.strptime(test_date, "%Y-%m-%d")
+        )
+
+    def test_strptime_D_format(self):
+        test_date = "11/28/25"
+        self.assertEqual(
+            self.theclass.strptime(test_date, "%D"),
+            self.theclass.strptime(test_date, "%m/%d/%y")
+        )
+
 
 #############################################################################
 # datetime tests
@@ -2626,6 +2641,10 @@ class TestDateTime(TestDate):
         expected = time.localtime(ts)
         got = self.theclass.fromtimestamp(ts)
         self.verify_field_equality(expected, got)
+        got = self.theclass.fromtimestamp(decimal.Decimal(ts))
+        self.verify_field_equality(expected, got)
+        got = self.theclass.fromtimestamp(fractions.Fraction(ts))
+        self.verify_field_equality(expected, got)
 
     def test_fromtimestamp_keyword_arg(self):
         import time
@@ -2640,6 +2659,12 @@ class TestDateTime(TestDate):
         expected = time.gmtime(ts)
         with self.assertWarns(DeprecationWarning):
             got = self.theclass.utcfromtimestamp(ts)
+        self.verify_field_equality(expected, got)
+        with self.assertWarns(DeprecationWarning):
+            got = self.theclass.utcfromtimestamp(decimal.Decimal(ts))
+        self.verify_field_equality(expected, got)
+        with self.assertWarns(DeprecationWarning):
+            got = self.theclass.utcfromtimestamp(fractions.Fraction(ts))
         self.verify_field_equality(expected, got)
 
     # Run with US-style DST rules: DST begins 2 a.m. on second Sunday in
@@ -2695,24 +2720,20 @@ class TestDateTime(TestDate):
             self.assertEqual(zero.second, 0)
             self.assertEqual(zero.microsecond, 0)
             one = fts(1e-6)
-            try:
-                minus_one = fts(-1e-6)
-            except OSError:
-                # localtime(-1) and gmtime(-1) is not supported on Windows
-                pass
-            else:
-                self.assertEqual(minus_one.second, 59)
-                self.assertEqual(minus_one.microsecond, 999999)
+            minus_one = fts(-1e-6)
 
-                t = fts(-1e-8)
-                self.assertEqual(t, zero)
-                t = fts(-9e-7)
-                self.assertEqual(t, minus_one)
-                t = fts(-1e-7)
-                self.assertEqual(t, zero)
-                t = fts(-1/2**7)
-                self.assertEqual(t.second, 59)
-                self.assertEqual(t.microsecond, 992188)
+            self.assertEqual(minus_one.second, 59)
+            self.assertEqual(minus_one.microsecond, 999999)
+
+            t = fts(-1e-8)
+            self.assertEqual(t, zero)
+            t = fts(-9e-7)
+            self.assertEqual(t, minus_one)
+            t = fts(-1e-7)
+            self.assertEqual(t, zero)
+            t = fts(-1/2**7)
+            self.assertEqual(t.second, 59)
+            self.assertEqual(t.microsecond, 992188)
 
             t = fts(1e-7)
             self.assertEqual(t, zero)
@@ -2725,6 +2746,100 @@ class TestDateTime(TestDate):
             self.assertEqual(t.second, 1)
             self.assertEqual(t.microsecond, 0)
             t = fts(1/2**7)
+            self.assertEqual(t.second, 0)
+            self.assertEqual(t.microsecond, 7812)
+
+    @support.run_with_tz('MSK-03')  # Something east of Greenwich
+    def test_microsecond_rounding_decimal(self):
+        D = decimal.Decimal
+        def utcfromtimestamp(*args, **kwargs):
+            with self.assertWarns(DeprecationWarning):
+                return self.theclass.utcfromtimestamp(*args, **kwargs)
+
+        for fts in [self.theclass.fromtimestamp,
+                    utcfromtimestamp]:
+            zero = fts(D(0))
+            self.assertEqual(zero.second, 0)
+            self.assertEqual(zero.microsecond, 0)
+            one = fts(D('0.000_001'))
+            minus_one = fts(D('-0.000_001'))
+
+            self.assertEqual(minus_one.second, 59)
+            self.assertEqual(minus_one.microsecond, 999_999)
+
+            t = fts(D('-0.000_000_1'))
+            self.assertEqual(t, zero)
+            t = fts(D('-0.000_000_9'))
+            self.assertEqual(t, minus_one)
+            t = fts(D(-1)/2**7)
+            self.assertEqual(t.second, 59)
+            self.assertEqual(t.microsecond, 992188)
+
+            t = fts(D('0.000_000_1'))
+            self.assertEqual(t, zero)
+            t = fts(D('0.000_000_5'))
+            self.assertEqual(t, zero)
+            t = fts(D('0.000_000_500_000_000_000_000_1'))
+            self.assertEqual(t, one)
+            t = fts(D('0.000_000_9'))
+            self.assertEqual(t, one)
+            t = fts(D('0.999_999_499_999_999_9'))
+            self.assertEqual(t.second, 0)
+            self.assertEqual(t.microsecond, 999_999)
+            t = fts(D('0.999_999_5'))
+            self.assertEqual(t.second, 1)
+            self.assertEqual(t.microsecond, 0)
+            t = fts(D('0.999_999_9'))
+            self.assertEqual(t.second, 1)
+            self.assertEqual(t.microsecond, 0)
+            t = fts(D(1)/2**7)
+            self.assertEqual(t.second, 0)
+            self.assertEqual(t.microsecond, 7812)
+
+    @support.run_with_tz('MSK-03')  # Something east of Greenwich
+    def test_microsecond_rounding_fraction(self):
+        F = fractions.Fraction
+        def utcfromtimestamp(*args, **kwargs):
+            with self.assertWarns(DeprecationWarning):
+                return self.theclass.utcfromtimestamp(*args, **kwargs)
+
+        for fts in [self.theclass.fromtimestamp,
+                    utcfromtimestamp]:
+            zero = fts(F(0))
+            self.assertEqual(zero.second, 0)
+            self.assertEqual(zero.microsecond, 0)
+            one = fts(F(1, 1_000_000))
+            minus_one = fts(F(-1, 1_000_000))
+
+            self.assertEqual(minus_one.second, 59)
+            self.assertEqual(minus_one.microsecond, 999_999)
+
+            t = fts(F(-1, 10_000_000))
+            self.assertEqual(t, zero)
+            t = fts(F(-9, 10_000_000))
+            self.assertEqual(t, minus_one)
+            t = fts(F(-1, 2**7))
+            self.assertEqual(t.second, 59)
+            self.assertEqual(t.microsecond, 992188)
+
+            t = fts(F(1, 10_000_000))
+            self.assertEqual(t, zero)
+            t = fts(F(5, 10_000_000))
+            self.assertEqual(t, zero)
+            t = fts(F(5_000_000_000, 9_999_999_999_999_999))
+            self.assertEqual(t, one)
+            t = fts(F(9, 10_000_000))
+            self.assertEqual(t, one)
+            t = fts(F(9_999_995_000_000_000, 10_000_000_000_000_001))
+            self.assertEqual(t.second, 0)
+            self.assertEqual(t.microsecond, 999_999)
+            t = fts(F(9_999_995, 10_000_000))
+            self.assertEqual(t.second, 1)
+            self.assertEqual(t.microsecond, 0)
+            t = fts(F(9_999_999, 10_000_000))
+            self.assertEqual(t.second, 1)
+            self.assertEqual(t.microsecond, 0)
+            t = fts(F(1, 2**7))
             self.assertEqual(t.second, 0)
             self.assertEqual(t.microsecond, 7812)
 
@@ -2747,6 +2862,7 @@ class TestDateTime(TestDate):
             # If that assumption changes, this value can change as well
             self.assertEqual(max_ts, 253402300799.0)
 
+    @unittest.skipIf(sys.platform == "win32", "Windows doesn't support min timestamp")
     def test_fromtimestamp_limits(self):
         try:
             self.theclass.fromtimestamp(-2**32 - 1)
@@ -2786,6 +2902,7 @@ class TestDateTime(TestDate):
                     # OverflowError, especially on 32-bit platforms.
                     self.theclass.fromtimestamp(ts)
 
+    @unittest.skipIf(sys.platform == "win32", "Windows doesn't support min timestamp")
     def test_utcfromtimestamp_limits(self):
         with self.assertWarns(DeprecationWarning):
             try:
@@ -2847,13 +2964,11 @@ class TestDateTime(TestDate):
                 self.assertRaises(OverflowError, self.theclass.utcfromtimestamp,
                                   insane)
 
-    @unittest.skipIf(sys.platform == "win32", "Windows doesn't accept negative timestamps")
     def test_negative_float_fromtimestamp(self):
         # The result is tz-dependent; at least test that this doesn't
         # fail (like it did before bug 1646728 was fixed).
         self.theclass.fromtimestamp(-1.05)
 
-    @unittest.skipIf(sys.platform == "win32", "Windows doesn't accept negative timestamps")
     def test_negative_float_utcfromtimestamp(self):
         with self.assertWarns(DeprecationWarning):
             d = self.theclass.utcfromtimestamp(-1.05)
@@ -3682,6 +3797,13 @@ class TestDateTime(TestDate):
         self.assertEqual(repr(td), "SubclassDatetime(2010, 10, 10, 0, 0)")
         td = SubclassDatetime(2010, 10, 2, second=3)
         self.assertEqual(repr(td), "SubclassDatetime(2010, 10, 2, 0, 0, 3)")
+
+    def test_strptime_T_format(self):
+        test_time = "15:00:00"
+        self.assertEqual(
+            self.theclass.strptime(test_time, "%T"),
+            self.theclass.strptime(test_time, "%H:%M:%S")
+        )
 
 
 class TestSubclassDateTime(TestDateTime):
@@ -6195,21 +6317,21 @@ class TestLocalTimeDisambiguation(unittest.TestCase):
 
         gdt = datetime(1941, 6, 23, 20, 59, 59, tzinfo=timezone.utc)
         ldt = gdt.astimezone(Vilnius)
-        self.assertEqual(ldt.strftime("%c %Z%z"),
+        self.assertEqual(ldt.strftime("%a %b %d %H:%M:%S %Y %Z%z"),
                          'Mon Jun 23 23:59:59 1941 MSK+0300')
         self.assertEqual(ldt.fold, 0)
         self.assertFalse(ldt.dst())
 
         gdt = datetime(1941, 6, 23, 21, tzinfo=timezone.utc)
         ldt = gdt.astimezone(Vilnius)
-        self.assertEqual(ldt.strftime("%c %Z%z"),
+        self.assertEqual(ldt.strftime("%a %b %d %H:%M:%S %Y %Z%z"),
                          'Mon Jun 23 23:00:00 1941 CEST+0200')
         self.assertEqual(ldt.fold, 1)
         self.assertTrue(ldt.dst())
 
         gdt = datetime(1941, 6, 23, 22, tzinfo=timezone.utc)
         ldt = gdt.astimezone(Vilnius)
-        self.assertEqual(ldt.strftime("%c %Z%z"),
+        self.assertEqual(ldt.strftime("%a %b %d %H:%M:%S %Y %Z%z"),
                          'Tue Jun 24 00:00:00 1941 CEST+0200')
         self.assertEqual(ldt.fold, 0)
         self.assertTrue(ldt.dst())
@@ -6219,22 +6341,22 @@ class TestLocalTimeDisambiguation(unittest.TestCase):
 
         ldt = datetime(1941, 6, 23, 22, 59, 59, tzinfo=Vilnius)
         gdt = ldt.astimezone(timezone.utc)
-        self.assertEqual(gdt.strftime("%c %Z"),
+        self.assertEqual(gdt.strftime("%a %b %d %H:%M:%S %Y %Z"),
                          'Mon Jun 23 19:59:59 1941 UTC')
 
         ldt = datetime(1941, 6, 23, 23, 59, 59, tzinfo=Vilnius)
         gdt = ldt.astimezone(timezone.utc)
-        self.assertEqual(gdt.strftime("%c %Z"),
+        self.assertEqual(gdt.strftime("%a %b %d %H:%M:%S %Y %Z"),
                          'Mon Jun 23 20:59:59 1941 UTC')
 
         ldt = datetime(1941, 6, 23, 23, 59, 59, tzinfo=Vilnius, fold=1)
         gdt = ldt.astimezone(timezone.utc)
-        self.assertEqual(gdt.strftime("%c %Z"),
+        self.assertEqual(gdt.strftime("%a %b %d %H:%M:%S %Y %Z"),
                          'Mon Jun 23 21:59:59 1941 UTC')
 
         ldt = datetime(1941, 6, 24, 0, tzinfo=Vilnius)
         gdt = ldt.astimezone(timezone.utc)
-        self.assertEqual(gdt.strftime("%c %Z"),
+        self.assertEqual(gdt.strftime("%a %b %d %H:%M:%S %Y %Z"),
                          'Mon Jun 23 22:00:00 1941 UTC')
 
     def test_constructors(self):

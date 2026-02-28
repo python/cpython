@@ -286,7 +286,7 @@ class StrptimeTests(unittest.TestCase):
     def test_strptime_exception_context(self):
         # check that this doesn't chain exceptions needlessly (see #17572)
         with self.assertRaises(ValueError) as e:
-            _strptime._strptime_time('', '%D')
+            _strptime._strptime_time('', '%!')
         self.assertTrue(e.exception.__suppress_context__)
         # additional check for stray % branch
         with self.assertRaises(ValueError) as e:
@@ -572,7 +572,7 @@ class StrptimeTests(unittest.TestCase):
     def test_date_locale2(self):
         # Test %x directive
         loc = locale.getlocale(locale.LC_TIME)[0]
-        if sys.platform.startswith('sunos'):
+        if sys.platform.startswith(('sunos', 'aix')):
             if loc in ('en_US', 'de_DE', 'ar_AE'):
                 self.skipTest(f'locale {loc!r} may not work on this platform')
         self.roundtrip('%x', slice(0, 3), (1900, 1, 1, 0, 0, 0, 0, 1, 0))
@@ -650,6 +650,27 @@ class StrptimeTests(unittest.TestCase):
         self.assertLess(
                 time.strptime("Feb 29", "%b %d"),
                 time.strptime("Mar 1", "%b %d"))
+
+    def test_strptime_F_format(self):
+        test_date = "2025-10-26"
+        self.assertEqual(
+            time.strptime(test_date, "%F"),
+            time.strptime(test_date, "%Y-%m-%d")
+        )
+
+    def test_strptime_T_format(self):
+        test_time = "15:00:00"
+        self.assertEqual(
+            time.strptime(test_time, "%T"),
+            time.strptime(test_time, "%H:%M:%S")
+        )
+
+    def test_strptime_D_format(self):
+        test_date = "11/28/25"
+        self.assertEqual(
+            time.strptime(test_date, "%D"),
+            time.strptime(test_date, "%m/%d/%y")
+        )
 
 class Strptime12AMPMTests(unittest.TestCase):
     """Test a _strptime regression in '%I %p' at 12 noon (12 PM)"""

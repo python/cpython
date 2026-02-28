@@ -23,8 +23,8 @@
  */
 
 
-#ifndef __Hacl_Streaming_HMAC_H
-#define __Hacl_Streaming_HMAC_H
+#ifndef Hacl_Streaming_HMAC_H
+#define Hacl_Streaming_HMAC_H
 
 #if defined(__cplusplus)
 extern "C" {
@@ -130,5 +130,5 @@ Hacl_Streaming_HMAC_agile_state
 }
 #endif
 
-#define __Hacl_Streaming_HMAC_H_DEFINED
-#endif
+#define Hacl_Streaming_HMAC_H_DEFINED
+#endif /* Hacl_Streaming_HMAC_H */

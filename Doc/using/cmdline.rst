@@ -390,7 +390,7 @@ Miscellaneous options
    Hash randomization is intended to provide protection against a
    denial-of-service caused by carefully chosen inputs that exploit the worst
    case performance of a dict construction, *O*\ (*n*\ :sup:`2`) complexity.  See
-   http://ocert.org/advisories/ocert-2011-003.html for details.
+   https://ocert.org/advisories/ocert-2011-003.html for details.
 
    :envvar:`PYTHONHASHSEED` allows you to set a fixed value for the hash
    seed secret.
@@ -512,7 +512,7 @@ Miscellaneous options
    See :ref:`warning-filter` and :ref:`describing-warning-filters` for more
    details.
 
-   .. versionchanged:: next
+   .. versionchanged:: 3.15
       Added regular expression support for *message* and *module*.
 
 
@@ -693,6 +693,14 @@ Miscellaneous options
      :envvar:`PYTHON_TLBC`.
 
      .. versionadded:: 3.14
+
+   * :samp:`-X lazy_imports={all,none,normal}` controls lazy import behavior.
+     ``all`` makes all imports lazy by default, ``none`` disables lazy imports
+     entirely (even explicit ``lazy`` statements become eager), and ``normal``
+     (the default) respects the ``lazy`` keyword in source code.
+     See also :envvar:`PYTHON_LAZY_IMPORTS`.
+
+     .. versionadded:: next
 
    It also allows passing arbitrary values and retrieving them through the
    :data:`sys._xoptions` dictionary.
@@ -989,7 +997,7 @@ conflict.
    See :ref:`warning-filter` and :ref:`describing-warning-filters` for more
    details.
 
-   .. versionchanged:: next
+   .. versionchanged:: 3.15
       Added regular expression support for *message* and *module*.
 
 
@@ -1085,6 +1093,27 @@ conflict.
    .. versionchanged:: 3.6
       This variable can now also be used on Python compiled in release mode.
       It now has no effect if set to an empty string.
+
+
+.. envvar:: PYTHON_PYMALLOC_HUGEPAGES
+
+   If set to a non-zero integer, enable huge page support for
+   :ref:`pymalloc <pymalloc>` arenas.  Set to ``0`` or unset to disable.
+   Python must be compiled with :option:`--with-pymalloc-hugepages` for this
+   variable to have any effect.
+
+   When enabled, arena allocation uses ``MAP_HUGETLB`` (Linux) or
+   ``MEM_LARGE_PAGES`` (Windows) with automatic fallback to regular pages if
+   huge pages are not available.
+
+   .. warning::
+
+      On Linux, if the huge-page pool is exhausted, page faults — including
+      copy-on-write faults triggered by :func:`os.fork` — deliver ``SIGBUS``
+      and kill the process.  Only enable this in environments where the
+      huge-page pool is properly sized and fork-safety is not a concern.
+
+   .. versionadded:: 3.15
 
 
 .. envvar:: PYTHONLEGACYWINDOWSFSENCODING
@@ -1277,9 +1306,8 @@ conflict.
 .. envvar:: PYTHON_BASIC_REPL
 
    If this variable is set to any value, the interpreter will not attempt to
-   load the Python-based :term:`REPL` that requires :mod:`curses` and
-   :mod:`readline`, and will instead use the traditional parser-based
-   :term:`REPL`.
+   load the Python-based :term:`REPL` that requires :mod:`readline`, and will
+   instead use the traditional parser-based :term:`REPL`.
 
    .. versionadded:: 3.13
 
@@ -1339,6 +1367,17 @@ conflict.
    See also the :option:`-X tlbc <-X>` command-line option.
 
    .. versionadded:: 3.14
+
+.. envvar:: PYTHON_LAZY_IMPORTS
+
+   Controls lazy import behavior. Accepts three values: ``all`` makes all
+   imports lazy by default, ``none`` disables lazy imports entirely (even
+   explicit ``lazy`` statements become eager), and ``normal`` (the default)
+   respects the ``lazy`` keyword in source code.
+
+   See also the :option:`-X lazy_imports <-X>` command-line option.
+
+   .. versionadded:: next
 
 Debug-mode variables
 ~~~~~~~~~~~~~~~~~~~~

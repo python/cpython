@@ -251,8 +251,9 @@ class UnixConsole(Console):
         if not self.__gone_tall:
             while len(self.screen) < min(len(screen), self.height):
                 self.__hide_cursor()
-                self.__move(0, len(self.screen) - 1)
-                self.__write("\n")
+                if self.screen:
+                    self.__move(0, len(self.screen) - 1)
+                    self.__write("\n")
                 self.posxy = 0, len(self.screen)
                 self.screen.append("")
         else:
@@ -390,7 +391,12 @@ class UnixConsole(Console):
             os.write(self.output_fd, b"\033[?7h")
 
         if hasattr(self, "old_sigwinch"):
-            signal.signal(signal.SIGWINCH, self.old_sigwinch)
+            try:
+                signal.signal(signal.SIGWINCH, self.old_sigwinch)
+            except ValueError as e:
+                import threading
+                if threading.current_thread() is threading.main_thread():
+                    raise e
             del self.old_sigwinch
 
     def push_char(self, char: int | bytes) -> None:
@@ -803,7 +809,7 @@ class UnixConsole(Console):
         will never do anyone any good."""
         # using .get() means that things will blow up
         # only if the bps is actually needed (which I'm
-        # betting is pretty unlkely)
+        # betting is pretty unlikely)
         bps = ratedict.get(self.__svtermstate.ospeed)
         while True:
             m = prog.search(fmt)

@@ -186,7 +186,7 @@ How do I get documentation on Python?
 -------------------------------------
 
 The standard documentation for the current stable version of Python is available
-at https://docs.python.org/3/.  PDF, plain text, and downloadable HTML versions are
+at https://docs.python.org/3/.  EPUB, plain text, and downloadable HTML versions are
 also available at https://docs.python.org/3/download.html.
 
 The documentation is written in reStructuredText and processed by `the Sphinx

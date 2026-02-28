@@ -1,3 +1,0 @@
-:mod:`hmac`: use the :manpage:`EVP_MAC(3ssl)` interface for HMAC when Python
-is built with OpenSSL 3.0 and later instead of the deprecated
-:manpage:`HMAC_CTX(3ssl) <hmac(3)>` interface. Patch by Bénédikt Tran.

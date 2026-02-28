@@ -813,7 +813,7 @@ For example, this conforms to :pep:`484`::
        def __len__(self) -> int: ...
        def __iter__(self) -> Iterator[int]: ...
 
-:pep:`544` allows to solve this problem by allowing users to write
+:pep:`544` solves this problem by allowing users to write
 the above code without explicit base classes in the class definition,
 allowing ``Bucket`` to be implicitly considered a subtype of both ``Sized``
 and ``Iterable[int]`` by static type checkers. This is known as
@@ -1390,7 +1390,7 @@ These can be used as types in annotations. They all support subscription using
    Using ``Annotated[T, x]`` as an annotation still allows for static
    typechecking of ``T``, as type checkers will simply ignore the metadata ``x``.
    In this way, ``Annotated`` differs from the
-   :func:`@no_type_check <no_type_check>` decorator, which can also be used for
+   :deco:`no_type_check` decorator, which can also be used for
    adding annotations outside the scope of the typing system, but
    completely disables typechecking for a function or class.
 
@@ -2243,7 +2243,7 @@ without the dedicated syntax, as documented below.
    .. versionadded:: 3.10
 
 
-.. class:: TypeAliasType(name, value, *, type_params=())
+.. class:: TypeAliasType(name, value, *, type_params=(), qualname=None)
 
    The type of type aliases created through the :keyword:`type` statement.
 
@@ -2267,9 +2267,23 @@ without the dedicated syntax, as documented below.
          >>> Alias.__name__
          'Alias'
 
+   .. attribute:: __qualname__
+
+      The :term:`qualified name` of the type alias:
+
+      .. doctest::
+
+        >>> class Class:
+        ...     type Alias = int
+        ...
+        >>> Class.Alias.__qualname__
+        'Class.Alias'
+
+      .. versionadded:: 3.15
+
    .. attribute:: __module__
 
-      The module in which the type alias was defined::
+      The name of the module in which the type alias was defined::
 
          >>> type Alias = int
          >>> Alias.__module__
@@ -2428,25 +2442,16 @@ types.
       Removed the ``_field_types`` attribute in favor of the more
       standard ``__annotations__`` attribute which has the same information.
 
+   .. versionchanged:: 3.9
+      ``NamedTuple`` is now a function rather than a class.
+      It can still be used as a class base, as described above.
+
    .. versionchanged:: 3.11
       Added support for generic namedtuples.
 
    .. versionchanged:: 3.14
       Using :func:`super` (and the ``__class__`` :term:`closure variable`) in methods of ``NamedTuple`` subclasses
       is unsupported and causes a :class:`TypeError`.
-
-   .. deprecated-removed:: 3.13 3.15
-      The undocumented keyword argument syntax for creating NamedTuple classes
-      (``NT = NamedTuple("NT", x=int)``) is deprecated, and will be disallowed
-      in 3.15. Use the class-based syntax or the functional syntax instead.
-
-   .. deprecated-removed:: 3.13 3.15
-      When using the functional syntax to create a NamedTuple class, failing to
-      pass a value to the 'fields' parameter (``NT = NamedTuple("NT")``) is
-      deprecated. Passing ``None`` to the 'fields' parameter
-      (``NT = NamedTuple("NT", None)``) is also deprecated. Both will be
-      disallowed in Python 3.15. To create a NamedTuple class with 0 fields,
-      use ``class NT(NamedTuple): pass`` or ``NT = NamedTuple("NT", [])``.
 
 .. class:: NewType(name, tp)
 
@@ -2462,7 +2467,7 @@ types.
 
    .. attribute:: __module__
 
-      The module in which the new type is defined.
+      The name of the module in which the new type is defined.
 
    .. attribute:: __name__
 
@@ -2522,6 +2527,12 @@ types.
 
    .. versionadded:: 3.8
 
+   .. deprecated-removed:: 3.15 3.20
+      It is deprecated to call :func:`isinstance` and :func:`issubclass` checks on
+      protocol classes that were not explicitly decorated with :func:`!runtime_checkable`
+      but that inherit from a runtime-checkable protocol class. This will throw
+      a :exc:`TypeError` in Python 3.20.
+
 .. decorator:: runtime_checkable
 
    Mark a protocol class as a runtime protocol.
@@ -2542,6 +2553,18 @@ types.
 
       import threading
       assert isinstance(threading.Thread(name='Bob'), Named)
+
+   Runtime checkability of protocols is not inherited. A subclass of a runtime-checkable protocol
+   is only runtime-checkable if it is explicitly marked as such, regardless of class hierarchy::
+
+      @runtime_checkable
+      class Iterable(Protocol):
+          def __iter__(self): ...
+
+      # Without @runtime_checkable, Reversible would no longer be runtime-checkable.
+      @runtime_checkable
+      class Reversible(Iterable, Protocol):
+          def __reversed__(self): ...
 
    This decorator raises :exc:`TypeError` when applied to a non-protocol class.
 
@@ -2583,11 +2606,16 @@ types.
       protocol. See :ref:`What's new in Python 3.12 <whatsnew-typing-py312>`
       for more details.
 
+   .. deprecated-removed:: 3.15 3.20
+      It is deprecated to call :func:`isinstance` and :func:`issubclass` checks on
+      protocol classes that were not explicitly decorated with :func:`!runtime_checkable`
+      but that inherit from a runtime-checkable protocol class. This will throw
+      a :exc:`TypeError` in Python 3.20.
 
 .. class:: TypedDict(dict)
 
    Special construct to add type hints to a dictionary.
-   At runtime it is a plain :class:`dict`.
+   At runtime ":class:`!TypedDict` instances" are simply :class:`dicts <dict>`.
 
    ``TypedDict`` declares a dictionary type that expects all of its
    instances to have a certain set of keys, where each key is
@@ -2810,6 +2838,10 @@ types.
 
    .. versionadded:: 3.8
 
+   .. versionchanged:: 3.9
+      ``TypedDict`` is now a function rather than a class.
+      It can still be used as a class base, as described above.
+
    .. versionchanged:: 3.11
       Added support for marking individual keys as :data:`Required` or :data:`NotRequired`.
       See :pep:`655`.
@@ -2823,19 +2855,12 @@ types.
    .. versionchanged:: 3.13
       Support for the :data:`ReadOnly` qualifier was added.
 
-   .. deprecated-removed:: 3.13 3.15
-      When using the functional syntax to create a TypedDict class, failing to
-      pass a value to the 'fields' parameter (``TD = TypedDict("TD")``) is
-      deprecated. Passing ``None`` to the 'fields' parameter
-      (``TD = TypedDict("TD", None)``) is also deprecated. Both will be
-      disallowed in Python 3.15. To create a TypedDict class with 0 fields,
-      use ``class TD(TypedDict): pass`` or ``TD = TypedDict("TD", {})``.
 
 Protocols
 ---------
 
 The following protocols are provided by the :mod:`!typing` module. All are decorated
-with :func:`@runtime_checkable <runtime_checkable>`.
+with :deco:`runtime_checkable`.
 
 .. class:: SupportsAbs
 
@@ -2875,8 +2900,8 @@ ABCs and Protocols for working with I/O
 ---------------------------------------
 
 .. class:: IO[AnyStr]
-           TextIO[AnyStr]
-           BinaryIO[AnyStr]
+           TextIO
+           BinaryIO
 
    Generic class ``IO[AnyStr]`` and its subclasses ``TextIO(IO[str])``
    and ``BinaryIO(IO[bytes])``
@@ -3016,7 +3041,7 @@ Functions and decorators
    The presence of ``@dataclass_transform()`` tells a static type checker that the
    decorated object performs runtime "magic" that
    transforms a class in a similar way to
-   :func:`@dataclasses.dataclass <dataclasses.dataclass>`.
+   :deco:`dataclasses.dataclass`.
 
    Example usage with a decorator function:
 
@@ -3054,14 +3079,14 @@ Functions and decorators
 
    The ``CustomerModel`` classes defined above will
    be treated by type checkers similarly to classes created with
-   :func:`@dataclasses.dataclass <dataclasses.dataclass>`.
+   :deco:`dataclasses.dataclass`.
    For example, type checkers will assume these classes have
    ``__init__`` methods that accept ``id`` and ``name``.
 
    The decorated class, metaclass, or function may accept the following bool
    arguments which type checkers will assume have the same effect as they
    would have on the
-   :func:`@dataclasses.dataclass<dataclasses.dataclass>` decorator: ``init``,
+   :deco:`dataclasses.dataclass` decorator: ``init``,
    ``eq``, ``order``, ``unsafe_hash``, ``frozen``, ``match_args``,
    ``kw_only``, and ``slots``. It must be possible for the value of these
    arguments (``True`` or ``False``) to be statically evaluated.
@@ -3189,12 +3214,12 @@ Functions and decorators
 
 .. function:: get_overloads(func)
 
-   Return a sequence of :func:`@overload <overload>`-decorated definitions for
+   Return a sequence of :deco:`overload`-decorated definitions for
    *func*.
 
    *func* is the function object for the implementation of the
    overloaded function. For example, given the definition of ``process`` in
-   the documentation for :func:`@overload <overload>`,
+   the documentation for :deco:`overload`,
    ``get_overloads(process)`` will return a sequence of three function objects
    for the three defined overloads. If called on a function with no overloads,
    ``get_overloads()`` returns an empty sequence.
@@ -3264,17 +3289,6 @@ Functions and decorators
 
    ``@no_type_check`` mutates the decorated object in place.
 
-.. decorator:: no_type_check_decorator
-
-   Decorator to give another decorator the :func:`no_type_check` effect.
-
-   This wraps the decorator with something that wraps the decorated
-   function in :func:`no_type_check`.
-
-   .. deprecated-removed:: 3.13 3.15
-      No type checker ever added support for ``@no_type_check_decorator``. It
-      is therefore deprecated, and will be removed in Python 3.15.
-
 .. decorator:: override
 
    Decorator to indicate that a method in a subclass is intended to override a
@@ -3339,8 +3353,8 @@ Introspection helpers
 
 .. function:: get_type_hints(obj, globalns=None, localns=None, include_extras=False)
 
-   Return a dictionary containing type hints for a function, method, module
-   or class object.
+   Return a dictionary containing type hints for a function, method, module,
+   class object, or other callable object.
 
    This is often the same as ``obj.__annotations__``, but this function makes
    the following changes to the annotations dictionary:
@@ -3351,7 +3365,7 @@ Introspection helpers
      If *globalns* or *localns* is not given, appropriate namespace
      dictionaries are inferred from *obj*.
    * ``None`` is replaced with :class:`types.NoneType`.
-   * If :func:`@no_type_check <no_type_check>` has been applied to *obj*, an
+   * If :deco:`no_type_check` has been applied to *obj*, an
      empty dictionary is returned.
    * If *obj* is a class ``C``, the function returns a dictionary that merges
      annotations from ``C``'s base classes with those on ``C`` directly. This
@@ -3360,7 +3374,8 @@ Introspection helpers
      ``__annotations__`` dictionaries. Annotations on classes appearing
      earlier in the :term:`method resolution order` always take precedence over
      annotations on classes appearing later in the method resolution order.
-   * The function recursively replaces all occurrences of ``Annotated[T, ...]``
+   * The function recursively replaces all occurrences of
+     ``Annotated[T, ...]``, ``Required[T]``, ``NotRequired[T]``, and ``ReadOnly[T]``
      with ``T``, unless *include_extras* is set to ``True`` (see
      :class:`Annotated` for more information).
 
@@ -3380,6 +3395,13 @@ Introspection helpers
       :ref:`type aliases <type-aliases>` that include forward references,
       or with names imported under :data:`if TYPE_CHECKING <TYPE_CHECKING>`.
 
+   .. note::
+
+      Calling :func:`get_type_hints` on an instance is not supported.
+      To retrieve annotations for an instance, call
+      :func:`get_type_hints` on the instance's class instead
+      (for example, ``get_type_hints(type(obj))``).
+
    .. versionchanged:: 3.9
       Added ``include_extras`` parameter as part of :pep:`593`.
       See the documentation on :data:`Annotated` for more information.
@@ -3388,6 +3410,11 @@ Introspection helpers
       Previously, ``Optional[t]`` was added for function and method annotations
       if a default value equal to ``None`` was set.
       Now the annotation is returned unchanged.
+
+   .. versionchanged:: 3.14
+      Calling :func:`get_type_hints` on instances is no longer supported.
+      Some instances were accepted in earlier versions as an undocumented
+      implementation detail.
 
 .. function:: get_origin(tp)
 
@@ -4119,10 +4146,6 @@ convenience. This is subject to change, and not all deprecations are listed.
      - 3.12
      - Undecided
      - :pep:`695`
-   * - :func:`@typing.no_type_check_decorator <no_type_check_decorator>`
-     - 3.13
-     - 3.15
-     - :gh:`106309`
    * - :data:`typing.AnyStr`
      - 3.13
      - 3.18

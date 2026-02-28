@@ -376,7 +376,7 @@ pairwise_next(PyObject *op)
     }
 
     result = po->result;
-    if (Py_REFCNT(result) == 1) {
+    if (_PyObject_IsUniquelyReferenced(result)) {
         Py_INCREF(result);
         PyObject *last_old = PyTuple_GET_ITEM(result, 0);
         PyObject *last_new = PyTuple_GET_ITEM(result, 1);
@@ -544,9 +544,19 @@ groupby_next(PyObject *op)
         else if (gbo->tgtkey == NULL)
             break;
         else {
-            int rcmp;
+            /* A user-defined __eq__ can re-enter groupby and advance the iterator,
+               mutating gbo->tgtkey / gbo->currkey while we are comparing them.
+               Take local snapshots and hold strong references so INCREF/DECREF
+               apply to the same objects even under re-entrancy. */
+            PyObject *tgtkey = gbo->tgtkey;
+            PyObject *currkey = gbo->currkey;
 
-            rcmp = PyObject_RichCompareBool(gbo->tgtkey, gbo->currkey, Py_EQ);
+            Py_INCREF(tgtkey);
+            Py_INCREF(currkey);
+            int rcmp = PyObject_RichCompareBool(tgtkey, currkey, Py_EQ);
+            Py_DECREF(tgtkey);
+            Py_DECREF(currkey);
+
             if (rcmp == -1)
                 return NULL;
             else if (rcmp == 0)
@@ -802,7 +812,7 @@ teedataobject_traverse(PyObject *op, visitproc visit, void * arg)
 static void
 teedataobject_safe_decref(PyObject *obj)
 {
-    while (obj && Py_REFCNT(obj) == 1) {
+    while (obj && _PyObject_IsUniquelyReferenced(obj)) {
         teedataobject *tmp = teedataobject_CAST(obj);
         PyObject *nextlink = tmp->nextlink;
         tmp->nextlink = NULL;
@@ -2129,9 +2139,9 @@ product_next_lock_held(PyObject *op)
         Py_ssize_t *indices = lz->indices;
 
         /* Copy the previous result tuple or re-use it if available */
-        if (Py_REFCNT(result) > 1) {
+        if (!_PyObject_IsUniquelyReferenced(result)) {
             PyObject *old_result = result;
-            result = _PyTuple_FromArray(_PyTuple_ITEMS(old_result), npools);
+            result = PyTuple_FromArray(_PyTuple_ITEMS(old_result), npools);
             if (result == NULL)
                 goto empty;
             lz->result = result;
@@ -2364,9 +2374,9 @@ combinations_next_lock_held(PyObject *op)
         }
     } else {
         /* Copy the previous result tuple or re-use it if available */
-        if (Py_REFCNT(result) > 1) {
+        if (!_PyObject_IsUniquelyReferenced(result)) {
             PyObject *old_result = result;
-            result = _PyTuple_FromArray(_PyTuple_ITEMS(old_result), r);
+            result = PyTuple_FromArray(_PyTuple_ITEMS(old_result), r);
             if (result == NULL)
                 goto empty;
             co->result = result;
@@ -2587,7 +2597,7 @@ cwr_traverse(PyObject *op, visitproc visit, void *arg)
 }
 
 static PyObject *
-cwr_next(PyObject *op)
+cwr_next_lock_held(PyObject *op)
 {
     cwrobject *co = cwrobject_CAST(op);
     PyObject *elem;
@@ -2618,9 +2628,9 @@ cwr_next(PyObject *op)
         }
     } else {
         /* Copy the previous result tuple or re-use it if available */
-        if (Py_REFCNT(result) > 1) {
+        if (!_PyObject_IsUniquelyReferenced(result)) {
             PyObject *old_result = result;
-            result = _PyTuple_FromArray(_PyTuple_ITEMS(old_result), r);
+            result = PyTuple_FromArray(_PyTuple_ITEMS(old_result), r);
             if (result == NULL)
                 goto empty;
             co->result = result;
@@ -2664,6 +2674,16 @@ cwr_next(PyObject *op)
 empty:
     co->stopped = 1;
     return NULL;
+}
+
+static PyObject *
+cwr_next(PyObject *op)
+{
+    PyObject *result;
+    Py_BEGIN_CRITICAL_SECTION(op);
+    result = cwr_next_lock_held(op);
+    Py_END_CRITICAL_SECTION()
+    return result;
 }
 
 static PyMethodDef cwr_methods[] = {
@@ -2846,7 +2866,7 @@ permutations_traverse(PyObject *op, visitproc visit, void *arg)
 }
 
 static PyObject *
-permutations_next(PyObject *op)
+permutations_next_lock_held(PyObject *op)
 {
     permutationsobject *po = permutationsobject_CAST(op);
     PyObject *elem;
@@ -2879,9 +2899,9 @@ permutations_next(PyObject *op)
             goto empty;
 
         /* Copy the previous result tuple or re-use it if available */
-        if (Py_REFCNT(result) > 1) {
+        if (!_PyObject_IsUniquelyReferenced(result)) {
             PyObject *old_result = result;
-            result = _PyTuple_FromArray(_PyTuple_ITEMS(old_result), r);
+            result = PyTuple_FromArray(_PyTuple_ITEMS(old_result), r);
             if (result == NULL)
                 goto empty;
             po->result = result;
@@ -2934,6 +2954,16 @@ permutations_next(PyObject *op)
 empty:
     po->stopped = 1;
     return NULL;
+}
+
+static PyObject *
+permutations_next(PyObject *op)
+{
+    PyObject *result;
+    Py_BEGIN_CRITICAL_SECTION(op);
+    result = permutations_next_lock_held(op);
+    Py_END_CRITICAL_SECTION()
+    return result;
 }
 
 static PyMethodDef permuations_methods[] = {
@@ -3847,7 +3877,7 @@ zip_longest_next(PyObject *op)
         return NULL;
     if (lz->numactive == 0)
         return NULL;
-    if (Py_REFCNT(result) == 1) {
+    if (_PyObject_IsUniquelyReferenced(result)) {
         Py_INCREF(result);
         for (i=0 ; i < tuplesize ; i++) {
             it = PyTuple_GET_ITEM(lz->ittuple, i);

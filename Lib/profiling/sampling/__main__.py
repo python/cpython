@@ -15,7 +15,7 @@ Tachyon needs elevated permissions to profile processes. Try one of these soluti
 """
 
 LINUX_PERMISSION_ERROR = """
-🔒 Tachyon was unable to acess process memory. This could be because tachyon
+🔒 Tachyon was unable to access process memory. This could be because tachyon
 has insufficient privileges (the required capability is CAP_SYS_PTRACE).
 Unprivileged processes cannot trace processes that they cannot send signals
 to or those running set-user-ID/set-group-ID programs, for security reasons.
@@ -45,7 +45,8 @@ GENERIC_PERMISSION_ERROR = """
 system restrictions or missing privileges.
 """
 
-from .sample import main
+from .cli import main
+from .errors import SamplingUnknownProcessError, SamplingModuleNotFoundError, SamplingScriptNotFoundError
 
 def handle_permission_error():
     """Handle PermissionError by displaying appropriate error message."""
@@ -64,3 +65,9 @@ if __name__ == '__main__':
         main()
     except PermissionError:
         handle_permission_error()
+    except SamplingUnknownProcessError as err:
+        print(f"Tachyon cannot find the process: {err}", file=sys.stderr)
+        sys.exit(1)
+    except (SamplingModuleNotFoundError, SamplingScriptNotFoundError) as err:
+        print(f"Tachyon cannot find the target: {err}", file=sys.stderr)
+        sys.exit(1)

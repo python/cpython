@@ -11,6 +11,7 @@
 #include "pycore_code.h"             // _PyCode_New()
 #include "pycore_hashtable.h"        // _Py_hashtable_t
 #include "pycore_long.h"             // _PyLong_IsZero()
+#include "pycore_object.h"           // _PyObject_IsUniquelyReferenced
 #include "pycore_pystate.h"          // _PyInterpreterState_GET()
 #include "pycore_setobject.h"        // _PySet_NextEntryRef()
 #include "pycore_unicodeobject.h"    // _PyUnicode_InternImmortal()
@@ -66,6 +67,7 @@ module marshal
 #define TYPE_TUPLE              '('  // See also TYPE_SMALL_TUPLE.
 #define TYPE_LIST               '['
 #define TYPE_DICT               '{'
+#define TYPE_FROZENDICT         '}'
 #define TYPE_CODE               'c'
 #define TYPE_UNICODE            'u'
 #define TYPE_UNKNOWN            '?'
@@ -309,7 +311,7 @@ w_PyLong(const PyLongObject *ob, char flag, WFILE *p)
     }
     if (!long_export.digits) {
         int8_t sign = long_export.value < 0 ? -1 : 1;
-        uint64_t abs_value = Py_ABS(long_export.value);
+        uint64_t abs_value = _Py_ABS_CAST(uint64_t, long_export.value);
         uint64_t d = abs_value;
         long l = 0;
 
@@ -388,7 +390,7 @@ w_ref(PyObject *v, char *flag, WFILE *p)
      * But we use TYPE_REF always for interned string, to PYC file stable
      * as possible.
      */
-    if (Py_REFCNT(v) == 1 &&
+    if (_PyObject_IsUniquelyReferenced(v) &&
             !(PyUnicode_CheckExact(v) && PyUnicode_CHECK_INTERNED(v))) {
         return 0;
     }
@@ -430,6 +432,10 @@ static void
 w_object(PyObject *v, WFILE *p)
 {
     char flag = '\0';
+
+    if (p->error != WFERR_OK) {
+        return;
+    }
 
     p->depth++;
 
@@ -570,10 +576,15 @@ w_complex_object(PyObject *v, char flag, WFILE *p)
             w_object(PyList_GET_ITEM(v, i), p);
         }
     }
-    else if (PyDict_CheckExact(v)) {
+    else if (PyAnyDict_CheckExact(v)) {
         Py_ssize_t pos;
         PyObject *key, *value;
-        W_TYPE(TYPE_DICT, p);
+        if (PyFrozenDict_CheckExact(v)) {
+            W_TYPE(TYPE_FROZENDICT, p);
+        }
+        else {
+            W_TYPE(TYPE_DICT, p);
+        }
         /* This one is NULL object terminated! */
         pos = 0;
         while (PyDict_Next(v, &pos, &key, &value)) {
@@ -1415,6 +1426,7 @@ r_object(RFILE *p)
         break;
 
     case TYPE_DICT:
+    case TYPE_FROZENDICT:
         v = PyDict_New();
         R_REF(v);
         if (v == NULL)
@@ -1438,7 +1450,16 @@ r_object(RFILE *p)
             Py_DECREF(val);
         }
         if (PyErr_Occurred()) {
-            Py_SETREF(v, NULL);
+            Py_CLEAR(v);
+        }
+        if (type == TYPE_FROZENDICT && v != NULL) {
+            PyObject *frozendict = PyFrozenDict_New(v);
+            if (frozendict != NULL) {
+                Py_SETREF(v, frozendict);
+            }
+            else {
+                Py_CLEAR(v);
+            }
         }
         retval = v;
         break;

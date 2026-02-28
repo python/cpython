@@ -1,1 +1,0 @@
-Prevent infinite traceback loop when sending CTRL^C to Python through ``strace``.

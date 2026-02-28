@@ -1,2 +1,0 @@
-Fix crash in PyREPL when os.environ is overwritten with an invalid value for
-mac

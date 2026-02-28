@@ -127,7 +127,7 @@ This module defines the following constants and functions:
    .. versionchanged:: 3.13
       Added support for GNU/kFreeBSD.
 
-   .. versionchanged:: next
+   .. versionchanged:: 3.15
       Added support for Solaris.
 
 

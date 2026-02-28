@@ -6,16 +6,13 @@
 
 .. versionadded:: 3.9
 
-.. moduleauthor:: Paul Ganssle <paul@ganssle.io>
-.. sectionauthor:: Paul Ganssle <paul@ganssle.io>
-
 **Source code:** :source:`Lib/zoneinfo`
 
 --------------
 
-The :mod:`zoneinfo` module provides a concrete time zone implementation to
+The :mod:`!zoneinfo` module provides a concrete time zone implementation to
 support the IANA time zone database as originally specified in :pep:`615`. By
-default, :mod:`zoneinfo` uses the system's time zone data if available; if no
+default, :mod:`!zoneinfo` uses the system's time zone data if available; if no
 system time zone data is available, the library will fall back to using the
 first-party :pypi:`tzdata` package available on PyPI.
 
@@ -206,6 +203,9 @@ The ``ZoneInfo`` class has two alternate constructors:
 
     Objects created via this constructor cannot be pickled (see `pickling`_).
 
+    :exc:`ValueError` is raised if the data read from *file_obj* is not a valid
+    TZif file.
+
 .. classmethod:: ZoneInfo.no_cache(key)
 
     An alternate constructor that bypasses the constructor's cache. It is
@@ -299,7 +299,7 @@ The behavior of a ``ZoneInfo`` file depends on how it was constructed:
 1. ``ZoneInfo(key)``: When constructed with the primary constructor, a
    ``ZoneInfo`` object is serialized by key, and when deserialized, the
    deserializing process uses the primary and thus it is expected that these
-   are expected to be the same object as other references to the same time
+   are the same object as other references to the same time
    zone.  For example, if ``europe_berlin_pkl`` is a string containing a pickle
    constructed from ``ZoneInfo("Europe/Berlin")``, one would expect the
    following behavior:
