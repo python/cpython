@@ -670,37 +670,22 @@ class StrptimeTests(unittest.TestCase):
             time.strptime(test_date, "%m/%d/%y")
         )
 
-    def test_strptime_t_format(self):
-        test_year,test_month,test_day = 2026,2,20
-        whitespaces = ('',' ','\t','\r','\v','\n','\f')
-        for ws in (*whitespaces,''.join(whitespaces)):
-            with self.subTest(whitespace=ws):
-                self.assertEqual(
-                    time.strptime(
-                        f'{test_year:04d}{ws}{test_month:02d}{ws}{test_day:02d}',
-                        "%Y%t%m%t%d"
-                    ),
-                    time.strptime(
-                        f'{test_year:04d}-{test_month:02d}-{test_day:02d}',
-                        "%Y-%m-%d"
+    def test_strptime_n_and_t_format(self):
+        year, month, day = 2026, 2, 20
+        whitespaces = ('', ' ', '\t', '\r', '\v', '\n', '\f')
+        for fd in ('n', 't'):
+            for ws in (*whitespaces, ''.join(whitespaces)):
+                with self.subTest(format_descriptor=fd, whitespace=ws):
+                    self.assertEqual(
+                        time.strptime(
+                            f"{year:04d}{ws}{month:02d}{ws}{day:02d}",
+                            f"%Y%{fd}%m%{fd}%d"
+                        ),
+                        time.strptime(
+                            f'{year:04d}-{month:02d}-{day:02d}',
+                            "%Y-%m-%d"
+                        )
                     )
-                )
-
-    def test_strptime_n_format(self):
-        test_year,test_month,test_day = 2026,2,20
-        whitespaces = ('',' ','\t','\r','\v','\n','\f')
-        for ws in (*whitespaces,''.join(whitespaces)):
-            with self.subTest(whitespace=ws):
-                self.assertEqual(
-                    time.strptime(
-                        f'{test_year:04d}{ws}{test_month:02d}{ws}{test_day:02d}',
-                        "%Y%n%m%n%d"
-                    ),
-                    time.strptime(
-                        f'{test_year:04d}-{test_month:02d}-{test_day:02d}',
-                        "%Y-%m-%d"
-                    )
-                )
 
 class Strptime12AMPMTests(unittest.TestCase):
     """Test a _strptime regression in '%I %p' at 12 noon (12 PM)"""

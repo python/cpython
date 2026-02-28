@@ -2207,32 +2207,19 @@ class TestDate(HarmlessMixedComparison, unittest.TestCase):
             self.theclass.strptime(test_date, "%m/%d/%y")
         )
 
-    def test_strptime_t_format(self):
-        test_year,test_month,test_day = 2026,2,20
-        whitespaces = ('',' ','\t','\r','\v','\n','\f')
-        for ws in (*whitespaces,''.join(whitespaces)):
-            with self.subTest(whitespace=ws):
-                self.assertEqual(
-                    self.theclass.strptime(
-                        f'{test_year:04d}{ws}{test_month:02d}{ws}{test_day:02d}',
-                        "%Y%t%m%t%d"
-                    ),
-                    self.theclass(test_year,test_month,test_day)
-                )
-
-    def test_strptime_n_format(self):
-        test_year,test_month,test_day = 2026,2,25
-        whitespaces = ('',' ','\t','\r','\v','\n','\f')
-        for ws in (*whitespaces,''.join(whitespaces)):
-            with self.subTest(whitespace=ws):
-                self.assertEqual(
-                    self.theclass.strptime(
-                        f'{test_year:04d}{ws}{test_month:02d}{ws}{test_day:02d}',
-                        "%Y%n%m%n%d"
-                    ),
-                    self.theclass(test_year,test_month,test_day)
-                )
-
+    def test_strptime_n_and_t_format(self):
+        year, month, day = 2026, 2, 20
+        whitespaces = ('', ' ', '\t', '\r', '\v', '\n', '\f')
+        for fd in ('n', 't'):
+            for ws in (*whitespaces, ''.join(whitespaces)):
+                with self.subTest(format_descriptor=fd, whitespace=ws):
+                    self.assertEqual(
+                        self.theclass.strptime(
+                            f"{year:04d}{ws}{month:02d}{ws}{day:02d}",
+                            f"%Y%{fd}%m%{fd}%d"
+                        ),
+                        self.theclass(year, month, day)
+                    )
 
 #############################################################################
 # datetime tests
