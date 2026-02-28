@@ -1,0 +1,3 @@
+Specialized the parser error for when ``with`` items are followed
+by a trailing comma (for example, ``with item,:``), raising a clearer
+:exc:`SyntaxError` message. Patch by Pablo Galindo and Bartosz Sławecki.
