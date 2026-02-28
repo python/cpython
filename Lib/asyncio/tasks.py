@@ -101,6 +101,7 @@ class Task(futures._PyFuture):  # Inherit Python Task implementation
         self._must_cancel = False
         self._fut_waiter = None
         self._coro = coro
+        self._current_cancel_scope = None
         if context is None:
             self._context = contextvars.copy_context()
         else:
@@ -271,6 +272,11 @@ class Task(futures._PyFuture):  # Inherit Python Task implementation
             if not isinstance(exc, exceptions.CancelledError):
                 exc = self._make_cancelled_error()
             self._must_cancel = False
+        elif (self._current_cancel_scope is not None
+              and self._current_cancel_scope._cancel_called
+              and not self._current_cancel_scope._shield
+              and not isinstance(exc, exceptions.CancelledError)):
+            exc = self._make_cancelled_error()
         self._fut_waiter = None
 
         _py_enter_task(self._loop, self)

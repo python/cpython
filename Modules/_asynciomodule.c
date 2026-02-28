@@ -65,6 +65,7 @@ typedef struct TaskObj {
     PyObject *task_coro;
     PyObject *task_name;
     PyObject *task_context;
+    PyObject *task_cancel_scope;
     struct llist_node task_node;
 #ifdef Py_GIL_DISABLED
     // thread id of the thread where this task was created
@@ -2348,6 +2349,7 @@ _asyncio_Task___init___impl(TaskObj *self, PyObject *coro, PyObject *loop,
     self->task_must_cancel = 0;
     self->task_log_destroy_pending = 1;
     self->task_num_cancels_requested = 0;
+    Py_CLEAR(self->task_cancel_scope);
     set_task_coro(self, coro);
 
     if (name == Py_None) {
@@ -2406,6 +2408,7 @@ TaskObj_clear(PyObject *op)
     Py_CLEAR(task->task_context);
     Py_CLEAR(task->task_name);
     Py_CLEAR(task->task_fut_waiter);
+    Py_CLEAR(task->task_cancel_scope);
     return 0;
 }
 
@@ -2418,6 +2421,7 @@ TaskObj_traverse(PyObject *op, visitproc visit, void *arg)
     Py_VISIT(task->task_coro);
     Py_VISIT(task->task_name);
     Py_VISIT(task->task_fut_waiter);
+    Py_VISIT(task->task_cancel_scope);
     FutureObj *fut = (FutureObj *)task;
     Py_VISIT(fut->fut_loop);
     Py_VISIT(fut->fut_callback0);
@@ -2526,6 +2530,40 @@ _asyncio_Task__fut_waiter_get_impl(TaskObj *self)
     }
 
     Py_RETURN_NONE;
+}
+
+/*[clinic input]
+@critical_section
+@getter
+_asyncio.Task._current_cancel_scope
+[clinic start generated code]*/
+
+static PyObject *
+_asyncio_Task__current_cancel_scope_get_impl(TaskObj *self)
+/*[clinic end generated code: output=15046cb0fcee9abf input=07be6e2e1497d228]*/
+{
+    if (self->task_cancel_scope) {
+        return Py_NewRef(self->task_cancel_scope);
+    }
+    Py_RETURN_NONE;
+}
+
+/*[clinic input]
+@critical_section
+@setter
+_asyncio.Task._current_cancel_scope
+[clinic start generated code]*/
+
+static int
+_asyncio_Task__current_cancel_scope_set_impl(TaskObj *self, PyObject *value)
+/*[clinic end generated code: output=5765aaca52153089 input=c0c3e38a37538b5c]*/
+{
+    if (value == NULL) {
+        Py_CLEAR(self->task_cancel_scope);
+        return 0;
+    }
+    Py_XSETREF(self->task_cancel_scope, Py_NewRef(value));
+    return 0;
 }
 
 static PyObject *
@@ -2942,6 +2980,7 @@ static PyGetSetDef TaskType_getsetlist[] = {
     _ASYNCIO_TASK__MUST_CANCEL_GETSETDEF
     _ASYNCIO_TASK__CORO_GETSETDEF
     _ASYNCIO_TASK__FUT_WAITER_GETSETDEF
+    _ASYNCIO_TASK__CURRENT_CANCEL_SCOPE_GETSETDEF
     {NULL} /* Sentinel */
 };
 
@@ -3081,6 +3120,47 @@ task_step_impl(asyncio_state *state, TaskObj *task, PyObject *exc)
         }
 
         task->task_must_cancel = 0;
+    }
+    else if (task->task_cancel_scope != NULL
+             && task->task_cancel_scope != Py_None) {
+        /* Level-triggered cancellation: re-inject CancelledError at every
+           step while the current CancelScope is cancelled and not shielded. */
+        PyObject *cancel_called = PyObject_GetAttrString(
+            task->task_cancel_scope, "_cancel_called");
+        if (cancel_called == NULL) {
+            goto fail;
+        }
+        int is_cancelled = PyObject_IsTrue(cancel_called);
+        Py_DECREF(cancel_called);
+        if (is_cancelled < 0) {
+            goto fail;
+        }
+        if (is_cancelled) {
+            PyObject *shield = PyObject_GetAttrString(
+                task->task_cancel_scope, "_shield");
+            if (shield == NULL) {
+                goto fail;
+            }
+            int is_shielded = PyObject_IsTrue(shield);
+            Py_DECREF(shield);
+            if (is_shielded < 0) {
+                goto fail;
+            }
+            if (!is_shielded
+                && (!exc || !PyErr_GivenExceptionMatches(
+                        exc, state->asyncio_CancelledError))) {
+                PyObject *new_exc = create_cancelled_error(
+                    state, (FutureObj*)task);
+                if (!new_exc) {
+                    goto fail;
+                }
+                if (clear_exc) {
+                    Py_DECREF(exc);
+                }
+                exc = new_exc;
+                clear_exc = 1;
+            }
+        }
     }
 
     Py_CLEAR(task->task_fut_waiter);

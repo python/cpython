@@ -6,6 +6,7 @@ import sys
 
 # This relies on each of the submodules having an __all__ variable.
 from .base_events import *
+from .cancelscope import *
 from .coroutines import *
 from .events import *
 from .exceptions import *
@@ -24,6 +25,7 @@ from .threads import *
 from .transports import *
 
 __all__ = (base_events.__all__ +
+           cancelscope.__all__ +
            coroutines.__all__ +
            events.__all__ +
            exceptions.__all__ +
