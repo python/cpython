@@ -93,7 +93,8 @@ KSDATAFORMAT_SUBTYPE_PCM = b'\x01\x00\x00\x00\x00\x00\x10\x00\x80\x00\x00\xaa\x0
 _array_fmts = None, 'b', 'h', None, 'i'
 
 _wave_params = namedtuple('_wave_params',
-                     'nchannels sampwidth framerate nframes comptype compname')
+                     'nchannels sampwidth framerate nframes comptype compname format',
+                     defaults=(WAVE_FORMAT_PCM,))
 
 
 def _byteswap(data, width):
@@ -349,7 +350,8 @@ class Wave_read:
     def getparams(self):
         return _wave_params(self.getnchannels(), self.getsampwidth(),
                        self.getframerate(), self.getnframes(),
-                       self.getcomptype(), self.getcompname())
+                       self.getcomptype(), self.getcompname(),
+                       self.getformat())
 
     def setpos(self, pos):
         if pos < 0 or pos > self._nframes:
@@ -552,20 +554,25 @@ class Wave_write:
         return self._compname
 
     def setparams(self, params):
-        nchannels, sampwidth, framerate, nframes, comptype, compname = params
         if self._datawritten:
             raise Error('cannot change parameters after starting to write')
+        if len(params) == 6:
+            nchannels, sampwidth, framerate, nframes, comptype, compname = params
+            format = WAVE_FORMAT_PCM
+        else:
+            nchannels, sampwidth, framerate, nframes, comptype, compname, format = params
         self.setnchannels(nchannels)
         self.setsampwidth(sampwidth)
         self.setframerate(framerate)
         self.setnframes(nframes)
         self.setcomptype(comptype, compname)
+        self.setformat(format)
 
     def getparams(self):
         if not self._nchannels or not self._sampwidth or not self._framerate:
             raise Error('not all parameters set')
         return _wave_params(self._nchannels, self._sampwidth, self._framerate,
-              self._nframes, self._comptype, self._compname)
+              self._nframes, self._comptype, self._compname, self._format)
 
     def tell(self):
         return self._nframeswritten

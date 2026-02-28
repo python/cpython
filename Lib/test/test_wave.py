@@ -173,6 +173,38 @@ class MiscTestCase(unittest.TestCase):
 
 class WaveLowLevelTest(unittest.TestCase):
 
+    def test_setparams_6_tuple_defaults_to_pcm(self):
+        with tempfile.NamedTemporaryFile(delete_on_close=False) as fp:
+            filename = fp.name
+        self.addCleanup(unlink, filename)
+
+        with wave.open(filename, 'wb') as w:
+            w.setformat(wave.WAVE_FORMAT_IEEE_FLOAT)
+            w.setparams((1, 2, 22050, 0, 'NONE', 'not compressed'))
+            self.assertEqual(w.getformat(), wave.WAVE_FORMAT_PCM)
+
+    def test_setparams_7_tuple_uses_format(self):
+        with tempfile.NamedTemporaryFile(delete_on_close=False) as fp:
+            filename = fp.name
+        self.addCleanup(unlink, filename)
+
+        with wave.open(filename, 'wb') as w:
+            w.setparams((1, 2, 22050, 0, 'NONE', 'not compressed',
+                         wave.WAVE_FORMAT_IEEE_FLOAT))
+            self.assertEqual(w.getformat(), wave.WAVE_FORMAT_IEEE_FLOAT)
+
+    def test_getparams_has_format_field(self):
+        with tempfile.NamedTemporaryFile(delete_on_close=False) as fp:
+            filename = fp.name
+        self.addCleanup(unlink, filename)
+
+        with wave.open(filename, 'wb') as w:
+            w.setparams((1, 2, 22050, 0, 'NONE', 'not compressed',
+                         wave.WAVE_FORMAT_IEEE_FLOAT))
+            params = w.getparams()
+            self.assertEqual(params.format, wave.WAVE_FORMAT_IEEE_FLOAT)
+            self.assertEqual(params[:6], (1, 2, 22050, 0, 'NONE', 'not compressed'))
+
     def test_getformat_setformat(self):
         with tempfile.NamedTemporaryFile(delete_on_close=False) as fp:
             filename = fp.name
