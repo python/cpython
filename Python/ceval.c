@@ -1563,7 +1563,6 @@ _PyEval_EvalFrameDefault(PyThreadState *tstate, _PyInterpreterFrame *frame, int 
         if (_Py_EnterRecursivePy(tstate)) {
             goto early_exit;
         }
-        DTRACE_FUNCTION_ENTRY();
 #ifdef Py_GIL_DISABLED
         /* Load thread-local bytecode */
         if (frame->tlbc_index != ((_PyThreadStateImpl *)tstate)->tlbc_index) {

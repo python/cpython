@@ -5533,6 +5533,12 @@ dummy_func(
 
         spilled label(exit_unwind) {
             assert(_PyErr_Occurred(tstate));
+            DTRACE_FUNCTION_RETURN();
+            goto exit_unwind_notrace;
+        }
+
+        spilled label(exit_unwind_notrace) {
+            assert(_PyErr_Occurred(tstate));
             _Py_LeaveRecursiveCallPy(tstate);
             assert(frame->owner != FRAME_OWNED_BY_INTERPRETER);
             // GH-99729: We need to unlink the frame *before* clearing it:
@@ -5564,7 +5570,7 @@ dummy_func(
         spilled label(start_frame) {
             int too_deep = _Py_EnterRecursivePy(tstate);
             if (too_deep) {
-                goto exit_unwind;
+                goto exit_unwind_notrace;
             }
             DTRACE_FUNCTION_ENTRY();
             next_instr = frame->instr_ptr;
@@ -5654,6 +5660,7 @@ dummy_func(
  error:
  exception_unwind:
  exit_unwind:
+ exit_unwind_notrace:
  handle_eval_breaker:
  resume_frame:
  start_frame:

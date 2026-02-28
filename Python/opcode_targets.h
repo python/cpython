@@ -527,6 +527,7 @@ Py_PRESERVE_NONE_CC static PyObject *_TAIL_CALL_pop_1_error(TAIL_CALL_PARAMS);
 Py_PRESERVE_NONE_CC static PyObject *_TAIL_CALL_error(TAIL_CALL_PARAMS);
 Py_PRESERVE_NONE_CC static PyObject *_TAIL_CALL_exception_unwind(TAIL_CALL_PARAMS);
 Py_PRESERVE_NONE_CC static PyObject *_TAIL_CALL_exit_unwind(TAIL_CALL_PARAMS);
+Py_PRESERVE_NONE_CC static PyObject *_TAIL_CALL_exit_unwind_notrace(TAIL_CALL_PARAMS);
 Py_PRESERVE_NONE_CC static PyObject *_TAIL_CALL_start_frame(TAIL_CALL_PARAMS);
 Py_PRESERVE_NONE_CC static PyObject *_TAIL_CALL_stop_tracing(TAIL_CALL_PARAMS);
 

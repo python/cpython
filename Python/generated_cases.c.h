@@ -11942,6 +11942,13 @@ JUMP_TO_LABEL(error);
         LABEL(exit_unwind)
         {
             assert(_PyErr_Occurred(tstate));
+            DTRACE_FUNCTION_RETURN();
+            JUMP_TO_LABEL(exit_unwind_notrace);
+        }
+
+        LABEL(exit_unwind_notrace)
+        {
+            assert(_PyErr_Occurred(tstate));
             _Py_LeaveRecursiveCallPy(tstate);
             assert(frame->owner != FRAME_OWNED_BY_INTERPRETER);
             _PyInterpreterFrame *dying = frame;
@@ -11972,7 +11979,7 @@ JUMP_TO_LABEL(error);
         {
             int too_deep = _Py_EnterRecursivePy(tstate);
             if (too_deep) {
-                JUMP_TO_LABEL(exit_unwind);
+                JUMP_TO_LABEL(exit_unwind_notrace);
             }
             DTRACE_FUNCTION_ENTRY();
             next_instr = frame->instr_ptr;
