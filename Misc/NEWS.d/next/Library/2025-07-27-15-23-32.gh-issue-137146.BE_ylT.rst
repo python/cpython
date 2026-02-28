@@ -1,1 +1,2 @@
-Validate IPv6 ZoneID characters in bracketed hostnames to match RFC 6874. :func:`urllib.parse.urlparse` now rejects ZoneIDs containing invalid or unsafe characters.
+:func:`urllib.parse.urlparse` now rejects IPv6 ZoneIDs containing
+invalid or unsafe characters as per :rfc:`6874`.
