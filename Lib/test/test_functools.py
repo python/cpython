@@ -515,7 +515,7 @@ class TestPartial:
         self.assertEqual(alias.__parameters__, ())
 
     # GH-144475: Tests that the partial object does not change until repr finishes
-    def test_repr_saftey_against_reentrant_mutation(self):
+    def test_repr_safety_against_reentrant_mutation(self):
         g_partial = None
 
         class Function:
