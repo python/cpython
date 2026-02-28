@@ -1,1 +1,1 @@
-lazy from test.test_import.data.lazy_imports import basic2
+lazy from test.test_lazy_import.data import basic2
