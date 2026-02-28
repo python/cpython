@@ -1963,14 +1963,20 @@ class BaseEventLoop(events.AbstractEventLoop):
         if handle._scheduled:
             self._timer_cancelled_count += 1
 
-    def _run_once(self):
-        """Run one full iteration of the event loop.
+    def poll_events(self):
+        """Poll for I/O events without processing them.
 
-        This calls all currently ready callbacks, polls for I/O,
-        schedules the resulting callbacks, and finally schedules
-        'call_later' callbacks.
+        Cleans up cancelled scheduled handles, computes an appropriate
+        timeout from the scheduled callbacks, and calls
+        ``self._selector.select(timeout)``.  Returns the raw event list.
+
+        This method, together with :meth:`process_events` and
+        :meth:`process_ready`, decomposes :meth:`_run_once` into
+        independently callable steps so that an external event loop can
+        drive asyncio (see :func:`asyncio.start_guest_run`).
+
+        .. versionadded:: 3.15
         """
-
         sched_count = len(self._scheduled)
         if (sched_count > _MIN_SCHEDULED_TIMER_HANDLES and
             self._timer_cancelled_count / sched_count >
@@ -2005,11 +2011,29 @@ class BaseEventLoop(events.AbstractEventLoop):
             elif timeout < 0:
                 timeout = 0
 
-        event_list = self._selector.select(timeout)
-        self._process_events(event_list)
-        # Needed to break cycles when an exception occurs.
-        event_list = None
+        return self._selector.select(timeout)
 
+    def process_events(self, event_list):
+        """Process I/O events returned by :meth:`poll_events`.
+
+        Delegates to the selector-specific :meth:`_process_events`
+        implementation which turns raw selector events into ready
+        callbacks.
+
+        .. versionadded:: 3.15
+        """
+        self._process_events(event_list)
+
+    def process_ready(self):
+        """Process expired timers and execute ready callbacks.
+
+        Moves scheduled callbacks whose deadline has passed into the
+        ready queue, then runs all callbacks that were ready at call
+        time.  Callbacks enqueued *by* running callbacks are left for
+        the next iteration.
+
+        .. versionadded:: 3.15
+        """
         # Handle 'later' callbacks that are ready.
         end_time = self.time() + self._clock_resolution
         while self._scheduled:
@@ -2044,6 +2068,18 @@ class BaseEventLoop(events.AbstractEventLoop):
                     self._current_handle = None
             else:
                 handle._run()
+
+    def _run_once(self):
+        """Run one full iteration of the event loop.
+
+        This calls all currently ready callbacks, polls for I/O,
+        schedules the resulting callbacks, and finally schedules
+        'call_later' callbacks.
+        """
+        event_list = self.poll_events()
+        self.process_events(event_list)
+        event_list = None       # Needed to break cycles on exception.
+        self.process_ready()
         handle = None  # Needed to break cycles when an exception occurs.
 
     def _set_coroutine_origin_tracking(self, enabled):
