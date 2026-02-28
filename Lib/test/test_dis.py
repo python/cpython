@@ -14,8 +14,9 @@ import textwrap
 import types
 import unittest
 from test.support import (captured_stdout, force_not_colorized_test_class,
-                          requires_debug_ranges, requires_specialization,
-                          cpython_only, os_helper, import_helper, reset_code)
+                          force_colorized_test_class, requires_debug_ranges,
+                          requires_specialization, cpython_only, os_helper,
+                          import_helper, reset_code)
 from test.support.bytecode_helper import BytecodeTestCase
 
 
@@ -35,6 +36,12 @@ def get_tb():
     return tb
 
 TRACEBACK_CODE = get_tb().tb_frame.f_code
+
+def _get_dis_theme():
+    from _colorize import get_theme
+    return get_theme().dis
+
+theme = _get_dis_theme()
 
 class _C:
     def __init__(self, x):
@@ -2633,6 +2640,65 @@ class TestDisCLI(unittest.TestCase):
         for flag in ['-S', '--specialized']:
             self.check_output(source, expect, flag)
 
+@force_colorized_test_class
+class DisColored(unittest.TestCase):
+    def get_colored_output(self, func):
+        output = io.StringIO()
+
+        with contextlib.redirect_stdout(output):
+            dis.dis(func)
+
+        return output.getvalue()
+
+    def assertOpColored(self, output, opname, color):
+        self.assertIn(
+            f"{color}{opname}", output,
+            f"{opname} should be colored with {color!r}"
+        )
+
+    def test_load_ops_colored(self):
+        def f(a):
+            return a
+        out = self.get_colored_output(f)
+        self.assertOpColored(out, "LOAD_FAST", theme.op_load)
+
+    def test_call_return_ops_colored(self):
+        def f():
+            return 1
+        out = self.get_colored_output(f)
+        self.assertOpColored(out, "RETURN_VALUE", theme.op_call_return)
+        self.assertOpColored(out, "RESUME", theme.op_call_return)
+
+    def test_pop_ops_colored(self):
+        def f(a):
+            print(a)
+        out = self.get_colored_output(f)
+        self.assertOpColored(out, "POP_TOP", theme.op_pop)
+
+    def test_control_flow_ops_colored(self):
+        def f(a):
+            for _ in a:
+                pass
+        out = self.get_colored_output(f)
+        self.assertOpColored(out, "FOR_ITER", theme.op_control_flow)
+        self.assertOpColored(out, "JUMP_BACKWARD", theme.op_control_flow)
+
+    def test_argrepr_colored(self):
+        def f(a):
+            print(a)
+        out = self.get_colored_output(f)
+        self.assertIn(f"{theme.argument_detail}(", out)
+
+    def test_color_by_opname_coverage(self):
+        self.assertEqual(theme.color_by_opname("LOAD_FAST"), theme.op_load)
+        self.assertEqual(theme.color_by_opname("LOAD_GLOBAL"), theme.op_load)
+        self.assertEqual(theme.color_by_opname("POP_TOP"), theme.op_pop)
+        self.assertEqual(theme.color_by_opname("CALL"), theme.op_call_return)
+        self.assertEqual(theme.color_by_opname("RETURN_VALUE"), theme.op_call_return)
+        self.assertEqual(theme.color_by_opname("RESUME"), theme.op_call_return)
+        self.assertEqual(theme.color_by_opname("FOR_ITER"), theme.op_control_flow)
+        self.assertEqual(theme.color_by_opname("JUMP_BACKWARD"), theme.op_control_flow)
+        self.assertEqual(theme.color_by_opname("BINARY_OP"), theme.reset)  # uncolored
 
 if __name__ == "__main__":
     unittest.main()

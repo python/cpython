@@ -205,7 +205,6 @@ class Dis(ThemeSection):
     label_bg: str = ANSIColors.BACKGROUND_CYAN
     label_fg: str = ANSIColors.BLACK
 
-    L:str = ANSIColors.BOLD_RED
     exception_label: str = ANSIColors.CYAN
     argument_detail: str = ANSIColors.CYAN
 
