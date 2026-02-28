@@ -91,6 +91,9 @@ _WHATWG_C0_CONTROL_OR_SPACE = '\x00\x01\x02\x03\x04\x05\x06\x07\x08\t\n\x0b\x0c\
 # Unsafe bytes to be removed per WHATWG spec
 _UNSAFE_URL_BYTES_TO_REMOVE = ['\t', '\r', '\n']
 
+# Zone ID regex as defined in RFC 6874
+zone_id_regex = re.compile(r"(%[a-fA-F0-9]{2}|[\w\.~-])+")
+
 def clear_cache():
     """Clear internal performance caches. Undocumented; some tests want it."""
     urlsplit.cache_clear()
@@ -461,13 +464,13 @@ def _check_bracketed_netloc(netloc):
 def _check_bracketed_host(hostname):
     if hostname.startswith('v'):
         if not re.match(r"\Av[a-fA-F0-9]+\..+\z", hostname):
-            raise ValueError(f"IPvFuture address is invalid")
+            raise ValueError("IPvFuture address is invalid")
     else:
         ip = ipaddress.ip_address(hostname) # Throws Value Error if not IPv6 or IPv4
         if isinstance(ip, ipaddress.IPv4Address):
-            raise ValueError(f"An IPv4 address cannot be in brackets")
-        if "%" in hostname and not re.match(r"\A(%[a-fA-F0-9]{2}|[\w\.~-])+\z", hostname.split("%", 1)[1], flags=re.ASCII):
-            raise ValueError(f"IPv6 ZoneID is invalid")
+            raise ValueError("An IPv4 address cannot be in brackets")
+        if "%" in hostname and not zone_id_regex.fullmatch(hostname.split("%", 1)[1], flags=re.ASCII):
+            raise ValueError("IPv6 ZoneID is invalid")
 
 # typed=True avoids BytesWarnings being emitted during cache key
 # comparison since this API supports both bytes and str input.
