@@ -1528,15 +1528,26 @@ class InitConfigTests(EmbeddingTestsMixin, unittest.TestCase):
             'exec_prefix': exec_prefix,
             'base_exec_prefix': exec_prefix,
             'pythonpath_env': paths_str,
-            'stdlib_dir': stdlib,
+            'stdlib_dir': stdlib,  # Only correct on _is_python_build==0!
         }
         # The code above is taken from test_init_setpythonhome()
         env = {'TESTHOME': home, 'PYTHONPATH': paths_str}
 
         env['NEGATIVE_ISPYTHONBUILD'] = '1'
         config['_is_python_build'] = 0
+        # This configuration doesn't set a valid stdlibdir/plststdlibdir because
+        # with _is_python_build=0 getpath doesn't check for the build directory
+        # landmarks in PYTHONHOME/Py_SetPythonHome.
+        # getpath correctly shows a warning, which messes up check_all_configs,
+        # so we need to ignore stderr.
         self.check_all_configs("test_init_is_python_build", config,
-                               api=API_COMPAT, env=env)
+                               api=API_COMPAT, env=env, ignore_stderr=True)
+
+        # config['stdlib_dir'] = os.path.join(home, 'Lib')
+        # FIXME: This test does not check if stdlib_dir is calculated correctly.
+        #        test_init_is_python_build runs the initialization twice,
+        #        setting stdlib_dir in _Py_path_config on the first run, which
+        #        then overrides the stdlib_dir calculation (as of GH-108730).
 
         env['NEGATIVE_ISPYTHONBUILD'] = '0'
         config['_is_python_build'] = 1
@@ -1551,8 +1562,14 @@ class InitConfigTests(EmbeddingTestsMixin, unittest.TestCase):
             expected_paths[0] = self.module_search_paths(prefix=prefix)[0]
             config.update(prefix=prefix, base_prefix=prefix,
                           exec_prefix=exec_prefix, base_exec_prefix=exec_prefix)
+        # This also shows the bad stdlib warning, getpath is run twice. The
+        # first time with _is_python_build=0, which results in the warning just
+        # as explained above. However, the second time a valid standard library
+        # should be found, but the stdlib_dir is cached in _Py_path_config from
+        # the first run, which ovewrites it, so it also shows the warning.
+        # Also ignore stderr.
         self.check_all_configs("test_init_is_python_build", config,
-                               api=API_COMPAT, env=env)
+                               api=API_COMPAT, env=env, ignore_stderr=True)
 
     def copy_paths_by_env(self, config):
         all_configs = self._get_expected_config()
