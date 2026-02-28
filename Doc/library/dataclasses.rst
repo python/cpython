@@ -330,6 +330,27 @@ Module contents
    :attr:`!C.t` will be ``20``, and the class attributes :attr:`!C.x` and
    :attr:`!C.y` will not be set.
 
+   .. warning::
+
+      Do not reuse :class:`Field` objects across multiple fields or classes.
+      Each call to :func:`!field` returns a new object that gets modified
+      in place by the :deco:`dataclass` decorator. Reusing the same field
+      object will cause unexpected behavior::
+
+         f = field(kw_only=True)
+
+         @dataclass
+         class A:
+             x: int = f  # Don't do this
+             y: int = f  # f is now modified and broken
+
+      Instead, call :func:`!field` separately for each field::
+
+         @dataclass
+         class A:
+             x: int = field(kw_only=True)
+             y: int = field(kw_only=True)
+
    .. versionchanged:: next
       If *metadata* is ``None``, use an empty :class:`frozendict`, instead
       of a :func:`~types.MappingProxyType` of an empty :class:`dict`.
