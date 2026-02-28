@@ -2641,7 +2641,7 @@ class TestDisCLI(unittest.TestCase):
             self.check_output(source, expect, flag)
 
 @force_colorized_test_class
-class DisColored(unittest.TestCase):
+class DisColoredTests(unittest.TestCase):
     def get_colored_output(self, func):
         output = io.StringIO()
 
