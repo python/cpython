@@ -111,8 +111,6 @@ jobs:
         run: echo "IMAGE_OS_VERSION=${ImageOS}-${ImageVersion}" >> "$GITHUB_ENV"
       - name: Install dependencies
         run: sudo ./.github/workflows/posix-deps-apt.sh
-      - name: Add ccache to PATH
-        run: echo "PATH=/usr/lib/ccache:$PATH" >> "$GITHUB_ENV"
       - name: Configure CPython
         run: |
           # Build Python with the libpython dynamic library
@@ -242,11 +240,18 @@ jobs:
         # BOLT currently crashes during instrumentation on aarch64
         - os: ubuntu-24.04-arm
           bolt: true
+        include:
+        # Enable CPU-intensive tests on ARM (default build only)
+        - os: ubuntu-24.04-arm
+          bolt: false
+          free-threading: false
+          test-opts: '-u cpu'
     uses: ./.github/workflows/reusable-ubuntu.yml
     with:
       bolt-optimizations: ${{ matrix.bolt }}
       free-threading: ${{ matrix.free-threading }}
       os: ${{ matrix.os }}
+      test-opts: ${{ matrix.test-opts || '' }}
 
   build-ubuntu-ssltests:
     name: 'Ubuntu SSL tests'
@@ -301,9 +306,6 @@ jobs:
           --base-directory "$MULTISSL_DIR" \
           --${{ matrix.ssllib.name }} ${{ matrix.ssllib.version }} \
           --system Linux
-    - name: Add ccache to PATH
-      run: |
-        echo "PATH=/usr/lib/ccache:$PATH" >> "$GITHUB_ENV"
     - name: Configure CPython
       run: |
         ./configure CFLAGS="-fdiagnostics-format=json" \
@@ -380,7 +382,7 @@ jobs:
     needs: build-context
     if: needs.build-context.outputs.run-ubuntu == 'true'
     env:
-      OPENSSL_VER: 3.0.18
+      OPENSSL_VER: 3.5.5
       PYTHONSTRICTEXTENSIONBUILD: 1
     steps:
     - uses: actions/checkout@v6
@@ -404,9 +406,6 @@ jobs:
     - name: Install OpenSSL
       if: steps.cache-openssl.outputs.cache-hit != 'true'
       run: python3 Tools/ssl/multissltests.py --steps=library --base-directory "$MULTISSL_DIR" --openssl "$OPENSSL_VER" --system Linux
-    - name: Add ccache to PATH
-      run: |
-        echo "PATH=/usr/lib/ccache:$PATH" >> "$GITHUB_ENV"
     - name: Setup directory envs for out-of-tree builds
       run: |
         echo "CPYTHON_RO_SRCDIR=$(realpath -m "${GITHUB_WORKSPACE}"/../cpython-ro-srcdir)" >> "$GITHUB_ENV"
@@ -491,7 +490,7 @@ jobs:
       matrix:
         os: [ubuntu-24.04]
     env:
-      OPENSSL_VER: 3.0.18
+      OPENSSL_VER: 3.5.5
       PYTHONSTRICTEXTENSIONBUILD: 1
       ASAN_OPTIONS: detect_leaks=0:allocator_may_return_null=1:handle_segv=0
     steps:
@@ -522,11 +521,8 @@ jobs:
     - name: Install OpenSSL
       if: steps.cache-openssl.outputs.cache-hit != 'true'
       run: python3 Tools/ssl/multissltests.py --steps=library --base-directory "$MULTISSL_DIR" --openssl "$OPENSSL_VER" --system Linux
-    - name: Add ccache to PATH
-      run: |
-        echo "PATH=/usr/lib/ccache:$PATH" >> "$GITHUB_ENV"
     - name: Configure CPython
-      run: ./configure --config-cache --with-address-sanitizer --without-pymalloc
+      run: ./configure --config-cache --with-address-sanitizer --without-pymalloc --with-openssl="$OPENSSL_DIR"
     - name: Build CPython
       run: make -j4
     - name: Display build info

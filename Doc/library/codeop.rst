@@ -4,9 +4,6 @@
 .. module:: codeop
    :synopsis: Compile (possibly incomplete) Python code.
 
-.. sectionauthor:: Moshe Zadka <moshez@zadka.site.co.il>
-.. sectionauthor:: Michael Hudson <mwh@python.net>
-
 **Source code:** :source:`Lib/codeop.py`
 
 --------------

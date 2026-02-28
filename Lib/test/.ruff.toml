@@ -15,8 +15,9 @@ extend-exclude = [
     # and tests re-use the same names as only the grammar is being checked.
     "test_grammar.py",
     # Lazy import syntax (PEP 810) is not yet supported by Ruff
-    "test_import/data/lazy_imports/*.py",
-    "test_import/data/lazy_imports/**/*.py",
+    "test_lazy_import/__init__.py",
+    "test_lazy_import/data/*.py",
+    "test_lazy_import/data/**/*.py",
 ]
 
 [lint]

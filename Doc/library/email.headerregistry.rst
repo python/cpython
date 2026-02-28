@@ -4,9 +4,6 @@
 .. module:: email.headerregistry
    :synopsis: Automatic Parsing of headers based on the field name
 
-.. moduleauthor:: R. David Murray <rdmurray@bitdance.com>
-.. sectionauthor:: R. David Murray <rdmurray@bitdance.com>
-
 **Source code:** :source:`Lib/email/headerregistry.py`
 
 --------------
@@ -268,6 +265,10 @@ variant, :attr:`~.BaseHeader.max_count` is set to 1.
     .. attribute:: params
 
        A dictionary mapping parameter names to parameter values.
+
+       .. versionchanged:: next
+          It is now a :class:`frozendict` instead of a
+          :class:`types.MappingProxyType`.
 
 
 .. class:: ContentTypeHeader
