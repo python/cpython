@@ -1676,7 +1676,7 @@ islice_length_hint(PyObject *op, PyObject *Py_UNUSED(dummy))
             /* propagate exception */
             return NULL;
         }
-        remaining = hint - lz->next;
+        remaining = hint - (lz->next - lz->cnt);
     } else {
         remaining = lz->stop - lz->next;
     }

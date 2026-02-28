@@ -1231,6 +1231,17 @@ class TestBasicOps(unittest.TestCase):
         list(it)  # exhaust
         self.assertEqual(it.__length_hint__(), 0)
 
+        it = islice(iter(range(10)), 2, None, 2)
+        self.assertEqual(it.__length_hint__(), 4)  # indices 2, 4, 6, 8
+        next(it)  # yields 2
+        self.assertEqual(it.__length_hint__(), 3)  # indices 4, 6, 8
+        next(it)  # yields 4
+        self.assertEqual(it.__length_hint__(), 2)  # indices 6, 8
+        next(it)  # yields 6
+        self.assertEqual(it.__length_hint__(), 1)  # index 8
+        next(it)  # yields 8
+        self.assertEqual(it.__length_hint__(), 0)
+
     def test_takewhile(self):
         data = [1, 3, 5, 20, 2, 4, 6, 8]
         self.assertEqual(list(takewhile(underten, data)), [1, 3, 5])
