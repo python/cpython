@@ -2212,7 +2212,7 @@ class TestDate(HarmlessMixedComparison, unittest.TestCase):
         whitespaces = ('', ' ', '\t', '\r', '\v', '\n', '\f')
         for fd in ('n', 't'):
             for ws in (*whitespaces, ''.join(whitespaces)):
-                with self.subTest(format_descriptor=fd, whitespace=ws):
+                with self.subTest(format_directive=fd, whitespace=ws):
                     self.assertEqual(
                         self.theclass.strptime(
                             f"{year:04d}{ws}{month:02d}{ws}{day:02d}",
