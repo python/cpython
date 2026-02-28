@@ -817,6 +817,22 @@ class StructTest(ComplexesAreIdenticalMixin, unittest.TestCase):
         my_struct = MyStruct(5)
         self.assertEqual(my_struct.pack(123), b'\x00{')
 
+        class MyStruct(struct.Struct):
+            def __init__(self, *args, **kwargs):
+                super().__init__('>h')
+
+        with self.assertWarns(DeprecationWarning):
+            my_struct = MyStruct('<h')
+        self.assertEqual(my_struct.pack(12345), b'\x30\x39')
+
+        with self.assertWarns(DeprecationWarning):
+            my_struct = MyStruct(5)
+        self.assertEqual(my_struct.pack(12345), b'\x30\x39')
+
+        with self.assertWarns(DeprecationWarning):
+            my_struct = MyStruct('>h')
+        self.assertEqual(my_struct.pack(12345), b'\x30\x39')
+
     def test_repr(self):
         s = struct.Struct('=i2H')
         self.assertEqual(repr(s), f'Struct({s.format!r})')

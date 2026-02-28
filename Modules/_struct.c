@@ -1796,7 +1796,11 @@ s_create(PyStructObject *self, PyObject *format)
 static PyObject *
 s_new(PyTypeObject *type, PyObject *args, PyObject *kwds)
 {
+    PyObject *mod = PyType_GetModuleByDef(type, &_structmodule);
+    _structmodulestate *state = PyModule_GetState(mod);
     PyStructObject *self;
+    bool implicit_new_call = s_new == PyType_GetSlot(type, Py_tp_new);
+    bool in_subclass = type != (PyTypeObject *)state->PyStructType;
 
     assert(type != NULL);
     allocfunc alloc_func = PyType_GetSlot(type, Py_tp_alloc);
@@ -1817,8 +1821,18 @@ s_new(PyTypeObject *type, PyObject *args, PyObject *kwds)
         }
     }
     else {
-        if (s_create(self, PyTuple_GET_ITEM(args, 0))) {
-            goto err;
+        if (implicit_new_call && in_subclass) {
+            if (PyErr_WarnEx(PyExc_DeprecationWarning,
+                             ("Creation of half-initialized Struct() objects"
+                              " is deprecated, use Struct.__new__(cls, format)"), 1))
+            {
+                goto err;
+            }
+        }
+        else {
+            if (s_create(self, PyTuple_GET_ITEM(args, 0))) {
+                goto err;
+            }
         }
     }
     return (PyObject *)self;
@@ -1843,6 +1857,9 @@ static int
 Struct___init___impl(PyStructObject *self, PyObject *format)
 /*[clinic end generated code: output=b8e80862444e92d0 input=dcf0b5a00eb0dbd9]*/
 {
+    bool explicit_init_call = (Struct___init__
+                               != PyType_GetSlot(Py_TYPE(self), Py_tp_init));
+
     if (!format && !self->s_codes) {
         PyErr_SetString(PyExc_TypeError,
                         "Struct() missing required argument 'format' (pos 1)");
@@ -1859,7 +1876,7 @@ Struct___init___impl(PyStructObject *self, PyObject *format)
         return s_create(self, format);
     }
     else {
-        if (!self->s_codes && s_create(self, format)) {
+        if (explicit_init_call && s_create(self, format)) {
             return -1;
         }
         self->init_called = true;
