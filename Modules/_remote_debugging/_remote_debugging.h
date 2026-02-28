@@ -29,6 +29,7 @@ extern "C" {
 #include "internal/pycore_interpframe.h"    // FRAME_OWNED_BY_INTERPRETER
 #include "internal/pycore_llist.h"          // struct llist_node
 #include "internal/pycore_long.h"           // _PyLong_GetZero
+#include "internal/pycore_pyerrors.h"       // _PyErr_FormatFromCause
 #include "internal/pycore_stackref.h"       // Py_TAG_BITS
 #include "../../Python/remote_debug.h"
 
@@ -173,10 +174,13 @@ typedef enum _WIN32_THREADSTATE {
 #define THREAD_STATUS_HAS_EXCEPTION       (1 << 4)
 
 /* Exception cause macro */
-#define set_exception_cause(unwinder, exc_type, message) \
-    if (unwinder->debug) { \
-        _set_debug_exception_cause(exc_type, message); \
-    }
+#define set_exception_cause(unwinder, exc_type, message)                              \
+    do {                                                                              \
+        assert(PyErr_Occurred() && "function returned -1 without setting exception"); \
+        if (unwinder->debug) {                                                        \
+            _set_debug_exception_cause(exc_type, message);                            \
+        }                                                                             \
+    } while (0)
 
 /* ============================================================================
  * TYPE DEFINITIONS

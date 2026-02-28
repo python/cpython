@@ -141,6 +141,7 @@ ste_new(struct symtable *st, identifier name, _Py_block_ty block,
     ste->ste_needs_classdict = 0;
     ste->ste_has_conditional_annotations = 0;
     ste->ste_in_conditional_block = 0;
+    ste->ste_in_try_block = 0;
     ste->ste_in_unevaluated_annotation = 0;
     ste->ste_annotation_block = NULL;
 
@@ -1747,6 +1748,13 @@ symtable_enter_type_param_block(struct symtable *st, identifier name,
 #define LEAVE_CONDITIONAL_BLOCK(ST) \
     (ST)->st_cur->ste_in_conditional_block = in_conditional_block;
 
+#define ENTER_TRY_BLOCK(ST) \
+    int in_try_block = (ST)->st_cur->ste_in_try_block; \
+    (ST)->st_cur->ste_in_try_block = 1;
+
+#define LEAVE_TRY_BLOCK(ST) \
+    (ST)->st_cur->ste_in_try_block = in_try_block;
+
 #define ENTER_RECURSIVE() \
 if (Py_EnterRecursiveCall(" during compilation")) { \
     return 0; \
@@ -1805,6 +1813,38 @@ check_import_from(struct symtable *st, stmt_ty s)
         SET_ERROR_LOCATION(st->st_filename, LOCATION(s));
         return 0;
     }
+    return 1;
+}
+
+static int
+check_lazy_import_context(struct symtable *st, stmt_ty s,
+                          const char* import_type)
+{
+    // Check if inside try/except block.
+    if (st->st_cur->ste_in_try_block) {
+        PyErr_Format(PyExc_SyntaxError,
+                     "lazy %s not allowed inside try/except blocks",
+                     import_type);
+        SET_ERROR_LOCATION(st->st_filename, LOCATION(s));
+        return 0;
+    }
+
+    // Check if inside function scope.
+    if (st->st_cur->ste_type == FunctionBlock) {
+        PyErr_Format(PyExc_SyntaxError,
+                     "lazy %s not allowed inside functions", import_type);
+        SET_ERROR_LOCATION(st->st_filename, LOCATION(s));
+        return 0;
+    }
+
+    // Check if inside class scope.
+    if (st->st_cur->ste_type == ClassBlock) {
+        PyErr_Format(PyExc_SyntaxError,
+                     "lazy %s not allowed inside classes", import_type);
+        SET_ERROR_LOCATION(st->st_filename, LOCATION(s));
+        return 0;
+    }
+
     return 1;
 }
 
@@ -2076,19 +2116,23 @@ symtable_visit_stmt(struct symtable *st, stmt_ty s)
         break;
     case Try_kind: {
         ENTER_CONDITIONAL_BLOCK(st);
+        ENTER_TRY_BLOCK(st);
         VISIT_SEQ(st, stmt, s->v.Try.body);
         VISIT_SEQ(st, excepthandler, s->v.Try.handlers);
         VISIT_SEQ(st, stmt, s->v.Try.orelse);
         VISIT_SEQ(st, stmt, s->v.Try.finalbody);
+        LEAVE_TRY_BLOCK(st);
         LEAVE_CONDITIONAL_BLOCK(st);
         break;
     }
     case TryStar_kind: {
         ENTER_CONDITIONAL_BLOCK(st);
+        ENTER_TRY_BLOCK(st);
         VISIT_SEQ(st, stmt, s->v.TryStar.body);
         VISIT_SEQ(st, excepthandler, s->v.TryStar.handlers);
         VISIT_SEQ(st, stmt, s->v.TryStar.orelse);
         VISIT_SEQ(st, stmt, s->v.TryStar.finalbody);
+        LEAVE_TRY_BLOCK(st);
         LEAVE_CONDITIONAL_BLOCK(st);
         break;
     }
@@ -2098,9 +2142,33 @@ symtable_visit_stmt(struct symtable *st, stmt_ty s)
             VISIT(st, expr, s->v.Assert.msg);
         break;
     case Import_kind:
+        if (s->v.Import.is_lazy) {
+            if (!check_lazy_import_context(st, s, "import")) {
+                return 0;
+            }
+        }
         VISIT_SEQ(st, alias, s->v.Import.names);
         break;
     case ImportFrom_kind:
+        if (s->v.ImportFrom.is_lazy) {
+            if (!check_lazy_import_context(st, s, "from ... import")) {
+                return 0;
+            }
+
+            // Check for import *
+            for (Py_ssize_t i = 0; i < asdl_seq_LEN(s->v.ImportFrom.names);
+                 i++) {
+                alias_ty alias = (alias_ty)asdl_seq_GET(
+                    s->v.ImportFrom.names, i);
+                if (alias->name &&
+                        _PyUnicode_EqualToASCIIString(alias->name, "*")) {
+                    PyErr_SetString(PyExc_SyntaxError,
+                                    "lazy from ... import * is not allowed");
+                    SET_ERROR_LOCATION(st->st_filename, LOCATION(s));
+                    return 0;
+                }
+            }
+        }
         VISIT_SEQ(st, alias, s->v.ImportFrom.names);
         if (!check_import_from(st, s)) {
             return 0;
@@ -3181,6 +3249,27 @@ _Py_MaybeMangle(PyObject *privateobj, PySTEntryObject *ste, PyObject *name)
         }
     }
     return _Py_Mangle(privateobj, name);
+}
+
+int
+_Py_IsPrivateName(PyObject *ident)
+{
+    if (!PyUnicode_Check(ident)) {
+        return 0;
+    }
+    Py_ssize_t nlen = PyUnicode_GET_LENGTH(ident);
+    if (nlen < 3 ||
+        PyUnicode_READ_CHAR(ident, 0) != '_' ||
+        PyUnicode_READ_CHAR(ident, 1) != '_')
+    {
+        return 0;
+    }
+    if (PyUnicode_READ_CHAR(ident, nlen-1) == '_' &&
+        PyUnicode_READ_CHAR(ident, nlen-2) == '_')
+    {
+        return 0; /* Don't mangle __whatever__ */
+    }
+    return 1;
 }
 
 PyObject *
