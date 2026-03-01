@@ -42,7 +42,7 @@ jobs:
       if: ${{ fromJSON(inputs.bolt-optimizations) }}
       run: |
         sudo bash -c "$(wget -O - https://apt.llvm.org/llvm.sh)" ./llvm.sh 19
-        sudo apt-get install bolt-19
+        sudo apt-get install --no-install-recommends bolt-19
         echo PATH="$(llvm-config-19 --bindir):$PATH" >> $GITHUB_ENV
     - name: Configure OpenSSL env vars
       run: |

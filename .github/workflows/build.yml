@@ -64,7 +64,7 @@ jobs:
       - name: Install dependencies
         run: |
             sudo ./.github/workflows/posix-deps-apt.sh
-            sudo apt-get install -yq abigail-tools
+            sudo apt-get install -yq --no-install-recommends abigail-tools
       - name: Build CPython
         env:
           CFLAGS: -g3 -O0
