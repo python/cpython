@@ -1509,6 +1509,44 @@ class TestPasteEvent(TestCase):
         output = multiline_input(reader)
         self.assertEqual(output, input_code)
 
+    def test_bracketed_paste_in_isearch(self):
+        paste_start = "\x1b[200~"
+        paste_end = "\x1b[201~"
+
+        events = itertools.chain(
+            # Add some history
+            code_to_events("print('hello')\n"),
+            # Search for 'hello'
+            [
+                Event(evt="key", data="\x12", raw=bytearray(b"\x12")),
+            ],
+            code_to_events(paste_start),
+            code_to_events("hello"),
+            code_to_events(paste_end),
+            [
+                Event(evt="key", data="\n", raw=bytearray(b"\n")),
+                Event(evt="key", data="\n", raw=bytearray(b"\n")),
+            ],
+            [
+                Event(evt="key", data="\x12", raw=bytearray(b"\x12")),
+            ],
+            # Search for 'world', which should not be found
+            code_to_events(paste_start),
+            code_to_events("world"),
+            code_to_events(paste_end),
+            [
+                Event(evt="key", data="\n", raw=bytearray(b"\n")),
+                Event(evt="key", data="\n", raw=bytearray(b"\n")),
+            ],
+        )
+
+        reader = self.prepare_reader(events)
+        multiline_input(reader)
+        output = multiline_input(reader)
+        self.assertEqual(output, "print('hello')")
+        output = multiline_input(reader)
+        self.assertEqual(output, "")
+
 
 @skipUnless(pty, "requires pty")
 class TestDumbTerminal(ReplTestCase):

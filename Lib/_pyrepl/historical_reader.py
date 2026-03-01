@@ -31,7 +31,7 @@ if False:
 
 
 isearch_keymap: tuple[tuple[KeySpec, CommandName], ...] = tuple(
-    [("\\%03o" % c, "isearch-end") for c in range(256) if chr(c) != "\\"]
+    [("\\%03o" % c, "isearch-end") for c in range(256) if chr(c) not in ("\\", "\x1b")]
     + [(c, "isearch-add-character") for c in map(chr, range(32, 127)) if c != "\\"]
     + [
         ("\\%03o" % c, "isearch-add-character")
@@ -45,6 +45,7 @@ isearch_keymap: tuple[tuple[KeySpec, CommandName], ...] = tuple(
         (r"\C-c", "isearch-cancel"),
         (r"\C-g", "isearch-cancel"),
         (r"\<backspace>", "isearch-backspace"),
+        (r"\x1b[200~", "isearch-bracketed-paste"),
     ]
 )
 
@@ -209,6 +210,21 @@ class isearch_end(commands.Command):
         r.pop_input_trans()
         r.dirty = True
 
+class isearch_bracketed_paste(commands.Command):
+    def do(self) -> None:
+        r = self.reader
+        b = r.buffer
+        done = "\x1b[201~"
+        data = ""
+        while done not in data:
+            ev = r.console.getpending()
+            data += ev.data
+        paste_content = data.replace(done, "")
+        r.isearch_term += paste_content
+        r.dirty = True
+        if "".join(b[r.pos:r.pos+len(r.isearch_term)]) != r.isearch_term:
+            r.isearch_next()
+
 
 @dataclass
 class HistoricalReader(Reader):
@@ -245,6 +261,7 @@ class HistoricalReader(Reader):
             isearch_backspace,
             isearch_forwards,
             isearch_backwards,
+            isearch_bracketed_paste,
             operate_and_get_next,
             history_search_backward,
             history_search_forward,
