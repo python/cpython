@@ -574,7 +574,7 @@ _overlapped_Overlapped_getresultex_impl(OverlappedObject *self,
                                         DWORD milliseconds, BOOL alertable);
 
 static PyObject *
-_overlapped_Overlapped_getresultex(OverlappedObject *self, PyObject *const *args, Py_ssize_t nargs)
+_overlapped_Overlapped_getresultex(PyObject *self, PyObject *const *args, Py_ssize_t nargs)
 {
     PyObject *return_value = NULL;
     DWORD milliseconds;
@@ -590,7 +590,7 @@ _overlapped_Overlapped_getresultex(OverlappedObject *self, PyObject *const *args
     if (alertable == -1 && PyErr_Occurred()) {
         goto exit;
     }
-    return_value = _overlapped_Overlapped_getresultex_impl(self, milliseconds, alertable);
+    return_value = _overlapped_Overlapped_getresultex_impl((OverlappedObject *)self, milliseconds, alertable);
 
 exit:
     return return_value;
@@ -1277,4 +1277,4 @@ exit:
 
     return return_value;
 }
-/*[clinic end generated code: output=3e4cb2b55342cd96 input=a9049054013a1b77]*/
+/*[clinic end generated code: output=3b2367cc36de7750 input=a9049054013a1b77]*/
