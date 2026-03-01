@@ -2572,8 +2572,8 @@ requires, and these work on all supported platforms.
 +-----------+--------------------------------+------------------------+-------+
 |  ``%n``   | The newline character          | ``\n``                 |       |
 |           | (``'\n'``). For                |                        |       |
-|           | :meth:`!strptime`, arbitrary   |                        |       |
-|           | whitespace.                    |                        |       |
+|           | :meth:`!strptime`, zero or     |                        |       |
+|           | more whitespace.               |                        |       |
 +-----------+--------------------------------+------------------------+-------+
 |  ``%p``   | Locale's equivalent of either  || AM, PM (en_US);       | \(1), |
 |           | AM or PM.                      || am, pm (de_DE)        | \(3)  |
