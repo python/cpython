@@ -377,7 +377,8 @@ last 0'th element you extracted.  This is especially useful in simulation
 contexts, where the tree holds all incoming events, and the "win" condition
 means the smallest scheduled time.  When an event schedules other events for
 execution, they are scheduled into the future, so they can easily go into the
-heap.  So, a heap is a good structure for implementing schedulers.
+heap.  So, a heap is a good structure for implementing schedulers, such as
+event-driven simulations and task queues.
 
 Various structures for implementing schedulers have been extensively studied,
 and heaps are good for this, as they are reasonably speedy, the speed is almost
