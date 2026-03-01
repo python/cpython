@@ -1,0 +1,6 @@
+Fix a heap-buffer-overflow in :func:`functools.partial.__repr__` where a
+user-defined :meth:`~object.__repr__` on an argument could mutate the
+:class:`~functools.partial` object via :meth:`~functools.partial.__setstate__`,
+freeing the args tuple while iteration was still in progress. The fix holds
+strong references to the ``args`` tuple, ``kw`` dict, and ``fn`` callable
+during formatting.
