@@ -173,6 +173,8 @@ class TestCase(unittest.TestCase):
         def serializer(obj, protocol):
             if isinstance(obj, (bytes, bytearray, str)):
                 if protocol == 5:
+                    if isinstance(obj, bytearray):
+                        return bytes(obj)  # DBM backends expect bytes
                     return obj
                 return type(obj).__name__
             elif isinstance(obj, array.array):
@@ -223,11 +225,10 @@ class TestCase(unittest.TestCase):
                     )
 
     def test_custom_incomplete_serializer_and_deserializer(self):
-        dbm_sqlite3 = import_helper.import_module("dbm.sqlite3")
         os.mkdir(self.dirname)
         self.addCleanup(os_helper.rmtree, self.dirname)
 
-        with self.assertRaises(dbm_sqlite3.error):
+        with self.assertRaises(shelve.ShelveError):
             def serializer(obj, protocol=None):
                 pass
 
@@ -429,6 +430,79 @@ class TestShelveFileBase(TestShelveBase):
         self.addCleanup(setattr, dbm, '_defaultmod', dbm._defaultmod)
         dbm._defaultmod = self.dbm_mod
 
+
+class TestShelveValidation(unittest.TestCase):
+    dirname = os_helper.TESTFN
+    fname = os.path.join(dirname, os_helper.TESTFN)
+
+    def setup_test_dir(self):
+        os_helper.rmtree(self.dirname)
+        os.mkdir(self.dirname)
+
+    def setUp(self):
+        self.addCleanup(setattr, dbm, "_defaultmod", dbm._defaultmod)
+        os.mkdir(self.dirname)
+        self.addCleanup(os_helper.rmtree, self.dirname)
+
+    def test_serializer_unsupported_return_type(self):
+        def int_serializer(obj, protocol=None):
+            return 3
+
+        def none_serializer(obj, protocol=None):
+            return None
+
+        def deserializer(data):
+            if isinstance(data, bytes):
+                return data.decode("utf-8")
+            else:
+                return data
+
+        for module in dbm_iterator():
+            self.setup_test_dir()
+            dbm._defaultmod = module
+            with module.open(self.fname, "c"):
+                pass
+            self.assertEqual(module.__name__, dbm.whichdb(self.fname))
+
+            with shelve.open(self.fname, serializer=none_serializer,
+                             deserializer=deserializer) as s:
+                with self.assertRaises(shelve.ShelveError) as cm:
+                    s["key"] = "value"
+                self.assertEqual("Serializer must return bytes or str, not None",
+                                 f"{cm.exception}")
+
+            with shelve.open(self.fname, serializer=int_serializer,
+                             deserializer=deserializer,) as s:
+                with self.assertRaises(shelve.ShelveError) as cm:
+                    s["key"] = "value"
+                self.assertEqual("Serializer must return bytes or str, not int",
+                                 f"{cm.exception}")
+
+    def test_shelve_type_compatibility(self):
+        for module in dbm_iterator():
+            self.setup_test_dir()
+            dbm._defaultmod = module
+            with shelve.Shelf(module.open(self.fname, "c")) as shelf:
+                shelf["string"] = "hello"
+                shelf["bytes"] = b"world"
+                shelf["number"] = 42
+                shelf["list"] = [1, 2, 3]
+                shelf["dict"] = {"key": "value"}
+                shelf["set"] = {1, 2, 3}
+                shelf["tuple"] = (1, 2, 3)
+                shelf["complex"] = 1 + 2j
+                shelf["bytearray"] = bytearray(b"test")
+                shelf["array"] = array.array("i", [1, 2, 3])
+                self.assertEqual(shelf["string"], "hello")
+                self.assertEqual(shelf["bytes"], b"world")
+                self.assertEqual(shelf["number"], 42)
+                self.assertEqual(shelf["list"], [1, 2, 3])
+                self.assertEqual(shelf["dict"], {"key": "value"})
+                self.assertEqual(shelf["set"], {1, 2, 3})
+                self.assertEqual(shelf["tuple"], (1, 2, 3))
+                self.assertEqual(shelf["complex"], 1 + 2j)
+                self.assertEqual(shelf["bytearray"], bytearray(b"test"))
+                self.assertEqual(shelf["array"], array.array("i", [1, 2, 3]))
 
 from test import mapping_tests
 
