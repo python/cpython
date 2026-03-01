@@ -5638,6 +5638,7 @@ _imp__set_lazy_attributes_impl(PyObject *module, PyObject *modobj,
 
     module_dict = get_mod_dict(modobj);
     if (module_dict == NULL || !PyDict_CheckExact(module_dict)) {
+        Py_DECREF(lazy_submodules);
         goto done;
     }
 
