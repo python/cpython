@@ -559,12 +559,6 @@ def getdefaultlocale(envvars=('LC_ALL', 'LC_CTYPE', 'LANG', 'LANGUAGE')):
 
     """
 
-    import warnings
-    warnings._deprecated(
-        "locale.getdefaultlocale",
-        "{name!r} is deprecated and slated for removal in Python {remove}. "
-        "Use setlocale(), getencoding() and getlocale() instead.",
-        remove=(3, 15))
     return _getdefaultlocale(envvars)
 
 
@@ -576,10 +570,6 @@ def _getdefaultlocale(envvars=('LC_ALL', 'LC_CTYPE', 'LANG', 'LANGUAGE')):
     except (ImportError, AttributeError):
         pass
     else:
-        # make sure the code/encoding values are valid
-        if sys.platform == "win32" and code and code[:2] == "0x":
-            # map windows language identifier to language name
-            code = windows_locale.get(int(code, 0))
         # ...add other platform-specific processing here, if
         # necessary...
         return code, encoding

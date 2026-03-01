@@ -965,75 +965,16 @@ want one of them to be the value::
 
 
 Finer Points
-^^^^^^^^^^^^
+------------
 
-Supported ``__dunder__`` names
-""""""""""""""""""""""""""""""
+Supported ``__dunder__`` and ``_sunder_`` names
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-:attr:`~enum.EnumType.__members__` is a read-only ordered mapping of ``member_name``:``member``
-items.  It is only available on the class.
-
-:meth:`~object.__new__`, if specified, must create and return the enum members; it is
-also a very good idea to set the member's :attr:`~Enum._value_` appropriately.  Once
-all the members are created it is no longer used.
-
-
-Supported ``_sunder_`` names
-""""""""""""""""""""""""""""
-
-- :attr:`~Enum._name_` -- name of the member
-- :attr:`~Enum._value_` -- value of the member; can be set in ``__new__``
-- :meth:`~Enum._missing_` -- a lookup function used when a value is not found;
-  may be overridden
-- :attr:`~Enum._ignore_` -- a list of names, either as a :class:`list` or a
-  :class:`str`, that will not be transformed into members, and will be removed
-  from the final class
-- :meth:`~Enum._generate_next_value_` -- used to get an appropriate value for
-  an enum member; may be overridden
-- :meth:`~Enum._add_alias_` -- adds a new name as an alias to an existing
-  member.
-- :meth:`~Enum._add_value_alias_` -- adds a new value as an alias to an
-  existing member.  See `MultiValueEnum`_ for an example.
-
-  .. note::
-
-     For standard :class:`Enum` classes the next value chosen is the highest
-     value seen incremented by one.
-
-     For :class:`Flag` classes the next value chosen will be the next highest
-     power-of-two.
-
-  .. versionchanged:: 3.13
-     Prior versions would use the last seen value instead of the highest value.
-
-.. versionadded:: 3.6 ``_missing_``, ``_order_``, ``_generate_next_value_``
-.. versionadded:: 3.7 ``_ignore_``
-.. versionadded:: 3.13 ``_add_alias_``, ``_add_value_alias_``
-
-To help keep Python 2 / Python 3 code in sync an :attr:`~Enum._order_` attribute can
-be provided.  It will be checked against the actual order of the enumeration
-and raise an error if the two do not match::
-
-    >>> class Color(Enum):
-    ...     _order_ = 'RED GREEN BLUE'
-    ...     RED = 1
-    ...     BLUE = 3
-    ...     GREEN = 2
-    ...
-    Traceback (most recent call last):
-    ...
-    TypeError: member order does not match _order_:
-      ['RED', 'BLUE', 'GREEN']
-      ['RED', 'GREEN', 'BLUE']
-
-.. note::
-
-    In Python 2 code the :attr:`~Enum._order_` attribute is necessary as definition
-    order is lost before it can be recorded.
+The supported ``__dunder__`` and ``_sunder_`` names can be found in the :ref:`Enum API documentation <enum-dunder-sunder>`.
 
 
 _Private__names
-"""""""""""""""
+^^^^^^^^^^^^^^^
 
 :ref:`Private names <private-name-mangling>` are not converted to enum members,
 but remain normal attributes.
@@ -1042,7 +983,7 @@ but remain normal attributes.
 
 
 ``Enum`` member type
-""""""""""""""""""""
+^^^^^^^^^^^^^^^^^^^^
 
 Enum members are instances of their enum class, and are normally accessed as
 ``EnumClass.member``.  In certain situations, such as writing custom enum
@@ -1055,7 +996,7 @@ recommended.
 
 
 Creating members that are mixed with other data types
-"""""""""""""""""""""""""""""""""""""""""""""""""""""
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
 When subclassing other data types, such as :class:`int` or :class:`str`, with
 an :class:`Enum`, all values after the ``=`` are passed to that data type's
@@ -1069,7 +1010,7 @@ constructor.  For example::
 
 
 Boolean value of ``Enum`` classes and members
-"""""""""""""""""""""""""""""""""""""""""""""
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
 Enum classes that are mixed with non-:class:`Enum` types (such as
 :class:`int`, :class:`str`, etc.) are evaluated according to the mixed-in
@@ -1084,7 +1025,7 @@ Plain :class:`Enum` classes always evaluate as :data:`True`.
 
 
 ``Enum`` classes with methods
-"""""""""""""""""""""""""""""
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
 If you give your enum subclass extra methods, like the `Planet`_
 class below, those methods will show up in a :func:`dir` of the member,
@@ -1097,7 +1038,7 @@ but not of the class::
 
 
 Combining members of ``Flag``
-"""""""""""""""""""""""""""""
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
 Iterating over a combination of :class:`Flag` members will only return the members that
 are comprised of a single bit::
@@ -1117,7 +1058,7 @@ are comprised of a single bit::
 
 
 ``Flag`` and ``IntFlag`` minutia
-""""""""""""""""""""""""""""""""
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
 Using the following snippet for our examples::
 
@@ -1478,6 +1419,7 @@ alias::
     behaviors as well as disallowing aliases.  If the only desired change is
     disallowing aliases, the :func:`unique` decorator can be used instead.
 
+.. _multi-value-enum:
 
 MultiValueEnum
 ^^^^^^^^^^^^^^^^^

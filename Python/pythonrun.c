@@ -1175,7 +1175,7 @@ fallback:
     }
     if (print_exception_recursive(&ctx, value) < 0) {
         PyErr_Clear();
-        PyUnstable_Object_Dump(value);
+        PyObject_Dump(value);
         fprintf(stderr, "lost sys.stderr\n");
     }
     Py_XDECREF(ctx.seen);
@@ -1193,14 +1193,14 @@ PyErr_Display(PyObject *unused, PyObject *value, PyObject *tb)
     PyObject *file;
     if (PySys_GetOptionalAttr(&_Py_ID(stderr), &file) < 0) {
         PyObject *exc = PyErr_GetRaisedException();
-        PyUnstable_Object_Dump(value);
+        PyObject_Dump(value);
         fprintf(stderr, "lost sys.stderr\n");
-        PyUnstable_Object_Dump(exc);
+        PyObject_Dump(exc);
         Py_DECREF(exc);
         return;
     }
     if (file == NULL) {
-        PyUnstable_Object_Dump(value);
+        PyObject_Dump(value);
         fprintf(stderr, "lost sys.stderr\n");
         return;
     }

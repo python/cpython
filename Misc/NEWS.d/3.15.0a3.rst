@@ -843,15 +843,6 @@ for :term:`stdlib` modules.
 
 ..
 
-.. date: 2025-10-09-15-46-18
-.. gh-issue: 139686
-.. nonce: XwIZB2
-.. section: Library
-
-Make importlib.reload no-op for lazy modules.
-
-..
-
 .. date: 2025-09-09-13-00-42
 .. gh-issue: 138697
 .. nonce: QVwJw_
@@ -1461,7 +1452,7 @@ sqlite when used with multiple sub interpreters.
 .. nonce: mkrhjQ
 .. section: C API
 
-Add :c:func:`PyUnstable_Object_Dump` to dump an object to ``stderr``. It
+Add :c:func:`!PyUnstable_Object_Dump` to dump an object to ``stderr``. It
 should only be used for debugging. Patch by Victor Stinner.
 
 ..
