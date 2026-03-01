@@ -43,6 +43,8 @@ patchcheck      Tools for checking and applying patches to the Python source cod
 
 peg_generator   PEG-based parser generator (pegen) used for new parser.
 
+pixi-packages   Pixi package definitions for downstream from-source builds.
+
 scripts         A number of useful single-file programs, e.g. run_tests.py
                 which runs the Python test suite.
 
@@ -50,8 +52,6 @@ ssl             Scripts to generate ssl_data.h from OpenSSL sources, and run
                 tests against multiple installations of OpenSSL and LibreSSL.
 
 tsan            Utilities for building CPython with thread-sanitizer.
-
-tz              A script to dump timezone from /usr/share/zoneinfo.
 
 unicode         Tools for generating unicodedata and codecs from unicode.org
                 and other mapping files (by Fredrik Lundh, Marc-Andre Lemburg

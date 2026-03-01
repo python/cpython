@@ -690,7 +690,11 @@ gdbm__enter__(PyObject *self, PyObject *args)
 static PyObject *
 gdbm__exit__(PyObject *self, PyObject *args)
 {
-    return _gdbm_gdbm_close_impl((gdbmobject *)self);
+    PyObject *result;
+    Py_BEGIN_CRITICAL_SECTION(self);
+    result = _gdbm_gdbm_close_impl((gdbmobject *)self);
+    Py_END_CRITICAL_SECTION();
+    return result;
 }
 
 static PyMethodDef gdbm_methods[] = {

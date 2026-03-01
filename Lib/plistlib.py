@@ -73,6 +73,9 @@ from xml.parsers.expat import ParserCreate
 PlistFormat = enum.Enum('PlistFormat', 'FMT_XML FMT_BINARY', module=__name__)
 globals().update(PlistFormat.__members__)
 
+# Data larger than this will be read in chunks, to prevent extreme
+# overallocation.
+_MIN_READ_BUF_SIZE = 1 << 20
 
 class UID:
     def __init__(self, data):
@@ -119,13 +122,7 @@ _controlCharPat = re.compile(
     r"\x10\x11\x12\x13\x14\x15\x16\x17\x18\x19\x1a\x1b\x1c\x1d\x1e\x1f]")
 
 def _encode_base64(s, maxlinelength=76):
-    # copied from base64.encodebytes(), with added maxlinelength argument
-    maxbinsize = (maxlinelength//4)*3
-    pieces = []
-    for i in range(0, len(s), maxbinsize):
-        chunk = s[i : i + maxbinsize]
-        pieces.append(binascii.b2a_base64(chunk))
-    return b''.join(pieces)
+    return binascii.b2a_base64(s, wrapcol=maxlinelength, newline=False)
 
 def _decode_base64(s):
     if isinstance(s, str):
@@ -379,11 +376,10 @@ class _PlistWriter(_DumbXMLWriter):
     def write_bytes(self, data):
         self.begin_element("data")
         self._indent_level -= 1
-        maxlinelength = max(
-            16,
-            76 - len(self.indent.replace(b"\t", b" " * 8) * self._indent_level))
-
-        for line in _encode_base64(data, maxlinelength).split(b"\n"):
+        wrapcol = 76 - len((self.indent * self._indent_level).expandtabs())
+        wrapcol = max(16, wrapcol)
+        encoded = binascii.b2a_base64(data, wrapcol=wrapcol, newline=False)
+        for line in encoded.split(b"\n"):
             if line:
                 self.writeln(line)
         self._indent_level += 1
@@ -508,12 +504,24 @@ class _BinaryPlistParser:
 
         return tokenL
 
+    def _read(self, size):
+        cursize = min(size, _MIN_READ_BUF_SIZE)
+        data = self._fp.read(cursize)
+        while True:
+            if len(data) != cursize:
+                raise InvalidFileException
+            if cursize == size:
+                return data
+            delta = min(cursize, size - cursize)
+            data += self._fp.read(delta)
+            cursize += delta
+
     def _read_ints(self, n, size):
-        data = self._fp.read(size * n)
+        data = self._read(size * n)
         if size in _BINARY_FORMAT:
             return struct.unpack(f'>{n}{_BINARY_FORMAT[size]}', data)
         else:
-            if not size or len(data) != size * n:
+            if not size:
                 raise InvalidFileException()
             return tuple(int.from_bytes(data[i: i + size], 'big')
                          for i in range(0, size * n, size))
@@ -573,22 +581,16 @@ class _BinaryPlistParser:
 
         elif tokenH == 0x40:  # data
             s = self._get_size(tokenL)
-            result = self._fp.read(s)
-            if len(result) != s:
-                raise InvalidFileException()
+            result = self._read(s)
 
         elif tokenH == 0x50:  # ascii string
             s = self._get_size(tokenL)
-            data = self._fp.read(s)
-            if len(data) != s:
-                raise InvalidFileException()
+            data = self._read(s)
             result = data.decode('ascii')
 
         elif tokenH == 0x60:  # unicode string
             s = self._get_size(tokenL) * 2
-            data = self._fp.read(s)
-            if len(data) != s:
-                raise InvalidFileException()
+            data = self._read(s)
             result = data.decode('utf-16be')
 
         elif tokenH == 0x80:  # UID

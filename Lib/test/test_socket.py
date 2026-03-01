@@ -1176,7 +1176,10 @@ class GeneralModuleTests(unittest.TestCase):
                          'socket.if_indextoname() not available.')
     @support.skip_android_selinux('if_indextoname')
     def testInvalidInterfaceIndexToName(self):
-        self.assertRaises(OSError, socket.if_indextoname, 0)
+        with self.assertRaises(OSError) as cm:
+            socket.if_indextoname(0)
+        self.assertIsNotNone(cm.exception.errno)
+
         self.assertRaises(ValueError, socket.if_indextoname, -1)
         self.assertRaises(OverflowError, socket.if_indextoname, 2**1000)
         self.assertRaises(TypeError, socket.if_indextoname, '_DEADBEEF')
@@ -1196,8 +1199,11 @@ class GeneralModuleTests(unittest.TestCase):
                          'socket.if_nametoindex() not available.')
     @support.skip_android_selinux('if_nametoindex')
     def testInvalidInterfaceNameToIndex(self):
+        with self.assertRaises(OSError) as cm:
+            socket.if_nametoindex("_DEADBEEF")
+        self.assertIsNotNone(cm.exception.errno)
+
         self.assertRaises(TypeError, socket.if_nametoindex, 0)
-        self.assertRaises(OSError, socket.if_nametoindex, '_DEADBEEF')
 
     @unittest.skipUnless(hasattr(sys, 'getrefcount'),
                          'test needs sys.getrefcount()')
@@ -2215,6 +2221,24 @@ class GeneralModuleTests(unittest.TestCase):
                 lambda C: C.isupper() and C.startswith('AI_'),
                 source=_socket)
         enum._test_simple_enum(CheckedAddressInfo, socket.AddressInfo)
+
+    @unittest.skipUnless(hasattr(socket.socket, "sendmsg"),"sendmsg not supported")
+    def test_sendmsg_reentrant_ancillary_mutation(self):
+
+        class Mut:
+            def __index__(self):
+                seq.clear()
+                return socket.SCM_RIGHTS
+
+        seq = [
+            (socket.SOL_SOCKET, Mut(), b'xxxx'),
+            (socket.SOL_SOCKET, socket.SCM_RIGHTS, b'xxxx'),
+        ]
+
+        left, right = socket.socketpair()
+        self.addCleanup(left.close)
+        self.addCleanup(right.close)
+        self.assertRaises(OSError, left.sendmsg, [b'x'], seq)
 
 
 @unittest.skipUnless(HAVE_SOCKET_CAN, 'SocketCan required for this test.')

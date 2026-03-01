@@ -19,7 +19,7 @@ from collections import namedtuple
 # import weakref  # Deferred to single_dispatch()
 from operator import itemgetter
 from reprlib import recursive_repr
-from types import GenericAlias, MethodType, MappingProxyType, UnionType
+from types import FunctionType, GenericAlias, MethodType, MappingProxyType, UnionType
 from _thread import RLock
 
 ################################################################################
@@ -517,7 +517,7 @@ def _unwrap_partialmethod(func):
 ### LRU Cache function decorator
 ################################################################################
 
-_CacheInfo = namedtuple("CacheInfo", ["hits", "misses", "maxsize", "currsize"])
+_CacheInfo = namedtuple("CacheInfo", ("hits", "misses", "maxsize", "currsize"))
 
 def _make_key(args, kwds, typed,
              kwd_mark = (object(),),
@@ -539,13 +539,15 @@ def _make_key(args, kwds, typed,
     # distinct call from f(y=2, x=1) which will be cached separately.
     key = args
     if kwds:
+        key = list(key)
         key += kwd_mark
         for item in kwds.items():
             key += item
+        key = tuple(key)
     if typed:
-        key += tuple(type(v) for v in args)
+        key += tuple([type(v) for v in args])
         if kwds:
-            key += tuple(type(v) for v in kwds.values())
+            key += tuple([type(v) for v in kwds.values()])
     elif len(key) == 1 and type(key[0]) in fasttypes:
         return key[0]
     return key
@@ -600,6 +602,9 @@ def lru_cache(maxsize=128, typed=False):
     return decorating_function
 
 def _lru_cache_wrapper(user_function, maxsize, typed, _CacheInfo):
+    if not callable(user_function):
+        raise TypeError("the first argument must be callable")
+
     # Constants shared by all lru cache instances:
     sentinel = object()          # unique object used to signal cache misses
     make_key = _make_key         # build a key from the function arguments
@@ -687,7 +692,7 @@ def _lru_cache_wrapper(user_function, maxsize, typed, _CacheInfo):
                     # still adjusting the links.
                     root = oldroot[NEXT]
                     oldkey = root[KEY]
-                    oldresult = root[RESULT]
+                    oldresult = root[RESULT]  # noqa: F841
                     root[KEY] = root[RESULT] = None
 
                     # Now update the cache dictionary.
@@ -1055,6 +1060,11 @@ class _singledispatchmethod_get:
         # Set instance attributes which cannot be handled in __getattr__()
         # because they conflict with type descriptors.
         func = unbound.func
+
+        # Dispatch on the second argument if a generic method turns into
+        # a bound method on instance-level access. See GH-143535.
+        self._dispatch_arg_index = 1 if obj is None and isinstance(func, FunctionType) else 0
+
         try:
             self.__module__ = func.__module__
         except AttributeError:
@@ -1083,7 +1093,23 @@ class _singledispatchmethod_get:
                                'singledispatchmethod method')
             raise TypeError(f'{funcname} requires at least '
                             '1 positional argument')
-        return self._dispatch(args[0].__class__).__get__(self._obj, self._cls)(*args, **kwargs)
+        method = self._dispatch(args[self._dispatch_arg_index].__class__)
+
+        if hasattr(method, "__get__"):
+            # If the method is a descriptor, it might be necessary
+            # to drop the first argument before calling
+            # as it can be no longer expected after descriptor access.
+            skip_bound_arg = False
+            if isinstance(method, staticmethod):
+                skip_bound_arg = self._dispatch_arg_index == 1
+
+            method = method.__get__(self._obj, self._cls)
+            if isinstance(method, MethodType):
+                skip_bound_arg = self._dispatch_arg_index == 1
+
+            if skip_bound_arg:
+                return method(*args[1:], **kwargs)
+        return method(*args, **kwargs)
 
     def __getattr__(self, name):
         # Resolve these attributes lazily to speed up creation of
