@@ -37,7 +37,7 @@ Each package definition is contained in a subdirectory, but they share the build
 - More package variants (such as UBSan)
 - Support for Windows
 - Using a single `pixi.toml` and `recipe.yaml` for all package variants is blocked on
-  [pixi-build-backends#532](https://github.com/prefix-dev/pixi-build-backends/pull/532)
+  [pixi#5364](https://github.com/prefix-dev/pixi/pull/5364)
   and [pixi#5248](https://github.com/prefix-dev/pixi/issues/5248)
 
 ## Troubleshooting

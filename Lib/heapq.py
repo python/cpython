@@ -511,7 +511,7 @@ def nsmallest(n, iterable, key=None):
         for elem in it:
             if elem < top:
                 _heapreplace(result, (elem, order))
-                top, _order = result[0]
+                top = result[0][0]
                 order += 1
         result.sort()
         return [elem for (elem, order) in result]
@@ -529,7 +529,7 @@ def nsmallest(n, iterable, key=None):
         k = key(elem)
         if k < top:
             _heapreplace(result, (k, order, elem))
-            top, _order, _elem = result[0]
+            top = result[0][0]
             order += 1
     result.sort()
     return [elem for (k, order, elem) in result]
@@ -569,7 +569,7 @@ def nlargest(n, iterable, key=None):
         for elem in it:
             if top < elem:
                 _heapreplace(result, (elem, order))
-                top, _order = result[0]
+                top = result[0][0]
                 order -= 1
         result.sort(reverse=True)
         return [elem for (elem, order) in result]
@@ -587,7 +587,7 @@ def nlargest(n, iterable, key=None):
         k = key(elem)
         if top < k:
             _heapreplace(result, (k, order, elem))
-            top, _order, _elem = result[0]
+            top = result[0][0]
             order -= 1
     result.sort(reverse=True)
     return [elem for (k, order, elem) in result]

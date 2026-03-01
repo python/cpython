@@ -265,9 +265,17 @@ The constructors :func:`int`, :func:`float`, and
    pair: operator; % (percent)
    pair: operator; **
 
+.. _stdtypes-mixed-arithmetic:
+
 Python fully supports mixed arithmetic: when a binary arithmetic operator has
-operands of different numeric types, the operand with the "narrower" type is
-widened to that of the other, where integer is narrower than floating point.
+operands of different built-in numeric types, the operand with the "narrower"
+type is widened to that of the other:
+
+* If both arguments are complex numbers, no conversion is performed;
+* if either argument is a complex or a floating-point number, the other is
+  converted to a floating-point number;
+* otherwise, both must be integers and no conversion is necessary.
+
 Arithmetic with complex and real operands is defined by the usual mathematical
 formula, for example::
 
@@ -1441,108 +1449,10 @@ application).
          list appear empty for the duration, and raises :exc:`ValueError` if it can
          detect that the list has been mutated during a sort.
 
-.. admonition:: Thread safety
+.. seealso::
 
-   Reading a single element from a :class:`list` is
-   :term:`atomic <atomic operation>`:
-
-   .. code-block::
-      :class: green
-
-      lst[i]   # list.__getitem__
-
-   The following methods traverse the list and use :term:`atomic <atomic operation>`
-   reads of each item to perform their function. That means that they may
-   return results affected by concurrent modifications:
-
-   .. code-block::
-      :class: maybe
-
-      item in lst
-      lst.index(item)
-      lst.count(item)
-
-   All of the above methods/operations are also lock-free. They do not block
-   concurrent modifications. Other operations that hold a lock will not block
-   these from observing intermediate states.
-
-   All other operations from here on block using the per-object lock.
-
-   Writing a single item via ``lst[i] = x`` is safe to call from multiple
-   threads and will not corrupt the list.
-
-   The following operations return new objects and appear
-   :term:`atomic <atomic operation>` to other threads:
-
-   .. code-block::
-      :class: good
-
-      lst1 + lst2    # concatenates two lists into a new list
-      x * lst        # repeats lst x times into a new list
-      lst.copy()     # returns a shallow copy of the list
-
-   Methods that only operate on a single elements with no shifting required are
-   :term:`atomic <atomic operation>`:
-
-   .. code-block::
-      :class: good
-
-      lst.append(x)  # append to the end of the list, no shifting required
-      lst.pop()      # pop element from the end of the list, no shifting required
-
-   The :meth:`~list.clear` method is also :term:`atomic <atomic operation>`.
-   Other threads cannot observe elements being removed.
-
-   The :meth:`~list.sort` method is not :term:`atomic <atomic operation>`.
-   Other threads cannot observe intermediate states during sorting, but the
-   list appears empty for the duration of the sort.
-
-   The following operations may allow lock-free operations to observe
-   intermediate states since they modify multiple elements in place:
-
-   .. code-block::
-      :class: maybe
-
-      lst.insert(idx, item)  # shifts elements
-      lst.pop(idx)           # idx not at the end of the list, shifts elements
-      lst *= x               # copies elements in place
-
-   The :meth:`~list.remove` method may allow concurrent modifications since
-   element comparison may execute arbitrary Python code (via
-   :meth:`~object.__eq__`).
-
-   :meth:`~list.extend` is safe to call from multiple threads.  However, its
-   guarantees depend on the iterable passed to it. If it is a :class:`list`, a
-   :class:`tuple`, a :class:`set`, a :class:`frozenset`, a :class:`dict` or a
-   :ref:`dictionary view object <dict-views>` (but not their subclasses), the
-   ``extend`` operation is safe from concurrent modifications to the iterable.
-   Otherwise, an iterator is created which can be concurrently modified by
-   another thread.  The same applies to inplace concatenation of a list with
-   other iterables when using ``lst += iterable``.
-
-   Similarly, assigning to a list slice with ``lst[i:j] = iterable`` is safe
-   to call from multiple threads, but ``iterable`` is only locked when it is
-   also a :class:`list` (but not its subclasses).
-
-   Operations that involve multiple accesses, as well as iteration, are never
-   atomic. For example:
-
-   .. code-block::
-      :class: bad
-
-      # NOT atomic: read-modify-write
-      lst[i] = lst[i] + 1
-
-      # NOT atomic: check-then-act
-      if lst:
-          item = lst.pop()
-
-      # NOT thread-safe: iteration while modifying
-      for item in lst:
-          process(item)  # another thread may modify lst
-
-   Consider external synchronization when sharing :class:`list` instances
-   across threads.  See :ref:`freethreading-python-howto` for more information.
+   For detailed information on thread-safety guarantees for :class:`list`
+   objects, see :ref:`thread-safety-list`.
 
 
 .. _typesseq-tuple:
@@ -2180,7 +2090,7 @@ expression support in the :mod:`re` module).
    Return ``True`` if all characters in the string are alphanumeric and there is at
    least one character, ``False`` otherwise.  A character ``c`` is alphanumeric if one
    of the following returns ``True``: ``c.isalpha()``, ``c.isdecimal()``,
-   ``c.isdigit()``, or ``c.isnumeric()``. For example::
+   ``c.isdigit()``, or ``c.isnumeric()``. For example:
 
    .. doctest::
 
@@ -2594,6 +2504,19 @@ expression support in the :mod:`re` module).
    done using the specified *fillchar* (default is an ASCII space). The
    original string is returned if *width* is less than or equal to ``len(s)``.
 
+   For example:
+
+   .. doctest::
+
+      >>> 'Python'.rjust(10)
+      '    Python'
+      >>> 'Python'.rjust(10, '.')
+      '....Python'
+      >>> 'Monty Python'.rjust(10, '.')
+      'Monty Python'
+
+   See also :meth:`ljust` and :meth:`zfill`.
+
 
 .. method:: str.rpartition(sep, /)
 
@@ -2918,12 +2841,16 @@ expression support in the :mod:`re` module).
    than before. The original string is returned if *width* is less than
    or equal to ``len(s)``.
 
-   For example::
+   For example:
+
+   .. doctest::
 
       >>> "42".zfill(5)
       '00042'
       >>> "-42".zfill(5)
       '-0042'
+
+   See also :meth:`rjust`.
 
 
 .. index::
@@ -5302,8 +5229,8 @@ frozenset, a temporary one is created from *elem*.
 
 .. _typesmapping:
 
-Mapping Types --- :class:`dict`
-===============================
+Mapping types --- :class:`!dict`, :class:`!frozendict`
+======================================================
 
 .. index::
    pair: object; mapping
@@ -5314,8 +5241,9 @@ Mapping Types --- :class:`dict`
    pair: built-in function; len
 
 A :term:`mapping` object maps :term:`hashable` values to arbitrary objects.
-Mappings are mutable objects.  There is currently only one standard mapping
-type, the :dfn:`dictionary`.  (For other containers see the built-in
+There are currently two standard mapping types, the :dfn:`dictionary` and
+:class:`frozendict`.
+(For other containers see the built-in
 :class:`list`, :class:`set`, and :class:`tuple` classes, and the
 :mod:`collections` module.)
 
@@ -5585,9 +5513,14 @@ can be used interchangeably to index the same dictionary entry.
       Dictionaries are now reversible.
 
 
+   .. seealso::
+      :class:`frozendict` and :class:`types.MappingProxyType` can be used to
+      create a read-only view of a :class:`dict`.
+
 .. seealso::
-   :class:`types.MappingProxyType` can be used to create a read-only view
-   of a :class:`dict`.
+
+   For detailed information on thread-safety guarantees for :class:`dict`
+   objects, see :ref:`thread-safety-dict`.
 
 
 .. _dict-views:
@@ -5694,6 +5627,41 @@ An example of dictionary view usage::
    mappingproxy({'bacon': 1, 'spam': 500})
    >>> values.mapping['spam']
    500
+
+
+Frozen dictionaries
+-------------------
+
+.. class:: frozendict(**kwargs)
+           frozendict(mapping, /, **kwargs)
+           frozendict(iterable, /, **kwargs)
+
+   Return a new frozen dictionary initialized from an optional positional
+   argument and a possibly empty set of keyword arguments.
+
+   A :class:`!frozendict` has a similar API to the :class:`dict` API, with the
+   following differences:
+
+   * :class:`!dict` has more methods than :class:`!frozendict`:
+
+      * :meth:`!__delitem__`
+      * :meth:`!__setitem__`
+      * :meth:`~dict.clear`
+      * :meth:`~dict.pop`
+      * :meth:`~dict.popitem`
+      * :meth:`~dict.setdefault`
+      * :meth:`~dict.update`
+
+   * A :class:`!frozendict` can be hashed with ``hash(frozendict)`` if all keys and
+     values can be hashed.
+
+   * ``frozendict |= other`` does not modify the :class:`!frozendict` in-place but
+     creates a new frozen dictionary.
+
+   :class:`!frozendict` is not a :class:`!dict` subclass but inherits directly
+   from ``object``.
+
+   .. versionadded:: next
 
 
 .. _typecontextmanager:
@@ -5919,6 +5887,7 @@ list is non-exhaustive.
 * :class:`list`
 * :class:`dict`
 * :class:`set`
+* :class:`frozendict`
 * :class:`frozenset`
 * :class:`type`
 * :class:`asyncio.Future`

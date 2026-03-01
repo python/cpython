@@ -752,7 +752,12 @@ remove it.
       .. versionchanged:: 3.9
 
          :c:member:`m_traverse`, :c:member:`m_clear` and :c:member:`m_free`
-         functions are longer called before the module state is allocated.
+         functions are no longer called before the module state is allocated.
+
+
+.. c:var:: PyTypeObject PyModuleDef_Type
+
+   The type of ``PyModuleDef`` objects.
 
 
 .. _moduledef-dynamic:
