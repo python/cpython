@@ -18,6 +18,6 @@ sphinx-notfound-page~=1.0.0
 # to install that as well.
 python-docs-theme>=2023.3.1,!=2023.7
 
-git+https://github.com/nedbat/linklint
+linklint
 
 -c constraints.txt
