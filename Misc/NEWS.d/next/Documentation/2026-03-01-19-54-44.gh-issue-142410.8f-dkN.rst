@@ -1,0 +1,3 @@
+Soft-deprecate the ``PyException_HEAD`` macro in the C API documentation.
+The macro is an internal implementation detail and should not be used by
+third-party extensions.
