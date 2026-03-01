@@ -58,6 +58,9 @@ Dictionary objects
 
    Empty an existing dictionary of all key-value pairs.
 
+   Do nothing if the argument is not a :class:`dict` or a :class:`!dict`
+   subclass.
+
 
 .. c:function:: int PyDict_Contains(PyObject *p, PyObject *key)
 
@@ -79,6 +82,9 @@ Dictionary objects
 
    Return a new dictionary that contains the same key-value pairs as *p*.
 
+   .. versionchanged:: next
+      If *p* is a subclass of :class:`frozendict`, the result will be a
+      :class:`frozendict` instance instead of a :class:`dict` instance.
 
 .. c:function:: int PyDict_SetItem(PyObject *p, PyObject *key, PyObject *val)
 

@@ -494,9 +494,11 @@ valid_utf8(const unsigned char* s)
         return 0;
     }
     length = expected + 1;
-    for (; expected; expected--)
-        if (s[expected] < 0x80 || s[expected] >= 0xC0)
+    for (int i = 1; i <= expected; i++) {
+        if (s[i] < 0x80 || s[i] >= 0xC0) {
             return 0;
+        }
+    }
     return length;
 }
 
