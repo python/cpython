@@ -1348,18 +1348,27 @@ dummy_func(void) {
         sym_set_type(nos, &PyTuple_Type);
     }
 
-    op(_GUARD_TOS_DICT, (tos -- tos)) {
-        if (sym_matches_type(tos, &PyDict_Type)) {
-            ADD_OP(_NOP, 0, 0);
-        }
-        sym_set_type(tos, &PyDict_Type);
-    }
-
     op(_GUARD_NOS_DICT, (nos, unused -- nos, unused)) {
         if (sym_matches_type(nos, &PyDict_Type)) {
             ADD_OP(_NOP, 0, 0);
         }
         sym_set_type(nos, &PyDict_Type);
+    }
+
+    op(_GUARD_NOS_ANY_DICT, (nos, unused -- nos, unused)) {
+        PyTypeObject *tp = sym_get_type(nos);
+        if (tp == &PyDict_Type || tp == &PyFrozenDict_Type) {
+            ADD_OP(_NOP, 0, 0);
+            sym_set_type(nos, tp);
+        }
+    }
+
+    op(_GUARD_TOS_ANY_DICT, (tos -- tos)) {
+        PyTypeObject *tp = sym_get_type(tos);
+        if (tp == &PyDict_Type || tp == &PyFrozenDict_Type) {
+            ADD_OP(_NOP, 0, 0);
+            sym_set_type(tos, tp);
+        }
     }
 
     op(_GUARD_TOS_ANY_SET, (tos -- tos)) {
@@ -1641,7 +1650,8 @@ dummy_func(void) {
     }
 
     op(_GUARD_IP__PUSH_FRAME, (ip/4 --)) {
-        stack_pointer = sym_set_stack_depth(this_instr->operand1, stack_pointer);
+        (void)ip;
+        stack_pointer = sym_set_stack_depth((int)this_instr->operand1, stack_pointer);
         // TO DO
         // Normal function calls to known functions
         // do not need an IP guard.
@@ -1659,24 +1669,27 @@ dummy_func(void) {
     }
 
     op(_GUARD_IP_YIELD_VALUE, (ip/4 --)) {
+        (void)ip;
         if (ctx->frame->caller) {
             REPLACE_OP(this_instr, _NOP, 0, 0);
         }
-        stack_pointer = sym_set_stack_depth(this_instr->operand1, stack_pointer);
+        stack_pointer = sym_set_stack_depth((int)this_instr->operand1, stack_pointer);
     }
 
     op(_GUARD_IP_RETURN_VALUE, (ip/4 --)) {
+        (void)ip;
         if (ctx->frame->caller) {
             REPLACE_OP(this_instr, _NOP, 0, 0);
         }
-        stack_pointer = sym_set_stack_depth(this_instr->operand1, stack_pointer);
+        stack_pointer = sym_set_stack_depth((int)this_instr->operand1, stack_pointer);
     }
 
     op(_GUARD_IP_RETURN_GENERATOR, (ip/4 --)) {
+        (void)ip;
         if (ctx->frame->caller) {
             REPLACE_OP(this_instr, _NOP, 0, 0);
         }
-        stack_pointer = sym_set_stack_depth(this_instr->operand1, stack_pointer);
+        stack_pointer = sym_set_stack_depth((int)this_instr->operand1, stack_pointer);
     }
 
 
