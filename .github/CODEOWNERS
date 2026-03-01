@@ -63,9 +63,10 @@
 .azure-pipelines/             @AA-Turner
 
 # GitHub & related scripts
-.github/                               @ezio-melotti @hugovk @AA-Turner @webknjaz
-Tools/build/compute-changes.py         @AA-Turner @hugovk @webknjaz
-Tools/build/verify_ensurepip_wheels.py @AA-Turner @pfmoore @pradyunsg
+.github/                                    @ezio-melotti @hugovk @AA-Turner @webknjaz
+Tools/build/compute-changes.py              @AA-Turner @hugovk @webknjaz
+Lib/test/test_tools/test_compute_changes.py @AA-Turner @hugovk @webknjaz
+Tools/build/verify_ensurepip_wheels.py      @AA-Turner @pfmoore @pradyunsg
 
 # Pre-commit
 .pre-commit-config.yaml       @hugovk
@@ -110,6 +111,7 @@ Doc/tools/                    @AA-Turner @hugovk
 .readthedocs.yml              @AA-Turner
 
 # Sections
+Doc/c-api/                    @ZeroIntensity
 Doc/reference/                @willingc @AA-Turner
 Doc/whatsnew/                 @AA-Turner
 
@@ -287,16 +289,16 @@ Programs/_bootstrap_python.c  @ericsnowcurrently
 Programs/python.c             @ericsnowcurrently
 
 # JIT
+.github/workflows/jit.yml     @savannahostrowski
 Include/internal/pycore_jit.h @brandtbucher @savannahostrowski @diegorusso
 Python/jit.c                  @brandtbucher @savannahostrowski @diegorusso
 Tools/jit/                    @brandtbucher @savannahostrowski @diegorusso
 InternalDocs/jit.md           @brandtbucher @savannahostrowski @diegorusso @AA-Turner
 
 # Lazy imports (PEP 810)
-Objects/lazyimportobject.c                  @twouters @DinoV @pablogsal
-Include/internal/pycore_lazyimportobject.h  @twouters @DinoV @pablogsal
-Lib/test/test_import/test_lazy_imports.py   @twouters @DinoV @pablogsal
-Lib/test/test_import/data/lazy_imports/     @twouters @DinoV @pablogsal
+Objects/lazyimportobject.c                  @yhg1s @DinoV @pablogsal
+Include/internal/pycore_lazyimportobject.h  @yhg1s @DinoV @pablogsal
+Lib/test/test_lazy_import                   @yhg1s @DinoV @pablogsal
 
 # Micro-op / μop / Tier 2 Optimiser
 Python/optimizer.c            @markshannon @Fidget-Spinner
@@ -423,18 +425,19 @@ Lib/dataclasses.py            @ericvsmith
 Lib/test/test_dataclasses/    @ericvsmith
 
 # Dates and times
-Doc/**/*time.rst                 @pganssle @abalkin
-Doc/library/zoneinfo.rst         @pganssle
-Include/datetime.h               @pganssle @abalkin
-Include/internal/pycore_time.h   @pganssle @abalkin
-Lib/test/test_zoneinfo/          @pganssle
-Lib/zoneinfo/                    @pganssle
-Lib/*time.py                     @pganssle @abalkin
-Lib/test/datetimetester.py       @pganssle @abalkin
-Lib/test/test_*time.py           @pganssle @abalkin
-Modules/*zoneinfo*               @pganssle
-Modules/*time*                   @pganssle @abalkin
-Python/pytime.c                  @pganssle @abalkin
+Doc/**/*time.rst                 @pganssle @abalkin @StanFromIreland
+Doc/library/datetime-*           @pganssle @StanFromIreland
+Doc/library/zoneinfo.rst         @pganssle @StanFromIreland
+Include/datetime.h               @pganssle @abalkin @StanFromIreland
+Include/internal/pycore_time.h   @pganssle @abalkin @StanFromIreland
+Lib/test/test_zoneinfo/          @pganssle @StanFromIreland
+Lib/zoneinfo/                    @pganssle @StanFromIreland
+Lib/*time.py                     @pganssle @abalkin @StanFromIreland
+Lib/test/datetimetester.py       @pganssle @abalkin @StanFromIreland
+Lib/test/test_*time.py           @pganssle @abalkin @StanFromIreland
+Modules/*zoneinfo*               @pganssle @StanFromIreland
+Modules/*time*                   @pganssle @abalkin @StanFromIreland
+Python/pytime.c                  @pganssle @abalkin @StanFromIreland
 
 # Dbm
 Doc/library/dbm.rst           @corona10 @erlend-aasland @serhiy-storchaka
@@ -473,8 +476,9 @@ Lib/test/test_functools.py    @rhettinger
 Modules/_functoolsmodule.c    @rhettinger
 
 # Garbage collector
-Modules/gcmodule.c            @pablogsal
-Doc/library/gc.rst            @pablogsal
+Modules/gcmodule.c                @pablogsal
+Doc/library/gc.rst                @pablogsal
+InternalDocs/garbage_collector.md @pablogsal
 
 # Gettext
 Doc/library/gettext.rst       @tomasr8

@@ -4,15 +4,9 @@
 .. module:: datetime
    :synopsis: Basic date and time types.
 
-.. moduleauthor:: Tim Peters <tim@zope.com>
-.. sectionauthor:: Tim Peters <tim@zope.com>
-.. sectionauthor:: A.M. Kuchling <amk@amk.ca>
-
 **Source code:** :source:`Lib/datetime.py`
 
 --------------
-
-.. XXX what order should the types be discussed in?
 
 The :mod:`!datetime` module supplies classes for manipulating dates and times.
 
@@ -38,13 +32,14 @@ on efficient attribute extraction for output formatting and manipulation.
       Third-party library with expanded time zone and parsing support.
 
    Package :pypi:`DateType`
-      Third-party library that introduces distinct static types to e.g. allow
-      :term:`static type checkers <static type checker>`
+      Third-party library that introduces distinct static types to for example,
+      allow :term:`static type checkers <static type checker>`
       to differentiate between naive and aware datetimes.
+
 
 .. _datetime-naive-aware:
 
-Aware and Naive Objects
+Aware and naive objects
 -----------------------
 
 Date and time objects may be categorized as "aware" or "naive" depending on
@@ -65,7 +60,7 @@ understand and to work with, at the cost of ignoring some aspects of reality.
 
 For applications requiring aware objects, :class:`.datetime` and :class:`.time`
 objects have an optional time zone information attribute, :attr:`!tzinfo`, that
-can be set to an instance of a subclass of the abstract :class:`tzinfo` class.
+can be set to an instance of a subclass of the abstract :class:`!tzinfo` class.
 These :class:`tzinfo` objects capture information about the offset from UTC
 time, the time zone name, and whether daylight saving time is in effect.
 
@@ -76,6 +71,7 @@ North American EST and EDT time zones. Supporting time zones at deeper levels of
 detail is up to the application. The rules for time adjustment across the
 world are more political than rational, change frequently, and there is no
 standard suitable for every application aside from UTC.
+
 
 Constants
 ---------
@@ -93,13 +89,15 @@ The :mod:`!datetime` module exports the following constants:
    The largest year number allowed in a :class:`date` or :class:`.datetime` object.
    :const:`MAXYEAR` is 9999.
 
+
 .. data:: UTC
 
    Alias for the UTC time zone singleton :attr:`datetime.timezone.utc`.
 
    .. versionadded:: 3.11
 
-Available Types
+
+Available types
 ---------------
 
 .. class:: date
@@ -142,6 +140,7 @@ Available Types
    time adjustment (for example, to account for time zone and/or daylight saving
    time).
 
+
 .. class:: timezone
    :noindex:
 
@@ -150,19 +149,19 @@ Available Types
 
    .. versionadded:: 3.2
 
+
 Objects of these types are immutable.
 
-Subclass relationships::
+Subclass relationships:
 
-   object
-       timedelta
-       tzinfo
-           timezone
-       time
-       date
-           datetime
+.. figure:: datetime-inheritance.svg
+   :class: invert-in-dark-mode
+   :align: center
+   :alt: timedelta, tzinfo, time, and date inherit from object; timezone inherits
+         from tzinfo; and datetime inherits from date.
 
-Common Properties
+
+Common properties
 ^^^^^^^^^^^^^^^^^
 
 The :class:`date`, :class:`.datetime`, :class:`.time`, and :class:`timezone` types
@@ -173,7 +172,8 @@ share these common features:
   dictionary keys.
 - Objects of these types support efficient pickling via the :mod:`pickle` module.
 
-Determining if an Object is Aware or Naive
+
+Determining if an object is aware or naive
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
 Objects of the :class:`date` type are always naive.
@@ -197,10 +197,11 @@ Otherwise, ``t`` is naive.
 The distinction between aware and naive doesn't apply to :class:`timedelta`
 objects.
 
+
 .. _datetime-timedelta:
 
-:class:`timedelta` Objects
---------------------------
+:class:`!timedelta` objects
+---------------------------
 
 A :class:`timedelta` object represents a duration, the difference between two
 :class:`.datetime` or :class:`date` instances.
@@ -296,6 +297,7 @@ Class attributes:
    The smallest possible difference between non-equal :class:`timedelta` objects,
    ``timedelta(microseconds=1)``.
 
+
 Note that, because of normalization, ``timedelta.max`` is greater than ``-timedelta.min``.
 ``-timedelta.max`` is not representable as a :class:`timedelta` object.
 
@@ -326,14 +328,13 @@ Instance attributes (read-only):
          >>> duration.total_seconds()
          11235813.0
 
+
 .. attribute:: timedelta.microseconds
 
    Between 0 and 999,999 inclusive.
 
 
 Supported operations:
-
-.. XXX this table is too wide!
 
 +--------------------------------+-----------------------------------------------+
 | Operation                      | Result                                        |
@@ -396,7 +397,6 @@ Supported operations:
 |                                | call with canonical attribute values.         |
 +--------------------------------+-----------------------------------------------+
 
-
 Notes:
 
 (1)
@@ -432,9 +432,9 @@ objects (see below).
 
 .. versionchanged:: 3.2
    Floor division and true division of a :class:`timedelta` object by another
-   :class:`timedelta` object are now supported, as are remainder operations and
+   :class:`!timedelta` object are now supported, as are remainder operations and
    the :func:`divmod` function. True division and multiplication of a
-   :class:`timedelta` object by a :class:`float` object are now supported.
+   :class:`!timedelta` object by a :class:`float` object are now supported.
 
 :class:`timedelta` objects support equality and order comparisons.
 
@@ -447,15 +447,16 @@ Instance methods:
 
    Return the total number of seconds contained in the duration. Equivalent to
    ``td / timedelta(seconds=1)``. For interval units other than seconds, use the
-   division form directly (e.g. ``td / timedelta(microseconds=1)``).
+   division form directly (for example, ``td / timedelta(microseconds=1)``).
 
    Note that for very large time intervals (greater than 270 years on
    most platforms) this method will lose microsecond accuracy.
 
    .. versionadded:: 3.2
 
-Examples of usage: :class:`timedelta`
-^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+Examples of usage: :class:`!timedelta`
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
 An additional example of normalization::
 
@@ -485,10 +486,11 @@ Examples of :class:`timedelta` arithmetic::
     >>> three_years, three_years.days // 365
     (datetime.timedelta(days=1095), 3)
 
+
 .. _datetime-date:
 
-:class:`date` Objects
----------------------
+:class:`!date` objects
+----------------------
 
 A :class:`date` object represents a date (year, month and day) in an idealized
 calendar, the current Gregorian calendar indefinitely extended in both
@@ -517,9 +519,10 @@ Other constructors, all class methods:
 
    This is equivalent to ``date.fromtimestamp(time.time())``.
 
+
 .. classmethod:: date.fromtimestamp(timestamp)
 
-   Return the local date corresponding to the POSIX timestamp, such as is
+   Return the local date corresponding to the POSIX *timestamp*, such as is
    returned by :func:`time.time`.
 
    This may raise :exc:`OverflowError`, if the timestamp is out
@@ -541,7 +544,7 @@ Other constructors, all class methods:
 
 .. classmethod:: date.fromordinal(ordinal)
 
-   Return the date corresponding to the proleptic Gregorian ordinal, where
+   Return the date corresponding to the proleptic Gregorian *ordinal*, where
    January 1 of year 1 has ordinal 1.
 
    :exc:`ValueError` is raised unless ``1 <= ordinal <=
@@ -574,12 +577,14 @@ Other constructors, all class methods:
    .. versionchanged:: 3.11
       Previously, this method only supported the format ``YYYY-MM-DD``.
 
+
 .. classmethod:: date.fromisocalendar(year, week, day)
 
    Return a :class:`date` corresponding to the ISO calendar date specified by
-   year, week and day. This is the inverse of the function :meth:`date.isocalendar`.
+   *year*, *week* and *day*. This is the inverse of the function :meth:`date.isocalendar`.
 
    .. versionadded:: 3.8
+
 
 .. classmethod:: date.strptime(date_string, format)
 
@@ -700,7 +705,7 @@ Notes:
    In other words, ``date1 < date2`` if and only if ``date1.toordinal() <
    date2.toordinal()``.
 
-   Order comparison between a :class:`!date` object that is not also a
+   Order comparison between a :class:`date` object that is not also a
    :class:`.datetime` instance and a :class:`!datetime` object raises
    :exc:`TypeError`.
 
@@ -791,6 +796,7 @@ Instance methods:
    .. versionchanged:: 3.9
       Result changed from a tuple to a :term:`named tuple`.
 
+
 .. method:: date.isoformat()
 
    Return a string representing the date in ISO 8601 format, ``YYYY-MM-DD``::
@@ -798,6 +804,7 @@ Instance methods:
        >>> from datetime import date
        >>> date(2002, 12, 4).isoformat()
        '2002-12-04'
+
 
 .. method:: date.__str__()
 
@@ -835,8 +842,9 @@ Instance methods:
    literals <f-strings>` and when using :meth:`str.format`.
    See also :ref:`strftime-strptime-behavior` and :meth:`date.isoformat`.
 
-Examples of Usage: :class:`date`
-^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+Examples of usage: :class:`!date`
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
 Example of counting days to an event::
 
@@ -878,7 +886,7 @@ More examples of working with :class:`date`:
     >>> 'The {1} is {0:%d}, the {2} is {0:%B}.'.format(d, "day", "month")
     'The day is 11, the month is March.'
 
-    >>> # Methods for to extracting 'components' under different calendars
+    >>> # Methods for extracting 'components' under different calendars
     >>> t = d.timetuple()
     >>> for i in t:     # doctest: +SKIP
     ...     print(i)
@@ -905,7 +913,7 @@ More examples of working with :class:`date`:
 
 .. _datetime-datetime:
 
-:class:`.datetime` Objects
+:class:`!datetime` objects
 --------------------------
 
 A :class:`.datetime` object is a single object containing all the information
@@ -913,7 +921,7 @@ from a :class:`date` object and a :class:`.time` object.
 
 Like a :class:`date` object, :class:`.datetime` assumes the current Gregorian
 calendar extended in both directions; like a :class:`.time` object,
-:class:`.datetime` assumes there are exactly 3600\*24 seconds in every day.
+:class:`!datetime` assumes there are exactly 3600\*24 seconds in every day.
 
 Constructor:
 
@@ -937,6 +945,7 @@ Constructor:
    .. versionchanged:: 3.6
       Added the *fold* parameter.
 
+
 Other constructors, all class methods:
 
 .. classmethod:: datetime.today()
@@ -951,6 +960,7 @@ Other constructors, all class methods:
 
    This method is functionally equivalent to :meth:`now`, but without a
    ``tz`` parameter.
+
 
 .. classmethod:: datetime.now(tz=None)
 
@@ -971,6 +981,7 @@ Other constructors, all class methods:
 
       Subsequent calls to :meth:`!datetime.now` may return the same
       instant depending on the precision of the underlying clock.
+
 
 .. classmethod:: datetime.utcnow()
 
@@ -1063,12 +1074,12 @@ Other constructors, all class methods:
       :c:func:`gmtime` function. Raise :exc:`OSError` instead of
       :exc:`ValueError` on :c:func:`gmtime` failure.
 
+   .. versionchanged:: 3.15
+      Accepts any real number as *timestamp*, not only integer or float.
+
    .. deprecated:: 3.12
 
       Use :meth:`datetime.fromtimestamp` with :const:`UTC` instead.
-
-   .. versionchanged:: 3.15
-      Accepts any real number as *timestamp*, not only integer or float.
 
 
 .. classmethod:: datetime.fromordinal(ordinal)
@@ -1086,7 +1097,7 @@ Other constructors, all class methods:
    are equal to the given :class:`.time` object's. If the *tzinfo*
    argument is provided, its value is used to set the :attr:`.tzinfo` attribute
    of the result, otherwise the :attr:`~.time.tzinfo` attribute of the *time* argument
-   is used.  If the *date* argument is a :class:`.datetime` object, its time components
+   is used.  If the *date* argument is a :class:`!datetime` object, its time components
    and :attr:`.tzinfo` attributes are ignored.
 
    For any :class:`.datetime` object ``d``,
@@ -1142,11 +1153,12 @@ Other constructors, all class methods:
 .. classmethod:: datetime.fromisocalendar(year, week, day)
 
    Return a :class:`.datetime` corresponding to the ISO calendar date specified
-   by year, week and day. The non-date components of the datetime are populated
+   by *year*, *week* and *day*. The non-date components of the datetime are populated
    with their normal default values. This is the inverse of the function
    :meth:`datetime.isocalendar`.
 
    .. versionadded:: 3.8
+
 
 .. classmethod:: datetime.strptime(date_string, format)
 
@@ -1255,6 +1267,7 @@ Instance attributes (read-only):
 
    .. versionadded:: 3.6
 
+
 Supported operations:
 
 +---------------------------------------+--------------------------------+
@@ -1290,7 +1303,7 @@ Supported operations:
    datetime, and no time zone adjustments are done even if the input is aware.
 
 (3)
-   Subtraction of a :class:`.datetime` from a :class:`.datetime` is defined only if
+   Subtraction of a :class:`.datetime` from a :class:`!datetime` is defined only if
    both operands are naive, or if both are aware. If one is aware and the other is
    naive, :exc:`TypeError` is raised.
 
@@ -1308,7 +1321,7 @@ Supported operations:
    :class:`.datetime` objects are equal if they represent the same date
    and time, taking into account the time zone.
 
-   Naive and aware :class:`!datetime` objects are never equal.
+   Naive and aware :class:`.datetime` objects are never equal.
 
    If both comparands are aware, and have the same :attr:`!tzinfo` attribute,
    the :attr:`!tzinfo` and :attr:`~.datetime.fold` attributes are ignored and
@@ -1316,7 +1329,7 @@ Supported operations:
    If both comparands are aware and have different :attr:`~.datetime.tzinfo`
    attributes, the comparison acts as comparands were first converted to UTC
    datetimes except that the implementation never overflows.
-   :class:`!datetime` instances in a repeated interval are never equal to
+   :class:`.datetime` instances in a repeated interval are never equal to
    :class:`!datetime` instances in other time zone.
 
 (5)
@@ -1344,6 +1357,7 @@ Supported operations:
    and the time zone.
    The default behavior can be changed by overriding the special comparison
    methods in subclasses.
+
 
 Instance methods:
 
@@ -1500,10 +1514,12 @@ Instance methods:
       ``datetime.replace(tzinfo=timezone.utc)`` to make it aware, at which point
       you can use :meth:`.datetime.timetuple`.
 
+
 .. method:: datetime.toordinal()
 
    Return the proleptic Gregorian ordinal of the date. The same as
    ``self.date().toordinal()``.
+
 
 .. method:: datetime.timestamp()
 
@@ -1513,7 +1529,7 @@ Instance methods:
 
    Naive :class:`.datetime` instances are assumed to represent local
    time and this method relies on platform C functions to perform
-   the conversion. Since :class:`.datetime` supports a wider range of
+   the conversion. Since :class:`!datetime` supports a wider range of
    values than the platform C functions on many platforms, this
    method may raise :exc:`OverflowError` or :exc:`OSError` for times
    far in the past or far in the future.
@@ -1522,16 +1538,6 @@ Instance methods:
    as::
 
       (dt - datetime(1970, 1, 1, tzinfo=timezone.utc)).total_seconds()
-
-   .. versionadded:: 3.3
-
-   .. versionchanged:: 3.6
-      The :meth:`timestamp` method uses the :attr:`.fold` attribute to
-      disambiguate the times during a repeated interval.
-
-   .. versionchanged:: 3.6
-      This method no longer relies on the platform C :c:func:`mktime`
-      function to perform conversions.
 
    .. note::
 
@@ -1546,6 +1552,17 @@ Instance methods:
       or by calculating the timestamp directly::
 
          timestamp = (dt - datetime(1970, 1, 1)) / timedelta(seconds=1)
+
+   .. versionadded:: 3.3
+
+   .. versionchanged:: 3.6
+      The :meth:`timestamp` method uses the :attr:`.fold` attribute to
+      disambiguate the times during a repeated interval.
+
+   .. versionchanged:: 3.6
+      This method no longer relies on the platform C :c:func:`mktime`
+      function to perform conversions.
+
 
 .. method:: datetime.weekday()
 
@@ -1675,7 +1692,7 @@ Instance methods:
    See also :ref:`strftime-strptime-behavior` and :meth:`datetime.isoformat`.
 
 
-Examples of Usage: :class:`.datetime`
+Examples of usage: :class:`!datetime`
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
 Examples of working with :class:`.datetime` objects:
@@ -1801,9 +1818,10 @@ Usage of ``KabulTz`` from above::
    >>> dt2 == dt3
    True
 
+
 .. _datetime-time:
 
-:class:`.time` Objects
+:class:`!time` objects
 ----------------------
 
 A :class:`.time` object represents a (local) time of day, independent of any particular
@@ -1823,6 +1841,7 @@ day, and subject to adjustment via a :class:`tzinfo` object.
 
    If an argument outside those ranges is given, :exc:`ValueError` is raised. All
    default to 0 except *tzinfo*, which defaults to ``None``.
+
 
 Class attributes:
 
@@ -1882,6 +1901,7 @@ Instance attributes (read-only):
 
    .. versionadded:: 3.6
 
+
 :class:`.time` objects support equality and order comparisons,
 where ``a`` is considered less than ``b`` when ``a`` precedes ``b`` in time.
 
@@ -1904,8 +1924,8 @@ In Boolean contexts, a :class:`.time` object is always considered to be true.
 .. versionchanged:: 3.5
    Before Python 3.5, a :class:`.time` object was considered to be false if it
    represented midnight in UTC. This behavior was considered obscure and
-   error-prone and has been removed in Python 3.5. See :issue:`13936` for full
-   details.
+   error-prone and has been removed in Python 3.5. See :issue:`13936` for more
+   information.
 
 
 Other constructors:
@@ -1950,6 +1970,7 @@ Other constructors:
       Previously, this method only supported formats that could be emitted by
       :meth:`time.isoformat`.
 
+
 .. classmethod:: time.strptime(date_string, format)
 
    Return a :class:`.time` corresponding to *date_string*, parsed according to
@@ -1974,7 +1995,7 @@ Instance methods:
 
    Return a new :class:`.time` with the same values, but with specified
    parameters updated. Note that ``tzinfo=None`` can be specified to create a
-   naive :class:`.time` from an aware :class:`.time`, without conversion of the
+   naive :class:`!time` from an aware :class:`!time`, without conversion of the
    time data.
 
    :class:`.time` objects are also supported by generic function
@@ -2066,13 +2087,15 @@ Instance methods:
    .. versionchanged:: 3.7
       The DST offset is not restricted to a whole number of minutes.
 
+
 .. method:: time.tzname()
 
    If :attr:`.tzinfo` is ``None``, returns ``None``, else returns
    ``self.tzinfo.tzname(None)``, or raises an exception if the latter doesn't
    return ``None`` or a string object.
 
-Examples of Usage: :class:`.time`
+
+Examples of usage: :class:`!time`
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
 Examples of working with a :class:`.time` object::
@@ -2105,25 +2128,25 @@ Examples of working with a :class:`.time` object::
 
 .. _datetime-tzinfo:
 
-:class:`tzinfo` Objects
------------------------
+:class:`!tzinfo` objects
+------------------------
 
 .. class:: tzinfo()
 
-   This is an abstract base class, meaning that this class should not be
+   This is an :term:`abstract base class`, meaning that this class should not be
    instantiated directly.  Define a subclass of :class:`tzinfo` to capture
    information about a particular time zone.
 
    An instance of (a concrete subclass of) :class:`tzinfo` can be passed to the
    constructors for :class:`.datetime` and :class:`.time` objects. The latter objects
-   view their attributes as being in local time, and the :class:`tzinfo` object
+   view their attributes as being in local time, and the :class:`!tzinfo` object
    supports methods revealing offset of local time from UTC, the name of the time
    zone, and DST offset, all relative to a date or time object passed to them.
 
    You need to derive a concrete subclass, and (at least)
    supply implementations of the standard :class:`tzinfo` methods needed by the
    :class:`.datetime` methods you use. The :mod:`!datetime` module provides
-   :class:`timezone`, a simple concrete subclass of :class:`tzinfo` which can
+   :class:`timezone`, a simple concrete subclass of :class:`!tzinfo` which can
    represent time zones with fixed offset from UTC such as UTC itself or North
    American EST and EDT.
 
@@ -2186,11 +2209,11 @@ Examples of working with a :class:`.time` object::
    ``tz.utcoffset(dt) - tz.dst(dt)``
 
    must return the same result for every :class:`.datetime` *dt* with ``dt.tzinfo ==
-   tz``. For sane :class:`tzinfo` subclasses, this expression yields the time
+   tz``. For sane :class:`!tzinfo` subclasses, this expression yields the time
    zone's "standard offset", which should not depend on the date or the time, but
    only on geographic location. The implementation of :meth:`datetime.astimezone`
    relies on this, but cannot detect violations; it's the programmer's
-   responsibility to ensure it. If a :class:`tzinfo` subclass cannot guarantee
+   responsibility to ensure it. If a :class:`!tzinfo` subclass cannot guarantee
    this, it may be able to override the default implementation of
    :meth:`tzinfo.fromutc` to work correctly with :meth:`~.datetime.astimezone` regardless.
 
@@ -2227,17 +2250,17 @@ Examples of working with a :class:`.time` object::
    valid replies. Return ``None`` if a string name isn't known. Note that this is
    a method rather than a fixed string primarily because some :class:`tzinfo`
    subclasses will wish to return different names depending on the specific value
-   of *dt* passed, especially if the :class:`tzinfo` class is accounting for
+   of *dt* passed, especially if the :class:`!tzinfo` class is accounting for
    daylight time.
 
    The default implementation of :meth:`tzname` raises :exc:`NotImplementedError`.
 
 
 These methods are called by a :class:`.datetime` or :class:`.time` object, in
-response to their methods of the same names. A :class:`.datetime` object passes
-itself as the argument, and a :class:`.time` object passes ``None`` as the
+response to their methods of the same names. A :class:`!datetime` object passes
+itself as the argument, and a :class:`!time` object passes ``None`` as the
 argument. A :class:`tzinfo` subclass's methods should therefore be prepared to
-accept a *dt* argument of ``None``, or of class :class:`.datetime`.
+accept a *dt* argument of ``None``, or of class :class:`!datetime`.
 
 When ``None`` is passed, it's up to the class designer to decide the best
 response. For example, returning ``None`` is appropriate if the class wishes to
@@ -2245,10 +2268,10 @@ say that time objects don't participate in the :class:`tzinfo` protocols. It
 may be more useful for ``utcoffset(None)`` to return the standard UTC offset, as
 there is no other convention for discovering the standard offset.
 
-When a :class:`.datetime` object is passed in response to a :class:`.datetime`
+When a :class:`.datetime` object is passed in response to a :class:`!datetime`
 method, ``dt.tzinfo`` is the same object as *self*. :class:`tzinfo` methods can
-rely on this, unless user code calls :class:`tzinfo` methods directly. The
-intent is that the :class:`tzinfo` methods interpret *dt* as being in local
+rely on this, unless user code calls :class:`!tzinfo` methods directly. The
+intent is that the :class:`!tzinfo` methods interpret *dt* as being in local
 time, and not need worry about objects in other time zones.
 
 There is one more :class:`tzinfo` method that a subclass may wish to override:
@@ -2358,7 +2381,7 @@ Note that the :class:`.datetime` instances that differ only by the value of the
 Applications that can't bear wall-time ambiguities should explicitly check the
 value of the :attr:`~.datetime.fold` attribute or avoid using hybrid
 :class:`tzinfo` subclasses; there are no ambiguities when using :class:`timezone`,
-or any other fixed-offset :class:`tzinfo` subclass (such as a class representing
+or any other fixed-offset :class:`!tzinfo` subclass (such as a class representing
 only EST (fixed offset -5 hours), or only EDT (fixed offset -4 hours)).
 
 .. seealso::
@@ -2381,8 +2404,8 @@ only EST (fixed offset -5 hours), or only EDT (fixed offset -4 hours)).
 
 .. _datetime-timezone:
 
-:class:`timezone` Objects
--------------------------
+:class:`!timezone` objects
+--------------------------
 
 The :class:`timezone` class is a subclass of :class:`tzinfo`, each
 instance of which represents a time zone defined by a fixed offset from
@@ -2420,6 +2443,7 @@ where historical changes have been made to civil time.
   .. versionchanged:: 3.7
      The UTC offset is not restricted to a whole number of minutes.
 
+
 .. method:: timezone.tzname(dt)
 
   Return the fixed value specified when the :class:`timezone` instance
@@ -2440,10 +2464,12 @@ where historical changes have been made to civil time.
 
   Always returns ``None``.
 
+
 .. method:: timezone.fromutc(dt)
 
   Return ``dt + offset``. The *dt* argument must be an aware
   :class:`.datetime` instance, with ``tzinfo`` set to ``self``.
+
 
 Class attributes:
 
@@ -2457,8 +2483,8 @@ Class attributes:
 
 .. _strftime-strptime-behavior:
 
-:meth:`~.datetime.strftime` and :meth:`~.datetime.strptime` Behavior
---------------------------------------------------------------------
+:meth:`!strftime` and :meth:`!strptime` behavior
+------------------------------------------------
 
 :class:`date`, :class:`.datetime`, and :class:`.time` objects all support a
 ``strftime(format)`` method, to create a string representing the time under the
@@ -2484,8 +2510,8 @@ versus :meth:`~.datetime.strptime`:
 
    .. _format-codes:
 
-:meth:`~.datetime.strftime` and :meth:`~.datetime.strptime` Format Codes
-^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+:meth:`!strftime` and :meth:`!strptime` format codes
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
 These methods accept format codes that can be used to parse and format dates::
 
@@ -2682,7 +2708,8 @@ differences between platforms in handling of unsupported format specifiers.
    ``%D``, ``%F``, ``%n``, ``%t``, and ``%:z`` were added for
    :meth:`~.datetime.strptime`.
 
-Technical Detail
+
+Technical detail
 ^^^^^^^^^^^^^^^^
 
 Broadly speaking, ``d.strftime(fmt)`` acts like the :mod:`time` module's
@@ -2704,7 +2731,6 @@ in the format string will be pulled from the default value.
    and :meth:`.date.strptime` will raise when encountering February 29 because
    the default year of 1900 is *not* a leap year.  Always add a default leap
    year to partial date strings before parsing.
-
 
 .. testsetup::
 

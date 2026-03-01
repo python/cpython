@@ -1212,19 +1212,22 @@ def make_archive(base_name, format, root_dir=None, base_dir=None, verbose=0,
     for arg, val in format_info[1]:
         kwargs[arg] = val
 
+    base_name = os.fspath(base_name)
+
     if base_dir is None:
         base_dir = os.curdir
+    else:
+        base_dir = os.fspath(base_dir)
 
     supports_root_dir = getattr(func, 'supports_root_dir', False)
     save_cwd = None
     if root_dir is not None:
+        root_dir = os.fspath(root_dir)
         stmd = os.stat(root_dir).st_mode
         if not stat.S_ISDIR(stmd):
             raise NotADirectoryError(errno.ENOTDIR, 'Not a directory', root_dir)
 
         if supports_root_dir:
-            # Support path-like base_name here for backwards-compatibility.
-            base_name = os.fspath(base_name)
             kwargs['root_dir'] = root_dir
         else:
             save_cwd = os.getcwd()
