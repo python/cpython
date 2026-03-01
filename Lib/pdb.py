@@ -91,7 +91,6 @@ import builtins
 import tempfile
 import textwrap
 import tokenize
-import functools
 import itertools
 import traceback
 import linecache
