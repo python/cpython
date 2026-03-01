@@ -43,14 +43,17 @@
 /* Redefined below for Windows debug builds after important #includes */
 #define _PySSL_FIX_ERRNO
 
-#define PySSL_BEGIN_ALLOW_THREADS_S(save, mutex) \
-    do { (save) = PyEval_SaveThread(); PyMutex_Lock(mutex); } while(0)
-#define PySSL_END_ALLOW_THREADS_S(save, mutex) \
-    do { PyMutex_Unlock(mutex); PyEval_RestoreThread(save); _PySSL_FIX_ERRNO; } while(0)
+#define PySSL_BEGIN_ALLOW_THREADS_S(save) \
+    do { (save) = PyEval_SaveThread(); } while(0)
+#define PySSL_END_ALLOW_THREADS_S(save) \
+    do { PyEval_RestoreThread(save); _PySSL_FIX_ERRNO; } while(0)
 #define PySSL_BEGIN_ALLOW_THREADS(self) { \
             PyThreadState *_save = NULL;  \
-            PySSL_BEGIN_ALLOW_THREADS_S(_save, &self->tstate_mutex);
-#define PySSL_END_ALLOW_THREADS(self) PySSL_END_ALLOW_THREADS_S(_save, &self->tstate_mutex); }
+            PySSL_BEGIN_ALLOW_THREADS_S(_save); \
+            PyMutex_Lock(&(self)->tstate_mutex);
+#define PySSL_END_ALLOW_THREADS(self) \
+            PyMutex_Unlock(&(self)->tstate_mutex); \
+            PySSL_END_ALLOW_THREADS_S(_save); }
 
 #if defined(HAVE_POLL_H)
 #include <poll.h>
@@ -328,7 +331,7 @@ typedef struct {
     int post_handshake_auth;
 #endif
     PyObject *msg_cb;
-    PyObject *keylog_filename;
+    PyObject *keylog_filename;  // can be anything accepted by Py_fopen()
     BIO *keylog_bio;
     /* Cached module state, also used in SSLSocket and SSLSession code. */
     _sslmodulestate *state;
@@ -358,7 +361,7 @@ typedef struct {
     PySSLContext *ctx; /* weakref to SSL context */
     char shutdown_seen_zero;
     enum py_ssl_server_or_client socket_type;
-    PyObject *owner; /* Python level "owner" passed to servername callback */
+    PyObject *owner; /* weakref to Python level "owner" passed to servername callback */
     PyObject *server_hostname;
 } PySSLSocket;
 
@@ -419,26 +422,6 @@ typedef enum {
 /* Wrap error strings with filename and line # */
 #define ERRSTR1(x,y,z) (x ":" y ": " z)
 #define ERRSTR(x) ERRSTR1("_ssl.c", Py_STRINGIFY(__LINE__), x)
-
-// Get the socket from a PySSLSocket, if it has one.
-// Return a borrowed reference.
-static inline PySocketSockObject* GET_SOCKET(PySSLSocket *obj) {
-    if (obj->Socket) {
-        PyObject *sock;
-        if (PyWeakref_GetRef(obj->Socket, &sock)) {
-            // GET_SOCKET() returns a borrowed reference
-            Py_DECREF(sock);
-        }
-        else {
-            // dead weak reference
-            sock = Py_None;
-        }
-        return (PySocketSockObject *)sock;  // borrowed reference
-    }
-    else {
-        return NULL;
-    }
-}
 
 /* If sock is NULL, use a timeout of 0 second */
 #define GET_SOCKET_TIMEOUT(sock) \
@@ -791,6 +774,35 @@ _ssl_deprecated(const char* msg, int stacklevel) {
 #define PY_SSL_DEPRECATED(name, stacklevel, ret) \
     if (_ssl_deprecated((name), (stacklevel)) == -1) return (ret)
 
+// Get the socket from a PySSLSocket, if it has one.
+// Stores a strong reference in out_sock.
+static int
+get_socket(PySSLSocket *obj, PySocketSockObject **out_sock,
+           const char *filename, int lineno)
+{
+    if (!obj->Socket) {
+        *out_sock = NULL;
+        return 0;
+    }
+    PySocketSockObject *sock;
+    int res = PyWeakref_GetRef(obj->Socket, (PyObject **)&sock);
+    if (res == 0 || sock->sock_fd == INVALID_SOCKET) {
+        _setSSLError(get_state_sock(obj),
+                     "Underlying socket connection gone",
+                     PY_SSL_ERROR_NO_SOCKET, filename, lineno);
+        *out_sock = NULL;
+        return -1;
+    }
+    if (sock != NULL) {
+        /* just in case the blocking state of the socket has been changed */
+        int nonblocking = (sock->sock_timeout >= 0);
+        BIO_set_nbio(SSL_get_rbio(obj->ssl), nonblocking);
+        BIO_set_nbio(SSL_get_wbio(obj->ssl), nonblocking);
+    }
+    *out_sock = sock;
+    return res;
+}
+
 /*
  * SSL objects
  */
@@ -905,8 +917,8 @@ newPySSLSocket(PySSLContext *sslctx, PySocketSockObject *sock,
     self->ssl = SSL_new(ctx);
     PySSL_END_ALLOW_THREADS(sslctx)
     if (self->ssl == NULL) {
+        _setSSLError(get_state_ctx(sslctx), NULL, 0, __FILE__, __LINE__);
         Py_DECREF(self);
-        _setSSLError(get_state_ctx(self), NULL, 0, __FILE__, __LINE__);
         return NULL;
     }
 
@@ -1018,24 +1030,13 @@ _ssl__SSLSocket_do_handshake_impl(PySSLSocket *self)
     int ret;
     _PySSLError err;
     PyObject *exc = NULL;
-    int sockstate, nonblocking;
-    PySocketSockObject *sock = GET_SOCKET(self);
+    int sockstate;
     PyTime_t timeout, deadline = 0;
     int has_timeout;
 
-    if (sock) {
-        if (((PyObject*)sock) == Py_None) {
-            _setSSLError(get_state_sock(self),
-                         "Underlying socket connection gone",
-                         PY_SSL_ERROR_NO_SOCKET, __FILE__, __LINE__);
-            return NULL;
-        }
-        Py_INCREF(sock);
-
-        /* just in case the blocking state of the socket has been changed */
-        nonblocking = (sock->sock_timeout >= 0);
-        BIO_set_nbio(SSL_get_rbio(self->ssl), nonblocking);
-        BIO_set_nbio(SSL_get_wbio(self->ssl), nonblocking);
+    PySocketSockObject *sock = NULL;
+    if (get_socket(self, &sock, __FILE__, __LINE__) < 0) {
+        return NULL;
     }
 
     timeout = GET_SOCKET_TIMEOUT(sock);
@@ -2435,6 +2436,17 @@ PySSL_traverse(PyObject *op, visitproc visit, void *arg)
     return 0;
 }
 
+static int
+PySSL_clear(PyObject *op)
+{
+    PySSLSocket *self = PySSLSocket_CAST(op);
+    Py_CLEAR(self->Socket);
+    Py_CLEAR(self->ctx);
+    Py_CLEAR(self->owner);
+    Py_CLEAR(self->server_hostname);
+    return 0;
+}
+
 static void
 PySSL_dealloc(PyObject *op)
 {
@@ -2455,10 +2467,7 @@ PySSL_dealloc(PyObject *op)
         SSL_set_shutdown(self->ssl, SSL_SENT_SHUTDOWN | SSL_get_shutdown(self->ssl));
         SSL_free(self->ssl);
     }
-    Py_XDECREF(self->Socket);
-    Py_XDECREF(self->ctx);
-    Py_XDECREF(self->server_hostname);
-    Py_XDECREF(self->owner);
+    (void)PySSL_clear(op);
     PyObject_GC_Del(self);
     Py_DECREF(tp);
 }
@@ -2607,22 +2616,12 @@ _ssl__SSLSocket_sendfile_impl(PySSLSocket *self, int fd, Py_off_t offset,
     int sockstate;
     _PySSLError err;
     PyObject *exc = NULL;
-    PySocketSockObject *sock = GET_SOCKET(self);
     PyTime_t timeout, deadline = 0;
     int has_timeout;
 
-    if (sock != NULL) {
-        if ((PyObject *)sock == Py_None) {
-            _setSSLError(get_state_sock(self),
-                         "Underlying socket connection gone",
-                         PY_SSL_ERROR_NO_SOCKET, __FILE__, __LINE__);
-            return NULL;
-        }
-        Py_INCREF(sock);
-        /* just in case the blocking state of the socket has been changed */
-        int nonblocking = (sock->sock_timeout >= 0);
-        BIO_set_nbio(SSL_get_rbio(self->ssl), nonblocking);
-        BIO_set_nbio(SSL_get_wbio(self->ssl), nonblocking);
+    PySocketSockObject *sock = NULL;
+    if (get_socket(self, &sock, __FILE__, __LINE__) < 0) {
+        return NULL;
     }
 
     timeout = GET_SOCKET_TIMEOUT(sock);
@@ -2744,26 +2743,12 @@ _ssl__SSLSocket_write_impl(PySSLSocket *self, Py_buffer *b)
     int sockstate;
     _PySSLError err;
     PyObject *exc = NULL;
-    int nonblocking;
-    PySocketSockObject *sock = GET_SOCKET(self);
     PyTime_t timeout, deadline = 0;
     int has_timeout;
 
-    if (sock != NULL) {
-        if (((PyObject*)sock) == Py_None) {
-            _setSSLError(get_state_sock(self),
-                         "Underlying socket connection gone",
-                         PY_SSL_ERROR_NO_SOCKET, __FILE__, __LINE__);
-            return NULL;
-        }
-        Py_INCREF(sock);
-    }
-
-    if (sock != NULL) {
-        /* just in case the blocking state of the socket has been changed */
-        nonblocking = (sock->sock_timeout >= 0);
-        BIO_set_nbio(SSL_get_rbio(self->ssl), nonblocking);
-        BIO_set_nbio(SSL_get_wbio(self->ssl), nonblocking);
+    PySocketSockObject *sock = NULL;
+    if (get_socket(self, &sock, __FILE__, __LINE__) < 0) {
+        return NULL;
     }
 
     timeout = GET_SOCKET_TIMEOUT(sock);
@@ -2893,8 +2878,6 @@ _ssl__SSLSocket_read_impl(PySSLSocket *self, Py_ssize_t len,
     int sockstate;
     _PySSLError err;
     PyObject *exc = NULL;
-    int nonblocking;
-    PySocketSockObject *sock = GET_SOCKET(self);
     PyTime_t timeout, deadline = 0;
     int has_timeout;
 
@@ -2903,14 +2886,9 @@ _ssl__SSLSocket_read_impl(PySSLSocket *self, Py_ssize_t len,
         return NULL;
     }
 
-    if (sock != NULL) {
-        if (((PyObject*)sock) == Py_None) {
-            _setSSLError(get_state_sock(self),
-                         "Underlying socket connection gone",
-                         PY_SSL_ERROR_NO_SOCKET, __FILE__, __LINE__);
-            return NULL;
-        }
-        Py_INCREF(sock);
+    PySocketSockObject *sock = NULL;
+    if (get_socket(self, &sock, __FILE__, __LINE__) < 0) {
+        return NULL;
     }
 
     if (!group_right_1) {
@@ -2939,13 +2917,6 @@ _ssl__SSLSocket_read_impl(PySSLSocket *self, Py_ssize_t len,
                 goto done;
             }
         }
-    }
-
-    if (sock != NULL) {
-        /* just in case the blocking state of the socket has been changed */
-        nonblocking = (sock->sock_timeout >= 0);
-        BIO_set_nbio(SSL_get_rbio(self->ssl), nonblocking);
-        BIO_set_nbio(SSL_get_wbio(self->ssl), nonblocking);
     }
 
     timeout = GET_SOCKET_TIMEOUT(sock);
@@ -3038,26 +3009,14 @@ _ssl__SSLSocket_shutdown_impl(PySSLSocket *self)
 {
     _PySSLError err;
     PyObject *exc = NULL;
-    int sockstate, nonblocking, ret;
+    int sockstate, ret;
     int zeros = 0;
-    PySocketSockObject *sock = GET_SOCKET(self);
     PyTime_t timeout, deadline = 0;
     int has_timeout;
 
-    if (sock != NULL) {
-        /* Guard against closed socket */
-        if ((((PyObject*)sock) == Py_None) || (sock->sock_fd == INVALID_SOCKET)) {
-            _setSSLError(get_state_sock(self),
-                         "Underlying socket connection gone",
-                         PY_SSL_ERROR_NO_SOCKET, __FILE__, __LINE__);
-            return NULL;
-        }
-        Py_INCREF(sock);
-
-        /* Just in case the blocking state of the socket has been changed */
-        nonblocking = (sock->sock_timeout >= 0);
-        BIO_set_nbio(SSL_get_rbio(self->ssl), nonblocking);
-        BIO_set_nbio(SSL_get_wbio(self->ssl), nonblocking);
+    PySocketSockObject *sock = NULL;
+    if (get_socket(self, &sock, __FILE__, __LINE__) < 0) {
+        return NULL;
     }
 
     timeout = GET_SOCKET_TIMEOUT(sock);
@@ -3617,6 +3576,11 @@ context_traverse(PyObject *op, visitproc visit, void *arg)
     PySSLContext *self = PySSLContext_CAST(op);
     Py_VISIT(self->set_sni_cb);
     Py_VISIT(self->msg_cb);
+    Py_VISIT(self->keylog_filename);
+#ifndef OPENSSL_NO_PSK
+    Py_VISIT(self->psk_client_callback);
+    Py_VISIT(self->psk_server_callback);
+#endif
     Py_VISIT(Py_TYPE(self));
     return 0;
 }
@@ -4543,8 +4507,75 @@ error:
     return -1;
 }
 
+static PyObject *
+load_cert_chain_lock_held(PySSLContext *self, _PySSLPasswordInfo *pw_info,
+                          PyObject *certfile_bytes, PyObject *keyfile_bytes)
+{
+    int r;
+    PyObject *ret = NULL;
+
+    pem_password_cb *orig_passwd_cb = SSL_CTX_get_default_passwd_cb(self->ctx);
+    void *orig_passwd_userdata = SSL_CTX_get_default_passwd_cb_userdata(self->ctx);
+
+    SSL_CTX_set_default_passwd_cb(self->ctx, _password_callback);
+    SSL_CTX_set_default_passwd_cb_userdata(self->ctx, pw_info);
+
+    PySSL_BEGIN_ALLOW_THREADS_S(pw_info->thread_state);
+    r = SSL_CTX_use_certificate_chain_file(self->ctx,
+        PyBytes_AS_STRING(certfile_bytes));
+    PySSL_END_ALLOW_THREADS_S(pw_info->thread_state);
+    if (r != 1) {
+        if (pw_info->error) {
+            ERR_clear_error();
+            /* the password callback has already set the error information */
+        }
+        else if (errno != 0) {
+            PyErr_SetFromErrnoWithFilename(PyExc_OSError,
+                PyBytes_AS_STRING(certfile_bytes));
+            ERR_clear_error();
+        }
+        else {
+            _setSSLError(get_state_ctx(self), NULL, 0, __FILE__, __LINE__);
+        }
+        goto error;
+    }
+
+    PySSL_BEGIN_ALLOW_THREADS_S(pw_info->thread_state);
+    r = SSL_CTX_use_PrivateKey_file(self->ctx,
+        PyBytes_AS_STRING(keyfile_bytes ? keyfile_bytes : certfile_bytes),
+        SSL_FILETYPE_PEM);
+    PySSL_END_ALLOW_THREADS_S(pw_info->thread_state);
+    if (r != 1) {
+        if (pw_info->error) {
+            ERR_clear_error();
+            /* the password callback has already set the error information */
+        }
+        else if (errno != 0) {
+            PyErr_SetFromErrnoWithFilename(PyExc_OSError,
+                PyBytes_AS_STRING(keyfile_bytes ? keyfile_bytes : certfile_bytes));
+            ERR_clear_error();
+        }
+        else {
+            _setSSLError(get_state_ctx(self), NULL, 0, __FILE__, __LINE__);
+        }
+        goto error;
+    }
+
+    PySSL_BEGIN_ALLOW_THREADS_S(pw_info->thread_state);
+    r = SSL_CTX_check_private_key(self->ctx);
+    PySSL_END_ALLOW_THREADS_S(pw_info->thread_state);
+    if (r != 1) {
+        _setSSLError(get_state_ctx(self), NULL, 0, __FILE__, __LINE__);
+        goto error;
+    }
+    ret = Py_None;
+error:
+    SSL_CTX_set_default_passwd_cb(self->ctx, orig_passwd_cb);
+    SSL_CTX_set_default_passwd_cb_userdata(self->ctx, orig_passwd_userdata);
+    return ret;
+}
+
 /*[clinic input]
-@critical_section
 _ssl._SSLContext.load_cert_chain
     certfile: object
     keyfile: object = None
@@ -4555,13 +4586,11 @@ _ssl._SSLContext.load_cert_chain
 static PyObject *
 _ssl__SSLContext_load_cert_chain_impl(PySSLContext *self, PyObject *certfile,
                                       PyObject *keyfile, PyObject *password)
-/*[clinic end generated code: output=9480bc1c380e2095 input=6c7c5e8b73e4264b]*/
+/*[clinic end generated code: output=9480bc1c380e2095 input=30bc7e967ea01a58]*/
 {
     PyObject *certfile_bytes = NULL, *keyfile_bytes = NULL;
-    pem_password_cb *orig_passwd_cb = SSL_CTX_get_default_passwd_cb(self->ctx);
-    void *orig_passwd_userdata = SSL_CTX_get_default_passwd_cb_userdata(self->ctx);
     _PySSLPasswordInfo pw_info = { NULL, NULL, NULL, 0, 0 };
-    int r;
+    PyObject *ret = NULL;
 
     errno = 0;
     ERR_clear_error();
@@ -4579,76 +4608,26 @@ _ssl__SSLContext_load_cert_chain_impl(PySSLContext *self, PyObject *certfile,
             PyErr_SetString(PyExc_TypeError,
                             "keyfile should be a valid filesystem path");
         }
-        goto error;
+        goto done;
     }
     if (password != Py_None) {
         if (PyCallable_Check(password)) {
             pw_info.callable = password;
         } else if (!_pwinfo_set(&pw_info, password,
                                 "password should be a string or callable")) {
-            goto error;
+            goto done;
         }
-        SSL_CTX_set_default_passwd_cb(self->ctx, _password_callback);
-        SSL_CTX_set_default_passwd_cb_userdata(self->ctx, &pw_info);
     }
-    PySSL_BEGIN_ALLOW_THREADS_S(pw_info.thread_state, &self->tstate_mutex);
-    r = SSL_CTX_use_certificate_chain_file(self->ctx,
-        PyBytes_AS_STRING(certfile_bytes));
-    PySSL_END_ALLOW_THREADS_S(pw_info.thread_state, &self->tstate_mutex);
-    if (r != 1) {
-        if (pw_info.error) {
-            ERR_clear_error();
-            /* the password callback has already set the error information */
-        }
-        else if (errno != 0) {
-            PyErr_SetFromErrno(PyExc_OSError);
-            ERR_clear_error();
-        }
-        else {
-            _setSSLError(get_state_ctx(self), NULL, 0, __FILE__, __LINE__);
-        }
-        goto error;
-    }
-    PySSL_BEGIN_ALLOW_THREADS_S(pw_info.thread_state, &self->tstate_mutex);
-    r = SSL_CTX_use_PrivateKey_file(self->ctx,
-        PyBytes_AS_STRING(keyfile ? keyfile_bytes : certfile_bytes),
-        SSL_FILETYPE_PEM);
-    PySSL_END_ALLOW_THREADS_S(pw_info.thread_state, &self->tstate_mutex);
-    Py_CLEAR(keyfile_bytes);
-    Py_CLEAR(certfile_bytes);
-    if (r != 1) {
-        if (pw_info.error) {
-            ERR_clear_error();
-            /* the password callback has already set the error information */
-        }
-        else if (errno != 0) {
-            PyErr_SetFromErrno(PyExc_OSError);
-            ERR_clear_error();
-        }
-        else {
-            _setSSLError(get_state_ctx(self), NULL, 0, __FILE__, __LINE__);
-        }
-        goto error;
-    }
-    PySSL_BEGIN_ALLOW_THREADS_S(pw_info.thread_state, &self->tstate_mutex);
-    r = SSL_CTX_check_private_key(self->ctx);
-    PySSL_END_ALLOW_THREADS_S(pw_info.thread_state, &self->tstate_mutex);
-    if (r != 1) {
-        _setSSLError(get_state_ctx(self), NULL, 0, __FILE__, __LINE__);
-        goto error;
-    }
-    SSL_CTX_set_default_passwd_cb(self->ctx, orig_passwd_cb);
-    SSL_CTX_set_default_passwd_cb_userdata(self->ctx, orig_passwd_userdata);
-    PyMem_Free(pw_info.password);
-    Py_RETURN_NONE;
 
-error:
-    SSL_CTX_set_default_passwd_cb(self->ctx, orig_passwd_cb);
-    SSL_CTX_set_default_passwd_cb_userdata(self->ctx, orig_passwd_userdata);
+    PyMutex_Lock(&self->tstate_mutex);
+    ret = load_cert_chain_lock_held(self, &pw_info, certfile_bytes, keyfile_bytes);
+    PyMutex_Unlock(&self->tstate_mutex);
+
+done:
     PyMem_Free(pw_info.password);
     Py_XDECREF(keyfile_bytes);
     Py_XDECREF(certfile_bytes);
-    return NULL;
+    return ret;
 }
 
 /* internal helper function, returns -1 on error

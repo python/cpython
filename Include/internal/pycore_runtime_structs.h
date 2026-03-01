@@ -31,6 +31,7 @@ struct _pymem_allocators {
         debug_alloc_api_t obj;
     } debug;
     int is_debug_enabled;
+    int use_hugepages;
     PyObjectArenaAllocator obj_arena;
 };
 
@@ -273,6 +274,16 @@ struct pyruntimestate {
     struct _Py_unicode_runtime_state unicode_state;
     struct _types_runtime_state types;
     struct _Py_time_runtime_state time;
+
+#if defined(__EMSCRIPTEN__) && defined(PY_CALL_TRAMPOLINE)
+    // Used in "Python/emscripten_trampoline.c" to choose between wasm-gc
+    // trampoline and JavaScript trampoline.
+    PyObject* (*emscripten_trampoline)(int* success,
+                                       PyCFunctionWithKeywords func,
+                                       PyObject* self,
+                                       PyObject* args,
+                                       PyObject* kw);
+#endif
 
     /* All the objects that are shared by the runtime's interpreters. */
     struct _Py_cached_objects cached_objects;
