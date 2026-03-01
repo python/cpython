@@ -254,6 +254,11 @@ Module contents
    used because ``None`` is a valid value for some parameters with
    a distinct meaning.  No code should directly use the :const:`MISSING` value.
 
+   :deco:`dataclass` is free to possibly mutate the provided field
+   objects. As such, do not use the same object for multiple fields
+   even if they share the same properties. If so, the updated class is
+   not ensured to be well-functioning.
+
    The parameters to :func:`!field` are:
 
    - *default*: If provided, this will be the default value for this
