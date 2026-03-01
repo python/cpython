@@ -923,6 +923,7 @@ Attribute assignment updates the module's namespace dictionary, e.g.,
    single: __loader__ (module attribute)
    single: __path__ (module attribute)
    single: __file__ (module attribute)
+   single: __cached__ (module attribute)
    single: __doc__ (module attribute)
    single: __annotations__ (module attribute)
    single: __annotate__ (module attribute)
@@ -1073,8 +1074,7 @@ this approach.
 .. attribute:: module.__file__
 
    :attr:`!__file__` is an optional attribute that
-   may or may not be set. Both attributes should be a :class:`str` when they
-   are available.
+   may or may not be set. When available, it should be a :class:`str`.
 
    An optional attribute, :attr:`!__file__` indicates the pathname of the file
    from which the module was loaded (if loaded from a file), or the pathname of
@@ -1083,6 +1083,18 @@ this approach.
    modules that are statically linked into the interpreter, and the
    :ref:`import system <importsystem>` may opt to leave it unset if it
    has no semantic meaning (for example, a module loaded from a database).
+
+.. attribute:: module.__cached__
+
+   An optional attribute, :attr:`!__cached__` indicates the pathname of the
+   compiled bytecode file.
+
+   .. deprecated-removed:: 3.12 3.15
+      Setting ``__cached__`` is deprecated. In Python 3.15,
+      ``__cached__`` will cease to be set or taken into consideration by
+      the import system or standard library.
+      See :attr:`module.__spec__.cached <importlib.machinery.ModuleSpec.cached>`
+      instead.
 
 Other writable attributes on module objects
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
