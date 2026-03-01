@@ -184,11 +184,11 @@ increment_longindex_lock_held(enumobject *en)
         if (next_index == NULL) {
             return NULL;
         }
+        en->en_longindex = next_index;
     }
     assert(next_index != NULL);
     PyObject *stepped_up = PyNumber_Add(next_index, en->one);
     if (stepped_up == NULL) {
-        Py_DECREF(next_index);
         return NULL;
     }
     en->en_longindex = stepped_up;

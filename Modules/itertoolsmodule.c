@@ -3538,9 +3538,10 @@ count_nextlong(countobject *lz)
     if (long_cnt == NULL) {
         /* Switch to slow_mode */
         long_cnt = PyLong_FromSsize_t(PY_SSIZE_T_MAX);
-        lz->long_cnt = long_cnt;
-        if (long_cnt == NULL)
+        if (long_cnt == NULL) {
             return NULL;
+        }
+        lz->long_cnt = long_cnt;
     }
     assert(lz->cnt == PY_SSIZE_T_MAX && long_cnt != NULL);
 
