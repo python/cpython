@@ -81,6 +81,77 @@ exit:
     return return_value;
 }
 
+static PyObject *
+enum_vectorcall(PyObject *type, PyObject *const *args,
+    size_t nargsf, PyObject *kwnames)
+{
+    PyObject *return_value = NULL;
+    Py_ssize_t nargs = PyVectorcall_NARGS(nargsf);
+    PyObject *iterable;
+    PyObject *start = 0;
+
+    if (kwnames == NULL) {
+        if (!_PyArg_CheckPositional("enumerate", nargs, 1, 2)) {
+            goto exit;
+        }
+        iterable = args[0];
+        if (nargs < 2) {
+            goto skip_optional_vc_fast;
+        }
+        start = args[1];
+    skip_optional_vc_fast:
+        goto vc_fast_end;
+    }
+    #if defined(Py_BUILD_CORE) && !defined(Py_BUILD_CORE_MODULE)
+
+    #define NUM_KEYWORDS 2
+    static struct {
+        PyGC_Head _this_is_not_used;
+        PyObject_VAR_HEAD
+        Py_hash_t ob_hash;
+        PyObject *ob_item[NUM_KEYWORDS];
+    } _kwtuple = {
+        .ob_base = PyVarObject_HEAD_INIT(&PyTuple_Type, NUM_KEYWORDS)
+        .ob_hash = -1,
+        .ob_item = { &_Py_ID(iterable), &_Py_ID(start), },
+    };
+    #undef NUM_KEYWORDS
+    #define KWTUPLE (&_kwtuple.ob_base.ob_base)
+
+    #else  // !Py_BUILD_CORE
+    #  define KWTUPLE NULL
+    #endif  // !Py_BUILD_CORE
+
+    static const char * const _keywords[] = {"iterable", "start", NULL};
+    static _PyArg_Parser _parser = {
+        .keywords = _keywords,
+        .fname = "enumerate",
+        .kwtuple = KWTUPLE,
+    };
+    #undef KWTUPLE
+    PyObject *argsbuf[2];
+    Py_ssize_t noptargs = nargs + (kwnames ? PyTuple_GET_SIZE(kwnames) : 0) - 1;
+    args = _PyArg_UnpackKeywords(args, nargs, NULL, kwnames,
+        &_parser,
+        /*minpos*/ 1, /*maxpos*/ 2,
+        /*minkw*/ 0,
+        /*varpos*/ 0, argsbuf);
+    if (!args) {
+        goto exit;
+    }
+    iterable = args[0];
+    if (!noptargs) {
+        goto skip_optional_pos_vc;
+    }
+    start = args[1];
+skip_optional_pos_vc:
+vc_fast_end:
+    return_value = enum_new_impl(_PyType_CAST(type), iterable, start);
+
+exit:
+    return return_value;
+}
+
 PyDoc_STRVAR(reversed_new__doc__,
 "reversed(object, /)\n"
 "--\n"
@@ -110,4 +181,25 @@ reversed_new(PyTypeObject *type, PyObject *args, PyObject *kwargs)
 exit:
     return return_value;
 }
-/*[clinic end generated code: output=155cc9483d5f9eab input=a9049054013a1b77]*/
+
+static PyObject *
+reversed_vectorcall(PyObject *type, PyObject *const *args,
+    size_t nargsf, PyObject *kwnames)
+{
+    PyObject *return_value = NULL;
+    Py_ssize_t nargs = PyVectorcall_NARGS(nargsf);
+    PyObject *seq;
+
+    if (!_PyArg_NoKwnames("reversed", kwnames)) {
+        goto exit;
+    }
+    if (!_PyArg_CheckPositional("reversed", nargs, 1, 1)) {
+        goto exit;
+    }
+    seq = args[0];
+    return_value = reversed_new_impl(_PyType_CAST(type), seq);
+
+exit:
+    return return_value;
+}
+/*[clinic end generated code: output=d0c0441d7f42cd54 input=a9049054013a1b77]*/

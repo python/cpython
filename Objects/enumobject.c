@@ -28,6 +28,7 @@ typedef struct {
 #define _enumobject_CAST(op)    ((enumobject *)(op))
 
 /*[clinic input]
+@vectorcall
 @classmethod
 enumerate.__new__ as enum_new
 
@@ -46,7 +47,7 @@ enumerate is useful for obtaining an indexed list:
 
 static PyObject *
 enum_new_impl(PyTypeObject *type, PyObject *iterable, PyObject *start)
-/*[clinic end generated code: output=e95e6e439f812c10 input=782e4911efcb8acf]*/
+/*[clinic end generated code: output=e95e6e439f812c10 input=a139e88889360e8f]*/
 {
     enumobject *en;
 
@@ -85,71 +86,6 @@ enum_new_impl(PyTypeObject *type, PyObject *iterable, PyObject *start)
     }
     en->one = _PyLong_GetOne();    /* borrowed reference */
     return (PyObject *)en;
-}
-
-static int check_keyword(PyObject *kwnames, int index,
-                         const char *name)
-{
-    PyObject *kw = PyTuple_GET_ITEM(kwnames, index);
-    if (!_PyUnicode_EqualToASCIIString(kw, name)) {
-        PyErr_Format(PyExc_TypeError,
-            "'%S' is an invalid keyword argument for enumerate()", kw);
-        return 0;
-    }
-    return 1;
-}
-
-// TODO: Use AC when bpo-43447 is supported
-static PyObject *
-enumerate_vectorcall(PyObject *type, PyObject *const *args,
-                     size_t nargsf, PyObject *kwnames)
-{
-    PyTypeObject *tp = _PyType_CAST(type);
-    Py_ssize_t nargs = PyVectorcall_NARGS(nargsf);
-    Py_ssize_t nkwargs = 0;
-    if (kwnames != NULL) {
-        nkwargs = PyTuple_GET_SIZE(kwnames);
-    }
-
-    // Manually implement enumerate(iterable, start=...)
-    if (nargs + nkwargs == 2) {
-        if (nkwargs == 1) {
-            if (!check_keyword(kwnames, 0, "start")) {
-                return NULL;
-            }
-        } else if (nkwargs == 2) {
-            PyObject *kw0 = PyTuple_GET_ITEM(kwnames, 0);
-            if (_PyUnicode_EqualToASCIIString(kw0, "start")) {
-                if (!check_keyword(kwnames, 1, "iterable")) {
-                    return NULL;
-                }
-                return enum_new_impl(tp, args[1], args[0]);
-            }
-            if (!check_keyword(kwnames, 0, "iterable") ||
-                !check_keyword(kwnames, 1, "start")) {
-                return NULL;
-            }
-
-        }
-        return enum_new_impl(tp, args[0], args[1]);
-    }
-
-    if (nargs + nkwargs == 1) {
-        if (nkwargs == 1 && !check_keyword(kwnames, 0, "iterable")) {
-            return NULL;
-        }
-        return enum_new_impl(tp, args[0], NULL);
-    }
-
-    if (nargs == 0) {
-        PyErr_SetString(PyExc_TypeError,
-            "enumerate() missing required argument 'iterable'");
-        return NULL;
-    }
-
-    PyErr_Format(PyExc_TypeError,
-        "enumerate() takes at most 2 arguments (%d given)", nargs + nkwargs);
-    return NULL;
 }
 
 static void
@@ -350,7 +286,7 @@ PyTypeObject PyEnum_Type = {
     PyType_GenericAlloc,            /* tp_alloc */
     enum_new,                       /* tp_new */
     PyObject_GC_Del,                /* tp_free */
-    .tp_vectorcall = enumerate_vectorcall
+    .tp_vectorcall = enum_vectorcall
 };
 
 /* Reversed Object ***************************************************************/
@@ -364,6 +300,7 @@ typedef struct {
 #define _reversedobject_CAST(op)    ((reversedobject *)(op))
 
 /*[clinic input]
+@vectorcall
 @classmethod
 reversed.__new__ as reversed_new
 
@@ -375,7 +312,7 @@ Return a reverse iterator over the values of the given sequence.
 
 static PyObject *
 reversed_new_impl(PyTypeObject *type, PyObject *seq)
-/*[clinic end generated code: output=f7854cc1df26f570 input=4781869729e3ba50]*/
+/*[clinic end generated code: output=f7854cc1df26f570 input=7db568182ab28c59]*/
 {
     Py_ssize_t n;
     PyObject *reversed_meth;
@@ -415,22 +352,6 @@ reversed_new_impl(PyTypeObject *type, PyObject *seq)
     ro->index = n-1;
     ro->seq = Py_NewRef(seq);
     return (PyObject *)ro;
-}
-
-static PyObject *
-reversed_vectorcall(PyObject *type, PyObject * const*args,
-                size_t nargsf, PyObject *kwnames)
-{
-    if (!_PyArg_NoKwnames("reversed", kwnames)) {
-        return NULL;
-    }
-
-    Py_ssize_t nargs = PyVectorcall_NARGS(nargsf);
-    if (!_PyArg_CheckPositional("reversed", nargs, 1, 1)) {
-        return NULL;
-    }
-
-    return reversed_new_impl(_PyType_CAST(type), args[0]);
 }
 
 static void
