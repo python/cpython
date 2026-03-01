@@ -981,7 +981,7 @@ def singledispatch(func):
         return (isinstance(cls, UnionType) and
                 all(isinstance(arg, type) for arg in cls.__args__))
 
-    def register(cls, func=None, __role__="function"):
+    def register(cls, func=None, *, _role="function"):
         """generic_func.register(cls, func) -> func
 
         Registers a new implementation for the given *cls* on a *generic_func*.
@@ -1006,7 +1006,7 @@ def singledispatch(func):
                 )
             func = cls
 
-            argname = _get_singledispatch_annotated_param(func, role=__role__)
+            argname = _get_singledispatch_annotated_param(func, role=_role)
 
             # only import typing if annotation parsing is necessary
             from typing import get_type_hints
@@ -1058,7 +1058,7 @@ def singledispatch(func):
     funcname = getattr(func, '__name__', 'singledispatch function')
     registry[object] = func
     wrapper.register = register
-    wrapper.register.__text_signature__ = "(cls, func)"  # Hide __role__ from help().
+    wrapper.register.__text_signature__ = "(cls, func)"  # Hide _role from help().
     wrapper.dispatch = dispatch
     wrapper.registry = MappingProxyType(registry)
     wrapper._clear_cache = dispatch_cache.clear
@@ -1086,7 +1086,7 @@ class singledispatchmethod:
 
         Registers a new implementation for the given *cls* on a *generic_method*.
         """
-        return self.dispatcher.register(cls, func=method, __role__="method")
+        return self.dispatcher.register(cls, func=method, _role="method")
 
     def __get__(self, obj, cls=None):
         return _singledispatchmethod_get(self, obj, cls)
