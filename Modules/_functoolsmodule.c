@@ -705,26 +705,39 @@ partial_repr(PyObject *self)
     arglist = Py_GetConstant(Py_CONSTANT_EMPTY_STR);
     if (arglist == NULL)
         goto done;
-    /* Pack positional arguments */
+    /* Pack positional arguments.
+     * Hold a strong reference to pto->args across the loop, because
+     * a user-defined __repr__ called via %R could mutate 'pto' (e.g.
+     * via __setstate__), freeing the original args tuple while we're
+     * still iterating over it.  See gh-144475. */
     assert(PyTuple_Check(pto->args));
-    n = PyTuple_GET_SIZE(pto->args);
+    PyObject *args = Py_NewRef(pto->args);
+    n = PyTuple_GET_SIZE(args);
     for (i = 0; i < n; i++) {
         Py_SETREF(arglist, PyUnicode_FromFormat("%U, %R", arglist,
-                                        PyTuple_GET_ITEM(pto->args, i)));
-        if (arglist == NULL)
+                                        PyTuple_GET_ITEM(args, i)));
+        if (arglist == NULL) {
+            Py_DECREF(args);
             goto done;
+        }
     }
-    /* Pack keyword arguments */
+    Py_DECREF(args);
+    /* Pack keyword arguments.
+     * Similarly, hold a strong reference to pto->kw.  See gh-144475. */
     assert (PyDict_Check(pto->kw));
-    for (i = 0; PyDict_Next(pto->kw, &i, &key, &value);) {
+    PyObject *kw = Py_NewRef(pto->kw);
+    for (i = 0; PyDict_Next(kw, &i, &key, &value);) {
         /* Prevent key.__str__ from deleting the value. */
         Py_INCREF(value);
         Py_SETREF(arglist, PyUnicode_FromFormat("%U, %S=%R", arglist,
                                                 key, value));
         Py_DECREF(value);
-        if (arglist == NULL)
+        if (arglist == NULL) {
+            Py_DECREF(kw);
             goto done;
+        }
     }
+    Py_DECREF(kw);
 
     mod = PyType_GetModuleName(Py_TYPE(pto));
     if (mod == NULL) {
@@ -735,7 +748,10 @@ partial_repr(PyObject *self)
         Py_DECREF(mod);
         goto error;
     }
-    result = PyUnicode_FromFormat("%S.%S(%R%U)", mod, name, pto->fn, arglist);
+    /* Hold a strong reference to pto->fn for the same reason as args/kw. */
+    PyObject *fn = Py_NewRef(pto->fn);
+    result = PyUnicode_FromFormat("%S.%S(%R%U)", mod, name, fn, arglist);
+    Py_DECREF(fn);
     Py_DECREF(mod);
     Py_DECREF(name);
     Py_DECREF(arglist);
