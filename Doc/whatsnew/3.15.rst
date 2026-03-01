@@ -857,6 +857,13 @@ os.path
   (Contributed by Petr Viktorin for :cve:`2025-4517`.)
 
 
+pdb
+---
+
+* Use the new interactive shell as the default input shell for :mod:`pdb`.
+  (Contributed by Tian Gao in :gh:`145379`.)
+
+
 pickle
 ------
 
