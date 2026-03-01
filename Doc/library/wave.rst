@@ -9,13 +9,18 @@
 --------------
 
 The :mod:`!wave` module provides a convenient interface to the Waveform Audio
-"WAVE" (or "WAV") file format. Only uncompressed PCM encoded wave files are
-supported.
+"WAVE" (or "WAV") file format.
+
+The module supports uncompressed PCM and IEEE floating-point WAV formats.
 
 .. versionchanged:: 3.12
 
    Support for ``WAVE_FORMAT_EXTENSIBLE`` headers was added, provided that the
    extended format is ``KSDATAFORMAT_SUBTYPE_PCM``.
+
+.. versionchanged:: 3.15
+
+   Support for reading and writing ``WAVE_FORMAT_IEEE_FLOAT`` files was added.
 
 The :mod:`!wave` module defines the following function and exception:
 
@@ -98,6 +103,14 @@ Wave_read Objects
       Returns number of audio frames.
 
 
+   .. method:: getformat()
+
+      Returns the frame format code.
+
+      This is one of ``WAVE_FORMAT_PCM``, ``WAVE_FORMAT_IEEE_FLOAT``, or
+      ``WAVE_FORMAT_EXTENSIBLE``.
+
+
    .. method:: getcomptype()
 
       Returns compression type (``'NONE'`` is the only supported type).
@@ -112,8 +125,8 @@ Wave_read Objects
    .. method:: getparams()
 
       Returns a :func:`~collections.namedtuple` ``(nchannels, sampwidth,
-      framerate, nframes, comptype, compname)``, equivalent to output of the
-      ``get*()`` methods.
+      framerate, nframes, comptype, compname, format)``, equivalent to output
+      of the ``get*()`` methods.
 
 
    .. method:: readframes(n)
@@ -208,11 +221,27 @@ Wave_write Objects
       ``NONE`` is supported, meaning no compression.
 
 
+   .. method:: setformat(format)
+
+      Set the frame format code.
+
+      Supported values are ``WAVE_FORMAT_PCM`` and
+      ``WAVE_FORMAT_IEEE_FLOAT``.
+
+
+   .. method:: getformat()
+
+      Return the current frame format code.
+
+
    .. method:: setparams(tuple)
 
-      The *tuple* should be ``(nchannels, sampwidth, framerate, nframes, comptype,
-      compname)``, with values valid for the ``set*()`` methods.  Sets all
-      parameters.
+      The *tuple* should be
+      ``(nchannels, sampwidth, framerate, nframes, comptype, compname, format)``,
+      with values valid for the ``set*()`` methods. Sets all parameters.
+
+      For backwards compatibility, a 6-item tuple without *format* is also
+      accepted and defaults to ``WAVE_FORMAT_PCM``.
 
 
    .. method:: tell()
@@ -242,3 +271,6 @@ Wave_write Objects
       Note that it is invalid to set any parameters after calling :meth:`writeframes`
       or :meth:`writeframesraw`, and any attempt to do so will raise
       :exc:`wave.Error`.
+
+      For ``WAVE_FORMAT_IEEE_FLOAT`` output, a ``fact`` chunk is written as
+      required by the WAVE specification for non-PCM formats.
