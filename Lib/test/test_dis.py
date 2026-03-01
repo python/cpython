@@ -37,11 +37,7 @@ def get_tb():
 
 TRACEBACK_CODE = get_tb().tb_frame.f_code
 
-def _get_dis_theme():
-    from _colorize import get_theme
-    return get_theme().dis
-
-theme = _get_dis_theme()
+theme = dis._get_dis_theme()
 
 class _C:
     def __init__(self, x):
