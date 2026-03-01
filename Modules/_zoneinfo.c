@@ -348,7 +348,7 @@ zoneinfo_ZoneInfo_impl(PyTypeObject *type, PyObject *key)
     if (!PyObject_TypeCheck(instance, type)) {
         PyErr_Format(PyExc_RuntimeError,
                      "Unexpected instance of %T in %s weak cache for key %R",
-                     instance, type->tp_name, key);
+                     instance, _PyType_Name(type), key);
         Py_DECREF(instance);
         Py_DECREF(weak_cache);
         return NULL;

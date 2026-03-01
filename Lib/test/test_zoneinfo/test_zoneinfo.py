@@ -1585,7 +1585,7 @@ class CZoneInfoCacheTest(ZoneInfoCacheTest):
         class ZI(self.klass):
             pass
         # Class attribute must be set after class creation
-        # to override zoneinfo.Zoneinfo.__init_subclass__.
+        # to override zoneinfo.ZoneInfo.__init_subclass__.
         ZI._weak_cache = Cache()
 
         with self.assertRaises(RuntimeError) as te:
@@ -1605,7 +1605,7 @@ class CZoneInfoCacheTest(ZoneInfoCacheTest):
         class ZI(self.klass):
             pass
         # Class attribute must be set after class creation
-        # to override zoneinfo.Zoneinfo.__init_subclass__.
+        # to override zoneinfo.ZoneInfo.__init_subclass__.
         ZI._weak_cache = Cache()
 
         with self.assertRaises(RuntimeError) as te:
