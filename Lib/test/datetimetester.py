@@ -2208,17 +2208,16 @@ class TestDate(HarmlessMixedComparison, unittest.TestCase):
         )
 
     def test_strptime_n_and_t_format(self):
-        year, month, day = 2026, 2, 20
         whitespaces = ('', ' ', '\t', '\r', '\v', '\n', '\f')
         for fd in ('n', 't'):
             for ws in (*whitespaces, ''.join(whitespaces)):
                 with self.subTest(format_directive=fd, whitespace=ws):
                     self.assertEqual(
                         self.theclass.strptime(
-                            f"{year:04d}{ws}{month:02d}{ws}{day:02d}",
+                            f"2026{ws}02{ws}01",
                             f"%Y%{fd}%m%{fd}%d"
                         ),
-                        self.theclass(year, month, day)
+                        self.theclass(2026, 2, 1)
                     )
 
 #############################################################################
