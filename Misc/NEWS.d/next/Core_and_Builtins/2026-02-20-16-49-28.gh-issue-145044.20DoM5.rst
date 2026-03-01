@@ -1,2 +1,0 @@
-The function ``unsafe_object_compare()`` in :file:`Objects/listobject.c` has been optimized to avoid unnecessary reference count decrements on boolean results.
-Patch by Benedikt Johannes.
