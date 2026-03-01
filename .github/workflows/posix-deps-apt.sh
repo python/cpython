@@ -1,7 +1,7 @@
 #!/bin/sh
 apt-get update
 
-apt-get -yq install \
+apt-get -yq --no-install-recommends install \
     build-essential \
     pkg-config \
     ccache \
