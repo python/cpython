@@ -1,0 +1,30 @@
+Linux sdsshost2.apo.nmsu.edu 2.4.21-32.0.1.ELsmp #1 SMP Wed May 25 16:24:34 CDT 2005 i686 athlon i386 GNU/Linux
+Main memory size: 896 Mbytes
+2 AuthenticAMD AMD Opteron(tm) Processor 250 processors
+2 16550A serial ports
+1 vga+ graphics device
+1 keyboard
+PCI bus devices:
+    PCI bridge: Advanced Micro Devices [AMD] AMD-8111 PCI (rev 7).
+    ISA bridge: Advanced Micro Devices [AMD] AMD-8111 LPC (rev 5).
+    IDE interface: Advanced Micro Devices [AMD] AMD-8111 IDE (rev 3).
+    SMBus: Advanced Micro Devices [AMD] AMD-8111 SMBus 2.0 (rev 2).
+    Bridge: Advanced Micro Devices [AMD] AMD-8111 ACPI (rev 5).
+    PCI bridge: Advanced Micro Devices [AMD] AMD-8131 PCI-X Bridge (#2) (rev 18).
+    PCI bridge: Advanced Micro Devices [AMD] AMD-8131 PCI-X Bridge (rev 18).
+    PIC: Advanced Micro Devices [AMD] AMD-8131 PCI-X APIC (#2) (rev 1).
+    PIC: Advanced Micro Devices [AMD] AMD-8131 PCI-X APIC (rev 1).
+    Host bridge: Advanced Micro Devices [AMD] K8 NorthBridge (#2) (rev 0).
+    Host bridge: Advanced Micro Devices [AMD] K8 NorthBridge (rev 0).
+    Host bridge: Advanced Micro Devices [AMD] K8 NorthBridge (#2) (rev 0).
+    Host bridge: Advanced Micro Devices [AMD] K8 NorthBridge (rev 0).
+    Host bridge: Advanced Micro Devices [AMD] K8 NorthBridge (#2) (rev 0).
+    Host bridge: Advanced Micro Devices [AMD] K8 NorthBridge (rev 0).
+    Host bridge: Advanced Micro Devices [AMD] K8 NorthBridge (#2) (rev 0).
+    Host bridge: Advanced Micro Devices [AMD] K8 NorthBridge (rev 0).
+    USB Controller: Advanced Micro Devices [AMD] AMD-8111 USB (#2) (rev 11).
+    USB Controller: Advanced Micro Devices [AMD] AMD-8111 USB (rev 11).
+    VGA compatible controller: ATI Technologies Inc Rage XL (rev 39).
+    Ethernet controller: Broadcom Corporation NetXtreme BCM5704 Gigabit Ethernet (#2) (rev 3).
+    Ethernet controller: Broadcom Corporation NetXtreme BCM5704 Gigabit Ethernet (rev 3).
+    RAID bus controller: 3ware Inc 3ware ATA-RAID (rev 0).

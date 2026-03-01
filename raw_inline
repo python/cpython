@@ -1,0 +1,452 @@
+Builder: AMD64 Windows11 Refleaks 3.12
+Build number: 854
+Worker name: ware-win11
+git --version
+ in dir b:\uildarea\3.12.ware-win11.refleak\build (timeout 3600 secs)
+ watching logfiles {}
+ argv: [b'git', b'--version']
+ environment:
+  ALLUSERSPROFILE=C:\ProgramData
+  APPDATA=C:\Users\buildworker\AppData\Roaming
+  COMMONPROGRAMFILES=C:\Program Files\Common Files
+  COMMONPROGRAMFILES(X86)=C:\Program Files (x86)\Common Files
+  COMMONPROGRAMW6432=C:\Program Files\Common Files
+  COMPUTERNAME=ware-win11
+  COMSPEC=C:\Windows\system32\cmd.exe
+  DRIVERDATA=C:\Windows\System32\Drivers\DriverData
+  HOMEDRIVE=C:
+  HOMEPATH=\Users\buildworker
+  LOCALAPPDATA=C:\Users\buildworker\AppData\Local
+  LOGONSERVER=\\ware-win11
+  NUMBER_OF_PROCESSORS=2
+  ONEDRIVE=C:\Users\buildworker\OneDrive
+  OS=Windows_NT
+  PATH=C:\Windows\system32;C:\Windows;C:\Windows\System32\Wbem;C:\Windows\System32\WindowsPowerShell\v1.0\;C:\Windows\System32\OpenSSH\;C:\Program Files\Git\cmd;C:\Users\buildworker\AppData\Local\Microsoft\WindowsApps
+  PATHEXT=.COM;.EXE;.BAT;.CMD;.VBS;.VBE;.JS;.JSE;.WSF;.WSH;.MSC
+  PROCESSOR_ARCHITECTURE=AMD64
+  PROCESSOR_IDENTIFIER=AMD64 Family 25 Model 1 Stepping 1, AuthenticAMD
+  PROCESSOR_LEVEL=25
+  PROCESSOR_REVISION=0101
+  PROGRAMDATA=C:\ProgramData
+  PROGRAMFILES=C:\Program Files
+  PROGRAMFILES(X86)=C:\Program Files (x86)
+  PROGRAMW6432=C:\Program Files
+  PSMODULEPATH=%ProgramFiles%\WindowsPowerShell\Modules;C:\Windows\system32\WindowsPowerShell\v1.0\Modules
+  PUBLIC=C:\Users\Public
+  PWD=b:\uildarea\3.12.ware-win11.refleak\build
+  SYSTEMDRIVE=C:
+  SYSTEMROOT=C:\Windows
+  TEMP=b:\uildworker_temp
+  TMP=b:\uildworker_tmp
+  USERDOMAIN=ware-win11
+  USERDOMAIN_ROAMINGPROFILE=ware-win11
+  USERNAME=buildworker
+  USERPROFILE=C:\Users\buildworker
+  VS140COMNTOOLS=C:\Program Files (x86)\Microsoft Visual Studio 14.0\Common7\Tools\
+  WINDIR=C:\Windows
+ using PTY: False
+git version 2.47.1.windows.1
+program finished with exit code 0
+elapsedTime=0.109377
+program finished with exit code 2
+stat: The system cannot find the file specified: b:\uildarea\3.12.ware-win11.refleak\build\.buildbot-patched
+program finished with exit code 0
+git clean -f -f -d -x
+ in dir b:\uildarea\3.12.ware-win11.refleak\build (timeout 3600 secs)
+ watching logfiles {}
+ argv: [b'git', b'clean', b'-f', b'-f', b'-d', b'-x']
+ environment:
+  ALLUSERSPROFILE=C:\ProgramData
+  APPDATA=C:\Users\buildworker\AppData\Roaming
+  COMMONPROGRAMFILES=C:\Program Files\Common Files
+  COMMONPROGRAMFILES(X86)=C:\Program Files (x86)\Common Files
+  COMMONPROGRAMW6432=C:\Program Files\Common Files
+  COMPUTERNAME=ware-win11
+  COMSPEC=C:\Windows\system32\cmd.exe
+  DRIVERDATA=C:\Windows\System32\Drivers\DriverData
+  HOMEDRIVE=C:
+  HOMEPATH=\Users\buildworker
+  LOCALAPPDATA=C:\Users\buildworker\AppData\Local
+  LOGONSERVER=\\ware-win11
+  NUMBER_OF_PROCESSORS=2
+  ONEDRIVE=C:\Users\buildworker\OneDrive
+  OS=Windows_NT
+  PATH=C:\Windows\system32;C:\Windows;C:\Windows\System32\Wbem;C:\Windows\System32\WindowsPowerShell\v1.0\;C:\Windows\System32\OpenSSH\;C:\Program Files\Git\cmd;C:\Users\buildworker\AppData\Local\Microsoft\WindowsApps
+  PATHEXT=.COM;.EXE;.BAT;.CMD;.VBS;.VBE;.JS;.JSE;.WSF;.WSH;.MSC
+  PROCESSOR_ARCHITECTURE=AMD64
+  PROCESSOR_IDENTIFIER=AMD64 Family 25 Model 1 Stepping 1, AuthenticAMD
+  PROCESSOR_LEVEL=25
+  PROCESSOR_REVISION=0101
+  PROGRAMDATA=C:\ProgramData
+  PROGRAMFILES=C:\Program Files
+  PROGRAMFILES(X86)=C:\Program Files (x86)
+  PROGRAMW6432=C:\Program Files
+  PSMODULEPATH=%ProgramFiles%\WindowsPowerShell\Modules;C:\Windows\system32\WindowsPowerShell\v1.0\Modules
+  PUBLIC=C:\Users\Public
+  PWD=b:\uildarea\3.12.ware-win11.refleak\build
+  SYSTEMDRIVE=C:
+  SYSTEMROOT=C:\Windows
+  TEMP=b:\uildworker_temp
+  TMP=b:\uildworker_tmp
+  USERDOMAIN=ware-win11
+  USERDOMAIN_ROAMINGPROFILE=ware-win11
+  USERNAME=buildworker
+  USERPROFILE=C:\Users\buildworker
+  VS140COMNTOOLS=C:\Program Files (x86)\Microsoft Visual Studio 14.0\Common7\Tools\
+  WINDIR=C:\Windows
+ using PTY: False
+Removing Lib/__pycache__/
+Removing Lib/asyncio/__pycache__/
+Removing Lib/collections/__pycache__/
+Removing Lib/concurrent/__pycache__/
+Removing Lib/concurrent/futures/__pycache__/
+Removing Lib/ctypes/__pycache__/
+Removing Lib/ctypes/macholib/__pycache__/
+Removing Lib/curses/__pycache__/
+Removing Lib/dbm/__pycache__/
+Removing Lib/email/__pycache__/
+Removing Lib/email/mime/__pycache__/
+Removing Lib/encodings/__pycache__/
+Removing Lib/ensurepip/__pycache__/
+Removing Lib/html/__pycache__/
+Removing Lib/http/__pycache__/
+Removing Lib/idlelib/__pycache__/
+Removing Lib/idlelib/idle_test/__pycache__/
+Removing Lib/importlib/__pycache__/
+Removing Lib/importlib/metadata/__pycache__/
+Removing Lib/importlib/resources/__pycache__/
+Removing Lib/json/__pycache__/
+Removing Lib/lib2to3/__pycache__/
+Removing Lib/lib2to3/pgen2/__pycache__/
+Removing Lib/logging/__pycache__/
+Removing Lib/msilib/__pycache__/
+Removing Lib/multiprocessing/__pycache__/
+Removing Lib/multiprocessing/dummy/__pycache__/
+Removing Lib/pydoc_data/__pycache__/
+Removing Lib/re/__pycache__/
+Removing Lib/sqlite3/__pycache__/
+Removing Lib/test/__pycache__/
+Removing Lib/test/data/BIG5.TXT
+Removing Lib/test/data/BIG5HKSCS-2004.TXT
+Removing Lib/test/data/CP949.TXT
+Removing Lib/test/data/CP950.TXT
+Removing Lib/test/data/EUC-KR.TXT
+Removing Lib/test/data/JOHAB.TXT
+Removing Lib/test/data/blake2b.txt
+Removing Lib/test/data/blake2s.txt
+Removing Lib/test/data/sha3_224.txt
+Removing Lib/test/data/sha3_256.txt
+Removing Lib/test/data/sha3_384.txt
+Removing Lib/test/data/sha3_512.txt
+Removing Lib/test/data/shake_128.txt
+Removing Lib/test/data/shake_256.txt
+Removing Lib/test/encoded_modules/__pycache__/
+Removing Lib/test/libregrtest/__pycache__/
+Removing Lib/test/regrtestdata/import_from_tests/__pycache__/
+Removing Lib/test/regrtestdata/import_from_tests/test_regrtest_b/__pycache__/
+Removing Lib/test/support/__pycache__/
+Removing Lib/test/support/_hypothesis_stubs/__pycache__/
+Removing Lib/test/test_ast/__pycache__/
+Removing Lib/test/test_asyncio/__pycache__/
+Removing Lib/test/test_capi/__pycache__/
+Removing Lib/test/test_cext/__pycache__/
+Removing Lib/test/test_concurrent_futures/__pycache__/
+Removing Lib/test/test_cppext/__pycache__/
+Removing Lib/test/test_ctypes/__pycache__/
+Removing Lib/test/test_dataclasses/__pycache__/
+Removing Lib/test/test_doctest/__pycache__/
+Removing Lib/test/test_email/__pycache__/
+Removing Lib/test/test_future_stmt/__pycache__/
+Removing Lib/test/test_gdb/__pycache__/
+Removing Lib/test/test_import/__pycache__/
+Removing Lib/test/test_import/data/__pycache__/
+Removing Lib/test/test_import/data/circular_imports/__pycache__/
+Removing Lib/test/test_import/data/circular_imports/subpkg/__pycache__/
+Removing Lib/test/test_import/data/circular_imports/subpkg2/__pycache__/
+Removing Lib/test/test_import/data/circular_imports/subpkg2/parent/__pycache__/
+Removing Lib/test/test_import/data/package/__pycache__/
+Removing Lib/test/test_import/data/package2/__pycache__/
+Removing Lib/test/test_import/data/package3/__pycache__/
+Removing Lib/test/test_import/data/package4/__pycache__/
+Removing Lib/test/test_import/data/unwritable/__pycache__/
+Removing Lib/test/test_importlib/__pycache__/
+Removing Lib/test/test_importlib/import_/__pycache__/
+Removing Lib/test/test_inspect/__pycache__/
+Removing Lib/test/test_multiprocessing_fork/__pycache__/
+Removing Lib/test/test_multiprocessing_forkserver/__pycache__/
+Removing Lib/test/test_multiprocessing_spawn/__pycache__/
+Removing Lib/test/test_peg_generator/__pycache__/
+Removing Lib/test/test_pydoc/__pycache__/
+Removing Lib/test/test_sqlite3/__pycache__/
+Removing Lib/test/test_tkinter/__pycache__/
+Removing Lib/test/test_tomllib/__pycache__/
+Removing Lib/test/test_tools/__pycache__/
+Removing Lib/test/test_ttk/__pycache__/
+Removing Lib/test/test_unittest/__pycache__/
+Removing Lib/test/test_unittest/testmock/__pycache__/
+Removing Lib/test/test_warnings/__pycache__/
+Removing Lib/test/test_warnings/data/__pycache__/
+Removing Lib/test/test_zoneinfo/__pycache__/
+Removing Lib/test/tokenizedata/__pycache__/
+Removing Lib/test/tracedmodules/__pycache__/
+Removing Lib/test/typinganndata/__pycache__/
+Removing Lib/tkinter/__pycache__/
+Removing Lib/tomllib/__pycache__/
+Removing Lib/unittest/__pycache__/
+Removing Lib/urllib/__pycache__/
+Removing Lib/venv/__pycache__/
+Removing Lib/wsgiref/__pycache__/
+Removing Lib/xml/__pycache__/
+Removing Lib/xml/dom/__pycache__/
+Removing Lib/xml/etree/__pycache__/
+Removing Lib/xml/parsers/__pycache__/
+Removing Lib/xml/sax/__pycache__/
+Removing Lib/xmlrpc/__pycache__/
+Removing Lib/zipfile/__pycache__/
+Removing Lib/zipfile/_path/__pycache__/
+Removing Lib/zoneinfo/__pycache__/
+Removing PCbuild/amd64/
+Removing PCbuild/obj/
+Removing PCbuild/win32/
+Removing Parser/__pycache__/
+Removing Python/deepfreeze/deepfreeze.c
+Removing Python/frozen_modules/__hello__.h
+Removing Python/frozen_modules/__phello__.h
+Removing Python/frozen_modules/__phello__.ham.eggs.h
+Removing Python/frozen_modules/__phello__.ham.h
+Removing Python/frozen_modules/__phello__.spam.h
+Removing Python/frozen_modules/_collections_abc.h
+Removing Python/frozen_modules/_sitebuiltins.h
+Removing Python/frozen_modules/abc.h
+Removing Python/frozen_modules/codecs.h
+Removing Python/frozen_modules/frozen_only.h
+Removing Python/frozen_modules/genericpath.h
+Removing Python/frozen_modules/getpath.h
+Removing Python/frozen_modules/importlib._bootstrap.h
+Removing Python/frozen_modules/importlib._bootstrap_external.h
+Removing Python/frozen_modules/importlib.machinery.h
+Removing Python/frozen_modules/importlib.util.h
+Removing Python/frozen_modules/io.h
+Removing Python/frozen_modules/ntpath.h
+Removing Python/frozen_modules/os.h
+Removing Python/frozen_modules/posixpath.h
+Removing Python/frozen_modules/runpy.h
+Removing Python/frozen_modules/site.h
+Removing Python/frozen_modules/stat.h
+Removing Python/frozen_modules/zipimport.h
+Removing Tools/build/__pycache__/
+Removing Tools/clinic/__pycache__/
+Removing Tools/freeze/test/__pycache__/
+Removing Tools/peg_generator/pegen/__pycache__/
+Removing Tools/scripts/__pycache__/
+Removing build/
+Removing externals/
+Removing python.bat
+program finished with exit code 0
+elapsedTime=4.198911
+git cat-file -e aeb3a6f61af53ed3fbf31f0b3704f49b71ac553c
+ in dir b:\uildarea\3.12.ware-win11.refleak\build (timeout 3600 secs)
+ watching logfiles {}
+ argv: [b'git', b'cat-file', b'-e', b'aeb3a6f61af53ed3fbf31f0b3704f49b71ac553c']
+ environment:
+  ALLUSERSPROFILE=C:\ProgramData
+  APPDATA=C:\Users\buildworker\AppData\Roaming
+  COMMONPROGRAMFILES=C:\Program Files\Common Files
+  COMMONPROGRAMFILES(X86)=C:\Program Files (x86)\Common Files
+  COMMONPROGRAMW6432=C:\Program Files\Common Files
+  COMPUTERNAME=ware-win11
+  COMSPEC=C:\Windows\system32\cmd.exe
+  DRIVERDATA=C:\Windows\System32\Drivers\DriverData
+  HOMEDRIVE=C:
+  HOMEPATH=\Users\buildworker
+  LOCALAPPDATA=C:\Users\buildworker\AppData\Local
+  LOGONSERVER=\\ware-win11
+  NUMBER_OF_PROCESSORS=2
+  ONEDRIVE=C:\Users\buildworker\OneDrive
+  OS=Windows_NT
+  PATH=C:\Windows\system32;C:\Windows;C:\Windows\System32\Wbem;C:\Windows\System32\WindowsPowerShell\v1.0\;C:\Windows\System32\OpenSSH\;C:\Program Files\Git\cmd;C:\Users\buildworker\AppData\Local\Microsoft\WindowsApps
+  PATHEXT=.COM;.EXE;.BAT;.CMD;.VBS;.VBE;.JS;.JSE;.WSF;.WSH;.MSC
+  PROCESSOR_ARCHITECTURE=AMD64
+  PROCESSOR_IDENTIFIER=AMD64 Family 25 Model 1 Stepping 1, AuthenticAMD
+  PROCESSOR_LEVEL=25
+  PROCESSOR_REVISION=0101
+  PROGRAMDATA=C:\ProgramData
+  PROGRAMFILES=C:\Program Files
+  PROGRAMFILES(X86)=C:\Program Files (x86)
+  PROGRAMW6432=C:\Program Files
+  PSMODULEPATH=%ProgramFiles%\WindowsPowerShell\Modules;C:\Windows\system32\WindowsPowerShell\v1.0\Modules
+  PUBLIC=C:\Users\Public
+  PWD=b:\uildarea\3.12.ware-win11.refleak\build
+  SYSTEMDRIVE=C:
+  SYSTEMROOT=C:\Windows
+  TEMP=b:\uildworker_temp
+  TMP=b:\uildworker_tmp
+  USERDOMAIN=ware-win11
+  USERDOMAIN_ROAMINGPROFILE=ware-win11
+  USERNAME=buildworker
+  USERPROFILE=C:\Users\buildworker
+  VS140COMNTOOLS=C:\Program Files (x86)\Microsoft Visual Studio 14.0\Common7\Tools\
+  WINDIR=C:\Windows
+ using PTY: False
+program finished with exit code 0
+elapsedTime=0.109371
+git checkout -f aeb3a6f61af53ed3fbf31f0b3704f49b71ac553c
+ in dir b:\uildarea\3.12.ware-win11.refleak\build (timeout 3600 secs)
+ watching logfiles {}
+ argv: [b'git', b'checkout', b'-f', b'aeb3a6f61af53ed3fbf31f0b3704f49b71ac553c']
+ environment:
+  ALLUSERSPROFILE=C:\ProgramData
+  APPDATA=C:\Users\buildworker\AppData\Roaming
+  COMMONPROGRAMFILES=C:\Program Files\Common Files
+  COMMONPROGRAMFILES(X86)=C:\Program Files (x86)\Common Files
+  COMMONPROGRAMW6432=C:\Program Files\Common Files
+  COMPUTERNAME=ware-win11
+  COMSPEC=C:\Windows\system32\cmd.exe
+  DRIVERDATA=C:\Windows\System32\Drivers\DriverData
+  HOMEDRIVE=C:
+  HOMEPATH=\Users\buildworker
+  LOCALAPPDATA=C:\Users\buildworker\AppData\Local
+  LOGONSERVER=\\ware-win11
+  NUMBER_OF_PROCESSORS=2
+  ONEDRIVE=C:\Users\buildworker\OneDrive
+  OS=Windows_NT
+  PATH=C:\Windows\system32;C:\Windows;C:\Windows\System32\Wbem;C:\Windows\System32\WindowsPowerShell\v1.0\;C:\Windows\System32\OpenSSH\;C:\Program Files\Git\cmd;C:\Users\buildworker\AppData\Local\Microsoft\WindowsApps
+  PATHEXT=.COM;.EXE;.BAT;.CMD;.VBS;.VBE;.JS;.JSE;.WSF;.WSH;.MSC
+  PROCESSOR_ARCHITECTURE=AMD64
+  PROCESSOR_IDENTIFIER=AMD64 Family 25 Model 1 Stepping 1, AuthenticAMD
+  PROCESSOR_LEVEL=25
+  PROCESSOR_REVISION=0101
+  PROGRAMDATA=C:\ProgramData
+  PROGRAMFILES=C:\Program Files
+  PROGRAMFILES(X86)=C:\Program Files (x86)
+  PROGRAMW6432=C:\Program Files
+  PSMODULEPATH=%ProgramFiles%\WindowsPowerShell\Modules;C:\Windows\system32\WindowsPowerShell\v1.0\Modules
+  PUBLIC=C:\Users\Public
+  PWD=b:\uildarea\3.12.ware-win11.refleak\build
+  SYSTEMDRIVE=C:
+  SYSTEMROOT=C:\Windows
+  TEMP=b:\uildworker_temp
+  TMP=b:\uildworker_tmp
+  USERDOMAIN=ware-win11
+  USERDOMAIN_ROAMINGPROFILE=ware-win11
+  USERNAME=buildworker
+  USERPROFILE=C:\Users\buildworker
+  VS140COMNTOOLS=C:\Program Files (x86)\Microsoft Visual Studio 14.0\Common7\Tools\
+  WINDIR=C:\Windows
+ using PTY: False
+Note: switching to 'aeb3a6f61af53ed3fbf31f0b3704f49b71ac553c'.
+
+You are in 'detached HEAD' state. You can look around, make experimental
+changes and commit them, and you can discard any commits you make in this
+state without impacting any branches by switching back to a branch.
+
+If you want to create a new branch to retain commits you create, you may
+do so (now or later) by using -c with the switch command. Example:
+
+  git switch -c <new-branch-name>
+
+Or undo this operation with:
+
+  git switch -
+
+Turn off this advice by setting config variable advice.detachedHead to false
+
+HEAD is now at aeb3a6f61af [3.12] gh-132553: Build the perf tool without buildid cache (GH-132663) (#132718)
+program finished with exit code 0
+elapsedTime=0.328112
+git checkout -B 3.12
+ in dir b:\uildarea\3.12.ware-win11.refleak\build (timeout 3600 secs)
+ watching logfiles {}
+ argv: [b'git', b'checkout', b'-B', b'3.12']
+ environment:
+  ALLUSERSPROFILE=C:\ProgramData
+  APPDATA=C:\Users\buildworker\AppData\Roaming
+  COMMONPROGRAMFILES=C:\Program Files\Common Files
+  COMMONPROGRAMFILES(X86)=C:\Program Files (x86)\Common Files
+  COMMONPROGRAMW6432=C:\Program Files\Common Files
+  COMPUTERNAME=ware-win11
+  COMSPEC=C:\Windows\system32\cmd.exe
+  DRIVERDATA=C:\Windows\System32\Drivers\DriverData
+  HOMEDRIVE=C:
+  HOMEPATH=\Users\buildworker
+  LOCALAPPDATA=C:\Users\buildworker\AppData\Local
+  LOGONSERVER=\\ware-win11
+  NUMBER_OF_PROCESSORS=2
+  ONEDRIVE=C:\Users\buildworker\OneDrive
+  OS=Windows_NT
+  PATH=C:\Windows\system32;C:\Windows;C:\Windows\System32\Wbem;C:\Windows\System32\WindowsPowerShell\v1.0\;C:\Windows\System32\OpenSSH\;C:\Program Files\Git\cmd;C:\Users\buildworker\AppData\Local\Microsoft\WindowsApps
+  PATHEXT=.COM;.EXE;.BAT;.CMD;.VBS;.VBE;.JS;.JSE;.WSF;.WSH;.MSC
+  PROCESSOR_ARCHITECTURE=AMD64
+  PROCESSOR_IDENTIFIER=AMD64 Family 25 Model 1 Stepping 1, AuthenticAMD
+  PROCESSOR_LEVEL=25
+  PROCESSOR_REVISION=0101
+  PROGRAMDATA=C:\ProgramData
+  PROGRAMFILES=C:\Program Files
+  PROGRAMFILES(X86)=C:\Program Files (x86)
+  PROGRAMW6432=C:\Program Files
+  PSMODULEPATH=%ProgramFiles%\WindowsPowerShell\Modules;C:\Windows\system32\WindowsPowerShell\v1.0\Modules
+  PUBLIC=C:\Users\Public
+  PWD=b:\uildarea\3.12.ware-win11.refleak\build
+  SYSTEMDRIVE=C:
+  SYSTEMROOT=C:\Windows
+  TEMP=b:\uildworker_temp
+  TMP=b:\uildworker_tmp
+  USERDOMAIN=ware-win11
+  USERDOMAIN_ROAMINGPROFILE=ware-win11
+  USERNAME=buildworker
+  USERPROFILE=C:\Users\buildworker
+  VS140COMNTOOLS=C:\Program Files (x86)\Microsoft Visual Studio 14.0\Common7\Tools\
+  WINDIR=C:\Windows
+ using PTY: False
+Your branch is ahead of 'origin/3.12' by 153 commits.
+  (use "git push" to publish your local commits)
+Switched to and reset branch '3.12'
+program finished with exit code 0
+elapsedTime=0.234359
+git rev-parse HEAD
+ in dir b:\uildarea\3.12.ware-win11.refleak\build (timeout 3600 secs)
+ watching logfiles {}
+ argv: [b'git', b'rev-parse', b'HEAD']
+ environment:
+  ALLUSERSPROFILE=C:\ProgramData
+  APPDATA=C:\Users\buildworker\AppData\Roaming
+  COMMONPROGRAMFILES=C:\Program Files\Common Files
+  COMMONPROGRAMFILES(X86)=C:\Program Files (x86)\Common Files
+  COMMONPROGRAMW6432=C:\Program Files\Common Files
+  COMPUTERNAME=ware-win11
+  COMSPEC=C:\Windows\system32\cmd.exe
+  DRIVERDATA=C:\Windows\System32\Drivers\DriverData
+  HOMEDRIVE=C:
+  HOMEPATH=\Users\buildworker
+  LOCALAPPDATA=C:\Users\buildworker\AppData\Local
+  LOGONSERVER=\\ware-win11
+  NUMBER_OF_PROCESSORS=2
+  ONEDRIVE=C:\Users\buildworker\OneDrive
+  OS=Windows_NT
+  PATH=C:\Windows\system32;C:\Windows;C:\Windows\System32\Wbem;C:\Windows\System32\WindowsPowerShell\v1.0\;C:\Windows\System32\OpenSSH\;C:\Program Files\Git\cmd;C:\Users\buildworker\AppData\Local\Microsoft\WindowsApps
+  PATHEXT=.COM;.EXE;.BAT;.CMD;.VBS;.VBE;.JS;.JSE;.WSF;.WSH;.MSC
+  PROCESSOR_ARCHITECTURE=AMD64
+  PROCESSOR_IDENTIFIER=AMD64 Family 25 Model 1 Stepping 1, AuthenticAMD
+  PROCESSOR_LEVEL=25
+  PROCESSOR_REVISION=0101
+  PROGRAMDATA=C:\ProgramData
+  PROGRAMFILES=C:\Program Files
+  PROGRAMFILES(X86)=C:\Program Files (x86)
+  PROGRAMW6432=C:\Program Files
+  PSMODULEPATH=%ProgramFiles%\WindowsPowerShell\Modules;C:\Windows\system32\WindowsPowerShell\v1.0\Modules
+  PUBLIC=C:\Users\Public
+  PWD=b:\uildarea\3.12.ware-win11.refleak\build
+  SYSTEMDRIVE=C:
+  SYSTEMROOT=C:\Windows
+  TEMP=b:\uildworker_temp
+  TMP=b:\uildworker_tmp
+  USERDOMAIN=ware-win11
+  USERDOMAIN_ROAMINGPROFILE=ware-win11
+  USERNAME=buildworker
+  USERPROFILE=C:\Users\buildworker
+  VS140COMNTOOLS=C:\Program Files (x86)\Microsoft Visual Studio 14.0\Common7\Tools\
+  WINDIR=C:\Windows
+ using PTY: False
+aeb3a6f61af53ed3fbf31f0b3704f49b71ac553c
+program finished with exit code 0
+elapsedTime=0.125003

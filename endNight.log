@@ -1,0 +1,31 @@
+CST 2000 Feb  8 04:53:37 endNight 51582 check_frames doImager doSpectro doTpm 
+CST 2000 Feb  8 04:53:59 endNight 51582 check_frames doImager doSpectro doTpm 
+CST 2000 Feb  8 04:54:23 endNight 51582 check_frames doImager doSpectro doTpm 
+CST 2000 Feb  8 04:54:37 endNight 51582 check_frames doImager doSpectro doTpm 
+CST 2000 Feb  8 04:54:43 endNight 51582 check_gangs doImager doSpectro doTpm 
+CST 2000 Feb  8 05:01:09 endNight 51582 check_frames doImager doSpectro doTpm 
+CST 2000 Feb  8 05:05:20 endNight 51582 check_frames doImager doSpectro doTpm 
+CST 2000 Feb  8 05:13:54 endNight 51582 check_frames doImager doSpectro doTpm 
+CST 2000 Feb  8 05:14:45 endNight catastrophe recovery: done
+CST 2000 Feb  8 05:34:03 endNight 51582 check_frames doImager doSpectro doTpm 
+CST 2000 Feb  8 05:34:30 endNight catastrophe recovery: done
+CST 2000 Feb  8 08:55:17 endNight 51582 check_frames check_gangs copy_astrolog copy_fermi doImager doSpectro doTpm framelog_fix ioptape parse_murmur run_sum shiptape 
+CST 2000 Feb  8 08:55:23 endNight gangCheck: done
+CST 2000 Feb  8 08:55:27 endNight frameCheck: done
+CST 2000 Feb  8 08:55:27 endNight parseMurmur run
+CST 2000 Feb  8 08:55:47 endNight parseMurmur done
+CST 2000 Feb  8 08:58:55 endNight 51582 check_frames check_gangs copy_astrolog copy_fermi doImager doSpectro doTpm framelog_fix ioptape parse_murmur run_sum shiptape 
+CST 2000 Feb  8 08:59:02 endNight gangCheck: done
+CST 2000 Feb  8 08:59:05 endNight frameCheck: done
+CST 2000 Feb  8 08:59:05 endNight parseMurmur run
+CST 2000 Feb  8 08:59:27 endNight parseMurmur done
+MST 2000 Feb  8 08:00:30 endNight 51582 check_frames check_gangs copy_astrolog copy_fermi doImager doSpectro doTpm framelog_fix ioptape parse_murmur run_sum shiptape 
+MST 2000 Feb  8 08:00:37 endNight gangCheck: done
+MST 2000 Feb  8 08:00:41 endNight frameCheck: done
+MST 2000 Feb  8 08:00:41 endNight parseMurmur run
+MST 2000 Feb  8 08:01:01 endNight parseMurmur done
+MST 2000 Feb  8 08:52:23 endNight 51582 doImager doSpectro doTpm shiptape 
+MST 2000 Feb  8 08:53:03 endNight 51582 doImager doSpectro doTpm shiptape 
+MST 2000 Feb  8 08:54:02 endNight 51582 doImager doSpectro doTpm shiptape 
+MST 2000 Feb  8 08:58:03 endNight 51582 copy_astrolog copy_fermi doImager doSpectro doTpm ioptape run_sum 
+MST 2000 Feb  8 08:58:03 endNight ioptape run
