@@ -4270,7 +4270,9 @@ listiter_reduce_general(void *_it, int forward)
     }
     /* empty iterator, create an empty list */
     list = PyList_New(0);
-    if (list == NULL)
+    if (list == NULL) {
+        Py_DECREF(iter);
         return NULL;
+    }
     return Py_BuildValue("N(N)", iter, list);
 }
