@@ -277,7 +277,7 @@ Wave_write Objects
    .. method:: getparams()
 
       Return a :func:`~collections.namedtuple`
-      ``(nchannels, sampwidth, framerate, nframes, comptype, compname)``
+      ``(nchannels, sampwidth, framerate, nframes, comptype, compname, format)``
       containing the current output parameters.
 
 
