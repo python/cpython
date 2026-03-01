@@ -194,9 +194,19 @@ Wave_write Objects
       Set the number of channels.
 
 
+   .. method:: getnchannels()
+
+      Return the number of channels.
+
+
    .. method:: setsampwidth(n)
 
       Set the sample width to *n* bytes.
+
+
+   .. method:: getsampwidth()
+
+      Return the sample width in bytes.
 
 
    .. method:: setframerate(n)
@@ -208,6 +218,11 @@ Wave_write Objects
          integer.
 
 
+   .. method:: getframerate()
+
+      Return the frame rate.
+
+
    .. method:: setnframes(n)
 
       Set the number of frames to *n*.  This will be changed later if the number
@@ -215,10 +230,25 @@ Wave_write Objects
       raise an error if the output stream is not seekable).
 
 
+   .. method:: getnframes()
+
+      Return the number of audio frames written so far.
+
+
    .. method:: setcomptype(type, name)
 
       Set the compression type and description. At the moment, only compression type
       ``NONE`` is supported, meaning no compression.
+
+
+   .. method:: getcomptype()
+
+      Return the compression type (``'NONE'``).
+
+
+   .. method:: getcompname()
+
+      Return the human-readable compression type name.
 
 
    .. method:: setformat(format)
@@ -242,6 +272,13 @@ Wave_write Objects
 
       For backwards compatibility, a 6-item tuple without *format* is also
       accepted and defaults to ``WAVE_FORMAT_PCM``.
+
+
+   .. method:: getparams()
+
+      Return a :func:`~collections.namedtuple`
+      ``(nchannels, sampwidth, framerate, nframes, comptype, compname, format)``
+      containing the current output parameters.
 
 
    .. method:: tell()
