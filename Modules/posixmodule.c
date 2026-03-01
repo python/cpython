@@ -1609,6 +1609,12 @@ follow_symlinks_specified(const char *function_name, int follow_symlinks)
     return 1;
 }
 
+static bool
+path_is_fd(const path_t *path)
+{
+    return path->allow_fd && path->object != NULL && PyIndex_Check(path->object);
+}
+
 static int
 path_and_dir_fd_invalid(const char *function_name, path_t *path, int dir_fd)
 {
@@ -14328,8 +14334,9 @@ os_pathconf_impl(PyObject *module, path_t *path, int name)
 
     errno = 0;
 #ifdef HAVE_FPATHCONF
-    if (path->fd != -1)
+    if (path_is_fd(path)) {
         limit = fpathconf(path->fd, name);
+    }
     else
 #endif
         limit = pathconf(path->narrow, name);
