@@ -4,8 +4,6 @@
 .. module:: curses.panel
    :synopsis: A panel stack extension that adds depth to  curses windows.
 
-.. sectionauthor:: A.M. Kuchling <amk@amk.ca>
-
 --------------
 
 Panels are windows with the added feature of depth, so they can be stacked on
@@ -18,7 +16,7 @@ displayed.  Panels can be added, moved up or down in the stack, and removed.
 Functions
 ---------
 
-The module :mod:`curses.panel` defines the following functions:
+The module :mod:`!curses.panel` defines the following functions:
 
 
 .. function:: bottom_panel()

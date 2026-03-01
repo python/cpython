@@ -898,6 +898,10 @@ _PyType_LookupStackRefAndVersion(PyTypeObject *type, PyObject *name, _PyStackRef
 PyAPI_FUNC(int) _PyObject_GetMethodStackRef(PyThreadState *ts, PyObject *obj,
                                        PyObject *name, _PyStackRef *method);
 
+// Like PyObject_GetAttr but returns a _PyStackRef. For types, this can
+// return a deferred reference to reduce reference count contention.
+PyAPI_FUNC(_PyStackRef) _PyObject_GetAttrStackRef(PyObject *obj, PyObject *name);
+
 // Cache the provided init method in the specialization cache of type if the
 // provided type version matches the current version of the type.
 //

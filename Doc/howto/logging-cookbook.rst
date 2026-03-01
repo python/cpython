@@ -229,7 +229,7 @@ messages should not. Here's how you can achieve this::
    # tell the handler to use this format
    console.setFormatter(formatter)
    # add the handler to the root logger
-   logging.getLogger('').addHandler(console)
+   logging.getLogger().addHandler(console)
 
    # Now, we can log to the root logger, or any other logger. First the root...
    logging.info('Jackdaws love my big sphinx of quartz.')
@@ -650,7 +650,7 @@ the receiving end. A simple way of doing this is attaching a
 
    import logging, logging.handlers
 
-   rootLogger = logging.getLogger('')
+   rootLogger = logging.getLogger()
    rootLogger.setLevel(logging.DEBUG)
    socketHandler = logging.handlers.SocketHandler('localhost',
                        logging.handlers.DEFAULT_TCP_LOGGING_PORT)
@@ -1563,9 +1563,6 @@ process. This can be set up using a process management tool such as Supervisor -
 
 Using file rotation
 -------------------
-
-.. sectionauthor:: Doug Hellmann, Vinay Sajip (changes)
-.. (see <https://pymotw.com/3/logging/>)
 
 Sometimes you want to let a log file grow to a certain size, then open a new
 file and log to that. You may want to keep a certain number of these files, and

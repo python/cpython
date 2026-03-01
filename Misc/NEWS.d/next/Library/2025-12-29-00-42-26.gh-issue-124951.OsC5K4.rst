@@ -1,3 +1,0 @@
-The base64 implementation behind the :mod:`binascii`, :mod:`base64`, and
-related codec has been optimized for modern pipelined CPU architectures and
-now performs 2-3x faster across all platforms.

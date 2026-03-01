@@ -12,7 +12,7 @@ and :source:`Lib/concurrent/futures/interpreter.py`
 
 --------------
 
-The :mod:`concurrent.futures` module provides a high-level interface for
+The :mod:`!concurrent.futures` module provides a high-level interface for
 asynchronously executing callables.
 
 The asynchronous execution can be performed with threads, using
@@ -20,6 +20,11 @@ The asynchronous execution can be performed with threads, using
 or separate processes, using :class:`ProcessPoolExecutor`.
 Each implements the same interface, which is defined
 by the abstract :class:`Executor` class.
+
+:class:`concurrent.futures.Future` must not be confused with
+:class:`asyncio.Future`, which is designed for use with :mod:`asyncio`
+tasks and coroutines. See the :doc:`asyncio's Future <asyncio-future>`
+documentation for a detailed comparison of the two.
 
 .. include:: ../includes/wasm-notavail.rst
 

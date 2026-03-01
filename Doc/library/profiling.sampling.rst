@@ -1,9 +1,9 @@
-.. highlight:: shell-session
+.. highlight:: sh
 
 .. _profiling-sampling:
 
 ***************************************************
-:mod:`profiling.sampling` --- Statistical profiler
+:mod:`!profiling.sampling` --- Statistical profiler
 ***************************************************
 
 .. module:: profiling.sampling
@@ -22,7 +22,7 @@
    :align: center
    :width: 300px
 
-The :mod:`profiling.sampling` module, named **Tachyon**, provides statistical
+The :mod:`!profiling.sampling` module, named **Tachyon**, provides statistical
 profiling of Python programs through periodic stack sampling. Tachyon can
 run scripts directly or attach to any running Python process without requiring
 code changes or restarts. Because sampling occurs externally to the target
@@ -43,6 +43,23 @@ CPU time will appear frequently in the collected samples. By gathering thousands
 of samples over a profiling session, Tachyon constructs an accurate statistical
 estimate of where time is spent. The more samples collected, the
 more precise this estimate becomes.
+
+.. only:: html
+
+   The following interactive visualization demonstrates how sampling profiling
+   works. Press **Play** to watch a Python program execute, and observe how the
+   profiler periodically captures snapshots of the call stack. Adjust the
+   **sample interval** to see how sampling frequency affects the results.
+
+   .. raw:: html
+      :file: profiling-sampling-visualization.html
+
+.. only:: not html
+
+   .. note::
+
+      An interactive visualization of sampling profiling is available in the
+      HTML version of this documentation.
 
 
 How time is estimated
@@ -354,7 +371,7 @@ Together, these determine how many samples will be collected during a profiling
 session.
 
 The :option:`--sampling-rate` option (:option:`-r`) sets how frequently samples
-are collected. The default is 1 kHz (10,000 samples per second)::
+are collected. The default is 1 kHz (1,000 samples per second)::
 
    python -m profiling.sampling run -r 20khz script.py
 
@@ -878,9 +895,9 @@ interesting functions that highlights:
 
 Use :option:`--no-summary` to suppress both the legend and summary sections.
 
-To save pstats output to a file instead of stdout::
+To save pstats output to a binary file instead of stdout::
 
-   python -m profiling.sampling run -o profile.txt script.py
+   python -m profiling.sampling run -o profile.pstats script.py
 
 The pstats format supports several options for controlling the display.
 The :option:`--sort` option determines the column used for ordering results::
@@ -1455,7 +1472,9 @@ Output options
 
 .. option:: --pstats
 
-   Generate text statistics output. This is the default.
+   Generate pstats statistics. This is the default.
+   When written to stdout, the output is a text table; with :option:`-o`,
+   it is a binary pstats file.
 
 .. option:: --collapsed
 
@@ -1486,8 +1505,9 @@ Output options
 .. option:: -o <path>, --output <path>
 
    Output file or directory path. Default behavior varies by format:
-   :option:`--pstats` writes to stdout, while other formats generate a file
-   named ``<format>_<PID>.<ext>`` (for example, ``flamegraph_12345.html``).
+   :option:`--pstats` prints a text table to stdout, while ``-o`` writes a
+   binary pstats file. Other formats generate a file named
+   ``<format>_<PID>.<ext>`` (for example, ``flamegraph_12345.html``).
    :option:`--heatmap` creates a directory named ``heatmap_<PID>``.
 
 .. option:: --browser
