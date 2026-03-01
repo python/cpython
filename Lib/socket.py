@@ -565,7 +565,10 @@ class socket(_socket.socket):
         """
         try:
             if sys.platform == "win32":
-                return self._sendfile_use_transmitfile(file, offset, count)
+                sendfile_use_transmitfile = getattr(self,
+                                                    "_sendfile_use_transmitfile")
+                if sendfile_use_transmitfile:
+                    return sendfile_use_transmitfile(file, offset, count)
             return self._sendfile_use_sendfile(file, offset, count)
         except _GiveupOnSendfile:
             return self._sendfile_use_send(file, offset, count)
