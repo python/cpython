@@ -713,6 +713,7 @@ static PyObject *
 tuple_subtype_new(PyTypeObject *type, PyObject *iterable);
 
 /*[clinic input]
+@vectorcall zero_arg=(PyObject*)&_Py_SINGLETON(tuple_empty)
 @classmethod
 tuple.__new__ as tuple_new
     iterable: object(c_default="NULL") = ()
@@ -728,7 +729,7 @@ If the argument is a tuple, the return value is the same object.
 
 static PyObject *
 tuple_new_impl(PyTypeObject *type, PyObject *iterable)
-/*[clinic end generated code: output=4546d9f0d469bce7 input=86963bcde633b5a2]*/
+/*[clinic end generated code: output=4546d9f0d469bce7 input=fff66d7a13734d92]*/
 {
     if (type != &PyTuple_Type)
         return tuple_subtype_new(type, iterable);
@@ -738,27 +739,6 @@ tuple_new_impl(PyTypeObject *type, PyObject *iterable)
     }
     else {
         return PySequence_Tuple(iterable);
-    }
-}
-
-static PyObject *
-tuple_vectorcall(PyObject *type, PyObject * const*args,
-                 size_t nargsf, PyObject *kwnames)
-{
-    if (!_PyArg_NoKwnames("tuple", kwnames)) {
-        return NULL;
-    }
-
-    Py_ssize_t nargs = PyVectorcall_NARGS(nargsf);
-    if (!_PyArg_CheckPositional("tuple", nargs, 0, 1)) {
-        return NULL;
-    }
-
-    if (nargs) {
-        return tuple_new_impl(_PyType_CAST(type), args[0]);
-    }
-    else {
-        return tuple_get_empty();
     }
 }
 
