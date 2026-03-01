@@ -37,9 +37,10 @@ jobs:
       shell: python
     - name: "Install WASI SDK"
       id: install-wasi-sdk
-      uses: bytecodealliance/setup-wasi-sdk-action@dcd040abc428fe35253676ef0e6379fba9bf8f9f
+      uses: bytecodealliance/setup-wasi-sdk-action@b2de090b44eb70013ee96b393727d473b35e1728
       with:
         version: ${{ steps.wasi-sdk-version.outputs.version }}
+        add-to-path: false
     - name: "Add ccache to PATH"
       run: echo "PATH=/usr/lib/ccache:$PATH" >> "$GITHUB_ENV"
     - name: "Install Python"
