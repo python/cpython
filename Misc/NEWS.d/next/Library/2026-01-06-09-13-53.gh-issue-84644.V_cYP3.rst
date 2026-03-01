@@ -1,5 +1,5 @@
-When registering a callable to :func:`functools.singledispatch`
+When registering a callable or descriptor to :func:`functools.singledispatch`
 or :func:`functools.singledispatchmethod` via a type annotation,
-it is now validated that the first proper positional parameter is annotated.
+it is now validated that the first non-*self* or non-*cls* parameter is used.
 Previously, a callable could be registered based on its return type
 annotation or an irrelevant parameter type annotation. Patch by Bartosz Sławecki.
