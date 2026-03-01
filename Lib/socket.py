@@ -480,10 +480,6 @@ class socket(_socket.socket):
             timeout = self.gettimeout()
             if timeout == 0:
                 raise ValueError("non-blocking sockets are not supported")
-            ov = _overlapped.Overlapped()
-            offset_low = offset & 0xffff_ffff
-            offset_high = (offset >> 32) & 0xffff_ffff
-            count = count or 0
             try:
                 fileno = file.fileno()
             except (AttributeError, io.UnsupportedOperation) as err:
@@ -492,20 +488,49 @@ class socket(_socket.socket):
                 os.fstat(fileno)
             except OSError as err:
                 raise _GiveupOnSendfile(err)  # not a regular file
-            ov.TransmitFile(self.fileno(), msvcrt.get_osfhandle(fileno),
-                            offset_low, offset_high, count, 0, 0)
+            sock_fileno = self.fileno()
+            file_handle = msvcrt.get_osfhandle(fileno)
             timeout_ms = _overlapped.INFINITE
             if timeout is not None:
                 timeout_ms = int(timeout * 1000)
-            try:
-                sent = ov.getresultex(timeout_ms, False)
-            except WindowsError as e:
-                if e.winerror == 258:
-                    raise TimeoutError('timed out')
-                raise
-            if sent > 0 and hasattr(file, 'seek'):
-                file.seek(offset + sent)
-            return sent
+
+            max_count = 0xffff_ffff
+            total_sent = 0
+            remaining = count
+            while True:
+                chunk_offset = offset + total_sent
+                offset_low = chunk_offset & 0xffff_ffff
+                offset_high = (chunk_offset >> 32) & 0xffff_ffff
+                if remaining is None:
+                    chunk_count = 0
+                else:
+                    chunk_count = min(remaining, max_count)
+                    if chunk_count <= 0:
+                        break
+
+                ov = _overlapped.Overlapped()
+                ov.TransmitFile(sock_fileno, file_handle, offset_low,
+                                offset_high, chunk_count, 0, 0)
+                try:
+                    sent = ov.getresultex(timeout_ms, False)
+                except WindowsError as e:
+                    if e.winerror == 258:
+                        raise TimeoutError('timed out')
+                    raise
+
+                total_sent += sent
+
+                if remaining is None:
+                    if sent == 0:
+                        break
+                else:
+                    remaining -= sent
+                    if sent < chunk_count:
+                        break
+
+            if total_sent > 0 and hasattr(file, 'seek'):
+                file.seek(offset + total_sent)
+            return total_sent
 
     def _check_sendfile_params(self, file, offset, count):
         if 'b' not in getattr(file, 'mode', 'b'):
