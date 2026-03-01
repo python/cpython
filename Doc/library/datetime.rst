@@ -2588,7 +2588,7 @@ requires, and these work on all supported platforms.
 +-----------+--------------------------------+------------------------+-------+
 |  ``%t``   | The tab character (``'\t'``).  | ``\t``                 |       |
 |           | For :meth:`!strptime`,         |                        |       |
-|           | arbitrary whitespace.          |                        |       |
+|           | zero or more whitespace.       |                        |       |
 +-----------+--------------------------------+------------------------+-------+
 |  ``%T``   | ISO 8601 time format,          | 10:01:59               |       |
 |           | equivalent to ``%H:%M:%S``.    |                        |       |
