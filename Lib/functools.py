@@ -924,7 +924,10 @@ def _get_singledispatch_annotated_param(func, role):
         pass
     else:
         # Allow variadic positional '(*args)' parameters for backward compatibility.
-        if param.kind not in (inspect.Parameter.KEYWORD_ONLY, inspect.Parameter.VAR_KEYWORD):
+        if param.kind not in (
+            inspect.Parameter.KEYWORD_ONLY,
+            inspect.Parameter.VAR_KEYWORD,
+        ):
             return param.name
     raise TypeError(
         f"Invalid first argument to `register()`: {func!r} "
