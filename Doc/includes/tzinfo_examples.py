@@ -22,7 +22,7 @@ DSTDIFF = DSTOFFSET - STDOFFSET
 class LocalTimezone(dt.tzinfo):
 
     def fromutc(self, when):
-        assert dt.tzinfo is self
+        assert when.tzinfo is self
         stamp = (when - dt.datetime(1970, 1, 1, tzinfo=self)) // SECOND
         args = _time.localtime(stamp)[:6]
         dst_diff = DSTDIFF // SECOND
@@ -142,7 +142,7 @@ class USTimeZone(dt.tzinfo):
         # Can't compare naive to aware objects, so strip the timezone from
         # when first.
         when = when.replace(tzinfo=None)
-        if start + HOUR <= dt < end - HOUR:
+        if start + HOUR <= when < end - HOUR:
             # DST is in effect.
             return HOUR
         if end - HOUR <= when < end:
