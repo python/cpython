@@ -1809,7 +1809,7 @@ s_new(PyTypeObject *type, PyObject *args, PyObject *kwds)
     if (self == NULL) {
         return NULL;
     }
-    self->s_format = Py_NewRef(Py_None);
+    self->s_format = Py_None;
     self->s_codes = NULL;
     self->s_size = -1;
     self->s_len = -1;
