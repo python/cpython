@@ -288,7 +288,7 @@ class Completion(unittest.TestCase):
         output = self.write_input(input_)
         lines = output.decode().splitlines()
         indices = [i for i, line in enumerate(lines)
-                  if line.startswith(self.PS1)]
+                  if line.startswith(self.PS1_NO_COLOR)]
         start, end = indices[-3], indices[-2]
         candidates = [l.strip() for l in lines[start+1:end]]
         self.assertEqual(candidates,
@@ -327,7 +327,7 @@ class Completion(unittest.TestCase):
         output = self.write_input(input_)
         lines = output.decode().splitlines()
         indices = [
-            i for i, line in enumerate(lines) if line.startswith(self.PS1)
+            i for i, line in enumerate(lines) if line.startswith(self.PS1_NO_COLOR)
         ]
         start, end = indices[-3], indices[-2]
         candidates = [l.strip() for l in lines[start+1:end]]
@@ -365,7 +365,7 @@ class Completion(unittest.TestCase):
         output = self.write_input(input_)
         lines = output.decode().splitlines()
         indices = [
-            i for i, line in enumerate(lines) if line.startswith(self.PS1)
+            i for i, line in enumerate(lines) if line.startswith(self.PS1_NO_COLOR)
         ]
         start, end = indices[-4], indices[-3]
         candidates = [l.strip() for l in lines[start+1:end]]
