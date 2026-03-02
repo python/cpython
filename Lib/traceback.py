@@ -1678,13 +1678,13 @@ def _check_for_nested_attribute(obj, wrong_name, attrs):
     for attr_name in attrs_to_check:
         with suppress(AttributeError):
             attr_obj = inspect.getattr_static(obj, attr_name)
-                
+
             try:
                 inspect.getattr_static(attr_obj, '__get__')
                 continue # Descriptor, skip it as we can't access its contents safely
             except AttributeError:
                 pass
-            
+
             # Skip lazy imports to avoid triggering module loading
             if _is_lazy_import(obj, attr_name):
                 continue
