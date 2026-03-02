@@ -555,13 +555,7 @@ class WarnTests(BaseTest):
         with self.module.catch_warnings(record=True) as w:
             self.module.resetwarnings()
             self.module.filterwarnings("always", category=UserWarning)
-            filenames = ["nonascii\xe9\u20ac"]
-            if not support.is_emscripten:
-                # JavaScript does not like surrogates.
-                # Invalid UTF-8 leading byte 0x80 encountered when
-                # deserializing a UTF-8 string in wasm memory to a JS
-                # string!
-                filenames.append("surrogate\udc80")
+            filenames = ["nonascii\xe9\u20ac", "surrogate\udc80"]
             for filename in filenames:
                 try:
                     os.fsencode(filename)

@@ -1,0 +1,1 @@
+Update Python implementation of :class:`io.BytesIO` to be thread safe.

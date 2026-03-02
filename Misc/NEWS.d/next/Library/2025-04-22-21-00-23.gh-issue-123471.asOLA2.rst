@@ -1,0 +1,1 @@
+Make concurrent iterations over :class:`itertools.combinations` and :class:`itertools.product` safe under free-threading.

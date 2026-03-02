@@ -172,7 +172,18 @@ class Argparse(ThemeSection):
     reset: str = ANSIColors.RESET
 
 
-@dataclass(frozen=True)
+@dataclass(frozen=True, kw_only=True)
+class Difflib(ThemeSection):
+    """A 'git diff'-like theme for `difflib.unified_diff`."""
+    added: str = ANSIColors.GREEN
+    context: str = ANSIColors.RESET  # context lines
+    header: str = ANSIColors.BOLD  # eg "---" and "+++" lines
+    hunk: str = ANSIColors.CYAN  # the "@@" lines
+    removed: str = ANSIColors.RED
+    reset: str = ANSIColors.RESET
+
+
+@dataclass(frozen=True, kw_only=True)
 class Syntax(ThemeSection):
     prompt: str = ANSIColors.BOLD_MAGENTA
     keyword: str = ANSIColors.BOLD_BLUE
@@ -186,7 +197,7 @@ class Syntax(ThemeSection):
     reset: str = ANSIColors.RESET
 
 
-@dataclass(frozen=True)
+@dataclass(frozen=True, kw_only=True)
 class Traceback(ThemeSection):
     type: str = ANSIColors.BOLD_MAGENTA
     message: str = ANSIColors.MAGENTA
@@ -198,7 +209,7 @@ class Traceback(ThemeSection):
     reset: str = ANSIColors.RESET
 
 
-@dataclass(frozen=True)
+@dataclass(frozen=True, kw_only=True)
 class Unittest(ThemeSection):
     passed: str = ANSIColors.GREEN
     warn: str = ANSIColors.YELLOW
@@ -207,7 +218,7 @@ class Unittest(ThemeSection):
     reset: str = ANSIColors.RESET
 
 
-@dataclass(frozen=True)
+@dataclass(frozen=True, kw_only=True)
 class Theme:
     """A suite of themes for all sections of Python.
 
@@ -215,6 +226,7 @@ class Theme:
     below.
     """
     argparse: Argparse = field(default_factory=Argparse)
+    difflib: Difflib = field(default_factory=Difflib)
     syntax: Syntax = field(default_factory=Syntax)
     traceback: Traceback = field(default_factory=Traceback)
     unittest: Unittest = field(default_factory=Unittest)
@@ -223,6 +235,7 @@ class Theme:
         self,
         *,
         argparse: Argparse | None = None,
+        difflib: Difflib | None = None,
         syntax: Syntax | None = None,
         traceback: Traceback | None = None,
         unittest: Unittest | None = None,
@@ -234,6 +247,7 @@ class Theme:
         """
         return type(self)(
             argparse=argparse or self.argparse,
+            difflib=difflib or self.difflib,
             syntax=syntax or self.syntax,
             traceback=traceback or self.traceback,
             unittest=unittest or self.unittest,
@@ -249,6 +263,7 @@ class Theme:
         """
         return cls(
             argparse=Argparse.no_colors(),
+            difflib=Difflib.no_colors(),
             syntax=Syntax.no_colors(),
             traceback=Traceback.no_colors(),
             unittest=Unittest.no_colors(),

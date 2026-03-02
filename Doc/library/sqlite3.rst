@@ -509,7 +509,7 @@ Module constants
 
 .. data:: SQLITE_KEYWORDS
 
-   A :class:`tuple` containing all sqlite3 keywords.
+   A :class:`tuple` containing all SQLite keywords.
 
    This constant is only available if Python was compiled with SQLite
    3.24.0 or greater.
@@ -2288,7 +2288,7 @@ This section shows recipes for common adapters and converters.
 
    def adapt_datetime_iso(val):
        """Adapt datetime.datetime to timezone-naive ISO 8601 date."""
-       return val.isoformat()
+       return val.replace(tzinfo=None).isoformat()
 
    def adapt_datetime_epoch(val):
        """Adapt datetime.datetime to Unix timestamp."""

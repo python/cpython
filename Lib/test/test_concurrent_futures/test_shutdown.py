@@ -49,6 +49,7 @@ class ExecutorShutdownTest:
         self.assertFalse(err)
         self.assertEqual(out.strip(), b"apple")
 
+    @support.force_not_colorized
     def test_submit_after_interpreter_shutdown(self):
         # Test the atexit hook for shutdown of worker threads and processes
         rc, out, err = assert_python_ok('-c', """if 1:

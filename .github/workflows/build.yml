@@ -260,7 +260,7 @@ jobs:
       free-threading: ${{ matrix.free-threading }}
       os: ${{ matrix.os }}
 
-  build-ubuntu-ssltests:
+  build-ubuntu-ssltests-openssl:
     name: 'Ubuntu SSL tests with OpenSSL'
     runs-on: ${{ matrix.os }}
     timeout-minutes: 60
@@ -319,6 +319,81 @@ jobs:
       run: make -j4
     - name: Display build info
       run: make pythoninfo
+    - name: SSL tests
+      run: ./python Lib/test/ssltests.py
+
+  build-ubuntu-ssltests-awslc:
+    name: 'Ubuntu SSL tests with AWS-LC'
+    runs-on: ${{ matrix.os }}
+    timeout-minutes: 60
+    needs: build-context
+    if: needs.build-context.outputs.run-tests == 'true'
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ubuntu-24.04]
+        awslc_ver: [1.55.0]
+    env:
+      AWSLC_VER: ${{ matrix.awslc_ver}}
+      MULTISSL_DIR: ${{ github.workspace }}/multissl
+      OPENSSL_DIR: ${{ github.workspace }}/multissl/aws-lc/${{ matrix.awslc_ver }}
+      LD_LIBRARY_PATH: ${{ github.workspace }}/multissl/aws-lc/${{ matrix.awslc_ver }}/lib
+    steps:
+    - uses: actions/checkout@v4
+      with:
+        persist-credentials: false
+    - name: Runner image version
+      run: echo "IMAGE_OS_VERSION=${ImageOS}-${ImageVersion}" >> "$GITHUB_ENV"
+    - name: Restore config.cache
+      uses: actions/cache@v4
+      with:
+        path: config.cache
+        key: ${{ github.job }}-${{ env.IMAGE_OS_VERSION }}-${{ needs.build-context.outputs.config-hash }}
+    - name: Register gcc problem matcher
+      run: echo "::add-matcher::.github/problem-matchers/gcc.json"
+    - name: Install dependencies
+      run: sudo ./.github/workflows/posix-deps-apt.sh
+    - name: Configure SSL lib env vars
+      run: |
+        echo "MULTISSL_DIR=${GITHUB_WORKSPACE}/multissl" >> "$GITHUB_ENV"
+        echo "OPENSSL_DIR=${GITHUB_WORKSPACE}/multissl/aws-lc/${AWSLC_VER}" >> "$GITHUB_ENV"
+        echo "LD_LIBRARY_PATH=${GITHUB_WORKSPACE}/multissl/aws-lc/${AWSLC_VER}/lib" >> "$GITHUB_ENV"
+    - name: 'Restore AWS-LC build'
+      id: cache-aws-lc
+      uses: actions/cache@v4
+      with:
+        path: ./multissl/aws-lc/${{ matrix.awslc_ver }}
+        key: ${{ matrix.os }}-multissl-aws-lc-${{ matrix.awslc_ver }}
+    - name: Install AWS-LC
+      if: steps.cache-aws-lc.outputs.cache-hit != 'true'
+      run: |
+        python3 Tools/ssl/multissltests.py \
+          --steps=library \
+          --base-directory "$MULTISSL_DIR" \
+          --awslc ${{ matrix.awslc_ver }} \
+          --system Linux
+    - name: Add ccache to PATH
+      run: |
+        echo "PATH=/usr/lib/ccache:$PATH" >> "$GITHUB_ENV"
+    - name: Configure ccache action
+      uses: hendrikmuhs/ccache-action@v1.2
+      with:
+        save: false
+    - name: Configure CPython
+      run: |
+        ./configure CFLAGS="-fdiagnostics-format=json" \
+          --config-cache \
+          --enable-slower-safety \
+          --with-pydebug \
+          --with-openssl="$OPENSSL_DIR" \
+          --with-builtin-hashlib-hashes=blake2 \
+          --with-ssl-default-suites=openssl
+    - name: Build CPython
+      run: make -j
+    - name: Display build info
+      run: make pythoninfo
+    - name: Verify python is linked to AWS-LC
+      run: ./python -c 'import ssl; print(ssl.OPENSSL_VERSION)' | grep AWS-LC
     - name: SSL tests
       run: ./python Lib/test/ssltests.py
 
@@ -510,30 +585,30 @@ jobs:
     - name: Tests
       run: xvfb-run make ci
 
-  build-tsan:
-    name: >-
-      Thread sanitizer
-      ${{ fromJSON(matrix.free-threading) && '(free-threading)' || '' }}
+  build-san:
+    name: >-  # ${{ '' } is a hack to nest jobs under the same sidebar category
+      Sanitizers${{ '' }}
     needs: build-context
     if: needs.build-context.outputs.run-tests == 'true'
     strategy:
       fail-fast: false
       matrix:
+        check-name:
+        - Thread
         free-threading:
         - false
         - true
-    uses: ./.github/workflows/reusable-tsan.yml
+        sanitizer:
+        - TSan
+        include:
+        - check-name: Undefined behavior
+          sanitizer: UBSan
+          free-threading: false
+    uses: ./.github/workflows/reusable-san.yml
     with:
+      sanitizer: ${{ matrix.sanitizer }}
       config_hash: ${{ needs.build-context.outputs.config-hash }}
       free-threading: ${{ matrix.free-threading }}
-
-  build-ubsan:
-    name: Undefined behavior sanitizer
-    needs: build-context
-    if: needs.build-context.outputs.run-tests == 'true'
-    uses: ./.github/workflows/reusable-ubsan.yml
-    with:
-      config_hash: ${{ needs.build-context.outputs.config-hash }}
 
   cross-build-linux:
     name: Cross build Linux
@@ -628,11 +703,12 @@ jobs:
     - build-windows-msi
     - build-macos
     - build-ubuntu
-    - build-ubuntu-ssltests
+    - build-ubuntu-ssltests-awslc
+    - build-ubuntu-ssltests-openssl
     - build-wasi
     - test-hypothesis
     - build-asan
-    - build-tsan
+    - build-san
     - cross-build-linux
     - cifuzz
     if: always()
@@ -643,7 +719,8 @@ jobs:
       with:
         allowed-failures: >-
           build-windows-msi,
-          build-ubuntu-ssltests,
+          build-ubuntu-ssltests-awslc,
+          build-ubuntu-ssltests-openssl,
           test-hypothesis,
           cifuzz,
         allowed-skips: >-
@@ -661,11 +738,12 @@ jobs:
             check-generated-files,
             build-macos,
             build-ubuntu,
-            build-ubuntu-ssltests,
+            build-ubuntu-ssltests-awslc,
+            build-ubuntu-ssltests-openssl,
             build-wasi,
             test-hypothesis,
             build-asan,
-            build-tsan,
+            build-san,
             cross-build-linux,
             '
             || ''

@@ -1384,6 +1384,13 @@ The :mod:`test.support.threading_helper` module provides support for threading t
    .. versionadded:: 3.8
 
 
+.. function:: run_concurrently(worker_func, nthreads, args=(), kwargs={})
+
+    Run the worker function concurrently in multiple threads.
+    Re-raises an exception if any thread raises one, after all threads have
+    finished.
+
+
 :mod:`test.support.os_helper` --- Utilities for os tests
 ========================================================================
 

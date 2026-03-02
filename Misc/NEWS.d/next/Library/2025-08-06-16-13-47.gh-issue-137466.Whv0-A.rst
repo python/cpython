@@ -1,0 +1,3 @@
+Remove undocumented :func:`!glob.glob0` and :func:`!glob.glob1` functions,
+which have been deprecated since Python 3.13. Use :func:`glob.glob` and pass
+a directory to its *root_dir* argument instead.

@@ -3942,7 +3942,7 @@ class ClassPropertiesAndMethods(unittest.TestCase):
         # it as a leak.
         del C.__del__
 
-    @unittest.skipIf(support.is_emscripten, "Seems to works in Pyodide?")
+    @support.skip_emscripten_stack_overflow()
     @support.skip_wasi_stack_overflow()
     def test_slots_trash(self):
         # Testing slot trash...

@@ -767,6 +767,15 @@ class BaseTest:
         self.checkraises(TypeError, 'hello', 'replace', 42, 'h')
         self.checkraises(TypeError, 'hello', 'replace', 'h', 42)
 
+    def test_replacement_on_buffer_boundary(self):
+        # gh-127971: Check we don't read past the end of the buffer when a
+        # potential match misses on the last character.
+        any_3_nonblank_codepoints = '!!!'
+        seven_codepoints = any_3_nonblank_codepoints + ' ' + any_3_nonblank_codepoints
+        a = (' ' * 243) + seven_codepoints + (' ' * 7)
+        b = ' ' * 6 + chr(256)
+        a.replace(seven_codepoints, b)
+
     def test_replace_uses_two_way_maxcount(self):
         # Test that maxcount works in _two_way_count in fastsearch.h
         A, B = "A"*1000, "B"*1000

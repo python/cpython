@@ -523,8 +523,14 @@ Advanced parameter control
    .. attribute:: compression_level
 
       A high-level means of setting other compression parameters that affect
-      the speed and ratio of compressing data. Setting the level to zero uses
-      :attr:`COMPRESSION_LEVEL_DEFAULT`.
+      the speed and ratio of compressing data.
+
+      Regular compression levels are greater than ``0``. Values greater than
+      ``20`` are considered "ultra" compression and require more memory than
+      other levels. Negative values can be used to trade off faster compression
+      for worse compression ratios.
+
+      Setting the level to zero uses :attr:`COMPRESSION_LEVEL_DEFAULT`.
 
    .. attribute:: window_log
 

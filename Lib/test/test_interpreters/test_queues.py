@@ -188,9 +188,11 @@ class QueueTests(TestBase):
 
     def test_pickle(self):
         queue = queues.create()
-        data = pickle.dumps(queue)
-        unpickled = pickle.loads(data)
-        self.assertEqual(unpickled, queue)
+        for protocol in range(pickle.HIGHEST_PROTOCOL + 1):
+            with self.subTest(protocol=protocol):
+                data = pickle.dumps(queue, protocol)
+                unpickled = pickle.loads(data)
+                self.assertEqual(unpickled, queue)
 
 
 class TestQueueOps(TestBase):

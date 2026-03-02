@@ -366,6 +366,13 @@ extern int _PyRunRemoteDebugger(PyThreadState *tstate);
 PyAPI_FUNC(_PyStackRef)
 _PyForIter_VirtualIteratorNext(PyThreadState* tstate, struct _PyInterpreterFrame* frame, _PyStackRef iter, _PyStackRef *index_ptr);
 
+/* Special methods used by LOAD_SPECIAL */
+#define SPECIAL___ENTER__   0
+#define SPECIAL___EXIT__    1
+#define SPECIAL___AENTER__  2
+#define SPECIAL___AEXIT__   3
+#define SPECIAL_MAX   3
+
 #ifdef __cplusplus
 }
 #endif

@@ -473,6 +473,7 @@ later:
 #include "pycore_pyerrors.h"         // _PyErr_ChainExceptions1()
 #include "pycore_tuple.h"            // _PyTuple_Recycle()
 #include <stddef.h>                  // offsetof()
+#include "pycore_weakref.h"          // FT_CLEAR_WEAKREFS()
 
 #include "clinic/odictobject.c.h"
 
@@ -1391,8 +1392,7 @@ odict_dealloc(PyObject *op)
     PyObject_GC_UnTrack(self);
 
     Py_XDECREF(self->od_inst_dict);
-    if (self->od_weakreflist != NULL)
-        PyObject_ClearWeakRefs((PyObject *)self);
+    FT_CLEAR_WEAKREFS(op, self->od_weakreflist);
 
     _odict_clear_nodes(self);
     PyDict_Type.tp_dealloc((PyObject *)self);

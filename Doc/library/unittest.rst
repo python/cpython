@@ -1131,7 +1131,7 @@ Test cases
       .. versionchanged:: 3.3
          Added the *msg* keyword argument when used as a context manager.
 
-   .. method:: assertLogs(logger=None, level=None)
+   .. method:: assertLogs(logger=None, level=None, formatter=None)
 
       A context manager to test that at least one message is logged on
       the *logger* or one of its children, with at least the given
@@ -1145,6 +1145,10 @@ Test cases
       If given, *level* should be either a numeric logging level or
       its string equivalent (for example either ``"ERROR"`` or
       :const:`logging.ERROR`).  The default is :const:`logging.INFO`.
+
+      If given, *formatter* should be a :class:`logging.Formatter` object.
+      The default is a formatter with format string
+      ``"%(levelname)s:%(name)s:%(message)s"``
 
       The test passes if at least one message emitted inside the ``with``
       block matches the *logger* and *level* conditions, otherwise it fails.
@@ -1172,6 +1176,9 @@ Test cases
                                       'ERROR:foo.bar:second message'])
 
       .. versionadded:: 3.4
+
+      .. versionchanged:: next
+         Now accepts a *formatter* to control how messages are formatted.
 
    .. method:: assertNoLogs(logger=None, level=None)
 
@@ -2556,7 +2563,7 @@ To add cleanup code that must be run even in the case of an exception, use
    .. versionadded:: 3.8
 
 
-.. classmethod:: enterModuleContext(cm)
+.. function:: enterModuleContext(cm)
 
    Enter the supplied :term:`context manager`.  If successful, also
    add its :meth:`~object.__exit__` method as a cleanup function by

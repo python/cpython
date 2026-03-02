@@ -43,8 +43,5 @@ race:list_inplace_repeat_lock_held
 race:PyObject_Realloc
 
 # gh-133467.  Some of these could be hard to trigger.
-race_top:_Py_slot_tp_getattr_hook
-race_top:slot_tp_descr_get
-race_top:type_set_name
 race_top:set_tp_bases
 race_top:type_set_bases_unlocked

@@ -709,7 +709,9 @@ bytearray_ass_subscript_lock_held(PyObject *op, PyObject *index, PyObject *value
     _Py_CRITICAL_SECTION_ASSERT_OBJECT_LOCKED(op);
     PyByteArrayObject *self = _PyByteArray_CAST(op);
     Py_ssize_t start, stop, step, slicelen;
-    char *buf = PyByteArray_AS_STRING(self);
+    // Do not store a reference to the internal buffer since
+    // index.__index__() or _getbytevalue() may alter 'self'.
+    // See https://github.com/python/cpython/issues/91153.
 
     if (_PyIndex_Check(index)) {
         Py_ssize_t i = PyNumber_AsSsize_t(index, PyExc_IndexError);
@@ -744,7 +746,7 @@ bytearray_ass_subscript_lock_held(PyObject *op, PyObject *index, PyObject *value
         }
         else {
             assert(0 <= ival && ival < 256);
-            buf[i] = (char)ival;
+            PyByteArray_AS_STRING(self)[i] = (char)ival;
             return 0;
         }
     }
@@ -805,6 +807,7 @@ bytearray_ass_subscript_lock_held(PyObject *op, PyObject *index, PyObject *value
             /* Delete slice */
             size_t cur;
             Py_ssize_t i;
+            char *buf = PyByteArray_AS_STRING(self);
 
             if (!_canresize(self))
                 return -1;
@@ -845,6 +848,7 @@ bytearray_ass_subscript_lock_held(PyObject *op, PyObject *index, PyObject *value
             /* Assign slice */
             Py_ssize_t i;
             size_t cur;
+            char *buf = PyByteArray_AS_STRING(self);
 
             if (needed != slicelen) {
                 PyErr_Format(PyExc_ValueError,

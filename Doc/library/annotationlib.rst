@@ -511,7 +511,7 @@ code execution even with no access to any globals or builtins. For example:
 
   >>> def f(x: (1).__class__.__base__.__subclasses__()[-1].__init__.__builtins__["print"]("Hello world")): pass
   ...
-  >>> annotationlib.get_annotations(f, format=annotationlib.Format.SOURCE)
+  >>> annotationlib.get_annotations(f, format=annotationlib.Format.STRING)
   Hello world
   {'x': 'None'}
 

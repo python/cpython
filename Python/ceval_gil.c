@@ -907,13 +907,9 @@ unsignal_pending_calls(PyThreadState *tstate, PyInterpreterState *interp)
 static void
 clear_pending_handling_thread(struct _pending_calls *pending)
 {
-#ifdef Py_GIL_DISABLED
-    PyMutex_Lock(&pending->mutex);
+    FT_MUTEX_LOCK(&pending->mutex);
     pending->handling_thread = NULL;
-    PyMutex_Unlock(&pending->mutex);
-#else
-    pending->handling_thread = NULL;
-#endif
+    FT_MUTEX_UNLOCK(&pending->mutex);
 }
 
 static int
@@ -1386,6 +1382,10 @@ _Py_HandlePending(PyThreadState *tstate)
     if ((breaker & _PY_EVAL_EXPLICIT_MERGE_BIT) != 0) {
         _Py_unset_eval_breaker_bit(tstate, _PY_EVAL_EXPLICIT_MERGE_BIT);
         _Py_brc_merge_refcounts(tstate);
+    }
+    /* Process deferred memory frees held by QSBR */
+    if (_Py_qsbr_should_process(((_PyThreadStateImpl *)tstate)->qsbr)) {
+        _PyMem_ProcessDelayed(tstate);
     }
 #endif
 

@@ -1,0 +1,2 @@
+Limit excess memory usage in the :term:`free threading` build when a
+large dictionary or list is resized and accessed by multiple threads.

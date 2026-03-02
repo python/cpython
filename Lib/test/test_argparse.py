@@ -18,7 +18,11 @@ import argparse
 import warnings
 
 from enum import StrEnum
-from test.support import captured_stderr
+from test.support import (
+    captured_stderr,
+    force_not_colorized,
+    force_not_colorized_test_class,
+)
 from test.support import import_helper
 from test.support import os_helper
 from test.support import script_helper
@@ -1007,6 +1011,7 @@ class TestStrEnumChoices(TestCase):
         args = parser.parse_args(['--color', 'red'])
         self.assertEqual(args.color, self.Color.RED)
 
+    @force_not_colorized
     def test_help_message_contains_enum_choices(self):
         parser = argparse.ArgumentParser()
         parser.add_argument('--color', choices=self.Color, help='Choose a color')
@@ -1829,7 +1834,7 @@ BIN_STDERR_SENTINEL = object()
 class StdStreamComparer:
     def __init__(self, attr):
         # We try to use the actual stdXXX.buffer attribute as our
-        # marker, but but under some test environments,
+        # marker, but under some test environments,
         # sys.stdout/err are replaced by io.StringIO which won't have .buffer,
         # so we use a sentinel simply to show that the tests do the right thing
         # for any buffer supporting object
@@ -2403,6 +2408,7 @@ class TestInvalidAction(TestCase):
 # Subparsers tests
 # ================
 
+@force_not_colorized_test_class
 class TestAddSubparsers(TestCase):
     """Test the add_subparsers method"""
 
@@ -3009,6 +3015,7 @@ class TestGroupConstructor(TestCase):
 # Parent parser tests
 # ===================
 
+@force_not_colorized_test_class
 class TestParentParsers(TestCase):
     """Tests that parsers can be created with parent parsers"""
 
@@ -3216,6 +3223,7 @@ class TestParentParsers(TestCase):
 # Mutually exclusive group tests
 # ==============================
 
+@force_not_colorized_test_class
 class TestMutuallyExclusiveGroupErrors(TestCase):
 
     def test_invalid_add_argument_group(self):
@@ -3344,21 +3352,25 @@ class MEMixin(object):
                 actual_ns = parse_args(args_string.split())
                 self.assertEqual(actual_ns, expected_ns)
 
+    @force_not_colorized
     def test_usage_when_not_required(self):
         format_usage = self.get_parser(required=False).format_usage
         expected_usage = self.usage_when_not_required
         self.assertEqual(format_usage(), textwrap.dedent(expected_usage))
 
+    @force_not_colorized
     def test_usage_when_required(self):
         format_usage = self.get_parser(required=True).format_usage
         expected_usage = self.usage_when_required
         self.assertEqual(format_usage(), textwrap.dedent(expected_usage))
 
+    @force_not_colorized
     def test_help_when_not_required(self):
         format_help = self.get_parser(required=False).format_help
         help = self.usage_when_not_required + self.help
         self.assertEqual(format_help(), textwrap.dedent(help))
 
+    @force_not_colorized
     def test_help_when_required(self):
         format_help = self.get_parser(required=True).format_help
         help = self.usage_when_required + self.help
@@ -4030,11 +4042,13 @@ class TestHelpFormattingMetaclass(type):
                 tester.maxDiff = None
                 tester.assertEqual(expected_text, parser_text)
 
+            @force_not_colorized
             def test_format(self, tester):
                 parser = self._get_parser(tester)
                 format = getattr(parser, 'format_%s' % self.func_suffix)
                 self._test(tester, format())
 
+            @force_not_colorized
             def test_print(self, tester):
                 parser = self._get_parser(tester)
                 print_ = getattr(parser, 'print_%s' % self.func_suffix)
@@ -4047,6 +4061,7 @@ class TestHelpFormattingMetaclass(type):
                     setattr(sys, self.std_name, old_stream)
                 self._test(tester, parser_text)
 
+            @force_not_colorized
             def test_print_file(self, tester):
                 parser = self._get_parser(tester)
                 print_ = getattr(parser, 'print_%s' % self.func_suffix)
@@ -4788,6 +4803,7 @@ class TestHelpUsageMetavarsSpacesParentheses(HelpTestCase):
     version = ''
 
 
+@force_not_colorized_test_class
 class TestHelpUsageNoWhitespaceCrash(TestCase):
 
     def test_all_suppressed_mutex_followed_by_long_arg(self):
@@ -5469,6 +5485,7 @@ class TestHelpMetavarTypeFormatter(HelpTestCase):
     version = ''
 
 
+@force_not_colorized_test_class
 class TestHelpCustomHelpFormatter(TestCase):
     maxDiff = None
 
@@ -5765,6 +5782,7 @@ class TestConflictHandling(TestCase):
         self.assertRaises(argparse.ArgumentError,
                           parser.add_argument, '--spam')
 
+    @force_not_colorized
     def test_resolve_error(self):
         get_parser = argparse.ArgumentParser
         parser = get_parser(prog='PROG', conflict_handler='resolve')
@@ -6031,6 +6049,7 @@ class TestArgumentError(TestCase):
 
 class TestArgumentTypeError(TestCase):
 
+    @force_not_colorized
     def test_argument_type_error(self):
 
         def spam(string):
@@ -6829,6 +6848,7 @@ class TestWrappingMetavar(TestCase):
         metavar = '<http[s]://example:1234>'
         self.parser.add_argument('--proxy', metavar=metavar)
 
+    @force_not_colorized
     def test_help_with_metavar(self):
         help_text = self.parser.format_help()
         self.assertEqual(help_text, textwrap.dedent('''\
@@ -6994,6 +7014,7 @@ class TestExitOnError(TestCase):
                                self.parser.parse_args, ['@no-such-file'])
 
 
+@force_not_colorized_test_class
 class TestProgName(TestCase):
     source = textwrap.dedent('''\
         import argparse

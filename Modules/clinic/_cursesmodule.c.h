@@ -2372,7 +2372,22 @@ _curses_ungetmouse(PyObject *module, PyObject *const *args, Py_ssize_t nargs)
         _PyArg_BadArgument("ungetmouse", "argument 5", "int", args[4]);
         goto exit;
     }
-    bstate = PyLong_AsUnsignedLongMask(args[4]);
+    {
+        Py_ssize_t _bytes = PyLong_AsNativeBytes(args[4], &bstate, sizeof(unsigned long),
+                Py_ASNATIVEBYTES_NATIVE_ENDIAN |
+                Py_ASNATIVEBYTES_ALLOW_INDEX |
+                Py_ASNATIVEBYTES_UNSIGNED_BUFFER);
+        if (_bytes < 0) {
+            goto exit;
+        }
+        if ((size_t)_bytes > sizeof(unsigned long)) {
+            if (PyErr_WarnEx(PyExc_DeprecationWarning,
+                "integer value out of range", 1) < 0)
+            {
+                goto exit;
+            }
+        }
+    }
     return_value = _curses_ungetmouse_impl(module, id, x, y, z, bstate);
 
 exit:
@@ -3138,7 +3153,22 @@ _curses_mousemask(PyObject *module, PyObject *arg)
         _PyArg_BadArgument("mousemask", "argument", "int", arg);
         goto exit;
     }
-    newmask = PyLong_AsUnsignedLongMask(arg);
+    {
+        Py_ssize_t _bytes = PyLong_AsNativeBytes(arg, &newmask, sizeof(unsigned long),
+                Py_ASNATIVEBYTES_NATIVE_ENDIAN |
+                Py_ASNATIVEBYTES_ALLOW_INDEX |
+                Py_ASNATIVEBYTES_UNSIGNED_BUFFER);
+        if (_bytes < 0) {
+            goto exit;
+        }
+        if ((size_t)_bytes > sizeof(unsigned long)) {
+            if (PyErr_WarnEx(PyExc_DeprecationWarning,
+                "integer value out of range", 1) < 0)
+            {
+                goto exit;
+            }
+        }
+    }
     return_value = _curses_mousemask_impl(module, newmask);
 
 exit:
@@ -4420,4 +4450,4 @@ _curses_has_extended_color_support(PyObject *module, PyObject *Py_UNUSED(ignored
 #ifndef _CURSES_ASSUME_DEFAULT_COLORS_METHODDEF
     #define _CURSES_ASSUME_DEFAULT_COLORS_METHODDEF
 #endif /* !defined(_CURSES_ASSUME_DEFAULT_COLORS_METHODDEF) */
-/*[clinic end generated code: output=a083473003179b30 input=a9049054013a1b77]*/
+/*[clinic end generated code: output=79ddaae4da3b80df input=a9049054013a1b77]*/

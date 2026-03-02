@@ -239,16 +239,17 @@ SHA3_traverse(PyObject *self, visitproc visit, void *arg)
 /*[clinic input]
 _sha3.sha3_224.copy
 
+    cls: defining_class
+
 Return a copy of the hash object.
 [clinic start generated code]*/
 
 static PyObject *
-_sha3_sha3_224_copy_impl(SHA3object *self)
-/*[clinic end generated code: output=6c537411ecdcda4c input=93a44aaebea51ba8]*/
+_sha3_sha3_224_copy_impl(SHA3object *self, PyTypeObject *cls)
+/*[clinic end generated code: output=13958b44c244013e input=7134b4dc0a2fbcac]*/
 {
     SHA3object *newobj;
-
-    if ((newobj = newSHA3object(Py_TYPE(self))) == NULL) {
+    if ((newobj = newSHA3object(cls)) == NULL) {
         return NULL;
     }
     HASHLIB_ACQUIRE_LOCK(self);

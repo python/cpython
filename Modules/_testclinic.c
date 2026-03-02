@@ -1734,14 +1734,14 @@ output impl_definition block
 class _testclinic.DeprStarNew "PyObject *" "PyObject"
 @classmethod
 _testclinic.DeprStarNew.__new__ as depr_star_new
-    * [from 3.37]
+    * [from 3.14]
     a: object = None
 The deprecation message should use the class name instead of __new__.
 [clinic start generated code]*/
 
 static PyObject *
 depr_star_new_impl(PyTypeObject *type, PyObject *a)
-/*[clinic end generated code: output=bdbb36244f90cf46 input=df8930826b302c3a]*/
+/*[clinic end generated code: output=bdbb36244f90cf46 input=fdd640db964b4dc1]*/
 {
     return type->tp_alloc(type, 0);
 }
@@ -1775,14 +1775,14 @@ static PyTypeObject DeprStarNew = {
 /*[clinic input]
 class _testclinic.DeprStarInit "PyObject *" "PyObject"
 _testclinic.DeprStarInit.__init__ as depr_star_init
-    * [from 3.37]
+    * [from 3.14]
     a: object = None
 The deprecation message should use the class name instead of __init__.
 [clinic start generated code]*/
 
 static int
 depr_star_init_impl(PyObject *self, PyObject *a)
-/*[clinic end generated code: output=8d27b43c286d3ecc input=07a5c35e04f526c5]*/
+/*[clinic end generated code: output=8d27b43c286d3ecc input=5575b77229d5e2be]*/
 {
     return 0;
 }
@@ -1818,7 +1818,7 @@ static PyTypeObject DeprStarInit = {
 class _testclinic.DeprStarInitNoInline "PyObject *" "PyObject"
 _testclinic.DeprStarInitNoInline.__init__ as depr_star_init_noinline
     a: object
-    * [from 3.37]
+    * [from 3.14]
     b: object
     c: object = None
     *
@@ -1829,7 +1829,7 @@ _testclinic.DeprStarInitNoInline.__init__ as depr_star_init_noinline
 static int
 depr_star_init_noinline_impl(PyObject *self, PyObject *a, PyObject *b,
                              PyObject *c, const char *d, Py_ssize_t d_length)
-/*[clinic end generated code: output=9b31fc167f1bf9f7 input=45171504f009a391]*/
+/*[clinic end generated code: output=9b31fc167f1bf9f7 input=5a887543122bca48]*/
 {
     return 0;
 }
@@ -1849,13 +1849,13 @@ class _testclinic.DeprKwdNew "PyObject *" "PyObject"
 @classmethod
 _testclinic.DeprKwdNew.__new__ as depr_kwd_new
     a: object = None
-    / [from 3.37]
+    / [from 3.14]
 The deprecation message should use the class name instead of __new__.
 [clinic start generated code]*/
 
 static PyObject *
 depr_kwd_new_impl(PyTypeObject *type, PyObject *a)
-/*[clinic end generated code: output=618d07afc5616149 input=1bfb1b86f56ad2e6]*/
+/*[clinic end generated code: output=618d07afc5616149 input=6c7d13c471013c10]*/
 {
     return type->tp_alloc(type, 0);
 }
@@ -1873,13 +1873,13 @@ static PyTypeObject DeprKwdNew = {
 class _testclinic.DeprKwdInit "PyObject *" "PyObject"
 _testclinic.DeprKwdInit.__init__ as depr_kwd_init
     a: object = None
-    / [from 3.37]
+    / [from 3.14]
 The deprecation message should use the class name instead of __init__.
 [clinic start generated code]*/
 
 static int
 depr_kwd_init_impl(PyObject *self, PyObject *a)
-/*[clinic end generated code: output=6e02eb724a85d840 input=6f4daaa912ec24b2]*/
+/*[clinic end generated code: output=6e02eb724a85d840 input=b9bf3c20f012d539]*/
 {
     return 0;
 }
@@ -1901,7 +1901,7 @@ _testclinic.DeprKwdInitNoInline.__init__ as depr_kwd_init_noinline
     /
     b: object
     c: object = None
-    / [from 3.37]
+    / [from 3.14]
     # Force to use _PyArg_ParseTupleAndKeywordsFast.
     d: str(accept={str, robuffer}, zeroes=True) = ''
 [clinic start generated code]*/
@@ -1909,7 +1909,7 @@ _testclinic.DeprKwdInitNoInline.__init__ as depr_kwd_init_noinline
 static int
 depr_kwd_init_noinline_impl(PyObject *self, PyObject *a, PyObject *b,
                             PyObject *c, const char *d, Py_ssize_t d_length)
-/*[clinic end generated code: output=27759d70ddd25873 input=a022ad17f4b6008c]*/
+/*[clinic end generated code: output=27759d70ddd25873 input=c19d982c8c70a930]*/
 {
     return 0;
 }
@@ -1926,13 +1926,13 @@ static PyTypeObject DeprKwdInitNoInline = {
 
 /*[clinic input]
 depr_star_pos0_len1
-    * [from 3.37]
+    * [from 3.14]
     a: object
 [clinic start generated code]*/
 
 static PyObject *
 depr_star_pos0_len1_impl(PyObject *module, PyObject *a)
-/*[clinic end generated code: output=e1c6c2b423129499 input=c8f49d8c6165ab6c]*/
+/*[clinic end generated code: output=e1c6c2b423129499 input=089b9aee25381b69]*/
 {
     Py_RETURN_NONE;
 }
@@ -1940,14 +1940,14 @@ depr_star_pos0_len1_impl(PyObject *module, PyObject *a)
 
 /*[clinic input]
 depr_star_pos0_len2
-    * [from 3.37]
+    * [from 3.14]
     a: object
     b: object
 [clinic start generated code]*/
 
 static PyObject *
 depr_star_pos0_len2_impl(PyObject *module, PyObject *a, PyObject *b)
-/*[clinic end generated code: output=96df9be39859c7e4 input=aca96f36892eda25]*/
+/*[clinic end generated code: output=96df9be39859c7e4 input=65c83a32e01495c6]*/
 {
     Py_RETURN_NONE;
 }
@@ -1955,7 +1955,7 @@ depr_star_pos0_len2_impl(PyObject *module, PyObject *a, PyObject *b)
 
 /*[clinic input]
 depr_star_pos0_len3_with_kwd
-    * [from 3.37]
+    * [from 3.14]
     a: object
     b: object
     c: object
@@ -1966,7 +1966,7 @@ depr_star_pos0_len3_with_kwd
 static PyObject *
 depr_star_pos0_len3_with_kwd_impl(PyObject *module, PyObject *a, PyObject *b,
                                   PyObject *c, PyObject *d)
-/*[clinic end generated code: output=7f2531eda837052f input=5602f0bced3d5094]*/
+/*[clinic end generated code: output=7f2531eda837052f input=b33f620f57d9270f]*/
 {
     Py_RETURN_NONE;
 }
@@ -1975,13 +1975,13 @@ depr_star_pos0_len3_with_kwd_impl(PyObject *module, PyObject *a, PyObject *b,
 /*[clinic input]
 depr_star_pos1_len1_opt
     a: object
-    * [from 3.37]
+    * [from 3.14]
     b: object = None
 [clinic start generated code]*/
 
 static PyObject *
 depr_star_pos1_len1_opt_impl(PyObject *module, PyObject *a, PyObject *b)
-/*[clinic end generated code: output=b5b4e326ee3b216f input=070817da1d6ccf49]*/
+/*[clinic end generated code: output=b5b4e326ee3b216f input=4a4b8ff72eae9ff7]*/
 {
     Py_RETURN_NONE;
 }
@@ -1990,13 +1990,13 @@ depr_star_pos1_len1_opt_impl(PyObject *module, PyObject *a, PyObject *b)
 /*[clinic input]
 depr_star_pos1_len1
     a: object
-    * [from 3.37]
+    * [from 3.14]
     b: object
 [clinic start generated code]*/
 
 static PyObject *
 depr_star_pos1_len1_impl(PyObject *module, PyObject *a, PyObject *b)
-/*[clinic end generated code: output=eab92e37d5b0a480 input=2e3a30c71edd0f30]*/
+/*[clinic end generated code: output=eab92e37d5b0a480 input=1e7787a9fe5f62a0]*/
 {
     Py_RETURN_NONE;
 }
@@ -2005,7 +2005,7 @@ depr_star_pos1_len1_impl(PyObject *module, PyObject *a, PyObject *b)
 /*[clinic input]
 depr_star_pos1_len2_with_kwd
     a: object
-    * [from 3.37]
+    * [from 3.14]
     b: object
     c: object
     *
@@ -2015,7 +2015,7 @@ depr_star_pos1_len2_with_kwd
 static PyObject *
 depr_star_pos1_len2_with_kwd_impl(PyObject *module, PyObject *a, PyObject *b,
                                   PyObject *c, PyObject *d)
-/*[clinic end generated code: output=3bccab672b7cfbb8 input=48492b028a4f281c]*/
+/*[clinic end generated code: output=3bccab672b7cfbb8 input=6bc7bd742fa8be15]*/
 {
     Py_RETURN_NONE;
 }
@@ -2025,14 +2025,14 @@ depr_star_pos1_len2_with_kwd_impl(PyObject *module, PyObject *a, PyObject *b,
 depr_star_pos2_len1
     a: object
     b: object
-    * [from 3.37]
+    * [from 3.14]
     c: object
 [clinic start generated code]*/
 
 static PyObject *
 depr_star_pos2_len1_impl(PyObject *module, PyObject *a, PyObject *b,
                          PyObject *c)
-/*[clinic end generated code: output=20f5b230e9beeb70 input=80ee46e15cd14cf3]*/
+/*[clinic end generated code: output=20f5b230e9beeb70 input=5fc3e1790dec00d5]*/
 {
     Py_RETURN_NONE;
 }
@@ -2042,7 +2042,7 @@ depr_star_pos2_len1_impl(PyObject *module, PyObject *a, PyObject *b,
 depr_star_pos2_len2
     a: object
     b: object
-    * [from 3.37]
+    * [from 3.14]
     c: object
     d: object
 [clinic start generated code]*/
@@ -2050,7 +2050,7 @@ depr_star_pos2_len2
 static PyObject *
 depr_star_pos2_len2_impl(PyObject *module, PyObject *a, PyObject *b,
                          PyObject *c, PyObject *d)
-/*[clinic end generated code: output=9f90ed8fbce27d7a input=ac57914cf40a011b]*/
+/*[clinic end generated code: output=9f90ed8fbce27d7a input=9cc8003b89d38779]*/
 {
     Py_RETURN_NONE;
 }
@@ -2060,7 +2060,7 @@ depr_star_pos2_len2_impl(PyObject *module, PyObject *a, PyObject *b,
 depr_star_pos2_len2_with_kwd
     a: object
     b: object
-    * [from 3.37]
+    * [from 3.14]
     c: object
     d: object
     *
@@ -2070,7 +2070,7 @@ depr_star_pos2_len2_with_kwd
 static PyObject *
 depr_star_pos2_len2_with_kwd_impl(PyObject *module, PyObject *a, PyObject *b,
                                   PyObject *c, PyObject *d, PyObject *e)
-/*[clinic end generated code: output=05432c4f20527215 input=98f25e33c01285a3]*/
+/*[clinic end generated code: output=05432c4f20527215 input=831832d90534da91]*/
 {
     Py_RETURN_NONE;
 }
@@ -2079,7 +2079,7 @@ depr_star_pos2_len2_with_kwd_impl(PyObject *module, PyObject *a, PyObject *b,
 /*[clinic input]
 depr_star_noinline
     a: object
-    * [from 3.37]
+    * [from 3.14]
     b: object
     c: object = None
     *
@@ -2090,7 +2090,7 @@ depr_star_noinline
 static PyObject *
 depr_star_noinline_impl(PyObject *module, PyObject *a, PyObject *b,
                         PyObject *c, const char *d, Py_ssize_t d_length)
-/*[clinic end generated code: output=cc27dacf5c2754af input=a829784557a42349]*/
+/*[clinic end generated code: output=cc27dacf5c2754af input=d36cc862a2daef98]*/
 {
     Py_RETURN_NONE;
 }
@@ -2099,12 +2099,12 @@ depr_star_noinline_impl(PyObject *module, PyObject *a, PyObject *b,
 /*[clinic input]
 depr_star_multi
     a: object
-    * [from 3.39]
+    * [from 3.16]
     b: object
-    * [from 3.38]
+    * [from 3.15]
     c: object
     d: object
-    * [from 3.37]
+    * [from 3.14]
     e: object
     f: object
     g: object
@@ -2116,7 +2116,7 @@ static PyObject *
 depr_star_multi_impl(PyObject *module, PyObject *a, PyObject *b, PyObject *c,
                      PyObject *d, PyObject *e, PyObject *f, PyObject *g,
                      PyObject *h)
-/*[clinic end generated code: output=77681653f4202068 input=6798940a18b2e62b]*/
+/*[clinic end generated code: output=77681653f4202068 input=3ebd05d888a957ea]*/
 {
     Py_RETURN_NONE;
 }
@@ -2127,12 +2127,12 @@ depr_kwd_required_1
     a: object
     /
     b: object
-    / [from 3.37]
+    / [from 3.14]
 [clinic start generated code]*/
 
 static PyObject *
 depr_kwd_required_1_impl(PyObject *module, PyObject *a, PyObject *b)
-/*[clinic end generated code: output=1d8ab19ea78418af input=37853d8548d42df5]*/
+/*[clinic end generated code: output=1d8ab19ea78418af input=53f2c398b828462d]*/
 {
     Py_RETURN_NONE;
 }
@@ -2144,13 +2144,13 @@ depr_kwd_required_2
     /
     b: object
     c: object
-    / [from 3.37]
+    / [from 3.14]
 [clinic start generated code]*/
 
 static PyObject *
 depr_kwd_required_2_impl(PyObject *module, PyObject *a, PyObject *b,
                          PyObject *c)
-/*[clinic end generated code: output=44a89cb82509ddde input=0e1faedd8ec248b1]*/
+/*[clinic end generated code: output=44a89cb82509ddde input=a2b0ef37de8a01a7]*/
 {
     Py_RETURN_NONE;
 }
@@ -2161,12 +2161,12 @@ depr_kwd_optional_1
     a: object
     /
     b: object = None
-    / [from 3.37]
+    / [from 3.14]
 [clinic start generated code]*/
 
 static PyObject *
 depr_kwd_optional_1_impl(PyObject *module, PyObject *a, PyObject *b)
-/*[clinic end generated code: output=a8a3d67efcc7b058 input=adb240416511b30a]*/
+/*[clinic end generated code: output=a8a3d67efcc7b058 input=e416981eb78c3053]*/
 {
     Py_RETURN_NONE;
 }
@@ -2178,13 +2178,13 @@ depr_kwd_optional_2
     /
     b: object = None
     c: object = None
-    / [from 3.37]
+    / [from 3.14]
 [clinic start generated code]*/
 
 static PyObject *
 depr_kwd_optional_2_impl(PyObject *module, PyObject *a, PyObject *b,
                          PyObject *c)
-/*[clinic end generated code: output=aa2d967f26fdb9f6 input=fb8a82d0087f8732]*/
+/*[clinic end generated code: output=aa2d967f26fdb9f6 input=cae3afb783bfc855]*/
 {
     Py_RETURN_NONE;
 }
@@ -2195,13 +2195,13 @@ depr_kwd_optional_3
     a: object = None
     b: object = None
     c: object = None
-    / [from 3.37]
+    / [from 3.14]
 [clinic start generated code]*/
 
 static PyObject *
 depr_kwd_optional_3_impl(PyObject *module, PyObject *a, PyObject *b,
                          PyObject *c)
-/*[clinic end generated code: output=a26025bf6118fd07 input=e54bbbacd8624fa7]*/
+/*[clinic end generated code: output=a26025bf6118fd07 input=c9183b2f9ccaf992]*/
 {
     Py_RETURN_NONE;
 }
@@ -2213,13 +2213,13 @@ depr_kwd_required_optional
     /
     b: object
     c: object = None
-    / [from 3.37]
+    / [from 3.14]
 [clinic start generated code]*/
 
 static PyObject *
 depr_kwd_required_optional_impl(PyObject *module, PyObject *a, PyObject *b,
                                 PyObject *c)
-/*[clinic end generated code: output=e53a8b7a250d8ffc input=285105a1ffb784b5]*/
+/*[clinic end generated code: output=e53a8b7a250d8ffc input=23237a046f8388f5]*/
 {
     Py_RETURN_NONE;
 }
@@ -2231,7 +2231,7 @@ depr_kwd_noinline
     /
     b: object
     c: object = None
-    / [from 3.37]
+    / [from 3.14]
     # Force to use _PyArg_ParseStackAndKeywords.
     d: str(accept={str, robuffer}, zeroes=True) = ''
 [clinic start generated code]*/
@@ -2239,7 +2239,7 @@ depr_kwd_noinline
 static PyObject *
 depr_kwd_noinline_impl(PyObject *module, PyObject *a, PyObject *b,
                        PyObject *c, const char *d, Py_ssize_t d_length)
-/*[clinic end generated code: output=f59da8113f2bad7c input=3773d1bdc1f82298]*/
+/*[clinic end generated code: output=f59da8113f2bad7c input=1d6db65bebb069d7]*/
 {
     Py_RETURN_NONE;
 }
@@ -2250,14 +2250,14 @@ depr_kwd_multi
     a: object
     /
     b: object
-    / [from 3.37]
+    / [from 3.14]
     c: object
     d: object
-    / [from 3.38]
+    / [from 3.15]
     e: object
     f: object
     g: object
-    / [from 3.39]
+    / [from 3.16]
     h: object
 [clinic start generated code]*/
 
@@ -2265,7 +2265,7 @@ static PyObject *
 depr_kwd_multi_impl(PyObject *module, PyObject *a, PyObject *b, PyObject *c,
                     PyObject *d, PyObject *e, PyObject *f, PyObject *g,
                     PyObject *h)
-/*[clinic end generated code: output=ddfbde80fe1942e1 input=a84c447a74284174]*/
+/*[clinic end generated code: output=ddfbde80fe1942e1 input=7a074e621c79efd7]*/
 {
     Py_RETURN_NONE;
 }
@@ -2276,13 +2276,13 @@ depr_multi
     a: object
     /
     b: object
-    / [from 3.37]
+    / [from 3.14]
     c: object
-    / [from 3.38]
+    / [from 3.15]
     d: object
-    * [from 3.38]
+    * [from 3.15]
     e: object
-    * [from 3.37]
+    * [from 3.14]
     f: object
     *
     g: object
@@ -2291,7 +2291,7 @@ depr_multi
 static PyObject *
 depr_multi_impl(PyObject *module, PyObject *a, PyObject *b, PyObject *c,
                 PyObject *d, PyObject *e, PyObject *f, PyObject *g)
-/*[clinic end generated code: output=f81c92852ca2d4ee input=0e859e8b8eda75d7]*/
+/*[clinic end generated code: output=f81c92852ca2d4ee input=5b847c5e44bedd02]*/
 {
     Py_RETURN_NONE;
 }

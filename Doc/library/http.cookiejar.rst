@@ -570,7 +570,7 @@ Netscape protocol strictness switches:
 
    Don't allow setting cookies whose path doesn't path-match request URI.
 
-:attr:`strict_ns_domain` is a collection of flags.  Its value is constructed by
+:attr:`~DefaultCookiePolicy.strict_ns_domain` is a collection of flags.  Its value is constructed by
 or-ing together (for example, ``DomainStrictNoDots|DomainStrictNonDomain`` means
 both flags are set).
 

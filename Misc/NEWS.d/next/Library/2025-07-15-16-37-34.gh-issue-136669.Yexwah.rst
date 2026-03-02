@@ -1,0 +1,1 @@
+:mod:`!_asyncio` is now statically linked for improved performance.

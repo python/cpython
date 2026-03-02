@@ -95,6 +95,13 @@ There are a few functions specific to Python functions.
 
    .. versionadded:: 3.12
 
+
+.. c:function:: PyObject* PyFunction_GetKwDefaults(PyObject *op)
+
+   Return the keyword-only argument default values of the function object *op*. This can be a
+   dictionary of arguments or ``NULL``.
+
+
 .. c:function:: PyObject* PyFunction_GetClosure(PyObject *op)
 
    Return the closure associated with the function object *op*. This can be ``NULL``
@@ -121,6 +128,19 @@ There are a few functions specific to Python functions.
    must be a dictionary or ``Py_None``.
 
    Raises :exc:`SystemError` and returns ``-1`` on failure.
+
+
+.. c:function:: PyObject *PyFunction_GET_CODE(PyObject *op)
+                PyObject *PyFunction_GET_GLOBALS(PyObject *op)
+                PyObject *PyFunction_GET_MODULE(PyObject *op)
+                PyObject *PyFunction_GET_DEFAULTS(PyObject *op)
+                PyObject *PyFunction_GET_KW_DEFAULTS(PyObject *op)
+                PyObject *PyFunction_GET_CLOSURE(PyObject *op)
+                PyObject *PyFunction_GET_ANNOTATIONS(PyObject *op)
+
+   These functions are similar to their ``PyFunction_Get*`` counterparts, but
+   do not do type checking. Passing anything other than an instance of
+   :c:data:`PyFunction_Type` is undefined behavior.
 
 
 .. c:function:: int PyFunction_AddWatcher(PyFunction_WatchCallback callback)

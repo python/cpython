@@ -751,6 +751,14 @@ search_linux_map_for_section(proc_handle_t *handle, const char* secname, const c
 
 #ifdef MS_WINDOWS
 
+static int is_process_alive(HANDLE hProcess) {
+    DWORD exitCode;
+    if (GetExitCodeProcess(hProcess, &exitCode)) {
+        return exitCode == STILL_ACTIVE;
+    }
+    return 0;
+}
+
 static void* analyze_pe(const wchar_t* mod_path, BYTE* remote_base, const char* secname) {
     HANDLE hFile = CreateFileW(mod_path, GENERIC_READ, FILE_SHARE_READ, NULL, OPEN_EXISTING, FILE_ATTRIBUTE_NORMAL, NULL);
     if (hFile == INVALID_HANDLE_VALUE) {
@@ -911,7 +919,9 @@ _Py_RemoteDebug_GetPyRuntimeAddress(proc_handle_t* handle)
         _PyErr_ChainExceptions1(exc);
     }
 #else
-    Py_UNREACHABLE();
+    _set_debug_exception_cause(PyExc_RuntimeError,
+        "Reading the PyRuntime section is not supported on this platform");
+    return 0;
 #endif
 
     return address;
@@ -981,6 +991,13 @@ _Py_RemoteDebug_ReadRemoteMemory(proc_handle_t *handle, uintptr_t remote_address
     SIZE_T result = 0;
     do {
         if (!ReadProcessMemory(handle->hProcess, (LPCVOID)(remote_address + result), (char*)dst + result, len - result, &read_bytes)) {
+            // Check if the process is still alive: we need to be able to tell our caller
+            // that the process is dead and not just that the read failed.
+            if (!is_process_alive(handle->hProcess)) {
+                _set_errno(ESRCH);
+                PyErr_SetFromErrno(PyExc_OSError);
+                return -1;
+            }
             PyErr_SetFromWindowsErr(0);
             DWORD error = GetLastError();
             _set_debug_exception_cause(PyExc_OSError,
@@ -1013,6 +1030,9 @@ _Py_RemoteDebug_ReadRemoteMemory(proc_handle_t *handle, uintptr_t remote_address
                 return read_remote_memory_fallback(handle, remote_address, len, dst);
             }
             PyErr_SetFromErrno(PyExc_OSError);
+            if (errno == ESRCH) {
+                return -1;
+            }
             _set_debug_exception_cause(PyExc_OSError,
                 "process_vm_readv failed for PID %d at address 0x%lx "
                 "(size %zu, partial read %zd bytes): %s",

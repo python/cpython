@@ -1444,12 +1444,16 @@ make_unraisable_hook_args(PyThreadState *tstate, PyObject *exc_type,
 
    It can be called to log the exception of a custom sys.unraisablehook.
 
-   Do nothing if sys.stderr attribute doesn't exist or is set to None. */
+   This assumes 'file' is neither NULL nor None.
+ */
 static int
 write_unraisable_exc_file(PyThreadState *tstate, PyObject *exc_type,
                           PyObject *exc_value, PyObject *exc_tb,
                           PyObject *err_msg, PyObject *obj, PyObject *file)
 {
+    assert(file != NULL);
+    assert(!Py_IsNone(file));
+
     if (obj != NULL && obj != Py_None) {
         if (err_msg != NULL && err_msg != Py_None) {
             if (PyFile_WriteObject(err_msg, file, Py_PRINT_RAW) < 0) {
@@ -1483,6 +1487,27 @@ write_unraisable_exc_file(PyThreadState *tstate, PyObject *exc_type,
             return -1;
         }
     }
+
+    // Try printing the exception using the stdlib module.
+    // If this fails, then we have to use the C implementation.
+    PyObject *print_exception_fn = PyImport_ImportModuleAttrString("traceback",
+                                                                   "_print_exception_bltin");
+    if (print_exception_fn != NULL && PyCallable_Check(print_exception_fn)) {
+        PyObject *args[2] = {exc_value, file};
+        PyObject *result = PyObject_Vectorcall(print_exception_fn, args, 2, NULL);
+        int ok = (result != NULL);
+        Py_DECREF(print_exception_fn);
+        Py_XDECREF(result);
+        if (ok) {
+            // Nothing else to do
+            return 0;
+        }
+    }
+    else {
+        Py_XDECREF(print_exception_fn);
+    }
+    // traceback module failed, fall back to pure C
+    _PyErr_Clear(tstate);
 
     if (exc_tb != NULL && exc_tb != Py_None) {
         if (PyTraceBack_Print(exc_tb, file) < 0) {

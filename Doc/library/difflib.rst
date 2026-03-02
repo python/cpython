@@ -278,7 +278,7 @@ diffs. For comparing directories and files, see also, the :mod:`filecmp` module.
       emu
 
 
-.. function:: unified_diff(a, b, fromfile='', tofile='', fromfiledate='', tofiledate='', n=3, lineterm='\n')
+.. function:: unified_diff(a, b, fromfile='', tofile='', fromfiledate='', tofiledate='', n=3, lineterm='\n', *, color=False)
 
    Compare *a* and *b* (lists of strings); return a delta (a :term:`generator`
    generating the delta lines) in unified diff format.
@@ -296,6 +296,10 @@ diffs. For comparing directories and files, see also, the :mod:`filecmp` module.
 
    For inputs that do not have trailing newlines, set the *lineterm* argument to
    ``""`` so that the output will be uniformly newline free.
+
+   Set *color* to ``True`` to enable output in color, similar to
+   :program:`git diff --color`. Even if enabled, it can be
+   :ref:`controlled using environment variables <using-on-controlling-color>`.
 
    The unified diff format normally has a header for filenames and modification
    times.  Any or all of these may be specified using strings for *fromfile*,
@@ -318,6 +322,10 @@ diffs. For comparing directories and files, see also, the :mod:`filecmp` module.
        guido
 
    See :ref:`difflib-interface` for a more detailed example.
+
+   .. versionchanged:: next
+      Added the *color* parameter.
+
 
 .. function:: diff_bytes(dfunc, a, b, fromfile=b'', tofile=b'', fromfiledate=b'', tofiledate=b'', n=3, lineterm=b'\n')
 
@@ -351,9 +359,9 @@ diffs. For comparing directories and files, see also, the :mod:`filecmp` module.
 
 .. seealso::
 
-   `Pattern Matching: The Gestalt Approach <https://www.drdobbs.com/database/pattern-matching-the-gestalt-approach/184407970>`_
+   `Pattern Matching: The Gestalt Approach <https://jacobfilipp.com/DrDobbs/articles/DDJ/1988/8807/8807c/8807c.htm>`_
       Discussion of a similar algorithm by John W. Ratcliff and D. E. Metzener. This
-      was published in `Dr. Dobb's Journal <https://www.drdobbs.com/>`_ in July, 1988.
+      was published in Dr. Dobb's Journal in July, 1988.
 
 
 .. _sequence-matcher:

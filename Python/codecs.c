@@ -16,7 +16,7 @@ Copyright (c) Corporation for National Research Initiatives.
 #include "pycore_runtime.h"       // _Py_ID()
 #include "pycore_ucnhash.h"       // _PyUnicode_Name_CAPI
 #include "pycore_unicodeobject.h" // _PyUnicode_InternMortal()
-
+#include "pycore_pyatomic_ft_wrappers.h"
 
 static const char *codecs_builtin_error_handlers[] = {
     "strict", "ignore", "replace",
@@ -40,13 +40,10 @@ int PyCodec_Register(PyObject *search_function)
         PyErr_SetString(PyExc_TypeError, "argument must be callable");
         goto onError;
     }
-#ifdef Py_GIL_DISABLED
-    PyMutex_Lock(&interp->codecs.search_path_mutex);
-#endif
+    FT_MUTEX_LOCK(&interp->codecs.search_path_mutex);
     int ret = PyList_Append(interp->codecs.search_path, search_function);
-#ifdef Py_GIL_DISABLED
-    PyMutex_Unlock(&interp->codecs.search_path_mutex);
-#endif
+    FT_MUTEX_UNLOCK(&interp->codecs.search_path_mutex);
+
     return ret;
 
  onError:
@@ -66,9 +63,7 @@ PyCodec_Unregister(PyObject *search_function)
     PyObject *codec_search_path = interp->codecs.search_path;
     assert(PyList_CheckExact(codec_search_path));
     for (Py_ssize_t i = 0; i < PyList_GET_SIZE(codec_search_path); i++) {
-#ifdef Py_GIL_DISABLED
-        PyMutex_Lock(&interp->codecs.search_path_mutex);
-#endif
+        FT_MUTEX_LOCK(&interp->codecs.search_path_mutex);
         PyObject *item = PyList_GetItemRef(codec_search_path, i);
         int ret = 1;
         if (item == search_function) {
@@ -76,9 +71,7 @@ PyCodec_Unregister(PyObject *search_function)
             // while we hold search_path_mutex.
             ret = PyList_SetSlice(codec_search_path, i, i+1, NULL);
         }
-#ifdef Py_GIL_DISABLED
-        PyMutex_Unlock(&interp->codecs.search_path_mutex);
-#endif
+        FT_MUTEX_UNLOCK(&interp->codecs.search_path_mutex);
         Py_DECREF(item);
         if (ret != 1) {
             assert(interp->codecs.search_cache != NULL);
@@ -1204,7 +1197,7 @@ get_standard_encoding_impl(const char *encoding, int *bytelength)
             }
         }
     }
-    else if (strcmp(encoding, "CP_UTF8") == 0) {
+    else if (strcmp(encoding, "cp65001") == 0) {
         *bytelength = 3;
         return ENC_UTF8;
     }

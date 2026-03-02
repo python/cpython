@@ -124,7 +124,22 @@ fcntl_ioctl(PyObject *module, PyObject *const *args, Py_ssize_t nargs)
         PyErr_Format(PyExc_TypeError, "ioctl() argument 2 must be int, not %T", args[1]);
         goto exit;
     }
-    code = PyLong_AsUnsignedLongMask(args[1]);
+    {
+        Py_ssize_t _bytes = PyLong_AsNativeBytes(args[1], &code, sizeof(unsigned long),
+                Py_ASNATIVEBYTES_NATIVE_ENDIAN |
+                Py_ASNATIVEBYTES_ALLOW_INDEX |
+                Py_ASNATIVEBYTES_UNSIGNED_BUFFER);
+        if (_bytes < 0) {
+            goto exit;
+        }
+        if ((size_t)_bytes > sizeof(unsigned long)) {
+            if (PyErr_WarnEx(PyExc_DeprecationWarning,
+                "integer value out of range", 1) < 0)
+            {
+                goto exit;
+            }
+        }
+    }
     if (nargs < 3) {
         goto skip_optional;
     }
@@ -264,4 +279,4 @@ skip_optional:
 exit:
     return return_value;
 }
-/*[clinic end generated code: output=65a16bc64c7b4de4 input=a9049054013a1b77]*/
+/*[clinic end generated code: output=bf84289b741e7cf6 input=a9049054013a1b77]*/

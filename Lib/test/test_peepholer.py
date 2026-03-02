@@ -292,6 +292,7 @@ class TestTranforms(BytecodeTestCase):
             ('---x', 'UNARY_NEGATIVE', None, False, None, None),
             ('~~~x', 'UNARY_INVERT', None, False, None, None),
             ('+++x', 'CALL_INTRINSIC_1', intrinsic_positive, False, None, None),
+            ('~True', 'UNARY_INVERT', None, False, None, None),
         ]
 
         for (
@@ -718,9 +719,9 @@ class TestTranforms(BytecodeTestCase):
         self.assertEqual(format('x = %d!', 1234), 'x = 1234!')
         self.assertEqual(format('x = %x!', 1234), 'x = 4d2!')
         self.assertEqual(format('x = %f!', 1234), 'x = 1234.000000!')
-        self.assertEqual(format('x = %s!', 1234.5678901), 'x = 1234.5678901!')
-        self.assertEqual(format('x = %f!', 1234.5678901), 'x = 1234.567890!')
-        self.assertEqual(format('x = %d!', 1234.5678901), 'x = 1234!')
+        self.assertEqual(format('x = %s!', 1234.0000625), 'x = 1234.0000625!')
+        self.assertEqual(format('x = %f!', 1234.0000625), 'x = 1234.000063!')
+        self.assertEqual(format('x = %d!', 1234.0000625), 'x = 1234!')
         self.assertEqual(format('x = %s%% %%%%', 1234), 'x = 1234% %%')
         self.assertEqual(format('x = %s!', '%% %s'), 'x = %% %s!')
         self.assertEqual(format('x = %s, y = %d', 12, 34), 'x = 12, y = 34')

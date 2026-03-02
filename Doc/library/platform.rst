@@ -176,8 +176,8 @@ Cross platform
    :attr:`processor` is resolved late, on demand.
 
    Note: the first two attribute names differ from the names presented by
-   :func:`os.uname`, where they are named :attr:`sysname` and
-   :attr:`nodename`.
+   :func:`os.uname`, where they are named :attr:`!sysname` and
+   :attr:`!nodename`.
 
    Entries which cannot be determined are set to ``''``.
 

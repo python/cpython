@@ -26,7 +26,7 @@ Note that additional file formats which can be decompressed by the
 The module defines the following items:
 
 
-.. function:: open(filename, mode='rb', compresslevel=9, encoding=None, errors=None, newline=None)
+.. function:: open(filename, mode='rb', compresslevel=6, encoding=None, errors=None, newline=None)
 
    Open a gzip-compressed file in binary or text mode, returning a :term:`file
    object`.
@@ -59,6 +59,11 @@ The module defines the following items:
    .. versionchanged:: 3.6
       Accepts a :term:`path-like object`.
 
+   .. versionchanged:: next
+      The default compression level was reduced to 6 (down from 9).
+      It is the default level used by most compression tools and a better
+      tradeoff between speed and performance.
+
 .. exception:: BadGzipFile
 
    An exception raised for invalid gzip files.  It inherits from :exc:`OSError`.
@@ -67,7 +72,7 @@ The module defines the following items:
 
    .. versionadded:: 3.8
 
-.. class:: GzipFile(filename=None, mode=None, compresslevel=9, fileobj=None, mtime=None)
+.. class:: GzipFile(filename=None, mode=None, compresslevel=6, fileobj=None, mtime=None)
 
    Constructor for the :class:`GzipFile` class, which simulates most of the
    methods of a :term:`file object`, with the exception of the :meth:`~io.IOBase.truncate`
@@ -181,8 +186,13 @@ The module defines the following items:
       Remove the ``filename`` attribute, use the :attr:`~GzipFile.name`
       attribute instead.
 
+   .. versionchanged:: next
+      The default compression level was reduced to 6 (down from 9).
+      It is the default level used by most compression tools and a better
+      tradeoff between speed and performance.
 
-.. function:: compress(data, compresslevel=9, *, mtime=0)
+
+.. function:: compress(data, compresslevel=6, *, mtime=0)
 
    Compress the *data*, returning a :class:`bytes` object containing
    the compressed data.  *compresslevel* and *mtime* have the same meaning as in
@@ -206,6 +216,10 @@ The module defines the following items:
       The *mtime* parameter now defaults to 0 for reproducible output.
       For the previous behaviour of using the current time,
       pass ``None`` to *mtime*.
+   .. versionchanged:: next
+      The default compression level was reduced to 6 (down from 9).
+      It is the default level used by most compression tools and a better
+      tradeoff between speed and performance.
 
 .. function:: decompress(data)
 

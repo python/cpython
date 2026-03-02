@@ -656,7 +656,7 @@ else:
             fd = None
             def opener(*args):
                 nonlocal fd
-                flags2 = (flags | _os.O_TMPFILE) & ~_os.O_CREAT
+                flags2 = (flags | _os.O_TMPFILE) & ~_os.O_CREAT & ~_os.O_EXCL
                 fd = _os.open(dir, flags2, 0o600)
                 return fd
             try:

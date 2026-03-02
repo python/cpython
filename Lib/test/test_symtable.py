@@ -527,6 +527,58 @@ class SymtableTest(unittest.TestCase):
         expected = f"<symtable entry top({self.top.get_id()}), line {self.top.get_lineno()}>"
         self.assertEqual(repr(self.top._table), expected)
 
+    def test_lambda(self):
+        st = symtable.symtable("lambda x: x", "?", "exec")
+        self.assertEqual(len(st.get_children()), 1)
+        st = st.get_children()[0]
+        self.assertIs(st.get_type(), symtable.SymbolTableType.FUNCTION)
+        self.assertEqual(st.get_name(), "<lambda>")
+        self.assertFalse(st.is_nested())
+        self.assertEqual(sorted(st.get_identifiers()), ["x"])
+        self.assertEqual(st.get_children(), [])
+
+    def test_nested_lambda(self):
+        st = symtable.symtable("lambda x: lambda y=x: y", "?", "exec")
+        self.assertEqual(len(st.get_children()), 1)
+        st = st.get_children()[0]
+        self.assertIs(st.get_type(), symtable.SymbolTableType.FUNCTION)
+        self.assertEqual(st.get_name(), "<lambda>")
+        self.assertFalse(st.is_nested())
+        self.assertEqual(sorted(st.get_identifiers()), ["x"])
+        self.assertEqual(len(st.get_children()), 1)
+        st = st.get_children()[0]
+        self.assertIs(st.get_type(), symtable.SymbolTableType.FUNCTION)
+        self.assertEqual(st.get_name(), "<lambda>")
+        self.assertTrue(st.is_nested())
+        self.assertEqual(sorted(st.get_identifiers()), ["y"])
+        self.assertEqual(st.get_children(), [])
+
+    def test_genexpr(self):
+        st = symtable.symtable("(x for x in a)", "?", "exec")
+        self.assertEqual(len(st.get_children()), 1)
+        st = st.get_children()[0]
+        self.assertIs(st.get_type(), symtable.SymbolTableType.FUNCTION)
+        self.assertEqual(st.get_name(), "<genexpr>")
+        self.assertFalse(st.is_nested())
+        self.assertEqual(sorted(st.get_identifiers()), [".0", "x"])
+        self.assertEqual(st.get_children(), [])
+
+    def test_nested_genexpr(self):
+        st = symtable.symtable("((y for y in x) for x in a)", "?", "exec")
+        self.assertEqual(len(st.get_children()), 1)
+        st = st.get_children()[0]
+        self.assertIs(st.get_type(), symtable.SymbolTableType.FUNCTION)
+        self.assertEqual(st.get_name(), "<genexpr>")
+        self.assertFalse(st.is_nested())
+        self.assertEqual(sorted(st.get_identifiers()), [".0", "x"])
+        self.assertEqual(len(st.get_children()), 1)
+        st = st.get_children()[0]
+        self.assertIs(st.get_type(), symtable.SymbolTableType.FUNCTION)
+        self.assertEqual(st.get_name(), "<genexpr>")
+        self.assertTrue(st.is_nested())
+        self.assertEqual(sorted(st.get_identifiers()), [".0", "y"])
+        self.assertEqual(st.get_children(), [])
+
 
 class ComprehensionTests(unittest.TestCase):
     def get_identifiers_recursive(self, st, res):

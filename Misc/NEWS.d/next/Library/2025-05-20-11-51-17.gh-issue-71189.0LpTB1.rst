@@ -1,0 +1,1 @@
+Add support of the all-but-last mode in :func:`os.path.realpath`.

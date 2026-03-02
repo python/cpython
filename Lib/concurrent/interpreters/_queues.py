@@ -129,12 +129,8 @@ class Queue:
         return hash(self._id)
 
     # for pickling:
-    def __getnewargs__(self):
-        return (self._id,)
-
-    # for pickling:
-    def __getstate__(self):
-        return None
+    def __reduce__(self):
+        return (type(self), (self._id,))
 
     def _set_unbound(self, op, items=None):
         assert not hasattr(self, '_unbound')

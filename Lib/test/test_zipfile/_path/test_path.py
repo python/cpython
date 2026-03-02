@@ -316,7 +316,7 @@ class TestPath(unittest.TestCase):
     HUGE_ZIPFILE_NUM_ENTRIES = 2**13
 
     def huge_zipfile(self):
-        """Create a read-only zipfile with a huge number of entries entries."""
+        """Create a read-only zipfile with a huge number of entries."""
         strm = io.BytesIO()
         zf = zipfile.ZipFile(strm, "w")
         for entry in map(str, range(self.HUGE_ZIPFILE_NUM_ENTRIES)):

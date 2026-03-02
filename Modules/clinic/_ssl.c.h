@@ -7,6 +7,7 @@ preserve
 #  include "pycore_runtime.h"     // _Py_ID()
 #endif
 #include "pycore_critical_section.h"// Py_BEGIN_CRITICAL_SECTION()
+#include "pycore_long.h"          // _PyLong_Size_t_Converter()
 #include "pycore_modsupport.h"    // _PyArg_CheckPositional()
 
 PyDoc_STRVAR(_ssl__SSLSocket_do_handshake__doc__,
@@ -190,6 +191,29 @@ _ssl__SSLSocket_cipher(PyObject *self, PyObject *Py_UNUSED(ignored))
 
     Py_BEGIN_CRITICAL_SECTION(self);
     return_value = _ssl__SSLSocket_cipher_impl((PySSLSocket *)self);
+    Py_END_CRITICAL_SECTION();
+
+    return return_value;
+}
+
+PyDoc_STRVAR(_ssl__SSLSocket_group__doc__,
+"group($self, /)\n"
+"--\n"
+"\n");
+
+#define _SSL__SSLSOCKET_GROUP_METHODDEF    \
+    {"group", (PyCFunction)_ssl__SSLSocket_group, METH_NOARGS, _ssl__SSLSocket_group__doc__},
+
+static PyObject *
+_ssl__SSLSocket_group_impl(PySSLSocket *self);
+
+static PyObject *
+_ssl__SSLSocket_group(PyObject *self, PyObject *Py_UNUSED(ignored))
+{
+    PyObject *return_value = NULL;
+
+    Py_BEGIN_CRITICAL_SECTION(self);
+    return_value = _ssl__SSLSocket_group_impl((PySSLSocket *)self);
     Py_END_CRITICAL_SECTION();
 
     return return_value;
@@ -441,6 +465,115 @@ _ssl__SSLSocket_owner_set(PyObject *self, PyObject *value, void *Py_UNUSED(conte
 
     return return_value;
 }
+
+PyDoc_STRVAR(_ssl__SSLSocket_uses_ktls_for_send__doc__,
+"uses_ktls_for_send($self, /)\n"
+"--\n"
+"\n"
+"Check if the Kernel TLS data-path is used for sending.");
+
+#define _SSL__SSLSOCKET_USES_KTLS_FOR_SEND_METHODDEF    \
+    {"uses_ktls_for_send", (PyCFunction)_ssl__SSLSocket_uses_ktls_for_send, METH_NOARGS, _ssl__SSLSocket_uses_ktls_for_send__doc__},
+
+static PyObject *
+_ssl__SSLSocket_uses_ktls_for_send_impl(PySSLSocket *self);
+
+static PyObject *
+_ssl__SSLSocket_uses_ktls_for_send(PyObject *self, PyObject *Py_UNUSED(ignored))
+{
+    PyObject *return_value = NULL;
+
+    Py_BEGIN_CRITICAL_SECTION(self);
+    return_value = _ssl__SSLSocket_uses_ktls_for_send_impl((PySSLSocket *)self);
+    Py_END_CRITICAL_SECTION();
+
+    return return_value;
+}
+
+PyDoc_STRVAR(_ssl__SSLSocket_uses_ktls_for_recv__doc__,
+"uses_ktls_for_recv($self, /)\n"
+"--\n"
+"\n"
+"Check if the Kernel TLS data-path is used for receiving.");
+
+#define _SSL__SSLSOCKET_USES_KTLS_FOR_RECV_METHODDEF    \
+    {"uses_ktls_for_recv", (PyCFunction)_ssl__SSLSocket_uses_ktls_for_recv, METH_NOARGS, _ssl__SSLSocket_uses_ktls_for_recv__doc__},
+
+static PyObject *
+_ssl__SSLSocket_uses_ktls_for_recv_impl(PySSLSocket *self);
+
+static PyObject *
+_ssl__SSLSocket_uses_ktls_for_recv(PyObject *self, PyObject *Py_UNUSED(ignored))
+{
+    PyObject *return_value = NULL;
+
+    Py_BEGIN_CRITICAL_SECTION(self);
+    return_value = _ssl__SSLSocket_uses_ktls_for_recv_impl((PySSLSocket *)self);
+    Py_END_CRITICAL_SECTION();
+
+    return return_value;
+}
+
+#if defined(BIO_get_ktls_send)
+
+PyDoc_STRVAR(_ssl__SSLSocket_sendfile__doc__,
+"sendfile($self, fd, offset, size, flags=0, /)\n"
+"--\n"
+"\n"
+"Write size bytes from offset in the file descriptor fd to the SSL connection.\n"
+"\n"
+"This method uses the zero-copy technique and returns the number of bytes\n"
+"written. It should be called only when Kernel TLS is used for sending data in\n"
+"the connection.\n"
+"\n"
+"The meaning of flags is platform dependent.");
+
+#define _SSL__SSLSOCKET_SENDFILE_METHODDEF    \
+    {"sendfile", _PyCFunction_CAST(_ssl__SSLSocket_sendfile), METH_FASTCALL, _ssl__SSLSocket_sendfile__doc__},
+
+static PyObject *
+_ssl__SSLSocket_sendfile_impl(PySSLSocket *self, int fd, Py_off_t offset,
+                              size_t size, int flags);
+
+static PyObject *
+_ssl__SSLSocket_sendfile(PyObject *self, PyObject *const *args, Py_ssize_t nargs)
+{
+    PyObject *return_value = NULL;
+    int fd;
+    Py_off_t offset;
+    size_t size;
+    int flags = 0;
+
+    if (!_PyArg_CheckPositional("sendfile", nargs, 3, 4)) {
+        goto exit;
+    }
+    fd = PyLong_AsInt(args[0]);
+    if (fd == -1 && PyErr_Occurred()) {
+        goto exit;
+    }
+    if (!Py_off_t_converter(args[1], &offset)) {
+        goto exit;
+    }
+    if (!_PyLong_Size_t_Converter(args[2], &size)) {
+        goto exit;
+    }
+    if (nargs < 4) {
+        goto skip_optional;
+    }
+    flags = PyLong_AsInt(args[3]);
+    if (flags == -1 && PyErr_Occurred()) {
+        goto exit;
+    }
+skip_optional:
+    Py_BEGIN_CRITICAL_SECTION(self);
+    return_value = _ssl__SSLSocket_sendfile_impl((PySSLSocket *)self, fd, offset, size, flags);
+    Py_END_CRITICAL_SECTION();
+
+exit:
+    return return_value;
+}
+
+#endif /* defined(BIO_get_ktls_send) */
 
 PyDoc_STRVAR(_ssl__SSLSocket_write__doc__,
 "write($self, b, /)\n"
@@ -856,6 +989,111 @@ _ssl__SSLContext_get_ciphers(PyObject *self, PyObject *Py_UNUSED(ignored))
     return_value = _ssl__SSLContext_get_ciphers_impl((PySSLContext *)self);
     Py_END_CRITICAL_SECTION();
 
+    return return_value;
+}
+
+PyDoc_STRVAR(_ssl__SSLContext_set_groups__doc__,
+"set_groups($self, grouplist, /)\n"
+"--\n"
+"\n");
+
+#define _SSL__SSLCONTEXT_SET_GROUPS_METHODDEF    \
+    {"set_groups", (PyCFunction)_ssl__SSLContext_set_groups, METH_O, _ssl__SSLContext_set_groups__doc__},
+
+static PyObject *
+_ssl__SSLContext_set_groups_impl(PySSLContext *self, const char *grouplist);
+
+static PyObject *
+_ssl__SSLContext_set_groups(PyObject *self, PyObject *arg)
+{
+    PyObject *return_value = NULL;
+    const char *grouplist;
+
+    if (!PyUnicode_Check(arg)) {
+        _PyArg_BadArgument("set_groups", "argument", "str", arg);
+        goto exit;
+    }
+    Py_ssize_t grouplist_length;
+    grouplist = PyUnicode_AsUTF8AndSize(arg, &grouplist_length);
+    if (grouplist == NULL) {
+        goto exit;
+    }
+    if (strlen(grouplist) != (size_t)grouplist_length) {
+        PyErr_SetString(PyExc_ValueError, "embedded null character");
+        goto exit;
+    }
+    Py_BEGIN_CRITICAL_SECTION(self);
+    return_value = _ssl__SSLContext_set_groups_impl((PySSLContext *)self, grouplist);
+    Py_END_CRITICAL_SECTION();
+
+exit:
+    return return_value;
+}
+
+PyDoc_STRVAR(_ssl__SSLContext_get_groups__doc__,
+"get_groups($self, /, *, include_aliases=False)\n"
+"--\n"
+"\n");
+
+#define _SSL__SSLCONTEXT_GET_GROUPS_METHODDEF    \
+    {"get_groups", _PyCFunction_CAST(_ssl__SSLContext_get_groups), METH_FASTCALL|METH_KEYWORDS, _ssl__SSLContext_get_groups__doc__},
+
+static PyObject *
+_ssl__SSLContext_get_groups_impl(PySSLContext *self, int include_aliases);
+
+static PyObject *
+_ssl__SSLContext_get_groups(PyObject *self, PyObject *const *args, Py_ssize_t nargs, PyObject *kwnames)
+{
+    PyObject *return_value = NULL;
+    #if defined(Py_BUILD_CORE) && !defined(Py_BUILD_CORE_MODULE)
+
+    #define NUM_KEYWORDS 1
+    static struct {
+        PyGC_Head _this_is_not_used;
+        PyObject_VAR_HEAD
+        Py_hash_t ob_hash;
+        PyObject *ob_item[NUM_KEYWORDS];
+    } _kwtuple = {
+        .ob_base = PyVarObject_HEAD_INIT(&PyTuple_Type, NUM_KEYWORDS)
+        .ob_hash = -1,
+        .ob_item = { &_Py_ID(include_aliases), },
+    };
+    #undef NUM_KEYWORDS
+    #define KWTUPLE (&_kwtuple.ob_base.ob_base)
+
+    #else  // !Py_BUILD_CORE
+    #  define KWTUPLE NULL
+    #endif  // !Py_BUILD_CORE
+
+    static const char * const _keywords[] = {"include_aliases", NULL};
+    static _PyArg_Parser _parser = {
+        .keywords = _keywords,
+        .fname = "get_groups",
+        .kwtuple = KWTUPLE,
+    };
+    #undef KWTUPLE
+    PyObject *argsbuf[1];
+    Py_ssize_t noptargs = nargs + (kwnames ? PyTuple_GET_SIZE(kwnames) : 0) - 0;
+    int include_aliases = 0;
+
+    args = _PyArg_UnpackKeywords(args, nargs, NULL, kwnames, &_parser,
+            /*minpos*/ 0, /*maxpos*/ 0, /*minkw*/ 0, /*varpos*/ 0, argsbuf);
+    if (!args) {
+        goto exit;
+    }
+    if (!noptargs) {
+        goto skip_optional_kwonly;
+    }
+    include_aliases = PyObject_IsTrue(args[0]);
+    if (include_aliases < 0) {
+        goto exit;
+    }
+skip_optional_kwonly:
+    Py_BEGIN_CRITICAL_SECTION(self);
+    return_value = _ssl__SSLContext_get_groups_impl((PySSLContext *)self, include_aliases);
+    Py_END_CRITICAL_SECTION();
+
+exit:
     return return_value;
 }
 
@@ -2893,6 +3131,10 @@ exit:
 
 #endif /* defined(_MSC_VER) */
 
+#ifndef _SSL__SSLSOCKET_SENDFILE_METHODDEF
+    #define _SSL__SSLSOCKET_SENDFILE_METHODDEF
+#endif /* !defined(_SSL__SSLSOCKET_SENDFILE_METHODDEF) */
+
 #ifndef _SSL_ENUM_CERTIFICATES_METHODDEF
     #define _SSL_ENUM_CERTIFICATES_METHODDEF
 #endif /* !defined(_SSL_ENUM_CERTIFICATES_METHODDEF) */
@@ -2900,4 +3142,4 @@ exit:
 #ifndef _SSL_ENUM_CRLS_METHODDEF
     #define _SSL_ENUM_CRLS_METHODDEF
 #endif /* !defined(_SSL_ENUM_CRLS_METHODDEF) */
-/*[clinic end generated code: output=748650909fec8906 input=a9049054013a1b77]*/
+/*[clinic end generated code: output=c409bdf3c123b28b input=a9049054013a1b77]*/

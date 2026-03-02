@@ -17,6 +17,7 @@ import sys
 
 eps = 1E-05
 NAN = float('nan')
+NNAN = float('-nan')
 INF = float('inf')
 NINF = float('-inf')
 FLOAT_MAX = sys.float_info.max
@@ -475,6 +476,19 @@ class MathTests(unittest.TestCase):
         # similarly, copysign(2., NAN) could be 2. or -2.
         self.assertEqual(abs(math.copysign(2., NAN)), 2.)
 
+    def test_signbit(self):
+        self.assertRaises(TypeError, math.signbit)
+        self.assertRaises(TypeError, math.signbit, '1.0')
+
+        # C11, §7.12.3.6 requires signbit() to return a nonzero value
+        # if and only if the sign of its argument value is negative,
+        # but in practice, we are only interested in a boolean value.
+        self.assertIsInstance(math.signbit(1.0), bool)
+
+        for arg in [0., 1., INF, NAN]:
+            self.assertFalse(math.signbit(arg))
+            self.assertTrue(math.signbit(-arg))
+
     def testCos(self):
         self.assertRaises(TypeError, math.cos)
         self.ftest('cos(-pi/2)', math.cos(-math.pi/2), 0, abs_tol=math.ulp(1))
@@ -622,6 +636,92 @@ class MathTests(unittest.TestCase):
         self.assertEqual(math.fmod(0.0, 3.0), 0.0)
         self.assertEqual(math.fmod(0.0, NINF), 0.0)
         self.assertRaises(ValueError, math.fmod, INF, INF)
+
+    def test_fmax(self):
+        self.assertRaises(TypeError, math.fmax)
+        self.assertRaises(TypeError, math.fmax, 'x', 'y')
+
+        self.assertEqual(math.fmax(0., 0.), 0.)
+        self.assertEqual(math.fmax(1., 2.), 2.)
+        self.assertEqual(math.fmax(2., 1.), 2.)
+
+        self.assertEqual(math.fmax(+1., +0.), 1.)
+        self.assertEqual(math.fmax(+0., +1.), 1.)
+        self.assertEqual(math.fmax(+1., -0.), 1.)
+        self.assertEqual(math.fmax(-0., +1.), 1.)
+
+        self.assertEqual(math.fmax(-1., +0.), 0.)
+        self.assertEqual(math.fmax(+0., -1.), 0.)
+        self.assertEqual(math.fmax(-1., -0.), 0.)
+        self.assertEqual(math.fmax(-0., -1.), 0.)
+
+        for x in [NINF, -1., -0., 0., 1., INF]:
+            self.assertFalse(math.isnan(x))
+
+            with self.subTest(x=x, is_negative=math.copysign(1, x) < 0):
+                self.assertEqual(math.fmax(INF, x), INF)
+                self.assertEqual(math.fmax(x, INF), INF)
+                self.assertEqual(math.fmax(NINF, x), x)
+                self.assertEqual(math.fmax(x, NINF), x)
+
+    @requires_IEEE_754
+    def test_fmax_nans(self):
+        # When exactly one operand is NaN, the other is returned.
+        for x in [NINF, -1., -0., 0., 1., INF]:
+            with self.subTest(x=x, is_negative=math.copysign(1, x) < 0):
+                self.assertFalse(math.isnan(math.fmax(NAN, x)))
+                self.assertFalse(math.isnan(math.fmax(x, NAN)))
+                self.assertFalse(math.isnan(math.fmax(NNAN, x)))
+                self.assertFalse(math.isnan(math.fmax(x, NNAN)))
+        # When both operands are NaNs, fmax() returns NaN (see C11, F.10.9.2)
+        # whose sign is implementation-defined (see C11, F.10.0.3).
+        self.assertTrue(math.isnan(math.fmax(NAN, NAN)))
+        self.assertTrue(math.isnan(math.fmax(NNAN, NNAN)))
+        self.assertTrue(math.isnan(math.fmax(NAN, NNAN)))
+        self.assertTrue(math.isnan(math.fmax(NNAN, NAN)))
+
+    def test_fmin(self):
+        self.assertRaises(TypeError, math.fmin)
+        self.assertRaises(TypeError, math.fmin, 'x', 'y')
+
+        self.assertEqual(math.fmin(0., 0.), 0.)
+        self.assertEqual(math.fmin(1., 2.), 1.)
+        self.assertEqual(math.fmin(2., 1.), 1.)
+
+        self.assertEqual(math.fmin(+1., +0.), 0.)
+        self.assertEqual(math.fmin(+0., +1.), 0.)
+        self.assertEqual(math.fmin(+1., -0.), 0.)
+        self.assertEqual(math.fmin(-0., +1.), 0.)
+
+        self.assertEqual(math.fmin(-1., +0.), -1.)
+        self.assertEqual(math.fmin(+0., -1.), -1.)
+        self.assertEqual(math.fmin(-1., -0.), -1.)
+        self.assertEqual(math.fmin(-0., -1.), -1.)
+
+        for x in [NINF, -1., -0., 0., 1., INF]:
+            self.assertFalse(math.isnan(x))
+
+            with self.subTest(x=x, is_negative=math.copysign(1, x) < 0):
+                self.assertEqual(math.fmin(INF, x), x)
+                self.assertEqual(math.fmin(x, INF), x)
+                self.assertEqual(math.fmin(NINF, x), NINF)
+                self.assertEqual(math.fmin(x, NINF), NINF)
+
+    @requires_IEEE_754
+    def test_fmin_nans(self):
+        # When exactly one operand is NaN, the other is returned.
+        for x in [NINF, -1., -0., 0., 1., INF]:
+            with self.subTest(x=x, is_negative=math.copysign(1, x) < 0):
+                self.assertFalse(math.isnan(math.fmin(NAN, x)))
+                self.assertFalse(math.isnan(math.fmin(x, NAN)))
+                self.assertFalse(math.isnan(math.fmin(NNAN, x)))
+                self.assertFalse(math.isnan(math.fmin(x, NNAN)))
+        # When both operands are NaNs, fmin() returns NaN (see C11, F.10.9.3)
+        # whose sign is implementation-defined (see C11, F.10.0.3).
+        self.assertTrue(math.isnan(math.fmin(NAN, NAN)))
+        self.assertTrue(math.isnan(math.fmin(NNAN, NNAN)))
+        self.assertTrue(math.isnan(math.fmin(NAN, NNAN)))
+        self.assertTrue(math.isnan(math.fmin(NNAN, NAN)))
 
     def testFrexp(self):
         self.assertRaises(TypeError, math.frexp)
@@ -1386,7 +1486,6 @@ class MathTests(unittest.TestCase):
         # Error cases that arose during development
         args = ((-5, -5, 10), (1.5, 4611686018427387904, 2305843009213693952))
         self.assertEqual(sumprod(*args), 0.0)
-
 
     @requires_IEEE_754
     @unittest.skipIf(HAVE_DOUBLE_ROUNDING,
@@ -2485,7 +2584,6 @@ class MathTests(unittest.TestCase):
         self.assertEqual(1.0, math.nextafter(1.0, INF, steps=0))
         with self.assertRaises(ValueError):
             math.nextafter(1.0, INF, steps=-1)
-
 
     @requires_IEEE_754
     def test_ulp(self):

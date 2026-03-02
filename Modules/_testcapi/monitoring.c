@@ -109,7 +109,7 @@ static PyTypeObject PyCodeLike_Type = {
 };
 
 #define RAISE_UNLESS_CODELIKE(v)  if (!Py_IS_TYPE((v), &PyCodeLike_Type)) { \
-        PyErr_Format(PyExc_TypeError, "expected a code-like, got %s", Py_TYPE(v)->tp_name); \
+        PyErr_Format(PyExc_TypeError, "expected a code-like, got %T", v); \
         return NULL; \
     }
 

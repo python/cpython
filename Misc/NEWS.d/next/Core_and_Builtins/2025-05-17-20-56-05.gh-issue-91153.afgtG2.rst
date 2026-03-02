@@ -1,0 +1,1 @@
+Fix a crash when a :class:`bytearray` is concurrently mutated during item assignment.

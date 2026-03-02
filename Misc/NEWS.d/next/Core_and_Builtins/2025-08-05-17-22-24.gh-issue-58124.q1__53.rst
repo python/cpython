@@ -1,0 +1,3 @@
+Fix name of the Python encoding in Unicode errors of the code page codec:
+use "cp65000" and "cp65001" instead of "CP_UTF7" and "CP_UTF8" which are not
+valid Python code names. Patch by Victor Stinner.

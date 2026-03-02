@@ -3,6 +3,7 @@
 import collections
 import dis
 import functools
+import inspect
 import math
 import operator
 import sys
@@ -1708,6 +1709,27 @@ class TestBranchAndJumpEvents(CheckEvents):
             ('branch right', 'func', 4, 6),
             ('branch right', 'func', 6, 8),
             ('branch right', 'func', 2, 10)])
+
+    def test_callback_set_frame_lineno(self):
+        def func(s: str) -> int:
+            if s.startswith("t"):
+                return 1
+            else:
+                return 0
+
+        def callback(code, from_, to):
+            # try set frame.f_lineno
+            frame = inspect.currentframe()
+            while frame and frame.f_code is not code:
+                frame = frame.f_back
+
+            self.assertIsNotNone(frame)
+            frame.f_lineno = frame.f_lineno + 1 # run next instruction
+
+        sys.monitoring.set_local_events(TEST_TOOL, func.__code__, E.BRANCH_LEFT)
+        sys.monitoring.register_callback(TEST_TOOL, E.BRANCH_LEFT, callback)
+
+        self.assertEqual(func("true"), 1)
 
 
 class TestBranchConsistency(MonitoringTestBase, unittest.TestCase):

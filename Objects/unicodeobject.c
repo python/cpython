@@ -56,7 +56,6 @@ OF OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
 #include "pycore_pyhash.h"        // _Py_HashSecret_t
 #include "pycore_pylifecycle.h"   // _Py_SetFileSystemEncoding()
 #include "pycore_pystate.h"       // _PyInterpreterState_GET()
-#include "pycore_template.h"      // _PyTemplate_Concat()
 #include "pycore_tuple.h"         // _PyTuple_FromArray()
 #include "pycore_ucnhash.h"       // _PyUnicode_Name_CAPI
 #include "pycore_unicodeobject.h" // struct _Py_unicode_state
@@ -113,14 +112,6 @@ NOTE: In the interpreter's initialization phase, some globals are currently
 #  define _PyUnicode_CHECK(op) _PyUnicode_CheckConsistency(op, 0)
 #else
 #  define _PyUnicode_CHECK(op) PyUnicode_Check(op)
-#endif
-
-#ifdef Py_GIL_DISABLED
-#  define LOCK_INTERNED(interp) PyMutex_Lock(&_Py_INTERP_CACHED_OBJECT(interp, interned_mutex))
-#  define UNLOCK_INTERNED(interp) PyMutex_Unlock(&_Py_INTERP_CACHED_OBJECT(interp, interned_mutex))
-#else
-#  define LOCK_INTERNED(interp)
-#  define UNLOCK_INTERNED(interp)
 #endif
 
 static inline char* _PyUnicode_UTF8(PyObject *op)
@@ -7685,10 +7676,6 @@ code_page_name(UINT code_page, PyObject **obj)
     *obj = NULL;
     if (code_page == CP_ACP)
         return "mbcs";
-    if (code_page == CP_UTF7)
-        return "CP_UTF7";
-    if (code_page == CP_UTF8)
-        return "CP_UTF8";
 
     *obj = PyBytes_FromFormat("cp%u", code_page);
     if (*obj == NULL)
@@ -11610,16 +11597,10 @@ PyUnicode_Concat(PyObject *left, PyObject *right)
         return NULL;
 
     if (!PyUnicode_Check(right)) {
-        if (_PyTemplate_CheckExact(right)) {
-            // str + tstring is implemented in the tstring type
-            return _PyTemplate_Concat(left, right);
-        }
-        else {
-            PyErr_Format(PyExc_TypeError,
-                "can only concatenate str (not \"%.200s\") to str",
-                Py_TYPE(right)->tp_name);
-            return NULL;
-        }
+        PyErr_Format(PyExc_TypeError,
+            "can only concatenate str (not \"%.200s\") to str",
+            Py_TYPE(right)->tp_name);
+        return NULL;
     }
 
     /* Shortcuts */
@@ -15999,14 +15980,16 @@ intern_common(PyInterpreterState *interp, PyObject *s /* stolen */,
     /* Do a setdefault on the per-interpreter cache. */
     PyObject *interned = get_interned_dict(interp);
     assert(interned != NULL);
-
-    LOCK_INTERNED(interp);
+#ifdef Py_GIL_DISABLED
+#  define INTERN_MUTEX &_Py_INTERP_CACHED_OBJECT(interp, interned_mutex)
+#endif
+    FT_MUTEX_LOCK(INTERN_MUTEX);
     PyObject *t;
     {
         int res = PyDict_SetDefaultRef(interned, s, s, &t);
         if (res < 0) {
             PyErr_Clear();
-            UNLOCK_INTERNED(interp);
+            FT_MUTEX_UNLOCK(INTERN_MUTEX);
             return s;
         }
         else if (res == 1) {
@@ -16016,7 +15999,7 @@ intern_common(PyInterpreterState *interp, PyObject *s /* stolen */,
                     PyUnicode_CHECK_INTERNED(t) == SSTATE_INTERNED_MORTAL) {
                 immortalize_interned(t);
             }
-            UNLOCK_INTERNED(interp);
+            FT_MUTEX_UNLOCK(INTERN_MUTEX);
             return t;
         }
         else {
@@ -16049,7 +16032,7 @@ intern_common(PyInterpreterState *interp, PyObject *s /* stolen */,
         immortalize_interned(s);
     }
 
-    UNLOCK_INTERNED(interp);
+    FT_MUTEX_UNLOCK(INTERN_MUTEX);
     return s;
 }
 

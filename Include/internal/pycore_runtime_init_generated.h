@@ -889,7 +889,9 @@ extern "C" {
     INIT_ID(d_parameter_type), \
     INIT_ID(data), \
     INIT_ID(database), \
+    INIT_ID(date), \
     INIT_ID(day), \
+    INIT_ID(days), \
     INIT_ID(debug), \
     INIT_ID(decode), \
     INIT_ID(decoder), \
@@ -902,7 +904,6 @@ extern "C" {
     INIT_ID(deterministic), \
     INIT_ID(device), \
     INIT_ID(dict), \
-    INIT_ID(dictcomp), \
     INIT_ID(difference_update), \
     INIT_ID(digest), \
     INIT_ID(digest_size), \
@@ -977,7 +978,6 @@ extern "C" {
     INIT_ID(func), \
     INIT_ID(future), \
     INIT_ID(generation), \
-    INIT_ID(genexpr), \
     INIT_ID(get), \
     INIT_ID(get_debug), \
     INIT_ID(get_event_loop), \
@@ -998,6 +998,7 @@ extern "C" {
     INIT_ID(hi), \
     INIT_ID(hook), \
     INIT_ID(hour), \
+    INIT_ID(hours), \
     INIT_ID(id), \
     INIT_ID(ident), \
     INIT_ID(identity_hint), \
@@ -1005,6 +1006,7 @@ extern "C" {
     INIT_ID(imag), \
     INIT_ID(importlib), \
     INIT_ID(in_fd), \
+    INIT_ID(include_aliases), \
     INIT_ID(incoming), \
     INIT_ID(index), \
     INIT_ID(indexgroup), \
@@ -1053,7 +1055,6 @@ extern "C" {
     INIT_ID(kw2), \
     INIT_ID(kwdefaults), \
     INIT_ID(label), \
-    INIT_ID(lambda), \
     INIT_ID(last), \
     INIT_ID(last_exc), \
     INIT_ID(last_node), \
@@ -1069,7 +1070,6 @@ extern "C" {
     INIT_ID(line), \
     INIT_ID(line_buffering), \
     INIT_ID(lineno), \
-    INIT_ID(listcomp), \
     INIT_ID(little), \
     INIT_ID(lo), \
     INIT_ID(locale), \
@@ -1093,8 +1093,10 @@ extern "C" {
     INIT_ID(metadata), \
     INIT_ID(method), \
     INIT_ID(microsecond), \
+    INIT_ID(microseconds), \
     INIT_ID(milliseconds), \
     INIT_ID(minute), \
+    INIT_ID(minutes), \
     INIT_ID(mod), \
     INIT_ID(mode), \
     INIT_ID(module), \
@@ -1134,6 +1136,7 @@ extern "C" {
     INIT_ID(offset_src), \
     INIT_ID(on_type_read), \
     INIT_ID(onceregistry), \
+    INIT_ID(only_active_thread), \
     INIT_ID(only_keys), \
     INIT_ID(oparg), \
     INIT_ID(opcode), \
@@ -1204,6 +1207,7 @@ extern "C" {
     INIT_ID(scheduler), \
     INIT_ID(script), \
     INIT_ID(second), \
+    INIT_ID(seconds), \
     INIT_ID(security_attributes), \
     INIT_ID(seek), \
     INIT_ID(seekable), \
@@ -1215,7 +1219,6 @@ extern "C" {
     INIT_ID(server_hostname), \
     INIT_ID(server_side), \
     INIT_ID(session), \
-    INIT_ID(setcomp), \
     INIT_ID(setpgroup), \
     INIT_ID(setsid), \
     INIT_ID(setsigdef), \
@@ -1268,9 +1271,12 @@ extern "C" {
     INIT_ID(text), \
     INIT_ID(threading), \
     INIT_ID(throw), \
+    INIT_ID(time), \
     INIT_ID(timeout), \
     INIT_ID(timer), \
     INIT_ID(times), \
+    INIT_ID(timespec), \
+    INIT_ID(timestamp), \
     INIT_ID(timetuple), \
     INIT_ID(timeunit), \
     INIT_ID(top), \
@@ -1302,6 +1308,7 @@ extern "C" {
     INIT_ID(wbits), \
     INIT_ID(week), \
     INIT_ID(weekday), \
+    INIT_ID(weeks), \
     INIT_ID(which), \
     INIT_ID(who), \
     INIT_ID(withdata), \

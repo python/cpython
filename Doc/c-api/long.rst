@@ -372,6 +372,10 @@ distinguished from a number.  Use :c:func:`PyErr_Occurred` to disambiguate.
    Set *\*value* to a signed C :c:expr:`int32_t` or :c:expr:`int64_t`
    representation of *obj*.
 
+   If *obj* is not an instance of :c:type:`PyLongObject`, first call its
+   :meth:`~object.__index__` method (if present) to convert it to a
+   :c:type:`PyLongObject`.
+
    If the *obj* value is out of range, raise an :exc:`OverflowError`.
 
    Set *\*value* and return ``0`` on success.
@@ -439,7 +443,7 @@ distinguished from a number.  Use :c:func:`PyErr_Occurred` to disambiguate.
    All *n_bytes* of the buffer are written: large buffers are padded with
    zeroes.
 
-   If the returned value is greater than than *n_bytes*, the value was
+   If the returned value is greater than *n_bytes*, the value was
    truncated: as many of the lowest bits of the value as could fit are written,
    and the higher bits are ignored. This matches the typical behavior
    of a C-style downcast.

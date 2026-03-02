@@ -41,10 +41,6 @@
 // Starting size of the array of qsbr thread states
 #define MIN_ARRAY_SIZE 8
 
-// For _Py_qsbr_deferred_advance(): the number of deferrals before advancing
-// the write sequence.
-#define QSBR_DEFERRED_LIMIT 10
-
 // Allocate a QSBR thread state from the freelist
 static struct _qsbr_thread_state *
 qsbr_allocate(struct _qsbr_shared *shared)
@@ -117,13 +113,9 @@ _Py_qsbr_advance(struct _qsbr_shared *shared)
 }
 
 uint64_t
-_Py_qsbr_deferred_advance(struct _qsbr_thread_state *qsbr)
+_Py_qsbr_shared_next(struct _qsbr_shared *shared)
 {
-    if (++qsbr->deferrals < QSBR_DEFERRED_LIMIT) {
-        return _Py_qsbr_shared_current(qsbr->shared) + QSBR_INCR;
-    }
-    qsbr->deferrals = 0;
-    return _Py_qsbr_advance(qsbr->shared);
+    return _Py_qsbr_shared_current(shared) + QSBR_INCR;
 }
 
 static uint64_t

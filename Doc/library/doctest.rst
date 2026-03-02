@@ -311,8 +311,12 @@ Which Docstrings Are Examined?
 The module docstring, and all function, class and method docstrings are
 searched.  Objects imported into the module are not searched.
 
+.. currentmodule:: None
+
 .. attribute:: module.__test__
    :no-typesetting:
+
+.. currentmodule:: doctest
 
 In addition, there are cases when you want tests to be part of a module but not part
 of the help text, which requires that the tests not be included in the docstring.

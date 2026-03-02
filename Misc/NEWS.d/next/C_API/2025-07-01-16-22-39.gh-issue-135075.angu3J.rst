@@ -1,0 +1,2 @@
+Make :c:func:`PyObject_SetAttr` and :c:func:`PyObject_SetAttrString` fail if
+called with ``NULL`` value and an exception set. Patch by Victor Stinner.

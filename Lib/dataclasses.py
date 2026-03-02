@@ -1265,7 +1265,7 @@ def _create_slots(defined_fields, inherited_slots, field_names, weakref_slot):
         doc = getattr(defined_fields.get(slot), 'doc', None)
         if doc is not None:
             seen_docs = True
-        slots.update({slot: doc})
+        slots[slot] = doc
 
     # We only return dict if there's at least one doc member,
     # otherwise we return tuple, which is the old default format.

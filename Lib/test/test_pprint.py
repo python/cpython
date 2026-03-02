@@ -458,7 +458,7 @@ class QueryTestCase(unittest.TestCase):
                 return super().__new__(Temperature, celsius_degrees)
             def __repr__(self):
                 kelvin_degrees = self + 273.15
-                return f"{kelvin_degrees}°K"
+                return f"{kelvin_degrees:.2f}°K"
         self.assertEqual(pprint.pformat(Temperature(1000)), '1273.15°K')
 
     def test_sorted_dict(self):

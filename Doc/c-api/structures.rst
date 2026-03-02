@@ -28,18 +28,52 @@ under :ref:`reference counting <countingrefs>`.
    object.  In a normal "release" build, it contains only the object's
    reference count and a pointer to the corresponding type object.
    Nothing is actually declared to be a :c:type:`PyObject`, but every pointer
-   to a Python object can be cast to a :c:expr:`PyObject*`.  Access to the
-   members must be done by using the macros :c:macro:`Py_REFCNT` and
-   :c:macro:`Py_TYPE`.
+   to a Python object can be cast to a :c:expr:`PyObject*`.
+
+   The members must not be accessed directly; instead use macros such as
+   :c:macro:`Py_REFCNT` and :c:macro:`Py_TYPE`.
+
+   .. c:member:: Py_ssize_t ob_refcnt
+
+      The object's reference count, as returned by :c:macro:`Py_REFCNT`.
+      Do not use this field directly; instead use functions and macros such as
+      :c:macro:`!Py_REFCNT`, :c:func:`Py_INCREF` and :c:func:`Py_DecRef`.
+
+      The field type may be different from ``Py_ssize_t``, depending on
+      build configuration and platform.
+
+   .. c:member:: PyTypeObject* ob_type
+
+      The object's type.
+      Do not use this field directly; use :c:macro:`Py_TYPE` and
+      :c:func:`Py_SET_TYPE` instead.
 
 
 .. c:type:: PyVarObject
 
-   This is an extension of :c:type:`PyObject` that adds the :c:member:`~PyVarObject.ob_size`
-   field.  This is only used for objects that have some notion of *length*.
-   This type does not often appear in the Python/C API.
-   Access to the members must be done by using the macros
-   :c:macro:`Py_REFCNT`, :c:macro:`Py_TYPE`, and :c:macro:`Py_SIZE`.
+   An extension of :c:type:`PyObject` that adds the
+   :c:member:`~PyVarObject.ob_size` field.
+   This is intended for objects that have some notion of *length*.
+
+   As with :c:type:`!PyObject`, the members must not be accessed directly;
+   instead use macros such as :c:macro:`Py_SIZE`, :c:macro:`Py_REFCNT` and
+   :c:macro:`Py_TYPE`.
+
+   .. c:member:: Py_ssize_t ob_size
+
+      A size field, whose contents should be considered an object's internal
+      implementation detail.
+
+      Do not use this field directly; use :c:macro:`Py_SIZE` instead.
+
+      Object creation functions such as :c:func:`PyObject_NewVar` will
+      generally set this field to the requested size (number of items).
+      After creation, arbitrary values can be stored in :c:member:`!ob_size`
+      using :c:macro:`Py_SET_SIZE`.
+
+      To get an object's publicly exposed length, as returned by
+      the Python function :py:func:`len`, use :c:func:`PyObject_Length`
+      instead.
 
 
 .. c:macro:: PyObject_HEAD
@@ -103,9 +137,8 @@ under :ref:`reference counting <countingrefs>`.
 
    Get the type of the Python object *o*.
 
-   Return a :term:`borrowed reference`.
-
-   Use the :c:func:`Py_SET_TYPE` function to set an object type.
+   The returned reference is :term:`borrowed <borrowed reference>` from *o*.
+   Do not release it with :c:func:`Py_DECREF` or similar.
 
    .. versionchanged:: 3.11
       :c:func:`Py_TYPE()` is changed to an inline static function.
@@ -122,16 +155,26 @@ under :ref:`reference counting <countingrefs>`.
 
 .. c:function:: void Py_SET_TYPE(PyObject *o, PyTypeObject *type)
 
-   Set the object *o* type to *type*.
+   Set the type of object *o* to *type*, without any checking or reference
+   counting.
+
+   This is a very low-level operation.
+   Consider instead setting the Python attribute :attr:`~object.__class__`
+   using :c:func:`PyObject_SetAttrString` or similar.
+
+   Note that assigning an incompatible type can lead to undefined behavior.
+
+   If *type* is a :ref:`heap type <heap-types>`, the caller must create a
+   new reference to it.
+   Similarly, if the old type of *o* is a heap type, the caller must release
+   a reference to that type.
 
    .. versionadded:: 3.9
 
 
 .. c:function:: Py_ssize_t Py_SIZE(PyVarObject *o)
 
-   Get the size of the Python object *o*.
-
-   Use the :c:func:`Py_SET_SIZE` function to set an object size.
+   Get the :c:member:`~PyVarObject.ob_size` field of *o*.
 
    .. versionchanged:: 3.11
       :c:func:`Py_SIZE()` is changed to an inline static function.
@@ -140,7 +183,7 @@ under :ref:`reference counting <countingrefs>`.
 
 .. c:function:: void Py_SET_SIZE(PyVarObject *o, Py_ssize_t size)
 
-   Set the object *o* size to *size*.
+   Set the :c:member:`~PyVarObject.ob_size` field of *o* to *size*.
 
    .. versionadded:: 3.9
 

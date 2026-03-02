@@ -121,38 +121,88 @@ set_ftstring_expr(struct tok_state* tok, struct token *token, char c) {
     }
     PyObject *res = NULL;
 
-    // Check if there is a # character in the expression
+    // Look for a # character outside of string literals
     int hash_detected = 0;
+    int in_string = 0;
+    char quote_char = 0;
+
     for (Py_ssize_t i = 0; i < tok_mode->last_expr_size - tok_mode->last_expr_end; i++) {
-        if (tok_mode->last_expr_buffer[i] == '#') {
+        char ch = tok_mode->last_expr_buffer[i];
+
+        // Skip escaped characters
+        if (ch == '\\') {
+            i++;
+            continue;
+        }
+
+        // Handle quotes
+        if (ch == '"' || ch == '\'') {
+            // The following if/else block works becase there is an off number
+            // of quotes in STRING tokens and the lexer only ever reaches this
+            // function with valid STRING tokens.
+            // For example: """hello"""
+            // First quote: in_string = 1
+            // Second quote: in_string = 0
+            // Third quote: in_string = 1
+            if (!in_string) {
+                in_string = 1;
+                quote_char = ch;
+            }
+            else if (ch == quote_char) {
+                in_string = 0;
+            }
+            continue;
+        }
+
+        // Check for # outside strings
+        if (ch == '#' && !in_string) {
             hash_detected = 1;
             break;
         }
     }
-
+    // If we found a # character in the expression, we need to handle comments
     if (hash_detected) {
-        Py_ssize_t input_length = tok_mode->last_expr_size - tok_mode->last_expr_end;
-        char *result = (char *)PyMem_Malloc((input_length + 1) * sizeof(char));
+        // Allocate buffer for processed result
+        char *result = (char *)PyMem_Malloc((tok_mode->last_expr_size - tok_mode->last_expr_end + 1) * sizeof(char));
         if (!result) {
             return -1;
         }
 
-        Py_ssize_t i = 0;
-        Py_ssize_t j = 0;
+        Py_ssize_t i = 0;  // Input position
+        Py_ssize_t j = 0;  // Output position
+        in_string = 0;     // Whether we're in a string
+        quote_char = 0;    // Current string quote char
 
-        for (i = 0, j = 0; i < input_length; i++) {
-            if (tok_mode->last_expr_buffer[i] == '#') {
-                // Skip characters until newline or end of string
-                while (i < input_length && tok_mode->last_expr_buffer[i] != '\0') {
-                    if (tok_mode->last_expr_buffer[i] == '\n') {
-                        result[j++] = tok_mode->last_expr_buffer[i];
-                        break;
-                    }
+        // Process each character
+        while (i < tok_mode->last_expr_size - tok_mode->last_expr_end) {
+            char ch = tok_mode->last_expr_buffer[i];
+
+            // Handle string quotes
+            if (ch == '"' || ch == '\'') {
+                // See comment above to understand this part
+                if (!in_string) {
+                    in_string = 1;
+                    quote_char = ch;
+                } else if (ch == quote_char) {
+                    in_string = 0;
+                }
+                result[j++] = ch;
+            }
+            // Skip comments
+            else if (ch == '#' && !in_string) {
+                while (i < tok_mode->last_expr_size - tok_mode->last_expr_end &&
+                       tok_mode->last_expr_buffer[i] != '\n') {
                     i++;
                 }
-            } else {
-                result[j++] = tok_mode->last_expr_buffer[i];
+                if (i < tok_mode->last_expr_size - tok_mode->last_expr_end) {
+                    result[j++] = '\n';
+                }
             }
+            // Copy other chars
+            else {
+                result[j++] = ch;
+            }
+            i++;
         }
 
         result[j] = '\0';  // Null-terminate the result string
@@ -164,11 +214,9 @@ set_ftstring_expr(struct tok_state* tok, struct token *token, char c) {
             tok_mode->last_expr_size - tok_mode->last_expr_end,
             NULL
         );
-
     }
 
-
-   if (!res) {
+    if (!res) {
         return -1;
     }
     token->metadata = res;
@@ -1421,7 +1469,8 @@ f_string_middle:
                     return MAKE_TOKEN(
                         _PyTokenizer_syntaxerror(
                             tok,
-                            "f-string: newlines are not allowed in format specifiers for single quoted f-strings"
+                            "%c-string: newlines are not allowed in format specifiers for single quoted %c-strings",
+                            TOK_GET_STRING_PREFIX(tok), TOK_GET_STRING_PREFIX(tok)
                         )
                     );
                 }

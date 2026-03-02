@@ -55,6 +55,7 @@ xzname = os.path.join(TEMPDIR, "testtar.tar.xz")
 zstname = os.path.join(TEMPDIR, "testtar.tar.zst")
 tmpname = os.path.join(TEMPDIR, "tmp.tar")
 dotlessname = os.path.join(TEMPDIR, "testtar")
+SPACE = b" "
 
 sha256_regtype = (
     "e09e4bc8b3c9d9177e77256353b36c159f5f040531bbd4b024a8f9b9196c71ce"
@@ -839,6 +840,57 @@ class MiscReadTestBase(CommonReadTest):
         fd.seek(0)
         with tarfile.open(fileobj=fd, mode="r") as tf:
             self.assertEqual(tf.next(), None)
+
+    def _setup_symlink_to_target(self, temp_dirpath):
+        target_filepath = os.path.join(temp_dirpath, "target")
+        ustar_dirpath = os.path.join(temp_dirpath, "ustar")
+        hardlink_filepath = os.path.join(ustar_dirpath, "lnktype")
+        with open(target_filepath, "wb") as f:
+            f.write(b"target")
+        os.makedirs(ustar_dirpath)
+        os.symlink(target_filepath, hardlink_filepath)
+        return target_filepath, hardlink_filepath
+
+    def _assert_on_file_content(self, filepath, digest):
+        with open(filepath, "rb") as f:
+            data = f.read()
+        self.assertEqual(sha256sum(data), digest)
+
+    @unittest.skipUnless(
+        hasattr(os, "link"), "Missing hardlink implementation"
+    )
+    @os_helper.skip_unless_symlink
+    def test_extract_hardlink_on_symlink(self):
+        """
+        This test verifies that extracting a hardlink will not follow an
+        existing symlink after a FileExistsError on os.link.
+        """
+        with os_helper.temp_dir() as DIR:
+            target_filepath, hardlink_filepath = self._setup_symlink_to_target(DIR)
+            with tarfile.open(tarname, encoding="iso8859-1") as tar:
+                tar.extract("ustar/regtype", DIR, filter="data")
+                tar.extract("ustar/lnktype", DIR, filter="data")
+                self._assert_on_file_content(target_filepath, sha256sum(b"target"))
+                self._assert_on_file_content(hardlink_filepath, sha256_regtype)
+
+    @unittest.skipUnless(
+        hasattr(os, "link"), "Missing hardlink implementation"
+    )
+    @os_helper.skip_unless_symlink
+    def test_extractall_hardlink_on_symlink(self):
+        """
+        This test verifies that extracting a hardlink will not follow an
+        existing symlink after a FileExistsError on os.link.
+        """
+        with os_helper.temp_dir() as DIR:
+            target_filepath, hardlink_filepath = self._setup_symlink_to_target(DIR)
+            with tarfile.open(tarname, encoding="iso8859-1") as tar:
+                tar.extractall(
+                    DIR, members=["ustar/regtype", "ustar/lnktype"], filter="data",
+                )
+                self._assert_on_file_content(target_filepath, sha256sum(b"target"))
+                self._assert_on_file_content(hardlink_filepath, sha256_regtype)
+
 
 class MiscReadTest(MiscReadTestBase, unittest.TestCase):
     test_fail_comp = None
@@ -1735,6 +1787,16 @@ class StreamWriteTest(WriteTestBase, unittest.TestCase):
             self.assertEqual(mode, 0o644, "wrong file permissions")
         finally:
             os.umask(original_umask)
+
+    def test_pathlike_name(self):
+        expected_name = os.path.abspath(tmpname)
+        tarpath = os_helper.FakePath(tmpname)
+
+        for func in (tarfile.open, tarfile.TarFile.open):
+            with self.subTest():
+                with func(tarpath, self.mode) as tar:
+                    self.assertEqual(tar.name, expected_name)
+                os_helper.unlink(tmpname)
 
 
 class GzipStreamWriteTest(GzipTest, StreamWriteTest):
@@ -4600,6 +4662,161 @@ class OverwriteTests(archiver_tests.OverwriteTests, unittest.TestCase):
 
     def extractall(self, ar):
         ar.extractall(self.testdir, filter='fully_trusted')
+
+
+class OffsetValidationTests(unittest.TestCase):
+    tarname = tmpname
+    invalid_posix_header = (
+        # name: 100 bytes
+        tarfile.NUL * tarfile.LENGTH_NAME
+        # mode, space, null terminator: 8 bytes
+        + b"000755" + SPACE + tarfile.NUL
+        # uid, space, null terminator: 8 bytes
+        + b"000001" + SPACE + tarfile.NUL
+        # gid, space, null terminator: 8 bytes
+        + b"000001" + SPACE + tarfile.NUL
+        # size, space: 12 bytes
+        + b"\xff" * 11 + SPACE
+        # mtime, space: 12 bytes
+        + tarfile.NUL * 11 + SPACE
+        # chksum: 8 bytes
+        + b"0011407" + tarfile.NUL
+        # type: 1 byte
+        + tarfile.REGTYPE
+        # linkname: 100 bytes
+        + tarfile.NUL * tarfile.LENGTH_LINK
+        # magic: 6 bytes, version: 2 bytes
+        + tarfile.POSIX_MAGIC
+        # uname: 32 bytes
+        + tarfile.NUL * 32
+        # gname: 32 bytes
+        + tarfile.NUL * 32
+        # devmajor, space, null terminator: 8 bytes
+        + tarfile.NUL * 6 + SPACE + tarfile.NUL
+        # devminor, space, null terminator: 8 bytes
+        + tarfile.NUL * 6 + SPACE + tarfile.NUL
+        # prefix: 155 bytes
+        + tarfile.NUL * tarfile.LENGTH_PREFIX
+        # padding: 12 bytes
+        + tarfile.NUL * 12
+    )
+    invalid_gnu_header = (
+        # name: 100 bytes
+        tarfile.NUL * tarfile.LENGTH_NAME
+        # mode, null terminator: 8 bytes
+        + b"0000755" + tarfile.NUL
+        # uid, null terminator: 8 bytes
+        + b"0000001" + tarfile.NUL
+        # gid, space, null terminator: 8 bytes
+        + b"0000001" + tarfile.NUL
+        # size, space: 12 bytes
+        + b"\xff" * 11 + SPACE
+        # mtime, space: 12 bytes
+        + tarfile.NUL * 11 + SPACE
+        # chksum: 8 bytes
+        + b"0011327" + tarfile.NUL
+        # type: 1 byte
+        + tarfile.REGTYPE
+        # linkname: 100 bytes
+        + tarfile.NUL * tarfile.LENGTH_LINK
+        # magic: 8 bytes
+        + tarfile.GNU_MAGIC
+        # uname: 32 bytes
+        + tarfile.NUL * 32
+        # gname: 32 bytes
+        + tarfile.NUL * 32
+        # devmajor, null terminator: 8 bytes
+        + tarfile.NUL * 8
+        # devminor, null terminator: 8 bytes
+        + tarfile.NUL * 8
+        # padding: 167 bytes
+        + tarfile.NUL * 167
+    )
+    invalid_v7_header = (
+        # name: 100 bytes
+        tarfile.NUL * tarfile.LENGTH_NAME
+        # mode, space, null terminator: 8 bytes
+        + b"000755" + SPACE + tarfile.NUL
+        # uid, space, null terminator: 8 bytes
+        + b"000001" + SPACE + tarfile.NUL
+        # gid, space, null terminator: 8 bytes
+        + b"000001" + SPACE + tarfile.NUL
+        # size, space: 12 bytes
+        + b"\xff" * 11 + SPACE
+        # mtime, space: 12 bytes
+        + tarfile.NUL * 11 + SPACE
+        # chksum: 8 bytes
+        + b"0010070" + tarfile.NUL
+        # type: 1 byte
+        + tarfile.REGTYPE
+        # linkname: 100 bytes
+        + tarfile.NUL * tarfile.LENGTH_LINK
+        # padding: 255 bytes
+        + tarfile.NUL * 255
+    )
+    valid_gnu_header = tarfile.TarInfo("filename").tobuf(tarfile.GNU_FORMAT)
+    data_block = b"\xff" * tarfile.BLOCKSIZE
+
+    def _write_buffer(self, buffer):
+        with open(self.tarname, "wb") as f:
+            f.write(buffer)
+
+    def _get_members(self, ignore_zeros=None):
+        with open(self.tarname, "rb") as f:
+            with tarfile.open(
+                mode="r", fileobj=f, ignore_zeros=ignore_zeros
+            ) as tar:
+                return tar.getmembers()
+
+    def _assert_raises_read_error_exception(self):
+        with self.assertRaisesRegex(
+            tarfile.ReadError, "file could not be opened successfully"
+        ):
+            self._get_members()
+
+    def test_invalid_offset_header_validations(self):
+        for tar_format, invalid_header in (
+            ("posix", self.invalid_posix_header),
+            ("gnu", self.invalid_gnu_header),
+            ("v7", self.invalid_v7_header),
+        ):
+            with self.subTest(format=tar_format):
+                self._write_buffer(invalid_header)
+                self._assert_raises_read_error_exception()
+
+    def test_early_stop_at_invalid_offset_header(self):
+        buffer = self.valid_gnu_header + self.invalid_gnu_header + self.valid_gnu_header
+        self._write_buffer(buffer)
+        members = self._get_members()
+        self.assertEqual(len(members), 1)
+        self.assertEqual(members[0].name, "filename")
+        self.assertEqual(members[0].offset, 0)
+
+    def test_ignore_invalid_archive(self):
+        # 3 invalid headers with their respective data
+        buffer = (self.invalid_gnu_header + self.data_block) * 3
+        self._write_buffer(buffer)
+        members = self._get_members(ignore_zeros=True)
+        self.assertEqual(len(members), 0)
+
+    def test_ignore_invalid_offset_headers(self):
+        for first_block, second_block, expected_offset in (
+            (
+                (self.valid_gnu_header),
+                (self.invalid_gnu_header + self.data_block),
+                0,
+            ),
+            (
+                (self.invalid_gnu_header + self.data_block),
+                (self.valid_gnu_header),
+                1024,
+            ),
+        ):
+            self._write_buffer(first_block + second_block)
+            members = self._get_members(ignore_zeros=True)
+            self.assertEqual(len(members), 1)
+            self.assertEqual(members[0].name, "filename")
+            self.assertEqual(members[0].offset, expected_offset)
 
 
 def setUpModule():
