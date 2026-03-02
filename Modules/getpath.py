@@ -779,7 +779,7 @@ if not stdlib_zip or not isfile(stdlib_zip):
     if not stdlib_dir or not isdir(stdlib_dir):
         hint = home_hint if home else f'sys.prefix is set to {prefix}, is this correct?'
         warn('WARN: Could not find the standard library directory! ' + hint)
-    elif (not platstdlib_dir and not build_prefix) or not isdir(platstdlib_dir):
+    elif not platstdlib_dir or not isdir(platstdlib_dir):
         hint = home_hint if home else f'sys.exec_prefix is set to {exec_prefix}, is this correct?'
         warn('WARN: Could not find the platform standard library directory! ' + hint)
 
