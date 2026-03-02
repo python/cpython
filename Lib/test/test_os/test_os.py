@@ -2815,19 +2815,6 @@ class TestInvalidFD(unittest.TestCase):
         if os.listdir in os.supports_fd:
             with self.check_for_ebadf():
                 os.listdir(fd)
-        if support.MS_WINDOWS:
-            with self.check_for_ebadf():
-                os._path_exists(fd)
-            with self.check_for_ebadf():
-                os._path_lexists(fd)
-            with self.check_for_ebadf():
-                os._path_isdir(fd)
-            with self.check_for_ebadf():
-                os._path_isfile(fd)
-            with self.check_for_ebadf():
-                os._path_islink(fd)
-            with self.check_for_ebadf():
-                os._path_isjunction(fd)
         if os.utime in os.supports_fd:
             with self.check_for_ebadf():
                 os.utime(fd, (0, 0))
@@ -2853,6 +2840,15 @@ class TestInvalidFD(unittest.TestCase):
         if os.scandir in os.supports_fd:
             with self.check_for_ebadf():
                 os.scandir(fd)
+
+        if support.MS_WINDOWS:
+            import nt
+            self.assertFalse(nt._path_exists(fd))
+            self.assertFalse(nt._path_lexists(fd))
+            self.assertFalse(nt._path_isdir(fd))
+            self.assertFalse(nt._path_isfile(fd))
+            self.assertFalse(nt._path_islink(fd))
+            self.assertFalse(nt._path_isjunction(fd))
 
     @unittest.skipUnless(hasattr(os, 'ftruncate'), 'test needs os.ftruncate()')
     def test_ftruncate(self):
