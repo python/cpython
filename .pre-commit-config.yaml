@@ -15,16 +15,13 @@ repos:
         args: [--exit-non-zero-on-fix]
         files: ^Lib/test/
       - id: ruff-check
-        name: Run Ruff (lint) on Tools/build/
-        args: [--exit-non-zero-on-fix, --config=Tools/build/.ruff.toml]
-        files: ^Tools/build/
-      - id: ruff-check
-        name: Run Ruff (lint) on Platforms/WASI/
-        args: [--exit-non-zero-on-fix, --config=Platforms/WASI/.ruff.toml]
-      - id: ruff-check
         name: Run Ruff (lint) on Platforms/WASI/
         args: [--exit-non-zero-on-fix, --config=Platforms/WASI/.ruff.toml]
         files: ^Platforms/WASI/
+      - id: ruff-check
+        name: Run Ruff (lint) on Tools/build/
+        args: [--exit-non-zero-on-fix, --config=Tools/build/.ruff.toml]
+        files: ^Tools/build/
       - id: ruff-check
         name: Run Ruff (lint) on Tools/build/
         args: [--exit-non-zero-on-fix, --config=Tools/build/.ruff.toml]
