@@ -949,8 +949,9 @@ conflict.
 
 .. envvar:: PYTHONNOUSERSITE
 
-   If this is set, Python won't add the :data:`user site-packages directory
-   <site.USER_SITE>` to :data:`sys.path`.
+   This is equivalent to the :option:`-s` option.  If this is set, Python won't
+   add the :data:`user site-packages directory <site.USER_SITE>` to
+   :data:`sys.path`.
 
    .. seealso::
 
@@ -963,6 +964,9 @@ conflict.
    compute the path of the :data:`user site-packages directory <site.USER_SITE>`
    and :ref:`installation paths <sysconfig-user-scheme>` for
    ``python -m pip install --user``.
+
+   To disable the user site-packages, see :envvar:`PYTHONNOUSERSITE` or the :option:`-s`
+   option.
 
    .. seealso::
 
