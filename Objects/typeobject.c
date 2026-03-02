@@ -5058,7 +5058,7 @@ type_new(PyTypeObject *metatype, PyObject *args, PyObject *kwds)
     }
     if (!PyAnyDict_Check(orig_dict)) {
         PyErr_Format(PyExc_TypeError,
-                     "type.__new__() argument 3 must be dict, not %T",
+                     "type.__new__() argument 3 must be dict or frozendict, not %T",
                      orig_dict);
         return NULL;
     }
