@@ -473,6 +473,25 @@ tuple_slice(PyTupleObject *a, Py_ssize_t ilow,
 }
 
 PyObject *
+_PyTuple_BinarySlice(PyObject *container, PyObject *start, PyObject *stop)
+{
+    assert(PyTuple_CheckExact(container));
+    Py_ssize_t len = Py_SIZE(container);
+    Py_ssize_t istart, istop;
+    if (!_PyEval_UnpackIndices(start, stop, len, &istart, &istop)) {
+        return NULL;
+    }
+    if (istart == 0 && istop == len) {
+        return Py_NewRef(container);
+    }
+    if (istop < istart) {
+        istop = istart;
+    }
+    return PyTuple_FromArray(((PyTupleObject *)container)->ob_item + istart,
+                             istop - istart);
+}
+
+PyObject *
 PyTuple_GetSlice(PyObject *op, Py_ssize_t i, Py_ssize_t j)
 {
     if (op == NULL || !PyTuple_Check(op)) {
