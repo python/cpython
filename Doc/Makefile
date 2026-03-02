@@ -150,7 +150,7 @@ venv:
 		echo "To recreate it, remove it first with \`make clean-venv'."; \
 	else \
 		$(PYTHON) -m venv $(VENVDIR); \
-		$(VENVDIR)/bin/python3 -m pip install -U pip setuptools; \
+		$(VENVDIR)/bin/python3 -m pip install -U pip setuptools==81; \
 		$(VENVDIR)/bin/python3 -m pip install -r requirements.txt; \
 		echo "The venv has been created in the $(VENVDIR) directory"; \
 	fi
