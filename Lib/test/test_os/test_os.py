@@ -2781,7 +2781,7 @@ class TestInvalidFD(unittest.TestCase):
     @unittest.skipUnless(hasattr(os, 'pathconf'), 'test needs os.pathconf()')
     @unittest.skipIf(
         support.linked_to_musl(),
-        'musl pathconf ignores the file descriptor and returns a constant',
+        'musl fpathconf ignores the file descriptor and returns a constant',
         )
     def test_pathconf_negative_fd_uses_fd_semantics(self):
         with self.assertRaises(OSError) as ctx:
