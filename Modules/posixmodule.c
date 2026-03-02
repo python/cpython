@@ -1280,6 +1280,8 @@ get_posix_state(PyObject *module)
  *     Contains a file descriptor if path.accept_fd was true
  *     and the caller provided a signed integer instead of any
  *     sort of string.
+ *   path.is_fd
+ *     True if path was provided as a file descriptor.
  *
  *     WARNING: if your "path" parameter is optional, and is
  *     unspecified, path_converter will never get called.
@@ -1332,6 +1334,7 @@ typedef struct {
     const wchar_t *wide;
     const char *narrow;
     int fd;
+    bool is_fd;
     int value_error;
     Py_ssize_t length;
     PyObject *object;
@@ -1341,7 +1344,7 @@ typedef struct {
 #define PATH_T_INITIALIZE(function_name, argument_name, nullable, nonstrict, \
                           make_wide, suppress_value_error, allow_fd) \
     {function_name, argument_name, nullable, nonstrict, make_wide, \
-     suppress_value_error, allow_fd, NULL, NULL, -1, 0, 0, NULL, NULL}
+     suppress_value_error, allow_fd, NULL, NULL, -1, false, 0, 0, NULL, NULL}
 #ifdef MS_WINDOWS
 #define PATH_T_INITIALIZE_P(function_name, argument_name, nullable, \
                             nonstrict, suppress_value_error, allow_fd) \
@@ -1475,6 +1478,7 @@ path_converter(PyObject *o, void *p)
         }
         path->wide = NULL;
         path->narrow = NULL;
+        path->is_fd = true;
         goto success_exit;
     }
     else {
@@ -1607,12 +1611,6 @@ follow_symlinks_specified(const char *function_name, int follow_symlinks)
 
     argument_unavailable_error(function_name, "follow_symlinks");
     return 1;
-}
-
-static bool
-path_is_fd(const path_t *path)
-{
-    return path->allow_fd && path->object != NULL && PyIndex_Check(path->object);
 }
 
 static int
@@ -14334,7 +14332,7 @@ os_pathconf_impl(PyObject *module, path_t *path, int name)
 
     errno = 0;
 #ifdef HAVE_FPATHCONF
-    if (path_is_fd(path)) {
+    if (path->is_fd) {
         limit = fpathconf(path->fd, name);
     }
     else
