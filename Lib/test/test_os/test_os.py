@@ -2778,15 +2778,80 @@ class TestInvalidFD(unittest.TestCase):
         self.check(os.pathconf, "PC_NAME_MAX")
         self.check(os.fpathconf, "PC_NAME_MAX")
 
+    @contextlib.contextmanager
+    def check_for_ebadf(self, errnos=(errno.EBADF,)):
+        with self.assertRaises(OSError) as ctx:
+            yield
+        self.assertIn(ctx.exception.errno, errnos)
+
     @unittest.skipUnless(hasattr(os, 'pathconf'), 'test needs os.pathconf()')
+    @unittest.skipUnless(os.pathconf in os.supports_fd,
+                         'needs fpathconf()')
     @unittest.skipIf(
         support.linked_to_musl(),
         'musl fpathconf ignores the file descriptor and returns a constant',
         )
     def test_pathconf_negative_fd_uses_fd_semantics(self):
-        with self.assertRaises(OSError) as ctx:
+        with self.check_for_ebadf():
             os.pathconf(-1, 1)
-        self.assertEqual(ctx.exception.errno, errno.EBADF)
+
+    @support.subTests("fd", [-1, -5])
+    def test_negative_fd_ebadf(self, fd):
+        with self.check_for_ebadf():
+            os.stat(fd)
+        if hasattr(os, "statx"):
+            with self.check_for_ebadf():
+                os.statx(fd, mask=0)
+        if os.chdir in os.supports_fd:
+            with self.check_for_ebadf():
+                os.chdir(fd)
+        if os.chmod in os.supports_fd:
+            with self.check_for_ebadf():
+                os.chmod(fd, 0o777)
+        if hasattr(os, "chown") and os.chown in os.supports_fd:
+            with self.check_for_ebadf():
+                os.chown(fd, 0, 0)
+        if os.listdir in os.supports_fd:
+            with self.check_for_ebadf():
+                os.listdir(fd)
+        if support.MS_WINDOWS:
+            with self.check_for_ebadf():
+                os._path_exists(fd)
+            with self.check_for_ebadf():
+                os._path_lexists(fd)
+            with self.check_for_ebadf():
+                os._path_isdir(fd)
+            with self.check_for_ebadf():
+                os._path_isfile(fd)
+            with self.check_for_ebadf():
+                os._path_islink(fd)
+            with self.check_for_ebadf():
+                os._path_isjunction(fd)
+        if os.utime in os.supports_fd:
+            with self.check_for_ebadf():
+                os.utime(fd, (0, 0))
+        if hasattr(os, "execve") and os.execve in os.supports_fd:
+            # glibc fails with EINVAL, musl fails with EBADF
+            with self.check_for_ebadf(errnos=(errno.EBADF, errno.EINVAL)):
+                os.execve(fd, [sys.executable, "-c", "pass"], os.environ)
+        if hasattr(os, "truncate") and os.truncate in os.supports_fd:
+            with self.check_for_ebadf():
+                os.truncate(fd, 0)
+        if hasattr(os, 'statvfs') and os.statvfs in os.supports_fd:
+            with self.check_for_ebadf():
+                os.statvfs(fd)
+        if hasattr(os, "setxattr"):
+            with self.check_for_ebadf():
+                os.getxattr(fd, b"user.test")
+            with self.check_for_ebadf():
+                os.setxattr(fd, b"user.test", b"1")
+            with self.check_for_ebadf():
+                os.removexattr(fd, b"user.test")
+            with self.check_for_ebadf():
+                os.listxattr(fd)
+        if os.scandir in os.supports_fd:
+            with self.check_for_ebadf():
+                os.scandir(fd)
 
     @unittest.skipUnless(hasattr(os, 'ftruncate'), 'test needs os.ftruncate()')
     def test_ftruncate(self):
