@@ -1,6 +1,7 @@
 /* Execute compiled code */
 
 #include "ceval.h"
+#include "pycore_long.h"
 
 int
 Py_GetRecursionLimit(void)
@@ -2883,23 +2884,10 @@ PyEval_GetFuncDesc(PyObject *func)
 int
 _PyEval_SliceIndex(PyObject *v, Py_ssize_t *pi)
 {
-    PyThreadState *tstate = _PyThreadState_GET();
-    if (!Py_IsNone(v)) {
-        Py_ssize_t x;
-        if (_PyIndex_Check(v)) {
-            x = PyNumber_AsSsize_t(v, NULL);
-            if (x == -1 && _PyErr_Occurred(tstate))
-                return 0;
-        }
-        else {
-            _PyErr_SetString(tstate, PyExc_TypeError,
-                             "slice indices must be integers or "
-                             "None or have an __index__ method");
-            return 0;
-        }
-        *pi = x;
+    if (Py_IsNone(v)) {
+        return 1;
     }
-    return 1;
+    return _PyEval_SliceIndexNotNone(v, pi);
 }
 
 int
@@ -2907,6 +2895,10 @@ _PyEval_SliceIndexNotNone(PyObject *v, Py_ssize_t *pi)
 {
     PyThreadState *tstate = _PyThreadState_GET();
     Py_ssize_t x;
+    if (PyLong_CheckExact(v) && _PyLong_IsCompact((PyLongObject *)v)) {
+        *pi = _PyLong_CompactValue((PyLongObject *)v);
+        return 1;
+    }
     if (_PyIndex_Check(v)) {
         x = PyNumber_AsSsize_t(v, NULL);
         if (x == -1 && _PyErr_Occurred(tstate))
@@ -2919,6 +2911,26 @@ _PyEval_SliceIndexNotNone(PyObject *v, Py_ssize_t *pi)
         return 0;
     }
     *pi = x;
+    return 1;
+}
+
+int
+_PyEval_UnpackIndices(PyObject *start, PyObject *stop,
+                      Py_ssize_t len,
+                      Py_ssize_t *istart, Py_ssize_t *istop)
+{
+    if (len < 0) {
+        return 0;
+    }
+    *istart = 0;
+    *istop = PY_SSIZE_T_MAX;
+    if (!_PyEval_SliceIndex(start, istart)) {
+        return 0;
+    }
+    if (!_PyEval_SliceIndex(stop, istop)) {
+        return 0;
+    }
+    PySlice_AdjustIndices(len, istart, istop, 1);
     return 1;
 }
 

@@ -717,6 +717,30 @@ list_slice_lock_held(PyListObject *a, Py_ssize_t ilow, Py_ssize_t ihigh)
 }
 
 PyObject *
+_PyList_BinarySlice(PyObject *container, PyObject *start, PyObject *stop)
+{
+    assert(PyList_CheckExact(container));
+    Py_ssize_t istart = 0;
+    Py_ssize_t istop = PY_SSIZE_T_MAX;
+    /* Unpack the index values before acquiring the lock, since
+     * _PyEval_SliceIndex may call __index__ which could execute
+     * arbitrary Python code. */
+    if (!_PyEval_SliceIndex(start, &istart)) {
+        return NULL;
+    }
+    if (!_PyEval_SliceIndex(stop, &istop)) {
+        return NULL;
+    }
+    PyObject *ret;
+    Py_BEGIN_CRITICAL_SECTION(container);
+    Py_ssize_t len = Py_SIZE(container);
+    PySlice_AdjustIndices(len, &istart, &istop, 1);
+    ret = list_slice_lock_held((PyListObject *)container, istart, istop);
+    Py_END_CRITICAL_SECTION();
+    return ret;
+}
+
+PyObject *
 PyList_GetSlice(PyObject *a, Py_ssize_t ilow, Py_ssize_t ihigh)
 {
     if (!PyList_Check(a)) {
