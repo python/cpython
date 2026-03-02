@@ -158,8 +158,6 @@ jobs:
         run: echo "IMAGE_OS_VERSION=${ImageOS}-${ImageVersion}" >> "$GITHUB_ENV"
       - name: Install dependencies
         run: sudo ./.github/workflows/posix-deps-apt.sh
-      - name: Add ccache to PATH
-        run: echo "PATH=/usr/lib/ccache:$PATH" >> "$GITHUB_ENV"
       - name: Configure CPython
         run: |
           # Build Python with the libpython dynamic library
@@ -334,9 +332,6 @@ jobs:
     - name: Install OpenSSL
       if: steps.cache-openssl.outputs.cache-hit != 'true'
       run: python3 Tools/ssl/multissltests.py --steps=library --base-directory "$MULTISSL_DIR" --openssl "$OPENSSL_VER" --system Linux
-    - name: Add ccache to PATH
-      run: |
-        echo "PATH=/usr/lib/ccache:$PATH" >> "$GITHUB_ENV"
     - name: Configure CPython
       run: ./configure CFLAGS="-fdiagnostics-format=json" --config-cache --enable-slower-safety --with-pydebug --with-openssl="$OPENSSL_DIR"
     - name: Build CPython
@@ -428,9 +423,6 @@ jobs:
     - name: Install OpenSSL
       if: steps.cache-openssl.outputs.cache-hit != 'true'
       run: python3 Tools/ssl/multissltests.py --steps=library --base-directory "$MULTISSL_DIR" --openssl "$OPENSSL_VER" --system Linux
-    - name: Add ccache to PATH
-      run: |
-        echo "PATH=/usr/lib/ccache:$PATH" >> "$GITHUB_ENV"
     - name: Setup directory envs for out-of-tree builds
       run: |
         echo "CPYTHON_RO_SRCDIR=$(realpath -m "${GITHUB_WORKSPACE}"/../cpython-ro-srcdir)" >> "$GITHUB_ENV"
@@ -546,9 +538,6 @@ jobs:
     - name: Install OpenSSL
       if: steps.cache-openssl.outputs.cache-hit != 'true'
       run: python3 Tools/ssl/multissltests.py --steps=library --base-directory "$MULTISSL_DIR" --openssl "$OPENSSL_VER" --system Linux
-    - name: Add ccache to PATH
-      run: |
-        echo "PATH=/usr/lib/ccache:$PATH" >> "$GITHUB_ENV"
     - name: Configure CPython
       run: ./configure --config-cache --with-address-sanitizer --without-pymalloc
     - name: Build CPython
