@@ -2220,6 +2220,7 @@ class TestDate(HarmlessMixedComparison, unittest.TestCase):
                         self.theclass(2026, 2, 1)
                     )
 
+
 #############################################################################
 # datetime tests
 
