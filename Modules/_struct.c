@@ -1773,8 +1773,9 @@ s_create(PyStructObject *self, PyObject *format)
 {
     if (PyUnicode_Check(format)) {
         format = PyUnicode_AsASCIIString(format);
-        if (format == NULL)
+        if (format == NULL) {
             return -1;
+        }
     }
     else {
         Py_INCREF(format);
