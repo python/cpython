@@ -7414,17 +7414,16 @@ PyObject_VisitManagedDict(PyObject *obj, visitproc visit, void *arg)
     PyDictObject *dict = _PyObject_ManagedDictPointer(obj)->dict;
     if (dict != NULL) {
         // GH-130327: If there's a managed dictionary available, we should
-        // *always* traverse it, including when inline values are available.
+        // *always* traverse it. The dict is responsible for traversing the
+        // inline values if it points to them.
         Py_VISIT(dict);
-        return 0;
     }
-    if (tp->tp_flags & Py_TPFLAGS_INLINE_VALUES) {
+    else if (tp->tp_flags & Py_TPFLAGS_INLINE_VALUES) {
         PyDictValues *values = _PyObject_InlineValues(obj);
         if (values->valid) {
             for (Py_ssize_t i = 0; i < values->capacity; i++) {
                 Py_VISIT(values->values[i]);
             }
-            return 0;
         }
     }
     return 0;
