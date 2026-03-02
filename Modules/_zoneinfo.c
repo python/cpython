@@ -330,6 +330,7 @@ zoneinfo_ZoneInfo_impl(PyTypeObject *type, PyObject *key)
             return NULL;
         }
 
+        ((PyZoneInfo_ZoneInfo *)tmp)->source = SOURCE_CACHE;
         instance =
             PyObject_CallMethod(weak_cache, "setdefault", "OO", key, tmp);
         Py_DECREF(tmp);
@@ -337,7 +338,15 @@ zoneinfo_ZoneInfo_impl(PyTypeObject *type, PyObject *key)
             Py_DECREF(weak_cache);
             return NULL;
         }
-        ((PyZoneInfo_ZoneInfo *)instance)->source = SOURCE_CACHE;
+    }
+
+    if (!PyObject_TypeCheck(instance, type)) {
+        PyErr_Format(PyExc_RuntimeError,
+                     "Unexpected instance of %T in %s weak cache for key %R",
+                     instance, _PyType_Name(type), key);
+        Py_DECREF(instance);
+        Py_DECREF(weak_cache);
+        return NULL;
     }
 
     update_strong_cache(state, type, key, instance);
