@@ -378,6 +378,8 @@ Improved error messages
   name, the error message will suggest accessing it via that inner attribute:
 
   .. code-block:: python
+     from dataclasses import dataclass
+     from math import pi
 
      @dataclass
      class Circle:

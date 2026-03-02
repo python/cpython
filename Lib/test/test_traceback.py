@@ -4401,17 +4401,23 @@ class SuggestionFormattingTestBase(SuggestionFormattingTestMixin):
     def test_getattr_nested_with_property(self):
         # Test that descriptors (including properties) are suggested in nested attributes
         class Inner:
+            def __init__(self):
+                self.access_counter = 0
             @property
             def computed(self):
+                self.access_counter += 1
                 return 42
 
         class Outer:
             def __init__(self):
                 self.inner = Inner()
 
-        actual = self.get_suggestion(Outer(), 'computed')
-        # Descriptors should not be suggested to avoid executing arbitrary code
+        obj = Outer()
+        actual = self.get_suggestion(obj, 'computed')
+        # Descriptors should be suggested
         self.assertIn("inner.computed", actual)
+        # Should not increment the access counter
+        self.assertEqual(obj.inner.access_counter, 0)
 
     def test_getattr_nested_no_suggestion_for_deep_nesting(self):
         # Test that deeply nested attributes (2+ levels) are not suggested

@@ -14,6 +14,7 @@ import tokenize
 import io
 import importlib.util
 import pathlib
+import inspect
 import _colorize
 
 from contextlib import suppress
@@ -1670,30 +1671,27 @@ def _check_for_nested_attribute(obj, wrong_name, attrs):
 
     Returns the first nested attribute suggestion found, or None.
     Limited to checking 20 attributes.
-    Only considers non-descriptor attributes to avoid executing arbitrary code.
     Skips lazy imports to avoid triggering module loading.
     """
     # Check for nested attributes (only one level deep)
     attrs_to_check = [x for x in attrs if not x.startswith('_')][:20]  # Limit number of attributes to check
     for attr_name in attrs_to_check:
-        with suppress(Exception):
-            # Check if attr_name is a descriptor - if so, skip it
-            attr_from_class = getattr(type(obj), attr_name, None)
-            if attr_from_class is not None and hasattr(attr_from_class, '__get__'):
-                continue  # Skip descriptors to avoid executing arbitrary code
-
+        with suppress(AttributeError):
+            attr_obj = inspect.getattr_static(obj, attr_name)
+                
+            try:
+                inspect.getattr_static(attr_obj, '__get__')
+                continue # Descriptor, skip it as we can't access its contents safely
+            except AttributeError:
+                pass
+            
             # Skip lazy imports to avoid triggering module loading
             if _is_lazy_import(obj, attr_name):
                 continue
 
-            # Safe to get the attribute since it's not a descriptor
-            attr_obj = getattr(obj, attr_name)
+            inspect.getattr_static(attr_obj, wrong_name)
 
-            # Check if the nested attribute exists and is not a descriptor
-            nested_attr_from_class = getattr(type(attr_obj), wrong_name, None)
-
-            if hasattr(attr_obj, wrong_name):
-                return f"{attr_name}.{wrong_name}"
+            return f"{attr_name}.{wrong_name}"
 
     return None
 

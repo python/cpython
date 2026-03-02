@@ -1,0 +1,1 @@
+Fixed nested properties being executed in error message suggestions
