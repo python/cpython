@@ -1,0 +1,2 @@
+Fix use-after-free crashes when a :class:`memoryview` is mutated
+during a comparison with another object.
