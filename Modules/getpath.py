@@ -236,6 +236,7 @@ stdlib_dir_was_set_in_config = bool(stdlib_dir)
 
 real_executable_dir = None
 platstdlib_dir = None
+stdlib_zip = None
 
 # ******************************************************************************
 # CALCULATE program_name
@@ -697,12 +698,13 @@ elif not pythonpath_was_set:
             library_dir = dirname(library)
         else:
             library_dir = executable_dir
-        pythonpath.append(joinpath(library_dir, ZIP_LANDMARK))
+        stdlib_zip = joinpath(library_dir, ZIP_LANDMARK)
     elif build_prefix:
         # QUIRK: POSIX uses the default prefix when in the build directory
-        pythonpath.append(joinpath(PREFIX, ZIP_LANDMARK))
+        stdlib_zip = joinpath(PREFIX, ZIP_LANDMARK)
     else:
-        pythonpath.append(joinpath(base_prefix, ZIP_LANDMARK))
+        stdlib_zip = joinpath(base_prefix, ZIP_LANDMARK)
+    pythonpath.append(stdlib_zip)
 
     if os_name == 'nt' and use_environment and winreg:
         # QUIRK: Windows also lists paths in the registry. Paths are stored
@@ -765,6 +767,21 @@ elif not pythonpath_was_set:
 
     config['module_search_paths'] = pythonpath
     config['module_search_paths_set'] = 1
+
+
+# ******************************************************************************
+# SANITY CHECKS
+# ******************************************************************************
+
+# Warn if the standard library is missing
+if not stdlib_zip or not isfile(stdlib_zip):
+    home_hint = f"The Python 'home' directory was set to {home!r}, is this correct?"
+    if not stdlib_dir or not isdir(stdlib_dir):
+        hint = home_hint if home else f'sys.prefix is set to {prefix}, is this correct?'
+        warn('WARN: Could not find the standard library directory! ' + hint)
+    elif not platstdlib_dir or not isdir(platstdlib_dir):
+        hint = home_hint if home else f'sys.exec_prefix is set to {exec_prefix}, is this correct?'
+        warn('WARN: Could not find the platform standard library directory! ' + hint)
 
 
 # ******************************************************************************
