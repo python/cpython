@@ -687,6 +687,13 @@ Miscellaneous options
 
      .. versionadded:: 3.14
 
+   * :samp:`-X pathconfig_warnings={0,1}` if true (``1``) then
+     :ref:`sys-path-init` is allowed to log warnings into stderr.
+     If false (``0``) suppress these warnings. Set to true by default.
+     See also :envvar:`PYTHON_PATHCONFIG_WARNINGS`.
+
+     .. versionadded:: next
+
    * :samp:`-X tlbc={0,1}` enables (1, the default) or disables (0) thread-local
      bytecode in builds configured with :option:`--disable-gil`.  When disabled,
      this also disables the specializing interpreter.  See also
@@ -1353,6 +1360,14 @@ conflict.
    context_aware_warnings<-X>`.
 
    .. versionadded:: 3.14
+
+.. envvar:: PYTHON_PATHCONFIG_WARNINGS
+
+   If true (``1``) then :ref:`sys-path-init` is allowed to log warnings into
+   stderr. If false (``0``) suppress these warnings. Set to true by default.
+   See also :option:`-X pathconfig_warnings<-X>`.
+
+   .. versionadded:: next
 
 .. envvar:: PYTHON_JIT
 
