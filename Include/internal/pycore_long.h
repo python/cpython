@@ -135,7 +135,7 @@ extern int _PyLong_FormatWriter(
     int alternate);
 
 extern char* _PyLong_FormatBytesWriter(
-    _PyBytesWriter *writer,
+    PyBytesWriter *writer,
     char *str,
     PyObject *obj,
     int base,

@@ -331,7 +331,7 @@ simplified and finer-grained.
 
 You don't have to worry anymore about choosing the appropriate exception
 type between :exc:`OSError`, :exc:`IOError`, :exc:`EnvironmentError`,
-:exc:`WindowsError`, :exc:`mmap.error`, :exc:`socket.error` or
+:exc:`WindowsError`, :exc:`!mmap.error`, :exc:`socket.error` or
 :exc:`select.error`.  All these exception types are now only one:
 :exc:`OSError`.  The other names are kept as aliases for compatibility
 reasons.
@@ -805,7 +805,7 @@ Some smaller changes made to the core Python language are:
 * New methods have been added to :class:`list` and :class:`bytearray`:
   ``copy()`` and ``clear()`` (:issue:`10516`).  Consequently,
   :class:`~collections.abc.MutableSequence` now also defines a
-  :meth:`~collections.abc.MutableSequence.clear` method (:issue:`11388`).
+  :meth:`!clear` method (:issue:`11388`).
 
 * Raw bytes literals can now be written ``rb"..."`` as well as ``br"..."``.
 
@@ -869,10 +869,10 @@ faulthandler
 This new debug module :mod:`faulthandler` contains functions to dump Python tracebacks explicitly,
 on a fault (a crash like a segmentation fault), after a timeout, or on a user
 signal. Call :func:`faulthandler.enable` to install fault handlers for the
-:const:`SIGSEGV`, :const:`SIGFPE`, :const:`SIGABRT`, :const:`SIGBUS`, and
-:const:`SIGILL` signals. You can also enable them at startup by setting the
-:envvar:`PYTHONFAULTHANDLER` environment variable or by using :option:`-X`
-``faulthandler`` command line option.
+:const:`~signal.SIGSEGV`, :const:`~signal.SIGFPE`, :const:`~signal.SIGABRT`,
+:const:`~signal.SIGBUS`, and :const:`~signal.SIGILL` signals.
+You can also enable them at startup by setting the :envvar:`PYTHONFAULTHANDLER`
+environment variable or by using :option:`-X` ``faulthandler`` command line option.
 
 Example of a segmentation fault on Linux:
 
@@ -916,7 +916,7 @@ abc
 
 Improved support for abstract base classes containing descriptors composed with
 abstract methods. The recommended approach to declaring abstract descriptors is
-now to provide :attr:`__isabstractmethod__` as a dynamically updated
+now to provide :attr:`!__isabstractmethod__` as a dynamically updated
 property. The built-in descriptors have been updated accordingly.
 
 * :class:`abc.abstractproperty` has been deprecated, use :class:`property`
@@ -979,7 +979,7 @@ new features have been added:
   (Contributed by Nir Aides in :issue:`1625`.)
 
 * :class:`bz2.BZ2File` now implements all of the :class:`io.BufferedIOBase` API,
-  except for the :meth:`detach` and :meth:`truncate` methods.
+  except for the :meth:`!detach` and :meth:`!truncate` methods.
 
 
 codecs
@@ -1064,7 +1064,7 @@ curses
 
 * If the :mod:`curses` module is linked to the ncursesw library, use Unicode
   functions when Unicode strings or characters are passed (e.g.
-  :c:func:`waddwstr`), and bytes functions otherwise (e.g. :c:func:`waddstr`).
+  :c:func:`!waddwstr`), and bytes functions otherwise (e.g. :c:func:`!waddstr`).
 * Use the locale encoding instead of ``utf-8`` to encode Unicode strings.
 * :class:`curses.window` has a new :attr:`curses.window.encoding` attribute.
 * The :class:`curses.window` class has a new :meth:`~curses.window.get_wch`
@@ -1137,15 +1137,15 @@ API changes
 * The C module has the following context limits, depending on the machine
   architecture:
 
-   +-------------------+----------------+-------------------------+
-   |                   |       32-bit   |            64-bit       |
-   +===================+================+=========================+
-   | :const:`MAX_PREC` | ``425000000``  | ``999999999999999999``  |
-   +-------------------+----------------+-------------------------+
-   | :const:`MAX_EMAX` | ``425000000``  | ``999999999999999999``  |
-   +-------------------+----------------+-------------------------+
-   | :const:`MIN_EMIN` | ``-425000000`` | ``-999999999999999999`` |
-   +-------------------+----------------+-------------------------+
+   +----------------------------+----------------+-------------------------+
+   |                            |       32-bit   |            64-bit       |
+   +============================+================+=========================+
+   | :const:`~decimal.MAX_PREC` | ``425000000``  | ``999999999999999999``  |
+   +----------------------------+----------------+-------------------------+
+   | :const:`~decimal.MAX_EMAX` | ``425000000``  | ``999999999999999999``  |
+   +----------------------------+----------------+-------------------------+
+   | :const:`~decimal.MIN_EMIN` | ``-425000000`` | ``-999999999999999999`` |
+   +----------------------------+----------------+-------------------------+
 
 * In the context templates (:const:`~decimal.DefaultContext`,
   :const:`~decimal.BasicContext` and :const:`~decimal.ExtendedContext`)
@@ -1434,7 +1434,7 @@ html
 
 :class:`html.parser.HTMLParser` is now able to parse broken markup without
 raising errors, therefore the *strict* argument of the constructor and the
-:exc:`~html.parser.HTMLParseError` exception are now deprecated.
+:exc:`!HTMLParseError` exception are now deprecated.
 The ability to parse broken markup is the result of a number of bug fixes that
 are also available on the latest bug fix releases of Python 2.7/3.2.
 (Contributed by Ezio Melotti in :issue:`15114`, and :issue:`14538`,
@@ -1486,7 +1486,7 @@ already exists. It is based on the C11 'x' mode to fopen().
 
 The constructor of the :class:`~io.TextIOWrapper` class has a new
 *write_through* optional argument. If *write_through* is ``True``, calls to
-:meth:`~io.TextIOWrapper.write` are guaranteed not to be buffered: any data
+:meth:`!write` are guaranteed not to be buffered: any data
 written on the :class:`~io.TextIOWrapper` object is immediately handled to its
 underlying binary buffer.
 
@@ -1504,7 +1504,7 @@ logging
 The :func:`~logging.basicConfig` function now supports an optional ``handlers``
 argument taking an iterable of handlers to be added to the root logger.
 
-A class level attribute :attr:`~logging.handlers.SysLogHandler.append_nul` has
+A class level attribute :attr:`!append_nul` has
 been added to :class:`~logging.handlers.SysLogHandler` to allow control of the
 appending of the ``NUL`` (``\000``) byte to syslog records, since for some
 daemons it is required while for others it is passed through to the log.
@@ -1536,8 +1536,8 @@ The new :func:`multiprocessing.connection.wait` function allows polling
 multiple objects (such as connections, sockets and pipes) with a timeout.
 (Contributed by Richard Oudkerk in :issue:`12328`.)
 
-:class:`multiprocessing.Connection` objects can now be transferred over
-multiprocessing connections.
+:class:`multiprocessing.connection.Connection` objects can now be transferred
+over multiprocessing connections.
 (Contributed by Richard Oudkerk in :issue:`4892`.)
 
 :class:`multiprocessing.Process` now accepts a ``daemon`` keyword argument
@@ -1611,7 +1611,7 @@ os
     :func:`~os.rename`, :func:`~os.replace`, :func:`~os.rmdir`, :func:`~os.stat`,
     :func:`~os.symlink`, :func:`~os.unlink`, :func:`~os.utime`.  Platform
     support for using these parameters can be checked via the sets
-    :data:`os.supports_dir_fd` and :data:`os.supports_follows_symlinks`.
+    :data:`os.supports_dir_fd` and :data:`os.supports_follow_symlinks`.
 
   - The following functions now support a file descriptor for their path argument:
     :func:`~os.chdir`, :func:`~os.chmod`, :func:`~os.chown`,
@@ -1698,7 +1698,7 @@ os
   :const:`~os.RTLD_NOLOAD`, and :const:`~os.RTLD_DEEPBIND` are available on
   platforms that support them.   These are for use with the
   :func:`sys.setdlopenflags` function, and supersede the similar constants
-  defined in :mod:`ctypes` and :mod:`DLFCN`.  (Contributed by Victor Stinner
+  defined in :mod:`ctypes` and :mod:`!DLFCN`.  (Contributed by Victor Stinner
   in :issue:`13226`.)
 
 * :func:`os.symlink` now accepts (and ignores) the ``target_is_directory``
@@ -1728,8 +1728,8 @@ reduction functions to be set.
 pydoc
 -----
 
-The Tk GUI and the :func:`~pydoc.serve` function have been removed from the
-:mod:`pydoc` module: ``pydoc -g`` and :func:`~pydoc.serve` have been deprecated
+The Tk GUI and the :func:`!serve` function have been removed from the
+:mod:`pydoc` module: ``pydoc -g`` and :func:`!serve` have been deprecated
 in Python 3.2.
 
 
@@ -1931,7 +1931,7 @@ ssl
 
   * :func:`~ssl.RAND_bytes`: generate cryptographically strong
     pseudo-random bytes.
-  * :func:`~ssl.RAND_pseudo_bytes`: generate pseudo-random bytes.
+  * :func:`!RAND_pseudo_bytes`: generate pseudo-random bytes.
 
   (Contributed by Victor Stinner in :issue:`12049`.)
 
@@ -2020,8 +2020,7 @@ tarfile
 tempfile
 --------
 
-:class:`tempfile.SpooledTemporaryFile`\'s
-:meth:`~tempfile.SpooledTemporaryFile.truncate` method now accepts
+:class:`tempfile.SpooledTemporaryFile`\'s :meth:`!truncate` method now accepts
 a ``size`` parameter.  (Contributed by Ryan Kelly in :issue:`9957`.)
 
 
@@ -2129,7 +2128,7 @@ xml.etree.ElementTree
 
 The :mod:`xml.etree.ElementTree` module now imports its C accelerator by
 default; there is no longer a need to explicitly import
-:mod:`xml.etree.cElementTree` (this module stays for backwards compatibility,
+:mod:`!xml.etree.cElementTree` (this module stays for backwards compatibility,
 but is now deprecated).  In addition,  the ``iter`` family of methods of
 :class:`~xml.etree.ElementTree.Element` has been optimized (rewritten in C).
 The module's documentation has also been greatly improved with added examples
@@ -2197,7 +2196,7 @@ Changes to Python's build process and to the C API include:
     * :c:func:`PyUnicode_AsUCS4`, :c:func:`PyUnicode_AsUCS4Copy`
     * :c:macro:`PyUnicode_DATA`, :c:macro:`PyUnicode_1BYTE_DATA`,
       :c:macro:`PyUnicode_2BYTE_DATA`, :c:macro:`PyUnicode_4BYTE_DATA`
-    * :c:macro:`PyUnicode_KIND` with :c:enum:`PyUnicode_Kind` enum:
+    * :c:macro:`PyUnicode_KIND` with :c:enum:`!PyUnicode_Kind` enum:
       :c:data:`!PyUnicode_WCHAR_KIND`, :c:data:`PyUnicode_1BYTE_KIND`,
       :c:data:`PyUnicode_2BYTE_KIND`, :c:data:`PyUnicode_4BYTE_KIND`
     * :c:macro:`PyUnicode_READ`, :c:macro:`PyUnicode_READ_CHAR`, :c:macro:`PyUnicode_WRITE`
@@ -2232,17 +2231,17 @@ Deprecated Python modules, functions and methods
   (``utf-32-le`` or ``utf-32-be``)
 * :meth:`ftplib.FTP.nlst` and :meth:`ftplib.FTP.dir`: use
   :meth:`ftplib.FTP.mlsd`
-* :func:`platform.popen`: use the :mod:`subprocess` module. Check especially
+* :func:`!platform.popen`: use the :mod:`subprocess` module. Check especially
   the :ref:`subprocess-replacements` section (:issue:`11377`).
 * :issue:`13374`: The Windows bytes API has been deprecated in the :mod:`os`
   module. Use Unicode filenames, instead of bytes filenames, to not depend on
   the ANSI code page anymore and to support any filename.
-* :issue:`13988`: The :mod:`xml.etree.cElementTree` module is deprecated.  The
+* :issue:`13988`: The :mod:`!xml.etree.cElementTree` module is deprecated.  The
   accelerator is used automatically whenever available.
-* The behaviour of :func:`time.clock` depends on the platform: use the new
+* The behaviour of :func:`!time.clock` depends on the platform: use the new
   :func:`time.perf_counter` or :func:`time.process_time` function instead,
   depending on your requirements, to have a well defined behaviour.
-* The :func:`os.stat_float_times` function is deprecated.
+* The :func:`!os.stat_float_times` function is deprecated.
 * :mod:`abc` module:
 
   * :class:`abc.abstractproperty` has been deprecated, use :class:`property`
@@ -2466,7 +2465,7 @@ Porting C code
 * In the course of changes to the buffer API the undocumented
   :c:member:`!smalltable` member of the
   :c:type:`Py_buffer` structure has been removed and the
-  layout of the :c:type:`PyMemoryViewObject` has changed.
+  layout of the :c:type:`!PyMemoryViewObject` has changed.
 
   All extensions relying on the relevant parts in ``memoryobject.h``
   or ``object.h`` must be rebuilt.

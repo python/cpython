@@ -44,14 +44,16 @@ log = logging.getLogger("multissl")
 
 OPENSSL_OLD_VERSIONS = [
     "1.1.1w",
+    "3.1.8",
+    "3.2.6",
 ]
 
 OPENSSL_RECENT_VERSIONS = [
-    "3.0.16",
-    "3.1.8",
-    "3.2.4",
-    "3.3.3",
-    "3.4.1",
+    "3.0.19",
+    "3.3.6",
+    "3.4.4",
+    "3.5.5",
+    "3.6.1",
     # See make_ssl_data.py for notes on adding a new version.
 ]
 
@@ -62,7 +64,7 @@ LIBRESSL_RECENT_VERSIONS = [
 ]
 
 AWSLC_RECENT_VERSIONS = [
-    "1.55.0",
+    "1.68.0",
 ]
 
 # store files in ../multissl
@@ -74,8 +76,7 @@ MULTISSL_DIR = os.path.abspath(os.path.join(PYTHONROOT, '..', 'multissl'))
 parser = argparse.ArgumentParser(
     prog='multissl',
     description=(
-        "Run CPython tests with multiple cryptography libraries"
-        "versions."
+        "Run CPython tests with multiple cryptography libraries/versions."
     ),
 )
 parser.add_argument(
@@ -107,7 +108,10 @@ parser.add_argument(
     ).format(LIBRESSL_RECENT_VERSIONS, LIBRESSL_OLD_VERSIONS)
 )
 parser.add_argument(
+    '--aws-lc',
+    # Soft-deprecated alias
     '--awslc',
+    dest='awslc',
     nargs='+',
     default=(),
     help=(
@@ -306,7 +310,7 @@ class AbstractBuilder(object):
                 raise ValueError(member.name, base)
             member.name = member.name[len(base):].lstrip('/')
         log.info("Unpacking files to {}".format(self.build_dir))
-        tf.extractall(self.build_dir, members)
+        tf.extractall(self.build_dir, members, filter='data')
 
     def _build_src(self, config_args=()):
         """Now build openssl"""

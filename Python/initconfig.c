@@ -111,6 +111,7 @@ static const PyConfigSpec PYCONFIG_SPEC[] = {
     SPEC(base_prefix, WSTR_OPT, PUBLIC, SYS_ATTR("base_prefix")),
     SPEC(bytes_warning, UINT, PUBLIC, SYS_FLAG(9)),
     SPEC(cpu_count, INT, PUBLIC, NO_SYS),
+    SPEC(lazy_imports, INT, PUBLIC, NO_SYS),
     SPEC(exec_prefix, WSTR_OPT, PUBLIC, SYS_ATTR("exec_prefix")),
     SPEC(executable, WSTR_OPT, PUBLIC, SYS_ATTR("executable")),
     SPEC(inspect, BOOL, PUBLIC, SYS_FLAG(1)),
@@ -160,6 +161,7 @@ static const PyConfigSpec PYCONFIG_SPEC[] = {
     SPEC(legacy_windows_stdio, BOOL, READ_ONLY, NO_SYS),
 #endif
     SPEC(malloc_stats, BOOL, READ_ONLY, NO_SYS),
+    SPEC(pymalloc_hugepages, BOOL, READ_ONLY, NO_SYS),
     SPEC(orig_argv, WSTR_LIST, READ_ONLY, SYS_ATTR("orig_argv")),
     SPEC(parse_argv, BOOL, READ_ONLY, NO_SYS),
     SPEC(pathconfig_warnings, BOOL, READ_ONLY, NO_SYS),
@@ -239,9 +241,11 @@ static const PyConfigSpec PYPRECONFIG_SPEC[] = {
 
 
 // Forward declarations
-static PyObject*
-config_get(const PyConfig *config, const PyConfigSpec *spec,
-           int use_sys);
+static PyObject* config_get(const PyConfig *config, const PyConfigSpec *spec,
+                            int use_sys);
+static void initconfig_free_wstr(wchar_t *member);
+static void initconfig_free_wstr_list(PyWideStringList *list);
+static void initconfig_free_config(const PyConfig *config);
 
 
 /* --- Command line options --------------------------------------- */
@@ -256,6 +260,7 @@ static const char usage_help[] = "\
 Options (and corresponding environment variables):\n\
 -b     : issue warnings about converting bytes/bytearray to str and comparing\n\
          bytes/bytearray with str or bytes with int. (-bb: issue errors)\n\
+         deprecated since 3.15 and will become no-op in 3.17.\n\
 -B     : don't write .pyc files on import; also PYTHONDONTWRITEBYTECODE=x\n\
 -c cmd : program passed in as string (terminates option list)\n\
 -d     : turn on parser debugging output (for experts only, only works on\n\
@@ -314,6 +319,8 @@ The following implementation-specific options are available:\n\
 "\
 -X importtime[=2]: show how long each import takes; use -X importtime=2 to\n\
          log imports of already-loaded modules; also PYTHONPROFILEIMPORTTIME\n\
+-X lazy_imports=[all|none|normal]: control global lazy imports;\n\
+         default is normal; also PYTHON_LAZY_IMPORTS\n\
 -X int_max_str_digits=N: limit the size of int<->str conversions;\n\
          0 disables the limit; also PYTHONINTMAXSTRDIGITS\n\
 -X no_debug_ranges: don't include extra location information in code objects;\n\
@@ -428,6 +435,7 @@ static const char usage_envvars[] =
 "PYTHON_PRESITE: import this module before site (-X presite)\n"
 #endif
 "PYTHONPROFILEIMPORTTIME: show how long each import takes (-X importtime)\n"
+"PYTHON_LAZY_IMPORTS: control global lazy imports (-X lazy_imports)\n"
 "PYTHONPYCACHEPREFIX: root directory for bytecode cache (pyc) files\n"
 "                  (-X pycache_prefix)\n"
 "PYTHONSAFEPATH  : don't prepend a potentially unsafe path to sys.path.\n"
@@ -897,6 +905,7 @@ config_check_consistency(const PyConfig *config)
     assert(config->show_ref_count >= 0);
     assert(config->dump_refs >= 0);
     assert(config->malloc_stats >= 0);
+    assert(config->pymalloc_hugepages >= 0);
     assert(config->site_import >= 0);
     assert(config->bytes_warning >= 0);
     assert(config->warn_default_encoding >= 0);
@@ -936,6 +945,8 @@ config_check_consistency(const PyConfig *config)
     assert(config->int_max_str_digits >= 0);
     // cpu_count can be -1 if the user doesn't override it.
     assert(config->cpu_count != 0);
+    // lazy_imports can be -1 (default), 0 (off), or 1 (on).
+    assert(config->lazy_imports >= -1 && config->lazy_imports <= 1);
     // config->use_frozen_modules is initialized later
     // by _PyConfig_InitImportConfig().
     assert(config->thread_inherit_context >= 0);
@@ -1047,6 +1058,7 @@ _PyConfig_InitCompatConfig(PyConfig *config)
     config->_is_python_build = 0;
     config->code_debug_ranges = 1;
     config->cpu_count = -1;
+    config->lazy_imports = -1;
 #ifdef Py_GIL_DISABLED
     config->thread_inherit_context = 1;
     config->context_aware_warnings = 1;
@@ -1843,7 +1855,9 @@ config_read_env_vars(PyConfig *config)
     _Py_get_env_flag(use_env, &config->parser_debug, "PYTHONDEBUG");
     _Py_get_env_flag(use_env, &config->verbose, "PYTHONVERBOSE");
     _Py_get_env_flag(use_env, &config->optimization_level, "PYTHONOPTIMIZE");
-    _Py_get_env_flag(use_env, &config->inspect, "PYTHONINSPECT");
+    if (!config->inspect && _Py_GetEnv(use_env, "PYTHONINSPECT")) {
+        config->inspect = 1;
+    }
 
     int dont_write_bytecode = 0;
     _Py_get_env_flag(use_env, &dont_write_bytecode, "PYTHONDONTWRITEBYTECODE");
@@ -1873,6 +1887,18 @@ config_read_env_vars(PyConfig *config)
     }
     if (config_get_env(config, "PYTHONMALLOCSTATS")) {
         config->malloc_stats = 1;
+    }
+    {
+        const char *env = _Py_GetEnv(use_env, "PYTHON_PYMALLOC_HUGEPAGES");
+        if (env) {
+            int value;
+            if (_Py_str_to_int(env, &value) < 0 || value < 0) {
+                /* PYTHON_PYMALLOC_HUGEPAGES=text or negative
+                   behaves as PYTHON_PYMALLOC_HUGEPAGES=1 */
+                value = 1;
+            }
+            config->pymalloc_hugepages = (value > 0);
+        }
     }
 
     if (config->dump_refs_file == NULL) {
@@ -2282,6 +2308,49 @@ config_init_import_time(PyConfig *config)
 }
 
 static PyStatus
+config_init_lazy_imports(PyConfig *config)
+{
+    int lazy_imports = -1;
+
+    const char *env = config_get_env(config, "PYTHON_LAZY_IMPORTS");
+    if (env) {
+        if (strcmp(env, "all") == 0) {
+            lazy_imports = 1;
+        }
+        else if (strcmp(env, "none") == 0) {
+            lazy_imports = 0;
+        }
+        else if (strcmp(env, "normal") == 0) {
+            lazy_imports = -1;
+        }
+        else {
+            return _PyStatus_ERR("PYTHON_LAZY_IMPORTS: invalid value; "
+                                 "expected 'all', 'none', or 'normal'");
+        }
+        config->lazy_imports = lazy_imports;
+    }
+
+    const wchar_t *x_value = config_get_xoption_value(config, L"lazy_imports");
+    if (x_value) {
+        if (wcscmp(x_value, L"all") == 0) {
+            lazy_imports = 1;
+        }
+        else if (wcscmp(x_value, L"none") == 0) {
+            lazy_imports = 0;
+        }
+        else if (wcscmp(x_value, L"normal") == 0) {
+            lazy_imports = -1;
+        }
+        else {
+            return _PyStatus_ERR("-X lazy_imports: invalid value; "
+                                 "expected 'all', 'none', or 'normal'");
+        }
+        config->lazy_imports = lazy_imports;
+    }
+    return _PyStatus_OK();
+}
+
+static PyStatus
 config_read_complex_options(PyConfig *config)
 {
     /* More complex options configured by env var and -X option */
@@ -2299,6 +2368,13 @@ config_read_complex_options(PyConfig *config)
     PyStatus status;
     if (config->import_time < 0) {
         status = config_init_import_time(config);
+        if (_PyStatus_EXCEPTION(status)) {
+            return status;
+        }
+    }
+
+    if (config->lazy_imports < 0) {
+        status = config_init_lazy_imports(config);
         if (_PyStatus_EXCEPTION(status)) {
             return status;
         }
@@ -2693,6 +2769,9 @@ config_read(PyConfig *config, int compute_path_config)
     if (config->tracemalloc < 0) {
         config->tracemalloc = 0;
     }
+    if (config->lazy_imports < 0) {
+        config->lazy_imports = -1;  // Default is auto/unset
+    }
     if (config->perf_profiling < 0) {
         config->perf_profiling = 0;
     }
@@ -2807,10 +2886,8 @@ _PyConfig_Write(const PyConfig *config, _PyRuntimeState *runtime)
         return _PyStatus_NO_MEMORY();
     }
 
-#ifdef Py_STATS
-    if (config->_pystats) {
-        _Py_StatsOn();
-    }
+#ifdef PYMALLOC_USE_HUGEPAGES
+    runtime->allocators.use_hugepages = config->pymalloc_hugepages;
 #endif
 
     return _PyStatus_OK();
@@ -3725,6 +3802,9 @@ PyInitConfig_Free(PyInitConfig *config)
     if (config == NULL) {
         return;
     }
+
+    initconfig_free_config(&config->config);
+    PyMem_RawFree(config->inittab);
     free(config->err_msg);
     free(config);
 }
@@ -4093,13 +4173,51 @@ PyInitConfig_SetStr(PyInitConfig *config, const char *name, const char* value)
 }
 
 
+static void
+initconfig_free_wstr(wchar_t *member)
+{
+    if (member) {
+        free(member);
+    }
+}
+
+
+static void
+initconfig_free_wstr_list(PyWideStringList *list)
+{
+    for (Py_ssize_t i = 0; i < list->length; i++) {
+        free(list->items[i]);
+    }
+    free(list->items);
+}
+
+
+static void
+initconfig_free_config(const PyConfig *config)
+{
+    const PyConfigSpec *spec = PYCONFIG_SPEC;
+    for (; spec->name != NULL; spec++) {
+        void *member = config_get_spec_member(config, spec);
+        if (spec->type == PyConfig_MEMBER_WSTR
+            || spec->type == PyConfig_MEMBER_WSTR_OPT)
+        {
+            wchar_t *wstr = *(wchar_t **)member;
+            initconfig_free_wstr(wstr);
+        }
+        else if (spec->type == PyConfig_MEMBER_WSTR_LIST) {
+            initconfig_free_wstr_list(member);
+        }
+    }
+}
+
+
 static int
-_PyWideStringList_FromUTF8(PyInitConfig *config, PyWideStringList *list,
-                           Py_ssize_t length, char * const *items)
+initconfig_set_str_list(PyInitConfig *config, PyWideStringList *list,
+                        Py_ssize_t length, char * const *items)
 {
     PyWideStringList wlist = _PyWideStringList_INIT;
     size_t size = sizeof(wchar_t*) * length;
-    wlist.items = (wchar_t **)PyMem_RawMalloc(size);
+    wlist.items = (wchar_t **)malloc(size);
     if (wlist.items == NULL) {
         config->status = _PyStatus_NO_MEMORY();
         return -1;
@@ -4108,14 +4226,14 @@ _PyWideStringList_FromUTF8(PyInitConfig *config, PyWideStringList *list,
     for (Py_ssize_t i = 0; i < length; i++) {
         wchar_t *arg = utf8_to_wstr(config, items[i]);
         if (arg == NULL) {
-            _PyWideStringList_Clear(&wlist);
+            initconfig_free_wstr_list(&wlist);
             return -1;
         }
         wlist.items[i] = arg;
         wlist.length++;
     }
 
-    _PyWideStringList_Clear(list);
+    initconfig_free_wstr_list(list);
     *list = wlist;
     return 0;
 }
@@ -4136,7 +4254,7 @@ PyInitConfig_SetStrList(PyInitConfig *config, const char *name,
         return -1;
     }
     PyWideStringList *list = raw_member;
-    if (_PyWideStringList_FromUTF8(config, list, length, items) < 0) {
+    if (initconfig_set_str_list(config, list, length, items) < 0) {
         return -1;
     }
 

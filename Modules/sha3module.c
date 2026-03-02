@@ -21,6 +21,7 @@
 #endif
 
 #include "Python.h"
+#include "pycore_object.h"        // _PyObject_VisitType()
 #include "pycore_strhex.h"        // _Py_strhex()
 #include "pycore_typeobject.h"    // _PyType_GetModuleState()
 #include "hashlib.h"
@@ -226,13 +227,6 @@ SHA3_dealloc(PyObject *self)
     Py_DECREF(tp);
 }
 
-static int
-SHA3_traverse(PyObject *self, visitproc visit, void *arg)
-{
-    Py_VISIT(Py_TYPE(self));
-    return 0;
-}
-
 /* External methods for a hash object */
 
 
@@ -424,7 +418,7 @@ static PyGetSetDef SHA3_getseters[] = {
     static PyType_Slot type_slots_obj[] = { \
         {Py_tp_clear, SHA3_clear}, \
         {Py_tp_dealloc, SHA3_dealloc}, \
-        {Py_tp_traverse, SHA3_traverse}, \
+        {Py_tp_traverse, _PyObject_VisitType}, \
         {Py_tp_doc, (char*)type_doc}, \
         {Py_tp_methods, type_methods}, \
         {Py_tp_getset, type_getseters}, \
@@ -478,10 +472,7 @@ SHA3_TYPE_SPEC(sha3_512_spec, "sha3_512", sha3_512_slots);
 static int
 sha3_shake_check_digest_length(Py_ssize_t length)
 {
-    if (length < 0) {
-        PyErr_SetString(PyExc_ValueError, "negative digest length");
-        return -1;
-    }
+    assert(length >= 0);
     if ((size_t)length >= (1 << 29)) {
         /*
          * Raise OverflowError to match the semantics of OpenSSL SHAKE
@@ -498,14 +489,14 @@ sha3_shake_check_digest_length(Py_ssize_t length)
 /*[clinic input]
 _sha3.shake_128.digest
 
-    length: Py_ssize_t
+    length: Py_ssize_t(allow_negative=False)
 
 Return the digest value as a bytes object.
 [clinic start generated code]*/
 
 static PyObject *
 _sha3_shake_128_digest_impl(SHA3object *self, Py_ssize_t length)
-/*[clinic end generated code: output=6c53fb71a6cff0a0 input=be03ade4b31dd54c]*/
+/*[clinic end generated code: output=6c53fb71a6cff0a0 input=1160c9f86ae0f867]*/
 {
     if (sha3_shake_check_digest_length(length) < 0) {
         return NULL;
@@ -519,28 +510,33 @@ _sha3_shake_128_digest_impl(SHA3object *self, Py_ssize_t length)
     if (length == 0) {
         return Py_GetConstant(Py_CONSTANT_EMPTY_BYTES);
     }
-
     CHECK_HACL_UINT32_T_LENGTH(length);
-    PyObject *digest = PyBytes_FromStringAndSize(NULL, length);
-    uint8_t *buffer = (uint8_t *)PyBytes_AS_STRING(digest);
+
+    PyBytesWriter *writer = PyBytesWriter_Create(length);
+    if (writer == NULL) {
+        return NULL;
+    }
+    uint8_t *buffer = (uint8_t *)PyBytesWriter_GetData(writer);
+
     HASHLIB_ACQUIRE_LOCK(self);
     (void)Hacl_Hash_SHA3_squeeze(self->hash_state, buffer, (uint32_t)length);
     HASHLIB_RELEASE_LOCK(self);
-    return digest;
+
+    return PyBytesWriter_Finish(writer);
 }
 
 
 /*[clinic input]
 _sha3.shake_128.hexdigest
 
-    length: Py_ssize_t
+    length: Py_ssize_t(allow_negative=False)
 
 Return the digest value as a string of hexadecimal digits.
 [clinic start generated code]*/
 
 static PyObject *
 _sha3_shake_128_hexdigest_impl(SHA3object *self, Py_ssize_t length)
-/*[clinic end generated code: output=a27412d404f64512 input=0d84d05d7a8ccd37]*/
+/*[clinic end generated code: output=a27412d404f64512 input=ff06c9362949d2c8]*/
 {
     if (sha3_shake_check_digest_length(length) < 0) {
         return NULL;
@@ -550,8 +546,8 @@ _sha3_shake_128_hexdigest_impl(SHA3object *self, Py_ssize_t length)
     if (length == 0) {
         return Py_GetConstant(Py_CONSTANT_EMPTY_STR);
     }
-
     CHECK_HACL_UINT32_T_LENGTH(length);
+
     uint8_t *buffer = PyMem_Malloc(length);
     if (buffer == NULL) {
         return PyErr_NoMemory();
@@ -560,6 +556,7 @@ _sha3_shake_128_hexdigest_impl(SHA3object *self, Py_ssize_t length)
     HASHLIB_ACQUIRE_LOCK(self);
     (void)Hacl_Hash_SHA3_squeeze(self->hash_state, buffer, (uint32_t)length);
     HASHLIB_RELEASE_LOCK(self);
+
     PyObject *digest = _Py_strhex((const char *)buffer, length);
     PyMem_Free(buffer);
     return digest;

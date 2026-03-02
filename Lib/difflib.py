@@ -638,15 +638,15 @@ class SequenceMatcher:
         # avail[x] is the number of times x appears in 'b' less the
         # number of times we've seen it in 'a' so far ... kinda
         avail = {}
-        availhas, matches = avail.__contains__, 0
+        matches = 0
         for elt in self.a:
-            if availhas(elt):
+            if elt in avail:
                 numb = avail[elt]
             else:
                 numb = fullbcount.get(elt, 0)
             avail[elt] = numb - 1
             if numb > 0:
-                matches = matches + 1
+                matches += 1
         return _calculate_ratio(matches, len(self.a) + len(self.b))
 
     def real_quick_ratio(self):
@@ -702,10 +702,12 @@ def get_close_matches(word, possibilities, n=3, cutoff=0.6):
     s.set_seq2(word)
     for x in possibilities:
         s.set_seq1(x)
-        if s.real_quick_ratio() >= cutoff and \
-           s.quick_ratio() >= cutoff and \
-           s.ratio() >= cutoff:
-            result.append((s.ratio(), x))
+        if s.real_quick_ratio() < cutoff or s.quick_ratio() < cutoff:
+            continue
+
+        ratio = s.ratio()
+        if ratio >= cutoff:
+            result.append((ratio, x))
 
     # Move the best scorers to head of list
     result = _nlargest(n, result)
@@ -940,10 +942,12 @@ class Differ:
                 cruncher.set_seq1(a[i])
                 # Ordering by cheapest to most expensive ratio is very
                 # valuable, most often getting out early.
-                if (crqr() > best_ratio
-                      and cqr() > best_ratio
-                      and cr() > best_ratio):
-                    best_i, best_j, best_ratio = i, j, cr()
+                if crqr() <= best_ratio or cqr() <= best_ratio:
+                    continue
+
+                ratio = cr()
+                if ratio > best_ratio:
+                    best_i, best_j, best_ratio = i, j, ratio
 
             if best_i is None:
                 # found nothing to synch on yet - move to next j
@@ -1924,8 +1928,11 @@ class HtmlDiff(object):
         # make space non-breakable so they don't get compressed or line wrapped
         text = text.replace(' ','&nbsp;').rstrip()
 
-        return '<td class="diff_header"%s>%s</td><td nowrap="nowrap">%s</td>' \
-               % (id,linenum,text)
+        # add a class to the td tag if there is a difference on the line
+        css_class = ' class="diff_changed" ' if flag else ' '
+
+        return f'<td class="diff_header"{id}>{linenum}</td>' \
+            + f'<td{css_class}nowrap="nowrap">{text}</td>'
 
     def _make_prefix(self):
         """Create unique anchor prefixes"""

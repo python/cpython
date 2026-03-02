@@ -102,7 +102,7 @@ Error Handling
    * Set *\*err_msg* and return ``1`` if an error is set.
    * Set *\*err_msg* to ``NULL`` and return ``0`` otherwise.
 
-   An error message is an UTF-8 encoded string.
+   An error message is a UTF-8 encoded string.
 
    If *config* has an exit code, format the exit code as an error
    message.
@@ -544,9 +544,9 @@ Configuration Options
 
 Visibility:
 
-* Public: Can by get by :c:func:`PyConfig_Get` and set by
+* Public: Can be retrieved by :c:func:`PyConfig_Get` and set by
   :c:func:`PyConfig_Set`.
-* Read-only: Can by get by :c:func:`PyConfig_Get`, but cannot be set by
+* Read-only: Can be retrieved by :c:func:`PyConfig_Get`, but cannot be set by
   :c:func:`PyConfig_Set`.
 
 
@@ -1153,7 +1153,7 @@ PyConfig
 
    Most ``PyConfig`` methods :ref:`preinitialize Python <c-preinit>` if needed.
    In that case, the Python preinitialization configuration
-   (:c:type:`PyPreConfig`) in based on the :c:type:`PyConfig`. If configuration
+   (:c:type:`PyPreConfig`) is based on the :c:type:`PyConfig`. If configuration
    fields which are in common with :c:type:`PyPreConfig` are tuned, they must
    be set before calling a :c:type:`PyConfig` method:
 
@@ -1277,6 +1277,11 @@ PyConfig
       Incremented by the :option:`-b` command line option.
 
       Default: ``0``.
+
+      .. deprecated-removed:: 3.15 3.17
+
+         The :option:`-b` and :option:`!-bb` options will become no-op in 3.17.
+         :c:member:`~PyConfig.bytes_warning` member will be removed in 3.17.
 
    .. c:member:: int warn_default_encoding
 
@@ -2258,6 +2263,7 @@ If a ``._pth`` file is present:
 * Set :c:member:`~PyConfig.isolated` to ``1``.
 * Set :c:member:`~PyConfig.use_environment` to ``0``.
 * Set :c:member:`~PyConfig.site_import` to ``0``.
+* Set :c:member:`~PyConfig.user_site_directory` to ``0`` (since 3.15).
 * Set :c:member:`~PyConfig.safe_path` to ``1``.
 
 If :c:member:`~PyConfig.home` is not set and a ``pyvenv.cfg`` file is present in
@@ -2276,6 +2282,12 @@ The ``__PYVENV_LAUNCHER__`` environment variable is used to set
    :c:member:`~PyConfig.prefix`, and :c:member:`~PyConfig.exec_prefix`, are now
    set to the ``pyvenv.cfg`` directory. This was previously done by :mod:`site`,
    therefore affected by :option:`-S`.
+
+
+.. versionchanged:: 3.15
+
+   :c:member:`~PyConfig.user_site_directory` is now set to ``0`` when a
+   ``._pth`` file is present.
 
 
 Py_GetArgcArgv()

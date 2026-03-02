@@ -22,12 +22,13 @@
 #include <limits.h>               // INT_MAX
 #include <math.h>                 // HUGE_VAL
 #include <stdarg.h>               // va_list
+#include <string.h>               // memcpy()
 #include <wchar.h>                // wchar_t
 #ifdef HAVE_SYS_TYPES_H
 #  include <sys/types.h>          // ssize_t
 #endif
 
-// <errno.h>, <stdio.h>, <stdlib.h> and <string.h> headers are no longer used
+// <errno.h>, <stdio.h> and <stdlib.h> headers are no longer used
 // by Python, but kept for the backward compatibility of existing third party C
 // extensions. They are not included by limited C API version 3.11 and newer.
 //
@@ -37,7 +38,6 @@
 #  include <errno.h>              // errno
 #  include <stdio.h>              // FILE*
 #  include <stdlib.h>             // getenv()
-#  include <string.h>             // memcpy()
 #endif
 #if !defined(Py_LIMITED_API) || Py_LIMITED_API+0 < 0x030d0000
 #  include <ctype.h>              // tolower()
@@ -60,6 +60,15 @@
 #  endif
 #endif // Py_GIL_DISABLED
 
+#ifdef _MSC_VER
+// Ignore MSC warning C4201: "nonstandard extension used: nameless
+// struct/union".  (Only generated for C standard versions less than C11, which
+// we don't *officially* support.)
+__pragma(warning(push))
+__pragma(warning(disable: 4201))
+#endif
+
+
 // Include Python header files
 #include "pyport.h"
 #include "pymacro.h"
@@ -69,7 +78,7 @@
 #include "pybuffer.h"
 #include "pystats.h"
 #include "pyatomic.h"
-#include "pylock.h"
+#include "cpython/pylock.h"
 #include "critical_section.h"
 #include "object.h"
 #include "refcount.h"
@@ -96,7 +105,7 @@
 #include "setobject.h"
 #include "methodobject.h"
 #include "moduleobject.h"
-#include "monitoring.h"
+#include "cpython/monitoring.h"
 #include "cpython/funcobject.h"
 #include "cpython/classobject.h"
 #include "fileobject.h"
@@ -138,5 +147,9 @@
 #include "fileutils.h"
 #include "cpython/pyfpe.h"
 #include "cpython/tracemalloc.h"
+
+#ifdef _MSC_VER
+__pragma(warning(pop))  // warning(disable: 4201)
+#endif
 
 #endif /* !Py_PYTHON_H */
