@@ -1379,7 +1379,7 @@ py_hmac_hinfo_ht_free(void *hinfo)
 {
     py_hmac_hinfo *entry = (py_hmac_hinfo *)hinfo;
     if (--(entry->refcnt) == 0) {
-        Py_XCLEAR(entry->display_name);
+        Py_CLEAR(entry->display_name);
         PyMem_Free(hinfo);
     }
 }
