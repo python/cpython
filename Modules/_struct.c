@@ -1831,7 +1831,8 @@ s_new(PyTypeObject *type, PyObject *args, PyObject *kwds)
             }
         }
         else {
-            if (s_create(self, PyTuple_GET_ITEM(args, 0))) {
+            PyObject *format = PyTuple_GET_ITEM(args, 0);
+            if (s_create(self, format)) {
                 goto err;
             }
         }
