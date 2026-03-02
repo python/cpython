@@ -13,8 +13,8 @@ _PyLexer_remember_fstring_buffers(struct tok_state *tok)
 
     for (index = tok->tok_mode_stack_index; index >= 0; --index) {
         mode = &(tok->tok_mode_stack[index]);
-        mode->f_string_start_offset = mode->f_string_start - tok->buf;
-        mode->f_string_multi_line_start_offset = mode->f_string_multi_line_start - tok->buf;
+        mode->f_string_start_offset = mode->f_string_start == NULL ? -1 : mode->f_string_start - tok->buf;
+        mode->f_string_multi_line_start_offset = mode->f_string_multi_line_start == NULL ? -1 : mode->f_string_multi_line_start - tok->buf;
     }
 }
 
@@ -27,8 +27,8 @@ _PyLexer_restore_fstring_buffers(struct tok_state *tok)
 
     for (index = tok->tok_mode_stack_index; index >= 0; --index) {
         mode = &(tok->tok_mode_stack[index]);
-        mode->f_string_start = tok->buf + mode->f_string_start_offset;
-        mode->f_string_multi_line_start = tok->buf + mode->f_string_multi_line_start_offset;
+        mode->f_string_start = mode->f_string_start_offset < 0 ? NULL : tok->buf + mode->f_string_start_offset;
+        mode->f_string_multi_line_start = mode->f_string_multi_line_start_offset < 0 ? NULL : tok->buf + mode->f_string_multi_line_start_offset;
     }
 }
 

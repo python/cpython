@@ -6,6 +6,9 @@
 
 # GitHub
 .github/**                    @ezio-melotti @hugovk @webknjaz
+.github/workflows/jit.yml    @savannahostrowski
+Tools/build/compute-changes.py              @AA-Turner @hugovk @webknjaz
+Lib/test/test_tools/test_compute_changes.py @AA-Turner @hugovk @webknjaz
 
 # pre-commit
 .pre-commit-config.yaml       @hugovk
@@ -21,7 +24,7 @@ configure*                    @erlend-aasland @corona10
 **/*context*                  @1st1
 **/*genobject*                @markshannon
 **/*hamt*                     @1st1
-**/*jit*                      @brandtbucher
+**/*jit*                      @brandtbucher @savannahostrowski
 Python/perf_jit_trampoline.c  # Exclude the owners of "**/*jit*", above.
 Objects/set*                  @rhettinger
 Objects/dict*                 @methane @markshannon
