@@ -795,7 +795,7 @@ are always available.  They are listed here in alphabetical order.
    whitespace characters are removed:
 
    .. productionlist:: float
-      sign: "+" | "-" | "−" <Unicode minus sign (U+2212)>
+      sign: "+" | "-" | <U+2212 (Unicode minus sign)>
       infinity: "Infinity" | "inf"
       nan: "nan"
       digit: <a Unicode decimal digit, i.e. characters in Unicode general category Nd>
