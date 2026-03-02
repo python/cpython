@@ -303,10 +303,10 @@ typedef struct _excinfo {
     const char *errdisplay;
 } _PyXI_excinfo;
 
-PyAPI_FUNC(int) _PyXI_InitExcInfo(_PyXI_excinfo *info, PyObject *exc);
+PyAPI_FUNC(_PyXI_excinfo *) _PyXI_NewExcInfo(PyObject *exc);
+PyAPI_FUNC(void) _PyXI_FreeExcInfo(_PyXI_excinfo *info);
 PyAPI_FUNC(PyObject *) _PyXI_FormatExcInfo(_PyXI_excinfo *info);
 PyAPI_FUNC(PyObject *) _PyXI_ExcInfoAsObject(_PyXI_excinfo *info);
-PyAPI_FUNC(void) _PyXI_ClearExcInfo(_PyXI_excinfo *info);
 
 
 typedef enum error_code {
@@ -317,22 +317,25 @@ typedef enum error_code {
     _PyXI_ERR_ALREADY_RUNNING = -4,
     _PyXI_ERR_MAIN_NS_FAILURE = -5,
     _PyXI_ERR_APPLY_NS_FAILURE = -6,
-    _PyXI_ERR_NOT_SHAREABLE = -7,
+    _PyXI_ERR_PRESERVE_FAILURE = -7,
+    _PyXI_ERR_EXC_PROPAGATION_FAILURE = -8,
+    _PyXI_ERR_NOT_SHAREABLE = -9,
 } _PyXI_errcode;
 
+typedef struct xi_failure _PyXI_failure;
 
-typedef struct _sharedexception {
-    // The originating interpreter.
-    PyInterpreterState *interp;
-    // The kind of error to propagate.
-    _PyXI_errcode code;
-    // The exception information to propagate, if applicable.
-    // This is populated only for some error codes,
-    // but always for _PyXI_ERR_UNCAUGHT_EXCEPTION.
-    _PyXI_excinfo uncaught;
-} _PyXI_error;
+PyAPI_FUNC(_PyXI_failure *) _PyXI_NewFailure(void);
+PyAPI_FUNC(void) _PyXI_FreeFailure(_PyXI_failure *);
+PyAPI_FUNC(_PyXI_errcode) _PyXI_GetFailureCode(_PyXI_failure *);
+PyAPI_FUNC(int) _PyXI_InitFailure(_PyXI_failure *, _PyXI_errcode, PyObject *);
+PyAPI_FUNC(void) _PyXI_InitFailureUTF8(
+    _PyXI_failure *,
+    _PyXI_errcode,
+    const char *);
 
-PyAPI_FUNC(PyObject *) _PyXI_ApplyError(_PyXI_error *err);
+PyAPI_FUNC(int) _PyXI_UnwrapNotShareableError(
+    PyThreadState *,
+    _PyXI_failure *);
 
 
 // A cross-interpreter session involves entering an interpreter
@@ -350,16 +353,35 @@ typedef struct xi_session _PyXI_session;
 PyAPI_FUNC(_PyXI_session *) _PyXI_NewSession(void);
 PyAPI_FUNC(void) _PyXI_FreeSession(_PyXI_session *);
 
+typedef struct {
+    PyObject *preserved;
+    PyObject *excinfo;
+    _PyXI_errcode errcode;
+} _PyXI_session_result;
+PyAPI_FUNC(void) _PyXI_ClearResult(_PyXI_session_result *);
+
 PyAPI_FUNC(int) _PyXI_Enter(
     _PyXI_session *session,
     PyInterpreterState *interp,
-    PyObject *nsupdates);
-PyAPI_FUNC(void) _PyXI_Exit(_PyXI_session *session);
+    PyObject *nsupdates,
+    _PyXI_session_result *);
+PyAPI_FUNC(int) _PyXI_Exit(
+    _PyXI_session *,
+    _PyXI_failure *,
+    _PyXI_session_result *);
 
-PyAPI_FUNC(PyObject *) _PyXI_GetMainNamespace(_PyXI_session *);
+PyAPI_FUNC(PyObject *) _PyXI_GetMainNamespace(
+    _PyXI_session *,
+    _PyXI_failure *);
 
-PyAPI_FUNC(PyObject *) _PyXI_ApplyCapturedException(_PyXI_session *session);
-PyAPI_FUNC(int) _PyXI_HasCapturedException(_PyXI_session *session);
+PyAPI_FUNC(int) _PyXI_Preserve(
+    _PyXI_session *,
+    const char *,
+    PyObject *,
+    _PyXI_failure *);
+PyAPI_FUNC(PyObject *) _PyXI_GetPreserved(
+    _PyXI_session_result *,
+    const char *);
 
 
 /*************/

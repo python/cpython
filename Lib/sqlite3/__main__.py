@@ -12,6 +12,8 @@ from code import InteractiveConsole
 from textwrap import dedent
 from _colorize import get_theme, theme_no_color
 
+from ._completer import completer
+
 
 def execute(c, sql, suppress_errors=True, theme=theme_no_color):
     """Helper that wraps execution of SQL code.
@@ -58,20 +60,25 @@ class SqliteInteractiveConsole(InteractiveConsole):
 
         if not source or source.isspace():
             return False
+        # Remember to update CLI_COMMANDS in _completer.py
         if source[0] == ".":
             match source[1:].strip():
                 case "version":
-                    print(f"{sqlite3.sqlite_version}")
+                    print(sqlite3.sqlite_version)
                 case "help":
-                    print("Enter SQL code and press enter.")
+                    t = theme.syntax
+                    print(f"Enter SQL code or one of the below commands, and press enter.\n\n"
+                          f"{t.builtin}.version{t.reset}    Print underlying SQLite library version\n"
+                          f"{t.builtin}.help{t.reset}       Print this help message\n"
+                          f"{t.builtin}.quit{t.reset}       Exit the CLI, equivalent to CTRL-D\n")
                 case "quit":
                     sys.exit(0)
                 case "":
                     pass
                 case _ as unknown:
                     t = theme.traceback
-                    self.write(f'{t.type}Error{t.reset}:{t.message} unknown'
-                               f'command or invalid arguments:  "{unknown}".\n{t.reset}')
+                    self.write(f'{t.type}Error{t.reset}: {t.message}unknown '
+                               f'command: "{unknown}"{t.reset}\n')
         else:
             if not sqlite3.complete_statement(source):
                 return True
@@ -136,12 +143,9 @@ def main(*args):
             execute(con, args.sql, suppress_errors=False, theme=theme)
         else:
             # No SQL provided; start the REPL.
-            console = SqliteInteractiveConsole(con, use_color=True)
-            try:
-                import readline  # noqa: F401
-            except ImportError:
-                pass
-            console.interact(banner, exitmsg="")
+            with completer(con):
+                console = SqliteInteractiveConsole(con, use_color=True)
+                console.interact(banner, exitmsg="")
     finally:
         con.close()
 

@@ -15,13 +15,17 @@
 This module defines a class :class:`HTMLParser` which serves as the basis for
 parsing text files formatted in HTML (HyperText Mark-up Language) and XHTML.
 
-.. class:: HTMLParser(*, convert_charrefs=True)
+.. class:: HTMLParser(*, convert_charrefs=True, scripting=False)
 
    Create a parser instance able to parse invalid markup.
 
-   If *convert_charrefs* is ``True`` (the default), all character
-   references (except the ones in ``script``/``style`` elements) are
+   If *convert_charrefs* is true (the default), all character
+   references (except the ones in elements like ``script`` and ``style``) are
    automatically converted to the corresponding Unicode characters.
+
+   If *scripting* is false (the default), the content of the ``noscript``
+   element is parsed normally; if it's true, it's returned as is without
+   being parsed.
 
    An :class:`.HTMLParser` instance is fed HTML data and calls handler methods
    when start tags, end tags, text, comments, and other markup elements are
@@ -36,6 +40,9 @@ parsing text files formatted in HTML (HyperText Mark-up Language) and XHTML.
 
    .. versionchanged:: 3.5
       The default value for argument *convert_charrefs* is now ``True``.
+
+   .. versionchanged:: 3.14.1
+      Added the *scripting* parameter.
 
 
 Example HTML Parser Application
@@ -161,15 +168,15 @@ implementations do nothing (except for :meth:`~HTMLParser.handle_startendtag`):
 .. method:: HTMLParser.handle_data(data)
 
    This method is called to process arbitrary data (e.g. text nodes and the
-   content of ``<script>...</script>`` and ``<style>...</style>``).
+   content of elements like ``script`` and ``style``).
 
 
 .. method:: HTMLParser.handle_entityref(name)
 
    This method is called to process a named character reference of the form
    ``&name;`` (e.g. ``&gt;``), where *name* is a general entity reference
-   (e.g. ``'gt'``).  This method is never called if *convert_charrefs* is
-   ``True``.
+   (e.g. ``'gt'``).
+   This method is only called if *convert_charrefs* is false.
 
 
 .. method:: HTMLParser.handle_charref(name)
@@ -177,8 +184,8 @@ implementations do nothing (except for :meth:`~HTMLParser.handle_startendtag`):
    This method is called to process decimal and hexadecimal numeric character
    references of the form :samp:`&#{NNN};` and :samp:`&#x{NNN};`.  For example, the decimal
    equivalent for ``&gt;`` is ``&#62;``, whereas the hexadecimal is ``&#x3E;``;
-   in this case the method will receive ``'62'`` or ``'x3E'``.  This method
-   is never called if *convert_charrefs* is ``True``.
+   in this case the method will receive ``'62'`` or ``'x3E'``.
+   This method is only called if *convert_charrefs* is false.
 
 
 .. method:: HTMLParser.handle_comment(data)
@@ -292,8 +299,8 @@ Parsing an element with a few attributes and a title:
    Data     : Python
    End tag  : h1
 
-The content of ``script`` and ``style`` elements is returned as is, without
-further parsing:
+The content of elements like ``script`` and ``style`` is returned as is,
+without further parsing:
 
 .. doctest::
 
@@ -304,10 +311,10 @@ further parsing:
    End tag  : style
 
    >>> parser.feed('<script type="text/javascript">'
-   ...             'alert("<strong>hello!</strong>");</script>')
+   ...             'alert("<strong>hello! &#9786;</strong>");</script>')
    Start tag: script
         attr: ('type', 'text/javascript')
-   Data     : alert("<strong>hello!</strong>");
+   Data     : alert("<strong>hello! &#9786;</strong>");
    End tag  : script
 
 Parsing comments:
@@ -336,7 +343,7 @@ correct char (note: these 3 references are all equivalent to ``'>'``):
 
 Feeding incomplete chunks to :meth:`~HTMLParser.feed` works, but
 :meth:`~HTMLParser.handle_data` might be called more than once
-(unless *convert_charrefs* is set to ``True``):
+if *convert_charrefs* is false:
 
 .. doctest::
 

@@ -34,7 +34,8 @@ The module provides the following classes:
 
 
 .. class:: HTTPConnection(host, port=None[, timeout], source_address=None, \
-                          blocksize=8192, continue_timeout=2.5)
+                          blocksize=8192, continue_timeout=2.5, \
+                          max_response_headers=None)
 
    An :class:`HTTPConnection` instance represents one transaction with an HTTP
    server.  It should be instantiated by passing it a host and optional port
@@ -46,10 +47,12 @@ The module provides the following classes:
    The optional *source_address* parameter may be a tuple of a (host, port)
    to use as the source address the HTTP connection is made from.
    The optional *blocksize* parameter sets the buffer size in bytes for
-   sending a file-like message body. Finally, the optional *continue_timeout*
+   sending a file-like message body. The optional *continue_timeout*
    parameter controls how long the connection will wait for a ``100 Continue``
    response from the server before sending the body, if the request included
-   an ``Expect: 100-Continue`` header.
+   an ``Expect: 100-Continue`` header. The optional *max_response_headers*
+   parameter sets the maximum number of allowed response headers to help
+   prevent denial-of-service attacks, otherwise the default value (100) is used.
 
    For example, the following calls all create instances that connect to the server
    at the same host and port::
@@ -69,13 +72,16 @@ The module provides the following classes:
    .. versionchanged:: 3.7
       *blocksize* parameter was added.
 
+   .. versionchanged:: 3.15
+      *max_response_headers* parameter was added.
+
    .. versionchanged:: next
       *continue_timeout* parameter was added.
 
 
 .. class:: HTTPSConnection(host, port=None, *[, timeout], \
                            source_address=None, context=None, \
-                           blocksize=8192)
+                           blocksize=8192, max_response_headers=None)
 
    A subclass of :class:`HTTPConnection` that uses SSL for communication with
    secure servers.  Default port is ``443``.  If *context* is specified, it
@@ -115,6 +121,9 @@ The module provides the following classes:
       The deprecated *key_file*, *cert_file* and *check_hostname* parameters
       have been removed.
 
+   .. versionchanged:: 3.15
+      *max_response_headers* parameter was added.
+
 
 .. class:: HTTPResponse(sock, debuglevel=0, method=None, url=None)
 
@@ -131,7 +140,7 @@ This module provides the following function:
 
    Parse the headers from a file pointer *fp* representing a HTTP
    request/response. The file has to be a :class:`~io.BufferedIOBase` reader
-   (i.e. not text) and must provide a valid :rfc:`2822` style header.
+   (i.e. not text) and must provide a valid :rfc:`5322` style header.
 
    This function returns an instance of :class:`http.client.HTTPMessage`
    that holds the header fields, but no payload
@@ -317,6 +326,12 @@ HTTPConnection Objects
       :class:`str` or bytes-like object that is not also a file as the
       body representation.
 
+   .. note::
+
+      Note that you must have read the whole response or call :meth:`close`
+      if :meth:`getresponse` raised an non-:exc:`ConnectionError` exception
+      before you can send a new request to the server.
+
    .. versionchanged:: 3.2
       *body* can now be an iterable.
 
@@ -354,6 +369,10 @@ HTTPConnection Objects
       If a :exc:`ConnectionError` or subclass is raised, the
       :class:`HTTPConnection` object will be ready to reconnect when
       a new request is sent.
+
+      Note that this does not apply to :exc:`OSError`\s raised by the underlying
+      socket. Instead the caller is responsible to call :meth:`close` on the
+      existing connection.
 
    .. versionchanged:: next
       Added the *ignore_100_continue* parameter. (In prior versions
@@ -437,6 +456,14 @@ HTTPConnection Objects
    Buffer size in bytes for sending a file-like message body.
 
    .. versionadded:: 3.7
+
+
+.. attribute:: HTTPConnection.max_response_headers
+
+   The maximum number of allowed response headers to help prevent denial-of-service
+   attacks. By default, the maximum number of allowed headers is set to 100.
+
+   .. versionadded:: 3.15
 
 
 As an alternative to using the :meth:`~HTTPConnection.request` method described above, you can

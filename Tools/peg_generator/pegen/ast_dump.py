@@ -6,7 +6,7 @@ always fail. We rely on string comparison of the base classes instead.
 TODO: Remove the above-described hack.
 """
 
-from typing import Any, Optional, Tuple
+from typing import Any
 
 
 def ast_dump(
@@ -14,9 +14,9 @@ def ast_dump(
     annotate_fields: bool = True,
     include_attributes: bool = False,
     *,
-    indent: Optional[str] = None,
+    indent: str | None = None,
 ) -> str:
-    def _format(node: Any, level: int = 0) -> Tuple[str, bool]:
+    def _format(node: Any, level: int = 0) -> tuple[str, bool]:
         if indent is not None:
             level += 1
             prefix = "\n" + indent * level
@@ -41,7 +41,7 @@ def ast_dump(
                 value, simple = _format(value, level)
                 allsimple = allsimple and simple
                 if keywords:
-                    args.append("%s=%s" % (name, value))
+                    args.append(f"{name}={value}")
                 else:
                     args.append(value)
             if include_attributes and node._attributes:
@@ -54,16 +54,16 @@ def ast_dump(
                         continue
                     value, simple = _format(value, level)
                     allsimple = allsimple and simple
-                    args.append("%s=%s" % (name, value))
+                    args.append(f"{name}={value}")
             if allsimple and len(args) <= 3:
-                return "%s(%s)" % (node.__class__.__name__, ", ".join(args)), not args
-            return "%s(%s%s)" % (node.__class__.__name__, prefix, sep.join(args)), False
+                return "{}({})".format(node.__class__.__name__, ", ".join(args)), not args
+            return f"{node.__class__.__name__}({prefix}{sep.join(args)})", False
         elif isinstance(node, list):
             if not node:
                 return "[]", True
-            return "[%s%s]" % (prefix, sep.join(_format(x, level)[0] for x in node)), False
+            return f"[{prefix}{sep.join(_format(x, level)[0] for x in node)}]", False
         return repr(node), True
 
     if all(cls.__name__ != "AST" for cls in node.__class__.__mro__):
-        raise TypeError("expected AST, got %r" % node.__class__.__name__)
+        raise TypeError(f"expected AST, got {node.__class__.__name__!r}")
     return _format(node)[0]

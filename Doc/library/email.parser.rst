@@ -116,7 +116,7 @@ Here is the API for the :class:`BytesFeedParser`:
    Works like :class:`BytesFeedParser` except that the input to the
    :meth:`~BytesFeedParser.feed` method must be a string.  This is of limited
    utility, since the only way for such a message to be valid is for it to
-   contain only ASCII text or, if :attr:`~email.policy.Policy.utf8` is
+   contain only ASCII text or, if :attr:`~email.policy.EmailPolicy.utf8` is
    ``True``, no binary attachments.
 
    .. versionchanged:: 3.3 Added the *policy* keyword.
@@ -125,10 +125,10 @@ Here is the API for the :class:`BytesFeedParser`:
 Parser API
 ^^^^^^^^^^
 
-The :class:`BytesParser` class, imported from the :mod:`email.parser` module,
+The :class:`BytesParser` class, imported from the :mod:`!email.parser` module,
 provides an API that can be used to parse a message when the complete contents
 of the message are available in a :term:`bytes-like object` or file.  The
-:mod:`email.parser` module also provides :class:`Parser` for parsing strings,
+:mod:`!email.parser` module also provides :class:`Parser` for parsing strings,
 and header-only parsers, :class:`BytesHeaderParser` and
 :class:`HeaderParser`, which can be used if you're only interested in the
 headers of the message.  :class:`BytesHeaderParser` and :class:`HeaderParser`
@@ -159,7 +159,7 @@ message body, instead setting the payload to the raw body.
       methods.
 
       The bytes contained in *fp* must be formatted as a block of :rfc:`5322`
-      (or, if :attr:`~email.policy.Policy.utf8` is ``True``, :rfc:`6532`)
+      (or, if :attr:`~email.policy.EmailPolicy.utf8` is ``True``, :rfc:`6532`)
       style headers and header continuation lines, optionally preceded by an
       envelope header.  The header block is terminated either by the end of the
       data or by a blank line.  Following the header block is the body of the

@@ -112,6 +112,11 @@ responses = {v: v.phrase for v in http.HTTPStatus.__members__.values()}
 _MAXLINE = 65536
 _MAXHEADERS = 100
 
+# Data larger than this will be read in chunks, to prevent extreme
+# overallocation.
+_MIN_READ_BUF_SIZE = 1 << 20
+
+
 # Header name/value ABNF (http://tools.ietf.org/html/rfc7230#section-3.2)
 #
 # VCHAR          = %x21-7E
@@ -210,27 +215,29 @@ class HTTPMessage(email.message.Message):
                 lst.append(line)
         return lst
 
-def _read_headers(fp):
+def _read_headers(fp, max_headers):
     """Reads potential header lines into a list from a file pointer.
 
     Length of line is limited by _MAXLINE, and number of
-    headers is limited by _MAXHEADERS.
+    headers is limited by max_headers.
     """
     headers = []
+    if max_headers is None:
+        max_headers = _MAXHEADERS
     while True:
         line = fp.readline(_MAXLINE + 1)
         if len(line) > _MAXLINE:
             raise LineTooLong("header line")
-        headers.append(line)
-        if len(headers) > _MAXHEADERS:
-            raise HTTPException("got more than %d headers" % _MAXHEADERS)
         if line in (b'\r\n', b'\n', b''):
             break
+        headers.append(line)
+        if len(headers) > max_headers:
+            raise HTTPException(f"got more than {max_headers} headers")
     return headers
 
 def _parse_header_lines(header_lines, _class=HTTPMessage):
     """
-    Parses only RFC2822 headers from header lines.
+    Parses only RFC 5322 headers from header lines.
 
     email Parser wants to see strings rather than bytes.
     But a TextIOWrapper around self.rfile would buffer too many bytes
@@ -242,10 +249,10 @@ def _parse_header_lines(header_lines, _class=HTTPMessage):
     hstring = b''.join(header_lines).decode('iso-8859-1')
     return email.parser.Parser(_class=_class).parsestr(hstring)
 
-def parse_headers(fp, _class=HTTPMessage):
-    """Parses only RFC2822 headers from a file pointer."""
+def parse_headers(fp, _class=HTTPMessage, *, _max_headers=None):
+    """Parses only RFC 5322 headers from a file pointer."""
 
-    headers = _read_headers(fp)
+    headers = _read_headers(fp, _max_headers)
     return _parse_header_lines(headers, _class)
 
 
@@ -321,7 +328,7 @@ class HTTPResponse(io.BufferedIOBase):
             raise BadStatusLine(line)
         return version, status, reason
 
-    def begin(self, ignore_100_continue=True):
+    def begin(self, ignore_100_continue=True, _max_headers=None):
         if self.headers is not None:
             # we've already started reading the response
             return
@@ -333,7 +340,7 @@ class HTTPResponse(io.BufferedIOBase):
             if not (ignore_100_continue and status == CONTINUE):
                 break
             # skip the header from the 100 response
-            skipped_headers = _read_headers(self.fp)
+            skipped_headers = _read_headers(self.fp, _max_headers)
             if self.debuglevel > 0:
                 print("headers:", skipped_headers)
             del skipped_headers
@@ -348,7 +355,9 @@ class HTTPResponse(io.BufferedIOBase):
         else:
             raise UnknownProtocol(version)
 
-        self.headers = self.msg = parse_headers(self.fp)
+        self.headers = self.msg = parse_headers(
+            self.fp, _max_headers=_max_headers
+        )
 
         if self.debuglevel > 0:
             for hdr, val in self.headers.items():
@@ -640,10 +649,25 @@ class HTTPResponse(io.BufferedIOBase):
         reading. If the bytes are truly not available (due to EOF), then the
         IncompleteRead exception can be used to detect the problem.
         """
-        data = self.fp.read(amt)
-        if len(data) < amt:
-            raise IncompleteRead(data, amt-len(data))
-        return data
+        cursize = min(amt, _MIN_READ_BUF_SIZE)
+        data = self.fp.read(cursize)
+        if len(data) >= amt:
+            return data
+        if len(data) < cursize:
+            raise IncompleteRead(data, amt - len(data))
+
+        data = io.BytesIO(data)
+        data.seek(0, 2)
+        while True:
+            # This is a geometric increase in read size (never more than
+            # doubling out the current length of data per loop iteration).
+            delta = min(cursize, amt - cursize)
+            data.write(self.fp.read(delta))
+            if data.tell() >= amt:
+                return data.getvalue()
+            cursize += delta
+            if data.tell() < cursize:
+                raise IncompleteRead(data.getvalue(), amt - data.tell())
 
     def _safe_readinto(self, b):
         """Same as _safe_read, but for reading into a buffer."""
@@ -866,7 +890,8 @@ class HTTPConnection:
         return None
 
     def __init__(self, host, port=None, timeout=socket._GLOBAL_DEFAULT_TIMEOUT,
-                 source_address=None, blocksize=8192, continue_timeout=2.5):
+                 source_address=None, blocksize=8192, continue_timeout=2.5, *,
+                 max_response_headers=None):
         self.timeout = timeout
         self.continue_timeout = continue_timeout
         self.source_address = source_address
@@ -881,6 +906,7 @@ class HTTPConnection:
         self._tunnel_port = None
         self._tunnel_headers = {}
         self._raw_proxy_headers = None
+        self.max_response_headers = max_response_headers
 
         (self.host, self.port) = self._get_hostport(host, port)
 
@@ -974,7 +1000,7 @@ class HTTPConnection:
         try:
             (version, code, message) = response._read_status()
 
-            self._raw_proxy_headers = _read_headers(response.fp)
+            self._raw_proxy_headers = _read_headers(response.fp, self.max_response_headers)
 
             if self.debuglevel > 0:
                 for header in self._raw_proxy_headers:
@@ -1471,7 +1497,11 @@ class HTTPConnection:
 
         try:
             try:
-                response.begin(ignore_100_continue=ignore_100_continue)
+                if self.max_response_headers is None:
+                    response.begin(ignore_100_continue=ignore_100_continue)
+                else:
+                    response.begin(ignore_100_continue=ignore_100_continue,
+                                   _max_headers=self.max_response_headers)
             except ConnectionError:
                 self.close()
                 raise
@@ -1504,10 +1534,12 @@ else:
 
         def __init__(self, host, port=None,
                      *, timeout=socket._GLOBAL_DEFAULT_TIMEOUT,
-                     source_address=None, context=None, blocksize=8192):
+                     source_address=None, context=None, blocksize=8192,
+                     max_response_headers=None):
             super(HTTPSConnection, self).__init__(host, port, timeout,
                                                   source_address,
-                                                  blocksize=blocksize)
+                                                  blocksize=blocksize,
+                                                  max_response_headers=max_response_headers)
             if context is None:
                 context = _create_https_context(self._http_vsn)
             self._context = context

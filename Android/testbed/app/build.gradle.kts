@@ -47,7 +47,7 @@ for ((i, prefix) in prefixes.withIndex()) {
     val libDir = file("$prefix/lib")
     val version = run {
         for (filename in libDir.list()!!) {
-            """python(\d+\.\d+)""".toRegex().matchEntire(filename)?.let {
+            """python(\d+\.\d+[a-z]*)""".toRegex().matchEntire(filename)?.let {
                 return@run it.groupValues[1]
             }
         }
@@ -64,9 +64,10 @@ for ((i, prefix) in prefixes.withIndex()) {
     val libPythonDir = file("$libDir/python$pythonVersion")
     val triplet = run {
         for (filename in libPythonDir.list()!!) {
-            """_sysconfigdata__android_(.+).py""".toRegex().matchEntire(filename)?.let {
-                return@run it.groupValues[1]
-            }
+            """_sysconfigdata_[a-z]*_android_(.+).py""".toRegex()
+                .matchEntire(filename)?.let {
+                    return@run it.groupValues[1]
+                }
         }
         throw GradleException("Failed to find Python triplet in $libPythonDir")
     }
@@ -78,20 +79,28 @@ android {
     val androidEnvFile = file("../../android-env.sh").absoluteFile
 
     namespace = "org.python.testbed"
-    compileSdk = 34
+    compileSdk = 35
 
     defaultConfig {
         applicationId = "org.python.testbed"
 
         minSdk = androidEnvFile.useLines {
             for (line in it) {
-                """api_level:=(\d+)""".toRegex().find(line)?.let {
+                """ANDROID_API_LEVEL:=(\d+)""".toRegex().find(line)?.let {
                     return@useLines it.groupValues[1].toInt()
                 }
             }
             throw GradleException("Failed to find API level in $androidEnvFile")
         }
-        targetSdk = 34
+
+        // This controls the API level of the maxVersion managed emulator, which is used
+        // by CI and cibuildwheel.
+        //  * 33 has excessive buffering in the logcat client
+        //    (https://cs.android.com/android/_/android/platform/system/logging/+/d340721894f223327339010df59b0ac514308826).
+        //  * 34 consumes too much disk space on GitHub Actions (#142289).
+        //  * 35 has issues connecting to the internet (#142387).
+        //  * 36 and later are not available as aosp_atd images yet.
+        targetSdk = 32
 
         versionCode = 1
         versionName = "1.0"
@@ -124,9 +133,10 @@ android {
         path("src/main/c/CMakeLists.txt")
     }
 
-    // Set this property to something non-empty, otherwise it'll use the default
-    // list, which ignores asset directories beginning with an underscore.
-    aaptOptions.ignoreAssetsPattern = ".git"
+    // Set this property to something nonexistent but non-empty. Otherwise it'll use the
+    // default list, which ignores asset directories beginning with an underscore, and
+    // maybe also other files required by tests.
+    aaptOptions.ignoreAssetsPattern = "android-testbed-dont-ignore-anything"
 
     compileOptions {
         sourceCompatibility = JavaVersion.VERSION_1_8
@@ -205,11 +215,35 @@ androidComponents.onVariants { variant ->
 
                 into("site-packages") {
                     from("$projectDir/src/main/python")
+
+                    val sitePackages = findProperty("python.sitePackages") as String?
+                    if (!sitePackages.isNullOrEmpty()) {
+                        if (!file(sitePackages).exists()) {
+                            throw GradleException("$sitePackages does not exist")
+                        }
+                        from(sitePackages)
+                    }
                 }
 
                 duplicatesStrategy = DuplicatesStrategy.EXCLUDE
                 exclude("**/__pycache__")
             }
+
+            into("cwd") {
+                val cwd = findProperty("python.cwd") as String?
+                if (!cwd.isNullOrEmpty()) {
+                    if (!file(cwd).exists()) {
+                        throw GradleException("$cwd does not exist")
+                    }
+                    from(cwd)
+                }
+            }
+
+            // A filename ending with .gz will be automatically decompressed
+            // while building the APK. Avoid this by adding a dash to the end,
+            // and add an extra dash to any filenames that already end with one.
+            // This will be undone in MainActivity.kt.
+            rename(""".*(\.gz|-)""", "$0-")
         }
     }
 

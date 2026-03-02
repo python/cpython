@@ -4,9 +4,6 @@
 .. module:: platform
    :synopsis: Retrieves as much platform identifying data as possible.
 
-.. moduleauthor:: Marc-André Lemburg <mal@egenix.com>
-.. sectionauthor:: Bjorn Pettersen <bpettersen@corp.fairisaac.com>
-
 **Source code:** :source:`Lib/platform.py`
 
 --------------
@@ -55,6 +52,8 @@ Cross platform
 
    Returns the machine type, e.g. ``'AMD64'``. An empty string is returned if the
    value cannot be determined.
+
+   The output is platform-dependent and may differ in casing and naming conventions.
 
 
 .. function:: node()
@@ -176,8 +175,8 @@ Cross platform
    :attr:`processor` is resolved late, on demand.
 
    Note: the first two attribute names differ from the names presented by
-   :func:`os.uname`, where they are named :attr:`sysname` and
-   :attr:`nodename`.
+   :func:`os.uname`, where they are named :attr:`!sysname` and
+   :attr:`!nodename`.
 
    Entries which cannot be determined are set to ``''``.
 
@@ -186,6 +185,14 @@ Cross platform
 
    .. versionchanged:: 3.9
       :attr:`processor` is resolved late instead of immediately.
+
+.. function:: invalidate_caches()
+
+   Clear out the internal cache of information, such as the :func:`uname`.
+   This is typically useful when the platform's :func:`node` is changed
+   by an external process and one needs to retrieve the updated value.
+
+   .. versionadded:: 3.14
 
 
 Windows platform
@@ -347,7 +354,7 @@ Android platform
 Command-line usage
 ------------------
 
-:mod:`platform` can also be invoked directly using the :option:`-m`
+:mod:`!platform` can also be invoked directly using the :option:`-m`
 switch of the interpreter::
 
    python -m platform [--terse] [--nonaliased] [{nonaliased,terse} ...]
@@ -370,14 +377,3 @@ The following options are accepted:
 You can also pass one or more positional arguments (``terse``, ``nonaliased``)
 to explicitly control the output format. These behave similarly to their
 corresponding options.
-
-Miscellaneous
--------------
-
-.. function:: invalidate_caches()
-
-   Clear out the internal cache of information, such as the :func:`uname`.
-   This is typically useful when the platform's :func:`node` is changed
-   by an external process and one needs to retrieve the updated value.
-
-   .. versionadded:: 3.14

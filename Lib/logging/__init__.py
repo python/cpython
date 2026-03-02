@@ -45,9 +45,6 @@ import threading
 
 __author__  = "Vinay Sajip <vinay_sajip@red-dove.com>"
 __status__  = "production"
-# The following module attributes are no longer updated.
-__version__ = "0.5.1.2"
-__date__    = "07 February 2010"
 
 #---------------------------------------------------------------------------
 #   Miscellaneous module data
@@ -1475,8 +1472,6 @@ class Logger(Filterer):
     level, and "input.csv", "input.xls" and "input.gnu" for the sub-levels.
     There is no arbitrary limit to the depth of nesting.
     """
-    _tls = threading.local()
-
     def __init__(self, name, level=NOTSET):
         """
         Initialize the logger with a name and an optional level.
@@ -1673,19 +1668,14 @@ class Logger(Filterer):
         This method is used for unpickled records received from a socket, as
         well as those created locally. Logger-level filtering is applied.
         """
-        if self._is_disabled():
+        if self.disabled:
             return
-
-        self._tls.in_progress = True
-        try:
-            maybe_record = self.filter(record)
-            if not maybe_record:
-                return
-            if isinstance(maybe_record, LogRecord):
-                record = maybe_record
-            self.callHandlers(record)
-        finally:
-            self._tls.in_progress = False
+        maybe_record = self.filter(record)
+        if not maybe_record:
+            return
+        if isinstance(maybe_record, LogRecord):
+            record = maybe_record
+        self.callHandlers(record)
 
     def addHandler(self, hdlr):
         """
@@ -1773,7 +1763,7 @@ class Logger(Filterer):
         """
         Is this logger enabled for level 'level'?
         """
-        if self._is_disabled():
+        if self.disabled:
             return False
 
         try:
@@ -1823,11 +1813,6 @@ class Logger(Filterer):
                        if isinstance(item, Logger) and item.parent is self and
                        _hierlevel(item) == 1 + _hierlevel(item.parent))
 
-    def _is_disabled(self):
-        # We need to use getattr as it will only be set the first time a log
-        # message is recorded on any given thread
-        return self.disabled or getattr(self._tls, 'in_progress', False)
-
     def __repr__(self):
         level = getLevelName(self.getEffectiveLevel())
         return '<%s %s (%s)>' % (self.__class__.__name__, self.name, level)
@@ -1864,9 +1849,9 @@ class LoggerAdapter(object):
 
     def __init__(self, logger, extra=None, merge_extra=False):
         """
-        Initialize the adapter with a logger and a dict-like object which
-        provides contextual information. This constructor signature allows
-        easy stacking of LoggerAdapters, if so desired.
+        Initialize the adapter with a logger and an optional dict-like object
+        which provides contextual information. This constructor signature
+        allows easy stacking of LoggerAdapters, if so desired.
 
         You can effectively pass keyword arguments as shown in the
         following example:
@@ -1897,8 +1882,9 @@ class LoggerAdapter(object):
         Normally, you'll only need to override this one method in a
         LoggerAdapter subclass for your specific needs.
         """
-        if self.merge_extra and "extra" in kwargs:
-            kwargs["extra"] = {**self.extra, **kwargs["extra"]}
+        if self.merge_extra and kwargs.get("extra") is not None:
+            if self.extra is not None:
+                kwargs["extra"] = {**self.extra, **kwargs["extra"]}
         else:
             kwargs["extra"] = self.extra
         return msg, kwargs
@@ -2353,3 +2339,16 @@ def captureWarnings(capture):
         if _warnings_showwarning is not None:
             warnings.showwarning = _warnings_showwarning
             _warnings_showwarning = None
+
+
+def __getattr__(name):
+    if name in ("__version__", "__date__"):
+        from warnings import _deprecated
+
+        _deprecated(name, remove=(3, 20))
+        return {  # Do not change
+            "__version__": "0.5.1.2",
+            "__date__": "07 February 2010",
+        }[name]
+
+    raise AttributeError(f"module {__name__!r} has no attribute {name!r}")
