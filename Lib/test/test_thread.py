@@ -334,11 +334,8 @@ class ThreadRunningTests(BasicThreadTest):
 
         with threading_helper.wait_threads_exit():
             thread.start_joinable_thread(func, handle=handle)
-            print(handle)
             with self.assertRaisesRegex(RuntimeError, "thread already started"):
-                print(handle)
                 thread.start_joinable_thread(func, handle=handle)
-            print(handle)
             lock.release()
             handle.join()
 
