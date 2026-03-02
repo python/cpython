@@ -922,8 +922,8 @@ _readIni(const wchar_t *section, const wchar_t *settingName, wchar_t *buffer, in
 {
     wchar_t iniPath[MAXLEN];
     int n;
-    // Check for PYLAUNCHER_INIDIR override (used for test isolation)
-    DWORD len = GetEnvironmentVariableW(L"PYLAUNCHER_INIDIR", iniPath, MAXLEN);
+    // Check for _PYLAUNCHER_INIDIR override (used for test isolation)
+    DWORD len = GetEnvironmentVariableW(L"_PYLAUNCHER_INIDIR", iniPath, MAXLEN);
     if (len && len < MAXLEN) {
         if (join(iniPath, MAXLEN, L"py.ini")) {
             debug(L"# Reading from %s for %s/%s\n", iniPath, section, settingName);
@@ -933,7 +933,7 @@ _readIni(const wchar_t *section, const wchar_t *settingName, wchar_t *buffer, in
                 return n;
             }
         }
-        // When PYLAUNCHER_INIDIR is set, skip the default locations
+        // When _PYLAUNCHER_INIDIR is set, skip the default locations
         return 0;
     }
     if (SUCCEEDED(SHGetFolderPathW(NULL, CSIDL_LOCAL_APPDATA, NULL, 0, iniPath)) &&

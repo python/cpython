@@ -228,7 +228,7 @@ class RunPyMixin:
             **{k.upper(): v for k, v in (env or {}).items()},
         }
         if ini_dir := getattr(self, '_ini_dir', None):
-            env.setdefault("PYLAUNCHER_INIDIR", ini_dir)
+            env.setdefault("_PYLAUNCHER_INIDIR", ini_dir)
         if not argv:
             argv = [self.py_exe, *args]
         with subprocess.Popen(
