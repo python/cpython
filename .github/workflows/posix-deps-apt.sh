@@ -4,7 +4,6 @@ apt-get update
 apt-get -yq --no-install-recommends install \
     build-essential \
     pkg-config \
-    ccache \
     gdb \
     lcov \
     libb2-dev \
