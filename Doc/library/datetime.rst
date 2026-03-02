@@ -2658,10 +2658,13 @@ requires, and these work on all supported platforms.
 |  ``%Y``   | Year with century as a decimal | 0001, 0002, ..., 2013, | \(2)  |
 |           | number.                        | 2014, ..., 9998, 9999  |       |
 +-----------+--------------------------------+------------------------+-------+
-|  ``%z``   | UTC offset in the form         | (empty), +0000,        | \(6)  |
-|           | ``±HH[MM[SS[.ffffff]]]``       | -0400, +1030,          |       |
-|           | (empty string if the object is | +063415, +04,          |       |
-|           | naive).                        | -030712.345216         |       |
+|  ``%z``   | UTC offset.                    | (empty), +0000,        | \(6)  |
+|           | ``strptime()`` accepts         | -0400, +1030,          |       |
+|           | ``±HH[MM[SS[.ffffff]]]``;      | +063415, +04,          |       |
+|           | ``strftime()`` outputs         | -030712.345216         |       |
+|           | ``±HHMM[SS[.ffffff]]``         |                        |       |
+|           | (empty string if the object is |                        |       |
+|           | naive).                        |                        |       |
 +-----------+--------------------------------+------------------------+-------+
 |  ``%Z``   | Time zone name (empty string   | (empty), UTC, GMT      | \(6)  |
 |           | if the object is naive).       |                        |       |
@@ -2683,10 +2686,13 @@ convenience.
 |           | number, zero-padded to 6       | 999999                 |       |
 |           | digits.                        |                        |       |
 +-----------+--------------------------------+------------------------+-------+
-| ``%:z``   | UTC offset in the form         | (empty), +00:00,       | \(6)  |
-|           | ``±HH[:MM[:SS[.ffffff]]]``     | -04:00, +10:30,        |       |
-|           | (empty string if the object is | +06:34:15, +04,        |       |
-|           | naive).                        | -03:07:12.345216       |       |
+| ``%:z``   | UTC offset.                    | (empty), +00:00,       | \(6)  |
+|           | ``strptime()`` accepts         | -04:00, +10:30,        |       |
+|           | ``±HH[:MM[:SS[.ffffff]]]``;    | +06:34:15, +04,        |       |
+|           | ``strftime()`` outputs         | -03:07:12.345216       |       |
+|           | ``±HH:MM[:SS[.ffffff]]``       |                        |       |
+|           | (empty string if the object is |                        |       |
+|           | naive).                        |                        |       |
 +-----------+--------------------------------+------------------------+-------+
 
 The full set of format codes supported varies across platforms, because Python
@@ -2870,6 +2876,10 @@ Notes:
       When the ``%z`` directive is provided to the :meth:`~.datetime.strptime` method, an
       aware :class:`.datetime` object will be produced. The ``tzinfo`` of the
       result will be set to a :class:`timezone` instance.
+
+   .. versionchanged:: next
+      The ``%z`` and ``%:z`` directives in :meth:`~.datetime.strptime`
+      now accept time zone offsets in ``±HH`` format (for example, ``+03``).
 
 (7)
    When used with the :meth:`~.datetime.strptime` method, ``%U`` and ``%W`` are only used

@@ -3060,6 +3060,8 @@ class TestDateTime(TestDate):
         with self.assertRaises(ValueError): strptime("-2400", "%z")
         with self.assertRaises(ValueError): strptime("-000", "%z")
         with self.assertRaises(ValueError): strptime("z", "%z")
+        with self.assertRaises(ValueError): strptime("+3", "%z")
+        with self.assertRaises(ValueError): strptime("-7", "%z")
 
     def test_strptime_ampm(self):
         dt = datetime(1999, 3, 17, 0, 44, 55, 2)
