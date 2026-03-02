@@ -391,6 +391,11 @@ class DunderLazyImportTests(unittest.TestCase):
         import test.test_lazy_import.data.dunder_lazy_import
         self.assertNotIn("test.test_lazy_import.data.basic2", sys.modules)
 
+    def test_dunder_lazy_import_with_custom_filter(self):
+        sys.set_lazy_imports_filter(lambda importer, imported, fromlist: False)
+        import test.test_lazy_import.data.dunder_lazy_import
+        self.assertIn("test.test_lazy_import.data.basic2", sys.modules)
+
     def test_dunder_lazy_import_used(self):
         """Using __lazy_import__ result should trigger module load."""
         import test.test_lazy_import.data.dunder_lazy_import_used
