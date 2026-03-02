@@ -1916,16 +1916,16 @@ def _allow_reckless_class_checks(depth=2):
     return _caller(depth) in {'abc', '_py_abc', 'functools', None}
 
 
-_PROTO_ALLOWLIST = frozendict({
-    'collections.abc': (
+_PROTO_ALLOWLIST = {
+    'collections.abc': [
         'Callable', 'Awaitable', 'Iterable', 'Iterator', 'AsyncIterable',
         'AsyncIterator', 'Hashable', 'Sized', 'Container', 'Collection',
         'Reversible', 'Buffer',
-    ),
-    'contextlib': ('AbstractContextManager', 'AbstractAsyncContextManager'),
-    'io': ('Reader', 'Writer'),
-    'os': ('PathLike',),
-})
+    ],
+    'contextlib': ['AbstractContextManager', 'AbstractAsyncContextManager'],
+    'io': ['Reader', 'Writer'],
+    'os': ['PathLike'],
+}
 
 
 @functools.cache
