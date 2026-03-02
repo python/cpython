@@ -2778,6 +2778,16 @@ class TestInvalidFD(unittest.TestCase):
         self.check(os.pathconf, "PC_NAME_MAX")
         self.check(os.fpathconf, "PC_NAME_MAX")
 
+    @unittest.skipUnless(hasattr(os, 'pathconf'), 'test needs os.pathconf()')
+    @unittest.skipIf(
+        support.linked_to_musl(),
+        'musl fpathconf ignores the file descriptor and returns a constant',
+        )
+    def test_pathconf_negative_fd_uses_fd_semantics(self):
+        with self.assertRaises(OSError) as ctx:
+            os.pathconf(-1, 1)
+        self.assertEqual(ctx.exception.errno, errno.EBADF)
+
     @unittest.skipUnless(hasattr(os, 'ftruncate'), 'test needs os.ftruncate()')
     def test_ftruncate(self):
         self.check(os.truncate, 0)
