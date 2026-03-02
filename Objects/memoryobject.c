@@ -3136,12 +3136,13 @@ memory_richcompare(PyObject *v, PyObject *w, int op)
             }
             // Include only formats known by struct, exclude formats
             // "d" (double), "f" (float) and "e" (16-bit float).
+            // Do not optimize "P" format.
             can_compare_ptr = (format[0] != 0
-                               && strchr("bBchHiIlLnNPqQ?", format[0]) != NULL
+                               && strchr("bBchHiIlLnNqQ?", format[0]) != NULL
                                && format[1] == 0);
         }
         else {
-            can_compare_ptr = 1;
+            can_compare_ptr = 0;
         }
         if (can_compare_ptr) {
             equal = 1;

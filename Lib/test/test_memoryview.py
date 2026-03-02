@@ -605,17 +605,6 @@ class ArrayMemoryviewTest(unittest.TestCase,
         m = memoryview(b'\0\1\2').cast('?')
         check_equal(m, True)
 
-        # Test 'P' format
-        if struct.calcsize('L') == struct.calcsize('P'):
-            int_format = 'L'
-        elif struct.calcsize('Q') == struct.calcsize('P'):
-            int_format = 'Q'
-        else:
-            raise ValueError('unable to get void* format in struct')
-        a = array.array(int_format, [1, 2, 3])
-        m = memoryview(a.tobytes()).cast('P')
-        check_equal(m, True)
-
         # Test float formats
         for float_format in 'fd':
             with self.subTest(format=float_format):
