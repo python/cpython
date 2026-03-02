@@ -699,6 +699,8 @@ Signal Handling
 
    - Executing a pending :ref:`remote debugger <remote-debugging>` script.
 
+   - Raise the exception set by :c:func:`PyThreadState_SetAsyncExc`.
+
    If any handler raises an exception, immediately return ``-1`` with that
    exception set.
    Any remaining interruptions are left to be processed on the next
@@ -713,6 +715,9 @@ Signal Handling
    .. versionchanged:: 3.14
       This function may now execute a remote debugger script, if remote
       debugging is enabled.
+
+   .. versionchanged:: next
+      The exception set by :c:func:`PyThreadState_SetAsyncExc` is now raised.
 
 
 .. c:function:: void PyErr_SetInterrupt()

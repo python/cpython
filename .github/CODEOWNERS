@@ -289,6 +289,7 @@ Programs/_bootstrap_python.c  @ericsnowcurrently
 Programs/python.c             @ericsnowcurrently
 
 # JIT
+.github/workflows/jit.yml     @savannahostrowski
 Include/internal/pycore_jit.h @brandtbucher @savannahostrowski @diegorusso
 Python/jit.c                  @brandtbucher @savannahostrowski @diegorusso
 Tools/jit/                    @brandtbucher @savannahostrowski @diegorusso
@@ -297,8 +298,7 @@ InternalDocs/jit.md           @brandtbucher @savannahostrowski @diegorusso @AA-T
 # Lazy imports (PEP 810)
 Objects/lazyimportobject.c                  @yhg1s @DinoV @pablogsal
 Include/internal/pycore_lazyimportobject.h  @yhg1s @DinoV @pablogsal
-Lib/test/test_import/test_lazy_imports.py   @yhg1s @DinoV @pablogsal
-Lib/test/test_import/data/lazy_imports/     @yhg1s @DinoV @pablogsal
+Lib/test/test_lazy_import                   @yhg1s @DinoV @pablogsal
 
 # Micro-op / μop / Tier 2 Optimiser
 Python/optimizer.c            @markshannon @Fidget-Spinner
@@ -425,19 +425,19 @@ Lib/dataclasses.py            @ericvsmith
 Lib/test/test_dataclasses/    @ericvsmith
 
 # Dates and times
-Doc/**/*time.rst                 @pganssle @abalkin
-Doc/library/datetime-*           @pganssle
-Doc/library/zoneinfo.rst         @pganssle
-Include/datetime.h               @pganssle @abalkin
-Include/internal/pycore_time.h   @pganssle @abalkin
-Lib/test/test_zoneinfo/          @pganssle
-Lib/zoneinfo/                    @pganssle
-Lib/*time.py                     @pganssle @abalkin
-Lib/test/datetimetester.py       @pganssle @abalkin
-Lib/test/test_*time.py           @pganssle @abalkin
-Modules/*zoneinfo*               @pganssle
-Modules/*time*                   @pganssle @abalkin
-Python/pytime.c                  @pganssle @abalkin
+Doc/**/*time.rst                 @pganssle @abalkin @StanFromIreland
+Doc/library/datetime-*           @pganssle @StanFromIreland
+Doc/library/zoneinfo.rst         @pganssle @StanFromIreland
+Include/datetime.h               @pganssle @abalkin @StanFromIreland
+Include/internal/pycore_time.h   @pganssle @abalkin @StanFromIreland
+Lib/test/test_zoneinfo/          @pganssle @StanFromIreland
+Lib/zoneinfo/                    @pganssle @StanFromIreland
+Lib/*time.py                     @pganssle @abalkin @StanFromIreland
+Lib/test/datetimetester.py       @pganssle @abalkin @StanFromIreland
+Lib/test/test_*time.py           @pganssle @abalkin @StanFromIreland
+Modules/*zoneinfo*               @pganssle @StanFromIreland
+Modules/*time*                   @pganssle @abalkin @StanFromIreland
+Python/pytime.c                  @pganssle @abalkin @StanFromIreland
 
 # Dbm
 Doc/library/dbm.rst           @corona10 @erlend-aasland @serhiy-storchaka

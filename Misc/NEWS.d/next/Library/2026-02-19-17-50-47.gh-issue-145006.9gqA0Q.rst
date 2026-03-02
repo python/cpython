@@ -1,0 +1,2 @@
+Add :exc:`ModuleNotFoundError` hints when a module for a different ABI
+exists.

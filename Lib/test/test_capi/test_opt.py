@@ -4114,6 +4114,28 @@ class TestUopsOptimization(unittest.TestCase):
              PYTHON_JIT_SIDE_EXIT_INITIAL_VALUE="1")
         self.assertEqual(result[0].rc, 0, result)
 
+    def test_for_iter_gen_cleared_frame_does_not_crash(self):
+        # See: https://github.com/python/cpython/issues/145197
+        result = script_helper.run_python_until_end('-c', textwrap.dedent("""
+        def g():
+            yield 1
+            yield 2
+
+        for _ in range(4002):
+            for _ in g():
+                pass
+
+        for i in range(4002):
+            it = g()
+            if (i & 7) == 0:
+                next(it)
+                it.close()
+            for _ in it:
+                pass
+        """),
+        PYTHON_JIT="1", PYTHON_JIT_STRESS="1")
+        self.assertEqual(result[0].rc, 0, result)
+
 def global_identity(x):
     return x
 
