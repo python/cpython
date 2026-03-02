@@ -21,9 +21,9 @@ Functions and classes provided:
 .. class:: AbstractContextManager
 
    An :term:`abstract base class` for classes that implement
-   :meth:`object.__enter__` and :meth:`object.__exit__`. A default
-   implementation for :meth:`object.__enter__` is provided which returns
-   ``self`` while :meth:`object.__exit__` is an abstract method which by default
+   :meth:`~object.__enter__` and :meth:`~object.__exit__`. A default
+   implementation for :meth:`~object.__enter__` is provided which returns
+   ``self`` while :meth:`~object.__exit__` is an abstract method which by default
    returns ``None``. See also the definition of :ref:`typecontextmanager`.
 
    .. versionadded:: 3.6
@@ -32,9 +32,9 @@ Functions and classes provided:
 .. class:: AbstractAsyncContextManager
 
    An :term:`abstract base class` for classes that implement
-   :meth:`object.__aenter__` and :meth:`object.__aexit__`. A default
-   implementation for :meth:`object.__aenter__` is provided which returns
-   ``self`` while :meth:`object.__aexit__` is an abstract method which by default
+   :meth:`~object.__aenter__` and :meth:`~object.__aexit__`. A default
+   implementation for :meth:`~object.__aenter__` is provided which returns
+   ``self`` while :meth:`~object.__aexit__` is an abstract method which by default
    returns ``None``. See also the definition of
    :ref:`async-context-managers`.
 
