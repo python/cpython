@@ -2993,6 +2993,12 @@ class TestType(unittest.TestCase):
             A.__doc__ = doc
             self.assertEqual(A.__doc__, doc)
 
+    def test_type_frozendict(self):
+        A = type('A', (), frozendict({'x': 4, 'y': 2}))
+        self.assertEqual(A.x, 4)
+        self.assertEqual(A.y, 2)
+        self.assertEqual(A.__name__, 'A')
+
     def test_bad_args(self):
         with self.assertRaises(TypeError):
             type()
