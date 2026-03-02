@@ -1596,8 +1596,6 @@ class InitConfigTests(EmbeddingTestsMixin, unittest.TestCase):
             # The stdlib dir is dirname(executable) + VPATH + 'Lib'
             stdlibdir = os.path.normpath(os.path.join(tmpdir, vpath, 'Lib'))
             os.mkdir(libdir)
-            # Create the directory to avoid the bad stdlib dir warning
-            os.makedirs(stdlibdir)
 
             filename = os.path.join(tmpdir, 'pybuilddir.txt')
             with open(filename, "w", encoding="utf8") as fp:
@@ -1635,9 +1633,6 @@ class InitConfigTests(EmbeddingTestsMixin, unittest.TestCase):
             prefix = os.path.normpath(os.path.join(tmpdir, vpath))
             # The stdlib dir is dirname(executable) + VPATH + 'Lib'
             stdlibdir = os.path.normpath(os.path.join(tmpdir, vpath, 'Lib'))
-
-            # Create the directory to avoid the bad stdlib dir warning
-            os.makedirs(stdlibdir)
 
             filename = os.path.join(tmpdir, 'pybuilddir.txt')
             with open(filename, "w", encoding="utf8") as fp:
