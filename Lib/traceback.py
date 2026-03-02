@@ -3,16 +3,25 @@
 import collections.abc
 import itertools
 import linecache
+import os
 import sys
 import textwrap
+import types
 import warnings
 import codeop
 import keyword
 import tokenize
 import io
+import importlib.util
+import pathlib
 import _colorize
 
 from contextlib import suppress
+
+try:
+    from _missing_stdlib_info import _MISSING_STDLIB_MODULE_MESSAGES
+except ImportError:
+    _MISSING_STDLIB_MODULE_MESSAGES = {}
 
 __all__ = ['extract_stack', 'extract_tb', 'format_exception',
            'format_exception_only', 'format_list', 'format_stack',
@@ -137,8 +146,9 @@ def print_exception(exc, /, value=_sentinel, tb=_sentinel, limit=None, \
 BUILTIN_EXCEPTION_LIMIT = object()
 
 
-def _print_exception_bltin(exc, /):
-    file = sys.stderr if sys.stderr is not None else sys.__stderr__
+def _print_exception_bltin(exc, file=None, /):
+    if file is None:
+        file = sys.stderr if sys.stderr is not None else sys.__stderr__
     colorize = _colorize.can_colorize(file=file)
     return print_exception(exc, limit=BUILTIN_EXCEPTION_LIMIT, file=file, colorize=colorize)
 
@@ -205,9 +215,9 @@ def _safe_string(value, what, func=str):
 
 # --
 
-def print_exc(limit=None, file=None, chain=True):
+def print_exc(limit=None, file=None, chain=True, **kwargs):
     """Shorthand for 'print_exception(sys.exception(), limit=limit, file=file, chain=chain)'."""
-    print_exception(sys.exception(), limit=limit, file=file, chain=chain)
+    print_exception(sys.exception(), limit=limit, file=file, chain=chain, **kwargs)
 
 def format_exc(limit=None, chain=True):
     """Like print_exc() but return a string."""
@@ -287,6 +297,12 @@ class FrameSummary:
       of code that was running when the frame was captured.
     - :attr:`locals` Either None if locals were not supplied, or a dict
       mapping the name to the repr() of the variable.
+    - :attr:`end_lineno` The last line number of the source code for this frame.
+      By default, it is set to lineno and indexation starts from 1.
+    - :attr:`colno` The column number of the source code for this frame.
+      By default, it is None and indexation starts from 0.
+    - :attr:`end_colno` The last column number of the source code for this frame.
+      By default, it is None and indexation starts from 0.
     """
 
     __slots__ = ('filename', 'lineno', 'end_lineno', 'colno', 'end_colno',
@@ -534,7 +550,7 @@ class StackSummary(list):
         colorize = kwargs.get("colorize", False)
         row = []
         filename = frame_summary.filename
-        if frame_summary.filename.startswith("<stdin>-"):
+        if frame_summary.filename.startswith("<stdin-") and frame_summary.filename.endswith('>'):
             filename = "<stdin>"
         if colorize:
             theme = _colorize.get_theme(force_color=True).traceback
@@ -1099,20 +1115,54 @@ class TracebackException:
             wrong_name = getattr(exc_value, "name_from", None)
             suggestion = _compute_suggestion_error(exc_value, exc_traceback, wrong_name)
             if suggestion:
-                self._str += f". Did you mean: '{suggestion}'?"
-        elif exc_type and issubclass(exc_type, (NameError, AttributeError)) and \
+                if suggestion.isascii():
+                    self._str += f". Did you mean: '{suggestion}'?"
+                else:
+                    self._str += f". Did you mean: '{suggestion}' ({suggestion!a})?"
+        elif exc_type and issubclass(exc_type, ModuleNotFoundError):
+            module_name = getattr(exc_value, "name", None)
+            if module_name in sys.stdlib_module_names:
+                message = _MISSING_STDLIB_MODULE_MESSAGES.get(
+                    module_name,
+                    f"Standard library module {module_name!r} was not found"
+                )
+                self._str = message
+            elif sys.flags.no_site:
+                self._str += (". Site initialization is disabled, did you forget to "
+                    + "add the site-packages directory to sys.path "
+                    + "or to enable your virtual environment?")
+            elif abi_tag := _find_incompatible_extension_module(module_name):
+                self._str += (
+                    ". Although a module with this name was found for a "
+                    f"different Python version ({abi_tag})."
+                )
+            else:
+                suggestion = _compute_suggestion_error(exc_value, exc_traceback, module_name)
+                if suggestion:
+                    self._str += f". Did you mean: '{suggestion}'?"
+        elif exc_type and issubclass(exc_type, AttributeError) and \
                 getattr(exc_value, "name", None) is not None:
             wrong_name = getattr(exc_value, "name", None)
             suggestion = _compute_suggestion_error(exc_value, exc_traceback, wrong_name)
             if suggestion:
-                self._str += f". Did you mean: '{suggestion}'?"
-            if issubclass(exc_type, NameError):
-                wrong_name = getattr(exc_value, "name", None)
-                if wrong_name is not None and wrong_name in sys.stdlib_module_names:
-                    if suggestion:
-                        self._str += f" Or did you forget to import '{wrong_name}'?"
-                    else:
-                        self._str += f". Did you forget to import '{wrong_name}'?"
+                if suggestion.isascii():
+                    self._str += f". Did you mean '.{suggestion}' instead of '.{wrong_name}'?"
+                else:
+                    self._str += f". Did you mean '.{suggestion}' ({suggestion!a}) instead of '.{wrong_name}' ({wrong_name!a})?"
+        elif exc_type and issubclass(exc_type, NameError) and \
+                getattr(exc_value, "name", None) is not None:
+            wrong_name = getattr(exc_value, "name", None)
+            suggestion = _compute_suggestion_error(exc_value, exc_traceback, wrong_name)
+            if suggestion:
+                if suggestion.isascii():
+                    self._str += f". Did you mean: '{suggestion}'?"
+                else:
+                    self._str += f". Did you mean: '{suggestion}' ({suggestion!a})?"
+            if wrong_name is not None and wrong_name in sys.stdlib_module_names:
+                if suggestion:
+                    self._str += f" Or did you forget to import '{wrong_name}'?"
+                else:
+                    self._str += f". Did you forget to import '{wrong_name}'?"
         if lookup_lines:
             self._load_lines()
         self.__suppress_context__ = \
@@ -1310,12 +1360,20 @@ class TracebackException:
             lines = source.splitlines()
 
         error_code = lines[line -1 if line > 0 else 0:end_line]
-        error_code[0] = error_code[0][offset:]
         error_code = textwrap.dedent('\n'.join(error_code))
 
         # Do not continue if the source is too large
         if len(error_code) > 1024:
             return
+
+        # If the original code doesn't raise SyntaxError, we can't validate
+        # that a keyword replacement actually fixes anything
+        try:
+            codeop.compile_command(error_code, symbol="exec", flags=codeop.PyCF_ONLY_AST)
+        except SyntaxError:
+            pass  # Good - the original code has a syntax error we might fix
+        else:
+            return  # Original code compiles or is incomplete - can't validate fixes
 
         error_lines = error_code.splitlines()
         tokens = tokenize.generate_tokens(io.StringIO(error_code).readline)
@@ -1326,7 +1384,8 @@ class TracebackException:
             if token.type != tokenize.NAME:
                 continue
             # Only consider NAME tokens on the same line as the error
-            if from_filename and token.start[0]+line != end_line+1:
+            the_end = end_line if line == 0 else end_line + 1
+            if from_filename and token.start[0]+line != the_end:
                 continue
             wrong_name = token.string
             if wrong_name in keyword.kwlist:
@@ -1431,10 +1490,11 @@ class TracebackException:
                 # Convert 1-based column offset to 0-based index into stripped text
                 colno = offset - 1 - spaces
                 end_colno = end_offset - 1 - spaces
-                caretspace = ' '
                 if colno >= 0:
-                    # non-space whitespace (likes tabs) must be kept for alignment
-                    caretspace = ((c if c.isspace() else ' ') for c in ltext[:colno])
+                    # Calculate display width to account for wide characters
+                    dp_colno = _display_width(ltext, colno)
+                    highlighted = ltext[colno:end_colno]
+                    caret_count = _display_width(highlighted) if highlighted else (end_colno - colno)
                     start_color = end_color = ""
                     if colorize:
                         # colorize from colno to end_colno
@@ -1447,9 +1507,9 @@ class TracebackException:
                         end_color = theme.reset
                     yield '    {}\n'.format(ltext)
                     yield '    {}{}{}{}\n'.format(
-                        "".join(caretspace),
+                        ' ' * dp_colno,
                         start_color,
-                        ('^' * (end_colno - colno)),
+                        '^' * caret_count,
                         end_color,
                     )
                 else:
@@ -1589,9 +1649,65 @@ def _substitution_cost(ch_a, ch_b):
     return _MOVE_COST
 
 
+def _is_lazy_import(obj, attr_name):
+    """Check if attr_name in obj's __dict__ is a lazy import.
+
+    Returns True if obj is a module and the attribute is a LazyImportType,
+    False otherwise. This avoids triggering module loading when computing
+    suggestions for AttributeError.
+    """
+    if not isinstance(obj, types.ModuleType):
+        return False
+    obj_dict = getattr(obj, '__dict__', None)
+    if obj_dict is None:
+        return False
+    attr_value = obj_dict.get(attr_name)
+    return isinstance(attr_value, types.LazyImportType)
+
+
+def _check_for_nested_attribute(obj, wrong_name, attrs):
+    """Check if any attribute of obj has the wrong_name as a nested attribute.
+
+    Returns the first nested attribute suggestion found, or None.
+    Limited to checking 20 attributes.
+    Only considers non-descriptor attributes to avoid executing arbitrary code.
+    Skips lazy imports to avoid triggering module loading.
+    """
+    # Check for nested attributes (only one level deep)
+    attrs_to_check = [x for x in attrs if not x.startswith('_')][:20]  # Limit number of attributes to check
+    for attr_name in attrs_to_check:
+        with suppress(Exception):
+            # Check if attr_name is a descriptor - if so, skip it
+            attr_from_class = getattr(type(obj), attr_name, None)
+            if attr_from_class is not None and hasattr(attr_from_class, '__get__'):
+                continue  # Skip descriptors to avoid executing arbitrary code
+
+            # Skip lazy imports to avoid triggering module loading
+            if _is_lazy_import(obj, attr_name):
+                continue
+
+            # Safe to get the attribute since it's not a descriptor
+            attr_obj = getattr(obj, attr_name)
+
+            # Check if the nested attribute exists and is not a descriptor
+            nested_attr_from_class = getattr(type(attr_obj), wrong_name, None)
+
+            if hasattr(attr_obj, wrong_name):
+                return f"{attr_name}.{wrong_name}"
+
+    return None
+
+
 def _compute_suggestion_error(exc_value, tb, wrong_name):
     if wrong_name is None or not isinstance(wrong_name, str):
         return None
+    not_normalized = False
+    if not wrong_name.isascii():
+        from unicodedata import normalize
+        normalized_name = normalize('NFKC', wrong_name)
+        if normalized_name != wrong_name:
+            not_normalized = True
+            wrong_name = normalized_name
     if isinstance(exc_value, AttributeError):
         obj = exc_value.obj
         try:
@@ -1600,6 +1716,8 @@ def _compute_suggestion_error(exc_value, tb, wrong_name):
             except TypeError:  # Attributes are unsortable, e.g. int and str
                 d = list(obj.__class__.__dict__.keys()) + list(obj.__dict__.keys())
             d = sorted([x for x in d if isinstance(x, str)])
+            # Filter out lazy imports to avoid triggering module loading
+            d = [x for x in d if not _is_lazy_import(obj, x)]
             hide_underscored = (wrong_name[:1] != '_')
             if hide_underscored and tb is not None:
                 while tb.tb_next is not None:
@@ -1611,6 +1729,18 @@ def _compute_suggestion_error(exc_value, tb, wrong_name):
                 d = [x for x in d if x[:1] != '_']
         except Exception:
             return None
+    elif isinstance(exc_value, ModuleNotFoundError):
+        try:
+            if parent_name := wrong_name.rpartition('.')[0]:
+                parent = importlib.util.find_spec(parent_name)
+            else:
+                parent = None
+            d = []
+            for finder in sys.meta_path:
+                if discover := getattr(finder, 'discover', None):
+                    d += [spec.name for spec in discover(parent)]
+        except Exception:
+            return None
     elif isinstance(exc_value, ImportError):
         try:
             mod = __import__(exc_value.name)
@@ -1619,6 +1749,8 @@ def _compute_suggestion_error(exc_value, tb, wrong_name):
             except TypeError:  # Attributes are unsortable, e.g. int and str
                 d = list(mod.__dict__.keys())
             d = sorted([x for x in d if isinstance(x, str)])
+            # Filter out lazy imports to avoid triggering module loading
+            d = [x for x in d if not _is_lazy_import(mod, x)]
             if wrong_name[:1] != '_':
                 d = [x for x in d if x[:1] != '_']
         except Exception:
@@ -1637,6 +1769,8 @@ def _compute_suggestion_error(exc_value, tb, wrong_name):
             + list(frame.f_builtins)
         )
         d = [x for x in d if isinstance(x, str)]
+        if not_normalized and wrong_name in d:
+            return wrong_name
 
         # Check first if we are in a method and the instance
         # has the wrong name as attribute
@@ -1649,12 +1783,16 @@ def _compute_suggestion_error(exc_value, tb, wrong_name):
             if has_wrong_name:
                 return f"self.{wrong_name}"
 
+    if not_normalized and wrong_name in d:
+        return wrong_name
     try:
         import _suggestions
     except ImportError:
         pass
     else:
-        return _suggestions._generate_suggestions(d, wrong_name)
+        suggestion = _suggestions._generate_suggestions(d, wrong_name)
+        if suggestion:
+            return suggestion
 
     # Compute closest match
 
@@ -1679,6 +1817,14 @@ def _compute_suggestion_error(exc_value, tb, wrong_name):
         if not suggestion or current_distance < best_distance:
             suggestion = possible_name
             best_distance = current_distance
+
+    # If no direct attribute match found, check for nested attributes
+    if not suggestion and isinstance(exc_value, AttributeError):
+        with suppress(Exception):
+            nested_suggestion = _check_for_nested_attribute(exc_value.obj, wrong_name, d)
+            if nested_suggestion:
+                return nested_suggestion
+
     return suggestion
 
 
@@ -1741,3 +1887,32 @@ def _levenshtein_distance(a, b, max_cost):
             # Everything in this row is too big, so bail early.
             return max_cost + 1
     return result
+
+
+def _find_incompatible_extension_module(module_name):
+    import importlib.machinery
+    import importlib.resources.readers
+
+    if not module_name or not importlib.machinery.EXTENSION_SUFFIXES:
+        return
+
+    # We assume the last extension is untagged (eg. .so, .pyd)!
+    # tests.test_traceback.MiscTest.test_find_incompatible_extension_modules
+    # tests that assumption.
+    untagged_suffix = importlib.machinery.EXTENSION_SUFFIXES[-1]
+    # On Windows the debug tag is part of the module file stem, instead of the
+    # extension (eg. foo_d.pyd), so let's remove it and just look for .pyd.
+    if os.name == 'nt':
+        untagged_suffix = untagged_suffix.removeprefix('_d')
+
+    parent, _, child = module_name.rpartition('.')
+    if parent:
+        traversable = importlib.resources.files(parent)
+    else:
+        traversable = importlib.resources.readers.MultiplexedPath(
+            *map(pathlib.Path, filter(os.path.isdir, sys.path))
+        )
+
+    for entry in traversable.iterdir():
+        if entry.name.startswith(child + '.') and entry.name.endswith(untagged_suffix):
+            return entry.name

@@ -1,2 +1,0 @@
-:mod:`shelve` as well as underlying :mod:`!dbm.dumb` and :mod:`!dbm.sqlite` now have :meth:`!reorganize` methods to
-recover unused free space previously occupied by deleted entries.

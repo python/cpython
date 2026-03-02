@@ -83,14 +83,11 @@ __all__ = [
     "SubElement",
     "tostring", "tostringlist",
     "TreeBuilder",
-    "VERSION",
     "XML", "XMLID",
     "XMLParser", "XMLPullParser",
     "register_namespace",
     "canonicalize", "C14NWriterTarget",
     ]
-
-VERSION = "1.3.0"
 
 import sys
 import re
@@ -266,12 +263,15 @@ class Element:
         ValueError is raised if a matching element could not be found.
 
         """
-        # assert iselement(element)
         try:
             self._children.remove(subelement)
         except ValueError:
+            # to align the error type with the C implementation
+            if isinstance(subelement, type) or not iselement(subelement):
+                raise TypeError('expected an Element, not %s' %
+                                type(subelement).__name__) from None
             # to align the error message with the C implementation
-            raise ValueError("Element.remove(x): element not found") from None
+            raise ValueError(f"{subelement!r} not in {self!r}") from None
 
     def find(self, path, namespaces=None):
         """Find first matching element by tag name or path.
@@ -527,7 +527,9 @@ class ElementTree:
 
     """
     def __init__(self, element=None, file=None):
-        # assert element is None or iselement(element)
+        if element is not None and not iselement(element):
+            raise TypeError('expected an Element, not %s' %
+                            type(element).__name__)
         self._root = element # first node
         if file:
             self.parse(file)
@@ -543,7 +545,9 @@ class ElementTree:
         with the given element.  Use with care!
 
         """
-        # assert iselement(element)
+        if not iselement(element):
+            raise TypeError('expected an Element, not %s'
+                            % type(element).__name__)
         self._root = element
 
     def parse(self, source, parser=None):
@@ -709,6 +713,8 @@ class ElementTree:
                                     of start/end tags
 
         """
+        if self._root is None:
+            raise TypeError('ElementTree not initialized')
         if not method:
             method = "xml"
         elif method not in _serialize:
@@ -1255,16 +1261,20 @@ def iterparse(source, events=None, parser=None):
     gen = iterator(source)
     class IterParseIterator(collections.abc.Iterator):
         __next__ = gen.__next__
+
         def close(self):
+            nonlocal close_source
             if close_source:
                 source.close()
+                close_source = False
             gen.close()
 
-        def __del__(self):
-            # TODO: Emit a ResourceWarning if it was not explicitly closed.
-            # (When the close() method will be supported in all maintained Python versions.)
+        def __del__(self, _warn=warnings.warn):
             if close_source:
-                source.close()
+                try:
+                    _warn(f"unclosed iterparse iterator {source.name!r}", ResourceWarning, stacklevel=2)
+                finally:
+                    source.close()
 
     it = IterParseIterator()
     it.root = None
@@ -2094,3 +2104,14 @@ except ImportError:
     pass
 else:
     _set_factories(Comment, ProcessingInstruction)
+
+
+# --------------------------------------------------------------------
+
+def __getattr__(name):
+    if name == "VERSION":
+        from warnings import _deprecated
+
+        _deprecated("VERSION", remove=(3, 20))
+        return "1.3.0"  # Do not change
+    raise AttributeError(f"module {__name__!r} has no attribute {name!r}")

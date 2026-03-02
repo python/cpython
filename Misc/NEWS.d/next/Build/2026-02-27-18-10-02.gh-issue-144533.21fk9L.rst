@@ -1,0 +1,1 @@
+Use wasmtime's ``--argv0`` to auto-discover sysconfig in WASI builds

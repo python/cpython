@@ -9,7 +9,6 @@ import sysconfig
 import tempfile
 import textwrap
 import unittest
-import warnings
 from test import support
 from test.support import os_helper
 from test.support import force_not_colorized
@@ -300,6 +299,10 @@ class CmdLineTest(unittest.TestCase):
             cmd = [sys.executable, '-X', 'utf8', '-c', code, arg]
             return subprocess.run(cmd, stdout=subprocess.PIPE, text=True)
 
+        def run_no_utf8_mode(arg):
+            cmd = [sys.executable, '-X', 'utf8=0', '-c', code, arg]
+            return subprocess.run(cmd, stdout=subprocess.PIPE, text=True)
+
         valid_utf8 = 'e:\xe9, euro:\u20ac, non-bmp:\U0010ffff'.encode('utf-8')
         # invalid UTF-8 byte sequences with a valid UTF-8 sequence
         # in the middle.
@@ -312,7 +315,8 @@ class CmdLineTest(unittest.TestCase):
         )
         test_args = [valid_utf8, invalid_utf8]
 
-        for run_cmd in (run_default, run_c_locale, run_utf8_mode):
+        for run_cmd in (run_default, run_c_locale, run_utf8_mode,
+                        run_no_utf8_mode):
             with self.subTest(run_cmd=run_cmd):
                 for arg in test_args:
                     proc = run_cmd(arg)
@@ -484,6 +488,7 @@ class CmdLineTest(unittest.TestCase):
         self.assertRegex(err.decode('ascii', 'ignore'), 'SyntaxError')
         self.assertEqual(b'', out)
 
+    @force_not_colorized
     def test_stdout_flush_at_shutdown(self):
         # Issue #5319: if stdout.flush() fails at shutdown, an error should
         # be printed out.
@@ -937,21 +942,15 @@ class CmdLineTest(unittest.TestCase):
 
     @unittest.skipUnless(sysconfig.get_config_var('Py_TRACE_REFS'), "Requires --with-trace-refs build option")
     def test_python_dump_refs(self):
-        code = 'import sys; sys._clear_type_cache()'
-        # TODO: Remove warnings context manager once sys._clear_type_cache is removed
-        with warnings.catch_warnings():
-            warnings.simplefilter("ignore", DeprecationWarning)
-            rc, out, err = assert_python_ok('-c', code, PYTHONDUMPREFS='1')
+        code = 'import sys; sys._clear_internal_caches()'
+        rc, out, err = assert_python_ok('-c', code, PYTHONDUMPREFS='1')
         self.assertEqual(rc, 0)
 
     @unittest.skipUnless(sysconfig.get_config_var('Py_TRACE_REFS'), "Requires --with-trace-refs build option")
     def test_python_dump_refs_file(self):
         with tempfile.NamedTemporaryFile() as dump_file:
-            code = 'import sys; sys._clear_type_cache()'
-            # TODO: Remove warnings context manager once sys._clear_type_cache is removed
-            with warnings.catch_warnings():
-                warnings.simplefilter("ignore", DeprecationWarning)
-                rc, out, err = assert_python_ok('-c', code, PYTHONDUMPREFSFILE=dump_file.name)
+            code = 'import sys; sys._clear_internal_caches()'
+            rc, out, err = assert_python_ok('-c', code, PYTHONDUMPREFSFILE=dump_file.name)
             self.assertEqual(rc, 0)
             with open(dump_file.name, 'r') as file:
                 contents = file.read()

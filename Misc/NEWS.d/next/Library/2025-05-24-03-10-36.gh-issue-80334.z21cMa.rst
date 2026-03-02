@@ -1,2 +1,0 @@
-:func:`multiprocessing.freeze_support` now checks for work on any "spawn"
-start method platform rather than only on Windows.

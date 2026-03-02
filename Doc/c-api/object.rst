@@ -73,7 +73,7 @@ Object Protocol
 
    Flag to be used with multiple functions that print the object (like
    :c:func:`PyObject_Print` and :c:func:`PyFile_WriteObject`).
-   If passed, these function would use the :func:`str` of the object
+   If passed, these functions use the :func:`str` of the object
    instead of the :func:`repr`.
 
 
@@ -83,6 +83,35 @@ Object Protocol
    is used to enable certain printing options.  The only option currently supported
    is :c:macro:`Py_PRINT_RAW`; if given, the :func:`str` of the object is written
    instead of the :func:`repr`.
+
+
+.. c:function:: void PyObject_Dump(PyObject *op)
+
+   Dump an object *op* to ``stderr``. This should only be used for debugging.
+
+   The output is intended to try dumping objects even after memory corruption:
+
+   * Information is written starting with fields that are the least likely to
+     crash when accessed.
+   * This function can be called without an :term:`attached thread state`, but
+     it's not recommended to do so: it can cause deadlocks.
+   * An object that does not belong to the current interpreter may be dumped,
+     but this may also cause crashes or unintended behavior.
+   * Implement a heuristic to detect if the object memory has been freed. Don't
+     display the object contents in this case, only its memory address.
+   * The output format may change at any time.
+
+   Example of output:
+
+   .. code-block:: output
+
+       object address  : 0x7f80124702c0
+       object refcount : 2
+       object type     : 0x9902e0
+       object type name: str
+       object repr     : 'abcdef'
+
+   .. versionadded:: 3.15
 
 
 .. c:function:: int PyObject_HasAttrWithError(PyObject *o, PyObject *attr_name)
@@ -197,6 +226,13 @@ Object Protocol
    in favour of using :c:func:`PyObject_DelAttr`, but there are currently no
    plans to remove it.
 
+   The function must not be called with a ``NULL`` *v* and an exception set.
+   This case can arise from forgetting ``NULL`` checks and would delete the
+   attribute.
+
+   .. versionchanged:: 3.15
+      Must not be called with NULL value if an exception is set.
+
 
 .. c:function:: int PyObject_SetAttrString(PyObject *o, const char *attr_name, PyObject *v)
 
@@ -207,6 +243,10 @@ Object Protocol
    If *v* is ``NULL``, the attribute is deleted, but this feature is
    deprecated in favour of using :c:func:`PyObject_DelAttrString`.
 
+   The function must not be called with a ``NULL`` *v* and an exception set.
+   This case can arise from forgetting ``NULL`` checks and would delete the
+   attribute.
+
    The number of different attribute names passed to this function
    should be kept small, usually by using a statically allocated string
    as *attr_name*.
@@ -214,6 +254,10 @@ Object Protocol
    :c:func:`PyUnicode_FromString` and :c:func:`PyObject_SetAttr` directly.
    For more details, see :c:func:`PyUnicode_InternFromString`, which may be
    used internally to create a key object.
+
+   .. versionchanged:: 3.15
+      Must not be called with NULL value if an exception is set.
+
 
 .. c:function:: int PyObject_GenericSetAttr(PyObject *o, PyObject *name, PyObject *value)
 
@@ -585,7 +629,7 @@ Object Protocol
 
    Clear the managed dictionary of *obj*.
 
-   This function must only be called in a traverse function of the type which
+   This function must only be called in a clear function of the type which
    has the :c:macro:`Py_TPFLAGS_MANAGED_DICT` flag set.
 
    .. versionadded:: 3.13
@@ -596,12 +640,13 @@ Object Protocol
    if supported by the runtime.  In the :term:`free-threaded <free threading>` build,
    this allows the interpreter to avoid reference count adjustments to *obj*,
    which may improve multi-threaded performance.  The tradeoff is
-   that *obj* will only be deallocated by the tracing garbage collector.
+   that *obj* will only be deallocated by the tracing garbage collector, and
+   not when the interpreter no longer has any references to it.
 
-   This function returns ``1`` if deferred reference counting is enabled on *obj*
-   (including when it was enabled before the call),
+   This function returns ``1`` if deferred reference counting is enabled on *obj*,
    and ``0`` if deferred reference counting is not supported or if the hint was
-   ignored by the runtime. This function is thread-safe, and cannot fail.
+   ignored by the interpreter, such as when deferred reference counting is already
+   enabled on *obj*. This function is thread-safe, and cannot fail.
 
    This function does nothing on builds with the :term:`GIL` enabled, which do
    not support deferred reference counting. This also does nothing if *obj* is not
@@ -609,7 +654,8 @@ Object Protocol
    :c:func:`PyObject_GC_IsTracked`).
 
    This function is intended to be used soon after *obj* is created,
-   by the code that creates it.
+   by the code that creates it, such as in the object's :c:member:`~PyTypeObject.tp_new`
+   slot.
 
    .. versionadded:: 3.14
 
@@ -665,10 +711,10 @@ Object Protocol
 
    :c:func:`PyUnstable_EnableTryIncRef` must have been called
    earlier on *obj* or this function may spuriously return ``0`` in the
-   :term:`free threading` build.
+   :term:`free-threaded build`.
 
    This function is logically equivalent to the following C code, except that
-   it behaves atomically in the :term:`free threading` build::
+   it behaves atomically in the :term:`free-threaded build`::
 
       if (Py_REFCNT(op) > 0) {
          Py_INCREF(op);
@@ -745,13 +791,30 @@ Object Protocol
    On GIL-enabled builds, this function is equivalent to
    :c:expr:`Py_REFCNT(op) == 1`.
 
-   On a :term:`free threaded <free threading>` build, this checks if *op*'s
+   On a :term:`free-threaded build`, this checks if *op*'s
    :term:`reference count` is equal to one and additionally checks if *op*
    is only used by this thread. :c:expr:`Py_REFCNT(op) == 1` is **not**
-   thread-safe on free threaded builds; prefer this function.
+   thread-safe on free-threaded builds; prefer this function.
 
    The caller must hold an :term:`attached thread state`, despite the fact
    that this function doesn't call into the Python interpreter. This function
    cannot fail.
 
    .. versionadded:: 3.14
+
+.. c:function:: int PyUnstable_SetImmortal(PyObject *op)
+
+   Marks the object *op* :term:`immortal`. The argument should be uniquely referenced by
+   the calling thread. This is intended to be used for reducing reference counting contention
+   in the :term:`free-threaded build` for objects which are shared across threads.
+
+   This is a one-way process: objects can only be made immortal; they cannot be
+   made mortal once again. Immortal objects do not participate in reference counting
+   and will never be garbage collected. If the object is GC-tracked, it is untracked.
+
+   This function is intended to be used soon after *op* is created, by the code that
+   creates it, such as in the object's :c:member:`~PyTypeObject.tp_new` slot.
+   Returns 1 if the object was made immortal and returns 0 if it was not.
+   This function cannot fail.
+
+   .. versionadded:: next

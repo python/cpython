@@ -360,6 +360,7 @@ _curses_panel_panel_bottom_impl(PyCursesPanelObject *self)
 }
 
 /*[clinic input]
+@permit_long_docstring_body
 _curses_panel.panel.hide
 
 Hide the panel.
@@ -369,7 +370,7 @@ This does not delete the object, it just makes the window on screen invisible.
 
 static PyObject *
 _curses_panel_panel_hide_impl(PyCursesPanelObject *self)
-/*[clinic end generated code: output=a7bbbd523e1eab49 input=f6ab884e99386118]*/
+/*[clinic end generated code: output=a7bbbd523e1eab49 input=9071b463a39a1a6a]*/
 {
     int rtn = hide_panel(self->pan);
     return curses_panel_panel_check_err(self, rtn, "hide_panel", "hide");
@@ -409,8 +410,11 @@ static PyObject *
 PyCursesPanel_New(_curses_panel_state *state, PANEL *pan,
                   PyCursesWindowObject *wo)
 {
-    PyCursesPanelObject *po = PyObject_New(PyCursesPanelObject,
-                                           state->PyCursesPanel_Type);
+    assert(state != NULL);
+    PyTypeObject *type = state->PyCursesPanel_Type;
+    assert(type != NULL);
+    assert(type->tp_alloc != NULL);
+    PyCursesPanelObject *po = (PyCursesPanelObject *)type->tp_alloc(type, 0);
     if (po == NULL) {
         return NULL;
     }
@@ -425,20 +429,31 @@ PyCursesPanel_New(_curses_panel_state *state, PANEL *pan,
     return (PyObject *)po;
 }
 
+static int
+PyCursesPanel_Clear(PyObject *op)
+{
+    PyCursesPanelObject *self = _PyCursesPanelObject_CAST(op);
+    PyObject *extra = (PyObject *)panel_userptr(self->pan);
+    if (extra != NULL) {
+        Py_DECREF(extra);
+        if (set_panel_userptr(self->pan, NULL) == ERR) {
+            curses_panel_panel_set_error(self, "set_panel_userptr", NULL);
+            return -1;
+        }
+    }
+    // self->wo should not be cleared because an associated WINDOW may exist
+    return 0;
+}
+
 static void
 PyCursesPanel_Dealloc(PyObject *self)
 {
-    PyObject *tp, *obj;
-    PyCursesPanelObject *po = _PyCursesPanelObject_CAST(self);
+    PyTypeObject *tp = Py_TYPE(self);
+    PyObject_GC_UnTrack(self);
 
-    tp = (PyObject *) Py_TYPE(po);
-    obj = (PyObject *) panel_userptr(po->pan);
-    if (obj) {
-        Py_DECREF(obj);
-        if (set_panel_userptr(po->pan, NULL) == ERR) {
-            curses_panel_panel_set_error(po, "set_panel_userptr", "__del__");
-            PyErr_FormatUnraisable("Exception ignored in PyCursesPanel_Dealloc()");
-        }
+    PyCursesPanelObject *po = _PyCursesPanelObject_CAST(self);
+    if (PyCursesPanel_Clear(self) < 0) {
+        PyErr_FormatUnraisable("Exception ignored in PyCursesPanel_Dealloc()");
     }
     if (del_panel(po->pan) == ERR && !PyErr_Occurred()) {
         curses_panel_panel_set_error(po, "del_panel", "__del__");
@@ -451,8 +466,18 @@ PyCursesPanel_Dealloc(PyObject *self)
             PyErr_FormatUnraisable("Exception ignored in PyCursesPanel_Dealloc()");
         }
     }
-    PyObject_Free(po);
+    tp->tp_free(po);
     Py_DECREF(tp);
+}
+
+static int
+PyCursesPanel_Traverse(PyObject *op, visitproc visit, void *arg)
+{
+    PyCursesPanelObject *self = _PyCursesPanelObject_CAST(op);
+    Py_VISIT(Py_TYPE(op));
+    Py_VISIT(panel_userptr(self->pan));
+    Py_VISIT(self->wo);
+    return 0;
 }
 
 /* panel_above(NULL) returns the bottom panel in the stack. To get
@@ -646,7 +671,9 @@ static PyMethodDef PyCursesPanel_Methods[] = {
 /* -------------------------------------------------------*/
 
 static PyType_Slot PyCursesPanel_Type_slots[] = {
+    {Py_tp_clear, PyCursesPanel_Clear},
     {Py_tp_dealloc, PyCursesPanel_Dealloc},
+    {Py_tp_traverse, PyCursesPanel_Traverse},
     {Py_tp_methods, PyCursesPanel_Methods},
     {0, 0},
 };
@@ -654,7 +681,12 @@ static PyType_Slot PyCursesPanel_Type_slots[] = {
 static PyType_Spec PyCursesPanel_Type_spec = {
     .name = "_curses_panel.panel",
     .basicsize = sizeof(PyCursesPanelObject),
-    .flags = Py_TPFLAGS_DEFAULT | Py_TPFLAGS_DISALLOW_INSTANTIATION,
+    .flags = (
+        Py_TPFLAGS_DEFAULT
+        | Py_TPFLAGS_DISALLOW_INSTANTIATION
+        | Py_TPFLAGS_IMMUTABLETYPE
+        | Py_TPFLAGS_HAVE_GC
+    ),
     .slots = PyCursesPanel_Type_slots
 };
 

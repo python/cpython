@@ -434,15 +434,19 @@ PyDoc_STRVAR(_blake2_blake2b_copy__doc__,
 "Return a copy of the hash object.");
 
 #define _BLAKE2_BLAKE2B_COPY_METHODDEF    \
-    {"copy", (PyCFunction)_blake2_blake2b_copy, METH_NOARGS, _blake2_blake2b_copy__doc__},
+    {"copy", _PyCFunction_CAST(_blake2_blake2b_copy), METH_METHOD|METH_FASTCALL|METH_KEYWORDS, _blake2_blake2b_copy__doc__},
 
 static PyObject *
-_blake2_blake2b_copy_impl(Blake2Object *self);
+_blake2_blake2b_copy_impl(Blake2Object *self, PyTypeObject *cls);
 
 static PyObject *
-_blake2_blake2b_copy(PyObject *self, PyObject *Py_UNUSED(ignored))
+_blake2_blake2b_copy(PyObject *self, PyTypeObject *cls, PyObject *const *args, Py_ssize_t nargs, PyObject *kwnames)
 {
-    return _blake2_blake2b_copy_impl((Blake2Object *)self);
+    if (nargs || (kwnames && PyTuple_GET_SIZE(kwnames))) {
+        PyErr_SetString(PyExc_TypeError, "copy() takes no arguments");
+        return NULL;
+    }
+    return _blake2_blake2b_copy_impl((Blake2Object *)self, cls);
 }
 
 PyDoc_STRVAR(_blake2_blake2b_update__doc__,
@@ -502,4 +506,4 @@ _blake2_blake2b_hexdigest(PyObject *self, PyObject *Py_UNUSED(ignored))
 {
     return _blake2_blake2b_hexdigest_impl((Blake2Object *)self);
 }
-/*[clinic end generated code: output=eed18dcfaf6f7731 input=a9049054013a1b77]*/
+/*[clinic end generated code: output=60a4abbcb8950fe5 input=a9049054013a1b77]*/

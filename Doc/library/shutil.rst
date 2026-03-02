@@ -4,9 +4,6 @@
 .. module:: shutil
    :synopsis: High-level file operations, including copying.
 
-.. sectionauthor:: Fred L. Drake, Jr. <fdrake@acm.org>
-.. partly based on the docstrings
-
 **Source code:** :source:`Lib/shutil.py`
 
 .. index::
@@ -15,7 +12,7 @@
 
 --------------
 
-The :mod:`shutil` module offers a number of high-level operations on files and
+The :mod:`!shutil` module offers a number of high-level operations on files and
 collections of files.  In particular, functions are provided  which support file
 copying and removal. For operations on individual files, see also the
 :mod:`os` module.
@@ -47,6 +44,13 @@ Directory and files operations
    0, only the contents from the current file position to the end of the file will
    be copied.
 
+   :func:`copyfileobj` will *not* guarantee that the destination stream has
+   been flushed on completion of the copy. If you want to read from the
+   destination at the completion of the copy operation (for example, reading
+   the contents of a temporary file that has been copied from a HTTP stream),
+   you must ensure that you have called :func:`~io.IOBase.flush` or
+   :func:`~io.IOBase.close` on the file-like object before attempting to read
+   the destination file.
 
 .. function:: copyfile(src, dst, *, follow_symlinks=True)
 
@@ -82,6 +86,13 @@ Directory and files operations
       Platform-specific fast-copy syscalls may be used internally in order to
       copy the file more efficiently. See
       :ref:`shutil-platform-dependent-efficient-copy-operations` section.
+
+.. exception:: SpecialFileError
+
+   This exception is raised when :func:`copyfile` or :func:`copytree` attempt
+   to copy a named pipe.
+
+   .. versionadded:: 2.7
 
 .. exception:: SameFileError
 
@@ -501,7 +512,7 @@ Directory and files operations
 
 .. exception:: Error
 
-   This exception collects exceptions that are raised during a multi-file
+   Subclass of :exc:`OSError` collecting exceptions raised during a multi-file
    operation. For :func:`copytree`, the exception argument is a list of 3-tuples
    (*srcname*, *dstname*, *exception*).
 
@@ -526,10 +537,12 @@ On Solaris :func:`os.sendfile` is used.
 
 On Windows :func:`shutil.copyfile` uses a bigger default buffer size (1 MiB
 instead of 64 KiB) and a :func:`memoryview`-based variant of
-:func:`shutil.copyfileobj` is used.
+:func:`shutil.copyfileobj` is used, which still reads and writes in a loop.
+:func:`shutil.copy2` uses the native ``CopyFile2`` call on Windows, which is the most
+efficient method, supports copy-on-write, and preserves metadata.
 
 If the fast-copy operation fails and no data was written in the destination
-file then shutil will silently fallback on using less efficient
+file then shutil will silently fall back to less efficient
 :func:`copyfileobj` function internally.
 
 .. versionchanged:: 3.8
@@ -605,21 +618,23 @@ provided.  They rely on the :mod:`zipfile` and :mod:`tarfile` modules.
 
    Create an archive file (such as zip or tar) and return its name.
 
-   *base_name* is the name of the file to create, including the path, minus
-   any format-specific extension.
+   *base_name* is a string or :term:`path-like object` specifying the name of
+   the file to create, including the path, minus any format-specific extension.
 
    *format* is the archive format: one of
    "zip" (if the :mod:`zlib` module is available), "tar", "gztar" (if the
    :mod:`zlib` module is available), "bztar" (if the :mod:`bz2` module is
-   available), or "xztar" (if the :mod:`lzma` module is available).
+   available), "xztar" (if the :mod:`lzma` module is available), or "zstdtar"
+   (if the :mod:`compression.zstd` module is available).
 
-   *root_dir* is a directory that will be the root directory of the
-   archive, all paths in the archive will be relative to it; for example,
-   we typically chdir into *root_dir* before creating the archive.
+   *root_dir* is a string or :term:`path-like object` specifying a directory
+   that will be the root directory of the archive, all paths in the archive
+   will be relative to it; for example, we typically chdir into *root_dir*
+   before creating the archive.
 
-   *base_dir* is the directory where we start archiving from;
-   i.e. *base_dir* will be the common prefix of all files and
-   directories in the archive.  *base_dir* must be given relative
+   *base_dir* is a string or :term:`path-like object` specifying a directory
+   where we start archiving from; i.e. *base_dir* will be the common prefix of
+   all files and directories in the archive.  *base_dir* must be given relative
    to *root_dir*.  See :ref:`shutil-archiving-example-with-basedir` for how to
    use *base_dir* and *root_dir* together.
 
@@ -654,18 +669,24 @@ provided.  They rely on the :mod:`zipfile` and :mod:`tarfile` modules.
       This function is now made thread-safe during creation of standard
       ``.zip`` and tar archives.
 
+   .. versionchanged:: next
+      Accepts a :term:`path-like object` for *base_name*, *root_dir* and
+      *base_dir*.
+
 .. function:: get_archive_formats()
 
    Return a list of supported formats for archiving.
    Each element of the returned sequence is a tuple ``(name, description)``.
 
-   By default :mod:`shutil` provides these formats:
+   By default :mod:`!shutil` provides these formats:
 
    - *zip*: ZIP file (if the :mod:`zlib` module is available).
    - *tar*: Uncompressed tar file. Uses POSIX.1-2001 pax format for new archives.
    - *gztar*: gzip'ed tar-file (if the :mod:`zlib` module is available).
    - *bztar*: bzip2'ed tar-file (if the :mod:`bz2` module is available).
    - *xztar*: xz'ed tar-file (if the :mod:`lzma` module is available).
+   - *zstdtar*: Zstandard compressed tar-file (if the :mod:`compression.zstd`
+     module is available).
 
    You can register new formats or provide your own archiver for any existing
    formats, by using :func:`register_archive_format`.
@@ -709,8 +730,8 @@ provided.  They rely on the :mod:`zipfile` and :mod:`tarfile` modules.
    *extract_dir* is the name of the target directory where the archive is
    unpacked. If not provided, the current working directory is used.
 
-   *format* is the archive format: one of "zip", "tar", "gztar", "bztar", or
-   "xztar".  Or any other format registered with
+   *format* is the archive format: one of "zip", "tar", "gztar", "bztar",
+   "xztar", or "zstdtar".  Or any other format registered with
    :func:`register_unpack_format`.  If not provided, :func:`unpack_archive`
    will use the archive file name extension and see if an unpacker was
    registered for that extension.  In case none is found,
@@ -774,7 +795,7 @@ provided.  They rely on the :mod:`zipfile` and :mod:`tarfile` modules.
    Each element of the returned sequence is a tuple
    ``(name, extensions, description)``.
 
-   By default :mod:`shutil` provides these formats:
+   By default :mod:`!shutil` provides these formats:
 
    - *zip*: ZIP file (unpacking compressed files works only if the corresponding
      module is available).
@@ -782,6 +803,8 @@ provided.  They rely on the :mod:`zipfile` and :mod:`tarfile` modules.
    - *gztar*: gzip'ed tar-file (if the :mod:`zlib` module is available).
    - *bztar*: bzip2'ed tar-file (if the :mod:`bz2` module is available).
    - *xztar*: xz'ed tar-file (if the :mod:`lzma` module is available).
+   - *zstdtar*: Zstandard compressed tar-file (if the :mod:`compression.zstd`
+     module is available).
 
    You can register new formats or provide your own unpacker for any existing
    formats, by using :func:`register_unpack_format`.
@@ -848,7 +871,7 @@ In the final archive, :file:`please_add.txt` should be included, but
     ...     root_dir='tmp/root',
     ...     base_dir='structure/content',
     ... )
-    '/Users/tarek/my_archive.tar'
+    '/Users/tarek/myarchive.tar'
 
 Listing the files in the resulting archive gives us:
 

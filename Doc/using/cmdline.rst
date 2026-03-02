@@ -254,6 +254,15 @@ Miscellaneous options
    .. versionchanged:: 3.5
       Affects also comparisons of :class:`bytes` with :class:`int`.
 
+   .. deprecated:: 3.15
+
+      Deprecate :option:`-b` and :option:`!-bb` command line options
+      and schedule them to become no-op in Python 3.17.
+      These were primarily helpers for the Python 2 -> 3 transition.
+      Starting with Python 3.17, no :exc:`BytesWarning` will be raised
+      for these cases; use a type checker instead.
+
+
 .. option:: -B
 
    If given, Python won't try to write ``.pyc`` files on the
@@ -369,8 +378,8 @@ Miscellaneous options
 .. option:: -R
 
    Turn on hash randomization. This option only has an effect if the
-   :envvar:`PYTHONHASHSEED` environment variable is set to ``0``, since hash
-   randomization is enabled by default.
+   :envvar:`PYTHONHASHSEED` environment variable is set to anything other
+   than ``random``, since hash randomization is enabled by default.
 
    On previous versions of Python, this option turns on hash randomization,
    so that the :meth:`~object.__hash__` values of str and bytes objects
@@ -381,7 +390,7 @@ Miscellaneous options
    Hash randomization is intended to provide protection against a
    denial-of-service caused by carefully chosen inputs that exploit the worst
    case performance of a dict construction, *O*\ (*n*\ :sup:`2`) complexity.  See
-   http://ocert.org/advisories/ocert-2011-003.html for details.
+   https://ocert.org/advisories/ocert-2011-003.html for details.
 
    :envvar:`PYTHONHASHSEED` allows you to set a fixed value for the hash
    seed secret.
@@ -470,8 +479,10 @@ Miscellaneous options
    The *action* field is as explained above but only applies to warnings that
    match the remaining fields.
 
-   The *message* field must match the whole warning message; this match is
-   case-insensitive.
+   The *message* field must match the start of the warning message;
+   this match is case-insensitive.
+   If it starts and ends with a forward slash (``/``), it specifies
+   a regular expression, otherwise it specifies a literal string.
 
    The *category* field matches the warning category
    (ex: ``DeprecationWarning``). This must be a class name; the match test
@@ -480,6 +491,10 @@ Miscellaneous options
 
    The *module* field matches the (fully qualified) module name; this match is
    case-sensitive.
+   If it starts and ends with a forward slash (``/``), it specifies
+   a regular expression that the start of the fully qualified module name
+   must match, otherwise it specifies a literal string that the fully
+   qualified module name must be equal to.
 
    The *lineno* field matches the line number, where zero matches all line
    numbers and is thus equivalent to an omitted line number.
@@ -496,6 +511,9 @@ Miscellaneous options
 
    See :ref:`warning-filter` and :ref:`describing-warning-filters` for more
    details.
+
+   .. versionchanged:: 3.15
+      Added regular expression support for *message* and *module*.
 
 
 .. option:: -x
@@ -653,7 +671,7 @@ Miscellaneous options
      .. versionadded:: 3.13
 
    * :samp:`-X thread_inherit_context={0,1}` causes :class:`~threading.Thread`
-     to, by default, use a copy of context of of the caller of
+     to, by default, use a copy of context of the caller of
      ``Thread.start()`` when starting.  Otherwise, threads will start
      with an empty context.  If unset, the value of this option defaults
      to ``1`` on free-threaded builds and to ``0`` otherwise.  See also
@@ -668,6 +686,21 @@ Miscellaneous options
      and to ``0`` otherwise.  See also :envvar:`PYTHON_CONTEXT_AWARE_WARNINGS`.
 
      .. versionadded:: 3.14
+
+   * :samp:`-X tlbc={0,1}` enables (1, the default) or disables (0) thread-local
+     bytecode in builds configured with :option:`--disable-gil`.  When disabled,
+     this also disables the specializing interpreter.  See also
+     :envvar:`PYTHON_TLBC`.
+
+     .. versionadded:: 3.14
+
+   * :samp:`-X lazy_imports={all,none,normal}` controls lazy import behavior.
+     ``all`` makes all imports lazy by default, ``none`` disables lazy imports
+     entirely (even explicit ``lazy`` statements become eager), and ``normal``
+     (the default) respects the ``lazy`` keyword in source code.
+     See also :envvar:`PYTHON_LAZY_IMPORTS`.
+
+     .. versionadded:: next
 
    It also allows passing arbitrary values and retrieving them through the
    :data:`sys._xoptions` dictionary.
@@ -916,8 +949,9 @@ conflict.
 
 .. envvar:: PYTHONNOUSERSITE
 
-   If this is set, Python won't add the :data:`user site-packages directory
-   <site.USER_SITE>` to :data:`sys.path`.
+   This is equivalent to the :option:`-s` option.  If this is set, Python won't
+   add the :data:`user site-packages directory <site.USER_SITE>` to
+   :data:`sys.path`.
 
    .. seealso::
 
@@ -930,6 +964,9 @@ conflict.
    compute the path of the :data:`user site-packages directory <site.USER_SITE>`
    and :ref:`installation paths <sysconfig-user-scheme>` for
    ``python -m pip install --user``.
+
+   To disable the user site-packages, see :envvar:`PYTHONNOUSERSITE` or the :option:`-s`
+   option.
 
    .. seealso::
 
@@ -963,6 +1000,9 @@ conflict.
 
    See :ref:`warning-filter` and :ref:`describing-warning-filters` for more
    details.
+
+   .. versionchanged:: 3.15
+      Added regular expression support for *message* and *module*.
 
 
 .. envvar:: PYTHONFAULTHANDLER
@@ -1057,6 +1097,27 @@ conflict.
    .. versionchanged:: 3.6
       This variable can now also be used on Python compiled in release mode.
       It now has no effect if set to an empty string.
+
+
+.. envvar:: PYTHON_PYMALLOC_HUGEPAGES
+
+   If set to a non-zero integer, enable huge page support for
+   :ref:`pymalloc <pymalloc>` arenas.  Set to ``0`` or unset to disable.
+   Python must be compiled with :option:`--with-pymalloc-hugepages` for this
+   variable to have any effect.
+
+   When enabled, arena allocation uses ``MAP_HUGETLB`` (Linux) or
+   ``MEM_LARGE_PAGES`` (Windows) with automatic fallback to regular pages if
+   huge pages are not available.
+
+   .. warning::
+
+      On Linux, if the huge-page pool is exhausted, page faults — including
+      copy-on-write faults triggered by :func:`os.fork` — deliver ``SIGBUS``
+      and kill the process.  Only enable this in environments where the
+      huge-page pool is properly sized and fork-safety is not a concern.
+
+   .. versionadded:: 3.15
 
 
 .. envvar:: PYTHONLEGACYWINDOWSFSENCODING
@@ -1249,9 +1310,8 @@ conflict.
 .. envvar:: PYTHON_BASIC_REPL
 
    If this variable is set to any value, the interpreter will not attempt to
-   load the Python-based :term:`REPL` that requires :mod:`curses` and
-   :mod:`readline`, and will instead use the traditional parser-based
-   :term:`REPL`.
+   load the Python-based :term:`REPL` that requires :mod:`readline`, and will
+   instead use the traditional parser-based :term:`REPL`.
 
    .. versionadded:: 3.13
 
@@ -1277,7 +1337,7 @@ conflict.
 .. envvar:: PYTHON_THREAD_INHERIT_CONTEXT
 
    If this variable is set to ``1`` then :class:`~threading.Thread` will,
-   by default, use a copy of context of of the caller of ``Thread.start()``
+   by default, use a copy of context of the caller of ``Thread.start()``
    when starting.  Otherwise, new threads will start with an empty context.
    If unset, this variable defaults to ``1`` on free-threaded builds and to
    ``0`` otherwise.  See also :option:`-X thread_inherit_context<-X>`.
@@ -1301,6 +1361,27 @@ conflict.
    interpreter startup.
 
    .. versionadded:: 3.13
+
+.. envvar:: PYTHON_TLBC
+
+   If set to ``1`` enables thread-local bytecode. If set to ``0`` thread-local
+   bytecode and the specializing interpreter are disabled.  Only applies to
+   builds configured with :option:`--disable-gil`.
+
+   See also the :option:`-X tlbc <-X>` command-line option.
+
+   .. versionadded:: 3.14
+
+.. envvar:: PYTHON_LAZY_IMPORTS
+
+   Controls lazy import behavior. Accepts three values: ``all`` makes all
+   imports lazy by default, ``none`` disables lazy imports entirely (even
+   explicit ``lazy`` statements become eager), and ``normal`` (the default)
+   respects the ``lazy`` keyword in source code.
+
+   See also the :option:`-X lazy_imports <-X>` command-line option.
+
+   .. versionadded:: next
 
 Debug-mode variables
 ~~~~~~~~~~~~~~~~~~~~
