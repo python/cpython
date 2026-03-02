@@ -13,7 +13,7 @@ HERE = pathlib.Path(__file__).parent
 
 def main():
     default_host_runner = (
-        f"{WASMTIME} run "
+        "{WASMTIME} run "
         # Set argv0 so that getpath.py can auto-discover the sysconfig data directory.
         "--argv0 {ARGV0} "
         # Map the checkout to / to load the stdlib from /Lib.
