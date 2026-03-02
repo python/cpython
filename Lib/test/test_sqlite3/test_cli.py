@@ -80,8 +80,8 @@ class CommandLineInterface(unittest.TestCase):
 @force_not_colorized_test_class
 class InteractiveSession(unittest.TestCase):
     MEMORY_DB_MSG = "Connected to a transient in-memory database"
-    PS1 = "sqlite> "
-    PS2 = "... "
+    PS1 = "\001\002sqlite> \001\002"
+    PS2 = "\001\002    ... \001\002"
 
     def run_cli(self, *args, commands=()):
         with (
@@ -212,7 +212,7 @@ class InteractiveSession(unittest.TestCase):
 @requires_subprocess()
 @force_not_colorized_test_class
 class Completion(unittest.TestCase):
-    PS1 = "sqlite> "
+    PS1_NO_COLOR = "sqlite> "
 
     @classmethod
     def setUpClass(cls):
@@ -260,7 +260,7 @@ class Completion(unittest.TestCase):
         lines = output.decode().splitlines()
         indices = (
             i for i, line in enumerate(lines, 1)
-            if line.startswith(f"{self.PS1}xyzzy")
+            if line.startswith(f"{self.PS1_NO_COLOR}xyzzy")
         )
         line_num = next(indices, -1)
         self.assertNotEqual(line_num, -1)
@@ -296,7 +296,7 @@ class Completion(unittest.TestCase):
             lines = output.decode().splitlines()
             indices = [
                 i for i, line in enumerate(lines)
-                if line.startswith(self.PS1)
+                if line.startswith(self.PS1_NO_COLOR)
             ]
             self.assertEqual(len(indices), 2)
             start, end = indices
