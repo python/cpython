@@ -586,8 +586,8 @@ class StructTest(ComplexesAreIdenticalMixin, unittest.TestCase):
         # when running with regrtest -L.
         s = struct.Struct('i')
         with self.assertWarns(DeprecationWarning):
-            s.__init__('ii')
-        self.assertEqual(s.format, 'ii')
+            s.__init__('<ii')
+        self.assertEqual(s.format, '<ii')
         packed = b'\x01\x00\x00\x00\x02\x00\x00\x00'
         self.assertEqual(s.pack(1, 2), packed)
         self.assertEqual(s.unpack(packed), (1, 2))
