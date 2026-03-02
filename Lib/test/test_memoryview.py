@@ -601,6 +601,24 @@ class ArrayMemoryviewTest(unittest.TestCase,
                     m2 = m.cast('@' + m.format)
                     check_equal(m2, True)
 
+        # Test 'c' format
+        a = array.array('B', [1, 2, 3])
+        m = memoryview(a.tobytes()).cast('c')
+        check_equal(m, True)
+
+        # Test 'n' and 'N' formats
+        if struct.calcsize('L') == struct.calcsize('N'):
+            int_format = 'L'
+        elif struct.calcsize('Q') == struct.calcsize('N'):
+            int_format = 'Q'
+        else:
+            raise ValueError('unable to get size_t format in struct')
+        a = array.array(int_format, [1, 2, 3])
+        m = memoryview(a.tobytes()).cast('N')
+        check_equal(m, True)
+        m = memoryview(a.tobytes()).cast('n')
+        check_equal(m, True)
+
         # Test '?' format
         m = memoryview(b'\0\1\2').cast('?')
         check_equal(m, True)
