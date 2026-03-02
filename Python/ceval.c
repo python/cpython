@@ -2923,21 +2923,11 @@ _PyEval_SliceIndexNotNone(PyObject *v, Py_ssize_t *pi)
 {
     PyThreadState *tstate = _PyThreadState_GET();
     Py_ssize_t x;
-    if (PyLong_CheckExact(v)) {
-        if (_PyLong_IsCompact((PyLongObject *)v)) {
-            x = _PyLong_CompactValue((PyLongObject *)v);
-        }
-        else {
-            x = PyLong_AsSsize_t(v);
-            if (x == -1 && _PyErr_Occurred(tstate)) {
-                assert(_PyErr_ExceptionMatches(tstate, PyExc_OverflowError));
-                _PyErr_Clear(tstate);
-                x = _PyLong_IsNegative((PyLongObject *)v)
-                    ? PY_SSIZE_T_MIN : PY_SSIZE_T_MAX;
-            }
-        }
+    if (PyLong_CheckExact(v) && _PyLong_IsCompact((PyLongObject *)v)) {
+        *pi = _PyLong_CompactValue((PyLongObject *)v);
+        return 1;
     }
-    else if (_PyIndex_Check(v)) {
+    if (_PyIndex_Check(v)) {
         x = PyNumber_AsSsize_t(v, NULL);
         if (x == -1 && _PyErr_Occurred(tstate))
             return 0;
