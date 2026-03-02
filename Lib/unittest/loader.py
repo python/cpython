@@ -19,7 +19,7 @@ def _valid_module_name(path):
     # gh-68451: use str.isidentifier() to support Unicode module names,
     # rather than a restrictive ASCII-only regex.
     root, ext = os.path.splitext(path)
-    return ext == '.py' and root.isidentifier()
+    return ext.lower() == '.py' and root.isidentifier()
 
 
 class _FailedTest(case.TestCase):
