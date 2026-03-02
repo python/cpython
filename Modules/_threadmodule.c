@@ -98,7 +98,7 @@ class _thread.RLock "rlockobject *" "clinic_state()->rlock_type"
 //     NOT_STARTED -> STARTING -> RUNNING -> DONE
 //                       |                    ^
 //                       |                    |
-//                       +----- FAILED --------+
+//                       +----- FAILED -------+
 typedef enum {
     THREAD_HANDLE_NOT_STARTED = 1,
     THREAD_HANDLE_STARTING = 2,
@@ -398,7 +398,7 @@ thread_run(void *boot_raw)
             PyErr_FormatUnraisable(
                 "Exception ignored in thread started by %R", boot->func);
         }
-        // Notify that the bootstrap is done and failed (e.g. Memory error).
+        // Notify that bootstrap is done and failed (e.g. Memory error).
         set_thread_handle_state(handle, THREAD_HANDLE_FAILED);
         _PyEvent_Notify(&handle->thread_is_running);
     }
@@ -722,7 +722,8 @@ static PyObject *
 PyThreadHandleObject_is_running(PyObject *op, PyObject *Py_UNUSED(dummy))
 {
     PyThreadHandleObject *self = PyThreadHandleObject_CAST(op);
-    if (_PyEvent_IsSet(&self->handle->thread_is_running)) {
+    if (get_thread_handle_state(self->handle) == THREAD_HANDLE_RUNNING
+        && _PyEvent_IsSet(&self->handle->thread_is_running)) {
         Py_RETURN_TRUE;
     }
     else {
