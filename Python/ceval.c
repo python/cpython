@@ -2884,38 +2884,10 @@ PyEval_GetFuncDesc(PyObject *func)
 int
 _PyEval_SliceIndex(PyObject *v, Py_ssize_t *pi)
 {
-    PyThreadState *tstate = _PyThreadState_GET();
-    if (!Py_IsNone(v)) {
-        Py_ssize_t x;
-        if (PyLong_CheckExact(v)) {
-            // Fast path for compact ints (single digit) -- most slice indices.
-            if (_PyLong_IsCompact((PyLongObject *)v)) {
-                x = _PyLong_CompactValue((PyLongObject *)v);
-            }
-            else {
-                x = PyLong_AsSsize_t(v);
-                if (x == -1 && _PyErr_Occurred(tstate)) {
-                    assert(_PyErr_ExceptionMatches(tstate, PyExc_OverflowError));
-                    _PyErr_Clear(tstate);
-                    x = _PyLong_IsNegative((PyLongObject *)v)
-                        ? PY_SSIZE_T_MIN : PY_SSIZE_T_MAX;
-                }
-            }
-        }
-        else if (_PyIndex_Check(v)) {
-            x = PyNumber_AsSsize_t(v, NULL);
-            if (x == -1 && _PyErr_Occurred(tstate))
-                return 0;
-        }
-        else {
-            _PyErr_SetString(tstate, PyExc_TypeError,
-                             "slice indices must be integers or "
-                             "None or have an __index__ method");
-            return 0;
-        }
-        *pi = x;
+    if (Py_IsNone(v)) {
+        return 1;
     }
-    return 1;
+    return _PyEval_SliceIndexNotNone(v, pi);
 }
 
 int
