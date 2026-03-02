@@ -539,6 +539,7 @@ def collect_sysconfig(info_add):
         'SHELL',
         'SOABI',
         'TEST_MODULES',
+        'VAPTH',
         'abs_builddir',
         'abs_srcdir',
         'prefix',
