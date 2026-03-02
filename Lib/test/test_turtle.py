@@ -671,6 +671,21 @@ class TestTurtle(unittest.TestCase):
         self.assertRaises(turtle.TurtleGraphicsError, self.turtle.dot, 0, (0, 257, 0))
         self.assertRaises(turtle.TurtleGraphicsError, self.turtle.dot, 0, 0, 257, 0)
 
+    def test_clone_clear_does_not_delete_source_items(self):
+        screen = self.turtle.screen
+        screen._delete.reset_mock()
+        screen._createline.side_effect = lambda: object()
+
+        self.turtle.circle(20)
+        clone = self.turtle.clone()
+        source_items = set(self.turtle.items)
+
+        clone.forward(50)
+        clone.clear()
+
+        deleted_items = {call.args[0] for call in screen._delete.call_args_list}
+        self.assertFalse(source_items & deleted_items)
+
 class TestModuleLevel(unittest.TestCase):
     def test_all_signatures(self):
         import inspect
