@@ -29,6 +29,7 @@ import traceback
 import sys
 import warnings
 import weakref
+import math
 
 try:
     import ssl
@@ -2022,7 +2023,10 @@ class BaseEventLoop(events.AbstractEventLoop):
         event_list = None
 
         # Handle 'later' callbacks that are ready.
-        end_time = self.time() + self._clock_resolution
+        now = self.time()
+        # If clock resolution is too small, make sure end_time has the minimal
+        # possible increment
+        end_time = now + max(self._clock_resolution, math.ulp(now))
         while self._scheduled:
             handle = self._scheduled[0]
             if handle._when >= end_time:
