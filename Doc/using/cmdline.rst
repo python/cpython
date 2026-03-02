@@ -390,7 +390,7 @@ Miscellaneous options
    Hash randomization is intended to provide protection against a
    denial-of-service caused by carefully chosen inputs that exploit the worst
    case performance of a dict construction, *O*\ (*n*\ :sup:`2`) complexity.  See
-   http://ocert.org/advisories/ocert-2011-003.html for details.
+   https://ocert.org/advisories/ocert-2011-003.html for details.
 
    :envvar:`PYTHONHASHSEED` allows you to set a fixed value for the hash
    seed secret.
@@ -687,12 +687,27 @@ Miscellaneous options
 
      .. versionadded:: 3.14
 
+   * :samp:`-X pathconfig_warnings={0,1}` if true (``1``) then
+     :ref:`sys-path-init` is allowed to log warnings into stderr.
+     If false (``0``) suppress these warnings. Set to true by default.
+     See also :envvar:`PYTHON_PATHCONFIG_WARNINGS`.
+
+     .. versionadded:: next
+
    * :samp:`-X tlbc={0,1}` enables (1, the default) or disables (0) thread-local
      bytecode in builds configured with :option:`--disable-gil`.  When disabled,
      this also disables the specializing interpreter.  See also
      :envvar:`PYTHON_TLBC`.
 
      .. versionadded:: 3.14
+
+   * :samp:`-X lazy_imports={all,none,normal}` controls lazy import behavior.
+     ``all`` makes all imports lazy by default, ``none`` disables lazy imports
+     entirely (even explicit ``lazy`` statements become eager), and ``normal``
+     (the default) respects the ``lazy`` keyword in source code.
+     See also :envvar:`PYTHON_LAZY_IMPORTS`.
+
+     .. versionadded:: next
 
    It also allows passing arbitrary values and retrieving them through the
    :data:`sys._xoptions` dictionary.
@@ -941,8 +956,9 @@ conflict.
 
 .. envvar:: PYTHONNOUSERSITE
 
-   If this is set, Python won't add the :data:`user site-packages directory
-   <site.USER_SITE>` to :data:`sys.path`.
+   This is equivalent to the :option:`-s` option.  If this is set, Python won't
+   add the :data:`user site-packages directory <site.USER_SITE>` to
+   :data:`sys.path`.
 
    .. seealso::
 
@@ -955,6 +971,9 @@ conflict.
    compute the path of the :data:`user site-packages directory <site.USER_SITE>`
    and :ref:`installation paths <sysconfig-user-scheme>` for
    ``python -m pip install --user``.
+
+   To disable the user site-packages, see :envvar:`PYTHONNOUSERSITE` or the :option:`-s`
+   option.
 
    .. seealso::
 
@@ -1105,7 +1124,7 @@ conflict.
       and kill the process.  Only enable this in environments where the
       huge-page pool is properly sized and fork-safety is not a concern.
 
-   .. versionadded:: next
+   .. versionadded:: 3.15
 
 
 .. envvar:: PYTHONLEGACYWINDOWSFSENCODING
@@ -1342,6 +1361,14 @@ conflict.
 
    .. versionadded:: 3.14
 
+.. envvar:: PYTHON_PATHCONFIG_WARNINGS
+
+   If true (``1``) then :ref:`sys-path-init` is allowed to log warnings into
+   stderr. If false (``0``) suppress these warnings. Set to true by default.
+   See also :option:`-X pathconfig_warnings<-X>`.
+
+   .. versionadded:: next
+
 .. envvar:: PYTHON_JIT
 
    On builds where experimental just-in-time compilation is available, this
@@ -1359,6 +1386,17 @@ conflict.
    See also the :option:`-X tlbc <-X>` command-line option.
 
    .. versionadded:: 3.14
+
+.. envvar:: PYTHON_LAZY_IMPORTS
+
+   Controls lazy import behavior. Accepts three values: ``all`` makes all
+   imports lazy by default, ``none`` disables lazy imports entirely (even
+   explicit ``lazy`` statements become eager), and ``normal`` (the default)
+   respects the ``lazy`` keyword in source code.
+
+   See also the :option:`-X lazy_imports <-X>` command-line option.
+
+   .. versionadded:: next
 
 Debug-mode variables
 ~~~~~~~~~~~~~~~~~~~~

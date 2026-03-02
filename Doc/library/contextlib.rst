@@ -21,9 +21,9 @@ Functions and classes provided:
 .. class:: AbstractContextManager
 
    An :term:`abstract base class` for classes that implement
-   :meth:`object.__enter__` and :meth:`object.__exit__`. A default
-   implementation for :meth:`object.__enter__` is provided which returns
-   ``self`` while :meth:`object.__exit__` is an abstract method which by default
+   :meth:`~object.__enter__` and :meth:`~object.__exit__`. A default
+   implementation for :meth:`~object.__enter__` is provided which returns
+   ``self`` while :meth:`~object.__exit__` is an abstract method which by default
    returns ``None``. See also the definition of :ref:`typecontextmanager`.
 
    .. versionadded:: 3.6
@@ -32,9 +32,9 @@ Functions and classes provided:
 .. class:: AbstractAsyncContextManager
 
    An :term:`abstract base class` for classes that implement
-   :meth:`object.__aenter__` and :meth:`object.__aexit__`. A default
-   implementation for :meth:`object.__aenter__` is provided which returns
-   ``self`` while :meth:`object.__aexit__` is an abstract method which by default
+   :meth:`~object.__aenter__` and :meth:`~object.__aexit__`. A default
+   implementation for :meth:`~object.__aenter__` is provided which returns
+   ``self`` while :meth:`~object.__aexit__` is an abstract method which by default
    returns ``None``. See also the definition of
    :ref:`async-context-managers`.
 
@@ -228,7 +228,7 @@ Functions and classes provided:
 
 .. function:: nullcontext(enter_result=None)
 
-   Return a context manager that returns *enter_result* from ``__enter__``, but
+   Return a context manager that returns *enter_result* from :meth:`~object.__enter__`, but
    otherwise does nothing. It is intended to be used as a stand-in for an
    optional context manager, for example::
 
@@ -335,7 +335,7 @@ Functions and classes provided:
    For example, the output of :func:`help` normally is sent to *sys.stdout*.
    You can capture that output in a string by redirecting the output to an
    :class:`io.StringIO` object. The replacement stream is returned from the
-   ``__enter__`` method and so is available as the target of the
+   :meth:`~object.__enter__` method and so is available as the target of the
    :keyword:`with` statement::
 
         with redirect_stdout(io.StringIO()) as f:
@@ -396,7 +396,8 @@ Functions and classes provided:
    A base class that enables a context manager to also be used as a decorator.
 
    Context managers inheriting from ``ContextDecorator`` have to implement
-   ``__enter__`` and ``__exit__`` as normal. ``__exit__`` retains its optional
+   :meth:`~object.__enter__` and :meth:`~object.__exit__` as normal.
+   ``__exit__`` retains its optional
    exception handling even when used as a decorator.
 
    ``ContextDecorator`` is used by :func:`contextmanager`, so you get this
@@ -564,7 +565,7 @@ Functions and classes provided:
          Raises :exc:`TypeError` instead of :exc:`AttributeError` if *cm*
          is not a context manager.
 
-      .. versionchanged:: next
+      .. versionchanged:: 3.15
          Added support for arbitrary descriptors :meth:`!__enter__` and
          :meth:`!__exit__`.
 
@@ -586,7 +587,7 @@ Functions and classes provided:
       The passed in object is returned from the function, allowing this
       method to be used as a function decorator.
 
-      .. versionchanged:: next
+      .. versionchanged:: 3.15
          Added support for arbitrary descriptors :meth:`!__exit__`.
 
    .. method:: callback(callback, /, *args, **kwds)
@@ -646,7 +647,7 @@ Functions and classes provided:
          Raises :exc:`TypeError` instead of :exc:`AttributeError` if *cm*
          is not an asynchronous context manager.
 
-      .. versionchanged:: next
+      .. versionchanged:: 3.15
          Added support for arbitrary descriptors :meth:`!__aenter__` and :meth:`!__aexit__`.
 
    .. method:: push_async_exit(exit)
@@ -654,7 +655,7 @@ Functions and classes provided:
       Similar to :meth:`ExitStack.push` but expects either an asynchronous context manager
       or a coroutine function.
 
-      .. versionchanged:: next
+      .. versionchanged:: 3.15
          Added support for arbitrary descriptors :meth:`!__aexit__`.
 
    .. method:: push_async_callback(callback, /, *args, **kwds)
@@ -681,7 +682,7 @@ Examples and Recipes
 --------------------
 
 This section describes some examples and recipes for making effective use of
-the tools provided by :mod:`contextlib`.
+the tools provided by :mod:`!contextlib`.
 
 
 Supporting a variable number of context managers
@@ -710,9 +711,9 @@ context management protocol.
 Catching exceptions from ``__enter__`` methods
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-It is occasionally desirable to catch exceptions from an ``__enter__``
+It is occasionally desirable to catch exceptions from an :meth:`~object.__enter__`
 method implementation, *without* inadvertently catching exceptions from
-the :keyword:`with` statement body or the context manager's ``__exit__``
+the :keyword:`with` statement body or the context manager's :meth:`~object.__exit__`
 method. By using :class:`ExitStack` the steps in the context management
 protocol can be separated slightly in order to allow this::
 

@@ -17,6 +17,11 @@ on:
          description: OS to run the job
          required: true
          type: string
+      test-opts:
+         description: Extra options to pass to the test runner via TESTOPTS
+         required: false
+         type: string
+         default: ''
 
 env:
   FORCE_COLOR: 1
@@ -27,7 +32,7 @@ jobs:
     runs-on: ${{ inputs.os }}
     timeout-minutes: 60
     env:
-      OPENSSL_VER: 3.0.18
+      OPENSSL_VER: 3.5.5
       PYTHONSTRICTEXTENSIONBUILD: 1
       TERM: linux
     steps:
@@ -42,7 +47,7 @@ jobs:
       if: ${{ fromJSON(inputs.bolt-optimizations) }}
       run: |
         sudo bash -c "$(wget -O - https://apt.llvm.org/llvm.sh)" ./llvm.sh 19
-        sudo apt-get install bolt-19
+        sudo apt-get install --no-install-recommends bolt-19
         echo PATH="$(llvm-config-19 --bindir):$PATH" >> $GITHUB_ENV
     - name: Configure OpenSSL env vars
       run: |
@@ -58,9 +63,6 @@ jobs:
     - name: Install OpenSSL
       if: steps.cache-openssl.outputs.cache-hit != 'true'
       run: python3 Tools/ssl/multissltests.py --steps=library --base-directory "$MULTISSL_DIR" --openssl "$OPENSSL_VER" --system Linux
-    - name: Add ccache to PATH
-      run: |
-        echo "PATH=/usr/lib/ccache:$PATH" >> "$GITHUB_ENV"
     - name: Setup directory envs for out-of-tree builds
       run: |
         echo "CPYTHON_RO_SRCDIR=$(realpath -m "${GITHUB_WORKSPACE}"/../cpython-ro-srcdir)" >> "$GITHUB_ENV"
@@ -111,4 +113,6 @@ jobs:
       run: sudo mount "$CPYTHON_RO_SRCDIR" -oremount,rw
     - name: Tests
       working-directory: ${{ env.CPYTHON_BUILDDIR }}
-      run: xvfb-run make ci
+      run: xvfb-run make ci EXTRATESTOPTS="${TEST_OPTS}"
+      env:
+        TEST_OPTS: ${{ inputs.test-opts }}
