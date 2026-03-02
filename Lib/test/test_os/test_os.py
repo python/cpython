@@ -2785,13 +2785,14 @@ class TestInvalidFD(unittest.TestCase):
         self.assertIn(ctx.exception.errno, errnos)
 
     @unittest.skipUnless(hasattr(os, 'pathconf'), 'test needs os.pathconf()')
-    @unittest.skipUnless(os.pathconf in os.supports_fd,
-                         'needs fpathconf()')
     @unittest.skipIf(
         support.linked_to_musl(),
         'musl fpathconf ignores the file descriptor and returns a constant',
         )
     def test_pathconf_negative_fd_uses_fd_semantics(self):
+        if os.pathconf not in os.supports_fd:
+            self.skipTest('needs fpathconf()')
+
         with self.check_for_ebadf():
             os.pathconf(-1, 1)
 
