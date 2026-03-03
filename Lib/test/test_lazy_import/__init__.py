@@ -210,6 +210,20 @@ class LazyImportTypeTests(unittest.TestCase):
         import test.test_lazy_import.data.lazy_get_value
         self.assertIn("test.test_lazy_import.data.basic2", sys.modules)
 
+    @support.requires_subprocess()
+    def test_lazy_value_resolve_method_exists_if_not_called(self):
+        code = textwrap.dedent("""
+            lazy import json
+            print(globals()["json"].resolve)
+        """)
+        result = subprocess.run(
+            [sys.executable, "-c", code],
+            capture_output=True,
+            text=True
+        )
+        self.assertEqual(result.returncode, 0, f"stdout: {result.stdout}, stderr: {result.stderr}")
+        self.assertIn("<built-in method resolve of lazy_import object at", result.stdout)
+
     def test_lazy_import_type_exposed(self):
         """LazyImportType should be exposed in types module."""
         self.assertHasAttr(types, 'LazyImportType')
