@@ -376,8 +376,9 @@ class BasicTest(BaseTest):
     def test_install_scripts_mtime(self):
         """
         Test that install_scripts does not preserve mtime when copying scripts.
-        Using mtime serves as a proxy to verify that shutil.copy2 (and thus
-        SELinux bin_t contexts) is not being used during script installation.
+        Using mtime serves as a proxy to verify that shutil.copy2/copystat
+        is not used during script installation,
+        incorrectly copying e.g. SELinux bin_t context.
         See gh-145417.
         """
         import time
