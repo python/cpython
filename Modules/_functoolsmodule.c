@@ -194,13 +194,19 @@ partial_new(PyTypeObject *type, PyObject *args, PyObject *kw)
     if (kw != NULL) {
         PyObject *key, *val;
         Py_ssize_t pos = 0;
+        Py_BEGIN_CRITICAL_SECTION(kw);
         while (PyDict_Next(kw, &pos, &key, &val)) {
             if (val == phold) {
                 PyErr_SetString(PyExc_TypeError,
                                 "Placeholder cannot be passed as a keyword argument");
+#ifdef Py_GIL_DISABLED
+                /* Need to release lock in case of error */
+                PyCriticalSection_End(&_py_cs);
+#endif
                 return NULL;
             }
         }
+        Py_END_CRITICAL_SECTION();
     }
 
     /* check wrapped function / object */
@@ -487,12 +493,15 @@ partial_vectorcall(PyObject *self, PyObject *const *args,
         /* Copy pto_keywords with overlapping call keywords merged
          * Note, tail is already coppied. */
         Py_ssize_t pos = 0, i = 0;
-        while (PyDict_Next(n_merges ? pto_kw_merged : pto->kw, &pos, &key, &val)) {
+        PyObject *keyword_dict = n_merges ? pto_kw_merged : pto->kw;
+        Py_BEGIN_CRITICAL_SECTION(keyword_dict);
+        while (PyDict_Next(keyword_dict, &pos, &key, &val)) {
             assert(i < pto_nkwds);
             PyTuple_SET_ITEM(tot_kwnames, i, Py_NewRef(key));
             stack[tot_nargs + i] = val;
             i++;
         }
+        Py_END_CRITICAL_SECTION();
         assert(i == pto_nkwds);
         Py_XDECREF(pto_kw_merged);
 
@@ -723,6 +732,7 @@ partial_repr(PyObject *self)
         }
     }
     /* Pack keyword arguments */
+    Py_BEGIN_CRITICAL_SECTION(kw);
     for (i = 0; PyDict_Next(kw, &i, &key, &value);) {
         /* Prevent key.__str__ from deleting the value. */
         Py_INCREF(value);
@@ -730,9 +740,14 @@ partial_repr(PyObject *self)
                                                 key, value));
         Py_DECREF(value);
         if (arglist == NULL) {
+#ifdef Py_GIL_DISABLED
+        /* Need to release lock in case of error */
+        PyCriticalSection_End(&_py_cs);
+#endif
             goto done;
         }
     }
+    Py_END_CRITICAL_SECTION();
 
     mod = PyType_GetModuleName(Py_TYPE(pto));
     if (mod == NULL) {
@@ -1247,10 +1262,12 @@ lru_cache_make_key(PyObject *kwd_mark, PyObject *args,
     }
     if (kwds_size) {
         PyTuple_SET_ITEM(key, key_pos++, Py_NewRef(kwd_mark));
+        Py_BEGIN_CRITICAL_SECTION(kwds);
         for (pos = 0; PyDict_Next(kwds, &pos, &keyword, &value);) {
             PyTuple_SET_ITEM(key, key_pos++, Py_NewRef(keyword));
             PyTuple_SET_ITEM(key, key_pos++, Py_NewRef(value));
         }
+        Py_END_CRITICAL_SECTION();
         assert(key_pos == PyTuple_GET_SIZE(args) + kwds_size * 2 + 1);
     }
     if (typed) {
@@ -1259,10 +1276,12 @@ lru_cache_make_key(PyObject *kwd_mark, PyObject *args,
             PyTuple_SET_ITEM(key, key_pos++, Py_NewRef(item));
         }
         if (kwds_size) {
+            Py_BEGIN_CRITICAL_SECTION(kwds);
             for (pos = 0; PyDict_Next(kwds, &pos, &keyword, &value);) {
                 PyObject *item = (PyObject *)Py_TYPE(value);
                 PyTuple_SET_ITEM(key, key_pos++, Py_NewRef(item));
             }
+            Py_END_CRITICAL_SECTION();
         }
     }
     assert(key_pos == key_size);
