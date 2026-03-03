@@ -81,7 +81,7 @@ Summary -- Release highlights
 * :pep:`747`: :ref:`Annotating type forms with TypeForm
   <whatsnew315-typeform>`
 * :pep:`782`: :ref:`A new PyBytesWriter C API to create a Python bytes object
-  <whatsnew315-pep782>`
+  <whatsnew315-pybyteswriter>`
 * :ref:`The JIT compiler has been significantly upgraded <whatsnew315-jit>`
 * :ref:`Improved error messages <whatsnew315-improved-error-messages>`
 
@@ -1641,7 +1641,7 @@ New features
   and :c:data:`Py_mod_abi`.
   (Contributed by Petr Viktorin in :gh:`137210`.)
 
-.. _whatsnew315-pep782:
+.. _whatsnew315-pybyteswriter:
 
 * Implement :pep:`782`, the :ref:`PyBytesWriter API <pybyteswriter>`.
   Add functions:
