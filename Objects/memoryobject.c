@@ -3128,25 +3128,21 @@ memory_richcompare(PyObject *v, PyObject *w, int op)
     // is not equal to itself.  So only use this optimization on format known to
     // not use floats.
     if (v == w) {
-        int can_compare_ptr;
         const char *format = vv->format;
         if (format != NULL) {
             if (*format == '@') {
                 format++;
             }
-            // Include only formats known by struct, exclude formats
+            // Include only formats known by struct, exclude float formats
             // "d" (double), "f" (float) and "e" (16-bit float).
             // Do not optimize "P" format.
-            can_compare_ptr = (format[0] != 0
-                               && strchr("bBchHiIlLnNqQ?", format[0]) != NULL
-                               && format[1] == 0);
-        }
-        else {
-            can_compare_ptr = 0;
-        }
-        if (can_compare_ptr) {
-            equal = 1;
-            goto result;
+            if (format[0] != 0
+                && strchr("bBchHiIlLnNqQ?", format[0]) != NULL
+                && format[1] == 0)
+            {
+                equal = 1;
+                goto result;
+            }
         }
     }
 
