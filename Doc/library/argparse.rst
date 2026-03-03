@@ -739,8 +739,8 @@ By default, :mod:`!argparse` automatically handles the internal naming and
 display names of arguments, simplifying the process without requiring
 additional configuration.
 As such, you do not need to specify the dest_ and metavar_ parameters.
-The dest_ parameter defaults to the argument name, with underscores ``_``
-replacing hyphens ``-`` if the argument is optional . The metavar_
+For optional arguments, the dest_ parameter defaults to the argument name, with underscores ``_``
+replacing hyphens ``-``. The metavar_
 parameter defaults to the upper-cased name. For example::
 
    >>> parser = argparse.ArgumentParser(prog='PROG')
