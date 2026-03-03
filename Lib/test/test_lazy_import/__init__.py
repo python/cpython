@@ -221,7 +221,7 @@ class LazyImportTypeTests(unittest.TestCase):
 
     @support.requires_subprocess()
     def test_lazy_import_type_attributes_accessible(self):
-        """Regression test for GH-145453."""
+        """Regression test for GH-145452."""
         code = textwrap.dedent("""
             lazy import json
             print(globals()["json"].resolve)
