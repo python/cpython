@@ -609,6 +609,7 @@ check_missing___main___attr(PyObject *exc)
     // Get the error message.
     PyObject *args = PyException_GetArgs(exc);
     if (args == NULL || args == Py_None || PyObject_Size(args) < 1) {
+        Py_XDECREF(args);
         assert(!PyErr_Occurred());
         return 0;
     }
