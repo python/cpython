@@ -1,3 +1,0 @@
-Calling :func:`repr` on :func:`functools.partial` will no longer
-use a mutated version of the arguments ``fn``, ``args``, or ``kw``
-when generating the string representation of the partial object.
