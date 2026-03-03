@@ -2209,13 +2209,14 @@ class TestDate(HarmlessMixedComparison, unittest.TestCase):
 
     def test_strptime_n_and_t_format(self):
         whitespaces = ('', ' ', '\t', '\r', '\v', '\n', '\f')
-        for fd in ('n', 't'):
+        format_directives = ('%n', '%t', '%n%t', '%t%n')
+        for fd in format_directives:
             for ws in (*whitespaces, ''.join(whitespaces)):
                 with self.subTest(format_directive=fd, whitespace=ws):
                     self.assertEqual(
                         self.theclass.strptime(
                             f"2026{ws}02{ws}01",
-                            f"%Y%{fd}%m%{fd}%d"
+                            f"%Y{fd}%m{fd}%d",
                         ),
                         self.theclass(2026, 2, 1),
                     )
