@@ -136,7 +136,6 @@ def main(*args):
     # Use RL_PROMPT_START_IGNORE (\001) and RL_PROMPT_END_IGNORE (\002) to
     # bracket non-printing characters. This tells readline to ignore them
     # when calculating screen space for redisplay during history scrolling.
-    # See https://stackoverflow.com/a/9468954 for more details.
     sys.ps1 = f"\001{s.prompt}\002sqlite> \001{s.reset}\002"
     sys.ps2 = f"\001{s.prompt}\002    ... \001{s.reset}\002"
 
