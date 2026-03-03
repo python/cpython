@@ -215,8 +215,7 @@ class Completion(unittest.TestCase):
     # run_pty() creates a real terminal environment, where sqlite3 CLI
     # SqliteInteractiveConsole invokes GNU Readline for input. Readline's
     # _rl_strip_prompt() strips \001 and \002 from the output, so test
-    # assertions use the plain prompt. See
-    # https://cgit.git.savannah.gnu.org/cgit/readline.git/tree/display.c
+    # assertions use the plain prompt.
     PS1 = "sqlite> "
 
     @classmethod
