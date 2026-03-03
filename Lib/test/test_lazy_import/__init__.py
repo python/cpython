@@ -230,6 +230,7 @@ class LazyImportTypeTests(unittest.TestCase):
         proc = assert_python_ok("-c", code)  
         self.assertIn(b"<built-in method resolve of lazy_import object at", proc.out)  
 
+
 class SyntaxRestrictionTests(unittest.TestCase):
     """Tests for syntax restrictions on lazy imports."""
 
