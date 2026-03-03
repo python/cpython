@@ -210,8 +210,18 @@ class LazyImportTypeTests(unittest.TestCase):
         import test.test_lazy_import.data.lazy_get_value
         self.assertIn("test.test_lazy_import.data.basic2", sys.modules)
 
+    def test_lazy_import_type_exposed(self):
+        """LazyImportType should be exposed in types module."""
+        self.assertHasAttr(types, 'LazyImportType')
+        self.assertEqual(types.LazyImportType.__name__, 'lazy_import')
+
+    def test_lazy_import_type_cant_construct(self):
+        """LazyImportType should not be directly constructible."""
+        self.assertRaises(TypeError, types.LazyImportType, {}, "module")
+
     @support.requires_subprocess()
-    def test_lazy_value_resolve_method_exists_if_not_called(self):
+    def test_lazy_import_type_attributes_accessible(self):
+        """Regression test for GH-145453."""
         code = textwrap.dedent("""
             lazy import json
             print(globals()["json"].resolve)
@@ -223,15 +233,6 @@ class LazyImportTypeTests(unittest.TestCase):
         )
         self.assertEqual(result.returncode, 0, f"stdout: {result.stdout}, stderr: {result.stderr}")
         self.assertIn("<built-in method resolve of lazy_import object at", result.stdout)
-
-    def test_lazy_import_type_exposed(self):
-        """LazyImportType should be exposed in types module."""
-        self.assertHasAttr(types, 'LazyImportType')
-        self.assertEqual(types.LazyImportType.__name__, 'lazy_import')
-
-    def test_lazy_import_type_cant_construct(self):
-        """LazyImportType should not be directly constructible."""
-        self.assertRaises(TypeError, types.LazyImportType, {}, "module")
 
 
 class SyntaxRestrictionTests(unittest.TestCase):
