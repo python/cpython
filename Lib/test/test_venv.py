@@ -378,31 +378,41 @@ class BasicTest(BaseTest):
         Test that install_scripts does not preserve mtime when copying scripts.
         Using mtime serves as a proxy to verify that shutil.copy2 (and thus
         SELinux bin_t contexts) is not being used during script installation.
+        See gh-145417.
         """
         import time
 
-        builder = venv.EnvBuilder()
-        builder.create(self.env_dir)
-        context = builder.ensure_directories(self.env_dir)
+        venv_dir = os.path.dirname(venv.__file__)
+        src_path = os.path.join(venv_dir, 'scripts', 'common', 'Activate.ps1')
+        src_mtime = os.path.getmtime(src_path)
+        if abs(time.time() - src_mtime) < 1.0:
+            time.sleep(1.1)
 
-        with tempfile.TemporaryDirectory() as script_dir:
-            common_dir = os.path.join(script_dir, 'common')
-            os.mkdir(common_dir)
-            script_path = os.path.join(common_dir, 'test_script.sh')
+        rmtree(self.env_dir)
+        venv.create(self.env_dir)
 
-            with open(script_path, 'wb') as f:
-                f.write(b'echo Hello')
+        dst_path = os.path.join(self.env_dir, self.bindir, 'Activate.ps1')
+        self.assertTrue(os.path.exists(dst_path), "Activate.ps1 not found in venv")
+        dst_mtime = os.path.getmtime(dst_path)
 
-            past_time = time.time() - 10_000_000
-            os.utime(script_path, (past_time, past_time))
+        # shutil.copy should update mtime, whereas shutil.copy2 would preserve it
+        self.assertNotEqual(src_mtime, dst_mtime,
+                          "mtime was preserved, meaning shutil.copy2 was used")
 
-            builder.install_scripts(context, script_dir)
+        # Permissions and content should still match
+        src_stat = os.stat(src_path)
+        dst_stat = os.stat(dst_path)
+        self.assertEqual(src_stat.st_mode, dst_stat.st_mode, "File modes do not match")
 
-            dst_path = os.path.join(context.bin_path, 'test_script.sh')
-            self.assertTrue(os.path.exists(dst_path))
+        with open(src_path, 'rb') as f:
+            src_data = f.read()
+        with open(dst_path, 'rb') as f:
+            dst_data = f.read()
+        self.assertEqual(src_data, dst_data, "File contents do not match")
 
-            new_mtime = os.path.getmtime(dst_path)
-            self.assertGreater(new_mtime, past_time + 1000)
+        self.assertNotIn(b'__VENV_PYTHON__', src_data,
+                         "Test assumes Activate.ps1 is a static file, not a template")
+
 
     def test_overwrite_existing(self):
         """
