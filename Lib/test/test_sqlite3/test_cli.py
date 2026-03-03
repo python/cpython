@@ -212,7 +212,12 @@ class InteractiveSession(unittest.TestCase):
 @requires_subprocess()
 @force_not_colorized_test_class
 class Completion(unittest.TestCase):
-    PS1_NO_COLOR = "sqlite> "
+    # run_pty() creates a real terminal environment, where sqlite3 CLI
+    # SqliteInteractiveConsole invokes GNU Readline for input. Readline's
+    # _rl_strip_prompt() strips \001 and \002 from the output, so test
+    # assertions use the plain prompt. See
+    # https://cgit.git.savannah.gnu.org/cgit/readline.git/tree/display.c
+    PS1 = "sqlite> "
 
     @classmethod
     def setUpClass(cls):
@@ -288,7 +293,7 @@ class Completion(unittest.TestCase):
         output = self.write_input(input_)
         lines = output.decode().splitlines()
         indices = [i for i, line in enumerate(lines)
-                  if line.startswith(self.PS1_NO_COLOR)]
+                  if line.startswith(self.PS1)]
         start, end = indices[-3], indices[-2]
         candidates = [l.strip() for l in lines[start+1:end]]
         self.assertEqual(candidates,
@@ -327,7 +332,7 @@ class Completion(unittest.TestCase):
         output = self.write_input(input_)
         lines = output.decode().splitlines()
         indices = [
-            i for i, line in enumerate(lines) if line.startswith(self.PS1_NO_COLOR)
+            i for i, line in enumerate(lines) if line.startswith(self.PS1)
         ]
         start, end = indices[-3], indices[-2]
         candidates = [l.strip() for l in lines[start+1:end]]
@@ -365,7 +370,7 @@ class Completion(unittest.TestCase):
         output = self.write_input(input_)
         lines = output.decode().splitlines()
         indices = [
-            i for i, line in enumerate(lines) if line.startswith(self.PS1_NO_COLOR)
+            i for i, line in enumerate(lines) if line.startswith(self.PS1)
         ]
         start, end = indices[-4], indices[-3]
         candidates = [l.strip() for l in lines[start+1:end]]
@@ -385,7 +390,7 @@ class Completion(unittest.TestCase):
         lines = output.decode().splitlines()
         indices = (
             i for i, line in enumerate(lines, 1)
-            if line.startswith(f"{self.PS1_NO_COLOR}xyzzy")
+            if line.startswith(f"{self.PS1}xyzzy")
         )
         line_num = next(indices, -1)
         self.assertNotEqual(line_num, -1)
@@ -419,7 +424,7 @@ class Completion(unittest.TestCase):
             lines = output.decode().splitlines()
             indices = [
                 i for i, line in enumerate(lines)
-                if line.startswith(self.PS1_NO_COLOR)
+                if line.startswith(self.PS1)
             ]
             self.assertEqual(len(indices), 2)
             start, end = indices
