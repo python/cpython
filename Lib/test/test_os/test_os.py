@@ -2778,12 +2778,6 @@ class TestInvalidFD(unittest.TestCase):
         self.check(os.pathconf, "PC_NAME_MAX")
         self.check(os.fpathconf, "PC_NAME_MAX")
 
-    @contextlib.contextmanager
-    def check_for_ebadf(self, errnos=(errno.EBADF,)):
-        with self.assertRaises(OSError) as ctx:
-            yield
-        self.assertIn(ctx.exception.errno, errnos)
-
     @unittest.skipUnless(hasattr(os, 'pathconf'), 'test needs os.pathconf()')
     @unittest.skipIf(
         support.linked_to_musl(),
@@ -2793,53 +2787,48 @@ class TestInvalidFD(unittest.TestCase):
         if os.pathconf not in os.supports_fd:
             self.skipTest('needs fpathconf()')
 
-        with self.check_for_ebadf():
+        with self.assertRaises(OSError) as ctx:
             os.pathconf(-1, 1)
+        self.assertEqual(ctx.exception.errno, errno.EBADF)
 
     @support.subTests("fd", [-1, -5])
     def test_negative_fd_ebadf(self, fd):
-        with self.check_for_ebadf():
-            os.stat(fd)
+        tests = [(os.stat, fd)]
         if hasattr(os, "statx"):
-            with self.check_for_ebadf():
-                os.statx(fd, mask=0)
+            tests.append((os.statx, fd, 0))
         if os.chdir in os.supports_fd:
-            with self.check_for_ebadf():
-                os.chdir(fd)
+            tests.append((os.chdir, fd))
         if os.chmod in os.supports_fd:
-            with self.check_for_ebadf():
-                os.chmod(fd, 0o777)
+            tests.append((os.chmod, fd, 0o777))
         if hasattr(os, "chown") and os.chown in os.supports_fd:
-            with self.check_for_ebadf():
-                os.chown(fd, 0, 0)
+            tests.append((os.chown, fd, 0, 0))
         if os.listdir in os.supports_fd:
-            with self.check_for_ebadf():
-                os.listdir(fd)
+            tests.append((os.listdir, fd))
         if os.utime in os.supports_fd:
-            with self.check_for_ebadf():
-                os.utime(fd, (0, 0))
+            tests.append((os.utime, fd, (0, 0)))
+        if hasattr(os, "truncate") and os.truncate in os.supports_fd:
+            tests.append((os.truncate, fd, 0))
+        if hasattr(os, 'statvfs') and os.statvfs in os.supports_fd:
+            tests.append((os.statvfs, fd))
+        if hasattr(os, "setxattr"):
+            tests.append((os.getxattr, fd, b"user.test"))
+            tests.append((os.setxattr, fd, b"user.test", b"1"))
+            tests.append((os.removexattr, fd, b"user.test"))
+            tests.append((os.listxattr, fd))
+        if os.scandir in os.supports_fd:
+            tests.append((os.scandir, fd))
+
+        for func, *args in tests:
+            with self.subTest(func=func, args=args):
+                with self.assertRaises(OSError) as ctx:
+                    func(*args)
+                self.assertEqual(ctx.exception.errno, errno.EBADF)
+
         if hasattr(os, "execve") and os.execve in os.supports_fd:
             # glibc fails with EINVAL, musl fails with EBADF
-            with self.check_for_ebadf(errnos=(errno.EBADF, errno.EINVAL)):
+            with self.assertRaises(OSError) as ctx:
                 os.execve(fd, [sys.executable, "-c", "pass"], os.environ)
-        if hasattr(os, "truncate") and os.truncate in os.supports_fd:
-            with self.check_for_ebadf():
-                os.truncate(fd, 0)
-        if hasattr(os, 'statvfs') and os.statvfs in os.supports_fd:
-            with self.check_for_ebadf():
-                os.statvfs(fd)
-        if hasattr(os, "setxattr"):
-            with self.check_for_ebadf():
-                os.getxattr(fd, b"user.test")
-            with self.check_for_ebadf():
-                os.setxattr(fd, b"user.test", b"1")
-            with self.check_for_ebadf():
-                os.removexattr(fd, b"user.test")
-            with self.check_for_ebadf():
-                os.listxattr(fd)
-        if os.scandir in os.supports_fd:
-            with self.check_for_ebadf():
-                os.scandir(fd)
+            self.assertIn(ctx.exception.errno, (errno.EBADF, errno.EINVAL))
 
         if support.MS_WINDOWS:
             import nt
