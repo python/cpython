@@ -65,6 +65,21 @@ The :mod:`!wave` module defines the following function and exception:
    specification or hits an implementation deficiency.
 
 
+.. data:: WAVE_FORMAT_PCM
+
+   Format code for uncompressed PCM audio.
+
+
+.. data:: WAVE_FORMAT_IEEE_FLOAT
+
+   Format code for IEEE floating-point audio.
+
+
+.. data:: WAVE_FORMAT_EXTENSIBLE
+
+   Format code for WAVE extensible headers.
+
+
 .. _wave-read-objects:
 
 Wave_read Objects
@@ -107,8 +122,8 @@ Wave_read Objects
 
       Returns the frame format code.
 
-      This is one of ``WAVE_FORMAT_PCM``, ``WAVE_FORMAT_IEEE_FLOAT``, or
-      ``WAVE_FORMAT_EXTENSIBLE``.
+      This is one of :data:`WAVE_FORMAT_PCM`,
+      :data:`WAVE_FORMAT_IEEE_FLOAT`, or :data:`WAVE_FORMAT_EXTENSIBLE`.
 
 
    .. method:: getcomptype()
@@ -255,8 +270,8 @@ Wave_write Objects
 
       Set the frame format code.
 
-      Supported values are ``WAVE_FORMAT_PCM`` and
-      ``WAVE_FORMAT_IEEE_FLOAT``.
+      Supported values are :data:`WAVE_FORMAT_PCM` and
+      :data:`WAVE_FORMAT_IEEE_FLOAT`.
 
 
    .. method:: getformat()
@@ -271,7 +286,7 @@ Wave_write Objects
       with values valid for the ``set*()`` methods. Sets all parameters.
 
       For backwards compatibility, a 6-item tuple without *format* is also
-      accepted and defaults to ``WAVE_FORMAT_PCM``.
+      accepted and defaults to :data:`WAVE_FORMAT_PCM`.
 
 
    .. method:: getparams()
@@ -309,5 +324,5 @@ Wave_write Objects
       or :meth:`writeframesraw`, and any attempt to do so will raise
       :exc:`wave.Error`.
 
-      For ``WAVE_FORMAT_IEEE_FLOAT`` output, a ``fact`` chunk is written as
+      For :data:`WAVE_FORMAT_IEEE_FLOAT` output, a ``fact`` chunk is written as
       required by the WAVE specification for non-PCM formats.
