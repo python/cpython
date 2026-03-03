@@ -149,6 +149,31 @@ class TestList(TestCase):
         with threading_helper.start_threads(threads):
             pass
 
+    # gh-145036: race condition with list.__sizeof__()
+    def test_list_sizeof_free_threaded_build(self):
+        L = []
+
+        def test1():
+            for _ in range(100):
+                L.append(1)
+                L.pop()
+
+        def test2():
+            for _ in range(100):
+                L.__sizeof__()
+
+        threads = []
+        for _ in range(4):
+            threads.append(Thread(target=test1))
+            threads.append(Thread(target=test2))
+
+        for t in threads:
+            t.start()
+        for t in threads:
+            t.join()
+
+        self.assertEqual(len(L), 0)
+
 
 if __name__ == "__main__":
     unittest.main()
