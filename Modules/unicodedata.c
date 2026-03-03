@@ -89,8 +89,7 @@ _getrecord_ex(Py_UCS4 code)
     if (code >= 0x110000)
         index = 0;
     else {
-        index = index1[(code>>SHIFT)];
-        index = index2[(index<<SHIFT)+(code&((1<<SHIFT)-1))];
+        index = unicodedata_get_record_index(code);
     }
 
     return &_PyUnicode_Database_Records[index];

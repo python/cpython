@@ -48,10 +48,8 @@ gettyperecord(Py_UCS4 code)
 
     if (code >= 0x110000)
         index = 0;
-    else
-    {
-        index = index1[(code>>SHIFT)];
-        index = index2[(index<<SHIFT)+(code&((1<<SHIFT)-1))];
+    else {
+        index = unicodetype_get_type_index(code);
     }
 
     return &_PyUnicode_TypeRecords[index];
@@ -285,4 +283,3 @@ int _PyUnicode_IsAlpha(Py_UCS4 ch)
 
     return (ctype->flags & ALPHA_MASK) != 0;
 }
-

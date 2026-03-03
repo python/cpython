@@ -27,6 +27,7 @@
 #
 
 import dataclasses
+import io
 import os
 import sys
 import re
@@ -35,6 +36,12 @@ import zipfile
 from functools import partial
 from textwrap import dedent
 from typing import Iterator, List, Optional, Set, Tuple
+
+PACKTAB_DIR = os.path.join(os.path.dirname(__file__), "packtab")
+if PACKTAB_DIR not in sys.path:
+    sys.path.insert(0, PACKTAB_DIR)
+
+from packTab import Code, pack_table
 
 SCRIPT = os.path.normpath(sys.argv[0])
 VERSION = "3.3"
@@ -427,13 +434,15 @@ def makeunicodedata(unicode, trace):
         fprint("    NULL")
         fprint("};")
 
-        # split record index table
-        index1, index2, shift = splitbins(index, trace)
-
-        fprint("/* index tables for the database records */")
-        fprint("#define SHIFT", shift)
-        Array("index1", index1).dump(fp, trace)
-        Array("index2", index2).dump(fp, trace)
+        fprint("/* lookup helper for the database records */")
+        dump_packtab_lookup(
+            fp,
+            "unicodedata",
+            "get_record_index",
+            index,
+            default=0,
+            trace=trace,
+        )
 
         # split decomposition index table
         index1, index2, shift = splitbins(decomp_index, trace)
@@ -638,13 +647,15 @@ def makeunicodetype(unicode, trace):
         fprint("};")
         fprint()
 
-        # split decomposition index table
-        index1, index2, shift = splitbins(index, trace)
-
-        fprint("/* type indexes */")
-        fprint("#define SHIFT", shift)
-        Array("index1", index1).dump(fp, trace)
-        Array("index2", index2).dump(fp, trace)
+        fprint("/* lookup helper for type indexes */")
+        dump_packtab_lookup(
+            fp,
+            "unicodetype",
+            "get_type_index",
+            index,
+            default=0,
+            trace=trace,
+        )
 
         # Generate code for _PyUnicode_ToNumeric()
         numeric_items = sorted(numeric.items())
@@ -1281,6 +1292,26 @@ class Array:
             if s.strip():
                 file.write(s.rstrip() + "\n")
         file.write("};\n\n")
+
+
+def dump_packtab_lookup(file, namespace, func_name, data, default=0, trace=0, compression=1):
+    solution = pack_table(data, default=default, compression=compression)
+    if trace:
+        print(
+            f"{func_name}: packtab {solution.cost} bytes,"
+            f" {solution.nLookups} lookups, {solution.nExtraOps} extra ops",
+            file=sys.stderr,
+        )
+    code = Code(namespace)
+    solution.genCode(code, func_name, language="c", private=True)
+    buf = io.StringIO()
+    code.print_code(file=buf, language="c")
+    generated = buf.getvalue()
+    if generated.startswith("#include <stdint.h>\n\n"):
+        generated = generated[len("#include <stdint.h>\n\n"):]
+    file.write(generated)
+    if not generated.endswith("\n\n"):
+        file.write("\n")
 
 
 def getsize(data):
