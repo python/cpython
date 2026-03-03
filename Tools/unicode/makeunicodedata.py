@@ -437,29 +437,35 @@ def makeunicodedata(unicode, trace):
         fprint("/* lookup helper for the database records */")
         dump_packtab_lookup(
             fp,
-            "unicodedata",
+            "unicodedata_record",
             "get_record_index",
             index,
             default=0,
             trace=trace,
         )
 
-        # split decomposition index table
-        index1, index2, shift = splitbins(decomp_index, trace)
-
         fprint("/* decomposition data */")
         Array("decomp_data", decomp_data).dump(fp, trace)
 
-        fprint("/* index tables for the decomposition data */")
-        fprint("#define DECOMP_SHIFT", shift)
-        Array("decomp_index1", index1).dump(fp, trace)
-        Array("decomp_index2", index2).dump(fp, trace)
+        fprint("/* lookup helper for the decomposition data */")
+        dump_packtab_lookup(
+            fp,
+            "unicodedata_decomp",
+            "get_decomp_index",
+            decomp_index,
+            default=0,
+            trace=trace,
+        )
 
-        index, index2, shift = splitbins(comp_data, trace)
         fprint("/* NFC pairs */")
-        fprint("#define COMP_SHIFT", shift)
-        Array("comp_index", index).dump(fp, trace)
-        Array("comp_data", index2).dump(fp, trace)
+        dump_packtab_lookup(
+            fp,
+            "unicodedata_comp",
+            "get_comp_data",
+            comp_data,
+            default=0,
+            trace=trace,
+        )
 
         # Generate delta tables for old versions
         for version, table, normalization in unicode.changed:
@@ -473,22 +479,23 @@ def makeunicodedata(unicode, trace):
                 except KeyError:
                     index[i] = cache[record] = len(records)
                     records.append(record)
-            index1, index2, shift = splitbins(index, trace)
             fprint("static const change_record change_records_%s[] = {" % cversion)
             for record in records:
                 fprint("    { %s }," % ", ".join(map(str,record)))
             fprint("};")
-            Array("changes_%s_index" % cversion, index1).dump(fp, trace)
-            Array("changes_%s_data" % cversion, index2).dump(fp, trace)
+            dump_packtab_lookup(
+                fp,
+                f"changes_{cversion}",
+                f"get_change_index_{cversion}",
+                index,
+                default=0,
+                trace=trace,
+            )
             fprint("static const change_record* get_change_%s(Py_UCS4 n)" % cversion)
             fprint("{")
             fprint("    int index;")
             fprint("    if (n >= 0x110000) index = 0;")
-            fprint("    else {")
-            fprint("        index = changes_%s_index[n>>%d];" % (cversion, shift))
-            fprint("        index = changes_%s_data[(index<<%d)+(n & %d)];" % \
-                   (cversion, shift, ((1<<shift)-1)))
-            fprint("    }")
+            fprint("    else index = changes_%s_get_change_index_%s(n);" % (cversion, cversion))
             fprint("    return change_records_%s+index;" % cversion)
             fprint("}\n")
             fprint("static Py_UCS4 normalization_%s(Py_UCS4 n)" % cversion)
@@ -755,11 +762,15 @@ def makeunicodename(unicode, trace):
             inverse_list[codepoint] = pos
         Array("packed_name_dawg", list(packed_dawg)).dump(fp, trace)
         Array("dawg_pos_to_codepoint", pos_to_codepoint).dump(fp, trace)
-        index1, index2, shift = splitbins(inverse_list, trace)
-        fprint("#define DAWG_CODEPOINT_TO_POS_SHIFT", shift)
         fprint("#define DAWG_CODEPOINT_TO_POS_NOTFOUND", notfound)
-        Array("dawg_codepoint_to_pos_index1", index1).dump(fp, trace)
-        Array("dawg_codepoint_to_pos_index2", index2).dump(fp, trace)
+        dump_packtab_lookup(
+            fp,
+            "unicodename",
+            "get_dawg_codepoint_pos",
+            inverse_list,
+            default=notfound,
+            trace=trace,
+        )
 
         fprint()
         fprint('static const unsigned int aliases_start = %#x;' %

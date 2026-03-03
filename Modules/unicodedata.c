@@ -89,7 +89,7 @@ _getrecord_ex(Py_UCS4 code)
     if (code >= 0x110000)
         index = 0;
     else {
-        index = unicodedata_get_record_index(code);
+        index = unicodedata_record_get_record_index(code);
     }
 
     return &_PyUnicode_Database_Records[index];
@@ -492,9 +492,7 @@ unicodedata_UCD_decomposition_impl(PyObject *self, int chr)
     if (code < 0 || code >= 0x110000)
         index = 0;
     else {
-        index = decomp_index1[(code>>DECOMP_SHIFT)];
-        index = decomp_index2[(index<<DECOMP_SHIFT)+
-                             (code&((1<<DECOMP_SHIFT)-1))];
+        index = unicodedata_decomp_get_decomp_index(code);
     }
 
     /* high byte is number of hex bytes (usually one or two), low byte
@@ -538,9 +536,7 @@ get_decomp_record(PyObject *self, Py_UCS4 code,
         *index = 0;
     }
     else {
-        *index = decomp_index1[(code>>DECOMP_SHIFT)];
-        *index = decomp_index2[(*index<<DECOMP_SHIFT)+
-                               (code&((1<<DECOMP_SHIFT)-1))];
+        *index = unicodedata_decomp_get_decomp_index(code);
     }
 
     /* high byte is number of hex bytes (usually one or two), low byte
@@ -710,7 +706,7 @@ nfc_nfkc(PyObject *self, PyObject *input, int k)
     const void *data;
     Py_UCS4 *output;
     Py_ssize_t i, i1, o, len;
-    int f,l,index,index1,comb;
+    int f,l,index,comb;
     Py_UCS4 code;
     Py_ssize_t skipped[20];
     int cskipped = 0;
@@ -809,9 +805,7 @@ nfc_nfkc(PyObject *self, PyObject *input, int k)
               continue;
           }
           index = f*TOTAL_LAST + l;
-          index1 = comp_index[index >> COMP_SHIFT];
-          code = comp_data[(index1<<COMP_SHIFT)+
-                           (index&((1<<COMP_SHIFT)-1))];
+          code = unicodedata_comp_get_comp_data(index);
           if (code == 0)
               goto not_combinable;
 
@@ -1395,9 +1389,7 @@ _getucname(PyObject *self,
     }
 
     /* get position of codepoint in order of names in the dawg */
-    offset = dawg_codepoint_to_pos_index1[(code>>DAWG_CODEPOINT_TO_POS_SHIFT)];
-    offset = dawg_codepoint_to_pos_index2[(offset<<DAWG_CODEPOINT_TO_POS_SHIFT) +
-                               (code&((1<<DAWG_CODEPOINT_TO_POS_SHIFT)-1))];
+    offset = unicodename_get_dawg_codepoint_pos(code);
     if (offset == DAWG_CODEPOINT_TO_POS_NOTFOUND)
         return 0;
 
