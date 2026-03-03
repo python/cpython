@@ -1664,6 +1664,10 @@ New features
 * Add :c:func:`PyUnstable_SetImmortal` C-API function to mark objects as :term:`immortal`.
   (Contributed by Kumar Aditya in :gh:`143300`.)
 
+* Restore private provisional ``_Py_InitializeMain()`` function removed in
+  Python 3.14.
+  (Contributed by Victor Stinner in :gh:`142417`.)
+
 Changed C APIs
 --------------
 
