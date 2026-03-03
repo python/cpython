@@ -153,26 +153,22 @@ class TestList(TestCase):
     def test_list_sizeof_free_threaded_build(self):
         L = []
 
-        def test1():
+        def mutate_function():
             for _ in range(100):
                 L.append(1)
                 L.pop()
 
-        def test2():
+        def size_function():
             for _ in range(100):
                 L.__sizeof__()
 
         threads = []
         for _ in range(4):
-            threads.append(Thread(target=test1))
-            threads.append(Thread(target=test2))
+            threads.append(Thread(target=mutate_function))
+            threads.append(Thread(target=size_function))
 
-        for t in threads:
-            t.start()
-        for t in threads:
-            t.join()
-
-        self.assertEqual(len(L), 0)
+        with threading_helper.start_threads(threads):
+            pass
 
 
 if __name__ == "__main__":

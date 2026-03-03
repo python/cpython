@@ -381,5 +381,6 @@ class ListTest(list_tests.CommonTest):
 
         self.assertEqual(foo(list(range(10))), 45)
 
+
 if __name__ == "__main__":
     unittest.main()
