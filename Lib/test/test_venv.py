@@ -376,32 +376,31 @@ class BasicTest(BaseTest):
     def test_install_scripts_mtime(self):
         """
         Test that install_scripts does not preserve mtime when copying scripts.
-        Using mtime serves as a proxy to verify that shutil.copy2 (and thus 
+        Using mtime serves as a proxy to verify that shutil.copy2 (and thus
         SELinux bin_t contexts) is not being used during script installation.
         """
         import time
-        from unittest.mock import patch
-        
+
         builder = venv.EnvBuilder()
         builder.create(self.env_dir)
         context = builder.ensure_directories(self.env_dir)
-        
+
         with tempfile.TemporaryDirectory() as script_dir:
             common_dir = os.path.join(script_dir, 'common')
             os.mkdir(common_dir)
             script_path = os.path.join(common_dir, 'test_script.sh')
-            
+
             with open(script_path, 'wb') as f:
                 f.write(b'echo Hello')
-            
+
             past_time = time.time() - 10_000_000
             os.utime(script_path, (past_time, past_time))
-            
+
             builder.install_scripts(context, script_dir)
-            
+
             dst_path = os.path.join(context.bin_path, 'test_script.sh')
             self.assertTrue(os.path.exists(dst_path))
-            
+
             new_mtime = os.path.getmtime(dst_path)
             self.assertGreater(new_mtime, past_time + 1000)
 
