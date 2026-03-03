@@ -11,13 +11,13 @@ import os
 import os.path
 import pathlib
 import re
+import shlex
 import shutil
 import subprocess
 import sys
-import time
 import sysconfig
 import tempfile
-import shlex
+import time
 from test.support import (captured_stdout, captured_stderr,
                           skip_if_broken_multiprocessing_synchronize, verbose,
                           requires_subprocess, is_android, is_apple_mobile,
