@@ -12,6 +12,7 @@ import tempfile
 import os
 
 from test import support
+from test.support.script_helper import assert_python_ok
 
 try:
     import _testcapi
@@ -218,6 +219,16 @@ class LazyImportTypeTests(unittest.TestCase):
     def test_lazy_import_type_cant_construct(self):
         """LazyImportType should not be directly constructible."""
         self.assertRaises(TypeError, types.LazyImportType, {}, "module")
+
+    @support.requires_subprocess()
+    def test_lazy_import_type_attributes_accessible(self):
+        """Check that static PyLazyImport_Type is initialized at startup."""
+        code = textwrap.dedent("""
+            lazy import json
+            print(globals()["json"].resolve)
+        """)
+        proc = assert_python_ok("-c", code)
+        self.assertIn(b"<built-in method resolve of lazy_import object at", proc.out)
 
 
 class SyntaxRestrictionTests(unittest.TestCase):
