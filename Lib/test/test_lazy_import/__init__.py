@@ -228,7 +228,7 @@ class LazyImportTypeTests(unittest.TestCase):
             print(globals()["json"].resolve)
         """)
         proc = assert_python_ok("-c", code)
-        self.assertIn(b"<built-in method resolve of lazy_import object at", proc.out)  
+        self.assertIn(b"<built-in method resolve of lazy_import object at", proc.out)
 
 
 class SyntaxRestrictionTests(unittest.TestCase):
