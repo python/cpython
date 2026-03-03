@@ -77,6 +77,7 @@ Summary -- Release highlights
   <whatsnew315-unpacking-in-comprehensions>`
 * :pep:`686`: :ref:`Python now uses UTF-8 as the default encoding
   <whatsnew315-utf8-default>`
+* :pep:`728`: ``TypedDict`` with typed extra items
 * :pep:`747`: :ref:`Annotating type forms with TypeForm
   <whatsnew315-typeform>`
 * :pep:`782`: :ref:`A new PyBytesWriter C API to create a Python bytes object
