@@ -1,4 +1,6 @@
-Fix infinite loop in email.message.EmailMessage.as_string() when
-add_attachment() is called with very long parameter keys.  This could cause
-denial of service by hanging the application indefinitely during MIME
-parameter folding and RFC 2231 encoding.
+:mod:`email.message`: fix an infinite loop :meth:`EmailMessage.as_string
+<email.message.EmailMessage.as_string>` when :meth:`~email.message.MIMEPart.add_attachment`
+is called with very long parameter keys.
+
+This could cause denial of service by hanging the application indefinitely
+during MIME parameter folding and :rfc:`2231` encoding.
