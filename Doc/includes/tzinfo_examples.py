@@ -4,15 +4,15 @@ import datetime as dt
 # (May result in wrong values on historical times in
 #  timezones where UTC offset and/or the DST rules had
 #  changed in the past.)
-import time as _time
+import time
 
 ZERO = dt.timedelta(0)
 HOUR = dt.timedelta(hours=1)
 SECOND = dt.timedelta(seconds=1)
 
-STDOFFSET = dt.timedelta(seconds=-_time.timezone)
-if _time.daylight:
-    DSTOFFSET = dt.timedelta(seconds=-_time.altzone)
+STDOFFSET = dt.timedelta(seconds=-time.timezone)
+if time.daylight:
+    DSTOFFSET = dt.timedelta(seconds=-time.altzone)
 else:
     DSTOFFSET = STDOFFSET
 
@@ -24,10 +24,10 @@ class LocalTimezone(dt.tzinfo):
     def fromutc(self, when):
         assert when.tzinfo is self
         stamp = (when - dt.datetime(1970, 1, 1, tzinfo=self)) // SECOND
-        args = _time.localtime(stamp)[:6]
+        args = time.localtime(stamp)[:6]
         dst_diff = DSTDIFF // SECOND
         # Detect fold
-        fold = (args == _time.localtime(stamp - dst_diff))
+        fold = (args == time.localtime(stamp - dst_diff))
         return dt.datetime(*args, microsecond=when.microsecond,
                            tzinfo=self, fold=fold)
 
@@ -44,14 +44,14 @@ class LocalTimezone(dt.tzinfo):
             return ZERO
 
     def tzname(self, when):
-        return _time.tzname[self._isdst(when)]
+        return time.tzname[self._isdst(when)]
 
     def _isdst(self, when):
         tt = (when.year, when.month, when.day,
               when.hour, when.minute, when.second,
               when.weekday(), 0, 0)
-        stamp = _time.mktime(tt)
-        tt = _time.localtime(stamp)
+        stamp = time.mktime(tt)
+        tt = time.localtime(stamp)
         return tt.tm_isdst > 0
 
 
