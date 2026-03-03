@@ -255,7 +255,7 @@ common XML vulnerabilities.
    The corresponding :attr:`~ExpatError.lineno` and :attr:`~ExpatError.offset`
    should not be used as they may have no special meaning.
 
-   .. versionadded:: next
+   .. versionadded:: 3.12.13
 
 .. method:: xmlparser.SetAllocTrackerMaximumAmplification(max_factor, /)
 
@@ -285,7 +285,7 @@ common XML vulnerabilities.
       that can be adjusted by :meth:`.SetAllocTrackerActivationThreshold`
       is exceeded.
 
-   .. versionadded:: next
+   .. versionadded:: 3.12.13
 
 
 :class:`xmlparser` objects have the following attributes:

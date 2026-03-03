@@ -1,2 +1,0 @@
-:mod:`email.message`: ensure linear complexity for legacy HTTP parameters
-parsing. Patch by Bénédikt Tran.
