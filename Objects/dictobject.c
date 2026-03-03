@@ -1518,12 +1518,18 @@ dictkeys_generic_lookup_threadsafe(PyDictObject *mp, PyDictKeysObject* dk, PyObj
 Py_ssize_t
 _Py_dict_lookup_threadsafe(PyDictObject *mp, PyObject *key, Py_hash_t hash, PyObject **value_addr)
 {
+    ensure_shared_on_read(mp);
+
+    if (PyFrozenDict_CheckExact(mp)) {
+        Py_ssize_t ix = _Py_dict_lookup(mp, key, hash, value_addr);
+        Py_XNewRef(*value_addr);
+        return ix;
+    }
+
     PyDictKeysObject *dk;
     DictKeysKind kind;
     Py_ssize_t ix;
     PyObject *value;
-
-    ensure_shared_on_read(mp);
 
     dk = _Py_atomic_load_ptr(&mp->ma_keys);
     kind = dk->dk_kind;
