@@ -2658,11 +2658,10 @@ requires, and these work on all supported platforms.
 |  ``%Y``   | Year with century as a decimal | 0001, 0002, ..., 2013, | \(2)  |
 |           | number.                        | 2014, ..., 9998, 9999  |       |
 +-----------+--------------------------------+------------------------+-------+
-|  ``%z``   | UTC offset.                    | (empty), +0000,        | \(6)  |
-|           | ``strptime()`` accepts         | -0400, +1030,          |       |
-|           | ``±HH[MM[SS[.ffffff]]]``;      | +063415, +04,          |       |
-|           | ``strftime()`` outputs         | -030712.345216         |       |
-|           | ``±HHMM[SS[.ffffff]]``         |                        |       |
+|  ``%z``   | UTC offset in the form         | (empty), +0000,        | \(6)  |
+|           | ``±HH[MM[SS[.ffffff]]]``.      | -0400, +1030,          |       |
+|           | For :meth:`!strftime`,         | +063415, +04,          |       |
+|           | ``±HHMM[SS[.ffffff]]``         | -030712.345216         |       |
 |           | (empty string if the object is |                        |       |
 |           | naive).                        |                        |       |
 +-----------+--------------------------------+------------------------+-------+
@@ -2686,11 +2685,10 @@ convenience.
 |           | number, zero-padded to 6       | 999999                 |       |
 |           | digits.                        |                        |       |
 +-----------+--------------------------------+------------------------+-------+
-| ``%:z``   | UTC offset.                    | (empty), +00:00,       | \(6)  |
-|           | ``strptime()`` accepts         | -04:00, +10:30,        |       |
-|           | ``±HH[:MM[:SS[.ffffff]]]``;    | +06:34:15, +04,        |       |
-|           | ``strftime()`` outputs         | -03:07:12.345216       |       |
-|           | ``±HH:MM[:SS[.ffffff]]``       |                        |       |
+| ``%:z``   | UTC offset in the form         | (empty), +00:00,       | \(6)  |
+|           | ``±HH[:MM[:SS[.ffffff]]]``.    | -04:00, +10:30,        |       |
+|           | For :meth:`!strftime`,         | +06:34:15, +04,        |       |
+|           | ``±HH:MM[:SS[.ffffff]]``       | -03:07:12.345216       |       |
 |           | (empty string if the object is |                        |       |
 |           | naive).                        |                        |       |
 +-----------+--------------------------------+------------------------+-------+
