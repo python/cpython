@@ -386,6 +386,8 @@ class BasicTest(BaseTest):
         venv_dir = os.path.dirname(venv.__file__)
         src_path = os.path.join(venv_dir, 'scripts', 'common', 'Activate.ps1')
         src_mtime = os.path.getmtime(src_path)
+
+        # Ensure a temporal difference between src and dst creation
         if abs(time.time() - src_mtime) < 1.0:
             time.sleep(1.1)
 
@@ -404,14 +406,17 @@ class BasicTest(BaseTest):
         src_stat = os.stat(src_path)
         dst_stat = os.stat(dst_path)
         self.assertEqual(src_stat.st_mode, dst_stat.st_mode, "File modes do not match")
-        self.assertNotIn(b'__VENV_PYTHON__', src_data,
-                         "Test assumes Activate.ps1 is a static file, not a template")
+
         with open(src_path, 'rb') as f:
             src_data = f.read()
+
+        # Protection against the file becoming a template in the future
         self.assertNotIn(b'__VENV_PYTHON__', src_data,
                          "Test assumes Activate.ps1 is a static file, not a template")
+
         with open(dst_path, 'rb') as f:
             dst_data = f.read()
+
         self.assertEqual(src_data, dst_data, "File contents do not match")
 
 
