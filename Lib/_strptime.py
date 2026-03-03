@@ -384,7 +384,7 @@ class TimeRE(dict):
                                 'Z'),
             'n': r'\s*',
             't': r'\s*',
-            '%': '%'
+            '%': '%',
         }
         if self.locale_time.LC_alt_digits is None:
             for d in 'dmyCHIMS':
