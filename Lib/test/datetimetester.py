@@ -2217,7 +2217,7 @@ class TestDate(HarmlessMixedComparison, unittest.TestCase):
                             f"2026{ws}02{ws}01",
                             f"%Y%{fd}%m%{fd}%d"
                         ),
-                        self.theclass(2026, 2, 1)
+                        self.theclass(2026, 2, 1),
                     )
 
 
