@@ -2208,8 +2208,8 @@ class TestDate(HarmlessMixedComparison, unittest.TestCase):
         )
 
     def test_strptime_n_and_t_format(self):
-        whitespaces = ('', ' ', '\t', '\r', '\v', '\n', '\f')
         format_directives = ('%n', '%t', '%n%t', '%t%n')
+        whitespaces = ('', ' ', '\t', '\r', '\v', '\n', '\f')
         for fd in format_directives:
             for ws in (*whitespaces, ''.join(whitespaces)):
                 with self.subTest(format_directive=fd, whitespace=ws):
