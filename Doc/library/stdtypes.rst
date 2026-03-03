@@ -4536,7 +4536,7 @@ copying.
    types such as :class:`bytes` and :class:`bytearray`, an element is a single
    byte, but other types such as :class:`array.array` may have bigger elements.
 
-   ``len(view)`` is equal to the length of :class:`~memoryview.tolist`, which
+   ``len(view)`` is equal to the length of :meth:`~memoryview.tolist`, which
    is the nested list representation of the view. If ``view.ndim = 1``,
    this is equal to the number of elements in the view.
 
