@@ -2215,10 +2215,10 @@ class TestDate(HarmlessMixedComparison, unittest.TestCase):
                 with self.subTest(format_directive=fd, whitespace=ws):
                     self.assertEqual(
                         self.theclass.strptime(
-                            f"2026{ws}02{ws}01",
+                            f"2026{ws}02{ws}03",
                             f"%Y{fd}%m{fd}%d",
                         ),
-                        self.theclass(2026, 2, 1),
+                        self.theclass(2026, 2, 3),
                     )
 
 

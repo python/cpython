@@ -678,11 +678,11 @@ class StrptimeTests(unittest.TestCase):
                 with self.subTest(format_directive=fd, whitespace=ws):
                     self.assertEqual(
                         time.strptime(
-                            f"2026{ws}02{ws}01",
+                            f"2026{ws}02{ws}03",
                             f"%Y{fd}%m{fd}%d",
                         ),
                         time.strptime(
-                            f'2026-02-01',
+                            f'2026-02-03',
                             "%Y-%m-%d",
                         ),
                     )
