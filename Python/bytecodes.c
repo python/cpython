@@ -1082,6 +1082,16 @@ dummy_func(
             EXIT_IF(!PyAnyDict_CheckExact(o));
         }
 
+        op(_GUARD_TOS_DICT, (tos -- tos)) {
+            PyObject *o = PyStackRef_AsPyObjectBorrow(tos);
+            EXIT_IF(!PyDict_CheckExact(o));
+        }
+
+        op(_GUARD_TOS_FROZENDICT, (tos -- tos)) {
+            PyObject *o = PyStackRef_AsPyObjectBorrow(tos);
+            EXIT_IF(!PyFrozenDict_CheckExact(o));
+        }
+
         macro(BINARY_OP_SUBSCR_DICT) =
             _GUARD_NOS_ANY_DICT + unused/5 + _BINARY_OP_SUBSCR_DICT + POP_TOP + POP_TOP;
 
@@ -2929,6 +2939,16 @@ dummy_func(
         op(_GUARD_TOS_ANY_SET, (tos -- tos)) {
             PyObject *o = PyStackRef_AsPyObjectBorrow(tos);
             DEOPT_IF(!PyAnySet_CheckExact(o));
+        }
+
+        op(_GUARD_TOS_SET, (tos -- tos)) {
+            PyObject *o = PyStackRef_AsPyObjectBorrow(tos);
+            DEOPT_IF(!PySet_CheckExact(o));
+        }
+
+        op(_GUARD_TOS_FROZENSET, (tos -- tos)) {
+            PyObject *o = PyStackRef_AsPyObjectBorrow(tos);
+            DEOPT_IF(!PyFrozenSet_CheckExact(o));
         }
 
         macro(CONTAINS_OP_SET) = _GUARD_TOS_ANY_SET + unused/1 + _CONTAINS_OP_SET + POP_TOP + POP_TOP;
