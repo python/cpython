@@ -1,0 +1,190 @@
+.. date: 2026-01-21-12-34-05
+.. gh-issue: 144125
+.. nonce: TAz5uo
+.. release date: 2026-03-03
+.. section: Security
+
+:mod:`~email.generator.BytesGenerator` will now refuse to serialize (write)
+headers that are unsafely folded or delimited; see
+:attr:`~email.policy.Policy.verify_generated_headers`. (Contributed by Bas
+Bloemsaat and Petr Viktorin in :gh:`121650`).
+
+..
+
+.. date: 2026-01-16-14-40-31
+.. gh-issue: 143935
+.. nonce: U2YtKl
+.. section: Security
+
+Fixed a bug in the folding of comments when flattening an email message
+using a modern email policy. Comments consisting of a very long sequence of
+non-foldable characters could trigger a forced line wrap that omitted the
+required leading space on the continuation line, causing the remainder of
+the comment to be interpreted as a new header field. This enabled header
+injection with carefully crafted inputs.
+
+..
+
+.. date: 2026-01-16-11-51-19
+.. gh-issue: 143925
+.. nonce: mrtcHW
+.. section: Security
+
+Reject control characters in ``data:`` URL media types.
+
+..
+
+.. date: 2026-01-16-11-13-15
+.. gh-issue: 143919
+.. nonce: kchwZV
+.. section: Security
+
+Reject control characters in :class:`http.cookies.Morsel` fields and values.
+
+..
+
+.. date: 2026-01-16-11-07-36
+.. gh-issue: 143916
+.. nonce: dpWeOD
+.. section: Security
+
+Reject C0 control characters within wsgiref.headers.Headers fields, values,
+and parameters.
+
+..
+
+.. date: 2025-12-01-09-36-45
+.. gh-issue: 142145
+.. nonce: tcAUhg
+.. section: Security
+
+Remove quadratic behavior in ``xml.minidom`` node ID cache clearing.  In
+order to do this without breaking existing users, we also add the
+*ownerDocument* attribute to :mod:`xml.dom.minidom` elements and attributes
+created by directly instantiating the ``Element`` or ``Attr`` class. Note
+that this way of creating nodes is not supported; creator functions like
+:py:meth:`xml.dom.Document.documentElement` should be used instead.
+
+..
+
+.. date: 2025-08-15-23-08-44
+.. gh-issue: 137836
+.. nonce: b55rhh
+.. section: Security
+
+Add support of the "plaintext" element, RAWTEXT elements "xmp", "iframe",
+"noembed" and "noframes", and optionally RAWTEXT element "noscript" in
+:class:`html.parser.HTMLParser`.
+
+..
+
+.. date: 2025-06-28-13-23-53
+.. gh-issue: 136063
+.. nonce: aGk0Jv
+.. section: Security
+
+:mod:`email.message`: ensure linear complexity for legacy HTTP parameters
+parsing. Patch by Bénédikt Tran.
+
+..
+
+.. date: 2025-05-30-22-33-27
+.. gh-issue: 136065
+.. nonce: bu337o
+.. section: Security
+
+Fix quadratic complexity in :func:`os.path.expandvars`.
+
+..
+
+.. date: 2024-05-23-11-47-48
+.. gh-issue: 119451
+.. nonce: qkJe9-
+.. section: Security
+
+Fix a potential memory denial of service in the :mod:`http.client` module.
+When connecting to a malicious server, it could cause an arbitrary amount of
+memory to be allocated. This could have led to symptoms including a
+:exc:`MemoryError`, swapping, out of memory (OOM) killed processes or
+containers, or even system crashes.
+
+..
+
+.. date: 2024-05-23-11-44-41
+.. gh-issue: 119452
+.. nonce: PRfsSv
+.. section: Security
+
+Fix a potential memory denial of service in the :mod:`http.server` module.
+When a malicious user is connected to the CGI server on Windows, it could
+cause an arbitrary amount of memory to be allocated. This could have led to
+symptoms including a :exc:`MemoryError`, swapping, out of memory (OOM)
+killed processes or containers, or even system crashes.
+
+..
+
+.. date: 2024-05-21-22-11-31
+.. gh-issue: 119342
+.. nonce: BTFj4Z
+.. section: Security
+
+Fix a potential memory denial of service in the :mod:`plistlib` module. When
+reading a Plist file received from untrusted source, it could cause an
+arbitrary amount of memory to be allocated. This could have led to symptoms
+including a :exc:`MemoryError`, swapping, out of memory (OOM) killed
+processes or containers, or even system crashes.
+
+..
+
+.. date: 2026-02-15-00-00-00
+.. gh-issue: 144833
+.. nonce: TUelo1
+.. section: Library
+
+Fixed a use-after-free in :mod:`ssl` when ``SSL_new()`` returns NULL in
+``newPySSLSocket()``. The error was reported via a dangling pointer after
+the object had already been freed.
+
+..
+
+.. date: 2026-01-31-17-15-49
+.. gh-issue: 144363
+.. nonce: X9f0sU
+.. section: Library
+
+Update bundled `libexpat <https://libexpat.github.io/>`_ to 2.7.4
+
+..
+
+.. date: 2025-09-22-14-40-11
+.. gh-issue: 90949
+.. nonce: UM35nb
+.. section: Library
+
+Add :meth:`~xml.parsers.expat.xmlparser.SetAllocTrackerActivationThreshold`
+and :meth:`~xml.parsers.expat.xmlparser.SetAllocTrackerMaximumAmplification`
+to :ref:`xmlparser <xmlparser-objects>` objects to prevent use of
+disproportional amounts of dynamic memory from within an Expat parser. Patch
+by Bénédikt Tran.
+
+..
+
+.. date: 2024-06-13-12-17-52
+.. gh-issue: 120384
+.. nonce: w1UBGl
+.. section: Core and Builtins
+
+Fix an array out of bounds crash in ``list_ass_subscript``, which could be
+invoked via some specificly tailored input: including concurrent
+modification of a list object, where one thread assigns a slice and another
+clears it.
+
+..
+
+.. date: 2024-06-10-10-42-48
+.. gh-issue: 120298
+.. nonce: napREA
+.. section: Core and Builtins
+
+Fix use-after free in ``list_richcompare_impl`` which can be invoked via
+some specificly tailored evil input.
