@@ -227,7 +227,7 @@ class LazyImportTypeTests(unittest.TestCase):
             lazy import json
             print(globals()["json"].resolve)
         """)
-        proc = assert_python_ok("-c", code)  
+        proc = assert_python_ok("-c", code)
         self.assertIn(b"<built-in method resolve of lazy_import object at", proc.out)  
 
 
