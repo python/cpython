@@ -182,8 +182,7 @@ class Collector(ABC):
                 # Add all frames from all coroutines in this task
                 if task_info.coroutine_stack:
                     for coro_info in task_info.coroutine_stack:
-                        for frame in coro_info.call_stack:
-                            frames.append(frame)
+                        frames.extend(coro_info.call_stack)
 
                 # Get pre-computed parent info (no sorting needed!)
                 parent_info = child_to_parent.get(current_id)

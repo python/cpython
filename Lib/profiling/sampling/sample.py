@@ -104,7 +104,7 @@ class SampleProfiler:
                     sleep_time = (next_time - current_time) * 0.9
                     if sleep_time > 0.0001:
                         time.sleep(sleep_time)
-                elif next_time < current_time:
+                else:
                     try:
                         with _pause_threads(self.unwinder, self.blocking):
                             if async_aware == "all":
@@ -126,7 +126,7 @@ class SampleProfiler:
                         raise e from None
 
                     # Track actual sampling intervals for real-time stats
-                    if num_samples > 0:
+                    if self.realtime_stats and num_samples > 0:
                         actual_interval = current_time - last_sample_time
                         self.sample_intervals.append(
                             1.0 / actual_interval
@@ -146,7 +146,7 @@ class SampleProfiler:
                     num_samples += 1
                     next_time += sample_interval_sec
 
-                running_time_sec = time.perf_counter() - start_time
+                running_time_sec = current_time - start_time
         except KeyboardInterrupt:
             interrupted = True
             running_time_sec = time.perf_counter() - start_time
@@ -166,7 +166,7 @@ class SampleProfiler:
         if not is_live_mode:
             print(f"Captured {num_samples:n} samples in {fmt(running_time_sec, 2)} seconds")
             print(f"Sample rate: {fmt(sample_rate, 2)} samples/sec")
-            print(f"Error rate: {fmt(error_rate, 2)}")
+            print(f"Error rate: {fmt(error_rate, 2)}%")
 
             # Print unwinder stats if stats collection is enabled
             if self.collect_stats:
