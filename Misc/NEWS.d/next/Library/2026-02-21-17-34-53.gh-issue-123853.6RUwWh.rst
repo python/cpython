@@ -1,0 +1,1 @@
+Removed Windows 95 compatibility for :func:`locale.getdefaultlocale`.

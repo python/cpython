@@ -4512,6 +4512,10 @@ _PyImport_LazyImportModuleLevelObject(PyThreadState *tstate,
             assert(!PyErr_Occurred());
             modname = Py_NewRef(Py_None);
         }
+        if (fromlist == NULL) {
+            assert(!PyErr_Occurred());
+            fromlist = Py_NewRef(Py_None);
+        }
         PyObject *args[] = {modname, name, fromlist};
         PyObject *res = PyObject_Vectorcall(filter, args, 3, NULL);
 

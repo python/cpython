@@ -121,6 +121,7 @@ iterate_set_entries(
 
     // Validate mask and num_els to prevent huge loop iterations from garbage data
     if (mask < 0 || mask >= MAX_SET_TABLE_SIZE || num_els < 0 || num_els > mask + 1) {
+        PyErr_SetString(PyExc_RuntimeError, "Invalid set object (corrupted remote memory)");
         set_exception_cause(unwinder, PyExc_RuntimeError,
             "Invalid set object (corrupted remote memory)");
         return -1;
