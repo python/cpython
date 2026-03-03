@@ -77,6 +77,8 @@ Summary -- Release highlights
   <whatsnew315-unpacking-in-comprehensions>`
 * :pep:`686`: :ref:`Python now uses UTF-8 as the default encoding
   <whatsnew315-utf8-default>`
+* :pep:`747`: :ref:`Annotating type forms with TypeForm
+  <whatsnew315-typeform>`
 * :pep:`782`: :ref:`A new PyBytesWriter C API to create a Python bytes object
   <whatsnew315-pep782>`
 * :ref:`The JIT compiler has been significantly upgraded <whatsnew315-jit>`
@@ -1437,6 +1439,8 @@ threading
 
 typing
 ------
+
+.. _whatsnew315-typeform:
 
 * :pep:`747`: Add :data:`~typing.TypeForm`, a new special form for annotating
   values that are themselves type expressions.
