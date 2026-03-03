@@ -404,15 +404,19 @@ class BasicTest(BaseTest):
         src_stat = os.stat(src_path)
         dst_stat = os.stat(dst_path)
         self.assertEqual(src_stat.st_mode, dst_stat.st_mode, "File modes do not match")
-
+        
+        self.assertNotIn(b'__VENV_PYTHON__', src_data,
+                         "Test assumes Activate.ps1 is a static file, not a template")
         with open(src_path, 'rb') as f:
             src_data = f.read()
-        with open(dst_path, 'rb') as f:
-            dst_data = f.read()
-        self.assertEqual(src_data, dst_data, "File contents do not match")
 
         self.assertNotIn(b'__VENV_PYTHON__', src_data,
                          "Test assumes Activate.ps1 is a static file, not a template")
+
+        with open(dst_path, 'rb') as f:
+            dst_data = f.read()
+
+        self.assertEqual(src_data, dst_data, "File contents do not match")
 
 
     def test_overwrite_existing(self):
