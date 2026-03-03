@@ -79,7 +79,15 @@ import struct
 import sys
 
 
-__all__ = ["open", "Error", "Wave_read", "Wave_write"]
+__all__ = [
+    "open",
+    "Error",
+    "Wave_read",
+    "Wave_write",
+    "WAVE_FORMAT_PCM",
+    "WAVE_FORMAT_IEEE_FLOAT",
+    "WAVE_FORMAT_EXTENSIBLE",
+]
 
 class Error(Exception):
     pass
