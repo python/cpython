@@ -265,6 +265,13 @@ if py_setpath:
     if not executable:
         executable = real_executable
 
+if not executable and os_name == 'posix':
+    # On Linux, try resolving the executable path via procfs
+    try:
+        executable = realpath('/proc/self/exe')
+    except (OSError, MemoryError):
+        pass
+
 if not executable and SEP in program_name:
     # Resolve partial path program_name against current directory
     executable = abspath(program_name)
