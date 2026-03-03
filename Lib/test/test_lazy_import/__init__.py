@@ -12,6 +12,7 @@ import tempfile
 import os
 
 from test import support
+from test.support.script_helper import assert_python_ok
 
 try:
     import _testcapi
@@ -226,14 +227,8 @@ class LazyImportTypeTests(unittest.TestCase):
             lazy import json
             print(globals()["json"].resolve)
         """)
-        result = subprocess.run(
-            [sys.executable, "-c", code],
-            capture_output=True,
-            text=True
-        )
-        self.assertEqual(result.returncode, 0, f"stdout: {result.stdout}, stderr: {result.stderr}")
-        self.assertIn("<built-in method resolve of lazy_import object at", result.stdout)
-
+        proc = assert_python_ok("-c", code)  
+        self.assertIn(b"<built-in method resolve of lazy_import object at", proc.out)  
 
 class SyntaxRestrictionTests(unittest.TestCase):
     """Tests for syntax restrictions on lazy imports."""
