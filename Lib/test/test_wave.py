@@ -193,7 +193,7 @@ class WaveLowLevelTest(unittest.TestCase):
                          wave.WAVE_FORMAT_IEEE_FLOAT))
             self.assertEqual(w.getformat(), wave.WAVE_FORMAT_IEEE_FLOAT)
 
-    def test_getparams_has_format_field(self):
+    def test_getparams_backward_compatible_shape(self):
         with tempfile.NamedTemporaryFile(delete_on_close=False) as fp:
             filename = fp.name
         self.addCleanup(unlink, filename)
@@ -202,8 +202,7 @@ class WaveLowLevelTest(unittest.TestCase):
             w.setparams((1, 2, 22050, 0, 'NONE', 'not compressed',
                          wave.WAVE_FORMAT_IEEE_FLOAT))
             params = w.getparams()
-            self.assertEqual(params.format, wave.WAVE_FORMAT_IEEE_FLOAT)
-            self.assertEqual(params[:6], (1, 2, 22050, 0, 'NONE', 'not compressed'))
+            self.assertEqual(params, (1, 2, 22050, 0, 'NONE', 'not compressed'))
 
     def test_getformat_setformat(self):
         with tempfile.NamedTemporaryFile(delete_on_close=False) as fp:

@@ -125,7 +125,7 @@ Wave_read Objects
    .. method:: getparams()
 
       Returns a :func:`~collections.namedtuple` ``(nchannels, sampwidth,
-      framerate, nframes, comptype, compname, format)``, equivalent to output
+      framerate, nframes, comptype, compname)``, equivalent to output
       of the ``get*()`` methods.
 
 
@@ -277,7 +277,7 @@ Wave_write Objects
    .. method:: getparams()
 
       Return a :func:`~collections.namedtuple`
-      ``(nchannels, sampwidth, framerate, nframes, comptype, compname, format)``
+      ``(nchannels, sampwidth, framerate, nframes, comptype, compname)``
       containing the current output parameters.
 
 
