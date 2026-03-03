@@ -1,2 +1,0 @@
-Fix use-after free in ``list_richcompare_impl`` which can be invoked via
-some specificly tailored evil input.
