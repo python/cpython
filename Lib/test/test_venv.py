@@ -14,6 +14,7 @@ import re
 import shutil
 import subprocess
 import sys
+import time
 import sysconfig
 import tempfile
 import shlex
@@ -381,8 +382,6 @@ class BasicTest(BaseTest):
         incorrectly copying e.g. SELinux bin_t context.
         See gh-145417.
         """
-        import time
-
         venv_dir = os.path.dirname(venv.__file__)
         src_path = os.path.join(venv_dir, 'scripts', 'common', 'Activate.ps1')
         src_mtime = os.path.getmtime(src_path)
