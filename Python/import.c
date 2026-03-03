@@ -3729,7 +3729,8 @@ resolve_name(PyThreadState *tstate, PyObject *name, PyObject *globals, int level
         goto error;
     }
     if (!PyAnyDict_Check(globals)) {
-        _PyErr_SetString(tstate, PyExc_TypeError, "globals must be a dict");
+        _PyErr_SetString(tstate, PyExc_TypeError,
+                         "globals must be a dict or a frozendict");
         goto error;
     }
     if (PyDict_GetItemRef(globals, &_Py_ID(__package__), &package) < 0) {

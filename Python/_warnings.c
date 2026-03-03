@@ -1271,8 +1271,9 @@ warnings_warn_explicit_impl(PyObject *module, PyObject *message,
     if (module_globals && module_globals != Py_None) {
         if (!PyAnyDict_Check(module_globals)) {
             PyErr_Format(PyExc_TypeError,
-                         "module_globals must be a dict, not '%.200s'",
-                         Py_TYPE(module_globals)->tp_name);
+                         "module_globals must be a dict or a frozendict, "
+                         "not %T",
+                         module_globals);
             return NULL;
         }
 
