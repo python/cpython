@@ -688,7 +688,6 @@ partial_repr(PyObject *self)
 {
     partialobject *pto = partialobject_CAST(self);
     PyObject *result = NULL;
-    PyObject *fn, *args, *kw;
     PyObject *arglist = NULL;
     PyObject *mod = NULL;
     PyObject *name = NULL;
@@ -704,9 +703,9 @@ partial_repr(PyObject *self)
         return PyUnicode_FromString("...");
     }
     /* Reference arguments in case they change */
-    fn = Py_NewRef(pto->fn);
-    args = Py_NewRef(pto->args);
-    kw = Py_NewRef(pto->kw);
+    PyObject *fn = Py_NewRef(pto->fn);
+    PyObject *args = Py_NewRef(pto->args);
+    PyObject *kw = Py_NewRef(pto->kw);
     assert(PyTuple_Check(args));
     assert(PyDict_Check(kw));
 
