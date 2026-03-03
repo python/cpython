@@ -202,8 +202,8 @@ class InteractiveSession(unittest.TestCase):
     def test_color(self):
         with unittest.mock.patch("_colorize.can_colorize", return_value=True):
             out, err = self.run_cli(commands="TEXT\n")
-            self.assertIn("\001\x1b[1;35m\002sqlite> \001\x1b[0m\002", out)
-            self.assertIn("\001\x1b[1;35m\002    ... \001\x1b[0m\002\001\x1b", out)
+            self.assertIn("\x01\x1b[1;35m\x02sqlite> \x01\x1b[0m\x02", out)
+            self.assertIn("\x01\x1b[1;35m\x02    ... \x01\x1b[0m\x02\x01\x1b", out)
             out, err = self.run_cli(commands=("sel;",))
             self.assertIn('\x1b[1;35mOperationalError (SQLITE_ERROR)\x1b[0m: '
                           '\x1b[35mnear "sel": syntax error\x1b[0m', err)
