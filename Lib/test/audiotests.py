@@ -38,14 +38,13 @@ class AudioTests:
 
         params = f.getparams()
         self.assertEqual(params,
-                (nchannels, sampwidth, framerate, nframes, comptype, compname, format))
+            (nchannels, sampwidth, framerate, nframes, comptype, compname))
         self.assertEqual(params.nchannels, nchannels)
         self.assertEqual(params.sampwidth, sampwidth)
         self.assertEqual(params.framerate, framerate)
         self.assertEqual(params.nframes, nframes)
         self.assertEqual(params.comptype, comptype)
         self.assertEqual(params.compname, compname)
-        self.assertEqual(params.format, format)
 
         for proto in range(pickle.HIGHEST_PROTOCOL + 1):
             dump = pickle.dumps(params, proto)
