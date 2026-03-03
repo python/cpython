@@ -1638,10 +1638,10 @@ dir_fd_and_fd_invalid(const char *function_name, int dir_fd, int fd)
 }
 
 static int
-fd_and_follow_symlinks_invalid(const char *function_name, int fd,
+fd_and_follow_symlinks_invalid(const char *function_name, int is_fd,
                                int follow_symlinks)
 {
-    if ((fd >= 0) && (!follow_symlinks)) {
+    if (is_fd && (!follow_symlinks)) {
         PyErr_Format(PyExc_ValueError,
                      "%s: cannot use fd and follow_symlinks together",
                      function_name);
@@ -2880,12 +2880,13 @@ posix_do_stat(PyObject *module, const char *function_name, path_t *path,
 
     if (path_and_dir_fd_invalid("stat", path, dir_fd) ||
         dir_fd_and_fd_invalid("stat", dir_fd, path->fd) ||
-        fd_and_follow_symlinks_invalid("stat", path->fd, follow_symlinks))
+        fd_and_follow_symlinks_invalid("stat", path->is_fd, follow_symlinks))
         return NULL;
 
     Py_BEGIN_ALLOW_THREADS
-    if (path->fd != -1)
+    if (path->is_fd) {
         result = FSTAT(path->fd, &st);
+    }
 #ifdef MS_WINDOWS
     else if (follow_symlinks)
         result = win32_stat(path->wide, &st);
@@ -3647,7 +3648,7 @@ os_statx_impl(PyObject *module, path_t *path, unsigned int mask, int flags,
 {
     if (path_and_dir_fd_invalid("statx", path, dir_fd) ||
         dir_fd_and_fd_invalid("statx", dir_fd, path->fd) ||
-        fd_and_follow_symlinks_invalid("statx", path->fd, follow_symlinks)) {
+        fd_and_follow_symlinks_invalid("statx", path->is_fd, follow_symlinks)) {
         return NULL;
     }
 
@@ -3677,7 +3678,7 @@ os_statx_impl(PyObject *module, path_t *path, unsigned int mask, int flags,
 
     int result;
     Py_BEGIN_ALLOW_THREADS
-    if (path->fd != -1) {
+    if (path->is_fd) {
         result = statx(path->fd, "", flags | AT_EMPTY_PATH, mask, &v->stx);
     }
     else {
@@ -3934,7 +3935,7 @@ os_chdir_impl(PyObject *module, path_t *path)
     result = !win32_wchdir(path->wide);
 #else
 #ifdef HAVE_FCHDIR
-    if (path->fd != -1)
+    if (path->is_fd)
         result = fchdir(path->fd);
     else
 #endif
@@ -4090,7 +4091,7 @@ os_chmod_impl(PyObject *module, path_t *path, int mode, int dir_fd,
 #ifdef MS_WINDOWS
     result = 0;
     Py_BEGIN_ALLOW_THREADS
-    if (path->fd != -1) {
+    if (path->is_fd) {
         result = win32_fchmod(path->fd, mode);
     }
     else if (follow_symlinks) {
@@ -4113,8 +4114,9 @@ os_chmod_impl(PyObject *module, path_t *path, int mode, int dir_fd,
 #else /* MS_WINDOWS */
     Py_BEGIN_ALLOW_THREADS
 #ifdef HAVE_FCHMOD
-    if (path->fd != -1)
+    if (path->is_fd) {
         result = fchmod(path->fd, mode);
+    }
     else
 #endif /* HAVE_CHMOD */
 #ifdef HAVE_LCHMOD
@@ -4511,7 +4513,7 @@ os_chown_impl(PyObject *module, path_t *path, uid_t uid, gid_t gid,
         return NULL;
 #endif
     if (dir_fd_and_fd_invalid("chown", dir_fd, path->fd) ||
-        fd_and_follow_symlinks_invalid("chown", path->fd, follow_symlinks))
+        fd_and_follow_symlinks_invalid("chown", path->is_fd, follow_symlinks))
         return NULL;
 
     if (PySys_Audit("os.chown", "OIIi", path->object, uid, gid,
@@ -4521,7 +4523,7 @@ os_chown_impl(PyObject *module, path_t *path, uid_t uid, gid_t gid,
 
     Py_BEGIN_ALLOW_THREADS
 #ifdef HAVE_FCHOWN
-    if (path->fd != -1)
+    if (path->is_fd)
         result = fchown(path->fd, uid, gid);
     else
 #endif
@@ -4999,7 +5001,7 @@ _posix_listdir(path_t *path, PyObject *list)
 
     errno = 0;
 #ifdef HAVE_FDOPENDIR
-    if (path->fd != -1) {
+    if (path->is_fd) {
       if (HAVE_FDOPENDIR_RUNTIME) {
         /* closedir() closes the FD, so we duplicate it */
         fd = _Py_dup(path->fd);
@@ -5898,7 +5900,7 @@ _testFileExists(path_t *path, BOOL followLinks)
     }
 
     Py_BEGIN_ALLOW_THREADS
-    if (path->fd != -1) {
+    if (path->is_fd) {
         HANDLE hfile = _Py_get_osfhandle_noraise(path->fd);
         if (hfile != INVALID_HANDLE_VALUE) {
             if (GetFileType(hfile) != FILE_TYPE_UNKNOWN || !GetLastError()) {
@@ -5924,7 +5926,7 @@ _testFileType(path_t *path, int testedType)
     }
 
     Py_BEGIN_ALLOW_THREADS
-    if (path->fd != -1) {
+    if (path->is_fd) {
         HANDLE hfile = _Py_get_osfhandle_noraise(path->fd);
         if (hfile != INVALID_HANDLE_VALUE) {
             result = _testFileTypeByHandle(hfile, testedType, TRUE);
@@ -7141,7 +7143,7 @@ os_utime_impl(PyObject *module, path_t *path, PyObject *times, PyObject *ns,
 
     if (path_and_dir_fd_invalid("utime", path, dir_fd) ||
         dir_fd_and_fd_invalid("utime", dir_fd, path->fd) ||
-        fd_and_follow_symlinks_invalid("utime", path->fd, follow_symlinks))
+        fd_and_follow_symlinks_invalid("utime", path->is_fd, follow_symlinks))
         return NULL;
 
 #if !defined(HAVE_UTIMENSAT)
@@ -7200,7 +7202,7 @@ os_utime_impl(PyObject *module, path_t *path, PyObject *times, PyObject *ns,
 #endif
 
 #if defined(HAVE_FUTIMES) || defined(HAVE_FUTIMENS)
-    if (path->fd != -1)
+    if (path->is_fd)
         result = utime_fd(&utime, path->fd);
     else
 #endif
@@ -7569,7 +7571,7 @@ os_execve_impl(PyObject *module, path_t *path, PyObject *argv, PyObject *env)
 
     _Py_BEGIN_SUPPRESS_IPH
 #ifdef HAVE_FEXECVE
-    if (path->fd > -1)
+    if (path->is_fd)
         fexecve(path->fd, argvlist, envlist);
     else
 #endif
@@ -13355,7 +13357,7 @@ os_truncate_impl(PyObject *module, path_t *path, Py_off_t length)
     int fd;
 #endif
 
-    if (path->fd != -1)
+    if (path->is_fd)
         return os_ftruncate_impl(module, path->fd, length);
 
     if (PySys_Audit("os.truncate", "On", path->object, length) < 0) {
@@ -14052,7 +14054,7 @@ os_statvfs_impl(PyObject *module, path_t *path)
     struct statfs st;
 
     Py_BEGIN_ALLOW_THREADS
-    if (path->fd != -1) {
+    if (path->is_fd) {
         result = fstatfs(path->fd, &st);
     }
     else
@@ -14070,7 +14072,7 @@ os_statvfs_impl(PyObject *module, path_t *path)
 
     Py_BEGIN_ALLOW_THREADS
 #ifdef HAVE_FSTATVFS
-    if (path->fd != -1) {
+    if (path->is_fd) {
         result = fstatvfs(path->fd, &st);
     }
     else
@@ -15410,7 +15412,7 @@ os_getxattr_impl(PyObject *module, path_t *path, path_t *attribute,
                  int follow_symlinks)
 /*[clinic end generated code: output=5f2f44200a43cff2 input=025789491708f7eb]*/
 {
-    if (fd_and_follow_symlinks_invalid("getxattr", path->fd, follow_symlinks))
+    if (fd_and_follow_symlinks_invalid("getxattr", path->is_fd, follow_symlinks))
         return NULL;
 
     if (PySys_Audit("os.getxattr", "OO", path->object, attribute->object) < 0) {
@@ -15432,7 +15434,7 @@ os_getxattr_impl(PyObject *module, path_t *path, path_t *attribute,
         void *ptr = PyBytesWriter_GetData(writer);
 
         Py_BEGIN_ALLOW_THREADS;
-        if (path->fd >= 0)
+        if (path->is_fd)
             result = fgetxattr(path->fd, attribute->narrow, ptr, buffer_size);
         else if (follow_symlinks)
             result = getxattr(path->narrow, attribute->narrow, ptr, buffer_size);
@@ -15481,7 +15483,7 @@ os_setxattr_impl(PyObject *module, path_t *path, path_t *attribute,
 {
     ssize_t result;
 
-    if (fd_and_follow_symlinks_invalid("setxattr", path->fd, follow_symlinks))
+    if (fd_and_follow_symlinks_invalid("setxattr", path->is_fd, follow_symlinks))
         return NULL;
 
     if (PySys_Audit("os.setxattr", "OOy#i", path->object, attribute->object,
@@ -15490,7 +15492,7 @@ os_setxattr_impl(PyObject *module, path_t *path, path_t *attribute,
     }
 
     Py_BEGIN_ALLOW_THREADS;
-    if (path->fd > -1)
+    if (path->is_fd)
         result = fsetxattr(path->fd, attribute->narrow,
                            value->buf, value->len, flags);
     else if (follow_symlinks)
@@ -15534,7 +15536,7 @@ os_removexattr_impl(PyObject *module, path_t *path, path_t *attribute,
 {
     ssize_t result;
 
-    if (fd_and_follow_symlinks_invalid("removexattr", path->fd, follow_symlinks))
+    if (fd_and_follow_symlinks_invalid("removexattr", path->is_fd, follow_symlinks))
         return NULL;
 
     if (PySys_Audit("os.removexattr", "OO", path->object, attribute->object) < 0) {
@@ -15542,7 +15544,7 @@ os_removexattr_impl(PyObject *module, path_t *path, path_t *attribute,
     }
 
     Py_BEGIN_ALLOW_THREADS;
-    if (path->fd > -1)
+    if (path->is_fd)
         result = fremovexattr(path->fd, attribute->narrow);
     else if (follow_symlinks)
         result = removexattr(path->narrow, attribute->narrow);
@@ -15584,7 +15586,7 @@ os_listxattr_impl(PyObject *module, path_t *path, int follow_symlinks)
     const char *name;
     char *buffer = NULL;
 
-    if (fd_and_follow_symlinks_invalid("listxattr", path->fd, follow_symlinks))
+    if (fd_and_follow_symlinks_invalid("listxattr", path->is_fd, follow_symlinks))
         goto exit;
 
     if (PySys_Audit("os.listxattr", "(O)",
@@ -15611,7 +15613,7 @@ os_listxattr_impl(PyObject *module, path_t *path, int follow_symlinks)
         }
 
         Py_BEGIN_ALLOW_THREADS;
-        if (path->fd > -1)
+        if (path->is_fd)
             length = flistxattr(path->fd, buffer, buffer_size);
         else if (follow_symlinks)
             length = listxattr(name, buffer, buffer_size);
@@ -16664,7 +16666,7 @@ DirEntry_from_posix_info(PyObject *module, path_t *path, const char *name,
     entry->stat = NULL;
     entry->lstat = NULL;
 
-    if (path->fd != -1) {
+    if (path->is_fd) {
         entry->dir_fd = path->fd;
         joined_path = NULL;
     }
@@ -16689,7 +16691,7 @@ DirEntry_from_posix_info(PyObject *module, path_t *path, const char *name,
     if (!entry->name)
         goto error;
 
-    if (path->fd != -1) {
+    if (path->is_fd) {
         entry->path = Py_NewRef(entry->name);
     }
     else if (!entry->path)
@@ -16813,8 +16815,9 @@ ScandirIterator_closedir(ScandirIterator *iterator)
     iterator->dirp = NULL;
     Py_BEGIN_ALLOW_THREADS
 #ifdef HAVE_FDOPENDIR
-    if (iterator->path.fd != -1)
+    if (iterator->path.is_fd) {
         rewinddir(dirp);
+    }
 #endif
     closedir(dirp);
     Py_END_ALLOW_THREADS
@@ -17034,7 +17037,7 @@ os_scandir_impl(PyObject *module, path_t *path)
 #else /* POSIX */
     errno = 0;
 #ifdef HAVE_FDOPENDIR
-    if (iterator->path.fd != -1) {
+    if (iterator->path.is_fd) {
       if (HAVE_FDOPENDIR_RUNTIME) {
         /* closedir() closes the FD, so we duplicate it */
         fd = _Py_dup(iterator->path.fd);
