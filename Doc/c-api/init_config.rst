@@ -2327,8 +2327,10 @@ initialization, the core feature of :pep:`432`:
 
 Private provisional API:
 
-* :c:member:`PyConfig._init_main`: if set to ``0``,
-  :c:func:`Py_InitializeFromConfig` stops at the "Core" initialization phase.
+.. c:member:: int PyConfig._init_main
+
+   If set to ``0``, :c:func:`Py_InitializeFromConfig` stops at the "Core"
+   initialization phase.
 
 .. c:function:: PyStatus _Py_InitializeMain(void)
 
