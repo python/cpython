@@ -2322,7 +2322,7 @@ class TestPosixWeaklinking(unittest.TestCase):
     # as expected. These cases only test new behaviour introduced by weak linking,
     # regular behaviour is tested by the normal test cases.
     #
-    # See the section on Weak Linking in Mac/README.txt for more information.
+    # See the section on Weak Linking in Platforms/Mac/README.txt for more information.
     def setUp(self):
         import sysconfig
         import platform

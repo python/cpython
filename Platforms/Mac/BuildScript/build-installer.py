@@ -144,12 +144,13 @@ UNIVERSALARCHS = '32-bit'
 
 ARCHLIST = universal_opts_map[UNIVERSALARCHS]
 
-# Source directory (assume we're in Mac/BuildScript)
+# Source directory (assume we're in Platforms/Mac/BuildScript)
 SRCDIR = os.path.dirname(
-        os.path.dirname(
+          os.path.dirname(
             os.path.dirname(
-                os.path.abspath(__file__
-        ))))
+                os.path.dirname(
+                    os.path.abspath(__file__
+        )))))
 
 # $MACOSX_DEPLOYMENT_TARGET -> minimum OS X level
 DEPTARGET = '10.5'

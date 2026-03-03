@@ -1821,12 +1821,12 @@ Optional Features:
   --enable-universalsdk[=SDKDIR]
                           create a universal binary build. SDKDIR specifies
                           which macOS SDK should be used to perform the build,
-                          see Mac/README.rst. (default is no)
+                          see Platforms/Mac/README.rst. (default is no)
   --enable-framework[=INSTALLDIR]
                           create a Python.framework rather than a traditional
                           Unix install. optional INSTALLDIR specifies the
-                          installation path. see Mac/README.rst (default is
-                          no)
+                          installation path. see Platforms/Mac/README.rst
+                          (default is no)
   --enable-wasm-dynamic-linking
                           Enable dynamic linking support for WebAssembly
                           (default is no); WASI requires an external dynamic
@@ -1879,11 +1879,11 @@ Optional Packages:
                           --enable-universalsdk is set; options are:
                           ("universal2", "intel-64", "intel-32", "intel",
                           "32-bit", "64-bit", "3-way", or "all") see
-                          Mac/README.rst
+                          Platforms/Mac/README.rst
   --with-framework-name=FRAMEWORK
                           specify the name for the python framework on macOS
                           only valid when --enable-framework is set. see
-                          Mac/README.rst (default is 'Python')
+                          Platforms/Mac/README.rst (default is 'Python')
   --with-app-store-compliance=[PATCH-FILE]
                           Enable any patches required for compiliance with app
                           stores. Optional PATCH-FILE specifies the custom
@@ -4278,7 +4278,7 @@ then :
   enableval=$enable_universalsdk;
 	case $enableval in
 	yes)
-		# Locate the best usable SDK, see Mac/README for more
+		# Locate the best usable SDK, see Platforms/Mac/README for more
 		# information
 		enableval="`/usr/bin/xcodebuild -version -sdk macosx Path 2>/dev/null`"
 		if ! ( echo $enableval | grep -E '\.sdk' 1>/dev/null )
@@ -4477,17 +4477,17 @@ then :
 
 				prefix=$PYTHONFRAMEWORKINSTALLDIR/Versions/$VERSION
 				PYTHONFRAMEWORKINSTALLNAMEPREFIX=${prefix}
-				RESSRCDIR=Mac/Resources/framework
+				RESSRCDIR=Platforms/Mac/Resources/framework
 
 				# Add files for Mac specific code to the list of output
 				# files:
-				ac_config_files="$ac_config_files Mac/Makefile"
+				ac_config_files="$ac_config_files Platforms/Mac/Makefile"
 
-				ac_config_files="$ac_config_files Mac/PythonLauncher/Makefile"
+				ac_config_files="$ac_config_files Platforms/Mac/PythonLauncher/Makefile"
 
-				ac_config_files="$ac_config_files Mac/Resources/framework/Info.plist"
+				ac_config_files="$ac_config_files Platforms/Mac/Resources/framework/Info.plist"
 
-				ac_config_files="$ac_config_files Mac/Resources/app/Info.plist"
+				ac_config_files="$ac_config_files Platforms/Mac/Resources/app/Info.plist"
 
 				;;
 			iOS) :
@@ -4571,7 +4571,7 @@ then :
       case $ac_sys_system in
         Darwin|iOS)
           # iOS is able to share the macOS patch
-          APP_STORE_COMPLIANCE_PATCH="Mac/Resources/app-store-compliance.patch"
+          APP_STORE_COMPLIANCE_PATCH="Platforms/Mac/Resources/app-store-compliance.patch"
           ;;
         *) as_fn_error $? "no default app store compliance patch available for $ac_sys_system" "$LINENO" 5 ;;
       esac
@@ -4590,7 +4590,7 @@ else case e in #(
     case $ac_sys_system in
       iOS)
         # Always apply the compliance patch on iOS; we can use the macOS patch
-        APP_STORE_COMPLIANCE_PATCH="Mac/Resources/app-store-compliance.patch"
+        APP_STORE_COMPLIANCE_PATCH="Platforms/Mac/Resources/app-store-compliance.patch"
         { printf "%s\n" "$as_me:${as_lineno-$LINENO}: result: applying default app store compliance patch" >&5
 printf "%s\n" "applying default app store compliance patch" >&6; }
         ;;
@@ -4903,7 +4903,7 @@ printf %s "checking macOS SDKROOT... " >&6; }
 printf "%s\n" "$SDKROOT" >&6; }
 
 	# Compiler selection on MacOSX is more complicated than
-	# AC_PROG_CC can handle, see Mac/README for more
+	# AC_PROG_CC can handle, see Platforms/Mac/README for more
 	# information
 	if test -z "${CC}"
 	then
@@ -35577,10 +35577,10 @@ for ac_config_target in $ac_config_targets
 do
   case $ac_config_target in
     "pyconfig.h") CONFIG_HEADERS="$CONFIG_HEADERS pyconfig.h" ;;
-    "Mac/Makefile") CONFIG_FILES="$CONFIG_FILES Mac/Makefile" ;;
-    "Mac/PythonLauncher/Makefile") CONFIG_FILES="$CONFIG_FILES Mac/PythonLauncher/Makefile" ;;
-    "Mac/Resources/framework/Info.plist") CONFIG_FILES="$CONFIG_FILES Mac/Resources/framework/Info.plist" ;;
-    "Mac/Resources/app/Info.plist") CONFIG_FILES="$CONFIG_FILES Mac/Resources/app/Info.plist" ;;
+    "Platforms/Mac/Makefile") CONFIG_FILES="$CONFIG_FILES Platforms/Mac/Makefile" ;;
+    "Platforms/Mac/PythonLauncher/Makefile") CONFIG_FILES="$CONFIG_FILES Platforms/Mac/PythonLauncher/Makefile" ;;
+    "Platforms/Mac/Resources/framework/Info.plist") CONFIG_FILES="$CONFIG_FILES Platforms/Mac/Resources/framework/Info.plist" ;;
+    "Platforms/Mac/Resources/app/Info.plist") CONFIG_FILES="$CONFIG_FILES Platforms/Mac/Resources/app/Info.plist" ;;
     "Apple/iOS/Resources/Info.plist") CONFIG_FILES="$CONFIG_FILES Apple/iOS/Resources/Info.plist" ;;
     "Makefile.pre") CONFIG_FILES="$CONFIG_FILES Makefile.pre" ;;
     "Misc/python.pc") CONFIG_FILES="$CONFIG_FILES Misc/python.pc" ;;

@@ -462,11 +462,11 @@ AC_ARG_ENABLE([universalsdk],
 	AS_HELP_STRING([--enable-universalsdk@<:@=SDKDIR@:>@],
 	               [create a universal binary build.
 	                SDKDIR specifies which macOS SDK should be used to perform the build,
-	                see Mac/README.rst. (default is no)]),
+	                see Platforms/Mac/README.rst. (default is no)]),
 [
 	case $enableval in
 	yes)
-		# Locate the best usable SDK, see Mac/README for more
+		# Locate the best usable SDK, see Platforms/Mac/README for more
 		# information
 		enableval="`/usr/bin/xcodebuild -version -sdk macosx Path 2>/dev/null`"
 		if ! ( echo $enableval | grep -E '\.sdk' 1>/dev/null )
@@ -531,7 +531,7 @@ AC_ARG_WITH([universal-archs],
                     This option is only valid when --enable-universalsdk is set; options are:
                     ("universal2", "intel-64", "intel-32", "intel", "32-bit",
                     "64-bit", "3-way", or "all")
-                    see Mac/README.rst]),
+                    see Platforms/Mac/README.rst]),
 [
 	UNIVERSAL_ARCHS="$withval"
 ],
@@ -546,7 +546,7 @@ fi
 AC_ARG_WITH([framework-name],
               AS_HELP_STRING([--with-framework-name=FRAMEWORK],
                              [specify the name for the python framework on macOS
-                              only valid when --enable-framework is set. see Mac/README.rst
+                              only valid when --enable-framework is set. see Platforms/Mac/README.rst
                               (default is 'Python')]),
 [
     PYTHONFRAMEWORK=${withval}
@@ -561,7 +561,7 @@ dnl quadrigraphs "@<:@" and "@:>@" produce "[" and "]" in the output
 AC_ARG_ENABLE([framework],
               AS_HELP_STRING([--enable-framework@<:@=INSTALLDIR@:>@],
                              [create a Python.framework rather than a traditional Unix install.
-                              optional INSTALLDIR specifies the installation path. see Mac/README.rst
+                              optional INSTALLDIR specifies the installation path. see Platforms/Mac/README.rst
                               (default is no)]),
 [
 	case $enableval in
@@ -656,14 +656,14 @@ AC_ARG_ENABLE([framework],
 
 				prefix=$PYTHONFRAMEWORKINSTALLDIR/Versions/$VERSION
 				PYTHONFRAMEWORKINSTALLNAMEPREFIX=${prefix}
-				RESSRCDIR=Mac/Resources/framework
+				RESSRCDIR=Platforms/Mac/Resources/framework
 
 				# Add files for Mac specific code to the list of output
 				# files:
-				AC_CONFIG_FILES([Mac/Makefile])
-				AC_CONFIG_FILES([Mac/PythonLauncher/Makefile])
-				AC_CONFIG_FILES([Mac/Resources/framework/Info.plist])
-				AC_CONFIG_FILES([Mac/Resources/app/Info.plist])
+				AC_CONFIG_FILES([Platforms/Mac/Makefile])
+				AC_CONFIG_FILES([Platforms/Mac/PythonLauncher/Makefile])
+				AC_CONFIG_FILES([Platforms/Mac/Resources/framework/Info.plist])
+				AC_CONFIG_FILES([Platforms/Mac/Resources/app/Info.plist])
 				;;
 			iOS) :
 				FRAMEWORKINSTALLFIRST="frameworkinstallunversionedstructure"
@@ -741,7 +741,7 @@ AC_ARG_WITH(
       case $ac_sys_system in
         Darwin|iOS)
           # iOS is able to share the macOS patch
-          APP_STORE_COMPLIANCE_PATCH="Mac/Resources/app-store-compliance.patch"
+          APP_STORE_COMPLIANCE_PATCH="Platforms/Mac/Resources/app-store-compliance.patch"
           ;;
         *) AC_MSG_ERROR([no default app store compliance patch available for $ac_sys_system]) ;;
       esac
@@ -756,7 +756,7 @@ AC_ARG_WITH(
     case $ac_sys_system in
       iOS)
         # Always apply the compliance patch on iOS; we can use the macOS patch
-        APP_STORE_COMPLIANCE_PATCH="Mac/Resources/app-store-compliance.patch"
+        APP_STORE_COMPLIANCE_PATCH="Platforms/Mac/Resources/app-store-compliance.patch"
         AC_MSG_RESULT([applying default app store compliance patch])
         ;;
       *)
@@ -1014,7 +1014,7 @@ then
   AC_MSG_RESULT([$SDKROOT])
 
 	# Compiler selection on MacOSX is more complicated than
-	# AC_PROG_CC can handle, see Mac/README for more
+	# AC_PROG_CC can handle, see Platforms/Mac/README for more
 	# information
 	if test -z "${CC}"
 	then

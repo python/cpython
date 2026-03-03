@@ -70,8 +70,8 @@ section of the `Developer Guide`_ for current detailed information on
 dependencies for various Linux distributions and macOS.
 
 On macOS, there are additional configure and build options related
-to macOS framework and universal builds.  Refer to `Mac/README.rst
-<https://github.com/python/cpython/blob/main/Mac/README.rst>`_.
+to macOS framework and universal builds.  Refer to `Platforms/Mac/README.rst
+<https://github.com/python/cpython/blob/main/Platforms/Mac/README.rst>`_.
 
 On Windows, see `PCbuild/readme.txt
 <https://github.com/python/cpython/blob/main/PCbuild/readme.txt>`_.
