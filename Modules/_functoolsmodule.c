@@ -194,19 +194,20 @@ partial_new(PyTypeObject *type, PyObject *args, PyObject *kw)
     if (kw != NULL) {
         PyObject *key, *val;
         Py_ssize_t pos = 0;
+        int error = 0;
         Py_BEGIN_CRITICAL_SECTION(kw);
         while (PyDict_Next(kw, &pos, &key, &val)) {
             if (val == phold) {
-                PyErr_SetString(PyExc_TypeError,
-                                "Placeholder cannot be passed as a keyword argument");
-#ifdef Py_GIL_DISABLED
-                /* Need to release lock in case of error */
-                PyCriticalSection_End(&_py_cs);
-#endif
-                return NULL;
+                error = 1;
+                break;
             }
         }
         Py_END_CRITICAL_SECTION();
+        if (error) {
+            PyErr_SetString(PyExc_TypeError,
+                            "Placeholder cannot be passed as a keyword argument");
+            return NULL;
+        }
     }
 
     /* check wrapped function / object */
@@ -732,6 +733,7 @@ partial_repr(PyObject *self)
         }
     }
     /* Pack keyword arguments */
+    int error = 0;
     Py_BEGIN_CRITICAL_SECTION(kw);
     for (i = 0; PyDict_Next(kw, &i, &key, &value);) {
         /* Prevent key.__str__ from deleting the value. */
@@ -740,14 +742,14 @@ partial_repr(PyObject *self)
                                                 key, value));
         Py_DECREF(value);
         if (arglist == NULL) {
-#ifdef Py_GIL_DISABLED
-        /* Need to release lock in case of error */
-        PyCriticalSection_End(&_py_cs);
-#endif
-            goto done;
+            error = 1;
+            break;
         }
     }
     Py_END_CRITICAL_SECTION();
+    if (error) {
+        goto done;
+    }
 
     mod = PyType_GetModuleName(Py_TYPE(pto));
     if (mod == NULL) {
