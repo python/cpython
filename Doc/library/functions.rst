@@ -643,10 +643,6 @@ are always available.  They are listed here in alphabetical order.
    If the given source is a string, then leading and trailing spaces and tabs
    are stripped.
 
-   It's possible to pass :class:`frozendict` to *globals* if the
-   :class:`!frozendict` has a ``__builtins__`` item. In this case, it's not
-   possible to assign or reassign global variables.
-
    See :func:`ast.literal_eval` for a function that can safely evaluate strings
    with expressions containing only literals.
 
@@ -695,10 +691,6 @@ are always available.  They are listed here in alphabetical order.
    *locals* are given, they are used for the global and local variables,
    respectively.  If provided, *locals* can be any mapping object.  Remember
    that at the module level, globals and locals are the same dictionary.
-
-   It's possible to pass :class:`frozendict` to *globals* if the
-   :class:`!frozendict` has a ``__builtins__`` item. In this case, it's not
-   possible to assign or reassign global variables.
 
    .. note::
 

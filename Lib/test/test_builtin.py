@@ -784,11 +784,15 @@ class BuiltinTest(ComplexesAreIdenticalMixin, unittest.TestCase):
                 raise ValueError
         self.assertRaises(ValueError, eval, "foo", {}, X())
 
-        # Pass frozenset to globals
+    def test_eval_frozendict(self):
         ns = frozendict(x=1, data=[], __builtins__=__builtins__)
-        code = "data.append(x)"
-        eval(code, ns, ns)
+        eval("data.append(x)", ns, ns)
         self.assertEqual(ns['data'], [1])
+
+        ns = frozendict()
+        errmsg = "cannot set __builtins__ in frozendict globals"
+        with self.assertRaisesRegex(TypeError, errmsg):
+            eval("", ns, ns)
 
     def test_eval_kwargs(self):
         data = {"A_GLOBAL_VALUE": 456}
@@ -888,17 +892,20 @@ class BuiltinTest(ComplexesAreIdenticalMixin, unittest.TestCase):
             del l['__builtins__']
         self.assertEqual((g, l), ({'a': 1}, {'b': 2}))
 
-        # Pass frozenset to globals
+    def test_exec_frozendict(self):
         ns = frozendict(x=1, data=[], __builtins__=__builtins__)
-        code = "data.append(x)"
-        exec(code, ns, ns)
+        exec("data.append(x)", ns, ns)
         self.assertEqual(ns['data'], [1])
 
         ns = frozendict(__builtins__=__builtins__)
-        code = "x = 1"
         errmsg = "'frozendict' object does not support item assignment"
         with self.assertRaisesRegex(TypeError, errmsg):
-            exec(code, ns, ns)
+            exec("x = 1", ns, ns)
+
+        ns = frozendict()
+        errmsg = "cannot set __builtins__ in frozendict globals"
+        with self.assertRaisesRegex(TypeError, errmsg):
+            exec("", ns, ns)
 
     def test_exec_kwargs(self):
         g = {}

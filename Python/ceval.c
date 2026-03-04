@@ -2742,6 +2742,10 @@ set_globals_builtins(PyObject *globals, PyObject *builtins)
     }
     else {
         if (PyObject_SetItem(globals, &_Py_ID(__builtins__), builtins) < 0) {
+            if (PyFrozenDict_Check(globals)) {
+                PyErr_SetString(PyExc_TypeError,
+                                "cannot set __builtins__ in frozendict globals");
+            }
             return -1;
         }
     }
