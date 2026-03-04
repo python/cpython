@@ -158,6 +158,19 @@ class _PoolCache(dict):
         self.notifier = notifier
         super().__init__(*args, **kwds)
 
+        self._cache_failed = False
+        self._cache_failed_reason = None
+
+    def _disable_cache(self, exec):
+        self._cache_failed = True
+        self._cache_failed_reason = exec
+    
+    def __setitem__(self, key, value):
+        if self._cache_failed:
+            raise RuntimeError("Pool cache is disabled due to previous error") \
+                from self._cache_failed_reason
+        super().__setitem__(key, value)
+
     def __delitem__(self, item):
         super().__delitem__(item)
 
@@ -579,6 +592,23 @@ class Pool(object):
                 task = get()
             except (OSError, EOFError):
                 util.debug('result handler got EOFError/OSError -- exiting')
+                return
+            except Exception as e:
+                exc = RuntimeError("Result handler failed to get result from worker and " +
+                               "unable to maintain its states anymore. " + 
+                               "This is likely due to a worker process return or raise " +
+                               "an unpicklable object.")
+                exc.__cause__ = e
+                cache._disable_cache(exc)
+                _cache = cache.copy()
+                for value in _cache.values():
+                    if isinstance(value, ApplyResult):
+                        chunk_number_left = getattr(value, '_number_left', 1)
+                        for _ in range(chunk_number_left):
+                            value._set(None, (False, exc))
+                    elif isinstance(value, IMapIterator):
+                        value._set_length(value._index + 1)
+                        value._set(value._index, (False, exc))
                 return
 
             if thread._state != RUN:
