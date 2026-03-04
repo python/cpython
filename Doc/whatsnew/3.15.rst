@@ -211,6 +211,13 @@ For example::
     >>> a == b
     True
 
+The following standard library modules have been updated to accept
+:class:`frozendict`: :mod:`copy`, :mod:`decimal`, :mod:`json`, :mod:`pickle`,
+:mod:`pprint` and :mod:`xml.etree.ElementTree`.
+
+:func:`eval` and :func:`exec` now also accept :class:`frozendict` for
+*globals*.
+
 .. seealso:: :pep:`814` for the full specification and rationale.
 
 (Contributed by Victor Stinner and Donghee Na in :gh:`141510`.)
