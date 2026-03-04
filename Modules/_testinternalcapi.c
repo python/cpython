@@ -2966,6 +2966,8 @@ static PyMethodDef module_functions[] = {
 static int
 module_exec(PyObject *module)
 {
+    PyInterpreterState *interp = PyInterpreterState_Get();
+
     if (_PyTestInternalCapi_Init_Lock(module) < 0) {
         return 1;
     }
@@ -3009,7 +3011,7 @@ module_exec(PyObject *module)
 
     if (PyModule_Add(module, "TIER2_THRESHOLD",
         // + 1 more due to one loop spent on tracing.
-                        PyLong_FromLong(JUMP_BACKWARD_INITIAL_VALUE + 2)) < 0) {
+                        PyLong_FromLong(interp->opt_config.jump_backward_initial_value + 2)) < 0) {
         return 1;
     }
 
