@@ -8179,7 +8179,7 @@ Return a shallow copy of the frozendict.
 
 static PyObject *
 frozendict_copy_impl(PyFrozenDictObject *self)
-/*[clinic end generated code: output=e580fd91d9fc2cf7 input=19650637a441d51e]*/
+/*[clinic end generated code: output=e580fd91d9fc2cf7 input=35f6abeaa08fd4bc]*/
 {
     assert(PyFrozenDict_Check(self));
 

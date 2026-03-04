@@ -328,7 +328,7 @@ PyDoc_STRVAR(frozendict_copy__doc__,
 "copy($self, /)\n"
 "--\n"
 "\n"
-"Return a shallow copy of the dict.");
+"Return a shallow copy of the frozendict.");
 
 #define FROZENDICT_COPY_METHODDEF    \
     {"copy", (PyCFunction)frozendict_copy, METH_NOARGS, frozendict_copy__doc__},
@@ -341,4 +341,4 @@ frozendict_copy(PyObject *self, PyObject *Py_UNUSED(ignored))
 {
     return frozendict_copy_impl((PyFrozenDictObject *)self);
 }
-/*[clinic end generated code: output=80026d393cef7367 input=a9049054013a1b77]*/
+/*[clinic end generated code: output=f4c88a3464928ae3 input=a9049054013a1b77]*/
