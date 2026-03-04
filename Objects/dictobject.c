@@ -896,24 +896,20 @@ free_values(PyDictValues *values, bool use_qsbr)
     PyMem_Free(values);
 }
 
-/* Consumes a reference to the keys object */
-static PyObject *
-new_dict(PyDictKeysObject *keys, PyDictValues *values,
-         Py_ssize_t used, int free_values_on_failure)
+static inline PyObject *
+new_dict_impl(PyDictObject *mp, PyDictKeysObject *keys,
+              PyDictValues *values, Py_ssize_t used,
+              int free_values_on_failure)
 {
     assert(keys != NULL);
-    PyDictObject *mp = _Py_FREELIST_POP(PyDictObject, dicts);
     if (mp == NULL) {
-        mp = PyObject_GC_New(PyDictObject, &PyDict_Type);
-        if (mp == NULL) {
-            dictkeys_decref(keys, false);
-            if (free_values_on_failure) {
-                free_values(values, false);
-            }
-            return NULL;
+        dictkeys_decref(keys, false);
+        if (free_values_on_failure) {
+            free_values(values, false);
         }
+        return NULL;
     }
-    assert(Py_IS_TYPE(mp, &PyDict_Type));
+
     mp->ma_keys = keys;
     mp->ma_values = values;
     mp->ma_used = used;
@@ -921,6 +917,29 @@ new_dict(PyDictKeysObject *keys, PyDictValues *values,
     ASSERT_CONSISTENT(mp);
     _PyObject_GC_TRACK(mp);
     return (PyObject *)mp;
+}
+
+/* Consumes a reference to the keys object */
+static PyObject *
+new_dict(PyDictKeysObject *keys, PyDictValues *values,
+         Py_ssize_t used, int free_values_on_failure)
+{
+    PyDictObject *mp = _Py_FREELIST_POP(PyDictObject, dicts);
+    if (mp == NULL) {
+        mp = PyObject_GC_New(PyDictObject, &PyDict_Type);
+    }
+    assert(mp == NULL || Py_IS_TYPE(mp, &PyDict_Type));
+
+    return new_dict_impl(mp, keys, values, used, free_values_on_failure);
+}
+
+/* Consumes a reference to the keys object */
+static PyObject *
+new_frozendict(PyDictKeysObject *keys, PyDictValues *values,
+               Py_ssize_t used, int free_values_on_failure)
+{
+    PyDictObject *mp = PyObject_GC_New(PyDictObject, &PyFrozenDict_Type);
+    return new_dict_impl(mp, keys, values, used, free_values_on_failure);
 }
 
 static PyObject *
@@ -4313,8 +4332,7 @@ copy_lock_held(PyObject *o, int as_frozendict)
 
     if (Py_TYPE(mp)->tp_iter == dict_iter &&
             mp->ma_values == NULL &&
-            (mp->ma_used >= (mp->ma_keys->dk_nentries * 2) / 3) &&
-            !as_frozendict)
+            (mp->ma_used >= (mp->ma_keys->dk_nentries * 2) / 3))
     {
         /* Use fast-copy if:
 
@@ -4334,9 +4352,15 @@ copy_lock_held(PyObject *o, int as_frozendict)
         if (keys == NULL) {
             return NULL;
         }
-        PyDictObject *new = (PyDictObject *)new_dict(keys, NULL, 0, 0);
+        PyDictObject *new;
+        if (as_frozendict) {
+            new = (PyDictObject *)new_frozendict(keys, NULL, 0, 0);
+        }
+        else {
+            new = (PyDictObject *)new_dict(keys, NULL, 0, 0);
+        }
         if (new == NULL) {
-            /* In case of an error, `new_dict()` takes care of
+            /* In case of an error, new_dict()/new_frozendict() takes care of
                cleaning up `keys`. */
             return NULL;
         }
