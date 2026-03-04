@@ -1863,6 +1863,11 @@ class FrozenDictTests(unittest.TestCase):
         self.assertEqual(d, frozendict({'x': 1, 'y': 2}))
         self.assertEqual(copy, frozendict({'x': 1}))
 
+    def test_items_xor(self):
+        # test "a ^ b" operator on items views
+        res = frozendict(a=1, b=2).items() ^ frozendict(b=2, c=3).items()
+        self.assertEqual(res, {('a', 1), ('c', 3)})
+
     def test_repr(self):
         d = frozendict()
         self.assertEqual(repr(d), "frozendict()")
