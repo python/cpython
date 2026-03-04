@@ -1,0 +1,3 @@
+Fix ``test_frame_pointer_unwind`` when Python is built with
+:option:`--enable-shared`. Classify also libpython frames as ``"python"``.
+Patch by Victor Stinner.
