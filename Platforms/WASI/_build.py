@@ -142,7 +142,7 @@ def call(command, *, context=None, quiet=False, **kwargs):
         stdout = None
         stderr = None
     else:
-        if context.logdir is None:
+        if (logdir := getattr(context, "logdir", None)) is None:
             logdir = pathlib.Path(tempfile.gettempdir())
         stdout = tempfile.NamedTemporaryFile(
             "w",
