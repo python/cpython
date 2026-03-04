@@ -790,7 +790,7 @@ class BuiltinTest(ComplexesAreIdenticalMixin, unittest.TestCase):
         self.assertEqual(ns['data'], [1])
 
         ns = frozendict()
-        errmsg = "cannot set __builtins__ in frozendict globals"
+        errmsg = "cannot assign __builtins__ to frozendict globals"
         with self.assertRaisesRegex(TypeError, errmsg):
             eval("", ns, ns)
 
@@ -903,7 +903,7 @@ class BuiltinTest(ComplexesAreIdenticalMixin, unittest.TestCase):
             exec("x = 1", ns, ns)
 
         ns = frozendict()
-        errmsg = "cannot set __builtins__ in frozendict globals"
+        errmsg = "cannot assign __builtins__ to frozendict globals"
         with self.assertRaisesRegex(TypeError, errmsg):
             exec("", ns, ns)
 
