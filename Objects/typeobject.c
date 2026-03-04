@@ -4850,21 +4850,9 @@ type_new_get_slots(type_new_ctx *ctx, PyObject *dict)
 static PyTypeObject*
 type_new_init(type_new_ctx *ctx)
 {
-    PyObject *dict;
-    if (PyFrozenDict_Check(ctx->orig_dict)) {
-        dict = PyDict_New();
-        if (dict == NULL) {
-            goto error;
-        }
-        if (PyDict_Merge(dict, ctx->orig_dict, 1) < 0) {
-            goto error;
-        }
-    }
-    else {
-        dict = PyDict_Copy(ctx->orig_dict);
-        if (dict == NULL) {
-            goto error;
-        }
+    PyObject *dict = _PyDict_CopyAsDict(ctx->orig_dict);
+    if (dict == NULL) {
+        goto error;
     }
 
     if (type_new_get_slots(ctx, dict) < 0) {
