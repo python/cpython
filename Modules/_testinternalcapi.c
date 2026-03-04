@@ -3009,9 +3009,9 @@ module_exec(PyObject *module)
         return 1;
     }
 
+    // + 1 more due to one loop spent on tracing.
     unsigned long threshold = interp->opt_config.jump_backward_initial_value + 2;
     if (PyModule_Add(module, "TIER2_THRESHOLD",
-        // + 1 more due to one loop spent on tracing.
                         PyLong_FromUnsignedLong(threshold)) < 0) {
         return 1;
     }
