@@ -196,6 +196,10 @@ classify_address(uintptr_t addr, int jit_enabled, PyInterpreterState *interp)
         if (strncmp(base, "python", 6) == 0) {
             return "python";
         }
+        // Match "libpython3.15.so.1.0"
+        if (strncmp(base, "libpython", 9) == 0) {
+            return "python";
+        }
         return "other";
     }
 #ifdef _Py_JIT
