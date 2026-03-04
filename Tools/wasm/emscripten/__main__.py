@@ -510,6 +510,8 @@ def main():
     if context.emsdk_cache:
         validate_emsdk_version(context.emsdk_cache)
         context.emsdk_cache = Path(context.emsdk_cache).absolute()
+    else:
+        print("Build will use EMSDK from current environment.")
 
     dispatch = {
         "make-libffi": make_emscripten_libffi,
