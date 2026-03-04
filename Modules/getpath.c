@@ -799,7 +799,7 @@ progname_to_dict(PyObject *dict, const char *key)
     }
 #elif defined(HAVE_READLINK)
     wchar_t resolved[MAXPATHLEN + 1];
-    if (_Py_wreadlink(L"/proc/self/exe", resolved, Py_ARRAY_LENGTH(resolved)) != -1) {
+    if (_Py_wreadlink(L"/proc/self/exe", resolved, Py_ARRAY_LENGTH(resolved)) > 0) {
         return wchar_to_dict(dict, key, resolved);
     }
 #endif
