@@ -4468,6 +4468,17 @@ _PyImport_LazyImportModuleLevelObject(PyThreadState *tstate,
                                       PyObject *globals, PyObject *locals,
                                       PyObject *fromlist, int level)
 {
+    assert(name != NULL);
+    if (!PyUnicode_Check(name)) {
+        _PyErr_Format(tstate, PyExc_TypeError,
+                      "module name must be a string, got %T", name);
+        return NULL;
+    }
+    if (level < 0) {
+        _PyErr_SetString(tstate, PyExc_ValueError, "level must be >= 0");
+        return NULL;
+    }
+
     PyObject *abs_name = get_abs_name(tstate, name, globals, level);
     if (abs_name == NULL) {
         return NULL;
@@ -4500,6 +4511,10 @@ _PyImport_LazyImportModuleLevelObject(PyThreadState *tstate,
         if (modname == NULL) {
             assert(!PyErr_Occurred());
             modname = Py_NewRef(Py_None);
+        }
+        if (fromlist == NULL) {
+            assert(!PyErr_Occurred());
+            fromlist = Py_NewRef(Py_None);
         }
         PyObject *args[] = {modname, name, fromlist};
         PyObject *res = PyObject_Vectorcall(filter, args, 3, NULL);
@@ -5627,6 +5642,7 @@ _imp__set_lazy_attributes_impl(PyObject *module, PyObject *modobj,
 
     module_dict = get_mod_dict(modobj);
     if (module_dict == NULL || !PyDict_CheckExact(module_dict)) {
+        Py_DECREF(lazy_submodules);
         goto done;
     }
 

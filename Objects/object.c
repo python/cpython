@@ -17,6 +17,7 @@
 #include "pycore_instruction_sequence.h" // _PyInstructionSequence_Type
 #include "pycore_interpframe.h"   // _PyFrame_Stackbase()
 #include "pycore_interpolation.h" // _PyInterpolation_Type
+#include "pycore_lazyimportobject.h" // PyLazyImport_Type
 #include "pycore_list.h"          // _PyList_DebugMallocStats()
 #include "pycore_long.h"          // _PyLong_GetZero()
 #include "pycore_memoryobject.h"  // _PyManagedBuffer_Type
@@ -58,7 +59,7 @@ _PyObject_CheckConsistency(PyObject *op, int check_content)
     if (PyUnicode_Check(op)) {
         _PyUnicode_CheckConsistency(op, check_content);
     }
-    else if (PyDict_Check(op)) {
+    else if (PyAnyDict_Check(op)) {
         _PyDict_CheckConsistency(op, check_content);
     }
     return 1;
@@ -2532,13 +2533,15 @@ static PyTypeObject* static_types[] = {
     &PyEnum_Type,
     &PyFilter_Type,
     &PyFloat_Type,
-    &PyFrame_Type,
     &PyFrameLocalsProxy_Type,
+    &PyFrame_Type,
+    &PyFrozenDict_Type,
     &PyFrozenSet_Type,
     &PyFunction_Type,
     &PyGen_Type,
     &PyGetSetDescr_Type,
     &PyInstanceMethod_Type,
+    &PyLazyImport_Type,
     &PyListIter_Type,
     &PyListRevIter_Type,
     &PyList_Type,

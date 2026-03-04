@@ -4,9 +4,6 @@
 .. module:: logging
    :synopsis: Flexible event logging system for applications.
 
-.. moduleauthor:: Vinay Sajip <vinay_sajip@red-dove.com>
-.. sectionauthor:: Vinay Sajip <vinay_sajip@red-dove.com>
-
 **Source code:** :source:`Lib/logging/__init__.py`
 
 .. index:: pair: Errors; logging

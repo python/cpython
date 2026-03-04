@@ -9,9 +9,6 @@
 .. module:: inspect
    :synopsis: Extract information and source code from live objects.
 
-.. moduleauthor:: Ka-Ping Yee <ping@lfw.org>
-.. sectionauthor:: Ka-Ping Yee <ping@lfw.org>
-
 **Source code:** :source:`Lib/inspect.py`
 
 --------------

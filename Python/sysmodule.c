@@ -1762,7 +1762,7 @@ sys_getwindowsversion_impl(PyObject *module)
     PyObject *realVersion = _sys_getwindowsversion_from_kernel32();
     if (!realVersion) {
         if (!PyErr_ExceptionMatches(PyExc_WindowsError)) {
-            return NULL;
+            goto error;
         }
 
         PyErr_Clear();

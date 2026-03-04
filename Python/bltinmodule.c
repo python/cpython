@@ -318,6 +318,12 @@ builtin___lazy_import___impl(PyObject *module, PyObject *name,
         locals = globals;
     }
 
+    if (!PyDict_Check(globals)) {
+        PyErr_Format(PyExc_TypeError,
+                     "expect dict for globals, got %T", globals);
+        return NULL;
+    }
+
     if (PyDict_GetItemRef(globals, &_Py_ID(__builtins__), &builtins) < 0) {
         return NULL;
     }
@@ -3536,6 +3542,7 @@ _PyBuiltin_Init(PyInterpreterState *interp)
     SETBUILTIN("enumerate",             &PyEnum_Type);
     SETBUILTIN("filter",                &PyFilter_Type);
     SETBUILTIN("float",                 &PyFloat_Type);
+    SETBUILTIN("frozendict",            &PyFrozenDict_Type);
     SETBUILTIN("frozenset",             &PyFrozenSet_Type);
     SETBUILTIN("property",              &PyProperty_Type);
     SETBUILTIN("int",                   &PyLong_Type);

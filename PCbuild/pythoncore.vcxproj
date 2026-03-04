@@ -730,7 +730,7 @@
       </ClCompile>
     </ItemGroup>
   </Target>
-  <Target Name="_WarnAboutToolset" BeforeTargets="PrepareForBuild" Condition="$(PlatformToolset) != 'v141' and $(PlatformToolset) != 'v142' and $(PlatformToolset) != 'v143'">
+  <Target Name="_WarnAboutToolset" BeforeTargets="PrepareForBuild" Condition="$(PlatformToolset) != 'v143' and $(PlatformToolset) != 'v145'">
     <Warning Text="Toolset $(PlatformToolset) is not used for official builds. Your build may have errors or incompatibilities." />
   </Target>
   <Target Name="_WarnAboutZlib" BeforeTargets="PrepareForBuild" Condition="!$(IncludeExternals)">
