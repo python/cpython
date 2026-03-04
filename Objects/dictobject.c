@@ -4235,9 +4235,6 @@ static PyObject *
 dict_copy_impl(PyDictObject *self)
 /*[clinic end generated code: output=ffb782cf970a5c39 input=73935f042b639de4]*/
 {
-    if (PyFrozenDict_CheckExact(self)) {
-        return Py_NewRef(self);
-    }
     return PyDict_Copy((PyObject *)self);
 }
 
@@ -4263,18 +4260,17 @@ copy_values(PyDictValues *values)
 }
 
 static PyObject *
-copy_lock_held(PyObject *o)
+copy_lock_held(PyObject *o, int as_frozendict)
 {
     PyObject *copy;
     PyDictObject *mp;
-    int frozendict = PyFrozenDict_Check(o);
 
     ASSERT_DICT_LOCKED(o);
 
     mp = (PyDictObject *)o;
     if (mp->ma_used == 0) {
         /* The dict is empty; just return a new dict. */
-        if (frozendict) {
+        if (as_frozendict) {
             return PyFrozenDict_New(NULL);
         }
         else {
@@ -4288,7 +4284,7 @@ copy_lock_held(PyObject *o)
         if (newvalues == NULL) {
             return PyErr_NoMemory();
         }
-        if (frozendict) {
+        if (as_frozendict) {
             split_copy = (PyDictObject *)PyObject_GC_New(PyFrozenDictObject,
                                                          &PyFrozenDict_Type);
         }
@@ -4307,7 +4303,7 @@ copy_lock_held(PyObject *o)
         split_copy->ma_used = mp->ma_used;
         split_copy->_ma_watcher_tag = 0;
         dictkeys_incref(mp->ma_keys);
-        if (frozendict) {
+        if (as_frozendict) {
             PyFrozenDictObject *frozen = (PyFrozenDictObject *)split_copy;
             frozen->ma_hash = -1;
         }
@@ -4318,7 +4314,7 @@ copy_lock_held(PyObject *o)
     if (Py_TYPE(mp)->tp_iter == dict_iter &&
             mp->ma_values == NULL &&
             (mp->ma_used >= (mp->ma_keys->dk_nentries * 2) / 3) &&
-            !frozendict)
+            !as_frozendict)
     {
         /* Use fast-copy if:
 
@@ -4350,7 +4346,7 @@ copy_lock_held(PyObject *o)
         return (PyObject *)new;
     }
 
-    if (frozendict) {
+    if (as_frozendict) {
         copy = PyFrozenDict_New(NULL);
     }
     else {
@@ -4364,6 +4360,19 @@ copy_lock_held(PyObject *o)
     return NULL;
 }
 
+// Similar to PyDict_Copy(), but copy also frozendict.
+static PyObject *
+_PyDict_Copy(PyObject *o)
+{
+    assert(PyAnyDict_Check(o));
+
+    PyObject *res;
+    Py_BEGIN_CRITICAL_SECTION(o);
+    res = copy_lock_held(o, PyFrozenDict_Check(o));
+    Py_END_CRITICAL_SECTION();
+    return res;
+}
+
 PyObject *
 PyDict_Copy(PyObject *o)
 {
@@ -4372,11 +4381,22 @@ PyDict_Copy(PyObject *o)
         return NULL;
     }
 
+    if (PyFrozenDict_CheckExact(o)) {
+        return Py_NewRef(o);
+    }
+
+    return _PyDict_Copy(o);
+}
+
+// Similar to PyDict_Copy(), but return a dict if the argument is a frozendict.
+PyObject*
+_PyDict_CopyAsDict(PyObject *o)
+{
+    assert(PyAnyDict_Check(o));
+
     PyObject *res;
     Py_BEGIN_CRITICAL_SECTION(o);
-
-    res = copy_lock_held(o);
-
+    res = copy_lock_held(o, 0);
     Py_END_CRITICAL_SECTION();
     return res;
 }
@@ -4925,7 +4945,7 @@ dict_or(PyObject *self, PyObject *other)
     if (!PyAnyDict_Check(self) || !PyAnyDict_Check(other)) {
         Py_RETURN_NOTIMPLEMENTED;
     }
-    PyObject *new = PyDict_Copy(self);
+    PyObject *new = _PyDict_Copy(self);
     if (new == NULL) {
         return NULL;
     }
@@ -6479,7 +6499,7 @@ dictitems_xor_lock_held(PyObject *d1, PyObject *d2)
     ASSERT_DICT_LOCKED(d1);
     ASSERT_DICT_LOCKED(d2);
 
-    PyObject *temp_dict = copy_lock_held(d1);
+    PyObject *temp_dict = copy_lock_held(d1, PyFrozenDict_Check(d1));
     if (temp_dict == NULL) {
         return NULL;
     }
