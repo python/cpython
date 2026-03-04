@@ -6,6 +6,7 @@
 # You can set these variables from the command line.
 PYTHON       = python3
 VENVDIR      = ./venv
+VENVDIR_PDF  = ./venv-pdf
 UV           = uv
 SPHINXBUILD  = PATH=$(VENVDIR)/bin:$$PATH sphinx-build
 BLURB        = PATH=$(VENVDIR)/bin:$$PATH blurb
@@ -163,7 +164,7 @@ clean: clean-venv
 
 .PHONY: clean-venv
 clean-venv:
-	rm -rf $(VENVDIR)
+	rm -rf $(VENVDIR) $(VENVDIR_PDF)
 
 .PHONY: venv
 venv:
@@ -182,6 +183,25 @@ venv:
 			$(VENVDIR)/bin/python3 -m pip install -r $(REQUIREMENTS); \
 		fi; \
 		echo "The venv has been created in the $(VENVDIR) directory"; \
+	fi
+
+.PHONY: venv-pdf
+venv-pdf:
+	@if [ -d $(VENVDIR_PDF) ] ; then \
+		echo "venv-pdf already exists."; \
+		echo "To recreate it, remove it first with \`make clean-venv'."; \
+	else \
+		set -e; \
+		echo "Creating venv in $(VENVDIR_PDF)"; \
+		if $(UV) --version >/dev/null 2>&1; then \
+			$(UV) venv --python=$(PYTHON) $(VENVDIR_PDF); \
+			VIRTUAL_ENV=$(VENVDIR_PDF) $(UV) pip install -r requirements-pdf.txt; \
+		else \
+			$(PYTHON) -m venv $(VENVDIR_PDF); \
+			$(VENVDIR_PDF)/bin/python3 -m pip install --upgrade pip; \
+			$(VENVDIR_PDF)/bin/python3 -m pip install -r requirements-pdf.txt; \
+		fi; \
+		echo "The venv has been created in the $(VENVDIR_PDF) directory"; \
 	fi
 
 .PHONY: dist-no-html
@@ -231,13 +251,13 @@ dist-text:
 	@echo "Build finished and archived!"
 
 .PHONY: dist-pdf
-dist-pdf:
+dist-pdf: venv-pdf
 	# archive the A4 latex
 	@echo "Building LaTeX (A4 paper)..."
 	mkdir -p dist
 	rm -rf build/latex
 	find dist -name 'python-$(DISTVERSION)-docs-pdf*' -exec rm -rf {} \;
-	$(MAKE) latex PAPER=a4
+	$(MAKE) latex PAPER=a4 VENVDIR=$(VENVDIR_PDF)
 	# remove zip & bz2 dependency on all-pdf,
 	# as otherwise the full latexmk process is run twice.
 	# ($$ is needed to escape the $; https://www.gnu.org/software/make/manual/make.html#Basics-of-Variable-References)
