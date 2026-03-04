@@ -4872,9 +4872,21 @@ type_new_get_slots(type_new_ctx *ctx, PyObject *dict)
 static PyTypeObject*
 type_new_init(type_new_ctx *ctx)
 {
-    PyObject *dict = PyDict_Copy(ctx->orig_dict);
-    if (dict == NULL) {
-        goto error;
+    PyObject *dict;
+    if (PyFrozenDict_Check(ctx->orig_dict)) {
+        dict = PyDict_New();
+        if (dict == NULL) {
+            goto error;
+        }
+        if (PyDict_Merge(dict, ctx->orig_dict, 1) < 0) {
+            goto error;
+        }
+    }
+    else {
+        dict = PyDict_Copy(ctx->orig_dict);
+        if (dict == NULL) {
+            goto error;
+        }
     }
 
     if (type_new_get_slots(ctx, dict) < 0) {
@@ -5037,11 +5049,17 @@ type_new(PyTypeObject *metatype, PyObject *args, PyObject *kwds)
 
     /* Parse arguments: (name, bases, dict) */
     PyObject *name, *bases, *orig_dict;
-    if (!PyArg_ParseTuple(args, "UO!O!:type.__new__",
+    if (!PyArg_ParseTuple(args, "UO!O:type.__new__",
                           &name,
                           &PyTuple_Type, &bases,
-                          &PyDict_Type, &orig_dict))
+                          &orig_dict))
     {
+        return NULL;
+    }
+    if (!PyAnyDict_Check(orig_dict)) {
+        PyErr_Format(PyExc_TypeError,
+                     "type.__new__() argument 3 must be dict or frozendict, not %T",
+                     orig_dict);
         return NULL;
     }
 
