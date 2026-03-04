@@ -62,6 +62,28 @@ def validate_emsdk_version(emsdk_cache):
     print(f"✅ Emscripten version {required_version} found in {emsdk_cache}")
 
 
+def parse_env(text):
+    result = {}
+    for line in text.splitlines():
+        key, val = line.split("=", 1)
+        result[key] = val
+    return result
+
+
+@functools.cache
+def get_emsdk_env(emsdk_cache):
+    env_text = subprocess.check_output(
+        [
+            "bash",
+            "-c",
+            f"EMSDK_QUIET=1 source {get_emsdk_activate_path(emsdk_cache)} && env",
+        ],
+        text=True,
+    )
+    env = parse_env(env_text)
+    return {key: env[key] for key in ["PATH", "EMSDK", "EMSDK_NODE"]}
+
+
 def updated_env(updates, emsdk_cache):
     """Create a new dict representing the environment to use.
 
@@ -80,15 +102,7 @@ def updated_env(updates, emsdk_cache):
     # This layering lets SOURCE_DATE_EPOCH from os.environ takes precedence.
     environment = env_defaults | os.environ | updates
     if emsdk_cache:
-        env = os.environ.copy()
-        call(
-            ["bash", "-c", f"source {get_emsdk_activate_path(emsdk_cache)}"],
-            env=env,
-            quiet=False,
-        )
-        for key in ["PATH", "EMSDK", "EMSDK_NODE"]:
-            environment[key] = env[key]
-
+        environment |= get_emsdk_env(emsdk_cache)
     env_diff = {}
     for key, value in environment.items():
         if os.environ.get(key) != value:
