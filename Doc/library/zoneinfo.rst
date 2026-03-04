@@ -6,9 +6,6 @@
 
 .. versionadded:: 3.9
 
-.. moduleauthor:: Paul Ganssle <paul@ganssle.io>
-.. sectionauthor:: Paul Ganssle <paul@ganssle.io>
-
 **Source code:** :source:`Lib/zoneinfo`
 
 --------------

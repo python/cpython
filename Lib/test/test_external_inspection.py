@@ -521,6 +521,44 @@ class TestGetStackTrace(RemoteInspectionTestBase):
         sys.platform == "linux" and not PROCESS_VM_READV_SUPPORTED,
         "Test only runs on Linux with process_vm_readv support",
     )
+    def test_self_trace_after_ctypes_import(self):
+        """Test that RemoteUnwinder works on the same process after _ctypes import.
+
+        When _ctypes is imported, it may call dlopen on the libpython shared
+        library, creating a duplicate mapping in the process address space.
+        The remote debugging code must skip these uninitialized duplicate
+        mappings and find the real PyRuntime. See gh-144563.
+        """
+        # Run the test in a subprocess to avoid side effects
+        script = textwrap.dedent("""\
+            import os
+            import _remote_debugging
+
+            # Should work before _ctypes import
+            unwinder = _remote_debugging.RemoteUnwinder(os.getpid())
+
+            import _ctypes
+
+            # Should still work after _ctypes import (gh-144563)
+            unwinder = _remote_debugging.RemoteUnwinder(os.getpid())
+            """)
+
+        result = subprocess.run(
+            [sys.executable, "-c", script],
+            capture_output=True,
+            text=True,
+            timeout=SHORT_TIMEOUT,
+        )
+        self.assertEqual(
+            result.returncode, 0,
+            f"stdout: {result.stdout}\nstderr: {result.stderr}"
+        )
+
+    @skip_if_not_supported
+    @unittest.skipIf(
+        sys.platform == "linux" and not PROCESS_VM_READV_SUPPORTED,
+        "Test only runs on Linux with process_vm_readv support",
+    )
     def test_async_remote_stack_trace(self):
         port = find_unused_port()
         script = textwrap.dedent(

@@ -239,11 +239,11 @@ class Unparser(NodeVisitor):
             self.traverse(node.value)
 
     def visit_Import(self, node):
-        self.fill("import ")
+        self.fill("lazy import " if node.is_lazy else "import ")
         self.interleave(lambda: self.write(", "), self.traverse, node.names)
 
     def visit_ImportFrom(self, node):
-        self.fill("from ")
+        self.fill("lazy from " if node.is_lazy else "from ")
         self.write("." * (node.level or 0))
         if node.module:
             self.write(node.module)

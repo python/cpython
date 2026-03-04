@@ -1,0 +1,3 @@
+Calling :func:`repr` on :func:`functools.partial` is now safer
+when the partial object's internal attributes are replaced while
+the string representation is being generated.

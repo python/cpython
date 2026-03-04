@@ -951,6 +951,16 @@ Glossary
       to locks exist such as queues, producer/consumer patterns, and
       thread-local state. See also :term:`deadlock`, and :term:`reentrant`.
 
+   lock-free
+      An operation that does not acquire any :term:`lock` and uses atomic CPU
+      instructions to ensure correctness. Lock-free operations can execute
+      concurrently without blocking each other and cannot be blocked by
+      operations that hold locks. In :term:`free-threaded <free threading>`
+      Python, built-in types like :class:`dict` and :class:`list` provide
+      lock-free read operations, which means other threads may observe
+      intermediate states during multi-step modifications even when those
+      modifications hold the :term:`per-object lock`.
+
    loader
       An object that loads a module.
       It must define the :meth:`!exec_module` and :meth:`!create_module` methods
@@ -1217,6 +1227,16 @@ Glossary
       <faq-argument-vs-parameter>`, the :class:`inspect.Parameter` class, the
       :ref:`function` section, and :pep:`362`.
 
+   per-object lock
+      A :term:`lock` associated with an individual object instance rather than
+      a global lock shared across all objects. In :term:`free-threaded
+      <free threading>` Python, built-in types like :class:`dict` and
+      :class:`list` use per-object locks to allow concurrent operations on
+      different objects while serializing operations on the same object.
+      Operations that hold the per-object lock prevent other locking operations
+      on the same object from proceeding, but do not block :term:`lock-free`
+      operations.
+
    path entry
       A single location on the :term:`import path` which the :term:`path
       based finder` consults to find modules for importing.
@@ -1339,7 +1359,7 @@ Glossary
          'email.mime.text'
 
    race condition
-      A condition of a program where the its behavior
+      A condition of a program where the behavior
       depends on the relative timing or ordering of events, particularly in
       multi-threaded programs.  Race conditions can lead to
       :term:`non-deterministic` behavior and bugs that are difficult to

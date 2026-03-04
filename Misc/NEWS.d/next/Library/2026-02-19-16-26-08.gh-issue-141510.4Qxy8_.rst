@@ -1,0 +1,3 @@
+``ParameterizedMIMEHeader.params`` of :mod:`email.headerregistry` is now a
+:class:`frozendict` instead of a :class:`types.MappingProxyType`. Patch by
+Victor Stinner.

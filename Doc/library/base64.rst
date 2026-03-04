@@ -105,10 +105,10 @@ POST request.
 
    For more information about the strict base64 check, see :func:`binascii.a2b_base64`
 
-   .. versionchanged:: next
+   .. versionchanged:: 3.15
       Added the *ignorechars* parameter.
 
-   .. deprecated:: next
+   .. deprecated:: 3.15
       Accepting the ``+`` and ``/`` characters with an alternative alphabet
       is now deprecated.
 
@@ -142,7 +142,7 @@ POST request.
    ``/`` in the standard Base64 alphabet, and return the decoded
    :class:`bytes`.
 
-   .. deprecated:: next
+   .. deprecated:: 3.15
       Accepting the ``+`` and ``/`` characters is now deprecated.
 
 

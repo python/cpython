@@ -11,8 +11,9 @@ extern "C" {
 #include <stdbool.h>
 #include "pycore_uop.h"  // UOP_MAX_TRACE_LENGTH
 
-// Holds locals, stack, locals, stack ... (in that order)
-#define MAX_ABSTRACT_INTERP_SIZE 512
+#define ABSTRACT_INTERP_STACK_SIZE 256
+#define ABSTRACT_INTERP_LOCALS_SIZE 512
+
 
 #define TY_ARENA_SIZE (UOP_MAX_TRACE_LENGTH * 5)
 
@@ -138,6 +139,7 @@ typedef struct _Py_UOpsAbstractFrame {
     // Max stacklen
     int stack_len;
     int locals_len;
+    bool caller; // We have made a call from this frame during the trace
     PyFunctionObject *func;
     PyCodeObject *code;
 

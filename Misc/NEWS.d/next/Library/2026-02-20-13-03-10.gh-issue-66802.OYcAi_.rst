@@ -1,0 +1,3 @@
+Add :func:`unicodedata.block` function to return the `Unicode block
+<https://www.unicode.org/versions/Unicode17.0.0/core-spec/chapter-3/#G64189>`_ of a
+character.

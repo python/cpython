@@ -4,9 +4,6 @@
 .. module:: collections
     :synopsis: Container datatypes
 
-.. moduleauthor:: Raymond Hettinger <python@rcn.com>
-.. sectionauthor:: Raymond Hettinger <python@rcn.com>
-
 **Source code:** :source:`Lib/collections/__init__.py`
 
 .. testsetup:: *

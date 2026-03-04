@@ -35,7 +35,6 @@ although there is currently no date scheduled for their removal.
   * Support for ``__complex__()`` method returning a strict subclass of
     :class:`complex`: these methods will be required to return an instance of
     :class:`complex`.
-  * Delegation of ``int()`` to ``__trunc__()`` method.
   * Passing a complex number as the *real* or *imag* argument in the
     :func:`complex` constructor is now deprecated; it should only be passed
     as a single positional argument.

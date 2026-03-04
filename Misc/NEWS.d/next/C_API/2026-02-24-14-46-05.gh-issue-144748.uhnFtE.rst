@@ -1,0 +1,2 @@
+:c:func:`PyErr_CheckSignals` now raises the exception scheduled by
+:c:func:`PyThreadState_SetAsyncExc`, if any.

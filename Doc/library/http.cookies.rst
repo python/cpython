@@ -4,9 +4,6 @@
 .. module:: http.cookies
    :synopsis: Support for HTTP state management (cookies).
 
-.. moduleauthor:: Timothy O'Malley <timo@alum.mit.edu>
-.. sectionauthor:: Moshe Zadka <moshez@zadka.site.co.il>
-
 **Source code:** :source:`Lib/http/cookies.py`
 
 --------------

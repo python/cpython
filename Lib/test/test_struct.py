@@ -552,6 +552,9 @@ class StructTest(ComplexesAreIdenticalMixin, unittest.TestCase):
         hugecount2 = '{}b{}H'.format(sys.maxsize//2, sys.maxsize//2)
         self.assertRaises(struct.error, struct.calcsize, hugecount2)
 
+        hugecount3 = '{}i{}q'.format(sys.maxsize // 4, sys.maxsize // 8)
+        self.assertRaises(struct.error, struct.calcsize, hugecount3)
+
     def test_trailing_counter(self):
         store = array.array('b', b' '*100)
 

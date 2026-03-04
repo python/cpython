@@ -5,9 +5,6 @@
 Set Objects
 -----------
 
-.. sectionauthor:: Raymond D. Hettinger <python@rcn.com>
-
-
 .. index::
    pair: object; set
    pair: object; frozenset

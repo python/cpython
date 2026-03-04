@@ -1,0 +1,2 @@
+A warning is now shown during :ref:`sys-path-init` if it can't find a valid
+standard library.

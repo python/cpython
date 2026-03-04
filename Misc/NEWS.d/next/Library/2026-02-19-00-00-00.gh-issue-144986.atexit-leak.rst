@@ -1,0 +1,2 @@
+Fix a memory leak in :func:`atexit.register`.
+Patch by Shamil Abdulaev.

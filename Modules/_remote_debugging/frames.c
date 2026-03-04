@@ -49,6 +49,8 @@ process_single_stack_chunk(
         // Size must be at least enough for the header and reasonably bounded
         if (actual_size <= offsetof(_PyStackChunk, data) || actual_size > MAX_STACK_CHUNK_SIZE) {
             PyMem_RawFree(this_chunk);
+            PyErr_Format(PyExc_RuntimeError,
+                "Invalid stack chunk size %zu (corrupted remote memory)", actual_size);
             set_exception_cause(unwinder, PyExc_RuntimeError,
                 "Invalid stack chunk size (corrupted remote memory)");
             return -1;
@@ -244,6 +246,7 @@ parse_frame_from_chunks(
 ) {
     void *frame_ptr = find_frame_in_chunks(chunks, address);
     if (!frame_ptr) {
+        PyErr_Format(PyExc_RuntimeError, "Frame at address 0x%lx not found in stack chunks", address);
         set_exception_cause(unwinder, PyExc_RuntimeError, "Frame not found in stack chunks");
         return -1;
     }

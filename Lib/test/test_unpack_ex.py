@@ -543,13 +543,13 @@ Now some general starred expressions (all fail).
 
 Some size constraints (all fail.)
 
-    >>> s = ", ".join("a%d" % i for i in range(1<<8)) + ", *rest = range(1<<8 + 1)"
+    >>> s = ", ".join("a%d" % i for i in range(1<<8)) + ", *rest = range((1<<8) + 1)"
     >>> compile(s, 'test', 'exec') # doctest:+ELLIPSIS
     Traceback (most recent call last):
      ...
     SyntaxError: too many expressions in star-unpacking assignment
 
-    >>> s = ", ".join("a%d" % i for i in range(1<<8 + 1)) + ", *rest = range(1<<8 + 2)"
+    >>> s = ", ".join("a%d" % i for i in range((1<<8) + 1)) + ", *rest = range((1<<8) + 2)"
     >>> compile(s, 'test', 'exec') # doctest:+ELLIPSIS
     Traceback (most recent call last):
      ...

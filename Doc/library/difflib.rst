@@ -4,10 +4,6 @@
 .. module:: difflib
    :synopsis: Helpers for computing differences between objects.
 
-.. moduleauthor:: Tim Peters <tim_one@users.sourceforge.net>
-.. sectionauthor:: Tim Peters <tim_one@users.sourceforge.net>
-.. Markup by Fred L. Drake, Jr. <fdrake@acm.org>
-
 **Source code:** :source:`Lib/difflib.py`
 
 .. testsetup::

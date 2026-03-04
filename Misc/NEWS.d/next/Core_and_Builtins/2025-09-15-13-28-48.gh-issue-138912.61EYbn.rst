@@ -1,0 +1,1 @@
+Improve :opcode:`MATCH_CLASS` performance by up to 52% in certain cases. Patch by Marc Mueller.

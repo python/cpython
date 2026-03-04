@@ -1,0 +1,2 @@
+Optimize :meth:`!frozendict.fromkeys` to avoid unnecessary thread-safety operations
+in frozendict cases. Patch by Donghee Na.

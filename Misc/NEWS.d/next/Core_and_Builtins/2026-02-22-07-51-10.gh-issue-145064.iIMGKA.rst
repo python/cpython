@@ -1,0 +1,1 @@
+Fix JIT optimizer assertion failure during ``CALL_ALLOC_AND_ENTER_INIT`` side exit.

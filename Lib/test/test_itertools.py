@@ -733,6 +733,27 @@ class TestBasicOps(unittest.TestCase):
         keyfunc.skip = 1
         self.assertRaises(ExpectedError, gulp, [None, None], keyfunc)
 
+    def test_groupby_reentrant_eq_does_not_crash(self):
+        # regression test for gh-143543
+        class Key:
+            def __init__(self, do_advance):
+                self.do_advance = do_advance
+
+            def __eq__(self, other):
+                if self.do_advance:
+                    self.do_advance = False
+                    next(g)
+                    return NotImplemented
+                return False
+
+        def keys():
+            yield Key(True)
+            yield Key(False)
+
+        g = itertools.groupby([None, None], keys().send)
+        next(g)
+        next(g)  # must pass with address sanitizer
+
     def test_filter(self):
         self.assertEqual(list(filter(isEven, range(6))), [0,2,4])
         self.assertEqual(list(filter(None, [0,1,0,2,0])), [1,2])

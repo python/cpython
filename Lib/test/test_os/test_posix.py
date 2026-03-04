@@ -2008,6 +2008,11 @@ class _PosixSpawnMixin:
         )
         support.wait_process(pid, exitcode=0)
 
+    def test_setpgroup_allow_none(self):
+        path, args = self.NOOP_PROGRAM[0], self.NOOP_PROGRAM
+        pid = self.spawn_func(path, args, os.environ, setpgroup=None)
+        support.wait_process(pid, exitcode=0)
+
     def test_setpgroup_wrong_type(self):
         with self.assertRaises(TypeError):
             self.spawn_func(sys.executable,
@@ -2107,6 +2112,20 @@ class _PosixSpawnMixin:
             self.spawn_func(sys.executable,
                             [sys.executable, "-c", "pass"],
                             os.environ, setsigdef=[signal.NSIG, signal.NSIG+1])
+
+    def test_scheduler_allow_none(self):
+        path, args = self.NOOP_PROGRAM[0], self.NOOP_PROGRAM
+        pid = self.spawn_func(path, args, os.environ, scheduler=None)
+        support.wait_process(pid, exitcode=0)
+
+    @support.subTests("scheduler", [object(), 1, [1, 2]])
+    def test_scheduler_wrong_type(self, scheduler):
+        path, args = self.NOOP_PROGRAM[0], self.NOOP_PROGRAM
+        with self.assertRaisesRegex(
+            TypeError,
+            "scheduler must be a tuple or None",
+        ):
+            self.spawn_func(path, args, os.environ, scheduler=scheduler)
 
     @requires_sched
     @unittest.skipIf(sys.platform.startswith(('freebsd', 'netbsd')),

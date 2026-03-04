@@ -1,0 +1,3 @@
+Fixed a use-after-free in :mod:`ssl` when ``SSL_new()`` returns NULL in
+``newPySSLSocket()``. The error was reported via a dangling pointer after the
+object had already been freed.

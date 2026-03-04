@@ -2193,6 +2193,20 @@ class TestDate(HarmlessMixedComparison, unittest.TestCase):
                 with self.assertRaises(TypeError):
                     self.theclass.fromisocalendar(*isocal)
 
+    def test_strptime_F_format(self):
+        test_date = "2025-10-26"
+        self.assertEqual(
+            self.theclass.strptime(test_date, "%F"),
+            self.theclass.strptime(test_date, "%Y-%m-%d")
+        )
+
+    def test_strptime_D_format(self):
+        test_date = "11/28/25"
+        self.assertEqual(
+            self.theclass.strptime(test_date, "%D"),
+            self.theclass.strptime(test_date, "%m/%d/%y")
+        )
+
 
 #############################################################################
 # datetime tests
@@ -3779,6 +3793,13 @@ class TestDateTime(TestDate):
         self.assertEqual(repr(td), "SubclassDatetime(2010, 10, 10, 0, 0)")
         td = SubclassDatetime(2010, 10, 2, second=3)
         self.assertEqual(repr(td), "SubclassDatetime(2010, 10, 2, 0, 0, 3)")
+
+    def test_strptime_T_format(self):
+        test_time = "15:00:00"
+        self.assertEqual(
+            self.theclass.strptime(test_time, "%T"),
+            self.theclass.strptime(test_time, "%H:%M:%S")
+        )
 
 
 class TestSubclassDateTime(TestDateTime):

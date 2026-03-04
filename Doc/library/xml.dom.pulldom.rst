@@ -4,8 +4,6 @@
 .. module:: xml.dom.pulldom
    :synopsis: Support for building partial DOM trees from SAX events.
 
-.. moduleauthor:: Paul Prescod <paul@prescod.net>
-
 **Source code:** :source:`Lib/xml/dom/pulldom.py`
 
 --------------

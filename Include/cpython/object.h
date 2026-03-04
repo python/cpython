@@ -493,3 +493,5 @@ PyAPI_FUNC(int) PyUnstable_TryIncRef(PyObject *);
 PyAPI_FUNC(void) PyUnstable_EnableTryIncRef(PyObject *);
 
 PyAPI_FUNC(int) PyUnstable_Object_IsUniquelyReferenced(PyObject *);
+
+PyAPI_FUNC(int) PyUnstable_SetImmortal(PyObject *op);

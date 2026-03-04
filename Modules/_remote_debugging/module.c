@@ -595,6 +595,9 @@ _remote_debugging_RemoteUnwinder_get_stack_trace_impl(RemoteUnwinderObject *self
                     // Detect cycle: if current_tstate didn't advance, we have corrupted data
                     if (current_tstate == prev_tstate) {
                         Py_DECREF(interpreter_threads);
+                        PyErr_Format(PyExc_RuntimeError,
+                            "Thread list cycle detected at address 0x%lx (corrupted remote memory)",
+                            current_tstate);
                         set_exception_cause(self, PyExc_RuntimeError,
                             "Thread list cycle detected (corrupted remote memory)");
                         Py_CLEAR(result);

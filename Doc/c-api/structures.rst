@@ -410,7 +410,7 @@ There are these calling conventions:
 
 
 These two constants are not used to indicate the calling convention but the
-binding when use with methods of classes.  These may not be used for functions
+binding when used with methods of classes.  These may not be used for functions
 defined for modules.  At most one of these flags may be set for any given
 method.
 

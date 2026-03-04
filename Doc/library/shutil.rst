@@ -4,9 +4,6 @@
 .. module:: shutil
    :synopsis: High-level file operations, including copying.
 
-.. sectionauthor:: Fred L. Drake, Jr. <fdrake@acm.org>
-.. partly based on the docstrings
-
 **Source code:** :source:`Lib/shutil.py`
 
 .. index::
@@ -540,12 +537,12 @@ On Solaris :func:`os.sendfile` is used.
 
 On Windows :func:`shutil.copyfile` uses a bigger default buffer size (1 MiB
 instead of 64 KiB) and a :func:`memoryview`-based variant of
-:func:`shutil.copyfileobj` is used, which is still reads and writes in a loop.
+:func:`shutil.copyfileobj` is used, which still reads and writes in a loop.
 :func:`shutil.copy2` uses the native ``CopyFile2`` call on Windows, which is the most
 efficient method, supports copy-on-write, and preserves metadata.
 
 If the fast-copy operation fails and no data was written in the destination
-file then shutil will silently fallback on using less efficient
+file then shutil will silently fall back to less efficient
 :func:`copyfileobj` function internally.
 
 .. versionchanged:: 3.8
@@ -621,8 +618,8 @@ provided.  They rely on the :mod:`zipfile` and :mod:`tarfile` modules.
 
    Create an archive file (such as zip or tar) and return its name.
 
-   *base_name* is the name of the file to create, including the path, minus
-   any format-specific extension.
+   *base_name* is a string or :term:`path-like object` specifying the name of
+   the file to create, including the path, minus any format-specific extension.
 
    *format* is the archive format: one of
    "zip" (if the :mod:`zlib` module is available), "tar", "gztar" (if the
@@ -630,13 +627,14 @@ provided.  They rely on the :mod:`zipfile` and :mod:`tarfile` modules.
    available), "xztar" (if the :mod:`lzma` module is available), or "zstdtar"
    (if the :mod:`compression.zstd` module is available).
 
-   *root_dir* is a directory that will be the root directory of the
-   archive, all paths in the archive will be relative to it; for example,
-   we typically chdir into *root_dir* before creating the archive.
+   *root_dir* is a string or :term:`path-like object` specifying a directory
+   that will be the root directory of the archive, all paths in the archive
+   will be relative to it; for example, we typically chdir into *root_dir*
+   before creating the archive.
 
-   *base_dir* is the directory where we start archiving from;
-   i.e. *base_dir* will be the common prefix of all files and
-   directories in the archive.  *base_dir* must be given relative
+   *base_dir* is a string or :term:`path-like object` specifying a directory
+   where we start archiving from; i.e. *base_dir* will be the common prefix of
+   all files and directories in the archive.  *base_dir* must be given relative
    to *root_dir*.  See :ref:`shutil-archiving-example-with-basedir` for how to
    use *base_dir* and *root_dir* together.
 
@@ -670,6 +668,10 @@ provided.  They rely on the :mod:`zipfile` and :mod:`tarfile` modules.
    .. versionchanged:: 3.10.6
       This function is now made thread-safe during creation of standard
       ``.zip`` and tar archives.
+
+   .. versionchanged:: next
+      Accepts a :term:`path-like object` for *base_name*, *root_dir* and
+      *base_dir*.
 
 .. function:: get_archive_formats()
 

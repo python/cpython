@@ -4,11 +4,6 @@
 .. module:: unittest
    :synopsis: Unit testing framework for Python.
 
-.. moduleauthor:: Steve Purcell <stephen_purcell@yahoo.com>
-.. sectionauthor:: Steve Purcell <stephen_purcell@yahoo.com>
-.. sectionauthor:: Fred L. Drake, Jr. <fdrake@acm.org>
-.. sectionauthor:: Raymond Hettinger <python@rcn.com>
-
 **Source code:** :source:`Lib/unittest/__init__.py`
 
 --------------

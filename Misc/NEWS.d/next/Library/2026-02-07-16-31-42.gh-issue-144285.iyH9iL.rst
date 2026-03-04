@@ -1,0 +1,3 @@
+Attribute suggestions in :exc:`AttributeError` tracebacks are now formatted differently
+to make them easier to understand, for example: ``Did you mean '.datetime.now' instead of '.now'``.
+Contributed by Bartosz Sławecki.

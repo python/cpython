@@ -1069,7 +1069,9 @@ class ExpansionProtectionTest(AttackProtectionTestBase, unittest.TestCase):
         self.assertIsNotNone(parser.Parse(payload, True))
 
 
-@unittest.skipIf(expat.version_info < (2, 7, 2), "requires Expat >= 2.7.2")
+@unittest.skipIf(not hasattr(expat.XMLParserType,
+                             "SetAllocTrackerMaximumAmplification"),
+                 "requires Python compiled with Expat >= 2.7.2")
 class MemoryProtectionTest(AttackProtectionTestBase, unittest.TestCase):
 
     # NOTE: with the default Expat configuration, the billion laughs protection

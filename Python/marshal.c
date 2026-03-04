@@ -67,6 +67,7 @@ module marshal
 #define TYPE_TUPLE              '('  // See also TYPE_SMALL_TUPLE.
 #define TYPE_LIST               '['
 #define TYPE_DICT               '{'
+#define TYPE_FROZENDICT         '}'
 #define TYPE_CODE               'c'
 #define TYPE_UNICODE            'u'
 #define TYPE_UNKNOWN            '?'
@@ -575,10 +576,15 @@ w_complex_object(PyObject *v, char flag, WFILE *p)
             w_object(PyList_GET_ITEM(v, i), p);
         }
     }
-    else if (PyDict_CheckExact(v)) {
+    else if (PyAnyDict_CheckExact(v)) {
         Py_ssize_t pos;
         PyObject *key, *value;
-        W_TYPE(TYPE_DICT, p);
+        if (PyFrozenDict_CheckExact(v)) {
+            W_TYPE(TYPE_FROZENDICT, p);
+        }
+        else {
+            W_TYPE(TYPE_DICT, p);
+        }
         /* This one is NULL object terminated! */
         pos = 0;
         while (PyDict_Next(v, &pos, &key, &value)) {
@@ -1420,6 +1426,7 @@ r_object(RFILE *p)
         break;
 
     case TYPE_DICT:
+    case TYPE_FROZENDICT:
         v = PyDict_New();
         R_REF(v);
         if (v == NULL)
@@ -1443,7 +1450,16 @@ r_object(RFILE *p)
             Py_DECREF(val);
         }
         if (PyErr_Occurred()) {
-            Py_SETREF(v, NULL);
+            Py_CLEAR(v);
+        }
+        if (type == TYPE_FROZENDICT && v != NULL) {
+            PyObject *frozendict = PyFrozenDict_New(v);
+            if (frozendict != NULL) {
+                Py_SETREF(v, frozendict);
+            }
+            else {
+                Py_CLEAR(v);
+            }
         }
         retval = v;
         break;

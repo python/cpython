@@ -36,6 +36,8 @@ extern int _PyDict_DelItem_KnownHash_LockHeld(PyObject *mp, PyObject *key,
 
 extern int _PyDict_Contains_KnownHash(PyObject *, PyObject *, Py_hash_t);
 
+extern void _PyDict_ClearKeysVersionLockHeld(PyObject *mp);
+
 extern int _PyDict_Next(
     PyObject *mp, Py_ssize_t *pos, PyObject **key, PyObject **value, Py_hash_t *hash);
 
@@ -264,6 +266,13 @@ static inline PyDictUnicodeEntry* DK_UNICODE_ENTRIES(PyDictKeysObject *dk) {
 #define DICT_UNIQUE_ID_SHIFT (32)
 #define DICT_UNIQUE_ID_MAX ((UINT64_C(1) << (64 - DICT_UNIQUE_ID_SHIFT)) - 1)
 
+/* The first three dict watcher IDs are reserved for CPython,
+ * so we don't need to check that they haven't been used */
+#define BUILTINS_WATCHER_ID     0
+#define GLOBALS_WATCHER_ID      1
+#define MODULE_WATCHER_ID       2
+#define FIRST_AVAILABLE_WATCHER 3
+
 
 PyAPI_FUNC(void)
 _PyDict_SendEvent(int watcher_bits,
@@ -398,6 +407,15 @@ _Py_DECREF_BUILTINS(PyObject *op)
     }
 }
 #endif
+
+/* frozendict */
+typedef struct {
+    PyDictObject ob_base;
+    Py_hash_t ma_hash;
+} PyFrozenDictObject;
+
+#define _PyFrozenDictObject_CAST(op) \
+    (assert(PyFrozenDict_Check(op)), _Py_CAST(PyFrozenDictObject*, (op)))
 
 #ifdef __cplusplus
 }

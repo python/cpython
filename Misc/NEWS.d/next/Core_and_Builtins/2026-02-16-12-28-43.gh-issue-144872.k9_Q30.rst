@@ -1,0 +1,1 @@
+Fix heap buffer overflow in the parser found by OSS-Fuzz.

@@ -136,9 +136,6 @@ comparison.
 Using Lists as Stacks
 ---------------------
 
-.. sectionauthor:: Ka-Ping Yee <ping@lfw.org>
-
-
 The list methods make it very easy to use a list as a stack, where the last
 element added is the first element retrieved ("last-in, first-out").  To add an
 item to the top of the stack, use :meth:`~list.append`.  To retrieve an item from the
@@ -165,8 +162,6 @@ top of the stack, use :meth:`~list.pop` without an explicit index.  For example:
 
 Using Lists as Queues
 ---------------------
-
-.. sectionauthor:: Ka-Ping Yee <ping@lfw.org>
 
 It is also possible to use a list as a queue, where the first element added is
 the first element retrieved ("first-in, first-out"); however, lists are not
@@ -337,7 +332,7 @@ Unpacking in Lists and List Comprehensions
 ------------------------------------------
 
 The section on :ref:`tut-unpacking-arguments` describes the use of ``*`` to
-"unpack" the elements of an iterable object, providing each one seperately as
+"unpack" the elements of an iterable object, providing each one separately as
 an argument to a function.  Unpacking can also be used in other contexts, for
 example, when creating lists.  When specifying elements of a list, prefixing an
 expression by a ``*`` will unpack the result of that expression, adding each of

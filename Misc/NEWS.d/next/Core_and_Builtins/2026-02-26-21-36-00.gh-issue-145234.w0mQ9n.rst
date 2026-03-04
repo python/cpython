@@ -1,0 +1,5 @@
+Fixed a ``SystemError`` in the parser when an encoding cookie (for example,
+UTF-7) decodes to carriage returns (``\r``). Newlines are now normalized after
+decoding in the string tokenizer.
+
+Patch by Pablo Galindo.

@@ -21,6 +21,7 @@ Pending removal in Python 3.20
   - :mod:`re`
   - :mod:`socketserver`
   - :mod:`tabnanny`
+  - :mod:`tarfile`
   - :mod:`tkinter.font`
   - :mod:`tkinter.ttk`
   - :mod:`wsgiref.simple_server`

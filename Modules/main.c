@@ -506,6 +506,7 @@ pymain_run_interactive_hook(int *exitcode)
     }
 
     if (PySys_Audit("cpython.run_interactivehook", "O", hook) < 0) {
+        Py_DECREF(hook);
         goto error;
     }
 

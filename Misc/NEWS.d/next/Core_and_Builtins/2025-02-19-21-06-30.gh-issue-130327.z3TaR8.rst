@@ -1,0 +1,2 @@
+Fix erroneous clearing of an object's :attr:`~object.__dict__` if
+overwritten at runtime.

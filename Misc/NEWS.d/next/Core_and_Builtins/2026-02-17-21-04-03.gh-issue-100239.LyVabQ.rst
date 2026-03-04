@@ -1,0 +1,2 @@
+Speedup ``BINARY_OP_EXTEND`` for exact floats and medium-size integers by up
+to 15%. Patch by Chris Eibl.

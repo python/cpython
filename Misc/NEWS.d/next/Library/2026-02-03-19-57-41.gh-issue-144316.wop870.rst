@@ -1,0 +1,1 @@
+Fix crash in ``_remote_debugging`` that caused ``test_external_inspection`` to intermittently fail. Patch by Taegyun Kim.

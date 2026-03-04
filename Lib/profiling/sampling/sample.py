@@ -164,7 +164,8 @@ class SampleProfiler:
         # Don't print stats for live mode (curses is handling display)
         is_live_mode = LiveStatsCollector is not None and isinstance(collector, LiveStatsCollector)
         if not is_live_mode:
-            print(f"Captured {num_samples:n} samples in {fmt(running_time_sec, 2)} seconds")
+            s = "" if num_samples == 1 else "s"
+            print(f"Captured {num_samples:n} sample{s} in {fmt(running_time_sec, 2)} seconds")
             print(f"Sample rate: {fmt(sample_rate, 2)} samples/sec")
             print(f"Error rate: {fmt(error_rate, 2)}")
 

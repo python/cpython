@@ -9,7 +9,6 @@ import sysconfig
 import tempfile
 import textwrap
 import unittest
-import warnings
 from test import support
 from test.support import os_helper
 from test.support import force_not_colorized
@@ -943,21 +942,15 @@ class CmdLineTest(unittest.TestCase):
 
     @unittest.skipUnless(sysconfig.get_config_var('Py_TRACE_REFS'), "Requires --with-trace-refs build option")
     def test_python_dump_refs(self):
-        code = 'import sys; sys._clear_type_cache()'
-        # TODO: Remove warnings context manager once sys._clear_type_cache is removed
-        with warnings.catch_warnings():
-            warnings.simplefilter("ignore", DeprecationWarning)
-            rc, out, err = assert_python_ok('-c', code, PYTHONDUMPREFS='1')
+        code = 'import sys; sys._clear_internal_caches()'
+        rc, out, err = assert_python_ok('-c', code, PYTHONDUMPREFS='1')
         self.assertEqual(rc, 0)
 
     @unittest.skipUnless(sysconfig.get_config_var('Py_TRACE_REFS'), "Requires --with-trace-refs build option")
     def test_python_dump_refs_file(self):
         with tempfile.NamedTemporaryFile() as dump_file:
-            code = 'import sys; sys._clear_type_cache()'
-            # TODO: Remove warnings context manager once sys._clear_type_cache is removed
-            with warnings.catch_warnings():
-                warnings.simplefilter("ignore", DeprecationWarning)
-                rc, out, err = assert_python_ok('-c', code, PYTHONDUMPREFSFILE=dump_file.name)
+            code = 'import sys; sys._clear_internal_caches()'
+            rc, out, err = assert_python_ok('-c', code, PYTHONDUMPREFSFILE=dump_file.name)
             self.assertEqual(rc, 0)
             with open(dump_file.name, 'r') as file:
                 contents = file.read()

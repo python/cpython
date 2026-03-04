@@ -1,0 +1,1 @@
+Add :c:func:`PyUnstable_SetImmortal` C-API function to mark objects as :term:`immortal`.

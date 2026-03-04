@@ -1,0 +1,1 @@
+Use ``mimalloc`` for raw memory allocations such as via :c:func:`PyMem_RawMalloc` for better performance on :term:`free-threaded builds <free-threaded build>`. Patch by Kumar Aditya.

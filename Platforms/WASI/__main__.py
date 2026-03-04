@@ -317,21 +317,8 @@ def configure_wasi_python(context, working_dir):
 
     wasi_build_dir = working_dir.relative_to(CHECKOUT)
 
-    python_build_dir = BUILD_DIR / "build"
-    lib_dirs = list(python_build_dir.glob("lib.*"))
-    assert len(lib_dirs) == 1, (
-        f"Expected a single lib.* directory in {python_build_dir}"
-    )
-    lib_dir = os.fsdecode(lib_dirs[0])
-    python_version = lib_dir.rpartition("-")[-1]
-    sysconfig_data_dir = (
-        f"{wasi_build_dir}/build/lib.wasi-wasm32-{python_version}"
-    )
-
-    # Use PYTHONPATH to include sysconfig data which must be anchored to the
-    # WASI guest's `/` directory.
     args = {
-        "PYTHONPATH": f"/{sysconfig_data_dir}",
+        "ARGV0": f"/{wasi_build_dir}/python.wasm",
         "PYTHON_WASM": working_dir / "python.wasm",
     }
     # Check dynamically for wasmtime in case it was specified manually via
@@ -421,8 +408,8 @@ def main():
     default_host_triple = config["targets"]["host-triple"]
     default_host_runner = (
         f"{WASMTIME_HOST_RUNNER_VAR} run "
-        # For setting PYTHONPATH to the sysconfig data directory.
-        "--env PYTHONPATH={PYTHONPATH} "
+        # Set argv0 so that getpath.py can auto-discover the sysconfig data directory
+        "--argv0 {ARGV0} "
         # Map the checkout to / to load the stdlib from /Lib.
         f"--dir {os.fsdecode(CHECKOUT)}::/ "
         # Flags involving --optimize, --codegen, --debug, --wasm, and --wasi can be kept

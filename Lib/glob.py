@@ -15,7 +15,7 @@ __all__ = ["glob", "iglob", "escape", "translate"]
 
 def glob(pathname, *, root_dir=None, dir_fd=None, recursive=False,
         include_hidden=False):
-    """Return a list of paths matching a pathname pattern.
+    """Return a list of paths matching a `pathname` pattern.
 
     The pattern may contain simple shell-style wildcards a la
     fnmatch. Unlike fnmatch, filenames starting with a
@@ -24,6 +24,15 @@ def glob(pathname, *, root_dir=None, dir_fd=None, recursive=False,
 
     The order of the returned list is undefined. Sort it if you need a
     particular order.
+
+    If `root_dir` is not None, it should be a path-like object specifying the
+    root directory for searching. It has the same effect as changing the
+    current directory before calling it (without actually
+    changing it). If pathname is relative, the result will contain
+    paths relative to `root_dir`.
+
+    If `dir_fd` is not None, it should be a file descriptor referring to a
+    directory, and paths will then be relative to that directory.
 
     If `include_hidden` is true, the patterns '*', '?', '**'  will match hidden
     directories.
@@ -36,7 +45,7 @@ def glob(pathname, *, root_dir=None, dir_fd=None, recursive=False,
 
 def iglob(pathname, *, root_dir=None, dir_fd=None, recursive=False,
           include_hidden=False):
-    """Return an iterator which yields the paths matching a pathname pattern.
+    """Return an iterator which yields the paths matching a `pathname` pattern.
 
     The pattern may contain simple shell-style wildcards a la
     fnmatch. However, unlike fnmatch, filenames starting with a
@@ -46,7 +55,19 @@ def iglob(pathname, *, root_dir=None, dir_fd=None, recursive=False,
     The order of the returned paths is undefined. Sort them if you need a
     particular order.
 
-    If recursive is true, the pattern '**' will match any files and
+    If `root_dir` is not None, it should be a path-like object specifying
+    the root directory for searching. It has the same effect as changing
+    the current directory before calling it (without actually
+    changing it). If pathname is relative, the result will contain
+    paths relative to `root_dir`.
+
+    If `dir_fd` is not None, it should be a file descriptor referring to a
+    directory, and paths will then be relative to that directory.
+
+    If `include_hidden` is true, the patterns '*', '?', '**'  will match hidden
+    directories.
+
+    If `recursive` is true, the pattern '**' will match any files and
     zero or more directories and subdirectories.
     """
     sys.audit("glob.glob", pathname, recursive)

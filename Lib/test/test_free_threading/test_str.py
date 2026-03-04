@@ -69,6 +69,22 @@ class TestStr(TestCase):
         for reader in readers:
             reader.join()
 
+    def test_maketrans_dict_concurrent_modification(self):
+        for _ in range(5):
+            d = {2000: 'a'}
+
+            def work(dct):
+                for i in range(100):
+                    str.maketrans(dct)
+                    dct[2000 + i] = chr(i % 16)
+                    dct.pop(2000 + i, None)
+
+            threading_helper.run_concurrently(
+                work,
+                nthreads=5,
+                args=(d,),
+            )
+
 
 if __name__ == "__main__":
     unittest.main()

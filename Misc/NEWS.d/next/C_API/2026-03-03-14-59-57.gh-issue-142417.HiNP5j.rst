@@ -1,0 +1,2 @@
+Restore private provisional ``_Py_InitializeMain()`` function removed in
+Python 3.14. Patch by Victor Stinner.

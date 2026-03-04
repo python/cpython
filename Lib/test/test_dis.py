@@ -292,7 +292,7 @@ dis_intrinsic_1_2 = """\
 
   1           LOAD_SMALL_INT           0
               LOAD_CONST               1 (('*',))
-              IMPORT_NAME              0 (math)
+              IMPORT_NAME              2 (math + eager)
               CALL_INTRINSIC_1         2 (INTRINSIC_IMPORT_STAR)
               POP_TOP
               LOAD_CONST               2 (None)

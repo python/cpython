@@ -1,7 +1,6 @@
 :mod:`!unittest.mock` --- getting started
 =========================================
 
-.. moduleauthor:: Michael Foord <michael@python.org>
 .. currentmodule:: unittest.mock
 
 .. versionadded:: 3.3

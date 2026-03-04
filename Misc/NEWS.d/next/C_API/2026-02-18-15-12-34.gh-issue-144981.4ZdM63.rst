@@ -1,0 +1,3 @@
+Made :c:func:`PyUnstable_Code_SetExtra`, :c:func:`PyUnstable_Code_GetExtra`,
+and :c:func:`PyUnstable_Eval_RequestCodeExtraIndex` thread-safe on the
+:term:`free threaded <free threading>` build.

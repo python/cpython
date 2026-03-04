@@ -66,6 +66,7 @@ setlocal
 set platf=x64
 set conf=Release
 set target=Build
+set clean=false
 set dir=%~dp0
 set parallel=/m
 set verbose=/nologo /v:m /clp:summary
@@ -119,6 +120,9 @@ if "%UseJIT%" NEQ "true" set IncludeLLVM=false
 
 if "%IncludeExternals%"=="true" call "%dir%get_externals.bat"
 
+if /I "%target%"=="Clean" set clean=true
+if /I "%target%"=="CleanAll" set clean=true
+
 if "%do_pgo%" EQU "true" if "%platf%" EQU "x64" (
     if "%PROCESSOR_ARCHITEW6432%" NEQ "AMD64" if "%PROCESSOR_ARCHITECTURE%" NEQ "AMD64" (
         echo.ERROR: Cannot cross-compile with PGO 
@@ -159,15 +163,20 @@ if "%do_pgo%"=="true" (
 rem %VARS% are evaluated eagerly, which would lose the ERRORLEVEL
 rem value if we didn't split it out here.
 if "%do_pgo%"=="true" if ERRORLEVEL 1 exit /B %ERRORLEVEL%
+
+rem In case of a PGO build, we switch the conf here to PGUpdate
+rem to get it cleaned or built as well.
 if "%do_pgo%"=="true" (
     del /s "%dir%\*.pgc"
     del /s "%dir%\..\Lib\*.pyc"
-    echo on
-    call "%dir%\..\python.bat" %pgo_job%
-    @echo off
-    call :Kill
     set conf=PGUpdate
-    set target=Build
+    if "%clean%"=="false" (
+        echo on
+        call "%dir%\..\python.bat" %pgo_job%
+        @echo off
+        call :Kill
+        set target=Build
+    )
 )
 goto :Build
 

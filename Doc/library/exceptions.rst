@@ -266,6 +266,12 @@ The following exceptions are the exceptions that are usually raised.
 
    .. versionadded:: 3.6
 
+.. exception:: ImportCycleError
+
+   A subclass of :exc:`ImportError` which is raised when a lazy import fails
+   because it (directly or indirectly) tries to import itself.
+
+   .. versionadded:: next
 
 .. exception:: IndexError
 

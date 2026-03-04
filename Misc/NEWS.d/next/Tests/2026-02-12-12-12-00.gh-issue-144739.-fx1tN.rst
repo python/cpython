@@ -1,0 +1,3 @@
+When Python was compiled with system expat older then 2.7.2 but tests run
+with newer expat, still skip
+:class:`!test.test_pyexpat.MemoryProtectionTest`.

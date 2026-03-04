@@ -1,0 +1,2 @@
+The :mod:`json` module now supports the :class:`frozendict` type. Patch by
+Victor Stinner.

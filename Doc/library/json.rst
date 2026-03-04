@@ -4,9 +4,6 @@
 .. module:: json
    :synopsis: Encode and decode the JSON format.
 
-.. moduleauthor:: Bob Ippolito <bob@redivi.com>
-.. sectionauthor:: Bob Ippolito <bob@redivi.com>
-
 **Source code:** :source:`Lib/json/__init__.py`
 
 --------------
@@ -748,7 +745,7 @@ Command-line interface
 --------------
 
 The :mod:`!json` module can be invoked as a script via ``python -m json``
-to validate and pretty-print JSON objects. The :mod:`json.tool` submodule
+to validate and pretty-print JSON objects. The :mod:`!json.tool` submodule
 implements this interface.
 
 If the optional ``infile`` and ``outfile`` arguments are not
