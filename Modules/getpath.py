@@ -280,7 +280,7 @@ elif os_name == 'darwin':
     # whether we are in a build tree. This is true even if the
     # executable path was provided in the config.
     real_executable = executable
-elif os_name == 'posix':
+elif os_name == 'posix' and real_executable:
     # real_executable is more accurate than the value we have computed for
     # executable, so use it instead if it resolves to a different path
     # (eg. GH-124241).
