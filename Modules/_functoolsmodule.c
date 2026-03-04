@@ -252,6 +252,11 @@ partial_new(PyTypeObject *type, PyObject *args, PyObject *kw)
         }
         PyObject *item;
         PyObject *tot_args = PyTuple_New(tot_nargs);
+        if (tot_args == NULL) {
+            Py_DECREF(new_args);
+            Py_DECREF(pto);
+            return NULL;
+        }
         for (Py_ssize_t i = 0, j = 0; i < tot_nargs; i++) {
             if (i < npargs) {
                 item = PyTuple_GET_ITEM(pto_args, i);
