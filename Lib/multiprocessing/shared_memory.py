@@ -286,9 +286,9 @@ class ShareableList:
     _alignment = 8
     _back_transforms_mapping = {
         0: lambda value: value,                   # int, float, bool
-        1: lambda value: value.rstrip(b'\x00').decode(_encoding),  # str
-        2: lambda value: value.rstrip(b'\x00'),   # bytes
-        3: lambda _value: None,                   # None
+        1: lambda value: value.decode(_encoding),  # str
+        2: lambda value: value,                    # bytes
+        3: lambda _value: None,                    # None
     }
 
     @staticmethod
@@ -312,7 +312,13 @@ class ShareableList:
                 self._types_mapping[type(item)]
                     if not isinstance(item, (str, bytes))
                     else self._types_mapping[type(item)] % (
-                        self._alignment * (len(item) // self._alignment + 1),
+                        self._alignment * (
+                            len(
+                                item.encode(_encoding)
+                                if isinstance(item, str)
+                                else item
+                            ) // self._alignment + 1
+                        ),
                     )
                 for item in sequence
             ]
@@ -326,6 +332,15 @@ class ShareableList:
             for fmt in _formats:
                 offset += self._alignment if fmt[-1] != "s" else int(fmt[:-1])
                 self._allocated_offsets.append(offset)
+            _stored_formats = []
+            for item, fmt in zip(sequence, _formats):
+                if isinstance(item, (str, bytes)):
+                    encoded = (item.encode(_encoding)
+                               if isinstance(item, str) else item)
+                    _stored_formats.append("%ds" % len(encoded))
+                else:
+                    _stored_formats.append(fmt)
+
             _recreation_codes = [
                 self._extract_recreation_code(item) for item in sequence
             ]
@@ -359,7 +374,7 @@ class ShareableList:
                 self._format_packing_metainfo,
                 self.shm.buf,
                 self._offset_packing_formats,
-                *(v.encode(_enc) for v in _formats)
+                *(v.encode(_enc) for v in _stored_formats)
             )
             struct.pack_into(
                 self._format_back_transform_codes,
@@ -459,6 +474,7 @@ class ShareableList:
 
         if not isinstance(value, (str, bytes)):
             new_format = self._types_mapping[type(value)]
+            pack_format = new_format
             encoded_value = value
         else:
             allocated_length = self._allocated_offsets[position + 1] - item_offset
@@ -467,19 +483,17 @@ class ShareableList:
                              if isinstance(value, str) else value)
             if len(encoded_value) > allocated_length:
                 raise ValueError("bytes/str item exceeds available storage")
-            if current_format[-1] == "s":
-                new_format = current_format
-            else:
-                new_format = self._types_mapping[str] % (
-                    allocated_length,
-                )
+            # Allocated-length format for struct.pack_into (fills the slot).
+            pack_format = "%ds" % allocated_length
+            # Actual-length format stored in metadata (for exact retrieval).
+            new_format = "%ds" % len(encoded_value)
 
         self._set_packing_format_and_transform(
             position,
             new_format,
             value
         )
-        struct.pack_into(new_format, self.shm.buf, offset, encoded_value)
+        struct.pack_into(pack_format, self.shm.buf, offset, encoded_value)
 
     def __reduce__(self):
         return partial(self.__class__, name=self.shm.name), ()
