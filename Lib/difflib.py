@@ -638,15 +638,15 @@ class SequenceMatcher:
         # avail[x] is the number of times x appears in 'b' less the
         # number of times we've seen it in 'a' so far ... kinda
         avail = {}
-        availhas, matches = avail.__contains__, 0
+        matches = 0
         for elt in self.a:
-            if availhas(elt):
+            if elt in avail:
                 numb = avail[elt]
             else:
                 numb = fullbcount.get(elt, 0)
             avail[elt] = numb - 1
             if numb > 0:
-                matches = matches + 1
+                matches += 1
         return _calculate_ratio(matches, len(self.a) + len(self.b))
 
     def real_quick_ratio(self):
@@ -702,10 +702,12 @@ def get_close_matches(word, possibilities, n=3, cutoff=0.6):
     s.set_seq2(word)
     for x in possibilities:
         s.set_seq1(x)
-        if s.real_quick_ratio() >= cutoff and \
-           s.quick_ratio() >= cutoff and \
-           s.ratio() >= cutoff:
-            result.append((s.ratio(), x))
+        if s.real_quick_ratio() < cutoff or s.quick_ratio() < cutoff:
+            continue
+
+        ratio = s.ratio()
+        if ratio >= cutoff:
+            result.append((ratio, x))
 
     # Move the best scorers to head of list
     result = _nlargest(n, result)

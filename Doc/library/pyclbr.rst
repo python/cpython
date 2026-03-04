@@ -10,7 +10,7 @@
 
 --------------
 
-The :mod:`pyclbr` module provides limited information about the
+The :mod:`!pyclbr` module provides limited information about the
 functions, classes, and methods defined in a Python-coded module.  The
 information is sufficient to implement a module browser.  The
 information is extracted from the Python source code rather than by

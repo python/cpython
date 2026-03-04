@@ -1,0 +1,3 @@
+Fix crash in :class:`set` when objects with the same hash are concurrently
+added to the set after removing an element with the same hash while the set
+still contains elements with the same hash.

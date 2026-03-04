@@ -400,6 +400,7 @@ Modules/_tkinter.c	-	tcl_lock	-
 Modules/_tkinter.c	-	excInCmd	-
 Modules/_tkinter.c	-	valInCmd	-
 Modules/_tkinter.c	-	trbInCmd	-
+Modules/socketmodule.c 	- 	netdb_lock 	-
 
 
 ##################################

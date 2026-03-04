@@ -168,7 +168,7 @@ which relays any information about the UUID's safety, using this enumeration:
 
    .. versionadded:: 3.7
 
-The :mod:`uuid` module defines the following functions:
+The :mod:`!uuid` module defines the following functions:
 
 
 .. function:: getnode()
@@ -273,7 +273,7 @@ The :mod:`uuid` module defines the following functions:
    .. versionadded:: 3.14
 
 
-The :mod:`uuid` module defines the following namespace identifiers for use with
+The :mod:`!uuid` module defines the following namespace identifiers for use with
 :func:`uuid3` or :func:`uuid5`.
 
 
@@ -298,7 +298,7 @@ The :mod:`uuid` module defines the following namespace identifiers for use with
    When this namespace is specified, the *name* string is an X.500 DN in DER or a
    text output format.
 
-The :mod:`uuid` module defines the following constants for the possible values
+The :mod:`!uuid` module defines the following constants for the possible values
 of the :attr:`~UUID.variant` attribute:
 
 
@@ -324,7 +324,7 @@ of the :attr:`~UUID.variant` attribute:
    Reserved for future definition.
 
 
-The :mod:`uuid` module defines the special Nil and Max UUID values:
+The :mod:`!uuid` module defines the special Nil and Max UUID values:
 
 
 .. data:: NIL
@@ -357,7 +357,7 @@ Command-Line Usage
 
 .. versionadded:: 3.12
 
-The :mod:`uuid` module can be executed as a script from the command line.
+The :mod:`!uuid` module can be executed as a script from the command line.
 
 .. code-block:: sh
 
@@ -406,7 +406,7 @@ The following options are accepted:
 Example
 -------
 
-Here are some examples of typical usage of the :mod:`uuid` module::
+Here are some examples of typical usage of the :mod:`!uuid` module::
 
    >>> import uuid
 
@@ -473,7 +473,7 @@ Here are some examples of typical usage of the :mod:`uuid` module::
 Command-Line Example
 --------------------
 
-Here are some examples of typical usage of the :mod:`uuid` command-line interface:
+Here are some examples of typical usage of the :mod:`!uuid` command-line interface:
 
 .. code-block:: shell
 

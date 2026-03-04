@@ -1,3 +1,0 @@
-Fix :obj:`threading.Thread.is_alive` to remain ``True`` until the underlying OS
-thread is fully cleaned up. This avoids false negatives in edge cases
-involving thread monitoring or premature :obj:`threading.Thread.is_alive` calls.

@@ -42,6 +42,7 @@ class ForkServer(object):
         self._inherited_fds = None
         self._lock = threading.Lock()
         self._preload_modules = ['__main__']
+        self._preload_on_error = 'ignore'
 
     def _stop(self):
         # Method used by unit tests to stop the server
@@ -64,11 +65,22 @@ class ForkServer(object):
         self._forkserver_address = None
         self._forkserver_authkey = None
 
-    def set_forkserver_preload(self, modules_names):
-        '''Set list of module names to try to load in forkserver process.'''
+    def set_forkserver_preload(self, modules_names, *, on_error='ignore'):
+        '''Set list of module names to try to load in forkserver process.
+
+        The on_error parameter controls how import failures are handled:
+        "ignore" (default) silently ignores failures, "warn" emits warnings,
+        and "fail" raises exceptions breaking the forkserver context.
+        '''
         if not all(type(mod) is str for mod in modules_names):
             raise TypeError('module_names must be a list of strings')
+        if on_error not in ('ignore', 'warn', 'fail'):
+            raise ValueError(
+                f"on_error must be 'ignore', 'warn', or 'fail', "
+                f"not {on_error!r}"
+            )
         self._preload_modules = modules_names
+        self._preload_on_error = on_error
 
     def get_inherited_fds(self):
         '''Return list of fds inherited from parent process.
@@ -107,6 +119,14 @@ class ForkServer(object):
                             wrapped_client, self._forkserver_authkey)
                     connection.deliver_challenge(
                             wrapped_client, self._forkserver_authkey)
+                except (EOFError, ConnectionError, BrokenPipeError) as exc:
+                    if (self._preload_modules and
+                        self._preload_on_error == 'fail'):
+                        exc.add_note(
+                            "Forkserver process may have crashed during module "
+                            "preloading. Check stderr."
+                        )
+                    raise
                 finally:
                     wrapped_client._detach()
                     del wrapped_client
@@ -152,6 +172,10 @@ class ForkServer(object):
                     main_kws['sys_path'] = data['sys_path']
                 if 'init_main_from_path' in data:
                     main_kws['main_path'] = data['init_main_from_path']
+                if 'sys_argv' in data:
+                    main_kws['sys_argv'] = data['sys_argv']
+                if self._preload_on_error != 'ignore':
+                    main_kws['on_error'] = self._preload_on_error
 
             with socket.socket(socket.AF_UNIX) as listener:
                 address = connection.arbitrary_address('AF_UNIX')
@@ -196,8 +220,69 @@ class ForkServer(object):
 #
 #
 
+def _handle_import_error(on_error, modinfo, exc, *, warn_stacklevel):
+    """Handle an import error according to the on_error policy."""
+    match on_error:
+        case 'fail':
+            raise
+        case 'warn':
+            warnings.warn(
+                f"Failed to preload {modinfo}: {exc}",
+                ImportWarning,
+                stacklevel=warn_stacklevel + 1
+            )
+        case 'ignore':
+            pass
+
+
+def _handle_preload(preload, main_path=None, sys_path=None, sys_argv=None,
+                    on_error='ignore'):
+    """Handle module preloading with configurable error handling.
+
+    Args:
+        preload: List of module names to preload.
+        main_path: Path to __main__ module if '__main__' is in preload.
+        sys_path: sys.path to use for imports (None means use current).
+        sys_argv: sys.argv to use (None means use current).
+        on_error: How to handle import errors ("ignore", "warn", or "fail").
+    """
+    if not preload:
+        return
+
+    if sys_argv is not None:
+        sys.argv[:] = sys_argv
+    if sys_path is not None:
+        sys.path[:] = sys_path
+
+    if '__main__' in preload and main_path is not None:
+        process.current_process()._inheriting = True
+        try:
+            spawn.import_main_path(main_path)
+        except Exception as e:
+            # Catch broad Exception because import_main_path() uses
+            # runpy.run_path() which executes the script and can raise
+            # any exception, not just ImportError
+            _handle_import_error(
+                on_error, f"__main__ from {main_path!r}", e, warn_stacklevel=2
+            )
+        finally:
+            del process.current_process()._inheriting
+
+    for modname in preload:
+        try:
+            __import__(modname)
+        except ImportError as e:
+            _handle_import_error(
+                on_error, f"module {modname!r}", e, warn_stacklevel=2
+            )
+
+    # gh-135335: flush stdout/stderr in case any of the preloaded modules
+    # wrote to them, otherwise children might inherit buffered data
+    util._flush_std_streams()
+
+
 def main(listener_fd, alive_r, preload, main_path=None, sys_path=None,
-         *, authkey_r=None):
+         *, sys_argv=None, authkey_r=None, on_error='ignore'):
     """Run forkserver."""
     if authkey_r is not None:
         try:
@@ -208,24 +293,7 @@ def main(listener_fd, alive_r, preload, main_path=None, sys_path=None,
     else:
         authkey = b''
 
-    if preload:
-        if sys_path is not None:
-            sys.path[:] = sys_path
-        if '__main__' in preload and main_path is not None:
-            process.current_process()._inheriting = True
-            try:
-                spawn.import_main_path(main_path)
-            finally:
-                del process.current_process()._inheriting
-        for modname in preload:
-            try:
-                __import__(modname)
-            except ImportError:
-                pass
-
-        # gh-135335: flush stdout/stderr in case any of the preloaded modules
-        # wrote to them, otherwise children might inherit buffered data
-        util._flush_std_streams()
+    _handle_preload(preload, main_path, sys_path, sys_argv, on_error)
 
     util._close_stdin()
 

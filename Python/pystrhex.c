@@ -42,8 +42,7 @@ static PyObject *_Py_strhex_impl(const char* argbuf, const Py_ssize_t arglen,
     else {
         bytes_per_sep_group = 0;
     }
-
-    unsigned int abs_bytes_per_sep = Py_ABS(bytes_per_sep_group);
+    unsigned int abs_bytes_per_sep = _Py_ABS_CAST(unsigned int, bytes_per_sep_group);
     Py_ssize_t resultlen = 0;
     if (bytes_per_sep_group && arglen > 0) {
         /* How many sep characters we'll be inserting. */

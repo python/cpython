@@ -45,12 +45,14 @@ extern "C" {
 #endif
 
 typedef struct {
-    // List of bytes objects
-    PyObject *list;
+    // Bytes writer managing output buffer
+    PyBytesWriter *writer;
     // Number of whole allocated size
     Py_ssize_t allocated;
-    // Max length of the buffer, negative number means unlimited length.
+    // Max length of the buffer, negative number means unlimited length
     Py_ssize_t max_length;
+    // Number of blocks of bytes. Used to calculate next allocation size
+    size_t num_blocks;
 } _BlocksOutputBuffer;
 
 static const char unable_allocate_msg[] = "Unable to allocate output buffer.";
@@ -107,11 +109,10 @@ _BlocksOutputBuffer_InitAndGrow(_BlocksOutputBuffer *buffer,
                                 const Py_ssize_t max_length,
                                 void **next_out)
 {
-    PyObject *b;
     Py_ssize_t block_size;
 
-    // ensure .list was set to NULL
-    assert(buffer->list == NULL);
+    // ensure .writer was set to NULL
+    assert(buffer->writer == NULL);
 
     // get block size
     if (0 <= max_length && max_length < BUFFER_BLOCK_SIZE[0]) {
@@ -120,25 +121,17 @@ _BlocksOutputBuffer_InitAndGrow(_BlocksOutputBuffer *buffer,
         block_size = BUFFER_BLOCK_SIZE[0];
     }
 
-    // the first block
-    b = PyBytes_FromStringAndSize(NULL, block_size);
-    if (b == NULL) {
+    buffer->writer = PyBytesWriter_Create(block_size);
+    if (buffer->writer == NULL) {
         return -1;
     }
-
-    // create the list
-    buffer->list = PyList_New(1);
-    if (buffer->list == NULL) {
-        Py_DECREF(b);
-        return -1;
-    }
-    PyList_SET_ITEM(buffer->list, 0, b);
 
     // set variables
     buffer->allocated = block_size;
     buffer->max_length = max_length;
+    buffer->num_blocks = 1;
 
-    *next_out = PyBytes_AS_STRING(b);
+    *next_out = PyBytesWriter_GetData(buffer->writer);
     return block_size;
 }
 
@@ -155,31 +148,21 @@ _BlocksOutputBuffer_InitWithSize(_BlocksOutputBuffer *buffer,
                                  const Py_ssize_t init_size,
                                  void **next_out)
 {
-    PyObject *b;
 
-    // ensure .list was set to NULL
-    assert(buffer->list == NULL);
+    // ensure .writer was set to NULL
+    assert(buffer->writer == NULL);
 
-    // the first block
-    b = PyBytes_FromStringAndSize(NULL, init_size);
-    if (b == NULL) {
-        PyErr_SetString(PyExc_MemoryError, unable_allocate_msg);
+    buffer->writer = PyBytesWriter_Create(init_size);
+    if (buffer->writer == NULL) {
         return -1;
     }
-
-    // create the list
-    buffer->list = PyList_New(1);
-    if (buffer->list == NULL) {
-        Py_DECREF(b);
-        return -1;
-    }
-    PyList_SET_ITEM(buffer->list, 0, b);
 
     // set variables
     buffer->allocated = init_size;
     buffer->max_length = -1;
+    buffer->num_blocks = 1;
 
-    *next_out = PyBytes_AS_STRING(b);
+    *next_out = PyBytesWriter_GetData(buffer->writer);
     return init_size;
 }
 
@@ -193,8 +176,6 @@ _BlocksOutputBuffer_Grow(_BlocksOutputBuffer *buffer,
                          void **next_out,
                          const Py_ssize_t avail_out)
 {
-    PyObject *b;
-    const Py_ssize_t list_len = Py_SIZE(buffer->list);
     Py_ssize_t block_size;
 
     // ensure no gaps in the data
@@ -205,11 +186,10 @@ _BlocksOutputBuffer_Grow(_BlocksOutputBuffer *buffer,
     }
 
     // get block size
-    if (list_len < (Py_ssize_t) Py_ARRAY_LENGTH(BUFFER_BLOCK_SIZE)) {
-        block_size = BUFFER_BLOCK_SIZE[list_len];
-    } else {
-        block_size = BUFFER_BLOCK_SIZE[Py_ARRAY_LENGTH(BUFFER_BLOCK_SIZE) - 1];
-    }
+    size_t maxblock = Py_ARRAY_LENGTH(BUFFER_BLOCK_SIZE);
+    assert(maxblock >= 1);
+    size_t block_index = Py_MIN(buffer->num_blocks, maxblock - 1);
+    block_size = BUFFER_BLOCK_SIZE[block_index];
 
     // check max_length
     if (buffer->max_length >= 0) {
@@ -229,22 +209,19 @@ _BlocksOutputBuffer_Grow(_BlocksOutputBuffer *buffer,
         return -1;
     }
 
-    // create the block
-    b = PyBytes_FromStringAndSize(NULL, block_size);
-    if (b == NULL) {
+    if (PyBytesWriter_Grow(buffer->writer, block_size)) {
         PyErr_SetString(PyExc_MemoryError, unable_allocate_msg);
         return -1;
     }
-    if (PyList_Append(buffer->list, b) < 0) {
-        Py_DECREF(b);
-        return -1;
-    }
-    Py_DECREF(b);
+
+    Py_ssize_t current_size = buffer->allocated;
 
     // set variables
     buffer->allocated += block_size;
+    buffer->num_blocks += 1;
 
-    *next_out = PyBytes_AS_STRING(b);
+    char *data = PyBytesWriter_GetData(buffer->writer);
+    *next_out = data + current_size;
     return block_size;
 }
 
@@ -265,54 +242,17 @@ static inline PyObject *
 _BlocksOutputBuffer_Finish(_BlocksOutputBuffer *buffer,
                            const Py_ssize_t avail_out)
 {
-    PyObject *result, *block;
-    const Py_ssize_t list_len = Py_SIZE(buffer->list);
-
-    // fast path for single block
-    if ((list_len == 1 && avail_out == 0) ||
-        (list_len == 2 && Py_SIZE(PyList_GET_ITEM(buffer->list, 1)) == avail_out))
-    {
-        block = PyList_GET_ITEM(buffer->list, 0);
-        Py_INCREF(block);
-
-        Py_CLEAR(buffer->list);
-        return block;
-    }
-
-    // final bytes object
-    result = PyBytes_FromStringAndSize(NULL, buffer->allocated - avail_out);
-    if (result == NULL) {
-        PyErr_SetString(PyExc_MemoryError, unable_allocate_msg);
-        return NULL;
-    }
-
-    // memory copy
-    if (list_len > 0) {
-        char *posi = PyBytes_AS_STRING(result);
-
-        // blocks except the last one
-        Py_ssize_t i = 0;
-        for (; i < list_len-1; i++) {
-            block = PyList_GET_ITEM(buffer->list, i);
-            memcpy(posi, PyBytes_AS_STRING(block), Py_SIZE(block));
-            posi += Py_SIZE(block);
-        }
-        // the last block
-        block = PyList_GET_ITEM(buffer->list, i);
-        memcpy(posi, PyBytes_AS_STRING(block), Py_SIZE(block) - avail_out);
-    } else {
-        assert(Py_SIZE(result) == 0);
-    }
-
-    Py_CLEAR(buffer->list);
-    return result;
+    assert(buffer->writer != NULL);
+    return PyBytesWriter_FinishWithSize(buffer->writer,
+                                        buffer->allocated - avail_out);
 }
 
 /* Clean up the buffer when an error occurred. */
 static inline void
 _BlocksOutputBuffer_OnError(_BlocksOutputBuffer *buffer)
 {
-    Py_CLEAR(buffer->list);
+    PyBytesWriter_Discard(buffer->writer);
+    buffer->writer = NULL;
 }
 
 #ifdef __cplusplus

@@ -70,6 +70,7 @@ typedef struct {
     unsigned int writable : 1;
     unsigned int appending : 1;
     signed int seekable : 2; /* -1 means unknown */
+    unsigned int truncate : 1;
     unsigned int closefd : 1;
     char finalizing;
     /* Stat result which was grabbed at file open, useful for optimizing common
@@ -209,6 +210,7 @@ fileio_new(PyTypeObject *type, PyObject *args, PyObject *kwds)
     self->writable = 0;
     self->appending = 0;
     self->seekable = -1;
+    self->truncate = 0;
     self->stat_atopen = NULL;
     self->closefd = 1;
     self->weakreflist = NULL;
@@ -341,6 +343,7 @@ _io_FileIO___init___impl(fileio *self, PyObject *nameobj, const char *mode,
                 goto bad_mode;
             rwa = 1;
             self->writable = 1;
+            self->truncate = 1;
             flags |= O_CREAT | O_TRUNC;
             break;
         case 'a':
@@ -725,6 +728,9 @@ new_buffersize(fileio *self, size_t currentsize)
 @permit_long_docstring_body
 _io.FileIO.readall
 
+    cls: defining_class
+    /
+
 Read all data from the file, returned as bytes.
 
 Reads until either there is an error or read() returns size 0 (indicates EOF).
@@ -735,8 +741,8 @@ data is available (EAGAIN is returned before bytes are read) returns None.
 [clinic start generated code]*/
 
 static PyObject *
-_io_FileIO_readall_impl(fileio *self)
-/*[clinic end generated code: output=faa0292b213b4022 input=10d8b2ec403302dc]*/
+_io_FileIO_readall_impl(fileio *self, PyTypeObject *cls)
+/*[clinic end generated code: output=d546737ec895c462 input=cecda40bf9961299]*/
 {
     Py_off_t pos, end;
     PyBytesWriter *writer;
@@ -746,6 +752,10 @@ _io_FileIO_readall_impl(fileio *self)
 
     if (self->fd < 0) {
         return err_closed();
+    }
+    if (!self->readable) {
+        _PyIO_State *state = get_io_state_by_cls(cls);
+        return err_mode(state, "reading");
     }
 
     if (self->stat_atopen != NULL && self->stat_atopen->st_size < _PY_READ_MAX) {
@@ -870,7 +880,7 @@ _io_FileIO_read_impl(fileio *self, PyTypeObject *cls, Py_ssize_t size)
     }
 
     if (size < 0)
-        return _io_FileIO_readall_impl(self);
+        return _io_FileIO_readall_impl(self, cls);
 
     if (size > _PY_READ_MAX) {
         size = _PY_READ_MAX;
@@ -1145,10 +1155,17 @@ mode_string(fileio *self)
             return "ab";
     }
     else if (self->readable) {
-        if (self->writable)
-            return "rb+";
-        else
+        if (self->writable) {
+            if (self->truncate) {
+                return "wb+";
+            }
+            else {
+                return "rb+";
+            }
+        }
+        else {
             return "rb";
+        }
     }
     else
         return "wb";
@@ -1319,7 +1336,7 @@ static PyType_Slot fileio_slots[] = {
     {0, NULL},
 };
 
-PyType_Spec fileio_spec = {
+PyType_Spec _Py_fileio_spec = {
     .name = "_io.FileIO",
     .basicsize = sizeof(fileio),
     .flags = (Py_TPFLAGS_DEFAULT | Py_TPFLAGS_BASETYPE | Py_TPFLAGS_HAVE_GC |

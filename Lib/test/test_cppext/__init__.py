@@ -25,24 +25,10 @@ SETUP = os.path.join(os.path.dirname(__file__), 'setup.py')
 @support.requires_subprocess()
 @support.requires_resource('cpu')
 class BaseTests:
+    TEST_INTERNAL_C_API = False
+
     def test_build(self):
         self.check_build('_testcppext')
-
-    def test_build_cpp03(self):
-        # In public docs, we say C API is compatible with C++11. However,
-        # in practice we do maintain C++03 compatibility in public headers.
-        # Please ask the C API WG before adding a new C++11-only feature.
-        self.check_build('_testcpp03ext', std='c++03')
-
-    @unittest.skipIf(support.MS_WINDOWS, "MSVC doesn't support /std:c++11")
-    def test_build_cpp11(self):
-        self.check_build('_testcpp11ext', std='c++11')
-
-    # Only test C++14 on MSVC.
-    # On s390x RHEL7, GCC 4.8.5 doesn't support C++14.
-    @unittest.skipIf(not support.MS_WINDOWS, "need Windows")
-    def test_build_cpp14(self):
-        self.check_build('_testcpp14ext', std='c++14')
 
     def check_build(self, extension_name, std=None, limited=False):
         venv_dir = 'env'
@@ -63,6 +49,7 @@ class BaseTests:
             if limited:
                 env['CPYTHON_TEST_LIMITED'] = '1'
             env['CPYTHON_TEST_EXT_NAME'] = extension_name
+            env['TEST_INTERNAL_C_API'] = str(int(self.TEST_INTERNAL_C_API))
             if support.verbose:
                 print('Run:', ' '.join(map(shlex.quote, cmd)))
                 subprocess.run(cmd, check=True, env=env)
@@ -111,6 +98,22 @@ class TestPublicCAPI(BaseTests, unittest.TestCase):
     @support.requires_gil_enabled('incompatible with Free Threading')
     def test_build_limited(self):
         self.check_build('_testcppext_limited', limited=True)
+
+    def test_build_cpp03(self):
+        # In public docs, we say C API is compatible with C++11. However,
+        # in practice we do maintain C++03 compatibility in public headers.
+        # Please ask the C API WG before adding a new C++11-only feature.
+        self.check_build('_testcpp03ext', std='c++03')
+
+    @unittest.skipIf(support.MS_WINDOWS, "MSVC doesn't support /std:c++11")
+    def test_build_cpp11(self):
+        self.check_build('_testcpp11ext', std='c++11')
+
+    # Only test C++14 on MSVC.
+    # On s390x RHEL7, GCC 4.8.5 doesn't support C++14.
+    @unittest.skipIf(not support.MS_WINDOWS, "need Windows")
+    def test_build_cpp14(self):
+        self.check_build('_testcpp14ext', std='c++14')
 
 
 class TestInteralCAPI(BaseTests, unittest.TestCase):

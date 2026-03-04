@@ -58,6 +58,11 @@ functions, respectively.
 The following functions are provided for min-heaps:
 
 
+.. function:: heapify(x)
+
+   Transform list *x* into a min-heap, in-place, in linear time.
+
+
 .. function:: heappush(heap, item)
 
    Push the value *item* onto the *heap*, maintaining the min-heap invariant.
@@ -75,11 +80,6 @@ The following functions are provided for min-heaps:
    Push *item* on the heap, then pop and return the smallest item from the
    *heap*.  The combined action runs more efficiently than :func:`heappush`
    followed by a separate call to :func:`heappop`.
-
-
-.. function:: heapify(x)
-
-   Transform list *x* into a min-heap, in-place, in linear time.
 
 
 .. function:: heapreplace(heap, item)

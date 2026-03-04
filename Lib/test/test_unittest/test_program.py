@@ -75,6 +75,14 @@ class Test_TestProgram(unittest.TestCase):
     class Empty(unittest.TestCase):
         pass
 
+    class SetUpClassFailure(unittest.TestCase):
+        @classmethod
+        def setUpClass(cls):
+            super().setUpClass()
+            raise Exception
+        def testPass(self):
+            pass
+
     class TestLoader(unittest.TestLoader):
         """Test loader that returns a suite containing the supplied testcase."""
 
@@ -190,6 +198,18 @@ class Test_TestProgram(unittest.TestCase):
         self.assertEqual(cm.exception.code, 5)
         out = stream.getvalue()
         self.assertIn('\nNO TESTS RAN\n', out)
+
+    def test_ExitSetUpClassFailureSuite(self):
+        stream = BufferedWriter()
+        with self.assertRaises(SystemExit) as cm:
+            unittest.main(
+                argv=["setup_class_failure"],
+                testRunner=unittest.TextTestRunner(stream=stream),
+                testLoader=self.TestLoader(self.SetUpClassFailure))
+        self.assertEqual(cm.exception.code, 1)
+        out = stream.getvalue()
+        self.assertIn("ERROR: setUpClass", out)
+        self.assertIn("SetUpClassFailure", out)
 
 
 class InitialisableProgram(unittest.TestProgram):

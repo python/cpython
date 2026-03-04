@@ -6,6 +6,7 @@ import unittest
 from importlib.metadata import (
     Distribution,
     PackageNotFoundError,
+    Prepared,
     distribution,
     entry_points,
     files,
@@ -313,3 +314,36 @@ class InvalidateCache(unittest.TestCase):
     def test_invalidate_cache(self):
         # No externally observable behavior, but ensures test coverage...
         importlib.invalidate_caches()
+
+
+class PreparedTests(unittest.TestCase):
+    def test_normalize(self):
+        tests = [
+            # Simple
+            ("sample", "sample"),
+            # Mixed case
+            ("Sample", "sample"),
+            ("SAMPLE", "sample"),
+            ("SaMpLe", "sample"),
+            # Separator conversions
+            ("sample-pkg", "sample_pkg"),
+            ("sample.pkg", "sample_pkg"),
+            ("sample_pkg", "sample_pkg"),
+            # Multiple separators
+            ("sample---pkg", "sample_pkg"),
+            ("sample___pkg", "sample_pkg"),
+            ("sample...pkg", "sample_pkg"),
+            # Mixed separators
+            ("sample-._pkg", "sample_pkg"),
+            ("sample_.-pkg", "sample_pkg"),
+            # Complex
+            ("Sample__Pkg-name.foo", "sample_pkg_name_foo"),
+            ("Sample__Pkg.name__foo", "sample_pkg_name_foo"),
+            # Uppercase with separators
+            ("SAMPLE-PKG", "sample_pkg"),
+            ("Sample.Pkg", "sample_pkg"),
+            ("SAMPLE_PKG", "sample_pkg"),
+        ]
+        for name, expected in tests:
+            with self.subTest(name=name):
+                self.assertEqual(Prepared.normalize(name), expected)

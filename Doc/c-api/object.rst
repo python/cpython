@@ -73,7 +73,7 @@ Object Protocol
 
    Flag to be used with multiple functions that print the object (like
    :c:func:`PyObject_Print` and :c:func:`PyFile_WriteObject`).
-   If passed, these function would use the :func:`str` of the object
+   If passed, these functions use the :func:`str` of the object
    instead of the :func:`repr`.
 
 
@@ -83,6 +83,35 @@ Object Protocol
    is used to enable certain printing options.  The only option currently supported
    is :c:macro:`Py_PRINT_RAW`; if given, the :func:`str` of the object is written
    instead of the :func:`repr`.
+
+
+.. c:function:: void PyObject_Dump(PyObject *op)
+
+   Dump an object *op* to ``stderr``. This should only be used for debugging.
+
+   The output is intended to try dumping objects even after memory corruption:
+
+   * Information is written starting with fields that are the least likely to
+     crash when accessed.
+   * This function can be called without an :term:`attached thread state`, but
+     it's not recommended to do so: it can cause deadlocks.
+   * An object that does not belong to the current interpreter may be dumped,
+     but this may also cause crashes or unintended behavior.
+   * Implement a heuristic to detect if the object memory has been freed. Don't
+     display the object contents in this case, only its memory address.
+   * The output format may change at any time.
+
+   Example of output:
+
+   .. code-block:: output
+
+       object address  : 0x7f80124702c0
+       object refcount : 2
+       object type     : 0x9902e0
+       object type name: str
+       object repr     : 'abcdef'
+
+   .. versionadded:: 3.15
 
 
 .. c:function:: int PyObject_HasAttrWithError(PyObject *o, PyObject *attr_name)
@@ -201,7 +230,7 @@ Object Protocol
    This case can arise from forgetting ``NULL`` checks and would delete the
    attribute.
 
-   .. versionchanged:: next
+   .. versionchanged:: 3.15
       Must not be called with NULL value if an exception is set.
 
 
@@ -226,7 +255,7 @@ Object Protocol
    For more details, see :c:func:`PyUnicode_InternFromString`, which may be
    used internally to create a key object.
 
-   .. versionchanged:: next
+   .. versionchanged:: 3.15
       Must not be called with NULL value if an exception is set.
 
 
@@ -600,7 +629,7 @@ Object Protocol
 
    Clear the managed dictionary of *obj*.
 
-   This function must only be called in a traverse function of the type which
+   This function must only be called in a clear function of the type which
    has the :c:macro:`Py_TPFLAGS_MANAGED_DICT` flag set.
 
    .. versionadded:: 3.13
@@ -682,10 +711,10 @@ Object Protocol
 
    :c:func:`PyUnstable_EnableTryIncRef` must have been called
    earlier on *obj* or this function may spuriously return ``0`` in the
-   :term:`free threading` build.
+   :term:`free-threaded build`.
 
    This function is logically equivalent to the following C code, except that
-   it behaves atomically in the :term:`free threading` build::
+   it behaves atomically in the :term:`free-threaded build`::
 
       if (Py_REFCNT(op) > 0) {
          Py_INCREF(op);
@@ -762,10 +791,10 @@ Object Protocol
    On GIL-enabled builds, this function is equivalent to
    :c:expr:`Py_REFCNT(op) == 1`.
 
-   On a :term:`free threaded <free threading>` build, this checks if *op*'s
+   On a :term:`free-threaded build`, this checks if *op*'s
    :term:`reference count` is equal to one and additionally checks if *op*
    is only used by this thread. :c:expr:`Py_REFCNT(op) == 1` is **not**
-   thread-safe on free threaded builds; prefer this function.
+   thread-safe on free-threaded builds; prefer this function.
 
    The caller must hold an :term:`attached thread state`, despite the fact
    that this function doesn't call into the Python interpreter. This function

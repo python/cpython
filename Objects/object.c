@@ -31,6 +31,7 @@
 #include "pycore_tuple.h"         // _PyTuple_DebugMallocStats()
 #include "pycore_typeobject.h"    // _PyBufferWrapper_Type
 #include "pycore_typevarobject.h" // _PyTypeAlias_Type
+#include "pycore_stackref.h"      // PyStackRef_FromPyObjectSteal
 #include "pycore_unionobject.h"   // _PyUnion_Type
 
 
@@ -711,9 +712,9 @@ _PyObject_IsFreed(PyObject *op)
 }
 
 
-/* For debugging convenience.  See Misc/gdbinit for some useful gdb hooks */
+/* For debugging convenience. */
 void
-_PyObject_Dump(PyObject* op)
+PyObject_Dump(PyObject* op)
 {
     if (_PyObject_IsFreed(op)) {
         /* It seems like the object memory has been freed:
@@ -1263,7 +1264,10 @@ PyObject *
 _PyObject_GetAttrId(PyObject *v, _Py_Identifier *name)
 {
     PyObject *result;
+_Py_COMP_DIAG_PUSH
+_Py_COMP_DIAG_IGNORE_DEPR_DECLS
     PyObject *oname = _PyUnicode_FromId(name); /* borrowed */
+_Py_COMP_DIAG_POP
     if (!oname)
         return NULL;
     result = PyObject_GetAttr(v, oname);
@@ -1329,6 +1333,54 @@ PyObject_GetAttr(PyObject *v, PyObject *name)
         _PyObject_SetAttributeErrorContext(v, name);
     }
     return result;
+}
+
+/* Like PyObject_GetAttr but returns a _PyStackRef.
+   For types (tp_getattro == _Py_type_getattro), this can return
+   a deferred reference to reduce reference count contention. */
+_PyStackRef
+_PyObject_GetAttrStackRef(PyObject *v, PyObject *name)
+{
+    PyTypeObject *tp = Py_TYPE(v);
+    if (!PyUnicode_Check(name)) {
+        PyErr_Format(PyExc_TypeError,
+                     "attribute name must be string, not '%.200s'",
+                     Py_TYPE(name)->tp_name);
+        return PyStackRef_NULL;
+    }
+
+    /* Fast path for types - can return deferred references */
+    if (tp->tp_getattro == _Py_type_getattro) {
+        _PyStackRef result = _Py_type_getattro_stackref((PyTypeObject *)v, name, NULL);
+        if (PyStackRef_IsNull(result)) {
+            _PyObject_SetAttributeErrorContext(v, name);
+        }
+        return result;
+    }
+
+    /* Fall back to regular PyObject_GetAttr and convert to stackref */
+    PyObject *result = NULL;
+    if (tp->tp_getattro != NULL) {
+        result = (*tp->tp_getattro)(v, name);
+    }
+    else if (tp->tp_getattr != NULL) {
+        const char *name_str = PyUnicode_AsUTF8(name);
+        if (name_str == NULL) {
+            return PyStackRef_NULL;
+        }
+        result = (*tp->tp_getattr)(v, (char *)name_str);
+    }
+    else {
+        PyErr_Format(PyExc_AttributeError,
+                    "'%.100s' object has no attribute '%U'",
+                    tp->tp_name, name);
+    }
+
+    if (result == NULL) {
+        _PyObject_SetAttributeErrorContext(v, name);
+        return PyStackRef_NULL;
+    }
+    return PyStackRef_FromPyObjectSteal(result);
 }
 
 int
@@ -2443,13 +2495,17 @@ static PyTypeObject* static_types[] = {
     &PyBaseObject_Type,
     &PyType_Type,
 
+    // PyStaticMethod_Type and PyCFunction_Type are used by PyType_Ready()
+    // on other types and so must be initialized first.
+    &PyStaticMethod_Type,
+    &PyCFunction_Type,
+
     // Static types with base=&PyBaseObject_Type
     &PyAsyncGen_Type,
     &PyByteArrayIter_Type,
     &PyByteArray_Type,
     &PyBytesIter_Type,
     &PyBytes_Type,
-    &PyCFunction_Type,
     &PyCallIter_Type,
     &PyCapsule_Type,
     &PyCell_Type,
@@ -2506,7 +2562,6 @@ static PyTypeObject* static_types[] = {
     &PySetIter_Type,
     &PySet_Type,
     &PySlice_Type,
-    &PyStaticMethod_Type,
     &PyStdPrinter_Type,
     &PySuper_Type,
     &PyTraceBack_Type,
@@ -2759,8 +2814,12 @@ PyUnstable_Object_IsUniqueReferencedTemporary(PyObject *op)
     _PyStackRef *stackpointer = frame->stackpointer;
     while (stackpointer > base) {
         stackpointer--;
-        if (op == PyStackRef_AsPyObjectBorrow(*stackpointer)) {
-            return PyStackRef_IsHeapSafe(*stackpointer);
+        _PyStackRef ref = *stackpointer;
+        if (PyStackRef_IsTaggedInt(ref)) {
+            continue;
+        }
+        if (op == PyStackRef_AsPyObjectBorrow(ref)) {
+            return PyStackRef_IsHeapSafe(ref);
         }
     }
     return 0;
@@ -3150,7 +3209,7 @@ _PyObject_AssertFailed(PyObject *obj, const char *expr, const char *msg,
 
         /* This might succeed or fail, but we're about to abort, so at least
            try to provide any extra info we can: */
-        _PyObject_Dump(obj);
+        PyObject_Dump(obj);
 
         fprintf(stderr, "\n");
         fflush(stderr);
@@ -3361,24 +3420,6 @@ Py_GetConstantBorrowed(unsigned int constant_id)
     return Py_GetConstant(constant_id);
 }
 
-
-// Py_TYPE() implementation for the stable ABI
-#undef Py_TYPE
-PyTypeObject*
-Py_TYPE(PyObject *ob)
-{
-    return _Py_TYPE(ob);
-}
-
-
-// Py_REFCNT() implementation for the stable ABI
-#undef Py_REFCNT
-Py_ssize_t
-Py_REFCNT(PyObject *ob)
-{
-    return _Py_REFCNT(ob);
-}
-
 int
 PyUnstable_IsImmortal(PyObject *op)
 {
@@ -3405,3 +3446,16 @@ _PyObject_VisitType(PyObject *op, visitproc visit, void *arg)
     Py_VISIT(tp);
     return 0;
 }
+
+// Implementations for the stable ABI
+// Keep these at the end.
+#undef Py_TYPE
+#undef Py_REFCNT
+#undef Py_SIZE
+#undef Py_IS_TYPE
+#undef Py_SET_SIZE
+PyTypeObject* Py_TYPE(PyObject *ob) { return _Py_TYPE_impl(ob); }
+Py_ssize_t Py_REFCNT(PyObject *ob) { return _Py_REFCNT(ob); }
+Py_ssize_t Py_SIZE(PyObject *o) { return _Py_SIZE_impl(o); }
+int Py_IS_TYPE(PyObject *o, PyTypeObject *t) { return _Py_IS_TYPE_impl(o, t); }
+void Py_SET_SIZE(PyVarObject *o, Py_ssize_t s) { _Py_SET_SIZE_impl(o, s); }

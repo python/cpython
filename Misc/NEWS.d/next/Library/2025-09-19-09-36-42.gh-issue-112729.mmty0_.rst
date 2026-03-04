@@ -1,2 +1,0 @@
-Fix crash when calling :func:`concurrent.interpreters.create` when the
-process is out of memory.

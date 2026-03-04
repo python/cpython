@@ -1,2 +1,0 @@
-Speedup pasting in ``PyREPL`` on Windows in a legacy console. Patch by Chris
-Eibl.

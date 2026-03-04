@@ -36,7 +36,7 @@ from token import *
 from token import EXACT_TOKEN_TYPES
 import _tokenize
 
-cookie_re = re.compile(r'^[ \t\f]*#.*?coding[:=][ \t]*([-\w.]+)', re.ASCII)
+cookie_re = re.compile(br'^[ \t\f]*#.*?coding[:=][ \t]*([-\w.]+)', re.ASCII)
 blank_re = re.compile(br'^[ \t\f]*(?:[#\r\n]|$)', re.ASCII)
 
 import token
@@ -385,24 +385,25 @@ def detect_encoding(readline):
         except StopIteration:
             return b''
 
-    def find_cookie(line):
+    def check(line, encoding):
+        # Check if the line matches the encoding.
+        if 0 in line:
+            raise SyntaxError("source code cannot contain null bytes")
         try:
-            # Decode as UTF-8. Either the line is an encoding declaration,
-            # in which case it should be pure ASCII, or it must be UTF-8
-            # per default encoding.
-            line_string = line.decode('utf-8')
+            line.decode(encoding)
         except UnicodeDecodeError:
             msg = "invalid or missing encoding declaration"
             if filename is not None:
                 msg = '{} for {!r}'.format(msg, filename)
             raise SyntaxError(msg)
 
-        match = cookie_re.match(line_string)
+    def find_cookie(line):
+        match = cookie_re.match(line)
         if not match:
             return None
-        encoding = _get_normal_name(match.group(1))
+        encoding = _get_normal_name(match.group(1).decode())
         try:
-            codec = lookup(encoding)
+            lookup(encoding)
         except LookupError:
             # This behaviour mimics the Python interpreter
             if filename is None:
@@ -433,18 +434,23 @@ def detect_encoding(readline):
 
     encoding = find_cookie(first)
     if encoding:
+        check(first, encoding)
         return encoding, [first]
     if not blank_re.match(first):
+        check(first, default)
         return default, [first]
 
     second = read_or_stop()
     if not second:
+        check(first, default)
         return default, [first]
 
     encoding = find_cookie(second)
     if encoding:
+        check(first + second, encoding)
         return encoding, [first, second]
 
+    check(first + second, default)
     return default, [first, second]
 
 

@@ -11,7 +11,7 @@
 
 --------------
 
-The :mod:`codeop` module provides utilities upon which the Python
+The :mod:`!codeop` module provides utilities upon which the Python
 read-eval-print loop can be emulated, as is done in the :mod:`code` module.  As
 a result, you probably don't want to use the module directly; if you want to
 include such a loop in your program you probably want to use the :mod:`code`
@@ -25,7 +25,7 @@ There are two parts to this job:
 #. Remembering which future statements the user has entered, so subsequent
    input can be compiled with these in effect.
 
-The :mod:`codeop` module provides a way of doing each of these things, and a way
+The :mod:`!codeop` module provides a way of doing each of these things, and a way
 of doing them both.
 
 To do just the former:

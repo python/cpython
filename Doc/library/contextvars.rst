@@ -77,6 +77,32 @@ Context Variables
       to restore the variable to its previous value via the
       :meth:`ContextVar.reset` method.
 
+      For convenience, the token object can be used as a context manager
+      to avoid calling :meth:`ContextVar.reset` manually::
+
+          var = ContextVar('var', default='default value')
+
+          with var.set('new value'):
+              assert var.get() == 'new value'
+
+          assert var.get() == 'default value'
+
+      It is a shorthand for::
+
+          var = ContextVar('var', default='default value')
+
+          token = var.set('new value')
+          try:
+              assert var.get() == 'new value'
+          finally:
+              var.reset(token)
+
+          assert var.get() == 'default value'
+
+      .. versionadded:: 3.14
+
+         Added support for using tokens as context managers.
+
    .. method:: reset(token)
 
       Reset the context variable to the value it had before the
@@ -93,24 +119,18 @@ Context Variables
           # After the reset call the var has no value again, so
           # var.get() would raise a LookupError.
 
+      The same *token* cannot be used twice.
+
 
 .. class:: Token
 
    *Token* objects are returned by the :meth:`ContextVar.set` method.
    They can be passed to the :meth:`ContextVar.reset` method to revert
    the value of the variable to what it was before the corresponding
-   *set*.
+   *set*. A single token cannot reset a context variable more than once.
 
-   The token supports :ref:`context manager protocol <context-managers>`
-   to restore the corresponding context variable value at the exit from
-   :keyword:`with` block::
-
-       var = ContextVar('var', default='default value')
-
-       with var.set('new value'):
-           assert var.get() == 'new value'
-
-       assert var.get() == 'default value'
+   Tokens support the :ref:`context manager protocol <context-managers>`
+   to automatically reset context variables. See :meth:`ContextVar.set`.
 
    .. versionadded:: 3.14
 
@@ -313,7 +333,7 @@ client::
         addr = writer.transport.get_extra_info('socket').getpeername()
         client_addr_var.set(addr)
 
-        # In any code that we call is now possible to get
+        # In any code that we call, it is now possible to get the
         # client's address by calling 'client_addr_var.get()'.
 
         while True:

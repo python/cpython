@@ -226,10 +226,11 @@ Up through 3.10, the call stack was implemented as a singly-linked list of
 heap allocation for the stack frame.
 
 Since 3.11, frames are no longer fully-fledged objects. Instead, a leaner internal
-`_PyInterpreterFrame` structure is used, which is allocated using a custom allocator
-function (`_PyThreadState_BumpFramePointer()`), which allocates and initializes a
-frame structure. Usually a frame allocation is just a pointer bump, which improves
-memory locality.
+`_PyInterpreterFrame` structure is used. Most frames are allocated contiguously in a
+per-thread stack (see `_PyThreadState_PushFrame` in [Python/pystate.c](../Python/pystate.c)),
+which improves memory locality and reduces overhead.
+If the current `datastack_chunk` has enough space (`_PyThreadState_HasStackSpace`)
+then the lightweight `_PyFrame_PushUnchecked` can be used instead of `_PyThreadState_PushFrame`.
 
 Sometimes an actual `PyFrameObject` is needed, such as when Python code calls
 `sys._getframe()` or an extension module calls

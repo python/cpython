@@ -1,1 +1,0 @@
-Raise a correct exception for values greater than 0x7fffffff for the ``BINSTRING`` opcode in the C implementation of :mod:`pickle`.

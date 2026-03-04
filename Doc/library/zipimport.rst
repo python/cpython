@@ -12,7 +12,7 @@
 
 This module adds the ability to import Python modules (:file:`\*.py`,
 :file:`\*.pyc`) and packages from ZIP-format archives. It is usually not
-needed to use the :mod:`zipimport` module explicitly; it is automatically used
+needed to use the :mod:`!zipimport` module explicitly; it is automatically used
 by the built-in :keyword:`import` mechanism for :data:`sys.path` items that are paths
 to ZIP archives.
 
@@ -30,7 +30,7 @@ Any files may be present in the ZIP archive, but importers are only invoked for
 corresponding :file:`.pyc` file, meaning that if a ZIP archive
 doesn't contain :file:`.pyc` files, importing may be rather slow.
 
-.. versionchanged:: next
+.. versionchanged:: 3.15
    Zstandard (*zstd*) compressed zip file entries are supported.
 
 .. versionchanged:: 3.13
@@ -176,7 +176,7 @@ Examples
 --------
 
 Here is an example that imports a module from a ZIP archive - note that the
-:mod:`zipimport` module is not explicitly used.
+:mod:`!zipimport` module is not explicitly used.
 
 .. code-block:: shell-session
 

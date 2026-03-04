@@ -34,13 +34,13 @@ status.  If that doesn't work, you can exit the interpreter by typing the
 following command: ``quit()``.
 
 The interpreter's line-editing features include interactive editing, history
-substitution and code completion on systems that support the `GNU Readline
-<https://tiswww.case.edu/php/chet/readline/rltop.html>`_ library.
+substitution and code completion on most systems.
 Perhaps the quickest check to see whether command line editing is supported is
-typing :kbd:`Control-P` to the first Python prompt you get.  If it beeps, you
-have command line editing; see Appendix :ref:`tut-interacting` for an
-introduction to the keys.  If nothing appears to happen, or if ``^P`` is
-echoed, command line editing isn't available; you'll only be able to use
+typing a word in on the Python prompt, then pressing Left arrow (or :kbd:`Control-b`).
+If the cursor moves, you have command line editing; see Appendix
+:ref:`tut-interacting` for an introduction to the keys.
+If nothing appears to happen, or if a sequence like ``^[[D`` or ``^B`` appears,
+command line editing isn't available; you'll only be able to use
 backspace to remove characters from the current line.
 
 The interpreter operates somewhat like the Unix shell: when called with standard

@@ -16,7 +16,7 @@ Complex Number Objects
 
       The complex number value, using the C :c:type:`Py_complex` representation.
 
-      .. deprecated-removed:: next 3.20
+      .. deprecated-removed:: 3.15 3.20
          Use :c:func:`PyComplex_AsCComplex` and
          :c:func:`PyComplex_FromCComplex` to convert a
          Python complex number to/from the C :c:type:`Py_complex`
@@ -82,7 +82,7 @@ Complex Number Objects
 
 .. c:type:: Py_complex
 
-   This C structure defines export format for a Python complex
+   This C structure defines an export format for a Python complex
    number object.
 
    .. c:member:: double real

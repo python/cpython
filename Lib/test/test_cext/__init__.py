@@ -14,7 +14,6 @@ from test import support
 
 SOURCES = [
     os.path.join(os.path.dirname(__file__), 'extension.c'),
-    os.path.join(os.path.dirname(__file__), 'create_moduledef.c'),
 ]
 SETUP = os.path.join(os.path.dirname(__file__), 'setup.py')
 

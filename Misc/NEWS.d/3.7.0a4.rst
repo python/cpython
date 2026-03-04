@@ -403,7 +403,7 @@ SOCK_CLOEXEC.
 .. nonce: zmO8G2
 .. section: Library
 
-Add :class:`importlib.abc.ResourceReader` as an ABC for loaders to provide a
+Add :class:`!importlib.abc.ResourceReader` as an ABC for loaders to provide a
 unified API for reading resources contained within packages.  Also add
 :mod:`importlib.resources` as the port of ``importlib_resources``.
 

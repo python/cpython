@@ -1,0 +1,1 @@
+Make concurrent iteration over :class:`itertools.combinations_with_replacement` and :class:`itertools.permutations` safe under free-threading.

@@ -340,13 +340,28 @@ Functions
 
    * VALUE: :attr:`!object.__annotations__` is tried first; if that does not exist,
      the :attr:`!object.__annotate__` function is called if it exists.
+
    * FORWARDREF: If :attr:`!object.__annotations__` exists and can be evaluated successfully,
      it is used; otherwise, the :attr:`!object.__annotate__` function is called. If it
      does not exist either, :attr:`!object.__annotations__` is tried again and any error
      from accessing it is re-raised.
+
+     * When calling :attr:`!object.__annotate__` it is first called with :attr:`~Format.FORWARDREF`.
+       If this is not implemented, it will then check if :attr:`~Format.VALUE_WITH_FAKE_GLOBALS`
+       is supported and use that in the fake globals environment.
+       If neither of these formats are supported, it will fall back to using :attr:`~Format.VALUE`.
+       If :attr:`~Format.VALUE` fails, the error from this call will be raised.
+
    * STRING: If :attr:`!object.__annotate__` exists, it is called first;
      otherwise, :attr:`!object.__annotations__` is used and stringified
      using :func:`annotations_to_string`.
+
+     * When calling :attr:`!object.__annotate__` it is first called with :attr:`~Format.STRING`.
+       If this is not implemented, it will then check if :attr:`~Format.VALUE_WITH_FAKE_GLOBALS`
+       is supported and use that in the fake globals environment.
+       If neither of these formats are supported, it will fall back to using :attr:`~Format.VALUE`
+       with the result converted using :func:`annotations_to_string`.
+       If :attr:`~Format.VALUE` fails, the error from this call will be raised.
 
    Returns a dict. :func:`!get_annotations` returns a new dict every time
    it's called; calling it twice on the same object will return two

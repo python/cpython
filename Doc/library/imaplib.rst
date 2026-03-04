@@ -29,7 +29,7 @@ note that the ``STATUS`` command is not supported in IMAP4.
 
 .. include:: ../includes/wasm-notavail.rst
 
-Three classes are provided by the :mod:`imaplib` module, :class:`IMAP4` is the
+Three classes are provided by the :mod:`!imaplib` module, :class:`IMAP4` is the
 base class:
 
 
@@ -413,7 +413,7 @@ An :class:`IMAP4` instance has the following methods:
    the password.  Will only work if the server ``CAPABILITY`` response includes the
    phrase ``AUTH=CRAM-MD5``.
 
-   .. versionchanged:: next
+   .. versionchanged:: 3.15
       An :exc:`IMAP4.error` is raised if MD5 support is not available.
 
 

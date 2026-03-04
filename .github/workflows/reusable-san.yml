@@ -6,9 +6,6 @@ on:
       sanitizer:
         required: true
         type: string
-      config_hash:
-        required: true
-        type: string
       free-threading:
         description: Whether to use free-threaded mode
         required: false
@@ -29,16 +26,11 @@ jobs:
     runs-on: ubuntu-24.04
     timeout-minutes: 60
     steps:
-    - uses: actions/checkout@v4
+    - uses: actions/checkout@v6
       with:
         persist-credentials: false
     - name: Runner image version
       run: echo "IMAGE_OS_VERSION=${ImageOS}-${ImageVersion}" >> "$GITHUB_ENV"
-    - name: Restore config.cache
-      uses: actions/cache@v4
-      with:
-        path: config.cache
-        key: ${{ github.job }}-${{ env.IMAGE_OS_VERSION }}-${{ inputs.sanitizer }}-${{ inputs.config_hash }}
     - name: Install dependencies
       run: |
         sudo ./.github/workflows/posix-deps-apt.sh
@@ -77,11 +69,6 @@ jobs:
     - name: Add ccache to PATH
       run: |
         echo "PATH=/usr/lib/ccache:$PATH" >> "$GITHUB_ENV"
-    - name: Configure ccache action
-      uses: hendrikmuhs/ccache-action@v1.2
-      with:
-        save: ${{ github.event_name == 'push' }}
-        max-size: "200M"
     - name: Configure CPython
       run: >-
         ./configure
@@ -112,7 +99,7 @@ jobs:
       run: find "${GITHUB_WORKSPACE}" -name 'san_log.*' | xargs head -n 1000
     - name: Archive logs
       if: always()
-      uses: actions/upload-artifact@v4
+      uses: actions/upload-artifact@v6
       with:
         name: >-
           ${{ inputs.sanitizer }}-logs-${{

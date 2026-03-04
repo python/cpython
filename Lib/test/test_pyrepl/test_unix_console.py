@@ -4,11 +4,12 @@ import os
 import signal
 import subprocess
 import sys
+import threading
 import unittest
 from functools import partial
 from test import support
 from test.support import os_helper, force_not_colorized_test_class
-from test.support import script_helper
+from test.support import script_helper, threading_helper
 
 from unittest import TestCase
 from unittest.mock import MagicMock, call, patch, ANY, Mock
@@ -101,6 +102,20 @@ handle_events_unix_console_height_3 = partial(
 @patch("os.write")
 @force_not_colorized_test_class
 class TestConsole(TestCase):
+    def test_no_newline(self, _os_write):
+        code = "1"
+        events = code_to_events(code)
+        _, con = handle_events_unix_console(events)
+        self.assertNotIn(call(ANY, b'\n'), _os_write.mock_calls)
+        con.restore()
+
+    def test_newline(self, _os_write):
+        code = "\n"
+        events = code_to_events(code)
+        _, con = handle_events_unix_console(events)
+        _os_write.assert_any_call(ANY, b"\n")
+        con.restore()
+
     def test_simple_addition(self, _os_write):
         code = "12+34"
         events = code_to_events(code)
@@ -318,6 +333,17 @@ class TestConsole(TestCase):
             console.prepare()  # needed to call restore()
             console.restore()  # this should succeed
 
+    @threading_helper.reap_threads
+    @threading_helper.requires_working_threading()
+    def test_restore_in_thread(self, _os_write):
+        # gh-139391: ensure that console.restore() silently suppresses
+        # exceptions when calling signal.signal() from a non-main thread.
+        console = unix_console([])
+        console.old_sigwinch = signal.SIG_DFL
+        thread = threading.Thread(target=console.restore)
+        thread.start()
+        thread.join()  # this should not raise
+
 
 @unittest.skipIf(sys.platform == "win32", "No Unix console on Windows")
 class TestUnixConsoleEIOHandling(TestCase):
@@ -361,7 +387,7 @@ class TestUnixConsoleEIOHandling(TestCase):
 
         os.kill(proc.pid, signal.SIGUSR1)
         # sleep for pty to settle
-        _, err = proc.communicate(timeout=support.SHORT_TIMEOUT)
+        _, err = proc.communicate(timeout=support.LONG_TIMEOUT)
         self.assertEqual(
             proc.returncode,
             1,

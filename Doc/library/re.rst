@@ -49,7 +49,7 @@ fine-tuning parameters.
 .. seealso::
 
    The third-party :pypi:`regex` module,
-   which has an API compatible with the standard library :mod:`re` module,
+   which has an API compatible with the standard library :mod:`!re` module,
    but offers additional functionality and a more thorough Unicode support.
 
 

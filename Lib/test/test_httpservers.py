@@ -1560,6 +1560,16 @@ class CommandLineRunTimeTestCase(unittest.TestCase):
         self.assertEqual(res, self.served_data)
 
 
+class TestModule(unittest.TestCase):
+    def test_deprecated__version__(self):
+        with self.assertWarnsRegex(
+            DeprecationWarning,
+            "'__version__' is deprecated and slated for removal in Python 3.20",
+        ) as cm:
+            getattr(http.server, "__version__")
+        self.assertEqual(cm.filename, __file__)
+
+
 def setUpModule():
     unittest.addModuleCleanup(os.chdir, os.getcwd())
 

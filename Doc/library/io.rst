@@ -24,7 +24,7 @@ Overview
 .. index::
    single: file object; io module
 
-The :mod:`io` module provides Python's main facilities for dealing with various
+The :mod:`!io` module provides Python's main facilities for dealing with various
 types of I/O.  There are three main types of I/O: *text I/O*, *binary I/O*
 and *raw I/O*.  These are generic categories, and various backing stores can
 be used for each of them.  A concrete object belonging to any of these
@@ -292,7 +292,7 @@ interface to a buffered raw stream (:class:`BufferedIOBase`).  Finally,
 Argument names are not part of the specification, and only the arguments of
 :func:`open` are intended to be used as keyword arguments.
 
-The following table summarizes the ABCs provided by the :mod:`io` module:
+The following table summarizes the ABCs provided by the :mod:`!io` module:
 
 .. tabularcolumns:: |l|l|L|L|
 
@@ -587,7 +587,7 @@ I/O Base Classes
 
          When the underlying raw stream is non-blocking, implementations may
          either raise :exc:`BlockingIOError` or return ``None`` if no data is
-         available. :mod:`io` implementations return ``None``.
+         available. :mod:`!io` implementations return ``None``.
 
    .. method:: read1(size=-1, /)
 
@@ -600,7 +600,7 @@ I/O Base Classes
 
          When the underlying raw stream is non-blocking, implementations may
          either raise :exc:`BlockingIOError` or return ``None`` if no data is
-         available. :mod:`io` implementations return ``None``.
+         available. :mod:`!io` implementations return ``None``.
 
    .. method:: readinto(b, /)
 
@@ -720,7 +720,7 @@ than raw I/O does.
    contains initial data.
 
    Methods may be used from multiple threads without external locking in
-   :term:`free threading` builds.
+   :term:`free-threaded builds <free-threaded build>`.
 
    :class:`BytesIO` provides or overrides these methods in addition to those
    from :class:`BufferedIOBase` and :class:`IOBase`:

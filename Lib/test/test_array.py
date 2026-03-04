@@ -8,6 +8,7 @@ from test import support
 from test.support import import_helper
 from test.support import os_helper
 from test.support import _2G
+from test.support import subTests
 import weakref
 import pickle
 import operator
@@ -66,6 +67,23 @@ class MiscTest(unittest.TestCase):
         self.assertEqual(len(a * 3), 0)
         a += a
         self.assertEqual(len(a), 0)
+
+    def test_fromlist_reentrant_index_mutation(self):
+
+        class Evil:
+            def __init__(self, lst):
+                self.lst = lst
+            def __index__(self):
+                self.lst.clear()
+                return "not an int"
+
+        for typecode in ('I', 'L', 'Q'):
+            with self.subTest(typecode=typecode):
+                lst = []
+                lst.append(Evil(lst))
+                a = array.array(typecode)
+                with self.assertRaises(TypeError):
+                    a.fromlist(lst)
 
 
 # Machine format codes.
@@ -1255,6 +1273,14 @@ class UnicodeTest(StringTest, unittest.TestCase):
         with self.assertWarns(DeprecationWarning):
             array.array("u")
 
+    def test_empty_string_mem_leak_gh140474(self):
+        with warnings.catch_warnings():
+            warnings.simplefilter('ignore', DeprecationWarning)
+            for _ in range(1000):
+                a = array.array('u', '')
+                self.assertEqual(len(a), 0)
+                self.assertEqual(a.typecode, 'u')
+
 
 class UCS4Test(UnicodeTest):
     typecode = 'w'
@@ -1671,6 +1697,45 @@ class LargeArrayTest(unittest.TestCase):
         list(it)
         it.__setstate__(0)
         self.assertRaises(StopIteration, next, it)
+
+    # Tests for NULL pointer dereference in array.__setitem__
+    # when the index conversion mutates the array.
+    # See: https://github.com/python/cpython/issues/142555.
+
+    @subTests("dtype", ["b", "B", "h", "H", "i", "l", "q", "I", "L", "Q"])
+    def test_setitem_use_after_clear_with_int_data(self, dtype):
+        victim = array.array(dtype, list(range(64)))
+
+        class Index:
+            def __index__(self):
+                victim.clear()
+                return 0
+
+        self.assertRaises(IndexError, victim.__setitem__, 1, Index())
+        self.assertEqual(len(victim), 0)
+
+    def test_setitem_use_after_shrink_with_int_data(self):
+        victim = array.array('b', [1, 2, 3])
+
+        class Index:
+            def __index__(self):
+                victim.pop()
+                victim.pop()
+                return 0
+
+        self.assertRaises(IndexError, victim.__setitem__, 1, Index())
+
+    @subTests("dtype", ["f", "d"])
+    def test_setitem_use_after_clear_with_float_data(self, dtype):
+        victim = array.array(dtype, [1.0, 2.0, 3.0])
+
+        class Float:
+            def __float__(self):
+                victim.clear()
+                return 0.0
+
+        self.assertRaises(IndexError, victim.__setitem__, 1, Float())
+        self.assertEqual(len(victim), 0)
 
 
 if __name__ == "__main__":

@@ -10,7 +10,7 @@ from functools import partial
 from test.support import force_not_colorized_test_class
 from typing import Iterable
 from unittest import TestCase
-from unittest.mock import MagicMock, call
+from unittest.mock import MagicMock, call, patch
 
 from .support import handle_all_events, code_to_events
 from .support import prepare_reader as default_prepare_reader
@@ -30,7 +30,21 @@ except ImportError:
     pass
 
 
+def _mock_console_init(self, f_in=0, f_out=1, term="", encoding="utf-8"):
+    """Mock __init__ to avoid real Windows API calls in headless environments."""
+    super(WindowsConsole, self).__init__(f_in, f_out, term, encoding)
+    self.screen = []
+    self.width = 80
+    self.height = 25
+    self._WindowsConsole__offset = 0
+    self.posxy = (0, 0)
+    self._WindowsConsole__vt_support = False
+    self._WindowsConsole_original_input_mode = 0
+    self.event_queue = wc.EventQueue('utf-8')
+
+
 @force_not_colorized_test_class
+@patch.object(WindowsConsole, '__init__', _mock_console_init)
 class WindowsConsoleTests(TestCase):
     def console(self, events, **kwargs) -> Console:
         console = WindowsConsole()
@@ -71,6 +85,20 @@ class WindowsConsoleTests(TestCase):
 
     def handle_events_height_3(self, events):
         return self.handle_events(events, height=3)
+
+    def test_no_newline(self):
+        code = "1"
+        events = code_to_events(code)
+        _, con = self.handle_events(events)
+        self.assertNotIn(call(b'\n'), con.out.write.mock_calls)
+        con.restore()
+
+    def test_newline(self):
+        code = "\n"
+        events = code_to_events(code)
+        _, con = self.handle_events(events)
+        con.out.write.assert_any_call(b"\n")
+        con.restore()
 
     def test_simple_addition(self):
         code = "12+34"
@@ -359,6 +387,7 @@ class WindowsConsoleTests(TestCase):
         con.restore()
 
 
+@patch.object(WindowsConsole, '__init__', _mock_console_init)
 class WindowsConsoleGetEventTests(TestCase):
     # Virtual-Key Codes: https://learn.microsoft.com/en-us/windows/win32/inputdev/virtual-key-codes
     VK_BACK = 0x08
@@ -575,6 +604,32 @@ class WindowsConsoleGetEventTests(TestCase):
         self.assertEqual(self.get_event(irs, vt_support=True),
                          Event(evt='key', data='up', raw=bytearray(b'\x1b[A')))
         self.assertEqual(self.mock.call_count, 3)
+
+    # All tests above assume that there is always keyboard data to read,
+    # because for simplicity we just use
+    # self.console.wait = MagicMock(return_value=True)
+    def test_wait_empty(self):
+        console = WindowsConsole(encoding='utf-8')
+        console.wait_for_event = MagicMock(return_value=True)
+        self.assertTrue(console.event_queue.empty())
+        timeout = 2.0
+        self.assertTrue(console.wait(timeout))
+        self.assertEqual(console.wait_for_event.call_count, 1)
+        self.assertEqual(console.wait_for_event.mock_calls[0], call(timeout))
+
+        timeout = 1.1
+        console.wait_for_event = MagicMock(return_value=False)
+        self.assertFalse(console.wait(timeout))
+        self.assertEqual(console.wait_for_event.call_count, 1)
+        self.assertEqual(console.wait_for_event.mock_calls[0], call(timeout))
+
+    def test_wait_not_empty(self):
+        console = WindowsConsole(encoding='utf-8')
+        console.wait_for_event = MagicMock(return_value=True)
+        console.event_queue.push(b"a")
+        self.assertFalse(console.event_queue.empty())
+        self.assertTrue(console.wait(0.0))
+        self.assertEqual(console.wait_for_event.call_count, 0)
 
 
 if __name__ == "__main__":

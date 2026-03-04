@@ -35,7 +35,7 @@ Resource Locators. It supports the following URL schemes: ``file``, ``ftp``,
    macOS, it *may* be removed if CPython has been built with the
    :option:`--with-app-store-compliance` option.
 
-The :mod:`urllib.parse` module defines functions that fall into two broad
+The :mod:`!urllib.parse` module defines functions that fall into two broad
 categories: URL parsing and URL quoting. These are covered in detail in
 the following sections.
 
@@ -50,12 +50,17 @@ URL Parsing
 The URL parsing functions focus on splitting a URL string into its components,
 or on combining URL components into a URL string.
 
-.. function:: urlparse(urlstring, scheme='', allow_fragments=True)
+.. function:: urlsplit(urlstring, scheme=None, allow_fragments=True, *, missing_as_none=False)
 
-   Parse a URL into six components, returning a 6-item :term:`named tuple`.  This
-   corresponds to the general structure of a URL:
-   ``scheme://netloc/path;parameters?query#fragment``.
-   Each tuple item is a string, possibly empty. The components are not broken up
+   Parse a URL into five components, returning a 5-item :term:`named tuple`
+   :class:`SplitResult` or :class:`SplitResultBytes`.
+   This corresponds to the general structure of a URL:
+   ``scheme://netloc/path?query#fragment``.
+   Each tuple item is a string, possibly empty, or ``None`` if
+   *missing_as_none* is true.
+   Not defined component are represented an empty string (by default) or
+   ``None`` if *missing_as_none* is true.
+   The components are not broken up
    into smaller parts (for example, the network location is a single string), and %
    escapes are not expanded. The delimiters as shown above are not part of the
    result, except for a leading slash in the *path* component, which is retained if
@@ -64,15 +69,15 @@ or on combining URL components into a URL string.
    .. doctest::
       :options: +NORMALIZE_WHITESPACE
 
-      >>> from urllib.parse import urlparse
-      >>> urlparse("scheme://netloc/path;parameters?query#fragment")
-      ParseResult(scheme='scheme', netloc='netloc', path='/path;parameters', params='',
+      >>> from urllib.parse import urlsplit
+      >>> urlsplit("scheme://netloc/path?query#fragment")
+      SplitResult(scheme='scheme', netloc='netloc', path='/path',
                   query='query', fragment='fragment')
-      >>> o = urlparse("http://docs.python.org:80/3/library/urllib.parse.html?"
+      >>> o = urlsplit("http://docs.python.org:80/3/library/urllib.parse.html?"
       ...              "highlight=params#url-parsing")
       >>> o
-      ParseResult(scheme='http', netloc='docs.python.org:80',
-                  path='/3/library/urllib.parse.html', params='',
+      SplitResult(scheme='http', netloc='docs.python.org:80',
+                  path='/3/library/urllib.parse.html',
                   query='highlight=params', fragment='url-parsing')
       >>> o.scheme
       'http'
@@ -84,8 +89,14 @@ or on combining URL components into a URL string.
       80
       >>> o._replace(fragment="").geturl()
       'http://docs.python.org:80/3/library/urllib.parse.html?highlight=params'
+      >>> urlsplit("http://docs.python.org?")
+      SplitResult(scheme='http', netloc='docs.python.org', path='',
+                  query='', fragment='')
+      >>> urlsplit("http://docs.python.org?", missing_as_none=True)
+      SplitResult(scheme='http', netloc='docs.python.org', path='',
+                  query='', fragment=None)
 
-   Following the syntax specifications in :rfc:`1808`, urlparse recognizes
+   Following the syntax specifications in :rfc:`1808`, :func:`!urlsplit` recognizes
    a netloc only if it is properly introduced by '//'.  Otherwise the
    input is presumed to be a relative URL and thus to start with
    a path component.
@@ -93,55 +104,58 @@ or on combining URL components into a URL string.
    .. doctest::
       :options: +NORMALIZE_WHITESPACE
 
-      >>> from urllib.parse import urlparse
-      >>> urlparse('//www.cwi.nl:80/%7Eguido/Python.html')
-      ParseResult(scheme='', netloc='www.cwi.nl:80', path='/%7Eguido/Python.html',
-                  params='', query='', fragment='')
-      >>> urlparse('www.cwi.nl/%7Eguido/Python.html')
-      ParseResult(scheme='', netloc='', path='www.cwi.nl/%7Eguido/Python.html',
-                  params='', query='', fragment='')
-      >>> urlparse('help/Python.html')
-      ParseResult(scheme='', netloc='', path='help/Python.html', params='',
+      >>> from urllib.parse import urlsplit
+      >>> urlsplit('//www.cwi.nl:80/%7Eguido/Python.html')
+      SplitResult(scheme='', netloc='www.cwi.nl:80', path='/%7Eguido/Python.html',
                   query='', fragment='')
+      >>> urlsplit('www.cwi.nl/%7Eguido/Python.html')
+      SplitResult(scheme='', netloc='', path='www.cwi.nl/%7Eguido/Python.html',
+                  query='', fragment='')
+      >>> urlsplit('help/Python.html')
+      SplitResult(scheme='', netloc='', path='help/Python.html',
+                  query='', fragment='')
+      >>> urlsplit('help/Python.html', missing_as_none=True)
+      SplitResult(scheme=None, netloc=None, path='help/Python.html',
+                  query=None, fragment=None)
 
    The *scheme* argument gives the default addressing scheme, to be
    used only if the URL does not specify one.  It should be the same type
-   (text or bytes) as *urlstring*, except that the default value ``''`` is
+   (text or bytes) as *urlstring* or ``None``, except that the ``''`` is
    always allowed, and is automatically converted to ``b''`` if appropriate.
 
    If the *allow_fragments* argument is false, fragment identifiers are not
-   recognized.  Instead, they are parsed as part of the path, parameters
-   or query component, and :attr:`fragment` is set to the empty string in
-   the return value.
+   recognized.  Instead, they are parsed as part of the path
+   or query component, and :attr:`fragment` is set to ``None`` or the empty
+   string (depending on the value of *missing_as_none*) in the return value.
 
    The return value is a :term:`named tuple`, which means that its items can
    be accessed by index or as named attributes, which are:
 
-   +------------------+-------+-------------------------+------------------------+
-   | Attribute        | Index | Value                   | Value if not present   |
-   +==================+=======+=========================+========================+
-   | :attr:`scheme`   | 0     | URL scheme specifier    | *scheme* parameter     |
-   +------------------+-------+-------------------------+------------------------+
-   | :attr:`netloc`   | 1     | Network location part   | empty string           |
-   +------------------+-------+-------------------------+------------------------+
-   | :attr:`path`     | 2     | Hierarchical path       | empty string           |
-   +------------------+-------+-------------------------+------------------------+
-   | :attr:`params`   | 3     | Parameters for last     | empty string           |
-   |                  |       | path element            |                        |
-   +------------------+-------+-------------------------+------------------------+
-   | :attr:`query`    | 4     | Query component         | empty string           |
-   +------------------+-------+-------------------------+------------------------+
-   | :attr:`fragment` | 5     | Fragment identifier     | empty string           |
-   +------------------+-------+-------------------------+------------------------+
-   | :attr:`username` |       | User name               | :const:`None`          |
-   +------------------+-------+-------------------------+------------------------+
-   | :attr:`password` |       | Password                | :const:`None`          |
-   +------------------+-------+-------------------------+------------------------+
-   | :attr:`hostname` |       | Host name (lower case)  | :const:`None`          |
-   +------------------+-------+-------------------------+------------------------+
-   | :attr:`port`     |       | Port number as integer, | :const:`None`          |
-   |                  |       | if present              |                        |
-   +------------------+-------+-------------------------+------------------------+
+   +------------------+-------+-------------------------+-------------------------------+
+   | Attribute        | Index | Value                   | Value if not present          |
+   +==================+=======+=========================+===============================+
+   | :attr:`scheme`   | 0     | URL scheme specifier    | *scheme* parameter or         |
+   |                  |       |                         | empty string [1]_             |
+   +------------------+-------+-------------------------+-------------------------------+
+   | :attr:`netloc`   | 1     | Network location part   | ``None`` or empty string [1]_ |
+   +------------------+-------+-------------------------+-------------------------------+
+   | :attr:`path`     | 2     | Hierarchical path       | empty string                  |
+   +------------------+-------+-------------------------+-------------------------------+
+   | :attr:`query`    | 3     | Query component         | ``None`` or empty string [1]_ |
+   +------------------+-------+-------------------------+-------------------------------+
+   | :attr:`fragment` | 4     | Fragment identifier     | ``None`` or empty string [1]_ |
+   +------------------+-------+-------------------------+-------------------------------+
+   | :attr:`username` |       | User name               | ``None``                      |
+   +------------------+-------+-------------------------+-------------------------------+
+   | :attr:`password` |       | Password                | ``None``                      |
+   +------------------+-------+-------------------------+-------------------------------+
+   | :attr:`hostname` |       | Host name (lower case)  | ``None``                      |
+   +------------------+-------+-------------------------+-------------------------------+
+   | :attr:`port`     |       | Port number as integer, | ``None``                      |
+   |                  |       | if present              |                               |
+   +------------------+-------+-------------------------+-------------------------------+
+
+   .. [1] Depending on the value of the *missing_as_none* argument.
 
    Reading the :attr:`port` attribute will raise a :exc:`ValueError` if
    an invalid port is specified in the URL.  See section
@@ -155,26 +169,30 @@ or on combining URL components into a URL string.
    ``#``, ``@``, or ``:`` will raise a :exc:`ValueError`. If the URL is
    decomposed before parsing, no error will be raised.
 
+   Following some of the `WHATWG spec`_ that updates :rfc:`3986`, leading C0
+   control and space characters are stripped from the URL. ``\n``,
+   ``\r`` and tab ``\t`` characters are removed from the URL at any position.
+
    As is the case with all named tuples, the subclass has a few additional methods
    and attributes that are particularly useful. One such method is :meth:`_replace`.
-   The :meth:`_replace` method will return a new ParseResult object replacing specified
-   fields with new values.
+   The :meth:`_replace` method will return a new :class:`SplitResult` object
+   replacing specified fields with new values.
 
    .. doctest::
       :options: +NORMALIZE_WHITESPACE
 
-      >>> from urllib.parse import urlparse
-      >>> u = urlparse('//www.cwi.nl:80/%7Eguido/Python.html')
+      >>> from urllib.parse import urlsplit
+      >>> u = urlsplit('//www.cwi.nl:80/%7Eguido/Python.html')
       >>> u
-      ParseResult(scheme='', netloc='www.cwi.nl:80', path='/%7Eguido/Python.html',
-                  params='', query='', fragment='')
+      SplitResult(scheme='', netloc='www.cwi.nl:80', path='/%7Eguido/Python.html',
+                  query='', fragment='')
       >>> u._replace(scheme='http')
-      ParseResult(scheme='http', netloc='www.cwi.nl:80', path='/%7Eguido/Python.html',
-                  params='', query='', fragment='')
+      SplitResult(scheme='http', netloc='www.cwi.nl:80', path='/%7Eguido/Python.html',
+                  query='', fragment='')
 
    .. warning::
 
-      :func:`urlparse` does not perform validation.  See :ref:`URL parsing
+      :func:`urlsplit` does not perform validation.  See :ref:`URL parsing
       security <url-parsing-security>` for details.
 
    .. versionchanged:: 3.2
@@ -187,11 +205,22 @@ or on combining URL components into a URL string.
 
    .. versionchanged:: 3.6
       Out-of-range port numbers now raise :exc:`ValueError`, instead of
-      returning :const:`None`.
+      returning ``None``.
 
    .. versionchanged:: 3.8
       Characters that affect netloc parsing under NFKC normalization will
       now raise :exc:`ValueError`.
+
+   .. versionchanged:: 3.10
+      ASCII newline and tab characters are stripped from the URL.
+
+   .. versionchanged:: 3.12
+      Leading WHATWG C0 control and space characters are stripped from the URL.
+
+   .. versionchanged:: next
+      Added the *missing_as_none* parameter.
+
+.. _WHATWG spec: https://url.spec.whatwg.org/#concept-basic-url-parser
 
 
 .. function:: parse_qs(qs, keep_blank_values=False, strict_parsing=False, encoding='utf-8', errors='replace', max_num_fields=None, separator='&')
@@ -287,96 +316,63 @@ or on combining URL components into a URL string.
       separator key, with ``&`` as the default separator.
 
 
-.. function:: urlunparse(parts)
-
-   Construct a URL from a tuple as returned by ``urlparse()``. The *parts*
-   argument can be any six-item iterable. This may result in a slightly
-   different, but equivalent URL, if the URL that was parsed originally had
-   unnecessary delimiters (for example, a ``?`` with an empty query; the RFC
-   states that these are equivalent).
-
-
-.. function:: urlsplit(urlstring, scheme='', allow_fragments=True)
-
-   This is similar to :func:`urlparse`, but does not split the params from the URL.
-   This should generally be used instead of :func:`urlparse` if the more recent URL
-   syntax allowing parameters to be applied to each segment of the *path* portion
-   of the URL (see :rfc:`2396`) is wanted.  A separate function is needed to
-   separate the path segments and parameters.  This function returns a 5-item
-   :term:`named tuple`::
-
-      (addressing scheme, network location, path, query, fragment identifier).
-
-   The return value is a :term:`named tuple`, its items can be accessed by index
-   or as named attributes:
-
-   +------------------+-------+-------------------------+----------------------+
-   | Attribute        | Index | Value                   | Value if not present |
-   +==================+=======+=========================+======================+
-   | :attr:`scheme`   | 0     | URL scheme specifier    | *scheme* parameter   |
-   +------------------+-------+-------------------------+----------------------+
-   | :attr:`netloc`   | 1     | Network location part   | empty string         |
-   +------------------+-------+-------------------------+----------------------+
-   | :attr:`path`     | 2     | Hierarchical path       | empty string         |
-   +------------------+-------+-------------------------+----------------------+
-   | :attr:`query`    | 3     | Query component         | empty string         |
-   +------------------+-------+-------------------------+----------------------+
-   | :attr:`fragment` | 4     | Fragment identifier     | empty string         |
-   +------------------+-------+-------------------------+----------------------+
-   | :attr:`username` |       | User name               | :const:`None`        |
-   +------------------+-------+-------------------------+----------------------+
-   | :attr:`password` |       | Password                | :const:`None`        |
-   +------------------+-------+-------------------------+----------------------+
-   | :attr:`hostname` |       | Host name (lower case)  | :const:`None`        |
-   +------------------+-------+-------------------------+----------------------+
-   | :attr:`port`     |       | Port number as integer, | :const:`None`        |
-   |                  |       | if present              |                      |
-   +------------------+-------+-------------------------+----------------------+
-
-   Reading the :attr:`port` attribute will raise a :exc:`ValueError` if
-   an invalid port is specified in the URL.  See section
-   :ref:`urlparse-result-object` for more information on the result object.
-
-   Unmatched square brackets in the :attr:`netloc` attribute will raise a
-   :exc:`ValueError`.
-
-   Characters in the :attr:`netloc` attribute that decompose under NFKC
-   normalization (as used by the IDNA encoding) into any of ``/``, ``?``,
-   ``#``, ``@``, or ``:`` will raise a :exc:`ValueError`. If the URL is
-   decomposed before parsing, no error will be raised.
-
-   Following some of the `WHATWG spec`_ that updates RFC 3986, leading C0
-   control and space characters are stripped from the URL. ``\n``,
-   ``\r`` and tab ``\t`` characters are removed from the URL at any position.
-
-   .. warning::
-
-      :func:`urlsplit` does not perform validation.  See :ref:`URL parsing
-      security <url-parsing-security>` for details.
-
-   .. versionchanged:: 3.6
-      Out-of-range port numbers now raise :exc:`ValueError`, instead of
-      returning :const:`None`.
-
-   .. versionchanged:: 3.8
-      Characters that affect netloc parsing under NFKC normalization will
-      now raise :exc:`ValueError`.
-
-   .. versionchanged:: 3.10
-      ASCII newline and tab characters are stripped from the URL.
-
-   .. versionchanged:: 3.12
-      Leading WHATWG C0 control and space characters are stripped from the URL.
-
-.. _WHATWG spec: https://url.spec.whatwg.org/#concept-basic-url-parser
-
 .. function:: urlunsplit(parts)
+              urlunsplit(parts, *, keep_empty)
 
-   Combine the elements of a tuple as returned by :func:`urlsplit` into a
-   complete URL as a string. The *parts* argument can be any five-item
-   iterable. This may result in a slightly different, but equivalent URL, if the
-   URL that was parsed originally had unnecessary delimiters (for example, a ?
-   with an empty query; the RFC states that these are equivalent).
+   Construct a URL from a tuple as returned by :func:`urlsplit`. The *parts*
+   argument can be any five-item iterable.
+
+   This may result in a slightly different, but equivalent URL, if the
+   URL that was parsed originally had unnecessary delimiters (for example,
+   a ``?`` with an empty query; the RFC states that these are equivalent).
+
+   If *keep_empty* is true, empty strings are kept in the result (for example,
+   a ``?`` for an empty query), only ``None`` components are omitted.
+   This allows rebuilding a URL that was parsed with option
+   ``missing_as_none=True``.
+   By default, *keep_empty* is true if *parts* is the result of the
+   :func:`urlsplit` call with ``missing_as_none=True``.
+
+   .. versionchanged:: next
+      Added the *keep_empty* parameter.
+
+
+.. function:: urlparse(urlstring, scheme=None, allow_fragments=True, *, missing_as_none=False)
+
+   This is similar to :func:`urlsplit`, but additionally splits the *path*
+   component on *path* and *params*.
+   This function returns a 6-item :term:`named tuple` :class:`ParseResult`
+   or :class:`ParseResultBytes`.
+   Its items are the same as for the :func:`!urlsplit` result, except that
+   *params* is inserted at index 3, between *path* and *query*.
+
+   This function is based on obsoleted :rfc:`1738` and :rfc:`1808`, which
+   listed *params* as the main URL component.
+   The more recent URL syntax allows parameters to be applied to each segment
+   of the *path* portion of the URL (see :rfc:`3986`).
+   :func:`urlsplit` should generally be used instead of :func:`urlparse`.
+   A separate function is needed to separate the path segments and parameters.
+
+.. function:: urlunparse(parts)
+              urlunparse(parts, *, keep_empty)
+
+   Combine the elements of a tuple as returned by :func:`urlparse` into a
+   complete URL as a string. The *parts* argument can be any six-item
+   iterable.
+
+   This may result in a slightly different, but equivalent URL, if the
+   URL that was parsed originally had unnecessary delimiters (for example,
+   a ``?`` with an empty query; the RFC states that these are equivalent).
+
+   If *keep_empty* is true, empty strings are kept in the result (for example,
+   a ``?`` for an empty query), only ``None`` components are omitted.
+   This allows rebuilding a URL that was parsed with option
+   ``missing_as_none=True``.
+   By default, *keep_empty* is true if *parts* is the result of the
+   :func:`urlparse` call with ``missing_as_none=True``.
+
+   .. versionchanged:: next
+      Added the *keep_empty* parameter.
 
 
 .. function:: urljoin(base, url, allow_fragments=True)
@@ -391,7 +387,7 @@ or on combining URL components into a URL string.
       'http://www.cwi.nl/%7Eguido/FAQ.html'
 
    The *allow_fragments* argument has the same meaning and default as for
-   :func:`urlparse`.
+   :func:`urlsplit`.
 
    .. note::
 
@@ -422,29 +418,34 @@ or on combining URL components into a URL string.
       Behavior updated to match the semantics defined in :rfc:`3986`.
 
 
-.. function:: urldefrag(url)
+.. function:: urldefrag(url, *, missing_as_none=False)
 
    If *url* contains a fragment identifier, return a modified version of *url*
    with no fragment identifier, and the fragment identifier as a separate
    string.  If there is no fragment identifier in *url*, return *url* unmodified
-   and an empty string.
+   and an empty string (by default) or ``None`` if *missing_as_none* is true.
 
    The return value is a :term:`named tuple`, its items can be accessed by index
    or as named attributes:
 
-   +------------------+-------+-------------------------+----------------------+
-   | Attribute        | Index | Value                   | Value if not present |
-   +==================+=======+=========================+======================+
-   | :attr:`url`      | 0     | URL with no fragment    | empty string         |
-   +------------------+-------+-------------------------+----------------------+
-   | :attr:`fragment` | 1     | Fragment identifier     | empty string         |
-   +------------------+-------+-------------------------+----------------------+
+   +------------------+-------+-------------------------+-------------------------------+
+   | Attribute        | Index | Value                   | Value if not present          |
+   +==================+=======+=========================+===============================+
+   | :attr:`url`      | 0     | URL with no fragment    | empty string                  |
+   +------------------+-------+-------------------------+-------------------------------+
+   | :attr:`fragment` | 1     | Fragment identifier     | ``None`` or empty string [3]_ |
+   +------------------+-------+-------------------------+-------------------------------+
+
+   .. [3] Depending on the value of the *missing_as_none* argument.
 
    See section :ref:`urlparse-result-object` for more information on the result
    object.
 
    .. versionchanged:: 3.2
       Result is a structured object rather than a simple 2-tuple.
+
+   .. versionchanged:: next
+      Added the *missing_as_none* parameter.
 
 .. function:: unwrap(url)
 
@@ -465,8 +466,9 @@ URLs elsewhere.  Their purpose is for practical functionality rather than
 purity.
 
 Instead of raising an exception on unusual input, they may instead return some
-component parts as empty strings. Or components may contain more than perhaps
-they should.
+component parts as empty strings or ``None`` (depending on the value of the
+*missing_as_none* argument).
+Or components may contain more than perhaps they should.
 
 We recommend that users of these APIs where the values may be used anywhere
 with security implications code defensively. Do some verification within your
@@ -531,7 +533,7 @@ individual URL quoting functions.
 Structured Parse Results
 ------------------------
 
-The result objects from the :func:`urlparse`, :func:`urlsplit`  and
+The result objects from the :func:`urlsplit`, :func:`urlparse`  and
 :func:`urldefrag` functions are subclasses of the :class:`tuple` type.
 These subclasses add the attributes listed in the documentation for
 those functions, the encoding and decoding support described in the
@@ -542,7 +544,8 @@ previous section, as well as an additional method:
    Return the re-combined version of the original URL as a string. This may
    differ from the original URL in that the scheme may be normalized to lower
    case and empty components may be dropped. Specifically, empty parameters,
-   queries, and fragment identifiers will be removed.
+   queries, and fragment identifiers will be removed unless the URL was parsed
+   with ``missing_as_none=True``.
 
    For :func:`urldefrag` results, only empty fragment identifiers will be removed.
    For :func:`urlsplit` and :func:`urlparse` results, all noted changes will be
@@ -559,6 +562,9 @@ previous section, as well as an additional method:
       >>> r2 = urlsplit(r1.geturl())
       >>> r2.geturl()
       'http://www.Python.org/doc/'
+      >>> r3 = urlsplit(url, missing_as_none=True)
+      >>> r3.geturl()
+      'http://www.Python.org/doc/#'
 
 
 The following classes provide the implementations of the structured parse

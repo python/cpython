@@ -657,6 +657,12 @@ class NewIMAPTestsMixin:
         self.assertEqual(data[0], b'Returned to authenticated state. (Success)')
         self.assertEqual(client.state, 'AUTH')
 
+    def test_control_characters(self):
+        client, _ = self._setup(SimpleIMAPHandler)
+        for c0 in support.control_characters_c0():
+            with self.assertRaises(ValueError):
+                client.login(f'user{c0}', 'pass')
+
     # property tests
 
     def test_file_property_should_not_be_accessed(self):
@@ -1115,6 +1121,16 @@ class ThreadedNetworkedTestsSSL(ThreadedNetworkedTests):
             client = self.imap_class("localhost", server.server_address[1],
                                      ssl_context=ssl_context)
             client.shutdown()
+
+
+class TestModule(unittest.TestCase):
+    def test_deprecated__version__(self):
+        with self.assertWarnsRegex(
+            DeprecationWarning,
+            "'__version__' is deprecated and slated for removal in Python 3.20",
+        ) as cm:
+            getattr(imaplib, "__version__")
+        self.assertEqual(cm.filename, __file__)
 
 
 if __name__ == "__main__":

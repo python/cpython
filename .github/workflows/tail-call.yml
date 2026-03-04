@@ -38,6 +38,7 @@ jobs:
 # Un-comment as we add support for more platforms for tail-calling interpreters.
 #          - i686-pc-windows-msvc/msvc
           - x86_64-pc-windows-msvc/msvc
+          - free-threading-msvc
 #          - aarch64-pc-windows-msvc/msvc
           - x86_64-apple-darwin/clang
           - aarch64-apple-darwin/clang
@@ -52,7 +53,10 @@ jobs:
 #            runner: windows-2022
           - target: x86_64-pc-windows-msvc/msvc
             architecture: x64
-            runner: windows-2022
+            runner: windows-2025-vs2026
+          - target: free-threading-msvc
+            architecture: x64
+            runner: windows-2025-vs2026
 #          - target: aarch64-pc-windows-msvc/msvc
 #            architecture: ARM64
 #            runner: windows-2022
@@ -72,33 +76,38 @@ jobs:
             architecture: x86_64
             runner: ubuntu-24.04
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v6
         with:
           persist-credentials: false
-      - uses: actions/setup-python@v5
+      - uses: actions/setup-python@v6
         with:
           python-version: '3.11'
 
-      - name: Native Windows (debug)
-        if: runner.os == 'Windows' && matrix.architecture != 'ARM64'
-        shell: cmd
+      - name: Native Windows MSVC (release)
+        if: runner.os == 'Windows' && matrix.architecture != 'ARM64' && matrix.target != 'free-threading-msvc'
+        shell: pwsh
         run: |
-          choco install llvm --allow-downgrade --no-progress --version ${{ matrix.llvm }}.1.0
-          set PlatformToolset=clangcl
-          set LLVMToolsVersion=${{ matrix.llvm }}.1.0
-          set LLVMInstallDir=C:\Program Files\LLVM
-          call ./PCbuild/build.bat --tail-call-interp -d -p ${{ matrix.architecture }}
-          call ./PCbuild/rt.bat -d -p ${{ matrix.architecture }} -q --multiprocess 0 --timeout 4500 --verbose2 --verbose3
+          $env:PlatformToolset = "v145"
+          ./PCbuild/build.bat --tail-call-interp -c Release -p ${{ matrix.architecture }}
+          ./PCbuild/rt.bat -p ${{ matrix.architecture }} -q --multiprocess 0 --timeout 4500 --verbose2 --verbose3
+
+        # No tests:
+      - name: Native Windows MSVC with free-threading (release)
+        if: matrix.target == 'free-threading-msvc'
+        shell: pwsh
+        run: |
+          $env:PlatformToolset = "v145"
+          ./PCbuild/build.bat --tail-call-interp --disable-gil -c Release -p ${{ matrix.architecture }}
 
       # No tests (yet):
-      - name: Emulated Windows (release)
+      - name: Emulated Windows Clang (release)
         if: runner.os == 'Windows' && matrix.architecture == 'ARM64'
-        shell: cmd
+        shell: pwsh
         run: |
           choco install llvm --allow-downgrade --no-progress --version ${{ matrix.llvm }}.1.0
-          set PlatformToolset=clangcl
-          set LLVMToolsVersion=${{ matrix.llvm }}.1.0
-          set LLVMInstallDir=C:\Program Files\LLVM
+          $env:PlatformToolset = "clangcl"
+          $env:LLVMToolsVersion = "${{ matrix.llvm }}.1.0"
+          $env:LLVMInstallDir = "C:\Program Files\LLVM"
           ./PCbuild/build.bat --tail-call-interp -p ${{ matrix.architecture }}
 
       - name: Native macOS (release)

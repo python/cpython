@@ -3,7 +3,7 @@
  * distribution.
  */
 #ifndef EXPAT_CONFIG_H
-#define EXPAT_CONFIG_H
+#define EXPAT_CONFIG_H 1
 
 #include <pyconfig.h>
 #ifdef WORDS_BIGENDIAN

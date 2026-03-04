@@ -269,12 +269,12 @@ class TestProgram(object):
             testRunner = self.testRunner
         self.result = testRunner.run(self.test)
         if self.exit:
-            if self.result.testsRun == 0 and len(self.result.skipped) == 0:
-                sys.exit(_NO_TESTS_EXITCODE)
-            elif self.result.wasSuccessful():
-                sys.exit(0)
-            else:
+            if not self.result.wasSuccessful():
                 sys.exit(1)
+            elif self.result.testsRun == 0 and len(self.result.skipped) == 0:
+                sys.exit(_NO_TESTS_EXITCODE)
+            else:
+                sys.exit(0)
 
 
 main = TestProgram

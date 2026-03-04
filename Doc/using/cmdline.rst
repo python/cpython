@@ -512,7 +512,7 @@ Miscellaneous options
    See :ref:`warning-filter` and :ref:`describing-warning-filters` for more
    details.
 
-   .. versionchanged:: next
+   .. versionchanged:: 3.15
       Added regular expression support for *message* and *module*.
 
 
@@ -989,7 +989,7 @@ conflict.
    See :ref:`warning-filter` and :ref:`describing-warning-filters` for more
    details.
 
-   .. versionchanged:: next
+   .. versionchanged:: 3.15
       Added regular expression support for *message* and *module*.
 
 
@@ -1085,6 +1085,27 @@ conflict.
    .. versionchanged:: 3.6
       This variable can now also be used on Python compiled in release mode.
       It now has no effect if set to an empty string.
+
+
+.. envvar:: PYTHON_PYMALLOC_HUGEPAGES
+
+   If set to a non-zero integer, enable huge page support for
+   :ref:`pymalloc <pymalloc>` arenas.  Set to ``0`` or unset to disable.
+   Python must be compiled with :option:`--with-pymalloc-hugepages` for this
+   variable to have any effect.
+
+   When enabled, arena allocation uses ``MAP_HUGETLB`` (Linux) or
+   ``MEM_LARGE_PAGES`` (Windows) with automatic fallback to regular pages if
+   huge pages are not available.
+
+   .. warning::
+
+      On Linux, if the huge-page pool is exhausted, page faults — including
+      copy-on-write faults triggered by :func:`os.fork` — deliver ``SIGBUS``
+      and kill the process.  Only enable this in environments where the
+      huge-page pool is properly sized and fork-safety is not a concern.
+
+   .. versionadded:: next
 
 
 .. envvar:: PYTHONLEGACYWINDOWSFSENCODING
@@ -1277,9 +1298,8 @@ conflict.
 .. envvar:: PYTHON_BASIC_REPL
 
    If this variable is set to any value, the interpreter will not attempt to
-   load the Python-based :term:`REPL` that requires :mod:`curses` and
-   :mod:`readline`, and will instead use the traditional parser-based
-   :term:`REPL`.
+   load the Python-based :term:`REPL` that requires :mod:`readline`, and will
+   instead use the traditional parser-based :term:`REPL`.
 
    .. versionadded:: 3.13
 

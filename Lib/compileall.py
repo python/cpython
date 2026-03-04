@@ -223,7 +223,7 @@ def compile_file(fullname, ddir=None, force=False, rx=None, quiet=0,
                     cfile = importlib.util.cache_from_source(fullname)
                     opt_cfiles[opt_level] = cfile
 
-        head, tail = name[:-3], name[-3:]
+        tail = name[-3:]
         if tail == '.py':
             if not force:
                 try:

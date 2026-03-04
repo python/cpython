@@ -1,2 +1,0 @@
-The types of :func:`select.poll` and :func:`select.epoll` objects are now
-immutable. Patch by Bénédikt Tran.

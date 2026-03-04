@@ -45,6 +45,7 @@ gmon.out
 .pytest_cache/
 .ruff_cache/
 .DS_Store
+.pixi/
 
 *.exe
 
@@ -135,7 +136,6 @@ Tools/unicode/data/
 /config.log
 /config.status
 /config.status.lineno
-# hendrikmuhs/ccache-action@v1
 /.ccache
 /cross-build/
 /jit_stencils*.h

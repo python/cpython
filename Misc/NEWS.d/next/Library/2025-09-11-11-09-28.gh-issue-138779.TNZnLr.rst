@@ -1,3 +1,0 @@
-Support device numbers larger than ``2**63-1`` for the
-:attr:`~os.stat_result.st_rdev` field of the :class:`os.stat_result`
-structure.

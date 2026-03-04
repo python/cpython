@@ -1,0 +1,2 @@
+Move ``classmethod`` and ``staticmethod`` initialization from ``__init__()``
+to ``__new__()``. Patch by Victor Stinner.

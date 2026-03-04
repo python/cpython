@@ -528,6 +528,21 @@ pytype_getmodulebydef(PyObject *self, PyObject *type)
     return Py_XNewRef(mod);
 }
 
+static PyObject *
+pytype_getmodulebytoken(PyObject *self, PyObject *args)
+{
+    PyObject *type;
+    PyObject *py_token;
+    if (!PyArg_ParseTuple(args, "OO", &type, &py_token)) {
+        return NULL;
+    }
+    void *token = PyLong_AsVoidPtr(py_token);
+    if ((!token) && PyErr_Occurred()) {
+        return NULL;
+    }
+    return PyType_GetModuleByToken((PyTypeObject *)type, token);
+}
+
 
 static PyMethodDef TestMethods[] = {
     {"pytype_fromspec_meta",    pytype_fromspec_meta,            METH_O},
@@ -546,6 +561,7 @@ static PyMethodDef TestMethods[] = {
     {"get_tp_token", get_tp_token, METH_O},
     {"pytype_getbasebytoken", pytype_getbasebytoken, METH_VARARGS},
     {"pytype_getmodulebydef", pytype_getmodulebydef, METH_O},
+    {"pytype_getmodulebytoken", pytype_getmodulebytoken, METH_VARARGS},
     {NULL},
 };
 

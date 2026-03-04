@@ -1,2 +1,0 @@
-Fix ``musl`` detection for :func:`platform.libc_ver` on Alpine Linux if
-compiled with --strip-all.

@@ -1,0 +1,2 @@
+:func:`struct.pack_into` now raises OverflowError instead of IndexError for
+too large *offset* argument.

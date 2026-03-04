@@ -423,9 +423,6 @@ _opcode_exec(PyObject *m) {
     if (PyModule_AddIntMacro(m, ENABLE_SPECIALIZATION) < 0) {
         return -1;
     }
-    if (PyModule_AddIntMacro(m, ENABLE_SPECIALIZATION_FT) < 0) {
-        return -1;
-    }
     return 0;
 }
 

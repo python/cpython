@@ -13,11 +13,11 @@
 
 --------------
 
-:mod:`unittest.mock` is a library for testing in Python. It allows you to
+:mod:`!unittest.mock` is a library for testing in Python. It allows you to
 replace parts of your system under test with mock objects and make assertions
 about how they have been used.
 
-:mod:`unittest.mock` provides a core :class:`Mock` class removing the need to
+:mod:`!unittest.mock` provides a core :class:`Mock` class removing the need to
 create a host of stubs throughout your test suite. After performing an
 action, you can make assertions about which methods / attributes were used
 and arguments they were called with. You can also specify return values and
@@ -33,7 +33,7 @@ Mock is designed for use with :mod:`unittest` and
 is based on the 'action -> assertion' pattern instead of 'record -> replay'
 used by many mocking frameworks.
 
-There is a backport of :mod:`unittest.mock` for earlier versions of Python,
+There is a backport of :mod:`!unittest.mock` for earlier versions of Python,
 available as :pypi:`mock` on PyPI.
 
 
@@ -2638,7 +2638,7 @@ unit tests. Testing everything in isolation is all fine and dandy, but if you
 don't test how your units are "wired together" there is still lots of room
 for bugs that tests might have caught.
 
-:mod:`unittest.mock` already provides a feature to help with this, called speccing. If you
+:mod:`!unittest.mock` already provides a feature to help with this, called speccing. If you
 use a class or instance as the :attr:`!spec` for a mock then you can only access
 attributes on the mock that exist on the real class:
 

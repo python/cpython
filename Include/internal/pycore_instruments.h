@@ -67,8 +67,8 @@ _Py_call_instrumentation_exc2(PyThreadState *tstate, int event,
 extern int
 _Py_Instrumentation_GetLine(PyCodeObject *code, int index);
 
-extern PyObject _PyInstrumentation_MISSING;
-extern PyObject _PyInstrumentation_DISABLE;
+PyAPI_DATA(PyObject) _PyInstrumentation_MISSING;
+PyAPI_DATA(PyObject) _PyInstrumentation_DISABLE;
 
 
 /* Total tool ids available */

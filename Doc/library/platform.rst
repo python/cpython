@@ -357,7 +357,7 @@ Android platform
 Command-line usage
 ------------------
 
-:mod:`platform` can also be invoked directly using the :option:`-m`
+:mod:`!platform` can also be invoked directly using the :option:`-m`
 switch of the interpreter::
 
    python -m platform [--terse] [--nonaliased] [{nonaliased,terse} ...]

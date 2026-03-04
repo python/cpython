@@ -107,6 +107,46 @@ header files properly declare the entry points to be ``extern "C"``. As a result
 there is no need to do anything special to use the API from C++.
 
 
+.. _capi-system-includes:
+
+System includes
+---------------
+
+   :file:`Python.h` includes several standard header files.
+   C extensions should include the standard headers that they use,
+   and should not rely on these implicit includes.
+   The implicit includes are:
+
+   * ``<assert.h>``
+   * ``<intrin.h>`` (on Windows)
+   * ``<inttypes.h>``
+   * ``<limits.h>``
+   * ``<math.h>``
+   * ``<stdarg.h>``
+   * ``<wchar.h>``
+   * ``<sys/types.h>`` (if present)
+
+   The following are included for backwards compatibility, unless using
+   :ref:`Limited API <limited-c-api>` 3.13 or newer:
+
+   * ``<ctype.h>``
+   * ``<unistd.h>`` (on POSIX)
+
+   The following are included for backwards compatibility, unless using
+   :ref:`Limited API <limited-c-api>` 3.11 or newer:
+
+   * ``<errno.h>``
+   * ``<stdio.h>``
+   * ``<stdlib.h>``
+   * ``<string.h>``
+
+.. note::
+
+   Since Python may define some pre-processor definitions which affect the standard
+   headers on some systems, you *must* include :file:`Python.h` before any standard
+   headers are included.
+
+
 Useful macros
 =============
 
@@ -116,17 +156,278 @@ defined closer to where they are useful (for example, :c:macro:`Py_RETURN_NONE`,
 Others of a more general utility are defined here.  This is not necessarily a
 complete listing.
 
+.. c:macro:: Py_CAN_START_THREADS
+
+   If this macro is defined, then the current system is able to start threads.
+
+   Currently, all systems supported by CPython (per :pep:`11`), with the
+   exception of some WebAssembly platforms, support starting threads.
+
+   .. versionadded:: 3.13
+
+.. c:macro:: Py_GETENV(s)
+
+   Like :samp:`getenv({s})`, but returns ``NULL`` if :option:`-E` was passed
+   on the command line (see :c:member:`PyConfig.use_environment`).
+
+
+Docstring macros
+----------------
+
+.. c:macro:: PyDoc_STRVAR(name, str)
+
+   Creates a variable with name *name* that can be used in docstrings.
+   If Python is built without docstrings (:option:`--without-doc-strings`),
+   the value will be an empty string.
+
+   Example::
+
+      PyDoc_STRVAR(pop_doc, "Remove and return the rightmost element.");
+
+      static PyMethodDef deque_methods[] = {
+          // ...
+          {"pop", (PyCFunction)deque_pop, METH_NOARGS, pop_doc},
+          // ...
+      }
+
+   Expands to :samp:`PyDoc_VAR({name}) = PyDoc_STR({str})`.
+
+.. c:macro:: PyDoc_STR(str)
+
+   Expands to the given input string, or an empty string
+   if docstrings are disabled (:option:`--without-doc-strings`).
+
+   Example::
+
+      static PyMethodDef pysqlite_row_methods[] = {
+          {"keys", (PyCFunction)pysqlite_row_keys, METH_NOARGS,
+              PyDoc_STR("Returns the keys of the row.")},
+          {NULL, NULL}
+      };
+
+.. c:macro:: PyDoc_VAR(name)
+
+   Declares a static character array variable with the given *name*.
+   Expands to :samp:`static const char {name}[]`
+
+   For example::
+
+      PyDoc_VAR(python_doc) = PyDoc_STR(
+         "A genus of constricting snakes in the Pythonidae family native "
+         "to the tropics and subtropics of the Eastern Hemisphere.");
+
+
+General utility macros
+----------------------
+
+The following macros common tasks not specific to Python.
+
+.. c:macro:: Py_UNUSED(arg)
+
+   Use this for unused arguments in a function definition to silence compiler
+   warnings. Example: ``int func(int a, int Py_UNUSED(b)) { return a; }``.
+
+   .. versionadded:: 3.4
+
+.. c:macro:: Py_GCC_ATTRIBUTE(name)
+
+   Use a GCC attribute *name*, hiding it from compilers that don't support GCC
+   attributes (such as MSVC).
+
+   This expands to :samp:`__attribute__(({name)})` on a GCC compiler,
+   and expands to nothing on compilers that don't support GCC attributes.
+
+
+Numeric utilities
+^^^^^^^^^^^^^^^^^
 
 .. c:macro:: Py_ABS(x)
 
    Return the absolute value of ``x``.
 
+   The argument may be evaluated more than once.
+   Consequently, do not pass an expression with side-effects directly
+   to this macro.
+
+   If the result cannot be represented (for example, if ``x`` has
+   :c:macro:`!INT_MIN` value for :c:expr:`int` type), the behavior is
+   undefined.
+
+   Corresponds roughly to :samp:`(({x}) < 0 ? -({x}) : ({x}))`
+
    .. versionadded:: 3.3
+
+.. c:macro:: Py_MAX(x, y)
+             Py_MIN(x, y)
+
+   Return the larger or smaller of the arguments, respectively.
+
+   Any arguments may be evaluated more than once.
+   Consequently, do not pass an expression with side-effects directly
+   to this macro.
+
+   :c:macro:`!Py_MAX` corresponds roughly to
+   :samp:`((({x}) > ({y})) ? ({x}) : ({y}))`.
+
+   .. versionadded:: 3.3
+
+.. c:macro:: Py_ARITHMETIC_RIGHT_SHIFT(type, integer, positions)
+
+   Similar to :samp:`{integer} >> {positions}`, but forces sign extension,
+   as the C standard does not define whether a right-shift of a signed
+   integer will perform sign extension or a zero-fill.
+
+   *integer* should be any signed integer type.
+   *positions* is the number of positions to shift to the right.
+
+   Both *integer* and *positions* can be evaluated more than once;
+   consequently, avoid directly passing a function call or some other
+   operation with side-effects to this macro. Instead, store the result as a
+   variable and then pass it.
+
+   *type* is unused and only kept for backwards compatibility. Historically,
+   *type* was used to cast *integer*.
+
+   .. versionchanged:: 3.1
+
+      This macro is now valid for all signed integer types, not just those for
+      which ``unsigned type`` is legal. As a result, *type* is no longer
+      used.
+
+.. c:macro:: Py_CHARMASK(c)
+
+   Argument must be a character or an integer in the range [-128, 127] or [0,
+   255].  This macro returns ``c`` cast to an ``unsigned char``.
+
+
+Assertion utilities
+^^^^^^^^^^^^^^^^^^^
+
+.. c:macro:: Py_UNREACHABLE()
+
+   Use this when you have a code path that cannot be reached by design.
+   For example, in the ``default:`` clause in a ``switch`` statement for which
+   all possible values are covered in ``case`` statements.  Use this in places
+   where you might be tempted to put an ``assert(0)`` or ``abort()`` call.
+
+   In release mode, the macro helps the compiler to optimize the code, and
+   avoids a warning about unreachable code.  For example, the macro is
+   implemented with ``__builtin_unreachable()`` on GCC in release mode.
+
+   In debug mode, and on unsupported compilers, the macro expands to a call to
+   :c:func:`Py_FatalError`.
+
+   A use for ``Py_UNREACHABLE()`` is following a call a function that
+   never returns but that is not declared ``_Noreturn``.
+
+   If a code path is very unlikely code but can be reached under exceptional
+   case, this macro must not be used.  For example, under low memory condition
+   or if a system call returns a value out of the expected range.  In this
+   case, it's better to report the error to the caller.  If the error cannot
+   be reported to caller, :c:func:`Py_FatalError` can be used.
+
+   .. versionadded:: 3.7
+
+.. c:macro:: Py_SAFE_DOWNCAST(value, larger, smaller)
+
+   Cast *value* to type *smaller* from type *larger*, validating that no
+   information was lost.
+
+   On release builds of Python, this is roughly equivalent to
+   :samp:`(({smaller}) {value})`
+   (in C++, :samp:`static_cast<{smaller}>({value})` will be used instead).
+
+   On debug builds (implying that :c:macro:`Py_DEBUG` is defined), this asserts
+   that no information was lost with the cast from *larger* to *smaller*.
+
+   *value*, *larger*, and *smaller* may all be evaluated more than once in the
+   expression; consequently, do not pass an expression with side-effects
+   directly to this macro.
+
+.. c:macro:: Py_BUILD_ASSERT(cond)
+
+   Asserts a compile-time condition *cond*, as a statement.
+   The build will fail if the condition is false or cannot be evaluated at compile time.
+
+   Corresponds roughly to :samp:`static_assert({cond})` on C23 and above.
+
+   For example::
+
+      Py_BUILD_ASSERT(sizeof(PyTime_t) == sizeof(int64_t));
+
+   .. versionadded:: 3.3
+
+.. c:macro:: Py_BUILD_ASSERT_EXPR(cond)
+
+   Asserts a compile-time condition *cond*, as an expression that evaluates to ``0``.
+   The build will fail if the condition is false or cannot be evaluated at compile time.
+
+   For example::
+
+      #define foo_to_char(foo) \
+          ((char *)(foo) + Py_BUILD_ASSERT_EXPR(offsetof(struct foo, string) == 0))
+
+   .. versionadded:: 3.3
+
+
+Type size utilities
+^^^^^^^^^^^^^^^^^^^
+
+.. c:macro:: Py_ARRAY_LENGTH(array)
+
+   Compute the length of a statically allocated C array at compile time.
+
+   The *array* argument must be a C array with a size known at compile time.
+   Passing an array with an unknown size, such as a heap-allocated array,
+   will result in a compilation error on some compilers, or otherwise produce
+   incorrect results.
+
+   This is roughly equivalent to::
+
+      sizeof(array) / sizeof((array)[0])
+
+.. c:macro:: Py_MEMBER_SIZE(type, member)
+
+   Return the size of a structure (*type*) *member* in bytes.
+
+   Corresponds roughly to :samp:`sizeof((({type} *)NULL)->{member})`.
+
+   .. versionadded:: 3.6
+
+
+Macro definition utilities
+^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+.. c:macro:: Py_FORCE_EXPANSION(X)
+
+   This is equivalent to :samp:`{X}`, which is useful for token-pasting in
+   macros, as macro expansions in *X* are forcefully evaluated by the
+   preprocessor.
+
+.. c:macro:: Py_STRINGIFY(x)
+
+   Convert ``x`` to a C string.  For example, ``Py_STRINGIFY(123)`` returns
+   ``"123"``.
+
+   .. versionadded:: 3.4
+
+
+Declaration utilities
+---------------------
+
+The following macros can be used in declarations.
+They are most useful for defining the C API itself, and have limited use
+for extension authors.
+Most of them expand to compiler-specific spellings of common extensions
+to the C language.
 
 .. c:macro:: Py_ALWAYS_INLINE
 
    Ask the compiler to always inline a static inline function. The compiler can
    ignore it and decide to not inline the function.
+
+   Corresponds to ``always_inline`` attribute in GCC and ``__forceinline``
+   in MSVC.
 
    It can be used to inline performance critical static inline functions when
    building Python in debug mode with function inlining disabled. For example,
@@ -145,15 +446,24 @@ complete listing.
 
    .. versionadded:: 3.11
 
-.. c:macro:: Py_CHARMASK(c)
+.. c:macro:: Py_NO_INLINE
 
-   Argument must be a character or an integer in the range [-128, 127] or [0,
-   255].  This macro returns ``c`` cast to an ``unsigned char``.
+   Disable inlining on a function. For example, it reduces the C stack
+   consumption: useful on LTO+PGO builds which heavily inline code (see
+   :issue:`33720`).
+
+   Corresponds to the ``noinline`` attribute/specification on GCC and MSVC.
+
+   Usage::
+
+       Py_NO_INLINE static int random(void) { return 4; }
+
+   .. versionadded:: 3.11
 
 .. c:macro:: Py_DEPRECATED(version)
 
-   Use this for deprecated declarations.  The macro must be placed before the
-   symbol name.
+   Use this to declare APIs that were deprecated in a specific CPython version.
+   The macro must be placed before the symbol name.
 
    Example::
 
@@ -162,110 +472,97 @@ complete listing.
    .. versionchanged:: 3.8
       MSVC support was added.
 
-.. c:macro:: Py_GETENV(s)
+.. c:macro:: Py_LOCAL(type)
 
-   Like ``getenv(s)``, but returns ``NULL`` if :option:`-E` was passed on the
-   command line (see :c:member:`PyConfig.use_environment`).
+   Declare a function returning the specified *type* using a fast-calling
+   qualifier for functions that are local to the current file.
+   Semantically, this is equivalent to :samp:`static {type}`.
 
-.. c:macro:: Py_MAX(x, y)
+.. c:macro:: Py_LOCAL_INLINE(type)
 
-   Return the maximum value between ``x`` and ``y``.
+   Equivalent to :c:macro:`Py_LOCAL` but additionally requests the function
+   be inlined.
 
-   .. versionadded:: 3.3
+.. c:macro:: Py_LOCAL_SYMBOL
 
-.. c:macro:: Py_MEMBER_SIZE(type, member)
+   Macro used to declare a symbol as local to the shared library (hidden).
+   On supported platforms, it ensures the symbol is not exported.
 
-   Return the size of a structure (``type``) ``member`` in bytes.
+   On compatible versions of GCC/Clang, it
+   expands to ``__attribute__((visibility("hidden")))``.
 
-   .. versionadded:: 3.6
+.. c:macro:: Py_EXPORTED_SYMBOL
 
-.. c:macro:: Py_MIN(x, y)
+   Macro used to declare a symbol (function or data) as exported.
+   On Windows, this expands to ``__declspec(dllexport)``.
+   On compatible versions of GCC/Clang, it
+   expands to ``__attribute__((visibility("default")))``.
+   This macro is for defining the C API itself; extension modules should not use it.
 
-   Return the minimum value between ``x`` and ``y``.
 
-   .. versionadded:: 3.3
+.. c:macro:: Py_IMPORTED_SYMBOL
 
-.. c:macro:: Py_NO_INLINE
+   Macro used to declare a symbol as imported.
+   On Windows, this expands to ``__declspec(dllimport)``.
+   This macro is for defining the C API itself; extension modules should not use it.
 
-   Disable inlining on a function. For example, it reduces the C stack
-   consumption: useful on LTO+PGO builds which heavily inline code (see
-   :issue:`33720`).
 
-   Usage::
+.. c:macro:: PyAPI_FUNC(type)
 
-       Py_NO_INLINE static int random(void) { return 4; }
+   Macro used by CPython to declare a function as part of the C API.
+   Its expansion depends on the platform and build configuration.
+   This macro is intended for defining CPython's C API itself;
+   extension modules should not use it for their own symbols.
 
-   .. versionadded:: 3.11
 
-.. c:macro:: Py_STRINGIFY(x)
+.. c:macro:: PyAPI_DATA(type)
 
-   Convert ``x`` to a C string.  E.g. ``Py_STRINGIFY(123)`` returns
-   ``"123"``.
+   Macro used by CPython to declare a public global variable as part of the C API.
+   Its expansion depends on the platform and build configuration.
+   This macro is intended for defining CPython's C API itself;
+   extension modules should not use it for their own symbols.
 
-   .. versionadded:: 3.4
 
-.. c:macro:: Py_UNREACHABLE()
+Outdated macros
+---------------
 
-   Use this when you have a code path that cannot be reached by design.
-   For example, in the ``default:`` clause in a ``switch`` statement for which
-   all possible values are covered in ``case`` statements.  Use this in places
-   where you might be tempted to put an ``assert(0)`` or ``abort()`` call.
+The following macros have been used to features that have been standardized
+in C11.
 
-   In release mode, the macro helps the compiler to optimize the code, and
-   avoids a warning about unreachable code.  For example, the macro is
-   implemented with ``__builtin_unreachable()`` on GCC in release mode.
+.. c:macro:: Py_ALIGNED(num)
 
-   A use for ``Py_UNREACHABLE()`` is following a call a function that
-   never returns but that is not declared :c:macro:`_Py_NO_RETURN`.
+   Specify alignment to *num* bytes on compilers that support it.
 
-   If a code path is very unlikely code but can be reached under exceptional
-   case, this macro must not be used.  For example, under low memory condition
-   or if a system call returns a value out of the expected range.  In this
-   case, it's better to report the error to the caller.  If the error cannot
-   be reported to caller, :c:func:`Py_FatalError` can be used.
+   Consider using the C11 standard ``_Alignas`` specifier over this macro.
 
-   .. versionadded:: 3.7
+.. c:macro:: Py_LL(number)
+             Py_ULL(number)
 
-.. c:macro:: Py_UNUSED(arg)
+   Use *number* as a ``long long`` or ``unsigned long long`` integer literal,
+   respectively.
 
-   Use this for unused arguments in a function definition to silence compiler
-   warnings. Example: ``int func(int a, int Py_UNUSED(b)) { return a; }``.
+   Expands to *number* followed by ``LL`` or ``LLU``, respectively, but will
+   expand to some compiler-specific suffixes on some older compilers.
 
-   .. versionadded:: 3.4
+   Consider using the C99 standard suffixes ``LL`` and ``LLU`` directly.
 
-.. c:macro:: PyDoc_STRVAR(name, str)
+.. c:macro:: Py_MEMCPY(dest, src, n)
 
-   Creates a variable with name ``name`` that can be used in docstrings.
-   If Python is built without docstrings, the value will be empty.
+   This is a :term:`soft deprecated` alias to :c:func:`!memcpy`.
+   Use :c:func:`!memcpy` directly instead.
 
-   Use :c:macro:`PyDoc_STRVAR` for docstrings to support building
-   Python without docstrings, as specified in :pep:`7`.
+   .. deprecated:: 3.14
+      The macro is :term:`soft deprecated`.
 
-   Example::
+.. c:macro:: Py_VA_COPY
 
-      PyDoc_STRVAR(pop_doc, "Remove and return the rightmost element.");
+   This is a :term:`soft deprecated` alias to the C99-standard ``va_copy``
+   function.
 
-      static PyMethodDef deque_methods[] = {
-          // ...
-          {"pop", (PyCFunction)deque_pop, METH_NOARGS, pop_doc},
-          // ...
-      }
+   Historically, this would use a compiler-specific method to copy a ``va_list``.
 
-.. c:macro:: PyDoc_STR(str)
-
-   Creates a docstring for the given input string or an empty string
-   if docstrings are disabled.
-
-   Use :c:macro:`PyDoc_STR` in specifying docstrings to support
-   building Python without docstrings, as specified in :pep:`7`.
-
-   Example::
-
-      static PyMethodDef pysqlite_row_methods[] = {
-          {"keys", (PyCFunction)pysqlite_row_keys, METH_NOARGS,
-              PyDoc_STR("Returns the keys of the row.")},
-          {NULL, NULL}
-      };
+   .. versionchanged:: 3.6
+      This is now an alias to ``va_copy``.
 
 
 .. _api-objects:

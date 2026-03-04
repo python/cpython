@@ -1,3 +1,0 @@
-Check consistency of the zip64 end of central directory record. Support
-records with "zip64 extensible data" if there are no bytes prepended to the
-ZIP file.

@@ -131,6 +131,7 @@ REMOTE_HOST = "self-signed.pythontest.net"
 EMPTYCERT = data_file("nullcert.pem")
 BADCERT = data_file("badcert.pem")
 NONEXISTINGCERT = data_file("XXXnonexisting.pem")
+NONEXISTINGKEY = data_file("XXXnonexistingkey.pem")
 BADKEY = data_file("badkey.pem")
 NOKIACERT = data_file("nokia.pem")
 NULLBYTECERT = data_file("nullbytecert.pem")
@@ -1229,6 +1230,11 @@ class ContextTests(unittest.TestCase):
         with self.assertRaises(OSError) as cm:
             ctx.load_cert_chain(NONEXISTINGCERT)
         self.assertEqual(cm.exception.errno, errno.ENOENT)
+        self.assertEqual(cm.exception.filename, NONEXISTINGCERT)
+        with self.assertRaises(OSError) as cm:
+            ctx.load_cert_chain(CERTFILE, keyfile=NONEXISTINGKEY)
+        self.assertEqual(cm.exception.errno, errno.ENOENT)
+        self.assertEqual(cm.exception.filename, NONEXISTINGKEY)
         with self.assertRaisesRegex(ssl.SSLError, "PEM (lib|routines)"):
             ctx.load_cert_chain(BADCERT)
         with self.assertRaisesRegex(ssl.SSLError, "PEM (lib|routines)"):
@@ -5277,6 +5283,20 @@ class TestSSLDebug(unittest.TestCase):
         with self.assertRaises(TypeError):
             client_context._msg_callback = object()
 
+    def test_msg_callback_exception(self):
+        client_context, server_context, hostname = testing_context()
+
+        def msg_cb(conn, direction, version, content_type, msg_type, data):
+            raise RuntimeError("msg_cb exception")
+
+        client_context._msg_callback = msg_cb
+        server = ThreadedEchoServer(context=server_context, chatty=False)
+        with server:
+            with client_context.wrap_socket(socket.socket(),
+                                            server_hostname=hostname) as s:
+                with self.assertRaisesRegex(RuntimeError, "msg_cb exception"):
+                    s.connect((HOST, server.port))
+
     def test_msg_callback_tls12(self):
         client_context, server_context, hostname = testing_context()
         client_context.maximum_version = ssl.TLSVersion.TLSv1_2
@@ -5613,7 +5633,7 @@ class TestEnumerations(unittest.TestCase):
         class Checked_TLSAlertType(enum.IntEnum):
             """Alert types for TLSContentType.ALERT messages
 
-            See RFC 8466, section B.2
+            See RFC 8446, section B.2
             """
             CLOSE_NOTIFY = 0
             UNEXPECTED_MESSAGE = 10
