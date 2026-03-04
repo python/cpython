@@ -744,6 +744,10 @@ functools
   callables.
   (Contributed by Serhiy Storchaka in :gh:`140873`.)
 
+* :func:`~functools.singledispatchmethod` now dispatches on the second argument
+  if it wraps a regular method and is called as a class attribute.
+  (Contributed by Bartosz Sławecki in :gh:`143535`.)
+
 
 hashlib
 -------
@@ -1054,6 +1058,11 @@ tkinter
   in Tk 8.6) instead of :meth:`!*_slaves` methods which use Tk commands
   with outdated names.
   (Contributed by Serhiy Storchaka in :gh:`143754`.)
+
+* Added :class:`!Event` attributes :attr:`!user_data` for Tk virtual events
+  and :attr:`!detail` for ``Enter``, ``Leave``, ``FocusIn``, ``FocusOut``,
+  and ``ConfigureRequest`` events.
+  (Contributed by Matthias Kievernagel and Serhiy Storchaka in :gh:`47655`.)
 
 
 .. _whatsnew315-tomllib-1-1-0:
@@ -1422,6 +1431,25 @@ threading
 typing
 ------
 
+* :pep:`747`: Add :data:`~typing.TypeForm`, a new special form for annotating
+  values that are themselves type expressions.
+  ``TypeForm[T]`` means "a type form object describing ``T`` (or a type
+  assignable to ``T``)". At runtime, ``TypeForm(x)`` simply returns ``x``,
+  which allows explicit annotation of type-form values without changing
+  behavior.
+
+  This helps libraries that accept user-provided type expressions
+  (for example ``int``, ``str | None``, :class:`~typing.TypedDict`
+  classes, or ``list[int]``) expose precise signatures:
+
+  .. code-block:: python
+
+     from typing import Any, TypeForm
+
+     def cast[T](typ: TypeForm[T], value: Any) -> T: ...
+
+  (Contributed by Jelle Zijlstra in :gh:`145033`.)
+
 * The undocumented keyword argument syntax for creating
   :class:`~typing.NamedTuple` classes (for example,
   ``Point = NamedTuple("Point", x=int, y=int)``) is no longer supported.
@@ -1540,6 +1568,7 @@ New deprecations
     - :mod:`re`
     - :mod:`socketserver`
     - :mod:`tabnanny`
+    - :mod:`tarfile`
     - :mod:`tkinter.font`
     - :mod:`tkinter.ttk`
     - :mod:`wsgiref.simple_server`
@@ -1634,6 +1663,10 @@ New features
 
 * Add :c:func:`PyUnstable_SetImmortal` C-API function to mark objects as :term:`immortal`.
   (Contributed by Kumar Aditya in :gh:`143300`.)
+
+* Restore private provisional ``_Py_InitializeMain()`` function removed in
+  Python 3.14.
+  (Contributed by Victor Stinner in :gh:`142417`.)
 
 Changed C APIs
 --------------

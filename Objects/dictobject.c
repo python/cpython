@@ -896,24 +896,20 @@ free_values(PyDictValues *values, bool use_qsbr)
     PyMem_Free(values);
 }
 
-/* Consumes a reference to the keys object */
-static PyObject *
-new_dict(PyDictKeysObject *keys, PyDictValues *values,
-         Py_ssize_t used, int free_values_on_failure)
+static inline PyObject *
+new_dict_impl(PyDictObject *mp, PyDictKeysObject *keys,
+              PyDictValues *values, Py_ssize_t used,
+              int free_values_on_failure)
 {
     assert(keys != NULL);
-    PyDictObject *mp = _Py_FREELIST_POP(PyDictObject, dicts);
     if (mp == NULL) {
-        mp = PyObject_GC_New(PyDictObject, &PyDict_Type);
-        if (mp == NULL) {
-            dictkeys_decref(keys, false);
-            if (free_values_on_failure) {
-                free_values(values, false);
-            }
-            return NULL;
+        dictkeys_decref(keys, false);
+        if (free_values_on_failure) {
+            free_values(values, false);
         }
+        return NULL;
     }
-    assert(Py_IS_TYPE(mp, &PyDict_Type));
+
     mp->ma_keys = keys;
     mp->ma_values = values;
     mp->ma_used = used;
@@ -921,6 +917,29 @@ new_dict(PyDictKeysObject *keys, PyDictValues *values,
     ASSERT_CONSISTENT(mp);
     _PyObject_GC_TRACK(mp);
     return (PyObject *)mp;
+}
+
+/* Consumes a reference to the keys object */
+static PyObject *
+new_dict(PyDictKeysObject *keys, PyDictValues *values,
+         Py_ssize_t used, int free_values_on_failure)
+{
+    PyDictObject *mp = _Py_FREELIST_POP(PyDictObject, dicts);
+    if (mp == NULL) {
+        mp = PyObject_GC_New(PyDictObject, &PyDict_Type);
+    }
+    assert(mp == NULL || Py_IS_TYPE(mp, &PyDict_Type));
+
+    return new_dict_impl(mp, keys, values, used, free_values_on_failure);
+}
+
+/* Consumes a reference to the keys object */
+static PyObject *
+new_frozendict(PyDictKeysObject *keys, PyDictValues *values,
+               Py_ssize_t used, int free_values_on_failure)
+{
+    PyDictObject *mp = PyObject_GC_New(PyDictObject, &PyFrozenDict_Type);
+    return new_dict_impl(mp, keys, values, used, free_values_on_failure);
 }
 
 static PyObject *
@@ -2970,6 +2989,21 @@ _PyDict_DelItemIf(PyObject *op, PyObject *key,
 }
 
 static void
+clear_embedded_values(PyDictValues *values, Py_ssize_t nentries)
+{
+    PyObject *refs[SHARED_KEYS_MAX_SIZE];
+    assert(nentries <= SHARED_KEYS_MAX_SIZE);
+    for (Py_ssize_t i = 0; i < nentries; i++) {
+        refs[i] = values->values[i];
+        values->values[i] = NULL;
+    }
+    values->size = 0;
+    for (Py_ssize_t i = 0; i < nentries; i++) {
+        Py_XDECREF(refs[i]);
+    }
+}
+
+static void
 clear_lock_held(PyObject *op)
 {
     if (!PyDict_Check(op)) {
@@ -2997,20 +3031,18 @@ clear_lock_held(PyObject *op)
         assert(oldkeys->dk_refcnt == 1);
         dictkeys_decref(oldkeys, IS_DICT_SHARED(mp));
     }
+    else if (oldvalues->embedded) {
+        clear_embedded_values(oldvalues, oldkeys->dk_nentries);
+    }
     else {
+        set_values(mp, NULL);
+        set_keys(mp, Py_EMPTY_KEYS);
         n = oldkeys->dk_nentries;
         for (i = 0; i < n; i++) {
             Py_CLEAR(oldvalues->values[i]);
         }
-        if (oldvalues->embedded) {
-            oldvalues->size = 0;
-        }
-        else {
-            set_values(mp, NULL);
-            set_keys(mp, Py_EMPTY_KEYS);
-            free_values(oldvalues, IS_DICT_SHARED(mp));
-            dictkeys_decref(oldkeys, false);
-        }
+        free_values(oldvalues, IS_DICT_SHARED(mp));
+        dictkeys_decref(oldkeys, false);
     }
     ASSERT_CONSISTENT(mp);
 }
@@ -4222,9 +4254,6 @@ static PyObject *
 dict_copy_impl(PyDictObject *self)
 /*[clinic end generated code: output=ffb782cf970a5c39 input=73935f042b639de4]*/
 {
-    if (PyFrozenDict_CheckExact(self)) {
-        return Py_NewRef(self);
-    }
     return PyDict_Copy((PyObject *)self);
 }
 
@@ -4250,18 +4279,17 @@ copy_values(PyDictValues *values)
 }
 
 static PyObject *
-copy_lock_held(PyObject *o)
+copy_lock_held(PyObject *o, int as_frozendict)
 {
     PyObject *copy;
     PyDictObject *mp;
-    int frozendict = PyFrozenDict_Check(o);
 
     ASSERT_DICT_LOCKED(o);
 
     mp = (PyDictObject *)o;
     if (mp->ma_used == 0) {
         /* The dict is empty; just return a new dict. */
-        if (frozendict) {
+        if (as_frozendict) {
             return PyFrozenDict_New(NULL);
         }
         else {
@@ -4275,7 +4303,7 @@ copy_lock_held(PyObject *o)
         if (newvalues == NULL) {
             return PyErr_NoMemory();
         }
-        if (frozendict) {
+        if (as_frozendict) {
             split_copy = (PyDictObject *)PyObject_GC_New(PyFrozenDictObject,
                                                          &PyFrozenDict_Type);
         }
@@ -4294,7 +4322,7 @@ copy_lock_held(PyObject *o)
         split_copy->ma_used = mp->ma_used;
         split_copy->_ma_watcher_tag = 0;
         dictkeys_incref(mp->ma_keys);
-        if (frozendict) {
+        if (as_frozendict) {
             PyFrozenDictObject *frozen = (PyFrozenDictObject *)split_copy;
             frozen->ma_hash = -1;
         }
@@ -4304,8 +4332,7 @@ copy_lock_held(PyObject *o)
 
     if (Py_TYPE(mp)->tp_iter == dict_iter &&
             mp->ma_values == NULL &&
-            (mp->ma_used >= (mp->ma_keys->dk_nentries * 2) / 3) &&
-            !frozendict)
+            (mp->ma_used >= (mp->ma_keys->dk_nentries * 2) / 3))
     {
         /* Use fast-copy if:
 
@@ -4325,9 +4352,15 @@ copy_lock_held(PyObject *o)
         if (keys == NULL) {
             return NULL;
         }
-        PyDictObject *new = (PyDictObject *)new_dict(keys, NULL, 0, 0);
+        PyDictObject *new;
+        if (as_frozendict) {
+            new = (PyDictObject *)new_frozendict(keys, NULL, 0, 0);
+        }
+        else {
+            new = (PyDictObject *)new_dict(keys, NULL, 0, 0);
+        }
         if (new == NULL) {
-            /* In case of an error, `new_dict()` takes care of
+            /* In case of an error, new_dict()/new_frozendict() takes care of
                cleaning up `keys`. */
             return NULL;
         }
@@ -4337,7 +4370,7 @@ copy_lock_held(PyObject *o)
         return (PyObject *)new;
     }
 
-    if (frozendict) {
+    if (as_frozendict) {
         copy = PyFrozenDict_New(NULL);
     }
     else {
@@ -4351,6 +4384,19 @@ copy_lock_held(PyObject *o)
     return NULL;
 }
 
+// Similar to PyDict_Copy(), but copy also frozendict.
+static PyObject *
+_PyDict_Copy(PyObject *o)
+{
+    assert(PyAnyDict_Check(o));
+
+    PyObject *res;
+    Py_BEGIN_CRITICAL_SECTION(o);
+    res = copy_lock_held(o, PyFrozenDict_Check(o));
+    Py_END_CRITICAL_SECTION();
+    return res;
+}
+
 PyObject *
 PyDict_Copy(PyObject *o)
 {
@@ -4359,11 +4405,22 @@ PyDict_Copy(PyObject *o)
         return NULL;
     }
 
+    if (PyFrozenDict_CheckExact(o)) {
+        return Py_NewRef(o);
+    }
+
+    return _PyDict_Copy(o);
+}
+
+// Similar to PyDict_Copy(), but return a dict if the argument is a frozendict.
+PyObject*
+_PyDict_CopyAsDict(PyObject *o)
+{
+    assert(PyAnyDict_Check(o));
+
     PyObject *res;
     Py_BEGIN_CRITICAL_SECTION(o);
-
-    res = copy_lock_held(o);
-
+    res = copy_lock_held(o, 0);
     Py_END_CRITICAL_SECTION();
     return res;
 }
@@ -4812,10 +4869,8 @@ dict_traverse(PyObject *op, visitproc visit, void *arg)
 
     if (DK_IS_UNICODE(keys)) {
         if (_PyDict_HasSplitTable(mp)) {
-            if (!mp->ma_values->embedded) {
-                for (i = 0; i < n; i++) {
-                    Py_VISIT(mp->ma_values->values[i]);
-                }
+            for (i = 0; i < n; i++) {
+                Py_VISIT(mp->ma_values->values[i]);
             }
         }
         else {
@@ -4914,7 +4969,7 @@ dict_or(PyObject *self, PyObject *other)
     if (!PyAnyDict_Check(self) || !PyAnyDict_Check(other)) {
         Py_RETURN_NOTIMPLEMENTED;
     }
-    PyObject *new = PyDict_Copy(self);
+    PyObject *new = _PyDict_Copy(self);
     if (new == NULL) {
         return NULL;
     }
@@ -6468,7 +6523,7 @@ dictitems_xor_lock_held(PyObject *d1, PyObject *d2)
     ASSERT_DICT_LOCKED(d1);
     ASSERT_DICT_LOCKED(d2);
 
-    PyObject *temp_dict = copy_lock_held(d1);
+    PyObject *temp_dict = copy_lock_held(d1, PyFrozenDict_Check(d1));
     if (temp_dict == NULL) {
         return NULL;
     }
@@ -7400,16 +7455,21 @@ PyObject_VisitManagedDict(PyObject *obj, visitproc visit, void *arg)
     if((tp->tp_flags & Py_TPFLAGS_MANAGED_DICT) == 0) {
         return 0;
     }
-    if (tp->tp_flags & Py_TPFLAGS_INLINE_VALUES) {
+    PyDictObject *dict = _PyObject_ManagedDictPointer(obj)->dict;
+    if (dict != NULL) {
+        // GH-130327: If there's a managed dictionary available, we should
+        // *always* traverse it. The dict is responsible for traversing the
+        // inline values if it points to them.
+        Py_VISIT(dict);
+    }
+    else if (tp->tp_flags & Py_TPFLAGS_INLINE_VALUES) {
         PyDictValues *values = _PyObject_InlineValues(obj);
         if (values->valid) {
             for (Py_ssize_t i = 0; i < values->capacity; i++) {
                 Py_VISIT(values->values[i]);
             }
-            return 0;
         }
     }
-    Py_VISIT(_PyObject_ManagedDictPointer(obj)->dict);
     return 0;
 }
 
@@ -8143,7 +8203,6 @@ PyTypeObject PyFrozenDict_Type = {
     .tp_richcompare = dict_richcompare,
     .tp_iter = dict_iter,
     .tp_methods = frozendict_methods,
-    .tp_init = dict_init,
     .tp_alloc = _PyType_AllocNoTrack,
     .tp_new = frozendict_new,
     .tp_free = PyObject_GC_Del,

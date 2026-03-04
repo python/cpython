@@ -64,7 +64,8 @@ When running under a :ref:`virtual environment <sys-path-init-virtual-environmen
 the ``pyvenv.cfg`` file in :data:`sys.prefix` is checked for site-specific
 configurations. If the ``include-system-site-packages`` key exists and is set to
 ``true`` (case-insensitive), the system-level prefixes will be searched for
-site-packages, otherwise they won't.
+site-packages, otherwise they won't.  If the system-level prefixes are not searched then
+the user site prefixes are also implicitly not searched for site-packages.
 
 .. index::
    single: # (hash); comment
