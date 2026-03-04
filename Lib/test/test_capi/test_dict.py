@@ -98,14 +98,18 @@ class CAPITest(unittest.TestCase):
         # Test PyDict_Copy()
         copy = _testlimitedcapi.dict_copy
         for dict_type in ANYDICT_TYPES:
-            if issubclass(dict_type, frozendict):
-                expected_type = frozendict
-            else:
-                expected_type = dict
             dct = dict_type({1: 2})
             dct_copy = copy(dct)
-            self.assertIs(type(dct_copy), expected_type)
-            self.assertEqual(dct_copy, dct)
+            if dict_type == frozendict:
+                expected_type = frozendict
+                self.assertIs(dct_copy, dct)
+            else:
+                if issubclass(dict_type, frozendict):
+                    expected_type = frozendict
+                else:
+                    expected_type = dict
+                self.assertIs(type(dct_copy), expected_type)
+                self.assertEqual(dct_copy, dct)
 
         for test_type in NOT_ANYDICT_TYPES + OTHER_TYPES:
             self.assertRaises(SystemError, copy, test_type())

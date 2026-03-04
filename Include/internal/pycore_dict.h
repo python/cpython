@@ -160,6 +160,8 @@ extern void _PyDict_Clear_LockHeld(PyObject *op);
 PyAPI_FUNC(void) _PyDict_EnsureSharedOnRead(PyDictObject *mp);
 #endif
 
+extern PyObject* _PyDict_CopyAsDict(PyObject *op);
+
 #define DKIX_EMPTY (-1)
 #define DKIX_DUMMY (-2)  /* Used internally */
 #define DKIX_ERROR (-3)
