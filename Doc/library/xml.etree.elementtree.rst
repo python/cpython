@@ -877,7 +877,7 @@ Element Objects
    :noindex:
    :no-index:
 
-.. class:: Element(tag, attrib={}, **extra)
+.. class:: Element(tag, /, attrib={}, **extra)
 
    Element class.  This class defines the Element interface, and provides a
    reference implementation of this interface.
@@ -886,6 +886,9 @@ Element Objects
    bytestrings or Unicode strings.  *tag* is the element name.  *attrib* is
    an optional dictionary, containing element attributes.  *extra* contains
    additional attributes, given as keyword arguments.
+
+   .. versionchanged:: 3.15
+      *tag* is now a positional-only parameter.
 
 
    .. attribute:: tag

@@ -1,0 +1,2 @@
+Made the *tag* parameter of :class:`xml.etree.ElementTree.Element`
+positional-only, matching the behavior of the C accelerator.
