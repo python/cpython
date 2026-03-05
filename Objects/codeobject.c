@@ -1830,7 +1830,7 @@ identify_unbound_names(PyThreadState *tstate, PyCodeObject *co,
     assert(attrnames != NULL);
     assert(PySet_Check(attrnames));
     assert(PySet_GET_SIZE(attrnames) == 0 || counts != NULL);
-    assert(globalsns == NULL || PyDict_Check(globalsns));
+    assert(globalsns == NULL || PyAnyDict_Check(globalsns));
     assert(builtinsns == NULL || PyDict_Check(builtinsns));
     assert(counts == NULL || counts->total == 0);
     struct co_unbound_counts unbound = {0};

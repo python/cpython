@@ -2687,7 +2687,7 @@ _PyDict_LoadGlobalStackRef(PyDictObject *globals, PyDictObject *builtins, PyObje
 PyObject *
 _PyDict_LoadBuiltinsFromGlobals(PyObject *globals)
 {
-    if (!PyDict_Check(globals)) {
+    if (!PyAnyDict_Check(globals)) {
         PyErr_BadInternalCall();
         return NULL;
     }
@@ -7912,7 +7912,7 @@ validate_watcher_id(PyInterpreterState *interp, int watcher_id)
 int
 PyDict_Watch(int watcher_id, PyObject* dict)
 {
-    if (!PyAnyDict_Check(dict)) {
+    if (!PyDict_Check(dict)) {
         PyErr_SetString(PyExc_ValueError, "Cannot watch non-dictionary");
         return -1;
     }
@@ -7927,7 +7927,7 @@ PyDict_Watch(int watcher_id, PyObject* dict)
 int
 PyDict_Unwatch(int watcher_id, PyObject* dict)
 {
-    if (!PyAnyDict_Check(dict)) {
+    if (!PyDict_Check(dict)) {
         PyErr_SetString(PyExc_ValueError, "Cannot watch non-dictionary");
         return -1;
     }
