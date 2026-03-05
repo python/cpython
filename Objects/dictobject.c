@@ -146,8 +146,9 @@ static int dict_merge_from_seq2(PyObject *d, PyObject *seq2, int override);
 
 /*[clinic input]
 class dict "PyDictObject *" "&PyDict_Type"
+class frozendict "PyFrozenDictObject *" "&PyFrozenDict_Type"
 [clinic start generated code]*/
-/*[clinic end generated code: output=da39a3ee5e6b4b0d input=f157a5a0ce9589d6]*/
+/*[clinic end generated code: output=da39a3ee5e6b4b0d input=5dfa93bac68e7c54]*/
 
 
 /*
@@ -4384,9 +4385,25 @@ copy_lock_held(PyObject *o, int as_frozendict)
     return NULL;
 }
 
-// Similar to PyDict_Copy(), but copy also frozendict.
+PyObject *
+PyDict_Copy(PyObject *o)
+{
+    if (o == NULL || !PyDict_Check(o)) {
+        PyErr_BadInternalCall();
+        return NULL;
+    }
+
+    PyObject *res;
+    Py_BEGIN_CRITICAL_SECTION(o);
+    res = copy_lock_held(o, 0);
+    Py_END_CRITICAL_SECTION();
+    return res;
+}
+
+// Similar to PyDict_Copy(), but return a frozendict if the argument
+// is a frozendict.
 static PyObject *
-_PyDict_Copy(PyObject *o)
+anydict_copy(PyObject *o)
 {
     assert(PyAnyDict_Check(o));
 
@@ -4397,22 +4414,8 @@ _PyDict_Copy(PyObject *o)
     return res;
 }
 
-PyObject *
-PyDict_Copy(PyObject *o)
-{
-    if (o == NULL || !PyAnyDict_Check(o)) {
-        PyErr_BadInternalCall();
-        return NULL;
-    }
-
-    if (PyFrozenDict_CheckExact(o)) {
-        return Py_NewRef(o);
-    }
-
-    return _PyDict_Copy(o);
-}
-
-// Similar to PyDict_Copy(), but return a dict if the argument is a frozendict.
+// Similar to PyDict_Copy(), but accept also frozendict:
+// convert frozendict to a new dict.
 PyObject*
 _PyDict_CopyAsDict(PyObject *o)
 {
@@ -4969,7 +4972,7 @@ dict_or(PyObject *self, PyObject *other)
     if (!PyAnyDict_Check(self) || !PyAnyDict_Check(other)) {
         Py_RETURN_NOTIMPLEMENTED;
     }
-    PyObject *new = _PyDict_Copy(self);
+    PyObject *new = anydict_copy(self);
     if (new == NULL) {
         return NULL;
     }
@@ -8057,7 +8060,7 @@ static PyMethodDef frozendict_methods[] = {
     DICT_ITEMS_METHODDEF
     DICT_VALUES_METHODDEF
     DICT_FROMKEYS_METHODDEF
-    DICT_COPY_METHODDEF
+    FROZENDICT_COPY_METHODDEF
     DICT___REVERSED___METHODDEF
     {"__class_getitem__", Py_GenericAlias, METH_O|METH_CLASS, PyDoc_STR("See PEP 585")},
     {"__getnewargs__", frozendict_getnewargs, METH_NOARGS},
@@ -8180,6 +8183,25 @@ PyFrozenDict_New(PyObject *iterable)
         PyObject *args = Py_GetConstantBorrowed(Py_CONSTANT_EMPTY_TUPLE);
         return frozendict_new(&PyFrozenDict_Type, args, NULL);
     }
+}
+
+/*[clinic input]
+frozendict.copy
+
+Return a shallow copy of the frozendict.
+[clinic start generated code]*/
+
+static PyObject *
+frozendict_copy_impl(PyFrozenDictObject *self)
+/*[clinic end generated code: output=e580fd91d9fc2cf7 input=35f6abeaa08fd4bc]*/
+{
+    assert(PyFrozenDict_Check(self));
+
+    if (PyFrozenDict_CheckExact(self)) {
+        return Py_NewRef(self);
+    }
+
+    return anydict_copy((PyObject*)self);
 }
 
 
