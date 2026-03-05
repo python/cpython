@@ -295,6 +295,14 @@ frozendict_new(PyObject *self, PyObject *obj)
 }
 
 
+static PyObject*
+frozendict_asdict(PyObject *self, PyObject *obj)
+{
+    NULLABLE(obj);
+    return PyFrozenDict_AsDict(obj);
+}
+
+
 static PyMethodDef test_methods[] = {
     {"dict_containsstring", dict_containsstring, METH_VARARGS},
     {"dict_getitemref", dict_getitemref, METH_VARARGS},
@@ -311,6 +319,7 @@ static PyMethodDef test_methods[] = {
     {"anydict_check", anydict_check, METH_O},
     {"anydict_checkexact", anydict_checkexact, METH_O},
     {"frozendict_new", frozendict_new, METH_O},
+    {"frozendict_asdict", frozendict_asdict, METH_O},
     {NULL},
 };
 
