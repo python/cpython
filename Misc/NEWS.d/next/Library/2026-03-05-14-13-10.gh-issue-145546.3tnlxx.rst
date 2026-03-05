@@ -1,4 +1,4 @@
-Fix :func:`unittest.util.sorted_list_difference` to deduplicate remaining
+Fix ``unittest.util.sorted_list_difference()`` to deduplicate remaining
 elements when one input list is exhausted before the other. Previously,
 duplicates in the tail were included in the output despite the documented
 guarantee that "Duplicate elements in either input list are ignored."
