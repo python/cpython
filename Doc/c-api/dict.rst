@@ -42,6 +42,9 @@ Dictionary objects
    enforces read-only behavior.  This is normally used to create a view to
    prevent modification of the dictionary for non-dynamic class types.
 
+   The first argument can be a :class:`dict`, a :class:`frozendict`, or a
+   mapping.
+
    .. versionchanged:: next
       Accept also :class:`frozendict`.
 
@@ -71,12 +74,19 @@ Dictionary objects
    *key*, return ``1``, otherwise return ``0``.  On error, return ``-1``.
    This is equivalent to the Python expression ``key in p``.
 
+   The first argument can be a :class:`dict` or a :class:`frozendict`.
+
+   .. versionchanged:: next
+      Also accept :class:`frozendict`.
+
 
 .. c:function:: int PyDict_ContainsString(PyObject *p, const char *key)
 
    This is the same as :c:func:`PyDict_Contains`, but *key* is specified as a
    :c:expr:`const char*` UTF-8 encoded bytes string, rather than a
    :c:expr:`PyObject*`.
+
+   The first argument can be a :class:`dict` or a :class:`frozendict`.
 
    .. versionadded:: 3.13
 
@@ -87,10 +97,6 @@ Dictionary objects
 .. c:function:: PyObject* PyDict_Copy(PyObject *p)
 
    Return a new dictionary that contains the same key-value pairs as *p*.
-
-   .. versionchanged:: next
-      If *p* is a subclass of :class:`frozendict`, the result will be a
-      :class:`frozendict` instance instead of a :class:`dict` instance.
 
 .. c:function:: int PyDict_SetItem(PyObject *p, PyObject *key, PyObject *val)
 
@@ -132,6 +138,8 @@ Dictionary objects
    * If the key is missing, set *\*result* to ``NULL`` and return ``0``.
    * On error, raise an exception and return ``-1``.
 
+   The first argument can be a :class:`dict` or a :class:`frozendict`.
+
    .. versionadded:: 3.13
 
    .. versionchanged:: next
@@ -145,6 +153,8 @@ Dictionary objects
    Return a :term:`borrowed reference` to the object from dictionary *p* which
    has a key *key*.  Return ``NULL`` if the key *key* is missing *without*
    setting an exception.
+
+   The first argument can be a :class:`dict` or a :class:`frozendict`.
 
    .. note::
 
@@ -167,6 +177,8 @@ Dictionary objects
    occurred.  Return ``NULL`` **without** an exception set if the key
    wasn't present.
 
+   The first argument can be a :class:`dict` or a :class:`frozendict`.
+
    .. versionchanged:: next
       Accept also :class:`frozendict`.
 
@@ -176,6 +188,8 @@ Dictionary objects
    This is the same as :c:func:`PyDict_GetItem`, but *key* is specified as a
    :c:expr:`const char*` UTF-8 encoded bytes string, rather than a
    :c:expr:`PyObject*`.
+
+   The first argument can be a :class:`dict` or a :class:`frozendict`.
 
    .. note::
 
@@ -194,6 +208,8 @@ Dictionary objects
    Similar to :c:func:`PyDict_GetItemRef`, but *key* is specified as a
    :c:expr:`const char*` UTF-8 encoded bytes string, rather than a
    :c:expr:`PyObject*`.
+
+   The first argument can be a :class:`dict` or a :class:`frozendict`.
 
    .. versionadded:: 3.13
 
@@ -263,6 +279,8 @@ Dictionary objects
 
    Return a :c:type:`PyListObject` containing all the items from the dictionary.
 
+   The first argument can be a :class:`dict` or a :class:`frozendict`.
+
    .. versionchanged:: next
       Accept also :class:`frozendict`.
 
@@ -270,6 +288,8 @@ Dictionary objects
 .. c:function:: PyObject* PyDict_Keys(PyObject *p)
 
    Return a :c:type:`PyListObject` containing all the keys from the dictionary.
+
+   The first argument can be a :class:`dict` or a :class:`frozendict`.
 
    .. versionchanged:: next
       Accept also :class:`frozendict`.
@@ -279,6 +299,8 @@ Dictionary objects
 
    Return a :c:type:`PyListObject` containing all the values from the dictionary
    *p*.
+
+   The first argument can be a :class:`dict` or a :class:`frozendict`.
 
    .. versionchanged:: next
       Accept also :class:`frozendict`.
@@ -290,6 +312,8 @@ Dictionary objects
 
    Return the number of items in the dictionary.  This is equivalent to
    ``len(p)`` on a dictionary.
+
+   The argument can be a :class:`dict` or a :class:`frozendict`.
 
    .. versionchanged:: next
       Accept also :class:`frozendict`.
@@ -315,6 +339,8 @@ Dictionary objects
    them are borrowed.  *ppos* should not be altered during iteration. Its
    value represents offsets within the internal dictionary structure, and
    since the structure is sparse, the offsets are not consecutive.
+
+   The first argument can be a :class:`dict` or a :class:`frozendict`.
 
    For example::
 
