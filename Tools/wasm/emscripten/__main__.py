@@ -71,7 +71,10 @@ def parse_env(text):
 
 
 @functools.cache
-def get_emsdk_env(emsdk_cache):
+def get_emsdk_environ(emsdk_cache):
+    """Returns os.environ updated by sourcing emsdk_env.sh"""
+    if not emsdk_cache:
+        return os.environ
     env_text = subprocess.check_output(
         [
             "bash",
@@ -80,8 +83,7 @@ def get_emsdk_env(emsdk_cache):
         ],
         text=True,
     )
-    env = parse_env(env_text)
-    return {key: env[key] for key in ["PATH", "EMSDK", "EMSDK_NODE"]}
+    return parse_env(env_text)
 
 
 def updated_env(updates, emsdk_cache):
@@ -100,9 +102,7 @@ def updated_env(updates, emsdk_cache):
     except subprocess.CalledProcessError:
         pass  # Might be building from a tarball.
     # This layering lets SOURCE_DATE_EPOCH from os.environ takes precedence.
-    environment = env_defaults | os.environ | updates
-    if emsdk_cache:
-        environment |= get_emsdk_env(emsdk_cache)
+    environment = env_defaults | get_emsdk_environ(emsdk_cache) | updates
     env_diff = {}
     for key, value in environment.items():
         if os.environ.get(key) != value:
