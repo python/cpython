@@ -429,6 +429,17 @@ unicodedata_UCD_east_asian_width_impl(PyObject *self, int chr)
     return PyUnicode_FromString(_PyUnicode_EastAsianWidthNames[index]);
 }
 
+// For Hangul decomposition
+#define SBase   0xAC00
+#define LBase   0x1100
+#define VBase   0x1161
+#define TBase   0x11A7
+#define LCount  19
+#define VCount  21
+#define TCount  28
+#define NCount  (VCount*TCount)
+#define SCount  (LCount*NCount)
+
 /*[clinic input]
 @permit_long_summary
 unicodedata.UCD.decomposition
@@ -458,6 +469,25 @@ unicodedata_UCD_decomposition_impl(PyObject *self, int chr)
         const change_record *old = get_old_record(self, c);
         if (old->category_changed == 0)
             return Py_GetConstant(Py_CONSTANT_EMPTY_STR); /* unassigned */
+    }
+
+    // Hangul Decomposition.
+    // See section 3.12.2, "Hangul Syllable Decomposition"
+    // https://www.unicode.org/versions/latest/core-spec/chapter-3/#G56669
+    if (SBase <= code && code < (SBase + SCount)) {
+        int SIndex = code - SBase;
+        int L = LBase + SIndex / NCount;
+        int V = VBase + (SIndex % NCount) / TCount;
+        int T = TBase + SIndex % TCount;
+        if (T != TBase) {
+            PyOS_snprintf(decomp, sizeof(decomp),
+                          "%04X %04X %04X", L, V, T);
+        }
+        else {
+            PyOS_snprintf(decomp, sizeof(decomp),
+                          "%04X %04X", L, V);
+        }
+        return PyUnicode_FromString(decomp);
     }
 
     if (code < 0 || code >= 0x110000)
@@ -522,16 +552,6 @@ get_decomp_record(PyObject *self, Py_UCS4 code,
     (*index)++;
 }
 
-#define SBase   0xAC00
-#define LBase   0x1100
-#define VBase   0x1161
-#define TBase   0x11A7
-#define LCount  19
-#define VCount  21
-#define TCount  28
-#define NCount  (VCount*TCount)
-#define SCount  (LCount*NCount)
-
 static PyObject*
 nfd_nfkd(PyObject *self, PyObject *input, int k)
 {
@@ -585,7 +605,9 @@ nfd_nfkd(PyObject *self, PyObject *input, int k)
                 }
                 output = new_output;
             }
-            /* Hangul Decomposition. */
+            // Hangul Decomposition.
+            // See section 3.12.2, "Hangul Syllable Decomposition"
+            // https://www.unicode.org/versions/latest/core-spec/chapter-3/#G56669
             if (SBase <= code && code < (SBase+SCount)) {
                 int SIndex = code - SBase;
                 int L = LBase + SIndex / NCount;
@@ -1903,13 +1925,6 @@ Segment_traverse(PyObject *self, visitproc visit, void *arg)
     return 0;
 }
 
-static int
-Segment_clear(PyObject *self)
-{
-    Py_CLEAR(((SegmentObject *)self)->string);
-    return 0;
-}
-
 static PyObject *
 Segment_str(PyObject *self)
 {
@@ -1925,9 +1940,9 @@ Segment_repr(PyObject *self)
 }
 
 static PyMemberDef Segment_members[] = {
-    {"start", Py_T_PYSSIZET, offsetof(SegmentObject, start), 0,
+    {"start", Py_T_PYSSIZET, offsetof(SegmentObject, start), Py_READONLY,
         PyDoc_STR("grapheme start")},
-    {"end", Py_T_PYSSIZET, offsetof(SegmentObject, end), 0,
+    {"end", Py_T_PYSSIZET, offsetof(SegmentObject, end), Py_READONLY,
         PyDoc_STR("grapheme end")},
     {NULL}  /* Sentinel */
 };
@@ -1935,7 +1950,6 @@ static PyMemberDef Segment_members[] = {
 static PyType_Slot Segment_slots[] = {
     {Py_tp_dealloc, Segment_dealloc},
     {Py_tp_traverse, Segment_traverse},
-    {Py_tp_clear, Segment_clear},
     {Py_tp_str, Segment_str},
     {Py_tp_repr, Segment_repr},
     {Py_tp_members, Segment_members},
@@ -1979,13 +1993,6 @@ GBI_traverse(PyObject *self, visitproc visit, void *arg)
     return 0;
 }
 
-static int
-GBI_clear(PyObject *self)
-{
-    Py_CLEAR(((GraphemeBreakIterator *)self)->iter.str);
-    return 0;
-}
-
 static PyObject *
 GBI_iternext(PyObject *self)
 {
@@ -2016,7 +2023,6 @@ static PyType_Slot GraphemeBreakIterator_slots[] = {
     {Py_tp_iter, PyObject_SelfIter},
     {Py_tp_iternext, GBI_iternext},
     {Py_tp_traverse, GBI_traverse},
-    {Py_tp_clear, GBI_clear},
     {0, 0},
 };
 
