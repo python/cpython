@@ -595,7 +595,7 @@ class Pool(object):
                 return
             except Exception as e:
                 exc = RuntimeError("Result handler failed to get result from worker and " +
-                               "unable to recover. " + 
+                               "unable to recover. " +
                                "This is likely due to a worker process return or raise " +
                                "an unpicklable object.")
                 exc.__cause__ = e
