@@ -32,7 +32,6 @@ from test.support import findfile, gc_collect, swap_attr, swap_item
 from test.support.import_helper import import_fresh_module
 from test.support.os_helper import TESTFN
 
-
 # pyET is the pure-Python implementation.
 #
 # ET is pyET in test_xml_etree and is the C accelerated version in
@@ -4804,6 +4803,34 @@ def setUpModule(module=None):
         old_factories = ET._set_factories(ET.Comment, ET.PI)
         unittest.addModuleCleanup(ET._set_factories, *old_factories)
 
+class TestElementTreeGlobalNamespace(unittest.TestCase):
+    def test_find_uses_registered_namespace(self):
+        xml_data = """<root>
+          <h:title xmlns:h="http://www.w3.org/TR/html4/">
+            <h:tr><h:td>Apple</h:td></h:tr>
+          </h:title>
+        </root>"""
+        ET.register_namespace("h", "http://www.w3.org/TR/html4/")
+        tree = ET.ElementTree(ET.fromstring(xml_data))
+
+        # should work without passing namespaces explicitly
+        elem = tree.find(".//h:title")
+        self.assertIsNotNone(elem)
+        self.assertEqual(elem.tag, "{http://www.w3.org/TR/html4/}title")
+
+    def test_findall_and_findtext_with_global_ns(self):
+        xml_data = """<root xmlns:h="http://www.w3.org/TR/html4/">
+            <h:item>Apple</h:item>
+            <h:item>Banana</h:item>
+        </root>"""
+        ET.register_namespace("h", "http://www.w3.org/TR/html4/")
+        root = ET.fromstring(xml_data)
+
+        items = root.findall(".//h:item")
+        self.assertEqual(len(items), 2)
+
+        first_text = root.findtext(".//h:item")
+        self.assertEqual(first_text, "Apple")
 
 if __name__ == '__main__':
     unittest.main()
