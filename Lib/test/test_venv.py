@@ -17,7 +17,6 @@ import subprocess
 import sys
 import sysconfig
 import tempfile
-import time
 from test.support import (captured_stdout, captured_stderr,
                           skip_if_broken_multiprocessing_synchronize, verbose,
                           requires_subprocess, is_android, is_apple_mobile,
@@ -374,12 +373,13 @@ class BasicTest(BaseTest):
             with open(fn, 'wb') as f:
                 f.write(b'Still here?')
 
+@unittest.skipUnless(hasattr(os, 'listxattr'), 'test requires os.listxattr')
     def test_install_scripts_selinux(self):
         """
         gh-145417: Test that install_scripts does not copy SELinux context
         when copying scripts.
         """
-        with patch('shutil.os.listxattr') as listxattr_mock:
+        with patch('os.listxattr') as listxattr_mock:
             venv.create(self.env_dir)
             listxattr_mock.assert_not_called()
 
