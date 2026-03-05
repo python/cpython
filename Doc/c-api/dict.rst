@@ -82,6 +82,12 @@ Dictionary objects
 
    Return a new dictionary that contains the same key-value pairs as *p*.
 
+   If the argument is a :class:`frozendict`, convert it to a :class:`dict`
+   (create a copy).
+
+   .. versionchanged:: next
+      Accept also :class:`frozendict` type.
+
 .. c:function:: int PyDict_SetItem(PyObject *p, PyObject *key, PyObject *val)
 
    Insert *val* into the dictionary *p* with a key of *key*.  *key* must be
