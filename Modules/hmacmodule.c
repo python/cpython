@@ -1476,8 +1476,8 @@ py_hmac_hinfo_ht_new(void)
             e->hashlib_name == NULL ? e->name : e->hashlib_name
         );
         if (value->display_name == NULL) {
-            /* value is owned by the table (refcnt > 0), so
-               _Py_hashtable_destroy() will free it. */
+            /* 'value' is owned by the table (refcnt > 0),
+               so _Py_hashtable_destroy() will free it. */
             goto error;
         }
     }
