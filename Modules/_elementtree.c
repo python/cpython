@@ -16,6 +16,7 @@
 #endif
 
 #include "Python.h"
+#include "pycore_critical_section.h"  // Py_BEGIN_CRITICAL_SECTION()
 #include "pycore_dict.h"          // _PyDict_CopyAsDict()
 #include "pycore_pyhash.h"        // _Py_HashSecret
 #include "pycore_weakref.h"       // FT_CLEAR_WEAKREFS()
@@ -305,7 +306,7 @@ dealloc_extra(ElementObjectExtra *extra)
 }
 
 LOCAL(void)
-clear_extra(ElementObject* self)
+clear_extra_lock_held(ElementObject* self)
 {
     ElementObjectExtra *myextra;
 
@@ -318,6 +319,14 @@ clear_extra(ElementObject* self)
     self->extra = NULL;
 
     dealloc_extra(myextra);
+}
+
+LOCAL(void)
+clear_extra(ElementObject* self)
+{
+    Py_BEGIN_CRITICAL_SECTION(self);
+    clear_extra_lock_held(self);
+    Py_END_CRITICAL_SECTION();
 }
 
 /* Convenience internal function to create new Element objects with the given
@@ -467,7 +476,7 @@ element_init(PyObject *self, PyObject *args, PyObject *kwds)
 }
 
 LOCAL(int)
-element_resize(ElementObject* self, Py_ssize_t extra)
+element_resize_lock_held(ElementObject* self, Py_ssize_t extra)
 {
     Py_ssize_t size;
     PyObject* *children;
@@ -524,6 +533,16 @@ element_resize(ElementObject* self, Py_ssize_t extra)
     return -1;
 }
 
+LOCAL(int)
+element_resize(ElementObject* self, Py_ssize_t extra)
+{
+    int result;
+    Py_BEGIN_CRITICAL_SECTION(self);
+    result = element_resize_lock_held(self, extra);
+    Py_END_CRITICAL_SECTION();
+    return result;
+}
+
 LOCAL(void)
 raise_type_error(PyObject *element)
 {
@@ -542,21 +561,23 @@ element_add_subelement(elementtreestate *st, ElementObject *self,
         return -1;
     }
 
-    if (element_resize(self, 1) < 0)
-        return -1;
-
-    self->extra->children[self->extra->length] = Py_NewRef(element);
-
-    self->extra->length++;
-
-    return 0;
+    int result;
+    Py_BEGIN_CRITICAL_SECTION(self);
+    result = element_resize_lock_held(self, 1);
+    if (result >= 0) {
+        self->extra->children[self->extra->length] = Py_NewRef(element);
+        self->extra->length++;
+    }
+    Py_END_CRITICAL_SECTION();
+    return result;
 }
 
 LOCAL(PyObject*)
-element_get_attrib(ElementObject* self)
+element_get_attrib_lock_held(ElementObject* self)
 {
     /* return borrowed reference to attrib dictionary */
     /* note: this function assumes that the extra section exists */
+    /* caller must hold self's per-object lock */
 
     PyObject* res = self->extra->attrib;
 
@@ -569,9 +590,10 @@ element_get_attrib(ElementObject* self)
 }
 
 LOCAL(PyObject*)
-element_get_text(ElementObject* self)
+element_get_text_lock_held(ElementObject* self)
 {
     /* return borrowed reference to text attribute */
+    /* caller must hold self's per-object lock */
 
     PyObject *res = self->text;
 
@@ -590,9 +612,22 @@ element_get_text(ElementObject* self)
 }
 
 LOCAL(PyObject*)
-element_get_tail(ElementObject* self)
+element_get_text(ElementObject* self)
 {
-    /* return borrowed reference to text attribute */
+    /* return strong reference to text attribute */
+    PyObject *res;
+    Py_BEGIN_CRITICAL_SECTION(self);
+    res = element_get_text_lock_held(self);
+    Py_XINCREF(res);
+    Py_END_CRITICAL_SECTION();
+    return res;
+}
+
+LOCAL(PyObject*)
+element_get_tail_lock_held(ElementObject* self)
+{
+    /* return borrowed reference to tail attribute */
+    /* caller must hold self's per-object lock */
 
     PyObject *res = self->tail;
 
@@ -607,6 +642,18 @@ element_get_tail(ElementObject* self)
         }
     }
 
+    return res;
+}
+
+LOCAL(PyObject*)
+element_get_tail(ElementObject* self)
+{
+    /* return strong reference to tail attribute */
+    PyObject *res;
+    Py_BEGIN_CRITICAL_SECTION(self);
+    res = element_get_tail_lock_held(self);
+    Py_XINCREF(res);
+    Py_END_CRITICAL_SECTION();
     return res;
 }
 
@@ -684,9 +731,10 @@ element_gc_clear(PyObject *op)
     _clear_joined_ptr(&self->tail);
 
     /* After dropping all references from extra, it's no longer valid anyway,
-     * so fully deallocate it.
+     * so fully deallocate it.  GC runs when the object is already unreachable,
+     * so call the lock-free variant directly to avoid a pointless lock.
     */
-    clear_extra(self);
+    clear_extra_lock_held(self);
     return 0;
 }
 
@@ -741,10 +789,11 @@ static PyObject *
 _elementtree_Element_clear_impl(ElementObject *self)
 /*[clinic end generated code: output=8bcd7a51f94cfff6 input=3c719ff94bf45dd6]*/
 {
-    clear_extra(self);
-
+    Py_BEGIN_CRITICAL_SECTION(self);
+    clear_extra_lock_held(self);
     _set_joined_ptr(&self->text, Py_NewRef(Py_None));
     _set_joined_ptr(&self->tail, Py_NewRef(Py_None));
+    Py_END_CRITICAL_SECTION();
 
     Py_RETURN_NONE;
 }
@@ -762,13 +811,17 @@ _elementtree_Element___copy___impl(ElementObject *self, PyTypeObject *cls)
 /*[clinic end generated code: output=da22894421ff2b36 input=91edb92d9f441213]*/
 {
     Py_ssize_t i;
-    ElementObject* element;
+    ElementObject* element = NULL;
     elementtreestate *st = get_elementtree_state_by_cls(cls);
+
+    /* Acquire self's lock for the entire read phase to prevent concurrent
+     * modifications from racing with our field accesses. */
+    Py_BEGIN_CRITICAL_SECTION(self);
 
     element = (ElementObject*) create_new_element(
         st, self->tag, self->extra ? self->extra->attrib : NULL);
     if (!element)
-        return NULL;
+        goto copy_done;
 
     Py_INCREF(JOIN_OBJ(self->text));
     _set_joined_ptr(&element->text, self->text);
@@ -778,9 +831,10 @@ _elementtree_Element___copy___impl(ElementObject *self, PyTypeObject *cls)
 
     assert(!element->extra || !element->extra->length);
     if (self->extra) {
-        if (element_resize(element, self->extra->length) < 0) {
-            Py_DECREF(element);
-            return NULL;
+        /* element_resize_lock_held: element is local/unshared, no extra lock */
+        if (element_resize_lock_held(element, self->extra->length) < 0) {
+            Py_CLEAR(element);
+            goto copy_done;
         }
 
         for (i = 0; i < self->extra->length; i++) {
@@ -791,6 +845,8 @@ _elementtree_Element___copy___impl(ElementObject *self, PyTypeObject *cls)
         element->extra->length = self->extra->length;
     }
 
+copy_done:
+    Py_END_CRITICAL_SECTION();
     return (PyObject*) element;
 }
 
@@ -811,58 +867,100 @@ _elementtree_Element___deepcopy___impl(ElementObject *self, PyObject *memo)
 {
     Py_ssize_t i;
     ElementObject* element;
-    PyObject* tag;
-    PyObject* attrib;
-    PyObject* text;
-    PyObject* tail;
     PyObject* id;
 
     PyTypeObject *tp = Py_TYPE(self);
     elementtreestate *st = get_elementtree_state_by_type(tp);
-    // The deepcopy() helper takes care of incrementing the refcount
-    // of the object to copy so to avoid use-after-frees.
-    tag = deepcopy(st, self->tag, memo);
-    if (!tag)
-        return NULL;
 
-    if (self->extra && self->extra->attrib) {
-        attrib = deepcopy(st, self->extra->attrib, memo);
+    /* Snapshot all fields under lock so concurrent modifications cannot race
+     * with our reads.  We release the lock before calling deepcopy() to avoid
+     * holding it during arbitrary Python calls. */
+    PyObject *snap_tag;
+    PyObject *snap_attrib;
+    PyObject *snap_text;
+    int snap_text_join;
+    PyObject *snap_tail;
+    int snap_tail_join;
+    Py_ssize_t snap_length = 0;
+    PyObject **snap_children = NULL;
+
+    Py_BEGIN_CRITICAL_SECTION(self);
+    snap_tag    = Py_NewRef(self->tag);
+    snap_attrib = (self->extra && self->extra->attrib)
+                  ? Py_NewRef(self->extra->attrib) : NULL;
+    snap_text      = Py_NewRef(JOIN_OBJ(self->text));
+    snap_text_join = (int)JOIN_GET(self->text);
+    snap_tail      = Py_NewRef(JOIN_OBJ(self->tail));
+    snap_tail_join = (int)JOIN_GET(self->tail);
+    if (self->extra) {
+        snap_length = self->extra->length;
+        if (snap_length > 0) {
+            snap_children = PyMem_Malloc(snap_length * sizeof(PyObject *));
+            if (snap_children) {
+                for (i = 0; i < snap_length; i++) {
+                    snap_children[i] = Py_NewRef(self->extra->children[i]);
+                }
+            }
+        }
+    }
+    Py_END_CRITICAL_SECTION();
+
+    if (snap_length > 0 && !snap_children) {
+        Py_DECREF(snap_tag);
+        Py_XDECREF(snap_attrib);
+        Py_DECREF(snap_text);
+        Py_DECREF(snap_tail);
+        PyErr_NoMemory();
+        return NULL;
+    }
+
+    /* Deep-copy the snapshots outside the lock. */
+    PyObject *tag = deepcopy(st, snap_tag, memo);
+    Py_DECREF(snap_tag);
+    snap_tag = NULL;
+    if (!tag)
+        goto error_noelem;
+
+    PyObject *attrib = NULL;
+    if (snap_attrib) {
+        attrib = deepcopy(st, snap_attrib, memo);
+        Py_DECREF(snap_attrib);
+        snap_attrib = NULL;
         if (!attrib) {
             Py_DECREF(tag);
-            return NULL;
+            goto error_noelem;
         }
-    } else {
-        attrib = NULL;
     }
 
     element = (ElementObject*) create_new_element(st, tag, attrib);
-
     Py_DECREF(tag);
     Py_XDECREF(attrib);
-
     if (!element)
-        return NULL;
+        goto error_noelem;
 
-    text = deepcopy(st, JOIN_OBJ(self->text), memo);
+    PyObject *text = deepcopy(st, snap_text, memo);
+    Py_DECREF(snap_text);
+    snap_text = NULL;
     if (!text)
         goto error;
-    _set_joined_ptr(&element->text, JOIN_SET(text, JOIN_GET(self->text)));
+    _set_joined_ptr(&element->text, JOIN_SET(text, snap_text_join));
 
-    tail = deepcopy(st, JOIN_OBJ(self->tail), memo);
+    PyObject *tail = deepcopy(st, snap_tail, memo);
+    Py_DECREF(snap_tail);
+    snap_tail = NULL;
     if (!tail)
         goto error;
-    _set_joined_ptr(&element->tail, JOIN_SET(tail, JOIN_GET(self->tail)));
+    _set_joined_ptr(&element->tail, JOIN_SET(tail, snap_tail_join));
 
     assert(!element->extra || !element->extra->length);
-    if (self->extra) {
-        Py_ssize_t expected_count = self->extra->length;
-        if (element_resize(element, expected_count) < 0) {
+    if (snap_length > 0) {
+        if (element_resize(element, snap_length) < 0) {
             assert(!element->extra->length);
             goto error;
         }
 
-        for (i = 0; self->extra && i < self->extra->length; i++) {
-            PyObject* child = deepcopy(st, self->extra->children[i], memo);
+        for (i = 0; i < snap_length; i++) {
+            PyObject* child = deepcopy(st, snap_children[i], memo);
             if (!child || !Element_Check(st, child)) {
                 if (child) {
                     raise_type_error(child);
@@ -871,41 +969,65 @@ _elementtree_Element___deepcopy___impl(ElementObject *self, PyObject *memo)
                 element->extra->length = i;
                 goto error;
             }
-            if (self->extra && expected_count != self->extra->length) {
-                // 'self->extra' got mutated and 'element' may not have
-                // sufficient space to hold the next iteration's item.
-                expected_count = self->extra->length;
-                if (element_resize(element, expected_count) < 0) {
-                    Py_DECREF(child);
-                    element->extra->length = i;
-                    goto error;
-                }
-            }
             element->extra->children[i] = child;
         }
 
         assert(!element->extra->length);
-        // The original 'self->extra' may be gone at this point if deepcopy()
-        // has side-effects. However, 'i' is the number of copied items that
-        // we were able to successfully copy.
-        element->extra->length = i;
+        element->extra->length = snap_length;
     }
+
+    /* Release children snapshot */
+    for (i = 0; i < snap_length; i++) {
+        Py_DECREF(snap_children[i]);
+    }
+    PyMem_Free(snap_children);
 
     /* add object to memo dictionary (so deepcopy won't visit it again) */
     id = PyLong_FromSsize_t((uintptr_t) self);
     if (!id)
-        goto error;
+        goto error_after_children;
 
     i = PyDict_SetItem(memo, id, (PyObject*) element);
-
     Py_DECREF(id);
-
     if (i < 0)
-        goto error;
+        goto error_after_children;
 
     return (PyObject*) element;
 
   error:
+    /* element was created; save how many children were transferred before
+     * releasing it, so we can clean up the rest of the snapshot. */
+    {
+        Py_ssize_t n_transferred = (element->extra) ? element->extra->length : 0;
+        Py_DECREF(element);
+        Py_XDECREF(snap_tag);
+        Py_XDECREF(snap_attrib);
+        Py_XDECREF(snap_text);
+        Py_XDECREF(snap_tail);
+        if (snap_children) {
+            for (i = n_transferred; i < snap_length; i++) {
+                Py_DECREF(snap_children[i]);
+            }
+            PyMem_Free(snap_children);
+        }
+        return NULL;
+    }
+
+  error_noelem:
+    /* element was never created; release all snapshots */
+    Py_XDECREF(snap_tag);
+    Py_XDECREF(snap_attrib);
+    Py_XDECREF(snap_text);
+    Py_XDECREF(snap_tail);
+    if (snap_children) {
+        for (i = 0; i < snap_length; i++) {
+            Py_DECREF(snap_children[i]);
+        }
+        PyMem_Free(snap_children);
+    }
+    return NULL;
+
+  error_after_children:
     Py_DECREF(element);
     return NULL;
 }
@@ -922,15 +1044,19 @@ deepcopy(elementtreestate *st, PyObject *object, PyObject *memo)
 
     if (_PyObject_IsUniquelyReferenced(object)) {
         if (PyDict_CheckExact(object)) {
+            /* Protect the uniqueness check + iteration from concurrent dict
+             * modifications in the free-threaded build. */
             PyObject *key, *value;
             Py_ssize_t pos = 0;
             int simple = 1;
+            Py_BEGIN_CRITICAL_SECTION(object);
             while (PyDict_Next(object, &pos, &key, &value)) {
                 if (!PyUnicode_CheckExact(key) || !PyUnicode_CheckExact(value)) {
                     simple = 0;
                     break;
                 }
             }
+            Py_END_CRITICAL_SECTION();
             if (simple) {
                 return PyDict_Copy(object);
             }
@@ -1346,12 +1472,16 @@ _elementtree_Element_findtext_impl(ElementObject *self, PyTypeObject *cls,
         int rc = PyObject_RichCompareBool(tag, path, Py_EQ);
         Py_DECREF(tag);
         if (rc > 0) {
+            /* element_get_text returns a strong reference */
             PyObject *text = element_get_text((ElementObject *)item);
             Py_DECREF(item);
+            if (!text) {
+                return NULL;
+            }
             if (text == Py_None) {
+                Py_DECREF(text);
                 return Py_GetConstant(Py_CONSTANT_EMPTY_STR);
             }
-            Py_XINCREF(text);
             return text;
         }
         Py_DECREF(item);
@@ -1554,30 +1684,33 @@ _elementtree_Element_insert_impl(ElementObject *self, Py_ssize_t index,
 /*[clinic end generated code: output=990adfef4d424c0b input=9530f4905aa401ca]*/
 {
     Py_ssize_t i;
+    int result = 0;
 
+    Py_BEGIN_CRITICAL_SECTION(self);
     if (!self->extra) {
-        if (create_extra(self, NULL) < 0)
-            return NULL;
+        result = create_extra(self, NULL);
     }
+    if (result == 0) {
+        if (index < 0) {
+            index += self->extra->length;
+            if (index < 0)
+                index = 0;
+        }
+        if (index > self->extra->length)
+            index = self->extra->length;
 
-    if (index < 0) {
-        index += self->extra->length;
-        if (index < 0)
-            index = 0;
+        result = element_resize_lock_held(self, 1);
     }
-    if (index > self->extra->length)
-        index = self->extra->length;
+    if (result == 0) {
+        for (i = self->extra->length; i > index; i--)
+            self->extra->children[i] = self->extra->children[i-1];
+        self->extra->children[index] = Py_NewRef(subelement);
+        self->extra->length++;
+    }
+    Py_END_CRITICAL_SECTION();
 
-    if (element_resize(self, 1) < 0)
+    if (result < 0)
         return NULL;
-
-    for (i = self->extra->length; i > index; i--)
-        self->extra->children[i] = self->extra->children[i-1];
-
-    self->extra->children[index] = Py_NewRef(subelement);
-
-    self->extra->length++;
-
     Py_RETURN_NONE;
 }
 
@@ -1745,18 +1878,24 @@ _elementtree_Element_set_impl(ElementObject *self, PyObject *key,
                               PyObject *value)
 /*[clinic end generated code: output=fb938806be3c5656 input=1efe90f7d82b3fe9]*/
 {
-    PyObject* attrib;
+    PyObject* attrib = NULL;
+    int cs_err = 0;
 
+    Py_BEGIN_CRITICAL_SECTION(self);
     if (!self->extra) {
-        if (create_extra(self, NULL) < 0)
-            return NULL;
+        cs_err = create_extra(self, NULL);
     }
+    if (cs_err == 0) {
+        attrib = Py_XNewRef(element_get_attrib_lock_held(self));
+    }
+    Py_END_CRITICAL_SECTION();
 
-    attrib = element_get_attrib(self);
     if (!attrib)
         return NULL;
 
-    if (PyDict_SetItem(attrib, key, value) < 0)
+    int rc = PyDict_SetItem(attrib, key, value);
+    Py_DECREF(attrib);
+    if (rc < 0)
         return NULL;
 
     Py_RETURN_NONE;
@@ -2046,37 +2185,52 @@ static PyObject*
 element_tag_getter(PyObject *op, void *closure)
 {
     ElementObject *self = _Element_CAST(op);
-    PyObject *res = self->tag;
-    return Py_NewRef(res);
+    PyObject *res;
+    Py_BEGIN_CRITICAL_SECTION(op);
+    res = Py_NewRef(self->tag);
+    Py_END_CRITICAL_SECTION();
+    return res;
 }
 
 static PyObject*
 element_text_getter(PyObject *op, void *closure)
 {
     ElementObject *self = _Element_CAST(op);
-    PyObject *res = element_get_text(self);
-    return Py_XNewRef(res);
+    PyObject *res;
+    Py_BEGIN_CRITICAL_SECTION(op);
+    res = element_get_text_lock_held(self);
+    res = Py_XNewRef(res);
+    Py_END_CRITICAL_SECTION();
+    return res;
 }
 
 static PyObject*
 element_tail_getter(PyObject *op, void *closure)
 {
     ElementObject *self = _Element_CAST(op);
-    PyObject *res = element_get_tail(self);
-    return Py_XNewRef(res);
+    PyObject *res;
+    Py_BEGIN_CRITICAL_SECTION(op);
+    res = element_get_tail_lock_held(self);
+    res = Py_XNewRef(res);
+    Py_END_CRITICAL_SECTION();
+    return res;
 }
 
 static PyObject*
 element_attrib_getter(PyObject *op, void *closure)
 {
-    PyObject *res;
+    PyObject *res = NULL;
+    int cs_err = 0;
     ElementObject *self = _Element_CAST(op);
+    Py_BEGIN_CRITICAL_SECTION(op);
     if (!self->extra) {
-        if (create_extra(self, NULL) < 0)
-            return NULL;
+        cs_err = create_extra(self, NULL);
     }
-    res = element_get_attrib(self);
-    return Py_XNewRef(res);
+    if (cs_err == 0) {
+        res = Py_XNewRef(element_get_attrib_lock_held(self));
+    }
+    Py_END_CRITICAL_SECTION();
+    return res;
 }
 
 /* macro for setter validation */
@@ -2093,7 +2247,9 @@ element_tag_setter(PyObject *op, PyObject *value, void *closure)
 {
     _VALIDATE_ATTR_VALUE(value);
     ElementObject *self = _Element_CAST(op);
+    Py_BEGIN_CRITICAL_SECTION(op);
     Py_SETREF(self->tag, Py_NewRef(value));
+    Py_END_CRITICAL_SECTION();
     return 0;
 }
 
@@ -2102,7 +2258,9 @@ element_text_setter(PyObject *op, PyObject *value, void *closure)
 {
     _VALIDATE_ATTR_VALUE(value);
     ElementObject *self = _Element_CAST(op);
+    Py_BEGIN_CRITICAL_SECTION(op);
     _set_joined_ptr(&self->text, Py_NewRef(value));
+    Py_END_CRITICAL_SECTION();
     return 0;
 }
 
@@ -2111,7 +2269,9 @@ element_tail_setter(PyObject *op, PyObject *value, void *closure)
 {
     _VALIDATE_ATTR_VALUE(value);
     ElementObject *self = _Element_CAST(op);
+    Py_BEGIN_CRITICAL_SECTION(op);
     _set_joined_ptr(&self->tail, Py_NewRef(value));
+    Py_END_CRITICAL_SECTION();
     return 0;
 }
 
@@ -2126,12 +2286,16 @@ element_attrib_setter(PyObject *op, PyObject *value, void *closure)
         return -1;
     }
     ElementObject *self = _Element_CAST(op);
+    int cs_err = 0;
+    Py_BEGIN_CRITICAL_SECTION(op);
     if (!self->extra) {
-        if (create_extra(self, NULL) < 0)
-            return -1;
+        cs_err = create_extra(self, NULL);
     }
-    Py_XSETREF(self->extra->attrib, Py_NewRef(value));
-    return 0;
+    if (cs_err == 0) {
+        Py_XSETREF(self->extra->attrib, Py_NewRef(value));
+    }
+    Py_END_CRITICAL_SECTION();
+    return cs_err;
 }
 
 /******************************* Element iterator ****************************/
@@ -2306,15 +2470,16 @@ elementiter_next(PyObject *op)
         continue;
 
 gettext:
+        /* element_get_text/element_get_tail return strong references */
         if (!text) {
             Py_DECREF(elem);
             return NULL;
         }
         if (text == Py_None) {
+            Py_DECREF(text);
             Py_DECREF(elem);
         }
         else {
-            Py_INCREF(text);
             Py_DECREF(elem);
             rc = PyObject_IsTrue(text);
             if (rc > 0)
@@ -2838,7 +3003,7 @@ treebuilder_handle_data(TreeBuilderObject* self, PyObject* data)
 }
 
 LOCAL(PyObject*)
-treebuilder_handle_end(TreeBuilderObject* self, PyObject* tag)
+treebuilder_handle_end_lock_held(TreeBuilderObject* self, PyObject* tag)
 {
     PyObject* item;
 
@@ -2865,6 +3030,16 @@ treebuilder_handle_end(TreeBuilderObject* self, PyObject* tag)
         return NULL;
 
     return Py_NewRef(self->last);
+}
+
+LOCAL(PyObject*)
+treebuilder_handle_end(TreeBuilderObject* self, PyObject* tag)
+{
+    PyObject* result;
+    Py_BEGIN_CRITICAL_SECTION(self);
+    result = treebuilder_handle_end_lock_held(self, tag);
+    Py_END_CRITICAL_SECTION();
+    return result;
 }
 
 LOCAL(PyObject*)
@@ -3266,10 +3441,10 @@ expat_default_handler(void *op, const XML_Char *data_in, int data_len)
     if (!key)
         return;
 
-    value = PyDict_GetItemWithError(self->entity, key);
+    int rc = PyDict_GetItemRef(self->entity, key, &value);
 
     elementtreestate *st = self->state;
-    if (value) {
+    if (rc > 0) {
         if (TreeBuilder_CheckExact(st, self->target))
             res = treebuilder_handle_data(
                 (TreeBuilderObject*) self->target, value
@@ -3278,8 +3453,9 @@ expat_default_handler(void *op, const XML_Char *data_in, int data_len)
             res = PyObject_CallOneArg(self->handle_data, value);
         else
             res = NULL;
+        Py_DECREF(value);
         Py_XDECREF(res);
-    } else if (!PyErr_Occurred()) {
+    } else if (rc == 0) {
         /* Report the first error, not the last */
         char message[128] = "undefined entity ";
         strncat(message, data_in, data_len < 100?data_len:100);
