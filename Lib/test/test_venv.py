@@ -375,13 +375,13 @@ class BasicTest(BaseTest):
                 f.write(b'Still here?')
 
     def test_install_scripts_selinux(self):
-    """
-    gh-145417: Test that install_scripts does not copy SELinux context when
-    copying scripts.
-    """
-    with patch('os.listxattr') as listxattr_mock:
-        venv.create(self.env_dir)
-    listxattr_mock.assert_not_called()
+        """
+        gh-145417: Test that install_scripts does not copy SELinux context
+        when copying scripts.
+        """
+        with patch('shutil.os.listxattr') as listxattr_mock:
+            venv.create(self.env_dir)
+            listxattr_mock.assert_not_called()
 
     def test_overwrite_existing(self):
         """
