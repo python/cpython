@@ -2407,7 +2407,7 @@ dict_unhashable_type(PyObject *op, PyObject *key)
     }
 
     const char *errmsg;
-    if (PyObject_IsInstance(op, (PyObject*)&PyFrozenDict_Type)) {
+    if (PyFrozenDict_Check(op)) {
         errmsg = "cannot use '%T' as a frozendict key (%S)";
     }
     else {
@@ -4403,7 +4403,7 @@ PyDict_Copy(PyObject *o)
 // Similar to PyDict_Copy(), but return a frozendict if the argument
 // is a frozendict.
 static PyObject *
-_PyDict_Copy(PyObject *o)
+anydict_copy(PyObject *o)
 {
     assert(PyAnyDict_Check(o));
 
@@ -4973,7 +4973,7 @@ dict_or(PyObject *self, PyObject *other)
     if (!PyAnyDict_Check(self) || !PyAnyDict_Check(other)) {
         Py_RETURN_NOTIMPLEMENTED;
     }
-    PyObject *new = _PyDict_Copy(self);
+    PyObject *new = anydict_copy(self);
     if (new == NULL) {
         return NULL;
     }
@@ -8202,7 +8202,7 @@ frozendict_copy_impl(PyFrozenDictObject *self)
         return Py_NewRef(self);
     }
 
-    return _PyDict_Copy((PyObject*)self);
+    return anydict_copy((PyObject*)self);
 }
 
 
