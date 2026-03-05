@@ -1,1 +1,2 @@
-Fix double free and null pointer dereference in unusual error scenarios in :mod:`md5module` and :mod:`hmacmodule`.
+Fix double free and null pointer dereference in unusual error scenarios
+in :mod:`md5` and :mod:`hmac` modules.
