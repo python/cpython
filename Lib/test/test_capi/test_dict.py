@@ -626,7 +626,7 @@ class CAPITest(unittest.TestCase):
 
     def test_frozendict_asdict(self):
         # Test PyFrozenDict_AsDict()
-        frozendict_asdict = _testlimitedcapi.frozendict_asdict
+        frozendict_asdict = _testcapi.frozendict_asdict
         for dict_type in FROZENDICT_TYPES:
             dct = dict_type({1: 2})
             dct_copy = frozendict_asdict(dct)
