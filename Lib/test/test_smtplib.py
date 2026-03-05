@@ -77,6 +77,26 @@ class GeneralTests:
         expected = "abc\r\n..jkl\r\nfoo\r\n...blue"
         self.assertEqual(expected, smtplib.quotedata(teststr))
 
+    def testQuoteAddr(self):
+        # Standard address is wrapped in angle brackets.
+        self.assertEqual(smtplib.quoteaddr('user@example.com'),
+                         '<user@example.com>')
+        # Already angle-bracketed and valid.
+        self.assertEqual(smtplib.quoteaddr('<user@example.com>'),
+                         '<user@example.com>')
+        # Empty string produces empty angle brackets.
+        self.assertEqual(smtplib.quoteaddr(''), '<>')
+
+    def testQuoteAddrMalformedAngleBracket(self):
+        # Inputs starting with '<' but missing closing '>' must still
+        # produce output that ends with '>'.
+        result = smtplib.quoteaddr('<')
+        self.assertTrue(result.startswith('<') and result.endswith('>'), result)
+        result = smtplib.quoteaddr('< ')
+        self.assertTrue(result.startswith('<') and result.endswith('>'), result)
+        result = smtplib.quoteaddr('<user@example.com')
+        self.assertTrue(result.startswith('<') and result.endswith('>'), result)
+
     def testBasic1(self):
         mock_socket.reply_with(b"220 Hola mundo")
         # connects
