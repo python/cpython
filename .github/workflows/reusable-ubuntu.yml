@@ -42,7 +42,7 @@ jobs:
       if: ${{ fromJSON(inputs.bolt-optimizations) }}
       run: |
         sudo bash -c "$(wget -O - https://apt.llvm.org/llvm.sh)" ./llvm.sh 19
-        sudo apt-get install bolt-19
+        sudo apt-get install --no-install-recommends bolt-19
         echo PATH="$(llvm-config-19 --bindir):$PATH" >> $GITHUB_ENV
     - name: Configure OpenSSL env vars
       run: |
@@ -58,9 +58,6 @@ jobs:
     - name: Install OpenSSL
       if: steps.cache-openssl.outputs.cache-hit != 'true'
       run: python3 Tools/ssl/multissltests.py --steps=library --base-directory "$MULTISSL_DIR" --openssl "$OPENSSL_VER" --system Linux
-    - name: Add ccache to PATH
-      run: |
-        echo "PATH=/usr/lib/ccache:$PATH" >> "$GITHUB_ENV"
     - name: Setup directory envs for out-of-tree builds
       run: |
         echo "CPYTHON_RO_SRCDIR=$(realpath -m "${GITHUB_WORKSPACE}"/../cpython-ro-srcdir)" >> "$GITHUB_ENV"

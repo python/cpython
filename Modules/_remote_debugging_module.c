@@ -77,6 +77,8 @@
                                   offsetof(PyInterpreterState, _gil.last_holder) + sizeof(PyThreadState*))
 #endif
 #define INTERP_STATE_BUFFER_SIZE MAX(INTERP_STATE_MIN_SIZE, 256)
+#define MAX_STACK_CHUNK_SIZE (16 * 1024 * 1024)  /* 16 MB max for stack chunks */
+#define MAX_SET_TABLE_SIZE (1 << 20)  /* 1 million entries max for set iteration */
 
 
 
@@ -318,10 +320,13 @@ static int append_awaited_by(RemoteUnwinderObject *unwinder, unsigned long tid, 
  * UTILITY FUNCTIONS AND HELPERS
  * ============================================================================ */
 
-#define set_exception_cause(unwinder, exc_type, message) \
-    if (unwinder->debug) { \
-        _set_debug_exception_cause(exc_type, message); \
-    }
+#define set_exception_cause(unwinder, exc_type, message)                              \
+    do {                                                                              \
+        assert(PyErr_Occurred() && "function returned -1 without setting exception"); \
+        if (unwinder->debug) {                                                        \
+            _set_debug_exception_cause(exc_type, message);                            \
+        }                                                                             \
+    } while (0)
 
 static void
 cached_code_metadata_destroy(void *ptr)
@@ -498,8 +503,15 @@ iterate_set_entries(
     }
 
     Py_ssize_t num_els = GET_MEMBER(Py_ssize_t, set_object, unwinder->debug_offsets.set_object.used);
-    Py_ssize_t set_len = GET_MEMBER(Py_ssize_t, set_object, unwinder->debug_offsets.set_object.mask) + 1;
+    Py_ssize_t mask = GET_MEMBER(Py_ssize_t, set_object, unwinder->debug_offsets.set_object.mask);
     uintptr_t table_ptr = GET_MEMBER(uintptr_t, set_object, unwinder->debug_offsets.set_object.table);
+    if (mask < 0 || mask >= MAX_SET_TABLE_SIZE || num_els < 0 || num_els > mask + 1) {
+        PyErr_SetString(PyExc_RuntimeError, "Invalid set object (corrupted remote memory)");
+        set_exception_cause(unwinder, PyExc_RuntimeError,
+            "Invalid set object (corrupted remote memory)");
+        return -1;
+    }
+    Py_ssize_t set_len = mask + 1;
 
     Py_ssize_t i = 0;
     Py_ssize_t els = 0;
@@ -1825,7 +1837,15 @@ parse_code_object(RemoteUnwinderObject *unwinder,
         tlbc_entry = get_tlbc_cache_entry(unwinder, real_address, unwinder->tlbc_generation);
     }
 
-    if (tlbc_entry && tlbc_index < tlbc_entry->tlbc_array_size) {
+    if (tlbc_entry) {
+        if (tlbc_index < 0 || tlbc_index >= tlbc_entry->tlbc_array_size) {
+            PyErr_Format(PyExc_RuntimeError,
+                "Invalid tlbc_index %d (array size %zd, corrupted remote memory)",
+                tlbc_index, tlbc_entry->tlbc_array_size);
+            set_exception_cause(unwinder, PyExc_RuntimeError,
+                "Invalid tlbc_index (corrupted remote memory)");
+            goto error;
+        }
         // Use cached TLBC data
         uintptr_t *entries = (uintptr_t *)((char *)tlbc_entry->tlbc_array + sizeof(Py_ssize_t));
         uintptr_t tlbc_bytecode_addr = entries[tlbc_index];
@@ -1924,6 +1944,15 @@ process_single_stack_chunk(
     // Check actual size and reread if necessary
     size_t actual_size = GET_MEMBER(size_t, this_chunk, offsetof(_PyStackChunk, size));
     if (actual_size != current_size) {
+        if (actual_size <= offsetof(_PyStackChunk, data) || actual_size > MAX_STACK_CHUNK_SIZE) {
+            PyMem_RawFree(this_chunk);
+            PyErr_Format(PyExc_RuntimeError,
+                "Invalid stack chunk size %zu (corrupted remote memory)", actual_size);
+            set_exception_cause(unwinder, PyExc_RuntimeError,
+                "Invalid stack chunk size (corrupted remote memory)");
+            return -1;
+        }
+
         this_chunk = PyMem_RawRealloc(this_chunk, actual_size);
         if (!this_chunk) {
             PyErr_NoMemory();
@@ -2027,6 +2056,7 @@ parse_frame_from_chunks(
 ) {
     void *frame_ptr = find_frame_in_chunks(chunks, address);
     if (!frame_ptr) {
+        PyErr_Format(PyExc_RuntimeError, "Frame at address 0x%lx not found in stack chunks", address);
         set_exception_cause(unwinder, PyExc_RuntimeError, "Frame not found in stack chunks");
         return -1;
     }
@@ -2736,6 +2766,7 @@ _remote_debugging_RemoteUnwinder_get_stack_trace_impl(RemoteUnwinderObject *self
     }
 
     while (current_tstate != 0) {
+        uintptr_t prev_tstate = current_tstate;
         PyObject* frame_info = unwind_stack_for_thread(self, &current_tstate);
         if (!frame_info) {
             Py_CLEAR(result);
@@ -2750,6 +2781,16 @@ _remote_debugging_RemoteUnwinder_get_stack_trace_impl(RemoteUnwinderObject *self
             goto exit;
         }
         Py_DECREF(frame_info);
+
+        if (current_tstate == prev_tstate) {
+            PyErr_Format(PyExc_RuntimeError,
+                "Thread list cycle detected at address 0x%lx (corrupted remote memory)",
+                current_tstate);
+            set_exception_cause(self, PyExc_RuntimeError,
+                "Thread list cycle detected (corrupted remote memory)");
+            Py_CLEAR(result);
+            goto exit;
+        }
 
         // We are targeting a single tstate, break here
         if (self->tstate_addr) {
