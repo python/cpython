@@ -200,16 +200,16 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        # macos-26 is Apple Silicon, macos-15-intel is Intel.
-        # macos-15-intel only runs tests against the GIL-enabled CPython.
+        # macos-26 is Apple Silicon, macos-26-intel is Intel.
+        # macos-26-intel only runs tests against the GIL-enabled CPython.
         os:
         - macos-26
-        - macos-15-intel
+        - macos-26-intel
         free-threading:
         - false
         - true
         exclude:
-        - os: macos-15-intel
+        - os: macos-26-intel
           free-threading: true
     uses: ./.github/workflows/reusable-macos.yml
     with:

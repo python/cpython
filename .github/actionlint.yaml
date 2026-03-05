@@ -1,6 +1,7 @@
 self-hosted-runner:
   # Pending https://github.com/rhysd/actionlint/pull/615
-  labels: ["windows-2025-vs2026"]
+  # https://github.com/rhysd/actionlint/pull/629
+  labels: ["windows-2025-vs2026", "macos-26-intel"]
 
 config-variables: null
 
