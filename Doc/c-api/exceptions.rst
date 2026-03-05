@@ -1346,3 +1346,20 @@ Tracebacks
 
    This function returns ``0`` on success, and returns ``-1`` with an
    exception set on failure.
+
+.. c:function:: void PyUnstable_DumpTraceback(int fd, PyThreadState *tstate)
+
+   Write a trace of the Python stack in *tstate* into the file *fd*.
+
+   This function is safe to use from signal handlers.
+
+.. c:function:: const char* PyUnstable_DumpTracebackThreads(int fd, PyInterpreterState *interp, PyThreadState *current_tstate)
+
+   Write the traces of all Python threads in *interp* into the file *fd*.  If
+   *current_state* is not NULL then it will be used to identify what the current
+   thread is in the written output. If it is NULL then this function will
+   identify the current thread using thread-specific storage.
+
+   This function will return NULL on success, or an error message on error.
+
+   This function is safe to use from signal handlers.
