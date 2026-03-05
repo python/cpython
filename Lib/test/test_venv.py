@@ -374,50 +374,14 @@ class BasicTest(BaseTest):
             with open(fn, 'wb') as f:
                 f.write(b'Still here?')
 
-    def test_install_scripts_mtime(self):
-        """
-        Test that install_scripts does not preserve mtime when copying scripts.
-        Using mtime serves as a proxy to verify that shutil.copy2/copystat
-        is not used during script installation,
-        incorrectly copying e.g. SELinux bin_t context.
-        See gh-145417.
-        """
-        venv_dir = os.path.dirname(venv.__file__)
-        src_path = os.path.join(venv_dir, 'scripts', 'common', 'Activate.ps1')
-        src_mtime = os.path.getmtime(src_path)
-
-        # Ensure a temporal difference between src and dst creation
-        if abs(time.time() - src_mtime) < 1.0:
-            time.sleep(1.1)
-
-        rmtree(self.env_dir)
+    def test_install_scripts_selinux(self):
+    """
+    gh-145417: Test that install_scripts does not copy SELinux context when
+    copying scripts.
+    """
+    with patch('os.listxattr') as listxattr_mock:
         venv.create(self.env_dir)
-
-        dst_path = os.path.join(self.env_dir, self.bindir, 'Activate.ps1')
-        self.assertTrue(os.path.exists(dst_path), "Activate.ps1 not found in venv")
-        dst_mtime = os.path.getmtime(dst_path)
-
-        # shutil.copy should update mtime, whereas shutil.copy2 would preserve it
-        self.assertNotEqual(src_mtime, dst_mtime,
-                          "mtime was preserved, meaning shutil.copy2 was used")
-
-        # Permissions and content should still match
-        src_stat = os.stat(src_path)
-        dst_stat = os.stat(dst_path)
-        self.assertEqual(src_stat.st_mode, dst_stat.st_mode, "File modes do not match")
-
-        with open(src_path, 'rb') as f:
-            src_data = f.read()
-
-        # Protection against the file becoming a template in the future
-        self.assertNotIn(b'__VENV_PYTHON__', src_data,
-                         "Test assumes Activate.ps1 is a static file, not a template")
-
-        with open(dst_path, 'rb') as f:
-            dst_data = f.read()
-
-        self.assertEqual(src_data, dst_data, "File contents do not match")
-
+    listxattr_mock.assert_not_called()
 
     def test_overwrite_existing(self):
         """
