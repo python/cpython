@@ -7568,7 +7568,11 @@ object_set_class_world_stopped(PyObject *self, PyTypeObject *newto)
 
             assert(_PyObject_GetManagedDict(self) == dict);
 
-            if (_PyDict_DetachFromObject(dict, self) < 0) {
+            int err;
+            Py_BEGIN_CRITICAL_SECTION(dict);
+            err = _PyDict_DetachFromObject(dict, self);
+            Py_END_CRITICAL_SECTION();
+            if (err < 0) {
                 return -1;
             }
 
