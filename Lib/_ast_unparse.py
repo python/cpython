@@ -744,7 +744,6 @@ class Unparser(NodeVisitor):
                 self.traverse(node.value)
             else:
                 self.write("**")
-                self.set_precedence(_Precedence.EXPR, node.key)
                 self.traverse(node.key)
             for gen in node.generators:
                 self.traverse(gen)

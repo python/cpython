@@ -471,7 +471,7 @@ append_ast_dictcomp(PyUnicodeWriter *writer, expr_ty e)
     }
     else {
         APPEND_STR("**");
-        APPEND_EXPR(e->v.DictComp.key, PR_EXPR);
+        APPEND_EXPR(e->v.DictComp.key, PR_TEST);
     }
     APPEND(comprehensions, e->v.DictComp.generators);
     APPEND_CHAR_FINISH('}');
