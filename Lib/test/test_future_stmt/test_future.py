@@ -349,6 +349,7 @@ class AnnotationsFutureTestCase(unittest.TestCase):
         eq("(i ** 2 + j for i in (1, 2, 3) for j in (1, 2, 3))")
         eq("{i: 0 for i in (1, 2, 3)}")
         eq("{i: j for i, j in ((1, 'a'), (2, 'b'), (3, 'c'))}")
+        eq("{**x for x in ()}")
         eq("[(x, y) for x, y in (a, b)]")
         eq("[(x,) for x, in (a,)]")
         eq("Python3 > Python2 > COBOL")

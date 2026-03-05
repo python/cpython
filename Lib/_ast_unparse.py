@@ -738,9 +738,14 @@ class Unparser(NodeVisitor):
 
     def visit_DictComp(self, node):
         with self.delimit("{", "}"):
-            self.traverse(node.key)
-            self.write(": ")
-            self.traverse(node.value)
+            if node.value:
+                self.traverse(node.key)
+                self.write(": ")
+                self.traverse(node.value)
+            else:
+                self.write("**")
+                self.set_precedence(_Precedence.EXPR, node.key)
+                self.traverse(node.key)
             for gen in node.generators:
                 self.traverse(gen)
 

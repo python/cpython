@@ -555,6 +555,7 @@ linkcheck_ignore = [
 # mapping unique short aliases to a base URL and a prefix.
 # https://www.sphinx-doc.org/en/master/usage/extensions/extlinks.html
 extlinks = {
+    "oss-fuzz": ("https://issues.oss-fuzz.com/issues/%s", "#%s"),
     "pypi": ("https://pypi.org/project/%s/", "%s"),
     "source": (SOURCE_URI, "%s"),
 }
