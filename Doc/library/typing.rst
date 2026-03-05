@@ -209,7 +209,7 @@ Annotating callable objects
 
 Functions -- or other :term:`callable` objects -- can be annotated using
 :class:`collections.abc.Callable` or deprecated :data:`typing.Callable`.
-``Callable[[int], str]`` signifies a function that takes a single parameter
+``Callable[[int], str]`` signifies a function that has a single parameter
 of type :class:`int` and returns a :class:`str`.
 
 For example:
@@ -232,12 +232,11 @@ For example:
 
 .. index:: single: ...; ellipsis literal
 
-The subscription syntax must always be used with exactly two values: the
-argument list and the return type.  The argument list must be a list of types,
-a :class:`ParamSpec`, :data:`Concatenate`, or an ellipsis (``...``). The return type must
-be a single type.
+The type specification `[]` must have two objects, a parameter type list and return type.
+The parameter type list must be a list of types, :class:`ParamSpec`, :data:`Concatenate`
+or ellipsis (``...``). The return type must be a single type.
 
-If a literal ellipsis ``...`` is given as the argument list, it indicates that
+If a literal ellipsis ``...`` is given as the parameter type list, it indicates that
 a callable with any arbitrary parameter list would be acceptable:
 
 .. testcode::
@@ -249,10 +248,9 @@ a callable with any arbitrary parameter list would be acceptable:
    x = str     # OK
    x = concat  # Also OK
 
-``Callable`` cannot express complex signatures such as functions that take a
-variadic number of arguments, :ref:`overloaded functions <overload>`, or
-functions that have keyword-only parameters. However, these signatures can be
-expressed by defining a :class:`Protocol` class with a
+``Callable`` cannot express complex signatures such as functions that have 
+keyword-only or var-positional parameters, or :ref:`overloaded functions <overload>`.
+However, these signatures can be expressed by defining a :class:`Protocol` class with a
 :meth:`~object.__call__` method:
 
 .. testcode::
@@ -281,7 +279,7 @@ parameter types are dependent on each other using :class:`ParamSpec`.
 Additionally, if that callable adds or removes arguments from other
 callables, the :data:`Concatenate` operator may be used.  They
 take the form ``Callable[ParamSpecVariable, ReturnType]`` and
-``Callable[Concatenate[Arg1Type, Arg2Type, ..., ParamSpecVariable], ReturnType]``
+``Callable[Concatenate[Param1Type, Arg2Type, ..., ParamSpecVariable], ReturnType]``
 respectively.
 
 .. versionchanged:: 3.10
