@@ -698,6 +698,10 @@ The add_argument() method
 
    * deprecated_ - Whether or not use of the argument is deprecated.
 
+   The method returns the :class:`Action` object that was created and added to
+   the parser.  This can be stored and used for further customization or
+   inspection.
+
 The following sections describe how each of these are used.
 
 
