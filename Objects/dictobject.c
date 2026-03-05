@@ -6523,7 +6523,7 @@ dictitems_xor_lock_held(PyObject *d1, PyObject *d2)
     ASSERT_DICT_LOCKED(d1);
     ASSERT_DICT_LOCKED(d2);
 
-    PyObject *temp_dict = copy_lock_held(d1, PyFrozenDict_Check(d1));
+    PyObject *temp_dict = copy_lock_held(d1, 0);
     if (temp_dict == NULL) {
         return NULL;
     }
