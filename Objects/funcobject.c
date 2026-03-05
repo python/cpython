@@ -631,7 +631,8 @@ func_get_code(PyObject *self, void *Py_UNUSED(ignored))
         return NULL;
     }
 
-    return Py_NewRef(op->func_code);
+    PyCodeObject *code = _Py_atomic_load_ptr(&op->func_code);
+    return Py_NewRef(code);
 }
 
 static int
@@ -664,7 +665,7 @@ func_set_code(PyObject *self, PyObject *value, void *Py_UNUSED(ignored))
         return -1;
     }
 
-    PyObject *func_code = PyFunction_GET_CODE(op);
+    PyCodeObject *func_code = _Py_atomic_load_ptr(&op->func_code);
     int old_flags = ((PyCodeObject *)func_code)->co_flags;
     int new_flags = ((PyCodeObject *)value)->co_flags;
     int mask = CO_GENERATOR | CO_COROUTINE | CO_ASYNC_GENERATOR;
@@ -679,7 +680,10 @@ func_set_code(PyObject *self, PyObject *value, void *Py_UNUSED(ignored))
 
     handle_func_event(PyFunction_EVENT_MODIFY_CODE, op, value);
     _PyFunction_ClearVersion(op);
-    Py_XSETREF(op->func_code, Py_NewRef(value));
+    PyCodeObject *new = (PyCodeObject *)Py_NewRef(value);
+    PyCodeObject *old =
+        (PyCodeObject *)_Py_atomic_exchange_ptr(&op->func_code, new);
+    Py_XDECREF(old);
     return 0;
 }
 
