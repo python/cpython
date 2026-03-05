@@ -212,8 +212,8 @@ For example::
     True
 
 The following standard library modules have been updated to accept
-:class:`frozendict`: :mod:`copy`, :mod:`decimal`, :mod:`json`, :mod:`pickle`,
-:mod:`pprint` and :mod:`xml.etree.ElementTree`.
+:class:`frozendict`: :mod:`copy`, :mod:`decimal`, :mod:`json`, :mod:`marshal`,
+:mod:`pickle`, :mod:`pprint` and :mod:`xml.etree.ElementTree`.
 
 :func:`eval` and :func:`exec` accept :class:`frozendict` for *globals*, and
 :func:`type` accept :class:`frozendict` for *dict*.
