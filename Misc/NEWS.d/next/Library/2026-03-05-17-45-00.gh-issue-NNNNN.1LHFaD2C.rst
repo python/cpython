@@ -1,5 +1,0 @@
-Fix data race in :mod:`xml.etree.ElementTree` XML parser when handling
-entity references. Use :c:func:`PyDict_GetItemRef` instead of
-:c:func:`!PyDict_GetItemWithError` to avoid using a borrowed reference
-that could be invalidated by concurrent dict modifications in the
-free-threaded build.

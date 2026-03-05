@@ -1,0 +1,12 @@
+Fix multiple data races in :mod:`xml.etree.ElementTree` for the free-threaded
+build.  Add :c:macro:`Py_BEGIN_CRITICAL_SECTION` guards and ``_lock_held``
+split-function patterns throughout ``Modules/_elementtree.c`` to protect
+:class:`~xml.etree.ElementTree.Element` struct fields, child-list mutations
+(:meth:`~xml.etree.ElementTree.Element.append`,
+:meth:`~xml.etree.ElementTree.Element.insert`,
+:meth:`~xml.etree.ElementTree.Element.clear`), property
+getters/setters, :meth:`~xml.etree.ElementTree.Element.__copy__`,
+:meth:`~xml.etree.ElementTree.Element.__deepcopy__`, and
+:class:`~xml.etree.ElementTree.TreeBuilder` end-tag handling.
+Also replace a :c:func:`PyDict_GetItemWithError` borrowed-reference lookup
+in the expat entity handler with :c:func:`PyDict_GetItemRef`.
