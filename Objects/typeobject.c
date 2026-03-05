@@ -651,28 +651,6 @@ lookup_tp_mro(PyTypeObject *self)
     return self->tp_mro;
 }
 
-PyObject *
-_PyType_GetMRO(PyTypeObject *self)
-{
-#ifdef Py_GIL_DISABLED
-    PyObject *mro = _Py_atomic_load_ptr_relaxed(&self->tp_mro);
-    if (mro == NULL) {
-        return NULL;
-    }
-    if (_Py_TryIncrefCompare(&self->tp_mro, mro)) {
-        return mro;
-    }
-
-    BEGIN_TYPE_LOCK();
-    mro = lookup_tp_mro(self);
-    Py_XINCREF(mro);
-    END_TYPE_LOCK();
-    return mro;
-#else
-    return Py_XNewRef(lookup_tp_mro(self));
-#endif
-}
-
 static inline void
 set_tp_mro(PyTypeObject *self, PyObject *mro, int initial)
 {
@@ -4872,7 +4850,7 @@ type_new_get_slots(type_new_ctx *ctx, PyObject *dict)
 static PyTypeObject*
 type_new_init(type_new_ctx *ctx)
 {
-    PyObject *dict = PyDict_Copy(ctx->orig_dict);
+    PyObject *dict = _PyDict_CopyAsDict(ctx->orig_dict);
     if (dict == NULL) {
         goto error;
     }
@@ -5037,11 +5015,17 @@ type_new(PyTypeObject *metatype, PyObject *args, PyObject *kwds)
 
     /* Parse arguments: (name, bases, dict) */
     PyObject *name, *bases, *orig_dict;
-    if (!PyArg_ParseTuple(args, "UO!O!:type.__new__",
+    if (!PyArg_ParseTuple(args, "UO!O:type.__new__",
                           &name,
                           &PyTuple_Type, &bases,
-                          &PyDict_Type, &orig_dict))
+                          &orig_dict))
     {
+        return NULL;
+    }
+    if (!PyAnyDict_Check(orig_dict)) {
+        PyErr_Format(PyExc_TypeError,
+                     "type.__new__() argument 3 must be dict or frozendict, not %T",
+                     orig_dict);
         return NULL;
     }
 
