@@ -26,6 +26,17 @@ class TestUtil(unittest.TestCase):
         self.assertEqual(sorted_list_difference([2], [1, 1]), ([2], [1]))
         self.assertEqual(sorted_list_difference([1, 2], [1, 1]), ([2], []))
 
+    def test_sorted_list_difference_tail_deduplication(self):
+        # Tail deduplication when one list is exhausted before the other.
+        # These exercise the except-IndexError path in sorted_list_difference.
+        self.assertEqual(sorted_list_difference([], [0, 0]), ([], [0]))
+        self.assertEqual(sorted_list_difference([0, 0], []), ([0], []))
+        self.assertEqual(sorted_list_difference([], [1, 1, 2, 2]), ([], [1, 2]))
+        self.assertEqual(sorted_list_difference([1, 1, 2, 2], []), ([1, 2], []))
+        # One list exhausts mid-way, leaving duplicated tail in the other.
+        self.assertEqual(sorted_list_difference([1], [1, 2, 2, 3, 3]), ([], [2, 3]))
+        self.assertEqual(sorted_list_difference([1, 2, 2, 3, 3], [1]), ([2, 3], []))
+
     def test_unorderable_list_difference(self):
         self.assertEqual(unorderable_list_difference([], []), ([], []))
         self.assertEqual(unorderable_list_difference([1, 2], []), ([2, 1], []))
