@@ -27,18 +27,7 @@ For instance, SML provides a tabulation tool: ``tabulate(f)`` which produces a
 sequence ``f(0), f(1), ...``.  The same effect can be achieved in Python
 by combining :func:`map` and :func:`count` to form ``map(f, count())``.
 
-
-**Infinite iterators:**
-
-==================  =================       =================================================               =========================================
-Iterator            Arguments               Results                                                         Example
-==================  =================       =================================================               =========================================
-:func:`count`       [start[, step]]         start, start+step, start+2*step, ...                            ``count(10) → 10 11 12 13 14 ...``
-:func:`cycle`       p                       p0, p1, ... plast, p0, p1, ...                                  ``cycle('ABCD') → A B C D A B C D ...``
-:func:`repeat`      elem [,n]               elem, elem, elem, ... endlessly or up to n times                ``repeat(10, 3) → 10 10 10``
-==================  =================       =================================================               =========================================
-
-**Iterators terminating on the shortest input sequence:**
+**General iterators:**
 
 ============================    ============================    =================================================   =============================================================
 Iterator                        Arguments                       Results                                             Example
@@ -48,11 +37,14 @@ Iterator                        Arguments                       Results         
 :func:`chain`                   p, q, ...                       p0, p1, ... plast, q0, q1, ...                      ``chain('ABC', 'DEF') → A B C D E F``
 :func:`chain.from_iterable`     iterable                        p0, p1, ... plast, q0, q1, ...                      ``chain.from_iterable(['ABC', 'DEF']) → A B C D E F``
 :func:`compress`                data, selectors                 (d[0] if s[0]), (d[1] if s[1]), ...                 ``compress('ABCDEF', [1,0,1,0,1,1]) → A C E F``
+:func:`count`                   [start[, step]]                 start, start+step, start+2*step, ...                ``count(10) → 10 11 12 13 14 ...``
+:func:`cycle`                   p                               p0, p1, ... plast, p0, p1, ...                      ``cycle('ABCD') → A B C D A B C D ...``
 :func:`dropwhile`               predicate, seq                  seq[n], seq[n+1], starting when predicate fails     ``dropwhile(lambda x: x<5, [1,4,6,3,8]) → 6 3 8``
 :func:`filterfalse`             predicate, seq                  elements of seq where predicate(elem) fails         ``filterfalse(lambda x: x<5, [1,4,6,3,8]) → 6 8``
 :func:`groupby`                 iterable[, key]                 sub-iterators grouped by value of key(v)            ``groupby(['A','B','DEF'], len) → (1, A B) (3, DEF)``
 :func:`islice`                  seq, [start,] stop [, step]     elements from seq[start:stop:step]                  ``islice('ABCDEFG', 2, None) → C D E F G``
 :func:`pairwise`                iterable                        (p[0], p[1]), (p[1], p[2])                          ``pairwise('ABCDEFG') → AB BC CD DE EF FG``
+:func:`repeat`                  elem [,n]                       elem, elem, elem, ... endlessly or up to n times    ``repeat(10, 3) → 10 10 10``
 :func:`starmap`                 func, seq                       func(\*seq[0]), func(\*seq[1]), ...                 ``starmap(pow, [(2,5), (3,2), (10,3)]) → 32 9 1000``
 :func:`takewhile`               predicate, seq                  seq[0], seq[1], until predicate fails               ``takewhile(lambda x: x<5, [1,4,6,3,8]) → 1 4``
 :func:`tee`                     it, n                           it1, it2, ... itn  splits one iterator into n       ``tee('ABC', 2) → A B C, A B C``

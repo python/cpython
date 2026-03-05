@@ -1569,6 +1569,26 @@ class DictTest(unittest.TestCase):
                 self.assertEqual(d.get(key3_3), 44)
                 self.assertGreaterEqual(eq_count, 1)
 
+    def test_overwrite_managed_dict(self):
+        # GH-130327: Overwriting an object's managed dictionary with another object's
+        # skipped traversal in favor of inline values, causing the GC to believe that
+        # the __dict__ wasn't reachable.
+        import gc
+
+        class Shenanigans:
+            pass
+
+        to_be_deleted = Shenanigans()
+        to_be_deleted.attr = "whatever"
+        holds_reference = Shenanigans()
+        holds_reference.__dict__ = to_be_deleted.__dict__
+        holds_reference.ref = {"circular": to_be_deleted, "data": 42}
+
+        del to_be_deleted
+        gc.collect()
+        self.assertEqual(holds_reference.ref['data'], 42)
+        self.assertEqual(holds_reference.attr, "whatever")
+
     def test_unhashable_key(self):
         d = {'a': 1}
         key = [1, 2, 3]
@@ -1680,6 +1700,69 @@ class DictTest(unittest.TestCase):
         self.assertEqual(len(d), len(items), d)
         self.assertEqual(d, dict(items))
 
+    def test_clear_reentrant_embedded(self):
+        # gh-130555: dict.clear() must be safe when values are embedded
+        # in an object and a destructor mutates the dict.
+        class MyObj: pass
+        class ClearOnDelete:
+            def __del__(self):
+                nonlocal x
+                del x
+
+        x = MyObj()
+        x.a = ClearOnDelete()
+
+        d = x.__dict__
+        d.clear()
+
+    def test_clear_reentrant_cycle(self):
+        # gh-130555: dict.clear() must be safe for embedded dicts when the
+        # object is part of a reference cycle and the last reference to the
+        # dict is via the cycle.
+        class MyObj: pass
+        obj = MyObj()
+        obj.f = obj
+        obj.attr = "attr"
+
+        d = obj.__dict__
+        del obj
+
+        d.clear()
+
+    def test_clear_reentrant_force_combined(self):
+        # gh-130555: dict.clear() must be safe when a destructor forces the
+        # dict from embedded/split to combined (setting ma_values to NULL).
+        class MyObj: pass
+        class ForceConvert:
+            def __del__(self):
+                d[1] = "trigger"
+
+        x = MyObj()
+        x.a = ForceConvert()
+        x.b = "other"
+
+        d = x.__dict__
+        d.clear()
+
+    def test_clear_reentrant_delete(self):
+        # gh-130555: dict.clear() must be safe when a destructor deletes
+        # a key from the same embedded dict.
+        class MyObj: pass
+        class DelKey:
+            def __del__(self):
+                try:
+                    del d['b']
+                except KeyError:
+                    pass
+
+        x = MyObj()
+        x.a = DelKey()
+        x.b = "value_b"
+        x.c = "value_c"
+
+        d = x.__dict__
+        d.clear()
+
 
 class CAPITest(unittest.TestCase):
 
@@ -1731,7 +1814,21 @@ class FrozenDict(frozendict):
     pass
 
 
+class FrozenDictSlots(frozendict):
+    __slots__ = ('slot_attr',)
+
+
 class FrozenDictTests(unittest.TestCase):
+    def test_constructor(self):
+        # frozendict.__init__() has no effect
+        d = frozendict(a=1, b=2, c=3)
+        d.__init__(x=1)
+        self.assertEqual(d, frozendict(a=1, b=2, c=3))
+
+        # dict constructor cannot be used on frozendict
+        with self.assertRaises(TypeError):
+            dict.__init__(d, x=1)
+
     def test_copy(self):
         d = frozendict(x=1, y=2)
         d2 = d.copy()
@@ -1751,10 +1848,18 @@ class FrozenDictTests(unittest.TestCase):
                          frozendict({'x': 1, 'y': 2}))
         self.assertEqual(frozendict(x=1, y=2) | frozendict(y=5),
                          frozendict({'x': 1, 'y': 5}))
+        self.assertEqual(FrozenDict(x=1, y=2) | FrozenDict(y=5),
+                         frozendict({'x': 1, 'y': 5}))
+
         fd = frozendict(x=1, y=2)
         self.assertIs(fd | frozendict(), fd)
         self.assertIs(fd | {}, fd)
         self.assertIs(frozendict() | fd, fd)
+
+        fd = FrozenDict(x=1, y=2)
+        self.assertEqual(fd | frozendict(), fd)
+        self.assertEqual(fd | {}, fd)
+        self.assertEqual(frozendict() | fd, fd)
 
     def test_update(self):
         # test "a |= b" operator
@@ -1766,6 +1871,11 @@ class FrozenDictTests(unittest.TestCase):
         self.assertEqual(d, frozendict({'x': 1, 'y': 2}))
         self.assertEqual(copy, frozendict({'x': 1}))
 
+    def test_items_xor(self):
+        # test "a ^ b" operator on items views
+        res = frozendict(a=1, b=2).items() ^ frozendict(b=2, c=3).items()
+        self.assertEqual(res, {('a', 1), ('c', 3)})
+
     def test_repr(self):
         d = frozendict()
         self.assertEqual(repr(d), "frozendict()")
@@ -1773,10 +1883,8 @@ class FrozenDictTests(unittest.TestCase):
         d = frozendict(x=1, y=2)
         self.assertEqual(repr(d), "frozendict({'x': 1, 'y': 2})")
 
-        class MyFrozenDict(frozendict):
-            pass
-        d = MyFrozenDict(x=1, y=2)
-        self.assertEqual(repr(d), "MyFrozenDict({'x': 1, 'y': 2})")
+        d = FrozenDict(x=1, y=2)
+        self.assertEqual(repr(d), "FrozenDict({'x': 1, 'y': 2})")
 
     def test_hash(self):
         # hash() doesn't rely on the items order
@@ -1824,6 +1932,79 @@ class FrozenDictTests(unittest.TestCase):
         self.assertEqual(fd, frozendict(x=1, a=None, b=None, c=None))
         self.assertEqual(type(fd), DictSubclass)
         self.assertEqual(created, frozendict(x=1))
+
+    def test_pickle(self):
+        for proto in range(pickle.HIGHEST_PROTOCOL + 1):
+            for fd in (
+                frozendict(),
+                frozendict(x=1, y=2),
+                FrozenDict(x=1, y=2),
+                FrozenDictSlots(x=1, y=2),
+            ):
+                if type(fd) == FrozenDict:
+                    fd.attr = 123
+                if type(fd) == FrozenDictSlots:
+                    fd.slot_attr = 456
+                with self.subTest(fd=fd, proto=proto):
+                    if proto >= 2:
+                        p = pickle.dumps(fd, proto)
+                        fd2 = pickle.loads(p)
+                        self.assertEqual(fd2, fd)
+                        self.assertEqual(type(fd2), type(fd))
+                        if type(fd) == FrozenDict:
+                            self.assertEqual(fd2.attr, 123)
+                        if type(fd) == FrozenDictSlots:
+                            self.assertEqual(fd2.slot_attr, 456)
+                    else:
+                        # protocol 0 and 1 don't support frozendict
+                        with self.assertRaises(TypeError):
+                            pickle.dumps(fd, proto)
+
+    def test_pickle_iter(self):
+        fd = frozendict(c=1, b=2, a=3, d=4, e=5, f=6)
+        for method_name in (None, 'keys', 'values', 'items'):
+            if method_name is not None:
+                meth = getattr(fd, method_name)
+            else:
+                meth = lambda: fd
+            expected = list(meth())[1:]
+            for proto in range(pickle.HIGHEST_PROTOCOL + 1):
+                with self.subTest(method_name=method_name, protocol=proto):
+                    it = iter(meth())
+                    next(it)
+                    p = pickle.dumps(it, proto)
+                    unpickled = pickle.loads(p)
+                    self.assertEqual(list(unpickled), expected)
+                    self.assertEqual(list(it), expected)
+
+    def test_unhashable_key(self):
+        d = frozendict(a=1)
+        key = [1, 2, 3]
+
+        def check_unhashable_key():
+            msg = "cannot use 'list' as a frozendict key (unhashable type: 'list')"
+            return self.assertRaisesRegex(TypeError, re.escape(msg))
+
+        with check_unhashable_key():
+            key in d
+        with check_unhashable_key():
+            d[key]
+        with check_unhashable_key():
+            d.get(key)
+
+        # Only TypeError exception is overridden,
+        # other exceptions are left unchanged.
+        class HashError:
+            def __hash__(self):
+                raise KeyError('error')
+
+        key2 = HashError()
+        with self.assertRaises(KeyError):
+            key2 in d
+        with self.assertRaises(KeyError):
+            d[key2]
+        with self.assertRaises(KeyError):
+            d.get(key2)
 
 
 if __name__ == "__main__":

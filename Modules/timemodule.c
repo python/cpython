@@ -1170,7 +1170,8 @@ time_tzset(PyObject *self, PyObject *unused)
 
     /* Reset timezone, altzone, daylight and tzname */
     if (init_timezone(m) < 0) {
-         return NULL;
+        Py_DECREF(m);
+        return NULL;
     }
     Py_DECREF(m);
     if (PyErr_Occurred())

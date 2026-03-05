@@ -552,7 +552,7 @@ dict_as_flags(decimal_state *state, PyObject *val)
     uint32_t flags = 0;
     int x;
 
-    if (!PyDict_Check(val)) {
+    if (!PyAnyDict_Check(val)) {
         PyErr_SetString(PyExc_TypeError,
             "argument must be a signal dict");
         return DEC_INVALID_SIGNALS;
@@ -802,7 +802,7 @@ signaldict_richcompare(PyObject *v, PyObject *w, int op)
         if (PyDecSignalDict_Check(state, w)) {
             res = (SdFlags(v)==SdFlags(w)) ^ (op==Py_NE) ? Py_True : Py_False;
         }
-        else if (PyDict_Check(w)) {
+        else if (PyAnyDict_Check(w)) {
             uint32_t flags = dict_as_flags(state, w);
             if (flags & DEC_ERRORS) {
                 if (flags & DEC_INVALID_SIGNALS) {

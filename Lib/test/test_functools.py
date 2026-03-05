@@ -514,6 +514,58 @@ class TestPartial:
         self.assertEqual(alias.__args__, (int,))
         self.assertEqual(alias.__parameters__, ())
 
+    # GH-144475: Tests that the partial object does not change until repr finishes
+    def test_repr_safety_against_reentrant_mutation(self):
+        g_partial = None
+
+        class Function:
+            def __init__(self, name):
+                self.name = name
+
+            def __call__(self):
+                return None
+
+            def __repr__(self):
+                return f"Function({self.name})"
+
+        class EvilObject:
+            def __init__(self):
+                self.triggered = False
+
+            def __repr__(self):
+                if not self.triggered and g_partial is not None:
+                    self.triggered = True
+                    new_args_tuple = (None,)
+                    new_keywords_dict = {"keyword": None}
+                    new_tuple_state = (Function("new_function"), new_args_tuple, new_keywords_dict, None)
+                    g_partial.__setstate__(new_tuple_state)
+                    gc.collect()
+                return f"EvilObject"
+
+        trigger = EvilObject()
+        func = Function("old_function")
+
+        g_partial = functools.partial(func, None, trigger=trigger)
+        self.assertEqual(repr(g_partial),"functools.partial(Function(old_function), None, trigger=EvilObject)")
+
+        trigger.triggered = False
+        g_partial = functools.partial(func, trigger, arg=None)
+        self.assertEqual(repr(g_partial),"functools.partial(Function(old_function), EvilObject, arg=None)")
+
+
+        trigger.triggered = False
+        g_partial = functools.partial(func, trigger, None)
+        self.assertEqual(repr(g_partial),"functools.partial(Function(old_function), EvilObject, None)")
+
+        trigger.triggered = False
+        g_partial = functools.partial(func, trigger=trigger, arg=None)
+        self.assertEqual(repr(g_partial),"functools.partial(Function(old_function), trigger=EvilObject, arg=None)")
+
+        trigger.triggered = False
+        g_partial = functools.partial(func, trigger, None, None, None, None, arg=None)
+        self.assertEqual(repr(g_partial),"functools.partial(Function(old_function), EvilObject, None, None, None, None, arg=None)")
+
+
 
 @unittest.skipUnless(c_functools, 'requires the C _functools module')
 class TestPartialC(TestPartial, unittest.TestCase):
@@ -3004,6 +3056,57 @@ class TestSingleDispatch(unittest.TestCase):
         self.assertEqual(A().cls_func.__name__, 'cls_func')
         self.assertEqual(A.static_func.__name__, 'static_func')
         self.assertEqual(A().static_func.__name__, 'static_func')
+
+    def test_method_classlevel_calls(self):
+        """Regression test for GH-143535."""
+        class C:
+            @functools.singledispatchmethod
+            def generic(self, x: object):
+                return "generic"
+
+            @generic.register
+            def special1(self, x: int):
+                return "special1"
+
+            @generic.register
+            @classmethod
+            def special2(self, x: float):
+                return "special2"
+
+            @generic.register
+            @staticmethod
+            def special3(x: complex):
+                return "special3"
+
+            def special4(self, x):
+                return "special4"
+
+            class D1:
+                def __get__(self, _, owner):
+                    return lambda inst, x: owner.special4(inst, x)
+
+            generic.register(D1, D1())
+
+            def special5(self, x):
+                return "special5"
+
+            class D2:
+                def __get__(self, inst, owner):
+                    # Different instance bound to the returned method
+                    # doesn't cause it to receive the original instance
+                    # as a separate argument.
+                    # To work around this, wrap the returned bound method
+                    # with `functools.partial`.
+                    return C().special5
+
+            generic.register(D2, D2())
+
+        self.assertEqual(C.generic(C(), "foo"), "generic")
+        self.assertEqual(C.generic(C(), 1), "special1")
+        self.assertEqual(C.generic(C(), 2.0), "special2")
+        self.assertEqual(C.generic(C(), 3j), "special3")
+        self.assertEqual(C.generic(C(), C.D1()), "special4")
+        self.assertEqual(C.generic(C(), C.D2()), "special5")
 
     def test_method_repr(self):
         class Callable:
