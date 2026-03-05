@@ -590,9 +590,6 @@ class Pool(object):
         while 1:
             try:
                 task = get()
-            except (OSError, EOFError):
-                util.debug('result handler got EOFError/OSError -- exiting')
-                return
             except Exception as e:
                 exc = RuntimeError("Result handler failed to get result from worker and " +
                                "unable to recover. " +
