@@ -164,7 +164,7 @@ class _PoolCache(dict):
     def _disable_cache(self, exec):
         self._cache_failed = True
         self._cache_failed_reason = exec
-    
+
     def __setitem__(self, key, value):
         if self._cache_failed:
             raise RuntimeError("Pool cache is disabled due to previous error") \
