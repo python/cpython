@@ -255,8 +255,7 @@ class _ConnectionBase:
         self._check_closed()
         self._check_readable()
         buf = self._recv_bytes()
-        res = _ForkingPickler.loads(buf.getbuffer())
-        return res
+        return _ForkingPickler.loads(buf.getbuffer())
 
     def poll(self, timeout=0.0):
         """Whether there is any input available to be read"""
