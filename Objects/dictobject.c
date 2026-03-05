@@ -2719,6 +2719,10 @@ _PyDict_LoadBuiltinsFromGlobals(PyObject *globals)
     return builtins;
 }
 
+#define frozendict_does_not_support(WHAT) \
+    PyErr_SetString(PyExc_TypeError, "frozendict object does " \
+                    "not support item " WHAT)
+
 /* Consumes references to key and value */
 static int
 setitem_take2_lock_held(PyDictObject *mp, PyObject *key, PyObject *value)
@@ -2762,12 +2766,19 @@ _PyDict_SetItem_Take2(PyDictObject *mp, PyObject *key, PyObject *value)
 int
 PyDict_SetItem(PyObject *op, PyObject *key, PyObject *value)
 {
-    if (!PyDict_Check(op)) {
-        PyErr_BadInternalCall();
-        return -1;
-    }
     assert(key);
     assert(value);
+
+    if (!PyDict_Check(op)) {
+        if (PyFrozenDict_Check(op)) {
+            frozendict_does_not_support("assignment");
+        }
+        else {
+            PyErr_BadInternalCall();
+        }
+        return -1;
+    }
+
     return _PyDict_SetItem_Take2((PyDictObject *)op,
                                  Py_NewRef(key), Py_NewRef(value));
 }
@@ -2807,13 +2818,19 @@ int
 _PyDict_SetItem_KnownHash(PyObject *op, PyObject *key, PyObject *value,
                           Py_hash_t hash)
 {
-    if (!PyDict_Check(op)) {
-        PyErr_BadInternalCall();
-        return -1;
-    }
     assert(key);
     assert(value);
     assert(hash != -1);
+
+    if (!PyDict_Check(op)) {
+        if (PyFrozenDict_Check(op)) {
+            frozendict_does_not_support("assignment");
+        }
+        else {
+            PyErr_BadInternalCall();
+        }
+        return -1;
+    }
 
     int res;
     Py_BEGIN_CRITICAL_SECTION(op);
@@ -2899,13 +2916,18 @@ PyDict_DelItem(PyObject *op, PyObject *key)
 int
 _PyDict_DelItem_KnownHash_LockHeld(PyObject *op, PyObject *key, Py_hash_t hash)
 {
-    Py_ssize_t ix;
-    PyObject *old_value;
-
     if (!PyDict_Check(op)) {
-        PyErr_BadInternalCall();
+        if (PyFrozenDict_Check(op)) {
+            frozendict_does_not_support("deletion");
+        }
+        else {
+            PyErr_BadInternalCall();
+        }
         return -1;
     }
+
+    Py_ssize_t ix;
+    PyObject *old_value;
     PyDictObject *mp = (PyDictObject *)op;
     assert(can_modify_dict(mp));
 
@@ -3206,7 +3228,12 @@ pop_lock_held(PyObject *op, PyObject *key, PyObject **result)
         if (result) {
             *result = NULL;
         }
-        PyErr_BadInternalCall();
+        if (PyFrozenDict_Check(op)) {
+            frozendict_does_not_support("deletion");
+        }
+        else {
+            PyErr_BadInternalCall();
+        }
         return -1;
     }
     PyDictObject *dict = (PyDictObject *)op;
@@ -4017,7 +4044,12 @@ PyDict_MergeFromSeq2(PyObject *d, PyObject *seq2, int override)
     assert(d != NULL);
     assert(seq2 != NULL);
     if (!PyDict_Check(d)) {
-        PyErr_BadInternalCall();
+        if (PyFrozenDict_Check(d)) {
+            frozendict_does_not_support("assignment");
+        }
+        else {
+            PyErr_BadInternalCall();
+        }
         return -1;
     }
 
@@ -4220,7 +4252,12 @@ dict_merge_api(PyObject *a, PyObject *b, int override)
      * PyMapping_Keys() and PyObject_GetItem() be supported.
      */
     if (a == NULL || !PyDict_Check(a) || b == NULL) {
-        PyErr_BadInternalCall();
+        if (a != NULL && PyFrozenDict_Check(a)) {
+            frozendict_does_not_support("assignment");
+        }
+        else {
+            PyErr_BadInternalCall();
+        }
         return -1;
     }
     return dict_merge(a, b, override);
@@ -4596,19 +4633,24 @@ static int
 dict_setdefault_ref_lock_held(PyObject *d, PyObject *key, PyObject *default_value,
                     PyObject **result, int incref_result)
 {
-    PyDictObject *mp = (PyDictObject *)d;
-    PyObject *value;
-    Py_hash_t hash;
-    Py_ssize_t ix;
-
     if (!PyDict_Check(d)) {
-        PyErr_BadInternalCall();
+        if (PyFrozenDict_Check(d)) {
+            frozendict_does_not_support("assignment");
+        }
+        else {
+            PyErr_BadInternalCall();
+        }
         if (result) {
             *result = NULL;
         }
         return -1;
     }
     assert(can_modify_dict((PyDictObject*)d));
+
+    PyDictObject *mp = (PyDictObject *)d;
+    PyObject *value;
+    Py_hash_t hash;
+    Py_ssize_t ix;
 
     hash = _PyObject_HashFast(key);
     if (hash == -1) {
@@ -7122,7 +7164,17 @@ int
 _PyDict_SetItem_LockHeld(PyDictObject *dict, PyObject *name, PyObject *value)
 {
     if (!PyDict_Check(dict)) {
-        PyErr_BadInternalCall();
+        if (PyFrozenDict_Check(dict)) {
+            if (value == NULL) {
+                frozendict_does_not_support("deletion");
+            }
+            else {
+                frozendict_does_not_support("assignment");
+            }
+        }
+        else {
+            PyErr_BadInternalCall();
+        }
         return -1;
     }
 
