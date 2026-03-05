@@ -542,9 +542,9 @@ Frozen dictionary objects
 
    Create an empty dictionary if *iterable* is ``NULL``.
 
-.. c:function:: PyObject* PyFrozenDict_AsDict(PyObject *p)
+.. c:function:: PyObject* PyAnyDict_AsNewDict(PyObject *p)
 
-   Convert a :class:`frozendict` to a :class:`dict` (create a copy).
+   Create a new dictionary from a :class:`dict` or a :class:`frozendict`.
 
 
 Ordered dictionaries

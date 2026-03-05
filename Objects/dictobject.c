@@ -4415,9 +4415,9 @@ anydict_copy(PyObject *o)
 }
 
 PyObject*
-PyFrozenDict_AsDict(PyObject *o)
+PyAnyDict_AsNewDict(PyObject *o)
 {
-    if (o == NULL || !PyFrozenDict_Check(o)) {
+    if (o == NULL || !PyAnyDict_Check(o)) {
         PyErr_BadInternalCall();
         return NULL;
     }

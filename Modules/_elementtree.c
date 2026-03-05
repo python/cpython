@@ -389,12 +389,7 @@ get_attrib_from_keywords(PyObject *kwds)
             Py_DECREF(attrib);
             return NULL;
         }
-        if (PyFrozenDict_Check(attrib)) {
-            Py_SETREF(attrib, PyFrozenDict_AsDict(attrib));
-        }
-        else {
-            Py_SETREF(attrib, PyDict_Copy(attrib));
-        }
+        Py_SETREF(attrib, PyAnyDict_AsNewDict(attrib));
     }
     else {
         attrib = PyDict_New();
@@ -433,12 +428,7 @@ element_init(PyObject *self, PyObject *args, PyObject *kwds)
 
     if (attrib) {
         /* attrib passed as positional arg */
-        if (PyFrozenDict_Check(attrib)) {
-            attrib = PyFrozenDict_AsDict(attrib);
-        }
-        else {
-            attrib = PyDict_Copy(attrib);
-        }
+        attrib = PyAnyDict_AsNewDict(attrib);
         if (!attrib)
             return -1;
         if (kwds) {
