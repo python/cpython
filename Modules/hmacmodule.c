@@ -1604,16 +1604,19 @@ py_hmac_hinfo_ht_new(void)
         assert(value->display_name == NULL);
         value->refcnt = 0;
 
-#define Py_HMAC_HINFO_LINK(KEY)                                 \
-        do {                                                    \
-            int rc = py_hmac_hinfo_ht_add(table, KEY, value);   \
-            if (rc < 0) {                                       \
-                PyMem_Free(value);                              \
-                goto error;                                     \
-            }                                                   \
-            else if (rc == 1) {                                 \
-                value->refcnt++;                                \
-            }                                                   \
+#define Py_HMAC_HINFO_LINK(KEY)                                     \
+        do {                                                        \
+            int rc = py_hmac_hinfo_ht_add(table, (KEY), value);     \
+            if (rc < 0) {                                           \
+                /* entry may already be in ht, freed upon exit */   \
+                if (value->refcnt == 0) {                           \
+                    PyMem_Free(value);                              \
+                }                                                   \
+                goto error;                                         \
+            }                                                       \
+            else if (rc == 1) {                                     \
+                value->refcnt++;                                    \
+            }                                                       \
         } while (0)
         Py_HMAC_HINFO_LINK(e->name);
         Py_HMAC_HINFO_LINK(e->hashlib_name);
