@@ -2824,7 +2824,7 @@ class TestInvalidFD(unittest.TestCase):
                     func(*args)
                 self.assertEqual(ctx.exception.errno, errno.EBADF)
 
-        if hasattr(os, "execve") and os.execve in os.supports_fd:
+        if hasattr(os, "execve") and os.execve in os.supports_fd and not support.is_emscripten:
             # glibc fails with EINVAL, musl fails with EBADF
             with self.assertRaises(OSError) as ctx:
                 os.execve(fd, [sys.executable, "-c", "pass"], os.environ)
