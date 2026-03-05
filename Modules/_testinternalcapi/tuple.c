@@ -4,7 +4,7 @@
 
 
 static PyObject *
-_tuple_from_pair(PyObject *Py_UNUSED(module), PyObject *args)
+tuple_from_pair(PyObject *Py_UNUSED(module), PyObject *args)
 {
     PyObject *one, *two;
     if (!PyArg_ParseTuple(args, "OO", &one, &two)) {
@@ -15,7 +15,7 @@ _tuple_from_pair(PyObject *Py_UNUSED(module), PyObject *args)
 }
 
 static PyObject *
-_tuple_from_pair_steal(PyObject *Py_UNUSED(module), PyObject *args)
+tuple_from_pair_steal(PyObject *Py_UNUSED(module), PyObject *args)
 {
     PyObject *one, *two;
     if (!PyArg_ParseTuple(args, "OO", &one, &two)) {
@@ -27,8 +27,8 @@ _tuple_from_pair_steal(PyObject *Py_UNUSED(module), PyObject *args)
 
 
 static PyMethodDef test_methods[] = {
-    {"_tuple_from_pair", _tuple_from_pair, METH_VARARGS},
-    {"_tuple_from_pair_steal", _tuple_from_pair_steal, METH_VARARGS},
+    {"tuple_from_pair", tuple_from_pair, METH_VARARGS},
+    {"tuple_from_pair_steal", tuple_from_pair_steal, METH_VARARGS},
     {NULL},
 };
 

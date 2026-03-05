@@ -120,36 +120,40 @@ class CAPITest(unittest.TestCase):
         # CRASHES pack(1, NULL)
         # CRASHES pack(2, [1])
 
+    def check_tuple_from_pair(self, from_pair):
+        self.assertEqual(type(from_pair(1, 2)), tuple)
+        self.assertEqual(from_pair(1, 145325), (1, 145325))
+        self.assertEqual(from_pair(None, None), (None, None))
+        self.assertEqual(from_pair(True, False), (True, False))
+
+        # user class supports gc
+        class Temp:
+            pass
+        temp = Temp()
+        temp_rc = getrefcount(temp)
+        self.assertEqual(from_pair(temp, temp), (temp, temp))
+        self.assertEqual(getrefcount(temp), temp_rc)
+
+        self._not_tracked(from_pair(1, 2))
+        self._not_tracked(from_pair(None, None))
+        self._not_tracked(from_pair(True, False))
+        self._tracked(from_pair(temp, (1, 2)))
+        self._tracked(from_pair(temp, 1))
+        self._tracked(from_pair([], {}))
+
+        self.assertRaises(TypeError, from_pair, 1, 2, 3)
+        self.assertRaises(TypeError, from_pair, 1)
+        self.assertRaises(TypeError, from_pair)
+
     def test_tuple_from_pair(self):
-        # Test _PyTuple_FromPair, _PyTuple_FromPairSteal
-        ctors = (("_PyTuple_FromPair", _testinternalcapi._tuple_from_pair),
-                 ("_PyTuple_FromPairSteal", _testinternalcapi._tuple_from_pair_steal))
+        # Test _PyTuple_FromPair()
+        from_pair = _testinternalcapi.tuple_from_pair
+        self.check_tuple_from_pair(from_pair)
 
-        for name, ctor in ctors:
-            with self.subTest(name):
-                self.assertEqual(type(ctor(1, 2)), tuple)
-                self.assertEqual(ctor(1, 145325), (1, 145325))
-                self.assertEqual(ctor(None, None), (None, None))
-                self.assertEqual(ctor(True, False), (True, False))
-
-                # user class supports gc
-                class Temp:
-                    pass
-                temp = Temp()
-                temp_rc = getrefcount(temp)
-                self.assertEqual(ctor(temp, temp), (temp, temp))
-                self.assertEqual(getrefcount(temp), temp_rc)
-
-                self.assertRaises(TypeError, ctor, 1, 2, 3)
-                self.assertRaises(TypeError, ctor, 1)
-                self.assertRaises(TypeError, ctor)
-
-                self.assertFalse(gc.is_tracked(ctor(1, 2)))
-                self.assertFalse(gc.is_tracked(ctor(None, None)))
-                self.assertFalse(gc.is_tracked(ctor(True, False)))
-                self.assertTrue(gc.is_tracked(ctor(temp, (1, 2))))
-                self.assertTrue(gc.is_tracked(ctor(temp, 1)))
-                self.assertTrue(gc.is_tracked(ctor([], {})))
+    def test_tuple_from_pair_steal(self):
+        # Test _PyTuple_FromPairSteal()
+        from_pair = _testinternalcapi.tuple_from_pair_steal
+        self.check_tuple_from_pair(from_pair)
 
     def test_tuple_size(self):
         # Test PyTuple_Size()
