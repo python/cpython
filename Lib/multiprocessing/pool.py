@@ -585,27 +585,30 @@ class Pool(object):
 
     @staticmethod
     def _handle_results(outqueue, get, cache):
+        def _handle_results_failure(cache, e):
+            exc = RuntimeError("Result handler failed to get result from worker and " +
+                               "unable to recover. " +
+                               "This is likely due to a worker process return or raise " +
+                               "an unpicklable object.")
+            exc.__cause__ = e
+            cache._disable_cache(exc)
+            _cache = cache.copy()
+            for value in _cache.values():
+                if isinstance(value, ApplyResult):
+                    chunk_number_left = getattr(value, '_number_left', 1)
+                    for _ in range(chunk_number_left):
+                        value._set(None, (False, exc))
+                elif isinstance(value, IMapIterator):
+                    value._set_length(value._index + 1)
+                    value._set(value._index, (False, exc))
+
         thread = threading.current_thread()
 
         while 1:
             try:
                 task = get()
             except Exception as e:
-                exc = RuntimeError("Result handler failed to get result from worker and " +
-                               "unable to recover. " +
-                               "This is likely due to a worker process return or raise " +
-                               "an unpicklable object.")
-                exc.__cause__ = e
-                cache._disable_cache(exc)
-                _cache = cache.copy()
-                for value in _cache.values():
-                    if isinstance(value, ApplyResult):
-                        chunk_number_left = getattr(value, '_number_left', 1)
-                        for _ in range(chunk_number_left):
-                            value._set(None, (False, exc))
-                    elif isinstance(value, IMapIterator):
-                        value._set_length(value._index + 1)
-                        value._set(value._index, (False, exc))
+                _handle_results_failure(cache, e)
                 return
 
             if thread._state != RUN:
@@ -627,8 +630,8 @@ class Pool(object):
         while cache and thread._state != TERMINATE:
             try:
                 task = get()
-            except (OSError, EOFError):
-                util.debug('result handler got EOFError/OSError -- exiting')
+            except Exception as e:
+                _handle_results_failure(cache, e)
                 return
 
             if task is None:
