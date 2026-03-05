@@ -177,8 +177,6 @@ Dictionary objects
    occurred.  Return ``NULL`` **without** an exception set if the key
    wasn't present.
 
-   The first argument can be a :class:`dict` or a :class:`frozendict`.
-
    .. versionchanged:: next
       Accept also :class:`frozendict`.
 
@@ -188,8 +186,6 @@ Dictionary objects
    This is the same as :c:func:`PyDict_GetItem`, but *key* is specified as a
    :c:expr:`const char*` UTF-8 encoded bytes string, rather than a
    :c:expr:`PyObject*`.
-
-   The first argument can be a :class:`dict` or a :class:`frozendict`.
 
    .. note::
 
@@ -208,8 +204,6 @@ Dictionary objects
    Similar to :c:func:`PyDict_GetItemRef`, but *key* is specified as a
    :c:expr:`const char*` UTF-8 encoded bytes string, rather than a
    :c:expr:`PyObject*`.
-
-   The first argument can be a :class:`dict` or a :class:`frozendict`.
 
    .. versionadded:: 3.13
 
