@@ -355,7 +355,9 @@
             if (sym_matches_type(nos, &PyList_Type)) {
                 ADD_OP(_NOP, 0, 0);
             }
-            sym_set_type(nos, &PyList_Type);
+            else {
+                sym_set_type(nos, &PyList_Type);
+            }
             break;
         }
 
@@ -365,7 +367,9 @@
             if (sym_matches_type(tos, &PyList_Type)) {
                 ADD_OP(_NOP, 0, 0);
             }
-            sym_set_type(tos, &PyList_Type);
+            else {
+                sym_set_type(tos, &PyList_Type);
+            }
             break;
         }
 
@@ -375,7 +379,9 @@
             if (sym_matches_type(tos, &PySlice_Type)) {
                 ADD_OP(_NOP, 0, 0);
             }
-            sym_set_type(tos, &PySlice_Type);
+            else {
+                sym_set_type(tos, &PySlice_Type);
+            }
             break;
         }
 
@@ -1023,7 +1029,9 @@
             if (sym_matches_type(nos, &PyTuple_Type)) {
                 ADD_OP(_NOP, 0, 0);
             }
-            sym_set_type(nos, &PyTuple_Type);
+            else {
+                sym_set_type(nos, &PyTuple_Type);
+            }
             break;
         }
 
@@ -1033,7 +1041,9 @@
             if (sym_matches_type(tos, &PyTuple_Type)) {
                 ADD_OP(_NOP, 0, 0);
             }
-            sym_set_type(tos, &PyTuple_Type);
+            else {
+                sym_set_type(tos, &PyTuple_Type);
+            }
             break;
         }
 
@@ -1107,7 +1117,6 @@
             PyTypeObject *tp = sym_get_type(nos);
             if (tp == &PyDict_Type || tp == &PyFrozenDict_Type) {
                 ADD_OP(_NOP, 0, 0);
-                sym_set_type(nos, tp);
             }
             break;
         }
@@ -1118,7 +1127,39 @@
             PyTypeObject *tp = sym_get_type(tos);
             if (tp == &PyDict_Type || tp == &PyFrozenDict_Type) {
                 ADD_OP(_NOP, 0, 0);
-                sym_set_type(tos, tp);
+            }
+            else {
+                tp = sym_get_probable_type(tos);
+                if (tp == &PyDict_Type) {
+                    ADD_OP(_GUARD_TOS_DICT, 0, 0);
+                }
+                else if (tp == &PyFrozenDict_Type) {
+                    ADD_OP(_GUARD_TOS_FROZENDICT, 0, 0);
+                }
+            }
+            break;
+        }
+
+        case _GUARD_TOS_DICT: {
+            JitOptRef tos;
+            tos = stack_pointer[-1];
+            if (sym_matches_type(tos, &PyDict_Type)) {
+                ADD_OP(_NOP, 0, 0);
+            }
+            else {
+                sym_set_type(tos, &PyDict_Type);
+            }
+            break;
+        }
+
+        case _GUARD_TOS_FROZENDICT: {
+            JitOptRef tos;
+            tos = stack_pointer[-1];
+            if (sym_matches_type(tos, &PyFrozenDict_Type)) {
+                ADD_OP(_NOP, 0, 0);
+            }
+            else {
+                sym_set_type(tos, &PyFrozenDict_Type);
             }
             break;
         }
@@ -2430,10 +2471,42 @@
         case _GUARD_TOS_ANY_SET: {
             JitOptRef tos;
             tos = stack_pointer[-1];
-            if (sym_matches_type(tos, &PySet_Type) ||
-                sym_matches_type(tos, &PyFrozenSet_Type))
-            {
+            PyTypeObject *tp = sym_get_type(tos);
+            if (tp == &PySet_Type || tp == &PyFrozenSet_Type) {
                 ADD_OP(_NOP, 0, 0);
+            }
+            else {
+                tp = sym_get_probable_type(tos);
+                if (tp == &PySet_Type) {
+                    ADD_OP(_GUARD_TOS_SET, 0, 0);
+                }
+                else if (tp == &PyFrozenSet_Type) {
+                    ADD_OP(_GUARD_TOS_FROZENSET, 0, 0);
+                }
+            }
+            break;
+        }
+
+        case _GUARD_TOS_SET: {
+            JitOptRef tos;
+            tos = stack_pointer[-1];
+            if (sym_matches_type(tos, &PySet_Type)) {
+                ADD_OP(_NOP, 0, 0);
+            }
+            else {
+                sym_set_type(tos, &PySet_Type);
+            }
+            break;
+        }
+
+        case _GUARD_TOS_FROZENSET: {
+            JitOptRef tos;
+            tos = stack_pointer[-1];
+            if (sym_matches_type(tos, &PyFrozenSet_Type)) {
+                ADD_OP(_NOP, 0, 0);
+            }
+            else {
+                sym_set_type(tos, &PyFrozenSet_Type);
             }
             break;
         }
@@ -3071,7 +3144,9 @@
             if (sym_is_null(null)) {
                 ADD_OP(_NOP, 0, 0);
             }
-            sym_set_null(null);
+            else {
+                sym_set_null(null);
+            }
             break;
         }
 
@@ -3081,7 +3156,9 @@
             if (sym_is_not_null(nos)) {
                 ADD_OP(_NOP, 0, 0);
             }
-            sym_set_non_null(nos);
+            else {
+                sym_set_non_null(nos);
+            }
             break;
         }
 
@@ -3091,7 +3168,9 @@
             if (sym_is_null(null)) {
                 ADD_OP(_NOP, 0, 0);
             }
-            sym_set_null(null);
+            else {
+                sym_set_null(null);
+            }
             break;
         }
 
@@ -3101,7 +3180,9 @@
             if (sym_get_const(ctx, callable) == (PyObject *)&PyType_Type) {
                 ADD_OP(_NOP, 0, 0);
             }
-            sym_set_const(callable, (PyObject *)&PyType_Type);
+            else {
+                sym_set_const(callable, (PyObject *)&PyType_Type);
+            }
             break;
         }
 
@@ -3134,7 +3215,9 @@
             if (sym_get_const(ctx, callable) == (PyObject *)&PyUnicode_Type) {
                 ADD_OP(_NOP, 0, 0);
             }
-            sym_set_const(callable, (PyObject *)&PyUnicode_Type);
+            else {
+                sym_set_const(callable, (PyObject *)&PyUnicode_Type);
+            }
             break;
         }
 
@@ -3164,7 +3247,9 @@
             if (sym_get_const(ctx, callable) == (PyObject *)&PyTuple_Type) {
                 ADD_OP(_NOP, 0, 0);
             }
-            sym_set_const(callable, (PyObject *)&PyTuple_Type);
+            else {
+                sym_set_const(callable, (PyObject *)&PyTuple_Type);
+            }
             break;
         }
 
@@ -3307,7 +3392,9 @@
             if (sym_get_const(ctx, callable) == len) {
                 ADD_OP(_NOP, 0, 0);
             }
-            sym_set_const(callable, len);
+            else {
+                sym_set_const(callable, len);
+            }
             break;
         }
 
@@ -3368,7 +3455,9 @@
             if (sym_get_const(ctx, callable) == isinstance) {
                 ADD_OP(_NOP, 0, 0);
             }
-            sym_set_const(callable, isinstance);
+            else {
+                sym_set_const(callable, isinstance);
+            }
             break;
         }
 
@@ -3403,7 +3492,9 @@
             if (sym_get_const(ctx, callable) == list_append) {
                 ADD_OP(_NOP, 0, 0);
             }
-            sym_set_const(callable, list_append);
+            else {
+                sym_set_const(callable, list_append);
+            }
             break;
         }
 

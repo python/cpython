@@ -211,6 +211,13 @@ For example::
     >>> a == b
     True
 
+The following standard library modules have been updated to accept
+:class:`!frozendict`: :mod:`copy`, :mod:`decimal`, :mod:`json`, :mod:`marshal`,
+:mod:`pickle`, :mod:`pprint` and :mod:`xml.etree.ElementTree`.
+
+:func:`eval` and :func:`exec` accept :class:`!frozendict` for *globals*, and
+:func:`type` and :meth:`str.maketrans` accept :class:`!frozendict` for *dict*.
+
 .. seealso:: :pep:`814` for the full specification and rationale.
 
 (Contributed by Victor Stinner and Donghee Na in :gh:`141510`.)
@@ -1663,6 +1670,10 @@ New features
 
 * Add :c:func:`PyUnstable_SetImmortal` C-API function to mark objects as :term:`immortal`.
   (Contributed by Kumar Aditya in :gh:`143300`.)
+
+* Restore private provisional ``_Py_InitializeMain()`` function removed in
+  Python 3.14.
+  (Contributed by Victor Stinner in :gh:`142417`.)
 
 Changed C APIs
 --------------

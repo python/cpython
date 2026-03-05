@@ -1004,7 +1004,7 @@ platform: $(PYTHON_FOR_BUILD_DEPS) pybuilddir.txt
 # or removed in case of failure.
 pybuilddir.txt: $(PYTHON_FOR_BUILD_DEPS)
 	@echo "none" > ./pybuilddir.txt
-	$(RUNSHARED) $(PYTHON_FOR_BUILD) -S -m sysconfig --generate-posix-vars ;\
+	$(RUNSHARED) $(PYTHON_FOR_BUILD) -S -X pathconfig_warnings=0 -m sysconfig --generate-posix-vars ;\
 	if test $$? -ne 0 ; then \
 		echo "generate-posix-vars failed" ; \
 		rm -f ./pybuilddir.txt ; \

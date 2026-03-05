@@ -651,28 +651,6 @@ lookup_tp_mro(PyTypeObject *self)
     return self->tp_mro;
 }
 
-PyObject *
-_PyType_GetMRO(PyTypeObject *self)
-{
-#ifdef Py_GIL_DISABLED
-    PyObject *mro = _Py_atomic_load_ptr_relaxed(&self->tp_mro);
-    if (mro == NULL) {
-        return NULL;
-    }
-    if (_Py_TryIncrefCompare(&self->tp_mro, mro)) {
-        return mro;
-    }
-
-    BEGIN_TYPE_LOCK();
-    mro = lookup_tp_mro(self);
-    Py_XINCREF(mro);
-    END_TYPE_LOCK();
-    return mro;
-#else
-    return Py_XNewRef(lookup_tp_mro(self));
-#endif
-}
-
 static inline void
 set_tp_mro(PyTypeObject *self, PyObject *mro, int initial)
 {
@@ -4872,21 +4850,9 @@ type_new_get_slots(type_new_ctx *ctx, PyObject *dict)
 static PyTypeObject*
 type_new_init(type_new_ctx *ctx)
 {
-    PyObject *dict;
-    if (PyFrozenDict_Check(ctx->orig_dict)) {
-        dict = PyDict_New();
-        if (dict == NULL) {
-            goto error;
-        }
-        if (PyDict_Merge(dict, ctx->orig_dict, 1) < 0) {
-            goto error;
-        }
-    }
-    else {
-        dict = PyDict_Copy(ctx->orig_dict);
-        if (dict == NULL) {
-            goto error;
-        }
+    PyObject *dict = _PyDict_CopyAsDict(ctx->orig_dict);
+    if (dict == NULL) {
+        goto error;
     }
 
     if (type_new_get_slots(ctx, dict) < 0) {
