@@ -37,6 +37,28 @@ class TestUtil(unittest.TestCase):
         self.assertEqual(sorted_list_difference([1], [1, 2, 2, 3, 3]), ([], [2, 3]))
         self.assertEqual(sorted_list_difference([1, 2, 2, 3, 3], [1]), ([2, 3], []))
 
+    def test_sorted_list_difference_strings(self):
+        self.assertEqual(
+            sorted_list_difference(['a', 'b'], ['b', 'c']),
+            (['a'], ['c']))
+        self.assertEqual(
+            sorted_list_difference([], ['a', 'a', 'b']),
+            ([], ['a', 'b']))
+        self.assertEqual(
+            sorted_list_difference(['a', 'a', 'b'], []),
+            (['a', 'b'], []))
+
+    def test_sorted_list_difference_unhashable(self):
+        self.assertEqual(
+            sorted_list_difference([[1], [2]], [[2], [3]]),
+            ([[1]], [[3]]))
+        self.assertEqual(
+            sorted_list_difference([], [[0], [0]]),
+            ([], [[0]]))
+        self.assertEqual(
+            sorted_list_difference([[0], [0]], []),
+            ([[0]], []))
+
     def test_unorderable_list_difference(self):
         self.assertEqual(unorderable_list_difference([], []), ([], []))
         self.assertEqual(unorderable_list_difference([1, 2], []), ([2, 1], []))

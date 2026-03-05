@@ -63,6 +63,17 @@ def safe_repr(obj, short=False):
 def strclass(cls):
     return "%s.%s" % (cls.__module__, cls.__qualname__)
 
+def _dedupe_sorted(lst):
+    """Remove consecutive duplicate elements from a sorted list.
+
+    Only requires that elements support equality comparison,
+    not hashing."""
+    result = []
+    for item in lst:
+        if not result or result[-1] != item:
+            result.append(item)
+    return result
+
 def sorted_list_difference(expected, actual):
     """Finds elements in only one or the other of two, sorted input lists.
 
@@ -98,8 +109,8 @@ def sorted_list_difference(expected, actual):
                     while actual[j] == a:
                         j += 1
         except IndexError:
-            missing.extend(dict.fromkeys(expected[i:]))
-            unexpected.extend(dict.fromkeys(actual[j:]))
+            missing.extend(_dedupe_sorted(expected[i:]))
+            unexpected.extend(_dedupe_sorted(actual[j:]))
             break
     return missing, unexpected
 
