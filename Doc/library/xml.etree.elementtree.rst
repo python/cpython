@@ -691,7 +691,7 @@ Functions
    .. versionadded:: 3.2
 
 
-.. function:: SubElement(parent, tag, attrib={}, **extra)
+.. function:: SubElement(parent, tag, /, attrib={}, **extra)
 
    Subelement factory.  This function creates an element instance, and appends
    it to an existing element.
@@ -701,6 +701,9 @@ Functions
    the subelement name.  *attrib* is an optional dictionary, containing element
    attributes.  *extra* contains additional attributes, given as keyword
    arguments.  Returns an element instance.
+
+   .. versionchanged:: next
+      *parent* and *tag* are now positional-only parameters.
 
 
 .. function:: tostring(element, encoding="us-ascii", method="xml", *, \
@@ -877,7 +880,7 @@ Element Objects
    :noindex:
    :no-index:
 
-.. class:: Element(tag, attrib={}, **extra)
+.. class:: Element(tag, /, attrib={}, **extra)
 
    Element class.  This class defines the Element interface, and provides a
    reference implementation of this interface.
@@ -886,6 +889,9 @@ Element Objects
    bytestrings or Unicode strings.  *tag* is the element name.  *attrib* is
    an optional dictionary, containing element attributes.  *extra* contains
    additional attributes, given as keyword arguments.
+
+   .. versionchanged:: next
+      *tag* is now a positional-only parameter.
 
 
    .. attribute:: tag
