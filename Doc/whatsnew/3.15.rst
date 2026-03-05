@@ -216,7 +216,7 @@ The following standard library modules have been updated to accept
 :mod:`pickle`, :mod:`pprint` and :mod:`xml.etree.ElementTree`.
 
 :func:`eval` and :func:`exec` accept :class:`!frozendict` for *globals*, and
-:func:`type` accepts :class:`!frozendict` for *dict*.
+:func:`type` and :meth:`str.maketrans` accept :class:`!frozendict` for *dict*.
 
 .. seealso:: :pep:`814` for the full specification and rationale.
 
