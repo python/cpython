@@ -128,7 +128,7 @@ class CAPITest(unittest.TestCase):
         for name, ctor in ctors:
             with self.subTest(name):
                 self.assertEqual(type(ctor(1, 2)), tuple)
-                self.assertEqual(ctor(1, 2), (1, 2))
+                self.assertEqual(ctor(1, 145325), (1, 145325))
                 self.assertEqual(ctor(None, None), (None, None))
                 self.assertEqual(ctor(True, False), (True, False))
 

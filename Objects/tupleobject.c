@@ -210,10 +210,11 @@ tuple_alloc_2(void)
     PyTupleObject *result = _Py_FREELIST_POP(PyTupleObject, tuples[index]);
     if (result == NULL) {
         result = PyObject_GC_NewVar(PyTupleObject, &PyTuple_Type, size);
+        if (result == NULL) {
+            return NULL;
+        }
     }
-    if (result != NULL) {
-        _PyTuple_RESET_HASH_CACHE(result);
-    }
+    _PyTuple_RESET_HASH_CACHE(result);
     return result;
 }
 

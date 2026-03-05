@@ -35,9 +35,5 @@ static PyMethodDef test_methods[] = {
 int
 _PyTestInternalCapi_Init_Tuple(PyObject *m)
 {
-    if (PyModule_AddFunctions(m, test_methods) < 0) {
-        return -1;
-    }
-
-    return 0;
+    return PyModule_AddFunctions(m, test_methods);
 }
