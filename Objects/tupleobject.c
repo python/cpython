@@ -227,9 +227,10 @@ _PyTuple_FromPair(PyObject *one, PyObject *two)
     if (op == NULL) {
         return NULL;
     }
-    op->ob_item[0] = Py_NewRef(one);
-    op->ob_item[1] = Py_NewRef(two);
-    if (maybe_tracked(one) || maybe_tracked(two)) {
+    PyObject **items = op->ob_item;
+    items[0] = Py_NewRef(one);
+    items[1] = Py_NewRef(two);
+    if (maybe_tracked(items[0]) || maybe_tracked(items[1])) {
         _PyObject_GC_TRACK(op);
     }
     return (PyObject *)op;
@@ -247,9 +248,10 @@ _PyTuple_FromPairSteal(PyObject *one, PyObject *two)
         Py_DECREF(two);
         return NULL;
     }
-    op->ob_item[0] = one;
-    op->ob_item[1] = two;
-    if (maybe_tracked(one) || maybe_tracked(two)) {
+    PyObject **items = op->ob_item;
+    items[0] = one;
+    items[1] = two;
+    if (maybe_tracked(items[0]) || maybe_tracked(items[1])) {
         _PyObject_GC_TRACK(op);
     }
     return (PyObject *)op;
