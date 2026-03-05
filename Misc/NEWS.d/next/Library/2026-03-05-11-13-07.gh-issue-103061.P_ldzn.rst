@@ -1,1 +1,1 @@
-Fix `multiprocessing.Pool` hang when a unpicklable object is returned
+Fix :code:`multiprocessing.Pool` hang when a unpicklable object is returned
