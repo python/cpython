@@ -1809,7 +1809,7 @@ without the dedicated syntax, as documented below.
    However, if desired, reusable type variables can also be constructed manually, like so::
 
       T = TypeVar('T')  # Can be anything
-      S = TypeVar('S', bound=str)  # Can be any subtype of str
+      S = TypeVar('S', bound=str)  # Can be str or any subtype of str
       A = TypeVar('A', str, bytes)  # Must be exactly str or bytes
 
    Type variables exist primarily for the benefit of static type
