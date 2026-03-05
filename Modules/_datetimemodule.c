@@ -6908,8 +6908,8 @@ datetime_datetime_astimezone_impl(PyDateTime_DateTime *self,
         goto naive;
     }
     else if (!PyDelta_Check(offset)) {
-        PyErr_Format(PyExc_TypeError, "utcoffset() returned %.200s,"
-                     " expected timedelta or None", Py_TYPE(offset)->tp_name);
+        PyErr_Format(PyExc_TypeError, "utcoffset() returned %T,"
+                     " expected timedelta or None", offset);
         Py_DECREF(offset);
         return NULL;
     }
