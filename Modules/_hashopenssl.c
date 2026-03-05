@@ -239,7 +239,7 @@ py_hashentry_table_new(void) {
 
         if (h->py_alias != NULL) {
             if (_Py_hashtable_set(ht, (const void*)entry->py_alias, (void*)entry) < 0) {
-                PyMem_Free(entry);
+                /* entry is already in ht, will be freed by _Py_hashtable_destroy() */
                 goto error;
             }
             entry->refcnt++;
