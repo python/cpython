@@ -107,7 +107,7 @@ The block above expands to the following code::
 Here is how these functions work:
 
 The attached thread state implies that the GIL is held for the interpreter.
-To detach it, :c:func:`PyEval_StoreThread` is called and the result is stored
+To detach it, :c:func:`PyEval_SaveThread` is called and the result is stored
 in a local variable.
 
 By detaching the thread state, the GIL is released, which allows other threads
