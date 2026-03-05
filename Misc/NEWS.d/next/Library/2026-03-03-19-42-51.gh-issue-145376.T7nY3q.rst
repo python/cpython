@@ -1,1 +1,0 @@
-Fix refleak and null pointer deref in unusual error path of :mod:`datetime`.
