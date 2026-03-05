@@ -4001,8 +4001,8 @@ _PyObject_SetDict(PyObject *obj, PyObject *value)
 {
     if (value != NULL && !PyAnyDict_Check(value)) {
         PyErr_Format(PyExc_TypeError,
-                     "__dict__ must be set to a dictionary, "
-                     "not a '%.200s'", Py_TYPE(value)->tp_name);
+                     "__dict__ must be set to a dict or frozendict, "
+                     "not a %T", value);
         return -1;
     }
     if (Py_TYPE(obj)->tp_flags & Py_TPFLAGS_MANAGED_DICT) {
