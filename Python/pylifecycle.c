@@ -29,7 +29,7 @@
 #include "pycore_setobject.h"     // _PySet_NextEntry()
 #include "pycore_stats.h"         // _PyStats_InterpInit()
 #include "pycore_sysmodule.h"     // _PySys_ClearAttrString()
-#include "pycore_traceback.h"     // _Py_DumpTracebackThreads()
+#include "pycore_traceback.h"     // _Py_DumpTraceback_Init()
 #include "pycore_typeobject.h"    // _PyTypes_InitTypes()
 #include "pycore_typevarobject.h" // _Py_clear_generic_types()
 #include "pycore_unicodeobject.h" // _PyUnicode_InitTypes()
@@ -3208,9 +3208,9 @@ _Py_FatalError_DumpTracebacks(int fd, PyInterpreterState *interp,
 
     /* display the current Python stack */
 #ifndef Py_GIL_DISABLED
-    _Py_DumpTracebackThreads(fd, interp, tstate);
+    PyUnstable_DumpTracebackThreads(fd, interp, tstate);
 #else
-    _Py_DumpTraceback(fd, tstate);
+    PyUnstable_DumpTraceback(fd, tstate);
 #endif
 }
 

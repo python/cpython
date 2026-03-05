@@ -7,7 +7,7 @@
 #include "pycore_runtime.h"       // _Py_ID()
 #include "pycore_signal.h"        // Py_NSIG
 #include "pycore_time.h"          // _PyTime_FromSecondsObject()
-#include "pycore_traceback.h"     // _Py_DumpTracebackThreads
+#include "pycore_traceback.h"     // _Py_DumpStack()
 #ifdef HAVE_UNISTD_H
 #  include <unistd.h>             // _exit()
 #endif
@@ -205,14 +205,15 @@ faulthandler_dump_traceback(int fd, int all_threads,
     PyThreadState *tstate = PyGILState_GetThisThreadState();
 
     if (all_threads == 1) {
-        (void)_Py_DumpTracebackThreads(fd, NULL, tstate);
+        (void)PyUnstable_DumpTracebackThreads(fd, NULL, tstate);
     }
     else {
         if (all_threads == FT_IGNORE_ALL_THREADS) {
             PUTS(fd, "<Cannot show all threads while the GIL is disabled>\n");
         }
-        if (tstate != NULL)
-            _Py_DumpTraceback(fd, tstate);
+        if (tstate != NULL) {
+            PyUnstable_DumpTraceback(fd, tstate);
+        }
     }
 
     reentrant = 0;
@@ -273,7 +274,7 @@ faulthandler_dump_traceback_py_impl(PyObject *module, PyObject *file,
         /* gh-128400: Accessing other thread states while they're running
          * isn't safe if those threads are running. */
         _PyEval_StopTheWorld(interp);
-        errmsg = _Py_DumpTracebackThreads(fd, NULL, tstate);
+        errmsg = PyUnstable_DumpTracebackThreads(fd, NULL, tstate);
         _PyEval_StartTheWorld(interp);
         if (errmsg != NULL) {
             PyErr_SetString(PyExc_RuntimeError, errmsg);
@@ -282,7 +283,7 @@ faulthandler_dump_traceback_py_impl(PyObject *module, PyObject *file,
         }
     }
     else {
-        _Py_DumpTraceback(fd, tstate);
+        PyUnstable_DumpTraceback(fd, tstate);
     }
     Py_XDECREF(file);
 
@@ -703,7 +704,7 @@ faulthandler_thread(void *unused)
 
         (void)_Py_write_noraise(thread.fd, thread.header, (int)thread.header_len);
 
-        errmsg = _Py_DumpTracebackThreads(thread.fd, thread.interp, NULL);
+        errmsg = PyUnstable_DumpTracebackThreads(thread.fd, thread.interp, NULL);
         ok = (errmsg == NULL);
 
         if (thread.exit)

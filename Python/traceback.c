@@ -1168,7 +1168,7 @@ dump_traceback(int fd, PyThreadState *tstate, int write_header)
    The caller is responsible to call PyErr_CheckSignals() to call Python signal
    handlers if signals were received. */
 void
-_Py_DumpTraceback(int fd, PyThreadState *tstate)
+PyUnstable_DumpTraceback(int fd, PyThreadState *tstate)
 {
     dump_traceback(fd, tstate, 1);
 }
@@ -1264,11 +1264,11 @@ write_thread_id(int fd, PyThreadState *tstate, int is_current)
    The caller is responsible to call PyErr_CheckSignals() to call Python signal
    handlers if signals were received. */
 const char* _Py_NO_SANITIZE_THREAD
-_Py_DumpTracebackThreads(int fd, PyInterpreterState *interp,
-                         PyThreadState *current_tstate)
+PyUnstable_DumpTracebackThreads(int fd, PyInterpreterState *interp,
+                                PyThreadState *current_tstate)
 {
     if (current_tstate == NULL) {
-        /* _Py_DumpTracebackThreads() is called from signal handlers by
+        /* PyUnstable_DumpTracebackThreads() is called from signal handlers by
            faulthandler.
 
            SIGSEGV, SIGFPE, SIGABRT, SIGBUS and SIGILL are synchronous signals
