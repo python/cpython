@@ -8203,6 +8203,11 @@ PyObject*
 PyFrozenDict_New(PyObject *iterable)
 {
     if (iterable != NULL) {
+        if (PyFrozenDict_CheckExact(iterable)) {
+            // PyFrozenDict_New(frozendict) returns the same object unmodified
+            return Py_NewRef(iterable);
+        }
+
         PyObject *args = PyTuple_Pack(1, iterable);
         if (args == NULL) {
             return NULL;
