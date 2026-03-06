@@ -3223,21 +3223,6 @@ through the object's keys; for sequences, it should iterate through the values.
    .. versionadded:: 3.4
 
 
-.. index:: pair: object; slice
-
-.. note::
-
-   Slicing is done exclusively with the following three methods.  A call like ::
-
-      a[1:2] = b
-
-   is translated to ::
-
-      a[slice(1, 2, None)] = b
-
-   and so forth.  Missing slice items are always filled in with ``None``.
-
-
 .. method:: object.__getitem__(self, subscript)
 
    Called to implement *subscription*, that is, ``self[subscript]``.
@@ -3259,6 +3244,21 @@ through the object's keys; for sequences, it should iterate through the values.
    If *subscript* has an inappropriate value, :meth:`!__getitem__`
    should raise an :exc:`LookupError` or one of its subclasses
    (:exc:`IndexError` for sequences; :exc:`KeyError` for mappings).
+
+   .. index:: pair: object; slice
+
+   .. note::
+
+      Slicing is done exclusively with the following three methods.
+      A call like ::
+
+         a[1:2] = b
+
+      is translated to ::
+
+         a[slice(1, 2, None)] = b
+
+      and so forth. Missing slice items are always filled in with ``None``.
 
    .. note::
 
