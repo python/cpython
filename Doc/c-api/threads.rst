@@ -182,7 +182,7 @@ Non-Python created threads
 --------------------------
 
 When threads are created using the dedicated Python APIs (such as the
-:mod:`threading` module), a thread state is automatically associated wih them,
+:mod:`threading` module), a thread state is automatically associated with them,
 However, when a thread is created from native code (for example, by a
 third-party library with its own thread management), it doesn't hold an
 attached thread state.
