@@ -151,6 +151,8 @@ should_advance_qsbr_for_page(struct _qsbr_thread_state *qsbr, mi_page_t *page)
 }
 #endif
 
+_Atomic(int) _debug_qsbr_clear_in_collect;
+
 static bool
 _PyMem_mi_page_maybe_free(mi_page_t *page, mi_page_queue_t *pq, bool force)
 {
@@ -174,7 +176,19 @@ _PyMem_mi_page_maybe_free(mi_page_t *page, mi_page_queue_t *pq, bool force)
             page->qsbr_goal = _Py_qsbr_shared_next(tstate->qsbr->shared);
         }
 
-        llist_insert_tail(&tstate->mimalloc.page_list, &page->qsbr_node);
+        mi_heap_t *page_heap = mi_page_heap(page);
+        _PyThreadStateImpl *heap_tstate = _Py_CONTAINER_OF(page_heap->tld, _PyThreadStateImpl, mimalloc.tld);
+        if (page_heap->thread_id != _mi_thread_id()) {
+            static _Atomic(int) cross_thread_qsbr_count;
+            int n = 1 + atomic_fetch_add(&cross_thread_qsbr_count, 1);
+            if (n % 100 == 0) {
+                _PyThreadStateImpl *cur_tstate = (_PyThreadStateImpl *)PyThreadState_GET();
+                printf("cross-thread QSBR page count: %d (page_tid=%zu cur_tid=%zu heap_tstate=%p cur_tstate=%p)\n",
+                       n, (size_t)page_heap->thread_id, (size_t)_mi_thread_id(),
+                       (void*)heap_tstate, (void*)cur_tstate);
+            }
+        }
+        llist_insert_tail(&heap_tstate->mimalloc.page_list, &page->qsbr_node);
         return false;
     }
 #endif
@@ -212,24 +226,60 @@ _PyMem_mi_heap_collect_qsbr(mi_heap_t *heap)
     _PyThreadStateImpl *tstate = (_PyThreadStateImpl *)_PyThreadState_GET();
     struct llist_node *head = &tstate->mimalloc.page_list;
     if (llist_empty(head)) {
+        static _Atomic(int) empty_qsbr_count;
+        int n = 1 + atomic_fetch_add(&empty_qsbr_count, 1);
+        if (n % 50 == 0 || n <= 5) {
+            _PyThreadStateImpl *heap_ts = _Py_CONTAINER_OF(heap->tld, _PyThreadStateImpl, mimalloc.tld);
+            printf("qsbr_collect EMPTY tid=%zu heap_tid=%zu tstate=%p heap_tstate=%p (call #%d)\n",
+                   (size_t)_mi_thread_id(), (size_t)heap->thread_id,
+                   (void*)tstate, (void*)heap_ts, n);
+        }
         return;
     }
 
+    int freed = 0, not_free = 0, not_reached = 0;
     struct llist_node *node;
     llist_for_each_safe(node, head) {
         mi_page_t *page = llist_data(node, mi_page_t, qsbr_node);
         if (!mi_page_all_free(page)) {
             // We allocated from this page some point after the delayed free
+            not_free++;
             _PyMem_mi_page_clear_qsbr(page);
             continue;
         }
 
         if (!_Py_qsbr_poll(tstate->qsbr, page->qsbr_goal)) {
-            return;
+            not_reached++;
+            // On first failure, log the details
+            if (not_reached == 1) {
+                struct _qsbr_shared *shared = tstate->qsbr->shared;
+                printf("  qsbr FAIL: goal=%llu rd_seq=%llu wr_seq=%llu my_seq=%llu\n",
+                       (unsigned long long)page->qsbr_goal,
+                       (unsigned long long)_Py_atomic_load_uint64(&shared->rd_seq),
+                       (unsigned long long)_Py_atomic_load_uint64(&shared->wr_seq),
+                       (unsigned long long)_Py_atomic_load_uint64(&tstate->qsbr->seq));
+                // scan threads to find the blocker
+                struct _qsbr_pad *array = shared->array;
+                for (Py_ssize_t ii = 0; ii < shared->size; ii++) {
+                    uint64_t s = _Py_atomic_load_uint64(&array[ii].qsbr.seq);
+                    if (s != QSBR_OFFLINE && s < page->qsbr_goal) {
+                        printf("    blocker slot %zd: seq=%llu\n", ii, (unsigned long long)s);
+                    }
+                }
+            }
+            // count remaining
+            while (node->next != head) { not_reached++; node = node->next; }
+            break;
         }
 
+        freed++;
         _PyMem_mi_page_clear_qsbr(page);
         _mi_page_free(page, mi_page_queue_of(page), false);
+    }
+    if (freed || not_free || not_reached) {
+        printf("qsbr_collect tid=%zu: freed=%d not_free=%d not_reached=%d heap_tid=%zu\n",
+               (size_t)_mi_thread_id(), freed, not_free, not_reached,
+               (size_t)heap->thread_id);
     }
 #endif
 }

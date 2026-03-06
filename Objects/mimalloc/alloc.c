@@ -625,6 +625,10 @@ bool _mi_free_delayed_block(mi_block_t* block) {
   }
 
   // collect all other non-local frees to ensure up-to-date `used` count
+  if (page->qsbr_node.next != NULL && (page->local_free != NULL || mi_page_thread_free(page) != NULL)) {
+    static _Atomic(int) _c; int _n = 1+atomic_fetch_add(&_c,1);
+    if (_n%100==0||_n<=3) printf("QSBR CLEAR from _mi_free_delayed_block page=%p all_free=%d used=%d (%d)\n",(void*)page,(int)mi_page_all_free(page),(int)page->used,_n);
+  }
   _mi_page_free_collect(page, false);
 
   // and free the block (possibly freeing the page as well since used is updated)

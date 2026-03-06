@@ -226,6 +226,13 @@ void _mi_page_free_collect(mi_page_t* page, bool force) {
   // and the local free list
   if (page->local_free != NULL) {
     // any previous QSBR goals are no longer valid because we reused the page
+    if (page->qsbr_node.next != NULL) {
+      extern _Atomic(int) _debug_qsbr_clear_in_collect;
+      int n = 1 + atomic_fetch_add(&_debug_qsbr_clear_in_collect, 1);
+      if (n%100==0||n<=3) printf("QSBR CLEAR generic page=%p all_free=%d used=%d xfree=%d lfree=%d (%d)\n",
+             (void*)page,(int)mi_page_all_free(page),(int)page->used,
+             (mi_page_thread_free(page)!=NULL),(page->local_free!=NULL),n);
+    }
     _PyMem_mi_page_clear_qsbr(page);
 
     if mi_likely(page->free == NULL) {
@@ -371,6 +378,10 @@ static void mi_page_to_full(mi_page_t* page, mi_page_queue_t* pq) {
 
   if (mi_page_is_in_full(page)) return;
   mi_page_queue_enqueue_from(&mi_page_heap(page)->pages[MI_BIN_FULL], pq, page);
+  if (page->qsbr_node.next != NULL && (page->local_free != NULL || mi_page_thread_free(page) != NULL)) {
+    static _Atomic(int) _c; int _n = 1+atomic_fetch_add(&_c,1);
+    if (_n%100==0||_n<=3) printf("QSBR CLEAR from mi_page_to_full page=%p all_free=%d used=%d (%d)\n",(void*)page,(int)mi_page_all_free(page),(int)page->used,_n);
+  }
   _mi_page_free_collect(page,false);  // try to collect right away in case another thread freed just before MI_USE_DELAYED_FREE was set
 }
 
@@ -752,6 +763,10 @@ static mi_page_t* mi_page_queue_find_free_ex(mi_heap_t* heap, mi_page_queue_t* p
     #endif
 
     // 0. collect freed blocks by us and other threads
+    if (page->qsbr_node.next != NULL && (page->local_free != NULL || mi_page_thread_free(page) != NULL)) {
+      static _Atomic(int) _c; int _n = 1+atomic_fetch_add(&_c,1);
+      if (_n%100==0||_n<=3) printf("QSBR CLEAR from find_free_ex page=%p all_free=%d used=%d (%d)\n",(void*)page,(int)mi_page_all_free(page),(int)page->used,_n);
+    }
     _mi_page_free_collect(page, false);
 
     // 1. if the page contains free blocks, we are done
@@ -777,6 +792,15 @@ static mi_page_t* mi_page_queue_find_free_ex(mi_heap_t* heap, mi_page_queue_t* p
   mi_heap_stat_counter_increase(heap, searches, count);
 
   if (page == NULL) {
+    {
+      static _Atomic(int) null_page_count;
+      int n = 1 + atomic_fetch_add(&null_page_count, 1);
+      if (n % 50 == 0 || n <= 5) {
+        printf("find_free_ex: page==NULL tid=%zu heap_tid=%zu use_qsbr=%d (call #%d)\n",
+               (size_t)_mi_thread_id(), (size_t)heap->thread_id,
+               heap->page_use_qsbr, n);
+      }
+    }
     _PyMem_mi_heap_collect_qsbr(heap); // some pages might be safe to free now
     _mi_heap_collect_retired(heap, false); // perhaps make a page available?
     page = mi_page_fresh(heap, pq);
@@ -809,6 +833,10 @@ static inline mi_page_t* mi_find_free_page(mi_heap_t* heap, size_t size) {
     else
    #endif
     {
+      if (page->qsbr_node.next != NULL && (page->local_free != NULL || mi_page_thread_free(page) != NULL)) {
+        static _Atomic(int) _c; int _n = 1+atomic_fetch_add(&_c,1);
+        if (_n%100==0||_n<=3) printf("QSBR CLEAR from mi_page_fresh_alloc page=%p all_free=%d used=%d (%d)\n",(void*)page,(int)mi_page_all_free(page),(int)page->used,_n);
+      }
       _mi_page_free_collect(page,false);
     }
 
