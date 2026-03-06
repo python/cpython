@@ -1,1 +1,1 @@
-Fix :meth:`test_resource.test_fsize_enforced` to gracefully skip when the system hard limit or privileges prevent setting file size limits.
+Fix ``test_resource.test_fsize_enforced`` to gracefully skip when the system hard limit or privileges prevent setting file size limits.
