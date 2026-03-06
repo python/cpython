@@ -337,8 +337,14 @@ class Morsel(dict):
             key = key.lower()
             if key not in self._reserved:
                 raise CookieError("Invalid attribute %r" % (key,))
+            if _has_control_character(key, val):
+                raise CookieError("Control characters are not allowed in cookies %r %r" % (key, val))
             data[key] = val
         dict.update(self, data)
+
+    def __ior__(self, values):
+        self.update(values)
+        return self
 
     def isReservedKey(self, K):
         return K.lower() in self._reserved
@@ -524,6 +530,8 @@ class BaseCookie(dict):
         result = []
         items = sorted(self.items())
         for key, value in items:
+            if _has_control_character(value.OutputString(attrs)):
+                raise CookieError("Control characters are not allowed in cookies")
             result.append(value.js_output(attrs))
         return _nulljoin(result)
 
