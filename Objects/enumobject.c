@@ -184,7 +184,7 @@ increment_longindex_lock_held(enumobject *en)
             return NULL;
         }
     }
-    assert(next_index != NULL);
+    assert(en->en_longindex != NULL);
     // We hold one reference to "next_index" (a.k.a. the old value of
     // en->en_longindex); we'll either return it or keep it in en->en_longindex
     PyObject *next_index = en->en_longindex;
