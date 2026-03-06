@@ -1,1 +1,3 @@
-Reject control characters in :class:`http.cookies.Morsel` fields and values.
+Reject control characters in :class:`http.cookies.Morsel`
+:meth:`~http.cookies.Morsel.update` and
+:meth:`~http.cookies.BaseCookie.js_output`.
