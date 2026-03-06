@@ -82,7 +82,7 @@ The constants defined in this module are:
 
 .. _string-formatting:
 
-Custom String Formatting
+Custom string formatting
 ------------------------
 
 The built-in string class provides the ability to do complex variable
@@ -192,7 +192,7 @@ implementation as the built-in :meth:`~str.format` method.
 
 .. _formatstrings:
 
-Format String Syntax
+Format string syntax
 --------------------
 
 The :meth:`str.format` method and the :class:`Formatter` class share the same
@@ -304,7 +304,7 @@ See the :ref:`formatexamples` section for some examples.
 
 .. _formatspec:
 
-Format Specification Mini-Language
+Format specification mini-language
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
 "Format specifications" are used within replacement fields contained within a

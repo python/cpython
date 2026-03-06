@@ -1549,10 +1549,10 @@ to this (remembering to first import :mod:`concurrent.futures`)::
         for i in range(10):
             executor.submit(worker_process, queue, worker_configurer)
 
-Deploying Web applications using Gunicorn and uWSGI
+Deploying web applications using Gunicorn and uWSGI
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-When deploying Web applications using `Gunicorn <https://gunicorn.org/>`_ or `uWSGI
+When deploying web applications using `Gunicorn <https://gunicorn.org/>`_ or `uWSGI
 <https://uwsgi-docs.readthedocs.io/en/latest/>`_ (or similar), multiple worker
 processes are created to handle client requests. In such environments, avoid creating
 file-based handlers directly in your web application. Instead, use a

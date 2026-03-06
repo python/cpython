@@ -69,7 +69,7 @@ servers written in Python.  Servers can either be free standing, using
 
 .. _simple-xmlrpc-servers:
 
-SimpleXMLRPCServer Objects
+SimpleXMLRPCServer objects
 --------------------------
 
 The :class:`SimpleXMLRPCServer` class is based on
@@ -140,7 +140,7 @@ alone XML-RPC servers.
 
 .. _simplexmlrpcserver-example:
 
-SimpleXMLRPCServer Example
+SimpleXMLRPCServer example
 ^^^^^^^^^^^^^^^^^^^^^^^^^^
 Server code::
 
@@ -387,7 +387,7 @@ to HTTP GET requests.  Servers can either be free standing, using
 
 .. _doc-xmlrpc-servers:
 
-DocXMLRPCServer Objects
+DocXMLRPCServer objects
 -----------------------
 
 The :class:`DocXMLRPCServer` class is derived from :class:`SimpleXMLRPCServer`

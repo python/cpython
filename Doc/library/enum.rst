@@ -56,7 +56,7 @@ are not normal Python classes.  See
 
 ---------------
 
-Module Contents
+Module contents
 ---------------
 
    :class:`EnumType`
@@ -161,7 +161,7 @@ Module Contents
 
 ---------------
 
-Data Types
+Data types
 ----------
 
 
@@ -970,7 +970,7 @@ Supported ``_sunder_`` names
 
 ---------------
 
-Utilities and Decorators
+Utilities and decorators
 ------------------------
 
 .. class:: auto
