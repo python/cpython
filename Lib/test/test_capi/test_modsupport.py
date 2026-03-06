@@ -155,15 +155,15 @@ class Test_ABIInfo_Check(unittest.TestCase):
 
 
 class TestModsupport(unittest.TestCase):
-    def test_pyarg_parsevector(self):
-        func = _testcapi.pyarg_parsevector
+    def test_pyarg_parsearray(self):
+        func = _testcapi.pyarg_parsearray
         self.assertEqual(func(1, 2), (1, 2, 0))
         self.assertEqual(func(1, 2, 3), (1, 2, 3))
         self.assertRaises(TypeError, func, 1)
         self.assertRaises(TypeError, func, "str", 2)
 
     def test_funcandkeywords(self):
-        func = _testcapi.pyarg_parsevectorandkeywords
+        func = _testcapi.pyarg_parsearrayandkeywords
         self.assertEqual(func(1, 2), (1, 2, 0))
         self.assertEqual(func(1, 2, 3), (1, 2, 3))
         self.assertEqual(func(1, b=2), (1, 2, 0))

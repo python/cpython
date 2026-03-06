@@ -26,24 +26,24 @@ pyabiinfo_check(PyObject *Py_UNUSED(module), PyObject *args)
 }
 
 static PyObject *
-pyarg_parsevector(PyObject* self, PyObject* const* args, Py_ssize_t nargs)
+pyarg_parsearray(PyObject* self, PyObject* const* args, Py_ssize_t nargs)
 {
     int a, b, c = 0;
-    if (!PyArg_ParseVector(args, nargs, "ii|i", &a, &b, &c)) {
+    if (!PyArg_ParseArray(args, nargs, "ii|i", &a, &b, &c)) {
         return NULL;
     }
     return Py_BuildValue("iii", a, b, c);
 }
 
 static PyObject *
-pyarg_parsevectorandkeywords(PyObject* self, PyObject* const* args,
-                             Py_ssize_t nargs, PyObject* kwnames)
+pyarg_parsearrayandkeywords(PyObject* self, PyObject* const* args,
+                            Py_ssize_t nargs, PyObject* kwnames)
 {
     int a, b, c = 0;
     const char *kwlist[] = {"a", "b", "c", NULL};
-    if (!PyArg_ParseVectorAndKeywords(args, nargs, kwnames,
-                                      "ii|i", kwlist,
-                                      &a, &b, &c)) {
+    if (!PyArg_ParseArrayAndKeywords(args, nargs, kwnames,
+                                     "ii|i", kwlist,
+                                     &a, &b, &c)) {
         return NULL;
     }
     return Py_BuildValue("iii", a, b, c);
@@ -51,9 +51,9 @@ pyarg_parsevectorandkeywords(PyObject* self, PyObject* const* args,
 
 static PyMethodDef TestMethods[] = {
     {"pyabiinfo_check", pyabiinfo_check, METH_VARARGS},
-    {"pyarg_parsevector", _PyCFunction_CAST(pyarg_parsevector), METH_FASTCALL},
-    {"pyarg_parsevectorandkeywords",
-     _PyCFunction_CAST(pyarg_parsevectorandkeywords),
+    {"pyarg_parsearray", _PyCFunction_CAST(pyarg_parsearray), METH_FASTCALL},
+    {"pyarg_parsearrayandkeywords",
+     _PyCFunction_CAST(pyarg_parsearrayandkeywords),
      METH_FASTCALL | METH_KEYWORDS},
     {NULL},
 };

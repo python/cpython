@@ -2,12 +2,12 @@
 #  error "this header file must not be included directly"
 #endif
 
-PyAPI_FUNC(int) PyArg_ParseVector(
+PyAPI_FUNC(int) PyArg_ParseArray(
     PyObject *const *args,
     Py_ssize_t nargs,
     const char *format,
     ...);
-PyAPI_FUNC(int) PyArg_ParseVectorAndKeywords(
+PyAPI_FUNC(int) PyArg_ParseArrayAndKeywords(
     PyObject *const *args,
     Py_ssize_t nargs,
     PyObject *kwnames,

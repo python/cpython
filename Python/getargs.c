@@ -137,7 +137,7 @@ _PyArg_ParseStack(PyObject *const *args, Py_ssize_t nargs, const char *format, .
 }
 
 int
-PyArg_ParseVector(PyObject *const *args, Py_ssize_t nargs, const char *format, ...)
+PyArg_ParseArray(PyObject *const *args, Py_ssize_t nargs, const char *format, ...)
 {
     va_list va;
     va_start(va, format);
@@ -147,10 +147,10 @@ PyArg_ParseVector(PyObject *const *args, Py_ssize_t nargs, const char *format, .
 }
 
 int
-PyArg_ParseVectorAndKeywords(PyObject *const *args, Py_ssize_t nargs,
-                             PyObject *kwnames,
-                             const char *format,
-                             const char * const *kwlist, ...)
+PyArg_ParseArrayAndKeywords(PyObject *const *args, Py_ssize_t nargs,
+                            PyObject *kwnames,
+                            const char *format,
+                            const char * const *kwlist, ...)
 {
     if ((args == NULL && nargs != 0) ||
         (kwnames != NULL && !PyTuple_Check(kwnames)) ||
