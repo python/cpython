@@ -473,7 +473,7 @@ class _CallableGenericAlias(GenericAlias):
     def __new__(cls, origin, args):
         if not (isinstance(args, tuple) and len(args) == 2):
             raise TypeError(
-                "Callable must be used as Callable[[paramtype1, ...], returntype].")
+                "Callable must be used as Callable[[paramtype1, paramtype2, ...], returntype].")
         t_params, t_return = args
         if isinstance(t_params, (tuple, list)):
             args = (*t_params, t_return)
