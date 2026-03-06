@@ -2099,6 +2099,10 @@ are always available.  They are listed here in alphabetical order.
       Subclasses of :class:`!type` which don't override ``type.__new__`` may no
       longer use the one-argument form to get the type of an object.
 
+   .. versionchanged:: next
+
+      *dict* can now be a :class:`frozendict`.
+
 .. function:: vars()
               vars(object, /)
 

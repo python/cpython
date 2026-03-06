@@ -580,6 +580,12 @@ w_complex_object(PyObject *v, char flag, WFILE *p)
         Py_ssize_t pos;
         PyObject *key, *value;
         if (PyFrozenDict_CheckExact(v)) {
+            if (p->version < 6) {
+                w_byte(TYPE_UNKNOWN, p);
+                p->error = WFERR_UNMARSHALLABLE;
+                return;
+            }
+
             W_TYPE(TYPE_FROZENDICT, p);
         }
         else {
