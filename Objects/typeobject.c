@@ -7164,9 +7164,9 @@ object_set_class(PyObject *self, PyObject *value, void *closure)
         return -1;
     }
 
-    int unique = _PyObject_IsUniquelyReferenced(self);
 #ifdef Py_GIL_DISABLED
     PyInterpreterState *interp = _PyInterpreterState_GET();
+    int unique = _PyObject_IsUniquelyReferenced(self);
     if (!unique) {
         _PyEval_StopTheWorld(interp);
     }
