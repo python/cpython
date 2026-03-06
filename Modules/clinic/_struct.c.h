@@ -9,6 +9,66 @@ preserve
 #include "pycore_abstract.h"      // _PyNumber_Index()
 #include "pycore_modsupport.h"    // _PyArg_UnpackKeywords()
 
+PyDoc_STRVAR(Struct__doc__,
+"Struct(format)\n"
+"--\n"
+"\n"
+"Create a compiled struct object.\n"
+"\n"
+"Return a new Struct object which writes and reads binary data according\n"
+"to the format string.  See help(struct) for more on format strings.");
+
+static PyObject *
+Struct_impl(PyTypeObject *type, PyObject *format);
+
+static PyObject *
+Struct(PyTypeObject *type, PyObject *args, PyObject *kwargs)
+{
+    PyObject *return_value = NULL;
+    #if defined(Py_BUILD_CORE) && !defined(Py_BUILD_CORE_MODULE)
+
+    #define NUM_KEYWORDS 1
+    static struct {
+        PyGC_Head _this_is_not_used;
+        PyObject_VAR_HEAD
+        Py_hash_t ob_hash;
+        PyObject *ob_item[NUM_KEYWORDS];
+    } _kwtuple = {
+        .ob_base = PyVarObject_HEAD_INIT(&PyTuple_Type, NUM_KEYWORDS)
+        .ob_hash = -1,
+        .ob_item = { &_Py_ID(format), },
+    };
+    #undef NUM_KEYWORDS
+    #define KWTUPLE (&_kwtuple.ob_base.ob_base)
+
+    #else  // !Py_BUILD_CORE
+    #  define KWTUPLE NULL
+    #endif  // !Py_BUILD_CORE
+
+    static const char * const _keywords[] = {"format", NULL};
+    static _PyArg_Parser _parser = {
+        .keywords = _keywords,
+        .fname = "Struct",
+        .kwtuple = KWTUPLE,
+    };
+    #undef KWTUPLE
+    PyObject *argsbuf[1];
+    PyObject * const *fastargs;
+    Py_ssize_t nargs = PyTuple_GET_SIZE(args);
+    PyObject *format;
+
+    fastargs = _PyArg_UnpackKeywords(_PyTuple_CAST(args)->ob_item, nargs, kwargs, NULL, &_parser,
+            /*minpos*/ 1, /*maxpos*/ 1, /*minkw*/ 0, /*varpos*/ 0, argsbuf);
+    if (!fastargs) {
+        goto exit;
+    }
+    format = fastargs[0];
+    return_value = Struct_impl(type, format);
+
+exit:
+    return return_value;
+}
+
 PyDoc_STRVAR(Struct___init____doc__,
 "Struct(format)\n"
 "--\n"
@@ -55,19 +115,14 @@ Struct___init__(PyObject *self, PyObject *args, PyObject *kwargs)
     PyObject *argsbuf[1];
     PyObject * const *fastargs;
     Py_ssize_t nargs = PyTuple_GET_SIZE(args);
-    Py_ssize_t noptargs = nargs + (kwargs ? PyDict_GET_SIZE(kwargs) : 0) - 0;
-    PyObject *format = NULL;
+    PyObject *format;
 
     fastargs = _PyArg_UnpackKeywords(_PyTuple_CAST(args)->ob_item, nargs, kwargs, NULL, &_parser,
-            /*minpos*/ 0, /*maxpos*/ 1, /*minkw*/ 0, /*varpos*/ 0, argsbuf);
+            /*minpos*/ 1, /*maxpos*/ 1, /*minkw*/ 0, /*varpos*/ 0, argsbuf);
     if (!fastargs) {
         goto exit;
     }
-    if (!noptargs) {
-        goto skip_optional_pos;
-    }
     format = fastargs[0];
-skip_optional_pos:
     return_value = Struct___init___impl((PyStructObject *)self, format);
 
 exit:
@@ -669,4 +724,4 @@ exit:
 
     return return_value;
 }
-/*[clinic end generated code: output=e61298fe6714a259 input=a9049054013a1b77]*/
+/*[clinic end generated code: output=0f417d43a2a387c8 input=a9049054013a1b77]*/

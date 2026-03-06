@@ -1766,10 +1766,10 @@ prepare_s(PyStructObject *self)
     return -1;
 }
 
-/* This should be moved to s_new() when Struct___init__() will
-   be removed (see gh-143715 and gh-94532). */
+/* This should be moved to Struct_impl() when Struct___init__() and
+ * s_new() will be removed (see gh-143715 and gh-94532). */
 static int
-s_create(PyStructObject *self, PyObject *format)
+set_format(PyStructObject *self, PyObject *format)
 {
     if (PyUnicode_Check(format)) {
         format = PyUnicode_AsASCIIString(format);
@@ -1793,19 +1793,23 @@ s_create(PyStructObject *self, PyObject *format)
     return 0;
 }
 
-static PyObject *
-s_new(PyTypeObject *type, PyObject *args, PyObject *kwds)
-{
-    PyObject *mod = PyType_GetModuleByDef(type, &_structmodule);
-    _structmodulestate *state = PyModule_GetState(mod);
-    PyStructObject *self;
-    bool implicit_new_call = s_new == PyType_GetSlot(type, Py_tp_new);
-    bool in_subclass = type != (PyTypeObject *)state->PyStructType;
+/*[clinic input]
+@classmethod
+Struct.__new__
 
-    assert(type != NULL);
-    allocfunc alloc_func = PyType_GetSlot(type, Py_tp_alloc);
-    assert(alloc_func != NULL);
-    self = (PyStructObject *)alloc_func(type, 0);
+   format: object
+
+Create a compiled struct object.
+
+Return a new Struct object which writes and reads binary data according
+to the format string.  See help(struct) for more on format strings.
+[clinic start generated code]*/
+
+static PyObject *
+Struct_impl(PyTypeObject *type, PyObject *format)
+/*[clinic end generated code: output=49468b044e334308 input=8381a9796f20f24e]*/
+{
+    PyStructObject *self = (PyStructObject *)type->tp_alloc(type, 0);
     if (self == NULL) {
         return NULL;
     }
@@ -1814,38 +1818,107 @@ s_new(PyTypeObject *type, PyObject *args, PyObject *kwds)
     self->s_size = -1;
     self->s_len = -1;
     self->init_called = false;
-    if (PyTuple_GET_SIZE(args) != 1) {
-        if (PyErr_WarnEx(PyExc_DeprecationWarning,
-                         "Struct.__new__() has one positional argument", 1)) {
-            goto err;
+    if (set_format(self, format) < 0) {
+        Py_DECREF(self);
+        return NULL;
+    }
+    return (PyObject *)self;
+}
+
+
+static int
+s_init(PyObject *self, PyObject *args, PyObject *kwargs);
+
+static PyObject *
+s_new(PyTypeObject *type, PyObject *args, PyObject *kwds)
+{
+    if (type->tp_new != s_new) {
+        /* Struct.__new__() was called explicitly in a subclass' __new__(). */
+        return Struct(type, args, kwds);
+    }
+
+    PyObject *format = NULL;
+    if (PyTuple_GET_SIZE(args) == 1 && (kwds == NULL || PyDict_GET_SIZE(kwds) == 0)) {
+        format = Py_NewRef(PyTuple_GET_ITEM(args, 0));
+    }
+    else if (PyTuple_GET_SIZE(args) == 0 && kwds != NULL && PyDict_GET_SIZE(kwds) == 1) {
+        if (PyDict_GetItemStringRef(kwds, "format", &format) < 0) {
+            return NULL;
         }
     }
-    else {
-        if (implicit_new_call && in_subclass) {
-            if (PyErr_WarnEx(PyExc_DeprecationWarning,
-                             ("Creation of half-initialized Struct() objects"
-                              " is deprecated, use Struct.__new__(cls, format)"), 1))
+    if (format == NULL && type->tp_init != s_init) {
+        Py_ssize_t nargs = PyTuple_GET_SIZE(args) + (kwds ? PyDict_GET_SIZE(kwds) : 0);
+        if (nargs > 1) {
+            if (PyErr_WarnFormat(PyExc_DeprecationWarning, 1,
+                "Struct() takes at most 1 argument (%zd given)", nargs))
             {
-                goto err;
+                Py_XDECREF(format);
+                return NULL;
             }
         }
         else {
-            if (s_create(self, PyTuple_GET_ITEM(args, 0))) {
-                goto err;
+            if (PyErr_WarnEx(PyExc_DeprecationWarning,
+                "Struct() missing required argument 'format' (pos 1)", 1))
+            {
+                Py_XDECREF(format);
+                return NULL;
             }
         }
     }
+
+    PyStructObject *self = (PyStructObject *)type->tp_alloc(type, 0);
+    if (self == NULL) {
+        return NULL;
+    }
+    self->s_format = Py_NewRef(Py_None);
+    self->s_codes = NULL;
+    self->s_size = -1;
+    self->s_len = -1;
+    self->init_called = false;
+    if (format && set_format(self, format) < 0) {
+        if (type->tp_init == s_init) {
+            /* No custom __init__() method, so __new__() should do
+             * all the work. */
+            Py_DECREF(format);
+            Py_DECREF(self);
+            return NULL;
+        }
+        PyObject *exc = PyErr_GetRaisedException();
+        Py_SETREF(self->s_format, Py_NewRef(Py_None));
+        if (PyErr_WarnFormat(PyExc_DeprecationWarning, 1,
+            "Invalid 'format' argument for Struct.__new__(): %S", exc))
+        {
+            Py_DECREF(exc);
+            Py_DECREF(format);
+            Py_DECREF(self);
+            return NULL;
+        }
+        Py_DECREF(exc);
+    }
+    Py_XDECREF(format);
     return (PyObject *)self;
-err:
-    Py_DECREF(self);
-    return NULL;
+}
+
+static bool
+same_format(PyStructObject *s, PyObject *format)
+{
+    Py_ssize_t size = PyBytes_GET_SIZE(s->s_format);
+    const void *data = PyBytes_AS_STRING(s->s_format);
+    if (PyUnicode_Check(format) && PyUnicode_IS_ASCII(format)) {
+        return PyUnicode_GET_LENGTH(format) == size
+            && memcmp(PyUnicode_1BYTE_DATA(format), data, size) == 0;
+    }
+    if (PyBytes_Check(format)) {
+        return PyBytes_GET_SIZE(format) == size
+            && memcmp(PyBytes_AS_STRING(format), data, size) == 0;
+    }
+    return false;
 }
 
 /*[clinic input]
-@text_signature "(format)"
 Struct.__init__
 
-    format: object = NULL
+    format: object
 
 Create a compiled struct object.
 
@@ -1855,33 +1928,51 @@ to the format string.  See help(struct) for more on format strings.
 
 static int
 Struct___init___impl(PyStructObject *self, PyObject *format)
-/*[clinic end generated code: output=b8e80862444e92d0 input=dcf0b5a00eb0dbd9]*/
+/*[clinic end generated code: output=b8e80862444e92d0 input=1af78a5f57d82cec]*/
 {
-    bool explicit_init_call = (Struct___init__
-                               != PyType_GetSlot(Py_TYPE(self), Py_tp_init));
-
-    if (!format && !self->s_codes) {
-        PyErr_SetString(PyExc_TypeError,
-                        "Struct() missing required argument 'format' (pos 1)");
-        return -1;
+    if (self->s_format == Py_None) {
+        if (set_format(self, format) < 0) {
+            return -1;
+        }
     }
-    if (self->init_called) {
-        if (self->s_codes
-            && PyErr_WarnEx(PyExc_DeprecationWarning,
-                            ("Explicit call of __init__() on "
-                             "initialized Struct() is deprecated"), 1))
+    else if (!same_format(self, format)) {
+        if (!self->init_called) {
+            if (PyErr_WarnEx(PyExc_FutureWarning,
+                             "Different format arguments for __new__() "
+                             "and __init__() methods of Struct", 1))
+            {
+                return -1;
+            }
+        }
+        if (set_format(self, format) < 0) {
+            return -1;
+        }
+    }
+    self->init_called = true;
+    return 0;
+}
+
+static int
+s_init(PyObject *self, PyObject *args, PyObject *kwargs)
+{
+    if (((PyStructObject *)self)->init_called) {
+        if (PyErr_WarnEx(PyExc_DeprecationWarning,
+                         "Explicit call of __init__() on "
+                         "initialized Struct is deprecated", 1))
         {
             return -1;
         }
-        return s_create(self, format);
     }
-    else {
-        if (explicit_init_call && s_create(self, format)) {
-            return -1;
-        }
-        self->init_called = true;
+    else if (Py_TYPE(self)->tp_init == s_init
+            && ((PyStructObject *)self)->s_format != Py_None)
+    {
+        /* Struct.__init__() was called implicitly.
+         * __new__() already did all the work. */
+        ((PyStructObject *)self)->init_called = true;
         return 0;
     }
+    /* Struct.__init__() was called explicitly. */
+    return Struct___init__(self, args, kwargs);
 }
 
 static int
@@ -2495,7 +2586,7 @@ static PyType_Slot PyStructType_slots[] = {
     {Py_tp_methods, s_methods},
     {Py_tp_members, s_members},
     {Py_tp_getset, s_getsetlist},
-    {Py_tp_init, Struct___init__},
+    {Py_tp_init, s_init},
     {Py_tp_new, s_new},
     {0, 0},
 };
