@@ -702,6 +702,11 @@ concurrent.futures
   terminated process.
   (Contributed by Jonathan Berg in :gh:`139486`.)
 
+* Added *daemon* parameter to :class:`concurrent.futures.ThreadPoolExecutor`.
+  When set to ``True``, worker threads are created as daemon threads, allowing
+  the interpreter to exit without waiting for them to finish.
+  (Contributed by Hrvoje Nikšić in :gh:`80961`.)
+
 
 contextlib
 ----------

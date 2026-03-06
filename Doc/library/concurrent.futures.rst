@@ -95,7 +95,8 @@ Executor Objects
       return immediately and the resources associated with the executor will be
       freed when all pending futures are done executing.  Regardless of the
       value of *wait*, the entire Python program will not exit until all
-      pending futures are done executing.
+      pending futures are done executing (see the *daemon* parameter of
+      :class:`ThreadPoolExecutor` for an exception to this rule).
 
       If *cancel_futures* is ``True``, this method will cancel all pending
       futures that the executor has not started running. Any futures that
@@ -159,7 +160,7 @@ And::
    executor.submit(wait_on_future)
 
 
-.. class:: ThreadPoolExecutor(max_workers=None, thread_name_prefix='', initializer=None, initargs=())
+.. class:: ThreadPoolExecutor(max_workers=None, thread_name_prefix='', initializer=None, initargs=(), *, daemon=False)
 
    An :class:`Executor` subclass that uses a pool of at most *max_workers*
    threads to execute calls asynchronously.
@@ -176,6 +177,13 @@ And::
    initializer.  Should *initializer* raise an exception, all currently
    pending jobs will raise a :exc:`~concurrent.futures.thread.BrokenThreadPool`,
    as well as any attempt to submit more jobs to the pool.
+
+   If *daemon* is ``True``, worker threads are created as
+   :ref:`daemon threads <thread-objects>`, allowing the interpreter to exit
+   without waiting for them to finish. This is useful when tasks may be stuck
+   indefinitely and would otherwise prevent the process from exiting.
+   ``shutdown(wait=True)`` still joins the threads explicitly. Daemon threads
+   are not supported in subinterpreters and will raise :exc:`RuntimeError`.
 
    .. versionchanged:: 3.5
       If *max_workers* is ``None`` or
@@ -205,6 +213,9 @@ And::
    .. versionchanged:: 3.13
       Default value of *max_workers* is changed to
       ``min(32, (os.process_cpu_count() or 1) + 4)``.
+
+   .. versionchanged:: 3.15
+      Added the *daemon* parameter.
 
 
 .. _threadpoolexecutor-example:
