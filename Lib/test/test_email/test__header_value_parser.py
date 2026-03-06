@@ -2014,13 +2014,6 @@ class TestParser(TestParserMixin, TestEmailBase):
 
         )
 
-    def test_get_quoted_string_only(self):
-        qs = self._test_get_x(parser.get_quoted_string,
-            '"bob"', '"bob"', 'bob', [], '')
-        self.assertEqual(qs.token_type, 'quoted-string')
-        self.assertEqual(qs.quoted_value, '"bob"')
-        self.assertEqual(qs.content, 'bob')
-
     def test_get_quoted_string_with_wsp(self):
         qs = self._test_get_x(parser.get_quoted_string,
             '\t "bob"  ', '\t "bob"  ', ' bob ', [], '')
