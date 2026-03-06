@@ -58,31 +58,6 @@ check_cursor_locked(pysqlite_Cursor *cur)
     return 1;
 }
 
-/*
- * Check if any cursor other than 'exclude' is locked on this connection.
- * Used to determine if we're in a nested callback scenario.
- */
-static int
-any_other_cursor_locked(pysqlite_Connection *conn, pysqlite_Cursor *exclude)
-{
-    assert(PyList_CheckExact(conn->cursors));
-    Py_ssize_t n = PyList_GET_SIZE(conn->cursors);
-    for (Py_ssize_t i = 0; i < n; i++) {
-        PyObject *weakref = PyList_GET_ITEM(conn->cursors, i);
-        PyObject *obj;
-        if (!PyWeakref_GetRef(weakref, &obj)) {
-            continue;
-        }
-        pysqlite_Cursor *cursor = (pysqlite_Cursor *)obj;
-        int locked = cursor->locked;
-        Py_DECREF(obj);
-        if (locked && cursor != exclude) {
-            return 1;
-        }
-    }
-    return 0;
-}
-
 static pysqlite_state *
 get_module_state_by_cursor(pysqlite_Cursor *cursor)
 {
@@ -957,17 +932,6 @@ _pysqlite_query_execute(pysqlite_Cursor* self, int multiple, PyObject* operation
         }
 
         rc = stmt_step(self->statement->st);
-        if (self->connection->close_attempted_in_callback) {
-            /* Only clear the flag if no other cursor is locked (outermost) */
-            if (!any_other_cursor_locked(self->connection, self)) {
-                self->connection->close_attempted_in_callback = 0;
-            }
-            PyErr_Clear();
-            PyErr_SetString(state->ProgrammingError,
-                            "Cannot close the database connection "
-                            "from within a callback function.");
-            goto error;
-        }
         if (rc != SQLITE_DONE && rc != SQLITE_ROW) {
             if (PyErr_Occurred()) {
                 /* there was an error that occurred in a user-defined callback */
@@ -1219,20 +1183,6 @@ pysqlite_cursor_iternext(PyObject *op)
     }
     int rc = stmt_step(stmt);
     self->locked = 0;
-    if (self->connection->close_attempted_in_callback) {
-        /* Only clear the flag if no other cursor is locked (outermost) */
-        if (!any_other_cursor_locked(self->connection, self)) {
-            self->connection->close_attempted_in_callback = 0;
-        }
-        Py_DECREF(row);
-        stmt_reset(self->statement);
-        Py_CLEAR(self->statement);
-        PyErr_Clear();
-        PyErr_SetString(self->connection->state->ProgrammingError,
-                        "Cannot close the database connection "
-                        "from within a callback function.");
-        return NULL;
-    }
     if (rc == SQLITE_DONE) {
         if (self->statement->is_dml) {
             self->rowcount = (long)sqlite3_changes(self->connection->db);

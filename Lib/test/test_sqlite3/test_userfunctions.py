@@ -606,8 +606,7 @@ class WindowFunctionTests(unittest.TestCase):
                 pass
 
         con.create_window_function("evil_win", 1, CloseConnWindow)
-        msg = "from within a callback"
-        with self.assertRaisesRegex(sqlite.ProgrammingError, msg):
+        with self.assertRaises(sqlite.OperationalError):
             cursor = con.execute(
                 "SELECT evil_win(x) OVER "
                 "(ROWS BETWEEN 1 PRECEDING AND 1 FOLLOWING) FROM t"
@@ -771,8 +770,7 @@ class AggregateTests(unittest.TestCase):
                 return self.total
 
         con.create_aggregate("agg_close", 1, CloseConnAgg)
-        msg = "from within a callback"
-        with self.assertRaisesRegex(sqlite.ProgrammingError, msg):
+        with self.assertRaises(sqlite.OperationalError):
             con.execute("SELECT agg_close(x) FROM t")
         con.close()
 
@@ -792,17 +790,15 @@ class AggregateTests(unittest.TestCase):
 
         con.create_function("outer_func", 1, outer_func)
         con.create_function("inner_func", 1, inner_func)
-        msg = "from within a callback"
-        with self.assertRaisesRegex(sqlite.ProgrammingError, msg):
+        with self.assertRaises(sqlite.OperationalError):
             con.execute("SELECT outer_func(inner_func(x)) FROM t")
         # Connection must still be usable after the failed close attempt.
         self.assertEqual(con.execute("SELECT 1").fetchone(), (1,))
         con.close()
 
     def test_close_conn_in_nested_callback_caught(self):
-        # gh-145040: close attempt must propagate even if the exception
-        # is caught inside the callback and a nested execute consumes
-        # the flag.
+        # gh-145040: if the ProgrammingError from close() is caught inside
+        # the callback, execution continues normally.
         con = sqlite.connect(":memory:", autocommit=True)
         con.execute("CREATE TABLE t(x INTEGER)")
         con.execute("INSERT INTO t VALUES(1)")
@@ -812,16 +808,13 @@ class AggregateTests(unittest.TestCase):
                 con.close()
             except sqlite.ProgrammingError:
                 pass
-            try:
-                con.execute("SELECT 1")
-            except sqlite.ProgrammingError:
-                pass
             return x
 
         con.create_function("swallow_close", 1, swallow_close)
-        msg = "from within a callback"
-        with self.assertRaisesRegex(sqlite.ProgrammingError, msg):
-            con.execute("SELECT swallow_close(x) FROM t")
+        # The close() was prevented and the exception was caught,
+        # so the execute should succeed.
+        result = con.execute("SELECT swallow_close(x) FROM t").fetchone()
+        self.assertEqual(result, (1,))
         # Connection must still be usable.
         self.assertEqual(con.execute("SELECT 1").fetchone(), (1,))
         con.close()
@@ -836,8 +829,7 @@ class AggregateTests(unittest.TestCase):
             return x
 
         con.create_function("close_conn", 1, close_conn)
-        msg = "from within a callback"
-        with self.assertRaisesRegex(sqlite.ProgrammingError, msg):
+        with self.assertRaises(sqlite.OperationalError):
             con.executemany("INSERT INTO t VALUES(close_conn(?))",
                             [(i,) for i in range(10)])
         con.close()
@@ -860,14 +852,9 @@ class AggregateTests(unittest.TestCase):
 
         cursor = con.execute("SELECT * FROM t")
         con.set_progress_handler(close_progress, 1)
-        msg = "from within a callback"
-        import test.support
-        with test.support.catch_unraisable_exception():
-            with self.assertRaisesRegex(sqlite.ProgrammingError, msg):
-                for row in cursor:
-                    pass
-            del cursor
-            gc_collect()
+        with self.assertRaises(sqlite.OperationalError):
+            for row in cursor:
+                pass
         con.close()
 
     def test_close_conn_in_collation_callback(self):

@@ -65,11 +65,6 @@ typedef struct
 
     int initialized;
 
-    /* set to 1 when close() is attempted while a cursor is locked (actively
-     * executing); checked after stmt_step() returns to raise the appropriate
-     * ProgrammingError */
-    int close_attempted_in_callback;
-
     /* thread identification of the thread the connection was created in */
     unsigned long thread_ident;
 

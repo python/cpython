@@ -38,7 +38,6 @@
 #include "pycore_pyerrors.h"      // _PyErr_ChainExceptions1()
 #include "pycore_pylifecycle.h"   // _Py_IsInterpreterFinalizing()
 #include "pycore_unicodeobject.h" // _PyUnicode_AsUTF8NoNUL
-#include "pycore_weakref.h"
 
 #include <stdbool.h>
 
@@ -309,7 +308,6 @@ pysqlite_connection_init_impl(pysqlite_Connection *self, PyObject *database,
     self->statement_cache = statement_cache;
     self->cursors = cursors;
     self->blobs = blobs;
-    self->close_attempted_in_callback = 0;
     self->row_factory = Py_NewRef(Py_None);
     self->text_factory = Py_NewRef(&PyUnicode_Type);
     self->trace_ctx = NULL;
@@ -673,9 +671,6 @@ pysqlite_connection_close_impl(pysqlite_Connection *self)
     Py_ssize_t n = PyList_GET_SIZE(self->cursors);
     for (Py_ssize_t i = 0; i < n; i++) {
         PyObject *weakref = PyList_GET_ITEM(self->cursors, i);
-        if (_PyWeakref_IsDead(weakref)) {
-            continue;
-        }
         PyObject *obj;
         if (!PyWeakref_GetRef(weakref, &obj)) {
             continue;
@@ -683,7 +678,6 @@ pysqlite_connection_close_impl(pysqlite_Connection *self)
         int locked = ((pysqlite_Cursor *)obj)->locked;
         Py_DECREF(obj);
         if (locked) {
-            self->close_attempted_in_callback = 1;
             PyTypeObject *tp = Py_TYPE(self);
             pysqlite_state *state = pysqlite_get_state_by_type(tp);
             PyErr_SetString(state->ProgrammingError,
