@@ -736,6 +736,10 @@ difflib
   class, and migrated the output to the HTML5 standard.
   (Contributed by Jiahao Li in :gh:`134580`.)
 
+* Users can now implement and/or provide custom ``Matcher`` and ``Diff``
+  classes to functions and objects of :mod:`difflib`.
+  (Contributed by Tim Peters and Dominykas Grigoni in :gh:`145210`)
+
 
 functools
 ---------
