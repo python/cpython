@@ -131,7 +131,9 @@ _VALID_THREADSAFETY_LEVELS = frozenset({
 })
 
 
-def read_threadsafety_data(threadsafety_filename: Path) -> dict[str, ThreadSafetyEntry]:
+def read_threadsafety_data(
+    threadsafety_filename: Path,
+) -> dict[str, ThreadSafetyEntry]:
     threadsafety_data = {}
     for line in threadsafety_filename.read_text(encoding="utf8").splitlines():
         line = line.strip()
@@ -301,32 +303,33 @@ def _unstable_api_annotation() -> nodes.admonition:
     )
 
 
-_THREADSAFETY_DISPLAY = {
-    "incompatible":  "Not safe to call from multiple threads.",
-    "compatible":    "Safe to call from multiple threads with external synchronization only.",
-    "safe":          "Safe for concurrent use.",
-}
-
-# Maps each thread safety level to the glossary term it should link to.
-_THREADSAFETY_TERM = {
-    "incompatible": "thread-incompatible",
-    "compatible":   "thread-compatible",
-    "safe":         "thread-safe",
-}
-
-
 def _threadsafety_annotation(level: str) -> nodes.emphasis:
-    display = sphinx_gettext(_THREADSAFETY_DISPLAY[level])
+    match level:
+        case "incompatible":
+            display = sphinx_gettext("Not safe to call from multiple threads.")
+            reftarget = "thread-incompatible"
+        case "compatible":
+            display = sphinx_gettext(
+                "Safe to call from multiple threads with external synchronization only."
+            )
+            reftarget = "thread-compatible"
+        case "safe":
+            display = sphinx_gettext("Safe for concurrent use.")
+            reftarget = "thread-safe"
+        case _:
+            raise AssertionError(
+                "Only the levels 'incompatible', 'compatible' and 'safe' are possible"
+            )
     ref_node = addnodes.pending_xref(
         display,
         nodes.Text(display),
         refdomain="std",
-        reftarget=_THREADSAFETY_TERM[level],
+        reftarget=reftarget,
         reftype="term",
         refexplicit="True",
     )
     prefix = sphinx_gettext("Thread safety:") + " "
-    classes = [f"threadsafety-{level}"]
+    classes = ["threadsafety", f"threadsafety-{level}"]
     return nodes.emphasis("", prefix, ref_node, classes=classes)
 
 
