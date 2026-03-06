@@ -84,7 +84,10 @@ MD5_traverse(PyObject *ptr, visitproc visit, void *arg)
 static void
 MD5_dealloc(MD5object *ptr)
 {
-    Hacl_Hash_MD5_free(ptr->hash_state);
+    if (ptr->hash_state != NULL) {
+        Hacl_Hash_MD5_free(ptr->hash_state);
+        ptr->hash_state == NULL;
+    }
     PyTypeObject *tp = Py_TYPE((PyObject*)ptr);
     PyObject_GC_UnTrack(ptr);
     PyObject_GC_Del(ptr);
