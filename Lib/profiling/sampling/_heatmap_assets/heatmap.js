@@ -577,10 +577,12 @@ function populateBytecodePanel(panel, button) {
         else if (specPct >= 33) specClass = 'medium';
 
         // Build specialization summary
+        const instruction_word = instructions.length === 1 ? 'instruction' : 'instructions';
+        const sample_word = totalSamples === 1 ? 'sample' : 'samples';
         let html = `<div class="bytecode-spec-summary ${specClass}">
             <span class="spec-pct">${specPct}%</span>
             <span class="spec-label">specialized</span>
-            <span class="spec-detail">(${specializedCount}/${instructions.length} instructions, ${specializedSamples.toLocaleString()}/${totalSamples.toLocaleString()} samples)</span>
+            <span class="spec-detail">(${specializedCount}/${instructions.length} ${instruction_word}, ${specializedSamples.toLocaleString()}/${totalSamples.toLocaleString()} ${sample_word})</span>
         </div>`;
 
         html += '<div class="bytecode-header">' +

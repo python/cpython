@@ -111,6 +111,7 @@ static const PyConfigSpec PYCONFIG_SPEC[] = {
     SPEC(base_prefix, WSTR_OPT, PUBLIC, SYS_ATTR("base_prefix")),
     SPEC(bytes_warning, UINT, PUBLIC, SYS_FLAG(9)),
     SPEC(cpu_count, INT, PUBLIC, NO_SYS),
+    SPEC(lazy_imports, INT, PUBLIC, NO_SYS),
     SPEC(exec_prefix, WSTR_OPT, PUBLIC, SYS_ATTR("exec_prefix")),
     SPEC(executable, WSTR_OPT, PUBLIC, SYS_ATTR("executable")),
     SPEC(inspect, BOOL, PUBLIC, SYS_FLAG(1)),
@@ -160,6 +161,7 @@ static const PyConfigSpec PYCONFIG_SPEC[] = {
     SPEC(legacy_windows_stdio, BOOL, READ_ONLY, NO_SYS),
 #endif
     SPEC(malloc_stats, BOOL, READ_ONLY, NO_SYS),
+    SPEC(pymalloc_hugepages, BOOL, READ_ONLY, NO_SYS),
     SPEC(orig_argv, WSTR_LIST, READ_ONLY, SYS_ATTR("orig_argv")),
     SPEC(parse_argv, BOOL, READ_ONLY, NO_SYS),
     SPEC(pathconfig_warnings, BOOL, READ_ONLY, NO_SYS),
@@ -317,6 +319,8 @@ The following implementation-specific options are available:\n\
 "\
 -X importtime[=2]: show how long each import takes; use -X importtime=2 to\n\
          log imports of already-loaded modules; also PYTHONPROFILEIMPORTTIME\n\
+-X lazy_imports=[all|none|normal]: control global lazy imports;\n\
+         default is normal; also PYTHON_LAZY_IMPORTS\n\
 -X int_max_str_digits=N: limit the size of int<->str conversions;\n\
          0 disables the limit; also PYTHONINTMAXSTRDIGITS\n\
 -X no_debug_ranges: don't include extra location information in code objects;\n\
@@ -353,6 +357,9 @@ The following implementation-specific options are available:\n\
          use module globals, which is not concurrent-safe; set to true for\n\
          free-threaded builds and false otherwise; also\n\
          PYTHON_CONTEXT_AWARE_WARNINGS\n\
+-X pathconfig_warnings=[0|1]: if true (1) then path configuration is allowed\n\
+         to log warnings into stderr; if false (0) suppress these warnings;\n\
+         set to true by default; also PYTHON_PATHCONFIG_WARNINGS\n\
 -X tracemalloc[=N]: trace Python memory allocations; N sets a traceback limit\n \
          of N frames (default: 1); also PYTHONTRACEMALLOC=N\n\
 -X utf8[=0|1]: enable (1) or disable (0) UTF-8 mode; also PYTHONUTF8\n\
@@ -431,6 +438,7 @@ static const char usage_envvars[] =
 "PYTHON_PRESITE: import this module before site (-X presite)\n"
 #endif
 "PYTHONPROFILEIMPORTTIME: show how long each import takes (-X importtime)\n"
+"PYTHON_LAZY_IMPORTS: control global lazy imports (-X lazy_imports)\n"
 "PYTHONPYCACHEPREFIX: root directory for bytecode cache (pyc) files\n"
 "                  (-X pycache_prefix)\n"
 "PYTHONSAFEPATH  : don't prepend a potentially unsafe path to sys.path.\n"
@@ -900,6 +908,7 @@ config_check_consistency(const PyConfig *config)
     assert(config->show_ref_count >= 0);
     assert(config->dump_refs >= 0);
     assert(config->malloc_stats >= 0);
+    assert(config->pymalloc_hugepages >= 0);
     assert(config->site_import >= 0);
     assert(config->bytes_warning >= 0);
     assert(config->warn_default_encoding >= 0);
@@ -939,6 +948,8 @@ config_check_consistency(const PyConfig *config)
     assert(config->int_max_str_digits >= 0);
     // cpu_count can be -1 if the user doesn't override it.
     assert(config->cpu_count != 0);
+    // lazy_imports can be -1 (default), 0 (off), or 1 (on).
+    assert(config->lazy_imports >= -1 && config->lazy_imports <= 1);
     // config->use_frozen_modules is initialized later
     // by _PyConfig_InitImportConfig().
     assert(config->thread_inherit_context >= 0);
@@ -1050,6 +1061,7 @@ _PyConfig_InitCompatConfig(PyConfig *config)
     config->_is_python_build = 0;
     config->code_debug_ranges = 1;
     config->cpu_count = -1;
+    config->lazy_imports = -1;
 #ifdef Py_GIL_DISABLED
     config->thread_inherit_context = 1;
     config->context_aware_warnings = 1;
@@ -1846,7 +1858,9 @@ config_read_env_vars(PyConfig *config)
     _Py_get_env_flag(use_env, &config->parser_debug, "PYTHONDEBUG");
     _Py_get_env_flag(use_env, &config->verbose, "PYTHONVERBOSE");
     _Py_get_env_flag(use_env, &config->optimization_level, "PYTHONOPTIMIZE");
-    _Py_get_env_flag(use_env, &config->inspect, "PYTHONINSPECT");
+    if (!config->inspect && _Py_GetEnv(use_env, "PYTHONINSPECT")) {
+        config->inspect = 1;
+    }
 
     int dont_write_bytecode = 0;
     _Py_get_env_flag(use_env, &dont_write_bytecode, "PYTHONDONTWRITEBYTECODE");
@@ -1876,6 +1890,18 @@ config_read_env_vars(PyConfig *config)
     }
     if (config_get_env(config, "PYTHONMALLOCSTATS")) {
         config->malloc_stats = 1;
+    }
+    {
+        const char *env = _Py_GetEnv(use_env, "PYTHON_PYMALLOC_HUGEPAGES");
+        if (env) {
+            int value;
+            if (_Py_str_to_int(env, &value) < 0 || value < 0) {
+                /* PYTHON_PYMALLOC_HUGEPAGES=text or negative
+                   behaves as PYTHON_PYMALLOC_HUGEPAGES=1 */
+                value = 1;
+            }
+            config->pymalloc_hugepages = (value > 0);
+        }
     }
 
     if (config->dump_refs_file == NULL) {
@@ -2285,6 +2311,75 @@ config_init_import_time(PyConfig *config)
 }
 
 static PyStatus
+config_init_lazy_imports(PyConfig *config)
+{
+    int lazy_imports = -1;
+
+    const char *env = config_get_env(config, "PYTHON_LAZY_IMPORTS");
+    if (env) {
+        if (strcmp(env, "all") == 0) {
+            lazy_imports = 1;
+        }
+        else if (strcmp(env, "none") == 0) {
+            lazy_imports = 0;
+        }
+        else if (strcmp(env, "normal") == 0) {
+            lazy_imports = -1;
+        }
+        else {
+            return _PyStatus_ERR("PYTHON_LAZY_IMPORTS: invalid value; "
+                                 "expected 'all', 'none', or 'normal'");
+        }
+        config->lazy_imports = lazy_imports;
+    }
+
+    const wchar_t *x_value = config_get_xoption_value(config, L"lazy_imports");
+    if (x_value) {
+        if (wcscmp(x_value, L"all") == 0) {
+            lazy_imports = 1;
+        }
+        else if (wcscmp(x_value, L"none") == 0) {
+            lazy_imports = 0;
+        }
+        else if (wcscmp(x_value, L"normal") == 0) {
+            lazy_imports = -1;
+        }
+        else {
+            return _PyStatus_ERR("-X lazy_imports: invalid value; "
+                                 "expected 'all', 'none', or 'normal'");
+        }
+        config->lazy_imports = lazy_imports;
+    }
+    return _PyStatus_OK();
+}
+
+static PyStatus
+config_init_pathconfig_warnings(PyConfig *config)
+{
+    const char *env = config_get_env(config, "PYTHON_PATHCONFIG_WARNINGS");
+    if (env) {
+        int enabled;
+        if (_Py_str_to_int(env, &enabled) < 0 || (enabled < 0) || (enabled > 1)) {
+            return _PyStatus_ERR(
+                "PYTHON_PATHCONFIG_WARNINGS=N: N is missing or invalid");
+        }
+        config->pathconfig_warnings = enabled;
+    }
+
+    const wchar_t *xoption = config_get_xoption(config, L"pathconfig_warnings");
+    if (xoption) {
+        int enabled;
+        const wchar_t *sep = wcschr(xoption, L'=');
+        if (!sep || (config_wstr_to_int(sep + 1, &enabled) < 0) || (enabled < 0) || (enabled > 1)) {
+            return _PyStatus_ERR(
+                "-X pathconfig_warnings=n: n is missing or invalid");
+        }
+        config->pathconfig_warnings = enabled;
+    }
+    return _PyStatus_OK();
+}
+
+static PyStatus
 config_read_complex_options(PyConfig *config)
 {
     /* More complex options configured by env var and -X option */
@@ -2302,6 +2397,13 @@ config_read_complex_options(PyConfig *config)
     PyStatus status;
     if (config->import_time < 0) {
         status = config_init_import_time(config);
+        if (_PyStatus_EXCEPTION(status)) {
+            return status;
+        }
+    }
+
+    if (config->lazy_imports < 0) {
+        status = config_init_lazy_imports(config);
         if (_PyStatus_EXCEPTION(status)) {
             return status;
         }
@@ -2369,6 +2471,11 @@ config_read_complex_options(PyConfig *config)
     }
 
     status = config_init_tlbc(config);
+    if (_PyStatus_EXCEPTION(status)) {
+        return status;
+    }
+
+    status = config_init_pathconfig_warnings(config);
     if (_PyStatus_EXCEPTION(status)) {
         return status;
     }
@@ -2696,6 +2803,9 @@ config_read(PyConfig *config, int compute_path_config)
     if (config->tracemalloc < 0) {
         config->tracemalloc = 0;
     }
+    if (config->lazy_imports < 0) {
+        config->lazy_imports = -1;  // Default is auto/unset
+    }
     if (config->perf_profiling < 0) {
         config->perf_profiling = 0;
     }
@@ -2809,6 +2919,10 @@ _PyConfig_Write(const PyConfig *config, _PyRuntimeState *runtime)
     {
         return _PyStatus_NO_MEMORY();
     }
+
+#ifdef PYMALLOC_USE_HUGEPAGES
+    runtime->allocators.use_hugepages = config->pymalloc_hugepages;
+#endif
 
     return _PyStatus_OK();
 }

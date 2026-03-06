@@ -2624,6 +2624,45 @@ class ExecTests(unittest.TestCase):
         with self.assertRaises(ValueError):
             os.execve(args[0], args, newenv)
 
+    # See https://github.com/python/cpython/issues/137934 and the other
+    # related issues for the reason why we cannot test this on Windows.
+    @unittest.skipIf(os.name == "nt", "POSIX-specific test")
+    @unittest.skipUnless(unix_shell and os.path.exists(unix_shell),
+                        "requires a shell")
+    def test_execve_env_concurrent_mutation_with_fspath_posix(self):
+        # Prevent crash when mutating environment during parsing.
+        # Regression test for https://github.com/python/cpython/issues/143309.
+
+        message = "hello from execve"
+        code = """
+        import os, sys
+
+        class MyPath:
+            def __fspath__(self):
+                mutated.clear()
+                return b"pwn"
+
+        mutated = KEYS = VALUES = [MyPath()]
+
+        class MyEnv:
+            def __getitem__(self): raise RuntimeError("must not be called")
+            def __len__(self): return 1
+            def keys(self): return KEYS
+            def values(self): return VALUES
+
+        args = [{unix_shell!r}, '-c', 'echo \"{message!s}\"']
+        os.execve(args[0], args, MyEnv())
+        """.format(unix_shell=unix_shell, message=message)
+
+        # Make sure to forward "LD_*" variables so that assert_python_ok()
+        # can run correctly.
+        minimal = {k: v for k, v in os.environ.items() if k.startswith("LD_")}
+        with os_helper.EnvironmentVarGuard() as env:
+            env.clear()
+            env.update(minimal)
+            _, out, _ = assert_python_ok('-c', code, **env)
+        self.assertIn(bytes(message, "ascii"), out)
+
     @unittest.skipUnless(sys.platform == "win32", "Win32-specific test")
     def test_execve_with_empty_path(self):
         # bpo-32890: Check GetLastError() misuse
@@ -2738,6 +2777,67 @@ class TestInvalidFD(unittest.TestCase):
     def test_fpathconf_bad_fd(self):
         self.check(os.pathconf, "PC_NAME_MAX")
         self.check(os.fpathconf, "PC_NAME_MAX")
+
+    @unittest.skipUnless(hasattr(os, 'pathconf'), 'test needs os.pathconf()')
+    @unittest.skipIf(
+        support.linked_to_musl(),
+        'musl fpathconf ignores the file descriptor and returns a constant',
+        )
+    def test_pathconf_negative_fd_uses_fd_semantics(self):
+        if os.pathconf not in os.supports_fd:
+            self.skipTest('needs fpathconf()')
+
+        with self.assertRaises(OSError) as ctx:
+            os.pathconf(-1, 1)
+        self.assertEqual(ctx.exception.errno, errno.EBADF)
+
+    @support.subTests("fd", [-1, -5])
+    def test_negative_fd_ebadf(self, fd):
+        tests = [(os.stat, fd)]
+        if hasattr(os, "statx"):
+            tests.append((os.statx, fd, 0))
+        if os.chdir in os.supports_fd:
+            tests.append((os.chdir, fd))
+        if os.chmod in os.supports_fd:
+            tests.append((os.chmod, fd, 0o777))
+        if hasattr(os, "chown") and os.chown in os.supports_fd:
+            tests.append((os.chown, fd, 0, 0))
+        if os.listdir in os.supports_fd:
+            tests.append((os.listdir, fd))
+        if os.utime in os.supports_fd:
+            tests.append((os.utime, fd, (0, 0)))
+        if hasattr(os, "truncate") and os.truncate in os.supports_fd:
+            tests.append((os.truncate, fd, 0))
+        if hasattr(os, 'statvfs') and os.statvfs in os.supports_fd:
+            tests.append((os.statvfs, fd))
+        if hasattr(os, "setxattr"):
+            tests.append((os.getxattr, fd, b"user.test"))
+            tests.append((os.setxattr, fd, b"user.test", b"1"))
+            tests.append((os.removexattr, fd, b"user.test"))
+            tests.append((os.listxattr, fd))
+        if os.scandir in os.supports_fd:
+            tests.append((os.scandir, fd))
+
+        for func, *args in tests:
+            with self.subTest(func=func, args=args):
+                with self.assertRaises(OSError) as ctx:
+                    func(*args)
+                self.assertEqual(ctx.exception.errno, errno.EBADF)
+
+        if hasattr(os, "execve") and os.execve in os.supports_fd:
+            # glibc fails with EINVAL, musl fails with EBADF
+            with self.assertRaises(OSError) as ctx:
+                os.execve(fd, [sys.executable, "-c", "pass"], os.environ)
+            self.assertIn(ctx.exception.errno, (errno.EBADF, errno.EINVAL))
+
+        if support.MS_WINDOWS:
+            import nt
+            self.assertFalse(nt._path_exists(fd))
+            self.assertFalse(nt._path_lexists(fd))
+            self.assertFalse(nt._path_isdir(fd))
+            self.assertFalse(nt._path_isfile(fd))
+            self.assertFalse(nt._path_islink(fd))
+            self.assertFalse(nt._path_isjunction(fd))
 
     @unittest.skipUnless(hasattr(os, 'ftruncate'), 'test needs os.ftruncate()')
     def test_ftruncate(self):

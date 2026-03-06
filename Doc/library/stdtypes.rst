@@ -46,8 +46,10 @@ Any object can be tested for truth value, for use in an :keyword:`if` or
 By default, an object is considered true unless its class defines either a
 :meth:`~object.__bool__` method that returns ``False`` or a
 :meth:`~object.__len__` method that
-returns zero, when called with the object. [1]_  Here are most of the built-in
-objects considered false:
+returns zero, when called with the object. [1]_ If one of the methods raises an
+exception when called, the exception is propagated and the object does
+not have a truth value (for example, :data:`NotImplemented`).
+Here are most of the built-in objects considered false:
 
 .. index::
    single: None (Built-in object)
@@ -263,9 +265,17 @@ The constructors :func:`int`, :func:`float`, and
    pair: operator; % (percent)
    pair: operator; **
 
+.. _stdtypes-mixed-arithmetic:
+
 Python fully supports mixed arithmetic: when a binary arithmetic operator has
-operands of different numeric types, the operand with the "narrower" type is
-widened to that of the other, where integer is narrower than floating point.
+operands of different built-in numeric types, the operand with the "narrower"
+type is widened to that of the other:
+
+* If both arguments are complex numbers, no conversion is performed;
+* if either argument is a complex or a floating-point number, the other is
+  converted to a floating-point number;
+* otherwise, both must be integers and no conversion is necessary.
+
 Arithmetic with complex and real operands is defined by the usual mathematical
 formula, for example::
 
@@ -1091,11 +1101,14 @@ Notes:
    still ``0``.
 
 (4)
-   The slice of *s* from *i* to *j* is defined as the sequence of items with index
-   *k* such that ``i <= k < j``.  If *i* or *j* is greater than ``len(s)``, use
-   ``len(s)``.  If *i* is omitted or ``None``, use ``0``.  If *j* is omitted or
-   ``None``, use ``len(s)``.  If *i* is greater than or equal to *j*, the slice is
-   empty.
+   The slice of *s* from *i* to *j* is defined as the sequence of items with
+   index *k* such that ``i <= k < j``.
+
+   * If *i* is omitted or ``None``, use ``0``.
+   * If *j* is omitted or ``None``, use ``len(s)``.
+   * If *i* or *j* is less than ``-len(s)``, use ``0``.
+   * If *i* or *j* is greater than ``len(s)``, use ``len(s)``.
+   * If *i* is greater than or equal to *j*, the slice is empty.
 
 (5)
    The slice of *s* from *i* to *j* with step *k* is defined as the sequence of
@@ -1435,6 +1448,11 @@ application).
          inspect, the list is undefined.  The C implementation of Python makes the
          list appear empty for the duration, and raises :exc:`ValueError` if it can
          detect that the list has been mutated during a sort.
+
+.. seealso::
+
+   For detailed information on thread-safety guarantees for :class:`list`
+   objects, see :ref:`thread-safety-list`.
 
 
 .. _typesseq-tuple:
@@ -1842,6 +1860,14 @@ expression support in the :mod:`re` module).
    lowercase letter ``'ß'`` is equivalent to ``"ss"``. Since it is already
    lowercase, :meth:`lower` would do nothing to ``'ß'``; :meth:`casefold`
    converts it to ``"ss"``.
+   For example:
+
+   .. doctest::
+
+      >>> 'straße'.lower()
+      'straße'
+      >>> 'straße'.casefold()
+      'strasse'
 
    The casefolding algorithm is `described in section 3.13.3 'Default Case
    Folding' of the Unicode Standard
@@ -2043,7 +2069,20 @@ expression support in the :mod:`re` module).
 .. method:: str.index(sub[, start[, end]])
 
    Like :meth:`~str.find`, but raise :exc:`ValueError` when the substring is
-   not found.
+   not found. For example:
+
+   .. doctest::
+
+      >>> 'spam, spam, spam'.index('spam')
+      0
+      >>> 'spam, spam, spam'.index('eggs')
+      Traceback (most recent call last):
+        File "<python-input-0>", line 1, in <module>
+          'spam, spam, spam'.index('eggs')
+          ~~~~~~~~~~~~~~~~~~~~~~~~^^^^^^^^
+      ValueError: substring not found
+
+   See also :meth:`rindex`.
 
 
 .. method:: str.isalnum()
@@ -2051,7 +2090,18 @@ expression support in the :mod:`re` module).
    Return ``True`` if all characters in the string are alphanumeric and there is at
    least one character, ``False`` otherwise.  A character ``c`` is alphanumeric if one
    of the following returns ``True``: ``c.isalpha()``, ``c.isdecimal()``,
-   ``c.isdigit()``, or ``c.isnumeric()``.
+   ``c.isdigit()``, or ``c.isnumeric()``. For example:
+
+   .. doctest::
+
+      >>> 'abc123'.isalnum()
+      True
+      >>> 'abc123!@#'.isalnum()
+      False
+      >>> ''.isalnum()
+      False
+      >>> ' '.isalnum()
+      False
 
 
 .. method:: str.isalpha()
@@ -2188,6 +2238,15 @@ expression support in the :mod:`re` module).
    Nonprintable characters are those in group Separator or Other (Z or C),
    except the ASCII space.
 
+   For example:
+
+   .. doctest::
+
+      >>> ''.isprintable(), ' '.isprintable()
+      (True, True)
+      >>> '\t'.isprintable(), '\n'.isprintable()
+      (False, False)
+
 
 .. method:: str.isspace()
 
@@ -2278,7 +2337,12 @@ expression support in the :mod:`re` module).
 .. method:: str.lower()
 
    Return a copy of the string with all the cased characters [4]_ converted to
-   lowercase.
+   lowercase. For example:
+
+   .. doctest::
+
+      >>> 'Lower Method Example'.lower()
+      'lower method example'
 
    The lowercasing algorithm used is `described in section 3.13.2 'Default Case
    Conversion' of the Unicode Standard
@@ -2329,12 +2393,27 @@ expression support in the :mod:`re` module).
    after the separator.  If the separator is not found, return a 3-tuple containing
    the string itself, followed by two empty strings.
 
+   For example:
+
+   .. doctest::
+
+      >>> 'Monty Python'.partition(' ')
+      ('Monty', ' ', 'Python')
+      >>> "Monty Python's Flying Circus".partition(' ')
+      ('Monty', ' ', "Python's Flying Circus")
+      >>> 'Monty Python'.partition('-')
+      ('Monty Python', '', '')
+
+   See also :meth:`rpartition`.
+
 
 .. method:: str.removeprefix(prefix, /)
 
    If the string starts with the *prefix* string, return
    ``string[len(prefix):]``. Otherwise, return a copy of the original
-   string::
+   string:
+
+   .. doctest::
 
       >>> 'TestHook'.removeprefix('Test')
       'Hook'
@@ -2343,12 +2422,16 @@ expression support in the :mod:`re` module).
 
    .. versionadded:: 3.9
 
+   See also :meth:`removesuffix` and :meth:`startswith`.
+
 
 .. method:: str.removesuffix(suffix, /)
 
    If the string ends with the *suffix* string and that *suffix* is not empty,
    return ``string[:-len(suffix)]``. Otherwise, return a copy of the
-   original string::
+   original string:
+
+   .. doctest::
 
       >>> 'MiscTests'.removesuffix('Tests')
       'Misc'
@@ -2357,12 +2440,22 @@ expression support in the :mod:`re` module).
 
    .. versionadded:: 3.9
 
+   See also :meth:`removeprefix` and :meth:`endswith`.
+
 
 .. method:: str.replace(old, new, /, count=-1)
 
    Return a copy of the string with all occurrences of substring *old* replaced by
    *new*.  If *count* is given, only the first *count* occurrences are replaced.
    If *count* is not specified or ``-1``, then all occurrences are replaced.
+   For example:
+
+   .. doctest::
+
+      >>> 'spam, spam, spam'.replace('spam', 'eggs')
+      'eggs, eggs, eggs'
+      >>> 'spam, spam, spam'.replace('spam', 'eggs', 1)
+      'eggs, spam, spam'
 
    .. versionchanged:: 3.13
       *count* is now supported as a keyword argument.
@@ -2373,12 +2466,36 @@ expression support in the :mod:`re` module).
    Return the highest index in the string where substring *sub* is found, such
    that *sub* is contained within ``s[start:end]``.  Optional arguments *start*
    and *end* are interpreted as in slice notation.  Return ``-1`` on failure.
+   For example:
+
+   .. doctest::
+
+      >>> 'spam, spam, spam'.rfind('sp')
+      12
+      >>> 'spam, spam, spam'.rfind('sp', 0, 10)
+      6
+
+   See also :meth:`find` and :meth:`rindex`.
 
 
 .. method:: str.rindex(sub[, start[, end]])
 
    Like :meth:`rfind` but raises :exc:`ValueError` when the substring *sub* is not
    found.
+   For example:
+
+   .. doctest::
+
+      >>> 'spam, spam, spam'.rindex('spam')
+      12
+      >>> 'spam, spam, spam'.rindex('eggs')
+      Traceback (most recent call last):
+        File "<stdin-0>", line 1, in <module>
+          'spam, spam, spam'.rindex('eggs')
+          ~~~~~~~~~~~~~~~~~~~~~~~~~^^^^^^^^
+      ValueError: substring not found
+
+   See also :meth:`index` and :meth:`find`.
 
 
 .. method:: str.rjust(width, fillchar=' ', /)
@@ -2387,6 +2504,19 @@ expression support in the :mod:`re` module).
    done using the specified *fillchar* (default is an ASCII space). The
    original string is returned if *width* is less than or equal to ``len(s)``.
 
+   For example:
+
+   .. doctest::
+
+      >>> 'Python'.rjust(10)
+      '    Python'
+      >>> 'Python'.rjust(10, '.')
+      '....Python'
+      >>> 'Monty Python'.rjust(10, '.')
+      'Monty Python'
+
+   See also :meth:`ljust` and :meth:`zfill`.
+
 
 .. method:: str.rpartition(sep, /)
 
@@ -2394,6 +2524,19 @@ expression support in the :mod:`re` module).
    containing the part before the separator, the separator itself, and the part
    after the separator.  If the separator is not found, return a 3-tuple containing
    two empty strings, followed by the string itself.
+
+   For example:
+
+   .. doctest::
+
+      >>> 'Monty Python'.rpartition(' ')
+      ('Monty', ' ', 'Python')
+      >>> "Monty Python's Flying Circus".rpartition(' ')
+      ("Monty Python's Flying", ' ', 'Circus')
+      >>> 'Monty Python'.rpartition('-')
+      ('', '', 'Monty Python')
+
+   See also :meth:`partition`.
 
 
 .. method:: str.rsplit(sep=None, maxsplit=-1)
@@ -2410,20 +2553,26 @@ expression support in the :mod:`re` module).
    Return a copy of the string with trailing characters removed.  The *chars*
    argument is a string specifying the set of characters to be removed.  If omitted
    or ``None``, the *chars* argument defaults to removing whitespace.  The *chars*
-   argument is not a suffix; rather, all combinations of its values are stripped::
+   argument is not a suffix; rather, all combinations of its values are stripped.
+   For example:
+
+   .. doctest::
 
       >>> '   spacious   '.rstrip()
       '   spacious'
       >>> 'mississippi'.rstrip('ipz')
       'mississ'
 
-   See :meth:`str.removesuffix` for a method that will remove a single suffix
+   See :meth:`removesuffix` for a method that will remove a single suffix
    string rather than all of a set of characters.  For example::
 
       >>> 'Monty Python'.rstrip(' Python')
       'M'
       >>> 'Monty Python'.removesuffix(' Python')
       'Monty'
+
+   See also :meth:`strip`.
+
 
 .. method:: str.split(sep=None, maxsplit=-1)
 
@@ -2555,6 +2704,19 @@ expression support in the :mod:`re` module).
    test string beginning at that position.  With optional *end*, stop comparing
    string at that position.
 
+   For example:
+
+   .. doctest::
+
+      >>> 'Python'.startswith('Py')
+      True
+      >>> 'a tuple of prefixes'.startswith(('at', 'a'))
+      True
+      >>> 'Python is amazing'.startswith('is', 7)
+      True
+
+   See also :meth:`endswith` and :meth:`removeprefix`.
+
 
 .. method:: str.strip(chars=None, /)
 
@@ -2562,7 +2724,11 @@ expression support in the :mod:`re` module).
    The *chars* argument is a string specifying the set of characters to be removed.
    If omitted or ``None``, the *chars* argument defaults to removing whitespace.
    The *chars* argument is not a prefix or suffix; rather, all combinations of its
-   values are stripped::
+   values are stripped.
+
+   For example:
+
+   .. doctest::
 
       >>> '   spacious   '.strip()
       'spacious'
@@ -2573,11 +2739,16 @@ expression support in the :mod:`re` module).
    from the string. Characters are removed from the leading end until
    reaching a string character that is not contained in the set of
    characters in *chars*. A similar action takes place on the trailing end.
-   For example::
+
+   For example:
+
+   .. doctest::
 
       >>> comment_string = '#....... Section 3.2.1 Issue #32 .......'
       >>> comment_string.strip('.#! ')
       'Section 3.2.1 Issue #32'
+
+   See also :meth:`rstrip`.
 
 
 .. method:: str.swapcase()
@@ -2637,6 +2808,14 @@ expression support in the :mod:`re` module).
    You can use :meth:`str.maketrans` to create a translation map from
    character-to-character mappings in different formats.
 
+   The following example uses a mapping to replace ``'a'`` with ``'X'``,
+   ``'b'`` with ``'Y'``, and delete ``'c'``:
+
+   .. doctest::
+
+      >>> 'abc123'.translate({ord('a'): 'X', ord('b'): 'Y', ord('c'): None})
+      'XY123'
+
    See also the :mod:`codecs` module for a more flexible approach to custom
    character mappings.
 
@@ -2662,12 +2841,16 @@ expression support in the :mod:`re` module).
    than before. The original string is returned if *width* is less than
    or equal to ``len(s)``.
 
-   For example::
+   For example:
+
+   .. doctest::
 
       >>> "42".zfill(5)
       '00042'
       >>> "-42".zfill(5)
       '-0042'
+
+   See also :meth:`rjust`.
 
 
 .. index::
@@ -4353,7 +4536,7 @@ copying.
    types such as :class:`bytes` and :class:`bytearray`, an element is a single
    byte, but other types such as :class:`array.array` may have bigger elements.
 
-   ``len(view)`` is equal to the length of :class:`~memoryview.tolist`, which
+   ``len(view)`` is equal to the length of :meth:`~memoryview.tolist`, which
    is the nested list representation of the view. If ``view.ndim = 1``,
    this is equal to the number of elements in the view.
 
@@ -5046,8 +5229,8 @@ frozenset, a temporary one is created from *elem*.
 
 .. _typesmapping:
 
-Mapping Types --- :class:`dict`
-===============================
+Mapping types --- :class:`!dict`, :class:`!frozendict`
+======================================================
 
 .. index::
    pair: object; mapping
@@ -5058,8 +5241,9 @@ Mapping Types --- :class:`dict`
    pair: built-in function; len
 
 A :term:`mapping` object maps :term:`hashable` values to arbitrary objects.
-Mappings are mutable objects.  There is currently only one standard mapping
-type, the :dfn:`dictionary`.  (For other containers see the built-in
+There are currently two standard mapping types, the :dfn:`dictionary` and
+:class:`frozendict`.
+(For other containers see the built-in
 :class:`list`, :class:`set`, and :class:`tuple` classes, and the
 :mod:`collections` module.)
 
@@ -5329,9 +5513,14 @@ can be used interchangeably to index the same dictionary entry.
       Dictionaries are now reversible.
 
 
+   .. seealso::
+      :class:`frozendict` and :class:`types.MappingProxyType` can be used to
+      create a read-only view of a :class:`dict`.
+
 .. seealso::
-   :class:`types.MappingProxyType` can be used to create a read-only view
-   of a :class:`dict`.
+
+   For detailed information on thread-safety guarantees for :class:`dict`
+   objects, see :ref:`thread-safety-dict`.
 
 
 .. _dict-views:
@@ -5438,6 +5627,41 @@ An example of dictionary view usage::
    mappingproxy({'bacon': 1, 'spam': 500})
    >>> values.mapping['spam']
    500
+
+
+Frozen dictionaries
+-------------------
+
+.. class:: frozendict(**kwargs)
+           frozendict(mapping, /, **kwargs)
+           frozendict(iterable, /, **kwargs)
+
+   Return a new frozen dictionary initialized from an optional positional
+   argument and a possibly empty set of keyword arguments.
+
+   A :class:`!frozendict` has a similar API to the :class:`dict` API, with the
+   following differences:
+
+   * :class:`!dict` has more methods than :class:`!frozendict`:
+
+      * :meth:`!__delitem__`
+      * :meth:`!__setitem__`
+      * :meth:`~dict.clear`
+      * :meth:`~dict.pop`
+      * :meth:`~dict.popitem`
+      * :meth:`~dict.setdefault`
+      * :meth:`~dict.update`
+
+   * A :class:`!frozendict` can be hashed with ``hash(frozendict)`` if all keys and
+     values can be hashed.
+
+   * ``frozendict |= other`` does not modify the :class:`!frozendict` in-place but
+     creates a new frozen dictionary.
+
+   :class:`!frozendict` is not a :class:`!dict` subclass but inherits directly
+   from ``object``.
+
+   .. versionadded:: next
 
 
 .. _typecontextmanager:
@@ -5663,6 +5887,7 @@ list is non-exhaustive.
 * :class:`list`
 * :class:`dict`
 * :class:`set`
+* :class:`frozendict`
 * :class:`frozenset`
 * :class:`type`
 * :class:`asyncio.Future`

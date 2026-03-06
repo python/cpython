@@ -58,7 +58,7 @@ build:
 	@if [ -f  ../Misc/NEWS ] ; then \
 		echo "Using existing Misc/NEWS file"; \
 		cp ../Misc/NEWS build/NEWS; \
-	elif $(BLURB) help >/dev/null 2>&1 && $(SPHINXBUILD) --version >/dev/null 2>&1; then \
+	elif $(BLURB) --version && $(SPHINXBUILD) --version ; then \
 		if [ -d ../Misc/NEWS.d ]; then \
 			echo "Building NEWS from Misc/NEWS.d with blurb"; \
 			$(BLURB) merge -f build/NEWS; \
@@ -140,7 +140,8 @@ doctest:
 pydoc-topics: BUILDER = pydoc-topics
 pydoc-topics: build
 	@echo "Building finished; now run this:" \
-	      "cp build/pydoc-topics/topics.py ../Lib/pydoc_data/topics.py"
+	      "cp build/pydoc-topics/topics.py ../Lib/pydoc_data/topics.py" \
+	      "&& cp build/pydoc-topics/module_docs.py ../Lib/pydoc_data/module_docs.py"
 
 .PHONY: gettext
 gettext: BUILDER = gettext
@@ -335,3 +336,9 @@ autobuild-stable-html:
 		exit 1;; \
 	esac
 	@$(MAKE) autobuild-dev-html
+
+# Collect HTML IDs to a JSON document
+.PHONY: html-ids
+html-ids:
+	$(PYTHON) tools/check-html-ids.py collect build/html \
+		-o build/html/html-ids.json.gz

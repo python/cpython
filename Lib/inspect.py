@@ -153,9 +153,9 @@ import importlib.machinery
 import itertools
 import linecache
 import os
-import re
+lazy import re
 import sys
-import tokenize
+lazy import tokenize
 import token
 import types
 import functools
@@ -163,9 +163,9 @@ import builtins
 from keyword import iskeyword
 from operator import attrgetter
 from collections import namedtuple, OrderedDict
-from weakref import ref as make_weakref
+from _weakref import ref as make_weakref
 
-# Create constants for the compiler flags in Include/code.h
+# Create constants for the compiler flags in Include/cpython/code.h
 # We try to get them from dis to avoid duplication
 mod_dict = globals()
 for k, v in dis.COMPILER_FLAG_NAMES.items():
@@ -348,6 +348,7 @@ def isgenerator(object):
         gi_frame        frame object or possibly None once the generator has
                         been exhausted
         gi_running      set to 1 when generator is executing, 0 otherwise
+        gi_suspended    set to 1 when the generator is suspended at a yield point, 0 otherwise
         gi_yieldfrom    object being iterated by yield from or None
 
         __iter__()      defined to support iteration over container
@@ -1812,13 +1813,7 @@ def getgeneratorstate(generator):
       GEN_SUSPENDED: Currently suspended at a yield expression.
       GEN_CLOSED: Execution has completed.
     """
-    if generator.gi_running:
-        return GEN_RUNNING
-    if generator.gi_suspended:
-        return GEN_SUSPENDED
-    if generator.gi_frame is None:
-        return GEN_CLOSED
-    return GEN_CREATED
+    return generator.gi_state
 
 
 def getgeneratorlocals(generator):
@@ -1854,13 +1849,7 @@ def getcoroutinestate(coroutine):
       CORO_SUSPENDED: Currently suspended at an await expression.
       CORO_CLOSED: Execution has completed.
     """
-    if coroutine.cr_running:
-        return CORO_RUNNING
-    if coroutine.cr_suspended:
-        return CORO_SUSPENDED
-    if coroutine.cr_frame is None:
-        return CORO_CLOSED
-    return CORO_CREATED
+    return coroutine.cr_state
 
 
 def getcoroutinelocals(coroutine):
@@ -1893,13 +1882,7 @@ def getasyncgenstate(agen):
       AGEN_SUSPENDED: Currently suspended at a yield expression.
       AGEN_CLOSED: Execution has completed.
     """
-    if agen.ag_running:
-        return AGEN_RUNNING
-    if agen.ag_suspended:
-        return AGEN_SUSPENDED
-    if agen.ag_frame is None:
-        return AGEN_CLOSED
-    return AGEN_CREATED
+    return agen.ag_state
 
 
 def getasyncgenlocals(agen):
@@ -2683,11 +2666,12 @@ class Parameter:
         The annotation for the parameter if specified.  If the
         parameter has no annotation, this attribute is set to
         `Parameter.empty`.
-    * kind : str
+    * kind
         Describes how argument values are bound to the parameter.
         Possible values: `Parameter.POSITIONAL_ONLY`,
         `Parameter.POSITIONAL_OR_KEYWORD`, `Parameter.VAR_POSITIONAL`,
         `Parameter.KEYWORD_ONLY`, `Parameter.VAR_KEYWORD`.
+        Every value has a `description` attribute describing meaning.
     """
 
     __slots__ = ('_name', '_kind', '_default', '_annotation')

@@ -45,14 +45,15 @@ log = logging.getLogger("multissl")
 OPENSSL_OLD_VERSIONS = [
     "1.1.1w",
     "3.1.8",
+    "3.2.6",
 ]
 
 OPENSSL_RECENT_VERSIONS = [
-    "3.0.18",
-    "3.2.6",
-    "3.3.5",
-    "3.4.3",
-    "3.5.4",
+    "3.0.19",
+    "3.3.6",
+    "3.4.4",
+    "3.5.5",
+    "3.6.1",
     # See make_ssl_data.py for notes on adding a new version.
 ]
 
@@ -63,7 +64,7 @@ LIBRESSL_RECENT_VERSIONS = [
 ]
 
 AWSLC_RECENT_VERSIONS = [
-    "1.55.0",
+    "1.68.0",
 ]
 
 # store files in ../multissl
@@ -107,7 +108,10 @@ parser.add_argument(
     ).format(LIBRESSL_RECENT_VERSIONS, LIBRESSL_OLD_VERSIONS)
 )
 parser.add_argument(
+    '--aws-lc',
+    # Soft-deprecated alias
     '--awslc',
+    dest='awslc',
     nargs='+',
     default=(),
     help=(

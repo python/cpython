@@ -2776,28 +2776,17 @@ class BaseTaskTests:
         finally:
             loop.close()
 
-    def test_proper_refcounts(self):
-        # see: https://github.com/python/cpython/issues/126083
-        class Break:
-            def __str__(self):
-                raise RuntimeError("break")
+    def test_task_disallow_multiple_initialization(self):
+        async def foo():
+            pass
 
-        obj = object()
-        initial_refcount = sys.getrefcount(obj)
+        coro = foo()
+        self.addCleanup(coro.close)
+        task = self.new_task(self.loop, coro)
+        task._log_destroy_pending = False
 
-        coro = coroutine_function()
-        with contextlib.closing(asyncio.EventLoop()) as loop:
-            task = asyncio.Task.__new__(asyncio.Task)
-            for _ in range(5):
-                with self.assertRaisesRegex(RuntimeError, 'break'):
-                    task.__init__(coro, loop=loop, context=obj, name=Break())
-
-            coro.close()
-            task._log_destroy_pending = False
-            del task
-
-            self.assertEqual(sys.getrefcount(obj), initial_refcount)
-
+        with self.assertRaises(RuntimeError, msg="is already initialized"):
+            task.__init__(coro, loop=self.loop)
 
 def add_subclass_tests(cls):
     BaseTask = cls.Task
@@ -2920,19 +2909,6 @@ class CTask_CFuture_Tests(BaseTaskTests, SetMethodsTest,
     Future = getattr(futures, '_CFuture', None)
     all_tasks = getattr(tasks, '_c_all_tasks', None)
     current_task = staticmethod(getattr(tasks, '_c_current_task', None))
-
-    @support.refcount_test
-    def test_refleaks_in_task___init__(self):
-        gettotalrefcount = support.get_attribute(sys, 'gettotalrefcount')
-        async def coro():
-            pass
-        task = self.new_task(self.loop, coro())
-        self.loop.run_until_complete(task)
-        refs_before = gettotalrefcount()
-        for i in range(100):
-            task.__init__(coro(), loop=self.loop)
-            self.loop.run_until_complete(task)
-        self.assertAlmostEqual(gettotalrefcount() - refs_before, 0, delta=10)
 
     def test_del__log_destroy_pending_segfault(self):
         async def coro():
