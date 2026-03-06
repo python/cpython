@@ -1587,19 +1587,6 @@ Glossary
       See :ref:`Thread State and the Global Interpreter Lock <threads>` for more
       information.
 
-   thread-compatible
-      A function or operation that is safe to call from multiple threads
-      provided the caller supplies appropriate external synchronization, for
-      example by holding a :term:`lock` for the duration of each call. Without
-      such synchronization, concurrent calls may produce :term:`race conditions
-      <race condition>` or :term:`data races <data race>`.
-
-   thread-incompatible
-      A function or operation that cannot be made safe for concurrent use even
-      with external synchronization. Thread-incompatible code typically
-      accesses global state in an unsynchronized way and must be called from
-      only one thread at a time throughout the program's lifetime.
-
    thread-safe
       A module, function, or class that behaves correctly when used by multiple
       threads concurrently.  Thread-safe code uses appropriate

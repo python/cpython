@@ -127,7 +127,9 @@ def read_stable_abi_data(stable_abi_file: Path) -> dict[str, StableABIEntry]:
 _VALID_THREADSAFETY_LEVELS = frozenset({
     "incompatible",
     "compatible",
-    "safe",
+    "distinct",
+    "shared",
+    "atomic",
 })
 
 
@@ -307,25 +309,35 @@ def _threadsafety_annotation(level: str) -> nodes.emphasis:
     match level:
         case "incompatible":
             display = sphinx_gettext("Not safe to call from multiple threads.")
-            reftarget = "thread-incompatible"
+            reftarget = "threadsafety-level-incompatible"
         case "compatible":
             display = sphinx_gettext(
-                "Safe to call from multiple threads with external synchronization only."
+                "Safe to call from multiple threads"
+                " with external synchronization only."
             )
-            reftarget = "thread-compatible"
-        case "safe":
-            display = sphinx_gettext("Safe for concurrent use.")
-            reftarget = "thread-safe"
+            reftarget = "threadsafety-level-compatible"
+        case "distinct":
+            display = sphinx_gettext(
+                "Safe to call without external synchronization"
+                " on distinct objects."
+            )
+            reftarget = "threadsafety-level-distinct"
+        case "shared":
+            display = sphinx_gettext(
+                "Safe for concurrent use on the same object."
+            )
+            reftarget = "threadsafety-level-shared"
+        case "atomic":
+            display = sphinx_gettext("Atomic.")
+            reftarget = "threadsafety-level-atomic"
         case _:
-            raise AssertionError(
-                "Only the levels 'incompatible', 'compatible' and 'safe' are possible"
-            )
+            raise AssertionError(f"Unknown thread safety level {level!r}")
     ref_node = addnodes.pending_xref(
         display,
         nodes.Text(display),
         refdomain="std",
         reftarget=reftarget,
-        reftype="term",
+        reftype="ref",
         refexplicit="True",
     )
     prefix = sphinx_gettext("Thread safety:") + " "

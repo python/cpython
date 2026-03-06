@@ -13,6 +13,88 @@ For general guidance on writing thread-safe code in free-threaded Python, see
 :ref:`freethreading-python-howto`.
 
 
+.. _threadsafety-levels:
+
+Thread safety levels
+====================
+
+The C API documentation uses the following levels to describe the thread
+safety guarantees of each function. The levels are listed from least to
+most safe.
+
+.. _threadsafety-level-incompatible:
+
+Incompatible
+------------
+
+A function or operation that cannot be made safe for concurrent use even
+with external synchronization. Incompatible code typically accesses
+global state in an unsynchronized way and must only be called from a single
+thread throughout the program's lifetime.
+
+Example: a function that modifies process-wide state such as signal handlers
+or environment variables, where concurrent calls from any threads, even with
+external locking, can conflict with the runtime or other libraries.
+
+.. _threadsafety-level-compatible:
+
+Compatible
+----------
+
+A function or operation that is safe to call from multiple threads
+*provided* the caller supplies appropriate external synchronization, for
+example by holding a :term:`lock` for the duration of each call. Without
+such synchronization, concurrent calls may produce :term:`race conditions
+<race condition>` or :term:`data races <data race>`.
+
+Example: a function that reads from or writes to an object whose internal
+state is not protected by a lock. Callers must ensure that no two threads
+access the same object at the same time.
+
+.. _threadsafety-level-distinct:
+
+Safe on distinct objects
+------------------------
+
+A function or operation that is safe to call from multiple threads without
+external synchronization, as long as each thread operates on a **different**
+object. Two threads may call the function at the same time, but they must
+not pass the same object (or objects that share underlying state) as
+arguments.
+
+Example: a function that modifies fields of a struct using non-atomic
+writes. Two threads can each call the function on their own struct
+instance safely, but concurrent calls on the *same* instance require
+external synchronization.
+
+.. _threadsafety-level-shared:
+
+Safe on shared objects
+----------------------
+
+A function or operation that is safe for concurrent use on the **same**
+object. The implementation uses internal synchronization (such as
+:term:`per-object locks <per-object lock>` or
+:ref:`critical sections <python-critical-section-api>`) to protect shared
+mutable state, so callers do not need to supply their own locking.
+
+Example: :c:func:`PyMutex_Lock` can be called from multiple threads on the
+same :c:type:`PyMutex` - it uses internal synchronization to serialize
+access.
+
+.. _threadsafety-level-atomic:
+
+Atomic
+------
+
+A function or operation that appears :term:`atomic <atomic operation>` with
+respect to other threads - it executes instantaneously from the perspective
+of other threads. This is the strongest form of thread safety.
+
+Example: :c:func:`PyMutex_IsLocked` performs an atomic read of the mutex
+state and can be called from any thread at any time.
+
+
 .. _thread-safety-list:
 
 Thread safety for list objects
