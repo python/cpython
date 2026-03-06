@@ -105,8 +105,8 @@ The complete :class:`!Weekday` enum now looks like this::
 
 Now we can find out what today is!  Observe::
 
-    >>> from datetime import date
-    >>> Weekday.from_date(date.today())     # doctest: +SKIP
+    >>> import datetime as dt
+    >>> Weekday.from_date(dt.date.today())     # doctest: +SKIP
     <Weekday.TUESDAY: 2>
 
 Of course, if you're reading this on some other day, you'll see that day instead.
@@ -1480,8 +1480,8 @@ TimePeriod
 
 An example to show the :attr:`~Enum._ignore_` attribute in use::
 
-    >>> from datetime import timedelta
-    >>> class Period(timedelta, Enum):
+    >>> import datetime as dt
+    >>> class Period(dt.timedelta, Enum):
     ...     "different lengths of time"
     ...     _ignore_ = 'Period i'
     ...     Period = vars()

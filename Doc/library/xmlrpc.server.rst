@@ -231,7 +231,7 @@ a server allowing dotted names and registering a multicall function.
 
 ::
 
-    import datetime
+    import datetime as dt
 
     class ExampleService:
         def getData(self):
@@ -240,7 +240,7 @@ a server allowing dotted names and registering a multicall function.
         class currentTime:
             @staticmethod
             def getCurrentTime():
-                return datetime.datetime.now()
+                return dt.datetime.now()
 
     with SimpleXMLRPCServer(("localhost", 8000)) as server:
         server.register_function(pow)

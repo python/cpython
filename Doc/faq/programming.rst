@@ -1956,9 +1956,9 @@ parent class:
 
 .. testcode::
 
-    from datetime import date
+    import datetime as dt
 
-    class FirstOfMonthDate(date):
+    class FirstOfMonthDate(dt.date):
         "Always choose the first day of the month"
         def __new__(cls, year, month, day):
             return super().__new__(cls, year, month, 1)

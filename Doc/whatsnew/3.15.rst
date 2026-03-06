@@ -120,12 +120,12 @@ name:
 .. code-block:: python
 
    lazy import json
-   lazy from datetime import datetime
+   lazy from pathlib import Path
 
-   print("Starting up...")  # json and datetime not loaded yet
+   print("Starting up...")  # json and pathlib not loaded yet
 
-   data = json.loads('{"key": "value"}')  # json gets loads here
-   now = datetime()  # datetime loads here
+   data = json.loads('{"key": "value"}')  # json loads here
+   p = Path(".")  # pathlib loads here
 
 This mechanism is particularly useful for applications that import many
 modules at the top level but may only use a subset of them in any given run.

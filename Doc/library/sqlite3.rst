@@ -2285,7 +2285,7 @@ This section shows recipes for common adapters and converters.
 
 .. testcode::
 
-   import datetime
+   import datetime as dt
    import sqlite3
 
    def adapt_date_iso(val):
@@ -2300,21 +2300,21 @@ This section shows recipes for common adapters and converters.
        """Adapt datetime.datetime to Unix timestamp."""
        return int(val.timestamp())
 
-   sqlite3.register_adapter(datetime.date, adapt_date_iso)
-   sqlite3.register_adapter(datetime.datetime, adapt_datetime_iso)
-   sqlite3.register_adapter(datetime.datetime, adapt_datetime_epoch)
+   sqlite3.register_adapter(dt.date, adapt_date_iso)
+   sqlite3.register_adapter(dt.datetime, adapt_datetime_iso)
+   sqlite3.register_adapter(dt.datetime, adapt_datetime_epoch)
 
    def convert_date(val):
        """Convert ISO 8601 date to datetime.date object."""
-       return datetime.date.fromisoformat(val.decode())
+       return dt.date.fromisoformat(val.decode())
 
    def convert_datetime(val):
        """Convert ISO 8601 datetime to datetime.datetime object."""
-       return datetime.datetime.fromisoformat(val.decode())
+       return dt.datetime.fromisoformat(val.decode())
 
    def convert_timestamp(val):
        """Convert Unix epoch timestamp to datetime.datetime object."""
-       return datetime.datetime.fromtimestamp(int(val))
+       return dt.datetime.fromtimestamp(int(val))
 
    sqlite3.register_converter("date", convert_date)
    sqlite3.register_converter("datetime", convert_datetime)
@@ -2323,17 +2323,17 @@ This section shows recipes for common adapters and converters.
 .. testcode::
    :hide:
 
-   dt = datetime.datetime(2019, 5, 18, 15, 17, 8, 123456)
+   when = dt.datetime(2019, 5, 18, 15, 17, 8, 123456)
 
-   assert adapt_date_iso(dt.date()) == "2019-05-18"
-   assert convert_date(b"2019-05-18") == dt.date()
+   assert adapt_date_iso(when.date()) == "2019-05-18"
+   assert convert_date(b"2019-05-18") == when.date()
 
-   assert adapt_datetime_iso(dt) == "2019-05-18T15:17:08.123456"
-   assert convert_datetime(b"2019-05-18T15:17:08.123456") == dt
+   assert adapt_datetime_iso(when) == "2019-05-18T15:17:08.123456"
+   assert convert_datetime(b"2019-05-18T15:17:08.123456") == when
 
    # Using current time as fromtimestamp() returns local date/time.
    # Dropping microseconds as adapt_datetime_epoch truncates fractional second part.
-   now = datetime.datetime.now().replace(microsecond=0)
+   now = dt.datetime.now().replace(microsecond=0)
    current_timestamp = int(now.timestamp())
 
    assert adapt_datetime_epoch(now) == current_timestamp

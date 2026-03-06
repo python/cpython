@@ -384,11 +384,11 @@ Certificate handling
    .. doctest:: newcontext
 
       >>> import ssl
+      >>> import datetime as dt
       >>> timestamp = ssl.cert_time_to_seconds("Jan  5 09:34:43 2018 GMT")
       >>> timestamp  # doctest: +SKIP
       1515144883
-      >>> from datetime import datetime
-      >>> print(datetime.utcfromtimestamp(timestamp))  # doctest: +SKIP
+      >>> print(dt.datetime.utcfromtimestamp(timestamp))  # doctest: +SKIP
       2018-01-05 09:34:43
 
    "notBefore" or "notAfter" dates must use GMT (:rfc:`5280`).

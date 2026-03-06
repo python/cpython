@@ -1971,10 +1971,10 @@ callback uses the :meth:`loop.call_later` method to reschedule itself
 after 5 seconds, and then stops the event loop::
 
     import asyncio
-    import datetime
+    import datetime as dt
 
     def display_date(end_time, loop):
-        print(datetime.datetime.now())
+        print(dt.datetime.now())
         if (loop.time() + 1.0) < end_time:
             loop.call_later(1, display_date, end_time, loop)
         else:

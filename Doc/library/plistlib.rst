@@ -180,7 +180,7 @@ Examples
 
 Generating a plist::
 
-    import datetime
+    import datetime as dt
     import plistlib
 
     pl = dict(
@@ -196,7 +196,7 @@ Generating a plist::
         ),
         someData = b"<binary gunk>",
         someMoreData = b"<lots of binary gunk>" * 10,
-        aDate = datetime.datetime.now()
+        aDate = dt.datetime.now()
     )
     print(plistlib.dumps(pl).decode())
 

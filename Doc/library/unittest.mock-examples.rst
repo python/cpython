@@ -614,13 +614,13 @@ attribute on the mock date class is then set to a lambda function that returns
 a real date. When the mock date class is called a real date will be
 constructed and returned by ``side_effect``. ::
 
-    >>> from datetime import date
+    >>> import datetime as dt
     >>> with patch('mymodule.date') as mock_date:
-    ...     mock_date.today.return_value = date(2010, 10, 8)
-    ...     mock_date.side_effect = lambda *args, **kw: date(*args, **kw)
+    ...     mock_date.today.return_value = dt.date(2010, 10, 8)
+    ...     mock_date.side_effect = lambda *args, **kw: dt.date(*args, **kw)
     ...
-    ...     assert mymodule.date.today() == date(2010, 10, 8)
-    ...     assert mymodule.date(2009, 6, 8) == date(2009, 6, 8)
+    ...     assert mymodule.date.today() == dt.date(2010, 10, 8)
+    ...     assert mymodule.date(2009, 6, 8) == dt.date(2009, 6, 8)
 
 Note that we don't patch :class:`datetime.date` globally, we patch ``date`` in the
 module that *uses* it. See :ref:`where to patch <where-to-patch>`.
