@@ -1349,17 +1349,55 @@ Tracebacks
 
 .. c:function:: void PyUnstable_DumpTraceback(int fd, PyThreadState *tstate)
 
-   Write a trace of the Python stack in *tstate* into the file *fd*.
+   Write a trace of the Python stack in *tstate* into the file *fd*.  The format
+   looks like::
+
+      Traceback (most recent call first):
+            File "xxx", line xxx in <xxx>
+            File "xxx", line xxx in <xxx>
+            ...
+            File "xxx", line xxx in <xxx>
+
+   This function is meant to debug situations such as segfaults, fatal errors,
+   .etc. The file and function names it outputs are encoded to ASCII with
+   backslashreplace and truncated to 500 characters. It writes only the first
+   100 frames, further frames are truncated with the line " ...".
 
    This function is safe to use from signal handlers.
+
+   The caller does not need to hold an :term:`attached thread state`, nor does
+   *tstate* need to be attached.
+
+   .. versionadded:: next
 
 .. c:function:: const char* PyUnstable_DumpTracebackThreads(int fd, PyInterpreterState *interp, PyThreadState *current_tstate)
 
-   Write the traces of all Python threads in *interp* into the file *fd*.  If
-   *current_state* is not NULL then it will be used to identify what the current
-   thread is in the written output. If it is NULL then this function will
-   identify the current thread using thread-specific storage.
+   Write the traces of all Python threads in *interp* into the file *fd*.
 
-   This function will return NULL on success, or an error message on error.
+   If *interp* is ``NULL`` then this function will try to identify the current
+   interpreter using thread-specific storage. If it cannot, it will return an
+   error.
+
+   If *current_tstate* is not ``NULL`` then it will be used to identify what the
+   current thread is in the written output. If it is ``NULL`` then this function
+   will identify the current thread using thread-specific storage. It is not an
+   error if the function is unable to get the current Python thread state.
+
+   This function will return ``NULL`` on success, or an error message on error.
+
+   This function is meant to debug debug situations such as segfaults, fatal
+   errors, .etc. It calls :c:func:`PyUnsafe_DumpTraceback` for each thread. It
+   only writes the tracebacks of the first 100 threads, further output is
+   truncated with the line " ...".
 
    This function is safe to use from signal handlers.
+
+   The caller does not need to hold an :term:`attached thread state`, nor does
+   *current_tstate* need to be attached.
+
+   .. warning::
+      On the :term:`free-threaded build`, this function is not thread-safe. If
+      another thread deletes its :term:`thread state` while this function is being
+      called, the process will likely crash.
+
+   .. versionadded:: next
