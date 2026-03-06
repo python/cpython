@@ -42,6 +42,7 @@ extensions = [
 
 # Skip if downstream redistributors haven't installed them
 _OPTIONAL_EXTENSIONS = (
+    'linklint.ext',
     'notfound.extension',
     'sphinxext.opengraph',
 )
