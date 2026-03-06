@@ -1607,6 +1607,11 @@ C API changes
 New features
 ------------
 
+* Add :c:func:`PyArg_ParseArray` and :c:func:`PyArg_ParseArrayAndKeywords`
+  functions to parse arguments of functions using the :c:macro:`METH_FASTCALL`
+  calling convention.
+  (Contributed by Victor Stinner in :gh:`144175`.)
+
 * Add the following functions for the new :class:`frozendict` type:
 
   * :c:func:`PyAnyDict_Check`
