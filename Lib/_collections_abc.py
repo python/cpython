@@ -459,10 +459,10 @@ class Buffer(metaclass=ABCMeta):
 
 
 class _CallableGenericAlias(GenericAlias):
-    """ Represent `Callable[argtypes, resulttype]`.
+    """ Represent `Callable[paramtypes, returntype]`.
 
-    This sets ``__args__`` to a tuple containing the flattened ``argtypes``
-    followed by ``resulttype``.
+    This sets ``__args__`` to a tuple containing the flattened ``paramtypes``
+    followed by ``returntype``.
 
     Example: ``Callable[[int, str], float]`` sets ``__args__`` to
     ``(int, str, float)``.
@@ -473,13 +473,13 @@ class _CallableGenericAlias(GenericAlias):
     def __new__(cls, origin, args):
         if not (isinstance(args, tuple) and len(args) == 2):
             raise TypeError(
-                "Callable must be used as Callable[[arg, ...], result].")
-        t_args, t_result = args
-        if isinstance(t_args, (tuple, list)):
-            args = (*t_args, t_result)
-        elif not _is_param_expr(t_args):
+                "Callable must be used as Callable[[paramtype1, ...], returntype].")
+        t_params, t_return = args
+        if isinstance(t_params, (tuple, list)):
+            args = (*t_params, t_return)
+        elif not _is_param_expr(t_params):
             raise TypeError(f"Expected a list of types, an ellipsis, "
-                            f"ParamSpec, or Concatenate. Got {t_args}")
+                            f"ParamSpec, or Concatenate. Got {t_params}")
         return super().__new__(cls, origin, args)
 
     def __repr__(self):
@@ -508,9 +508,9 @@ class _CallableGenericAlias(GenericAlias):
 
         # args[0] occurs due to things like Z[[int, str, bool]] from PEP 612
         if not isinstance(new_args[0], (tuple, list)):
-            t_result = new_args[-1]
-            t_args = new_args[:-1]
-            new_args = (t_args, t_result)
+            t_params = new_args[:-1]
+            t_return = new_args[-1]
+            new_args = (t_params, t_return)
         return _CallableGenericAlias(Callable, tuple(new_args))
 
 def _is_param_expr(obj):
