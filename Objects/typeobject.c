@@ -7568,7 +7568,11 @@ object_set_class_world_stopped(PyObject *self, PyTypeObject *newto)
 
             assert(_PyObject_GetManagedDict(self) == dict);
 
-            if (_PyDict_DetachFromObject(dict, self) < 0) {
+            int err;
+            Py_BEGIN_CRITICAL_SECTION(dict);
+            err = _PyDict_DetachFromObject(dict, self);
+            Py_END_CRITICAL_SECTION();
+            if (err < 0) {
                 return -1;
             }
 
@@ -7608,10 +7612,15 @@ object_set_class(PyObject *self, PyObject *value, void *closure)
         return -1;
     }
 
-    types_stop_world();
+    int unique = _PyObject_IsUniquelyReferenced(self);
+    if (!unique) {
+        types_stop_world();
+    }
     PyTypeObject *oldto = Py_TYPE(self);
     int res = object_set_class_world_stopped(self, newto);
-    types_start_world();
+    if (!unique) {
+        types_start_world();
+    }
     if (res == 0) {
         if (oldto->tp_flags & Py_TPFLAGS_HEAPTYPE) {
             Py_DECREF(oldto);
