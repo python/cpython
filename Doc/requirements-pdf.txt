@@ -1,3 +1,0 @@
--r requirements.txt
-
-sphinxcontrib-svg2pdfconverter~=2.1.0

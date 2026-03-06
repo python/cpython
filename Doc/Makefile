@@ -6,7 +6,6 @@
 # You can set these variables from the command line.
 PYTHON       = python3
 VENVDIR      = ./venv
-VENVDIR_PDF  = ./venv-pdf
 UV           = uv
 SPHINXBUILD  = PATH=$(VENVDIR)/bin:$$PATH sphinx-build
 BLURB        = PATH=$(VENVDIR)/bin:$$PATH blurb
@@ -89,6 +88,7 @@ htmlhelp: build
 	      "build/htmlhelp/pydoc.hhp project file."
 
 .PHONY: latex
+latex: _ensure-sphinxcontrib-svg2pdfconverter
 latex: BUILDER = latex
 latex: build
 	@echo "Build finished; the LaTeX files are in build/latex."
@@ -164,7 +164,7 @@ clean: clean-venv
 
 .PHONY: clean-venv
 clean-venv:
-	rm -rf $(VENVDIR) $(VENVDIR_PDF)
+	rm -rf $(VENVDIR)
 
 .PHONY: venv
 venv:
@@ -184,12 +184,6 @@ venv:
 		fi; \
 		echo "The venv has been created in the $(VENVDIR) directory"; \
 	fi
-
-.PHONY: venv-pdf
-venv-pdf:
-    venv-pdf: REQUIREMENTS = requirements-pdf.txt
-    venv-pdf: VENVDIR = $(VENVDIR_PDF)
-    venv-pdf: venv
 
 .PHONY: dist-no-html
 dist-no-html: dist-text dist-epub dist-texinfo
@@ -238,13 +232,13 @@ dist-text:
 	@echo "Build finished and archived!"
 
 .PHONY: dist-pdf
-dist-pdf:
+dist-pdf: _ensure-sphinxcontrib-svg2pdfconverter
 	# archive the A4 latex
 	@echo "Building LaTeX (A4 paper)..."
 	mkdir -p dist
 	rm -rf build/latex
 	find dist -name 'python-$(DISTVERSION)-docs-pdf*' -exec rm -rf {} \;
-	$(MAKE) latex PAPER=a4 VENVDIR=$(VENVDIR_PDF)
+	$(MAKE) latex PAPER=a4
 	# remove zip & bz2 dependency on all-pdf,
 	# as otherwise the full latexmk process is run twice.
 	# ($$ is needed to escape the $; https://www.gnu.org/software/make/manual/make.html#Basics-of-Variable-References)
@@ -298,6 +292,10 @@ _ensure-pre-commit:
 .PHONY: _ensure-sphinx-autobuild
 _ensure-sphinx-autobuild:
 	$(MAKE) _ensure-package PACKAGE=sphinx-autobuild
+
+.PHONY: _ensure-sphinxcontrib-svg2pdfconverter
+_ensure-sphinxcontrib-svg2pdfconverter:
+	$(MAKE) _ensure-package PACKAGE=sphinxcontrib-svg2pdfconverter
 
 .PHONY: check
 check: _ensure-pre-commit

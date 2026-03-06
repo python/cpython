@@ -116,7 +116,7 @@ toc_object_entries = False
 # Ignore any .rst files in the includes/ directory;
 # they're embedded in pages but not rendered as individual pages.
 # Ignore any .rst files in the venv/ directory.
-exclude_patterns = ['includes/*.rst', 'venv/*', 'venv-pdf/*', 'README.rst']
+exclude_patterns = ['includes/*.rst', 'venv/*', 'README.rst']
 venvdir = os.getenv('VENVDIR')
 if venvdir is not None:
     exclude_patterns.append(venvdir + '/*')
