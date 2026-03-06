@@ -78,9 +78,6 @@ def rebuild_exc(exc, tb):
 #
 
 class MaybeDecodingError(Exception):
-    """Wraps possible unpickleable errors, so they can be
-    safely sent through the socket."""
-
     def __init__(self, exc):
         self.exc = repr(exc)
         self.__cause__ = exc
