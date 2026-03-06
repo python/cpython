@@ -3296,6 +3296,7 @@ class _TestPoolWorkerErrors(BaseTestCase):
         p.close()
         p.join()
 
+    @warnings_helper.ignore_fork_in_thread_deprecation_warnings()
     def test_undepickleable_result(self):
         from multiprocessing.pool import MaybeDecodingError
         p = multiprocessing.Pool(2)
