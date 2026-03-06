@@ -77,6 +77,22 @@ def rebuild_exc(exc, tb):
 # Code run by worker processes
 #
 
+class MaybeDecodingError(Exception):
+    """Wraps possible unpickleable errors, so they can be
+    safely sent through the socket."""
+
+    def __init__(self, exc):
+        self.exc = repr(exc)
+        self.__cause__ = exc
+        super(MaybeDecodingError, self).__init__(self.exc)
+
+    def __str__(self):
+        return "Error receiving result. Reason: '%s'" % (self.exc,
+                                                             self.exc)
+
+    def __repr__(self):
+        return "<%s: %s>" % (self.__class__.__name__, self)
+
 class MaybeEncodingError(Exception):
     """Wraps possible unpickleable errors, so they can be
     safely sent through the socket."""
@@ -586,11 +602,7 @@ class Pool(object):
     @staticmethod
     def _handle_results(outqueue, get, cache):
         def _handle_results_failure(cache, e):
-            exc = RuntimeError("Result handler failed to get result from worker and " +
-                               "unable to recover. " +
-                               "This is likely due to a worker process return or raise " +
-                               "an unpicklable object.")
-            exc.__cause__ = e
+            exc = MaybeDecodingError(e)
             cache._disable_cache(exc)
             _cache = cache.copy()
             for value in _cache.values():
