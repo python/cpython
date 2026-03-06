@@ -527,7 +527,7 @@ API Functions
    .. versionadded:: next
 
 
-.. c:function:: int PyArg_ParseVectorAndKeywords(PyObject *const *args, Py_ssize_t nargs, PyObject *kwnames, const char * const *kwlist, ...)
+.. c:function:: int PyArg_ParseVectorAndKeywords(PyObject *const *args, Py_ssize_t nargs, PyObject *kwnames, const char *format, const char * const *kwlist, ...)
 
    Parse the parameters of a function that takes both vector and keyword
    parameters into local variables (that is, a function using the

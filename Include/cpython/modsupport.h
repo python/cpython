@@ -12,7 +12,7 @@ PyAPI_FUNC(int) PyArg_ParseVectorAndKeywords(
     Py_ssize_t nargs,
     PyObject *kwnames,
     const char *format,
-    PY_CXX_CONST char * const *kwlist,
+    const char * const *kwlist,
     ...);
 
 // A data structure that can be used to run initialization code once in a
