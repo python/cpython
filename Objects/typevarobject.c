@@ -2310,6 +2310,7 @@ _Py_subscript_generic(PyThreadState* unused, PyObject *params)
     PyInterpreterState *interp = _PyInterpreterState_GET();
     if (interp->cached_objects.generic_type == NULL) {
         PyErr_SetString(PyExc_SystemError, "Cannot find Generic type");
+        Py_DECREF(params);
         return NULL;
     }
     PyObject *args[2] = {(PyObject *)interp->cached_objects.generic_type, params};
