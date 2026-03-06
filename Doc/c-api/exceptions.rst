@@ -1359,9 +1359,9 @@ Tracebacks
             File "xxx", line xxx in <xxx>
 
    This function is meant to debug situations such as segfaults, fatal errors,
-   .etc. The file and function names it outputs are encoded to ASCII with
+   and similar. The file and function names it outputs are encoded to ASCII with
    backslashreplace and truncated to 500 characters. It writes only the first
-   100 frames, further frames are truncated with the line " ...".
+   100 frames; further frames are truncated with the line ``...``.
 
    This function is safe to use from signal handlers.
 
@@ -1386,9 +1386,9 @@ Tracebacks
    This function will return ``NULL`` on success, or an error message on error.
 
    This function is meant to debug debug situations such as segfaults, fatal
-   errors, .etc. It calls :c:func:`PyUnsafe_DumpTraceback` for each thread. It
-   only writes the tracebacks of the first 100 threads, further output is
-   truncated with the line " ...".
+   errors, and similar. It calls :c:func:`PyUnstable_DumpTraceback` for each
+   thread. It only writes the tracebacks of the first 100 threads, further
+   output is truncated with the line ``...``.
 
    This function is safe to use from signal handlers.
 

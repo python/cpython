@@ -1668,6 +1668,11 @@ New features
   Python 3.14.
   (Contributed by Victor Stinner in :gh:`142417`.)
 
+* Add :c:func:`PyUnstable_DumpTraceback` and `PyUnstable_DumpTracebackThreads`
+  functions to safely output Python stacktraces. These were previously internal
+  functions ``_Py_DumpTraceback`` and ``_Py_DumpTracebackThreads``.
+  (Contributed by Alex Malyshev in :gh:`145559`.)
+
 Changed C APIs
 --------------
 
