@@ -248,7 +248,7 @@ a callable with any arbitrary parameter list would be acceptable:
    x = str     # OK
    x = concat  # Also OK
 
-``Callable`` cannot express complex signatures such as functions that have 
+``Callable`` cannot express complex signatures such as functions that have
 keyword-only or var-positional parameters, or :ref:`overloaded functions <overload>`.
 However, these signatures can be expressed by defining a :class:`Protocol` class with a
 :meth:`~object.__call__` method:
