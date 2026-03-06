@@ -232,7 +232,7 @@ For example:
 
 .. index:: single: ...; ellipsis literal
 
-The type specification `[]` must have two objects, a parameter type list and return type.
+The type specification ``[]`` must have two objects, a parameter type list and return type.
 The parameter type list must be a list of types, :class:`ParamSpec`, :data:`Concatenate`
 or ellipsis (``...``). The return type must be a single type.
 
