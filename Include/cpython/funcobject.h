@@ -95,6 +95,7 @@ static inline PyObject* PyFunction_GET_CODE(PyObject *func) {
     return op->func_code;
 #endif
 }
+#define PyFunction_GET_CODE(func) PyFunction_GET_CODE(_PyObject_CAST(func))
 static inline PyObject* PyFunction_GET_GLOBALS(PyObject *func) {
     return _PyFunction_CAST(func)->func_globals;
 }

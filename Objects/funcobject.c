@@ -665,7 +665,7 @@ func_set_code(PyObject *self, PyObject *value, void *Py_UNUSED(ignored))
         return -1;
     }
 
-    PyCodeObject *func_code = _Py_atomic_load_ptr(&op->func_code);
+    PyCodeObject *func_code = (PyCodeObject *)PyFunction_GET_CODE(op);
     int old_flags = ((PyCodeObject *)func_code)->co_flags;
     int new_flags = ((PyCodeObject *)value)->co_flags;
     int mask = CO_GENERATOR | CO_COROUTINE | CO_ASYNC_GENERATOR;
