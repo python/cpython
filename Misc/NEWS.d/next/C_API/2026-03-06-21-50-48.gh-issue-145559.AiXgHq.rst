@@ -1,0 +1,1 @@
+Rename `_Py_DumpTraceback` and `_Py_DumpTracebackThreads` to `PyUnstable_DumpTraceback` and `PyUnstable_DumpTracebackThreads`.
