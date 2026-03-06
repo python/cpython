@@ -3078,7 +3078,7 @@ Py_ReprEnter(PyObject *obj)
         list = PyList_New(0);
         if (list == NULL)
             return -1;
-        if (_PyDict_SetItem_Take(dict, &_Py_ID(Py_Repr), list) < 0) {
+        if (_PyDict_SetItem_Take2((PyDictObject *)dict, &_Py_ID(Py_Repr), list) < 0) {
             return -1;
         }
     }
