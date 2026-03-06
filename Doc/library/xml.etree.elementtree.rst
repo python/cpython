@@ -4,13 +4,11 @@
 .. module:: xml.etree.ElementTree
    :synopsis: Implementation of the ElementTree API.
 
-.. moduleauthor:: Fredrik Lundh <fredrik@pythonware.com>
-
 **Source code:** :source:`Lib/xml/etree/ElementTree.py`
 
 --------------
 
-The :mod:`xml.etree.ElementTree` module implements a simple and efficient API
+The :mod:`!xml.etree.ElementTree` module implements a simple and efficient API
 for parsing and creating XML data.
 
 .. versionchanged:: 3.3
@@ -28,7 +26,7 @@ for parsing and creating XML data.
 Tutorial
 --------
 
-This is a short tutorial for using :mod:`xml.etree.ElementTree` (``ET`` in
+This is a short tutorial for using :mod:`!xml.etree.ElementTree` (``ET`` in
 short).  The goal is to demonstrate some of the building blocks and basic
 concepts of the module.
 
@@ -704,6 +702,9 @@ Functions
    attributes.  *extra* contains additional attributes, given as keyword
    arguments.  Returns an element instance.
 
+   .. versionchanged:: next
+      *attrib* can now be a :class:`frozendict`.
+
 
 .. function:: tostring(element, encoding="us-ascii", method="xml", *, \
                        xml_declaration=None, default_namespace=None, \
@@ -795,7 +796,7 @@ Here's an example that demonstrates use of the XInclude module. To include an XM
 
 By default, the **href** attribute is treated as a file name. You can use custom loaders to override this behaviour. Also note that the standard helper does not support XPointer syntax.
 
-To process this file, load it as usual, and pass the root element to the :mod:`xml.etree.ElementTree` module:
+To process this file, load it as usual, and pass the root element to the :mod:`!xml.etree.ElementTree` module:
 
 .. code-block:: python
 
@@ -888,6 +889,9 @@ Element Objects
    bytestrings or Unicode strings.  *tag* is the element name.  *attrib* is
    an optional dictionary, containing element attributes.  *extra* contains
    additional attributes, given as keyword arguments.
+
+   .. versionchanged:: next
+      *attrib* can now be a :class:`frozendict`.
 
 
    .. attribute:: tag

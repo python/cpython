@@ -1,0 +1,2 @@
+In the free threading build, skip the stop-the-world pause when reassigning
+``__class__`` on a newly created object.

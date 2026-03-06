@@ -916,8 +916,8 @@ esac
 
 if test $define_xopen_source = yes
 then
-  # X/Open 7, incorporating POSIX.1-2008
-  AC_DEFINE([_XOPEN_SOURCE], [700],
+  # X/Open 8, incorporating POSIX.1-2024
+  AC_DEFINE([_XOPEN_SOURCE], [800],
             [Define to the level of X/Open that your system supports])
 
   # On Tru64 Unix 4.0F, defining _XOPEN_SOURCE also requires
@@ -927,8 +927,8 @@ then
   AC_DEFINE([_XOPEN_SOURCE_EXTENDED], [1],
             [Define to activate Unix95-and-earlier features])
 
-  AC_DEFINE([_POSIX_C_SOURCE], [200809L],
-            [Define to activate features from IEEE Stds 1003.1-2008])
+  AC_DEFINE([_POSIX_C_SOURCE], [202405L],
+            [Define to activate features from IEEE Std 1003.1-2024])
 fi
 
 # On HP-UX mbstate_t requires _INCLUDE__STDC_A1_SOURCE
@@ -2357,7 +2357,7 @@ AS_CASE([$ac_sys_system],
     dnl Include file system support
     AS_VAR_APPEND([LINKFORSHARED], [" -sFORCE_FILESYSTEM -lidbfs.js -lnodefs.js -lproxyfs.js -lworkerfs.js"])
     AS_VAR_APPEND([LINKFORSHARED], [" -sEXPORTED_RUNTIME_METHODS=FS,callMain,ENV,HEAPU32,TTY"])
-    AS_VAR_APPEND([LINKFORSHARED], [" -sEXPORTED_FUNCTIONS=_main,_Py_Version,__PyRuntime,_PyGILState_GetThisThreadState,__Py_DumpTraceback"])
+    AS_VAR_APPEND([LINKFORSHARED], [" -sEXPORTED_FUNCTIONS=_main,_Py_Version,__PyRuntime,_PyGILState_GetThisThreadState,__Py_DumpTraceback,__PyEM_EMSCRIPTEN_TRAMPOLINE_OFFSET"])
     AS_VAR_APPEND([LINKFORSHARED], [" -sSTACK_SIZE=5MB"])
     dnl Avoid bugs in JS fallback string decoding path
     AS_VAR_APPEND([LINKFORSHARED], [" -sTEXTDECODER=2"])
@@ -2422,6 +2422,7 @@ AS_CASE([$enable_wasm_dynamic_linking],
 AC_SUBST([BASECFLAGS])
 AC_SUBST([CFLAGS_NODIST])
 AC_SUBST([LDFLAGS_NODIST])
+AC_SUBST([EXE_LDFLAGS])
 AC_SUBST([LDFLAGS_NOLTO])
 AC_SUBST([WASM_ASSETS_DIR])
 AC_SUBST([WASM_STDLIB])
@@ -3717,7 +3718,10 @@ AC_MSG_CHECKING([perf trampoline])
 AS_CASE([$PLATFORM_TRIPLET],
   [x86_64-linux-gnu], [perf_trampoline=yes],
   [aarch64-linux-gnu], [perf_trampoline=yes],
-  [darwin], [perf_trampoline=yes],
+  [darwin], [AS_CASE([$MACOSX_DEPLOYMENT_TARGET],
+                [[10.[0-9]|10.1[0-1]]], [perf_trampoline=no],
+                [perf_trampoline=yes]
+            )],
   [perf_trampoline=no]
 )
 AC_MSG_RESULT([$perf_trampoline])
@@ -5014,6 +5018,41 @@ AS_VAR_IF([ac_cv_builtin_atomic], [yes], [
     AC_DEFINE(HAVE_BUILTIN_ATOMIC, 1, [Has builtin __atomic_load_n() and __atomic_store_n() functions])
 ])
 
+# Check for __builtin_shufflevector with 128-bit vector support on an
+# architecture where it compiles to worthwhile native SIMD instructions.
+# Used for SIMD-accelerated bytes.hex() in Python/pystrhex.c.
+AC_CACHE_CHECK([for __builtin_shufflevector], [ac_cv_efficient_builtin_shufflevector], [
+AC_LINK_IFELSE([
+  AC_LANG_PROGRAM([[
+    /* __builtin_shufflevector is available on many platforms, but 128-bit
+       vector code is only worthwhile on architectures with native SIMD:
+       x86-64 (SSE2, always available), ARM64 (NEON, always available),
+       or ARM32 when NEON is enabled via compiler flags (e.g. -march=native
+       on RPi3+).  On ARM32 without NEON (e.g. armv6 builds), the compiler
+       has the builtin but generates slow scalar code instead. */
+    #if !defined(__x86_64__) && !defined(__aarch64__) && \
+        !(defined(__arm__) && defined(__ARM_NEON))
+    #  error "128-bit vector SIMD not worthwhile on this architecture"
+    #endif
+    typedef unsigned char v16u8 __attribute__((vector_size(16)));
+  ]], [[
+    v16u8 a = {0,1,2,3,4,5,6,7,8,9,10,11,12,13,14,15};
+    v16u8 b = {16,17,18,19,20,21,22,23,24,25,26,27,28,29,30,31};
+    v16u8 c = __builtin_shufflevector(a, b,
+        0, 16, 1, 17, 2, 18, 3, 19, 4, 20, 5, 21, 6, 22, 7, 23);
+    (void)c;
+    return 0;
+  ]])
+],[ac_cv_efficient_builtin_shufflevector=yes],[ac_cv_efficient_builtin_shufflevector=no])
+])
+
+AS_VAR_IF([ac_cv_efficient_builtin_shufflevector], [yes], [
+    AC_DEFINE([HAVE_EFFICIENT_BUILTIN_SHUFFLEVECTOR], [1],
+              [Define if compiler supports __builtin_shufflevector with 128-bit
+               vectors AND the target architecture has native SIMD (not just API
+               availability)])
+])
+
 # --with-mimalloc
 AC_MSG_CHECKING([for --with-mimalloc])
 AC_ARG_WITH([mimalloc],
@@ -5060,6 +5099,29 @@ then
      [Define if you want to compile in Python-specific mallocs])
 fi
 AC_MSG_RESULT([$with_pymalloc])
+
+AC_MSG_CHECKING([for --with-pymalloc-hugepages])
+AC_ARG_WITH(
+  [pymalloc-hugepages],
+  [AS_HELP_STRING([--with-pymalloc-hugepages],
+    [enable huge page support for pymalloc arenas (default is no)])])
+if test "$with_pymalloc_hugepages" = "yes"
+then
+    dnl configure only runs on Unix-like systems; Windows uses MEM_LARGE_PAGES
+    dnl via VirtualAlloc but does not use configure. Only check MAP_HUGETLB here.
+    AC_COMPILE_IFELSE(
+      [AC_LANG_PROGRAM([[
+#include <sys/mman.h>
+      ]], [[
+int flags = MAP_PRIVATE | MAP_ANONYMOUS | MAP_HUGETLB;
+(void)flags;
+      ]])],
+      [AC_DEFINE([PYMALLOC_USE_HUGEPAGES], [1],
+         [Define to use huge pages for pymalloc arenas])],
+      [AC_MSG_WARN([--with-pymalloc-hugepages requested but MAP_HUGETLB not found])
+       with_pymalloc_hugepages=no])
+fi
+AC_MSG_RESULT([${with_pymalloc_hugepages:-no}])
 
 # Check for --with-c-locale-coercion
 AC_MSG_CHECKING([for --with-c-locale-coercion])

@@ -7,7 +7,6 @@ import inspect
 import io
 import operator
 import os
-import py_compile
 import shutil
 import stat
 import sys
@@ -79,6 +78,27 @@ class StdStreamTest(unittest.TestCase):
             ):
                 func()
                 self.assertRegex(mocked_stderr.getvalue(), r'usage:')
+
+
+class TestArgumentParserPickleable(unittest.TestCase):
+
+    @force_not_colorized
+    def test_pickle_roundtrip(self):
+        import pickle
+        parser = argparse.ArgumentParser(exit_on_error=False)
+        parser.add_argument('--foo', type=int, default=42)
+        parser.add_argument('bar', nargs='?', default='baz')
+        for proto in range(pickle.HIGHEST_PROTOCOL + 1):
+            with self.subTest(protocol=proto):
+                # Try to pickle and unpickle the parser
+                parser2 = pickle.loads(pickle.dumps(parser, protocol=proto))
+                # Check that the round-tripped parser still works
+                ns = parser2.parse_args(['--foo', '123', 'quux'])
+                self.assertEqual(ns.foo, 123)
+                self.assertEqual(ns.bar, 'quux')
+                ns2 = parser2.parse_args([])
+                self.assertEqual(ns2.foo, 42)
+                self.assertEqual(ns2.bar, 'baz')
 
 
 class TestCase(unittest.TestCase):
@@ -7162,9 +7182,8 @@ class TestProgName(TestCase):
         script_name = script_helper.make_script(dirname, basename, self.source)
         if not compiled:
             return script_name
-        py_compile.compile(script_name, doraise=True)
+        pyc_file = import_helper.make_legacy_pyc(script_name, allow_compile=True)
         os.remove(script_name)
-        pyc_file = import_helper.make_legacy_pyc(script_name)
         return pyc_file
 
     def make_zip_script(self, script_name, name_in_zip=None):

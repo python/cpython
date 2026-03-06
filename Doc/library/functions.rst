@@ -594,7 +594,7 @@ are always available.  They are listed here in alphabetical order.
 
    :param globals:
       The global namespace (default: ``None``).
-   :type globals: :class:`dict` | ``None``
+   :type globals: :class:`dict` | :class:`frozendict` | ``None``
 
    :param locals:
       The local namespace (default: ``None``).
@@ -659,6 +659,10 @@ are always available.  They are listed here in alphabetical order.
 
       The semantics of the default *locals* namespace have been adjusted as
       described for the :func:`locals` builtin.
+
+   .. versionchanged:: next
+
+      *globals* can now be a :class:`frozendict`.
 
 .. index:: pair: built-in function; exec
 
@@ -736,6 +740,10 @@ are always available.  They are listed here in alphabetical order.
 
       The semantics of the default *locals* namespace have been adjusted as
       described for the :func:`locals` builtin.
+
+   .. versionchanged:: next
+
+      *globals* can now be a :class:`frozendict`.
 
 
 .. function:: filter(function, iterable, /)
@@ -1824,19 +1832,19 @@ are always available.  They are listed here in alphabetical order.
    ``range(start, stop, step)``.  The *start* and *step* arguments default to
    ``None``.
 
-   Slice objects have read-only data attributes :attr:`!start`,
-   :attr:`!stop`, and :attr:`!step` which merely return the argument
-   values (or their default).  They have no other explicit functionality;
-   however, they are used by NumPy and other third-party packages.
+   Slice objects are also generated when :ref:`slicing syntax <slicings>`
+   is used.  For example: ``a[start:stop:step]`` or ``a[start:stop, i]``.
+
+   See :func:`itertools.islice` for an alternate version that returns an
+   :term:`iterator`.
 
    .. attribute:: slice.start
-   .. attribute:: slice.stop
-   .. attribute:: slice.step
+                  slice.stop
+                  slice.step
 
-   Slice objects are also generated when extended indexing syntax is used.  For
-   example: ``a[start:stop:step]`` or ``a[start:stop, i]``.  See
-   :func:`itertools.islice` for an alternate version that returns an
-   :term:`iterator`.
+      These read-only attributes are set to the argument values
+      (or their default).  They have no other explicit functionality;
+      however, they are used by NumPy and other third-party packages.
 
    .. versionchanged:: 3.12
       Slice objects are now :term:`hashable` (provided :attr:`~slice.start`,
@@ -2090,6 +2098,10 @@ are always available.  They are listed here in alphabetical order.
    .. versionchanged:: 3.6
       Subclasses of :class:`!type` which don't override ``type.__new__`` may no
       longer use the one-argument form to get the type of an object.
+
+   .. versionchanged:: next
+
+      *dict* can now be a :class:`frozendict`.
 
 .. function:: vars()
               vars(object, /)
