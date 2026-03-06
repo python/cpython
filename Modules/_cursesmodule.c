@@ -1112,6 +1112,7 @@ _curses_window_addstr_impl(PyCursesWindowObject *self, int group_left_1,
         attr_old = getattrs(self->win);
         if (curses_wattrset(self, attr, "addstr") < 0) {
             curses_release_wstr(strtype, wstr);
+            Py_DECREF(bytesobj);
             return NULL;
         }
     }
@@ -1210,6 +1211,7 @@ _curses_window_addnstr_impl(PyCursesWindowObject *self, int group_left_1,
         attr_old = getattrs(self->win);
         if (curses_wattrset(self, attr, "addnstr") < 0) {
             curses_release_wstr(strtype, wstr);
+            Py_DECREF(bytesobj);
             return NULL;
         }
     }
@@ -2212,6 +2214,7 @@ _curses_window_insstr_impl(PyCursesWindowObject *self, int group_left_1,
         attr_old = getattrs(self->win);
         if (curses_wattrset(self, attr, "insstr") < 0) {
             curses_release_wstr(strtype, wstr);
+            Py_DECREF(bytesobj);
             return NULL;
         }
     }
