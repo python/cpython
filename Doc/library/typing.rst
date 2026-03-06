@@ -279,7 +279,7 @@ parameter types are dependent on each other using :class:`ParamSpec`.
 Additionally, if that callable adds or removes arguments from other
 callables, the :data:`Concatenate` operator may be used.  They
 take the form ``Callable[ParamSpecVariable, ReturnType]`` and
-``Callable[Concatenate[Param1Type, Param2Type, ..., ParamSpecVariable], ReturnType]``
+``Callable[Concatenate[ParamType1, ParamType2, ..., ParamSpecVariable], ReturnType]``
 respectively.
 
 .. versionchanged:: 3.10
