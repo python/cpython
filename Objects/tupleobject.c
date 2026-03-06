@@ -221,8 +221,8 @@ tuple_alloc_2(void)
 PyObject *
 _PyTuple_FromPair(PyObject *one, PyObject *two)
 {
-    assert (one != NULL);
-    assert (two != NULL);
+    assert(one != NULL);
+    assert(two != NULL);
 
     PyTupleObject *op = tuple_alloc_2();
     if (op == NULL) {
@@ -240,8 +240,8 @@ _PyTuple_FromPair(PyObject *one, PyObject *two)
 PyObject *
 _PyTuple_FromPairSteal(PyObject *one, PyObject *two)
 {
-    assert (one != NULL);
-    assert (two != NULL);
+    assert(one != NULL);
+    assert(two != NULL);
 
     PyTupleObject *op = tuple_alloc_2();
     if (op == NULL) {
