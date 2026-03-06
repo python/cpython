@@ -187,22 +187,9 @@ venv:
 
 .PHONY: venv-pdf
 venv-pdf:
-	@if [ -d $(VENVDIR_PDF) ] ; then \
-		echo "venv-pdf already exists."; \
-		echo "To recreate it, remove it first with \`make clean-venv'."; \
-	else \
-		set -e; \
-		echo "Creating venv in $(VENVDIR_PDF)"; \
-		if $(UV) --version >/dev/null 2>&1; then \
-			$(UV) venv --python=$(PYTHON) $(VENVDIR_PDF); \
-			VIRTUAL_ENV=$(VENVDIR_PDF) $(UV) pip install -r requirements-pdf.txt; \
-		else \
-			$(PYTHON) -m venv $(VENVDIR_PDF); \
-			$(VENVDIR_PDF)/bin/python3 -m pip install --upgrade pip; \
-			$(VENVDIR_PDF)/bin/python3 -m pip install -r requirements-pdf.txt; \
-		fi; \
-		echo "The venv has been created in the $(VENVDIR_PDF) directory"; \
-	fi
+    venv-pdf: REQUIREMENTS = requirements-pdf.txt
+    venv-pdf: VENVDIR = $(VENVDIR_PDF)
+    venv-pdf: venv
 
 .PHONY: dist-no-html
 dist-no-html: dist-text dist-epub dist-texinfo
@@ -251,7 +238,7 @@ dist-text:
 	@echo "Build finished and archived!"
 
 .PHONY: dist-pdf
-dist-pdf: venv-pdf
+dist-pdf:
 	# archive the A4 latex
 	@echo "Building LaTeX (A4 paper)..."
 	mkdir -p dist
