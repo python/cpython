@@ -88,10 +88,13 @@ PyAPI_FUNC(int) PyFunction_SetAnnotations(PyObject *, PyObject *);
 /* Static inline functions for direct access to these values.
    Type checks are *not* done, so use with care. */
 static inline PyObject* PyFunction_GET_CODE(PyObject *func) {
-    return _PyFunction_CAST(func)->func_code;
+    PyFunctionObject *op = _PyFunction_CAST(func);
+#ifdef Py_GIL_DISABLED
+    return (PyObject *)_Py_atomic_load_ptr(&op->func_code);
+#else
+    return op->func_code;
+#endif
 }
-#define PyFunction_GET_CODE(func) PyFunction_GET_CODE(_PyObject_CAST(func))
-
 static inline PyObject* PyFunction_GET_GLOBALS(PyObject *func) {
     return _PyFunction_CAST(func)->func_globals;
 }
