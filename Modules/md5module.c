@@ -86,7 +86,7 @@ MD5_dealloc(MD5object *ptr)
 {
     if (ptr->hash_state != NULL) {
         Hacl_Hash_MD5_free(ptr->hash_state);
-        ptr->hash_state == NULL;
+        ptr->hash_state = NULL;
     }
     PyTypeObject *tp = Py_TYPE((PyObject*)ptr);
     PyObject_GC_UnTrack(ptr);
