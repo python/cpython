@@ -3236,11 +3236,23 @@ class _TestPool(BaseTestCase):
             pool = None
             support.gc_collect()
 
+
+class _Undepickleable:
+    def __init__(self, fail=False):
+        if fail:
+            raise RuntimeError()
+
+    def __reduce__(self):
+        return self.__class__, (True,)
+
 def raising():
     raise KeyError("key")
 
 def unpickleable_result():
     return lambda: 42
+
+def undepickleable_result():
+    return _Undepickleable()
 
 class _TestPoolWorkerErrors(BaseTestCase):
     ALLOWED_TYPES = ('processes', )
@@ -3283,6 +3295,16 @@ class _TestPoolWorkerErrors(BaseTestCase):
 
         p.close()
         p.join()
+
+    def test_undepickleable_result(self):
+        from multiprocessing.pool import MaybeDecodingError
+        p = multiprocessing.Pool(2)
+        res = p.apply_async(undepickleable_result)
+        self.assertRaises(MaybeDecodingError, res.get, 10)
+        self.assertRaises(RuntimeError, p.apply_async, undepickleable_result)
+        p.close()
+        p.join()
+
 
 class _TestPoolWorkerLifetime(BaseTestCase):
     ALLOWED_TYPES = ('processes', )
