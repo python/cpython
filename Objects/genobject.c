@@ -2716,24 +2716,23 @@ PyTypeObject _PyAsyncGenYieldFrom_Type = {
 
 
 PyObject *
-_PyAsyncGenYieldFrom_New(PyThreadState *tstate, PyObject *iterator)
+_PyAsyncGenYieldFrom_New(PyThreadState *tstate, PyObject *iterable)
 {
     assert(tstate != NULL);
-    assert(iterator != NULL);
+    assert(iterable != NULL);
     _PyAsyncGenYieldFrom *yield_from = PyObject_GC_New(_PyAsyncGenYieldFrom,
                                                       &_PyAsyncGenYieldFrom_Type);
     if (yield_from == NULL) {
         return NULL;
     }
-    if (!PyIter_Check(iterator)) {
-        if (PyAsyncGen_CheckExact(iterator)) {
-            _PyErr_Format(tstate, PyExc_TypeError,
-                          "%T object is not iterable. Did you mean 'async yield from'?",
-                          iterator);
-        } else {
-            _PyErr_Format(tstate, PyExc_TypeError,
-                          "%T object is not iterable", iterator);
-        }
+    if (!Py_TYPE(iterable)->tp_iter && PyAsyncGen_CheckExact(iterable)) {
+        _PyErr_Format(tstate, PyExc_TypeError,
+                      "%T object is not iterable. Did you mean 'async yield from'?",
+                      iterable);
+        return NULL;
+    }
+    PyObject *iterator = PyObject_GetIter(iterable);
+    if (iterator == NULL) {
         return NULL;
     }
     yield_from->agyf_iterator = Py_NewRef(iterator);
