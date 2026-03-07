@@ -27,6 +27,7 @@ struct ast_state {
     PyObject *AsyncFor_type;
     PyObject *AsyncFunctionDef_type;
     PyObject *AsyncWith_type;
+    PyObject *AsyncYieldFrom_type;
     PyObject *Attribute_type;
     PyObject *AugAssign_type;
     PyObject *Await_type;

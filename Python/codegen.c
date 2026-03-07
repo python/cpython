@@ -5413,6 +5413,16 @@ codegen_visit_expr(compiler *c, expr_ty e)
         ADDOP_LOAD_CONST(c, loc, Py_None);
         ADD_YIELD_FROM(c, loc, 0);
         break;
+    case AsyncYieldFrom_kind:
+        if (!_PyST_IsFunctionLike(SYMTABLE_ENTRY(c))) {
+            return _PyCompile_Error(c, loc, "'async yield from' outside function");
+        }
+
+        VISIT(c, expr, e->v.AsyncYieldFrom.value);
+        ADDOP(c, loc, GET_YIELD_FROM_ITER);
+        ADDOP_LOAD_CONST(c, loc, Py_None);
+        ADD_YIELD_FROM(c, loc, 0);
+        break;
     case Await_kind:
         VISIT(c, expr, e->v.Await.value);
         ADDOP_I(c, loc, GET_AWAITABLE, 0);

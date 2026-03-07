@@ -316,6 +316,9 @@ validate_expr(expr_ty exp, expr_context_ty ctx)
     case YieldFrom_kind:
         ret = validate_expr(exp->v.YieldFrom.value, Load);
         break;
+    case AsyncYieldFrom_kind:
+        ret = validate_expr(exp->v.AsyncYieldFrom.value, Load);
+        break;
     case Await_kind:
         ret = validate_expr(exp->v.Await.value, Load);
         break;
