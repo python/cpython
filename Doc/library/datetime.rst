@@ -849,6 +849,9 @@ Instance methods:
    See also :ref:`strftime-strptime-behavior` and :meth:`date.isoformat`.
 
 
+Examples of usage: :class:`!date`
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
 Example of counting days to an event::
 
     >>> import time
