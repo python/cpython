@@ -133,8 +133,11 @@ def main(*args):
     theme = get_theme()
     s = theme.syntax
 
-    sys.ps1 = f"{s.prompt}sqlite> {s.reset}"
-    sys.ps2 = f"{s.prompt}    ... {s.reset}"
+    # Use RL_PROMPT_START_IGNORE (\001) and RL_PROMPT_END_IGNORE (\002) to
+    # bracket non-printing characters. This tells readline to ignore them
+    # when calculating screen space for redisplay during history scrolling.
+    sys.ps1 = f"\001{s.prompt}\002sqlite> \001{s.reset}\002"
+    sys.ps2 = f"\001{s.prompt}\002    ... \001{s.reset}\002"
 
     con = sqlite3.connect(args.filename, isolation_level=None)
     try:
@@ -143,7 +146,7 @@ def main(*args):
             execute(con, args.sql, suppress_errors=False, theme=theme)
         else:
             # No SQL provided; start the REPL.
-            with completer():
+            with completer(con):
                 console = SqliteInteractiveConsole(con, use_color=True)
                 console.interact(banner, exitmsg="")
     finally:

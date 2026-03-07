@@ -1,2 +1,0 @@
-Fixed ``build-details.json`` generation to use the correct ``c_api.headers``
-as defined in :pep:`739`, instead of ``c_api.include``.

@@ -122,6 +122,7 @@ Don Bashford
 Pior Bastida
 Nick Bastin
 Ned Batchelder
+Facundo Batista
 Jeff Bauer
 Michael R Bax
 Anthony Baxter
@@ -210,6 +211,7 @@ Médéric Boquien
 Matias Bordese
 Jonas Borgström
 Jurjen Bos
+Jeffrey Bosboom
 Peter Bosch
 Dan Boswell
 Eric Bouck
@@ -327,6 +329,7 @@ David Chaum
 Nicolas Chauvat
 Jerry Chen
 Michael Chermside
+Dmitry Chestnykh
 Ingrid Cheung
 Adam Chhina
 Terry Chia
@@ -417,11 +420,13 @@ Lisandro Dalcin
 Darren Dale
 Andrew Dalke
 Lars Damerow
+Hauke Dämpfling
 Evan Dandrea
 Eric Daniel
 Scott David Daniels
 Derzsi Dániel
 Lawrence D'Anna
+Steven D'Aprano
 Ben Darnell
 Kushal Das
 Jonathan Dasteel
@@ -498,6 +503,7 @@ Eugene Dvurechenski
 Karmen Dykstra
 Josip Dzolonga
 Maxim Dzumanenko
+Phillip J. Eby
 Hans Eckardt
 Rodolpho Eckhardt
 Ulrich Eckhardt
@@ -622,6 +628,7 @@ Soumendra Ganguly (गङ्गोपाध्याय)
 Fred Gansevles
 Paul Ganssle
 Tian Gao
+Katie Gardner
 Lars Marius Garshol
 Jake Garver
 Dan Gass
@@ -735,6 +742,7 @@ Derek Harland
 Jason Harper
 David Harrigan
 Brian Harring
+Peter Harris
 Jonathan Hartley
 Travis B. Hartwell
 Henrik Harutyunyan
@@ -755,6 +763,7 @@ Tim Heaney
 Henrik Heimbuerger
 Christian Heimes
 Thomas Heller
+Doug Hellmann
 Malte Helmert
 Lance Finn Helsten
 Gordon P. Hemsley
@@ -841,6 +850,7 @@ Lawrence Hudson
 Michael Hudson
 Roberto Hueso Gomez
 Jim Hugunin
+Taneli Hukkinen
 Greg Humphreys
 Chris Hunt
 Eric Huss
@@ -906,6 +916,8 @@ Jim Jewett
 Pedro Diaz Jimenez
 Orjan Johansen
 Fredrik Johansson
+Benjamin Johnson
+Benjamin K. Johnson
 Gregory K. Johnson
 Kent Johnson
 Michael Johnson
@@ -924,6 +936,7 @@ Kristján Valur Jónsson
 Jens B. Jorgensen
 John Jorgensen
 Sijin Joseph
+Paresh Joshi
 Andreas Jung
 Tattoo Mabonzo K.
 Sarah K.
@@ -1045,6 +1058,7 @@ Jon Kuhn
 Andrei Kulakov
 Ilya Kulakov
 Upendra Kumar
+Senthil Kumaran
 Toshio Kuratomi
 Ilia Kurenkov
 Vladimir Kushnir
@@ -1072,6 +1086,7 @@ Wolfgang Langner
 Detlef Lannert
 Rémi Lapeyre
 Soren Larsen
+Seth Michael Larson
 Amos Latteier
 Keenan Lau
 Piers Lauder
@@ -1145,6 +1160,7 @@ Per Lindqvist
 Eric Lindvall
 Gregor Lingl
 Everett Lipman
+Jake Lishman
 Mirko Liss
 Alexander Liu
 Hui Liu
@@ -1152,6 +1168,7 @@ Yuan Liu
 Nick Lockwood
 Stephanie Lockwood
 Martin von Löwis
+Edward Loper
 Hugo Lopes Tavares
 Guillermo López-Anglada
 Anne Lord
@@ -1168,6 +1185,7 @@ Kang-Hao (Kenny) Lu
 Raymond Lu
 Lukas Lueg
 Loren Luke
+Steen Lumholt
 Fredrik Lundh
 Mike Lundy
 Zhongyue Luo
@@ -1334,6 +1352,7 @@ Trent Nelson
 Andrew Nester
 Osvaldo Santana Neto
 Chad Netzer
+Nick Neumann
 Max Neunhöffer
 Anthon van der Neut
 George Neville-Neil
@@ -1346,6 +1365,7 @@ Gustavo Niemeyer
 Oscar Nierstrasz
 Lysandros Nikolaou
 Hrvoje Nikšić
+Jan-Eric Nitschke
 Gregory Nofi
 Jesse Noller
 Bill Noon
@@ -1652,11 +1672,13 @@ Amit Saha
 Suman Saha
 Koki Saito
 Hajime Saitou
+Vinay Sajip
 George Sakkis
 Victor Salgado
 Rich Salz
 Kevin Samborn
 Adrian Sampson
+Guillaume Sanchez
 Nevada Sanchez
 James Sanders
 Ilya Sandler
@@ -1678,6 +1700,7 @@ David Scherer
 Wolfgang Scherer
 Felix Scherz
 Hynek Schlawack
+Jakob Schluse
 Bob Schmertz
 Gregor Schmid
 Ralf Schmitt
@@ -1707,6 +1730,7 @@ Jendrik Seipp
 Michael Selik
 Yury Selivanov
 Fred Sells
+James Seo
 Jiwon Seo
 Iñigo Serna
 Joakim Sernbrant
@@ -1893,6 +1917,7 @@ Guo Ci Teo
 Mikhail Terekhov
 Victor Terrón
 Pablo Galindo
+Rue Ching Teh
 Richard M. Tew
 Srinivas Reddy Thatiparthy
 Tobias Thelen
@@ -1917,11 +1942,13 @@ Tim Tisdall
 Jason Tishler
 Christian Tismer
 Jim Tittsler
+Abhishek Tiwari
 Frank J. Tobin
 James Tocknell
 Bennett Todd
 R Lindsay Todd
 Eugene Toder
+Heikki Toivonen
 Erik Tollerud
 Stephen Tonkin
 Matias Torchinsky
@@ -2113,12 +2140,14 @@ Xiang Zhang
 Robert Xiao
 Florent Xicluna
 Yanbo, Xie
+Kaisheng Xu
 Xinhang Xu
 Arnon Yaari
 Alakshendra Yadav
 Hirokazu Yamamoto
 Masayuki Yamamoto
 Zhikang Yan
+Jeffrey Yasskin
 Jingchen Ye
 Ka-Ping Yee
 Chi Hsuan Yen

@@ -3694,7 +3694,7 @@ class TestExtractionFilters(unittest.TestCase):
             else:
                 raise AssertionError('Could not determine link resolution')
         else:
-            cls.dotdot_resolves_early = True
+            cls.dotdot_resolves_early = False
 
     @contextmanager
     def check_context(self, tar, filter, *, check_flag=True):
@@ -3842,7 +3842,7 @@ class TestExtractionFilters(unittest.TestCase):
             arc.add('current', symlink_to='.')
 
             # effectively points to ./../
-            if self.dotdot_resolves_early:
+            if self.dotdot_resolves_early and os_helper.can_symlink():
                 arc.add('parent', symlink_to='current/../..')
             else:
                 arc.add('parent', symlink_to='current/..')
@@ -4834,6 +4834,16 @@ class OffsetValidationTests(unittest.TestCase):
             self.assertEqual(len(members), 1)
             self.assertEqual(members[0].name, "filename")
             self.assertEqual(members[0].offset, expected_offset)
+
+
+class TestModule(unittest.TestCase):
+    def test_deprecated_version(self):
+        with self.assertWarnsRegex(
+                DeprecationWarning,
+                "'version' is deprecated and slated for removal in Python 3.20",
+        ) as cm:
+            getattr(tarfile, "version")
+        self.assertEqual(cm.filename, __file__)
 
 
 def setUpModule():

@@ -1,2 +1,0 @@
-Forbid expansion of shared anonymous :mod:`memory maps <mmap>` on Linux,
-which caused a bus error.

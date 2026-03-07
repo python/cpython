@@ -35,11 +35,6 @@ class LoaderTests:
 
         self.loader = self.LoaderClass(util.EXTENSIONS.name, util.EXTENSIONS.file_path)
 
-    def load_module(self, fullname):
-        with warnings.catch_warnings():
-            warnings.simplefilter("ignore", DeprecationWarning)
-            return self.loader.load_module(fullname)
-
     def test_equality(self):
         other = self.LoaderClass(util.EXTENSIONS.name, util.EXTENSIONS.file_path)
         self.assertEqual(self.loader, other)
@@ -47,25 +42,6 @@ class LoaderTests:
     def test_inequality(self):
         other = self.LoaderClass('_' + util.EXTENSIONS.name, util.EXTENSIONS.file_path)
         self.assertNotEqual(self.loader, other)
-
-    def test_load_module_API(self):
-        # Test the default argument for load_module().
-        with warnings.catch_warnings():
-            warnings.simplefilter("ignore", DeprecationWarning)
-            self.loader.load_module()
-            self.loader.load_module(None)
-            with self.assertRaises(ImportError):
-                self.load_module('XXX')
-
-    def test_module(self):
-        with util.uncache(util.EXTENSIONS.name):
-            module = self.load_module(util.EXTENSIONS.name)
-            for attr, value in [('__name__', util.EXTENSIONS.name),
-                                ('__file__', util.EXTENSIONS.file_path),
-                                ('__package__', '')]:
-                self.assertEqual(getattr(module, attr), value)
-            self.assertIn(util.EXTENSIONS.name, sys.modules)
-            self.assertIsInstance(module.__loader__, self.LoaderClass)
 
     # No extension module as __init__ available for testing.
     test_package = None
@@ -75,18 +51,6 @@ class LoaderTests:
 
     # No easy way to trigger a failure after a successful import.
     test_state_after_failure = None
-
-    def test_unloadable(self):
-        name = 'asdfjkl;'
-        with self.assertRaises(ImportError) as cm:
-            self.load_module(name)
-        self.assertEqual(cm.exception.name, name)
-
-    def test_module_reuse(self):
-        with util.uncache(util.EXTENSIONS.name):
-            module1 = self.load_module(util.EXTENSIONS.name)
-            module2 = self.load_module(util.EXTENSIONS.name)
-            self.assertIs(module1, module2)
 
     def test_is_package(self):
         self.assertFalse(self.loader.is_package(util.EXTENSIONS.name))
@@ -126,11 +90,6 @@ class SinglePhaseExtensionModuleTests(abc.LoaderTests):
 
         self.loader = self.LoaderClass(self.name, self.spec.origin)
 
-    def load_module(self):
-        with warnings.catch_warnings():
-            warnings.simplefilter("ignore", DeprecationWarning)
-            return self.loader.load_module(self.name)
-
     def load_module_by_name(self, fullname):
         # Load a module from the test extension by name.
         origin = self.spec.origin
@@ -139,19 +98,6 @@ class SinglePhaseExtensionModuleTests(abc.LoaderTests):
         module = importlib.util.module_from_spec(spec)
         loader.exec_module(module)
         return module
-
-    def test_module(self):
-        # Test loading an extension module.
-        with util.uncache(self.name):
-            module = self.load_module()
-            for attr, value in [('__name__', self.name),
-                                ('__file__', self.spec.origin),
-                                ('__package__', '')]:
-                self.assertEqual(getattr(module, attr), value)
-            with self.assertRaises(AttributeError):
-                module.__path__
-            self.assertIs(module, sys.modules[self.name])
-            self.assertIsInstance(module.__loader__, self.LoaderClass)
 
     # No extension module as __init__ available for testing.
     test_package = None
@@ -213,12 +159,6 @@ class MultiPhaseExtensionModuleTests(abc.LoaderTests):
         assert self.spec
         self.loader = self.LoaderClass(self.name, self.spec.origin)
 
-    def load_module(self):
-        # Load the module from the test extension.
-        with warnings.catch_warnings():
-            warnings.simplefilter("ignore", DeprecationWarning)
-            return self.loader.load_module(self.name)
-
     def load_module_by_name(self, fullname):
         # Load a module from the test extension by name.
         origin = self.spec.origin
@@ -236,60 +176,6 @@ class MultiPhaseExtensionModuleTests(abc.LoaderTests):
 
     # Handling failure on reload is the up to the module.
     test_state_after_failure = None
-
-    def test_module(self):
-        # Test loading an extension module.
-        with util.uncache(self.name):
-            module = self.load_module()
-            for attr, value in [('__name__', self.name),
-                                ('__file__', self.spec.origin),
-                                ('__package__', '')]:
-                self.assertEqual(getattr(module, attr), value)
-            with self.assertRaises(AttributeError):
-                module.__path__
-            self.assertIs(module, sys.modules[self.name])
-            self.assertIsInstance(module.__loader__, self.LoaderClass)
-
-    def test_functionality(self):
-        # Test basic functionality of stuff defined in an extension module.
-        with util.uncache(self.name):
-            module = self.load_module()
-            self.assertIsInstance(module, types.ModuleType)
-            ex = module.Example()
-            self.assertEqual(ex.demo('abcd'), 'abcd')
-            self.assertEqual(ex.demo(), None)
-            with self.assertRaises(AttributeError):
-                ex.abc
-            ex.abc = 0
-            self.assertEqual(ex.abc, 0)
-            self.assertEqual(module.foo(9, 9), 18)
-            self.assertIsInstance(module.Str(), str)
-            self.assertEqual(module.Str(1) + '23', '123')
-            with self.assertRaises(module.error):
-                raise module.error()
-            self.assertEqual(module.int_const, 1969)
-            self.assertEqual(module.str_const, 'something different')
-
-    def test_reload(self):
-        # Test that reload didn't re-set the module's attributes.
-        with util.uncache(self.name):
-            module = self.load_module()
-            ex_class = module.Example
-            importlib.reload(module)
-            self.assertIs(ex_class, module.Example)
-
-    def test_try_registration(self):
-        # Assert that the PyState_{Find,Add,Remove}Module C API doesn't work.
-        with util.uncache(self.name):
-            module = self.load_module()
-            with self.subTest('PyState_FindModule'):
-                self.assertEqual(module.call_state_registration_func(0), None)
-            with self.subTest('PyState_AddModule'):
-                with self.assertRaises(SystemError):
-                    module.call_state_registration_func(1)
-            with self.subTest('PyState_RemoveModule'):
-                with self.assertRaises(SystemError):
-                    module.call_state_registration_func(2)
 
     def test_load_submodule(self):
         # Test loading a simulated submodule.

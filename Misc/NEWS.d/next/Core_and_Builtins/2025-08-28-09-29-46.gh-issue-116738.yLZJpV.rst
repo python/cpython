@@ -1,2 +1,0 @@
-Make :mod:`cProfile` thread-safe on the :term:`free threaded <free
-threading>` build.

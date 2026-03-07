@@ -16,6 +16,7 @@
 #endif
 
 #include "Python.h"
+#include "pycore_dict.h"          // _PyDict_CopyAsDict()
 #include "pycore_pyhash.h"        // _Py_HashSecret
 #include "pycore_weakref.h"       // FT_CLEAR_WEAKREFS()
 
@@ -382,13 +383,14 @@ get_attrib_from_keywords(PyObject *kwds)
         /* If attrib was found in kwds, copy its value and remove it from
          * kwds
          */
-        if (!PyDict_Check(attrib)) {
-            PyErr_Format(PyExc_TypeError, "attrib must be dict, not %.100s",
-                         Py_TYPE(attrib)->tp_name);
+        if (!PyAnyDict_Check(attrib)) {
+            PyErr_Format(PyExc_TypeError,
+                         "attrib must be dict or frozendict, not %T",
+                         attrib);
             Py_DECREF(attrib);
             return NULL;
         }
-        Py_SETREF(attrib, PyDict_Copy(attrib));
+        Py_SETREF(attrib, _PyDict_CopyAsDict(attrib));
     }
     else {
         attrib = PyDict_New();
@@ -416,12 +418,18 @@ element_init(PyObject *self, PyObject *args, PyObject *kwds)
     PyObject *attrib = NULL;
     ElementObject *self_elem;
 
-    if (!PyArg_ParseTuple(args, "O|O!:Element", &tag, &PyDict_Type, &attrib))
+    if (!PyArg_ParseTuple(args, "O|O:Element", &tag, &attrib))
         return -1;
+    if (attrib != NULL && !PyAnyDict_Check(attrib)) {
+        PyErr_Format(PyExc_TypeError,
+                     "Element() argument 2 must be dict or frozendict, not %T",
+                     attrib);
+        return -1;
+    }
 
     if (attrib) {
         /* attrib passed as positional arg */
-        attrib = PyDict_Copy(attrib);
+        attrib = _PyDict_CopyAsDict(attrib);
         if (!attrib)
             return -1;
         if (kwds) {
@@ -912,7 +920,7 @@ deepcopy(elementtreestate *st, PyObject *object, PyObject *memo)
         return Py_NewRef(object);
     }
 
-    if (Py_REFCNT(object) == 1) {
+    if (_PyObject_IsUniquelyReferenced(object)) {
         if (PyDict_CheckExact(object)) {
             PyObject *key, *value;
             Py_ssize_t pos = 0;
@@ -1679,8 +1687,7 @@ _elementtree_Element_remove_impl(ElementObject *self, PyObject *subelement)
     }
 
     if (rc == 0) {
-        PyErr_SetString(PyExc_ValueError,
-                        "Element.remove(x): element not found");
+        PyErr_Format(PyExc_ValueError, "%R not in %R", subelement, self);
         return NULL;
     }
 
@@ -1806,15 +1813,19 @@ element_subscr(PyObject *op, PyObject *item)
         return element_getitem(op, i);
     }
     else if (PySlice_Check(item)) {
+        // Note: 'slicelen' is computed once we are sure that 'self->extra'
+        // cannot be mutated by user-defined code.
+        // See https://github.com/python/cpython/issues/143200.
         Py_ssize_t start, stop, step, slicelen, i;
         size_t cur;
         PyObject* list;
 
-        if (!self->extra)
-            return PyList_New(0);
-
         if (PySlice_Unpack(item, &start, &stop, &step) < 0) {
             return NULL;
+        }
+
+        if (self->extra == NULL) {
+            return PyList_New(0);
         }
         slicelen = PySlice_AdjustIndices(self->extra->length, &start, &stop,
                                          step);
@@ -1858,28 +1869,26 @@ element_ass_subscr(PyObject *op, PyObject *item, PyObject *value)
         return element_setitem(op, i, value);
     }
     else if (PySlice_Check(item)) {
+        // Note: 'slicelen' is computed once we are sure that 'self->extra'
+        // cannot be mutated by user-defined code.
+        // See https://github.com/python/cpython/issues/143200.
         Py_ssize_t start, stop, step, slicelen, newlen, i;
         size_t cur;
 
         PyObject* recycle = NULL;
         PyObject* seq;
 
-        if (!self->extra) {
-            if (create_extra(self, NULL) < 0)
-                return -1;
-        }
-
         if (PySlice_Unpack(item, &start, &stop, &step) < 0) {
             return -1;
         }
-        slicelen = PySlice_AdjustIndices(self->extra->length, &start, &stop,
-                                         step);
 
         if (value == NULL) {
             /* Delete slice */
-            size_t cur;
-            Py_ssize_t i;
-
+            if (self->extra == NULL) {
+                return 0;
+            }
+            slicelen = PySlice_AdjustIndices(self->extra->length, &start, &stop,
+                                             step);
             if (slicelen <= 0)
                 return 0;
 
@@ -1948,8 +1957,16 @@ element_ass_subscr(PyObject *op, PyObject *item, PyObject *value)
         }
         newlen = PySequence_Fast_GET_SIZE(seq);
 
-        if (step !=  1 && newlen != slicelen)
-        {
+        if (self->extra == NULL) {
+            if (create_extra(self, NULL) < 0) {
+                Py_DECREF(seq);
+                return -1;
+            }
+        }
+        slicelen = PySlice_AdjustIndices(self->extra->length, &start, &stop,
+                                         step);
+
+        if (step != 1 && newlen != slicelen) {
             Py_DECREF(seq);
             PyErr_Format(PyExc_ValueError,
                 "attempt to assign sequence of size %zd "
@@ -2102,10 +2119,10 @@ static int
 element_attrib_setter(PyObject *op, PyObject *value, void *closure)
 {
     _VALIDATE_ATTR_VALUE(value);
-    if (!PyDict_Check(value)) {
+    if (!PyAnyDict_Check(value)) {
         PyErr_Format(PyExc_TypeError,
-                     "attrib must be dict, not %.200s",
-                     Py_TYPE(value)->tp_name);
+                     "attrib must be dict or frozendict, not %T",
+                     value);
         return -1;
     }
     ElementObject *self = _Element_CAST(op);
@@ -2794,8 +2811,9 @@ treebuilder_handle_data(TreeBuilderObject* self, PyObject* data)
         self->data = Py_NewRef(data);
     } else {
         /* more than one item; use a list to collect items */
-        if (PyBytes_CheckExact(self->data) && Py_REFCNT(self->data) == 1 &&
-            PyBytes_CheckExact(data) && PyBytes_GET_SIZE(data) == 1) {
+        if (PyBytes_CheckExact(self->data)
+            && _PyObject_IsUniquelyReferenced(self->data)
+            && PyBytes_CheckExact(data) && PyBytes_GET_SIZE(data) == 1) {
             /* XXX this code path unused in Python 3? */
             /* expat often generates single character data sections; handle
                the most common case by resizing the existing string... */
@@ -4214,8 +4232,8 @@ _elementtree_XMLParser__setevents_impl(XMLParserObject *self,
                 (XML_ProcessingInstructionHandler) expat_pi_handler
                 );
         } else {
-            Py_DECREF(events_seq);
             PyErr_Format(PyExc_ValueError, "unknown event '%s'", event_name);
+            Py_DECREF(events_seq);
             return NULL;
         }
     }

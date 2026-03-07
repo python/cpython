@@ -936,7 +936,7 @@ methods to match the corresponding methods of :class:`str`.
 collections.abc
 ---------------
 
-The :meth:`Sequence.index() <collections.abc.MutableSequence.index>` method now
+The :meth:`!Sequence.index` method now
 accepts *start* and *stop* arguments to match the corresponding methods
 of :class:`tuple`, :class:`list`, etc.
 (Contributed by Devin Jeanpierre in :issue:`23086`.)
@@ -2324,7 +2324,7 @@ The previously undocumented ``from_function`` and ``from_builtin`` methods of
 :meth:`Signature.from_callable() <inspect.Signature.from_callable>`
 method instead. (Contributed by Yury Selivanov in :issue:`24248`.)
 
-The :func:`inspect.getargspec` function is deprecated and scheduled to be
+The :func:`!inspect.getargspec` function is deprecated and scheduled to be
 removed in Python 3.6.  (See :issue:`20438` for details.)
 
 The :mod:`inspect` :func:`~inspect.getfullargspec`,

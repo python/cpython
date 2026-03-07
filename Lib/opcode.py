@@ -40,83 +40,87 @@ _intrinsic_1_descs = _opcode.get_intrinsic1_descs()
 _intrinsic_2_descs = _opcode.get_intrinsic2_descs()
 _special_method_names = _opcode.get_special_method_names()
 _common_constants = [builtins.AssertionError, builtins.NotImplementedError,
-                     builtins.tuple, builtins.all, builtins.any]
+                     builtins.tuple, builtins.all, builtins.any, builtins.list,
+                     builtins.set]
 _nb_ops = _opcode.get_nb_ops()
 
 hascompare = [opmap["COMPARE_OP"]]
 
-_cache_format = {
-    "LOAD_GLOBAL": {
-        "counter": 1,
-        "index": 1,
-        "module_keys_version": 1,
-        "builtin_keys_version": 1,
-    },
-    "BINARY_OP": {
-        "counter": 1,
-        "descr": 4,
-    },
-    "UNPACK_SEQUENCE": {
-        "counter": 1,
-    },
-    "COMPARE_OP": {
-        "counter": 1,
-    },
-    "CONTAINS_OP": {
-        "counter": 1,
-    },
-    "FOR_ITER": {
-        "counter": 1,
-    },
-    "LOAD_SUPER_ATTR": {
-        "counter": 1,
-    },
-    "LOAD_ATTR": {
-        "counter": 1,
-        "version": 2,
-        "keys_version": 2,
-        "descr": 4,
-    },
-    "STORE_ATTR": {
-        "counter": 1,
-        "version": 2,
-        "index": 1,
-    },
-    "CALL": {
-        "counter": 1,
-        "func_version": 2,
-    },
-    "CALL_KW": {
-        "counter": 1,
-        "func_version": 2,
-    },
-    "STORE_SUBSCR": {
-        "counter": 1,
-    },
-    "SEND": {
-        "counter": 1,
-    },
-    "JUMP_BACKWARD": {
-        "counter": 1,
-    },
-    "TO_BOOL": {
-        "counter": 1,
-        "version": 2,
-    },
-    "POP_JUMP_IF_TRUE": {
-        "counter": 1,
-    },
-    "POP_JUMP_IF_FALSE": {
-        "counter": 1,
-    },
-    "POP_JUMP_IF_NONE": {
-        "counter": 1,
-    },
-    "POP_JUMP_IF_NOT_NONE": {
-        "counter": 1,
-    },
-}
+_cache_format = frozendict(
+    LOAD_GLOBAL=frozendict(
+        counter=1,
+        index=1,
+        module_keys_version=1,
+        builtin_keys_version=1,
+    ),
+    BINARY_OP=frozendict(
+        counter=1,
+        descr=4,
+    ),
+    UNPACK_SEQUENCE=frozendict(
+        counter=1,
+    ),
+    COMPARE_OP=frozendict(
+        counter=1,
+    ),
+    CONTAINS_OP=frozendict(
+        counter=1,
+    ),
+    FOR_ITER=frozendict(
+        counter=1,
+    ),
+    LOAD_SUPER_ATTR=frozendict(
+        counter=1,
+    ),
+    LOAD_ATTR=frozendict(
+        counter=1,
+        version=2,
+        keys_version=2,
+        descr=4,
+    ),
+    STORE_ATTR=frozendict(
+        counter=1,
+        version=2,
+        index=1,
+    ),
+    CALL=frozendict(
+        counter=1,
+        func_version=2,
+    ),
+    CALL_KW=frozendict(
+        counter=1,
+        func_version=2,
+    ),
+    CALL_FUNCTION_EX=frozendict(
+        counter=1,
+    ),
+    STORE_SUBSCR=frozendict(
+        counter=1,
+    ),
+    SEND=frozendict(
+        counter=1,
+    ),
+    JUMP_BACKWARD=frozendict(
+        counter=1,
+    ),
+    TO_BOOL=frozendict(
+        counter=1,
+        version=2,
+    ),
+    POP_JUMP_IF_TRUE=frozendict(
+        counter=1,
+    ),
+    POP_JUMP_IF_FALSE=frozendict(
+        counter=1,
+    ),
+    POP_JUMP_IF_NONE=frozendict(
+        counter=1,
+    ),
+    POP_JUMP_IF_NOT_NONE=frozendict(
+        counter=1,
+    ),
+)
 
-_inline_cache_entries = {
+_inline_cache_entries = frozendict({
     name : sum(value.values()) for (name, value) in _cache_format.items()
-}
+})

@@ -160,9 +160,6 @@
     <ClCompile Include="..\Python\flowgraph.c">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="..\Python\formatter_unicode.c">
-      <Filter>Source Files</Filter>
-    </ClCompile>
     <ClCompile Include="..\Python\frame.c">
       <Filter>Source Files</Filter>
     </ClCompile>
@@ -268,6 +265,9 @@
     <ClCompile Include="..\Python\jit.c">
       <Filter>Source Files</Filter>
     </ClCompile>
+    <ClCompile Include="..\Objects\lazyimportobject.c">
+      <Filter>Source Files</Filter>
+    </ClCompile>
     <ClCompile Include="..\Objects\listobject.c">
       <Filter>Source Files</Filter>
     </ClCompile>
@@ -368,6 +368,9 @@
       <Filter>Source Files</Filter>
     </ClCompile>
     <ClCompile Include="..\Python\pystate.c">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="..\Python\pystats.c">
       <Filter>Source Files</Filter>
     </ClCompile>
     <ClCompile Include="..\Python\pystrcmp.c">
@@ -484,7 +487,16 @@
     <ClCompile Include="..\Objects\typeobject.c">
       <Filter>Source Files</Filter>
     </ClCompile>
+    <ClCompile Include="..\Objects\unicode_format.c">
+      <Filter>Source Files</Filter>
+    </ClCompile>
     <ClCompile Include="..\Objects\unicodectype.c">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="..\Objects\unicode_formatter.c">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="..\Objects\unicode_writer.c">
       <Filter>Source Files</Filter>
     </ClCompile>
     <ClCompile Include="..\Objects\unicodeobject.c">

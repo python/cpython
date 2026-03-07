@@ -1,4 +1,0 @@
-Fix normalization of the ``robots.txt`` rules and URLs in the
-:mod:`urllib.robotparser` module. No longer ignore trailing ``?``.
-Distinguish raw special characters ``?``, ``=`` and ``&`` from the
-percent-encoded ones.

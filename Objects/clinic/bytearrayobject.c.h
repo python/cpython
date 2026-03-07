@@ -599,7 +599,7 @@ PyDoc_STRVAR(bytearray_resize__doc__,
 "Resize the internal buffer of bytearray to len.\n"
 "\n"
 "  size\n"
-"    New size to resize to..");
+"    New size to resize to.");
 
 #define BYTEARRAY_RESIZE_METHODDEF    \
     {"resize", (PyCFunction)bytearray_resize, METH_O, bytearray_resize__doc__},
@@ -626,6 +626,43 @@ bytearray_resize(PyObject *self, PyObject *arg)
         size = ival;
     }
     return_value = bytearray_resize_impl((PyByteArrayObject *)self, size);
+
+exit:
+    return return_value;
+}
+
+PyDoc_STRVAR(bytearray_take_bytes__doc__,
+"take_bytes($self, n=None, /)\n"
+"--\n"
+"\n"
+"Take *n* bytes from the bytearray and return them as a bytes object.\n"
+"\n"
+"  n\n"
+"    Bytes to take, negative indexes from end. None indicates all bytes.");
+
+#define BYTEARRAY_TAKE_BYTES_METHODDEF    \
+    {"take_bytes", _PyCFunction_CAST(bytearray_take_bytes), METH_FASTCALL, bytearray_take_bytes__doc__},
+
+static PyObject *
+bytearray_take_bytes_impl(PyByteArrayObject *self, PyObject *n);
+
+static PyObject *
+bytearray_take_bytes(PyObject *self, PyObject *const *args, Py_ssize_t nargs)
+{
+    PyObject *return_value = NULL;
+    PyObject *n = Py_None;
+
+    if (!_PyArg_CheckPositional("take_bytes", nargs, 0, 1)) {
+        goto exit;
+    }
+    if (nargs < 1) {
+        goto skip_optional;
+    }
+    n = args[0];
+skip_optional:
+    Py_BEGIN_CRITICAL_SECTION(self);
+    return_value = bytearray_take_bytes_impl((PyByteArrayObject *)self, n);
+    Py_END_CRITICAL_SECTION();
 
 exit:
     return return_value;
@@ -1796,4 +1833,4 @@ bytearray_sizeof(PyObject *self, PyObject *Py_UNUSED(ignored))
 {
     return bytearray_sizeof_impl((PyByteArrayObject *)self);
 }
-/*[clinic end generated code: output=be6d28193bc96a2c input=a9049054013a1b77]*/
+/*[clinic end generated code: output=5eddefde2a001ceb input=a9049054013a1b77]*/
