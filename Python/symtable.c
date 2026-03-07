@@ -2540,6 +2540,16 @@ symtable_visit_expr(struct symtable *st, expr_ty e)
             return symtable_raise_if_comprehension_block(st, e);
         }
         break;
+    case AsyncYieldFrom_kind:
+        if (!symtable_raise_if_annotation_block(st, "async yield expression", e)) {
+            return 0;
+        }
+        VISIT(st, expr, e->v.AsyncYieldFrom.value);
+        st->st_cur->ste_generator = 1;
+        if (st->st_cur->ste_comprehension) {
+            return symtable_raise_if_comprehension_block(st, e);
+        }
+        break;
     case Await_kind:
         if (!symtable_raise_if_annotation_block(st, "await expression", e)) {
             return 0;

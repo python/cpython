@@ -575,6 +575,9 @@ astfold_expr(expr_ty node_, PyArena *ctx_, _PyASTPreprocessState *state)
     case YieldFrom_kind:
         CALL(astfold_expr, expr_ty, node_->v.YieldFrom.value);
         break;
+    case AsyncYieldFrom_kind:
+        CALL(astfold_expr, expr_ty, node_->v.YieldFrom.value);
+        break;
     case Compare_kind:
         CALL(astfold_expr, expr_ty, node_->v.Compare.left);
         CALL_SEQ(astfold_expr, expr, node_->v.Compare.comparators);

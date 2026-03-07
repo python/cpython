@@ -1096,6 +1096,8 @@ _PyPegen_get_expr_name(expr_ty e)
         case Yield_kind:
         case YieldFrom_kind:
             return "yield expression";
+        case AsyncYieldFrom_kind:
+            return "async yield expression";
         case Await_kind:
             return "await expression";
         case ListComp_kind:
