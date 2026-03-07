@@ -1,1 +1,1 @@
-Resolved a performance regression in `multiprocessing.connection.wait` on Windows that caused infinite busy loops when called with no objects. The function now properly yields control to the OS to conserve CPU resources.
+Resolved a performance regression in ``multiprocessing.connection.wait`` on Windows that caused infinite busy loops when called with no objects. The function now properly yields control to the OS to conserve CPU resources.
