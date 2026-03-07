@@ -1,0 +1,2 @@
+Remove support for ancient ARM platforms, using mixed-endian representation
+for doubles.  Patch by Sergey B Kirpichev.
