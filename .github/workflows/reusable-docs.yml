@@ -115,7 +115,8 @@ jobs:
       run: >-
         python Doc/tools/check-html-ids.py check
         /tmp/html-ids-base.json.gz /tmp/html-ids-head.json.gz
-        --exclude-file Doc/tools/removed-html-ids.txt
+      # XXX: When an exclude file is added, update this to use it:
+      # --exclude-file Doc/tools/removed-ids.txt
 
   # Run "doctest" on HEAD as new syntax doesn't exist in the latest stable release
   doctest:
