@@ -836,6 +836,8 @@ class StructTest(ComplexesAreIdenticalMixin, unittest.TestCase):
         self.assertRaises(RuntimeError, S.unpack, spam)
         self.assertRaises(RuntimeError, S.unpack_from, spam)
         self.assertRaises(RuntimeError, getattr, S, 'format')
+        self.assertRaises(RuntimeError, S.__sizeof__)
+        self.assertRaises(RuntimeError, repr, S)
         self.assertEqual(S.size, -1)
 
 
