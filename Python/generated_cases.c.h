@@ -4710,18 +4710,28 @@
             frame->instr_ptr = next_instr;
             next_instr += 1;
             INSTRUCTION_STATS(CLEANUP_ASYNC_THROW);
+            _PyStackRef iter;
             _PyStackRef exc_value_st;
             _PyStackRef value;
             exc_value_st = stack_pointer[-1];
+            iter = stack_pointer[-2];
             PyObject *exc_value = PyStackRef_AsPyObjectSteal(exc_value_st);
             assert(exc_value != NULL);
             assert(PyExceptionInstance_Check(exc_value));
-            stack_pointer += -2;
+            stack_pointer += -1;
             ASSERT_WITHIN_STACK_BOUNDS(__FILE__, __LINE__);
             _PyFrame_SetStackPointer(frame, stack_pointer);
             int matches = PyErr_GivenExceptionMatches(exc_value, PyExc_StopAsyncIteration);
             stack_pointer = _PyFrame_GetStackPointer(frame);
             if (matches) {
+                _PyFrame_SetStackPointer(frame, stack_pointer);
+                _PyStackRef tmp = iter;
+                iter = PyStackRef_NULL;
+                stack_pointer[-1] = iter;
+                PyStackRef_CLOSE(tmp);
+                stack_pointer = _PyFrame_GetStackPointer(frame);
+                stack_pointer += -1;
+                ASSERT_WITHIN_STACK_BOUNDS(__FILE__, __LINE__);
                 value = PyStackRef_FromPyObjectNew(((PyStopAsyncIterationObject *)exc_value)->value);
             }
             else {
