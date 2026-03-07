@@ -1,1 +1,0 @@
-Make the module :mod:`json` safe to use under the free-threading build.

@@ -455,33 +455,23 @@ _locale_strxfrm_impl(PyObject *module, PyObject *str)
         goto exit;
     }
 
-    /* assume no change in size, first */
-    n1 = n1 + 1;
-    buf = PyMem_New(wchar_t, n1);
-    if (!buf) {
-        PyErr_NoMemory();
-        goto exit;
-    }
     errno = 0;
-    n2 = wcsxfrm(buf, s, n1);
+    n2 = wcsxfrm(NULL, s, 0);
     if (errno && errno != ERANGE) {
         PyErr_SetFromErrno(PyExc_OSError);
         goto exit;
     }
-    if (n2 >= (size_t)n1) {
-        /* more space needed */
-        wchar_t * new_buf = PyMem_Realloc(buf, (n2+1)*sizeof(wchar_t));
-        if (!new_buf) {
-            PyErr_NoMemory();
-            goto exit;
-        }
-        buf = new_buf;
-        errno = 0;
-        n2 = wcsxfrm(buf, s, n2+1);
-        if (errno) {
-            PyErr_SetFromErrno(PyExc_OSError);
-            goto exit;
-        }
+    buf = PyMem_New(wchar_t, n2+1);
+    if (!buf) {
+        PyErr_NoMemory();
+        goto exit;
+    }
+
+    errno = 0;
+    n2 = wcsxfrm(buf, s, n2+1);
+    if (errno) {
+        PyErr_SetFromErrno(PyExc_OSError);
+        goto exit;
     }
     /* The result is just a sequence of integers, they are not necessary
        Unicode code points, so PyUnicode_FromWideChar() cannot be used
@@ -565,19 +555,7 @@ _locale__getdefaultlocale_impl(PyObject *module)
             return Py_BuildValue("ss", locale, encoding);
     }
 
-    /* If we end up here, this windows version didn't know about
-       ISO639/ISO3166 names (it's probably Windows 95).  Return the
-       Windows language identifier instead (a hexadecimal number) */
-
-    locale[0] = '0';
-    locale[1] = 'x';
-    if (GetLocaleInfoA(LOCALE_USER_DEFAULT, LOCALE_IDEFAULTLANGUAGE,
-                      locale+2, sizeof(locale)-2)) {
-        return Py_BuildValue("ss", locale, encoding);
-    }
-
     /* cannot determine the language code (very unlikely) */
-    Py_INCREF(Py_None);
     return Py_BuildValue("Os", Py_None, encoding);
 }
 #endif

@@ -268,7 +268,7 @@ py_hashentry_table_new(void) {
 
         if (h->py_alias != NULL) {
             if (_Py_hashtable_set(ht, (const void*)entry->py_alias, (void*)entry) < 0) {
-                PyMem_Free(entry);
+                /* entry is already in ht, will be freed by _Py_hashtable_destroy() */
                 goto error;
             }
             entry->refcnt++;
@@ -606,9 +606,14 @@ get_asn1_utf8name_by_nid(int nid)
 {
     const char *name = OBJ_nid2ln(nid);
     if (name == NULL) {
-        // In OpenSSL 3.0 and later, OBJ_nid*() are thread-safe and may raise.
-        assert(ERR_peek_last_error() != 0);
-        if (ERR_GET_REASON(ERR_peek_last_error()) != OBJ_R_UNKNOWN_NID) {
+        /* In OpenSSL 3.0 and later, OBJ_nid*() are thread-safe and may raise.
+         * However, not all versions of OpenSSL set a last error, so we simply
+         * ignore the last error if none exists.
+         *
+         * See https://github.com/python/cpython/issues/142451.
+         */
+        unsigned long errcode = ERR_peek_last_error();
+        if (errcode && ERR_GET_REASON(errcode) != OBJ_R_UNKNOWN_NID) {
             goto error;
         }
         // fallback to short name and unconditionally propagate errors
@@ -1629,7 +1634,6 @@ pbkdf2_hmac_impl(PyObject *module, const char *hash_name,
 {
     _hashlibstate *state = get_hashlib_state(module);
     PyObject *key_obj = NULL;
-    char *key;
     long dklen;
     int retval;
 
@@ -1682,24 +1686,24 @@ pbkdf2_hmac_impl(PyObject *module, const char *hash_name,
         goto end;
     }
 
-    key_obj = PyBytes_FromStringAndSize(NULL, dklen);
-    if (key_obj == NULL) {
+    PyBytesWriter *writer = PyBytesWriter_Create(dklen);
+    if (writer == NULL) {
         goto end;
     }
-    key = PyBytes_AS_STRING(key_obj);
 
     Py_BEGIN_ALLOW_THREADS
     retval = PKCS5_PBKDF2_HMAC((const char *)password->buf, (int)password->len,
                                (const unsigned char *)salt->buf, (int)salt->len,
                                iterations, digest, dklen,
-                               (unsigned char *)key);
+                               (unsigned char *)PyBytesWriter_GetData(writer));
     Py_END_ALLOW_THREADS
 
     if (!retval) {
-        Py_CLEAR(key_obj);
+        PyBytesWriter_Discard(writer);
         notify_ssl_error_occurred_in(Py_STRINGIFY(PKCS5_PBKDF2_HMAC));
         goto end;
     }
+    key_obj = PyBytesWriter_Finish(writer);
 
 end:
     if (digest != NULL) {
@@ -1799,7 +1803,7 @@ _hashlib_scrypt_impl(PyObject *module, Py_buffer *password, Py_buffer *salt,
         (const char *)password->buf, (size_t)password->len,
         (const unsigned char *)salt->buf, (size_t)salt->len,
         (uint64_t)n, (uint64_t)r, (uint64_t)p, (uint64_t)maxmem,
-        PyBytesWriter_GetData(writer), (size_t)dklen
+        (unsigned char *)PyBytesWriter_GetData(writer), (size_t)dklen
     );
     Py_END_ALLOW_THREADS
 
@@ -2256,6 +2260,9 @@ _hashlib_HMAC_copy_impl(HMACobject *self)
         return NULL;
     }
     retval->ctx = ctx;
+#ifdef Py_HAS_OPENSSL3_SUPPORT
+    retval->evp_md_nid = self->evp_md_nid;
+#endif
     HASHLIB_INIT_MUTEX(retval);
     return (PyObject *)retval;
 }

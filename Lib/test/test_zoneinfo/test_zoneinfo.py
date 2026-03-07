@@ -29,7 +29,7 @@ py_zoneinfo, c_zoneinfo = test_support.get_modules()
 
 try:
     importlib.metadata.metadata("tzdata")
-    HAS_TZDATA_PKG = True
+    HAS_TZDATA_PKG = (importlib.metadata.version("tzdata") == "2025.3")
 except importlib.metadata.PackageNotFoundError:
     HAS_TZDATA_PKG = False
 
@@ -252,6 +252,8 @@ class ZoneInfoTest(TzPathUserMixin, ZoneInfoTestBase):
         bad_zones = [
             b"",  # Empty file
             b"AAAA3" + b" " * 15,  # Bad magic
+            # Truncated V2 file (should not loop indefinitely)
+            b"TZif2" + (b"\x00" * 39) + b"TZif2" + (b"\x00" * 39) + b"\n" + b"Part",
         ]
 
         for bad_zone in bad_zones:
@@ -1551,9 +1553,67 @@ class ZoneInfoCacheTest(TzPathUserMixin, ZoneInfoTestBase):
         except CustomError:
             pass
 
+    def test_weak_cache_descriptor_use_after_free(self):
+        class BombDescriptor:
+            def __get__(self, obj, owner):
+                return {}
+
+        class EvilZoneInfo(self.klass):
+            pass
+
+        # Must be set after the class creation.
+        EvilZoneInfo._weak_cache = BombDescriptor()
+
+        key = "America/Los_Angeles"
+        zone1 = EvilZoneInfo(key)
+        self.assertEqual(str(zone1), key)
+
+        EvilZoneInfo.clear_cache()
+        zone2 = EvilZoneInfo(key)
+        self.assertEqual(str(zone2), key)
+        self.assertIsNot(zone2, zone1)
+
 
 class CZoneInfoCacheTest(ZoneInfoCacheTest):
     module = c_zoneinfo
+
+    def test_inconsistent_weak_cache_get(self):
+        class Cache:
+            def get(self, key, default=None):
+                return 1337
+
+        class ZI(self.klass):
+            pass
+        # Class attribute must be set after class creation
+        # to override zoneinfo.ZoneInfo.__init_subclass__.
+        ZI._weak_cache = Cache()
+
+        with self.assertRaises(RuntimeError) as te:
+            ZI("America/Los_Angeles")
+        self.assertEqual(
+            str(te.exception),
+            "Unexpected instance of int in ZI weak cache for key 'America/Los_Angeles'"
+        )
+
+    def test_inconsistent_weak_cache_setdefault(self):
+        class Cache:
+            def get(self, key, default=None):
+                return default
+            def setdefault(self, key, value):
+                return 1337
+
+        class ZI(self.klass):
+            pass
+        # Class attribute must be set after class creation
+        # to override zoneinfo.ZoneInfo.__init_subclass__.
+        ZI._weak_cache = Cache()
+
+        with self.assertRaises(RuntimeError) as te:
+            ZI("America/Los_Angeles")
+        self.assertEqual(
+            str(te.exception),
+            "Unexpected instance of int in ZI weak cache for key 'America/Los_Angeles'"
+        )
 
 
 class ZoneInfoPickleTest(TzPathUserMixin, ZoneInfoTestBase):
@@ -1951,6 +2011,21 @@ class TestModule(ZoneInfoTestBase):
                 actual = self.module.available_timezones()
                 self.assertEqual(actual, expected)
 
+    def test_exclude_localtime(self):
+        expected = {
+            "America/New_York",
+            "Europe/London",
+        }
+
+        tree = list(expected) + ["localtime"]
+
+        with tempfile.TemporaryDirectory() as td:
+            for key in tree:
+                self.touch_zone(key, td)
+
+            with self.tzpath_context([td]):
+                actual = self.module.available_timezones()
+                self.assertEqual(actual, expected)
 
 class CTestModule(TestModule):
     module = c_zoneinfo
@@ -2192,8 +2267,8 @@ class ZoneDumpData:
             ]
 
         def _America_Santiago():
-            LMT = ZoneOffset("LMT", timedelta(seconds=-16966), ZERO)
-            SMT = ZoneOffset("SMT", timedelta(seconds=-16966), ZERO)
+            LMT = ZoneOffset("LMT", timedelta(seconds=-16965), ZERO)
+            SMT = ZoneOffset("SMT", timedelta(seconds=-16965), ZERO)
             N05 = ZoneOffset("-05", timedelta(seconds=-18000), ZERO)
             N04 = ZoneOffset("-04", timedelta(seconds=-14400), ZERO)
             N03 = ZoneOffset("-03", timedelta(seconds=-10800), ONE_H)
@@ -2228,8 +2303,8 @@ class ZoneDumpData:
 
             return [
                 ZoneTransition(datetime(1895, 2, 1), LMT, AEST),
-                ZoneTransition(datetime(1917, 1, 1, 0, 1), AEST, AEDT),
-                ZoneTransition(datetime(1917, 3, 25, 2), AEDT, AEST),
+                ZoneTransition(datetime(1917, 1, 1, 2), AEST, AEDT),
+                ZoneTransition(datetime(1917, 3, 25, 3), AEDT, AEST),
                 ZoneTransition(datetime(2012, 4, 1, 3), AEDT, AEST),
                 ZoneTransition(datetime(2012, 10, 7, 2), AEST, AEDT),
                 ZoneTransition(datetime(2040, 4, 1, 3), AEDT, AEST),
@@ -2237,7 +2312,7 @@ class ZoneDumpData:
             ]
 
         def _Europe_Dublin():
-            LMT = ZoneOffset("LMT", timedelta(seconds=-1500), ZERO)
+            LMT = ZoneOffset("LMT", timedelta(seconds=-1521), ZERO)
             DMT = ZoneOffset("DMT", timedelta(seconds=-1521), ZERO)
             IST_0 = ZoneOffset("IST", timedelta(seconds=2079), ONE_H)
             GMT_0 = ZoneOffset("GMT", ZERO, ZERO)

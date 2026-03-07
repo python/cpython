@@ -2349,7 +2349,13 @@ memoryview_hex_impl(PyMemoryViewObject *self, PyObject *sep,
     CHECK_RELEASED(self);
 
     if (MV_C_CONTIGUOUS(self->flags)) {
-        return _Py_strhex_with_sep(src->buf, src->len, sep, bytes_per_sep);
+        // Prevent 'self' from being freed if computing len(sep) mutates 'self'
+        // in _Py_strhex_with_sep().
+        // See: https://github.com/python/cpython/issues/143195.
+        self->exports++;
+        PyObject *ret = _Py_strhex_with_sep(src->buf, src->len, sep, bytes_per_sep);
+        self->exports--;
+        return ret;
     }
 
     PyBytesWriter *writer = PyBytesWriter_Create(src->len);
@@ -3116,6 +3122,30 @@ memory_richcompare(PyObject *v, PyObject *w, int op)
     }
     vv = VIEW_ADDR(v);
 
+    // For formats supported by the struct module a memoryview is equal to
+    // itself: there is no need to compare individual values.
+    // This is not true for float values since they can be NaN, and NaN
+    // is not equal to itself.  So only use this optimization on format known to
+    // not use floats.
+    if (v == w) {
+        const char *format = vv->format;
+        if (format != NULL) {
+            if (*format == '@') {
+                format++;
+            }
+            // Include only formats known by struct, exclude float formats
+            // "d" (double), "f" (float) and "e" (16-bit float).
+            // Do not optimize "P" format.
+            if (format[0] != 0
+                && strchr("bBchHiIlLnNqQ?", format[0]) != NULL
+                && format[1] == 0)
+            {
+                equal = 1;
+                goto result;
+            }
+        }
+    }
+
     if (PyMemoryView_Check(w)) {
         if (BASE_INACCESSIBLE(w)) {
             equal = (v == w);
@@ -3225,9 +3255,16 @@ memory_hash(PyObject *_self)
                 "memoryview: hashing is restricted to formats 'B', 'b' or 'c'");
             return -1;
         }
-        if (view->obj != NULL && PyObject_Hash(view->obj) == -1) {
-            /* Keep the original error message */
-            return -1;
+        if (view->obj != NULL) {
+            // Prevent 'self' from being freed when computing the item's hash.
+            // See https://github.com/python/cpython/issues/142664.
+            self->exports++;
+            Py_hash_t h = PyObject_Hash(view->obj);
+            self->exports--;
+            if (h == -1) {
+                /* Keep the original error message */
+                return -1;
+            }
         }
 
         if (!MV_C_CONTIGUOUS(self->flags)) {

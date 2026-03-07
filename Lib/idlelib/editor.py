@@ -33,21 +33,7 @@ from idlelib.help import _get_dochome
 
 # The default tab setting for a Text widget, in average-width characters.
 TK_TABWIDTH_DEFAULT = 8
-_py_version = ' (%s)' % platform.python_version()
 darwin = sys.platform == 'darwin'
-
-def _sphinx_version():
-    "Format sys.version_info to produce the Sphinx version string used to install the chm docs"
-    major, minor, micro, level, serial = sys.version_info
-    # TODO remove unneeded function since .chm no longer installed
-    release = f'{major}{minor}'
-    release += f'{micro}'
-    if level == 'candidate':
-        release += f'rc{serial}'
-    elif level != 'final':
-        release += f'{level[0]}{serial}'
-    return release
-
 
 class EditorWindow:
     from idlelib.percolator import Percolator
@@ -1008,12 +994,16 @@ class EditorWindow:
     def saved_change_hook(self):
         short = self.short_title()
         long = self.long_title()
+        _py_version = ' (%s)' % platform.python_version()
         if short and long and not macosx.isCocoaTk():
             # Don't use both values on macOS because
             # that doesn't match platform conventions.
             title = short + " - " + long + _py_version
         elif short:
-            title = short
+            if short == "IDLE Shell":
+                title = short + " " +  platform.python_version()
+            else:
+                title = short + _py_version
         elif long:
             title = long
         else:
