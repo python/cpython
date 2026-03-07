@@ -218,6 +218,9 @@ Wave_write Objects
 
       Set the sample width to *n* bytes.
 
+      For :data:`WAVE_FORMAT_IEEE_FLOAT`, only 4-byte (32-bit) and
+      8-byte (64-bit) sample widths are supported.
+
 
    .. method:: getsampwidth()
 
@@ -273,6 +276,9 @@ Wave_write Objects
       Supported values are :data:`WAVE_FORMAT_PCM` and
       :data:`WAVE_FORMAT_IEEE_FLOAT`.
 
+      When setting :data:`WAVE_FORMAT_IEEE_FLOAT`, the sample width must be
+      4 or 8 bytes.
+
 
    .. method:: getformat()
 
@@ -287,6 +293,8 @@ Wave_write Objects
 
       For backwards compatibility, a 6-item tuple without *format* is also
       accepted and defaults to :data:`WAVE_FORMAT_PCM`.
+
+      For ``format=WAVE_FORMAT_IEEE_FLOAT``, *sampwidth* must be 4 or 8.
 
 
    .. method:: getparams()

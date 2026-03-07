@@ -506,7 +506,10 @@ class Wave_write:
     def setsampwidth(self, sampwidth):
         if self._datawritten:
             raise Error('cannot change parameters after starting to write')
-        if sampwidth < 1 or sampwidth > 4:
+        if self._format == WAVE_FORMAT_IEEE_FLOAT:
+            if sampwidth not in (4, 8):
+                raise Error('unsupported sample width for IEEE float format')
+        elif sampwidth < 1 or sampwidth > 4:
             raise Error('bad sample width')
         self._sampwidth = sampwidth
 
@@ -548,6 +551,8 @@ class Wave_write:
             raise Error('cannot change parameters after starting to write')
         if format not in (WAVE_FORMAT_IEEE_FLOAT, WAVE_FORMAT_PCM):
             raise Error('unsupported wave format')
+        if format == WAVE_FORMAT_IEEE_FLOAT and self._sampwidth and self._sampwidth not in (4, 8):
+            raise Error('unsupported sample width for IEEE float format')
         self._format = format
 
     def getformat(self):
@@ -568,11 +573,11 @@ class Wave_write:
         else:
             nchannels, sampwidth, framerate, nframes, comptype, compname, format = params
         self.setnchannels(nchannels)
+        self.setformat(format)
         self.setsampwidth(sampwidth)
         self.setframerate(framerate)
         self.setnframes(nframes)
         self.setcomptype(comptype, compname)
-        self.setformat(format)
 
     def getparams(self):
         if not self._nchannels or not self._sampwidth or not self._framerate:

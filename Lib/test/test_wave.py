@@ -189,9 +189,20 @@ class WaveLowLevelTest(unittest.TestCase):
         self.addCleanup(unlink, filename)
 
         with wave.open(filename, 'wb') as w:
-            w.setparams((1, 2, 22050, 0, 'NONE', 'not compressed',
+            w.setparams((1, 4, 22050, 0, 'NONE', 'not compressed',
                          wave.WAVE_FORMAT_IEEE_FLOAT))
             self.assertEqual(w.getformat(), wave.WAVE_FORMAT_IEEE_FLOAT)
+
+    def test_setparams_7_tuple_ieee_64bit_sampwidth(self):
+        with tempfile.NamedTemporaryFile(delete_on_close=False) as fp:
+            filename = fp.name
+        self.addCleanup(unlink, filename)
+
+        with wave.open(filename, 'wb') as w:
+            w.setparams((1, 8, 22050, 0, 'NONE', 'not compressed',
+                         wave.WAVE_FORMAT_IEEE_FLOAT))
+            self.assertEqual(w.getformat(), wave.WAVE_FORMAT_IEEE_FLOAT)
+            self.assertEqual(w.getsampwidth(), 8)
 
     def test_getparams_backward_compatible_shape(self):
         with tempfile.NamedTemporaryFile(delete_on_close=False) as fp:
@@ -199,10 +210,10 @@ class WaveLowLevelTest(unittest.TestCase):
         self.addCleanup(unlink, filename)
 
         with wave.open(filename, 'wb') as w:
-            w.setparams((1, 2, 22050, 0, 'NONE', 'not compressed',
+            w.setparams((1, 4, 22050, 0, 'NONE', 'not compressed',
                          wave.WAVE_FORMAT_IEEE_FLOAT))
             params = w.getparams()
-            self.assertEqual(params, (1, 2, 22050, 0, 'NONE', 'not compressed'))
+            self.assertEqual(params, (1, 4, 22050, 0, 'NONE', 'not compressed'))
 
     def test_getformat_setformat(self):
         with tempfile.NamedTemporaryFile(delete_on_close=False) as fp:
@@ -211,11 +222,50 @@ class WaveLowLevelTest(unittest.TestCase):
 
         with wave.open(filename, 'wb') as w:
             w.setnchannels(1)
-            w.setsampwidth(2)
+            w.setsampwidth(4)
             w.setframerate(22050)
             self.assertEqual(w.getformat(), wave.WAVE_FORMAT_PCM)
             w.setformat(wave.WAVE_FORMAT_IEEE_FLOAT)
             self.assertEqual(w.getformat(), wave.WAVE_FORMAT_IEEE_FLOAT)
+
+    def test_setformat_ieee_requires_32_or_64_bit_sampwidth(self):
+        with tempfile.NamedTemporaryFile(delete_on_close=False) as fp:
+            filename = fp.name
+        self.addCleanup(unlink, filename)
+
+        with wave.open(filename, 'wb') as w:
+            w.setnchannels(1)
+            w.setsampwidth(2)
+            w.setframerate(22050)
+            with self.assertRaisesRegex(wave.Error,
+                                        'unsupported sample width for IEEE float format'):
+                w.setformat(wave.WAVE_FORMAT_IEEE_FLOAT)
+
+    def test_setsampwidth_ieee_requires_32_or_64_bit(self):
+        with tempfile.NamedTemporaryFile(delete_on_close=False) as fp:
+            filename = fp.name
+        self.addCleanup(unlink, filename)
+
+        with wave.open(filename, 'wb') as w:
+            w.setnchannels(1)
+            w.setframerate(22050)
+            w.setformat(wave.WAVE_FORMAT_IEEE_FLOAT)
+            with self.assertRaisesRegex(wave.Error,
+                                        'unsupported sample width for IEEE float format'):
+                w.setsampwidth(2)
+            w.setsampwidth(4)
+
+    def test_setsampwidth_ieee_accepts_64_bit(self):
+        with tempfile.NamedTemporaryFile(delete_on_close=False) as fp:
+            filename = fp.name
+        self.addCleanup(unlink, filename)
+
+        with wave.open(filename, 'wb') as w:
+            w.setnchannels(1)
+            w.setframerate(22050)
+            w.setformat(wave.WAVE_FORMAT_IEEE_FLOAT)
+            w.setsampwidth(8)
+            self.assertEqual(w.getsampwidth(), 8)
 
     def test_read_getformat(self):
         b = b'RIFF' + struct.pack('<L', 36) + b'WAVE'
@@ -297,10 +347,10 @@ class WaveLowLevelTest(unittest.TestCase):
 
         with wave.open(filename, 'wb') as w:
             w.setnchannels(1)
-            w.setsampwidth(2)
+            w.setsampwidth(4)
             w.setframerate(22050)
             w.setformat(wave.WAVE_FORMAT_IEEE_FLOAT)
-            w.writeframes(b'\x00\x00' * nframes)
+            w.writeframes(b'\x00\x00\x00\x00' * nframes)
 
         with open(filename, 'rb') as f:
             f.read(12)
