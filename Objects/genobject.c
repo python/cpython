@@ -307,8 +307,7 @@ gen_send_ex2(PyGenObject *gen, PyObject *arg, PyObject **presult, int exc)
     /* If the generator just returned (as opposed to yielding), signal
      * that the generator is exhausted. */
     if (result) {
-        assert(result == Py_None || !PyAsyncGen_CheckExact(gen));
-        if (result == Py_None && !PyAsyncGen_CheckExact(gen) && !arg) {
+        if (result == Py_None && !arg) {
             /* Return NULL if called by gen_iternext() */
             Py_CLEAR(result);
         }
@@ -380,12 +379,14 @@ PyGen_am_send(PyObject *self, PyObject *arg, PyObject **result)
     return gen_send_ex(gen, arg, result);
 }
 
+int
+_PyAsyncGen_SetStopIterationValue(PyObject *value);
+
 static PyObject *
 gen_set_stop_iteration(PyGenObject *gen, PyObject *result)
 {
     if (PyAsyncGen_CheckExact(gen)) {
-        assert(result == Py_None);
-        PyErr_SetNone(PyExc_StopAsyncIteration);
+        _PyAsyncGen_SetStopIterationValue(result);
     }
     else if (result == Py_None) {
         PyErr_SetNone(PyExc_StopIteration);
@@ -776,8 +777,11 @@ gen_iternext(PyObject *self)
  * Returns 0 if StopIteration is set and -1 if any other exception is set.
  */
 int
-_PyGen_SetStopIterationValue(PyObject *value)
+_PyAnyGen_SetStopIterationValue(PyObject *exc_class, PyObject *value)
 {
+    assert(exc_class != NULL);
+    assert(PyType_Check(exc_class));
+    assert(value != NULL);
     assert(!PyErr_Occurred());
     // Construct an exception instance manually with PyObject_CallOneArg()
     // but use PyErr_SetRaisedException() instead of PyErr_SetObject() as
@@ -785,13 +789,25 @@ _PyGen_SetStopIterationValue(PyObject *value)
     // is a tuple, where the value of the StopIteration exception would be
     // set to 'value[0]' instead of 'value'.
     PyObject *exc = value == NULL
-        ? PyObject_CallNoArgs(PyExc_StopIteration)
-        : PyObject_CallOneArg(PyExc_StopIteration, value);
+        ? PyObject_CallNoArgs(exc_class)
+        : PyObject_CallOneArg(exc_class, value);
     if (exc == NULL) {
         return -1;
     }
     PyErr_SetRaisedException(exc /* stolen */);
     return 0;
+}
+
+int
+_PyGen_SetStopIterationValue(PyObject *value)
+{
+    return _PyAnyGen_SetStopIterationValue(PyExc_StopIteration, value);
+}
+
+int
+_PyAsyncGen_SetStopIterationValue(PyObject *value)
+{
+    return _PyAnyGen_SetStopIterationValue(PyExc_StopAsyncIteration, value);
 }
 
 /*
@@ -2645,6 +2661,7 @@ async_gen_yield_from_iternext(PyObject *op)
 {
     assert(op != NULL);
     _PyAsyncGenYieldFrom *self = _PyAsyncGenYieldFrom_CAST(op);
+    assert(self->agyf_iterator != NULL);
     PyObject *result = PyIter_Next(self->agyf_iterator);
     if (result == NULL) {
         return NULL;
@@ -2706,6 +2723,17 @@ _PyAsyncGenYieldFrom_New(PyThreadState *tstate, PyObject *iterator)
     _PyAsyncGenYieldFrom *yield_from = PyObject_GC_New(_PyAsyncGenYieldFrom,
                                                       &_PyAsyncGenYieldFrom_Type);
     if (yield_from == NULL) {
+        return NULL;
+    }
+    if (!PyIter_Check(iterator)) {
+        if (PyAsyncGen_CheckExact(iterator)) {
+            _PyErr_Format(tstate, PyExc_TypeError,
+                          "%T object is not iterable. Did you mean 'async yield from'?",
+                          iterator);
+        } else {
+            _PyErr_Format(tstate, PyExc_TypeError,
+                          "%T object is not iterable", iterator);
+        }
         return NULL;
     }
     yield_from->agyf_iterator = Py_NewRef(iterator);

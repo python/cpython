@@ -720,8 +720,68 @@ SimpleExtendsException(PyExc_Exception, TypeError,
 /*
  *    StopAsyncIteration extends Exception
  */
-SimpleExtendsException(PyExc_Exception, StopAsyncIteration,
-                       "Signal the end from iterator.__anext__().");
+
+static PyMemberDef StopAsyncIteration_members[] = {
+    {"value", _Py_T_OBJECT, offsetof(PyStopAsyncIterationObject, value), 0,
+        PyDoc_STR("async generator return value")},
+    {NULL}  /* Sentinel */
+};
+
+static inline PyStopAsyncIterationObject *
+PyStopAsyncIterationObject_CAST(PyObject *self)
+{
+    assert(self != NULL);
+    assert(PyObject_TypeCheck(self, (PyTypeObject *)PyExc_StopAsyncIteration));
+    return (PyStopAsyncIterationObject *)self;
+}
+
+static int
+StopAsyncIteration_init(PyObject *op, PyObject *args, PyObject *kwds)
+{
+    Py_ssize_t size = PyTuple_GET_SIZE(args);
+
+    if (BaseException_init(op, args, kwds) < 0) {
+        return -1;
+    }
+    PyStopAsyncIterationObject *self = PyStopAsyncIterationObject_CAST(op);
+    Py_CLEAR(self->value);
+    PyObject *value;
+    if (size > 0) {
+        self->value = PyTuple_GET_ITEM(args, 0);
+    }
+    else {
+        self->value = Py_None;
+    };
+    return 0;
+}
+
+static int
+StopAsyncIteration_clear(PyObject *op)
+{
+    PyStopAsyncIterationObject *self = PyStopAsyncIterationObject_CAST(op);
+    Py_CLEAR(self->value);
+    return BaseException_clear(op);
+}
+
+static void
+StopAsyncIteration_dealloc(PyObject *self)
+{
+    _PyObject_GC_UNTRACK(self);
+    (void)StopAsyncIteration_clear(self);
+    Py_TYPE(self)->tp_free(self);
+}
+
+static int
+StopAsyncIteration_traverse(PyObject *op, visitproc visit, void *arg)
+{
+    PyStopAsyncIterationObject *self = PyStopAsyncIterationObject_CAST(op);
+    Py_VISIT(self->value);
+    return BaseException_traverse(op, visit, arg);
+}
+
+ComplexExtendsException(PyExc_Exception, StopAsyncIteration, StopAsyncIteration,
+                        0, 0, StopAsyncIteration_members, 0, 0, 0,
+                        "Signal the end from iterator.__anext__().");
 
 
 /*

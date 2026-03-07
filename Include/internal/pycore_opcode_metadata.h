@@ -157,7 +157,7 @@ int _PyOpcode_num_popped(int opcode, int oparg)  {
         case CHECK_EXC_MATCH:
             return 2;
         case CLEANUP_ASYNC_THROW:
-            return 1;
+            return 2;
         case CLEANUP_THROW:
             return 3;
         case COMPARE_OP:
@@ -654,7 +654,7 @@ int _PyOpcode_num_pushed(int opcode, int oparg)  {
         case CHECK_EXC_MATCH:
             return 2;
         case CLEANUP_ASYNC_THROW:
-            return 0;
+            return 1;
         case CLEANUP_THROW:
             return 2;
         case COMPARE_OP:
