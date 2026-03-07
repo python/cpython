@@ -6,23 +6,23 @@
 static PyObject *
 tuple_from_pair(PyObject *Py_UNUSED(module), PyObject *args)
 {
-    PyObject *one, *two;
-    if (!PyArg_ParseTuple(args, "OO", &one, &two)) {
+    PyObject *first, *second;
+    if (!PyArg_ParseTuple(args, "OO", &first, &second)) {
         return NULL;
     }
 
-    return _PyTuple_FromPair(one, two);
+    return _PyTuple_FromPair(first, second);
 }
 
 static PyObject *
 tuple_from_pair_steal(PyObject *Py_UNUSED(module), PyObject *args)
 {
-    PyObject *one, *two;
-    if (!PyArg_ParseTuple(args, "OO", &one, &two)) {
+    PyObject *first, *second;
+    if (!PyArg_ParseTuple(args, "OO", &first, &second)) {
         return NULL;
     }
 
-    return _PyTuple_FromPairSteal(Py_NewRef(one), Py_NewRef(two));
+    return _PyTuple_FromPairSteal(Py_NewRef(first), Py_NewRef(second));
 }
 
 
