@@ -219,40 +219,30 @@ tuple_alloc_2(void)
 }
 
 PyObject *
-_PyTuple_FromPair(PyObject *one, PyObject *two)
+_PyTuple_FromPair(PyObject *first, PyObject *second)
 {
-    assert(one != NULL);
-    assert(two != NULL);
+    assert(first != NULL);
+    assert(second != NULL);
 
-    PyTupleObject *op = tuple_alloc_2();
-    if (op == NULL) {
-        return NULL;
-    }
-    PyObject **items = op->ob_item;
-    items[0] = Py_NewRef(one);
-    items[1] = Py_NewRef(two);
-    if (maybe_tracked(items[0]) || maybe_tracked(items[1])) {
-        _PyObject_GC_TRACK(op);
-    }
-    return (PyObject *)op;
+    return _PyTuple_FromPairSteal(Py_NewRef(first), Py_NewRef(second));
 }
 
 PyObject *
-_PyTuple_FromPairSteal(PyObject *one, PyObject *two)
+_PyTuple_FromPairSteal(PyObject *first, PyObject *second)
 {
-    assert(one != NULL);
-    assert(two != NULL);
+    assert(first != NULL);
+    assert(second != NULL);
 
     PyTupleObject *op = tuple_alloc_2();
     if (op == NULL) {
-        Py_DECREF(one);
-        Py_DECREF(two);
+        Py_DECREF(first);
+        Py_DECREF(second);
         return NULL;
     }
     PyObject **items = op->ob_item;
-    items[0] = one;
-    items[1] = two;
-    if (maybe_tracked(one || maybe_tracked(two)) {
+    items[0] = first;
+    items[1] = second;
+    if (maybe_tracked(first || maybe_tracked(second)) {
         _PyObject_GC_TRACK(op);
     }
     return (PyObject *)op;
