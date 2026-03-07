@@ -1925,13 +1925,6 @@ Segment_traverse(PyObject *self, visitproc visit, void *arg)
     return 0;
 }
 
-static int
-Segment_clear(PyObject *self)
-{
-    Py_CLEAR(((SegmentObject *)self)->string);
-    return 0;
-}
-
 static PyObject *
 Segment_str(PyObject *self)
 {
@@ -1947,9 +1940,9 @@ Segment_repr(PyObject *self)
 }
 
 static PyMemberDef Segment_members[] = {
-    {"start", Py_T_PYSSIZET, offsetof(SegmentObject, start), 0,
+    {"start", Py_T_PYSSIZET, offsetof(SegmentObject, start), Py_READONLY,
         PyDoc_STR("grapheme start")},
-    {"end", Py_T_PYSSIZET, offsetof(SegmentObject, end), 0,
+    {"end", Py_T_PYSSIZET, offsetof(SegmentObject, end), Py_READONLY,
         PyDoc_STR("grapheme end")},
     {NULL}  /* Sentinel */
 };
@@ -1957,7 +1950,6 @@ static PyMemberDef Segment_members[] = {
 static PyType_Slot Segment_slots[] = {
     {Py_tp_dealloc, Segment_dealloc},
     {Py_tp_traverse, Segment_traverse},
-    {Py_tp_clear, Segment_clear},
     {Py_tp_str, Segment_str},
     {Py_tp_repr, Segment_repr},
     {Py_tp_members, Segment_members},
@@ -2001,13 +1993,6 @@ GBI_traverse(PyObject *self, visitproc visit, void *arg)
     return 0;
 }
 
-static int
-GBI_clear(PyObject *self)
-{
-    Py_CLEAR(((GraphemeBreakIterator *)self)->iter.str);
-    return 0;
-}
-
 static PyObject *
 GBI_iternext(PyObject *self)
 {
@@ -2038,7 +2023,6 @@ static PyType_Slot GraphemeBreakIterator_slots[] = {
     {Py_tp_iter, PyObject_SelfIter},
     {Py_tp_iternext, GBI_iternext},
     {Py_tp_traverse, GBI_traverse},
-    {Py_tp_clear, GBI_clear},
     {0, 0},
 };
 

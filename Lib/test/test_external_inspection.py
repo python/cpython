@@ -17,6 +17,7 @@ from test.support import (
     requires_gil_enabled,
     requires_remote_subprocess_debugging,
 )
+from test.support.import_helper import import_module
 from test.support.script_helper import make_script
 from test.support.socket_helper import find_unused_port
 
@@ -529,6 +530,10 @@ class TestGetStackTrace(RemoteInspectionTestBase):
         The remote debugging code must skip these uninitialized duplicate
         mappings and find the real PyRuntime. See gh-144563.
         """
+
+        # Skip the test if the _ctypes module is missing.
+        import_module("_ctypes")
+
         # Run the test in a subprocess to avoid side effects
         script = textwrap.dedent("""\
             import os

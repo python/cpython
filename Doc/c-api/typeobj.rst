@@ -1499,6 +1499,52 @@ and :c:data:`PyType_Type` effectively act as defaults.)
          It will be removed in a future version of CPython
 
 
+   .. c:macro:: Py_TPFLAGS_HAVE_VERSION_TAG
+
+      This is a :term:`soft deprecated` macro that does nothing.
+      Historically, this would indicate that the
+      :c:member:`~PyTypeObject.tp_version_tag` field was available and
+      initialized.
+
+
+   .. c:macro:: Py_TPFLAGS_INLINE_VALUES
+
+      This bit indicates that instances of this type will have an "inline values"
+      array (containing the object's attributes) placed directly after the end
+      of the object.
+
+      This requires that :c:macro:`Py_TPFLAGS_HAVE_GC` is set.
+
+      **Inheritance:**
+
+      This flag is not inherited.
+
+      .. versionadded:: 3.13
+
+
+   .. c:macro:: Py_TPFLAGS_IS_ABSTRACT
+
+      This bit indicates that this is an abstract type and therefore cannot
+      be instantiated.
+
+      **Inheritance:**
+
+      This flag is not inherited.
+
+      .. seealso::
+         :mod:`abc`
+
+
+   .. c:macro:: Py_TPFLAGS_HAVE_STACKLESS_EXTENSION
+
+      Internal. Do not set or unset this flag.
+      Historically, this was a reserved flag for use in Stackless Python.
+
+      .. warning::
+            This flag is present in header files, but is not be used.
+            This may be removed in a future version of CPython.
+
+
 .. c:member:: const char* PyTypeObject.tp_doc
 
    .. corresponding-type-slot:: Py_tp_doc

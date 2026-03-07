@@ -1,0 +1,1 @@
+:func:`type` now accepts :class:`frozendict` as an argument.
