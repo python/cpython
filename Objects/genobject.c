@@ -2605,3 +2605,111 @@ async_gen_athrow_new(PyAsyncGenObject *gen, PyObject *args)
     _PyObject_GC_TRACK((PyObject*)o);
     return (PyObject*)o;
 }
+
+typedef struct {
+    PyObject_HEAD
+    PyObject *agyf_iterator;
+} _PyAsyncGenYieldFrom;
+
+#define _PyAsyncGenYieldFrom_CAST(op) ((_PyAsyncGenYieldFrom *)op)
+
+static int
+async_gen_yield_from_traverse(PyObject *op, visitproc visit, void *arg)
+{
+    assert(op != NULL);
+    _PyAsyncGenYieldFrom *self = _PyAsyncGenYieldFrom_CAST(op);
+    Py_VISIT(self->agyf_iterator);
+    return 0;
+}
+
+static int
+async_gen_yield_from_clear(PyObject *op)
+{
+    assert(op != NULL);
+    _PyAsyncGenYieldFrom *self = _PyAsyncGenYieldFrom_CAST(op);
+    Py_CLEAR(self->agyf_iterator);
+    return 0;
+}
+
+static void
+async_gen_yield_from_dealloc(PyObject *op)
+{
+    assert(op != NULL);
+    _PyAsyncGenYieldFrom *self = _PyAsyncGenYieldFrom_CAST(op);
+    _PyObject_GC_UNTRACK(op);
+    (void)async_gen_yield_from_clear(op);
+    PyObject_GC_Del(op);
+}
+
+static PyObject *
+async_gen_yield_from_iternext(PyObject *op)
+{
+    assert(op != NULL);
+    _PyAsyncGenYieldFrom *self = _PyAsyncGenYieldFrom_CAST(op);
+    PyObject *result = PyIter_Next(self->agyf_iterator);
+    if (result == NULL) {
+        return NULL;
+    }
+
+    PyObject *wrapped = _PyAsyncGenValueWrapperNew(_PyThreadState_GET(), result);
+    Py_DECREF(result);
+    return wrapped;
+}
+
+PyTypeObject _PyAsyncGenYieldFrom_Type = {
+    PyVarObject_HEAD_INIT(&PyType_Type, 0)
+    "async_generator_yield_from",               /* tp_name */
+    sizeof(_PyAsyncGenYieldFrom),               /* tp_basicsize */
+    0,                                          /* tp_itemsize */
+    /* methods */
+    async_gen_yield_from_dealloc,               /* tp_dealloc */
+    0,                                          /* tp_vectorcall_offset */
+    0,                                          /* tp_getattr */
+    0,                                          /* tp_setattr */
+    0,                                          /* tp_as_async */
+    0,                                          /* tp_repr */
+    0,                                          /* tp_as_number */
+    0,                                          /* tp_as_sequence */
+    0,                                          /* tp_as_mapping */
+    0,                                          /* tp_hash */
+    0,                                          /* tp_call */
+    0,                                          /* tp_str */
+    PyObject_GenericGetAttr,                    /* tp_getattro */
+    0,                                          /* tp_setattro */
+    0,                                          /* tp_as_buffer */
+    Py_TPFLAGS_DEFAULT | Py_TPFLAGS_HAVE_GC,    /* tp_flags */
+    0,                                          /* tp_doc */
+    async_gen_yield_from_traverse,              /* tp_traverse */
+    async_gen_yield_from_clear,                 /* tp_clear */
+    0,                                          /* tp_richcompare */
+    0,                                          /* tp_weaklistoffset */
+    PyObject_SelfIter,                          /* tp_iter */
+    async_gen_yield_from_iternext,              /* tp_iternext */
+    0,                                          /* tp_methods */
+    0,                                          /* tp_members */
+    0,                                          /* tp_getset */
+    0,                                          /* tp_base */
+    0,                                          /* tp_dict */
+    0,                                          /* tp_descr_get */
+    0,                                          /* tp_descr_set */
+    0,                                          /* tp_dictoffset */
+    0,                                          /* tp_init */
+    0,                                          /* tp_alloc */
+    0,                                          /* tp_new */
+};
+
+
+PyObject *
+_PyAsyncGenYieldFrom_New(PyThreadState *tstate, PyObject *iterator)
+{
+    assert(tstate != NULL);
+    assert(iterator != NULL);
+    _PyAsyncGenYieldFrom *yield_from = PyObject_GC_New(_PyAsyncGenYieldFrom,
+                                                      &_PyAsyncGenYieldFrom_Type);
+    if (yield_from == NULL) {
+        return NULL;
+    }
+    yield_from->agyf_iterator = Py_NewRef(iterator);
+    _PyObject_GC_TRACK((PyObject *)yield_from);
+    return (PyObject *)yield_from;
+}

@@ -5404,10 +5404,11 @@ codegen_visit_expr(compiler *c, expr_ty e)
         if (!_PyST_IsFunctionLike(SYMTABLE_ENTRY(c))) {
             return _PyCompile_Error(c, loc, "'yield from' outside function");
         }
-        if (SCOPE_TYPE(c) == COMPILE_SCOPE_ASYNC_FUNCTION) {
-            return _PyCompile_Error(c, loc, "'yield from' inside async function");
-        }
+
         VISIT(c, expr, e->v.YieldFrom.value);
+        if (SCOPE_TYPE(c) == COMPILE_SCOPE_ASYNC_FUNCTION) {
+            ADDOP_I(c, loc, CALL_INTRINSIC_1, INSTRINSIC_ASYNC_GEN_WRAP_YIELD_FROM);
+        }
         ADDOP(c, loc, GET_YIELD_FROM_ITER);
         ADDOP_LOAD_CONST(c, loc, Py_None);
         ADD_YIELD_FROM(c, loc, 0);
