@@ -1,2 +1,0 @@
-Removed the ``check_home`` parameter from :func:`sysconfig.is_python_build`,
-deprecated since Python 3.12.

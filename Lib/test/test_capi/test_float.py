@@ -28,6 +28,23 @@ INF = float("inf")
 NAN = float("nan")
 
 
+def make_nan(size, sign, quiet, payload=None):
+    if size == 8:
+        payload_mask = 0x7ffffffffffff
+        i = (sign << 63) + (0x7ff << 52) + (quiet << 51)
+    elif size == 4:
+        payload_mask = 0x3fffff
+        i = (sign << 31) + (0xff << 23) + (quiet << 22)
+    elif size == 2:
+        payload_mask = 0x1ff
+        i = (sign << 15) + (0x1f << 10) + (quiet << 9)
+    else:
+        raise ValueError("size must be either 2, 4, or 8")
+    if payload is None:
+        payload = random.randint(not quiet, payload_mask)
+    return i + payload
+
+
 class CAPIFloatTest(unittest.TestCase):
     def test_check(self):
         # Test PyFloat_Check()
@@ -197,16 +214,11 @@ class CAPIFloatTest(unittest.TestCase):
                     # PyFloat_Pack/Unpack*() API.  See also gh-130317 and
                     # e.g. https://developercommunity.visualstudio.com/t/155064
                     signaling = 0
-                quiet = int(not signaling)
-                if size == 8:
-                    payload = random.randint(signaling, 0x7ffffffffffff)
-                    i = (sign << 63) + (0x7ff << 52) + (quiet << 51) + payload
-                elif size == 4:
-                    payload = random.randint(signaling, 0x3fffff)
-                    i = (sign << 31) + (0xff << 23) + (quiet << 22) + payload
-                elif size == 2:
-                    payload = random.randint(signaling, 0x1ff)
-                    i = (sign << 15) + (0x1f << 10) + (quiet << 9) + payload
+                    if _testcapi.nan_msb_is_signaling:
+                        # HP PA RISC and some MIPS CPUs use 0 for quiet, see:
+                        # https://en.wikipedia.org/wiki/NaN#Encoding
+                        signaling = 1
+                i = make_nan(size, sign, not signaling)
                 data = bytes.fromhex(f'{i:x}')
                 for endian in (BIG_ENDIAN, LITTLE_ENDIAN):
                     with self.subTest(data=data, size=size, endian=endian):
@@ -215,6 +227,32 @@ class CAPIFloatTest(unittest.TestCase):
                         data2 = pack(size, value, endian)
                         self.assertTrue(math.isnan(value))
                         self.assertEqual(data1, data2)
+
+    @unittest.skipUnless(HAVE_IEEE_754, "requires IEEE 754")
+    @unittest.skipUnless(sys.maxsize != 2147483647, "requires 64-bit mode")
+    def test_pack_unpack_nans_for_different_formats(self):
+        pack = _testcapi.float_pack
+        unpack = _testcapi.float_unpack
+
+        for endian in (BIG_ENDIAN, LITTLE_ENDIAN):
+            with self.subTest(endian=endian):
+                byteorder = "big" if endian == BIG_ENDIAN else "little"
+
+                # Convert sNaN to qNaN, if payload got truncated
+                data = make_nan(8, 0, False, 0x80001).to_bytes(8, byteorder)
+                snan_low = unpack(data, endian)
+                qnan4 = make_nan(4, 0, True, 0).to_bytes(4, byteorder)
+                qnan2 = make_nan(2, 0, True, 0).to_bytes(2, byteorder)
+                self.assertEqual(pack(4, snan_low, endian), qnan4)
+                self.assertEqual(pack(2, snan_low, endian), qnan2)
+
+                # Preserve NaN type, if payload not truncated
+                data = make_nan(8, 0, False, 0x80000000001).to_bytes(8, byteorder)
+                snan_high = unpack(data, endian)
+                snan4 = make_nan(4, 0, False, 16384).to_bytes(4, byteorder)
+                snan2 = make_nan(2, 0, False, 2).to_bytes(2, byteorder)
+                self.assertEqual(pack(4, snan_high, endian), snan4)
+                self.assertEqual(pack(2, snan_high, endian), snan2)
 
 
 if __name__ == "__main__":

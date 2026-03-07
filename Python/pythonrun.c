@@ -478,9 +478,6 @@ _PyRun_SimpleFileObject(FILE *fp, PyObject *filename, int closeit,
         if (PyDict_SetItemString(dict, "__file__", filename) < 0) {
             goto done;
         }
-        if (PyDict_SetItemString(dict, "__cached__", Py_None) < 0) {
-            goto done;
-        }
         set_file_name = 1;
     }
 
@@ -533,9 +530,6 @@ _PyRun_SimpleFileObject(FILE *fp, PyObject *filename, int closeit,
   done:
     if (set_file_name) {
         if (PyDict_PopString(dict, "__file__", NULL) < 0) {
-            PyErr_Print();
-        }
-        if (PyDict_PopString(dict, "__cached__", NULL) < 0) {
             PyErr_Print();
         }
     }
@@ -1151,6 +1145,7 @@ _PyErr_Display(PyObject *file, PyObject *unused, PyObject *value, PyObject *tb)
         "traceback",
         "_print_exception_bltin");
     if (print_exception_fn == NULL || !PyCallable_Check(print_exception_fn)) {
+        Py_XDECREF(print_exception_fn);
         goto fallback;
     }
 
@@ -1181,7 +1176,7 @@ fallback:
     }
     if (print_exception_recursive(&ctx, value) < 0) {
         PyErr_Clear();
-        _PyObject_Dump(value);
+        PyObject_Dump(value);
         fprintf(stderr, "lost sys.stderr\n");
     }
     Py_XDECREF(ctx.seen);
@@ -1199,14 +1194,14 @@ PyErr_Display(PyObject *unused, PyObject *value, PyObject *tb)
     PyObject *file;
     if (PySys_GetOptionalAttr(&_Py_ID(stderr), &file) < 0) {
         PyObject *exc = PyErr_GetRaisedException();
-        _PyObject_Dump(value);
+        PyObject_Dump(value);
         fprintf(stderr, "lost sys.stderr\n");
-        _PyObject_Dump(exc);
+        PyObject_Dump(exc);
         Py_DECREF(exc);
         return;
     }
     if (file == NULL) {
-        _PyObject_Dump(value);
+        PyObject_Dump(value);
         fprintf(stderr, "lost sys.stderr\n");
         return;
     }
@@ -1252,12 +1247,19 @@ _PyRun_StringFlagsWithName(const char *str, PyObject* name, int start,
     } else {
         name = &_Py_STR(anon_string);
     }
+    PyObject *module = NULL;
+    if (globals && PyDict_GetItemStringRef(globals, "__name__", &module) < 0) {
+        goto done;
+    }
 
-    mod = _PyParser_ASTFromString(str, name, start, flags, arena);
+    mod = _PyParser_ASTFromString(str, name, start, flags, arena, module);
+    Py_XDECREF(module);
 
-   if (mod != NULL) {
+    if (mod != NULL) {
         ret = run_mod(mod, name, globals, locals, flags, arena, source, generate_new_source);
     }
+
+done:
     Py_XDECREF(source);
     _PyArena_Free(arena);
     return ret;
@@ -1346,8 +1348,9 @@ static PyObject *
 run_eval_code_obj(PyThreadState *tstate, PyCodeObject *co, PyObject *globals, PyObject *locals)
 {
     /* Set globals['__builtins__'] if it doesn't exist */
-    if (!globals || !PyDict_Check(globals)) {
-        PyErr_SetString(PyExc_SystemError, "globals must be a real dict");
+    if (!globals || !PyAnyDict_Check(globals)) {
+        PyErr_SetString(PyExc_SystemError,
+                        "globals must be a real dict or a real frozendict");
         return NULL;
     }
     int has_builtins = PyDict_ContainsString(globals, "__builtins__");
@@ -1407,8 +1410,17 @@ run_mod(mod_ty mod, PyObject *filename, PyObject *globals, PyObject *locals,
             return NULL;
         }
     }
+    PyObject *module = NULL;
+    if (globals && PyDict_GetItemStringRef(globals, "__name__", &module) < 0) {
+        if (interactive_src) {
+            Py_DECREF(interactive_filename);
+        }
+        return NULL;
+    }
 
-    PyCodeObject *co = _PyAST_Compile(mod, interactive_filename, flags, -1, arena);
+    PyCodeObject *co = _PyAST_Compile(mod, interactive_filename, flags, -1,
+                                      arena, module);
+    Py_XDECREF(module);
     if (co == NULL) {
         if (interactive_src) {
             Py_DECREF(interactive_filename);
@@ -1508,20 +1520,30 @@ PyObject *
 Py_CompileStringObject(const char *str, PyObject *filename, int start,
                        PyCompilerFlags *flags, int optimize)
 {
+    return _Py_CompileStringObjectWithModule(str, filename, start,
+                                             flags, optimize, NULL);
+}
+
+PyObject *
+_Py_CompileStringObjectWithModule(const char *str, PyObject *filename, int start,
+                       PyCompilerFlags *flags, int optimize, PyObject *module)
+{
     PyCodeObject *co;
     mod_ty mod;
     PyArena *arena = _PyArena_New();
     if (arena == NULL)
         return NULL;
 
-    mod = _PyParser_ASTFromString(str, filename, start, flags, arena);
+    mod = _PyParser_ASTFromString(str, filename, start, flags, arena, module);
     if (mod == NULL) {
         _PyArena_Free(arena);
         return NULL;
     }
     if (flags && (flags->cf_flags & PyCF_ONLY_AST)) {
         int syntax_check_only = ((flags->cf_flags & PyCF_OPTIMIZED_AST) == PyCF_ONLY_AST); /* unoptiomized AST */
-        if (_PyCompile_AstPreprocess(mod, filename, flags, optimize, arena, syntax_check_only) < 0) {
+        if (_PyCompile_AstPreprocess(mod, filename, flags, optimize, arena,
+                                     syntax_check_only, module) < 0)
+        {
             _PyArena_Free(arena);
             return NULL;
         }
@@ -1529,7 +1551,7 @@ Py_CompileStringObject(const char *str, PyObject *filename, int start,
         _PyArena_Free(arena);
         return result;
     }
-    co = _PyAST_Compile(mod, filename, flags, optimize, arena);
+    co = _PyAST_Compile(mod, filename, flags, optimize, arena, module);
     _PyArena_Free(arena);
     return (PyObject *)co;
 }

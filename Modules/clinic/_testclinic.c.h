@@ -9,7 +9,7 @@ preserve
 #include "pycore_long.h"          // _PyLong_UnsignedShort_Converter()
 #include "pycore_modsupport.h"    // _PyArg_CheckPositional()
 #include "pycore_runtime.h"       // _Py_ID()
-#include "pycore_tuple.h"         // _PyTuple_FromArray()
+#include "pycore_tuple.h"         // _PyTuple_ITEMS()
 
 PyDoc_STRVAR(test_empty_function__doc__,
 "test_empty_function($module, /)\n"
@@ -2764,7 +2764,7 @@ varpos(PyObject *module, PyObject *const *args, Py_ssize_t nargs)
     PyObject *return_value = NULL;
     PyObject *__clinic_args = NULL;
 
-    __clinic_args = _PyTuple_FromArray(args, nargs);
+    __clinic_args = PyTuple_FromArray(args, nargs);
     if (__clinic_args == NULL) {
         goto exit;
     }
@@ -2802,7 +2802,7 @@ posonly_varpos(PyObject *module, PyObject *const *args, Py_ssize_t nargs)
     }
     a = args[0];
     b = args[1];
-    __clinic_args = _PyTuple_FromArray(args + 2, nargs - 2);
+    __clinic_args = PyTuple_FromArray(args + 2, nargs - 2);
     if (__clinic_args == NULL) {
         goto exit;
     }
@@ -2845,7 +2845,7 @@ posonly_req_opt_varpos(PyObject *module, PyObject *const *args, Py_ssize_t nargs
     b = args[1];
 skip_optional:
     __clinic_args = nargs > 2
-        ? _PyTuple_FromArray(args + 2, nargs - 2)
+        ? PyTuple_FromArray(args + 2, nargs - 2)
         : PyTuple_New(0);
     if (__clinic_args == NULL) {
         goto exit;
@@ -2916,7 +2916,7 @@ posonly_poskw_varpos(PyObject *module, PyObject *const *args, Py_ssize_t nargs, 
     a = fastargs[0];
     b = fastargs[1];
     __clinic_args = nargs > 2
-        ? _PyTuple_FromArray(args + 2, nargs - 2)
+        ? PyTuple_FromArray(args + 2, nargs - 2)
         : PyTuple_New(0);
     if (__clinic_args == NULL) {
         goto exit;
@@ -2984,7 +2984,7 @@ poskw_varpos(PyObject *module, PyObject *const *args, Py_ssize_t nargs, PyObject
     }
     a = fastargs[0];
     __clinic_args = nargs > 1
-        ? _PyTuple_FromArray(args + 1, nargs - 1)
+        ? PyTuple_FromArray(args + 1, nargs - 1)
         : PyTuple_New(0);
     if (__clinic_args == NULL) {
         goto exit;
@@ -3063,7 +3063,7 @@ poskw_varpos_kwonly_opt(PyObject *module, PyObject *const *args, Py_ssize_t narg
     }
 skip_optional_kwonly:
     __clinic_args = nargs > 1
-        ? _PyTuple_FromArray(args + 1, nargs - 1)
+        ? PyTuple_FromArray(args + 1, nargs - 1)
         : PyTuple_New(0);
     if (__clinic_args == NULL) {
         goto exit;
@@ -3146,7 +3146,7 @@ poskw_varpos_kwonly_opt2(PyObject *module, PyObject *const *args, Py_ssize_t nar
     c = fastargs[2];
 skip_optional_kwonly:
     __clinic_args = nargs > 1
-        ? _PyTuple_FromArray(args + 1, nargs - 1)
+        ? PyTuple_FromArray(args + 1, nargs - 1)
         : PyTuple_New(0);
     if (__clinic_args == NULL) {
         goto exit;
@@ -3218,7 +3218,7 @@ varpos_kwonly_opt(PyObject *module, PyObject *const *args, Py_ssize_t nargs, PyO
     }
     b = fastargs[0];
 skip_optional_kwonly:
-    __clinic_args = _PyTuple_FromArray(args, nargs);
+    __clinic_args = PyTuple_FromArray(args, nargs);
     if (__clinic_args == NULL) {
         goto exit;
     }
@@ -3299,7 +3299,7 @@ varpos_kwonly_req_opt(PyObject *module, PyObject *const *args, Py_ssize_t nargs,
     }
     c = fastargs[2];
 skip_optional_kwonly:
-    __clinic_args = _PyTuple_FromArray(args, nargs);
+    __clinic_args = PyTuple_FromArray(args, nargs);
     if (__clinic_args == NULL) {
         goto exit;
     }
@@ -3549,7 +3549,7 @@ gh_32092_oob(PyObject *module, PyObject *const *args, Py_ssize_t nargs, PyObject
     kw2 = fastargs[3];
 skip_optional_kwonly:
     varargs = nargs > 2
-        ? _PyTuple_FromArray(args + 2, nargs - 2)
+        ? PyTuple_FromArray(args + 2, nargs - 2)
         : PyTuple_New(0);
     if (varargs == NULL) {
         goto exit;
@@ -3626,7 +3626,7 @@ gh_32092_kw_pass(PyObject *module, PyObject *const *args, Py_ssize_t nargs, PyOb
     kw = fastargs[1];
 skip_optional_kwonly:
     __clinic_args = nargs > 1
-        ? _PyTuple_FromArray(args + 1, nargs - 1)
+        ? PyTuple_FromArray(args + 1, nargs - 1)
         : PyTuple_New(0);
     if (__clinic_args == NULL) {
         goto exit;
@@ -3658,7 +3658,7 @@ gh_99233_refcount(PyObject *module, PyObject *const *args, Py_ssize_t nargs)
     PyObject *return_value = NULL;
     PyObject *__clinic_args = NULL;
 
-    __clinic_args = _PyTuple_FromArray(args, nargs);
+    __clinic_args = PyTuple_FromArray(args, nargs);
     if (__clinic_args == NULL) {
         goto exit;
     }
@@ -3771,7 +3771,7 @@ null_or_tuple_for_varargs(PyObject *module, PyObject *const *args, Py_ssize_t na
     }
 skip_optional_kwonly:
     constraints = nargs > 1
-        ? _PyTuple_FromArray(args + 1, nargs - 1)
+        ? PyTuple_FromArray(args + 1, nargs - 1)
         : PyTuple_New(0);
     if (constraints == NULL) {
         goto exit;
@@ -4174,7 +4174,7 @@ _testclinic_TestClass_defclass_varpos(PyObject *self, PyTypeObject *cls, PyObjec
     if (!fastargs) {
         goto exit;
     }
-    __clinic_args = _PyTuple_FromArray(args, nargs);
+    __clinic_args = PyTuple_FromArray(args, nargs);
     if (__clinic_args == NULL) {
         goto exit;
     }
@@ -4231,7 +4231,7 @@ _testclinic_TestClass_defclass_posonly_varpos(PyObject *self, PyTypeObject *cls,
     }
     a = fastargs[0];
     b = fastargs[1];
-    __clinic_args = _PyTuple_FromArray(args + 2, nargs - 2);
+    __clinic_args = PyTuple_FromArray(args + 2, nargs - 2);
     if (__clinic_args == NULL) {
         goto exit;
     }
@@ -4600,4 +4600,4 @@ _testclinic_TestClass_posonly_poskw_varpos_array_no_fastcall(PyObject *type, PyO
 exit:
     return return_value;
 }
-/*[clinic end generated code: output=0764e6f8c9d94057 input=a9049054013a1b77]*/
+/*[clinic end generated code: output=290d2e346ea7bfa1 input=a9049054013a1b77]*/

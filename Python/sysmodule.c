@@ -610,7 +610,7 @@ sys_breakpointhook(PyObject *self, PyObject *const *args, Py_ssize_t nargs, PyOb
 
     if (last_dot == NULL) {
         /* The breakpoint is a built-in, e.g. PYTHONBREAKPOINT=int */
-        modulepath = PyUnicode_FromString("builtins");
+        modulepath = &_Py_ID(builtins);
         attrname = envar;
     }
     else if (last_dot != envar) {
@@ -1587,10 +1587,10 @@ get_hash_info(PyThreadState *tstate)
     } while(0)
 
     SET_HASH_INFO_ITEM(PyLong_FromLong(8 * sizeof(Py_hash_t)));
-    SET_HASH_INFO_ITEM(PyLong_FromSsize_t(_PyHASH_MODULUS));
-    SET_HASH_INFO_ITEM(PyLong_FromLong(_PyHASH_INF));
+    SET_HASH_INFO_ITEM(PyLong_FromSsize_t(PyHASH_MODULUS));
+    SET_HASH_INFO_ITEM(PyLong_FromLong(PyHASH_INF));
     SET_HASH_INFO_ITEM(PyLong_FromLong(0));  // This is no longer used
-    SET_HASH_INFO_ITEM(PyLong_FromLong(_PyHASH_IMAG));
+    SET_HASH_INFO_ITEM(PyLong_FromLong(PyHASH_IMAG));
     SET_HASH_INFO_ITEM(PyUnicode_FromString(hashfunc->name));
     SET_HASH_INFO_ITEM(PyLong_FromLong(hashfunc->hash_bits));
     SET_HASH_INFO_ITEM(PyLong_FromLong(hashfunc->seed_bits));
@@ -1762,7 +1762,7 @@ sys_getwindowsversion_impl(PyObject *module)
     PyObject *realVersion = _sys_getwindowsversion_from_kernel32();
     if (!realVersion) {
         if (!PyErr_ExceptionMatches(PyExc_WindowsError)) {
-            return NULL;
+            goto error;
         }
 
         PyErr_Clear();
@@ -2281,7 +2281,9 @@ static PyObject *
 sys__stats_on_impl(PyObject *module)
 /*[clinic end generated code: output=aca53eafcbb4d9fe input=43b5bfe145299e55]*/
 {
-    _Py_StatsOn();
+    if (_Py_StatsOn() < 0) {
+        return NULL;
+    }
     Py_RETURN_NONE;
 }
 
@@ -2378,14 +2380,14 @@ sys_activate_stack_trampoline_impl(PyObject *module, const char *backend)
                 return NULL;
             }
         }
-        else if (strcmp(backend, "perf_jit") == 0) {
-            _PyPerf_Callbacks cur_cb;
-            _PyPerfTrampoline_GetCallbacks(&cur_cb);
-            if (cur_cb.write_state != _Py_perfmap_jit_callbacks.write_state) {
-                if (_PyPerfTrampoline_SetCallbacks(&_Py_perfmap_jit_callbacks) < 0 ) {
-                    PyErr_SetString(PyExc_ValueError, "can't activate perf jit trampoline");
-                    return NULL;
-                }
+    }
+    else if (strcmp(backend, "perf_jit") == 0) {
+        _PyPerf_Callbacks cur_cb;
+        _PyPerfTrampoline_GetCallbacks(&cur_cb);
+        if (cur_cb.write_state != _Py_perfmap_jit_callbacks.write_state) {
+            if (_PyPerfTrampoline_SetCallbacks(&_Py_perfmap_jit_callbacks) < 0 ) {
+                PyErr_SetString(PyExc_ValueError, "can't activate perf jit trampoline");
+                return NULL;
             }
         }
     }
@@ -2751,20 +2753,31 @@ PyAPI_FUNC(int) PyUnstable_CopyPerfMapFile(const char* parent_filename) {
     }
     char buf[4096];
     PyThread_acquire_lock(perf_map_state.map_lock, 1);
-    int fflush_result = 0, result = 0;
+    int result = 0;
     while (1) {
         size_t bytes_read = fread(buf, 1, sizeof(buf), from);
-        size_t bytes_written = fwrite(buf, 1, bytes_read, perf_map_state.perf_map);
-        fflush_result = fflush(perf_map_state.perf_map);
-        if (fflush_result != 0 || bytes_read == 0 || bytes_written < bytes_read) {
-            result = -1;
-            goto close_and_release;
+        if (bytes_read == 0) {
+            if (ferror(from)) {
+                result = -1;
+            }
+            break;
         }
+
+        size_t bytes_written = fwrite(buf, 1, bytes_read, perf_map_state.perf_map);
+        if (bytes_written < bytes_read) {
+            result = -1;
+            break;
+        }
+
+        if (fflush(perf_map_state.perf_map) != 0) {
+            result = -1;
+            break;
+        }
+
         if (bytes_read < sizeof(buf) && feof(from)) {
-            goto close_and_release;
+            break;
         }
     }
-close_and_release:
     fclose(from);
     PyThread_release_lock(perf_map_state.map_lock);
     return result;
@@ -2772,6 +2785,128 @@ close_and_release:
     return 0;
 }
 
+/*[clinic input]
+sys.set_lazy_imports_filter
+
+    filter: object
+
+Set the lazy imports filter callback.
+
+The filter is a callable which disables lazy imports when they
+would otherwise be enabled. Returns True if the import is still enabled
+or False to disable it. The callable is called with:
+
+(importing_module_name, imported_module_name, [fromlist])
+
+Pass None to clear the filter.
+[clinic start generated code]*/
+
+static PyObject *
+sys_set_lazy_imports_filter_impl(PyObject *module, PyObject *filter)
+/*[clinic end generated code: output=10251d49469c278c input=2eb48786bdd4ee42]*/
+{
+    if (PyImport_SetLazyImportsFilter(filter) < 0) {
+        return NULL;
+    }
+
+    Py_RETURN_NONE;
+}
+
+/*[clinic input]
+sys.get_lazy_imports_filter
+
+Get the current lazy imports filter callback.
+
+Returns the filter callable or None if no filter is set.
+[clinic start generated code]*/
+
+static PyObject *
+sys_get_lazy_imports_filter_impl(PyObject *module)
+/*[clinic end generated code: output=3bf73022892165af input=cf1e07cb8e203c94]*/
+{
+    PyObject *filter = PyImport_GetLazyImportsFilter();
+    if (filter == NULL) {
+        assert(!PyErr_Occurred());
+        Py_RETURN_NONE;
+    }
+    return filter;
+}
+
+/*[clinic input]
+sys.set_lazy_imports
+
+    mode: object
+
+Sets the global lazy imports mode.
+
+The mode parameter must be one of the following strings:
+- "all": All top-level imports become potentially lazy
+- "none": All lazy imports are suppressed (even explicitly marked ones)
+- "normal": Only explicitly marked imports (with 'lazy' keyword) are lazy
+
+In addition to the mode, lazy imports can be controlled via the filter
+provided to sys.set_lazy_imports_filter
+
+[clinic start generated code]*/
+
+static PyObject *
+sys_set_lazy_imports_impl(PyObject *module, PyObject *mode)
+/*[clinic end generated code: output=1ff34ba6c4feaf73 input=f04e70d8bf9fe4f6]*/
+{
+    PyImport_LazyImportsMode lazy_mode;
+    if (!PyUnicode_Check(mode)) {
+        PyErr_SetString(PyExc_TypeError,
+                        "mode must be a string: 'normal', 'all', or 'none'");
+        return NULL;
+    }
+    if (PyUnicode_CompareWithASCIIString(mode, "normal") == 0) {
+        lazy_mode = PyImport_LAZY_NORMAL;
+    }
+    else if (PyUnicode_CompareWithASCIIString(mode, "all") == 0) {
+        lazy_mode = PyImport_LAZY_ALL;
+    }
+    else if (PyUnicode_CompareWithASCIIString(mode, "none") == 0) {
+        lazy_mode = PyImport_LAZY_NONE;
+    }
+    else {
+        PyErr_SetString(PyExc_ValueError,
+                        "mode must be 'normal', 'all', or 'none'");
+        return NULL;
+    }
+
+    if (PyImport_SetLazyImportsMode(lazy_mode)) {
+        return NULL;
+    }
+    Py_RETURN_NONE;
+}
+
+/*[clinic input]
+sys.get_lazy_imports
+
+Gets the global lazy imports mode.
+
+Returns "all" if all top level imports are potentially lazy.
+Returns "none" if all explicitly marked lazy imports are suppressed.
+Returns "normal" if only explicitly marked imports are lazy.
+
+[clinic start generated code]*/
+
+static PyObject *
+sys_get_lazy_imports_impl(PyObject *module)
+/*[clinic end generated code: output=4147dec48c51ae99 input=8cb574f1e4e3003c]*/
+{
+    switch (PyImport_GetLazyImportsMode()) {
+        case PyImport_LAZY_NORMAL:
+            return PyUnicode_FromString("normal");
+        case PyImport_LAZY_ALL:
+            return PyUnicode_FromString("all");
+        case PyImport_LAZY_NONE:
+            return PyUnicode_FromString("none");
+        default:
+            PyErr_SetString(PyExc_RuntimeError, "unknown lazy imports mode");
+            return NULL;
+    }
+}
 
 static PyMethodDef sys_methods[] = {
     /* Might as well keep this in alphabetic order */
@@ -2837,6 +2972,10 @@ static PyMethodDef sys_methods[] = {
     SYS_UNRAISABLEHOOK_METHODDEF
     SYS_GET_INT_MAX_STR_DIGITS_METHODDEF
     SYS_SET_INT_MAX_STR_DIGITS_METHODDEF
+    SYS_GET_LAZY_IMPORTS_METHODDEF
+    SYS_SET_LAZY_IMPORTS_METHODDEF
+    SYS_GET_LAZY_IMPORTS_FILTER_METHODDEF
+    SYS_SET_LAZY_IMPORTS_FILTER_METHODDEF
     SYS__BASEREPL_METHODDEF
 #ifdef Py_STATS
     SYS__STATS_ON_METHODDEF
@@ -3045,7 +3184,7 @@ get_warnoptions(PyThreadState *tstate)
     return warnoptions;
 }
 
-void
+PyAPI_FUNC(void)
 PySys_ResetWarnOptions(void)
 {
     PyThreadState *tstate = _PyThreadState_GET();
@@ -3268,6 +3407,7 @@ PyDoc_STR(
 "\n\
 Static objects:\n\
 \n\
+abi_info -- Python ABI information.\n\
 builtin_module_names -- tuple of module names built into this interpreter\n\
 copyright -- copyright notice pertaining to this interpreter\n\
 exec_prefix -- prefix used to find the machine-specific Python library\n\
@@ -3360,6 +3500,7 @@ static PyStructSequence_Field flags_fields[] = {
     {"gil",                     "-X gil"},
     {"thread_inherit_context",  "-X thread_inherit_context"},
     {"context_aware_warnings",    "-X context_aware_warnings"},
+    {"lazy_imports",            "-X lazy_imports"},
     {0}
 };
 
@@ -3369,7 +3510,7 @@ static PyStructSequence_Desc flags_desc = {
     "sys.flags",        /* name */
     flags__doc__,       /* doc */
     flags_fields,       /* fields */
-    18
+    19
 };
 
 static void
@@ -3462,6 +3603,7 @@ set_flags_from_config(PyInterpreterState *interp, PyObject *flags)
 #endif
     SetFlag(config->thread_inherit_context);
     SetFlag(config->context_aware_warnings);
+    SetFlag(config->lazy_imports);
 #undef SetFlagObj
 #undef SetFlag
     return 0;
@@ -3554,16 +3696,22 @@ make_version_info(PyThreadState *tstate)
 }
 
 /* sys.implementation values */
-#define NAME "cpython"
-const char *_PySys_ImplName = NAME;
+#ifndef _PY_IMPL_NAME
+#define _PY_IMPL_NAME "cpython"
+#endif
+const char *_PySys_ImplName = _PY_IMPL_NAME;
+#ifndef _PY_IMPL_CACHE_TAG
 #define MAJOR Py_STRINGIFY(PY_MAJOR_VERSION)
 #define MINOR Py_STRINGIFY(PY_MINOR_VERSION)
-#define TAG NAME "-" MAJOR MINOR
-const char *_PySys_ImplCacheTag = TAG;
-#undef NAME
+#define _PY_IMPL_CACHE_TAG _PY_IMPL_NAME "-" MAJOR MINOR
+#endif
+const char *_PySys_ImplCacheTag = _PY_IMPL_CACHE_TAG;
+#ifdef MAJOR
 #undef MAJOR
+#endif
+#ifdef MINOR
 #undef MINOR
-#undef TAG
+#endif
 
 static PyObject *
 make_impl_info(PyObject *version_info)
@@ -3585,9 +3733,12 @@ make_impl_info(PyObject *version_info)
     if (res < 0)
         goto error;
 
-    value = PyUnicode_FromString(_PySys_ImplCacheTag);
-    if (value == NULL)
+    value = _PySys_ImplCacheTag
+        ? PyUnicode_FromString(_PySys_ImplCacheTag)
+        : Py_NewRef(Py_None);
+    if (value == NULL) {
         goto error;
+    }
     res = PyDict_SetItemString(impl_info, "cache_tag", value);
     Py_DECREF(value);
     if (res < 0)
@@ -3637,6 +3788,66 @@ error:
     Py_CLEAR(impl_info);
     return NULL;
 }
+
+
+static PyObject *
+make_abi_info(void)
+{
+    // New entries should be added when needed for a supported platform,
+    // or by core dev consensus for enabling an unsupported one.
+
+    PyObject *value;
+    PyObject *abi_info = PyDict_New();
+    if (abi_info == NULL) {
+        return NULL;
+    }
+
+    value = PyLong_FromLong(sizeof(void *) * 8);
+    if (value == NULL) {
+        goto error;
+    }
+    if (PyDict_SetItem(abi_info, &_Py_ID(pointer_bits), value) < 0) {
+        goto error;
+    }
+    Py_DECREF(value);
+
+#ifdef Py_GIL_DISABLED
+    value = Py_True;
+#else
+    value = Py_False;
+#endif
+    if (PyDict_SetItem(abi_info, &_Py_ID(free_threaded), value) < 0) {
+        goto error;
+    }
+
+#ifdef Py_DEBUG
+    value = Py_True;
+#else
+    value = Py_False;
+#endif
+    if (PyDict_SetItem(abi_info, &_Py_ID(debug), value) < 0) {
+        goto error;
+    }
+
+#if PY_BIG_ENDIAN
+    value = &_Py_ID(big);
+#else
+    value = &_Py_ID(little);
+#endif
+    if (PyDict_SetItem(abi_info, &_Py_ID(byteorder), value) < 0) {
+        goto error;
+    }
+
+    PyObject *ns = _PyNamespace_New(abi_info);
+    Py_DECREF(abi_info);
+    return ns;
+
+error:
+    Py_DECREF(abi_info);
+    Py_XDECREF(value);
+    return NULL;
+}
+
 
 #ifdef __EMSCRIPTEN__
 
@@ -3812,9 +4023,9 @@ _PySys_InitCore(PyThreadState *tstate, PyObject *sysdict)
     SET_SYS("builtin_module_names", list_builtin_module_names());
     SET_SYS("stdlib_module_names", list_stdlib_module_names());
 #if PY_BIG_ENDIAN
-    SET_SYS_FROM_STRING("byteorder", "big");
+    SET_SYS("byteorder", &_Py_ID(big));
 #else
-    SET_SYS_FROM_STRING("byteorder", "little");
+    SET_SYS("byteorder", &_Py_ID(little));
 #endif
 
 #ifdef MS_COREDLL
@@ -3856,12 +4067,14 @@ _PySys_InitCore(PyThreadState *tstate, PyObject *sysdict)
 
     /* float repr style: 0.03 (short) vs 0.029999999999999999 (legacy) */
 #if _PY_SHORT_FLOAT_REPR == 1
-    SET_SYS_FROM_STRING("float_repr_style", "short");
+    SET_SYS("float_repr_style", &_Py_ID(short));
 #else
-    SET_SYS_FROM_STRING("float_repr_style", "legacy");
+    SET_SYS("float_repr_style", &_Py_ID(legacy));
 #endif
 
     SET_SYS("thread_info", PyThread_GetInfo());
+
+    SET_SYS("abi_info", make_abi_info());
 
     /* initialize asyncgen_hooks */
     if (_PyStructSequence_InitBuiltin(interp, &AsyncGenHooksType,
@@ -4115,6 +4328,15 @@ _PySys_Create(PyThreadState *tstate, PyObject **sysmod_p)
     }
 
     if (PyDict_SetItemString(sysdict, "modules", modules) < 0) {
+        goto error;
+    }
+
+    PyObject *lazy_modules = _PyImport_InitLazyModules(interp); // borrowed reference
+    if (lazy_modules == NULL) {
+        goto error;
+    }
+
+    if (PyDict_SetItemString(sysdict, "lazy_modules", lazy_modules) < 0) {
         goto error;
     }
 

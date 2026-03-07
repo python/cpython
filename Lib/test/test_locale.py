@@ -1,7 +1,6 @@
 from decimal import Decimal
 from test import support
 from test.support import cpython_only, verbose, is_android, linked_to_musl, os_helper
-from test.support.warnings_helper import check_warnings
 from test.support.import_helper import ensure_lazy_imports, import_fresh_module
 from unittest import mock
 import unittest
@@ -351,8 +350,7 @@ class TestEnUSCollation(BaseLocalizedTest, TestCollation):
         enc = codecs.lookup(locale.getencoding() or 'ascii').name
         if enc not in ('utf-8', 'iso8859-1', 'cp1252'):
             raise unittest.SkipTest('encoding not suitable')
-        if enc != 'iso8859-1' and (sys.platform == 'darwin' or is_android or
-                                   sys.platform.startswith('freebsd')):
+        if enc != 'iso8859-1' and is_android:
             raise unittest.SkipTest('wcscoll/wcsxfrm have known bugs')
         BaseLocalizedTest.setUp(self)
 
@@ -655,8 +653,7 @@ class TestMiscellaneous(unittest.TestCase):
                 env.unset('LC_ALL', 'LC_CTYPE', 'LANG', 'LANGUAGE')
                 env.set('LC_CTYPE', 'UTF-8')
 
-                with check_warnings(('', DeprecationWarning)):
-                    self.assertEqual(locale.getdefaultlocale(), (None, 'UTF-8'))
+                self.assertEqual(locale.getdefaultlocale(), (None, 'UTF-8'))
         finally:
             if orig_getlocale is not None:
                 _locale._getdefaultlocale = orig_getlocale

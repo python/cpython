@@ -90,6 +90,18 @@ class BaseTest:
         args = self.fixtype(args)
         getattr(obj, methodname)(*args)
 
+    def _get_teststrings(self, charset, digits):
+        base = len(charset)
+        teststrings = set()
+        for i in range(base ** digits):
+            entry = []
+            for j in range(digits):
+                i, m = divmod(i, base)
+                entry.append(charset[m])
+            teststrings.add(''.join(entry))
+        teststrings = [self.fixtype(ts) for ts in teststrings]
+        return teststrings
+
     def test_count(self):
         self.checkequal(3, 'aaa', 'count', 'a')
         self.checkequal(0, 'aaa', 'count', 'b')
@@ -130,17 +142,7 @@ class BaseTest:
         # For a variety of combinations,
         #    verify that str.count() matches an equivalent function
         #    replacing all occurrences and then differencing the string lengths
-        charset = ['', 'a', 'b']
-        digits = 7
-        base = len(charset)
-        teststrings = set()
-        for i in range(base ** digits):
-            entry = []
-            for j in range(digits):
-                i, m = divmod(i, base)
-                entry.append(charset[m])
-            teststrings.add(''.join(entry))
-        teststrings = [self.fixtype(ts) for ts in teststrings]
+        teststrings = self._get_teststrings(['', 'a', 'b'], 7)
         for i in teststrings:
             n = len(i)
             for j in teststrings:
@@ -197,17 +199,7 @@ class BaseTest:
         # For a variety of combinations,
         #    verify that str.find() matches __contains__
         #    and that the found substring is really at that location
-        charset = ['', 'a', 'b', 'c']
-        digits = 5
-        base = len(charset)
-        teststrings = set()
-        for i in range(base ** digits):
-            entry = []
-            for j in range(digits):
-                i, m = divmod(i, base)
-                entry.append(charset[m])
-            teststrings.add(''.join(entry))
-        teststrings = [self.fixtype(ts) for ts in teststrings]
+        teststrings = self._get_teststrings(['', 'a', 'b', 'c'], 5)
         for i in teststrings:
             for j in teststrings:
                 loc = i.find(j)
@@ -244,17 +236,7 @@ class BaseTest:
         # For a variety of combinations,
         #    verify that str.rfind() matches __contains__
         #    and that the found substring is really at that location
-        charset = ['', 'a', 'b', 'c']
-        digits = 5
-        base = len(charset)
-        teststrings = set()
-        for i in range(base ** digits):
-            entry = []
-            for j in range(digits):
-                i, m = divmod(i, base)
-                entry.append(charset[m])
-            teststrings.add(''.join(entry))
-        teststrings = [self.fixtype(ts) for ts in teststrings]
+        teststrings = self._get_teststrings(['', 'a', 'b', 'c'], 5)
         for i in teststrings:
             for j in teststrings:
                 loc = i.rfind(j)
@@ -295,6 +277,19 @@ class BaseTest:
         else:
             self.checkraises(TypeError, 'hello', 'index', 42)
 
+        # For a variety of combinations,
+        #    verify that str.index() matches __contains__
+        #    and that the found substring is really at that location
+        teststrings = self._get_teststrings(['', 'a', 'b', 'c'], 5)
+        for i in teststrings:
+            for j in teststrings:
+                if j in i:
+                    loc = i.index(j)
+                    self.assertGreaterEqual(loc, 0)
+                    self.assertEqual(i[loc:loc+len(j)], j)
+                else:
+                    self.assertRaises(ValueError, i.index, j)
+
     def test_rindex(self):
         self.checkequal(12, 'abcdefghiabc', 'rindex', '')
         self.checkequal(3,  'abcdefghiabc', 'rindex', 'def')
@@ -320,6 +315,19 @@ class BaseTest:
             self.checkraises(ValueError, 'hello', 'rindex', 42)
         else:
             self.checkraises(TypeError, 'hello', 'rindex', 42)
+
+        # For a variety of combinations,
+        #    verify that str.rindex() matches __contains__
+        #    and that the found substring is really at that location
+        teststrings = self._get_teststrings(['', 'a', 'b', 'c'], 5)
+        for i in teststrings:
+            for j in teststrings:
+                if j in i:
+                    loc = i.rindex(j)
+                    self.assertGreaterEqual(loc, 0)
+                    self.assertEqual(i[loc:loc+len(j)], j)
+                else:
+                    self.assertRaises(ValueError, i.rindex, j)
 
     def test_find_periodic_pattern(self):
         """Cover the special path for periodic patterns."""

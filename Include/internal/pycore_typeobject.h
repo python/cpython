@@ -10,6 +10,7 @@ extern "C" {
 
 #include "pycore_interp_structs.h" // managed_static_type_state
 #include "pycore_moduleobject.h"  // PyModuleObject
+#include "pycore_structs.h"       // _PyStackRef
 
 
 /* state */
@@ -25,6 +26,7 @@ extern "C" {
 #define _Py_TYPE_VERSION_BYTEARRAY 9
 #define _Py_TYPE_VERSION_BYTES 10
 #define _Py_TYPE_VERSION_COMPLEX 11
+#define _Py_TYPE_VERSION_FROZENDICT 12
 
 #define _Py_TYPE_VERSION_NEXT 16
 
@@ -90,8 +92,10 @@ _PyType_GetModuleState(PyTypeObject *type)
 // function
 PyAPI_FUNC(PyObject *) _PyType_GetDict(PyTypeObject *);
 
+PyAPI_FUNC(PyObject *) _PyType_LookupSubclasses(PyTypeObject *);
+PyAPI_FUNC(PyObject *) _PyType_InitSubclasses(PyTypeObject *);
+
 extern PyObject * _PyType_GetBases(PyTypeObject *type);
-extern PyObject * _PyType_GetMRO(PyTypeObject *type);
 extern PyObject* _PyType_GetSubclasses(PyTypeObject *);
 extern int _PyType_HasSubclasses(PyTypeObject *);
 
@@ -109,6 +113,8 @@ _PyType_IsReady(PyTypeObject *type)
 extern PyObject* _Py_type_getattro_impl(PyTypeObject *type, PyObject *name,
                                         int *suppress_missing_attribute);
 extern PyObject* _Py_type_getattro(PyObject *type, PyObject *name);
+extern _PyStackRef _Py_type_getattro_stackref(PyTypeObject *type, PyObject *name,
+                                              int *suppress_missing_attribute);
 
 extern PyObject* _Py_BaseObject_RichCompare(PyObject* self, PyObject* other, int op);
 
@@ -148,6 +154,14 @@ typedef int (*_py_validate_type)(PyTypeObject *);
 // tp_version_tag from the ``ty``.
 extern int _PyType_Validate(PyTypeObject *ty, _py_validate_type validate, unsigned int *tp_version);
 extern int _PyType_CacheGetItemForSpecialization(PyHeapTypeObject *ht, PyObject *descriptor, uint32_t tp_version);
+
+// Precalculates count of non-unique slots and fills wrapperbase.name_count.
+extern int _PyType_InitSlotDefs(PyInterpreterState *interp);
+
+// Like PyType_GetBaseByToken, but does not modify refcounts.
+// Cannot fail; arguments must be valid.
+PyAPI_FUNC(int)
+_PyType_GetBaseByToken_Borrow(PyTypeObject *type, void *token, PyTypeObject **result);
 
 #ifdef __cplusplus
 }
