@@ -103,6 +103,7 @@ executables:
 * `py2app <https://github.com/ronaldoussoren/py2app>`_ (macOS only)
 * `py2exe <https://www.py2exe.org/>`_ (Windows only)
 
+
 Are there coding standards or a style guide for Python programs?
 ----------------------------------------------------------------
 
@@ -143,7 +144,7 @@ results in an :exc:`!UnboundLocalError`:
    >>> foo()
    Traceback (most recent call last):
      ...
-   UnboundLocalError: local variable 'x' referenced before assignment
+   UnboundLocalError: cannot access local variable 'x' where it is not associated with a value
 
 This is because when you make an assignment to a variable in a scope, that
 variable becomes local to that scope and shadows any similarly named variable
@@ -300,7 +301,7 @@ It's good practice if you import modules in the following order:
 
 1. standard library modules -- such as :mod:`sys`, :mod:`os`, :mod:`argparse`, :mod:`re`
 2. third-party library modules (anything installed in Python's site-packages
-   directory) -- such as :mod:`!dateutil`, :mod:`!requests`, :mod:`!PIL.Image`
+   directory) -- such as :pypi:`dateutil`, :pypi:`requests`, :pypi:`tzdata`
 3. locally developed modules
 
 It is sometimes necessary to move imports to a function or class to avoid
@@ -714,8 +715,8 @@ not::
 
     "a" in ("b", "a")
 
-The same is true of the various assignment operators (``=``, ``+=`` etc).  They
-are not truly operators but syntactic delimiters in assignment statements.
+The same is true of the various assignment operators (``=``, ``+=``, and so on).
+They are not truly operators but syntactic delimiters in assignment statements.
 
 
 Is there an equivalent of C's "?:" ternary operator?
@@ -1066,13 +1067,14 @@ the raw string::
 
 Also see the specification in the :ref:`language reference <strings>`.
 
+
 Performance
 ===========
 
 My program is too slow. How do I speed it up?
 ---------------------------------------------
 
-That's a tough one, in general.  First, here are a list of things to
+That's a tough one, in general.  First, here are is list of things to
 remember before diving further:
 
 * Performance characteristics vary across Python implementations.  This FAQ
@@ -1124,6 +1126,7 @@ yourself.
 .. seealso::
    The wiki page devoted to `performance tips
    <https://wiki.python.org/moin/PythonSpeed/PerformanceTips>`_.
+
 
 .. _efficient_string_concatenation:
 
@@ -1324,7 +1327,7 @@ Or, you can use an extension that provides a matrix datatype; `NumPy
 How do I apply a method or function to a sequence of objects?
 -------------------------------------------------------------
 
-To call a method or function and accumulate the return values is a list,
+To call a method or function and accumulate the return values in a list,
 a :term:`list comprehension` is an elegant solution::
 
    result = [obj.method() for obj in mylist]
@@ -1339,6 +1342,7 @@ a plain :keyword:`for` loop will suffice::
 
    for obj in mylist:
        function(obj)
+
 
 .. _faq-augmented-assignment-tuple-error:
 
@@ -1444,7 +1448,7 @@ How can I sort one list by values from another list?
 ----------------------------------------------------
 
 Merge them into an iterator of tuples, sort the resulting list, and then pick
-out the element you want. ::
+out the element you want.
 
    >>> list1 = ["what", "I'm", "sorting", "by"]
    >>> list2 = ["something", "else", "to", "sort"]
@@ -1775,6 +1779,7 @@ to use private variable names at all.
    The :ref:`private name mangling specifications <private-name-mangling>`
    for details and special cases.
 
+
 My class defines __del__ but it is not called when I delete the object.
 -----------------------------------------------------------------------
 
@@ -1884,9 +1889,9 @@ are preferred.  In particular, identity tests should not be used to check
 constants such as :class:`int` and :class:`str` which aren't guaranteed to be
 singletons::
 
-    >>> a = 1000
-    >>> b = 500
-    >>> c = b + 500
+    >>> a = 10_000_000
+    >>> b = 5_000_000
+    >>> c = b + 5_000_000
     >>> a is c
     False
 
@@ -1955,9 +1960,9 @@ parent class:
 
 .. testcode::
 
-    from datetime import date
+    import datetime as dt
 
-    class FirstOfMonthDate(date):
+    class FirstOfMonthDate(dt.date):
         "Always choose the first day of the month"
         def __new__(cls, year, month, day):
             return super().__new__(cls, year, month, 1)
