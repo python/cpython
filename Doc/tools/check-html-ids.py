@@ -1,7 +1,4 @@
-try:
-    from compression import gzip
-except ImportError:
-    import gzip
+from compression import gzip
 import concurrent.futures
 from pathlib import Path
 import html.parser
@@ -178,6 +175,7 @@ def main(argv):
             )
             if args.exclude_file:
                 print(f'Alternatively, add them to {args.exclude_file}.')
+            sys.exit(1)
 
 
 if __name__ == '__main__':
