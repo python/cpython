@@ -682,7 +682,7 @@ Glossary
       a :ref:`container class<sequence-types>` such as :class:`list` or :class:`dict`.
       Used for :term:`type hints <type hint>` and :term:`annotations <annotation>`.
       Created by a :ref:`generic class <generic-classes>`,
-      :term:`generic function <generic-functions>`
+      :ref:`generic function <generic-functions>`
       or :ref:`generic type alias <generic-type-aliases>`.
 
       For more details, see :ref:`generic alias types<types-genericalias>`,
