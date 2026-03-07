@@ -2196,6 +2196,7 @@ PyDoc_STRVAR(s_sizeof__doc__,
 static PyObject *
 s_sizeof(PyStructObject *self, void *unused)
 {
+    ENSURE_STRUCT_IS_READY(self);
     size_t size = _PyObject_SIZE(Py_TYPE(self)) + sizeof(formatcode);
     for (formatcode *code = self->s_codes; code->fmtdef != NULL; code++) {
         size += sizeof(formatcode);
@@ -2206,6 +2207,7 @@ s_sizeof(PyStructObject *self, void *unused)
 static PyObject *
 s_repr(PyStructObject *self)
 {
+    ENSURE_STRUCT_IS_READY(self);
     PyObject* fmt = PyUnicode_FromStringAndSize(
         PyBytes_AS_STRING(self->s_format), PyBytes_GET_SIZE(self->s_format));
     if (fmt == NULL) {
