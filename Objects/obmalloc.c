@@ -153,6 +153,12 @@ should_advance_qsbr_for_page(struct _qsbr_thread_state *qsbr, mi_page_t *page)
 }
 #endif
 
+static _PyThreadStateImpl *
+tstate_from_heap(mi_heap_t *heap)
+{
+    return _Py_CONTAINER_OF(heap->tld, _PyThreadStateImpl, mimalloc.tld);
+}
+
 static bool
 _PyMem_mi_page_maybe_free(mi_page_t *page, mi_page_queue_t *pq, bool force)
 {
@@ -187,8 +193,7 @@ _PyMem_mi_page_maybe_free(mi_page_t *page, mi_page_queue_t *pq, bool force)
 
         // We may be freeing a page belonging to a different thread during a
         // stop-the-world event. Find the _PyThreadStateImpl for the page.
-        mi_heap_t *heap = mi_page_heap(page);
-        _PyThreadStateImpl *tstate = _Py_CONTAINER_OF(heap->tld, _PyThreadStateImpl, mimalloc.tld);
+        _PyThreadStateImpl *tstate = tstate_from_heap(mi_page_heap(page));
         llist_insert_tail(&tstate->mimalloc.page_list, &page->qsbr_node);
         return false;
     }
@@ -205,7 +210,8 @@ _PyMem_mi_page_reclaimed(mi_page_t *page)
     if (page->qsbr_goal != 0) {
         if (mi_page_all_free(page)) {
             assert(page->qsbr_node.next == NULL);
-            _PyThreadStateImpl *tstate = (_PyThreadStateImpl *)PyThreadState_GET();
+            _PyThreadStateImpl *tstate = tstate_from_heap(mi_page_heap(page));
+            assert(tstate == (_PyThreadStateImpl *)_PyThreadState_GET());
             page->retire_expire = 0;
             llist_insert_tail(&tstate->mimalloc.page_list, &page->qsbr_node);
         }
