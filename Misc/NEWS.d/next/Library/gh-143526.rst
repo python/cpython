@@ -1,0 +1,1 @@
+tkinter.filedialog.askopenfilename now correctly handles filetypes=None without raising a TypeError.
