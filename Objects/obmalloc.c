@@ -151,13 +151,13 @@ should_advance_qsbr_for_page(struct _qsbr_thread_state *qsbr, mi_page_t *page)
     }
     return false;
 }
-#endif
 
 static _PyThreadStateImpl *
 tstate_from_heap(mi_heap_t *heap)
 {
     return _Py_CONTAINER_OF(heap->tld, _PyThreadStateImpl, mimalloc.tld);
 }
+#endif
 
 static bool
 _PyMem_mi_page_maybe_free(mi_page_t *page, mi_page_queue_t *pq, bool force)
