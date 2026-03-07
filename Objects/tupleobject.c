@@ -242,7 +242,7 @@ _PyTuple_FromPairSteal(PyObject *first, PyObject *second)
     PyObject **items = op->ob_item;
     items[0] = first;
     items[1] = second;
-    if (maybe_tracked(first || maybe_tracked(second)) {
+    if (maybe_tracked(first) || maybe_tracked(second)) {
         _PyObject_GC_TRACK(op);
     }
     return (PyObject *)op;
