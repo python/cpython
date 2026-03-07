@@ -2204,19 +2204,19 @@ SyntaxError: cannot use subscript as import target
 
 >>> import a as b; None = 1
 Traceback (most recent call last):
-SyntaxError: cannot assign to None
+SyntaxError: cannot assign to reserved keyword 'None'
 
 >>> import a, b as c; d = 1; None = 1
 Traceback (most recent call last):
-SyntaxError: cannot assign to None
+SyntaxError: cannot assign to reserved keyword 'None'
 
 >>> from a import b as c; None = 1
 Traceback (most recent call last):
-SyntaxError: cannot assign to None
+SyntaxError: cannot assign to reserved keyword 'None'
 
 >>> from a import b, c as d; e = 1; None = 1
 Traceback (most recent call last):
-SyntaxError: cannot assign to None
+SyntaxError: cannot assign to reserved keyword 'None'
 
 # Check that we dont raise the "trailing comma" error if there is more
 # input to the left of the valid part that we parsed.
