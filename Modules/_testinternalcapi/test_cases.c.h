@@ -4700,6 +4700,35 @@
             DISPATCH();
         }
 
+        TARGET(CLEANUP_ASYNC_THROW) {
+            #if _Py_TAIL_CALL_INTERP
+            int opcode = CLEANUP_ASYNC_THROW;
+            (void)(opcode);
+            #endif
+            _Py_CODEUNIT* const this_instr = next_instr;
+            (void)this_instr;
+            frame->instr_ptr = next_instr;
+            next_instr += 1;
+            INSTRUCTION_STATS(CLEANUP_ASYNC_THROW);
+            _PyStackRef exc_value_st;
+            exc_value_st = stack_pointer[-1];
+            PyObject *exc_value = PyStackRef_AsPyObjectSteal(exc_value_st);
+            assert(exc_value != NULL);
+            assert(PyExceptionInstance_Check(exc_value));
+            stack_pointer += -1;
+            ASSERT_WITHIN_STACK_BOUNDS(__FILE__, __LINE__);
+            _PyFrame_SetStackPointer(frame, stack_pointer);
+            int matches = PyErr_GivenExceptionMatches(exc_value, PyExc_StopAsyncIteration);
+            stack_pointer = _PyFrame_GetStackPointer(frame);
+            if (!matches) {
+                _PyFrame_SetStackPointer(frame, stack_pointer);
+                _PyErr_SetRaisedException(tstate, exc_value);
+                monitor_reraise(tstate, frame, this_instr);
+                JUMP_TO_LABEL(exception_unwind);
+            }
+            DISPATCH();
+        }
+
         TARGET(CLEANUP_THROW) {
             #if _Py_TAIL_CALL_INTERP
             int opcode = CLEANUP_THROW;

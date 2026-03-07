@@ -1583,6 +1583,20 @@ dummy_func(
             }
         }
 
+        inst(CLEANUP_ASYNC_THROW, (exc_value_st -- )) {
+            PyObject *exc_value = PyStackRef_AsPyObjectSteal(exc_value_st);
+            assert(exc_value != NULL);
+            assert(PyExceptionInstance_Check(exc_value));
+            INPUTS_DEAD();
+
+            int matches = PyErr_GivenExceptionMatches(exc_value, PyExc_StopAsyncIteration);
+            if (!matches) {
+                _PyErr_SetRaisedException(tstate, exc_value);
+                monitor_reraise(tstate, frame, this_instr);
+                goto exception_unwind;
+            }
+        }
+
         inst(LOAD_COMMON_CONSTANT, ( -- value)) {
             // Keep in sync with _common_constants in opcode.py
             assert(oparg < NUM_COMMON_CONSTANTS);

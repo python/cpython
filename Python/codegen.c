@@ -514,13 +514,13 @@ static int
 codegen_async_yield_from(compiler *c, location loc, expr_ty e)
 {
     NEW_JUMP_TARGET_LABEL(c, send);
-    NEW_JUMP_TARGET_LABEL(c, fail);
+    NEW_JUMP_TARGET_LABEL(c, exit);
 
     VISIT(c, expr, e->v.AsyncYieldFrom.value);
     ADDOP(c, loc, GET_ASYNC_YIELD_FROM_ITER);
 
     USE_LABEL(c, send);
-    ADDOP_JUMP(c, loc, SETUP_FINALLY, fail);
+    ADDOP_JUMP(c, loc, SETUP_FINALLY, exit);
     // Virtual try/except for the StopIteration; see above.
 
     // Get the __asend__() and await it. We preserve the iterator
@@ -538,8 +538,8 @@ codegen_async_yield_from(compiler *c, location loc, expr_ty e)
     ADDOP(c, loc, POP_TOP);
     ADDOP_JUMP(c, loc, JUMP_NO_INTERRUPT, send);
 
-    USE_LABEL(c, fail);
-    ADDOP(c, loc, POP_TOP);
+    USE_LABEL(c, exit);
+    ADDOP(c, loc, CLEANUP_ASYNC_THROW);
 
     return SUCCESS;
 }
