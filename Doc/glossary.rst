@@ -681,9 +681,9 @@ Glossary
       A :term:`type` that can have type arguments; typically
       a :ref:`container class<sequence-types>` such as :class:`list` or :class:`dict`.
       Used for :term:`type hints <type hint>` and :term:`annotations <annotation>`.
-      Created by a :ref:`generic-classes <generic class>`,
-      :term:`generic-functions <generic function>`
-      or :ref:`generic-type-aliases <generic type alias>`.
+      Created by a :ref:`generic class <generic-classes>`,
+      :term:`generic function <generic-functions>`
+      or :ref:`generic type alias <generic-type-aliases>`.
 
       For more details, see :ref:`generic alias types<types-genericalias>`,
       :pep:`483`, :pep:`484`, :pep:`585`, and the :mod:`typing` module.
