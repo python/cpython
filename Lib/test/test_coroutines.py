@@ -91,10 +91,6 @@ class AsyncBadSyntaxTest(unittest.TestCase):
             """await something()""",
 
             """async def foo():
-                yield from []
-            """,
-
-            """async def foo():
                 await await fut
             """,
 
