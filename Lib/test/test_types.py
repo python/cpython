@@ -41,7 +41,7 @@ def clear_typing_caches():
 class TypesTests(unittest.TestCase):
 
     def test_names(self):
-        c_only_names = {'CapsuleType'}
+        c_only_names = {'CapsuleType', 'LazyImportType'}
         ignored = {'new_class', 'resolve_bases', 'prepare_class',
                    'get_original_bases', 'DynamicClassAttribute', 'coroutine'}
 
@@ -55,10 +55,11 @@ class TypesTests(unittest.TestCase):
             'CoroutineType', 'EllipsisType', 'FrameType', 'FunctionType',
             'FrameLocalsProxyType',
             'GeneratorType', 'GenericAlias', 'GetSetDescriptorType',
-            'LambdaType', 'MappingProxyType', 'MemberDescriptorType',
-            'MethodDescriptorType', 'MethodType', 'MethodWrapperType',
-            'ModuleType', 'NoneType', 'NotImplementedType', 'SimpleNamespace',
-            'TracebackType', 'UnionType', 'WrapperDescriptorType',
+            'LambdaType', 'LazyImportType', 'MappingProxyType',
+            'MemberDescriptorType', 'MethodDescriptorType', 'MethodType',
+            'MethodWrapperType', 'ModuleType', 'NoneType',
+            'NotImplementedType', 'SimpleNamespace', 'TracebackType',
+            'UnionType', 'WrapperDescriptorType',
         }
         self.assertEqual(all_names, set(c_types.__all__))
         self.assertEqual(all_names - c_only_names, set(py_types.__all__))

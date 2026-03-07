@@ -4,9 +4,6 @@
 .. module:: tarfile
    :synopsis: Read and write tar-format archive files.
 
-.. moduleauthor:: Lars Gustäbel <lars@gustaebel.de>
-.. sectionauthor:: Lars Gustäbel <lars@gustaebel.de>
-
 **Source code:** :source:`Lib/tarfile.py`
 
 --------------

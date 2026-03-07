@@ -20,7 +20,11 @@ C API deprecations
 
 .. include:: c-api-pending-removal-in-3.15.rst
 
+.. include:: c-api-pending-removal-in-3.16.rst
+
 .. include:: c-api-pending-removal-in-3.18.rst
+
+.. include:: c-api-pending-removal-in-3.19.rst
 
 .. include:: c-api-pending-removal-in-3.20.rst
 

@@ -68,7 +68,8 @@ LIBRARY_FUZZER_PATHS = frozenset({
     Path("Lib/encodings/"),
     Path("Modules/_codecsmodule.c"),
     Path("Modules/cjkcodecs/"),
-    Path("Modules/unicodedata*"),
+    Path("Modules/unicodedata.c"),
+    Path("Modules/unicodedata_db.h"),
     # difflib
     Path("Lib/difflib.py"),
     # email
@@ -116,10 +117,10 @@ class Outputs:
 
 
 def compute_changes() -> None:
-    target_branch, head_ref = git_refs()
+    target_ref, head_ref = git_refs()
     if os.environ.get("GITHUB_EVENT_NAME", "") == "pull_request":
         # Getting changed files only makes sense on a pull request
-        files = get_changed_files(target_branch, head_ref)
+        files = get_changed_files(target_ref, head_ref)
         outputs = process_changed_files(files)
     else:
         # Otherwise, just run the tests
@@ -132,6 +133,7 @@ def compute_changes() -> None:
             run_wasi=True,
             run_windows_tests=True,
         )
+    target_branch = target_ref.removeprefix("origin/")
     outputs = process_target_branch(outputs, target_branch)
 
     if outputs.run_tests:
@@ -225,19 +227,27 @@ def process_changed_files(changed_files: Set[Path]) -> Outputs:
 
         if file.parent == GITHUB_WORKFLOWS_PATH:
             if file.name in ("build.yml", "reusable-cifuzz.yml"):
-                run_tests = run_ci_fuzz = run_ci_fuzz_stdlib = True
+                run_tests = run_ci_fuzz = run_ci_fuzz_stdlib = run_windows_tests = True
                 has_platform_specific_change = False
+                continue
             if file.name == "reusable-docs.yml":
                 run_docs = True
+                continue
+            if file.name == "reusable-windows.yml":
+                run_tests = True
+                run_windows_tests = True
+                continue
             if file.name == "reusable-windows-msi.yml":
                 run_windows_msi = True
+                continue
             if file.name == "reusable-macos.yml":
                 run_tests = True
                 platforms_changed.add("macos")
+                continue
             if file.name == "reusable-wasi.yml":
                 run_tests = True
                 platforms_changed.add("wasi")
-            continue
+                continue
 
         if not doc_file and file not in RUN_TESTS_IGNORE:
             run_tests = True

@@ -1,0 +1,2 @@
+:mod:`marshal` now supports :class:`frozendict` objects. The marshal format
+version was increased to 6. Patch by Victor Stinner.

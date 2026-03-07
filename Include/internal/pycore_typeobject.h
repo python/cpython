@@ -26,6 +26,7 @@ extern "C" {
 #define _Py_TYPE_VERSION_BYTEARRAY 9
 #define _Py_TYPE_VERSION_BYTES 10
 #define _Py_TYPE_VERSION_COMPLEX 11
+#define _Py_TYPE_VERSION_FROZENDICT 12
 
 #define _Py_TYPE_VERSION_NEXT 16
 
@@ -95,7 +96,6 @@ PyAPI_FUNC(PyObject *) _PyType_LookupSubclasses(PyTypeObject *);
 PyAPI_FUNC(PyObject *) _PyType_InitSubclasses(PyTypeObject *);
 
 extern PyObject * _PyType_GetBases(PyTypeObject *type);
-extern PyObject * _PyType_GetMRO(PyTypeObject *type);
 extern PyObject* _PyType_GetSubclasses(PyTypeObject *);
 extern int _PyType_HasSubclasses(PyTypeObject *);
 
