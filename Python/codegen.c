@@ -520,25 +520,26 @@ codegen_async_yield_from(compiler *c, location loc, expr_ty e)
     ADDOP(c, loc, GET_ASYNC_YIELD_FROM_ITER);
 
     USE_LABEL(c, send);
+    ADDOP_JUMP(c, loc, SETUP_FINALLY, fail);
     // Virtual try/except for the StopIteration; see above.
-    //ADDOP_JUMP(c, loc, SETUP_FINALLY, fail);
 
-    // Get the __asend__() and await it
+    // Get the __asend__() and await it. We preserve the iterator
+    // on the top of the stack by copying it.
+    ADDOP_I(c, loc, COPY, 1);
     ADDOP_LOAD_CONST(c, loc, Py_None);
     ADDOP(c, loc, GET_ASEND);
     ADDOP_LOAD_CONST(c, loc, Py_None);
     ADD_YIELD_FROM(c, loc, 1);
 
-    // Yield the value
     ADDOP_I(c, loc, CALL_INTRINSIC_1, INTRINSIC_ASYNC_GEN_WRAP);
-    ADDOP_I(c, loc, YIELD_VALUE, 0);
-    ADDOP_I(c, loc, RESUME, RESUME_AFTER_YIELD);
+    ADDOP_I(c, loc, YIELD_VALUE, 1);
 
-    // Repeat the loop
-    //ADDOP_JUMP(c, loc, JUMP_NO_INTERRUPT, send);
+    ADDOP(c, NO_LOCATION, POP_BLOCK);
+    ADDOP(c, loc, POP_TOP);
+    ADDOP_JUMP(c, loc, JUMP_NO_INTERRUPT, send);
 
-    //USE_LABEL(c, fail);
-    //ADDOP(c, loc, CLEANUP_THROW);
+    USE_LABEL(c, fail);
+    ADDOP(c, loc, POP_TOP);
 
     return SUCCESS;
 }
