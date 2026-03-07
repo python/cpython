@@ -1,4 +1,7 @@
-from compression import gzip
+try:
+    from compression import gzip
+except ImportError:
+    import gzip
 import concurrent.futures
 from pathlib import Path
 import html.parser

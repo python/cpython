@@ -1,0 +1,1 @@
+# HTML IDs excluded from the Doc/tools/check-html-ids.py check
