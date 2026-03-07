@@ -224,6 +224,10 @@ int _PyOpcode_num_popped(int opcode, int oparg)  {
             return 1;
         case GET_ANEXT:
             return 1;
+        case GET_ASEND:
+            return 2;
+        case GET_ASYNC_YIELD_FROM_ITER:
+            return 1;
         case GET_AWAITABLE:
             return 1;
         case GET_ITER:
@@ -715,6 +719,10 @@ int _PyOpcode_num_pushed(int opcode, int oparg)  {
             return 1;
         case GET_ANEXT:
             return 2;
+        case GET_ASEND:
+            return 1;
+        case GET_ASYNC_YIELD_FROM_ITER:
+            return 1;
         case GET_AWAITABLE:
             return 1;
         case GET_ITER:
@@ -1185,6 +1193,8 @@ const struct opcode_metadata _PyOpcode_opcode_metadata[267] = {
     [FOR_ITER_TUPLE] = { true, INSTR_FMT_IBC, HAS_ARG_FLAG | HAS_JUMP_FLAG | HAS_EXIT_FLAG | HAS_UNPREDICTABLE_JUMP_FLAG },
     [GET_AITER] = { true, INSTR_FMT_IX, HAS_ERROR_FLAG | HAS_ESCAPES_FLAG },
     [GET_ANEXT] = { true, INSTR_FMT_IX, HAS_ERROR_FLAG | HAS_ERROR_NO_POP_FLAG | HAS_ESCAPES_FLAG },
+    [GET_ASEND] = { true, INSTR_FMT_IX, HAS_ERROR_FLAG | HAS_ERROR_NO_POP_FLAG | HAS_ESCAPES_FLAG },
+    [GET_ASYNC_YIELD_FROM_ITER] = { true, INSTR_FMT_IX, HAS_ERROR_FLAG | HAS_ERROR_NO_POP_FLAG | HAS_ESCAPES_FLAG },
     [GET_AWAITABLE] = { true, INSTR_FMT_IB, HAS_ARG_FLAG | HAS_ERROR_FLAG | HAS_ESCAPES_FLAG },
     [GET_ITER] = { true, INSTR_FMT_IX, HAS_ERROR_FLAG | HAS_ESCAPES_FLAG },
     [GET_LEN] = { true, INSTR_FMT_IX, HAS_ERROR_FLAG | HAS_ESCAPES_FLAG },
@@ -1430,6 +1440,8 @@ _PyOpcode_macro_expansion[256] = {
     [FOR_ITER_TUPLE] = { .nuops = 3, .uops = { { _ITER_CHECK_TUPLE, OPARG_SIMPLE, 1 }, { _ITER_JUMP_TUPLE, OPARG_REPLACED, 1 }, { _ITER_NEXT_TUPLE, OPARG_SIMPLE, 1 } } },
     [GET_AITER] = { .nuops = 1, .uops = { { _GET_AITER, OPARG_SIMPLE, 0 } } },
     [GET_ANEXT] = { .nuops = 1, .uops = { { _GET_ANEXT, OPARG_SIMPLE, 0 } } },
+    [GET_ASEND] = { .nuops = 1, .uops = { { _GET_ASEND, OPARG_SIMPLE, 0 } } },
+    [GET_ASYNC_YIELD_FROM_ITER] = { .nuops = 1, .uops = { { _GET_ASYNC_YIELD_FROM_ITER, OPARG_SIMPLE, 0 } } },
     [GET_AWAITABLE] = { .nuops = 1, .uops = { { _GET_AWAITABLE, OPARG_SIMPLE, 0 } } },
     [GET_ITER] = { .nuops = 1, .uops = { { _GET_ITER, OPARG_SIMPLE, 0 } } },
     [GET_LEN] = { .nuops = 1, .uops = { { _GET_LEN, OPARG_SIMPLE, 0 } } },
@@ -1633,6 +1645,8 @@ const char *_PyOpcode_OpName[267] = {
     [FOR_ITER_TUPLE] = "FOR_ITER_TUPLE",
     [GET_AITER] = "GET_AITER",
     [GET_ANEXT] = "GET_ANEXT",
+    [GET_ASEND] = "GET_ASEND",
+    [GET_ASYNC_YIELD_FROM_ITER] = "GET_ASYNC_YIELD_FROM_ITER",
     [GET_AWAITABLE] = "GET_AWAITABLE",
     [GET_ITER] = "GET_ITER",
     [GET_LEN] = "GET_LEN",
@@ -1811,8 +1825,6 @@ const uint8_t _PyOpcode_Caches[256] = {
 PyAPI_DATA(const uint8_t) _PyOpcode_Deopt[256];
 #ifdef NEED_OPCODE_METADATA
 const uint8_t _PyOpcode_Deopt[256] = {
-    [121] = 121,
-    [122] = 122,
     [123] = 123,
     [124] = 124,
     [125] = 125,
@@ -1931,6 +1943,8 @@ const uint8_t _PyOpcode_Deopt[256] = {
     [FOR_ITER_TUPLE] = FOR_ITER,
     [GET_AITER] = GET_AITER,
     [GET_ANEXT] = GET_ANEXT,
+    [GET_ASEND] = GET_ASEND,
+    [GET_ASYNC_YIELD_FROM_ITER] = GET_ASYNC_YIELD_FROM_ITER,
     [GET_AWAITABLE] = GET_AWAITABLE,
     [GET_ITER] = GET_ITER,
     [GET_LEN] = GET_LEN,
@@ -2072,8 +2086,6 @@ const uint8_t _PyOpcode_Deopt[256] = {
 #endif // NEED_OPCODE_METADATA
 
 #define EXTRA_CASES \
-    case 121: \
-    case 122: \
     case 123: \
     case 124: \
     case 125: \

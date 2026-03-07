@@ -16,8 +16,10 @@ static void *opcode_targets_table[256] = {
     &&TARGET_FORMAT_WITH_SPEC,
     &&TARGET_GET_AITER,
     &&TARGET_GET_ANEXT,
-    &&TARGET_GET_ITER,
+    &&TARGET_GET_ASEND,
     &&TARGET_RESERVED,
+    &&TARGET_GET_ASYNC_YIELD_FROM_ITER,
+    &&TARGET_GET_ITER,
     &&TARGET_GET_LEN,
     &&TARGET_GET_YIELD_FROM_ITER,
     &&TARGET_INTERPRETER_EXIT,
@@ -121,8 +123,6 @@ static void *opcode_targets_table[256] = {
     &&TARGET_UNPACK_EX,
     &&TARGET_UNPACK_SEQUENCE,
     &&TARGET_YIELD_VALUE,
-    &&_unknown_opcode,
-    &&_unknown_opcode,
     &&_unknown_opcode,
     &&_unknown_opcode,
     &&_unknown_opcode,
@@ -380,8 +380,8 @@ static void *opcode_tracing_targets_table[256] = {
     &&TARGET_TRACE_RECORD,
     &&TARGET_TRACE_RECORD,
     &&TARGET_TRACE_RECORD,
-    &&_unknown_opcode,
-    &&_unknown_opcode,
+    &&TARGET_TRACE_RECORD,
+    &&TARGET_TRACE_RECORD,
     &&_unknown_opcode,
     &&_unknown_opcode,
     &&_unknown_opcode,
@@ -623,6 +623,8 @@ static PyObject *Py_PRESERVE_NONE_CC _TAIL_CALL_FOR_ITER_RANGE(TAIL_CALL_PARAMS)
 static PyObject *Py_PRESERVE_NONE_CC _TAIL_CALL_FOR_ITER_TUPLE(TAIL_CALL_PARAMS);
 static PyObject *Py_PRESERVE_NONE_CC _TAIL_CALL_GET_AITER(TAIL_CALL_PARAMS);
 static PyObject *Py_PRESERVE_NONE_CC _TAIL_CALL_GET_ANEXT(TAIL_CALL_PARAMS);
+static PyObject *Py_PRESERVE_NONE_CC _TAIL_CALL_GET_ASEND(TAIL_CALL_PARAMS);
+static PyObject *Py_PRESERVE_NONE_CC _TAIL_CALL_GET_ASYNC_YIELD_FROM_ITER(TAIL_CALL_PARAMS);
 static PyObject *Py_PRESERVE_NONE_CC _TAIL_CALL_GET_AWAITABLE(TAIL_CALL_PARAMS);
 static PyObject *Py_PRESERVE_NONE_CC _TAIL_CALL_GET_ITER(TAIL_CALL_PARAMS);
 static PyObject *Py_PRESERVE_NONE_CC _TAIL_CALL_GET_LEN(TAIL_CALL_PARAMS);
@@ -864,6 +866,8 @@ static py_tail_call_funcptr instruction_funcptr_handler_table[256] = {
     [FOR_ITER_TUPLE] = _TAIL_CALL_FOR_ITER_TUPLE,
     [GET_AITER] = _TAIL_CALL_GET_AITER,
     [GET_ANEXT] = _TAIL_CALL_GET_ANEXT,
+    [GET_ASEND] = _TAIL_CALL_GET_ASEND,
+    [GET_ASYNC_YIELD_FROM_ITER] = _TAIL_CALL_GET_ASYNC_YIELD_FROM_ITER,
     [GET_AWAITABLE] = _TAIL_CALL_GET_AWAITABLE,
     [GET_ITER] = _TAIL_CALL_GET_ITER,
     [GET_LEN] = _TAIL_CALL_GET_LEN,
@@ -1000,8 +1004,6 @@ static py_tail_call_funcptr instruction_funcptr_handler_table[256] = {
     [UNPACK_SEQUENCE_TWO_TUPLE] = _TAIL_CALL_UNPACK_SEQUENCE_TWO_TUPLE,
     [WITH_EXCEPT_START] = _TAIL_CALL_WITH_EXCEPT_START,
     [YIELD_VALUE] = _TAIL_CALL_YIELD_VALUE,
-    [121] = _TAIL_CALL_UNKNOWN_OPCODE,
-    [122] = _TAIL_CALL_UNKNOWN_OPCODE,
     [123] = _TAIL_CALL_UNKNOWN_OPCODE,
     [124] = _TAIL_CALL_UNKNOWN_OPCODE,
     [125] = _TAIL_CALL_UNKNOWN_OPCODE,
@@ -1122,6 +1124,8 @@ static py_tail_call_funcptr instruction_funcptr_tracing_table[256] = {
     [FOR_ITER_TUPLE] = _TAIL_CALL_TRACE_RECORD,
     [GET_AITER] = _TAIL_CALL_TRACE_RECORD,
     [GET_ANEXT] = _TAIL_CALL_TRACE_RECORD,
+    [GET_ASEND] = _TAIL_CALL_TRACE_RECORD,
+    [GET_ASYNC_YIELD_FROM_ITER] = _TAIL_CALL_TRACE_RECORD,
     [GET_AWAITABLE] = _TAIL_CALL_TRACE_RECORD,
     [GET_ITER] = _TAIL_CALL_TRACE_RECORD,
     [GET_LEN] = _TAIL_CALL_TRACE_RECORD,
@@ -1258,8 +1262,6 @@ static py_tail_call_funcptr instruction_funcptr_tracing_table[256] = {
     [UNPACK_SEQUENCE_TWO_TUPLE] = _TAIL_CALL_TRACE_RECORD,
     [WITH_EXCEPT_START] = _TAIL_CALL_TRACE_RECORD,
     [YIELD_VALUE] = _TAIL_CALL_TRACE_RECORD,
-    [121] = _TAIL_CALL_UNKNOWN_OPCODE,
-    [122] = _TAIL_CALL_UNKNOWN_OPCODE,
     [123] = _TAIL_CALL_UNKNOWN_OPCODE,
     [124] = _TAIL_CALL_UNKNOWN_OPCODE,
     [125] = _TAIL_CALL_UNKNOWN_OPCODE,

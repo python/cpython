@@ -1322,6 +1322,16 @@
 
         /* _SEND is not a viable micro-op for tier 2 */
 
+        case _GET_ASEND: {
+            JitOptRef retval;
+            retval = sym_new_not_null(ctx);
+            CHECK_STACK_BOUNDS(-1);
+            stack_pointer[-2] = retval;
+            stack_pointer += -1;
+            ASSERT_WITHIN_STACK_BOUNDS(__FILE__, __LINE__);
+            break;
+        }
+
         case _SEND_GEN_FRAME: {
             JitOptRef v;
             JitOptRef receiver;
@@ -2625,6 +2635,13 @@
             JitOptRef iter;
             iter = sym_new_not_null(ctx);
             stack_pointer[-1] = iter;
+            break;
+        }
+
+        case _GET_ASYNC_YIELD_FROM_ITER: {
+            JitOptRef aiter;
+            aiter = sym_new_not_null(ctx);
+            stack_pointer[-1] = aiter;
             break;
         }
 

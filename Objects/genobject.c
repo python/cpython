@@ -2635,7 +2635,6 @@ static void
 async_gen_yield_from_dealloc(PyObject *op)
 {
     assert(op != NULL);
-    _PyAsyncGenYieldFrom *self = _PyAsyncGenYieldFrom_CAST(op);
     _PyObject_GC_UNTRACK(op);
     (void)async_gen_yield_from_clear(op);
     PyObject_GC_Del(op);

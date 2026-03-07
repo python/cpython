@@ -511,6 +511,39 @@ codegen_add_yield_from(compiler *c, location loc, int await)
 }
 
 static int
+codegen_async_yield_from(compiler *c, location loc, expr_ty e)
+{
+    NEW_JUMP_TARGET_LABEL(c, send);
+    NEW_JUMP_TARGET_LABEL(c, fail);
+
+    VISIT(c, expr, e->v.AsyncYieldFrom.value);
+    ADDOP(c, loc, GET_ASYNC_YIELD_FROM_ITER);
+
+    USE_LABEL(c, send);
+    // Virtual try/except for the StopIteration; see above.
+    //ADDOP_JUMP(c, loc, SETUP_FINALLY, fail);
+
+    // Get the __asend__() and await it
+    ADDOP_LOAD_CONST(c, loc, Py_None);
+    ADDOP(c, loc, GET_ASEND);
+    ADDOP_LOAD_CONST(c, loc, Py_None);
+    ADD_YIELD_FROM(c, loc, 1);
+
+    // Yield the value
+    ADDOP_I(c, loc, CALL_INTRINSIC_1, INTRINSIC_ASYNC_GEN_WRAP);
+    ADDOP_I(c, loc, YIELD_VALUE, 0);
+    ADDOP_I(c, loc, RESUME, RESUME_AFTER_YIELD);
+
+    // Repeat the loop
+    //ADDOP_JUMP(c, loc, JUMP_NO_INTERRUPT, send);
+
+    //USE_LABEL(c, fail);
+    //ADDOP(c, loc, CLEANUP_THROW);
+
+    return SUCCESS;
+}
+
+static int
 codegen_pop_except_and_reraise(compiler *c, location loc)
 {
     /* Stack contents
@@ -5418,10 +5451,7 @@ codegen_visit_expr(compiler *c, expr_ty e)
             return _PyCompile_Error(c, loc, "'async yield from' outside function");
         }
 
-        VISIT(c, expr, e->v.AsyncYieldFrom.value);
-        ADDOP(c, loc, GET_YIELD_FROM_ITER);
-        ADDOP_LOAD_CONST(c, loc, Py_None);
-        ADD_YIELD_FROM(c, loc, 0);
+        return codegen_async_yield_from(c, loc, e);
         break;
     case Await_kind:
         VISIT(c, expr, e->v.Await.value);

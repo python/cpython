@@ -144,6 +144,7 @@ const uint32_t _PyUop_Flags[MAX_UOP_ID+1] = {
     [_GET_AITER] = HAS_ERROR_FLAG | HAS_ESCAPES_FLAG,
     [_GET_ANEXT] = HAS_ERROR_FLAG | HAS_ERROR_NO_POP_FLAG | HAS_ESCAPES_FLAG,
     [_GET_AWAITABLE] = HAS_ARG_FLAG | HAS_ERROR_FLAG | HAS_ESCAPES_FLAG,
+    [_GET_ASEND] = HAS_ERROR_FLAG | HAS_ERROR_NO_POP_FLAG | HAS_ESCAPES_FLAG,
     [_SEND_GEN_FRAME] = HAS_ARG_FLAG | HAS_DEOPT_FLAG,
     [_YIELD_VALUE] = HAS_ARG_FLAG | HAS_NEEDS_GUARD_IP_FLAG,
     [_POP_EXCEPT] = HAS_ESCAPES_FLAG,
@@ -225,6 +226,7 @@ const uint32_t _PyUop_Flags[MAX_UOP_ID+1] = {
     [_MATCH_KEYS] = HAS_ERROR_FLAG | HAS_ESCAPES_FLAG,
     [_GET_ITER] = HAS_ERROR_FLAG | HAS_ESCAPES_FLAG,
     [_GET_YIELD_FROM_ITER] = HAS_ERROR_FLAG | HAS_ERROR_NO_POP_FLAG | HAS_ESCAPES_FLAG,
+    [_GET_ASYNC_YIELD_FROM_ITER] = HAS_ERROR_FLAG | HAS_ERROR_NO_POP_FLAG | HAS_ESCAPES_FLAG,
     [_FOR_ITER_TIER_TWO] = HAS_EXIT_FLAG | HAS_ERROR_FLAG | HAS_ERROR_NO_POP_FLAG | HAS_ESCAPES_FLAG,
     [_ITER_CHECK_LIST] = HAS_EXIT_FLAG,
     [_GUARD_NOT_EXHAUSTED_LIST] = HAS_EXIT_FLAG,
@@ -1380,6 +1382,15 @@ const _PyUopCachingInfo _PyUop_Caching[MAX_UOP_ID+1] = {
             { -1, -1, -1 },
         },
     },
+    [_GET_ASEND] = {
+        .best = { 2, 2, 2, 2 },
+        .entries = {
+            { -1, -1, -1 },
+            { -1, -1, -1 },
+            { 1, 2, _GET_ASEND_r21 },
+            { -1, -1, -1 },
+        },
+    },
     [_SEND_GEN_FRAME] = {
         .best = { 2, 2, 2, 2 },
         .entries = {
@@ -2105,6 +2116,15 @@ const _PyUopCachingInfo _PyUop_Caching[MAX_UOP_ID+1] = {
         .entries = {
             { -1, -1, -1 },
             { 1, 1, _GET_YIELD_FROM_ITER_r11 },
+            { -1, -1, -1 },
+            { -1, -1, -1 },
+        },
+    },
+    [_GET_ASYNC_YIELD_FROM_ITER] = {
+        .best = { 1, 1, 1, 1 },
+        .entries = {
+            { -1, -1, -1 },
+            { 1, 1, _GET_ASYNC_YIELD_FROM_ITER_r11 },
             { -1, -1, -1 },
             { -1, -1, -1 },
         },
@@ -3760,6 +3780,7 @@ const uint16_t _PyUop_Uncached[MAX_UOP_REGS_ID+1] = {
     [_GET_AITER_r11] = _GET_AITER,
     [_GET_ANEXT_r12] = _GET_ANEXT,
     [_GET_AWAITABLE_r11] = _GET_AWAITABLE,
+    [_GET_ASEND_r21] = _GET_ASEND,
     [_SEND_GEN_FRAME_r22] = _SEND_GEN_FRAME,
     [_YIELD_VALUE_r11] = _YIELD_VALUE,
     [_POP_EXCEPT_r10] = _POP_EXCEPT,
@@ -3881,6 +3902,7 @@ const uint16_t _PyUop_Uncached[MAX_UOP_REGS_ID+1] = {
     [_MATCH_KEYS_r23] = _MATCH_KEYS,
     [_GET_ITER_r12] = _GET_ITER,
     [_GET_YIELD_FROM_ITER_r11] = _GET_YIELD_FROM_ITER,
+    [_GET_ASYNC_YIELD_FROM_ITER_r11] = _GET_ASYNC_YIELD_FROM_ITER,
     [_FOR_ITER_TIER_TWO_r23] = _FOR_ITER_TIER_TWO,
     [_ITER_CHECK_LIST_r02] = _ITER_CHECK_LIST,
     [_ITER_CHECK_LIST_r12] = _ITER_CHECK_LIST,
@@ -4574,6 +4596,10 @@ const char *const _PyOpcode_uop_name[MAX_UOP_REGS_ID+1] = {
     [_GET_AITER_r11] = "_GET_AITER_r11",
     [_GET_ANEXT] = "_GET_ANEXT",
     [_GET_ANEXT_r12] = "_GET_ANEXT_r12",
+    [_GET_ASEND] = "_GET_ASEND",
+    [_GET_ASEND_r21] = "_GET_ASEND_r21",
+    [_GET_ASYNC_YIELD_FROM_ITER] = "_GET_ASYNC_YIELD_FROM_ITER",
+    [_GET_ASYNC_YIELD_FROM_ITER_r11] = "_GET_ASYNC_YIELD_FROM_ITER_r11",
     [_GET_AWAITABLE] = "_GET_AWAITABLE",
     [_GET_AWAITABLE_r11] = "_GET_AWAITABLE_r11",
     [_GET_ITER] = "_GET_ITER",
@@ -5637,6 +5663,8 @@ int _PyUop_num_popped(int opcode, int oparg)
             return 0;
         case _GET_AWAITABLE:
             return 1;
+        case _GET_ASEND:
+            return 2;
         case _SEND_GEN_FRAME:
             return 1;
         case _YIELD_VALUE:
@@ -5798,6 +5826,8 @@ int _PyUop_num_popped(int opcode, int oparg)
         case _GET_ITER:
             return 1;
         case _GET_YIELD_FROM_ITER:
+            return 1;
+        case _GET_ASYNC_YIELD_FROM_ITER:
             return 1;
         case _FOR_ITER_TIER_TWO:
             return 0;
