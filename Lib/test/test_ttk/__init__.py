@@ -19,7 +19,21 @@ from _tkinter import TclError
 from tkinter import ttk
 
 
+class TestModule(unittest.TestCase):
+    def test_deprecated__version__(self):
+        with self.assertWarnsRegex(
+            DeprecationWarning,
+            "'__version__' is deprecated and slated for removal in Python 3.20",
+        ) as cm:
+            getattr(ttk, "__version__")
+        self.assertEqual(cm.filename, __file__)
+
+
 def setUpModule():
+    wantobjects = support.get_resource_value('wantobjects')
+    if wantobjects is not None:
+        unittest.enterModuleContext(
+            support.swap_attr(tkinter, 'wantobjects', int(wantobjects)))
     root = None
     try:
         root = tkinter.Tk()

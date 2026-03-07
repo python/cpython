@@ -11,6 +11,51 @@ interpreter and to functions that interact strongly with the interpreter. It is
 always available. Unless explicitly noted otherwise, all variables are read-only.
 
 
+.. data:: abi_info
+
+   .. versionadded:: 3.15
+
+   An object containing information about the ABI of the currently running
+   Python interpreter.
+   It should include information that affect the CPython ABI in ways that
+   require a specific build of the interpreter chosen from variants that can
+   co-exist on a single machine.
+   For example, it does not encode the base OS (Linux or Windows), but does
+   include pointer size since some systems support both 32- and 64-bit builds.
+   The available entries are the same on all platforms;
+   e.g. *pointer_size* is available even on 64-bit-only architectures.
+
+   The following attributes are available:
+
+   .. attribute:: abi_info.pointer_bits
+
+      The width of pointers in bits, as an integer,
+      equivalent to ``8 * sizeof(void *)``.
+      Usually, this is  ``32`` or ``64``.
+
+   .. attribute:: abi_info.free_threaded
+
+      A Boolean indicating whether the interpreter was built with
+      :term:`free threading` support.
+      This reflects either the presence of the :option:`--disable-gil`
+      :file:`configure` option (on Unix)
+      or setting the ``DisableGil`` property (on Windows).
+
+   .. attribute:: abi_info.debug
+
+      A Boolean indicating whether the interpreter was built in
+      :ref:`debug mode <debug-build>`.
+      This reflects either the presence of the :option:`--with-pydebug`
+      :file:`configure` option (on Unix)
+      or the ``Debug`` configuration (on Windows).
+
+   .. attribute:: abi_info.byteorder
+
+      A string indicating the native byte order,
+      either ``'big'`` or ``'little'``.
+      This is the same as the :data:`byteorder` attribute.
+
+
 .. data:: abiflags
 
    On POSIX systems where Python was built with the standard ``configure``
@@ -515,7 +560,7 @@ always available. Unless explicitly noted otherwise, all variables are read-only
    in the range 0--127, and produce undefined results otherwise.  Some systems
    have a convention for assigning specific meanings to specific exit codes, but
    these are generally underdeveloped; Unix programs generally use 2 for command
-   line syntax errors and 1 for all other kind of errors.  If another type of
+   line syntax errors and 1 for all other kinds of errors.  If another type of
    object is passed, ``None`` is equivalent to passing zero, and any other
    object is printed to :data:`stderr` and results in an exit code of 1.  In
    particular, ``sys.exit("some error message")`` is a quick way to exit a
@@ -523,8 +568,9 @@ always available. Unless explicitly noted otherwise, all variables are read-only
 
    Since :func:`exit` ultimately "only" raises an exception, it will only exit
    the process when called from the main thread, and the exception is not
-   intercepted. Cleanup actions specified by finally clauses of :keyword:`try` statements
-   are honored, and it is possible to intercept the exit attempt at an outer level.
+   intercepted. Cleanup actions specified by :keyword:`finally` clauses of
+   :keyword:`try` statements are honored, and it is possible to intercept the
+   exit attempt at an outer level.
 
    .. versionchanged:: 3.6
       If an error occurs in the cleanup after the Python interpreter
@@ -865,6 +911,35 @@ always available. Unless explicitly noted otherwise, all variables are read-only
 
    .. versionadded:: 3.11
 
+
+.. function:: get_lazy_imports()
+
+   Returns the current lazy imports mode as a string.
+
+   * ``"normal"``: Only imports explicitly marked with the ``lazy`` keyword
+     are lazy
+   * ``"all"``: All top-level imports are potentially lazy
+   * ``"none"``: All lazy imports are suppressed (even explicitly marked
+     ones)
+
+   See also :func:`set_lazy_imports` and :pep:`810`.
+
+   .. versionadded:: next
+
+
+.. function:: get_lazy_imports_filter()
+
+   Returns the current lazy imports filter function, or ``None`` if no
+   filter is set.
+
+   The filter function is called for every potentially lazy import to
+   determine whether it should actually be lazy. See
+   :func:`set_lazy_imports_filter` for details on the filter function
+   signature.
+
+   .. versionadded:: next
+
+
 .. function:: getrefcount(object)
 
    Return the reference count of the *object*.  The count returned is generally one
@@ -952,6 +1027,8 @@ always available. Unless explicitly noted otherwise, all variables are read-only
 
       This function should be used for internal and specialized purposes only.
       It is not guaranteed to exist in all implementations of Python.
+
+   .. versionadded:: 3.12
 
 
 .. function:: getobjects(limit[, type])
@@ -1128,10 +1205,14 @@ always available. Unless explicitly noted otherwise, all variables are read-only
 
       The size of the seed key of the hash algorithm
 
+   .. attribute:: hash_info.cutoff
+
+      Cutoff for small string DJBX33A optimization in range ``[1, cutoff)``.
+
    .. versionadded:: 3.2
 
    .. versionchanged:: 3.4
-      Added *algorithm*, *hash_bits* and *seed_bits*
+      Added *algorithm*, *hash_bits*, *seed_bits*, and *cutoff*.
 
 
 .. data:: hexversion
@@ -1185,6 +1266,15 @@ always available. Unless explicitly noted otherwise, all variables are read-only
    ``cache_tag`` is set to ``None``, it indicates that module caching should
    be disabled.
 
+   *supports_isolated_interpreters* is a boolean value, whether
+   this implementation supports multiple isolated interpreters.
+   It is ``True`` for CPython on most platforms.  Platforms with
+   this support implement the low-level :mod:`!_interpreters` module.
+
+   .. seealso::
+
+      :pep:`684`, :pep:`734`, and :mod:`concurrent.interpreters`.
+
    :data:`sys.implementation` may contain additional attributes specific to
    the Python implementation.  These non-standard attributes must start with
    an underscore, and are not described here.  Regardless of its contents,
@@ -1193,6 +1283,9 @@ always available. Unless explicitly noted otherwise, all variables are read-only
    language versions, however.)  See :pep:`421` for more information.
 
    .. versionadded:: 3.3
+
+   .. versionchanged:: 3.14
+      Added ``supports_isolated_interpreters`` field.
 
    .. note::
 
@@ -1281,6 +1374,64 @@ always available. Unless explicitly noted otherwise, all variables are read-only
    See also the :exc:`PythonFinalizationError` exception.
 
    .. versionadded:: 3.5
+
+.. data:: _jit
+
+   Utilities for observing just-in-time compilation.
+
+   .. impl-detail::
+
+      JIT compilation is an *experimental implementation detail* of CPython.
+      ``sys._jit`` is not guaranteed to exist or behave the same way in all
+      Python implementations, versions, or build configurations.
+
+   .. versionadded:: 3.14
+
+   .. function:: _jit.is_available()
+
+      Return ``True`` if the current Python executable supports JIT compilation,
+      and ``False`` otherwise.  This can be controlled by building CPython with
+      the ``--experimental-jit`` option on Windows, and the
+      :option:`--enable-experimental-jit` option on all other platforms.
+
+   .. function:: _jit.is_enabled()
+
+      Return ``True`` if JIT compilation is enabled for the current Python
+      process (implies :func:`sys._jit.is_available`), and ``False`` otherwise.
+      If JIT compilation is available, this can be controlled by setting the
+      :envvar:`PYTHON_JIT` environment variable to ``0`` (disabled) or ``1``
+      (enabled) at interpreter startup.
+
+   .. function:: _jit.is_active()
+
+      Return ``True`` if the topmost Python frame is currently executing JIT
+      code (implies :func:`sys._jit.is_enabled`), and ``False`` otherwise.
+
+      .. note::
+
+         This function is intended for testing and debugging the JIT itself.
+         It should be avoided for any other purpose.
+
+      .. note::
+
+         Due to the nature of tracing JIT compilers, repeated calls to this
+         function may give surprising results. For example, branching on its
+         return value will likely lead to unexpected behavior (if doing so
+         causes JIT code to be entered or exited):
+
+         .. code-block:: pycon
+
+            >>> for warmup in range(BIG_NUMBER):
+            ...     # This line is "hot", and is eventually JIT-compiled:
+            ...     if sys._jit.is_active():
+            ...         # This line is "cold", and is run in the interpreter:
+            ...         assert sys._jit.is_active()
+            ...
+            Traceback (most recent call last):
+              File "<stdin>", line 5, in <module>
+                assert sys._jit.is_active()
+                       ~~~~~~~~~~~~~~~~~~^^
+            AssertionError
 
 .. data:: last_exc
 
@@ -1597,6 +1748,61 @@ always available. Unless explicitly noted otherwise, all variables are read-only
 
    .. versionadded:: 3.11
 
+
+.. function:: set_lazy_imports(mode)
+
+   Sets the global lazy imports mode. The *mode* parameter must be one of
+   the following strings:
+
+   * ``"normal"``: Only imports explicitly marked with the ``lazy`` keyword
+     are lazy
+   * ``"all"``: All top-level imports become potentially lazy
+   * ``"none"``: All lazy imports are suppressed (even explicitly marked
+     ones)
+
+   This function is intended for advanced users who need to control lazy
+   imports across their entire application. Library developers should
+   generally not use this function as it affects the runtime execution of
+   applications.
+
+   In addition to the mode, lazy imports can be controlled via the filter
+   provided by :func:`set_lazy_imports_filter`.
+
+   See also :func:`get_lazy_imports` and :pep:`810`.
+
+   .. versionadded:: next
+
+
+.. function:: set_lazy_imports_filter(filter)
+
+   Sets the lazy imports filter callback. The *filter* parameter must be a
+   callable or ``None`` to clear the filter.
+
+   The filter function is called for every potentially lazy import to
+   determine whether it should actually be lazy. It must have the following
+   signature::
+
+      def filter(importing_module: str, imported_module: str,
+                 fromlist: tuple[str, ...] | None) -> bool
+
+   Where:
+
+   * *importing_module* is the name of the module doing the import
+   * *imported_module* is the name of the module being imported
+   * *fromlist* is the tuple of names being imported (for ``from ... import``
+     statements), or ``None`` for regular imports
+
+   The filter should return ``True`` to allow the import to be lazy, or
+   ``False`` to force an eager import.
+
+   This is an advanced feature intended for specialized users who need
+   fine-grained control over lazy import behavior.
+
+   See also :func:`get_lazy_imports_filter` and :pep:`810`.
+
+   .. versionadded:: next
+
+
 .. function:: setprofile(profilefunc)
 
    .. index::
@@ -1692,7 +1898,7 @@ always available. Unless explicitly noted otherwise, all variables are read-only
    :func:`settrace` for each thread being debugged or use :func:`threading.settrace`.
 
    Trace functions should have three arguments: *frame*, *event*, and
-   *arg*. *frame* is the current stack frame.  *event* is a string: ``'call'``,
+   *arg*. *frame* is the :ref:`current stack frame <frame-objects>`. *event* is a string: ``'call'``,
    ``'line'``, ``'return'``, ``'exception'`` or ``'opcode'``.  *arg* depends on
    the event type.
 
@@ -1875,8 +2081,28 @@ always available. Unless explicitly noted otherwise, all variables are read-only
    interpreter is pre-release (alpha, beta, or release candidate) then the
    local and remote interpreters must be the same exact version.
 
+   See :ref:`remote-debugging` for more information about the remote debugging
+   mechanism.
+
+   .. audit-event:: sys.remote_exec pid script_path
+
+      When the code is executed in the remote process, an
+      :ref:`auditing event <auditing>` ``sys.remote_exec`` is raised with
+      the *pid* and the path to the script file.
+      This event is raised in the process that called :func:`sys.remote_exec`.
+
+   .. audit-event:: cpython.remote_debugger_script script_path
+
+      When the script is executed in the remote process, an
+      :ref:`auditing event <auditing>`
+      ``cpython.remote_debugger_script`` is raised
+      with the path in the remote process.
+      This event is raised in the remote process, not the one
+      that called :func:`sys.remote_exec`.
+
    .. availability:: Unix, Windows.
    .. versionadded:: 3.14
+      See :pep:`768` for more details.
 
 
 .. function:: _enablelegacywindowsfsencoding()
@@ -2064,10 +2290,15 @@ always available. Unless explicitly noted otherwise, all variables are read-only
 
    The default hook formats :attr:`!err_msg` and :attr:`!object` as:
    ``f'{err_msg}: {object!r}'``; use "Exception ignored in" error message
-   if :attr:`!err_msg` is ``None``.
+   if :attr:`!err_msg` is ``None``. Similar to the :mod:`traceback` module,
+   this adds color to exceptions by default. This can be disabled using
+   :ref:`environment variables <using-on-controlling-color>`.
 
    :func:`sys.unraisablehook` can be overridden to control how unraisable
    exceptions are handled.
+
+   .. versionchanged:: 3.15
+      Exceptions are now printed with colorful text.
 
    .. seealso::
 
@@ -2103,8 +2334,11 @@ always available. Unless explicitly noted otherwise, all variables are read-only
 
 .. data:: api_version
 
-   The C API version for this interpreter.  Programmers may find this useful when
-   debugging version conflicts between Python and extension modules.
+   The C API version, equivalent to the C macro :c:macro:`PYTHON_API_VERSION`.
+   Defined for backwards compatibility.
+
+   Currently, this constant is not updated in new Python versions, and is not
+   useful for versioning. This may change in the future.
 
 
 .. data:: version_info
@@ -2131,7 +2365,7 @@ always available. Unless explicitly noted otherwise, all variables are read-only
 
    The version number used to form registry keys on Windows platforms. This is
    stored as string resource 1000 in the Python DLL.  The value is normally the
-   major and minor versions of the running Python interpreter.  It is provided in the :mod:`sys`
+   major and minor versions of the running Python interpreter.  It is provided in the :mod:`!sys`
    module for informational purposes; modifying this value has no effect on the
    registry keys used by Python.
 

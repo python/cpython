@@ -142,6 +142,8 @@ class TestLineCounts(unittest.TestCase):
 
         self.assertEqual(self.tracer.results().counts, expected)
 
+    @unittest.skipIf(os.environ.get('PYTHON_UOPS_OPTIMIZE') == '0',
+                     "Line counts differ when JIT optimizer is disabled")
     def test_traced_func_loop(self):
         self.tracer.runfunc(traced_func_loop, 2, 3)
 
@@ -166,6 +168,8 @@ class TestLineCounts(unittest.TestCase):
 
         self.assertEqual(self.tracer.results().counts, expected)
 
+    @unittest.skipIf(os.environ.get('PYTHON_UOPS_OPTIMIZE') == '0',
+                     "Line counts differ when JIT optimizer is disabled")
     def test_trace_func_generator(self):
         self.tracer.runfunc(traced_func_calling_generator)
 
@@ -236,6 +240,8 @@ class TestRunExecCounts(unittest.TestCase):
         self.my_py_filename = fix_ext_py(__file__)
         self.addCleanup(sys.settrace, sys.gettrace())
 
+    @unittest.skipIf(os.environ.get('PYTHON_UOPS_OPTIMIZE') == '0',
+                     "Line counts differ when JIT optimizer is disabled")
     def test_exec_counts(self):
         self.tracer = Trace(count=1, trace=0, countfuncs=0, countcallers=0)
         code = r'''traced_func_loop(2, 5)'''

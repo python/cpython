@@ -1,4 +1,0 @@
-Add optional *add_scheme* argument to :func:`urllib.request.pathname2url`; when
-set to true, a complete URL is returned. Likewise add optional *require_scheme*
-argument to :func:`~urllib.request.url2pathname`; when set to true, a complete
-URL is accepted.

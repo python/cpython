@@ -5,6 +5,7 @@
 #include "pycore_moduleobject.h"  // _PyModule_GetState()
 #include "pycore_pyatomic_ft_wrappers.h"
 #include "pycore_typeobject.h"    // _PyType_GetModuleState()
+#include "pycore_weakref.h"       // FT_CLEAR_WEAKREFS()
 
 #include <stddef.h>
 
@@ -341,8 +342,10 @@ deque_append_lock_held(dequeobject *deque, PyObject *item, Py_ssize_t maxlen)
 {
     if (deque->rightindex == BLOCKLEN - 1) {
         block *b = newblock(deque);
-        if (b == NULL)
+        if (b == NULL) {
+            Py_DECREF(item);
             return -1;
+        }
         b->leftlink = deque->rightblock;
         CHECK_END(deque->rightblock->rightlink);
         deque->rightblock->rightlink = b;
@@ -388,8 +391,10 @@ deque_appendleft_lock_held(dequeobject *deque, PyObject *item,
 {
     if (deque->leftindex == 0) {
         block *b = newblock(deque);
-        if (b == NULL)
+        if (b == NULL) {
+            Py_DECREF(item);
             return -1;
+        }
         b->rightlink = deque->leftblock;
         CHECK_END(deque->leftblock->leftlink);
         deque->leftblock->leftlink = b;
@@ -563,7 +568,6 @@ deque_extendleft_impl(dequeobject *deque, PyObject *iterable)
     iternext = *Py_TYPE(it)->tp_iternext;
     while ((item = iternext(it)) != NULL) {
         if (deque_appendleft_lock_held(deque, item, maxlen) == -1) {
-            Py_DECREF(item);
             Py_DECREF(it);
             return NULL;
         }
@@ -604,29 +608,42 @@ deque_copy_impl(dequeobject *deque)
     collections_state *state = find_module_state_by_def(Py_TYPE(deque));
     if (Py_IS_TYPE(deque, state->deque_type)) {
         dequeobject *new_deque;
-        PyObject *rv;
+        Py_ssize_t n = Py_SIZE(deque);
 
         new_deque = (dequeobject *)deque_new(state->deque_type, NULL, NULL);
         if (new_deque == NULL)
             return NULL;
         new_deque->maxlen = old_deque->maxlen;
-        /* Fast path for the deque_repeat() common case where len(deque) == 1
-         *
-         * It's safe to not acquire the per-object lock for new_deque; it's
-         * invisible to other threads.
+
+        /* Copy elements directly by walking the block structure.
+         * This is safe because the caller holds the deque lock and
+         * the new deque is not yet visible to other threads.
          */
-        if (Py_SIZE(deque) == 1) {
-            PyObject *item = old_deque->leftblock->data[old_deque->leftindex];
-            rv = deque_append_impl(new_deque, item);
-        } else {
-            rv = deque_extend_impl(new_deque, (PyObject *)deque);
+        if (n > 0) {
+            block *b = old_deque->leftblock;
+            Py_ssize_t index = old_deque->leftindex;
+
+            /* Space saving heuristic.  Start filling from the left */
+            assert(new_deque->leftblock == new_deque->rightblock);
+            assert(new_deque->leftindex == new_deque->rightindex + 1);
+            new_deque->leftindex = 1;
+            new_deque->rightindex = 0;
+
+            for (Py_ssize_t i = 0; i < n; i++) {
+                PyObject *item = b->data[index];
+                if (deque_append_lock_held(new_deque, Py_NewRef(item),
+                                           new_deque->maxlen) < 0) {
+                    Py_DECREF(new_deque);
+                    return NULL;
+                }
+                index++;
+                if (index == BLOCKLEN) {
+                    b = b->rightlink;
+                    index = 0;
+                }
+            }
         }
-        if (rv != NULL) {
-            Py_DECREF(rv);
-            return (PyObject *)new_deque;
-        }
-        Py_DECREF(new_deque);
-        return NULL;
+        return (PyObject *)new_deque;
     }
     if (old_deque->maxlen < 0)
         result = PyObject_CallOneArg((PyObject *)(Py_TYPE(deque)),
@@ -1532,9 +1549,7 @@ deque_dealloc(PyObject *self)
     Py_ssize_t i;
 
     PyObject_GC_UnTrack(deque);
-    if (deque->weakreflist != NULL) {
-        PyObject_ClearWeakRefs(self);
-    }
+    FT_CLEAR_WEAKREFS(self, deque->weakreflist);
     if (deque->leftblock != NULL) {
         (void)deque_clear(self);
         assert(deque->leftblock != NULL);
@@ -2232,11 +2247,11 @@ defdict_missing(PyObject *op, PyObject *key)
     value = _PyObject_CallNoArgs(factory);
     if (value == NULL)
         return value;
-    if (PyObject_SetItem(op, key, value) < 0) {
-        Py_DECREF(value);
-        return NULL;
-    }
-    return value;
+    PyObject *result = NULL;
+    (void)PyDict_SetDefaultRef(op, key, value, &result);
+    // 'result' is NULL, or a strong reference to 'value' or 'op[key]'
+    Py_DECREF(value);
+    return result;
 }
 
 static inline PyObject*
@@ -2578,7 +2593,12 @@ _collections__count_elements_impl(PyObject *module, PyObject *mapping,
                 if (_PyDict_SetItem_KnownHash(mapping, key, one, hash) < 0)
                     goto done;
             } else {
+                /* oldval is a borrowed reference.  Keep it alive across
+                   PyNumber_Add(), which can execute arbitrary user code and
+                   mutate (or even clear) the underlying dict. */
+                Py_INCREF(oldval);
                 newval = PyNumber_Add(oldval, one);
+                Py_DECREF(oldval);
                 if (newval == NULL)
                     goto done;
                 if (_PyDict_SetItem_KnownHash(mapping, key, newval, hash) < 0)

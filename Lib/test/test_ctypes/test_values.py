@@ -7,7 +7,6 @@ import importlib.util
 import sys
 import unittest
 from ctypes import (Structure, CDLL, POINTER, pythonapi,
-                    _pointer_type_cache,
                     c_ubyte, c_char_p, c_int)
 from test.support import import_helper, thread_unsafe
 
@@ -97,8 +96,6 @@ class PythonValuesTestCase(unittest.TestCase):
         self.assertEqual(modules, expected,
                          "_PyImport_FrozenBootstrap example "
                          "in Doc/library/ctypes.rst may be out of date")
-
-        del _pointer_type_cache[struct_frozen]
 
     def test_undefined(self):
         self.assertRaises(ValueError, c_int.in_dll, pythonapi,

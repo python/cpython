@@ -4,6 +4,7 @@ Tests for pathlib.types._ReadablePath
 
 import collections.abc
 import io
+import sys
 import unittest
 
 from .support import is_pypi
@@ -12,10 +13,10 @@ from .support.zip_path import ReadableZipPath, ZipPathGround
 
 if is_pypi:
     from pathlib_abc import PathInfo, _ReadablePath
-    from pathlib_abc._os import magic_open
+    from pathlib_abc._os import vfsopen
 else:
     from pathlib.types import PathInfo, _ReadablePath
-    from pathlib._os import magic_open
+    from pathlib._os import vfsopen
 
 
 class ReadTestBase:
@@ -31,17 +32,34 @@ class ReadTestBase:
 
     def test_open_r(self):
         p = self.root / 'fileA'
-        with magic_open(p, 'r') as f:
+        with vfsopen(p, 'r', encoding='utf-8') as f:
             self.assertIsInstance(f, io.TextIOBase)
             self.assertEqual(f.read(), 'this is file A\n')
 
+    def test_open_r_buffering_error(self):
+        p = self.root / 'fileA'
+        self.assertRaises(ValueError, vfsopen, p, 'r', buffering=0)
+        self.assertRaises(ValueError, vfsopen, p, 'r', buffering=1)
+        self.assertRaises(ValueError, vfsopen, p, 'r', buffering=1024)
+
+    @unittest.skipIf(
+        not getattr(sys.flags, 'warn_default_encoding', 0),
+        "Requires warn_default_encoding",
+    )
+    def test_open_r_encoding_warning(self):
+        p = self.root / 'fileA'
+        with self.assertWarns(EncodingWarning) as wc:
+            with vfsopen(p, 'r'):
+                pass
+        self.assertEqual(wc.filename, __file__)
+
     def test_open_rb(self):
         p = self.root / 'fileA'
-        with magic_open(p, 'rb') as f:
+        with vfsopen(p, 'rb') as f:
             self.assertEqual(f.read(), b'this is file A\n')
-        self.assertRaises(ValueError, magic_open, p, 'rb', encoding='utf8')
-        self.assertRaises(ValueError, magic_open, p, 'rb', errors='strict')
-        self.assertRaises(ValueError, magic_open, p, 'rb', newline='')
+        self.assertRaises(ValueError, vfsopen, p, 'rb', encoding='utf8')
+        self.assertRaises(ValueError, vfsopen, p, 'rb', errors='strict')
+        self.assertRaises(ValueError, vfsopen, p, 'rb', newline='')
 
     def test_read_bytes(self):
         p = self.root / 'fileA'
@@ -49,21 +67,31 @@ class ReadTestBase:
 
     def test_read_text(self):
         p = self.root / 'fileA'
-        self.assertEqual(p.read_text(), 'this is file A\n')
+        self.assertEqual(p.read_text(encoding='utf-8'), 'this is file A\n')
         q = self.root / 'abc'
         self.ground.create_file(q, b'\xe4bcdefg')
         self.assertEqual(q.read_text(encoding='latin-1'), 'äbcdefg')
         self.assertEqual(q.read_text(encoding='utf-8', errors='ignore'), 'bcdefg')
 
+    @unittest.skipIf(
+        not getattr(sys.flags, 'warn_default_encoding', 0),
+        "Requires warn_default_encoding",
+    )
+    def test_read_text_encoding_warning(self):
+        p = self.root / 'fileA'
+        with self.assertWarns(EncodingWarning) as wc:
+            p.read_text()
+        self.assertEqual(wc.filename, __file__)
+
     def test_read_text_with_newlines(self):
         p = self.root / 'abc'
         self.ground.create_file(p, b'abcde\r\nfghlk\n\rmnopq')
         # Check that `\n` character change nothing
-        self.assertEqual(p.read_text(newline='\n'), 'abcde\r\nfghlk\n\rmnopq')
+        self.assertEqual(p.read_text(encoding='utf-8', newline='\n'), 'abcde\r\nfghlk\n\rmnopq')
         # Check that `\r` character replaces `\n`
-        self.assertEqual(p.read_text(newline='\r'), 'abcde\r\nfghlk\n\rmnopq')
+        self.assertEqual(p.read_text(encoding='utf-8', newline='\r'), 'abcde\r\nfghlk\n\rmnopq')
         # Check that `\r\n` character replaces `\n`
-        self.assertEqual(p.read_text(newline='\r\n'), 'abcde\r\nfghlk\n\rmnopq')
+        self.assertEqual(p.read_text(encoding='utf-8', newline='\r\n'), 'abcde\r\nfghlk\n\rmnopq')
 
     def test_iterdir(self):
         expected = ['dirA', 'dirB', 'dirC', 'fileA']

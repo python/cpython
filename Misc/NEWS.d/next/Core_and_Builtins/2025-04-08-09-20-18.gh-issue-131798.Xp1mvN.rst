@@ -1,2 +1,0 @@
-Allow the JIT compiler to remove some type checks for operations on lists,
-tuples, dictionaries, and sets.

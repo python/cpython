@@ -109,23 +109,22 @@ static PyObject *
 _multiprocessing_recv_impl(PyObject *module, HANDLE handle, int size)
 /*[clinic end generated code: output=92322781ba9ff598 input=6a5b0834372cee5b]*/
 {
-    int nread;
-    PyObject *buf;
-
-    buf = PyBytes_FromStringAndSize(NULL, size);
-    if (!buf)
+    PyBytesWriter *writer = PyBytesWriter_Create(size);
+    if (!writer) {
         return NULL;
+    }
+    char *buf = PyBytesWriter_GetData(writer);
 
+    Py_ssize_t nread;
     Py_BEGIN_ALLOW_THREADS
-    nread = recv((SOCKET) handle, PyBytes_AS_STRING(buf), size, 0);
+    nread = recv((SOCKET) handle, buf, size, 0);
     Py_END_ALLOW_THREADS
 
     if (nread < 0) {
-        Py_DECREF(buf);
+        PyBytesWriter_Discard(writer);
         return PyErr_SetExcFromWindowsErr(PyExc_OSError, WSAGetLastError());
     }
-    _PyBytes_Resize(&buf, nread);
-    return buf;
+    return PyBytesWriter_FinishWithSize(writer, nread);
 }
 
 /*[clinic input]

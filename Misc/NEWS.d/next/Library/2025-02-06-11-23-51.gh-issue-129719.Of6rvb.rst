@@ -1,1 +1,0 @@
-Fix missing :data:`!socket.CAN_RAW_ERR_FILTER` constant in the socket module on Linux systems. It was missing since Python 3.11.

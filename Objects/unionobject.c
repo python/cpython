@@ -4,6 +4,7 @@
 #include "pycore_typevarobject.h"  // _PyTypeAlias_Type, _Py_typing_type_repr
 #include "pycore_unicodeobject.h" // _PyUnicode_EqualToASCIIString
 #include "pycore_unionobject.h"
+#include "pycore_weakref.h"       // FT_CLEAR_WEAKREFS()
 
 
 typedef struct {
@@ -21,9 +22,7 @@ unionobject_dealloc(PyObject *self)
     unionobject *alias = (unionobject *)self;
 
     _PyObject_GC_UNTRACK(self);
-    if (alias->weakreflist != NULL) {
-        PyObject_ClearWeakRefs((PyObject *)alias);
-    }
+    FT_CLEAR_WEAKREFS(self, alias->weakreflist);
 
     Py_XDECREF(alias->args);
     Py_XDECREF(alias->hashable_args);
@@ -290,7 +289,7 @@ union_repr(PyObject *self)
     }
 
     for (Py_ssize_t i = 0; i < len; i++) {
-        if (i > 0 && PyUnicodeWriter_WriteUTF8(writer, " | ", 3) < 0) {
+        if (i > 0 && PyUnicodeWriter_WriteASCII(writer, " | ", 3) < 0) {
             goto error;
         }
         PyObject *p = PyTuple_GET_ITEM(alias->args, i);
@@ -300,12 +299,12 @@ union_repr(PyObject *self)
     }
 
 #if 0
-    PyUnicodeWriter_WriteUTF8(writer, "|args=", 6);
+    PyUnicodeWriter_WriteASCII(writer, "|args=", 6);
     PyUnicodeWriter_WriteRepr(writer, alias->args);
-    PyUnicodeWriter_WriteUTF8(writer, "|h=", 3);
+    PyUnicodeWriter_WriteASCII(writer, "|h=", 3);
     PyUnicodeWriter_WriteRepr(writer, alias->hashable_args);
     if (alias->unhashable_args) {
-        PyUnicodeWriter_WriteUTF8(writer, "|u=", 3);
+        PyUnicodeWriter_WriteASCII(writer, "|u=", 3);
         PyUnicodeWriter_WriteRepr(writer, alias->unhashable_args);
     }
 #endif
@@ -394,8 +393,23 @@ static PyGetSetDef union_properties[] = {
     {0}
 };
 
+static PyObject *
+union_nb_or(PyObject *a, PyObject *b)
+{
+    unionbuilder ub;
+    if (!unionbuilder_init(&ub, true)) {
+        return NULL;
+    }
+    if (!unionbuilder_add_single(&ub, a) ||
+        !unionbuilder_add_single(&ub, b)) {
+        unionbuilder_finalize(&ub);
+        return NULL;
+    }
+    return make_union(&ub);
+}
+
 static PyNumberMethods union_as_number = {
-        .nb_or = _Py_union_type_or, // Add __or__ function
+        .nb_or = union_nb_or, // Add __or__ function
 };
 
 static const char* const cls_attrs[] = {
@@ -475,11 +489,13 @@ _Py_union_from_tuple(PyObject *args)
     }
     if (PyTuple_CheckExact(args)) {
         if (!unionbuilder_add_tuple(&ub, args)) {
+            unionbuilder_finalize(&ub);
             return NULL;
         }
     }
     else {
         if (!unionbuilder_add_single(&ub, args)) {
+            unionbuilder_finalize(&ub);
             return NULL;
         }
     }

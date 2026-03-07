@@ -1,3 +1,0 @@
-Add ``--prioritize`` to ``-m test``. This option allows the user to specify
-which selected tests should execute first, even if the order is otherwise
-randomized. This is particularly useful for tests that run the longest.

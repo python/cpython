@@ -420,7 +420,7 @@ Here are three practical data validation utilities:
 
         def validate(self, value):
             if not isinstance(value, str):
-                raise TypeError(f'Expected {value!r} to be an str')
+                raise TypeError(f'Expected {value!r} to be a str')
             if self.minsize is not None and len(value) < self.minsize:
                 raise ValueError(
                     f'Expected {value!r} to be no smaller than {self.minsize!r}'

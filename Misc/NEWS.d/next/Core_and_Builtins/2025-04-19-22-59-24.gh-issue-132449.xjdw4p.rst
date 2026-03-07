@@ -1,2 +1,0 @@
-Syntax errors that look like misspellings of Python keywords now provide a
-helpful fix suggestion for the typo.  Contributed by Pablo Galindo Salgado.

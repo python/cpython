@@ -922,6 +922,20 @@ _readIni(const wchar_t *section, const wchar_t *settingName, wchar_t *buffer, in
 {
     wchar_t iniPath[MAXLEN];
     int n;
+    // Check for _PYLAUNCHER_INIDIR override (used for test isolation)
+    DWORD len = GetEnvironmentVariableW(L"_PYLAUNCHER_INIDIR", iniPath, MAXLEN);
+    if (len && len < MAXLEN) {
+        if (join(iniPath, MAXLEN, L"py.ini")) {
+            debug(L"# Reading from %s for %s/%s\n", iniPath, section, settingName);
+            n = GetPrivateProfileStringW(section, settingName, NULL, buffer, bufferLength, iniPath);
+            if (n) {
+                debug(L"# Found %s in %s\n", settingName, iniPath);
+                return n;
+            }
+        }
+        // When _PYLAUNCHER_INIDIR is set, skip the default locations
+        return 0;
+    }
     if (SUCCEEDED(SHGetFolderPathW(NULL, CSIDL_LOCAL_APPDATA, NULL, 0, iniPath)) &&
         join(iniPath, MAXLEN, L"py.ini")) {
         debug(L"# Reading from %s for %s/%s\n", iniPath, section, settingName);
@@ -1058,7 +1072,7 @@ checkShebang(SearchInfo *search)
         debug(L"# Failed to open %s for shebang parsing (0x%08X)\n",
               scriptFile, GetLastError());
         free(scriptFile);
-        return 0;
+        return RC_NO_SCRIPT;
     }
 
     DWORD bytesRead = 0;
@@ -2664,6 +2678,21 @@ performSearch(SearchInfo *search, EnvironmentInfo **envs)
     case 0:
     case RC_NO_SHEBANG:
     case RC_RECURSIVE_SHEBANG:
+        break;
+    case RC_NO_SCRIPT:
+        if (!_comparePath(search->scriptFile, search->scriptFileLength, L"install", -1) ||
+            !_comparePath(search->scriptFile, search->scriptFileLength, L"uninstall", -1) ||
+            !_comparePath(search->scriptFile, search->scriptFileLength, L"list", -1) ||
+            !_comparePath(search->scriptFile, search->scriptFileLength, L"help", -1)) {
+            fprintf(
+                stderr,
+                "WARNING: The '%.*ls' command is unavailable because this is the legacy py.exe command.\n"
+                "If you have already installed the Python install manager, open Installed Apps and "
+                "remove 'Python Launcher' to enable the new py.exe command.\n",
+                search->scriptFileLength,
+                search->scriptFile
+            );
+        }
         break;
     default:
         return exitCode;

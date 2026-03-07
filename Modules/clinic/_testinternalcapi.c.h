@@ -375,4 +375,21 @@ skip_optional_pos:
 exit:
     return return_value;
 }
-/*[clinic end generated code: output=da34166d2c147e7a input=a9049054013a1b77]*/
+
+PyDoc_STRVAR(get_next_dict_keys_version__doc__,
+"get_next_dict_keys_version($module, /)\n"
+"--\n"
+"\n");
+
+#define GET_NEXT_DICT_KEYS_VERSION_METHODDEF    \
+    {"get_next_dict_keys_version", (PyCFunction)get_next_dict_keys_version, METH_NOARGS, get_next_dict_keys_version__doc__},
+
+static PyObject *
+get_next_dict_keys_version_impl(PyObject *module);
+
+static PyObject *
+get_next_dict_keys_version(PyObject *module, PyObject *Py_UNUSED(ignored))
+{
+    return get_next_dict_keys_version_impl(module);
+}
+/*[clinic end generated code: output=fbd8b7e0cae8bac7 input=a9049054013a1b77]*/

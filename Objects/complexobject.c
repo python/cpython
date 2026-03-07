@@ -1,4 +1,3 @@
-
 /* Complex object implementation */
 
 /* Borrows heavily from floatobject.c */
@@ -9,6 +8,7 @@
 #include "pycore_call.h"          // _PyObject_CallNoArgs()
 #include "pycore_complexobject.h" // _PyComplex_FormatAdvancedWriter()
 #include "pycore_floatobject.h"   // _Py_convert_int_to_double()
+#include "pycore_freelist.h"      // _Py_FREELIST_FREE(), _Py_FREELIST_POP()
 #include "pycore_long.h"          // _PyLong_GetZero()
 #include "pycore_object.h"        // _PyObject_Init()
 #include "pycore_pymath.h"        // _Py_ADJUST_ERANGE2()
@@ -139,8 +139,8 @@ _Py_c_prod(Py_complex z, Py_complex w)
             recalc = 1;
         }
         if (recalc) {
-            r.real = Py_INFINITY*(a*c - b*d);
-            r.imag = Py_INFINITY*(a*d + b*c);
+            r.real = INFINITY*(a*c - b*d);
+            r.imag = INFINITY*(a*d + b*c);
         }
     }
 
@@ -229,8 +229,8 @@ _Py_c_quot(Py_complex a, Py_complex b)
         {
             const double x = copysign(isinf(a.real) ? 1.0 : 0.0, a.real);
             const double y = copysign(isinf(a.imag) ? 1.0 : 0.0, a.imag);
-            r.real = Py_INFINITY * (x*b.real + y*b.imag);
-            r.imag = Py_INFINITY * (y*b.real - x*b.imag);
+            r.real = INFINITY * (x*b.real + y*b.imag);
+            r.imag = INFINITY * (y*b.real - x*b.imag);
         }
         else if ((isinf(abs_breal) || isinf(abs_bimag))
                  && isfinite(a.real) && isfinite(a.imag))
@@ -410,14 +410,30 @@ complex_subtype_from_c_complex(PyTypeObject *type, Py_complex cval)
 PyObject *
 PyComplex_FromCComplex(Py_complex cval)
 {
-    /* Inline PyObject_New */
-    PyComplexObject *op = PyObject_Malloc(sizeof(PyComplexObject));
+    PyComplexObject *op = _Py_FREELIST_POP(PyComplexObject, complexes);
+
     if (op == NULL) {
-        return PyErr_NoMemory();
+        /* Inline PyObject_New */
+        op = PyObject_Malloc(sizeof(PyComplexObject));
+        if (op == NULL) {
+            return PyErr_NoMemory();
+        }
+        _PyObject_Init((PyObject*)op, &PyComplex_Type);
     }
-    _PyObject_Init((PyObject*)op, &PyComplex_Type);
     op->cval = cval;
     return (PyObject *) op;
+}
+
+static void
+complex_dealloc(PyObject *op)
+{
+    assert(PyComplex_Check(op));
+    if (PyComplex_CheckExact(op)) {
+        _Py_FREELIST_FREE(complexes, op, PyObject_Free);
+    }
+    else {
+        Py_TYPE(op)->tp_free(op);
+    }
 }
 
 static PyObject *
@@ -499,17 +515,17 @@ try_complex_special_method(PyObject *op)
         }
         if (!PyComplex_Check(res)) {
             PyErr_Format(PyExc_TypeError,
-                "__complex__ returned non-complex (type %.200s)",
-                Py_TYPE(res)->tp_name);
+                "%T.__complex__() must return a complex, not %T",
+                op, res);
             Py_DECREF(res);
             return NULL;
         }
         /* Issue #29894: warn if 'res' not of exact type complex. */
         if (PyErr_WarnFormat(PyExc_DeprecationWarning, 1,
-                "__complex__ returned non-complex (type %.200s).  "
+                "%T.__complex__() must return a complex, not %T.  "
                 "The ability to return an instance of a strict subclass of complex "
                 "is deprecated, and may be removed in a future version of Python.",
-                Py_TYPE(res)->tp_name)) {
+                op, res)) {
             Py_DECREF(res);
             return NULL;
         }
@@ -628,7 +644,7 @@ complex_hash(PyObject *op)
      * compare equal must have the same hash value, so that
      * hash(x + 0*j) must equal hash(x).
      */
-    combined = hashreal + _PyHASH_IMAG * hashimag;
+    combined = hashreal + PyHASH_IMAG * hashimag;
     if (combined == (Py_uhash_t)-1)
         combined = (Py_uhash_t)-2;
     return (Py_hash_t)combined;
@@ -853,6 +869,7 @@ Unimplemented:
 }
 
 /*[clinic input]
+@permit_long_summary
 complex.conjugate
 
 Return the complex conjugate of its argument. (3-4j).conjugate() == 3+4j.
@@ -860,7 +877,7 @@ Return the complex conjugate of its argument. (3-4j).conjugate() == 3+4j.
 
 static PyObject *
 complex_conjugate_impl(PyComplexObject *self)
-/*[clinic end generated code: output=5059ef162edfc68e input=5fea33e9747ec2c4]*/
+/*[clinic end generated code: output=5059ef162edfc68e input=71b8ab003e1cec95]*/
 {
     Py_complex c = self->cval;
     c.imag = -c.imag;
@@ -1383,7 +1400,7 @@ PyTypeObject PyComplex_Type = {
     "complex",
     sizeof(PyComplexObject),
     0,
-    0,                                          /* tp_dealloc */
+    complex_dealloc,                            /* tp_dealloc */
     0,                                          /* tp_vectorcall_offset */
     0,                                          /* tp_getattr */
     0,                                          /* tp_setattr */

@@ -102,7 +102,7 @@ Error Handling
    * Set *\*err_msg* and return ``1`` if an error is set.
    * Set *\*err_msg* to ``NULL`` and return ``0`` otherwise.
 
-   An error message is an UTF-8 encoded string.
+   An error message is a UTF-8 encoded string.
 
    If *config* has an exit code, format the exit code as an error
    message.
@@ -363,7 +363,7 @@ Configuration Options
      - Read-only
    * - ``"import_time"``
      - :c:member:`import_time <PyConfig.import_time>`
-     - ``bool``
+     - ``int``
      - Read-only
    * - ``"inspect"``
      - :c:member:`inspect <PyConfig.inspect>`
@@ -544,9 +544,9 @@ Configuration Options
 
 Visibility:
 
-* Public: Can by get by :c:func:`PyConfig_Get` and set by
+* Public: Can be retrieved by :c:func:`PyConfig_Get` and set by
   :c:func:`PyConfig_Set`.
-* Read-only: Can by get by :c:func:`PyConfig_Get`, but cannot be set by
+* Read-only: Can be retrieved by :c:func:`PyConfig_Get`, but cannot be set by
   :c:func:`PyConfig_Set`.
 
 
@@ -975,9 +975,7 @@ PyPreConfig
       Set to ``0`` or ``1`` by the :option:`-X utf8 <-X>` command line option
       and the :envvar:`PYTHONUTF8` environment variable.
 
-      Also set to ``1`` if the ``LC_CTYPE`` locale is ``C`` or ``POSIX``.
-
-      Default: ``-1`` in Python config and ``0`` in isolated config.
+      Default: ``1``.
 
 
 .. _c-preinit:
@@ -1155,7 +1153,7 @@ PyConfig
 
    Most ``PyConfig`` methods :ref:`preinitialize Python <c-preinit>` if needed.
    In that case, the Python preinitialization configuration
-   (:c:type:`PyPreConfig`) in based on the :c:type:`PyConfig`. If configuration
+   (:c:type:`PyPreConfig`) is based on the :c:type:`PyConfig`. If configuration
    fields which are in common with :c:type:`PyPreConfig` are tuned, they must
    be set before calling a :c:type:`PyConfig` method:
 
@@ -1279,6 +1277,11 @@ PyConfig
       Incremented by the :option:`-b` command line option.
 
       Default: ``0``.
+
+      .. deprecated-removed:: 3.15 3.17
+
+         The :option:`-b` and :option:`!-bb` options will become no-op in 3.17.
+         :c:member:`~PyConfig.bytes_warning` member will be removed in 3.17.
 
    .. c:member:: int warn_default_encoding
 
@@ -1477,12 +1480,18 @@ PyConfig
 
    .. c:member:: int import_time
 
-      If non-zero, profile import time.
+      If ``1``, profile import time.
+      If ``2``, include additional output that indicates
+      when an imported module has already been loaded.
 
-      Set the ``1`` by the :option:`-X importtime <-X>` option and the
+      Set by the :option:`-X importtime <-X>` option and the
       :envvar:`PYTHONPROFILEIMPORTTIME` environment variable.
 
       Default: ``0``.
+
+     .. versionchanged:: 3.14
+
+        Added support for ``import_time = 2``
 
    .. c:member:: int inspect
 
@@ -2105,7 +2114,7 @@ initialization::
 
         /* Specify sys.path explicitly */
         /* If you want to modify the default set of paths, finish
-           initialization first and then use PySys_GetObject("path") */
+           initialization first and then use PySys_GetAttrString("path") */
         config.module_search_paths_set = 1;
         status = PyWideStringList_Append(&config.module_search_paths,
                                          L"/path/to/stdlib");
@@ -2254,6 +2263,7 @@ If a ``._pth`` file is present:
 * Set :c:member:`~PyConfig.isolated` to ``1``.
 * Set :c:member:`~PyConfig.use_environment` to ``0``.
 * Set :c:member:`~PyConfig.site_import` to ``0``.
+* Set :c:member:`~PyConfig.user_site_directory` to ``0`` (since 3.15).
 * Set :c:member:`~PyConfig.safe_path` to ``1``.
 
 If :c:member:`~PyConfig.home` is not set and a ``pyvenv.cfg`` file is present in
@@ -2274,6 +2284,12 @@ The ``__PYVENV_LAUNCHER__`` environment variable is used to set
    therefore affected by :option:`-S`.
 
 
+.. versionchanged:: 3.15
+
+   :c:member:`~PyConfig.user_site_directory` is now set to ``0`` when a
+   ``._pth`` file is present.
+
+
 Py_GetArgcArgv()
 ================
 
@@ -2283,13 +2299,91 @@ Py_GetArgcArgv()
 
    See also :c:member:`PyConfig.orig_argv` member.
 
-Delaying main module execution
-==============================
 
-In some embedding use cases, it may be desirable to separate interpreter initialization
-from the execution of the main module.
+Multi-Phase Initialization Private Provisional API
+==================================================
 
-This separation can be achieved by setting ``PyConfig.run_command`` to the empty
-string during initialization (to prevent the interpreter from dropping into the
-interactive prompt), and then subsequently executing the desired main module
-code using ``__main__.__dict__`` as the global namespace.
+This section is a private provisional API introducing multi-phase
+initialization, the core feature of :pep:`432`:
+
+* "Core" initialization phase, "bare minimum Python":
+
+  * Builtin types;
+  * Builtin exceptions;
+  * Builtin and frozen modules;
+  * The :mod:`sys` module is only partially initialized
+    (ex: :data:`sys.path` doesn't exist yet).
+
+* "Main" initialization phase, Python is fully initialized:
+
+  * Install and configure :mod:`importlib`;
+  * Apply the :ref:`Path Configuration <init-path-config>`;
+  * Install signal handlers;
+  * Finish :mod:`sys` module initialization (ex: create :data:`sys.stdout`
+    and :data:`sys.path`);
+  * Enable optional features like :mod:`faulthandler` and :mod:`tracemalloc`;
+  * Import the :mod:`site` module;
+  * etc.
+
+Private provisional API:
+
+.. c:member:: int PyConfig._init_main
+
+   If set to ``0``, :c:func:`Py_InitializeFromConfig` stops at the "Core"
+   initialization phase.
+
+.. c:function:: PyStatus _Py_InitializeMain(void)
+
+   Move to the "Main" initialization phase, finish the Python initialization.
+
+No module is imported during the "Core" phase and the ``importlib`` module is
+not configured: the :ref:`Path Configuration <init-path-config>` is only
+applied during the "Main" phase. It may allow to customize Python in Python to
+override or tune the :ref:`Path Configuration <init-path-config>`, maybe
+install a custom :data:`sys.meta_path` importer or an import hook, etc.
+
+It may become possible to calculate the :ref:`Path Configuration
+<init-path-config>` in Python, after the Core phase and before the Main phase,
+which is one of the :pep:`432` motivation.
+
+The "Core" phase is not properly defined: what should be and what should
+not be available at this phase is not specified yet. The API is marked
+as private and provisional: the API can be modified or even be removed
+anytime until a proper public API is designed.
+
+Example running Python code between "Core" and "Main" initialization
+phases::
+
+    void init_python(void)
+    {
+        PyStatus status;
+
+        PyConfig config;
+        PyConfig_InitPythonConfig(&config);
+        config._init_main = 0;
+
+        /* ... customize 'config' configuration ... */
+
+        status = Py_InitializeFromConfig(&config);
+        PyConfig_Clear(&config);
+        if (PyStatus_Exception(status)) {
+            Py_ExitStatusException(status);
+        }
+
+        /* Use sys.stderr because sys.stdout is only created
+           by _Py_InitializeMain() */
+        int res = PyRun_SimpleString(
+            "import sys; "
+            "print('Run Python code before _Py_InitializeMain', "
+                   "file=sys.stderr)");
+        if (res < 0) {
+            exit(1);
+        }
+
+        /* ... put more configuration code here ... */
+
+        status = _Py_InitializeMain();
+        if (PyStatus_Exception(status)) {
+            Py_ExitStatusException(status);
+        }
+    }

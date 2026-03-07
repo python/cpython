@@ -1,2 +1,0 @@
-Raise :exc:`DeprecationWarning` for :func:`sys._clear_type_cache`. This function was deprecated in Python 3.13
-but it didn't raise a runtime warning.

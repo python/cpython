@@ -82,7 +82,14 @@ class PrettyPrintTests(DebuggerTests):
         self.assertGdbRepr({})
         self.assertGdbRepr({'foo': 'bar'}, "{'foo': 'bar'}")
         # Python preserves insertion order since 3.6
-        self.assertGdbRepr({'foo': 'bar', 'douglas': 42}, "{'foo': 'bar', 'douglas': 42}")
+        self.assertGdbRepr({'foo': 'bar', 'douglas': 42},
+                           "{'foo': 'bar', 'douglas': 42}")
+
+        # frozendict
+        self.assertGdbRepr(frozendict(),
+                           "frozendict({})")
+        self.assertGdbRepr(frozendict({'foo': 'bar', 'douglas': 42}),
+                           "frozendict({'foo': 'bar', 'douglas': 42})")
 
     def test_lists(self):
         'Verify the pretty-printing of lists'

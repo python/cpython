@@ -1,2 +1,0 @@
-Enhance unhashable key/element error messages for :class:`dict` and
-:class:`set`. Patch by Victor Stinner.

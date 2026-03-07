@@ -50,3 +50,72 @@ sentinel value is returned.
    callable object that can be called with no parameters; each call to it should
    return the next item in the iteration.  When *callable* returns a value equal to
    *sentinel*, the iteration will be terminated.
+
+
+Range Objects
+^^^^^^^^^^^^^
+
+.. c:var:: PyTypeObject PyRange_Type
+
+   The type object for :class:`range` objects.
+
+
+.. c:function:: int PyRange_Check(PyObject *o)
+
+   Return true if the object *o* is an instance of a :class:`range` object.
+   This function always succeeds.
+
+
+Builtin Iterator Types
+^^^^^^^^^^^^^^^^^^^^^^
+
+These are built-in iteration types that are included in Python's C API, but
+provide no additional functions. They are here for completeness.
+
+
+.. list-table::
+   :widths: auto
+   :header-rows: 1
+
+   * * C type
+     * Python type
+   * * .. c:var:: PyTypeObject PyEnum_Type
+     * :py:class:`enumerate`
+   * * .. c:var:: PyTypeObject PyFilter_Type
+     * :py:class:`filter`
+   * * .. c:var:: PyTypeObject PyMap_Type
+     * :py:class:`map`
+   * * .. c:var:: PyTypeObject PyReversed_Type
+     * :py:class:`reversed`
+   * * .. c:var:: PyTypeObject PyZip_Type
+     * :py:class:`zip`
+
+
+Other Iterator Objects
+^^^^^^^^^^^^^^^^^^^^^^
+
+.. c:var:: PyTypeObject PyByteArrayIter_Type
+.. c:var:: PyTypeObject PyBytesIter_Type
+.. c:var:: PyTypeObject PyListIter_Type
+.. c:var:: PyTypeObject PyListRevIter_Type
+.. c:var:: PyTypeObject PySetIter_Type
+.. c:var:: PyTypeObject PyTupleIter_Type
+.. c:var:: PyTypeObject PyRangeIter_Type
+.. c:var:: PyTypeObject PyLongRangeIter_Type
+.. c:var:: PyTypeObject PyDictIterKey_Type
+.. c:var:: PyTypeObject PyDictRevIterKey_Type
+.. c:var:: PyTypeObject PyDictIterValue_Type
+.. c:var:: PyTypeObject PyDictRevIterValue_Type
+.. c:var:: PyTypeObject PyDictIterItem_Type
+.. c:var:: PyTypeObject PyDictRevIterItem_Type
+.. c:var:: PyTypeObject PyODictIter_Type
+
+   Type objects for iterators of various built-in objects.
+
+   Do not create instances of these directly; prefer calling
+   :c:func:`PyObject_GetIter` instead.
+
+   Note that there is no guarantee that a given built-in type uses a given iterator
+   type. For example, iterating over :class:`range` will use one of two iterator
+   types depending on the size of the range. Other types may start using a
+   similar scheme in the future, without warning.

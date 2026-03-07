@@ -17,8 +17,8 @@ The OpenSSL git checkout should be at a specific tag, using commands like:
     git tag --list 'openssl-*'
     git switch --detach openssl-3.4.1
 
-After generating the definitions, compare the result with newest pre-existing file.
-You can use a command like:
+After generating the definitions, compare the result with the newest
+pre-existing file. You can use a command like:
 
     git diff --no-index Modules/_ssl_data_340.h Modules/_ssl_data_341.h
 
@@ -140,6 +140,7 @@ def parse_openssl_error_text(args):
         if "_F_" in reason:  # ignore function codes
             # FEAT(picnixz): in the future, we may want to also check
             # the consistency of the OpenSSL files with an external tool.
+            # See https://github.com/python/cpython/issues/132745.
             continue
         yield reason, libname, errname, int(num)
 

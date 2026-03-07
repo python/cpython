@@ -316,6 +316,7 @@ class TestAlignedStructures(unittest.TestCase, StructCheckMixin):
 
             class Main(sbase):
                 _pack_ = 1
+                _layout_ = "ms"
                 _fields_ = [
                     ("a", c_ubyte),
                     ("b", Inner),
