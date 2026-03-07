@@ -306,7 +306,8 @@ class _Dialog(commondialog.Dialog):
     def _fixoptions(self):
         try:
             # make sure "filetypes" is a tuple
-            self.options["filetypes"] = tuple(self.options["filetypes"])
+            if self.options.get("filetypes") is not None:
+                self.options["filetypes"] = tuple(self.options["filetypes"])
         except KeyError:
             pass
 
