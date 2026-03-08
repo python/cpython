@@ -925,7 +925,7 @@ class TestDiscovery(unittest.TestCase):
 
         # Valid ASCII module names
         self.assertTrue(_valid_module_name('test_foo.py'))
-        self.assertTrue(_valid_module_name('Test_foo.py'))
+        self.assertTrue(_valid_module_name('Test_foo.PY'))
         self.assertTrue(_valid_module_name('_test.py'))
         self.assertTrue(_valid_module_name('a.py'))
 
