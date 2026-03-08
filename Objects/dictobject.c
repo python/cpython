@@ -146,8 +146,9 @@ static int dict_merge_from_seq2(PyObject *d, PyObject *seq2, int override);
 
 /*[clinic input]
 class dict "PyDictObject *" "&PyDict_Type"
+class frozendict "PyFrozenDictObject *" "&PyFrozenDict_Type"
 [clinic start generated code]*/
-/*[clinic end generated code: output=da39a3ee5e6b4b0d input=f157a5a0ce9589d6]*/
+/*[clinic end generated code: output=da39a3ee5e6b4b0d input=5dfa93bac68e7c54]*/
 
 
 /*
@@ -896,24 +897,20 @@ free_values(PyDictValues *values, bool use_qsbr)
     PyMem_Free(values);
 }
 
-/* Consumes a reference to the keys object */
-static PyObject *
-new_dict(PyDictKeysObject *keys, PyDictValues *values,
-         Py_ssize_t used, int free_values_on_failure)
+static inline PyObject *
+new_dict_impl(PyDictObject *mp, PyDictKeysObject *keys,
+              PyDictValues *values, Py_ssize_t used,
+              int free_values_on_failure)
 {
     assert(keys != NULL);
-    PyDictObject *mp = _Py_FREELIST_POP(PyDictObject, dicts);
     if (mp == NULL) {
-        mp = PyObject_GC_New(PyDictObject, &PyDict_Type);
-        if (mp == NULL) {
-            dictkeys_decref(keys, false);
-            if (free_values_on_failure) {
-                free_values(values, false);
-            }
-            return NULL;
+        dictkeys_decref(keys, false);
+        if (free_values_on_failure) {
+            free_values(values, false);
         }
+        return NULL;
     }
-    assert(Py_IS_TYPE(mp, &PyDict_Type));
+
     mp->ma_keys = keys;
     mp->ma_values = values;
     mp->ma_used = used;
@@ -921,6 +918,29 @@ new_dict(PyDictKeysObject *keys, PyDictValues *values,
     ASSERT_CONSISTENT(mp);
     _PyObject_GC_TRACK(mp);
     return (PyObject *)mp;
+}
+
+/* Consumes a reference to the keys object */
+static PyObject *
+new_dict(PyDictKeysObject *keys, PyDictValues *values,
+         Py_ssize_t used, int free_values_on_failure)
+{
+    PyDictObject *mp = _Py_FREELIST_POP(PyDictObject, dicts);
+    if (mp == NULL) {
+        mp = PyObject_GC_New(PyDictObject, &PyDict_Type);
+    }
+    assert(mp == NULL || Py_IS_TYPE(mp, &PyDict_Type));
+
+    return new_dict_impl(mp, keys, values, used, free_values_on_failure);
+}
+
+/* Consumes a reference to the keys object */
+static PyObject *
+new_frozendict(PyDictKeysObject *keys, PyDictValues *values,
+               Py_ssize_t used, int free_values_on_failure)
+{
+    PyDictObject *mp = PyObject_GC_New(PyDictObject, &PyFrozenDict_Type);
+    return new_dict_impl(mp, keys, values, used, free_values_on_failure);
 }
 
 static PyObject *
@@ -2387,7 +2407,7 @@ dict_unhashable_type(PyObject *op, PyObject *key)
     }
 
     const char *errmsg;
-    if (PyObject_IsInstance(op, (PyObject*)&PyFrozenDict_Type)) {
+    if (PyFrozenDict_Check(op)) {
         errmsg = "cannot use '%T' as a frozendict key (%S)";
     }
     else {
@@ -2668,7 +2688,7 @@ _PyDict_LoadGlobalStackRef(PyDictObject *globals, PyDictObject *builtins, PyObje
 PyObject *
 _PyDict_LoadBuiltinsFromGlobals(PyObject *globals)
 {
-    if (!PyDict_Check(globals)) {
+    if (!PyAnyDict_Check(globals)) {
         PyErr_BadInternalCall();
         return NULL;
     }
@@ -4235,9 +4255,6 @@ static PyObject *
 dict_copy_impl(PyDictObject *self)
 /*[clinic end generated code: output=ffb782cf970a5c39 input=73935f042b639de4]*/
 {
-    if (PyFrozenDict_CheckExact(self)) {
-        return Py_NewRef(self);
-    }
     return PyDict_Copy((PyObject *)self);
 }
 
@@ -4263,18 +4280,17 @@ copy_values(PyDictValues *values)
 }
 
 static PyObject *
-copy_lock_held(PyObject *o)
+copy_lock_held(PyObject *o, int as_frozendict)
 {
     PyObject *copy;
     PyDictObject *mp;
-    int frozendict = PyFrozenDict_Check(o);
 
     ASSERT_DICT_LOCKED(o);
 
     mp = (PyDictObject *)o;
     if (mp->ma_used == 0) {
         /* The dict is empty; just return a new dict. */
-        if (frozendict) {
+        if (as_frozendict) {
             return PyFrozenDict_New(NULL);
         }
         else {
@@ -4288,7 +4304,7 @@ copy_lock_held(PyObject *o)
         if (newvalues == NULL) {
             return PyErr_NoMemory();
         }
-        if (frozendict) {
+        if (as_frozendict) {
             split_copy = (PyDictObject *)PyObject_GC_New(PyFrozenDictObject,
                                                          &PyFrozenDict_Type);
         }
@@ -4307,7 +4323,7 @@ copy_lock_held(PyObject *o)
         split_copy->ma_used = mp->ma_used;
         split_copy->_ma_watcher_tag = 0;
         dictkeys_incref(mp->ma_keys);
-        if (frozendict) {
+        if (as_frozendict) {
             PyFrozenDictObject *frozen = (PyFrozenDictObject *)split_copy;
             frozen->ma_hash = -1;
         }
@@ -4317,8 +4333,7 @@ copy_lock_held(PyObject *o)
 
     if (Py_TYPE(mp)->tp_iter == dict_iter &&
             mp->ma_values == NULL &&
-            (mp->ma_used >= (mp->ma_keys->dk_nentries * 2) / 3) &&
-            !frozendict)
+            (mp->ma_used >= (mp->ma_keys->dk_nentries * 2) / 3))
     {
         /* Use fast-copy if:
 
@@ -4338,9 +4353,15 @@ copy_lock_held(PyObject *o)
         if (keys == NULL) {
             return NULL;
         }
-        PyDictObject *new = (PyDictObject *)new_dict(keys, NULL, 0, 0);
+        PyDictObject *new;
+        if (as_frozendict) {
+            new = (PyDictObject *)new_frozendict(keys, NULL, 0, 0);
+        }
+        else {
+            new = (PyDictObject *)new_dict(keys, NULL, 0, 0);
+        }
         if (new == NULL) {
-            /* In case of an error, `new_dict()` takes care of
+            /* In case of an error, new_dict()/new_frozendict() takes care of
                cleaning up `keys`. */
             return NULL;
         }
@@ -4350,7 +4371,7 @@ copy_lock_held(PyObject *o)
         return (PyObject *)new;
     }
 
-    if (frozendict) {
+    if (as_frozendict) {
         copy = PyFrozenDict_New(NULL);
     }
     else {
@@ -4367,16 +4388,42 @@ copy_lock_held(PyObject *o)
 PyObject *
 PyDict_Copy(PyObject *o)
 {
-    if (o == NULL || !PyAnyDict_Check(o)) {
+    if (o == NULL || !PyDict_Check(o)) {
         PyErr_BadInternalCall();
         return NULL;
     }
 
     PyObject *res;
     Py_BEGIN_CRITICAL_SECTION(o);
+    res = copy_lock_held(o, 0);
+    Py_END_CRITICAL_SECTION();
+    return res;
+}
 
-    res = copy_lock_held(o);
+// Similar to PyDict_Copy(), but return a frozendict if the argument
+// is a frozendict.
+static PyObject *
+anydict_copy(PyObject *o)
+{
+    assert(PyAnyDict_Check(o));
 
+    PyObject *res;
+    Py_BEGIN_CRITICAL_SECTION(o);
+    res = copy_lock_held(o, PyFrozenDict_Check(o));
+    Py_END_CRITICAL_SECTION();
+    return res;
+}
+
+// Similar to PyDict_Copy(), but accept also frozendict:
+// convert frozendict to a new dict.
+PyObject*
+_PyDict_CopyAsDict(PyObject *o)
+{
+    assert(PyAnyDict_Check(o));
+
+    PyObject *res;
+    Py_BEGIN_CRITICAL_SECTION(o);
+    res = copy_lock_held(o, 0);
     Py_END_CRITICAL_SECTION();
     return res;
 }
@@ -4925,7 +4972,7 @@ dict_or(PyObject *self, PyObject *other)
     if (!PyAnyDict_Check(self) || !PyAnyDict_Check(other)) {
         Py_RETURN_NOTIMPLEMENTED;
     }
-    PyObject *new = PyDict_Copy(self);
+    PyObject *new = anydict_copy(self);
     if (new == NULL) {
         return NULL;
     }
@@ -6479,7 +6526,7 @@ dictitems_xor_lock_held(PyObject *d1, PyObject *d2)
     ASSERT_DICT_LOCKED(d1);
     ASSERT_DICT_LOCKED(d2);
 
-    PyObject *temp_dict = copy_lock_held(d1);
+    PyObject *temp_dict = copy_lock_held(d1, 0);
     if (temp_dict == NULL) {
         return NULL;
     }
@@ -7868,7 +7915,7 @@ validate_watcher_id(PyInterpreterState *interp, int watcher_id)
 int
 PyDict_Watch(int watcher_id, PyObject* dict)
 {
-    if (!PyAnyDict_Check(dict)) {
+    if (!PyDict_Check(dict)) {
         PyErr_SetString(PyExc_ValueError, "Cannot watch non-dictionary");
         return -1;
     }
@@ -7883,7 +7930,7 @@ PyDict_Watch(int watcher_id, PyObject* dict)
 int
 PyDict_Unwatch(int watcher_id, PyObject* dict)
 {
-    if (!PyAnyDict_Check(dict)) {
+    if (!PyDict_Check(dict)) {
         PyErr_SetString(PyExc_ValueError, "Cannot watch non-dictionary");
         return -1;
     }
@@ -8013,7 +8060,7 @@ static PyMethodDef frozendict_methods[] = {
     DICT_ITEMS_METHODDEF
     DICT_VALUES_METHODDEF
     DICT_FROMKEYS_METHODDEF
-    DICT_COPY_METHODDEF
+    FROZENDICT_COPY_METHODDEF
     DICT___REVERSED___METHODDEF
     {"__class_getitem__", Py_GenericAlias, METH_O|METH_CLASS, PyDoc_STR("See PEP 585")},
     {"__getnewargs__", frozendict_getnewargs, METH_NOARGS},
@@ -8136,6 +8183,25 @@ PyFrozenDict_New(PyObject *iterable)
         PyObject *args = Py_GetConstantBorrowed(Py_CONSTANT_EMPTY_TUPLE);
         return frozendict_new(&PyFrozenDict_Type, args, NULL);
     }
+}
+
+/*[clinic input]
+frozendict.copy
+
+Return a shallow copy of the frozendict.
+[clinic start generated code]*/
+
+static PyObject *
+frozendict_copy_impl(PyFrozenDictObject *self)
+/*[clinic end generated code: output=e580fd91d9fc2cf7 input=35f6abeaa08fd4bc]*/
+{
+    assert(PyFrozenDict_Check(self));
+
+    if (PyFrozenDict_CheckExact(self)) {
+        return Py_NewRef(self);
+    }
+
+    return anydict_copy((PyObject*)self);
 }
 
 
