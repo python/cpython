@@ -585,7 +585,7 @@ There are three forms, which can be combined.
 .. _tut-defaultparams:
 
 Default Parameter Values
------------------------
+------------------------
 
 The most useful form is to specify a default value for one or more parameters.
 This creates a function that can be called with fewer arguments than it is
@@ -771,9 +771,9 @@ parameter by how the arguments may be passed to the function:
 positional-only, positional-or-keyword, and keyword-only. Keyword parameters
 are also referred to as named parameters.
 
--------------------------------
+--------------------------------
 Positional-or-Keyword Parameters
--------------------------------
+--------------------------------
 
 Positional-or-keyword paremeters don't precede ``/``, don't follow ``*`` or ``*args``,
 and don't have ``*`` and ``**`` in their names as prefixes, so that arguments can
@@ -793,9 +793,9 @@ parameters.
 
 Parameters following the ``/`` can be *positional-or-keyword* or *keyword-only*.
 
-----------------------
+-----------------------
 Keyword-Only Parameters
-----------------------
+-----------------------
 
 To mark parameters as *keyword-only*, indicating their arguments must be passed
 by keyword, place parameters after an ``*`` to make them
