@@ -665,12 +665,14 @@ def get_platform():
 
     For other non-POSIX platforms, currently just returns :data:`sys.platform`."""
     if os.name == 'nt':
-        if 'amd64' in sys.version.lower():
+        import platform
+        machine = platform.machine()
+        if machine == 'AMD64':
             return 'win-amd64'
-        if '(arm)' in sys.version.lower():
-            return 'win-arm32'
-        if '(arm64)' in sys.version.lower():
+        if machine == 'ARM64':
             return 'win-arm64'
+        if machine == 'ARM' or machine.startswith('armv'):
+            return 'win-arm32'
         return sys.platform
 
     if os.name != "posix" or not hasattr(os, 'uname'):
