@@ -37,13 +37,13 @@ TWO_THIRD = 2.0/3.0
 # There are a great many versions of the constants used in these formulae.
 # The ones in this library uses constants from the FCC version of NTSC.
 
-def rgb_to_yiq(r, g, b):
+def rgb_to_yiq(r: float, g:float, b: float) -> tuple[float, float, float]:
     y = 0.30*r + 0.59*g + 0.11*b
     i = 0.74*(r-y) - 0.27*(b-y)
     q = 0.48*(r-y) + 0.41*(b-y)
     return (y, i, q)
 
-def yiq_to_rgb(y, i, q):
+def yiq_to_rgb(y: float, i: float, q: float) -> tuple[float, float, float]:
     # r = y + (0.27*q + 0.41*i) / (0.74*0.41 + 0.27*0.48)
     # b = y + (0.74*q - 0.48*i) / (0.74*0.41 + 0.27*0.48)
     # g = y - (0.30*(r-y) + 0.11*(b-y)) / 0.59
@@ -72,7 +72,7 @@ def yiq_to_rgb(y, i, q):
 # L: color lightness
 # S: color saturation
 
-def rgb_to_hls(r, g, b):
+def rgb_to_hls(r: float, g: float, b: float) -> tuple[float, float, float]:
     maxc = max(r, g, b)
     minc = min(r, g, b)
     sumc = (maxc+minc)
@@ -96,7 +96,7 @@ def rgb_to_hls(r, g, b):
     h = (h/6.0) % 1.0
     return h, l, s
 
-def hls_to_rgb(h, l, s):
+def hls_to_rgb(h: float, l: float, s: float) -> tuple[float, float, float]:
     if s == 0.0:
         return l, l, l
     if l <= 0.5:
@@ -106,7 +106,7 @@ def hls_to_rgb(h, l, s):
     m1 = 2.0*l - m2
     return (_v(m1, m2, h+ONE_THIRD), _v(m1, m2, h), _v(m1, m2, h-ONE_THIRD))
 
-def _v(m1, m2, hue):
+def _v(m1: float, m2: float, hue: float) -> tuple[float, float, float]:
     hue = hue % 1.0
     if hue < ONE_SIXTH:
         return m1 + (m2-m1)*hue*6.0
@@ -122,7 +122,7 @@ def _v(m1, m2, hue):
 # S: color saturation ("purity")
 # V: color brightness
 
-def rgb_to_hsv(r, g, b):
+def rgb_to_hsv(r: float, g: float, b: float) -> tuple[float, float, float]:
     maxc = max(r, g, b)
     minc = min(r, g, b)
     rangec = (maxc-minc)
@@ -142,7 +142,7 @@ def rgb_to_hsv(r, g, b):
     h = (h/6.0) % 1.0
     return h, s, v
 
-def hsv_to_rgb(h, s, v):
+def hsv_to_rgb(h: float, s: float, v: float) -> tuple[float, float, float]:
     if s == 0.0:
         return v, v, v
     i = int(h*6.0) # XXX assume int() truncates!
