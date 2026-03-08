@@ -1328,6 +1328,17 @@ Mutable sequence types also support the following methods:
    For the most part, this is the same as writing
    ``seq[len(seq):len(seq)] = iterable``.
 
+      .. note::
+
+         When extending a sequence with itself (e.g., ``seq.extend(seq)``),
+         the behavior differs between sequence types if the sequence mutates
+         during iteration:
+
+         * :class:`list` and :class:`array.array` pick up elements as they
+           are added, potentially leading to unbounded growth.
+         * :class:`bytearray` captures the sequence length at the start,
+           limiting the extension to at most doubling the original length.
+
 .. method:: bytearray.insert(index, value, /)
             list.insert(index, value, /)
    :no-contents-entry:
