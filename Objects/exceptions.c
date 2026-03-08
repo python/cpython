@@ -912,7 +912,7 @@ BaseExceptionGroup_new(PyTypeObject *type, PyObject *args, PyObject *kwds)
 
     exceptions = PySequence_Tuple(exceptions);
     if (!exceptions) {
-        return NULL;
+        goto error;
     }
 
     /* We are now holding a ref to the exceptions tuple */

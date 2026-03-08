@@ -12313,6 +12313,18 @@ _PyUnicode_XStrip(PyObject *self, int striptype, PyObject *sepobj)
 }
 
 PyObject*
+_PyUnicode_BinarySlice(PyObject *container, PyObject *start_o, PyObject *stop_o)
+{
+    assert(PyUnicode_CheckExact(container));
+    Py_ssize_t len = PyUnicode_GET_LENGTH(container);
+    Py_ssize_t istart, istop;
+    if (!_PyEval_UnpackIndices(start_o, stop_o, len, &istart, &istop)) {
+        return NULL;
+    }
+    return PyUnicode_Substring(container, istart, istop);
+}
+
+PyObject*
 PyUnicode_Substring(PyObject *self, Py_ssize_t start, Py_ssize_t end)
 {
     const unsigned char *data;

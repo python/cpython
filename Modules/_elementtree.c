@@ -16,6 +16,7 @@
 #endif
 
 #include "Python.h"
+#include "pycore_dict.h"          // _PyDict_CopyAsDict()
 #include "pycore_pyhash.h"        // _Py_HashSecret
 #include "pycore_weakref.h"       // FT_CLEAR_WEAKREFS()
 
@@ -382,13 +383,14 @@ get_attrib_from_keywords(PyObject *kwds)
         /* If attrib was found in kwds, copy its value and remove it from
          * kwds
          */
-        if (!PyDict_Check(attrib)) {
-            PyErr_Format(PyExc_TypeError, "attrib must be dict, not %.100s",
-                         Py_TYPE(attrib)->tp_name);
+        if (!PyAnyDict_Check(attrib)) {
+            PyErr_Format(PyExc_TypeError,
+                         "attrib must be dict or frozendict, not %T",
+                         attrib);
             Py_DECREF(attrib);
             return NULL;
         }
-        Py_SETREF(attrib, PyDict_Copy(attrib));
+        Py_SETREF(attrib, _PyDict_CopyAsDict(attrib));
     }
     else {
         attrib = PyDict_New();
@@ -416,12 +418,18 @@ element_init(PyObject *self, PyObject *args, PyObject *kwds)
     PyObject *attrib = NULL;
     ElementObject *self_elem;
 
-    if (!PyArg_ParseTuple(args, "O|O!:Element", &tag, &PyDict_Type, &attrib))
+    if (!PyArg_ParseTuple(args, "O|O:Element", &tag, &attrib))
         return -1;
+    if (attrib != NULL && !PyAnyDict_Check(attrib)) {
+        PyErr_Format(PyExc_TypeError,
+                     "Element() argument 2 must be dict or frozendict, not %T",
+                     attrib);
+        return -1;
+    }
 
     if (attrib) {
         /* attrib passed as positional arg */
-        attrib = PyDict_Copy(attrib);
+        attrib = _PyDict_CopyAsDict(attrib);
         if (!attrib)
             return -1;
         if (kwds) {
@@ -2111,10 +2119,10 @@ static int
 element_attrib_setter(PyObject *op, PyObject *value, void *closure)
 {
     _VALIDATE_ATTR_VALUE(value);
-    if (!PyDict_Check(value)) {
+    if (!PyAnyDict_Check(value)) {
         PyErr_Format(PyExc_TypeError,
-                     "attrib must be dict, not %.200s",
-                     Py_TYPE(value)->tp_name);
+                     "attrib must be dict or frozendict, not %T",
+                     value);
         return -1;
     }
     ElementObject *self = _Element_CAST(op);
