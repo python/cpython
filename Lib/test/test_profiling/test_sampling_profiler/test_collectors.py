@@ -36,7 +36,7 @@ except ImportError:
 
 from test.support import captured_stdout, captured_stderr
 
-from .mocks import MockFrameInfo, MockThreadInfo, MockInterpreterInfo, LocationInfo
+from .mocks import MockFrameInfo, MockThreadInfo, MockInterpreterInfo, LocationInfo, make_diff_collector_with_mock_baseline
 from .helpers import close_and_unlink
 
 
@@ -1207,6 +1207,330 @@ class TestSampleProfilerComponents(unittest.TestCase):
         self.assertEqual(collector.per_thread_stats[2]["gc_samples"], 1)
         self.assertEqual(collector.per_thread_stats[2]["total"], 6)
         self.assertAlmostEqual(per_thread_stats[2]["gc_pct"], 10.0, places=1)
+
+    def test_diff_flamegraph_identical_profiles(self):
+        """When baseline and current are identical, diff should be ~0."""
+        test_frames = [
+            MockInterpreterInfo(0, [
+                MockThreadInfo(1, [
+                    MockFrameInfo("file.py", 10, "func1"),
+                    MockFrameInfo("file.py", 20, "func2"),
+                ])
+            ])
+        ]
+
+        diff = make_diff_collector_with_mock_baseline([test_frames] * 3)
+        for _ in range(3):
+            diff.collect(test_frames)
+
+        data = diff._convert_to_flamegraph_format()
+        strings = data.get("strings", [])
+
+        self.assertTrue(data["stats"]["is_differential"])
+        self.assertEqual(data["stats"]["baseline_samples"], 3)
+        self.assertEqual(data["stats"]["current_samples"], 3)
+        self.assertAlmostEqual(data["stats"]["baseline_scale"], 1.0)
+
+        children = data.get("children", [])
+        self.assertEqual(len(children), 1)
+        child = children[0]
+        child_name_index = child.get("name", 0)
+        child_name = (
+            strings[child_name_index]
+            if isinstance(child_name_index, int)
+            and 0 <= child_name_index < len(strings)
+            else str(child_name_index)
+        )
+        self.assertIn("func1", child_name)
+        self.assertAlmostEqual(child["diff"], 0.0, places=1)
+        self.assertAlmostEqual(child["diff_pct"], 0.0, places=1)
+
+        self.assertEqual(data["stats"]["elided_count"], 0)
+        self.assertNotIn("elided_flamegraph", data["stats"])
+
+    def test_diff_flamegraph_new_function(self):
+        """A function only in current should have diff_pct=100 and baseline=0."""
+        baseline_frames = [
+            MockInterpreterInfo(0, [
+                MockThreadInfo(1, [
+                    MockFrameInfo("file.py", 10, "func1"),
+                    MockFrameInfo("file.py", 20, "func2"),
+                ])
+            ])
+        ]
+
+        diff = make_diff_collector_with_mock_baseline([baseline_frames])
+        diff.collect([
+            MockInterpreterInfo(0, [
+                MockThreadInfo(1, [
+                    MockFrameInfo("file.py", 30, "new_func"),
+                    MockFrameInfo("file.py", 10, "func1"),
+                    MockFrameInfo("file.py", 20, "func2"),
+                ])
+            ])
+        ])
+
+        data = diff._convert_to_flamegraph_format()
+        strings = data.get("strings", [])
+
+        children = data.get("children", [])
+        self.assertEqual(len(children), 1)
+        func1_node = children[0]
+        func1_name_index = func1_node.get("name", 0)
+        func1_name = (
+            strings[func1_name_index]
+            if isinstance(func1_name_index, int)
+            and 0 <= func1_name_index < len(strings)
+            else str(func1_name_index)
+        )
+        self.assertIn("func1", func1_name)
+
+        func1_children = func1_node.get("children", [])
+        self.assertEqual(len(func1_children), 1)
+        new_func_node = func1_children[0]
+        new_func_name_index = new_func_node.get("name", 0)
+        new_func_name = (
+            strings[new_func_name_index]
+            if isinstance(new_func_name_index, int)
+            and 0 <= new_func_name_index < len(strings)
+            else str(new_func_name_index)
+        )
+        self.assertIn("new_func", new_func_name)
+        self.assertEqual(new_func_node["baseline"], 0)
+        self.assertGreater(new_func_node["self_time"], 0)
+        self.assertAlmostEqual(new_func_node["diff_pct"], 100.0)
+
+    def test_diff_flamegraph_scale_factor(self):
+        """Scale factor adjusts when sample counts differ."""
+        baseline_frames = [
+            MockInterpreterInfo(0, [
+                MockThreadInfo(1, [
+                    MockFrameInfo("file.py", 10, "func1"),
+                    MockFrameInfo("file.py", 20, "func2"),
+                ])
+            ])
+        ]
+
+        diff = make_diff_collector_with_mock_baseline([baseline_frames])
+        for _ in range(4):
+            diff.collect(baseline_frames)
+
+        data = diff._convert_to_flamegraph_format()
+        self.assertAlmostEqual(data["stats"]["baseline_scale"], 4.0)
+
+    def test_diff_flamegraph_elided_stacks(self):
+        """Paths in baseline but not current produce elided stacks."""
+        baseline_frames_1 = [
+            MockInterpreterInfo(0, [
+                MockThreadInfo(1, [
+                    MockFrameInfo("file.py", 10, "func1"),
+                    MockFrameInfo("file.py", 20, "func2"),
+                ])
+            ])
+        ]
+        baseline_frames_2 = [
+            MockInterpreterInfo(0, [
+                MockThreadInfo(1, [
+                    MockFrameInfo("file.py", 30, "old_func"),
+                    MockFrameInfo("file.py", 20, "func2"),
+                ])
+            ])
+        ]
+
+        diff = make_diff_collector_with_mock_baseline([baseline_frames_1, baseline_frames_2])
+        for _ in range(2):
+            diff.collect(baseline_frames_1)
+
+        data = diff._convert_to_flamegraph_format()
+
+        self.assertGreater(data["stats"]["elided_count"], 0)
+        self.assertIn("elided_flamegraph", data["stats"])
+        elided = data["stats"]["elided_flamegraph"]
+        self.assertTrue(elided["stats"]["is_differential"])
+        self.assertIn("baseline_strings", elided)
+
+        elided_strings = elided.get("strings", [])
+        children = elided.get("children", [])
+        self.assertEqual(len(children), 1)
+        child = children[0]
+        child_name_index = child.get("name", 0)
+        child_name = (
+            elided_strings[child_name_index]
+            if isinstance(child_name_index, int)
+            and 0 <= child_name_index < len(elided_strings)
+            else str(child_name_index)
+        )
+        self.assertIn("old_func", child_name)
+
+    def test_diff_flamegraph_function_matched_despite_line_change(self):
+        """Functions match by (filename, funcname), ignoring lineno."""
+        baseline_frames = [
+            MockInterpreterInfo(0, [
+                MockThreadInfo(1, [
+                    MockFrameInfo("file.py", 10, "func1"),
+                    MockFrameInfo("file.py", 20, "func2"),
+                ])
+            ])
+        ]
+
+        diff = make_diff_collector_with_mock_baseline([baseline_frames])
+        # Same functions but different line numbers
+        diff.collect([
+            MockInterpreterInfo(0, [
+                MockThreadInfo(1, [
+                    MockFrameInfo("file.py", 99, "func1"),
+                    MockFrameInfo("file.py", 55, "func2"),
+                ])
+            ])
+        ])
+
+        data = diff._convert_to_flamegraph_format()
+        strings = data.get("strings", [])
+
+        # func1 is child of promoted root func2
+        children = data.get("children", [])
+        self.assertEqual(len(children), 1)
+        child = children[0]
+        child_name_index = child.get("name", 0)
+        child_name = (
+            strings[child_name_index]
+            if isinstance(child_name_index, int)
+            and 0 <= child_name_index < len(strings)
+            else str(child_name_index)
+        )
+        self.assertIn("func1", child_name)
+        self.assertGreater(child["baseline"], 0)
+        self.assertGreater(child["self_time"], 0)
+        self.assertAlmostEqual(child["diff"], 0.0, places=1)
+        self.assertAlmostEqual(child["diff_pct"], 0.0, places=1)
+
+    def test_diff_flamegraph_empty_current(self):
+        """Empty current profile returns early without crashing."""
+        baseline_frames = [
+            MockInterpreterInfo(0, [
+                MockThreadInfo(1, [MockFrameInfo("file.py", 10, "func1")])
+            ])
+        ]
+
+        diff = make_diff_collector_with_mock_baseline([baseline_frames])
+        # Don't collect anything in current
+
+        data = diff._convert_to_flamegraph_format()
+        self.assertIn("name", data)
+        self.assertEqual(data["value"], 0)
+
+    def test_diff_flamegraph_export(self):
+        """DiffFlamegraphCollector export produces differential HTML."""
+        test_frames = [
+            MockInterpreterInfo(0, [
+                MockThreadInfo(1, [
+                    MockFrameInfo("file.py", 10, "func1"),
+                    MockFrameInfo("file.py", 20, "func2"),
+                ])
+            ])
+        ]
+
+        diff = make_diff_collector_with_mock_baseline([test_frames])
+        diff.collect(test_frames)
+
+        flamegraph_out = tempfile.NamedTemporaryFile(
+            suffix=".html", delete=False
+        )
+        self.addCleanup(close_and_unlink, flamegraph_out)
+
+        with captured_stdout(), captured_stderr():
+            diff.export(flamegraph_out.name)
+
+        self.assertTrue(os.path.exists(flamegraph_out.name))
+        self.assertGreater(os.path.getsize(flamegraph_out.name), 0)
+
+        with open(flamegraph_out.name, "r", encoding="utf-8") as f:
+            content = f.read()
+
+        self.assertIn("<!doctype html>", content.lower())
+        self.assertIn("Differential Flamegraph", content)
+        self.assertIn('"is_differential": true', content)
+        self.assertIn("d3-flame-graph", content)
+        self.assertIn('id="diff-legend-section"', content)
+        self.assertIn("Differential Colors", content)
+
+    def test_diff_flamegraph_preserves_metadata(self):
+        """Differential mode preserves threads and opcodes metadata."""
+        test_frames = [
+            MockInterpreterInfo(0, [
+                MockThreadInfo(1, [MockFrameInfo("a.py", 10, "func_a", opcode=100)]),
+                MockThreadInfo(2, [MockFrameInfo("b.py", 20, "func_b", opcode=200)]),
+            ])
+        ]
+
+        diff = make_diff_collector_with_mock_baseline([test_frames])
+        diff.collect(test_frames)
+
+        data = diff._convert_to_flamegraph_format()
+        strings = data.get("strings", [])
+
+        self.assertTrue(data["stats"]["is_differential"])
+
+        self.assertIn("threads", data)
+        self.assertEqual(len(data["threads"]), 2)
+
+        children = data.get("children", [])
+        self.assertEqual(len(children), 2)
+
+        opcodes_found = set()
+        for child in children:
+            self.assertIn("diff", child)
+            self.assertIn("diff_pct", child)
+            self.assertIn("baseline", child)
+            self.assertIn("self_time", child)
+            self.assertIn("threads", child)
+
+            if "opcodes" in child:
+                opcodes_found.update(child["opcodes"].keys())
+
+        self.assertIn(100, opcodes_found)
+        self.assertIn(200, opcodes_found)
+
+        self.assertIn("per_thread_stats", data["stats"])
+        per_thread_stats = data["stats"]["per_thread_stats"]
+        self.assertIn(1, per_thread_stats)
+        self.assertIn(2, per_thread_stats)
+
+    def test_diff_flamegraph_elided_preserves_metadata(self):
+        """Elided flamegraph preserves thread_stats, per_thread_stats, and opcodes."""
+        baseline_frames_1 = [
+            MockInterpreterInfo(0, [
+                MockThreadInfo(1, [
+                    MockFrameInfo("file.py", 10, "func1", opcode=100),
+                    MockFrameInfo("file.py", 20, "func2", opcode=101),
+                ], status=THREAD_STATUS_HAS_GIL)
+            ])
+        ]
+        baseline_frames_2 = [
+            MockInterpreterInfo(0, [
+                MockThreadInfo(1, [
+                    MockFrameInfo("file.py", 30, "old_func", opcode=200),
+                    MockFrameInfo("file.py", 20, "func2", opcode=101),
+                ], status=THREAD_STATUS_HAS_GIL)
+            ])
+        ]
+
+        diff = make_diff_collector_with_mock_baseline([baseline_frames_1, baseline_frames_2])
+        for _ in range(2):
+            diff.collect(baseline_frames_1)
+
+        data = diff._convert_to_flamegraph_format()
+        elided = data["stats"]["elided_flamegraph"]
+
+        self.assertIn("thread_stats", elided["stats"])
+        self.assertIn("per_thread_stats", elided["stats"])
+
+        elided_strings = elided.get("strings", [])
+        children = elided.get("children", [])
+        self.assertEqual(len(children), 1)
+        old_func_node = children[0]
+        if "opcodes" in old_func_node:
+            self.assertIn(200, old_func_node["opcodes"])
 
 
 class TestRecursiveFunctionHandling(unittest.TestCase):
