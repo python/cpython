@@ -228,7 +228,7 @@ they all return ``16``::
 This happens because ``x`` is not local to the lambdas, but is defined in
 the outer scope, and it is accessed when the lambda is called --- not when it
 is defined.  At the end of the loop, the value of ``x`` is ``4``, so all the
-functions now return ``4**2``, or ``16``.  You can also verify this by
+functions now return ``4**2``, that is ``16``.  You can also verify this by
 changing the value of ``x`` and see how the results of the lambdas change::
 
    >>> x = 8
