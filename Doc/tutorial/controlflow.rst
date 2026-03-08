@@ -488,7 +488,7 @@ boundary::
    single: strings, documentation
 
 The keyword :keyword:`def` introduces a function *definition*.  It must be
-followed by the function name and the parenthesized list of formal parameters.
+followed by the function name and the parenthesized list of parameters.
 The statements that form the body of the function start at the next line, and
 must be indented.
 
@@ -510,7 +510,7 @@ variables, named in a :keyword:`global` statement, or, for variables of enclosin
 functions, named in a :keyword:`nonlocal` statement), although they may be
 referenced.
 
-The actual parameters (arguments) to a function call are introduced in the local
+Arguments to a function call are introduced in the local
 symbol table of the called function when it is called; thus, arguments are
 passed using *call by value* (where the *value* is always an object *reference*,
 not the value of the object). [#]_ When a function calls another function,
@@ -578,16 +578,16 @@ This example, as usual, demonstrates some new Python features:
 More on Defining Functions
 ==========================
 
-It is also possible to define functions with a variable number of arguments.
+It is also possible to define functions with variadic arguments.
 There are three forms, which can be combined.
 
 
-.. _tut-defaultargs:
+.. _tut-defaultparams:
 
-Default Argument Values
+Default Parameter Values
 -----------------------
 
-The most useful form is to specify a default value for one or more arguments.
+The most useful form is to specify a default value for one or more parameters.
 This creates a function that can be called with fewer arguments than it is
 defined to allow.  For example::
 
@@ -690,11 +690,11 @@ but all the following calls would be invalid::
    parrot(actor='John Cleese')  # unknown keyword argument
 
 In a function call, keyword arguments must follow positional arguments.
-All the keyword arguments passed must match one of the arguments
-accepted by the function (e.g. ``actor`` is not a valid argument for the
-``parrot`` function), and their order is not important.  This also includes
+Each keyword arguments passed must match one of the function parameters
+(e.g. ``actor`` is not a valid argument for the ``parrot`` function),
+and their order is not important.  This also includes
 non-optional arguments (e.g. ``parrot(voltage=1000)`` is valid too).
-No argument may receive a value more than once.
+No arguments are possible only if no required parameters exist.
 Here's an example that fails due to this restriction::
 
    >>> def function(a):
@@ -703,15 +703,15 @@ Here's an example that fails due to this restriction::
    >>> function(0, a=0)
    Traceback (most recent call last):
      File "<stdin>", line 1, in <module>
-   TypeError: function() got multiple values for argument 'a'
+   TypeError: function() got multiple values for parameter 'a'
 
-When a final formal parameter of the form ``**name`` is present, it receives a
-dictionary (see :ref:`typesmapping`) containing all keyword arguments except for
-those corresponding to a formal parameter.  This may be combined with a formal
-parameter of the form ``*name`` (described in the next subsection) which
-receives a :ref:`tuple <tut-tuples>` containing the positional
-arguments beyond the formal parameter list.  (``*name`` must occur
-before ``**name``.) For example, if we define a function like this::
+When a final var-keyword parameter ``**name`` is present, it defaults to an empty
+dictionary (see :ref:`typesmapping`) to receive all keyword arguments except for
+those corresponding to other parameters.  This may be combined with a var-positional
+parameter ``*name`` (described in the next subsection) which defaults to an empty
+:ref:`tuple <tut-tuples>` to receive all positional arguments except for those received
+by the preceding parameters. (``*name`` must occur before ``**name``.) For example,
+if we define a function like this::
 
    def cheeseshop(kind, *arguments, **keywords):
        print("-- Do you have any", kind, "?")
@@ -749,7 +749,7 @@ to match the order in which they were provided in the function call.
 Special parameters
 ------------------
 
-By default, arguments may be passed to a Python function either by position
+By default, arguments can be passed to a Python function either by position
 or explicitly by keyword. For readability and performance, it makes sense to
 restrict the way arguments can be passed so that a developer need only look
 at the function definition to determine if items are passed by position, by
@@ -772,33 +772,34 @@ positional-only, positional-or-keyword, and keyword-only. Keyword parameters
 are also referred to as named parameters.
 
 -------------------------------
-Positional-or-Keyword Arguments
+Positional-or-Keyword Parameters
 -------------------------------
 
-If ``/`` and ``*`` are not present in the function definition, arguments may
-be passed to a function by position or by keyword.
+Positional-or-keyword paremeters don't precede ``/``, don't follow ``*`` or ``*args``,
+and don't have ``*`` and ``**`` in their names as prefixes, so that arguments can
+be passed to them by position or keyword.
 
 --------------------------
 Positional-Only Parameters
 --------------------------
 
 Looking at this in a bit more detail, it is possible to mark certain parameters
-as *positional-only*. If *positional-only*, the parameters' order matters, and
-the parameters cannot be passed by keyword. Positional-only parameters are
+as *positional-only*. If *positional-only*, the arguments' order matters, and
+the arguments cannot be passed by keyword. Positional-only parameters are
 placed before a ``/`` (forward-slash). The ``/`` is used to logically
 separate the positional-only parameters from the rest of the parameters.
 If there is no ``/`` in the function definition, there are no positional-only
 parameters.
 
-Parameters following the ``/`` may be *positional-or-keyword* or *keyword-only*.
+Parameters following the ``/`` can be *positional-or-keyword* or *keyword-only*.
 
 ----------------------
-Keyword-Only Arguments
+Keyword-Only Parameters
 ----------------------
 
-To mark parameters as *keyword-only*, indicating the parameters must be passed
-by keyword argument, place an ``*`` in the arguments list just before the first
-*keyword-only* parameter.
+To mark parameters as *keyword-only*, indicating their arguments must be passed
+by keyword, place parameters after an ``*`` to make them 
+*keyword-only* parameters.
 
 -----------------
 Function Examples
@@ -807,49 +808,49 @@ Function Examples
 Consider the following example function definitions paying close attention to the
 markers ``/`` and ``*``::
 
-   >>> def standard_arg(arg):
-   ...     print(arg)
+   >>> def standard_param(x):
+   ...     print(x)
    ...
-   >>> def pos_only_arg(arg, /):
-   ...     print(arg)
+   >>> def pos_only_param(x, /):
+   ...     print(x)
    ...
-   >>> def kwd_only_arg(*, arg):
-   ...     print(arg)
+   >>> def kwd_only_param(*, x):
+   ...     print(x)
    ...
    >>> def combined_example(pos_only, /, standard, *, kwd_only):
    ...     print(pos_only, standard, kwd_only)
 
 
-The first function definition, ``standard_arg``, the most familiar form,
-places no restrictions on the calling convention and arguments may be
+The first function definition, ``standard_param``, the most familiar form,
+places no restrictions on the calling convention and arguments can be
 passed by position or keyword::
 
-   >>> standard_arg(2)
+   >>> standard_param(2)
    2
 
-   >>> standard_arg(arg=2)
+   >>> standard_param(x=2)
    2
 
-The second function ``pos_only_arg`` is restricted to only use positional
-parameters as there is a ``/`` in the function definition::
+The second function ``pos_only_param`` is restricted to only use a positional
+argument as its parameter precedes ``/``::
 
-   >>> pos_only_arg(1)
+   >>> pos_only_param(1)
    1
 
-   >>> pos_only_arg(arg=1)
+   >>> pos_only_param(x=1)
    Traceback (most recent call last):
      File "<stdin>", line 1, in <module>
-   TypeError: pos_only_arg() got some positional-only arguments passed as keyword arguments: 'arg'
+   TypeError: pos_only_param() got some positional arguments passed as keyword arguments: 'x'
 
-The third function ``kwd_only_arg`` only allows keyword arguments as indicated
+The third function ``kwd_only_param`` only allows keyword arguments as indicated
 by a ``*`` in the function definition::
 
-   >>> kwd_only_arg(3)
+   >>> kwd_only_param(3)
    Traceback (most recent call last):
      File "<stdin>", line 1, in <module>
-   TypeError: kwd_only_arg() takes 0 positional arguments but 1 was given
+   TypeError: kwd_only_param() takes 0 positional arguments but 1 was given
 
-   >>> kwd_only_arg(arg=3)
+   >>> kwd_only_param(x=3)
    3
 
 And the last uses all three calling conventions in the same function
@@ -869,33 +870,34 @@ definition::
    >>> combined_example(pos_only=1, standard=2, kwd_only=3)
    Traceback (most recent call last):
      File "<stdin>", line 1, in <module>
-   TypeError: combined_example() got some positional-only arguments passed as keyword arguments: 'pos_only'
+   TypeError: combined_example() got some positional arguments passed as keyword arguments: 'pos_only'
 
 
-Finally, consider this function definition which has a potential collision between the positional argument ``name``  and ``**kwds`` which has ``name`` as a key::
+Finally, consider this function which has a potential collision between
+the positional-or-keyword parameter ``name`` and the var-keyword parameter
+``**kwds`` which has ``name`` as a key::
 
     def foo(name, **kwds):
         return 'name' in kwds
 
-There is no possible call that will make it return ``True`` as the keyword ``'name'``
-will always bind to the first parameter. For example::
+Calling `foo()` gets error because `name` parameter can receive both the 1st and
+2nd argument by position and keyword respectively::
 
-    >>> foo(1, **{'name': 2})
+    >>> foo(1, name=2)
     Traceback (most recent call last):
       File "<stdin>", line 1, in <module>
-    TypeError: foo() got multiple values for argument 'name'
+    TypeError: foo() got multiple values for parameter 'name'
     >>>
 
-But using ``/`` (positional only arguments), it is possible since it allows ``name`` as a positional argument and ``'name'`` as a key in the keyword arguments::
+But using ``/`` (positional-only parameters) and calling `foo()` works because
+``name`` parameter can only receive the 1st argument by position while
+`**kwds` receives the 2nd argument by keyword::
 
     >>> def foo(name, /, **kwds):
     ...     return 'name' in kwds
     ...
-    >>> foo(1, **{'name': 2})
+    >>> foo(1, name=2)
     True
-
-In other words, the names of positional-only parameters can be used in
-``**kwds`` without ambiguity.
 
 -----
 Recap
