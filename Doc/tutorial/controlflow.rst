@@ -880,7 +880,7 @@ the positional-or-keyword parameter ``name`` and the var-keyword parameter
     def foo(name, **kwds):
         return 'name' in kwds
 
-Calling ``foo()`` gets error because `name` parameter can receive both the 1st and
+Calling ``foo()`` gets error because ``name`` parameter can receive both the 1st and
 2nd argument by position and keyword respectively::
 
     >>> foo(1, name=2)
