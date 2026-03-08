@@ -1695,7 +1695,7 @@ C type named by typestr.
 
 static PyObject *
 float___getformat___impl(PyTypeObject *type, const char *typestr)
-/*[clinic end generated code: output=2bfb987228cc9628 input=d2735823bfe8e81e]*/
+/*[clinic end generated code: output=2bfb987228cc9628 input=0ae1ba35d192f704]*/
 {
     float_format_type r;
 
