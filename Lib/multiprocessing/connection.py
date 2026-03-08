@@ -1101,8 +1101,6 @@ if sys.platform == 'win32':
             timeout = 0
         else:
             timeout = int(timeout * 1000 + 0.5)
-
-        object_list = list(object_list)
         waithandle_to_obj = {}
         ov_list = []
         ready_objects = set()
