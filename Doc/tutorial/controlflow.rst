@@ -880,7 +880,7 @@ the positional-or-keyword parameter ``name`` and the var-keyword parameter
     def foo(name, **kwds):
         return 'name' in kwds
 
-Calling `foo()` gets error because `name` parameter can receive both the 1st and
+Calling ``foo()`` gets error because `name` parameter can receive both the 1st and
 2nd argument by position and keyword respectively::
 
     >>> foo(1, name=2)
@@ -889,9 +889,9 @@ Calling `foo()` gets error because `name` parameter can receive both the 1st and
     TypeError: foo() got multiple values for parameter 'name'
     >>>
 
-But using ``/`` (positional-only parameters) and calling `foo()` works because
+But using ``/`` (positional-only parameters) and calling ``foo()`` works because
 ``name`` parameter can only receive the 1st argument by position while
-`**kwds` receives the 2nd argument by keyword::
+``**kwds`` receives the 2nd argument by keyword::
 
     >>> def foo(name, /, **kwds):
     ...     return 'name' in kwds
