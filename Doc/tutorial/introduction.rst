@@ -184,7 +184,8 @@ If you don't want characters prefaced by ``\`` to be interpreted as
 special characters, you can use *raw strings* by adding an ``r`` before
 the first quote::
 
-   >>> print('C:\some\name')  # here \n means newline!
+   >>> print('C:\some\name')  # here \n means newline, and \s means nothing!
+   <python-input-0>:1: SyntaxWarning: "\s" is an invalid escape sequence. Such sequences will not work in the future. Did you mean "\\s"? A raw string is also an option.
    C:\some
    ame
    >>> print(r'C:\some\name')  # note the r before the quote
