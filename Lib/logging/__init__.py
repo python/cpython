@@ -622,6 +622,9 @@ class Formatter(object):
         self._fmt = self._style._fmt
         self.datefmt = datefmt
 
+    def __repr__(self):
+        return '<%s (%s)>' % (self.__class__.__name__, self._fmt)
+
     default_time_format = '%Y-%m-%d %H:%M:%S'
     default_msec_format = '%s,%03d'
 
@@ -808,6 +811,9 @@ class Filter(object):
         elif record.name.find(self.name, 0, self.nlen) != 0:
             return False
         return (record.name[self.nlen] == ".")
+
+    def __repr__(self):
+        return '<%s (%s)>' % (self.__class__.__name__, self.name)
 
 class Filterer(object):
     """
