@@ -798,7 +798,7 @@ Keyword-Only Parameters
 ----------------------
 
 To mark parameters as *keyword-only*, indicating their arguments must be passed
-by keyword, place parameters after an ``*`` to make them 
+by keyword, place parameters after an ``*`` to make them
 *keyword-only* parameters.
 
 -----------------
@@ -819,7 +819,6 @@ markers ``/`` and ``*``::
    ...
    >>> def combined_example(pos_only, /, standard, *, kwd_only):
    ...     print(pos_only, standard, kwd_only)
-
 
 The first function definition, ``standard_param``, the most familiar form,
 places no restrictions on the calling convention and arguments can be
