@@ -3889,7 +3889,7 @@ class _TestConnection(BaseTestCase):
             self.assertTrue(b.closed)
             self.assertRaises(OSError, a.recv)
             self.assertRaises(OSError, b.recv)
-            
+
     @warnings_helper.ignore_fork_in_thread_deprecation_warnings()
     def test_wait_empty(self):
         # gh-145587: wait() with empty list should respect timeout
