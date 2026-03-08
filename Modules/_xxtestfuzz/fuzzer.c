@@ -428,6 +428,7 @@ static int fuzz_ast_literal_eval(const char* data, size_t size) {
                             PyErr_ExceptionMatches(PyExc_TypeError) ||
                             PyErr_ExceptionMatches(PyExc_SyntaxError) ||
                             PyErr_ExceptionMatches(PyExc_MemoryError) ||
+                            PyErr_ExceptionMatches(PyExc_OverflowError) ||
                             PyErr_ExceptionMatches(PyExc_RecursionError))
     ) {
         PyErr_Clear();

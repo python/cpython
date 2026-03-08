@@ -342,8 +342,10 @@ deque_append_lock_held(dequeobject *deque, PyObject *item, Py_ssize_t maxlen)
 {
     if (deque->rightindex == BLOCKLEN - 1) {
         block *b = newblock(deque);
-        if (b == NULL)
+        if (b == NULL) {
+            Py_DECREF(item);
             return -1;
+        }
         b->leftlink = deque->rightblock;
         CHECK_END(deque->rightblock->rightlink);
         deque->rightblock->rightlink = b;
@@ -389,8 +391,10 @@ deque_appendleft_lock_held(dequeobject *deque, PyObject *item,
 {
     if (deque->leftindex == 0) {
         block *b = newblock(deque);
-        if (b == NULL)
+        if (b == NULL) {
+            Py_DECREF(item);
             return -1;
+        }
         b->rightlink = deque->leftblock;
         CHECK_END(deque->leftblock->leftlink);
         deque->leftblock->leftlink = b;
@@ -564,7 +568,6 @@ deque_extendleft_impl(dequeobject *deque, PyObject *iterable)
     iternext = *Py_TYPE(it)->tp_iternext;
     while ((item = iternext(it)) != NULL) {
         if (deque_appendleft_lock_held(deque, item, maxlen) == -1) {
-            Py_DECREF(item);
             Py_DECREF(it);
             return NULL;
         }

@@ -196,6 +196,10 @@ classify_address(uintptr_t addr, int jit_enabled, PyInterpreterState *interp)
         if (strncmp(base, "python", 6) == 0) {
             return "python";
         }
+        // Match "libpython3.15.so.1.0"
+        if (strncmp(base, "libpython", 9) == 0) {
+            return "python";
+        }
         return "other";
     }
 #ifdef _Py_JIT
@@ -2966,6 +2970,8 @@ static PyMethodDef module_functions[] = {
 static int
 module_exec(PyObject *module)
 {
+    PyInterpreterState *interp = PyInterpreterState_Get();
+
     if (_PyTestInternalCapi_Init_Lock(module) < 0) {
         return 1;
     }
@@ -3007,9 +3013,10 @@ module_exec(PyObject *module)
         return 1;
     }
 
+    // + 1 more due to one loop spent on tracing.
+    unsigned long threshold = interp->opt_config.jump_backward_initial_value + 2;
     if (PyModule_Add(module, "TIER2_THRESHOLD",
-        // + 1 more due to one loop spent on tracing.
-                        PyLong_FromLong(JUMP_BACKWARD_INITIAL_VALUE + 2)) < 0) {
+                        PyLong_FromUnsignedLong(threshold)) < 0) {
         return 1;
     }
 

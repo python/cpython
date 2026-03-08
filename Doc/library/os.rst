@@ -2409,6 +2409,10 @@ features:
    .. versionchanged:: 3.6
       Accepts a :term:`path-like object`.
 
+   .. versionchanged:: next
+      ``os.listdir(-1)`` now fails with ``OSError(errno.EBADF)`` rather than
+      listing the current directory.
+
 
 .. function:: listdrives()
 
@@ -2938,6 +2942,10 @@ features:
 
    .. versionchanged:: 3.7
       Added support for :ref:`file descriptors <path_fd>` on Unix.
+
+   .. versionchanged:: next
+      ``os.scandir(-1)`` now fails with ``OSError(errno.EBADF)`` rather than
+      listing the current directory.
 
 
 .. class:: DirEntry
@@ -4573,6 +4581,10 @@ These functions are all available on Linux only.
 
    .. versionchanged:: 3.6
       Accepts a :term:`path-like object`.
+
+   .. versionchanged:: next
+      ``os.listxattr(-1)`` now fails with ``OSError(errno.EBADF)`` rather than
+      listing extended attributes of the current directory.
 
 
 .. function:: removexattr(path, attribute, *, follow_symlinks=True)

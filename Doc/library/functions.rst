@@ -594,7 +594,7 @@ are always available.  They are listed here in alphabetical order.
 
    :param globals:
       The global namespace (default: ``None``).
-   :type globals: :class:`dict` | ``None``
+   :type globals: :class:`dict` | :class:`frozendict` | ``None``
 
    :param locals:
       The local namespace (default: ``None``).
@@ -659,6 +659,10 @@ are always available.  They are listed here in alphabetical order.
 
       The semantics of the default *locals* namespace have been adjusted as
       described for the :func:`locals` builtin.
+
+   .. versionchanged:: next
+
+      *globals* can now be a :class:`frozendict`.
 
 .. index:: pair: built-in function; exec
 
@@ -736,6 +740,10 @@ are always available.  They are listed here in alphabetical order.
 
       The semantics of the default *locals* namespace have been adjusted as
       described for the :func:`locals` builtin.
+
+   .. versionchanged:: next
+
+      *globals* can now be a :class:`frozendict`.
 
 
 .. function:: filter(function, iterable, /)
@@ -2090,6 +2098,10 @@ are always available.  They are listed here in alphabetical order.
    .. versionchanged:: 3.6
       Subclasses of :class:`!type` which don't override ``type.__new__`` may no
       longer use the one-argument form to get the type of an object.
+
+   .. versionchanged:: next
+
+      *dict* can now be a :class:`frozendict`.
 
 .. function:: vars()
               vars(object, /)
