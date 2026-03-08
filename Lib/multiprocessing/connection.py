@@ -1085,6 +1085,8 @@ if sys.platform == 'win32':
 
         Returns list of those objects in object_list which are ready/readable.
         '''
+        object_list = list(object_list)
+
         if not object_list:
             if timeout is None:
                 while True:
