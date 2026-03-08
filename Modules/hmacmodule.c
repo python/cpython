@@ -1378,7 +1378,6 @@ static void
 py_hmac_hinfo_ht_free(void *hinfo)
 {
     py_hmac_hinfo *entry = (py_hmac_hinfo *)hinfo;
-    assert(entry->display_name != NULL);
     if (--(entry->refcnt) == 0) {
         Py_CLEAR(entry->display_name);
         PyMem_Free(hinfo);
@@ -1477,7 +1476,8 @@ py_hmac_hinfo_ht_new(void)
             e->hashlib_name == NULL ? e->name : e->hashlib_name
         );
         if (value->display_name == NULL) {
-            PyMem_Free(value);
+            /* 'value' is owned by the table (refcnt > 0),
+               so _Py_hashtable_destroy() will free it. */
             goto error;
         }
     }
