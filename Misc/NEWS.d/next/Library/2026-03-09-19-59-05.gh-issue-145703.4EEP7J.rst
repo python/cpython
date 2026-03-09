@@ -1,2 +1,2 @@
-Make sure asyncio.BaseEventLoop triggers scheduled events on time when clock
-resolution is too small.
+:mod:`asyncio`: Make sure that :class:`~asyncio.BaseEventLoop` triggers
+scheduled events on time when the clock resolution becomes too small.
