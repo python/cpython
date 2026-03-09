@@ -702,6 +702,7 @@ PyObject* get_cfunc_from_callable(PyObject* callable, PyObject* self_arg, PyObje
         if (PyCFunction_Check(meth)) {
             return (PyObject*)((PyCFunctionObject *)meth);
         }
+        Py_DECREF(meth);
     }
     return NULL;
 }
@@ -961,6 +962,8 @@ profiler_traverse(PyObject *op, visitproc visit, void *arg)
     ProfilerObject *self = ProfilerObject_CAST(op);
     Py_VISIT(Py_TYPE(op));
     Py_VISIT(self->externalTimer);
+    Py_VISIT(self->missing);
+
     return 0;
 }
 
@@ -979,6 +982,7 @@ profiler_dealloc(PyObject *op)
 
     flush_unmatched(self);
     clearEntries(self);
+    Py_XDECREF(self->missing);
     Py_XDECREF(self->externalTimer);
     PyTypeObject *tp = Py_TYPE(self);
     tp->tp_free(self);
@@ -1017,7 +1021,7 @@ profiler_init_impl(ProfilerObject *self, PyObject *timer, double timeunit,
     if (!monitoring) {
         return -1;
     }
-    self->missing = PyObject_GetAttrString(monitoring, "MISSING");
+    Py_XSETREF(self->missing, PyObject_GetAttrString(monitoring, "MISSING"));
     if (!self->missing) {
         Py_DECREF(monitoring);
         return -1;

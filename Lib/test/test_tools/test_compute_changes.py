@@ -54,6 +54,8 @@ class TestProcessChangedFiles(unittest.TestCase):
                         f = p / "file"
                     elif p.is_file():
                         f = p
+                    else:
+                        self.fail(f"LIBRARY_FUZZER_PATHS contains an invalid entry: {p!r}")
                     result = process_changed_files({f})
                     self.assertTrue(result.run_ci_fuzz_stdlib)
                     self.assertTrue(is_fuzzable_library_file(f))
