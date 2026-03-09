@@ -12,6 +12,7 @@ import tempfile
 import os
 
 from test import support
+from test.support.script_helper import assert_python_ok
 
 try:
     import _testcapi
@@ -219,6 +220,16 @@ class LazyImportTypeTests(unittest.TestCase):
         """LazyImportType should not be directly constructible."""
         self.assertRaises(TypeError, types.LazyImportType, {}, "module")
 
+    @support.requires_subprocess()
+    def test_lazy_import_type_attributes_accessible(self):
+        """Check that static PyLazyImport_Type is initialized at startup."""
+        code = textwrap.dedent("""
+            lazy import json
+            print(globals()["json"].resolve)
+        """)
+        proc = assert_python_ok("-c", code)
+        self.assertIn(b"<built-in method resolve of lazy_import object at", proc.out)
+
 
 class SyntaxRestrictionTests(unittest.TestCase):
     """Tests for syntax restrictions on lazy imports."""
@@ -390,6 +401,11 @@ class DunderLazyImportTests(unittest.TestCase):
         """__lazy_import__ should create lazy import proxy."""
         import test.test_lazy_import.data.dunder_lazy_import
         self.assertNotIn("test.test_lazy_import.data.basic2", sys.modules)
+
+    def test_dunder_lazy_import_with_custom_filter(self):
+        sys.set_lazy_imports_filter(lambda importer, imported, fromlist: False)
+        import test.test_lazy_import.data.dunder_lazy_import
+        self.assertIn("test.test_lazy_import.data.basic2", sys.modules)
 
     def test_dunder_lazy_import_used(self):
         """Using __lazy_import__ result should trigger module load."""
