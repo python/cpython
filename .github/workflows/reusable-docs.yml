@@ -109,7 +109,6 @@ jobs:
       run: python Doc/tools/check-html-ids.py collect Doc/build/html -o /tmp/html-ids-base.json.gz
     - name: 'Download PR base HTML IDs'
       uses: actions/download-artifact@v8
-      archive: false
       with:
         name: html-ids-head
         path: /tmp
