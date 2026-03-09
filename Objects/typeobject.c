@@ -52,8 +52,8 @@ class object "PyObject *" "&PyBaseObject_Type"
     MCACHE_HASH(FT_ATOMIC_LOAD_UINT_RELAXED((type)->tp_version_tag),   \
                 ((Py_ssize_t)(name)) >> 3)
 #define MCACHE_CACHEABLE_NAME(name)                             \
-        PyUnicode_CheckExact(name) &&                           \
-        (PyUnicode_GET_LENGTH(name) <= MCACHE_MAX_ATTR_SIZE)
+        (PyUnicode_CheckExact(name) &&                           \
+         (PyUnicode_GET_LENGTH(name) <= MCACHE_MAX_ATTR_SIZE))
 
 #define NEXT_VERSION_TAG(interp) \
     (interp)->types.next_version_tag
@@ -6134,6 +6134,21 @@ _PyType_LookupRefAndVersion(PyTypeObject *type, PyObject *name, unsigned int *ve
     return PyStackRef_AsPyObjectSteal(out);
 }
 
+static int
+should_assign_version_tag(PyTypeObject *type, PyObject *name, unsigned int version_tag)
+{
+    if (version_tag != 0) {
+        return 0;
+    }
+    if (FT_ATOMIC_LOAD_UINT16_RELAXED(type->tp_versions_used) >= MAX_VERSIONS_PER_CLASS) {
+        return 0;
+    }
+    if (!MCACHE_CACHEABLE_NAME(name)) {
+        return 0;
+    }
+    return 1;
+}
+
 unsigned int
 _PyType_LookupStackRefAndVersion(PyTypeObject *type, PyObject *name, _PyStackRef *out)
 {
@@ -6187,19 +6202,18 @@ _PyType_LookupStackRefAndVersion(PyTypeObject *type, PyObject *name, _PyStackRef
 
     int res;
     PyInterpreterState *interp = _PyInterpreterState_GET();
-    int has_version = 0;
-    unsigned int assigned_version = 0;
 
-    BEGIN_TYPE_LOCK();
-    // We must assign the version before doing the lookup.  If
-    // find_name_in_mro() blocks and releases the critical section
-    // then the type version can change.
-    if (MCACHE_CACHEABLE_NAME(name)) {
-        has_version = assign_version_tag(interp, type);
-        assigned_version = type->tp_version_tag;
+    unsigned int version_tag = FT_ATOMIC_LOAD_UINT(type->tp_version_tag);
+    if (should_assign_version_tag(type, name, version_tag)) {
+        BEGIN_TYPE_LOCK();
+        assign_version_tag(interp, type);
+        version_tag = type->tp_version_tag;
+        res = find_name_in_mro(type, name, out);
+        END_TYPE_LOCK();
     }
-    res = find_name_in_mro(type, name, out);
-    END_TYPE_LOCK();
+    else {
+        res = find_name_in_mro(type, name, out);
+    }
 
     /* Only put NULL results into cache if there was no error. */
     if (res < 0) {
@@ -6207,16 +6221,18 @@ _PyType_LookupStackRefAndVersion(PyTypeObject *type, PyObject *name, _PyStackRef
         return 0;
     }
 
-    if (has_version) {
-        PyObject *res_obj = PyStackRef_AsPyObjectBorrow(*out);
-#if Py_GIL_DISABLED
-        update_cache_gil_disabled(entry, name, assigned_version, res_obj);
-#else
-        PyObject *old_value = update_cache(entry, name, assigned_version, res_obj);
-        Py_DECREF(old_value);
-#endif
+    if (version_tag == 0 || !MCACHE_CACHEABLE_NAME(name)) {
+        return 0;
     }
-    return has_version ? assigned_version : 0;
+
+    PyObject *res_obj = PyStackRef_AsPyObjectBorrow(*out);
+#if Py_GIL_DISABLED
+    update_cache_gil_disabled(entry, name, version_tag, res_obj);
+#else
+    PyObject *old_value = update_cache(entry, name, version_tag, res_obj);
+    Py_DECREF(old_value);
+#endif
+    return version_tag;
 }
 
 /* Internal API to look for a name through the MRO.
