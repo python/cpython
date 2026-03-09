@@ -46,6 +46,9 @@
 #include "frozen_modules/zipimport.h"
 #include "frozen_modules/abc.h"
 #include "frozen_modules/codecs.h"
+#include "frozen_modules/encodings.h"
+#include "frozen_modules/encodings.aliases.h"
+#include "frozen_modules/encodings.utf_8.h"
 #include "frozen_modules/io.h"
 #include "frozen_modules/_collections_abc.h"
 #include "frozen_modules/_sitebuiltins.h"
@@ -55,6 +58,7 @@
 #include "frozen_modules/os.h"
 #include "frozen_modules/site.h"
 #include "frozen_modules/stat.h"
+#include "frozen_modules/linecache.h"
 #include "frozen_modules/importlib.util.h"
 #include "frozen_modules/importlib.machinery.h"
 #include "frozen_modules/runpy.h"
@@ -76,6 +80,9 @@ static const struct _frozen stdlib_modules[] = {
     /* stdlib - startup, without site (python -S) */
     {"abc", _Py_M__abc, (int)sizeof(_Py_M__abc), false},
     {"codecs", _Py_M__codecs, (int)sizeof(_Py_M__codecs), false},
+    {"encodings", _Py_M__encodings, (int)sizeof(_Py_M__encodings), true},
+    {"encodings.aliases", _Py_M__encodings_aliases, (int)sizeof(_Py_M__encodings_aliases), false},
+    {"encodings.utf_8", _Py_M__encodings_utf_8, (int)sizeof(_Py_M__encodings_utf_8), false},
     {"io", _Py_M__io, (int)sizeof(_Py_M__io), false},
 
     /* stdlib - startup, with site */
@@ -87,6 +94,9 @@ static const struct _frozen stdlib_modules[] = {
     {"os", _Py_M__os, (int)sizeof(_Py_M__os), false},
     {"site", _Py_M__site, (int)sizeof(_Py_M__site), false},
     {"stat", _Py_M__stat, (int)sizeof(_Py_M__stat), false},
+
+    /* pythonrun - interactive */
+    {"linecache", _Py_M__linecache, (int)sizeof(_Py_M__linecache), false},
 
     /* runpy - run module with -m */
     {"importlib.util", _Py_M__importlib_util, (int)sizeof(_Py_M__importlib_util), false},
