@@ -430,11 +430,11 @@ Communicating Between Interpreters
       been destroyed.  If ``None`` (the default), the queue's default
       (set via :func:`create_queue`) is used.  Supported values:
 
-      * :data:`UNBOUND` -- :meth:`get` returns the :data:`UNBOUND`
+      * ``UNBOUND`` -- :meth:`get` returns the ``UNBOUND``
         sentinel in place of the original object.
-      * :data:`UNBOUND_ERROR` -- :meth:`get` raises
-        :exc:`ItemInterpreterDestroyed`.
-      * :data:`UNBOUND_REMOVE` -- the item is silently removed from
+      * ``UNBOUND_ERROR`` -- :meth:`get` raises
+        ``ItemInterpreterDestroyed``.
+      * ``UNBOUND_REMOVE`` -- the item is silently removed from
         the queue when the original interpreter is destroyed.
 
    .. method:: put_nowait(obj, *, unbounditems=None)
