@@ -5832,7 +5832,7 @@ The builtin functions :func:`isinstance` and :func:`issubclass` do not accept
    >>> isinstance([1, 2], list[str])
    Traceback (most recent call last):
      File "<stdin>", line 1, in <module>
-   TypeError: isinstance() argument 2 cannot be a parameterized generic
+   TypeError: isinstance() argument 2 cannot be an argumentized generic type
 
 The Python runtime does not enforce :term:`type annotations <annotation>`.
 This extends to generic types and their type parameters. When creating
@@ -6087,7 +6087,7 @@ enables cleaner type hinting syntax compared to subscripting :class:`typing.Unio
       >>> isinstance([1], int | list[int])
       Traceback (most recent call last):
         ...
-      TypeError: isinstance() argument 2 cannot be a parameterized generic
+      TypeError: isinstance() argument 2 cannot be an argumentized generic type
 
 The user-exposed type for the union object can be accessed from
 :class:`typing.Union` and used for :func:`isinstance` checks::
