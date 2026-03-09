@@ -123,7 +123,11 @@ PY_STDMODULE_CFLAGS= $(PY_CFLAGS) $(PY_CFLAGS_NODIST) $(PY_CPPFLAGS) $(CFLAGSFOR
 PY_BUILTIN_MODULE_CFLAGS= $(PY_STDMODULE_CFLAGS) -DPy_BUILD_CORE_BUILTIN
 PY_CORE_CFLAGS=	$(PY_STDMODULE_CFLAGS) -DPy_BUILD_CORE
 # Linker flags used for building the interpreter object files
+# In particular, EXE_LDFLAGS is an extra flag to provide fine grain distinction between
+# LDFLAGS used to build executables and shared targets.
 PY_CORE_LDFLAGS=$(PY_LDFLAGS) $(PY_LDFLAGS_NODIST)
+CONFIGURE_EXE_LDFLAGS=@EXE_LDFLAGS@
+PY_CORE_EXE_LDFLAGS:= $(if $(CONFIGURE_EXE_LDFLAGS), $(CONFIGURE_EXE_LDFLAGS) $(PY_LDFLAGS_NODIST), $(PY_CORE_LDFLAGS))
 # Strict or non-strict aliasing flags used to compile dtoa.c, see above
 CFLAGS_ALIASING=@CFLAGS_ALIASING@
 
@@ -986,7 +990,7 @@ clinic-tests: check-clean-src $(srcdir)/Lib/test/clinic.test.c
 
 # Build the interpreter
 $(BUILDPYTHON):	Programs/python.o $(LINK_PYTHON_DEPS)
-	$(LINKCC) $(PY_CORE_LDFLAGS) $(LINKFORSHARED) -o $@ Programs/python.o $(LINK_PYTHON_OBJS) $(LIBS) $(MODLIBS) $(SYSLIBS)
+	$(LINKCC) $(PY_CORE_EXE_LDFLAGS) $(LINKFORSHARED) -o $@ Programs/python.o $(LINK_PYTHON_OBJS) $(LIBS) $(MODLIBS) $(SYSLIBS)
 
 platform: $(PYTHON_FOR_BUILD_DEPS) pybuilddir.txt
 	$(RUNSHARED) $(PYTHON_FOR_BUILD) -c 'import sys ; from sysconfig import get_platform ; print("%s-%d.%d" % (get_platform(), *sys.version_info[:2]))' >platform
@@ -1000,7 +1004,7 @@ platform: $(PYTHON_FOR_BUILD_DEPS) pybuilddir.txt
 # or removed in case of failure.
 pybuilddir.txt: $(PYTHON_FOR_BUILD_DEPS)
 	@echo "none" > ./pybuilddir.txt
-	$(RUNSHARED) $(PYTHON_FOR_BUILD) -S -m sysconfig --generate-posix-vars ;\
+	$(RUNSHARED) $(PYTHON_FOR_BUILD) -S -X pathconfig_warnings=0 -m sysconfig --generate-posix-vars ;\
 	if test $$? -ne 0 ; then \
 		echo "generate-posix-vars failed" ; \
 		rm -f ./pybuilddir.txt ; \
@@ -1676,7 +1680,7 @@ regen-re: $(BUILDPYTHON)
 	$(RUNSHARED) ./$(BUILDPYTHON) $(srcdir)/Tools/build/generate_re_casefix.py $(srcdir)/Lib/re/_casefix.py
 
 Programs/_testembed: Programs/_testembed.o $(LINK_PYTHON_DEPS)
-	$(LINKCC) $(PY_CORE_LDFLAGS) $(LINKFORSHARED) -o $@ Programs/_testembed.o $(LINK_PYTHON_OBJS) $(LIBS) $(MODLIBS) $(SYSLIBS)
+	$(LINKCC) $(PY_CORE_EXE_LDFLAGS) $(LINKFORSHARED) -o $@ Programs/_testembed.o $(LINK_PYTHON_OBJS) $(LIBS) $(MODLIBS) $(SYSLIBS)
 
 ############################################################################
 # "Bootstrap Python" used to run Programs/_freeze_module.py
@@ -1725,6 +1729,9 @@ FROZEN_FILES_IN = \
 		Lib/zipimport.py \
 		Lib/abc.py \
 		Lib/codecs.py \
+		Lib/encodings/__init__.py \
+		Lib/encodings/aliases.py \
+		Lib/encodings/utf_8.py \
 		Lib/io.py \
 		Lib/_collections_abc.py \
 		Lib/_sitebuiltins.py \
@@ -1734,6 +1741,7 @@ FROZEN_FILES_IN = \
 		Lib/os.py \
 		Lib/site.py \
 		Lib/stat.py \
+		Lib/linecache.py \
 		Lib/importlib/util.py \
 		Lib/importlib/machinery.py \
 		Lib/runpy.py \
@@ -1750,6 +1758,9 @@ FROZEN_FILES_OUT = \
 		Python/frozen_modules/zipimport.h \
 		Python/frozen_modules/abc.h \
 		Python/frozen_modules/codecs.h \
+		Python/frozen_modules/encodings.h \
+		Python/frozen_modules/encodings.aliases.h \
+		Python/frozen_modules/encodings.utf_8.h \
 		Python/frozen_modules/io.h \
 		Python/frozen_modules/_collections_abc.h \
 		Python/frozen_modules/_sitebuiltins.h \
@@ -1759,6 +1770,7 @@ FROZEN_FILES_OUT = \
 		Python/frozen_modules/os.h \
 		Python/frozen_modules/site.h \
 		Python/frozen_modules/stat.h \
+		Python/frozen_modules/linecache.h \
 		Python/frozen_modules/importlib.util.h \
 		Python/frozen_modules/importlib.machinery.h \
 		Python/frozen_modules/runpy.h \
@@ -1798,6 +1810,15 @@ Python/frozen_modules/abc.h: Lib/abc.py $(FREEZE_MODULE_DEPS)
 Python/frozen_modules/codecs.h: Lib/codecs.py $(FREEZE_MODULE_DEPS)
 	$(FREEZE_MODULE) codecs $(srcdir)/Lib/codecs.py Python/frozen_modules/codecs.h
 
+Python/frozen_modules/encodings.h: Lib/encodings/__init__.py $(FREEZE_MODULE_DEPS)
+	$(FREEZE_MODULE) encodings $(srcdir)/Lib/encodings/__init__.py Python/frozen_modules/encodings.h
+
+Python/frozen_modules/encodings.aliases.h: Lib/encodings/aliases.py $(FREEZE_MODULE_DEPS)
+	$(FREEZE_MODULE) encodings.aliases $(srcdir)/Lib/encodings/aliases.py Python/frozen_modules/encodings.aliases.h
+
+Python/frozen_modules/encodings.utf_8.h: Lib/encodings/utf_8.py $(FREEZE_MODULE_DEPS)
+	$(FREEZE_MODULE) encodings.utf_8 $(srcdir)/Lib/encodings/utf_8.py Python/frozen_modules/encodings.utf_8.h
+
 Python/frozen_modules/io.h: Lib/io.py $(FREEZE_MODULE_DEPS)
 	$(FREEZE_MODULE) io $(srcdir)/Lib/io.py Python/frozen_modules/io.h
 
@@ -1824,6 +1845,9 @@ Python/frozen_modules/site.h: Lib/site.py $(FREEZE_MODULE_DEPS)
 
 Python/frozen_modules/stat.h: Lib/stat.py $(FREEZE_MODULE_DEPS)
 	$(FREEZE_MODULE) stat $(srcdir)/Lib/stat.py Python/frozen_modules/stat.h
+
+Python/frozen_modules/linecache.h: Lib/linecache.py $(FREEZE_MODULE_DEPS)
+	$(FREEZE_MODULE) linecache $(srcdir)/Lib/linecache.py Python/frozen_modules/linecache.h
 
 Python/frozen_modules/importlib.util.h: Lib/importlib/util.py $(FREEZE_MODULE_DEPS)
 	$(FREEZE_MODULE) importlib.util $(srcdir)/Lib/importlib/util.py Python/frozen_modules/importlib.util.h
@@ -2678,8 +2702,6 @@ TESTSUBDIRS=	idlelib/idle_test \
 		test/test_import/data/package3 \
 		test/test_import/data/package4 \
 		test/test_import/data/unwritable \
-		test/test_import/data/lazy_imports \
-		test/test_import/data/lazy_imports/pkg \
 		test/test_importlib \
 		test/test_importlib/builtin \
 		test/test_importlib/extension \
@@ -2720,6 +2742,10 @@ TESTSUBDIRS=	idlelib/idle_test \
 		test/test_interpreters \
 		test/test_io \
 		test/test_json \
+		test/test_lazy_import \
+		test/test_lazy_import/data \
+		test/test_lazy_import/data/pkg \
+		test/test_lazy_import/data/badsyntax \
 		test/test_module \
 		test/test_multiprocessing_fork \
 		test/test_multiprocessing_forkserver \

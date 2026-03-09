@@ -127,7 +127,10 @@ const uint32_t _PyUop_Flags[MAX_UOP_ID+1] = {
     [_GUARD_BINARY_OP_SUBSCR_TUPLE_INT_BOUNDS] = HAS_DEOPT_FLAG,
     [_BINARY_OP_SUBSCR_TUPLE_INT] = 0,
     [_GUARD_NOS_DICT] = HAS_EXIT_FLAG,
+    [_GUARD_NOS_ANY_DICT] = HAS_EXIT_FLAG,
+    [_GUARD_TOS_ANY_DICT] = HAS_EXIT_FLAG,
     [_GUARD_TOS_DICT] = HAS_EXIT_FLAG,
+    [_GUARD_TOS_FROZENDICT] = HAS_EXIT_FLAG,
     [_BINARY_OP_SUBSCR_DICT] = HAS_ERROR_FLAG | HAS_ERROR_NO_POP_FLAG | HAS_ESCAPES_FLAG,
     [_BINARY_OP_SUBSCR_CHECK_FUNC] = HAS_DEOPT_FLAG,
     [_BINARY_OP_SUBSCR_INIT_CALL] = 0,
@@ -213,6 +216,8 @@ const uint32_t _PyUop_Flags[MAX_UOP_ID+1] = {
     [_IS_OP] = HAS_ARG_FLAG,
     [_CONTAINS_OP] = HAS_ARG_FLAG | HAS_ERROR_FLAG | HAS_ERROR_NO_POP_FLAG | HAS_ESCAPES_FLAG,
     [_GUARD_TOS_ANY_SET] = HAS_DEOPT_FLAG,
+    [_GUARD_TOS_SET] = HAS_DEOPT_FLAG,
+    [_GUARD_TOS_FROZENSET] = HAS_DEOPT_FLAG,
     [_CONTAINS_OP_SET] = HAS_ARG_FLAG | HAS_ERROR_FLAG | HAS_ERROR_NO_POP_FLAG | HAS_ESCAPES_FLAG,
     [_CONTAINS_OP_DICT] = HAS_ARG_FLAG | HAS_ERROR_FLAG | HAS_ERROR_NO_POP_FLAG | HAS_ESCAPES_FLAG,
     [_CHECK_EG_MATCH] = HAS_ERROR_FLAG | HAS_ESCAPES_FLAG,
@@ -381,7 +386,7 @@ const uint32_t _PyUop_Flags[MAX_UOP_ID+1] = {
     [_RECORD_TOS] = HAS_RECORDS_VALUE_FLAG,
     [_RECORD_TOS_TYPE] = HAS_RECORDS_VALUE_FLAG,
     [_RECORD_NOS] = HAS_RECORDS_VALUE_FLAG,
-    [_RECORD_NOS_GEN_FUNC] = HAS_ESCAPES_FLAG | HAS_RECORDS_VALUE_FLAG,
+    [_RECORD_NOS_GEN_FUNC] = HAS_RECORDS_VALUE_FLAG,
     [_RECORD_4OS] = HAS_RECORDS_VALUE_FLAG,
     [_RECORD_CALLABLE] = HAS_ARG_FLAG | HAS_RECORDS_VALUE_FLAG,
     [_RECORD_BOUND_METHOD] = HAS_ARG_FLAG | HAS_RECORDS_VALUE_FLAG,
@@ -1229,6 +1234,24 @@ const _PyUopCachingInfo _PyUop_Caching[MAX_UOP_ID+1] = {
             { 3, 3, _GUARD_NOS_DICT_r33 },
         },
     },
+    [_GUARD_NOS_ANY_DICT] = {
+        .best = { 0, 1, 2, 3 },
+        .entries = {
+            { 2, 0, _GUARD_NOS_ANY_DICT_r02 },
+            { 2, 1, _GUARD_NOS_ANY_DICT_r12 },
+            { 2, 2, _GUARD_NOS_ANY_DICT_r22 },
+            { 3, 3, _GUARD_NOS_ANY_DICT_r33 },
+        },
+    },
+    [_GUARD_TOS_ANY_DICT] = {
+        .best = { 0, 1, 2, 3 },
+        .entries = {
+            { 1, 0, _GUARD_TOS_ANY_DICT_r01 },
+            { 1, 1, _GUARD_TOS_ANY_DICT_r11 },
+            { 2, 2, _GUARD_TOS_ANY_DICT_r22 },
+            { 3, 3, _GUARD_TOS_ANY_DICT_r33 },
+        },
+    },
     [_GUARD_TOS_DICT] = {
         .best = { 0, 1, 2, 3 },
         .entries = {
@@ -1236,6 +1259,15 @@ const _PyUopCachingInfo _PyUop_Caching[MAX_UOP_ID+1] = {
             { 1, 1, _GUARD_TOS_DICT_r11 },
             { 2, 2, _GUARD_TOS_DICT_r22 },
             { 3, 3, _GUARD_TOS_DICT_r33 },
+        },
+    },
+    [_GUARD_TOS_FROZENDICT] = {
+        .best = { 0, 1, 2, 3 },
+        .entries = {
+            { 1, 0, _GUARD_TOS_FROZENDICT_r01 },
+            { 1, 1, _GUARD_TOS_FROZENDICT_r11 },
+            { 2, 2, _GUARD_TOS_FROZENDICT_r22 },
+            { 3, 3, _GUARD_TOS_FROZENDICT_r33 },
         },
     },
     [_BINARY_OP_SUBSCR_DICT] = {
@@ -2001,6 +2033,24 @@ const _PyUopCachingInfo _PyUop_Caching[MAX_UOP_ID+1] = {
             { 1, 1, _GUARD_TOS_ANY_SET_r11 },
             { 2, 2, _GUARD_TOS_ANY_SET_r22 },
             { 3, 3, _GUARD_TOS_ANY_SET_r33 },
+        },
+    },
+    [_GUARD_TOS_SET] = {
+        .best = { 0, 1, 2, 3 },
+        .entries = {
+            { 1, 0, _GUARD_TOS_SET_r01 },
+            { 1, 1, _GUARD_TOS_SET_r11 },
+            { 2, 2, _GUARD_TOS_SET_r22 },
+            { 3, 3, _GUARD_TOS_SET_r33 },
+        },
+    },
+    [_GUARD_TOS_FROZENSET] = {
+        .best = { 0, 1, 2, 3 },
+        .entries = {
+            { 1, 0, _GUARD_TOS_FROZENSET_r01 },
+            { 1, 1, _GUARD_TOS_FROZENSET_r11 },
+            { 2, 2, _GUARD_TOS_FROZENSET_r22 },
+            { 3, 3, _GUARD_TOS_FROZENSET_r33 },
         },
     },
     [_CONTAINS_OP_SET] = {
@@ -3754,10 +3804,22 @@ const uint16_t _PyUop_Uncached[MAX_UOP_REGS_ID+1] = {
     [_GUARD_NOS_DICT_r12] = _GUARD_NOS_DICT,
     [_GUARD_NOS_DICT_r22] = _GUARD_NOS_DICT,
     [_GUARD_NOS_DICT_r33] = _GUARD_NOS_DICT,
+    [_GUARD_NOS_ANY_DICT_r02] = _GUARD_NOS_ANY_DICT,
+    [_GUARD_NOS_ANY_DICT_r12] = _GUARD_NOS_ANY_DICT,
+    [_GUARD_NOS_ANY_DICT_r22] = _GUARD_NOS_ANY_DICT,
+    [_GUARD_NOS_ANY_DICT_r33] = _GUARD_NOS_ANY_DICT,
+    [_GUARD_TOS_ANY_DICT_r01] = _GUARD_TOS_ANY_DICT,
+    [_GUARD_TOS_ANY_DICT_r11] = _GUARD_TOS_ANY_DICT,
+    [_GUARD_TOS_ANY_DICT_r22] = _GUARD_TOS_ANY_DICT,
+    [_GUARD_TOS_ANY_DICT_r33] = _GUARD_TOS_ANY_DICT,
     [_GUARD_TOS_DICT_r01] = _GUARD_TOS_DICT,
     [_GUARD_TOS_DICT_r11] = _GUARD_TOS_DICT,
     [_GUARD_TOS_DICT_r22] = _GUARD_TOS_DICT,
     [_GUARD_TOS_DICT_r33] = _GUARD_TOS_DICT,
+    [_GUARD_TOS_FROZENDICT_r01] = _GUARD_TOS_FROZENDICT,
+    [_GUARD_TOS_FROZENDICT_r11] = _GUARD_TOS_FROZENDICT,
+    [_GUARD_TOS_FROZENDICT_r22] = _GUARD_TOS_FROZENDICT,
+    [_GUARD_TOS_FROZENDICT_r33] = _GUARD_TOS_FROZENDICT,
     [_BINARY_OP_SUBSCR_DICT_r23] = _BINARY_OP_SUBSCR_DICT,
     [_BINARY_OP_SUBSCR_CHECK_FUNC_r23] = _BINARY_OP_SUBSCR_CHECK_FUNC,
     [_BINARY_OP_SUBSCR_INIT_CALL_r01] = _BINARY_OP_SUBSCR_INIT_CALL,
@@ -3882,6 +3944,14 @@ const uint16_t _PyUop_Uncached[MAX_UOP_REGS_ID+1] = {
     [_GUARD_TOS_ANY_SET_r11] = _GUARD_TOS_ANY_SET,
     [_GUARD_TOS_ANY_SET_r22] = _GUARD_TOS_ANY_SET,
     [_GUARD_TOS_ANY_SET_r33] = _GUARD_TOS_ANY_SET,
+    [_GUARD_TOS_SET_r01] = _GUARD_TOS_SET,
+    [_GUARD_TOS_SET_r11] = _GUARD_TOS_SET,
+    [_GUARD_TOS_SET_r22] = _GUARD_TOS_SET,
+    [_GUARD_TOS_SET_r33] = _GUARD_TOS_SET,
+    [_GUARD_TOS_FROZENSET_r01] = _GUARD_TOS_FROZENSET,
+    [_GUARD_TOS_FROZENSET_r11] = _GUARD_TOS_FROZENSET,
+    [_GUARD_TOS_FROZENSET_r22] = _GUARD_TOS_FROZENSET,
+    [_GUARD_TOS_FROZENSET_r33] = _GUARD_TOS_FROZENSET,
     [_CONTAINS_OP_SET_r23] = _CONTAINS_OP_SET,
     [_CONTAINS_OP_DICT_r23] = _CONTAINS_OP_DICT,
     [_CHECK_EG_MATCH_r22] = _CHECK_EG_MATCH,
@@ -4750,6 +4820,11 @@ const char *const _PyOpcode_uop_name[MAX_UOP_REGS_ID+1] = {
     [_GUARD_KEYS_VERSION_r11] = "_GUARD_KEYS_VERSION_r11",
     [_GUARD_KEYS_VERSION_r22] = "_GUARD_KEYS_VERSION_r22",
     [_GUARD_KEYS_VERSION_r33] = "_GUARD_KEYS_VERSION_r33",
+    [_GUARD_NOS_ANY_DICT] = "_GUARD_NOS_ANY_DICT",
+    [_GUARD_NOS_ANY_DICT_r02] = "_GUARD_NOS_ANY_DICT_r02",
+    [_GUARD_NOS_ANY_DICT_r12] = "_GUARD_NOS_ANY_DICT_r12",
+    [_GUARD_NOS_ANY_DICT_r22] = "_GUARD_NOS_ANY_DICT_r22",
+    [_GUARD_NOS_ANY_DICT_r33] = "_GUARD_NOS_ANY_DICT_r33",
     [_GUARD_NOS_COMPACT_ASCII] = "_GUARD_NOS_COMPACT_ASCII",
     [_GUARD_NOS_COMPACT_ASCII_r02] = "_GUARD_NOS_COMPACT_ASCII_r02",
     [_GUARD_NOS_COMPACT_ASCII_r12] = "_GUARD_NOS_COMPACT_ASCII_r12",
@@ -4820,6 +4895,11 @@ const char *const _PyOpcode_uop_name[MAX_UOP_REGS_ID+1] = {
     [_GUARD_THIRD_NULL_r13] = "_GUARD_THIRD_NULL_r13",
     [_GUARD_THIRD_NULL_r23] = "_GUARD_THIRD_NULL_r23",
     [_GUARD_THIRD_NULL_r33] = "_GUARD_THIRD_NULL_r33",
+    [_GUARD_TOS_ANY_DICT] = "_GUARD_TOS_ANY_DICT",
+    [_GUARD_TOS_ANY_DICT_r01] = "_GUARD_TOS_ANY_DICT_r01",
+    [_GUARD_TOS_ANY_DICT_r11] = "_GUARD_TOS_ANY_DICT_r11",
+    [_GUARD_TOS_ANY_DICT_r22] = "_GUARD_TOS_ANY_DICT_r22",
+    [_GUARD_TOS_ANY_DICT_r33] = "_GUARD_TOS_ANY_DICT_r33",
     [_GUARD_TOS_ANY_SET] = "_GUARD_TOS_ANY_SET",
     [_GUARD_TOS_ANY_SET_r01] = "_GUARD_TOS_ANY_SET_r01",
     [_GUARD_TOS_ANY_SET_r11] = "_GUARD_TOS_ANY_SET_r11",
@@ -4835,6 +4915,16 @@ const char *const _PyOpcode_uop_name[MAX_UOP_REGS_ID+1] = {
     [_GUARD_TOS_FLOAT_r11] = "_GUARD_TOS_FLOAT_r11",
     [_GUARD_TOS_FLOAT_r22] = "_GUARD_TOS_FLOAT_r22",
     [_GUARD_TOS_FLOAT_r33] = "_GUARD_TOS_FLOAT_r33",
+    [_GUARD_TOS_FROZENDICT] = "_GUARD_TOS_FROZENDICT",
+    [_GUARD_TOS_FROZENDICT_r01] = "_GUARD_TOS_FROZENDICT_r01",
+    [_GUARD_TOS_FROZENDICT_r11] = "_GUARD_TOS_FROZENDICT_r11",
+    [_GUARD_TOS_FROZENDICT_r22] = "_GUARD_TOS_FROZENDICT_r22",
+    [_GUARD_TOS_FROZENDICT_r33] = "_GUARD_TOS_FROZENDICT_r33",
+    [_GUARD_TOS_FROZENSET] = "_GUARD_TOS_FROZENSET",
+    [_GUARD_TOS_FROZENSET_r01] = "_GUARD_TOS_FROZENSET_r01",
+    [_GUARD_TOS_FROZENSET_r11] = "_GUARD_TOS_FROZENSET_r11",
+    [_GUARD_TOS_FROZENSET_r22] = "_GUARD_TOS_FROZENSET_r22",
+    [_GUARD_TOS_FROZENSET_r33] = "_GUARD_TOS_FROZENSET_r33",
     [_GUARD_TOS_INT] = "_GUARD_TOS_INT",
     [_GUARD_TOS_INT_r01] = "_GUARD_TOS_INT_r01",
     [_GUARD_TOS_INT_r11] = "_GUARD_TOS_INT_r11",
@@ -4850,6 +4940,11 @@ const char *const _PyOpcode_uop_name[MAX_UOP_REGS_ID+1] = {
     [_GUARD_TOS_OVERFLOWED_r11] = "_GUARD_TOS_OVERFLOWED_r11",
     [_GUARD_TOS_OVERFLOWED_r22] = "_GUARD_TOS_OVERFLOWED_r22",
     [_GUARD_TOS_OVERFLOWED_r33] = "_GUARD_TOS_OVERFLOWED_r33",
+    [_GUARD_TOS_SET] = "_GUARD_TOS_SET",
+    [_GUARD_TOS_SET_r01] = "_GUARD_TOS_SET_r01",
+    [_GUARD_TOS_SET_r11] = "_GUARD_TOS_SET_r11",
+    [_GUARD_TOS_SET_r22] = "_GUARD_TOS_SET_r22",
+    [_GUARD_TOS_SET_r33] = "_GUARD_TOS_SET_r33",
     [_GUARD_TOS_SLICE] = "_GUARD_TOS_SLICE",
     [_GUARD_TOS_SLICE_r01] = "_GUARD_TOS_SLICE_r01",
     [_GUARD_TOS_SLICE_r11] = "_GUARD_TOS_SLICE_r11",
@@ -5623,7 +5718,13 @@ int _PyUop_num_popped(int opcode, int oparg)
             return 2;
         case _GUARD_NOS_DICT:
             return 0;
+        case _GUARD_NOS_ANY_DICT:
+            return 0;
+        case _GUARD_TOS_ANY_DICT:
+            return 0;
         case _GUARD_TOS_DICT:
+            return 0;
+        case _GUARD_TOS_FROZENDICT:
             return 0;
         case _BINARY_OP_SUBSCR_DICT:
             return 2;
@@ -5794,6 +5895,10 @@ int _PyUop_num_popped(int opcode, int oparg)
         case _CONTAINS_OP:
             return 2;
         case _GUARD_TOS_ANY_SET:
+            return 0;
+        case _GUARD_TOS_SET:
+            return 0;
+        case _GUARD_TOS_FROZENSET:
             return 0;
         case _CONTAINS_OP_SET:
             return 2;

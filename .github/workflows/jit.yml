@@ -1,7 +1,7 @@
 name: JIT
 on:
   pull_request:
-    paths:
+    paths: &paths
       - '**jit**'
       - 'Python/bytecodes.c'
       - 'Python/optimizer*.c'
@@ -12,16 +12,7 @@ on:
       - '!**/*.md'
       - '!**/*.ini'
   push:
-    paths:
-      - '**jit**'
-      - 'Python/bytecodes.c'
-      - 'Python/optimizer*.c'
-      - 'Python/executor_cases.c.h'
-      - 'Python/optimizer_cases.c.h'
-      - '**_testinternalcapi**'
-      - '!Python/perf_jit_trampoline.c'
-      - '!**/*.md'
-      - '!**/*.ini'
+    paths: *paths
   workflow_dispatch:
 
 permissions:
@@ -33,12 +24,13 @@ concurrency:
 
 env:
   FORCE_COLOR: 1
+  LLVM_VERSION: 21
 
 jobs:
   interpreter:
     name: Interpreter (Debug)
     runs-on: ubuntu-24.04
-    timeout-minutes: 90
+    timeout-minutes: 60
     steps:
       - uses: actions/checkout@v6
         with:
@@ -50,11 +42,12 @@ jobs:
       - name: Test tier two interpreter
         run: |
           ./python -m test --multiprocess 0 --timeout 4500 --verbose2 --verbose3
-  jit:
+
+  windows:
     name: ${{ matrix.target }} (${{ matrix.debug && 'Debug' || 'Release' }})
-    needs: interpreter
+
     runs-on: ${{ matrix.runner }}
-    timeout-minutes: 90
+    timeout-minutes: 60
     strategy:
       fail-fast: false
       matrix:
@@ -62,15 +55,9 @@ jobs:
           - i686-pc-windows-msvc/msvc
           - x86_64-pc-windows-msvc/msvc
           - aarch64-pc-windows-msvc/msvc
-          - x86_64-apple-darwin/clang
-          - aarch64-apple-darwin/clang
-          - x86_64-unknown-linux-gnu/gcc
-          - aarch64-unknown-linux-gnu/gcc
         debug:
           - true
           - false
-        llvm:
-          - 21
         include:
           - target: i686-pc-windows-msvc/msvc
             architecture: Win32
@@ -81,17 +68,82 @@ jobs:
           - target: aarch64-pc-windows-msvc/msvc
             architecture: ARM64
             runner: windows-11-arm
+    steps:
+      - uses: actions/checkout@v6
+        with:
+          persist-credentials: false
+      - uses: actions/setup-python@v6
+        with:
+          python-version: '3.11'
+      # PCbuild downloads LLVM automatically:
+      - name: Build
+        run: |
+          ./PCbuild/build.bat --experimental-jit ${{ matrix.debug && '-d' || '' }} -p ${{ matrix.architecture }}
+      - name: Test
+        run: |
+          ./PCbuild/rt.bat ${{ matrix.debug && '-d' || '' }} -p ${{ matrix.architecture }} -q --multiprocess 0 --timeout 4500 --verbose2 --verbose3
+
+  macos:
+    name: ${{ matrix.target }} (${{ matrix.debug && 'Debug' || 'Release' }})
+
+    runs-on: ${{ matrix.runner }}
+    timeout-minutes: 60
+    strategy:
+      fail-fast: false
+      matrix:
+        target:
+          - x86_64-apple-darwin/clang
+          - aarch64-apple-darwin/clang
+        debug:
+          - true
+          - false
+        include:
           - target: x86_64-apple-darwin/clang
-            architecture: x86_64
             runner: macos-15-intel
           - target: aarch64-apple-darwin/clang
-            architecture: aarch64
             runner: macos-14
+    steps:
+      - uses: actions/checkout@v6
+        with:
+          persist-credentials: false
+      - uses: actions/setup-python@v6
+        with:
+          python-version: '3.11'
+      - name: Install LLVM
+        run: |
+          brew update
+          brew install llvm@${{ env.LLVM_VERSION }}
+      - name: Build
+        run: |
+          export SDKROOT="$(xcrun --show-sdk-path)"
+          # Set MACOSX_DEPLOYMENT_TARGET and -Werror=unguarded-availability to
+          # make sure we don't break downstream distributors (like uv):
+          export CFLAGS_JIT='-Werror=unguarded-availability'
+          export MACOSX_DEPLOYMENT_TARGET=10.15
+          ./configure --enable-experimental-jit --enable-universalsdk --with-universal-archs=universal2 ${{ matrix.debug && '--with-pydebug' || '' }}
+          make all --jobs 4
+      - name: Test
+        run: |
+          ./python.exe -m test --multiprocess 0 --timeout 4500 --verbose2 --verbose3
+
+  linux:
+    name: ${{ matrix.target }} (${{ matrix.debug && 'Debug' || 'Release' }})
+
+    runs-on: ${{ matrix.runner }}
+    timeout-minutes: 60
+    strategy:
+      fail-fast: false
+      matrix:
+        target:
+          - x86_64-unknown-linux-gnu/gcc
+          - aarch64-unknown-linux-gnu/gcc
+        debug:
+          - true
+          - false
+        include:
           - target: x86_64-unknown-linux-gnu/gcc
-            architecture: x86_64
             runner: ubuntu-24.04
           - target: aarch64-unknown-linux-gnu/gcc
-            architecture: aarch64
             runner: ubuntu-24.04-arm
     steps:
       - uses: actions/checkout@v6
@@ -100,75 +152,35 @@ jobs:
       - uses: actions/setup-python@v6
         with:
           python-version: '3.11'
-
-      # PCbuild downloads LLVM automatically:
-      - name: Windows
-        if: runner.os == 'Windows'
+      - name: Build
         run: |
-          ./PCbuild/build.bat --experimental-jit ${{ matrix.debug && '-d' || '' }} -p ${{ matrix.architecture }}
-          ./PCbuild/rt.bat ${{ matrix.debug && '-d' || '' }} -p ${{ matrix.architecture }} -q --multiprocess 0 --timeout 4500 --verbose2 --verbose3
-
-      - name: macOS
-        if: runner.os == 'macOS'
-        run: |
-          brew update
-          brew install llvm@${{ matrix.llvm }}
-          export SDKROOT="$(xcrun --show-sdk-path)"
-          # Set MACOSX_DEPLOYMENT_TARGET and -Werror=unguarded-availability to
-          # make sure we don't break downstream distributors (like uv):
-          export CFLAGS_JIT='-Werror=unguarded-availability'
-          export MACOSX_DEPLOYMENT_TARGET=10.15
-          ./configure --enable-experimental-jit --enable-universalsdk --with-universal-archs=universal2 ${{ matrix.debug && '--with-pydebug' || '' }}
-          make all --jobs 4
-          ./python.exe -m test --multiprocess 0 --timeout 4500 --verbose2 --verbose3
-
-      - name: Linux
-        if: runner.os == 'Linux'
-        run: |
-          sudo bash -c "$(wget -O - https://apt.llvm.org/llvm.sh)" ./llvm.sh ${{ matrix.llvm }}
-          export PATH="$(llvm-config-${{ matrix.llvm }} --bindir):$PATH"
+          sudo bash -c "$(wget -O - https://apt.llvm.org/llvm.sh)" ./llvm.sh ${{ env.LLVM_VERSION }}
+          export PATH="$(llvm-config-${{ env.LLVM_VERSION }} --bindir):$PATH"
           ./configure --enable-experimental-jit ${{ matrix.debug && '--with-pydebug' || '' }}
           make all --jobs 4
-          ./python -m test --multiprocess 0 --timeout 4500 --verbose2 --verbose3
-
-  jit-with-disabled-gil:
-    name: Free-Threaded (Debug)
-    needs: interpreter
-    runs-on: ubuntu-24.04
-    timeout-minutes: 90
-    strategy:
-      fail-fast: false
-      matrix:
-        llvm:
-          - 21
-    steps:
-      - uses: actions/checkout@v6
-        with:
-          persist-credentials: false
-      - uses: actions/setup-python@v6
-        with:
-          python-version: '3.11'
-      - name: Build with JIT enabled and GIL disabled
-        run: |
-          sudo bash -c "$(wget -O - https://apt.llvm.org/llvm.sh)" ./llvm.sh ${{ matrix.llvm }}
-          export PATH="$(llvm-config-${{ matrix.llvm }} --bindir):$PATH"
-          ./configure --enable-experimental-jit --with-pydebug --disable-gil
-          make all --jobs 4
-      - name: Run tests
+      - name: Test
         run: |
           ./python -m test --multiprocess 0 --timeout 4500 --verbose2 --verbose3
-        continue-on-error: true
 
-  no-opt-jit:
-    name: JIT without optimizations (Debug)
-    needs: interpreter
+  linux-extras:
+    name: ${{ matrix.name }}
+
     runs-on: ubuntu-24.04
-    timeout-minutes: 90
+    timeout-minutes: 60
     strategy:
       fail-fast: false
       matrix:
-        llvm:
-          - 21
+        include:
+          - name: Free-Threaded (Debug)
+            configure_flags: --enable-experimental-jit --with-pydebug --disable-gil
+            continue_on_error: true
+          - name: JIT without optimizations (Debug)
+            configure_flags: --enable-experimental-jit --with-pydebug
+            test_env: "PYTHON_UOPS_OPTIMIZE=0"
+          - name: JIT with tail calling interpreter
+            configure_flags: --enable-experimental-jit --with-tail-call-interp --with-pydebug
+            use_clang: true
+            run_tests: false
     steps:
       - uses: actions/checkout@v6
         with:
@@ -176,36 +188,17 @@ jobs:
       - uses: actions/setup-python@v6
         with:
           python-version: '3.11'
-      - name: Build with JIT
+      - name: Build
         run: |
-          sudo bash -c "$(wget -O - https://apt.llvm.org/llvm.sh)" ./llvm.sh ${{ matrix.llvm }}
-          export PATH="$(llvm-config-${{ matrix.llvm }} --bindir):$PATH"
-          ./configure --enable-experimental-jit --with-pydebug
+          sudo bash -c "$(wget -O - https://apt.llvm.org/llvm.sh)" ./llvm.sh ${{ env.LLVM_VERSION }}
+          export PATH="$(llvm-config-${{ env.LLVM_VERSION }} --bindir):$PATH"
+          if [ "${{ matrix.use_clang }}" = "true" ]; then
+            export CC=clang-${{ env.LLVM_VERSION }}
+          fi
+          ./configure ${{ matrix.configure_flags }}
           make all --jobs 4
-      - name: Run tests without optimizations
+      - name: Test
+        if: matrix.run_tests != false
         run: |
-          PYTHON_UOPS_OPTIMIZE=0 ./python -m test --multiprocess 0 --timeout 4500 --verbose2 --verbose3
-
-  tail-call-jit:
-    name: JIT with tail calling interpreter
-    needs: interpreter
-    runs-on: ubuntu-24.04
-    timeout-minutes: 90
-    strategy:
-      fail-fast: false
-      matrix:
-        llvm:
-          - 21
-    steps:
-      - uses: actions/checkout@v6
-        with:
-          persist-credentials: false
-      - uses: actions/setup-python@v6
-        with:
-          python-version: '3.11'
-      - name: Build with JIT and tailcall
-        run: |
-          sudo bash -c "$(wget -O - https://apt.llvm.org/llvm.sh)" ./llvm.sh ${{ matrix.llvm }}
-          export PATH="$(llvm-config-${{ matrix.llvm }} --bindir):$PATH"
-          CC=clang-${{ matrix.llvm }} ./configure --enable-experimental-jit --with-tail-call-interp --with-pydebug
-          make all --jobs 4
+          ${{ matrix.test_env }} ./python -m test --multiprocess 0 --timeout 4500 --verbose2 --verbose3
+        continue-on-error: ${{ matrix.continue_on_error }}

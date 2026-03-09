@@ -1887,6 +1887,30 @@ class TestSpecializer(TestBase):
 
     @cpython_only
     @requires_specialization
+    def test_store_subscr(self):
+        def store_subscr_dict():
+            for _ in range(_testinternalcapi.SPECIALIZATION_THRESHOLD):
+                a = {1: 2, 2: 3}
+                a[1] = 4
+                self.assertEqual(a[1], 4)
+
+        store_subscr_dict()
+        self.assert_specialized(store_subscr_dict, "STORE_SUBSCR_DICT")
+        self.assert_no_opcode(store_subscr_dict, "STORE_SUBSCR")
+
+        def store_subscr_frozen_dict():
+            dicts = [{1: 2}, frozendict({1: 2})]
+            for i in range(_testinternalcapi.SPECIALIZATION_THRESHOLD + 1):
+                d = dicts[i == _testinternalcapi.SPECIALIZATION_THRESHOLD]
+                d[1] = 3
+
+        with self.assertRaises(TypeError):
+            store_subscr_frozen_dict()
+        self.assert_specialized(store_subscr_frozen_dict, "STORE_SUBSCR_DICT")
+        self.assert_no_opcode(store_subscr_frozen_dict, "STORE_SUBSCR")
+
+    @cpython_only
+    @requires_specialization
     def test_compare_op(self):
         def compare_op_int():
             for _ in range(_testinternalcapi.SPECIALIZATION_THRESHOLD):

@@ -602,18 +602,13 @@ choices (if specified) or subparser names, along with a "maybe you meant"
 suggestion if a close match is found. Note that this only applies for arguments
 when the choices specified are strings::
 
-   >>> parser = argparse.ArgumentParser(description='Process some integers.',
-                                        suggest_on_error=True)
-   >>> parser.add_argument('--action', choices=['sum', 'max'])
-   >>> parser.add_argument('integers', metavar='N', type=int, nargs='+',
-   ...                     help='an integer for the accumulator')
-   >>> parser.parse_args(['--action', 'sumn', 1, 2, 3])
-   tester.py: error: argument --action: invalid choice: 'sumn', maybe you meant 'sum'? (choose from 'sum', 'max')
+   >>> parser = argparse.ArgumentParser(suggest_on_error=True)
+   >>> parser.add_argument('--action', choices=['debug', 'dryrun'])
+   >>> parser.parse_args(['--action', 'debugg'])
+   usage: tester.py [-h] [--action {debug,dryrun}]
+   tester.py: error: argument --action: invalid choice: 'debugg', maybe you meant 'debug'? (choose from debug, dryrun)
 
-You can disable suggestions by setting ``suggest_on_error`` to ``False``::
-
-   >>> parser = argparse.ArgumentParser(description='Process some integers.',
-                                        suggest_on_error=False)
+You can disable suggestions by setting ``suggest_on_error`` to ``False``.
 
 .. versionadded:: 3.14
 .. versionchanged:: 3.15
@@ -703,6 +698,8 @@ The add_argument() method
 
    * deprecated_ - Whether or not use of the argument is deprecated.
 
+   The method returns an :class:`Action` object representing the argument.
+
 The following sections describe how each of these are used.
 
 
@@ -744,9 +741,9 @@ By default, :mod:`!argparse` automatically handles the internal naming and
 display names of arguments, simplifying the process without requiring
 additional configuration.
 As such, you do not need to specify the dest_ and metavar_ parameters.
-The dest_ parameter defaults to the argument name with underscores ``_``
-replacing hyphens ``-`` . The metavar_ parameter defaults to the
-upper-cased name. For example::
+For optional arguments, the dest_ parameter defaults to the argument name, with
+underscores ``_`` replacing hyphens ``-``. The metavar_ parameter defaults to
+the upper-cased name. For example::
 
    >>> parser = argparse.ArgumentParser(prog='PROG')
    >>> parser.add_argument('--foo-bar')
