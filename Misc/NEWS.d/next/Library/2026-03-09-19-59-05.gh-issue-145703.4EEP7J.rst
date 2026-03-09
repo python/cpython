@@ -1,0 +1,2 @@
+Make sure asyncio.BaseEventLoop triggers scheduled events on time when clock
+resolution is too small.
