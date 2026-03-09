@@ -202,22 +202,6 @@ PyTuple_Pack(Py_ssize_t n, ...)
     return (PyObject *)result;
 }
 
-static PyTupleObject *
-tuple_alloc_2(void)
-{
-    Py_ssize_t size = 2;
-    Py_ssize_t index = size - 1;
-    PyTupleObject *result = _Py_FREELIST_POP(PyTupleObject, tuples[index]);
-    if (result == NULL) {
-        result = PyObject_GC_NewVar(PyTupleObject, &PyTuple_Type, size);
-        if (result == NULL) {
-            return NULL;
-        }
-    }
-    _PyTuple_RESET_HASH_CACHE(result);
-    return result;
-}
-
 PyObject *
 _PyTuple_FromPair(PyObject *first, PyObject *second)
 {
@@ -233,7 +217,7 @@ _PyTuple_FromPairSteal(PyObject *first, PyObject *second)
     assert(first != NULL);
     assert(second != NULL);
 
-    PyTupleObject *op = tuple_alloc_2();
+    PyTupleObject *op = tuple_alloc(2);
     if (op == NULL) {
         Py_DECREF(first);
         Py_DECREF(second);
