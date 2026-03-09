@@ -1,3 +1,3 @@
-Add :func:`repr` support to :class:`http.client.HTTPConnection` and
+Add :meth:`~object.__repr__` support to :class:`http.client.HTTPConnection` and
 :class:`http.client.HTTPResponse`, showing host/port and status/reason
 respectively.

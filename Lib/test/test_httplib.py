@@ -2373,15 +2373,15 @@ class ReprTest(TestCase):
         conn = client.HTTPConnection('example.com', 8080)
         self.assertEqual(repr(conn), '<HTTPConnection example.com:8080>')
 
+    @unittest.skipUnless(hasattr(client, 'HTTPSConnection'),
+                         'ssl support required')
     def test_https_connection_repr(self):
-        if not hasattr(client, 'HTTPSConnection'):
-            self.skipTest('ssl support required')
         conn = client.HTTPSConnection('example.com')
         self.assertEqual(repr(conn), '<HTTPSConnection example.com:443>')
 
+    @unittest.skipUnless(hasattr(client, 'HTTPSConnection'),
+                         'ssl support required')
     def test_https_connection_repr_explicit_port(self):
-        if not hasattr(client, 'HTTPSConnection'):
-            self.skipTest('ssl support required')
         conn = client.HTTPSConnection('example.com', 8443)
         self.assertEqual(repr(conn), '<HTTPSConnection example.com:8443>')
 
