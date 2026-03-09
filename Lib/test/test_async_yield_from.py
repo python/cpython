@@ -978,12 +978,12 @@ class TestPEP828Operation(unittest.TestCase):
     #         raise
 
     # @_async_test
-    # async def test_delegating_generators_claim_to_be_running_with_close(self):
+    # async def test_delegating_generators_claim_to_be_running_with_aclose(self):
     #     # Check with close
     #     class MyIt:
-    #         def __iter__(self):
+    #         def __aiter__(self):
     #             return self
-    #         async def __next__(self):
+    #         async def __anext__(self):
     #             return 42
     #         async def aclose(self_):
     #             self.assertTrue(g1.gi_running)
