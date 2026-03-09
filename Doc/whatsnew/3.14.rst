@@ -897,8 +897,7 @@ Command line and environment
   (Contributed by Noah Kim and Adam Turner in :gh:`118655`.)
 
 * The command-line option :option:`-c` now automatically dedents its code
-  argument before execution. The auto-dedentation behavior only
-  supports spaces and tabs and does not normalize empty lines.
+  argument before execution.
   (Contributed by Jon Crall and Steven Sun in :gh:`103998`.)
 
 * :option:`!-J` is no longer a reserved flag for Jython_,
