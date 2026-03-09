@@ -4,9 +4,6 @@
 .. module:: concurrent.interpreters
    :synopsis: Multiple interpreters in the same process
 
-.. moduleauthor:: Eric Snow <ericsnowcurrently@gmail.com>
-.. sectionauthor:: Eric Snow <ericsnowcurrently@gmail.com>
-
 .. versionadded:: 3.14
 
 **Source code:** :source:`Lib/concurrent/interpreters`

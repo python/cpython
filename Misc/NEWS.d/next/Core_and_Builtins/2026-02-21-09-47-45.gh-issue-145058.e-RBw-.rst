@@ -1,0 +1,2 @@
+Fix a crash when :func:`!__lazy_import__` is passed a non-string argument,
+by raising an :exc:`TypeError` instead.

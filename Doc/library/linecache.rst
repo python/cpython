@@ -4,8 +4,6 @@
 .. module:: linecache
    :synopsis: Provides random access to individual lines from text files.
 
-.. sectionauthor:: Moshe Zadka <moshez@zadka.site.co.il>
-
 **Source code:** :source:`Lib/linecache.py`
 
 --------------

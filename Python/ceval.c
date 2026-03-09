@@ -1,6 +1,7 @@
 /* Execute compiled code */
 
 #include "ceval.h"
+#include "pycore_long.h"
 
 int
 Py_GetRecursionLimit(void)
@@ -509,15 +510,18 @@ match_class_attr(PyThreadState *tstate, PyObject *subject, PyObject *type,
                  PyObject *name, PyObject *seen)
 {
     assert(PyUnicode_CheckExact(name));
-    assert(PySet_CheckExact(seen));
-    if (PySet_Contains(seen, name) || PySet_Add(seen, name)) {
-        if (!_PyErr_Occurred(tstate)) {
-            // Seen it before!
-            _PyErr_Format(tstate, PyExc_TypeError,
-                          "%s() got multiple sub-patterns for attribute %R",
-                          ((PyTypeObject*)type)->tp_name, name);
+    // Only check for duplicates if seen is not NULL.
+    if (seen != NULL) {
+        assert(PySet_CheckExact(seen));
+        if (PySet_Contains(seen, name) || PySet_Add(seen, name)) {
+            if (!_PyErr_Occurred(tstate)) {
+                // Seen it before!
+                _PyErr_Format(tstate, PyExc_TypeError,
+                            "%s() got multiple sub-patterns for attribute %R",
+                            ((PyTypeObject*)type)->tp_name, name);
+            }
+            return NULL;
         }
-        return NULL;
     }
     PyObject *attr;
     (void)PyObject_GetOptionalAttr(subject, name, &attr);
@@ -531,7 +535,7 @@ _PyEval_MatchClass(PyThreadState *tstate, PyObject *subject, PyObject *type,
                    Py_ssize_t nargs, PyObject *kwargs)
 {
     if (!PyType_Check(type)) {
-        const char *e = "called match pattern must be a class";
+        const char *e = "class pattern must refer to a class";
         _PyErr_Format(tstate, PyExc_TypeError, e);
         return NULL;
     }
@@ -540,14 +544,26 @@ _PyEval_MatchClass(PyThreadState *tstate, PyObject *subject, PyObject *type,
     if (PyObject_IsInstance(subject, type) <= 0) {
         return NULL;
     }
-    // So far so good:
-    PyObject *seen = PySet_New(NULL);
-    if (seen == NULL) {
-        return NULL;
+    // Short circuit if there aren't any arguments:
+    Py_ssize_t nkwargs = PyTuple_GET_SIZE(kwargs);
+    Py_ssize_t nattrs = nargs + nkwargs;
+    if (!nattrs) {
+        return PyTuple_New(0);
     }
-    PyObject *attrs = PyList_New(0);
+    // So far so good:
+    PyObject *seen = NULL;
+    // Only check for duplicates if there is at least one positional attribute
+    // and two or more attributes in total. Duplicate keyword attributes are
+    // detected during the compile stage and raise a SyntaxError.
+    if (nargs > 0 && nattrs > 1) {
+        seen = PySet_New(NULL);
+        if (seen == NULL) {
+            return NULL;
+        }
+    }
+    PyObject *attrs = PyTuple_New(nattrs);
     if (attrs == NULL) {
-        Py_DECREF(seen);
+        Py_XDECREF(seen);
         return NULL;
     }
     // NOTE: From this point on, goto fail on failure:
@@ -588,9 +604,8 @@ _PyEval_MatchClass(PyThreadState *tstate, PyObject *subject, PyObject *type,
         }
         if (match_self) {
             // Easy. Copy the subject itself, and move on to kwargs.
-            if (PyList_Append(attrs, subject) < 0) {
-                goto fail;
-            }
+            assert(PyTuple_GET_ITEM(attrs, 0) == NULL);
+            PyTuple_SET_ITEM(attrs, 0, Py_NewRef(subject));
         }
         else {
             for (Py_ssize_t i = 0; i < nargs; i++) {
@@ -606,36 +621,29 @@ _PyEval_MatchClass(PyThreadState *tstate, PyObject *subject, PyObject *type,
                 if (attr == NULL) {
                     goto fail;
                 }
-                if (PyList_Append(attrs, attr) < 0) {
-                    Py_DECREF(attr);
-                    goto fail;
-                }
-                Py_DECREF(attr);
+                assert(PyTuple_GET_ITEM(attrs, i) == NULL);
+                PyTuple_SET_ITEM(attrs, i, attr);
             }
         }
         Py_CLEAR(match_args);
     }
     // Finally, the keyword subpatterns:
-    for (Py_ssize_t i = 0; i < PyTuple_GET_SIZE(kwargs); i++) {
+    for (Py_ssize_t i = 0; i < nkwargs; i++) {
         PyObject *name = PyTuple_GET_ITEM(kwargs, i);
         PyObject *attr = match_class_attr(tstate, subject, type, name, seen);
         if (attr == NULL) {
             goto fail;
         }
-        if (PyList_Append(attrs, attr) < 0) {
-            Py_DECREF(attr);
-            goto fail;
-        }
-        Py_DECREF(attr);
+        assert(PyTuple_GET_ITEM(attrs, nargs + i) == NULL);
+        PyTuple_SET_ITEM(attrs, nargs + i, attr);
     }
-    Py_SETREF(attrs, PyList_AsTuple(attrs));
-    Py_DECREF(seen);
+    Py_XDECREF(seen);
     return attrs;
 fail:
     // We really don't care whether an error was raised or not... that's our
     // caller's problem. All we know is that the match failed.
     Py_XDECREF(match_args);
-    Py_DECREF(seen);
+    Py_XDECREF(seen);
     Py_DECREF(attrs);
     return NULL;
 }
@@ -2710,7 +2718,7 @@ static PyObject *
 get_globals_builtins(PyObject *globals)
 {
     PyObject *builtins = NULL;
-    if (PyDict_Check(globals)) {
+    if (PyAnyDict_Check(globals)) {
         if (PyDict_GetItemRef(globals, &_Py_ID(__builtins__), &builtins) < 0) {
             return NULL;
         }
@@ -2735,6 +2743,10 @@ set_globals_builtins(PyObject *globals, PyObject *builtins)
     }
     else {
         if (PyObject_SetItem(globals, &_Py_ID(__builtins__), builtins) < 0) {
+            if (PyFrozenDict_Check(globals)) {
+                PyErr_SetString(PyExc_TypeError,
+                                "cannot assign __builtins__ to frozendict globals");
+            }
             return -1;
         }
     }
@@ -2876,23 +2888,10 @@ PyEval_GetFuncDesc(PyObject *func)
 int
 _PyEval_SliceIndex(PyObject *v, Py_ssize_t *pi)
 {
-    PyThreadState *tstate = _PyThreadState_GET();
-    if (!Py_IsNone(v)) {
-        Py_ssize_t x;
-        if (_PyIndex_Check(v)) {
-            x = PyNumber_AsSsize_t(v, NULL);
-            if (x == -1 && _PyErr_Occurred(tstate))
-                return 0;
-        }
-        else {
-            _PyErr_SetString(tstate, PyExc_TypeError,
-                             "slice indices must be integers or "
-                             "None or have an __index__ method");
-            return 0;
-        }
-        *pi = x;
+    if (Py_IsNone(v)) {
+        return 1;
     }
-    return 1;
+    return _PyEval_SliceIndexNotNone(v, pi);
 }
 
 int
@@ -2900,6 +2899,10 @@ _PyEval_SliceIndexNotNone(PyObject *v, Py_ssize_t *pi)
 {
     PyThreadState *tstate = _PyThreadState_GET();
     Py_ssize_t x;
+    if (PyLong_CheckExact(v) && _PyLong_IsCompact((PyLongObject *)v)) {
+        *pi = _PyLong_CompactValue((PyLongObject *)v);
+        return 1;
+    }
     if (_PyIndex_Check(v)) {
         x = PyNumber_AsSsize_t(v, NULL);
         if (x == -1 && _PyErr_Occurred(tstate))
@@ -2912,6 +2915,26 @@ _PyEval_SliceIndexNotNone(PyObject *v, Py_ssize_t *pi)
         return 0;
     }
     *pi = x;
+    return 1;
+}
+
+int
+_PyEval_UnpackIndices(PyObject *start, PyObject *stop,
+                      Py_ssize_t len,
+                      Py_ssize_t *istart, Py_ssize_t *istop)
+{
+    if (len < 0) {
+        return 0;
+    }
+    *istart = 0;
+    *istop = PY_SSIZE_T_MAX;
+    if (!_PyEval_SliceIndex(start, istart)) {
+        return 0;
+    }
+    if (!_PyEval_SliceIndex(stop, istop)) {
+        return 0;
+    }
+    PySlice_AdjustIndices(len, istart, istop, 1);
     return 1;
 }
 
@@ -3486,11 +3509,27 @@ PyUnstable_Eval_RequestCodeExtraIndex(freefunc free)
     PyInterpreterState *interp = _PyInterpreterState_GET();
     Py_ssize_t new_index;
 
-    if (interp->co_extra_user_count == MAX_CO_EXTRA_USERS - 1) {
+#ifdef Py_GIL_DISABLED
+    struct _py_code_state *state = &interp->code_state;
+    FT_MUTEX_LOCK(&state->mutex);
+#endif
+
+    if (interp->co_extra_user_count >= MAX_CO_EXTRA_USERS - 1) {
+#ifdef Py_GIL_DISABLED
+        FT_MUTEX_UNLOCK(&state->mutex);
+#endif
         return -1;
     }
-    new_index = interp->co_extra_user_count++;
+
+    new_index = interp->co_extra_user_count;
     interp->co_extra_freefuncs[new_index] = free;
+
+    // Publish freefuncs[new_index] before making the index visible.
+    FT_ATOMIC_STORE_SSIZE_RELEASE(interp->co_extra_user_count, new_index + 1);
+
+#ifdef Py_GIL_DISABLED
+    FT_MUTEX_UNLOCK(&state->mutex);
+#endif
     return new_index;
 }
 
@@ -3549,7 +3588,7 @@ _PyEval_GetANext(PyObject *aiter)
 void
 _PyEval_LoadGlobalStackRef(PyObject *globals, PyObject *builtins, PyObject *name, _PyStackRef *writeto)
 {
-    if (PyDict_CheckExact(globals) && PyDict_CheckExact(builtins)) {
+    if (PyAnyDict_CheckExact(globals) && PyAnyDict_CheckExact(builtins)) {
         _PyDict_LoadGlobalStackRef((PyDictObject *)globals,
                                     (PyDictObject *)builtins,
                                     name, writeto);

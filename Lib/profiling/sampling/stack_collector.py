@@ -144,9 +144,13 @@ class FlamegraphCollector(StackTraceCollector):
         num_functions = len(flamegraph_data.get("children", []))
         total_time = flamegraph_data.get("value", 0)
         string_count = len(self._string_table)
+        s1 = "" if num_functions == 1 else "s"
+        s2 = "" if total_time == 1 else "s"
+        s3 = "" if string_count == 1 else "s"
         print(
-            f"Flamegraph data: {num_functions} root functions, total samples: {total_time}, "
-            f"{string_count} unique strings"
+            f"Flamegraph data: {num_functions} root function{s1}, "
+            f"{total_time} total sample{s2}, "
+            f"{string_count} unique string{s3}"
         )
 
         if num_functions == 0:

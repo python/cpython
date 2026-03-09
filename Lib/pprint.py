@@ -235,6 +235,20 @@ class PrettyPrinter:
 
     _dispatch[dict.__repr__] = _pprint_dict
 
+    def _pprint_frozendict(self, object, stream, indent, allowance, context, level):
+        write = stream.write
+        cls = object.__class__
+        stream.write(cls.__name__ + '(')
+        length = len(object)
+        if length:
+            self._pprint_dict(object, stream,
+                              indent + len(cls.__name__) + 1,
+                              allowance + 1,
+                              context, level)
+        write(')')
+
+    _dispatch[frozendict.__repr__] = _pprint_frozendict
+
     def _pprint_ordered_dict(self, object, stream, indent, allowance, context, level):
         if not len(object):
             stream.write(repr(object))
@@ -623,12 +637,21 @@ class PrettyPrinter:
             else:
                 return repr(object), True, False
 
-        if issubclass(typ, dict) and r is dict.__repr__:
+        if ((issubclass(typ, dict) and r is dict.__repr__)
+            or (issubclass(typ, frozendict) and r is frozendict.__repr__)):
+            is_frozendict = issubclass(typ, frozendict)
             if not object:
-                return "{}", True, False
+                if is_frozendict:
+                    rep = f"{object.__class__.__name__}()"
+                else:
+                    rep = "{}"
+                return rep, True, False
             objid = id(object)
             if maxlevels and level >= maxlevels:
-                return "{...}", False, objid in context
+                rep = "{...}"
+                if is_frozendict:
+                    rep = f"{object.__class__.__name__}({rep})"
+                return rep, False, objid in context
             if objid in context:
                 return _recursion(object), False, True
             context[objid] = 1
@@ -651,7 +674,10 @@ class PrettyPrinter:
                 if krecur or vrecur:
                     recursive = True
             del context[objid]
-            return "{%s}" % ", ".join(components), readable, recursive
+            rep = "{%s}" % ", ".join(components)
+            if is_frozendict:
+                rep = f"{object.__class__.__name__}({rep})"
+            return rep, readable, recursive
 
         if (issubclass(typ, list) and r is list.__repr__) or \
            (issubclass(typ, tuple) and r is tuple.__repr__):

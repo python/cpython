@@ -1678,7 +1678,15 @@ prepare_s(PyStructObject *self)
             case 's': _Py_FALLTHROUGH;
             case 'p': len++; ncodes++; break;
             case 'x': break;
-            default: len += num; if (num) ncodes++; break;
+            default:
+                if (num > PY_SSIZE_T_MAX - len) {
+                    goto overflow;
+                }
+                len += num;
+                if (num) {
+                    ncodes++;
+                }
+                break;
         }
 
         itemsize = e->size;
@@ -2374,6 +2382,7 @@ static PyObject *
 Struct___sizeof___impl(PyStructObject *self)
 /*[clinic end generated code: output=2d0d78900b4cdb4e input=faca5925c1f1ffd0]*/
 {
+    ENSURE_STRUCT_IS_READY(self);
     size_t size = _PyObject_SIZE(Py_TYPE(self)) + sizeof(formatcode);
     for (formatcode *code = self->s_codes; code->fmtdef != NULL; code++) {
         size += sizeof(formatcode);
@@ -2385,6 +2394,7 @@ static PyObject *
 s_repr(PyObject *op)
 {
     PyStructObject *self = PyStructObject_CAST(op);
+    ENSURE_STRUCT_IS_READY(self);
     PyObject* fmt = PyUnicode_FromStringAndSize(
         PyBytes_AS_STRING(self->s_format), PyBytes_GET_SIZE(self->s_format));
     if (fmt == NULL) {

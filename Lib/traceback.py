@@ -3,6 +3,7 @@
 import collections.abc
 import itertools
 import linecache
+import os
 import sys
 import textwrap
 import types
@@ -11,6 +12,8 @@ import codeop
 import keyword
 import tokenize
 import io
+import importlib.util
+import pathlib
 import _colorize
 
 from contextlib import suppress
@@ -1128,7 +1131,25 @@ class TracebackException:
                 self._str += (". Site initialization is disabled, did you forget to "
                     + "add the site-packages directory to sys.path "
                     + "or to enable your virtual environment?")
-        elif exc_type and issubclass(exc_type, (NameError, AttributeError)) and \
+            elif abi_tag := _find_incompatible_extension_module(module_name):
+                self._str += (
+                    ". Although a module with this name was found for a "
+                    f"different Python version ({abi_tag})."
+                )
+            else:
+                suggestion = _compute_suggestion_error(exc_value, exc_traceback, module_name)
+                if suggestion:
+                    self._str += f". Did you mean: '{suggestion}'?"
+        elif exc_type and issubclass(exc_type, AttributeError) and \
+                getattr(exc_value, "name", None) is not None:
+            wrong_name = getattr(exc_value, "name", None)
+            suggestion = _compute_suggestion_error(exc_value, exc_traceback, wrong_name)
+            if suggestion:
+                if suggestion.isascii():
+                    self._str += f". Did you mean '.{suggestion}' instead of '.{wrong_name}'?"
+                else:
+                    self._str += f". Did you mean '.{suggestion}' ({suggestion!a}) instead of '.{wrong_name}' ({wrong_name!a})?"
+        elif exc_type and issubclass(exc_type, NameError) and \
                 getattr(exc_value, "name", None) is not None:
             wrong_name = getattr(exc_value, "name", None)
             suggestion = _compute_suggestion_error(exc_value, exc_traceback, wrong_name)
@@ -1137,13 +1158,11 @@ class TracebackException:
                     self._str += f". Did you mean: '{suggestion}'?"
                 else:
                     self._str += f". Did you mean: '{suggestion}' ({suggestion!a})?"
-            if issubclass(exc_type, NameError):
-                wrong_name = getattr(exc_value, "name", None)
-                if wrong_name is not None and wrong_name in sys.stdlib_module_names:
-                    if suggestion:
-                        self._str += f" Or did you forget to import '{wrong_name}'?"
-                    else:
-                        self._str += f". Did you forget to import '{wrong_name}'?"
+            if wrong_name is not None and wrong_name in sys.stdlib_module_names:
+                if suggestion:
+                    self._str += f" Or did you forget to import '{wrong_name}'?"
+                else:
+                    self._str += f". Did you forget to import '{wrong_name}'?"
         if lookup_lines:
             self._load_lines()
         self.__suppress_context__ = \
@@ -1710,6 +1729,18 @@ def _compute_suggestion_error(exc_value, tb, wrong_name):
                 d = [x for x in d if x[:1] != '_']
         except Exception:
             return None
+    elif isinstance(exc_value, ModuleNotFoundError):
+        try:
+            if parent_name := wrong_name.rpartition('.')[0]:
+                parent = importlib.util.find_spec(parent_name)
+            else:
+                parent = None
+            d = []
+            for finder in sys.meta_path:
+                if discover := getattr(finder, 'discover', None):
+                    d += [spec.name for spec in discover(parent)]
+        except Exception:
+            return None
     elif isinstance(exc_value, ImportError):
         try:
             mod = __import__(exc_value.name)
@@ -1856,3 +1887,32 @@ def _levenshtein_distance(a, b, max_cost):
             # Everything in this row is too big, so bail early.
             return max_cost + 1
     return result
+
+
+def _find_incompatible_extension_module(module_name):
+    import importlib.machinery
+    import importlib.resources.readers
+
+    if not module_name or not importlib.machinery.EXTENSION_SUFFIXES:
+        return
+
+    # We assume the last extension is untagged (eg. .so, .pyd)!
+    # tests.test_traceback.MiscTest.test_find_incompatible_extension_modules
+    # tests that assumption.
+    untagged_suffix = importlib.machinery.EXTENSION_SUFFIXES[-1]
+    # On Windows the debug tag is part of the module file stem, instead of the
+    # extension (eg. foo_d.pyd), so let's remove it and just look for .pyd.
+    if os.name == 'nt':
+        untagged_suffix = untagged_suffix.removeprefix('_d')
+
+    parent, _, child = module_name.rpartition('.')
+    if parent:
+        traversable = importlib.resources.files(parent)
+    else:
+        traversable = importlib.resources.readers.MultiplexedPath(
+            *map(pathlib.Path, filter(os.path.isdir, sys.path))
+        )
+
+    for entry in traversable.iterdir():
+        if entry.name.startswith(child + '.') and entry.name.endswith(untagged_suffix):
+            return entry.name

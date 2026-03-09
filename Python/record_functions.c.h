@@ -32,11 +32,12 @@ void _PyOpcode_RecordFunction_NOS_GEN_FUNC(_PyInterpreterFrame *frame, _PyStackR
     nos = stack_pointer[-2];
     PyObject *obj = PyStackRef_AsPyObjectBorrow(nos);
     if (PyGen_Check(obj)) {
-        _PyFrame_SetStackPointer(frame, stack_pointer);
-        PyObject *func = (PyObject *)_PyFrame_GetFunction(&((PyGenObject *)obj)->gi_iframe);
-        stack_pointer = _PyFrame_GetStackPointer(frame);
-        *recorded_value = (PyObject *)func;
-        Py_INCREF(*recorded_value);
+        PyGenObject *gen = (PyGenObject *)obj;
+        _PyStackRef func = gen->gi_iframe.f_funcobj;
+        if (!PyStackRef_IsNull(func)) {
+            *recorded_value = (PyObject *)PyStackRef_AsPyObjectBorrow(func);
+            Py_INCREF(*recorded_value);
+        }
     }
 }
 
