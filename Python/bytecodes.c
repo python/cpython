@@ -3277,8 +3277,10 @@ dummy_func(
             _Py_GatherStats_GetIter(iterable);
             #endif
             PyTypeObject *tp = PyStackRef_TYPE(iterable);
-            if (tp == &PyTuple_Type || tp == &PyList_Type) {
-                /* Leave iterable on stack and pushed tagged 0 */
+            if (tp == &PyTuple_Type || tp == &PyList_Type ||
+                tp == &PyBytes_Type || tp == &PyByteArray_Type ||
+                tp == &PyUnicode_Type) {
+                /* Leave iterable on stack and push tagged 0 */
                 iter = iterable;
                 DEAD(iterable);
                 index_or_null = PyStackRef_TagInt(0);
