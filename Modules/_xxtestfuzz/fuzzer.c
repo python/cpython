@@ -533,27 +533,24 @@ static int fuzz_pycompile(const char* data, size_t size) {
     unsigned char flags_byte = (unsigned char) data[2];
     PyCompilerFlags flags = _PyCompilerFlags_INIT;
     if (flags_byte & 0x01) {
-        flags.cf_flags |= PyCF_SOURCE_IS_UTF8;
-    }
-    if (flags_byte & 0x02) {
         flags.cf_flags |= PyCF_DONT_IMPLY_DEDENT;
     }
-    if (flags_byte & 0x04) {
+    if (flags_byte & 0x02) {
         flags.cf_flags |= PyCF_ONLY_AST;
     }
-    if (flags_byte & 0x08) {
+    if (flags_byte & 0x04) {
         flags.cf_flags |= PyCF_IGNORE_COOKIE;
     }
-    if (flags_byte & 0x10) {
+    if (flags_byte & 0x08) {
         flags.cf_flags |= PyCF_TYPE_COMMENTS;
     }
-    if (flags_byte & 0x20) {
+    if (flags_byte & 0x10) {
         flags.cf_flags |= PyCF_ALLOW_TOP_LEVEL_AWAIT;
     }
-    if (flags_byte & 0x40) {
+    if (flags_byte & 0x20) {
         flags.cf_flags |= PyCF_ALLOW_INCOMPLETE_INPUT;
     }
-    if (flags_byte & 0x80) {
+    if (flags_byte & 0x40) {
         flags.cf_flags |= PyCF_OPTIMIZED_AST;
     }
 
