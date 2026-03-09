@@ -1132,7 +1132,9 @@ _curses_window_addstr_impl(PyCursesWindowObject *self, int group_left_1,
     else
 #endif
     {
+#ifdef HAVE_NCURSESW
         assert(wstr == NULL);
+#endif
         const char *str = PyBytes_AS_STRING(bytesobj);
         if (use_xy) {
             rtn = mvwaddstr(self->win,y,x,str);
