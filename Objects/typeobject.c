@@ -76,6 +76,62 @@ class object "PyObject *" "&PyBaseObject_Type"
 #define ASSERT_TYPE_LOCK_HELD() \
     _Py_CRITICAL_SECTION_ASSERT_MUTEX_LOCKED(TYPE_LOCK)
 
+static void
+types_stop_world(void)
+{
+    PyInterpreterState *interp = _PyInterpreterState_GET();
+    _PyEval_StopTheWorld(interp);
+}
+
+static void
+types_start_world(void)
+{
+    PyInterpreterState *interp = _PyInterpreterState_GET();
+    _PyEval_StartTheWorld(interp);
+}
+
+// This is used to temporarily prevent the TYPE_LOCK from being suspended
+// when held by the topmost critical section.
+static void
+type_lock_prevent_release(void)
+{
+    PyThreadState *tstate = _PyThreadState_GET();
+    uintptr_t *tagptr = &tstate->critical_section;
+    PyCriticalSection *c = (PyCriticalSection *)(*tagptr & ~_Py_CRITICAL_SECTION_MASK);
+    if (!(*tagptr & _Py_CRITICAL_SECTION_TWO_MUTEXES)) {
+        assert(c->_cs_mutex == TYPE_LOCK);
+        c->_cs_mutex = NULL;
+    }
+    else {
+        PyCriticalSection2 *c2 = (PyCriticalSection2 *)c;
+        if (c->_cs_mutex == TYPE_LOCK) {
+            c->_cs_mutex = c2->_cs_mutex2;
+            c2->_cs_mutex2 = NULL;
+        }
+        else {
+            assert(c2->_cs_mutex2 == TYPE_LOCK);
+            c2->_cs_mutex2 = NULL;
+        }
+    }
+}
+
+static void
+type_lock_allow_release(void)
+{
+    PyThreadState *tstate = _PyThreadState_GET();
+    uintptr_t *tagptr = &tstate->critical_section;
+    PyCriticalSection *c = (PyCriticalSection *)(*tagptr & ~_Py_CRITICAL_SECTION_MASK);
+    if (!(*tagptr & _Py_CRITICAL_SECTION_TWO_MUTEXES)) {
+        assert(c->_cs_mutex == NULL);
+        c->_cs_mutex = TYPE_LOCK;
+    }
+    else {
+        PyCriticalSection2 *c2 = (PyCriticalSection2 *)c;
+        assert(c2->_cs_mutex2 == NULL);
+        c2->_cs_mutex2 = TYPE_LOCK;
+    }
+}
+
 #else
 
 #define BEGIN_TYPE_LOCK()
@@ -83,6 +139,10 @@ class object "PyObject *" "&PyBaseObject_Type"
 #define BEGIN_TYPE_DICT_LOCK(d)
 #define END_TYPE_DICT_LOCK()
 #define ASSERT_TYPE_LOCK_HELD()
+#define types_stop_world()
+#define types_start_world()
+#define type_lock_prevent_release()
+#define type_lock_allow_release()
 
 #endif
 
@@ -541,7 +601,6 @@ clear_tp_bases(PyTypeObject *self, int final)
 static inline PyObject *
 lookup_tp_mro(PyTypeObject *self)
 {
-    ASSERT_TYPE_LOCK_HELD();
     return self->tp_mro;
 }
 
@@ -580,8 +639,19 @@ set_tp_mro(PyTypeObject *self, PyObject *mro, int initial)
             /* Other checks are done via set_tp_bases. */
             _Py_SetImmortal(mro);
         }
+        else {
+            PyUnstable_Object_EnableDeferredRefcount(mro);
+        }
+    }
+    if (!initial) {
+        type_lock_prevent_release();
+        types_stop_world();
     }
     self->tp_mro = mro;
+    if (!initial) {
+        types_start_world();
+        type_lock_allow_release();
+    }
 }
 
 static inline void
@@ -1627,18 +1697,11 @@ static PyObject *
 type_get_mro(PyObject *tp, void *Py_UNUSED(closure))
 {
     PyTypeObject *type = PyTypeObject_CAST(tp);
-    PyObject *mro;
-
-    BEGIN_TYPE_LOCK();
-    mro = lookup_tp_mro(type);
+    PyObject *mro = lookup_tp_mro(type);
     if (mro == NULL) {
-        mro = Py_None;
-    } else {
-        Py_INCREF(mro);
+        Py_RETURN_NONE;
     }
-
-    END_TYPE_LOCK();
-    return mro;
+    return Py_NewRef(mro);
 }
 
 static PyTypeObject *best_base(PyObject *);
