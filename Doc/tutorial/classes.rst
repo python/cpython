@@ -326,7 +326,7 @@ instance objects are attribute references.  There are two kinds of valid
 attribute names: data attributes and methods.
 
 *Data attributes* correspond to "instance variables" in Smalltalk, and to "data
-members" in C++.  Data attributes need not be declared; like local variables,
+members" in C++.  Data attributes don't have to be declared like local variables,
 they spring into existence when they are first assigned to.  For example, if
 ``x`` is the instance of :class:`!MyClass` created above, the following piece of
 code will print the value ``16``, without leaving a trace::
@@ -367,7 +367,7 @@ object, and can be stored away and called at a later time.  For example::
    while True:
        print(xf())
 
-will continue to print ``hello world`` until the end of time.
+will continue to print ``hello world`` until the end of time or when ``Ctrl + C`` is pressed.
 
 What exactly happens when a method is called?  You may have noticed that
 ``x.f()`` was called without an argument above, even though the function
