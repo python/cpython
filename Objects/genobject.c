@@ -2735,7 +2735,7 @@ _PyAsyncGenYieldFrom_New(PyThreadState *tstate, PyObject *iterable)
     if (iterator == NULL) {
         return NULL;
     }
-    yield_from->agyf_iterator = Py_NewRef(iterator);
+    yield_from->agyf_iterator = iterator;
     _PyObject_GC_TRACK((PyObject *)yield_from);
     return (PyObject *)yield_from;
 }
