@@ -800,13 +800,8 @@ _PyJit_translate_single_bytecode_to_trace(
             _Py_CODEUNIT *computed_next_instr = computed_next_instr_without_modifiers + (computed_next_instr_without_modifiers->op.code == NOT_TAKEN);
             _Py_CODEUNIT *computed_jump_instr = computed_next_instr_without_modifiers + oparg;
             assert(next_instr == computed_next_instr || next_instr == computed_jump_instr);
-            int jump_happened;
-            if (computed_next_instr == computed_jump_instr) {
-                jump_happened = target_instr[1].cache & 1;
-            } else {
-                jump_happened = computed_jump_instr == next_instr;
-            }
-            assert(jump_happened == (target_instr[1].cache & 1));
+            int jump_happened = target_instr[1].cache & 1;
+            assert(jump_happened ? (next_instr == computed_jump_instr) : (next_instr == computed_next_instr));
             uint32_t uopcode = BRANCH_TO_GUARD[opcode - POP_JUMP_IF_FALSE][jump_happened];
             ADD_TO_TRACE(uopcode, 0, 0, INSTR_IP(jump_happened ? computed_next_instr : computed_jump_instr, old_code));
             break;
