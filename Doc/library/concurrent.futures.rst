@@ -156,7 +156,9 @@ And::
        print(f.result())
 
    executor = ThreadPoolExecutor(max_workers=1)
-   executor.submit(wait_on_future)
+   future = executor.submit(wait_on_future)
+   # Note: calling future.result() would also cause a deadlock because
+   # the single worker thread is already waiting for wait_on_future().
 
 
 .. class:: ThreadPoolExecutor(max_workers=None, thread_name_prefix='', initializer=None, initargs=())
