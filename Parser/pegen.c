@@ -539,7 +539,7 @@ _PyPegen_new_identifier(Parser *p, const char *n)
     };
     for (int i = 0; forbidden[i] != NULL; i++) {
         if (_PyUnicode_EqualToASCIIString(id, forbidden[i])) {
-            PyErr_Format(PyExc_ValueError,
+            RAISE_SYNTAX_ERROR(
                          "identifier field can't represent '%s' constant",
                          forbidden[i]);
             Py_DECREF(id);
