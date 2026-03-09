@@ -267,7 +267,7 @@ then the representation of the evaluated expression.  For example:
 The usual :ref:`f-string format specifiers <f-strings>` allow more
 control over how the result of the expression is displayed::
 
-  >>> delta = date.today() - member_since
+  >>> delta = dt.date.today() - member_since
   >>> f'{user=!s}  {delta.days=:,d}'
   'user=eric_idle  delta.days=16,075'
 
