@@ -50,7 +50,6 @@ For full details, see the :ref:`changelog <changelog>`.
 
 .. testsetup::
 
-   from datetime import date
    from math import cos, radians
    from unicodedata import normalize
    import re
@@ -259,8 +258,9 @@ Added an ``=`` specifier to :term:`f-string`\s. An f-string such as
 ``f'{expr=}'`` will expand to the text of the expression, an equal sign,
 then the representation of the evaluated expression.  For example:
 
+  >>> import datetime as dt
   >>> user = 'eric_idle'
-  >>> member_since = date(1975, 7, 31)
+  >>> member_since = dt.date(1975, 7, 31)
   >>> f'{user=} {member_since=}'
   "user='eric_idle' member_since=datetime.date(1975, 7, 31)"
 
