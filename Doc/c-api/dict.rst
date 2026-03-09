@@ -542,10 +542,6 @@ Frozen dictionary objects
 
    Create an empty dictionary if *iterable* is ``NULL``.
 
-   .. impl-detail::
-      If *iterable* is a :class:`frozendict`, return the same object
-      unmodified.
-
 
 Ordered dictionaries
 ^^^^^^^^^^^^^^^^^^^^
