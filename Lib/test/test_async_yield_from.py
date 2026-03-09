@@ -1638,7 +1638,7 @@ class TestInterestingEdgeCases(unittest.TestCase):
             async yield from Silly()
 
         with self.assertRaisesRegex(RuntimeError, "nobody expects the spanish inquisition"):
-            await anext(aiter(my_generator()))
+            await anext(my_generator())
 
 
 if __name__ == '__main__':
