@@ -822,6 +822,8 @@ mimetypes
 * Add ``application/node`` MIME type for ``.cjs`` extension.
   (Contributed by John Franey in :gh:`140937`.)
 * Add ``application/toml``. (Contributed by Gil Forcada in :gh:`139959`.)
+* Add ``application/sql`` and ``application/vnd.sqlite3``.
+  (Contributed by Charlie Lin in :gh:`145698`.)
 * Add ``image/jxl``. (Contributed by Foolbar in :gh:`144213`.)
 * Rename ``application/x-texinfo`` to ``application/texinfo``.
   (Contributed by Charlie Lin in :gh:`140165`.)
