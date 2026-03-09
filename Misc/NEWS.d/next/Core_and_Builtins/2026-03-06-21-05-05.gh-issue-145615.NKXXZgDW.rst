@@ -1,0 +1,2 @@
+Fixed a memory leak in the :term:`free-threaded build` where mimalloc pages
+could become permanently unreclaimable until the owning thread exited.
