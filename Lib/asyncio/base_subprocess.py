@@ -265,7 +265,7 @@ class BaseSubprocessTransport(transports.SubprocessTransport):
             # to avoid hanging forever in self._wait as otherwise _exit_waiters
             # would never be woken up, we wake them up here.
             for waiter in self._exit_waiters:
-                if not waiter.cancelled():
+                if not waiter.done():
                     waiter.set_result(self._returncode)
         if all(p is not None and p.disconnected
                for p in self._pipes.values()):
@@ -278,7 +278,7 @@ class BaseSubprocessTransport(transports.SubprocessTransport):
         finally:
             # wake up futures waiting for wait()
             for waiter in self._exit_waiters:
-                if not waiter.cancelled():
+                if not waiter.done():
                     waiter.set_result(self._returncode)
             self._exit_waiters = None
             self._loop = None
