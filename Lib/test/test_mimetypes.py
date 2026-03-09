@@ -232,6 +232,7 @@ class MimeTypesTestCase(unittest.TestCase):
                 ("application/pdf", ".pdf"),
                 ("application/postscript", ".ps"),
                 ("application/rtf", ".rtf"),
+                ("application/sql", ".sql"),
                 ("application/texinfo", ".texi"),
                 ("application/toml", ".toml"),
                 ("application/vnd.apple.mpegurl", ".m3u"),
@@ -246,6 +247,7 @@ class MimeTypesTestCase(unittest.TestCase):
                 ("application/vnd.openxmlformats-officedocument.spreadsheetml.sheet", ".xlsx"),
                 ("application/vnd.openxmlformats-officedocument.wordprocessingml.document", ".docx"),
                 ("application/vnd.rar", ".rar"),
+                ("application/vnd.sqlite3", ".sqlite3")
                 ("application/x-7z-compressed", ".7z"),
                 ("application/x-debian-package", ".deb"),
                 ("application/x-httpd-php", ".php"),
