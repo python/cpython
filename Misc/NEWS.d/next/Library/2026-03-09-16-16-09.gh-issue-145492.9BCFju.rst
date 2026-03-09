@@ -1,0 +1,2 @@
+Fix :class:`collections.defaultdict` ``__repr__`` entering infinite recursion
+when the default factory references the ``defaultdict`` instance.
