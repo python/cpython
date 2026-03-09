@@ -2499,8 +2499,7 @@ sys_remote_exec_impl(PyObject *module, int pid, PyObject *script)
     }
 
     if (PySys_Audit("sys.remote_exec", "iO", pid, script) < 0) {
-        Py_DECREF(path);
-        return NULL;
+        goto error;
     }
 
     debugger_script_path = PyBytes_AS_STRING(path);
