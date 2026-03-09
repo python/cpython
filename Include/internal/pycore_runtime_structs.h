@@ -36,7 +36,6 @@ struct _pymem_allocators {
 };
 
 enum _py_float_format_type {
-    _py_float_format_unknown,
     _py_float_format_ieee_big_endian,
     _py_float_format_ieee_little_endian,
 };
