@@ -2411,6 +2411,31 @@ class TestParser(TestParserMixin, TestEmailBase):
                 ),
             ),
 
+        **for_each_character(RFC_NONPRINTABLES, skip=RFC_WSP)(
+            non_printable_in_atext = C(
+                'foo.{char}.bar',
+                defects=[(nonprintable_defect, '{char}')],
+                ),
+            ),
+
+        undecodable_characters = C(
+            'foo.🎁.bar'.encode().decode('us-ascii', errors='surrogateescape'),
+            defects=[undecodable_bytes_defect],
+            ),
+
+        all_atext_characters_allowed = C(
+            RFC_ATEXT + '.' + RFC_ATEXT + '@foo',
+            remainder = '@foo',
+            ),
+
+        raises_on_paired_dots = C(
+            'foo..bar',
+            exception=(
+                errors.HeaderParseError,
+                r'(?=.*expected)(?=.*atom)(?=.*\.\.bar)',
+                ),
+            ),
+
         )
 
 
