@@ -90,7 +90,7 @@ LIBRARY_FUZZER_PATHS = frozenset({
     # tarfile
     Path("Lib/tarfile.py"),
     # tomllib
-    Path("Modules/tomllib/"),
+    Path("Lib/tomllib/"),
     # xml
     Path("Lib/xml/"),
     Path("Lib/_markupbase.py"),
