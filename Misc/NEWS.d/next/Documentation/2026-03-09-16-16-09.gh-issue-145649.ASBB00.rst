@@ -1,0 +1,2 @@
+Fix man page text wrapping for :option:`-X` option descriptions by replacing
+hardcoded space indentation with proper troff macros.
