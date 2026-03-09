@@ -2399,6 +2399,38 @@ Invalid pattern matching constructs:
     Traceback (most recent call last):
     SyntaxError: double star pattern must be the last (right-most) subpattern in the mapping pattern
 
+Unary '+' is not allowed in match patterns:
+
+    >>> match ...:
+    ...   case +1:
+    ...     ...
+    Traceback (most recent call last):
+    SyntaxError: cannot use unary '+' in a literal pattern
+
+    >>> match ...:
+    ...   case 1 | +2 | -3:
+    ...     ...
+    Traceback (most recent call last):
+    SyntaxError: cannot use unary '+' in a literal pattern
+
+    >>> match ...:
+    ...   case [1, +2, -3]:
+    ...     ...
+    Traceback (most recent call last):
+    SyntaxError: cannot use unary '+' in a literal pattern
+
+    >>> match ...:
+    ...   case Foo(x=+1, y=-2):
+    ...     ...
+    Traceback (most recent call last):
+    SyntaxError: cannot use unary '+' in a literal pattern
+
+    >>> match ...:
+    ...   case {True: +1, False: -2}:
+    ...     ...
+    Traceback (most recent call last):
+    SyntaxError: cannot use unary '+' in a literal pattern
+
 Uses of the star operator which should fail:
 
 A[:*b]

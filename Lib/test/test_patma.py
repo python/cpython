@@ -3230,6 +3230,41 @@ class TestSyntaxErrors(unittest.TestCase):
                 pass
         """)
 
+    def test_unary_add_in_literal_pattern(self):
+        self.assert_syntax_error("""
+        match ...:
+            case +1:
+                pass
+        """)
+
+    def test_unary_add_in_or_pattern(self):
+        self.assert_syntax_error("""
+        match ...:
+            case 1 | +2 | -3:
+                pass
+        """)
+
+    def test_unary_add_in_sequence_pattern(self):
+        self.assert_syntax_error("""
+        match ...:
+            case [1, +2, -3]:
+                pass
+        """)
+
+    def test_unary_add_in_class_pattern(self):
+        self.assert_syntax_error("""
+        match ...:
+            case Foo(x=+1, y=-2):
+                pass
+        """)
+
+    def test_unary_add_in_mapping_pattern(self):
+        self.assert_syntax_error("""
+        match ...:
+            case {True: +1, False: -2}:
+                pass
+        """)
+
 class TestTypeErrors(unittest.TestCase):
 
     def test_accepts_positional_subpatterns_0(self):

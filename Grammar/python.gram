@@ -536,6 +536,7 @@ literal_pattern[pattern_ty]:
     | 'None' { _PyAST_MatchSingleton(Py_None, EXTRA) }
     | 'True' { _PyAST_MatchSingleton(Py_True, EXTRA) }
     | 'False' { _PyAST_MatchSingleton(Py_False, EXTRA) }
+    | invalid_literal_pattern
 
 # Literal expressions are used to restrict permitted mapping pattern keys
 literal_expr[expr_ty]:
@@ -1519,6 +1520,8 @@ invalid_mapping_pattern:
         "double star pattern must be the last (right-most) subpattern in the mapping pattern") }
 invalid_class_argument_pattern[asdl_pattern_seq*]:
     | [positional_patterns ','] keyword_patterns ',' a=positional_patterns { a }
+invalid_literal_pattern:
+    | a='+' NUMBER { RAISE_SYNTAX_ERROR_KNOWN_LOCATION(a, "cannot use unary '+' in a literal pattern") }
 invalid_if_stmt:
     | 'if' named_expression NEWLINE { RAISE_SYNTAX_ERROR("expected ':'") }
     | a='if' a=named_expression ':' NEWLINE !INDENT {

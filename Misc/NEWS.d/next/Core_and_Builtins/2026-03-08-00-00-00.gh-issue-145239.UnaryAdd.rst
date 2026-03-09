@@ -1,0 +1,3 @@
+Improved the error message when using unary ``+`` in a :keyword:`match`
+pattern. Instead of a generic "invalid syntax", Python now reports "cannot
+use unary '+' in a literal pattern".
