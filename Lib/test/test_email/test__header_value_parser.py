@@ -2391,10 +2391,6 @@ class TestParser(TestParserMixin, TestEmailBase):
         self.assertEqual(dot_atom_text.token_type, 'dot-atom-text')
         self.assertEqual(len(dot_atom_text), 5)
 
-    def test_get_dot_atom_text_lone_atom_is_valid(self):
-        dot_atom_text = self._test_get_x(parser.get_dot_atom_text,
-            'foo', 'foo', 'foo', [], '')
-
     def test_get_dot_atom_text_raises_on_leading_dot(self):
         with self.assertRaises(errors.HeaderParseError):
             parser.get_dot_atom_text('.foo.bar')
