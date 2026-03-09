@@ -1,2 +1,2 @@
-:mod:`asyncio`: Make sure that :class:`~asyncio.BaseEventLoop` triggers
+:mod:`asyncio`: Make sure that :meth:`asyncio.loop.call_soon` triggers
 scheduled events on time when the clock resolution becomes too small.
