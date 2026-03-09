@@ -357,6 +357,9 @@ The following implementation-specific options are available:\n\
          use module globals, which is not concurrent-safe; set to true for\n\
          free-threaded builds and false otherwise; also\n\
          PYTHON_CONTEXT_AWARE_WARNINGS\n\
+-X pathconfig_warnings=[0|1]: if true (1) then path configuration is allowed\n\
+         to log warnings into stderr; if false (0) suppress these warnings;\n\
+         set to true by default; also PYTHON_PATHCONFIG_WARNINGS\n\
 -X tracemalloc[=N]: trace Python memory allocations; N sets a traceback limit\n \
          of N frames (default: 1); also PYTHONTRACEMALLOC=N\n\
 -X utf8[=0|1]: enable (1) or disable (0) UTF-8 mode; also PYTHONUTF8\n\
@@ -2351,6 +2354,32 @@ config_init_lazy_imports(PyConfig *config)
 }
 
 static PyStatus
+config_init_pathconfig_warnings(PyConfig *config)
+{
+    const char *env = config_get_env(config, "PYTHON_PATHCONFIG_WARNINGS");
+    if (env) {
+        int enabled;
+        if (_Py_str_to_int(env, &enabled) < 0 || (enabled < 0) || (enabled > 1)) {
+            return _PyStatus_ERR(
+                "PYTHON_PATHCONFIG_WARNINGS=N: N is missing or invalid");
+        }
+        config->pathconfig_warnings = enabled;
+    }
+
+    const wchar_t *xoption = config_get_xoption(config, L"pathconfig_warnings");
+    if (xoption) {
+        int enabled;
+        const wchar_t *sep = wcschr(xoption, L'=');
+        if (!sep || (config_wstr_to_int(sep + 1, &enabled) < 0) || (enabled < 0) || (enabled > 1)) {
+            return _PyStatus_ERR(
+                "-X pathconfig_warnings=n: n is missing or invalid");
+        }
+        config->pathconfig_warnings = enabled;
+    }
+    return _PyStatus_OK();
+}
+
+static PyStatus
 config_read_complex_options(PyConfig *config)
 {
     /* More complex options configured by env var and -X option */
@@ -2442,6 +2471,11 @@ config_read_complex_options(PyConfig *config)
     }
 
     status = config_init_tlbc(config);
+    if (_PyStatus_EXCEPTION(status)) {
+        return status;
+    }
+
+    status = config_init_pathconfig_warnings(config);
     if (_PyStatus_EXCEPTION(status)) {
         return status;
     }

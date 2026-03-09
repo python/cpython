@@ -1,0 +1,2 @@
+Defers loading of the ``psapi.dll`` module until it is used by
+:func:`ctypes.util.dllist`.

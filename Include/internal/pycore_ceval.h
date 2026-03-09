@@ -286,6 +286,9 @@ PyAPI_FUNC(PyObject *)_Py_MakeCoro(PyFunctionObject *func);
    and asynchronous exception */
 PyAPI_FUNC(int) _Py_HandlePending(PyThreadState *tstate);
 
+/* Raise exception set by PyThreadState_SetAsyncExc, if any */
+PyAPI_FUNC(int) _PyEval_RaiseAsyncExc(PyThreadState *tstate);
+
 extern PyObject * _PyEval_GetFrameLocals(void);
 
 typedef PyObject *(*conversion_func)(PyObject *);
