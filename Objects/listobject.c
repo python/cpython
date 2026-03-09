@@ -3260,6 +3260,7 @@ _PyList_AsTupleAndClear(PyListObject *self)
     Py_ssize_t size = Py_SIZE(self);
     self->ob_item = NULL;
     Py_SET_SIZE(self, 0);
+    self->allocated = 0;
     ret = _PyTuple_FromArraySteal(items, size);
     free_list_items(items, false);
     Py_END_CRITICAL_SECTION();
