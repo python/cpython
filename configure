@@ -9443,15 +9443,16 @@ then :
   withval=$with_strict_overflow;
     if test "x$with_strict_overflow" = xyes
 then :
-                              save_CFLAGS=$CFLAGS
-       CFLAGS="-fstrict-overflow -fno-strict-overflow"
-       { printf "%s\n" "$as_me:${as_lineno-$LINENO}: checking if $CC supports -fstrict-overflow and -fno-strict-overflow" >&5
-printf %s "checking if $CC supports -fstrict-overflow and -fno-strict-overflow... " >&6; }
-if test ${ac_cv_cc_supports_fstrict_overflow+y}
+                              { printf "%s\n" "$as_me:${as_lineno-$LINENO}: checking whether C compiler accepts -fstrict-overflow" >&5
+printf %s "checking whether C compiler accepts -fstrict-overflow... " >&6; }
+if test ${ax_cv_check_cflags___fstrict_overflow+y}
 then :
   printf %s "(cached) " >&6
 else case e in #(
-  e) cat confdefs.h - <<_ACEOF >conftest.$ac_ext
+  e)
+  ax_check_save_flags=$CFLAGS
+  CFLAGS="$CFLAGS  -fstrict-overflow"
+  cat confdefs.h - <<_ACEOF >conftest.$ac_ext
 /* end confdefs.h.  */
 
 int
@@ -9464,24 +9465,64 @@ main (void)
 _ACEOF
 if ac_fn_c_try_compile "$LINENO"
 then :
-  ac_cv_cc_supports_fstrict_overflow=yes
+  ax_cv_check_cflags___fstrict_overflow=yes
 else case e in #(
-  e) ac_cv_cc_supports_fstrict_overflow=no
-          ;;
+  e) ax_cv_check_cflags___fstrict_overflow=no ;;
 esac
 fi
 rm -f core conftest.err conftest.$ac_objext conftest.beam conftest.$ac_ext
-        ;;
+  CFLAGS=$ax_check_save_flags ;;
 esac
 fi
-{ printf "%s\n" "$as_me:${as_lineno-$LINENO}: result: $ac_cv_cc_supports_fstrict_overflow" >&5
-printf "%s\n" "$ac_cv_cc_supports_fstrict_overflow" >&6; }
-       CFLAGS=$save_CFLAGS
+{ printf "%s\n" "$as_me:${as_lineno-$LINENO}: result: $ax_cv_check_cflags___fstrict_overflow" >&5
+printf "%s\n" "$ax_cv_check_cflags___fstrict_overflow" >&6; }
+if test "x$ax_cv_check_cflags___fstrict_overflow" = xyes
+then :
+  { printf "%s\n" "$as_me:${as_lineno-$LINENO}: checking whether C compiler accepts -fno-strict-overflow" >&5
+printf %s "checking whether C compiler accepts -fno-strict-overflow... " >&6; }
+if test ${ax_cv_check_cflags___fno_strict_overflow+y}
+then :
+  printf %s "(cached) " >&6
+else case e in #(
+  e)
+  ax_check_save_flags=$CFLAGS
+  CFLAGS="$CFLAGS  -fno-strict-overflow"
+  cat confdefs.h - <<_ACEOF >conftest.$ac_ext
+/* end confdefs.h.  */
 
-       if test "x$ac_cv_cc_supports_fstrict_overflow" = xyes
+int
+main (void)
+{
+
+  ;
+  return 0;
+}
+_ACEOF
+if ac_fn_c_try_compile "$LINENO"
+then :
+  ax_cv_check_cflags___fno_strict_overflow=yes
+else case e in #(
+  e) ax_cv_check_cflags___fno_strict_overflow=no ;;
+esac
+fi
+rm -f core conftest.err conftest.$ac_objext conftest.beam conftest.$ac_ext
+  CFLAGS=$ax_check_save_flags ;;
+esac
+fi
+{ printf "%s\n" "$as_me:${as_lineno-$LINENO}: result: $ax_cv_check_cflags___fno_strict_overflow" >&5
+printf "%s\n" "$ax_cv_check_cflags___fno_strict_overflow" >&6; }
+if test "x$ax_cv_check_cflags___fno_strict_overflow" = xyes
 then :
   STRICT_OVERFLOW_CFLAGS="-fstrict-overflow"
-          NO_STRICT_OVERFLOW_CFLAGS="-fno-strict-overflow"
+            NO_STRICT_OVERFLOW_CFLAGS="-fno-strict-overflow"
+else case e in #(
+  e) { printf "%s\n" "$as_me:${as_lineno-$LINENO}: WARNING: --with-strict-overflow=yes requires a compiler that supports -fno-strict-overflow" >&5
+printf "%s\n" "$as_me: WARNING: --with-strict-overflow=yes requires a compiler that supports -fno-strict-overflow" >&2;}
+            STRICT_OVERFLOW_CFLAGS=""
+            NO_STRICT_OVERFLOW_CFLAGS="" ;;
+esac
+fi
+
 else case e in #(
   e) { printf "%s\n" "$as_me:${as_lineno-$LINENO}: WARNING: --with-strict-overflow=yes requires a compiler that supports -fstrict-overflow" >&5
 printf "%s\n" "$as_me: WARNING: --with-strict-overflow=yes requires a compiler that supports -fstrict-overflow" >&2;}
@@ -9489,6 +9530,7 @@ printf "%s\n" "$as_me: WARNING: --with-strict-overflow=yes requires a compiler t
           NO_STRICT_OVERFLOW_CFLAGS="" ;;
 esac
 fi
+
 
 else case e in #(
   e) STRICT_OVERFLOW_CFLAGS=""
