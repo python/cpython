@@ -512,7 +512,7 @@ How do I write a function with output parameters (call by reference)?
 
 Remember that arguments are passed by assignment in Python.  Since assignment
 just creates references to objects, there's no alias between an argument name in
-the caller and callee, and so no call-by-reference as such.  You can achieve the
+the caller and callee, and consequently no call-by-reference.  You can achieve the
 desired effect in a number of ways.
 
 1) By returning a tuple of the results::
