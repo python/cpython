@@ -32,7 +32,7 @@ def get_build_paths(cross_build_dir=None):
     """Compute all build paths from the given cross-build directory."""
     if cross_build_dir is None:
         cross_build_dir = DEFAULT_CROSS_BUILD_DIR
-    cross_build_dir = Path(cross_build_dir)
+    cross_build_dir = Path(cross_build_dir).absolute()
     host_triple_dir = cross_build_dir / HOST_TRIPLE
     return {
         "cross_build_dir": cross_build_dir,
