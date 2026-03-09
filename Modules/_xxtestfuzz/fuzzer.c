@@ -517,8 +517,8 @@ static int fuzz_pycompile(const char* data, size_t size) {
         return 0;
     }
 
-    // Need 2 bytes for parameter selection
-    if (size < 2) {
+    // Need 3 bytes for parameter selection
+    if (size < 3) {
         return 0;
     }
 
@@ -530,25 +530,39 @@ static int fuzz_pycompile(const char* data, size_t size) {
     unsigned char optimize_idx = (unsigned char) data[1];
     int optimize = optimize_vals[optimize_idx % NUM_OPTIMIZE_VALS];
 
+    // Use third byte to determine compiler flags to use.
+    unsigned char flags_byte = (unsigned char) data[2];
+    PyCompilerFlags flags = _PyCompilerFlags_INIT;
+    if (flags_byte & 0x01) {
+        flags.cf_flags |= PyCF_DONT_IMPLY_DEDENT;
+    }
+    if (flags_byte & 0x02) {
+        flags.cf_flags |= PyCF_ONLY_AST;
+    }
+    if (flags_byte & 0x04) {
+        flags.cf_flags |= PyCF_IGNORE_COOKIE;
+    }
+    if (flags_byte & 0x08) {
+        flags.cf_flags |= PyCF_TYPE_COMMENTS;
+    }
+    if (flags_byte & 0x10) {
+        flags.cf_flags |= PyCF_ALLOW_TOP_LEVEL_AWAIT;
+    }
+    if (flags_byte & 0x20) {
+        flags.cf_flags |= PyCF_ALLOW_INCOMPLETE_INPUT;
+    }
+    if (flags_byte & 0x40) {
+        flags.cf_flags |= PyCF_OPTIMIZED_AST;
+    }
+
     char pycompile_scratch[MAX_PYCOMPILE_TEST_SIZE];
 
     // Create a NUL-terminated C string from the remaining input
-    memcpy(pycompile_scratch, data + 2, size - 2);
+    memcpy(pycompile_scratch, data + 3, size - 3);
     // Put a NUL terminator just after the copied data. (Space was reserved already.)
-    pycompile_scratch[size - 2] = '\0';
+    pycompile_scratch[size - 3] = '\0';
 
-    // XXX: instead of always using NULL for the `flags` value to
-    // `Py_CompileStringExFlags`, there are many flags that conditionally
-    // change parser behavior:
-    //
-    //     #define PyCF_TYPE_COMMENTS 0x1000
-    //     #define PyCF_ALLOW_TOP_LEVEL_AWAIT 0x2000
-    //     #define PyCF_ONLY_AST 0x0400
-    //
-    // It would be good to test various combinations of these, too.
-    PyCompilerFlags *flags = NULL;
-
-    PyObject *result = Py_CompileStringExFlags(pycompile_scratch, "<fuzz input>", start, flags, optimize);
+    PyObject *result = Py_CompileStringExFlags(pycompile_scratch, "<fuzz input>", start, &flags, optimize);
     if (result == NULL) {
         /* Compilation failed, most likely from a syntax error. If it was a
            SystemError we abort. There's no non-bug reason to raise a
