@@ -135,7 +135,7 @@ Tools/unicode/data/
 /config.status
 /config.status.lineno
 /.ccache
-/cross-build/
+/cross-build*/
 /jit_stencils*.h
 /platform
 /profile-clean-stamp
