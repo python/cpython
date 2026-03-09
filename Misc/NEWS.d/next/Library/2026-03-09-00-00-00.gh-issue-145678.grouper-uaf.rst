@@ -1,0 +1,7 @@
+Fix a use-after-free in :func:`itertools.groupby`: the internal
+``_grouper_next()`` function did not hold strong references to
+``gbo->currkey`` and ``igo->tgtkey`` before calling
+:c:func:`PyObject_RichCompareBool`, so a re-entrant ``__eq__`` that advanced
+the parent iterator (triggering ``groupby_step()`` and ``Py_XSETREF`` on
+``currkey``) could free those objects while they were still being compared.
+The fix mirrors the protection added in :gh:`143543` for ``groupby_next()``.
