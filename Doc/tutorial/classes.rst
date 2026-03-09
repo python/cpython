@@ -367,7 +367,7 @@ object, and can be stored away and called at a later time.  For example::
    while True:
        print(xf())
 
-will continue to print ``hello world`` until the end of time or when ``Ctrl + C`` is pressed.
+will continue to print ``hello world`` until the end of time.
 
 What exactly happens when a method is called?  You may have noticed that
 ``x.f()`` was called without an argument above, even though the function
