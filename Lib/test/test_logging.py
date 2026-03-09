@@ -4928,7 +4928,6 @@ class FormatterTest(unittest.TestCase, AssertErrorMessage):
                 # After PR gh-102412, precision (places) increases from 3 to 7
                 self.assertAlmostEqual(relativeCreated, offset_ns / 1e6, places=7)
 
-
     def test_formatter_repr(self):
         f = logging.Formatter('%(message)s')
         self.assertEqual(repr(f), '<Formatter (%(message)s)>')

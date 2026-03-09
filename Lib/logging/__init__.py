@@ -797,6 +797,9 @@ class Filter(object):
         self.name = name
         self.nlen = len(name)
 
+    def __repr__(self):
+        return '<%s (%s)>' % (self.__class__.__name__, self.name)
+
     def filter(self, record):
         """
         Determine if the specified record is to be logged.
@@ -811,9 +814,6 @@ class Filter(object):
         elif record.name.find(self.name, 0, self.nlen) != 0:
             return False
         return (record.name[self.nlen] == ".")
-
-    def __repr__(self):
-        return '<%s (%s)>' % (self.__class__.__name__, self.name)
 
 class Filterer(object):
     """

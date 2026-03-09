@@ -1,3 +1,0 @@
-Add :func:`repr` support to :class:`http.client.HTTPConnection` and
-:class:`http.client.HTTPResponse`, showing host/port and status/reason
-respectively.
