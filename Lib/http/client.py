@@ -917,7 +917,10 @@ class HTTPConnection:
         self._create_connection = socket.create_connection
 
     def __repr__(self):
-        port = self.port if self.port is not None else self.default_port
+        if self.port is not None:
+            port = self.port
+        else:
+            port = self.default_port
         return f'<{self.__class__.__name__} {self.host}:{port}>'
 
     def set_tunnel(self, host, port=None, headers=None):
