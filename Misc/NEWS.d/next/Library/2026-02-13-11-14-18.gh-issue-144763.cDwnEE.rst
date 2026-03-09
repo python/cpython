@@ -1,0 +1,2 @@
+Fix a race condition in :mod:`tracemalloc`: it no longer detaches the attached
+thread state to acquire its internal lock. Patch by Victor Stinner.

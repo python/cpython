@@ -1,0 +1,10 @@
+The :mod:`re` module gains a new :func:`re.prefixmatch` function as an
+explicit spelling of what has to date always been known as :func:`re.match`.
+:class:`re.Pattern` similary gains a :meth:`re.Pattern.prefixmatch` method.
+
+Why? Explicit is better than implicit. Other widely used languages all use
+the term "match" to mean what Python uses the term "search" for. The
+unadorened "match" name in Python has been a frequent case of confusion and
+coding bugs due to the inconsistency with the rest if the software industry.
+
+We do not plan to deprecate and remove the older ``match`` name.

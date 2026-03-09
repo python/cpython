@@ -1,76 +1,19 @@
-# Python WebAssembly (WASM) build
+# Python Emscripten (wasm32-emscripten) build
 
-**WASI support is [tier 2](https://peps.python.org/pep-0011/#tier-2).**
 **Emscripten support is [tier 3](https://peps.python.org/pep-0011/#tier-3).**
 
 This directory contains configuration and helpers to facilitate cross
-compilation of CPython to WebAssembly (WASM). Python supports Emscripten
-(*wasm32-emscripten*) and WASI (*wasm32-wasi*) targets. Emscripten builds
-run in modern browsers and JavaScript runtimes like *Node.js*. WASI builds
-use WASM runtimes such as *wasmtime*.
+compilation of CPython to WebAssembly (WASM) using Emscripten. Emscripten builds
+run in modern browsers and JavaScript runtimes like *Node.js*.
 
-Users and developers are encouraged to use the script
-`Tools/wasm/wasm_build.py`. The tool automates the build process and provides
-assistance with installation of SDKs, running tests, etc.
+For WASI builds, see [Platforms/WASI](../../Platforms/WASI/README.md).
 
-**NOTE**: If you are looking for information that is not directly related to
-building CPython for WebAssembly (or the resulting build), please see
-https://github.com/psf/webassembly for more information.
-
-## wasm32-emscripten
+**NOTE**: If you are looking for general information about WebAssembly that is
+not directly related to CPython, please see https://github.com/psf/webassembly.
 
 ### Build
 
-To cross compile to the ``wasm32-emscripten`` platform you need
-[the Emscripten compiler toolchain](https://emscripten.org/),
-a Python interpreter, and an installation of Node version 18 or newer.
-Emscripten version 4.0.2 is recommended; newer versions may also work, but all
-official testing is performed with that version. All commands below are relative
-to a checkout of the Python repository.
-
-#### Install [the Emscripten compiler toolchain](https://emscripten.org/docs/getting_started/downloads.html)
-
-You can install the Emscripten toolchain as follows:
-```shell
-git clone https://github.com/emscripten-core/emsdk.git --depth 1
-./emsdk/emsdk install latest
-./emsdk/emsdk activate latest
-```
-To add the Emscripten compiler to your path:
-```shell
-source ./emsdk/emsdk_env.sh
-```
-This adds `emcc` and `emconfigure` to your path.
-
-##### Optionally: enable ccache for EMSDK
-
-The ``EM_COMPILER_WRAPPER`` must be set after the EMSDK environment is
-sourced. Otherwise the source script removes the environment variable.
-
-```shell
-export EM_COMPILER_WRAPPER=ccache
-```
-
-#### Compile and build Python interpreter
-
-You can use `python Tools/wasm/emscripten` to compile and build targeting
-Emscripten. You can do everything at once with:
-```shell
-python Tools/wasm/emscripten build
-```
-or you can break it out into four separate steps:
-```shell
-python Tools/wasm/emscripten configure-build-python
-python Tools/wasm/emscripten make-build-python
-python Tools/wasm/emscripten make-libffi
-python Tools/wasm/emscripten configure-host
-python Tools/wasm/emscripten make-host
-```
-Extra arguments to the configure steps are passed along to configure. For
-instance, to do a debug build, you can use:
-```shell
-python Tools/wasm/emscripten build --with-py-debug
-```
+See [the devguide instructions for building for Emscripten](https://devguide.python.org/getting-started/setup-building/#emscripten).
 
 ### Running from node
 
@@ -97,8 +40,8 @@ You can run the browser smoke test with:
 
 ### The Web Example
 
-When building for Emscripten, the web example will be built automatically. It
-is in the ``web_example`` directory. To run the web example, ``cd`` into the
+When building for Emscripten, a small web example will be built automatically
+in the ``web_example`` directory. To run the web example, ``cd`` into the
 ``web_example`` directory, then run ``python server.py``. This will start a web
 server; you can then visit ``http://localhost:8000/`` in a browser to see a
 simple REPL example.
@@ -226,8 +169,8 @@ await createEmscriptenModule({
   e.g. ``ctypes``, ``readline``, ``ssl``, and more.
 - Shared extension modules are not implemented yet. All extension modules
   are statically linked into the main binary. The experimental configure
-  option ``--enable-wasm-dynamic-linking`` enables dynamic extensions
-  supports. It's currently known to crash in combination with threading.
+  option ``--enable-wasm-dynamic-linking`` enables dynamic extension
+  support. It's currently known to crash in combination with threading.
 - glibc extensions for date and time formatting are not available.
 - ``locales`` module is affected by musl libc issues,
   [gh-90548](https://github.com/python/cpython/issues/90548).
@@ -246,11 +189,7 @@ await createEmscriptenModule({
 - Test modules are disabled by default. Use ``--enable-test-modules`` build
   test modules like ``_testcapi``.
 
-## WASI (wasm32-wasi)
-
-See [the devguide on how to build and run for WASI](https://devguide.python.org/getting-started/setup-building/#wasi).
-
-## Detecting WebAssembly builds
+## Detecting Emscripten builds
 
 ### Python code
 
@@ -259,9 +198,6 @@ import os, sys
 
 if sys.platform == "emscripten":
     # Python on Emscripten
-    ...
-if sys.platform == "wasi":
-    # Python on WASI
     ...
 
 if os.name == "posix":
@@ -305,31 +241,14 @@ sys._emscripten_info(
 )
 ```
 
-```python
->>> import os, sys
->>> os.uname()
-posix.uname_result(
-    sysname='wasi',
-    nodename='(none)',
-    release='0.0.0',
-    version='0.0.0',
-    machine='wasm32'
-)
->>> os.name
-'posix'
->>> sys.platform
-'wasi'
-```
-
 ### C code
 
-Emscripten SDK and WASI SDK define several built-in macros. You can dump a
-full list of built-ins with ``emcc -dM -E - < /dev/null`` and
-``/path/to/wasi-sdk/bin/clang -dM -E - < /dev/null``.
+Emscripten SDK defines several built-in macros. You can dump a full list of
+built-ins with ``emcc -dM -E - < /dev/null``.
 
 * WebAssembly ``__wasm__`` (also ``__wasm``)
 * wasm32 ``__wasm32__`` (also ``__wasm32``)
 * wasm64 ``__wasm64__``
 * Emscripten ``__EMSCRIPTEN__`` (also ``EMSCRIPTEN``)
 * Emscripten version ``__EMSCRIPTEN_major__``, ``__EMSCRIPTEN_minor__``, ``__EMSCRIPTEN_tiny__``
-* WASI ``__wasi__``
+

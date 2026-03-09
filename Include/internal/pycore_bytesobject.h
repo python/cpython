@@ -60,6 +60,14 @@ PyAPI_FUNC(void)
 _PyBytes_Repeat(char* dest, Py_ssize_t len_dest,
     const char* src, Py_ssize_t len_src);
 
+/* _PyBytesObject_SIZE gives the basic size of a bytes object; any memory allocation
+   for a bytes object of length n should request PyBytesObject_SIZE + n bytes.
+
+   Using _PyBytesObject_SIZE instead of sizeof(PyBytesObject) saves
+   3 or 7 bytes per bytes object allocation on a typical system.
+*/
+#define _PyBytesObject_SIZE (offsetof(PyBytesObject, ob_sval) + 1)
+
 /* --- PyBytesWriter ------------------------------------------------------ */
 
 struct PyBytesWriter {

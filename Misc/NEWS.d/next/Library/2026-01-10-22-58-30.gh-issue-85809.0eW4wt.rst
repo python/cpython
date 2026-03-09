@@ -1,0 +1,1 @@
+Added :term:`path-like object` support for :func:`shutil.make_archive`.

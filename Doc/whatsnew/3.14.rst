@@ -1,8 +1,9 @@
+
 ****************************
   What's new in Python 3.14
 ****************************
 
-:Editor: Hugo van Kemenade
+:Editors: Adam Turner and Hugo van Kemenade
 
 .. Rules for maintenance:
 
@@ -45,439 +46,115 @@
    when researching a change.
 
 This article explains the new features in Python 3.14, compared to 3.13.
-
+Python 3.14 was released on 7 October 2025.
 For full details, see the :ref:`changelog <changelog>`.
 
 .. seealso::
 
    :pep:`745` -- Python 3.14 release schedule
 
-.. note::
 
-   Prerelease users should be aware that this document is currently in draft
-   form. It will be updated substantially as Python 3.14 moves towards release,
-   so it's worth checking back even after reading earlier versions.
-
-
-Summary -- release highlights
+Summary -- Release highlights
 =============================
 
 .. This section singles out the most important changes in Python 3.14.
    Brevity is key.
 
-Python 3.14 will be the latest stable release of the Python
-programming language, with a mix of changes to the language, the
-implementation and the standard library.
+Python 3.14 is the latest stable release of the Python programming
+language, with a mix of changes to the language, the implementation,
+and the standard library.
+The biggest changes include :ref:`template string literals
+<whatsnew314-template-string-literals>`,
+:ref:`deferred evaluation of annotations <whatsnew314-deferred-annotations>`,
+and support for :ref:`subinterpreters <whatsnew314-multiple-interpreters>` in
+the standard library.
 
-The biggest changes to the implementation include template strings (:pep:`750`),
-deferred evaluation of annotations (:pep:`649`),
-and a new type of interpreter that uses tail calls.
-
-The library changes include the addition of a new :mod:`!annotationlib` module
-for introspecting and wrapping annotations (:pep:`749`),
-a new :mod:`!compression.zstd` module for Zstandard support (:pep:`784`),
-plus syntax highlighting in the REPL,
+The library changes include significantly improved capabilities for
+:ref:`introspection in asyncio <whatsnew314-asyncio-introspection>`,
+:ref:`support for Zstandard <whatsnew314-zstandard>` via a new
+:mod:`compression.zstd` module, syntax highlighting in the REPL,
 as well as the usual deprecations and removals,
 and improvements in user-friendliness and correctness.
 
+This article doesn't attempt to provide a complete specification
+of all new features, but instead gives a convenient overview.
+For full details refer to the documentation,
+such as the :ref:`Library Reference <library-index>`
+and :ref:`Language Reference <reference-index>`.
+To understand the complete implementation and design rationale for a change,
+refer to the PEP for a particular new feature;
+but note that PEPs usually are not kept up-to-date
+once a feature has been fully implemented.
+See `Porting to Python 3.14`_ for guidance on upgrading from
+earlier versions of Python.
+
+--------------
+
 .. PEP-sized items next.
 
-* :ref:`PEP 779: Free-threaded Python is officially supported <whatsnew314-pep779>`
-* :ref:`PEP 649 and 749: deferred evaluation of annotations <whatsnew314-pep649>`
-* :ref:`PEP 734: Multiple interpreters in the stdlib <whatsnew314-pep734>`
-* :ref:`PEP 741: Python configuration C API <whatsnew314-pep741>`
-* :ref:`PEP 750: Template strings <whatsnew314-pep750>`
-* :ref:`PEP 758: Allow except and except* expressions without parentheses <whatsnew314-pep758>`
-* :ref:`PEP 761: Discontinuation of PGP signatures <whatsnew314-no-more-pgp>`
-* :ref:`PEP 765: Disallow return/break/continue that exit a finally block <whatsnew314-finally-syntaxwarning>`
-* :ref:`Free-threaded mode improvements <whatsnew314-free-threaded-cpython>`
-* :ref:`PEP 768: Safe external debugger interface for CPython <whatsnew314-pep768>`
-* :ref:`PEP 784: Adding Zstandard to the standard library <whatsnew314-pep784>`
-* :ref:`A new type of interpreter <whatsnew314-tail-call>`
-* :ref:`Syntax highlighting in the default interactive shell <whatsnew314-pyrepl-highlighting>`,
-  and color output in :ref:`unittest <whatsnew314-color-unittest>`,
-  :ref:`argparse <whatsnew314-color-argparse>`,
-  :ref:`json <whatsnew314-color-json>` and
-  :ref:`calendar <whatsnew314-color-calendar>` CLIs
-* :ref:`Binary releases for the experimental just-in-time compiler <whatsnew314-jit-compiler>`
+Interpreter improvements:
 
+* :pep:`649` and :pep:`749`: :ref:`Deferred evaluation of annotations
+  <whatsnew314-deferred-annotations>`
+* :pep:`734`: :ref:`Multiple interpreters in the standard library
+  <whatsnew314-multiple-interpreters>`
+* :pep:`750`: :ref:`Template strings <whatsnew314-template-string-literals>`
+* :pep:`758`: :ref:`Allow except and except* expressions without brackets
+  <whatsnew314-bracketless-except>`
+* :pep:`765`: :ref:`Control flow in finally blocks
+  <whatsnew314-finally-syntaxwarning>`
+* :pep:`768`: :ref:`Safe external debugger interface for CPython
+  <whatsnew314-remote-debugging>`
+* :ref:`A new type of interpreter <whatsnew314-tail-call-interpreter>`
+* :ref:`Free-threaded mode improvements <whatsnew314-free-threaded-cpython>`
+* :ref:`Improved error messages <whatsnew314-improved-error-messages>`
+* :ref:`Incremental garbage collection <whatsnew314-incremental-gc>`
+
+Significant improvements in the standard library:
+
+* :pep:`784`: :ref:`Zstandard support in the standard library
+  <whatsnew314-zstandard>`
+* :ref:`whatsnew314-asyncio-introspection`
+* :ref:`whatsnew314-concurrent-warnings-control`
+* :ref:`Syntax highlighting in the default interactive shell
+  <whatsnew314-pyrepl-highlighting>`, and color output in several
+  standard library CLIs
+
+C API improvements:
+
+* :pep:`741`: :ref:`Python configuration C API <whatsnew314-capi-config>`
+
+Platform support:
+
+* :pep:`776`: Emscripten is now an :ref:`officially supported platform
+  <whatsnew314-build-changes>`, at :pep:`tier 3 <11#tier-3>`.
+
+Release changes:
+
+* :pep:`779`: :ref:`Free-threaded Python is officially supported
+  <whatsnew314-free-threaded-now-supported>`
+* :pep:`761`: :ref:`PGP signatures have been discontinued for official releases
+  <whatsnew314-no-more-pgp>`
+* :ref:`Windows and macOS binary releases now support the experimental
+  just-in-time compiler <whatsnew314-jit-compiler>`
+* :ref:`Binary releases for Android are now provided <whatsnew314-build-changes>`
 
 
 New features
 ============
 
-.. _whatsnew314-pep779:
+.. _whatsnew314-deferred-annotations:
 
-PEP 779: Free-threaded Python is officially supported
------------------------------------------------------
-
-The free-threaded build of Python is now supported and no longer experimental.
-This is the start of phase II where free-threaded Python is officially supported
-but still optional.
-
-We are confident that the project is on the right path, and we appreciate the
-continued dedication from everyone working to make free-threading ready for
-broader adoption across the Python community.
-
-With these recommendations and the acceptance of this PEP, we as the Python
-developer community should broadly advertise that free-threading is a supported
-Python build option now and into the future, and that it will not be removed
-without a proper deprecation schedule.
-
-Any decision to transition to phase III, with free-threading as the default or
-sole build of Python is still undecided, and dependent on many factors both
-within CPython itself and the community. This decision is for the future.
-
-.. seealso::
-   :pep:`779` and its `acceptance
-   <https://discuss.python.org/t/pep-779-criteria-for-supported-status-for-free-threaded-python/84319/123>`__.
-
-.. _whatsnew314-pep734:
-
-PEP 734: Multiple interpreters in the stdlib
---------------------------------------------
-
-The CPython runtime supports running multiple copies of Python in the
-same process simultaneously and has done so for over 20 years.
-Each of these separate copies is called an "interpreter".
-However, the feature had been available only through the C-API.
-
-That limitation is removed in the 3.14 release,
-with the new :mod:`concurrent.interpreters` module.
-
-There are at least two notable reasons why using multiple interpreters
-is worth considering:
-
-* they support a new (to Python), human-friendly concurrency model
-* true multi-core parallelism
-
-For some use cases, concurrency in software enables efficiency and
-can simplify software, at a high level.  At the same time, implementing
-and maintaining all but the simplest concurrency is often a struggle
-for the human brain.  That especially applies to plain threads
-(for example, :mod:`threading`), where all memory is shared between all threads.
-
-With multiple isolated interpreters, you can take advantage of a class
-of concurrency models, like CSP or the actor model, that have found
-success in other programming languages, like Smalltalk, Erlang,
-Haskell, and Go.  Think of multiple interpreters like threads
-but with opt-in sharing.
-
-Regarding multi-core parallelism: as of the 3.12 release, interpreters
-are now sufficiently isolated from one another to be used in parallel.
-(See :pep:`684`.)  This unlocks a variety of CPU-intensive use cases
-for Python that were limited by the :term:`GIL`.
-
-Using multiple interpreters is similar in many ways to
-:mod:`multiprocessing`, in that they both provide isolated logical
-"processes" that can run in parallel, with no sharing by default.
-However, when using multiple interpreters, an application will use
-fewer system resources and will operate more efficiently (since it
-stays within the same process).  Think of multiple interpreters as
-having the isolation of processes with the efficiency of threads.
-
-.. XXX Add an example or two.
-.. XXX Link to the not-yet-added HOWTO doc.
-
-While the feature has been around for decades, multiple interpreters
-have not been used widely, due to low awareness and the lack of a stdlib
-module.  Consequently, they currently have several notable limitations,
-which will improve significantly now that the feature is finally
-going mainstream.
-
-Current limitations:
-
-* starting each interpreter has not been optimized yet
-* each interpreter uses more memory than necessary
-  (we will be working next on extensive internal sharing between
-  interpreters)
-* there aren't many options *yet* for truly sharing objects or other
-  data between interpreters (other than :type:`memoryview`)
-* many extension modules on PyPI are not compatible with multiple
-  interpreters yet (stdlib extension modules *are* compatible)
-* the approach to writing applications that use multiple isolated
-  interpreters is mostly unfamiliar to Python users, for now
-
-The impact of these limitations will depend on future CPython
-improvements, how interpreters are used, and what the community solves
-through PyPI packages.  Depending on the use case, the limitations may
-not have much impact, so try it out!
-
-Furthermore, future CPython releases will reduce or eliminate overhead
-and provide utilities that are less appropriate on PyPI.  In the
-meantime, most of the limitations can also be addressed through
-extension modules, meaning PyPI packages can fill any gap for 3.14, and
-even back to 3.12 where interpreters were finally properly isolated and
-stopped sharing the :term:`GIL`.  Likewise, we expect to slowly see
-libraries on PyPI for high-level abstractions on top of interpreters.
-
-Regarding extension modules, work is in progress to update some PyPI
-projects, as well as tools like Cython, pybind11, nanobind, and PyO3.
-The steps for isolating an extension module are found at
-:ref:`isolating-extensions-howto`.  Isolating a module has a lot of
-overlap with what is required to support
-:ref:`free-threading <whatsnew314-free-threaded-cpython>`,
-so the ongoing work in the community in that area will help accelerate
-support for multiple interpreters.
-
-Also added in 3.14: :ref:`concurrent.futures.InterpreterPoolExecutor
-<whatsnew314-concurrent-futures-interp-pool>`.
-
-.. seealso::
-   :pep:`734`.
-
-
-.. _whatsnew314-pep750:
-
-PEP 750: Template strings
--------------------------
-
-Template string literals (t-strings) are a generalization of f-strings,
-using a ``t`` in place of the ``f`` prefix. Instead of evaluating
-to :class:`str`, t-strings evaluate to a new :class:`!string.templatelib.Template` type:
-
-.. code-block:: python
-
-   from string.templatelib import Template
-
-   name = "World"
-   template: Template = t"Hello {name}"
-
-The template can then be combined with functions that operate on the template's
-structure to produce a :class:`str` or a string-like result.
-For example, sanitizing input:
-
-.. code-block:: python
-
-   evil = "<script>alert('evil')</script>"
-   template = t"<p>{evil}</p>"
-   assert html(template) == "<p>&lt;script&gt;alert('evil')&lt;/script&gt;</p>"
-
-As another example, generating HTML attributes from data:
-
-.. code-block:: python
-
-   attributes = {"src": "shrubbery.jpg", "alt": "looks nice"}
-   template = t"<img {attributes}>"
-   assert html(template) == '<img src="shrubbery.jpg" alt="looks nice" />'
-
-Compared to using an f-string, the ``html`` function has access to template attributes
-containing the original information: static strings, interpolations, and values
-from the original scope. Unlike existing templating approaches, t-strings build
-from the well-known f-string syntax and rules. Template systems thus benefit
-from Python tooling as they are much closer to the Python language, syntax,
-scoping, and more.
-
-Writing template handlers is straightforward:
-
-.. code-block:: python
-
-   from string.templatelib import Template, Interpolation
-
-   def lower_upper(template: Template) -> str:
-       """Render static parts lowercased and interpolations uppercased."""
-       parts: list[str] = []
-       for item in template:
-           if isinstance(item, Interpolation):
-               parts.append(str(item.value).upper())
-           else:
-               parts.append(item.lower())
-       return "".join(parts)
-
-   name = "world"
-   assert lower_upper(t"HELLO {name}") == "hello WORLD"
-
-With this in place, developers can write template systems to sanitize SQL, make
-safe shell operations, improve logging, tackle modern ideas in web development
-(HTML, CSS, and so on), and implement lightweight, custom business DSLs.
-
-(Contributed by Jim Baker, Guido van Rossum, Paul Everitt, Koudai Aono,
-Lysandros Nikolaou, Dave Peck, Adam Turner, Jelle Zijlstra, Bénédikt Tran,
-and Pablo Galindo Salgado in :gh:`132661`.)
-
-.. seealso::
-   :pep:`750`.
-
-
-.. _whatsnew314-pep768:
-
-PEP 768: Safe external debugger interface for CPython
------------------------------------------------------
-
-:pep:`768` introduces a zero-overhead debugging interface that allows debuggers and profilers
-to safely attach to running Python processes. This is a significant enhancement to Python's
-debugging capabilities allowing debuggers to forego unsafe alternatives. See
-:ref:`below <whatsnew314-remote-pdb>` for how this feature is leveraged to
-implement the new :mod:`pdb` module's remote attaching capabilities.
-
-The new interface provides safe execution points for attaching debugger code without modifying
-the interpreter's normal execution path or adding runtime overhead. This enables tools to
-inspect and interact with Python applications in real-time without stopping or restarting
-them — a crucial capability for high-availability systems and production environments.
-
-For convenience, CPython implements this interface through the :mod:`sys` module with a
-:func:`sys.remote_exec` function::
-
-    sys.remote_exec(pid, script_path)
-
-This function allows sending Python code to be executed in a target process at the next safe
-execution point. However, tool authors can also implement the protocol directly as described
-in the PEP, which details the underlying mechanisms used to safely attach to running processes.
-
-Here's a simple example that inspects object types in a running Python process:
-
-  .. code-block:: python
-
-     import os
-     import sys
-     import tempfile
-
-     # Create a temporary script
-     with tempfile.NamedTemporaryFile(mode='w', suffix='.py', delete=False) as f:
-         script_path = f.name
-         f.write(f"import my_debugger; my_debugger.connect({os.getpid()})")
-     try:
-         # Execute in process with PID 1234
-         print("Behold! An offering:")
-         sys.remote_exec(1234, script_path)
-     finally:
-         os.unlink(script_path)
-
-The debugging interface has been carefully designed with security in mind and includes several
-mechanisms to control access:
-
-* A :envvar:`PYTHON_DISABLE_REMOTE_DEBUG` environment variable.
-* A :option:`-X disable-remote-debug` command-line option.
-* A :option:`--without-remote-debug` configure flag to completely disable the feature at build time.
-
-A key implementation detail is that the interface piggybacks on the interpreter's existing evaluation
-loop and safe points, ensuring zero overhead during normal execution while providing a reliable way
-for external processes to coordinate debugging operations.
-
-(Contributed by Pablo Galindo Salgado, Matt Wozniski, and Ivona Stojanovic in :gh:`131591`.)
-
-.. seealso::
-   :pep:`768`.
-
-
-.. _whatsnew314-pep784:
-
-PEP 784: Adding Zstandard to the standard library
--------------------------------------------------
-
-The new ``compression`` package contains modules :mod:`!compression.lzma`,
-:mod:`!compression.bz2`, :mod:`!compression.gzip` and :mod:`!compression.zlib`
-which re-export the :mod:`lzma`, :mod:`bz2`, :mod:`gzip` and :mod:`zlib`
-modules respectively. The new import names under ``compression`` are the
-canonical names for importing these compression modules going forward. However,
-the existing modules names have not been deprecated. Any deprecation or removal
-of the existing compression modules will occur no sooner than five years after
-the release of 3.14.
-
-The new :mod:`!compression.zstd` module provides compression and decompression
-APIs for the Zstandard format via bindings to `Meta's zstd library
-<https://facebook.github.io/zstd/>`__. Zstandard is a widely adopted, highly
-efficient, and fast compression format. In addition to the APIs introduced in
-:mod:`!compression.zstd`, support for reading and writing Zstandard compressed
-archives has been added to the :mod:`tarfile`, :mod:`zipfile`, and
-:mod:`shutil` modules.
-
-Here's an example of using the new module to compress some data:
-
-.. code-block:: python
-
-    from compression import zstd
-    import math
-
-    data = str(math.pi).encode() * 20
-
-    compressed = zstd.compress(data)
-
-    ratio = len(compressed) / len(data)
-    print(f"Achieved compression ratio of {ratio}")
-
-As can be seen, the API is similar to the APIs of the :mod:`!lzma` and
-:mod:`!bz2` modules.
-
-(Contributed by Emma Harper Smith, Adam Turner, Gregory P. Smith, Tomas Roun,
-Victor Stinner, and Rogdham in :gh:`132983`.)
-
-.. seealso::
-   :pep:`784`.
-
-
-.. _whatsnew314-remote-pdb:
-
-Remote attaching to a running Python process with PDB
------------------------------------------------------
-
-The :mod:`pdb` module now supports remote attaching to a running Python process
-using a new ``-p PID`` command-line option:
-
-.. code-block:: sh
-
-   python -m pdb -p 1234
-
-This will connect to the Python process with the given PID and allow you to
-debug it interactively. Notice that due to how the Python interpreter works
-attaching to a remote process that is blocked in a system call or waiting for
-I/O will only work once the next bytecode instruction is executed or when the
-process receives a signal.
-
-This feature uses :pep:`768` and the :func:`sys.remote_exec` function
-to attach to the remote process and send the PDB commands to it.
-
-
-(Contributed by Matt Wozniski and Pablo Galindo in :gh:`131591`.)
-
-.. seealso::
-   :pep:`768`.
-
-
-.. _whatsnew314-pep758:
-
-PEP 758 – Allow except and except* expressions without parentheses
-------------------------------------------------------------------
-
-The :keyword:`except` and :keyword:`except* <except_star>` expressions now allow
-parentheses to be omitted when there are multiple exception types and the ``as`` clause is not used.
-For example the following expressions are now valid:
-
-.. code-block:: python
-
-   try:
-       connect_to_server()
-   except TimeoutError, ConnectionRefusedError:
-       print("Network issue encountered.")
-
-    # The same applies to except* (for exception groups):
-
-   try:
-       connect_to_server()
-   except* TimeoutError, ConnectionRefusedError:
-       print("Network issue encountered.")
-
-Check :pep:`758` for more details.
-
-(Contributed by Pablo Galindo and Brett Cannon in :gh:`131831`.)
-
-.. seealso::
-   :pep:`758`.
-
-
-.. _whatsnew314-pep649:
-
-PEP 649 and 749: deferred evaluation of annotations
----------------------------------------------------
+:pep:`649` & :pep:`749`: Deferred evaluation of annotations
+------------------------------------------------------------
 
 The :term:`annotations <annotation>` on functions, classes, and modules are no
 longer evaluated eagerly. Instead, annotations are stored in special-purpose
 :term:`annotate functions <annotate function>` and evaluated only when
 necessary (except if ``from __future__ import annotations`` is used).
-This is specified in :pep:`649` and :pep:`749`.
 
-This change is designed to make annotations in Python more performant and more
-usable in most circumstances. The runtime cost for defining annotations is
+This change is designed to improve performance and usability of annotations
+in Python in most circumstances. The runtime cost for defining annotations is
 minimized, but it remains possible to introspect annotations at runtime.
 It is no longer necessary to enclose annotations in strings if they
 contain forward references.
@@ -505,70 +182,344 @@ This example shows how these formats behave:
    >>> get_annotations(func, format=Format.STRING)
    {'arg': 'Undefined'}
 
-Implications for annotated code
-^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+The :ref:`porting <whatsnew314-porting-annotations>` section contains guidance
+on changes that may be needed due to these changes, though in the majority of
+cases, code will continue working as-is.
 
-If you define annotations in your code (for example, for use with a static type
-checker), then this change probably does not affect you: you can keep
-writing annotations the same way you did with previous versions of Python.
-
-You will likely be able to remove quoted strings in annotations, which are frequently
-used for forward references. Similarly, if you use ``from __future__ import annotations``
-to avoid having to write strings in annotations, you may well be able to
-remove that import once you support only Python 3.14 and newer.
-However, if you rely on third-party libraries that read annotations,
-those libraries may need changes to support unquoted annotations before they
-work as expected.
-
-Implications for readers of ``__annotations__``
-^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-
-If your code reads the ``__annotations__`` attribute on objects, you may want
-to make changes in order to support code that relies on deferred evaluation of
-annotations. For example, you may want to use :func:`annotationlib.get_annotations`
-with the :attr:`~annotationlib.Format.FORWARDREF` format, as the :mod:`dataclasses`
-module now does.
-
-The external :pypi:`typing_extensions` package provides partial backports of some of the
-functionality of the :mod:`annotationlib` module, such as the :class:`~annotationlib.Format`
-enum and the :func:`~annotationlib.get_annotations` function. These can be used to
-write cross-version code that takes advantage of the new behavior in Python 3.14.
-
-Related changes
-^^^^^^^^^^^^^^^
-
-The changes in Python 3.14 are designed to rework how ``__annotations__``
-works at runtime while minimizing breakage to code that contains
-annotations in source code and to code that reads ``__annotations__``. However,
-if you rely on undocumented details of the annotation behavior or on private
-functions in the standard library, there are many ways in which your code may
-not work in Python 3.14. To safeguard your code against future changes,
-use only the documented functionality of the :mod:`annotationlib` module.
-
-In particular, do not read annotations directly from the namespace dictionary
-attribute of type objects. Use :func:`annotationlib.get_annotate_from_class_namespace`
-during class construction and :func:`annotationlib.get_annotations` afterwards.
-
-In previous releases, it was sometimes possible to access class annotations from
-an instance of an annotated class. This behavior was undocumented and accidental,
-and will no longer work in Python 3.14.
-
-``from __future__ import annotations``
-^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-
-In Python 3.7, :pep:`563` introduced the ``from __future__ import annotations``
-directive, which turns all annotations into strings. This directive is now
-considered deprecated and it is expected to be removed in a future version of Python.
-However, this removal will not happen until after Python 3.13, the last version of
-Python without deferred evaluation of annotations, reaches its end of life in 2029.
-In Python 3.14, the behavior of code using ``from __future__ import annotations``
-is unchanged.
-
-(Contributed by Jelle Zijlstra in :gh:`119180`; :pep:`649` was written by Larry Hastings.)
+(Contributed by Jelle Zijlstra in :pep:`749` and :gh:`119180`;
+:pep:`649` was written by Larry Hastings.)
 
 .. seealso::
-   :pep:`649` and :pep:`749`.
 
+   :pep:`649`
+      Deferred Evaluation Of Annotations Using Descriptors
+   :pep:`749`
+      Implementing PEP 649
+
+
+.. _whatsnew314-multiple-interpreters:
+
+:pep:`734`: Multiple interpreters in the standard library
+---------------------------------------------------------
+
+The CPython runtime supports running multiple copies of Python in the
+same process simultaneously and has done so for over 20 years.
+Each of these separate copies is called an 'interpreter'.
+However, the feature had been available only through
+the :ref:`C-API <sub-interpreter-support>`.
+
+That limitation is removed in Python 3.14,
+with the new :mod:`concurrent.interpreters` module.
+
+There are at least two notable reasons why using multiple interpreters
+has significant benefits:
+
+* they support a new (to Python), human-friendly concurrency model
+* true multi-core parallelism
+
+For some use cases, concurrency in software improves efficiency and
+can simplify design, at a high level.
+At the same time, implementing and maintaining all but the simplest concurrency
+is often a struggle for the human brain.
+That especially applies to plain threads (for example, :mod:`threading`),
+where all memory is shared between all threads.
+
+With multiple isolated interpreters, you can take advantage of a class
+of concurrency models, like Communicating Sequential Processes (CSP)
+or the actor model, that have found
+success in other programming languages, like Smalltalk, Erlang,
+Haskell, and Go. Think of multiple interpreters as threads
+but with opt-in sharing.
+
+Regarding multi-core parallelism: as of Python 3.12, interpreters
+are now sufficiently isolated from one another to be used in parallel
+(see :pep:`684`). This unlocks a variety of CPU-intensive use cases
+for Python that were limited by the :term:`GIL`.
+
+Using multiple interpreters is similar in many ways to
+:mod:`multiprocessing`, in that they both provide isolated logical
+"processes" that can run in parallel, with no sharing by default.
+However, when using multiple interpreters, an application will use
+fewer system resources and will operate more efficiently (since it
+stays within the same process). Think of multiple interpreters as
+having the isolation of processes with the efficiency of threads.
+
+.. XXX Add an example or two.
+.. XXX Link to the not-yet-added HOWTO doc.
+
+While the feature has been around for decades, multiple interpreters
+have not been used widely, due to low awareness and the lack of a
+standard library module. Consequently, they currently have several
+notable limitations, which are expected to improve significantly now
+that the feature is going mainstream.
+
+Current limitations:
+
+* starting each interpreter has not been optimized yet
+* each interpreter uses more memory than necessary
+  (work continues on extensive internal sharing between interpreters)
+* there aren't many options *yet* for truly sharing objects or other
+  data between interpreters (other than :type:`memoryview`)
+* many third-party extension modules on PyPI are not yet compatible
+  with multiple interpreters
+  (all standard library extension modules *are* compatible)
+* the approach to writing applications that use multiple isolated
+  interpreters is mostly unfamiliar to Python users, for now
+
+The impact of these limitations will depend on future CPython
+improvements, how interpreters are used, and what the community solves
+through PyPI packages. Depending on the use case, the limitations may
+not have much impact, so try it out!
+
+Furthermore, future CPython releases will reduce or eliminate overhead
+and provide utilities that are less appropriate on PyPI. In the
+meantime, most of the limitations can also be addressed through
+extension modules, meaning PyPI packages can fill any gap for 3.14, and
+even back to 3.12 where interpreters were finally properly isolated and
+stopped sharing the :term:`GIL`. Likewise, libraries on PyPI are expected
+to emerge for high-level abstractions on top of interpreters.
+
+Regarding extension modules, work is in progress to update some PyPI
+projects, as well as tools like Cython, pybind11, nanobind, and PyO3.
+The steps for isolating an extension module are found at
+:ref:`isolating-extensions-howto`.
+Isolating a module has a lot of overlap with what is required to support
+:ref:`free-threading <whatsnew314-free-threaded-cpython>`, so the ongoing
+work in the community in that area will help accelerate support
+for multiple interpreters.
+
+Also added in 3.14: :ref:`concurrent.futures.InterpreterPoolExecutor
+<whatsnew314-concurrent-futures-interp-pool>`.
+
+(Contributed by Eric Snow in :gh:`134939`.)
+
+.. seealso:: :pep:`734`
+
+
+.. _whatsnew314-template-string-literals:
+
+:pep:`750`: Template string literals
+------------------------------------
+
+Template strings are a new mechanism for custom string processing.
+They share the familiar syntax of f-strings but, unlike f-strings,
+return an object representing the static and interpolated parts of
+the string, instead of a simple :class:`str`.
+
+To write a t-string, use a ``'t'`` prefix instead of an ``'f'``:
+
+.. doctest::
+
+   >>> variety = 'Stilton'
+   >>> template = t'Try some {variety} cheese!'
+   >>> type(template)
+   <class 'string.templatelib.Template'>
+
+:class:`~string.templatelib.Template` objects provide access to the static
+and interpolated (in curly braces) parts of a string *before* they are combined.
+Iterate over :class:`!Template` instances to access their parts in order:
+
+.. testsetup::
+
+   variety = 'Stilton'
+   template = t'Try some {variety} cheese!'
+
+.. doctest::
+
+   >>> list(template)
+   ['Try some ', Interpolation('Stilton', 'variety', None, ''), ' cheese!']
+
+It's easy to write (or call) code to process :class:`!Template` instances.
+For example, here's a function that renders static parts lowercase and
+:class:`~string.templatelib.Interpolation` instances uppercase:
+
+.. code-block:: python
+
+   from string.templatelib import Interpolation
+
+   def lower_upper(template):
+       """Render static parts lowercase and interpolations uppercase."""
+       parts = []
+       for part in template:
+           if isinstance(part, Interpolation):
+               parts.append(str(part.value).upper())
+           else:
+               parts.append(part.lower())
+       return ''.join(parts)
+
+   name = 'Wenslydale'
+   template = t'Mister {name}'
+   assert lower_upper(template) == 'mister WENSLYDALE'
+
+Because :class:`!Template` instances distinguish between static strings and
+interpolations at runtime, they can be useful for sanitising user input.
+Writing a :func:`!html` function that escapes user input in HTML is an exercise
+left to the reader!
+Template processing code can provide improved flexibility.
+For instance, a more advanced :func:`!html` function could accept
+a :class:`!dict` of HTML attributes directly in the template:
+
+.. code-block:: python
+
+   attributes = {'src': 'limburger.jpg', 'alt': 'lovely cheese'}
+   template = t'<img {attributes}>'
+   assert html(template) == '<img src="limburger.jpg" alt="lovely cheese" />'
+
+Of course, template processing code does not need to return a string-like result.
+An even *more* advanced :func:`!html` could return a custom type representing
+a DOM-like structure.
+
+With t-strings in place, developers can write systems that sanitise SQL,
+make safe shell operations, improve logging, tackle modern ideas in web
+development (HTML, CSS, and so on), and implement lightweight custom business DSLs.
+
+(Contributed by Jim Baker, Guido van Rossum, Paul Everitt, Koudai Aono,
+Lysandros Nikolaou, Dave Peck, Adam Turner, Jelle Zijlstra, Bénédikt Tran,
+and Pablo Galindo Salgado in :gh:`132661`.)
+
+.. seealso:: :pep:`750`.
+
+
+.. _whatsnew314-remote-debugging:
+
+:pep:`768`: Safe external debugger interface
+--------------------------------------------
+
+Python 3.14 introduces a zero-overhead debugging interface that allows
+debuggers and profilers to safely attach to running Python processes
+without stopping or restarting them.
+This is a significant enhancement to Python's debugging capabilities,
+meaning that unsafe alternatives are no longer required.
+
+The new interface provides safe execution points for attaching debugger code
+without modifying the interpreter's normal execution path
+or adding any overhead at runtime.
+Due to this, tools can now inspect and interact with Python applications
+in real-time, which is a crucial capability for high-availability systems
+and production environments.
+
+For convenience, this interface is implemented in the :func:`sys.remote_exec`
+function. For example:
+
+.. code-block:: python
+
+   import sys
+   from tempfile import NamedTemporaryFile
+
+   with NamedTemporaryFile(mode='w', suffix='.py', delete=False) as f:
+       script_path = f.name
+       f.write(f'import my_debugger; my_debugger.connect({os.getpid()})')
+
+   # Execute in process with PID 1234
+   print('Behold! An offering:')
+   sys.remote_exec(1234, script_path)
+
+
+This function allows sending Python code to be executed in a target process
+at the next safe execution point.
+However, tool authors can also implement the protocol directly as described
+in the PEP, which details the underlying mechanisms used to safely attach to
+running processes.
+
+The debugging interface has been carefully designed with security in mind
+and includes several mechanisms to control access:
+
+* A :envvar:`PYTHON_DISABLE_REMOTE_DEBUG` environment variable.
+* A :option:`-X disable-remote-debug` command-line option.
+* A :option:`--without-remote-debug` configure flag to completely disable
+  the feature at build time.
+
+(Contributed by Pablo Galindo Salgado, Matt Wozniski, and Ivona Stojanovic
+in :gh:`131591`.)
+
+.. seealso:: :pep:`768`.
+
+
+.. _whatsnew314-tail-call-interpreter:
+
+A new type of interpreter
+-------------------------
+
+A new type of interpreter has been added to CPython.
+It uses tail calls between small C functions that implement individual
+Python opcodes, rather than one large C ``case`` statement.
+For certain newer compilers, this interpreter provides
+significantly better performance. Preliminary benchmarks suggest a geometric
+mean of 3-5% faster on the standard ``pyperformance`` benchmark suite,
+depending on platform and architecture.
+The baseline is Python 3.14 built with Clang 19, without this new interpreter.
+
+This interpreter currently only works with Clang 19 and newer
+on x86-64 and AArch64 architectures.
+However, a future release of GCC is expected to support this as well.
+
+This feature is opt-in for now. Enabling profile-guided optimization is highly
+recommendeded when using the new interpreter as it is the only configuration
+that has been tested and validated for improved performance.
+For further information, see :option:`--with-tail-call-interp`.
+
+.. note::
+
+   This is not to be confused with `tail call optimization`__ of Python
+   functions, which is currently not implemented in CPython.
+
+   This new interpreter type is an internal implementation detail of the CPython
+   interpreter.  It doesn't change the visible behavior of Python programs at
+   all.  It can improve their performance, but doesn't change anything else.
+
+   __ https://en.wikipedia.org/wiki/Tail_call
+
+(Contributed by Ken Jin in :gh:`128563`, with ideas on how to implement this
+in CPython by Mark Shannon, Garrett Gu, Haoran Xu, and Josh Haberman.)
+
+
+.. _whatsnew314-free-threaded-cpython:
+
+Free-threaded mode improvements
+-------------------------------
+
+CPython's free-threaded mode (:pep:`703`), initially added in 3.13,
+has been significantly improved in Python 3.14.
+The implementation described in PEP 703 has been finished, including C API
+changes, and temporary workarounds in the interpreter were replaced with
+more permanent solutions.
+The specializing adaptive interpreter (:pep:`659`) is now enabled
+in free-threaded mode, which along with many other optimizations
+greatly improves its performance.
+The performance penalty on single-threaded code in free-threaded mode
+is now roughly 5-10%, depending on the platform and C compiler used.
+
+From Python 3.14, when compiling extension modules for the free-threaded build of
+CPython on Windows, the preprocessor variable ``Py_GIL_DISABLED`` now needs to
+be specified by the build backend, as it will no longer be determined
+automatically by the C compiler. For a running interpreter, the setting that
+was used at compile time can be found using :func:`sysconfig.get_config_var`.
+
+The new :option:`-X context_aware_warnings <-X>` flag controls if
+:ref:`concurrent safe warnings control <whatsnew314-concurrent-warnings-control>`
+is enabled. The flag defaults to true for the free-threaded build
+and false for the GIL-enabled build.
+
+A new :data:`~sys.flags.thread_inherit_context` flag has been added,
+which if enabled means that threads created with :class:`threading.Thread`
+start with a copy of the :class:`~contextvars.Context()` of the caller of
+:meth:`~threading.Thread.start`.  Most significantly, this makes the warning
+filtering context established by :class:`~warnings.catch_warnings` be
+"inherited" by threads (or asyncio tasks) started within that context.  It also
+affects other modules that use context variables, such as the :mod:`decimal`
+context manager.
+This flag defaults to true for the free-threaded build and false for
+the GIL-enabled build.
+
+(Contributed by Sam Gross, Matt Page, Neil Schemenauer, Thomas Wouters,
+Donghee Na, Kirill Podoprigora, Ken Jin, Itamar Oren, Brett Simmers,
+Dino Viehland, Nathan Goldbaum, Ralf Gommers, Lysandros Nikolaou, Kumar Aditya,
+Edgar Margffoy, and many others.
+Some of these contributors are employed by Meta, which has continued to provide
+significant engineering resources to support this project.)
+
+
+.. _whatsnew314-improved-error-messages:
 
 Improved error messages
 -----------------------
@@ -589,47 +540,12 @@ Improved error messages
          ^^^^^^
      SyntaxError: invalid syntax. Did you mean 'while'?
 
-     >>> asynch def fetch_data():
-     ...     pass
-     Traceback (most recent call last):
-       File "<stdin>", line 1
-         asynch def fetch_data():
-         ^^^^^^
-     SyntaxError: invalid syntax. Did you mean 'async'?
-
-     >>> async def foo():
-     ...     awaid fetch_data()
-     Traceback (most recent call last):
-       File "<stdin>", line 2
-         awaid fetch_data()
-         ^^^^^
-     SyntaxError: invalid syntax. Did you mean 'await'?
-
-     >>> raisee ValueError("Error")
-     Traceback (most recent call last):
-       File "<stdin>", line 1
-         raisee ValueError("Error")
-         ^^^^^^
-     SyntaxError: invalid syntax. Did you mean 'raise'?
-
   While the feature focuses on the most common cases, some variations of
   misspellings may still result in regular syntax errors.
   (Contributed by Pablo Galindo in :gh:`132449`.)
 
-* When an unpacking assignment fails due to an incorrect number of variables, the
-  error message prints the received number of values in more cases than before.
-  (Contributed by Tushar Sadhwani in :gh:`122239`.)
-
-  .. code-block:: pycon
-
-     >>> x, y, z = 1, 2, 3, 4
-     Traceback (most recent call last):
-       File "<stdin>", line 1, in <module>
-         x, y, z = 1, 2, 3, 4
-         ^^^^^^^
-     ValueError: too many values to unpack (expected 3, got 4)
-
-* :keyword:`elif` statements that follow an :keyword:`else` block now have a specific error message.
+* :keyword:`elif` statements that follow an :keyword:`else` block now have
+  a specific error message.
   (Contributed by Steele Farnsworth in :gh:`129902`.)
 
   .. code-block:: pycon
@@ -645,11 +561,9 @@ Improved error messages
         ^^^^
       SyntaxError: 'elif' block follows an 'else' block
 
-* If a statement (:keyword:`pass`, :keyword:`del`, :keyword:`return`,
-  :keyword:`yield`, :keyword:`raise`, :keyword:`break`, :keyword:`continue`,
-  :keyword:`assert`, :keyword:`import`, :keyword:`from`) is passed to the
-  :ref:`if_expr` after :keyword:`else`, or one of :keyword:`pass`,
-  :keyword:`break`, or :keyword:`continue` is passed before :keyword:`if`, then the
+* If a statement is passed to the :ref:`if_expr` after :keyword:`else`,
+  or one of :keyword:`pass`, :keyword:`break`, or :keyword:`continue`
+  is passed before :keyword:`if`, then the
   error message highlights where the :token:`~python-grammar:expression` is
   required. (Contributed by Sergey Miryanov in :gh:`129515`.)
 
@@ -669,10 +583,9 @@ Improved error messages
              ^^^^^^^^
      SyntaxError: expected expression before 'if', but statement is given
 
-
 * When incorrectly closed strings are detected, the error message suggests
-  that the string may be intended to be part of the string. (Contributed by
-  Pablo Galindo in :gh:`88535`.)
+  that the string may be intended to be part of the string.
+  (Contributed by Pablo Galindo in :gh:`88535`.)
 
   .. code-block:: pycon
 
@@ -681,8 +594,8 @@ Improved error messages
     SyntaxError: invalid syntax. Is this intended to be part of the string?
 
 * When strings have incompatible prefixes, the error now shows
-  which prefixes are incompatible. (Contributed by
-  Nikita Sobolev in :gh:`133197`.)
+  which prefixes are incompatible.
+  (Contributed by Nikita Sobolev in :gh:`133197`.)
 
   .. code-block:: pycon
 
@@ -699,20 +612,11 @@ Improved error messages
   - Except handlers: ``except ... as ...``
   - Pattern-match cases: ``case ... as ...``
 
-  (Contributed by Nikita Sobolev in :gh:`123539`,
-  :gh:`123562`, and :gh:`123440`.)
-
-  .. code-block:: pycon
-
-   >>> import ast as arr[0]
-     File "<python-input-1>", line 1
-       import ast as arr[0]
-                     ^^^^^^
-   SyntaxError: cannot use subscript as import target
+  (Contributed by Nikita Sobolev in :gh:`123539`, :gh:`123562`, and :gh:`123440`.)
 
 * Improved error message when trying to add an instance of an unhashable type to
-  a :class:`dict` or :class:`set`. (Contributed by CF Bolz-Tereick and Victor Stinner
-  in :gh:`132828`.)
+  a :class:`dict` or :class:`set`.
+  (Contributed by CF Bolz-Tereick and Victor Stinner in :gh:`132828`.)
 
   .. code-block:: pycon
 
@@ -739,65 +643,70 @@ Improved error messages
   (Contributed by Bénédikt Tran in :gh:`128398`.)
 
 
-.. _whatsnew314-pep741:
+.. _whatsnew314-zstandard:
 
-PEP 741: Python configuration C API
------------------------------------
+:pep:`784`: Zstandard support in the standard library
+-----------------------------------------------------
 
-Add a :ref:`PyInitConfig C API <pyinitconfig_api>` to configure the Python
-initialization without relying on C structures and the ability to make
-ABI-compatible changes in the future.
+The new :mod:`!compression` package contains modules :mod:`!compression.lzma`,
+:mod:`!compression.bz2`, :mod:`!compression.gzip` and :mod:`!compression.zlib`
+which re-export the :mod:`lzma`, :mod:`bz2`, :mod:`gzip` and :mod:`zlib`
+modules respectively. The new import names under :mod:`!compression` are the
+preferred names for importing these compression modules from Python 3.14. However,
+the existing modules names have not been deprecated. Any deprecation or removal
+of the existing compression modules will occur no sooner than five years after
+the release of 3.14.
 
-Complete the :pep:`587` :ref:`PyConfig C API <pyconfig_api>` by adding
-:c:func:`PyInitConfig_AddModule` which can be used to add a built-in extension
-module; a feature previously referred to as the “inittab”.
+The new :mod:`!compression.zstd` module provides compression and decompression
+APIs for the Zstandard format via bindings to `Meta's zstd library
+<https://facebook.github.io/zstd/>`__. Zstandard is a widely adopted, highly
+efficient, and fast compression format. In addition to the APIs introduced in
+:mod:`!compression.zstd`, support for reading and writing Zstandard compressed
+archives has been added to the :mod:`tarfile`, :mod:`zipfile`, and
+:mod:`shutil` modules.
 
-Add :c:func:`PyConfig_Get` and :c:func:`PyConfig_Set` functions to get and set
-the current runtime configuration.
+Here's an example of using the new module to compress some data:
 
-PEP 587 “Python Initialization Configuration” unified all the ways to configure
-the Python initialization. This PEP unifies also the configuration of the
-Python preinitialization and the Python initialization in a single API.
-Moreover, this PEP only provides a single choice to embed Python, instead of
-having two “Python” and “Isolated” choices (PEP 587), to simplify the API
-further.
+.. code-block:: python
 
-The lower level PEP 587 PyConfig API remains available for use cases with an
-intentionally higher level of coupling to CPython implementation details (such
-as emulating the full functionality of CPython’s CLI, including its
-configuration mechanisms).
+    from compression import zstd
+    import math
 
-(Contributed by Victor Stinner in :gh:`107954`.)
+    data = str(math.pi).encode() * 20
+    compressed = zstd.compress(data)
+    ratio = len(compressed) / len(data)
+    print(f"Achieved compression ratio of {ratio}")
 
-.. seealso::
-   :pep:`741`.
+As can be seen, the API is similar to the APIs of the :mod:`!lzma` and
+:mod:`!bz2` modules.
+
+(Contributed by Emma Harper Smith, Adam Turner, Gregory P. Smith, Tomas Roun,
+Victor Stinner, and Rogdham in :gh:`132983`.)
+
+.. seealso:: :pep:`784`.
+
 
 .. _whatsnew314-asyncio-introspection:
 
 Asyncio introspection capabilities
 ----------------------------------
 
-Added a new command-line interface to inspect running Python processes using
-asynchronous tasks, available via:
+Added a new command-line interface to inspect running Python processes
+using asynchronous tasks, available via ``python -m asyncio ps PID``
+or ``python -m asyncio pstree PID``.
 
-.. code-block:: bash
+The ``ps`` subcommand inspects the given process ID (PID) and displays
+information about currently running asyncio tasks.
+It outputs a task table: a flat listing of all tasks, their names,
+their coroutine stacks, and which tasks are awaiting them.
 
-  python -m asyncio ps PID
 
-This tool inspects the given process ID (PID) and displays information about
-currently running asyncio tasks.  It outputs a task table: a flat
-listing of all tasks, their names, their coroutine stacks, and which tasks are
-awaiting them.
-
-.. code-block:: bash
-
-  python -m asyncio pstree PID
-
-This tool fetches the same information, but renders a visual async call tree,
-showing coroutine relationships in a hierarchical format.  This command is
-particularly useful for debugging long-running or stuck asynchronous programs.
-It can help developers quickly identify where a program is blocked, what tasks
-are pending, and how coroutines are chained together.
+The ``pstree`` subcommand fetches the same information, but instead renders a
+visual async call tree, showing coroutine relationships in a hierarchical format.
+This command is particularly useful for debugging long-running or stuck
+asynchronous programs.
+It can help developers quickly identify where a program is blocked,
+what tasks are pending, and how coroutines are chained together.
 
 For example given this code:
 
@@ -805,23 +714,25 @@ For example given this code:
 
   import asyncio
 
-  async def play(track):
+  async def play_track(track):
       await asyncio.sleep(5)
-      print(f"🎵 Finished: {track}")
+      print(f'🎵 Finished: {track}')
 
-  async def album(name, tracks):
+  async def play_album(name, tracks):
       async with asyncio.TaskGroup() as tg:
           for track in tracks:
-              tg.create_task(play(track), name=track)
+              tg.create_task(play_track(track), name=track)
 
   async def main():
       async with asyncio.TaskGroup() as tg:
           tg.create_task(
-            album("Sundowning", ["TNDNBTG", "Levitate"]), name="Sundowning")
+            play_album('Sundowning', ['TNDNBTG', 'Levitate']),
+            name='Sundowning')
           tg.create_task(
-            album("TMBTE", ["DYWTYLM", "Aqua Regia"]), name="TMBTE")
+            play_album('TMBTE', ['DYWTYLM', 'Aqua Regia']),
+            name='TMBTE')
 
-  if __name__ == "__main__":
+  if __name__ == '__main__':
       asyncio.run(main())
 
 Executing the new tool on the running process will yield a table like this:
@@ -886,168 +797,21 @@ prevent tree construction:
 (Contributed by Pablo Galindo, Łukasz Langa, Yury Selivanov, and Marta
 Gomez Macias in :gh:`91048`.)
 
-.. _whatsnew314-tail-call:
 
-A new type of interpreter
--------------------------
-
-A new type of interpreter has been added to CPython.
-It uses tail calls between small C functions that implement individual
-Python opcodes, rather than one large C case statement.
-For certain newer compilers, this interpreter provides
-significantly better performance. Preliminary numbers on our machines suggest
-anywhere up to 30% faster Python code, and a geometric mean of 3-5%
-faster on ``pyperformance`` depending on platform and architecture. The
-baseline is Python 3.14 built with Clang 19 without this new interpreter.
-
-This interpreter currently only works with Clang 19 and newer
-on x86-64 and AArch64 architectures. However, we expect
-that a future release of GCC will support this as well.
-
-This feature is opt-in for now. We highly recommend enabling profile-guided
-optimization with the new interpreter as it is the only configuration we have
-tested and can validate its improved performance.
-For further information on how to build Python, see
-:option:`--with-tail-call-interp`.
-
-.. note::
-
-   This is not to be confused with `tail call optimization`__ of Python
-   functions, which is currently not implemented in CPython.
-
-   This new interpreter type is an internal implementation detail of the CPython
-   interpreter.  It doesn't change the visible behavior of Python programs at
-   all.  It can improve their performance, but doesn't change anything else.
-
-   __ https://en.wikipedia.org/wiki/Tail_call
-
-.. attention::
-
-    This section previously reported a 9-15% geometric mean speedup. This number has since been
-    cautiously revised down to 3-5%. While we expect performance results to be better
-    than what we report, our estimates are more conservative due to a
-    `compiler bug <https://github.com/llvm/llvm-project/issues/106846>`_ found in
-    Clang/LLVM 19, which causes the normal interpreter to be slower. We were unaware of this bug,
-    resulting in inaccurate results. We sincerely apologize for
-    communicating results that were only accurate for LLVM v19.1.x and v20.1.0. In the meantime,
-    the bug has been fixed in LLVM v20.1.1 and for the upcoming v21.1, but it will remain
-    unfixed for LLVM v19.1.x and v20.1.0. Thus
-    any benchmarks with those versions of LLVM may produce inaccurate numbers.
-    (Thanks to Nelson Elhage for bringing this to light.)
-
-(Contributed by Ken Jin in :gh:`128563`, with ideas on how to implement this
-in CPython by Mark Shannon, Garrett Gu, Haoran Xu, and Josh Haberman.)
-
-.. _whatsnew314-free-threaded-cpython:
-
-Free-threaded mode
-------------------
-
-Free-threaded mode (:pep:`703`), initially added in 3.13, has been significantly improved.
-The implementation described in PEP 703 was finished, including C API changes,
-and temporary workarounds in the interpreter were replaced with more permanent solutions.
-The specializing adaptive interpreter (:pep:`659`) is now enabled in free-threaded mode,
-which along with many other optimizations greatly improves its performance.
-The performance penalty on single-threaded code in free-threaded mode is now roughly 5-10%,
-depending on platform and C compiler used.
-
-This work was done by many contributors: Sam Gross, Matt Page, Neil Schemenauer,
-Thomas Wouters, Donghee Na, Kirill Podoprigora, Ken Jin, Itamar Oren,
-Brett Simmers, Dino Viehland, Nathan Goldbaum, Ralf Gommers, Lysandros Nikolaou,
-Kumar Aditya, Edgar Margffoy, and many others.
-
-Some of these contributors are employed by Meta, which has continued to provide
-significant engineering resources to support this project.
-
-From 3.14, when compiling extension modules for the free-threaded build of
-CPython on Windows, the preprocessor variable ``Py_GIL_DISABLED`` now needs to
-be specified by the build backend, as it will no longer be determined
-automatically by the C compiler. For a running interpreter, the setting that
-was used at compile time can be found using :func:`sysconfig.get_config_var`.
-
-A new flag has been added, :data:`~sys.flags.context_aware_warnings`.  This
-flag defaults to true for the free-threaded build and false for the GIL-enabled
-build. If the flag is true then the :class:`warnings.catch_warnings` context
-manager uses a context variable for warning filters.  This makes the context
-manager behave predictably when used with multiple threads or asynchronous
-tasks.
-
-A new flag has been added, :data:`~sys.flags.thread_inherit_context`. This flag
-defaults to true for the free-threaded build and false for the GIL-enabled
-build. If the flag is true then threads created with :class:`threading.Thread`
-start with a copy of the :class:`~contextvars.Context()` of the caller of
-:meth:`~threading.Thread.start`.  Most significantly, this makes the warning
-filtering context established by :class:`~warnings.catch_warnings` be
-"inherited" by threads (or asyncio tasks) started within that context.  It also
-affects other modules that use context variables, such as the :mod:`decimal`
-context manager.
-
-
-.. _whatsnew314-jit-compiler:
-
-Binary releases for the experimental just-in-time compiler
-----------------------------------------------------------
-
-The official macOS and Windows release binaries now include an *experimental*
-just-in-time (JIT) compiler. Although it is **not** recommended for production
-use, it can be tested by setting :envvar:`PYTHON_JIT=1 <PYTHON_JIT>` as an
-environment variable. Downstream source builds and redistributors can use the
-:option:`--enable-experimental-jit=yes-off` configuration option for similar
-behavior.
-
-The JIT is at an early stage and still in active development. As such, the
-typical performance impact of enabling it can range from 10% slower to 20%
-faster, depending on workload. To aid in testing and evaluation, a set of
-introspection functions has been provided in the :data:`sys._jit` namespace.
-:func:`sys._jit.is_available` can be used to determine if the current executable
-supports JIT compilation, while :func:`sys._jit.is_enabled` can be used to tell
-if JIT compilation has been enabled for the current process.
-
-Currently, the most significant missing functionality is that native debuggers
-and profilers like ``gdb`` and ``perf`` are unable to unwind through JIT frames
-(Python debuggers and profilers, like :mod:`pdb` or :mod:`profile`, continue to
-work without modification). Free-threaded builds do not support JIT compilation.
-
-Please report any bugs or major performance regressions that you encounter!
-
-.. seealso:: :pep:`744`
+.. _whatsnew314-concurrent-warnings-control:
 
 Concurrent safe warnings control
 --------------------------------
 
 The :class:`warnings.catch_warnings` context manager will now optionally
-use a context variable for warning filters.  This is enabled by setting
+use a context variable for warning filters. This is enabled by setting
 the :data:`~sys.flags.context_aware_warnings` flag, either with the ``-X``
-command-line option or an environment variable.  This gives predictable
+command-line option or an environment variable. This gives predictable
 warnings control when using :class:`~warnings.catch_warnings` combined with
 multiple threads or asynchronous tasks. The flag defaults to true for the
 free-threaded build and false for the GIL-enabled build.
 
 (Contributed by Neil Schemenauer and Kumar Aditya in :gh:`130010`.)
-
-
-Platform support
-================
-
-* :pep:`776`: Emscripten is now an officially supported platform at
-  :pep:`tier 3 <11#tier-3>`. As a part of this effort, more than 25 bugs in
-  `Emscripten libc`__ were fixed. Emscripten now includes support
-  for :mod:`ctypes`, :mod:`termios`, and :mod:`fcntl`, as well as
-  experimental support for the new :ref:`default interactive shell
-  <tut-interactive>`.
-
-  (Contributed by R. Hood Chatham in :gh:`127146`, :gh:`127683`, and :gh:`136931`.)
-
-  __ https://emscripten.org/docs/porting/emscripten-runtime-environment.html
-
-* iOS and macOS apps can now be configured to redirect ``stdout`` and
-  ``stderr`` content to the system log.
-  (Contributed by Russell Keith-Magee in :gh:`127592`.)
-
-* The iOS testbed is now able to stream test output while the test is running.
-  The testbed can also be used to run the test suite of projects other than
-  CPython itself.
-  (Contributed by Russell Keith-Magee in :gh:`127592`.)
 
 
 Other language changes
@@ -1144,6 +908,26 @@ Command line and environment
   .. _Jython: https://www.jython.org/
 
 
+.. _whatsnew314-bracketless-except:
+
+PEP 758: Allow ``except`` and ``except*`` expressions without brackets
+----------------------------------------------------------------------
+
+The :keyword:`except` and :keyword:`except* <except_star>` expressions
+now allow brackets to be omitted when there are multiple exception types
+and the ``as`` clause is not used.
+For example:
+
+.. code-block:: python
+
+   try:
+       connect_to_server()
+   except TimeoutError, ConnectionRefusedError:
+       print('The network has ceased to be!')
+
+(Contributed by Pablo Galindo and Brett Cannon in :pep:`758` and :gh:`131831`.)
+
+
 .. _whatsnew314-finally-syntaxwarning:
 
 PEP 765: Control flow in :keyword:`finally` blocks
@@ -1153,6 +937,19 @@ The compiler now emits a :exc:`SyntaxWarning` when a :keyword:`return`,
 :keyword:`break`, or :keyword:`continue` statement have the effect of
 leaving a :keyword:`finally` block.
 This change is specified in :pep:`765`.
+
+In situations where this change is inconvenient (such as those where the
+warnings are redundant due to code linting), the :ref:`warning filter
+<warning-filter>` can be used to turn off all syntax warnings by adding
+``ignore::SyntaxWarning`` as a filter. This can be specified in combination
+with a filter that converts other warnings to errors (for example, passing
+``-Werror -Wignore::SyntaxWarning`` as CLI options, or setting
+``PYTHONWARNINGS=error,ignore::SyntaxWarning``).
+
+Note that applying such a filter at runtime using the :mod:`warnings` module
+will only suppress the warning in code that is compiled *after* the filter is
+adjusted. Code that is compiled prior to the filter adjustment (for example,
+when a module is imported) will still emit the syntax warning.
 
 (Contributed by Irit Katriel in :gh:`130080`.)
 
@@ -1214,24 +1011,24 @@ New modules
 
 * :mod:`annotationlib`:
   For introspecting :term:`annotations <annotation>`.
-  See :ref:`PEP 749 <whatsnew314-pep649>` for more details.
+  See :ref:`PEP 749 <whatsnew314-deferred-annotations>` for more details.
   (Contributed by Jelle Zijlstra in :gh:`119180`.)
 
 * :mod:`compression` (including :mod:`compression.zstd`):
   A package for compression-related modules,
   including a new module to support the Zstandard compression format.
-  See :ref:`PEP 784 <whatsnew314-pep784>` for more details.
+  See :ref:`PEP 784 <whatsnew314-zstandard>` for more details.
   (Contributed by Emma Harper Smith, Adam Turner, Gregory P. Smith, Tomas Roun,
   Victor Stinner, and Rogdham in :gh:`132983`.)
 
 * :mod:`concurrent.interpreters`:
   Support for multiple interpreters in the standard library.
-  See :ref:`PEP 734 <whatsnew314-pep734>` for more details.
+  See :ref:`PEP 734 <whatsnew314-multiple-interpreters>` for more details.
   (Contributed by Eric Snow in :gh:`134939`.)
 
 * :mod:`string.templatelib`:
   Support for template string literals (t-strings).
-  See :ref:`PEP 750 <whatsnew314-pep750>` for more details.
+  See :ref:`PEP 750 <whatsnew314-template-string-literals>` for more details.
   (Contributed by Jim Baker, Guido van Rossum, Paul Everitt, Koudai Aono,
   Lysandros Nikolaou, Dave Peck, Adam Turner, Jelle Zijlstra, Bénédikt Tran,
   and Pablo Galindo Salgado in :gh:`132661`.)
@@ -1252,8 +1049,6 @@ argparse
   :class:`argparse.ArgumentParser`, enabling suggestions for argument choices
   and subparser names if mistyped by the user.
   (Contributed by Savannah Ostrowski in :gh:`124456`.)
-
-.. _whatsnew314-color-argparse:
 
 * Enable color for help text, which can be disabled with the optional *color*
   parameter to :class:`argparse.ArgumentParser`.
@@ -1339,13 +1134,13 @@ concurrent.futures
   asynchronously.
 
   This is separate from the new :mod:`~concurrent.interpreters` module
-  introduced by :ref:`PEP 734 <whatsnew314-pep734>`.
+  introduced by :ref:`PEP 734 <whatsnew314-multiple-interpreters>`.
   (Contributed by Eric Snow in :gh:`124548`.)
 
 .. _whatsnew314-concurrent-futures-start-method:
 
 * On Unix platforms other than macOS, :ref:`'forkserver'
-  <multiprocessing-start-method-forkserver>` is now the the default :ref:`start
+  <multiprocessing-start-method-forkserver>` is now the default :ref:`start
   method <multiprocessing-start-methods>` for
   :class:`~concurrent.futures.ProcessPoolExecutor`
   (replacing :ref:`'fork' <multiprocessing-start-method-fork>`).
@@ -1687,8 +1482,6 @@ json
   See the :ref:`JSON command-line interface <json-commandline>` documentation.
   (Contributed by Trey Hunner in :gh:`122873`.)
 
-.. _whatsnew314-color-json:
-
 * By default, the output of the :ref:`JSON command-line interface
   <json-commandline>` is highlighted in color.
   This can be controlled by :ref:`environment variables
@@ -1798,7 +1591,7 @@ multiprocessing
 .. _whatsnew314-multiprocessing-start-method:
 
 * On Unix platforms other than macOS, :ref:`'forkserver'
-  <multiprocessing-start-method-forkserver>` is now the the default :ref:`start
+  <multiprocessing-start-method-forkserver>` is now the default :ref:`start
   method <multiprocessing-start-methods>`
   (replacing :ref:`'fork' <multiprocessing-start-method-fork>`).
   This change does not affect Windows or macOS, where :ref:`'spawn'
@@ -1904,6 +1697,25 @@ pathlib
 
 pdb
 ---
+
+* The :mod:`pdb` module now supports remote attaching to a running Python process
+  using a new :option:`-p PID <pdb --pid>` command-line option:
+
+  .. code-block:: sh
+
+     python -m pdb -p 1234
+
+  This will connect to the Python process with the given PID and allow you to
+  debug it interactively. Notice that due to how the Python interpreter works
+  attaching to a remote process that is blocked in a system call or waiting for
+  I/O will only work once the next bytecode instruction is executed or when the
+  process receives a signal.
+
+  This feature uses :ref:`PEP 768 <whatsnew314-remote-debugging>`
+  and the new :func:`sys.remote_exec` function to attach to the remote process
+  and send the PDB commands to it.
+
+  (Contributed by Matt Wozniski and Pablo Galindo in :gh:`131591`.)
 
 * Hardcoded breakpoints (:func:`breakpoint` and :func:`~pdb.set_trace`) now
   reuse the most recent :class:`~pdb.Pdb` instance that calls
@@ -2064,7 +1876,7 @@ sys
   function was deprecated in Python 3.13 but it didn't raise a runtime warning.
 
 * Add :func:`sys.remote_exec` to implement the new external debugger interface.
-  See :ref:`PEP 768 <whatsnew314-pep768>` for details.
+  See :ref:`PEP 768 <whatsnew314-remote-debugging>` for details.
   (Contributed by Pablo Galindo Salgado, Matt Wozniski, and Ivona Stojanovic
   in :gh:`131591`.)
 
@@ -2453,6 +2265,15 @@ pdb
   (Contributed by Tian Gao in :gh:`124533`.)
 
 
+textwrap
+--------
+
+* Optimize the :func:`~textwrap.dedent` function, improving performance by
+  an average of 2.4x, with larger improvements for bigger inputs,
+  and fix a bug with incomplete normalization of blank lines with whitespace
+  characters other than space and tab.
+
+
 uuid
 ----
 
@@ -2651,6 +2472,7 @@ asyncio
          runner.run(operation_one())
          blocking_code()
          runner.run(operation_two())
+
 
 email
 -----
@@ -2896,6 +2718,8 @@ New deprecations
 
 .. include:: ../deprecations/pending-removal-in-3.17.rst
 
+.. include:: ../deprecations/pending-removal-in-3.18.rst
+
 .. include:: ../deprecations/pending-removal-in-3.19.rst
 
 .. include:: ../deprecations/pending-removal-in-3.20.rst
@@ -2914,7 +2738,7 @@ CPython bytecode changes
   opcodes to construct new :class:`~string.templatelib.Interpolation`
   and :class:`~string.templatelib.Template` instances, respectively.
   (Contributed by Lysandros Nikolaou and others in :gh:`132661`;
-  see also :ref:`PEP 750: Template strings <whatsnew314-pep750>`).
+  see also :ref:`PEP 750: Template strings <whatsnew314-template-string-literals>`).
 
 * Remove the :opcode:`!BUILD_CONST_KEY_MAP` opcode.
   Use :opcode:`BUILD_MAP` instead.
@@ -2943,12 +2767,13 @@ CPython bytecode changes
 * Add the :opcode:`POP_ITER` opcode to support 'virtual' iterators.
   (Contributed by Mark Shannon in :gh:`132554`.)
 
+
 Pseudo-instructions
 -------------------
 
 * Add the :opcode:`!ANNOTATIONS_PLACEHOLDER` pseudo instruction
   to support partially executed module-level annotations with
-  :ref:`deferred evaluation of annotations <whatsnew314-pep649>`.
+  :ref:`deferred evaluation of annotations <whatsnew314-deferred-annotations>`.
   (Contributed by Jelle Zijlstra in :gh:`130907`.)
 
 * Add the :opcode:`!BINARY_OP_EXTEND` pseudo instruction,
@@ -2983,6 +2808,39 @@ Pseudo-instructions
 C API changes
 =============
 
+.. _whatsnew314-capi-config:
+
+Python configuration C API
+--------------------------
+
+Add a :ref:`PyInitConfig C API <pyinitconfig_api>` to configure the Python
+initialization without relying on C structures and the ability to make
+ABI-compatible changes in the future.
+
+Complete the :pep:`587` :ref:`PyConfig C API <pyconfig_api>` by adding
+:c:func:`PyInitConfig_AddModule` which can be used to add a built-in extension
+module; a feature previously referred to as the "inittab".
+
+Add :c:func:`PyConfig_Get` and :c:func:`PyConfig_Set` functions to get and set
+the current runtime configuration.
+
+:pep:`587` 'Python Initialization Configuration' unified all the ways
+to configure Python's initialization. This PEP also unifies the configuration
+of Python's preinitialization and initialization in a single API.
+Moreover, this PEP only provides a single choice to embed Python,
+instead of having two 'Python' and 'Isolated' choices (PEP 587),
+to further simplify the API.
+
+The lower level PEP 587 PyConfig API remains available for use cases
+with an intentionally higher level of coupling to CPython implementation details
+(such as emulating the full functionality of CPython's CLI, including its
+configuration mechanisms).
+
+(Contributed by Victor Stinner in :gh:`107954`.)
+
+.. seealso:: :pep:`741` and :pep:`587`
+
+
 New features in the C API
 -------------------------
 
@@ -2998,7 +2856,7 @@ New features in the C API
 
 * Add functions to manipulate the configuration of the current
   runtime Python interpreter
-  (:ref:`PEP 741: Python configuration C API <whatsnew314-pep741>`):
+  (:ref:`PEP 741: Python configuration C API <whatsnew314-capi-config>`):
 
   * :c:func:`PyConfig_Get`
   * :c:func:`PyConfig_GetInt`
@@ -3008,7 +2866,7 @@ New features in the C API
   (Contributed by Victor Stinner in :gh:`107954`.)
 
 * Add functions to configure Python initialization
-  (:ref:`PEP 741: Python configuration C API <whatsnew314-pep741>`):
+  (:ref:`PEP 741: Python configuration C API <whatsnew314-capi-config>`):
 
   * :c:func:`Py_InitializeFromInitConfig`
   * :c:func:`PyInitConfig_AddModule`
@@ -3198,7 +3056,7 @@ Deprecated C APIs
 -----------------
 
 * The :c:macro:`!Py_HUGE_VAL` macro is now :term:`soft deprecated`.
-  Use :c:macro:`!Py_INFINITY` instead.
+  Use :c:macro:`!INFINITY` instead.
   (Contributed by Sergey B Kirpichev in :gh:`120026`.)
 
 * The :c:macro:`!Py_IS_NAN`, :c:macro:`!Py_IS_INFINITY`,
@@ -3235,8 +3093,24 @@ Deprecated C APIs
 .. include:: ../deprecations/c-api-pending-removal-in-future.rst
 
 
-Build Changes
+.. _whatsnew314-build-changes:
+
+Build changes
 =============
+
+* :pep:`776`: Emscripten is now an officially supported platform at
+  :pep:`tier 3 <11#tier-3>`. As a part of this effort, more than 25 bugs in
+  `Emscripten libc`__ were fixed. Emscripten now includes support
+  for :mod:`ctypes`, :mod:`termios`, and :mod:`fcntl`, as well as
+  experimental support for the new :ref:`default interactive shell
+  <tut-interactive>`.
+  (Contributed by R. Hood Chatham in :gh:`127146`, :gh:`127683`, and :gh:`136931`.)
+
+  __ https://emscripten.org/docs/porting/emscripten-runtime-environment.html
+
+* Official Android binary releases are now provided on python.org__.
+
+  __ https://www.python.org/downloads/android/
 
 * GNU Autoconf 2.72 is now required to generate :file:`configure`.
   (Contributed by Erlend Aasland in :gh:`115765`.)
@@ -3259,11 +3133,21 @@ Build Changes
 
 * The new :file:`configure` option :option:`--with-tail-call-interp`
   may be used to enable the experimental tail call interpreter.
-  See :ref:`whatsnew314-tail-call` for further details.
+  See :ref:`whatsnew314-tail-call-interpreter` for further details.
 
 * To disable the new remote debugging support, use the
   :option:`--without-remote-debug` :file:`configure` option.
   This may be useful for security reasons.
+
+* iOS and macOS apps can now be configured to redirect ``stdout`` and
+  ``stderr`` content to the system log.
+  (Contributed by Russell Keith-Magee in :gh:`127592`.)
+
+* The iOS testbed is now able to stream test output while the test is running.
+  The testbed can also be used to run the test suite of projects other than
+  CPython itself.
+  (Contributed by Russell Keith-Magee in :gh:`127592`.)
+
 
 .. _whatsnew314-build_details:
 
@@ -3285,6 +3169,7 @@ which can be found by running ``sysconfig.get_path('stdlib')``.
    :pep:`739` -- ``build-details.json`` 1.0 -- a static description file
    for Python build details
 
+
 .. _whatsnew314-no-more-pgp:
 
 Discontinuation of PGP signatures
@@ -3299,6 +3184,66 @@ Releases have been signed using Sigstore_ since Python 3.11.
 This change in release process was specified in :pep:`761`.
 
 .. _Sigstore: https://www.sigstore.dev/
+
+
+.. _whatsnew314-free-threaded-now-supported:
+
+Free-threaded Python is officially supported
+--------------------------------------------
+
+The free-threaded build of Python is now supported and no longer experimental.
+This is the start of `phase II <https://discuss.python.org/t/37075>`__ where
+free-threaded Python is officially supported but still optional.
+
+The free-threading team are confident that the project is on the right path,
+and appreciate the continued dedication from everyone working to make
+free-threading ready for broader adoption across the Python community.
+
+With these recommendations and the acceptance of this PEP, the Python developer
+community should broadly advertise that free-threading is a supported
+Python build option now and into the future, and that it will not be removed
+without a proper deprecation schedule.
+
+Any decision to transition to `phase III <https://discuss.python.org/t/37075>`__,
+with free-threading as the default or sole build of Python is still undecided,
+and dependent on many factors both within CPython itself and the community.
+This decision is for the future.
+
+.. seealso::
+
+   :pep:`779`
+
+   `PEP 779's acceptance <https://discuss.python.org/t/84319/123>`__
+
+
+.. _whatsnew314-jit-compiler:
+
+Binary releases for the experimental just-in-time compiler
+----------------------------------------------------------
+
+The official macOS and Windows release binaries now include an *experimental*
+just-in-time (JIT) compiler. Although it is **not** recommended for production
+use, it can be tested by setting :envvar:`PYTHON_JIT=1 <PYTHON_JIT>` as an
+environment variable. Downstream source builds and redistributors can use the
+:option:`--enable-experimental-jit=yes-off` configuration option for similar
+behavior.
+
+The JIT is at an early stage and still in active development. As such, the
+typical performance impact of enabling it can range from 10% slower to 20%
+faster, depending on workload. To aid in testing and evaluation, a set of
+introspection functions has been provided in the :data:`sys._jit` namespace.
+:func:`sys._jit.is_available` can be used to determine if the current executable
+supports JIT compilation, while :func:`sys._jit.is_enabled` can be used to tell
+if JIT compilation has been enabled for the current process.
+
+Currently, the most significant missing functionality is that native debuggers
+and profilers like ``gdb`` and ``perf`` are unable to unwind through JIT frames
+(Python debuggers and profilers, like :mod:`pdb` or :mod:`profile`, continue to
+work without modification). Free-threaded builds do not support JIT compilation.
+
+Please report any bugs or major performance regressions that you encounter!
+
+.. seealso:: :pep:`744`
 
 
 Porting to Python 3.14
@@ -3347,7 +3292,7 @@ Changes in the Python API
   (Contributed by Jelle Zijlstra in :gh:`105499`.)
 
 * The runtime behavior of annotations has changed in various ways; see
-  :ref:`above <whatsnew314-pep649>` for details. While most code that interacts
+  :ref:`above <whatsnew314-deferred-annotations>` for details. While most code that interacts
   with annotations should continue to work, some undocumented details may behave
   differently.
 
@@ -3360,6 +3305,92 @@ Changes in the Python API
   when given as the entire pattern, which may cause behavioural changes.
 
 * On FreeBSD, :data:`sys.platform` no longer contains the major version number.
+
+
+.. _whatsnew314-porting-annotations:
+
+Changes in annotations (:pep:`649` and :pep:`749`)
+--------------------------------------------------
+
+This section contains guidance on changes that may be needed to annotations
+or Python code that interacts with or introspects annotations,
+due to the changes related to :ref:`deferred evaluation of annotations
+<whatsnew314-deferred-annotations>`.
+
+In the majority of cases, working code from older versions of Python
+will not require any changes.
+
+
+Implications for annotated code
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+If you define annotations in your code (for example, for use with a static type
+checker), then this change probably does not affect you: you can keep
+writing annotations the same way you did with previous versions of Python.
+
+You will likely be able to remove quoted strings in annotations, which are frequently
+used for forward references. Similarly, if you use ``from __future__ import annotations``
+to avoid having to write strings in annotations, you may well be able to
+remove that import once you support only Python 3.14 and newer.
+However, if you rely on third-party libraries that read annotations,
+those libraries may need changes to support unquoted annotations before they
+work as expected.
+
+
+Implications for readers of ``__annotations__``
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+If your code reads the :attr:`~object.__annotations__` attribute on objects,
+you may want to make changes in order to support code that relies on
+deferred evaluation of annotations.
+For example, you may want to use :func:`annotationlib.get_annotations` with
+the :attr:`~annotationlib.Format.FORWARDREF` format,
+as the :mod:`dataclasses` module now does.
+
+The external :pypi:`typing_extensions` package provides partial backports
+of some of the functionality of the :mod:`annotationlib` module,
+such as the :class:`~annotationlib.Format` enum and
+the :func:`~annotationlib.get_annotations` function.
+These can be used to write cross-version code that takes advantage of
+the new behavior in Python 3.14.
+
+
+Related changes
+^^^^^^^^^^^^^^^
+
+The changes in Python 3.14 are designed to rework how :attr:`!__annotations__`
+works at runtime while minimizing breakage to code that contains
+annotations in source code and to code that reads :attr:`!__annotations__`.
+However, if you rely on undocumented details of the annotation behavior
+or on private functions in the standard library, there are many ways in which
+your code may not work in Python 3.14.
+To safeguard your code against future changes, only use the documented
+functionality of the :mod:`annotationlib` module.
+
+In particular, do not read annotations directly from the namespace dictionary
+attribute of type objects.
+Use :func:`annotationlib.get_annotate_from_class_namespace` during class
+construction and :func:`annotationlib.get_annotations` afterwards.
+
+In previous releases, it was sometimes possible to access class annotations
+from an instance of an annotated class. This behavior was undocumented
+and accidental, and will no longer work in Python 3.14.
+
+
+``from __future__ import annotations``
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+In Python 3.7, :pep:`563` introduced the ``from __future__ import annotations``
+:ref:`future statement <future>`, which turns all annotations into strings.
+
+However, this statement is now deprecated and it is expected to be removed
+in a future version of Python.
+This removal will not happen until after Python 3.13 reaches its end of life
+in 2029, being the last version of Python without support for deferred
+evaluation of annotations.
+
+In Python 3.14, the behavior of code using ``from __future__ import annotations``
+is unchanged.
 
 
 Changes in the C API

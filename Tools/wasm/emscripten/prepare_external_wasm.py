@@ -19,6 +19,7 @@ function hexStringToUTF8Array(hex) {{
 }});
 """
 
+
 def prepare_wasm(input_file, output_file, function_name):
     # Read the compiled WASM as binary and convert to hex
     wasm_bytes = Path(input_file).read_bytes()
@@ -31,9 +32,7 @@ def prepare_wasm(input_file, output_file, function_name):
     )
     Path(output_file).write_text(js_content)
 
-    print(
-        f"Successfully compiled {input_file} and generated {output_file}"
-    )
+    print(f"Successfully compiled {input_file} and generated {output_file}")
     return 0
 
 

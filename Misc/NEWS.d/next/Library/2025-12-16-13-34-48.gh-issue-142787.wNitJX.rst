@@ -1,0 +1,2 @@
+Fix assertion failure in :mod:`sqlite3` blob subscript when slicing with
+indices that result in an empty slice.

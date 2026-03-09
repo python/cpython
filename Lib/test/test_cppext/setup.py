@@ -59,7 +59,7 @@ def main():
         else:
             cppflags.append(f'-std={std}')
 
-        if limited or (std != 'c++03'):
+        if limited or (std != 'c++03') and not internal:
             # See CPPFLAGS_PEDANTIC docstring
             cppflags.extend(CPPFLAGS_PEDANTIC)
 
@@ -101,7 +101,7 @@ def main():
             print(f"Add PCbuild directory: {pcbuild}")
 
     # Display information to help debugging
-    for env_name in ('CC', 'CFLAGS', 'CPPFLAGS'):
+    for env_name in ('CC', 'CXX', 'CFLAGS', 'CPPFLAGS', 'CXXFLAGS'):
         if env_name in os.environ:
             print(f"{env_name} env var: {os.environ[env_name]!r}")
         else:

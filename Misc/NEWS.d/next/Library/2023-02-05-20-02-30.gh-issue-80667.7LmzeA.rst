@@ -1,0 +1,1 @@
+Add support for Tangut Ideographs names in :mod:`unicodedata`.

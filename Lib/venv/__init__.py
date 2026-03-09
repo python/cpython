@@ -306,7 +306,6 @@ class EnvBuilder:
             binpath = context.bin_path
             path = context.env_exe
             copier = self.symlink_or_copy
-            dirname = context.python_dir
             copier(context.executable, path)
             if not os.path.islink(path):
                 os.chmod(path, 0o755)
@@ -582,7 +581,7 @@ class EnvBuilder:
                                    'may be binary: %s', srcfile, e)
                     continue
                 if new_data == data:
-                    shutil.copy2(srcfile, dstfile)
+                    shutil.copy(srcfile, dstfile)
                 else:
                     with open(dstfile, 'wb') as f:
                         f.write(new_data)
