@@ -110,7 +110,7 @@ jobs:
     - name: 'Download PR base HTML IDs'
       uses: actions/download-artifact@v8
       with:
-        name: html-ids-head
+        name: html-ids-head.json.gz
         path: /tmp
     - name: 'Check for removed HTML IDs'
       run: >-
