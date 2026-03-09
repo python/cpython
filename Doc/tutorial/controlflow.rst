@@ -703,7 +703,7 @@ Here's an example that fails due to this restriction::
    >>> function(0, a=0)
    Traceback (most recent call last):
      File "<stdin>", line 1, in <module>
-   TypeError: function() got multiple values for parameter 'a'
+   TypeError: function() got multiple values for argument 'a'
 
 When a final var-keyword parameter ``**name`` is present, it defaults to an empty
 dictionary (see :ref:`typesmapping`) to receive all keyword arguments except for
@@ -885,7 +885,7 @@ Calling ``foo()`` gets error because ``name`` parameter can receive both the 1st
     >>> foo(1, name=2)
     Traceback (most recent call last):
       File "<stdin>", line 1, in <module>
-    TypeError: foo() got multiple values for parameter 'name'
+    TypeError: foo() got multiple values for argument 'name'
     >>>
 
 But using ``/`` (positional-only parameters) and calling ``foo()`` works because
