@@ -2,7 +2,7 @@
 
 .. _dictobjects:
 
-Dictionary Objects
+Dictionary objects
 ------------------
 
 .. index:: pair: object; dictionary
@@ -43,9 +43,23 @@ Dictionary Objects
    prevent modification of the dictionary for non-dynamic class types.
 
 
+.. c:var:: PyTypeObject PyDictProxy_Type
+
+   The type object for mapping proxy objects created by
+   :c:func:`PyDictProxy_New` and for the read-only ``__dict__`` attribute
+   of many built-in types. A :c:type:`PyDictProxy_Type` instance provides a
+   dynamic, read-only view of an underlying dictionary: changes to the
+   underlying dictionary are reflected in the proxy, but the proxy itself
+   does not support mutation operations. This corresponds to
+   :class:`types.MappingProxyType` in Python.
+
+
 .. c:function:: void PyDict_Clear(PyObject *p)
 
    Empty an existing dictionary of all key-value pairs.
+
+   Do nothing if the argument is not a :class:`dict` or a :class:`!dict`
+   subclass.
 
 
 .. c:function:: int PyDict_Contains(PyObject *p, PyObject *key)
@@ -67,7 +81,6 @@ Dictionary Objects
 .. c:function:: PyObject* PyDict_Copy(PyObject *p)
 
    Return a new dictionary that contains the same key-value pairs as *p*.
-
 
 .. c:function:: int PyDict_SetItem(PyObject *p, PyObject *key, PyObject *val)
 
@@ -433,7 +446,7 @@ Dictionary Objects
    .. versionadded:: 3.12
 
 
-Dictionary View Objects
+Dictionary view objects
 ^^^^^^^^^^^^^^^^^^^^^^^
 
 .. c:function:: int PyDictViewSet_Check(PyObject *op)
@@ -477,3 +490,143 @@ Dictionary View Objects
 
    Return true if *op* is an instance of a dictionary items view. This function
    always succeeds.
+
+
+Frozen dictionary objects
+^^^^^^^^^^^^^^^^^^^^^^^^^
+
+.. versionadded:: next
+
+
+.. c:var:: PyTypeObject PyFrozenDict_Type
+
+   This instance of :c:type:`PyTypeObject` represents the Python frozen
+   dictionary type.
+   This is the same object as :class:`frozendict` in the Python layer.
+
+
+.. c:function:: int PyAnyDict_Check(PyObject *p)
+
+   Return true if *p* is a :class:`dict` object, a :class:`frozendict` object,
+   or an instance of a subtype of the :class:`!dict` or :class:`!frozendict`
+   type.
+   This function always succeeds.
+
+
+.. c:function:: int PyAnyDict_CheckExact(PyObject *p)
+
+   Return true if *p* is a :class:`dict` object or a :class:`frozendict` object,
+   but not an instance of a subtype of the :class:`!dict` or
+   :class:`!frozendict` type.
+   This function always succeeds.
+
+
+.. c:function:: int PyFrozenDict_Check(PyObject *p)
+
+   Return true if *p* is a :class:`frozendict` object or an instance of a
+   subtype of the :class:`!frozendict` type.
+   This function always succeeds.
+
+
+.. c:function:: int PyFrozenDict_CheckExact(PyObject *p)
+
+   Return true if *p* is a :class:`frozendict` object, but not an instance of a
+   subtype of the :class:`!frozendict` type.
+   This function always succeeds.
+
+
+.. c:function:: PyObject* PyFrozenDict_New(PyObject *iterable)
+
+   Return a new :class:`frozendict` from an iterable, or ``NULL`` on failure
+   with an exception set.
+
+   Create an empty dictionary if *iterable* is ``NULL``.
+
+
+Ordered dictionaries
+^^^^^^^^^^^^^^^^^^^^
+
+Python's C API provides interface for :class:`collections.OrderedDict` from C.
+Since Python 3.7, dictionaries are ordered by default, so there is usually
+little need for these functions; prefer ``PyDict*`` where possible.
+
+
+.. c:var:: PyTypeObject PyODict_Type
+
+   Type object for ordered dictionaries. This is the same object as
+   :class:`collections.OrderedDict` in the Python layer.
+
+
+.. c:function:: int PyODict_Check(PyObject *od)
+
+   Return true if *od* is an ordered dictionary object or an instance of a
+   subtype of the :class:`~collections.OrderedDict` type.  This function
+   always succeeds.
+
+
+.. c:function:: int PyODict_CheckExact(PyObject *od)
+
+   Return true if *od* is an ordered dictionary object, but not an instance of
+   a subtype of the :class:`~collections.OrderedDict` type.
+   This function always succeeds.
+
+
+.. c:var:: PyTypeObject PyODictKeys_Type
+
+   Analogous to :c:type:`PyDictKeys_Type` for ordered dictionaries.
+
+
+.. c:var:: PyTypeObject PyODictValues_Type
+
+   Analogous to :c:type:`PyDictValues_Type` for ordered dictionaries.
+
+
+.. c:var:: PyTypeObject PyODictItems_Type
+
+   Analogous to :c:type:`PyDictItems_Type` for ordered dictionaries.
+
+
+.. c:function:: PyObject *PyODict_New(void)
+
+   Return a new empty ordered dictionary, or ``NULL`` on failure.
+
+   This is analogous to :c:func:`PyDict_New`.
+
+
+.. c:function:: int PyODict_SetItem(PyObject *od, PyObject *key, PyObject *value)
+
+   Insert *value* into the ordered dictionary *od* with a key of *key*.
+   Return ``0`` on success or ``-1`` with an exception set on failure.
+
+   This is analogous to :c:func:`PyDict_SetItem`.
+
+
+.. c:function:: int PyODict_DelItem(PyObject *od, PyObject *key)
+
+   Remove the entry in the ordered dictionary *od* with key *key*.
+   Return ``0`` on success or ``-1`` with an exception set on failure.
+
+   This is analogous to :c:func:`PyDict_DelItem`.
+
+
+These are :term:`soft deprecated` aliases to ``PyDict`` APIs:
+
+
+.. list-table::
+   :widths: auto
+   :header-rows: 1
+
+   * * ``PyODict``
+     * ``PyDict``
+   * * .. c:macro:: PyODict_GetItem(od, key)
+     * :c:func:`PyDict_GetItem`
+   * * .. c:macro:: PyODict_GetItemWithError(od, key)
+     * :c:func:`PyDict_GetItemWithError`
+   * * .. c:macro:: PyODict_GetItemString(od, key)
+     * :c:func:`PyDict_GetItemString`
+   * * .. c:macro:: PyODict_Contains(od, key)
+     * :c:func:`PyDict_Contains`
+   * * .. c:macro:: PyODict_Size(od)
+     * :c:func:`PyDict_Size`
+   * * .. c:macro:: PyODict_SIZE(od)
+     * :c:func:`PyDict_GET_SIZE`

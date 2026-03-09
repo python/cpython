@@ -1,3 +1,0 @@
-:mod:`encodings`: Deprecate passing a non-ascii *encoding* name to
-:func:`encodings.normalize_encoding` and schedule removal of support for
-Python 3.17.

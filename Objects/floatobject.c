@@ -135,13 +135,6 @@ PyFloat_FromDouble(double fval)
     return (PyObject *) op;
 }
 
-_PyStackRef _PyFloat_FromDouble_ConsumeInputs(_PyStackRef left, _PyStackRef right, double value)
-{
-    PyStackRef_CLOSE_SPECIALIZED(left, _PyFloat_ExactDealloc);
-    PyStackRef_CLOSE_SPECIALIZED(right, _PyFloat_ExactDealloc);
-    return PyStackRef_FromPyObjectSteal(PyFloat_FromDouble(value));
-}
-
 static PyObject *
 float_from_string_inner(const char *s, Py_ssize_t len, void *obj)
 {
@@ -442,82 +435,67 @@ float_richcompare(PyObject *v, PyObject *w, int op)
         assert(vsign != 0); /* if vsign were 0, then since wsign is
                              * not 0, we would have taken the
                              * vsign != wsign branch at the start */
-        /* We want to work with non-negative numbers. */
-        if (vsign < 0) {
-            /* "Multiply both sides" by -1; this also swaps the
-             * comparator.
-             */
-            i = -i;
-            op = _Py_SwappedOp[op];
-        }
-        assert(i > 0.0);
         (void) frexp(i, &exponent);
         /* exponent is the # of bits in v before the radix point;
          * we know that nbits (the # of bits in w) > 48 at this point
          */
         if (exponent < nbits) {
-            i = 1.0;
-            j = 2.0;
+            j = i;
+            i = 0.0;
             goto Compare;
         }
         if (exponent > nbits) {
-            i = 2.0;
-            j = 1.0;
+            j = 0.0;
             goto Compare;
         }
         /* v and w have the same number of bits before the radix
-         * point.  Construct two ints that have the same comparison
-         * outcome.
+         * point.  Construct an int from the integer part of v and
+         * update op if necessary, so comparing two ints has the same outcome.
          */
         {
             double fracpart;
             double intpart;
             PyObject *result = NULL;
             PyObject *vv = NULL;
-            PyObject *ww = w;
-
-            if (wsign < 0) {
-                ww = PyNumber_Negative(w);
-                if (ww == NULL)
-                    goto Error;
-            }
-            else
-                Py_INCREF(ww);
 
             fracpart = modf(i, &intpart);
+            if (fracpart != 0.0) {
+                switch (op) {
+                    /* Non-integer float never equals to an int. */
+                    case Py_EQ:
+                        Py_RETURN_FALSE;
+                    case Py_NE:
+                        Py_RETURN_TRUE;
+                    /* For non-integer float, v <= w <=> v < w.
+                     * If v > 0: trunc(v) < v < trunc(v) + 1
+                     *   v < w => trunc(v) < w
+                     *   trunc(v) < w => trunc(v) + 1 <= w => v < w
+                     * If v < 0: trunc(v) - 1 < v < trunc(v)
+                     *   v < w => trunc(v) - 1 < w => trunc(v) <= w
+                     *   trunc(v) <= w => v < w
+                     */
+                    case Py_LT:
+                    case Py_LE:
+                        op = vsign > 0 ? Py_LT : Py_LE;
+                        break;
+                    /* The same as above, but with opposite directions. */
+                    case Py_GT:
+                    case Py_GE:
+                        op = vsign > 0 ? Py_GE : Py_GT;
+                        break;
+                }
+            }
+
             vv = PyLong_FromDouble(intpart);
             if (vv == NULL)
                 goto Error;
 
-            if (fracpart != 0.0) {
-                /* Shift left, and or a 1 bit into vv
-                 * to represent the lost fraction.
-                 */
-                PyObject *temp;
-
-                temp = _PyLong_Lshift(ww, 1);
-                if (temp == NULL)
-                    goto Error;
-                Py_SETREF(ww, temp);
-
-                temp = _PyLong_Lshift(vv, 1);
-                if (temp == NULL)
-                    goto Error;
-                Py_SETREF(vv, temp);
-
-                temp = PyNumber_Or(vv, _PyLong_GetOne());
-                if (temp == NULL)
-                    goto Error;
-                Py_SETREF(vv, temp);
-            }
-
-            r = PyObject_RichCompareBool(vv, ww, op);
+            r = PyObject_RichCompareBool(vv, w, op);
             if (r < 0)
                 goto Error;
             result = PyBool_FromLong(r);
          Error:
             Py_XDECREF(vv);
-            Py_XDECREF(ww);
             return result;
         }
     } /* else if (PyLong_Check(w)) */

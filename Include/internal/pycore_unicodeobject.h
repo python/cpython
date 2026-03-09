@@ -32,6 +32,7 @@ extern PyObject* _PyUnicode_ResizeCompact(
     PyObject *unicode,
     Py_ssize_t length);
 extern PyObject* _PyUnicode_GetEmpty(void);
+PyAPI_FUNC(PyObject*) _PyUnicode_BinarySlice(PyObject *, PyObject *, PyObject *);
 
 
 /* Generic helper macro to convert characters of different types.
@@ -305,14 +306,6 @@ PyAPI_FUNC(PyObject*) _PyUnicode_JoinArray(
     PyObject *separator,
     PyObject *const *items,
     Py_ssize_t seqlen
-    );
-
-/* Test whether a unicode is equal to ASCII identifier.  Return 1 if true,
-   0 otherwise.  The right argument must be ASCII identifier.
-   Any error occurs inside will be cleared before return. */
-extern int _PyUnicode_EqualToASCIIId(
-    PyObject *left,             /* Left string */
-    _Py_Identifier *right       /* Right identifier */
     );
 
 // Test whether a unicode is equal to ASCII string.  Return 1 if true,

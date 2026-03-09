@@ -1,0 +1,1 @@
+Document rest of full public :class:`importlib.metadata.Distribution` API. Also add the (already documented) :class:`~importlib.metadata.PackagePath` to ``__all__``.

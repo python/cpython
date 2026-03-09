@@ -25,6 +25,7 @@ import logging.config
 
 import codecs
 import configparser
+import contextlib
 import copy
 import datetime
 import pathlib
@@ -6369,6 +6370,32 @@ class RotatingFileHandlerTest(BaseFileTest):
         self.assertFalse(rh.shouldRollover(self.next_rec()))
         rh.close()
 
+    @unittest.skipUnless(hasattr(os, "mkfifo"), 'requires os.mkfifo()')
+    def test_should_not_rollover_named_pipe(self):
+        # gh-143237 - test with non-seekable special file (named pipe)
+        filename = os_helper.TESTFN
+        self.addCleanup(os_helper.unlink, filename)
+        try:
+            os.mkfifo(filename)
+        except PermissionError as e:
+            self.skipTest('os.mkfifo(): %s' % e)
+
+        data = 'not read'
+        def other_side():
+            nonlocal data
+            with open(filename, 'rb') as f:
+                data = f.read()
+
+        thread = threading.Thread(target=other_side)
+        with threading_helper.start_threads([thread]):
+            rh = logging.handlers.RotatingFileHandler(
+                    filename, encoding="utf-8", maxBytes=1)
+            with contextlib.closing(rh):
+                m = self.next_rec()
+                self.assertFalse(rh.shouldRollover(m))
+                rh.emit(m)
+        self.assertEqual(data.decode(), m.msg + os.linesep)
+
     def test_should_rollover(self):
         with open(self.fn, 'wb') as f:
             f.write(b'\n')
@@ -7221,8 +7248,8 @@ for when, exp in (('S', 1),
         setattr(TimedRotatingFileHandlerTest, name, test_compute_rollover)
 
 
-@unittest.skipUnless(win32evtlog, 'win32evtlog/win32evtlogutil/pywintypes required for this test.')
 class NTEventLogHandlerTest(BaseTest):
+    @unittest.skipUnless(win32evtlog, 'win32evtlog/win32evtlogutil/pywintypes required for this test.')
     def test_basic(self):
         logtype = 'Application'
         elh = win32evtlog.OpenEventLog(None, logtype)
@@ -7255,6 +7282,17 @@ class NTEventLogHandlerTest(BaseTest):
             break
         msg = 'Record not found in event log, went back %d records' % GO_BACK
         self.assertTrue(found, msg=msg)
+
+    @unittest.skipUnless(sys.platform == "win32", "Windows required for this test")
+    def test_without_pywin32(self):
+        h = logging.handlers.NTEventLogHandler('python_test')
+        self.addCleanup(h.close)
+
+        # Verify that the handler uses _winapi module
+        self.assertIsNotNone(h._winapi, "_winapi module should be available")
+
+        r = logging.makeLogRecord({'msg': 'Hello!'})
+        h.emit(r)
 
 
 class MiscTestCase(unittest.TestCase):

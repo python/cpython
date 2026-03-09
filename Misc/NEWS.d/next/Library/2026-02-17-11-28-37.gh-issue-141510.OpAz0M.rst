@@ -1,0 +1,2 @@
+The :mod:`copy` module now supports the :class:`frozendict` type. Patch by
+Pieter Eendebak based on work by Victor Stinner.

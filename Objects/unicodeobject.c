@@ -547,7 +547,8 @@ unicode_check_encoding_errors(const char *encoding, const char *errors)
     }
 
     /* Disable checks during Python finalization. For example, it allows to
-       call _PyObject_Dump() during finalization for debugging purpose. */
+     * call PyObject_Dump() during finalization for debugging purpose.
+     */
     if (_PyInterpreterState_GetFinalizing(interp) != NULL) {
         return 0;
     }
@@ -5219,7 +5220,7 @@ unicode_decode_utf8_impl(_PyUnicodeWriter *writer,
             }
 
             if (_PyUnicodeWriter_Prepare(writer, end - s, 127) < 0) {
-                return -1;
+                goto onError;
             }
         }
     }
@@ -11193,47 +11194,6 @@ _PyUnicode_EqualToASCIIString(PyObject *unicode, const char *str)
            memcmp(PyUnicode_1BYTE_DATA(unicode), str, len) == 0;
 }
 
-int
-_PyUnicode_EqualToASCIIId(PyObject *left, _Py_Identifier *right)
-{
-    PyObject *right_uni;
-
-    assert(_PyUnicode_CHECK(left));
-    assert(right->string);
-#ifndef NDEBUG
-    for (const char *p = right->string; *p; p++) {
-        assert((unsigned char)*p < 128);
-    }
-#endif
-
-    if (!PyUnicode_IS_ASCII(left))
-        return 0;
-
-    right_uni = _PyUnicode_FromId(right);       /* borrowed */
-    if (right_uni == NULL) {
-        /* memory error or bad data */
-        PyErr_Clear();
-        return _PyUnicode_EqualToASCIIString(left, right->string);
-    }
-
-    if (left == right_uni)
-        return 1;
-
-    assert(PyUnicode_CHECK_INTERNED(right_uni));
-    if (PyUnicode_CHECK_INTERNED(left)) {
-        return 0;
-    }
-
-    Py_hash_t right_hash = PyUnicode_HASH(right_uni);
-    assert(right_hash != -1);
-    Py_hash_t hash = PyUnicode_HASH(left);
-    if (hash != -1 && hash != right_hash) {
-        return 0;
-    }
-
-    return unicode_eq(left, right_uni);
-}
-
 PyObject *
 PyUnicode_RichCompare(PyObject *left, PyObject *right, int op)
 {
@@ -12353,6 +12313,18 @@ _PyUnicode_XStrip(PyObject *self, int striptype, PyObject *sepobj)
 }
 
 PyObject*
+_PyUnicode_BinarySlice(PyObject *container, PyObject *start_o, PyObject *stop_o)
+{
+    assert(PyUnicode_CheckExact(container));
+    Py_ssize_t len = PyUnicode_GET_LENGTH(container);
+    Py_ssize_t istart, istop;
+    if (!_PyEval_UnpackIndices(start_o, stop_o, len, &istart, &istop)) {
+        return NULL;
+    }
+    return PyUnicode_Substring(container, istart, istop);
+}
+
+PyObject*
 PyUnicode_Substring(PyObject *self, Py_ssize_t start, Py_ssize_t end)
 {
     const unsigned char *data;
@@ -13100,6 +13072,45 @@ unicode_swapcase_impl(PyObject *self)
     return case_operation(self, do_swapcase);
 }
 
+static int
+unicode_maketrans_from_dict(PyObject *x, PyObject *newdict)
+{
+    PyObject *key, *value;
+    Py_ssize_t i = 0;
+    int res;
+    while (PyDict_Next(x, &i, &key, &value)) {
+        if (PyUnicode_Check(key)) {
+            PyObject *newkey;
+            int kind;
+            const void *data;
+            if (PyUnicode_GET_LENGTH(key) != 1) {
+                PyErr_SetString(PyExc_ValueError, "string keys in translate"
+                                "table must be of length 1");
+                return -1;
+            }
+            kind = PyUnicode_KIND(key);
+            data = PyUnicode_DATA(key);
+            newkey = PyLong_FromLong(PyUnicode_READ(kind, data, 0));
+            if (!newkey)
+                return -1;
+            res = PyDict_SetItem(newdict, newkey, value);
+            Py_DECREF(newkey);
+            if (res < 0)
+                return -1;
+        }
+        else if (PyLong_Check(key)) {
+            if (PyDict_SetItem(newdict, key, value) < 0)
+                return -1;
+        }
+        else {
+            PyErr_SetString(PyExc_TypeError, "keys in translate table must"
+                            "be strings or integers");
+            return -1;
+        }
+    }
+    return 0;
+}
+
 /*[clinic input]
 
 @staticmethod
@@ -13185,44 +13196,19 @@ unicode_maketrans_impl(PyObject *x, PyObject *y, PyObject *z)
             }
         }
     } else {
-        int kind;
-        const void *data;
-
         /* x must be a dict */
-        if (!PyDict_CheckExact(x)) {
+        if (!PyAnyDict_CheckExact(x)) {
             PyErr_SetString(PyExc_TypeError, "if you give only one argument "
                             "to maketrans it must be a dict");
             goto err;
         }
         /* copy entries into the new dict, converting string keys to int keys */
-        while (PyDict_Next(x, &i, &key, &value)) {
-            if (PyUnicode_Check(key)) {
-                /* convert string keys to integer keys */
-                PyObject *newkey;
-                if (PyUnicode_GET_LENGTH(key) != 1) {
-                    PyErr_SetString(PyExc_ValueError, "string keys in translate "
-                                    "table must be of length 1");
-                    goto err;
-                }
-                kind = PyUnicode_KIND(key);
-                data = PyUnicode_DATA(key);
-                newkey = PyLong_FromLong(PyUnicode_READ(kind, data, 0));
-                if (!newkey)
-                    goto err;
-                res = PyDict_SetItem(new, newkey, value);
-                Py_DECREF(newkey);
-                if (res < 0)
-                    goto err;
-            } else if (PyLong_Check(key)) {
-                /* just keep integer keys */
-                if (PyDict_SetItem(new, key, value) < 0)
-                    goto err;
-            } else {
-                PyErr_SetString(PyExc_TypeError, "keys in translate table must "
-                                "be strings or integers");
-                goto err;
-            }
-        }
+        int errcode;
+        Py_BEGIN_CRITICAL_SECTION(x);
+        errcode = unicode_maketrans_from_dict(x, new);
+        Py_END_CRITICAL_SECTION();
+        if (errcode < 0)
+            goto err;
     }
     return new;
   err:

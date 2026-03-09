@@ -3963,15 +3963,21 @@ class ContextFlags:
         d.update(c.flags)
         self.assertEqual(d, c.flags)
         self.assertEqual(c.flags, d)
+        self.assertEqual(frozendict(d), c.flags)
+        self.assertEqual(c.flags, frozendict(d))
 
         d[Inexact] = True
         self.assertNotEqual(d, c.flags)
         self.assertNotEqual(c.flags, d)
+        self.assertNotEqual(frozendict(d), c.flags)
+        self.assertNotEqual(c.flags, frozendict(d))
 
         # Invalid SignalDict
         d = {Inexact:False}
         self.assertNotEqual(d, c.flags)
         self.assertNotEqual(c.flags, d)
+        self.assertNotEqual(frozendict(d), c.flags)
+        self.assertNotEqual(c.flags, frozendict(d))
 
         d = ["xyz"]
         self.assertNotEqual(d, c.flags)

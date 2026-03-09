@@ -24,6 +24,7 @@ incomplete = re.compile('&[a-zA-Z#]')
 
 entityref = re.compile('&([a-zA-Z][-.a-zA-Z0-9]*)[^a-zA-Z0-9]')
 charref = re.compile('&#(?:[0-9]+|[xX][0-9a-fA-F]+)[^0-9a-fA-F]')
+incomplete_charref = re.compile('&#(?:[0-9]|[xX][0-9a-fA-F])')
 attr_charref = re.compile(r'&(#[0-9]+|#[xX][0-9a-fA-F]+|[a-zA-Z][a-zA-Z0-9]*)[;=]?')
 
 starttagopen = re.compile('<[a-zA-Z]')
@@ -304,10 +305,20 @@ class HTMLParser(_markupbase.ParserBase):
                         k = k - 1
                     i = self.updatepos(i, k)
                     continue
+                match = incomplete_charref.match(rawdata, i)
+                if match:
+                    if end:
+                        self.handle_charref(rawdata[i+2:])
+                        i = self.updatepos(i, n)
+                        break
+                    # incomplete
+                    break
+                elif i + 3 < n:  # larger than "&#x"
+                    # not the end of the buffer, and can't be confused
+                    # with some other construct
+                    self.handle_data("&#")
+                    i = self.updatepos(i, i + 2)
                 else:
-                    if ";" in rawdata[i:]:  # bail by consuming &#
-                        self.handle_data(rawdata[i:i+2])
-                        i = self.updatepos(i, i+2)
                     break
             elif startswith('&', i):
                 match = entityref.match(rawdata, i)
@@ -321,15 +332,13 @@ class HTMLParser(_markupbase.ParserBase):
                     continue
                 match = incomplete.match(rawdata, i)
                 if match:
-                    # match.group() will contain at least 2 chars
-                    if end and match.group() == rawdata[i:]:
-                        k = match.end()
-                        if k <= i:
-                            k = n
-                        i = self.updatepos(i, i + 1)
+                    if end:
+                        self.handle_entityref(rawdata[i+1:])
+                        i = self.updatepos(i, n)
+                        break
                     # incomplete
                     break
-                elif (i + 1) < n:
+                elif i + 1 < n:
                     # not the end of the buffer, and can't be confused
                     # with some other construct
                     self.handle_data("&")

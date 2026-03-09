@@ -131,3 +131,22 @@ the :mod:`io` APIs instead.
 
    Write string *s* to file object *p*.  Return ``0`` on success or ``-1`` on
    failure; the appropriate exception will be set.
+
+
+Deprecated API
+^^^^^^^^^^^^^^
+
+
+These are :term:`soft deprecated` APIs that were included in Python's C API
+by mistake. They are documented solely for completeness; use other
+``PyFile*`` APIs instead.
+
+.. c:function:: PyObject *PyFile_NewStdPrinter(int fd)
+
+   Use :c:func:`PyFile_FromFd` with defaults (``fd, NULL, "w", -1, NULL, NULL, NULL, 0``) instead.
+
+.. c:var:: PyTypeObject PyStdPrinter_Type
+
+   Type of file-like objects used internally at Python startup when :py:mod:`io` is
+   not yet available.
+   Use Python :py:func:`open` or :c:func:`PyFile_FromFd` to create file objects instead.
