@@ -1074,7 +1074,7 @@ Performance
 My program is too slow. How do I speed it up?
 ---------------------------------------------
 
-That's a tough one, in general.  First, here is list of things to
+That's a tough one, in general.  First, here is a list of things to
 remember before diving further:
 
 * Performance characteristics vary across Python implementations.  This FAQ
