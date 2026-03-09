@@ -1,2 +1,2 @@
 Use the instance ``skip_idle`` attribute instead of passing it as a parameter
-in :class:`profiling.sampling.stack_collector.StackCollector`.
+in ``StackCollector``.
