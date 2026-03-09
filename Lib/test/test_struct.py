@@ -880,20 +880,28 @@ class StructTest(ComplexesAreIdenticalMixin, unittest.TestCase):
                 return super().__new__(cls, '>h')
 
         my_struct = MyStruct('>h')
+        self.assertEqual(my_struct.format, '>h')
         self.assertEqual(my_struct.pack(12345), b'\x30\x39')
         my_struct = MyStruct('<h')
+        self.assertEqual(my_struct.format, '>h')
         self.assertEqual(my_struct.pack(12345), b'\x30\x39')
         my_struct = MyStruct(format='<h')
+        self.assertEqual(my_struct.format, '>h')
         self.assertEqual(my_struct.pack(12345), b'\x30\x39')
         my_struct = MyStruct()
+        self.assertEqual(my_struct.format, '>h')
         self.assertEqual(my_struct.pack(12345), b'\x30\x39')
         my_struct = MyStruct(42)
+        self.assertEqual(my_struct.format, '>h')
         self.assertEqual(my_struct.pack(12345), b'\x30\x39')
         my_struct = MyStruct('$')
+        self.assertEqual(my_struct.format, '>h')
         self.assertEqual(my_struct.pack(12345), b'\x30\x39')
         my_struct = MyStruct('\u20ac')
+        self.assertEqual(my_struct.format, '>h')
         self.assertEqual(my_struct.pack(12345), b'\x30\x39')
         my_struct = MyStruct('<h', 42)
+        self.assertEqual(my_struct.format, '>h')
         self.assertEqual(my_struct.pack(12345), b'\x30\x39')
 
     def test_custom_struct_new_and_init(self):
@@ -906,6 +914,7 @@ class StructTest(ComplexesAreIdenticalMixin, unittest.TestCase):
                     super().__init__(*initargs)
 
         my_struct = MyStruct(('>h',), ('>h',))
+        self.assertEqual(my_struct.format, '>h')
         self.assertEqual(my_struct.pack(12345), b'\x30\x39')
         with self.assertRaises(TypeError):
             MyStruct((), ())
@@ -930,6 +939,7 @@ class StructTest(ComplexesAreIdenticalMixin, unittest.TestCase):
                 MyStruct(('>h',), ('\u20ac',))
         with self.assertWarns(FutureWarning):
             my_struct = MyStruct(('>h',), ('<h',))
+        self.assertEqual(my_struct.format, '<h')
         self.assertEqual(my_struct.pack(12345), b'\x39\x30')
 
     def test_no_custom_struct_new_or_init(self):
@@ -937,8 +947,10 @@ class StructTest(ComplexesAreIdenticalMixin, unittest.TestCase):
             pass
 
         my_struct = MyStruct('>h')
+        self.assertEqual(my_struct.format, '>h')
         self.assertEqual(my_struct.pack(12345), b'\x30\x39')
         my_struct = MyStruct(format='>h')
+        self.assertEqual(my_struct.format, '>h')
         self.assertEqual(my_struct.pack(12345), b'\x30\x39')
         with self.assertRaises(TypeError):
             MyStruct()
