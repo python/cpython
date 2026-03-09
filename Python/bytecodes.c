@@ -1605,14 +1605,14 @@ dummy_func(
         }
 
         inst(CLEANUP_ASYNC_THROW, (iter, exc_value_st -- value)) {
-            PyObject *exc_value = PyStackRef_AsPyObjectSteal(exc_value_st);
+            PyObject *exc_value = PyStackRef_AsPyObjectBorrow(exc_value_st);
             assert(exc_value != NULL);
             assert(PyExceptionInstance_Check(exc_value));
 
             int matches = PyErr_GivenExceptionMatches(exc_value, PyExc_StopAsyncIteration);
             if (matches) {
-                DECREF_INPUTS();
                 value = PyStackRef_FromPyObjectNew(((PyStopAsyncIterationObject *)exc_value)->value);
+                DECREF_INPUTS();
             }
             else {
                 _PyErr_SetRaisedException(tstate, exc_value);
