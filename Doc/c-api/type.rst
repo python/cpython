@@ -274,6 +274,10 @@ Type Objects
    Return the module object associated with the given type when the type was
    created using :c:func:`PyType_FromModuleAndSpec`.
 
+   The returned reference is :term:`borrowed <borrowed reference>` from *type*,
+   and will be valid as long as you hold a reference to *type*.
+   Do not release it with :c:func:`Py_DECREF` or similar.
+
    If no module is associated with the given type, sets :py:class:`TypeError`
    and returns ``NULL``.
 
