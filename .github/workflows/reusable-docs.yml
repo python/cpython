@@ -78,10 +78,11 @@ jobs:
     - name: 'Collect HTML IDs'
       run: python Doc/tools/check-html-ids.py collect Doc/build/html -o Doc/build/html-ids-head.json.gz
     - name: 'Upload HTML IDs'
-      uses: actions/upload-artifact@v6
+      uses: actions/upload-artifact@v7
       with:
         name: html-ids-head
         path: Doc/build/html-ids-head.json.gz
+        archive: false
 
   check-html-ids:
     name: 'Check for removed HTML IDs'
@@ -107,7 +108,8 @@ jobs:
     - name: 'Collect HTML IDs'
       run: python Doc/tools/check-html-ids.py collect Doc/build/html -o /tmp/html-ids-base.json.gz
     - name: 'Download PR base HTML IDs'
-      uses: actions/download-artifact@v6
+      uses: actions/download-artifact@v8
+      archive: false
       with:
         name: html-ids-head
         path: /tmp
