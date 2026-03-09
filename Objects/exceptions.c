@@ -745,7 +745,6 @@ StopAsyncIteration_init(PyObject *op, PyObject *args, PyObject *kwds)
     }
     PyStopAsyncIterationObject *self = PyStopAsyncIterationObject_CAST(op);
     Py_CLEAR(self->value);
-    PyObject *value;
     if (size > 0) {
         self->value = PyTuple_GET_ITEM(args, 0);
     }
