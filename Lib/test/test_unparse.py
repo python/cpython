@@ -406,6 +406,7 @@ class UnparseTestCase(ASTTestCase):
     def test_dict_comprehension_unpacking(self):
         self.check_ast_roundtrip("{**x for x in ()}")
         self.check_ast_roundtrip("{**x for x in range(10)}")
+        self.check_ast_roundtrip("[*x for x in ()]")
 
     def test_class_decorators(self):
         self.check_ast_roundtrip(class_decorator)
