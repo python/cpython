@@ -584,11 +584,31 @@ class StructTest(ComplexesAreIdenticalMixin, unittest.TestCase):
         # Issue 9422: there was a memory leak when reinitializing a
         # Struct instance.  This test can be used to detect the leak
         # when running with regrtest -L.
-        s = struct.Struct('i')
+        s = struct.Struct('>h')
         with self.assertWarns(DeprecationWarning):
-            s.__init__('ii')
-        self.assertEqual(s.format, 'ii')
-        packed = b'\x01\x00\x00\x00\x02\x00\x00\x00'
+            s.__init__('>hh')
+        self.assertEqual(s.format, '>hh')
+        packed = b'\x00\x01\x00\x02'
+        self.assertEqual(s.pack(1, 2), packed)
+        self.assertEqual(s.unpack(packed), (1, 2))
+
+        with self.assertWarns(DeprecationWarning):
+            s.__init__('>hh')
+        self.assertEqual(s.format, '>hh')
+        self.assertEqual(s.pack(1, 2), packed)
+        self.assertEqual(s.unpack(packed), (1, 2))
+
+        with self.assertWarns(DeprecationWarning):
+            with self.assertRaises(UnicodeEncodeError):
+                s.__init__('\u20ac')
+        self.assertEqual(s.format, '>hh')
+        self.assertEqual(s.pack(1, 2), packed)
+        self.assertEqual(s.unpack(packed), (1, 2))
+
+        with self.assertWarns(DeprecationWarning):
+            with self.assertRaises(struct.error):
+                s.__init__('$')
+        self.assertEqual(s.format, '$')
         self.assertEqual(s.pack(1, 2), packed)
         self.assertEqual(s.unpack(packed), (1, 2))
 
@@ -895,18 +915,18 @@ class StructTest(ComplexesAreIdenticalMixin, unittest.TestCase):
             MyStruct((), ('>h',))
         with self.assertRaises(TypeError):
             MyStruct((42,), ('>h',))
-        with self.assertRaises(TypeError):
-            with self.assertWarns(FutureWarning):
+        with self.assertWarns(FutureWarning):
+            with self.assertRaises(TypeError):
                 MyStruct(('>h',), (42,))
         with self.assertRaises(struct.error):
             MyStruct(('$',), ('>h',))
-        with self.assertRaises(struct.error):
-            with self.assertWarns(FutureWarning):
+        with self.assertWarns(FutureWarning):
+            with self.assertRaises(struct.error):
                 MyStruct(('>h',), ('$',))
         with self.assertRaises(UnicodeEncodeError):
             MyStruct(('\u20ac',), ('>h',))
-        with self.assertRaises(UnicodeEncodeError):
-            with self.assertWarns(FutureWarning):
+        with self.assertWarns(FutureWarning):
+            with self.assertRaises(UnicodeEncodeError):
                 MyStruct(('>h',), ('\u20ac',))
         with self.assertWarns(FutureWarning):
             my_struct = MyStruct(('>h',), ('<h',))
