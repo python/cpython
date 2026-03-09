@@ -4763,7 +4763,7 @@
             }
             else {
                 _PyFrame_SetStackPointer(frame, stack_pointer);
-                _PyErr_SetRaisedException(tstate, exc_value);
+                _PyErr_SetRaisedException(tstate, Py_NewRef(exc_value));
                 monitor_reraise(tstate, frame, this_instr);
                 JUMP_TO_LABEL(exception_unwind);
             }
