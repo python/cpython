@@ -1,0 +1,2 @@
+Fix crash in AST unparser when unparsing dict comprehension unpacking.
+Found by OSS Fuzz in :oss-fuzz:`489790200`.
