@@ -18,6 +18,8 @@ extend-exclude = [
     "test_lazy_import/__init__.py",
     "test_lazy_import/data/*.py",
     "test_lazy_import/data/**/*.py",
+    # Async yield from syntax (PEP 828) is not yet supported by Ruff
+    "test_async_yield_from.py",
 ]
 
 [lint]
