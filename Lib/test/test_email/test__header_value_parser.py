@@ -2404,14 +2404,11 @@ class TestParser(TestParserMixin, TestEmailBase):
                 ),
             ),
 
-        trailing_text_preserved = C(
-            'foo@bar',
-            remainder='@bar',
-            ),
-
-        trailing_ws_preserved = C(
-            'foo .bar',
-            remainder=' .bar',
+        **for_each_character(RFC_SPECIALS + RFC_WSP, skip='.')(
+            ends_at_special_or_wsp = C(
+                'foo.bird{char}bar',
+                remainder='{char}bar',
+                ),
             ),
 
         )
