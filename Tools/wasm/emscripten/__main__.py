@@ -452,10 +452,17 @@ def build_all(context):
 
 def clean_contents(context):
     """Delete all files created by this script."""
-    host_triple_dir = context.build_paths["host_triple_dir"]
-    if host_triple_dir.exists():
-        print(f"🧹 Deleting {host_triple_dir} ...")
-        shutil.rmtree(host_triple_dir)
+    if context.target in {"all", "build"}:
+        build_dir = context.build_paths["native_build_dir"]
+        if build_dir.exists():
+            print(f"🧹 Deleting {build_dir} ...")
+            shutil.rmtree(build_dir)
+
+    if context.target in {"all", "host"}:
+        host_triple_dir = context.build_paths["host_triple_dir"]
+        if host_triple_dir.exists():
+            print(f"🧹 Deleting {host_triple_dir} ...")
+            shutil.rmtree(host_triple_dir)
 
     if LOCAL_SETUP.exists():
         with LOCAL_SETUP.open("rb") as file:
@@ -493,6 +500,17 @@ def main():
     clean = subcommands.add_parser(
         "clean", help="Delete files and directories created by this script"
     )
+    clean.add_argument(
+        "target",
+        nargs="?",
+        default="host",
+        choices=["all", "host", "build"],
+        help=(
+            "What should be cleaned. 'build' for just the build platform, or "
+            "'host' for the host platform, or 'all' for both. Defaults to 'host'."
+        ),
+    )
+
     for subcommand in (
         build,
         configure_build,
