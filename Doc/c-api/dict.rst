@@ -46,7 +46,7 @@ Dictionary objects
    mapping.
 
    .. versionchanged:: next
-      Accept also :class:`frozendict`.
+      Also accept :class:`frozendict`.
 
 
 .. c:var:: PyTypeObject PyDictProxy_Type
@@ -91,7 +91,7 @@ Dictionary objects
    .. versionadded:: 3.13
 
    .. versionchanged:: next
-      Accept also :class:`frozendict`.
+      Also accept :class:`frozendict`.
 
 
 .. c:function:: PyObject* PyDict_Copy(PyObject *p)
@@ -143,7 +143,7 @@ Dictionary objects
    .. versionadded:: 3.13
 
    .. versionchanged:: next
-      Accept also :class:`frozendict`.
+      Also accept :class:`frozendict`.
 
    See also the :c:func:`PyObject_GetItem` function.
 
@@ -167,7 +167,7 @@ Dictionary objects
       reason. It is no longer allowed.
 
    .. versionchanged:: next
-      Accept also :class:`frozendict`.
+      Also accept :class:`frozendict`.
 
 
 .. c:function:: PyObject* PyDict_GetItemWithError(PyObject *p, PyObject *key)
@@ -178,7 +178,7 @@ Dictionary objects
    wasn't present.
 
    .. versionchanged:: next
-      Accept also :class:`frozendict`.
+      Also accept :class:`frozendict`.
 
 
 .. c:function:: PyObject* PyDict_GetItemString(PyObject *p, const char *key)
@@ -196,7 +196,7 @@ Dictionary objects
       :c:func:`PyUnicode_FromString` *key* instead.
 
    .. versionchanged:: next
-      Accept also :class:`frozendict`.
+      Also accept :class:`frozendict`.
 
 
 .. c:function:: int PyDict_GetItemStringRef(PyObject *p, const char *key, PyObject **result)
@@ -208,7 +208,7 @@ Dictionary objects
    .. versionadded:: 3.13
 
    .. versionchanged:: next
-      Accept also :class:`frozendict`.
+      Also accept :class:`frozendict`.
 
 
 .. c:function:: PyObject* PyDict_SetDefault(PyObject *p, PyObject *key, PyObject *defaultobj)
@@ -276,7 +276,7 @@ Dictionary objects
    The first argument can be a :class:`dict` or a :class:`frozendict`.
 
    .. versionchanged:: next
-      Accept also :class:`frozendict`.
+      Also accept :class:`frozendict`.
 
 
 .. c:function:: PyObject* PyDict_Keys(PyObject *p)
@@ -286,7 +286,7 @@ Dictionary objects
    The first argument can be a :class:`dict` or a :class:`frozendict`.
 
    .. versionchanged:: next
-      Accept also :class:`frozendict`.
+      Also accept :class:`frozendict`.
 
 
 .. c:function:: PyObject* PyDict_Values(PyObject *p)
@@ -297,7 +297,7 @@ Dictionary objects
    The first argument can be a :class:`dict` or a :class:`frozendict`.
 
    .. versionchanged:: next
-      Accept also :class:`frozendict`.
+      Also accept :class:`frozendict`.
 
 
 .. c:function:: Py_ssize_t PyDict_Size(PyObject *p)
@@ -310,7 +310,7 @@ Dictionary objects
    The argument can be a :class:`dict` or a :class:`frozendict`.
 
    .. versionchanged:: next
-      Accept also :class:`frozendict`.
+      Also accept :class:`frozendict`.
 
 
 .. c:function:: Py_ssize_t PyDict_GET_SIZE(PyObject *p)
@@ -318,7 +318,7 @@ Dictionary objects
    Similar to :c:func:`PyDict_Size`, but without error checking.
 
    .. versionchanged:: next
-      Accept also :class:`frozendict`.
+      Also accept :class:`frozendict`.
 
 
 .. c:function:: int PyDict_Next(PyObject *p, Py_ssize_t *ppos, PyObject **pkey, PyObject **pvalue)
@@ -390,7 +390,7 @@ Dictionary objects
       :c:func:`Py_NewRef`).
 
    .. versionchanged:: next
-      Accept also :class:`frozendict`.
+      Also accept :class:`frozendict`.
 
 .. c:function:: int PyDict_Merge(PyObject *a, PyObject *b, int override)
 
