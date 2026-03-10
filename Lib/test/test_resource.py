@@ -77,7 +77,7 @@ class ResourceTest(unittest.TestCase):
                         f.flush()
         finally:
             resource.setrlimit(resource.RLIMIT_FSIZE, (cur, max_lim))
-    
+
     @unittest.skipIf(sys.platform == "vxworks",
                      "setting RLIMIT_FSIZE is not supported on VxWorks")
     @unittest.skipUnless(hasattr(resource, 'RLIMIT_FSIZE'), 'requires resource.RLIMIT_FSIZE')
