@@ -84,10 +84,6 @@ extern PyTypeObject _PyExc_MemoryError;
         .stoptheworld = { \
             .is_global = 1, \
         }, \
-        .float_state = { \
-            .float_format = _py_float_format_ieee_little_endian, \
-            .double_format = _py_float_format_ieee_little_endian, \
-        }, \
         .types = { \
             .next_version_tag = _Py_TYPE_VERSION_NEXT, \
         }, \

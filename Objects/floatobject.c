@@ -1699,29 +1699,14 @@ float___getformat___impl(PyTypeObject *type, const char *typestr)
 {
     float_format_type r;
 
-    if (strcmp(typestr, "double") == 0) {
-        r = double_format;
-    }
-    else if (strcmp(typestr, "float") == 0) {
-        r = float_format;
-    }
-    else {
+    if (strcmp(typestr, "double") != 0 || strcmp(typestr, "float") != 0) {
         PyErr_SetString(PyExc_ValueError,
                         "__getformat__() argument 1 must be "
                         "'double' or 'float'");
         return NULL;
     }
-
-    switch (r) {
-    case ieee_little_endian_format:
-        return PyUnicode_FromString("IEEE, little-endian");
-    case ieee_big_endian_format:
-        return PyUnicode_FromString("IEEE, big-endian");
-    default:
-        PyErr_SetString(PyExc_RuntimeError,
-                        "insane float_format or double_format");
-        return NULL;
-    }
+    return PyUnicode_FromString(_PY_FLOAT_LITTLE_ENDIAN ?
+                                "IEEE, little-endian" : "IEEE, big-endian");
 }
 
 static PyObject *
@@ -1873,27 +1858,6 @@ PyTypeObject PyFloat_Type = {
     .tp_vectorcall = float_vectorcall,
     .tp_version_tag = _Py_TYPE_VERSION_FLOAT,
 };
-
-static void
-_init_global_state(void)
-{
-#ifdef DOUBLE_IS_BIG_ENDIAN_IEEE754
-    double_format = ieee_big_endian_format;
-    float_format = ieee_big_endian_format;
-#else
-    double_format = ieee_little_endian_format;
-    float_format = ieee_little_endian_format;
-#endif
-}
-
-void
-_PyFloat_InitState(PyInterpreterState *interp)
-{
-    if (!_Py_IsMainInterpreter(interp)) {
-        return;
-    }
-    _init_global_state();
-}
 
 PyStatus
 _PyFloat_InitTypes(PyInterpreterState *interp)
@@ -2098,8 +2062,7 @@ PyFloat_Pack4(double x, char *data, int le)
     unsigned char s[sizeof(float)];
     memcpy(s, &y, sizeof(float));
 
-    if ((float_format == ieee_little_endian_format && !le)
-        || (float_format == ieee_big_endian_format && le)) {
+    if ((_PY_FLOAT_LITTLE_ENDIAN && !le) || (_PY_FLOAT_BIG_ENDIAN && le)) {
         p += 3;
         incr = -1;
     }
@@ -2120,8 +2083,7 @@ PyFloat_Pack8(double x, char *data, int le)
     const unsigned char *s = as_bytes;
     int i, incr = 1;
 
-    if ((double_format == ieee_little_endian_format && !le)
-        || (double_format == ieee_big_endian_format && le)) {
+    if ((_PY_FLOAT_LITTLE_ENDIAN && !le) || (_PY_FLOAT_BIG_ENDIAN && le)) {
         p += 7;
         incr = -1;
     }
@@ -2195,8 +2157,7 @@ PyFloat_Unpack4(const char *data, int le)
     unsigned char *p = (unsigned char *)data;
     float x;
 
-    if ((float_format == ieee_little_endian_format && !le)
-        || (float_format == ieee_big_endian_format && le)) {
+    if ((_PY_FLOAT_LITTLE_ENDIAN && !le) || (_PY_FLOAT_BIG_ENDIAN && le)) {
         char buf[4];
         char *d = &buf[3];
         int i;
@@ -2254,8 +2215,7 @@ PyFloat_Unpack8(const char *data, int le)
     unsigned char *p = (unsigned char *)data;
     double x;
 
-    if ((double_format == ieee_little_endian_format && !le)
-        || (double_format == ieee_big_endian_format && le)) {
+    if ((_PY_FLOAT_LITTLE_ENDIAN && !le) || (_PY_FLOAT_BIG_ENDIAN && le)) {
         char buf[8];
         char *d = &buf[7];
         int i;
