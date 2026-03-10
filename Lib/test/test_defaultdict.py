@@ -211,13 +211,12 @@ class TestDefaultDict(unittest.TestCase):
             def __call__(self):
                 return {}
             def __repr__(self):
-                repr(dd)
-                return "ProblematicFactory()"
+                return f"ProblematicFactory for {repr(dd)}"
 
         dd = defaultdict(ProblematicFactory())
         # Should not raise RecursionError
         r = repr(dd)
-        self.assertIn('ProblematicFactory()', r)
+        self.assertIn('ProblematicFactory for', r)
 
 if __name__ == "__main__":
     unittest.main()
