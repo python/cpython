@@ -2402,7 +2402,7 @@ expression support in the :mod:`re` module).
    the same position in *to*.  If there is a third argument, it must be a string,
    whose characters will be mapped to ``None`` in the result.
 
-   .. versionchanged:: next
+   .. versionchanged:: 3.15
 
       *dict* can now be a :class:`frozendict`.
 
@@ -5682,7 +5682,7 @@ Frozen dictionaries
    :class:`!frozendict` is not a :class:`!dict` subclass but inherits directly
    from ``object``.
 
-   .. versionadded:: next
+   .. versionadded:: 3.15
 
 
 .. _typecontextmanager:

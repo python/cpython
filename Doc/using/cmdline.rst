@@ -692,7 +692,7 @@ Miscellaneous options
      If false (``0``) suppress these warnings. Set to true by default.
      See also :envvar:`PYTHON_PATHCONFIG_WARNINGS`.
 
-     .. versionadded:: next
+     .. versionadded:: 3.15
 
    * :samp:`-X tlbc={0,1}` enables (1, the default) or disables (0) thread-local
      bytecode in builds configured with :option:`--disable-gil`.  When disabled,
@@ -707,7 +707,7 @@ Miscellaneous options
      (the default) respects the ``lazy`` keyword in source code.
      See also :envvar:`PYTHON_LAZY_IMPORTS`.
 
-     .. versionadded:: next
+     .. versionadded:: 3.15
 
    It also allows passing arbitrary values and retrieving them through the
    :data:`sys._xoptions` dictionary.
@@ -1367,7 +1367,7 @@ conflict.
    stderr. If false (``0``) suppress these warnings. Set to true by default.
    See also :option:`-X pathconfig_warnings<-X>`.
 
-   .. versionadded:: next
+   .. versionadded:: 3.15
 
 .. envvar:: PYTHON_JIT
 
@@ -1396,7 +1396,7 @@ conflict.
 
    See also the :option:`-X lazy_imports <-X>` command-line option.
 
-   .. versionadded:: next
+   .. versionadded:: 3.15
 
 Debug-mode variables
 ~~~~~~~~~~~~~~~~~~~~
