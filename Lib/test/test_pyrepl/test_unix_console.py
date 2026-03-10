@@ -102,6 +102,18 @@ handle_events_unix_console_height_3 = partial(
 @patch("os.write")
 @force_not_colorized_test_class
 class TestConsole(TestCase):
+    def test_prepare_enables_kitty_keyboard(self, _os_write):
+        console = UnixConsole(term="xterm")
+        console.prepare()
+        _os_write.assert_any_call(ANY, b"\x1b[=31;1u")
+        console.restore()
+
+    def test_restore_disables_kitty_keyboard(self, _os_write):
+        console = UnixConsole(term="xterm")
+        console.prepare()
+        console.restore()
+        _os_write.assert_any_call(ANY, b"\x1b[<u")
+
     def test_no_newline(self, _os_write):
         code = "1"
         events = code_to_events(code)

@@ -70,6 +70,8 @@ SIGWINCH_EVENT = "repaint"
 FIONREAD = getattr(termios, "FIONREAD", None)
 TIOCGWINSZ = getattr(termios, "TIOCGWINSZ", None)
 
+KITTY_KEYBOARD_FLAGS = 0b1 | 0b10 | 0b100 | 0b1000 | 0b10000
+
 # ------------ start of baudrate definitions ------------
 
 # Add (possibly) missing baudrates (check termios man page) to termios
@@ -377,12 +379,14 @@ class UnixConsole(Console):
             pass
 
         self.__enable_bracketed_paste()
+        self.__enable_kitty_keyboard()
 
     def restore(self):
         """
         Restore the console to the default state
         """
         self.__disable_bracketed_paste()
+        self.__disable_kitty_keyboard()
         self.__maybe_write_code(self._rmkx)
         self.flushoutput()
         self.__input_fd_set(self.__svtermstate)
@@ -597,6 +601,12 @@ class UnixConsole(Console):
 
     def __disable_bracketed_paste(self) -> None:
         os.write(self.output_fd, b"\x1b[?2004l")
+
+    def __enable_kitty_keyboard(self) -> None:
+        os.write(self.output_fd, f"\x1b[={KITTY_KEYBOARD_FLAGS};1u".encode("ascii"))
+
+    def __disable_kitty_keyboard(self) -> None:
+        os.write(self.output_fd, b"\x1b[<u")
 
     def __setup_movement(self):
         """

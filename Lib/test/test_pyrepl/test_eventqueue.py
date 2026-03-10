@@ -196,3 +196,72 @@ class TestUnixEventQueue(EventQueueTestBase, unittest.TestCase):
 class TestWindowsEventQueue(EventQueueTestBase, unittest.TestCase):
     def make_eventqueue(self) -> base_eventqueue.BaseEventQueue:
         return windows_eventqueue.EventQueue("utf-8")
+
+
+@unittest.skipIf(support.MS_WINDOWS, "Unix-only kitty parser tests")
+class TestUnixKittyEventQueue(unittest.TestCase):
+    def make_eventqueue(self) -> base_eventqueue.BaseEventQueue:
+        ti = EmptyTermInfo("ansi")
+        return unix_eventqueue.EventQueue(self.file.fileno(), "utf-8", ti)
+
+    def setUp(self):
+        self.file = tempfile.TemporaryFile()
+
+    def tearDown(self) -> None:
+        self.file.close()
+
+    def push_sequence(self, sequence: bytes) -> list[Event]:
+        eq = self.make_eventqueue()
+        for byte in sequence:
+            eq.push(byte)
+        events = []
+        while not eq.empty():
+            events.append(eq.get())
+        return events
+
+    def assert_events(self, sequence: bytes, expected: list[str]) -> None:
+        events = self.push_sequence(sequence)
+        self.assertEqual([event.data for event in events], expected)
+
+    def test_kitty_unicode_key(self):
+        self.assert_events(b"\x1b[97u", ["a"])
+
+    def test_kitty_shifted_text(self):
+        self.assert_events(b"\x1b[97;2;65u", ["A"])
+
+    def test_kitty_ctrl_c(self):
+        self.assert_events(b"\x1b[99;5u", ["\x03"])
+
+    def test_kitty_ctrl_h(self):
+        self.assert_events(b"\x1b[104;5u", ["\x08"])
+
+    def test_kitty_alt_x(self):
+        self.assert_events(b"\x1b[120;3u", ["\033", "x"])
+
+    def test_kitty_alt_backspace(self):
+        self.assert_events(b"\x1b[127;3u", ["\033", "backspace"])
+
+    def test_kitty_ctrl_left(self):
+        self.assert_events(b"\x1b[1;5D", ["ctrl left"])
+
+    def test_kitty_functional_tilde(self):
+        self.assert_events(b"\x1b[15~", ["f5"])
+
+    def test_kitty_functional_unicode(self):
+        self.assert_events(b"\x1b[57383u", ["f20"])
+
+    def test_kitty_alternate_base_layout_for_ctrl(self):
+        self.assert_events(b"\x1b[1091::99;5u", ["\x03"])
+
+    def test_kitty_repeat_is_press(self):
+        self.assert_events(b"\x1b[99;5:2u", ["\x03"])
+
+    def test_kitty_release_is_ignored(self):
+        self.assert_events(b"\x1b[99;5:3u", [])
+
+    def test_kitty_malformed_sequence_falls_back(self):
+        self.assert_events(b"\x1b[xyz", ["\033", "[", "x", "y", "z"])
+
+    def test_kitty_sequence_then_legacy_sequence(self):
+        events = self.push_sequence(b"\x1b[99;5u\x1b[A")
+        self.assertEqual([event.data for event in events], ["\x03", "up"])

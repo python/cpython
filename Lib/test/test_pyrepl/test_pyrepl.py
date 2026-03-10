@@ -2004,6 +2004,7 @@ class TestMain(ReplTestCase):
 
         # Modern extensions not in standard terminfo - always use patterns
         safe_patterns.append(r'\x1b\[\?2004[hl]')  # bracketed paste mode
+        safe_patterns.append(r'\x1b\[[=<](?:\d+(?:;\d+)*)?u')  # kitty keyboard protocol
         safe_patterns.append(r'\x1b\[\?12[hl]')  # cursor blinking (may be separate)
         safe_patterns.append(r'\x1b\[\?[01]c')  # device attributes
 
