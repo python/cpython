@@ -279,10 +279,12 @@ def generate_tier2(
             continue
         for inputs, outputs, exit_depth in get_uop_cache_depths(uop):
             emitter = Tier2Emitter(out, analysis.labels, exit_depth)
+            opname = f"{uop.name}_r{inputs}{outputs}"
             needed_cached_registers = max(inputs, outputs)
+            out.emit(f"/* BEGIN_JIT_CASE {opname} */\n")
             if needed_cached_registers:
                 out.emit(f"#if MAX_CACHED_REGISTER >= {needed_cached_registers}\n")
-            out.emit(f"case {uop.name}_r{inputs}{outputs}: {{\n")
+            out.emit(f"case {opname}: {{\n")
             out.emit(f"CHECK_CURRENT_CACHED_VALUES({inputs});\n")
             out.emit("assert(WITHIN_STACK_BOUNDS_IGNORING_CACHE());\n")
             declare_variables(uop, out)
@@ -300,6 +302,8 @@ def generate_tier2(
             out.emit("\n\n")
             if needed_cached_registers:
                 out.emit("#endif\n\n")
+            out.emit(f"/* END_JIT_CASE {opname} */\n")
+            out.emit("\n")
     out.emit("\n")
     outfile.write("#undef TIER_TWO\n")
 

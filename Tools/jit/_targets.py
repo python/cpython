@@ -36,6 +36,28 @@ _R = typing.TypeVar(
     "_R", _schema.COFFRelocation, _schema.ELFRelocation, _schema.MachORelocation
 )
 
+def _extract_jit_cases(generated_cases: str) -> list[tuple[str, str]]:
+    begin_case = re.compile(r"\s*/\* BEGIN_JIT_CASE (\w+) \*/\n")
+    cases_and_opnames: list[tuple[str, str]] = []
+    current_opname: str | None = None
+    current_lines: list[str] = []
+    for line in generated_cases.splitlines(keepends=True):
+        if current_opname is None:
+            match = begin_case.fullmatch(line)
+            if match is not None:
+                current_opname = match.group(1)
+                current_lines = []
+            continue
+        if line.strip() == f"/* END_JIT_CASE {current_opname} */":
+            cases_and_opnames.append(("".join(current_lines), current_opname))
+            current_opname = None
+            current_lines = []
+            continue
+        current_lines.append(line)
+    if current_opname is not None:
+        raise RuntimeError(f"Unterminated JIT case block for {current_opname}")
+    return cases_and_opnames
+
 
 @dataclasses.dataclass
 class _Target(typing.Generic[_S, _R]):
@@ -195,11 +217,7 @@ class _Target(typing.Generic[_S, _R]):
 
     async def _build_stencils(self) -> dict[str, _stencils.StencilGroup]:
         generated_cases = PYTHON_EXECUTOR_CASES_C_H.read_text()
-        cases_and_opnames = sorted(
-            re.findall(
-                r"\n {8}(case (\w+): \{\n.*?\n {8}\})", generated_cases, flags=re.DOTALL
-            )
-        )
+        cases_and_opnames = _extract_jit_cases(generated_cases)
         tasks = []
         with tempfile.TemporaryDirectory() as tempdir:
             work = pathlib.Path(tempdir).resolve()
