@@ -29,8 +29,6 @@ class AbstractToplevelTest(AbstractWidgetTest, PixelSizeTests):
     _no_round = {'padx', 'pady'}
     if tk_version < (8, 7):
         _clipped = {'highlightthickness'}
-    elif tk_version < (9, 0):
-        _clipped = {'borderwidth', 'highlightthickness', 'padx', 'pady'}
     else:
         _clipped = {'borderwidth', 'height', 'highlightthickness', 'padx',
                     'pady', 'width'}
@@ -771,10 +769,6 @@ class CanvasTest(AbstractWidgetTest, unittest.TestCase):
     )
     if tk_version < (8, 7):
         _clipped = {'highlightthickness'}
-    elif tk_version < (9, 0):
-        _clipped = {'borderwidth', 'highlightthickness', 'insertborderwidth',
-                    'insertwidth', 'selectborderwidth', 'xscrollincrement',
-                    'yscrollincrement'}
     else:
         _clipped = {'borderwidth', 'height', 'highlightthickness',
                     'insertborderwidth', 'insertwidth', 'selectborderwidth',

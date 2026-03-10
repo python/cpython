@@ -558,27 +558,17 @@ class IntegerSizeTests:
     def test_configure_width(self):
         widget = self.create()
         self.checkIntegerParam(widget, 'width', 402, -402, 0)
-        if tk_version < (8, 7):
-            self.checkIntegerParam(widget, 'width', 402, -402, 0)
-        else:
-            self.checkIntegerParam(widget, 'width', 402, 0, 0)
 
 
 class PixelSizeTests:
     """ Tests widgets which accept screen distances for width and height."""
     def test_configure_height(self):
         widget = self.create()
-        value = -100 if tk_version < (8, 7) else 0
-        self.checkPixelsParam(
-            widget, 'height', 100, 101.2, 102.6, value, 0, '3c'
-        )
+        self.checkPixelsParam(widget, 'height', 100, 101.2, 102.6, -100, 0, '3c')
 
     def test_configure_width(self):
         widget = self.create()
-        value = -402 if tk_version < (8, 7) else 0
-        self.checkPixelsParam(
-            widget, 'width', 402, 403.4, 404.6, value, 0, '5i'
-        )
+        self.checkPixelsParam(widget, 'width', 402, 403.4, 404.6, -402, 0, '5i')
 
 
 def add_configure_tests(*source_classes):
