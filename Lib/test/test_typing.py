@@ -4574,6 +4574,19 @@ class ProtocolTests(BaseTestCase):
         with self.assertRaisesRegex(TypeError, "not a Protocol"):
             get_protocol_members(ConcreteInherit())
 
+    def test_get_protocol_members_named_protocol_or_generic(self):
+        # gh-145688: Protocols named "Protocol" or "Generic" should still
+        # have their members collected correctly.
+        class Protocol(typing.Protocol):
+            a: int
+
+        self.assertEqual(get_protocol_members(Protocol), {'a'})
+
+        class Generic(typing.Protocol):
+            b: str
+
+        self.assertEqual(get_protocol_members(Generic), {'b'})
+
     def test_is_protocol(self):
         self.assertTrue(is_protocol(Proto))
         self.assertTrue(is_protocol(Point))

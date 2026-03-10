@@ -1,0 +1,5 @@
+Fixed :func:`typing.get_protocol_members` and :attr:`~typing.Protocol.__protocol_attrs__`
+returning empty results for Protocol subclasses named ``"Protocol"`` or ``"Generic"``.
+The check in :func:`_get_protocol_attrs` now uses identity comparison instead of
+name-based comparison to skip the base :class:`typing.Protocol` and
+:class:`typing.Generic` classes.

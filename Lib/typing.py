@@ -1884,7 +1884,7 @@ def _get_protocol_attrs(cls):
     """
     attrs = set()
     for base in cls.__mro__[:-1]:  # without object
-        if base.__name__ in {'Protocol', 'Generic'}:
+        if base.__name__ in {'Protocol', 'Generic'} and base.__module__ == 'typing':
             continue
         try:
             annotations = base.__annotations__
