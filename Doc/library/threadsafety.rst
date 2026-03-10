@@ -78,8 +78,8 @@ object. The implementation uses internal synchronization (such as
 :ref:`critical sections <python-critical-section-api>`) to protect shared
 mutable state, so callers do not need to supply their own locking.
 
-Example: :c:func:`PyMutex_Lock` can be called from multiple threads on the
-same :c:type:`PyMutex` - it uses internal synchronization to serialize
+Example: :c:func:`PyList_GetItemRef` can be called from multiple threads on the
+same :c:type:`PyListObject` - it uses internal synchronization to serialize
 access.
 
 .. _threadsafety-level-atomic:
