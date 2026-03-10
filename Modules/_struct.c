@@ -1757,8 +1757,7 @@ prepare_s(PyStructObject *self, PyObject *format)
     self->s_codes = codes0;
     self->s_size = size;
     self->s_len = len;
-    Py_INCREF(format);
-    Py_XSETREF(self->s_format, format);
+    Py_XSETREF(self->s_format, Py_NewRef(format));
 
     return 0;
 
