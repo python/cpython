@@ -1670,8 +1670,7 @@ New features
 
 * Add :c:func:`PyUnstable_DumpTraceback` and
   :c:func:`PyUnstable_DumpTracebackThreads` functions to safely output Python
-  stacktraces. These were previously internal functions ``_Py_DumpTraceback``
-  and ``_Py_DumpTracebackThreads``.
+  stacktraces.
   (Contributed by Alex Malyshev in :gh:`145559`.)
 
 Changed C APIs
