@@ -65,6 +65,8 @@ jobs:
             process-mode: single-process
           - platform: microvm
             process-mode: multi-process
+          - platform: microvm
+            process-mode: standalone
     name: ${{ matrix.platform }}-${{ matrix.process-mode }}
     container:
       image: nanvix/toolchain:latest-minimal
