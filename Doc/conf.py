@@ -43,8 +43,10 @@ extensions = [
 
 # Skip if downstream redistributors haven't installed them
 _OPTIONAL_EXTENSIONS = (
+    'linklint.ext',
     'notfound.extension',
     'sphinxext.opengraph',
+    'sphinxcontrib.rsvgconverter',
 )
 for optional_ext in _OPTIONAL_EXTENSIONS:
     try:
@@ -555,6 +557,7 @@ linkcheck_ignore = [
 # mapping unique short aliases to a base URL and a prefix.
 # https://www.sphinx-doc.org/en/master/usage/extensions/extlinks.html
 extlinks = {
+    "oss-fuzz": ("https://issues.oss-fuzz.com/issues/%s", "#%s"),
     "pypi": ("https://pypi.org/project/%s/", "%s"),
     "source": (SOURCE_URI, "%s"),
 }

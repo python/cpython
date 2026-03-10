@@ -784,6 +784,16 @@ class BuiltinTest(ComplexesAreIdenticalMixin, unittest.TestCase):
                 raise ValueError
         self.assertRaises(ValueError, eval, "foo", {}, X())
 
+    def test_eval_frozendict(self):
+        ns = frozendict(x=1, data=[], __builtins__=__builtins__)
+        eval("data.append(x)", ns, ns)
+        self.assertEqual(ns['data'], [1])
+
+        ns = frozendict()
+        errmsg = "cannot assign __builtins__ to frozendict globals"
+        with self.assertRaisesRegex(TypeError, errmsg):
+            eval("", ns, ns)
+
     def test_eval_kwargs(self):
         data = {"A_GLOBAL_VALUE": 456}
         self.assertEqual(eval("globals()['A_GLOBAL_VALUE']", globals=data), 456)
@@ -881,6 +891,21 @@ class BuiltinTest(ComplexesAreIdenticalMixin, unittest.TestCase):
         if '__builtins__' in l:
             del l['__builtins__']
         self.assertEqual((g, l), ({'a': 1}, {'b': 2}))
+
+    def test_exec_frozendict(self):
+        ns = frozendict(x=1, data=[], __builtins__=__builtins__)
+        exec("data.append(x)", ns, ns)
+        self.assertEqual(ns['data'], [1])
+
+        ns = frozendict(__builtins__=__builtins__)
+        errmsg = "'frozendict' object does not support item assignment"
+        with self.assertRaisesRegex(TypeError, errmsg):
+            exec("x = 1", ns, ns)
+
+        ns = frozendict()
+        errmsg = "cannot assign __builtins__ to frozendict globals"
+        with self.assertRaisesRegex(TypeError, errmsg):
+            exec("", ns, ns)
 
     def test_exec_kwargs(self):
         g = {}
@@ -2992,6 +3017,12 @@ class TestType(unittest.TestCase):
         for doc in 'x', '\xc4', '\U0001f40d', 'x\x00y', 'x\udcdcy', b'x', 42, None:
             A.__doc__ = doc
             self.assertEqual(A.__doc__, doc)
+
+    def test_type_frozendict(self):
+        A = type('A', (), frozendict({'x': 4, 'y': 2}))
+        self.assertEqual(A.x, 4)
+        self.assertEqual(A.y, 2)
+        self.assertEqual(A.__name__, 'A')
 
     def test_bad_args(self):
         with self.assertRaises(TypeError):

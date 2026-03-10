@@ -49,7 +49,7 @@ additional methods of invocation:
   appropriately named script from that directory.
 * When called with ``-c command``, it executes the Python statement(s) given as
   *command*.  Here *command* may contain multiple statements separated by
-  newlines. Leading whitespace is significant in Python statements!
+  newlines.
 * When called with ``-m module-name``, the given module is located on the
   Python module path and executed as a script.
 
@@ -687,6 +687,13 @@ Miscellaneous options
 
      .. versionadded:: 3.14
 
+   * :samp:`-X pathconfig_warnings={0,1}` if true (``1``) then
+     :ref:`sys-path-init` is allowed to log warnings into stderr.
+     If false (``0``) suppress these warnings. Set to true by default.
+     See also :envvar:`PYTHON_PATHCONFIG_WARNINGS`.
+
+     .. versionadded:: next
+
    * :samp:`-X tlbc={0,1}` enables (1, the default) or disables (0) thread-local
      bytecode in builds configured with :option:`--disable-gil`.  When disabled,
      this also disables the specializing interpreter.  See also
@@ -949,8 +956,9 @@ conflict.
 
 .. envvar:: PYTHONNOUSERSITE
 
-   If this is set, Python won't add the :data:`user site-packages directory
-   <site.USER_SITE>` to :data:`sys.path`.
+   This is equivalent to the :option:`-s` option.  If this is set, Python won't
+   add the :data:`user site-packages directory <site.USER_SITE>` to
+   :data:`sys.path`.
 
    .. seealso::
 
@@ -963,6 +971,9 @@ conflict.
    compute the path of the :data:`user site-packages directory <site.USER_SITE>`
    and :ref:`installation paths <sysconfig-user-scheme>` for
    ``python -m pip install --user``.
+
+   To disable the user site-packages, see :envvar:`PYTHONNOUSERSITE` or the :option:`-s`
+   option.
 
    .. seealso::
 
@@ -1349,6 +1360,14 @@ conflict.
    context_aware_warnings<-X>`.
 
    .. versionadded:: 3.14
+
+.. envvar:: PYTHON_PATHCONFIG_WARNINGS
+
+   If true (``1``) then :ref:`sys-path-init` is allowed to log warnings into
+   stderr. If false (``0``) suppress these warnings. Set to true by default.
+   See also :option:`-X pathconfig_warnings<-X>`.
+
+   .. versionadded:: next
 
 .. envvar:: PYTHON_JIT
 

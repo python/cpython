@@ -699,13 +699,25 @@ pointer and a void pointer argument.
 
 .. c:function:: int PyThreadState_SetAsyncExc(unsigned long id, PyObject *exc)
 
-   Asynchronously raise an exception in a thread. The *id* argument is the thread
-   id of the target thread; *exc* is the exception object to be raised. This
-   function does not steal any references to *exc*. To prevent naive misuse, you
-   must write your own C extension to call this.  Must be called with an :term:`attached thread state`.
-   Returns the number of thread states modified; this is normally one, but will be
-   zero if the thread id isn't found.  If *exc* is ``NULL``, the pending
-   exception (if any) for the thread is cleared. This raises no exceptions.
+   Schedule an exception to be raised asynchronously in a thread.
+   If the thread has a previously scheduled exception, it is overwritten.
+
+   The *id* argument is the thread id of the target thread, as returned by
+   :c:func:`PyThread_get_thread_ident`.
+   *exc* is the class of the exception to be raised, or ``NULL`` to clear
+   the pending exception (if any).
+
+   Return the number of affected thread states.
+   This is normally ``1`` if *id* is found, even when no change was
+   made (the given *exc* was already pending, or *exc* is ``NULL`` but
+   no exception is pending).
+   If the thread id isn't found, return ``0``.  This raises no exceptions.
+
+   To prevent naive misuse, you must write your own C extension to call this.
+   This function must be called with an :term:`attached thread state`.
+   This function does not steal any references to *exc*.
+   This function does not necessarily interrupt system calls such as
+   :py:func:`~time.sleep`.
 
    .. versionchanged:: 3.7
       The type of the *id* parameter changed from :c:expr:`long` to
@@ -743,7 +755,8 @@ Operating system thread APIs
    :term:`attached thread state`.
 
    .. seealso::
-      :py:func:`threading.get_ident`
+      :py:func:`threading.get_ident` and :py:attr:`threading.Thread.ident`
+      expose this identifier to Python.
 
 
 .. c:function:: PyObject *PyThread_GetInfo(void)
