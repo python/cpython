@@ -606,7 +606,7 @@ are always available.  They are listed here in alphabetical order.
    .. warning::
 
       This function executes arbitrary code. Calling it with
-      user-supplied input may lead to security vulnerabilities.
+      user-supplied input will lead to security vulnerabilities.
 
    The *source* argument is parsed and evaluated as a Python expression
    (technically speaking, a condition list) using the *globals* and *locals*
@@ -672,7 +672,7 @@ are always available.  They are listed here in alphabetical order.
    .. warning::
 
       This function executes arbitrary code. Calling it with
-      user-supplied input may lead to security vulnerabilities.
+      user-supplied input will lead to security vulnerabilities.
 
    This function supports dynamic execution of Python code. *source* must be
    either a string or a code object.  If it is a string, the string is parsed as
