@@ -1689,7 +1689,7 @@ static PyObject *
 float___getformat___impl(PyTypeObject *type, const char *typestr)
 /*[clinic end generated code: output=2bfb987228cc9628 input=0ae1ba35d192f704]*/
 {
-    if (strcmp(typestr, "double") != 0 || strcmp(typestr, "float") != 0) {
+    if (strcmp(typestr, "double") != 0 && strcmp(typestr, "float") != 0) {
         PyErr_SetString(PyExc_ValueError,
                         "__getformat__() argument 1 must be "
                         "'double' or 'float'");
