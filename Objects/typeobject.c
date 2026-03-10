@@ -12368,8 +12368,7 @@ _super_lookup_descr(PyTypeObject *su_type, PyTypeObject *su_obj_type, PyObject *
        replaced during PyDict_GetItemRef(dict, name, &res). */
     PyThreadState *tstate = _PyThreadState_GET();
     _PyCStackRef mro_ref;
-    _PyThreadState_PushCStackRef(tstate, &mro_ref);
-    mro_ref.ref = PyStackRef_FromPyObjectNew(mro);
+    _PyThreadState_PushCStackRefNew(tstate, &mro_ref, mro);
 
     assert(PyTuple_Check(mro));
     n = PyTuple_GET_SIZE(mro);
