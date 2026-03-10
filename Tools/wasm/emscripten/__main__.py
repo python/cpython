@@ -535,16 +535,24 @@ def make_emscripten_python(context, working_dir):
     subprocess.check_call([exec_script, "--version"])
 
 
-def build_all(context):
-    """Build everything."""
-    steps = [
-        configure_build_python,
-        make_build_python,
-        make_emscripten_libffi,
-        make_mpdec,
-        configure_emscripten_python,
-        make_emscripten_python,
-    ]
+def build_target(context):
+    """Build one or more targets."""
+    steps = []
+    if context.target in {"all"}:
+        steps.append(install_emscripten)
+    if context.target in {"build", "all"}:
+        steps.extend([
+            configure_build_python,
+            make_build_python,
+            make_emscripten_libffi,
+            make_mpdec,
+        ])
+    if context.target in {"host", "all"}:
+        steps.extend([
+            configure_emscripten_python,
+            make_emscripten_python,
+        ])
+
     for step in steps:
         step(context)
 
@@ -579,6 +587,17 @@ def main():
         help="Install the appropriate version of Emscripten",
     )
     build = subcommands.add_parser("build", help="Build everything")
+    build.add_argument(
+        "target",
+        nargs="?",
+        default="all",
+        choices=["all", "host", "build"],
+        help=(
+            "What should be built. 'build' for just the build platform, or "
+            "'host' for the host platform, or 'all' for both. Defaults to 'all'."
+        ),
+    )
+
     configure_build = subcommands.add_parser(
         "configure-build-python", help="Run `configure` for the build Python"
     )
@@ -690,7 +709,7 @@ def main():
         "make-build-python": make_build_python,
         "configure-host": configure_emscripten_python,
         "make-host": make_emscripten_python,
-        "build": build_all,
+        "build": build_target,
         "clean": clean_contents,
     }
 
