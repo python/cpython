@@ -300,13 +300,8 @@ and will not corrupt the set:
 These operations also compare elements, so the same :meth:`~object.__eq__`
 considerations as above apply.
 
-The following operations return new objects and hold the per-object lock
-for the duration:
-
-.. code-block::
-   :class: good
-
-   s.copy()         # returns a shallow copy
+The :meth:`~set.copy` method returns a new object and holds the per-object lock
+for the duration so that it is always atomic.
 
 The :meth:`~set.clear` method holds the lock for its duration. Other
 threads cannot observe elements being removed.
@@ -341,8 +336,8 @@ The update variants of the above methods also have some differences between
 them:
 
    * :meth:`set.difference_update` and :meth:`set.intersection_update` try
-      to lock all objects.
-   * :meth:`set.symmetric_difference_update` only lock the argument if it is
+      to lock all objects one-by-one.
+   * :meth:`set.symmetric_difference_update` only locks the arguments if it is
       of type :class:`set`, :class:`frozenset`, or :class:`dict`.
 
 The following methods always try to lock both objects:
