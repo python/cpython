@@ -204,8 +204,9 @@ The following function sets, modeled after the ANSI C standard, but specifying
 behavior when requesting zero bytes, are available for allocating and releasing
 memory from the Python heap.
 
-The :ref:`default memory allocator <default-memory-allocators>` uses the
-:ref:`pymalloc memory allocator <pymalloc>`.  In the
+In the GIL-enabled build (default build) the
+:ref:`default memory allocator <default-memory-allocators>` uses the
+:ref:`pymalloc memory allocator <pymalloc>`, whereas in the
 :term:`free-threaded build`, the default is the
 :ref:`mimalloc memory allocator <mimalloc>` instead.
 

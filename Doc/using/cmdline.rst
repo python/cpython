@@ -1086,12 +1086,6 @@ conflict.
    .. versionchanged:: 3.7
       Added the ``"default"`` allocator.
 
-   .. versionchanged:: 3.13
-      Added the ``"mimalloc"`` and ``"mimalloc_debug"`` allocators.
-      In the :term:`free-threaded <free threading>` build, the ``"malloc"``,
-      ``"malloc_debug"``, ``"pymalloc"``, and ``"pymalloc_debug"`` values are
-      not accepted.
-
 
 .. envvar:: PYTHONMALLOCSTATS
 
