@@ -211,6 +211,23 @@ endif
 	@mkdir -p $(TEST_STAGING)/sysroot/bin
 	@cp "$(abspath $(NANVIX_HOME))/bin/nanvixd.elf" $(TEST_STAGING)/sysroot/bin/ 2>/dev/null || true
 	@cp "$(abspath $(NANVIX_HOME))/bin/kernel.elf" $(TEST_STAGING)/sysroot/bin/ 2>/dev/null || true
+ifeq ($(PROCESS_MODE),standalone)
+	@cp "$(abspath $(NANVIX_HOME))/bin/mkramfs.elf" $(TEST_STAGING)/sysroot/bin/ 2>/dev/null || true
+	@echo "Test: Hello world (standalone)..."
+	cd $(TEST_STAGING)/sysroot && \
+		./bin/mkramfs.elf -o /tmp/rootfs.img . && \
+		timeout 120 ./bin/nanvixd.elf \
+		  -bin-dir ./bin -ramfs /tmp/rootfs.img \
+		  -- ./bin/python3.12 \
+		  "-B /sysroot/test_hello.py;PYTHONHOME=/sysroot PYTHONDONTWRITEBYTECODE=1" \
+		  < /dev/null > /tmp/cpython_test.log 2>&1; \
+		if grep -q 'CPYTHON_TEST_HELLO:' /tmp/cpython_test.log; then \
+			echo "  PASS: $$(grep 'CPYTHON_TEST_HELLO:' /tmp/cpython_test.log)"; \
+		else \
+			echo "  FAIL: Hello test did not produce expected output"; cat /tmp/cpython_test.log; exit 1; \
+		fi
+	@rm -f /tmp/rootfs.img
+else
 	@echo "Test: Hello world..."
 	cd $(TEST_STAGING)/sysroot && \
 		timeout 120 ./bin/nanvixd.elf -- ./bin/python3.12 ./test_hello.py < /dev/null > /tmp/cpython_test.log 2>&1; \
@@ -219,6 +236,7 @@ endif
 		else \
 			echo "  FAIL: Hello test did not produce expected output"; cat /tmp/cpython_test.log; exit 1; \
 		fi
+endif
 	@rm -rf $(TEST_STAGING) /tmp/cpython_test.log
 	@echo "		*** CPython tests PASSED ***"
 
