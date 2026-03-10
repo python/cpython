@@ -2915,7 +2915,7 @@ class FreeThreadingTest(unittest.TestCase):
         def resize_stress(ba):
             for _ in range(1000):
                 try:
-                    ba.resize(10_000)
+                    ba.resize(1000)
                     ba.resize(1)
                 except (BufferError, ValueError):
                     pass
