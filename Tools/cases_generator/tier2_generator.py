@@ -16,7 +16,7 @@ from analyzer import (
     analysis_error,
     get_uop_cache_depths,
     is_large,
-    MAX_CACHED_REGISTER,
+    MAX_GENERATED_CACHED_REGISTER,
 )
 
 from generators_common import (
@@ -202,8 +202,10 @@ class Tier2Emitter(Emitter):
             # replace this with a "clobber" to tell
             # the compiler that these values are unused
             # without having to emit any code.
-            for i in range(cached_items, MAX_CACHED_REGISTER):
+            for i in range(cached_items, MAX_GENERATED_CACHED_REGISTER):
+                self.out.emit(f"#if MAX_CACHED_REGISTER >= {i + 1}\n")
                 self.out.emit(f"_tos_cache{i} = PyStackRef_ZERO_BITS;\n")
+                self.out.emit("#endif\n")
         self.emit(f"SET_CURRENT_CACHED_VALUES({cached_items});\n")
 
 
@@ -277,6 +279,9 @@ def generate_tier2(
             continue
         for inputs, outputs, exit_depth in get_uop_cache_depths(uop):
             emitter = Tier2Emitter(out, analysis.labels, exit_depth)
+            needed_cached_registers = max(inputs, outputs)
+            if needed_cached_registers:
+                out.emit(f"#if MAX_CACHED_REGISTER >= {needed_cached_registers}\n")
             out.emit(f"case {uop.name}_r{inputs}{outputs}: {{\n")
             out.emit(f"CHECK_CURRENT_CACHED_VALUES({inputs});\n")
             out.emit("assert(WITHIN_STACK_BOUNDS_IGNORING_CACHE());\n")
@@ -293,6 +298,8 @@ def generate_tier2(
             out.start_line()
             out.emit("}")
             out.emit("\n\n")
+            if needed_cached_registers:
+                out.emit("#endif\n\n")
     out.emit("\n")
     outfile.write("#undef TIER_TWO\n")
 

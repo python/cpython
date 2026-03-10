@@ -10,7 +10,6 @@ from analyzer import (
     analyze_files,
     get_uop_cache_depths,
     Uop,
-    MAX_CACHED_REGISTER,
 )
 from generators_common import (
     DEFAULT_INPUT,
@@ -23,6 +22,7 @@ from cwriter import CWriter
 from typing import TextIO
 
 DEFAULT_OUTPUT = ROOT / "Include/internal/pycore_uop_metadata.h"
+MAX_CACHED_REGISTER = 3  # Specify this by different platform
 
 
 def uop_cache_info(uop: Uop) -> list[str] | None:
@@ -37,6 +37,8 @@ def uop_cache_info(uop: Uop) -> list[str] | None:
     high = -1
     defined = [ False ] * 4
     for inputs, outputs, exit_depth in get_uop_cache_depths(uop):
+        if max(inputs, outputs) > MAX_CACHED_REGISTER:
+            continue
         entries[inputs] = f"{{ {outputs}, {exit_depth}, {uop.name}_r{inputs}{outputs} }},\n"
         if inputs < low:
             low = inputs
