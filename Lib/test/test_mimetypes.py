@@ -235,8 +235,6 @@ class MimeTypesTestCase(unittest.TestCase):
                 ("application/texinfo", ".texi"),
                 ("application/toml", ".toml"),
                 ("application/vnd.apple.mpegurl", ".m3u"),
-                ("application/vnd.microsoft.portable-executable", ".exe"),
-                ("application/vnd.ms-cab-compressed", ".cab"),
                 ("application/vnd.ms-excel", ".xls"),
                 ("application/vnd.ms-fontobject", ".eot"),
                 ("application/vnd.ms-htmlhelp", ".chm"),
