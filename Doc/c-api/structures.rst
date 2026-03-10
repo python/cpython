@@ -50,7 +50,7 @@ under :ref:`reference counting <countingrefs>`.
 
    .. c:member:: PyMutex ob_mutex
 
-      A per-object lock, present only in the :term:`free-threaded <free threading>`
+      A :ref:`per-object lock <per-object-locks>`, present only in the :term:`free-threaded <free threading>`
       build (when :c:macro:`Py_GIL_DISABLED` is defined).
 
       This field is **reserved for use by the critical section API**
@@ -58,9 +58,6 @@ under :ref:`reference counting <countingrefs>`.
       Do **not** lock it directly with ``PyMutex_Lock``; doing so can cause
       deadlocks.  If you need your own lock, add a separate :c:type:`PyMutex`
       field to your object struct.
-
-      See :ref:`per-object-locks` in the free-threading extension guide for
-      details.
 
       .. versionadded:: 3.13
 
