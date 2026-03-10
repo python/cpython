@@ -5220,7 +5220,7 @@ unicode_decode_utf8_impl(_PyUnicodeWriter *writer,
             }
 
             if (_PyUnicodeWriter_Prepare(writer, end - s, 127) < 0) {
-                return -1;
+                goto onError;
             }
         }
     }
@@ -13581,7 +13581,8 @@ search_longest_common_leading_whitespace(
 }
 
 /* Dedent a string.
-   Behaviour is expected to be an exact match of `textwrap.dedent`.
+   Intended to dedent Python source. Unlike `textwrap.dedent`, this
+   only supports spaces and tabs and doesn't normalize empty lines.
    Return a new reference on success, NULL with exception set on error.
    */
 PyObject *

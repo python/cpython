@@ -1,0 +1,1 @@
+Fix a JIT assertion failure when a conditional branch jumps to the same target as the fallthrough path.

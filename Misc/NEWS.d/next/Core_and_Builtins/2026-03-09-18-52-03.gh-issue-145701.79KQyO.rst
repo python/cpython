@@ -1,0 +1,3 @@
+Fix :exc:`SystemError` when ``__classdict__`` or
+``__conditional_annotations__`` is in a class-scope inlined comprehension.
+Found by OSS Fuzz in :oss-fuzz:`491105000`.

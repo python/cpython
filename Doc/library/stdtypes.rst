@@ -2247,16 +2247,33 @@ expression support in the :mod:`re` module).
       >>> '\t'.isprintable(), '\n'.isprintable()
       (False, False)
 
+   See also :meth:`isspace`.
+
 
 .. method:: str.isspace()
 
    Return ``True`` if there are only whitespace characters in the string and there is
    at least one character, ``False`` otherwise.
 
+   For example:
+
+   .. doctest::
+
+      >>> ''.isspace()
+      False
+      >>> ' '.isspace()
+      True
+      >>> '\t\n'.isspace() # TAB and BREAK LINE
+      True
+      >>> '\u3000'.isspace() # IDEOGRAPHIC SPACE
+      True
+
    A character is *whitespace* if in the Unicode character database
    (see :mod:`unicodedata`), either its general category is ``Zs``
    ("Separator, space"), or its bidirectional class is one of ``WS``,
    ``B``, or ``S``.
+
+   See also :meth:`isprintable`.
 
 
 .. method:: str.istitle()
@@ -2384,6 +2401,10 @@ expression support in the :mod:`re` module).
    resulting dictionary, each character in *from* will be mapped to the character at
    the same position in *to*.  If there is a third argument, it must be a string,
    whose characters will be mapped to ``None`` in the result.
+
+   .. versionchanged:: next
+
+      *dict* can now be a :class:`frozendict`.
 
 
 .. method:: str.partition(sep, /)
