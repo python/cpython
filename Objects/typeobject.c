@@ -6137,16 +6137,9 @@ _PyType_LookupRefAndVersion(PyTypeObject *type, PyObject *name, unsigned int *ve
 static int
 should_assign_version_tag(PyTypeObject *type, PyObject *name, unsigned int version_tag)
 {
-    if (version_tag != 0) {
-        return 0;
-    }
-    if (FT_ATOMIC_LOAD_UINT16_RELAXED(type->tp_versions_used) >= MAX_VERSIONS_PER_CLASS) {
-        return 0;
-    }
-    if (!MCACHE_CACHEABLE_NAME(name)) {
-        return 0;
-    }
-    return 1;
+    return (version_tag == 0
+        && FT_ATOMIC_LOAD_UINT16_RELAXED(type->tp_versions_used) < MAX_VERSIONS_PER_CLASS
+        && MCACHE_CACHEABLE_NAME(name));
 }
 
 unsigned int
@@ -6196,9 +6189,6 @@ _PyType_LookupStackRefAndVersion(PyTypeObject *type, PyObject *name, _PyStackRef
 
     /* We may end up clearing live exceptions below, so make sure it's ours. */
     assert(!PyErr_Occurred());
-
-    // We need to atomically do the lookup and capture the version before
-    // anyone else can modify our mro or mutate the type.
 
     int res;
     PyInterpreterState *interp = _PyInterpreterState_GET();
