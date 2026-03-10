@@ -705,7 +705,7 @@ are always available.  They are listed here in alphabetical order.
    ``__builtins__``, a reference to the dictionary of the built-in module
    :mod:`builtins` is inserted under that key.
    Overriding ``__builtins__`` can be used to restrict or change the available
-   names, but is **not** a security mechanism: the executed code can
+   names, but this is **not** a security mechanism: the executed code can
    still access all builtins.
 
    The *closure* argument specifies a closure--a tuple of cellvars.
