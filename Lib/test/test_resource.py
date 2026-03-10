@@ -68,31 +68,25 @@ class ResourceTest(unittest.TestCase):
         self.addCleanup(resource.setrlimit, resource.RLIMIT_FSIZE, (cur, max_lim))
 
         resource.setrlimit(resource.RLIMIT_FSIZE, (1024, max_lim))
-
-        f = open(os_helper.TESTFN, "wb")
+        
         try:
-            f.write(b"X" * 1024)
-            try:
-                f.write(b"Y")
-                f.flush()
-                # On some systems (e.g., Ubuntu on hppa) the flush()
-                # doesn't always cause the exception, but the close()
-                # does eventually.  Try flushing several times in
-                # an attempt to ensure the file is really synced and
-                # the exception raised.
-                for i in range(5):
-                    time.sleep(.1)
+            with open(os_helper.TESTFN, "wb") as f:
+                f.write(b"X" * 1024)
+                # This should raise OSError because it exceeds the 1024 byte limit
+                with self.assertRaises(OSError, msg="f.write() did not raise OSError when exceeding RLIMIT_FSIZE"):
+                    f.write(b"Y")
                     f.flush()
-            except OSError:
-                pass
-            else:
-                self.fail("f.write() did not raise OSError when exceeding RLIMIT_FSIZE")
-
-            # Close will attempt to flush the byte we wrote
-            # Restore limit first to avoid getting a spurious error
-            resource.setrlimit(resource.RLIMIT_FSIZE, (cur, max_lim))
+                    # On some systems (e.g., Ubuntu on hppa) the flush()
+                    # doesn't always cause the exception, but the close()
+                    # does eventually.  Try flushing several times in
+                    # an attempt to ensure the file is really synced and
+                    # the exception raised.
+                    for i in range(5):
+                        time.sleep(.1)
+                        f.flush()
         finally:
-            f.close()
+            # Restore limit after the file is closed by the 'with' block
+            resource.setrlimit(resource.RLIMIT_FSIZE, (cur, max_lim))
 
     @unittest.skipIf(sys.platform == "vxworks",
                      "setting RLIMIT_FSIZE is not supported on VxWorks")
