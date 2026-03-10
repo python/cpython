@@ -1,3 +1,0 @@
-Fix crash in :mod:`struct` when calling :func:`repr` or
-``__sizeof__()`` on an uninitialized :class:`struct.Struct`
-object created via ``Struct.__new__()`` without calling ``__init__()``.

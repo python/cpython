@@ -3023,6 +3023,13 @@ def force_color(color: bool):
     import _colorize
     from .os_helper import EnvironmentVarGuard
 
+    if color:
+        try:
+            import _pyrepl  # noqa: F401
+        except ModuleNotFoundError:
+            # Can't force enable color without _pyrepl, so just skip.
+            raise unittest.SkipTest("_pyrepl is missing")
+
     with (
         swap_attr(_colorize, "can_colorize", lambda *, file=None: color),
         EnvironmentVarGuard() as env,

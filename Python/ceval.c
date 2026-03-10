@@ -2243,6 +2243,7 @@ _PyEval_ExceptionGroupMatch(_PyInterpreterFrame *frame, PyObject* exc_value,
             if (f != NULL) {
                 PyObject *tb = _PyTraceBack_FromFrame(NULL, f);
                 if (tb == NULL) {
+                    Py_DECREF(wrapped);
                     return -1;
                 }
                 PyException_SetTraceback(wrapped, tb);

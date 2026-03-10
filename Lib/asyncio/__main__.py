@@ -12,13 +12,16 @@ import threading
 import types
 import warnings
 
-from _colorize import get_theme
-from _pyrepl.console import InteractiveColoredConsole
+try:
+    from _colorize import get_theme
+    from _pyrepl.console import InteractiveColoredConsole as InteractiveConsole
+except ModuleNotFoundError:
+    from code import InteractiveConsole
 
 from . import futures
 
 
-class AsyncIOInteractiveConsole(InteractiveColoredConsole):
+class AsyncIOInteractiveConsole(InteractiveConsole):
 
     def __init__(self, locals, loop):
         super().__init__(locals, filename="<stdin>")
@@ -185,7 +188,10 @@ if __name__ == '__main__':
     if os.getenv('PYTHON_BASIC_REPL'):
         CAN_USE_PYREPL = False
     else:
-        from _pyrepl.main import CAN_USE_PYREPL
+        try:
+            from _pyrepl.main import CAN_USE_PYREPL
+        except ModuleNotFoundError:
+            CAN_USE_PYREPL = False
 
     return_code = 0
     loop = asyncio.new_event_loop()
