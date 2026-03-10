@@ -1,0 +1,1 @@
+Add a few Microsoft-specific MIME types, and synchronize between ``mimetypes`` module and tests
