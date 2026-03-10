@@ -1829,6 +1829,13 @@ class FrozenDictTests(unittest.TestCase):
         with self.assertRaises(TypeError):
             dict.__init__(d, x=1)
 
+        # Avoid copy if it's frozendict type
+        d2 = frozendict(d)
+        self.assertIs(d2, d)
+        d2 = FrozenDict(d)
+        self.assertIsNot(d2, d)
+        self.assertEqual(d2, d)
+
     def test_copy(self):
         d = frozendict(x=1, y=2)
         d2 = d.copy()
@@ -1848,10 +1855,18 @@ class FrozenDictTests(unittest.TestCase):
                          frozendict({'x': 1, 'y': 2}))
         self.assertEqual(frozendict(x=1, y=2) | frozendict(y=5),
                          frozendict({'x': 1, 'y': 5}))
+        self.assertEqual(FrozenDict(x=1, y=2) | FrozenDict(y=5),
+                         frozendict({'x': 1, 'y': 5}))
+
         fd = frozendict(x=1, y=2)
         self.assertIs(fd | frozendict(), fd)
         self.assertIs(fd | {}, fd)
         self.assertIs(frozendict() | fd, fd)
+
+        fd = FrozenDict(x=1, y=2)
+        self.assertEqual(fd | frozendict(), fd)
+        self.assertEqual(fd | {}, fd)
+        self.assertEqual(frozendict() | fd, fd)
 
     def test_update(self):
         # test "a |= b" operator
@@ -1862,6 +1877,11 @@ class FrozenDictTests(unittest.TestCase):
         self.assertIsNot(copy, d)
         self.assertEqual(d, frozendict({'x': 1, 'y': 2}))
         self.assertEqual(copy, frozendict({'x': 1}))
+
+    def test_items_xor(self):
+        # test "a ^ b" operator on items views
+        res = frozendict(a=1, b=2).items() ^ frozendict(b=2, c=3).items()
+        self.assertEqual(res, {('a', 1), ('c', 3)})
 
     def test_repr(self):
         d = frozendict()

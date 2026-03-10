@@ -515,7 +515,8 @@ initialize_structseq_dict(PyStructSequence_Desc *desc, PyObject* dict,
     }
 
     if (_PyTuple_Resize(&keys, k) == -1) {
-        goto error;
+        assert(keys == NULL);
+        return -1;
     }
 
     if (PyDict_SetItemString(dict, match_args_key, keys) < 0) {

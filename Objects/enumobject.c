@@ -178,14 +178,16 @@ enum_traverse(PyObject *op, visitproc visit, void *arg)
 static inline PyObject *
 increment_longindex_lock_held(enumobject *en)
 {
-    PyObject *next_index = en->en_longindex;
-    if (next_index == NULL) {
-        next_index = PyLong_FromSsize_t(PY_SSIZE_T_MAX);
-        if (next_index == NULL) {
+    if (en->en_longindex == NULL) {
+        en->en_longindex = PyLong_FromSsize_t(PY_SSIZE_T_MAX);
+        if (en->en_longindex == NULL) {
             return NULL;
         }
     }
-    assert(next_index != NULL);
+    assert(en->en_longindex != NULL);
+    // We hold one reference to "next_index" (a.k.a. the old value of
+    // en->en_longindex); we'll either return it or keep it in en->en_longindex
+    PyObject *next_index = en->en_longindex;
     PyObject *stepped_up = PyNumber_Add(next_index, en->one);
     if (stepped_up == NULL) {
         return NULL;

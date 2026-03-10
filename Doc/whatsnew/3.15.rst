@@ -211,6 +211,13 @@ For example::
     >>> a == b
     True
 
+The following standard library modules have been updated to accept
+:class:`!frozendict`: :mod:`copy`, :mod:`decimal`, :mod:`json`, :mod:`marshal`,
+:mod:`pickle`, :mod:`pprint` and :mod:`xml.etree.ElementTree`.
+
+:func:`eval` and :func:`exec` accept :class:`!frozendict` for *globals*, and
+:func:`type` and :meth:`str.maketrans` accept :class:`!frozendict` for *dict*.
+
 .. seealso:: :pep:`814` for the full specification and rationale.
 
 (Contributed by Victor Stinner and Donghee Na in :gh:`141510`.)
@@ -1599,6 +1606,11 @@ C API changes
 
 New features
 ------------
+
+* Add :c:func:`PyArg_ParseArray` and :c:func:`PyArg_ParseArrayAndKeywords`
+  functions to parse arguments of functions using the :c:macro:`METH_FASTCALL`
+  calling convention.
+  (Contributed by Victor Stinner in :gh:`144175`.)
 
 * Add the following functions for the new :class:`frozendict` type:
 
