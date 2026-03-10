@@ -59,16 +59,9 @@ class ResourceTest(unittest.TestCase):
             self.skipTest(f"system RLIMIT_FSIZE hard limit ({max_lim}) is too small for this test")
 
         try:
-            resource.setrlimit(resource.RLIMIT_FSIZE, (1024, max_lim))
-            resource.setrlimit(resource.RLIMIT_FSIZE, (cur, max_lim))
-        except (ValueError, OSError, PermissionError) as e:
-            self.skipTest(f"cannot set RLIMIT_FSIZE to 1024: {e}")
-
-        self.addCleanup(os_helper.unlink, os_helper.TESTFN)
-        self.addCleanup(resource.setrlimit, resource.RLIMIT_FSIZE, (cur, max_lim))
-        resource.setrlimit(resource.RLIMIT_FSIZE, (1024, max_lim))
-        try:
             with open(os_helper.TESTFN, "wb") as f:
+                resource.setrlimit(resource.RLIMIT_FSIZE, (1024, max_lim))
+
                 f.write(b"X" * 1024)
                 # This should raise OSError because it exceeds the 1024 byte limit
                 with self.assertRaises(OSError, msg="f.write() did not raise OSError when exceeding RLIMIT_FSIZE"):
@@ -83,9 +76,8 @@ class ResourceTest(unittest.TestCase):
                         time.sleep(.1)
                         f.flush()
         finally:
-            # Restore limit after the file is closed by the 'with' block
             resource.setrlimit(resource.RLIMIT_FSIZE, (cur, max_lim))
-
+    
     @unittest.skipIf(sys.platform == "vxworks",
                      "setting RLIMIT_FSIZE is not supported on VxWorks")
     @unittest.skipUnless(hasattr(resource, 'RLIMIT_FSIZE'), 'requires resource.RLIMIT_FSIZE')
