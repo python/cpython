@@ -2337,9 +2337,10 @@ defdict_repr(defdictobject *dd)
             }
             defrepr = PyUnicode_FromString("...");
         }
-        else
+        else {
             defrepr = PyObject_Repr(dd->default_factory);
-        Py_ReprLeave(dd->default_factory);
+            Py_ReprLeave(dd->default_factory);
+        }
     }
     if (defrepr == NULL) {
         Py_DECREF(baserepr);
