@@ -64,10 +64,7 @@ def strclass(cls):
     return "%s.%s" % (cls.__module__, cls.__qualname__)
 
 def _dedupe_sorted(lst):
-    """Remove consecutive duplicate elements from a sorted list.
-
-    Only requires that elements support equality comparison,
-    not hashing."""
+    """Remove consecutive duplicate elements from a sorted list."""
     result = []
     for item in lst:
         if not result or result[-1] != item:
