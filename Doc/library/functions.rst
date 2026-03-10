@@ -660,7 +660,7 @@ are always available.  They are listed here in alphabetical order.
       The semantics of the default *locals* namespace have been adjusted as
       described for the :func:`locals` builtin.
 
-   .. versionchanged:: next
+   .. versionchanged:: 3.15
 
       *globals* can now be a :class:`frozendict`.
 
@@ -741,7 +741,7 @@ are always available.  They are listed here in alphabetical order.
       The semantics of the default *locals* namespace have been adjusted as
       described for the :func:`locals` builtin.
 
-   .. versionchanged:: next
+   .. versionchanged:: 3.15
 
       *globals* can now be a :class:`frozendict`.
 
@@ -2099,7 +2099,7 @@ are always available.  They are listed here in alphabetical order.
       Subclasses of :class:`!type` which don't override ``type.__new__`` may no
       longer use the one-argument form to get the type of an object.
 
-   .. versionchanged:: next
+   .. versionchanged:: 3.15
 
       *dict* can now be a :class:`frozendict`.
 
