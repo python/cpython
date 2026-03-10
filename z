@@ -107,17 +107,7 @@ download_artifact() {
   local url="https://github.com/${repo}/releases/latest/download/${artifact}"
 
   log "downloading ${repo} artifact: ${artifact}"
-  if ! curl -fsSL "${curl_headers[@]}" -o "$destination" "$url"; then
-    # Fallback: try single-process artifact (libraries are identical across process modes)
-    local fallback_artifact="${artifact//${NANVIX_PROCESS_MODE}/single-process}"
-    if [[ "$fallback_artifact" != "$artifact" ]]; then
-      local fallback_url="https://github.com/${repo}/releases/latest/download/${fallback_artifact}"
-      log "fallback: downloading ${fallback_artifact}"
-      curl -fsSL "${curl_headers[@]}" -o "$destination" "$fallback_url"
-    else
-      return 1
-    fi
-  fi
+  curl -fsSL "${curl_headers[@]}" -o "$destination" "$url"
 }
 
 extract_dep_dir() {
