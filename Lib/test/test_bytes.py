@@ -2908,6 +2908,19 @@ class FreeThreadingTest(unittest.TestCase):
             check([iter_next] + [iter_reduce] * 10, iter(ba))  # for tsan
             check([iter_next] + [iter_setstate] * 10, iter(ba))  # for tsan
 
+    def test_free_threading_bytearray_resize(self):
+        def resize_stress(ba):
+            for _ in range(100_000):
+                try:
+                    ba.resize(10_000)
+                    ba.resize(1)
+                except (BufferError, ValueError):
+                    pass
+
+        ba = bytearray(100)
+        threads = [threading.Thread(target=resize_stress, args=(ba,)) for _ in range(4)]
+        for t in threads: t.start()
+        for t in threads: t.join()
 
 if __name__ == "__main__":
     unittest.main()
