@@ -26,13 +26,11 @@ def float_round(x):
     return float(round(x))
 
 class AbstractToplevelTest(AbstractWidgetTest, PixelSizeTests):
-    if tk_version < (9, 0):
-        _no_round = {'padx', 'pady'}
-    else:
-        _no_round = {'borderwidth', 'height', 'highlightthickness', 'padx',
-                     'pady', 'width'}
-    if tk_version < (9, 0):
+    _no_round = {'padx', 'pady'}
+    if tk_version < (8, 7):
         _clipped = {'highlightthickness'}
+    elif tk_version < (9, 0):
+        _clipped = {'borderwidth', 'highlightthickness', 'padx', 'pady'}
     else:
         _clipped = {'borderwidth', 'height', 'highlightthickness', 'padx',
                     'pady', 'width'}
@@ -122,11 +120,6 @@ class FrameTest(AbstractToplevelTest, unittest.TestCase):
         'highlightbackground', 'highlightcolor', 'highlightthickness',
         'padx', 'pady', 'relief', 'takefocus', 'tile', 'visual', 'width',
     )
-    if tk_version < (9, 0):
-        _no_round = {'padx', 'pady'}
-    else:
-        _no_round = {'borderwidth', 'height', 'highlightthickness', 'padx',
-                     'pady', 'width'}
 
     def create(self, **kwargs):
         return tkinter.Frame(self.root, **kwargs)
@@ -142,11 +135,6 @@ class LabelFrameTest(AbstractToplevelTest, unittest.TestCase):
         'labelanchor', 'labelwidget', 'padx', 'pady', 'relief',
         'takefocus', 'text', 'visual', 'width',
     )
-    if tk_version < (9, 0):
-        _no_round = {'padx', 'pady'}
-    else:
-        _no_round = {'borderwidth', 'height', 'highlightthickness', 'padx',
-                     'pady', 'width'}
 
     def create(self, **kwargs):
         return tkinter.LabelFrame(self.root, **kwargs)
@@ -167,11 +155,13 @@ class LabelFrameTest(AbstractToplevelTest, unittest.TestCase):
 # Label, Button, Checkbutton, Radiobutton, MenuButton
 class AbstractLabelTest(AbstractWidgetTest, IntegerSizeTests):
     _rounds_pixels = False
-    if tk_version < (9, 0):
+    if tk_version < (8, 7):
         _clipped = {}
+    elif tk_version < (9, 0):
+        _clipped = {'borderwidth', 'height', 'highlightthickness', 'padx', 'pady', 'width'}
     else:
-        _clipped = {'borderwidth', 'insertborderwidth', 'highlightthickness',
-                    'padx', 'pady'}
+        _clipped = {'borderwidth', 'height', 'highlightthickness',
+                    'insertborderwidth', 'padx', 'pady', 'width'}
 
 @add_configure_tests(StandardOptionsTests)
 class LabelTest(AbstractLabelTest, unittest.TestCase):
@@ -201,6 +191,11 @@ class ButtonTest(AbstractLabelTest, unittest.TestCase):
         'repeatdelay', 'repeatinterval',
         'state', 'takefocus', 'text', 'textvariable',
         'underline', 'width', 'wraplength')
+    if tk_version < (8, 7):
+        _clipped = {}
+    else:
+        _clipped = {'borderwidth', 'height', 'highlightthickness',
+                    'padx', 'pady', 'width'}
 
     def create(self, **kwargs):
         return tkinter.Button(self.root, **kwargs)
@@ -301,10 +296,12 @@ class MenubuttonTest(AbstractLabelTest, unittest.TestCase):
         'underline', 'width', 'wraplength',
     )
     _rounds_pixels = (tk_version < (9, 0))
-    if tk_version < (9, 0):
+    if tk_version < (8, 7):
         _clipped = {'highlightthickness', 'padx', 'pady'}
+    elif tk_version < (9, 0):
+        _clipped = {'borderwidth', 'highlightthickness', 'padx', 'pady'}
     else:
-        _clipped ={ 'insertborderwidth', 'highlightthickness', 'padx', 'pady'}
+        _clipped = {'borderwidth', 'highlightthickness', 'insertborderwidth', 'padx', 'pady'}
 
     def create(self, **kwargs):
         return tkinter.Menubutton(self.root, **kwargs)
@@ -316,16 +313,14 @@ class MenubuttonTest(AbstractLabelTest, unittest.TestCase):
 
     def test_configure_height(self):
         widget = self.create()
-        if tk_version < (9, 0):
-            self.checkIntegerParam(widget, 'height', 100, -100, 0, conv=str)
-        else:
-            self.checkIntegerParam(widget, 'height', 0, -100, 0)
+        conv = str if tk_version < (8, 7) else False
+        self.checkIntegerParam(widget, 'height', 100, -100, 0, conv=conv)
 
     def test_configure_image(self):
         widget = self.create()
         image = tkinter.PhotoImage(master=self.root, name='image1')
         self.checkParam(widget, 'image', image, conv=str)
-        if tk_version < (9, 0):
+        if tk_version < (8, 7):
             errmsg = 'image "spam" doesn\'t exist'
         else:
             errmsg = 'image "spam" does not exist'
@@ -346,10 +341,8 @@ class MenubuttonTest(AbstractLabelTest, unittest.TestCase):
 
     def test_configure_width(self):
         widget = self.create()
-        if tk_version < (9, 0):
-            self.checkIntegerParam(widget, 'width', 402, -402, 0, conv=str)
-        else:
-            self.checkIntegerParam(widget, 'width', 402, 0, 0)
+        conv = str if tk_version < (8, 7) else False
+        self.checkIntegerParam(widget, 'width', 402, -402, 0, conv=conv)
 
 
 class OptionMenuTest(MenubuttonTest, unittest.TestCase):
@@ -368,12 +361,11 @@ class OptionMenuTest(MenubuttonTest, unittest.TestCase):
 
 @add_configure_tests(IntegerSizeTests, StandardOptionsTests)
 class EntryTest(AbstractWidgetTest, unittest.TestCase):
-    _rounds_pixels = (tk_version < (9, 0))
-    if tk_version < (9, 0):
+    if tk_version < (8, 7):
         _clipped = {'highlightthickness'}
     else:
-        _clipped = {'highlightthickness', 'borderwidth', 'insertborderwidth',
-                    'selectborderwidth'}
+        _clipped = {'borderwidth', 'highlightthickness', 'insertborderwidth',
+                    'insertwidth', 'selectborderwidth'}
 
     OPTIONS = (
         'background', 'borderwidth', 'cursor',
@@ -398,28 +390,21 @@ class EntryTest(AbstractWidgetTest, unittest.TestCase):
 
     def test_configure_insertborderwidth(self):
         widget = self.create(insertwidth=100)
-        if tk_version < (9, 0):
-            self.checkPixelsParam(widget, 'insertborderwidth',
-                                  0, 1.3, 2.6, 6, '10p')
-        else:
-            self.checkPixelsParam(widget, 'insertborderwidth',
-                                  0, 1.3, 3, 6, '10p')
-        self.checkParam(widget, 'insertborderwidth', -2)
+        self.checkPixelsParam(widget, 'insertborderwidth',
+                              0, 1.3, 2.6, 6, -2, '10p')
         # insertborderwidth is bounded above by a half of insertwidth.
-        expected =  100 // 2 if tk_version < (9, 0) else 60
+        expected =  100 // 2 if tk_version < (8, 7) else 60
         self.checkParam(widget, 'insertborderwidth', 60, expected=expected)
 
     def test_configure_insertwidth(self):
         widget = self.create()
-        self.checkPixelsParam(widget, 'insertwidth', 1.3, 3.6, '10p')
-        if tk_version < (9, 0):
+        self.checkPixelsParam(widget, 'insertwidth', 1.3, 3.6, 0.9, '10p')
+        if tk_version < (8, 7):
+            self.checkParam(widget, 'insertwidth', 0, expected=2)
             self.checkParam(widget, 'insertwidth', 0.1, expected=2)
             self.checkParam(widget, 'insertwidth', -2, expected=2)
-            self.checkParam(widget, 'insertwidth', 0.9, expected=1)
         else:
-            self.checkParam(widget, 'insertwidth', 0.1)
-            self.checkParam(widget, 'insertwidth', -2, expected=0)
-            self.checkParam(widget, 'insertwidth', 0.9)
+            self.checkPixelsParam(widget, 'insertwidth', 0, 0.1, -2)
 
     def test_configure_invalidcommand(self):
         widget = self.create()
@@ -562,7 +547,7 @@ class SpinboxTest(EntryTest, unittest.TestCase):
         # XXX
         widget = self.create()
         self.assertEqual(widget['values'], '')
-        if tk_version < (9, 0):
+        if tk_version < (8, 7):
             expected = 'mon tue wed thur'
         else:
             expected = ('mon', 'tue', 'wed', 'thur')
@@ -571,7 +556,7 @@ class SpinboxTest(EntryTest, unittest.TestCase):
         self.checkParam(widget, 'values', ('mon', 'tue', 'wed', 'thur'),
                         expected=expected)
 
-        if tk_version < (9, 0):
+        if tk_version < (8, 7):
             expected = '42 3.14 {} {any string}'
         else:
             expected = (42, 3.14, '', 'any string')
@@ -640,9 +625,13 @@ class TextTest(AbstractWidgetTest, unittest.TestCase):
         'tabs', 'tabstyle', 'takefocus', 'undo', 'width', 'wrap',
         'xscrollcommand', 'yscrollcommand',
     )
-    _rounds_pixels = (tk_version < (9, 0))
     _no_round = {'selectborderwidth'}
-    _clipped = {'highlightthickness'}
+    if tk_version < (9, 0):
+        _clipped = {'highlightthickness', 'spacing1', 'spacing2', 'spacing3'}
+    else:
+        _clipped = {'borderwidth', 'highlightthickness', 'insertborderwidth',
+                    'insertwidth', 'padx', 'pady', 'selectborderwidth',
+                    'spacing1', 'spacing2', 'spacing3'}
 
     def create(self, **kwargs):
         return tkinter.Text(self.root, **kwargs)
@@ -672,8 +661,11 @@ class TextTest(AbstractWidgetTest, unittest.TestCase):
         widget = self.create()
         self.checkPixelsParam(widget, 'height', 100, 101.2, 102.6, '3c')
         expected = 1 if tk_version < (9, 0) else 0
-        self.checkParam(widget, 'height', -100, expected=expected)
         self.checkParam(widget, 'height', 0, expected=expected)
+        if tk_version < (9, 1):
+            self.checkParam(widget, 'height', -100, expected=expected)
+        else:
+            self.checkInvalidParam(widget, 'height', -100)
 
     def test_configure_maxundo(self):
         widget = self.create()
@@ -691,24 +683,20 @@ class TextTest(AbstractWidgetTest, unittest.TestCase):
 
     def test_configure_selectborderwidth(self):
         widget = self.create()
-        value = -2 if tk_version < (9, 0) else 0
         self.checkPixelsParam(widget, 'selectborderwidth',
-                              1.3, 2.6, value, '10p', conv=False)
+                              1.3, 2.6, -2, '10p', conv=False)
 
     def test_configure_spacing1(self):
         widget = self.create()
-        self.checkPixelsParam(widget, 'spacing1', 20, 21.4, 22.6, '0.5c')
-        self.checkParam(widget, 'spacing1', -5, expected=0)
+        self.checkPixelsParam(widget, 'spacing1', 20, 21.4, 22.6, -5, '0.5c')
 
     def test_configure_spacing2(self):
         widget = self.create()
-        self.checkPixelsParam(widget, 'spacing2', 5, 6.4, 7.6, '0.1c')
-        self.checkParam(widget, 'spacing2', -1, expected=0)
+        self.checkPixelsParam(widget, 'spacing2', 5, 6.4, 7.6, -1, '0.1c')
 
     def test_configure_spacing3(self):
         widget = self.create()
-        self.checkPixelsParam(widget, 'spacing3', 20, 21.4, 22.6, '0.5c')
-        self.checkParam(widget, 'spacing3', -10, expected=0)
+        self.checkPixelsParam(widget, 'spacing3', 20, 21.4, 22.6, -10, '0.5c')
 
     def test_configure_startline(self):
         widget = self.create()
@@ -781,15 +769,16 @@ class CanvasTest(AbstractWidgetTest, unittest.TestCase):
         'xscrollcommand', 'xscrollincrement',
         'yscrollcommand', 'yscrollincrement', 'width',
     )
-    _rounds_pixels = True
-    if tk_version < (9, 0):
-        _noround = {}
+    if tk_version < (8, 7):
         _clipped = {'highlightthickness'}
+    elif tk_version < (9, 0):
+        _clipped = {'borderwidth', 'highlightthickness', 'insertborderwidth',
+                    'insertwidth', 'selectborderwidth', 'xscrollincrement',
+                    'yscrollincrement'}
     else:
-        _no_round = {'borderwidth', 'height', 'highlightthickness', 'width',
-                     'xscrollincrement', 'yscrollincrement'}
-        _clipped = {'borderwidth', 'height', 'highlightthickness', 'width',
-                    'xscrollincrement', 'yscrollincrement'}
+        _clipped = {'borderwidth', 'height', 'highlightthickness',
+                    'insertborderwidth', 'insertwidth', 'selectborderwidth',
+                    'width', 'xscrollincrement', 'yscrollincrement'}
     _stringify = True
 
     def create(self, **kwargs):
@@ -938,7 +927,6 @@ class CanvasTest(AbstractWidgetTest, unittest.TestCase):
 
     def test_create_polygon(self):
         c = self.create()
-        tk87 = tk_version >= (8, 7)
         # In Tk < 8.7 polygons are filled, but has no outline by default.
         # This affects its size, so always explicitly specify outline.
         i1 = c.create_polygon(20, 30, 40, 50, 60, 10, outline='red')
@@ -1043,11 +1031,10 @@ class ListboxTest(AbstractWidgetTest, unittest.TestCase):
         'selectmode', 'setgrid', 'state',
         'takefocus', 'width', 'xscrollcommand', 'yscrollcommand',
     )
-    _rounds_pixels = (tk_version < (9, 0))
-    if tk_version < (9, 0):
+    if tk_version < (8, 7):
         _clipped = {'highlightthickness'}
     else:
-        _clipped = { 'borderwidth', 'highlightthickness', 'selectborderwidth'}
+        _clipped = {'borderwidth', 'highlightthickness', 'selectborderwidth'}
 
     def create(self, **kwargs):
         return tkinter.Listbox(self.root, **kwargs)
@@ -1185,7 +1172,6 @@ class ScaleTest(AbstractWidgetTest, unittest.TestCase):
         'resolution', 'showvalue', 'sliderlength', 'sliderrelief', 'state',
         'takefocus', 'tickinterval', 'to', 'troughcolor', 'variable', 'width',
     )
-    _rounds_pixels = (tk_version < (9, 0))
     _clipped = {'highlightthickness'}
     default_orient = 'vertical'
 
@@ -1255,12 +1241,10 @@ class ScrollbarTest(AbstractWidgetTest, unittest.TestCase):
         'repeatdelay', 'repeatinterval',
         'takefocus', 'troughcolor', 'width',
     )
-    _rounds_pixels = True
-    if tk_version >= (9, 0):
-        _no_round = {'borderwidth', 'elementborderwidth', 'highlightthickness',
-                     'width'}
-    if tk_version < (9, 0):
+    if tk_version < (8, 7):
         _clipped = {'highlightthickness'}
+    elif tk_version < (9, 0):
+        _clipped = {'borderwidth', 'highlightthickness'}
     else:
         _clipped = {'borderwidth', 'highlightthickness', 'width'}
     _stringify = True
@@ -1272,8 +1256,7 @@ class ScrollbarTest(AbstractWidgetTest, unittest.TestCase):
     def test_configure_elementborderwidth(self):
         widget = self.create()
         self.checkPixelsParam(widget, 'elementborderwidth', 4.3, 5.6, '1m')
-        expected = self._default_pixels if tk_version >= (8, 7) else -2
-        self.checkParam(widget, 'elementborderwidth', -2, expected=expected)
+        self.checkNegPixelParam(widget, 'elementborderwidth', -2)
 
     def test_configure_orient(self):
         widget = self.create()
@@ -1311,14 +1294,8 @@ class PanedWindowTest(AbstractWidgetTest, unittest.TestCase):
         'sashcursor', 'sashpad', 'sashrelief', 'sashwidth',
         'showhandle', 'width',
     )
-    _rounds_pixels = True
-    if tk_version < (9, 0):
-        _no_round = {'handlesize', 'height', 'proxyborderwidth', 'sashwidth',
-                     'selectborderwidth', 'width'}
-    else:
-        _no_round = {'borderwidth', 'handlepad', 'handlesize', 'height',
-                     'proxyborderwidth', 'sashpad', 'sashwidth',
-                     'selectborderwidth', 'width'}
+    _no_round = {'handlesize', 'height', 'proxyborderwidth', 'sashwidth',
+                 'selectborderwidth', 'width'}
     _clipped = {}
     default_orient = 'horizontal'
 
@@ -1568,12 +1545,11 @@ class MessageTest(AbstractWidgetTest, unittest.TestCase):
         'justify', 'padx', 'pady', 'relief',
         'takefocus', 'text', 'textvariable', 'width',
     )
-    _rounds_pixels = (tk_version < (9, 0))
     _no_round = {'padx', 'pady'}
-    if tk_version < (9, 0):
+    if tk_version < (8, 7):
         _clipped = {'highlightthickness'}
     else:
-        _clipped = {'borderwidth', 'highlightthickness', 'padx', 'pady'}
+        _clipped = {'borderwidth', 'highlightthickness', 'width'}
 
     def create(self, **kwargs):
         return tkinter.Message(self.root, **kwargs)
@@ -1585,20 +1561,16 @@ class MessageTest(AbstractWidgetTest, unittest.TestCase):
     def test_configure_padx(self):
         widget = self.create()
         self.checkPixelsParam(widget, 'padx', 3, 4.4, 5.6, '12m')
-        expected = -2 if tk_version < (9, 0) else self._default_pixels
-        self.checkParam(widget, 'padx', -2, expected=expected)
+        self.checkNegPixelParam(widget, 'padx', -2)
 
     def test_configure_pady(self):
         widget = self.create()
         self.checkPixelsParam(widget, 'pady', 3, 4.4, 5.6, '12m')
-        expected = -2 if tk_version < (9, 0) else self._default_pixels
-        self.checkParam(widget, 'pady', -2, expected=expected)
+        self.checkNegPixelParam(widget, 'pady', -2)
 
     def test_configure_width(self):
         widget = self.create()
-        self.checkPixelsParam(widget, 'width', 402, 403.4, 404.6, 0, '5i')
-        expected = 0 if tk_version >= (8, 7) else -402
-        self.checkParam(widget, 'width', -402, expected=expected)
+        self.checkPixelsParam(widget, 'width', 402, 403.4, 404.6, 0, -402, '5i')
 
 
 class DefaultRootTest(AbstractDefaultRootTest, unittest.TestCase):
