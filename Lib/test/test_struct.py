@@ -550,6 +550,12 @@ class StructTest(unittest.TestCase):
         hugecount3 = '{}i{}q'.format(sys.maxsize // 4, sys.maxsize // 8)
         self.assertRaises(struct.error, struct.calcsize, hugecount3)
 
+        hugecount4 = '{}?s'.format(sys.maxsize)
+        self.assertRaises(struct.error, struct.calcsize, hugecount4)
+
+        hugecount5 = '{}?p'.format(sys.maxsize)
+        self.assertRaises(struct.error, struct.calcsize, hugecount5)
+
     def test_trailing_counter(self):
         store = array.array('b', b' '*100)
 
