@@ -544,11 +544,11 @@ def build_target(context):
         steps.extend([
             configure_build_python,
             make_build_python,
-            make_emscripten_libffi,
-            make_mpdec,
         ])
     if context.target in {"host", "all"}:
         steps.extend([
+            make_emscripten_libffi,
+            make_mpdec,
             configure_emscripten_python,
             make_emscripten_python,
         ])
