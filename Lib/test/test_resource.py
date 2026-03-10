@@ -66,9 +66,7 @@ class ResourceTest(unittest.TestCase):
 
         self.addCleanup(os_helper.unlink, os_helper.TESTFN)
         self.addCleanup(resource.setrlimit, resource.RLIMIT_FSIZE, (cur, max_lim))
-
         resource.setrlimit(resource.RLIMIT_FSIZE, (1024, max_lim))
-        
         try:
             with open(os_helper.TESTFN, "wb") as f:
                 f.write(b"X" * 1024)
