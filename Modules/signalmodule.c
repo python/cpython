@@ -847,6 +847,39 @@ PySignal_SetWakeupFd(int fd)
 }
 
 
+/*[clinic input]
+signal.get_wakeup_fd
+
+Returns the current wakeup fd.
+
+Returns the file descriptor previously set by set_wakeup_fd(), or -1 if
+no wakeup fd is currently set. Unlike set_wakeup_fd(), this function does
+not modify the wakeup fd.
+[clinic start generated code]*/
+
+static PyObject *
+signal_get_wakeup_fd_impl(PyObject *module)
+/*[clinic end generated code: output=4a38f1468baa700c input=c3ef2d4ee38352fd]*/
+{
+    PyThreadState *tstate = _PyThreadState_GET();
+    if (!_Py_ThreadCanHandleSignals(tstate->interp)) {
+        _PyErr_SetString(tstate, PyExc_ValueError,
+                         "get_wakeup_fd only works in main thread "
+                         "of the main interpreter");
+        return NULL;
+    }
+
+#ifdef MS_WINDOWS
+    if (wakeup.fd != INVALID_FD)
+        return PyLong_FromSocket_t((SOCKET_T)wakeup.fd);
+    else
+        return PyLong_FromLong(-1);
+#else
+    return PyLong_FromLong(wakeup.fd);
+#endif
+}
+
+
 #ifdef HAVE_SETITIMER
 /*[clinic input]
 @permit_long_docstring_body
@@ -1357,6 +1390,7 @@ static PyMethodDef signal_methods[] = {
     SIGNAL_STRSIGNAL_METHODDEF
     SIGNAL_GETSIGNAL_METHODDEF
     SIGNAL_SET_WAKEUP_FD_METHODDEF
+    SIGNAL_GET_WAKEUP_FD_METHODDEF
     SIGNAL_SIGINTERRUPT_METHODDEF
     SIGNAL_PAUSE_METHODDEF
     SIGNAL_PIDFD_SEND_SIGNAL_METHODDEF

@@ -1,0 +1,3 @@
+Added :func:`signal.get_wakeup_fd` to return the current wakeup file
+descriptor without modifying it, avoiding the race condition inherent in
+using :func:`signal.set_wakeup_fd` to read and restore the current value.

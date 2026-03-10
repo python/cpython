@@ -288,6 +288,26 @@ class WakeupFDTests(unittest.TestCase):
         self.assertEqual(signal.set_wakeup_fd(-1), fd2)
         self.assertEqual(signal.set_wakeup_fd(-1), -1)
 
+    @unittest.skipUnless(hasattr(os, "pipe"), "requires os.pipe()")
+    def test_get_wakeup_fd(self):
+        # gh-145638: get_wakeup_fd should return the current wakeup fd
+        # without modifying it.
+        self.assertEqual(signal.get_wakeup_fd(), -1)
+
+        r, w = os.pipe()
+        self.addCleanup(os.close, r)
+        self.addCleanup(os.close, w)
+
+        if hasattr(os, 'set_blocking'):
+            os.set_blocking(w, False)
+
+        signal.set_wakeup_fd(w)
+        self.assertEqual(signal.get_wakeup_fd(), w)
+        # Calling get_wakeup_fd again should return the same value
+        self.assertEqual(signal.get_wakeup_fd(), w)
+        signal.set_wakeup_fd(-1)
+        self.assertEqual(signal.get_wakeup_fd(), -1)
+
     # On Windows, files are always blocking and Windows does not provide a
     # function to test if a socket is in non-blocking mode.
     @unittest.skipIf(sys.platform == "win32", "tests specific to POSIX")

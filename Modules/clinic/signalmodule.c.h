@@ -354,6 +354,28 @@ exit:
     return return_value;
 }
 
+PyDoc_STRVAR(signal_get_wakeup_fd__doc__,
+"get_wakeup_fd($module, /)\n"
+"--\n"
+"\n"
+"Returns the current wakeup fd.\n"
+"\n"
+"Returns the file descriptor previously set by set_wakeup_fd(), or -1 if\n"
+"no wakeup fd is currently set. Unlike set_wakeup_fd(), this function does\n"
+"not modify the wakeup fd.");
+
+#define SIGNAL_GET_WAKEUP_FD_METHODDEF    \
+    {"get_wakeup_fd", (PyCFunction)signal_get_wakeup_fd, METH_NOARGS, signal_get_wakeup_fd__doc__},
+
+static PyObject *
+signal_get_wakeup_fd_impl(PyObject *module);
+
+static PyObject *
+signal_get_wakeup_fd(PyObject *module, PyObject *Py_UNUSED(ignored))
+{
+    return signal_get_wakeup_fd_impl(module);
+}
+
 #if defined(HAVE_SETITIMER)
 
 PyDoc_STRVAR(signal_setitimer__doc__,
@@ -794,4 +816,4 @@ exit:
 #ifndef SIGNAL_PIDFD_SEND_SIGNAL_METHODDEF
     #define SIGNAL_PIDFD_SEND_SIGNAL_METHODDEF
 #endif /* !defined(SIGNAL_PIDFD_SEND_SIGNAL_METHODDEF) */
-/*[clinic end generated code: output=42e20d118435d7fa input=a9049054013a1b77]*/
+/*[clinic end generated code: output=9c8cdf6f5fe76c08 input=a9049054013a1b77]*/

@@ -592,6 +592,19 @@ The :mod:`!signal` module defines the following functions:
    .. versionchanged:: 3.7
       Added ``warn_on_full_buffer`` parameter.
 
+.. function:: get_wakeup_fd()
+
+   Return the current wakeup file descriptor, or -1 if no wakeup fd is
+   currently set. Unlike :func:`set_wakeup_fd`, this function does not modify
+   the wakeup fd.
+
+   When threads are enabled, this function can only be called
+   from :ref:`the main thread of the main interpreter <signals-and-threads>`;
+   attempting to call it from other threads will cause a :exc:`ValueError`
+   exception to be raised.
+
+   .. versionadded:: 3.15
+
 .. function:: siginterrupt(signalnum, flag)
 
    Change system call restart behaviour: if *flag* is :const:`False`, system
