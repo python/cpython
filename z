@@ -280,36 +280,42 @@ cmd_setup() {
 
   mkdir -p "$NANVIX_HOME/lib" "$NANVIX_HOME/include"
 
+  # Dependency libraries are process-mode-agnostic; standalone uses single-process artifacts
+  local dep_process_mode="$NANVIX_PROCESS_MODE"
+  if [[ "$dep_process_mode" == "standalone" ]]; then
+    dep_process_mode="single-process"
+  fi
+
   local sqlite_artifact sqlite_archive sqlite_dir
-  sqlite_artifact="sqlite-${NANVIX_PLATFORM}-${NANVIX_PROCESS_MODE}.tar.bz2"
+  sqlite_artifact="sqlite-${NANVIX_PLATFORM}-${dep_process_mode}.tar.bz2"
   sqlite_archive="$DOWNLOAD_DIR/$sqlite_artifact"
   download_artifact "nanvix/sqlite" "$sqlite_artifact" "$sqlite_archive"
   sqlite_dir="$(extract_dep_dir "$sqlite_archive" "$EXTRACT_DIR/sqlite")"
   install_sqlite_or_zlib "$sqlite_dir"
 
   local zlib_artifact zlib_archive zlib_dir
-  zlib_artifact="zlib-${NANVIX_PLATFORM}-${NANVIX_PROCESS_MODE}.tar.bz2"
+  zlib_artifact="zlib-${NANVIX_PLATFORM}-${dep_process_mode}.tar.bz2"
   zlib_archive="$DOWNLOAD_DIR/$zlib_artifact"
   download_artifact "nanvix/zlib" "$zlib_artifact" "$zlib_archive"
   zlib_dir="$(extract_dep_dir "$zlib_archive" "$EXTRACT_DIR/zlib")"
   install_sqlite_or_zlib "$zlib_dir"
 
   local bzip2_artifact bzip2_archive bzip2_dir
-  bzip2_artifact="bzip2-${NANVIX_PLATFORM}-${NANVIX_PROCESS_MODE}.tar.bz2"
+  bzip2_artifact="bzip2-${NANVIX_PLATFORM}-${dep_process_mode}.tar.bz2"
   bzip2_archive="$DOWNLOAD_DIR/$bzip2_artifact"
   download_artifact "nanvix/bzip2" "$bzip2_artifact" "$bzip2_archive"
   bzip2_dir="$(extract_dep_dir "$bzip2_archive" "$EXTRACT_DIR/bzip2")"
   install_sqlite_or_zlib "$bzip2_dir"
 
   local libffi_artifact libffi_archive libffi_dir
-  libffi_artifact="libffi-${NANVIX_PLATFORM}-${NANVIX_PROCESS_MODE}.tar.bz2"
+  libffi_artifact="libffi-${NANVIX_PLATFORM}-${dep_process_mode}.tar.bz2"
   libffi_archive="$DOWNLOAD_DIR/$libffi_artifact"
   download_artifact "nanvix/libffi" "$libffi_artifact" "$libffi_archive"
   libffi_dir="$(extract_dep_dir "$libffi_archive" "$EXTRACT_DIR/libffi")"
   install_sqlite_or_zlib "$libffi_dir"
 
   local openssl_artifact openssl_archive openssl_dir
-  openssl_artifact="openssl-${NANVIX_PLATFORM}-${NANVIX_PROCESS_MODE}.tar.bz2"
+  openssl_artifact="openssl-${NANVIX_PLATFORM}-${dep_process_mode}.tar.bz2"
   openssl_archive="$DOWNLOAD_DIR/$openssl_artifact"
   download_artifact "nanvix/openssl" "$openssl_artifact" "$openssl_archive"
   openssl_dir="$(extract_dep_dir "$openssl_archive" "$EXTRACT_DIR/openssl")"
