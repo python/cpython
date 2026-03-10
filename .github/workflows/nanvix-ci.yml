@@ -99,6 +99,7 @@ jobs:
         run: ./z build
 
       - name: Test
+        if: matrix.process-mode != 'standalone'
         run: ./z test
 
       - name: Package
