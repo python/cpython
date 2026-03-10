@@ -12,6 +12,18 @@ class TestDump:
     def test_dumps(self):
         self.assertEqual(self.dumps({}), '{}')
 
+    def test_dumps_dict(self):
+        self.assertEqual(self.dumps({'x': 1, 'y': 2}),
+                         '{"x": 1, "y": 2}')
+        self.assertEqual(self.dumps(frozendict({'x': 1, 'y': 2})),
+                         '{"x": 1, "y": 2}')
+        lst = [{'x': 1}, frozendict(y=2)]
+        self.assertEqual(self.dumps(lst),
+                         '[{"x": 1}, {"y": 2}]')
+        data = {'x': dict(a=1), 'y': frozendict(b=2)}
+        self.assertEqual(self.dumps(data),
+                         '{"x": {"a": 1}, "y": {"b": 2}}')
+
     def test_dump_skipkeys(self):
         v = {b'invalid_key': False, 'valid_key': True}
         with self.assertRaises(TypeError):
@@ -21,6 +33,14 @@ class TestDump:
         o = self.json.loads(s)
         self.assertIn('valid_key', o)
         self.assertNotIn(b'invalid_key', o)
+
+    def test_dump_skipkeys_indent_empty(self):
+        v = {b'invalid_key': False}
+        self.assertEqual(self.json.dumps(v, skipkeys=True, indent=4), '{}')
+
+    def test_skipkeys_indent(self):
+        v = {b'invalid_key': False, 'valid_key': True}
+        self.assertEqual(self.json.dumps(v, skipkeys=True, indent=4), '{\n    "valid_key": true\n}')
 
     def test_encode_truefalse(self):
         self.assertEqual(self.dumps(

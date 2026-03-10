@@ -9,8 +9,7 @@ extern "C" {
 #endif
 
 #include "pycore_bytesobject.h"   // _PyBytesWriter
-#include "pycore_global_objects.h"// _PY_NSMALLNEGINTS
-#include "pycore_runtime.h"       // _PyRuntime
+#include "pycore_runtime.h"       // _Py_SINGLETON()
 
 /*
  * Default int base conversion size limitation: Denial of Service prevention.
@@ -55,6 +54,8 @@ extern void _PyLong_FiniTypes(PyInterpreterState *interp);
 
 /* other API */
 
+PyAPI_FUNC(void) _PyLong_ExactDealloc(PyObject *self);
+
 #define _PyLong_SMALL_INTS _Py_SINGLETON(small_ints)
 
 // _PyLong_GetZero() and _PyLong_GetOne() must always be available
@@ -62,6 +63,8 @@ extern void _PyLong_FiniTypes(PyInterpreterState *interp);
 #if _PY_NSMALLPOSINTS < 257
 #  error "_PY_NSMALLPOSINTS must be greater than or equal to 257"
 #endif
+
+#define _PY_IS_SMALL_INT(val) ((val) >= 0 && (val) < 256 && (val) < _PY_NSMALLPOSINTS)
 
 // Return a reference to the immortal zero singleton.
 // The function cannot return NULL.
@@ -79,11 +82,10 @@ static inline PyObject* _PyLong_FromUnsignedChar(unsigned char i)
 }
 
 // _PyLong_Frexp returns a double x and an exponent e such that the
-// true value is approximately equal to x * 2**e.  e is >= 0.  x is
+// true value is approximately equal to x * 2**e.  x is
 // 0.0 if and only if the input is 0 (in which case, e and x are both
-// zeroes); otherwise, 0.5 <= abs(x) < 1.0.  On overflow, which is
-// possible if the number of bits doesn't fit into a Py_ssize_t, sets
-// OverflowError and returns -1.0 for x, 0 for e.
+// zeroes); otherwise, 0.5 <= abs(x) < 1.0.
+// Always successful.
 //
 // Export for 'math' shared extension
 PyAPI_DATA(double) _PyLong_Frexp(PyLongObject *a, int64_t *e);
@@ -105,14 +107,14 @@ PyAPI_DATA(PyObject*) _PyLong_DivmodNear(PyObject *, PyObject *);
 PyAPI_DATA(PyObject*) _PyLong_Format(PyObject *obj, int base);
 
 // Export for 'math' shared extension
-PyAPI_DATA(PyObject*) _PyLong_Rshift(PyObject *, uint64_t);
+PyAPI_DATA(PyObject*) _PyLong_Rshift(PyObject *, int64_t);
 
 // Export for 'math' shared extension
-PyAPI_DATA(PyObject*) _PyLong_Lshift(PyObject *, uint64_t);
+PyAPI_DATA(PyObject*) _PyLong_Lshift(PyObject *, int64_t);
 
-PyAPI_FUNC(PyObject*) _PyLong_Add(PyLongObject *left, PyLongObject *right);
-PyAPI_FUNC(PyObject*) _PyLong_Multiply(PyLongObject *left, PyLongObject *right);
-PyAPI_FUNC(PyObject*) _PyLong_Subtract(PyLongObject *left, PyLongObject *right);
+PyAPI_FUNC(_PyStackRef) _PyCompactLong_Add(PyLongObject *left, PyLongObject *right);
+PyAPI_FUNC(_PyStackRef) _PyCompactLong_Multiply(PyLongObject *left, PyLongObject *right);
+PyAPI_FUNC(_PyStackRef) _PyCompactLong_Subtract(PyLongObject *left, PyLongObject *right);
 
 // Export for 'binascii' shared extension.
 PyAPI_DATA(unsigned char) _PyLong_DigitValue[256];
@@ -133,7 +135,7 @@ extern int _PyLong_FormatWriter(
     int alternate);
 
 extern char* _PyLong_FormatBytesWriter(
-    _PyBytesWriter *writer,
+    PyBytesWriter *writer,
     char *str,
     PyObject *obj,
     int base,
@@ -156,15 +158,21 @@ PyAPI_FUNC(int) _PyLong_UnsignedLongLong_Converter(PyObject *, void *);
 // Export for '_testclinic' shared extension (Argument Clinic code)
 PyAPI_FUNC(int) _PyLong_Size_t_Converter(PyObject *, void *);
 
+PyAPI_FUNC(int) _PyLong_UInt8_Converter(PyObject *, void *);
+PyAPI_FUNC(int) _PyLong_UInt16_Converter(PyObject *, void *);
+PyAPI_FUNC(int) _PyLong_UInt32_Converter(PyObject *, void *);
+PyAPI_FUNC(int) _PyLong_UInt64_Converter(PyObject *, void *);
+
 /* Long value tag bits:
  * 0-1: Sign bits value = (1-sign), ie. negative=2, positive=0, zero=1.
- * 2: Reserved for immortality bit
+ * 2: Set to 1 for the small ints
  * 3+ Unsigned digit count
  */
 #define SIGN_MASK 3
 #define SIGN_ZERO 1
 #define SIGN_NEGATIVE 2
 #define NON_SIZE_BITS 3
+#define IMMORTALITY_BIT_MASK (1 << 2)
 
 /* The functions _PyLong_IsCompact and _PyLong_CompactValue are defined
  * in Include/cpython/longobject.h, since they need to be inline.
@@ -195,7 +203,7 @@ PyAPI_FUNC(int) _PyLong_Size_t_Converter(PyObject *, void *);
 static inline int
 _PyLong_IsNonNegativeCompact(const PyLongObject* op) {
     assert(PyLong_Check(op));
-    return op->long_value.lv_tag <= (1 << NON_SIZE_BITS);
+    return ((op->long_value.lv_tag & ~IMMORTALITY_BIT_MASK) <= (1 << NON_SIZE_BITS));
 }
 
 
@@ -205,7 +213,6 @@ _PyLong_BothAreCompact(const PyLongObject* a, const PyLongObject* b) {
     assert(PyLong_Check(b));
     return (a->long_value.lv_tag | b->long_value.lv_tag) < (2 << NON_SIZE_BITS);
 }
-
 static inline bool
 _PyLong_IsZero(const PyLongObject *op)
 {
@@ -297,13 +304,19 @@ _PyLong_FlipSign(PyLongObject *op) {
         .long_value  = { \
             .lv_tag = TAG_FROM_SIGN_AND_SIZE( \
                 (val) == 0 ? 0 : ((val) < 0 ? -1 : 1), \
-                (val) == 0 ? 0 : 1), \
+                (val) == 0 ? 0 : 1) | IMMORTALITY_BIT_MASK, \
             { ((val) >= 0 ? (val) : -(val)) }, \
         } \
     }
 
 #define _PyLong_FALSE_TAG TAG_FROM_SIGN_AND_SIZE(0, 0)
 #define _PyLong_TRUE_TAG TAG_FROM_SIGN_AND_SIZE(1, 1)
+
+static inline int
+_PyLong_CheckExactAndCompact(PyObject *op)
+{
+    return PyLong_CheckExact(op) && _PyLong_IsCompact((const PyLongObject *)op);
+}
 
 #ifdef __cplusplus
 }

@@ -1,1 +1,0 @@
-The critical section API is now public as part of the non-limited C API.

@@ -1,1 +1,0 @@
-Extend the deprecation period for bool inversion (``~``) by two years.
