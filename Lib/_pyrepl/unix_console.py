@@ -675,7 +675,8 @@ class UnixConsole(Console):
             self.__move(x_coord, y)
             self.__write_code(self.ich1)
             self.__write(newline[x_pos])
-            self.posxy = x_coord + character_width, y
+            new_x = x_coord + character_width
+            self.posxy = min(new_x, self.width - 1), y
 
         # if it's a single character change in the middle of the line
         elif (
@@ -686,7 +687,8 @@ class UnixConsole(Console):
             character_width = wlen(newline[x_pos])
             self.__move(x_coord, y)
             self.__write(newline[x_pos])
-            self.posxy = x_coord + character_width, y
+            new_x = x_coord + character_width
+            self.posxy = min(new_x, self.width - 1), y
 
         # if this is the last character to fit in the line and we edit in the middle of the line
         elif (
@@ -713,7 +715,14 @@ class UnixConsole(Console):
             if wlen(oldline) > wlen(newline):
                 self.__write_code(self._el)
             self.__write(newline[x_pos:])
-            self.posxy = wlen(newline), y
+            # When writing reaches the last column, the terminal enters
+            # "pending wrap" state where the cursor physically stays at
+            # width-1. Record position accordingly so CUB calculations
+            # use the correct physical cursor position (gh-145448).
+            newline_width = wlen(newline)
+            if newline_width >= self.width:
+                newline_width = self.width - 1
+            self.posxy = newline_width, y
 
         if "\x1b" in newline:
             # ANSI escape characters are present, so we can't assume
