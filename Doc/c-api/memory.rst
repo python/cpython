@@ -206,7 +206,7 @@ memory from the Python heap.
 
 The :ref:`default memory allocator <default-memory-allocators>` uses the
 :ref:`pymalloc memory allocator <pymalloc>`.  In the
-:term:`free-threaded <free threading>` build, the default is the
+:term:`free-threaded build`, the default is the
 :ref:`mimalloc memory allocator <mimalloc>` instead.
 
 .. warning::
@@ -436,8 +436,8 @@ Release build                        ``"pymalloc"``           ``malloc``        
 Debug build                          ``"pymalloc_debug"``     ``malloc`` + debug  ``pymalloc`` + debug   ``pymalloc`` + debug
 Release build, without pymalloc      ``"malloc"``             ``malloc``          ``malloc``             ``malloc``
 Debug build, without pymalloc        ``"malloc_debug"``       ``malloc`` + debug  ``malloc`` + debug     ``malloc`` + debug
-Free-threaded build                  ``"mimalloc"``           ``malloc``          ``mimalloc``           ``mimalloc``
-Free-threaded debug build            ``"mimalloc_debug"``     ``malloc`` + debug  ``mimalloc`` + debug   ``mimalloc`` + debug
+Free-threaded build                  ``"mimalloc"``           ``mimalloc``          ``mimalloc``           ``mimalloc``
+Free-threaded debug build            ``"mimalloc_debug"``     ``mimalloc`` + debug  ``mimalloc`` + debug   ``mimalloc`` + debug
 ===================================  =======================  ==================  =====================  ====================
 
 Legend:
