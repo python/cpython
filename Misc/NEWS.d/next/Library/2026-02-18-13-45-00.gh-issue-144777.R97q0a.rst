@@ -1,0 +1,1 @@
+Fix data races in :class:`io.IncrementalNewlineDecoder` in the :term:`free-threaded build`.

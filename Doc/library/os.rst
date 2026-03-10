@@ -25,7 +25,7 @@ Notes on the availability of these functions:
   with the POSIX interface).
 
 * Extensions peculiar to a particular operating system are also available
-  through the :mod:`os` module, but using them is of course a threat to
+  through the :mod:`!os` module, but using them is of course a threat to
   portability.
 
 * All functions accepting path or file names accept both bytes and string
@@ -34,7 +34,7 @@ Notes on the availability of these functions:
 
 * On VxWorks, os.popen, os.fork, os.execv and os.spawn*p* are not supported.
 
-* On WebAssembly platforms, Android and iOS, large parts of the :mod:`os` module are
+* On WebAssembly platforms, Android and iOS, large parts of the :mod:`!os` module are
   not available or behave differently. APIs related to processes (e.g.
   :func:`~os.fork`, :func:`~os.execve`) and resources (e.g. :func:`~os.nice`)
   are not available. Others like :func:`~os.getuid` and :func:`~os.getpid` are
@@ -111,7 +111,7 @@ Python UTF-8 Mode
 .. versionchanged:: 3.15
 
    Python UTF-8 mode is now enabled by default (:pep:`686`).
-   It may be disabled with by setting :envvar:`PYTHONUTF8=0 <PYTHONUTF8>` as
+   It may be disabled by setting :envvar:`PYTHONUTF8=0 <PYTHONUTF8>` as
    an environment variable or by using the :option:`-X utf8=0 <-X>` command line option.
 
 The Python UTF-8 Mode ignores the :term:`locale encoding` and forces the usage
@@ -185,7 +185,7 @@ process and user.
    of your home directory (on some platforms), and is equivalent to
    ``getenv("HOME")`` in C.
 
-   This mapping is captured the first time the :mod:`os` module is imported,
+   This mapping is captured the first time the :mod:`!os` module is imported,
    typically during Python startup as part of processing :file:`site.py`.  Changes
    to the environment made after this time are not reflected in :data:`os.environ`,
    except for changes made by modifying :data:`os.environ` directly.
@@ -254,7 +254,7 @@ process and user.
 
    .. warning::
       This function is not thread-safe. Calling it while the environment is
-      being modified in an other thread is an undefined behavior. Reading from
+      being modified in another thread is an undefined behavior. Reading from
       :data:`os.environ` or :data:`os.environb`, or calling :func:`os.getenv`
       while reloading, may return an empty result.
 
@@ -1279,7 +1279,7 @@ as internal buffering of data.
 
    For a description of the flag and mode values, see the C run-time documentation;
    flag constants (like :const:`O_RDONLY` and :const:`O_WRONLY`) are defined in
-   the :mod:`os` module.  In particular, on Windows adding
+   the :mod:`!os` module.  In particular, on Windows adding
    :const:`O_BINARY` is needed to open files in binary mode.
 
    This function can support :ref:`paths relative to directory descriptors
@@ -1556,6 +1556,15 @@ or `the MSDN <https://msdn.microsoft.com/en-us/library/z0kc8e3z.aspx>`_ on Windo
    .. versionadded:: 3.15
 
 
+.. data:: RWF_ATOMIC
+
+   Write data atomically. Requires alignment to the device's atomic write unit.
+
+   .. availability:: Linux >= 6.11
+
+   .. versionadded:: 3.15
+
+
 .. function:: ptsname(fd, /)
 
    Return the name of the slave pseudo-terminal device associated with the
@@ -1598,6 +1607,7 @@ or `the MSDN <https://msdn.microsoft.com/en-us/library/z0kc8e3z.aspx>`_ on Windo
    - :data:`RWF_SYNC`
    - :data:`RWF_APPEND`
    - :data:`RWF_DONTCACHE`
+   - :data:`RWF_ATOMIC`
 
    Return the total number of bytes actually written.
 
@@ -1969,7 +1979,8 @@ can be inherited by child processes.  Since Python 3.4, file descriptors
 created by Python are non-inheritable by default.
 
 On UNIX, non-inheritable file descriptors are closed in child processes at the
-execution of a new program, other file descriptors are inherited.
+execution of a new program, other file descriptors are inherited. Note that
+non-inheritable file descriptors are still *inherited* by child processes on :func:`os.fork`.
 
 On Windows, non-inheritable handles and file descriptors are closed in child
 processes, except for standard streams (file descriptors 0, 1 and 2: stdin, stdout
@@ -2013,7 +2024,7 @@ features:
 .. _path_fd:
 
 * **specifying a file descriptor:**
-  Normally the *path* argument provided to functions in the :mod:`os` module
+  Normally the *path* argument provided to functions in the :mod:`!os` module
   must be a string specifying a file path.  However, some functions now
   alternatively accept an open file descriptor for their *path* argument.
   The function will then operate on the file referred to by the descriptor.
@@ -2397,6 +2408,10 @@ features:
 
    .. versionchanged:: 3.6
       Accepts a :term:`path-like object`.
+
+   .. versionchanged:: next
+      ``os.listdir(-1)`` now fails with ``OSError(errno.EBADF)`` rather than
+      listing the current directory.
 
 
 .. function:: listdrives()
@@ -2927,6 +2942,10 @@ features:
 
    .. versionchanged:: 3.7
       Added support for :ref:`file descriptors <path_fd>` on Unix.
+
+   .. versionchanged:: next
+      ``os.scandir(-1)`` now fails with ``OSError(errno.EBADF)`` rather than
+      listing the current directory.
 
 
 .. class:: DirEntry
@@ -3784,7 +3803,7 @@ features:
 
 .. data:: supports_dir_fd
 
-   A :class:`set` object indicating which functions in the :mod:`os`
+   A :class:`set` object indicating which functions in the :mod:`!os`
    module accept an open file descriptor for their *dir_fd* parameter.
    Different platforms provide different features, and the underlying
    functionality Python uses to implement the *dir_fd* parameter is not
@@ -3829,7 +3848,7 @@ features:
 .. data:: supports_fd
 
    A :class:`set` object indicating which functions in the
-   :mod:`os` module permit specifying their *path* parameter as an open file
+   :mod:`!os` module permit specifying their *path* parameter as an open file
    descriptor on the local platform.  Different platforms provide different
    features, and the underlying functionality Python uses to accept open file
    descriptors as *path* arguments is not available on all platforms Python
@@ -3848,7 +3867,7 @@ features:
 
 .. data:: supports_follow_symlinks
 
-   A :class:`set` object indicating which functions in the :mod:`os` module
+   A :class:`set` object indicating which functions in the :mod:`!os` module
    accept ``False`` for their *follow_symlinks* parameter on the local platform.
    Different platforms provide different features, and the underlying
    functionality Python uses to implement *follow_symlinks* is not available
@@ -4251,7 +4270,7 @@ features:
        import os
 
        # semaphore with start value '1'
-       fd = os.eventfd(1, os.EFD_SEMAPHORE | os.EFC_CLOEXEC)
+       fd = os.eventfd(1, os.EFD_SEMAPHORE | os.EFD_CLOEXEC)
        try:
            # acquire semaphore
            v = os.eventfd_read(fd)
@@ -4360,7 +4379,7 @@ Naturally, they are all only available on Linux.
    except it includes any time that the system is suspended.
 
    The file descriptor's behaviour can be modified by specifying a *flags* value.
-   Any of the following variables may used, combined using bitwise OR
+   Any of the following variables may be used, combined using bitwise OR
    (the ``|`` operator):
 
    - :const:`TFD_NONBLOCK`
@@ -4392,7 +4411,7 @@ Naturally, they are all only available on Linux.
    *fd* must be a valid timer file descriptor.
 
    The timer's behaviour can be modified by specifying a *flags* value.
-   Any of the following variables may used, combined using bitwise OR
+   Any of the following variables may be used, combined using bitwise OR
    (the ``|`` operator):
 
    - :const:`TFD_TIMER_ABSTIME`
@@ -4461,7 +4480,7 @@ Naturally, they are all only available on Linux.
 
    Return a two-item tuple of floats (``next_expiration``, ``interval``).
 
-   ``next_expiration`` denotes the relative time until next the timer next fires,
+   ``next_expiration`` denotes the relative time until the timer next fires,
    regardless of if the :const:`TFD_TIMER_ABSTIME` flag is set.
 
    ``interval`` denotes the timer's interval.
@@ -4562,6 +4581,10 @@ These functions are all available on Linux only.
 
    .. versionchanged:: 3.6
       Accepts a :term:`path-like object`.
+
+   .. versionchanged:: next
+      ``os.listxattr(-1)`` now fails with ``OSError(errno.EBADF)`` rather than
+      listing extended attributes of the current directory.
 
 
 .. function:: removexattr(path, attribute, *, follow_symlinks=True)
@@ -5993,7 +6016,7 @@ Miscellaneous System Information
 
    .. versionchanged:: 3.13
       If :option:`-X cpu_count <-X>` is given or :envvar:`PYTHON_CPU_COUNT` is set,
-      :func:`cpu_count` returns the overridden value *n*.
+      :func:`cpu_count` returns the override value *n*.
 
 
 .. function:: getloadavg()
@@ -6015,7 +6038,7 @@ Miscellaneous System Information
    in the **system**.
 
    If :option:`-X cpu_count <-X>` is given or :envvar:`PYTHON_CPU_COUNT` is set,
-   :func:`process_cpu_count` returns the overridden value *n*.
+   :func:`process_cpu_count` returns the override value *n*.
 
    See also the :func:`sched_getaffinity` function.
 

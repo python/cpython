@@ -252,6 +252,8 @@ class ZoneInfoTest(TzPathUserMixin, ZoneInfoTestBase):
         bad_zones = [
             b"",  # Empty file
             b"AAAA3" + b" " * 15,  # Bad magic
+            # Truncated V2 file (should not loop indefinitely)
+            b"TZif2" + (b"\x00" * 39) + b"TZif2" + (b"\x00" * 39) + b"\n" + b"Part",
         ]
 
         for bad_zone in bad_zones:
@@ -1574,6 +1576,44 @@ class ZoneInfoCacheTest(TzPathUserMixin, ZoneInfoTestBase):
 
 class CZoneInfoCacheTest(ZoneInfoCacheTest):
     module = c_zoneinfo
+
+    def test_inconsistent_weak_cache_get(self):
+        class Cache:
+            def get(self, key, default=None):
+                return 1337
+
+        class ZI(self.klass):
+            pass
+        # Class attribute must be set after class creation
+        # to override zoneinfo.ZoneInfo.__init_subclass__.
+        ZI._weak_cache = Cache()
+
+        with self.assertRaises(RuntimeError) as te:
+            ZI("America/Los_Angeles")
+        self.assertEqual(
+            str(te.exception),
+            "Unexpected instance of int in ZI weak cache for key 'America/Los_Angeles'"
+        )
+
+    def test_inconsistent_weak_cache_setdefault(self):
+        class Cache:
+            def get(self, key, default=None):
+                return default
+            def setdefault(self, key, value):
+                return 1337
+
+        class ZI(self.klass):
+            pass
+        # Class attribute must be set after class creation
+        # to override zoneinfo.ZoneInfo.__init_subclass__.
+        ZI._weak_cache = Cache()
+
+        with self.assertRaises(RuntimeError) as te:
+            ZI("America/Los_Angeles")
+        self.assertEqual(
+            str(te.exception),
+            "Unexpected instance of int in ZI weak cache for key 'America/Los_Angeles'"
+        )
 
 
 class ZoneInfoPickleTest(TzPathUserMixin, ZoneInfoTestBase):

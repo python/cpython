@@ -1,5 +1,9 @@
 """Constants for the sampling profiler."""
 
+# Time unit conversion constants
+MICROSECONDS_PER_SECOND = 1_000_000
+MILLISECONDS_PER_SECOND = 1_000
+
 # Profiling mode constants
 PROFILING_MODE_WALL = 0
 PROFILING_MODE_CPU = 1
@@ -18,6 +22,12 @@ SORT_MODE_NSAMPLES_CUMUL = 5
 # Default location for synthetic frames (native, GC) that have no source location
 # Format: (lineno, end_lineno, col_offset, end_col_offset)
 DEFAULT_LOCATION = (0, 0, -1, -1)
+
+# Internal frame path suffixes to filter from profiling output
+# These are internal profiler modules that should not appear in user-facing output
+_INTERNAL_FRAME_SUFFIXES = (
+    "_sync_coordinator.py",
+)
 
 # Thread status flags
 try:

@@ -20,7 +20,7 @@ rarely does). [#]_
 
 This is not a general "persistence" module.  For general persistence and
 transfer of Python objects through RPC calls, see the modules :mod:`pickle` and
-:mod:`shelve`.  The :mod:`marshal` module exists mainly to support reading and
+:mod:`shelve`.  The :mod:`!marshal` module exists mainly to support reading and
 writing the "pseudo-compiled" code for Python modules of :file:`.pyc` files.
 Therefore, the Python maintainers reserve the right to modify the marshal format
 in backward incompatible ways should the need arise.
@@ -34,7 +34,7 @@ supports a substantially wider range of objects than marshal.
 
 .. warning::
 
-   The :mod:`marshal` module is not intended to be secure against erroneous or
+   The :mod:`!marshal` module is not intended to be secure against erroneous or
    maliciously constructed data.  Never unmarshal data received from an
    untrusted or unauthenticated source.
 
@@ -51,8 +51,9 @@ this module.  The following types are supported:
 * Strings (:class:`str`) and :class:`bytes`.
   :term:`Bytes-like objects <bytes-like object>` like :class:`bytearray` are
   marshalled as :class:`!bytes`.
-* Containers: :class:`tuple`, :class:`list`, :class:`set`, :class:`frozenset`,
-  and (since :data:`version` 5), :class:`slice`.
+* Containers: :class:`tuple`, :class:`list`, :class:`dict`, :class:`frozendict`
+  (since :data:`version` 6), :class:`set`, :class:`frozenset`, and
+  :class:`slice` (since :data:`version` 5).
   It should be understood that these are supported only if the values contained
   therein are themselves supported.
   Recursive containers are supported since :data:`version` 3.
@@ -70,6 +71,10 @@ this module.  The following types are supported:
 .. versionchanged:: 3.14
 
    Added format version 5, which allows marshalling slices.
+
+.. versionchanged:: next
+
+   Added format version 6, which allows marshalling :class:`frozendict`.
 
 
 The module defines these functions:
@@ -173,6 +178,8 @@ In addition, the following constants are defined:
    4       Python 3.4      Efficient representation of short strings
    ------- --------------- ----------------------------------------------------
    5       Python 3.14     Support for :class:`slice` objects
+   ------- --------------- ----------------------------------------------------
+   6       Python 3.15     Support for :class:`frozendict` objects
    ======= =============== ====================================================
 
 

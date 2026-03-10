@@ -483,10 +483,20 @@ class Doc:
 
         if (self._is_stdlib_module(object, basedir) and
             object.__name__ not in ('xml.etree', 'test.test_pydoc.pydoc_mod')):
-            if docloc.startswith(("http://", "https://")):
-                docloc = "{}/{}.html".format(docloc.rstrip("/"), object.__name__.lower())
+
+            try:
+                from pydoc_data import module_docs
+            except ImportError:
+                module_docs = None
+
+            if module_docs and object.__name__ in module_docs.module_docs:
+                doc_name = module_docs.module_docs[object.__name__]
+                if docloc.startswith(("http://", "https://")):
+                    docloc = "{}/{}".format(docloc.rstrip("/"), doc_name)
+                else:
+                    docloc = os.path.join(docloc, doc_name)
             else:
-                docloc = os.path.join(docloc, object.__name__.lower() + ".html")
+                docloc = None
         else:
             docloc = None
         return docloc
@@ -1994,10 +2004,11 @@ has the same effect as typing a particular string at the help> prompt.
         while True:
             try:
                 request = self.getline('help> ')
-                if not request: break
             except (KeyboardInterrupt, EOFError):
                 break
             request = request.strip()
+            if not request:
+                continue  # back to the prompt
 
             # Make sure significant trailing quoting marks of literals don't
             # get deleted while cleaning input

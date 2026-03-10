@@ -346,6 +346,58 @@ Importing Modules
 
    .. versionadded:: 3.14
 
+.. c:function:: PyImport_LazyImportsMode PyImport_GetLazyImportsMode()
+
+   Gets the current lazy imports mode.
+
+   .. versionadded:: next
+
+.. c:function:: PyObject* PyImport_GetLazyImportsFilter()
+
+   Return a :term:`strong reference` to the current lazy imports filter,
+   or ``NULL`` if none exists. This function always succeeds.
+
+   .. versionadded:: next
+
+.. c:function:: int PyImport_SetLazyImportsMode(PyImport_LazyImportsMode mode)
+
+   Similar to :c:func:`PyImport_ImportModuleAttr`, but names are UTF-8 encoded
+   strings instead of Python :class:`str` objects.
+
+   This function always returns ``0``.
+
+   .. versionadded:: next
+
+.. c:function:: int PyImport_SetLazyImportsFilter(PyObject *filter)
+
+   Sets the current lazy imports filter. The *filter* should be a callable that
+   will receive ``(importing_module_name, imported_module_name, [fromlist])``
+   when an import can potentially be lazy and that must return ``True`` if
+   the import should be lazy and ``False`` otherwise.
+
+   Return ``0`` on success and ``-1`` with an exception set otherwise.
+
+   .. versionadded:: next
+
+.. c:type:: PyImport_LazyImportsMode
+
+   Enumeration of possible lazy import modes.
+
+   .. c:enumerator:: PyImport_LAZY_NORMAL
+
+      Respect the ``lazy`` keyword in source code. This is the default mode.
+
+   .. c:enumerator:: PyImport_LAZY_ALL
+
+      Make all imports lazy by default.
+
+   .. c:enumerator:: PyImport_LAZY_NONE
+
+      Disable lazy imports entirely. Even explicit ``lazy`` statements become
+      eager imports.
+
+   .. versionadded:: next
+
 .. c:function:: PyObject* PyImport_CreateModuleFromInitfunc(PyObject *spec, PyObject* (*initfunc)(void))
 
    This function is a building block that enables embedders to implement
