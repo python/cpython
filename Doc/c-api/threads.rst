@@ -10,43 +10,63 @@ Thread states and the global interpreter lock
    single: interpreter lock
    single: lock, interpreter
 
-Unless on a :term:`free-threaded <free threading>` build of :term:`CPython`,
-the Python interpreter is not fully thread-safe.  In order to support
+Unless on a :term:`free-threaded build` of :term:`CPython`,
+the Python interpreter is generally not thread-safe.  In order to support
 multi-threaded Python programs, there's a global lock, called the :term:`global
-interpreter lock` or :term:`GIL`, that must be held by the current thread before
-it can safely access Python objects. Without the lock, even the simplest
-operations could cause problems in a multi-threaded program: for example, when
+interpreter lock` or :term:`GIL`, that must be held by a thread before
+accessing Python objects. Without the lock, even the simplest operations
+could cause problems in a multi-threaded program: for example, when
 two threads simultaneously increment the reference count of the same object, the
 reference count could end up being incremented only once instead of twice.
 
+As such, only a thread that holds the GIL may operate on Python objects or
+invoke Python's C API.
+
 .. index:: single: setswitchinterval (in module sys)
 
-Therefore, the rule exists that only the thread that has acquired the
-:term:`GIL` may operate on Python objects or call Python/C API functions.
-In order to emulate concurrency of execution, the interpreter regularly
-tries to switch threads (see :func:`sys.setswitchinterval`).  The lock is also
-released around potentially blocking I/O operations like reading or writing
-a file, so that other Python threads can run in the meantime.
+In order to emulate concurrency, the interpreter regularly tries to switch
+threads between bytecode instructions (see :func:`sys.setswitchinterval`).
+This is why locks are also necessary for thread-safety in pure-Python code.
+
+Additionally, the global interpreter lock is released around blocking I/O
+operations, such as reading or writing to a file. From the C API, this is done
+by :ref:`detaching the thread state <detaching-thread-state>`.
+
 
 .. index::
    single: PyThreadState (C type)
 
-The Python interpreter keeps some thread-specific bookkeeping information
-inside a data structure called :c:type:`PyThreadState`, known as a :term:`thread state`.
-Each OS thread has a thread-local pointer to a :c:type:`PyThreadState`; a thread state
+The Python interpreter keeps some thread-local information inside
+a data structure called :c:type:`PyThreadState`, known as a :term:`thread state`.
+Each thread has a thread-local pointer to a :c:type:`PyThreadState`; a thread state
 referenced by this pointer is considered to be :term:`attached <attached thread state>`.
 
 A thread can only have one :term:`attached thread state` at a time. An attached
-thread state is typically analogous with holding the :term:`GIL`, except on
-:term:`free-threaded <free threading>` builds.  On builds with the :term:`GIL` enabled,
-:term:`attaching <attached thread state>` a thread state will block until the :term:`GIL`
-can be acquired. However, even on builds with the :term:`GIL` disabled, it is still required
-to have an attached thread state to call most of the C API.
+thread state is typically analogous with holding the GIL, except on
+free-threaded builds.  On builds with the GIL enabled, attaching a thread state
+will block until the GIL can be acquired. However, even on builds with the GIL
+disabled, it is still required to have an attached thread state, as the interpreter
+needs to keep track of which threads may access Python objects.
 
-In general, there will always be an :term:`attached thread state` when using Python's C API.
-Only in some specific cases (such as in a :c:macro:`Py_BEGIN_ALLOW_THREADS` block) will the
-thread not have an attached thread state. If uncertain, check if :c:func:`PyThreadState_GetUnchecked` returns
-``NULL``.
+.. note::
+
+   Even on the free-threaded build, attaching a thread state may block, as the
+   GIL can be re-enabled or threads might be temporarily suspended (such as during
+   a garbage collection).
+
+Generally, there will always be an attached thread state when using Python's
+C API, including during embedding and when implementing methods, so it's uncommon
+to need to set up a thread state on your own. Only in some specific cases, such
+as in a :c:macro:`Py_BEGIN_ALLOW_THREADS` block or in a fresh thread, will the
+thread not have an attached thread state.
+If uncertain, check if :c:func:`PyThreadState_GetUnchecked` returns ``NULL``.
+
+If it turns out that you do need to create a thread state, call :c:func:`PyThreadState_New`
+followed by :c:func:`PyThreadState_Swap`, or use the dangerous
+:c:func:`PyGILState_Ensure` function.
+
+
+.. _detaching-thread-state:
 
 Detaching the thread state from extension code
 ----------------------------------------------
@@ -86,28 +106,37 @@ The block above expands to the following code::
 
 Here is how these functions work:
 
-The :term:`attached thread state` holds the :term:`GIL` for the entire interpreter. When detaching
-the :term:`attached thread state`, the :term:`GIL` is released, allowing other threads to attach
-a thread state to their own thread, thus getting the :term:`GIL` and can start executing.
-The pointer to the prior :term:`attached thread state` is stored as a local variable.
-Upon reaching :c:macro:`Py_END_ALLOW_THREADS`, the thread state that was
-previously :term:`attached <attached thread state>` is passed to :c:func:`PyEval_RestoreThread`.
-This function will block until another releases its :term:`thread state <attached thread state>`,
-thus allowing the old :term:`thread state <attached thread state>` to get re-attached and the
-C API can be called again.
+The attached thread state implies that the GIL is held for the interpreter.
+To detach it, :c:func:`PyEval_SaveThread` is called and the result is stored
+in a local variable.
 
-For :term:`free-threaded <free threading>` builds, the :term:`GIL` is normally
-out of the question, but detaching the :term:`thread state <attached thread state>` is still required
-for blocking I/O and long operations. The difference is that threads don't have to wait for the :term:`GIL`
-to be released to attach their thread state, allowing true multi-core parallelism.
+By detaching the thread state, the GIL is released, which allows other threads
+to attach to the interpreter and execute while the current thread performs
+blocking I/O. When the I/O operation is complete, the old thread state is
+reattached by calling :c:func:`PyEval_RestoreThread`, which will wait until
+the GIL can be acquired.
 
 .. note::
-   Calling system I/O functions is the most common use case for detaching
-   the :term:`thread state <attached thread state>`, but it can also be useful before calling
-   long-running computations which don't need access to Python objects, such
-   as compression or cryptographic functions operating over memory buffers.
+   Performing blocking I/O is the most common use case for detaching
+   the thread state, but it is also useful to call it over long-running
+   native code that doesn't need access to Python objects or Python's C API.
    For example, the standard :mod:`zlib` and :mod:`hashlib` modules detach the
-   :term:`thread state <attached thread state>` when compressing or hashing data.
+   :term:`thread state <attached thread state>` when compressing or hashing
+   data.
+
+On a :term:`free-threaded build`, the :term:`GIL` is usually out of the question,
+but **detaching the thread state is still required**, because the interpreter
+periodically needs to block all threads to get a consistent view of Python objects
+without the risk of race conditions.
+For example, CPython currently suspends all threads for a short period of time
+while running the garbage collector.
+
+.. warning::
+
+   Detaching the thread state can lead to unexpected behavior during interpreter
+   finalization. See :ref:`cautions-regarding-runtime-finalization` for more
+   details.
+
 
 APIs
 ^^^^
@@ -149,28 +178,74 @@ example usage in the Python source distribution.
    declaration.
 
 
-.. _gilstate:
-
 Non-Python created threads
 --------------------------
 
 When threads are created using the dedicated Python APIs (such as the
-:mod:`threading` module), a thread state is automatically associated to them
-and the code shown above is therefore correct.  However, when threads are
-created from C (for example by a third-party library with its own thread
-management), they don't hold the :term:`GIL`, because they don't have an
-:term:`attached thread state`.
+:mod:`threading` module), a thread state is automatically associated with them,
+However, when a thread is created from native code (for example, by a
+third-party library with its own thread management), it doesn't hold an
+attached thread state.
 
 If you need to call Python code from these threads (often this will be part
 of a callback API provided by the aforementioned third-party library),
 you must first register these threads with the interpreter by
-creating an :term:`attached thread state` before you can start using the Python/C
-API.  When you are done, you should detach the :term:`thread state <attached thread state>`, and
-finally free it.
+creating a new thread state and attaching it.
 
-The :c:func:`PyGILState_Ensure` and :c:func:`PyGILState_Release` functions do
-all of the above automatically.  The typical idiom for calling into Python
-from a C thread is::
+The most robust way to do this is through :c:func:`PyThreadState_New` followed
+by :c:func:`PyThreadState_Swap`.
+
+.. note::
+   ``PyThreadState_New`` requires an argument pointing to the desired
+   interpreter; such a pointer can be acquired via a call to
+   :c:func:`PyInterpreterState_Get` from the code where the thread was
+   created.
+
+For example::
+
+   /* The return value of PyInterpreterState_Get() from the
+      function that created this thread. */
+   PyInterpreterState *interp = thread_data->interp;
+
+   /* Create a new thread state for the interpreter. It does not start out
+      attached. */
+   PyThreadState *tstate = PyThreadState_New(interp);
+
+   /* Attach the thread state, which will acquire the GIL. */
+   PyThreadState_Swap(tstate);
+
+   /* Perform Python actions here. */
+   result = CallSomeFunction();
+   /* evaluate result or handle exception */
+
+   /* Destroy the thread state. No Python API allowed beyond this point. */
+   PyThreadState_Clear(tstate);
+   PyThreadState_DeleteCurrent();
+
+.. warning::
+
+   If the interpreter finalized before ``PyThreadState_Swap`` was called, then
+   ``interp`` will be a dangling pointer!
+
+.. _gilstate:
+
+Legacy API
+----------
+
+Another common pattern to call Python code from a non-Python thread is to use
+:c:func:`PyGILState_Ensure` followed by a call to :c:func:`PyGILState_Release`.
+
+These functions do not work well when multiple interpreters exist in the Python
+process. If no Python interpreter has ever been used in the current thread (which
+is common for threads created outside Python), ``PyGILState_Ensure`` will create
+and attach a thread state for the "main" interpreter (the first interpreter in
+the Python process).
+
+Additionally, these functions have thread-safety issues during interpreter
+finalization. Using ``PyGILState_Ensure`` during finalization will likely
+crash the process.
+
+Usage of these functions look like such::
 
    PyGILState_STATE gstate;
    gstate = PyGILState_Ensure();
@@ -181,41 +256,6 @@ from a C thread is::
 
    /* Release the thread. No Python API allowed beyond this point. */
    PyGILState_Release(gstate);
-
-Note that the ``PyGILState_*`` functions assume there is only one global
-interpreter (created automatically by :c:func:`Py_Initialize`).  Python
-supports the creation of additional interpreters (using
-:c:func:`Py_NewInterpreter`), but mixing multiple interpreters and the
-``PyGILState_*`` API is unsupported. This is because :c:func:`PyGILState_Ensure`
-and similar functions default to :term:`attaching <attached thread state>` a
-:term:`thread state` for the main interpreter, meaning that the thread can't safely
-interact with the calling subinterpreter.
-
-Supporting subinterpreters in non-Python threads
-------------------------------------------------
-
-If you would like to support subinterpreters with non-Python created threads, you
-must use the ``PyThreadState_*`` API instead of the traditional ``PyGILState_*``
-API.
-
-In particular, you must store the interpreter state from the calling
-function and pass it to :c:func:`PyThreadState_New`, which will ensure that
-the :term:`thread state` is targeting the correct interpreter::
-
-   /* The return value of PyInterpreterState_Get() from the
-      function that created this thread. */
-   PyInterpreterState *interp = ThreadData->interp;
-   PyThreadState *tstate = PyThreadState_New(interp);
-   PyThreadState_Swap(tstate);
-
-   /* GIL of the subinterpreter is now held.
-      Perform Python actions here. */
-   result = CallSomeFunction();
-   /* evaluate result or handle exception */
-
-   /* Destroy the thread state. No Python API allowed beyond this point. */
-   PyThreadState_Clear(tstate);
-   PyThreadState_DeleteCurrent();
 
 
 .. _fork-and-threads:
