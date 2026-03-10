@@ -1621,11 +1621,11 @@ align(Py_ssize_t size, char c, const formatdef *e)
 /* calculate the size of a format string */
 
 static int
-prepare_s(PyStructObject *self)
+prepare_s(PyStructObject *self, PyObject *format)
 {
     const formatdef *f;
     const formatdef *e;
-    formatcode *codes;
+    formatcode *codes, *codes0;
 
     const char *s;
     const char *fmt;
@@ -1635,8 +1635,8 @@ prepare_s(PyStructObject *self)
 
     _structmodulestate *state = get_struct_state_structinst(self);
 
-    fmt = PyBytes_AS_STRING(self->s_format);
-    if (strlen(fmt) != (size_t)PyBytes_GET_SIZE(self->s_format)) {
+    fmt = PyBytes_AS_STRING(format);
+    if (strlen(fmt) != (size_t)PyBytes_GET_SIZE(format)) {
         PyErr_SetString(state->StructError,
                         "embedded null character");
         return -1;
@@ -1712,13 +1712,7 @@ prepare_s(PyStructObject *self)
         PyErr_NoMemory();
         return -1;
     }
-    /* Free any s_codes value left over from a previous initialization. */
-    if (self->s_codes != NULL)
-        PyMem_Free(self->s_codes);
-    self->s_codes = codes;
-    self->s_size = size;
-    self->s_len = len;
-
+    codes0 = codes;
     s = fmt;
     size = 0;
     while ((c = *s++) != '\0') {
@@ -1758,6 +1752,14 @@ prepare_s(PyStructObject *self)
     codes->size = 0;
     codes->repeat = 0;
 
+    /* Free any s_codes value left over from a previous initialization. */
+    if (self->s_codes != NULL)
+        PyMem_Free(self->s_codes);
+    self->s_codes = codes0;
+    self->s_size = size;
+    self->s_len = len;
+    Py_XSETREF(self->s_format, Py_NewRef(format));
+
     return 0;
 
   overflow:
@@ -1776,20 +1778,20 @@ set_format(PyStructObject *self, PyObject *format)
         if (format == NULL)
             return -1;
     }
-    else {
+    else if (PyBytes_Check(format)) {
         Py_INCREF(format);
     }
-    if (!PyBytes_Check(format)) {
+    else  {
         PyErr_Format(PyExc_TypeError,
                      "Struct() argument 1 must be a str or bytes object, "
                      "not %T", format);
+        return -1;
+    }
+    if (prepare_s(self, format)) {
         Py_DECREF(format);
         return -1;
     }
-    Py_SETREF(self->s_format, format);
-    if (prepare_s(self)) {
-        return -1;
-    }
+    Py_DECREF(format);
     return 0;
 }
 
@@ -2531,6 +2533,7 @@ static PyObject *
 Struct___sizeof___impl(PyStructObject *self)
 /*[clinic end generated code: output=2d0d78900b4cdb4e input=faca5925c1f1ffd0]*/
 {
+    ENSURE_STRUCT_IS_READY(self);
     size_t size = _PyObject_SIZE(Py_TYPE(self)) + sizeof(formatcode);
     for (formatcode *code = self->s_codes; code->fmtdef != NULL; code++) {
         size += sizeof(formatcode);
@@ -2542,6 +2545,7 @@ static PyObject *
 s_repr(PyObject *op)
 {
     PyStructObject *self = PyStructObject_CAST(op);
+    ENSURE_STRUCT_IS_READY(self);
     PyObject* fmt = PyUnicode_FromStringAndSize(
         PyBytes_AS_STRING(self->s_format), PyBytes_GET_SIZE(self->s_format));
     if (fmt == NULL) {

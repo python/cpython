@@ -600,7 +600,7 @@ class StructTest(ComplexesAreIdenticalMixin, unittest.TestCase):
 
         with self.assertWarns(DeprecationWarning):
             with self.assertRaises(UnicodeEncodeError):
-                s.__init__('\u20ac')
+                s.__init__('\udc00')
         self.assertEqual(s.format, '>hh')
         self.assertEqual(s.pack(1, 2), packed)
         self.assertEqual(s.unpack(packed), (1, 2))
@@ -608,7 +608,7 @@ class StructTest(ComplexesAreIdenticalMixin, unittest.TestCase):
         with self.assertWarns(DeprecationWarning):
             with self.assertRaises(struct.error):
                 s.__init__('$')
-        self.assertEqual(s.format, '$')
+        self.assertEqual(s.format, '>hh')
         self.assertEqual(s.pack(1, 2), packed)
         self.assertEqual(s.unpack(packed), (1, 2))
 
@@ -999,6 +999,8 @@ class StructTest(ComplexesAreIdenticalMixin, unittest.TestCase):
         self.assertRaises(RuntimeError, S.unpack, spam)
         self.assertRaises(RuntimeError, S.unpack_from, spam)
         self.assertRaises(RuntimeError, getattr, S, 'format')
+        self.assertRaises(RuntimeError, S.__sizeof__)
+        self.assertRaises(RuntimeError, repr, S)
         self.assertEqual(S.size, -1)
 
 

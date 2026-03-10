@@ -5220,7 +5220,7 @@ unicode_decode_utf8_impl(_PyUnicodeWriter *writer,
             }
 
             if (_PyUnicodeWriter_Prepare(writer, end - s, 127) < 0) {
-                return -1;
+                goto onError;
             }
         }
     }
@@ -12313,6 +12313,18 @@ _PyUnicode_XStrip(PyObject *self, int striptype, PyObject *sepobj)
 }
 
 PyObject*
+_PyUnicode_BinarySlice(PyObject *container, PyObject *start_o, PyObject *stop_o)
+{
+    assert(PyUnicode_CheckExact(container));
+    Py_ssize_t len = PyUnicode_GET_LENGTH(container);
+    Py_ssize_t istart, istop;
+    if (!_PyEval_UnpackIndices(start_o, stop_o, len, &istart, &istop)) {
+        return NULL;
+    }
+    return PyUnicode_Substring(container, istart, istop);
+}
+
+PyObject*
 PyUnicode_Substring(PyObject *self, Py_ssize_t start, Py_ssize_t end)
 {
     const unsigned char *data;
@@ -13569,7 +13581,8 @@ search_longest_common_leading_whitespace(
 }
 
 /* Dedent a string.
-   Behaviour is expected to be an exact match of `textwrap.dedent`.
+   Intended to dedent Python source. Unlike `textwrap.dedent`, this
+   only supports spaces and tabs and doesn't normalize empty lines.
    Return a new reference on success, NULL with exception set on error.
    */
 PyObject *
