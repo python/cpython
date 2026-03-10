@@ -478,6 +478,7 @@ def _default_mime_types():
         '.js'     : 'text/javascript',
         '.mjs'    : 'text/javascript',
         '.dcm'    : 'application/dicom',
+        '.efi'    : 'application/efi',
         '.epub'   : 'application/epub+zip',
         '.gz'     : 'application/gzip',
         '.json'   : 'application/json',
