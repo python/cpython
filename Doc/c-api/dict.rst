@@ -369,7 +369,7 @@ Dictionary objects
       }
 
    The function is not thread-safe in the :term:`free-threaded <free threading>`
-   build without external synchronization.  You can use
+   build without external synchronization for a mutable :class:`dict`. You can use
    :c:macro:`Py_BEGIN_CRITICAL_SECTION` to lock the dictionary while iterating
    over it::
 
@@ -378,6 +378,8 @@ Dictionary objects
           ...
       }
       Py_END_CRITICAL_SECTION();
+
+   The function is thread-safe on a :class:`frozendict`.
 
    .. note::
 
