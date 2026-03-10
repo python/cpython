@@ -133,6 +133,7 @@ Tools/check-c-api-docs/       @ZeroIntensity
 
 # Fuzzing
 Modules/_xxtestfuzz/                    @python/fuzzers
+Lib/test/test_xxtestfuzz.py             @python/fuzzers
 .github/workflows/reusable-cifuzz.yml   @python/fuzzers
 
 # Limited C API & Stable ABI
