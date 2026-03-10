@@ -1164,6 +1164,10 @@ class FormatTest:
             ('<^+15.20%', 'inf', '<<+Infinity%<<<'),
             ('\x07>,%', 'sNaN1234567', 'sNaN1234567%'),
             ('=10.10%', 'NaN123', '   NaN123%'),
+
+            # issue 61449
+            ('<06', '1.2', '1.2000'),
+            ('x>06', '1.2', 'xxx1.2'),
             ]
         for fmt, d, result in test_values:
             self.assertEqual(format(Decimal(d), fmt), result)
