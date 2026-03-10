@@ -149,6 +149,9 @@ def quoteaddr(addrstring):
     displayname, addr = email.utils.parseaddr(addrstring)
     if (displayname, addr) == ('', ''):
         # parseaddr couldn't parse it, wrap it in angle brackets.
+        if addrstring.strip().startswith('<'):
+            if addrstring.strip().endswith('>'):
+                return addrstring
         return "<%s>" % addrstring
     return "<%s>" % addr
 
