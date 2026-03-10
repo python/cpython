@@ -568,7 +568,7 @@ class ThreadedVSOCKSocketStreamTest(unittest.TestCase, ThreadableTest):
         self.addCleanup(self.serv.close)
         cid = get_cid()
         if cid in (socket.VMADDR_CID_HOST, socket.VMADDR_CID_ANY):
-            cid = socket.VMADDR_CID_LOCAL
+            cid = VMADDR_CID_LOCAL
         try:
             self.serv.bind((cid, VSOCKPORT))
         except OSError as exc:
