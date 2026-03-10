@@ -1,0 +1,1 @@
+Make :class:`threading.RLock` a real class instead of a factory function.
