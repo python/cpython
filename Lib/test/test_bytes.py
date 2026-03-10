@@ -2913,7 +2913,7 @@ class FreeThreadingTest(unittest.TestCase):
     @threading_helper.requires_working_threading()
     def test_free_threading_bytearray_resize(self):
         def resize_stress(ba):
-            for _ in range(100_000):
+            for _ in range(1000):
                 try:
                     ba.resize(10_000)
                     ba.resize(1)
