@@ -613,10 +613,11 @@ are always available.  They are listed here in alphabetical order.
    mappings as global and local namespace.  If the *globals* dictionary is
    present and does not contain a value for the key ``__builtins__``, a
    reference to the dictionary of the built-in module :mod:`builtins` is
-   inserted under that key before *source* is parsed.  That way you can
-   control what builtins are available to the executed code by inserting your
-   own ``__builtins__`` dictionary into *globals* before passing it to
-   :func:`eval`.  If the *locals* mapping is omitted it defaults to the
+   inserted under that key before *source* is parsed.
+   Overriding ``__builtins__`` can be used to restrict or change the available
+   names, but it is **not** a security mechanism, the executed code can
+   still access builtins.
+   If the *locals* mapping is omitted it defaults to the
    *globals* dictionary.  If both mappings are omitted, the source is
    executed with the *globals* and *locals* in the environment where
    :func:`eval` is called.  Note, *eval()* will only have access to the
@@ -702,9 +703,10 @@ are always available.  They are listed here in alphabetical order.
 
    If the *globals* dictionary does not contain a value for the key
    ``__builtins__``, a reference to the dictionary of the built-in module
-   :mod:`builtins` is inserted under that key.  That way you can control what
-   builtins are available to the executed code by inserting your own
-   ``__builtins__`` dictionary into *globals* before passing it to :func:`exec`.
+   :mod:`builtins` is inserted under that key.
+   Overriding ``__builtins__`` can be used to restrict or change the available
+   names, but it is **not** a security mechanism, the executed code can
+   still access builtins.
 
    The *closure* argument specifies a closure--a tuple of cellvars.
    It's only valid when the *object* is a code object containing
