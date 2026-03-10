@@ -579,8 +579,24 @@ class StructTest(unittest.TestCase):
         # Issue 9422: there was a memory leak when reinitializing a
         # Struct instance.  This test can be used to detect the leak
         # when running with regrtest -L.
-        s = struct.Struct('i')
-        s.__init__('ii')
+        s = struct.Struct('>h')
+        s.__init__('>hh')
+        self.assertEqual(s.format, '>hh')
+        packed = b'\x00\x01\x00\x02'
+        self.assertEqual(s.pack(1, 2), packed)
+        self.assertEqual(s.unpack(packed), (1, 2))
+
+        with self.assertRaises(UnicodeEncodeError):
+            s.__init__('\udc00')
+        self.assertEqual(s.format, '>hh')
+        self.assertEqual(s.pack(1, 2), packed)
+        self.assertEqual(s.unpack(packed), (1, 2))
+
+        with self.assertRaises(struct.error):
+            s.__init__('$')
+        self.assertEqual(s.format, '>hh')
+        self.assertEqual(s.pack(1, 2), packed)
+        self.assertEqual(s.unpack(packed), (1, 2))
 
     def check_sizeof(self, format_str, number_of_codes):
         # The size of 'PyStructObject'
