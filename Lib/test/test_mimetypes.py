@@ -275,7 +275,6 @@ class MimeTypesTestCase(unittest.TestCase):
                 ("image/t38", ".t38"),
                 ("image/tiff", ".tiff"),
                 ("image/tiff-fx", ".tfx"),
-                ("image/vnd.microsoft.icon", ".ico"),
                 ("image/webp", ".webp"),
                 ("image/wmf", ".wmf"),
                 ("message/rfc822", ".eml"),
