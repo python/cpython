@@ -45,7 +45,7 @@ def required_emscripten_version():
 @functools.cache
 def emsdk_cache_root(emsdk_cache):
     required_version = required_emscripten_version()
-    return Path(emsdk_cache) / required_version
+    return Path(emsdk_cache).absolute() / required_version
 
 
 @functools.cache
