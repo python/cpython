@@ -1,0 +1,3 @@
+Allow *scheduler* and *setpgroup* arguments to be explicitly :const:`None`
+when calling :func:`os.posix_spawn` or :func:`os.posix_spawnp`. Patch by
+Bénédikt Tran.

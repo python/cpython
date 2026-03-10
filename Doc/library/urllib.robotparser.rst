@@ -5,8 +5,6 @@
    :synopsis: Load a robots.txt file and answer questions about
               fetchability of other URLs.
 
-.. sectionauthor:: Skip Montanaro <skip.montanaro@gmail.com>
-
 **Source code:** :source:`Lib/urllib/robotparser.py`
 
 .. index::

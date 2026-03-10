@@ -1,0 +1,2 @@
+Fix targets "Clean" and "CLeanAll" in case of PGO builds on Windows. Patch by
+Chris Eibl.

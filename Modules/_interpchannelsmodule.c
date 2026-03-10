@@ -1644,14 +1644,16 @@ _channels_list_all(_channels *channels, int64_t *count)
     if (ids == NULL) {
         goto done;
     }
-    _channelref *ref = channels->head;
-    for (int64_t i=0; ref != NULL; ref = ref->next, i++) {
-        ids[i] = (struct channel_id_and_info){
-            .id = ref->cid,
-            .defaults = ref->chan->defaults,
-        };
+    int64_t i = 0;
+    for (_channelref *ref = channels->head; ref != NULL; ref = ref->next) {
+        if (ref->chan != NULL) {
+            ids[i++] = (struct channel_id_and_info){
+                .id = ref->cid,
+                .defaults = ref->chan->defaults,
+            };
+        }
     }
-    *count = channels->numopen;
+    *count = i;
 
     cids = ids;
 done:

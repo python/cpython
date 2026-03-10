@@ -2,7 +2,7 @@
 
 .. _dictobjects:
 
-Dictionary Objects
+Dictionary objects
 ------------------
 
 .. index:: pair: object; dictionary
@@ -58,6 +58,9 @@ Dictionary Objects
 
    Empty an existing dictionary of all key-value pairs.
 
+   Do nothing if the argument is not a :class:`dict` or a :class:`!dict`
+   subclass.
+
 
 .. c:function:: int PyDict_Contains(PyObject *p, PyObject *key)
 
@@ -78,7 +81,6 @@ Dictionary Objects
 .. c:function:: PyObject* PyDict_Copy(PyObject *p)
 
    Return a new dictionary that contains the same key-value pairs as *p*.
-
 
 .. c:function:: int PyDict_SetItem(PyObject *p, PyObject *key, PyObject *val)
 
@@ -444,7 +446,7 @@ Dictionary Objects
    .. versionadded:: 3.12
 
 
-Dictionary View Objects
+Dictionary view objects
 ^^^^^^^^^^^^^^^^^^^^^^^
 
 .. c:function:: int PyDictViewSet_Check(PyObject *op)
@@ -490,7 +492,58 @@ Dictionary View Objects
    always succeeds.
 
 
-Ordered Dictionaries
+Frozen dictionary objects
+^^^^^^^^^^^^^^^^^^^^^^^^^
+
+.. versionadded:: next
+
+
+.. c:var:: PyTypeObject PyFrozenDict_Type
+
+   This instance of :c:type:`PyTypeObject` represents the Python frozen
+   dictionary type.
+   This is the same object as :class:`frozendict` in the Python layer.
+
+
+.. c:function:: int PyAnyDict_Check(PyObject *p)
+
+   Return true if *p* is a :class:`dict` object, a :class:`frozendict` object,
+   or an instance of a subtype of the :class:`!dict` or :class:`!frozendict`
+   type.
+   This function always succeeds.
+
+
+.. c:function:: int PyAnyDict_CheckExact(PyObject *p)
+
+   Return true if *p* is a :class:`dict` object or a :class:`frozendict` object,
+   but not an instance of a subtype of the :class:`!dict` or
+   :class:`!frozendict` type.
+   This function always succeeds.
+
+
+.. c:function:: int PyFrozenDict_Check(PyObject *p)
+
+   Return true if *p* is a :class:`frozendict` object or an instance of a
+   subtype of the :class:`!frozendict` type.
+   This function always succeeds.
+
+
+.. c:function:: int PyFrozenDict_CheckExact(PyObject *p)
+
+   Return true if *p* is a :class:`frozendict` object, but not an instance of a
+   subtype of the :class:`!frozendict` type.
+   This function always succeeds.
+
+
+.. c:function:: PyObject* PyFrozenDict_New(PyObject *iterable)
+
+   Return a new :class:`frozendict` from an iterable, or ``NULL`` on failure
+   with an exception set.
+
+   Create an empty dictionary if *iterable* is ``NULL``.
+
+
+Ordered dictionaries
 ^^^^^^^^^^^^^^^^^^^^
 
 Python's C API provides interface for :class:`collections.OrderedDict` from C.

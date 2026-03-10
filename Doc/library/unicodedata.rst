@@ -4,10 +4,6 @@
 .. module:: unicodedata
    :synopsis: Access the Unicode Database.
 
-.. moduleauthor:: Marc-André Lemburg <mal@lemburg.com>
-.. sectionauthor:: Marc-André Lemburg <mal@lemburg.com>
-.. sectionauthor:: Martin v. Löwis <martin@v.loewis.de>
-
 .. index::
    single: Unicode
    single: character
@@ -132,6 +128,18 @@ following functions:
    Returns the east asian width assigned to the character *chr* as
    string. For a list of widths and or more information, see the
    `Unicode Standard Annex #11 <https://www.unicode.org/reports/tr11/>`_.
+
+
+.. function:: block(chr, /)
+
+   Returns the `block
+   <https://www.unicode.org/versions/Unicode17.0.0/core-spec/chapter-3/#G64189>`_
+   assigned to the character *chr*. For example::
+
+      >>> unicodedata.block('S')
+      'Basic Latin'
+
+   .. versionadded:: next
 
 
 .. function:: mirrored(chr, /)

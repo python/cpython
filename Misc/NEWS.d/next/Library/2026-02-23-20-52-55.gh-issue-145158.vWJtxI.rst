@@ -1,0 +1,2 @@
+Avoid undefined behaviour from signed integer overflow when parsing format
+strings in the :mod:`struct` module.
