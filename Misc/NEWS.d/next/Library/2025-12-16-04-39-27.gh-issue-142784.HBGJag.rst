@@ -1,3 +1,0 @@
-The :mod:`asyncio` REPL now properly closes the loop upon the end of interactive session.
-Previously, it could cause surprising warnings.
-Contributed by Bartosz Sławecki.

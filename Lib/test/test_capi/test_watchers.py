@@ -176,8 +176,9 @@ class TestDictWatchers(unittest.TestCase):
 
     def test_unwatch_non_dict(self):
         with self.watcher() as wid:
-            with self.assertRaisesRegex(ValueError, r"Cannot watch non-dictionary"):
-                self.unwatch(wid, 1)
+            for wrong_type in (frozendict(), 5, [123], object()):
+                with self.assertRaisesRegex(ValueError, r"Cannot watch non-dictionary"):
+                    self.unwatch(wid, wrong_type)
 
     def test_unwatch_out_of_range_watcher_id(self):
         d = {}

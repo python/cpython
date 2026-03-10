@@ -1441,6 +1441,34 @@ class PdbConnectTestCase(unittest.TestCase):
             self.assertIn("Function returned: 42", stdout)
             self.assertEqual(process.returncode, 0)
 
+    def test_exec_in_closure_result_uses_pdb_stdout(self):
+        """
+        Expression results executed via _exec_in_closure() should be written
+        to the debugger output stream (pdb stdout), not to sys.stdout.
+        """
+        self._create_script()
+        process, client_file = self._connect_and_get_client_file()
+
+        with kill_on_error(process):
+            self._read_until_prompt(client_file)
+
+            self._send_command(client_file, "(lambda: 123)()")
+            messages = self._read_until_prompt(client_file)
+            result_msg = "".join(msg.get("message", "") for msg in messages)
+            self.assertIn("123", result_msg)
+
+            self._send_command(client_file, "sum(i for i in (1, 2, 3))")
+            messages = self._read_until_prompt(client_file)
+            result_msg = "".join(msg.get("message", "") for msg in messages)
+            self.assertIn("6", result_msg)
+
+            self._send_command(client_file, "c")
+            stdout, _ = process.communicate(timeout=SHORT_TIMEOUT)
+
+            self.assertNotIn("\n123\n", stdout)
+            self.assertNotIn("\n6\n", stdout)
+            self.assertEqual(process.returncode, 0)
+
 
 def _supports_remote_attaching():
     PROCESS_VM_READV_SUPPORTED = False

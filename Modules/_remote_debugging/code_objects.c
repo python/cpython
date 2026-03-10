@@ -446,6 +446,9 @@ parse_code_object(RemoteUnwinderObject *unwinder,
     if (tlbc_entry) {
         // Validate index bounds (also catches negative values since tlbc_index is signed)
         if (ctx->tlbc_index < 0 || ctx->tlbc_index >= tlbc_entry->tlbc_array_size) {
+            PyErr_Format(PyExc_RuntimeError,
+                "Invalid tlbc_index %d (array size %zd, corrupted remote memory)",
+                ctx->tlbc_index, tlbc_entry->tlbc_array_size);
             set_exception_cause(unwinder, PyExc_RuntimeError,
                 "Invalid tlbc_index (corrupted remote memory)");
             goto error;

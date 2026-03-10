@@ -595,6 +595,9 @@ _remote_debugging_RemoteUnwinder_get_stack_trace_impl(RemoteUnwinderObject *self
                     // Detect cycle: if current_tstate didn't advance, we have corrupted data
                     if (current_tstate == prev_tstate) {
                         Py_DECREF(interpreter_threads);
+                        PyErr_Format(PyExc_RuntimeError,
+                            "Thread list cycle detected at address 0x%lx (corrupted remote memory)",
+                            current_tstate);
                         set_exception_cause(self, PyExc_RuntimeError,
                             "Thread list cycle detected (corrupted remote memory)");
                         Py_CLEAR(result);
@@ -947,6 +950,7 @@ _remote_debugging_RemoteUnwinder_get_stats_impl(RemoteUnwinderObject *self)
 }
 
 /*[clinic input]
+@permit_long_docstring_body
 @critical_section
 _remote_debugging.RemoteUnwinder.pause_threads
 
@@ -963,7 +967,7 @@ Raises:
 
 static PyObject *
 _remote_debugging_RemoteUnwinder_pause_threads_impl(RemoteUnwinderObject *self)
-/*[clinic end generated code: output=aaf2bdc0a725750c input=78601c60dbc245fe]*/
+/*[clinic end generated code: output=aaf2bdc0a725750c input=d8a266f19a81c67e]*/
 {
 #ifdef Py_REMOTE_DEBUG_SUPPORTS_BLOCKING
     if (self->threads_stopped) {
@@ -985,6 +989,7 @@ _remote_debugging_RemoteUnwinder_pause_threads_impl(RemoteUnwinderObject *self)
 }
 
 /*[clinic input]
+@permit_long_docstring_body
 @critical_section
 _remote_debugging.RemoteUnwinder.resume_threads
 
@@ -997,7 +1002,7 @@ Returns True if threads were successfully resumed, False if they were not paused
 
 static PyObject *
 _remote_debugging_RemoteUnwinder_resume_threads_impl(RemoteUnwinderObject *self)
-/*[clinic end generated code: output=8d6781ea37095536 input=67ca813bd804289e]*/
+/*[clinic end generated code: output=8d6781ea37095536 input=16baaaab007f4259]*/
 {
 #ifdef Py_REMOTE_DEBUG_SUPPORTS_BLOCKING
     if (!self->threads_stopped) {
@@ -1261,6 +1266,7 @@ class _remote_debugging.BinaryWriter "BinaryWriterObject *" "&PyBinaryWriter_Typ
 /*[clinic end generated code: output=da39a3ee5e6b4b0d input=e948838b90a2003c]*/
 
 /*[clinic input]
+@permit_long_docstring_body
 _remote_debugging.BinaryWriter.__init__
     filename: str
     sample_interval_us: unsigned_long_long
@@ -1285,7 +1291,7 @@ _remote_debugging_BinaryWriter___init___impl(BinaryWriterObject *self,
                                              unsigned long long sample_interval_us,
                                              unsigned long long start_time_us,
                                              int compression)
-/*[clinic end generated code: output=014c0306f1bacf4b input=57497fe3cb9214a6]*/
+/*[clinic end generated code: output=014c0306f1bacf4b input=3bdf01c1cc2f5a1d]*/
 {
     if (self->writer) {
         binary_writer_destroy(self->writer);
@@ -1300,6 +1306,7 @@ _remote_debugging_BinaryWriter___init___impl(BinaryWriterObject *self,
 }
 
 /*[clinic input]
+@permit_long_docstring_body
 _remote_debugging.BinaryWriter.write_sample
     stack_frames: object
     timestamp_us: unsigned_long_long
@@ -1315,7 +1322,7 @@ static PyObject *
 _remote_debugging_BinaryWriter_write_sample_impl(BinaryWriterObject *self,
                                                  PyObject *stack_frames,
                                                  unsigned long long timestamp_us)
-/*[clinic end generated code: output=24d5b86679b4128f input=dce3148417482624]*/
+/*[clinic end generated code: output=24d5b86679b4128f input=4e6d832d360bea46]*/
 {
     if (!self->writer) {
         PyErr_SetString(PyExc_ValueError, "Writer is closed");
@@ -1422,6 +1429,7 @@ _remote_debugging_BinaryWriter___exit___impl(BinaryWriterObject *self,
 }
 
 /*[clinic input]
+@permit_long_docstring_body
 _remote_debugging.BinaryWriter.get_stats
 
 Get encoding statistics for the writer.
@@ -1432,7 +1440,7 @@ record counts, frames written/saved, and compression ratio.
 
 static PyObject *
 _remote_debugging_BinaryWriter_get_stats_impl(BinaryWriterObject *self)
-/*[clinic end generated code: output=06522cd52544df89 input=82968491b53ad277]*/
+/*[clinic end generated code: output=06522cd52544df89 input=837c874ffdebd24c]*/
 {
     if (!self->writer) {
         PyErr_SetString(PyExc_ValueError, "Writer is closed");
@@ -1754,6 +1762,7 @@ _remote_debugging_zstd_available_impl(PyObject *module)
  * ============================================================================ */
 
 /*[clinic input]
+@permit_long_docstring_body
 _remote_debugging.get_child_pids
 
     pid: int
@@ -1779,7 +1788,7 @@ Raises:
 static PyObject *
 _remote_debugging_get_child_pids_impl(PyObject *module, int pid,
                                       int recursive)
-/*[clinic end generated code: output=1ae2289c6b953e4b input=3395cbe7f17066c9]*/
+/*[clinic end generated code: output=1ae2289c6b953e4b input=19d8d5d6e2b59e6e]*/
 {
     return enumerate_child_pids((pid_t)pid, recursive);
 }

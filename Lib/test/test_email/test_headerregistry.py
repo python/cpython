@@ -1711,7 +1711,7 @@ class TestFolding(TestHeaderBase):
             'singlewordthatwontfit')
         self.assertEqual(
             h.fold(policy=policy.default.clone(max_line_length=20)),
-            'Subject: \n'
+            'Subject:\n'
             ' =?utf-8?q?thisisa?=\n'
             ' =?utf-8?q?verylon?=\n'
             ' =?utf-8?q?glineco?=\n'
@@ -1727,7 +1727,7 @@ class TestFolding(TestHeaderBase):
             'singlewordthatwontfit plusanotherverylongwordthatwontfit')
         self.assertEqual(
             h.fold(policy=policy.default.clone(max_line_length=20)),
-            'Subject: \n'
+            'Subject:\n'
             ' =?utf-8?q?thisisa?=\n'
             ' =?utf-8?q?verylon?=\n'
             ' =?utf-8?q?glineco?=\n'

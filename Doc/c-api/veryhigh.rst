@@ -191,7 +191,7 @@ the same library that the Python runtime is using.
    objects *globals* and *locals* with the compiler flags specified by
    *flags*.  *globals* must be a dictionary; *locals* can be any object
    that implements the mapping protocol.  The parameter *start* specifies
-   the start symbol and must one of the :ref:`available start symbols <start-symbols>`.
+   the start symbol and must be one of the :ref:`available start symbols <start-symbols>`.
 
    Returns the result of executing the code as a Python object, or ``NULL`` if an
    exception was raised.

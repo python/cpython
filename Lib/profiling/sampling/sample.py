@@ -43,6 +43,9 @@ except ImportError:
 
 _FREE_THREADED_BUILD = sysconfig.get_config_var("Py_GIL_DISABLED") is not None
 
+# Minimum number of samples required before showing the TUI
+# If fewer samples are collected, we skip the TUI and just print a message
+MIN_SAMPLES_FOR_TUI = 200
 
 class SampleProfiler:
     def __init__(self, pid, sample_interval_usec, all_threads, *, mode=PROFILING_MODE_WALL, native=False, gc=True, opcodes=False, skip_non_matching_threads=True, collect_stats=False, blocking=False):
@@ -62,19 +65,23 @@ class SampleProfiler:
         self.realtime_stats = False
 
     def _new_unwinder(self, native, gc, opcodes, skip_non_matching_threads):
-        if _FREE_THREADED_BUILD:
-            unwinder = _remote_debugging.RemoteUnwinder(
-                self.pid, all_threads=self.all_threads, mode=self.mode, native=native, gc=gc,
-                opcodes=opcodes, skip_non_matching_threads=skip_non_matching_threads,
-                cache_frames=True, stats=self.collect_stats
-            )
+        kwargs = {}
+        if _FREE_THREADED_BUILD or self.all_threads:
+            kwargs['all_threads'] = self.all_threads
         else:
-            unwinder = _remote_debugging.RemoteUnwinder(
-                self.pid, only_active_thread=bool(self.all_threads), mode=self.mode, native=native, gc=gc,
-                opcodes=opcodes, skip_non_matching_threads=skip_non_matching_threads,
-                cache_frames=True, stats=self.collect_stats
-            )
-        return unwinder
+            kwargs['only_active_thread'] = bool(self.all_threads)
+
+        return _remote_debugging.RemoteUnwinder(
+            self.pid,
+            mode=self.mode,
+            native=native,
+            gc=gc,
+            opcodes=opcodes,
+            skip_non_matching_threads=skip_non_matching_threads,
+            cache_frames=True,
+            stats=self.collect_stats,
+            **kwargs
+        )
 
     def sample(self, collector, duration_sec=None, *, async_aware=False):
         sample_interval_sec = self.sample_interval_usec / 1_000_000
@@ -93,7 +100,11 @@ class SampleProfiler:
                     break
 
                 current_time = time.perf_counter()
-                if next_time < current_time:
+                if next_time > current_time:
+                    sleep_time = (next_time - current_time) * 0.9
+                    if sleep_time > 0.0001:
+                        time.sleep(sleep_time)
+                elif next_time < current_time:
                     try:
                         with _pause_threads(self.unwinder, self.blocking):
                             if async_aware == "all":
@@ -153,7 +164,8 @@ class SampleProfiler:
         # Don't print stats for live mode (curses is handling display)
         is_live_mode = LiveStatsCollector is not None and isinstance(collector, LiveStatsCollector)
         if not is_live_mode:
-            print(f"Captured {num_samples:n} samples in {fmt(running_time_sec, 2)} seconds")
+            s = "" if num_samples == 1 else "s"
+            print(f"Captured {num_samples:n} sample{s} in {fmt(running_time_sec, 2)} seconds")
             print(f"Sample rate: {fmt(sample_rate, 2)} samples/sec")
             print(f"Error rate: {fmt(error_rate, 2)}")
 
@@ -459,6 +471,11 @@ def sample_live(
     """
     import curses
 
+    # Check if process is alive before doing any heavy initialization
+    if not _is_process_running(pid):
+        print(f"No samples collected - process {pid} exited before profiling could begin.", file=sys.stderr)
+        return collector
+
     # Get sample interval from collector
     sample_interval_usec = collector.sample_interval_usec
 
@@ -486,6 +503,12 @@ def sample_live(
         collector.init_curses(stdscr)
         try:
             profiler.sample(collector, duration_sec, async_aware=async_aware)
+            # If too few samples were collected, exit cleanly without showing TUI
+            if collector.successful_samples < MIN_SAMPLES_FOR_TUI:
+                # Clear screen before exiting to avoid visual artifacts
+                stdscr.clear()
+                stdscr.refresh()
+                return
             # Mark as finished and keep the TUI running until user presses 'q'
             collector.mark_finished()
             # Keep processing input until user quits
@@ -499,5 +522,12 @@ def sample_live(
         curses.wrapper(curses_wrapper_func)
     except KeyboardInterrupt:
         pass
+
+    # If too few samples were collected, print a message
+    if collector.successful_samples < MIN_SAMPLES_FOR_TUI:
+        if collector.successful_samples == 0:
+            print(f"No samples collected - process {pid} exited before profiling could begin.", file=sys.stderr)
+        else:
+            print(f"Only {collector.successful_samples} sample(s) collected (minimum {MIN_SAMPLES_FOR_TUI} required for TUI) - process {pid} exited too quickly.", file=sys.stderr)
 
     return collector
