@@ -615,8 +615,8 @@ are always available.  They are listed here in alphabetical order.
    reference to the dictionary of the built-in module :mod:`builtins` is
    inserted under that key before *source* is parsed.
    Overriding ``__builtins__`` can be used to restrict or change the available
-   names, but it is **not** a security mechanism, the executed code can
-   still access builtins.
+   names, but this is **not** a security mechanism: the executed code can
+   still access all builtins.
    If the *locals* mapping is omitted it defaults to the
    *globals* dictionary.  If both mappings are omitted, the source is
    executed with the *globals* and *locals* in the environment where
@@ -672,7 +672,7 @@ are always available.  They are listed here in alphabetical order.
    .. warning::
 
       This function executes arbitrary code. Calling it with
-      user-supplied input will lead to security vulnerabilities.
+      untrusted user-supplied input will lead to security vulnerabilities.
 
    This function supports dynamic execution of Python code. *source* must be
    either a string or a code object.  If it is a string, the string is parsed as
@@ -705,8 +705,8 @@ are always available.  They are listed here in alphabetical order.
    ``__builtins__``, a reference to the dictionary of the built-in module
    :mod:`builtins` is inserted under that key.
    Overriding ``__builtins__`` can be used to restrict or change the available
-   names, but it is **not** a security mechanism, the executed code can
-   still access builtins.
+   names, but is **not** a security mechanism: the executed code can
+   still access all builtins.
 
    The *closure* argument specifies a closure--a tuple of cellvars.
    It's only valid when the *object* is a code object containing
