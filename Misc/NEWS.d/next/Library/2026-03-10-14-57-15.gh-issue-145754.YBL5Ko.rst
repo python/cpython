@@ -1,1 +1,3 @@
-Request signature during mock autospec with string annotation format
+Request signature during mock autospec with forwardref annotation format.
+This prevents runtime errors when a type referred in a type hint is
+imported within a `TYPE_CHECKING` block.

@@ -120,7 +120,7 @@ def _get_signature_object(func, as_instance, eat_self):
     else:
         sig_func = func
     try:
-        return func, inspect.signature(sig_func, annotation_format=Format.STRING)
+        return func, inspect.signature(sig_func, annotation_format=Format.FORWARDREF)
     except ValueError:
         # Certain callable types are not supported by inspect.signature()
         return None
