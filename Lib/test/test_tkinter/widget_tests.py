@@ -17,6 +17,7 @@ class AbstractWidgetTest(AbstractTkTest):
     _no_round = {}         # Pixel options which are not rounded nonetheless
     _stringify = False     # Whether to convert tuples to strings
     _allow_empty_justify = False
+    _clipped_to_default = {}
 
     @property
     def scaling(self):
@@ -43,9 +44,12 @@ class AbstractWidgetTest(AbstractTkTest):
         widget[name] = value
         if expected is _sentinel:
             expected = value
-        if name in self._clipped:
-            if not isinstance(expected, str):
-                expected = max(expected, 0)
+            if name in self._clipped:
+                if not isinstance(expected, str) and expected < 0:
+                    if tk_version >= (8, 7) and name in self._clipped_to_default:
+                        expected = self._default_pixels
+                    else:
+                        expected = 0
         if conv:
             expected = conv(expected)
         if self._stringify or not self.wantobjects:
@@ -72,14 +76,6 @@ class AbstractWidgetTest(AbstractTkTest):
         with self.assertRaisesRegex(tkinter.TclError, errmsg or ''):
             widget.configure({name: value})
         self.assertEqual(widget[name], orig)
-
-    def checkNegPixelParam(self, widget, name, value):
-        if tk_version < (8, 7):
-            self.checkParam(widget, name, value)
-        elif tk_version < (9, 1):
-            self.checkParam(widget, name, value, expected=self._default_pixels)
-        else:
-            self.checkInvalidParam(widget, name, value)
 
     def checkParams(self, widget, name, *values, **kwargs):
         for value in values:

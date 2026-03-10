@@ -627,9 +627,9 @@ class TextTest(AbstractWidgetTest, unittest.TestCase):
     if tk_version < (9, 0):
         _clipped = {'highlightthickness', 'spacing1', 'spacing2', 'spacing3'}
     else:
-        _clipped = {'borderwidth', 'highlightthickness', 'insertborderwidth',
-                    'insertwidth', 'padx', 'pady', 'selectborderwidth',
-                    'spacing1', 'spacing2', 'spacing3'}
+        _clipped = {'borderwidth', 'height', 'highlightthickness',
+                    'insertborderwidth', 'insertwidth', 'padx', 'pady',
+                    'selectborderwidth', 'spacing1', 'spacing2', 'spacing3'}
 
     def create(self, **kwargs):
         return tkinter.Text(self.root, **kwargs)
@@ -658,12 +658,11 @@ class TextTest(AbstractWidgetTest, unittest.TestCase):
     def test_configure_height(self):
         widget = self.create()
         self.checkPixelsParam(widget, 'height', 100, 101.2, 102.6, '3c')
-        expected = 1 if tk_version < (9, 0) else 0
-        self.checkParam(widget, 'height', 0, expected=expected)
-        if tk_version < (9, 1):
-            self.checkParam(widget, 'height', -100, expected=expected)
+        if tk_version < (9, 0):
+            self.checkParam(widget, 'height', 0, expected=1)
+            self.checkParam(widget, 'height', -100, expected=1)
         else:
-            self.checkInvalidParam(widget, 'height', -100)
+            self.checkPixelsParam(widget, 'height', 0, -100)
 
     def test_configure_maxundo(self):
         widget = self.create()
@@ -1238,9 +1237,10 @@ class ScrollbarTest(AbstractWidgetTest, unittest.TestCase):
     if tk_version < (8, 7):
         _clipped = {'highlightthickness'}
     elif tk_version < (9, 0):
-        _clipped = {'borderwidth', 'highlightthickness'}
+        _clipped = {'borderwidth', 'elementborderwidth', 'highlightthickness'}
     else:
-        _clipped = {'borderwidth', 'highlightthickness', 'width'}
+        _clipped = {'borderwidth', 'elementborderwidth', 'highlightthickness', 'width'}
+    _clipped_to_default = {'elementborderwidth'}
     _stringify = True
     default_orient = 'vertical'
 
@@ -1249,8 +1249,7 @@ class ScrollbarTest(AbstractWidgetTest, unittest.TestCase):
 
     def test_configure_elementborderwidth(self):
         widget = self.create()
-        self.checkPixelsParam(widget, 'elementborderwidth', 4.3, 5.6, '1m')
-        self.checkNegPixelParam(widget, 'elementborderwidth', -2)
+        self.checkPixelsParam(widget, 'elementborderwidth', 4.3, 5.6, -2, '1m')
 
     def test_configure_orient(self):
         widget = self.create()
@@ -1543,7 +1542,8 @@ class MessageTest(AbstractWidgetTest, unittest.TestCase):
     if tk_version < (8, 7):
         _clipped = {'highlightthickness'}
     else:
-        _clipped = {'borderwidth', 'highlightthickness', 'width'}
+        _clipped = {'borderwidth', 'highlightthickness', 'padx', 'pady', 'width'}
+    _clipped_to_default = {'padx', 'pady'}
 
     def create(self, **kwargs):
         return tkinter.Message(self.root, **kwargs)
@@ -1551,16 +1551,6 @@ class MessageTest(AbstractWidgetTest, unittest.TestCase):
     def test_configure_aspect(self):
         widget = self.create()
         self.checkIntegerParam(widget, 'aspect', 250, 0, -300)
-
-    def test_configure_padx(self):
-        widget = self.create()
-        self.checkPixelsParam(widget, 'padx', 3, 4.4, 5.6, '12m')
-        self.checkNegPixelParam(widget, 'padx', -2)
-
-    def test_configure_pady(self):
-        widget = self.create()
-        self.checkPixelsParam(widget, 'pady', 3, 4.4, 5.6, '12m')
-        self.checkNegPixelParam(widget, 'pady', -2)
 
     def test_configure_width(self):
         widget = self.create()
