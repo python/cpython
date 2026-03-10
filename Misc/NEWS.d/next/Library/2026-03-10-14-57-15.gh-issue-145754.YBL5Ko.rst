@@ -1,0 +1,1 @@
+Request signature during mock autospec with string annotation format
