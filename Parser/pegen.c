@@ -966,12 +966,6 @@ _PyPegen_run_parser(Parser *p)
        return NULL;
     }
 
-    // If parsing succeeded but error_indicator was set the error was not propagated.
-    // Avoids hitting assert(!PyErr_Occurred()) in _PyAST_Validate.
-    if (p->error_indicator && PyErr_Occurred()) {
-        return NULL;
-    }
-
     if (p->start_rule == Py_single_input && bad_single_statement(p)) {
         p->tok->done = E_BADSINGLE; // This is not necessary for now, but might be in the future
         return RAISE_SYNTAX_ERROR("multiple statements found while compiling a single statement");
