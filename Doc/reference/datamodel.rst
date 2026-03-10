@@ -3249,7 +3249,8 @@ through the object's keys; for sequences, it should iterate through the values.
 
    .. note::
 
-      Slicing is done exclusively with the following three methods.
+      Slicing is handled by :meth:`!__getitem__`, :meth:`~object.__setitem__`,
+      and :meth:`~object.__delitem__`.
       A call like ::
 
          a[1:2] = b
