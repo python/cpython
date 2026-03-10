@@ -194,19 +194,12 @@ partial_new(PyTypeObject *type, PyObject *args, PyObject *kw)
     if (kw != NULL) {
         PyObject *key, *val;
         Py_ssize_t pos = 0;
-        int error = 0;
-        Py_BEGIN_CRITICAL_SECTION(kw);
         while (PyDict_Next(kw, &pos, &key, &val)) {
             if (val == phold) {
-                error = 1;
-                break;
+                PyErr_SetString(PyExc_TypeError,
+                                "Placeholder cannot be passed as a keyword argument");
+                return NULL;
             }
-        }
-        Py_END_CRITICAL_SECTION();
-        if (error) {
-            PyErr_SetString(PyExc_TypeError,
-                            "Placeholder cannot be passed as a keyword argument");
-            return NULL;
         }
     }
 
@@ -1264,12 +1257,10 @@ lru_cache_make_key(PyObject *kwd_mark, PyObject *args,
     }
     if (kwds_size) {
         PyTuple_SET_ITEM(key, key_pos++, Py_NewRef(kwd_mark));
-        Py_BEGIN_CRITICAL_SECTION(kwds);
         for (pos = 0; PyDict_Next(kwds, &pos, &keyword, &value);) {
             PyTuple_SET_ITEM(key, key_pos++, Py_NewRef(keyword));
             PyTuple_SET_ITEM(key, key_pos++, Py_NewRef(value));
         }
-        Py_END_CRITICAL_SECTION();
         assert(key_pos == PyTuple_GET_SIZE(args) + kwds_size * 2 + 1);
     }
     if (typed) {
@@ -1278,12 +1269,10 @@ lru_cache_make_key(PyObject *kwd_mark, PyObject *args,
             PyTuple_SET_ITEM(key, key_pos++, Py_NewRef(item));
         }
         if (kwds_size) {
-            Py_BEGIN_CRITICAL_SECTION(kwds);
             for (pos = 0; PyDict_Next(kwds, &pos, &keyword, &value);) {
                 PyObject *item = (PyObject *)Py_TYPE(value);
                 PyTuple_SET_ITEM(key, key_pos++, Py_NewRef(item));
             }
-            Py_END_CRITICAL_SECTION();
         }
     }
     assert(key_pos == key_size);
