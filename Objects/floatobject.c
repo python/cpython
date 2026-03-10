@@ -1666,14 +1666,6 @@ float___getnewargs___impl(PyObject *self)
     return Py_BuildValue("(d)", ((PyFloatObject *)self)->ob_fval);
 }
 
-/* this is for the benefit of the pack/unpack routines below */
-typedef enum _py_float_format_type float_format_type;
-#define ieee_big_endian_format _py_float_format_ieee_big_endian
-#define ieee_little_endian_format _py_float_format_ieee_little_endian
-
-#define float_format (_PyRuntime.float_state.float_format)
-#define double_format (_PyRuntime.float_state.double_format)
-
 
 /*[clinic input]
 @permit_long_docstring_body
@@ -1697,8 +1689,6 @@ static PyObject *
 float___getformat___impl(PyTypeObject *type, const char *typestr)
 /*[clinic end generated code: output=2bfb987228cc9628 input=0ae1ba35d192f704]*/
 {
-    float_format_type r;
-
     if (strcmp(typestr, "double") != 0 || strcmp(typestr, "float") != 0) {
         PyErr_SetString(PyExc_ValueError,
                         "__getformat__() argument 1 must be "
