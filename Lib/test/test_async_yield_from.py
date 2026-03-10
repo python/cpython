@@ -1640,6 +1640,30 @@ class TestInterestingEdgeCases(unittest.TestCase):
         with self.assertRaisesRegex(RuntimeError, "nobody expects the spanish inquisition"):
             await anext(my_generator())
 
+    @_async_test
+    async def test_delegate_exception(self):
+        yielded_first = object()
+        yielded_second = object()
+        returned = object()
+
+        async def inner():
+            try:
+                yield yielded_first
+                yield yielded_second
+                return returned
+            finally:
+                raise raised
+
+        async def outer():
+            return (async yield from inner())
+
+        g = outer()
+        assert (await anext(g)) is yielded_first
+        raised = RuntimeError()
+        with self.assertRaises(RuntimeError) as error:
+            await g.athrow(SystemError)
+        self.assertIs(raised, error.exception)
+
 
 if __name__ == '__main__':
     unittest.main()

@@ -426,7 +426,7 @@ gen_close_iter(PyObject *yf)
 {
     PyObject *retval = NULL;
 
-    if (PyGen_CheckExact(yf) || PyCoro_CheckExact(yf)) {
+    if (PyGen_CheckExact(yf) || PyCoro_CheckExact(yf) || PyAsyncGen_CheckExact(yf)) {
         retval = gen_close((PyObject *)yf, NULL);
         if (retval == NULL)
             return -1;
@@ -668,7 +668,7 @@ _gen_throw(PyGenObject *gen, int close_on_genexit,
         }
         PyThreadState *tstate = _PyThreadState_GET();
         assert(tstate != NULL);
-        if (PyGen_CheckExact(yf) || PyCoro_CheckExact(yf)) {
+        if (PyGen_CheckExact(yf) || PyCoro_CheckExact(yf) || PyAsyncGen_CheckExact(yf)) {
             /* `yf` is a generator or a coroutine. */
 
             /* Link frame into the stack to enable complete backtraces. */
