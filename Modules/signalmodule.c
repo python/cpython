@@ -870,10 +870,12 @@ signal_get_wakeup_fd_impl(PyObject *module)
     }
 
 #ifdef MS_WINDOWS
-    if (wakeup.fd != INVALID_FD)
+    if (wakeup.fd != INVALID_FD) {
         return PyLong_FromSocket_t((SOCKET_T)wakeup.fd);
-    else
+    }
+    else {
         return PyLong_FromLong(-1);
+    }
 #else
     return PyLong_FromLong(wakeup.fd);
 #endif
