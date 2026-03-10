@@ -43,11 +43,11 @@ class JSONDecodeError(ValueError):
         return self.__class__, (self.msg, self.doc, self.pos)
 
 
-_CONSTANTS = {
+_CONSTANTS = frozendict({
     '-Infinity': NegInf,
     'Infinity': PosInf,
     'NaN': NaN,
-}
+})
 
 
 HEXDIGITS = re.compile(r'[0-9A-Fa-f]{4}', FLAGS)

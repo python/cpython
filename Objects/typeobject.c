@@ -647,7 +647,6 @@ clear_tp_bases(PyTypeObject *self, int final)
 static inline PyObject *
 lookup_tp_mro(PyTypeObject *self)
 {
-    ASSERT_NEW_TYPE_OR_LOCKED(self);
     return self->tp_mro;
 }
 
@@ -664,8 +663,19 @@ set_tp_mro(PyTypeObject *self, PyObject *mro, int initial)
             /* Other checks are done via set_tp_bases. */
             _Py_SetImmortal(mro);
         }
+        else {
+            PyUnstable_Object_EnableDeferredRefcount(mro);
+        }
+    }
+    if (!initial) {
+        type_lock_prevent_release();
+        types_stop_world();
     }
     self->tp_mro = mro;
+    if (!initial) {
+        types_start_world();
+        type_lock_allow_release();
+    }
 }
 
 static inline void
@@ -1728,18 +1738,11 @@ static PyObject *
 type_get_mro(PyObject *tp, void *Py_UNUSED(closure))
 {
     PyTypeObject *type = PyTypeObject_CAST(tp);
-    PyObject *mro;
-
-    BEGIN_TYPE_LOCK();
-    mro = lookup_tp_mro(type);
+    PyObject *mro = lookup_tp_mro(type);
     if (mro == NULL) {
-        mro = Py_None;
-    } else {
-        Py_INCREF(mro);
+        Py_RETURN_NONE;
     }
-
-    END_TYPE_LOCK();
-    return mro;
+    return Py_NewRef(mro);
 }
 
 static PyTypeObject *find_best_base(PyObject *);
@@ -7568,7 +7571,11 @@ object_set_class_world_stopped(PyObject *self, PyTypeObject *newto)
 
             assert(_PyObject_GetManagedDict(self) == dict);
 
-            if (_PyDict_DetachFromObject(dict, self) < 0) {
+            int err;
+            Py_BEGIN_CRITICAL_SECTION(dict);
+            err = _PyDict_DetachFromObject(dict, self);
+            Py_END_CRITICAL_SECTION();
+            if (err < 0) {
                 return -1;
             }
 
@@ -7608,10 +7615,15 @@ object_set_class(PyObject *self, PyObject *value, void *closure)
         return -1;
     }
 
-    types_stop_world();
+    int unique = _PyObject_IsUniquelyReferenced(self);
+    if (!unique) {
+        types_stop_world();
+    }
     PyTypeObject *oldto = Py_TYPE(self);
     int res = object_set_class_world_stopped(self, newto);
-    types_start_world();
+    if (!unique) {
+        types_start_world();
+    }
     if (res == 0) {
         if (oldto->tp_flags & Py_TPFLAGS_HEAPTYPE) {
             Py_DECREF(oldto);

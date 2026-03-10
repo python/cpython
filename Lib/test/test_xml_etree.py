@@ -4472,6 +4472,9 @@ class KeywordArgsTest(unittest.TestCase):
             ET.Element('a', dict(href="#"), id="foo"),
             ET.Element('a', href="#", id="foo"),
             ET.Element('a', dict(href="#", id="foo"), href="#", id="foo"),
+            ET.Element('a', frozendict(href="#", id="foo")),
+            ET.Element('a', frozendict(href="#"), id="foo"),
+            ET.Element('a', attrib=frozendict(href="#", id="foo")),
         ]
         for e in elements:
             self.assertEqual(e.tag, 'a')
@@ -4479,10 +4482,14 @@ class KeywordArgsTest(unittest.TestCase):
 
         e2 = ET.SubElement(elements[0], 'foobar', attrib={'key1': 'value1'})
         self.assertEqual(e2.attrib['key1'], 'value1')
+        e3 = ET.SubElement(elements[0], 'foobar',
+                           attrib=frozendict({'key1': 'value1'}))
+        self.assertEqual(e3.attrib['key1'], 'value1')
 
-        with self.assertRaisesRegex(TypeError, 'must be dict, not str'):
+        errmsg = 'must be dict or frozendict, not str'
+        with self.assertRaisesRegex(TypeError, errmsg):
             ET.Element('a', "I'm not a dict")
-        with self.assertRaisesRegex(TypeError, 'must be dict, not str'):
+        with self.assertRaisesRegex(TypeError, errmsg):
             ET.Element('a', attrib="I'm not a dict")
 
 # --------------------------------------------------------------------
