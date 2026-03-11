@@ -126,6 +126,14 @@ def add_annotations(app: Sphinx, doctree: nodes.document) -> None:
         name = par[0]["ids"][0].removeprefix("c.")
         objtype = par["objtype"]
 
+        annotations = []
+
+        # Return value annotation
+        if objtype == "function" and name in refcount_data:
+            entry = refcount_data[name]
+            if entry.result_type.endswith("Object*"):
+                annotations.append(_return_value_annotation(entry.result_refs))
+
         # Stable ABI annotation.
         if record := stable_abi_data.get(name):
             if ROLE_TO_OBJECT_TYPE[record.role] != objtype:
@@ -134,24 +142,19 @@ def add_annotations(app: Sphinx, doctree: nodes.document) -> None:
                     f"{ROLE_TO_OBJECT_TYPE[record.role]!r} != {objtype!r}"
                 )
                 raise ValueError(msg)
-            annotation = _stable_abi_annotation(record)
-            node.insert(0, annotation)
+            annotations.append(_stable_abi_annotation(record))
 
         # Unstable API annotation.
         if name.startswith("PyUnstable"):
-            annotation = _unstable_api_annotation()
-            node.insert(0, annotation)
+            annotations.append(_unstable_api_annotation())
 
-        # Return value annotation
-        if objtype != "function":
-            continue
-        if name not in refcount_data:
-            continue
-        entry = refcount_data[name]
-        if not entry.result_type.endswith("Object*"):
-            continue
-        annotation = _return_value_annotation(entry.result_refs)
-        node.insert(0, annotation)
+        if annotations:
+            para = nodes.paragraph(' ', ' ', classes=['c_annotations'])
+            for idx, annotation in enumerate(annotations):
+                if idx:
+                    para.append(nodes.Text(" "))
+                para.append(annotation)
+            node.insert(0, para)
 
 
 def _stable_abi_annotation(
