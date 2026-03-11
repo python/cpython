@@ -1,0 +1,3 @@
+Fix :exc:`TypeError` in :mod:`optparse` when ``callback_kwargs`` is a
+non-dict (e.g. a tuple). The validation in ``Option._check_callback`` now
+correctly raises :exc:`~optparse.OptionError`.
