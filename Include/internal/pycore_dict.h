@@ -198,29 +198,13 @@ struct _dictkeysobject {
     /* Number of used entries in dk_entries. */
     Py_ssize_t dk_nentries;
 
-    /* Offset to entries within this allocation.
-
-       PyDictKeysObject * points to dk_refcnt.  The actual hash table
-       (dk_indices) is stored immediately before the struct in memory;
-       see _DK_INDICES_END() and _DK_INDICES_BASE().
-
-       dk_indices marks the start of the entries array and is used by
-       DK_ENTRIES() / DK_UNICODE_ENTRIES(). */
-    char dk_indices[];  /* char is required to avoid strict aliasing. */
-
-    /* dk_indices is the actual hash table of dk_size entries. It holds
-       indices in dk_entries, or DKIX_EMPTY(-1) or DKIX_DUMMY(-2).
-
-       Indices must be: 0 <= indice < USABLE_FRACTION(dk_size).
-
-       The size in bytes of an indice depends on dk_size:
-
-       - 1 byte if dk_size <= 0xff (char*)
-       - 2 bytes if dk_size <= 0xffff (int16_t*)
-       - 4 bytes if dk_size <= 0xffffffff (int32_t*)
-       - 8 bytes otherwise (int64_t*)
-
-       Dynamically sized, SIZEOF_VOID_P is minimum. */
+    /* The actual hash table (dk_indices) is stored immediately before this
+       struct in memory (negative offsets from dk); see _DK_INDICES_BASE().
+       The entries array is stored here, at the end of the struct. */
+    union {
+        PyDictKeyEntry entries[1];
+        PyDictUnicodeEntry unicode_entries[1];
+    } dk_entries;
 };
 
 /* This must be no more than 250, for the prefix size to fit in one byte. */
@@ -248,10 +232,6 @@ struct _dictvalues {
 #define DK_SIZE(dk)      (1<<DK_LOG_SIZE(dk))
 #endif
 
-static inline void* _DK_INDICES_END(const PyDictKeysObject *dk) {
-    return (void *)dk;
-}
-
 static inline void* _DK_INDICES_BASE(const PyDictKeysObject *dk) {
     size_t indices_size = (size_t)1 << dk->dk_log2_index_bytes;
     return (char *)dk - indices_size;
@@ -262,16 +242,17 @@ static inline void* _DK_ALLOC_BASE(PyDictKeysObject *dk) {
 }
 
 static inline void* _DK_ENTRIES(PyDictKeysObject *dk) {
-    return (void *)(&dk->dk_indices[0]);
+    return (void *)(&dk->dk_entries);
 }
 
 static inline PyDictKeyEntry* DK_ENTRIES(PyDictKeysObject *dk) {
     assert(dk->dk_kind == DICT_KEYS_GENERAL);
-    return (PyDictKeyEntry*)_DK_ENTRIES(dk);
+    return dk->dk_entries.entries;
 }
+
 static inline PyDictUnicodeEntry* DK_UNICODE_ENTRIES(PyDictKeysObject *dk) {
     assert(dk->dk_kind != DICT_KEYS_GENERAL);
-    return (PyDictUnicodeEntry*)_DK_ENTRIES(dk);
+    return dk->dk_entries.unicode_entries;
 }
 
 #define DK_IS_UNICODE(dk) ((dk)->dk_kind != DICT_KEYS_GENERAL)

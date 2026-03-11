@@ -19,7 +19,7 @@ layout:
 +---------------------+
 | dk_indices[]        |
 |                     |
-+---------------------+
++---------------------+         <---- PyDictKeysObject* pointer points here
 | dk_refcnt           |
 | dk_log2_size        |
 | dk_log2_index_bytes |
@@ -182,8 +182,8 @@ ASSERT_DICT_LOCKED(PyObject *op)
 
 #define IS_DICT_SHARED(mp) _PyObject_GC_IS_SHARED(mp)
 #define SET_DICT_SHARED(mp) _PyObject_GC_SET_SHARED(mp)
-#define LOAD_INDEX(keys, size, idx) _Py_atomic_load_int##size##_relaxed(&((const int##size##_t*)_DK_INDICES_END(keys))[-1 - (idx)]);
-#define STORE_INDEX(keys, size, idx, value) _Py_atomic_store_int##size##_relaxed(&((int##size##_t*)_DK_INDICES_END(keys))[-1 - (idx)], (int##size##_t)value);
+#define LOAD_INDEX(keys, size, idx) _Py_atomic_load_int##size##_relaxed(&((const int##size##_t*)(keys))[-1 - (idx)]);
+#define STORE_INDEX(keys, size, idx, value) _Py_atomic_store_int##size##_relaxed(&((int##size##_t*)(keys))[-1 - (idx)], (int##size##_t)value);
 #define ASSERT_OWNED_OR_SHARED(mp) \
     assert(_Py_IsOwnedByCurrentThread((PyObject *)mp) || IS_DICT_SHARED(mp));
 
@@ -262,8 +262,8 @@ static inline void split_keys_entry_added(PyDictKeysObject *keys)
 #define UNLOCK_KEYS_IF_SPLIT(keys, kind)
 #define IS_DICT_SHARED(mp) (false)
 #define SET_DICT_SHARED(mp)
-#define LOAD_INDEX(keys, size, idx) ((const int##size##_t*)_DK_INDICES_END(keys))[-1 - (idx)]
-#define STORE_INDEX(keys, size, idx, value) ((int##size##_t*)_DK_INDICES_END(keys))[-1 - (idx)] = (int##size##_t)value
+#define LOAD_INDEX(keys, size, idx) ((const int##size##_t*)(keys))[-1 - (idx)]
+#define STORE_INDEX(keys, size, idx, value) ((int##size##_t*)(keys))[-1 - (idx)] = (int##size##_t)value
 
 static inline void split_keys_entry_added(PyDictKeysObject *keys)
 {
@@ -651,7 +651,7 @@ static const _PyDict_EmptyKeysStorage empty_keys_storage = {
         1, /* dk_version */
         0, /* dk_usable (immutable) */
         0, /* dk_nentries */
-        {},
+        {}, /* dk_entries */
     }
 };
 
@@ -836,7 +836,7 @@ new_keys_object(uint8_t log2_size, bool unicode)
 
     if (base == NULL) {
         base = PyMem_Malloc(indices_size
-                            + sizeof(PyDictKeysObject)
+                            + offsetof(PyDictKeysObject, dk_entries)
                             + entry_size * usable);
         if (base == NULL) {
             PyErr_NoMemory();
@@ -859,7 +859,7 @@ new_keys_object(uint8_t log2_size, bool unicode)
     dk->dk_usable = usable;
     dk->dk_version = 0;
     memset(_DK_INDICES_BASE(dk), 0xff, indices_size);
-    memset(&dk->dk_indices[0], 0, entry_size * usable);
+    memset(&dk->dk_entries, 0, entry_size * usable);
     return dk;
 }
 
@@ -4921,7 +4921,7 @@ _PyDict_KeysSize(PyDictKeysObject *keys)
 {
     size_t es = (keys->dk_kind == DICT_KEYS_GENERAL
                  ? sizeof(PyDictKeyEntry) : sizeof(PyDictUnicodeEntry));
-    size_t size = sizeof(PyDictKeysObject);
+    size_t size = offsetof(PyDictKeysObject, dk_entries);
     size += (size_t)1 << keys->dk_log2_index_bytes;
     size += USABLE_FRACTION((size_t)DK_SIZE(keys)) * es;
     return size;

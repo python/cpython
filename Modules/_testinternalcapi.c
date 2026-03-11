@@ -1942,12 +1942,12 @@ dict_check_indices_layout(PyObject *self, PyObject *arg)
 
     bool ok = true;
     ok &= (header == base + indices_size);
-    ok &= (entries == header + sizeof(PyDictKeysObject));
+    ok &= (entries == header + offsetof(PyDictKeysObject, dk_entries));
 
     size_t index_bytes = dict_index_bytes_for_keys(keys);
     char *idx_base = (char *)_DK_INDICES_BASE(keys);
     /* Index 0 is stored immediately before the header. */
-    char *idx0 = (char *)_DK_INDICES_END(keys) - (ptrdiff_t)index_bytes;
+    char *idx0 = (char *)keys - (ptrdiff_t)index_bytes;
     ok &= (idx0 == idx_base + indices_size - (ptrdiff_t)index_bytes);
 
     return PyBool_FromLong(ok);
