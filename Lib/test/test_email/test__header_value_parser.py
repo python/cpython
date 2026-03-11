@@ -2800,7 +2800,88 @@ class TestParser(TestParserMixin, TestEmailBase):
             defects=[missing_whitespace_after_ew_defect],
             ),
 
-        )
+        ew_before_quoted_string_missing_space = C(
+            '=?ascii?q?disjoin?="=?ascii?q?ted?="',
+            stringified='disjoin"ted"',
+            value='disjointed',
+            defects=[
+                # XXX XXX After refactoring there should be one 'after' defect
+                missing_whitespace_after_ew_defect,
+                missing_whitespace_after_ew_defect,
+                ew_inside_quoted_string_defect,
+                ],
+            ),
+
+        ew_after_quoted_string_missing_space = C(
+            '"=?ascii?q?disjoin?="=?ascii?q?ted?=',
+            stringified='"disjoin"ted',
+            value='disjointed',
+            defects=[
+                # XXX XXX After refactoring 'after' should become 'before'
+                missing_whitespace_after_ew_defect,
+                ew_inside_quoted_string_defect,
+                ],
+            ),
+
+        **for_each_character(RFC_SPECIALS, skip=CFWS_LEADER + '."')(
+            ends_at_special = C(
+                'complex (obsolete). "phrase" {char}foo',
+                value='complex . phrase ',
+                defects=[period_in_phrase_obs_defect],
+                remainder='{char}foo',
+                comments=['obsolete'],
+                obs_dots=1,
+                ),
+            ),
+
+        # While these violate the RFC in several ways, allowing the '.'
+        # as the value of the phrase is the only sensible recovery.
+
+        obsolete_dot_only = C(
+            '.',
+            defects=[
+                non_word_phrase_start_defect,
+                period_in_phrase_obs_defect,
+                ],
+            obs_dots=1,
+            ),
+
+        obsolete_dot_with_wsp = C(
+            '\t .  ',
+            value=' . ',
+            defects=[
+                non_word_phrase_start_defect,
+                *[comment_without_atom_in_phrase_obs_defect]*2,
+                period_in_phrase_obs_defect,
+                ],
+            obs_dots=1,
+            ),
+
+        obsolete_dot_and_comments_only = C(
+            '(foo).(bar)',
+            value=' . ',
+            comments=['foo', 'bar'],
+            defects=[
+                non_word_phrase_start_defect,
+                *[comment_without_atom_in_phrase_obs_defect]*2,
+                period_in_phrase_obs_defect,
+                ],
+            obs_dots=1,
+            ),
+
+        obsolete_dot_and_comments_with_fws = C(
+            ' (foo).  (bar) ',
+            value=' . ',
+            comments=['foo', 'bar'],
+            defects=[
+                non_word_phrase_start_defect,
+                *[comment_without_atom_in_phrase_obs_defect]*2,
+                period_in_phrase_obs_defect,
+                ],
+            obs_dots=1,
+            ),
+
+       )
 
 
     # get_local_part
