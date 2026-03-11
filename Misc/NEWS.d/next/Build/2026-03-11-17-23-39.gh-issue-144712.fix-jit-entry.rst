@@ -1,0 +1,1 @@
+Fix ``_testinternalcapi`` import failure due to missing ``_Py_jit_entry`` symbol when built with :option:`--enable-experimental-jit`. Patch by Shamil Abdulaev.
