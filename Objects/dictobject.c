@@ -182,8 +182,8 @@ ASSERT_DICT_LOCKED(PyObject *op)
 
 #define IS_DICT_SHARED(mp) _PyObject_GC_IS_SHARED(mp)
 #define SET_DICT_SHARED(mp) _PyObject_GC_SET_SHARED(mp)
-#define LOAD_INDEX(keys, size, idx) _Py_atomic_load_int##size##_relaxed(&((const int##size##_t*)(keys))[-1 - (idx)]);
-#define STORE_INDEX(keys, size, idx, value) _Py_atomic_store_int##size##_relaxed(&((int##size##_t*)(keys))[-1 - (idx)], (int##size##_t)value);
+#define LOAD_INDEX(keys, size, idx) _Py_atomic_load_int##size##_relaxed(&((const int##size##_t*)(_DK_INDICES_BASE(keys)))[(idx)]);
+#define STORE_INDEX(keys, size, idx, value) _Py_atomic_store_int##size##_relaxed(&((int##size##_t*)(_DK_INDICES_BASE(keys)))[(idx)], (int##size##_t)value);
 #define ASSERT_OWNED_OR_SHARED(mp) \
     assert(_Py_IsOwnedByCurrentThread((PyObject *)mp) || IS_DICT_SHARED(mp));
 
@@ -262,8 +262,8 @@ static inline void split_keys_entry_added(PyDictKeysObject *keys)
 #define UNLOCK_KEYS_IF_SPLIT(keys, kind)
 #define IS_DICT_SHARED(mp) (false)
 #define SET_DICT_SHARED(mp)
-#define LOAD_INDEX(keys, size, idx) ((const int##size##_t*)(keys))[-1 - (idx)]
-#define STORE_INDEX(keys, size, idx, value) ((int##size##_t*)(keys))[-1 - (idx)] = (int##size##_t)value
+#define LOAD_INDEX(keys, size, idx) ((const int##size##_t*)(_DK_INDICES_BASE(keys)))[(idx)]
+#define STORE_INDEX(keys, size, idx, value) ((int##size##_t*)(_DK_INDICES_BASE(keys)))[(idx)] = (int##size##_t)value
 
 static inline void split_keys_entry_added(PyDictKeysObject *keys)
 {
