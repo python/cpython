@@ -361,7 +361,14 @@ recommended to review the security section for any code deployed to production.
 
    `ISO 32000-2 Portable document format - Part 2: PDF 2.0 <https://pdfa.org/resource/iso-32000-2/>`_
       Section 7.4.3, "ASCII85Decode Filter," provides the definition
-      of the standard base85 encoding used in PDF and PostScript.
+      of the standard base85 encoding used in PDF and PostScript, including
+      the output character set and the details of data length preservation
+      using zero-padding and partial output groups.
+
+   :rfc:`1924` - A Compact Representation of IPv6 Addresses
+      Section 4.2 details the character set used in base85 encoding. The question
+      of zero-padding is not mentioned, since IPV6 addresses by definition are a
+      multiple of four bytes.
 
    `ZeroMQ RFC 32/Z85 <https://rfc.zeromq.org/spec/32/>`_
       The "Formal Specification" section provides the character set used in Z85.
