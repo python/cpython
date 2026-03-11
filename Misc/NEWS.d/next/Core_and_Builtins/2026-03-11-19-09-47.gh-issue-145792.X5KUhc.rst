@@ -1,0 +1,2 @@
+Fix incorrect memory allocation in the VLA fallback macro in traceback.c
+when using alloca(), preventing potential out-of-bounds access.

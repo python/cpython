@@ -625,6 +625,18 @@ class TracebackCases(unittest.TestCase):
             str(inspect.signature(traceback.format_exception_only)),
             '(exc, /, value=<implicit>, *, show_group=False, **kwargs)')
 
+    def test_traceback_deep_recursion_alloca():
+
+        def recurse(n):
+            if n == 0:
+                raise RuntimeError("boom")
+            return recurse(n - 1)
+        try:
+            recurse(1000)
+        except RuntimeError as exc:
+            tb = traceback.format_exception(exc)
+            assert any("RuntimeError" in line for line in tb)
+
 
 class PurePythonExceptionFormattingMixin:
     def get_exception(self, callable, slice_start=0, slice_end=-1):
