@@ -1767,8 +1767,6 @@ _encoder_iterate_dict_lock_held(PyEncoderObject *s, PyUnicodeWriter *writer,
     PyObject *key, *value;
     Py_ssize_t pos = 0;
     while (PyDict_Next(dct, &pos, &key, &value)) {
-        // GH-142831: The key and value must be strong-referenced to avoid
-        // use-after-free if the user code modifies the dict during iteration.
         Py_INCREF(key);
         Py_INCREF(value);
 
@@ -1885,8 +1883,6 @@ _encoder_iterate_fast_seq_lock_held(PyEncoderObject *s, PyUnicodeWriter *writer,
     for (Py_ssize_t i = 0; i < PySequence_Fast_GET_SIZE(s_fast); i++) {
         PyObject *obj = PySequence_Fast_GET_ITEM(s_fast, i);
 
-        // GH-142831: The object must be strong-referenced to avoid use-after-free
-        // if the user code modifies the sequence during iteration.
         Py_INCREF(obj);
 
         if (i) {
