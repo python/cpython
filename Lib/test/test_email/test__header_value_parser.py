@@ -2705,20 +2705,20 @@ class TestParser(TestParserMixin, TestEmailBase):
                 )(params_test_get_word),
             ),
 
-        simple = C(
+        simple_phrase = C(
             '"Fred A. Johnson" is his name, oh.',
             value='Fred A. Johnson is his name',
             remainder=', oh.',
             ),
 
-        complex = C(
+        complex_phrase = C(
             ' (A) bird (in (my|your)) "hand  " is messy\t<>\t',
             value=' bird hand   is messy ',
             remainder='<>\t',
             comments=['A', 'in (my|your)'],
             ),
 
-        obsolete = C(
+        obsolete_phrase = C(
             'Fred A.(weird).O Johnson',
             value='Fred A. .O Johnson',
             defects=[
@@ -2729,7 +2729,7 @@ class TestParser(TestParserMixin, TestEmailBase):
             obs_dots=2,
             ),
 
-        must_start_with_word = C(
+        should_start_with_word = C(
             '(even weirder).name',
             value=' .name',
             defects=[
@@ -2741,7 +2741,7 @@ class TestParser(TestParserMixin, TestEmailBase):
             obs_dots=1,
             ),
 
-        ending_with_obsolete = C(
+        obsolete_ending = C(
             'simple phrase.(with trailing comment):boo',
             value='simple phrase. ',
             defects=[
