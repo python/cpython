@@ -344,6 +344,7 @@ def write_library_config(prefix, name, config, quiet):
 
 @subdir("host_build_dir", clean_ok=True)
 def make_emscripten_libffi(context, working_dir):
+    validate_emsdk_version(context.emsdk_cache)
     prefix = context.build_paths["prefix_dir"]
     libffi_config = load_config_toml()["libffi"]
     if not should_build_library(
@@ -371,6 +372,7 @@ def make_emscripten_libffi(context, working_dir):
 
 @subdir("host_build_dir", clean_ok=True)
 def make_mpdec(context, working_dir):
+    validate_emsdk_version(context.emsdk_cache)
     prefix = context.build_paths["prefix_dir"]
     mpdec_config = load_config_toml()["mpdec"]
     if not should_build_library(prefix, "mpdec", mpdec_config, context.quiet):
@@ -410,6 +412,7 @@ def make_mpdec(context, working_dir):
 @subdir("host_dir", clean_ok=True)
 def configure_emscripten_python(context, working_dir):
     """Configure the emscripten/host build."""
+    validate_emsdk_version(context.emsdk_cache)
     paths = context.build_paths
     config_site = os.fsdecode(EMSCRIPTEN_DIR / "config.site-wasm32-emscripten")
 
@@ -525,6 +528,7 @@ def configure_emscripten_python(context, working_dir):
 @subdir("host_dir")
 def make_emscripten_python(context, working_dir):
     """Run `make` for the emscripten/host build."""
+    validate_emsdk_version(context.emsdk_cache)
     call(
         ["make", "--jobs", str(cpu_count()), "all"],
         env=updated_env({}, context.emsdk_cache),
@@ -688,9 +692,10 @@ def main():
         )
 
     context = parser.parse_args()
+    context.emsdk_cache = getattr(context, "emsdk_cache", None)
+    context.cross_build_dir = getattr(context, "cross_build_dir", None)
 
-    if context.emsdk_cache and context.subcommand != "install-emscripten":
-        validate_emsdk_version(context.emsdk_cache)
+    if context.emsdk_cache:
         context.emsdk_cache = Path(context.emsdk_cache).absolute()
     else:
         print("Build will use EMSDK from current environment.")
