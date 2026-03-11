@@ -220,12 +220,12 @@ POST request.
 Base85 Encodings
 -----------------
 
-Base85 encoding is a family of algorithms which represent four input
-bytes using five ASCII characters.  Originally implemented in the Unix
+Base85 encoding is a family of algorithms which represent four bytes
+using five ASCII characters.  Originally implemented in the Unix
 ``btoa(1)`` utility, a version of it was later adopted by Adobe in the
-PostScript language and is standardized as ISO 32000-2:2020 (PDF 2.0),
-section 7.4.3.  This version, in both its ``btoa`` and PDF variants,
-is implemented by :func:`a85encode`.
+PostScript language and is standardized as ISO 32000-2:2020 (PDF 2.0).
+This version, in both its ``btoa`` and PDF variants, is implemented by
+:func:`a85encode`.
 
 A separate version, using a different output character set, was
 defined as an April Fool's joke in :rfc:`1924` but is now used by Git
@@ -320,8 +320,10 @@ Refer to the documentation of the individual functions for more information.
    Encode the :term:`bytes-like object` *s* using Z85 (as used in ZeroMQ)
    and return the encoded :class:`bytes`.
 
-   If *pad* is true, the input is padded with ``b'\0'`` so its length is a
-   multiple of 4 bytes before encoding.
+   The input is padded with ``b'\0'`` so its length is a multiple of 4
+   bytes before encoding.  If *pad* is true, all the resulting
+   characters are retained in the output, which will then be a
+   multiple of 5 bytes, as required by the ZeroMQ standard.
 
    .. versionadded:: 3.13
 
