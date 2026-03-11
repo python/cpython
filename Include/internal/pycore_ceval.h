@@ -134,7 +134,7 @@ _Py_CODEUNIT *_PyTier2Interpreter(
 #endif
 #endif
 
-extern _PyJitEntryFuncPtr _Py_jit_entry;
+PyAPI_DATA(_PyJitEntryFuncPtr) _Py_jit_entry;
 
 extern PyObject*
 _PyEval_Vector(PyThreadState *tstate,
