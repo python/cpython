@@ -1944,13 +1944,13 @@ Struct___init___impl(PyStructObject *self, PyObject *format)
         }
     }
     else if (!same_format(self, format)) {
-        if (!self->init_called) {
-            if (PyErr_WarnEx(PyExc_FutureWarning,
-                             "Different format arguments for __new__() "
-                             "and __init__() methods of Struct", 1))
-            {
-                return -1;
-            }
+        const char *msg = self->init_called
+            ? "Re-initialization of Struct by calling the __init__() method "
+              "will not work in future Python versions"
+            : "Different format arguments for __new__() and __init__() "
+              "methods of Struct";
+        if (PyErr_WarnEx(PyExc_FutureWarning, msg, 1)) {
+            return -1;
         }
         if (set_format(self, format) < 0) {
             return -1;
@@ -1963,15 +1963,8 @@ Struct___init___impl(PyStructObject *self, PyObject *format)
 static int
 s_init(PyObject *self, PyObject *args, PyObject *kwargs)
 {
-    if (((PyStructObject *)self)->init_called) {
-        if (PyErr_WarnEx(PyExc_DeprecationWarning,
-                         "Explicit call of __init__() on "
-                         "initialized Struct is deprecated", 1))
-        {
-            return -1;
-        }
-    }
-    else if (Py_TYPE(self)->tp_init == s_init
+    if (!((PyStructObject *)self)->init_called
+            && Py_TYPE(self)->tp_init == s_init
             && ((PyStructObject *)self)->s_format != Py_None)
     {
         /* Struct.__init__() was called implicitly.

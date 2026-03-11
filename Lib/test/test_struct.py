@@ -591,27 +591,27 @@ class StructTest(ComplexesAreIdenticalMixin, unittest.TestCase):
         # Struct instance.  This test can be used to detect the leak
         # when running with regrtest -L.
         s = struct.Struct('>h')
-        with self.assertWarns(DeprecationWarning):
+        msg = 'Re-initialization .* will not work'
+        with self.assertWarnsRegex(FutureWarning, msg):
             s.__init__('>hh')
         self.assertEqual(s.format, '>hh')
         packed = b'\x00\x01\x00\x02'
         self.assertEqual(s.pack(1, 2), packed)
         self.assertEqual(s.unpack(packed), (1, 2))
 
-        with self.assertWarns(DeprecationWarning):
-            s.__init__('>hh')
+        s.__init__('>hh')  # same format
         self.assertEqual(s.format, '>hh')
         self.assertEqual(s.pack(1, 2), packed)
         self.assertEqual(s.unpack(packed), (1, 2))
 
-        with self.assertWarns(DeprecationWarning):
+        with self.assertWarnsRegex(FutureWarning, msg):
             with self.assertRaises(UnicodeEncodeError):
                 s.__init__('\udc00')
         self.assertEqual(s.format, '>hh')
         self.assertEqual(s.pack(1, 2), packed)
         self.assertEqual(s.unpack(packed), (1, 2))
 
-        with self.assertWarns(DeprecationWarning):
+        with self.assertWarnsRegex(FutureWarning, msg):
             with self.assertRaises(struct.error):
                 s.__init__('$')
         self.assertEqual(s.format, '>hh')
@@ -873,10 +873,10 @@ class StructTest(ComplexesAreIdenticalMixin, unittest.TestCase):
             my_struct = MyStruct(format='$')
         self.assertEqual(my_struct.pack(12345), b'\x30\x39')
         with self.assertWarnsRegex(DeprecationWarning, warnmsg + ".*can't encode"):
-            my_struct = MyStruct('\u20ac')
+            my_struct = MyStruct('\udc00')
         self.assertEqual(my_struct.pack(12345), b'\x30\x39')
         with self.assertWarnsRegex(DeprecationWarning, warnmsg + ".*can't encode"):
-            my_struct = MyStruct(format='\u20ac')
+            my_struct = MyStruct(format='\udc00')
         self.assertEqual(my_struct.pack(12345), b'\x30\x39')
 
     def test_custom_struct_new(self):
@@ -885,7 +885,7 @@ class StructTest(ComplexesAreIdenticalMixin, unittest.TestCase):
             def __new__(cls, *args, **kwargs):
                 return super().__new__(cls, '>h')
 
-        for format in '>h', '<h', 42, '$', '\u20ac':
+        for format in '>h', '<h', 42, '$', '\u20ac', '\udc00', b'\xa4':
             with self.subTest(format=format):
                 my_struct = MyStruct(format)
                 self.assertEqual(my_struct.format, '>h')
@@ -929,10 +929,10 @@ class StructTest(ComplexesAreIdenticalMixin, unittest.TestCase):
             with self.assertRaises(struct.error):
                 MyStruct(('>h',), ('$',))
         with self.assertRaises(UnicodeEncodeError):
-            MyStruct(('\u20ac',), ('>h',))
+            MyStruct(('\udc00',), ('>h',))
         with self.assertWarns(FutureWarning):
             with self.assertRaises(UnicodeEncodeError):
-                MyStruct(('>h',), ('\u20ac',))
+                MyStruct(('>h',), ('\udc00',))
         with self.assertWarns(FutureWarning):
             my_struct = MyStruct(('>h',), ('<h',))
         self.assertEqual(my_struct.format, '<h')
@@ -955,7 +955,7 @@ class StructTest(ComplexesAreIdenticalMixin, unittest.TestCase):
         with self.assertRaises(struct.error):
             MyStruct('$')
         with self.assertRaises(UnicodeEncodeError):
-            MyStruct('\u20ac')
+            MyStruct('\udc00')
         with self.assertRaises(TypeError):
             MyStruct('>h', 42)
         with self.assertRaises(TypeError):
