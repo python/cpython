@@ -3053,7 +3053,7 @@ push_chunk(PyThreadState *tstate, int size)
     }
     _PyStackChunk *new;
     if (tstate->datastack_cached_chunk != NULL
-        && tstate->datastack_cached_chunk->size >= allocate_size)
+        && (size_t)allocate_size <= tstate->datastack_cached_chunk->size)
     {
         new = tstate->datastack_cached_chunk;
         tstate->datastack_cached_chunk = NULL;
