@@ -1,0 +1,3 @@
+Fix :exc:`AttributeError` in :func:`email.utils.collapse_rfc2231_value` when
+called with a tuple whose length is not 3. The function now returns a string
+representation instead of passing the tuple to :func:`~email.utils.unquote`.
