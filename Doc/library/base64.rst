@@ -16,8 +16,10 @@
 This module provides functions for encoding binary data to printable
 ASCII characters and decoding such encodings back to binary data.
 This includes the :ref:`encodings specified in <base64-rfc-4648>`
-:rfc:`4648` (Base64, Base32 and Base16)
-and the non-standard :ref:`Base85 encodings <base64-base-85>`.
+:rfc:`4648` (Base64, Base32 and Base16), the :ref:`Base85 encoding
+<base64-base-85>` specified in `PDF 2.0
+<https://pdfa.org/resource/iso-32000-2/>`_, and non-standard variants
+of Base85 used elsewhere.
 
 There are two interfaces provided by this module.  The modern interface
 supports encoding :term:`bytes-like objects <bytes-like object>` to ASCII
@@ -353,3 +355,13 @@ recommended to review the security section for any code deployed to production.
       Section 5.2, "Base64 Content-Transfer-Encoding," provides the definition of the
       base64 encoding.
 
+   `Binary-to-text encoding <https://en.wikipedia.org/wiki/Binary-to-text_encoding>`_
+      This Wikipedia article describes the history of binary to text
+      encoding techniques including those implemented by this module.
+
+   `ISO 32000-2 Portable document format - Part 2: PDF 2.0 <https://pdfa.org/resource/iso-32000-2/>`_
+      Section 7.4.3, "ASCII85Decode Filter," provides the definition
+      of the standard base85 encoding used in PDF and PostScript.
+
+   `ZeroMQ RFC 32/Z85 <https://rfc.zeromq.org/spec/32/>`_
+      The "Formal Specification" section provides the character set used in Z85.
