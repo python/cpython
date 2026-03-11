@@ -2702,48 +2702,39 @@ class TestParser(TestParserMixin, TestEmailBase):
 
         simple = C(
             '"Fred A. Johnson" is his name, oh.',
-            '"Fred A. Johnson" is his name',
-            'Fred A. Johnson is his name',
-            [],
-            ', oh.',
+            value='Fred A. Johnson is his name',
+            remainder=', oh.',
             ),
 
         complex = C(
             ' (A) bird (in (my|your)) "hand  " is messy\t<>\t',
-            ' (A) bird (in (my|your)) "hand  " is messy\t',
-            ' bird hand   is messy ',
-            [],
-            '<>\t',
-            ['A', 'in (my|your)'],
+            value=' bird hand   is messy ',
+            remainder='<>\t',
+            comments=['A', 'in (my|your)'],
             ),
 
         obsolete = C(
             'Fred A.(weird).O Johnson',
-            'Fred A.(weird).O Johnson',
-            'Fred A. .O Johnson',
-            [errors.ObsoleteHeaderDefect]*3,
-            '',
-            ['weird'],
+            value='Fred A. .O Johnson',
+            defects=[errors.ObsoleteHeaderDefect]*3,
+            comments=['weird'],
             ),
        #self.assertEqual(len(phrase), 7)
 
         must_start_with_word = C(
             '(even weirder).name',
-            '(even weirder).name',
-            ' .name',
-            [errors.InvalidHeaderDefect] + [errors.ObsoleteHeaderDefect]*2,
-            '',
-            ['even weirder'],
+            value=' .name',
+            defects=[errors.InvalidHeaderDefect] + [errors.ObsoleteHeaderDefect]*2,
+            comments=['even weirder'],
             ),
        #self.assertEqual(len(phrase), 3)
 
         ending_with_obsolete = C(
             'simple phrase.(with trailing comment):boo',
-            'simple phrase.(with trailing comment)',
-            'simple phrase. ',
-            [errors.ObsoleteHeaderDefect]*2,
-            ':boo',
-            ['with trailing comment'],
+            value='simple phrase. ',
+            defects=[errors.ObsoleteHeaderDefect]*2,
+            remainder=':boo',
+            comments=['with trailing comment'],
             ),
        #self.assertEqual(len(phrase), 4)
 
@@ -2752,68 +2743,48 @@ class TestParser(TestParserMixin, TestEmailBase):
 
         adjacent_ew = C(
             '=?ascii?q?Joi?= \t =?ascii?q?ned?=',
-            'Joined',
-            'Joined',
-            [],
-            '',
+            stringified='Joined',
             ),
 
         adjacent_ew_different_encodings = C(
             '=?utf-8?q?B=C3=A9r?= =?iso-8859-1?q?=E9nice?=',
-            'Bérénice',
-            'Bérénice',
-            [],
-            ''
+            stringified='Bérénice',
             ),
 
         adjacent_ew_encoded_spaces = C(
             '=?ascii?q?Encoded?= =?ascii?q?_spaces_?= =?ascii?q?preserved?=',
-            'Encoded spaces preserved',
-            'Encoded spaces preserved',
-            [],
-            ''
+            stringified='Encoded spaces preserved',
             ),
 
         adjacent_ew_comment_is_not_linear_white_space = C(
             '=?ascii?q?Comment?= (is not) =?ascii?q?linear-white-space?=',
-            'Comment (is not) linear-white-space',
-            'Comment linear-white-space',
-            [],
-            '',
+            stringified='Comment (is not) linear-white-space',
+            value='Comment linear-white-space',
             comments=['is not'],
             ),
 
         adjacent_ew_no_error_on_defects = C(
             '=?ascii?q?Def?= =?ascii?q?ect still joins?=',
-            'Defect still joins',
-            'Defect still joins',
-            [errors.InvalidHeaderDefect],  # whitespace inside encoded word
-            ''
+            stringified='Defect still joins',
+            defects=[errors.InvalidHeaderDefect],  # whitespace inside encoded word
             ),
 
         adjacent_ew_ignore_non_ew = C(
             '=?ascii?q?No?= =?join?= for non-ew',
-            'No =?join?= for non-ew',
-            'No =?join?= for non-ew',
-            [],
-            ''
+            stringified='No =?join?= for non-ew',
             ),
 
         adjacent_ew_ignore_invalid_ew = C(
             '=?ascii?q?No?= =?ascii?rot13?wbva= for invalid ew',
-            'No =?ascii?rot13?wbva= for invalid ew',
-            'No =?ascii?rot13?wbva= for invalid ew',
-            [],
-            ''
+            stringified='No =?ascii?rot13?wbva= for invalid ew',
             ),
 
         adjacent_ew_missing_space = C(
             '=?ascii?q?Joi?==?ascii?q?ned?=',
-            'Joined',
-            'Joined',
-            [errors.InvalidHeaderDefect],  # missing trailing whitespace
-            ''
+            stringified='Joined',
+            defects=[errors.InvalidHeaderDefect],  # missing trailing whitespace
             ),
+
         )
 
 
