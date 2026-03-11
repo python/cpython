@@ -362,11 +362,11 @@ enum _expr_kind {BoolOp_kind=1, NamedExpr_kind=2, BinOp_kind=3, UnaryOp_kind=4,
                   Lambda_kind=5, IfExp_kind=6, Dict_kind=7, Set_kind=8,
                   ListComp_kind=9, SetComp_kind=10, DictComp_kind=11,
                   GeneratorExp_kind=12, Await_kind=13, Yield_kind=14,
-                  YieldFrom_kind=15, Compare_kind=16, Call_kind=17,
-                  FormattedValue_kind=18, Interpolation_kind=19,
-                  JoinedStr_kind=20, TemplateStr_kind=21, Constant_kind=22,
-                  Attribute_kind=23, Subscript_kind=24, Starred_kind=25,
-                  Name_kind=26, List_kind=27, Tuple_kind=28, Slice_kind=29};
+                  YieldFrom_kind=15, AsyncYieldFrom_kind=16, Compare_kind=17,
+                  Call_kind=18, FormattedValue_kind=19, Interpolation_kind=20,
+                  JoinedStr_kind=21, TemplateStr_kind=22, Constant_kind=23,
+                  Attribute_kind=24, Subscript_kind=25, Starred_kind=26,
+                  Name_kind=27, List_kind=28, Tuple_kind=29, Slice_kind=30};
 struct _expr {
     enum _expr_kind kind;
     union {
@@ -443,6 +443,10 @@ struct _expr {
         struct {
             expr_ty value;
         } YieldFrom;
+
+        struct {
+            expr_ty value;
+        } AsyncYieldFrom;
 
         struct {
             expr_ty left;
@@ -826,6 +830,8 @@ expr_ty _PyAST_Yield(expr_ty value, int lineno, int col_offset, int end_lineno,
                      int end_col_offset, PyArena *arena);
 expr_ty _PyAST_YieldFrom(expr_ty value, int lineno, int col_offset, int
                          end_lineno, int end_col_offset, PyArena *arena);
+expr_ty _PyAST_AsyncYieldFrom(expr_ty value, int lineno, int col_offset, int
+                              end_lineno, int end_col_offset, PyArena *arena);
 expr_ty _PyAST_Compare(expr_ty left, asdl_int_seq * ops, asdl_expr_seq *
                        comparators, int lineno, int col_offset, int end_lineno,
                        int end_col_offset, PyArena *arena);

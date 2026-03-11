@@ -916,6 +916,14 @@ append_ast_yield_from(PyUnicodeWriter *writer, expr_ty e)
 }
 
 static int
+append_ast_async_yield_from(PyUnicodeWriter *writer, expr_ty e)
+{
+    APPEND_STR("(async yield from ");
+    APPEND_EXPR(e->v.YieldFrom.value, PR_TEST);
+    APPEND_CHAR_FINISH(')');
+}
+
+static int
 append_ast_await(PyUnicodeWriter *writer, expr_ty e, int level)
 {
     APPEND_STR_IF(level > PR_AWAIT, "(");
@@ -966,6 +974,8 @@ append_ast_expr(PyUnicodeWriter *writer, expr_ty e, int level)
         return append_ast_yield(writer, e);
     case YieldFrom_kind:
         return append_ast_yield_from(writer, e);
+    case AsyncYieldFrom_kind:
+        return append_ast_async_yield_from(writer, e);
     case Await_kind:
         return append_ast_await(writer, e, level);
     case Compare_kind:

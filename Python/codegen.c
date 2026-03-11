@@ -511,6 +511,40 @@ codegen_add_yield_from(compiler *c, location loc, int await)
 }
 
 static int
+codegen_async_yield_from(compiler *c, location loc, expr_ty e)
+{
+    NEW_JUMP_TARGET_LABEL(c, send);
+    NEW_JUMP_TARGET_LABEL(c, exit);
+
+    VISIT(c, expr, e->v.AsyncYieldFrom.value);
+    ADDOP(c, loc, GET_ASYNC_YIELD_FROM_ITER);
+
+    USE_LABEL(c, send);
+    ADDOP_JUMP(c, loc, SETUP_FINALLY, exit);
+    // Virtual try/except for the StopIteration; see above.
+
+    // Get the __asend__() and await it. We preserve the iterator
+    // on the top of the stack by copying it.
+    ADDOP_I(c, loc, COPY, 1);
+    ADDOP_LOAD_CONST(c, loc, Py_None);
+    ADDOP(c, loc, GET_ASEND);
+    ADDOP_LOAD_CONST(c, loc, Py_None);
+    ADD_YIELD_FROM(c, loc, 1);
+
+    ADDOP_I(c, loc, CALL_INTRINSIC_1, INTRINSIC_ASYNC_GEN_WRAP);
+    ADDOP_I(c, loc, YIELD_VALUE, 1);
+
+    ADDOP(c, NO_LOCATION, POP_BLOCK);
+    ADDOP(c, loc, POP_TOP);
+    ADDOP_JUMP(c, loc, JUMP_NO_INTERRUPT, send);
+
+    USE_LABEL(c, exit);
+    ADDOP(c, loc, CLEANUP_ASYNC_THROW);
+
+    return SUCCESS;
+}
+
+static int
 codegen_pop_except_and_reraise(compiler *c, location loc)
 {
     /* Stack contents
@@ -2240,9 +2274,6 @@ codegen_return(compiler *c, stmt_ty s)
     PySTEntryObject *ste = SYMTABLE_ENTRY(c);
     if (!_PyST_IsFunctionLike(ste)) {
         return _PyCompile_Error(c, loc, "'return' outside function");
-    }
-    if (s->v.Return.value != NULL && ste->ste_coroutine && ste->ste_generator) {
-        return _PyCompile_Error(c, loc, "'return' with value in async generator");
     }
 
     if (preserve_tos) {
@@ -5404,13 +5435,21 @@ codegen_visit_expr(compiler *c, expr_ty e)
         if (!_PyST_IsFunctionLike(SYMTABLE_ENTRY(c))) {
             return _PyCompile_Error(c, loc, "'yield from' outside function");
         }
-        if (SCOPE_TYPE(c) == COMPILE_SCOPE_ASYNC_FUNCTION) {
-            return _PyCompile_Error(c, loc, "'yield from' inside async function");
-        }
+
         VISIT(c, expr, e->v.YieldFrom.value);
+        if (SCOPE_TYPE(c) == COMPILE_SCOPE_ASYNC_FUNCTION) {
+            ADDOP_I(c, loc, CALL_INTRINSIC_1, INSTRINSIC_ASYNC_GEN_WRAP_YIELD_FROM);
+        }
         ADDOP(c, loc, GET_YIELD_FROM_ITER);
         ADDOP_LOAD_CONST(c, loc, Py_None);
         ADD_YIELD_FROM(c, loc, 0);
+        break;
+    case AsyncYieldFrom_kind:
+        if (!_PyST_IsFunctionLike(SYMTABLE_ENTRY(c))) {
+            return _PyCompile_Error(c, loc, "'async yield from' outside function");
+        }
+
+        return codegen_async_yield_from(c, loc, e);
         break;
     case Await_kind:
         VISIT(c, expr, e->v.Await.value);

@@ -4725,6 +4725,51 @@
             DISPATCH();
         }
 
+        TARGET(CLEANUP_ASYNC_THROW) {
+            #if _Py_TAIL_CALL_INTERP
+            int opcode = CLEANUP_ASYNC_THROW;
+            (void)(opcode);
+            #endif
+            _Py_CODEUNIT* const this_instr = next_instr;
+            (void)this_instr;
+            frame->instr_ptr = next_instr;
+            next_instr += 1;
+            INSTRUCTION_STATS(CLEANUP_ASYNC_THROW);
+            _PyStackRef iter;
+            _PyStackRef exc_value_st;
+            _PyStackRef value;
+            exc_value_st = stack_pointer[-1];
+            iter = stack_pointer[-2];
+            PyObject *exc_value = PyStackRef_AsPyObjectBorrow(exc_value_st);
+            assert(exc_value != NULL);
+            assert(PyExceptionInstance_Check(exc_value));
+            _PyFrame_SetStackPointer(frame, stack_pointer);
+            int matches = PyErr_GivenExceptionMatches(exc_value, PyExc_StopAsyncIteration);
+            stack_pointer = _PyFrame_GetStackPointer(frame);
+            if (matches) {
+                value = PyStackRef_FromPyObjectNew(((PyStopAsyncIterationObject *)exc_value)->value);
+                _PyFrame_SetStackPointer(frame, stack_pointer);
+                _PyStackRef tmp = iter;
+                iter = value;
+                stack_pointer[-2] = iter;
+                PyStackRef_CLOSE(tmp);
+                tmp = exc_value_st;
+                exc_value_st = PyStackRef_NULL;
+                stack_pointer[-1] = exc_value_st;
+                PyStackRef_CLOSE(tmp);
+                stack_pointer = _PyFrame_GetStackPointer(frame);
+                stack_pointer += -1;
+                ASSERT_WITHIN_STACK_BOUNDS(__FILE__, __LINE__);
+            }
+            else {
+                _PyFrame_SetStackPointer(frame, stack_pointer);
+                _PyErr_SetRaisedException(tstate, Py_NewRef(exc_value));
+                monitor_reraise(tstate, frame, this_instr);
+                JUMP_TO_LABEL(exception_unwind);
+            }
+            DISPATCH();
+        }
+
         TARGET(CLEANUP_THROW) {
             #if _Py_TAIL_CALL_INTERP
             int opcode = CLEANUP_THROW;
@@ -6235,6 +6280,69 @@
             stack_pointer[0] = awaitable;
             stack_pointer += 1;
             ASSERT_WITHIN_STACK_BOUNDS(__FILE__, __LINE__);
+            DISPATCH();
+        }
+
+        TARGET(GET_ASEND) {
+            #if _Py_TAIL_CALL_INTERP
+            int opcode = GET_ASEND;
+            (void)(opcode);
+            #endif
+            frame->instr_ptr = next_instr;
+            next_instr += 1;
+            INSTRUCTION_STATS(GET_ASEND);
+            _PyStackRef receiver;
+            _PyStackRef v;
+            _PyStackRef retval;
+            v = stack_pointer[-1];
+            receiver = stack_pointer[-2];
+            PyObject *receiver_o = PyStackRef_AsPyObjectBorrow(receiver);
+            _PyFrame_SetStackPointer(frame, stack_pointer);
+            PyObject *retval_o = PyObject_CallMethodOneArg(receiver_o,
+                &_Py_ID(asend),
+                PyStackRef_AsPyObjectBorrow(v));
+            stack_pointer = _PyFrame_GetStackPointer(frame);
+            if (retval_o == NULL) {
+                JUMP_TO_LABEL(error);
+            }
+            retval = PyStackRef_FromPyObjectSteal(retval_o);
+            stack_pointer[-2] = retval;
+            stack_pointer += -1;
+            ASSERT_WITHIN_STACK_BOUNDS(__FILE__, __LINE__);
+            DISPATCH();
+        }
+
+        TARGET(GET_ASYNC_YIELD_FROM_ITER) {
+            #if _Py_TAIL_CALL_INTERP
+            int opcode = GET_ASYNC_YIELD_FROM_ITER;
+            (void)(opcode);
+            #endif
+            frame->instr_ptr = next_instr;
+            next_instr += 1;
+            INSTRUCTION_STATS(GET_ASYNC_YIELD_FROM_ITER);
+            _PyStackRef iterable;
+            _PyStackRef aiter;
+            iterable = stack_pointer[-1];
+            PyObject *iterable_o = PyStackRef_AsPyObjectBorrow(iterable);
+            if (PyCoro_CheckExact(iterable_o)) {
+                aiter = iterable;
+            }
+            else {
+                _PyFrame_SetStackPointer(frame, stack_pointer);
+                PyObject *aiter_o = PyObject_GetAIter(iterable_o);
+                stack_pointer = _PyFrame_GetStackPointer(frame);
+                if (aiter_o == NULL) {
+                    JUMP_TO_LABEL(error);
+                }
+                aiter = PyStackRef_FromPyObjectSteal(aiter_o);
+                _PyFrame_SetStackPointer(frame, stack_pointer);
+                _PyStackRef tmp = iterable;
+                iterable = aiter;
+                stack_pointer[-1] = iterable;
+                PyStackRef_CLOSE(tmp);
+                stack_pointer = _PyFrame_GetStackPointer(frame);
+            }
+            stack_pointer[-1] = aiter;
             DISPATCH();
         }
 

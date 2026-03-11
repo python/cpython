@@ -1445,6 +1445,18 @@ dummy_func(
             retval = PyStackRef_FromPyObjectSteal(retval_o);
         }
 
+        inst(GET_ASEND, (receiver, v -- retval)) {
+            PyObject *receiver_o = PyStackRef_AsPyObjectBorrow(receiver);
+            PyObject *retval_o = PyObject_CallMethodOneArg(receiver_o,
+                                                           &_Py_ID(asend),
+                                                           PyStackRef_AsPyObjectBorrow(v));
+            INPUTS_DEAD();
+            if (retval_o == NULL) {
+                ERROR_NO_POP();
+            }
+            retval = PyStackRef_FromPyObjectSteal(retval_o);
+        }
+
         macro(SEND) = _SPECIALIZE_SEND + _SEND;
 
         op(_SEND_GEN_FRAME, (receiver, v -- receiver, gen_frame)) {
@@ -1584,6 +1596,23 @@ dummy_func(
                 value = PyStackRef_FromPyObjectNew(((PyStopIterationObject *)exc_value)->value);
                 DECREF_INPUTS();
                 none = PyStackRef_None;
+            }
+            else {
+                _PyErr_SetRaisedException(tstate, Py_NewRef(exc_value));
+                monitor_reraise(tstate, frame, this_instr);
+                goto exception_unwind;
+            }
+        }
+
+        inst(CLEANUP_ASYNC_THROW, (iter, exc_value_st -- value)) {
+            PyObject *exc_value = PyStackRef_AsPyObjectBorrow(exc_value_st);
+            assert(exc_value != NULL);
+            assert(PyExceptionInstance_Check(exc_value));
+
+            int matches = PyErr_GivenExceptionMatches(exc_value, PyExc_StopAsyncIteration);
+            if (matches) {
+                value = PyStackRef_FromPyObjectNew(((PyStopAsyncIterationObject *)exc_value)->value);
+                DECREF_INPUTS();
             }
             else {
                 _PyErr_SetRaisedException(tstate, Py_NewRef(exc_value));
@@ -3320,6 +3349,24 @@ dummy_func(
                     ERROR_NO_POP();
                 }
                 iter = PyStackRef_FromPyObjectSteal(iter_o);
+                DECREF_INPUTS();
+            }
+        }
+
+        inst(GET_ASYNC_YIELD_FROM_ITER, (iterable -- aiter)) {
+            /* before: [obj]; after [aiter(obj)] */
+            PyObject *iterable_o = PyStackRef_AsPyObjectBorrow(iterable);
+            if (PyCoro_CheckExact(iterable_o)) {
+                aiter = iterable;
+                DEAD(iterable);
+            }
+            else {
+                /* `iterable` is not a generator. */
+                PyObject *aiter_o = PyObject_GetAIter(iterable_o);
+                if (aiter_o == NULL) {
+                    ERROR_NO_POP();
+                }
+                aiter = PyStackRef_FromPyObjectSteal(aiter_o);
                 DECREF_INPUTS();
             }
         }
