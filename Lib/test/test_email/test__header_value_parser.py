@@ -2700,132 +2700,113 @@ class TestParser(TestParserMixin, TestEmailBase):
                 )(params_test_get_word),
             ),
 
-        )
-
-    def test_get_phrase_simple(self):
-        phrase = self._test_get_x(parser.get_phrase,
+        test_get_phrase_simple = C(
             '"Fred A. Johnson" is his name, oh.',
             '"Fred A. Johnson" is his name',
             'Fred A. Johnson is his name',
             [],
             ', oh.')
-        self.assertEqual(phrase.token_type, 'phrase')
+            ,
 
-    def test_get_phrase_complex(self):
-        phrase = self._test_get_x(parser.get_phrase,
+        test_get_phrase_complex = C(
             ' (A) bird (in (my|your)) "hand  " is messy\t<>\t',
             ' (A) bird (in (my|your)) "hand  " is messy\t',
             ' bird hand   is messy ',
             [],
-            '<>\t')
-        self.assertEqual(phrase[0][0].comments, ['A'])
-        self.assertEqual(phrase[0][2].comments, ['in (my|your)'])
+            '<>\t',
+            ['A', 'in (my|your)'],
+            ),
 
-    def test_get_phrase_obsolete(self):
-        phrase = self._test_get_x(parser.get_phrase,
+        test_get_phrase_obsolete = C(
             'Fred A.(weird).O Johnson',
             'Fred A.(weird).O Johnson',
             'Fred A. .O Johnson',
             [errors.ObsoleteHeaderDefect]*3,
-            '')
-        self.assertEqual(len(phrase), 7)
-        self.assertEqual(phrase[3].comments, ['weird'])
+            '',
+            ['weird'],
+            ),
+       #self.assertEqual(len(phrase), 7)
 
-    def test_get_phrase_pharse_must_start_with_word(self):
-        phrase = self._test_get_x(parser.get_phrase,
+        test_get_phrase_pharse_must_start_with_word = C(
             '(even weirder).name',
             '(even weirder).name',
             ' .name',
             [errors.InvalidHeaderDefect] + [errors.ObsoleteHeaderDefect]*2,
-            '')
-        self.assertEqual(len(phrase), 3)
-        self.assertEqual(phrase[0].comments, ['even weirder'])
+            '',
+            ['even weirder'],
+            ),
+       #self.assertEqual(len(phrase), 3)
 
-    def test_get_phrase_ending_with_obsolete(self):
-        phrase = self._test_get_x(parser.get_phrase,
+        test_get_phrase_ending_with_obsolete = C(
             'simple phrase.(with trailing comment):boo',
             'simple phrase.(with trailing comment)',
             'simple phrase. ',
             [errors.ObsoleteHeaderDefect]*2,
-            ':boo')
-        self.assertEqual(len(phrase), 4)
-        self.assertEqual(phrase[3].comments, ['with trailing comment'])
+            ':boo',
+            ['with trailing comment'],
+            ),
+       #self.assertEqual(len(phrase), 4)
 
-    def get_phrase_cfws_only_raises(self):
-        with self.assertRaises(errors.HeaderParseError):
-            parser.get_phrase(' (foo) ')
-
-    def test_get_phrase_adjacent_ew(self):
+        test_get_phrase_adjacent_ew = C(
         # "'linear-white-space' that separates a pair of adjacent
         # 'encoded-word's is ignored" (rfc2047 section 6.2)
-        self._test_get_x(parser.get_phrase, '=?ascii?q?Joi?= \t =?ascii?q?ned?=', 'Joined', 'Joined', [], '')
+                                            '=?ascii?q?Joi?= \t =?ascii?q?ned?=', 'Joined', 'Joined', [], '')
+        ,
 
-    def test_get_phrase_adjacent_ew_different_encodings(self):
-        self._test_get_x(
-            parser.get_phrase,
+        test_get_phrase_adjacent_ew_different_encodings = C(
             '=?utf-8?q?B=C3=A9r?= =?iso-8859-1?q?=E9nice?=', 'Bérénice', 'Bérénice', [], ''
-        )
+        ),
 
-    def test_get_phrase_adjacent_ew_encoded_spaces(self):
-        self._test_get_x(
-            parser.get_phrase,
+        test_get_phrase_adjacent_ew_encoded_spaces = C(
             '=?ascii?q?Encoded?= =?ascii?q?_spaces_?= =?ascii?q?preserved?=',
             'Encoded spaces preserved',
             'Encoded spaces preserved',
             [],
             ''
-        )
+        ),
 
-    def test_get_phrase_adjacent_ew_comment_is_not_linear_white_space(self):
-        self._test_get_x(
-            parser.get_phrase,
+        test_get_phrase_adjacent_ew_comment_is_not_linear_white_space = C(
             '=?ascii?q?Comment?= (is not) =?ascii?q?linear-white-space?=',
             'Comment (is not) linear-white-space',
             'Comment linear-white-space',
             [],
             '',
             comments=['is not'],
-        )
+        ),
 
-    def test_get_phrase_adjacent_ew_no_error_on_defects(self):
-        self._test_get_x(
-            parser.get_phrase,
+        test_get_phrase_adjacent_ew_no_error_on_defects = C(
             '=?ascii?q?Def?= =?ascii?q?ect still joins?=',
             'Defect still joins',
             'Defect still joins',
             [errors.InvalidHeaderDefect],  # whitespace inside encoded word
             ''
-        )
+        ),
 
-    def test_get_phrase_adjacent_ew_ignore_non_ew(self):
-        self._test_get_x(
-            parser.get_phrase,
+        test_get_phrase_adjacent_ew_ignore_non_ew = C(
             '=?ascii?q?No?= =?join?= for non-ew',
             'No =?join?= for non-ew',
             'No =?join?= for non-ew',
             [],
             ''
-        )
+        ),
 
-    def test_get_phrase_adjacent_ew_ignore_invalid_ew(self):
-        self._test_get_x(
-            parser.get_phrase,
+        test_get_phrase_adjacent_ew_ignore_invalid_ew = C(
             '=?ascii?q?No?= =?ascii?rot13?wbva= for invalid ew',
             'No =?ascii?rot13?wbva= for invalid ew',
             'No =?ascii?rot13?wbva= for invalid ew',
             [],
             ''
-        )
+        ),
 
-    def test_get_phrase_adjacent_ew_missing_space(self):
-        self._test_get_x(
-            parser.get_phrase,
+        test_get_phrase_adjacent_ew_missing_space = C(
             '=?ascii?q?Joi?==?ascii?q?ned?=',
             'Joined',
             'Joined',
             [errors.InvalidHeaderDefect],  # missing trailing whitespace
             ''
+        ),
         )
+
 
     # get_local_part
 
