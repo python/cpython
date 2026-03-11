@@ -97,17 +97,13 @@ class CAPITest(unittest.TestCase):
     def test_dict_copy(self):
         # Test PyDict_Copy()
         copy = _testlimitedcapi.dict_copy
-        for dict_type in ANYDICT_TYPES:
-            if issubclass(dict_type, frozendict):
-                expected_type = frozendict
-            else:
-                expected_type = dict
+        for dict_type in DICT_TYPES:
             dct = dict_type({1: 2})
             dct_copy = copy(dct)
-            self.assertIs(type(dct_copy), expected_type)
+            self.assertIs(type(dct_copy), dict)
             self.assertEqual(dct_copy, dct)
 
-        for test_type in NOT_ANYDICT_TYPES + OTHER_TYPES:
+        for test_type in NOT_DICT_TYPES + OTHER_TYPES:
             self.assertRaises(SystemError, copy, test_type())
         self.assertRaises(SystemError, copy, NULL)
 
@@ -622,6 +618,16 @@ class CAPITest(unittest.TestCase):
         dct = frozendict_new([('x', 1), ('y', 2)])
         self.assertEqual(dct, frozendict(x=1, y=2))
         self.assertIs(type(dct), frozendict)
+
+        # PyFrozenDict_New(frozendict) returns the same object unmodified
+        fd = frozendict(a=1, b=2, c=3)
+        fd2 = frozendict_new(fd)
+        self.assertIs(fd2, fd)
+
+        fd = FrozenDictSubclass(a=1, b=2, c=3)
+        fd2 = frozendict_new(fd)
+        self.assertIsNot(fd2, fd)
+        self.assertEqual(fd2, fd)
 
         # PyFrozenDict_New(NULL) creates an empty dictionary
         dct = frozendict_new(NULL)
