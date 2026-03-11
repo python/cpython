@@ -678,11 +678,6 @@ class TextTest(AbstractWidgetTest, unittest.TestCase):
         self.checkEnumParam(widget, 'insertunfocussed',
                             'hollow', 'none', 'solid')
 
-    def test_configure_selectborderwidth(self):
-        widget = self.create()
-        self.checkPixelsParam(widget, 'selectborderwidth',
-                              1.3, 2.6, -2, '10p', conv=False)
-
     def test_configure_spacing1(self):
         widget = self.create()
         self.checkPixelsParam(widget, 'spacing1', 20, 21.4, 22.6, -5, '0.5c')
@@ -1276,7 +1271,7 @@ class ScrollbarTest(AbstractWidgetTest, unittest.TestCase):
         self.assertRaises(TypeError, sb.set, 0.6, 0.7, 0.8)
 
 
-@add_configure_tests(StandardOptionsTests)
+@add_configure_tests(PixelSizeTests, StandardOptionsTests)
 class PanedWindowTest(AbstractWidgetTest, unittest.TestCase):
     OPTIONS = (
         'background', 'borderwidth', 'cursor',
@@ -1301,13 +1296,7 @@ class PanedWindowTest(AbstractWidgetTest, unittest.TestCase):
 
     def test_configure_handlesize(self):
         widget = self.create()
-        self.checkPixelsParam(widget, 'handlesize', 8, 9.4, 10.6, -3, '2m',
-                              conv=False)
-
-    def test_configure_height(self):
-        widget = self.create()
-        self.checkPixelsParam(widget, 'height', 100, 101.2, 102.6, -100, 0, '1i',
-                              conv=False)
+        self.checkPixelsParam(widget, 'handlesize', 8, 9.4, 10.6, -3, '2m')
 
     def test_configure_opaqueresize(self):
         widget = self.create()
@@ -1322,8 +1311,7 @@ class PanedWindowTest(AbstractWidgetTest, unittest.TestCase):
     def test_configure_proxyborderwidth(self):
         widget = self.create()
         self.checkPixelsParam(widget, 'proxyborderwidth',
-                              0, 1.3, 2.9, 6, -2, '10p',
-                              conv=False)
+                              0, 1.3, 2.9, 6, -2, '10p')
 
     @requires_tk(8, 6, 5)
     def test_configure_proxyrelief(self):
@@ -1345,17 +1333,11 @@ class PanedWindowTest(AbstractWidgetTest, unittest.TestCase):
 
     def test_configure_sashwidth(self):
         widget = self.create()
-        self.checkPixelsParam(widget, 'sashwidth', 10, 11.1, 15.6, -3, '1m',
-                              conv=False)
+        self.checkPixelsParam(widget, 'sashwidth', 10, 11.1, 15.6, -3, '1m')
 
     def test_configure_showhandle(self):
         widget = self.create()
         self.checkBooleanParam(widget, 'showhandle')
-
-    def test_configure_width(self):
-        widget = self.create()
-        self.checkPixelsParam(widget, 'width', 402, 403.4, 404.6, -402, 0, '5i',
-                              conv=False)
 
     def create2(self):
         p = self.create()
@@ -1551,10 +1533,6 @@ class MessageTest(AbstractWidgetTest, unittest.TestCase):
     def test_configure_aspect(self):
         widget = self.create()
         self.checkIntegerParam(widget, 'aspect', 250, 0, -300)
-
-    def test_configure_width(self):
-        widget = self.create()
-        self.checkPixelsParam(widget, 'width', 402, 403.4, 404.6, 0, -402, '5i')
 
 
 class DefaultRootTest(AbstractDefaultRootTest, unittest.TestCase):
