@@ -1194,10 +1194,12 @@ data, similar to the ``top`` command for system processes::
    python -m profiling.sampling run --live script.py
    python -m profiling.sampling attach --live 12345
 
-.. figure:: tachyon-live-mode-2.gif
-   :alt: Tachyon live mode showing all threads
-   :align: center
-   :width: 100%
+.. only:: not latex
+
+   .. figure:: tachyon-live-mode-2.gif
+      :alt: Tachyon live mode showing all threads
+      :align: center
+      :width: 100%
 
    Live mode displays real-time profiling statistics, showing combined
    data from multiple threads in a multi-threaded application.
@@ -1217,10 +1219,12 @@ main table, showing instruction-level statistics for the currently selected
 function. This panel displays which bytecode instructions are executing most
 frequently, including specialized variants and their base opcodes.
 
-.. figure:: tachyon-live-mode-1.gif
-   :alt: Tachyon live mode with opcode panel
-   :align: center
-   :width: 100%
+.. only:: not latex
+
+   .. figure:: tachyon-live-mode-1.gif
+      :alt: Tachyon live mode with opcode panel
+      :align: center
+      :width: 100%
 
    Live mode with ``--opcodes`` enabled shows an opcode panel with a bytecode
    instruction breakdown for the selected function.

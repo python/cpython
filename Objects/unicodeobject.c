@@ -13581,7 +13581,8 @@ search_longest_common_leading_whitespace(
 }
 
 /* Dedent a string.
-   Behaviour is expected to be an exact match of `textwrap.dedent`.
+   Intended to dedent Python source. Unlike `textwrap.dedent`, this
+   only supports spaces and tabs and doesn't normalize empty lines.
    Return a new reference on success, NULL with exception set on error.
    */
 PyObject *

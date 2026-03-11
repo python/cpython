@@ -555,6 +555,12 @@ class StructTest(ComplexesAreIdenticalMixin, unittest.TestCase):
         hugecount3 = '{}i{}q'.format(sys.maxsize // 4, sys.maxsize // 8)
         self.assertRaises(struct.error, struct.calcsize, hugecount3)
 
+        hugecount4 = '{}?s'.format(sys.maxsize)
+        self.assertRaises(struct.error, struct.calcsize, hugecount4)
+
+        hugecount5 = '{}?p'.format(sys.maxsize)
+        self.assertRaises(struct.error, struct.calcsize, hugecount5)
+
     def test_trailing_counter(self):
         store = array.array('b', b' '*100)
 
@@ -584,8 +590,24 @@ class StructTest(ComplexesAreIdenticalMixin, unittest.TestCase):
         # Issue 9422: there was a memory leak when reinitializing a
         # Struct instance.  This test can be used to detect the leak
         # when running with regrtest -L.
-        s = struct.Struct('i')
-        s.__init__('ii')
+        s = struct.Struct('>h')
+        s.__init__('>hh')
+        self.assertEqual(s.format, '>hh')
+        packed = b'\x00\x01\x00\x02'
+        self.assertEqual(s.pack(1, 2), packed)
+        self.assertEqual(s.unpack(packed), (1, 2))
+
+        with self.assertRaises(UnicodeEncodeError):
+            s.__init__('\udc00')
+        self.assertEqual(s.format, '>hh')
+        self.assertEqual(s.pack(1, 2), packed)
+        self.assertEqual(s.unpack(packed), (1, 2))
+
+        with self.assertRaises(struct.error):
+            s.__init__('$')
+        self.assertEqual(s.format, '>hh')
+        self.assertEqual(s.pack(1, 2), packed)
+        self.assertEqual(s.unpack(packed), (1, 2))
 
     def check_sizeof(self, format_str, number_of_codes):
         # The size of 'PyStructObject'

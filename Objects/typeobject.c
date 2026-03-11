@@ -647,7 +647,6 @@ clear_tp_bases(PyTypeObject *self, int final)
 static inline PyObject *
 lookup_tp_mro(PyTypeObject *self)
 {
-    ASSERT_NEW_TYPE_OR_LOCKED(self);
     return self->tp_mro;
 }
 
@@ -664,8 +663,19 @@ set_tp_mro(PyTypeObject *self, PyObject *mro, int initial)
             /* Other checks are done via set_tp_bases. */
             _Py_SetImmortal(mro);
         }
+        else {
+            PyUnstable_Object_EnableDeferredRefcount(mro);
+        }
+    }
+    if (!initial) {
+        type_lock_prevent_release();
+        types_stop_world();
     }
     self->tp_mro = mro;
+    if (!initial) {
+        types_start_world();
+        type_lock_allow_release();
+    }
 }
 
 static inline void
@@ -1728,18 +1738,11 @@ static PyObject *
 type_get_mro(PyObject *tp, void *Py_UNUSED(closure))
 {
     PyTypeObject *type = PyTypeObject_CAST(tp);
-    PyObject *mro;
-
-    BEGIN_TYPE_LOCK();
-    mro = lookup_tp_mro(type);
+    PyObject *mro = lookup_tp_mro(type);
     if (mro == NULL) {
-        mro = Py_None;
-    } else {
-        Py_INCREF(mro);
+        Py_RETURN_NONE;
     }
-
-    END_TYPE_LOCK();
-    return mro;
+    return Py_NewRef(mro);
 }
 
 static PyTypeObject *find_best_base(PyObject *);
@@ -5975,15 +5978,16 @@ PyObject_GetItemData(PyObject *obj)
 }
 
 /* Internal API to look for a name through the MRO, bypassing the method cache.
-   This returns a borrowed reference, and might set an exception.
-   'error' is set to: -1: error with exception; 1: error without exception; 0: ok */
-static PyObject *
-find_name_in_mro(PyTypeObject *type, PyObject *name, int *error)
+   The result is stored as a _PyStackRef in `out`. It never set an exception.
+   Returns -1 if there was an error, 0 if the name was not found, and 1 if
+   the name was found. */
+static int
+find_name_in_mro(PyTypeObject *type, PyObject *name, _PyStackRef *out)
 {
     Py_hash_t hash = _PyObject_HashFast(name);
     if (hash == -1) {
-        *error = -1;
-        return NULL;
+        PyErr_Clear();
+        return -1;
     }
 
     /* Look in tp_dict of types in MRO */
@@ -5991,37 +5995,42 @@ find_name_in_mro(PyTypeObject *type, PyObject *name, int *error)
     if (mro == NULL) {
         if (!is_readying(type)) {
             if (PyType_Ready(type) < 0) {
-                *error = -1;
-                return NULL;
+                PyErr_Clear();
+                return -1;
             }
             mro = lookup_tp_mro(type);
         }
         if (mro == NULL) {
-            *error = 1;
-            return NULL;
+            return -1;
         }
     }
 
-    PyObject *res = NULL;
+    int res = 0;
+    PyThreadState *tstate = _PyThreadState_GET();
     /* Keep a strong reference to mro because type->tp_mro can be replaced
        during dict lookup, e.g. when comparing to non-string keys. */
-    Py_INCREF(mro);
+    _PyCStackRef mro_ref;
+    _PyThreadState_PushCStackRef(tstate, &mro_ref);
+    mro_ref.ref = PyStackRef_FromPyObjectNew(mro);
     Py_ssize_t n = PyTuple_GET_SIZE(mro);
     for (Py_ssize_t i = 0; i < n; i++) {
         PyObject *base = PyTuple_GET_ITEM(mro, i);
         PyObject *dict = lookup_tp_dict(_PyType_CAST(base));
         assert(dict && PyDict_Check(dict));
-        if (_PyDict_GetItemRef_KnownHash((PyDictObject *)dict, name, hash, &res) < 0) {
-            *error = -1;
+        Py_ssize_t ix = _Py_dict_lookup_threadsafe_stackref(
+            (PyDictObject *)dict, name, hash, out);
+        if (ix == DKIX_ERROR) {
+            PyErr_Clear();
+            res = -1;
             goto done;
         }
-        if (res != NULL) {
+        if (!PyStackRef_IsNull(*out)) {
+            res = 1;
             break;
         }
     }
-    *error = 0;
 done:
-    Py_DECREF(mro);
+    _PyThreadState_PopCStackRef(tstate, &mro_ref);
     return res;
 }
 
@@ -6176,11 +6185,11 @@ _PyType_LookupStackRefAndVersion(PyTypeObject *type, PyObject *name, _PyStackRef
     // We need to atomically do the lookup and capture the version before
     // anyone else can modify our mro or mutate the type.
 
-    PyObject *res;
-    int error;
+    int res;
     PyInterpreterState *interp = _PyInterpreterState_GET();
     int has_version = 0;
     unsigned int assigned_version = 0;
+
     BEGIN_TYPE_LOCK();
     // We must assign the version before doing the lookup.  If
     // find_name_in_mro() blocks and releases the critical section
@@ -6189,35 +6198,24 @@ _PyType_LookupStackRefAndVersion(PyTypeObject *type, PyObject *name, _PyStackRef
         has_version = assign_version_tag(interp, type);
         assigned_version = type->tp_version_tag;
     }
-    res = find_name_in_mro(type, name, &error);
+    res = find_name_in_mro(type, name, out);
     END_TYPE_LOCK();
 
     /* Only put NULL results into cache if there was no error. */
-    if (error) {
-        /* It's not ideal to clear the error condition,
-           but this function is documented as not setting
-           an exception, and I don't want to change that.
-           E.g., when PyType_Ready() can't proceed, it won't
-           set the "ready" flag, so future attempts to ready
-           the same type will call it again -- hopefully
-           in a context that propagates the exception out.
-        */
-        if (error == -1) {
-            PyErr_Clear();
-        }
+    if (res < 0) {
         *out = PyStackRef_NULL;
         return 0;
     }
 
     if (has_version) {
+        PyObject *res_obj = PyStackRef_AsPyObjectBorrow(*out);
 #if Py_GIL_DISABLED
-        update_cache_gil_disabled(entry, name, assigned_version, res);
+        update_cache_gil_disabled(entry, name, assigned_version, res_obj);
 #else
-        PyObject *old_value = update_cache(entry, name, assigned_version, res);
+        PyObject *old_value = update_cache(entry, name, assigned_version, res_obj);
         Py_DECREF(old_value);
 #endif
     }
-    *out = res ? PyStackRef_FromPyObjectSteal(res) : PyStackRef_NULL;
     return has_version ? assigned_version : 0;
 }
 
@@ -11706,7 +11704,6 @@ update_one_slot(PyTypeObject *type, pytype_slotdef *p, pytype_slotdef **next_p,
     int use_generic = 0;
 
     int offset = p->offset;
-    int error;
     void **ptr = slotptr(type, offset);
 
     if (ptr == NULL) {
@@ -11722,19 +11719,15 @@ update_one_slot(PyTypeObject *type, pytype_slotdef *p, pytype_slotdef **next_p,
     assert(!PyErr_Occurred());
     do {
         /* Use faster uncached lookup as we won't get any cache hits during type setup. */
-        descr = find_name_in_mro(type, p->name_strobj, &error);
-        if (descr == NULL) {
-            if (error == -1) {
-                /* It is unlikely but not impossible that there has been an exception
-                   during lookup. Since this function originally expected no errors,
-                   we ignore them here in order to keep up the interface. */
-                PyErr_Clear();
-            }
+        _PyStackRef descr_ref;
+        int res = find_name_in_mro(type, p->name_strobj, &descr_ref);
+        if (res <= 0) {
             if (ptr == (void**)&type->tp_iternext) {
                 specific = (void *)_PyObject_NextNotImplemented;
             }
             continue;
         }
+        descr = PyStackRef_AsPyObjectBorrow(descr_ref);
         if (Py_IS_TYPE(descr, &PyWrapperDescr_Type) &&
             ((PyWrapperDescrObject *)descr)->d_base->name_strobj == p->name_strobj) {
             void **tptr;
@@ -11812,7 +11805,7 @@ update_one_slot(PyTypeObject *type, pytype_slotdef *p, pytype_slotdef **next_p,
                 }
             }
         }
-        Py_DECREF(descr);
+        PyStackRef_CLOSE(descr_ref);
     } while ((++p)->offset == offset);
 
     void *slot_value;
@@ -12367,17 +12360,15 @@ _super_lookup_descr(PyTypeObject *su_type, PyTypeObject *su_obj_type, PyObject *
     PyObject *mro, *res;
     Py_ssize_t i, n;
 
-    BEGIN_TYPE_LOCK();
     mro = lookup_tp_mro(su_obj_type);
-    /* keep a strong reference to mro because su_obj_type->tp_mro can be
-       replaced during PyDict_GetItemRef(dict, name, &res) and because
-       another thread can modify it after we end the critical section
-       below  */
-    Py_XINCREF(mro);
-    END_TYPE_LOCK();
-
     if (mro == NULL)
         return NULL;
+
+    /* Keep a strong reference to mro because su_obj_type->tp_mro can be
+       replaced during PyDict_GetItemRef(dict, name, &res). */
+    PyThreadState *tstate = _PyThreadState_GET();
+    _PyCStackRef mro_ref;
+    _PyThreadState_PushCStackRefNew(tstate, &mro_ref, mro);
 
     assert(PyTuple_Check(mro));
     n = PyTuple_GET_SIZE(mro);
@@ -12389,7 +12380,7 @@ _super_lookup_descr(PyTypeObject *su_type, PyTypeObject *su_obj_type, PyObject *
     }
     i++;  /* skip su->type (if any)  */
     if (i >= n) {
-        Py_DECREF(mro);
+        _PyThreadState_PopCStackRef(tstate, &mro_ref);
         return NULL;
     }
 
@@ -12400,13 +12391,13 @@ _super_lookup_descr(PyTypeObject *su_type, PyTypeObject *su_obj_type, PyObject *
 
         if (PyDict_GetItemRef(dict, name, &res) != 0) {
             // found or error
-            Py_DECREF(mro);
+            _PyThreadState_PopCStackRef(tstate, &mro_ref);
             return res;
         }
 
         i++;
     } while (i < n);
-    Py_DECREF(mro);
+    _PyThreadState_PopCStackRef(tstate, &mro_ref);
     return NULL;
 }
 

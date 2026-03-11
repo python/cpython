@@ -461,6 +461,19 @@ class TestUops(unittest.TestCase):
         uops = get_opnames(ex)
         self.assertIn(self.guard_is_false, uops)
 
+    def test_branch_coincident_targets(self):
+        # test for gh-144681: https://github.com/python/cpython/issues/144681
+        def testfunc(n):
+            for _ in range(n):
+                r = [x for x in range(10) if [].append(x) or True]
+            return r
+
+        res = testfunc(TIER2_THRESHOLD)
+        ex = get_first_executor(testfunc)
+
+        self.assertEqual(res, list(range(10)))
+        self.assertIsNotNone(ex)
+
     def test_for_iter_tier_two(self):
         class MyIter:
             def __init__(self, n):
