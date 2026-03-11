@@ -4828,6 +4828,17 @@ class TestQuopri(unittest.TestCase):
     def test_decode_false_quoting(self):
         self._test_decode('A=1,B=A ==> A+B==2', 'A=1,B=A ==> A+B==2')
 
+    def test_decode_crlf_eol_no_trailing_newline(self):
+        # decode() with eol='\r\n' should not leave a stray \r
+        # when the input has no trailing line ending.
+        self._test_decode('abc', 'abc', eol='\r\n')
+
+    def test_decode_crlf_eol_multiline_no_trailing_newline(self):
+        self._test_decode('a\r\nb', 'a\r\nb', eol='\r\n')
+
+    def test_decode_crlf_eol_with_trailing_newline(self):
+        self._test_decode('abc\r\n', 'abc\r\n', eol='\r\n')
+
     def _test_encode(self, body, expected_encoded_body, maxlinelen=None, eol=None):
         kwargs = {}
         if maxlinelen is None:
