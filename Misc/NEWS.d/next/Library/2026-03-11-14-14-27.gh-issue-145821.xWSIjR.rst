@@ -1,3 +1,2 @@
-Fix :exc:`TypeError` in :mod:`optparse` when ``callback_kwargs`` is a
-non-dict (e.g. a tuple). The validation in ``Option._check_callback`` now
-correctly raises :exc:`~optparse.OptionError`.
+:mod:`optparse`: raise :exc:`~optparse.OptionError` instead of :exc:`TypeError`
+when ``callback_kwargs`` is not a dictionary.
