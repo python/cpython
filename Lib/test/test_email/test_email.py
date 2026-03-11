@@ -5008,6 +5008,29 @@ class TestCharset(unittest.TestCase):
         self.assertEqual(str(charset), 'us-ascii')
         self.assertRaises(errors.CharsetError, Charset, 'asc\xffii')
 
+    def test_viscii_not_registered(self):
+        # viscii has no Python codec, so it should not be in CHARSETS.
+        from email.charset import CHARSETS
+        self.assertNotIn('viscii', CHARSETS)
+
+    def test_all_charsets_have_codecs(self):
+        # Every charset registered in CHARSETS should have a resolvable
+        # Python codec (via CODEC_MAP or by name).
+        import codecs
+        from email.charset import CHARSETS, CODEC_MAP
+        for name in CHARSETS:
+            codec_name = CODEC_MAP.get(name, name)
+            if codec_name is None:
+                continue
+            with self.subTest(charset=name, codec=codec_name):
+                try:
+                    codecs.lookup(codec_name)
+                except LookupError:
+                    self.fail(
+                        f"charset {name!r} maps to codec {codec_name!r} "
+                        f"which is not available"
+                    )
+
 
 
 # Test multilingual MIME headers.
