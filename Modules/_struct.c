@@ -1677,7 +1677,13 @@ prepare_s(PyStructObject *self, PyObject *format)
 
         switch (c) {
             case 's': _Py_FALLTHROUGH;
-            case 'p': len++; ncodes++; break;
+            case 'p':
+                if (len == PY_SSIZE_T_MAX) {
+                    goto overflow;
+                }
+                len++;
+                ncodes++;
+                break;
             case 'x': break;
             default:
                 if (num > PY_SSIZE_T_MAX - len) {

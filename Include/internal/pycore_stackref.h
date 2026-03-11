@@ -771,6 +771,13 @@ _PyThreadState_PushCStackRef(PyThreadState *tstate, _PyCStackRef *ref)
 }
 
 static inline void
+_PyThreadState_PushCStackRefNew(PyThreadState *tstate, _PyCStackRef *ref, PyObject *obj)
+{
+    _PyThreadState_PushCStackRef(tstate, ref);
+    ref->ref = PyStackRef_FromPyObjectNew(obj);
+}
+
+static inline void
 _PyThreadState_PopCStackRef(PyThreadState *tstate, _PyCStackRef *ref)
 {
 #ifdef Py_GIL_DISABLED
