@@ -180,7 +180,6 @@ struct _ts {
     _PyStackChunk *datastack_chunk;
     PyObject **datastack_top;
     PyObject **datastack_limit;
-    _PyStackChunk *datastack_cached_chunk;
     /* XXX signal handlers should also be here */
 
     /* The following fields are here to avoid allocation during init.
@@ -209,6 +208,8 @@ struct _ts {
     */
     PyObject *threading_local_sentinel;
     _PyRemoteDebuggerSupport remote_debugger_support;
+
+    _PyStackChunk *datastack_cached_chunk;
 };
 
 /* other API */
