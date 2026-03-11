@@ -9,6 +9,7 @@ from analyzer import (
     Analysis,
     analyze_files,
     get_uop_cache_depths,
+    MAX_CACHED_REGISTER,
 )
 from generators_common import (
     DEFAULT_INPUT,
@@ -48,6 +49,7 @@ def generate_uop_ids(
                 next_id += 1
 
         out.emit(f"#define MAX_UOP_ID {next_id-1}\n")
+        out.emit(f"#define MAX_CACHED_REGISTER {MAX_CACHED_REGISTER}\n")
         for name, uop in sorted(uops):
             if uop.properties.tier == 1:
                 continue

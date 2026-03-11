@@ -8,6 +8,7 @@ from typing import Optional, Callable, Iterator
 from parser import Stmt, SimpleStmt, BlockStmt, IfStmt, WhileStmt, ForStmt, MacroIfStmt
 
 MAX_GENERATED_CACHED_REGISTER = 5
+MAX_CACHED_REGISTER = 3  # Platform-specific; controls compile-time case pruning
 
 @dataclass
 class EscapingCall:

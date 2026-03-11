@@ -9,6 +9,7 @@ from analyzer import (
     Analysis,
     analyze_files,
     get_uop_cache_depths,
+    MAX_CACHED_REGISTER,
     Uop,
 )
 from generators_common import (
@@ -22,7 +23,6 @@ from cwriter import CWriter
 from typing import TextIO
 
 DEFAULT_OUTPUT = ROOT / "Include/internal/pycore_uop_metadata.h"
-MAX_CACHED_REGISTER = 3  # Specify this by different platform
 
 
 def uop_cache_info(uop: Uop) -> list[str] | None:
@@ -65,7 +65,6 @@ extern const _PyUopCachingInfo _PyUop_Caching[MAX_UOP_ID+1];
 
 
 def generate_names_and_flags(analysis: Analysis, out: CWriter) -> None:
-    out.emit(f"#define MAX_CACHED_REGISTER {MAX_CACHED_REGISTER}\n")
     out.emit("extern const uint32_t _PyUop_Flags[MAX_UOP_ID+1];\n")
     out.emit("typedef struct _rep_range { uint8_t start; uint8_t stop; } ReplicationRange;\n")
     out.emit("extern const ReplicationRange _PyUop_Replication[MAX_UOP_ID+1];\n")
