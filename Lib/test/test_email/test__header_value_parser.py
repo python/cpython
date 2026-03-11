@@ -2647,11 +2647,16 @@ class TestParser(TestParserMixin, TestEmailBase):
     # get_phrase
 
     @params
-    def test_get_phrase(self, s, *args, **kw):
+    def test_get_phrase(self, s, *args, obs_dots=0, **kw):
         phrase = self._test_parse(parser.get_phrase, C(s), *args, **kw)
         if 'exception' in kw:
             return
         self.assertIsInstance(phrase, parser.Phrase)
+        self.assertEqual(
+            len([x for x in phrase if x.token_type == 'dot']),
+            obs_dots,
+            phrase.ppstr(),
+            )
         self.verify_terminal_types(phrase, 'dot', 'atext', 'ptext', 'fws', 'vtext')
 
     @params_map(with_namelist=True)
@@ -2718,16 +2723,16 @@ class TestParser(TestParserMixin, TestEmailBase):
             value='Fred A. .O Johnson',
             defects=[errors.ObsoleteHeaderDefect]*3,
             comments=['weird'],
+            obs_dots=2,
             ),
-       #self.assertEqual(len(phrase), 7)
 
         must_start_with_word = C(
             '(even weirder).name',
             value=' .name',
             defects=[errors.InvalidHeaderDefect] + [errors.ObsoleteHeaderDefect]*2,
             comments=['even weirder'],
+            obs_dots=1,
             ),
-       #self.assertEqual(len(phrase), 3)
 
         ending_with_obsolete = C(
             'simple phrase.(with trailing comment):boo',
@@ -2735,8 +2740,8 @@ class TestParser(TestParserMixin, TestEmailBase):
             defects=[errors.ObsoleteHeaderDefect]*2,
             remainder=':boo',
             comments=['with trailing comment'],
+            obs_dots=1,
             ),
-       #self.assertEqual(len(phrase), 4)
 
         # "'linear-white-space' that separates a pair of adjacent
         # 'encoded-word's is ignored" (rfc2047 section 6.2)
