@@ -59,15 +59,20 @@ jobs:
         include:
           - platform: hyperlight
             process-mode: multi-process
+            memory: 128mb
           - platform: hyperlight
             process-mode: single-process
+            memory: 128mb
           - platform: microvm
             process-mode: single-process
+            memory: 128mb
           - platform: microvm
             process-mode: multi-process
+            memory: 128mb
           - platform: microvm
             process-mode: standalone
-    name: ${{ matrix.platform }}-${{ matrix.process-mode }}
+            memory: 128mb
+    name: ${{ matrix.platform }}-${{ matrix.process-mode }}-${{ matrix.memory }}
     container:
       image: nanvix/toolchain:latest-minimal
       options: --device /dev/kvm
@@ -78,6 +83,7 @@ jobs:
       NANVIX_TOOLCHAIN: /opt/nanvix
       NANVIX_PLATFORM: ${{ matrix.platform }}
       NANVIX_PROCESS_MODE: ${{ matrix.process-mode }}
+      NANVIX_MEMORY_SIZE: ${{ matrix.memory }}
       USER: runner
     steps:
       - uses: actions/checkout@v4
@@ -106,13 +112,13 @@ jobs:
         run: |
           set -euo pipefail
           ./z release
-          ARTIFACT_NAME="cpython-${{ matrix.platform }}-${{ matrix.process-mode }}"
+          ARTIFACT_NAME="cpython-${{ matrix.platform }}-${{ matrix.process-mode }}-${{ matrix.memory }}"
           echo "ARTIFACT_TARBALL=dist/${ARTIFACT_NAME}.tar.bz2" >> "$GITHUB_ENV"
 
       - name: Upload Artifacts
         uses: actions/upload-artifact@v4
         with:
-          name: cpython-${{ matrix.platform }}-${{ matrix.process-mode }}
+          name: cpython-${{ matrix.platform }}-${{ matrix.process-mode }}-${{ matrix.memory }}
           path: ${{ env.ARTIFACT_TARBALL }}
           retention-days: 7
 
@@ -198,14 +204,15 @@ jobs:
           # Pick your platform and process mode
           PLATFORM=hyperlight  # or microvm
           MODE=multi-process   # or single-process
+          MEMORY=128mb
 
           # 1. Download & extract Nanvix runtime
           mkdir -p sysroot
           curl -fsSL https://raw.githubusercontent.com/nanvix/nanvix/refs/heads/dev/scripts/get-nanvix.sh | bash -s -- nanvix-artifacts
-          tar -xjf nanvix-artifacts/nanvix-\${PLATFORM}-\${MODE}-*.tar.bz2 -C sysroot
+          tar -xjf nanvix-artifacts/nanvix-\${PLATFORM}-\${MODE}-\${MEMORY}-*.tar.bz2 -C sysroot
 
           # 2. Download & overlay CPython release
-          curl -fsSL -o cpython.tar.bz2 <this-release-cpython-PLATFORM-MODE.tar.bz2-url>
+          curl -fsSL -o cpython.tar.bz2 <this-release-cpython-PLATFORM-MODE-MEMORY.tar.bz2-url>
           tar -xjf cpython.tar.bz2
 
           # 3. Run
