@@ -252,6 +252,11 @@ partial_new(PyTypeObject *type, PyObject *args, PyObject *kw)
         }
         PyObject *item;
         PyObject *tot_args = PyTuple_New(tot_nargs);
+        if (tot_args == NULL) {
+            Py_DECREF(new_args);
+            Py_DECREF(pto);
+            return NULL;
+        }
         for (Py_ssize_t i = 0, j = 0; i < tot_nargs; i++) {
             if (i < npargs) {
                 item = PyTuple_GET_ITEM(pto_args, i);
@@ -688,65 +693,72 @@ partial_repr(PyObject *self)
 {
     partialobject *pto = partialobject_CAST(self);
     PyObject *result = NULL;
-    PyObject *arglist;
-    PyObject *mod;
-    PyObject *name;
+    PyObject *arglist = NULL;
+    PyObject *mod = NULL;
+    PyObject *name = NULL;
     Py_ssize_t i, n;
     PyObject *key, *value;
     int status;
 
     status = Py_ReprEnter(self);
     if (status != 0) {
-        if (status < 0)
+        if (status < 0) {
             return NULL;
+        }
         return PyUnicode_FromString("...");
     }
+    /* Reference arguments in case they change */
+    PyObject *fn = Py_NewRef(pto->fn);
+    PyObject *args = Py_NewRef(pto->args);
+    PyObject *kw = Py_NewRef(pto->kw);
+    assert(PyTuple_Check(args));
+    assert(PyDict_Check(kw));
 
     arglist = Py_GetConstant(Py_CONSTANT_EMPTY_STR);
-    if (arglist == NULL)
+    if (arglist == NULL) {
         goto done;
+    }
     /* Pack positional arguments */
-    assert(PyTuple_Check(pto->args));
-    n = PyTuple_GET_SIZE(pto->args);
+    n = PyTuple_GET_SIZE(args);
     for (i = 0; i < n; i++) {
         Py_SETREF(arglist, PyUnicode_FromFormat("%U, %R", arglist,
-                                        PyTuple_GET_ITEM(pto->args, i)));
-        if (arglist == NULL)
+                                        PyTuple_GET_ITEM(args, i)));
+        if (arglist == NULL) {
             goto done;
+        }
     }
     /* Pack keyword arguments */
-    assert (PyDict_Check(pto->kw));
-    for (i = 0; PyDict_Next(pto->kw, &i, &key, &value);) {
+    for (i = 0; PyDict_Next(kw, &i, &key, &value);) {
         /* Prevent key.__str__ from deleting the value. */
         Py_INCREF(value);
         Py_SETREF(arglist, PyUnicode_FromFormat("%U, %S=%R", arglist,
                                                 key, value));
         Py_DECREF(value);
-        if (arglist == NULL)
+        if (arglist == NULL) {
             goto done;
+        }
     }
 
     mod = PyType_GetModuleName(Py_TYPE(pto));
     if (mod == NULL) {
-        goto error;
+        goto done;
     }
+
     name = PyType_GetQualName(Py_TYPE(pto));
     if (name == NULL) {
-        Py_DECREF(mod);
-        goto error;
+        goto done;
     }
-    result = PyUnicode_FromFormat("%S.%S(%R%U)", mod, name, pto->fn, arglist);
-    Py_DECREF(mod);
-    Py_DECREF(name);
-    Py_DECREF(arglist);
 
- done:
+    result = PyUnicode_FromFormat("%S.%S(%R%U)", mod, name, fn, arglist);
+done:
+    Py_XDECREF(name);
+    Py_XDECREF(mod);
+    Py_XDECREF(arglist);
+    Py_DECREF(fn);
+    Py_DECREF(args);
+    Py_DECREF(kw);
     Py_ReprLeave(self);
     return result;
- error:
-    Py_DECREF(arglist);
-    Py_ReprLeave(self);
-    return NULL;
 }
 
 /* Pickle strategy:

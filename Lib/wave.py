@@ -97,7 +97,7 @@ def _byteswap(data, width):
         for j in range(width):
             swapped_data[i + width - 1 - j] = data[i + j]
 
-    return bytes(swapped_data)
+    return swapped_data.take_bytes()
 
 
 class _Chunk:

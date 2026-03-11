@@ -74,13 +74,17 @@ class CursesDisplay(DisplayInterface):
         return self.stdscr.getmaxyx()
 
     def clear(self):
-        self.stdscr.clear()
+        # Use erase() instead of clear() to avoid flickering
+        # clear() forces a complete screen redraw, erase() just clears the buffer
+        self.stdscr.erase()
 
     def refresh(self):
         self.stdscr.refresh()
 
     def redraw(self):
-        self.stdscr.redrawwin()
+        # Use noutrefresh + doupdate for smoother updates
+        self.stdscr.noutrefresh()
+        curses.doupdate()
 
     def add_str(self, line, col, text, attr=0):
         try:

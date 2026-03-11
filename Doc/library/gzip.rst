@@ -15,7 +15,7 @@ like the GNU programs :program:`gzip` and :program:`gunzip` would.
 
 The data compression is provided by the :mod:`zlib` module.
 
-The :mod:`gzip` module provides the :class:`GzipFile` class, as well as the
+The :mod:`!gzip` module provides the :class:`GzipFile` class, as well as the
 :func:`.open`, :func:`compress` and :func:`decompress` convenience functions.
 The :class:`GzipFile` class reads and writes :program:`gzip`\ -format files,
 automatically compressing or decompressing the data so that it looks like an
@@ -286,10 +286,10 @@ Example of how to GZIP compress a binary string::
 Command-line interface
 ----------------------
 
-The :mod:`gzip` module provides a simple command line interface to compress or
+The :mod:`!gzip` module provides a simple command line interface to compress or
 decompress files.
 
-Once executed the :mod:`gzip` module keeps the input file(s).
+Once executed the :mod:`!gzip` module keeps the input file(s).
 
 .. versionchanged:: 3.8
 
