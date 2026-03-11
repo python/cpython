@@ -24,7 +24,7 @@ from ..constants import (
 )
 from .constants import (
     MICROSECONDS_PER_SECOND,
-    DISPLAY_UPDATE_INTERVAL,
+    DISPLAY_UPDATE_INTERVAL_SEC,
     MIN_TERMINAL_WIDTH,
     MIN_TERMINAL_HEIGHT,
     HEADER_LINES,
@@ -33,6 +33,9 @@ from .constants import (
     FINISHED_BANNER_EXTRA_LINES,
     DEFAULT_SORT_BY,
     DEFAULT_DISPLAY_LIMIT,
+    COLOR_PAIR_SAMPLES,
+    COLOR_PAIR_FILE,
+    COLOR_PAIR_FUNC,
     COLOR_PAIR_HEADER_BG,
     COLOR_PAIR_CYAN,
     COLOR_PAIR_YELLOW,
@@ -157,7 +160,7 @@ class LiveStatsCollector(Collector):
         self.max_sample_rate = 0  # Track maximum sample rate seen
         self.successful_samples = 0  # Track samples that captured frames
         self.failed_samples = 0  # Track samples that failed to capture frames
-        self.display_update_interval = DISPLAY_UPDATE_INTERVAL  # Instance variable for display refresh rate
+        self.display_update_interval_sec = DISPLAY_UPDATE_INTERVAL_SEC  # Instance variable for display refresh rate
 
         # Thread status statistics (bit flags)
         self.thread_status_counts = {
@@ -216,6 +219,9 @@ class LiveStatsCollector(Collector):
     def elapsed_time(self):
         """Get the elapsed time, frozen when finished."""
         if self.finished and self.finish_timestamp is not None:
+            # Handle case where process exited before any samples were collected
+            if self.start_time is None:
+                return 0
             return self.finish_timestamp - self.start_time
         return time.perf_counter() - self.start_time if self.start_time else 0
 
@@ -348,7 +354,7 @@ class LiveStatsCollector(Collector):
         self.failed_samples += 1
         self.total_samples += 1
 
-    def collect(self, stack_frames):
+    def collect(self, stack_frames, timestamp_us=None):
         """Collect and display profiling data."""
         if self.start_time is None:
             self.start_time = time.perf_counter()
@@ -395,11 +401,9 @@ class LiveStatsCollector(Collector):
         if has_gc_frame:
             self.gc_frame_samples += 1
 
-        # Only count as successful if we actually processed frames
-        # This is important for modes like --mode exception where most samples
-        # may be filtered out at the C level
-        if frames_processed:
-            self.successful_samples += 1
+        # Count as successful - the sample worked even if no frames matched the filter
+        # (e.g., in --mode exception when no thread has an active exception)
+        self.successful_samples += 1
         self.total_samples += 1
 
         # Handle input on every sample for instant responsiveness
@@ -412,7 +416,7 @@ class LiveStatsCollector(Collector):
             if (
                 self._last_display_update is None
                 or (current_time - self._last_display_update)
-                >= self.display_update_interval
+                >= self.display_update_interval_sec
             ):
                 self._update_display()
                 self._last_display_update = current_time
@@ -551,79 +555,61 @@ class LiveStatsCollector(Collector):
 
     def _setup_colors(self):
         """Set up color pairs and return color attributes."""
-
         A_BOLD = self.display.get_attr("A_BOLD")
         A_REVERSE = self.display.get_attr("A_REVERSE")
         A_UNDERLINE = self.display.get_attr("A_UNDERLINE")
         A_NORMAL = self.display.get_attr("A_NORMAL")
 
-        # Check both curses color support and _colorize.can_colorize()
         if self.display.has_colors() and self._can_colorize:
             with contextlib.suppress(Exception):
-                # Color constants (using curses values for compatibility)
-                COLOR_CYAN = 6
-                COLOR_GREEN = 2
-                COLOR_YELLOW = 3
-                COLOR_BLACK = 0
-                COLOR_MAGENTA = 5
-                COLOR_RED = 1
+                theme = _colorize.get_theme(force_color=True).live_profiler
+                default_bg = -1
 
-                # Initialize all color pairs used throughout the UI
+                self.display.init_color_pair(COLOR_PAIR_SAMPLES, theme.samples_fg, default_bg)
+                self.display.init_color_pair(COLOR_PAIR_FILE, theme.file_fg, default_bg)
+                self.display.init_color_pair(COLOR_PAIR_FUNC, theme.func_fg, default_bg)
+
+                # Normal header background color pair
                 self.display.init_color_pair(
-                    1, COLOR_CYAN, -1
-                )  # Data colors for stats rows
-                self.display.init_color_pair(2, COLOR_GREEN, -1)
-                self.display.init_color_pair(3, COLOR_YELLOW, -1)
-                self.display.init_color_pair(
-                    COLOR_PAIR_HEADER_BG, COLOR_BLACK, COLOR_GREEN
+                    COLOR_PAIR_HEADER_BG,
+                    theme.normal_header_fg,
+                    theme.normal_header_bg,
                 )
+
+                self.display.init_color_pair(COLOR_PAIR_CYAN, theme.pid_fg, default_bg)
+                self.display.init_color_pair(COLOR_PAIR_YELLOW, theme.time_fg, default_bg)
+                self.display.init_color_pair(COLOR_PAIR_GREEN, theme.uptime_fg, default_bg)
+                self.display.init_color_pair(COLOR_PAIR_MAGENTA, theme.interval_fg, default_bg)
+                self.display.init_color_pair(COLOR_PAIR_RED, theme.off_gil_fg, default_bg)
                 self.display.init_color_pair(
-                    COLOR_PAIR_CYAN, COLOR_CYAN, COLOR_BLACK
+                    COLOR_PAIR_SORTED_HEADER,
+                    theme.sorted_header_fg,
+                    theme.sorted_header_bg,
                 )
-                self.display.init_color_pair(
-                    COLOR_PAIR_YELLOW, COLOR_YELLOW, COLOR_BLACK
-                )
-                self.display.init_color_pair(
-                    COLOR_PAIR_GREEN, COLOR_GREEN, COLOR_BLACK
-                )
-                self.display.init_color_pair(
-                    COLOR_PAIR_MAGENTA, COLOR_MAGENTA, COLOR_BLACK
-                )
-                self.display.init_color_pair(
-                    COLOR_PAIR_RED, COLOR_RED, COLOR_BLACK
-                )
-                self.display.init_color_pair(
-                    COLOR_PAIR_SORTED_HEADER, COLOR_BLACK, COLOR_YELLOW
-                )
+
+                TREND_UP_PAIR = 11
+                TREND_DOWN_PAIR = 12
+                self.display.init_color_pair(TREND_UP_PAIR, theme.trend_up_fg, default_bg)
+                self.display.init_color_pair(TREND_DOWN_PAIR, theme.trend_down_fg, default_bg)
 
                 return {
-                    "header": self.display.get_color_pair(COLOR_PAIR_HEADER_BG)
-                    | A_BOLD,
-                    "cyan": self.display.get_color_pair(COLOR_PAIR_CYAN)
-                    | A_BOLD,
-                    "yellow": self.display.get_color_pair(COLOR_PAIR_YELLOW)
-                    | A_BOLD,
-                    "green": self.display.get_color_pair(COLOR_PAIR_GREEN)
-                    | A_BOLD,
-                    "magenta": self.display.get_color_pair(COLOR_PAIR_MAGENTA)
-                    | A_BOLD,
-                    "red": self.display.get_color_pair(COLOR_PAIR_RED)
-                    | A_BOLD,
-                    "sorted_header": self.display.get_color_pair(
-                        COLOR_PAIR_SORTED_HEADER
-                    )
-                    | A_BOLD,
-                    "normal_header": A_REVERSE | A_BOLD,
-                    "color_samples": self.display.get_color_pair(1),
-                    "color_file": self.display.get_color_pair(2),
-                    "color_func": self.display.get_color_pair(3),
-                    # Trend colors (stock-like indicators)
-                    "trend_up": self.display.get_color_pair(COLOR_PAIR_GREEN) | A_BOLD,
-                    "trend_down": self.display.get_color_pair(COLOR_PAIR_RED) | A_BOLD,
+                    "header": self.display.get_color_pair(COLOR_PAIR_HEADER_BG) | A_BOLD,
+                    "cyan": self.display.get_color_pair(COLOR_PAIR_CYAN) | A_BOLD,
+                    "yellow": self.display.get_color_pair(COLOR_PAIR_YELLOW) | A_BOLD,
+                    "green": self.display.get_color_pair(COLOR_PAIR_GREEN) | A_BOLD,
+                    "magenta": self.display.get_color_pair(COLOR_PAIR_MAGENTA) | A_BOLD,
+                    "red": self.display.get_color_pair(COLOR_PAIR_RED) | A_BOLD,
+                    "sorted_header": self.display.get_color_pair(COLOR_PAIR_SORTED_HEADER) | A_BOLD,
+                    "normal_header": self.display.get_color_pair(COLOR_PAIR_HEADER_BG) | A_BOLD,
+                    "color_samples": self.display.get_color_pair(COLOR_PAIR_SAMPLES),
+                    "color_file": self.display.get_color_pair(COLOR_PAIR_FILE),
+                    "color_func": self.display.get_color_pair(COLOR_PAIR_FUNC),
+                    "trend_up": self.display.get_color_pair(TREND_UP_PAIR) | A_BOLD,
+                    "trend_down": self.display.get_color_pair(TREND_DOWN_PAIR) | A_BOLD,
                     "trend_stable": A_NORMAL,
                 }
 
-        # Fallback to non-color attributes
+        # Fallback for no-color mode
         return {
             "header": A_REVERSE | A_BOLD,
             "cyan": A_BOLD,
@@ -636,7 +622,6 @@ class LiveStatsCollector(Collector):
             "color_samples": A_NORMAL,
             "color_file": A_NORMAL,
             "color_func": A_NORMAL,
-            # Trend colors (fallback to bold/normal for monochrome)
             "trend_up": A_BOLD,
             "trend_down": A_BOLD,
             "trend_stable": A_NORMAL,
@@ -931,8 +916,6 @@ class LiveStatsCollector(Collector):
 
     def _handle_input(self):
         """Handle keyboard input (non-blocking)."""
-        from . import constants
-
         self.display.set_nodelay(True)
         ch = self.display.get_input()
 
@@ -989,14 +972,14 @@ class LiveStatsCollector(Collector):
 
         elif ch == ord("+") or ch == ord("="):
             # Decrease update interval (faster refresh)
-            self.display_update_interval = max(
-                0.05, self.display_update_interval - 0.05
+            self.display_update_interval_sec = max(
+                0.05, self.display_update_interval_sec - 0.05
             )  # Min 20Hz
 
         elif ch == ord("-") or ch == ord("_"):
             # Increase update interval (slower refresh)
-            self.display_update_interval = min(
-                1.0, self.display_update_interval + 0.05
+            self.display_update_interval_sec = min(
+                1.0, self.display_update_interval_sec + 0.05
             )  # Max 1Hz
 
         elif ch == ord("c") or ch == ord("C"):

@@ -733,22 +733,27 @@ class TestTranforms(BytecodeTestCase):
         with self.assertRaisesRegex(TypeError,
                     'not all arguments converted during string formatting'):
             eval("'%s' % (x, y)", {'x': 1, 'y': 2})
-        with self.assertRaisesRegex(ValueError, 'incomplete format'):
+        with self.assertRaisesRegex(ValueError, 'stray % at position 2'):
             eval("'%s%' % (x,)", {'x': 1234})
-        with self.assertRaisesRegex(ValueError, 'incomplete format'):
+        with self.assertRaisesRegex(ValueError, 'stray % at position 4'):
             eval("'%s%%%' % (x,)", {'x': 1234})
         with self.assertRaisesRegex(TypeError,
                     'not enough arguments for format string'):
             eval("'%s%z' % (x,)", {'x': 1234})
-        with self.assertRaisesRegex(ValueError, 'unsupported format character'):
+        with self.assertRaisesRegex(ValueError,
+                    'unsupported format %z at position 2'):
             eval("'%s%z' % (x, 5)", {'x': 1234})
-        with self.assertRaisesRegex(TypeError, 'a real number is required, not str'):
+        with self.assertRaisesRegex(TypeError,
+                'format argument 1: %d requires a real number, not str'):
             eval("'%d' % (x,)", {'x': '1234'})
-        with self.assertRaisesRegex(TypeError, 'an integer is required, not float'):
+        with self.assertRaisesRegex(TypeError,
+                'format argument 1: %x requires an integer, not float'):
             eval("'%x' % (x,)", {'x': 1234.56})
-        with self.assertRaisesRegex(TypeError, 'an integer is required, not str'):
+        with self.assertRaisesRegex(TypeError,
+                'format argument 1: %x requires an integer, not str'):
             eval("'%x' % (x,)", {'x': '1234'})
-        with self.assertRaisesRegex(TypeError, 'must be real number, not str'):
+        with self.assertRaisesRegex(TypeError,
+                'format argument 1: %f requires a real number, not str'):
             eval("'%f' % (x,)", {'x': '1234'})
         with self.assertRaisesRegex(TypeError,
                     'not enough arguments for format string'):

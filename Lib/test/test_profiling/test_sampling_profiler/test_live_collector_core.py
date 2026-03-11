@@ -267,7 +267,13 @@ class TestLiveStatsCollectorCollect(unittest.TestCase):
         self.assertEqual(collector.failed_samples, 0)
 
     def test_collect_with_empty_frames(self):
-        """Test collect with empty frames."""
+        """Test collect with empty frames counts as successful.
+
+        A sample is considered successful if the profiler could read from the
+        target process, even if no frames matched the current filter (e.g.,
+        --mode exception when no thread has an active exception). The sample
+        itself worked; it just didn't produce frame data.
+        """
         collector = LiveStatsCollector(1000)
         thread_info = MockThreadInfo(123, [])
         interpreter_info = MockInterpreterInfo(0, [thread_info])
@@ -275,12 +281,44 @@ class TestLiveStatsCollectorCollect(unittest.TestCase):
 
         collector.collect(stack_frames)
 
-        # Empty frames do NOT count as successful - this is important for
-        # filtered modes like --mode exception where most samples may have
-        # no matching data. Only samples with actual frame data are counted.
-        self.assertEqual(collector.successful_samples, 0)
+        # Empty frames still count as successful - the sample worked even
+        # though no frames matched the filter
+        self.assertEqual(collector.successful_samples, 1)
         self.assertEqual(collector.total_samples, 1)
         self.assertEqual(collector.failed_samples, 0)
+
+    def test_sample_counts_invariant(self):
+        """Test that total_samples == successful_samples + failed_samples.
+
+        Empty frame data (e.g., from --mode exception with no active exception)
+        still counts as successful since the profiler could read process state.
+        """
+        collector = LiveStatsCollector(1000)
+
+        # Mix of samples with and without frame data
+        frames = [MockFrameInfo("test.py", 10, "func")]
+        thread_with_frames = MockThreadInfo(123, frames)
+        thread_empty = MockThreadInfo(456, [])
+        interp_with_frames = MockInterpreterInfo(0, [thread_with_frames])
+        interp_empty = MockInterpreterInfo(0, [thread_empty])
+
+        # Collect various samples
+        collector.collect([interp_with_frames])  # Has frames
+        collector.collect([interp_empty])         # No frames (filtered)
+        collector.collect([interp_with_frames])  # Has frames
+        collector.collect([interp_empty])         # No frames (filtered)
+        collector.collect([interp_empty])         # No frames (filtered)
+
+        # All 5 samples are successful (profiler could read process state)
+        self.assertEqual(collector.total_samples, 5)
+        self.assertEqual(collector.successful_samples, 5)
+        self.assertEqual(collector.failed_samples, 0)
+
+        # Invariant must hold
+        self.assertEqual(
+            collector.total_samples,
+            collector.successful_samples + collector.failed_samples
+        )
 
     def test_collect_skip_idle_threads(self):
         """Test that idle threads are skipped when skip_idle=True."""
@@ -327,9 +365,10 @@ class TestLiveStatsCollectorCollect(unittest.TestCase):
     def test_collect_filtered_mode_percentage_calculation(self):
         """Test that percentages use successful_samples, not total_samples.
 
-        This is critical for filtered modes like --mode exception where most
-        samples may be filtered out at the C level. The percentages should
-        be relative to samples that actually had frame data, not all attempts.
+        With the current behavior, all samples are considered successful
+        (the profiler could read from the process), even when filters result
+        in no frame data. This means percentages are relative to all sampling
+        attempts that succeeded in reading process state.
         """
         collector = LiveStatsCollector(1000)
 
@@ -338,7 +377,7 @@ class TestLiveStatsCollectorCollect(unittest.TestCase):
         thread_with_data = MockThreadInfo(123, frames_with_data)
         interpreter_with_data = MockInterpreterInfo(0, [thread_with_data])
 
-        # Empty thread simulates filtered-out data
+        # Empty thread simulates filtered-out data at C level
         thread_empty = MockThreadInfo(456, [])
         interpreter_empty = MockInterpreterInfo(0, [thread_empty])
 
@@ -346,26 +385,21 @@ class TestLiveStatsCollectorCollect(unittest.TestCase):
         collector.collect([interpreter_with_data])
         collector.collect([interpreter_with_data])
 
-        # 8 samples without data (filtered out)
+        # 8 samples without data (filtered out at C level, but sample still succeeded)
         for _ in range(8):
             collector.collect([interpreter_empty])
 
-        # Verify counts
+        # All 10 samples are successful - the profiler could read from the process
         self.assertEqual(collector.total_samples, 10)
-        self.assertEqual(collector.successful_samples, 2)
+        self.assertEqual(collector.successful_samples, 10)
 
         # Build stats and check percentage
         stats_list = collector.build_stats_list()
         self.assertEqual(len(stats_list), 1)
 
-        # The function appeared in 2 out of 2 successful samples = 100%
-        # NOT 2 out of 10 total samples = 20%
+        # The function appeared in 2 out of 10 successful samples = 20%
         location = ("test.py", 10, "exception_handler")
         self.assertEqual(collector.result[location]["direct_calls"], 2)
-
-        # Verify the percentage calculation in build_stats_list
-        # direct_calls / successful_samples * 100 = 2/2 * 100 = 100%
-        # This would be 20% if using total_samples incorrectly
 
     def test_percentage_values_use_successful_samples(self):
         """Test that percentages are calculated from successful_samples.

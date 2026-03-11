@@ -17,6 +17,7 @@
 #include "pycore_instruction_sequence.h" // _PyInstructionSequence_Type
 #include "pycore_interpframe.h"   // _PyFrame_Stackbase()
 #include "pycore_interpolation.h" // _PyInterpolation_Type
+#include "pycore_lazyimportobject.h" // PyLazyImport_Type
 #include "pycore_list.h"          // _PyList_DebugMallocStats()
 #include "pycore_long.h"          // _PyLong_GetZero()
 #include "pycore_memoryobject.h"  // _PyManagedBuffer_Type
@@ -31,6 +32,7 @@
 #include "pycore_tuple.h"         // _PyTuple_DebugMallocStats()
 #include "pycore_typeobject.h"    // _PyBufferWrapper_Type
 #include "pycore_typevarobject.h" // _PyTypeAlias_Type
+#include "pycore_stackref.h"      // PyStackRef_FromPyObjectSteal
 #include "pycore_unionobject.h"   // _PyUnion_Type
 
 
@@ -57,7 +59,7 @@ _PyObject_CheckConsistency(PyObject *op, int check_content)
     if (PyUnicode_Check(op)) {
         _PyUnicode_CheckConsistency(op, check_content);
     }
-    else if (PyDict_Check(op)) {
+    else if (PyAnyDict_Check(op)) {
         _PyDict_CheckConsistency(op, check_content);
     }
     return 1;
@@ -711,9 +713,9 @@ _PyObject_IsFreed(PyObject *op)
 }
 
 
-/* For debugging convenience.  See Misc/gdbinit for some useful gdb hooks */
+/* For debugging convenience. */
 void
-PyUnstable_Object_Dump(PyObject* op)
+PyObject_Dump(PyObject* op)
 {
     if (_PyObject_IsFreed(op)) {
         /* It seems like the object memory has been freed:
@@ -1293,6 +1295,7 @@ _PyObject_SetAttributeErrorContext(PyObject* v, PyObject* name)
     // Augment the exception with the name and object
     if (PyObject_SetAttr(exc, &_Py_ID(name), name) ||
         PyObject_SetAttr(exc, &_Py_ID(obj), v)) {
+        Py_DECREF(exc);
         return 1;
     }
 restore:
@@ -1332,6 +1335,54 @@ PyObject_GetAttr(PyObject *v, PyObject *name)
         _PyObject_SetAttributeErrorContext(v, name);
     }
     return result;
+}
+
+/* Like PyObject_GetAttr but returns a _PyStackRef.
+   For types (tp_getattro == _Py_type_getattro), this can return
+   a deferred reference to reduce reference count contention. */
+_PyStackRef
+_PyObject_GetAttrStackRef(PyObject *v, PyObject *name)
+{
+    PyTypeObject *tp = Py_TYPE(v);
+    if (!PyUnicode_Check(name)) {
+        PyErr_Format(PyExc_TypeError,
+                     "attribute name must be string, not '%.200s'",
+                     Py_TYPE(name)->tp_name);
+        return PyStackRef_NULL;
+    }
+
+    /* Fast path for types - can return deferred references */
+    if (tp->tp_getattro == _Py_type_getattro) {
+        _PyStackRef result = _Py_type_getattro_stackref((PyTypeObject *)v, name, NULL);
+        if (PyStackRef_IsNull(result)) {
+            _PyObject_SetAttributeErrorContext(v, name);
+        }
+        return result;
+    }
+
+    /* Fall back to regular PyObject_GetAttr and convert to stackref */
+    PyObject *result = NULL;
+    if (tp->tp_getattro != NULL) {
+        result = (*tp->tp_getattro)(v, name);
+    }
+    else if (tp->tp_getattr != NULL) {
+        const char *name_str = PyUnicode_AsUTF8(name);
+        if (name_str == NULL) {
+            return PyStackRef_NULL;
+        }
+        result = (*tp->tp_getattr)(v, (char *)name_str);
+    }
+    else {
+        PyErr_Format(PyExc_AttributeError,
+                    "'%.100s' object has no attribute '%U'",
+                    tp->tp_name, name);
+    }
+
+    if (result == NULL) {
+        _PyObject_SetAttributeErrorContext(v, name);
+        return PyStackRef_NULL;
+    }
+    return PyStackRef_FromPyObjectSteal(result);
 }
 
 int
@@ -2446,13 +2497,17 @@ static PyTypeObject* static_types[] = {
     &PyBaseObject_Type,
     &PyType_Type,
 
+    // PyStaticMethod_Type and PyCFunction_Type are used by PyType_Ready()
+    // on other types and so must be initialized first.
+    &PyStaticMethod_Type,
+    &PyCFunction_Type,
+
     // Static types with base=&PyBaseObject_Type
     &PyAsyncGen_Type,
     &PyByteArrayIter_Type,
     &PyByteArray_Type,
     &PyBytesIter_Type,
     &PyBytes_Type,
-    &PyCFunction_Type,
     &PyCallIter_Type,
     &PyCapsule_Type,
     &PyCell_Type,
@@ -2479,13 +2534,15 @@ static PyTypeObject* static_types[] = {
     &PyEnum_Type,
     &PyFilter_Type,
     &PyFloat_Type,
-    &PyFrame_Type,
     &PyFrameLocalsProxy_Type,
+    &PyFrame_Type,
+    &PyFrozenDict_Type,
     &PyFrozenSet_Type,
     &PyFunction_Type,
     &PyGen_Type,
     &PyGetSetDescr_Type,
     &PyInstanceMethod_Type,
+    &PyLazyImport_Type,
     &PyListIter_Type,
     &PyListRevIter_Type,
     &PyList_Type,
@@ -2509,7 +2566,6 @@ static PyTypeObject* static_types[] = {
     &PySetIter_Type,
     &PySet_Type,
     &PySlice_Type,
-    &PyStaticMethod_Type,
     &PyStdPrinter_Type,
     &PySuper_Type,
     &PyTraceBack_Type,
@@ -2787,6 +2843,17 @@ PyUnstable_EnableTryIncRef(PyObject *op)
 #endif
 }
 
+int
+PyUnstable_SetImmortal(PyObject *op)
+{
+    assert(op != NULL);
+    if (!_PyObject_IsUniquelyReferenced(op) || PyUnicode_Check(op)) {
+        return 0;
+    }
+    _Py_SetImmortal(op);
+    return 1;
+}
+
 void
 _Py_ResurrectReference(PyObject *op)
 {
@@ -3011,9 +3078,9 @@ Py_ReprEnter(PyObject *obj)
         list = PyList_New(0);
         if (list == NULL)
             return -1;
-        if (PyDict_SetItem(dict, &_Py_ID(Py_Repr), list) < 0)
+        if (_PyDict_SetItem_Take2((PyDictObject *)dict, &_Py_ID(Py_Repr), list) < 0) {
             return -1;
-        Py_DECREF(list);
+        }
     }
     i = PyList_GET_SIZE(list);
     while (--i >= 0) {
@@ -3157,7 +3224,7 @@ _PyObject_AssertFailed(PyObject *obj, const char *expr, const char *msg,
 
         /* This might succeed or fail, but we're about to abort, so at least
            try to provide any extra info we can: */
-        PyUnstable_Object_Dump(obj);
+        PyObject_Dump(obj);
 
         fprintf(stderr, "\n");
         fflush(stderr);

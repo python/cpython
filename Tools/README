@@ -46,6 +46,8 @@ patchcheck      Tools for checking and applying patches to the Python source cod
 
 peg_generator   PEG-based parser generator (pegen) used for new parser.
 
+pixi-packages   Pixi package definitions for downstream from-source builds.
+
 scripts         A number of useful single-file programs. See scripts/README for
                 more information.
 

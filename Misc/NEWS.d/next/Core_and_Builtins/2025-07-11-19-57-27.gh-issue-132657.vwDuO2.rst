@@ -1,2 +1,0 @@
-For the free-threaded build, avoid locking the :class:`set` object for the
-``__contains__`` method.

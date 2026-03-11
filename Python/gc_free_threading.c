@@ -290,7 +290,7 @@ frame_disable_deferred_refcounting(_PyInterpreterFrame *frame)
 
     frame->f_funcobj = PyStackRef_AsStrongReference(frame->f_funcobj);
     for (_PyStackRef *ref = frame->localsplus; ref < frame->stackpointer; ref++) {
-        if (!PyStackRef_IsNullOrInt(*ref) && PyStackRef_IsDeferred(*ref)) {
+        if (!PyStackRef_IsNullOrInt(*ref) && !PyStackRef_RefcountOnObject(*ref)) {
             *ref = PyStackRef_AsStrongReference(*ref);
         }
     }
@@ -458,7 +458,7 @@ gc_visit_heaps(PyInterpreterState *interp, mi_block_visit_fun *visitor,
 static inline void
 gc_visit_stackref(_PyStackRef stackref)
 {
-    if (PyStackRef_IsDeferred(stackref) && !PyStackRef_IsNullOrInt(stackref)) {
+    if (!PyStackRef_IsNullOrInt(stackref) && !PyStackRef_RefcountOnObject(stackref)) {
         PyObject *obj = PyStackRef_AsPyObjectBorrow(stackref);
         if (_PyObject_GC_IS_TRACKED(obj) && !gc_is_frozen(obj)) {
             gc_add_refs(obj, 1);
@@ -506,6 +506,10 @@ gc_visit_thread_stacks(PyInterpreterState *interp, struct collection_state *stat
 static bool
 gc_maybe_untrack(PyObject *op)
 {
+    if (_PyObject_HasDeferredRefcount(op)) {
+        // deferred refcounting only works if the object is tracked
+        return false;
+    }
     // Currently we only check for tuples containing only non-GC objects.  In
     // theory we could check other immutable objects that contain references
     // to non-GC objects.
@@ -906,7 +910,11 @@ exit:
 static void
 queue_untracked_obj_decref(PyObject *op, struct collection_state *state)
 {
-    if (!_PyObject_GC_IS_TRACKED(op)) {
+    assert(Py_REFCNT(op) == 0);
+    // gh-142975: We have to treat frozen objects as untracked in this function
+    // or else they might be picked up in a future collection, which breaks the
+    // assumption that all incoming objects have a non-zero reference count.
+    if (!_PyObject_GC_IS_TRACKED(op) || gc_is_frozen(op)) {
         // GC objects with zero refcount are handled subsequently by the
         // GC as if they were cyclic trash, but we have to handle dead
         // non-GC objects here. Add one to the refcount so that we can
@@ -1014,7 +1022,7 @@ update_refs(const mi_heap_t *heap, const mi_heap_area_t *area,
     }
     _PyObject_ASSERT(op, refcount >= 0);
 
-    if (refcount > 0 && !_PyObject_HasDeferredRefcount(op)) {
+    if (refcount > 0) {
         if (gc_maybe_untrack(op)) {
             gc_restore_refs(op);
             return true;
@@ -1828,7 +1836,7 @@ _PyGC_VisitStackRef(_PyStackRef *ref, visitproc visit, void *arg)
     // computing the incoming references, but otherwise treat them like
     // regular references.
     assert(!PyStackRef_IsTaggedInt(*ref));
-    if (!PyStackRef_IsDeferred(*ref) ||
+    if (PyStackRef_RefcountOnObject(*ref) ||
         (visit != visit_decref && visit != visit_decref_unreachable))
     {
         Py_VISIT(PyStackRef_AsPyObjectBorrow(*ref));
