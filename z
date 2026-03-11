@@ -10,6 +10,7 @@ NANVIX_TOOLCHAIN="${NANVIX_TOOLCHAIN:-}"
 NANVIX_DOCKER_IMAGE="${NANVIX_DOCKER_IMAGE:-nanvix/toolchain:latest-minimal}"
 NANVIX_PLATFORM="${NANVIX_PLATFORM:-hyperlight}"
 NANVIX_PROCESS_MODE="${NANVIX_PROCESS_MODE:-multi-process}"
+NANVIX_MEMORY_SIZE="${NANVIX_MEMORY_SIZE:-128mb}"
 WORK_DIR="${WORK_DIR:-$ROOT_DIR/.nanvix}"
 DOWNLOAD_DIR="$WORK_DIR/downloads"
 EXTRACT_DIR="$WORK_DIR/extracted"
@@ -43,6 +44,7 @@ Environment:
   NANVIX_DOCKER_IMAGE Docker image for cross-build fallback (default: nanvix/toolchain:latest-minimal).
   NANVIX_PLATFORM     Artifact platform (default: hyperlight).
   NANVIX_PROCESS_MODE Artifact process mode (default: multi-process).
+  NANVIX_MEMORY_SIZE  Memory size for artifacts (default: 128mb).
 EOF
 }
 
@@ -64,6 +66,7 @@ export NANVIX_HOME="$NANVIX_HOME"
 export NANVIX_TOOLCHAIN="$NANVIX_TOOLCHAIN"
 export NANVIX_PLATFORM="$NANVIX_PLATFORM"
 export NANVIX_PROCESS_MODE="$NANVIX_PROCESS_MODE"
+export NANVIX_MEMORY_SIZE="$NANVIX_MEMORY_SIZE"
 EOF
 }
 
@@ -195,7 +198,7 @@ resolve_nanvix_home() {
   fi
 
   local archive
-  archive="$(find "$artifacts_dir" -maxdepth 1 -type f \( -name '*.tar.bz2' -o -name '*.tar.gz' \) | grep -E "${NANVIX_PLATFORM}.*${NANVIX_PROCESS_MODE}" | head -1)"
+  archive="$(find "$artifacts_dir" -maxdepth 1 -type f \( -name '*.tar.bz2' -o -name '*.tar.gz' \) | grep -E "${NANVIX_PLATFORM}.*${NANVIX_PROCESS_MODE}.*${NANVIX_MEMORY_SIZE}" | head -1)"
   if [[ -z "$archive" ]]; then
     archive="$(find "$artifacts_dir" -maxdepth 1 -type f \( -name '*.tar.bz2' -o -name '*.tar.gz' \) | head -1)"
   fi
@@ -281,35 +284,35 @@ cmd_setup() {
   mkdir -p "$NANVIX_HOME/lib" "$NANVIX_HOME/include"
 
   local sqlite_artifact sqlite_archive sqlite_dir
-  sqlite_artifact="sqlite-${NANVIX_PLATFORM}-${NANVIX_PROCESS_MODE}.tar.bz2"
+  sqlite_artifact="sqlite-${NANVIX_PLATFORM}-${NANVIX_PROCESS_MODE}-${NANVIX_MEMORY_SIZE}.tar.bz2"
   sqlite_archive="$DOWNLOAD_DIR/$sqlite_artifact"
   download_artifact "nanvix/sqlite" "$sqlite_artifact" "$sqlite_archive"
   sqlite_dir="$(extract_dep_dir "$sqlite_archive" "$EXTRACT_DIR/sqlite")"
   install_sqlite_or_zlib "$sqlite_dir"
 
   local zlib_artifact zlib_archive zlib_dir
-  zlib_artifact="zlib-${NANVIX_PLATFORM}-${NANVIX_PROCESS_MODE}.tar.bz2"
+  zlib_artifact="zlib-${NANVIX_PLATFORM}-${NANVIX_PROCESS_MODE}-${NANVIX_MEMORY_SIZE}.tar.bz2"
   zlib_archive="$DOWNLOAD_DIR/$zlib_artifact"
   download_artifact "nanvix/zlib" "$zlib_artifact" "$zlib_archive"
   zlib_dir="$(extract_dep_dir "$zlib_archive" "$EXTRACT_DIR/zlib")"
   install_sqlite_or_zlib "$zlib_dir"
 
   local bzip2_artifact bzip2_archive bzip2_dir
-  bzip2_artifact="bzip2-${NANVIX_PLATFORM}-${NANVIX_PROCESS_MODE}.tar.bz2"
+  bzip2_artifact="bzip2-${NANVIX_PLATFORM}-${NANVIX_PROCESS_MODE}-${NANVIX_MEMORY_SIZE}.tar.bz2"
   bzip2_archive="$DOWNLOAD_DIR/$bzip2_artifact"
   download_artifact "nanvix/bzip2" "$bzip2_artifact" "$bzip2_archive"
   bzip2_dir="$(extract_dep_dir "$bzip2_archive" "$EXTRACT_DIR/bzip2")"
   install_sqlite_or_zlib "$bzip2_dir"
 
   local libffi_artifact libffi_archive libffi_dir
-  libffi_artifact="libffi-${NANVIX_PLATFORM}-${NANVIX_PROCESS_MODE}.tar.bz2"
+  libffi_artifact="libffi-${NANVIX_PLATFORM}-${NANVIX_PROCESS_MODE}-${NANVIX_MEMORY_SIZE}.tar.bz2"
   libffi_archive="$DOWNLOAD_DIR/$libffi_artifact"
   download_artifact "nanvix/libffi" "$libffi_artifact" "$libffi_archive"
   libffi_dir="$(extract_dep_dir "$libffi_archive" "$EXTRACT_DIR/libffi")"
   install_sqlite_or_zlib "$libffi_dir"
 
   local openssl_artifact openssl_archive openssl_dir
-  openssl_artifact="openssl-${NANVIX_PLATFORM}-${NANVIX_PROCESS_MODE}.tar.bz2"
+  openssl_artifact="openssl-${NANVIX_PLATFORM}-${NANVIX_PROCESS_MODE}-${NANVIX_MEMORY_SIZE}.tar.bz2"
   openssl_archive="$DOWNLOAD_DIR/$openssl_artifact"
   download_artifact "nanvix/openssl" "$openssl_artifact" "$openssl_archive"
   openssl_dir="$(extract_dep_dir "$openssl_archive" "$EXTRACT_DIR/openssl")"
@@ -354,7 +357,7 @@ cmd_build() {
 cmd_release() {
   local release_staging="$WORK_DIR/release"
   local release_sysroot="$release_staging/sysroot"
-  local artifact_name="cpython-${NANVIX_PLATFORM}-${NANVIX_PROCESS_MODE}"
+  local artifact_name="cpython-${NANVIX_PLATFORM}-${NANVIX_PROCESS_MODE}-${NANVIX_MEMORY_SIZE}"
   local dist_dir="$ROOT_DIR/dist"
   local tarball="$dist_dir/${artifact_name}.tar.bz2"
 
