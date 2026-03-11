@@ -748,6 +748,60 @@ def _use_posix_spawn():
     return False
 
 
+def _can_use_pidfd_open():
+    # Availability: Linux >= 5.3
+    if not hasattr(os, "pidfd_open"):
+        return False
+    try:
+        pidfd = os.pidfd_open(os.getpid(), 0)
+    except OSError as err:
+        if err.errno in {errno.EMFILE, errno.ENFILE}:
+            # transitory 'too many open files'
+            return True
+        # likely blocked by security policy like SECCOMP (EPERM,
+        # EACCES, ENOSYS)
+        return False
+    else:
+        os.close(pidfd)
+        return True
+
+
+def _can_use_kqueue():
+    # Availability: macOS, BSD
+    names = (
+        "kqueue",
+        "KQ_EV_ADD",
+        "KQ_EV_ONESHOT",
+        "KQ_FILTER_PROC",
+        "KQ_NOTE_EXIT",
+    )
+    if not all(hasattr(select, x) for x in names):
+        return False
+    kq = None
+    try:
+        kq = select.kqueue()
+        kev = select.kevent(
+            os.getpid(),
+            filter=select.KQ_FILTER_PROC,
+            flags=select.KQ_EV_ADD | select.KQ_EV_ONESHOT,
+            fflags=select.KQ_NOTE_EXIT,
+        )
+        kq.control([kev], 1, 0)
+        return True
+    except OSError as err:
+        if err.errno in {errno.EMFILE, errno.ENFILE}:
+            # transitory 'too many open files'
+            return True
+        return False
+    finally:
+        if kq is not None:
+            kq.close()
+
+
+_CAN_USE_PIDFD_OPEN = not _mswindows and _can_use_pidfd_open()
+_CAN_USE_KQUEUE = not _mswindows and _can_use_kqueue()
+
+
 # These are primarily fail-safe knobs for negatives. A True value does not
 # guarantee the given libc/syscall API will be used.
 _USE_POSIX_SPAWN = _use_posix_spawn()
@@ -2046,14 +2100,100 @@ class Popen:
                 sts = 0
             return (pid, sts)
 
+        def _wait_pidfd(self, timeout):
+            """Wait for PID to terminate using pidfd_open() + poll().
+            Linux >= 5.3 only.
+            """
+            if not _CAN_USE_PIDFD_OPEN:
+                return False
+            try:
+                pidfd = os.pidfd_open(self.pid, 0)
+            except OSError:
+                # May be:
+                # - ESRCH: no such process
+                # - EMFILE, ENFILE: too many open files (usually 1024)
+                # - ENODEV: anonymous inode filesystem not supported
+                # - EPERM, EACCES, ENOSYS: undocumented; may happen if
+                #   blocked by security policy like SECCOMP
+                return False
+
+            try:
+                poller = select.poll()
+                poller.register(pidfd, select.POLLIN)
+                events = poller.poll(timeout * 1000)
+                if not events:
+                    raise TimeoutExpired(self.args, timeout)
+                return True
+            finally:
+                os.close(pidfd)
+
+        def _wait_kqueue(self, timeout):
+            """Wait for PID to terminate using kqueue(). macOS and BSD only."""
+            if not _CAN_USE_KQUEUE:
+                return False
+            try:
+                kq = select.kqueue()
+            except OSError:
+                # likely EMFILE / ENFILE (too many open files)
+                return False
+
+            try:
+                kev = select.kevent(
+                    self.pid,
+                    filter=select.KQ_FILTER_PROC,
+                    flags=select.KQ_EV_ADD | select.KQ_EV_ONESHOT,
+                    fflags=select.KQ_NOTE_EXIT,
+                )
+                try:
+                    events = kq.control([kev], 1, timeout)  # wait
+                except OSError:
+                    return False
+                else:
+                    if not events:
+                        raise TimeoutExpired(self.args, timeout)
+                    return True
+            finally:
+                kq.close()
 
         def _wait(self, timeout):
-            """Internal implementation of wait() on POSIX."""
+            """Internal implementation of wait() on POSIX.
+
+            Uses efficient pidfd_open() + poll() on Linux or kqueue()
+            on macOS/BSD when available. Falls back to polling
+            waitpid(WNOHANG) otherwise.
+            """
             if self.returncode is not None:
                 return self.returncode
 
             if timeout is not None:
-                endtime = _time() + timeout
+                if timeout < 0:
+                    raise TimeoutExpired(self.args, timeout)
+                started = _time()
+                endtime = started + timeout
+
+                # Try efficient wait first.
+                if self._wait_pidfd(timeout) or self._wait_kqueue(timeout):
+                    # Process is gone. At this point os.waitpid(pid, 0)
+                    # will return immediately, but in very rare races
+                    # the PID may have been reused.
+                    # os.waitpid(pid, WNOHANG) ensures we attempt a
+                    # non-blocking reap without blocking indefinitely.
+                    with self._waitpid_lock:
+                        if self.returncode is not None:
+                            return self.returncode  # Another thread waited.
+                        (pid, sts) = self._try_wait(os.WNOHANG)
+                        assert pid == self.pid or pid == 0
+                        if pid == self.pid:
+                            self._handle_exitstatus(sts)
+                            return self.returncode
+                        # os.waitpid(pid, WNOHANG) returned 0 instead
+                        # of our PID, meaning PID has not yet exited,
+                        # even though poll() / kqueue() said so. Very
+                        # rare and mostly theoretical. Fallback to busy
+                        # polling.
+                        elapsed = _time() - started
+                        endtime -= elapsed
+
                 # Enter a busy loop if we have a timeout.  This busy loop was
                 # cribbed from Lib/threading.py in Thread.wait() at r71065.
                 delay = 0.0005 # 500 us -> initial delay of 1 ms
@@ -2085,6 +2225,7 @@ class Popen:
                         # http://bugs.python.org/issue14396.
                         if pid == self.pid:
                             self._handle_exitstatus(sts)
+
             return self.returncode
 
 

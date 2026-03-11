@@ -4,9 +4,6 @@
 .. module:: email.policy
    :synopsis: Controlling the parsing and generating of messages
 
-.. moduleauthor:: R. David Murray <rdmurray@bitdance.com>
-.. sectionauthor:: R. David Murray <rdmurray@bitdance.com>
-
 .. versionadded:: 3.3
 
 **Source code:** :source:`Lib/email/policy.py`
@@ -602,7 +599,7 @@ The header objects and their attributes are described in
 
    This concrete :class:`Policy` is the backward compatibility policy.  It
    replicates the behavior of the email package in Python 3.2.  The
-   :mod:`~email.policy` module also defines an instance of this class,
+   :mod:`!policy` module also defines an instance of this class,
    :const:`compat32`, that is used as the default policy.  Thus the default
    behavior of the email package is to maintain compatibility with Python 3.2.
 

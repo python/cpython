@@ -171,7 +171,10 @@ Now, build install the *project in the current directory* (``.``) via ``pip``:
 
 .. code-block:: sh
 
-   python -m pip install .
+   python -m pip -v install .
+
+The ``-v`` (``--verbose``) option causes ``pip`` to show the output from
+the compiler, which is often useful during development.
 
 .. tip::
 
@@ -460,7 +463,7 @@ So, we'll need to *encode* the data, and we'll use the UTF-8 encoding for it.
 and the C API has special support for it.)
 
 The function to encode a Python string into a UTF-8 buffer is named
-:c:func:`PyUnicode_AsUTF8` [#why-pyunicodeasutf8]_.
+:c:func:`PyUnicode_AsUTF8AndSize` [#why-pyunicodeasutf8]_.
 Call it like this:
 
 .. code-block:: c
@@ -469,31 +472,31 @@ Call it like this:
    static PyObject *
    spam_system(PyObject *self, PyObject *arg)
    {
-      const char *command = PyUnicode_AsUTF8(arg);
+      const char *command = PyUnicode_AsUTF8AndSize(arg, NULL);
       int status = 3;
       PyObject *result = PyLong_FromLong(status);
       return result;
    }
 
-If :c:func:`PyUnicode_AsUTF8` is successful, *command* will point to the
-resulting array of bytes.
+If :c:func:`PyUnicode_AsUTF8AndSize` is successful, *command* will point to the
+resulting C string -- a zero-terminated array of bytes [#embedded-nul]_.
 This buffer is managed by the *arg* object, which means we don't need to free
 it, but we must follow some rules:
 
 * We should only use the buffer inside the ``spam_system`` function.
-  When ``spam_system`` returns, *arg* and the buffer it manages might be
+  After ``spam_system`` returns, *arg* and the buffer it manages might be
   garbage-collected.
 * We must not modify it. This is why we use ``const``.
 
-If :c:func:`PyUnicode_AsUTF8` was *not* successful, it returns a ``NULL``
+If :c:func:`PyUnicode_AsUTF8AndSize` was *not* successful, it returns a ``NULL``
 pointer.
 When calling *any* Python C API, we always need to handle such error cases.
 The way to do this in general is left for later chapters of this documentation.
 For now, be assured that we are already handling errors from
 :c:func:`PyLong_FromLong` correctly.
 
-For the :c:func:`PyUnicode_AsUTF8` call, the correct way to handle errors is
-returning ``NULL`` from ``spam_system``.
+For the :c:func:`PyUnicode_AsUTF8AndSize` call, the correct way to handle
+errors is returning ``NULL`` from ``spam_system``.
 Add an ``if`` block for this:
 
 
@@ -503,7 +506,7 @@ Add an ``if`` block for this:
    static PyObject *
    spam_system(PyObject *self, PyObject *arg)
    {
-      const char *command = PyUnicode_AsUTF8(arg);
+      const char *command = PyUnicode_AsUTF8AndSize(arg);
       if (command == NULL) {
          return NULL;
       }
@@ -512,7 +515,18 @@ Add an ``if`` block for this:
       return result;
    }
 
-That's it for the setup.
+To test that error handling works, compile again, restart Python so that
+``import spam`` picks up the new version of your module, and try passing
+a non-string value to your function:
+
+.. code-block:: pycon
+
+   >>> import spam
+   >>> spam.system(3)
+   Traceback (most recent call last):
+      ...
+   TypeError: bad argument type for built-in operation
+
 Now, all that is left is calling the C library function :c:func:`system` with
 the ``char *`` buffer, and using its result instead of the ``3``:
 
@@ -522,7 +536,7 @@ the ``char *`` buffer, and using its result instead of the ``3``:
    static PyObject *
    spam_system(PyObject *self, PyObject *arg)
    {
-      const char *command = PyUnicode_AsUTF8(arg);
+      const char *command = PyUnicode_AsUTF8AndSize(arg);
       if (command == NULL) {
          return NULL;
       }
@@ -543,7 +557,8 @@ system command:
    >>> result
    0
 
-You might also want to test error cases:
+You can also test with other commands, like ``ls``, ``dir``, or one
+that doesn't exist:
 
 .. code-block:: pycon
 
@@ -552,11 +567,6 @@ You might also want to test error cases:
    sh: line 1: nonexistent-command: command not found
    >>> result
    32512
-
-   >>> spam.system(3)
-   Traceback (most recent call last):
-      ...
-   TypeError: bad argument type for built-in operation
 
 
 The result
@@ -665,3 +675,13 @@ on :py:attr:`sys.path`.
    type.
 .. [#why-pyunicodeasutf8] Here, ``PyUnicode`` refers to the original name of
    the Python :py:class:`str` class: ``unicode``.
+
+   The ``AndSize`` part of the name refers to the fact that this function can
+   also retrieve the size of the buffer, using an output argument.
+   We don't need this, so we set the second argument to NULL.
+.. [#embedded-nul] We're ignoring the fact that Python strings can also
+   contain NUL bytes, which terminate a C string.
+   In other words, our function will treat ``spam.system("foo\0bar")`` as
+   ``spam.system("foo")``.
+   This possibility can lead to security issues, so the real ``os.system``
+   function size checks for this case and raises an error.

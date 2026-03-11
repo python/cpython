@@ -1335,11 +1335,23 @@ _PyStaticObjects_CheckRefcnt(PyInterpreterState *interp) {
     _PyStaticObject_CheckRefcnt((PyObject *)&_Py_STR(str_replace_inf));
     _PyStaticObject_CheckRefcnt((PyObject *)&_Py_STR(type_params));
     _PyStaticObject_CheckRefcnt((PyObject *)&_Py_STR(utf_8));
+    _PyStaticObject_CheckRefcnt((PyObject *)&_Py_ID(AGEN_CLOSED));
+    _PyStaticObject_CheckRefcnt((PyObject *)&_Py_ID(AGEN_CREATED));
+    _PyStaticObject_CheckRefcnt((PyObject *)&_Py_ID(AGEN_RUNNING));
+    _PyStaticObject_CheckRefcnt((PyObject *)&_Py_ID(AGEN_SUSPENDED));
     _PyStaticObject_CheckRefcnt((PyObject *)&_Py_ID(CANCELLED));
+    _PyStaticObject_CheckRefcnt((PyObject *)&_Py_ID(CORO_CLOSED));
+    _PyStaticObject_CheckRefcnt((PyObject *)&_Py_ID(CORO_CREATED));
+    _PyStaticObject_CheckRefcnt((PyObject *)&_Py_ID(CORO_RUNNING));
+    _PyStaticObject_CheckRefcnt((PyObject *)&_Py_ID(CORO_SUSPENDED));
     _PyStaticObject_CheckRefcnt((PyObject *)&_Py_ID(Emax));
     _PyStaticObject_CheckRefcnt((PyObject *)&_Py_ID(Emin));
     _PyStaticObject_CheckRefcnt((PyObject *)&_Py_ID(FINISHED));
     _PyStaticObject_CheckRefcnt((PyObject *)&_Py_ID(False));
+    _PyStaticObject_CheckRefcnt((PyObject *)&_Py_ID(GEN_CLOSED));
+    _PyStaticObject_CheckRefcnt((PyObject *)&_Py_ID(GEN_CREATED));
+    _PyStaticObject_CheckRefcnt((PyObject *)&_Py_ID(GEN_RUNNING));
+    _PyStaticObject_CheckRefcnt((PyObject *)&_Py_ID(GEN_SUSPENDED));
     _PyStaticObject_CheckRefcnt((PyObject *)&_Py_ID(JSONDecodeError));
     _PyStaticObject_CheckRefcnt((PyObject *)&_Py_ID(PENDING));
     _PyStaticObject_CheckRefcnt((PyObject *)&_Py_ID(Py_Repr));
@@ -1434,6 +1446,8 @@ _PyStaticObjects_CheckRefcnt(PyInterpreterState *interp) {
     _PyStaticObject_CheckRefcnt((PyObject *)&_Py_ID(__iter__));
     _PyStaticObject_CheckRefcnt((PyObject *)&_Py_ID(__itruediv__));
     _PyStaticObject_CheckRefcnt((PyObject *)&_Py_ID(__ixor__));
+    _PyStaticObject_CheckRefcnt((PyObject *)&_Py_ID(__lazy_import__));
+    _PyStaticObject_CheckRefcnt((PyObject *)&_Py_ID(__lazy_modules__));
     _PyStaticObject_CheckRefcnt((PyObject *)&_Py_ID(__le__));
     _PyStaticObject_CheckRefcnt((PyObject *)&_Py_ID(__len__));
     _PyStaticObject_CheckRefcnt((PyObject *)&_Py_ID(__length_hint__));
@@ -1562,6 +1576,7 @@ _PyStaticObjects_CheckRefcnt(PyInterpreterState *interp) {
     _PyStaticObject_CheckRefcnt((PyObject *)&_Py_ID(aclose));
     _PyStaticObject_CheckRefcnt((PyObject *)&_Py_ID(add));
     _PyStaticObject_CheckRefcnt((PyObject *)&_Py_ID(add_done_callback));
+    _PyStaticObject_CheckRefcnt((PyObject *)&_Py_ID(adobe));
     _PyStaticObject_CheckRefcnt((PyObject *)&_Py_ID(after_in_child));
     _PyStaticObject_CheckRefcnt((PyObject *)&_Py_ID(after_in_parent));
     _PyStaticObject_CheckRefcnt((PyObject *)&_Py_ID(alias));
@@ -1757,6 +1772,7 @@ _PyStaticObjects_CheckRefcnt(PyInterpreterState *interp) {
     _PyStaticObject_CheckRefcnt((PyObject *)&_Py_ID(flags));
     _PyStaticObject_CheckRefcnt((PyObject *)&_Py_ID(flush));
     _PyStaticObject_CheckRefcnt((PyObject *)&_Py_ID(fold));
+    _PyStaticObject_CheckRefcnt((PyObject *)&_Py_ID(foldspaces));
     _PyStaticObject_CheckRefcnt((PyObject *)&_Py_ID(follow_symlinks));
     _PyStaticObject_CheckRefcnt((PyObject *)&_Py_ID(format));
     _PyStaticObject_CheckRefcnt((PyObject *)&_Py_ID(format_spec));
@@ -1956,6 +1972,7 @@ _PyStaticObjects_CheckRefcnt(PyInterpreterState *interp) {
     _PyStaticObject_CheckRefcnt((PyObject *)&_Py_ID(outpath));
     _PyStaticObject_CheckRefcnt((PyObject *)&_Py_ID(overlapped));
     _PyStaticObject_CheckRefcnt((PyObject *)&_Py_ID(owner));
+    _PyStaticObject_CheckRefcnt((PyObject *)&_Py_ID(pad));
     _PyStaticObject_CheckRefcnt((PyObject *)&_Py_ID(pages));
     _PyStaticObject_CheckRefcnt((PyObject *)&_Py_ID(parameter));
     _PyStaticObject_CheckRefcnt((PyObject *)&_Py_ID(parent));
