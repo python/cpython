@@ -1,0 +1,3 @@
+Remove ``viscii`` from :mod:`email.charset` ``CHARSETS`` table. Python has
+no ``viscii`` codec, so any encoding operation on ``Charset('viscii')``
+raised :exc:`LookupError`.
