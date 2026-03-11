@@ -27,6 +27,7 @@ import code
 import linecache
 from dataclasses import dataclass, field
 import os.path
+import re
 import sys
 
 
@@ -195,7 +196,19 @@ class InteractiveColoredConsole(code.InteractiveConsole):
                 ast.PyCF_ONLY_AST,
                 incomplete_input=False,
             )
-        except (SyntaxError, OverflowError, ValueError):
+        except SyntaxError as e:
+            # If it looks like pip install was entered (a common beginner
+            # mistake), provide a hint to use the system command prompt.
+            if re.match(r"^\s*(pip3?|py(thon3?)? -m pip) install.*", source):
+                e.add_note(
+                    "The Python package manager (pip) can only be used"
+                    " outside of the Python REPL.\n"
+                    "Try the 'pip' command in a separate terminal or"
+                    " command prompt."
+                )
+            self.showsyntaxerror(filename, source=source)
+            return False
+        except (OverflowError, ValueError):
             self.showsyntaxerror(filename, source=source)
             return False
         if tree.body:

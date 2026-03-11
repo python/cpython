@@ -511,12 +511,12 @@ _waiting_release(_waiting_t *waiting, int received)
     assert(!waiting->received);
 
     waiting->status = WAITING_RELEASING;
-    PyThread_release_lock(waiting->mutex);
     if (waiting->received != received) {
         assert(received == 1);
         waiting->received = received;
     }
     waiting->status = WAITING_RELEASED;
+    PyThread_release_lock(waiting->mutex);
 }
 
 static void
@@ -580,7 +580,7 @@ _channelitem_clear_data(_channelitem *item, int removed)
 {
     if (item->data != NULL) {
         // It was allocated in channel_send().
-        (void)_release_xid_data(item->data, XID_IGNORE_EXC & XID_FREE);
+        (void)_release_xid_data(item->data, XID_IGNORE_EXC | XID_FREE);
         item->data = NULL;
     }
 
@@ -1644,14 +1644,16 @@ _channels_list_all(_channels *channels, int64_t *count)
     if (ids == NULL) {
         goto done;
     }
-    _channelref *ref = channels->head;
-    for (int64_t i=0; ref != NULL; ref = ref->next, i++) {
-        ids[i] = (struct channel_id_and_info){
-            .id = ref->cid,
-            .defaults = ref->chan->defaults,
-        };
+    int64_t i = 0;
+    for (_channelref *ref = channels->head; ref != NULL; ref = ref->next) {
+        if (ref->chan != NULL) {
+            ids[i++] = (struct channel_id_and_info){
+                .id = ref->cid,
+                .defaults = ref->chan->defaults,
+            };
+        }
     }
-    *count = channels->numopen;
+    *count = i;
 
     cids = ids;
 done:
@@ -3614,8 +3616,7 @@ module_traverse(PyObject *mod, visitproc visit, void *arg)
 {
     module_state *state = get_module_state(mod);
     assert(state != NULL);
-    (void)traverse_module_state(state, visit, arg);
-    return 0;
+    return traverse_module_state(state, visit, arg);
 }
 
 static int
@@ -3625,8 +3626,7 @@ module_clear(PyObject *mod)
     assert(state != NULL);
 
     // Now we clear the module state.
-    (void)clear_module_state(state);
-    return 0;
+    return clear_module_state(state);
 }
 
 static void

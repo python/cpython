@@ -19,7 +19,7 @@ This module defines classes for implementing HTTP servers.
 
 .. warning::
 
-    :mod:`http.server` is not recommended for production. It only implements
+    :mod:`!http.server` is not recommended for production. It only implements
     :ref:`basic security checks <http.server-security>`.
 
 .. include:: ../includes/wasm-notavail.rst
@@ -154,7 +154,7 @@ instantiation, of which this module provides three different variants:
       variable. This instance parses and manages the headers in the HTTP
       request. The :func:`~http.client.parse_headers` function from
       :mod:`http.client` is used to parse the headers and it requires that the
-      HTTP request provide a valid :rfc:`2822` style header.
+      HTTP request provide a valid :rfc:`5322` style header.
 
    .. attribute:: rfile
 
@@ -463,7 +463,7 @@ such as using different index file names by overriding the class attribute
 Command-line interface
 ----------------------
 
-:mod:`http.server` can also be invoked directly using the :option:`-m`
+:mod:`!http.server` can also be invoked directly using the :option:`-m`
 switch of the interpreter.  The following example illustrates how to serve
 files relative to the current directory::
 

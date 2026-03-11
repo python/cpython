@@ -235,6 +235,20 @@ class PrettyPrinter:
 
     _dispatch[dict.__repr__] = _pprint_dict
 
+    def _pprint_frozendict(self, object, stream, indent, allowance, context, level):
+        write = stream.write
+        cls = object.__class__
+        stream.write(cls.__name__ + '(')
+        length = len(object)
+        if length:
+            self._pprint_dict(object, stream,
+                              indent + len(cls.__name__) + 1,
+                              allowance + 1,
+                              context, level)
+        write(')')
+
+    _dispatch[frozendict.__repr__] = _pprint_frozendict
+
     def _pprint_ordered_dict(self, object, stream, indent, allowance, context, level):
         if not len(object):
             stream.write(repr(object))
@@ -623,12 +637,21 @@ class PrettyPrinter:
             else:
                 return repr(object), True, False
 
-        if issubclass(typ, dict) and r is dict.__repr__:
+        if ((issubclass(typ, dict) and r is dict.__repr__)
+            or (issubclass(typ, frozendict) and r is frozendict.__repr__)):
+            is_frozendict = issubclass(typ, frozendict)
             if not object:
-                return "{}", True, False
+                if is_frozendict:
+                    rep = f"{object.__class__.__name__}()"
+                else:
+                    rep = "{}"
+                return rep, True, False
             objid = id(object)
             if maxlevels and level >= maxlevels:
-                return "{...}", False, objid in context
+                rep = "{...}"
+                if is_frozendict:
+                    rep = f"{object.__class__.__name__}({rep})"
+                return rep, False, objid in context
             if objid in context:
                 return _recursion(object), False, True
             context[objid] = 1
@@ -651,7 +674,44 @@ class PrettyPrinter:
                 if krecur or vrecur:
                     recursive = True
             del context[objid]
-            return "{%s}" % ", ".join(components), readable, recursive
+            rep = "{%s}" % ", ".join(components)
+            if is_frozendict:
+                rep = f"{object.__class__.__name__}({rep})"
+            return rep, readable, recursive
+
+        if (issubclass(typ, list) and r is list.__repr__) or \
+           (issubclass(typ, tuple) and r is tuple.__repr__):
+            if issubclass(typ, list):
+                if not object:
+                    return "[]", True, False
+                format = "[%s]"
+            elif len(object) == 1:
+                format = "(%s,)"
+            else:
+                if not object:
+                    return "()", True, False
+                format = "(%s)"
+            objid = id(object)
+            if maxlevels and level >= maxlevels:
+                return format % "...", False, objid in context
+            if objid in context:
+                return _recursion(object), False, True
+            context[objid] = 1
+            readable = True
+            recursive = False
+            components = []
+            append = components.append
+            level += 1
+            for o in object:
+                orepr, oreadable, orecur = self.format(
+                    o, context, maxlevels, level)
+                append(orepr)
+                if not oreadable:
+                    readable = False
+                if orecur:
+                    recursive = True
+            del context[objid]
+            return format % ", ".join(components), readable, recursive
 
         if issubclass(typ, _collections.abc.MappingView) and r in self._view_reprs:
             objid = id(object)
@@ -688,40 +748,6 @@ class PrettyPrinter:
                     recursive = True
             del context[objid]
             return typ.__name__ + '([%s])' % ", ".join(components), readable, recursive
-
-        if (issubclass(typ, list) and r is list.__repr__) or \
-           (issubclass(typ, tuple) and r is tuple.__repr__):
-            if issubclass(typ, list):
-                if not object:
-                    return "[]", True, False
-                format = "[%s]"
-            elif len(object) == 1:
-                format = "(%s,)"
-            else:
-                if not object:
-                    return "()", True, False
-                format = "(%s)"
-            objid = id(object)
-            if maxlevels and level >= maxlevels:
-                return format % "...", False, objid in context
-            if objid in context:
-                return _recursion(object), False, True
-            context[objid] = 1
-            readable = True
-            recursive = False
-            components = []
-            append = components.append
-            level += 1
-            for o in object:
-                orepr, oreadable, orecur = self.format(
-                    o, context, maxlevels, level)
-                append(orepr)
-                if not oreadable:
-                    readable = False
-                if orecur:
-                    recursive = True
-            del context[objid]
-            return format % ", ".join(components), readable, recursive
 
         rep = repr(object)
         return rep, (rep and not rep.startswith('<')), False

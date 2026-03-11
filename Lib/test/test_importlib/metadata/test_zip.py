@@ -1,7 +1,6 @@
 import sys
 import unittest
 
-from . import fixtures
 from importlib.metadata import (
     PackageNotFoundError,
     distribution,
@@ -10,6 +9,8 @@ from importlib.metadata import (
     files,
     version,
 )
+
+from . import fixtures
 
 
 class TestZip(fixtures.ZipFixtures, unittest.TestCase):
