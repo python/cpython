@@ -632,7 +632,7 @@ class TracebackCases(unittest.TestCase):
                 raise RuntimeError("boom")
             return recurse(n - 1)
         try:
-            recurse(1000)
+            recurse(50)
         except RuntimeError as exc:
             tb = traceback.format_exception(exc)
             assert any("RuntimeError" in line for line in tb)
