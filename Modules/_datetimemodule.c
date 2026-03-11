@@ -6215,10 +6215,10 @@ add_datetime_timedelta(PyDateTime_DateTime *date, PyDateTime_Delta *delta,
                                                 HASTZINFO(date) ? date->tzinfo : Py_None,
                                                 Py_TYPE(date));
     if (result != NULL && !PyDateTime_Check(result)) {
-        PyErr_Format(PyExc_TypeError,
-                     "datetime arithmetic on a subclass returned "
-                     "non-datetime (type %.200s)",
-                     Py_TYPE(result)->tp_name);
+            PyErr_Format(PyExc_TypeError,
+                        "datetime arithmetic on a subclass returned "
+                        "non-datetime (type %T)",
+                        result);
             Py_DECREF(result);
             return NULL;
         }
