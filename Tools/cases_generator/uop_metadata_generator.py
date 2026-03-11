@@ -9,8 +9,8 @@ from analyzer import (
     Analysis,
     analyze_files,
     get_uop_cache_depths,
-    MAX_CACHED_REGISTER,
     Uop,
+    MAX_CACHED_REGISTER,
 )
 from generators_common import (
     DEFAULT_INPUT,

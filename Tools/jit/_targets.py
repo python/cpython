@@ -36,6 +36,7 @@ _R = typing.TypeVar(
     "_R", _schema.COFFRelocation, _schema.ELFRelocation, _schema.MachORelocation
 )
 
+
 @dataclasses.dataclass
 class _Target(typing.Generic[_S, _R]):
     triple: str
