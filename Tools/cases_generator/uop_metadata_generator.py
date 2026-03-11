@@ -37,6 +37,8 @@ def uop_cache_info(uop: Uop) -> list[str] | None:
     high = -1
     defined = [ False ] * 4
     for inputs, outputs, exit_depth in get_uop_cache_depths(uop):
+        if max(inputs, outputs) > MAX_CACHED_REGISTER:
+            continue
         entries[inputs] = f"{{ {outputs}, {exit_depth}, {uop.name}_r{inputs}{outputs} }},\n"
         if inputs < low:
             low = inputs
@@ -63,7 +65,6 @@ extern const _PyUopCachingInfo _PyUop_Caching[MAX_UOP_ID+1];
 
 
 def generate_names_and_flags(analysis: Analysis, out: CWriter) -> None:
-    out.emit(f"#define MAX_CACHED_REGISTER {MAX_CACHED_REGISTER}\n")
     out.emit("extern const uint32_t _PyUop_Flags[MAX_UOP_ID+1];\n")
     out.emit("typedef struct _rep_range { uint8_t start; uint8_t stop; } ReplicationRange;\n")
     out.emit("extern const ReplicationRange _PyUop_Replication[MAX_UOP_ID+1];\n")
