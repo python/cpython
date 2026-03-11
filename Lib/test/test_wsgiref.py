@@ -1,6 +1,6 @@
 from unittest import mock
 from test import support
-from test.support import socket_helper
+from test.support import socket_helper, control_characters_c0
 from test.test_httpservers import NoLogRequestHandler
 from unittest import TestCase
 from wsgiref.util import setup_testing_defaults
@@ -109,7 +109,7 @@ class IntegrationTests(TestCase):
                 sys.version.split()[0])
         self.assertEqual(out,
             ("HTTP/1.0 200 OK\r\n"
-            "Server: WSGIServer/0.2 " + pyver +"\r\n"
+            "Server: WSGIServer " + pyver + "\r\n"
             "Content-Type: text/plain\r\n"
             "Date: Mon, 05 Jun 2006 18:49:54 GMT\r\n" +
             (has_length and  "Content-Length: 13\r\n" or "") +
@@ -206,7 +206,7 @@ class IntegrationTests(TestCase):
         pyver = py + b"/" + ver
         self.assertEqual(
                 b"HTTP/1.0 200 OK\r\n"
-                b"Server: WSGIServer/0.2 "+ pyver + b"\r\n"
+                b"Server: WSGIServer " + pyver + b"\r\n"
                 b"Content-Type: text/plain; charset=utf-8\r\n"
                 b"Date: Wed, 24 Dec 2008 13:29:32 GMT\r\n"
                 b"\r\n"
@@ -502,6 +502,22 @@ class HeaderTests(TestCase):
             'Foo: bar; cheese\r\n'
             '\r\n'
         )
+
+    def testRaisesControlCharacters(self):
+        for c0 in control_characters_c0():
+            with self.subTest(c0):
+                headers = Headers()
+                self.assertRaises(ValueError, headers.__setitem__, f"key{c0}", "val")
+                self.assertRaises(ValueError, headers.add_header, f"key{c0}", "val", param="param")
+                # HTAB (\x09) is allowed in values, not names.
+                if c0 == "\t":
+                    headers["key"] = f"val{c0}"
+                    headers.add_header("key", f"val{c0}")
+                    headers.setdefault(f"key", f"val{c0}")
+                else:
+                    self.assertRaises(ValueError, headers.__setitem__, "key", f"val{c0}")
+                    self.assertRaises(ValueError, headers.add_header, "key", f"val{c0}", param="param")
+                    self.assertRaises(ValueError, headers.add_header, "key", "val", param=f"param{c0}")
 
 class ErrorHandler(BaseCGIHandler):
     """Simple handler subclass for testing BaseHandler"""
@@ -838,6 +854,37 @@ class HandlerTests(TestCase):
         self.assertIsNotNone(h.headers)
         self.assertIsNotNone(h.status)
         self.assertIsNotNone(h.environ)
+
+    def testRaisesControlCharacters(self):
+        for c0 in control_characters_c0():
+            with self.subTest(c0):
+                base = BaseHandler()
+                with self.assertRaises(ValueError):
+                    base.start_response(c0, [('x', 'y')])
+
+                base = BaseHandler()
+                with self.assertRaises(ValueError):
+                    base.start_response('200 OK', [(c0, 'y')])
+
+                # HTAB (\x09) is allowed in header values, but not in names.
+                base = BaseHandler()
+                if c0 != "\t":
+                    with self.assertRaises(ValueError):
+                        base.start_response('200 OK', [('x', c0)])
+                else:
+                    base.start_response('200 OK', [('x', c0)])
+
+
+class TestModule(unittest.TestCase):
+    def test_deprecated__version__(self):
+        from wsgiref import simple_server
+
+        with self.assertWarnsRegex(
+            DeprecationWarning,
+            "'__version__' is deprecated and slated for removal in Python 3.20",
+        ) as cm:
+            getattr(simple_server, "__version__")
+        self.assertEqual(cm.filename, __file__)
 
 
 if __name__ == "__main__":

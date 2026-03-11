@@ -190,7 +190,7 @@ is_instrumented(int opcode)
 {
     assert(opcode != 0);
     assert(opcode != RESERVED);
-    return opcode != ENTER_EXECUTOR && opcode >= MIN_INSTRUMENTED_OPCODE;
+    return opcode < ENTER_EXECUTOR && opcode >= MIN_INSTRUMENTED_OPCODE;
 }
 
 #ifndef NDEBUG
@@ -525,7 +525,7 @@ valid_opcode(int opcode)
     if (IS_VALID_OPCODE(opcode) &&
         opcode != CACHE &&
         opcode != RESERVED &&
-        opcode < 255)
+        opcode < 254)
     {
        return true;
     }
@@ -2019,12 +2019,12 @@ _PyMonitoring_SetEvents(int tool_id, _PyMonitoringEventSet events)
     if (existing_events == events) {
         return 0;
     }
-    set_events(&interp->monitors, tool_id, events);
     uint32_t new_version = global_version(interp) + MONITORING_VERSION_INCREMENT;
     if (new_version == 0) {
         PyErr_Format(PyExc_OverflowError, "events set too many times");
         return -1;
     }
+    set_events(&interp->monitors, tool_id, events);
     set_global_version(tstate, new_version);
 #ifdef _Py_TIER2
     _Py_Executors_InvalidateAll(interp, 1);
@@ -2114,6 +2114,9 @@ int _PyMonitoring_ClearToolId(int tool_id)
     // Set the new global version so all the code objects can refresh the
     // instrumentation.
     set_global_version(_PyThreadState_GET(), version);
+#ifdef _Py_TIER2
+    _Py_Executors_InvalidateAll(interp, 1);
+#endif
     int res = instrument_all_executing_code_objects(interp);
     _PyEval_StartTheWorld(interp);
     return res;
@@ -2456,6 +2459,9 @@ monitoring_restart_events_impl(PyObject *module)
     }
     interp->last_restart_version = restart_version;
     set_global_version(tstate, new_version);
+#ifdef _Py_TIER2
+    _Py_Executors_InvalidateAll(interp, 1);
+#endif
     int res = instrument_all_executing_code_objects(interp);
     _PyEval_StartTheWorld(interp);
 

@@ -4836,6 +4836,16 @@ class OffsetValidationTests(unittest.TestCase):
             self.assertEqual(members[0].offset, expected_offset)
 
 
+class TestModule(unittest.TestCase):
+    def test_deprecated_version(self):
+        with self.assertWarnsRegex(
+                DeprecationWarning,
+                "'version' is deprecated and slated for removal in Python 3.20",
+        ) as cm:
+            getattr(tarfile, "version")
+        self.assertEqual(cm.filename, __file__)
+
+
 def setUpModule():
     os_helper.unlink(TEMPDIR)
     os.makedirs(TEMPDIR)

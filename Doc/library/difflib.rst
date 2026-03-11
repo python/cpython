@@ -4,10 +4,6 @@
 .. module:: difflib
    :synopsis: Helpers for computing differences between objects.
 
-.. moduleauthor:: Tim Peters <tim_one@users.sourceforge.net>
-.. sectionauthor:: Tim Peters <tim_one@users.sourceforge.net>
-.. Markup by Fred L. Drake, Jr. <fdrake@acm.org>
-
 **Source code:** :source:`Lib/difflib.py`
 
 .. testsetup::
@@ -323,7 +319,7 @@ diffs. For comparing directories and files, see also, the :mod:`filecmp` module.
 
    See :ref:`difflib-interface` for a more detailed example.
 
-   .. versionchanged:: next
+   .. versionchanged:: 3.15
       Added the *color* parameter.
 
 

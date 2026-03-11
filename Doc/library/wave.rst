@@ -4,14 +4,11 @@
 .. module:: wave
    :synopsis: Provide an interface to the WAV sound format.
 
-.. sectionauthor:: Moshe Zadka <moshez@zadka.site.co.il>
-.. Documentations stolen from comments in file.
-
 **Source code:** :source:`Lib/wave.py`
 
 --------------
 
-The :mod:`wave` module provides a convenient interface to the Waveform Audio
+The :mod:`!wave` module provides a convenient interface to the Waveform Audio
 "WAVE" (or "WAV") file format. Only uncompressed PCM encoded wave files are
 supported.
 
@@ -20,13 +17,14 @@ supported.
    Support for ``WAVE_FORMAT_EXTENSIBLE`` headers was added, provided that the
    extended format is ``KSDATAFORMAT_SUBTYPE_PCM``.
 
-The :mod:`wave` module defines the following function and exception:
+The :mod:`!wave` module defines the following function and exception:
 
 
 .. function:: open(file, mode=None)
 
-   If *file* is a string, open the file by that name, otherwise treat it as a
-   file-like object.  *mode* can be:
+   If *file* is a string, a :term:`path-like object` or a
+   :term:`bytes-like object` open the file by that name, otherwise treat it as
+   a file-like object.  *mode* can be:
 
    ``'rb'``
       Read only mode.
@@ -52,6 +50,10 @@ The :mod:`wave` module defines the following function and exception:
    .. versionchanged:: 3.4
       Added support for unseekable files.
 
+   .. versionchanged:: 3.15
+      Added support for :term:`path-like objects <path-like object>`
+      and :term:`bytes-like objects <bytes-like object>`.
+
 .. exception:: Error
 
    An error raised when something is impossible because it violates the WAV
@@ -72,7 +74,7 @@ Wave_read Objects
 
    .. method:: close()
 
-      Close the stream if it was opened by :mod:`wave`, and make the instance
+      Close the stream if it was opened by :mod:`!wave`, and make the instance
       unusable.  This is called automatically on object collection.
 
 
@@ -169,7 +171,7 @@ Wave_write Objects
    .. method:: close()
 
       Make sure *nframes* is correct, and close the file if it was opened by
-      :mod:`wave`.  This method is called upon object collection.  It will raise
+      :mod:`!wave`.  This method is called upon object collection.  It will raise
       an exception if the output stream is not seekable and *nframes* does not
       match the number of frames actually written.
 
@@ -179,9 +181,19 @@ Wave_write Objects
       Set the number of channels.
 
 
+   .. method:: getnchannels()
+
+      Return the number of channels.
+
+
    .. method:: setsampwidth(n)
 
       Set the sample width to *n* bytes.
+
+
+   .. method:: getsampwidth()
+
+      Return the sample width in bytes.
 
 
    .. method:: setframerate(n)
@@ -193,11 +205,21 @@ Wave_write Objects
          integer.
 
 
+   .. method:: getframerate()
+
+      Return the frame rate.
+
+
    .. method:: setnframes(n)
 
       Set the number of frames to *n*.  This will be changed later if the number
       of frames actually written is different (this update attempt will
       raise an error if the output stream is not seekable).
+
+
+   .. method:: getnframes()
+
+      Return the number of audio frames written so far.
 
 
    .. method:: setcomptype(type, name)
@@ -206,11 +228,28 @@ Wave_write Objects
       ``NONE`` is supported, meaning no compression.
 
 
+   .. method:: getcomptype()
+
+      Return the compression type (``'NONE'``).
+
+
+   .. method:: getcompname()
+
+      Return the human-readable compression type name.
+
+
    .. method:: setparams(tuple)
 
       The *tuple* should be ``(nchannels, sampwidth, framerate, nframes, comptype,
       compname)``, with values valid for the ``set*()`` methods.  Sets all
       parameters.
+
+
+   .. method:: getparams()
+
+      Return a :func:`~collections.namedtuple`
+      ``(nchannels, sampwidth, framerate, nframes, comptype, compname)``
+      containing the current output parameters.
 
 
    .. method:: tell()
