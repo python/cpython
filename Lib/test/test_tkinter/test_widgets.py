@@ -161,6 +161,12 @@ class AbstractLabelTest(AbstractWidgetTest, IntegerSizeTests):
         _clipped = {'borderwidth', 'height', 'highlightthickness',
                     'insertborderwidth', 'padx', 'pady', 'width'}
 
+    def setUp(self):
+        super().setUp()
+        if tk_version[:2] == (9, 0) and get_tk_patchlevel(self.root) < (9, 0, 2):
+            self._clipped = self._clipped - {'height', 'width'}
+
+
 @add_configure_tests(StandardOptionsTests)
 class LabelTest(AbstractLabelTest, unittest.TestCase):
     OPTIONS = (
@@ -301,6 +307,11 @@ class MenubuttonTest(AbstractLabelTest, unittest.TestCase):
     else:
         _clipped = {'borderwidth', 'highlightthickness', 'insertborderwidth', 'padx', 'pady'}
 
+    def setUp(self):
+        super().setUp()
+        if tk_version[:2] == (9, 0) and get_tk_patchlevel(self.root) < (9, 0, 1):
+            self._clipped = self._clipped - {'borderwidth'}
+
     def create(self, **kwargs):
         return tkinter.Menubutton(self.root, **kwargs)
 
@@ -311,7 +322,10 @@ class MenubuttonTest(AbstractLabelTest, unittest.TestCase):
 
     def test_configure_height(self):
         widget = self.create()
-        conv = str if tk_version < (8, 7) else False
+        if tk_version < (8, 7) or (tk_version[:2] == (9, 0) and get_tk_patchlevel(self.root) < (9, 0, 1)):
+            conv = str
+        else:
+            conv = False
         self.checkIntegerParam(widget, 'height', 100, -100, 0, conv=conv)
 
     def test_configure_image(self):
@@ -339,7 +353,10 @@ class MenubuttonTest(AbstractLabelTest, unittest.TestCase):
 
     def test_configure_width(self):
         widget = self.create()
-        conv = str if tk_version < (8, 7) else False
+        if tk_version < (8, 7) or (tk_version[:2] == (9, 0) and get_tk_patchlevel(self.root) < (9, 0, 1)):
+            conv = str
+        else:
+            conv = False
         self.checkIntegerParam(widget, 'width', 402, -402, 0, conv=conv)
 
 
@@ -545,7 +562,7 @@ class SpinboxTest(EntryTest, unittest.TestCase):
         # XXX
         widget = self.create()
         self.assertEqual(widget['values'], '')
-        if tk_version < (8, 7):
+        if tk_version < (8, 7) or (tk_version[:2] == (9, 0) and get_tk_patchlevel(self.root) < (9, 0, 1)):
             expected = 'mon tue wed thur'
         else:
             expected = ('mon', 'tue', 'wed', 'thur')
@@ -554,7 +571,7 @@ class SpinboxTest(EntryTest, unittest.TestCase):
         self.checkParam(widget, 'values', ('mon', 'tue', 'wed', 'thur'),
                         expected=expected)
 
-        if tk_version < (8, 7):
+        if tk_version < (8, 7) or (tk_version[:2] == (9, 0) and get_tk_patchlevel(self.root) < (9, 0, 1)):
             expected = '42 3.14 {} {any string}'
         else:
             expected = (42, 3.14, '', 'any string')
@@ -630,6 +647,13 @@ class TextTest(AbstractWidgetTest, unittest.TestCase):
         _clipped = {'borderwidth', 'height', 'highlightthickness',
                     'insertborderwidth', 'insertwidth', 'padx', 'pady',
                     'selectborderwidth', 'spacing1', 'spacing2', 'spacing3'}
+
+    def setUp(self):
+        super().setUp()
+        if tk_version[:2] == (9, 0) and get_tk_patchlevel(self.root) < (9, 0, 2):
+            self._clipped = self._clipped - {'borderwidth', 'height', 'padx', 'pady'}
+        if tk_version[:2] == (9, 0) and get_tk_patchlevel(self.root) < (9, 0, 1):
+            self._clipped = self._clipped - {'insertborderwidth', 'insertwidth', 'selectborderwidth'}
 
     def create(self, **kwargs):
         return tkinter.Text(self.root, **kwargs)
@@ -768,6 +792,14 @@ class CanvasTest(AbstractWidgetTest, unittest.TestCase):
                     'insertborderwidth', 'insertwidth', 'selectborderwidth',
                     'width', 'xscrollincrement', 'yscrollincrement'}
     _stringify = True
+
+    def setUp(self):
+        super().setUp()
+        if tk_version[:2] == (9, 0) and get_tk_patchlevel(self.root) < (9, 0, 1):
+            self._rounds_pixels = True
+            self._no_round = {'borderwidth', 'height', 'highlightthickness',
+                              'width', 'xscrollincrement', 'yscrollincrement'}
+            self._clipped = self._clipped - {'insertborderwidth', 'insertwidth', 'selectborderwidth'}
 
     def create(self, **kwargs):
         return tkinter.Canvas(self.root, **kwargs)

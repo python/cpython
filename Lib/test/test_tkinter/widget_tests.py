@@ -14,10 +14,10 @@ _sentinel = object()
 class AbstractWidgetTest(AbstractTkTest):
     _default_pixels = '' if tk_version >= (9, 0) else -1  # Value for unset pixel options.
     _rounds_pixels = (tk_version < (9, 0))  # True if some pixel options are rounded.
-    _no_round = {}         # Pixel options which are not rounded nonetheless
+    _no_round = set()      # Pixel options which are not rounded nonetheless
     _stringify = False     # Whether to convert tuples to strings
     _allow_empty_justify = False
-    _clipped_to_default = {}
+    _clipped_to_default = set()
 
     @property
     def scaling(self):
