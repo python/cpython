@@ -855,6 +855,25 @@ class HandlerTests(TestCase):
         self.assertIsNotNone(h.status)
         self.assertIsNotNone(h.environ)
 
+    def testRaisesControlCharacters(self):
+        for c0 in control_characters_c0():
+            with self.subTest(c0):
+                base = BaseHandler()
+                with self.assertRaises(ValueError):
+                    base.start_response(c0, [('x', 'y')])
+
+                base = BaseHandler()
+                with self.assertRaises(ValueError):
+                    base.start_response('200 OK', [(c0, 'y')])
+
+                # HTAB (\x09) is allowed in header values, but not in names.
+                base = BaseHandler()
+                if c0 != "\t":
+                    with self.assertRaises(ValueError):
+                        base.start_response('200 OK', [('x', c0)])
+                else:
+                    base.start_response('200 OK', [('x', c0)])
+
 
 class TestModule(unittest.TestCase):
     def test_deprecated__version__(self):
