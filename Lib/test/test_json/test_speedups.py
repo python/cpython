@@ -1,4 +1,5 @@
 from test.test_json import CTest
+from test.support import gc_collect
 
 
 class BadBool:
@@ -112,25 +113,24 @@ class TestEncode(CTest):
         self.assertRaises(TypeError, enc, ['spam', {'ham': 'eggs'}], 3.0)
         self.assertRaises(TypeError, enc, ['spam', {'ham': 'eggs'}])
 
-    def test_mutate_items_during_encode(self):
-        c_make_encoder = getattr(self.json.encoder, 'c_make_encoder', None)
-        if c_make_encoder is None:
-            self.skipTest("c_make_encoder not available")
-
-        cache = []
+    def test_mutate_dict_items_during_encode(self):
+        items = None
 
         class BadDict(dict):
             def items(self):
-                entries = [("boom", object())]
-                cache.append(entries)
-                return entries
+                nonlocal items
+                items = [("boom", object())]
+                return items
 
         def encode_str(obj):
-            if cache:
-                cache.pop().clear()
+            nonlocal items
+            if items is not None:
+                items.clear()
+                items = None
+                gc_collect()
             return '"x"'
 
-        encoder = c_make_encoder(
+        encoder = self.json.encoder.c_make_encoder(
             None, lambda o: "null",
             encode_str, None,
             ": ", ", ", False,
@@ -139,5 +139,25 @@ class TestEncode(CTest):
 
         try:
             encoder(BadDict(real=1), 0)
+        except (ValueError, RuntimeError):
+            pass
+
+    def test_mutate_list_during_encode(self):
+        lst = [object() for _ in range(10)]
+
+        def default(obj):
+            lst.clear()
+            gc_collect()
+            return None
+
+        encoder = self.json.encoder.c_make_encoder(
+            None, default,
+            self.json.encoder.c_encode_basestring, None,
+            ": ", ", ", False,
+            False, True
+        )
+
+        try:
+            encoder(lst, 0)
         except (ValueError, RuntimeError):
             pass
