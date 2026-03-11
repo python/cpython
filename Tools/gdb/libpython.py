@@ -835,14 +835,11 @@ class PyDictObjectPtr(PyObjectPtr):
     @staticmethod
     def _get_entries(keys):
         dk_nentries = int(keys['dk_nentries'])
-
-        ent_addr = keys['dk_indices'].address
         if int(keys['dk_kind']) == 0:  # DICT_KEYS_GENERAL
             ent_ptr_t = gdb.lookup_type('PyDictKeyEntry').pointer()
         else:
             ent_ptr_t = gdb.lookup_type('PyDictUnicodeEntry').pointer()
-        ent_addr = ent_addr.cast(ent_ptr_t)
-
+        ent_addr = keys['dk_entries'].address.cast(ent_ptr_t)
         return ent_addr, dk_nentries
 
 
