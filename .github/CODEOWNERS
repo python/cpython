@@ -260,33 +260,33 @@ Include/pyhash.h                 @gpshead @picnixz
 Python/pyhash.c                  @gpshead @picnixz
 
 # The import system (including importlib)
-**/*import*                   @brettcannon @ericsnowcurrently @ncoghlan @warsaw
-Python/import.c               @brettcannon @ericsnowcurrently @ncoghlan @warsaw @kumaraditya303
+**/*import*                   @brettcannon @ericsnowcurrently @ncoghlan @warsaw @FFY00
+Python/import.c               @brettcannon @ericsnowcurrently @ncoghlan @warsaw @FFY00 @kumaraditya303
 **/*freeze*                   @ericsnowcurrently
 **/*frozen*                   @ericsnowcurrently
 **/*modsupport*               @ericsnowcurrently
-**/*modulefinder*             @ericsnowcurrently
+**/*modulefinder*             @ericsnowcurrently @FFY00
 **/*moduleobject*             @ericsnowcurrently
 **/*multiphase*               @ericsnowcurrently
-**/*pkgutil*                  @ericsnowcurrently
+**/*pkgutil*                  @ericsnowcurrently @FFY00
 **/*pythonrun*                @ericsnowcurrently
-**/*runpy*                    @ericsnowcurrently
+**/*runpy*                    @ericsnowcurrently @FFY00
 **/*singlephase*              @ericsnowcurrently
 Doc/c-api/module.rst          @ericsnowcurrently
 Lib/test/test_module/         @ericsnowcurrently
-Python/dynload_*.c            @ericsnowcurrently
+Python/dynload_*.c            @ericsnowcurrently @FFY00
 
 # Initialisation
-**/*initconfig*               @ericsnowcurrently
-**/*pathconfig*               @ericsnowcurrently
-**/*preconfig*                @ericsnowcurrently
+**/*initconfig*               @ericsnowcurrently @FFY00
+**/*pathconfig*               @ericsnowcurrently @FFY00
+**/*preconfig*                @ericsnowcurrently @FFY00
 Doc/library/sys_path_init.rst @FFY00
 Doc/c-api/init_config.rst     @FFY00
 
 # Interpreter main program
-Modules/main.c                @ericsnowcurrently
-Programs/_bootstrap_python.c  @ericsnowcurrently
-Programs/python.c             @ericsnowcurrently
+Modules/main.c                @ericsnowcurrently @FFY00
+Programs/_bootstrap_python.c  @ericsnowcurrently @FFY00
+Programs/python.c             @ericsnowcurrently @FFY00
 
 # JIT
 .github/workflows/jit.yml     @savannahostrowski
@@ -298,8 +298,7 @@ InternalDocs/jit.md           @brandtbucher @savannahostrowski @diegorusso @AA-T
 # Lazy imports (PEP 810)
 Objects/lazyimportobject.c                  @yhg1s @DinoV @pablogsal
 Include/internal/pycore_lazyimportobject.h  @yhg1s @DinoV @pablogsal
-Lib/test/test_import/test_lazy_imports.py   @yhg1s @DinoV @pablogsal
-Lib/test/test_import/data/lazy_imports/     @yhg1s @DinoV @pablogsal
+Lib/test/test_lazy_import                   @yhg1s @DinoV @pablogsal
 
 # Micro-op / μop / Tier 2 Optimiser
 Python/optimizer.c            @markshannon @Fidget-Spinner
@@ -317,8 +316,8 @@ Tools/peg_generator/          @pablogsal @lysnikolaou
 
 # Runtime state/lifecycle
 **/*gil*                      @ericsnowcurrently
-**/*pylifecycle*              @ericsnowcurrently @ZeroIntensity
-**/*pystate*                  @ericsnowcurrently @ZeroIntensity
+**/*pylifecycle*              @ericsnowcurrently @ZeroIntensity @FFY00
+**/*pystate*                  @ericsnowcurrently @ZeroIntensity @FFY00
 Include/internal/pycore_*_init.h          @ericsnowcurrently
 Include/internal/pycore_*_state.h         @ericsnowcurrently
 Include/internal/pycore_atexit.h          @ericsnowcurrently
@@ -426,19 +425,19 @@ Lib/dataclasses.py            @ericvsmith
 Lib/test/test_dataclasses/    @ericvsmith
 
 # Dates and times
-Doc/**/*time.rst                 @pganssle @abalkin
-Doc/library/datetime-*           @pganssle
-Doc/library/zoneinfo.rst         @pganssle
-Include/datetime.h               @pganssle @abalkin
-Include/internal/pycore_time.h   @pganssle @abalkin
-Lib/test/test_zoneinfo/          @pganssle
-Lib/zoneinfo/                    @pganssle
-Lib/*time.py                     @pganssle @abalkin
-Lib/test/datetimetester.py       @pganssle @abalkin
-Lib/test/test_*time.py           @pganssle @abalkin
-Modules/*zoneinfo*               @pganssle
-Modules/*time*                   @pganssle @abalkin
-Python/pytime.c                  @pganssle @abalkin
+Doc/**/*time.rst                 @pganssle @abalkin @StanFromIreland
+Doc/library/datetime-*           @pganssle @StanFromIreland
+Doc/library/zoneinfo.rst         @pganssle @StanFromIreland
+Include/datetime.h               @pganssle @abalkin @StanFromIreland
+Include/internal/pycore_time.h   @pganssle @abalkin @StanFromIreland
+Lib/test/test_zoneinfo/          @pganssle @StanFromIreland
+Lib/zoneinfo/                    @pganssle @StanFromIreland
+Lib/*time.py                     @pganssle @abalkin @StanFromIreland
+Lib/test/datetimetester.py       @pganssle @abalkin @StanFromIreland
+Lib/test/test_*time.py           @pganssle @abalkin @StanFromIreland
+Modules/*zoneinfo*               @pganssle @StanFromIreland
+Modules/*time*                   @pganssle @abalkin @StanFromIreland
+Python/pytime.c                  @pganssle @abalkin @StanFromIreland
 
 # Dbm
 Doc/library/dbm.rst           @corona10 @erlend-aasland @serhiy-storchaka
@@ -506,13 +505,13 @@ Lib/idlelib/                  @terryjreedy
 Lib/turtledemo/               @terryjreedy
 
 # importlib.metadata
-Doc/library/importlib.metadata.rst  @jaraco @warsaw
-Lib/importlib/metadata/             @jaraco @warsaw
-Lib/test/test_importlib/metadata/   @jaraco @warsaw
+Doc/library/importlib.metadata.rst  @jaraco @warsaw @FFY00
+Lib/importlib/metadata/             @jaraco @warsaw @FFY00
+Lib/test/test_importlib/metadata/   @jaraco @warsaw @FFY00
 
 # importlib.resources
-Doc/library/importlib.resources.abc.rst   @jaraco @warsaw
-Doc/library/importlib.resources.rst       @jaraco @warsaw
+Doc/library/importlib.resources.abc.rst   @jaraco @warsaw @FFY00
+Doc/library/importlib.resources.rst       @jaraco @warsaw @FFY00
 Lib/importlib/resources/                  @jaraco @warsaw @FFY00
 Lib/test/test_importlib/resources/        @jaraco @warsaw @FFY00
 

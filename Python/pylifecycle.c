@@ -706,8 +706,6 @@ pycore_init_global_objects(PyInterpreterState *interp)
 {
     PyStatus status;
 
-    _PyFloat_InitState(interp);
-
     status = _PyUnicode_InitGlobalObjects(interp);
     if (_PyStatus_EXCEPTION(status)) {
         return status;
@@ -1527,6 +1525,18 @@ void
 Py_Initialize(void)
 {
     Py_InitializeEx(1);
+}
+
+
+PyStatus
+_Py_InitializeMain(void)
+{
+    PyStatus status = _PyRuntime_Initialize();
+    if (_PyStatus_EXCEPTION(status)) {
+        return status;
+    }
+    PyThreadState *tstate = _PyThreadState_GET();
+    return pyinit_main(tstate);
 }
 
 
