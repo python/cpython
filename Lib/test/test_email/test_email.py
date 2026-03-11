@@ -5789,6 +5789,21 @@ Content-Transfer-Encoding: 8bit
             with self.subTest(m=m):
                 msg = email.message_from_string(m)
 
+    def test_collapse_rfc2231_value_non_3_tuple(self):
+        # collapse_rfc2231_value should not crash on tuples
+        # whose length is not 3.
+        from email.utils import collapse_rfc2231_value
+        # Non-3-tuples should return a string, not raise AttributeError.
+        for val in [(), ('a',), ('a', 'b'), ('a', 'b', 'c', 'd')]:
+            with self.subTest(val=val):
+                result = collapse_rfc2231_value(val)
+                self.assertIsInstance(result, str)
+        # A proper 3-tuple decodes correctly.
+        result = collapse_rfc2231_value(('us-ascii', 'en', 'hello'))
+        self.assertEqual(result, 'hello')
+        # A plain string passes through unquote.
+        self.assertEqual(collapse_rfc2231_value('"hello"'), 'hello')
+
 
 # Tests to ensure that signed parts of an email are completely preserved, as
 # required by RFC1847 section 2.1.  Note that these are incomplete, because the
