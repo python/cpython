@@ -1121,11 +1121,7 @@ setiter_iternext(PyObject *self)
         return NULL;
     }
 
-#ifdef Py_GIL_DISABLED
     Py_BEGIN_CRITICAL_SECTION2(self, so);
-#else
-    Py_BEGIN_CRITICAL_SECTION(so);
-#endif
 
     i = si->si_pos;
 #ifdef Py_GIL_DISABLED
@@ -1158,7 +1154,7 @@ done:
     Py_END_CRITICAL_SECTION2();
     return key;
 #else
-    Py_END_CRITICAL_SECTION();
+    Py_END_CRITICAL_SECTION2();
 
     if (key == NULL) {
         /* exhausted */
