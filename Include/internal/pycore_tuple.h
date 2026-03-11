@@ -21,6 +21,8 @@ extern PyStatus _PyTuple_InitGlobalObjects(PyInterpreterState *);
 
 /* other API */
 
+PyAPI_FUNC(void) _PyTuple_Free(PyObject *self);
+
 #define _PyTuple_ITEMS(op) _Py_RVALUE(_PyTuple_CAST(op)->ob_item)
 
 PyAPI_FUNC(PyObject *)_PyTuple_FromStackRefStealOnSuccess(const union _PyStackRef *, Py_ssize_t);
