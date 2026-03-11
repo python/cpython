@@ -4225,14 +4225,14 @@ class BaseSuggestionTests(SuggestionFormattingTestMixin):
         class C1(C0, metaclass=M):
             pass
 
-        self.assertNotIn("'bluch'", self.get_suggestion(C0, "blach"))
-        self.assertIn("'bluch'", self.get_suggestion(C0(), "blach"))
+        self.assertNotIn("'.bluch'", self.get_suggestion(C0, "blach"))
+        self.assertIn("'.bluch'", self.get_suggestion(C0(), "blach"))
 
-        self.assertIn("'fox'", self.get_suggestion(C1, "foo"))
-        self.assertNotIn("'fox'", self.get_suggestion(C1(), "foo"))
+        self.assertIn("'.fox'", self.get_suggestion(C1, "foo"))
+        self.assertNotIn("'.fox'", self.get_suggestion(C1(), "foo"))
 
-        self.assertNotIn("'bluch'", self.get_suggestion(C1, "blach"))
-        self.assertIn("'bluch'", self.get_suggestion(C1(), "blach"))
+        self.assertNotIn("'.bluch'", self.get_suggestion(C1, "blach"))
+        self.assertIn("'.bluch'", self.get_suggestion(C1(), "blach"))
 
 
     def test_do_not_trigger_for_long_attributes(self):
