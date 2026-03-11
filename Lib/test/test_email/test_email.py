@@ -5790,14 +5790,13 @@ Content-Transfer-Encoding: 8bit
                 msg = email.message_from_string(m)
 
     def test_collapse_rfc2231_value_non_3_tuple(self):
-        # collapse_rfc2231_value should not crash on tuples
-        # whose length is not 3.
+        # collapse_rfc2231_value raises TypeError on values that are
+        # neither a string nor a 3-tuple.
         from email.utils import collapse_rfc2231_value
-        # Non-3-tuples should return a string, not raise AttributeError.
-        for val in [(), ('a',), ('a', 'b'), ('a', 'b', 'c', 'd')]:
+        for val in [(), ('a',), ('a', 'b'), ('a', 'b', 'c', 'd'), 42, None]:
             with self.subTest(val=val):
-                result = collapse_rfc2231_value(val)
-                self.assertIsInstance(result, str)
+                with self.assertRaises(TypeError):
+                    collapse_rfc2231_value(val)
         # A proper 3-tuple decodes correctly.
         result = collapse_rfc2231_value(('us-ascii', 'en', 'hello'))
         self.assertEqual(result, 'hello')
