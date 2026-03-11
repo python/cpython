@@ -2305,13 +2305,12 @@ generic_class_getitem(PyObject *cls, PyObject *args, PyObject *kwargs)
 PyObject *
 _Py_subscript_generic(PyThreadState* unused, PyObject *params)
 {
-    params = unpack_typevartuples(params);
-
     PyInterpreterState *interp = _PyInterpreterState_GET();
     if (interp->cached_objects.generic_type == NULL) {
         PyErr_SetString(PyExc_SystemError, "Cannot find Generic type");
         return NULL;
     }
+    params = unpack_typevartuples(params);
     PyObject *args[2] = {(PyObject *)interp->cached_objects.generic_type, params};
     PyObject *result = call_typing_func_object("_GenericAlias", args, 2);
     Py_DECREF(params);
