@@ -301,6 +301,16 @@ class TestOptionChecks(BaseTest):
                      'callback': self.dummy,
                      'callback_kwargs': 'foo'})
 
+    def test_callback_kwargs_tuple_not_dict(self):
+        # A tuple callback_kwargs should raise OptionError, not TypeError
+        # from string formatting unpacking the tuple.
+        self.assertOptionError(
+            "option -b: callback_kwargs, if supplied, "
+            "must be a dict: not (1, 2)",
+            ["-b"], {'action': 'callback',
+                     'callback': self.dummy,
+                     'callback_kwargs': (1, 2)})
+
     def test_no_callback_for_action(self):
         self.assertOptionError(
             "option -b: callback supplied ('foo') for non-callback option",
