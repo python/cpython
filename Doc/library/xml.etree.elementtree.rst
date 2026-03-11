@@ -702,6 +702,9 @@ Functions
    attributes.  *extra* contains additional attributes, given as keyword
    arguments.  Returns an element instance.
 
+   .. versionchanged:: 3.15
+      *attrib* can now be a :class:`frozendict`.
+
 
 .. function:: tostring(element, encoding="us-ascii", method="xml", *, \
                        xml_declaration=None, default_namespace=None, \
@@ -886,6 +889,9 @@ Element Objects
    bytestrings or Unicode strings.  *tag* is the element name.  *attrib* is
    an optional dictionary, containing element attributes.  *extra* contains
    additional attributes, given as keyword arguments.
+
+   .. versionchanged:: 3.15
+      *attrib* can now be a :class:`frozendict`.
 
 
    .. attribute:: tag
