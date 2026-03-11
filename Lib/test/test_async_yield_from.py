@@ -373,69 +373,68 @@ class TestPEP828Operation(unittest.TestCase):
             "value = eggs",
         ])
 
-    # @_async_test
-    # async def test_exception_value_crash(self):
-    #     # There used to be a refcount error when the return value
-    #     # stored in the StopAsyncIteration has a refcount of 1.
-    #     async def g1():
-    #         async yield from g2()
-    #     async def g2():
-    #         yield "g2"
-    #         return [42]
-    #     self.assertEqual([x async for x in g1()], ["g2"])
+    @_async_test
+    async def test_exception_value_crash(self):
+        # There used to be a refcount error when the return value
+        # stored in the StopAsyncIteration has a refcount of 1.
+        async def g1():
+            async yield from g2()
+        async def g2():
+            yield "g2"
+            return object()
+        self.assertEqual([x async for x in g1()], ["g2"])
 
-
-    # @_async_test
-    # async def test_generator_return_value(self):
-    #     """
-    #     Test generator return value
-    #     """
-    #     trace = []
-    #     async def g1():
-    #         trace.append("Starting g1")
-    #         yield "g1 ham"
-    #         ret = async yield from g2()
-    #         trace.append("g2 returned %r" % (ret,))
-    #         for v in 1, (2,), StopAsyncIteration(3):
-    #             ret = async yield from g2(v)
-    #             trace.append("g2 returned %r" % (ret,))
-    #         yield "g1 eggs"
-    #         trace.append("Finishing g1")
-    #     async def g2(v = None):
-    #         trace.append("Starting g2")
-    #         yield "g2 spam"
-    #         yield "g2 more spam"
-    #         trace.append("Finishing g2")
-    #         if v:
-    #             return v
-    #     async for x in g1():
-    #         trace.append("Yielded %s" % (x,))
-    #     self.assertEqual(trace,[
-    #         "Starting g1",
-    #         "Yielded g1 ham",
-    #         "Starting g2",
-    #         "Yielded g2 spam",
-    #         "Yielded g2 more spam",
-    #         "Finishing g2",
-    #         "g2 returned None",
-    #         "Starting g2",
-    #         "Yielded g2 spam",
-    #         "Yielded g2 more spam",
-    #         "Finishing g2",
-    #         "g2 returned 1",
-    #         "Starting g2",
-    #         "Yielded g2 spam",
-    #         "Yielded g2 more spam",
-    #         "Finishing g2",
-    #         "g2 returned (2,)",
-    #         "Starting g2",
-    #         "Yielded g2 spam",
-    #         "Yielded g2 more spam",
-    #         "Finishing g2",
-    #         "g2 returned StopAsyncIteration(3)",
-    #         "Yielded g1 eggs",
-    #         "Finishing g1",
-    #     ])
+    @_async_test
+    async def test_generator_return_value(self):
+        """
+        Test generator return value
+        """
+        trace = []
+        async def g1():
+            trace.append("Starting g1")
+            yield "g1 ham"
+            ret = async yield from g2()
+            trace.append("g2 returned %r" % (ret,))
+            for v in 1, (2,), StopAsyncIteration(3):
+                ret = async yield from g2(v)
+                trace.append("g2 returned %r" % (ret,))
+            yield "g1 eggs"
+            trace.append("Finishing g1")
+        async def g2(v = None):
+            trace.append("Starting g2")
+            yield "g2 spam"
+            yield "g2 more spam"
+            trace.append("Finishing g2")
+            if v:
+                return v
+        async for x in g1():
+            trace.append("Yielded %s" % (x,))
+        self.assertEqual(trace,[
+            "Starting g1",
+            "Yielded g1 ham",
+            "Starting g2",
+            "Yielded g2 spam",
+            "Yielded g2 more spam",
+            "Finishing g2",
+            "g2 returned None",
+            "Starting g2",
+            "Yielded g2 spam",
+            "Yielded g2 more spam",
+            "Finishing g2",
+            "g2 returned 1",
+            "Starting g2",
+            "Yielded g2 spam",
+            "Yielded g2 more spam",
+            "Finishing g2",
+            "g2 returned (2,)",
+            "Starting g2",
+            "Yielded g2 spam",
+            "Yielded g2 more spam",
+            "Finishing g2",
+            "g2 returned StopAsyncIteration(3)",
+            "Yielded g1 eggs",
+            "Finishing g1",
+        ])
 
     @_async_test
     async def test_delegation_of_anext_to_non_generator(self):
