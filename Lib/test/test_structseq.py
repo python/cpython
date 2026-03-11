@@ -358,7 +358,7 @@ class StructSeqTest(unittest.TestCase):
 
     def test_replace_gc_tracked(self):
         # Verify that __replace__ results are properly GC-tracked
-        time_struct= time.gmtime(0)
+        time_struct = time.gmtime(0)
         lst = []
         replaced_struct = time_struct.__replace__(tm_year=lst)
         lst.append(replaced_struct)
