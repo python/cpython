@@ -2700,15 +2700,15 @@ class TestParser(TestParserMixin, TestEmailBase):
                 )(params_test_get_word),
             ),
 
-        test_get_phrase_simple = C(
+        simple = C(
             '"Fred A. Johnson" is his name, oh.',
             '"Fred A. Johnson" is his name',
             'Fred A. Johnson is his name',
             [],
-            ', oh.')
-            ,
+            ', oh.',
+            ),
 
-        test_get_phrase_complex = C(
+        complex = C(
             ' (A) bird (in (my|your)) "hand  " is messy\t<>\t',
             ' (A) bird (in (my|your)) "hand  " is messy\t',
             ' bird hand   is messy ',
@@ -2717,7 +2717,7 @@ class TestParser(TestParserMixin, TestEmailBase):
             ['A', 'in (my|your)'],
             ),
 
-        test_get_phrase_obsolete = C(
+        obsolete = C(
             'Fred A.(weird).O Johnson',
             'Fred A.(weird).O Johnson',
             'Fred A. .O Johnson',
@@ -2727,7 +2727,7 @@ class TestParser(TestParserMixin, TestEmailBase):
             ),
        #self.assertEqual(len(phrase), 7)
 
-        test_get_phrase_pharse_must_start_with_word = C(
+        must_start_with_word = C(
             '(even weirder).name',
             '(even weirder).name',
             ' .name',
@@ -2737,7 +2737,7 @@ class TestParser(TestParserMixin, TestEmailBase):
             ),
        #self.assertEqual(len(phrase), 3)
 
-        test_get_phrase_ending_with_obsolete = C(
+        ending_with_obsolete = C(
             'simple phrase.(with trailing comment):boo',
             'simple phrase.(with trailing comment)',
             'simple phrase. ',
@@ -2747,64 +2747,73 @@ class TestParser(TestParserMixin, TestEmailBase):
             ),
        #self.assertEqual(len(phrase), 4)
 
-        test_get_phrase_adjacent_ew = C(
         # "'linear-white-space' that separates a pair of adjacent
         # 'encoded-word's is ignored" (rfc2047 section 6.2)
-                                            '=?ascii?q?Joi?= \t =?ascii?q?ned?=', 'Joined', 'Joined', [], '')
-        ,
 
-        test_get_phrase_adjacent_ew_different_encodings = C(
-            '=?utf-8?q?B=C3=A9r?= =?iso-8859-1?q?=E9nice?=', 'Bérénice', 'Bérénice', [], ''
-        ),
+        adjacent_ew = C(
+            '=?ascii?q?Joi?= \t =?ascii?q?ned?=',
+            'Joined',
+            'Joined',
+            [],
+            '',
+            ),
 
-        test_get_phrase_adjacent_ew_encoded_spaces = C(
+        adjacent_ew_different_encodings = C(
+            '=?utf-8?q?B=C3=A9r?= =?iso-8859-1?q?=E9nice?=',
+            'Bérénice',
+            'Bérénice',
+            [],
+            ''
+            ),
+
+        adjacent_ew_encoded_spaces = C(
             '=?ascii?q?Encoded?= =?ascii?q?_spaces_?= =?ascii?q?preserved?=',
             'Encoded spaces preserved',
             'Encoded spaces preserved',
             [],
             ''
-        ),
+            ),
 
-        test_get_phrase_adjacent_ew_comment_is_not_linear_white_space = C(
+        adjacent_ew_comment_is_not_linear_white_space = C(
             '=?ascii?q?Comment?= (is not) =?ascii?q?linear-white-space?=',
             'Comment (is not) linear-white-space',
             'Comment linear-white-space',
             [],
             '',
             comments=['is not'],
-        ),
+            ),
 
-        test_get_phrase_adjacent_ew_no_error_on_defects = C(
+        adjacent_ew_no_error_on_defects = C(
             '=?ascii?q?Def?= =?ascii?q?ect still joins?=',
             'Defect still joins',
             'Defect still joins',
             [errors.InvalidHeaderDefect],  # whitespace inside encoded word
             ''
-        ),
+            ),
 
-        test_get_phrase_adjacent_ew_ignore_non_ew = C(
+        adjacent_ew_ignore_non_ew = C(
             '=?ascii?q?No?= =?join?= for non-ew',
             'No =?join?= for non-ew',
             'No =?join?= for non-ew',
             [],
             ''
-        ),
+            ),
 
-        test_get_phrase_adjacent_ew_ignore_invalid_ew = C(
+        adjacent_ew_ignore_invalid_ew = C(
             '=?ascii?q?No?= =?ascii?rot13?wbva= for invalid ew',
             'No =?ascii?rot13?wbva= for invalid ew',
             'No =?ascii?rot13?wbva= for invalid ew',
             [],
             ''
-        ),
+            ),
 
-        test_get_phrase_adjacent_ew_missing_space = C(
+        adjacent_ew_missing_space = C(
             '=?ascii?q?Joi?==?ascii?q?ned?=',
             'Joined',
             'Joined',
             [errors.InvalidHeaderDefect],  # missing trailing whitespace
             ''
-        ),
+            ),
         )
 
 
