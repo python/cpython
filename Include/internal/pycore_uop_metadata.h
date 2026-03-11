@@ -11,7 +11,6 @@ extern "C" {
 
 #include <stdint.h>
 #include "pycore_uop_ids.h"
-#define MAX_CACHED_REGISTER 3
 extern const uint32_t _PyUop_Flags[MAX_UOP_ID+1];
 typedef struct _rep_range { uint8_t start; uint8_t stop; } ReplicationRange;
 extern const ReplicationRange _PyUop_Replication[MAX_UOP_ID+1];
