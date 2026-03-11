@@ -827,6 +827,7 @@ mimetypes
    - ``application/vnd.ms-cab-compressed`` for ``.cab`` extension
    - ``application/vnd.ms-htmlhelp`` for ``.chm`` extension
    - ``application/vnd.ms-officetheme`` for ``.thmx`` extension
+
 (Contributed by Charlie Lin in :gh:`145718`.)
 
 * Rename ``application/x-texinfo`` to ``application/texinfo``.
