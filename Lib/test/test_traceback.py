@@ -625,7 +625,7 @@ class TracebackCases(unittest.TestCase):
             str(inspect.signature(traceback.format_exception_only)),
             '(exc, /, value=<implicit>, *, show_group=False, **kwargs)')
 
-    def test_traceback_deep_recursion_alloca():
+    def test_traceback_deep_recursion_alloca(self):
 
         def recurse(n):
             if n == 0:
