@@ -413,7 +413,7 @@ recommended to review the security section for any code deployed to production.
 
    `ISO 32000-2 Portable document format - Part 2: PDF 2.0 <https://pdfa.org/resource/iso-32000-2/>`_
       Section 7.4.3, "ASCII85Decode Filter," provides the definition
-      of the standard base85 encoding used in PDF and PostScript, including
+      of the Ascii85 encoding used in PDF and PostScript, including
       the output character set and the details of data length preservation
       using zero-padding and partial output groups.
 
