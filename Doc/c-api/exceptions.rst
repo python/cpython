@@ -716,7 +716,7 @@ Signal Handling
       This function may now execute a remote debugger script, if remote
       debugging is enabled.
 
-   .. versionchanged:: next
+   .. versionchanged:: 3.15
       The exception set by :c:func:`PyThreadState_SetAsyncExc` is now raised.
 
 

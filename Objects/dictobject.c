@@ -5169,15 +5169,47 @@ dict_vectorcall(PyObject *type, PyObject * const*args,
         return NULL;
     }
 
-    PyObject *self;
-    if (Py_Is((PyTypeObject*)type, &PyFrozenDict_Type)
-        || PyType_IsSubtype((PyTypeObject*)type, &PyFrozenDict_Type))
+    PyObject *self = dict_new(_PyType_CAST(type), NULL, NULL);
+    if (self == NULL) {
+        return NULL;
+    }
+    if (nargs == 1) {
+        if (dict_update_arg(self, args[0]) < 0) {
+            Py_DECREF(self);
+            return NULL;
+        }
+        args++;
+    }
+    if (kwnames != NULL) {
+        for (Py_ssize_t i = 0; i < PyTuple_GET_SIZE(kwnames); i++) {
+            PyObject *key = PyTuple_GET_ITEM(kwnames, i);  // borrowed
+            if (PyDict_SetItem(self, key, args[i]) < 0) {
+                Py_DECREF(self);
+                return NULL;
+            }
+        }
+    }
+    return self;
+}
+
+static PyObject *
+frozendict_vectorcall(PyObject *type, PyObject * const*args,
+                      size_t nargsf, PyObject *kwnames)
+{
+    Py_ssize_t nargs = PyVectorcall_NARGS(nargsf);
+    if (!_PyArg_CheckPositional("frozendict", nargs, 0, 1)) {
+        return NULL;
+    }
+
+    if (nargs == 1 && kwnames == NULL
+        && PyFrozenDict_CheckExact(args[0])
+        && Py_Is((PyTypeObject*)type, &PyFrozenDict_Type))
     {
-        self = frozendict_new(_PyType_CAST(type), NULL, NULL);
+        // frozendict(frozendict) returns the same object unmodified
+        return Py_NewRef(args[0]);
     }
-    else {
-        self = dict_new(_PyType_CAST(type), NULL, NULL);
-    }
+
+    PyObject *self = frozendict_new(_PyType_CAST(type), NULL, NULL);
     if (self == NULL) {
         return NULL;
     }
@@ -8171,6 +8203,11 @@ PyObject*
 PyFrozenDict_New(PyObject *iterable)
 {
     if (iterable != NULL) {
+        if (PyFrozenDict_CheckExact(iterable)) {
+            // PyFrozenDict_New(frozendict) returns the same object unmodified
+            return Py_NewRef(iterable);
+        }
+
         PyObject *args = PyTuple_Pack(1, iterable);
         if (args == NULL) {
             return NULL;
@@ -8228,6 +8265,6 @@ PyTypeObject PyFrozenDict_Type = {
     .tp_alloc = _PyType_AllocNoTrack,
     .tp_new = frozendict_new,
     .tp_free = PyObject_GC_Del,
-    .tp_vectorcall = dict_vectorcall,
+    .tp_vectorcall = frozendict_vectorcall,
     .tp_version_tag = _Py_TYPE_VERSION_FROZENDICT,
 };

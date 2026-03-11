@@ -495,7 +495,7 @@ Dictionary view objects
 Frozen dictionary objects
 ^^^^^^^^^^^^^^^^^^^^^^^^^
 
-.. versionadded:: next
+.. versionadded:: 3.15
 
 
 .. c:var:: PyTypeObject PyFrozenDict_Type

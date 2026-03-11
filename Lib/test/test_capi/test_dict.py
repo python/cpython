@@ -619,6 +619,16 @@ class CAPITest(unittest.TestCase):
         self.assertEqual(dct, frozendict(x=1, y=2))
         self.assertIs(type(dct), frozendict)
 
+        # PyFrozenDict_New(frozendict) returns the same object unmodified
+        fd = frozendict(a=1, b=2, c=3)
+        fd2 = frozendict_new(fd)
+        self.assertIs(fd2, fd)
+
+        fd = FrozenDictSubclass(a=1, b=2, c=3)
+        fd2 = frozendict_new(fd)
+        self.assertIsNot(fd2, fd)
+        self.assertEqual(fd2, fd)
+
         # PyFrozenDict_New(NULL) creates an empty dictionary
         dct = frozendict_new(NULL)
         self.assertEqual(dct, frozendict())

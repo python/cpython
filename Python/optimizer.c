@@ -786,8 +786,8 @@ _PyJit_translate_single_bytecode_to_trace(
             _Py_CODEUNIT *computed_next_instr = computed_next_instr_without_modifiers + (computed_next_instr_without_modifiers->op.code == NOT_TAKEN);
             _Py_CODEUNIT *computed_jump_instr = computed_next_instr_without_modifiers + oparg;
             assert(next_instr == computed_next_instr || next_instr == computed_jump_instr);
-            int jump_happened = computed_jump_instr == next_instr;
-            assert(jump_happened == (target_instr[1].cache & 1));
+            int jump_happened = target_instr[1].cache & 1;
+            assert(jump_happened ? (next_instr == computed_jump_instr) : (next_instr == computed_next_instr));
             uint32_t uopcode = BRANCH_TO_GUARD[opcode - POP_JUMP_IF_FALSE][jump_happened];
             ADD_TO_TRACE(uopcode, 0, 0, INSTR_IP(jump_happened ? computed_next_instr : computed_jump_instr, old_code));
             break;
@@ -1076,12 +1076,19 @@ _PyJit_FinalizeTracing(PyThreadState *tstate, int err)
             exit->temperature = initial_temperature_backoff_counter(&tstate->interp->opt_config);
         }
     }
+    // Clear all recorded values
+    _PyJitUopBuffer *buffer = &tracer->code_buffer;
+    for (_PyUOpInstruction *inst = buffer->start; inst < buffer->next; inst++) {
+        if (_PyUop_Flags[inst->opcode] & HAS_RECORDS_VALUE_FLAG) {
+            Py_XDECREF((PyObject *)(uintptr_t)inst->operand0);
+        }
+    }
     Py_CLEAR(tracer->initial_state.code);
     Py_CLEAR(tracer->initial_state.func);
     Py_CLEAR(tracer->initial_state.executor);
     Py_CLEAR(tracer->prev_state.instr_code);
     Py_CLEAR(tracer->prev_state.recorded_value);
-    uop_buffer_init(&tracer->code_buffer, &tracer->uop_array[0], UOP_MAX_TRACE_LENGTH);
+    uop_buffer_init(buffer, &tracer->uop_array[0], UOP_MAX_TRACE_LENGTH);
     tracer->is_tracing = false;
 }
 
@@ -1521,6 +1528,11 @@ uop_optimize(
         }
         assert(_PyOpcode_uop_name[buffer[pc].opcode]);
     }
+    // We've cleaned up the references in the buffer, so discard the code buffer
+    // to avoid doing it again during tracer cleanup
+    _PyJitUopBuffer *code_buffer = &_tstate->jit_tracer_state->code_buffer;
+    code_buffer->next = code_buffer->start;
+
     OPT_HIST(effective_trace_length(buffer, length), optimized_trace_length_hist);
     _PyUOpInstruction *output = &_tstate->jit_tracer_state->uop_array[0];
     length = stack_allocate(buffer, output, length);
