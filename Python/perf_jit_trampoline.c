@@ -398,6 +398,7 @@ static void perf_map_jit_write_header(int pid, FILE* out_file) {
     header.version = 1;                           // Current jitdump version
     header.size = sizeof(Header);                 // Header size for validation
     header.elf_mach_target = GetElfMachineArchitecture();  // Target architecture
+    header.reserved = 0;                          // padding reserved for future use
     header.process_id = pid;                      // Process identifier
     header.time_stamp = get_current_time_microseconds();   // Creation time
     header.flags = 0;                             // No special flags currently used
@@ -1082,7 +1083,8 @@ static void* perf_map_jit_init(void) {
         0                        // Offset 0 (first page)
     );
 
-    if (perf_jit_map_state.mapped_buffer == NULL) {
+    if (perf_jit_map_state.mapped_buffer == MAP_FAILED) {
+        perf_jit_map_state.mapped_buffer = NULL;
         close(fd);
         return NULL;  // Memory mapping failed
     }

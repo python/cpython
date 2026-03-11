@@ -24,7 +24,6 @@
 #include "pycore_stackref.h"      // Py_STACKREF_DEBUG
 #include "pycore_stats.h"         // FT_STAT_WORLD_STOP_INC()
 #include "pycore_time.h"          // _PyTime_Init()
-#include "pycore_uop.h"           // UOP_BUFFER_SIZE
 #include "pycore_uniqueid.h"      // _PyObject_FinalizePerThreadRefcounts()
 
 
@@ -522,6 +521,13 @@ is_env_enabled(const char *env_name)
     return env && *env != '\0' && *env != '0';
 }
 
+static inline bool
+is_env_disabled(const char *env_name)
+{
+    char *env = Py_GETENV(env_name);
+    return env != NULL && *env == '0';
+}
+
 static inline void
 init_policy(uint16_t *target, const char *env_name, uint16_t default_value,
             long min_value, long max_value)
@@ -619,6 +625,7 @@ init_interpreter(PyInterpreterState *interp,
                 SIDE_EXIT_INITIAL_BACKOFF, 0, MAX_BACKOFF);
 
     interp->opt_config.specialization_enabled = !is_env_enabled("PYTHON_SPECIALIZATION_OFF");
+    interp->opt_config.uops_optimize_enabled = !is_env_disabled("PYTHON_UOPS_OPTIMIZE");
     if (interp != &runtime->_main_interpreter) {
         /* Fix the self-referential, statically initialized fields. */
         interp->dtoa = (struct _dtoa_state)_dtoa_state_INIT(interp);
@@ -1557,6 +1564,7 @@ init_threadstate(_PyThreadStateImpl *_tstate,
     tstate->datastack_chunk = NULL;
     tstate->datastack_top = NULL;
     tstate->datastack_limit = NULL;
+    tstate->datastack_cached_chunk = NULL;
     tstate->what_event = -1;
     tstate->current_executor = NULL;
     tstate->jit_exit = NULL;
@@ -1707,6 +1715,11 @@ clear_datastack(PyThreadState *tstate)
         _PyObject_VirtualFree(chunk, chunk->size);
         chunk = prev;
     }
+    if (tstate->datastack_cached_chunk != NULL) {
+        _PyObject_VirtualFree(tstate->datastack_cached_chunk,
+                              tstate->datastack_cached_chunk->size);
+        tstate->datastack_cached_chunk = NULL;
+    }
 }
 
 void
@@ -1835,6 +1848,10 @@ PyThreadState_Clear(PyThreadState *tstate)
     _PyMem_AbandonDelayed(tstate);
 
     _PyThreadState_ClearMimallocHeaps(tstate);
+
+#ifdef _Py_TIER2
+    _PyJit_TracerFree((_PyThreadStateImpl *)tstate);
+#endif
 
     tstate->_status.cleared = 1;
 
@@ -3034,9 +3051,20 @@ push_chunk(PyThreadState *tstate, int size)
     while (allocate_size < (int)sizeof(PyObject*)*(size + MINIMUM_OVERHEAD)) {
         allocate_size *= 2;
     }
-    _PyStackChunk *new = allocate_chunk(allocate_size, tstate->datastack_chunk);
-    if (new == NULL) {
-        return NULL;
+    _PyStackChunk *new;
+    if (tstate->datastack_cached_chunk != NULL
+        && (size_t)allocate_size <= tstate->datastack_cached_chunk->size)
+    {
+        new = tstate->datastack_cached_chunk;
+        tstate->datastack_cached_chunk = NULL;
+        new->previous = tstate->datastack_chunk;
+        new->top = 0;
+    }
+    else {
+        new = allocate_chunk(allocate_size, tstate->datastack_chunk);
+        if (new == NULL) {
+            return NULL;
+        }
     }
     if (tstate->datastack_chunk) {
         tstate->datastack_chunk->top = tstate->datastack_top -
@@ -3072,12 +3100,17 @@ _PyThreadState_PopFrame(PyThreadState *tstate, _PyInterpreterFrame * frame)
     if (base == &tstate->datastack_chunk->data[0]) {
         _PyStackChunk *chunk = tstate->datastack_chunk;
         _PyStackChunk *previous = chunk->previous;
+        _PyStackChunk *cached = tstate->datastack_cached_chunk;
         // push_chunk ensures that the root chunk is never popped:
         assert(previous);
         tstate->datastack_top = &previous->data[previous->top];
         tstate->datastack_chunk = previous;
-        _PyObject_VirtualFree(chunk, chunk->size);
         tstate->datastack_limit = (PyObject **)(((char *)previous) + previous->size);
+        chunk->previous = NULL;
+        if (cached != NULL) {
+            _PyObject_VirtualFree(cached, cached->size);
+        }
+        tstate->datastack_cached_chunk = chunk;
     }
     else {
         assert(tstate->datastack_top);

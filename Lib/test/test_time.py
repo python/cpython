@@ -358,8 +358,8 @@ class TimeTestCase(unittest.TestCase):
         # Should be able to go round-trip from strftime to strptime without
         # raising an exception.
         tt = time.gmtime(self.t)
-        for directive in ('a', 'A', 'b', 'B', 'c', 'd', 'H', 'I',
-                          'j', 'm', 'M', 'p', 'S',
+        for directive in ('a', 'A', 'b', 'B', 'c', 'd', 'D', 'F', 'H', 'I',
+                          'j', 'm', 'M', 'p', 'S', 'T',
                           'U', 'w', 'W', 'x', 'X', 'y', 'Y', 'Z', '%'):
             format = '%' + directive
             if directive == 'd':
@@ -379,7 +379,7 @@ class TimeTestCase(unittest.TestCase):
     def test_strptime_exception_context(self):
         # check that this doesn't chain exceptions needlessly (see #17572)
         with self.assertRaises(ValueError) as e:
-            time.strptime('', '%D')
+            time.strptime('', '%!')
         self.assertTrue(e.exception.__suppress_context__)
         # additional check for stray % branch
         with self.assertRaises(ValueError) as e:

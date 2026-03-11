@@ -59,6 +59,7 @@ Objects/interpolationobject.c	-	_PyInterpolation_Type	-
 Objects/iterobject.c	-	PyCallIter_Type	-
 Objects/iterobject.c	-	PySeqIter_Type	-
 Objects/iterobject.c	-	_PyAnextAwaitable_Type	-
+Objects/lazyimportobject.c	-	PyLazyImport_Type	-
 Objects/listobject.c	-	PyListIter_Type	-
 Objects/listobject.c	-	PyListRevIter_Type	-
 Objects/listobject.c	-	PyList_Type	-
@@ -176,6 +177,7 @@ Objects/exceptions.c	-	_PyExc_StopIteration	-
 Objects/exceptions.c	-	_PyExc_GeneratorExit	-
 Objects/exceptions.c	-	_PyExc_SystemExit	-
 Objects/exceptions.c	-	_PyExc_KeyboardInterrupt	-
+Objects/exceptions.c	-	_PyExc_ImportCycleError	-
 Objects/exceptions.c	-	_PyExc_ImportError	-
 Objects/exceptions.c	-	_PyExc_ModuleNotFoundError	-
 Objects/exceptions.c	-	_PyExc_OSError	-
@@ -242,6 +244,7 @@ Objects/exceptions.c	-	PyExc_StopIteration	-
 Objects/exceptions.c	-	PyExc_GeneratorExit	-
 Objects/exceptions.c	-	PyExc_SystemExit	-
 Objects/exceptions.c	-	PyExc_KeyboardInterrupt	-
+Objects/exceptions.c	-	PyExc_ImportCycleError	-
 Objects/exceptions.c	-	PyExc_ImportError	-
 Objects/exceptions.c	-	PyExc_ModuleNotFoundError	-
 Objects/exceptions.c	-	PyExc_OSError	-

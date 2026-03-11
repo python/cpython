@@ -125,8 +125,8 @@ Entry points
    :meth:`!select` method for comparison to the attributes of
    the individual entry point definitions.
 
-   Note: it is not currently possible to query for entry points based on
-   their :attr:`!EntryPoint.dist` attribute (as different :class:`!Distribution`
+   Note: to query for entry points based on :attr:`!EntryPoint.dist` attribute,
+   use :meth:`Distribution.entry_points` instead (as different :class:`Distribution`
    instances do not currently compare equal, even if they have the same attributes)
 
 .. class:: EntryPoints
@@ -291,7 +291,7 @@ Distribution files
 .. function:: files(distribution_name)
 
    Return the full set of files contained within the named
-   distribution package.
+   distribution package as :class:`PackagePath` instances.
 
    Raises :exc:`PackageNotFoundError` if the named distribution
    package is not installed in the current Python environment.
@@ -304,12 +304,22 @@ Distribution files
 
     A :class:`pathlib.PurePath` derived object with additional ``dist``,
     ``size``, and ``hash`` properties corresponding to the distribution
-    package's installation metadata for that file.
+    package's installation metadata for that file, also:
+
+    .. method:: locate()
+
+       If possible, return the concrete :class:`SimplePath` allowing to access data,
+       or raise a :exc:`NotImplementedError` otherwise.
+
+.. class:: SimplePath
+
+    A protocol representing a minimal subset of :class:`pathlib.Path` that allows to
+    check if it ``exists()``, to traverse using ``joinpath()`` and ``parent``,
+    and to retrieve data using ``read_text()`` and ``read_bytes()``.
 
 The :func:`!files` function takes a
 `Distribution Package <https://packaging.python.org/en/latest/glossary/#term-Distribution-Package>`_
-name and returns all of the files installed by this distribution. Each file is reported
-as a :class:`PackagePath` instance. For example::
+name and returns all of the files installed by this distribution. For example::
 
     >>> util = [p for p in files('wheel') if 'util.py' in str(p)][0]  # doctest: +SKIP
     >>> util  # doctest: +SKIP
@@ -402,6 +412,18 @@ function is not reliable with such installs.
 Distributions
 =============
 
+While the module level API described above is the most common and convenient usage,
+all that information is accessible from the :class:`Distribution` class.
+:class:`!Distribution` is an abstract object that represents the metadata for
+a Python `Distribution Package <https://packaging.python.org/en/latest/glossary/#term-Distribution-Package>`_.
+Get the concrete :class:`!Distribution` subclass instance for an installed
+distribution package by calling the :func:`distribution` function::
+
+    >>> from importlib.metadata import distribution  # doctest: +SKIP
+    >>> dist = distribution('wheel')  # doctest: +SKIP
+    >>> type(dist)  # doctest: +SKIP
+    <class 'importlib.metadata.PathDistribution'>
+
 .. function:: distribution(distribution_name)
 
    Return a :class:`Distribution` instance describing the named
@@ -409,6 +431,14 @@ Distributions
 
    Raises :exc:`PackageNotFoundError` if the named distribution
    package is not installed in the current Python environment.
+
+Thus, an alternative way to get e.g. the version number is through the
+:attr:`Distribution.version` attribute::
+
+    >>> dist.version  # doctest: +SKIP
+    '0.32.3'
+
+The same applies for :func:`entry_points` and :func:`files`.
 
 .. class:: Distribution
 
@@ -418,53 +448,85 @@ Distributions
    equal, even if they relate to the same installed distribution and
    accordingly have the same attributes.
 
-   .. method:: discover(cls, *, context=None, **kwargs)
+   .. staticmethod:: at(path)
+   .. classmethod:: from_name(name)
 
-      Returns an iterable of :class:`Distribution` instances for all packages.
+      Return a :class:`!Distribution` instance at the given path or
+      with the given name.
+
+   .. classmethod:: discover(*, context=None, **kwargs)
+
+      Returns an iterable of :class:`!Distribution` instances for all packages
+      (see distribution-discovery_).
 
       The optional argument *context* is a :class:`DistributionFinder.Context`
       instance, used to modify the search for distributions. Alternatively,
       *kwargs* may contain keyword arguments for constructing a new
       :class:`!DistributionFinder.Context`.
 
+   .. attribute:: metadata
+      :type: PackageMetadata
 
-While the module level API described above is the most common and convenient usage,
-you can get all of that information from the :class:`!Distribution` class.
-:class:`!Distribution` is an abstract object that represents the metadata for
-a Python `Distribution Package <https://packaging.python.org/en/latest/glossary/#term-Distribution-Package>`_.
-You can get the concrete :class:`!Distribution` subclass instance for an installed
-distribution package by calling the :func:`distribution` function::
+      There are all kinds of additional metadata available on :class:`!Distribution`
+      instances as a :class:`PackageMetadata` instance::
 
-    >>> from importlib.metadata import distribution  # doctest: +SKIP
-    >>> dist = distribution('wheel')  # doctest: +SKIP
-    >>> type(dist)  # doctest: +SKIP
-    <class 'importlib.metadata.PathDistribution'>
+          >>> dist.metadata['Requires-Python']  # doctest: +SKIP
+          '>=2.7, !=3.0.*, !=3.1.*, !=3.2.*, !=3.3.*'
+          >>> dist.metadata['License']  # doctest: +SKIP
+          'MIT'
 
-Thus, an alternative way to get the version number is through the
-:class:`!Distribution` instance::
+      The full set of available metadata is not described here.
+      See the PyPA `Core metadata specification <https://packaging.python.org/en/latest/specifications/core-metadata/#core-metadata>`_ for additional details.
 
-    >>> dist.version  # doctest: +SKIP
-    '0.32.3'
+   .. attribute:: name
+      :type: str
+   .. attribute:: requires
+      :type: list[str]
+   .. attribute:: version
+      :type: str
 
-There are all kinds of additional metadata available on :class:`!Distribution`
-instances::
+      A few metadata fields are also available as shortcut properties.
 
-    >>> dist.metadata['Requires-Python']  # doctest: +SKIP
-    '>=2.7, !=3.0.*, !=3.1.*, !=3.2.*, !=3.3.*'
-    >>> dist.metadata['License']  # doctest: +SKIP
-    'MIT'
+      .. versionadded:: 3.10
 
-For editable packages, an ``origin`` property may present :pep:`610`
-metadata::
+         The ``name`` shortcut was added.
 
-    >>> dist.origin.url
-    'file:///path/to/wheel-0.32.3.editable-py3-none-any.whl'
+   .. attribute:: origin
 
-The full set of available metadata is not described here.
-See the PyPA `Core metadata specification <https://packaging.python.org/en/latest/specifications/core-metadata/#core-metadata>`_ for additional details.
+      For editable packages, an ``origin`` property may present :pep:`610`
+      metadata (for non-editable packages, ``origin`` is :const:`None`)::
 
-.. versionadded:: 3.13
-   The ``.origin`` property was added.
+         >>> dist.origin.url
+         'file:///path/to/wheel-0.32.3.editable-py3-none-any.whl'
+
+      The ``origin`` object follows the `Direct URL Data Structure
+      <https://packaging.python.org/en/latest/specifications/direct-url-data-structure/>`_.
+
+      .. versionadded:: 3.13
+
+   .. attribute:: entry_points
+      :type: EntryPoints
+
+      The entry points provided by this distribution package.
+
+   .. attribute:: files
+      :type: list[PackagePath] | None
+
+      All files contained in this distribution package.
+      Like :func:`files`, this returns :const:`None` if there are no records.
+
+   The following two abstract methods need to be implemented when implementing-custom-providers_:
+
+   .. method:: locate_file(path)
+
+      Like :meth:`!PackagePath.locate`, return a :class:`SimplePath` for the given path.
+      Takes a :class:`os.PathLike` or a :class:`str`.
+
+   .. method:: read_text(filename)
+
+      A shortcut for ``distribution.locate_file(filename).read_text()``.
+
+.. _distribution-discovery:
 
 Distribution Discovery
 ======================
@@ -575,8 +637,8 @@ consumer.
 
 In practice, to support finding distribution package
 metadata in locations other than the file system, subclass
-``Distribution`` and implement the abstract methods. Then from
-a custom finder, return instances of this derived ``Distribution`` in the
+:class:`!Distribution` and implement the abstract methods. Then from
+a custom finder, return instances of this derived :class:`!Distribution` in the
 ``find_distributions()`` method.
 
 Example
@@ -653,8 +715,8 @@ packages served by the ``DatabaseImporter``, assuming that the
 ``.entry_points`` attributes.
 
 The ``DatabaseDistribution`` may also provide other metadata files, like
-``RECORD`` (required for ``Distribution.files``) or override the
-implementation of ``Distribution.files``. See the source for more inspiration.
+``RECORD`` (required for :attr:`!Distribution.files`) or override the
+implementation of :attr:`!Distribution.files`. See the source for more inspiration.
 
 
 .. _`entry point API`: https://setuptools.readthedocs.io/en/latest/pkg_resources.html#entry-points

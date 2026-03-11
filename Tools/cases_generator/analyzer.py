@@ -39,6 +39,7 @@ class Properties:
     uses_opcode: bool
     needs_guard_ip: bool
     unpredictable_jump: bool
+    records_value: bool
     tier: int | None = None
     const_oparg: int = -1
     needs_prev: bool = False
@@ -83,6 +84,7 @@ class Properties:
             no_save_ip=all(p.no_save_ip for p in properties),
             needs_guard_ip=any(p.needs_guard_ip for p in properties),
             unpredictable_jump=any(p.unpredictable_jump for p in properties),
+            records_value=any(p.records_value for p in properties),
         )
 
     @property
@@ -113,6 +115,7 @@ SKIP_PROPERTIES = Properties(
     no_save_ip=False,
     needs_guard_ip=False,
     unpredictable_jump=False,
+    records_value=False,
 )
 
 
@@ -710,6 +713,8 @@ NON_ESCAPING_FUNCTIONS = (
     "_Py_set_eval_breaker_bit",
     "trigger_backoff_counter",
     "_PyThreadState_PopCStackRefSteal",
+    "doesnt_escape",
+
 )
 
 
@@ -999,6 +1004,7 @@ def compute_properties(op: parser.CodeDef) -> Properties:
                        or variable_used(op, "LOAD_IP")
                        or variable_used(op, "DISPATCH_INLINED"),
         unpredictable_jump=unpredictable_jump,
+        records_value=variable_used(op, "RECORD_VALUE")
     )
 
 def expand(items: list[StackItem], oparg: int) -> list[StackItem]:
@@ -1124,6 +1130,7 @@ def add_macro(
     macro: parser.Macro, instructions: dict[str, Instruction], uops: dict[str, Uop]
 ) -> None:
     parts: list[Part] = []
+    first = True
     for part in macro.uops:
         match part:
             case parser.OpName():
@@ -1134,7 +1141,13 @@ def add_macro(
                         raise analysis_error(
                             f"No Uop named {part.name}", macro.tokens[0]
                         )
-                    parts.append(uops[part.name])
+                    uop = uops[part.name]
+                    if uop.properties.records_value and not first:
+                        raise analysis_error(
+                            f"Recording uop {part.name} must be first in macro",
+                            macro.tokens[0])
+                    parts.append(uop)
+                    first = False
             case parser.CacheEffect():
                 parts.append(Skip(part.size))
             case _:

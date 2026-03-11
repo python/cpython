@@ -267,7 +267,7 @@ PyDoc_STRVAR(Struct_pack_into__doc__,
 
 static PyObject *
 Struct_pack_into_impl(PyStructObject *self, Py_buffer *buffer,
-                      PyObject *offset_obj, PyObject * const *values,
+                      Py_ssize_t offset, PyObject * const *values,
                       Py_ssize_t values_length);
 
 static PyObject *
@@ -275,7 +275,7 @@ Struct_pack_into(PyObject *self, PyObject *const *args, Py_ssize_t nargs)
 {
     PyObject *return_value = NULL;
     Py_buffer buffer = {NULL, NULL};
-    PyObject *offset_obj;
+    Py_ssize_t offset;
     PyObject * const *values;
     Py_ssize_t values_length;
 
@@ -286,10 +286,21 @@ Struct_pack_into(PyObject *self, PyObject *const *args, Py_ssize_t nargs)
         _PyArg_BadArgument("pack_into", "argument 1", "read-write bytes-like object", args[0]);
         goto exit;
     }
-    offset_obj = args[1];
+    {
+        Py_ssize_t ival = -1;
+        PyObject *iobj = _PyNumber_Index(args[1]);
+        if (iobj != NULL) {
+            ival = PyLong_AsSsize_t(iobj);
+            Py_DECREF(iobj);
+        }
+        if (ival == -1 && PyErr_Occurred()) {
+            goto exit;
+        }
+        offset = ival;
+    }
     values = args + 2;
     values_length = nargs - 2;
-    return_value = Struct_pack_into_impl((PyStructObject *)self, &buffer, offset_obj, values, values_length);
+    return_value = Struct_pack_into_impl((PyStructObject *)self, &buffer, offset, values, values_length);
 
 exit:
     /* Cleanup for buffer */
@@ -427,7 +438,7 @@ PyDoc_STRVAR(pack_into__doc__,
 
 static PyObject *
 pack_into_impl(PyObject *module, PyStructObject *s_object, Py_buffer *buffer,
-               PyObject *offset_obj, PyObject * const *values,
+               Py_ssize_t offset, PyObject * const *values,
                Py_ssize_t values_length);
 
 static PyObject *
@@ -436,7 +447,7 @@ pack_into(PyObject *module, PyObject *const *args, Py_ssize_t nargs)
     PyObject *return_value = NULL;
     PyStructObject *s_object = NULL;
     Py_buffer buffer = {NULL, NULL};
-    PyObject *offset_obj;
+    Py_ssize_t offset;
     PyObject * const *values;
     Py_ssize_t values_length;
 
@@ -450,10 +461,21 @@ pack_into(PyObject *module, PyObject *const *args, Py_ssize_t nargs)
         _PyArg_BadArgument("pack_into", "argument 2", "read-write bytes-like object", args[1]);
         goto exit;
     }
-    offset_obj = args[2];
+    {
+        Py_ssize_t ival = -1;
+        PyObject *iobj = _PyNumber_Index(args[2]);
+        if (iobj != NULL) {
+            ival = PyLong_AsSsize_t(iobj);
+            Py_DECREF(iobj);
+        }
+        if (ival == -1 && PyErr_Occurred()) {
+            goto exit;
+        }
+        offset = ival;
+    }
     values = args + 3;
     values_length = nargs - 3;
-    return_value = pack_into_impl(module, s_object, &buffer, offset_obj, values, values_length);
+    return_value = pack_into_impl(module, s_object, &buffer, offset, values, values_length);
 
 exit:
     /* Cleanup for s_object */
@@ -642,4 +664,4 @@ exit:
 
     return return_value;
 }
-/*[clinic end generated code: output=dc4f86c77ab3b1c9 input=a9049054013a1b77]*/
+/*[clinic end generated code: output=09ee4ac45b7e709b input=a9049054013a1b77]*/

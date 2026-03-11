@@ -18,7 +18,7 @@ it was last read.
 .. note::
 
    The :mod:`selectors` module allows high-level and efficient I/O
-   multiplexing, built upon the :mod:`select` module primitives. Users are
+   multiplexing, built upon the :mod:`!select` module primitives. Users are
    encouraged to use the :mod:`selectors` module instead, unless they want
    precise control over the OS-level primitives used.
 
@@ -174,7 +174,7 @@ The module defines the following:
    The minimum number of bytes which can be written without blocking to a pipe
    when the pipe has been reported as ready for writing by :func:`~select.select`,
    :func:`!poll` or another interface in this module.  This doesn't apply
-   to other kind of file-like objects such as sockets.
+   to other kinds of file-like objects such as sockets.
 
    This value is guaranteed by POSIX to be at least 512.
 
@@ -226,7 +226,7 @@ object.
    implement :meth:`!fileno`, so they can also be used as the argument.
 
    *eventmask* is an optional bitmask describing the type of events you want to
-   check for. The constants are the same that with :c:func:`!poll`
+   check for. The constants are the same as with :c:func:`!poll`
    object. The default value is a combination of the constants :const:`POLLIN`,
    :const:`POLLPRI`, and :const:`POLLOUT`.
 
@@ -241,7 +241,7 @@ object.
 .. method:: devpoll.modify(fd[, eventmask])
 
    This method does an :meth:`unregister` followed by a
-   :meth:`register`. It is (a bit) more efficient that doing the same
+   :meth:`register`. It is (a bit) more efficient than doing the same
    explicitly.
 
 
@@ -580,9 +580,9 @@ https://man.freebsd.org/cgi/man.cgi?query=kqueue&sektion=2
    +---------------------------+---------------------------------------------+
    | :const:`KQ_EV_DELETE`     | Removes an event from the queue             |
    +---------------------------+---------------------------------------------+
-   | :const:`KQ_EV_ENABLE`     | Permitscontrol() to returns the event       |
+   | :const:`KQ_EV_ENABLE`     | Permits control() to return the event       |
    +---------------------------+---------------------------------------------+
-   | :const:`KQ_EV_DISABLE`    | Disablesevent                               |
+   | :const:`KQ_EV_DISABLE`    | Disables event                              |
    +---------------------------+---------------------------------------------+
    | :const:`KQ_EV_ONESHOT`    | Removes event after first occurrence        |
    +---------------------------+---------------------------------------------+

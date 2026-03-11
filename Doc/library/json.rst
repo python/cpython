@@ -4,9 +4,6 @@
 .. module:: json
    :synopsis: Encode and decode the JSON format.
 
-.. moduleauthor:: Bob Ippolito <bob@redivi.com>
-.. sectionauthor:: Bob Ippolito <bob@redivi.com>
-
 **Source code:** :source:`Lib/json/__init__.py`
 
 --------------
@@ -121,7 +118,7 @@ Extending :class:`JSONEncoder`::
     ['[2.0', ', 1.0', ']']
 
 
-Using :mod:`json` from the shell to validate and pretty-print:
+Using :mod:`!json` from the shell to validate and pretty-print:
 
 .. code-block:: shell-session
 
@@ -747,8 +744,8 @@ Command-line interface
 
 --------------
 
-The :mod:`json` module can be invoked as a script via ``python -m json``
-to validate and pretty-print JSON objects. The :mod:`json.tool` submodule
+The :mod:`!json` module can be invoked as a script via ``python -m json``
+to validate and pretty-print JSON objects. The :mod:`!json.tool` submodule
 implements this interface.
 
 If the optional ``infile`` and ``outfile`` arguments are not
@@ -769,7 +766,7 @@ specified, :data:`sys.stdin` and :data:`sys.stdout` will be used respectively:
    alphabetically by key.
 
 .. versionchanged:: 3.14
-   The :mod:`json` module may now be directly executed as
+   The :mod:`!json` module may now be directly executed as
    ``python -m json``. For backwards compatibility, invoking
    the CLI as ``python -m json.tool`` remains supported.
 

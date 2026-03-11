@@ -964,7 +964,10 @@ _shuffle_bits(Py_uhash_t h)
 
    This hash algorithm can be used on either a frozenset or a set.
    When it is used on a set, it computes the hash value of the equivalent
-   frozenset without creating a new frozenset object. */
+   frozenset without creating a new frozenset object.
+
+   If you update this code, update also frozendict_hash() which copied this
+   code. */
 
 static Py_hash_t
 frozenset_hash_impl(PyObject *self)
@@ -1183,10 +1186,14 @@ set_iter(PyObject *so)
 static int
 set_update_dict_lock_held(PySetObject *so, PyObject *other)
 {
-    assert(PyDict_CheckExact(other));
+    assert(PyAnyDict_CheckExact(other));
 
     _Py_CRITICAL_SECTION_ASSERT_OBJECT_LOCKED(so);
-    _Py_CRITICAL_SECTION_ASSERT_OBJECT_LOCKED(other);
+#ifdef Py_DEBUG
+    if (!PyFrozenDict_CheckExact(other)) {
+        _Py_CRITICAL_SECTION_ASSERT_OBJECT_LOCKED(other);
+    }
+#endif
 
     /* Do one big resize at the start, rather than
     * incrementally resizing as we insert new keys.  Expect
@@ -1242,7 +1249,7 @@ set_update_lock_held(PySetObject *so, PyObject *other)
     if (PyAnySet_Check(other)) {
         return set_merge_lock_held(so, other);
     }
-    else if (PyDict_CheckExact(other)) {
+    else if (PyAnyDict_CheckExact(other)) {
         return set_update_dict_lock_held(so, other);
     }
     return set_update_iterable_lock_held(so, other);
@@ -1267,6 +1274,9 @@ set_update_local(PySetObject *so, PyObject *other)
         Py_END_CRITICAL_SECTION();
         return rv;
     }
+    else if (PyFrozenDict_CheckExact(other)) {
+        return set_update_dict_lock_held(so, other);
+    }
     return set_update_iterable_lock_held(so, other);
 }
 
@@ -1288,6 +1298,13 @@ set_update_internal(PySetObject *so, PyObject *other)
         Py_BEGIN_CRITICAL_SECTION2(so, other);
         rv = set_update_dict_lock_held(so, other);
         Py_END_CRITICAL_SECTION2();
+        return rv;
+    }
+    else if (PyFrozenDict_CheckExact(other)) {
+        int rv;
+        Py_BEGIN_CRITICAL_SECTION(so);
+        rv = set_update_dict_lock_held(so, other);
+        Py_END_CRITICAL_SECTION();
         return rv;
     }
     else {
@@ -1368,6 +1385,26 @@ make_new_set_basetype(PyTypeObject *type, PyObject *iterable)
     return make_new_set(type, iterable);
 }
 
+// gh-140232: check whether a frozenset can be untracked from the GC
+static void
+_PyFrozenSet_MaybeUntrack(PyObject *op)
+{
+    assert(op != NULL);
+    // subclasses of a frozenset can generate reference cycles, so do not untrack
+    if (!PyFrozenSet_CheckExact(op)) {
+        return;
+    }
+    // if no elements of a frozenset are tracked by the GC, we untrack the object
+    Py_ssize_t pos = 0;
+    setentry *entry;
+    while (set_next((PySetObject *)op, &pos, &entry)) {
+        if (_PyObject_GC_MAY_BE_TRACKED(entry->key)) {
+            return;
+        }
+    }
+    _PyObject_GC_UNTRACK(op);
+}
+
 static PyObject *
 make_new_frozenset(PyTypeObject *type, PyObject *iterable)
 {
@@ -1379,7 +1416,11 @@ make_new_frozenset(PyTypeObject *type, PyObject *iterable)
         /* frozenset(f) is idempotent */
         return Py_NewRef(iterable);
     }
-    return make_new_set(type, iterable);
+    PyObject *obj = make_new_set(type, iterable);
+    if (obj != NULL) {
+        _PyFrozenSet_MaybeUntrack(obj);
+    }
+    return obj;
 }
 
 static PyObject *
@@ -2006,7 +2047,7 @@ set_difference(PySetObject *so, PyObject *other)
     if (PyAnySet_Check(other)) {
         other_size = PySet_GET_SIZE(other);
     }
-    else if (PyDict_CheckExact(other)) {
+    else if (PyAnyDict_CheckExact(other)) {
         other_size = PyDict_GET_SIZE(other);
     }
     else {
@@ -2023,7 +2064,7 @@ set_difference(PySetObject *so, PyObject *other)
     if (result == NULL)
         return NULL;
 
-    if (PyDict_CheckExact(other)) {
+    if (PyAnyDict_CheckExact(other)) {
         while (set_next(so, &pos, &entry)) {
             key = entry->key;
             hash = entry->hash;
@@ -2145,7 +2186,11 @@ static int
 set_symmetric_difference_update_dict(PySetObject *so, PyObject *other)
 {
     _Py_CRITICAL_SECTION_ASSERT_OBJECT_LOCKED(so);
-    _Py_CRITICAL_SECTION_ASSERT_OBJECT_LOCKED(other);
+#ifdef Py_DEBUG
+    if (!PyFrozenDict_CheckExact(other)) {
+        _Py_CRITICAL_SECTION_ASSERT_OBJECT_LOCKED(other);
+    }
+#endif
 
     Py_ssize_t pos = 0;
     PyObject *key, *value;
@@ -2218,6 +2263,11 @@ set_symmetric_difference_update_impl(PySetObject *so, PyObject *other)
         Py_BEGIN_CRITICAL_SECTION2(so, other);
         rv = set_symmetric_difference_update_dict(so, other);
         Py_END_CRITICAL_SECTION2();
+    }
+    else if (PyFrozenDict_CheckExact(other)) {
+        Py_BEGIN_CRITICAL_SECTION(so);
+        rv = set_symmetric_difference_update_dict(so, other);
+        Py_END_CRITICAL_SECTION();
     }
     else if (PyAnySet_Check(other)) {
         Py_BEGIN_CRITICAL_SECTION2(so, other);
@@ -2932,7 +2982,11 @@ PySet_New(PyObject *iterable)
 PyObject *
 PyFrozenSet_New(PyObject *iterable)
 {
-    return make_new_set(&PyFrozenSet_Type, iterable);
+    PyObject *result = make_new_set(&PyFrozenSet_Type, iterable);
+    if (result != NULL) {
+        _PyFrozenSet_MaybeUntrack(result);
+    }
+    return result;
 }
 
 Py_ssize_t
@@ -3010,6 +3064,11 @@ PySet_Add(PyObject *anyset, PyObject *key)
         // API limits the usage of `PySet_Add` to "fill in the values of brand
         // new frozensets before they are exposed to other code". In this case,
         // this can be done without a lock.
+        // Since another key is added to the set, we must track the frozenset
+        // if needed.
+        if (PyFrozenSet_CheckExact(anyset) && !PyObject_GC_IsTracked(anyset) && PyObject_GC_IsTracked(key)) {
+            _PyObject_GC_TRACK(anyset);
+        }
         return set_add_key((PySetObject *)anyset, key);
     }
 
