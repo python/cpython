@@ -11820,17 +11820,15 @@ _super_lookup_descr(PyTypeObject *su_type, PyTypeObject *su_obj_type, PyObject *
     PyObject *mro, *res;
     Py_ssize_t i, n;
 
-    BEGIN_TYPE_LOCK();
     mro = lookup_tp_mro(su_obj_type);
-    /* keep a strong reference to mro because su_obj_type->tp_mro can be
-       replaced during PyDict_GetItemRef(dict, name, &res) and because
-       another thread can modify it after we end the critical section
-       below  */
-    Py_XINCREF(mro);
-    END_TYPE_LOCK();
-
     if (mro == NULL)
         return NULL;
+
+    /* Keep a strong reference to mro because su_obj_type->tp_mro can be
+       replaced during PyDict_GetItemRef(dict, name, &res). */
+    PyThreadState *tstate = _PyThreadState_GET();
+    _PyCStackRef mro_ref;
+    _PyThreadState_PushCStackRefNew(tstate, &mro_ref, mro);
 
     assert(PyTuple_Check(mro));
     n = PyTuple_GET_SIZE(mro);
@@ -11842,7 +11840,7 @@ _super_lookup_descr(PyTypeObject *su_type, PyTypeObject *su_obj_type, PyObject *
     }
     i++;  /* skip su->type (if any)  */
     if (i >= n) {
-        Py_DECREF(mro);
+        _PyThreadState_PopCStackRef(tstate, &mro_ref);
         return NULL;
     }
 
@@ -11853,13 +11851,13 @@ _super_lookup_descr(PyTypeObject *su_type, PyTypeObject *su_obj_type, PyObject *
 
         if (PyDict_GetItemRef(dict, name, &res) != 0) {
             // found or error
-            Py_DECREF(mro);
+            _PyThreadState_PopCStackRef(tstate, &mro_ref);
             return res;
         }
 
         i++;
     } while (i < n);
-    Py_DECREF(mro);
+    _PyThreadState_PopCStackRef(tstate, &mro_ref);
     return NULL;
 }
 

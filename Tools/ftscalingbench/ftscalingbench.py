@@ -201,6 +201,23 @@ def instantiate_dataclass():
     for _ in range(1000 * WORK_SCALE):
         obj = MyDataClass(x=1, y=2, z=3)
 
+@register_benchmark
+def super_call():
+    # TODO: super() on the same class from multiple threads still doesn't
+    # scale well, so use a class per-thread here for now.
+    class Base:
+        def method(self):
+            return 1
+
+    class Derived(Base):
+        def method(self):
+            return super().method()
+
+    obj = Derived()
+    for _ in range(1000 * WORK_SCALE):
+        obj.method()
+
+
 def bench_one_thread(func):
     t0 = time.perf_counter_ns()
     func()
