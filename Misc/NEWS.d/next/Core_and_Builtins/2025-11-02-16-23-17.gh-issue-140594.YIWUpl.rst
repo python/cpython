@@ -1,2 +1,2 @@
-Fix a buffer overflow when a single NULL character is read from the standard input.
+Fix an out of bounds read when a single NUL character is read from the standard input.
 Patch by Shamil Abdulaev.

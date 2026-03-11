@@ -203,10 +203,8 @@ class CmdLineTest(unittest.TestCase):
 
     @support.cpython_only
     def test_null_byte_in_interactive_mode(self):
-        # gh-140594: Fix a buffer overflow when a single NULL character is read
-        # from standard input in interactive mode. The test ensures that
-        # feeding a null byte to the interactive prompt does not crash
-        # the interpreter.
+        # gh-140594: Fix an out of bounds read when a single NUL character
+        # is read from the standard input in interactive mode.
         proc = spawn_python('-i')
         proc.communicate(b'\x00', timeout=10)
         self.assertEqual(proc.returncode, 0)
