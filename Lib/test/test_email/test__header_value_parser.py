@@ -2721,7 +2721,10 @@ class TestParser(TestParserMixin, TestEmailBase):
         obsolete = C(
             'Fred A.(weird).O Johnson',
             value='Fred A. .O Johnson',
-            defects=[errors.ObsoleteHeaderDefect]*3,
+            defects=[
+                *[period_in_phrase_obs_defect]*2,
+                comment_without_atom_in_phrase_obs_defect,
+                ],
             comments=['weird'],
             obs_dots=2,
             ),
@@ -2729,7 +2732,11 @@ class TestParser(TestParserMixin, TestEmailBase):
         must_start_with_word = C(
             '(even weirder).name',
             value=' .name',
-            defects=[errors.InvalidHeaderDefect] + [errors.ObsoleteHeaderDefect]*2,
+            defects=[
+                non_word_phrase_start_defect,
+                comment_without_atom_in_phrase_obs_defect,
+                period_in_phrase_obs_defect,
+                ],
             comments=['even weirder'],
             obs_dots=1,
             ),
@@ -2737,7 +2744,10 @@ class TestParser(TestParserMixin, TestEmailBase):
         ending_with_obsolete = C(
             'simple phrase.(with trailing comment):boo',
             value='simple phrase. ',
-            defects=[errors.ObsoleteHeaderDefect]*2,
+            defects=[
+                period_in_phrase_obs_defect,
+                comment_without_atom_in_phrase_obs_defect,
+                ],
             remainder=':boo',
             comments=['with trailing comment'],
             obs_dots=1,
@@ -2771,7 +2781,7 @@ class TestParser(TestParserMixin, TestEmailBase):
         adjacent_ew_no_error_on_defects = C(
             '=?ascii?q?Def?= =?ascii?q?ect still joins?=',
             stringified='Defect still joins',
-            defects=[errors.InvalidHeaderDefect],  # whitespace inside encoded word
+            defects=[whitespace_inside_ew_defect],
             ),
 
         adjacent_ew_ignore_non_ew = C(
@@ -2787,7 +2797,7 @@ class TestParser(TestParserMixin, TestEmailBase):
         adjacent_ew_missing_space = C(
             '=?ascii?q?Joi?==?ascii?q?ned?=',
             stringified='Joined',
-            defects=[errors.InvalidHeaderDefect],  # missing trailing whitespace
+            defects=[missing_whitespace_after_ew_defect],
             ),
 
         )
