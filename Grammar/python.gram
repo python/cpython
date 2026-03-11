@@ -1447,6 +1447,8 @@ invalid_import_from_targets:
         RAISE_SYNTAX_ERROR_STARTING_FROM(token, "Expected one or more names after 'import'") }
 
 invalid_with_stmt:
+    | ['async'] 'with' ','.(expression ['as' star_target])+ trailing=',' ':' {
+        RAISE_SYNTAX_ERROR_KNOWN_LOCATION(trailing, "the last 'with' item has a trailing comma") }
     | ['async'] 'with' ','.(expression ['as' star_target])+ NEWLINE { RAISE_SYNTAX_ERROR("expected ':'") }
     | ['async'] 'with' '(' ','.(expressions ['as' star_target])+ ','? ')' NEWLINE { RAISE_SYNTAX_ERROR("expected ':'") }
 invalid_with_stmt_indent:

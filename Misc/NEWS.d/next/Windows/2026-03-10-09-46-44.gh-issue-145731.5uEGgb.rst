@@ -1,0 +1,1 @@
+Fix negative timestamp during DST on Windows. Patch by Hugo van Kemenade.

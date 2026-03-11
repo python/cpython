@@ -60,7 +60,7 @@ understand and to work with, at the cost of ignoring some aspects of reality.
 
 For applications requiring aware objects, :class:`.datetime` and :class:`.time`
 objects have an optional time zone information attribute, :attr:`!tzinfo`, that
-can be set to an instance of a subclass of the abstract :class:`tzinfo` class.
+can be set to an instance of a subclass of the abstract :class:`!tzinfo` class.
 These :class:`tzinfo` objects capture information about the offset from UTC
 time, the time zone name, and whether daylight saving time is in effect.
 
@@ -230,8 +230,8 @@ A :class:`timedelta` object represents a duration, the difference between two
    *days*, *seconds* and *microseconds* are "merged" and normalized into those
    three resulting attributes::
 
-       >>> from datetime import timedelta
-       >>> delta = timedelta(
+       >>> import datetime as dt
+       >>> delta = dt.timedelta(
        ...     days=50,
        ...     seconds=27,
        ...     microseconds=10,
@@ -243,6 +243,12 @@ A :class:`timedelta` object represents a duration, the difference between two
        >>> # Only days, seconds, and microseconds remain
        >>> delta
        datetime.timedelta(days=64, seconds=29156, microseconds=10)
+
+   .. tip::
+      ``import datetime as dt`` instead of ``import datetime`` or
+      ``from datetime import datetime`` to avoid confusion between the module
+      and the class. See `How I Import Python’s datetime Module
+      <https://adamj.eu/tech/2019/09/12/how-i-import-pythons-datetime-module/>`__.
 
    If any argument is a float and there are fractional microseconds,
    the fractional microseconds left over from all arguments are
@@ -257,8 +263,8 @@ A :class:`timedelta` object represents a duration, the difference between two
    Note that normalization of negative values may be surprising at first. For
    example::
 
-      >>> from datetime import timedelta
-      >>> d = timedelta(microseconds=-1)
+      >>> import datetime as dt
+      >>> d = dt.timedelta(microseconds=-1)
       >>> (d.days, d.seconds, d.microseconds)
       (-1, 86399, 999999)
 
@@ -321,8 +327,8 @@ Instance attributes (read-only):
 
       .. doctest::
 
-         >>> from datetime import timedelta
-         >>> duration = timedelta(seconds=11235813)
+         >>> import datetime as dt
+         >>> duration = dt.timedelta(seconds=11235813)
          >>> duration.days, duration.seconds
          (130, 3813)
          >>> duration.total_seconds()
@@ -432,9 +438,9 @@ objects (see below).
 
 .. versionchanged:: 3.2
    Floor division and true division of a :class:`timedelta` object by another
-   :class:`timedelta` object are now supported, as are remainder operations and
+   :class:`!timedelta` object are now supported, as are remainder operations and
    the :func:`divmod` function. True division and multiplication of a
-   :class:`timedelta` object by a :class:`float` object are now supported.
+   :class:`!timedelta` object by a :class:`float` object are now supported.
 
 :class:`timedelta` objects support equality and order comparisons.
 
@@ -461,10 +467,10 @@ Examples of usage: :class:`!timedelta`
 An additional example of normalization::
 
     >>> # Components of another_year add up to exactly 365 days
-    >>> from datetime import timedelta
-    >>> year = timedelta(days=365)
-    >>> another_year = timedelta(weeks=40, days=84, hours=23,
-    ...                          minutes=50, seconds=600)
+    >>> import datetime as dt
+    >>> year = dt.timedelta(days=365)
+    >>> another_year = dt.timedelta(weeks=40, days=84, hours=23,
+    ...                             minutes=50, seconds=600)
     >>> year == another_year
     True
     >>> year.total_seconds()
@@ -472,8 +478,8 @@ An additional example of normalization::
 
 Examples of :class:`timedelta` arithmetic::
 
-    >>> from datetime import timedelta
-    >>> year = timedelta(days=365)
+    >>> import datetime as dt
+    >>> year = dt.timedelta(days=365)
     >>> ten_years = 10 * year
     >>> ten_years
     datetime.timedelta(days=3650)
@@ -565,12 +571,12 @@ Other constructors, all class methods:
 
    Examples::
 
-      >>> from datetime import date
-      >>> date.fromisoformat('2019-12-04')
+      >>> import datetime as dt
+      >>> dt.date.fromisoformat('2019-12-04')
       datetime.date(2019, 12, 4)
-      >>> date.fromisoformat('20191204')
+      >>> dt.date.fromisoformat('20191204')
       datetime.date(2019, 12, 4)
-      >>> date.fromisoformat('2021-W01-1')
+      >>> dt.date.fromisoformat('2021-W01-1')
       datetime.date(2021, 1, 4)
 
    .. versionadded:: 3.7
@@ -611,9 +617,9 @@ Other constructors, all class methods:
 
       .. doctest::
 
-         >>> from datetime import date
+         >>> import datetime as dt
          >>> date_string = "02/29"
-         >>> when = date.strptime(f"{date_string};1984", "%m/%d;%Y")  # Avoids leap year bug.
+         >>> when = dt.date.strptime(f"{date_string};1984", "%m/%d;%Y")  # Avoids leap year bug.
          >>> when.strftime("%B %d")  # doctest: +SKIP
          'February 29'
 
@@ -705,7 +711,7 @@ Notes:
    In other words, ``date1 < date2`` if and only if ``date1.toordinal() <
    date2.toordinal()``.
 
-   Order comparison between a :class:`!date` object that is not also a
+   Order comparison between a :class:`date` object that is not also a
    :class:`.datetime` instance and a :class:`!datetime` object raises
    :exc:`TypeError`.
 
@@ -728,8 +734,8 @@ Instance methods:
 
    Example::
 
-       >>> from datetime import date
-       >>> d = date(2002, 12, 31)
+       >>> import datetime as dt
+       >>> d = dt.date(2002, 12, 31)
        >>> d.replace(day=26)
        datetime.date(2002, 12, 26)
 
@@ -787,10 +793,10 @@ Instance methods:
    For example, 2004 begins on a Thursday, so the first week of ISO year 2004
    begins on Monday, 29 Dec 2003 and ends on Sunday, 4 Jan 2004::
 
-        >>> from datetime import date
-        >>> date(2003, 12, 29).isocalendar()
+        >>> import datetime as dt
+        >>> dt.date(2003, 12, 29).isocalendar()
         datetime.IsoCalendarDate(year=2004, week=1, weekday=1)
-        >>> date(2004, 1, 4).isocalendar()
+        >>> dt.date(2004, 1, 4).isocalendar()
         datetime.IsoCalendarDate(year=2004, week=1, weekday=7)
 
    .. versionchanged:: 3.9
@@ -801,8 +807,8 @@ Instance methods:
 
    Return a string representing the date in ISO 8601 format, ``YYYY-MM-DD``::
 
-       >>> from datetime import date
-       >>> date(2002, 12, 4).isoformat()
+       >>> import datetime as dt
+       >>> dt.date(2002, 12, 4).isoformat()
        '2002-12-04'
 
 
@@ -815,8 +821,8 @@ Instance methods:
 
    Return a string representing the date::
 
-       >>> from datetime import date
-       >>> date(2002, 12, 4).ctime()
+       >>> import datetime as dt
+       >>> dt.date(2002, 12, 4).ctime()
        'Wed Dec  4 00:00:00 2002'
 
    ``d.ctime()`` is equivalent to::
@@ -849,13 +855,13 @@ Examples of usage: :class:`!date`
 Example of counting days to an event::
 
     >>> import time
-    >>> from datetime import date
-    >>> today = date.today()
+    >>> import datetime as dt
+    >>> today = dt.date.today()
     >>> today
     datetime.date(2007, 12, 5)
-    >>> today == date.fromtimestamp(time.time())
+    >>> today == dt.date.fromtimestamp(time.time())
     True
-    >>> my_birthday = date(today.year, 6, 24)
+    >>> my_birthday = dt.date(today.year, 6, 24)
     >>> if my_birthday < today:
     ...     my_birthday = my_birthday.replace(year=today.year + 1)
     ...
@@ -869,8 +875,8 @@ More examples of working with :class:`date`:
 
 .. doctest::
 
-    >>> from datetime import date
-    >>> d = date.fromordinal(730920) # 730920th day after 1. 1. 0001
+    >>> import datetime as dt
+    >>> d = dt.date.fromordinal(730920) # 730920th day after 1. 1. 0001
     >>> d
     datetime.date(2002, 3, 11)
 
@@ -921,7 +927,7 @@ from a :class:`date` object and a :class:`.time` object.
 
 Like a :class:`date` object, :class:`.datetime` assumes the current Gregorian
 calendar extended in both directions; like a :class:`.time` object,
-:class:`.datetime` assumes there are exactly 3600\*24 seconds in every day.
+:class:`!datetime` assumes there are exactly 3600\*24 seconds in every day.
 
 Constructor:
 
@@ -1097,7 +1103,7 @@ Other constructors, all class methods:
    are equal to the given :class:`.time` object's. If the *tzinfo*
    argument is provided, its value is used to set the :attr:`.tzinfo` attribute
    of the result, otherwise the :attr:`~.time.tzinfo` attribute of the *time* argument
-   is used.  If the *date* argument is a :class:`.datetime` object, its time components
+   is used.  If the *date* argument is a :class:`!datetime` object, its time components
    and :attr:`.tzinfo` attributes are ignored.
 
    For any :class:`.datetime` object ``d``,
@@ -1123,24 +1129,24 @@ Other constructors, all class methods:
 
    Examples::
 
-       >>> from datetime import datetime
-       >>> datetime.fromisoformat('2011-11-04')
+       >>> import datetime as dt
+       >>> dt.datetime.fromisoformat('2011-11-04')
        datetime.datetime(2011, 11, 4, 0, 0)
-       >>> datetime.fromisoformat('20111104')
+       >>> dt.datetime.fromisoformat('20111104')
        datetime.datetime(2011, 11, 4, 0, 0)
-       >>> datetime.fromisoformat('2011-11-04T00:05:23')
+       >>> dt.datetime.fromisoformat('2011-11-04T00:05:23')
        datetime.datetime(2011, 11, 4, 0, 5, 23)
-       >>> datetime.fromisoformat('2011-11-04T00:05:23Z')
+       >>> dt.datetime.fromisoformat('2011-11-04T00:05:23Z')
        datetime.datetime(2011, 11, 4, 0, 5, 23, tzinfo=datetime.timezone.utc)
-       >>> datetime.fromisoformat('20111104T000523')
+       >>> dt.datetime.fromisoformat('20111104T000523')
        datetime.datetime(2011, 11, 4, 0, 5, 23)
-       >>> datetime.fromisoformat('2011-W01-2T00:05:23.283')
+       >>> dt.datetime.fromisoformat('2011-W01-2T00:05:23.283')
        datetime.datetime(2011, 1, 4, 0, 5, 23, 283000)
-       >>> datetime.fromisoformat('2011-11-04 00:05:23.283')
+       >>> dt.datetime.fromisoformat('2011-11-04 00:05:23.283')
        datetime.datetime(2011, 11, 4, 0, 5, 23, 283000)
-       >>> datetime.fromisoformat('2011-11-04 00:05:23.283+00:00')
+       >>> dt.datetime.fromisoformat('2011-11-04 00:05:23.283+00:00')
        datetime.datetime(2011, 11, 4, 0, 5, 23, 283000, tzinfo=datetime.timezone.utc)
-       >>> datetime.fromisoformat('2011-11-04T00:05:23+04:00')   # doctest: +NORMALIZE_WHITESPACE
+       >>> dt.datetime.fromisoformat('2011-11-04T00:05:23+04:00')   # doctest: +NORMALIZE_WHITESPACE
        datetime.datetime(2011, 11, 4, 0, 5, 23,
            tzinfo=datetime.timezone(datetime.timedelta(seconds=14400)))
 
@@ -1187,9 +1193,9 @@ Other constructors, all class methods:
 
       .. doctest::
 
-         >>> from datetime import datetime
+         >>> import datetime as dt
          >>> date_string = "02/29"
-         >>> when = datetime.strptime(f"{date_string};1984", "%m/%d;%Y")  # Avoids leap year bug.
+         >>> when = dt.datetime.strptime(f"{date_string};1984", "%m/%d;%Y")  # Avoids leap year bug.
          >>> when.strftime("%B %d")  # doctest: +SKIP
          'February 29'
 
@@ -1303,7 +1309,7 @@ Supported operations:
    datetime, and no time zone adjustments are done even if the input is aware.
 
 (3)
-   Subtraction of a :class:`.datetime` from a :class:`.datetime` is defined only if
+   Subtraction of a :class:`.datetime` from a :class:`!datetime` is defined only if
    both operands are naive, or if both are aware. If one is aware and the other is
    naive, :exc:`TypeError` is raised.
 
@@ -1321,7 +1327,7 @@ Supported operations:
    :class:`.datetime` objects are equal if they represent the same date
    and time, taking into account the time zone.
 
-   Naive and aware :class:`!datetime` objects are never equal.
+   Naive and aware :class:`.datetime` objects are never equal.
 
    If both comparands are aware, and have the same :attr:`!tzinfo` attribute,
    the :attr:`!tzinfo` and :attr:`~.datetime.fold` attributes are ignored and
@@ -1329,7 +1335,7 @@ Supported operations:
    If both comparands are aware and have different :attr:`~.datetime.tzinfo`
    attributes, the comparison acts as comparands were first converted to UTC
    datetimes except that the implementation never overflows.
-   :class:`!datetime` instances in a repeated interval are never equal to
+   :class:`.datetime` instances in a repeated interval are never equal to
    :class:`!datetime` instances in other time zone.
 
 (5)
@@ -1529,7 +1535,7 @@ Instance methods:
 
    Naive :class:`.datetime` instances are assumed to represent local
    time and this method relies on platform C functions to perform
-   the conversion. Since :class:`.datetime` supports a wider range of
+   the conversion. Since :class:`!datetime` supports a wider range of
    values than the platform C functions on many platforms, this
    method may raise :exc:`OverflowError` or :exc:`OSError` for times
    far in the past or far in the future.
@@ -1599,24 +1605,24 @@ Instance methods:
 
    Examples::
 
-       >>> from datetime import datetime, timezone
-       >>> datetime(2019, 5, 18, 15, 17, 8, 132263).isoformat()
+       >>> import datetime as dt
+       >>> dt.datetime(2019, 5, 18, 15, 17, 8, 132263).isoformat()
        '2019-05-18T15:17:08.132263'
-       >>> datetime(2019, 5, 18, 15, 17, tzinfo=timezone.utc).isoformat()
+       >>> dt.datetime(2019, 5, 18, 15, 17, tzinfo=dt.timezone.utc).isoformat()
        '2019-05-18T15:17:00+00:00'
 
    The optional argument *sep* (default ``'T'``) is a one-character separator,
    placed between the date and time portions of the result. For example::
 
-      >>> from datetime import tzinfo, timedelta, datetime
-      >>> class TZ(tzinfo):
+      >>> import datetime as dt
+      >>> class TZ(dt.tzinfo):
       ...     """A time zone with an arbitrary, constant -06:39 offset."""
-      ...     def utcoffset(self, dt):
-      ...         return timedelta(hours=-6, minutes=-39)
+      ...     def utcoffset(self, when):
+      ...         return dt.timedelta(hours=-6, minutes=-39)
       ...
-      >>> datetime(2002, 12, 25, tzinfo=TZ()).isoformat(' ')
+      >>> dt.datetime(2002, 12, 25, tzinfo=TZ()).isoformat(' ')
       '2002-12-25 00:00:00-06:39'
-      >>> datetime(2009, 11, 27, microsecond=100, tzinfo=TZ()).isoformat()
+      >>> dt.datetime(2009, 11, 27, microsecond=100, tzinfo=TZ()).isoformat()
       '2009-11-27T00:00:00.000100-06:39'
 
    The optional argument *timespec* specifies the number of additional
@@ -1640,11 +1646,11 @@ Instance methods:
    :exc:`ValueError` will be raised on an invalid *timespec* argument::
 
 
-      >>> from datetime import datetime
-      >>> datetime.now().isoformat(timespec='minutes')   # doctest: +SKIP
+      >>> import datetime as dt
+      >>> dt.datetime.now().isoformat(timespec='minutes')   # doctest: +SKIP
       '2002-12-25T00:00'
-      >>> dt = datetime(2015, 1, 1, 12, 30, 59, 0)
-      >>> dt.isoformat(timespec='microseconds')
+      >>> my_datetime = dt.datetime(2015, 1, 1, 12, 30, 59, 0)
+      >>> my_datetime.isoformat(timespec='microseconds')
       '2015-01-01T12:30:59.000000'
 
    .. versionchanged:: 3.6
@@ -1661,8 +1667,8 @@ Instance methods:
 
    Return a string representing the date and time::
 
-       >>> from datetime import datetime
-       >>> datetime(2002, 12, 4, 20, 30, 40).ctime()
+       >>> import datetime as dt
+       >>> dt.datetime(2002, 12, 4, 20, 30, 40).ctime()
        'Wed Dec  4 20:30:40 2002'
 
    The output string will *not* include time zone information, regardless
@@ -1699,27 +1705,27 @@ Examples of working with :class:`.datetime` objects:
 
 .. doctest::
 
-    >>> from datetime import datetime, date, time, timezone
+    >>> import datetime as dt
 
     >>> # Using datetime.combine()
-    >>> d = date(2005, 7, 14)
-    >>> t = time(12, 30)
-    >>> datetime.combine(d, t)
+    >>> d = dt.date(2005, 7, 14)
+    >>> t = dt.time(12, 30)
+    >>> dt.datetime.combine(d, t)
     datetime.datetime(2005, 7, 14, 12, 30)
 
     >>> # Using datetime.now()
-    >>> datetime.now()   # doctest: +SKIP
+    >>> dt.datetime.now()   # doctest: +SKIP
     datetime.datetime(2007, 12, 6, 16, 29, 43, 79043)   # GMT +1
-    >>> datetime.now(timezone.utc)   # doctest: +SKIP
+    >>> dt.datetime.now(dt.timezone.utc)   # doctest: +SKIP
     datetime.datetime(2007, 12, 6, 15, 29, 43, 79060, tzinfo=datetime.timezone.utc)
 
     >>> # Using datetime.strptime()
-    >>> dt = datetime.strptime("21/11/06 16:30", "%d/%m/%y %H:%M")
-    >>> dt
+    >>> my_datetime = dt.datetime.strptime("21/11/06 16:30", "%d/%m/%y %H:%M")
+    >>> my_datetime
     datetime.datetime(2006, 11, 21, 16, 30)
 
     >>> # Using datetime.timetuple() to get tuple of all attributes
-    >>> tt = dt.timetuple()
+    >>> tt = my_datetime.timetuple()
     >>> for it in tt:   # doctest: +SKIP
     ...     print(it)
     ...
@@ -1734,7 +1740,7 @@ Examples of working with :class:`.datetime` objects:
     -1      # dst - method tzinfo.dst() returned None
 
     >>> # Date in ISO format
-    >>> ic = dt.isocalendar()
+    >>> ic = my_datetime.isocalendar()
     >>> for it in ic:   # doctest: +SKIP
     ...     print(it)
     ...
@@ -1743,55 +1749,55 @@ Examples of working with :class:`.datetime` objects:
     2       # ISO weekday
 
     >>> # Formatting a datetime
-    >>> dt.strftime("%A, %d. %B %Y %I:%M%p")
+    >>> my_datetime.strftime("%A, %d. %B %Y %I:%M%p")
     'Tuesday, 21. November 2006 04:30PM'
-    >>> 'The {1} is {0:%d}, the {2} is {0:%B}, the {3} is {0:%I:%M%p}.'.format(dt, "day", "month", "time")
+    >>> 'The {1} is {0:%d}, the {2} is {0:%B}, the {3} is {0:%I:%M%p}.'.format(my_datetime, "day", "month", "time")
     'The day is 21, the month is November, the time is 04:30PM.'
 
 The example below defines a :class:`tzinfo` subclass capturing time zone
 information for Kabul, Afghanistan, which used +4 UTC until 1945
 and then +4:30 UTC thereafter::
 
-   from datetime import timedelta, datetime, tzinfo, timezone
+   import datetime as dt
 
-   class KabulTz(tzinfo):
+   class KabulTz(dt.tzinfo):
        # Kabul used +4 until 1945, when they moved to +4:30
-       UTC_MOVE_DATE = datetime(1944, 12, 31, 20, tzinfo=timezone.utc)
+       UTC_MOVE_DATE = dt.datetime(1944, 12, 31, 20, tzinfo=dt.timezone.utc)
 
-       def utcoffset(self, dt):
-           if dt.year < 1945:
-               return timedelta(hours=4)
-           elif (1945, 1, 1, 0, 0) <= dt.timetuple()[:5] < (1945, 1, 1, 0, 30):
+       def utcoffset(self, when):
+           if when.year < 1945:
+               return dt.timedelta(hours=4)
+           elif (1945, 1, 1, 0, 0) <= when.timetuple()[:5] < (1945, 1, 1, 0, 30):
                # An ambiguous ("imaginary") half-hour range representing
                # a 'fold' in time due to the shift from +4 to +4:30.
-               # If dt falls in the imaginary range, use fold to decide how
-               # to resolve. See PEP495.
-               return timedelta(hours=4, minutes=(30 if dt.fold else 0))
+               # If when falls in the imaginary range, use fold to decide how
+               # to resolve. See PEP 495.
+               return dt.timedelta(hours=4, minutes=(30 if when.fold else 0))
            else:
-               return timedelta(hours=4, minutes=30)
+               return dt.timedelta(hours=4, minutes=30)
 
-       def fromutc(self, dt):
+       def fromutc(self, when):
            # Follow same validations as in datetime.tzinfo
-           if not isinstance(dt, datetime):
+           if not isinstance(when, dt.datetime):
                raise TypeError("fromutc() requires a datetime argument")
-           if dt.tzinfo is not self:
-               raise ValueError("dt.tzinfo is not self")
+           if when.tzinfo is not self:
+               raise ValueError("when.tzinfo is not self")
 
            # A custom implementation is required for fromutc as
            # the input to this function is a datetime with utc values
            # but with a tzinfo set to self.
            # See datetime.astimezone or fromtimestamp.
-           if dt.replace(tzinfo=timezone.utc) >= self.UTC_MOVE_DATE:
-               return dt + timedelta(hours=4, minutes=30)
+           if when.replace(tzinfo=dt.timezone.utc) >= self.UTC_MOVE_DATE:
+               return when + dt.timedelta(hours=4, minutes=30)
            else:
-               return dt + timedelta(hours=4)
+               return when + dt.timedelta(hours=4)
 
-       def dst(self, dt):
+       def dst(self, when):
            # Kabul does not observe daylight saving time.
-           return timedelta(0)
+           return dt.timedelta(0)
 
-       def tzname(self, dt):
-           if dt >= self.UTC_MOVE_DATE:
+       def tzname(self, when):
+           if when >= self.UTC_MOVE_DATE:
                return "+04:30"
            return "+04"
 
@@ -1800,17 +1806,17 @@ Usage of ``KabulTz`` from above::
    >>> tz1 = KabulTz()
 
    >>> # Datetime before the change
-   >>> dt1 = datetime(1900, 11, 21, 16, 30, tzinfo=tz1)
+   >>> dt1 = dt.datetime(1900, 11, 21, 16, 30, tzinfo=tz1)
    >>> print(dt1.utcoffset())
    4:00:00
 
    >>> # Datetime after the change
-   >>> dt2 = datetime(2006, 6, 14, 13, 0, tzinfo=tz1)
+   >>> dt2 = dt.datetime(2006, 6, 14, 13, 0, tzinfo=tz1)
    >>> print(dt2.utcoffset())
    4:30:00
 
    >>> # Convert datetime to another time zone
-   >>> dt3 = dt2.astimezone(timezone.utc)
+   >>> dt3 = dt2.astimezone(dt.timezone.utc)
    >>> dt3
    datetime.datetime(2006, 6, 14, 8, 30, tzinfo=datetime.timezone.utc)
    >>> dt2
@@ -1946,22 +1952,22 @@ Other constructors:
 
    .. doctest::
 
-       >>> from datetime import time
-       >>> time.fromisoformat('04:23:01')
+       >>> import datetime as dt
+       >>> dt.time.fromisoformat('04:23:01')
        datetime.time(4, 23, 1)
-       >>> time.fromisoformat('T04:23:01')
+       >>> dt.time.fromisoformat('T04:23:01')
        datetime.time(4, 23, 1)
-       >>> time.fromisoformat('T042301')
+       >>> dt.time.fromisoformat('T042301')
        datetime.time(4, 23, 1)
-       >>> time.fromisoformat('04:23:01.000384')
+       >>> dt.time.fromisoformat('04:23:01.000384')
        datetime.time(4, 23, 1, 384)
-       >>> time.fromisoformat('04:23:01,000384')
+       >>> dt.time.fromisoformat('04:23:01,000384')
        datetime.time(4, 23, 1, 384)
-       >>> time.fromisoformat('04:23:01+04:00')
+       >>> dt.time.fromisoformat('04:23:01+04:00')
        datetime.time(4, 23, 1, tzinfo=datetime.timezone(datetime.timedelta(seconds=14400)))
-       >>> time.fromisoformat('04:23:01Z')
+       >>> dt.time.fromisoformat('04:23:01Z')
        datetime.time(4, 23, 1, tzinfo=datetime.timezone.utc)
-       >>> time.fromisoformat('04:23:01+00:00')
+       >>> dt.time.fromisoformat('04:23:01+00:00')
        datetime.time(4, 23, 1, tzinfo=datetime.timezone.utc)
 
 
@@ -1995,7 +2001,7 @@ Instance methods:
 
    Return a new :class:`.time` with the same values, but with specified
    parameters updated. Note that ``tzinfo=None`` can be specified to create a
-   naive :class:`.time` from an aware :class:`.time`, without conversion of the
+   naive :class:`!time` from an aware :class:`!time`, without conversion of the
    time data.
 
    :class:`.time` objects are also supported by generic function
@@ -2036,13 +2042,13 @@ Instance methods:
 
    Example::
 
-      >>> from datetime import time
-      >>> time(hour=12, minute=34, second=56, microsecond=123456).isoformat(timespec='minutes')
+      >>> import datetime as dt
+      >>> dt.time(hour=12, minute=34, second=56, microsecond=123456).isoformat(timespec='minutes')
       '12:34'
-      >>> dt = time(hour=12, minute=34, second=56, microsecond=0)
-      >>> dt.isoformat(timespec='microseconds')
+      >>> my_time = dt.time(hour=12, minute=34, second=56, microsecond=0)
+      >>> my_time.isoformat(timespec='microseconds')
       '12:34:56.000000'
-      >>> dt.isoformat(timespec='auto')
+      >>> my_time.isoformat(timespec='auto')
       '12:34:56'
 
    .. versionchanged:: 3.6
@@ -2100,18 +2106,18 @@ Examples of usage: :class:`!time`
 
 Examples of working with a :class:`.time` object::
 
-    >>> from datetime import time, tzinfo, timedelta
-    >>> class TZ1(tzinfo):
-    ...     def utcoffset(self, dt):
-    ...         return timedelta(hours=1)
-    ...     def dst(self, dt):
-    ...         return timedelta(0)
-    ...     def tzname(self,dt):
+    >>> import datetime as dt
+    >>> class TZ1(dt.tzinfo):
+    ...     def utcoffset(self, when):
+    ...         return dt.timedelta(hours=1)
+    ...     def dst(self, when):
+    ...         return dt.timedelta(0)
+    ...     def tzname(self, when):
     ...         return "+01:00"
     ...     def  __repr__(self):
     ...         return f"{self.__class__.__name__}()"
     ...
-    >>> t = time(12, 10, 30, tzinfo=TZ1())
+    >>> t = dt.time(12, 10, 30, tzinfo=TZ1())
     >>> t
     datetime.time(12, 10, 30, tzinfo=TZ1())
     >>> t.isoformat()
@@ -2139,14 +2145,14 @@ Examples of working with a :class:`.time` object::
 
    An instance of (a concrete subclass of) :class:`tzinfo` can be passed to the
    constructors for :class:`.datetime` and :class:`.time` objects. The latter objects
-   view their attributes as being in local time, and the :class:`tzinfo` object
+   view their attributes as being in local time, and the :class:`!tzinfo` object
    supports methods revealing offset of local time from UTC, the name of the time
    zone, and DST offset, all relative to a date or time object passed to them.
 
    You need to derive a concrete subclass, and (at least)
    supply implementations of the standard :class:`tzinfo` methods needed by the
    :class:`.datetime` methods you use. The :mod:`!datetime` module provides
-   :class:`timezone`, a simple concrete subclass of :class:`tzinfo` which can
+   :class:`timezone`, a simple concrete subclass of :class:`!tzinfo` which can
    represent time zones with fixed offset from UTC such as UTC itself or North
    American EST and EDT.
 
@@ -2209,31 +2215,35 @@ Examples of working with a :class:`.time` object::
    ``tz.utcoffset(dt) - tz.dst(dt)``
 
    must return the same result for every :class:`.datetime` *dt* with ``dt.tzinfo ==
-   tz``. For sane :class:`tzinfo` subclasses, this expression yields the time
+   tz``. For sane :class:`!tzinfo` subclasses, this expression yields the time
    zone's "standard offset", which should not depend on the date or the time, but
    only on geographic location. The implementation of :meth:`datetime.astimezone`
    relies on this, but cannot detect violations; it's the programmer's
-   responsibility to ensure it. If a :class:`tzinfo` subclass cannot guarantee
+   responsibility to ensure it. If a :class:`!tzinfo` subclass cannot guarantee
    this, it may be able to override the default implementation of
    :meth:`tzinfo.fromutc` to work correctly with :meth:`~.datetime.astimezone` regardless.
 
    Most implementations of :meth:`dst` will probably look like one of these two::
 
-      def dst(self, dt):
+      import datetime as dt
+
+      def dst(self, when):
           # a fixed-offset class:  doesn't account for DST
-          return timedelta(0)
+          return dt.timedelta(0)
 
    or::
 
-      def dst(self, dt):
+      import datetime as dt
+
+      def dst(self, when):
           # Code to set dston and dstoff to the time zone's DST
-          # transition times based on the input dt.year, and expressed
+          # transition times based on the input when.year, and expressed
           # in standard local time.
 
-          if dston <= dt.replace(tzinfo=None) < dstoff:
-              return timedelta(hours=1)
+          if dston <= when.replace(tzinfo=None) < dstoff:
+              return dt.timedelta(hours=1)
           else:
-              return timedelta(0)
+              return dt.timedelta(0)
 
    The default implementation of :meth:`dst` raises :exc:`NotImplementedError`.
 
@@ -2250,17 +2260,17 @@ Examples of working with a :class:`.time` object::
    valid replies. Return ``None`` if a string name isn't known. Note that this is
    a method rather than a fixed string primarily because some :class:`tzinfo`
    subclasses will wish to return different names depending on the specific value
-   of *dt* passed, especially if the :class:`tzinfo` class is accounting for
+   of *dt* passed, especially if the :class:`!tzinfo` class is accounting for
    daylight time.
 
    The default implementation of :meth:`tzname` raises :exc:`NotImplementedError`.
 
 
 These methods are called by a :class:`.datetime` or :class:`.time` object, in
-response to their methods of the same names. A :class:`.datetime` object passes
-itself as the argument, and a :class:`.time` object passes ``None`` as the
+response to their methods of the same names. A :class:`!datetime` object passes
+itself as the argument, and a :class:`!time` object passes ``None`` as the
 argument. A :class:`tzinfo` subclass's methods should therefore be prepared to
-accept a *dt* argument of ``None``, or of class :class:`.datetime`.
+accept a *dt* argument of ``None``, or of class :class:`!datetime`.
 
 When ``None`` is passed, it's up to the class designer to decide the best
 response. For example, returning ``None`` is appropriate if the class wishes to
@@ -2268,10 +2278,10 @@ say that time objects don't participate in the :class:`tzinfo` protocols. It
 may be more useful for ``utcoffset(None)`` to return the standard UTC offset, as
 there is no other convention for discovering the standard offset.
 
-When a :class:`.datetime` object is passed in response to a :class:`.datetime`
+When a :class:`.datetime` object is passed in response to a :class:`!datetime`
 method, ``dt.tzinfo`` is the same object as *self*. :class:`tzinfo` methods can
-rely on this, unless user code calls :class:`tzinfo` methods directly. The
-intent is that the :class:`tzinfo` methods interpret *dt* as being in local
+rely on this, unless user code calls :class:`!tzinfo` methods directly. The
+intent is that the :class:`!tzinfo` methods interpret *dt* as being in local
 time, and not need worry about objects in other time zones.
 
 There is one more :class:`tzinfo` method that a subclass may wish to override:
@@ -2299,20 +2309,22 @@ There is one more :class:`tzinfo` method that a subclass may wish to override:
    Skipping code for error cases, the default :meth:`fromutc` implementation acts
    like::
 
-      def fromutc(self, dt):
-          # raise ValueError error if dt.tzinfo is not self
-          dtoff = dt.utcoffset()
-          dtdst = dt.dst()
+      import datetime as dt
+
+      def fromutc(self, when):
+          # raise ValueError error if when.tzinfo is not self
+          dtoff = when.utcoffset()
+          dtdst = when.dst()
           # raise ValueError if dtoff is None or dtdst is None
           delta = dtoff - dtdst  # this is self's standard offset
           if delta:
-              dt += delta   # convert to standard local time
-              dtdst = dt.dst()
+              when += delta   # convert to standard local time
+              dtdst = when.dst()
               # raise ValueError if dtdst is None
           if dtdst:
-              return dt + dtdst
+              return when + dtdst
           else:
-              return dt
+              return when
 
 In the following :download:`tzinfo_examples.py
 <../includes/tzinfo_examples.py>` file there are some examples of
@@ -2339,9 +2351,9 @@ When DST starts (the "start" line), the local wall clock leaps from 1:59 to
 ``astimezone(Eastern)`` won't deliver a result with ``hour == 2`` on the day DST
 begins. For example, at the Spring forward transition of 2016, we get::
 
-    >>> from datetime import datetime, timezone
+    >>> import datetime as dt
     >>> from tzinfo_examples import HOUR, Eastern
-    >>> u0 = datetime(2016, 3, 13, 5, tzinfo=timezone.utc)
+    >>> u0 = dt.datetime(2016, 3, 13, 5, tzinfo=dt.timezone.utc)
     >>> for i in range(4):
     ...     u = u0 + i*HOUR
     ...     t = u.astimezone(Eastern)
@@ -2364,7 +2376,9 @@ form 5:MM and 6:MM both map to 1:MM when converted to Eastern, but earlier times
 have the :attr:`~.datetime.fold` attribute set to 0 and the later times have it set to 1.
 For example, at the Fall back transition of 2016, we get::
 
-    >>> u0 = datetime(2016, 11, 6, 4, tzinfo=timezone.utc)
+    >>> import datetime as dt
+    >>> from tzinfo_examples import HOUR, Eastern
+    >>> u0 = dt.datetime(2016, 11, 6, 4, tzinfo=dt.timezone.utc)
     >>> for i in range(4):
     ...     u = u0 + i*HOUR
     ...     t = u.astimezone(Eastern)
@@ -2381,7 +2395,7 @@ Note that the :class:`.datetime` instances that differ only by the value of the
 Applications that can't bear wall-time ambiguities should explicitly check the
 value of the :attr:`~.datetime.fold` attribute or avoid using hybrid
 :class:`tzinfo` subclasses; there are no ambiguities when using :class:`timezone`,
-or any other fixed-offset :class:`tzinfo` subclass (such as a class representing
+or any other fixed-offset :class:`!tzinfo` subclass (such as a class representing
 only EST (fixed offset -5 hours), or only EDT (fixed offset -4 hours)).
 
 .. seealso::
@@ -2515,8 +2529,9 @@ versus :meth:`~.datetime.strptime`:
 
 These methods accept format codes that can be used to parse and format dates::
 
-   >>> datetime.strptime('31/01/22 23:59:59.999999',
-   ...                   '%d/%m/%y %H:%M:%S.%f')
+   >>> import datetime as dt
+   >>> dt.datetime.strptime('31/01/22 23:59:59.999999',
+   ...                      '%d/%m/%y %H:%M:%S.%f')
    datetime.datetime(2022, 1, 31, 23, 59, 59, 999999)
    >>> _.strftime('%a %d %b %Y, %I:%M%p')
    'Mon 31 Jan 2022, 11:59PM'
@@ -2745,13 +2760,13 @@ in the format string will be pulled from the default value.
 
 .. doctest::
 
-    >>> from datetime import datetime
+    >>> import datetime as dt
     >>> value = "2/29"
-    >>> datetime.strptime(value, "%m/%d")
+    >>> dt.datetime.strptime(value, "%m/%d")
     Traceback (most recent call last):
     ...
     ValueError: day 29 must be in range 1..28 for month 2 in year 1900
-    >>> datetime.strptime(f"1904 {value}", "%Y %m/%d")
+    >>> dt.datetime.strptime(f"1904 {value}", "%Y %m/%d")
     datetime.datetime(1904, 2, 29, 0, 0)
 
 Using ``datetime.strptime(date_string, format)`` is equivalent to::
@@ -2897,7 +2912,7 @@ Notes:
    .. doctest::
 
       >>> month_day = "02/29"
-      >>> datetime.strptime(f"{month_day};1984", "%m/%d;%Y")  # No leap year bug.
+      >>> dt.datetime.strptime(f"{month_day};1984", "%m/%d;%Y")  # No leap year bug.
       datetime.datetime(1984, 2, 29, 0, 0)
 
    .. deprecated-removed:: 3.13 3.15
@@ -2908,7 +2923,7 @@ Notes:
 
 .. rubric:: Footnotes
 
-.. [#] If, that is, we ignore the effects of Relativity
+.. [#] If, that is, we ignore the effects of relativity.
 
 .. [#] This matches the definition of the "proleptic Gregorian" calendar in
        Dershowitz and Reingold's book *Calendrical Calculations*,

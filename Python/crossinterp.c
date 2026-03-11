@@ -609,6 +609,7 @@ check_missing___main___attr(PyObject *exc)
     // Get the error message.
     PyObject *args = PyException_GetArgs(exc);
     if (args == NULL || args == Py_None || PyObject_Size(args) < 1) {
+        Py_XDECREF(args);
         assert(!PyErr_Occurred());
         return 0;
     }
@@ -1102,12 +1103,12 @@ _convert_exc_to_TracebackException(PyObject *exc, PyObject **p_tbexc)
     }
 
     PyObject *tbexc = PyObject_Call(create, args, kwargs);
-    Py_DECREF(args);
-    Py_DECREF(kwargs);
-    Py_DECREF(create);
     if (tbexc == NULL) {
         goto error;
     }
+    Py_DECREF(args);
+    Py_DECREF(kwargs);
+    Py_DECREF(create);
 
     *p_tbexc = tbexc;
     return 0;
@@ -1496,7 +1497,7 @@ _PyXI_excinfo_Apply(_PyXI_excinfo *info, PyObject *exctype)
 
     PyObject *formatted = _PyXI_excinfo_format(info);
     PyErr_SetObject(exctype, formatted);
-    Py_DECREF(formatted);
+    Py_XDECREF(formatted);
 
     if (tbexc != NULL) {
         PyObject *exc = PyErr_GetRaisedException();

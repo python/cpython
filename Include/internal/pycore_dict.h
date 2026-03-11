@@ -160,6 +160,9 @@ extern void _PyDict_Clear_LockHeld(PyObject *op);
 PyAPI_FUNC(void) _PyDict_EnsureSharedOnRead(PyDictObject *mp);
 #endif
 
+// Export for '_elementtree' shared extension
+PyAPI_FUNC(PyObject*) _PyDict_CopyAsDict(PyObject *op);
+
 #define DKIX_EMPTY (-1)
 #define DKIX_DUMMY (-2)  /* Used internally */
 #define DKIX_ERROR (-3)
@@ -370,7 +373,7 @@ _PyDict_UniqueId(PyDictObject *mp)
 static inline void
 _Py_INCREF_DICT(PyObject *op)
 {
-    assert(PyDict_Check(op));
+    assert(PyAnyDict_Check(op));
     Py_ssize_t id = _PyDict_UniqueId((PyDictObject *)op);
     _Py_THREAD_INCREF_OBJECT(op, id);
 }
@@ -378,7 +381,7 @@ _Py_INCREF_DICT(PyObject *op)
 static inline void
 _Py_DECREF_DICT(PyObject *op)
 {
-    assert(PyDict_Check(op));
+    assert(PyAnyDict_Check(op));
     Py_ssize_t id = _PyDict_UniqueId((PyDictObject *)op);
     _Py_THREAD_DECREF_OBJECT(op, id);
 }
