@@ -3011,7 +3011,7 @@ AC_CHECK_HEADERS([ \
   io.h langinfo.h libintl.h libutil.h linux/auxvec.h sys/auxv.h linux/fs.h linux/limits.h linux/memfd.h \
   linux/netfilter_ipv4.h linux/random.h linux/soundcard.h linux/sched.h \
   linux/tipc.h linux/wait.h netdb.h net/ethernet.h netinet/in.h netpacket/packet.h poll.h process.h pthread.h pty.h \
-  sched.h setjmp.h shadow.h signal.h spawn.h stropts.h sys/audioio.h sys/bsdtty.h sys/devpoll.h \
+  sched.h setjmp.h shadow.h signal.h spawn.h sys/audioio.h sys/bsdtty.h sys/devpoll.h \
   sys/endian.h sys/epoll.h sys/event.h sys/eventfd.h sys/file.h sys/ioctl.h sys/kern_control.h \
   sys/loadavg.h sys/lock.h sys/memfd.h sys/mkdev.h sys/mman.h sys/modem.h sys/param.h sys/pidfd.h sys/poll.h \
   sys/random.h sys/resource.h sys/select.h sys/sendfile.h sys/socket.h sys/soundcard.h sys/stat.h \
@@ -3021,6 +3021,16 @@ AC_CHECK_HEADERS([ \
 ])
 AC_HEADER_DIRENT
 AC_HEADER_MAJOR
+
+# On Linux, stropts.h may be empty
+AC_CHECK_DECL([I_PUSH], [
+  AC_DEFINE([HAVE_STROPTS_H], [1],
+    [Define to 1 if you have the <stropts.h> header file.])], [], [
+    #ifdef HAVE_SYS_TYPES_H
+    #  include <sys/types.h>
+    #endif
+    #include <stropts.h>
+])
 
 # bluetooth/bluetooth.h has been known to not compile with -std=c99.
 # http://permalink.gmane.org/gmane.linux.bluez.kernel/22294
@@ -6168,21 +6178,11 @@ AX_C_FLOAT_WORDS_BIGENDIAN(
   [AC_DEFINE([DOUBLE_IS_LITTLE_ENDIAN_IEEE754], [1],
              [Define if C doubles are 64-bit IEEE 754 binary format,
               stored with the least significant byte first])],
-  [AS_CASE([$host_cpu],
-           [*arm*], [# Some ARM platforms use a mixed-endian representation for
-                     # doubles. While Python doesn't currently have full support
-                     # for these platforms (see e.g., issue 1762561), we can at
-                     # least make sure that float <-> string conversions work.
-                     # FLOAT_WORDS_BIGENDIAN doesn't actually detect this case,
-                     # but if it's not big or little, then it must be this?
-                     AC_DEFINE([DOUBLE_IS_ARM_MIXED_ENDIAN_IEEE754], [1],
-                               [Define if C doubles are 64-bit IEEE 754 binary format,
-                                stored in ARM mixed-endian order (byte order 45670123)])],
-           [AC_MSG_ERROR([m4_normalize([
+  [AC_MSG_ERROR([m4_normalize([
              Unknown float word ordering. You need to manually
              preset ax_cv_c_float_words_bigendian=no (or yes)
              according to your system.
-           ])])])])
+           ])])])
 
 # The short float repr introduced in Python 3.1 requires the
 # correctly-rounded string <-> double conversion functions from

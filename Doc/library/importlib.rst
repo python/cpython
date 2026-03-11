@@ -292,7 +292,7 @@ ABC hierarchy::
          instead of a :class:`list` or other
          :class:`collection <collections.abc.Collection>` type.
 
-      .. versionadded:: next
+      .. versionadded:: 3.15
 
 
 .. class:: PathEntryFinder
@@ -346,7 +346,7 @@ ABC hierarchy::
          instead of a :class:`list` or other
          :class:`collection <collections.abc.Collection>` type.
 
-      .. versionadded:: next
+      .. versionadded:: 3.15
 
 
 .. class:: Loader

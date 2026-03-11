@@ -469,7 +469,7 @@ identifier names.
 .. versionchanged:: 3.12
    ``type`` is now a soft keyword.
 
-.. versionchanged:: next
+.. versionchanged:: 3.15
    ``lazy`` is now a soft keyword.
 
 .. index::

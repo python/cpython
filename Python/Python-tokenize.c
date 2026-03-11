@@ -1,6 +1,7 @@
 #include "Python.h"
 #include "errcode.h"
 #include "internal/pycore_critical_section.h"   // Py_BEGIN_CRITICAL_SECTION
+#include "internal/pycore_tuple.h"              // _PyTuple_FromPair
 #include "../Parser/lexer/state.h"
 #include "../Parser/lexer/lexer.h"
 #include "../Parser/tokenizer/tokenizer.h"
@@ -164,7 +165,7 @@ _tokenizer_error(tokenizeriterobject *it)
         goto exit;
     }
 
-    value = PyTuple_Pack(2, errstr, tmp);
+    value = _PyTuple_FromPair(errstr, tmp);
     if (!value) {
         result = -1;
         goto exit;
