@@ -930,17 +930,16 @@ dummy_func(
             assert(PyLong_CheckExact(sub));
             assert(PyList_CheckExact(list));
 
-            // Deopt unless 0 <= sub < PyList_Size(list)
-            EXIT_IF(!_PyLong_IsNonNegativeCompact((PyLongObject *)sub));
-            Py_ssize_t index = ((PyLongObject*)sub)->long_value.ob_digit[0];
+            Py_ssize_t index = _PyLong_CompactValue((PyLongObject *)sub);
+            if (index < 0) {
+                index += PyList_GET_SIZE(list);
+            }
 #ifdef Py_GIL_DISABLED
             PyObject *res_o = _PyList_GetItemRef((PyListObject*)list, index);
             EXIT_IF(res_o == NULL);
-            STAT_INC(BINARY_OP, hit);
             res = PyStackRef_FromPyObjectSteal(res_o);
 #else
-            EXIT_IF(index >= PyList_GET_SIZE(list));
-            STAT_INC(BINARY_OP, hit);
+            EXIT_IF(index < 0 || index >= PyList_GET_SIZE(list));
             PyObject *res_o = PyList_GET_ITEM(list, index);
             assert(res_o != NULL);
             res = PyStackRef_FromPyObjectNew(res_o);
@@ -1196,14 +1195,16 @@ dummy_func(
             assert(PyLong_CheckExact(sub));
             assert(PyList_CheckExact(list));
 
-            // Ensure nonnegative, zero-or-one-digit ints.
-            EXIT_IF(!_PyLong_IsNonNegativeCompact((PyLongObject *)sub));
-            Py_ssize_t index = ((PyLongObject*)sub)->long_value.ob_digit[0];
-            EXIT_IF(!LOCK_OBJECT(list));
+            Py_ssize_t index = _PyLong_CompactValue((PyLongObject *)sub);
+            DEOPT_IF(!LOCK_OBJECT(list));
+            Py_ssize_t len = PyList_GET_SIZE(list);
             // Ensure index < len(list)
-            if (index >= PyList_GET_SIZE(list)) {
+            if (index < 0) {
+                index += len;
+            }
+            if (index < 0 || index >= len) {
                 UNLOCK_OBJECT(list);
-                EXIT_IF(true);
+                DEOPT_IF(true);
             }
             STAT_INC(STORE_SUBSCR, hit);
 
@@ -1713,10 +1714,10 @@ dummy_func(
         op(_UNPACK_SEQUENCE_LIST, (seq -- values[oparg])) {
             PyObject *seq_o = PyStackRef_AsPyObjectBorrow(seq);
             assert(PyList_CheckExact(seq_o));
-            EXIT_IF(!LOCK_OBJECT(seq_o));
+            DEOPT_IF(!LOCK_OBJECT(seq_o));
             if (PyList_GET_SIZE(seq_o) != oparg) {
                 UNLOCK_OBJECT(seq_o);
-                EXIT_IF(true);
+                DEOPT_IF(true);
             }
             STAT_INC(UNPACK_SEQUENCE, hit);
             PyObject **items = _PyList_ITEMS(seq_o);
@@ -2448,10 +2449,9 @@ dummy_func(
             EXIT_IF(FT_ATOMIC_LOAD_UINT_RELAXED(tp->tp_version_tag) != type_version);
         }
 
-        op(_GUARD_TYPE_VERSION_AND_LOCK, (type_version/2, owner -- owner)) {
+        op(_GUARD_TYPE_VERSION_LOCKED, (type_version/2, owner -- owner)) {
             PyObject *owner_o = PyStackRef_AsPyObjectBorrow(owner);
             assert(type_version != 0);
-            EXIT_IF(!LOCK_OBJECT(owner_o));
             PyTypeObject *tp = Py_TYPE(owner_o);
             if (FT_ATOMIC_LOAD_UINT_RELAXED(tp->tp_version_tag) != type_version) {
                 UNLOCK_OBJECT(owner_o);
@@ -2717,9 +2717,14 @@ dummy_func(
             Py_XDECREF(old_value);
         }
 
+        op(_LOCK_OBJECT, (value -- value)) {
+            DEOPT_IF(!LOCK_OBJECT(PyStackRef_AsPyObjectBorrow(value)));
+        }
+
         macro(STORE_ATTR_INSTANCE_VALUE) =
             unused/1 +
-            _GUARD_TYPE_VERSION_AND_LOCK +
+            _LOCK_OBJECT +
+            _GUARD_TYPE_VERSION_LOCKED +
             _GUARD_DORV_NO_DICT +
             _STORE_ATTR_INSTANCE_VALUE +
             POP_TOP;
@@ -4505,7 +4510,7 @@ dummy_func(
             assert(oparg == 1);
             PyObject *self_o = PyStackRef_AsPyObjectBorrow(self);
 
-            EXIT_IF(!LOCK_OBJECT(self_o));
+            DEOPT_IF(!LOCK_OBJECT(self_o));
             STAT_INC(CALL, hit);
             int err = _PyList_AppendTakeRef((PyListObject *)self_o, PyStackRef_AsPyObjectSteal(arg));
             UNLOCK_OBJECT(self_o);

@@ -825,12 +825,10 @@
                 PyObject *list = PyStackRef_AsPyObjectBorrow(list_st);
                 assert(PyLong_CheckExact(sub));
                 assert(PyList_CheckExact(list));
-                if (!_PyLong_IsNonNegativeCompact((PyLongObject *)sub)) {
-                    UPDATE_MISS_STATS(BINARY_OP);
-                    assert(_PyOpcode_Deopt[opcode] == (BINARY_OP));
-                    JUMP_TO_PREDICTED(BINARY_OP);
+                Py_ssize_t index = _PyLong_CompactValue((PyLongObject *)sub);
+                if (index < 0) {
+                    index += PyList_GET_SIZE(list);
                 }
-                Py_ssize_t index = ((PyLongObject*)sub)->long_value.ob_digit[0];
                 #ifdef Py_GIL_DISABLED
                 _PyFrame_SetStackPointer(frame, stack_pointer);
                 PyObject *res_o = _PyList_GetItemRef((PyListObject*)list, index);
@@ -840,15 +838,13 @@
                     assert(_PyOpcode_Deopt[opcode] == (BINARY_OP));
                     JUMP_TO_PREDICTED(BINARY_OP);
                 }
-                STAT_INC(BINARY_OP, hit);
                 res = PyStackRef_FromPyObjectSteal(res_o);
                 #else
-                if (index >= PyList_GET_SIZE(list)) {
+                if (index < 0 || index >= PyList_GET_SIZE(list)) {
                     UPDATE_MISS_STATS(BINARY_OP);
                     assert(_PyOpcode_Deopt[opcode] == (BINARY_OP));
                     JUMP_TO_PREDICTED(BINARY_OP);
                 }
-                STAT_INC(BINARY_OP, hit);
                 PyObject *res_o = PyList_GET_ITEM(list, index);
                 assert(res_o != NULL);
                 res = PyStackRef_FromPyObjectNew(res_o);
@@ -10959,21 +10955,25 @@
             next_instr += 5;
             INSTRUCTION_STATS(STORE_ATTR_INSTANCE_VALUE);
             static_assert(INLINE_CACHE_ENTRIES_STORE_ATTR == 4, "incorrect cache size");
-            _PyStackRef owner;
             _PyStackRef value;
+            _PyStackRef owner;
             _PyStackRef o;
             /* Skip 1 cache entry */
-            // _GUARD_TYPE_VERSION_AND_LOCK
+            // _LOCK_OBJECT
             {
-                owner = stack_pointer[-1];
-                uint32_t type_version = read_u32(&this_instr[2].cache);
-                PyObject *owner_o = PyStackRef_AsPyObjectBorrow(owner);
-                assert(type_version != 0);
-                if (!LOCK_OBJECT(owner_o)) {
+                value = stack_pointer[-1];
+                if (!LOCK_OBJECT(PyStackRef_AsPyObjectBorrow(value))) {
                     UPDATE_MISS_STATS(STORE_ATTR);
                     assert(_PyOpcode_Deopt[opcode] == (STORE_ATTR));
                     JUMP_TO_PREDICTED(STORE_ATTR);
                 }
+            }
+            // _GUARD_TYPE_VERSION_LOCKED
+            {
+                owner = value;
+                uint32_t type_version = read_u32(&this_instr[2].cache);
+                PyObject *owner_o = PyStackRef_AsPyObjectBorrow(owner);
+                assert(type_version != 0);
                 PyTypeObject *tp = Py_TYPE(owner_o);
                 if (FT_ATOMIC_LOAD_UINT_RELAXED(tp->tp_version_tag) != type_version) {
                     UNLOCK_OBJECT(owner_o);
@@ -11597,18 +11597,17 @@
                 PyObject *list = PyStackRef_AsPyObjectBorrow(list_st);
                 assert(PyLong_CheckExact(sub));
                 assert(PyList_CheckExact(list));
-                if (!_PyLong_IsNonNegativeCompact((PyLongObject *)sub)) {
-                    UPDATE_MISS_STATS(STORE_SUBSCR);
-                    assert(_PyOpcode_Deopt[opcode] == (STORE_SUBSCR));
-                    JUMP_TO_PREDICTED(STORE_SUBSCR);
-                }
-                Py_ssize_t index = ((PyLongObject*)sub)->long_value.ob_digit[0];
+                Py_ssize_t index = _PyLong_CompactValue((PyLongObject *)sub);
                 if (!LOCK_OBJECT(list)) {
                     UPDATE_MISS_STATS(STORE_SUBSCR);
                     assert(_PyOpcode_Deopt[opcode] == (STORE_SUBSCR));
                     JUMP_TO_PREDICTED(STORE_SUBSCR);
                 }
-                if (index >= PyList_GET_SIZE(list)) {
+                Py_ssize_t len = PyList_GET_SIZE(list);
+                if (index < 0) {
+                    index += len;
+                }
+                if (index < 0 || index >= len) {
                     UNLOCK_OBJECT(list);
                     if (true) {
                         UPDATE_MISS_STATS(STORE_SUBSCR);
