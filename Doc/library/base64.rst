@@ -223,7 +223,7 @@ Base85 Encodings
 Base85 encoding is a family of algorithms which represent four bytes
 using five ASCII characters.  Originally implemented in the Unix
 ``btoa(1)`` utility, a version of it was later adopted by Adobe in the
-PostScript language and is standardized as ISO 32000-2:2020 (PDF 2.0).
+PostScript language and is standardized in PDF 2.0 (ISO 32000-2).
 This version, in both its ``btoa`` and PDF variants, is implemented by
 :func:`a85encode`.
 
