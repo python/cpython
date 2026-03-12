@@ -555,6 +555,12 @@ class StructTest(ComplexesAreIdenticalMixin, unittest.TestCase):
         hugecount3 = '{}i{}q'.format(sys.maxsize // 4, sys.maxsize // 8)
         self.assertRaises(struct.error, struct.calcsize, hugecount3)
 
+        hugecount4 = '{}?s'.format(sys.maxsize)
+        self.assertRaises(struct.error, struct.calcsize, hugecount4)
+
+        hugecount5 = '{}?p'.format(sys.maxsize)
+        self.assertRaises(struct.error, struct.calcsize, hugecount5)
+
     def test_trailing_counter(self):
         store = array.array('b', b' '*100)
 
@@ -584,12 +590,37 @@ class StructTest(ComplexesAreIdenticalMixin, unittest.TestCase):
         # Issue 9422: there was a memory leak when reinitializing a
         # Struct instance.  This test can be used to detect the leak
         # when running with regrtest -L.
-        s = struct.Struct('i')
-        s.__init__('ii')
+        s = struct.Struct('>h')
+        msg = 'Re-initialization .* will not work'
+        with self.assertWarnsRegex(FutureWarning, msg):
+            s.__init__('>hh')
+        self.assertEqual(s.format, '>hh')
+        packed = b'\x00\x01\x00\x02'
+        self.assertEqual(s.pack(1, 2), packed)
+        self.assertEqual(s.unpack(packed), (1, 2))
+
+        s.__init__('>hh')  # same format
+        self.assertEqual(s.format, '>hh')
+        self.assertEqual(s.pack(1, 2), packed)
+        self.assertEqual(s.unpack(packed), (1, 2))
+
+        with self.assertWarnsRegex(FutureWarning, msg):
+            with self.assertRaises(UnicodeEncodeError):
+                s.__init__('\udc00')
+        self.assertEqual(s.format, '>hh')
+        self.assertEqual(s.pack(1, 2), packed)
+        self.assertEqual(s.unpack(packed), (1, 2))
+
+        with self.assertWarnsRegex(FutureWarning, msg):
+            with self.assertRaises(struct.error):
+                s.__init__('$')
+        self.assertEqual(s.format, '>hh')
+        self.assertEqual(s.pack(1, 2), packed)
+        self.assertEqual(s.unpack(packed), (1, 2))
 
     def check_sizeof(self, format_str, number_of_codes):
         # The size of 'PyStructObject'
-        totalsize = support.calcobjsize('2n3P')
+        totalsize = support.calcobjsize('2n3P?0P')
         # The size taken up by the 'formatcode' dynamic array
         totalsize += struct.calcsize('P3n0P') * (number_of_codes + 1)
         support.check_sizeof(self, struct.Struct(format_str), totalsize)
@@ -787,14 +818,152 @@ class StructTest(ComplexesAreIdenticalMixin, unittest.TestCase):
         test_error_propagation('N')
         test_error_propagation('n')
 
-    def test_struct_subclass_instantiation(self):
+    def test_custom_struct_init(self):
         # Regression test for https://github.com/python/cpython/issues/112358
         class MyStruct(struct.Struct):
-            def __init__(self):
+            def __init__(self, *args, **kwargs):
                 super().__init__('>h')
 
-        my_struct = MyStruct()
+        my_struct = MyStruct('>h')
         self.assertEqual(my_struct.pack(12345), b'\x30\x39')
+        my_struct = MyStruct(format='>h')
+        self.assertEqual(my_struct.pack(12345), b'\x30\x39')
+
+        warnmsg = r"Different format arguments for __new__\(\) and __init__\(\) methods of Struct"
+        with self.assertWarnsRegex(FutureWarning, warnmsg):
+            my_struct = MyStruct('<h')
+        self.assertEqual(my_struct.pack(12345), b'\x30\x39')
+        with self.assertWarnsRegex(FutureWarning, warnmsg):
+            my_struct = MyStruct(format='<h')
+        self.assertEqual(my_struct.pack(12345), b'\x30\x39')
+
+        warnmsg = r"Struct\(\) missing required argument 'format' \(pos 1\)"
+        with self.assertWarnsRegex(DeprecationWarning, warnmsg):
+            my_struct = MyStruct()
+        self.assertEqual(my_struct.pack(12345), b'\x30\x39')
+        with self.assertWarnsRegex(DeprecationWarning, warnmsg):
+            my_struct = MyStruct(arg='>h')
+        self.assertEqual(my_struct.pack(12345), b'\x30\x39')
+
+        warnmsg = r"Struct\(\) takes at most 1 argument \(2 given\)"
+        with self.assertWarnsRegex(DeprecationWarning, warnmsg):
+            my_struct = MyStruct('>h', 42)
+        self.assertEqual(my_struct.pack(12345), b'\x30\x39')
+        with self.assertWarnsRegex(DeprecationWarning, warnmsg):
+            my_struct = MyStruct('>h', arg=42)
+        self.assertEqual(my_struct.pack(12345), b'\x30\x39')
+        with self.assertWarnsRegex(DeprecationWarning, warnmsg):
+            my_struct = MyStruct('>h', format=42)
+        self.assertEqual(my_struct.pack(12345), b'\x30\x39')
+        with self.assertWarnsRegex(DeprecationWarning, warnmsg):
+            my_struct = MyStruct(format='>h', arg=42)
+        self.assertEqual(my_struct.pack(12345), b'\x30\x39')
+
+        warnmsg = r"Invalid 'format' argument for Struct\.__new__\(\): "
+        with self.assertWarnsRegex(DeprecationWarning, warnmsg + '.*must be'):
+            my_struct = MyStruct(42)
+        self.assertEqual(my_struct.pack(12345), b'\x30\x39')
+        with self.assertWarnsRegex(DeprecationWarning, warnmsg + '.*must be'):
+            my_struct = MyStruct(format=42)
+        self.assertEqual(my_struct.pack(12345), b'\x30\x39')
+        with self.assertWarnsRegex(DeprecationWarning, warnmsg + 'bad char'):
+            my_struct = MyStruct('$')
+        self.assertEqual(my_struct.pack(12345), b'\x30\x39')
+        with self.assertWarnsRegex(DeprecationWarning, warnmsg + 'bad char'):
+            my_struct = MyStruct(format='$')
+        self.assertEqual(my_struct.pack(12345), b'\x30\x39')
+        with self.assertWarnsRegex(DeprecationWarning, warnmsg + ".*can't encode"):
+            my_struct = MyStruct('\udc00')
+        self.assertEqual(my_struct.pack(12345), b'\x30\x39')
+        with self.assertWarnsRegex(DeprecationWarning, warnmsg + ".*can't encode"):
+            my_struct = MyStruct(format='\udc00')
+        self.assertEqual(my_struct.pack(12345), b'\x30\x39')
+
+    def test_custom_struct_new(self):
+        # New way, no warnings:
+        class MyStruct(struct.Struct):
+            def __new__(cls, *args, **kwargs):
+                return super().__new__(cls, '>h')
+
+        for format in '>h', '<h', 42, '$', '\u20ac', '\udc00', b'\xa4':
+            with self.subTest(format=format):
+                my_struct = MyStruct(format)
+                self.assertEqual(my_struct.format, '>h')
+                self.assertEqual(my_struct.pack(12345), b'\x30\x39')
+        my_struct = MyStruct(format='<h')
+        self.assertEqual(my_struct.format, '>h')
+        self.assertEqual(my_struct.pack(12345), b'\x30\x39')
+        my_struct = MyStruct()
+        self.assertEqual(my_struct.format, '>h')
+        self.assertEqual(my_struct.pack(12345), b'\x30\x39')
+        my_struct = MyStruct('<h', 42)
+        self.assertEqual(my_struct.format, '>h')
+        self.assertEqual(my_struct.pack(12345), b'\x30\x39')
+
+    def test_custom_struct_new_and_init(self):
+        # New way, no warnings:
+        class MyStruct(struct.Struct):
+            def __new__(cls, newargs, initargs):
+                return super().__new__(cls, *newargs)
+            def __init__(self, newargs, initargs):
+                if initargs is not None:
+                    super().__init__(*initargs)
+
+        my_struct = MyStruct(('>h',), ('>h',))
+        self.assertEqual(my_struct.format, '>h')
+        self.assertEqual(my_struct.pack(12345), b'\x30\x39')
+        with self.assertRaises(TypeError):
+            MyStruct((), ())
+        with self.assertRaises(TypeError):
+            MyStruct(('>h',), ())
+        with self.assertRaises(TypeError):
+            MyStruct((), ('>h',))
+        with self.assertRaises(TypeError):
+            MyStruct((42,), ('>h',))
+        with self.assertWarns(FutureWarning):
+            with self.assertRaises(TypeError):
+                MyStruct(('>h',), (42,))
+        with self.assertRaises(struct.error):
+            MyStruct(('$',), ('>h',))
+        with self.assertWarns(FutureWarning):
+            with self.assertRaises(struct.error):
+                MyStruct(('>h',), ('$',))
+        with self.assertRaises(UnicodeEncodeError):
+            MyStruct(('\udc00',), ('>h',))
+        with self.assertWarns(FutureWarning):
+            with self.assertRaises(UnicodeEncodeError):
+                MyStruct(('>h',), ('\udc00',))
+        with self.assertWarns(FutureWarning):
+            my_struct = MyStruct(('>h',), ('<h',))
+        self.assertEqual(my_struct.format, '<h')
+        self.assertEqual(my_struct.pack(12345), b'\x39\x30')
+
+    def test_no_custom_struct_new_or_init(self):
+        class MyStruct(struct.Struct):
+            pass
+
+        my_struct = MyStruct('>h')
+        self.assertEqual(my_struct.format, '>h')
+        self.assertEqual(my_struct.pack(12345), b'\x30\x39')
+        my_struct = MyStruct(format='>h')
+        self.assertEqual(my_struct.format, '>h')
+        self.assertEqual(my_struct.pack(12345), b'\x30\x39')
+        with self.assertRaises(TypeError):
+            MyStruct()
+        with self.assertRaises(TypeError):
+            MyStruct(42)
+        with self.assertRaises(struct.error):
+            MyStruct('$')
+        with self.assertRaises(UnicodeEncodeError):
+            MyStruct('\udc00')
+        with self.assertRaises(TypeError):
+            MyStruct('>h', 42)
+        with self.assertRaises(TypeError):
+            MyStruct('>h', arg=42)
+        with self.assertRaises(TypeError):
+            MyStruct(arg=42)
+        with self.assertRaises(TypeError):
+            MyStruct('>h', format='>h')
 
     def test_repr(self):
         s = struct.Struct('=i2H')
