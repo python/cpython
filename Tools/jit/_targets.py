@@ -234,7 +234,7 @@ class _Target(typing.Generic[_S, _R]):
             args_o += self._shim_compile_args()
             args_o += [
                 "-c",
-                # The linked shim is a real function in the final binary, so
+                # The shim is a real function in the final binary, so
                 # keep unwind info for debuggers and stack walkers.
                 "-fasynchronous-unwind-tables",
             ]
@@ -332,7 +332,7 @@ class _COFF(
     _Target[_schema.COFFSection, _schema.COFFRelocation]
 ):  # pylint: disable = too-few-public-methods
     def _shim_compile_args(self) -> list[str]:
-        # The linked shim is part of pythoncore, not a shared extension.
+        # The shim is part of pythoncore, not a shared extension.
         # On Windows, Py_BUILD_CORE_MODULE makes public APIs import from
         # pythonXY.lib, which creates a self-dependency when linking
         # pythoncore.dll. Build the shim with builtin/core semantics.
