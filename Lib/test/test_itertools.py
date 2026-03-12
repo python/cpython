@@ -767,10 +767,7 @@ class TestBasicOps(unittest.TestCase):
             def __eq__(self, other):
                 if self.do_advance:
                     self.do_advance = False
-                    try:
-                        next(g)
-                    except StopIteration:
-                        pass
+                    next(g)
                     return NotImplemented
                 return self.val == other.val
 
