@@ -189,49 +189,8 @@ def _get_executable_linenos(code):
     return linenos
 
 
-# filename: (size, mtime, executable_linenos, fullname)
+# filename: (source_lines, executable_linenos)
 _executable_linenos_cache = {}
-
-
-def _check_executable_linenos_cache(filename=None):
-    if filename is None:
-        filenames = tuple(_executable_linenos_cache)
-    else:
-        filenames = (filename,)
-
-    for filename in filenames:
-        if (entry := _executable_linenos_cache.get(filename)) is None:
-            continue
-        size, mtime, _, fullname = entry
-        if mtime is None:
-            continue
-        try:
-            stat = os.stat(fullname)
-        except (OSError, ValueError):
-            _executable_linenos_cache.pop(filename, None)
-            continue
-        if size != stat.st_size or mtime != stat.st_mtime:
-            _executable_linenos_cache.pop(filename, None)
-
-
-def _set_executable_linenos_cache_entry(
-    filename, executable_linenos, source, linecache_entry
-):
-    if linecache_entry is not None and len(linecache_entry) != 1:
-        size, mtime, _, fullname = linecache_entry
-    else:
-        fullname = filename
-        try:
-            stat = os.stat(filename)
-        except (OSError, ValueError):
-            size = len(source)
-            mtime = None
-        else:
-            size = stat.st_size
-            mtime = stat.st_mtime
-    _executable_linenos_cache[filename] = (
-        size, mtime, executable_linenos, fullname
-    )
 
 
 class Bdb:
@@ -302,7 +261,6 @@ class Bdb:
         """Set values of attributes as ready to start debugging."""
         import linecache
         linecache.checkcache()
-        _check_executable_linenos_cache()
         self.botframe = None
         self._set_stopinfo(None, None)
 
@@ -727,24 +685,21 @@ class Bdb:
         filename = self.canonic(filename)
         import linecache # Import as late as possible
         linecache.checkcache(filename)
-        _check_executable_linenos_cache(filename)
         line = linecache.getline(filename, lineno)
         if not line:
             return 'Line %s:%d does not exist' % (filename, lineno)
-        if filename not in _executable_linenos_cache:
-            source = ''.join(linecache.getlines(filename))
+        lines = linecache.getlines(filename)
+        cached = _executable_linenos_cache.get(filename)
+        if cached is not None and cached[0] is lines:
+            executable_lines = cached[1]
+        else:
+            executable_lines = None
+            source = ''.join(lines)
             if source:
                 with suppress(SyntaxError):
                     code = compile(source, filename, 'exec')
                     executable_lines = _get_executable_linenos(code)
-                    _set_executable_linenos_cache_entry(
-                        filename,
-                        executable_lines,
-                        source,
-                        linecache.cache.get(filename),
-                    )
-        cache_entry = _executable_linenos_cache.get(filename)
-        executable_lines = cache_entry[2] if cache_entry else None
+                    _executable_linenos_cache[filename] = (lines, executable_lines)
         if executable_lines and lineno not in executable_lines:
             return 'Line %d has no code associated with it' % lineno
         self._add_to_breaks(filename, lineno)
