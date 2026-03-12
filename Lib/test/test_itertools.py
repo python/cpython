@@ -759,8 +759,6 @@ class TestBasicOps(unittest.TestCase):
         # gbo->currkey / igo->tgtkey before calling PyObject_RichCompareBool,
         # so a reentrant __eq__ that advanced the parent groupby could free
         # those objects while they were still being compared (use-after-free).
-        outer_grouper = None
-
         class Key:
             def __init__(self, val, do_advance):
                 self.val = val
@@ -769,10 +767,8 @@ class TestBasicOps(unittest.TestCase):
             def __eq__(self, other):
                 if self.do_advance:
                     self.do_advance = False
-                    # Advance the parent groupby iterator from inside __eq__,
-                    # which calls groupby_step() and frees the old currkey.
                     try:
-                        next(outer_grouper)
+                        next(g)
                     except StopIteration:
                         pass
                     return NotImplemented
@@ -781,10 +777,8 @@ class TestBasicOps(unittest.TestCase):
             def __hash__(self):
                 return hash(self.val)
 
-        values = [1, 1, 2]
         keys_iter = iter([Key(1, True), Key(1, False), Key(2, False)])
-        g = itertools.groupby(values, lambda _: next(keys_iter))
-        outer_grouper = g
+        g = itertools.groupby([1, 1, 2], lambda _: next(keys_iter))
         k, grp = next(g)
         list(grp)  # must not crash with address sanitizer
 
