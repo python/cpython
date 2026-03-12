@@ -38,6 +38,7 @@ PY_SIZE_MAX
 PY_UINT32_T
 PY_UINT64_T
 PY_ULLONG_MAX
+PY_BIG_ENDIAN
 # unicodeobject.h
 Py_UNICODE_SIZE
 # cpython/methodobject.h
