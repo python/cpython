@@ -134,6 +134,29 @@ Dict display element unpacking
     ...
     TypeError: 'list' object is not a mapping
 
+    >>> class MappingWithKeyErrors:
+    ...     def __init__(self, *, keys_error=None, getitem_error=None):
+    ...         self.keys_error = keys_error
+    ...         self.getitem_error = getitem_error
+    ...     def keys(self):
+    ...         if self.keys_error is not None:
+    ...             raise self.keys_error("error in keys")
+    ...         return [1, 2, 3]
+    ...     def __getitem__(self, key):
+    ...         if self.getitem_error is not None:
+    ...             raise self.getitem_error("error in __getitem__")
+    ...         return key * 2
+
+    >>> {**MappingWithKeyErrors(keys_error=AttributeError)}
+    Traceback (most recent call last):
+    ...
+    AttributeError: error in keys
+
+    >>> {**MappingWithKeyErrors(getitem_error=AttributeError)}
+    Traceback (most recent call last):
+    ...
+    AttributeError: error in __getitem__
+
     >>> len(eval("{" + ", ".join("**{{{}: {}}}".format(i, i)
     ...                          for i in range(1000)) + "}"))
     1000

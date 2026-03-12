@@ -2244,9 +2244,24 @@ dummy_func(
             if (err < 0) {
                 int matches = _PyErr_ExceptionMatches(tstate, PyExc_AttributeError);
                 if (matches) {
-                    _PyErr_Format(tstate, PyExc_TypeError,
-                                    "'%.200s' object is not a mapping",
-                                    Py_TYPE(update_o)->tp_name);
+                    PyObject *exc = PyErr_GetRaisedException();
+                    PyObject *keys = NULL;
+                    int has_keys = PyObject_GetOptionalAttr(update_o, &_Py_ID(keys), &keys);
+
+                    if (has_keys < 0) {
+                        Py_XDECREF(keys);
+                        Py_DECREF(exc);
+                    }
+                    else if (has_keys == 0) {
+                        Py_DECREF(exc);
+                        _PyErr_Format(tstate, PyExc_TypeError,
+                                        "'%.200s' object is not a mapping",
+                                        Py_TYPE(update_o)->tp_name);
+                    }
+                    else {
+                        Py_DECREF(keys);
+                        PyErr_SetRaisedException(exc);
+                    }
                 }
                 PyStackRef_CLOSE(update);
                 ERROR_IF(true);
