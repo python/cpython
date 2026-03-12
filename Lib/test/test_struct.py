@@ -930,13 +930,13 @@ class StructTest(ComplexesAreIdenticalMixin, unittest.TestCase):
                 MyStruct(('>h',), ('$',))
         with self.assertRaises(ValueError):
             MyStruct(('\udc00',), ('>h',))
-        with self.assertRaises(UnicodeDecodeError):
+        with self.assertRaises(ValueError):
             MyStruct((b'\xa4',), ('>h',))
         with self.assertWarns(FutureWarning):
             with self.assertRaises(ValueError):
                 MyStruct(('>h',), ('\udc00',))
         with self.assertWarns(FutureWarning):
-            with self.assertRaises(UnicodeDecodeError):
+            with self.assertRaises(ValueError):
                 MyStruct(('>h',), (b'\xa4',))
         with self.assertWarns(FutureWarning):
             my_struct = MyStruct(('>h',), ('<h',))
@@ -961,7 +961,7 @@ class StructTest(ComplexesAreIdenticalMixin, unittest.TestCase):
             MyStruct('$')
         with self.assertRaises(ValueError):
             MyStruct('\udc00')
-        with self.assertRaises(UnicodeDecodeError):
+        with self.assertRaises(ValueError):
             MyStruct(b'\xa4')
         with self.assertRaises(TypeError):
             MyStruct('>h', 42)

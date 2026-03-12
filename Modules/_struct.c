@@ -1635,7 +1635,10 @@ prepare_s(PyStructObject *self, PyObject *format)
 
     _structmodulestate *state = get_struct_state_structinst(self);
 
-    assert(PyUnicode_IS_ASCII(format));
+    if (!PyUnicode_IS_ASCII(format)) {
+        PyErr_SetString(PyExc_ValueError, "non-ASCII character in struct format");
+        return -1;
+    }
     fmt = (const char *)PyUnicode_1BYTE_DATA(format);
     if (strlen(fmt) != (size_t)PyUnicode_GET_LENGTH(format)) {
         PyErr_SetString(state->StructError,
@@ -1781,15 +1784,11 @@ static int
 set_format(PyStructObject *self, PyObject *format)
 {
     if (PyUnicode_Check(format)) {
-        if (!PyUnicode_IS_ASCII(format)) {
-            PyErr_SetString(PyExc_ValueError, "non-ASCII character in struct format");
-            return -1;
-        }
         format = PyUnicode_FromObject(format);
     }
     else if (PyBytes_Check(format)) {
         format = PyUnicode_DecodeASCII(PyBytes_AS_STRING(format),
-                                       PyBytes_GET_SIZE(format), NULL);
+                                       PyBytes_GET_SIZE(format), "surrogateescape");
     }
     else  {
         PyErr_Format(PyExc_TypeError,
