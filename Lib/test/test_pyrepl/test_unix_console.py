@@ -400,3 +400,30 @@ class TestUnixConsoleEIOHandling(TestCase):
             ),
             f"Expected EIO/ENXIO error message in stderr: {err}",
         )
+
+
+@unittest.skipIf(sys.platform == "win32", "No Unix console on Windows")
+class TestGetPending(TestCase):
+    def test_getpending_accumulates_raw_from_queued_events(self):
+        # gh-145886: getpending was adding e.raw to itself instead of e2.raw
+        console = UnixConsole.__new__(UnixConsole)
+        console.encoding = "utf-8"
+        console.input_fd = 0
+
+        ev1 = Event("key", "a", b"x")
+        ev2 = Event("key", "b", b"y")
+        queue = [ev1, ev2]
+
+        mock_eq = MagicMock()
+        mock_eq.empty = lambda: len(queue) == 0
+        mock_eq.get = lambda: queue.pop(0)
+        console.event_queue = mock_eq
+
+        # Mock __read to return empty bytes (no additional pending input)
+        console._UnixConsole__read = lambda n: b""
+
+        with patch("_pyrepl.unix_console.ioctl", return_value=b"\0\0\0\0"):
+            result = console.getpending()
+
+        self.assertEqual(result.data, "ab")
+        self.assertEqual(result.raw, b"xy")
