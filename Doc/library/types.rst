@@ -350,7 +350,7 @@ Standard names are defined for the following types:
    actually accessed. This type can be used to detect lazy imports
    programmatically.
 
-   .. versionadded:: next
+   .. versionadded:: 3.15
 
    .. seealso:: :pep:`810`
 

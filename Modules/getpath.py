@@ -776,9 +776,9 @@ elif not pythonpath_was_set:
 # Warn if the standard library is missing, unless pythonpath_was_set was set, as
 # that skips parts of the stdlib directories calculation — assume the provided
 # pythonpath is correct. This is how subinterpreters initialize the path for eg.
-if not py_setpath and not pythonpath_was_set and (not stdlib_zip or not isfile(stdlib_zip)):
+if not py_setpath and not pythonpath_was_set:
     home_hint = f"The Python 'home' directory was set to {home!r}, is this correct?"
-    if not stdlib_dir or not isdir(stdlib_dir):
+    if (not stdlib_zip or not isfile(stdlib_zip)) and (not stdlib_dir or not isdir(stdlib_dir)):
         hint = home_hint if home else f'sys.prefix is set to {prefix}, is this correct?'
         warn('WARN: Could not find the standard library directory! ' + hint)
     elif not platstdlib_dir or not isdir(platstdlib_dir):

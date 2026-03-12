@@ -3892,6 +3892,19 @@ class _TestConnection(BaseTestCase):
             self.assertRaises(OSError, a.recv)
             self.assertRaises(OSError, b.recv)
 
+    @warnings_helper.ignore_fork_in_thread_deprecation_warnings()
+    def test_wait_empty(self):
+        if self.TYPE != 'processes':
+            self.skipTest('test not appropriate for {}'.format(self.TYPE))
+        # gh-145587: wait() with empty list should respect timeout
+        timeout = 0.5
+        start = time.monotonic()
+        res = self.connection.wait([], timeout=timeout)
+        duration = time.monotonic() - start
+
+        self.assertEqual(res, [])
+        self.assertGreaterEqual(duration, timeout - 0.1)
+
 class _TestListener(BaseTestCase):
 
     ALLOWED_TYPES = ('processes',)

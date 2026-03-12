@@ -702,7 +702,7 @@ Functions
    attributes.  *extra* contains additional attributes, given as keyword
    arguments.  Returns an element instance.
 
-   .. versionchanged:: next
+   .. versionchanged:: 3.15
       *attrib* can now be a :class:`frozendict`.
 
 
@@ -890,7 +890,7 @@ Element Objects
    an optional dictionary, containing element attributes.  *extra* contains
    additional attributes, given as keyword arguments.
 
-   .. versionchanged:: next
+   .. versionchanged:: 3.15
       *attrib* can now be a :class:`frozendict`.
 
 
