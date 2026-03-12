@@ -12,7 +12,6 @@
 #include "pycore_lock.h"          // _PyOnceFlag_CallOnce()
 #include "pycore_long.h"          // _PyLong_AsByteArray()
 #include "pycore_moduleobject.h"  // _PyModule_GetState()
-#include "pycore_unicodeobject.h" // _PyUnicode_Copy()
 #include "pycore_weakref.h"       // FT_CLEAR_WEAKREFS()
 
 #include <stddef.h>               // offsetof()
@@ -1786,7 +1785,7 @@ set_format(PyStructObject *self, PyObject *format)
             PyErr_SetString(PyExc_ValueError, "non-ASCII character in struct format");
             return -1;
         }
-        format = _PyUnicode_Copy(format);
+        format = PyUnicode_FromObject(format);
     }
     else if (PyBytes_Check(format)) {
         format = PyUnicode_DecodeASCII(PyBytes_AS_STRING(format),
