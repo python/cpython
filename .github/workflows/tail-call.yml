@@ -1,0 +1,127 @@
+name: Tail calling interpreter
+on:
+  pull_request:
+    paths: &paths
+      - '.github/workflows/tail-call.yml'
+      - 'Python/bytecodes.c'
+      - 'Python/ceval.c'
+      - 'Python/ceval_macros.h'
+      - 'Python/generated_cases.c.h'
+  push:
+    paths: *paths
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.head_ref || github.run_id }}
+  cancel-in-progress: true
+
+env:
+  FORCE_COLOR: 1
+  LLVM_VERSION: 21
+
+jobs:
+  windows:
+    name: ${{ matrix.target }}
+    runs-on: ${{ matrix.runner }}
+    timeout-minutes: 60
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - target: x86_64-pc-windows-msvc/msvc
+            architecture: x64
+            runner: windows-2025-vs2026
+            build_flags: ""
+            run_tests: true
+          - target: x86_64-pc-windows-msvc/msvc-free-threading
+            architecture: x64
+            runner: windows-2025-vs2026
+            build_flags: --disable-gil
+            run_tests: false
+    steps:
+      - uses: actions/checkout@v6
+        with:
+          persist-credentials: false
+      - uses: actions/setup-python@v6
+        with:
+          python-version: '3.11'
+      - name: Build
+        shell: pwsh
+        run: |
+          ./PCbuild/build.bat --tail-call-interp ${{ matrix.build_flags }} -c Release -p ${{ matrix.architecture }}
+      - name: Test
+        if: matrix.run_tests
+        shell: pwsh
+        run: |
+          ./PCbuild/rt.bat -p ${{ matrix.architecture }} -q --multiprocess 0 --timeout 4500 --verbose2 --verbose3
+
+  macos:
+    name: ${{ matrix.target }}
+    runs-on: ${{ matrix.runner }}
+    timeout-minutes: 60
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - target: x86_64-apple-darwin/clang
+            runner: macos-15-intel
+          - target: aarch64-apple-darwin/clang
+            runner: macos-14
+    steps:
+      - uses: actions/checkout@v6
+        with:
+          persist-credentials: false
+      - uses: actions/setup-python@v6
+        with:
+          python-version: '3.11'
+      - name: Install dependencies
+        run: |
+          brew update
+          brew install llvm@${{ env.LLVM_VERSION }}
+      - name: Build
+        run: |
+          export SDKROOT="$(xcrun --show-sdk-path)"
+          export PATH="/usr/local/opt/llvm@${{ env.LLVM_VERSION }}/bin:$PATH"
+          export PATH="/opt/homebrew/opt/llvm@${{ env.LLVM_VERSION }}/bin:$PATH"
+          CC=clang-${{ env.LLVM_VERSION }} ./configure --with-tail-call-interp
+          make all --jobs 4
+      - name: Test
+        run: |
+          ./python.exe -m test --multiprocess 0 --timeout 4500 --verbose2 --verbose3
+
+  linux:
+    name: ${{ matrix.target }}
+    runs-on: ${{ matrix.runner }}
+    timeout-minutes: 60
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - target: x86_64-unknown-linux-gnu/gcc
+            runner: ubuntu-24.04
+            configure_flags: --with-pydebug
+          - target: x86_64-unknown-linux-gnu/gcc-free-threading
+            runner: ubuntu-24.04
+            configure_flags: --disable-gil
+          - target: aarch64-unknown-linux-gnu/gcc
+            runner: ubuntu-24.04-arm
+            configure_flags: --with-pydebug
+    steps:
+      - uses: actions/checkout@v6
+        with:
+          persist-credentials: false
+      - uses: actions/setup-python@v6
+        with:
+          python-version: '3.11'
+      - name: Build
+        run: |
+          sudo bash -c "$(wget -O - https://apt.llvm.org/llvm.sh)" ./llvm.sh ${{ env.LLVM_VERSION }}
+          export PATH="$(llvm-config-${{ env.LLVM_VERSION }} --bindir):$PATH"
+          CC=clang-${{ env.LLVM_VERSION }} ./configure --with-tail-call-interp ${{ matrix.configure_flags }}
+          make all --jobs 4
+      - name: Test
+        run: |
+          ./python -m test --multiprocess 0 --timeout 4500 --verbose2 --verbose3

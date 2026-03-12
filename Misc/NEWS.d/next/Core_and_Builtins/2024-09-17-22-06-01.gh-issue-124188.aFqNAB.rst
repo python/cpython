@@ -1,2 +1,0 @@
-Fix reading and decoding a line from the source file witn non-UTF-8 encoding
-for syntax errors raised in the compiler.

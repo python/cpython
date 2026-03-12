@@ -235,6 +235,20 @@ class PrettyPrinter:
 
     _dispatch[dict.__repr__] = _pprint_dict
 
+    def _pprint_frozendict(self, object, stream, indent, allowance, context, level):
+        write = stream.write
+        cls = object.__class__
+        stream.write(cls.__name__ + '(')
+        length = len(object)
+        if length:
+            self._pprint_dict(object, stream,
+                              indent + len(cls.__name__) + 1,
+                              allowance + 1,
+                              context, level)
+        write(')')
+
+    _dispatch[frozendict.__repr__] = _pprint_frozendict
+
     def _pprint_ordered_dict(self, object, stream, indent, allowance, context, level):
         if not len(object):
             stream.write(repr(object))
@@ -247,6 +261,49 @@ class PrettyPrinter:
         stream.write(')')
 
     _dispatch[_collections.OrderedDict.__repr__] = _pprint_ordered_dict
+
+    def _pprint_dict_view(self, object, stream, indent, allowance, context, level):
+        """Pretty print dict views (keys, values, items)."""
+        if isinstance(object, self._dict_items_view):
+            key = _safe_tuple
+        else:
+            key = _safe_key
+        write = stream.write
+        write(object.__class__.__name__ + '([')
+        if self._indent_per_level > 1:
+            write((self._indent_per_level - 1) * ' ')
+        length = len(object)
+        if length:
+            if self._sort_dicts:
+                entries = sorted(object, key=key)
+            else:
+                entries = object
+            self._format_items(entries, stream, indent, allowance + 1,
+                               context, level)
+        write('])')
+
+    def _pprint_mapping_abc_view(self, object, stream, indent, allowance, context, level):
+        """Pretty print mapping views from collections.abc."""
+        write = stream.write
+        write(object.__class__.__name__ + '(')
+        # Dispatch formatting to the view's _mapping
+        self._format(object._mapping, stream, indent, allowance, context, level)
+        write(')')
+
+    _dict_keys_view = type({}.keys())
+    _dispatch[_dict_keys_view.__repr__] = _pprint_dict_view
+
+    _dict_values_view = type({}.values())
+    _dispatch[_dict_values_view.__repr__] = _pprint_dict_view
+
+    _dict_items_view = type({}.items())
+    _dispatch[_dict_items_view.__repr__] = _pprint_dict_view
+
+    _dispatch[_collections.abc.MappingView.__repr__] = _pprint_mapping_abc_view
+
+    _view_reprs = {cls.__repr__ for cls in
+                   (_dict_keys_view, _dict_values_view, _dict_items_view,
+                    _collections.abc.MappingView)}
 
     def _pprint_list(self, object, stream, indent, allowance, context, level):
         stream.write('[')
@@ -580,12 +637,21 @@ class PrettyPrinter:
             else:
                 return repr(object), True, False
 
-        if issubclass(typ, dict) and r is dict.__repr__:
+        if ((issubclass(typ, dict) and r is dict.__repr__)
+            or (issubclass(typ, frozendict) and r is frozendict.__repr__)):
+            is_frozendict = issubclass(typ, frozendict)
             if not object:
-                return "{}", True, False
+                if is_frozendict:
+                    rep = f"{object.__class__.__name__}()"
+                else:
+                    rep = "{}"
+                return rep, True, False
             objid = id(object)
             if maxlevels and level >= maxlevels:
-                return "{...}", False, objid in context
+                rep = "{...}"
+                if is_frozendict:
+                    rep = f"{object.__class__.__name__}({rep})"
+                return rep, False, objid in context
             if objid in context:
                 return _recursion(object), False, True
             context[objid] = 1
@@ -608,7 +674,10 @@ class PrettyPrinter:
                 if krecur or vrecur:
                     recursive = True
             del context[objid]
-            return "{%s}" % ", ".join(components), readable, recursive
+            rep = "{%s}" % ", ".join(components)
+            if is_frozendict:
+                rep = f"{object.__class__.__name__}({rep})"
+            return rep, readable, recursive
 
         if (issubclass(typ, list) and r is list.__repr__) or \
            (issubclass(typ, tuple) and r is tuple.__repr__):
@@ -643,6 +712,42 @@ class PrettyPrinter:
                     recursive = True
             del context[objid]
             return format % ", ".join(components), readable, recursive
+
+        if issubclass(typ, _collections.abc.MappingView) and r in self._view_reprs:
+            objid = id(object)
+            if maxlevels and level >= maxlevels:
+                return "{...}", False, objid in context
+            if objid in context:
+                return _recursion(object), False, True
+            key = _safe_key
+            if issubclass(typ, (self._dict_items_view, _collections.abc.ItemsView)):
+                key = _safe_tuple
+            if hasattr(object, "_mapping"):
+                # Dispatch formatting to the view's _mapping
+                mapping_repr, readable, recursive = self.format(
+                    object._mapping, context, maxlevels, level)
+                return (typ.__name__ + '(%s)' % mapping_repr), readable, recursive
+            elif hasattr(typ, "_mapping"):
+                #  We have a view that somehow has lost its type's _mapping, raise
+                #  an error by calling repr() instead of failing cryptically later
+                return repr(object), True, False
+            if self._sort_dicts:
+                object = sorted(object, key=key)
+            context[objid] = 1
+            readable = True
+            recursive = False
+            components = []
+            append = components.append
+            level += 1
+            for val in object:
+                vrepr, vreadable, vrecur = self.format(
+                    val, context, maxlevels, level)
+                append(vrepr)
+                readable = readable and vreadable
+                if vrecur:
+                    recursive = True
+            del context[objid]
+            return typ.__name__ + '([%s])' % ", ".join(components), readable, recursive
 
         rep = repr(object)
         return rep, (rep and not rep.startswith('<')), False

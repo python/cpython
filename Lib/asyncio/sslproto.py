@@ -101,7 +101,7 @@ class _SSLProtocolTransport(transports._FlowControlMixin,
         return self._ssl_protocol._app_protocol
 
     def is_closing(self):
-        return self._closed
+        return self._closed or self._ssl_protocol._is_transport_closing()
 
     def close(self):
         """Close the transport.
@@ -378,6 +378,9 @@ class SSLProtocol(protocols.BufferedProtocol):
             self._app_transport = _SSLProtocolTransport(self._loop, self)
             self._app_transport_created = True
         return self._app_transport
+
+    def _is_transport_closing(self):
+        return self._transport is not None and self._transport.is_closing()
 
     def connection_made(self, transport):
         """Called when the low-level connection is made.

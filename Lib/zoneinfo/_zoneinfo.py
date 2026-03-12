@@ -47,7 +47,11 @@ class ZoneInfo(tzinfo):
         cls._strong_cache[key] = cls._strong_cache.pop(key, instance)
 
         if len(cls._strong_cache) > cls._strong_cache_size:
-            cls._strong_cache.popitem(last=False)
+            try:
+                cls._strong_cache.popitem(last=False)
+            except KeyError:
+                # another thread may have already emptied the cache
+                pass
 
         return instance
 
@@ -75,12 +79,12 @@ class ZoneInfo(tzinfo):
         return obj
 
     @classmethod
-    def from_file(cls, fobj, /, key=None):
+    def from_file(cls, file_obj, /, key=None):
         obj = super().__new__(cls)
         obj._key = key
         obj._file_path = None
-        obj._load_file(fobj)
-        obj._file_repr = repr(fobj)
+        obj._load_file(file_obj)
+        obj._file_repr = repr(file_obj)
 
         # Disable pickling for objects created from files
         obj.__reduce__ = obj._file_reduce

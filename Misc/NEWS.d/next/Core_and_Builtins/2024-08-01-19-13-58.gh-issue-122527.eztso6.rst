@@ -1,4 +1,0 @@
-Fix a crash that occurred when a ``PyStructSequence`` was deallocated after
-its type's dictionary was cleared by the GC.  The type's
-:c:member:`~PyTypeObject.tp_basicsize` now accounts for non-sequence fields
-that aren't included in the :c:macro:`Py_SIZE` of the sequence.

@@ -4,6 +4,7 @@
 
 from functools import partial
 from test import support, test_tools
+from test.support import force_not_colorized_test_class
 from test.support import os_helper
 from test.support.os_helper import TESTFN, unlink, rmtree
 from textwrap import dedent
@@ -32,6 +33,15 @@ with test_tools.imports_under_tool('clinic'):
     from libclinic.dsl_parser import DSLParser
     from libclinic.cli import parse_file, Clinic
 
+
+def repeat_fn(*functions):
+    def wrapper(test):
+        def wrapped(self):
+            for fn in functions:
+                with self.subTest(fn=fn):
+                    test(self, fn)
+        return wrapped
+    return wrapper
 
 def _make_clinic(*, filename='clinic_tests', limited_capi=False):
     clang = CLanguage(filename)
@@ -229,11 +239,11 @@ class ClinicWholeFileTest(TestCase):
         # The generated output will differ for every run, but we can check that
         # it starts with the clinic block, we check that it contains all the
         # expected fields, and we check that it contains the checksum line.
-        self.assertTrue(out.startswith(dedent("""
+        self.assertStartsWith(out, dedent("""
             /*[clinic input]
             output print 'I told you once.'
             [clinic start generated code]*/
-        """)))
+        """))
         fields = {
             "cpp_endif",
             "cpp_if",
@@ -250,9 +260,7 @@ class ClinicWholeFileTest(TestCase):
             with self.subTest(field=field):
                 self.assertIn(field, out)
         last_line = out.rstrip().split("\n")[-1]
-        self.assertTrue(
-            last_line.startswith("/*[clinic end generated code: output=")
-        )
+        self.assertStartsWith(last_line, "/*[clinic end generated code: output=")
 
     def test_directive_wrong_arg_number(self):
         raw = dedent("""
@@ -329,7 +337,7 @@ class ClinicWholeFileTest(TestCase):
             my_test_func
 
                 pos_arg: object
-                *args: object
+                *args: tuple
                 *
                 kw_arg: object
             [clinic start generated code]*/
@@ -344,11 +352,37 @@ class ClinicWholeFileTest(TestCase):
 
                 pos_arg: object
                 *
-                *args: object
+                *args: tuple
                 kw_arg: object
             [clinic start generated code]*/
         """
         self.expect_failure(block, err, lineno=6)
+
+    def test_double_star_after_var_keyword(self):
+        err = "Function 'my_test_func' has an invalid parameter declaration (**kwargs?): '**kwds: dict'"
+        block = """
+            /*[clinic input]
+            my_test_func
+
+                pos_arg: object
+                **kwds: dict
+                **
+            [clinic start generated code]*/
+        """
+        self.expect_failure(block, err, lineno=5)
+
+    def test_var_keyword_after_star(self):
+        err = "Function 'my_test_func' has an invalid parameter declaration: '**'"
+        block = """
+            /*[clinic input]
+            my_test_func
+
+                pos_arg: object
+                **
+                **kwds: dict
+            [clinic start generated code]*/
+        """
+        self.expect_failure(block, err, lineno=5)
 
     def test_module_already_got_one(self):
         err = "Already defined module 'm'!"
@@ -731,6 +765,26 @@ class ClinicWholeFileTest(TestCase):
         err = "Cannot use @text_signature when cloning a function"
         self.expect_failure(block, err, lineno=11)
 
+    def test_ignore_preprocessor_in_comments(self):
+        for dsl in "clinic", "python":
+            raw = dedent(f"""\
+                /*[{dsl} input]
+                # CPP directives, valid or not, should be ignored in C comments.
+                #
+                [{dsl} start generated code]*/
+            """)
+            self.clinic.parse(raw)
+
+    def test_var_keyword_non_dict(self):
+        err = "'var_keyword_object' is not a valid converter"
+        block = """
+            /*[clinic input]
+            my_test_func
+
+                **kwds: object
+            [clinic start generated code]*/
+        """
+        self.expect_failure(block, err, lineno=4)
 
 class ParseFileUnitTest(TestCase):
     def expect_parsing_failure(
@@ -1260,12 +1314,8 @@ class ClinicParserTest(TestCase):
             os.stat
                 invalid syntax: int = 42
         """
-        err = dedent(r"""
-            Function 'stat' has an invalid parameter declaration:
-            \s+'invalid syntax: int = 42'
-        """).strip()
-        with self.assertRaisesRegex(ClinicError, err):
-            self.parse_function(block)
+        err = "Function 'stat' has an invalid parameter declaration: 'invalid syntax: int = 42'"
+        self.expect_failure(block, err, lineno=2)
 
     def test_param_default_invalid_syntax(self):
         block = """
@@ -1273,7 +1323,7 @@ class ClinicParserTest(TestCase):
             os.stat
                 x: int = invalid syntax
         """
-        err = r"Syntax error: 'x = invalid syntax\n'"
+        err = "Function 'stat' has an invalid parameter declaration:"
         self.expect_failure(block, err, lineno=2)
 
     def test_cloning_nonexistent_function_correctly_fails(self):
@@ -1595,6 +1645,11 @@ class ClinicParserTest(TestCase):
                 [
                 a: object
                 ]
+        """, """
+            with_kwds
+                [
+                **kwds: dict
+                ]
         """)
         err = (
             "You cannot use optional groups ('[' and ']') unless all "
@@ -1807,7 +1862,7 @@ class ClinicParserTest(TestCase):
             foo.bar
                 a: int
                 * [from 3.14]
-                *args: object
+                *args: tuple
                 b: int
             Docstring.
         """
@@ -1835,7 +1890,7 @@ class ClinicParserTest(TestCase):
             module foo
             foo.bar
                 a: int
-                *args: object
+                *args: tuple
                 * [from 3.14]
                 b: int
             Docstring.
@@ -1971,11 +2026,49 @@ class ClinicParserTest(TestCase):
             foo.bar
                x: int
                y: int
-               *args: object
+               *args: tuple
                z: int
                /
         """
         err = "Function 'bar': '/' must precede '*'"
+        self.expect_failure(block, err)
+
+    def test_slash_after_var_keyword(self):
+        block = """
+            module foo
+            foo.bar
+               x: int
+               y: int
+               **kwds: dict
+               z: int
+               /
+        """
+        err = "Function 'bar' has an invalid parameter declaration (**kwargs?): '**kwds: dict'"
+        self.expect_failure(block, err)
+
+    def test_star_after_var_keyword(self):
+        block = """
+            module foo
+            foo.bar
+               x: int
+               y: int
+               **kwds: dict
+               z: int
+               *
+        """
+        err = "Function 'bar' has an invalid parameter declaration (**kwargs?): '**kwds: dict'"
+        self.expect_failure(block, err)
+
+    def test_parameter_after_var_keyword(self):
+        block = """
+            module foo
+            foo.bar
+               x: int
+               y: int
+               **kwds: dict
+               z: int
+        """
+        err = "Function 'bar' has an invalid parameter declaration (**kwargs?): '**kwds: dict'"
         self.expect_failure(block, err)
 
     def test_depr_star_must_come_after_slash(self):
@@ -2022,7 +2115,7 @@ class ClinicParserTest(TestCase):
             module foo
             foo.bar
                 a: int
-                *args: object
+                *args: tuple
                 / [from 3.14]
                 b: int
             Docstring.
@@ -2061,8 +2154,18 @@ class ClinicParserTest(TestCase):
         block = """
             module foo
             foo.bar
-               *vararg1: object
-               *vararg2: object
+               *vararg1: tuple
+               *vararg2: tuple
+        """
+        self.expect_failure(block, err, lineno=3)
+
+    def test_parameters_no_more_than_one_var_keyword(self):
+        err = "Encountered parameter line when not expecting parameters: **var_keyword_2: dict"
+        block = """
+            module foo
+            foo.bar
+               **var_keyword_1: dict
+               **var_keyword_2: dict
         """
         self.expect_failure(block, err, lineno=3)
 
@@ -2147,11 +2250,11 @@ class ClinicParserTest(TestCase):
         block = """
             module foo
             foo.bar
-               *vararg1: object
-            \t*vararg2: object
+               *vararg1: tuple
+            \t*vararg2: tuple
         """
         err = ("Tab characters are illegal in the Clinic DSL: "
-               r"'\t*vararg2: object'")
+               r"'\t*vararg2: tuple'")
         self.expect_failure(block, err)
 
     def test_indent_stack_illegal_outdent(self):
@@ -2493,10 +2596,18 @@ class ClinicParserTest(TestCase):
         self.expect_failure(block, err, lineno=1)
 
     def test_vararg_cannot_take_default_value(self):
-        err = "Vararg can't take a default value!"
+        err = "Function 'fn' has an invalid parameter declaration:"
         block = """
             fn
-                *args: object = None
+                *args: tuple = None
+        """
+        self.expect_failure(block, err, lineno=1)
+
+    def test_var_keyword_cannot_take_default_value(self):
+        err = "Function 'fn' has an invalid parameter declaration:"
+        block = """
+            fn
+                **kwds: dict = None
         """
         self.expect_failure(block, err, lineno=1)
 
@@ -2597,7 +2708,58 @@ class ClinicParserTest(TestCase):
         """
         self.expect_failure(block, err, lineno=2)
 
+    def test_var_keyword_with_pos_or_kw(self):
+        block = """
+            module foo
+            foo.bar
+               x: int
+               **kwds: dict
+        """
+        err = "Function 'bar' has an invalid parameter declaration (**kwargs?): '**kwds: dict'"
+        self.expect_failure(block, err)
 
+    def test_var_keyword_with_kw_only(self):
+        block = """
+            module foo
+            foo.bar
+               x: int
+               /
+               *
+               y: int
+               **kwds: dict
+        """
+        err = "Function 'bar' has an invalid parameter declaration (**kwargs?): '**kwds: dict'"
+        self.expect_failure(block, err)
+
+    def test_var_keyword_with_pos_or_kw_and_kw_only(self):
+        block = """
+            module foo
+            foo.bar
+               x: int
+               /
+               y: int
+               *
+               z: int
+               **kwds: dict
+        """
+        err = "Function 'bar' has an invalid parameter declaration (**kwargs?): '**kwds: dict'"
+        self.expect_failure(block, err)
+
+    def test_allow_negative_accepted_by_py_ssize_t_converter_only(self):
+        errmsg = re.escape("converter_init() got an unexpected keyword argument 'allow_negative'")
+        unsupported_converters = [converter_name for converter_name in converters.keys()
+                                  if converter_name != "Py_ssize_t"]
+        for converter in unsupported_converters:
+            with self.subTest(converter=converter):
+                block = f"""
+                    module m
+                    m.func
+                        a: {converter}(allow_negative=True)
+                """
+                with self.assertRaisesRegex((AssertionError, TypeError), errmsg):
+                    self.parse_function(block)
+
+@force_not_colorized_test_class
 class ClinicExternalTest(TestCase):
     maxDiff = None
 
@@ -2686,20 +2848,18 @@ class ClinicExternalTest(TestCase):
             # Note, we cannot check the entire fail msg, because the path to
             # the tmp file will change for every run.
             _, err = self.expect_failure(fn)
-            self.assertTrue(err.endswith(fail_msg),
-                            f"{err!r} does not end with {fail_msg!r}")
+            self.assertEndsWith(err, fail_msg)
             # Then, force regeneration; success expected.
             out = self.expect_success("-f", fn)
             self.assertEqual(out, "")
             # Verify by checking the checksum.
             checksum = (
                 "/*[clinic end generated code: "
-                "output=0acbef4794cb933e input=9543a8d2da235301]*/\n"
+                "output=a2957bc4d43a3c2f input=9543a8d2da235301]*/\n"
             )
             with open(fn, encoding='utf-8') as f:
                 generated = f.read()
-            self.assertTrue(generated.endswith(checksum),
-                            (generated, checksum))
+            self.assertEndsWith(generated, checksum)
 
     def test_cli_make(self):
         c_code = dedent("""
@@ -2781,6 +2941,7 @@ class ClinicExternalTest(TestCase):
             out = self.expect_success("-v", fn)
             self.assertEqual(out.strip(), fn)
 
+    @support.force_not_colorized
     def test_cli_help(self):
         out = self.expect_success("-h")
         self.assertIn("usage: clinic.py", out)
@@ -2816,7 +2977,13 @@ class ClinicExternalTest(TestCase):
             "size_t",
             "slice_index",
             "str",
+            "uint16",
+            "uint32",
+            "uint64",
+            "uint8",
             "unicode",
+            "unicode_fs_decoded",
+            "unicode_fs_encoded",
             "unsigned_char",
             "unsigned_int",
             "unsigned_long",
@@ -2844,8 +3011,8 @@ class ClinicExternalTest(TestCase):
         # param may change (it's a set, thus unordered). So, let's compare the
         # start and end of the expected output, and then assert that the
         # converters appear lined up in alphabetical order.
-        self.assertTrue(out.startswith(prelude), out)
-        self.assertTrue(out.endswith(finale), out)
+        self.assertStartsWith(out, prelude)
+        self.assertEndsWith(out, finale)
 
         out = out.removeprefix(prelude)
         out = out.removesuffix(finale)
@@ -2853,10 +3020,7 @@ class ClinicExternalTest(TestCase):
         for converter, line in zip(expected_converters, lines):
             line = line.lstrip()
             with self.subTest(converter=converter):
-                self.assertTrue(
-                    line.startswith(converter),
-                    f"expected converter {converter!r}, got {line!r}"
-                )
+                self.assertStartsWith(line, converter)
 
     def test_cli_fail_converters_and_filename(self):
         _, err = self.expect_failure("--converters", "test.c")
@@ -3013,6 +3177,11 @@ class ClinicFunctionalTest(unittest.TestCase):
         self.assertEqual(ac_tester.bool_converter('', [], 5), (False, False, True))
         self.assertEqual(ac_tester.bool_converter(('not empty',), {1: 2}, 0), (True, True, False))
 
+    def test_bool_converter_c_default(self):
+        self.assertEqual(ac_tester.bool_converter_c_default(), (1, 0, -2, -3))
+        self.assertEqual(ac_tester.bool_converter_c_default(False, True, False, True),
+                         (0, 1, 0, 1))
+
     def test_char_converter(self):
         with self.assertRaises(TypeError):
             ac_tester.char_converter(1)
@@ -3027,6 +3196,8 @@ class ClinicFunctionalTest(unittest.TestCase):
 
     def test_unsigned_char_converter(self):
         from _testcapi import UCHAR_MAX
+        SCHAR_MAX = UCHAR_MAX // 2
+        SCHAR_MIN = SCHAR_MAX - UCHAR_MAX
         with self.assertRaises(OverflowError):
             ac_tester.unsigned_char_converter(-1)
         with self.assertRaises(OverflowError):
@@ -3036,8 +3207,13 @@ class ClinicFunctionalTest(unittest.TestCase):
         with self.assertRaises(TypeError):
             ac_tester.unsigned_char_converter([])
         self.assertEqual(ac_tester.unsigned_char_converter(), (12, 34, 56))
-        self.assertEqual(ac_tester.unsigned_char_converter(0, 0, UCHAR_MAX + 1), (0, 0, 0))
-        self.assertEqual(ac_tester.unsigned_char_converter(0, 0, (UCHAR_MAX + 1) * 3 + 123), (0, 0, 123))
+        with self.assertWarns(DeprecationWarning):
+            self.assertEqual(ac_tester.unsigned_char_converter(0, 0, UCHAR_MAX + 1), (0, 0, 0))
+        self.assertEqual(ac_tester.unsigned_char_converter(0, 0, SCHAR_MIN), (0, 0, SCHAR_MAX + 1))
+        with self.assertWarns(DeprecationWarning):
+            self.assertEqual(ac_tester.unsigned_char_converter(0, 0, SCHAR_MIN - 1), (0, 0, SCHAR_MAX))
+        with self.assertWarns(DeprecationWarning):
+            self.assertEqual(ac_tester.unsigned_char_converter(0, 0, (UCHAR_MAX + 1) * 3 + 123), (0, 0, 123))
 
     def test_short_converter(self):
         from _testcapi import SHRT_MIN, SHRT_MAX
@@ -3051,7 +3227,7 @@ class ClinicFunctionalTest(unittest.TestCase):
         self.assertEqual(ac_tester.short_converter(4321), (4321,))
 
     def test_unsigned_short_converter(self):
-        from _testcapi import USHRT_MAX
+        from _testcapi import SHRT_MIN, SHRT_MAX, USHRT_MAX
         with self.assertRaises(ValueError):
             ac_tester.unsigned_short_converter(-1)
         with self.assertRaises(OverflowError):
@@ -3061,8 +3237,13 @@ class ClinicFunctionalTest(unittest.TestCase):
         with self.assertRaises(TypeError):
             ac_tester.unsigned_short_converter([])
         self.assertEqual(ac_tester.unsigned_short_converter(), (12, 34, 56))
-        self.assertEqual(ac_tester.unsigned_short_converter(0, 0, USHRT_MAX + 1), (0, 0, 0))
-        self.assertEqual(ac_tester.unsigned_short_converter(0, 0, (USHRT_MAX + 1) * 3 + 123), (0, 0, 123))
+        with self.assertWarns(DeprecationWarning):
+            self.assertEqual(ac_tester.unsigned_short_converter(0, 0, USHRT_MAX + 1), (0, 0, 0))
+        self.assertEqual(ac_tester.unsigned_short_converter(0, 0, SHRT_MIN), (0, 0, SHRT_MAX + 1))
+        with self.assertWarns(DeprecationWarning):
+            self.assertEqual(ac_tester.unsigned_short_converter(0, 0, SHRT_MIN - 1), (0, 0, SHRT_MAX))
+        with self.assertWarns(DeprecationWarning):
+            self.assertEqual(ac_tester.unsigned_short_converter(0, 0, (USHRT_MAX + 1) * 3 + 123), (0, 0, 123))
 
     def test_int_converter(self):
         from _testcapi import INT_MIN, INT_MAX
@@ -3078,7 +3259,7 @@ class ClinicFunctionalTest(unittest.TestCase):
         self.assertEqual(ac_tester.int_converter(1, 2, '3'), (1, 2, ord('3')))
 
     def test_unsigned_int_converter(self):
-        from _testcapi import UINT_MAX
+        from _testcapi import INT_MIN, INT_MAX, UINT_MAX
         with self.assertRaises(ValueError):
             ac_tester.unsigned_int_converter(-1)
         with self.assertRaises(OverflowError):
@@ -3088,8 +3269,13 @@ class ClinicFunctionalTest(unittest.TestCase):
         with self.assertRaises(TypeError):
             ac_tester.unsigned_int_converter([])
         self.assertEqual(ac_tester.unsigned_int_converter(), (12, 34, 56))
-        self.assertEqual(ac_tester.unsigned_int_converter(0, 0, UINT_MAX + 1), (0, 0, 0))
-        self.assertEqual(ac_tester.unsigned_int_converter(0, 0, (UINT_MAX + 1) * 3 + 123), (0, 0, 123))
+        with self.assertWarns(DeprecationWarning):
+            self.assertEqual(ac_tester.unsigned_int_converter(0, 0, UINT_MAX + 1), (0, 0, 0))
+        self.assertEqual(ac_tester.unsigned_int_converter(0, 0, INT_MIN), (0, 0, INT_MAX + 1))
+        with self.assertWarns(DeprecationWarning):
+            self.assertEqual(ac_tester.unsigned_int_converter(0, 0, INT_MIN - 1), (0, 0, INT_MAX))
+        with self.assertWarns(DeprecationWarning):
+            self.assertEqual(ac_tester.unsigned_int_converter(0, 0, (UINT_MAX + 1) * 3 + 123), (0, 0, 123))
 
     def test_long_converter(self):
         from _testcapi import LONG_MIN, LONG_MAX
@@ -3103,7 +3289,7 @@ class ClinicFunctionalTest(unittest.TestCase):
         self.assertEqual(ac_tester.long_converter(-1234), (-1234,))
 
     def test_unsigned_long_converter(self):
-        from _testcapi import ULONG_MAX
+        from _testcapi import LONG_MIN, LONG_MAX, ULONG_MAX
         with self.assertRaises(ValueError):
             ac_tester.unsigned_long_converter(-1)
         with self.assertRaises(OverflowError):
@@ -3113,8 +3299,13 @@ class ClinicFunctionalTest(unittest.TestCase):
         with self.assertRaises(TypeError):
             ac_tester.unsigned_long_converter([])
         self.assertEqual(ac_tester.unsigned_long_converter(), (12, 34, 56))
-        self.assertEqual(ac_tester.unsigned_long_converter(0, 0, ULONG_MAX + 1), (0, 0, 0))
-        self.assertEqual(ac_tester.unsigned_long_converter(0, 0, (ULONG_MAX + 1) * 3 + 123), (0, 0, 123))
+        with self.assertWarns(DeprecationWarning):
+            self.assertEqual(ac_tester.unsigned_long_converter(0, 0, ULONG_MAX + 1), (0, 0, 0))
+        self.assertEqual(ac_tester.unsigned_long_converter(0, 0, LONG_MIN), (0, 0, LONG_MAX + 1))
+        with self.assertWarns(DeprecationWarning):
+            self.assertEqual(ac_tester.unsigned_long_converter(0, 0, LONG_MIN - 1), (0, 0, LONG_MAX))
+        with self.assertWarns(DeprecationWarning):
+            self.assertEqual(ac_tester.unsigned_long_converter(0, 0, (ULONG_MAX + 1) * 3 + 123), (0, 0, 123))
 
     def test_long_long_converter(self):
         from _testcapi import LLONG_MIN, LLONG_MAX
@@ -3128,7 +3319,7 @@ class ClinicFunctionalTest(unittest.TestCase):
         self.assertEqual(ac_tester.long_long_converter(-1234), (-1234,))
 
     def test_unsigned_long_long_converter(self):
-        from _testcapi import ULLONG_MAX
+        from _testcapi import LLONG_MIN, LLONG_MAX, ULLONG_MAX
         with self.assertRaises(ValueError):
             ac_tester.unsigned_long_long_converter(-1)
         with self.assertRaises(OverflowError):
@@ -3138,8 +3329,13 @@ class ClinicFunctionalTest(unittest.TestCase):
         with self.assertRaises(TypeError):
             ac_tester.unsigned_long_long_converter([])
         self.assertEqual(ac_tester.unsigned_long_long_converter(), (12, 34, 56))
-        self.assertEqual(ac_tester.unsigned_long_long_converter(0, 0, ULLONG_MAX + 1), (0, 0, 0))
-        self.assertEqual(ac_tester.unsigned_long_long_converter(0, 0, (ULLONG_MAX + 1) * 3 + 123), (0, 0, 123))
+        with self.assertWarns(DeprecationWarning):
+            self.assertEqual(ac_tester.unsigned_long_long_converter(0, 0, ULLONG_MAX + 1), (0, 0, 0))
+        self.assertEqual(ac_tester.unsigned_long_long_converter(0, 0, LLONG_MIN), (0, 0, LLONG_MAX + 1))
+        with self.assertWarns(DeprecationWarning):
+            self.assertEqual(ac_tester.unsigned_long_long_converter(0, 0, LLONG_MIN - 1), (0, 0, LLONG_MAX))
+        with self.assertWarns(DeprecationWarning):
+            self.assertEqual(ac_tester.unsigned_long_long_converter(0, 0, (ULLONG_MAX + 1) * 3 + 123), (0, 0, 123))
 
     def test_py_ssize_t_converter(self):
         from _testcapi import PY_SSIZE_T_MIN, PY_SSIZE_T_MAX
@@ -3149,8 +3345,12 @@ class ClinicFunctionalTest(unittest.TestCase):
             ac_tester.py_ssize_t_converter(PY_SSIZE_T_MAX + 1)
         with self.assertRaises(TypeError):
             ac_tester.py_ssize_t_converter([])
-        self.assertEqual(ac_tester.py_ssize_t_converter(), (12, 34, 56))
-        self.assertEqual(ac_tester.py_ssize_t_converter(1, 2, None), (1, 2, 56))
+        with self.assertRaises(ValueError):
+            ac_tester.py_ssize_t_converter(12, 34, 56, -1)
+        with self.assertRaises(ValueError):
+            ac_tester.py_ssize_t_converter(12, 34, 56, 78, -1)
+        self.assertEqual(ac_tester.py_ssize_t_converter(), (12, 34, 56, 78, 90, -12, -34))
+        self.assertEqual(ac_tester.py_ssize_t_converter(1, 2, None, 3, None, 4, None), (1, 2, 56, 3, 90, 4, -34))
 
     def test_slice_index_converter(self):
         from _testcapi import PY_SSIZE_T_MIN, PY_SSIZE_T_MAX
@@ -3378,30 +3578,53 @@ class ClinicFunctionalTest(unittest.TestCase):
             ac_tester.keyword_only_parameter(1)
         self.assertEqual(ac_tester.keyword_only_parameter(a=1), (1,))
 
-    def test_varpos(self):
-        # fn(*args)
-        fn = ac_tester.varpos
-        self.assertEqual(fn(), ())
-        self.assertEqual(fn(1, 2), (1, 2))
+    if ac_tester is not None:
+        @repeat_fn(ac_tester.varpos,
+                   ac_tester.varpos_array,
+                   ac_tester.TestClass.varpos_no_fastcall,
+                   ac_tester.TestClass.varpos_array_no_fastcall)
+        def test_varpos(self, fn):
+            # fn(*args)
+            self.assertEqual(fn(), ())
+            self.assertEqual(fn(1, 2), (1, 2))
 
-    def test_posonly_varpos(self):
-        # fn(a, b, /, *args)
-        fn = ac_tester.posonly_varpos
-        self.assertRaises(TypeError, fn)
-        self.assertRaises(TypeError, fn, 1)
-        self.assertRaises(TypeError, fn, 1, b=2)
-        self.assertEqual(fn(1, 2), (1, 2, ()))
-        self.assertEqual(fn(1, 2, 3, 4), (1, 2, (3, 4)))
+        @repeat_fn(ac_tester.posonly_varpos,
+                   ac_tester.posonly_varpos_array,
+                   ac_tester.TestClass.posonly_varpos_no_fastcall,
+                   ac_tester.TestClass.posonly_varpos_array_no_fastcall)
+        def test_posonly_varpos(self, fn):
+            # fn(a, b, /, *args)
+            self.assertRaises(TypeError, fn)
+            self.assertRaises(TypeError, fn, 1)
+            self.assertRaises(TypeError, fn, 1, b=2)
+            self.assertEqual(fn(1, 2), (1, 2, ()))
+            self.assertEqual(fn(1, 2, 3, 4), (1, 2, (3, 4)))
 
-    def test_posonly_poskw_varpos(self):
-        # fn(a, /, b, *args)
-        fn = ac_tester.posonly_poskw_varpos
-        self.assertRaises(TypeError, fn)
-        self.assertEqual(fn(1, 2), (1, 2, ()))
-        self.assertEqual(fn(1, b=2), (1, 2, ()))
-        self.assertEqual(fn(1, 2, 3, 4), (1, 2, (3, 4)))
-        self.assertRaises(TypeError, fn, b=4)
-        self.assertRaises(TypeError, fn, 1, 2, 3, b=4)
+        @repeat_fn(ac_tester.posonly_req_opt_varpos,
+                   ac_tester.posonly_req_opt_varpos_array,
+                   ac_tester.TestClass.posonly_req_opt_varpos_no_fastcall,
+                   ac_tester.TestClass.posonly_req_opt_varpos_array_no_fastcall)
+        def test_posonly_req_opt_varpos(self, fn):
+            # fn(a, b=False, /, *args)
+            self.assertRaises(TypeError, fn)
+            self.assertRaises(TypeError, fn, a=1)
+            self.assertEqual(fn(1), (1, False, ()))
+            self.assertEqual(fn(1, 2), (1, 2, ()))
+            self.assertEqual(fn(1, 2, 3, 4), (1, 2, (3, 4)))
+
+        @repeat_fn(ac_tester.posonly_poskw_varpos,
+                   ac_tester.posonly_poskw_varpos_array,
+                   ac_tester.TestClass.posonly_poskw_varpos_no_fastcall,
+                   ac_tester.TestClass.posonly_poskw_varpos_array_no_fastcall)
+        def test_posonly_poskw_varpos(self, fn):
+            # fn(a, /, b, *args)
+            self.assertRaises(TypeError, fn)
+            self.assertEqual(fn(1, 2), (1, 2, ()))
+            self.assertEqual(fn(1, b=2), (1, 2, ()))
+            self.assertEqual(fn(1, 2, 3, 4), (1, 2, (3, 4)))
+            self.assertRaises(TypeError, fn, b=4)
+            errmsg = re.escape("given by name ('b') and position (2)")
+            self.assertRaisesRegex(TypeError, errmsg, fn, 1, 2, 3, b=4)
 
     def test_poskw_varpos(self):
         # fn(a, *args)
@@ -3409,7 +3632,8 @@ class ClinicFunctionalTest(unittest.TestCase):
         self.assertRaises(TypeError, fn)
         self.assertRaises(TypeError, fn, 1, b=2)
         self.assertEqual(fn(a=1), (1, ()))
-        self.assertRaises(TypeError, fn, 1, a=2)
+        errmsg = re.escape("given by name ('a') and position (1)")
+        self.assertRaisesRegex(TypeError, errmsg, fn, 1, a=2)
         self.assertEqual(fn(1), (1, ()))
         self.assertEqual(fn(1, 2, 3, 4), (1, (2, 3, 4)))
 
@@ -3417,7 +3641,8 @@ class ClinicFunctionalTest(unittest.TestCase):
         # fn(a, *args, b=False)
         fn = ac_tester.poskw_varpos_kwonly_opt
         self.assertRaises(TypeError, fn)
-        self.assertRaises(TypeError, fn, 1, a=2)
+        errmsg = re.escape("given by name ('a') and position (1)")
+        self.assertRaisesRegex(TypeError, errmsg, fn, 1, a=2)
         self.assertEqual(fn(1, b=2), (1, (), True))
         self.assertEqual(fn(1, 2, 3, 4), (1, (2, 3, 4), False))
         self.assertEqual(fn(1, 2, 3, 4, b=5), (1, (2, 3, 4), True))
@@ -3428,7 +3653,8 @@ class ClinicFunctionalTest(unittest.TestCase):
         # fn(a, *args, b=False, c=False)
         fn = ac_tester.poskw_varpos_kwonly_opt2
         self.assertRaises(TypeError, fn)
-        self.assertRaises(TypeError, fn, 1, a=2)
+        errmsg = re.escape("given by name ('a') and position (1)")
+        self.assertRaisesRegex(TypeError, errmsg, fn, 1, a=2)
         self.assertEqual(fn(1, b=2), (1, (), 2, False))
         self.assertEqual(fn(1, b=2, c=3), (1, (), 2, 3))
         self.assertEqual(fn(1, 2, 3), (1, (2, 3), False, False))
@@ -3490,9 +3716,10 @@ class ClinicFunctionalTest(unittest.TestCase):
         self.assertEqual(fn(covariant=True, name='a'), ('a', (), True))
 
         self.assertRaises(TypeError, fn, covariant=True)
-        self.assertRaises(TypeError, fn, 1, name='a')
-        self.assertRaises(TypeError, fn, 1, 2, 3, name='a', covariant=True)
-        self.assertRaises(TypeError, fn, 1, 2, 3, covariant=True, name='a')
+        errmsg = re.escape("given by name ('name') and position (1)")
+        self.assertRaisesRegex(TypeError, errmsg, fn, 1, name='a')
+        self.assertRaisesRegex(TypeError, errmsg, fn, 1, 2, 3, name='a', covariant=True)
+        self.assertRaisesRegex(TypeError, errmsg, fn, 1, 2, 3, covariant=True, name='a')
 
     def test_cloned_func_exception_message(self):
         incorrect_arg = -1  # f1() and f2() accept a single str
@@ -3568,14 +3795,15 @@ class ClinicFunctionalTest(unittest.TestCase):
         cls = ac_tester.TestClass
         obj = cls()
         fn = obj.defclass_posonly_varpos
-        self.assertRaises(TypeError, fn)
-        self.assertRaises(TypeError, fn, 1)
+        errmsg = 'takes at least 2 positional arguments'
+        self.assertRaisesRegex(TypeError, errmsg, fn)
+        self.assertRaisesRegex(TypeError, errmsg, fn, 1)
         self.assertEqual(fn(1, 2), (cls, 1, 2, ()))
         self.assertEqual(fn(1, 2, 3, 4), (cls, 1, 2, (3, 4)))
         fn = cls.defclass_posonly_varpos
         self.assertRaises(TypeError, fn)
-        self.assertRaises(TypeError, fn, obj)
-        self.assertRaises(TypeError, fn, obj, 1)
+        self.assertRaisesRegex(TypeError, errmsg, fn, obj)
+        self.assertRaisesRegex(TypeError, errmsg, fn, obj, 1)
         self.assertEqual(fn(obj, 1, 2), (cls, 1, 2, ()))
         self.assertEqual(fn(obj, 1, 2, 3, 4), (cls, 1, 2, (3, 4)))
 
@@ -3863,6 +4091,49 @@ class ClinicFunctionalTest(unittest.TestCase):
         check("a", "b", c="c", d="d", e="e", f="f", g="g")
         check("a", b="b", c="c", d="d", e="e", f="f", g="g")
         self.assertRaises(TypeError, fn, a="a", b="b", c="c", d="d", e="e", f="f", g="g")
+
+    def test_lone_kwds(self):
+        with self.assertRaises(TypeError):
+            ac_tester.lone_kwds(1, 2)
+        self.assertEqual(ac_tester.lone_kwds(), ({},))
+        self.assertEqual(ac_tester.lone_kwds(y='y'), ({'y': 'y'},))
+        kwds = {'y': 'y', 'z': 'z'}
+        self.assertEqual(ac_tester.lone_kwds(y='y', z='z'), (kwds,))
+        self.assertEqual(ac_tester.lone_kwds(**kwds), (kwds,))
+
+    def test_kwds_with_pos_only(self):
+        with self.assertRaises(TypeError):
+            ac_tester.kwds_with_pos_only()
+        with self.assertRaises(TypeError):
+            ac_tester.kwds_with_pos_only(y='y')
+        with self.assertRaises(TypeError):
+            ac_tester.kwds_with_pos_only(1, y='y')
+        self.assertEqual(ac_tester.kwds_with_pos_only(1, 2), (1, 2, {}))
+        self.assertEqual(ac_tester.kwds_with_pos_only(1, 2, y='y'), (1, 2, {'y': 'y'}))
+        kwds = {'y': 'y', 'z': 'z'}
+        self.assertEqual(ac_tester.kwds_with_pos_only(1, 2, y='y', z='z'), (1, 2, kwds))
+        self.assertEqual(ac_tester.kwds_with_pos_only(1, 2, **kwds), (1, 2, kwds))
+
+    def test_kwds_with_stararg(self):
+        self.assertEqual(ac_tester.kwds_with_stararg(), ((), {}))
+        self.assertEqual(ac_tester.kwds_with_stararg(1, 2), ((1, 2), {}))
+        self.assertEqual(ac_tester.kwds_with_stararg(y='y'), ((), {'y': 'y'}))
+        args = (1, 2)
+        kwds = {'y': 'y', 'z': 'z'}
+        self.assertEqual(ac_tester.kwds_with_stararg(1, 2, y='y', z='z'), (args, kwds))
+        self.assertEqual(ac_tester.kwds_with_stararg(*args, **kwds), (args, kwds))
+
+    def test_kwds_with_pos_only_and_stararg(self):
+        with self.assertRaises(TypeError):
+            ac_tester.kwds_with_pos_only_and_stararg()
+        with self.assertRaises(TypeError):
+            ac_tester.kwds_with_pos_only_and_stararg(y='y')
+        self.assertEqual(ac_tester.kwds_with_pos_only_and_stararg(1, 2), (1, 2, (), {}))
+        self.assertEqual(ac_tester.kwds_with_pos_only_and_stararg(1, 2, y='y'), (1, 2, (), {'y': 'y'}))
+        args = ('lobster', 'thermidor')
+        kwds = {'y': 'y', 'z': 'z'}
+        self.assertEqual(ac_tester.kwds_with_pos_only_and_stararg(1, 2, 'lobster', 'thermidor', y='y', z='z'), (1, 2, args, kwds))
+        self.assertEqual(ac_tester.kwds_with_pos_only_and_stararg(1, 2, *args, **kwds), (1, 2, args, kwds))
 
 
 class LimitedCAPIOutputTests(unittest.TestCase):

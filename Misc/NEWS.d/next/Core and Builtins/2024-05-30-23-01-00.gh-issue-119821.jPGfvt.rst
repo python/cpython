@@ -1,2 +1,0 @@
-Fix execution of :ref:`annotation scopes <annotation-scopes>` within classes
-when ``globals`` is set to a non-dict. Patch by Jelle Zijlstra.

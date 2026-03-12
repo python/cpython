@@ -4,14 +4,12 @@ on:
   schedule:
   - cron: "0 */6 * * *"
 
-permissions:
-  pull-requests: write
-
 jobs:
   stale:
     if: github.repository_owner == 'python'
-
     runs-on: ubuntu-latest
+    permissions:
+      pull-requests: write
     timeout-minutes: 10
 
     steps:

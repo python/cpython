@@ -6,8 +6,6 @@
 Installing Python Modules
 *************************
 
-:Email: distutils-sig@python.org
-
 As a popular open source development project, Python has an active
 supporting community of contributors and users that also make their software
 available for other Python developers to use under open source license terms.
@@ -188,7 +186,7 @@ switch::
    Once the Development & Deployment part of PPUG is fleshed out, some of
    those sections should be linked from new questions here (most notably,
    we should have a question about avoiding depending on PyPI that links to
-   https://packaging.python.org/en/latest/mirrors/)
+   https://packaging.python.org/en/latest/guides/index-mirrors-and-caches/)
 
 
 Common installation issues

@@ -36,7 +36,7 @@ def declare_parser(
 
     num_keywords = len([
         p for p in f.parameters.values()
-        if not p.is_positional_only() and not p.is_vararg()
+        if p.is_positional_or_keyword() or p.is_keyword_only()
     ])
 
     condition = '#if defined(Py_BUILD_CORE) && !defined(Py_BUILD_CORE_MODULE)'
@@ -65,9 +65,11 @@ def declare_parser(
             static struct {{
                 PyGC_Head _this_is_not_used;
                 PyObject_VAR_HEAD
+                Py_hash_t ob_hash;
                 PyObject *ob_item[NUM_KEYWORDS];
             }} _kwtuple = {{
                 .ob_base = PyVarObject_HEAD_INIT(&PyTuple_Type, NUM_KEYWORDS)
+                .ob_hash = -1,
                 .ob_item = {{ {keywords_py} }},
             }};
             #undef NUM_KEYWORDS
@@ -134,7 +136,7 @@ PARSER_PROTOTYPE_SETTER: Final[str] = libclinic.normalize_snippet("""
 """)
 METH_O_PROTOTYPE: Final[str] = libclinic.normalize_snippet("""
     static PyObject *
-    {c_basename}({impl_parameters})
+    {c_basename}({self_type}{self_name}, {parser_parameters})
 """)
 DOCSTRING_PROTOTYPE_VAR: Final[str] = libclinic.normalize_snippet("""
     PyDoc_VAR({c_basename}__doc__);
@@ -146,7 +148,10 @@ DOCSTRING_PROTOTYPE_STRVAR: Final[str] = libclinic.normalize_snippet("""
 GETSET_DOCSTRING_PROTOTYPE_STRVAR: Final[str] = libclinic.normalize_snippet("""
     PyDoc_STRVAR({getset_basename}__doc__,
     {docstring});
-    #define {getset_basename}_HAS_DOCSTR
+    #if defined({getset_basename}_DOCSTR)
+    #   undef {getset_basename}_DOCSTR
+    #endif
+    #define {getset_basename}_DOCSTR {getset_basename}__doc__
 """)
 IMPL_DEFINITION_PROTOTYPE: Final[str] = libclinic.normalize_snippet("""
     static {impl_return_type}
@@ -157,9 +162,7 @@ METHODDEF_PROTOTYPE_DEFINE: Final[str] = libclinic.normalize_snippet(r"""
         {{"{name}", {methoddef_cast}{c_basename}{methoddef_cast_end}, {methoddef_flags}, {c_basename}__doc__}},
 """)
 GETTERDEF_PROTOTYPE_DEFINE: Final[str] = libclinic.normalize_snippet(r"""
-    #if defined({getset_basename}_HAS_DOCSTR)
-    #  define {getset_basename}_DOCSTR {getset_basename}__doc__
-    #else
+    #if !defined({getset_basename}_DOCSTR)
     #  define {getset_basename}_DOCSTR NULL
     #endif
     #if defined({getset_name}_GETSETDEF)
@@ -170,9 +173,7 @@ GETTERDEF_PROTOTYPE_DEFINE: Final[str] = libclinic.normalize_snippet(r"""
     #endif
 """)
 SETTERDEF_PROTOTYPE_DEFINE: Final[str] = libclinic.normalize_snippet(r"""
-    #if defined({getset_name}_HAS_DOCSTR)
-    #  define {getset_basename}_DOCSTR {getset_basename}__doc__
-    #else
+    #if !defined({getset_basename}_DOCSTR)
     #  define {getset_basename}_DOCSTR NULL
     #endif
     #if defined({getset_name}_GETSETDEF)
@@ -196,6 +197,7 @@ class ParseArgsCodeGen:
 
     # Function parameters
     parameters: list[Parameter]
+    self_parameter_converter: self_converter
     converters: list[CConverter]
 
     # Is 'defining_class' used for the first parameter?
@@ -217,8 +219,8 @@ class ParseArgsCodeGen:
     min_pos: int = 0
     max_pos: int = 0
     min_kw_only: int = 0
-    pseudo_args: int = 0
-    vararg: int | str = NO_VARARG
+    varpos: Parameter | None = None
+    var_keyword: Parameter | None = None
 
     docstring_prototype: str
     docstring_definition: str
@@ -238,37 +240,54 @@ class ParseArgsCodeGen:
         self.codegen = codegen
 
         self.parameters = list(self.func.parameters.values())
-        first_param = self.parameters.pop(0)
-        if not isinstance(first_param.converter, self_converter):
+        self_parameter = self.parameters.pop(0)
+        if not isinstance(self_parameter.converter, self_converter):
             raise ValueError("the first parameter must use self_converter")
+        self.self_parameter_converter = self_parameter.converter
 
         self.requires_defining_class = False
         if self.parameters and isinstance(self.parameters[0].converter, defining_class_converter):
             self.requires_defining_class = True
             del self.parameters[0]
+
+        for i, p in enumerate(self.parameters):
+            if p.is_vararg():
+                self.varpos = p
+                del self.parameters[i]
+                break
+
+        for i, p in enumerate(self.parameters):
+            if p.is_var_keyword():
+                self.var_keyword = p
+                del self.parameters[i]
+                break
+
         self.converters = [p.converter for p in self.parameters]
 
         if self.func.critical_section:
             self.codegen.add_include('pycore_critical_section.h',
                                      'Py_BEGIN_CRITICAL_SECTION()')
-        self.fastcall = not self.is_new_or_init()
+
+        # Use fastcall if not disabled, except if in a __new__ or
+        # __init__ method, or if there is a **kwargs parameter.
+        if self.func.disable_fastcall:
+            self.fastcall = False
+        elif self.var_keyword is not None:
+            self.fastcall = False
+        else:
+            self.fastcall = not self.is_new_or_init()
 
         self.pos_only = 0
         self.min_pos = 0
         self.max_pos = 0
         self.min_kw_only = 0
-        self.pseudo_args = 0
         for i, p in enumerate(self.parameters, 1):
             if p.is_keyword_only():
                 assert not p.is_positional_only()
                 if not p.is_optional():
-                    self.min_kw_only = i - self.max_pos - int(self.vararg != NO_VARARG)
-            elif p.is_vararg():
-                self.pseudo_args += 1
-                self.vararg = i - 1
+                    self.min_kw_only = i - self.max_pos
             else:
-                if self.vararg == NO_VARARG:
-                    self.max_pos = i
+                self.max_pos = i
                 if p.is_positional_only():
                     self.pos_only = i
                 if not p.is_optional():
@@ -285,12 +304,16 @@ class ParseArgsCodeGen:
         return (len(self.parameters) == 1
                 and self.parameters[0].is_positional_only()
                 and not self.converters[0].is_optional()
+                and not self.varpos
                 and not self.requires_defining_class
                 and not self.is_new_or_init())
 
     def use_simple_return(self) -> bool:
         return (self.func.return_converter.type == 'PyObject *'
                 and not self.func.critical_section)
+
+    def use_pyobject_self(self) -> bool:
+        return self.self_parameter_converter.use_pyobject_self(self.func)
 
     def select_prototypes(self) -> None:
         self.docstring_prototype = ''
@@ -315,7 +338,8 @@ class ParseArgsCodeGen:
 
     def init_limited_capi(self) -> None:
         self.limited_capi = self.codegen.limited_capi
-        if self.limited_capi and (self.pseudo_args or
+        if self.limited_capi and (
+                (self.varpos and self.pos_only < len(self.parameters)) or
                 (any(p.is_optional() for p in self.parameters) and
                  any(p.is_keyword_only() and not p.is_optional() for p in self.parameters)) or
                 any(c.broken_limited_capi for c in self.converters)):
@@ -401,7 +425,7 @@ class ParseArgsCodeGen:
             self.converters[0].format_unit == 'O'):
             meth_o_prototype = METH_O_PROTOTYPE
 
-            if self.use_simple_return():
+            if self.use_simple_return() and self.use_pyobject_self():
                 # maps perfectly to METH_O, doesn't need a return converter.
                 # so we skip making a parse function
                 # and call directly into the impl function.
@@ -447,6 +471,22 @@ class ParseArgsCodeGen:
         parser_code = '    {option_group_parsing}'
         self.parser_body(parser_code)
 
+    def _parse_vararg(self) -> str:
+        assert self.varpos is not None
+        c = self.varpos.converter
+        assert isinstance(c, libclinic.converters.VarPosCConverter)
+        return c.parse_vararg(pos_only=self.pos_only,
+                              min_pos=self.min_pos,
+                              max_pos=self.max_pos,
+                              fastcall=self.fastcall,
+                              limited_capi=self.limited_capi)
+
+    def _parse_kwarg(self) -> str:
+        assert self.var_keyword is not None
+        c = self.var_keyword.converter
+        assert isinstance(c, libclinic.converters.VarKeywordCConverter)
+        return c.parse_var_keyword()
+
     def parse_pos_only(self) -> None:
         if self.fastcall:
             # positional-only, but no option groups
@@ -469,10 +509,9 @@ class ParseArgsCodeGen:
                 nargs = 'PyTuple_GET_SIZE(args)'
                 argname_fmt = 'PyTuple_GET_ITEM(args, %d)'
 
-        left_args = f"{nargs} - {self.max_pos}"
-        max_args = NO_VARARG if (self.vararg != NO_VARARG) else self.max_pos
+        parser_code = []
+        max_args = NO_VARARG if self.varpos else self.max_pos
         if self.limited_capi:
-            parser_code = []
             if nargs != 'nargs':
                 nargs_def = f'Py_ssize_t nargs = {nargs};'
                 parser_code.append(libclinic.normalize_snippet(nargs_def, indent=4))
@@ -505,50 +544,27 @@ class ParseArgsCodeGen:
                         }}}}
                         """,
                     indent=4))
-        else:
+        elif self.min_pos or max_args != NO_VARARG:
             self.codegen.add_include('pycore_modsupport.h',
                                      '_PyArg_CheckPositional()')
-            parser_code = [libclinic.normalize_snippet(f"""
+            parser_code.append(libclinic.normalize_snippet(f"""
                 if (!_PyArg_CheckPositional("{{name}}", {nargs}, {self.min_pos}, {max_args})) {{{{
                     goto exit;
                 }}}}
-                """, indent=4)]
+                """, indent=4))
 
         has_optional = False
         use_parser_code = True
         for i, p in enumerate(self.parameters):
-            if p.is_vararg():
-                if self.fastcall:
-                    parser_code.append(libclinic.normalize_snippet("""
-                        %s = PyTuple_New(%s);
-                        if (!%s) {{
-                            goto exit;
-                        }}
-                        for (Py_ssize_t i = 0; i < %s; ++i) {{
-                            PyTuple_SET_ITEM(%s, i, Py_NewRef(args[%d + i]));
-                        }}
-                        """ % (
-                            p.converter.parser_name,
-                            left_args,
-                            p.converter.parser_name,
-                            left_args,
-                            p.converter.parser_name,
-                            self.max_pos
-                        ), indent=4))
-                else:
-                    parser_code.append(libclinic.normalize_snippet("""
-                        %s = PyTuple_GetSlice(%d, -1);
-                        """ % (
-                            p.converter.parser_name,
-                            self.max_pos
-                        ), indent=4))
-                continue
-
             displayname = p.get_displayname(i+1)
             argname = argname_fmt % i
             parsearg: str | None
             parsearg = p.converter.parse_arg(argname, displayname, limited_capi=self.limited_capi)
             if parsearg is None:
+                if self.varpos:
+                    raise ValueError(
+                        f"Using converter {p.converter} is not supported "
+                        f"in function with var-positional parameter")
                 use_parser_code = False
                 parser_code = []
                 break
@@ -564,6 +580,10 @@ class ParseArgsCodeGen:
         if use_parser_code:
             if has_optional:
                 parser_code.append("skip_optional:")
+            if self.varpos:
+                parser_code.append(libclinic.normalize_snippet(self._parse_vararg(), indent=4))
+            elif self.var_keyword:
+                parser_code.append(libclinic.normalize_snippet(self._parse_kwarg(), indent=4))
         else:
             for parameter in self.parameters:
                 parameter.converter.use_converter()
@@ -590,6 +610,45 @@ class ParseArgsCodeGen:
                     """, indent=4)]
         self.parser_body(*parser_code)
 
+    def parse_var_keyword(self) -> None:
+        self.flags = "METH_VARARGS|METH_KEYWORDS"
+        self.parser_prototype = PARSER_PROTOTYPE_KEYWORD
+        nargs = 'PyTuple_GET_SIZE(args)'
+
+        parser_code = []
+        max_args = NO_VARARG if self.varpos else self.max_pos
+        if self.varpos is None and self.min_pos == self.max_pos == 0:
+            self.codegen.add_include('pycore_modsupport.h',
+                                     '_PyArg_NoPositional()')
+            parser_code.append(libclinic.normalize_snippet("""
+                if (!_PyArg_NoPositional("{name}", args)) {{
+                    goto exit;
+                }}
+                """, indent=4))
+        elif self.min_pos or max_args != NO_VARARG:
+            self.codegen.add_include('pycore_modsupport.h',
+                                     '_PyArg_CheckPositional()')
+            parser_code.append(libclinic.normalize_snippet(f"""
+                if (!_PyArg_CheckPositional("{{name}}", {nargs}, {self.min_pos}, {max_args})) {{{{
+                    goto exit;
+                }}}}
+                """, indent=4))
+
+        for i, p in enumerate(self.parameters):
+            parse_arg = p.converter.parse_arg(
+                f'PyTuple_GET_ITEM(args, {i})',
+                p.get_displayname(i+1),
+                limited_capi=self.limited_capi,
+            )
+            assert parse_arg is not None
+            parser_code.append(libclinic.normalize_snippet(parse_arg, indent=4))
+
+        if self.varpos:
+            parser_code.append(libclinic.normalize_snippet(self._parse_vararg(), indent=4))
+        if self.var_keyword:
+            parser_code.append(libclinic.normalize_snippet(self._parse_kwarg(), indent=4))
+        self.parser_body(*parser_code)
+
     def parse_general(self, clang: CLanguage) -> None:
         parsearg: str | None
         deprecated_positionals: dict[int, Parameter] = {}
@@ -602,7 +661,7 @@ class ParseArgsCodeGen:
 
         has_optional_kw = (
             max(self.pos_only, self.min_pos) + self.min_kw_only
-            < len(self.converters) - int(self.vararg != NO_VARARG)
+            < len(self.converters)
         )
 
         use_parser_code = True
@@ -611,57 +670,48 @@ class ParseArgsCodeGen:
             use_parser_code = False
             self.fastcall = False
         else:
-            if self.vararg == NO_VARARG:
-                self.codegen.add_include('pycore_modsupport.h',
-                                         '_PyArg_UnpackKeywords()')
-                args_declaration = "_PyArg_UnpackKeywords", "%s, %s, %s" % (
-                    self.min_pos,
-                    self.max_pos,
-                    self.min_kw_only
-                )
+            self.codegen.add_include('pycore_modsupport.h',
+                                     '_PyArg_UnpackKeywords()')
+            if not self.varpos:
                 nargs = "nargs"
             else:
-                self.codegen.add_include('pycore_modsupport.h',
-                                         '_PyArg_UnpackKeywordsWithVararg()')
-                args_declaration = "_PyArg_UnpackKeywordsWithVararg", "%s, %s, %s, %s" % (
-                    self.min_pos,
-                    self.max_pos,
-                    self.min_kw_only,
-                    self.vararg
-                )
                 nargs = f"Py_MIN(nargs, {self.max_pos})" if self.max_pos else "0"
 
             if self.fastcall:
                 self.flags = "METH_FASTCALL|METH_KEYWORDS"
                 self.parser_prototype = PARSER_PROTOTYPE_FASTCALL_KEYWORDS
-                argname_fmt = 'args[%d]'
                 self.declarations = declare_parser(self.func, codegen=self.codegen)
-                self.declarations += "\nPyObject *argsbuf[%s];" % len(self.converters)
+                self.declarations += "\nPyObject *argsbuf[%s];" % (len(self.converters) or 1)
+                if self.varpos:
+                    self.declarations += "\nPyObject * const *fastargs;"
+                    argsname = 'fastargs'
+                    argname_fmt = 'fastargs[%d]'
+                else:
+                    argsname = 'args'
+                    argname_fmt = 'args[%d]'
                 if has_optional_kw:
                     self.declarations += "\nPy_ssize_t noptargs = %s + (kwnames ? PyTuple_GET_SIZE(kwnames) : 0) - %d;" % (nargs, self.min_pos + self.min_kw_only)
-                parser_code = [libclinic.normalize_snippet("""
-                    args = %s(args, nargs, NULL, kwnames, &_parser, %s, argsbuf);
-                    if (!args) {{
-                        goto exit;
-                    }}
-                    """ % args_declaration, indent=4)]
+                unpack_args = 'args, nargs, NULL, kwnames'
             else:
                 # positional-or-keyword arguments
                 self.flags = "METH_VARARGS|METH_KEYWORDS"
                 self.parser_prototype = PARSER_PROTOTYPE_KEYWORD
+                argsname = 'fastargs'
                 argname_fmt = 'fastargs[%d]'
                 self.declarations = declare_parser(self.func, codegen=self.codegen)
-                self.declarations += "\nPyObject *argsbuf[%s];" % len(self.converters)
+                self.declarations += "\nPyObject *argsbuf[%s];" % (len(self.converters) or 1)
                 self.declarations += "\nPyObject * const *fastargs;"
                 self.declarations += "\nPy_ssize_t nargs = PyTuple_GET_SIZE(args);"
                 if has_optional_kw:
                     self.declarations += "\nPy_ssize_t noptargs = %s + (kwargs ? PyDict_GET_SIZE(kwargs) : 0) - %d;" % (nargs, self.min_pos + self.min_kw_only)
-                parser_code = [libclinic.normalize_snippet("""
-                    fastargs = %s(_PyTuple_CAST(args)->ob_item, nargs, kwargs, NULL, &_parser, %s, argsbuf);
-                    if (!fastargs) {{
-                        goto exit;
-                    }}
-                    """ % args_declaration, indent=4)]
+                unpack_args = '_PyTuple_CAST(args)->ob_item, nargs, kwargs, NULL'
+            parser_code = [libclinic.normalize_snippet(f"""
+                {argsname} = _PyArg_UnpackKeywords({unpack_args}, &_parser,
+                        /*minpos*/ {self.min_pos}, /*maxpos*/ {self.max_pos}, /*minkw*/ {self.min_kw_only}, /*varpos*/ {1 if self.varpos else 0}, argsbuf);
+                if (!{argsname}) {{{{
+                    goto exit;
+                }}}}
+                """, indent=4)]
 
         if self.requires_defining_class:
             self.flags = 'METH_METHOD|' + self.flags
@@ -710,8 +760,6 @@ class ParseArgsCodeGen:
                     else:
                         label = 'skip_optional_kwonly'
                         first_opt = self.max_pos + self.min_kw_only
-                        if self.vararg != NO_VARARG:
-                            first_opt += 1
                     if i == first_opt:
                         add_label = label
                         parser_code.append(libclinic.normalize_snippet("""
@@ -737,6 +785,8 @@ class ParseArgsCodeGen:
         if use_parser_code:
             if add_label:
                 parser_code.append("%s:" % add_label)
+            if self.varpos:
+                parser_code.append(libclinic.normalize_snippet(self._parse_vararg(), indent=4))
         else:
             for parameter in self.parameters:
                 parameter.converter.use_converter()
@@ -794,7 +844,10 @@ class ParseArgsCodeGen:
     def copy_includes(self) -> None:
         # Copy includes from parameters to Clinic after parse_arg()
         # has been called above.
-        for converter in self.converters:
+        converters = self.converters
+        if self.varpos:
+            converters = converters + [self.varpos.converter]
+        for converter in converters:
             for include in converter.get_includes():
                 self.codegen.add_include(
                     include.filename,
@@ -927,14 +980,16 @@ class ParseArgsCodeGen:
         # previous call to parser_body. this is used for an awful hack.
         self.parser_body_fields: tuple[str, ...] = ()
 
-        if not self.parameters:
+        if not self.parameters and not self.varpos and not self.var_keyword:
             self.parse_no_args()
         elif self.use_meth_o():
             self.parse_one_arg()
         elif self.has_option_groups():
             self.parse_option_groups()
+        elif self.var_keyword is not None:
+            self.parse_var_keyword()
         elif (not self.requires_defining_class
-              and self.pos_only == len(self.parameters) - self.pseudo_args):
+              and self.pos_only == len(self.parameters)):
             self.parse_pos_only()
         else:
             self.parse_general(clang)

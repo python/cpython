@@ -2,9 +2,11 @@
 /* Support for dynamic loading of extension modules */
 
 #include "Python.h"
-#include "pycore_interp.h"    // _PyInterpreterState.dlopenflags
-#include "pycore_pystate.h"   // _PyInterpreterState_GET()
+#include "pycore_fileutils.h"     // struct _Py_stat_struct
+#include "pycore_import.h"        // _PyImport_GetDLOpenFlags()
 #include "pycore_importdl.h"
+#include "pycore_interp.h"        // _PyInterpreterState.dlopenflags
+#include "pycore_pystate.h"       // _PyInterpreterState_GET()
 
 #include <sys/types.h>
 #include <sys/stat.h>

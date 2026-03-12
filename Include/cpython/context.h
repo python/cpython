@@ -28,21 +28,22 @@ PyAPI_FUNC(int) PyContext_Enter(PyObject *);
 PyAPI_FUNC(int) PyContext_Exit(PyObject *);
 
 typedef enum {
-   Py_CONTEXT_EVENT_ENTER,
-   Py_CONTEXT_EVENT_EXIT,
+    /*
+     * The current context has switched to a different context.  The object
+     * passed to the watch callback is the now-current contextvars.Context
+     * object, or None if no context is current.
+     */
+    Py_CONTEXT_SWITCHED = 1,
 } PyContextEvent;
 
 /*
- * A Callback to clue in non-python contexts impls about a
- * change in the active python context.
- *
- * The callback is invoked with the event and a reference to =
- * the context after its entered and before its exited.
+ * Context object watcher callback function.  The object passed to the callback
+ * is event-specific; see PyContextEvent for details.
  *
  * if the callback returns with an exception set, it must return -1. Otherwise
  * it should return 0
  */
-typedef int (*PyContext_WatchCallback)(PyContextEvent, PyContext *);
+typedef int (*PyContext_WatchCallback)(PyContextEvent, PyObject *);
 
 /*
  * Register a per-interpreter callback that will be invoked for context object
