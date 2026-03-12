@@ -1,1 +1,1 @@
-Update the WASI build configuration to support wasi-sdk 31 by changing Platforms/WASI/config.toml to expect version 31 instead of 30.
+Update to WASI SDK 31.
