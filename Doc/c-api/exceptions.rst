@@ -1347,7 +1347,7 @@ Tracebacks
    This function returns ``0`` on success, and returns ``-1`` with an
    exception set on failure.
 
-.. c:function:: void PyUnstable_DumpTraceback(int fd, PyThreadState *tstate)
+.. c:function:: const char* PyUnstable_DumpTraceback(int fd, PyThreadState *tstate)
 
    Write a trace of the Python stack in *tstate* into the file *fd*.  The format
    looks like::
@@ -1362,6 +1362,9 @@ Tracebacks
    and similar. The file and function names it outputs are encoded to ASCII with
    backslashreplace and truncated to 500 characters. It writes only the first
    100 frames; further frames are truncated with the line ``...``.
+
+   This function will return ``NULL`` on success, or an error message on error.
+   It will also write this error message to *fd*.
 
    This function is safe to use from signal handlers.
 
@@ -1384,6 +1387,7 @@ Tracebacks
    error if the function is unable to get the current Python thread state.
 
    This function will return ``NULL`` on success, or an error message on error.
+   It will also write this error message to *fd*.
 
    This function is meant to debug debug situations such as segfaults, fatal
    errors, and similar. It calls :c:func:`PyUnstable_DumpTraceback` for each

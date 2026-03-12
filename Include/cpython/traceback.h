@@ -12,7 +12,7 @@ struct _traceback {
     int tb_lineno;
 };
 
-PyAPI_FUNC(void) PyUnstable_DumpTraceback(int fd, PyThreadState *tstate);
+PyAPI_FUNC(const char*) PyUnstable_DumpTraceback(int fd, PyThreadState *tstate);
 
 PyAPI_FUNC(const char*) PyUnstable_DumpTracebackThreads(
     int fd,

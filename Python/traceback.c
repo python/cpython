@@ -1167,10 +1167,11 @@ dump_traceback(int fd, PyThreadState *tstate, int write_header)
 
    The caller is responsible to call PyErr_CheckSignals() to call Python signal
    handlers if signals were received. */
-void
+const char*
 PyUnstable_DumpTraceback(int fd, PyThreadState *tstate)
 {
     dump_traceback(fd, tstate, 1);
+    return NULL;
 }
 
 #if defined(HAVE_PTHREAD_GETNAME_NP) || defined(HAVE_PTHREAD_GET_NAME_NP)
@@ -1257,6 +1258,14 @@ write_thread_id(int fd, PyThreadState *tstate, int is_current)
     PUTS(fd, " (most recent call first):\n");
 }
 
+/* Write an error string and also return it at the same time. */
+static const char*
+dump_error(int fd, const char *msg)
+{
+    PUTS(fd, msg);
+    return msg;
+}
+
 /* Dump the traceback of all Python threads into fd. Use write() to write the
    traceback and retry if write() is interrupted by a signal (failed with
    EINTR), but don't call the Python signal handler.
@@ -1283,7 +1292,7 @@ PyUnstable_DumpTracebackThreads(int fd, PyInterpreterState *interp,
     }
 
     if (current_tstate != NULL && tstate_is_freed(current_tstate)) {
-        return "tstate is freed";
+        return dump_error(fd, "tstate is freed");
     }
 
     if (interp == NULL) {
@@ -1291,7 +1300,7 @@ PyUnstable_DumpTracebackThreads(int fd, PyInterpreterState *interp,
             interp = _PyGILState_GetInterpreterStateUnsafe();
             if (interp == NULL) {
                 /* We need the interpreter state to get Python threads */
-                return "unable to get the interpreter state";
+                return dump_error(fd, "unable to get the interpreter state");
             }
         }
         else {
@@ -1301,13 +1310,13 @@ PyUnstable_DumpTracebackThreads(int fd, PyInterpreterState *interp,
     assert(interp != NULL);
 
     if (interp_is_freed(interp)) {
-        return "interp is freed";
+        return dump_error(fd, "interp is freed");
     }
 
     /* Get the current interpreter from the current thread */
     PyThreadState *tstate = PyInterpreterState_ThreadHead(interp);
     if (tstate == NULL)
-        return "unable to get the thread head state";
+        return dump_error(fd, "unable to get the thread head state");
 
     /* Dump the traceback of each thread */
     unsigned int nthreads = 0;

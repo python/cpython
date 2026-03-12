@@ -276,15 +276,16 @@ faulthandler_dump_traceback_py_impl(PyObject *module, PyObject *file,
         _PyEval_StopTheWorld(interp);
         errmsg = PyUnstable_DumpTracebackThreads(fd, NULL, tstate);
         _PyEval_StartTheWorld(interp);
-        if (errmsg != NULL) {
-            PyErr_SetString(PyExc_RuntimeError, errmsg);
-            Py_XDECREF(file);
-            return NULL;
-        }
     }
     else {
-        PyUnstable_DumpTraceback(fd, tstate);
+        errmsg = PyUnstable_DumpTraceback(fd, tstate);
     }
+    if (errmsg != NULL) {
+      PyErr_SetString(PyExc_RuntimeError, errmsg);
+      Py_XDECREF(file);
+      return NULL;
+    }
+
     Py_XDECREF(file);
 
     if (PyErr_CheckSignals())
