@@ -1,1 +1,1 @@
-Add ``.efi`` file detection in ``mimetypes``
+Add ``application/efi`` MIME type to :mod:`mimetypes`.
