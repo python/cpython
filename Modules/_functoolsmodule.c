@@ -646,6 +646,8 @@ partial_repr(PyObject *self)
         }
     }
     /* Pack keyword arguments */
+    int error = 0;
+    Py_BEGIN_CRITICAL_SECTION(kw);
     for (i = 0; PyDict_Next(kw, &i, &key, &value);) {
         /* Prevent key.__str__ from deleting the value. */
         Py_INCREF(value);
@@ -653,8 +655,13 @@ partial_repr(PyObject *self)
                                                 key, value));
         Py_DECREF(value);
         if (arglist == NULL) {
-            goto done;
+            error = 1;
+            break;
         }
+    }
+    Py_END_CRITICAL_SECTION();
+    if (error) {
+        goto done;
     }
 
     mod = PyType_GetModuleName(Py_TYPE(pto));
