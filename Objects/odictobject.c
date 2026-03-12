@@ -1171,9 +1171,7 @@ OrderedDict_popitem_impl(PyODictObject *self, int last)
     value = _odict_popkey_hash((PyObject *)self, key, NULL, _odictnode_HASH(node));
     if (value == NULL)
         return NULL;
-    item = PyTuple_Pack(2, key, value);
-    Py_DECREF(key);
-    Py_DECREF(value);
+    item = _PyTuple_FromPairSteal(key, value);
     return item;
 }
 
@@ -1828,18 +1826,16 @@ odictiter_iternext_lock_held(PyObject *op)
         // bpo-42536: The GC may have untracked this result tuple. Since we're
         // recycling it, make sure it's tracked again:
         _PyTuple_Recycle(result);
+        PyTuple_SET_ITEM(result, 0, key);  /* steals reference */
+        PyTuple_SET_ITEM(result, 1, value);  /* steals reference */
     }
     else {
-        result = PyTuple_New(2);
+        result = _PyTuple_FromPairSteal(key, value);
         if (result == NULL) {
-            Py_DECREF(key);
-            Py_DECREF(value);
             goto done;
         }
     }
 
-    PyTuple_SET_ITEM(result, 0, key);  /* steals reference */
-    PyTuple_SET_ITEM(result, 1, value);  /* steals reference */
     return result;
 
 done:
@@ -1933,7 +1929,7 @@ odictiter_new(PyODictObject *od, int kind)
         return NULL;
 
     if ((kind & _odict_ITER_ITEMS) == _odict_ITER_ITEMS) {
-        di->di_result = PyTuple_Pack(2, Py_None, Py_None);
+        di->di_result = _PyTuple_FromPairSteal(Py_None, Py_None);
         if (di->di_result == NULL) {
             Py_DECREF(di);
             return NULL;
