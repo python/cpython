@@ -31,6 +31,9 @@ TOOLS_JIT_TEMPLATE_C = TOOLS_JIT / "template.c"
 
 ASYNCIO_RUNNER = asyncio.Runner()
 
+# TODO: Read this from Tools/cases_generator/analyzer.py instead of hardcoding.
+_MAX_CACHED_REGISTER = 3
+
 _S = typing.TypeVar("_S", _schema.COFFSection, _schema.ELFSection, _schema.MachOSection)
 _R = typing.TypeVar(
     "_R", _schema.COFFRelocation, _schema.ELFRelocation, _schema.MachORelocation
@@ -209,6 +212,9 @@ class _Target(typing.Generic[_S, _R]):
                 tasks.append(group.create_task(coro, name="shim"))
                 template = TOOLS_JIT_TEMPLATE_C.read_text()
                 for case, opname in cases_and_opnames:
+                    guard = re.match(r"#if MAX_CACHED_REGISTER >= (\d+)\n", case)
+                    if guard and int(guard.group(1)) > _MAX_CACHED_REGISTER:
+                        continue
                     # Write out a copy of the template with *only* this case
                     # inserted. This is about twice as fast as #include'ing all
                     # of executor_cases.c.h each time we compile (since the C
