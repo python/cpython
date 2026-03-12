@@ -207,10 +207,12 @@ else
 endif
 	@# Copy test script into the staging sysroot
 	@echo "import sys; print('CPYTHON_TEST_HELLO: Hello from Python', sys.version_info[:2])" > $(TEST_STAGING)/sysroot/test_hello.py
-	@# Copy nanvixd.elf into the staging sysroot
+	@# Copy Nanvix binaries into the staging sysroot
 	@mkdir -p $(TEST_STAGING)/sysroot/bin
 	@cp "$(abspath $(NANVIX_HOME))/bin/nanvixd.elf" $(TEST_STAGING)/sysroot/bin/ 2>/dev/null || true
 	@cp "$(abspath $(NANVIX_HOME))/bin/kernel.elf" $(TEST_STAGING)/sysroot/bin/ 2>/dev/null || true
+	@cp "$(abspath $(NANVIX_HOME))/bin/linuxd.elf" $(TEST_STAGING)/sysroot/bin/ 2>/dev/null || true
+	@cp "$(abspath $(NANVIX_HOME))/bin/uservm.elf" $(TEST_STAGING)/sysroot/bin/ 2>/dev/null || true
 ifeq ($(PROCESS_MODE),standalone)
 	@cp "$(abspath $(NANVIX_HOME))/bin/mkramfs.elf" $(TEST_STAGING)/sysroot/bin/ 2>/dev/null || true
 	@echo "Test: Hello world (standalone)..."
