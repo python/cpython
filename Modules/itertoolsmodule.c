@@ -678,14 +678,8 @@ _grouper_next(PyObject *op)
     }
 
     assert(gbo->currkey != NULL);
-    /* A user-defined __eq__ can re-enter groupby (via the parent iterator)
-       and call groupby_step(), which frees gbo->currkey via Py_XSETREF while
-       we are still comparing it.  Take local snapshots with strong references
-       so INCREF/DECREF apply to the same objects even under re-entrancy. */
-    PyObject *tgtkey = igo->tgtkey;
-    PyObject *currkey = gbo->currkey;
-    Py_INCREF(tgtkey);
-    Py_INCREF(currkey);
+    PyObject *tgtkey = Py_NewRef(igo->tgtkey);
+    PyObject *currkey = Py_NewRef(gbo->currkey);
     rcmp = PyObject_RichCompareBool(tgtkey, currkey, Py_EQ);
     Py_DECREF(tgtkey);
     Py_DECREF(currkey);
