@@ -58,6 +58,9 @@ __all__ = ["Awaitable", "Coroutine",
 # See issue #19218
 __name__ = "collections.abc"
 
+# Name of the ByteString class, used to avoid string literal duplication.
+_BYTESTRING_NAME = "ByteString"
+
 # Private list of types that we want to register with the various ABCs
 # so that they will pass tests like:
 #       it = iter(somebytearray)
@@ -1064,11 +1067,11 @@ Sequence.register(memoryview)
 
 class _DeprecateByteStringMeta(ABCMeta):
     def __new__(cls, name, bases, namespace, **kwargs):
-        if name != "ByteString":
+        if name != _BYTESTRING_NAME:
             import warnings
 
             warnings._deprecated(
-                "collections.abc.ByteString",
+                f"collections.abc.{_BYTESTRING_NAME}",
                 remove=(3, 17),
             )
         return super().__new__(cls, name, bases, namespace, **kwargs)
@@ -1077,7 +1080,7 @@ class _DeprecateByteStringMeta(ABCMeta):
         import warnings
 
         warnings._deprecated(
-            "collections.abc.ByteString",
+            f"collections.abc.{_BYTESTRING_NAME}",
             remove=(3, 17),
         )
         return super().__instancecheck__(instance)
@@ -1167,12 +1170,12 @@ class MutableSequence(Sequence):
 MutableSequence.register(list)
 MutableSequence.register(bytearray)
 
-_deprecated_ByteString = globals().pop("ByteString")
+_deprecated_ByteString = globals().pop(_BYTESTRING_NAME)
 
 def __getattr__(attr):
-    if attr == "ByteString":
+    if attr == _BYTESTRING_NAME:
         import warnings
-        warnings._deprecated("collections.abc.ByteString", remove=(3, 17))
-        globals()["ByteString"] = _deprecated_ByteString
+        warnings._deprecated(f"collections.abc.{_BYTESTRING_NAME}", remove=(3, 17))
+        globals()[_BYTESTRING_NAME] = _deprecated_ByteString
         return _deprecated_ByteString
     raise AttributeError(f"module 'collections.abc' has no attribute {attr!r}")
