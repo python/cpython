@@ -4829,8 +4829,6 @@ class TestQuopri(unittest.TestCase):
         self._test_decode('A=1,B=A ==> A+B==2', 'A=1,B=A ==> A+B==2')
 
     def test_decode_crlf_eol_no_trailing_newline(self):
-        # decode() with eol='\r\n' should not leave a stray \r
-        # when the input has no trailing line ending.
         self._test_decode('abc', 'abc', eol='\r\n')
 
     def test_decode_crlf_eol_multiline_no_trailing_newline(self):
