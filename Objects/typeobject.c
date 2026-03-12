@@ -11737,7 +11737,7 @@ update_one_slot(PyTypeObject *type, pytype_slotdef *p, pytype_slotdef **next_p,
         if (Py_IS_TYPE(descr, &PyWrapperDescr_Type) &&
             ((PyWrapperDescrObject *)descr)->d_base->name_strobj == p->name_strobj) {
             void **tptr;
-            size_t index = (p - slotdefs) / sizeof(slotdefs[0]);
+            size_t index = (p - slotdefs);
             if (slotdefs_name_counts[index] == 1) {
                 tptr = slotptr(type, p->offset);
             }
