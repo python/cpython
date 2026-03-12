@@ -192,22 +192,21 @@ string from a C :c:expr:`double`, and the Unpack routines produce a C
 :c:expr:`double` from such a bytes string. The suffix (2, 4 or 8) specifies the
 number of bytes in the bytes string.
 
-On platforms that appear to use IEEE 754 formats these functions work by
-copying bits. On other platforms, the 2-byte format is identical to the IEEE
-754 binary16 half-precision format, the 4-byte format (32-bit) is identical to
-the IEEE 754 binary32 single precision format, and the 8-byte format to the
-IEEE 754 binary64 double precision format, although the packing of INFs and
-NaNs (if such things exist on the platform) isn't handled correctly, and
-attempting to unpack a bytes string containing an IEEE INF or NaN will raise an
-exception.
+The 2-byte format is the IEEE 754 binary16 half-precision format, the 4-byte
+format is the IEEE 754 binary32 single precision format, and the 8-byte format
+is the IEEE 754 binary64 double precision format, although the NaNs type may
+not be preserved on some platforms while unpacking (signaling NaN become quiet
+NaN), for example on x86 systems in 32-bit mode.
 
-Note that NaNs type may not be preserved on IEEE platforms (signaling NaN become
-quiet NaN), for example on x86 systems in 32-bit mode.
-
+It's assumed, that the :c:expr:`double` type has the IEEE 754 binary64 double
+precision format.  What happens if it's not true is partly accidental (alas).
 On non-IEEE platforms with more precision, or larger dynamic range, than IEEE
 754 supports, not all values can be packed; on non-IEEE platforms with less
-precision, or smaller dynamic range, not all values can be unpacked. What
-happens in such cases is partly accidental (alas).
+precision, or smaller dynamic range, not all values can be unpacked.  The
+packing of special numbers like INFs and NaNs (if such things exist on the
+platform) may be not handled correctly, and attempting to unpack a bytes string
+containing an IEEE INF or NaN may raise an exception.
+
 
 .. versionadded:: 3.11
 
@@ -217,12 +216,15 @@ Pack functions
 The pack routines write 2, 4 or 8 bytes, starting at *p*. *le* is an
 :c:expr:`int` argument, non-zero if you want the bytes string in little-endian
 format (exponent last, at ``p+1``, ``p+3``, or ``p+6`` ``p+7``), zero if you
-want big-endian format (exponent first, at *p*). The :c:macro:`PY_BIG_ENDIAN`
-constant can be used to use the native endian: it is equal to ``1`` on big
-endian processor, or ``0`` on little endian processor.
+want big-endian format (exponent first, at *p*). The :c:macro:`PY_LITTLE_ENDIAN`
+constant can be used to use the native endian: it is equal to ``0`` on big
+endian processor, or ``1`` on little endian processor.
 
 Return value: ``0`` if all is OK, ``-1`` if error (and an exception is set,
 most likely :exc:`OverflowError`).
+
+.. impl-detail::
+    The :c:func:`PyFloat_Pack8` function always succeeds in the CPython.
 
 .. c:function:: int PyFloat_Pack2(double x, char *p, int le)
 
@@ -243,13 +245,16 @@ Unpack functions
 The unpack routines read 2, 4 or 8 bytes, starting at *p*.  *le* is an
 :c:expr:`int` argument, non-zero if the bytes string is in little-endian format
 (exponent last, at ``p+1``, ``p+3`` or ``p+6`` and ``p+7``), zero if big-endian
-(exponent first, at *p*). The :c:macro:`PY_BIG_ENDIAN` constant can be used to
-use the native endian: it is equal to ``1`` on big endian processor, or ``0``
+(exponent first, at *p*). The :c:macro:`PY_LITTLE_ENDIAN` constant can be used to
+use the native endian: it is equal to ``0`` on big endian processor, or ``1``
 on little endian processor.
 
 Return value: The unpacked double.  On error, this is ``-1.0`` and
 :c:func:`PyErr_Occurred` is true (and an exception is set, most likely
 :exc:`OverflowError`).
+
+.. impl-detail::
+    These functions always succeed in the CPython.
 
 .. c:function:: double PyFloat_Unpack2(const char *p, int le)
 
