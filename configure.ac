@@ -2084,7 +2084,10 @@ case "$ac_cv_cc_name" in
     fi
     ;;
   gcc)
-    PGO_PROF_GEN_FLAG="-fprofile-generate"
+    AX_CHECK_COMPILE_FLAG(
+        [-fprofile-update=atomic],
+        [PGO_PROF_GEN_FLAG="-fprofile-generate -fprofile-update=atomic"],
+        [PGO_PROF_GEN_FLAG="-fprofile-generate"])
     PGO_PROF_USE_FLAG="-fprofile-use -fprofile-correction"
     LLVM_PROF_MERGER="true"
     LLVM_PROF_FILE=""
