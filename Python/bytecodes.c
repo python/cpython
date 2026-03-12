@@ -2240,14 +2240,23 @@ dummy_func(
             PyObject *dict_o = PyStackRef_AsPyObjectBorrow(dict);
             PyObject *update_o = PyStackRef_AsPyObjectBorrow(update);
 
-            int err = PyDict_Update(dict_o, update_o);
-            if (err < 0) {
-                int matches = _PyErr_ExceptionMatches(tstate, PyExc_AttributeError);
-                if (matches) {
+            if (!PyAnyDict_Check(update_o)) {
+                int has_keys = PyObject_HasAttrWithError(
+                    update_o, &_Py_ID(keys));
+                if (has_keys < 0) {
+                    PyStackRef_CLOSE(update);
+                    ERROR_IF(true);
+                }
+                if (!has_keys) {
                     _PyErr_Format(tstate, PyExc_TypeError,
                                     "'%.200s' object is not a mapping",
                                     Py_TYPE(update_o)->tp_name);
+                    PyStackRef_CLOSE(update);
+                    ERROR_IF(true);
                 }
+            }
+            int err = PyDict_Update(dict_o, update_o);
+            if (err < 0) {
                 PyStackRef_CLOSE(update);
                 ERROR_IF(true);
             }
@@ -2259,6 +2268,21 @@ dummy_func(
             PyObject *dict_o = PyStackRef_AsPyObjectBorrow(dict);
             PyObject *update_o = PyStackRef_AsPyObjectBorrow(update);
 
+            if (!PyAnyDict_Check(update_o)) {
+                int has_keys = PyObject_HasAttrWithError(
+                    update_o, &_Py_ID(keys));
+                if (has_keys < 0) {
+                    PyStackRef_CLOSE(update);
+                    ERROR_IF(true);
+                }
+                if (!has_keys) {
+                    _PyErr_Format(tstate, PyExc_TypeError,
+                                    "Value after ** must be a mapping, not %.200s",
+                                    Py_TYPE(update_o)->tp_name);
+                    PyStackRef_CLOSE(update);
+                    ERROR_IF(true);
+                }
+            }
             int err = _PyDict_MergeEx(dict_o, update_o, 2);
             if (err < 0) {
                 _PyEval_FormatKwargsError(tstate, callable_o, update_o);

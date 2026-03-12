@@ -334,6 +334,30 @@ What about willful misconduct?
       ...
     TypeError: dir() got multiple values for keyword argument 'b'
 
+AttributeError raised inside keys() or __getitem__() should not be masked
+(see https://github.com/python/cpython/issues/145876)
+
+    >>> class KeysRaisesAttributeError:
+    ...     def keys(self):
+    ...         raise AttributeError("error in keys")
+    ...     def __getitem__(self, key):
+    ...         return key
+    >>> def f(**kwargs): pass
+    >>> f(**KeysRaisesAttributeError())
+    Traceback (most recent call last):
+      ...
+    AttributeError: error in keys
+
+    >>> class GetitemRaisesAttributeError:
+    ...     def keys(self):
+    ...         return ['a', 'b']
+    ...     def __getitem__(self, key):
+    ...         raise AttributeError("error in __getitem__")
+    >>> f(**GetitemRaisesAttributeError())
+    Traceback (most recent call last):
+      ...
+    AttributeError: error in __getitem__
+
 Test a kwargs mapping with duplicated keys.
 
     >>> from collections.abc import Mapping

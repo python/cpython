@@ -134,6 +134,29 @@ Dict display element unpacking
     ...
     TypeError: 'list' object is not a mapping
 
+AttributeError raised inside keys() or __getitem__() should not be masked
+(see https://github.com/python/cpython/issues/145876)
+
+    >>> class KeysRaisesAttributeError:
+    ...     def keys(self):
+    ...         raise AttributeError("error in keys")
+    ...     def __getitem__(self, key):
+    ...         return key
+    >>> {**KeysRaisesAttributeError()}
+    Traceback (most recent call last):
+    ...
+    AttributeError: error in keys
+
+    >>> class GetitemRaisesAttributeError:
+    ...     def keys(self):
+    ...         return ['a', 'b']
+    ...     def __getitem__(self, key):
+    ...         raise AttributeError("error in __getitem__")
+    >>> {**GetitemRaisesAttributeError()}
+    Traceback (most recent call last):
+    ...
+    AttributeError: error in __getitem__
+
     >>> len(eval("{" + ", ".join("**{{{}: {}}}".format(i, i)
     ...                          for i in range(1000)) + "}"))
     1000

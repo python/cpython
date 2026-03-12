@@ -1,0 +1,3 @@
+Fix :exc:`AttributeError` raised inside ``.keys()`` or ``.__getitem__()``
+being incorrectly masked as :exc:`TypeError` during ``{**mapping}`` and
+``f(**mapping)`` unpacking. Patched by Shamil Abdulaev.

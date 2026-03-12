@@ -3403,19 +3403,7 @@ _Py_Check_ArgsIterable(PyThreadState *tstate, PyObject *func, PyObject *args)
 void
 _PyEval_FormatKwargsError(PyThreadState *tstate, PyObject *func, PyObject *kwargs)
 {
-    /* _PyDict_MergeEx raises attribute
-     * error (percolated from an attempt
-     * to get 'keys' attribute) instead of
-     * a type error if its second argument
-     * is not a mapping.
-     */
-    if (_PyErr_ExceptionMatches(tstate, PyExc_AttributeError)) {
-        _PyErr_Format(
-            tstate, PyExc_TypeError,
-            "Value after ** must be a mapping, not %.200s",
-            Py_TYPE(kwargs)->tp_name);
-    }
-    else if (_PyErr_ExceptionMatches(tstate, PyExc_KeyError)) {
+    if (_PyErr_ExceptionMatches(tstate, PyExc_KeyError)) {
         PyObject *exc = _PyErr_GetRaisedException(tstate);
         PyObject *args = PyException_GetArgs(exc);
         if (PyTuple_Check(args) && PyTuple_GET_SIZE(args) == 1) {
