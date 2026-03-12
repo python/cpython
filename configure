@@ -8990,7 +8990,44 @@ case "$CC_BASENAME" in
         fi
         ;;
       *)
-        PGO_PROF_GEN_FLAG="-fprofile-generate"
+        { printf "%s\n" "$as_me:${as_lineno-$LINENO}: checking whether C compiler accepts -fprofile-update=atomic" >&5
+printf %s "checking whether C compiler accepts -fprofile-update=atomic... " >&6; }
+if test ${ax_cv_check_cflags___fprofile_update_atomic+y}
+then :
+  printf %s "(cached) " >&6
+else $as_nop
+
+  ax_check_save_flags=$CFLAGS
+  CFLAGS="$CFLAGS  -fprofile-update=atomic"
+  cat confdefs.h - <<_ACEOF >conftest.$ac_ext
+/* end confdefs.h.  */
+
+int
+main (void)
+{
+
+  ;
+  return 0;
+}
+_ACEOF
+if ac_fn_c_try_compile "$LINENO"
+then :
+  ax_cv_check_cflags___fprofile_update_atomic=yes
+else $as_nop
+  ax_cv_check_cflags___fprofile_update_atomic=no
+fi
+rm -f core conftest.err conftest.$ac_objext conftest.beam conftest.$ac_ext
+  CFLAGS=$ax_check_save_flags
+fi
+{ printf "%s\n" "$as_me:${as_lineno-$LINENO}: result: $ax_cv_check_cflags___fprofile_update_atomic" >&5
+printf "%s\n" "$ax_cv_check_cflags___fprofile_update_atomic" >&6; }
+if test "x$ax_cv_check_cflags___fprofile_update_atomic" = xyes
+then :
+  PGO_PROF_GEN_FLAG="-fprofile-generate -fprofile-update=atomic"
+else $as_nop
+  PGO_PROF_GEN_FLAG="-fprofile-generate"
+fi
+
         PGO_PROF_USE_FLAG="-fprofile-use -fprofile-correction"
         LLVM_PROF_MERGER="true"
         LLVM_PROF_FILE=""
