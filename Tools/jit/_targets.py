@@ -197,7 +197,8 @@ class _Target(typing.Generic[_S, _R]):
         generated_cases = PYTHON_EXECUTOR_CASES_C_H.read_text()
         cases_and_opnames = sorted(
             re.findall(
-                r"\n {8}(case (\w+): \{\n.*?\n {8}\})", generated_cases, flags=re.DOTALL
+                r"\n((?:#if [^\n]*\n)? {8}case (\w+): \{\n.*?\n {8}\}(?:\n#endif)?)",
+                generated_cases, flags=re.DOTALL,
             )
         )
         tasks = []
