@@ -1099,6 +1099,25 @@ class TestCopyTree(BaseTest, unittest.TestCase):
         rv = shutil.copytree(src_dir, dst_dir)
         self.assertEqual(['pol'], os.listdir(rv))
 
+    def test_copytree_xattr(self):
+        # gh-144220: copytree() must call copystat() to copy extended
+        # attributes before copying files.
+
+        src_dir = self.mkdtemp()
+        dst_dir = os.path.join(self.mkdtemp(), 'destination')
+        create_file((src_dir, 'test.txt'), '123')
+
+        def copystat(src, dst, *, follow_symlinks=True):
+            if os.path.isdir(dst) and os.listdir(dst):
+                raise Exception('Directory not empty')
+
+        with unittest.mock.patch('shutil.copystat', side_effect=copystat):
+            shutil.copytree(src_dir, dst_dir)
+        self.assertTrue(os.path.isfile(os.path.join(dst_dir, 'test.txt')))
+        actual = read_file((dst_dir, 'test.txt'))
+        self.assertEqual(actual, '123')
+
+
 class TestCopy(BaseTest, unittest.TestCase):
 
     ### shutil.copymode

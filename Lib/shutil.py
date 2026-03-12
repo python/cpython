@@ -553,6 +553,13 @@ def _copytree(entries, src, dst, symlinks, ignore, copy_function,
     errors = []
     use_srcentry = copy_function is copy2 or copy_function is copy
 
+    try:
+        copystat(src, dst)
+    except OSError as why:
+        # Copying file access times may fail on Windows
+        if getattr(why, 'winerror', None) is None:
+            errors.append((src, dst, str(why)))
+
     for srcentry in entries:
         if srcentry.name in ignored_names:
             continue
@@ -598,12 +605,7 @@ def _copytree(entries, src, dst, symlinks, ignore, copy_function,
             errors.extend(err.args[0])
         except OSError as why:
             errors.append((srcname, dstname, str(why)))
-    try:
-        copystat(src, dst)
-    except OSError as why:
-        # Copying file access times may fail on Windows
-        if getattr(why, 'winerror', None) is None:
-            errors.append((src, dst, str(why)))
+
     if errors:
         raise Error(errors)
     return dst

@@ -1,0 +1,3 @@
+:func:`shutil.copytree` now copies directory metadata before copying files. It
+prevents an error when setting an extended attribute (``bcachefs.casefold``) on
+an non-empty directory. Patch by Victor Stinner.
