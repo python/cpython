@@ -755,10 +755,7 @@ class TestBasicOps(unittest.TestCase):
         next(g)  # must pass with address sanitizer
 
     def test_grouper_next_reentrant_eq_does_not_crash(self):
-        # regression test for gh-145678: _grouper_next() did not protect
-        # gbo->currkey / igo->tgtkey before calling PyObject_RichCompareBool,
-        # so a reentrant __eq__ that advanced the parent groupby could free
-        # those objects while they were still being compared (use-after-free).
+        # regression test for gh-145678
         class Key:
             def __init__(self, val, do_advance):
                 self.val = val
