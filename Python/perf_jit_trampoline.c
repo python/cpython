@@ -740,6 +740,14 @@ static void perf_map_jit_write_entry(void *state, const void *code_addr,
                                        entry, filename);
 }
 
+void
+_PyPerfJit_WriteNamedCode(const void *code_addr, unsigned int code_size,
+                          const char *entry, const char *filename)
+{
+    perf_map_jit_write_entry_with_name(
+        NULL, code_addr, code_size, entry, filename);
+}
+
 // =============================================================================
 //                              CLEANUP AND FINALIZATION
 // =============================================================================

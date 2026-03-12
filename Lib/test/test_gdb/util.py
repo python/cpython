@@ -160,7 +160,8 @@ class DebuggerTests(unittest.TestCase):
                         breakpoint=BREAKPOINT_FN,
                         cmds_after_breakpoint=None,
                         import_site=False,
-                        ignore_stderr=False):
+                        ignore_stderr=False,
+                        **env_vars):
         '''
         Run 'python -c SOURCE' under gdb with a breakpoint.
 
@@ -239,7 +240,7 @@ class DebuggerTests(unittest.TestCase):
             args += [script]
 
         # Use "args" to invoke gdb, capturing stdout, stderr:
-        out, err = run_gdb(*args, PYTHONHASHSEED=PYTHONHASHSEED)
+        out, err = run_gdb(*args, PYTHONHASHSEED=PYTHONHASHSEED, **env_vars)
 
         if not ignore_stderr:
             for line in err.splitlines():

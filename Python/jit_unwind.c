@@ -10,6 +10,10 @@
 
 #ifdef PY_HAVE_PERF_TRAMPOLINE
 
+#if defined(__linux__)
+#  include <elf.h>
+#endif
+#include <stdio.h>
 #include <string.h>
 
 // =============================================================================
@@ -511,7 +515,11 @@ static void elf_init_ehframe(ELFObjectContext* ctx, int absolute_addr) {
         }
         else {
             /*
-             * In PC-relative mode, the FDE PC field points back to code_start.
+             * In perf jitdump mode (absolute_addr == 0), the FDE PC field is
+             * encoded PC-relative and points back to code_start. For the GDB
+             * JIT interface we reuse the same generator with absolute_addr == 1;
+             * the EH frame is then carried in a .eh_frame section of an
+             * in-memory ELF (no EhFrameHeader).
              */
             ctx->fde_p = p;                   // Remember where PC offset field is located for later calculation
             DWRF_U32(0);                      // Placeholder for PC-relative offset (calculated at end of elf_init_ehframe)
@@ -624,6 +632,268 @@ static void elf_init_ehframe(ELFObjectContext* ctx, int absolute_addr) {
         int32_t fde_offset_in_frame = (int32_t)(ctx->fde_p - framep);
         *(int32_t *)ctx->fde_p = -(rounded_code_size + fde_offset_in_frame);
     }
+}
+
+#if defined(__linux__) && defined(__ELF__)
+enum {
+    JIT_NOACTION = 0,
+    JIT_REGISTER_FN = 1,
+    JIT_UNREGISTER_FN = 2,
+};
+
+struct jit_code_entry {
+    struct jit_code_entry *next;
+    struct jit_code_entry *prev;
+    const char *symfile_addr;
+    uint64_t symfile_size;
+};
+
+struct jit_descriptor {
+    uint32_t version;
+    uint32_t action_flag;
+    struct jit_code_entry *relevant_entry;
+    struct jit_code_entry *first_entry;
+};
+
+Py_EXPORTED_SYMBOL volatile struct jit_descriptor __jit_debug_descriptor = {
+    1, JIT_NOACTION, NULL, NULL
+};
+
+PyAPI_FUNC(void) __attribute__((noinline)) __jit_debug_register_code(void)
+{
+    /* Keep this call visible to debuggers and not optimized away. */
+    (void)__jit_debug_descriptor.action_flag;
+#if defined(__GNUC__) || defined(__clang__)
+    __asm__ __volatile__("" ::: "memory");
+#endif
+}
+
+static uint16_t
+gdb_jit_machine_id(void)
+{
+    /* Map the current target to ELF e_machine; return 0 to skip registration. */
+#if defined(__x86_64__) || defined(_M_X64)
+    return EM_X86_64;
+#elif defined(__aarch64__) && !defined(__ILP32__)
+    return EM_AARCH64;
+#else
+    return 0;
+#endif
+}
+
+static void
+gdb_jit_register_code(
+    const void *code_addr,
+    unsigned int code_size,
+    const char *symname,
+    const uint8_t *eh_frame,
+    size_t eh_frame_size
+)
+{
+    /*
+     * Build a minimal in-memory ELF for GDB's JIT interface and link it into
+     * __jit_debug_descriptor so debuggers can resolve JIT code.
+     */
+    if (code_addr == NULL || code_size == 0 || symname == NULL) {
+        return;
+    }
+
+    const uint16_t machine = gdb_jit_machine_id();
+    if (machine == 0) {
+        return;
+    }
+
+    enum {
+        SH_NULL = 0,
+        SH_TEXT,
+        SH_EH_FRAME,
+        SH_SHSTRTAB,
+        SH_STRTAB,
+        SH_SYMTAB,
+        SH_NUM,
+    };
+    static const char shstrtab[] =
+        "\0.text\0.eh_frame\0.shstrtab\0.strtab\0.symtab";
+    _Static_assert(sizeof(shstrtab) ==
+        1 + sizeof(".text") + sizeof(".eh_frame") +
+            sizeof(".shstrtab") + sizeof(".strtab") + sizeof(".symtab"),
+        "shstrtab size mismatch");
+    const size_t shstrtab_size = sizeof(shstrtab);
+    const size_t sh_text = 1;
+    const size_t sh_eh_frame = sh_text + sizeof(".text");
+    const size_t sh_shstrtab = sh_eh_frame + sizeof(".eh_frame");
+    const size_t sh_strtab = sh_shstrtab + sizeof(".shstrtab");
+    const size_t sh_symtab = sh_strtab + sizeof(".strtab");
+    const size_t text_size = code_size;
+    const size_t text_padded = _Py_SIZE_ROUND_UP(text_size, 8);
+    const size_t strtab_size = 1 + strlen(symname) + 1;
+    const size_t symtab_size = 3 * sizeof(Elf64_Sym);
+
+    size_t offset = sizeof(Elf64_Ehdr);
+    offset = _Py_SIZE_ROUND_UP(offset, 16);
+    const size_t text_off = offset;
+    const size_t eh_off = text_off + text_padded;
+    offset = eh_off + eh_frame_size;
+    const size_t shstr_off = offset;
+    offset += shstrtab_size;
+    const size_t str_off = offset;
+    offset += strtab_size;
+    offset = _Py_SIZE_ROUND_UP(offset, sizeof(Elf64_Sym));
+    const size_t sym_off = offset;
+    offset += symtab_size;
+    offset = _Py_SIZE_ROUND_UP(offset, sizeof(Elf64_Shdr));
+    const size_t sh_off = offset;
+
+    const size_t shnum = SH_NUM;
+    const size_t total_size = sh_off + shnum * sizeof(Elf64_Shdr);
+    uint8_t *buf = (uint8_t *)PyMem_RawMalloc(total_size);
+    if (buf == NULL) {
+        return;
+    }
+    memset(buf, 0, total_size);
+
+    Elf64_Ehdr *ehdr = (Elf64_Ehdr *)buf;
+    memcpy(ehdr->e_ident, ELFMAG, SELFMAG);
+    ehdr->e_ident[EI_CLASS] = ELFCLASS64;
+    ehdr->e_ident[EI_DATA] = ELFDATA2LSB;
+    ehdr->e_ident[EI_VERSION] = EV_CURRENT;
+    ehdr->e_ident[EI_OSABI] = ELFOSABI_NONE;
+    ehdr->e_type = ET_DYN;
+    ehdr->e_machine = machine;
+    ehdr->e_version = EV_CURRENT;
+    ehdr->e_entry = 0;
+    ehdr->e_phoff = 0;
+    ehdr->e_shoff = sh_off;
+    ehdr->e_ehsize = sizeof(Elf64_Ehdr);
+    ehdr->e_shentsize = sizeof(Elf64_Shdr);
+    ehdr->e_shnum = shnum;
+    ehdr->e_shstrndx = SH_SHSTRTAB;
+
+    memcpy(buf + text_off, code_addr, text_size);
+    memcpy(buf + eh_off, eh_frame, eh_frame_size);
+
+    char *shstr = (char *)(buf + shstr_off);
+    memcpy(shstr, shstrtab, shstrtab_size);
+
+    char *strtab = (char *)(buf + str_off);
+    strtab[0] = '\0';
+    memcpy(strtab + 1, symname, strlen(symname));
+    strtab[strtab_size - 1] = '\0';
+
+    Elf64_Sym *syms = (Elf64_Sym *)(buf + sym_off);
+    memset(syms, 0, symtab_size);
+    /* Section symbol for .text (local) */
+    syms[1].st_info = ELF64_ST_INFO(STB_LOCAL, STT_SECTION);
+    syms[1].st_shndx = 1;
+    /* Function symbol */
+    syms[2].st_name = 1;
+    syms[2].st_info = ELF64_ST_INFO(STB_GLOBAL, STT_FUNC);
+    syms[2].st_other = STV_DEFAULT;
+    syms[2].st_shndx = 1;
+    /* For ET_DYN/ET_EXEC, st_value is the absolute virtual address. */
+    syms[2].st_value = (Elf64_Addr)(uintptr_t)code_addr;
+    syms[2].st_size = code_size;
+
+    Elf64_Shdr *shdrs = (Elf64_Shdr *)(buf + sh_off);
+    memset(shdrs, 0, shnum * sizeof(Elf64_Shdr));
+
+    shdrs[SH_TEXT].sh_name = sh_text;
+    shdrs[SH_TEXT].sh_type = SHT_PROGBITS;
+    shdrs[SH_TEXT].sh_flags = SHF_ALLOC | SHF_EXECINSTR;
+    shdrs[SH_TEXT].sh_addr = (Elf64_Addr)(uintptr_t)code_addr;
+    shdrs[SH_TEXT].sh_offset = text_off;
+    shdrs[SH_TEXT].sh_size = text_size;
+    shdrs[SH_TEXT].sh_addralign = 16;
+
+    shdrs[SH_EH_FRAME].sh_name = sh_eh_frame;
+    shdrs[SH_EH_FRAME].sh_type = SHT_PROGBITS;
+    shdrs[SH_EH_FRAME].sh_flags = SHF_ALLOC;
+    shdrs[SH_EH_FRAME].sh_addr =
+        (Elf64_Addr)((uintptr_t)code_addr + text_padded);
+    shdrs[SH_EH_FRAME].sh_offset = eh_off;
+    shdrs[SH_EH_FRAME].sh_size = eh_frame_size;
+    shdrs[SH_EH_FRAME].sh_addralign = 8;
+
+    shdrs[SH_SHSTRTAB].sh_name = sh_shstrtab;
+    shdrs[SH_SHSTRTAB].sh_type = SHT_STRTAB;
+    shdrs[SH_SHSTRTAB].sh_offset = shstr_off;
+    shdrs[SH_SHSTRTAB].sh_size = shstrtab_size;
+    shdrs[SH_SHSTRTAB].sh_addralign = 1;
+
+    shdrs[SH_STRTAB].sh_name = sh_strtab;
+    shdrs[SH_STRTAB].sh_type = SHT_STRTAB;
+    shdrs[SH_STRTAB].sh_offset = str_off;
+    shdrs[SH_STRTAB].sh_size = strtab_size;
+    shdrs[SH_STRTAB].sh_addralign = 1;
+
+    shdrs[SH_SYMTAB].sh_name = sh_symtab;
+    shdrs[SH_SYMTAB].sh_type = SHT_SYMTAB;
+    shdrs[SH_SYMTAB].sh_offset = sym_off;
+    shdrs[SH_SYMTAB].sh_size = symtab_size;
+    shdrs[SH_SYMTAB].sh_link = SH_STRTAB;
+    shdrs[SH_SYMTAB].sh_info = 2;
+    shdrs[SH_SYMTAB].sh_addralign = 8;
+    shdrs[SH_SYMTAB].sh_entsize = sizeof(Elf64_Sym);
+
+    struct jit_code_entry *entry = PyMem_RawMalloc(sizeof(*entry));
+    if (entry == NULL) {
+        PyMem_RawFree(buf);
+        return;
+    }
+    entry->symfile_addr = (const char *)buf;
+    entry->symfile_size = total_size;
+    entry->prev = NULL;
+    entry->next = __jit_debug_descriptor.first_entry;
+    if (entry->next != NULL) {
+        entry->next->prev = entry;
+    }
+    __jit_debug_descriptor.first_entry = entry;
+    __jit_debug_descriptor.relevant_entry = entry;
+    __jit_debug_descriptor.action_flag = JIT_REGISTER_FN;
+    __jit_debug_register_code();
+    __jit_debug_descriptor.action_flag = JIT_NOACTION;
+
+}
+#endif  // __linux__ && __ELF__
+
+void
+_PyJitUnwind_GdbRegisterCode(const void *code_addr,
+                           unsigned int code_size,
+                           const char *entry,
+                           const char *filename)
+{
+#if defined(__linux__) && defined(__ELF__)
+    /* GDB expects a stable symbol name and absolute addresses in .eh_frame. */
+    if (entry == NULL) {
+        entry = "";
+    }
+    if (filename == NULL) {
+        filename = "";
+    }
+    size_t name_size = snprintf(NULL, 0, "py::%s:%s", entry, filename) + 1;
+    char *name = (char *)PyMem_RawMalloc(name_size);
+    if (name == NULL) {
+        return;
+    }
+    snprintf(name, name_size, "py::%s:%s", entry, filename);
+
+    uint8_t buffer[1024];
+    size_t eh_frame_size = _PyJitUnwind_BuildEhFrame(
+        buffer, sizeof(buffer), code_addr, code_size, 1);
+    if (eh_frame_size == 0) {
+        PyMem_RawFree(name);
+        return;
+    }
+
+    gdb_jit_register_code(code_addr, code_size, name,
+                          buffer, eh_frame_size);
+    PyMem_RawFree(name);
+#else
+    (void)code_addr;
+    (void)code_size;
+    (void)entry;
+    (void)filename;
+#endif
 }
 
 #endif  // PY_HAVE_PERF_TRAMPOLINE

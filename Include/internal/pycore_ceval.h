@@ -108,6 +108,10 @@ extern PyStatus _PyPerfTrampoline_AfterFork_Child(void);
 #ifdef PY_HAVE_PERF_TRAMPOLINE
 extern _PyPerf_Callbacks _Py_perfmap_callbacks;
 extern _PyPerf_Callbacks _Py_perfmap_jit_callbacks;
+extern void _PyPerfJit_WriteNamedCode(const void *code_addr,
+                                      unsigned int code_size,
+                                      const char *entry,
+                                      const char *filename);
 #endif
 
 static inline PyObject*
