@@ -40,6 +40,7 @@
 
 #define _PyExecutorObject_CAST(op)  ((_PyExecutorObject *)(op))
 
+#ifndef Py_GIL_DISABLED
 static bool
 has_space_for_executor(PyCodeObject *code, _Py_CODEUNIT *instr)
 {
@@ -110,6 +111,7 @@ insert_executor(PyCodeObject *code, _Py_CODEUNIT *instr, int index, _PyExecutorO
     instr->op.code = ENTER_EXECUTOR;
     instr->op.arg = index;
 }
+#endif // Py_GIL_DISABLED
 
 static _PyExecutorObject *
 make_executor_from_uops(_PyThreadStateImpl *tstate, _PyUOpInstruction *buffer, int length, const _PyBloomFilter *dependencies);
@@ -128,7 +130,6 @@ _PyOptimizer_Optimize(
     _PyInterpreterFrame *frame, PyThreadState *tstate)
 {
     _PyThreadStateImpl *_tstate = (_PyThreadStateImpl *)tstate;
-    int chain_depth = _tstate->jit_tracer_state->initial_state.chain_depth;
     PyInterpreterState *interp = _PyInterpreterState_GET();
     if (!interp->jit) {
         // gh-140936: It is possible that interp->jit will become false during
@@ -152,6 +153,7 @@ _PyOptimizer_Optimize(
     // make progress in order to avoid infinite loops or excessively-long
     // side-exit chains. We can only insert the executor into the bytecode if
     // this is true, since a deopt won't infinitely re-enter the executor:
+    int chain_depth = _tstate->jit_tracer_state->initial_state.chain_depth;
     chain_depth %= MAX_CHAIN_DEPTH;
     bool progress_needed = chain_depth == 0;
     PyCodeObject *code = (PyCodeObject *)_tstate->jit_tracer_state->initial_state.code;
@@ -784,8 +786,8 @@ _PyJit_translate_single_bytecode_to_trace(
             _Py_CODEUNIT *computed_next_instr = computed_next_instr_without_modifiers + (computed_next_instr_without_modifiers->op.code == NOT_TAKEN);
             _Py_CODEUNIT *computed_jump_instr = computed_next_instr_without_modifiers + oparg;
             assert(next_instr == computed_next_instr || next_instr == computed_jump_instr);
-            int jump_happened = computed_jump_instr == next_instr;
-            assert(jump_happened == (target_instr[1].cache & 1));
+            int jump_happened = target_instr[1].cache & 1;
+            assert(jump_happened ? (next_instr == computed_jump_instr) : (next_instr == computed_next_instr));
             uint32_t uopcode = BRANCH_TO_GUARD[opcode - POP_JUMP_IF_FALSE][jump_happened];
             ADD_TO_TRACE(uopcode, 0, 0, INSTR_IP(jump_happened ? computed_next_instr : computed_jump_instr, old_code));
             break;
@@ -993,7 +995,7 @@ _PyJit_TryInitializeTracing(
         return 0;
     }
     PyObject *func = PyStackRef_AsPyObjectBorrow(frame->f_funcobj);
-    if (func == NULL) {
+    if (func == NULL || !PyFunction_Check(func)) {
         return 0;
     }
     PyCodeObject *code = _PyFrame_GetCode(frame);
@@ -1074,12 +1076,19 @@ _PyJit_FinalizeTracing(PyThreadState *tstate, int err)
             exit->temperature = initial_temperature_backoff_counter(&tstate->interp->opt_config);
         }
     }
+    // Clear all recorded values
+    _PyJitUopBuffer *buffer = &tracer->code_buffer;
+    for (_PyUOpInstruction *inst = buffer->start; inst < buffer->next; inst++) {
+        if (_PyUop_Flags[inst->opcode] & HAS_RECORDS_VALUE_FLAG) {
+            Py_XDECREF((PyObject *)(uintptr_t)inst->operand0);
+        }
+    }
     Py_CLEAR(tracer->initial_state.code);
     Py_CLEAR(tracer->initial_state.func);
     Py_CLEAR(tracer->initial_state.executor);
     Py_CLEAR(tracer->prev_state.instr_code);
     Py_CLEAR(tracer->prev_state.recorded_value);
-    uop_buffer_init(&tracer->code_buffer, &tracer->uop_array[0], UOP_MAX_TRACE_LENGTH);
+    uop_buffer_init(buffer, &tracer->uop_array[0], UOP_MAX_TRACE_LENGTH);
     tracer->is_tracing = false;
 }
 
@@ -1519,6 +1528,11 @@ uop_optimize(
         }
         assert(_PyOpcode_uop_name[buffer[pc].opcode]);
     }
+    // We've cleaned up the references in the buffer, so discard the code buffer
+    // to avoid doing it again during tracer cleanup
+    _PyJitUopBuffer *code_buffer = &_tstate->jit_tracer_state->code_buffer;
+    code_buffer->next = code_buffer->start;
+
     OPT_HIST(effective_trace_length(buffer, length), optimized_trace_length_hist);
     _PyUOpInstruction *output = &_tstate->jit_tracer_state->uop_array[0];
     length = stack_allocate(buffer, output, length);

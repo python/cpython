@@ -17,6 +17,7 @@
 #include "pycore_instruction_sequence.h" // _PyInstructionSequence_Type
 #include "pycore_interpframe.h"   // _PyFrame_Stackbase()
 #include "pycore_interpolation.h" // _PyInterpolation_Type
+#include "pycore_lazyimportobject.h" // PyLazyImport_Type
 #include "pycore_list.h"          // _PyList_DebugMallocStats()
 #include "pycore_long.h"          // _PyLong_GetZero()
 #include "pycore_memoryobject.h"  // _PyManagedBuffer_Type
@@ -1294,6 +1295,7 @@ _PyObject_SetAttributeErrorContext(PyObject* v, PyObject* name)
     // Augment the exception with the name and object
     if (PyObject_SetAttr(exc, &_Py_ID(name), name) ||
         PyObject_SetAttr(exc, &_Py_ID(obj), v)) {
+        Py_DECREF(exc);
         return 1;
     }
 restore:
@@ -2540,6 +2542,7 @@ static PyTypeObject* static_types[] = {
     &PyGen_Type,
     &PyGetSetDescr_Type,
     &PyInstanceMethod_Type,
+    &PyLazyImport_Type,
     &PyListIter_Type,
     &PyListRevIter_Type,
     &PyList_Type,
@@ -3075,9 +3078,9 @@ Py_ReprEnter(PyObject *obj)
         list = PyList_New(0);
         if (list == NULL)
             return -1;
-        if (PyDict_SetItem(dict, &_Py_ID(Py_Repr), list) < 0)
+        if (_PyDict_SetItem_Take2((PyDictObject *)dict, &_Py_ID(Py_Repr), list) < 0) {
             return -1;
-        Py_DECREF(list);
+        }
     }
     i = PyList_GET_SIZE(list);
     while (--i >= 0) {

@@ -285,6 +285,12 @@ work.
 Passing ``--dry-run`` will generate output and logs, but will not modify any
 installs.
 
+Passing ``--refresh`` will update all registrations for installed runtimes. This
+will recreate Start menu shortcuts, registry keys, and global aliases (such as
+``python3.14.exe`` or for any installed scripts). These are automatically
+refreshed on installation of any runtime, but may need to be manually refreshed
+after installing packages.
+
 In addition to the above options, the ``--target`` option will extract the
 runtime to the specified directory instead of doing a normal install.
 This is useful for embedding runtimes into larger applications.
@@ -467,6 +473,14 @@ customization.
      - ``PYTHON_MANAGER_SOURCE_URL``
      - Override the index feed to obtain new installs from.
 
+   * - ``install.enable_entrypoints``
+     - (none)
+     - True to generate global commands for installed packages (such as
+       ``pip.exe``). These are defined by the packages themselves.
+       If set to false, only the Python interpreter has global commands created.
+       By default, true. You should run ``py install --refresh`` after changing
+       this setting.
+
    * - ``list.format``
      - ``PYTHON_MANAGER_LIST_FORMAT``
      - Specify the default format used by the ``py list`` command.
@@ -480,8 +494,8 @@ customization.
 
    * - ``global_dir``
      - (none)
-     - Specify the directory where global commands (such as ``python3.14.exe``)
-       are stored.
+     - Specify the directory where global commands (such as ``python3.14.exe``
+       and ``pip.exe``) are stored.
        This directory should be added to your :envvar:`PATH` to make the
        commands available from your terminal.
 
@@ -490,6 +504,7 @@ customization.
      - Specify the directory where downloaded files are stored.
        This directory is a temporary cache, and can be cleaned up from time to
        time.
+
 
 Dotted names should be nested inside JSON objects, for example, ``list.format``
 would be specified as ``{"list": {"format": "table"}}``.
@@ -737,6 +752,14 @@ directory containing the configuration file that specified them.
        (e.g. ``"pep514,start"``).
        Disabled shortcuts are not reactivated by ``enable_shortcut_kinds``.
 
+   * - ``install.hard_link_entrypoints``
+     - True to use hard links for global shortcuts to save disk space. If false,
+       each shortcut executable is copied instead. After changing this setting,
+       you must run ``py install --refresh --force`` to update existing
+       commands.
+       By default, true. Disabling this may be necessary for troubleshooting or
+       systems that have issues with file links.
+
    * - ``pep514_root``
      - Registry location to read and write PEP 514 entries into.
        By default, :file:`HKEY_CURRENT_USER\\Software\\Python`.
@@ -876,12 +899,22 @@ default).
 
    * -
      - The package may be available but missing the generated executable.
-       We recommend using the ``python -m pip`` command instead,
-       or alternatively the ``python -m pip install --force pip`` command
-       will recreate the executables and show you the path to
-       add to :envvar:`PATH`.
-       These scripts are separated for each runtime, and so you may need to
-       add multiple paths.
+       We recommend using the ``python -m pip`` command instead.
+       Running ``py install --refresh`` and ensuring that the global shortcuts
+       directory is on :envvar:`PATH` (it will be shown in the command output if
+       it is not) should make commands such as ``pip`` (and other installed
+       packages) available.
+
+   * - I installed a package with ``pip`` but its command is not found.
+     - Have you activated a virtual environment?
+       Run the ``.venv\Scripts\activate`` script in your terminal to activate.
+
+   * -
+     - New packages do not automatically have global shortcuts created by the
+       Python install manager. Similarly, uninstalled packages do not have their
+       shortcuts removed.
+       Run ``py install --refresh`` to update the global shortcuts for newly
+       installed packages.
 
    * - Typing ``script-name.py`` in the terminal opens in a new window.
      - This is a known limitation of the operating system. Either specify ``py``

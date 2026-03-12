@@ -817,4 +817,4 @@ Object Protocol
    Returns 1 if the object was made immortal and returns 0 if it was not.
    This function cannot fail.
 
-   .. versionadded:: next
+   .. versionadded:: 3.15

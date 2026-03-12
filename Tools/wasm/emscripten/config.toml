@@ -1,0 +1,14 @@
+# Any data that can vary between Python versions is to be kept in this file.
+# This allows for blanket copying of the Emscripten build code between supported
+# Python versions.
+emscripten-version = "4.0.12"
+
+[libffi]
+url = "https://github.com/libffi/libffi/releases/download/v{version}/libffi-{version}.tar.gz"
+version = "3.4.6"
+shasum = "b0dea9df23c863a7a50e825440f3ebffabd65df1497108e5d437747843895a4e"
+
+[mpdec]
+url = "https://www.bytereef.org/software/mpdecimal/releases/mpdecimal-{version}.tar.gz"
+version = "4.0.1"
+shasum = "96d33abb4bb0070c7be0fed4246cd38416188325f820468214471938545b1ac8"
