@@ -1,3 +1,2 @@
-Fix a use-after-free crash in :func:`itertools.groupby` when a user-defined
-``__eq__`` advanced the parent iterator while the iterator of groups was advanced.
-The fix mirrors the protection added in :gh:`143543` for ``groupby_next()``.
+Fix a use-after-free crash in :func:`itertools.groupby` when the
+parent iterator is mutated while the iterator of groups was advanced.
