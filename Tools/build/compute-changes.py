@@ -98,6 +98,9 @@ LIBRARY_FUZZER_PATHS = frozenset({
     Path("Modules/pyexpat.c"),
     # zipfile
     Path("Lib/zipfile/"),
+    # zoneinfo
+    Path("Lib/zoneinfo/"),
+    Path("Modules/_zoneinfo.c"),
 })
 
 
