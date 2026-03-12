@@ -634,6 +634,11 @@ class Counter(dict):
         if n is None:
             return sorted(self.items(), key=_itemgetter(1), reverse=True)
 
+        if n == 1:
+            if not self.items():
+                return []
+            return [max(self.items(), key=_itemgetter(1))]        
+
         return _nlargest(n, self.items(), key=_itemgetter(1))
 
     def elements(self):

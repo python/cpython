@@ -2134,6 +2134,67 @@ class TestCounter(unittest.TestCase):
         self.assertEqual(c['d'], 1)
         self.assertEqual(c.setdefault('e', 5), 5)
         self.assertEqual(c['e'], 5)
+    
+    def test_most_common_n_equals_one(self):
+        # Test n == 1 returns a list with one tuple
+        c1 = Counter('abcaba')
+        result = c1.most_common(1)
+        self.assertEqual(result, [('a', 3)])
+        self.assertIsInstance(result, list)
+        self.assertEqual(len(result), 1)
+        self.assertIsInstance(result[0], tuple)
+    
+        # Test n == 1 returns same format as other n values
+        self.assertEqual(c1.most_common(1), c1.most_common(2)[:1])
+    
+        # Test with a counter where all items have same count
+        c2 = Counter('abc')
+        result = c2.most_common(1)
+        self.assertEqual(len(result), 1)
+        self.assertIn(result[0][1], [1])  # count should be 1
+    
+        # Test n == 1 with single element
+        c3 = Counter('a')
+        self.assertEqual(c3.most_common(1), [('a', 1)])
+    
+        # Test n == 1 with empty counter
+        c4 = Counter()
+        self.assertEqual(c4.most_common(1), [])
+    
+        # Test that n == 1 and n == 2 are consistent at index 0
+        c5 = Counter('the quick brown fox')
+        one = c5.most_common(1)
+        two = c5.most_common(2)
+        self.assertEqual(one[0], two[0])
+
+        # Test n == 1 with negative counts
+        c6 = Counter({'a': -3, 'b': -1, 'c': 5})
+        self.assertEqual(c6.most_common(1), [('c', 5)])
+
+        # Test n == 1 with zero counts mixed in
+        c7 = Counter({'x': 0, 'y': 0, 'z': 1})
+        self.assertEqual(c7.most_common(1), [('z', 1)])
+
+        # Test n == 1 consistency with most_common(None)[0]
+        c8 = Counter('abracadabra')
+        self.assertEqual(c8.most_common(1)[0], c8.most_common()[0])
+
+        # Test n == 1 with counter built from keyword args
+        c9 = Counter(cat=10, dog=3, bird=7)
+        self.assertEqual(c9.most_common(1), [('cat', 10)])
+
+        # Test n == 1 with counter built from mapping
+        c10 = Counter({'apple': 50, 'banana': 20, 'cherry': 30})
+        self.assertEqual(c10.most_common(1), [('apple', 50)])
+
+        # Test n == 1 with large number of unique keys
+        c11 = Counter({i: i for i in range(1000)})
+        self.assertEqual(c11.most_common(1), [(999, 999)])
+
+        # Test n == 1 with a Counter subclass
+        c12 = CounterSubclassWithSetItem('aabbbc')
+        result = c12.most_common(1)
+        self.assertEqual(result, [('b', 3)])
 
     def test_update_reentrant_add_clears_counter(self):
         c = Counter()
