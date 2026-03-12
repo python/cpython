@@ -5708,8 +5708,6 @@ PyObject_GetItemData(PyObject *obj)
 static int
 find_name_in_mro(PyTypeObject *type, PyObject *name, _PyStackRef *out)
 {
-    ASSERT_TYPE_LOCK_HELD();
-
     Py_hash_t hash = _PyObject_HashFast(name);
     if (hash == -1) {
         PyErr_Clear();
