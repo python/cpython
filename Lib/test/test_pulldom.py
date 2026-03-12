@@ -128,8 +128,6 @@ class PullDOMTestCase(unittest.TestCase):
         next(items) # Skip character data
         evt, node = next(items)
         self.assertEqual(node.tagName, "html")
-        # Consume any remaining events (e.g. END_ELEMENT, END_DOCUMENT)
-        # that are now correctly delivered after the fix for parser.close()
         remaining = list(items)
         self.assertTrue(
             any(evt == pulldom.END_DOCUMENT for evt, _ in remaining),
