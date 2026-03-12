@@ -962,6 +962,12 @@ class TestPlistlib(unittest.TestCase):
             expected = dt.astimezone(datetime.UTC).replace(tzinfo=None)
             self.assertEqual(parsed, expected)
 
+    def test_skipkeys_with_mixed_keys(self):
+        d = {1: "a", "z": "b", "a": "c"}
+        data = plistlib.dumps(d, skipkeys=True)
+        result = plistlib.loads(data)
+        self.assertEqual(result, {"a": "c", "z": "b"})
+
 
 class TestBinaryPlistlib(unittest.TestCase):
 

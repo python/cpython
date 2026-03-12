@@ -1,0 +1,2 @@
+Fix plistlib.dumps() raising TypeError when skipkeys=True and a dictionary
+contains mixed key types.
