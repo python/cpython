@@ -129,6 +129,8 @@ const uint32_t _PyUop_Flags[MAX_UOP_ID+1] = {
     [_GUARD_NOS_DICT] = HAS_EXIT_FLAG,
     [_GUARD_NOS_ANY_DICT] = HAS_EXIT_FLAG,
     [_GUARD_TOS_ANY_DICT] = HAS_EXIT_FLAG,
+    [_GUARD_TOS_DICT] = HAS_EXIT_FLAG,
+    [_GUARD_TOS_FROZENDICT] = HAS_EXIT_FLAG,
     [_BINARY_OP_SUBSCR_DICT] = HAS_ERROR_FLAG | HAS_ERROR_NO_POP_FLAG | HAS_ESCAPES_FLAG,
     [_BINARY_OP_SUBSCR_CHECK_FUNC] = HAS_DEOPT_FLAG,
     [_BINARY_OP_SUBSCR_INIT_CALL] = 0,
@@ -140,6 +142,7 @@ const uint32_t _PyUop_Flags[MAX_UOP_ID+1] = {
     [_DELETE_SUBSCR] = HAS_ERROR_FLAG | HAS_ESCAPES_FLAG,
     [_CALL_INTRINSIC_1] = HAS_ARG_FLAG | HAS_ERROR_FLAG | HAS_ESCAPES_FLAG,
     [_CALL_INTRINSIC_2] = HAS_ARG_FLAG | HAS_ERROR_FLAG | HAS_ESCAPES_FLAG,
+    [_MAKE_HEAP_SAFE] = 0,
     [_RETURN_VALUE] = HAS_ESCAPES_FLAG | HAS_NEEDS_GUARD_IP_FLAG,
     [_GET_AITER] = HAS_ERROR_FLAG | HAS_ESCAPES_FLAG,
     [_GET_ANEXT] = HAS_ERROR_FLAG | HAS_ERROR_NO_POP_FLAG | HAS_ESCAPES_FLAG,
@@ -211,6 +214,8 @@ const uint32_t _PyUop_Flags[MAX_UOP_ID+1] = {
     [_IS_OP] = HAS_ARG_FLAG,
     [_CONTAINS_OP] = HAS_ARG_FLAG | HAS_ERROR_FLAG | HAS_ERROR_NO_POP_FLAG | HAS_ESCAPES_FLAG,
     [_GUARD_TOS_ANY_SET] = HAS_DEOPT_FLAG,
+    [_GUARD_TOS_SET] = HAS_DEOPT_FLAG,
+    [_GUARD_TOS_FROZENSET] = HAS_DEOPT_FLAG,
     [_CONTAINS_OP_SET] = HAS_ARG_FLAG | HAS_ERROR_FLAG | HAS_ERROR_NO_POP_FLAG | HAS_ESCAPES_FLAG,
     [_CONTAINS_OP_DICT] = HAS_ARG_FLAG | HAS_ERROR_FLAG | HAS_ERROR_NO_POP_FLAG | HAS_ESCAPES_FLAG,
     [_CHECK_EG_MATCH] = HAS_ERROR_FLAG | HAS_ESCAPES_FLAG,
@@ -379,7 +384,7 @@ const uint32_t _PyUop_Flags[MAX_UOP_ID+1] = {
     [_RECORD_TOS] = HAS_RECORDS_VALUE_FLAG,
     [_RECORD_TOS_TYPE] = HAS_RECORDS_VALUE_FLAG,
     [_RECORD_NOS] = HAS_RECORDS_VALUE_FLAG,
-    [_RECORD_NOS_GEN_FUNC] = HAS_ESCAPES_FLAG | HAS_RECORDS_VALUE_FLAG,
+    [_RECORD_NOS_GEN_FUNC] = HAS_RECORDS_VALUE_FLAG,
     [_RECORD_4OS] = HAS_RECORDS_VALUE_FLAG,
     [_RECORD_CALLABLE] = HAS_ARG_FLAG | HAS_RECORDS_VALUE_FLAG,
     [_RECORD_BOUND_METHOD] = HAS_ARG_FLAG | HAS_RECORDS_VALUE_FLAG,
@@ -1245,6 +1250,24 @@ const _PyUopCachingInfo _PyUop_Caching[MAX_UOP_ID+1] = {
             { 3, 3, _GUARD_TOS_ANY_DICT_r33 },
         },
     },
+    [_GUARD_TOS_DICT] = {
+        .best = { 0, 1, 2, 3 },
+        .entries = {
+            { 1, 0, _GUARD_TOS_DICT_r01 },
+            { 1, 1, _GUARD_TOS_DICT_r11 },
+            { 2, 2, _GUARD_TOS_DICT_r22 },
+            { 3, 3, _GUARD_TOS_DICT_r33 },
+        },
+    },
+    [_GUARD_TOS_FROZENDICT] = {
+        .best = { 0, 1, 2, 3 },
+        .entries = {
+            { 1, 0, _GUARD_TOS_FROZENDICT_r01 },
+            { 1, 1, _GUARD_TOS_FROZENDICT_r11 },
+            { 2, 2, _GUARD_TOS_FROZENDICT_r22 },
+            { 3, 3, _GUARD_TOS_FROZENDICT_r33 },
+        },
+    },
     [_BINARY_OP_SUBSCR_DICT] = {
         .best = { 2, 2, 2, 2 },
         .entries = {
@@ -1342,6 +1365,15 @@ const _PyUopCachingInfo _PyUop_Caching[MAX_UOP_ID+1] = {
             { -1, -1, -1 },
             { 1, 2, _CALL_INTRINSIC_2_r21 },
             { -1, -1, -1 },
+        },
+    },
+    [_MAKE_HEAP_SAFE] = {
+        .best = { 0, 1, 2, 3 },
+        .entries = {
+            { 1, 0, _MAKE_HEAP_SAFE_r01 },
+            { 1, 1, _MAKE_HEAP_SAFE_r11 },
+            { 2, 2, _MAKE_HEAP_SAFE_r22 },
+            { 3, 3, _MAKE_HEAP_SAFE_r33 },
         },
     },
     [_RETURN_VALUE] = {
@@ -1981,6 +2013,24 @@ const _PyUopCachingInfo _PyUop_Caching[MAX_UOP_ID+1] = {
             { 1, 1, _GUARD_TOS_ANY_SET_r11 },
             { 2, 2, _GUARD_TOS_ANY_SET_r22 },
             { 3, 3, _GUARD_TOS_ANY_SET_r33 },
+        },
+    },
+    [_GUARD_TOS_SET] = {
+        .best = { 0, 1, 2, 3 },
+        .entries = {
+            { 1, 0, _GUARD_TOS_SET_r01 },
+            { 1, 1, _GUARD_TOS_SET_r11 },
+            { 2, 2, _GUARD_TOS_SET_r22 },
+            { 3, 3, _GUARD_TOS_SET_r33 },
+        },
+    },
+    [_GUARD_TOS_FROZENSET] = {
+        .best = { 0, 1, 2, 3 },
+        .entries = {
+            { 1, 0, _GUARD_TOS_FROZENSET_r01 },
+            { 1, 1, _GUARD_TOS_FROZENSET_r11 },
+            { 2, 2, _GUARD_TOS_FROZENSET_r22 },
+            { 3, 3, _GUARD_TOS_FROZENSET_r33 },
         },
     },
     [_CONTAINS_OP_SET] = {
@@ -3742,6 +3792,14 @@ const uint16_t _PyUop_Uncached[MAX_UOP_REGS_ID+1] = {
     [_GUARD_TOS_ANY_DICT_r11] = _GUARD_TOS_ANY_DICT,
     [_GUARD_TOS_ANY_DICT_r22] = _GUARD_TOS_ANY_DICT,
     [_GUARD_TOS_ANY_DICT_r33] = _GUARD_TOS_ANY_DICT,
+    [_GUARD_TOS_DICT_r01] = _GUARD_TOS_DICT,
+    [_GUARD_TOS_DICT_r11] = _GUARD_TOS_DICT,
+    [_GUARD_TOS_DICT_r22] = _GUARD_TOS_DICT,
+    [_GUARD_TOS_DICT_r33] = _GUARD_TOS_DICT,
+    [_GUARD_TOS_FROZENDICT_r01] = _GUARD_TOS_FROZENDICT,
+    [_GUARD_TOS_FROZENDICT_r11] = _GUARD_TOS_FROZENDICT,
+    [_GUARD_TOS_FROZENDICT_r22] = _GUARD_TOS_FROZENDICT,
+    [_GUARD_TOS_FROZENDICT_r33] = _GUARD_TOS_FROZENDICT,
     [_BINARY_OP_SUBSCR_DICT_r23] = _BINARY_OP_SUBSCR_DICT,
     [_BINARY_OP_SUBSCR_CHECK_FUNC_r23] = _BINARY_OP_SUBSCR_CHECK_FUNC,
     [_BINARY_OP_SUBSCR_INIT_CALL_r01] = _BINARY_OP_SUBSCR_INIT_CALL,
@@ -3756,6 +3814,10 @@ const uint16_t _PyUop_Uncached[MAX_UOP_REGS_ID+1] = {
     [_DELETE_SUBSCR_r20] = _DELETE_SUBSCR,
     [_CALL_INTRINSIC_1_r11] = _CALL_INTRINSIC_1,
     [_CALL_INTRINSIC_2_r21] = _CALL_INTRINSIC_2,
+    [_MAKE_HEAP_SAFE_r01] = _MAKE_HEAP_SAFE,
+    [_MAKE_HEAP_SAFE_r11] = _MAKE_HEAP_SAFE,
+    [_MAKE_HEAP_SAFE_r22] = _MAKE_HEAP_SAFE,
+    [_MAKE_HEAP_SAFE_r33] = _MAKE_HEAP_SAFE,
     [_RETURN_VALUE_r11] = _RETURN_VALUE,
     [_GET_AITER_r11] = _GET_AITER,
     [_GET_ANEXT_r12] = _GET_ANEXT,
@@ -3863,6 +3925,14 @@ const uint16_t _PyUop_Uncached[MAX_UOP_REGS_ID+1] = {
     [_GUARD_TOS_ANY_SET_r11] = _GUARD_TOS_ANY_SET,
     [_GUARD_TOS_ANY_SET_r22] = _GUARD_TOS_ANY_SET,
     [_GUARD_TOS_ANY_SET_r33] = _GUARD_TOS_ANY_SET,
+    [_GUARD_TOS_SET_r01] = _GUARD_TOS_SET,
+    [_GUARD_TOS_SET_r11] = _GUARD_TOS_SET,
+    [_GUARD_TOS_SET_r22] = _GUARD_TOS_SET,
+    [_GUARD_TOS_SET_r33] = _GUARD_TOS_SET,
+    [_GUARD_TOS_FROZENSET_r01] = _GUARD_TOS_FROZENSET,
+    [_GUARD_TOS_FROZENSET_r11] = _GUARD_TOS_FROZENSET,
+    [_GUARD_TOS_FROZENSET_r22] = _GUARD_TOS_FROZENSET,
+    [_GUARD_TOS_FROZENSET_r33] = _GUARD_TOS_FROZENSET,
     [_CONTAINS_OP_SET_r23] = _CONTAINS_OP_SET,
     [_CONTAINS_OP_DICT_r23] = _CONTAINS_OP_DICT,
     [_CHECK_EG_MATCH_r22] = _CHECK_EG_MATCH,
@@ -4816,11 +4886,26 @@ const char *const _PyOpcode_uop_name[MAX_UOP_REGS_ID+1] = {
     [_GUARD_TOS_ANY_SET_r11] = "_GUARD_TOS_ANY_SET_r11",
     [_GUARD_TOS_ANY_SET_r22] = "_GUARD_TOS_ANY_SET_r22",
     [_GUARD_TOS_ANY_SET_r33] = "_GUARD_TOS_ANY_SET_r33",
+    [_GUARD_TOS_DICT] = "_GUARD_TOS_DICT",
+    [_GUARD_TOS_DICT_r01] = "_GUARD_TOS_DICT_r01",
+    [_GUARD_TOS_DICT_r11] = "_GUARD_TOS_DICT_r11",
+    [_GUARD_TOS_DICT_r22] = "_GUARD_TOS_DICT_r22",
+    [_GUARD_TOS_DICT_r33] = "_GUARD_TOS_DICT_r33",
     [_GUARD_TOS_FLOAT] = "_GUARD_TOS_FLOAT",
     [_GUARD_TOS_FLOAT_r01] = "_GUARD_TOS_FLOAT_r01",
     [_GUARD_TOS_FLOAT_r11] = "_GUARD_TOS_FLOAT_r11",
     [_GUARD_TOS_FLOAT_r22] = "_GUARD_TOS_FLOAT_r22",
     [_GUARD_TOS_FLOAT_r33] = "_GUARD_TOS_FLOAT_r33",
+    [_GUARD_TOS_FROZENDICT] = "_GUARD_TOS_FROZENDICT",
+    [_GUARD_TOS_FROZENDICT_r01] = "_GUARD_TOS_FROZENDICT_r01",
+    [_GUARD_TOS_FROZENDICT_r11] = "_GUARD_TOS_FROZENDICT_r11",
+    [_GUARD_TOS_FROZENDICT_r22] = "_GUARD_TOS_FROZENDICT_r22",
+    [_GUARD_TOS_FROZENDICT_r33] = "_GUARD_TOS_FROZENDICT_r33",
+    [_GUARD_TOS_FROZENSET] = "_GUARD_TOS_FROZENSET",
+    [_GUARD_TOS_FROZENSET_r01] = "_GUARD_TOS_FROZENSET_r01",
+    [_GUARD_TOS_FROZENSET_r11] = "_GUARD_TOS_FROZENSET_r11",
+    [_GUARD_TOS_FROZENSET_r22] = "_GUARD_TOS_FROZENSET_r22",
+    [_GUARD_TOS_FROZENSET_r33] = "_GUARD_TOS_FROZENSET_r33",
     [_GUARD_TOS_INT] = "_GUARD_TOS_INT",
     [_GUARD_TOS_INT_r01] = "_GUARD_TOS_INT_r01",
     [_GUARD_TOS_INT_r11] = "_GUARD_TOS_INT_r11",
@@ -4836,6 +4921,11 @@ const char *const _PyOpcode_uop_name[MAX_UOP_REGS_ID+1] = {
     [_GUARD_TOS_OVERFLOWED_r11] = "_GUARD_TOS_OVERFLOWED_r11",
     [_GUARD_TOS_OVERFLOWED_r22] = "_GUARD_TOS_OVERFLOWED_r22",
     [_GUARD_TOS_OVERFLOWED_r33] = "_GUARD_TOS_OVERFLOWED_r33",
+    [_GUARD_TOS_SET] = "_GUARD_TOS_SET",
+    [_GUARD_TOS_SET_r01] = "_GUARD_TOS_SET_r01",
+    [_GUARD_TOS_SET_r11] = "_GUARD_TOS_SET_r11",
+    [_GUARD_TOS_SET_r22] = "_GUARD_TOS_SET_r22",
+    [_GUARD_TOS_SET_r33] = "_GUARD_TOS_SET_r33",
     [_GUARD_TOS_SLICE] = "_GUARD_TOS_SLICE",
     [_GUARD_TOS_SLICE_r01] = "_GUARD_TOS_SLICE_r01",
     [_GUARD_TOS_SLICE_r11] = "_GUARD_TOS_SLICE_r11",
@@ -5123,6 +5213,11 @@ const char *const _PyOpcode_uop_name[MAX_UOP_REGS_ID+1] = {
     [_MAKE_CELL_r00] = "_MAKE_CELL_r00",
     [_MAKE_FUNCTION] = "_MAKE_FUNCTION",
     [_MAKE_FUNCTION_r11] = "_MAKE_FUNCTION_r11",
+    [_MAKE_HEAP_SAFE] = "_MAKE_HEAP_SAFE",
+    [_MAKE_HEAP_SAFE_r01] = "_MAKE_HEAP_SAFE_r01",
+    [_MAKE_HEAP_SAFE_r11] = "_MAKE_HEAP_SAFE_r11",
+    [_MAKE_HEAP_SAFE_r22] = "_MAKE_HEAP_SAFE_r22",
+    [_MAKE_HEAP_SAFE_r33] = "_MAKE_HEAP_SAFE_r33",
     [_MAKE_WARM] = "_MAKE_WARM",
     [_MAKE_WARM_r00] = "_MAKE_WARM_r00",
     [_MAKE_WARM_r11] = "_MAKE_WARM_r11",
@@ -5607,6 +5702,10 @@ int _PyUop_num_popped(int opcode, int oparg)
             return 0;
         case _GUARD_TOS_ANY_DICT:
             return 0;
+        case _GUARD_TOS_DICT:
+            return 0;
+        case _GUARD_TOS_FROZENDICT:
+            return 0;
         case _BINARY_OP_SUBSCR_DICT:
             return 2;
         case _BINARY_OP_SUBSCR_CHECK_FUNC:
@@ -5629,6 +5728,8 @@ int _PyUop_num_popped(int opcode, int oparg)
             return 1;
         case _CALL_INTRINSIC_2:
             return 2;
+        case _MAKE_HEAP_SAFE:
+            return 0;
         case _RETURN_VALUE:
             return 1;
         case _GET_AITER:
@@ -5770,6 +5871,10 @@ int _PyUop_num_popped(int opcode, int oparg)
         case _CONTAINS_OP:
             return 2;
         case _GUARD_TOS_ANY_SET:
+            return 0;
+        case _GUARD_TOS_SET:
+            return 0;
+        case _GUARD_TOS_FROZENSET:
             return 0;
         case _CONTAINS_OP_SET:
             return 2;

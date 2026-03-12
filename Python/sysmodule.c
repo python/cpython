@@ -1762,7 +1762,7 @@ sys_getwindowsversion_impl(PyObject *module)
     PyObject *realVersion = _sys_getwindowsversion_from_kernel32();
     if (!realVersion) {
         if (!PyErr_ExceptionMatches(PyExc_WindowsError)) {
-            return NULL;
+            goto error;
         }
 
         PyErr_Clear();
@@ -2499,7 +2499,7 @@ sys_remote_exec_impl(PyObject *module, int pid, PyObject *script)
     }
 
     if (PySys_Audit("sys.remote_exec", "iO", pid, script) < 0) {
-        return NULL;
+        goto error;
     }
 
     debugger_script_path = PyBytes_AS_STRING(path);

@@ -82,7 +82,6 @@ Dictionary objects
 
    Return a new dictionary that contains the same key-value pairs as *p*.
 
-
 .. c:function:: int PyDict_SetItem(PyObject *p, PyObject *key, PyObject *val)
 
    Insert *val* into the dictionary *p* with a key of *key*.  *key* must be
@@ -496,7 +495,7 @@ Dictionary view objects
 Frozen dictionary objects
 ^^^^^^^^^^^^^^^^^^^^^^^^^
 
-.. versionadded:: next
+.. versionadded:: 3.15
 
 
 .. c:var:: PyTypeObject PyFrozenDict_Type

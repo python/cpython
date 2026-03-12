@@ -139,7 +139,7 @@ following functions:
       >>> unicodedata.block('S')
       'Basic Latin'
 
-   .. versionadded:: next
+   .. versionadded:: 3.15
 
 
 .. function:: mirrored(chr, /)

@@ -866,19 +866,30 @@ dummy_func(
         }
 
         op(_BINARY_SLICE, (container, start, stop -- res)) {
-            PyObject *slice = _PyBuildSlice_ConsumeRefs(PyStackRef_AsPyObjectSteal(start),
-                                                        PyStackRef_AsPyObjectSteal(stop));
+            PyObject *container_o = PyStackRef_AsPyObjectBorrow(container);
+            PyObject *start_o = PyStackRef_AsPyObjectBorrow(start);
+            PyObject *stop_o = PyStackRef_AsPyObjectBorrow(stop);
             PyObject *res_o;
-            // Can't use ERROR_IF() here, because we haven't
-            // DECREF'ed container yet, and we still own slice.
-            if (slice == NULL) {
-                res_o = NULL;
+            if (PyList_CheckExact(container_o)) {
+                res_o = _PyList_BinarySlice(container_o, start_o, stop_o);
+            }
+            else if (PyTuple_CheckExact(container_o)) {
+                res_o = _PyTuple_BinarySlice(container_o, start_o, stop_o);
+            }
+            else if (PyUnicode_CheckExact(container_o)) {
+                res_o = _PyUnicode_BinarySlice(container_o, start_o, stop_o);
             }
             else {
-                res_o = PyObject_GetItem(PyStackRef_AsPyObjectBorrow(container), slice);
-                Py_DECREF(slice);
+                PyObject *slice = PySlice_New(start_o, stop_o, NULL);
+                if (slice == NULL) {
+                    res_o = NULL;
+                }
+                else {
+                    res_o = PyObject_GetItem(container_o, slice);
+                    Py_DECREF(slice);
+                }
             }
-            PyStackRef_CLOSE(container);
+            DECREF_INPUTS();
             ERROR_IF(res_o == NULL);
             res = PyStackRef_FromPyObjectSteal(res_o);
         }
@@ -1069,6 +1080,16 @@ dummy_func(
         op(_GUARD_TOS_ANY_DICT, (tos -- tos)) {
             PyObject *o = PyStackRef_AsPyObjectBorrow(tos);
             EXIT_IF(!PyAnyDict_CheckExact(o));
+        }
+
+        op(_GUARD_TOS_DICT, (tos -- tos)) {
+            PyObject *o = PyStackRef_AsPyObjectBorrow(tos);
+            EXIT_IF(!PyDict_CheckExact(o));
+        }
+
+        op(_GUARD_TOS_FROZENDICT, (tos -- tos)) {
+            PyObject *o = PyStackRef_AsPyObjectBorrow(tos);
+            EXIT_IF(!PyFrozenDict_CheckExact(o));
         }
 
         macro(BINARY_OP_SUBSCR_DICT) =
@@ -1278,12 +1299,16 @@ dummy_func(
             return result;
         }
 
+        op(_MAKE_HEAP_SAFE, (value -- value)) {
+            value = PyStackRef_MakeHeapSafe(value);
+        }
+
         // The stack effect here is a bit misleading.
         // retval is popped from the stack, but res
         // is pushed to a different frame, the callers' frame.
-        inst(RETURN_VALUE, (retval -- res)) {
+        op(_RETURN_VALUE, (retval -- res)) {
             assert(frame->owner != FRAME_OWNED_BY_INTERPRETER);
-            _PyStackRef temp = PyStackRef_MakeHeapSafe(retval);
+            _PyStackRef temp = retval;
             DEAD(retval);
             SAVE_STACK();
             assert(STACK_LEVEL() == 0);
@@ -1298,6 +1323,10 @@ dummy_func(
             LLTRACE_RESUME_FRAME();
         }
 
+        macro(RETURN_VALUE) =
+            _MAKE_HEAP_SAFE +
+            _RETURN_VALUE;
+
         tier1 op(_RETURN_VALUE_EVENT, (val -- val)) {
             int err = _Py_call_instrumentation_arg(
                     tstate, PY_MONITORING_EVENT_PY_RETURN,
@@ -1307,7 +1336,8 @@ dummy_func(
 
         macro(INSTRUMENTED_RETURN_VALUE) =
             _RETURN_VALUE_EVENT +
-            RETURN_VALUE;
+            _MAKE_HEAP_SAFE +
+            _RETURN_VALUE;
 
         inst(GET_AITER, (obj -- iter)) {
             unaryfunc getter = NULL;
@@ -1449,7 +1479,7 @@ dummy_func(
             _SEND_GEN_FRAME +
             _PUSH_FRAME;
 
-        inst(YIELD_VALUE, (retval -- value)) {
+        op(_YIELD_VALUE, (retval -- value)) {
             // NOTE: It's important that YIELD_VALUE never raises an exception!
             // The compiler treats any exception raised here as a failed close()
             // or throw() call.
@@ -1481,9 +1511,13 @@ dummy_func(
             #endif
             RELOAD_STACK();
             LOAD_IP(1 + INLINE_CACHE_ENTRIES_SEND);
-            value = PyStackRef_MakeHeapSafe(temp);
+            value = temp;
             LLTRACE_RESUME_FRAME();
         }
+
+        macro(YIELD_VALUE) =
+            _MAKE_HEAP_SAFE +
+            _YIELD_VALUE;
 
         tier1 op(_YIELD_VALUE_EVENT, (val -- val)) {
             int err = _Py_call_instrumentation_arg(
@@ -1500,7 +1534,8 @@ dummy_func(
 
         macro(INSTRUMENTED_YIELD_VALUE) =
             _YIELD_VALUE_EVENT +
-            YIELD_VALUE;
+            _MAKE_HEAP_SAFE +
+            _YIELD_VALUE;
 
         inst(POP_EXCEPT, (exc_value -- )) {
             _PyErr_StackItem *exc_info = tstate->exc_info;
@@ -2918,6 +2953,16 @@ dummy_func(
         op(_GUARD_TOS_ANY_SET, (tos -- tos)) {
             PyObject *o = PyStackRef_AsPyObjectBorrow(tos);
             DEOPT_IF(!PyAnySet_CheckExact(o));
+        }
+
+        op(_GUARD_TOS_SET, (tos -- tos)) {
+            PyObject *o = PyStackRef_AsPyObjectBorrow(tos);
+            DEOPT_IF(!PySet_CheckExact(o));
+        }
+
+        op(_GUARD_TOS_FROZENSET, (tos -- tos)) {
+            PyObject *o = PyStackRef_AsPyObjectBorrow(tos);
+            DEOPT_IF(!PyFrozenSet_CheckExact(o));
         }
 
         macro(CONTAINS_OP_SET) = _GUARD_TOS_ANY_SET + unused/1 + _CONTAINS_OP_SET + POP_TOP + POP_TOP;
@@ -5730,8 +5775,11 @@ dummy_func(
         tier2 op(_RECORD_NOS_GEN_FUNC, (nos, tos -- nos, tos)) {
             PyObject *obj = PyStackRef_AsPyObjectBorrow(nos);
             if (PyGen_Check(obj)) {
-                PyObject *func = (PyObject *)_PyFrame_GetFunction(&((PyGenObject *)obj)->gi_iframe);
-                RECORD_VALUE(func);
+                PyGenObject *gen = (PyGenObject *)obj;
+                _PyStackRef func = gen->gi_iframe.f_funcobj;
+                if (!PyStackRef_IsNull(func)) {
+                    RECORD_VALUE(PyStackRef_AsPyObjectBorrow(func));
+                }
             }
         }
 

@@ -4213,6 +4213,27 @@ class BaseSuggestionTests(SuggestionFormattingTestMixin):
         self.assertIn("'._bluch'", self.get_suggestion(partial(B().method, '_luch')))
         self.assertIn("'._bluch'", self.get_suggestion(partial(B().method, 'bluch')))
 
+    def test_suggestions_with_custom___dir__(self):
+        class M(type):
+            def __dir__(cls):
+                return [None, "fox"]
+
+        class C0:
+            def __dir__(self):
+                return [..., "bluch"]
+
+        class C1(C0, metaclass=M):
+            pass
+
+        self.assertNotIn("'.bluch'", self.get_suggestion(C0, "blach"))
+        self.assertIn("'.bluch'", self.get_suggestion(C0(), "blach"))
+
+        self.assertIn("'.fox'", self.get_suggestion(C1, "foo"))
+        self.assertNotIn("'.fox'", self.get_suggestion(C1(), "foo"))
+
+        self.assertNotIn("'.bluch'", self.get_suggestion(C1, "blach"))
+        self.assertIn("'.bluch'", self.get_suggestion(C1(), "blach"))
+
 
     def test_do_not_trigger_for_long_attributes(self):
         class A:
@@ -5383,8 +5404,8 @@ class TestLazyImportSuggestions(unittest.TestCase):
         # pkg.bar prints "BAR_MODULE_LOADED" when imported.
         # If lazy import is reified during suggestion computation, we'll see it.
         code = textwrap.dedent("""
-            lazy import test.test_import.data.lazy_imports.pkg.bar
-            test.test_import.data.lazy_imports.pkg.nonexistent
+            lazy import test.test_lazy_import.data.pkg.bar
+            test.test_lazy_import.data.pkg.nonexistent
         """)
         rc, stdout, stderr = assert_python_failure('-c', code)
         self.assertNotIn(b"BAR_MODULE_LOADED", stdout)
@@ -5393,9 +5414,9 @@ class TestLazyImportSuggestions(unittest.TestCase):
         """Formatting a traceback should not trigger lazy import reification."""
         code = textwrap.dedent("""
             import traceback
-            lazy import test.test_import.data.lazy_imports.pkg.bar
+            lazy import test.test_lazy_import.data.pkg.bar
             try:
-                test.test_import.data.lazy_imports.pkg.nonexistent
+                test.test_lazy_import.data.pkg.nonexistent
             except AttributeError:
                 traceback.format_exc()
             print("OK")
@@ -5407,9 +5428,9 @@ class TestLazyImportSuggestions(unittest.TestCase):
     def test_suggestion_still_works_for_non_lazy_attributes(self):
         """Suggestions should still work for non-lazy module attributes."""
         code = textwrap.dedent("""
-            lazy import test.test_import.data.lazy_imports.pkg.bar
+            lazy import test.test_lazy_import.data.pkg.bar
             # Typo for __name__
-            test.test_import.data.lazy_imports.pkg.__nme__
+            test.test_lazy_import.data.pkg.__nme__
         """)
         rc, stdout, stderr = assert_python_failure('-c', code)
         self.assertIn(b"__name__", stderr)
