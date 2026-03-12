@@ -1,1 +1,0 @@
-Reduce the import time of :mod:`inspect` module by ~20%.

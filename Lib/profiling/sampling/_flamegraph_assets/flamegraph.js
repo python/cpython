@@ -83,18 +83,7 @@ function resolveStringIndices(node) {
 // ============================================================================
 
 function toggleTheme() {
-  const html = document.documentElement;
-  const current = html.getAttribute('data-theme') || 'light';
-  const next = current === 'light' ? 'dark' : 'light';
-  html.setAttribute('data-theme', next);
-  localStorage.setItem('flamegraph-theme', next);
-
-  // Update theme button icon
-  const btn = document.getElementById('theme-btn');
-  if (btn) {
-    btn.querySelector('.icon-moon').style.display = next === 'dark' ? 'none' : '';
-    btn.querySelector('.icon-sun').style.display = next === 'dark' ? '' : 'none';
-  }
+  toggleAndSaveTheme();
 
   // Re-render flamegraph with new theme colors
   if (window.flamegraphData && normalData) {
@@ -154,17 +143,9 @@ function toggleSection(sectionId) {
   }
 }
 
+// Restore theme from localStorage, or use browser preference
 function restoreUIState() {
-  // Restore theme
-  const savedTheme = localStorage.getItem('flamegraph-theme');
-  if (savedTheme) {
-    document.documentElement.setAttribute('data-theme', savedTheme);
-    const btn = document.getElementById('theme-btn');
-    if (btn) {
-      btn.querySelector('.icon-moon').style.display = savedTheme === 'dark' ? 'none' : '';
-      btn.querySelector('.icon-sun').style.display = savedTheme === 'dark' ? '' : 'none';
-    }
-  }
+  applyTheme(getPreferredTheme());
 
   // Restore sidebar state
   const savedSidebar = localStorage.getItem('flamegraph-sidebar');
@@ -1240,23 +1221,6 @@ function generateInvertedFlamegraph(data) {
 
   convertInvertDictToArray(invertedRoot);
   return invertedRoot;
-}
-
-function updateToggleUI(toggleId, isOn) {
-  const toggle = document.getElementById(toggleId);
-  if (toggle) {
-    const track = toggle.querySelector('.toggle-track');
-    const labels = toggle.querySelectorAll('.toggle-label');
-    if (isOn) {
-      track.classList.add('on');
-      labels[0].classList.remove('active');
-      labels[1].classList.add('active');
-    } else {
-      track.classList.remove('on');
-      labels[0].classList.add('active');
-      labels[1].classList.remove('active');
-    }
-  }
 }
 
 function toggleInvert() {

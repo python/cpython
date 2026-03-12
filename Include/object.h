@@ -206,11 +206,11 @@ _Py_ThreadId(void)
 #elif defined(__MINGW32__) && defined(_M_ARM64)
     tid = __getReg(18);
 #elif defined(__i386__)
-    __asm__("movl %%gs:0, %0" : "=r" (tid));  // 32-bit always uses GS
+    __asm__("{movl %%gs:0, %0|mov %0, dword ptr gs:[0]}" : "=r" (tid));  // 32-bit always uses GS
 #elif defined(__MACH__) && defined(__x86_64__)
-    __asm__("movq %%gs:0, %0" : "=r" (tid));  // x86_64 macOSX uses GS
+    __asm__("{movq %%gs:0, %0|mov %0, qword ptr gs:[0]}" : "=r" (tid));  // x86_64 macOSX uses GS
 #elif defined(__x86_64__)
-   __asm__("movq %%fs:0, %0" : "=r" (tid));  // x86_64 Linux, BSD uses FS
+    __asm__("{movq %%fs:0, %0|mov %0, qword ptr fs:[0]}" : "=r" (tid));  // x86_64 Linux, BSD uses FS
 #elif defined(__arm__) && __ARM_ARCH >= 7
     __asm__ ("mrc p15, 0, %0, c13, c0, 3\nbic %0, %0, #3" : "=r" (tid));
 #elif defined(__aarch64__) && defined(__APPLE__)

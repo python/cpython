@@ -606,17 +606,18 @@ are always available.  They are listed here in alphabetical order.
    .. warning::
 
       This function executes arbitrary code. Calling it with
-      user-supplied input may lead to security vulnerabilities.
+      untrusted user-supplied input will lead to security vulnerabilities.
 
    The *source* argument is parsed and evaluated as a Python expression
    (technically speaking, a condition list) using the *globals* and *locals*
    mappings as global and local namespace.  If the *globals* dictionary is
    present and does not contain a value for the key ``__builtins__``, a
    reference to the dictionary of the built-in module :mod:`builtins` is
-   inserted under that key before *source* is parsed.  That way you can
-   control what builtins are available to the executed code by inserting your
-   own ``__builtins__`` dictionary into *globals* before passing it to
-   :func:`eval`.  If the *locals* mapping is omitted it defaults to the
+   inserted under that key before *source* is parsed.
+   Overriding ``__builtins__`` can be used to restrict or change the available
+   names, but this is **not** a security mechanism: the executed code can
+   still access all builtins.
+   If the *locals* mapping is omitted it defaults to the
    *globals* dictionary.  If both mappings are omitted, the source is
    executed with the *globals* and *locals* in the environment where
    :func:`eval` is called.  Note, *eval()* will only have access to the
@@ -660,7 +661,7 @@ are always available.  They are listed here in alphabetical order.
       The semantics of the default *locals* namespace have been adjusted as
       described for the :func:`locals` builtin.
 
-   .. versionchanged:: next
+   .. versionchanged:: 3.15
 
       *globals* can now be a :class:`frozendict`.
 
@@ -671,7 +672,7 @@ are always available.  They are listed here in alphabetical order.
    .. warning::
 
       This function executes arbitrary code. Calling it with
-      user-supplied input may lead to security vulnerabilities.
+      untrusted user-supplied input will lead to security vulnerabilities.
 
    This function supports dynamic execution of Python code. *source* must be
    either a string or a code object.  If it is a string, the string is parsed as
@@ -702,9 +703,10 @@ are always available.  They are listed here in alphabetical order.
 
    If the *globals* dictionary does not contain a value for the key
    ``__builtins__``, a reference to the dictionary of the built-in module
-   :mod:`builtins` is inserted under that key.  That way you can control what
-   builtins are available to the executed code by inserting your own
-   ``__builtins__`` dictionary into *globals* before passing it to :func:`exec`.
+   :mod:`builtins` is inserted under that key.
+   Overriding ``__builtins__`` can be used to restrict or change the available
+   names, but this is **not** a security mechanism: the executed code can
+   still access all builtins.
 
    The *closure* argument specifies a closure--a tuple of cellvars.
    It's only valid when the *object* is a code object containing
@@ -741,7 +743,7 @@ are always available.  They are listed here in alphabetical order.
       The semantics of the default *locals* namespace have been adjusted as
       described for the :func:`locals` builtin.
 
-   .. versionchanged:: next
+   .. versionchanged:: 3.15
 
       *globals* can now be a :class:`frozendict`.
 
@@ -2099,7 +2101,7 @@ are always available.  They are listed here in alphabetical order.
       Subclasses of :class:`!type` which don't override ``type.__new__`` may no
       longer use the one-argument form to get the type of an object.
 
-   .. versionchanged:: next
+   .. versionchanged:: 3.15
 
       *dict* can now be a :class:`frozendict`.
 
