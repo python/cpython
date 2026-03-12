@@ -205,7 +205,7 @@ class CmdLineTest(unittest.TestCase):
         # gh-140594: Fix an out of bounds read when a single NUL character
         # is read from the standard input in interactive mode.
         proc = spawn_python('-i')
-        proc.communicate(b'\x00', timeout=10)
+        proc.communicate(b'\x00', timeout=support.SHORT_TIMEOUT)
         self.assertEqual(proc.returncode, 0)
 
     def test_relativedir_bug46421(self):
