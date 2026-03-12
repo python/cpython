@@ -741,6 +741,16 @@ class WeirdZoneTest(ZoneInfoTestBase):
         with self.assertRaises(ValueError):
             self.klass.from_file(zf)
 
+    def test_invalid_transition_index(self):
+        with open(DATA_DIR / "tzif_invalid_trans_idx", "rb") as f:
+            with self.assertRaises(ValueError):
+                self.klass.from_file(f)
+
+    def test_transition_lookahead_out_of_bounds(self):
+        with open(DATA_DIR / "tzif_invalid_lookahead", "rb") as f:
+            zi = self.klass.from_file(f)
+        self.assertIsNotNone(zi)
+
     def test_zone_very_large_timestamp(self):
         """Test when a transition is in the far past or future.
 
