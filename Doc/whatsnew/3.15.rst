@@ -828,6 +828,14 @@ mimetypes
 * Add ``application/sql`` and ``application/vnd.sqlite3``.
   (Contributed by Charlie Lin in :gh:`145698`.)
 * Add ``image/jxl``. (Contributed by Foolbar in :gh:`144213`.)
+* Add the following MIME types:
+
+  - ``application/vnd.ms-cab-compressed`` for ``.cab`` extension
+  - ``application/vnd.ms-htmlhelp`` for ``.chm`` extension
+  - ``application/vnd.ms-officetheme`` for ``.thmx`` extension
+
+  (Contributed by Charlie Lin in :gh:`145718`.)
+
 * Rename ``application/x-texinfo`` to ``application/texinfo``.
   (Contributed by Charlie Lin in :gh:`140165`.)
 * Changed the MIME type for ``.ai`` files to ``application/pdf``.
