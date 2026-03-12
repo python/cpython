@@ -3502,1175 +3502,3383 @@ const _PyUopCachingInfo _PyUop_Caching[MAX_UOP_ID+1] = {
 
 const uint16_t _PyUop_Uncached[MAX_UOP_REGS_ID+1] = {
     [_NOP_r00] = _NOP,
+    #if MAX_CACHED_REGISTER >= 1
     [_NOP_r11] = _NOP,
+    #endif
+    #if MAX_CACHED_REGISTER >= 2
     [_NOP_r22] = _NOP,
+    #endif
+    #if MAX_CACHED_REGISTER >= 3
     [_NOP_r33] = _NOP,
+    #endif
+    #if MAX_CACHED_REGISTER >= 4
     [_NOP_r44] = _NOP,
+    #endif
+    #if MAX_CACHED_REGISTER >= 5
     [_NOP_r55] = _NOP,
+    #endif
     [_CHECK_PERIODIC_r00] = _CHECK_PERIODIC,
     [_CHECK_PERIODIC_IF_NOT_YIELD_FROM_r00] = _CHECK_PERIODIC_IF_NOT_YIELD_FROM,
     [_RESUME_CHECK_r00] = _RESUME_CHECK,
+    #if MAX_CACHED_REGISTER >= 1
     [_RESUME_CHECK_r11] = _RESUME_CHECK,
+    #endif
+    #if MAX_CACHED_REGISTER >= 2
     [_RESUME_CHECK_r22] = _RESUME_CHECK,
+    #endif
+    #if MAX_CACHED_REGISTER >= 3
     [_RESUME_CHECK_r33] = _RESUME_CHECK,
+    #endif
+    #if MAX_CACHED_REGISTER >= 4
     [_RESUME_CHECK_r44] = _RESUME_CHECK,
+    #endif
+    #if MAX_CACHED_REGISTER >= 5
     [_RESUME_CHECK_r55] = _RESUME_CHECK,
+    #endif
+    #if MAX_CACHED_REGISTER >= 1
     [_LOAD_FAST_CHECK_r01] = _LOAD_FAST_CHECK,
+    #endif
+    #if MAX_CACHED_REGISTER >= 2
     [_LOAD_FAST_CHECK_r12] = _LOAD_FAST_CHECK,
+    #endif
+    #if MAX_CACHED_REGISTER >= 3
     [_LOAD_FAST_CHECK_r23] = _LOAD_FAST_CHECK,
+    #endif
+    #if MAX_CACHED_REGISTER >= 4
     [_LOAD_FAST_CHECK_r34] = _LOAD_FAST_CHECK,
+    #endif
+    #if MAX_CACHED_REGISTER >= 5
     [_LOAD_FAST_CHECK_r45] = _LOAD_FAST_CHECK,
+    #endif
+    #if MAX_CACHED_REGISTER >= 1
     [_LOAD_FAST_0_r01] = _LOAD_FAST_0,
+    #endif
+    #if MAX_CACHED_REGISTER >= 2
     [_LOAD_FAST_0_r12] = _LOAD_FAST_0,
+    #endif
+    #if MAX_CACHED_REGISTER >= 3
     [_LOAD_FAST_0_r23] = _LOAD_FAST_0,
+    #endif
+    #if MAX_CACHED_REGISTER >= 4
     [_LOAD_FAST_0_r34] = _LOAD_FAST_0,
+    #endif
+    #if MAX_CACHED_REGISTER >= 5
     [_LOAD_FAST_0_r45] = _LOAD_FAST_0,
+    #endif
+    #if MAX_CACHED_REGISTER >= 1
     [_LOAD_FAST_1_r01] = _LOAD_FAST_1,
+    #endif
+    #if MAX_CACHED_REGISTER >= 2
     [_LOAD_FAST_1_r12] = _LOAD_FAST_1,
+    #endif
+    #if MAX_CACHED_REGISTER >= 3
     [_LOAD_FAST_1_r23] = _LOAD_FAST_1,
+    #endif
+    #if MAX_CACHED_REGISTER >= 4
     [_LOAD_FAST_1_r34] = _LOAD_FAST_1,
+    #endif
+    #if MAX_CACHED_REGISTER >= 5
     [_LOAD_FAST_1_r45] = _LOAD_FAST_1,
+    #endif
+    #if MAX_CACHED_REGISTER >= 1
     [_LOAD_FAST_2_r01] = _LOAD_FAST_2,
+    #endif
+    #if MAX_CACHED_REGISTER >= 2
     [_LOAD_FAST_2_r12] = _LOAD_FAST_2,
+    #endif
+    #if MAX_CACHED_REGISTER >= 3
     [_LOAD_FAST_2_r23] = _LOAD_FAST_2,
+    #endif
+    #if MAX_CACHED_REGISTER >= 4
     [_LOAD_FAST_2_r34] = _LOAD_FAST_2,
+    #endif
+    #if MAX_CACHED_REGISTER >= 5
     [_LOAD_FAST_2_r45] = _LOAD_FAST_2,
+    #endif
+    #if MAX_CACHED_REGISTER >= 1
     [_LOAD_FAST_3_r01] = _LOAD_FAST_3,
+    #endif
+    #if MAX_CACHED_REGISTER >= 2
     [_LOAD_FAST_3_r12] = _LOAD_FAST_3,
+    #endif
+    #if MAX_CACHED_REGISTER >= 3
     [_LOAD_FAST_3_r23] = _LOAD_FAST_3,
+    #endif
+    #if MAX_CACHED_REGISTER >= 4
     [_LOAD_FAST_3_r34] = _LOAD_FAST_3,
+    #endif
+    #if MAX_CACHED_REGISTER >= 5
     [_LOAD_FAST_3_r45] = _LOAD_FAST_3,
+    #endif
+    #if MAX_CACHED_REGISTER >= 1
     [_LOAD_FAST_4_r01] = _LOAD_FAST_4,
+    #endif
+    #if MAX_CACHED_REGISTER >= 2
     [_LOAD_FAST_4_r12] = _LOAD_FAST_4,
+    #endif
+    #if MAX_CACHED_REGISTER >= 3
     [_LOAD_FAST_4_r23] = _LOAD_FAST_4,
+    #endif
+    #if MAX_CACHED_REGISTER >= 4
     [_LOAD_FAST_4_r34] = _LOAD_FAST_4,
+    #endif
+    #if MAX_CACHED_REGISTER >= 5
     [_LOAD_FAST_4_r45] = _LOAD_FAST_4,
+    #endif
+    #if MAX_CACHED_REGISTER >= 1
     [_LOAD_FAST_5_r01] = _LOAD_FAST_5,
+    #endif
+    #if MAX_CACHED_REGISTER >= 2
     [_LOAD_FAST_5_r12] = _LOAD_FAST_5,
+    #endif
+    #if MAX_CACHED_REGISTER >= 3
     [_LOAD_FAST_5_r23] = _LOAD_FAST_5,
+    #endif
+    #if MAX_CACHED_REGISTER >= 4
     [_LOAD_FAST_5_r34] = _LOAD_FAST_5,
+    #endif
+    #if MAX_CACHED_REGISTER >= 5
     [_LOAD_FAST_5_r45] = _LOAD_FAST_5,
+    #endif
+    #if MAX_CACHED_REGISTER >= 1
     [_LOAD_FAST_6_r01] = _LOAD_FAST_6,
+    #endif
+    #if MAX_CACHED_REGISTER >= 2
     [_LOAD_FAST_6_r12] = _LOAD_FAST_6,
+    #endif
+    #if MAX_CACHED_REGISTER >= 3
     [_LOAD_FAST_6_r23] = _LOAD_FAST_6,
+    #endif
+    #if MAX_CACHED_REGISTER >= 4
     [_LOAD_FAST_6_r34] = _LOAD_FAST_6,
+    #endif
+    #if MAX_CACHED_REGISTER >= 5
     [_LOAD_FAST_6_r45] = _LOAD_FAST_6,
+    #endif
+    #if MAX_CACHED_REGISTER >= 1
     [_LOAD_FAST_7_r01] = _LOAD_FAST_7,
+    #endif
+    #if MAX_CACHED_REGISTER >= 2
     [_LOAD_FAST_7_r12] = _LOAD_FAST_7,
+    #endif
+    #if MAX_CACHED_REGISTER >= 3
     [_LOAD_FAST_7_r23] = _LOAD_FAST_7,
+    #endif
+    #if MAX_CACHED_REGISTER >= 4
     [_LOAD_FAST_7_r34] = _LOAD_FAST_7,
+    #endif
+    #if MAX_CACHED_REGISTER >= 5
     [_LOAD_FAST_7_r45] = _LOAD_FAST_7,
+    #endif
+    #if MAX_CACHED_REGISTER >= 1
     [_LOAD_FAST_r01] = _LOAD_FAST,
+    #endif
+    #if MAX_CACHED_REGISTER >= 2
     [_LOAD_FAST_r12] = _LOAD_FAST,
+    #endif
+    #if MAX_CACHED_REGISTER >= 3
     [_LOAD_FAST_r23] = _LOAD_FAST,
+    #endif
+    #if MAX_CACHED_REGISTER >= 4
     [_LOAD_FAST_r34] = _LOAD_FAST,
+    #endif
+    #if MAX_CACHED_REGISTER >= 5
     [_LOAD_FAST_r45] = _LOAD_FAST,
+    #endif
+    #if MAX_CACHED_REGISTER >= 1
     [_LOAD_FAST_BORROW_0_r01] = _LOAD_FAST_BORROW_0,
+    #endif
+    #if MAX_CACHED_REGISTER >= 2
     [_LOAD_FAST_BORROW_0_r12] = _LOAD_FAST_BORROW_0,
+    #endif
+    #if MAX_CACHED_REGISTER >= 3
     [_LOAD_FAST_BORROW_0_r23] = _LOAD_FAST_BORROW_0,
+    #endif
+    #if MAX_CACHED_REGISTER >= 4
     [_LOAD_FAST_BORROW_0_r34] = _LOAD_FAST_BORROW_0,
+    #endif
+    #if MAX_CACHED_REGISTER >= 5
     [_LOAD_FAST_BORROW_0_r45] = _LOAD_FAST_BORROW_0,
+    #endif
+    #if MAX_CACHED_REGISTER >= 1
     [_LOAD_FAST_BORROW_1_r01] = _LOAD_FAST_BORROW_1,
+    #endif
+    #if MAX_CACHED_REGISTER >= 2
     [_LOAD_FAST_BORROW_1_r12] = _LOAD_FAST_BORROW_1,
+    #endif
+    #if MAX_CACHED_REGISTER >= 3
     [_LOAD_FAST_BORROW_1_r23] = _LOAD_FAST_BORROW_1,
+    #endif
+    #if MAX_CACHED_REGISTER >= 4
     [_LOAD_FAST_BORROW_1_r34] = _LOAD_FAST_BORROW_1,
+    #endif
+    #if MAX_CACHED_REGISTER >= 5
     [_LOAD_FAST_BORROW_1_r45] = _LOAD_FAST_BORROW_1,
+    #endif
+    #if MAX_CACHED_REGISTER >= 1
     [_LOAD_FAST_BORROW_2_r01] = _LOAD_FAST_BORROW_2,
+    #endif
+    #if MAX_CACHED_REGISTER >= 2
     [_LOAD_FAST_BORROW_2_r12] = _LOAD_FAST_BORROW_2,
+    #endif
+    #if MAX_CACHED_REGISTER >= 3
     [_LOAD_FAST_BORROW_2_r23] = _LOAD_FAST_BORROW_2,
+    #endif
+    #if MAX_CACHED_REGISTER >= 4
     [_LOAD_FAST_BORROW_2_r34] = _LOAD_FAST_BORROW_2,
+    #endif
+    #if MAX_CACHED_REGISTER >= 5
     [_LOAD_FAST_BORROW_2_r45] = _LOAD_FAST_BORROW_2,
+    #endif
+    #if MAX_CACHED_REGISTER >= 1
     [_LOAD_FAST_BORROW_3_r01] = _LOAD_FAST_BORROW_3,
+    #endif
+    #if MAX_CACHED_REGISTER >= 2
     [_LOAD_FAST_BORROW_3_r12] = _LOAD_FAST_BORROW_3,
+    #endif
+    #if MAX_CACHED_REGISTER >= 3
     [_LOAD_FAST_BORROW_3_r23] = _LOAD_FAST_BORROW_3,
+    #endif
+    #if MAX_CACHED_REGISTER >= 4
     [_LOAD_FAST_BORROW_3_r34] = _LOAD_FAST_BORROW_3,
+    #endif
+    #if MAX_CACHED_REGISTER >= 5
     [_LOAD_FAST_BORROW_3_r45] = _LOAD_FAST_BORROW_3,
+    #endif
+    #if MAX_CACHED_REGISTER >= 1
     [_LOAD_FAST_BORROW_4_r01] = _LOAD_FAST_BORROW_4,
+    #endif
+    #if MAX_CACHED_REGISTER >= 2
     [_LOAD_FAST_BORROW_4_r12] = _LOAD_FAST_BORROW_4,
+    #endif
+    #if MAX_CACHED_REGISTER >= 3
     [_LOAD_FAST_BORROW_4_r23] = _LOAD_FAST_BORROW_4,
+    #endif
+    #if MAX_CACHED_REGISTER >= 4
     [_LOAD_FAST_BORROW_4_r34] = _LOAD_FAST_BORROW_4,
+    #endif
+    #if MAX_CACHED_REGISTER >= 5
     [_LOAD_FAST_BORROW_4_r45] = _LOAD_FAST_BORROW_4,
+    #endif
+    #if MAX_CACHED_REGISTER >= 1
     [_LOAD_FAST_BORROW_5_r01] = _LOAD_FAST_BORROW_5,
+    #endif
+    #if MAX_CACHED_REGISTER >= 2
     [_LOAD_FAST_BORROW_5_r12] = _LOAD_FAST_BORROW_5,
+    #endif
+    #if MAX_CACHED_REGISTER >= 3
     [_LOAD_FAST_BORROW_5_r23] = _LOAD_FAST_BORROW_5,
+    #endif
+    #if MAX_CACHED_REGISTER >= 4
     [_LOAD_FAST_BORROW_5_r34] = _LOAD_FAST_BORROW_5,
+    #endif
+    #if MAX_CACHED_REGISTER >= 5
     [_LOAD_FAST_BORROW_5_r45] = _LOAD_FAST_BORROW_5,
+    #endif
+    #if MAX_CACHED_REGISTER >= 1
     [_LOAD_FAST_BORROW_6_r01] = _LOAD_FAST_BORROW_6,
+    #endif
+    #if MAX_CACHED_REGISTER >= 2
     [_LOAD_FAST_BORROW_6_r12] = _LOAD_FAST_BORROW_6,
+    #endif
+    #if MAX_CACHED_REGISTER >= 3
     [_LOAD_FAST_BORROW_6_r23] = _LOAD_FAST_BORROW_6,
+    #endif
+    #if MAX_CACHED_REGISTER >= 4
     [_LOAD_FAST_BORROW_6_r34] = _LOAD_FAST_BORROW_6,
+    #endif
+    #if MAX_CACHED_REGISTER >= 5
     [_LOAD_FAST_BORROW_6_r45] = _LOAD_FAST_BORROW_6,
+    #endif
+    #if MAX_CACHED_REGISTER >= 1
     [_LOAD_FAST_BORROW_7_r01] = _LOAD_FAST_BORROW_7,
+    #endif
+    #if MAX_CACHED_REGISTER >= 2
     [_LOAD_FAST_BORROW_7_r12] = _LOAD_FAST_BORROW_7,
+    #endif
+    #if MAX_CACHED_REGISTER >= 3
     [_LOAD_FAST_BORROW_7_r23] = _LOAD_FAST_BORROW_7,
+    #endif
+    #if MAX_CACHED_REGISTER >= 4
     [_LOAD_FAST_BORROW_7_r34] = _LOAD_FAST_BORROW_7,
+    #endif
+    #if MAX_CACHED_REGISTER >= 5
     [_LOAD_FAST_BORROW_7_r45] = _LOAD_FAST_BORROW_7,
+    #endif
+    #if MAX_CACHED_REGISTER >= 1
     [_LOAD_FAST_BORROW_r01] = _LOAD_FAST_BORROW,
+    #endif
+    #if MAX_CACHED_REGISTER >= 2
     [_LOAD_FAST_BORROW_r12] = _LOAD_FAST_BORROW,
+    #endif
+    #if MAX_CACHED_REGISTER >= 3
     [_LOAD_FAST_BORROW_r23] = _LOAD_FAST_BORROW,
+    #endif
+    #if MAX_CACHED_REGISTER >= 4
     [_LOAD_FAST_BORROW_r34] = _LOAD_FAST_BORROW,
+    #endif
+    #if MAX_CACHED_REGISTER >= 5
     [_LOAD_FAST_BORROW_r45] = _LOAD_FAST_BORROW,
+    #endif
+    #if MAX_CACHED_REGISTER >= 1
     [_LOAD_FAST_AND_CLEAR_r01] = _LOAD_FAST_AND_CLEAR,
+    #endif
+    #if MAX_CACHED_REGISTER >= 2
     [_LOAD_FAST_AND_CLEAR_r12] = _LOAD_FAST_AND_CLEAR,
+    #endif
+    #if MAX_CACHED_REGISTER >= 3
     [_LOAD_FAST_AND_CLEAR_r23] = _LOAD_FAST_AND_CLEAR,
+    #endif
+    #if MAX_CACHED_REGISTER >= 4
     [_LOAD_FAST_AND_CLEAR_r34] = _LOAD_FAST_AND_CLEAR,
+    #endif
+    #if MAX_CACHED_REGISTER >= 5
     [_LOAD_FAST_AND_CLEAR_r45] = _LOAD_FAST_AND_CLEAR,
+    #endif
+    #if MAX_CACHED_REGISTER >= 1
     [_LOAD_CONST_r01] = _LOAD_CONST,
+    #endif
+    #if MAX_CACHED_REGISTER >= 2
     [_LOAD_CONST_r12] = _LOAD_CONST,
+    #endif
+    #if MAX_CACHED_REGISTER >= 3
     [_LOAD_CONST_r23] = _LOAD_CONST,
+    #endif
+    #if MAX_CACHED_REGISTER >= 4
     [_LOAD_CONST_r34] = _LOAD_CONST,
+    #endif
+    #if MAX_CACHED_REGISTER >= 5
     [_LOAD_CONST_r45] = _LOAD_CONST,
+    #endif
+    #if MAX_CACHED_REGISTER >= 1
     [_LOAD_SMALL_INT_0_r01] = _LOAD_SMALL_INT_0,
+    #endif
+    #if MAX_CACHED_REGISTER >= 2
     [_LOAD_SMALL_INT_0_r12] = _LOAD_SMALL_INT_0,
+    #endif
+    #if MAX_CACHED_REGISTER >= 3
     [_LOAD_SMALL_INT_0_r23] = _LOAD_SMALL_INT_0,
+    #endif
+    #if MAX_CACHED_REGISTER >= 4
     [_LOAD_SMALL_INT_0_r34] = _LOAD_SMALL_INT_0,
+    #endif
+    #if MAX_CACHED_REGISTER >= 5
     [_LOAD_SMALL_INT_0_r45] = _LOAD_SMALL_INT_0,
+    #endif
+    #if MAX_CACHED_REGISTER >= 1
     [_LOAD_SMALL_INT_1_r01] = _LOAD_SMALL_INT_1,
+    #endif
+    #if MAX_CACHED_REGISTER >= 2
     [_LOAD_SMALL_INT_1_r12] = _LOAD_SMALL_INT_1,
+    #endif
+    #if MAX_CACHED_REGISTER >= 3
     [_LOAD_SMALL_INT_1_r23] = _LOAD_SMALL_INT_1,
+    #endif
+    #if MAX_CACHED_REGISTER >= 4
     [_LOAD_SMALL_INT_1_r34] = _LOAD_SMALL_INT_1,
+    #endif
+    #if MAX_CACHED_REGISTER >= 5
     [_LOAD_SMALL_INT_1_r45] = _LOAD_SMALL_INT_1,
+    #endif
+    #if MAX_CACHED_REGISTER >= 1
     [_LOAD_SMALL_INT_2_r01] = _LOAD_SMALL_INT_2,
+    #endif
+    #if MAX_CACHED_REGISTER >= 2
     [_LOAD_SMALL_INT_2_r12] = _LOAD_SMALL_INT_2,
+    #endif
+    #if MAX_CACHED_REGISTER >= 3
     [_LOAD_SMALL_INT_2_r23] = _LOAD_SMALL_INT_2,
+    #endif
+    #if MAX_CACHED_REGISTER >= 4
     [_LOAD_SMALL_INT_2_r34] = _LOAD_SMALL_INT_2,
+    #endif
+    #if MAX_CACHED_REGISTER >= 5
     [_LOAD_SMALL_INT_2_r45] = _LOAD_SMALL_INT_2,
+    #endif
+    #if MAX_CACHED_REGISTER >= 1
     [_LOAD_SMALL_INT_3_r01] = _LOAD_SMALL_INT_3,
+    #endif
+    #if MAX_CACHED_REGISTER >= 2
     [_LOAD_SMALL_INT_3_r12] = _LOAD_SMALL_INT_3,
+    #endif
+    #if MAX_CACHED_REGISTER >= 3
     [_LOAD_SMALL_INT_3_r23] = _LOAD_SMALL_INT_3,
+    #endif
+    #if MAX_CACHED_REGISTER >= 4
     [_LOAD_SMALL_INT_3_r34] = _LOAD_SMALL_INT_3,
+    #endif
+    #if MAX_CACHED_REGISTER >= 5
     [_LOAD_SMALL_INT_3_r45] = _LOAD_SMALL_INT_3,
+    #endif
+    #if MAX_CACHED_REGISTER >= 1
     [_LOAD_SMALL_INT_r01] = _LOAD_SMALL_INT,
+    #endif
+    #if MAX_CACHED_REGISTER >= 2
     [_LOAD_SMALL_INT_r12] = _LOAD_SMALL_INT,
+    #endif
+    #if MAX_CACHED_REGISTER >= 3
     [_LOAD_SMALL_INT_r23] = _LOAD_SMALL_INT,
+    #endif
+    #if MAX_CACHED_REGISTER >= 4
     [_LOAD_SMALL_INT_r34] = _LOAD_SMALL_INT,
+    #endif
+    #if MAX_CACHED_REGISTER >= 5
     [_LOAD_SMALL_INT_r45] = _LOAD_SMALL_INT,
+    #endif
+    #if MAX_CACHED_REGISTER >= 1
     [_SWAP_FAST_0_r01] = _SWAP_FAST_0,
+    #endif
+    #if MAX_CACHED_REGISTER >= 1
     [_SWAP_FAST_0_r11] = _SWAP_FAST_0,
+    #endif
+    #if MAX_CACHED_REGISTER >= 2
     [_SWAP_FAST_0_r22] = _SWAP_FAST_0,
+    #endif
+    #if MAX_CACHED_REGISTER >= 3
     [_SWAP_FAST_0_r33] = _SWAP_FAST_0,
+    #endif
+    #if MAX_CACHED_REGISTER >= 4
     [_SWAP_FAST_0_r44] = _SWAP_FAST_0,
+    #endif
+    #if MAX_CACHED_REGISTER >= 5
     [_SWAP_FAST_0_r55] = _SWAP_FAST_0,
+    #endif
+    #if MAX_CACHED_REGISTER >= 1
     [_SWAP_FAST_1_r01] = _SWAP_FAST_1,
+    #endif
+    #if MAX_CACHED_REGISTER >= 1
     [_SWAP_FAST_1_r11] = _SWAP_FAST_1,
+    #endif
+    #if MAX_CACHED_REGISTER >= 2
     [_SWAP_FAST_1_r22] = _SWAP_FAST_1,
+    #endif
+    #if MAX_CACHED_REGISTER >= 3
     [_SWAP_FAST_1_r33] = _SWAP_FAST_1,
+    #endif
+    #if MAX_CACHED_REGISTER >= 4
     [_SWAP_FAST_1_r44] = _SWAP_FAST_1,
+    #endif
+    #if MAX_CACHED_REGISTER >= 5
     [_SWAP_FAST_1_r55] = _SWAP_FAST_1,
+    #endif
+    #if MAX_CACHED_REGISTER >= 1
     [_SWAP_FAST_2_r01] = _SWAP_FAST_2,
+    #endif
+    #if MAX_CACHED_REGISTER >= 1
     [_SWAP_FAST_2_r11] = _SWAP_FAST_2,
+    #endif
+    #if MAX_CACHED_REGISTER >= 2
     [_SWAP_FAST_2_r22] = _SWAP_FAST_2,
+    #endif
+    #if MAX_CACHED_REGISTER >= 3
     [_SWAP_FAST_2_r33] = _SWAP_FAST_2,
+    #endif
+    #if MAX_CACHED_REGISTER >= 4
     [_SWAP_FAST_2_r44] = _SWAP_FAST_2,
+    #endif
+    #if MAX_CACHED_REGISTER >= 5
     [_SWAP_FAST_2_r55] = _SWAP_FAST_2,
+    #endif
+    #if MAX_CACHED_REGISTER >= 1
     [_SWAP_FAST_3_r01] = _SWAP_FAST_3,
+    #endif
+    #if MAX_CACHED_REGISTER >= 1
     [_SWAP_FAST_3_r11] = _SWAP_FAST_3,
+    #endif
+    #if MAX_CACHED_REGISTER >= 2
     [_SWAP_FAST_3_r22] = _SWAP_FAST_3,
+    #endif
+    #if MAX_CACHED_REGISTER >= 3
     [_SWAP_FAST_3_r33] = _SWAP_FAST_3,
+    #endif
+    #if MAX_CACHED_REGISTER >= 4
     [_SWAP_FAST_3_r44] = _SWAP_FAST_3,
+    #endif
+    #if MAX_CACHED_REGISTER >= 5
     [_SWAP_FAST_3_r55] = _SWAP_FAST_3,
+    #endif
+    #if MAX_CACHED_REGISTER >= 1
     [_SWAP_FAST_4_r01] = _SWAP_FAST_4,
+    #endif
+    #if MAX_CACHED_REGISTER >= 1
     [_SWAP_FAST_4_r11] = _SWAP_FAST_4,
+    #endif
+    #if MAX_CACHED_REGISTER >= 2
     [_SWAP_FAST_4_r22] = _SWAP_FAST_4,
+    #endif
+    #if MAX_CACHED_REGISTER >= 3
     [_SWAP_FAST_4_r33] = _SWAP_FAST_4,
+    #endif
+    #if MAX_CACHED_REGISTER >= 4
     [_SWAP_FAST_4_r44] = _SWAP_FAST_4,
+    #endif
+    #if MAX_CACHED_REGISTER >= 5
     [_SWAP_FAST_4_r55] = _SWAP_FAST_4,
+    #endif
+    #if MAX_CACHED_REGISTER >= 1
     [_SWAP_FAST_5_r01] = _SWAP_FAST_5,
+    #endif
+    #if MAX_CACHED_REGISTER >= 1
     [_SWAP_FAST_5_r11] = _SWAP_FAST_5,
+    #endif
+    #if MAX_CACHED_REGISTER >= 2
     [_SWAP_FAST_5_r22] = _SWAP_FAST_5,
+    #endif
+    #if MAX_CACHED_REGISTER >= 3
     [_SWAP_FAST_5_r33] = _SWAP_FAST_5,
+    #endif
+    #if MAX_CACHED_REGISTER >= 4
     [_SWAP_FAST_5_r44] = _SWAP_FAST_5,
+    #endif
+    #if MAX_CACHED_REGISTER >= 5
     [_SWAP_FAST_5_r55] = _SWAP_FAST_5,
+    #endif
+    #if MAX_CACHED_REGISTER >= 1
     [_SWAP_FAST_6_r01] = _SWAP_FAST_6,
+    #endif
+    #if MAX_CACHED_REGISTER >= 1
     [_SWAP_FAST_6_r11] = _SWAP_FAST_6,
+    #endif
+    #if MAX_CACHED_REGISTER >= 2
     [_SWAP_FAST_6_r22] = _SWAP_FAST_6,
+    #endif
+    #if MAX_CACHED_REGISTER >= 3
     [_SWAP_FAST_6_r33] = _SWAP_FAST_6,
+    #endif
+    #if MAX_CACHED_REGISTER >= 4
     [_SWAP_FAST_6_r44] = _SWAP_FAST_6,
+    #endif
+    #if MAX_CACHED_REGISTER >= 5
     [_SWAP_FAST_6_r55] = _SWAP_FAST_6,
+    #endif
+    #if MAX_CACHED_REGISTER >= 1
     [_SWAP_FAST_7_r01] = _SWAP_FAST_7,
+    #endif
+    #if MAX_CACHED_REGISTER >= 1
     [_SWAP_FAST_7_r11] = _SWAP_FAST_7,
+    #endif
+    #if MAX_CACHED_REGISTER >= 2
     [_SWAP_FAST_7_r22] = _SWAP_FAST_7,
+    #endif
+    #if MAX_CACHED_REGISTER >= 3
     [_SWAP_FAST_7_r33] = _SWAP_FAST_7,
+    #endif
+    #if MAX_CACHED_REGISTER >= 4
     [_SWAP_FAST_7_r44] = _SWAP_FAST_7,
+    #endif
+    #if MAX_CACHED_REGISTER >= 5
     [_SWAP_FAST_7_r55] = _SWAP_FAST_7,
+    #endif
+    #if MAX_CACHED_REGISTER >= 1
     [_SWAP_FAST_r01] = _SWAP_FAST,
+    #endif
+    #if MAX_CACHED_REGISTER >= 1
     [_SWAP_FAST_r11] = _SWAP_FAST,
+    #endif
+    #if MAX_CACHED_REGISTER >= 2
     [_SWAP_FAST_r22] = _SWAP_FAST,
+    #endif
+    #if MAX_CACHED_REGISTER >= 3
     [_SWAP_FAST_r33] = _SWAP_FAST,
+    #endif
+    #if MAX_CACHED_REGISTER >= 4
     [_SWAP_FAST_r44] = _SWAP_FAST,
+    #endif
+    #if MAX_CACHED_REGISTER >= 5
     [_SWAP_FAST_r55] = _SWAP_FAST,
+    #endif
+    #if MAX_CACHED_REGISTER >= 1
     [_POP_TOP_r10] = _POP_TOP,
+    #endif
     [_POP_TOP_NOP_r00] = _POP_TOP_NOP,
+    #if MAX_CACHED_REGISTER >= 1
     [_POP_TOP_NOP_r10] = _POP_TOP_NOP,
+    #endif
+    #if MAX_CACHED_REGISTER >= 2
     [_POP_TOP_NOP_r21] = _POP_TOP_NOP,
+    #endif
+    #if MAX_CACHED_REGISTER >= 3
     [_POP_TOP_NOP_r32] = _POP_TOP_NOP,
+    #endif
+    #if MAX_CACHED_REGISTER >= 4
     [_POP_TOP_NOP_r43] = _POP_TOP_NOP,
+    #endif
+    #if MAX_CACHED_REGISTER >= 5
     [_POP_TOP_NOP_r54] = _POP_TOP_NOP,
+    #endif
     [_POP_TOP_INT_r00] = _POP_TOP_INT,
+    #if MAX_CACHED_REGISTER >= 1
     [_POP_TOP_INT_r10] = _POP_TOP_INT,
+    #endif
+    #if MAX_CACHED_REGISTER >= 2
     [_POP_TOP_INT_r21] = _POP_TOP_INT,
+    #endif
+    #if MAX_CACHED_REGISTER >= 3
     [_POP_TOP_INT_r32] = _POP_TOP_INT,
+    #endif
+    #if MAX_CACHED_REGISTER >= 4
     [_POP_TOP_INT_r43] = _POP_TOP_INT,
+    #endif
+    #if MAX_CACHED_REGISTER >= 5
     [_POP_TOP_INT_r54] = _POP_TOP_INT,
+    #endif
     [_POP_TOP_FLOAT_r00] = _POP_TOP_FLOAT,
+    #if MAX_CACHED_REGISTER >= 1
     [_POP_TOP_FLOAT_r10] = _POP_TOP_FLOAT,
+    #endif
+    #if MAX_CACHED_REGISTER >= 2
     [_POP_TOP_FLOAT_r21] = _POP_TOP_FLOAT,
+    #endif
+    #if MAX_CACHED_REGISTER >= 3
     [_POP_TOP_FLOAT_r32] = _POP_TOP_FLOAT,
+    #endif
+    #if MAX_CACHED_REGISTER >= 4
     [_POP_TOP_FLOAT_r43] = _POP_TOP_FLOAT,
+    #endif
+    #if MAX_CACHED_REGISTER >= 5
     [_POP_TOP_FLOAT_r54] = _POP_TOP_FLOAT,
+    #endif
     [_POP_TOP_UNICODE_r00] = _POP_TOP_UNICODE,
+    #if MAX_CACHED_REGISTER >= 1
     [_POP_TOP_UNICODE_r10] = _POP_TOP_UNICODE,
+    #endif
+    #if MAX_CACHED_REGISTER >= 2
     [_POP_TOP_UNICODE_r21] = _POP_TOP_UNICODE,
+    #endif
+    #if MAX_CACHED_REGISTER >= 3
     [_POP_TOP_UNICODE_r32] = _POP_TOP_UNICODE,
+    #endif
+    #if MAX_CACHED_REGISTER >= 4
     [_POP_TOP_UNICODE_r43] = _POP_TOP_UNICODE,
+    #endif
+    #if MAX_CACHED_REGISTER >= 5
     [_POP_TOP_UNICODE_r54] = _POP_TOP_UNICODE,
+    #endif
+    #if MAX_CACHED_REGISTER >= 2
     [_POP_TWO_r20] = _POP_TWO,
+    #endif
+    #if MAX_CACHED_REGISTER >= 1
     [_PUSH_NULL_r01] = _PUSH_NULL,
+    #endif
+    #if MAX_CACHED_REGISTER >= 2
     [_PUSH_NULL_r12] = _PUSH_NULL,
+    #endif
+    #if MAX_CACHED_REGISTER >= 3
     [_PUSH_NULL_r23] = _PUSH_NULL,
+    #endif
+    #if MAX_CACHED_REGISTER >= 4
     [_PUSH_NULL_r34] = _PUSH_NULL,
+    #endif
+    #if MAX_CACHED_REGISTER >= 5
     [_PUSH_NULL_r45] = _PUSH_NULL,
+    #endif
+    #if MAX_CACHED_REGISTER >= 1
     [_END_FOR_r10] = _END_FOR,
+    #endif
+    #if MAX_CACHED_REGISTER >= 2
     [_POP_ITER_r20] = _POP_ITER,
+    #endif
+    #if MAX_CACHED_REGISTER >= 2
     [_END_SEND_r21] = _END_SEND,
+    #endif
+    #if MAX_CACHED_REGISTER >= 2
     [_UNARY_NEGATIVE_r12] = _UNARY_NEGATIVE,
+    #endif
+    #if MAX_CACHED_REGISTER >= 1
     [_UNARY_NOT_r01] = _UNARY_NOT,
+    #endif
+    #if MAX_CACHED_REGISTER >= 1
     [_UNARY_NOT_r11] = _UNARY_NOT,
+    #endif
+    #if MAX_CACHED_REGISTER >= 2
     [_UNARY_NOT_r22] = _UNARY_NOT,
+    #endif
+    #if MAX_CACHED_REGISTER >= 3
     [_UNARY_NOT_r33] = _UNARY_NOT,
+    #endif
+    #if MAX_CACHED_REGISTER >= 4
     [_UNARY_NOT_r44] = _UNARY_NOT,
+    #endif
+    #if MAX_CACHED_REGISTER >= 5
     [_UNARY_NOT_r55] = _UNARY_NOT,
+    #endif
+    #if MAX_CACHED_REGISTER >= 1
     [_TO_BOOL_r11] = _TO_BOOL,
+    #endif
+    #if MAX_CACHED_REGISTER >= 1
     [_TO_BOOL_BOOL_r01] = _TO_BOOL_BOOL,
+    #endif
+    #if MAX_CACHED_REGISTER >= 1
     [_TO_BOOL_BOOL_r11] = _TO_BOOL_BOOL,
+    #endif
+    #if MAX_CACHED_REGISTER >= 2
     [_TO_BOOL_BOOL_r22] = _TO_BOOL_BOOL,
+    #endif
+    #if MAX_CACHED_REGISTER >= 3
     [_TO_BOOL_BOOL_r33] = _TO_BOOL_BOOL,
+    #endif
+    #if MAX_CACHED_REGISTER >= 4
     [_TO_BOOL_BOOL_r44] = _TO_BOOL_BOOL,
+    #endif
+    #if MAX_CACHED_REGISTER >= 5
     [_TO_BOOL_BOOL_r55] = _TO_BOOL_BOOL,
+    #endif
+    #if MAX_CACHED_REGISTER >= 2
     [_TO_BOOL_INT_r02] = _TO_BOOL_INT,
+    #endif
+    #if MAX_CACHED_REGISTER >= 2
     [_TO_BOOL_INT_r12] = _TO_BOOL_INT,
+    #endif
+    #if MAX_CACHED_REGISTER >= 3
     [_TO_BOOL_INT_r23] = _TO_BOOL_INT,
+    #endif
+    #if MAX_CACHED_REGISTER >= 4
     [_TO_BOOL_INT_r34] = _TO_BOOL_INT,
+    #endif
+    #if MAX_CACHED_REGISTER >= 5
     [_TO_BOOL_INT_r45] = _TO_BOOL_INT,
+    #endif
+    #if MAX_CACHED_REGISTER >= 2
     [_GUARD_NOS_LIST_r02] = _GUARD_NOS_LIST,
+    #endif
+    #if MAX_CACHED_REGISTER >= 2
     [_GUARD_NOS_LIST_r12] = _GUARD_NOS_LIST,
+    #endif
+    #if MAX_CACHED_REGISTER >= 2
     [_GUARD_NOS_LIST_r22] = _GUARD_NOS_LIST,
+    #endif
+    #if MAX_CACHED_REGISTER >= 3
     [_GUARD_NOS_LIST_r33] = _GUARD_NOS_LIST,
+    #endif
+    #if MAX_CACHED_REGISTER >= 4
     [_GUARD_NOS_LIST_r44] = _GUARD_NOS_LIST,
+    #endif
+    #if MAX_CACHED_REGISTER >= 5
     [_GUARD_NOS_LIST_r55] = _GUARD_NOS_LIST,
+    #endif
+    #if MAX_CACHED_REGISTER >= 1
     [_GUARD_TOS_LIST_r01] = _GUARD_TOS_LIST,
+    #endif
+    #if MAX_CACHED_REGISTER >= 1
     [_GUARD_TOS_LIST_r11] = _GUARD_TOS_LIST,
+    #endif
+    #if MAX_CACHED_REGISTER >= 2
     [_GUARD_TOS_LIST_r22] = _GUARD_TOS_LIST,
+    #endif
+    #if MAX_CACHED_REGISTER >= 3
     [_GUARD_TOS_LIST_r33] = _GUARD_TOS_LIST,
+    #endif
+    #if MAX_CACHED_REGISTER >= 4
     [_GUARD_TOS_LIST_r44] = _GUARD_TOS_LIST,
+    #endif
+    #if MAX_CACHED_REGISTER >= 5
     [_GUARD_TOS_LIST_r55] = _GUARD_TOS_LIST,
+    #endif
+    #if MAX_CACHED_REGISTER >= 1
     [_GUARD_TOS_SLICE_r01] = _GUARD_TOS_SLICE,
+    #endif
+    #if MAX_CACHED_REGISTER >= 1
     [_GUARD_TOS_SLICE_r11] = _GUARD_TOS_SLICE,
+    #endif
+    #if MAX_CACHED_REGISTER >= 2
     [_GUARD_TOS_SLICE_r22] = _GUARD_TOS_SLICE,
+    #endif
+    #if MAX_CACHED_REGISTER >= 3
     [_GUARD_TOS_SLICE_r33] = _GUARD_TOS_SLICE,
+    #endif
+    #if MAX_CACHED_REGISTER >= 4
     [_GUARD_TOS_SLICE_r44] = _GUARD_TOS_SLICE,
+    #endif
+    #if MAX_CACHED_REGISTER >= 5
     [_GUARD_TOS_SLICE_r55] = _GUARD_TOS_SLICE,
+    #endif
+    #if MAX_CACHED_REGISTER >= 2
     [_TO_BOOL_LIST_r02] = _TO_BOOL_LIST,
+    #endif
+    #if MAX_CACHED_REGISTER >= 2
     [_TO_BOOL_LIST_r12] = _TO_BOOL_LIST,
+    #endif
+    #if MAX_CACHED_REGISTER >= 3
     [_TO_BOOL_LIST_r23] = _TO_BOOL_LIST,
+    #endif
+    #if MAX_CACHED_REGISTER >= 4
     [_TO_BOOL_LIST_r34] = _TO_BOOL_LIST,
+    #endif
+    #if MAX_CACHED_REGISTER >= 5
     [_TO_BOOL_LIST_r45] = _TO_BOOL_LIST,
+    #endif
+    #if MAX_CACHED_REGISTER >= 1
     [_TO_BOOL_NONE_r01] = _TO_BOOL_NONE,
+    #endif
+    #if MAX_CACHED_REGISTER >= 1
     [_TO_BOOL_NONE_r11] = _TO_BOOL_NONE,
+    #endif
+    #if MAX_CACHED_REGISTER >= 2
     [_TO_BOOL_NONE_r22] = _TO_BOOL_NONE,
+    #endif
+    #if MAX_CACHED_REGISTER >= 3
     [_TO_BOOL_NONE_r33] = _TO_BOOL_NONE,
+    #endif
+    #if MAX_CACHED_REGISTER >= 4
     [_TO_BOOL_NONE_r44] = _TO_BOOL_NONE,
+    #endif
+    #if MAX_CACHED_REGISTER >= 5
     [_TO_BOOL_NONE_r55] = _TO_BOOL_NONE,
+    #endif
+    #if MAX_CACHED_REGISTER >= 2
     [_GUARD_NOS_COMPACT_ASCII_r02] = _GUARD_NOS_COMPACT_ASCII,
+    #endif
+    #if MAX_CACHED_REGISTER >= 2
     [_GUARD_NOS_COMPACT_ASCII_r12] = _GUARD_NOS_COMPACT_ASCII,
+    #endif
+    #if MAX_CACHED_REGISTER >= 2
     [_GUARD_NOS_COMPACT_ASCII_r22] = _GUARD_NOS_COMPACT_ASCII,
+    #endif
+    #if MAX_CACHED_REGISTER >= 3
     [_GUARD_NOS_COMPACT_ASCII_r33] = _GUARD_NOS_COMPACT_ASCII,
+    #endif
+    #if MAX_CACHED_REGISTER >= 4
     [_GUARD_NOS_COMPACT_ASCII_r44] = _GUARD_NOS_COMPACT_ASCII,
+    #endif
+    #if MAX_CACHED_REGISTER >= 5
     [_GUARD_NOS_COMPACT_ASCII_r55] = _GUARD_NOS_COMPACT_ASCII,
+    #endif
+    #if MAX_CACHED_REGISTER >= 2
     [_GUARD_NOS_UNICODE_r02] = _GUARD_NOS_UNICODE,
+    #endif
+    #if MAX_CACHED_REGISTER >= 2
     [_GUARD_NOS_UNICODE_r12] = _GUARD_NOS_UNICODE,
+    #endif
+    #if MAX_CACHED_REGISTER >= 2
     [_GUARD_NOS_UNICODE_r22] = _GUARD_NOS_UNICODE,
+    #endif
+    #if MAX_CACHED_REGISTER >= 3
     [_GUARD_NOS_UNICODE_r33] = _GUARD_NOS_UNICODE,
+    #endif
+    #if MAX_CACHED_REGISTER >= 4
     [_GUARD_NOS_UNICODE_r44] = _GUARD_NOS_UNICODE,
+    #endif
+    #if MAX_CACHED_REGISTER >= 5
     [_GUARD_NOS_UNICODE_r55] = _GUARD_NOS_UNICODE,
+    #endif
+    #if MAX_CACHED_REGISTER >= 1
     [_GUARD_TOS_UNICODE_r01] = _GUARD_TOS_UNICODE,
+    #endif
+    #if MAX_CACHED_REGISTER >= 1
     [_GUARD_TOS_UNICODE_r11] = _GUARD_TOS_UNICODE,
+    #endif
+    #if MAX_CACHED_REGISTER >= 2
     [_GUARD_TOS_UNICODE_r22] = _GUARD_TOS_UNICODE,
+    #endif
+    #if MAX_CACHED_REGISTER >= 3
     [_GUARD_TOS_UNICODE_r33] = _GUARD_TOS_UNICODE,
+    #endif
+    #if MAX_CACHED_REGISTER >= 4
     [_GUARD_TOS_UNICODE_r44] = _GUARD_TOS_UNICODE,
+    #endif
+    #if MAX_CACHED_REGISTER >= 5
     [_GUARD_TOS_UNICODE_r55] = _GUARD_TOS_UNICODE,
+    #endif
+    #if MAX_CACHED_REGISTER >= 2
     [_TO_BOOL_STR_r02] = _TO_BOOL_STR,
+    #endif
+    #if MAX_CACHED_REGISTER >= 2
     [_TO_BOOL_STR_r12] = _TO_BOOL_STR,
+    #endif
+    #if MAX_CACHED_REGISTER >= 3
     [_TO_BOOL_STR_r23] = _TO_BOOL_STR,
+    #endif
+    #if MAX_CACHED_REGISTER >= 4
     [_TO_BOOL_STR_r34] = _TO_BOOL_STR,
+    #endif
+    #if MAX_CACHED_REGISTER >= 5
     [_TO_BOOL_STR_r45] = _TO_BOOL_STR,
+    #endif
+    #if MAX_CACHED_REGISTER >= 2
     [_REPLACE_WITH_TRUE_r02] = _REPLACE_WITH_TRUE,
+    #endif
+    #if MAX_CACHED_REGISTER >= 2
     [_REPLACE_WITH_TRUE_r12] = _REPLACE_WITH_TRUE,
+    #endif
+    #if MAX_CACHED_REGISTER >= 3
     [_REPLACE_WITH_TRUE_r23] = _REPLACE_WITH_TRUE,
+    #endif
+    #if MAX_CACHED_REGISTER >= 4
     [_REPLACE_WITH_TRUE_r34] = _REPLACE_WITH_TRUE,
+    #endif
+    #if MAX_CACHED_REGISTER >= 5
     [_REPLACE_WITH_TRUE_r45] = _REPLACE_WITH_TRUE,
+    #endif
+    #if MAX_CACHED_REGISTER >= 2
     [_UNARY_INVERT_r12] = _UNARY_INVERT,
+    #endif
+    #if MAX_CACHED_REGISTER >= 2
     [_GUARD_NOS_INT_r02] = _GUARD_NOS_INT,
+    #endif
+    #if MAX_CACHED_REGISTER >= 2
     [_GUARD_NOS_INT_r12] = _GUARD_NOS_INT,
+    #endif
+    #if MAX_CACHED_REGISTER >= 2
     [_GUARD_NOS_INT_r22] = _GUARD_NOS_INT,
+    #endif
+    #if MAX_CACHED_REGISTER >= 3
     [_GUARD_NOS_INT_r33] = _GUARD_NOS_INT,
+    #endif
+    #if MAX_CACHED_REGISTER >= 4
     [_GUARD_NOS_INT_r44] = _GUARD_NOS_INT,
+    #endif
+    #if MAX_CACHED_REGISTER >= 5
     [_GUARD_NOS_INT_r55] = _GUARD_NOS_INT,
+    #endif
+    #if MAX_CACHED_REGISTER >= 1
     [_GUARD_TOS_INT_r01] = _GUARD_TOS_INT,
+    #endif
+    #if MAX_CACHED_REGISTER >= 1
     [_GUARD_TOS_INT_r11] = _GUARD_TOS_INT,
+    #endif
+    #if MAX_CACHED_REGISTER >= 2
     [_GUARD_TOS_INT_r22] = _GUARD_TOS_INT,
+    #endif
+    #if MAX_CACHED_REGISTER >= 3
     [_GUARD_TOS_INT_r33] = _GUARD_TOS_INT,
+    #endif
+    #if MAX_CACHED_REGISTER >= 4
     [_GUARD_TOS_INT_r44] = _GUARD_TOS_INT,
+    #endif
+    #if MAX_CACHED_REGISTER >= 5
     [_GUARD_TOS_INT_r55] = _GUARD_TOS_INT,
+    #endif
+    #if MAX_CACHED_REGISTER >= 2
     [_GUARD_NOS_OVERFLOWED_r02] = _GUARD_NOS_OVERFLOWED,
+    #endif
+    #if MAX_CACHED_REGISTER >= 2
     [_GUARD_NOS_OVERFLOWED_r12] = _GUARD_NOS_OVERFLOWED,
+    #endif
+    #if MAX_CACHED_REGISTER >= 2
     [_GUARD_NOS_OVERFLOWED_r22] = _GUARD_NOS_OVERFLOWED,
+    #endif
+    #if MAX_CACHED_REGISTER >= 3
     [_GUARD_NOS_OVERFLOWED_r33] = _GUARD_NOS_OVERFLOWED,
+    #endif
+    #if MAX_CACHED_REGISTER >= 4
     [_GUARD_NOS_OVERFLOWED_r44] = _GUARD_NOS_OVERFLOWED,
+    #endif
+    #if MAX_CACHED_REGISTER >= 5
     [_GUARD_NOS_OVERFLOWED_r55] = _GUARD_NOS_OVERFLOWED,
+    #endif
+    #if MAX_CACHED_REGISTER >= 1
     [_GUARD_TOS_OVERFLOWED_r01] = _GUARD_TOS_OVERFLOWED,
+    #endif
+    #if MAX_CACHED_REGISTER >= 1
     [_GUARD_TOS_OVERFLOWED_r11] = _GUARD_TOS_OVERFLOWED,
+    #endif
+    #if MAX_CACHED_REGISTER >= 2
     [_GUARD_TOS_OVERFLOWED_r22] = _GUARD_TOS_OVERFLOWED,
+    #endif
+    #if MAX_CACHED_REGISTER >= 3
     [_GUARD_TOS_OVERFLOWED_r33] = _GUARD_TOS_OVERFLOWED,
+    #endif
+    #if MAX_CACHED_REGISTER >= 4
     [_GUARD_TOS_OVERFLOWED_r44] = _GUARD_TOS_OVERFLOWED,
+    #endif
+    #if MAX_CACHED_REGISTER >= 5
     [_GUARD_TOS_OVERFLOWED_r55] = _GUARD_TOS_OVERFLOWED,
+    #endif
+    #if MAX_CACHED_REGISTER >= 3
     [_BINARY_OP_MULTIPLY_INT_r03] = _BINARY_OP_MULTIPLY_INT,
+    #endif
+    #if MAX_CACHED_REGISTER >= 3
     [_BINARY_OP_MULTIPLY_INT_r13] = _BINARY_OP_MULTIPLY_INT,
+    #endif
+    #if MAX_CACHED_REGISTER >= 3
     [_BINARY_OP_MULTIPLY_INT_r23] = _BINARY_OP_MULTIPLY_INT,
+    #endif
+    #if MAX_CACHED_REGISTER >= 4
     [_BINARY_OP_MULTIPLY_INT_r34] = _BINARY_OP_MULTIPLY_INT,
+    #endif
+    #if MAX_CACHED_REGISTER >= 5
     [_BINARY_OP_MULTIPLY_INT_r45] = _BINARY_OP_MULTIPLY_INT,
+    #endif
+    #if MAX_CACHED_REGISTER >= 3
     [_BINARY_OP_ADD_INT_r03] = _BINARY_OP_ADD_INT,
+    #endif
+    #if MAX_CACHED_REGISTER >= 3
     [_BINARY_OP_ADD_INT_r13] = _BINARY_OP_ADD_INT,
+    #endif
+    #if MAX_CACHED_REGISTER >= 3
     [_BINARY_OP_ADD_INT_r23] = _BINARY_OP_ADD_INT,
+    #endif
+    #if MAX_CACHED_REGISTER >= 4
     [_BINARY_OP_ADD_INT_r34] = _BINARY_OP_ADD_INT,
+    #endif
+    #if MAX_CACHED_REGISTER >= 5
     [_BINARY_OP_ADD_INT_r45] = _BINARY_OP_ADD_INT,
+    #endif
+    #if MAX_CACHED_REGISTER >= 3
     [_BINARY_OP_SUBTRACT_INT_r03] = _BINARY_OP_SUBTRACT_INT,
+    #endif
+    #if MAX_CACHED_REGISTER >= 3
     [_BINARY_OP_SUBTRACT_INT_r13] = _BINARY_OP_SUBTRACT_INT,
+    #endif
+    #if MAX_CACHED_REGISTER >= 3
     [_BINARY_OP_SUBTRACT_INT_r23] = _BINARY_OP_SUBTRACT_INT,
+    #endif
+    #if MAX_CACHED_REGISTER >= 4
     [_BINARY_OP_SUBTRACT_INT_r34] = _BINARY_OP_SUBTRACT_INT,
+    #endif
+    #if MAX_CACHED_REGISTER >= 5
     [_BINARY_OP_SUBTRACT_INT_r45] = _BINARY_OP_SUBTRACT_INT,
+    #endif
+    #if MAX_CACHED_REGISTER >= 2
     [_GUARD_NOS_FLOAT_r02] = _GUARD_NOS_FLOAT,
+    #endif
+    #if MAX_CACHED_REGISTER >= 2
     [_GUARD_NOS_FLOAT_r12] = _GUARD_NOS_FLOAT,
+    #endif
+    #if MAX_CACHED_REGISTER >= 2
     [_GUARD_NOS_FLOAT_r22] = _GUARD_NOS_FLOAT,
+    #endif
+    #if MAX_CACHED_REGISTER >= 3
     [_GUARD_NOS_FLOAT_r33] = _GUARD_NOS_FLOAT,
+    #endif
+    #if MAX_CACHED_REGISTER >= 4
     [_GUARD_NOS_FLOAT_r44] = _GUARD_NOS_FLOAT,
+    #endif
+    #if MAX_CACHED_REGISTER >= 5
     [_GUARD_NOS_FLOAT_r55] = _GUARD_NOS_FLOAT,
+    #endif
+    #if MAX_CACHED_REGISTER >= 1
     [_GUARD_TOS_FLOAT_r01] = _GUARD_TOS_FLOAT,
+    #endif
+    #if MAX_CACHED_REGISTER >= 1
     [_GUARD_TOS_FLOAT_r11] = _GUARD_TOS_FLOAT,
+    #endif
+    #if MAX_CACHED_REGISTER >= 2
     [_GUARD_TOS_FLOAT_r22] = _GUARD_TOS_FLOAT,
+    #endif
+    #if MAX_CACHED_REGISTER >= 3
     [_GUARD_TOS_FLOAT_r33] = _GUARD_TOS_FLOAT,
+    #endif
+    #if MAX_CACHED_REGISTER >= 4
     [_GUARD_TOS_FLOAT_r44] = _GUARD_TOS_FLOAT,
+    #endif
+    #if MAX_CACHED_REGISTER >= 5
     [_GUARD_TOS_FLOAT_r55] = _GUARD_TOS_FLOAT,
+    #endif
+    #if MAX_CACHED_REGISTER >= 3
     [_BINARY_OP_MULTIPLY_FLOAT_r03] = _BINARY_OP_MULTIPLY_FLOAT,
+    #endif
+    #if MAX_CACHED_REGISTER >= 3
     [_BINARY_OP_MULTIPLY_FLOAT_r13] = _BINARY_OP_MULTIPLY_FLOAT,
+    #endif
+    #if MAX_CACHED_REGISTER >= 3
     [_BINARY_OP_MULTIPLY_FLOAT_r23] = _BINARY_OP_MULTIPLY_FLOAT,
+    #endif
+    #if MAX_CACHED_REGISTER >= 4
     [_BINARY_OP_MULTIPLY_FLOAT_r34] = _BINARY_OP_MULTIPLY_FLOAT,
+    #endif
+    #if MAX_CACHED_REGISTER >= 5
     [_BINARY_OP_MULTIPLY_FLOAT_r45] = _BINARY_OP_MULTIPLY_FLOAT,
+    #endif
+    #if MAX_CACHED_REGISTER >= 3
     [_BINARY_OP_ADD_FLOAT_r03] = _BINARY_OP_ADD_FLOAT,
+    #endif
+    #if MAX_CACHED_REGISTER >= 3
     [_BINARY_OP_ADD_FLOAT_r13] = _BINARY_OP_ADD_FLOAT,
+    #endif
+    #if MAX_CACHED_REGISTER >= 3
     [_BINARY_OP_ADD_FLOAT_r23] = _BINARY_OP_ADD_FLOAT,
+    #endif
+    #if MAX_CACHED_REGISTER >= 4
     [_BINARY_OP_ADD_FLOAT_r34] = _BINARY_OP_ADD_FLOAT,
+    #endif
+    #if MAX_CACHED_REGISTER >= 5
     [_BINARY_OP_ADD_FLOAT_r45] = _BINARY_OP_ADD_FLOAT,
+    #endif
+    #if MAX_CACHED_REGISTER >= 3
     [_BINARY_OP_SUBTRACT_FLOAT_r03] = _BINARY_OP_SUBTRACT_FLOAT,
+    #endif
+    #if MAX_CACHED_REGISTER >= 3
     [_BINARY_OP_SUBTRACT_FLOAT_r13] = _BINARY_OP_SUBTRACT_FLOAT,
+    #endif
+    #if MAX_CACHED_REGISTER >= 3
     [_BINARY_OP_SUBTRACT_FLOAT_r23] = _BINARY_OP_SUBTRACT_FLOAT,
+    #endif
+    #if MAX_CACHED_REGISTER >= 4
     [_BINARY_OP_SUBTRACT_FLOAT_r34] = _BINARY_OP_SUBTRACT_FLOAT,
+    #endif
+    #if MAX_CACHED_REGISTER >= 5
     [_BINARY_OP_SUBTRACT_FLOAT_r45] = _BINARY_OP_SUBTRACT_FLOAT,
+    #endif
+    #if MAX_CACHED_REGISTER >= 3
     [_BINARY_OP_ADD_UNICODE_r03] = _BINARY_OP_ADD_UNICODE,
+    #endif
+    #if MAX_CACHED_REGISTER >= 3
     [_BINARY_OP_ADD_UNICODE_r13] = _BINARY_OP_ADD_UNICODE,
+    #endif
+    #if MAX_CACHED_REGISTER >= 3
     [_BINARY_OP_ADD_UNICODE_r23] = _BINARY_OP_ADD_UNICODE,
+    #endif
+    #if MAX_CACHED_REGISTER >= 4
     [_BINARY_OP_ADD_UNICODE_r34] = _BINARY_OP_ADD_UNICODE,
+    #endif
+    #if MAX_CACHED_REGISTER >= 5
     [_BINARY_OP_ADD_UNICODE_r45] = _BINARY_OP_ADD_UNICODE,
+    #endif
+    #if MAX_CACHED_REGISTER >= 2
     [_BINARY_OP_INPLACE_ADD_UNICODE_r21] = _BINARY_OP_INPLACE_ADD_UNICODE,
+    #endif
+    #if MAX_CACHED_REGISTER >= 2
     [_GUARD_BINARY_OP_EXTEND_r22] = _GUARD_BINARY_OP_EXTEND,
+    #endif
+    #if MAX_CACHED_REGISTER >= 3
     [_BINARY_OP_EXTEND_r23] = _BINARY_OP_EXTEND,
+    #endif
+    #if MAX_CACHED_REGISTER >= 3
     [_BINARY_SLICE_r31] = _BINARY_SLICE,
+    #endif
+    #if MAX_CACHED_REGISTER >= 4
     [_STORE_SLICE_r40] = _STORE_SLICE,
+    #endif
+    #if MAX_CACHED_REGISTER >= 3
     [_BINARY_OP_SUBSCR_LIST_INT_r23] = _BINARY_OP_SUBSCR_LIST_INT,
+    #endif
+    #if MAX_CACHED_REGISTER >= 3
     [_BINARY_OP_SUBSCR_LIST_SLICE_r23] = _BINARY_OP_SUBSCR_LIST_SLICE,
+    #endif
+    #if MAX_CACHED_REGISTER >= 3
     [_BINARY_OP_SUBSCR_STR_INT_r23] = _BINARY_OP_SUBSCR_STR_INT,
+    #endif
+    #if MAX_CACHED_REGISTER >= 3
     [_BINARY_OP_SUBSCR_USTR_INT_r23] = _BINARY_OP_SUBSCR_USTR_INT,
+    #endif
+    #if MAX_CACHED_REGISTER >= 2
     [_GUARD_NOS_TUPLE_r02] = _GUARD_NOS_TUPLE,
+    #endif
+    #if MAX_CACHED_REGISTER >= 2
     [_GUARD_NOS_TUPLE_r12] = _GUARD_NOS_TUPLE,
+    #endif
+    #if MAX_CACHED_REGISTER >= 2
     [_GUARD_NOS_TUPLE_r22] = _GUARD_NOS_TUPLE,
+    #endif
+    #if MAX_CACHED_REGISTER >= 3
     [_GUARD_NOS_TUPLE_r33] = _GUARD_NOS_TUPLE,
+    #endif
+    #if MAX_CACHED_REGISTER >= 4
     [_GUARD_NOS_TUPLE_r44] = _GUARD_NOS_TUPLE,
+    #endif
+    #if MAX_CACHED_REGISTER >= 5
     [_GUARD_NOS_TUPLE_r55] = _GUARD_NOS_TUPLE,
+    #endif
+    #if MAX_CACHED_REGISTER >= 1
     [_GUARD_TOS_TUPLE_r01] = _GUARD_TOS_TUPLE,
+    #endif
+    #if MAX_CACHED_REGISTER >= 1
     [_GUARD_TOS_TUPLE_r11] = _GUARD_TOS_TUPLE,
+    #endif
+    #if MAX_CACHED_REGISTER >= 2
     [_GUARD_TOS_TUPLE_r22] = _GUARD_TOS_TUPLE,
+    #endif
+    #if MAX_CACHED_REGISTER >= 3
     [_GUARD_TOS_TUPLE_r33] = _GUARD_TOS_TUPLE,
+    #endif
+    #if MAX_CACHED_REGISTER >= 4
     [_GUARD_TOS_TUPLE_r44] = _GUARD_TOS_TUPLE,
+    #endif
+    #if MAX_CACHED_REGISTER >= 5
     [_GUARD_TOS_TUPLE_r55] = _GUARD_TOS_TUPLE,
+    #endif
+    #if MAX_CACHED_REGISTER >= 2
     [_GUARD_BINARY_OP_SUBSCR_TUPLE_INT_BOUNDS_r02] = _GUARD_BINARY_OP_SUBSCR_TUPLE_INT_BOUNDS,
+    #endif
+    #if MAX_CACHED_REGISTER >= 2
     [_GUARD_BINARY_OP_SUBSCR_TUPLE_INT_BOUNDS_r12] = _GUARD_BINARY_OP_SUBSCR_TUPLE_INT_BOUNDS,
+    #endif
+    #if MAX_CACHED_REGISTER >= 2
     [_GUARD_BINARY_OP_SUBSCR_TUPLE_INT_BOUNDS_r22] = _GUARD_BINARY_OP_SUBSCR_TUPLE_INT_BOUNDS,
+    #endif
+    #if MAX_CACHED_REGISTER >= 3
     [_GUARD_BINARY_OP_SUBSCR_TUPLE_INT_BOUNDS_r33] = _GUARD_BINARY_OP_SUBSCR_TUPLE_INT_BOUNDS,
+    #endif
+    #if MAX_CACHED_REGISTER >= 4
     [_GUARD_BINARY_OP_SUBSCR_TUPLE_INT_BOUNDS_r44] = _GUARD_BINARY_OP_SUBSCR_TUPLE_INT_BOUNDS,
+    #endif
+    #if MAX_CACHED_REGISTER >= 5
     [_GUARD_BINARY_OP_SUBSCR_TUPLE_INT_BOUNDS_r55] = _GUARD_BINARY_OP_SUBSCR_TUPLE_INT_BOUNDS,
+    #endif
+    #if MAX_CACHED_REGISTER >= 3
     [_BINARY_OP_SUBSCR_TUPLE_INT_r03] = _BINARY_OP_SUBSCR_TUPLE_INT,
+    #endif
+    #if MAX_CACHED_REGISTER >= 3
     [_BINARY_OP_SUBSCR_TUPLE_INT_r13] = _BINARY_OP_SUBSCR_TUPLE_INT,
+    #endif
+    #if MAX_CACHED_REGISTER >= 3
     [_BINARY_OP_SUBSCR_TUPLE_INT_r23] = _BINARY_OP_SUBSCR_TUPLE_INT,
+    #endif
+    #if MAX_CACHED_REGISTER >= 4
     [_BINARY_OP_SUBSCR_TUPLE_INT_r34] = _BINARY_OP_SUBSCR_TUPLE_INT,
+    #endif
+    #if MAX_CACHED_REGISTER >= 5
     [_BINARY_OP_SUBSCR_TUPLE_INT_r45] = _BINARY_OP_SUBSCR_TUPLE_INT,
+    #endif
+    #if MAX_CACHED_REGISTER >= 2
     [_GUARD_NOS_DICT_r02] = _GUARD_NOS_DICT,
+    #endif
+    #if MAX_CACHED_REGISTER >= 2
     [_GUARD_NOS_DICT_r12] = _GUARD_NOS_DICT,
+    #endif
+    #if MAX_CACHED_REGISTER >= 2
     [_GUARD_NOS_DICT_r22] = _GUARD_NOS_DICT,
+    #endif
+    #if MAX_CACHED_REGISTER >= 3
     [_GUARD_NOS_DICT_r33] = _GUARD_NOS_DICT,
+    #endif
+    #if MAX_CACHED_REGISTER >= 4
     [_GUARD_NOS_DICT_r44] = _GUARD_NOS_DICT,
+    #endif
+    #if MAX_CACHED_REGISTER >= 5
     [_GUARD_NOS_DICT_r55] = _GUARD_NOS_DICT,
+    #endif
+    #if MAX_CACHED_REGISTER >= 2
     [_GUARD_NOS_ANY_DICT_r02] = _GUARD_NOS_ANY_DICT,
+    #endif
+    #if MAX_CACHED_REGISTER >= 2
     [_GUARD_NOS_ANY_DICT_r12] = _GUARD_NOS_ANY_DICT,
+    #endif
+    #if MAX_CACHED_REGISTER >= 2
     [_GUARD_NOS_ANY_DICT_r22] = _GUARD_NOS_ANY_DICT,
+    #endif
+    #if MAX_CACHED_REGISTER >= 3
     [_GUARD_NOS_ANY_DICT_r33] = _GUARD_NOS_ANY_DICT,
+    #endif
+    #if MAX_CACHED_REGISTER >= 4
     [_GUARD_NOS_ANY_DICT_r44] = _GUARD_NOS_ANY_DICT,
+    #endif
+    #if MAX_CACHED_REGISTER >= 5
     [_GUARD_NOS_ANY_DICT_r55] = _GUARD_NOS_ANY_DICT,
+    #endif
+    #if MAX_CACHED_REGISTER >= 1
     [_GUARD_TOS_ANY_DICT_r01] = _GUARD_TOS_ANY_DICT,
+    #endif
+    #if MAX_CACHED_REGISTER >= 1
     [_GUARD_TOS_ANY_DICT_r11] = _GUARD_TOS_ANY_DICT,
+    #endif
+    #if MAX_CACHED_REGISTER >= 2
     [_GUARD_TOS_ANY_DICT_r22] = _GUARD_TOS_ANY_DICT,
+    #endif
+    #if MAX_CACHED_REGISTER >= 3
     [_GUARD_TOS_ANY_DICT_r33] = _GUARD_TOS_ANY_DICT,
+    #endif
+    #if MAX_CACHED_REGISTER >= 4
     [_GUARD_TOS_ANY_DICT_r44] = _GUARD_TOS_ANY_DICT,
+    #endif
+    #if MAX_CACHED_REGISTER >= 5
     [_GUARD_TOS_ANY_DICT_r55] = _GUARD_TOS_ANY_DICT,
+    #endif
+    #if MAX_CACHED_REGISTER >= 1
     [_GUARD_TOS_DICT_r01] = _GUARD_TOS_DICT,
+    #endif
+    #if MAX_CACHED_REGISTER >= 1
     [_GUARD_TOS_DICT_r11] = _GUARD_TOS_DICT,
+    #endif
+    #if MAX_CACHED_REGISTER >= 2
     [_GUARD_TOS_DICT_r22] = _GUARD_TOS_DICT,
+    #endif
+    #if MAX_CACHED_REGISTER >= 3
     [_GUARD_TOS_DICT_r33] = _GUARD_TOS_DICT,
+    #endif
+    #if MAX_CACHED_REGISTER >= 4
     [_GUARD_TOS_DICT_r44] = _GUARD_TOS_DICT,
+    #endif
+    #if MAX_CACHED_REGISTER >= 5
     [_GUARD_TOS_DICT_r55] = _GUARD_TOS_DICT,
+    #endif
+    #if MAX_CACHED_REGISTER >= 1
     [_GUARD_TOS_FROZENDICT_r01] = _GUARD_TOS_FROZENDICT,
+    #endif
+    #if MAX_CACHED_REGISTER >= 1
     [_GUARD_TOS_FROZENDICT_r11] = _GUARD_TOS_FROZENDICT,
+    #endif
+    #if MAX_CACHED_REGISTER >= 2
     [_GUARD_TOS_FROZENDICT_r22] = _GUARD_TOS_FROZENDICT,
+    #endif
+    #if MAX_CACHED_REGISTER >= 3
     [_GUARD_TOS_FROZENDICT_r33] = _GUARD_TOS_FROZENDICT,
+    #endif
+    #if MAX_CACHED_REGISTER >= 4
     [_GUARD_TOS_FROZENDICT_r44] = _GUARD_TOS_FROZENDICT,
+    #endif
+    #if MAX_CACHED_REGISTER >= 5
     [_GUARD_TOS_FROZENDICT_r55] = _GUARD_TOS_FROZENDICT,
+    #endif
+    #if MAX_CACHED_REGISTER >= 3
     [_BINARY_OP_SUBSCR_DICT_r23] = _BINARY_OP_SUBSCR_DICT,
+    #endif
+    #if MAX_CACHED_REGISTER >= 3
     [_BINARY_OP_SUBSCR_CHECK_FUNC_r23] = _BINARY_OP_SUBSCR_CHECK_FUNC,
+    #endif
+    #if MAX_CACHED_REGISTER >= 1
     [_BINARY_OP_SUBSCR_INIT_CALL_r01] = _BINARY_OP_SUBSCR_INIT_CALL,
+    #endif
+    #if MAX_CACHED_REGISTER >= 1
     [_BINARY_OP_SUBSCR_INIT_CALL_r11] = _BINARY_OP_SUBSCR_INIT_CALL,
+    #endif
+    #if MAX_CACHED_REGISTER >= 2
     [_BINARY_OP_SUBSCR_INIT_CALL_r21] = _BINARY_OP_SUBSCR_INIT_CALL,
+    #endif
+    #if MAX_CACHED_REGISTER >= 3
     [_BINARY_OP_SUBSCR_INIT_CALL_r31] = _BINARY_OP_SUBSCR_INIT_CALL,
+    #endif
+    #if MAX_CACHED_REGISTER >= 4
     [_BINARY_OP_SUBSCR_INIT_CALL_r42] = _BINARY_OP_SUBSCR_INIT_CALL,
+    #endif
+    #if MAX_CACHED_REGISTER >= 5
     [_BINARY_OP_SUBSCR_INIT_CALL_r53] = _BINARY_OP_SUBSCR_INIT_CALL,
+    #endif
+    #if MAX_CACHED_REGISTER >= 1
     [_LIST_APPEND_r10] = _LIST_APPEND,
+    #endif
+    #if MAX_CACHED_REGISTER >= 1
     [_SET_ADD_r10] = _SET_ADD,
+    #endif
+    #if MAX_CACHED_REGISTER >= 3
     [_STORE_SUBSCR_r30] = _STORE_SUBSCR,
+    #endif
+    #if MAX_CACHED_REGISTER >= 3
     [_STORE_SUBSCR_LIST_INT_r32] = _STORE_SUBSCR_LIST_INT,
+    #endif
+    #if MAX_CACHED_REGISTER >= 3
     [_STORE_SUBSCR_DICT_r31] = _STORE_SUBSCR_DICT,
+    #endif
+    #if MAX_CACHED_REGISTER >= 2
     [_DELETE_SUBSCR_r20] = _DELETE_SUBSCR,
+    #endif
+    #if MAX_CACHED_REGISTER >= 1
     [_CALL_INTRINSIC_1_r11] = _CALL_INTRINSIC_1,
+    #endif
+    #if MAX_CACHED_REGISTER >= 2
     [_CALL_INTRINSIC_2_r21] = _CALL_INTRINSIC_2,
+    #endif
+    #if MAX_CACHED_REGISTER >= 1
     [_RETURN_VALUE_r11] = _RETURN_VALUE,
+    #endif
+    #if MAX_CACHED_REGISTER >= 1
     [_GET_AITER_r11] = _GET_AITER,
+    #endif
+    #if MAX_CACHED_REGISTER >= 2
     [_GET_ANEXT_r12] = _GET_ANEXT,
+    #endif
+    #if MAX_CACHED_REGISTER >= 1
     [_GET_AWAITABLE_r11] = _GET_AWAITABLE,
+    #endif
+    #if MAX_CACHED_REGISTER >= 2
     [_SEND_GEN_FRAME_r22] = _SEND_GEN_FRAME,
+    #endif
+    #if MAX_CACHED_REGISTER >= 1
     [_YIELD_VALUE_r11] = _YIELD_VALUE,
+    #endif
+    #if MAX_CACHED_REGISTER >= 1
     [_POP_EXCEPT_r10] = _POP_EXCEPT,
+    #endif
+    #if MAX_CACHED_REGISTER >= 1
     [_LOAD_COMMON_CONSTANT_r01] = _LOAD_COMMON_CONSTANT,
+    #endif
+    #if MAX_CACHED_REGISTER >= 2
     [_LOAD_COMMON_CONSTANT_r12] = _LOAD_COMMON_CONSTANT,
+    #endif
+    #if MAX_CACHED_REGISTER >= 3
     [_LOAD_COMMON_CONSTANT_r23] = _LOAD_COMMON_CONSTANT,
+    #endif
+    #if MAX_CACHED_REGISTER >= 4
     [_LOAD_COMMON_CONSTANT_r34] = _LOAD_COMMON_CONSTANT,
+    #endif
+    #if MAX_CACHED_REGISTER >= 5
     [_LOAD_COMMON_CONSTANT_r45] = _LOAD_COMMON_CONSTANT,
+    #endif
+    #if MAX_CACHED_REGISTER >= 1
     [_LOAD_BUILD_CLASS_r01] = _LOAD_BUILD_CLASS,
+    #endif
+    #if MAX_CACHED_REGISTER >= 1
     [_STORE_NAME_r10] = _STORE_NAME,
+    #endif
     [_DELETE_NAME_r00] = _DELETE_NAME,
+    #if MAX_CACHED_REGISTER >= 1
     [_UNPACK_SEQUENCE_r10] = _UNPACK_SEQUENCE,
+    #endif
+    #if MAX_CACHED_REGISTER >= 2
     [_UNPACK_SEQUENCE_TWO_TUPLE_r12] = _UNPACK_SEQUENCE_TWO_TUPLE,
+    #endif
+    #if MAX_CACHED_REGISTER >= 1
     [_UNPACK_SEQUENCE_TUPLE_r10] = _UNPACK_SEQUENCE_TUPLE,
+    #endif
+    #if MAX_CACHED_REGISTER >= 1
     [_UNPACK_SEQUENCE_LIST_r10] = _UNPACK_SEQUENCE_LIST,
+    #endif
+    #if MAX_CACHED_REGISTER >= 1
     [_UNPACK_EX_r10] = _UNPACK_EX,
+    #endif
+    #if MAX_CACHED_REGISTER >= 2
     [_STORE_ATTR_r20] = _STORE_ATTR,
+    #endif
+    #if MAX_CACHED_REGISTER >= 1
     [_DELETE_ATTR_r10] = _DELETE_ATTR,
+    #endif
+    #if MAX_CACHED_REGISTER >= 1
     [_STORE_GLOBAL_r10] = _STORE_GLOBAL,
+    #endif
     [_DELETE_GLOBAL_r00] = _DELETE_GLOBAL,
+    #if MAX_CACHED_REGISTER >= 1
     [_LOAD_LOCALS_r01] = _LOAD_LOCALS,
+    #endif
+    #if MAX_CACHED_REGISTER >= 2
     [_LOAD_LOCALS_r12] = _LOAD_LOCALS,
+    #endif
+    #if MAX_CACHED_REGISTER >= 3
     [_LOAD_LOCALS_r23] = _LOAD_LOCALS,
+    #endif
+    #if MAX_CACHED_REGISTER >= 4
     [_LOAD_LOCALS_r34] = _LOAD_LOCALS,
+    #endif
+    #if MAX_CACHED_REGISTER >= 5
     [_LOAD_LOCALS_r45] = _LOAD_LOCALS,
+    #endif
+    #if MAX_CACHED_REGISTER >= 1
     [_LOAD_NAME_r01] = _LOAD_NAME,
+    #endif
     [_LOAD_GLOBAL_r00] = _LOAD_GLOBAL,
     [_PUSH_NULL_CONDITIONAL_r00] = _PUSH_NULL_CONDITIONAL,
     [_GUARD_GLOBALS_VERSION_r00] = _GUARD_GLOBALS_VERSION,
+    #if MAX_CACHED_REGISTER >= 1
     [_GUARD_GLOBALS_VERSION_r11] = _GUARD_GLOBALS_VERSION,
+    #endif
+    #if MAX_CACHED_REGISTER >= 2
     [_GUARD_GLOBALS_VERSION_r22] = _GUARD_GLOBALS_VERSION,
+    #endif
+    #if MAX_CACHED_REGISTER >= 3
     [_GUARD_GLOBALS_VERSION_r33] = _GUARD_GLOBALS_VERSION,
+    #endif
+    #if MAX_CACHED_REGISTER >= 4
     [_GUARD_GLOBALS_VERSION_r44] = _GUARD_GLOBALS_VERSION,
+    #endif
+    #if MAX_CACHED_REGISTER >= 5
     [_GUARD_GLOBALS_VERSION_r55] = _GUARD_GLOBALS_VERSION,
+    #endif
+    #if MAX_CACHED_REGISTER >= 1
     [_LOAD_GLOBAL_MODULE_r01] = _LOAD_GLOBAL_MODULE,
+    #endif
+    #if MAX_CACHED_REGISTER >= 1
     [_LOAD_GLOBAL_BUILTINS_r01] = _LOAD_GLOBAL_BUILTINS,
+    #endif
     [_DELETE_FAST_r00] = _DELETE_FAST,
     [_MAKE_CELL_r00] = _MAKE_CELL,
     [_DELETE_DEREF_r00] = _DELETE_DEREF,
+    #if MAX_CACHED_REGISTER >= 1
     [_LOAD_FROM_DICT_OR_DEREF_r11] = _LOAD_FROM_DICT_OR_DEREF,
+    #endif
+    #if MAX_CACHED_REGISTER >= 1
     [_LOAD_DEREF_r01] = _LOAD_DEREF,
+    #endif
+    #if MAX_CACHED_REGISTER >= 1
     [_STORE_DEREF_r10] = _STORE_DEREF,
+    #endif
     [_COPY_FREE_VARS_r00] = _COPY_FREE_VARS,
+    #if MAX_CACHED_REGISTER >= 1
     [_COPY_FREE_VARS_r11] = _COPY_FREE_VARS,
+    #endif
+    #if MAX_CACHED_REGISTER >= 2
     [_COPY_FREE_VARS_r22] = _COPY_FREE_VARS,
+    #endif
+    #if MAX_CACHED_REGISTER >= 3
     [_COPY_FREE_VARS_r33] = _COPY_FREE_VARS,
+    #endif
+    #if MAX_CACHED_REGISTER >= 4
     [_COPY_FREE_VARS_r44] = _COPY_FREE_VARS,
+    #endif
+    #if MAX_CACHED_REGISTER >= 5
     [_COPY_FREE_VARS_r55] = _COPY_FREE_VARS,
+    #endif
+    #if MAX_CACHED_REGISTER >= 1
     [_BUILD_STRING_r01] = _BUILD_STRING,
+    #endif
+    #if MAX_CACHED_REGISTER >= 1
     [_BUILD_INTERPOLATION_r01] = _BUILD_INTERPOLATION,
+    #endif
+    #if MAX_CACHED_REGISTER >= 2
     [_BUILD_TEMPLATE_r21] = _BUILD_TEMPLATE,
+    #endif
+    #if MAX_CACHED_REGISTER >= 1
     [_BUILD_TUPLE_r01] = _BUILD_TUPLE,
+    #endif
+    #if MAX_CACHED_REGISTER >= 1
     [_BUILD_LIST_r01] = _BUILD_LIST,
+    #endif
+    #if MAX_CACHED_REGISTER >= 1
     [_LIST_EXTEND_r10] = _LIST_EXTEND,
+    #endif
+    #if MAX_CACHED_REGISTER >= 1
     [_SET_UPDATE_r10] = _SET_UPDATE,
+    #endif
+    #if MAX_CACHED_REGISTER >= 1
     [_BUILD_SET_r01] = _BUILD_SET,
+    #endif
+    #if MAX_CACHED_REGISTER >= 1
     [_BUILD_MAP_r01] = _BUILD_MAP,
+    #endif
     [_SETUP_ANNOTATIONS_r00] = _SETUP_ANNOTATIONS,
+    #if MAX_CACHED_REGISTER >= 1
     [_DICT_UPDATE_r10] = _DICT_UPDATE,
+    #endif
+    #if MAX_CACHED_REGISTER >= 1
     [_DICT_MERGE_r10] = _DICT_MERGE,
+    #endif
+    #if MAX_CACHED_REGISTER >= 2
     [_MAP_ADD_r20] = _MAP_ADD,
+    #endif
+    #if MAX_CACHED_REGISTER >= 3
     [_LOAD_SUPER_ATTR_ATTR_r31] = _LOAD_SUPER_ATTR_ATTR,
+    #endif
+    #if MAX_CACHED_REGISTER >= 3
     [_LOAD_SUPER_ATTR_METHOD_r32] = _LOAD_SUPER_ATTR_METHOD,
+    #endif
+    #if MAX_CACHED_REGISTER >= 1
     [_LOAD_ATTR_r10] = _LOAD_ATTR,
+    #endif
+    #if MAX_CACHED_REGISTER >= 1
     [_GUARD_TYPE_VERSION_r01] = _GUARD_TYPE_VERSION,
+    #endif
+    #if MAX_CACHED_REGISTER >= 1
     [_GUARD_TYPE_VERSION_r11] = _GUARD_TYPE_VERSION,
+    #endif
+    #if MAX_CACHED_REGISTER >= 2
     [_GUARD_TYPE_VERSION_r22] = _GUARD_TYPE_VERSION,
+    #endif
+    #if MAX_CACHED_REGISTER >= 3
     [_GUARD_TYPE_VERSION_r33] = _GUARD_TYPE_VERSION,
+    #endif
+    #if MAX_CACHED_REGISTER >= 4
     [_GUARD_TYPE_VERSION_r44] = _GUARD_TYPE_VERSION,
+    #endif
+    #if MAX_CACHED_REGISTER >= 5
     [_GUARD_TYPE_VERSION_r55] = _GUARD_TYPE_VERSION,
+    #endif
+    #if MAX_CACHED_REGISTER >= 1
     [_GUARD_TYPE_VERSION_AND_LOCK_r01] = _GUARD_TYPE_VERSION_AND_LOCK,
+    #endif
+    #if MAX_CACHED_REGISTER >= 1
     [_GUARD_TYPE_VERSION_AND_LOCK_r11] = _GUARD_TYPE_VERSION_AND_LOCK,
+    #endif
+    #if MAX_CACHED_REGISTER >= 2
     [_GUARD_TYPE_VERSION_AND_LOCK_r22] = _GUARD_TYPE_VERSION_AND_LOCK,
+    #endif
+    #if MAX_CACHED_REGISTER >= 3
     [_GUARD_TYPE_VERSION_AND_LOCK_r33] = _GUARD_TYPE_VERSION_AND_LOCK,
+    #endif
+    #if MAX_CACHED_REGISTER >= 4
     [_GUARD_TYPE_VERSION_AND_LOCK_r44] = _GUARD_TYPE_VERSION_AND_LOCK,
+    #endif
+    #if MAX_CACHED_REGISTER >= 5
     [_GUARD_TYPE_VERSION_AND_LOCK_r55] = _GUARD_TYPE_VERSION_AND_LOCK,
+    #endif
+    #if MAX_CACHED_REGISTER >= 1
     [_CHECK_MANAGED_OBJECT_HAS_VALUES_r01] = _CHECK_MANAGED_OBJECT_HAS_VALUES,
+    #endif
+    #if MAX_CACHED_REGISTER >= 1
     [_CHECK_MANAGED_OBJECT_HAS_VALUES_r11] = _CHECK_MANAGED_OBJECT_HAS_VALUES,
+    #endif
+    #if MAX_CACHED_REGISTER >= 2
     [_CHECK_MANAGED_OBJECT_HAS_VALUES_r22] = _CHECK_MANAGED_OBJECT_HAS_VALUES,
+    #endif
+    #if MAX_CACHED_REGISTER >= 3
     [_CHECK_MANAGED_OBJECT_HAS_VALUES_r33] = _CHECK_MANAGED_OBJECT_HAS_VALUES,
+    #endif
+    #if MAX_CACHED_REGISTER >= 4
     [_CHECK_MANAGED_OBJECT_HAS_VALUES_r44] = _CHECK_MANAGED_OBJECT_HAS_VALUES,
+    #endif
+    #if MAX_CACHED_REGISTER >= 5
     [_CHECK_MANAGED_OBJECT_HAS_VALUES_r55] = _CHECK_MANAGED_OBJECT_HAS_VALUES,
+    #endif
+    #if MAX_CACHED_REGISTER >= 2
     [_LOAD_ATTR_INSTANCE_VALUE_r02] = _LOAD_ATTR_INSTANCE_VALUE,
+    #endif
+    #if MAX_CACHED_REGISTER >= 2
     [_LOAD_ATTR_INSTANCE_VALUE_r12] = _LOAD_ATTR_INSTANCE_VALUE,
+    #endif
+    #if MAX_CACHED_REGISTER >= 3
     [_LOAD_ATTR_INSTANCE_VALUE_r23] = _LOAD_ATTR_INSTANCE_VALUE,
+    #endif
+    #if MAX_CACHED_REGISTER >= 4
     [_LOAD_ATTR_INSTANCE_VALUE_r34] = _LOAD_ATTR_INSTANCE_VALUE,
+    #endif
+    #if MAX_CACHED_REGISTER >= 5
     [_LOAD_ATTR_INSTANCE_VALUE_r45] = _LOAD_ATTR_INSTANCE_VALUE,
+    #endif
+    #if MAX_CACHED_REGISTER >= 2
     [_LOAD_ATTR_MODULE_r12] = _LOAD_ATTR_MODULE,
+    #endif
+    #if MAX_CACHED_REGISTER >= 2
     [_LOAD_ATTR_WITH_HINT_r12] = _LOAD_ATTR_WITH_HINT,
+    #endif
+    #if MAX_CACHED_REGISTER >= 2
     [_LOAD_ATTR_SLOT_r02] = _LOAD_ATTR_SLOT,
+    #endif
+    #if MAX_CACHED_REGISTER >= 2
     [_LOAD_ATTR_SLOT_r12] = _LOAD_ATTR_SLOT,
+    #endif
+    #if MAX_CACHED_REGISTER >= 3
     [_LOAD_ATTR_SLOT_r23] = _LOAD_ATTR_SLOT,
+    #endif
+    #if MAX_CACHED_REGISTER >= 4
     [_LOAD_ATTR_SLOT_r34] = _LOAD_ATTR_SLOT,
+    #endif
+    #if MAX_CACHED_REGISTER >= 5
     [_LOAD_ATTR_SLOT_r45] = _LOAD_ATTR_SLOT,
+    #endif
+    #if MAX_CACHED_REGISTER >= 1
     [_CHECK_ATTR_CLASS_r01] = _CHECK_ATTR_CLASS,
+    #endif
+    #if MAX_CACHED_REGISTER >= 1
     [_CHECK_ATTR_CLASS_r11] = _CHECK_ATTR_CLASS,
+    #endif
+    #if MAX_CACHED_REGISTER >= 2
     [_CHECK_ATTR_CLASS_r22] = _CHECK_ATTR_CLASS,
+    #endif
+    #if MAX_CACHED_REGISTER >= 3
     [_CHECK_ATTR_CLASS_r33] = _CHECK_ATTR_CLASS,
+    #endif
+    #if MAX_CACHED_REGISTER >= 4
     [_CHECK_ATTR_CLASS_r44] = _CHECK_ATTR_CLASS,
+    #endif
+    #if MAX_CACHED_REGISTER >= 5
     [_CHECK_ATTR_CLASS_r55] = _CHECK_ATTR_CLASS,
+    #endif
+    #if MAX_CACHED_REGISTER >= 1
     [_LOAD_ATTR_CLASS_r11] = _LOAD_ATTR_CLASS,
+    #endif
+    #if MAX_CACHED_REGISTER >= 1
     [_LOAD_ATTR_PROPERTY_FRAME_r11] = _LOAD_ATTR_PROPERTY_FRAME,
+    #endif
+    #if MAX_CACHED_REGISTER >= 1
     [_GUARD_DORV_NO_DICT_r01] = _GUARD_DORV_NO_DICT,
+    #endif
+    #if MAX_CACHED_REGISTER >= 1
     [_GUARD_DORV_NO_DICT_r11] = _GUARD_DORV_NO_DICT,
+    #endif
+    #if MAX_CACHED_REGISTER >= 2
     [_GUARD_DORV_NO_DICT_r22] = _GUARD_DORV_NO_DICT,
+    #endif
+    #if MAX_CACHED_REGISTER >= 3
     [_GUARD_DORV_NO_DICT_r33] = _GUARD_DORV_NO_DICT,
+    #endif
+    #if MAX_CACHED_REGISTER >= 4
     [_GUARD_DORV_NO_DICT_r44] = _GUARD_DORV_NO_DICT,
+    #endif
+    #if MAX_CACHED_REGISTER >= 5
     [_GUARD_DORV_NO_DICT_r55] = _GUARD_DORV_NO_DICT,
+    #endif
+    #if MAX_CACHED_REGISTER >= 2
     [_STORE_ATTR_INSTANCE_VALUE_r21] = _STORE_ATTR_INSTANCE_VALUE,
+    #endif
+    #if MAX_CACHED_REGISTER >= 2
     [_STORE_ATTR_WITH_HINT_r21] = _STORE_ATTR_WITH_HINT,
+    #endif
+    #if MAX_CACHED_REGISTER >= 2
     [_STORE_ATTR_SLOT_r21] = _STORE_ATTR_SLOT,
+    #endif
+    #if MAX_CACHED_REGISTER >= 2
     [_COMPARE_OP_r21] = _COMPARE_OP,
+    #endif
+    #if MAX_CACHED_REGISTER >= 3
     [_COMPARE_OP_FLOAT_r03] = _COMPARE_OP_FLOAT,
+    #endif
+    #if MAX_CACHED_REGISTER >= 3
     [_COMPARE_OP_FLOAT_r13] = _COMPARE_OP_FLOAT,
+    #endif
+    #if MAX_CACHED_REGISTER >= 3
     [_COMPARE_OP_FLOAT_r23] = _COMPARE_OP_FLOAT,
+    #endif
+    #if MAX_CACHED_REGISTER >= 4
     [_COMPARE_OP_FLOAT_r34] = _COMPARE_OP_FLOAT,
+    #endif
+    #if MAX_CACHED_REGISTER >= 5
     [_COMPARE_OP_FLOAT_r45] = _COMPARE_OP_FLOAT,
+    #endif
+    #if MAX_CACHED_REGISTER >= 3
     [_COMPARE_OP_INT_r23] = _COMPARE_OP_INT,
+    #endif
+    #if MAX_CACHED_REGISTER >= 3
     [_COMPARE_OP_STR_r23] = _COMPARE_OP_STR,
+    #endif
+    #if MAX_CACHED_REGISTER >= 3
     [_IS_OP_r03] = _IS_OP,
+    #endif
+    #if MAX_CACHED_REGISTER >= 3
     [_IS_OP_r13] = _IS_OP,
+    #endif
+    #if MAX_CACHED_REGISTER >= 3
     [_IS_OP_r23] = _IS_OP,
+    #endif
+    #if MAX_CACHED_REGISTER >= 4
     [_IS_OP_r34] = _IS_OP,
+    #endif
+    #if MAX_CACHED_REGISTER >= 5
     [_IS_OP_r45] = _IS_OP,
+    #endif
+    #if MAX_CACHED_REGISTER >= 3
     [_CONTAINS_OP_r23] = _CONTAINS_OP,
+    #endif
+    #if MAX_CACHED_REGISTER >= 1
     [_GUARD_TOS_ANY_SET_r01] = _GUARD_TOS_ANY_SET,
+    #endif
+    #if MAX_CACHED_REGISTER >= 1
     [_GUARD_TOS_ANY_SET_r11] = _GUARD_TOS_ANY_SET,
+    #endif
+    #if MAX_CACHED_REGISTER >= 2
     [_GUARD_TOS_ANY_SET_r22] = _GUARD_TOS_ANY_SET,
+    #endif
+    #if MAX_CACHED_REGISTER >= 3
     [_GUARD_TOS_ANY_SET_r33] = _GUARD_TOS_ANY_SET,
+    #endif
+    #if MAX_CACHED_REGISTER >= 4
     [_GUARD_TOS_ANY_SET_r44] = _GUARD_TOS_ANY_SET,
+    #endif
+    #if MAX_CACHED_REGISTER >= 5
     [_GUARD_TOS_ANY_SET_r55] = _GUARD_TOS_ANY_SET,
+    #endif
+    #if MAX_CACHED_REGISTER >= 1
     [_GUARD_TOS_SET_r01] = _GUARD_TOS_SET,
+    #endif
+    #if MAX_CACHED_REGISTER >= 1
     [_GUARD_TOS_SET_r11] = _GUARD_TOS_SET,
+    #endif
+    #if MAX_CACHED_REGISTER >= 2
     [_GUARD_TOS_SET_r22] = _GUARD_TOS_SET,
+    #endif
+    #if MAX_CACHED_REGISTER >= 3
     [_GUARD_TOS_SET_r33] = _GUARD_TOS_SET,
+    #endif
+    #if MAX_CACHED_REGISTER >= 4
     [_GUARD_TOS_SET_r44] = _GUARD_TOS_SET,
+    #endif
+    #if MAX_CACHED_REGISTER >= 5
     [_GUARD_TOS_SET_r55] = _GUARD_TOS_SET,
+    #endif
+    #if MAX_CACHED_REGISTER >= 1
     [_GUARD_TOS_FROZENSET_r01] = _GUARD_TOS_FROZENSET,
+    #endif
+    #if MAX_CACHED_REGISTER >= 1
     [_GUARD_TOS_FROZENSET_r11] = _GUARD_TOS_FROZENSET,
+    #endif
+    #if MAX_CACHED_REGISTER >= 2
     [_GUARD_TOS_FROZENSET_r22] = _GUARD_TOS_FROZENSET,
+    #endif
+    #if MAX_CACHED_REGISTER >= 3
     [_GUARD_TOS_FROZENSET_r33] = _GUARD_TOS_FROZENSET,
+    #endif
+    #if MAX_CACHED_REGISTER >= 4
     [_GUARD_TOS_FROZENSET_r44] = _GUARD_TOS_FROZENSET,
+    #endif
+    #if MAX_CACHED_REGISTER >= 5
     [_GUARD_TOS_FROZENSET_r55] = _GUARD_TOS_FROZENSET,
+    #endif
+    #if MAX_CACHED_REGISTER >= 3
     [_CONTAINS_OP_SET_r23] = _CONTAINS_OP_SET,
+    #endif
+    #if MAX_CACHED_REGISTER >= 3
     [_CONTAINS_OP_DICT_r23] = _CONTAINS_OP_DICT,
+    #endif
+    #if MAX_CACHED_REGISTER >= 2
     [_CHECK_EG_MATCH_r22] = _CHECK_EG_MATCH,
+    #endif
+    #if MAX_CACHED_REGISTER >= 2
     [_CHECK_EXC_MATCH_r22] = _CHECK_EXC_MATCH,
+    #endif
+    #if MAX_CACHED_REGISTER >= 2
     [_IMPORT_NAME_r21] = _IMPORT_NAME,
+    #endif
+    #if MAX_CACHED_REGISTER >= 2
     [_IMPORT_FROM_r12] = _IMPORT_FROM,
+    #endif
+    #if MAX_CACHED_REGISTER >= 1
     [_IS_NONE_r11] = _IS_NONE,
+    #endif
+    #if MAX_CACHED_REGISTER >= 2
     [_GET_LEN_r12] = _GET_LEN,
+    #endif
+    #if MAX_CACHED_REGISTER >= 3
     [_MATCH_CLASS_r31] = _MATCH_CLASS,
+    #endif
+    #if MAX_CACHED_REGISTER >= 2
     [_MATCH_MAPPING_r02] = _MATCH_MAPPING,
+    #endif
+    #if MAX_CACHED_REGISTER >= 2
     [_MATCH_MAPPING_r12] = _MATCH_MAPPING,
+    #endif
+    #if MAX_CACHED_REGISTER >= 3
     [_MATCH_MAPPING_r23] = _MATCH_MAPPING,
+    #endif
+    #if MAX_CACHED_REGISTER >= 4
     [_MATCH_MAPPING_r34] = _MATCH_MAPPING,
+    #endif
+    #if MAX_CACHED_REGISTER >= 5
     [_MATCH_MAPPING_r45] = _MATCH_MAPPING,
+    #endif
+    #if MAX_CACHED_REGISTER >= 2
     [_MATCH_SEQUENCE_r02] = _MATCH_SEQUENCE,
+    #endif
+    #if MAX_CACHED_REGISTER >= 2
     [_MATCH_SEQUENCE_r12] = _MATCH_SEQUENCE,
+    #endif
+    #if MAX_CACHED_REGISTER >= 3
     [_MATCH_SEQUENCE_r23] = _MATCH_SEQUENCE,
+    #endif
+    #if MAX_CACHED_REGISTER >= 4
     [_MATCH_SEQUENCE_r34] = _MATCH_SEQUENCE,
+    #endif
+    #if MAX_CACHED_REGISTER >= 5
     [_MATCH_SEQUENCE_r45] = _MATCH_SEQUENCE,
+    #endif
+    #if MAX_CACHED_REGISTER >= 3
     [_MATCH_KEYS_r23] = _MATCH_KEYS,
+    #endif
+    #if MAX_CACHED_REGISTER >= 2
     [_GET_ITER_r12] = _GET_ITER,
+    #endif
+    #if MAX_CACHED_REGISTER >= 1
     [_GET_YIELD_FROM_ITER_r11] = _GET_YIELD_FROM_ITER,
+    #endif
+    #if MAX_CACHED_REGISTER >= 3
     [_FOR_ITER_TIER_TWO_r23] = _FOR_ITER_TIER_TWO,
+    #endif
+    #if MAX_CACHED_REGISTER >= 2
     [_ITER_CHECK_LIST_r02] = _ITER_CHECK_LIST,
+    #endif
+    #if MAX_CACHED_REGISTER >= 2
     [_ITER_CHECK_LIST_r12] = _ITER_CHECK_LIST,
+    #endif
+    #if MAX_CACHED_REGISTER >= 2
     [_ITER_CHECK_LIST_r22] = _ITER_CHECK_LIST,
+    #endif
+    #if MAX_CACHED_REGISTER >= 3
     [_ITER_CHECK_LIST_r33] = _ITER_CHECK_LIST,
+    #endif
+    #if MAX_CACHED_REGISTER >= 4
     [_ITER_CHECK_LIST_r44] = _ITER_CHECK_LIST,
+    #endif
+    #if MAX_CACHED_REGISTER >= 5
     [_ITER_CHECK_LIST_r55] = _ITER_CHECK_LIST,
+    #endif
+    #if MAX_CACHED_REGISTER >= 2
     [_GUARD_NOT_EXHAUSTED_LIST_r02] = _GUARD_NOT_EXHAUSTED_LIST,
+    #endif
+    #if MAX_CACHED_REGISTER >= 2
     [_GUARD_NOT_EXHAUSTED_LIST_r12] = _GUARD_NOT_EXHAUSTED_LIST,
+    #endif
+    #if MAX_CACHED_REGISTER >= 2
     [_GUARD_NOT_EXHAUSTED_LIST_r22] = _GUARD_NOT_EXHAUSTED_LIST,
+    #endif
+    #if MAX_CACHED_REGISTER >= 3
     [_GUARD_NOT_EXHAUSTED_LIST_r33] = _GUARD_NOT_EXHAUSTED_LIST,
+    #endif
+    #if MAX_CACHED_REGISTER >= 4
     [_GUARD_NOT_EXHAUSTED_LIST_r44] = _GUARD_NOT_EXHAUSTED_LIST,
+    #endif
+    #if MAX_CACHED_REGISTER >= 5
     [_GUARD_NOT_EXHAUSTED_LIST_r55] = _GUARD_NOT_EXHAUSTED_LIST,
+    #endif
+    #if MAX_CACHED_REGISTER >= 3
     [_ITER_NEXT_LIST_TIER_TWO_r23] = _ITER_NEXT_LIST_TIER_TWO,
+    #endif
+    #if MAX_CACHED_REGISTER >= 2
     [_ITER_CHECK_TUPLE_r02] = _ITER_CHECK_TUPLE,
+    #endif
+    #if MAX_CACHED_REGISTER >= 2
     [_ITER_CHECK_TUPLE_r12] = _ITER_CHECK_TUPLE,
+    #endif
+    #if MAX_CACHED_REGISTER >= 2
     [_ITER_CHECK_TUPLE_r22] = _ITER_CHECK_TUPLE,
+    #endif
+    #if MAX_CACHED_REGISTER >= 3
     [_ITER_CHECK_TUPLE_r33] = _ITER_CHECK_TUPLE,
+    #endif
+    #if MAX_CACHED_REGISTER >= 4
     [_ITER_CHECK_TUPLE_r44] = _ITER_CHECK_TUPLE,
+    #endif
+    #if MAX_CACHED_REGISTER >= 5
     [_ITER_CHECK_TUPLE_r55] = _ITER_CHECK_TUPLE,
+    #endif
+    #if MAX_CACHED_REGISTER >= 2
     [_GUARD_NOT_EXHAUSTED_TUPLE_r02] = _GUARD_NOT_EXHAUSTED_TUPLE,
+    #endif
+    #if MAX_CACHED_REGISTER >= 2
     [_GUARD_NOT_EXHAUSTED_TUPLE_r12] = _GUARD_NOT_EXHAUSTED_TUPLE,
+    #endif
+    #if MAX_CACHED_REGISTER >= 2
     [_GUARD_NOT_EXHAUSTED_TUPLE_r22] = _GUARD_NOT_EXHAUSTED_TUPLE,
+    #endif
+    #if MAX_CACHED_REGISTER >= 3
     [_GUARD_NOT_EXHAUSTED_TUPLE_r33] = _GUARD_NOT_EXHAUSTED_TUPLE,
+    #endif
+    #if MAX_CACHED_REGISTER >= 4
     [_GUARD_NOT_EXHAUSTED_TUPLE_r44] = _GUARD_NOT_EXHAUSTED_TUPLE,
+    #endif
+    #if MAX_CACHED_REGISTER >= 5
     [_GUARD_NOT_EXHAUSTED_TUPLE_r55] = _GUARD_NOT_EXHAUSTED_TUPLE,
+    #endif
+    #if MAX_CACHED_REGISTER >= 3
     [_ITER_NEXT_TUPLE_r03] = _ITER_NEXT_TUPLE,
+    #endif
+    #if MAX_CACHED_REGISTER >= 3
     [_ITER_NEXT_TUPLE_r13] = _ITER_NEXT_TUPLE,
+    #endif
+    #if MAX_CACHED_REGISTER >= 3
     [_ITER_NEXT_TUPLE_r23] = _ITER_NEXT_TUPLE,
+    #endif
+    #if MAX_CACHED_REGISTER >= 4
     [_ITER_NEXT_TUPLE_r34] = _ITER_NEXT_TUPLE,
+    #endif
+    #if MAX_CACHED_REGISTER >= 5
     [_ITER_NEXT_TUPLE_r45] = _ITER_NEXT_TUPLE,
+    #endif
+    #if MAX_CACHED_REGISTER >= 2
     [_ITER_CHECK_RANGE_r02] = _ITER_CHECK_RANGE,
+    #endif
+    #if MAX_CACHED_REGISTER >= 2
     [_ITER_CHECK_RANGE_r12] = _ITER_CHECK_RANGE,
+    #endif
+    #if MAX_CACHED_REGISTER >= 2
     [_ITER_CHECK_RANGE_r22] = _ITER_CHECK_RANGE,
+    #endif
+    #if MAX_CACHED_REGISTER >= 3
     [_ITER_CHECK_RANGE_r33] = _ITER_CHECK_RANGE,
+    #endif
+    #if MAX_CACHED_REGISTER >= 4
     [_ITER_CHECK_RANGE_r44] = _ITER_CHECK_RANGE,
+    #endif
+    #if MAX_CACHED_REGISTER >= 5
     [_ITER_CHECK_RANGE_r55] = _ITER_CHECK_RANGE,
+    #endif
+    #if MAX_CACHED_REGISTER >= 2
     [_GUARD_NOT_EXHAUSTED_RANGE_r02] = _GUARD_NOT_EXHAUSTED_RANGE,
+    #endif
+    #if MAX_CACHED_REGISTER >= 2
     [_GUARD_NOT_EXHAUSTED_RANGE_r12] = _GUARD_NOT_EXHAUSTED_RANGE,
+    #endif
+    #if MAX_CACHED_REGISTER >= 2
     [_GUARD_NOT_EXHAUSTED_RANGE_r22] = _GUARD_NOT_EXHAUSTED_RANGE,
+    #endif
+    #if MAX_CACHED_REGISTER >= 3
     [_GUARD_NOT_EXHAUSTED_RANGE_r33] = _GUARD_NOT_EXHAUSTED_RANGE,
+    #endif
+    #if MAX_CACHED_REGISTER >= 4
     [_GUARD_NOT_EXHAUSTED_RANGE_r44] = _GUARD_NOT_EXHAUSTED_RANGE,
+    #endif
+    #if MAX_CACHED_REGISTER >= 5
     [_GUARD_NOT_EXHAUSTED_RANGE_r55] = _GUARD_NOT_EXHAUSTED_RANGE,
+    #endif
+    #if MAX_CACHED_REGISTER >= 3
     [_ITER_NEXT_RANGE_r03] = _ITER_NEXT_RANGE,
+    #endif
+    #if MAX_CACHED_REGISTER >= 3
     [_ITER_NEXT_RANGE_r13] = _ITER_NEXT_RANGE,
+    #endif
+    #if MAX_CACHED_REGISTER >= 3
     [_ITER_NEXT_RANGE_r23] = _ITER_NEXT_RANGE,
+    #endif
+    #if MAX_CACHED_REGISTER >= 4
     [_ITER_NEXT_RANGE_r34] = _ITER_NEXT_RANGE,
+    #endif
+    #if MAX_CACHED_REGISTER >= 5
     [_ITER_NEXT_RANGE_r45] = _ITER_NEXT_RANGE,
+    #endif
+    #if MAX_CACHED_REGISTER >= 3
     [_FOR_ITER_GEN_FRAME_r03] = _FOR_ITER_GEN_FRAME,
+    #endif
+    #if MAX_CACHED_REGISTER >= 3
     [_FOR_ITER_GEN_FRAME_r13] = _FOR_ITER_GEN_FRAME,
+    #endif
+    #if MAX_CACHED_REGISTER >= 3
     [_FOR_ITER_GEN_FRAME_r23] = _FOR_ITER_GEN_FRAME,
+    #endif
+    #if MAX_CACHED_REGISTER >= 4
     [_FOR_ITER_GEN_FRAME_r34] = _FOR_ITER_GEN_FRAME,
+    #endif
+    #if MAX_CACHED_REGISTER >= 5
     [_FOR_ITER_GEN_FRAME_r45] = _FOR_ITER_GEN_FRAME,
+    #endif
+    #if MAX_CACHED_REGISTER >= 1
     [_INSERT_NULL_r10] = _INSERT_NULL,
+    #endif
     [_LOAD_SPECIAL_r00] = _LOAD_SPECIAL,
+    #if MAX_CACHED_REGISTER >= 5
     [_WITH_EXCEPT_START_r55] = _WITH_EXCEPT_START,
+    #endif
+    #if MAX_CACHED_REGISTER >= 2
     [_PUSH_EXC_INFO_r02] = _PUSH_EXC_INFO,
+    #endif
+    #if MAX_CACHED_REGISTER >= 2
     [_PUSH_EXC_INFO_r12] = _PUSH_EXC_INFO,
+    #endif
+    #if MAX_CACHED_REGISTER >= 3
     [_PUSH_EXC_INFO_r23] = _PUSH_EXC_INFO,
+    #endif
+    #if MAX_CACHED_REGISTER >= 4
     [_PUSH_EXC_INFO_r34] = _PUSH_EXC_INFO,
+    #endif
+    #if MAX_CACHED_REGISTER >= 5
     [_PUSH_EXC_INFO_r45] = _PUSH_EXC_INFO,
+    #endif
+    #if MAX_CACHED_REGISTER >= 1
     [_GUARD_DORV_VALUES_INST_ATTR_FROM_DICT_r01] = _GUARD_DORV_VALUES_INST_ATTR_FROM_DICT,
+    #endif
+    #if MAX_CACHED_REGISTER >= 1
     [_GUARD_DORV_VALUES_INST_ATTR_FROM_DICT_r11] = _GUARD_DORV_VALUES_INST_ATTR_FROM_DICT,
+    #endif
+    #if MAX_CACHED_REGISTER >= 2
     [_GUARD_DORV_VALUES_INST_ATTR_FROM_DICT_r22] = _GUARD_DORV_VALUES_INST_ATTR_FROM_DICT,
+    #endif
+    #if MAX_CACHED_REGISTER >= 3
     [_GUARD_DORV_VALUES_INST_ATTR_FROM_DICT_r33] = _GUARD_DORV_VALUES_INST_ATTR_FROM_DICT,
+    #endif
+    #if MAX_CACHED_REGISTER >= 4
     [_GUARD_DORV_VALUES_INST_ATTR_FROM_DICT_r44] = _GUARD_DORV_VALUES_INST_ATTR_FROM_DICT,
+    #endif
+    #if MAX_CACHED_REGISTER >= 5
     [_GUARD_DORV_VALUES_INST_ATTR_FROM_DICT_r55] = _GUARD_DORV_VALUES_INST_ATTR_FROM_DICT,
+    #endif
+    #if MAX_CACHED_REGISTER >= 1
     [_GUARD_KEYS_VERSION_r01] = _GUARD_KEYS_VERSION,
+    #endif
+    #if MAX_CACHED_REGISTER >= 1
     [_GUARD_KEYS_VERSION_r11] = _GUARD_KEYS_VERSION,
+    #endif
+    #if MAX_CACHED_REGISTER >= 2
     [_GUARD_KEYS_VERSION_r22] = _GUARD_KEYS_VERSION,
+    #endif
+    #if MAX_CACHED_REGISTER >= 3
     [_GUARD_KEYS_VERSION_r33] = _GUARD_KEYS_VERSION,
+    #endif
+    #if MAX_CACHED_REGISTER >= 4
     [_GUARD_KEYS_VERSION_r44] = _GUARD_KEYS_VERSION,
+    #endif
+    #if MAX_CACHED_REGISTER >= 5
     [_GUARD_KEYS_VERSION_r55] = _GUARD_KEYS_VERSION,
+    #endif
+    #if MAX_CACHED_REGISTER >= 2
     [_LOAD_ATTR_METHOD_WITH_VALUES_r02] = _LOAD_ATTR_METHOD_WITH_VALUES,
+    #endif
+    #if MAX_CACHED_REGISTER >= 2
     [_LOAD_ATTR_METHOD_WITH_VALUES_r12] = _LOAD_ATTR_METHOD_WITH_VALUES,
+    #endif
+    #if MAX_CACHED_REGISTER >= 3
     [_LOAD_ATTR_METHOD_WITH_VALUES_r23] = _LOAD_ATTR_METHOD_WITH_VALUES,
+    #endif
+    #if MAX_CACHED_REGISTER >= 4
     [_LOAD_ATTR_METHOD_WITH_VALUES_r34] = _LOAD_ATTR_METHOD_WITH_VALUES,
+    #endif
+    #if MAX_CACHED_REGISTER >= 5
     [_LOAD_ATTR_METHOD_WITH_VALUES_r45] = _LOAD_ATTR_METHOD_WITH_VALUES,
+    #endif
+    #if MAX_CACHED_REGISTER >= 2
     [_LOAD_ATTR_METHOD_NO_DICT_r02] = _LOAD_ATTR_METHOD_NO_DICT,
+    #endif
+    #if MAX_CACHED_REGISTER >= 2
     [_LOAD_ATTR_METHOD_NO_DICT_r12] = _LOAD_ATTR_METHOD_NO_DICT,
+    #endif
+    #if MAX_CACHED_REGISTER >= 3
     [_LOAD_ATTR_METHOD_NO_DICT_r23] = _LOAD_ATTR_METHOD_NO_DICT,
+    #endif
+    #if MAX_CACHED_REGISTER >= 4
     [_LOAD_ATTR_METHOD_NO_DICT_r34] = _LOAD_ATTR_METHOD_NO_DICT,
+    #endif
+    #if MAX_CACHED_REGISTER >= 5
     [_LOAD_ATTR_METHOD_NO_DICT_r45] = _LOAD_ATTR_METHOD_NO_DICT,
+    #endif
+    #if MAX_CACHED_REGISTER >= 1
     [_LOAD_ATTR_NONDESCRIPTOR_WITH_VALUES_r11] = _LOAD_ATTR_NONDESCRIPTOR_WITH_VALUES,
+    #endif
+    #if MAX_CACHED_REGISTER >= 1
     [_LOAD_ATTR_NONDESCRIPTOR_NO_DICT_r11] = _LOAD_ATTR_NONDESCRIPTOR_NO_DICT,
+    #endif
+    #if MAX_CACHED_REGISTER >= 1
     [_CHECK_ATTR_METHOD_LAZY_DICT_r01] = _CHECK_ATTR_METHOD_LAZY_DICT,
+    #endif
+    #if MAX_CACHED_REGISTER >= 1
     [_CHECK_ATTR_METHOD_LAZY_DICT_r11] = _CHECK_ATTR_METHOD_LAZY_DICT,
+    #endif
+    #if MAX_CACHED_REGISTER >= 2
     [_CHECK_ATTR_METHOD_LAZY_DICT_r22] = _CHECK_ATTR_METHOD_LAZY_DICT,
+    #endif
+    #if MAX_CACHED_REGISTER >= 3
     [_CHECK_ATTR_METHOD_LAZY_DICT_r33] = _CHECK_ATTR_METHOD_LAZY_DICT,
+    #endif
+    #if MAX_CACHED_REGISTER >= 4
     [_CHECK_ATTR_METHOD_LAZY_DICT_r44] = _CHECK_ATTR_METHOD_LAZY_DICT,
+    #endif
+    #if MAX_CACHED_REGISTER >= 5
     [_CHECK_ATTR_METHOD_LAZY_DICT_r55] = _CHECK_ATTR_METHOD_LAZY_DICT,
+    #endif
+    #if MAX_CACHED_REGISTER >= 2
     [_LOAD_ATTR_METHOD_LAZY_DICT_r02] = _LOAD_ATTR_METHOD_LAZY_DICT,
+    #endif
+    #if MAX_CACHED_REGISTER >= 2
     [_LOAD_ATTR_METHOD_LAZY_DICT_r12] = _LOAD_ATTR_METHOD_LAZY_DICT,
+    #endif
+    #if MAX_CACHED_REGISTER >= 3
     [_LOAD_ATTR_METHOD_LAZY_DICT_r23] = _LOAD_ATTR_METHOD_LAZY_DICT,
+    #endif
+    #if MAX_CACHED_REGISTER >= 4
     [_LOAD_ATTR_METHOD_LAZY_DICT_r34] = _LOAD_ATTR_METHOD_LAZY_DICT,
+    #endif
+    #if MAX_CACHED_REGISTER >= 5
     [_LOAD_ATTR_METHOD_LAZY_DICT_r45] = _LOAD_ATTR_METHOD_LAZY_DICT,
+    #endif
     [_MAYBE_EXPAND_METHOD_r00] = _MAYBE_EXPAND_METHOD,
+    #if MAX_CACHED_REGISTER >= 1
     [_PY_FRAME_GENERAL_r01] = _PY_FRAME_GENERAL,
+    #endif
     [_CHECK_FUNCTION_VERSION_r00] = _CHECK_FUNCTION_VERSION,
     [_CHECK_FUNCTION_VERSION_INLINE_r00] = _CHECK_FUNCTION_VERSION_INLINE,
+    #if MAX_CACHED_REGISTER >= 1
     [_CHECK_FUNCTION_VERSION_INLINE_r11] = _CHECK_FUNCTION_VERSION_INLINE,
+    #endif
+    #if MAX_CACHED_REGISTER >= 2
     [_CHECK_FUNCTION_VERSION_INLINE_r22] = _CHECK_FUNCTION_VERSION_INLINE,
+    #endif
+    #if MAX_CACHED_REGISTER >= 3
     [_CHECK_FUNCTION_VERSION_INLINE_r33] = _CHECK_FUNCTION_VERSION_INLINE,
+    #endif
+    #if MAX_CACHED_REGISTER >= 4
     [_CHECK_FUNCTION_VERSION_INLINE_r44] = _CHECK_FUNCTION_VERSION_INLINE,
+    #endif
+    #if MAX_CACHED_REGISTER >= 5
     [_CHECK_FUNCTION_VERSION_INLINE_r55] = _CHECK_FUNCTION_VERSION_INLINE,
+    #endif
     [_CHECK_METHOD_VERSION_r00] = _CHECK_METHOD_VERSION,
     [_EXPAND_METHOD_r00] = _EXPAND_METHOD,
     [_CHECK_IS_NOT_PY_CALLABLE_r00] = _CHECK_IS_NOT_PY_CALLABLE,
+    #if MAX_CACHED_REGISTER >= 1
     [_CALL_NON_PY_GENERAL_r01] = _CALL_NON_PY_GENERAL,
+    #endif
     [_CHECK_CALL_BOUND_METHOD_EXACT_ARGS_r00] = _CHECK_CALL_BOUND_METHOD_EXACT_ARGS,
     [_INIT_CALL_BOUND_METHOD_EXACT_ARGS_r00] = _INIT_CALL_BOUND_METHOD_EXACT_ARGS,
     [_CHECK_PEP_523_r00] = _CHECK_PEP_523,
+    #if MAX_CACHED_REGISTER >= 1
     [_CHECK_PEP_523_r11] = _CHECK_PEP_523,
+    #endif
+    #if MAX_CACHED_REGISTER >= 2
     [_CHECK_PEP_523_r22] = _CHECK_PEP_523,
+    #endif
+    #if MAX_CACHED_REGISTER >= 3
     [_CHECK_PEP_523_r33] = _CHECK_PEP_523,
+    #endif
+    #if MAX_CACHED_REGISTER >= 4
     [_CHECK_PEP_523_r44] = _CHECK_PEP_523,
+    #endif
+    #if MAX_CACHED_REGISTER >= 5
     [_CHECK_PEP_523_r55] = _CHECK_PEP_523,
+    #endif
     [_CHECK_FUNCTION_EXACT_ARGS_r00] = _CHECK_FUNCTION_EXACT_ARGS,
     [_CHECK_STACK_SPACE_r00] = _CHECK_STACK_SPACE,
     [_CHECK_RECURSION_REMAINING_r00] = _CHECK_RECURSION_REMAINING,
+    #if MAX_CACHED_REGISTER >= 1
     [_CHECK_RECURSION_REMAINING_r11] = _CHECK_RECURSION_REMAINING,
+    #endif
+    #if MAX_CACHED_REGISTER >= 2
     [_CHECK_RECURSION_REMAINING_r22] = _CHECK_RECURSION_REMAINING,
+    #endif
+    #if MAX_CACHED_REGISTER >= 3
     [_CHECK_RECURSION_REMAINING_r33] = _CHECK_RECURSION_REMAINING,
+    #endif
+    #if MAX_CACHED_REGISTER >= 4
     [_CHECK_RECURSION_REMAINING_r44] = _CHECK_RECURSION_REMAINING,
+    #endif
+    #if MAX_CACHED_REGISTER >= 5
     [_CHECK_RECURSION_REMAINING_r55] = _CHECK_RECURSION_REMAINING,
+    #endif
+    #if MAX_CACHED_REGISTER >= 1
     [_INIT_CALL_PY_EXACT_ARGS_0_r01] = _INIT_CALL_PY_EXACT_ARGS_0,
+    #endif
+    #if MAX_CACHED_REGISTER >= 1
     [_INIT_CALL_PY_EXACT_ARGS_1_r01] = _INIT_CALL_PY_EXACT_ARGS_1,
+    #endif
+    #if MAX_CACHED_REGISTER >= 1
     [_INIT_CALL_PY_EXACT_ARGS_2_r01] = _INIT_CALL_PY_EXACT_ARGS_2,
+    #endif
+    #if MAX_CACHED_REGISTER >= 1
     [_INIT_CALL_PY_EXACT_ARGS_3_r01] = _INIT_CALL_PY_EXACT_ARGS_3,
+    #endif
+    #if MAX_CACHED_REGISTER >= 1
     [_INIT_CALL_PY_EXACT_ARGS_4_r01] = _INIT_CALL_PY_EXACT_ARGS_4,
+    #endif
+    #if MAX_CACHED_REGISTER >= 1
     [_INIT_CALL_PY_EXACT_ARGS_r01] = _INIT_CALL_PY_EXACT_ARGS,
+    #endif
+    #if MAX_CACHED_REGISTER >= 1
     [_PUSH_FRAME_r10] = _PUSH_FRAME,
+    #endif
+    #if MAX_CACHED_REGISTER >= 2
     [_GUARD_NOS_NULL_r02] = _GUARD_NOS_NULL,
+    #endif
+    #if MAX_CACHED_REGISTER >= 2
     [_GUARD_NOS_NULL_r12] = _GUARD_NOS_NULL,
+    #endif
+    #if MAX_CACHED_REGISTER >= 2
     [_GUARD_NOS_NULL_r22] = _GUARD_NOS_NULL,
+    #endif
+    #if MAX_CACHED_REGISTER >= 3
     [_GUARD_NOS_NULL_r33] = _GUARD_NOS_NULL,
+    #endif
+    #if MAX_CACHED_REGISTER >= 4
     [_GUARD_NOS_NULL_r44] = _GUARD_NOS_NULL,
+    #endif
+    #if MAX_CACHED_REGISTER >= 5
     [_GUARD_NOS_NULL_r55] = _GUARD_NOS_NULL,
+    #endif
+    #if MAX_CACHED_REGISTER >= 2
     [_GUARD_NOS_NOT_NULL_r02] = _GUARD_NOS_NOT_NULL,
+    #endif
+    #if MAX_CACHED_REGISTER >= 2
     [_GUARD_NOS_NOT_NULL_r12] = _GUARD_NOS_NOT_NULL,
+    #endif
+    #if MAX_CACHED_REGISTER >= 2
     [_GUARD_NOS_NOT_NULL_r22] = _GUARD_NOS_NOT_NULL,
+    #endif
+    #if MAX_CACHED_REGISTER >= 3
     [_GUARD_NOS_NOT_NULL_r33] = _GUARD_NOS_NOT_NULL,
+    #endif
+    #if MAX_CACHED_REGISTER >= 4
     [_GUARD_NOS_NOT_NULL_r44] = _GUARD_NOS_NOT_NULL,
+    #endif
+    #if MAX_CACHED_REGISTER >= 5
     [_GUARD_NOS_NOT_NULL_r55] = _GUARD_NOS_NOT_NULL,
+    #endif
+    #if MAX_CACHED_REGISTER >= 3
     [_GUARD_THIRD_NULL_r03] = _GUARD_THIRD_NULL,
+    #endif
+    #if MAX_CACHED_REGISTER >= 3
     [_GUARD_THIRD_NULL_r13] = _GUARD_THIRD_NULL,
+    #endif
+    #if MAX_CACHED_REGISTER >= 3
     [_GUARD_THIRD_NULL_r23] = _GUARD_THIRD_NULL,
+    #endif
+    #if MAX_CACHED_REGISTER >= 3
     [_GUARD_THIRD_NULL_r33] = _GUARD_THIRD_NULL,
+    #endif
+    #if MAX_CACHED_REGISTER >= 4
     [_GUARD_THIRD_NULL_r44] = _GUARD_THIRD_NULL,
+    #endif
+    #if MAX_CACHED_REGISTER >= 5
     [_GUARD_THIRD_NULL_r55] = _GUARD_THIRD_NULL,
+    #endif
+    #if MAX_CACHED_REGISTER >= 3
     [_GUARD_CALLABLE_TYPE_1_r03] = _GUARD_CALLABLE_TYPE_1,
+    #endif
+    #if MAX_CACHED_REGISTER >= 3
     [_GUARD_CALLABLE_TYPE_1_r13] = _GUARD_CALLABLE_TYPE_1,
+    #endif
+    #if MAX_CACHED_REGISTER >= 3
     [_GUARD_CALLABLE_TYPE_1_r23] = _GUARD_CALLABLE_TYPE_1,
+    #endif
+    #if MAX_CACHED_REGISTER >= 3
     [_GUARD_CALLABLE_TYPE_1_r33] = _GUARD_CALLABLE_TYPE_1,
+    #endif
+    #if MAX_CACHED_REGISTER >= 4
     [_GUARD_CALLABLE_TYPE_1_r44] = _GUARD_CALLABLE_TYPE_1,
+    #endif
+    #if MAX_CACHED_REGISTER >= 5
     [_GUARD_CALLABLE_TYPE_1_r55] = _GUARD_CALLABLE_TYPE_1,
+    #endif
+    #if MAX_CACHED_REGISTER >= 2
     [_CALL_TYPE_1_r02] = _CALL_TYPE_1,
+    #endif
+    #if MAX_CACHED_REGISTER >= 2
     [_CALL_TYPE_1_r12] = _CALL_TYPE_1,
+    #endif
+    #if MAX_CACHED_REGISTER >= 2
     [_CALL_TYPE_1_r22] = _CALL_TYPE_1,
+    #endif
+    #if MAX_CACHED_REGISTER >= 3
     [_CALL_TYPE_1_r32] = _CALL_TYPE_1,
+    #endif
+    #if MAX_CACHED_REGISTER >= 4
     [_CALL_TYPE_1_r43] = _CALL_TYPE_1,
+    #endif
+    #if MAX_CACHED_REGISTER >= 5
     [_CALL_TYPE_1_r54] = _CALL_TYPE_1,
+    #endif
+    #if MAX_CACHED_REGISTER >= 3
     [_GUARD_CALLABLE_STR_1_r03] = _GUARD_CALLABLE_STR_1,
+    #endif
+    #if MAX_CACHED_REGISTER >= 3
     [_GUARD_CALLABLE_STR_1_r13] = _GUARD_CALLABLE_STR_1,
+    #endif
+    #if MAX_CACHED_REGISTER >= 3
     [_GUARD_CALLABLE_STR_1_r23] = _GUARD_CALLABLE_STR_1,
+    #endif
+    #if MAX_CACHED_REGISTER >= 3
     [_GUARD_CALLABLE_STR_1_r33] = _GUARD_CALLABLE_STR_1,
+    #endif
+    #if MAX_CACHED_REGISTER >= 4
     [_GUARD_CALLABLE_STR_1_r44] = _GUARD_CALLABLE_STR_1,
+    #endif
+    #if MAX_CACHED_REGISTER >= 5
     [_GUARD_CALLABLE_STR_1_r55] = _GUARD_CALLABLE_STR_1,
+    #endif
+    #if MAX_CACHED_REGISTER >= 3
     [_CALL_STR_1_r32] = _CALL_STR_1,
+    #endif
+    #if MAX_CACHED_REGISTER >= 3
     [_GUARD_CALLABLE_TUPLE_1_r03] = _GUARD_CALLABLE_TUPLE_1,
+    #endif
+    #if MAX_CACHED_REGISTER >= 3
     [_GUARD_CALLABLE_TUPLE_1_r13] = _GUARD_CALLABLE_TUPLE_1,
+    #endif
+    #if MAX_CACHED_REGISTER >= 3
     [_GUARD_CALLABLE_TUPLE_1_r23] = _GUARD_CALLABLE_TUPLE_1,
+    #endif
+    #if MAX_CACHED_REGISTER >= 3
     [_GUARD_CALLABLE_TUPLE_1_r33] = _GUARD_CALLABLE_TUPLE_1,
+    #endif
+    #if MAX_CACHED_REGISTER >= 4
     [_GUARD_CALLABLE_TUPLE_1_r44] = _GUARD_CALLABLE_TUPLE_1,
+    #endif
+    #if MAX_CACHED_REGISTER >= 5
     [_GUARD_CALLABLE_TUPLE_1_r55] = _GUARD_CALLABLE_TUPLE_1,
+    #endif
+    #if MAX_CACHED_REGISTER >= 3
     [_CALL_TUPLE_1_r32] = _CALL_TUPLE_1,
+    #endif
     [_CHECK_AND_ALLOCATE_OBJECT_r00] = _CHECK_AND_ALLOCATE_OBJECT,
+    #if MAX_CACHED_REGISTER >= 1
     [_CREATE_INIT_FRAME_r01] = _CREATE_INIT_FRAME,
+    #endif
+    #if MAX_CACHED_REGISTER >= 1
     [_EXIT_INIT_CHECK_r10] = _EXIT_INIT_CHECK,
+    #endif
+    #if MAX_CACHED_REGISTER >= 1
     [_CALL_BUILTIN_CLASS_r01] = _CALL_BUILTIN_CLASS,
+    #endif
+    #if MAX_CACHED_REGISTER >= 3
     [_CALL_BUILTIN_O_r03] = _CALL_BUILTIN_O,
+    #endif
+    #if MAX_CACHED_REGISTER >= 1
     [_CALL_BUILTIN_FAST_r01] = _CALL_BUILTIN_FAST,
+    #endif
+    #if MAX_CACHED_REGISTER >= 1
     [_CALL_BUILTIN_FAST_WITH_KEYWORDS_r01] = _CALL_BUILTIN_FAST_WITH_KEYWORDS,
+    #endif
+    #if MAX_CACHED_REGISTER >= 3
     [_GUARD_CALLABLE_LEN_r03] = _GUARD_CALLABLE_LEN,
+    #endif
+    #if MAX_CACHED_REGISTER >= 3
     [_GUARD_CALLABLE_LEN_r13] = _GUARD_CALLABLE_LEN,
+    #endif
+    #if MAX_CACHED_REGISTER >= 3
     [_GUARD_CALLABLE_LEN_r23] = _GUARD_CALLABLE_LEN,
+    #endif
+    #if MAX_CACHED_REGISTER >= 3
     [_GUARD_CALLABLE_LEN_r33] = _GUARD_CALLABLE_LEN,
+    #endif
+    #if MAX_CACHED_REGISTER >= 4
     [_GUARD_CALLABLE_LEN_r44] = _GUARD_CALLABLE_LEN,
+    #endif
+    #if MAX_CACHED_REGISTER >= 5
     [_GUARD_CALLABLE_LEN_r55] = _GUARD_CALLABLE_LEN,
+    #endif
+    #if MAX_CACHED_REGISTER >= 3
     [_CALL_LEN_r33] = _CALL_LEN,
+    #endif
+    #if MAX_CACHED_REGISTER >= 4
     [_GUARD_CALLABLE_ISINSTANCE_r04] = _GUARD_CALLABLE_ISINSTANCE,
+    #endif
+    #if MAX_CACHED_REGISTER >= 4
     [_GUARD_CALLABLE_ISINSTANCE_r14] = _GUARD_CALLABLE_ISINSTANCE,
+    #endif
+    #if MAX_CACHED_REGISTER >= 4
     [_GUARD_CALLABLE_ISINSTANCE_r24] = _GUARD_CALLABLE_ISINSTANCE,
+    #endif
+    #if MAX_CACHED_REGISTER >= 4
     [_GUARD_CALLABLE_ISINSTANCE_r34] = _GUARD_CALLABLE_ISINSTANCE,
+    #endif
+    #if MAX_CACHED_REGISTER >= 4
     [_GUARD_CALLABLE_ISINSTANCE_r44] = _GUARD_CALLABLE_ISINSTANCE,
+    #endif
+    #if MAX_CACHED_REGISTER >= 5
     [_GUARD_CALLABLE_ISINSTANCE_r55] = _GUARD_CALLABLE_ISINSTANCE,
+    #endif
+    #if MAX_CACHED_REGISTER >= 4
     [_CALL_ISINSTANCE_r41] = _CALL_ISINSTANCE,
+    #endif
+    #if MAX_CACHED_REGISTER >= 3
     [_GUARD_CALLABLE_LIST_APPEND_r03] = _GUARD_CALLABLE_LIST_APPEND,
+    #endif
+    #if MAX_CACHED_REGISTER >= 3
     [_GUARD_CALLABLE_LIST_APPEND_r13] = _GUARD_CALLABLE_LIST_APPEND,
+    #endif
+    #if MAX_CACHED_REGISTER >= 3
     [_GUARD_CALLABLE_LIST_APPEND_r23] = _GUARD_CALLABLE_LIST_APPEND,
+    #endif
+    #if MAX_CACHED_REGISTER >= 3
     [_GUARD_CALLABLE_LIST_APPEND_r33] = _GUARD_CALLABLE_LIST_APPEND,
+    #endif
+    #if MAX_CACHED_REGISTER >= 4
     [_GUARD_CALLABLE_LIST_APPEND_r44] = _GUARD_CALLABLE_LIST_APPEND,
+    #endif
+    #if MAX_CACHED_REGISTER >= 5
     [_GUARD_CALLABLE_LIST_APPEND_r55] = _GUARD_CALLABLE_LIST_APPEND,
+    #endif
+    #if MAX_CACHED_REGISTER >= 3
     [_CALL_LIST_APPEND_r03] = _CALL_LIST_APPEND,
+    #endif
+    #if MAX_CACHED_REGISTER >= 3
     [_CALL_LIST_APPEND_r13] = _CALL_LIST_APPEND,
+    #endif
+    #if MAX_CACHED_REGISTER >= 3
     [_CALL_LIST_APPEND_r23] = _CALL_LIST_APPEND,
+    #endif
+    #if MAX_CACHED_REGISTER >= 3
     [_CALL_LIST_APPEND_r33] = _CALL_LIST_APPEND,
+    #endif
+    #if MAX_CACHED_REGISTER >= 4
     [_CALL_LIST_APPEND_r44] = _CALL_LIST_APPEND,
+    #endif
+    #if MAX_CACHED_REGISTER >= 5
     [_CALL_LIST_APPEND_r55] = _CALL_LIST_APPEND,
+    #endif
+    #if MAX_CACHED_REGISTER >= 4
     [_CALL_METHOD_DESCRIPTOR_O_r04] = _CALL_METHOD_DESCRIPTOR_O,
+    #endif
+    #if MAX_CACHED_REGISTER >= 1
     [_CALL_METHOD_DESCRIPTOR_FAST_WITH_KEYWORDS_r01] = _CALL_METHOD_DESCRIPTOR_FAST_WITH_KEYWORDS,
+    #endif
+    #if MAX_CACHED_REGISTER >= 1
     [_CALL_METHOD_DESCRIPTOR_NOARGS_r01] = _CALL_METHOD_DESCRIPTOR_NOARGS,
+    #endif
+    #if MAX_CACHED_REGISTER >= 1
     [_CALL_METHOD_DESCRIPTOR_FAST_r01] = _CALL_METHOD_DESCRIPTOR_FAST,
+    #endif
+    #if MAX_CACHED_REGISTER >= 1
     [_MAYBE_EXPAND_METHOD_KW_r11] = _MAYBE_EXPAND_METHOD_KW,
+    #endif
+    #if MAX_CACHED_REGISTER >= 1
     [_PY_FRAME_KW_r11] = _PY_FRAME_KW,
+    #endif
+    #if MAX_CACHED_REGISTER >= 1
     [_CHECK_FUNCTION_VERSION_KW_r11] = _CHECK_FUNCTION_VERSION_KW,
+    #endif
+    #if MAX_CACHED_REGISTER >= 1
     [_CHECK_METHOD_VERSION_KW_r11] = _CHECK_METHOD_VERSION_KW,
+    #endif
+    #if MAX_CACHED_REGISTER >= 1
     [_EXPAND_METHOD_KW_r11] = _EXPAND_METHOD_KW,
+    #endif
+    #if MAX_CACHED_REGISTER >= 1
     [_CHECK_IS_NOT_PY_CALLABLE_KW_r11] = _CHECK_IS_NOT_PY_CALLABLE_KW,
+    #endif
+    #if MAX_CACHED_REGISTER >= 1
     [_CALL_KW_NON_PY_r11] = _CALL_KW_NON_PY,
+    #endif
+    #if MAX_CACHED_REGISTER >= 4
     [_MAKE_CALLARGS_A_TUPLE_r44] = _MAKE_CALLARGS_A_TUPLE,
+    #endif
+    #if MAX_CACHED_REGISTER >= 4
     [_CHECK_IS_PY_CALLABLE_EX_r04] = _CHECK_IS_PY_CALLABLE_EX,
+    #endif
+    #if MAX_CACHED_REGISTER >= 4
     [_CHECK_IS_PY_CALLABLE_EX_r14] = _CHECK_IS_PY_CALLABLE_EX,
+    #endif
+    #if MAX_CACHED_REGISTER >= 4
     [_CHECK_IS_PY_CALLABLE_EX_r24] = _CHECK_IS_PY_CALLABLE_EX,
+    #endif
+    #if MAX_CACHED_REGISTER >= 4
     [_CHECK_IS_PY_CALLABLE_EX_r34] = _CHECK_IS_PY_CALLABLE_EX,
+    #endif
+    #if MAX_CACHED_REGISTER >= 4
     [_CHECK_IS_PY_CALLABLE_EX_r44] = _CHECK_IS_PY_CALLABLE_EX,
+    #endif
+    #if MAX_CACHED_REGISTER >= 5
     [_CHECK_IS_PY_CALLABLE_EX_r55] = _CHECK_IS_PY_CALLABLE_EX,
+    #endif
+    #if MAX_CACHED_REGISTER >= 4
     [_PY_FRAME_EX_r41] = _PY_FRAME_EX,
+    #endif
+    #if MAX_CACHED_REGISTER >= 4
     [_CHECK_IS_NOT_PY_CALLABLE_EX_r04] = _CHECK_IS_NOT_PY_CALLABLE_EX,
+    #endif
+    #if MAX_CACHED_REGISTER >= 4
     [_CHECK_IS_NOT_PY_CALLABLE_EX_r14] = _CHECK_IS_NOT_PY_CALLABLE_EX,
+    #endif
+    #if MAX_CACHED_REGISTER >= 4
     [_CHECK_IS_NOT_PY_CALLABLE_EX_r24] = _CHECK_IS_NOT_PY_CALLABLE_EX,
+    #endif
+    #if MAX_CACHED_REGISTER >= 4
     [_CHECK_IS_NOT_PY_CALLABLE_EX_r34] = _CHECK_IS_NOT_PY_CALLABLE_EX,
+    #endif
+    #if MAX_CACHED_REGISTER >= 4
     [_CHECK_IS_NOT_PY_CALLABLE_EX_r44] = _CHECK_IS_NOT_PY_CALLABLE_EX,
+    #endif
+    #if MAX_CACHED_REGISTER >= 5
     [_CHECK_IS_NOT_PY_CALLABLE_EX_r55] = _CHECK_IS_NOT_PY_CALLABLE_EX,
+    #endif
+    #if MAX_CACHED_REGISTER >= 4
     [_CALL_FUNCTION_EX_NON_PY_GENERAL_r41] = _CALL_FUNCTION_EX_NON_PY_GENERAL,
+    #endif
+    #if MAX_CACHED_REGISTER >= 1
     [_MAKE_FUNCTION_r11] = _MAKE_FUNCTION,
+    #endif
+    #if MAX_CACHED_REGISTER >= 1
     [_SET_FUNCTION_ATTRIBUTE_r01] = _SET_FUNCTION_ATTRIBUTE,
+    #endif
+    #if MAX_CACHED_REGISTER >= 1
     [_SET_FUNCTION_ATTRIBUTE_r11] = _SET_FUNCTION_ATTRIBUTE,
+    #endif
+    #if MAX_CACHED_REGISTER >= 2
     [_SET_FUNCTION_ATTRIBUTE_r21] = _SET_FUNCTION_ATTRIBUTE,
+    #endif
+    #if MAX_CACHED_REGISTER >= 3
     [_SET_FUNCTION_ATTRIBUTE_r32] = _SET_FUNCTION_ATTRIBUTE,
+    #endif
+    #if MAX_CACHED_REGISTER >= 4
     [_SET_FUNCTION_ATTRIBUTE_r43] = _SET_FUNCTION_ATTRIBUTE,
+    #endif
+    #if MAX_CACHED_REGISTER >= 5
     [_SET_FUNCTION_ATTRIBUTE_r54] = _SET_FUNCTION_ATTRIBUTE,
+    #endif
+    #if MAX_CACHED_REGISTER >= 1
     [_RETURN_GENERATOR_r01] = _RETURN_GENERATOR,
+    #endif
+    #if MAX_CACHED_REGISTER >= 1
     [_BUILD_SLICE_r01] = _BUILD_SLICE,
+    #endif
+    #if MAX_CACHED_REGISTER >= 1
     [_CONVERT_VALUE_r11] = _CONVERT_VALUE,
+    #endif
+    #if MAX_CACHED_REGISTER >= 1
     [_FORMAT_SIMPLE_r11] = _FORMAT_SIMPLE,
+    #endif
+    #if MAX_CACHED_REGISTER >= 2
     [_FORMAT_WITH_SPEC_r21] = _FORMAT_WITH_SPEC,
+    #endif
+    #if MAX_CACHED_REGISTER >= 2
     [_COPY_1_r02] = _COPY_1,
+    #endif
+    #if MAX_CACHED_REGISTER >= 2
     [_COPY_1_r12] = _COPY_1,
+    #endif
+    #if MAX_CACHED_REGISTER >= 3
     [_COPY_1_r23] = _COPY_1,
+    #endif
+    #if MAX_CACHED_REGISTER >= 4
     [_COPY_1_r34] = _COPY_1,
+    #endif
+    #if MAX_CACHED_REGISTER >= 5
     [_COPY_1_r45] = _COPY_1,
+    #endif
+    #if MAX_CACHED_REGISTER >= 3
     [_COPY_2_r03] = _COPY_2,
+    #endif
+    #if MAX_CACHED_REGISTER >= 3
     [_COPY_2_r13] = _COPY_2,
+    #endif
+    #if MAX_CACHED_REGISTER >= 3
     [_COPY_2_r23] = _COPY_2,
+    #endif
+    #if MAX_CACHED_REGISTER >= 4
     [_COPY_2_r34] = _COPY_2,
+    #endif
+    #if MAX_CACHED_REGISTER >= 5
     [_COPY_2_r45] = _COPY_2,
+    #endif
+    #if MAX_CACHED_REGISTER >= 4
     [_COPY_3_r04] = _COPY_3,
+    #endif
+    #if MAX_CACHED_REGISTER >= 4
     [_COPY_3_r14] = _COPY_3,
+    #endif
+    #if MAX_CACHED_REGISTER >= 4
     [_COPY_3_r24] = _COPY_3,
+    #endif
+    #if MAX_CACHED_REGISTER >= 4
     [_COPY_3_r34] = _COPY_3,
+    #endif
+    #if MAX_CACHED_REGISTER >= 5
     [_COPY_3_r45] = _COPY_3,
+    #endif
+    #if MAX_CACHED_REGISTER >= 1
     [_COPY_r01] = _COPY,
+    #endif
+    #if MAX_CACHED_REGISTER >= 3
     [_BINARY_OP_r23] = _BINARY_OP,
+    #endif
+    #if MAX_CACHED_REGISTER >= 2
     [_SWAP_2_r02] = _SWAP_2,
+    #endif
+    #if MAX_CACHED_REGISTER >= 2
     [_SWAP_2_r12] = _SWAP_2,
+    #endif
+    #if MAX_CACHED_REGISTER >= 2
     [_SWAP_2_r22] = _SWAP_2,
+    #endif
+    #if MAX_CACHED_REGISTER >= 3
     [_SWAP_2_r33] = _SWAP_2,
+    #endif
+    #if MAX_CACHED_REGISTER >= 4
     [_SWAP_2_r44] = _SWAP_2,
+    #endif
+    #if MAX_CACHED_REGISTER >= 5
     [_SWAP_2_r55] = _SWAP_2,
+    #endif
+    #if MAX_CACHED_REGISTER >= 3
     [_SWAP_3_r03] = _SWAP_3,
+    #endif
+    #if MAX_CACHED_REGISTER >= 3
     [_SWAP_3_r13] = _SWAP_3,
+    #endif
+    #if MAX_CACHED_REGISTER >= 3
     [_SWAP_3_r23] = _SWAP_3,
+    #endif
+    #if MAX_CACHED_REGISTER >= 3
     [_SWAP_3_r33] = _SWAP_3,
+    #endif
+    #if MAX_CACHED_REGISTER >= 4
     [_SWAP_3_r44] = _SWAP_3,
+    #endif
+    #if MAX_CACHED_REGISTER >= 5
     [_SWAP_3_r55] = _SWAP_3,
+    #endif
+    #if MAX_CACHED_REGISTER >= 1
     [_SWAP_r11] = _SWAP,
+    #endif
     [_GUARD_IS_TRUE_POP_r00] = _GUARD_IS_TRUE_POP,
+    #if MAX_CACHED_REGISTER >= 1
     [_GUARD_IS_TRUE_POP_r10] = _GUARD_IS_TRUE_POP,
+    #endif
+    #if MAX_CACHED_REGISTER >= 2
     [_GUARD_IS_TRUE_POP_r21] = _GUARD_IS_TRUE_POP,
+    #endif
+    #if MAX_CACHED_REGISTER >= 3
     [_GUARD_IS_TRUE_POP_r32] = _GUARD_IS_TRUE_POP,
+    #endif
+    #if MAX_CACHED_REGISTER >= 4
     [_GUARD_IS_TRUE_POP_r43] = _GUARD_IS_TRUE_POP,
+    #endif
+    #if MAX_CACHED_REGISTER >= 5
     [_GUARD_IS_TRUE_POP_r54] = _GUARD_IS_TRUE_POP,
+    #endif
     [_GUARD_IS_FALSE_POP_r00] = _GUARD_IS_FALSE_POP,
+    #if MAX_CACHED_REGISTER >= 1
     [_GUARD_IS_FALSE_POP_r10] = _GUARD_IS_FALSE_POP,
+    #endif
+    #if MAX_CACHED_REGISTER >= 2
     [_GUARD_IS_FALSE_POP_r21] = _GUARD_IS_FALSE_POP,
+    #endif
+    #if MAX_CACHED_REGISTER >= 3
     [_GUARD_IS_FALSE_POP_r32] = _GUARD_IS_FALSE_POP,
+    #endif
+    #if MAX_CACHED_REGISTER >= 4
     [_GUARD_IS_FALSE_POP_r43] = _GUARD_IS_FALSE_POP,
+    #endif
+    #if MAX_CACHED_REGISTER >= 5
     [_GUARD_IS_FALSE_POP_r54] = _GUARD_IS_FALSE_POP,
+    #endif
     [_GUARD_BIT_IS_SET_POP_4_r00] = _GUARD_BIT_IS_SET_POP_4,
+    #if MAX_CACHED_REGISTER >= 1
     [_GUARD_BIT_IS_SET_POP_4_r10] = _GUARD_BIT_IS_SET_POP_4,
+    #endif
+    #if MAX_CACHED_REGISTER >= 2
     [_GUARD_BIT_IS_SET_POP_4_r21] = _GUARD_BIT_IS_SET_POP_4,
+    #endif
+    #if MAX_CACHED_REGISTER >= 3
     [_GUARD_BIT_IS_SET_POP_4_r32] = _GUARD_BIT_IS_SET_POP_4,
+    #endif
+    #if MAX_CACHED_REGISTER >= 4
     [_GUARD_BIT_IS_SET_POP_4_r43] = _GUARD_BIT_IS_SET_POP_4,
+    #endif
+    #if MAX_CACHED_REGISTER >= 5
     [_GUARD_BIT_IS_SET_POP_4_r54] = _GUARD_BIT_IS_SET_POP_4,
+    #endif
     [_GUARD_BIT_IS_SET_POP_5_r00] = _GUARD_BIT_IS_SET_POP_5,
+    #if MAX_CACHED_REGISTER >= 1
     [_GUARD_BIT_IS_SET_POP_5_r10] = _GUARD_BIT_IS_SET_POP_5,
+    #endif
+    #if MAX_CACHED_REGISTER >= 2
     [_GUARD_BIT_IS_SET_POP_5_r21] = _GUARD_BIT_IS_SET_POP_5,
+    #endif
+    #if MAX_CACHED_REGISTER >= 3
     [_GUARD_BIT_IS_SET_POP_5_r32] = _GUARD_BIT_IS_SET_POP_5,
+    #endif
+    #if MAX_CACHED_REGISTER >= 4
     [_GUARD_BIT_IS_SET_POP_5_r43] = _GUARD_BIT_IS_SET_POP_5,
+    #endif
+    #if MAX_CACHED_REGISTER >= 5
     [_GUARD_BIT_IS_SET_POP_5_r54] = _GUARD_BIT_IS_SET_POP_5,
+    #endif
     [_GUARD_BIT_IS_SET_POP_6_r00] = _GUARD_BIT_IS_SET_POP_6,
+    #if MAX_CACHED_REGISTER >= 1
     [_GUARD_BIT_IS_SET_POP_6_r10] = _GUARD_BIT_IS_SET_POP_6,
+    #endif
+    #if MAX_CACHED_REGISTER >= 2
     [_GUARD_BIT_IS_SET_POP_6_r21] = _GUARD_BIT_IS_SET_POP_6,
+    #endif
+    #if MAX_CACHED_REGISTER >= 3
     [_GUARD_BIT_IS_SET_POP_6_r32] = _GUARD_BIT_IS_SET_POP_6,
+    #endif
+    #if MAX_CACHED_REGISTER >= 4
     [_GUARD_BIT_IS_SET_POP_6_r43] = _GUARD_BIT_IS_SET_POP_6,
+    #endif
+    #if MAX_CACHED_REGISTER >= 5
     [_GUARD_BIT_IS_SET_POP_6_r54] = _GUARD_BIT_IS_SET_POP_6,
+    #endif
     [_GUARD_BIT_IS_SET_POP_7_r00] = _GUARD_BIT_IS_SET_POP_7,
+    #if MAX_CACHED_REGISTER >= 1
     [_GUARD_BIT_IS_SET_POP_7_r10] = _GUARD_BIT_IS_SET_POP_7,
+    #endif
+    #if MAX_CACHED_REGISTER >= 2
     [_GUARD_BIT_IS_SET_POP_7_r21] = _GUARD_BIT_IS_SET_POP_7,
+    #endif
+    #if MAX_CACHED_REGISTER >= 3
     [_GUARD_BIT_IS_SET_POP_7_r32] = _GUARD_BIT_IS_SET_POP_7,
+    #endif
+    #if MAX_CACHED_REGISTER >= 4
     [_GUARD_BIT_IS_SET_POP_7_r43] = _GUARD_BIT_IS_SET_POP_7,
+    #endif
+    #if MAX_CACHED_REGISTER >= 5
     [_GUARD_BIT_IS_SET_POP_7_r54] = _GUARD_BIT_IS_SET_POP_7,
+    #endif
     [_GUARD_BIT_IS_SET_POP_r00] = _GUARD_BIT_IS_SET_POP,
+    #if MAX_CACHED_REGISTER >= 1
     [_GUARD_BIT_IS_SET_POP_r10] = _GUARD_BIT_IS_SET_POP,
+    #endif
+    #if MAX_CACHED_REGISTER >= 2
     [_GUARD_BIT_IS_SET_POP_r21] = _GUARD_BIT_IS_SET_POP,
+    #endif
+    #if MAX_CACHED_REGISTER >= 3
     [_GUARD_BIT_IS_SET_POP_r32] = _GUARD_BIT_IS_SET_POP,
+    #endif
+    #if MAX_CACHED_REGISTER >= 4
     [_GUARD_BIT_IS_SET_POP_r43] = _GUARD_BIT_IS_SET_POP,
+    #endif
+    #if MAX_CACHED_REGISTER >= 5
     [_GUARD_BIT_IS_SET_POP_r54] = _GUARD_BIT_IS_SET_POP,
+    #endif
     [_GUARD_BIT_IS_UNSET_POP_4_r00] = _GUARD_BIT_IS_UNSET_POP_4,
+    #if MAX_CACHED_REGISTER >= 1
     [_GUARD_BIT_IS_UNSET_POP_4_r10] = _GUARD_BIT_IS_UNSET_POP_4,
+    #endif
+    #if MAX_CACHED_REGISTER >= 2
     [_GUARD_BIT_IS_UNSET_POP_4_r21] = _GUARD_BIT_IS_UNSET_POP_4,
+    #endif
+    #if MAX_CACHED_REGISTER >= 3
     [_GUARD_BIT_IS_UNSET_POP_4_r32] = _GUARD_BIT_IS_UNSET_POP_4,
+    #endif
+    #if MAX_CACHED_REGISTER >= 4
     [_GUARD_BIT_IS_UNSET_POP_4_r43] = _GUARD_BIT_IS_UNSET_POP_4,
+    #endif
+    #if MAX_CACHED_REGISTER >= 5
     [_GUARD_BIT_IS_UNSET_POP_4_r54] = _GUARD_BIT_IS_UNSET_POP_4,
+    #endif
     [_GUARD_BIT_IS_UNSET_POP_5_r00] = _GUARD_BIT_IS_UNSET_POP_5,
+    #if MAX_CACHED_REGISTER >= 1
     [_GUARD_BIT_IS_UNSET_POP_5_r10] = _GUARD_BIT_IS_UNSET_POP_5,
+    #endif
+    #if MAX_CACHED_REGISTER >= 2
     [_GUARD_BIT_IS_UNSET_POP_5_r21] = _GUARD_BIT_IS_UNSET_POP_5,
+    #endif
+    #if MAX_CACHED_REGISTER >= 3
     [_GUARD_BIT_IS_UNSET_POP_5_r32] = _GUARD_BIT_IS_UNSET_POP_5,
+    #endif
+    #if MAX_CACHED_REGISTER >= 4
     [_GUARD_BIT_IS_UNSET_POP_5_r43] = _GUARD_BIT_IS_UNSET_POP_5,
+    #endif
+    #if MAX_CACHED_REGISTER >= 5
     [_GUARD_BIT_IS_UNSET_POP_5_r54] = _GUARD_BIT_IS_UNSET_POP_5,
+    #endif
     [_GUARD_BIT_IS_UNSET_POP_6_r00] = _GUARD_BIT_IS_UNSET_POP_6,
+    #if MAX_CACHED_REGISTER >= 1
     [_GUARD_BIT_IS_UNSET_POP_6_r10] = _GUARD_BIT_IS_UNSET_POP_6,
+    #endif
+    #if MAX_CACHED_REGISTER >= 2
     [_GUARD_BIT_IS_UNSET_POP_6_r21] = _GUARD_BIT_IS_UNSET_POP_6,
+    #endif
+    #if MAX_CACHED_REGISTER >= 3
     [_GUARD_BIT_IS_UNSET_POP_6_r32] = _GUARD_BIT_IS_UNSET_POP_6,
+    #endif
+    #if MAX_CACHED_REGISTER >= 4
     [_GUARD_BIT_IS_UNSET_POP_6_r43] = _GUARD_BIT_IS_UNSET_POP_6,
+    #endif
+    #if MAX_CACHED_REGISTER >= 5
     [_GUARD_BIT_IS_UNSET_POP_6_r54] = _GUARD_BIT_IS_UNSET_POP_6,
+    #endif
     [_GUARD_BIT_IS_UNSET_POP_7_r00] = _GUARD_BIT_IS_UNSET_POP_7,
+    #if MAX_CACHED_REGISTER >= 1
     [_GUARD_BIT_IS_UNSET_POP_7_r10] = _GUARD_BIT_IS_UNSET_POP_7,
+    #endif
+    #if MAX_CACHED_REGISTER >= 2
     [_GUARD_BIT_IS_UNSET_POP_7_r21] = _GUARD_BIT_IS_UNSET_POP_7,
+    #endif
+    #if MAX_CACHED_REGISTER >= 3
     [_GUARD_BIT_IS_UNSET_POP_7_r32] = _GUARD_BIT_IS_UNSET_POP_7,
+    #endif
+    #if MAX_CACHED_REGISTER >= 4
     [_GUARD_BIT_IS_UNSET_POP_7_r43] = _GUARD_BIT_IS_UNSET_POP_7,
+    #endif
+    #if MAX_CACHED_REGISTER >= 5
     [_GUARD_BIT_IS_UNSET_POP_7_r54] = _GUARD_BIT_IS_UNSET_POP_7,
+    #endif
     [_GUARD_BIT_IS_UNSET_POP_r00] = _GUARD_BIT_IS_UNSET_POP,
+    #if MAX_CACHED_REGISTER >= 1
     [_GUARD_BIT_IS_UNSET_POP_r10] = _GUARD_BIT_IS_UNSET_POP,
+    #endif
+    #if MAX_CACHED_REGISTER >= 2
     [_GUARD_BIT_IS_UNSET_POP_r21] = _GUARD_BIT_IS_UNSET_POP,
+    #endif
+    #if MAX_CACHED_REGISTER >= 3
     [_GUARD_BIT_IS_UNSET_POP_r32] = _GUARD_BIT_IS_UNSET_POP,
+    #endif
+    #if MAX_CACHED_REGISTER >= 4
     [_GUARD_BIT_IS_UNSET_POP_r43] = _GUARD_BIT_IS_UNSET_POP,
+    #endif
+    #if MAX_CACHED_REGISTER >= 5
     [_GUARD_BIT_IS_UNSET_POP_r54] = _GUARD_BIT_IS_UNSET_POP,
+    #endif
     [_GUARD_IS_NONE_POP_r00] = _GUARD_IS_NONE_POP,
+    #if MAX_CACHED_REGISTER >= 1
     [_GUARD_IS_NONE_POP_r10] = _GUARD_IS_NONE_POP,
+    #endif
+    #if MAX_CACHED_REGISTER >= 2
     [_GUARD_IS_NONE_POP_r21] = _GUARD_IS_NONE_POP,
+    #endif
+    #if MAX_CACHED_REGISTER >= 3
     [_GUARD_IS_NONE_POP_r32] = _GUARD_IS_NONE_POP,
+    #endif
+    #if MAX_CACHED_REGISTER >= 4
     [_GUARD_IS_NONE_POP_r43] = _GUARD_IS_NONE_POP,
+    #endif
+    #if MAX_CACHED_REGISTER >= 5
     [_GUARD_IS_NONE_POP_r54] = _GUARD_IS_NONE_POP,
+    #endif
+    #if MAX_CACHED_REGISTER >= 1
     [_GUARD_IS_NOT_NONE_POP_r10] = _GUARD_IS_NOT_NONE_POP,
+    #endif
     [_JUMP_TO_TOP_r00] = _JUMP_TO_TOP,
     [_SET_IP_r00] = _SET_IP,
+    #if MAX_CACHED_REGISTER >= 1
     [_SET_IP_r11] = _SET_IP,
+    #endif
+    #if MAX_CACHED_REGISTER >= 2
     [_SET_IP_r22] = _SET_IP,
+    #endif
+    #if MAX_CACHED_REGISTER >= 3
     [_SET_IP_r33] = _SET_IP,
+    #endif
+    #if MAX_CACHED_REGISTER >= 4
     [_SET_IP_r44] = _SET_IP,
+    #endif
+    #if MAX_CACHED_REGISTER >= 5
     [_SET_IP_r55] = _SET_IP,
+    #endif
     [_CHECK_STACK_SPACE_OPERAND_r00] = _CHECK_STACK_SPACE_OPERAND,
+    #if MAX_CACHED_REGISTER >= 1
     [_CHECK_STACK_SPACE_OPERAND_r11] = _CHECK_STACK_SPACE_OPERAND,
+    #endif
+    #if MAX_CACHED_REGISTER >= 2
     [_CHECK_STACK_SPACE_OPERAND_r22] = _CHECK_STACK_SPACE_OPERAND,
+    #endif
+    #if MAX_CACHED_REGISTER >= 3
     [_CHECK_STACK_SPACE_OPERAND_r33] = _CHECK_STACK_SPACE_OPERAND,
+    #endif
+    #if MAX_CACHED_REGISTER >= 4
     [_CHECK_STACK_SPACE_OPERAND_r44] = _CHECK_STACK_SPACE_OPERAND,
+    #endif
+    #if MAX_CACHED_REGISTER >= 5
     [_CHECK_STACK_SPACE_OPERAND_r55] = _CHECK_STACK_SPACE_OPERAND,
+    #endif
     [_SAVE_RETURN_OFFSET_r00] = _SAVE_RETURN_OFFSET,
+    #if MAX_CACHED_REGISTER >= 1
     [_SAVE_RETURN_OFFSET_r11] = _SAVE_RETURN_OFFSET,
+    #endif
+    #if MAX_CACHED_REGISTER >= 2
     [_SAVE_RETURN_OFFSET_r22] = _SAVE_RETURN_OFFSET,
+    #endif
+    #if MAX_CACHED_REGISTER >= 3
     [_SAVE_RETURN_OFFSET_r33] = _SAVE_RETURN_OFFSET,
+    #endif
+    #if MAX_CACHED_REGISTER >= 4
     [_SAVE_RETURN_OFFSET_r44] = _SAVE_RETURN_OFFSET,
+    #endif
+    #if MAX_CACHED_REGISTER >= 5
     [_SAVE_RETURN_OFFSET_r55] = _SAVE_RETURN_OFFSET,
+    #endif
     [_EXIT_TRACE_r00] = _EXIT_TRACE,
+    #if MAX_CACHED_REGISTER >= 1
     [_EXIT_TRACE_r10] = _EXIT_TRACE,
+    #endif
+    #if MAX_CACHED_REGISTER >= 2
     [_EXIT_TRACE_r20] = _EXIT_TRACE,
+    #endif
+    #if MAX_CACHED_REGISTER >= 3
     [_EXIT_TRACE_r30] = _EXIT_TRACE,
+    #endif
+    #if MAX_CACHED_REGISTER >= 4
     [_EXIT_TRACE_r40] = _EXIT_TRACE,
+    #endif
+    #if MAX_CACHED_REGISTER >= 5
     [_EXIT_TRACE_r50] = _EXIT_TRACE,
+    #endif
     [_DYNAMIC_EXIT_r00] = _DYNAMIC_EXIT,
+    #if MAX_CACHED_REGISTER >= 1
     [_DYNAMIC_EXIT_r10] = _DYNAMIC_EXIT,
+    #endif
+    #if MAX_CACHED_REGISTER >= 2
     [_DYNAMIC_EXIT_r20] = _DYNAMIC_EXIT,
+    #endif
+    #if MAX_CACHED_REGISTER >= 3
     [_DYNAMIC_EXIT_r30] = _DYNAMIC_EXIT,
+    #endif
+    #if MAX_CACHED_REGISTER >= 4
     [_DYNAMIC_EXIT_r40] = _DYNAMIC_EXIT,
+    #endif
+    #if MAX_CACHED_REGISTER >= 5
     [_DYNAMIC_EXIT_r50] = _DYNAMIC_EXIT,
+    #endif
     [_CHECK_VALIDITY_r00] = _CHECK_VALIDITY,
+    #if MAX_CACHED_REGISTER >= 1
     [_CHECK_VALIDITY_r11] = _CHECK_VALIDITY,
+    #endif
+    #if MAX_CACHED_REGISTER >= 2
     [_CHECK_VALIDITY_r22] = _CHECK_VALIDITY,
+    #endif
+    #if MAX_CACHED_REGISTER >= 3
     [_CHECK_VALIDITY_r33] = _CHECK_VALIDITY,
+    #endif
+    #if MAX_CACHED_REGISTER >= 4
     [_CHECK_VALIDITY_r44] = _CHECK_VALIDITY,
+    #endif
+    #if MAX_CACHED_REGISTER >= 5
     [_CHECK_VALIDITY_r55] = _CHECK_VALIDITY,
+    #endif
+    #if MAX_CACHED_REGISTER >= 1
     [_LOAD_CONST_INLINE_r01] = _LOAD_CONST_INLINE,
+    #endif
+    #if MAX_CACHED_REGISTER >= 2
     [_LOAD_CONST_INLINE_r12] = _LOAD_CONST_INLINE,
+    #endif
+    #if MAX_CACHED_REGISTER >= 3
     [_LOAD_CONST_INLINE_r23] = _LOAD_CONST_INLINE,
+    #endif
+    #if MAX_CACHED_REGISTER >= 4
     [_LOAD_CONST_INLINE_r34] = _LOAD_CONST_INLINE,
+    #endif
+    #if MAX_CACHED_REGISTER >= 5
     [_LOAD_CONST_INLINE_r45] = _LOAD_CONST_INLINE,
+    #endif
+    #if MAX_CACHED_REGISTER >= 1
     [_POP_TOP_LOAD_CONST_INLINE_r11] = _POP_TOP_LOAD_CONST_INLINE,
+    #endif
+    #if MAX_CACHED_REGISTER >= 1
     [_LOAD_CONST_INLINE_BORROW_r01] = _LOAD_CONST_INLINE_BORROW,
+    #endif
+    #if MAX_CACHED_REGISTER >= 2
     [_LOAD_CONST_INLINE_BORROW_r12] = _LOAD_CONST_INLINE_BORROW,
+    #endif
+    #if MAX_CACHED_REGISTER >= 3
     [_LOAD_CONST_INLINE_BORROW_r23] = _LOAD_CONST_INLINE_BORROW,
+    #endif
+    #if MAX_CACHED_REGISTER >= 4
     [_LOAD_CONST_INLINE_BORROW_r34] = _LOAD_CONST_INLINE_BORROW,
+    #endif
+    #if MAX_CACHED_REGISTER >= 5
     [_LOAD_CONST_INLINE_BORROW_r45] = _LOAD_CONST_INLINE_BORROW,
+    #endif
+    #if MAX_CACHED_REGISTER >= 2
     [_POP_CALL_r20] = _POP_CALL,
+    #endif
+    #if MAX_CACHED_REGISTER >= 3
     [_POP_CALL_ONE_r30] = _POP_CALL_ONE,
+    #endif
+    #if MAX_CACHED_REGISTER >= 4
     [_POP_CALL_TWO_r40] = _POP_CALL_TWO,
+    #endif
+    #if MAX_CACHED_REGISTER >= 1
     [_POP_TOP_LOAD_CONST_INLINE_BORROW_r11] = _POP_TOP_LOAD_CONST_INLINE_BORROW,
+    #endif
+    #if MAX_CACHED_REGISTER >= 2
     [_POP_TWO_LOAD_CONST_INLINE_BORROW_r21] = _POP_TWO_LOAD_CONST_INLINE_BORROW,
+    #endif
+    #if MAX_CACHED_REGISTER >= 2
     [_POP_CALL_LOAD_CONST_INLINE_BORROW_r21] = _POP_CALL_LOAD_CONST_INLINE_BORROW,
+    #endif
+    #if MAX_CACHED_REGISTER >= 3
     [_POP_CALL_ONE_LOAD_CONST_INLINE_BORROW_r31] = _POP_CALL_ONE_LOAD_CONST_INLINE_BORROW,
+    #endif
+    #if MAX_CACHED_REGISTER >= 2
     [_INSERT_1_LOAD_CONST_INLINE_r02] = _INSERT_1_LOAD_CONST_INLINE,
+    #endif
+    #if MAX_CACHED_REGISTER >= 2
     [_INSERT_1_LOAD_CONST_INLINE_r12] = _INSERT_1_LOAD_CONST_INLINE,
+    #endif
+    #if MAX_CACHED_REGISTER >= 3
     [_INSERT_1_LOAD_CONST_INLINE_r23] = _INSERT_1_LOAD_CONST_INLINE,
+    #endif
+    #if MAX_CACHED_REGISTER >= 4
     [_INSERT_1_LOAD_CONST_INLINE_r34] = _INSERT_1_LOAD_CONST_INLINE,
+    #endif
+    #if MAX_CACHED_REGISTER >= 5
     [_INSERT_1_LOAD_CONST_INLINE_r45] = _INSERT_1_LOAD_CONST_INLINE,
+    #endif
+    #if MAX_CACHED_REGISTER >= 2
     [_INSERT_1_LOAD_CONST_INLINE_BORROW_r02] = _INSERT_1_LOAD_CONST_INLINE_BORROW,
+    #endif
+    #if MAX_CACHED_REGISTER >= 2
     [_INSERT_1_LOAD_CONST_INLINE_BORROW_r12] = _INSERT_1_LOAD_CONST_INLINE_BORROW,
+    #endif
+    #if MAX_CACHED_REGISTER >= 3
     [_INSERT_1_LOAD_CONST_INLINE_BORROW_r23] = _INSERT_1_LOAD_CONST_INLINE_BORROW,
+    #endif
+    #if MAX_CACHED_REGISTER >= 4
     [_INSERT_1_LOAD_CONST_INLINE_BORROW_r34] = _INSERT_1_LOAD_CONST_INLINE_BORROW,
+    #endif
+    #if MAX_CACHED_REGISTER >= 5
     [_INSERT_1_LOAD_CONST_INLINE_BORROW_r45] = _INSERT_1_LOAD_CONST_INLINE_BORROW,
+    #endif
+    #if MAX_CACHED_REGISTER >= 3
     [_INSERT_2_LOAD_CONST_INLINE_BORROW_r03] = _INSERT_2_LOAD_CONST_INLINE_BORROW,
+    #endif
+    #if MAX_CACHED_REGISTER >= 3
     [_INSERT_2_LOAD_CONST_INLINE_BORROW_r13] = _INSERT_2_LOAD_CONST_INLINE_BORROW,
+    #endif
+    #if MAX_CACHED_REGISTER >= 3
     [_INSERT_2_LOAD_CONST_INLINE_BORROW_r23] = _INSERT_2_LOAD_CONST_INLINE_BORROW,
+    #endif
+    #if MAX_CACHED_REGISTER >= 4
     [_INSERT_2_LOAD_CONST_INLINE_BORROW_r34] = _INSERT_2_LOAD_CONST_INLINE_BORROW,
+    #endif
+    #if MAX_CACHED_REGISTER >= 5
     [_INSERT_2_LOAD_CONST_INLINE_BORROW_r45] = _INSERT_2_LOAD_CONST_INLINE_BORROW,
+    #endif
+    #if MAX_CACHED_REGISTER >= 2
     [_SHUFFLE_2_LOAD_CONST_INLINE_BORROW_r02] = _SHUFFLE_2_LOAD_CONST_INLINE_BORROW,
+    #endif
+    #if MAX_CACHED_REGISTER >= 2
     [_SHUFFLE_2_LOAD_CONST_INLINE_BORROW_r12] = _SHUFFLE_2_LOAD_CONST_INLINE_BORROW,
+    #endif
+    #if MAX_CACHED_REGISTER >= 2
     [_SHUFFLE_2_LOAD_CONST_INLINE_BORROW_r22] = _SHUFFLE_2_LOAD_CONST_INLINE_BORROW,
+    #endif
+    #if MAX_CACHED_REGISTER >= 3
     [_SHUFFLE_2_LOAD_CONST_INLINE_BORROW_r32] = _SHUFFLE_2_LOAD_CONST_INLINE_BORROW,
+    #endif
+    #if MAX_CACHED_REGISTER >= 4
     [_SHUFFLE_2_LOAD_CONST_INLINE_BORROW_r43] = _SHUFFLE_2_LOAD_CONST_INLINE_BORROW,
+    #endif
+    #if MAX_CACHED_REGISTER >= 5
     [_SHUFFLE_2_LOAD_CONST_INLINE_BORROW_r54] = _SHUFFLE_2_LOAD_CONST_INLINE_BORROW,
+    #endif
+    #if MAX_CACHED_REGISTER >= 3
     [_SHUFFLE_3_LOAD_CONST_INLINE_BORROW_r03] = _SHUFFLE_3_LOAD_CONST_INLINE_BORROW,
+    #endif
+    #if MAX_CACHED_REGISTER >= 3
     [_SHUFFLE_3_LOAD_CONST_INLINE_BORROW_r13] = _SHUFFLE_3_LOAD_CONST_INLINE_BORROW,
+    #endif
+    #if MAX_CACHED_REGISTER >= 3
     [_SHUFFLE_3_LOAD_CONST_INLINE_BORROW_r23] = _SHUFFLE_3_LOAD_CONST_INLINE_BORROW,
+    #endif
+    #if MAX_CACHED_REGISTER >= 3
     [_SHUFFLE_3_LOAD_CONST_INLINE_BORROW_r33] = _SHUFFLE_3_LOAD_CONST_INLINE_BORROW,
+    #endif
+    #if MAX_CACHED_REGISTER >= 4
     [_SHUFFLE_3_LOAD_CONST_INLINE_BORROW_r44] = _SHUFFLE_3_LOAD_CONST_INLINE_BORROW,
+    #endif
+    #if MAX_CACHED_REGISTER >= 5
     [_SHUFFLE_3_LOAD_CONST_INLINE_BORROW_r55] = _SHUFFLE_3_LOAD_CONST_INLINE_BORROW,
+    #endif
+    #if MAX_CACHED_REGISTER >= 4
     [_POP_CALL_TWO_LOAD_CONST_INLINE_BORROW_r41] = _POP_CALL_TWO_LOAD_CONST_INLINE_BORROW,
+    #endif
+    #if MAX_CACHED_REGISTER >= 2
     [_LOAD_CONST_UNDER_INLINE_r02] = _LOAD_CONST_UNDER_INLINE,
+    #endif
+    #if MAX_CACHED_REGISTER >= 2
     [_LOAD_CONST_UNDER_INLINE_r12] = _LOAD_CONST_UNDER_INLINE,
+    #endif
+    #if MAX_CACHED_REGISTER >= 3
     [_LOAD_CONST_UNDER_INLINE_r23] = _LOAD_CONST_UNDER_INLINE,
+    #endif
+    #if MAX_CACHED_REGISTER >= 4
     [_LOAD_CONST_UNDER_INLINE_r34] = _LOAD_CONST_UNDER_INLINE,
+    #endif
+    #if MAX_CACHED_REGISTER >= 5
     [_LOAD_CONST_UNDER_INLINE_r45] = _LOAD_CONST_UNDER_INLINE,
+    #endif
+    #if MAX_CACHED_REGISTER >= 2
     [_LOAD_CONST_UNDER_INLINE_BORROW_r02] = _LOAD_CONST_UNDER_INLINE_BORROW,
+    #endif
+    #if MAX_CACHED_REGISTER >= 2
     [_LOAD_CONST_UNDER_INLINE_BORROW_r12] = _LOAD_CONST_UNDER_INLINE_BORROW,
+    #endif
+    #if MAX_CACHED_REGISTER >= 3
     [_LOAD_CONST_UNDER_INLINE_BORROW_r23] = _LOAD_CONST_UNDER_INLINE_BORROW,
+    #endif
+    #if MAX_CACHED_REGISTER >= 4
     [_LOAD_CONST_UNDER_INLINE_BORROW_r34] = _LOAD_CONST_UNDER_INLINE_BORROW,
+    #endif
+    #if MAX_CACHED_REGISTER >= 5
     [_LOAD_CONST_UNDER_INLINE_BORROW_r45] = _LOAD_CONST_UNDER_INLINE_BORROW,
+    #endif
     [_START_EXECUTOR_r00] = _START_EXECUTOR,
     [_MAKE_WARM_r00] = _MAKE_WARM,
+    #if MAX_CACHED_REGISTER >= 1
     [_MAKE_WARM_r11] = _MAKE_WARM,
+    #endif
+    #if MAX_CACHED_REGISTER >= 2
     [_MAKE_WARM_r22] = _MAKE_WARM,
+    #endif
+    #if MAX_CACHED_REGISTER >= 3
     [_MAKE_WARM_r33] = _MAKE_WARM,
+    #endif
+    #if MAX_CACHED_REGISTER >= 4
     [_MAKE_WARM_r44] = _MAKE_WARM,
+    #endif
+    #if MAX_CACHED_REGISTER >= 5
     [_MAKE_WARM_r55] = _MAKE_WARM,
+    #endif
     [_FATAL_ERROR_r00] = _FATAL_ERROR,
+    #if MAX_CACHED_REGISTER >= 1
     [_FATAL_ERROR_r11] = _FATAL_ERROR,
+    #endif
+    #if MAX_CACHED_REGISTER >= 2
     [_FATAL_ERROR_r22] = _FATAL_ERROR,
+    #endif
+    #if MAX_CACHED_REGISTER >= 3
     [_FATAL_ERROR_r33] = _FATAL_ERROR,
+    #endif
+    #if MAX_CACHED_REGISTER >= 4
     [_FATAL_ERROR_r44] = _FATAL_ERROR,
+    #endif
+    #if MAX_CACHED_REGISTER >= 5
     [_FATAL_ERROR_r55] = _FATAL_ERROR,
+    #endif
     [_DEOPT_r00] = _DEOPT,
+    #if MAX_CACHED_REGISTER >= 1
     [_DEOPT_r10] = _DEOPT,
+    #endif
+    #if MAX_CACHED_REGISTER >= 2
     [_DEOPT_r20] = _DEOPT,
+    #endif
+    #if MAX_CACHED_REGISTER >= 3
     [_DEOPT_r30] = _DEOPT,
+    #endif
+    #if MAX_CACHED_REGISTER >= 4
     [_DEOPT_r40] = _DEOPT,
+    #endif
+    #if MAX_CACHED_REGISTER >= 5
     [_DEOPT_r50] = _DEOPT,
+    #endif
     [_HANDLE_PENDING_AND_DEOPT_r00] = _HANDLE_PENDING_AND_DEOPT,
+    #if MAX_CACHED_REGISTER >= 1
     [_HANDLE_PENDING_AND_DEOPT_r10] = _HANDLE_PENDING_AND_DEOPT,
+    #endif
+    #if MAX_CACHED_REGISTER >= 2
     [_HANDLE_PENDING_AND_DEOPT_r20] = _HANDLE_PENDING_AND_DEOPT,
+    #endif
+    #if MAX_CACHED_REGISTER >= 3
     [_HANDLE_PENDING_AND_DEOPT_r30] = _HANDLE_PENDING_AND_DEOPT,
+    #endif
+    #if MAX_CACHED_REGISTER >= 4
     [_HANDLE_PENDING_AND_DEOPT_r40] = _HANDLE_PENDING_AND_DEOPT,
+    #endif
+    #if MAX_CACHED_REGISTER >= 5
     [_HANDLE_PENDING_AND_DEOPT_r50] = _HANDLE_PENDING_AND_DEOPT,
+    #endif
     [_ERROR_POP_N_r00] = _ERROR_POP_N,
+    #if MAX_CACHED_REGISTER >= 1
     [_SPILL_OR_RELOAD_r01] = _SPILL_OR_RELOAD,
+    #endif
+    #if MAX_CACHED_REGISTER >= 2
     [_SPILL_OR_RELOAD_r02] = _SPILL_OR_RELOAD,
+    #endif
+    #if MAX_CACHED_REGISTER >= 3
     [_SPILL_OR_RELOAD_r03] = _SPILL_OR_RELOAD,
+    #endif
+    #if MAX_CACHED_REGISTER >= 4
     [_SPILL_OR_RELOAD_r04] = _SPILL_OR_RELOAD,
+    #endif
+    #if MAX_CACHED_REGISTER >= 5
     [_SPILL_OR_RELOAD_r05] = _SPILL_OR_RELOAD,
+    #endif
+    #if MAX_CACHED_REGISTER >= 1
     [_SPILL_OR_RELOAD_r10] = _SPILL_OR_RELOAD,
+    #endif
+    #if MAX_CACHED_REGISTER >= 2
     [_SPILL_OR_RELOAD_r12] = _SPILL_OR_RELOAD,
+    #endif
+    #if MAX_CACHED_REGISTER >= 3
     [_SPILL_OR_RELOAD_r13] = _SPILL_OR_RELOAD,
+    #endif
+    #if MAX_CACHED_REGISTER >= 4
     [_SPILL_OR_RELOAD_r14] = _SPILL_OR_RELOAD,
+    #endif
+    #if MAX_CACHED_REGISTER >= 5
     [_SPILL_OR_RELOAD_r15] = _SPILL_OR_RELOAD,
+    #endif
+    #if MAX_CACHED_REGISTER >= 2
     [_SPILL_OR_RELOAD_r20] = _SPILL_OR_RELOAD,
+    #endif
+    #if MAX_CACHED_REGISTER >= 2
     [_SPILL_OR_RELOAD_r21] = _SPILL_OR_RELOAD,
+    #endif
+    #if MAX_CACHED_REGISTER >= 3
     [_SPILL_OR_RELOAD_r23] = _SPILL_OR_RELOAD,
+    #endif
+    #if MAX_CACHED_REGISTER >= 4
     [_SPILL_OR_RELOAD_r24] = _SPILL_OR_RELOAD,
+    #endif
+    #if MAX_CACHED_REGISTER >= 5
     [_SPILL_OR_RELOAD_r25] = _SPILL_OR_RELOAD,
+    #endif
+    #if MAX_CACHED_REGISTER >= 3
     [_SPILL_OR_RELOAD_r30] = _SPILL_OR_RELOAD,
+    #endif
+    #if MAX_CACHED_REGISTER >= 3
     [_SPILL_OR_RELOAD_r31] = _SPILL_OR_RELOAD,
+    #endif
+    #if MAX_CACHED_REGISTER >= 3
     [_SPILL_OR_RELOAD_r32] = _SPILL_OR_RELOAD,
+    #endif
+    #if MAX_CACHED_REGISTER >= 4
     [_SPILL_OR_RELOAD_r34] = _SPILL_OR_RELOAD,
+    #endif
+    #if MAX_CACHED_REGISTER >= 5
     [_SPILL_OR_RELOAD_r35] = _SPILL_OR_RELOAD,
+    #endif
+    #if MAX_CACHED_REGISTER >= 4
     [_SPILL_OR_RELOAD_r40] = _SPILL_OR_RELOAD,
+    #endif
+    #if MAX_CACHED_REGISTER >= 4
     [_SPILL_OR_RELOAD_r41] = _SPILL_OR_RELOAD,
+    #endif
+    #if MAX_CACHED_REGISTER >= 4
     [_SPILL_OR_RELOAD_r42] = _SPILL_OR_RELOAD,
+    #endif
+    #if MAX_CACHED_REGISTER >= 4
     [_SPILL_OR_RELOAD_r43] = _SPILL_OR_RELOAD,
+    #endif
+    #if MAX_CACHED_REGISTER >= 5
     [_SPILL_OR_RELOAD_r45] = _SPILL_OR_RELOAD,
+    #endif
+    #if MAX_CACHED_REGISTER >= 5
     [_SPILL_OR_RELOAD_r50] = _SPILL_OR_RELOAD,
+    #endif
+    #if MAX_CACHED_REGISTER >= 5
     [_SPILL_OR_RELOAD_r51] = _SPILL_OR_RELOAD,
+    #endif
+    #if MAX_CACHED_REGISTER >= 5
     [_SPILL_OR_RELOAD_r52] = _SPILL_OR_RELOAD,
+    #endif
+    #if MAX_CACHED_REGISTER >= 5
     [_SPILL_OR_RELOAD_r53] = _SPILL_OR_RELOAD,
+    #endif
+    #if MAX_CACHED_REGISTER >= 5
     [_SPILL_OR_RELOAD_r54] = _SPILL_OR_RELOAD,
+    #endif
     [_TIER2_RESUME_CHECK_r00] = _TIER2_RESUME_CHECK,
+    #if MAX_CACHED_REGISTER >= 1
     [_TIER2_RESUME_CHECK_r11] = _TIER2_RESUME_CHECK,
+    #endif
+    #if MAX_CACHED_REGISTER >= 2
     [_TIER2_RESUME_CHECK_r22] = _TIER2_RESUME_CHECK,
+    #endif
+    #if MAX_CACHED_REGISTER >= 3
     [_TIER2_RESUME_CHECK_r33] = _TIER2_RESUME_CHECK,
+    #endif
+    #if MAX_CACHED_REGISTER >= 4
     [_TIER2_RESUME_CHECK_r44] = _TIER2_RESUME_CHECK,
+    #endif
+    #if MAX_CACHED_REGISTER >= 5
     [_TIER2_RESUME_CHECK_r55] = _TIER2_RESUME_CHECK,
+    #endif
     [_COLD_EXIT_r00] = _COLD_EXIT,
     [_COLD_DYNAMIC_EXIT_r00] = _COLD_DYNAMIC_EXIT,
     [_GUARD_CODE_VERSION_r00] = _GUARD_CODE_VERSION,
+    #if MAX_CACHED_REGISTER >= 1
     [_GUARD_CODE_VERSION_r11] = _GUARD_CODE_VERSION,
+    #endif
+    #if MAX_CACHED_REGISTER >= 2
     [_GUARD_CODE_VERSION_r22] = _GUARD_CODE_VERSION,
+    #endif
+    #if MAX_CACHED_REGISTER >= 3
     [_GUARD_CODE_VERSION_r33] = _GUARD_CODE_VERSION,
+    #endif
+    #if MAX_CACHED_REGISTER >= 4
     [_GUARD_CODE_VERSION_r44] = _GUARD_CODE_VERSION,
+    #endif
+    #if MAX_CACHED_REGISTER >= 5
     [_GUARD_CODE_VERSION_r55] = _GUARD_CODE_VERSION,
+    #endif
     [_GUARD_IP__PUSH_FRAME_r00] = _GUARD_IP__PUSH_FRAME,
+    #if MAX_CACHED_REGISTER >= 1
     [_GUARD_IP__PUSH_FRAME_r11] = _GUARD_IP__PUSH_FRAME,
+    #endif
+    #if MAX_CACHED_REGISTER >= 2
     [_GUARD_IP__PUSH_FRAME_r22] = _GUARD_IP__PUSH_FRAME,
+    #endif
+    #if MAX_CACHED_REGISTER >= 3
     [_GUARD_IP__PUSH_FRAME_r33] = _GUARD_IP__PUSH_FRAME,
+    #endif
+    #if MAX_CACHED_REGISTER >= 4
     [_GUARD_IP__PUSH_FRAME_r44] = _GUARD_IP__PUSH_FRAME,
+    #endif
+    #if MAX_CACHED_REGISTER >= 5
     [_GUARD_IP__PUSH_FRAME_r55] = _GUARD_IP__PUSH_FRAME,
+    #endif
     [_GUARD_IP_YIELD_VALUE_r00] = _GUARD_IP_YIELD_VALUE,
+    #if MAX_CACHED_REGISTER >= 1
     [_GUARD_IP_YIELD_VALUE_r11] = _GUARD_IP_YIELD_VALUE,
+    #endif
+    #if MAX_CACHED_REGISTER >= 2
     [_GUARD_IP_YIELD_VALUE_r22] = _GUARD_IP_YIELD_VALUE,
+    #endif
+    #if MAX_CACHED_REGISTER >= 3
     [_GUARD_IP_YIELD_VALUE_r33] = _GUARD_IP_YIELD_VALUE,
+    #endif
+    #if MAX_CACHED_REGISTER >= 4
     [_GUARD_IP_YIELD_VALUE_r44] = _GUARD_IP_YIELD_VALUE,
+    #endif
+    #if MAX_CACHED_REGISTER >= 5
     [_GUARD_IP_YIELD_VALUE_r55] = _GUARD_IP_YIELD_VALUE,
+    #endif
     [_GUARD_IP_RETURN_VALUE_r00] = _GUARD_IP_RETURN_VALUE,
+    #if MAX_CACHED_REGISTER >= 1
     [_GUARD_IP_RETURN_VALUE_r11] = _GUARD_IP_RETURN_VALUE,
+    #endif
+    #if MAX_CACHED_REGISTER >= 2
     [_GUARD_IP_RETURN_VALUE_r22] = _GUARD_IP_RETURN_VALUE,
+    #endif
+    #if MAX_CACHED_REGISTER >= 3
     [_GUARD_IP_RETURN_VALUE_r33] = _GUARD_IP_RETURN_VALUE,
+    #endif
+    #if MAX_CACHED_REGISTER >= 4
     [_GUARD_IP_RETURN_VALUE_r44] = _GUARD_IP_RETURN_VALUE,
+    #endif
+    #if MAX_CACHED_REGISTER >= 5
     [_GUARD_IP_RETURN_VALUE_r55] = _GUARD_IP_RETURN_VALUE,
+    #endif
     [_GUARD_IP_RETURN_GENERATOR_r00] = _GUARD_IP_RETURN_GENERATOR,
+    #if MAX_CACHED_REGISTER >= 1
     [_GUARD_IP_RETURN_GENERATOR_r11] = _GUARD_IP_RETURN_GENERATOR,
+    #endif
+    #if MAX_CACHED_REGISTER >= 2
     [_GUARD_IP_RETURN_GENERATOR_r22] = _GUARD_IP_RETURN_GENERATOR,
+    #endif
+    #if MAX_CACHED_REGISTER >= 3
     [_GUARD_IP_RETURN_GENERATOR_r33] = _GUARD_IP_RETURN_GENERATOR,
+    #endif
+    #if MAX_CACHED_REGISTER >= 4
     [_GUARD_IP_RETURN_GENERATOR_r44] = _GUARD_IP_RETURN_GENERATOR,
+    #endif
+    #if MAX_CACHED_REGISTER >= 5
     [_GUARD_IP_RETURN_GENERATOR_r55] = _GUARD_IP_RETURN_GENERATOR,
+    #endif
 };
 
 const uint16_t _PyUop_SpillsAndReloads[4][4] = {
@@ -4690,297 +6898,673 @@ const uint16_t _PyUop_SpillsAndReloads[4][4] = {
 
 const char *const _PyOpcode_uop_name[MAX_UOP_REGS_ID+1] = {
     [_BINARY_OP] = "_BINARY_OP",
+    #if MAX_CACHED_REGISTER >= 3
     [_BINARY_OP_r23] = "_BINARY_OP_r23",
+    #endif
     [_BINARY_OP_ADD_FLOAT] = "_BINARY_OP_ADD_FLOAT",
+    #if MAX_CACHED_REGISTER >= 3
     [_BINARY_OP_ADD_FLOAT_r03] = "_BINARY_OP_ADD_FLOAT_r03",
+    #endif
+    #if MAX_CACHED_REGISTER >= 3
     [_BINARY_OP_ADD_FLOAT_r13] = "_BINARY_OP_ADD_FLOAT_r13",
+    #endif
+    #if MAX_CACHED_REGISTER >= 3
     [_BINARY_OP_ADD_FLOAT_r23] = "_BINARY_OP_ADD_FLOAT_r23",
+    #endif
+    #if MAX_CACHED_REGISTER >= 4
     [_BINARY_OP_ADD_FLOAT_r34] = "_BINARY_OP_ADD_FLOAT_r34",
+    #endif
+    #if MAX_CACHED_REGISTER >= 5
     [_BINARY_OP_ADD_FLOAT_r45] = "_BINARY_OP_ADD_FLOAT_r45",
+    #endif
     [_BINARY_OP_ADD_INT] = "_BINARY_OP_ADD_INT",
+    #if MAX_CACHED_REGISTER >= 3
     [_BINARY_OP_ADD_INT_r03] = "_BINARY_OP_ADD_INT_r03",
+    #endif
+    #if MAX_CACHED_REGISTER >= 3
     [_BINARY_OP_ADD_INT_r13] = "_BINARY_OP_ADD_INT_r13",
+    #endif
+    #if MAX_CACHED_REGISTER >= 3
     [_BINARY_OP_ADD_INT_r23] = "_BINARY_OP_ADD_INT_r23",
+    #endif
+    #if MAX_CACHED_REGISTER >= 4
     [_BINARY_OP_ADD_INT_r34] = "_BINARY_OP_ADD_INT_r34",
+    #endif
+    #if MAX_CACHED_REGISTER >= 5
     [_BINARY_OP_ADD_INT_r45] = "_BINARY_OP_ADD_INT_r45",
+    #endif
     [_BINARY_OP_ADD_UNICODE] = "_BINARY_OP_ADD_UNICODE",
+    #if MAX_CACHED_REGISTER >= 3
     [_BINARY_OP_ADD_UNICODE_r03] = "_BINARY_OP_ADD_UNICODE_r03",
+    #endif
+    #if MAX_CACHED_REGISTER >= 3
     [_BINARY_OP_ADD_UNICODE_r13] = "_BINARY_OP_ADD_UNICODE_r13",
+    #endif
+    #if MAX_CACHED_REGISTER >= 3
     [_BINARY_OP_ADD_UNICODE_r23] = "_BINARY_OP_ADD_UNICODE_r23",
+    #endif
+    #if MAX_CACHED_REGISTER >= 4
     [_BINARY_OP_ADD_UNICODE_r34] = "_BINARY_OP_ADD_UNICODE_r34",
+    #endif
+    #if MAX_CACHED_REGISTER >= 5
     [_BINARY_OP_ADD_UNICODE_r45] = "_BINARY_OP_ADD_UNICODE_r45",
+    #endif
     [_BINARY_OP_EXTEND] = "_BINARY_OP_EXTEND",
+    #if MAX_CACHED_REGISTER >= 3
     [_BINARY_OP_EXTEND_r23] = "_BINARY_OP_EXTEND_r23",
+    #endif
     [_BINARY_OP_INPLACE_ADD_UNICODE] = "_BINARY_OP_INPLACE_ADD_UNICODE",
+    #if MAX_CACHED_REGISTER >= 2
     [_BINARY_OP_INPLACE_ADD_UNICODE_r21] = "_BINARY_OP_INPLACE_ADD_UNICODE_r21",
+    #endif
     [_BINARY_OP_MULTIPLY_FLOAT] = "_BINARY_OP_MULTIPLY_FLOAT",
+    #if MAX_CACHED_REGISTER >= 3
     [_BINARY_OP_MULTIPLY_FLOAT_r03] = "_BINARY_OP_MULTIPLY_FLOAT_r03",
+    #endif
+    #if MAX_CACHED_REGISTER >= 3
     [_BINARY_OP_MULTIPLY_FLOAT_r13] = "_BINARY_OP_MULTIPLY_FLOAT_r13",
+    #endif
+    #if MAX_CACHED_REGISTER >= 3
     [_BINARY_OP_MULTIPLY_FLOAT_r23] = "_BINARY_OP_MULTIPLY_FLOAT_r23",
+    #endif
+    #if MAX_CACHED_REGISTER >= 4
     [_BINARY_OP_MULTIPLY_FLOAT_r34] = "_BINARY_OP_MULTIPLY_FLOAT_r34",
+    #endif
+    #if MAX_CACHED_REGISTER >= 5
     [_BINARY_OP_MULTIPLY_FLOAT_r45] = "_BINARY_OP_MULTIPLY_FLOAT_r45",
+    #endif
     [_BINARY_OP_MULTIPLY_INT] = "_BINARY_OP_MULTIPLY_INT",
+    #if MAX_CACHED_REGISTER >= 3
     [_BINARY_OP_MULTIPLY_INT_r03] = "_BINARY_OP_MULTIPLY_INT_r03",
+    #endif
+    #if MAX_CACHED_REGISTER >= 3
     [_BINARY_OP_MULTIPLY_INT_r13] = "_BINARY_OP_MULTIPLY_INT_r13",
+    #endif
+    #if MAX_CACHED_REGISTER >= 3
     [_BINARY_OP_MULTIPLY_INT_r23] = "_BINARY_OP_MULTIPLY_INT_r23",
+    #endif
+    #if MAX_CACHED_REGISTER >= 4
     [_BINARY_OP_MULTIPLY_INT_r34] = "_BINARY_OP_MULTIPLY_INT_r34",
+    #endif
+    #if MAX_CACHED_REGISTER >= 5
     [_BINARY_OP_MULTIPLY_INT_r45] = "_BINARY_OP_MULTIPLY_INT_r45",
+    #endif
     [_BINARY_OP_SUBSCR_CHECK_FUNC] = "_BINARY_OP_SUBSCR_CHECK_FUNC",
+    #if MAX_CACHED_REGISTER >= 3
     [_BINARY_OP_SUBSCR_CHECK_FUNC_r23] = "_BINARY_OP_SUBSCR_CHECK_FUNC_r23",
+    #endif
     [_BINARY_OP_SUBSCR_DICT] = "_BINARY_OP_SUBSCR_DICT",
+    #if MAX_CACHED_REGISTER >= 3
     [_BINARY_OP_SUBSCR_DICT_r23] = "_BINARY_OP_SUBSCR_DICT_r23",
+    #endif
     [_BINARY_OP_SUBSCR_INIT_CALL] = "_BINARY_OP_SUBSCR_INIT_CALL",
+    #if MAX_CACHED_REGISTER >= 1
     [_BINARY_OP_SUBSCR_INIT_CALL_r01] = "_BINARY_OP_SUBSCR_INIT_CALL_r01",
+    #endif
+    #if MAX_CACHED_REGISTER >= 1
     [_BINARY_OP_SUBSCR_INIT_CALL_r11] = "_BINARY_OP_SUBSCR_INIT_CALL_r11",
+    #endif
+    #if MAX_CACHED_REGISTER >= 2
     [_BINARY_OP_SUBSCR_INIT_CALL_r21] = "_BINARY_OP_SUBSCR_INIT_CALL_r21",
+    #endif
+    #if MAX_CACHED_REGISTER >= 3
     [_BINARY_OP_SUBSCR_INIT_CALL_r31] = "_BINARY_OP_SUBSCR_INIT_CALL_r31",
+    #endif
+    #if MAX_CACHED_REGISTER >= 4
     [_BINARY_OP_SUBSCR_INIT_CALL_r42] = "_BINARY_OP_SUBSCR_INIT_CALL_r42",
+    #endif
+    #if MAX_CACHED_REGISTER >= 5
     [_BINARY_OP_SUBSCR_INIT_CALL_r53] = "_BINARY_OP_SUBSCR_INIT_CALL_r53",
+    #endif
     [_BINARY_OP_SUBSCR_LIST_INT] = "_BINARY_OP_SUBSCR_LIST_INT",
+    #if MAX_CACHED_REGISTER >= 3
     [_BINARY_OP_SUBSCR_LIST_INT_r23] = "_BINARY_OP_SUBSCR_LIST_INT_r23",
+    #endif
     [_BINARY_OP_SUBSCR_LIST_SLICE] = "_BINARY_OP_SUBSCR_LIST_SLICE",
+    #if MAX_CACHED_REGISTER >= 3
     [_BINARY_OP_SUBSCR_LIST_SLICE_r23] = "_BINARY_OP_SUBSCR_LIST_SLICE_r23",
+    #endif
     [_BINARY_OP_SUBSCR_STR_INT] = "_BINARY_OP_SUBSCR_STR_INT",
+    #if MAX_CACHED_REGISTER >= 3
     [_BINARY_OP_SUBSCR_STR_INT_r23] = "_BINARY_OP_SUBSCR_STR_INT_r23",
+    #endif
     [_BINARY_OP_SUBSCR_TUPLE_INT] = "_BINARY_OP_SUBSCR_TUPLE_INT",
+    #if MAX_CACHED_REGISTER >= 3
     [_BINARY_OP_SUBSCR_TUPLE_INT_r03] = "_BINARY_OP_SUBSCR_TUPLE_INT_r03",
+    #endif
+    #if MAX_CACHED_REGISTER >= 3
     [_BINARY_OP_SUBSCR_TUPLE_INT_r13] = "_BINARY_OP_SUBSCR_TUPLE_INT_r13",
+    #endif
+    #if MAX_CACHED_REGISTER >= 3
     [_BINARY_OP_SUBSCR_TUPLE_INT_r23] = "_BINARY_OP_SUBSCR_TUPLE_INT_r23",
+    #endif
+    #if MAX_CACHED_REGISTER >= 4
     [_BINARY_OP_SUBSCR_TUPLE_INT_r34] = "_BINARY_OP_SUBSCR_TUPLE_INT_r34",
+    #endif
+    #if MAX_CACHED_REGISTER >= 5
     [_BINARY_OP_SUBSCR_TUPLE_INT_r45] = "_BINARY_OP_SUBSCR_TUPLE_INT_r45",
+    #endif
     [_BINARY_OP_SUBSCR_USTR_INT] = "_BINARY_OP_SUBSCR_USTR_INT",
+    #if MAX_CACHED_REGISTER >= 3
     [_BINARY_OP_SUBSCR_USTR_INT_r23] = "_BINARY_OP_SUBSCR_USTR_INT_r23",
+    #endif
     [_BINARY_OP_SUBTRACT_FLOAT] = "_BINARY_OP_SUBTRACT_FLOAT",
+    #if MAX_CACHED_REGISTER >= 3
     [_BINARY_OP_SUBTRACT_FLOAT_r03] = "_BINARY_OP_SUBTRACT_FLOAT_r03",
+    #endif
+    #if MAX_CACHED_REGISTER >= 3
     [_BINARY_OP_SUBTRACT_FLOAT_r13] = "_BINARY_OP_SUBTRACT_FLOAT_r13",
+    #endif
+    #if MAX_CACHED_REGISTER >= 3
     [_BINARY_OP_SUBTRACT_FLOAT_r23] = "_BINARY_OP_SUBTRACT_FLOAT_r23",
+    #endif
+    #if MAX_CACHED_REGISTER >= 4
     [_BINARY_OP_SUBTRACT_FLOAT_r34] = "_BINARY_OP_SUBTRACT_FLOAT_r34",
+    #endif
+    #if MAX_CACHED_REGISTER >= 5
     [_BINARY_OP_SUBTRACT_FLOAT_r45] = "_BINARY_OP_SUBTRACT_FLOAT_r45",
+    #endif
     [_BINARY_OP_SUBTRACT_INT] = "_BINARY_OP_SUBTRACT_INT",
+    #if MAX_CACHED_REGISTER >= 3
     [_BINARY_OP_SUBTRACT_INT_r03] = "_BINARY_OP_SUBTRACT_INT_r03",
+    #endif
+    #if MAX_CACHED_REGISTER >= 3
     [_BINARY_OP_SUBTRACT_INT_r13] = "_BINARY_OP_SUBTRACT_INT_r13",
+    #endif
+    #if MAX_CACHED_REGISTER >= 3
     [_BINARY_OP_SUBTRACT_INT_r23] = "_BINARY_OP_SUBTRACT_INT_r23",
+    #endif
+    #if MAX_CACHED_REGISTER >= 4
     [_BINARY_OP_SUBTRACT_INT_r34] = "_BINARY_OP_SUBTRACT_INT_r34",
+    #endif
+    #if MAX_CACHED_REGISTER >= 5
     [_BINARY_OP_SUBTRACT_INT_r45] = "_BINARY_OP_SUBTRACT_INT_r45",
+    #endif
     [_BINARY_SLICE] = "_BINARY_SLICE",
+    #if MAX_CACHED_REGISTER >= 3
     [_BINARY_SLICE_r31] = "_BINARY_SLICE_r31",
+    #endif
     [_BUILD_INTERPOLATION] = "_BUILD_INTERPOLATION",
+    #if MAX_CACHED_REGISTER >= 1
     [_BUILD_INTERPOLATION_r01] = "_BUILD_INTERPOLATION_r01",
+    #endif
     [_BUILD_LIST] = "_BUILD_LIST",
+    #if MAX_CACHED_REGISTER >= 1
     [_BUILD_LIST_r01] = "_BUILD_LIST_r01",
+    #endif
     [_BUILD_MAP] = "_BUILD_MAP",
+    #if MAX_CACHED_REGISTER >= 1
     [_BUILD_MAP_r01] = "_BUILD_MAP_r01",
+    #endif
     [_BUILD_SET] = "_BUILD_SET",
+    #if MAX_CACHED_REGISTER >= 1
     [_BUILD_SET_r01] = "_BUILD_SET_r01",
+    #endif
     [_BUILD_SLICE] = "_BUILD_SLICE",
+    #if MAX_CACHED_REGISTER >= 1
     [_BUILD_SLICE_r01] = "_BUILD_SLICE_r01",
+    #endif
     [_BUILD_STRING] = "_BUILD_STRING",
+    #if MAX_CACHED_REGISTER >= 1
     [_BUILD_STRING_r01] = "_BUILD_STRING_r01",
+    #endif
     [_BUILD_TEMPLATE] = "_BUILD_TEMPLATE",
+    #if MAX_CACHED_REGISTER >= 2
     [_BUILD_TEMPLATE_r21] = "_BUILD_TEMPLATE_r21",
+    #endif
     [_BUILD_TUPLE] = "_BUILD_TUPLE",
+    #if MAX_CACHED_REGISTER >= 1
     [_BUILD_TUPLE_r01] = "_BUILD_TUPLE_r01",
+    #endif
     [_CALL_BUILTIN_CLASS] = "_CALL_BUILTIN_CLASS",
+    #if MAX_CACHED_REGISTER >= 1
     [_CALL_BUILTIN_CLASS_r01] = "_CALL_BUILTIN_CLASS_r01",
+    #endif
     [_CALL_BUILTIN_FAST] = "_CALL_BUILTIN_FAST",
+    #if MAX_CACHED_REGISTER >= 1
     [_CALL_BUILTIN_FAST_r01] = "_CALL_BUILTIN_FAST_r01",
+    #endif
     [_CALL_BUILTIN_FAST_WITH_KEYWORDS] = "_CALL_BUILTIN_FAST_WITH_KEYWORDS",
+    #if MAX_CACHED_REGISTER >= 1
     [_CALL_BUILTIN_FAST_WITH_KEYWORDS_r01] = "_CALL_BUILTIN_FAST_WITH_KEYWORDS_r01",
+    #endif
     [_CALL_BUILTIN_O] = "_CALL_BUILTIN_O",
+    #if MAX_CACHED_REGISTER >= 3
     [_CALL_BUILTIN_O_r03] = "_CALL_BUILTIN_O_r03",
+    #endif
     [_CALL_FUNCTION_EX_NON_PY_GENERAL] = "_CALL_FUNCTION_EX_NON_PY_GENERAL",
+    #if MAX_CACHED_REGISTER >= 4
     [_CALL_FUNCTION_EX_NON_PY_GENERAL_r41] = "_CALL_FUNCTION_EX_NON_PY_GENERAL_r41",
+    #endif
     [_CALL_INTRINSIC_1] = "_CALL_INTRINSIC_1",
+    #if MAX_CACHED_REGISTER >= 1
     [_CALL_INTRINSIC_1_r11] = "_CALL_INTRINSIC_1_r11",
+    #endif
     [_CALL_INTRINSIC_2] = "_CALL_INTRINSIC_2",
+    #if MAX_CACHED_REGISTER >= 2
     [_CALL_INTRINSIC_2_r21] = "_CALL_INTRINSIC_2_r21",
+    #endif
     [_CALL_ISINSTANCE] = "_CALL_ISINSTANCE",
+    #if MAX_CACHED_REGISTER >= 4
     [_CALL_ISINSTANCE_r41] = "_CALL_ISINSTANCE_r41",
+    #endif
     [_CALL_KW_NON_PY] = "_CALL_KW_NON_PY",
+    #if MAX_CACHED_REGISTER >= 1
     [_CALL_KW_NON_PY_r11] = "_CALL_KW_NON_PY_r11",
+    #endif
     [_CALL_LEN] = "_CALL_LEN",
+    #if MAX_CACHED_REGISTER >= 3
     [_CALL_LEN_r33] = "_CALL_LEN_r33",
+    #endif
     [_CALL_LIST_APPEND] = "_CALL_LIST_APPEND",
+    #if MAX_CACHED_REGISTER >= 3
     [_CALL_LIST_APPEND_r03] = "_CALL_LIST_APPEND_r03",
+    #endif
+    #if MAX_CACHED_REGISTER >= 3
     [_CALL_LIST_APPEND_r13] = "_CALL_LIST_APPEND_r13",
+    #endif
+    #if MAX_CACHED_REGISTER >= 3
     [_CALL_LIST_APPEND_r23] = "_CALL_LIST_APPEND_r23",
+    #endif
+    #if MAX_CACHED_REGISTER >= 3
     [_CALL_LIST_APPEND_r33] = "_CALL_LIST_APPEND_r33",
+    #endif
+    #if MAX_CACHED_REGISTER >= 4
     [_CALL_LIST_APPEND_r44] = "_CALL_LIST_APPEND_r44",
+    #endif
+    #if MAX_CACHED_REGISTER >= 5
     [_CALL_LIST_APPEND_r55] = "_CALL_LIST_APPEND_r55",
+    #endif
     [_CALL_METHOD_DESCRIPTOR_FAST] = "_CALL_METHOD_DESCRIPTOR_FAST",
+    #if MAX_CACHED_REGISTER >= 1
     [_CALL_METHOD_DESCRIPTOR_FAST_r01] = "_CALL_METHOD_DESCRIPTOR_FAST_r01",
+    #endif
     [_CALL_METHOD_DESCRIPTOR_FAST_WITH_KEYWORDS] = "_CALL_METHOD_DESCRIPTOR_FAST_WITH_KEYWORDS",
+    #if MAX_CACHED_REGISTER >= 1
     [_CALL_METHOD_DESCRIPTOR_FAST_WITH_KEYWORDS_r01] = "_CALL_METHOD_DESCRIPTOR_FAST_WITH_KEYWORDS_r01",
+    #endif
     [_CALL_METHOD_DESCRIPTOR_NOARGS] = "_CALL_METHOD_DESCRIPTOR_NOARGS",
+    #if MAX_CACHED_REGISTER >= 1
     [_CALL_METHOD_DESCRIPTOR_NOARGS_r01] = "_CALL_METHOD_DESCRIPTOR_NOARGS_r01",
+    #endif
     [_CALL_METHOD_DESCRIPTOR_O] = "_CALL_METHOD_DESCRIPTOR_O",
+    #if MAX_CACHED_REGISTER >= 4
     [_CALL_METHOD_DESCRIPTOR_O_r04] = "_CALL_METHOD_DESCRIPTOR_O_r04",
+    #endif
     [_CALL_NON_PY_GENERAL] = "_CALL_NON_PY_GENERAL",
+    #if MAX_CACHED_REGISTER >= 1
     [_CALL_NON_PY_GENERAL_r01] = "_CALL_NON_PY_GENERAL_r01",
+    #endif
     [_CALL_STR_1] = "_CALL_STR_1",
+    #if MAX_CACHED_REGISTER >= 3
     [_CALL_STR_1_r32] = "_CALL_STR_1_r32",
+    #endif
     [_CALL_TUPLE_1] = "_CALL_TUPLE_1",
+    #if MAX_CACHED_REGISTER >= 3
     [_CALL_TUPLE_1_r32] = "_CALL_TUPLE_1_r32",
+    #endif
     [_CALL_TYPE_1] = "_CALL_TYPE_1",
+    #if MAX_CACHED_REGISTER >= 2
     [_CALL_TYPE_1_r02] = "_CALL_TYPE_1_r02",
+    #endif
+    #if MAX_CACHED_REGISTER >= 2
     [_CALL_TYPE_1_r12] = "_CALL_TYPE_1_r12",
+    #endif
+    #if MAX_CACHED_REGISTER >= 2
     [_CALL_TYPE_1_r22] = "_CALL_TYPE_1_r22",
+    #endif
+    #if MAX_CACHED_REGISTER >= 3
     [_CALL_TYPE_1_r32] = "_CALL_TYPE_1_r32",
+    #endif
+    #if MAX_CACHED_REGISTER >= 4
     [_CALL_TYPE_1_r43] = "_CALL_TYPE_1_r43",
+    #endif
+    #if MAX_CACHED_REGISTER >= 5
     [_CALL_TYPE_1_r54] = "_CALL_TYPE_1_r54",
+    #endif
     [_CHECK_AND_ALLOCATE_OBJECT] = "_CHECK_AND_ALLOCATE_OBJECT",
     [_CHECK_AND_ALLOCATE_OBJECT_r00] = "_CHECK_AND_ALLOCATE_OBJECT_r00",
     [_CHECK_ATTR_CLASS] = "_CHECK_ATTR_CLASS",
+    #if MAX_CACHED_REGISTER >= 1
     [_CHECK_ATTR_CLASS_r01] = "_CHECK_ATTR_CLASS_r01",
+    #endif
+    #if MAX_CACHED_REGISTER >= 1
     [_CHECK_ATTR_CLASS_r11] = "_CHECK_ATTR_CLASS_r11",
+    #endif
+    #if MAX_CACHED_REGISTER >= 2
     [_CHECK_ATTR_CLASS_r22] = "_CHECK_ATTR_CLASS_r22",
+    #endif
+    #if MAX_CACHED_REGISTER >= 3
     [_CHECK_ATTR_CLASS_r33] = "_CHECK_ATTR_CLASS_r33",
+    #endif
+    #if MAX_CACHED_REGISTER >= 4
     [_CHECK_ATTR_CLASS_r44] = "_CHECK_ATTR_CLASS_r44",
+    #endif
+    #if MAX_CACHED_REGISTER >= 5
     [_CHECK_ATTR_CLASS_r55] = "_CHECK_ATTR_CLASS_r55",
+    #endif
     [_CHECK_ATTR_METHOD_LAZY_DICT] = "_CHECK_ATTR_METHOD_LAZY_DICT",
+    #if MAX_CACHED_REGISTER >= 1
     [_CHECK_ATTR_METHOD_LAZY_DICT_r01] = "_CHECK_ATTR_METHOD_LAZY_DICT_r01",
+    #endif
+    #if MAX_CACHED_REGISTER >= 1
     [_CHECK_ATTR_METHOD_LAZY_DICT_r11] = "_CHECK_ATTR_METHOD_LAZY_DICT_r11",
+    #endif
+    #if MAX_CACHED_REGISTER >= 2
     [_CHECK_ATTR_METHOD_LAZY_DICT_r22] = "_CHECK_ATTR_METHOD_LAZY_DICT_r22",
+    #endif
+    #if MAX_CACHED_REGISTER >= 3
     [_CHECK_ATTR_METHOD_LAZY_DICT_r33] = "_CHECK_ATTR_METHOD_LAZY_DICT_r33",
+    #endif
+    #if MAX_CACHED_REGISTER >= 4
     [_CHECK_ATTR_METHOD_LAZY_DICT_r44] = "_CHECK_ATTR_METHOD_LAZY_DICT_r44",
+    #endif
+    #if MAX_CACHED_REGISTER >= 5
     [_CHECK_ATTR_METHOD_LAZY_DICT_r55] = "_CHECK_ATTR_METHOD_LAZY_DICT_r55",
+    #endif
     [_CHECK_CALL_BOUND_METHOD_EXACT_ARGS] = "_CHECK_CALL_BOUND_METHOD_EXACT_ARGS",
     [_CHECK_CALL_BOUND_METHOD_EXACT_ARGS_r00] = "_CHECK_CALL_BOUND_METHOD_EXACT_ARGS_r00",
     [_CHECK_EG_MATCH] = "_CHECK_EG_MATCH",
+    #if MAX_CACHED_REGISTER >= 2
     [_CHECK_EG_MATCH_r22] = "_CHECK_EG_MATCH_r22",
+    #endif
     [_CHECK_EXC_MATCH] = "_CHECK_EXC_MATCH",
+    #if MAX_CACHED_REGISTER >= 2
     [_CHECK_EXC_MATCH_r22] = "_CHECK_EXC_MATCH_r22",
+    #endif
     [_CHECK_FUNCTION_EXACT_ARGS] = "_CHECK_FUNCTION_EXACT_ARGS",
     [_CHECK_FUNCTION_EXACT_ARGS_r00] = "_CHECK_FUNCTION_EXACT_ARGS_r00",
     [_CHECK_FUNCTION_VERSION] = "_CHECK_FUNCTION_VERSION",
     [_CHECK_FUNCTION_VERSION_r00] = "_CHECK_FUNCTION_VERSION_r00",
     [_CHECK_FUNCTION_VERSION_INLINE] = "_CHECK_FUNCTION_VERSION_INLINE",
     [_CHECK_FUNCTION_VERSION_INLINE_r00] = "_CHECK_FUNCTION_VERSION_INLINE_r00",
+    #if MAX_CACHED_REGISTER >= 1
     [_CHECK_FUNCTION_VERSION_INLINE_r11] = "_CHECK_FUNCTION_VERSION_INLINE_r11",
+    #endif
+    #if MAX_CACHED_REGISTER >= 2
     [_CHECK_FUNCTION_VERSION_INLINE_r22] = "_CHECK_FUNCTION_VERSION_INLINE_r22",
+    #endif
+    #if MAX_CACHED_REGISTER >= 3
     [_CHECK_FUNCTION_VERSION_INLINE_r33] = "_CHECK_FUNCTION_VERSION_INLINE_r33",
+    #endif
+    #if MAX_CACHED_REGISTER >= 4
     [_CHECK_FUNCTION_VERSION_INLINE_r44] = "_CHECK_FUNCTION_VERSION_INLINE_r44",
+    #endif
+    #if MAX_CACHED_REGISTER >= 5
     [_CHECK_FUNCTION_VERSION_INLINE_r55] = "_CHECK_FUNCTION_VERSION_INLINE_r55",
+    #endif
     [_CHECK_FUNCTION_VERSION_KW] = "_CHECK_FUNCTION_VERSION_KW",
+    #if MAX_CACHED_REGISTER >= 1
     [_CHECK_FUNCTION_VERSION_KW_r11] = "_CHECK_FUNCTION_VERSION_KW_r11",
+    #endif
     [_CHECK_IS_NOT_PY_CALLABLE] = "_CHECK_IS_NOT_PY_CALLABLE",
     [_CHECK_IS_NOT_PY_CALLABLE_r00] = "_CHECK_IS_NOT_PY_CALLABLE_r00",
     [_CHECK_IS_NOT_PY_CALLABLE_EX] = "_CHECK_IS_NOT_PY_CALLABLE_EX",
+    #if MAX_CACHED_REGISTER >= 4
     [_CHECK_IS_NOT_PY_CALLABLE_EX_r04] = "_CHECK_IS_NOT_PY_CALLABLE_EX_r04",
+    #endif
+    #if MAX_CACHED_REGISTER >= 4
     [_CHECK_IS_NOT_PY_CALLABLE_EX_r14] = "_CHECK_IS_NOT_PY_CALLABLE_EX_r14",
+    #endif
+    #if MAX_CACHED_REGISTER >= 4
     [_CHECK_IS_NOT_PY_CALLABLE_EX_r24] = "_CHECK_IS_NOT_PY_CALLABLE_EX_r24",
+    #endif
+    #if MAX_CACHED_REGISTER >= 4
     [_CHECK_IS_NOT_PY_CALLABLE_EX_r34] = "_CHECK_IS_NOT_PY_CALLABLE_EX_r34",
+    #endif
+    #if MAX_CACHED_REGISTER >= 4
     [_CHECK_IS_NOT_PY_CALLABLE_EX_r44] = "_CHECK_IS_NOT_PY_CALLABLE_EX_r44",
+    #endif
+    #if MAX_CACHED_REGISTER >= 5
     [_CHECK_IS_NOT_PY_CALLABLE_EX_r55] = "_CHECK_IS_NOT_PY_CALLABLE_EX_r55",
+    #endif
     [_CHECK_IS_NOT_PY_CALLABLE_KW] = "_CHECK_IS_NOT_PY_CALLABLE_KW",
+    #if MAX_CACHED_REGISTER >= 1
     [_CHECK_IS_NOT_PY_CALLABLE_KW_r11] = "_CHECK_IS_NOT_PY_CALLABLE_KW_r11",
+    #endif
     [_CHECK_IS_PY_CALLABLE_EX] = "_CHECK_IS_PY_CALLABLE_EX",
+    #if MAX_CACHED_REGISTER >= 4
     [_CHECK_IS_PY_CALLABLE_EX_r04] = "_CHECK_IS_PY_CALLABLE_EX_r04",
+    #endif
+    #if MAX_CACHED_REGISTER >= 4
     [_CHECK_IS_PY_CALLABLE_EX_r14] = "_CHECK_IS_PY_CALLABLE_EX_r14",
+    #endif
+    #if MAX_CACHED_REGISTER >= 4
     [_CHECK_IS_PY_CALLABLE_EX_r24] = "_CHECK_IS_PY_CALLABLE_EX_r24",
+    #endif
+    #if MAX_CACHED_REGISTER >= 4
     [_CHECK_IS_PY_CALLABLE_EX_r34] = "_CHECK_IS_PY_CALLABLE_EX_r34",
+    #endif
+    #if MAX_CACHED_REGISTER >= 4
     [_CHECK_IS_PY_CALLABLE_EX_r44] = "_CHECK_IS_PY_CALLABLE_EX_r44",
+    #endif
+    #if MAX_CACHED_REGISTER >= 5
     [_CHECK_IS_PY_CALLABLE_EX_r55] = "_CHECK_IS_PY_CALLABLE_EX_r55",
+    #endif
     [_CHECK_MANAGED_OBJECT_HAS_VALUES] = "_CHECK_MANAGED_OBJECT_HAS_VALUES",
+    #if MAX_CACHED_REGISTER >= 1
     [_CHECK_MANAGED_OBJECT_HAS_VALUES_r01] = "_CHECK_MANAGED_OBJECT_HAS_VALUES_r01",
+    #endif
+    #if MAX_CACHED_REGISTER >= 1
     [_CHECK_MANAGED_OBJECT_HAS_VALUES_r11] = "_CHECK_MANAGED_OBJECT_HAS_VALUES_r11",
+    #endif
+    #if MAX_CACHED_REGISTER >= 2
     [_CHECK_MANAGED_OBJECT_HAS_VALUES_r22] = "_CHECK_MANAGED_OBJECT_HAS_VALUES_r22",
+    #endif
+    #if MAX_CACHED_REGISTER >= 3
     [_CHECK_MANAGED_OBJECT_HAS_VALUES_r33] = "_CHECK_MANAGED_OBJECT_HAS_VALUES_r33",
+    #endif
+    #if MAX_CACHED_REGISTER >= 4
     [_CHECK_MANAGED_OBJECT_HAS_VALUES_r44] = "_CHECK_MANAGED_OBJECT_HAS_VALUES_r44",
+    #endif
+    #if MAX_CACHED_REGISTER >= 5
     [_CHECK_MANAGED_OBJECT_HAS_VALUES_r55] = "_CHECK_MANAGED_OBJECT_HAS_VALUES_r55",
+    #endif
     [_CHECK_METHOD_VERSION] = "_CHECK_METHOD_VERSION",
     [_CHECK_METHOD_VERSION_r00] = "_CHECK_METHOD_VERSION_r00",
     [_CHECK_METHOD_VERSION_KW] = "_CHECK_METHOD_VERSION_KW",
+    #if MAX_CACHED_REGISTER >= 1
     [_CHECK_METHOD_VERSION_KW_r11] = "_CHECK_METHOD_VERSION_KW_r11",
+    #endif
     [_CHECK_PEP_523] = "_CHECK_PEP_523",
     [_CHECK_PEP_523_r00] = "_CHECK_PEP_523_r00",
+    #if MAX_CACHED_REGISTER >= 1
     [_CHECK_PEP_523_r11] = "_CHECK_PEP_523_r11",
+    #endif
+    #if MAX_CACHED_REGISTER >= 2
     [_CHECK_PEP_523_r22] = "_CHECK_PEP_523_r22",
+    #endif
+    #if MAX_CACHED_REGISTER >= 3
     [_CHECK_PEP_523_r33] = "_CHECK_PEP_523_r33",
+    #endif
+    #if MAX_CACHED_REGISTER >= 4
     [_CHECK_PEP_523_r44] = "_CHECK_PEP_523_r44",
+    #endif
+    #if MAX_CACHED_REGISTER >= 5
     [_CHECK_PEP_523_r55] = "_CHECK_PEP_523_r55",
+    #endif
     [_CHECK_PERIODIC] = "_CHECK_PERIODIC",
     [_CHECK_PERIODIC_r00] = "_CHECK_PERIODIC_r00",
     [_CHECK_PERIODIC_IF_NOT_YIELD_FROM] = "_CHECK_PERIODIC_IF_NOT_YIELD_FROM",
     [_CHECK_PERIODIC_IF_NOT_YIELD_FROM_r00] = "_CHECK_PERIODIC_IF_NOT_YIELD_FROM_r00",
     [_CHECK_RECURSION_REMAINING] = "_CHECK_RECURSION_REMAINING",
     [_CHECK_RECURSION_REMAINING_r00] = "_CHECK_RECURSION_REMAINING_r00",
+    #if MAX_CACHED_REGISTER >= 1
     [_CHECK_RECURSION_REMAINING_r11] = "_CHECK_RECURSION_REMAINING_r11",
+    #endif
+    #if MAX_CACHED_REGISTER >= 2
     [_CHECK_RECURSION_REMAINING_r22] = "_CHECK_RECURSION_REMAINING_r22",
+    #endif
+    #if MAX_CACHED_REGISTER >= 3
     [_CHECK_RECURSION_REMAINING_r33] = "_CHECK_RECURSION_REMAINING_r33",
+    #endif
+    #if MAX_CACHED_REGISTER >= 4
     [_CHECK_RECURSION_REMAINING_r44] = "_CHECK_RECURSION_REMAINING_r44",
+    #endif
+    #if MAX_CACHED_REGISTER >= 5
     [_CHECK_RECURSION_REMAINING_r55] = "_CHECK_RECURSION_REMAINING_r55",
+    #endif
     [_CHECK_STACK_SPACE] = "_CHECK_STACK_SPACE",
     [_CHECK_STACK_SPACE_r00] = "_CHECK_STACK_SPACE_r00",
     [_CHECK_STACK_SPACE_OPERAND] = "_CHECK_STACK_SPACE_OPERAND",
     [_CHECK_STACK_SPACE_OPERAND_r00] = "_CHECK_STACK_SPACE_OPERAND_r00",
+    #if MAX_CACHED_REGISTER >= 1
     [_CHECK_STACK_SPACE_OPERAND_r11] = "_CHECK_STACK_SPACE_OPERAND_r11",
+    #endif
+    #if MAX_CACHED_REGISTER >= 2
     [_CHECK_STACK_SPACE_OPERAND_r22] = "_CHECK_STACK_SPACE_OPERAND_r22",
+    #endif
+    #if MAX_CACHED_REGISTER >= 3
     [_CHECK_STACK_SPACE_OPERAND_r33] = "_CHECK_STACK_SPACE_OPERAND_r33",
+    #endif
+    #if MAX_CACHED_REGISTER >= 4
     [_CHECK_STACK_SPACE_OPERAND_r44] = "_CHECK_STACK_SPACE_OPERAND_r44",
+    #endif
+    #if MAX_CACHED_REGISTER >= 5
     [_CHECK_STACK_SPACE_OPERAND_r55] = "_CHECK_STACK_SPACE_OPERAND_r55",
+    #endif
     [_CHECK_VALIDITY] = "_CHECK_VALIDITY",
     [_CHECK_VALIDITY_r00] = "_CHECK_VALIDITY_r00",
+    #if MAX_CACHED_REGISTER >= 1
     [_CHECK_VALIDITY_r11] = "_CHECK_VALIDITY_r11",
+    #endif
+    #if MAX_CACHED_REGISTER >= 2
     [_CHECK_VALIDITY_r22] = "_CHECK_VALIDITY_r22",
+    #endif
+    #if MAX_CACHED_REGISTER >= 3
     [_CHECK_VALIDITY_r33] = "_CHECK_VALIDITY_r33",
+    #endif
+    #if MAX_CACHED_REGISTER >= 4
     [_CHECK_VALIDITY_r44] = "_CHECK_VALIDITY_r44",
+    #endif
+    #if MAX_CACHED_REGISTER >= 5
     [_CHECK_VALIDITY_r55] = "_CHECK_VALIDITY_r55",
+    #endif
     [_COLD_DYNAMIC_EXIT] = "_COLD_DYNAMIC_EXIT",
     [_COLD_DYNAMIC_EXIT_r00] = "_COLD_DYNAMIC_EXIT_r00",
     [_COLD_EXIT] = "_COLD_EXIT",
     [_COLD_EXIT_r00] = "_COLD_EXIT_r00",
     [_COMPARE_OP] = "_COMPARE_OP",
+    #if MAX_CACHED_REGISTER >= 2
     [_COMPARE_OP_r21] = "_COMPARE_OP_r21",
+    #endif
     [_COMPARE_OP_FLOAT] = "_COMPARE_OP_FLOAT",
+    #if MAX_CACHED_REGISTER >= 3
     [_COMPARE_OP_FLOAT_r03] = "_COMPARE_OP_FLOAT_r03",
+    #endif
+    #if MAX_CACHED_REGISTER >= 3
     [_COMPARE_OP_FLOAT_r13] = "_COMPARE_OP_FLOAT_r13",
+    #endif
+    #if MAX_CACHED_REGISTER >= 3
     [_COMPARE_OP_FLOAT_r23] = "_COMPARE_OP_FLOAT_r23",
+    #endif
+    #if MAX_CACHED_REGISTER >= 4
     [_COMPARE_OP_FLOAT_r34] = "_COMPARE_OP_FLOAT_r34",
+    #endif
+    #if MAX_CACHED_REGISTER >= 5
     [_COMPARE_OP_FLOAT_r45] = "_COMPARE_OP_FLOAT_r45",
+    #endif
     [_COMPARE_OP_INT] = "_COMPARE_OP_INT",
+    #if MAX_CACHED_REGISTER >= 3
     [_COMPARE_OP_INT_r23] = "_COMPARE_OP_INT_r23",
+    #endif
     [_COMPARE_OP_STR] = "_COMPARE_OP_STR",
+    #if MAX_CACHED_REGISTER >= 3
     [_COMPARE_OP_STR_r23] = "_COMPARE_OP_STR_r23",
+    #endif
     [_CONTAINS_OP] = "_CONTAINS_OP",
+    #if MAX_CACHED_REGISTER >= 3
     [_CONTAINS_OP_r23] = "_CONTAINS_OP_r23",
+    #endif
     [_CONTAINS_OP_DICT] = "_CONTAINS_OP_DICT",
+    #if MAX_CACHED_REGISTER >= 3
     [_CONTAINS_OP_DICT_r23] = "_CONTAINS_OP_DICT_r23",
+    #endif
     [_CONTAINS_OP_SET] = "_CONTAINS_OP_SET",
+    #if MAX_CACHED_REGISTER >= 3
     [_CONTAINS_OP_SET_r23] = "_CONTAINS_OP_SET_r23",
+    #endif
     [_CONVERT_VALUE] = "_CONVERT_VALUE",
+    #if MAX_CACHED_REGISTER >= 1
     [_CONVERT_VALUE_r11] = "_CONVERT_VALUE_r11",
+    #endif
     [_COPY] = "_COPY",
+    #if MAX_CACHED_REGISTER >= 1
     [_COPY_r01] = "_COPY_r01",
+    #endif
     [_COPY_1] = "_COPY_1",
+    #if MAX_CACHED_REGISTER >= 2
     [_COPY_1_r02] = "_COPY_1_r02",
+    #endif
+    #if MAX_CACHED_REGISTER >= 2
     [_COPY_1_r12] = "_COPY_1_r12",
+    #endif
+    #if MAX_CACHED_REGISTER >= 3
     [_COPY_1_r23] = "_COPY_1_r23",
+    #endif
+    #if MAX_CACHED_REGISTER >= 4
     [_COPY_1_r34] = "_COPY_1_r34",
+    #endif
+    #if MAX_CACHED_REGISTER >= 5
     [_COPY_1_r45] = "_COPY_1_r45",
+    #endif
     [_COPY_2] = "_COPY_2",
+    #if MAX_CACHED_REGISTER >= 3
     [_COPY_2_r03] = "_COPY_2_r03",
+    #endif
+    #if MAX_CACHED_REGISTER >= 3
     [_COPY_2_r13] = "_COPY_2_r13",
+    #endif
+    #if MAX_CACHED_REGISTER >= 3
     [_COPY_2_r23] = "_COPY_2_r23",
+    #endif
+    #if MAX_CACHED_REGISTER >= 4
     [_COPY_2_r34] = "_COPY_2_r34",
+    #endif
+    #if MAX_CACHED_REGISTER >= 5
     [_COPY_2_r45] = "_COPY_2_r45",
+    #endif
     [_COPY_3] = "_COPY_3",
+    #if MAX_CACHED_REGISTER >= 4
     [_COPY_3_r04] = "_COPY_3_r04",
+    #endif
+    #if MAX_CACHED_REGISTER >= 4
     [_COPY_3_r14] = "_COPY_3_r14",
+    #endif
+    #if MAX_CACHED_REGISTER >= 4
     [_COPY_3_r24] = "_COPY_3_r24",
+    #endif
+    #if MAX_CACHED_REGISTER >= 4
     [_COPY_3_r34] = "_COPY_3_r34",
+    #endif
+    #if MAX_CACHED_REGISTER >= 5
     [_COPY_3_r45] = "_COPY_3_r45",
+    #endif
     [_COPY_FREE_VARS] = "_COPY_FREE_VARS",
     [_COPY_FREE_VARS_r00] = "_COPY_FREE_VARS_r00",
+    #if MAX_CACHED_REGISTER >= 1
     [_COPY_FREE_VARS_r11] = "_COPY_FREE_VARS_r11",
+    #endif
+    #if MAX_CACHED_REGISTER >= 2
     [_COPY_FREE_VARS_r22] = "_COPY_FREE_VARS_r22",
+    #endif
+    #if MAX_CACHED_REGISTER >= 3
     [_COPY_FREE_VARS_r33] = "_COPY_FREE_VARS_r33",
+    #endif
+    #if MAX_CACHED_REGISTER >= 4
     [_COPY_FREE_VARS_r44] = "_COPY_FREE_VARS_r44",
+    #endif
+    #if MAX_CACHED_REGISTER >= 5
     [_COPY_FREE_VARS_r55] = "_COPY_FREE_VARS_r55",
+    #endif
     [_CREATE_INIT_FRAME] = "_CREATE_INIT_FRAME",
+    #if MAX_CACHED_REGISTER >= 1
     [_CREATE_INIT_FRAME_r01] = "_CREATE_INIT_FRAME_r01",
+    #endif
     [_DELETE_ATTR] = "_DELETE_ATTR",
+    #if MAX_CACHED_REGISTER >= 1
     [_DELETE_ATTR_r10] = "_DELETE_ATTR_r10",
+    #endif
     [_DELETE_DEREF] = "_DELETE_DEREF",
     [_DELETE_DEREF_r00] = "_DELETE_DEREF_r00",
     [_DELETE_FAST] = "_DELETE_FAST",
@@ -4990,960 +7574,2394 @@ const char *const _PyOpcode_uop_name[MAX_UOP_REGS_ID+1] = {
     [_DELETE_NAME] = "_DELETE_NAME",
     [_DELETE_NAME_r00] = "_DELETE_NAME_r00",
     [_DELETE_SUBSCR] = "_DELETE_SUBSCR",
+    #if MAX_CACHED_REGISTER >= 2
     [_DELETE_SUBSCR_r20] = "_DELETE_SUBSCR_r20",
+    #endif
     [_DEOPT] = "_DEOPT",
     [_DEOPT_r00] = "_DEOPT_r00",
+    #if MAX_CACHED_REGISTER >= 1
     [_DEOPT_r10] = "_DEOPT_r10",
+    #endif
+    #if MAX_CACHED_REGISTER >= 2
     [_DEOPT_r20] = "_DEOPT_r20",
+    #endif
+    #if MAX_CACHED_REGISTER >= 3
     [_DEOPT_r30] = "_DEOPT_r30",
+    #endif
+    #if MAX_CACHED_REGISTER >= 4
     [_DEOPT_r40] = "_DEOPT_r40",
+    #endif
+    #if MAX_CACHED_REGISTER >= 5
     [_DEOPT_r50] = "_DEOPT_r50",
+    #endif
     [_DICT_MERGE] = "_DICT_MERGE",
+    #if MAX_CACHED_REGISTER >= 1
     [_DICT_MERGE_r10] = "_DICT_MERGE_r10",
+    #endif
     [_DICT_UPDATE] = "_DICT_UPDATE",
+    #if MAX_CACHED_REGISTER >= 1
     [_DICT_UPDATE_r10] = "_DICT_UPDATE_r10",
+    #endif
     [_DYNAMIC_EXIT] = "_DYNAMIC_EXIT",
     [_DYNAMIC_EXIT_r00] = "_DYNAMIC_EXIT_r00",
+    #if MAX_CACHED_REGISTER >= 1
     [_DYNAMIC_EXIT_r10] = "_DYNAMIC_EXIT_r10",
+    #endif
+    #if MAX_CACHED_REGISTER >= 2
     [_DYNAMIC_EXIT_r20] = "_DYNAMIC_EXIT_r20",
+    #endif
+    #if MAX_CACHED_REGISTER >= 3
     [_DYNAMIC_EXIT_r30] = "_DYNAMIC_EXIT_r30",
+    #endif
+    #if MAX_CACHED_REGISTER >= 4
     [_DYNAMIC_EXIT_r40] = "_DYNAMIC_EXIT_r40",
+    #endif
+    #if MAX_CACHED_REGISTER >= 5
     [_DYNAMIC_EXIT_r50] = "_DYNAMIC_EXIT_r50",
+    #endif
     [_END_FOR] = "_END_FOR",
+    #if MAX_CACHED_REGISTER >= 1
     [_END_FOR_r10] = "_END_FOR_r10",
+    #endif
     [_END_SEND] = "_END_SEND",
+    #if MAX_CACHED_REGISTER >= 2
     [_END_SEND_r21] = "_END_SEND_r21",
+    #endif
     [_ERROR_POP_N] = "_ERROR_POP_N",
     [_ERROR_POP_N_r00] = "_ERROR_POP_N_r00",
     [_EXIT_INIT_CHECK] = "_EXIT_INIT_CHECK",
+    #if MAX_CACHED_REGISTER >= 1
     [_EXIT_INIT_CHECK_r10] = "_EXIT_INIT_CHECK_r10",
+    #endif
     [_EXIT_TRACE] = "_EXIT_TRACE",
     [_EXIT_TRACE_r00] = "_EXIT_TRACE_r00",
+    #if MAX_CACHED_REGISTER >= 1
     [_EXIT_TRACE_r10] = "_EXIT_TRACE_r10",
+    #endif
+    #if MAX_CACHED_REGISTER >= 2
     [_EXIT_TRACE_r20] = "_EXIT_TRACE_r20",
+    #endif
+    #if MAX_CACHED_REGISTER >= 3
     [_EXIT_TRACE_r30] = "_EXIT_TRACE_r30",
+    #endif
+    #if MAX_CACHED_REGISTER >= 4
     [_EXIT_TRACE_r40] = "_EXIT_TRACE_r40",
+    #endif
+    #if MAX_CACHED_REGISTER >= 5
     [_EXIT_TRACE_r50] = "_EXIT_TRACE_r50",
+    #endif
     [_EXPAND_METHOD] = "_EXPAND_METHOD",
     [_EXPAND_METHOD_r00] = "_EXPAND_METHOD_r00",
     [_EXPAND_METHOD_KW] = "_EXPAND_METHOD_KW",
+    #if MAX_CACHED_REGISTER >= 1
     [_EXPAND_METHOD_KW_r11] = "_EXPAND_METHOD_KW_r11",
+    #endif
     [_FATAL_ERROR] = "_FATAL_ERROR",
     [_FATAL_ERROR_r00] = "_FATAL_ERROR_r00",
+    #if MAX_CACHED_REGISTER >= 1
     [_FATAL_ERROR_r11] = "_FATAL_ERROR_r11",
+    #endif
+    #if MAX_CACHED_REGISTER >= 2
     [_FATAL_ERROR_r22] = "_FATAL_ERROR_r22",
+    #endif
+    #if MAX_CACHED_REGISTER >= 3
     [_FATAL_ERROR_r33] = "_FATAL_ERROR_r33",
+    #endif
+    #if MAX_CACHED_REGISTER >= 4
     [_FATAL_ERROR_r44] = "_FATAL_ERROR_r44",
+    #endif
+    #if MAX_CACHED_REGISTER >= 5
     [_FATAL_ERROR_r55] = "_FATAL_ERROR_r55",
+    #endif
     [_FORMAT_SIMPLE] = "_FORMAT_SIMPLE",
+    #if MAX_CACHED_REGISTER >= 1
     [_FORMAT_SIMPLE_r11] = "_FORMAT_SIMPLE_r11",
+    #endif
     [_FORMAT_WITH_SPEC] = "_FORMAT_WITH_SPEC",
+    #if MAX_CACHED_REGISTER >= 2
     [_FORMAT_WITH_SPEC_r21] = "_FORMAT_WITH_SPEC_r21",
+    #endif
     [_FOR_ITER_GEN_FRAME] = "_FOR_ITER_GEN_FRAME",
+    #if MAX_CACHED_REGISTER >= 3
     [_FOR_ITER_GEN_FRAME_r03] = "_FOR_ITER_GEN_FRAME_r03",
+    #endif
+    #if MAX_CACHED_REGISTER >= 3
     [_FOR_ITER_GEN_FRAME_r13] = "_FOR_ITER_GEN_FRAME_r13",
+    #endif
+    #if MAX_CACHED_REGISTER >= 3
     [_FOR_ITER_GEN_FRAME_r23] = "_FOR_ITER_GEN_FRAME_r23",
+    #endif
+    #if MAX_CACHED_REGISTER >= 4
     [_FOR_ITER_GEN_FRAME_r34] = "_FOR_ITER_GEN_FRAME_r34",
+    #endif
+    #if MAX_CACHED_REGISTER >= 5
     [_FOR_ITER_GEN_FRAME_r45] = "_FOR_ITER_GEN_FRAME_r45",
+    #endif
     [_FOR_ITER_TIER_TWO] = "_FOR_ITER_TIER_TWO",
+    #if MAX_CACHED_REGISTER >= 3
     [_FOR_ITER_TIER_TWO_r23] = "_FOR_ITER_TIER_TWO_r23",
+    #endif
     [_GET_AITER] = "_GET_AITER",
+    #if MAX_CACHED_REGISTER >= 1
     [_GET_AITER_r11] = "_GET_AITER_r11",
+    #endif
     [_GET_ANEXT] = "_GET_ANEXT",
+    #if MAX_CACHED_REGISTER >= 2
     [_GET_ANEXT_r12] = "_GET_ANEXT_r12",
+    #endif
     [_GET_AWAITABLE] = "_GET_AWAITABLE",
+    #if MAX_CACHED_REGISTER >= 1
     [_GET_AWAITABLE_r11] = "_GET_AWAITABLE_r11",
+    #endif
     [_GET_ITER] = "_GET_ITER",
+    #if MAX_CACHED_REGISTER >= 2
     [_GET_ITER_r12] = "_GET_ITER_r12",
+    #endif
     [_GET_LEN] = "_GET_LEN",
+    #if MAX_CACHED_REGISTER >= 2
     [_GET_LEN_r12] = "_GET_LEN_r12",
+    #endif
     [_GET_YIELD_FROM_ITER] = "_GET_YIELD_FROM_ITER",
+    #if MAX_CACHED_REGISTER >= 1
     [_GET_YIELD_FROM_ITER_r11] = "_GET_YIELD_FROM_ITER_r11",
+    #endif
     [_GUARD_BINARY_OP_EXTEND] = "_GUARD_BINARY_OP_EXTEND",
+    #if MAX_CACHED_REGISTER >= 2
     [_GUARD_BINARY_OP_EXTEND_r22] = "_GUARD_BINARY_OP_EXTEND_r22",
+    #endif
     [_GUARD_BINARY_OP_SUBSCR_TUPLE_INT_BOUNDS] = "_GUARD_BINARY_OP_SUBSCR_TUPLE_INT_BOUNDS",
+    #if MAX_CACHED_REGISTER >= 2
     [_GUARD_BINARY_OP_SUBSCR_TUPLE_INT_BOUNDS_r02] = "_GUARD_BINARY_OP_SUBSCR_TUPLE_INT_BOUNDS_r02",
+    #endif
+    #if MAX_CACHED_REGISTER >= 2
     [_GUARD_BINARY_OP_SUBSCR_TUPLE_INT_BOUNDS_r12] = "_GUARD_BINARY_OP_SUBSCR_TUPLE_INT_BOUNDS_r12",
+    #endif
+    #if MAX_CACHED_REGISTER >= 2
     [_GUARD_BINARY_OP_SUBSCR_TUPLE_INT_BOUNDS_r22] = "_GUARD_BINARY_OP_SUBSCR_TUPLE_INT_BOUNDS_r22",
+    #endif
+    #if MAX_CACHED_REGISTER >= 3
     [_GUARD_BINARY_OP_SUBSCR_TUPLE_INT_BOUNDS_r33] = "_GUARD_BINARY_OP_SUBSCR_TUPLE_INT_BOUNDS_r33",
+    #endif
+    #if MAX_CACHED_REGISTER >= 4
     [_GUARD_BINARY_OP_SUBSCR_TUPLE_INT_BOUNDS_r44] = "_GUARD_BINARY_OP_SUBSCR_TUPLE_INT_BOUNDS_r44",
+    #endif
+    #if MAX_CACHED_REGISTER >= 5
     [_GUARD_BINARY_OP_SUBSCR_TUPLE_INT_BOUNDS_r55] = "_GUARD_BINARY_OP_SUBSCR_TUPLE_INT_BOUNDS_r55",
+    #endif
     [_GUARD_BIT_IS_SET_POP] = "_GUARD_BIT_IS_SET_POP",
     [_GUARD_BIT_IS_SET_POP_r00] = "_GUARD_BIT_IS_SET_POP_r00",
+    #if MAX_CACHED_REGISTER >= 1
     [_GUARD_BIT_IS_SET_POP_r10] = "_GUARD_BIT_IS_SET_POP_r10",
+    #endif
+    #if MAX_CACHED_REGISTER >= 2
     [_GUARD_BIT_IS_SET_POP_r21] = "_GUARD_BIT_IS_SET_POP_r21",
+    #endif
+    #if MAX_CACHED_REGISTER >= 3
     [_GUARD_BIT_IS_SET_POP_r32] = "_GUARD_BIT_IS_SET_POP_r32",
+    #endif
+    #if MAX_CACHED_REGISTER >= 4
     [_GUARD_BIT_IS_SET_POP_r43] = "_GUARD_BIT_IS_SET_POP_r43",
+    #endif
+    #if MAX_CACHED_REGISTER >= 5
     [_GUARD_BIT_IS_SET_POP_r54] = "_GUARD_BIT_IS_SET_POP_r54",
+    #endif
     [_GUARD_BIT_IS_SET_POP_4] = "_GUARD_BIT_IS_SET_POP_4",
     [_GUARD_BIT_IS_SET_POP_4_r00] = "_GUARD_BIT_IS_SET_POP_4_r00",
+    #if MAX_CACHED_REGISTER >= 1
     [_GUARD_BIT_IS_SET_POP_4_r10] = "_GUARD_BIT_IS_SET_POP_4_r10",
+    #endif
+    #if MAX_CACHED_REGISTER >= 2
     [_GUARD_BIT_IS_SET_POP_4_r21] = "_GUARD_BIT_IS_SET_POP_4_r21",
+    #endif
+    #if MAX_CACHED_REGISTER >= 3
     [_GUARD_BIT_IS_SET_POP_4_r32] = "_GUARD_BIT_IS_SET_POP_4_r32",
+    #endif
+    #if MAX_CACHED_REGISTER >= 4
     [_GUARD_BIT_IS_SET_POP_4_r43] = "_GUARD_BIT_IS_SET_POP_4_r43",
+    #endif
+    #if MAX_CACHED_REGISTER >= 5
     [_GUARD_BIT_IS_SET_POP_4_r54] = "_GUARD_BIT_IS_SET_POP_4_r54",
+    #endif
     [_GUARD_BIT_IS_SET_POP_5] = "_GUARD_BIT_IS_SET_POP_5",
     [_GUARD_BIT_IS_SET_POP_5_r00] = "_GUARD_BIT_IS_SET_POP_5_r00",
+    #if MAX_CACHED_REGISTER >= 1
     [_GUARD_BIT_IS_SET_POP_5_r10] = "_GUARD_BIT_IS_SET_POP_5_r10",
+    #endif
+    #if MAX_CACHED_REGISTER >= 2
     [_GUARD_BIT_IS_SET_POP_5_r21] = "_GUARD_BIT_IS_SET_POP_5_r21",
+    #endif
+    #if MAX_CACHED_REGISTER >= 3
     [_GUARD_BIT_IS_SET_POP_5_r32] = "_GUARD_BIT_IS_SET_POP_5_r32",
+    #endif
+    #if MAX_CACHED_REGISTER >= 4
     [_GUARD_BIT_IS_SET_POP_5_r43] = "_GUARD_BIT_IS_SET_POP_5_r43",
+    #endif
+    #if MAX_CACHED_REGISTER >= 5
     [_GUARD_BIT_IS_SET_POP_5_r54] = "_GUARD_BIT_IS_SET_POP_5_r54",
+    #endif
     [_GUARD_BIT_IS_SET_POP_6] = "_GUARD_BIT_IS_SET_POP_6",
     [_GUARD_BIT_IS_SET_POP_6_r00] = "_GUARD_BIT_IS_SET_POP_6_r00",
+    #if MAX_CACHED_REGISTER >= 1
     [_GUARD_BIT_IS_SET_POP_6_r10] = "_GUARD_BIT_IS_SET_POP_6_r10",
+    #endif
+    #if MAX_CACHED_REGISTER >= 2
     [_GUARD_BIT_IS_SET_POP_6_r21] = "_GUARD_BIT_IS_SET_POP_6_r21",
+    #endif
+    #if MAX_CACHED_REGISTER >= 3
     [_GUARD_BIT_IS_SET_POP_6_r32] = "_GUARD_BIT_IS_SET_POP_6_r32",
+    #endif
+    #if MAX_CACHED_REGISTER >= 4
     [_GUARD_BIT_IS_SET_POP_6_r43] = "_GUARD_BIT_IS_SET_POP_6_r43",
+    #endif
+    #if MAX_CACHED_REGISTER >= 5
     [_GUARD_BIT_IS_SET_POP_6_r54] = "_GUARD_BIT_IS_SET_POP_6_r54",
+    #endif
     [_GUARD_BIT_IS_SET_POP_7] = "_GUARD_BIT_IS_SET_POP_7",
     [_GUARD_BIT_IS_SET_POP_7_r00] = "_GUARD_BIT_IS_SET_POP_7_r00",
+    #if MAX_CACHED_REGISTER >= 1
     [_GUARD_BIT_IS_SET_POP_7_r10] = "_GUARD_BIT_IS_SET_POP_7_r10",
+    #endif
+    #if MAX_CACHED_REGISTER >= 2
     [_GUARD_BIT_IS_SET_POP_7_r21] = "_GUARD_BIT_IS_SET_POP_7_r21",
+    #endif
+    #if MAX_CACHED_REGISTER >= 3
     [_GUARD_BIT_IS_SET_POP_7_r32] = "_GUARD_BIT_IS_SET_POP_7_r32",
+    #endif
+    #if MAX_CACHED_REGISTER >= 4
     [_GUARD_BIT_IS_SET_POP_7_r43] = "_GUARD_BIT_IS_SET_POP_7_r43",
+    #endif
+    #if MAX_CACHED_REGISTER >= 5
     [_GUARD_BIT_IS_SET_POP_7_r54] = "_GUARD_BIT_IS_SET_POP_7_r54",
+    #endif
     [_GUARD_BIT_IS_UNSET_POP] = "_GUARD_BIT_IS_UNSET_POP",
     [_GUARD_BIT_IS_UNSET_POP_r00] = "_GUARD_BIT_IS_UNSET_POP_r00",
+    #if MAX_CACHED_REGISTER >= 1
     [_GUARD_BIT_IS_UNSET_POP_r10] = "_GUARD_BIT_IS_UNSET_POP_r10",
+    #endif
+    #if MAX_CACHED_REGISTER >= 2
     [_GUARD_BIT_IS_UNSET_POP_r21] = "_GUARD_BIT_IS_UNSET_POP_r21",
+    #endif
+    #if MAX_CACHED_REGISTER >= 3
     [_GUARD_BIT_IS_UNSET_POP_r32] = "_GUARD_BIT_IS_UNSET_POP_r32",
+    #endif
+    #if MAX_CACHED_REGISTER >= 4
     [_GUARD_BIT_IS_UNSET_POP_r43] = "_GUARD_BIT_IS_UNSET_POP_r43",
+    #endif
+    #if MAX_CACHED_REGISTER >= 5
     [_GUARD_BIT_IS_UNSET_POP_r54] = "_GUARD_BIT_IS_UNSET_POP_r54",
+    #endif
     [_GUARD_BIT_IS_UNSET_POP_4] = "_GUARD_BIT_IS_UNSET_POP_4",
     [_GUARD_BIT_IS_UNSET_POP_4_r00] = "_GUARD_BIT_IS_UNSET_POP_4_r00",
+    #if MAX_CACHED_REGISTER >= 1
     [_GUARD_BIT_IS_UNSET_POP_4_r10] = "_GUARD_BIT_IS_UNSET_POP_4_r10",
+    #endif
+    #if MAX_CACHED_REGISTER >= 2
     [_GUARD_BIT_IS_UNSET_POP_4_r21] = "_GUARD_BIT_IS_UNSET_POP_4_r21",
+    #endif
+    #if MAX_CACHED_REGISTER >= 3
     [_GUARD_BIT_IS_UNSET_POP_4_r32] = "_GUARD_BIT_IS_UNSET_POP_4_r32",
+    #endif
+    #if MAX_CACHED_REGISTER >= 4
     [_GUARD_BIT_IS_UNSET_POP_4_r43] = "_GUARD_BIT_IS_UNSET_POP_4_r43",
+    #endif
+    #if MAX_CACHED_REGISTER >= 5
     [_GUARD_BIT_IS_UNSET_POP_4_r54] = "_GUARD_BIT_IS_UNSET_POP_4_r54",
+    #endif
     [_GUARD_BIT_IS_UNSET_POP_5] = "_GUARD_BIT_IS_UNSET_POP_5",
     [_GUARD_BIT_IS_UNSET_POP_5_r00] = "_GUARD_BIT_IS_UNSET_POP_5_r00",
+    #if MAX_CACHED_REGISTER >= 1
     [_GUARD_BIT_IS_UNSET_POP_5_r10] = "_GUARD_BIT_IS_UNSET_POP_5_r10",
+    #endif
+    #if MAX_CACHED_REGISTER >= 2
     [_GUARD_BIT_IS_UNSET_POP_5_r21] = "_GUARD_BIT_IS_UNSET_POP_5_r21",
+    #endif
+    #if MAX_CACHED_REGISTER >= 3
     [_GUARD_BIT_IS_UNSET_POP_5_r32] = "_GUARD_BIT_IS_UNSET_POP_5_r32",
+    #endif
+    #if MAX_CACHED_REGISTER >= 4
     [_GUARD_BIT_IS_UNSET_POP_5_r43] = "_GUARD_BIT_IS_UNSET_POP_5_r43",
+    #endif
+    #if MAX_CACHED_REGISTER >= 5
     [_GUARD_BIT_IS_UNSET_POP_5_r54] = "_GUARD_BIT_IS_UNSET_POP_5_r54",
+    #endif
     [_GUARD_BIT_IS_UNSET_POP_6] = "_GUARD_BIT_IS_UNSET_POP_6",
     [_GUARD_BIT_IS_UNSET_POP_6_r00] = "_GUARD_BIT_IS_UNSET_POP_6_r00",
+    #if MAX_CACHED_REGISTER >= 1
     [_GUARD_BIT_IS_UNSET_POP_6_r10] = "_GUARD_BIT_IS_UNSET_POP_6_r10",
+    #endif
+    #if MAX_CACHED_REGISTER >= 2
     [_GUARD_BIT_IS_UNSET_POP_6_r21] = "_GUARD_BIT_IS_UNSET_POP_6_r21",
+    #endif
+    #if MAX_CACHED_REGISTER >= 3
     [_GUARD_BIT_IS_UNSET_POP_6_r32] = "_GUARD_BIT_IS_UNSET_POP_6_r32",
+    #endif
+    #if MAX_CACHED_REGISTER >= 4
     [_GUARD_BIT_IS_UNSET_POP_6_r43] = "_GUARD_BIT_IS_UNSET_POP_6_r43",
+    #endif
+    #if MAX_CACHED_REGISTER >= 5
     [_GUARD_BIT_IS_UNSET_POP_6_r54] = "_GUARD_BIT_IS_UNSET_POP_6_r54",
+    #endif
     [_GUARD_BIT_IS_UNSET_POP_7] = "_GUARD_BIT_IS_UNSET_POP_7",
     [_GUARD_BIT_IS_UNSET_POP_7_r00] = "_GUARD_BIT_IS_UNSET_POP_7_r00",
+    #if MAX_CACHED_REGISTER >= 1
     [_GUARD_BIT_IS_UNSET_POP_7_r10] = "_GUARD_BIT_IS_UNSET_POP_7_r10",
+    #endif
+    #if MAX_CACHED_REGISTER >= 2
     [_GUARD_BIT_IS_UNSET_POP_7_r21] = "_GUARD_BIT_IS_UNSET_POP_7_r21",
+    #endif
+    #if MAX_CACHED_REGISTER >= 3
     [_GUARD_BIT_IS_UNSET_POP_7_r32] = "_GUARD_BIT_IS_UNSET_POP_7_r32",
+    #endif
+    #if MAX_CACHED_REGISTER >= 4
     [_GUARD_BIT_IS_UNSET_POP_7_r43] = "_GUARD_BIT_IS_UNSET_POP_7_r43",
+    #endif
+    #if MAX_CACHED_REGISTER >= 5
     [_GUARD_BIT_IS_UNSET_POP_7_r54] = "_GUARD_BIT_IS_UNSET_POP_7_r54",
+    #endif
     [_GUARD_CALLABLE_ISINSTANCE] = "_GUARD_CALLABLE_ISINSTANCE",
+    #if MAX_CACHED_REGISTER >= 4
     [_GUARD_CALLABLE_ISINSTANCE_r04] = "_GUARD_CALLABLE_ISINSTANCE_r04",
+    #endif
+    #if MAX_CACHED_REGISTER >= 4
     [_GUARD_CALLABLE_ISINSTANCE_r14] = "_GUARD_CALLABLE_ISINSTANCE_r14",
+    #endif
+    #if MAX_CACHED_REGISTER >= 4
     [_GUARD_CALLABLE_ISINSTANCE_r24] = "_GUARD_CALLABLE_ISINSTANCE_r24",
+    #endif
+    #if MAX_CACHED_REGISTER >= 4
     [_GUARD_CALLABLE_ISINSTANCE_r34] = "_GUARD_CALLABLE_ISINSTANCE_r34",
+    #endif
+    #if MAX_CACHED_REGISTER >= 4
     [_GUARD_CALLABLE_ISINSTANCE_r44] = "_GUARD_CALLABLE_ISINSTANCE_r44",
+    #endif
+    #if MAX_CACHED_REGISTER >= 5
     [_GUARD_CALLABLE_ISINSTANCE_r55] = "_GUARD_CALLABLE_ISINSTANCE_r55",
+    #endif
     [_GUARD_CALLABLE_LEN] = "_GUARD_CALLABLE_LEN",
+    #if MAX_CACHED_REGISTER >= 3
     [_GUARD_CALLABLE_LEN_r03] = "_GUARD_CALLABLE_LEN_r03",
+    #endif
+    #if MAX_CACHED_REGISTER >= 3
     [_GUARD_CALLABLE_LEN_r13] = "_GUARD_CALLABLE_LEN_r13",
+    #endif
+    #if MAX_CACHED_REGISTER >= 3
     [_GUARD_CALLABLE_LEN_r23] = "_GUARD_CALLABLE_LEN_r23",
+    #endif
+    #if MAX_CACHED_REGISTER >= 3
     [_GUARD_CALLABLE_LEN_r33] = "_GUARD_CALLABLE_LEN_r33",
+    #endif
+    #if MAX_CACHED_REGISTER >= 4
     [_GUARD_CALLABLE_LEN_r44] = "_GUARD_CALLABLE_LEN_r44",
+    #endif
+    #if MAX_CACHED_REGISTER >= 5
     [_GUARD_CALLABLE_LEN_r55] = "_GUARD_CALLABLE_LEN_r55",
+    #endif
     [_GUARD_CALLABLE_LIST_APPEND] = "_GUARD_CALLABLE_LIST_APPEND",
+    #if MAX_CACHED_REGISTER >= 3
     [_GUARD_CALLABLE_LIST_APPEND_r03] = "_GUARD_CALLABLE_LIST_APPEND_r03",
+    #endif
+    #if MAX_CACHED_REGISTER >= 3
     [_GUARD_CALLABLE_LIST_APPEND_r13] = "_GUARD_CALLABLE_LIST_APPEND_r13",
+    #endif
+    #if MAX_CACHED_REGISTER >= 3
     [_GUARD_CALLABLE_LIST_APPEND_r23] = "_GUARD_CALLABLE_LIST_APPEND_r23",
+    #endif
+    #if MAX_CACHED_REGISTER >= 3
     [_GUARD_CALLABLE_LIST_APPEND_r33] = "_GUARD_CALLABLE_LIST_APPEND_r33",
+    #endif
+    #if MAX_CACHED_REGISTER >= 4
     [_GUARD_CALLABLE_LIST_APPEND_r44] = "_GUARD_CALLABLE_LIST_APPEND_r44",
+    #endif
+    #if MAX_CACHED_REGISTER >= 5
     [_GUARD_CALLABLE_LIST_APPEND_r55] = "_GUARD_CALLABLE_LIST_APPEND_r55",
+    #endif
     [_GUARD_CALLABLE_STR_1] = "_GUARD_CALLABLE_STR_1",
+    #if MAX_CACHED_REGISTER >= 3
     [_GUARD_CALLABLE_STR_1_r03] = "_GUARD_CALLABLE_STR_1_r03",
+    #endif
+    #if MAX_CACHED_REGISTER >= 3
     [_GUARD_CALLABLE_STR_1_r13] = "_GUARD_CALLABLE_STR_1_r13",
+    #endif
+    #if MAX_CACHED_REGISTER >= 3
     [_GUARD_CALLABLE_STR_1_r23] = "_GUARD_CALLABLE_STR_1_r23",
+    #endif
+    #if MAX_CACHED_REGISTER >= 3
     [_GUARD_CALLABLE_STR_1_r33] = "_GUARD_CALLABLE_STR_1_r33",
+    #endif
+    #if MAX_CACHED_REGISTER >= 4
     [_GUARD_CALLABLE_STR_1_r44] = "_GUARD_CALLABLE_STR_1_r44",
+    #endif
+    #if MAX_CACHED_REGISTER >= 5
     [_GUARD_CALLABLE_STR_1_r55] = "_GUARD_CALLABLE_STR_1_r55",
+    #endif
     [_GUARD_CALLABLE_TUPLE_1] = "_GUARD_CALLABLE_TUPLE_1",
+    #if MAX_CACHED_REGISTER >= 3
     [_GUARD_CALLABLE_TUPLE_1_r03] = "_GUARD_CALLABLE_TUPLE_1_r03",
+    #endif
+    #if MAX_CACHED_REGISTER >= 3
     [_GUARD_CALLABLE_TUPLE_1_r13] = "_GUARD_CALLABLE_TUPLE_1_r13",
+    #endif
+    #if MAX_CACHED_REGISTER >= 3
     [_GUARD_CALLABLE_TUPLE_1_r23] = "_GUARD_CALLABLE_TUPLE_1_r23",
+    #endif
+    #if MAX_CACHED_REGISTER >= 3
     [_GUARD_CALLABLE_TUPLE_1_r33] = "_GUARD_CALLABLE_TUPLE_1_r33",
+    #endif
+    #if MAX_CACHED_REGISTER >= 4
     [_GUARD_CALLABLE_TUPLE_1_r44] = "_GUARD_CALLABLE_TUPLE_1_r44",
+    #endif
+    #if MAX_CACHED_REGISTER >= 5
     [_GUARD_CALLABLE_TUPLE_1_r55] = "_GUARD_CALLABLE_TUPLE_1_r55",
+    #endif
     [_GUARD_CALLABLE_TYPE_1] = "_GUARD_CALLABLE_TYPE_1",
+    #if MAX_CACHED_REGISTER >= 3
     [_GUARD_CALLABLE_TYPE_1_r03] = "_GUARD_CALLABLE_TYPE_1_r03",
+    #endif
+    #if MAX_CACHED_REGISTER >= 3
     [_GUARD_CALLABLE_TYPE_1_r13] = "_GUARD_CALLABLE_TYPE_1_r13",
+    #endif
+    #if MAX_CACHED_REGISTER >= 3
     [_GUARD_CALLABLE_TYPE_1_r23] = "_GUARD_CALLABLE_TYPE_1_r23",
+    #endif
+    #if MAX_CACHED_REGISTER >= 3
     [_GUARD_CALLABLE_TYPE_1_r33] = "_GUARD_CALLABLE_TYPE_1_r33",
+    #endif
+    #if MAX_CACHED_REGISTER >= 4
     [_GUARD_CALLABLE_TYPE_1_r44] = "_GUARD_CALLABLE_TYPE_1_r44",
+    #endif
+    #if MAX_CACHED_REGISTER >= 5
     [_GUARD_CALLABLE_TYPE_1_r55] = "_GUARD_CALLABLE_TYPE_1_r55",
+    #endif
     [_GUARD_CODE_VERSION] = "_GUARD_CODE_VERSION",
     [_GUARD_CODE_VERSION_r00] = "_GUARD_CODE_VERSION_r00",
+    #if MAX_CACHED_REGISTER >= 1
     [_GUARD_CODE_VERSION_r11] = "_GUARD_CODE_VERSION_r11",
+    #endif
+    #if MAX_CACHED_REGISTER >= 2
     [_GUARD_CODE_VERSION_r22] = "_GUARD_CODE_VERSION_r22",
+    #endif
+    #if MAX_CACHED_REGISTER >= 3
     [_GUARD_CODE_VERSION_r33] = "_GUARD_CODE_VERSION_r33",
+    #endif
+    #if MAX_CACHED_REGISTER >= 4
     [_GUARD_CODE_VERSION_r44] = "_GUARD_CODE_VERSION_r44",
+    #endif
+    #if MAX_CACHED_REGISTER >= 5
     [_GUARD_CODE_VERSION_r55] = "_GUARD_CODE_VERSION_r55",
+    #endif
     [_GUARD_DORV_NO_DICT] = "_GUARD_DORV_NO_DICT",
+    #if MAX_CACHED_REGISTER >= 1
     [_GUARD_DORV_NO_DICT_r01] = "_GUARD_DORV_NO_DICT_r01",
+    #endif
+    #if MAX_CACHED_REGISTER >= 1
     [_GUARD_DORV_NO_DICT_r11] = "_GUARD_DORV_NO_DICT_r11",
+    #endif
+    #if MAX_CACHED_REGISTER >= 2
     [_GUARD_DORV_NO_DICT_r22] = "_GUARD_DORV_NO_DICT_r22",
+    #endif
+    #if MAX_CACHED_REGISTER >= 3
     [_GUARD_DORV_NO_DICT_r33] = "_GUARD_DORV_NO_DICT_r33",
+    #endif
+    #if MAX_CACHED_REGISTER >= 4
     [_GUARD_DORV_NO_DICT_r44] = "_GUARD_DORV_NO_DICT_r44",
+    #endif
+    #if MAX_CACHED_REGISTER >= 5
     [_GUARD_DORV_NO_DICT_r55] = "_GUARD_DORV_NO_DICT_r55",
+    #endif
     [_GUARD_DORV_VALUES_INST_ATTR_FROM_DICT] = "_GUARD_DORV_VALUES_INST_ATTR_FROM_DICT",
+    #if MAX_CACHED_REGISTER >= 1
     [_GUARD_DORV_VALUES_INST_ATTR_FROM_DICT_r01] = "_GUARD_DORV_VALUES_INST_ATTR_FROM_DICT_r01",
+    #endif
+    #if MAX_CACHED_REGISTER >= 1
     [_GUARD_DORV_VALUES_INST_ATTR_FROM_DICT_r11] = "_GUARD_DORV_VALUES_INST_ATTR_FROM_DICT_r11",
+    #endif
+    #if MAX_CACHED_REGISTER >= 2
     [_GUARD_DORV_VALUES_INST_ATTR_FROM_DICT_r22] = "_GUARD_DORV_VALUES_INST_ATTR_FROM_DICT_r22",
+    #endif
+    #if MAX_CACHED_REGISTER >= 3
     [_GUARD_DORV_VALUES_INST_ATTR_FROM_DICT_r33] = "_GUARD_DORV_VALUES_INST_ATTR_FROM_DICT_r33",
+    #endif
+    #if MAX_CACHED_REGISTER >= 4
     [_GUARD_DORV_VALUES_INST_ATTR_FROM_DICT_r44] = "_GUARD_DORV_VALUES_INST_ATTR_FROM_DICT_r44",
+    #endif
+    #if MAX_CACHED_REGISTER >= 5
     [_GUARD_DORV_VALUES_INST_ATTR_FROM_DICT_r55] = "_GUARD_DORV_VALUES_INST_ATTR_FROM_DICT_r55",
+    #endif
     [_GUARD_GLOBALS_VERSION] = "_GUARD_GLOBALS_VERSION",
     [_GUARD_GLOBALS_VERSION_r00] = "_GUARD_GLOBALS_VERSION_r00",
+    #if MAX_CACHED_REGISTER >= 1
     [_GUARD_GLOBALS_VERSION_r11] = "_GUARD_GLOBALS_VERSION_r11",
+    #endif
+    #if MAX_CACHED_REGISTER >= 2
     [_GUARD_GLOBALS_VERSION_r22] = "_GUARD_GLOBALS_VERSION_r22",
+    #endif
+    #if MAX_CACHED_REGISTER >= 3
     [_GUARD_GLOBALS_VERSION_r33] = "_GUARD_GLOBALS_VERSION_r33",
+    #endif
+    #if MAX_CACHED_REGISTER >= 4
     [_GUARD_GLOBALS_VERSION_r44] = "_GUARD_GLOBALS_VERSION_r44",
+    #endif
+    #if MAX_CACHED_REGISTER >= 5
     [_GUARD_GLOBALS_VERSION_r55] = "_GUARD_GLOBALS_VERSION_r55",
+    #endif
     [_GUARD_IP_RETURN_GENERATOR] = "_GUARD_IP_RETURN_GENERATOR",
     [_GUARD_IP_RETURN_GENERATOR_r00] = "_GUARD_IP_RETURN_GENERATOR_r00",
+    #if MAX_CACHED_REGISTER >= 1
     [_GUARD_IP_RETURN_GENERATOR_r11] = "_GUARD_IP_RETURN_GENERATOR_r11",
+    #endif
+    #if MAX_CACHED_REGISTER >= 2
     [_GUARD_IP_RETURN_GENERATOR_r22] = "_GUARD_IP_RETURN_GENERATOR_r22",
+    #endif
+    #if MAX_CACHED_REGISTER >= 3
     [_GUARD_IP_RETURN_GENERATOR_r33] = "_GUARD_IP_RETURN_GENERATOR_r33",
+    #endif
+    #if MAX_CACHED_REGISTER >= 4
     [_GUARD_IP_RETURN_GENERATOR_r44] = "_GUARD_IP_RETURN_GENERATOR_r44",
+    #endif
+    #if MAX_CACHED_REGISTER >= 5
     [_GUARD_IP_RETURN_GENERATOR_r55] = "_GUARD_IP_RETURN_GENERATOR_r55",
+    #endif
     [_GUARD_IP_RETURN_VALUE] = "_GUARD_IP_RETURN_VALUE",
     [_GUARD_IP_RETURN_VALUE_r00] = "_GUARD_IP_RETURN_VALUE_r00",
+    #if MAX_CACHED_REGISTER >= 1
     [_GUARD_IP_RETURN_VALUE_r11] = "_GUARD_IP_RETURN_VALUE_r11",
+    #endif
+    #if MAX_CACHED_REGISTER >= 2
     [_GUARD_IP_RETURN_VALUE_r22] = "_GUARD_IP_RETURN_VALUE_r22",
+    #endif
+    #if MAX_CACHED_REGISTER >= 3
     [_GUARD_IP_RETURN_VALUE_r33] = "_GUARD_IP_RETURN_VALUE_r33",
+    #endif
+    #if MAX_CACHED_REGISTER >= 4
     [_GUARD_IP_RETURN_VALUE_r44] = "_GUARD_IP_RETURN_VALUE_r44",
+    #endif
+    #if MAX_CACHED_REGISTER >= 5
     [_GUARD_IP_RETURN_VALUE_r55] = "_GUARD_IP_RETURN_VALUE_r55",
+    #endif
     [_GUARD_IP_YIELD_VALUE] = "_GUARD_IP_YIELD_VALUE",
     [_GUARD_IP_YIELD_VALUE_r00] = "_GUARD_IP_YIELD_VALUE_r00",
+    #if MAX_CACHED_REGISTER >= 1
     [_GUARD_IP_YIELD_VALUE_r11] = "_GUARD_IP_YIELD_VALUE_r11",
+    #endif
+    #if MAX_CACHED_REGISTER >= 2
     [_GUARD_IP_YIELD_VALUE_r22] = "_GUARD_IP_YIELD_VALUE_r22",
+    #endif
+    #if MAX_CACHED_REGISTER >= 3
     [_GUARD_IP_YIELD_VALUE_r33] = "_GUARD_IP_YIELD_VALUE_r33",
+    #endif
+    #if MAX_CACHED_REGISTER >= 4
     [_GUARD_IP_YIELD_VALUE_r44] = "_GUARD_IP_YIELD_VALUE_r44",
+    #endif
+    #if MAX_CACHED_REGISTER >= 5
     [_GUARD_IP_YIELD_VALUE_r55] = "_GUARD_IP_YIELD_VALUE_r55",
+    #endif
     [_GUARD_IP__PUSH_FRAME] = "_GUARD_IP__PUSH_FRAME",
     [_GUARD_IP__PUSH_FRAME_r00] = "_GUARD_IP__PUSH_FRAME_r00",
+    #if MAX_CACHED_REGISTER >= 1
     [_GUARD_IP__PUSH_FRAME_r11] = "_GUARD_IP__PUSH_FRAME_r11",
+    #endif
+    #if MAX_CACHED_REGISTER >= 2
     [_GUARD_IP__PUSH_FRAME_r22] = "_GUARD_IP__PUSH_FRAME_r22",
+    #endif
+    #if MAX_CACHED_REGISTER >= 3
     [_GUARD_IP__PUSH_FRAME_r33] = "_GUARD_IP__PUSH_FRAME_r33",
+    #endif
+    #if MAX_CACHED_REGISTER >= 4
     [_GUARD_IP__PUSH_FRAME_r44] = "_GUARD_IP__PUSH_FRAME_r44",
+    #endif
+    #if MAX_CACHED_REGISTER >= 5
     [_GUARD_IP__PUSH_FRAME_r55] = "_GUARD_IP__PUSH_FRAME_r55",
+    #endif
     [_GUARD_IS_FALSE_POP] = "_GUARD_IS_FALSE_POP",
     [_GUARD_IS_FALSE_POP_r00] = "_GUARD_IS_FALSE_POP_r00",
+    #if MAX_CACHED_REGISTER >= 1
     [_GUARD_IS_FALSE_POP_r10] = "_GUARD_IS_FALSE_POP_r10",
+    #endif
+    #if MAX_CACHED_REGISTER >= 2
     [_GUARD_IS_FALSE_POP_r21] = "_GUARD_IS_FALSE_POP_r21",
+    #endif
+    #if MAX_CACHED_REGISTER >= 3
     [_GUARD_IS_FALSE_POP_r32] = "_GUARD_IS_FALSE_POP_r32",
+    #endif
+    #if MAX_CACHED_REGISTER >= 4
     [_GUARD_IS_FALSE_POP_r43] = "_GUARD_IS_FALSE_POP_r43",
+    #endif
+    #if MAX_CACHED_REGISTER >= 5
     [_GUARD_IS_FALSE_POP_r54] = "_GUARD_IS_FALSE_POP_r54",
+    #endif
     [_GUARD_IS_NONE_POP] = "_GUARD_IS_NONE_POP",
     [_GUARD_IS_NONE_POP_r00] = "_GUARD_IS_NONE_POP_r00",
+    #if MAX_CACHED_REGISTER >= 1
     [_GUARD_IS_NONE_POP_r10] = "_GUARD_IS_NONE_POP_r10",
+    #endif
+    #if MAX_CACHED_REGISTER >= 2
     [_GUARD_IS_NONE_POP_r21] = "_GUARD_IS_NONE_POP_r21",
+    #endif
+    #if MAX_CACHED_REGISTER >= 3
     [_GUARD_IS_NONE_POP_r32] = "_GUARD_IS_NONE_POP_r32",
+    #endif
+    #if MAX_CACHED_REGISTER >= 4
     [_GUARD_IS_NONE_POP_r43] = "_GUARD_IS_NONE_POP_r43",
+    #endif
+    #if MAX_CACHED_REGISTER >= 5
     [_GUARD_IS_NONE_POP_r54] = "_GUARD_IS_NONE_POP_r54",
+    #endif
     [_GUARD_IS_NOT_NONE_POP] = "_GUARD_IS_NOT_NONE_POP",
+    #if MAX_CACHED_REGISTER >= 1
     [_GUARD_IS_NOT_NONE_POP_r10] = "_GUARD_IS_NOT_NONE_POP_r10",
+    #endif
     [_GUARD_IS_TRUE_POP] = "_GUARD_IS_TRUE_POP",
     [_GUARD_IS_TRUE_POP_r00] = "_GUARD_IS_TRUE_POP_r00",
+    #if MAX_CACHED_REGISTER >= 1
     [_GUARD_IS_TRUE_POP_r10] = "_GUARD_IS_TRUE_POP_r10",
+    #endif
+    #if MAX_CACHED_REGISTER >= 2
     [_GUARD_IS_TRUE_POP_r21] = "_GUARD_IS_TRUE_POP_r21",
+    #endif
+    #if MAX_CACHED_REGISTER >= 3
     [_GUARD_IS_TRUE_POP_r32] = "_GUARD_IS_TRUE_POP_r32",
+    #endif
+    #if MAX_CACHED_REGISTER >= 4
     [_GUARD_IS_TRUE_POP_r43] = "_GUARD_IS_TRUE_POP_r43",
+    #endif
+    #if MAX_CACHED_REGISTER >= 5
     [_GUARD_IS_TRUE_POP_r54] = "_GUARD_IS_TRUE_POP_r54",
+    #endif
     [_GUARD_KEYS_VERSION] = "_GUARD_KEYS_VERSION",
+    #if MAX_CACHED_REGISTER >= 1
     [_GUARD_KEYS_VERSION_r01] = "_GUARD_KEYS_VERSION_r01",
+    #endif
+    #if MAX_CACHED_REGISTER >= 1
     [_GUARD_KEYS_VERSION_r11] = "_GUARD_KEYS_VERSION_r11",
+    #endif
+    #if MAX_CACHED_REGISTER >= 2
     [_GUARD_KEYS_VERSION_r22] = "_GUARD_KEYS_VERSION_r22",
+    #endif
+    #if MAX_CACHED_REGISTER >= 3
     [_GUARD_KEYS_VERSION_r33] = "_GUARD_KEYS_VERSION_r33",
+    #endif
+    #if MAX_CACHED_REGISTER >= 4
     [_GUARD_KEYS_VERSION_r44] = "_GUARD_KEYS_VERSION_r44",
+    #endif
+    #if MAX_CACHED_REGISTER >= 5
     [_GUARD_KEYS_VERSION_r55] = "_GUARD_KEYS_VERSION_r55",
+    #endif
     [_GUARD_NOS_ANY_DICT] = "_GUARD_NOS_ANY_DICT",
+    #if MAX_CACHED_REGISTER >= 2
     [_GUARD_NOS_ANY_DICT_r02] = "_GUARD_NOS_ANY_DICT_r02",
+    #endif
+    #if MAX_CACHED_REGISTER >= 2
     [_GUARD_NOS_ANY_DICT_r12] = "_GUARD_NOS_ANY_DICT_r12",
+    #endif
+    #if MAX_CACHED_REGISTER >= 2
     [_GUARD_NOS_ANY_DICT_r22] = "_GUARD_NOS_ANY_DICT_r22",
+    #endif
+    #if MAX_CACHED_REGISTER >= 3
     [_GUARD_NOS_ANY_DICT_r33] = "_GUARD_NOS_ANY_DICT_r33",
+    #endif
+    #if MAX_CACHED_REGISTER >= 4
     [_GUARD_NOS_ANY_DICT_r44] = "_GUARD_NOS_ANY_DICT_r44",
+    #endif
+    #if MAX_CACHED_REGISTER >= 5
     [_GUARD_NOS_ANY_DICT_r55] = "_GUARD_NOS_ANY_DICT_r55",
+    #endif
     [_GUARD_NOS_COMPACT_ASCII] = "_GUARD_NOS_COMPACT_ASCII",
+    #if MAX_CACHED_REGISTER >= 2
     [_GUARD_NOS_COMPACT_ASCII_r02] = "_GUARD_NOS_COMPACT_ASCII_r02",
+    #endif
+    #if MAX_CACHED_REGISTER >= 2
     [_GUARD_NOS_COMPACT_ASCII_r12] = "_GUARD_NOS_COMPACT_ASCII_r12",
+    #endif
+    #if MAX_CACHED_REGISTER >= 2
     [_GUARD_NOS_COMPACT_ASCII_r22] = "_GUARD_NOS_COMPACT_ASCII_r22",
+    #endif
+    #if MAX_CACHED_REGISTER >= 3
     [_GUARD_NOS_COMPACT_ASCII_r33] = "_GUARD_NOS_COMPACT_ASCII_r33",
+    #endif
+    #if MAX_CACHED_REGISTER >= 4
     [_GUARD_NOS_COMPACT_ASCII_r44] = "_GUARD_NOS_COMPACT_ASCII_r44",
+    #endif
+    #if MAX_CACHED_REGISTER >= 5
     [_GUARD_NOS_COMPACT_ASCII_r55] = "_GUARD_NOS_COMPACT_ASCII_r55",
+    #endif
     [_GUARD_NOS_DICT] = "_GUARD_NOS_DICT",
+    #if MAX_CACHED_REGISTER >= 2
     [_GUARD_NOS_DICT_r02] = "_GUARD_NOS_DICT_r02",
+    #endif
+    #if MAX_CACHED_REGISTER >= 2
     [_GUARD_NOS_DICT_r12] = "_GUARD_NOS_DICT_r12",
+    #endif
+    #if MAX_CACHED_REGISTER >= 2
     [_GUARD_NOS_DICT_r22] = "_GUARD_NOS_DICT_r22",
+    #endif
+    #if MAX_CACHED_REGISTER >= 3
     [_GUARD_NOS_DICT_r33] = "_GUARD_NOS_DICT_r33",
+    #endif
+    #if MAX_CACHED_REGISTER >= 4
     [_GUARD_NOS_DICT_r44] = "_GUARD_NOS_DICT_r44",
+    #endif
+    #if MAX_CACHED_REGISTER >= 5
     [_GUARD_NOS_DICT_r55] = "_GUARD_NOS_DICT_r55",
+    #endif
     [_GUARD_NOS_FLOAT] = "_GUARD_NOS_FLOAT",
+    #if MAX_CACHED_REGISTER >= 2
     [_GUARD_NOS_FLOAT_r02] = "_GUARD_NOS_FLOAT_r02",
+    #endif
+    #if MAX_CACHED_REGISTER >= 2
     [_GUARD_NOS_FLOAT_r12] = "_GUARD_NOS_FLOAT_r12",
+    #endif
+    #if MAX_CACHED_REGISTER >= 2
     [_GUARD_NOS_FLOAT_r22] = "_GUARD_NOS_FLOAT_r22",
+    #endif
+    #if MAX_CACHED_REGISTER >= 3
     [_GUARD_NOS_FLOAT_r33] = "_GUARD_NOS_FLOAT_r33",
+    #endif
+    #if MAX_CACHED_REGISTER >= 4
     [_GUARD_NOS_FLOAT_r44] = "_GUARD_NOS_FLOAT_r44",
+    #endif
+    #if MAX_CACHED_REGISTER >= 5
     [_GUARD_NOS_FLOAT_r55] = "_GUARD_NOS_FLOAT_r55",
+    #endif
     [_GUARD_NOS_INT] = "_GUARD_NOS_INT",
+    #if MAX_CACHED_REGISTER >= 2
     [_GUARD_NOS_INT_r02] = "_GUARD_NOS_INT_r02",
+    #endif
+    #if MAX_CACHED_REGISTER >= 2
     [_GUARD_NOS_INT_r12] = "_GUARD_NOS_INT_r12",
+    #endif
+    #if MAX_CACHED_REGISTER >= 2
     [_GUARD_NOS_INT_r22] = "_GUARD_NOS_INT_r22",
+    #endif
+    #if MAX_CACHED_REGISTER >= 3
     [_GUARD_NOS_INT_r33] = "_GUARD_NOS_INT_r33",
+    #endif
+    #if MAX_CACHED_REGISTER >= 4
     [_GUARD_NOS_INT_r44] = "_GUARD_NOS_INT_r44",
+    #endif
+    #if MAX_CACHED_REGISTER >= 5
     [_GUARD_NOS_INT_r55] = "_GUARD_NOS_INT_r55",
+    #endif
     [_GUARD_NOS_LIST] = "_GUARD_NOS_LIST",
+    #if MAX_CACHED_REGISTER >= 2
     [_GUARD_NOS_LIST_r02] = "_GUARD_NOS_LIST_r02",
+    #endif
+    #if MAX_CACHED_REGISTER >= 2
     [_GUARD_NOS_LIST_r12] = "_GUARD_NOS_LIST_r12",
+    #endif
+    #if MAX_CACHED_REGISTER >= 2
     [_GUARD_NOS_LIST_r22] = "_GUARD_NOS_LIST_r22",
+    #endif
+    #if MAX_CACHED_REGISTER >= 3
     [_GUARD_NOS_LIST_r33] = "_GUARD_NOS_LIST_r33",
+    #endif
+    #if MAX_CACHED_REGISTER >= 4
     [_GUARD_NOS_LIST_r44] = "_GUARD_NOS_LIST_r44",
+    #endif
+    #if MAX_CACHED_REGISTER >= 5
     [_GUARD_NOS_LIST_r55] = "_GUARD_NOS_LIST_r55",
+    #endif
     [_GUARD_NOS_NOT_NULL] = "_GUARD_NOS_NOT_NULL",
+    #if MAX_CACHED_REGISTER >= 2
     [_GUARD_NOS_NOT_NULL_r02] = "_GUARD_NOS_NOT_NULL_r02",
+    #endif
+    #if MAX_CACHED_REGISTER >= 2
     [_GUARD_NOS_NOT_NULL_r12] = "_GUARD_NOS_NOT_NULL_r12",
+    #endif
+    #if MAX_CACHED_REGISTER >= 2
     [_GUARD_NOS_NOT_NULL_r22] = "_GUARD_NOS_NOT_NULL_r22",
+    #endif
+    #if MAX_CACHED_REGISTER >= 3
     [_GUARD_NOS_NOT_NULL_r33] = "_GUARD_NOS_NOT_NULL_r33",
+    #endif
+    #if MAX_CACHED_REGISTER >= 4
     [_GUARD_NOS_NOT_NULL_r44] = "_GUARD_NOS_NOT_NULL_r44",
+    #endif
+    #if MAX_CACHED_REGISTER >= 5
     [_GUARD_NOS_NOT_NULL_r55] = "_GUARD_NOS_NOT_NULL_r55",
+    #endif
     [_GUARD_NOS_NULL] = "_GUARD_NOS_NULL",
+    #if MAX_CACHED_REGISTER >= 2
     [_GUARD_NOS_NULL_r02] = "_GUARD_NOS_NULL_r02",
+    #endif
+    #if MAX_CACHED_REGISTER >= 2
     [_GUARD_NOS_NULL_r12] = "_GUARD_NOS_NULL_r12",
+    #endif
+    #if MAX_CACHED_REGISTER >= 2
     [_GUARD_NOS_NULL_r22] = "_GUARD_NOS_NULL_r22",
+    #endif
+    #if MAX_CACHED_REGISTER >= 3
     [_GUARD_NOS_NULL_r33] = "_GUARD_NOS_NULL_r33",
+    #endif
+    #if MAX_CACHED_REGISTER >= 4
     [_GUARD_NOS_NULL_r44] = "_GUARD_NOS_NULL_r44",
+    #endif
+    #if MAX_CACHED_REGISTER >= 5
     [_GUARD_NOS_NULL_r55] = "_GUARD_NOS_NULL_r55",
+    #endif
     [_GUARD_NOS_OVERFLOWED] = "_GUARD_NOS_OVERFLOWED",
+    #if MAX_CACHED_REGISTER >= 2
     [_GUARD_NOS_OVERFLOWED_r02] = "_GUARD_NOS_OVERFLOWED_r02",
+    #endif
+    #if MAX_CACHED_REGISTER >= 2
     [_GUARD_NOS_OVERFLOWED_r12] = "_GUARD_NOS_OVERFLOWED_r12",
+    #endif
+    #if MAX_CACHED_REGISTER >= 2
     [_GUARD_NOS_OVERFLOWED_r22] = "_GUARD_NOS_OVERFLOWED_r22",
+    #endif
+    #if MAX_CACHED_REGISTER >= 3
     [_GUARD_NOS_OVERFLOWED_r33] = "_GUARD_NOS_OVERFLOWED_r33",
+    #endif
+    #if MAX_CACHED_REGISTER >= 4
     [_GUARD_NOS_OVERFLOWED_r44] = "_GUARD_NOS_OVERFLOWED_r44",
+    #endif
+    #if MAX_CACHED_REGISTER >= 5
     [_GUARD_NOS_OVERFLOWED_r55] = "_GUARD_NOS_OVERFLOWED_r55",
+    #endif
     [_GUARD_NOS_TUPLE] = "_GUARD_NOS_TUPLE",
+    #if MAX_CACHED_REGISTER >= 2
     [_GUARD_NOS_TUPLE_r02] = "_GUARD_NOS_TUPLE_r02",
+    #endif
+    #if MAX_CACHED_REGISTER >= 2
     [_GUARD_NOS_TUPLE_r12] = "_GUARD_NOS_TUPLE_r12",
+    #endif
+    #if MAX_CACHED_REGISTER >= 2
     [_GUARD_NOS_TUPLE_r22] = "_GUARD_NOS_TUPLE_r22",
+    #endif
+    #if MAX_CACHED_REGISTER >= 3
     [_GUARD_NOS_TUPLE_r33] = "_GUARD_NOS_TUPLE_r33",
+    #endif
+    #if MAX_CACHED_REGISTER >= 4
     [_GUARD_NOS_TUPLE_r44] = "_GUARD_NOS_TUPLE_r44",
+    #endif
+    #if MAX_CACHED_REGISTER >= 5
     [_GUARD_NOS_TUPLE_r55] = "_GUARD_NOS_TUPLE_r55",
+    #endif
     [_GUARD_NOS_UNICODE] = "_GUARD_NOS_UNICODE",
+    #if MAX_CACHED_REGISTER >= 2
     [_GUARD_NOS_UNICODE_r02] = "_GUARD_NOS_UNICODE_r02",
+    #endif
+    #if MAX_CACHED_REGISTER >= 2
     [_GUARD_NOS_UNICODE_r12] = "_GUARD_NOS_UNICODE_r12",
+    #endif
+    #if MAX_CACHED_REGISTER >= 2
     [_GUARD_NOS_UNICODE_r22] = "_GUARD_NOS_UNICODE_r22",
+    #endif
+    #if MAX_CACHED_REGISTER >= 3
     [_GUARD_NOS_UNICODE_r33] = "_GUARD_NOS_UNICODE_r33",
+    #endif
+    #if MAX_CACHED_REGISTER >= 4
     [_GUARD_NOS_UNICODE_r44] = "_GUARD_NOS_UNICODE_r44",
+    #endif
+    #if MAX_CACHED_REGISTER >= 5
     [_GUARD_NOS_UNICODE_r55] = "_GUARD_NOS_UNICODE_r55",
+    #endif
     [_GUARD_NOT_EXHAUSTED_LIST] = "_GUARD_NOT_EXHAUSTED_LIST",
+    #if MAX_CACHED_REGISTER >= 2
     [_GUARD_NOT_EXHAUSTED_LIST_r02] = "_GUARD_NOT_EXHAUSTED_LIST_r02",
+    #endif
+    #if MAX_CACHED_REGISTER >= 2
     [_GUARD_NOT_EXHAUSTED_LIST_r12] = "_GUARD_NOT_EXHAUSTED_LIST_r12",
+    #endif
+    #if MAX_CACHED_REGISTER >= 2
     [_GUARD_NOT_EXHAUSTED_LIST_r22] = "_GUARD_NOT_EXHAUSTED_LIST_r22",
+    #endif
+    #if MAX_CACHED_REGISTER >= 3
     [_GUARD_NOT_EXHAUSTED_LIST_r33] = "_GUARD_NOT_EXHAUSTED_LIST_r33",
+    #endif
+    #if MAX_CACHED_REGISTER >= 4
     [_GUARD_NOT_EXHAUSTED_LIST_r44] = "_GUARD_NOT_EXHAUSTED_LIST_r44",
+    #endif
+    #if MAX_CACHED_REGISTER >= 5
     [_GUARD_NOT_EXHAUSTED_LIST_r55] = "_GUARD_NOT_EXHAUSTED_LIST_r55",
+    #endif
     [_GUARD_NOT_EXHAUSTED_RANGE] = "_GUARD_NOT_EXHAUSTED_RANGE",
+    #if MAX_CACHED_REGISTER >= 2
     [_GUARD_NOT_EXHAUSTED_RANGE_r02] = "_GUARD_NOT_EXHAUSTED_RANGE_r02",
+    #endif
+    #if MAX_CACHED_REGISTER >= 2
     [_GUARD_NOT_EXHAUSTED_RANGE_r12] = "_GUARD_NOT_EXHAUSTED_RANGE_r12",
+    #endif
+    #if MAX_CACHED_REGISTER >= 2
     [_GUARD_NOT_EXHAUSTED_RANGE_r22] = "_GUARD_NOT_EXHAUSTED_RANGE_r22",
+    #endif
+    #if MAX_CACHED_REGISTER >= 3
     [_GUARD_NOT_EXHAUSTED_RANGE_r33] = "_GUARD_NOT_EXHAUSTED_RANGE_r33",
+    #endif
+    #if MAX_CACHED_REGISTER >= 4
     [_GUARD_NOT_EXHAUSTED_RANGE_r44] = "_GUARD_NOT_EXHAUSTED_RANGE_r44",
+    #endif
+    #if MAX_CACHED_REGISTER >= 5
     [_GUARD_NOT_EXHAUSTED_RANGE_r55] = "_GUARD_NOT_EXHAUSTED_RANGE_r55",
+    #endif
     [_GUARD_NOT_EXHAUSTED_TUPLE] = "_GUARD_NOT_EXHAUSTED_TUPLE",
+    #if MAX_CACHED_REGISTER >= 2
     [_GUARD_NOT_EXHAUSTED_TUPLE_r02] = "_GUARD_NOT_EXHAUSTED_TUPLE_r02",
+    #endif
+    #if MAX_CACHED_REGISTER >= 2
     [_GUARD_NOT_EXHAUSTED_TUPLE_r12] = "_GUARD_NOT_EXHAUSTED_TUPLE_r12",
+    #endif
+    #if MAX_CACHED_REGISTER >= 2
     [_GUARD_NOT_EXHAUSTED_TUPLE_r22] = "_GUARD_NOT_EXHAUSTED_TUPLE_r22",
+    #endif
+    #if MAX_CACHED_REGISTER >= 3
     [_GUARD_NOT_EXHAUSTED_TUPLE_r33] = "_GUARD_NOT_EXHAUSTED_TUPLE_r33",
+    #endif
+    #if MAX_CACHED_REGISTER >= 4
     [_GUARD_NOT_EXHAUSTED_TUPLE_r44] = "_GUARD_NOT_EXHAUSTED_TUPLE_r44",
+    #endif
+    #if MAX_CACHED_REGISTER >= 5
     [_GUARD_NOT_EXHAUSTED_TUPLE_r55] = "_GUARD_NOT_EXHAUSTED_TUPLE_r55",
+    #endif
     [_GUARD_THIRD_NULL] = "_GUARD_THIRD_NULL",
+    #if MAX_CACHED_REGISTER >= 3
     [_GUARD_THIRD_NULL_r03] = "_GUARD_THIRD_NULL_r03",
+    #endif
+    #if MAX_CACHED_REGISTER >= 3
     [_GUARD_THIRD_NULL_r13] = "_GUARD_THIRD_NULL_r13",
+    #endif
+    #if MAX_CACHED_REGISTER >= 3
     [_GUARD_THIRD_NULL_r23] = "_GUARD_THIRD_NULL_r23",
+    #endif
+    #if MAX_CACHED_REGISTER >= 3
     [_GUARD_THIRD_NULL_r33] = "_GUARD_THIRD_NULL_r33",
+    #endif
+    #if MAX_CACHED_REGISTER >= 4
     [_GUARD_THIRD_NULL_r44] = "_GUARD_THIRD_NULL_r44",
+    #endif
+    #if MAX_CACHED_REGISTER >= 5
     [_GUARD_THIRD_NULL_r55] = "_GUARD_THIRD_NULL_r55",
+    #endif
     [_GUARD_TOS_ANY_DICT] = "_GUARD_TOS_ANY_DICT",
+    #if MAX_CACHED_REGISTER >= 1
     [_GUARD_TOS_ANY_DICT_r01] = "_GUARD_TOS_ANY_DICT_r01",
+    #endif
+    #if MAX_CACHED_REGISTER >= 1
     [_GUARD_TOS_ANY_DICT_r11] = "_GUARD_TOS_ANY_DICT_r11",
+    #endif
+    #if MAX_CACHED_REGISTER >= 2
     [_GUARD_TOS_ANY_DICT_r22] = "_GUARD_TOS_ANY_DICT_r22",
+    #endif
+    #if MAX_CACHED_REGISTER >= 3
     [_GUARD_TOS_ANY_DICT_r33] = "_GUARD_TOS_ANY_DICT_r33",
+    #endif
+    #if MAX_CACHED_REGISTER >= 4
     [_GUARD_TOS_ANY_DICT_r44] = "_GUARD_TOS_ANY_DICT_r44",
+    #endif
+    #if MAX_CACHED_REGISTER >= 5
     [_GUARD_TOS_ANY_DICT_r55] = "_GUARD_TOS_ANY_DICT_r55",
+    #endif
     [_GUARD_TOS_ANY_SET] = "_GUARD_TOS_ANY_SET",
+    #if MAX_CACHED_REGISTER >= 1
     [_GUARD_TOS_ANY_SET_r01] = "_GUARD_TOS_ANY_SET_r01",
+    #endif
+    #if MAX_CACHED_REGISTER >= 1
     [_GUARD_TOS_ANY_SET_r11] = "_GUARD_TOS_ANY_SET_r11",
+    #endif
+    #if MAX_CACHED_REGISTER >= 2
     [_GUARD_TOS_ANY_SET_r22] = "_GUARD_TOS_ANY_SET_r22",
+    #endif
+    #if MAX_CACHED_REGISTER >= 3
     [_GUARD_TOS_ANY_SET_r33] = "_GUARD_TOS_ANY_SET_r33",
+    #endif
+    #if MAX_CACHED_REGISTER >= 4
     [_GUARD_TOS_ANY_SET_r44] = "_GUARD_TOS_ANY_SET_r44",
+    #endif
+    #if MAX_CACHED_REGISTER >= 5
     [_GUARD_TOS_ANY_SET_r55] = "_GUARD_TOS_ANY_SET_r55",
+    #endif
     [_GUARD_TOS_DICT] = "_GUARD_TOS_DICT",
+    #if MAX_CACHED_REGISTER >= 1
     [_GUARD_TOS_DICT_r01] = "_GUARD_TOS_DICT_r01",
+    #endif
+    #if MAX_CACHED_REGISTER >= 1
     [_GUARD_TOS_DICT_r11] = "_GUARD_TOS_DICT_r11",
+    #endif
+    #if MAX_CACHED_REGISTER >= 2
     [_GUARD_TOS_DICT_r22] = "_GUARD_TOS_DICT_r22",
+    #endif
+    #if MAX_CACHED_REGISTER >= 3
     [_GUARD_TOS_DICT_r33] = "_GUARD_TOS_DICT_r33",
+    #endif
+    #if MAX_CACHED_REGISTER >= 4
     [_GUARD_TOS_DICT_r44] = "_GUARD_TOS_DICT_r44",
+    #endif
+    #if MAX_CACHED_REGISTER >= 5
     [_GUARD_TOS_DICT_r55] = "_GUARD_TOS_DICT_r55",
+    #endif
     [_GUARD_TOS_FLOAT] = "_GUARD_TOS_FLOAT",
+    #if MAX_CACHED_REGISTER >= 1
     [_GUARD_TOS_FLOAT_r01] = "_GUARD_TOS_FLOAT_r01",
+    #endif
+    #if MAX_CACHED_REGISTER >= 1
     [_GUARD_TOS_FLOAT_r11] = "_GUARD_TOS_FLOAT_r11",
+    #endif
+    #if MAX_CACHED_REGISTER >= 2
     [_GUARD_TOS_FLOAT_r22] = "_GUARD_TOS_FLOAT_r22",
+    #endif
+    #if MAX_CACHED_REGISTER >= 3
     [_GUARD_TOS_FLOAT_r33] = "_GUARD_TOS_FLOAT_r33",
+    #endif
+    #if MAX_CACHED_REGISTER >= 4
     [_GUARD_TOS_FLOAT_r44] = "_GUARD_TOS_FLOAT_r44",
+    #endif
+    #if MAX_CACHED_REGISTER >= 5
     [_GUARD_TOS_FLOAT_r55] = "_GUARD_TOS_FLOAT_r55",
+    #endif
     [_GUARD_TOS_FROZENDICT] = "_GUARD_TOS_FROZENDICT",
+    #if MAX_CACHED_REGISTER >= 1
     [_GUARD_TOS_FROZENDICT_r01] = "_GUARD_TOS_FROZENDICT_r01",
+    #endif
+    #if MAX_CACHED_REGISTER >= 1
     [_GUARD_TOS_FROZENDICT_r11] = "_GUARD_TOS_FROZENDICT_r11",
+    #endif
+    #if MAX_CACHED_REGISTER >= 2
     [_GUARD_TOS_FROZENDICT_r22] = "_GUARD_TOS_FROZENDICT_r22",
+    #endif
+    #if MAX_CACHED_REGISTER >= 3
     [_GUARD_TOS_FROZENDICT_r33] = "_GUARD_TOS_FROZENDICT_r33",
+    #endif
+    #if MAX_CACHED_REGISTER >= 4
     [_GUARD_TOS_FROZENDICT_r44] = "_GUARD_TOS_FROZENDICT_r44",
+    #endif
+    #if MAX_CACHED_REGISTER >= 5
     [_GUARD_TOS_FROZENDICT_r55] = "_GUARD_TOS_FROZENDICT_r55",
+    #endif
     [_GUARD_TOS_FROZENSET] = "_GUARD_TOS_FROZENSET",
+    #if MAX_CACHED_REGISTER >= 1
     [_GUARD_TOS_FROZENSET_r01] = "_GUARD_TOS_FROZENSET_r01",
+    #endif
+    #if MAX_CACHED_REGISTER >= 1
     [_GUARD_TOS_FROZENSET_r11] = "_GUARD_TOS_FROZENSET_r11",
+    #endif
+    #if MAX_CACHED_REGISTER >= 2
     [_GUARD_TOS_FROZENSET_r22] = "_GUARD_TOS_FROZENSET_r22",
+    #endif
+    #if MAX_CACHED_REGISTER >= 3
     [_GUARD_TOS_FROZENSET_r33] = "_GUARD_TOS_FROZENSET_r33",
+    #endif
+    #if MAX_CACHED_REGISTER >= 4
     [_GUARD_TOS_FROZENSET_r44] = "_GUARD_TOS_FROZENSET_r44",
+    #endif
+    #if MAX_CACHED_REGISTER >= 5
     [_GUARD_TOS_FROZENSET_r55] = "_GUARD_TOS_FROZENSET_r55",
+    #endif
     [_GUARD_TOS_INT] = "_GUARD_TOS_INT",
+    #if MAX_CACHED_REGISTER >= 1
     [_GUARD_TOS_INT_r01] = "_GUARD_TOS_INT_r01",
+    #endif
+    #if MAX_CACHED_REGISTER >= 1
     [_GUARD_TOS_INT_r11] = "_GUARD_TOS_INT_r11",
+    #endif
+    #if MAX_CACHED_REGISTER >= 2
     [_GUARD_TOS_INT_r22] = "_GUARD_TOS_INT_r22",
+    #endif
+    #if MAX_CACHED_REGISTER >= 3
     [_GUARD_TOS_INT_r33] = "_GUARD_TOS_INT_r33",
+    #endif
+    #if MAX_CACHED_REGISTER >= 4
     [_GUARD_TOS_INT_r44] = "_GUARD_TOS_INT_r44",
+    #endif
+    #if MAX_CACHED_REGISTER >= 5
     [_GUARD_TOS_INT_r55] = "_GUARD_TOS_INT_r55",
+    #endif
     [_GUARD_TOS_LIST] = "_GUARD_TOS_LIST",
+    #if MAX_CACHED_REGISTER >= 1
     [_GUARD_TOS_LIST_r01] = "_GUARD_TOS_LIST_r01",
+    #endif
+    #if MAX_CACHED_REGISTER >= 1
     [_GUARD_TOS_LIST_r11] = "_GUARD_TOS_LIST_r11",
+    #endif
+    #if MAX_CACHED_REGISTER >= 2
     [_GUARD_TOS_LIST_r22] = "_GUARD_TOS_LIST_r22",
+    #endif
+    #if MAX_CACHED_REGISTER >= 3
     [_GUARD_TOS_LIST_r33] = "_GUARD_TOS_LIST_r33",
+    #endif
+    #if MAX_CACHED_REGISTER >= 4
     [_GUARD_TOS_LIST_r44] = "_GUARD_TOS_LIST_r44",
+    #endif
+    #if MAX_CACHED_REGISTER >= 5
     [_GUARD_TOS_LIST_r55] = "_GUARD_TOS_LIST_r55",
+    #endif
     [_GUARD_TOS_OVERFLOWED] = "_GUARD_TOS_OVERFLOWED",
+    #if MAX_CACHED_REGISTER >= 1
     [_GUARD_TOS_OVERFLOWED_r01] = "_GUARD_TOS_OVERFLOWED_r01",
+    #endif
+    #if MAX_CACHED_REGISTER >= 1
     [_GUARD_TOS_OVERFLOWED_r11] = "_GUARD_TOS_OVERFLOWED_r11",
+    #endif
+    #if MAX_CACHED_REGISTER >= 2
     [_GUARD_TOS_OVERFLOWED_r22] = "_GUARD_TOS_OVERFLOWED_r22",
+    #endif
+    #if MAX_CACHED_REGISTER >= 3
     [_GUARD_TOS_OVERFLOWED_r33] = "_GUARD_TOS_OVERFLOWED_r33",
+    #endif
+    #if MAX_CACHED_REGISTER >= 4
     [_GUARD_TOS_OVERFLOWED_r44] = "_GUARD_TOS_OVERFLOWED_r44",
+    #endif
+    #if MAX_CACHED_REGISTER >= 5
     [_GUARD_TOS_OVERFLOWED_r55] = "_GUARD_TOS_OVERFLOWED_r55",
+    #endif
     [_GUARD_TOS_SET] = "_GUARD_TOS_SET",
+    #if MAX_CACHED_REGISTER >= 1
     [_GUARD_TOS_SET_r01] = "_GUARD_TOS_SET_r01",
+    #endif
+    #if MAX_CACHED_REGISTER >= 1
     [_GUARD_TOS_SET_r11] = "_GUARD_TOS_SET_r11",
+    #endif
+    #if MAX_CACHED_REGISTER >= 2
     [_GUARD_TOS_SET_r22] = "_GUARD_TOS_SET_r22",
+    #endif
+    #if MAX_CACHED_REGISTER >= 3
     [_GUARD_TOS_SET_r33] = "_GUARD_TOS_SET_r33",
+    #endif
+    #if MAX_CACHED_REGISTER >= 4
     [_GUARD_TOS_SET_r44] = "_GUARD_TOS_SET_r44",
+    #endif
+    #if MAX_CACHED_REGISTER >= 5
     [_GUARD_TOS_SET_r55] = "_GUARD_TOS_SET_r55",
+    #endif
     [_GUARD_TOS_SLICE] = "_GUARD_TOS_SLICE",
+    #if MAX_CACHED_REGISTER >= 1
     [_GUARD_TOS_SLICE_r01] = "_GUARD_TOS_SLICE_r01",
+    #endif
+    #if MAX_CACHED_REGISTER >= 1
     [_GUARD_TOS_SLICE_r11] = "_GUARD_TOS_SLICE_r11",
+    #endif
+    #if MAX_CACHED_REGISTER >= 2
     [_GUARD_TOS_SLICE_r22] = "_GUARD_TOS_SLICE_r22",
+    #endif
+    #if MAX_CACHED_REGISTER >= 3
     [_GUARD_TOS_SLICE_r33] = "_GUARD_TOS_SLICE_r33",
+    #endif
+    #if MAX_CACHED_REGISTER >= 4
     [_GUARD_TOS_SLICE_r44] = "_GUARD_TOS_SLICE_r44",
+    #endif
+    #if MAX_CACHED_REGISTER >= 5
     [_GUARD_TOS_SLICE_r55] = "_GUARD_TOS_SLICE_r55",
+    #endif
     [_GUARD_TOS_TUPLE] = "_GUARD_TOS_TUPLE",
+    #if MAX_CACHED_REGISTER >= 1
     [_GUARD_TOS_TUPLE_r01] = "_GUARD_TOS_TUPLE_r01",
+    #endif
+    #if MAX_CACHED_REGISTER >= 1
     [_GUARD_TOS_TUPLE_r11] = "_GUARD_TOS_TUPLE_r11",
+    #endif
+    #if MAX_CACHED_REGISTER >= 2
     [_GUARD_TOS_TUPLE_r22] = "_GUARD_TOS_TUPLE_r22",
+    #endif
+    #if MAX_CACHED_REGISTER >= 3
     [_GUARD_TOS_TUPLE_r33] = "_GUARD_TOS_TUPLE_r33",
+    #endif
+    #if MAX_CACHED_REGISTER >= 4
     [_GUARD_TOS_TUPLE_r44] = "_GUARD_TOS_TUPLE_r44",
+    #endif
+    #if MAX_CACHED_REGISTER >= 5
     [_GUARD_TOS_TUPLE_r55] = "_GUARD_TOS_TUPLE_r55",
+    #endif
     [_GUARD_TOS_UNICODE] = "_GUARD_TOS_UNICODE",
+    #if MAX_CACHED_REGISTER >= 1
     [_GUARD_TOS_UNICODE_r01] = "_GUARD_TOS_UNICODE_r01",
+    #endif
+    #if MAX_CACHED_REGISTER >= 1
     [_GUARD_TOS_UNICODE_r11] = "_GUARD_TOS_UNICODE_r11",
+    #endif
+    #if MAX_CACHED_REGISTER >= 2
     [_GUARD_TOS_UNICODE_r22] = "_GUARD_TOS_UNICODE_r22",
+    #endif
+    #if MAX_CACHED_REGISTER >= 3
     [_GUARD_TOS_UNICODE_r33] = "_GUARD_TOS_UNICODE_r33",
+    #endif
+    #if MAX_CACHED_REGISTER >= 4
     [_GUARD_TOS_UNICODE_r44] = "_GUARD_TOS_UNICODE_r44",
+    #endif
+    #if MAX_CACHED_REGISTER >= 5
     [_GUARD_TOS_UNICODE_r55] = "_GUARD_TOS_UNICODE_r55",
+    #endif
     [_GUARD_TYPE_VERSION] = "_GUARD_TYPE_VERSION",
+    #if MAX_CACHED_REGISTER >= 1
     [_GUARD_TYPE_VERSION_r01] = "_GUARD_TYPE_VERSION_r01",
+    #endif
+    #if MAX_CACHED_REGISTER >= 1
     [_GUARD_TYPE_VERSION_r11] = "_GUARD_TYPE_VERSION_r11",
+    #endif
+    #if MAX_CACHED_REGISTER >= 2
     [_GUARD_TYPE_VERSION_r22] = "_GUARD_TYPE_VERSION_r22",
+    #endif
+    #if MAX_CACHED_REGISTER >= 3
     [_GUARD_TYPE_VERSION_r33] = "_GUARD_TYPE_VERSION_r33",
+    #endif
+    #if MAX_CACHED_REGISTER >= 4
     [_GUARD_TYPE_VERSION_r44] = "_GUARD_TYPE_VERSION_r44",
+    #endif
+    #if MAX_CACHED_REGISTER >= 5
     [_GUARD_TYPE_VERSION_r55] = "_GUARD_TYPE_VERSION_r55",
+    #endif
     [_GUARD_TYPE_VERSION_AND_LOCK] = "_GUARD_TYPE_VERSION_AND_LOCK",
+    #if MAX_CACHED_REGISTER >= 1
     [_GUARD_TYPE_VERSION_AND_LOCK_r01] = "_GUARD_TYPE_VERSION_AND_LOCK_r01",
+    #endif
+    #if MAX_CACHED_REGISTER >= 1
     [_GUARD_TYPE_VERSION_AND_LOCK_r11] = "_GUARD_TYPE_VERSION_AND_LOCK_r11",
+    #endif
+    #if MAX_CACHED_REGISTER >= 2
     [_GUARD_TYPE_VERSION_AND_LOCK_r22] = "_GUARD_TYPE_VERSION_AND_LOCK_r22",
+    #endif
+    #if MAX_CACHED_REGISTER >= 3
     [_GUARD_TYPE_VERSION_AND_LOCK_r33] = "_GUARD_TYPE_VERSION_AND_LOCK_r33",
+    #endif
+    #if MAX_CACHED_REGISTER >= 4
     [_GUARD_TYPE_VERSION_AND_LOCK_r44] = "_GUARD_TYPE_VERSION_AND_LOCK_r44",
+    #endif
+    #if MAX_CACHED_REGISTER >= 5
     [_GUARD_TYPE_VERSION_AND_LOCK_r55] = "_GUARD_TYPE_VERSION_AND_LOCK_r55",
+    #endif
     [_HANDLE_PENDING_AND_DEOPT] = "_HANDLE_PENDING_AND_DEOPT",
     [_HANDLE_PENDING_AND_DEOPT_r00] = "_HANDLE_PENDING_AND_DEOPT_r00",
+    #if MAX_CACHED_REGISTER >= 1
     [_HANDLE_PENDING_AND_DEOPT_r10] = "_HANDLE_PENDING_AND_DEOPT_r10",
+    #endif
+    #if MAX_CACHED_REGISTER >= 2
     [_HANDLE_PENDING_AND_DEOPT_r20] = "_HANDLE_PENDING_AND_DEOPT_r20",
+    #endif
+    #if MAX_CACHED_REGISTER >= 3
     [_HANDLE_PENDING_AND_DEOPT_r30] = "_HANDLE_PENDING_AND_DEOPT_r30",
+    #endif
+    #if MAX_CACHED_REGISTER >= 4
     [_HANDLE_PENDING_AND_DEOPT_r40] = "_HANDLE_PENDING_AND_DEOPT_r40",
+    #endif
+    #if MAX_CACHED_REGISTER >= 5
     [_HANDLE_PENDING_AND_DEOPT_r50] = "_HANDLE_PENDING_AND_DEOPT_r50",
+    #endif
     [_IMPORT_FROM] = "_IMPORT_FROM",
+    #if MAX_CACHED_REGISTER >= 2
     [_IMPORT_FROM_r12] = "_IMPORT_FROM_r12",
+    #endif
     [_IMPORT_NAME] = "_IMPORT_NAME",
+    #if MAX_CACHED_REGISTER >= 2
     [_IMPORT_NAME_r21] = "_IMPORT_NAME_r21",
+    #endif
     [_INIT_CALL_BOUND_METHOD_EXACT_ARGS] = "_INIT_CALL_BOUND_METHOD_EXACT_ARGS",
     [_INIT_CALL_BOUND_METHOD_EXACT_ARGS_r00] = "_INIT_CALL_BOUND_METHOD_EXACT_ARGS_r00",
     [_INIT_CALL_PY_EXACT_ARGS] = "_INIT_CALL_PY_EXACT_ARGS",
+    #if MAX_CACHED_REGISTER >= 1
     [_INIT_CALL_PY_EXACT_ARGS_r01] = "_INIT_CALL_PY_EXACT_ARGS_r01",
+    #endif
     [_INIT_CALL_PY_EXACT_ARGS_0] = "_INIT_CALL_PY_EXACT_ARGS_0",
+    #if MAX_CACHED_REGISTER >= 1
     [_INIT_CALL_PY_EXACT_ARGS_0_r01] = "_INIT_CALL_PY_EXACT_ARGS_0_r01",
+    #endif
     [_INIT_CALL_PY_EXACT_ARGS_1] = "_INIT_CALL_PY_EXACT_ARGS_1",
+    #if MAX_CACHED_REGISTER >= 1
     [_INIT_CALL_PY_EXACT_ARGS_1_r01] = "_INIT_CALL_PY_EXACT_ARGS_1_r01",
+    #endif
     [_INIT_CALL_PY_EXACT_ARGS_2] = "_INIT_CALL_PY_EXACT_ARGS_2",
+    #if MAX_CACHED_REGISTER >= 1
     [_INIT_CALL_PY_EXACT_ARGS_2_r01] = "_INIT_CALL_PY_EXACT_ARGS_2_r01",
+    #endif
     [_INIT_CALL_PY_EXACT_ARGS_3] = "_INIT_CALL_PY_EXACT_ARGS_3",
+    #if MAX_CACHED_REGISTER >= 1
     [_INIT_CALL_PY_EXACT_ARGS_3_r01] = "_INIT_CALL_PY_EXACT_ARGS_3_r01",
+    #endif
     [_INIT_CALL_PY_EXACT_ARGS_4] = "_INIT_CALL_PY_EXACT_ARGS_4",
+    #if MAX_CACHED_REGISTER >= 1
     [_INIT_CALL_PY_EXACT_ARGS_4_r01] = "_INIT_CALL_PY_EXACT_ARGS_4_r01",
+    #endif
     [_INSERT_1_LOAD_CONST_INLINE] = "_INSERT_1_LOAD_CONST_INLINE",
+    #if MAX_CACHED_REGISTER >= 2
     [_INSERT_1_LOAD_CONST_INLINE_r02] = "_INSERT_1_LOAD_CONST_INLINE_r02",
+    #endif
+    #if MAX_CACHED_REGISTER >= 2
     [_INSERT_1_LOAD_CONST_INLINE_r12] = "_INSERT_1_LOAD_CONST_INLINE_r12",
+    #endif
+    #if MAX_CACHED_REGISTER >= 3
     [_INSERT_1_LOAD_CONST_INLINE_r23] = "_INSERT_1_LOAD_CONST_INLINE_r23",
+    #endif
+    #if MAX_CACHED_REGISTER >= 4
     [_INSERT_1_LOAD_CONST_INLINE_r34] = "_INSERT_1_LOAD_CONST_INLINE_r34",
+    #endif
+    #if MAX_CACHED_REGISTER >= 5
     [_INSERT_1_LOAD_CONST_INLINE_r45] = "_INSERT_1_LOAD_CONST_INLINE_r45",
+    #endif
     [_INSERT_1_LOAD_CONST_INLINE_BORROW] = "_INSERT_1_LOAD_CONST_INLINE_BORROW",
+    #if MAX_CACHED_REGISTER >= 2
     [_INSERT_1_LOAD_CONST_INLINE_BORROW_r02] = "_INSERT_1_LOAD_CONST_INLINE_BORROW_r02",
+    #endif
+    #if MAX_CACHED_REGISTER >= 2
     [_INSERT_1_LOAD_CONST_INLINE_BORROW_r12] = "_INSERT_1_LOAD_CONST_INLINE_BORROW_r12",
+    #endif
+    #if MAX_CACHED_REGISTER >= 3
     [_INSERT_1_LOAD_CONST_INLINE_BORROW_r23] = "_INSERT_1_LOAD_CONST_INLINE_BORROW_r23",
+    #endif
+    #if MAX_CACHED_REGISTER >= 4
     [_INSERT_1_LOAD_CONST_INLINE_BORROW_r34] = "_INSERT_1_LOAD_CONST_INLINE_BORROW_r34",
+    #endif
+    #if MAX_CACHED_REGISTER >= 5
     [_INSERT_1_LOAD_CONST_INLINE_BORROW_r45] = "_INSERT_1_LOAD_CONST_INLINE_BORROW_r45",
+    #endif
     [_INSERT_2_LOAD_CONST_INLINE_BORROW] = "_INSERT_2_LOAD_CONST_INLINE_BORROW",
+    #if MAX_CACHED_REGISTER >= 3
     [_INSERT_2_LOAD_CONST_INLINE_BORROW_r03] = "_INSERT_2_LOAD_CONST_INLINE_BORROW_r03",
+    #endif
+    #if MAX_CACHED_REGISTER >= 3
     [_INSERT_2_LOAD_CONST_INLINE_BORROW_r13] = "_INSERT_2_LOAD_CONST_INLINE_BORROW_r13",
+    #endif
+    #if MAX_CACHED_REGISTER >= 3
     [_INSERT_2_LOAD_CONST_INLINE_BORROW_r23] = "_INSERT_2_LOAD_CONST_INLINE_BORROW_r23",
+    #endif
+    #if MAX_CACHED_REGISTER >= 4
     [_INSERT_2_LOAD_CONST_INLINE_BORROW_r34] = "_INSERT_2_LOAD_CONST_INLINE_BORROW_r34",
+    #endif
+    #if MAX_CACHED_REGISTER >= 5
     [_INSERT_2_LOAD_CONST_INLINE_BORROW_r45] = "_INSERT_2_LOAD_CONST_INLINE_BORROW_r45",
+    #endif
     [_INSERT_NULL] = "_INSERT_NULL",
+    #if MAX_CACHED_REGISTER >= 1
     [_INSERT_NULL_r10] = "_INSERT_NULL_r10",
+    #endif
     [_IS_NONE] = "_IS_NONE",
+    #if MAX_CACHED_REGISTER >= 1
     [_IS_NONE_r11] = "_IS_NONE_r11",
+    #endif
     [_IS_OP] = "_IS_OP",
+    #if MAX_CACHED_REGISTER >= 3
     [_IS_OP_r03] = "_IS_OP_r03",
+    #endif
+    #if MAX_CACHED_REGISTER >= 3
     [_IS_OP_r13] = "_IS_OP_r13",
+    #endif
+    #if MAX_CACHED_REGISTER >= 3
     [_IS_OP_r23] = "_IS_OP_r23",
+    #endif
+    #if MAX_CACHED_REGISTER >= 4
     [_IS_OP_r34] = "_IS_OP_r34",
+    #endif
+    #if MAX_CACHED_REGISTER >= 5
     [_IS_OP_r45] = "_IS_OP_r45",
+    #endif
     [_ITER_CHECK_LIST] = "_ITER_CHECK_LIST",
+    #if MAX_CACHED_REGISTER >= 2
     [_ITER_CHECK_LIST_r02] = "_ITER_CHECK_LIST_r02",
+    #endif
+    #if MAX_CACHED_REGISTER >= 2
     [_ITER_CHECK_LIST_r12] = "_ITER_CHECK_LIST_r12",
+    #endif
+    #if MAX_CACHED_REGISTER >= 2
     [_ITER_CHECK_LIST_r22] = "_ITER_CHECK_LIST_r22",
+    #endif
+    #if MAX_CACHED_REGISTER >= 3
     [_ITER_CHECK_LIST_r33] = "_ITER_CHECK_LIST_r33",
+    #endif
+    #if MAX_CACHED_REGISTER >= 4
     [_ITER_CHECK_LIST_r44] = "_ITER_CHECK_LIST_r44",
+    #endif
+    #if MAX_CACHED_REGISTER >= 5
     [_ITER_CHECK_LIST_r55] = "_ITER_CHECK_LIST_r55",
+    #endif
     [_ITER_CHECK_RANGE] = "_ITER_CHECK_RANGE",
+    #if MAX_CACHED_REGISTER >= 2
     [_ITER_CHECK_RANGE_r02] = "_ITER_CHECK_RANGE_r02",
+    #endif
+    #if MAX_CACHED_REGISTER >= 2
     [_ITER_CHECK_RANGE_r12] = "_ITER_CHECK_RANGE_r12",
+    #endif
+    #if MAX_CACHED_REGISTER >= 2
     [_ITER_CHECK_RANGE_r22] = "_ITER_CHECK_RANGE_r22",
+    #endif
+    #if MAX_CACHED_REGISTER >= 3
     [_ITER_CHECK_RANGE_r33] = "_ITER_CHECK_RANGE_r33",
+    #endif
+    #if MAX_CACHED_REGISTER >= 4
     [_ITER_CHECK_RANGE_r44] = "_ITER_CHECK_RANGE_r44",
+    #endif
+    #if MAX_CACHED_REGISTER >= 5
     [_ITER_CHECK_RANGE_r55] = "_ITER_CHECK_RANGE_r55",
+    #endif
     [_ITER_CHECK_TUPLE] = "_ITER_CHECK_TUPLE",
+    #if MAX_CACHED_REGISTER >= 2
     [_ITER_CHECK_TUPLE_r02] = "_ITER_CHECK_TUPLE_r02",
+    #endif
+    #if MAX_CACHED_REGISTER >= 2
     [_ITER_CHECK_TUPLE_r12] = "_ITER_CHECK_TUPLE_r12",
+    #endif
+    #if MAX_CACHED_REGISTER >= 2
     [_ITER_CHECK_TUPLE_r22] = "_ITER_CHECK_TUPLE_r22",
+    #endif
+    #if MAX_CACHED_REGISTER >= 3
     [_ITER_CHECK_TUPLE_r33] = "_ITER_CHECK_TUPLE_r33",
+    #endif
+    #if MAX_CACHED_REGISTER >= 4
     [_ITER_CHECK_TUPLE_r44] = "_ITER_CHECK_TUPLE_r44",
+    #endif
+    #if MAX_CACHED_REGISTER >= 5
     [_ITER_CHECK_TUPLE_r55] = "_ITER_CHECK_TUPLE_r55",
+    #endif
     [_ITER_NEXT_LIST_TIER_TWO] = "_ITER_NEXT_LIST_TIER_TWO",
+    #if MAX_CACHED_REGISTER >= 3
     [_ITER_NEXT_LIST_TIER_TWO_r23] = "_ITER_NEXT_LIST_TIER_TWO_r23",
+    #endif
     [_ITER_NEXT_RANGE] = "_ITER_NEXT_RANGE",
+    #if MAX_CACHED_REGISTER >= 3
     [_ITER_NEXT_RANGE_r03] = "_ITER_NEXT_RANGE_r03",
+    #endif
+    #if MAX_CACHED_REGISTER >= 3
     [_ITER_NEXT_RANGE_r13] = "_ITER_NEXT_RANGE_r13",
+    #endif
+    #if MAX_CACHED_REGISTER >= 3
     [_ITER_NEXT_RANGE_r23] = "_ITER_NEXT_RANGE_r23",
+    #endif
+    #if MAX_CACHED_REGISTER >= 4
     [_ITER_NEXT_RANGE_r34] = "_ITER_NEXT_RANGE_r34",
+    #endif
+    #if MAX_CACHED_REGISTER >= 5
     [_ITER_NEXT_RANGE_r45] = "_ITER_NEXT_RANGE_r45",
+    #endif
     [_ITER_NEXT_TUPLE] = "_ITER_NEXT_TUPLE",
+    #if MAX_CACHED_REGISTER >= 3
     [_ITER_NEXT_TUPLE_r03] = "_ITER_NEXT_TUPLE_r03",
+    #endif
+    #if MAX_CACHED_REGISTER >= 3
     [_ITER_NEXT_TUPLE_r13] = "_ITER_NEXT_TUPLE_r13",
+    #endif
+    #if MAX_CACHED_REGISTER >= 3
     [_ITER_NEXT_TUPLE_r23] = "_ITER_NEXT_TUPLE_r23",
+    #endif
+    #if MAX_CACHED_REGISTER >= 4
     [_ITER_NEXT_TUPLE_r34] = "_ITER_NEXT_TUPLE_r34",
+    #endif
+    #if MAX_CACHED_REGISTER >= 5
     [_ITER_NEXT_TUPLE_r45] = "_ITER_NEXT_TUPLE_r45",
+    #endif
     [_JUMP_TO_TOP] = "_JUMP_TO_TOP",
     [_JUMP_TO_TOP_r00] = "_JUMP_TO_TOP_r00",
     [_LIST_APPEND] = "_LIST_APPEND",
+    #if MAX_CACHED_REGISTER >= 1
     [_LIST_APPEND_r10] = "_LIST_APPEND_r10",
+    #endif
     [_LIST_EXTEND] = "_LIST_EXTEND",
+    #if MAX_CACHED_REGISTER >= 1
     [_LIST_EXTEND_r10] = "_LIST_EXTEND_r10",
+    #endif
     [_LOAD_ATTR] = "_LOAD_ATTR",
+    #if MAX_CACHED_REGISTER >= 1
     [_LOAD_ATTR_r10] = "_LOAD_ATTR_r10",
+    #endif
     [_LOAD_ATTR_CLASS] = "_LOAD_ATTR_CLASS",
+    #if MAX_CACHED_REGISTER >= 1
     [_LOAD_ATTR_CLASS_r11] = "_LOAD_ATTR_CLASS_r11",
+    #endif
     [_LOAD_ATTR_INSTANCE_VALUE] = "_LOAD_ATTR_INSTANCE_VALUE",
+    #if MAX_CACHED_REGISTER >= 2
     [_LOAD_ATTR_INSTANCE_VALUE_r02] = "_LOAD_ATTR_INSTANCE_VALUE_r02",
+    #endif
+    #if MAX_CACHED_REGISTER >= 2
     [_LOAD_ATTR_INSTANCE_VALUE_r12] = "_LOAD_ATTR_INSTANCE_VALUE_r12",
+    #endif
+    #if MAX_CACHED_REGISTER >= 3
     [_LOAD_ATTR_INSTANCE_VALUE_r23] = "_LOAD_ATTR_INSTANCE_VALUE_r23",
+    #endif
+    #if MAX_CACHED_REGISTER >= 4
     [_LOAD_ATTR_INSTANCE_VALUE_r34] = "_LOAD_ATTR_INSTANCE_VALUE_r34",
+    #endif
+    #if MAX_CACHED_REGISTER >= 5
     [_LOAD_ATTR_INSTANCE_VALUE_r45] = "_LOAD_ATTR_INSTANCE_VALUE_r45",
+    #endif
     [_LOAD_ATTR_METHOD_LAZY_DICT] = "_LOAD_ATTR_METHOD_LAZY_DICT",
+    #if MAX_CACHED_REGISTER >= 2
     [_LOAD_ATTR_METHOD_LAZY_DICT_r02] = "_LOAD_ATTR_METHOD_LAZY_DICT_r02",
+    #endif
+    #if MAX_CACHED_REGISTER >= 2
     [_LOAD_ATTR_METHOD_LAZY_DICT_r12] = "_LOAD_ATTR_METHOD_LAZY_DICT_r12",
+    #endif
+    #if MAX_CACHED_REGISTER >= 3
     [_LOAD_ATTR_METHOD_LAZY_DICT_r23] = "_LOAD_ATTR_METHOD_LAZY_DICT_r23",
+    #endif
+    #if MAX_CACHED_REGISTER >= 4
     [_LOAD_ATTR_METHOD_LAZY_DICT_r34] = "_LOAD_ATTR_METHOD_LAZY_DICT_r34",
+    #endif
+    #if MAX_CACHED_REGISTER >= 5
     [_LOAD_ATTR_METHOD_LAZY_DICT_r45] = "_LOAD_ATTR_METHOD_LAZY_DICT_r45",
+    #endif
     [_LOAD_ATTR_METHOD_NO_DICT] = "_LOAD_ATTR_METHOD_NO_DICT",
+    #if MAX_CACHED_REGISTER >= 2
     [_LOAD_ATTR_METHOD_NO_DICT_r02] = "_LOAD_ATTR_METHOD_NO_DICT_r02",
+    #endif
+    #if MAX_CACHED_REGISTER >= 2
     [_LOAD_ATTR_METHOD_NO_DICT_r12] = "_LOAD_ATTR_METHOD_NO_DICT_r12",
+    #endif
+    #if MAX_CACHED_REGISTER >= 3
     [_LOAD_ATTR_METHOD_NO_DICT_r23] = "_LOAD_ATTR_METHOD_NO_DICT_r23",
+    #endif
+    #if MAX_CACHED_REGISTER >= 4
     [_LOAD_ATTR_METHOD_NO_DICT_r34] = "_LOAD_ATTR_METHOD_NO_DICT_r34",
+    #endif
+    #if MAX_CACHED_REGISTER >= 5
     [_LOAD_ATTR_METHOD_NO_DICT_r45] = "_LOAD_ATTR_METHOD_NO_DICT_r45",
+    #endif
     [_LOAD_ATTR_METHOD_WITH_VALUES] = "_LOAD_ATTR_METHOD_WITH_VALUES",
+    #if MAX_CACHED_REGISTER >= 2
     [_LOAD_ATTR_METHOD_WITH_VALUES_r02] = "_LOAD_ATTR_METHOD_WITH_VALUES_r02",
+    #endif
+    #if MAX_CACHED_REGISTER >= 2
     [_LOAD_ATTR_METHOD_WITH_VALUES_r12] = "_LOAD_ATTR_METHOD_WITH_VALUES_r12",
+    #endif
+    #if MAX_CACHED_REGISTER >= 3
     [_LOAD_ATTR_METHOD_WITH_VALUES_r23] = "_LOAD_ATTR_METHOD_WITH_VALUES_r23",
+    #endif
+    #if MAX_CACHED_REGISTER >= 4
     [_LOAD_ATTR_METHOD_WITH_VALUES_r34] = "_LOAD_ATTR_METHOD_WITH_VALUES_r34",
+    #endif
+    #if MAX_CACHED_REGISTER >= 5
     [_LOAD_ATTR_METHOD_WITH_VALUES_r45] = "_LOAD_ATTR_METHOD_WITH_VALUES_r45",
+    #endif
     [_LOAD_ATTR_MODULE] = "_LOAD_ATTR_MODULE",
+    #if MAX_CACHED_REGISTER >= 2
     [_LOAD_ATTR_MODULE_r12] = "_LOAD_ATTR_MODULE_r12",
+    #endif
     [_LOAD_ATTR_NONDESCRIPTOR_NO_DICT] = "_LOAD_ATTR_NONDESCRIPTOR_NO_DICT",
+    #if MAX_CACHED_REGISTER >= 1
     [_LOAD_ATTR_NONDESCRIPTOR_NO_DICT_r11] = "_LOAD_ATTR_NONDESCRIPTOR_NO_DICT_r11",
+    #endif
     [_LOAD_ATTR_NONDESCRIPTOR_WITH_VALUES] = "_LOAD_ATTR_NONDESCRIPTOR_WITH_VALUES",
+    #if MAX_CACHED_REGISTER >= 1
     [_LOAD_ATTR_NONDESCRIPTOR_WITH_VALUES_r11] = "_LOAD_ATTR_NONDESCRIPTOR_WITH_VALUES_r11",
+    #endif
     [_LOAD_ATTR_PROPERTY_FRAME] = "_LOAD_ATTR_PROPERTY_FRAME",
+    #if MAX_CACHED_REGISTER >= 1
     [_LOAD_ATTR_PROPERTY_FRAME_r11] = "_LOAD_ATTR_PROPERTY_FRAME_r11",
+    #endif
     [_LOAD_ATTR_SLOT] = "_LOAD_ATTR_SLOT",
+    #if MAX_CACHED_REGISTER >= 2
     [_LOAD_ATTR_SLOT_r02] = "_LOAD_ATTR_SLOT_r02",
+    #endif
+    #if MAX_CACHED_REGISTER >= 2
     [_LOAD_ATTR_SLOT_r12] = "_LOAD_ATTR_SLOT_r12",
+    #endif
+    #if MAX_CACHED_REGISTER >= 3
     [_LOAD_ATTR_SLOT_r23] = "_LOAD_ATTR_SLOT_r23",
+    #endif
+    #if MAX_CACHED_REGISTER >= 4
     [_LOAD_ATTR_SLOT_r34] = "_LOAD_ATTR_SLOT_r34",
+    #endif
+    #if MAX_CACHED_REGISTER >= 5
     [_LOAD_ATTR_SLOT_r45] = "_LOAD_ATTR_SLOT_r45",
+    #endif
     [_LOAD_ATTR_WITH_HINT] = "_LOAD_ATTR_WITH_HINT",
+    #if MAX_CACHED_REGISTER >= 2
     [_LOAD_ATTR_WITH_HINT_r12] = "_LOAD_ATTR_WITH_HINT_r12",
+    #endif
     [_LOAD_BUILD_CLASS] = "_LOAD_BUILD_CLASS",
+    #if MAX_CACHED_REGISTER >= 1
     [_LOAD_BUILD_CLASS_r01] = "_LOAD_BUILD_CLASS_r01",
+    #endif
     [_LOAD_COMMON_CONSTANT] = "_LOAD_COMMON_CONSTANT",
+    #if MAX_CACHED_REGISTER >= 1
     [_LOAD_COMMON_CONSTANT_r01] = "_LOAD_COMMON_CONSTANT_r01",
+    #endif
+    #if MAX_CACHED_REGISTER >= 2
     [_LOAD_COMMON_CONSTANT_r12] = "_LOAD_COMMON_CONSTANT_r12",
+    #endif
+    #if MAX_CACHED_REGISTER >= 3
     [_LOAD_COMMON_CONSTANT_r23] = "_LOAD_COMMON_CONSTANT_r23",
+    #endif
+    #if MAX_CACHED_REGISTER >= 4
     [_LOAD_COMMON_CONSTANT_r34] = "_LOAD_COMMON_CONSTANT_r34",
+    #endif
+    #if MAX_CACHED_REGISTER >= 5
     [_LOAD_COMMON_CONSTANT_r45] = "_LOAD_COMMON_CONSTANT_r45",
+    #endif
     [_LOAD_CONST] = "_LOAD_CONST",
+    #if MAX_CACHED_REGISTER >= 1
     [_LOAD_CONST_r01] = "_LOAD_CONST_r01",
+    #endif
+    #if MAX_CACHED_REGISTER >= 2
     [_LOAD_CONST_r12] = "_LOAD_CONST_r12",
+    #endif
+    #if MAX_CACHED_REGISTER >= 3
     [_LOAD_CONST_r23] = "_LOAD_CONST_r23",
+    #endif
+    #if MAX_CACHED_REGISTER >= 4
     [_LOAD_CONST_r34] = "_LOAD_CONST_r34",
+    #endif
+    #if MAX_CACHED_REGISTER >= 5
     [_LOAD_CONST_r45] = "_LOAD_CONST_r45",
+    #endif
     [_LOAD_CONST_INLINE] = "_LOAD_CONST_INLINE",
+    #if MAX_CACHED_REGISTER >= 1
     [_LOAD_CONST_INLINE_r01] = "_LOAD_CONST_INLINE_r01",
+    #endif
+    #if MAX_CACHED_REGISTER >= 2
     [_LOAD_CONST_INLINE_r12] = "_LOAD_CONST_INLINE_r12",
+    #endif
+    #if MAX_CACHED_REGISTER >= 3
     [_LOAD_CONST_INLINE_r23] = "_LOAD_CONST_INLINE_r23",
+    #endif
+    #if MAX_CACHED_REGISTER >= 4
     [_LOAD_CONST_INLINE_r34] = "_LOAD_CONST_INLINE_r34",
+    #endif
+    #if MAX_CACHED_REGISTER >= 5
     [_LOAD_CONST_INLINE_r45] = "_LOAD_CONST_INLINE_r45",
+    #endif
     [_LOAD_CONST_INLINE_BORROW] = "_LOAD_CONST_INLINE_BORROW",
+    #if MAX_CACHED_REGISTER >= 1
     [_LOAD_CONST_INLINE_BORROW_r01] = "_LOAD_CONST_INLINE_BORROW_r01",
+    #endif
+    #if MAX_CACHED_REGISTER >= 2
     [_LOAD_CONST_INLINE_BORROW_r12] = "_LOAD_CONST_INLINE_BORROW_r12",
+    #endif
+    #if MAX_CACHED_REGISTER >= 3
     [_LOAD_CONST_INLINE_BORROW_r23] = "_LOAD_CONST_INLINE_BORROW_r23",
+    #endif
+    #if MAX_CACHED_REGISTER >= 4
     [_LOAD_CONST_INLINE_BORROW_r34] = "_LOAD_CONST_INLINE_BORROW_r34",
+    #endif
+    #if MAX_CACHED_REGISTER >= 5
     [_LOAD_CONST_INLINE_BORROW_r45] = "_LOAD_CONST_INLINE_BORROW_r45",
+    #endif
     [_LOAD_CONST_UNDER_INLINE] = "_LOAD_CONST_UNDER_INLINE",
+    #if MAX_CACHED_REGISTER >= 2
     [_LOAD_CONST_UNDER_INLINE_r02] = "_LOAD_CONST_UNDER_INLINE_r02",
+    #endif
+    #if MAX_CACHED_REGISTER >= 2
     [_LOAD_CONST_UNDER_INLINE_r12] = "_LOAD_CONST_UNDER_INLINE_r12",
+    #endif
+    #if MAX_CACHED_REGISTER >= 3
     [_LOAD_CONST_UNDER_INLINE_r23] = "_LOAD_CONST_UNDER_INLINE_r23",
+    #endif
+    #if MAX_CACHED_REGISTER >= 4
     [_LOAD_CONST_UNDER_INLINE_r34] = "_LOAD_CONST_UNDER_INLINE_r34",
+    #endif
+    #if MAX_CACHED_REGISTER >= 5
     [_LOAD_CONST_UNDER_INLINE_r45] = "_LOAD_CONST_UNDER_INLINE_r45",
+    #endif
     [_LOAD_CONST_UNDER_INLINE_BORROW] = "_LOAD_CONST_UNDER_INLINE_BORROW",
+    #if MAX_CACHED_REGISTER >= 2
     [_LOAD_CONST_UNDER_INLINE_BORROW_r02] = "_LOAD_CONST_UNDER_INLINE_BORROW_r02",
+    #endif
+    #if MAX_CACHED_REGISTER >= 2
     [_LOAD_CONST_UNDER_INLINE_BORROW_r12] = "_LOAD_CONST_UNDER_INLINE_BORROW_r12",
+    #endif
+    #if MAX_CACHED_REGISTER >= 3
     [_LOAD_CONST_UNDER_INLINE_BORROW_r23] = "_LOAD_CONST_UNDER_INLINE_BORROW_r23",
+    #endif
+    #if MAX_CACHED_REGISTER >= 4
     [_LOAD_CONST_UNDER_INLINE_BORROW_r34] = "_LOAD_CONST_UNDER_INLINE_BORROW_r34",
+    #endif
+    #if MAX_CACHED_REGISTER >= 5
     [_LOAD_CONST_UNDER_INLINE_BORROW_r45] = "_LOAD_CONST_UNDER_INLINE_BORROW_r45",
+    #endif
     [_LOAD_DEREF] = "_LOAD_DEREF",
+    #if MAX_CACHED_REGISTER >= 1
     [_LOAD_DEREF_r01] = "_LOAD_DEREF_r01",
+    #endif
     [_LOAD_FAST] = "_LOAD_FAST",
+    #if MAX_CACHED_REGISTER >= 1
     [_LOAD_FAST_r01] = "_LOAD_FAST_r01",
+    #endif
+    #if MAX_CACHED_REGISTER >= 2
     [_LOAD_FAST_r12] = "_LOAD_FAST_r12",
+    #endif
+    #if MAX_CACHED_REGISTER >= 3
     [_LOAD_FAST_r23] = "_LOAD_FAST_r23",
+    #endif
+    #if MAX_CACHED_REGISTER >= 4
     [_LOAD_FAST_r34] = "_LOAD_FAST_r34",
+    #endif
+    #if MAX_CACHED_REGISTER >= 5
     [_LOAD_FAST_r45] = "_LOAD_FAST_r45",
+    #endif
     [_LOAD_FAST_0] = "_LOAD_FAST_0",
+    #if MAX_CACHED_REGISTER >= 1
     [_LOAD_FAST_0_r01] = "_LOAD_FAST_0_r01",
+    #endif
+    #if MAX_CACHED_REGISTER >= 2
     [_LOAD_FAST_0_r12] = "_LOAD_FAST_0_r12",
+    #endif
+    #if MAX_CACHED_REGISTER >= 3
     [_LOAD_FAST_0_r23] = "_LOAD_FAST_0_r23",
+    #endif
+    #if MAX_CACHED_REGISTER >= 4
     [_LOAD_FAST_0_r34] = "_LOAD_FAST_0_r34",
+    #endif
+    #if MAX_CACHED_REGISTER >= 5
     [_LOAD_FAST_0_r45] = "_LOAD_FAST_0_r45",
+    #endif
     [_LOAD_FAST_1] = "_LOAD_FAST_1",
+    #if MAX_CACHED_REGISTER >= 1
     [_LOAD_FAST_1_r01] = "_LOAD_FAST_1_r01",
+    #endif
+    #if MAX_CACHED_REGISTER >= 2
     [_LOAD_FAST_1_r12] = "_LOAD_FAST_1_r12",
+    #endif
+    #if MAX_CACHED_REGISTER >= 3
     [_LOAD_FAST_1_r23] = "_LOAD_FAST_1_r23",
+    #endif
+    #if MAX_CACHED_REGISTER >= 4
     [_LOAD_FAST_1_r34] = "_LOAD_FAST_1_r34",
+    #endif
+    #if MAX_CACHED_REGISTER >= 5
     [_LOAD_FAST_1_r45] = "_LOAD_FAST_1_r45",
+    #endif
     [_LOAD_FAST_2] = "_LOAD_FAST_2",
+    #if MAX_CACHED_REGISTER >= 1
     [_LOAD_FAST_2_r01] = "_LOAD_FAST_2_r01",
+    #endif
+    #if MAX_CACHED_REGISTER >= 2
     [_LOAD_FAST_2_r12] = "_LOAD_FAST_2_r12",
+    #endif
+    #if MAX_CACHED_REGISTER >= 3
     [_LOAD_FAST_2_r23] = "_LOAD_FAST_2_r23",
+    #endif
+    #if MAX_CACHED_REGISTER >= 4
     [_LOAD_FAST_2_r34] = "_LOAD_FAST_2_r34",
+    #endif
+    #if MAX_CACHED_REGISTER >= 5
     [_LOAD_FAST_2_r45] = "_LOAD_FAST_2_r45",
+    #endif
     [_LOAD_FAST_3] = "_LOAD_FAST_3",
+    #if MAX_CACHED_REGISTER >= 1
     [_LOAD_FAST_3_r01] = "_LOAD_FAST_3_r01",
+    #endif
+    #if MAX_CACHED_REGISTER >= 2
     [_LOAD_FAST_3_r12] = "_LOAD_FAST_3_r12",
+    #endif
+    #if MAX_CACHED_REGISTER >= 3
     [_LOAD_FAST_3_r23] = "_LOAD_FAST_3_r23",
+    #endif
+    #if MAX_CACHED_REGISTER >= 4
     [_LOAD_FAST_3_r34] = "_LOAD_FAST_3_r34",
+    #endif
+    #if MAX_CACHED_REGISTER >= 5
     [_LOAD_FAST_3_r45] = "_LOAD_FAST_3_r45",
+    #endif
     [_LOAD_FAST_4] = "_LOAD_FAST_4",
+    #if MAX_CACHED_REGISTER >= 1
     [_LOAD_FAST_4_r01] = "_LOAD_FAST_4_r01",
+    #endif
+    #if MAX_CACHED_REGISTER >= 2
     [_LOAD_FAST_4_r12] = "_LOAD_FAST_4_r12",
+    #endif
+    #if MAX_CACHED_REGISTER >= 3
     [_LOAD_FAST_4_r23] = "_LOAD_FAST_4_r23",
+    #endif
+    #if MAX_CACHED_REGISTER >= 4
     [_LOAD_FAST_4_r34] = "_LOAD_FAST_4_r34",
+    #endif
+    #if MAX_CACHED_REGISTER >= 5
     [_LOAD_FAST_4_r45] = "_LOAD_FAST_4_r45",
+    #endif
     [_LOAD_FAST_5] = "_LOAD_FAST_5",
+    #if MAX_CACHED_REGISTER >= 1
     [_LOAD_FAST_5_r01] = "_LOAD_FAST_5_r01",
+    #endif
+    #if MAX_CACHED_REGISTER >= 2
     [_LOAD_FAST_5_r12] = "_LOAD_FAST_5_r12",
+    #endif
+    #if MAX_CACHED_REGISTER >= 3
     [_LOAD_FAST_5_r23] = "_LOAD_FAST_5_r23",
+    #endif
+    #if MAX_CACHED_REGISTER >= 4
     [_LOAD_FAST_5_r34] = "_LOAD_FAST_5_r34",
+    #endif
+    #if MAX_CACHED_REGISTER >= 5
     [_LOAD_FAST_5_r45] = "_LOAD_FAST_5_r45",
+    #endif
     [_LOAD_FAST_6] = "_LOAD_FAST_6",
+    #if MAX_CACHED_REGISTER >= 1
     [_LOAD_FAST_6_r01] = "_LOAD_FAST_6_r01",
+    #endif
+    #if MAX_CACHED_REGISTER >= 2
     [_LOAD_FAST_6_r12] = "_LOAD_FAST_6_r12",
+    #endif
+    #if MAX_CACHED_REGISTER >= 3
     [_LOAD_FAST_6_r23] = "_LOAD_FAST_6_r23",
+    #endif
+    #if MAX_CACHED_REGISTER >= 4
     [_LOAD_FAST_6_r34] = "_LOAD_FAST_6_r34",
+    #endif
+    #if MAX_CACHED_REGISTER >= 5
     [_LOAD_FAST_6_r45] = "_LOAD_FAST_6_r45",
+    #endif
     [_LOAD_FAST_7] = "_LOAD_FAST_7",
+    #if MAX_CACHED_REGISTER >= 1
     [_LOAD_FAST_7_r01] = "_LOAD_FAST_7_r01",
+    #endif
+    #if MAX_CACHED_REGISTER >= 2
     [_LOAD_FAST_7_r12] = "_LOAD_FAST_7_r12",
+    #endif
+    #if MAX_CACHED_REGISTER >= 3
     [_LOAD_FAST_7_r23] = "_LOAD_FAST_7_r23",
+    #endif
+    #if MAX_CACHED_REGISTER >= 4
     [_LOAD_FAST_7_r34] = "_LOAD_FAST_7_r34",
+    #endif
+    #if MAX_CACHED_REGISTER >= 5
     [_LOAD_FAST_7_r45] = "_LOAD_FAST_7_r45",
+    #endif
     [_LOAD_FAST_AND_CLEAR] = "_LOAD_FAST_AND_CLEAR",
+    #if MAX_CACHED_REGISTER >= 1
     [_LOAD_FAST_AND_CLEAR_r01] = "_LOAD_FAST_AND_CLEAR_r01",
+    #endif
+    #if MAX_CACHED_REGISTER >= 2
     [_LOAD_FAST_AND_CLEAR_r12] = "_LOAD_FAST_AND_CLEAR_r12",
+    #endif
+    #if MAX_CACHED_REGISTER >= 3
     [_LOAD_FAST_AND_CLEAR_r23] = "_LOAD_FAST_AND_CLEAR_r23",
+    #endif
+    #if MAX_CACHED_REGISTER >= 4
     [_LOAD_FAST_AND_CLEAR_r34] = "_LOAD_FAST_AND_CLEAR_r34",
+    #endif
+    #if MAX_CACHED_REGISTER >= 5
     [_LOAD_FAST_AND_CLEAR_r45] = "_LOAD_FAST_AND_CLEAR_r45",
+    #endif
     [_LOAD_FAST_BORROW] = "_LOAD_FAST_BORROW",
+    #if MAX_CACHED_REGISTER >= 1
     [_LOAD_FAST_BORROW_r01] = "_LOAD_FAST_BORROW_r01",
+    #endif
+    #if MAX_CACHED_REGISTER >= 2
     [_LOAD_FAST_BORROW_r12] = "_LOAD_FAST_BORROW_r12",
+    #endif
+    #if MAX_CACHED_REGISTER >= 3
     [_LOAD_FAST_BORROW_r23] = "_LOAD_FAST_BORROW_r23",
+    #endif
+    #if MAX_CACHED_REGISTER >= 4
     [_LOAD_FAST_BORROW_r34] = "_LOAD_FAST_BORROW_r34",
+    #endif
+    #if MAX_CACHED_REGISTER >= 5
     [_LOAD_FAST_BORROW_r45] = "_LOAD_FAST_BORROW_r45",
+    #endif
     [_LOAD_FAST_BORROW_0] = "_LOAD_FAST_BORROW_0",
+    #if MAX_CACHED_REGISTER >= 1
     [_LOAD_FAST_BORROW_0_r01] = "_LOAD_FAST_BORROW_0_r01",
+    #endif
+    #if MAX_CACHED_REGISTER >= 2
     [_LOAD_FAST_BORROW_0_r12] = "_LOAD_FAST_BORROW_0_r12",
+    #endif
+    #if MAX_CACHED_REGISTER >= 3
     [_LOAD_FAST_BORROW_0_r23] = "_LOAD_FAST_BORROW_0_r23",
+    #endif
+    #if MAX_CACHED_REGISTER >= 4
     [_LOAD_FAST_BORROW_0_r34] = "_LOAD_FAST_BORROW_0_r34",
+    #endif
+    #if MAX_CACHED_REGISTER >= 5
     [_LOAD_FAST_BORROW_0_r45] = "_LOAD_FAST_BORROW_0_r45",
+    #endif
     [_LOAD_FAST_BORROW_1] = "_LOAD_FAST_BORROW_1",
+    #if MAX_CACHED_REGISTER >= 1
     [_LOAD_FAST_BORROW_1_r01] = "_LOAD_FAST_BORROW_1_r01",
+    #endif
+    #if MAX_CACHED_REGISTER >= 2
     [_LOAD_FAST_BORROW_1_r12] = "_LOAD_FAST_BORROW_1_r12",
+    #endif
+    #if MAX_CACHED_REGISTER >= 3
     [_LOAD_FAST_BORROW_1_r23] = "_LOAD_FAST_BORROW_1_r23",
+    #endif
+    #if MAX_CACHED_REGISTER >= 4
     [_LOAD_FAST_BORROW_1_r34] = "_LOAD_FAST_BORROW_1_r34",
+    #endif
+    #if MAX_CACHED_REGISTER >= 5
     [_LOAD_FAST_BORROW_1_r45] = "_LOAD_FAST_BORROW_1_r45",
+    #endif
     [_LOAD_FAST_BORROW_2] = "_LOAD_FAST_BORROW_2",
+    #if MAX_CACHED_REGISTER >= 1
     [_LOAD_FAST_BORROW_2_r01] = "_LOAD_FAST_BORROW_2_r01",
+    #endif
+    #if MAX_CACHED_REGISTER >= 2
     [_LOAD_FAST_BORROW_2_r12] = "_LOAD_FAST_BORROW_2_r12",
+    #endif
+    #if MAX_CACHED_REGISTER >= 3
     [_LOAD_FAST_BORROW_2_r23] = "_LOAD_FAST_BORROW_2_r23",
+    #endif
+    #if MAX_CACHED_REGISTER >= 4
     [_LOAD_FAST_BORROW_2_r34] = "_LOAD_FAST_BORROW_2_r34",
+    #endif
+    #if MAX_CACHED_REGISTER >= 5
     [_LOAD_FAST_BORROW_2_r45] = "_LOAD_FAST_BORROW_2_r45",
+    #endif
     [_LOAD_FAST_BORROW_3] = "_LOAD_FAST_BORROW_3",
+    #if MAX_CACHED_REGISTER >= 1
     [_LOAD_FAST_BORROW_3_r01] = "_LOAD_FAST_BORROW_3_r01",
+    #endif
+    #if MAX_CACHED_REGISTER >= 2
     [_LOAD_FAST_BORROW_3_r12] = "_LOAD_FAST_BORROW_3_r12",
+    #endif
+    #if MAX_CACHED_REGISTER >= 3
     [_LOAD_FAST_BORROW_3_r23] = "_LOAD_FAST_BORROW_3_r23",
+    #endif
+    #if MAX_CACHED_REGISTER >= 4
     [_LOAD_FAST_BORROW_3_r34] = "_LOAD_FAST_BORROW_3_r34",
+    #endif
+    #if MAX_CACHED_REGISTER >= 5
     [_LOAD_FAST_BORROW_3_r45] = "_LOAD_FAST_BORROW_3_r45",
+    #endif
     [_LOAD_FAST_BORROW_4] = "_LOAD_FAST_BORROW_4",
+    #if MAX_CACHED_REGISTER >= 1
     [_LOAD_FAST_BORROW_4_r01] = "_LOAD_FAST_BORROW_4_r01",
+    #endif
+    #if MAX_CACHED_REGISTER >= 2
     [_LOAD_FAST_BORROW_4_r12] = "_LOAD_FAST_BORROW_4_r12",
+    #endif
+    #if MAX_CACHED_REGISTER >= 3
     [_LOAD_FAST_BORROW_4_r23] = "_LOAD_FAST_BORROW_4_r23",
+    #endif
+    #if MAX_CACHED_REGISTER >= 4
     [_LOAD_FAST_BORROW_4_r34] = "_LOAD_FAST_BORROW_4_r34",
+    #endif
+    #if MAX_CACHED_REGISTER >= 5
     [_LOAD_FAST_BORROW_4_r45] = "_LOAD_FAST_BORROW_4_r45",
+    #endif
     [_LOAD_FAST_BORROW_5] = "_LOAD_FAST_BORROW_5",
+    #if MAX_CACHED_REGISTER >= 1
     [_LOAD_FAST_BORROW_5_r01] = "_LOAD_FAST_BORROW_5_r01",
+    #endif
+    #if MAX_CACHED_REGISTER >= 2
     [_LOAD_FAST_BORROW_5_r12] = "_LOAD_FAST_BORROW_5_r12",
+    #endif
+    #if MAX_CACHED_REGISTER >= 3
     [_LOAD_FAST_BORROW_5_r23] = "_LOAD_FAST_BORROW_5_r23",
+    #endif
+    #if MAX_CACHED_REGISTER >= 4
     [_LOAD_FAST_BORROW_5_r34] = "_LOAD_FAST_BORROW_5_r34",
+    #endif
+    #if MAX_CACHED_REGISTER >= 5
     [_LOAD_FAST_BORROW_5_r45] = "_LOAD_FAST_BORROW_5_r45",
+    #endif
     [_LOAD_FAST_BORROW_6] = "_LOAD_FAST_BORROW_6",
+    #if MAX_CACHED_REGISTER >= 1
     [_LOAD_FAST_BORROW_6_r01] = "_LOAD_FAST_BORROW_6_r01",
+    #endif
+    #if MAX_CACHED_REGISTER >= 2
     [_LOAD_FAST_BORROW_6_r12] = "_LOAD_FAST_BORROW_6_r12",
+    #endif
+    #if MAX_CACHED_REGISTER >= 3
     [_LOAD_FAST_BORROW_6_r23] = "_LOAD_FAST_BORROW_6_r23",
+    #endif
+    #if MAX_CACHED_REGISTER >= 4
     [_LOAD_FAST_BORROW_6_r34] = "_LOAD_FAST_BORROW_6_r34",
+    #endif
+    #if MAX_CACHED_REGISTER >= 5
     [_LOAD_FAST_BORROW_6_r45] = "_LOAD_FAST_BORROW_6_r45",
+    #endif
     [_LOAD_FAST_BORROW_7] = "_LOAD_FAST_BORROW_7",
+    #if MAX_CACHED_REGISTER >= 1
     [_LOAD_FAST_BORROW_7_r01] = "_LOAD_FAST_BORROW_7_r01",
+    #endif
+    #if MAX_CACHED_REGISTER >= 2
     [_LOAD_FAST_BORROW_7_r12] = "_LOAD_FAST_BORROW_7_r12",
+    #endif
+    #if MAX_CACHED_REGISTER >= 3
     [_LOAD_FAST_BORROW_7_r23] = "_LOAD_FAST_BORROW_7_r23",
+    #endif
+    #if MAX_CACHED_REGISTER >= 4
     [_LOAD_FAST_BORROW_7_r34] = "_LOAD_FAST_BORROW_7_r34",
+    #endif
+    #if MAX_CACHED_REGISTER >= 5
     [_LOAD_FAST_BORROW_7_r45] = "_LOAD_FAST_BORROW_7_r45",
+    #endif
     [_LOAD_FAST_CHECK] = "_LOAD_FAST_CHECK",
+    #if MAX_CACHED_REGISTER >= 1
     [_LOAD_FAST_CHECK_r01] = "_LOAD_FAST_CHECK_r01",
+    #endif
+    #if MAX_CACHED_REGISTER >= 2
     [_LOAD_FAST_CHECK_r12] = "_LOAD_FAST_CHECK_r12",
+    #endif
+    #if MAX_CACHED_REGISTER >= 3
     [_LOAD_FAST_CHECK_r23] = "_LOAD_FAST_CHECK_r23",
+    #endif
+    #if MAX_CACHED_REGISTER >= 4
     [_LOAD_FAST_CHECK_r34] = "_LOAD_FAST_CHECK_r34",
+    #endif
+    #if MAX_CACHED_REGISTER >= 5
     [_LOAD_FAST_CHECK_r45] = "_LOAD_FAST_CHECK_r45",
+    #endif
     [_LOAD_FROM_DICT_OR_DEREF] = "_LOAD_FROM_DICT_OR_DEREF",
+    #if MAX_CACHED_REGISTER >= 1
     [_LOAD_FROM_DICT_OR_DEREF_r11] = "_LOAD_FROM_DICT_OR_DEREF_r11",
+    #endif
     [_LOAD_GLOBAL] = "_LOAD_GLOBAL",
     [_LOAD_GLOBAL_r00] = "_LOAD_GLOBAL_r00",
     [_LOAD_GLOBAL_BUILTINS] = "_LOAD_GLOBAL_BUILTINS",
+    #if MAX_CACHED_REGISTER >= 1
     [_LOAD_GLOBAL_BUILTINS_r01] = "_LOAD_GLOBAL_BUILTINS_r01",
+    #endif
     [_LOAD_GLOBAL_MODULE] = "_LOAD_GLOBAL_MODULE",
+    #if MAX_CACHED_REGISTER >= 1
     [_LOAD_GLOBAL_MODULE_r01] = "_LOAD_GLOBAL_MODULE_r01",
+    #endif
     [_LOAD_LOCALS] = "_LOAD_LOCALS",
+    #if MAX_CACHED_REGISTER >= 1
     [_LOAD_LOCALS_r01] = "_LOAD_LOCALS_r01",
+    #endif
+    #if MAX_CACHED_REGISTER >= 2
     [_LOAD_LOCALS_r12] = "_LOAD_LOCALS_r12",
+    #endif
+    #if MAX_CACHED_REGISTER >= 3
     [_LOAD_LOCALS_r23] = "_LOAD_LOCALS_r23",
+    #endif
+    #if MAX_CACHED_REGISTER >= 4
     [_LOAD_LOCALS_r34] = "_LOAD_LOCALS_r34",
+    #endif
+    #if MAX_CACHED_REGISTER >= 5
     [_LOAD_LOCALS_r45] = "_LOAD_LOCALS_r45",
+    #endif
     [_LOAD_NAME] = "_LOAD_NAME",
+    #if MAX_CACHED_REGISTER >= 1
     [_LOAD_NAME_r01] = "_LOAD_NAME_r01",
+    #endif
     [_LOAD_SMALL_INT] = "_LOAD_SMALL_INT",
+    #if MAX_CACHED_REGISTER >= 1
     [_LOAD_SMALL_INT_r01] = "_LOAD_SMALL_INT_r01",
+    #endif
+    #if MAX_CACHED_REGISTER >= 2
     [_LOAD_SMALL_INT_r12] = "_LOAD_SMALL_INT_r12",
+    #endif
+    #if MAX_CACHED_REGISTER >= 3
     [_LOAD_SMALL_INT_r23] = "_LOAD_SMALL_INT_r23",
+    #endif
+    #if MAX_CACHED_REGISTER >= 4
     [_LOAD_SMALL_INT_r34] = "_LOAD_SMALL_INT_r34",
+    #endif
+    #if MAX_CACHED_REGISTER >= 5
     [_LOAD_SMALL_INT_r45] = "_LOAD_SMALL_INT_r45",
+    #endif
     [_LOAD_SMALL_INT_0] = "_LOAD_SMALL_INT_0",
+    #if MAX_CACHED_REGISTER >= 1
     [_LOAD_SMALL_INT_0_r01] = "_LOAD_SMALL_INT_0_r01",
+    #endif
+    #if MAX_CACHED_REGISTER >= 2
     [_LOAD_SMALL_INT_0_r12] = "_LOAD_SMALL_INT_0_r12",
+    #endif
+    #if MAX_CACHED_REGISTER >= 3
     [_LOAD_SMALL_INT_0_r23] = "_LOAD_SMALL_INT_0_r23",
+    #endif
+    #if MAX_CACHED_REGISTER >= 4
     [_LOAD_SMALL_INT_0_r34] = "_LOAD_SMALL_INT_0_r34",
+    #endif
+    #if MAX_CACHED_REGISTER >= 5
     [_LOAD_SMALL_INT_0_r45] = "_LOAD_SMALL_INT_0_r45",
+    #endif
     [_LOAD_SMALL_INT_1] = "_LOAD_SMALL_INT_1",
+    #if MAX_CACHED_REGISTER >= 1
     [_LOAD_SMALL_INT_1_r01] = "_LOAD_SMALL_INT_1_r01",
+    #endif
+    #if MAX_CACHED_REGISTER >= 2
     [_LOAD_SMALL_INT_1_r12] = "_LOAD_SMALL_INT_1_r12",
+    #endif
+    #if MAX_CACHED_REGISTER >= 3
     [_LOAD_SMALL_INT_1_r23] = "_LOAD_SMALL_INT_1_r23",
+    #endif
+    #if MAX_CACHED_REGISTER >= 4
     [_LOAD_SMALL_INT_1_r34] = "_LOAD_SMALL_INT_1_r34",
+    #endif
+    #if MAX_CACHED_REGISTER >= 5
     [_LOAD_SMALL_INT_1_r45] = "_LOAD_SMALL_INT_1_r45",
+    #endif
     [_LOAD_SMALL_INT_2] = "_LOAD_SMALL_INT_2",
+    #if MAX_CACHED_REGISTER >= 1
     [_LOAD_SMALL_INT_2_r01] = "_LOAD_SMALL_INT_2_r01",
+    #endif
+    #if MAX_CACHED_REGISTER >= 2
     [_LOAD_SMALL_INT_2_r12] = "_LOAD_SMALL_INT_2_r12",
+    #endif
+    #if MAX_CACHED_REGISTER >= 3
     [_LOAD_SMALL_INT_2_r23] = "_LOAD_SMALL_INT_2_r23",
+    #endif
+    #if MAX_CACHED_REGISTER >= 4
     [_LOAD_SMALL_INT_2_r34] = "_LOAD_SMALL_INT_2_r34",
+    #endif
+    #if MAX_CACHED_REGISTER >= 5
     [_LOAD_SMALL_INT_2_r45] = "_LOAD_SMALL_INT_2_r45",
+    #endif
     [_LOAD_SMALL_INT_3] = "_LOAD_SMALL_INT_3",
+    #if MAX_CACHED_REGISTER >= 1
     [_LOAD_SMALL_INT_3_r01] = "_LOAD_SMALL_INT_3_r01",
+    #endif
+    #if MAX_CACHED_REGISTER >= 2
     [_LOAD_SMALL_INT_3_r12] = "_LOAD_SMALL_INT_3_r12",
+    #endif
+    #if MAX_CACHED_REGISTER >= 3
     [_LOAD_SMALL_INT_3_r23] = "_LOAD_SMALL_INT_3_r23",
+    #endif
+    #if MAX_CACHED_REGISTER >= 4
     [_LOAD_SMALL_INT_3_r34] = "_LOAD_SMALL_INT_3_r34",
+    #endif
+    #if MAX_CACHED_REGISTER >= 5
     [_LOAD_SMALL_INT_3_r45] = "_LOAD_SMALL_INT_3_r45",
+    #endif
     [_LOAD_SPECIAL] = "_LOAD_SPECIAL",
     [_LOAD_SPECIAL_r00] = "_LOAD_SPECIAL_r00",
     [_LOAD_SUPER_ATTR_ATTR] = "_LOAD_SUPER_ATTR_ATTR",
+    #if MAX_CACHED_REGISTER >= 3
     [_LOAD_SUPER_ATTR_ATTR_r31] = "_LOAD_SUPER_ATTR_ATTR_r31",
+    #endif
     [_LOAD_SUPER_ATTR_METHOD] = "_LOAD_SUPER_ATTR_METHOD",
+    #if MAX_CACHED_REGISTER >= 3
     [_LOAD_SUPER_ATTR_METHOD_r32] = "_LOAD_SUPER_ATTR_METHOD_r32",
+    #endif
     [_MAKE_CALLARGS_A_TUPLE] = "_MAKE_CALLARGS_A_TUPLE",
+    #if MAX_CACHED_REGISTER >= 4
     [_MAKE_CALLARGS_A_TUPLE_r44] = "_MAKE_CALLARGS_A_TUPLE_r44",
+    #endif
     [_MAKE_CELL] = "_MAKE_CELL",
     [_MAKE_CELL_r00] = "_MAKE_CELL_r00",
     [_MAKE_FUNCTION] = "_MAKE_FUNCTION",
+    #if MAX_CACHED_REGISTER >= 1
     [_MAKE_FUNCTION_r11] = "_MAKE_FUNCTION_r11",
+    #endif
     [_MAKE_WARM] = "_MAKE_WARM",
     [_MAKE_WARM_r00] = "_MAKE_WARM_r00",
+    #if MAX_CACHED_REGISTER >= 1
     [_MAKE_WARM_r11] = "_MAKE_WARM_r11",
+    #endif
+    #if MAX_CACHED_REGISTER >= 2
     [_MAKE_WARM_r22] = "_MAKE_WARM_r22",
+    #endif
+    #if MAX_CACHED_REGISTER >= 3
     [_MAKE_WARM_r33] = "_MAKE_WARM_r33",
+    #endif
+    #if MAX_CACHED_REGISTER >= 4
     [_MAKE_WARM_r44] = "_MAKE_WARM_r44",
+    #endif
+    #if MAX_CACHED_REGISTER >= 5
     [_MAKE_WARM_r55] = "_MAKE_WARM_r55",
+    #endif
     [_MAP_ADD] = "_MAP_ADD",
+    #if MAX_CACHED_REGISTER >= 2
     [_MAP_ADD_r20] = "_MAP_ADD_r20",
+    #endif
     [_MATCH_CLASS] = "_MATCH_CLASS",
+    #if MAX_CACHED_REGISTER >= 3
     [_MATCH_CLASS_r31] = "_MATCH_CLASS_r31",
+    #endif
     [_MATCH_KEYS] = "_MATCH_KEYS",
+    #if MAX_CACHED_REGISTER >= 3
     [_MATCH_KEYS_r23] = "_MATCH_KEYS_r23",
+    #endif
     [_MATCH_MAPPING] = "_MATCH_MAPPING",
+    #if MAX_CACHED_REGISTER >= 2
     [_MATCH_MAPPING_r02] = "_MATCH_MAPPING_r02",
+    #endif
+    #if MAX_CACHED_REGISTER >= 2
     [_MATCH_MAPPING_r12] = "_MATCH_MAPPING_r12",
+    #endif
+    #if MAX_CACHED_REGISTER >= 3
     [_MATCH_MAPPING_r23] = "_MATCH_MAPPING_r23",
+    #endif
+    #if MAX_CACHED_REGISTER >= 4
     [_MATCH_MAPPING_r34] = "_MATCH_MAPPING_r34",
+    #endif
+    #if MAX_CACHED_REGISTER >= 5
     [_MATCH_MAPPING_r45] = "_MATCH_MAPPING_r45",
+    #endif
     [_MATCH_SEQUENCE] = "_MATCH_SEQUENCE",
+    #if MAX_CACHED_REGISTER >= 2
     [_MATCH_SEQUENCE_r02] = "_MATCH_SEQUENCE_r02",
+    #endif
+    #if MAX_CACHED_REGISTER >= 2
     [_MATCH_SEQUENCE_r12] = "_MATCH_SEQUENCE_r12",
+    #endif
+    #if MAX_CACHED_REGISTER >= 3
     [_MATCH_SEQUENCE_r23] = "_MATCH_SEQUENCE_r23",
+    #endif
+    #if MAX_CACHED_REGISTER >= 4
     [_MATCH_SEQUENCE_r34] = "_MATCH_SEQUENCE_r34",
+    #endif
+    #if MAX_CACHED_REGISTER >= 5
     [_MATCH_SEQUENCE_r45] = "_MATCH_SEQUENCE_r45",
+    #endif
     [_MAYBE_EXPAND_METHOD] = "_MAYBE_EXPAND_METHOD",
     [_MAYBE_EXPAND_METHOD_r00] = "_MAYBE_EXPAND_METHOD_r00",
     [_MAYBE_EXPAND_METHOD_KW] = "_MAYBE_EXPAND_METHOD_KW",
+    #if MAX_CACHED_REGISTER >= 1
     [_MAYBE_EXPAND_METHOD_KW_r11] = "_MAYBE_EXPAND_METHOD_KW_r11",
+    #endif
     [_NOP] = "_NOP",
     [_NOP_r00] = "_NOP_r00",
+    #if MAX_CACHED_REGISTER >= 1
     [_NOP_r11] = "_NOP_r11",
+    #endif
+    #if MAX_CACHED_REGISTER >= 2
     [_NOP_r22] = "_NOP_r22",
+    #endif
+    #if MAX_CACHED_REGISTER >= 3
     [_NOP_r33] = "_NOP_r33",
+    #endif
+    #if MAX_CACHED_REGISTER >= 4
     [_NOP_r44] = "_NOP_r44",
+    #endif
+    #if MAX_CACHED_REGISTER >= 5
     [_NOP_r55] = "_NOP_r55",
+    #endif
     [_POP_CALL] = "_POP_CALL",
+    #if MAX_CACHED_REGISTER >= 2
     [_POP_CALL_r20] = "_POP_CALL_r20",
+    #endif
     [_POP_CALL_LOAD_CONST_INLINE_BORROW] = "_POP_CALL_LOAD_CONST_INLINE_BORROW",
+    #if MAX_CACHED_REGISTER >= 2
     [_POP_CALL_LOAD_CONST_INLINE_BORROW_r21] = "_POP_CALL_LOAD_CONST_INLINE_BORROW_r21",
+    #endif
     [_POP_CALL_ONE] = "_POP_CALL_ONE",
+    #if MAX_CACHED_REGISTER >= 3
     [_POP_CALL_ONE_r30] = "_POP_CALL_ONE_r30",
+    #endif
     [_POP_CALL_ONE_LOAD_CONST_INLINE_BORROW] = "_POP_CALL_ONE_LOAD_CONST_INLINE_BORROW",
+    #if MAX_CACHED_REGISTER >= 3
     [_POP_CALL_ONE_LOAD_CONST_INLINE_BORROW_r31] = "_POP_CALL_ONE_LOAD_CONST_INLINE_BORROW_r31",
+    #endif
     [_POP_CALL_TWO] = "_POP_CALL_TWO",
+    #if MAX_CACHED_REGISTER >= 4
     [_POP_CALL_TWO_r40] = "_POP_CALL_TWO_r40",
+    #endif
     [_POP_CALL_TWO_LOAD_CONST_INLINE_BORROW] = "_POP_CALL_TWO_LOAD_CONST_INLINE_BORROW",
+    #if MAX_CACHED_REGISTER >= 4
     [_POP_CALL_TWO_LOAD_CONST_INLINE_BORROW_r41] = "_POP_CALL_TWO_LOAD_CONST_INLINE_BORROW_r41",
+    #endif
     [_POP_EXCEPT] = "_POP_EXCEPT",
+    #if MAX_CACHED_REGISTER >= 1
     [_POP_EXCEPT_r10] = "_POP_EXCEPT_r10",
+    #endif
     [_POP_ITER] = "_POP_ITER",
+    #if MAX_CACHED_REGISTER >= 2
     [_POP_ITER_r20] = "_POP_ITER_r20",
+    #endif
     [_POP_TOP] = "_POP_TOP",
+    #if MAX_CACHED_REGISTER >= 1
     [_POP_TOP_r10] = "_POP_TOP_r10",
+    #endif
     [_POP_TOP_FLOAT] = "_POP_TOP_FLOAT",
     [_POP_TOP_FLOAT_r00] = "_POP_TOP_FLOAT_r00",
+    #if MAX_CACHED_REGISTER >= 1
     [_POP_TOP_FLOAT_r10] = "_POP_TOP_FLOAT_r10",
+    #endif
+    #if MAX_CACHED_REGISTER >= 2
     [_POP_TOP_FLOAT_r21] = "_POP_TOP_FLOAT_r21",
+    #endif
+    #if MAX_CACHED_REGISTER >= 3
     [_POP_TOP_FLOAT_r32] = "_POP_TOP_FLOAT_r32",
+    #endif
+    #if MAX_CACHED_REGISTER >= 4
     [_POP_TOP_FLOAT_r43] = "_POP_TOP_FLOAT_r43",
+    #endif
+    #if MAX_CACHED_REGISTER >= 5
     [_POP_TOP_FLOAT_r54] = "_POP_TOP_FLOAT_r54",
+    #endif
     [_POP_TOP_INT] = "_POP_TOP_INT",
     [_POP_TOP_INT_r00] = "_POP_TOP_INT_r00",
+    #if MAX_CACHED_REGISTER >= 1
     [_POP_TOP_INT_r10] = "_POP_TOP_INT_r10",
+    #endif
+    #if MAX_CACHED_REGISTER >= 2
     [_POP_TOP_INT_r21] = "_POP_TOP_INT_r21",
+    #endif
+    #if MAX_CACHED_REGISTER >= 3
     [_POP_TOP_INT_r32] = "_POP_TOP_INT_r32",
+    #endif
+    #if MAX_CACHED_REGISTER >= 4
     [_POP_TOP_INT_r43] = "_POP_TOP_INT_r43",
+    #endif
+    #if MAX_CACHED_REGISTER >= 5
     [_POP_TOP_INT_r54] = "_POP_TOP_INT_r54",
+    #endif
     [_POP_TOP_LOAD_CONST_INLINE] = "_POP_TOP_LOAD_CONST_INLINE",
+    #if MAX_CACHED_REGISTER >= 1
     [_POP_TOP_LOAD_CONST_INLINE_r11] = "_POP_TOP_LOAD_CONST_INLINE_r11",
+    #endif
     [_POP_TOP_LOAD_CONST_INLINE_BORROW] = "_POP_TOP_LOAD_CONST_INLINE_BORROW",
+    #if MAX_CACHED_REGISTER >= 1
     [_POP_TOP_LOAD_CONST_INLINE_BORROW_r11] = "_POP_TOP_LOAD_CONST_INLINE_BORROW_r11",
+    #endif
     [_POP_TOP_NOP] = "_POP_TOP_NOP",
     [_POP_TOP_NOP_r00] = "_POP_TOP_NOP_r00",
+    #if MAX_CACHED_REGISTER >= 1
     [_POP_TOP_NOP_r10] = "_POP_TOP_NOP_r10",
+    #endif
+    #if MAX_CACHED_REGISTER >= 2
     [_POP_TOP_NOP_r21] = "_POP_TOP_NOP_r21",
+    #endif
+    #if MAX_CACHED_REGISTER >= 3
     [_POP_TOP_NOP_r32] = "_POP_TOP_NOP_r32",
+    #endif
+    #if MAX_CACHED_REGISTER >= 4
     [_POP_TOP_NOP_r43] = "_POP_TOP_NOP_r43",
+    #endif
+    #if MAX_CACHED_REGISTER >= 5
     [_POP_TOP_NOP_r54] = "_POP_TOP_NOP_r54",
+    #endif
     [_POP_TOP_UNICODE] = "_POP_TOP_UNICODE",
     [_POP_TOP_UNICODE_r00] = "_POP_TOP_UNICODE_r00",
+    #if MAX_CACHED_REGISTER >= 1
     [_POP_TOP_UNICODE_r10] = "_POP_TOP_UNICODE_r10",
+    #endif
+    #if MAX_CACHED_REGISTER >= 2
     [_POP_TOP_UNICODE_r21] = "_POP_TOP_UNICODE_r21",
+    #endif
+    #if MAX_CACHED_REGISTER >= 3
     [_POP_TOP_UNICODE_r32] = "_POP_TOP_UNICODE_r32",
+    #endif
+    #if MAX_CACHED_REGISTER >= 4
     [_POP_TOP_UNICODE_r43] = "_POP_TOP_UNICODE_r43",
+    #endif
+    #if MAX_CACHED_REGISTER >= 5
     [_POP_TOP_UNICODE_r54] = "_POP_TOP_UNICODE_r54",
+    #endif
     [_POP_TWO] = "_POP_TWO",
+    #if MAX_CACHED_REGISTER >= 2
     [_POP_TWO_r20] = "_POP_TWO_r20",
+    #endif
     [_POP_TWO_LOAD_CONST_INLINE_BORROW] = "_POP_TWO_LOAD_CONST_INLINE_BORROW",
+    #if MAX_CACHED_REGISTER >= 2
     [_POP_TWO_LOAD_CONST_INLINE_BORROW_r21] = "_POP_TWO_LOAD_CONST_INLINE_BORROW_r21",
+    #endif
     [_PUSH_EXC_INFO] = "_PUSH_EXC_INFO",
+    #if MAX_CACHED_REGISTER >= 2
     [_PUSH_EXC_INFO_r02] = "_PUSH_EXC_INFO_r02",
+    #endif
+    #if MAX_CACHED_REGISTER >= 2
     [_PUSH_EXC_INFO_r12] = "_PUSH_EXC_INFO_r12",
+    #endif
+    #if MAX_CACHED_REGISTER >= 3
     [_PUSH_EXC_INFO_r23] = "_PUSH_EXC_INFO_r23",
+    #endif
+    #if MAX_CACHED_REGISTER >= 4
     [_PUSH_EXC_INFO_r34] = "_PUSH_EXC_INFO_r34",
+    #endif
+    #if MAX_CACHED_REGISTER >= 5
     [_PUSH_EXC_INFO_r45] = "_PUSH_EXC_INFO_r45",
+    #endif
     [_PUSH_FRAME] = "_PUSH_FRAME",
+    #if MAX_CACHED_REGISTER >= 1
     [_PUSH_FRAME_r10] = "_PUSH_FRAME_r10",
+    #endif
     [_PUSH_NULL] = "_PUSH_NULL",
+    #if MAX_CACHED_REGISTER >= 1
     [_PUSH_NULL_r01] = "_PUSH_NULL_r01",
+    #endif
+    #if MAX_CACHED_REGISTER >= 2
     [_PUSH_NULL_r12] = "_PUSH_NULL_r12",
+    #endif
+    #if MAX_CACHED_REGISTER >= 3
     [_PUSH_NULL_r23] = "_PUSH_NULL_r23",
+    #endif
+    #if MAX_CACHED_REGISTER >= 4
     [_PUSH_NULL_r34] = "_PUSH_NULL_r34",
+    #endif
+    #if MAX_CACHED_REGISTER >= 5
     [_PUSH_NULL_r45] = "_PUSH_NULL_r45",
+    #endif
     [_PUSH_NULL_CONDITIONAL] = "_PUSH_NULL_CONDITIONAL",
     [_PUSH_NULL_CONDITIONAL_r00] = "_PUSH_NULL_CONDITIONAL_r00",
     [_PY_FRAME_EX] = "_PY_FRAME_EX",
+    #if MAX_CACHED_REGISTER >= 4
     [_PY_FRAME_EX_r41] = "_PY_FRAME_EX_r41",
+    #endif
     [_PY_FRAME_GENERAL] = "_PY_FRAME_GENERAL",
+    #if MAX_CACHED_REGISTER >= 1
     [_PY_FRAME_GENERAL_r01] = "_PY_FRAME_GENERAL_r01",
+    #endif
     [_PY_FRAME_KW] = "_PY_FRAME_KW",
+    #if MAX_CACHED_REGISTER >= 1
     [_PY_FRAME_KW_r11] = "_PY_FRAME_KW_r11",
+    #endif
     [_RECORD_4OS] = "_RECORD_4OS",
     [_RECORD_BOUND_METHOD] = "_RECORD_BOUND_METHOD",
     [_RECORD_CALLABLE] = "_RECORD_CALLABLE",
@@ -5953,265 +9971,663 @@ const char *const _PyOpcode_uop_name[MAX_UOP_REGS_ID+1] = {
     [_RECORD_TOS] = "_RECORD_TOS",
     [_RECORD_TOS_TYPE] = "_RECORD_TOS_TYPE",
     [_REPLACE_WITH_TRUE] = "_REPLACE_WITH_TRUE",
+    #if MAX_CACHED_REGISTER >= 2
     [_REPLACE_WITH_TRUE_r02] = "_REPLACE_WITH_TRUE_r02",
+    #endif
+    #if MAX_CACHED_REGISTER >= 2
     [_REPLACE_WITH_TRUE_r12] = "_REPLACE_WITH_TRUE_r12",
+    #endif
+    #if MAX_CACHED_REGISTER >= 3
     [_REPLACE_WITH_TRUE_r23] = "_REPLACE_WITH_TRUE_r23",
+    #endif
+    #if MAX_CACHED_REGISTER >= 4
     [_REPLACE_WITH_TRUE_r34] = "_REPLACE_WITH_TRUE_r34",
+    #endif
+    #if MAX_CACHED_REGISTER >= 5
     [_REPLACE_WITH_TRUE_r45] = "_REPLACE_WITH_TRUE_r45",
+    #endif
     [_RESUME_CHECK] = "_RESUME_CHECK",
     [_RESUME_CHECK_r00] = "_RESUME_CHECK_r00",
+    #if MAX_CACHED_REGISTER >= 1
     [_RESUME_CHECK_r11] = "_RESUME_CHECK_r11",
+    #endif
+    #if MAX_CACHED_REGISTER >= 2
     [_RESUME_CHECK_r22] = "_RESUME_CHECK_r22",
+    #endif
+    #if MAX_CACHED_REGISTER >= 3
     [_RESUME_CHECK_r33] = "_RESUME_CHECK_r33",
+    #endif
+    #if MAX_CACHED_REGISTER >= 4
     [_RESUME_CHECK_r44] = "_RESUME_CHECK_r44",
+    #endif
+    #if MAX_CACHED_REGISTER >= 5
     [_RESUME_CHECK_r55] = "_RESUME_CHECK_r55",
+    #endif
     [_RETURN_GENERATOR] = "_RETURN_GENERATOR",
+    #if MAX_CACHED_REGISTER >= 1
     [_RETURN_GENERATOR_r01] = "_RETURN_GENERATOR_r01",
+    #endif
     [_RETURN_VALUE] = "_RETURN_VALUE",
+    #if MAX_CACHED_REGISTER >= 1
     [_RETURN_VALUE_r11] = "_RETURN_VALUE_r11",
+    #endif
     [_SAVE_RETURN_OFFSET] = "_SAVE_RETURN_OFFSET",
     [_SAVE_RETURN_OFFSET_r00] = "_SAVE_RETURN_OFFSET_r00",
+    #if MAX_CACHED_REGISTER >= 1
     [_SAVE_RETURN_OFFSET_r11] = "_SAVE_RETURN_OFFSET_r11",
+    #endif
+    #if MAX_CACHED_REGISTER >= 2
     [_SAVE_RETURN_OFFSET_r22] = "_SAVE_RETURN_OFFSET_r22",
+    #endif
+    #if MAX_CACHED_REGISTER >= 3
     [_SAVE_RETURN_OFFSET_r33] = "_SAVE_RETURN_OFFSET_r33",
+    #endif
+    #if MAX_CACHED_REGISTER >= 4
     [_SAVE_RETURN_OFFSET_r44] = "_SAVE_RETURN_OFFSET_r44",
+    #endif
+    #if MAX_CACHED_REGISTER >= 5
     [_SAVE_RETURN_OFFSET_r55] = "_SAVE_RETURN_OFFSET_r55",
+    #endif
     [_SEND_GEN_FRAME] = "_SEND_GEN_FRAME",
+    #if MAX_CACHED_REGISTER >= 2
     [_SEND_GEN_FRAME_r22] = "_SEND_GEN_FRAME_r22",
+    #endif
     [_SETUP_ANNOTATIONS] = "_SETUP_ANNOTATIONS",
     [_SETUP_ANNOTATIONS_r00] = "_SETUP_ANNOTATIONS_r00",
     [_SET_ADD] = "_SET_ADD",
+    #if MAX_CACHED_REGISTER >= 1
     [_SET_ADD_r10] = "_SET_ADD_r10",
+    #endif
     [_SET_FUNCTION_ATTRIBUTE] = "_SET_FUNCTION_ATTRIBUTE",
+    #if MAX_CACHED_REGISTER >= 1
     [_SET_FUNCTION_ATTRIBUTE_r01] = "_SET_FUNCTION_ATTRIBUTE_r01",
+    #endif
+    #if MAX_CACHED_REGISTER >= 1
     [_SET_FUNCTION_ATTRIBUTE_r11] = "_SET_FUNCTION_ATTRIBUTE_r11",
+    #endif
+    #if MAX_CACHED_REGISTER >= 2
     [_SET_FUNCTION_ATTRIBUTE_r21] = "_SET_FUNCTION_ATTRIBUTE_r21",
+    #endif
+    #if MAX_CACHED_REGISTER >= 3
     [_SET_FUNCTION_ATTRIBUTE_r32] = "_SET_FUNCTION_ATTRIBUTE_r32",
+    #endif
+    #if MAX_CACHED_REGISTER >= 4
     [_SET_FUNCTION_ATTRIBUTE_r43] = "_SET_FUNCTION_ATTRIBUTE_r43",
+    #endif
+    #if MAX_CACHED_REGISTER >= 5
     [_SET_FUNCTION_ATTRIBUTE_r54] = "_SET_FUNCTION_ATTRIBUTE_r54",
+    #endif
     [_SET_IP] = "_SET_IP",
     [_SET_IP_r00] = "_SET_IP_r00",
+    #if MAX_CACHED_REGISTER >= 1
     [_SET_IP_r11] = "_SET_IP_r11",
+    #endif
+    #if MAX_CACHED_REGISTER >= 2
     [_SET_IP_r22] = "_SET_IP_r22",
+    #endif
+    #if MAX_CACHED_REGISTER >= 3
     [_SET_IP_r33] = "_SET_IP_r33",
+    #endif
+    #if MAX_CACHED_REGISTER >= 4
     [_SET_IP_r44] = "_SET_IP_r44",
+    #endif
+    #if MAX_CACHED_REGISTER >= 5
     [_SET_IP_r55] = "_SET_IP_r55",
+    #endif
     [_SET_UPDATE] = "_SET_UPDATE",
+    #if MAX_CACHED_REGISTER >= 1
     [_SET_UPDATE_r10] = "_SET_UPDATE_r10",
+    #endif
     [_SHUFFLE_2_LOAD_CONST_INLINE_BORROW] = "_SHUFFLE_2_LOAD_CONST_INLINE_BORROW",
+    #if MAX_CACHED_REGISTER >= 2
     [_SHUFFLE_2_LOAD_CONST_INLINE_BORROW_r02] = "_SHUFFLE_2_LOAD_CONST_INLINE_BORROW_r02",
+    #endif
+    #if MAX_CACHED_REGISTER >= 2
     [_SHUFFLE_2_LOAD_CONST_INLINE_BORROW_r12] = "_SHUFFLE_2_LOAD_CONST_INLINE_BORROW_r12",
+    #endif
+    #if MAX_CACHED_REGISTER >= 2
     [_SHUFFLE_2_LOAD_CONST_INLINE_BORROW_r22] = "_SHUFFLE_2_LOAD_CONST_INLINE_BORROW_r22",
+    #endif
+    #if MAX_CACHED_REGISTER >= 3
     [_SHUFFLE_2_LOAD_CONST_INLINE_BORROW_r32] = "_SHUFFLE_2_LOAD_CONST_INLINE_BORROW_r32",
+    #endif
+    #if MAX_CACHED_REGISTER >= 4
     [_SHUFFLE_2_LOAD_CONST_INLINE_BORROW_r43] = "_SHUFFLE_2_LOAD_CONST_INLINE_BORROW_r43",
+    #endif
+    #if MAX_CACHED_REGISTER >= 5
     [_SHUFFLE_2_LOAD_CONST_INLINE_BORROW_r54] = "_SHUFFLE_2_LOAD_CONST_INLINE_BORROW_r54",
+    #endif
     [_SHUFFLE_3_LOAD_CONST_INLINE_BORROW] = "_SHUFFLE_3_LOAD_CONST_INLINE_BORROW",
+    #if MAX_CACHED_REGISTER >= 3
     [_SHUFFLE_3_LOAD_CONST_INLINE_BORROW_r03] = "_SHUFFLE_3_LOAD_CONST_INLINE_BORROW_r03",
+    #endif
+    #if MAX_CACHED_REGISTER >= 3
     [_SHUFFLE_3_LOAD_CONST_INLINE_BORROW_r13] = "_SHUFFLE_3_LOAD_CONST_INLINE_BORROW_r13",
+    #endif
+    #if MAX_CACHED_REGISTER >= 3
     [_SHUFFLE_3_LOAD_CONST_INLINE_BORROW_r23] = "_SHUFFLE_3_LOAD_CONST_INLINE_BORROW_r23",
+    #endif
+    #if MAX_CACHED_REGISTER >= 3
     [_SHUFFLE_3_LOAD_CONST_INLINE_BORROW_r33] = "_SHUFFLE_3_LOAD_CONST_INLINE_BORROW_r33",
+    #endif
+    #if MAX_CACHED_REGISTER >= 4
     [_SHUFFLE_3_LOAD_CONST_INLINE_BORROW_r44] = "_SHUFFLE_3_LOAD_CONST_INLINE_BORROW_r44",
+    #endif
+    #if MAX_CACHED_REGISTER >= 5
     [_SHUFFLE_3_LOAD_CONST_INLINE_BORROW_r55] = "_SHUFFLE_3_LOAD_CONST_INLINE_BORROW_r55",
+    #endif
     [_SPILL_OR_RELOAD] = "_SPILL_OR_RELOAD",
+    #if MAX_CACHED_REGISTER >= 1
     [_SPILL_OR_RELOAD_r01] = "_SPILL_OR_RELOAD_r01",
+    #endif
+    #if MAX_CACHED_REGISTER >= 2
     [_SPILL_OR_RELOAD_r02] = "_SPILL_OR_RELOAD_r02",
+    #endif
+    #if MAX_CACHED_REGISTER >= 3
     [_SPILL_OR_RELOAD_r03] = "_SPILL_OR_RELOAD_r03",
+    #endif
+    #if MAX_CACHED_REGISTER >= 4
     [_SPILL_OR_RELOAD_r04] = "_SPILL_OR_RELOAD_r04",
+    #endif
+    #if MAX_CACHED_REGISTER >= 5
     [_SPILL_OR_RELOAD_r05] = "_SPILL_OR_RELOAD_r05",
+    #endif
+    #if MAX_CACHED_REGISTER >= 1
     [_SPILL_OR_RELOAD_r10] = "_SPILL_OR_RELOAD_r10",
+    #endif
+    #if MAX_CACHED_REGISTER >= 2
     [_SPILL_OR_RELOAD_r12] = "_SPILL_OR_RELOAD_r12",
+    #endif
+    #if MAX_CACHED_REGISTER >= 3
     [_SPILL_OR_RELOAD_r13] = "_SPILL_OR_RELOAD_r13",
+    #endif
+    #if MAX_CACHED_REGISTER >= 4
     [_SPILL_OR_RELOAD_r14] = "_SPILL_OR_RELOAD_r14",
+    #endif
+    #if MAX_CACHED_REGISTER >= 5
     [_SPILL_OR_RELOAD_r15] = "_SPILL_OR_RELOAD_r15",
+    #endif
+    #if MAX_CACHED_REGISTER >= 2
     [_SPILL_OR_RELOAD_r20] = "_SPILL_OR_RELOAD_r20",
+    #endif
+    #if MAX_CACHED_REGISTER >= 2
     [_SPILL_OR_RELOAD_r21] = "_SPILL_OR_RELOAD_r21",
+    #endif
+    #if MAX_CACHED_REGISTER >= 3
     [_SPILL_OR_RELOAD_r23] = "_SPILL_OR_RELOAD_r23",
+    #endif
+    #if MAX_CACHED_REGISTER >= 4
     [_SPILL_OR_RELOAD_r24] = "_SPILL_OR_RELOAD_r24",
+    #endif
+    #if MAX_CACHED_REGISTER >= 5
     [_SPILL_OR_RELOAD_r25] = "_SPILL_OR_RELOAD_r25",
+    #endif
+    #if MAX_CACHED_REGISTER >= 3
     [_SPILL_OR_RELOAD_r30] = "_SPILL_OR_RELOAD_r30",
+    #endif
+    #if MAX_CACHED_REGISTER >= 3
     [_SPILL_OR_RELOAD_r31] = "_SPILL_OR_RELOAD_r31",
+    #endif
+    #if MAX_CACHED_REGISTER >= 3
     [_SPILL_OR_RELOAD_r32] = "_SPILL_OR_RELOAD_r32",
+    #endif
+    #if MAX_CACHED_REGISTER >= 4
     [_SPILL_OR_RELOAD_r34] = "_SPILL_OR_RELOAD_r34",
+    #endif
+    #if MAX_CACHED_REGISTER >= 5
     [_SPILL_OR_RELOAD_r35] = "_SPILL_OR_RELOAD_r35",
+    #endif
+    #if MAX_CACHED_REGISTER >= 4
     [_SPILL_OR_RELOAD_r40] = "_SPILL_OR_RELOAD_r40",
+    #endif
+    #if MAX_CACHED_REGISTER >= 4
     [_SPILL_OR_RELOAD_r41] = "_SPILL_OR_RELOAD_r41",
+    #endif
+    #if MAX_CACHED_REGISTER >= 4
     [_SPILL_OR_RELOAD_r42] = "_SPILL_OR_RELOAD_r42",
+    #endif
+    #if MAX_CACHED_REGISTER >= 4
     [_SPILL_OR_RELOAD_r43] = "_SPILL_OR_RELOAD_r43",
+    #endif
+    #if MAX_CACHED_REGISTER >= 5
     [_SPILL_OR_RELOAD_r45] = "_SPILL_OR_RELOAD_r45",
+    #endif
+    #if MAX_CACHED_REGISTER >= 5
     [_SPILL_OR_RELOAD_r50] = "_SPILL_OR_RELOAD_r50",
+    #endif
+    #if MAX_CACHED_REGISTER >= 5
     [_SPILL_OR_RELOAD_r51] = "_SPILL_OR_RELOAD_r51",
+    #endif
+    #if MAX_CACHED_REGISTER >= 5
     [_SPILL_OR_RELOAD_r52] = "_SPILL_OR_RELOAD_r52",
+    #endif
+    #if MAX_CACHED_REGISTER >= 5
     [_SPILL_OR_RELOAD_r53] = "_SPILL_OR_RELOAD_r53",
+    #endif
+    #if MAX_CACHED_REGISTER >= 5
     [_SPILL_OR_RELOAD_r54] = "_SPILL_OR_RELOAD_r54",
+    #endif
     [_START_EXECUTOR] = "_START_EXECUTOR",
     [_START_EXECUTOR_r00] = "_START_EXECUTOR_r00",
     [_STORE_ATTR] = "_STORE_ATTR",
+    #if MAX_CACHED_REGISTER >= 2
     [_STORE_ATTR_r20] = "_STORE_ATTR_r20",
+    #endif
     [_STORE_ATTR_INSTANCE_VALUE] = "_STORE_ATTR_INSTANCE_VALUE",
+    #if MAX_CACHED_REGISTER >= 2
     [_STORE_ATTR_INSTANCE_VALUE_r21] = "_STORE_ATTR_INSTANCE_VALUE_r21",
+    #endif
     [_STORE_ATTR_SLOT] = "_STORE_ATTR_SLOT",
+    #if MAX_CACHED_REGISTER >= 2
     [_STORE_ATTR_SLOT_r21] = "_STORE_ATTR_SLOT_r21",
+    #endif
     [_STORE_ATTR_WITH_HINT] = "_STORE_ATTR_WITH_HINT",
+    #if MAX_CACHED_REGISTER >= 2
     [_STORE_ATTR_WITH_HINT_r21] = "_STORE_ATTR_WITH_HINT_r21",
+    #endif
     [_STORE_DEREF] = "_STORE_DEREF",
+    #if MAX_CACHED_REGISTER >= 1
     [_STORE_DEREF_r10] = "_STORE_DEREF_r10",
+    #endif
     [_STORE_GLOBAL] = "_STORE_GLOBAL",
+    #if MAX_CACHED_REGISTER >= 1
     [_STORE_GLOBAL_r10] = "_STORE_GLOBAL_r10",
+    #endif
     [_STORE_NAME] = "_STORE_NAME",
+    #if MAX_CACHED_REGISTER >= 1
     [_STORE_NAME_r10] = "_STORE_NAME_r10",
+    #endif
     [_STORE_SLICE] = "_STORE_SLICE",
+    #if MAX_CACHED_REGISTER >= 4
     [_STORE_SLICE_r40] = "_STORE_SLICE_r40",
+    #endif
     [_STORE_SUBSCR] = "_STORE_SUBSCR",
+    #if MAX_CACHED_REGISTER >= 3
     [_STORE_SUBSCR_r30] = "_STORE_SUBSCR_r30",
+    #endif
     [_STORE_SUBSCR_DICT] = "_STORE_SUBSCR_DICT",
+    #if MAX_CACHED_REGISTER >= 3
     [_STORE_SUBSCR_DICT_r31] = "_STORE_SUBSCR_DICT_r31",
+    #endif
     [_STORE_SUBSCR_LIST_INT] = "_STORE_SUBSCR_LIST_INT",
+    #if MAX_CACHED_REGISTER >= 3
     [_STORE_SUBSCR_LIST_INT_r32] = "_STORE_SUBSCR_LIST_INT_r32",
+    #endif
     [_SWAP] = "_SWAP",
+    #if MAX_CACHED_REGISTER >= 1
     [_SWAP_r11] = "_SWAP_r11",
+    #endif
     [_SWAP_2] = "_SWAP_2",
+    #if MAX_CACHED_REGISTER >= 2
     [_SWAP_2_r02] = "_SWAP_2_r02",
+    #endif
+    #if MAX_CACHED_REGISTER >= 2
     [_SWAP_2_r12] = "_SWAP_2_r12",
+    #endif
+    #if MAX_CACHED_REGISTER >= 2
     [_SWAP_2_r22] = "_SWAP_2_r22",
+    #endif
+    #if MAX_CACHED_REGISTER >= 3
     [_SWAP_2_r33] = "_SWAP_2_r33",
+    #endif
+    #if MAX_CACHED_REGISTER >= 4
     [_SWAP_2_r44] = "_SWAP_2_r44",
+    #endif
+    #if MAX_CACHED_REGISTER >= 5
     [_SWAP_2_r55] = "_SWAP_2_r55",
+    #endif
     [_SWAP_3] = "_SWAP_3",
+    #if MAX_CACHED_REGISTER >= 3
     [_SWAP_3_r03] = "_SWAP_3_r03",
+    #endif
+    #if MAX_CACHED_REGISTER >= 3
     [_SWAP_3_r13] = "_SWAP_3_r13",
+    #endif
+    #if MAX_CACHED_REGISTER >= 3
     [_SWAP_3_r23] = "_SWAP_3_r23",
+    #endif
+    #if MAX_CACHED_REGISTER >= 3
     [_SWAP_3_r33] = "_SWAP_3_r33",
+    #endif
+    #if MAX_CACHED_REGISTER >= 4
     [_SWAP_3_r44] = "_SWAP_3_r44",
+    #endif
+    #if MAX_CACHED_REGISTER >= 5
     [_SWAP_3_r55] = "_SWAP_3_r55",
+    #endif
     [_SWAP_FAST] = "_SWAP_FAST",
+    #if MAX_CACHED_REGISTER >= 1
     [_SWAP_FAST_r01] = "_SWAP_FAST_r01",
+    #endif
+    #if MAX_CACHED_REGISTER >= 1
     [_SWAP_FAST_r11] = "_SWAP_FAST_r11",
+    #endif
+    #if MAX_CACHED_REGISTER >= 2
     [_SWAP_FAST_r22] = "_SWAP_FAST_r22",
+    #endif
+    #if MAX_CACHED_REGISTER >= 3
     [_SWAP_FAST_r33] = "_SWAP_FAST_r33",
+    #endif
+    #if MAX_CACHED_REGISTER >= 4
     [_SWAP_FAST_r44] = "_SWAP_FAST_r44",
+    #endif
+    #if MAX_CACHED_REGISTER >= 5
     [_SWAP_FAST_r55] = "_SWAP_FAST_r55",
+    #endif
     [_SWAP_FAST_0] = "_SWAP_FAST_0",
+    #if MAX_CACHED_REGISTER >= 1
     [_SWAP_FAST_0_r01] = "_SWAP_FAST_0_r01",
+    #endif
+    #if MAX_CACHED_REGISTER >= 1
     [_SWAP_FAST_0_r11] = "_SWAP_FAST_0_r11",
+    #endif
+    #if MAX_CACHED_REGISTER >= 2
     [_SWAP_FAST_0_r22] = "_SWAP_FAST_0_r22",
+    #endif
+    #if MAX_CACHED_REGISTER >= 3
     [_SWAP_FAST_0_r33] = "_SWAP_FAST_0_r33",
+    #endif
+    #if MAX_CACHED_REGISTER >= 4
     [_SWAP_FAST_0_r44] = "_SWAP_FAST_0_r44",
+    #endif
+    #if MAX_CACHED_REGISTER >= 5
     [_SWAP_FAST_0_r55] = "_SWAP_FAST_0_r55",
+    #endif
     [_SWAP_FAST_1] = "_SWAP_FAST_1",
+    #if MAX_CACHED_REGISTER >= 1
     [_SWAP_FAST_1_r01] = "_SWAP_FAST_1_r01",
+    #endif
+    #if MAX_CACHED_REGISTER >= 1
     [_SWAP_FAST_1_r11] = "_SWAP_FAST_1_r11",
+    #endif
+    #if MAX_CACHED_REGISTER >= 2
     [_SWAP_FAST_1_r22] = "_SWAP_FAST_1_r22",
+    #endif
+    #if MAX_CACHED_REGISTER >= 3
     [_SWAP_FAST_1_r33] = "_SWAP_FAST_1_r33",
+    #endif
+    #if MAX_CACHED_REGISTER >= 4
     [_SWAP_FAST_1_r44] = "_SWAP_FAST_1_r44",
+    #endif
+    #if MAX_CACHED_REGISTER >= 5
     [_SWAP_FAST_1_r55] = "_SWAP_FAST_1_r55",
+    #endif
     [_SWAP_FAST_2] = "_SWAP_FAST_2",
+    #if MAX_CACHED_REGISTER >= 1
     [_SWAP_FAST_2_r01] = "_SWAP_FAST_2_r01",
+    #endif
+    #if MAX_CACHED_REGISTER >= 1
     [_SWAP_FAST_2_r11] = "_SWAP_FAST_2_r11",
+    #endif
+    #if MAX_CACHED_REGISTER >= 2
     [_SWAP_FAST_2_r22] = "_SWAP_FAST_2_r22",
+    #endif
+    #if MAX_CACHED_REGISTER >= 3
     [_SWAP_FAST_2_r33] = "_SWAP_FAST_2_r33",
+    #endif
+    #if MAX_CACHED_REGISTER >= 4
     [_SWAP_FAST_2_r44] = "_SWAP_FAST_2_r44",
+    #endif
+    #if MAX_CACHED_REGISTER >= 5
     [_SWAP_FAST_2_r55] = "_SWAP_FAST_2_r55",
+    #endif
     [_SWAP_FAST_3] = "_SWAP_FAST_3",
+    #if MAX_CACHED_REGISTER >= 1
     [_SWAP_FAST_3_r01] = "_SWAP_FAST_3_r01",
+    #endif
+    #if MAX_CACHED_REGISTER >= 1
     [_SWAP_FAST_3_r11] = "_SWAP_FAST_3_r11",
+    #endif
+    #if MAX_CACHED_REGISTER >= 2
     [_SWAP_FAST_3_r22] = "_SWAP_FAST_3_r22",
+    #endif
+    #if MAX_CACHED_REGISTER >= 3
     [_SWAP_FAST_3_r33] = "_SWAP_FAST_3_r33",
+    #endif
+    #if MAX_CACHED_REGISTER >= 4
     [_SWAP_FAST_3_r44] = "_SWAP_FAST_3_r44",
+    #endif
+    #if MAX_CACHED_REGISTER >= 5
     [_SWAP_FAST_3_r55] = "_SWAP_FAST_3_r55",
+    #endif
     [_SWAP_FAST_4] = "_SWAP_FAST_4",
+    #if MAX_CACHED_REGISTER >= 1
     [_SWAP_FAST_4_r01] = "_SWAP_FAST_4_r01",
+    #endif
+    #if MAX_CACHED_REGISTER >= 1
     [_SWAP_FAST_4_r11] = "_SWAP_FAST_4_r11",
+    #endif
+    #if MAX_CACHED_REGISTER >= 2
     [_SWAP_FAST_4_r22] = "_SWAP_FAST_4_r22",
+    #endif
+    #if MAX_CACHED_REGISTER >= 3
     [_SWAP_FAST_4_r33] = "_SWAP_FAST_4_r33",
+    #endif
+    #if MAX_CACHED_REGISTER >= 4
     [_SWAP_FAST_4_r44] = "_SWAP_FAST_4_r44",
+    #endif
+    #if MAX_CACHED_REGISTER >= 5
     [_SWAP_FAST_4_r55] = "_SWAP_FAST_4_r55",
+    #endif
     [_SWAP_FAST_5] = "_SWAP_FAST_5",
+    #if MAX_CACHED_REGISTER >= 1
     [_SWAP_FAST_5_r01] = "_SWAP_FAST_5_r01",
+    #endif
+    #if MAX_CACHED_REGISTER >= 1
     [_SWAP_FAST_5_r11] = "_SWAP_FAST_5_r11",
+    #endif
+    #if MAX_CACHED_REGISTER >= 2
     [_SWAP_FAST_5_r22] = "_SWAP_FAST_5_r22",
+    #endif
+    #if MAX_CACHED_REGISTER >= 3
     [_SWAP_FAST_5_r33] = "_SWAP_FAST_5_r33",
+    #endif
+    #if MAX_CACHED_REGISTER >= 4
     [_SWAP_FAST_5_r44] = "_SWAP_FAST_5_r44",
+    #endif
+    #if MAX_CACHED_REGISTER >= 5
     [_SWAP_FAST_5_r55] = "_SWAP_FAST_5_r55",
+    #endif
     [_SWAP_FAST_6] = "_SWAP_FAST_6",
+    #if MAX_CACHED_REGISTER >= 1
     [_SWAP_FAST_6_r01] = "_SWAP_FAST_6_r01",
+    #endif
+    #if MAX_CACHED_REGISTER >= 1
     [_SWAP_FAST_6_r11] = "_SWAP_FAST_6_r11",
+    #endif
+    #if MAX_CACHED_REGISTER >= 2
     [_SWAP_FAST_6_r22] = "_SWAP_FAST_6_r22",
+    #endif
+    #if MAX_CACHED_REGISTER >= 3
     [_SWAP_FAST_6_r33] = "_SWAP_FAST_6_r33",
+    #endif
+    #if MAX_CACHED_REGISTER >= 4
     [_SWAP_FAST_6_r44] = "_SWAP_FAST_6_r44",
+    #endif
+    #if MAX_CACHED_REGISTER >= 5
     [_SWAP_FAST_6_r55] = "_SWAP_FAST_6_r55",
+    #endif
     [_SWAP_FAST_7] = "_SWAP_FAST_7",
+    #if MAX_CACHED_REGISTER >= 1
     [_SWAP_FAST_7_r01] = "_SWAP_FAST_7_r01",
+    #endif
+    #if MAX_CACHED_REGISTER >= 1
     [_SWAP_FAST_7_r11] = "_SWAP_FAST_7_r11",
+    #endif
+    #if MAX_CACHED_REGISTER >= 2
     [_SWAP_FAST_7_r22] = "_SWAP_FAST_7_r22",
+    #endif
+    #if MAX_CACHED_REGISTER >= 3
     [_SWAP_FAST_7_r33] = "_SWAP_FAST_7_r33",
+    #endif
+    #if MAX_CACHED_REGISTER >= 4
     [_SWAP_FAST_7_r44] = "_SWAP_FAST_7_r44",
+    #endif
+    #if MAX_CACHED_REGISTER >= 5
     [_SWAP_FAST_7_r55] = "_SWAP_FAST_7_r55",
+    #endif
     [_TIER2_RESUME_CHECK] = "_TIER2_RESUME_CHECK",
     [_TIER2_RESUME_CHECK_r00] = "_TIER2_RESUME_CHECK_r00",
+    #if MAX_CACHED_REGISTER >= 1
     [_TIER2_RESUME_CHECK_r11] = "_TIER2_RESUME_CHECK_r11",
+    #endif
+    #if MAX_CACHED_REGISTER >= 2
     [_TIER2_RESUME_CHECK_r22] = "_TIER2_RESUME_CHECK_r22",
+    #endif
+    #if MAX_CACHED_REGISTER >= 3
     [_TIER2_RESUME_CHECK_r33] = "_TIER2_RESUME_CHECK_r33",
+    #endif
+    #if MAX_CACHED_REGISTER >= 4
     [_TIER2_RESUME_CHECK_r44] = "_TIER2_RESUME_CHECK_r44",
+    #endif
+    #if MAX_CACHED_REGISTER >= 5
     [_TIER2_RESUME_CHECK_r55] = "_TIER2_RESUME_CHECK_r55",
+    #endif
     [_TO_BOOL] = "_TO_BOOL",
+    #if MAX_CACHED_REGISTER >= 1
     [_TO_BOOL_r11] = "_TO_BOOL_r11",
+    #endif
     [_TO_BOOL_BOOL] = "_TO_BOOL_BOOL",
+    #if MAX_CACHED_REGISTER >= 1
     [_TO_BOOL_BOOL_r01] = "_TO_BOOL_BOOL_r01",
+    #endif
+    #if MAX_CACHED_REGISTER >= 1
     [_TO_BOOL_BOOL_r11] = "_TO_BOOL_BOOL_r11",
+    #endif
+    #if MAX_CACHED_REGISTER >= 2
     [_TO_BOOL_BOOL_r22] = "_TO_BOOL_BOOL_r22",
+    #endif
+    #if MAX_CACHED_REGISTER >= 3
     [_TO_BOOL_BOOL_r33] = "_TO_BOOL_BOOL_r33",
+    #endif
+    #if MAX_CACHED_REGISTER >= 4
     [_TO_BOOL_BOOL_r44] = "_TO_BOOL_BOOL_r44",
+    #endif
+    #if MAX_CACHED_REGISTER >= 5
     [_TO_BOOL_BOOL_r55] = "_TO_BOOL_BOOL_r55",
+    #endif
     [_TO_BOOL_INT] = "_TO_BOOL_INT",
+    #if MAX_CACHED_REGISTER >= 2
     [_TO_BOOL_INT_r02] = "_TO_BOOL_INT_r02",
+    #endif
+    #if MAX_CACHED_REGISTER >= 2
     [_TO_BOOL_INT_r12] = "_TO_BOOL_INT_r12",
+    #endif
+    #if MAX_CACHED_REGISTER >= 3
     [_TO_BOOL_INT_r23] = "_TO_BOOL_INT_r23",
+    #endif
+    #if MAX_CACHED_REGISTER >= 4
     [_TO_BOOL_INT_r34] = "_TO_BOOL_INT_r34",
+    #endif
+    #if MAX_CACHED_REGISTER >= 5
     [_TO_BOOL_INT_r45] = "_TO_BOOL_INT_r45",
+    #endif
     [_TO_BOOL_LIST] = "_TO_BOOL_LIST",
+    #if MAX_CACHED_REGISTER >= 2
     [_TO_BOOL_LIST_r02] = "_TO_BOOL_LIST_r02",
+    #endif
+    #if MAX_CACHED_REGISTER >= 2
     [_TO_BOOL_LIST_r12] = "_TO_BOOL_LIST_r12",
+    #endif
+    #if MAX_CACHED_REGISTER >= 3
     [_TO_BOOL_LIST_r23] = "_TO_BOOL_LIST_r23",
+    #endif
+    #if MAX_CACHED_REGISTER >= 4
     [_TO_BOOL_LIST_r34] = "_TO_BOOL_LIST_r34",
+    #endif
+    #if MAX_CACHED_REGISTER >= 5
     [_TO_BOOL_LIST_r45] = "_TO_BOOL_LIST_r45",
+    #endif
     [_TO_BOOL_NONE] = "_TO_BOOL_NONE",
+    #if MAX_CACHED_REGISTER >= 1
     [_TO_BOOL_NONE_r01] = "_TO_BOOL_NONE_r01",
+    #endif
+    #if MAX_CACHED_REGISTER >= 1
     [_TO_BOOL_NONE_r11] = "_TO_BOOL_NONE_r11",
+    #endif
+    #if MAX_CACHED_REGISTER >= 2
     [_TO_BOOL_NONE_r22] = "_TO_BOOL_NONE_r22",
+    #endif
+    #if MAX_CACHED_REGISTER >= 3
     [_TO_BOOL_NONE_r33] = "_TO_BOOL_NONE_r33",
+    #endif
+    #if MAX_CACHED_REGISTER >= 4
     [_TO_BOOL_NONE_r44] = "_TO_BOOL_NONE_r44",
+    #endif
+    #if MAX_CACHED_REGISTER >= 5
     [_TO_BOOL_NONE_r55] = "_TO_BOOL_NONE_r55",
+    #endif
     [_TO_BOOL_STR] = "_TO_BOOL_STR",
+    #if MAX_CACHED_REGISTER >= 2
     [_TO_BOOL_STR_r02] = "_TO_BOOL_STR_r02",
+    #endif
+    #if MAX_CACHED_REGISTER >= 2
     [_TO_BOOL_STR_r12] = "_TO_BOOL_STR_r12",
+    #endif
+    #if MAX_CACHED_REGISTER >= 3
     [_TO_BOOL_STR_r23] = "_TO_BOOL_STR_r23",
+    #endif
+    #if MAX_CACHED_REGISTER >= 4
     [_TO_BOOL_STR_r34] = "_TO_BOOL_STR_r34",
+    #endif
+    #if MAX_CACHED_REGISTER >= 5
     [_TO_BOOL_STR_r45] = "_TO_BOOL_STR_r45",
+    #endif
     [_UNARY_INVERT] = "_UNARY_INVERT",
+    #if MAX_CACHED_REGISTER >= 2
     [_UNARY_INVERT_r12] = "_UNARY_INVERT_r12",
+    #endif
     [_UNARY_NEGATIVE] = "_UNARY_NEGATIVE",
+    #if MAX_CACHED_REGISTER >= 2
     [_UNARY_NEGATIVE_r12] = "_UNARY_NEGATIVE_r12",
+    #endif
     [_UNARY_NOT] = "_UNARY_NOT",
+    #if MAX_CACHED_REGISTER >= 1
     [_UNARY_NOT_r01] = "_UNARY_NOT_r01",
+    #endif
+    #if MAX_CACHED_REGISTER >= 1
     [_UNARY_NOT_r11] = "_UNARY_NOT_r11",
+    #endif
+    #if MAX_CACHED_REGISTER >= 2
     [_UNARY_NOT_r22] = "_UNARY_NOT_r22",
+    #endif
+    #if MAX_CACHED_REGISTER >= 3
     [_UNARY_NOT_r33] = "_UNARY_NOT_r33",
+    #endif
+    #if MAX_CACHED_REGISTER >= 4
     [_UNARY_NOT_r44] = "_UNARY_NOT_r44",
+    #endif
+    #if MAX_CACHED_REGISTER >= 5
     [_UNARY_NOT_r55] = "_UNARY_NOT_r55",
+    #endif
     [_UNPACK_EX] = "_UNPACK_EX",
+    #if MAX_CACHED_REGISTER >= 1
     [_UNPACK_EX_r10] = "_UNPACK_EX_r10",
+    #endif
     [_UNPACK_SEQUENCE] = "_UNPACK_SEQUENCE",
+    #if MAX_CACHED_REGISTER >= 1
     [_UNPACK_SEQUENCE_r10] = "_UNPACK_SEQUENCE_r10",
+    #endif
     [_UNPACK_SEQUENCE_LIST] = "_UNPACK_SEQUENCE_LIST",
+    #if MAX_CACHED_REGISTER >= 1
     [_UNPACK_SEQUENCE_LIST_r10] = "_UNPACK_SEQUENCE_LIST_r10",
+    #endif
     [_UNPACK_SEQUENCE_TUPLE] = "_UNPACK_SEQUENCE_TUPLE",
+    #if MAX_CACHED_REGISTER >= 1
     [_UNPACK_SEQUENCE_TUPLE_r10] = "_UNPACK_SEQUENCE_TUPLE_r10",
+    #endif
     [_UNPACK_SEQUENCE_TWO_TUPLE] = "_UNPACK_SEQUENCE_TWO_TUPLE",
+    #if MAX_CACHED_REGISTER >= 2
     [_UNPACK_SEQUENCE_TWO_TUPLE_r12] = "_UNPACK_SEQUENCE_TWO_TUPLE_r12",
+    #endif
     [_WITH_EXCEPT_START] = "_WITH_EXCEPT_START",
+    #if MAX_CACHED_REGISTER >= 5
     [_WITH_EXCEPT_START_r55] = "_WITH_EXCEPT_START_r55",
+    #endif
     [_YIELD_VALUE] = "_YIELD_VALUE",
+    #if MAX_CACHED_REGISTER >= 1
     [_YIELD_VALUE_r11] = "_YIELD_VALUE_r11",
+    #endif
 };
 int _PyUop_num_popped(int opcode, int oparg)
 {

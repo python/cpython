@@ -4,6 +4,7 @@ Writes the IDs to pycore_uop_ids.h by default.
 """
 
 import argparse
+from collections import defaultdict
 
 from analyzer import (
     Analysis,
@@ -50,15 +51,27 @@ def generate_uop_ids(
 
         out.emit(f"#define MAX_UOP_ID {next_id-1}\n")
         out.emit(f"#define MAX_CACHED_REGISTER {MAX_CACHED_REGISTER}\n")
+        register_groups: dict[int, list[tuple[str, int, int]]] = defaultdict(list)
         for name, uop in sorted(uops):
             if uop.properties.tier == 1:
                 continue
             if uop.properties.records_value:
                 continue
             for inputs, outputs, _ in sorted(get_uop_cache_depths(uop)):
+                register_groups[max(inputs, outputs)].append((name, inputs, outputs))
+        first_group = True
+        for level in sorted(register_groups):
+            if level > 0:
+                out.emit(f"#if MAX_CACHED_REGISTER >= {level}\n")
+            for name, inputs, outputs in register_groups[level]:
                 out.emit(f"#define {name}_r{inputs}{outputs} {next_id}\n")
                 next_id += 1
-        out.emit(f"#define MAX_UOP_REGS_ID {next_id-1}\n")
+            if not first_group:
+                out.emit(f"#undef MAX_UOP_REGS_ID\n")
+            out.emit(f"#define MAX_UOP_REGS_ID {next_id-1}\n")
+            first_group = False
+            if level > 0:
+                out.emit(f"#endif\n")
 
 
 arg_parser = argparse.ArgumentParser(

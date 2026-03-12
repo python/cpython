@@ -101,7 +101,12 @@ def generate_names_and_flags(analysis: Analysis, out: CWriter) -> None:
     for uop in analysis.uops.values():
         if uop.is_viable() and uop.properties.tier != 1 and not uop.is_super() and not uop.properties.records_value:
             for inputs, outputs, _ in get_uop_cache_depths(uop):
+                needed = max(inputs, outputs)
+                if needed > 0:
+                    out.emit(f"#if MAX_CACHED_REGISTER >= {needed}\n")
                 out.emit(f"[{uop.name}_r{inputs}{outputs}] = {uop.name},\n")
+                if needed > 0:
+                    out.emit(f"#endif\n")
     out.emit("};\n\n")
     out.emit(f"const uint16_t _PyUop_SpillsAndReloads[{MAX_CACHED_REGISTER+1}][{MAX_CACHED_REGISTER+1}] = {{\n")
     for i in range(MAX_CACHED_REGISTER+1):
@@ -115,7 +120,12 @@ def generate_names_and_flags(analysis: Analysis, out: CWriter) -> None:
             out.emit(f'[{uop.name}] = "{uop.name}",\n')
             if not uop.properties.records_value:
                 for inputs, outputs, _ in get_uop_cache_depths(uop):
+                    needed = max(inputs, outputs)
+                    if needed > 0:
+                        out.emit(f"#if MAX_CACHED_REGISTER >= {needed}\n")
                     out.emit(f'[{uop.name}_r{inputs}{outputs}] = "{uop.name}_r{inputs}{outputs}",\n')
+                    if needed > 0:
+                        out.emit(f"#endif\n")
     out.emit("};\n")
     out.emit("int _PyUop_num_popped(int opcode, int oparg)\n{\n")
     out.emit("switch(opcode) {\n")
