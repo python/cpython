@@ -566,6 +566,7 @@ extlinks_detect_hardcoded_links = True
 # Relative filename of the data files
 refcount_file = 'data/refcounts.dat'
 stable_abi_file = 'data/stable_abi.dat'
+threadsafety_file = 'data/threadsafety.dat'
 
 # Options for sphinxext-opengraph
 # -------------------------------
