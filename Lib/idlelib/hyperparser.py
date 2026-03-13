@@ -14,13 +14,6 @@ _ASCII_ID_CHARS = frozenset(string.ascii_letters + string.digits + "_")
 # all ASCII chars that may be the first char of an identifier
 _ASCII_ID_FIRST_CHARS = frozenset(string.ascii_letters + "_")
 
-# lookup table for whether 7-bit ASCII chars are valid in a Python identifier
-_IS_ASCII_ID_CHAR = [(chr(x) in _ASCII_ID_CHARS) for x in range(128)]
-# lookup table for whether 7-bit ASCII chars are valid as the first
-# char in a Python identifier
-_IS_ASCII_ID_FIRST_CHAR = \
-    [(chr(x) in _ASCII_ID_FIRST_CHARS) for x in range(128)]
-
 
 class HyperParser:
     def __init__(self, editwin, index):
@@ -166,8 +159,6 @@ class HyperParser:
 
         This ignores non-identifier eywords are not identifiers.
         """
-        is_ascii_id_char = _IS_ASCII_ID_CHAR
-
         # Start at the end (pos) and work backwards.
         i = pos
 
@@ -175,44 +166,40 @@ class HyperParser:
         # identifier characters. This is an optimization, since it
         # is faster in the common case where most of the characters
         # are ASCII.
-        while i > limit and (
-                ord(str[i - 1]) < 128 and
-                is_ascii_id_char[ord(str[i - 1])]
-        ):
+        while i > limit and str[i - 1] in _ASCII_ID_CHARS:
             i -= 1
 
         # If the above loop ended due to reaching a non-ASCII
         # character, continue going backwards using the most generic
         # test for whether a string contains only valid identifier
         # characters.
-        if i > limit and ord(str[i - 1]) >= 128:
-            while i - 4 >= limit and ('a' + str[i - 4:pos]).isidentifier():
+        if i > limit and str[i - 1] > '\x7f':
+            while i - 4 >= limit and ('a' + str[i - 4:i]).isidentifier():
                 i -= 4
-            if i - 2 >= limit and ('a' + str[i - 2:pos]).isidentifier():
+            if i - 2 >= limit and ('a' + str[i - 2:i]).isidentifier():
                 i -= 2
-            if i - 1 >= limit and ('a' + str[i - 1:pos]).isidentifier():
+            if i - 1 >= limit and ('a' + str[i - 1]).isidentifier():
                 i -= 1
 
             # The identifier candidate starts here. If it isn't a valid
             # identifier, don't eat anything. At this point that is only
             # possible if the first character isn't a valid first
             # character for an identifier.
-            if not str[i:pos].isidentifier():
+            if i < pos and not str[i].isidentifier():
                 return 0
         elif i < pos:
             # All characters in str[i:pos] are valid ASCII identifier
             # characters, so it is enough to check that the first is
             # valid as the first character of an identifier.
-            if not _IS_ASCII_ID_FIRST_CHAR[ord(str[i])]:
+            if str[i] not in _ASCII_ID_FIRST_CHARS:
                 return 0
 
         # All keywords are valid identifiers, but should not be
         # considered identifiers here, except for True, False and None.
-        if i < pos and (
-                iskeyword(str[i:pos]) and
-                str[i:pos] not in cls._ID_KEYWORDS
-        ):
-            return 0
+        if i < pos:
+            word = str[i:pos]
+            if iskeyword(word) and word not in cls._ID_KEYWORDS:
+                return 0
 
         return pos - i
 
