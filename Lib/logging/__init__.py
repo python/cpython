@@ -1682,7 +1682,7 @@ class Logger(Filterer):
         Add the specified handler to this logger.
         """
         with _lock:
-            if not (hdlr in self.handlers):
+            if hdlr not in self.handlers:
                 self.handlers.append(hdlr)
 
     def removeHandler(self, hdlr):
