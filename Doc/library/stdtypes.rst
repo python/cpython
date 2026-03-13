@@ -5251,6 +5251,11 @@ Note, the *elem* argument to the :meth:`~object.__contains__`,
 :meth:`~set.discard` methods may be a set.  To support searching for an equivalent
 frozenset, a temporary one is created from *elem*.
 
+.. seealso::
+
+   For detailed information on thread-safety guarantees for :class:`set`
+   objects, see :ref:`thread-safety-set`.
+
 
 .. _typesmapping:
 
