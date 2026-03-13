@@ -1786,7 +1786,31 @@
     added = '3.2'
 [const.Py_TPFLAGS_BASETYPE]
     added = '3.2'
+[const.Py_TPFLAGS_HEAPTYPE]
+    added = '3.2'
 [const.Py_TPFLAGS_HAVE_GC]
+    added = '3.2'
+[const.Py_TPFLAGS_READY]
+    added = '3.2'
+[const.Py_TPFLAGS_READYING]
+    added = '3.2'
+[const.Py_TPFLAGS_IS_ABSTRACT]
+    added = '3.2'
+[const.Py_TPFLAGS_LONG_SUBCLASS]
+    added = '3.2'
+[const.Py_TPFLAGS_LIST_SUBCLASS]
+    added = '3.2'
+[const.Py_TPFLAGS_TUPLE_SUBCLASS]
+    added = '3.2'
+[const.Py_TPFLAGS_BYTES_SUBCLASS]
+    added = '3.2'
+[const.Py_TPFLAGS_UNICODE_SUBCLASS]
+    added = '3.2'
+[const.Py_TPFLAGS_DICT_SUBCLASS]
+    added = '3.2'
+[const.Py_TPFLAGS_BASE_EXC_SUBCLASS]
+    added = '3.2'
+[const.Py_TPFLAGS_TYPE_SUBCLASS]
     added = '3.2'
 
 [const.METH_VARARGS]
@@ -2276,6 +2300,13 @@
 [function.PyGC_Enable]
     added = '3.10'
 [function.PyGC_IsEnabled]
+    added = '3.10'
+
+# New type flags in 3.10
+
+[const.Py_TPFLAGS_DISALLOW_INSTANTIATION]
+    added = '3.10'
+[const.Py_TPFLAGS_IMMUTABLETYPE]
     added = '3.10'
 
 # Add new C API in Python 3.11
