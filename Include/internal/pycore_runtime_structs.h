@@ -35,17 +35,6 @@ struct _pymem_allocators {
     PyObjectArenaAllocator obj_arena;
 };
 
-enum _py_float_format_type {
-    _py_float_format_unknown,
-    _py_float_format_ieee_big_endian,
-    _py_float_format_ieee_little_endian,
-};
-
-struct _Py_float_runtime_state {
-    enum _py_float_format_type float_format;
-    enum _py_float_format_type double_format;
-};
-
 struct pyhash_runtime_state {
     struct {
 #ifndef MS_WINDOWS
@@ -270,7 +259,6 @@ struct pyruntimestate {
     } audit_hooks;
 
     struct _py_object_runtime_state object_state;
-    struct _Py_float_runtime_state float_state;
     struct _Py_unicode_runtime_state unicode_state;
     struct _types_runtime_state types;
     struct _Py_time_runtime_state time;

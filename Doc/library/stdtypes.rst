@@ -3202,6 +3202,10 @@ The conversion types are:
 |            | character in the result.                            |       |
 +------------+-----------------------------------------------------+-------+
 
+For floating-point formats, the result should be correctly rounded to a given
+precision ``p`` of digits after the decimal point.  The rounding mode matches
+that of the :func:`round` builtin.
+
 Notes:
 
 (1)
@@ -5246,6 +5250,11 @@ Note, the *elem* argument to the :meth:`~object.__contains__`,
 :meth:`~set.remove`, and
 :meth:`~set.discard` methods may be a set.  To support searching for an equivalent
 frozenset, a temporary one is created from *elem*.
+
+.. seealso::
+
+   For detailed information on thread-safety guarantees for :class:`set`
+   objects, see :ref:`thread-safety-set`.
 
 
 .. _typesmapping:

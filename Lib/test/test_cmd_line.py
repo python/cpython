@@ -200,6 +200,14 @@ class CmdLineTest(unittest.TestCase):
         self.assertTrue(data.find(b'1 loop') != -1)
         self.assertTrue(data.find(b'__main__.Timer') != -1)
 
+    @support.cpython_only
+    def test_null_byte_in_interactive_mode(self):
+        # gh-140594: Fix an out of bounds read when a single NUL character
+        # is read from the standard input in interactive mode.
+        proc = spawn_python('-i')
+        proc.communicate(b'\x00', timeout=support.SHORT_TIMEOUT)
+        self.assertEqual(proc.returncode, 0)
+
     def test_relativedir_bug46421(self):
         # Test `python -m unittest` with a relative directory beginning with ./
         # Note: We have to switch to the project's top module's directory, as per
