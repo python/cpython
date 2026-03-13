@@ -73,11 +73,9 @@ _PyCode_Quicken(_Py_CODEUNIT *instructions, Py_ssize_t size, int enable_counters
                 case JUMP_BACKWARD:
                     instructions[i + 1].counter = jump_counter;
                     break;
-            #ifdef _Py_TIER2
                 case RESUME:
                     instructions[i + 1].counter = resume_counter;
                     break;
-            #endif
                 case POP_JUMP_IF_FALSE:
                 case POP_JUMP_IF_TRUE:
                 case POP_JUMP_IF_NONE:
