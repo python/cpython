@@ -1039,7 +1039,7 @@ _PyJit_TryInitializeTracing(
         _Py_RecordFuncPtr record_func = _PyOpcode_RecordFunctions[record_func_index];
         record_func(frame, stack_pointer, oparg, &tracer->prev_state.recorded_value);
     }
-    assert(curr_instr->op.code == JUMP_BACKWARD_JIT || (exit != NULL));
+    assert(curr_instr->op.code == JUMP_BACKWARD_JIT || curr_instr->op.code == RESUME_CHECK_JIT || (exit != NULL));
     tracer->initial_state.jump_backward_instr = curr_instr;
 
     if (_PyOpcode_Caches[_PyOpcode_Deopt[close_loop_instr->op.code]]) {
@@ -1064,7 +1064,12 @@ _PyJit_FinalizeTracing(PyThreadState *tstate, int err)
             tracer->initial_state.jump_backward_instr[1].counter = restart_backoff_counter(counter);
         }
         else {
-            tracer->initial_state.jump_backward_instr[1].counter = initial_jump_backoff_counter(&tstate->interp->opt_config);
+            if (tracer->initial_state.jump_backward_instr[0].op.code == JUMP_BACKWARD_JIT) {
+                tracer->initial_state.jump_backward_instr[1].counter = initial_jump_backoff_counter(&tstate->interp->opt_config);
+            }
+            else {
+                tracer->initial_state.jump_backward_instr[1].counter = initial_resume_backoff_counter(&tstate->interp->opt_config);
+            }
         }
     }
     else if (tracer->initial_state.executor->vm_data.valid) {

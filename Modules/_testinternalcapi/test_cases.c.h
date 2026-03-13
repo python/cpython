@@ -7782,7 +7782,7 @@
             // _JIT
             {
                 #ifdef _Py_TIER2
-                bool is_resume = this_instr->op.code == RESUME_CHECK;
+                bool is_resume = this_instr->op.code == RESUME_CHECK_JIT;
                 _Py_BackoffCounter counter = this_instr[1].counter;
                 if (!IS_JIT_TRACING() &&
                     (backoff_counter_triggers(counter) &&
@@ -10479,7 +10479,7 @@
                 uint16_t counter = read_u16(&this_instr[1].cache);
                 (void)counter;
                 _PyFrame_SetStackPointer(frame, stack_pointer);
-                _Py_Specialize_Resume(next_instr, tstate);
+                _Py_Specialize_Resume(this_instr, tstate);
                 stack_pointer = _PyFrame_GetStackPointer(frame);
             }
             // _CHECK_PERIODIC_IF_NOT_YIELD_FROM
@@ -10578,7 +10578,7 @@
             // _JIT
             {
                 #ifdef _Py_TIER2
-                bool is_resume = this_instr->op.code == RESUME_CHECK;
+                bool is_resume = this_instr->op.code == RESUME_CHECK_JIT;
                 _Py_BackoffCounter counter = this_instr[1].counter;
                 if (!IS_JIT_TRACING() &&
                     (backoff_counter_triggers(counter) &&

@@ -173,7 +173,7 @@ dummy_func(
         }
 
         specializing op(_SPECIALIZE_RESUME, (counter/1 --)) {
-            _Py_Specialize_Resume(next_instr, tstate);
+            _Py_Specialize_Resume(this_instr, tstate);
         }
 
         tier1 op(_MAYBE_INSTRUMENT, (--)) {
@@ -3116,7 +3116,7 @@ dummy_func(
 
         tier1 op(_JIT, (--)) {
         #ifdef _Py_TIER2
-            bool is_resume = this_instr->op.code == RESUME_CHECK;
+            bool is_resume = this_instr->op.code == RESUME_CHECK_JIT;
             _Py_BackoffCounter counter = this_instr[1].counter;
             if (!IS_JIT_TRACING() &&
                 (backoff_counter_triggers(counter) &&

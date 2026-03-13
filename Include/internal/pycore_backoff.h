@@ -142,10 +142,11 @@ initial_jump_backoff_counter(_PyOptimizationConfig *opt_config)
 #define RESUME_INITIAL_VALUE 8190
 #define RESUME_INITIAL_BACKOFF 6
 static inline _Py_BackoffCounter
-initial_resume_backoff_counter(void)
+initial_resume_backoff_counter(_PyOptimizationConfig *opt_config)
 {
-    return make_backoff_counter(RESUME_INITIAL_VALUE,
-                                RESUME_INITIAL_BACKOFF);
+    return make_backoff_counter(
+        opt_config->resume_initial_value,
+        opt_config->resume_initial_backoff);
 }
 
 /* Initial exit temperature.

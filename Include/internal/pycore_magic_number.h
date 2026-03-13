@@ -294,6 +294,7 @@ Known values:
     Python 3.15a4 3661 (Lazy imports IMPORT_NAME opcode changes)
     Python 3.15a6 3662 (Add counter to RESUME)
 
+
     Python 3.16 will start with 3700
 
     Please don't copy-paste the same pre-release tag for new entries above!!!
@@ -305,7 +306,7 @@ PC/launcher.c must also be updated.
 
 */
 
-#define PYC_MAGIC_NUMBER 3663
+#define PYC_MAGIC_NUMBER 3662
 /* This is equivalent to converting PYC_MAGIC_NUMBER to 2 bytes
    (little-endian) and then appending b'\r\n'. */
 #define PYC_MAGIC_NUMBER_TOKEN \
