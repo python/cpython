@@ -4265,9 +4265,7 @@
         case _GUARD_CODE_VERSION: {
             uint32_t version = (uint32_t)this_instr->operand0;
             PyCodeObject *co = get_current_code_object(ctx);
-            if (co->co_version == version) {
-                _Py_BloomFilter_Add(dependencies, co);
-                REPLACE_OP(this_instr, _NOP, 0, 0);
+            if (co->co_version != version) {
             }
             else {
                 ctx->done = true;

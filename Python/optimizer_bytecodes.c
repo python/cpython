@@ -1747,9 +1747,10 @@ dummy_func(void) {
 
     op(_GUARD_CODE_VERSION, (version/2 -- )) {
         PyCodeObject *co = get_current_code_object(ctx);
-        if (co->co_version == version) {
-            _Py_BloomFilter_Add(dependencies, co);
-            REPLACE_OP(this_instr, _NOP, 0, 0);
+        if (co->co_version != version) {
+            // TODO:
+            // If we've previously guarded on this code version in a trace, we
+            // can avoid guarding it again.
         }
         else {
             ctx->done = true;
