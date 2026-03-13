@@ -1,0 +1,2 @@
+Fix incorrect handling of division by zero so that Python consistently
+raises ``ZeroDivisionError`` as expected.
