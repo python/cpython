@@ -1366,7 +1366,10 @@ Tracebacks
    This function will return ``NULL`` on success, or an error message on error.
    It will also write this error message to *fd*.
 
-   This function is safe to use from signal handlers.
+   This function is intended for use in crash scenarios such as signal handlers
+   for SIGSEGV, where the interpreter may be in an inconsistent state. Given
+   that it reads interpreter data structures that may be partially modified, the
+   function might produce incomplete output or it may even crash itself.
 
    The caller does not need to hold an :term:`attached thread state`, nor does
    *tstate* need to be attached.
@@ -1394,7 +1397,10 @@ Tracebacks
    thread. It only writes the tracebacks of the first 100 threads, further
    output is truncated with the line ``...``.
 
-   This function is safe to use from signal handlers.
+   This function is intended for use in crash scenarios such as signal handlers
+   for SIGSEGV, where the interpreter may be in an inconsistent state. Given
+   that it reads interpreter data structures that may be partially modified, the
+   function might produce incomplete output or it may even crash itself.
 
    The caller does not need to hold an :term:`attached thread state`, nor does
    *current_tstate* need to be attached.
