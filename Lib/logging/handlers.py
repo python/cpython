@@ -1463,9 +1463,6 @@ class QueueHandler(logging.Handler):
     with a multiprocessing Queue to centralise logging to file in one process
     (in a multi-process application), so as to avoid file write contention
     between processes.
-
-    This code is new in Python 3.2, but this class can be copy pasted into
-    user code for use with earlier Python versions.
     """
 
     def __init__(self, queue):
