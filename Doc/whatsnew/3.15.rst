@@ -932,7 +932,7 @@ mimetypes
 * Add the following:
 
    - ``font/collection`` for ``.ttc`` extension
-   - ``haptics/ivs`` for ``.ivs` extension`
+   - ``haptics/ivs`` for ``.ivs`` extension
    - ``haptics/hjif`` for ``.hjif`` extension
    - ``haptics/hmpg`` for ``.hmpg`` extension
 
