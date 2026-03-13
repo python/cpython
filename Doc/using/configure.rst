@@ -774,6 +774,9 @@ also be used to improve performance.
    Disable the fast :ref:`mimalloc <mimalloc>` allocator
    (enabled by default).
 
+   This option cannot be used together with :option:`--disable-gil`
+   because the :term:`free-threaded <free threading>` build requires mimalloc.
+
    See also :envvar:`PYTHONMALLOC` environment variable.
 
 .. option:: --without-pymalloc

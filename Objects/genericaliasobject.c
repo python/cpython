@@ -299,6 +299,8 @@ subs_tvars(PyObject *obj, PyObject *params,
                                     &PyTuple_GET_ITEM(arg, 0),
                                     PyTuple_GET_SIZE(arg));
                     if (j < 0) {
+                        Py_DECREF(subparams);
+                        Py_DECREF(subargs);
                         return NULL;
                     }
                     continue;
@@ -455,6 +457,7 @@ _Py_subs_parameters(PyObject *self, PyObject *args, PyObject *parameters, PyObje
     if (is_args_list) {
         args = tuple_args = PySequence_Tuple(args);
         if (args == NULL) {
+            Py_DECREF(item);
             return NULL;
         }
     }

@@ -539,6 +539,7 @@ def collect_sysconfig(info_add):
         'SHELL',
         'SOABI',
         'TEST_MODULES',
+        'VAPTH',
         'abs_builddir',
         'abs_srcdir',
         'prefix',
@@ -749,6 +750,10 @@ def collect_test_socket(info_add):
     attributes = [name for name in dir(test_socket)
                   if name.startswith('HAVE_')]
     copy_attributes(info_add, test_socket, 'test_socket.%s', attributes)
+
+    # Get IOCTL_VM_SOCKETS_GET_LOCAL_CID of /dev/vsock
+    cid = test_socket.get_cid()
+    info_add('test_socket.get_cid', cid)
 
 
 def collect_support(info_add):

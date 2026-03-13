@@ -2247,16 +2247,33 @@ expression support in the :mod:`re` module).
       >>> '\t'.isprintable(), '\n'.isprintable()
       (False, False)
 
+   See also :meth:`isspace`.
+
 
 .. method:: str.isspace()
 
    Return ``True`` if there are only whitespace characters in the string and there is
    at least one character, ``False`` otherwise.
 
+   For example:
+
+   .. doctest::
+
+      >>> ''.isspace()
+      False
+      >>> ' '.isspace()
+      True
+      >>> '\t\n'.isspace() # TAB and BREAK LINE
+      True
+      >>> '\u3000'.isspace() # IDEOGRAPHIC SPACE
+      True
+
    A character is *whitespace* if in the Unicode character database
    (see :mod:`unicodedata`), either its general category is ``Zs``
    ("Separator, space"), or its bidirectional class is one of ``WS``,
    ``B``, or ``S``.
+
+   See also :meth:`isprintable`.
 
 
 .. method:: str.istitle()
@@ -2385,6 +2402,10 @@ expression support in the :mod:`re` module).
    the same position in *to*.  If there is a third argument, it must be a string,
    whose characters will be mapped to ``None`` in the result.
 
+   .. versionchanged:: 3.15
+
+      *dict* can now be a :class:`frozendict`.
+
 
 .. method:: str.partition(sep, /)
 
@@ -2503,6 +2524,19 @@ expression support in the :mod:`re` module).
    Return the string right justified in a string of length *width*. Padding is
    done using the specified *fillchar* (default is an ASCII space). The
    original string is returned if *width* is less than or equal to ``len(s)``.
+
+   For example:
+
+   .. doctest::
+
+      >>> 'Python'.rjust(10)
+      '    Python'
+      >>> 'Python'.rjust(10, '.')
+      '....Python'
+      >>> 'Monty Python'.rjust(10, '.')
+      'Monty Python'
+
+   See also :meth:`ljust` and :meth:`zfill`.
 
 
 .. method:: str.rpartition(sep, /)
@@ -2828,12 +2862,16 @@ expression support in the :mod:`re` module).
    than before. The original string is returned if *width* is less than
    or equal to ``len(s)``.
 
-   For example::
+   For example:
+
+   .. doctest::
 
       >>> "42".zfill(5)
       '00042'
       >>> "-42".zfill(5)
       '-0042'
+
+   See also :meth:`rjust`.
 
 
 .. index::
@@ -3163,6 +3201,10 @@ The conversion types are:
 | ``'%'``    | No argument is converted, results in a ``'%'``      |       |
 |            | character in the result.                            |       |
 +------------+-----------------------------------------------------+-------+
+
+For floating-point formats, the result should be correctly rounded to a given
+precision ``p`` of digits after the decimal point.  The rounding mode matches
+that of the :func:`round` builtin.
 
 Notes:
 
@@ -4524,7 +4566,7 @@ copying.
    types such as :class:`bytes` and :class:`bytearray`, an element is a single
    byte, but other types such as :class:`array.array` may have bigger elements.
 
-   ``len(view)`` is equal to the length of :class:`~memoryview.tolist`, which
+   ``len(view)`` is equal to the length of :meth:`~memoryview.tolist`, which
    is the nested list representation of the view. If ``view.ndim = 1``,
    this is equal to the number of elements in the view.
 
@@ -5214,6 +5256,11 @@ Note, the *elem* argument to the :meth:`~object.__contains__`,
 :meth:`~set.discard` methods may be a set.  To support searching for an equivalent
 frozenset, a temporary one is created from *elem*.
 
+.. seealso::
+
+   For detailed information on thread-safety guarantees for :class:`set`
+   objects, see :ref:`thread-safety-set`.
+
 
 .. _typesmapping:
 
@@ -5649,7 +5696,7 @@ Frozen dictionaries
    :class:`!frozendict` is not a :class:`!dict` subclass but inherits directly
    from ``object``.
 
-   .. versionadded:: next
+   .. versionadded:: 3.15
 
 
 .. _typecontextmanager:
