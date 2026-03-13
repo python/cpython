@@ -360,8 +360,8 @@ Notes:
    alternative conversions.
 
 (4)
-   float also accepts the strings "nan" and "inf" with an optional prefix ASCII plus
-   sign "+" or ASCII hyphen minus "-" or Unicode minus sign "−" (U+2212) for Not a Number
+   float also accepts the strings "nan" and "inf" with an optional prefix
+   sign "+" or "-" or Unicode minus sign "−" (U+2212) for Not a Number
    (NaN) and positive or negative infinity.
 
 (5)

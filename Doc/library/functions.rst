@@ -785,7 +785,7 @@ are always available.  They are listed here in alphabetical order.
 
    If the argument is a string, it should contain a decimal number, optionally
    preceded by a sign, and optionally embedded in whitespace.  The optional
-   sign may be ``'+'`` (ASCII plus sign), ``'-'`` (ASCII hyphen minus) or ``−``
+   sign may be ``'+'``, ``'-'`` or ``−``
    (Unicode minus sign, U+2212); a ``'+'`` sign has no effect on the value
    produced.  The argument may also be a string representing a NaN
    (not-a-number), or positive or negative infinity.
@@ -834,8 +834,7 @@ are always available.  They are listed here in alphabetical order.
 
    .. versionchanged:: next
       ``'−'`` (Unicode minus sign, U+2212) can be now used as an
-      alternative to ``'-'`` (ASCII hyphen minus) for denoting
-      negative sign.
+      alternative to ``'-'`` for denoting negative sign.
 
 
 .. index::
@@ -1047,7 +1046,7 @@ are always available.  They are listed here in alphabetical order.
    If the argument is not a number or if *base* is given, then it must be a string,
    :class:`bytes`, or :class:`bytearray` instance representing an integer
    in radix *base*.  Optionally, the string can be directly preceded (with no whitespaces
-   in between) by ``+`` (ASCII plus sign), ``-`` (ASCII hyphen minus) or ``−`` (Unicode
+   in between) by ``+``, ``-`` or ``−`` (Unicode
    minus sign, U+2212), have leading zeros, be surrounded by whitespace,
    and have single underscores interspersed between digits.
 
@@ -1093,8 +1092,7 @@ are always available.  They are listed here in alphabetical order.
 
    .. versionchanged:: next
       :func:`int` now supports ``−`` (Unicode minus sign, U+2212)
-      as an alternative to ``-`` (ASCII hyphen minus) for denoting
-      negative integers.
+      as an alternative to ``-`` for denoting negative integers.
 
 .. function:: isinstance(object, classinfo, /)
 
