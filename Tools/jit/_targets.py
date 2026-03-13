@@ -139,12 +139,8 @@ class _Target(typing.Generic[_S, _R]):
     ) -> _stencils.Hole:
         raise NotImplementedError(type(self))
 
-    async def _compile(
-        self, opname: str, c: pathlib.Path, tempdir: pathlib.Path
-    ) -> _stencils.StencilGroup:
-        s = tempdir / f"{opname}.s"
-        o = tempdir / f"{opname}.o"
-        args_s = [
+    def _common_clang_args(self, opname: str, tempdir: pathlib.Path) -> list[str]:
+        return [
             f"--target={self.triple}",
             "-DPy_BUILD_CORE_MODULE",
             "-D_DEBUG" if self.debug else "-DNDEBUG",
@@ -167,28 +163,35 @@ class _Target(typing.Generic[_S, _R]):
             # generates better code than -O2 (and -O2 usually generates better
             # code than -O3). As a nice benefit, it uses less memory too:
             "-Os",
-            "-S",
             # Shorten full absolute file paths in the generated code (like the
             # __FILE__ macro and assert failure messages) for reproducibility:
             f"-ffile-prefix-map={CPYTHON}=.",
             f"-ffile-prefix-map={tempdir}=.",
-            # This debug info isn't necessary, and bloats out the JIT'ed code.
-            # We *may* be able to re-enable this, process it, and JIT it for a
-            # nicer debugging experience... but that needs a lot more research:
-            "-fno-asynchronous-unwind-tables",
             # Don't call built-in functions that we can't find or patch:
             "-fno-builtin",
             # Don't call stack-smashing canaries that we can't find or patch:
             "-fno-stack-protector",
             "-std=c11",
+        ]
+
+    async def _build_stencil_group(
+        self, opname: str, c: pathlib.Path, tempdir: pathlib.Path
+    ) -> _stencils.StencilGroup:
+        s = tempdir / f"{opname}.s"
+        o = tempdir / f"{opname}.o"
+        args_s = self._common_clang_args(opname, tempdir)
+        args_s += [
+            "-S",
+            # This debug info isn't necessary, and bloats out the JIT'ed code.
+            # We *may* be able to re-enable this, process it, and JIT it for a
+            # nicer debugging experience... but that needs a lot more research:
+            "-fno-asynchronous-unwind-tables",
             "-o",
             f"{s}",
             f"{c}",
         ]
-        is_shim = opname == "shim"
         if self.frame_pointers:
-            frame_pointer = "all" if is_shim else "reserved"
-            args_s += ["-Xclang", f"-mframe-pointer={frame_pointer}"]
+            args_s += ["-Xclang", "-mframe-pointer=reserved"]
         args_s += self.args
         # Allow user-provided CFLAGS to override any defaults
         args_s += shlex.split(self.cflags)
@@ -199,14 +202,13 @@ class _Target(typing.Generic[_S, _R]):
             llvm_version=self.llvm_version,
             llvm_tools_install_dir=self.llvm_tools_install_dir,
         )
-        if not is_shim:
-            self.optimizer(
-                s,
-                label_prefix=self.label_prefix,
-                symbol_prefix=self.symbol_prefix,
-                re_global=self.re_global,
-                frame_pointers=self.frame_pointers,
-            ).run()
+        self.optimizer(
+            s,
+            label_prefix=self.label_prefix,
+            symbol_prefix=self.symbol_prefix,
+            re_global=self.re_global,
+            frame_pointers=self.frame_pointers,
+        ).run()
         args_o = [f"--target={self.triple}", "-c", "-o", f"{o}", f"{s}"]
         await _llvm.run(
             "clang",
@@ -216,6 +218,35 @@ class _Target(typing.Generic[_S, _R]):
             llvm_tools_install_dir=self.llvm_tools_install_dir,
         )
         return await self._parse(o)
+
+    async def _build_shim_object(self, output: pathlib.Path) -> None:
+        with tempfile.TemporaryDirectory() as tempdir:
+            work = pathlib.Path(tempdir).resolve()
+            args_o = self._common_clang_args("shim", work)
+            if self.triple.endswith("-windows-msvc"):
+                # The linked shim is part of pythoncore, not a shared extension.
+                # On Windows, Py_BUILD_CORE_MODULE makes public APIs import from
+                # pythonXY.lib, which creates a self-dependency when linking
+                # pythoncore.dll. Build the shim with builtin/core semantics.
+                args_o += ["-UPy_BUILD_CORE_MODULE", "-DPy_BUILD_CORE_BUILTIN"]
+            args_o += [
+                "-c",
+                # The linked shim is a real function in the final binary, so
+                # keep unwind info for debuggers and stack walkers.
+                "-fasynchronous-unwind-tables",
+            ]
+            if self.frame_pointers:
+                args_o += ["-Xclang", "-mframe-pointer=all"]
+            args_o += self.args
+            args_o += shlex.split(self.cflags)
+            args_o += ["-o", f"{output}", f"{TOOLS_JIT / 'shim.c'}"]
+            await _llvm.run(
+                "clang",
+                args_o,
+                echo=self.verbose,
+                llvm_version=self.llvm_version,
+                llvm_tools_install_dir=self.llvm_tools_install_dir,
+            )
 
     async def _build_stencils(self) -> dict[str, _stencils.StencilGroup]:
         generated_cases = PYTHON_EXECUTOR_CASES_C_H.read_text()
@@ -231,8 +262,6 @@ class _Target(typing.Generic[_S, _R]):
         with tempfile.TemporaryDirectory() as tempdir:
             work = pathlib.Path(tempdir).resolve()
             async with asyncio.TaskGroup() as group:
-                coro = self._compile("shim", TOOLS_JIT / "shim.c", work)
-                tasks.append(group.create_task(coro, name="shim"))
                 template = TOOLS_JIT_TEMPLATE_C.read_text()
                 for case, opname in cases_and_opnames:
                     # Write out a copy of the template with *only* this case
@@ -242,7 +271,7 @@ class _Target(typing.Generic[_S, _R]):
                     # all of the other cases):
                     c = work / f"{opname}.c"
                     c.write_text(template.replace("CASE", case))
-                    coro = self._compile(opname, c, work)
+                    coro = self._build_stencil_group(opname, c, work)
                     tasks.append(group.create_task(coro, name=opname))
         stencil_groups = {task.get_name(): task.result() for task in tasks}
         for stencil_group in stencil_groups.values():
@@ -256,8 +285,9 @@ class _Target(typing.Generic[_S, _R]):
         comment: str = "",
         force: bool = False,
         jit_stencils: pathlib.Path,
+        jit_shim_object: pathlib.Path,
     ) -> None:
-        """Build jit_stencils.h in the given directory."""
+        """Build jit_stencils.h and the shim object in the given directory."""
         jit_stencils.parent.mkdir(parents=True, exist_ok=True)
         if not self.stable:
             warning = f"JIT support for {self.triple} is still experimental!"
@@ -271,8 +301,10 @@ class _Target(typing.Generic[_S, _R]):
             not force
             and jit_stencils.exists()
             and jit_stencils.read_text().startswith(digest)
+            and jit_shim_object.exists()
         ):
             return
+        ASYNCIO_RUNNER.run(self._build_shim_object(jit_shim_object))
         stencil_groups = ASYNCIO_RUNNER.run(self._build_stencils())
         jit_stencils_new = jit_stencils.parent / "jit_stencils.h.new"
         try:
