@@ -5569,10 +5569,22 @@
                 stack_pointer = _PyFrame_GetStackPointer(frame);
                 if (matches) {
                     _PyFrame_SetStackPointer(frame, stack_pointer);
-                    _PyErr_Format(tstate, PyExc_TypeError,
-                                  "'%.200s' object is not a mapping",
-                                  Py_TYPE(update_o)->tp_name);
+                    PyObject *exc = _PyErr_GetRaisedException(tstate);
+                    int has_keys = PyObject_HasAttrWithError(update_o, &_Py_ID(keys));
                     stack_pointer = _PyFrame_GetStackPointer(frame);
+                    if (has_keys == 0) {
+                        _PyFrame_SetStackPointer(frame, stack_pointer);
+                        _PyErr_Format(tstate, PyExc_TypeError,
+                                      "'%T' object is not a mapping",
+                                      update_o);
+                        Py_DECREF(exc);
+                        stack_pointer = _PyFrame_GetStackPointer(frame);
+                    }
+                    else {
+                        _PyFrame_SetStackPointer(frame, stack_pointer);
+                        _PyErr_ChainExceptions1(exc);
+                        stack_pointer = _PyFrame_GetStackPointer(frame);
+                    }
                 }
                 stack_pointer += -1;
                 ASSERT_WITHIN_STACK_BOUNDS(__FILE__, __LINE__);
