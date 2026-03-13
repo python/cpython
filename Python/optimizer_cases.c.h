@@ -4266,6 +4266,7 @@
             uint32_t version = (uint32_t)this_instr->operand0;
             PyCodeObject *co = get_current_code_object(ctx);
             if (co->co_version != version) {
+                _Py_BloomFilter_Add(dependencies, co);
             }
             else {
                 ctx->done = true;
