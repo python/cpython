@@ -1042,9 +1042,6 @@ _PyJit_TryInitializeTracing(
     assert(curr_instr->op.code == JUMP_BACKWARD_JIT || curr_instr->op.code == RESUME_CHECK_JIT || (exit != NULL));
     tracer->initial_state.jump_backward_instr = curr_instr;
 
-    if (_PyOpcode_Caches[_PyOpcode_Deopt[close_loop_instr->op.code]]) {
-        close_loop_instr[1].counter = trigger_backoff_counter();
-    }
     tracer->is_tracing = true;
     return 1;
 }

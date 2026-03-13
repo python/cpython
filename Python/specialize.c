@@ -45,7 +45,7 @@ do { \
 void
 _PyCode_Quicken(_Py_CODEUNIT *instructions, Py_ssize_t size, int enable_counters)
 {
-    #if ENABLE_SPECIALIZATION_FT
+    #if ENABLE_SPECIALIZATION
     _Py_BackoffCounter jump_counter, adaptive_counter, resume_counter;
     if (enable_counters) {
         PyThreadState *tstate = _PyThreadState_GET();
@@ -59,7 +59,6 @@ _PyCode_Quicken(_Py_CODEUNIT *instructions, Py_ssize_t size, int enable_counters
         adaptive_counter = initial_unreachable_backoff_counter();
         resume_counter = initial_unreachable_backoff_counter();
     }
-    (void)resume_counter;
     int opcode = 0;
     int oparg = 0;
     /* The last code unit cannot have a cache, so we don't need to check it */
