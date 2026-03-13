@@ -197,7 +197,10 @@ def main():
             # in the module's namespace.
             globs = module.__dict__
             globs.update({
-                '__spec__': spec,
+                # See gh-140729, set None to __spec__ according
+                # to the documentation,
+                # https://docs.python.org/3/reference/import.html#module-specs
+                '__spec__': None,
                 '__file__': spec.origin,
                 '__name__': spec.name,
                 '__package__': None,
