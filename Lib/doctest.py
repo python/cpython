@@ -63,6 +63,7 @@ __all__ = [
     'REPORT_ONLY_FIRST_FAILURE',
     'REPORTING_FLAGS',
     'FAIL_FAST',
+    'IGNORE_CASE',
     # 1. Utility Functions
     # 2. Example & DocTest
     'Example',
@@ -159,13 +160,15 @@ NORMALIZE_WHITESPACE = register_optionflag('NORMALIZE_WHITESPACE')
 ELLIPSIS = register_optionflag('ELLIPSIS')
 SKIP = register_optionflag('SKIP')
 IGNORE_EXCEPTION_DETAIL = register_optionflag('IGNORE_EXCEPTION_DETAIL')
+IGNORE_CASE = register_optionflag('IGNORE_CASE')
 
 COMPARISON_FLAGS = (DONT_ACCEPT_TRUE_FOR_1 |
                     DONT_ACCEPT_BLANKLINE |
                     NORMALIZE_WHITESPACE |
                     ELLIPSIS |
                     SKIP |
-                    IGNORE_EXCEPTION_DETAIL)
+                    IGNORE_EXCEPTION_DETAIL |
+                    IGNORE_CASE)
 
 REPORT_UDIFF = register_optionflag('REPORT_UDIFF')
 REPORT_CDIFF = register_optionflag('REPORT_CDIFF')
@@ -1752,12 +1755,22 @@ class OutputChecker:
         if got == want:
             return True
 
+        # Ignore case if flag
+        # Lowercase got and want
+        true_line = "True\n"
+        false_line = "False\n"
+        if (optionflags & IGNORE_CASE):
+            got = got.casefold()
+            want = want.casefold()
+            true_line = "true\n"
+            false_line = "false\n"
+
         # The values True and False replaced 1 and 0 as the return
         # value for boolean comparisons in Python 2.3.
         if not (optionflags & DONT_ACCEPT_TRUE_FOR_1):
-            if (got,want) == ("True\n", "1\n"):
+            if (got, want) == (true_line, "1\n"):
                 return True
-            if (got,want) == ("False\n", "0\n"):
+            if (got, want) == (false_line, "0\n"):
                 return True
 
         # <BLANKLINE> can be used as a special sequence to signify a
