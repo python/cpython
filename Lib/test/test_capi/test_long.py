@@ -804,16 +804,10 @@ class LongTests(unittest.TestCase):
                                  (negative, digits))
 
     def test_bug_143050(self):
-        _testinternalcapi = import_helper.import_module('_testinternalcapi')
-        _pylong_is_small_int = _testinternalcapi._pylong_is_small_int
-
-        self.assertRaises(TypeError, _pylong_is_small_int, 1j)
-
         with support.adjust_int_max_str_digits(0):
-            self.assertTrue(_testinternalcapi._pylong_is_small_int(0))
             a = int('-' + '0' * 7000, 10)
             del a
-            self.assertTrue(_testinternalcapi._pylong_is_small_int(0))
+            _testcapi.test_immortal_small_ints()
 
 
 if __name__ == "__main__":

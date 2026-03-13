@@ -16,6 +16,5 @@ int _PyTestInternalCapi_Init_Set(PyObject *module);
 int _PyTestInternalCapi_Init_Complex(PyObject *module);
 int _PyTestInternalCapi_Init_CriticalSection(PyObject *module);
 int _PyTestInternalCapi_Init_Tuple(PyObject *module);
-int _PyTestInternalCapi_Init_Long(PyObject *module);
 
 #endif // Py_TESTINTERNALCAPI_PARTS_H
