@@ -2134,7 +2134,7 @@ class TestCounter(unittest.TestCase):
         self.assertEqual(c['d'], 1)
         self.assertEqual(c.setdefault('e', 5), 5)
         self.assertEqual(c['e'], 5)
-    
+
     def test_most_common_n_equals_one(self):
         # Test n == 1 returns a list with one tuple
         c1 = Counter('abcaba')
@@ -2143,24 +2143,24 @@ class TestCounter(unittest.TestCase):
         self.assertIsInstance(result, list)
         self.assertEqual(len(result), 1)
         self.assertIsInstance(result[0], tuple)
-    
+
         # Test n == 1 returns same format as other n values
         self.assertEqual(c1.most_common(1), c1.most_common(2)[:1])
-    
+
         # Test with a counter where all items have same count
         c2 = Counter('abc')
         result = c2.most_common(1)
         self.assertEqual(len(result), 1)
         self.assertIn(result[0][1], [1])  # count should be 1
-    
+
         # Test n == 1 with single element
         c3 = Counter('a')
         self.assertEqual(c3.most_common(1), [('a', 1)])
-    
+
         # Test n == 1 with empty counter
         c4 = Counter()
         self.assertEqual(c4.most_common(1), [])
-    
+
         # Test that n == 1 and n == 2 are consistent at index 0
         c5 = Counter('the quick brown fox')
         one = c5.most_common(1)

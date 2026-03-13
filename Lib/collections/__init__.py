@@ -637,7 +637,7 @@ class Counter(dict):
         if n == 1:
             if not self.items():
                 return []
-            return [max(self.items(), key=_itemgetter(1))]        
+            return [max(self.items(), key=_itemgetter(1))]
 
         return _nlargest(n, self.items(), key=_itemgetter(1))
 
