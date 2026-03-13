@@ -1,7 +1,7 @@
 import unittest
 from test import audiotests
 from test import support
-from test.support.os_helper import FakePath, unlink
+from test.support.os_helper import FakePath
 import io
 import os
 import struct
@@ -22,7 +22,6 @@ class WavePCM8Test(WaveTest, unittest.TestCase):
     sampwidth = 1
     framerate = 11025
     nframes = 48
-    format = wave.WAVE_FORMAT_PCM
     comptype = 'NONE'
     compname = 'not compressed'
     frames = bytes.fromhex("""\
@@ -40,7 +39,6 @@ class WavePCM16Test(WaveTest, unittest.TestCase):
     sampwidth = 2
     framerate = 11025
     nframes = 48
-    format = wave.WAVE_FORMAT_PCM
     comptype = 'NONE'
     compname = 'not compressed'
     frames = bytes.fromhex("""\
@@ -62,7 +60,6 @@ class WavePCM24Test(WaveTest, unittest.TestCase):
     sampwidth = 3
     framerate = 11025
     nframes = 48
-    format = wave.WAVE_FORMAT_PCM
     comptype = 'NONE'
     compname = 'not compressed'
     frames = bytes.fromhex("""\
@@ -90,8 +87,6 @@ class WavePCM24ExtTest(WaveTest, unittest.TestCase):
     sampwidth = 3
     framerate = 11025
     nframes = 48
-    format = wave.WAVE_FORMAT_EXTENSIBLE
-    readonly = True  # Writing EXTENSIBLE wave format is not supported.
     comptype = 'NONE'
     compname = 'not compressed'
     frames = bytes.fromhex("""\
@@ -119,7 +114,6 @@ class WavePCM32Test(WaveTest, unittest.TestCase):
     sampwidth = 4
     framerate = 11025
     nframes = 48
-    format = wave.WAVE_FORMAT_PCM
     comptype = 'NONE'
     compname = 'not compressed'
     frames = bytes.fromhex("""\
@@ -140,139 +134,13 @@ class WavePCM32Test(WaveTest, unittest.TestCase):
         frames = wave._byteswap(frames, 4)
 
 
-class WaveIeeeFloatingPointTest(WaveTest, unittest.TestCase):
-    sndfilename = 'pluck-float32.wav'
-    sndfilenframes = 3307
-    nchannels = 2
-    sampwidth = 4
-    framerate = 11025
-    nframes = 48
-    format = wave.WAVE_FORMAT_IEEE_FLOAT
-    comptype = 'NONE'
-    compname = 'not compressed'
-    frames = bytes.fromhex("""\
-      60598B3C001423BA 1FB4163F8054FA3B 0E4FC43E80C51D3D 53467EBF4030843D \
-      FC84D0BE304C563D 3053113F40BEFC3C B72F00BFC03E583C E0FEDA3C805142BC \
-      54510FBFE02638BD 569F16BF40FDCABD C060A63EECA421BE 3CE5523E2C3349BE \
-      0C2E10BE14725BBE 5268E7BEDC3B6CBE 985AE03D80497ABE B4B606BEECB67EBE \
-      B0B12E3FC87C6CBE 005519BD4C0F3EBE F8BD1B3EECDF03BE 924E9FBE588D8DBD \
-      D4E150BF501711BD B079A0BD20FBFBBC 5863863D40760CBD 0E3C83BE40E217BD \
-      04FF0B3EF07839BD E29AFB3E80A714BD B91007BFE042D3BC B5AD4D3F80CDA0BB \
-      1AB1C3BEB04E023D D33A063FC0A8973D 8012F9BEE074EC3D 7341223FD415153E \
-      D80409BE04A63A3E 00F27BBFBC25333E 0000803FFC29223E 000080BF38A7143E \
-      3638133F283BEB3D 7C6E253F00CADB3D 686A02BE88FDF53D 920CC7BE28E1FB3D \
-      185B5ABED8A2CE3D 5189463FC8A7A53D E88F8C3DF0FFA13D 1CE6AE3EE0A0B03D \
-      DF90223F184EE43D 376768BF2CD8093E 281612BF60B3EE3D 2F26083F88B4A53D \
-      """)
-
 class MiscTestCase(unittest.TestCase):
     def test__all__(self):
-        not_exported = {'KSDATAFORMAT_SUBTYPE_PCM'}
+        not_exported = {'WAVE_FORMAT_PCM', 'WAVE_FORMAT_EXTENSIBLE', 'KSDATAFORMAT_SUBTYPE_PCM'}
         support.check__all__(self, wave, not_exported=not_exported)
 
 
 class WaveLowLevelTest(unittest.TestCase):
-
-    def test_setparams_6_tuple_defaults_to_pcm(self):
-        with tempfile.NamedTemporaryFile(delete_on_close=False) as fp:
-            filename = fp.name
-        self.addCleanup(unlink, filename)
-
-        with wave.open(filename, 'wb') as w:
-            w.setformat(wave.WAVE_FORMAT_IEEE_FLOAT)
-            w.setparams((1, 2, 22050, 0, 'NONE', 'not compressed'))
-            self.assertEqual(w.getformat(), wave.WAVE_FORMAT_PCM)
-
-    def test_setparams_7_tuple_uses_format(self):
-        with tempfile.NamedTemporaryFile(delete_on_close=False) as fp:
-            filename = fp.name
-        self.addCleanup(unlink, filename)
-
-        with wave.open(filename, 'wb') as w:
-            w.setparams((1, 4, 22050, 0, 'NONE', 'not compressed',
-                         wave.WAVE_FORMAT_IEEE_FLOAT))
-            self.assertEqual(w.getformat(), wave.WAVE_FORMAT_IEEE_FLOAT)
-
-    def test_setparams_7_tuple_ieee_64bit_sampwidth(self):
-        with tempfile.NamedTemporaryFile(delete_on_close=False) as fp:
-            filename = fp.name
-        self.addCleanup(unlink, filename)
-
-        with wave.open(filename, 'wb') as w:
-            w.setparams((1, 8, 22050, 0, 'NONE', 'not compressed',
-                         wave.WAVE_FORMAT_IEEE_FLOAT))
-            self.assertEqual(w.getformat(), wave.WAVE_FORMAT_IEEE_FLOAT)
-            self.assertEqual(w.getsampwidth(), 8)
-
-    def test_getparams_backward_compatible_shape(self):
-        with tempfile.NamedTemporaryFile(delete_on_close=False) as fp:
-            filename = fp.name
-        self.addCleanup(unlink, filename)
-
-        with wave.open(filename, 'wb') as w:
-            w.setparams((1, 4, 22050, 0, 'NONE', 'not compressed',
-                         wave.WAVE_FORMAT_IEEE_FLOAT))
-            params = w.getparams()
-            self.assertEqual(params, (1, 4, 22050, 0, 'NONE', 'not compressed'))
-
-    def test_getformat_setformat(self):
-        with tempfile.NamedTemporaryFile(delete_on_close=False) as fp:
-            filename = fp.name
-        self.addCleanup(unlink, filename)
-
-        with wave.open(filename, 'wb') as w:
-            w.setnchannels(1)
-            w.setsampwidth(4)
-            w.setframerate(22050)
-            self.assertEqual(w.getformat(), wave.WAVE_FORMAT_PCM)
-            w.setformat(wave.WAVE_FORMAT_IEEE_FLOAT)
-            self.assertEqual(w.getformat(), wave.WAVE_FORMAT_IEEE_FLOAT)
-
-    def test_setformat_ieee_requires_32_or_64_bit_sampwidth(self):
-        with tempfile.NamedTemporaryFile(delete_on_close=False) as fp:
-            filename = fp.name
-        self.addCleanup(unlink, filename)
-
-        with wave.open(filename, 'wb') as w:
-            w.setnchannels(1)
-            w.setsampwidth(2)
-            w.setframerate(22050)
-            with self.assertRaisesRegex(wave.Error,
-                                        'unsupported sample width for IEEE float format'):
-                w.setformat(wave.WAVE_FORMAT_IEEE_FLOAT)
-
-    def test_setsampwidth_ieee_requires_32_or_64_bit(self):
-        with tempfile.NamedTemporaryFile(delete_on_close=False) as fp:
-            filename = fp.name
-        self.addCleanup(unlink, filename)
-
-        with wave.open(filename, 'wb') as w:
-            w.setnchannels(1)
-            w.setframerate(22050)
-            w.setformat(wave.WAVE_FORMAT_IEEE_FLOAT)
-            with self.assertRaisesRegex(wave.Error,
-                                        'unsupported sample width for IEEE float format'):
-                w.setsampwidth(2)
-            w.setsampwidth(4)
-
-    def test_setsampwidth_ieee_accepts_64_bit(self):
-        with tempfile.NamedTemporaryFile(delete_on_close=False) as fp:
-            filename = fp.name
-        self.addCleanup(unlink, filename)
-
-        with wave.open(filename, 'wb') as w:
-            w.setnchannels(1)
-            w.setframerate(22050)
-            w.setformat(wave.WAVE_FORMAT_IEEE_FLOAT)
-            w.setsampwidth(8)
-            self.assertEqual(w.getsampwidth(), 8)
-
-    def test_read_getformat(self):
-        b = b'RIFF' + struct.pack('<L', 36) + b'WAVE'
-        b += b'fmt ' + struct.pack('<LHHLLHH', 16, 1, 1, 11025, 11025, 1, 8)
-        b += b'data' + struct.pack('<L', 0)
-        with wave.open(io.BytesIO(b), 'rb') as r:
-            self.assertEqual(r.getformat(), wave.WAVE_FORMAT_PCM)
 
     def test_read_no_chunks(self):
         b = b'SPAM'
@@ -338,58 +206,6 @@ class WaveLowLevelTest(unittest.TestCase):
                 wave.open(os.curdir, "wb")
             support.gc_collect()
             self.assertIsNone(cm.unraisable)
-
-    def test_ieee_float_has_fact_chunk(self):
-        nframes = 100
-        with tempfile.NamedTemporaryFile(delete_on_close=False) as fp:
-            filename = fp.name
-        self.addCleanup(unlink, filename)
-
-        with wave.open(filename, 'wb') as w:
-            w.setnchannels(1)
-            w.setsampwidth(4)
-            w.setframerate(22050)
-            w.setformat(wave.WAVE_FORMAT_IEEE_FLOAT)
-            w.writeframes(b'\x00\x00\x00\x00' * nframes)
-
-        with open(filename, 'rb') as f:
-            f.read(12)
-            fact_found = False
-            fact_samples = None
-            while True:
-                chunk_id = f.read(4)
-                if len(chunk_id) < 4:
-                    break
-                chunk_size = struct.unpack('<L', f.read(4))[0]
-                if chunk_id == b'fact':
-                    fact_found = True
-                    fact_samples = struct.unpack('<L', f.read(4))[0]
-                    break
-                f.seek(chunk_size + (chunk_size & 1), 1)
-
-        self.assertTrue(fact_found)
-        self.assertEqual(fact_samples, nframes)
-
-    def test_pcm_has_no_fact_chunk(self):
-        with tempfile.NamedTemporaryFile(delete_on_close=False) as fp:
-            filename = fp.name
-        self.addCleanup(unlink, filename)
-
-        with wave.open(filename, 'wb') as w:
-            w.setnchannels(1)
-            w.setsampwidth(2)
-            w.setframerate(22050)
-            w.writeframes(b'\x00\x00' * 100)
-
-        with open(filename, 'rb') as f:
-            f.read(12)
-            while True:
-                chunk_id = f.read(4)
-                if len(chunk_id) < 4:
-                    break
-                chunk_size = struct.unpack('<L', f.read(4))[0]
-                self.assertNotEqual(chunk_id, b'fact')
-                f.seek(chunk_size + (chunk_size & 1), 1)
 
 
 class WaveOpen(unittest.TestCase):
