@@ -625,7 +625,9 @@ bytearray_resize(PyObject *self, PyObject *arg)
         }
         size = ival;
     }
+    Py_BEGIN_CRITICAL_SECTION(self);
     return_value = bytearray_resize_impl((PyByteArrayObject *)self, size);
+    Py_END_CRITICAL_SECTION();
 
 exit:
     return return_value;
@@ -1796,4 +1798,4 @@ bytearray_sizeof(PyObject *self, PyObject *Py_UNUSED(ignored))
 {
     return bytearray_sizeof_impl((PyByteArrayObject *)self);
 }
-/*[clinic end generated code: output=fdfe41139c91e409 input=a9049054013a1b77]*/
+/*[clinic end generated code: output=bca62cf335d48127 input=a9049054013a1b77]*/
