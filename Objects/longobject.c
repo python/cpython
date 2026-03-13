@@ -3118,11 +3118,11 @@ PyLong_FromString(const char *str, char **pend, int base)
     }
 
     /* Set sign and normalize */
-    if (sign < 0) {
-        _PyLong_FlipSign(z);
-    }
     long_normalize(z);
     z = maybe_small_long(z);
+    if (sign < 0) {
+        _PyLong_Negate(&z);
+    }
 
     if (pend != NULL) {
         *pend = (char *)str;

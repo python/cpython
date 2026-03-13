@@ -101,6 +101,7 @@
     <ClCompile Include="..\Modules\_testinternalcapi\complex.c" />
     <ClCompile Include="..\Modules\_testinternalcapi\interpreter.c" />
     <ClCompile Include="..\Modules\_testinternalcapi\tuple.c" />
+    <ClCompile Include="..\Modules\_testinternalcapi\long.c" />
   </ItemGroup>
   <ItemGroup>
     <ResourceCompile Include="..\PC\python_nt.rc" />
