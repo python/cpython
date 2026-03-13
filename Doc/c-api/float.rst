@@ -198,15 +198,14 @@ is the IEEE 754 binary64 double precision format, although the NaN type may
 not be preserved on some platforms while unpacking (signaling NaNs become quiet
 NaNs), for example on x86 systems in 32-bit mode.
 
-It's assumed, that the :c:expr:`double` type has the IEEE 754 binary64 double
+It's assumed that the :c:expr:`double` type has the IEEE 754 binary64 double
 precision format.  What happens if it's not true is partly accidental (alas).
 On non-IEEE platforms with more precision, or larger dynamic range, than IEEE
 754 supports, not all values can be packed; on non-IEEE platforms with less
 precision, or smaller dynamic range, not all values can be unpacked.  The
 packing of special numbers like INFs and NaNs (if such things exist on the
-platform) may be not handled correctly, and attempting to unpack a bytes string
+platform) may not be handled correctly, and attempting to unpack a bytes string
 containing an IEEE INF or NaN may raise an exception.
-
 
 .. versionadded:: 3.11
 
@@ -224,7 +223,7 @@ Return value: ``0`` if all is OK, ``-1`` if error (and an exception is set,
 most likely :exc:`OverflowError`).
 
 .. impl-detail::
-    The :c:func:`PyFloat_Pack8` function always succeeds in the CPython.
+    The :c:func:`PyFloat_Pack8` function always succeeds in CPython.
 
 .. c:function:: int PyFloat_Pack2(double x, char *p, int le)
 
@@ -254,7 +253,7 @@ Return value: The unpacked double.  On error, this is ``-1.0`` and
 :exc:`OverflowError`).
 
 .. impl-detail::
-    These functions always succeed in the CPython.
+    These functions always succeed in CPython.
 
 .. c:function:: double PyFloat_Unpack2(const char *p, int le)
 
