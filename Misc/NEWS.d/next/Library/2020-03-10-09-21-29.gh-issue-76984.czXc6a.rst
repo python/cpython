@@ -1,0 +1,2 @@
+:class:`smtplib.LMTP` now reads all replies to the DATA command when a
+message has multiple successful recipients. Patch by Jacob Middag.
