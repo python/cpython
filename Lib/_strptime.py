@@ -382,7 +382,10 @@ class TimeRE(dict):
             'Z': self.__seqToRE((tz for tz_names in self.locale_time.timezone
                                         for tz in tz_names),
                                 'Z'),
-            '%': '%'}
+            'n': r'\s*',
+            't': r'\s*',
+            '%': '%',
+        }
         if self.locale_time.LC_alt_digits is None:
             for d in 'dmyCHIMS':
                 mapping['O' + d] = r'(?P<%s>\d\d|\d| \d)' % d
