@@ -367,4 +367,3 @@ class TestUnixConsoleEIOHandling(TestCase):
 
         # EIO error should be handled gracefully in restore()
         console.restore()
-
