@@ -1518,21 +1518,6 @@ typing
 wave
 ----
 
-* Added support for IEEE floating-point WAVE audio
-  (``WAVE_FORMAT_IEEE_FLOAT``) in :mod:`wave`.
-
-* Added :meth:`wave.Wave_read.getformat`, :meth:`wave.Wave_write.getformat`,
-  and :meth:`wave.Wave_write.setformat` for explicit frame format handling.
-
-* :meth:`wave.Wave_write.setparams` accepts both 7-item tuples including
-  ``format`` and 6-item tuples for backwards compatibility (defaulting to
-  ``WAVE_FORMAT_PCM``).
-
-* ``WAVE_FORMAT_IEEE_FLOAT`` output now includes a ``fact`` chunk,
-  as required for non-PCM WAVE formats.
-
-(Contributed by Lionel Koenig and Michiel W. Beijen in :gh:`60729`.)
-
 * Removed the ``getmark()``, ``setmark()`` and ``getmarkers()`` methods
   of the :class:`~wave.Wave_read` and :class:`~wave.Wave_write` classes,
   which were deprecated since Python 3.13.
