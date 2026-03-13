@@ -2668,8 +2668,6 @@
     added = '3.15'
 [function.PyObject_GetTypeData_DuringGC]
     added = '3.15'
-[function.PyObject_GetItemData_DuringGC]
-    added = '3.15'
 [function.PyType_GetModuleState_DuringGC]
     added = '3.15'
 [function.PyModule_GetState_DuringGC]
