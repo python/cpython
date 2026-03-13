@@ -194,9 +194,9 @@ number of bytes in the bytes string.
 
 The 2-byte format is the IEEE 754 binary16 half-precision format, the 4-byte
 format is the IEEE 754 binary32 single precision format, and the 8-byte format
-is the IEEE 754 binary64 double precision format, although the NaNs type may
-not be preserved on some platforms while unpacking (signaling NaN become quiet
-NaN), for example on x86 systems in 32-bit mode.
+is the IEEE 754 binary64 double precision format, although the NaN type may
+not be preserved on some platforms while unpacking (signaling NaNs become quiet
+NaNs), for example on x86 systems in 32-bit mode.
 
 It's assumed, that the :c:expr:`double` type has the IEEE 754 binary64 double
 precision format.  What happens if it's not true is partly accidental (alas).
@@ -215,8 +215,8 @@ Pack functions
 
 The pack routines write 2, 4 or 8 bytes, starting at *p*. *le* is an
 :c:expr:`int` argument, non-zero if you want the bytes string in little-endian
-format (exponent last, at ``p+1``, ``p+3``, or ``p+6`` ``p+7``), zero if you
-want big-endian format (exponent first, at *p*). The :c:macro:`PY_LITTLE_ENDIAN`
+format (exponent last, at ``p+1``, ``p+3``, or ``p+6`` and ``p+7``), zero if you
+want big-endian format (exponent first, at *p*). The :c:macro:`!PY_LITTLE_ENDIAN`
 constant can be used to use the native endian: it is equal to ``0`` on big
 endian processor, or ``1`` on little endian processor.
 
@@ -245,7 +245,7 @@ Unpack functions
 The unpack routines read 2, 4 or 8 bytes, starting at *p*.  *le* is an
 :c:expr:`int` argument, non-zero if the bytes string is in little-endian format
 (exponent last, at ``p+1``, ``p+3`` or ``p+6`` and ``p+7``), zero if big-endian
-(exponent first, at *p*). The :c:macro:`PY_LITTLE_ENDIAN` constant can be used to
+(exponent first, at *p*). The :c:macro:`!PY_LITTLE_ENDIAN` constant can be used to
 use the native endian: it is equal to ``0`` on big endian processor, or ``1``
 on little endian processor.
 
