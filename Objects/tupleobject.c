@@ -83,7 +83,7 @@ PyTuple_New(Py_ssize_t size)
         return NULL;
     }
     for (Py_ssize_t i = 0; i < size; i++) {
-        op->ob_item[i] = NULL;
+        op->ob_item[i] = Py_None;
     }
     _PyObject_GC_TRACK(op);
     return (PyObject *) op;
