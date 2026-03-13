@@ -954,7 +954,7 @@ Functions
    :func:`~re.match`.  Use that name when you need to retain compatibility with
    older Python versions.
 
-   .. versionchanged:: next
+   .. versionchanged:: 3.15
       The alternate :func:`~re.prefixmatch` name of this API was added as a
       more explicitly descriptive name than :func:`~re.match`. Use it to better
       express intent. The norm in other languages and regular expression
@@ -1309,7 +1309,7 @@ Regular Expression Objects
    :meth:`~Pattern.match`.  Use that name when you need to retain compatibility
    with older Python versions.
 
-   .. versionchanged:: next
+   .. versionchanged:: 3.15
       The alternate :meth:`~Pattern.prefixmatch` name of this API was added as
       a more explicitly descriptive name than :meth:`~Pattern.match`. Use it to
       better express intent. The norm in other languages and regular expression
@@ -1781,7 +1781,7 @@ We **do not** plan to deprecate and remove the older *match* name,
 as it has been used in code for over 30 years.
 Code supporting older versions of Python should continue to use *match*.
 
-.. versionadded:: next
+.. versionadded:: 3.15
 
 Making a Phonebook
 ^^^^^^^^^^^^^^^^^^

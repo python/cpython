@@ -4,6 +4,7 @@
 #include "pycore_initconfig.h"    // _PyStatus_OK()
 #include "pycore_long.h"          // _PyLong_Format()
 #include "pycore_object.h"        // _PyObject_GC_TRACK()
+#include "pycore_tuple.h"         // _PyTuple_FromPair
 
 #include <stddef.h>               // offsetof()
 
@@ -2542,7 +2543,7 @@ PyTypeObject _PyHamtItems_Type = {
 static PyObject *
 hamt_iter_yield_items(PyObject *key, PyObject *val)
 {
-    return PyTuple_Pack(2, key, val);
+    return _PyTuple_FromPair(key, val);
 }
 
 PyObject *

@@ -68,7 +68,8 @@ LIBRARY_FUZZER_PATHS = frozenset({
     Path("Lib/encodings/"),
     Path("Modules/_codecsmodule.c"),
     Path("Modules/cjkcodecs/"),
-    Path("Modules/unicodedata*"),
+    Path("Modules/unicodedata.c"),
+    Path("Modules/unicodedata_db.h"),
     # difflib
     Path("Lib/difflib.py"),
     # email
@@ -89,7 +90,7 @@ LIBRARY_FUZZER_PATHS = frozenset({
     # tarfile
     Path("Lib/tarfile.py"),
     # tomllib
-    Path("Modules/tomllib/"),
+    Path("Lib/tomllib/"),
     # xml
     Path("Lib/xml/"),
     Path("Lib/_markupbase.py"),
@@ -116,10 +117,10 @@ class Outputs:
 
 
 def compute_changes() -> None:
-    target_branch, head_ref = git_refs()
+    target_ref, head_ref = git_refs()
     if os.environ.get("GITHUB_EVENT_NAME", "") == "pull_request":
         # Getting changed files only makes sense on a pull request
-        files = get_changed_files(target_branch, head_ref)
+        files = get_changed_files(target_ref, head_ref)
         outputs = process_changed_files(files)
     else:
         # Otherwise, just run the tests
@@ -132,6 +133,7 @@ def compute_changes() -> None:
             run_wasi=True,
             run_windows_tests=True,
         )
+    target_branch = target_ref.removeprefix("origin/")
     outputs = process_target_branch(outputs, target_branch)
 
     if outputs.run_tests:
