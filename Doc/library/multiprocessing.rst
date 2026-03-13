@@ -1335,12 +1335,12 @@ Connection objects are usually created using
       Note that multiple connection objects may be polled at once by
       using :func:`multiprocessing.connection.wait`.
 
-   .. method:: send_bytes(buffer[, offset[, size]])
+   .. method:: send_bytes(buf[, offset[, size]])
 
       Send byte data from a :term:`bytes-like object` as a complete message.
 
-      If *offset* is given then data is read from that position in *buffer*.  If
-      *size* is given then that many bytes will be read from buffer.  Very large
+      If *offset* is given then data is read from that position in *buf*.  If
+      *size* is given then that many bytes will be read from *buf*.  Very large
       buffers (approximately 32 MiB+, though it depends on the OS) may raise a
       :exc:`ValueError` exception
 
@@ -1360,18 +1360,18 @@ Connection objects are usually created using
          alias of :exc:`OSError`.
 
 
-   .. method:: recv_bytes_into(buffer[, offset])
+   .. method:: recv_bytes_into(buf[, offset])
 
-      Read into *buffer* a complete message of byte data sent from the other end
+      Read into *buf* a complete message of byte data sent from the other end
       of the connection and return the number of bytes in the message.  Blocks
       until there is something to receive.  Raises
       :exc:`EOFError` if there is nothing left to receive and the other end was
       closed.
 
-      *buffer* must be a writable :term:`bytes-like object`.  If
+      *buf* must be a writable :term:`bytes-like object`.  If
       *offset* is given then the message will be written into the buffer from
       that position.  Offset must be a non-negative integer less than the
-      length of *buffer* (in bytes).
+      length of *buf* (in bytes).
 
       If the buffer is too short then a :exc:`BufferTooShort` exception is
       raised and the complete message is available as ``e.args[0]`` where ``e``
