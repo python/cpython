@@ -1333,10 +1333,22 @@ class BaseEventLoop(events.AbstractEventLoop):
             raise TypeError(
                 f'transport {transport!r} is not supported by start_tls()')
 
+        # gh-109051: SSLProtocol needs to preserve "writing paused" state
+        if isinstance(transport, transports._FlowControlMixin):
+            writing_paused = transport._protocol_paused
+        else:
+            # Don't break compatibility with transports that don't implement
+            # the private _FlowControlMixin (e.g. wrapper transports) as much
+            # as possible.
+            _, high_water = transport.get_write_buffer_limits()
+            buffer_size = transport.get_write_buffer_size()
+            writing_paused = buffer_size > high_water
+
         waiter = self.create_future()
         ssl_protocol = sslproto.SSLProtocol(
             self, protocol, sslcontext, waiter,
             server_side, server_hostname,
+            writing_paused=writing_paused,
             ssl_handshake_timeout=ssl_handshake_timeout,
             ssl_shutdown_timeout=ssl_shutdown_timeout,
             call_connection_made=False)
