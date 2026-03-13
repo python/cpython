@@ -605,7 +605,7 @@ class StructTest(ComplexesAreIdenticalMixin, unittest.TestCase):
         self.assertEqual(s.unpack(packed), (1, 2))
 
         with self.assertWarnsRegex(FutureWarning, msg):
-            with self.assertRaises(UnicodeEncodeError):
+            with self.assertRaises(ValueError):
                 s.__init__('\udc00')
         self.assertEqual(s.format, '>hh')
         self.assertEqual(s.pack(1, 2), packed)
@@ -872,10 +872,10 @@ class StructTest(ComplexesAreIdenticalMixin, unittest.TestCase):
         with self.assertWarnsRegex(DeprecationWarning, warnmsg + 'bad char'):
             my_struct = MyStruct(format='$')
         self.assertEqual(my_struct.pack(12345), b'\x30\x39')
-        with self.assertWarnsRegex(DeprecationWarning, warnmsg + ".*can't encode"):
+        with self.assertWarnsRegex(DeprecationWarning, warnmsg + "non-ASCII"):
             my_struct = MyStruct('\udc00')
         self.assertEqual(my_struct.pack(12345), b'\x30\x39')
-        with self.assertWarnsRegex(DeprecationWarning, warnmsg + ".*can't encode"):
+        with self.assertWarnsRegex(DeprecationWarning, warnmsg + "non-ASCII"):
             my_struct = MyStruct(format='\udc00')
         self.assertEqual(my_struct.pack(12345), b'\x30\x39')
 
@@ -928,11 +928,16 @@ class StructTest(ComplexesAreIdenticalMixin, unittest.TestCase):
         with self.assertWarns(FutureWarning):
             with self.assertRaises(struct.error):
                 MyStruct(('>h',), ('$',))
-        with self.assertRaises(UnicodeEncodeError):
+        with self.assertRaises(ValueError):
             MyStruct(('\udc00',), ('>h',))
+        with self.assertRaises(ValueError):
+            MyStruct((b'\xa4',), ('>h',))
         with self.assertWarns(FutureWarning):
-            with self.assertRaises(UnicodeEncodeError):
+            with self.assertRaises(ValueError):
                 MyStruct(('>h',), ('\udc00',))
+        with self.assertWarns(FutureWarning):
+            with self.assertRaises(ValueError):
+                MyStruct(('>h',), (b'\xa4',))
         with self.assertWarns(FutureWarning):
             my_struct = MyStruct(('>h',), ('<h',))
         self.assertEqual(my_struct.format, '<h')
@@ -954,8 +959,10 @@ class StructTest(ComplexesAreIdenticalMixin, unittest.TestCase):
             MyStruct(42)
         with self.assertRaises(struct.error):
             MyStruct('$')
-        with self.assertRaises(UnicodeEncodeError):
+        with self.assertRaises(ValueError):
             MyStruct('\udc00')
+        with self.assertRaises(ValueError):
+            MyStruct(b'\xa4')
         with self.assertRaises(TypeError):
             MyStruct('>h', 42)
         with self.assertRaises(TypeError):
@@ -1004,7 +1011,7 @@ class StructTest(ComplexesAreIdenticalMixin, unittest.TestCase):
         self.assertRaises(RuntimeError, S.pack_into, spam, 1)
         self.assertRaises(RuntimeError, S.unpack, spam)
         self.assertRaises(RuntimeError, S.unpack_from, spam)
-        self.assertRaises(RuntimeError, getattr, S, 'format')
+        self.assertRaises(AttributeError, getattr, S, 'format')
         self.assertRaises(RuntimeError, S.__sizeof__)
         self.assertRaises(RuntimeError, repr, S)
         self.assertEqual(S.size, -1)
