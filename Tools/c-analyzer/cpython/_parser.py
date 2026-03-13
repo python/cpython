@@ -80,13 +80,18 @@ EXCLUDED = format_conf_lines([
     'Python/generated_cases.c.h',
     'Python/executor_cases.c.h',
     'Python/optimizer_cases.c.h',
+    'Python/record_functions.c.h',
     'Python/opcode_targets.h',
+    'Modules/_testinternalcapi/test_targets.h',
+    'Modules/_testinternalcapi/test_cases.c.h',
+    'Modules/_testinternalcapi/interpreter.c',
     # XXX: Throws errors if PY_VERSION_HEX is not mocked out
     'Modules/clinic/_testclinic_depr.c.h',
 
     # not actually source
     'Python/bytecodes.c',
     'Python/optimizer_bytecodes.c',
+    'Modules/_testinternalcapi/testbytecodes.c',
 
     # mimalloc
     'Objects/mimalloc/*.c',

@@ -87,7 +87,7 @@ Custom String Formatting
 
 The built-in string class provides the ability to do complex variable
 substitutions and value formatting via the :meth:`~str.format` method described in
-:pep:`3101`.  The :class:`Formatter` class in the :mod:`string` module allows
+:pep:`3101`.  The :class:`Formatter` class in the :mod:`!string` module allows
 you to create and customize your own string formatting behaviors using the same
 implementation as the built-in :meth:`~str.format` method.
 
@@ -840,7 +840,7 @@ Template strings support ``$``-based substitutions, using the following rules:
 Any other appearance of ``$`` in the string will result in a :exc:`ValueError`
 being raised.
 
-The :mod:`string` module provides a :class:`Template` class that implements
+The :mod:`!string` module provides a :class:`Template` class that implements
 these rules.  The methods of :class:`Template` are:
 
 

@@ -30,7 +30,6 @@ _PyFunction_IsVersionValid(uint32_t version)
 extern uint32_t _PyFunction_GetVersionForCurrentState(PyFunctionObject *func);
 PyAPI_FUNC(void) _PyFunction_SetVersion(PyFunctionObject *func, uint32_t version);
 void _PyFunction_ClearCodeByVersion(uint32_t version);
-PyFunctionObject *_PyFunction_LookupByVersion(uint32_t version, PyObject **p_code);
 
 extern PyObject *_Py_set_function_type_params(
     PyThreadState* unused, PyObject *func, PyObject *type_params);
@@ -45,6 +44,12 @@ static inline PyObject* _PyFunction_GET_BUILTINS(PyObject *func) {
     return _PyFunction_CAST(func)->func_builtins;
 }
 #define _PyFunction_GET_BUILTINS(func) _PyFunction_GET_BUILTINS(_PyObject_CAST(func))
+
+
+/* Get the callable wrapped by a staticmethod.
+   Returns a borrowed reference.
+   The caller must ensure 'sm' is a staticmethod object. */
+extern PyObject *_PyStaticMethod_GetFunc(PyObject *sm);
 
 
 #ifdef __cplusplus

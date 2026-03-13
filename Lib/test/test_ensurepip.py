@@ -12,6 +12,12 @@ import ensurepip
 import ensurepip._uninstall
 
 
+if sys.implementation.cache_tag is None:
+    COMPILE_OPT = ["--no-compile"]
+else:
+    COMPILE_OPT = []
+
+
 class TestPackages(unittest.TestCase):
     def touch(self, directory, filename):
         fullname = os.path.join(directory, filename)
@@ -85,7 +91,7 @@ class TestBootstrap(EnsurepipMixin, unittest.TestCase):
         self.run_pip.assert_called_once_with(
             [
                 "install", "--no-cache-dir", "--no-index", "--find-links",
-                unittest.mock.ANY, "pip",
+                unittest.mock.ANY, *COMPILE_OPT, "pip",
             ],
             unittest.mock.ANY,
         )
@@ -99,7 +105,7 @@ class TestBootstrap(EnsurepipMixin, unittest.TestCase):
         self.run_pip.assert_called_once_with(
             [
                 "install", "--no-cache-dir", "--no-index", "--find-links",
-                unittest.mock.ANY, "--root", "/foo/bar/",
+                unittest.mock.ANY, "--root", "/foo/bar/", *COMPILE_OPT,
                 "pip",
             ],
             unittest.mock.ANY,
@@ -111,7 +117,7 @@ class TestBootstrap(EnsurepipMixin, unittest.TestCase):
         self.run_pip.assert_called_once_with(
             [
                 "install", "--no-cache-dir", "--no-index", "--find-links",
-                unittest.mock.ANY, "--user", "pip",
+                unittest.mock.ANY, "--user", *COMPILE_OPT, "pip",
             ],
             unittest.mock.ANY,
         )
@@ -122,7 +128,7 @@ class TestBootstrap(EnsurepipMixin, unittest.TestCase):
         self.run_pip.assert_called_once_with(
             [
                 "install", "--no-cache-dir", "--no-index", "--find-links",
-                unittest.mock.ANY, "--upgrade", "pip",
+                unittest.mock.ANY, "--upgrade", *COMPILE_OPT, "pip",
             ],
             unittest.mock.ANY,
         )
@@ -133,7 +139,7 @@ class TestBootstrap(EnsurepipMixin, unittest.TestCase):
         self.run_pip.assert_called_once_with(
             [
                 "install", "--no-cache-dir", "--no-index", "--find-links",
-                unittest.mock.ANY, "-v", "pip",
+                unittest.mock.ANY, "-v", *COMPILE_OPT, "pip",
             ],
             unittest.mock.ANY,
         )
@@ -144,7 +150,7 @@ class TestBootstrap(EnsurepipMixin, unittest.TestCase):
         self.run_pip.assert_called_once_with(
             [
                 "install", "--no-cache-dir", "--no-index", "--find-links",
-                unittest.mock.ANY, "-vv", "pip",
+                unittest.mock.ANY, "-vv", *COMPILE_OPT, "pip",
             ],
             unittest.mock.ANY,
         )
@@ -155,7 +161,7 @@ class TestBootstrap(EnsurepipMixin, unittest.TestCase):
         self.run_pip.assert_called_once_with(
             [
                 "install", "--no-cache-dir", "--no-index", "--find-links",
-                unittest.mock.ANY, "-vvv", "pip",
+                unittest.mock.ANY, "-vvv", *COMPILE_OPT, "pip",
             ],
             unittest.mock.ANY,
         )
@@ -312,7 +318,7 @@ class TestBootstrappingMainFunction(EnsurepipMixin, unittest.TestCase):
         self.run_pip.assert_called_once_with(
             [
                 "install", "--no-cache-dir", "--no-index", "--find-links",
-                unittest.mock.ANY, "pip",
+                unittest.mock.ANY, *COMPILE_OPT, "pip",
             ],
             unittest.mock.ANY,
         )
