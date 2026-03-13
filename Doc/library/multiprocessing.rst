@@ -1542,6 +1542,12 @@ object -- see :ref:`multiprocessing-managers`.
       Behavior is the same as in :meth:`threading.Lock.release` except that
       when invoked on an unlocked lock, a :exc:`ValueError` is raised.
 
+   .. method:: locked()
+
+      Return true if the lock is acquired.
+
+      .. versionadded:: 3.10
+
 
    .. method:: locked()
 
