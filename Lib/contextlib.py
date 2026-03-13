@@ -137,22 +137,20 @@ class _GeneratorContextManager(
         # do not keep args and kwds alive unnecessarily
         # they are only needed for recreation, which is not possible anymore
         del self.args, self.kwds, self.func
-        try:
-            return next(self.gen)
-        except StopIteration:
-            raise RuntimeError("generator didn't yield") from None
+        # Slightly faster way to return next(self.gen):
+        for once in self.gen:
+            return once
+        raise RuntimeError("generator didn't yield")
 
     def __exit__(self, typ, value, traceback):
         if typ is None:
-            try:
-                next(self.gen)
-            except StopIteration:
-                return False
-            else:
+            # Faster way to run next(self.gen) and check for StopIteration:
+            for _ in self.gen:
                 try:
                     raise RuntimeError("generator didn't stop")
                 finally:
                     self.gen.close()
+            return False
         else:
             if value is None:
                 # Need to force instantiation so we can reliably
