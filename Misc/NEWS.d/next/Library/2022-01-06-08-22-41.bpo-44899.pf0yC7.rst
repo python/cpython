@@ -1,0 +1,1 @@
+Archiving files that can potentially change is now possible with tarfile library. Creation of the tar archival is not interrupted, when file has changed, but a warning message is printed instead.
