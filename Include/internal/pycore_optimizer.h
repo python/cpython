@@ -128,7 +128,6 @@ typedef struct {
     bool cold;
     uint8_t pending_deletion;
     int32_t index;           // Index of ENTER_EXECUTOR (if code isn't NULL, below).
-    _PyBloomFilter bloom;
     int32_t bloom_array_idx;        // Index in interp->executor_blooms/executor_ptrs.
     _PyExecutorLinkListNode links;  // Used by deletion list.
     PyCodeObject *code;  // Weak (NULL if no corresponding ENTER_EXECUTOR).

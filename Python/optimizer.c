@@ -1650,7 +1650,7 @@ bloom_filter_may_contain(_PyBloomFilter *bloom, _PyBloomFilter *hashes)
 }
 
 static int
-link_executor(_PyExecutorObject *executor)
+link_executor(_PyExecutorObject *executor, const _PyBloomFilter *bloom)
 {
     PyInterpreterState *interp = _PyInterpreterState_GET();
     if (interp->executor_count == interp->executor_capacity) {
@@ -1673,7 +1673,7 @@ link_executor(_PyExecutorObject *executor)
         interp->executor_capacity = new_cap;
     }
     size_t idx = interp->executor_count++;
-    interp->executor_blooms[idx] = executor->vm_data.bloom;
+    interp->executor_blooms[idx] = *bloom;
     interp->executor_ptrs[idx] = executor;
     executor->vm_data.bloom_array_idx = (int32_t)idx;
     return 0;
@@ -1702,10 +1702,7 @@ _Py_ExecutorInit(_PyExecutorObject *executor, const _PyBloomFilter *dependency_s
     executor->vm_data.valid = true;
     executor->vm_data.pending_deletion = 0;
     executor->vm_data.code = NULL;
-    for (int i = 0; i < _Py_BLOOM_FILTER_WORDS; i++) {
-        executor->vm_data.bloom.bits[i] = dependency_set->bits[i];
-    }
-    if (link_executor(executor) < 0) {
+    if (link_executor(executor, dependency_set) < 0) {
         return -1;
     }
     return 0;
@@ -1819,8 +1816,6 @@ void
 _Py_Executor_DependsOn(_PyExecutorObject *executor, void *obj)
 {
     assert(executor->vm_data.valid);
-    _Py_BloomFilter_Add(&executor->vm_data.bloom, obj);
-    /* Keep the contiguous bloom array in sync */
     PyInterpreterState *interp = _PyInterpreterState_GET();
     int32_t idx = executor->vm_data.bloom_array_idx;
     assert(idx >= 0 && (size_t)idx < interp->executor_count);
