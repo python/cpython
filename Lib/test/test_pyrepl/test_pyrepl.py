@@ -1095,6 +1095,7 @@ class TestPyReplModuleCompleter(TestCase):
         cases = (
             ("import collections.\t\n", "import collections.abc"),
             ("from os import \t\n", "from os import path"),
+            ("import math.\t\n", "import math.integer"),
             ("import xml.parsers.expat.\t\te\t\n\n", "import xml.parsers.expat.errors"),
             ("from xml.parsers.expat import \t\tm\t\n\n", "from xml.parsers.expat import model"),
         )
