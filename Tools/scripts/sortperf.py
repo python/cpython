@@ -7,7 +7,7 @@ To install `pyperf` you would need to:
 
 To run:
 
-    python3 Tools/scripts/sortperf
+    python3 Tools/scripts/sortperf.py
 
 Options:
 
