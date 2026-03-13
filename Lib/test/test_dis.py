@@ -941,7 +941,7 @@ dis_loop_test_quickened_code = """\
               LOAD_FAST_BORROW         0 (i)
               CALL_PY_GENERAL          1
               POP_TOP
-              JUMP_BACKWARD{: <6}     16 (to L1)
+              JUMP_BACKWARD_{: <6}    16 (to L1)
 
 %3d   L2:     END_FOR
               POP_ITER
@@ -1371,7 +1371,7 @@ class DisTests(DisTestBase):
         got = self.get_disassembly(loop_test, adaptive=True)
         jit = sys._jit.is_enabled()
         resume_str = "_JIT" if jit else ""
-        jit_str = "_JIT" if jit else "NO_JIT"
+        jit_str = "JIT " if jit else "NO_JIT"
         expected = dis_loop_test_quickened_code.format(resume_str, jit_str)
         self.do_disassembly_compare(got, expected)
 
