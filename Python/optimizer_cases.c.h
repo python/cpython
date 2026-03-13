@@ -23,8 +23,6 @@
             break;
         }
 
-        /* _QUICKEN_TO_RESUME_CHECK is not a viable micro-op for tier 2 */
-
         /* _MONITOR_RESUME is not a viable micro-op for tier 2 */
 
         case _LOAD_FAST_CHECK: {

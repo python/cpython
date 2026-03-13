@@ -10555,7 +10555,6 @@
             frame->instr_ptr = next_instr;
             next_instr += 2;
             INSTRUCTION_STATS(RESUME_CHECK_JIT);
-            opcode = RESUME_CHECK_JIT;
             static_assert(1 == 1, "incorrect cache size");
             /* Skip 1 cache entry */
             // _RESUME_CHECK
@@ -10585,21 +10584,30 @@
                 }
                 #endif
             }
-            // _QUICKEN_TO_RESUME_CHECK
-            {
-                FT_ATOMIC_STORE_UINT8_RELAXED(this_instr->op.code, RESUME_CHECK);
-                _PyFrame_SetStackPointer(frame, stack_pointer);
-                FT_ATOMIC_STORE_UINT16_RELAXED(this_instr[1].counter, initial_unreachable_backoff_counter());
-                stack_pointer = _PyFrame_GetStackPointer(frame);
-            }
-            // _JIT_RESUME
+            // _JIT
             {
                 #ifdef _Py_TIER2
-                assert(this_instr->op.code == RESUME_CHECK);
-                int succ = _PyJit_TryInitializeTracing(tstate, frame, this_instr, this_instr, this_instr,
-                    STACK_LEVEL(), 0, NULL, opcode, oparg);
-                if (succ) {
-                    ENTER_TRACING();
+                bool is_resume = this_instr->op.code == RESUME_CHECK;
+                _Py_BackoffCounter counter = this_instr[1].counter;
+                if (!IS_JIT_TRACING() &&
+                    (backoff_counter_triggers(counter) &&
+                        this_instr->op.code == JUMP_BACKWARD_JIT) &&
+                    next_instr->op.code != ENTER_EXECUTOR) {
+                    _Py_CODEUNIT *insert_exec_at = this_instr;
+                    while (oparg > 255) {
+                        oparg >>= 8;
+                        insert_exec_at--;
+                    }
+                    int succ = _PyJit_TryInitializeTracing(tstate, frame, this_instr, insert_exec_at, next_instr, stack_pointer, 0, NULL, oparg, NULL);
+                    if (succ) {
+                        ENTER_TRACING();
+                    }
+                    else {
+                        this_instr[1].counter = restart_backoff_counter(counter);
+                    }
+                }
+                else {
+                    ADVANCE_ADAPTIVE_COUNTER(this_instr[1].counter);
                 }
                 #endif
             }

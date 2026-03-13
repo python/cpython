@@ -634,50 +634,11 @@ _PyJit_translate_single_bytecode_to_trace(
     int oparg = tracer->prev_state.instr_oparg;
     int opcode = this_instr->op.code;
 
-    // Loop back to the start
-    int is_first_instr = _tstate->jit_tracer_state.initial_state.close_loop_instr == next_instr ||
-        _tstate->jit_tracer_state.initial_state.start_instr == next_instr;
-    if (stop_tracing_opcode == _DEOPT) {
-        // gh-143183: It's important we rewind to the last known proper target.
-        // The current target might be garbage as stop tracing usually indicates
-        // we are in something that we can't trace.
-        DPRINTF(2, "Told to stop tracing. Reason: %s\n", _PyOpcode_OpName[next_instr->op.code]);
-        goto unsupported;
-    }
-    if (stop_tracing_opcode != 0) {
-        assert(stop_tracing_opcode == _EXIT_TRACE);
-        if (is_first_instr) {
-            ADD_TO_TRACE(_JUMP_TO_TOP, 0, 0, target);
-        }
-        else {
-            ADD_TO_TRACE(_EXIT_TRACE, 0, 0, target);
-        }
-        goto done;
-    }
-
-    // Executor, trace over it to form a longer trace.
-    // Otherwise, we end up with fragmented loop traces that have bad performance.
-    // The only exception is if we see another loop trace. In that case, we link to it.
-    if (opcode == ENTER_EXECUTOR) {
-        DPRINTF(2, "ENTER_EXECUTOR seen\n");
-        _PyExecutorObject *executor = old_code->co_executors->executors[oparg & 255];
-        int orig_opcode = executor->vm_data.opcode;
-        assert(orig_opcode != JUMP_BACKWARD_JIT &&
-                        orig_opcode != JUMP_BACKWARD &&
-                        orig_opcode != JUMP_BACKWARD_NO_INTERRUPT &&
-                        orig_opcode != JUMP_BACKWARD_NO_JIT);
-        oparg = (oparg & ~255) | executor->vm_data.oparg;
-        opcode = orig_opcode;
-    }
-
     int rewind_oparg = oparg;
     while (rewind_oparg > 255) {
         rewind_oparg >>= 8;
         target--;
     }
-
-    DPRINTF(2, "%p %d: %s(%d) %d\n", old_code, target,
-    _PyOpcode_OpName[opcode], oparg,  _tstate->jit_tracer_state.prev_state.instr_stacklevel);
 
     if (_PyOpcode_Caches[_PyOpcode_Deopt[opcode]] > 0) {
         uint16_t backoff = (this_instr + 1)->counter.value_and_backoff;

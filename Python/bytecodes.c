@@ -256,31 +256,7 @@ dummy_func(
         macro(RESUME_CHECK_JIT) =
             unused/1 +
             _RESUME_CHECK +
-            _QUICKEN_TO_RESUME_CHECK +
-            _JIT_RESUME;
-
-        op(_QUICKEN_TO_RESUME_CHECK, (--)) {
-            // For some reason, RESUME_CHECK_JIT is quite expensive compared to RESUME.
-            // Even without the _JIT uop!
-            // It's enough to show up as a 10-20% slowdown in some benchmarks
-            // For that reason, we replace it back with RESUME_CHECK immediately.
-            // This also means that function entry tracing is practically a single attempt.
-            // In JIT builds, we thus stick only to RESUME and wait for it to specialize to RESUME_CHECK_JIT.
-            // This makes RESUME slightly slower on JIT builds, but since the JIT is faster it makes up for it.
-            FT_ATOMIC_STORE_UINT8_RELAXED(this_instr->op.code, RESUME_CHECK);
-            FT_ATOMIC_STORE_UINT16_RELAXED(this_instr[1].counter, initial_unreachable_backoff_counter());
-        }
-
-        tier1 op(_JIT_RESUME, (--)) {
-        #ifdef _Py_TIER2
-            assert(this_instr->op.code == RESUME_CHECK);
-            int succ = _PyJit_TryInitializeTracing(tstate, frame, this_instr, this_instr, this_instr,
-                STACK_LEVEL(), 0, NULL, opcode, oparg);
-            if (succ) {
-                ENTER_TRACING();
-            }
-        #endif
-        }
+            _JIT;
 
         op(_MONITOR_RESUME, (--)) {
             int err = _Py_call_instrumentation(
