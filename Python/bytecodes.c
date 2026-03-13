@@ -173,18 +173,7 @@ dummy_func(
         }
 
         specializing op(_SPECIALIZE_RESUME, (counter/1 --)) {
-#if ENABLE_SPECIALIZATION_FT
-    #if _Py_TIER2
-            if (ADAPTIVE_COUNTER_TRIGGERS(counter)) {
-                next_instr = this_instr;
-                _Py_Specialize_Resume(next_instr, tstate);
-                DISPATCH_SAME_OPARG();
-            }
-            ADVANCE_ADAPTIVE_COUNTER(this_instr[1].counter);
-    #else
             _Py_Specialize_Resume(next_instr, tstate);
-    #endif
-#endif  /* ENABLE_SPECIALIZATION_FT */
         }
 
         tier1 op(_MAYBE_INSTRUMENT, (--)) {
@@ -3131,7 +3120,7 @@ dummy_func(
             _Py_BackoffCounter counter = this_instr[1].counter;
             if (!IS_JIT_TRACING() &&
                 (backoff_counter_triggers(counter) &&
-                this_instr->op.code == JUMP_BACKWARD_JIT) &&
+                (this_instr->op.code == JUMP_BACKWARD_JIT || is_resume)) &&
                 next_instr->op.code != ENTER_EXECUTOR) {
                 /* Back up over EXTENDED_ARGs so executor is inserted at the correct place */
                 _Py_CODEUNIT *insert_exec_at = this_instr;
@@ -3139,7 +3128,8 @@ dummy_func(
                     oparg >>= 8;
                     insert_exec_at--;
                 }
-                int succ = _PyJit_TryInitializeTracing(tstate, frame, this_instr, insert_exec_at, next_instr, stack_pointer, 0, NULL, oparg, NULL);
+                int succ = _PyJit_TryInitializeTracing(tstate, frame, this_instr, insert_exec_at,
+                    is_resume ? insert_exec_at : next_instr, stack_pointer, 0, NULL, oparg, NULL);
                 if (succ) {
                     ENTER_TRACING();
                 }
@@ -3192,7 +3182,7 @@ dummy_func(
             #ifdef _Py_TIER2
             if (IS_JIT_TRACING()) {
                 next_instr = this_instr;
-                goto consider_stop_tracing;
+                goto stop_tracing;
             }
             PyCodeObject *code = _PyFrame_GetCode(frame);
             _PyExecutorObject *executor = code->co_executors->executors[oparg & 255];
@@ -6029,25 +6019,10 @@ dummy_func(
 #endif
         }
 
-        label(consider_stop_tracing) {
+        label(stop_tracing) {
 #if _Py_TIER2
             assert(IS_JIT_TRACING());
             int opcode = next_instr->op.code;
-            PyCodeObject *code = _PyFrame_GetCode(frame);
-            _PyExecutorObject *executor = code->co_executors->executors[oparg & 255];
-            int orig_opcode = executor->vm_data.opcode;
-            // Not backwards jump, trace over it to form a longer trace.
-            if (orig_opcode == RESUME_CHECK_JIT || orig_opcode == RESUME) {
-                assert(executor->vm_data.index == INSTR_OFFSET());
-                assert(executor->vm_data.code == code);
-                assert(executor->vm_data.valid);
-                oparg = (oparg & ~255) | executor->vm_data.oparg;
-                opcode = orig_opcode;
-                if (_PyOpcode_Caches[_PyOpcode_Deopt[opcode]]) {
-                    PAUSE_ADAPTIVE_COUNTER(next_instr[1].counter);
-                }
-                DISPATCH_GOTO_NON_TRACING();
-            }
             _PyJit_translate_single_bytecode_to_trace(tstate, frame, NULL, _EXIT_TRACE);
             LEAVE_TRACING();
             int err = stop_tracing_and_jit(tstate, frame);

@@ -579,22 +579,15 @@ add_to_trace(
 
 
 static int
-opcode_is_terminator(int opcode)
+is_terminator(const _PyUOpInstruction *uop)
 {
+    int opcode = _PyUop_Uncached[uop->opcode];
     return (
         opcode == _EXIT_TRACE ||
         opcode == _DEOPT ||
         opcode == _JUMP_TO_TOP ||
         opcode == _DYNAMIC_EXIT
     );
-}
-
-static int
-is_terminator(const _PyUOpInstruction *uop)
-{
-    int opcode = uop->opcode;
-    int base_opcode = _PyUop_Uncached[uop->opcode];
-    return opcode_is_terminator(opcode) || opcode_is_terminator(base_opcode);
 }
 
 /* Returns 1 on success (added to trace), 0 on trace end.
@@ -633,7 +626,6 @@ _PyJit_translate_single_bytecode_to_trace(
     // We must point to the first EXTENDED_ARG when deopting.
     int oparg = tracer->prev_state.instr_oparg;
     int opcode = this_instr->op.code;
-
     int rewind_oparg = oparg;
     while (rewind_oparg > 255) {
         rewind_oparg >>= 8;
@@ -1218,8 +1210,7 @@ prepare_for_execution(_PyUOpInstruction *buffer, int length)
             int exit_depth = get_cached_entries_for_side_exit(inst);
             assert(_PyUop_Caching[base_exit_op].entries[exit_depth].opcode > 0);
             int16_t exit_op = _PyUop_Caching[base_exit_op].entries[exit_depth].opcode;
-            bool is_control_flow = (base_opcode == _GUARD_IS_FALSE_POP || base_opcode == _GUARD_IS_TRUE_POP ||
-                base_opcode == _GUARD_IS_NONE_POP || base_opcode == _GUARD_IS_NOT_NONE_POP || is_for_iter_test[base_opcode]);
+            bool is_control_flow = (base_opcode == _GUARD_IS_FALSE_POP || base_opcode == _GUARD_IS_TRUE_POP || is_for_iter_test[base_opcode]);
             if (jump_target != current_jump_target || current_exit_op != exit_op) {
                 make_exit(&buffer[next_spare], exit_op, jump_target, is_control_flow);
                 current_exit_op = exit_op;

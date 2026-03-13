@@ -2796,7 +2796,7 @@ _Py_Specialize_Resume(_Py_CODEUNIT *instr, PyThreadState *tstate)
     if (tstate->tracing == 0 && instr->op.code == RESUME) {
         if (tstate->interp->jit) {
             specialize(instr, RESUME_CHECK_JIT);
-            set_counter((_Py_BackoffCounter *)instr + 1, trigger_backoff_counter());
+            set_counter((_Py_BackoffCounter *)instr + 1, initial_resume_backoff_counter());
             return;
         }
         specialize(instr, RESUME_CHECK);
