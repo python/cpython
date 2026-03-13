@@ -1,0 +1,2 @@
+Skip scan of modules that fail to load during keyword search in
+:mod:`pydoc`.
