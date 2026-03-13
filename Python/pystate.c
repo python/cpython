@@ -80,6 +80,56 @@ _Py_thread_local PyThreadState *_Py_tss_gilstate = NULL;
    and is same as tstate->interp. */
 _Py_thread_local PyInterpreterState *_Py_tss_interp = NULL;
 
+/* The last thread state used for each interpreter by this thread. */
+_Py_thread_local _Py_hashtable_t *_Py_tss_tstate_map = NULL;
+
+// TODO: Let's add a way to use _Py_hashtable_t statically to avoid the
+// extra heap allocation.
+
+static void
+mark_thread_state_used(PyThreadState *tstate)
+{
+    assert(tstate != NULL);
+    if (_Py_tss_tstate_map == NULL) {
+        _Py_hashtable_allocator_t alloc = {
+            .malloc = PyMem_RawMalloc,
+            .free = PyMem_RawFree
+        };
+        _Py_tss_tstate_map = _Py_hashtable_new_full(_Py_hashtable_hash_ptr,
+                                                    _Py_hashtable_compare_direct,
+                                                    NULL, NULL, &alloc);
+        if (_Py_tss_tstate_map == NULL) {
+            return;
+        }
+    }
+
+    (void)_Py_hashtable_steal(_Py_tss_tstate_map, tstate->interp);
+    (void)_Py_hashtable_set(_Py_tss_tstate_map, tstate->interp, tstate);
+}
+
+static PyThreadState *
+last_thread_state_for_interp(PyInterpreterState *interp)
+{
+    assert(interp != NULL);
+    if (_Py_tss_tstate_map == NULL) {
+        return NULL;
+    }
+
+    return _Py_hashtable_get(_Py_tss_tstate_map, interp);
+}
+
+static void
+mark_thread_state_dead(PyThreadState *tstate)
+{
+    if (_Py_tss_tstate_map == NULL) {
+        return;
+    }
+
+    if (tstate == _Py_hashtable_get(_Py_tss_tstate_map, tstate->interp)) {
+        (void)_Py_hashtable_steal(_Py_tss_tstate_map, tstate->interp);
+    }
+}
+
 static inline PyThreadState *
 current_fast_get(void)
 {
@@ -1682,6 +1732,21 @@ _PyThreadState_NewBound(PyInterpreterState *interp, int whence)
     return tstate;
 }
 
+/* Get the last thread state used for this interpreter, or create a new
+ * one if none exists.
+ * The thread state returned by this may or may not be attached. */
+PyThreadState *
+_PyThreadState_NewForExec(PyInterpreterState *interp)
+{
+    assert(interp != NULL);
+    PyThreadState *cached = last_thread_state_for_interp(interp);
+    if (cached != NULL) {
+        return cached;
+    }
+
+    return _PyThreadState_NewBound(interp, _PyThreadState_WHENCE_EXEC);
+}
+
 // This must be followed by a call to _PyThreadState_Bind();
 PyThreadState *
 _PyThreadState_New(PyInterpreterState *interp, int whence)
@@ -1733,6 +1798,7 @@ PyThreadState_Clear(PyThreadState *tstate)
     // disabled.
     // XXX assert(!_PyThreadState_IsRunningMain(tstate));
     // XXX assert(!tstate->_status.bound || tstate->_status.unbound);
+    mark_thread_state_dead(tstate);
     tstate->_status.finalizing = 1;  // just in case
 
     /* XXX Conditions we need to enforce:
@@ -2052,7 +2118,6 @@ _PyThreadState_DeleteList(PyThreadState *list, int is_after_fork)
     }
 }
 
-
 //----------
 // accessors
 //----------
@@ -2259,6 +2324,8 @@ _PyThreadState_Attach(PyThreadState *tstate)
 #if defined(Py_DEBUG)
     errno = err;
 #endif
+
+    mark_thread_state_used(tstate);
 }
 
 static void
