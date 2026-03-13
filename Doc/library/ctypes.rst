@@ -1638,7 +1638,7 @@ runtime dynamic library loader then interact in system-specific ways to find
 the filename of the library to load.
 
 While the mapping from short names to filenames is not consistently exposed
-by platforms, the :mod:`ctypes.util` module provides a function,
+by platforms, the :mod:`!ctypes.util` module provides a function,
 :func:`!find_library`, that attempts to match it.
 However, as backwards compatibility concerns make it difficult to adjust
 its behavior for new platforms and configurations, the function
@@ -1660,7 +1660,7 @@ as a default or fallback.
    *name* is the "short" library name without any prefix like ``lib``,
    suffix like ``.so``, ``.dylib`` or version number.
    (This is the form used for the posix linker option :option:`!-l`.)
-   The result is in a format suitable for passing to :py:class:`CDLL`.
+   The result is in a format suitable for passing to :py:class:`~ctypes.CDLL`.
 
    If no library can be found, return ``None``.
 
