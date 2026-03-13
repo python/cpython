@@ -133,6 +133,10 @@ static int fuzz_struct_unpack(const char* data, size_t size) {
     if (unpacked == NULL && PyErr_ExceptionMatches(PyExc_SystemError)) {
         PyErr_Clear();
     }
+    /* Ignore any ValueError, these are triggered by non-ASCII format. */
+    if (unpacked == NULL && PyErr_ExceptionMatches(PyExc_ValueError)) {
+        PyErr_Clear();
+    }
     /* Ignore any struct.error exceptions, these can be caused by invalid
        formats or incomplete buffers both of which are common. */
     if (unpacked == NULL && PyErr_ExceptionMatches(struct_error)) {

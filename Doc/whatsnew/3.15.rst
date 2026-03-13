@@ -828,6 +828,14 @@ mimetypes
 * Add ``application/sql`` and ``application/vnd.sqlite3``.
   (Contributed by Charlie Lin in :gh:`145698`.)
 * Add ``image/jxl``. (Contributed by Foolbar in :gh:`144213`.)
+* Add the following MIME types:
+
+  - ``application/vnd.ms-cab-compressed`` for ``.cab`` extension
+  - ``application/vnd.ms-htmlhelp`` for ``.chm`` extension
+  - ``application/vnd.ms-officetheme`` for ``.thmx`` extension
+
+  (Contributed by Charlie Lin in :gh:`145718`.)
+
 * Rename ``application/x-texinfo`` to ``application/texinfo``.
   (Contributed by Charlie Lin in :gh:`140165`.)
 * Changed the MIME type for ``.ai`` files to ``application/pdf``.
@@ -904,6 +912,9 @@ shelve
 * Added new :meth:`!reorganize` method to :mod:`shelve` used to recover unused free
   space previously occupied by deleted entries.
   (Contributed by Andrea Oliveri in :gh:`134004`.)
+* Add support for custom serialization and deserialization functions
+  in the :mod:`shelve` module.
+  (Contributed by Furkan Onder in :gh:`99631`.)
 
 
 socket
@@ -1506,6 +1517,21 @@ typing
 
 wave
 ----
+
+* Added support for IEEE floating-point WAVE audio
+  (``WAVE_FORMAT_IEEE_FLOAT``) in :mod:`wave`.
+
+* Added :meth:`wave.Wave_read.getformat`, :meth:`wave.Wave_write.getformat`,
+  and :meth:`wave.Wave_write.setformat` for explicit frame format handling.
+
+* :meth:`wave.Wave_write.setparams` accepts both 7-item tuples including
+  ``format`` and 6-item tuples for backwards compatibility (defaulting to
+  ``WAVE_FORMAT_PCM``).
+
+* ``WAVE_FORMAT_IEEE_FLOAT`` output now includes a ``fact`` chunk,
+  as required for non-PCM WAVE formats.
+
+(Contributed by Lionel Koenig and Michiel W. Beijen in :gh:`60729`.)
 
 * Removed the ``getmark()``, ``setmark()`` and ``getmarkers()`` methods
   of the :class:`~wave.Wave_read` and :class:`~wave.Wave_write` classes,
