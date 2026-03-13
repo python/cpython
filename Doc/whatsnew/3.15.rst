@@ -912,6 +912,9 @@ shelve
 * Added new :meth:`!reorganize` method to :mod:`shelve` used to recover unused free
   space previously occupied by deleted entries.
   (Contributed by Andrea Oliveri in :gh:`134004`.)
+* Add support for custom serialization and deserialization functions
+  in the :mod:`shelve` module.
+  (Contributed by Furkan Onder in :gh:`99631`.)
 
 
 socket
