@@ -1,2 +1,0 @@
-Use the instance ``skip_idle`` attribute instead of passing it as a parameter
-in ``StackCollector``.
