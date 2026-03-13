@@ -220,42 +220,6 @@ The :c:member:`~PyTypeObject.tp_traverse` handler accepts a function parameter o
    detection; it's not expected that users will need to write their own
    visitor functions.
 
-The :c:member:`~PyTypeObject.tp_traverse` handler must have the following type:
-
-
-.. c:type:: int (*traverseproc)(PyObject *self, visitproc visit, void *arg)
-
-   Traversal function for a container object.  Implementations must call the
-   *visit* function for each object directly contained by *self*, with the
-   parameters to *visit* being the contained object and the *arg* value passed
-   to the handler.  The *visit* function must not be called with a ``NULL``
-   object argument.  If *visit* returns a non-zero value that value should be
-   returned immediately.
-
-   The traversal function must not have any side effects.  Implementations
-   may not modify the reference counts of any Python objects nor create or
-   destroy any Python objects.
-
-To simplify writing :c:member:`~PyTypeObject.tp_traverse` handlers, a :c:func:`Py_VISIT` macro is
-provided.  In order to use this macro, the :c:member:`~PyTypeObject.tp_traverse` implementation
-must name its arguments exactly *visit* and *arg*:
-
-
-.. c:macro:: Py_VISIT(o)
-
-   If the :c:expr:`PyObject *` *o* is not ``NULL``, call the *visit* callback, with arguments *o*
-   and *arg*.  If *visit* returns a non-zero value, then return it.
-   Using this macro, :c:member:`~PyTypeObject.tp_traverse` handlers
-   look like::
-
-      static int
-      my_traverse(Noddy *self, visitproc visit, void *arg)
-      {
-          Py_VISIT(self->foo);
-          Py_VISIT(self->bar);
-          return 0;
-      }
-
 The :c:member:`~PyTypeObject.tp_clear` handler must be of the :c:type:`inquiry` type, or ``NULL``
 if the object is immutable.
 
@@ -268,6 +232,211 @@ if the object is immutable.
    this method (don't just call :c:func:`Py_DECREF` on a reference).  The
    collector will call this method if it detects that this object is involved
    in a reference cycle.
+
+
+.. _gc-traversal:
+
+Traversal
+---------
+
+The :c:member:`~PyTypeObject.tp_traverse` handler must have the following type:
+
+.. c:type:: int (*traverseproc)(PyObject *self, visitproc visit, void *arg)
+
+   Traversal function for a garbage-collected object, used by the garbage
+   collector to detect reference cycles.
+   Implementations must call the
+   *visit* function for each object directly contained by *self*, with the
+   parameters to *visit* being the contained object and the *arg* value passed
+   to the handler.  The *visit* function must not be called with a ``NULL``
+   object argument.  If *visit* returns a non-zero value, that value should be
+   returned immediately.
+
+   A typical :c:member:`!tp_traverse` function calls the :c:func:`Py_VISIT`
+   convenience macro on each of the instance's members that are Python
+   objects that the instance owns.
+   For example, this is a (slightly outdated) traversal function for
+   the :py:class:`threading.local` class::
+
+      static int
+      local_traverse(PyObject *op, visitproc visit, void *arg)
+      {
+          localobject *self = (localobject *) op;
+          Py_VISIT(Py_TYPE(self));
+          Py_VISIT(self->args);
+          Py_VISIT(self->kw);
+          Py_VISIT(self->dict);
+          return 0;
+      }
+
+   .. note::
+      :c:func:`Py_VISIT` requires the *visit* and *arg* parameters to
+      :c:func:`!local_traverse` to have these specific names; don't name them just
+      anything.
+
+   Instances of :ref:`heap-allocated types <heap-types>` hold a reference to
+   their type. Their traversal function must therefore visit the type::
+
+       Py_VISIT(Py_TYPE(self));
+
+   Alternately, the type may delegate this responsibility by
+   calling ``tp_traverse`` of a heap-allocated superclass (or another
+   heap-allocated type, if applicable).
+   If they do not, the type object may not be garbage-collected.
+
+   If the :c:macro:`Py_TPFLAGS_MANAGED_DICT` bit is set in the
+   :c:member:`~PyTypeObject.tp_flags` field, the traverse function must call
+   :c:func:`PyObject_VisitManagedDict` like this::
+
+       PyObject_VisitManagedDict((PyObject*)self, visit, arg);
+
+   Only the members that the instance *owns* (by having
+   :term:`strong references <strong reference>` to them) must be
+   visited. For instance, if an object supports weak references via the
+   :c:member:`~PyTypeObject.tp_weaklist` slot, the pointer supporting
+   the linked list (what *tp_weaklist* points to) must **not** be
+   visited as the instance does not directly own the weak references to itself.
+
+   The traversal function has a limitation:
+
+   .. warning::
+
+      The traversal function must not have any side effects.  Implementations
+      may not modify the reference counts of any Python objects nor create or
+      destroy any Python objects, directly or indirectly.
+
+   This means that *most* Python C API functions may not be used, since
+   they can raise a new exception, return a new reference to a result object,
+   have internal logic that uses side effects.
+   Also, unless documented otherwise, functions that happen to not have side
+   effects may start having them in future versions, without warning.
+
+   For a list of safe functions, see a
+   :ref:`separate section <durniggc-functions>` below.
+
+   .. note::
+
+      The :c:func:`Py_VISIT` call may be skipped for those members that provably
+      cannot participate in reference cycles.
+      In the ``local_traverse`` example above, there is also a ``self->key``
+      member, but it can only be ``NULL`` or a Python string and therefore
+      cannot be part of a reference cycle.
+
+      On the other hand, even if you know a member can never be part of a cycle,
+      as a debugging aid you may want to visit it anyway just so the :mod:`gc`
+      module's :func:`~gc.get_referents` function will include it.
+
+   .. note::
+
+      The :c:member:`~PyTypeObject.tp_traverse` function can be called from any
+      thread.
+
+   .. versionchanged:: 3.9
+
+      Heap-allocated types are expected to visit ``Py_TYPE(self)`` in
+      ``tp_traverse``.  In earlier versions of Python, due to
+      `bug 40217 <https://bugs.python.org/issue40217>`_, doing this
+      may lead to crashes in subclasses.
+
+To simplify writing :c:member:`~PyTypeObject.tp_traverse` handlers,
+a :c:func:`Py_VISIT` macro is provided.
+In order to use this macro, the :c:member:`~PyTypeObject.tp_traverse`
+implementation must name its arguments exactly *visit* and *arg*:
+
+.. c:macro:: Py_VISIT(o)
+
+   If the :c:expr:`PyObject *` *o* is not ``NULL``, call the *visit*
+   callback, with arguments *o* and *arg*.
+   If *visit* returns a non-zero value, then return it.
+
+   This corresponds roughly to::
+
+      #define Py_VISIT(o)                             \
+         if (op) {                                    \
+            int visit_result = visit(o, arg);         \
+            if (visit_result != 0) {                  \
+               return visit_result;                   \
+            }                                         \
+         }
+
+.. _durniggc-functions:
+
+Traversal-safe functions
+^^^^^^^^^^^^^^^^^^^^^^^^
+
+The following functions and macros are safe to use in a
+:c:member:`~PyTypeObject.tp_traverse` handler:
+
+* the *visit* function passed to ``tp_traverse``
+* :c:func:`Py_VISIT`
+* :c:func:`Py_SIZE`
+* :c:func:`Py_TYPE`
+* :c:func:`PyObject_VisitManagedDict`
+* :c:func:`PyObject_TypeCheck`, :c:func:`PyType_IsSubtype`,
+  :c:func:`PyType_HasFeature`
+* :samp:`Py{<type>}_Check` and :samp:`Py{<type>}_CheckExact` -- for example,
+  :c:func:`PyTuple_Check`
+
+The following functions should *only* used in a
+:c:member:`~PyTypeObject.tp_traverse` handler; calling them in other
+contexts may have unintended consequences:
+
+.. c:function:: void *PyObject_GetTypeData_DuringGC(PyObject *o, PyTypeObject *cls)
+                void *PyObject_GetItemData_DuringGC(PyObject *o)
+                void *PyType_GetModuleState_DuringGC(PyTypeObject *type)
+                void *PyModule_GetState_DuringGC(PyObject *module)
+                int PyModule_GetToken_DuringGC(PyObject *module, void** result)
+
+   These functions act like their counterparts without the ``_DuringGC`` suffix,
+   but they are guaranteed to not have side effects, and they do not
+   set an exception on failure.
+
+   Note that these functions may fail (return ``NULL`` or -1).
+   Only creating and setting the exception is suppressed.
+
+   .. versionadded:: next
+
+   .. seealso::
+
+      :c:func:`PyObject_GetTypeData`,
+      :c:func:`PyObject_GetItemData`,
+      :c:func:`PyType_GetModuleState`,
+      :c:func:`PyModule_GetState`,
+      :c:func:`PyModule_GetToken`,
+      :c:func:`PyType_GetBaseByToken`
+
+.. c:function:: int PyType_GetBaseByToken_DuringGC(PyTypeObject *type, void *tp_token, PyTypeObject **result)
+
+   Acts like :c:func:`PyType_GetBaseByToken`,
+   but is guaranteed to not have side effects, does not
+   set an exception on failure, and sets *\*result* to
+   a :term:`borrowed reference` rather than a strong one.
+   The reference is valid for the duration
+   of the :c:member:`!tp_traverse` handler call.
+
+   Note that this function may fail (return -1).
+   Only creating and setting the exception is suppressed.
+
+   .. versionadded:: next
+
+.. c:function:: PyObject* PyType_GetModule_DuringGC(PyTypeObject *type)
+                PyObject* PyType_GetModuleByToken_DuringGC(PyTypeObject *type, const void *mod_token)
+
+   These functions act like their counterparts without the ``_DuringGC`` suffix,
+   but they are guaranteed to not have side effects, they never set an
+   exception on failure, and they return a :term:`borrowed reference`.
+   The returned reference is valid for the duration
+   of the :c:member:`!tp_traverse` handler call.
+
+   Note that these functions may fail (return ``NULL``).
+   Only creating and setting the exception is suppressed.
+
+   .. versionadded:: next
+
+   .. seealso::
+
+      :c:func:`PyType_GetModule`,
+      :c:func:`PyType_GetModuleByToken`
 
 
 Controlling the Garbage Collector State
