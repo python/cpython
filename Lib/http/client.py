@@ -246,7 +246,8 @@ def _parse_header_lines(header_lines, _class=HTTPMessage):
 
     """
     hstring = b''.join(header_lines).decode('iso-8859-1')
-    return email.parser.Parser(_class=_class).parsestr(hstring)
+    return email.parser.Parser(_class=_class).parsestr(
+        hstring, headersonly=True, strictheaders=False)
 
 def parse_headers(fp, _class=HTTPMessage, *, _max_headers=None):
     """Parses only RFC 5322 headers from a file pointer."""
