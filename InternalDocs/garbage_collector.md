@@ -153,7 +153,11 @@ pointer-sized (that is, eight bytes on a 64-bit platform).
 
 The garbage collector also temporarily repurposes the `ob_tid` (thread ID)
 and `ob_ref_local` (local reference count) fields for other purposes during
-collections.
+collections.  The `ob_tid` field is later restored from the containing
+mimalloc segment data structure.  In some cases, such as when the original
+allocating thread exits, this can result in a different `ob_tid` value.
+Code should not rely on `ob_tid` being stable across operations that may
+trigger garbage collection.
 
 
 C APIs

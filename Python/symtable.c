@@ -807,6 +807,8 @@ inline_comprehension(PySTEntryObject *ste, PySTEntryObject *comp,
     PyObject *k, *v;
     Py_ssize_t pos = 0;
     int remove_dunder_class = 0;
+    int remove_dunder_classdict = 0;
+    int remove_dunder_cond_annotations = 0;
 
     while (PyDict_Next(comp->ste_symbols, &pos, &k, &v)) {
         // skip comprehension parameter
@@ -829,15 +831,27 @@ inline_comprehension(PySTEntryObject *ste, PySTEntryObject *comp,
         if (existing == NULL && PyErr_Occurred()) {
             return 0;
         }
-        // __class__ is never allowed to be free through a class scope (see
+        // __class__, __classdict__ and __conditional_annotations__ are
+        // never allowed to be free through a class scope (see
         // drop_class_free)
         if (scope == FREE && ste->ste_type == ClassBlock &&
-                _PyUnicode_EqualToASCIIString(k, "__class__")) {
+                (_PyUnicode_EqualToASCIIString(k, "__class__") ||
+                 _PyUnicode_EqualToASCIIString(k, "__classdict__") ||
+                 _PyUnicode_EqualToASCIIString(k, "__conditional_annotations__"))) {
             scope = GLOBAL_IMPLICIT;
             if (PySet_Discard(comp_free, k) < 0) {
                 return 0;
             }
-            remove_dunder_class = 1;
+
+            if (_PyUnicode_EqualToASCIIString(k, "__class__")) {
+                remove_dunder_class = 1;
+            }
+            else if (_PyUnicode_EqualToASCIIString(k, "__conditional_annotations__")) {
+                remove_dunder_cond_annotations = 1;
+            }
+            else {
+                remove_dunder_classdict = 1;
+            }
         }
         if (!existing) {
             // name does not exist in scope, copy from comprehension
@@ -875,6 +889,12 @@ inline_comprehension(PySTEntryObject *ste, PySTEntryObject *comp,
         }
     }
     if (remove_dunder_class && PyDict_DelItemString(comp->ste_symbols, "__class__") < 0) {
+        return 0;
+    }
+    if (remove_dunder_classdict && PyDict_DelItemString(comp->ste_symbols, "__classdict__") < 0) {
+        return 0;
+    }
+    if (remove_dunder_cond_annotations && PyDict_DelItemString(comp->ste_symbols, "__conditional_annotations__") < 0) {
         return 0;
     }
     return 1;

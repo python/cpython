@@ -4,9 +4,6 @@
 .. module:: xmlrpc.client
    :synopsis: XML-RPC client access.
 
-.. moduleauthor:: Fredrik Lundh <fredrik@pythonware.com>
-.. sectionauthor:: Eric S. Raymond <esr@snark.thyrsus.com>
-
 **Source code:** :source:`Lib/xmlrpc/client.py`
 
 .. XXX Not everything is documented yet.  It might be good to describe

@@ -191,8 +191,8 @@ class _KW_ONLY_TYPE:
 KW_ONLY = _KW_ONLY_TYPE()
 
 # Since most per-field metadata will be unused, create an empty
-# read-only proxy that can be shared among all fields.
-_EMPTY_METADATA = types.MappingProxyType({})
+# read-only dictionary that can be shared among all fields.
+_EMPTY_METADATA = frozendict()
 
 # Markers for the various kinds of fields and pseudo-fields.
 class _FIELD_BASE:

@@ -110,6 +110,7 @@ class TestExecutorInvalidation(unittest.TestCase):
             for exe in executors[:i]:
                 self.assertTrue(exe.is_valid())
 
+    @unittest.skipIf(os.getenv("PYTHON_UOPS_OPTIMIZE") == "0", "Needs uop optimizer to run.")
     def test_uop_optimizer_invalidation(self):
         # Generate a new function at each call
         ns = {}
@@ -459,6 +460,19 @@ class TestUops(unittest.TestCase):
         self.assertIsNotNone(ex)
         uops = get_opnames(ex)
         self.assertIn(self.guard_is_false, uops)
+
+    def test_branch_coincident_targets(self):
+        # test for gh-144681: https://github.com/python/cpython/issues/144681
+        def testfunc(n):
+            for _ in range(n):
+                r = [x for x in range(10) if [].append(x) or True]
+            return r
+
+        res = testfunc(TIER2_THRESHOLD)
+        ex = get_first_executor(testfunc)
+
+        self.assertEqual(res, list(range(10)))
+        self.assertIsNotNone(ex)
 
     def test_for_iter_tier_two(self):
         class MyIter:
@@ -1289,6 +1303,50 @@ class TestUopsOptimization(unittest.TestCase):
         self.assertEqual(res, TIER2_THRESHOLD - 1)
         self.assertIsNotNone(ex)
         self.assertIn("_RETURN_GENERATOR", get_opnames(ex))
+
+    def test_make_heap_safe_optimized_immortal(self):
+        def returns_immortal():
+            return None
+        def testfunc(n):
+            a = 0
+            for _ in range(n):
+                a = returns_immortal()
+            return a
+        res, ex = self._run_with_optimizer(testfunc, TIER2_THRESHOLD)
+        self.assertIsNone(res)
+        self.assertIsNotNone(ex)
+        uops = get_opnames(ex)
+        self.assertNotIn("_MAKE_HEAP_SAFE", uops)
+        self.assertIn("_RETURN_VALUE", uops)
+
+    def test_make_heap_safe_optimized_yield(self):
+        def gen(n):
+            for _ in range(n):
+                yield 1
+        def testfunc(n):
+            for _ in gen(n):
+                pass
+        testfunc(TIER2_THRESHOLD * 2)
+        gen_ex = get_first_executor(gen)
+        self.assertIsNotNone(gen_ex)
+        uops = get_opnames(gen_ex)
+        self.assertNotIn("_MAKE_HEAP_SAFE", uops)
+        self.assertIn("_YIELD_VALUE", uops)
+
+    def test_make_heap_safe_not_optimized_for_owned(self):
+        def returns_owned(x):
+            return x + 1
+        def testfunc(n):
+            a = 0
+            for _ in range(n):
+                a = returns_owned(a)
+            return a
+        res, ex = self._run_with_optimizer(testfunc, TIER2_THRESHOLD)
+        self.assertEqual(res, TIER2_THRESHOLD)
+        self.assertIsNotNone(ex)
+        uops = get_opnames(ex)
+        self.assertIn("_MAKE_HEAP_SAFE", uops)
+        self.assertIn("_RETURN_VALUE", uops)
 
     def test_for_iter(self):
         def testfunc(n):
@@ -4078,6 +4136,77 @@ class TestUopsOptimization(unittest.TestCase):
                          f"Memory leak detected by ASan:\n{stderr}")
         self.assertNotIn('_PyJit_TryInitializeTracing', stderr,
                          f"JIT tracer memory leak detected:\n{stderr}")
+
+    def test_cold_exit_on_init_cleanup_frame(self):
+
+        result = script_helper.run_python_until_end('-c', textwrap.dedent("""
+        class A:
+            __slots__ = ('x', 'y', 'z', 'w')
+            def __init__(self):
+                self.x = self.y = -1
+                self.z = self.w = None
+
+        class B(A):
+            __slots__ = ('a', 'b', 'c', 'd', 'e')
+            def __init__(self):
+                super().__init__()
+                self.a = self.b = None
+                self.c = ""
+                self.d = self.e = False
+
+        class C(B):
+            __slots__ = ('name', 'flag')
+            def __init__(self, name):
+                super().__init__()
+                self.name = name
+                self.flag = False
+
+        funcs = []
+        for n in range(20, 80):
+            lines = [f"def f{n}(names, info):"]
+            for j in range(n):
+                lines.append(f"    v{j} = names[{j % 3}]")
+                if j % 3 == 0:
+                    lines.append(f"    if v{j} in info:")
+                    lines.append(f"        v{j} = info[v{j}]")
+                elif j % 5 == 0:
+                    lines.append(f"    v{j} = len(v{j}) if isinstance(v{j}, str) else 0")
+            lines.append("    return C(names[0])")
+            ns = {'C': C}
+            exec("\\n".join(lines), ns)
+            funcs.append(ns[f"f{n}"])
+
+        names = ['alpha', 'beta', 'gamma']
+        info = {'alpha': 'x', 'beta': 'y', 'gamma': 'z'}
+
+        for f in funcs:
+            for _ in range(10):
+                f(names, info)
+        """), PYTHON_JIT="1", PYTHON_JIT_STRESS="1",
+             PYTHON_JIT_SIDE_EXIT_INITIAL_VALUE="1")
+        self.assertEqual(result[0].rc, 0, result)
+
+    def test_for_iter_gen_cleared_frame_does_not_crash(self):
+        # See: https://github.com/python/cpython/issues/145197
+        result = script_helper.run_python_until_end('-c', textwrap.dedent("""
+        def g():
+            yield 1
+            yield 2
+
+        for _ in range(4002):
+            for _ in g():
+                pass
+
+        for i in range(4002):
+            it = g()
+            if (i & 7) == 0:
+                next(it)
+                it.close()
+            for _ in it:
+                pass
+        """),
+        PYTHON_JIT="1", PYTHON_JIT_STRESS="1")
+        self.assertEqual(result[0].rc, 0, result)
 
 def global_identity(x):
     return x

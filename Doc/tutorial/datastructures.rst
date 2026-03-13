@@ -136,9 +136,6 @@ comparison.
 Using Lists as Stacks
 ---------------------
 
-.. sectionauthor:: Ka-Ping Yee <ping@lfw.org>
-
-
 The list methods make it very easy to use a list as a stack, where the last
 element added is the first element retrieved ("last-in, first-out").  To add an
 item to the top of the stack, use :meth:`~list.append`.  To retrieve an item from the
@@ -165,8 +162,6 @@ top of the stack, use :meth:`~list.pop` without an explicit index.  For example:
 
 Using Lists as Queues
 ---------------------
-
-.. sectionauthor:: Ka-Ping Yee <ping@lfw.org>
 
 It is also possible to use a list as a queue, where the first element added is
 the first element retrieved ("first-in, first-out"); however, lists are not

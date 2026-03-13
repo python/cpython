@@ -4,9 +4,6 @@
 .. module:: venv
    :synopsis: Creation of virtual environments.
 
-.. moduleauthor:: Vinay Sajip <vinay_sajip@yahoo.co.uk>
-.. sectionauthor:: Vinay Sajip <vinay_sajip@yahoo.co.uk>
-
 .. versionadded:: 3.3
 
 **Source code:** :source:`Lib/venv/`

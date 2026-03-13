@@ -2100,7 +2100,7 @@ float_compactlong_guard(PyObject *lhs, PyObject *rhs)
 {
     return (
         PyFloat_CheckExact(lhs) &&
-        !isnan(PyFloat_AsDouble(lhs)) &&
+        !isnan(PyFloat_AS_DOUBLE(lhs)) &&
         PyLong_CheckExact(rhs) &&
         _PyLong_IsCompact((PyLongObject *)rhs)
     );
@@ -2110,7 +2110,7 @@ static inline int
 nonzero_float_compactlong_guard(PyObject *lhs, PyObject *rhs)
 {
     return (
-        float_compactlong_guard(lhs, rhs) && !PyLong_IsZero(rhs)
+        float_compactlong_guard(lhs, rhs) && !_PyLong_IsZero((PyLongObject*)rhs)
     );
 }
 
@@ -2118,7 +2118,7 @@ nonzero_float_compactlong_guard(PyObject *lhs, PyObject *rhs)
     static PyObject * \
     (NAME)(PyObject *lhs, PyObject *rhs) \
     { \
-        double lhs_val = PyFloat_AsDouble(lhs); \
+        double lhs_val = PyFloat_AS_DOUBLE(lhs); \
         Py_ssize_t rhs_val = _PyLong_CompactValue((PyLongObject *)rhs); \
         return PyFloat_FromDouble(lhs_val OP rhs_val); \
     }
@@ -2137,7 +2137,7 @@ compactlong_float_guard(PyObject *lhs, PyObject *rhs)
         PyLong_CheckExact(lhs) &&
         _PyLong_IsCompact((PyLongObject *)lhs) &&
         PyFloat_CheckExact(rhs) &&
-        !isnan(PyFloat_AsDouble(rhs))
+        !isnan(PyFloat_AS_DOUBLE(rhs))
     );
 }
 
@@ -2145,7 +2145,7 @@ static inline int
 nonzero_compactlong_float_guard(PyObject *lhs, PyObject *rhs)
 {
     return (
-        compactlong_float_guard(lhs, rhs) && PyFloat_AsDouble(rhs) != 0.0
+        compactlong_float_guard(lhs, rhs) && PyFloat_AS_DOUBLE(rhs) != 0.0
     );
 }
 
@@ -2153,7 +2153,7 @@ nonzero_compactlong_float_guard(PyObject *lhs, PyObject *rhs)
     static PyObject * \
     (NAME)(PyObject *lhs, PyObject *rhs) \
     { \
-        double rhs_val = PyFloat_AsDouble(rhs); \
+        double rhs_val = PyFloat_AS_DOUBLE(rhs); \
         Py_ssize_t lhs_val = _PyLong_CompactValue((PyLongObject *)lhs); \
         return PyFloat_FromDouble(lhs_val OP rhs_val); \
     }
