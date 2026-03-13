@@ -1050,10 +1050,10 @@ _PyTuple_Resize(PyObject **pv, Py_ssize_t newsize)
         return -1;
     }
     _Py_NewReferenceNoTotal((PyObject *) sv);
-    /* Zero out items added by growing */
-    if (newsize > oldsize)
-        memset(&sv->ob_item[oldsize], 0,
-               sizeof(*sv->ob_item) * (newsize - oldsize));
+    /* Set items added by growing to Py_None */
+    for(i = oldsize; i < newsize;i++) {
+        sv->ob_item[i] = Py_None;
+    }
     *pv = (PyObject *) sv;
     _PyObject_GC_TRACK(sv);
     return 0;
