@@ -1,0 +1,6 @@
+Add the following to ``mimetypes``:
+
+* ``font/collection``
+* ``haptics/ivs``
+* ``haptics/hjif``
+* ``haptics/hmpg``
