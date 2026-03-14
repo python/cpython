@@ -97,7 +97,7 @@ def unbracket(s: str, including_content: bool = False) -> str:
 
 
 def gen_colors(buffer: str) -> Iterator[ColorSpan]:
-    """Returns a list of index spans to color using the given color tag.
+    """Yield index spans to color using the given color tag.
 
     The input `buffer` should be a valid start of a Python code block, i.e.
     it cannot be a block starting in the middle of a multiline string.
