@@ -780,6 +780,7 @@ class TestBasicOps(unittest.TestCase):
         g = itertools.groupby([1, 1, 2], lambda _: next(keys_iter))
         k, grp = next(g)
         list(grp)  # must not crash with address sanitizer
+        self.assertIsNotNone(ref_before, "re-entrant __eq__ was never called")
         # On an unpatched build, next(g) releases gbo->currkey's reference to
         # 'other', so the count drops by 1 -- the object will be freed when the
         # __eq__ frame exits, leaving do_richcompare() with a dangling pointer.
