@@ -12,6 +12,9 @@ typedef struct {
     PyObject *ns_dict;
 } _PyNamespaceObject;
 
+#define _PyNamespace_CAST(op) _Py_CAST(_PyNamespaceObject*, (op))
+#define _PyNamespace_Check(op) PyObject_TypeCheck((op), &_PyNamespace_Type)
+
 
 static PyMemberDef namespace_members[] = {
     {"__dict__", _Py_T_OBJECT, offsetof(_PyNamespaceObject, ns_dict), Py_READONLY},
@@ -223,6 +226,14 @@ namespace_replace(PyObject *self, PyObject *args, PyObject *kwargs)
     if (!result) {
         return NULL;
     }
+    if (!_PyNamespace_Check(result)) {
+        PyErr_Format(PyExc_TypeError,
+                     "expect %N type, but %T() returned '%T' object",
+                     &_PyNamespace_Type, self, result);
+        Py_DECREF(result);
+        return NULL;
+    }
+
     if (PyDict_Update(((_PyNamespaceObject*)result)->ns_dict,
                       ((_PyNamespaceObject*)self)->ns_dict) < 0)
     {
