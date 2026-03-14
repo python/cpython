@@ -4,8 +4,11 @@ import unittest
 from email import _header_value_parser as parser
 from email import errors
 from email import policy
-from test.test_email import TestEmailBase, parameterize
+from test.test_email import for_each_character, TestEmailBase, parameterize
 from test.test_email.params import C, params, Params
+
+# https://datatracker.ietf.org/doc/html/rfc5322#section-2.2
+RFC_NONPRINTABLES = bytes([*range(0, 33), 127]).decode('ascii')
 
 
 # ---> Defect Expectations
@@ -217,6 +220,55 @@ class TestParser(TestParserMixin, TestEmailBase):
         one_word = C('foo', ['foo']),
         two_words = C('foo def', ['foo', ' ', 'def']),
         ws_runs = C('foo \t def jik', ['foo', ' \t ', 'def jik']),
+        )
+
+
+    # _validate_xtext
+
+    # As an internal method these tests are not API requirements; however, the
+    # behavior they check must be verified one way or another, so if the
+    # implementation changes there need to be equivalent tests.
+
+    @params
+    def test__validate_xtext(self, s, defects=[]):
+        vt = parser.ValueTerminal(s, 'test')
+        parser._validate_xtext(vt)
+        self.assertDefectsMatch(vt.defects, defects)
+
+    params_test__validate_xtext = Params(
+
+        valid = C('foo'),
+
+        # Although it looks a bit odd for unicode to be acceptable when we have
+        # a non-ascii error, the parser in fact handles unicode.
+        unicode = C('föö'),
+
+        # The non-ascii error arises only if the input was supposed to be 7-bit
+        # ASCII but in fact had non-ascii in it, in which case those bytes end
+        # up as surrogates.  Thus the name of the defect.
+        surrogates = C(
+            'föö'.encode().decode('ascii', 'surrogateescape'),
+            # "Non-ASCII characters found in header token"
+            defects=[undecodable_bytes_defect],
+            ),
+
+        multiple_nps = C(
+            'a\ttab spaces and\rcarriage return',
+            defects=[(nonprintable_defect, '\t  \r ')],
+            ),
+
+        nps_and_surrogates = C(
+            'föö\t'.encode().decode('ascii', 'surrogateescape'),
+            defects=[undecodable_bytes_defect, nonprintable_defect('\t')],
+            ),
+
+        **for_each_character(RFC_NONPRINTABLES)(
+            non_printable = C(
+                'f{char}o',
+                defects=[(nonprintable_defect, '{char}')],
+                ),
+            ),
+
         )
 
 
