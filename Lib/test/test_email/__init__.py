@@ -2,12 +2,14 @@ import collections
 import email
 import os
 import re
+import unicodedata
 import unittest
+from curses.ascii import controlnames
 from email.message import Message
 from email._policybase import compat32
 from test.support import load_package_tests
 from test.test_email import __file__ as landmark
-from test.test_email.params import ParamsMixin
+from test.test_email.params import C, params_map, ParamsMixin
 
 # Load all tests in package
 def load_tests(*args):
@@ -19,6 +21,51 @@ def load_tests(*args):
 def openfile(filename, *args, **kws):
     path = os.path.join(os.path.dirname(landmark), 'data', filename)
     return open(path, *args, **kws)
+
+def charname(c):
+    try:
+        n = unicodedata.name(c).lower().replace(' ', '_').replace('-', '_')
+    except ValueError:
+        try:
+            n = controlnames[ord(c)]
+        except IndexError:
+            assert c == '\x7F'
+            return 'DEL'
+    return n
+
+def for_each_character(chars, skip=''):
+    """Create a filter that expands each input into a test per character.
+
+    chars should be an iterable of characters (eg a string), as should skip.
+
+    For each character in chars that is not in skip, the filter should process
+    all arguments and keywords, creating a new call spec.  For any objects and
+    (recursively} sub-objects found that have a 'format' attribute, replace the
+    object in the new call spec with the results of calling the object's format
+    method, passing the method three keyword arguments: 'char', set to the
+    character, 'echar', set to the character passed through re.escape, and
+    'erchar', set to the repr of the character (without the quotes) passed
+    through re.escape.
+
+    Process any dictionary object's values, but not its keys.  Assume that any
+    other object that is an iterator can be recreated by passing its type a
+    list of objects.
+
+    Return the character name as derived from unicodedata or the curses ascii
+    module as as the name string to be added to the test name.
+
+    """
+    chars = {charname(v): v for v in chars if v not in skip}
+    @params_map
+    def for_each_character_in(*args, **kw):
+        for name, c in chars.items():
+            subs = dict(
+                char=c,
+                echar=re.escape(c),
+                erchar=re.escape(repr(c)[1:-1]),
+                )
+            yield name, C(*args, **kw).fmtall(**subs)
+    return for_each_character_in
 
 
 # Base test class
