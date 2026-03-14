@@ -1938,53 +1938,80 @@ def get_word(value, start):
         token.push(leader)
     return token, start
 
-def get_phrase(value):
+@_deprecate_old_api_and_lack_of_raise_on_invalid_input
+def get_phrase(value, start):
     """ phrase = 1*word / obs-phrase
         obs-phrase = word *(word / "." / CFWS)
 
-    This means a phrase can be a sequence of words, periods, and CFWS in any
-    order as long as it starts with at least one word.  If anything other than
-    words is detected, an ObsoleteHeaderDefect is added to the token's defect
-    list.  We also accept a phrase that starts with CFWS followed by a dot;
-    this is registered as an InvalidHeaderDefect, since it is not supported by
-    even the obsolete grammar.
+    Return a Phrase containing the any sequence of words, periods, and CFWS in
+    any order up to the next unquoted character that is not allowed in a phrase
+    or obsolete phrase, and a pointer to that character or the len of value.
+    If periods or cfws without adjacent words are found, add an
+    ObsoleteHeaderDefect to the token's defect list.  If one or more periods
+    are found before the first word (or if there are no words, only periods and
+    whitespace), add an InvalidHeaderDefect.  If there are no words or periods,
+    raise a HeaderParseError.
 
     """
+    origstart = start
+    found_content = False
     phrase = Phrase()
+    vlen = len(value)
     try:
-        token, value = get_word(value)
+        token, start = get_word(value, start)
+        found_content = True
         phrase.append(token)
     except errors.HeaderParseError:
         phrase.defects.append(errors.InvalidHeaderDefect(
             "phrase does not start with word"))
-    while value and value[0] not in PHRASE_ENDS:
-        if value[0]=='.':
+    while start < vlen and value[start] not in PHRASE_ENDS:
+        if value[start]=='.':
             phrase.append(DOT)
+            found_content = True
             phrase.defects.append(errors.ObsoleteHeaderDefect(
                 "period in 'phrase'"))
-            value = value[1:]
+            start += 1
         else:
             try:
-                token, value = get_word(value)
-                if (token[0].token_type == 'encoded-word'
-                    and phrase
-                    and phrase[-1].token_type == 'atom'
-                    and len(phrase[-1]) > 1
-                    and phrase[-1][-2].token_type == 'encoded-word'
-                    and phrase[-1][-1].token_type == 'cfws'
-                    and not phrase[-1][-1].comments
-                ):
-                    # linear ws between ews needs special handing...
-                    phrase[-1][-1] = EWWhiteSpaceTerminal(phrase[-1], 'fws')
+                token, start = get_word(value, start)
+                found_content = True
             except errors.HeaderParseError:
-                if value[0] in CFWS_LEADER:
-                    token, value = get_cfws(value)
+                if value[start] in CFWS_LEADER:
+                    token, start = get_cfws(value, start)
                     phrase.defects.append(errors.ObsoleteHeaderDefect(
-                        "comment found without atom"))
+                        "cfws found without atom"))
                 else:
                     raise
+            if phrase and phrase[-1].token_type == 'atom':
+                if phrase[-1][-1].token_type == 'encoded-word':
+                    if not token.startswith_fws():
+                        phrase.defects.append(_MissingWhitespaceAfterEWDefect)
+                elif (token[0].token_type == 'encoded-word'
+                        and len(phrase[-1]) > 1
+                        and phrase[-1][-2].token_type == 'encoded-word'
+                        and phrase[-1][-1].token_type == 'cfws'
+                        and not phrase[-1][-1].comments
+                    ):
+                    phrase[-1][-1] = EWWhiteSpaceTerminal(phrase[-1], 'fws')
+            if (phrase
+                    and token[0].token_type == 'encoded-word'
+                    and not phrase.endswith_fws()
+                ):
+                phrase.defects.append(_MissingWhitespaceBeforeEWDefect)
             phrase.append(token)
-    return phrase, value
+    if found_content:
+        return phrase, start
+    # XXX POSTDEP: change this to raise the exception.
+    return (
+        phrase,
+        start,
+        errors.HeaderParseError(
+            f"expected phrase but found {value[origstart:]!r}",
+            ),
+        "Calling get_phrase when there is not at least one word or"
+            " period in addition to whitespace is deprecated and will"
+            " raise an error in the future."
+        )
 
 def get_obs_local_part(value):
     """ obs-local-part = word *("." word)
