@@ -66,9 +66,6 @@ jobs:
       env:
         SANITIZER: ${{ inputs.sanitizer }}
         SAN_LOG_OPTION: log_path=${{ github.workspace }}/san_log
-    - name: Add ccache to PATH
-      run: |
-        echo "PATH=/usr/lib/ccache:$PATH" >> "$GITHUB_ENV"
     - name: Configure CPython
       run: >-
         ./configure

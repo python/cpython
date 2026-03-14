@@ -4,13 +4,6 @@
 .. module:: functools
    :synopsis: Higher-order functions and operations on callable objects.
 
-.. moduleauthor:: Peter Harris <scav@blueyonder.co.uk>
-.. moduleauthor:: Raymond Hettinger <python@rcn.com>
-.. moduleauthor:: Nick Coghlan <ncoghlan@gmail.com>
-.. moduleauthor:: Łukasz Langa <lukasz@langa.pl>
-.. moduleauthor:: Pablo Galindo <pablogsal@gmail.com>
-.. sectionauthor:: Peter Harris <scav@blueyonder.co.uk>
-
 **Source code:** :source:`Lib/functools.py`
 
 .. testsetup:: default

@@ -1,6 +1,7 @@
 /* Execute compiled code */
 
 #include "ceval.h"
+#include "pycore_long.h"
 
 int
 Py_GetRecursionLimit(void)
@@ -535,7 +536,7 @@ _PyEval_MatchClass(PyThreadState *tstate, PyObject *subject, PyObject *type,
 {
     assert(nargs > 0);
     if (!PyType_Check(type)) {
-        const char *e = "called match pattern must be a class";
+        const char *e = "class pattern must refer to a class";
         _PyErr_Format(tstate, PyExc_TypeError, e);
         return NULL;
     }
@@ -2243,6 +2244,7 @@ _PyEval_ExceptionGroupMatch(_PyInterpreterFrame *frame, PyObject* exc_value,
             if (f != NULL) {
                 PyObject *tb = _PyTraceBack_FromFrame(NULL, f);
                 if (tb == NULL) {
+                    Py_DECREF(wrapped);
                     return -1;
                 }
                 PyException_SetTraceback(wrapped, tb);
@@ -2718,7 +2720,7 @@ static PyObject *
 get_globals_builtins(PyObject *globals)
 {
     PyObject *builtins = NULL;
-    if (PyDict_Check(globals)) {
+    if (PyAnyDict_Check(globals)) {
         if (PyDict_GetItemRef(globals, &_Py_ID(__builtins__), &builtins) < 0) {
             return NULL;
         }
@@ -2743,6 +2745,10 @@ set_globals_builtins(PyObject *globals, PyObject *builtins)
     }
     else {
         if (PyObject_SetItem(globals, &_Py_ID(__builtins__), builtins) < 0) {
+            if (PyFrozenDict_Check(globals)) {
+                PyErr_SetString(PyExc_TypeError,
+                                "cannot assign __builtins__ to frozendict globals");
+            }
             return -1;
         }
     }
@@ -2884,23 +2890,10 @@ PyEval_GetFuncDesc(PyObject *func)
 int
 _PyEval_SliceIndex(PyObject *v, Py_ssize_t *pi)
 {
-    PyThreadState *tstate = _PyThreadState_GET();
-    if (!Py_IsNone(v)) {
-        Py_ssize_t x;
-        if (_PyIndex_Check(v)) {
-            x = PyNumber_AsSsize_t(v, NULL);
-            if (x == -1 && _PyErr_Occurred(tstate))
-                return 0;
-        }
-        else {
-            _PyErr_SetString(tstate, PyExc_TypeError,
-                             "slice indices must be integers or "
-                             "None or have an __index__ method");
-            return 0;
-        }
-        *pi = x;
+    if (Py_IsNone(v)) {
+        return 1;
     }
-    return 1;
+    return _PyEval_SliceIndexNotNone(v, pi);
 }
 
 int
@@ -2908,6 +2901,10 @@ _PyEval_SliceIndexNotNone(PyObject *v, Py_ssize_t *pi)
 {
     PyThreadState *tstate = _PyThreadState_GET();
     Py_ssize_t x;
+    if (PyLong_CheckExact(v) && _PyLong_IsCompact((PyLongObject *)v)) {
+        *pi = _PyLong_CompactValue((PyLongObject *)v);
+        return 1;
+    }
     if (_PyIndex_Check(v)) {
         x = PyNumber_AsSsize_t(v, NULL);
         if (x == -1 && _PyErr_Occurred(tstate))
@@ -2920,6 +2917,26 @@ _PyEval_SliceIndexNotNone(PyObject *v, Py_ssize_t *pi)
         return 0;
     }
     *pi = x;
+    return 1;
+}
+
+int
+_PyEval_UnpackIndices(PyObject *start, PyObject *stop,
+                      Py_ssize_t len,
+                      Py_ssize_t *istart, Py_ssize_t *istop)
+{
+    if (len < 0) {
+        return 0;
+    }
+    *istart = 0;
+    *istop = PY_SSIZE_T_MAX;
+    if (!_PyEval_SliceIndex(start, istart)) {
+        return 0;
+    }
+    if (!_PyEval_SliceIndex(stop, istop)) {
+        return 0;
+    }
+    PySlice_AdjustIndices(len, istart, istop, 1);
     return 1;
 }
 
@@ -3494,11 +3511,27 @@ PyUnstable_Eval_RequestCodeExtraIndex(freefunc free)
     PyInterpreterState *interp = _PyInterpreterState_GET();
     Py_ssize_t new_index;
 
-    if (interp->co_extra_user_count == MAX_CO_EXTRA_USERS - 1) {
+#ifdef Py_GIL_DISABLED
+    struct _py_code_state *state = &interp->code_state;
+    FT_MUTEX_LOCK(&state->mutex);
+#endif
+
+    if (interp->co_extra_user_count >= MAX_CO_EXTRA_USERS - 1) {
+#ifdef Py_GIL_DISABLED
+        FT_MUTEX_UNLOCK(&state->mutex);
+#endif
         return -1;
     }
-    new_index = interp->co_extra_user_count++;
+
+    new_index = interp->co_extra_user_count;
     interp->co_extra_freefuncs[new_index] = free;
+
+    // Publish freefuncs[new_index] before making the index visible.
+    FT_ATOMIC_STORE_SSIZE_RELEASE(interp->co_extra_user_count, new_index + 1);
+
+#ifdef Py_GIL_DISABLED
+    FT_MUTEX_UNLOCK(&state->mutex);
+#endif
     return new_index;
 }
 
@@ -3557,7 +3590,7 @@ _PyEval_GetANext(PyObject *aiter)
 void
 _PyEval_LoadGlobalStackRef(PyObject *globals, PyObject *builtins, PyObject *name, _PyStackRef *writeto)
 {
-    if (PyDict_CheckExact(globals) && PyDict_CheckExact(builtins)) {
+    if (PyAnyDict_CheckExact(globals) && PyAnyDict_CheckExact(builtins)) {
         _PyDict_LoadGlobalStackRef((PyDictObject *)globals,
                                     (PyDictObject *)builtins,
                                     name, writeto);

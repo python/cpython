@@ -66,17 +66,22 @@ Summary -- Release highlights
 .. PEP-sized items next.
 
 * :pep:`810`: :ref:`Explicit lazy imports for faster startup times
-  <whatsnew315-pep810>`
+  <whatsnew315-lazy-imports>`
+* :pep:`814`: :ref:`Add frozendict built-in type
+  <whatsnew315-frozendict>`
 * :pep:`799`: :ref:`A dedicated profiling package for organizing Python
   profiling tools <whatsnew315-profiling-package>`
 * :pep:`799`: :ref:`Tachyon: High frequency statistical sampling profiler
   <whatsnew315-sampling-profiler>`
-* :pep:`798`: :ref:`Unpacking in Comprehensions
+* :pep:`798`: :ref:`Unpacking in comprehensions
   <whatsnew315-unpacking-in-comprehensions>`
 * :pep:`686`: :ref:`Python now uses UTF-8 as the default encoding
   <whatsnew315-utf8-default>`
+* :pep:`728`: ``TypedDict`` with typed extra items
+* :pep:`747`: :ref:`Annotating type forms with TypeForm
+  <whatsnew315-typeform>`
 * :pep:`782`: :ref:`A new PyBytesWriter C API to create a Python bytes object
-  <whatsnew315-pep782>`
+  <whatsnew315-pybyteswriter>`
 * :ref:`The JIT compiler has been significantly upgraded <whatsnew315-jit>`
 * :ref:`Improved error messages <whatsnew315-improved-error-messages>`
 
@@ -84,7 +89,7 @@ Summary -- Release highlights
 New features
 ============
 
-.. _whatsnew315-pep810:
+.. _whatsnew315-lazy-imports:
 
 :pep:`810`: Explicit lazy imports
 ---------------------------------
@@ -118,12 +123,12 @@ name:
 .. code-block:: python
 
    lazy import json
-   lazy from datetime import datetime
+   lazy from pathlib import Path
 
-   print("Starting up...")  # json and datetime not loaded yet
+   print("Starting up...")  # json and pathlib not loaded yet
 
-   data = json.loads('{"key": "value"}')  # json gets loads here
-   now = datetime()  # datetime loads here
+   data = json.loads('{"key": "value"}')  # json loads here
+   p = Path(".")  # pathlib loads here
 
 This mechanism is particularly useful for applications that import many
 modules at the top level but may only use a subset of them in any given run.
@@ -179,6 +184,47 @@ raise :exc:`SyntaxError`).
 .. seealso:: :pep:`810` for the full specification and rationale.
 
 (Contributed by Pablo Galindo Salgado and Dino Viehland in :gh:`142349`.)
+
+
+.. _whatsnew315-frozendict:
+
+:pep:`814`: Add frozendict built-in type
+----------------------------------------
+
+A new :term:`immutable` type, :class:`frozendict`, is added to the :mod:`builtins` module.
+It does not allow modification after creation. A :class:`!frozendict` is not a subclass of ``dict``;
+it inherits directly from ``object``. A :class:`!frozendict` is :term:`hashable`
+as long as all of its keys and values are hashable. A :class:`!frozendict` preserves
+insertion order, but comparison does not take order into account.
+
+For example::
+
+    >>> a = frozendict(x=1, y=2)
+    >>> a
+    frozendict({'x': 1, 'y': 2})
+    >>> a['z'] = 3
+    Traceback (most recent call last):
+      File "<python-input-2>", line 1, in <module>
+        a['z'] = 3
+        ~^^^^^
+    TypeError: 'frozendict' object does not support item assignment
+    >>> b = frozendict(y=2, x=1)
+    >>> hash(a) == hash(b)
+    True
+    >>> a == b
+    True
+
+The following standard library modules have been updated to accept
+:class:`!frozendict`: :mod:`copy`, :mod:`decimal`, :mod:`json`, :mod:`marshal`,
+:mod:`pickle`, :mod:`pprint` and :mod:`xml.etree.ElementTree`.
+
+:func:`eval` and :func:`exec` accept :class:`!frozendict` for *globals*, and
+:func:`type` and :meth:`str.maketrans` accept :class:`!frozendict` for *dict*.
+
+.. seealso:: :pep:`814` for the full specification and rationale.
+
+(Contributed by Victor Stinner and Donghee Na in :gh:`141510`.)
+
 
 .. _whatsnew315-profiling-package:
 
@@ -367,7 +413,7 @@ Improved error messages
      File "/home/pablogsal/github/python/main/lel.py", line 42, in <module>
         print(container.area)
               ^^^^^^^^^^^^^^
-     AttributeError: 'Container' object has no attribute 'area'. Did you mean: 'inner.area'?
+     AttributeError: 'Container' object has no attribute 'area'. Did you mean '.inner.area' instead of '.area'?
 
 
 Other language changes
@@ -708,6 +754,10 @@ functools
   callables.
   (Contributed by Serhiy Storchaka in :gh:`140873`.)
 
+* :func:`~functools.singledispatchmethod` now dispatches on the second argument
+  if it wraps a regular method and is called as a class attribute.
+  (Contributed by Bartosz Sławecki in :gh:`143535`.)
+
 
 hashlib
 -------
@@ -775,7 +825,17 @@ mimetypes
 * Add ``application/node`` MIME type for ``.cjs`` extension.
   (Contributed by John Franey in :gh:`140937`.)
 * Add ``application/toml``. (Contributed by Gil Forcada in :gh:`139959`.)
+* Add ``application/sql`` and ``application/vnd.sqlite3``.
+  (Contributed by Charlie Lin in :gh:`145698`.)
 * Add ``image/jxl``. (Contributed by Foolbar in :gh:`144213`.)
+* Add the following MIME types:
+
+  - ``application/vnd.ms-cab-compressed`` for ``.cab`` extension
+  - ``application/vnd.ms-htmlhelp`` for ``.chm`` extension
+  - ``application/vnd.ms-officetheme`` for ``.thmx`` extension
+
+  (Contributed by Charlie Lin in :gh:`145718`.)
+
 * Rename ``application/x-texinfo`` to ``application/texinfo``.
   (Contributed by Charlie Lin in :gh:`140165`.)
 * Changed the MIME type for ``.ai`` files to ``application/pdf``.
@@ -824,6 +884,19 @@ pickle
   (Contributed by Zackery Spytz and Serhiy Storchaka in :gh:`77188`.)
 
 
+re
+--
+
+* :func:`re.prefixmatch` and a corresponding :meth:`~re.Pattern.prefixmatch`
+  have been added as alternate more explicit names for the existing
+  :func:`re.match` and :meth:`~re.Pattern.match` APIs. These are intended
+  to be used to alleviate confusion around what *match* means by following the
+  Zen of Python's *"Explicit is better than implicit"* mantra. Most other
+  language regular expression libraries use an API named *match* to mean what
+  Python has always called *search*.
+  (Contributed by Gregory P. Smith in :gh:`86519`.)
+
+
 resource
 --------
 
@@ -839,6 +912,9 @@ shelve
 * Added new :meth:`!reorganize` method to :mod:`shelve` used to recover unused free
   space previously occupied by deleted entries.
   (Contributed by Andrea Oliveri in :gh:`134004`.)
+* Add support for custom serialization and deserialization functions
+  in the :mod:`shelve` module.
+  (Contributed by Furkan Onder in :gh:`99631`.)
 
 
 socket
@@ -1006,6 +1082,11 @@ tkinter
   with outdated names.
   (Contributed by Serhiy Storchaka in :gh:`143754`.)
 
+* Added :class:`!Event` attributes :attr:`!user_data` for Tk virtual events
+  and :attr:`!detail` for ``Enter``, ``Leave``, ``FocusIn``, ``FocusOut``,
+  and ``ConfigureRequest`` events.
+  (Contributed by Matthias Kievernagel and Serhiy Storchaka in :gh:`47655`.)
+
 
 .. _whatsnew315-tomllib-1-1-0:
 
@@ -1084,6 +1165,11 @@ unicodedata
   :func:`~unicodedata.extended_pictographic` functions to get the properties
   of the character which are related to the above algorithm.
   (Contributed by Serhiy Storchaka and Guillaume Sanchez in :gh:`74902`.)
+
+* Add :func:`~unicodedata.block` function to return the `Unicode block
+  <https://www.unicode.org/versions/Unicode17.0.0/core-spec/chapter-3/#G64189>`_
+  assigned to a character.
+  (Contributed by Stan Ulbrych in :gh:`66802`.)
 
 
 unittest
@@ -1174,6 +1260,11 @@ Optimizations
   (Contributed by Chris Eibl, Ken Jin, and Brandt Bucher in :gh:`143068`.
   Special thanks to the MSVC team including Hulon Jenkins.)
 
+* ``mimalloc`` is now used as the default allocator for
+  for raw memory allocations such as via :c:func:`PyMem_RawMalloc`
+  for better performance on :term:`free-threaded builds <free-threaded build>`.
+  (Contributed by Kumar Aditya in :gh:`144914`.)
+
 
 base64 & binascii
 -----------------
@@ -1198,7 +1289,7 @@ csv
 .. _whatsnew315-jit:
 
 Upgraded JIT compiler
-=====================
+---------------------
 
 Results from the `pyperformance <https://github.com/python/pyperformance>`__
 benchmark suite report
@@ -1285,7 +1376,7 @@ Diego Russo in :gh:`140683` and :gh:`142305`.)
 
 
 Removed
-=======
+========
 
 ctypes
 ------
@@ -1362,6 +1453,27 @@ threading
 
 typing
 ------
+
+.. _whatsnew315-typeform:
+
+* :pep:`747`: Add :data:`~typing.TypeForm`, a new special form for annotating
+  values that are themselves type expressions.
+  ``TypeForm[T]`` means "a type form object describing ``T`` (or a type
+  assignable to ``T``)". At runtime, ``TypeForm(x)`` simply returns ``x``,
+  which allows explicit annotation of type-form values without changing
+  behavior.
+
+  This helps libraries that accept user-provided type expressions
+  (for example ``int``, ``str | None``, :class:`~typing.TypedDict`
+  classes, or ``list[int]``) expose precise signatures:
+
+  .. code-block:: python
+
+     from typing import Any, TypeForm
+
+     def cast[T](typ: TypeForm[T], value: Any) -> T: ...
+
+  (Contributed by Jelle Zijlstra in :gh:`145033`.)
 
 * The undocumented keyword argument syntax for creating
   :class:`~typing.NamedTuple` classes (for example,
@@ -1459,6 +1571,15 @@ New deprecations
 
     (Contributed by Bénédikt Tran in :gh:`134978`.)
 
+* :mod:`struct`:
+
+  * Calling the ``Struct.__new__()`` without required argument now is
+    deprecated and will be removed in Python 3.20.  Calling
+    :meth:`~object.__init__` method on initialized :class:`~struct.Struct`
+    objects is deprecated and will be removed in Python 3.20.
+
+    (Contributed by Sergey B Kirpichev and Serhiy Storchaka in :gh:`143715`.)
+
 * ``__version__``
 
   * The ``__version__``, ``version`` and ``VERSION`` attributes have been
@@ -1481,6 +1602,7 @@ New deprecations
     - :mod:`re`
     - :mod:`socketserver`
     - :mod:`tabnanny`
+    - :mod:`tarfile`
     - :mod:`tkinter.font`
     - :mod:`tkinter.ttk`
     - :mod:`wsgiref.simple_server`
@@ -1512,6 +1634,21 @@ C API changes
 New features
 ------------
 
+* Add :c:func:`PyArg_ParseArray` and :c:func:`PyArg_ParseArrayAndKeywords`
+  functions to parse arguments of functions using the :c:macro:`METH_FASTCALL`
+  calling convention.
+  (Contributed by Victor Stinner in :gh:`144175`.)
+
+* Add the following functions for the new :class:`frozendict` type:
+
+  * :c:func:`PyAnyDict_Check`
+  * :c:func:`PyAnyDict_CheckExact`
+  * :c:func:`PyFrozenDict_Check`
+  * :c:func:`PyFrozenDict_CheckExact`
+  * :c:func:`PyFrozenDict_New`
+
+  (Contributed by Victor Stinner in :gh:`141510`.)
+
 * Add :c:func:`PySys_GetAttr`, :c:func:`PySys_GetAttrString`,
   :c:func:`PySys_GetOptionalAttr`, and :c:func:`PySys_GetOptionalAttrString`
   functions as replacements for :c:func:`PySys_GetObject`.
@@ -1526,7 +1663,7 @@ New features
   and :c:data:`Py_mod_abi`.
   (Contributed by Petr Viktorin in :gh:`137210`.)
 
-.. _whatsnew315-pep782:
+.. _whatsnew315-pybyteswriter:
 
 * Implement :pep:`782`, the :ref:`PyBytesWriter API <pybyteswriter>`.
   Add functions:
@@ -1563,6 +1700,12 @@ New features
   thread state.
   (Contributed by Victor Stinner in :gh:`139653`.)
 
+* Add :c:func:`PyUnstable_SetImmortal` C-API function to mark objects as :term:`immortal`.
+  (Contributed by Kumar Aditya in :gh:`143300`.)
+
+* Restore private provisional ``_Py_InitializeMain()`` function removed in
+  Python 3.14.
+  (Contributed by Victor Stinner in :gh:`142417`.)
 
 Changed C APIs
 --------------
@@ -1571,6 +1714,9 @@ Changed C APIs
   flag is set then :c:macro:`Py_TPFLAGS_HAVE_GC` must be set too.
   (Contributed by Sergey Miryanov in :gh:`134786`.)
 
+* :c:macro:`PyDateTime_IMPORT` is now thread safe. Code that directly checks ``PyDateTimeAPI``
+  for ``NULL`` should be updated to call :c:macro:`PyDateTime_IMPORT` instead.
+  (Contributed by Kumar Aditya in :gh:`141563`.)
 
 Porting to Python 3.15
 ----------------------
@@ -1653,6 +1799,16 @@ on Python 3.13 and older.
 
 Deprecated C APIs
 -----------------
+
+* Deprecate :pep:`456` support for providing an external definition
+  of the string hashing scheme. Removal is scheduled for Python 3.19.
+
+  Previously, embedders could define :c:macro:`Py_HASH_ALGORITHM` to be
+  ``Py_HASH_EXTERNAL`` to indicate that the hashing scheme was provided
+  externally but this feature was undocumented, untested and most likely
+  unused.
+
+  (Contributed by Bénédikt Tran in :gh:`141226`.)
 
 * For unsigned integer formats in :c:func:`PyArg_ParseTuple`,
   accepting Python integers with value that is larger than the maximal value
