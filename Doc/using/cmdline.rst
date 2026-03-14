@@ -49,7 +49,7 @@ additional methods of invocation:
   appropriately named script from that directory.
 * When called with ``-c command``, it executes the Python statement(s) given as
   *command*.  Here *command* may contain multiple statements separated by
-  newlines. Leading whitespace is significant in Python statements!
+  newlines.
 * When called with ``-m module-name``, the given module is located on the
   Python module path and executed as a script.
 
@@ -692,7 +692,7 @@ Miscellaneous options
      If false (``0``) suppress these warnings. Set to true by default.
      See also :envvar:`PYTHON_PATHCONFIG_WARNINGS`.
 
-     .. versionadded:: next
+     .. versionadded:: 3.15
 
    * :samp:`-X tlbc={0,1}` enables (1, the default) or disables (0) thread-local
      bytecode in builds configured with :option:`--disable-gil`.  When disabled,
@@ -707,7 +707,7 @@ Miscellaneous options
      (the default) respects the ``lazy`` keyword in source code.
      See also :envvar:`PYTHON_LAZY_IMPORTS`.
 
-     .. versionadded:: next
+     .. versionadded:: 3.15
 
    It also allows passing arbitrary values and retrieving them through the
    :data:`sys._xoptions` dictionary.
@@ -1085,6 +1085,13 @@ conflict.
    * ``pymalloc_debug``: same as ``pymalloc`` but also install debug hooks.
    * ``mimalloc_debug``: same as ``mimalloc`` but also install debug hooks.
 
+   .. note::
+
+      In the :term:`free-threaded <free threading>` build, the ``malloc``,
+      ``malloc_debug``, ``pymalloc``, and ``pymalloc_debug`` values are not
+      supported.  Only ``default``, ``debug``, ``mimalloc``, and
+      ``mimalloc_debug`` are accepted.
+
    .. versionadded:: 3.6
 
    .. versionchanged:: 3.7
@@ -1094,12 +1101,13 @@ conflict.
 .. envvar:: PYTHONMALLOCSTATS
 
    If set to a non-empty string, Python will print statistics of the
-   :ref:`pymalloc memory allocator <pymalloc>` every time a new pymalloc object
-   arena is created, and on shutdown.
+   :ref:`pymalloc memory allocator <pymalloc>` or the
+   :ref:`mimalloc memory allocator <mimalloc>` (whichever is in use)
+   every time a new object arena is created, and on shutdown.
 
    This variable is ignored if the :envvar:`PYTHONMALLOC` environment variable
    is used to force the :c:func:`malloc` allocator of the C library, or if
-   Python is configured without ``pymalloc`` support.
+   Python is configured without both ``pymalloc`` and ``mimalloc`` support.
 
    .. versionchanged:: 3.6
       This variable can now also be used on Python compiled in release mode.
@@ -1367,7 +1375,7 @@ conflict.
    stderr. If false (``0``) suppress these warnings. Set to true by default.
    See also :option:`-X pathconfig_warnings<-X>`.
 
-   .. versionadded:: next
+   .. versionadded:: 3.15
 
 .. envvar:: PYTHON_JIT
 
@@ -1396,7 +1404,7 @@ conflict.
 
    See also the :option:`-X lazy_imports <-X>` command-line option.
 
-   .. versionadded:: next
+   .. versionadded:: 3.15
 
 Debug-mode variables
 ~~~~~~~~~~~~~~~~~~~~

@@ -359,7 +359,7 @@ class TimeTestCase(unittest.TestCase):
         # raising an exception.
         tt = time.gmtime(self.t)
         for directive in ('a', 'A', 'b', 'B', 'c', 'd', 'D', 'F', 'H', 'I',
-                          'j', 'm', 'M', 'p', 'S', 'T',
+                          'j', 'm', 'M', 'n', 'p', 'S', 't', 'T',
                           'U', 'w', 'W', 'x', 'X', 'y', 'Y', 'Z', '%'):
             format = '%' + directive
             if directive == 'd':

@@ -121,9 +121,9 @@ A :keyword:`try` statement may have more than one *except clause*, to specify
 handlers for different exceptions.  At most one handler will be executed.
 Handlers only handle exceptions that occur in the corresponding *try clause*,
 not in other handlers of the same :keyword:`!try` statement.  An *except clause*
-may name multiple exceptions as a parenthesized tuple, for example::
+may name multiple exceptions, for example::
 
-   ... except (RuntimeError, TypeError, NameError):
+   ... except RuntimeError, TypeError, NameError:
    ...     pass
 
 A class in an :keyword:`except` clause matches exceptions which are instances of the

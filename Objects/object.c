@@ -1295,6 +1295,7 @@ _PyObject_SetAttributeErrorContext(PyObject* v, PyObject* name)
     // Augment the exception with the name and object
     if (PyObject_SetAttr(exc, &_Py_ID(name), name) ||
         PyObject_SetAttr(exc, &_Py_ID(obj), v)) {
+        Py_DECREF(exc);
         return 1;
     }
 restore:
@@ -3077,9 +3078,9 @@ Py_ReprEnter(PyObject *obj)
         list = PyList_New(0);
         if (list == NULL)
             return -1;
-        if (PyDict_SetItem(dict, &_Py_ID(Py_Repr), list) < 0)
+        if (_PyDict_SetItem_Take2((PyDictObject *)dict, &_Py_ID(Py_Repr), list) < 0) {
             return -1;
-        Py_DECREF(list);
+        }
     }
     i = PyList_GET_SIZE(list);
     while (--i >= 0) {

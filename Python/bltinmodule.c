@@ -3341,7 +3341,7 @@ zip_reduce(PyObject *self, PyObject *Py_UNUSED(ignored))
     if (lz->strict) {
         return PyTuple_Pack(3, Py_TYPE(lz), lz->ittuple, Py_True);
     }
-    return PyTuple_Pack(2, Py_TYPE(lz), lz->ittuple);
+    return _PyTuple_FromPair((PyObject *)Py_TYPE(lz), lz->ittuple);
 }
 
 static PyObject *

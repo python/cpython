@@ -224,11 +224,6 @@ endian processor, or ``0`` on little endian processor.
 Return value: ``0`` if all is OK, ``-1`` if error (and an exception is set,
 most likely :exc:`OverflowError`).
 
-There are two problems on non-IEEE platforms:
-
-* What this does is undefined if *x* is a NaN or infinity.
-* ``-0.0`` and ``+0.0`` produce the same bytes string.
-
 .. c:function:: int PyFloat_Pack2(double x, char *p, int le)
 
    Pack a C double as the IEEE 754 binary16 half-precision format.
@@ -255,9 +250,6 @@ on little endian processor.
 Return value: The unpacked double.  On error, this is ``-1.0`` and
 :c:func:`PyErr_Occurred` is true (and an exception is set, most likely
 :exc:`OverflowError`).
-
-Note that on a non-IEEE platform this will refuse to unpack a bytes string that
-represents a NaN or infinity.
 
 .. c:function:: double PyFloat_Unpack2(const char *p, int le)
 

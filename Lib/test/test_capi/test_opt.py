@@ -461,6 +461,19 @@ class TestUops(unittest.TestCase):
         uops = get_opnames(ex)
         self.assertIn(self.guard_is_false, uops)
 
+    def test_branch_coincident_targets(self):
+        # test for gh-144681: https://github.com/python/cpython/issues/144681
+        def testfunc(n):
+            for _ in range(n):
+                r = [x for x in range(10) if [].append(x) or True]
+            return r
+
+        res = testfunc(TIER2_THRESHOLD)
+        ex = get_first_executor(testfunc)
+
+        self.assertEqual(res, list(range(10)))
+        self.assertIsNotNone(ex)
+
     def test_for_iter_tier_two(self):
         class MyIter:
             def __init__(self, n):
@@ -1290,6 +1303,50 @@ class TestUopsOptimization(unittest.TestCase):
         self.assertEqual(res, TIER2_THRESHOLD - 1)
         self.assertIsNotNone(ex)
         self.assertIn("_RETURN_GENERATOR", get_opnames(ex))
+
+    def test_make_heap_safe_optimized_immortal(self):
+        def returns_immortal():
+            return None
+        def testfunc(n):
+            a = 0
+            for _ in range(n):
+                a = returns_immortal()
+            return a
+        res, ex = self._run_with_optimizer(testfunc, TIER2_THRESHOLD)
+        self.assertIsNone(res)
+        self.assertIsNotNone(ex)
+        uops = get_opnames(ex)
+        self.assertNotIn("_MAKE_HEAP_SAFE", uops)
+        self.assertIn("_RETURN_VALUE", uops)
+
+    def test_make_heap_safe_optimized_yield(self):
+        def gen(n):
+            for _ in range(n):
+                yield 1
+        def testfunc(n):
+            for _ in gen(n):
+                pass
+        testfunc(TIER2_THRESHOLD * 2)
+        gen_ex = get_first_executor(gen)
+        self.assertIsNotNone(gen_ex)
+        uops = get_opnames(gen_ex)
+        self.assertNotIn("_MAKE_HEAP_SAFE", uops)
+        self.assertIn("_YIELD_VALUE", uops)
+
+    def test_make_heap_safe_not_optimized_for_owned(self):
+        def returns_owned(x):
+            return x + 1
+        def testfunc(n):
+            a = 0
+            for _ in range(n):
+                a = returns_owned(a)
+            return a
+        res, ex = self._run_with_optimizer(testfunc, TIER2_THRESHOLD)
+        self.assertEqual(res, TIER2_THRESHOLD)
+        self.assertIsNotNone(ex)
+        uops = get_opnames(ex)
+        self.assertIn("_MAKE_HEAP_SAFE", uops)
+        self.assertIn("_RETURN_VALUE", uops)
 
     def test_for_iter(self):
         def testfunc(n):
