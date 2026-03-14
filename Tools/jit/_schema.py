@@ -106,6 +106,7 @@ class ELFSection(typing.TypedDict):
     Flags: dict[typing.Literal["Flags"], list[dict[typing.Literal["Name"], str]]]
     Index: int
     Info: int
+    Name: typing.NotRequired[dict[typing.Literal["Name"], str]]
     Relocations: list[dict[typing.Literal["Relocation"], ELFRelocation]]
     SectionData: dict[typing.Literal["Bytes"], list[int]]
     Symbols: list[dict[typing.Literal["Symbol"], _ELFSymbol]]

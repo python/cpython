@@ -18,6 +18,13 @@ import _schema
 import _stencils
 import _writer
 
+try:
+    import _asm_to_dasc
+    import _dasc_writer
+except ImportError:
+    _asm_to_dasc = None  # type: ignore[assignment]
+    _dasc_writer = None  # type: ignore[assignment]
+
 if sys.version_info < (3, 11):
     raise RuntimeError("Building the JIT compiler requires Python 3.11 or newer!")
 
@@ -54,6 +61,10 @@ class _Target(typing.Generic[_S, _R]):
     llvm_version: str = _llvm._LLVM_VERSION
     known_symbols: dict[str, int] = dataclasses.field(default_factory=dict)
     pyconfig_dir: pathlib.Path = pathlib.Path.cwd().resolve()
+    use_dynasm: bool = False
+    _jit_fold_pass: typing.Optional[pathlib.Path] = dataclasses.field(
+        default=None, init=False, repr=False
+    )
 
     def _get_nop(self) -> bytes:
         if re.fullmatch(r"aarch64-.*", self.triple):
@@ -134,11 +145,10 @@ class _Target(typing.Generic[_S, _R]):
     ) -> _stencils.StencilGroup:
         s = tempdir / f"{opname}.s"
         o = tempdir / f"{opname}.o"
-        args_s = [
+        common_args = [
             f"--target={self.triple}",
             "-DPy_BUILD_CORE_MODULE",
             "-D_DEBUG" if self.debug else "-DNDEBUG",
-            f"-DSUPPORTS_SMALL_CONSTS={1 if self.optimizer.supports_small_constants else 0}",
             f"-D_JIT_OPCODE={opname}",
             "-D_PyJIT_ACTIVE",
             "-D_Py_JIT",
@@ -157,7 +167,6 @@ class _Target(typing.Generic[_S, _R]):
             # generates better code than -O2 (and -O2 usually generates better
             # code than -O3). As a nice benefit, it uses less memory too:
             "-Os",
-            "-S",
             # Shorten full absolute file paths in the generated code (like the
             # __FILE__ macro and assert failure messages) for reproducibility:
             f"-ffile-prefix-map={CPYTHON}=.",
@@ -171,16 +180,68 @@ class _Target(typing.Generic[_S, _R]):
             # Don't call stack-smashing canaries that we can't find or patch:
             "-fno-stack-protector",
             "-std=c11",
-            "-o",
-            f"{s}",
-            f"{c}",
             *self.args,
             # Allow user-provided CFLAGS to override any defaults
             *shlex.split(self.cflags),
         ]
-        await _llvm.run(
-            "clang", args_s, echo=self.verbose, llvm_version=self.llvm_version
-        )
+        if self.use_dynasm and self._jit_fold_pass is not None:
+            # DynASM pipeline: compile to LLVM IR, run the JIT fold pass to
+            # replace patch-value computation trees with inline-asm markers,
+            # then compile the folded IR to assembly.
+            ll = tempdir / f"{opname}.ll"
+            ll_folded = tempdir / f"{opname}.folded.ll"
+            args_ll = [
+                *common_args,
+                "-emit-llvm",
+                "-S",
+                "-o", f"{ll}",
+                f"{c}",
+            ]
+            await _llvm.run(
+                "clang", args_ll, echo=self.verbose,
+                llvm_version=self.llvm_version,
+            )
+            args_opt = [
+                f"--load-pass-plugin={self._jit_fold_pass}",
+                "-passes=jit-fold",
+                f"{ll}",
+                "-S", "-o", f"{ll_folded}",
+            ]
+            await _llvm.run(
+                "opt", args_opt, echo=self.verbose,
+                llvm_version=self.llvm_version,
+            )
+            args_s = [
+                f"--target={self.triple}",
+                "-Os",
+                "-fno-asynchronous-unwind-tables",
+                "-fno-builtin",
+                "-fno-stack-protector",
+                *self.args,
+                *shlex.split(self.cflags),
+                "-S",
+                "-o", f"{s}",
+                f"{ll_folded}",
+                # DynASM requires Intel syntax for x86:
+                "-mllvm", "--x86-asm-syntax=intel",
+            ]
+            await _llvm.run(
+                "clang", args_s, echo=self.verbose,
+                llvm_version=self.llvm_version,
+            )
+        else:
+            args_s = [
+                *common_args,
+                "-S",
+                "-o", f"{s}",
+                f"{c}",
+                # DynASM requires Intel syntax for x86:
+                *(("-mllvm", "--x86-asm-syntax=intel") if self.use_dynasm else ()),
+            ]
+            await _llvm.run(
+                "clang", args_s, echo=self.verbose,
+                llvm_version=self.llvm_version,
+            )
         self.optimizer(
             s,
             label_prefix=self.label_prefix,
@@ -188,12 +249,130 @@ class _Target(typing.Generic[_S, _R]):
             re_global=self.re_global,
         ).run()
         args_o = [f"--target={self.triple}", "-c", "-o", f"{o}", f"{s}"]
+        if self.use_dynasm:
+            args_o.insert(1, "-masm=intel")
         await _llvm.run(
             "clang", args_o, echo=self.verbose, llvm_version=self.llvm_version
         )
-        return await self._parse(o)
+        group = await self._parse(o)
+        if self.use_dynasm:
+            group.assembly_text = s.read_text()
+        return group
+
+    async def _build_jit_fold_pass(self) -> None:
+        """Build the LLVM JIT fold pass plugin if DynASM is enabled."""
+        if not self.use_dynasm:
+            return
+        src = TOOLS_JIT / "jit_fold_pass.cpp"
+        if not src.exists():
+            return
+        so = TOOLS_JIT / "jit_fold_pass.so"
+        # Check if rebuild is needed.
+        if so.exists() and so.stat().st_mtime > src.stat().st_mtime:
+            self._jit_fold_pass = so
+            return
+        import subprocess
+        # Find the compiler and llvm-config.
+        clangxx = await _llvm.maybe_run(
+            "clang++", ["--version"], echo=self.verbose,
+            llvm_version=self.llvm_version,
+        )
+        if clangxx is None:
+            print("Warning: clang++ not found, skipping JIT fold pass build")
+            return
+        # Resolve the actual clang++ path.
+        clangxx_path = None
+        for name in (f"clang++-{self.llvm_version}", "clang++"):
+            result = subprocess.run(
+                ["which", name], capture_output=True, text=True
+            )
+            if result.returncode == 0:
+                clangxx_path = result.stdout.strip()
+                break
+        if clangxx_path is None:
+            print("Warning: clang++ not found, skipping JIT fold pass build")
+            return
+        # Find llvm-config.
+        llvm_config = None
+        for name in (f"llvm-config-{self.llvm_version}", "llvm-config"):
+            result = subprocess.run(
+                [name, "--version"], capture_output=True, text=True
+            )
+            if result.returncode == 0 and result.stdout.strip().startswith(
+                f"{self.llvm_version}."
+            ):
+                llvm_config = name
+                break
+        if llvm_config is None:
+            print("Warning: llvm-config not found, skipping JIT fold pass build")
+            return
+        # Get compile and link flags.
+        cxxflags = subprocess.run(
+            [llvm_config, "--cxxflags"], capture_output=True, text=True
+        ).stdout.strip()
+        ldflags = subprocess.run(
+            [llvm_config, "--ldflags"], capture_output=True, text=True
+        ).stdout.strip()
+        # Find the GCC installation directory for C++ stdlib headers.
+        gcc_install_dir = ""
+        for ver in ("15", "14", "13", "12"):
+            candidate = pathlib.Path(f"/usr/lib/gcc/x86_64-linux-gnu/{ver}")
+            headers = pathlib.Path(f"/usr/include/c++/{ver}/type_traits")
+            if candidate.exists() and headers.exists():
+                gcc_install_dir = f"--gcc-install-dir={candidate}"
+                break
+        args = [
+            clangxx_path,
+            "-shared", "-fPIC",
+            *cxxflags.split(),
+            *ldflags.split(),
+            *(gcc_install_dir.split() if gcc_install_dir else []),
+            "-o", f"{so}",
+            f"{src}",
+            f"-lLLVM-{self.llvm_version}",
+        ]
+        if self.verbose:
+            import shlex as _shlex
+            print(_shlex.join(args))
+        result = subprocess.run(args, capture_output=True, text=True)
+        if result.returncode != 0:
+            print(f"Warning: Failed to build JIT fold pass:\n{result.stderr}")
+            return
+        self._jit_fold_pass = so
+
+    # Stencils where oparg is provably constrained at the C level.
+    # These __builtin_assume hints let LLVM eliminate dead branches
+    # that compare oparg to constants.
+    #
+    # Evidence for each constraint:
+    #   COPY_FREE_VARS: Only emitted when nfreevars > 0
+    #                   (Python/flowgraph.c:make_cfg_from_code_object).
+    #   BUILD_SLICE: oparg is always 2 or 3 (2-arg or 3-arg slice).
+    #               (Python/bytecodes.c: inst(BUILD_SLICE))
+    #   UNPACK_SEQUENCE_TUPLE: Unpacking requires at least 1 target.
+    #   UNPACK_SEQUENCE_LIST: Same as UNPACK_SEQUENCE_TUPLE.
+    #   INIT_CALL_PY_EXACT_ARGS (non-specialized): The replicate(5)
+    #       creates _0 through _4 variants; the general variant
+    #       only runs when oparg >= 5.
+    _OPARG_ASSUMES: typing.ClassVar[dict[str, str]] = {
+        "COPY_FREE_VARS":          "    __builtin_assume(_oparg > 0);",
+        "BUILD_SLICE":             "    __builtin_assume(_oparg >= 2 && _oparg <= 3);",
+        "INIT_CALL_PY_EXACT_ARGS": "    __builtin_assume(_oparg >= 5);",
+    }
+
+    @staticmethod
+    def _oparg_assumes(opname: str) -> str:
+        """Return __builtin_assume statements for a stencil's oparg."""
+        # Strip leading underscore and register variant suffix
+        # e.g. "_COPY_FREE_VARS_r11" -> "COPY_FREE_VARS"
+        base = opname.lstrip("_")
+        # Remove register variant suffix (e.g. "_r01", "_r11")
+        base = re.sub(r"_r\d+$", "", base)
+        return _Target._OPARG_ASSUMES.get(base, "")
 
     async def _build_stencils(self) -> dict[str, _stencils.StencilGroup]:
+        # Build the LLVM JIT fold pass before compiling stencils.
+        await self._build_jit_fold_pass()
         generated_cases = PYTHON_EXECUTOR_CASES_C_H.read_text()
         cases_and_opnames = sorted(
             re.findall(
@@ -214,7 +393,15 @@ class _Target(typing.Generic[_S, _R]):
                     # compiler wastes a bunch of time parsing the dead code for
                     # all of the other cases):
                     c = work / f"{opname}.c"
-                    c.write_text(template.replace("CASE", case))
+                    body = template.replace("CASE", case)
+                    assumes = self._oparg_assumes(opname)
+                    if assumes:
+                        body = body.replace(
+                            "PATCH_VALUE(uint16_t, _oparg, _JIT_OPARG)",
+                            "PATCH_VALUE(uint16_t, _oparg, _JIT_OPARG)\n"
+                            + assumes,
+                        )
+                    c.write_text(body)
                     coro = self._compile(opname, c, work)
                     tasks.append(group.create_task(coro, name=opname))
         stencil_groups = {task.get_name(): task.result() for task in tasks}
@@ -222,6 +409,32 @@ class _Target(typing.Generic[_S, _R]):
             stencil_group.convert_labels_to_relocations()
             stencil_group.process_relocations(self.known_symbols)
         return stencil_groups
+
+    def _build_dasc(
+        self,
+        stencil_groups: dict[str, _stencils.StencilGroup],
+        jit_stencils: pathlib.Path,
+    ) -> str:
+        """Convert stencils to DynASM and return the generated header content."""
+        assert _asm_to_dasc is not None, "DynASM support requires _asm_to_dasc module"
+        assert _dasc_writer is not None, "DynASM support requires _dasc_writer module"
+        converted = {}
+        shim_stencil = None
+        for opname, group in stencil_groups.items():
+            if not group.assembly_text:
+                continue
+            cs = _asm_to_dasc.convert_stencil(opname, group.assembly_text,
+                                                is_shim=(opname == "shim"))
+            if opname == "shim":
+                shim_stencil = cs
+            else:
+                converted[opname] = cs
+        _asm_to_dasc.print_peephole_stats()
+        # Write .dasc next to the output header for easy debugging
+        dasc_path = jit_stencils.with_suffix(".dasc")
+        return _dasc_writer.dump_header(
+            converted, shim_stencil, dasc_path=dasc_path
+        )
 
     def build(
         self,
@@ -254,8 +467,12 @@ class _Target(typing.Generic[_S, _R]):
                 if comment:
                     file.write(f"// {comment}\n")
                 file.write("\n")
-                for line in _writer.dump(stencil_groups, self.known_symbols):
-                    file.write(f"{line}\n")
+                if self.use_dynasm:
+                    content = self._build_dasc(stencil_groups, jit_stencils)
+                    file.write(content)
+                else:
+                    for line in _writer.dump(stencil_groups, self.known_symbols):
+                        file.write(f"{line}\n")
             try:
                 jit_stencils_new.replace(jit_stencils)
             except FileNotFoundError:
@@ -392,6 +609,8 @@ class _ELF(
             value, base = maybe_symbol
             if value is _stencils.HoleValue.CODE:
                 stencil = group.code
+            elif value is _stencils.HoleValue.COLD_CODE:
+                stencil = group.cold_code
             else:
                 assert value is _stencils.HoleValue.DATA
                 stencil = group.data
@@ -403,8 +622,13 @@ class _ELF(
             if "SHF_ALLOC" not in flags:
                 return
             if "SHF_EXECINSTR" in flags:
-                value = _stencils.HoleValue.CODE
-                stencil = group.code
+                section_name = section.get("Name", {}).get("Name", "")
+                if ".text.cold" in section_name:
+                    value = _stencils.HoleValue.COLD_CODE
+                    stencil = group.cold_code
+                else:
+                    value = _stencils.HoleValue.CODE
+                    stencil = group.code
             else:
                 value = _stencils.HoleValue.DATA
                 stencil = group.data
@@ -588,7 +812,7 @@ def get_target(host: str) -> _COFF32 | _COFF64 | _ELF | _MachO:
         condition = "defined(__aarch64__) && defined(__linux__)"
         # -mno-outline-atomics: Keep intrinsics from being emitted.
         args = ["-fpic", "-mno-outline-atomics", "-fno-plt"]
-        optimizer = _optimizers.OptimizerAArch64
+        optimizer = _optimizers.OptimizerAArch64ELF
         target = _ELF(host, condition, args=args, optimizer=optimizer)
     elif re.fullmatch(r"i686-pc-windows-msvc", host):
         host = "i686-pc-windows-msvc"
@@ -611,9 +835,16 @@ def get_target(host: str) -> _COFF32 | _COFF64 | _ELF | _MachO:
     elif re.fullmatch(r"x86_64-.*-linux-gnu", host):
         host = "x86_64-unknown-linux-gnu"
         condition = "defined(__x86_64__) && defined(__linux__)"
-        args = ["-fno-pic", "-mcmodel=medium", "-mlarge-data-threshold=0", "-fno-plt"]
-        optimizer = _optimizers.OptimizerX86
-        target = _ELF(host, condition, args=args, optimizer=optimizer)
+        args = [
+            "-fno-pic",
+            "-mcmodel=medium",
+            "-mlarge-data-threshold=0",
+            "-fno-plt",
+            "-fno-omit-frame-pointer",
+            "-mno-red-zone",
+        ]
+        optimizer = _optimizers.OptimizerX86ELF
+        target = _ELF(host, condition, args=args, optimizer=optimizer, use_dynasm=True)
     else:
         raise ValueError(host)
     return target

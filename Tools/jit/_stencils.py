@@ -17,6 +17,8 @@ class HoleValue(enum.Enum):
 
     # The base address of the machine code for the current uop (exposed as _JIT_ENTRY):
     CODE = enum.auto()
+    # The base address of the cold machine code for the current uop:
+    COLD_CODE = enum.auto()
     # The base address of the read-only data for this uop:
     DATA = enum.auto()
     # The base address of the "global" offset table located in the read-only data.
@@ -91,7 +93,10 @@ _PATCH_FUNCS = {
     "R_AARCH64_MOVW_UABS_G3": "patch_aarch64_16d",
     # x86_64-unknown-linux-gnu:
     "R_X86_64_64": "patch_64",
+    "R_X86_64_32": "patch_32",
+    "R_X86_64_32S": "patch_32",
     "R_X86_64_GOTPCRELX": "patch_x86_64_32rx",
+    "R_X86_64_PC32": "patch_32r",
     "R_X86_64_PLT32": "patch_32r",
     "R_X86_64_REX_GOTPCRELX": "patch_x86_64_32rx",
     # x86_64-apple-darwin:
@@ -105,6 +110,7 @@ _PATCH_FUNCS = {
 # Translate HoleValues to C expressions:
 _HOLE_EXPRS = {
     HoleValue.CODE: "(uintptr_t)code",
+    HoleValue.COLD_CODE: "(uintptr_t)cold_code",
     HoleValue.DATA: "(uintptr_t)data",
     HoleValue.GOT: "",
     # These should all have been turned into DATA values by process_relocations:
@@ -255,10 +261,13 @@ class StencilGroup:
     """
 
     code: Stencil = dataclasses.field(default_factory=Stencil, init=False)
+    cold_code: Stencil = dataclasses.field(default_factory=Stencil, init=False)
     data: Stencil = dataclasses.field(default_factory=Stencil, init=False)
     symbols: dict[int | str, tuple[HoleValue, int]] = dataclasses.field(
         default_factory=dict, init=False
     )
+    # Assembly text (Intel syntax) preserved for DynASM conversion:
+    assembly_text: str = ""
     _jit_symbol_table: dict[str, int] = dataclasses.field(
         default_factory=dict, init=False
     )
@@ -268,17 +277,20 @@ class StencilGroup:
     def convert_labels_to_relocations(self) -> None:
         for name, hole_plus in self.symbols.items():
             if isinstance(name, str) and "_JIT_RELOCATION_" in name:
-                _, offset = hole_plus
+                section_value, offset = hole_plus
                 reloc, target, _ = name.split("_JIT_RELOCATION_")
                 value, symbol = symbol_to_value(target)
                 hole = Hole(
                     int(offset), typing.cast(_schema.HoleKind, reloc), value, symbol, 0
                 )
-                self.code.holes.append(hole)
+                if section_value is HoleValue.COLD_CODE:
+                    self.cold_code.holes.append(hole)
+                else:
+                    self.code.holes.append(hole)
 
     def process_relocations(self, known_symbols: dict[str, int]) -> None:
         """Fix up all GOT and internal relocations for this stencil group."""
-        for hole in self.code.holes.copy():
+        for hole in list(self.code.holes) + list(self.cold_code.holes):
             if (
                 hole.kind
                 in {"R_AARCH64_CALL26", "R_AARCH64_JUMP26", "ARM64_RELOC_BRANCH26"}
@@ -326,7 +338,7 @@ class StencilGroup:
                     known_symbols[hole.symbol] = ordinal
                 self._got_entries.add(ordinal)
         self.data.pad(8)
-        for stencil in [self.code, self.data]:
+        for stencil in [self.code, self.cold_code, self.data]:
             for hole in stencil.holes:
                 if hole.value is HoleValue.GOT:
                     assert hole.symbol is not None
@@ -361,6 +373,7 @@ class StencilGroup:
         self._emit_jit_symbol_table()
         self._emit_global_offset_table()
         self.code.holes.sort(key=lambda hole: hole.offset)
+        self.cold_code.holes.sort(key=lambda hole: hole.offset)
         self.data.holes.sort(key=lambda hole: hole.offset)
 
     def _jit_symbol_table_lookup(self, symbol: str) -> int:
@@ -395,7 +408,7 @@ class StencilGroup:
             self.data.body.extend([0] * 8)
 
     def _emit_global_offset_table(self) -> None:
-        for hole in self.code.holes:
+        for hole in list(self.code.holes) + list(self.cold_code.holes):
             if hole.value is HoleValue.GOT:
                 _got_hole = Hole(0, "R_X86_64_64", hole.value, None, hole.addend)
                 _got_hole.func = "patch_got_symbol"
@@ -422,7 +435,10 @@ class StencilGroup:
 
     def as_c(self, opname: str) -> str:
         """Dump this hole as a StencilGroup initializer."""
-        return f"{{emit_{opname}, {len(self.code.body)}, {len(self.data.body)}, {self._get_trampoline_mask()}, {self._get_got_mask()}}}"
+        return (
+            f"{{emit_{opname}, {len(self.code.body)}, {len(self.cold_code.body)}, "
+            f"{len(self.data.body)}, {self._get_trampoline_mask()}, {self._get_got_mask()}}}"
+        )
 
 
 def symbol_to_value(symbol: str) -> tuple[HoleValue, str | None]:

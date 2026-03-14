@@ -63,42 +63,40 @@ _AARCH64_COND_CODES = {
     "hi": "ls",
     "ls": "hi",
 }
-# MyPy doesn't understand that a invariant variable can be initialized by a covariant value
-CUSTOM_AARCH64_BRANCH19: str | None = "CUSTOM_AARCH64_BRANCH19"
-
 _AARCH64_SHORT_BRANCHES = {
     "tbz": "tbnz",
     "tbnz": "tbz",
 }
 
-# Branches are either b.{cond}, bc.{cond}, cbz, cbnz, tbz or tbnz
+# Branches are either b.{cond}, bc.{cond}, cbz, cbnz, tbz or tbnz.
+# Second tuple element unused (was for relocation fixup, now handled by DynASM).
 _AARCH64_BRANCHES: dict[str, tuple[str | None, str | None]] = (
     {
-        "b." + cond: (("b." + inverse if inverse else None), CUSTOM_AARCH64_BRANCH19)
+        "b." + cond: (("b." + inverse if inverse else None), None)
         for (cond, inverse) in _AARCH64_COND_CODES.items()
     }
     | {
-        "bc." + cond: (("bc." + inverse if inverse else None), CUSTOM_AARCH64_BRANCH19)
+        "bc." + cond: (("bc." + inverse if inverse else None), None)
         for (cond, inverse) in _AARCH64_COND_CODES.items()
     }
     | {
-        "cbz": ("cbnz", CUSTOM_AARCH64_BRANCH19),
-        "cbnz": ("cbz", CUSTOM_AARCH64_BRANCH19),
+        "cbz": ("cbnz", None),
+        "cbnz": ("cbz", None),
     }
-    | {cond: (inverse, None) for (cond, inverse) in _AARCH64_SHORT_BRANCHES.items()}
+    | {
+        cond: (inverse, None)
+        for (cond, inverse) in _AARCH64_SHORT_BRANCHES.items()
+    }
 )
 
 
 @enum.unique
 class InstructionKind(enum.Enum):
-
     JUMP = enum.auto()
     LONG_BRANCH = enum.auto()
     SHORT_BRANCH = enum.auto()
     CALL = enum.auto()
     RETURN = enum.auto()
-    SMALL_CONST_1 = enum.auto()
-    SMALL_CONST_2 = enum.auto()
     OTHER = enum.auto()
 
 
@@ -110,12 +108,18 @@ class Instruction:
     target: str | None
 
     def is_branch(self) -> bool:
-        return self.kind in (InstructionKind.LONG_BRANCH, InstructionKind.SHORT_BRANCH)
+        return self.kind in (
+            InstructionKind.LONG_BRANCH,
+            InstructionKind.SHORT_BRANCH,
+        )
 
     def update_target(self, target: str) -> "Instruction":
         assert self.target is not None
         return Instruction(
-            self.kind, self.name, self.text.replace(self.target, target), target
+            self.kind,
+            self.name,
+            self.text.replace(self.target, target),
+            target,
         )
 
     def update_name_and_target(self, name: str, target: str) -> "Instruction":
@@ -164,7 +168,9 @@ class Optimizer:
     re_global: re.Pattern[str]
     # The first block in the linked list:
     _root: _Block = dataclasses.field(init=False, default_factory=_Block)
-    _labels: dict[str, _Block] = dataclasses.field(init=False, default_factory=dict)
+    _labels: dict[str, _Block] = dataclasses.field(
+        init=False, default_factory=dict
+    )
     # No groups:
     _re_noninstructions: typing.ClassVar[re.Pattern[str]] = re.compile(
         r"\s*(?:\.|#|//|;|$)"
@@ -174,8 +180,6 @@ class Optimizer:
         r'\s*(?P<label>[\w."$?@]+):'
     )
     # Override everything that follows in subclasses:
-    _supports_external_relocations = True
-    supports_small_constants = False
     _branches: typing.ClassVar[dict[str, tuple[str | None, str | None]]] = {}
     # Short branches are instructions that can branch within a micro-op,
     # but might not have the reach to branch anywhere within a trace.
@@ -190,9 +194,6 @@ class Optimizer:
     _re_return: typing.ClassVar[re.Pattern[str]] = _RE_NEVER_MATCH
     text: str = ""
     globals: set[str] = dataclasses.field(default_factory=set)
-    _re_small_const_1 = _RE_NEVER_MATCH
-    _re_small_const_2 = _RE_NEVER_MATCH
-    const_reloc = "<Not supported>"
 
     def __post_init__(self) -> None:
         # Split the code into a linked list of basic blocks. A basic block is an
@@ -230,13 +231,13 @@ class Optimizer:
                 assert block.fallthrough
             elif inst.kind == InstructionKind.CALL:
                 # A block ending in a call has a target and return point after call:
-                assert inst.target is not None
-                block.target = self._lookup_label(inst.target)
+                if inst.target is not None:
+                    block.target = self._lookup_label(inst.target)
                 assert block.fallthrough
             elif inst.kind == InstructionKind.JUMP:
                 # A block ending in a jump has a target and no fallthrough:
-                assert inst.target is not None
-                block.target = self._lookup_label(inst.target)
+                if inst.target is not None:
+                    block.target = self._lookup_label(inst.target)
                 block.fallthrough = False
             elif inst.kind == InstructionKind.RETURN:
                 # A block ending in a return has no target and fallthrough:
@@ -249,7 +250,29 @@ class Optimizer:
         # references to a local _JIT_CONTINUE label (which we will add later):
         continue_symbol = rf"\b{re.escape(self.symbol_prefix)}_JIT_CONTINUE\b"
         continue_label = f"{self.label_prefix}_JIT_CONTINUE"
-        return re.sub(continue_symbol, continue_label, text)
+        text = re.sub(continue_symbol, continue_label, text)
+        # Keep metadata-only directives out of the assembled stencil body:
+        text = re.sub(
+            r'^\s*\.section\s+"?\.note\.GNU-stack.*$\n?',
+            "",
+            text,
+            flags=re.MULTILINE,
+        )
+        # Cross-section hot/cold splitting can make these non-absolute:
+        text = re.sub(
+            r"^\s*\.size\s+[\w.]+,\s+.*$\n?",
+            "",
+            text,
+            flags=re.MULTILINE,
+        )
+        # Keep type directives only for _JIT_ENTRY:
+        text = re.sub(
+            r"^\s*\.type\s+(?!_JIT_ENTRY\s)[\w.]+,@function\s*$\n?",
+            "",
+            text,
+            flags=re.MULTILINE,
+        )
+        return text
 
     def _parse_instruction(self, line: str) -> Instruction:
         target = None
@@ -271,22 +294,18 @@ class Optimizer:
         elif match := self._re_return.match(line):
             name = line
             kind = InstructionKind.RETURN
-        elif match := self._re_small_const_1.match(line):
-            target = match["value"]
-            name = match["instruction"]
-            kind = InstructionKind.SMALL_CONST_1
-        elif match := self._re_small_const_2.match(line):
-            target = match["value"]
-            name = match["instruction"]
-            kind = InstructionKind.SMALL_CONST_2
         else:
             name, *_ = line.split(" ")
             kind = InstructionKind.OTHER
         return Instruction(kind, name, line, target)
 
-    def _invert_branch(self, inst: Instruction, target: str) -> Instruction | None:
+    def _invert_branch(
+        self, inst: Instruction, target: str
+    ) -> Instruction | None:
         assert inst.is_branch()
-        if inst.kind == InstructionKind.SHORT_BRANCH and self._is_far_target(target):
+        if inst.kind == InstructionKind.SHORT_BRANCH and self._is_far_target(
+            target
+        ):
             return None
         inverted_reloc = self._branches.get(inst.name)
         if inverted_reloc is None:
@@ -310,20 +329,118 @@ class Optimizer:
             yield block
             block = block.link
 
+    _cold_section_directive: typing.ClassVar[str | None] = None
+    _hot_section_directive: typing.ClassVar[str | None] = None
+
     def _body(self) -> str:
         lines = ["#" + line for line in self.text.splitlines()]
-        hot = True
+        split_cold = self._cold_section_directive is not None
+        if not split_cold:
+            hot = True
+            for block in self._blocks():
+                if hot != block.hot:
+                    hot = block.hot
+                    # Make it easy to tell at a glance where cold code is:
+                    lines.append(
+                        f"# JIT: {'HOT' if hot else 'COLD'} ".ljust(80, "#")
+                    )
+                lines.extend(block.noninstructions)
+                for inst in block.instructions:
+                    lines.append(inst.text)
+            return "\n".join(lines)
+
+        hot_lines: list[str] = []
+        cold_lines: list[str] = []
+        continue_label = f"{self.label_prefix}_JIT_CONTINUE"
+        has_cold = any(not block.hot for block in self._blocks())
+
+        split_label_counter = [0]
+
+        def _ensure_label(block: _Block) -> str:
+            if block.label is not None:
+                return block.label
+            for noninstruction in block.noninstructions:
+                stripped = noninstruction.strip()
+                if stripped.endswith(":") and not stripped.startswith("#"):
+                    label = stripped[:-1]
+                    block.label = label
+                    return label
+            label = f"{self.label_prefix}_JIT_SPLIT_{split_label_counter[0]}"
+            split_label_counter[0] += 1
+            block.label = label
+            block.noninstructions.insert(0, f"{label}:")
+            return label
+
         for block in self._blocks():
-            if hot != block.hot:
-                hot = block.hot
-                # Make it easy to tell at a glance where cold code is:
-                lines.append(f"# JIT: {'HOT' if hot else 'COLD'} ".ljust(80, "#"))
-            lines.extend(block.noninstructions)
-            for inst in block.instructions:
-                lines.append(inst.text)
+            if has_cold and block.label == continue_label:
+                continue
+            dest = hot_lines if block.hot else cold_lines
+            dest.extend(block.noninstructions)
+            instructions = list(block.instructions)
+            # Splitting sections can make a jump to the next emitted block in
+            # the same section redundant.
+            if (
+                instructions
+                and instructions[-1].kind == InstructionKind.JUMP
+                and block.target is not None
+            ):
+                next_same = block.link
+                while next_same and (
+                    next_same.hot != block.hot
+                    or (has_cold and next_same.label == continue_label)
+                ):
+                    next_same = next_same.link
+                if next_same and block.target.resolve() is next_same.resolve():
+                    instructions.pop()
+            for inst in instructions:
+                dest.append(inst.text)
+            # Fallthrough crosses sections, so make it explicit:
+            if (
+                block.fallthrough
+                and block.link
+                and block.hot != block.link.hot
+            ):
+                target = _ensure_label(block.link)
+                # Prefer inverting a final hot branch to avoid the extra
+                # branch+jump sequence:
+                #     jcc HOT; jmp COLD
+                #  -> jncc COLD   (HOT fallthrough)
+                if (
+                    block.hot
+                    and block.instructions
+                    and block.instructions[-1].is_branch()
+                    and block.target
+                    and block.target.hot
+                ):
+                    next_hot = block.link
+                    while next_hot and not next_hot.hot:
+                        next_hot = next_hot.link
+                    if (
+                        next_hot is not None
+                        and block.target.resolve() is next_hot.resolve()
+                    ):
+                        inverted = self._invert_branch(
+                            block.instructions[-1], target
+                        )
+                        if inverted is not None:
+                            dest[-1] = inverted.text
+                            continue
+                dest.append(f"\tjmp\t{target}")
+
+        lines.extend(hot_lines)
+        if has_cold:
+            assert self._hot_section_directive is not None
+            assert self._cold_section_directive is not None
+            lines.append(self._hot_section_directive)
+            lines.append(f"{continue_label}:")
+            lines.append(self._cold_section_directive)
+            lines.extend(cold_lines)
+            lines.append(self._hot_section_directive)
         return "\n".join(lines)
 
-    def _predecessors(self, block: _Block) -> typing.Generator[_Block, None, None]:
+    def _predecessors(
+        self, block: _Block
+    ) -> typing.Generator[_Block, None, None]:
         # This is inefficient, but it's never wrong:
         for pre in self._blocks():
             if pre.target is block or pre.fallthrough and pre.link is block:
@@ -352,7 +469,174 @@ class Optimizer:
         while todo:
             block = todo.pop()
             block.hot = True
-            todo.extend(pre for pre in self._predecessors(block) if not pre.hot)
+            todo.extend(
+                pre for pre in self._predecessors(block) if not pre.hot
+            )
+        self._demote_cold_blocks()
+
+    _call_pattern: typing.ClassVar[re.Pattern[str]] = re.compile(
+        r"^\s*(?:callq?|blx?|blr)\b"
+    )
+
+    def _is_call_block(self, block: _Block) -> bool:
+        if not block.instructions:
+            return False
+        for inst in block.instructions:
+            if inst.kind == InstructionKind.CALL:
+                return True
+            if self._call_pattern.search(inst.text):
+                return True
+        return False
+
+    def _successors(self, block: _Block) -> list[_Block]:
+        successors = []
+        if block.target is not None:
+            successors.append(block.target.resolve())
+        if block.fallthrough and block.link is not None:
+            successors.append(block.link.resolve())
+        return successors
+
+    def _has_hot_passthrough(self, block: _Block, chain: set[_Block]) -> bool:
+        """Check if demoting block would route hot traffic through cold."""
+        has_hot_predecessor = any(
+            pred.hot and pred not in chain
+            for pred in self._predecessors(block)
+        )
+        if not has_hot_predecessor:
+            return False
+        return any(
+            succ.hot and succ not in chain for succ in self._successors(block)
+        )
+
+    def _demote_cold_blocks(self) -> None:
+        """Demote call blocks and their feeder paths to cold.
+
+        First demotes blocks containing function calls, then blocks whose
+        only purpose is feeding those cold regions.  The entry block is
+        never demoted.
+        """
+        entry: _Block | None = None
+        for block in self._blocks():
+            if block.instructions:
+                entry = block
+                break
+        # Phase 1: demote call blocks.
+        changed = True
+        while changed:
+            changed = False
+            for block in reversed(list(self._blocks())):
+                if (
+                    not block.hot
+                    or block is entry
+                    or not self._is_call_block(block)
+                ):
+                    continue
+                chain = self._find_cold_chain(block)
+                if chain is not None and any(b.hot for b in chain):
+                    for b in chain:
+                        b.hot = False
+                    changed = True
+        # Phase 2: demote feeder blocks that only exist to reach cold code.
+        changed = True
+        while changed:
+            changed = False
+            for block in reversed(list(self._blocks())):
+                if (
+                    not block.hot
+                    or block is entry
+                    or not block.instructions
+                    or not any(not s.hot for s in self._successors(block))
+                ):
+                    continue
+                chain = self._find_cold_chain(block)
+                if chain is not None and any(b.hot for b in chain):
+                    for b in chain:
+                        b.hot = False
+                    changed = True
+
+    def _can_reach_without(
+        self, start: _Block, target: _Block, avoid: set[_Block]
+    ) -> bool:
+        """Check if target is reachable from start without going through avoid."""
+        visited: set[int] = set()
+        todo = [start]
+        while todo:
+            block = todo.pop()
+            block_id = id(block)
+            if block_id in visited or block in avoid:
+                continue
+            visited.add(block_id)
+            if block is target:
+                return True
+            if block.target is not None:
+                todo.append(block.target)
+            if block.fallthrough and block.link is not None:
+                todo.append(block.link)
+        return False
+
+    def _find_cold_chain(self, cold_block: _Block) -> set[_Block] | None:
+        chain: set[_Block] = {cold_block}
+        changed = True
+        while changed:
+            changed = False
+            for block in list(self._blocks()):
+                if not block.hot or block in chain or not block.instructions:
+                    continue
+                # Pull predecessor gates into the chain if all successors are
+                # already in the chain.
+                target_ok = block.target is None or block.target in chain
+                fallthrough_ok = (
+                    not block.fallthrough
+                    or block.link is None
+                    or block.link in chain
+                )
+                if target_ok and fallthrough_ok:
+                    chain.add(block)
+                    changed = True
+                    continue
+                # Also include blocks only reachable from inside the chain.
+                preds = list(self._predecessors(block))
+                if preds and all(pred in chain for pred in preds):
+                    chain.add(block)
+                    changed = True
+
+        # Every edge into the chain from outside must have a hot alternative.
+        for block in chain:
+            # Keep tiny branch gates that sit between hot predecessors and hot
+            # successors in the hot section. They are frequently executed and
+            # should not pay a cross-section jump penalty.
+            if self._has_hot_passthrough(block, chain):
+                return None
+            for pred in self._predecessors(block):
+                if pred in chain or not pred.hot:
+                    continue
+                has_hot_alt = False
+                if (
+                    pred.target
+                    and pred.target not in chain
+                    and pred.target.hot
+                ):
+                    has_hot_alt = True
+                if (
+                    pred.fallthrough
+                    and pred.link
+                    and pred.link not in chain
+                    and pred.link.hot
+                ):
+                    has_hot_alt = True
+                if not has_hot_alt:
+                    return None
+
+        # Reject chains that would disconnect the hot path from entry to
+        # continuation.  A "hot alternative" like a loop backedge doesn't
+        # help if the loop must always exit through the chain.
+        entry = next((b for b in self._blocks() if b.instructions), None)
+        continuation = self._labels.get(f"{self.label_prefix}_JIT_CONTINUE")
+        if entry and continuation:
+            if not self._can_reach_without(entry, continuation, chain):
+                return None
+
+        return chain
 
     def _invert_hot_branches(self) -> None:
         for branch in self._blocks():
@@ -438,7 +722,9 @@ class Optimizer:
     def _find_live_blocks(self) -> set[_Block]:
         live: set[_Block] = set()
         # Externally reachable blocks are live
-        todo: set[_Block] = {b for b in self._blocks() if b.label in self.globals}
+        todo: set[_Block] = {
+            b for b in self._blocks() if b.label in self.globals
+        }
         while todo:
             block = todo.pop()
             live.add(block)
@@ -468,91 +754,6 @@ class Optimizer:
             block = next
             assert prev.link is block
 
-    def _fixup_external_labels(self) -> None:
-        if self._supports_external_relocations:
-            # Nothing to fix up
-            return
-        for index, block in enumerate(self._blocks()):
-            if block.target and block.fallthrough:
-                branch = block.instructions[-1]
-                if branch.kind == InstructionKind.CALL:
-                    continue
-                assert branch.is_branch()
-                target = branch.target
-                assert target is not None
-                reloc = self._branches[branch.name][1]
-                if reloc is not None and self._is_far_target(target):
-                    name = target[len(self.symbol_prefix) :]
-                    label = f"{self.symbol_prefix}{reloc}_JIT_RELOCATION_{name}_JIT_RELOCATION_{index}:"
-                    block.instructions[-1] = Instruction(
-                        InstructionKind.OTHER, "", label, None
-                    )
-                    block.instructions.append(branch.update_target("0"))
-
-    def _make_temp_label(self, index: int) -> Instruction:
-        marker = f"jit_temp_{index}:"
-        return Instruction(InstructionKind.OTHER, "", marker, None)
-
-    def _fixup_constants(self) -> None:
-        if not self.supports_small_constants:
-            return
-        index = 0
-        for block in self._blocks():
-            fixed: list[Instruction] = []
-            small_const_index = -1
-            for inst in block.instructions:
-                if inst.kind == InstructionKind.SMALL_CONST_1:
-                    marker = f"jit_pending_{inst.target}{index}:"
-                    fixed.append(self._make_temp_label(index))
-                    index += 1
-                    small_const_index = len(fixed)
-                    fixed.append(inst)
-                elif inst.kind == InstructionKind.SMALL_CONST_2:
-                    if small_const_index < 0:
-                        fixed.append(inst)
-                        continue
-                    small_const_1 = fixed[small_const_index]
-                    if not self._small_consts_match(small_const_1, inst):
-                        small_const_index = -1
-                        fixed.append(inst)
-                        continue
-                    assert small_const_1.target is not None
-                    if small_const_1.target.endswith("16"):
-                        fixed[small_const_index] = self._make_temp_label(index)
-                        index += 1
-                    else:
-                        assert small_const_1.target.endswith("32")
-                        patch_kind, replacement = self._small_const_1(small_const_1)
-                        if replacement is not None:
-                            label = f"{self.const_reloc}{patch_kind}_JIT_RELOCATION_CONST{small_const_1.target[:-3]}_JIT_RELOCATION_{index}:"
-                            index += 1
-                            fixed[small_const_index - 1] = Instruction(
-                                InstructionKind.OTHER, "", label, None
-                            )
-                            fixed[small_const_index] = replacement
-                    patch_kind, replacement = self._small_const_2(inst)
-                    if replacement is not None:
-                        assert inst.target is not None
-                        label = f"{self.const_reloc}{patch_kind}_JIT_RELOCATION_CONST{inst.target[:-3]}_JIT_RELOCATION_{index}:"
-                        index += 1
-                        fixed.append(
-                            Instruction(InstructionKind.OTHER, "", label, None)
-                        )
-                        fixed.append(replacement)
-                    small_const_index = -1
-                else:
-                    fixed.append(inst)
-            block.instructions = fixed
-
-    def _small_const_1(self, inst: Instruction) -> tuple[str, Instruction | None]:
-        raise NotImplementedError()
-
-    def _small_const_2(self, inst: Instruction) -> tuple[str, Instruction | None]:
-        raise NotImplementedError()
-
-    def _small_consts_match(self, inst1: Instruction, inst2: Instruction) -> bool:
-        raise NotImplementedError()
-
     def run(self) -> None:
         """Run this optimizer."""
         self._insert_continue_label()
@@ -563,18 +764,14 @@ class Optimizer:
             self._invert_hot_branches()
             self._remove_redundant_jumps()
             self._remove_unreachable()
-        self._fixup_external_labels()
-        self._fixup_constants()
         self.path.write_text(self._body())
 
 
 class OptimizerAArch64(Optimizer):  # pylint: disable = too-few-public-methods
-    """aarch64-pc-windows-msvc/aarch64-apple-darwin/aarch64-unknown-linux-gnu"""
+    """aarch64-unknown-linux-gnu"""
 
     _branches = _AARCH64_BRANCHES
     _short_branches = _AARCH64_SHORT_BRANCHES
-    # Mach-O does not support the 19 bit branch locations needed for branch reordering
-    _supports_external_relocations = False
     _branch_patterns = [name.replace(".", r"\.") for name in _AARCH64_BRANCHES]
     _re_branch = re.compile(
         rf"\s*(?P<instruction>{'|'.join(_branch_patterns)})\s+(.+,\s+)*(?P<target>[\w.]+)"
@@ -587,57 +784,9 @@ class OptimizerAArch64(Optimizer):  # pylint: disable = too-few-public-methods
     # https://developer.arm.com/documentation/ddi0602/2025-09/Base-Instructions/RET--Return-from-subroutine-
     _re_return = re.compile(r"\s*ret\b")
 
-    supports_small_constants = True
-    _re_small_const_1 = re.compile(
-        r"\s*(?P<instruction>adrp)\s+.*(?P<value>_JIT_OP(ARG|ERAND(0|1))_(16|32)).*"
-    )
-    _re_small_const_2 = re.compile(
-        r"\s*(?P<instruction>ldr)\s+.*(?P<value>_JIT_OP(ARG|ERAND(0|1))_(16|32)).*"
-    )
-    const_reloc = "CUSTOM_AARCH64_CONST"
-
-    def _get_reg(self, inst: Instruction) -> str:
-        _, rest = inst.text.split(inst.name)
-        reg, *_ = rest.split(",")
-        return reg.strip()
-
-    def _small_const_1(self, inst: Instruction) -> tuple[str, Instruction | None]:
-        assert inst.kind is InstructionKind.SMALL_CONST_1
-        assert inst.target is not None
-        if "16" in inst.target:
-            return "", None
-        pre, _ = inst.text.split(inst.name)
-        return "16a", Instruction(
-            InstructionKind.OTHER, "movz", f"{pre}movz {self._get_reg(inst)}, 0", None
-        )
-
-    def _small_const_2(self, inst: Instruction) -> tuple[str, Instruction | None]:
-        assert inst.kind is InstructionKind.SMALL_CONST_2
-        assert inst.target is not None
-        pre, _ = inst.text.split(inst.name)
-        if "16" in inst.target:
-            return "16a", Instruction(
-                InstructionKind.OTHER,
-                "movz",
-                f"{pre}movz {self._get_reg(inst)}, 0",
-                None,
-            )
-        else:
-            return "16b", Instruction(
-                InstructionKind.OTHER,
-                "movk",
-                f"{pre}movk {self._get_reg(inst)}, 0, lsl #16",
-                None,
-            )
-
-    def _small_consts_match(self, inst1: Instruction, inst2: Instruction) -> bool:
-        reg1 = self._get_reg(inst1)
-        reg2 = self._get_reg(inst2)
-        return reg1 == reg2
-
 
 class OptimizerX86(Optimizer):  # pylint: disable = too-few-public-methods
-    """i686-pc-windows-msvc/x86_64-apple-darwin/x86_64-unknown-linux-gnu"""
+    """x86_64-unknown-linux-gnu"""
 
     _branches = _X86_BRANCHES
     _short_branches = {}
@@ -647,6 +796,16 @@ class OptimizerX86(Optimizer):  # pylint: disable = too-few-public-methods
     # https://www.felixcloutier.com/x86/call
     _re_call = re.compile(r"\s*callq?\s+(?P<target>[\w.]+)")
     # https://www.felixcloutier.com/x86/jmp
-    _re_jump = re.compile(r"\s*jmp\s+(?P<target>[\w.]+)")
+    _re_jump = re.compile(r"\s*jmpq?\s+(?P<target>[\w.]+)")
     # https://www.felixcloutier.com/x86/ret
-    _re_return = re.compile(r"\s*ret\b")
+    _re_return = re.compile(r"\s*retq?\b")
+
+
+class OptimizerAArch64ELF(OptimizerAArch64):
+    _cold_section_directive = '\t.section\t.text.cold,"ax",@progbits'
+    _hot_section_directive = "\t.text"
+
+
+class OptimizerX86ELF(OptimizerX86):
+    _cold_section_directive = '\t.section\t.text.cold,"ax",@progbits'
+    _hot_section_directive = "\t.text"

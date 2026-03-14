@@ -1,0 +1,3 @@
+[submodule "Tools/jit/LuaJIT"]
+	path = Tools/jit/LuaJIT
+	url = https://github.com/LuaJIT/LuaJIT.git

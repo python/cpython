@@ -1469,10 +1469,19 @@ stack_allocate(_PyUOpInstruction *buffer, _PyUOpInstruction *output, int length)
         if (uop == _NOP) {
             continue;
         }
+        if (uop <= 0 || uop > MAX_UOP_ID) {
+            return 0;
+        }
         int new_depth = _PyUop_Caching[uop].best[depth];
+        if (new_depth < 0 || new_depth > MAX_CACHED_REGISTER) {
+            return 0;
+        }
         if (new_depth != depth) {
-            write->opcode = _PyUop_SpillsAndReloads[depth][new_depth];
-            assert(write->opcode != 0);
+            uint16_t spill_reload = _PyUop_SpillsAndReloads[depth][new_depth];
+            if (spill_reload == 0 || spill_reload > MAX_UOP_REGS_ID) {
+                return 0;
+            }
+            write->opcode = spill_reload;
             write->format = UOP_FORMAT_TARGET;
             write->oparg = 0;
             write->target = 0;
@@ -1481,10 +1490,16 @@ stack_allocate(_PyUOpInstruction *buffer, _PyUOpInstruction *output, int length)
         }
         *write = buffer[i];
         uint16_t new_opcode = _PyUop_Caching[uop].entries[depth].opcode;
-        assert(new_opcode != 0);
+        if (new_opcode == 0 || new_opcode > MAX_UOP_REGS_ID) {
+            return 0;
+        }
         write->opcode = new_opcode;
         write++;
-        depth = _PyUop_Caching[uop].entries[depth].output;
+        int output_depth = _PyUop_Caching[uop].entries[depth].output;
+        if (output_depth < 0 || output_depth > MAX_CACHED_REGISTER) {
+            return 0;
+        }
+        depth = output_depth;
     }
     return (int)(write - output);
 }
@@ -1542,6 +1557,9 @@ uop_optimize(
     OPT_HIST(effective_trace_length(buffer, length), optimized_trace_length_hist);
     _PyUOpInstruction *output = &_tstate->jit_tracer_state->uop_array[0];
     length = stack_allocate(buffer, output, length);
+    if (length <= 0) {
+        return 0;
+    }
     buffer = output;
     length = prepare_for_execution(buffer, length);
     assert(length <= UOP_MAX_TRACE_LENGTH);

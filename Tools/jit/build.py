@@ -43,7 +43,14 @@ if __name__ == "__main__":
         "--cflags", help="additional flags to pass to the compiler", default=""
     )
     parser.add_argument("--llvm-version", help="LLVM version to use")
+    parser.add_argument(
+        "--peephole-stats", action="store_true",
+        help="print peephole optimization statistics after DynASM build",
+    )
     args = parser.parse_args()
+    # Always print peephole optimization statistics during build.
+    import _asm_to_dasc
+    _asm_to_dasc.PEEPHOLE_STATS = True
     for target in args.target:
         target.debug = args.debug
         target.force = args.force

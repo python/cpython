@@ -3173,6 +3173,7 @@ Python/emscripten_trampoline_wasm.c: Python/emscripten_trampoline_inner.wasm
 JIT_DEPS = \
 		$(srcdir)/Tools/jit/*.c \
 		$(srcdir)/Tools/jit/*.py \
+		$(srcdir)/Tools/jit/LuaJIT/dynasm \
 		$(srcdir)/Python/executor_cases.c.h \
 		pyconfig.h
 
@@ -3180,7 +3181,7 @@ jit_stencils.h @JIT_STENCILS_H@: $(JIT_DEPS)
 	@REGEN_JIT_COMMAND@
 
 Python/jit.o: $(srcdir)/Python/jit.c @JIT_STENCILS_H@
-	$(CC) -c $(PY_CORE_CFLAGS) -o $@ $<
+	$(CC) -c $(PY_CORE_CFLAGS) -I$(srcdir)/Tools/jit/LuaJIT/dynasm -o $@ $<
 
 .PHONY: regen-jit
 regen-jit:
@@ -3305,7 +3306,7 @@ clean-profile: clean-retain-profile clean-bolt
 # gh-141808: The JIT stencils are deliberately kept in clean-profile
 .PHONY: clean-jit-stencils
 clean-jit-stencils:
-	-rm -f jit_stencils*.h
+	-rm -f jit_stencils*.h jit_stencils*.dasc
 
 .PHONY: clean
 clean: clean-profile clean-jit-stencils
