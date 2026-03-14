@@ -1235,7 +1235,18 @@ class _TestQueue(BaseTestCase):
                 break
         self.assertEqual(queue_empty(queue), False)
 
-        self.assertEqual(queue.get_nowait(), 1)
+        for _ in support.sleeping_retry(support.SHORT_TIMEOUT):
+            try:
+                value = queue.get_nowait()
+            except pyqueue.Empty:
+                # Queue.empty() may become false before the feeder thread
+                # flushes objects to the pipe.
+                continue
+            else:
+                break
+        else:
+            self.fail("queue.get_nowait() unexpectedly raised Empty")
+        self.assertEqual(value, 1)
         self.assertEqual(queue.get(True, None), 2)
         self.assertEqual(queue.get(True), 3)
         self.assertEqual(queue.get(timeout=1), 4)
@@ -1318,6 +1329,29 @@ class _TestQueue(BaseTestCase):
         self.assertEqual(q.qsize(), 1)
         q.get()
         self.assertEqual(q.qsize(), 0)
+        close_queue(q)
+
+    def test_empty_uses_semaphore_count(self):
+        if self.TYPE != 'processes':
+            self.skipTest(f'test not appropriate for {self.TYPE}')
+
+        q = self.Queue()
+        try:
+            q._sem.get_value()
+        except NotImplementedError:
+            close_queue(q)
+            self.skipTest('sem_getvalue not implemented on this platform')
+
+        q.put('sentinel')
+        original_poll = q._poll
+        q._poll = lambda timeout=0.0: False
+        try:
+            self.assertFalse(q.empty())
+        finally:
+            q._poll = original_poll
+
+        self.assertEqual(q.get(timeout=support.SHORT_TIMEOUT), 'sentinel')
+        self.assertTrue(q.empty())
         close_queue(q)
 
     @classmethod
