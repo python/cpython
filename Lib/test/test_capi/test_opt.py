@@ -3953,12 +3953,13 @@ class TestUopsOptimization(unittest.TestCase):
     def test_match_class(self):
         def testfunc(n):
             class A:
+                __match_args__ = ("val",)
                 val = 1
             x = A()
             ret = 0
             for _ in range(n):
                 match x:
-                    case A():
+                    case A(1):
                         ret += x.val
             return ret
 
@@ -3967,7 +3968,7 @@ class TestUopsOptimization(unittest.TestCase):
         uops = get_opnames(ex)
 
         self.assertIn("_MATCH_CLASS", uops)
-        self.assertEqual(count_ops(ex, "_POP_TOP_NOP"), 4)
+        self.assertEqual(count_ops(ex, "_POP_TOP_NOP"), 5)
 
     def test_143026(self):
         # https://github.com/python/cpython/issues/143026
