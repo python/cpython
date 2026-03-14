@@ -2169,17 +2169,17 @@ class SimpleNamespaceTests(unittest.TestCase):
 
     def test_replace_invalid_subtype(self):
         # See https://github.com/python/cpython/issues/143636.
-        class NS(types.SimpleNamespace):
+        class MyNS(types.SimpleNamespace):
             def __new__(cls, *args, **kwargs):
                 if created:
-                    return object()
+                    return 12345
                 return super().__new__(cls)
 
         created = False
-        ns = NS()
+        ns = MyNS()
         created = True
-        err = re.escape("NS.__new__() must return an instance "
-                        "of a subclass of types.SimpleNamespace")
+        err = (r"^expect types\.SimpleNamespace type, "
+               r"but .+\.MyNS\(\) returned 'int' object")
         self.assertRaisesRegex(TypeError, err, copy.replace, ns)
 
     def test_fake_namespace_compare(self):

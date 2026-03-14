@@ -237,8 +237,8 @@ namespace_replace(PyObject *self, PyObject *args, PyObject *kwargs)
     }
     if (!_PyNamespace_Check(result)) {
         PyErr_Format(PyExc_TypeError,
-                     "%T.__new__() must return an instance of a subclass of %s",
-                     self, _PyNamespace_Type.tp_name);
+                     "expect %N type, but %T() returned '%T' object",
+                     &_PyNamespace_Type, self, result);
         Py_DECREF(result);
         return NULL;
     }
