@@ -805,8 +805,9 @@ class LongTests(unittest.TestCase):
 
     def test_bug_143050(self):
         with support.adjust_int_max_str_digits(0):
-            a = int('-' + '0' * 7000, 10)
-            del a
+            int('-' + '0' * 7000, 10)
+            _testcapi.test_immortal_small_ints()
+            int('-' + '0' * 7000 + '123', 10)
             _testcapi.test_immortal_small_ints()
 
 
