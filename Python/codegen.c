@@ -6422,7 +6422,7 @@ diff:;
     _PyCompile_Error(
         c, LOC(p),
         "alternative patterns bind different names "
-        "(first pattern binds %S, pattern %d binds %S)",
+        "(first pattern binds %S, pattern %zd binds %S)",
         PyList_GET_SIZE(control) == 0 ? no_names : control,
         mismatch_index + 1,
         mismatched_names == NULL ? no_names : mismatched_names
