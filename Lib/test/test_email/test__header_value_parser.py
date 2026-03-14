@@ -141,9 +141,9 @@ period_in_phrase_obs_defect = (
     "period in 'phrase'",
     )
 
-comment_without_atom_in_phrase_obs_defect = (
+cfws_without_atom_in_phrase_obs_defect = (
     errors.ObsoleteHeaderDefect,
-    'comment found without atom',
+    'cfws found without atom',
     )
 
 non_word_phrase_start_defect = (
@@ -3690,47 +3690,62 @@ class TestParser(TestParserMixin, TestEmailBase):
         self.verify_terminal_types(phrase, 'dot', 'atext', 'ptext', 'fws')
 
     @params_map(with_namelist=True)
-    def adapt_get_word_tests_for_get_phrase(nl, *args, **kw):
+    def adapt_get_word_tests_for_get_phrase(nl, s, *args, **kw):
         kw.pop('tokenlisttype')
         kw.pop('quoted_value', None)
         kw.pop('content', None)
-        # XXX XXX A phrase has to have at least one word, but the current code
-        # does not enforce this.  We'll fix this in the refactor, but for now
-        # we skip the parameters that expect a raise on a value with no
-        # content.
-        if nl.has_any(
-                'empty',
-                'no_atom_before_special',
-                'no_atom',
-                'no_atext_before_special_or_wsp',
-                'cfws_only_raises',
-                'empty_input',
-            ):
-            return
-        yield '', C(*args, **kw)
+        # XXX POSTDEP: delete from here...
+        if 'oldapi' in nl:
+            # A phrase has to have at least one word, but the old code did not
+            # enforce this.  For backward compatibility we preserve that
+            # behavior in the old api, so for the parameters that expect a
+            # raise on no content we'll either skip them or adapt them.
+            if nl.has_any(
+                    'no_atom_before_special',
+                    'no_atom',
+                    'cfws_only_raises',
+                    'empty_input',
+                ):
+                return
+            # These two tests will serve to test the lack-of-raise deprecation.
+            if nl.has_any(
+                    'empty',
+                    'no_atext_before_special_or_wsp',
+                ):
+                kw.pop('exception')
+                kw['remainder'] = s
+                kw['warnings'] = kw.get('warnings', []) + [
+                    (
+                        DeprecationWarning,
+                        r'(?i)(?=.*word)(?=.*whitespace)(?=.*raise)',
+                        )
+                    ]
+                kw['defects'] = kw.get('defects', []) + [
+                    non_word_phrase_start_defect,
+                    ]
+        # XXX POSTDEP: ...to here
+        yield '', C(s, *args, **kw)
 
-    params_test_get_phrase = old_api_only(
+    params_test_get_phrase = for_each_api(
 
         # A phrase is a series of words, and single words are valid,
         # so get_phrase should pass many of the get_word tests.
         adapt_get_word_tests_for_get_phrase(
+            # A phrase only ends at specials other than " and ., so skip
+            # get_word tests that expect parsing to stop on those characters.
             include_unless(
                 lambda n, *a, remainder=False, **k:
                     n.has_any(
-                        # A phrase only ends at specials other than " and .
                         'atom_ends_at_noncfws',
+                        'no_atext_before_special_or_wsp',
                         'qs_ends_at_noncfws',
                         'ew_after_dquote',
                         'encoded_word_after_dquote_with_no_ws',
                         'end_dquote_mid_word',
-                        # XXX XXX This test should pass after refactoring.
-                        'multiple_ew_no_ws',
                         )
-                    # A phrase does *not* end at a period or a quotation mark.
-                    or remainder and n.has_any(
-                        'full_stop',
-                        'quotation_mark',
-                        ),
+                    or n.has_any('atom_ends_at_special', 'up_to_special')
+                        and n.has_any('full_stop', 'quotation_mark')
+                    or n.has_all('no_atom_before_special', 'full_stop'),
                 label='from_test_get_word',
                 )(params_test_get_word),
             ),
@@ -3753,7 +3768,7 @@ class TestParser(TestParserMixin, TestEmailBase):
             value='Fred A. .O Johnson',
             defects=[
                 *[period_in_phrase_obs_defect]*2,
-                comment_without_atom_in_phrase_obs_defect,
+                cfws_without_atom_in_phrase_obs_defect,
                 ],
             comments=['weird'],
             obs_dots=2,
@@ -3764,7 +3779,7 @@ class TestParser(TestParserMixin, TestEmailBase):
             value=' .name',
             defects=[
                 non_word_phrase_start_defect,
-                comment_without_atom_in_phrase_obs_defect,
+                cfws_without_atom_in_phrase_obs_defect,
                 period_in_phrase_obs_defect,
                 ],
             comments=['even weirder'],
@@ -3776,7 +3791,7 @@ class TestParser(TestParserMixin, TestEmailBase):
             value='simple phrase. ',
             defects=[
                 period_in_phrase_obs_defect,
-                comment_without_atom_in_phrase_obs_defect,
+                cfws_without_atom_in_phrase_obs_defect,
                 ],
             remainder=':boo',
             comments=['with trailing comment'],
@@ -3789,22 +3804,19 @@ class TestParser(TestParserMixin, TestEmailBase):
         adjacent_ew = C(
             '=?ascii?q?Joi?= \t =?ascii?q?ned?=',
             stringified='Joined',
-            # XXX XXX second index will change during refactor
-            ew_indexes=[0, 0],
+            ew_indexes=[0, 18],
             ),
 
         adjacent_ew_different_encodings = C(
             '=?utf-8?q?B=C3=A9r?= =?iso-8859-1?q?=E9nice?=',
             stringified='Bérénice',
-            # XXX XXX second index will change during refactor
-            ew_indexes=[0, 0],
+            ew_indexes=[0, 21],
             ),
 
         adjacent_ew_encoded_spaces = C(
             '=?ascii?q?Encoded?= =?ascii?q?_spaces_?= =?ascii?q?preserved?=',
             stringified='Encoded spaces preserved',
-            # XXX XXX second and third indexes will change during refactor
-            ew_indexes=[0, 0, 0],
+            ew_indexes=[0, 20, 41],
             ),
 
         adjacent_ew_comment_is_not_linear_white_space = C(
@@ -3812,16 +3824,14 @@ class TestParser(TestParserMixin, TestEmailBase):
             stringified='Comment (is not) linear-white-space',
             value='Comment linear-white-space',
             comments=['is not'],
-            # XXX XXX second index will change during refactor
-            ew_indexes=[0, 0],
+            ew_indexes=[0, 29],
             ),
 
         adjacent_ew_no_error_on_defects = C(
             '=?ascii?q?Def?= =?ascii?q?ect still joins?=',
             stringified='Defect still joins',
             defects=[whitespace_inside_ew_defect],
-            # XXX XXX second index will change during refactor
-            ew_indexes=[0, 0],
+            ew_indexes=[0, 16],
             ),
 
         adjacent_ew_ignore_non_ew = C(
@@ -3851,12 +3861,10 @@ class TestParser(TestParserMixin, TestEmailBase):
             stringified='disjoin"ted"',
             value='disjointed',
             defects=[
-                # XXX XXX After refactoring there should be one 'after' defect
-                #missing_whitespace_after_ew_defect,
+                missing_whitespace_after_ew_defect,
                 ew_inside_quoted_string_defect,
                 ],
-            # XXX XXX second index will change during refactoring
-            ew_indexes=[0, 1],
+            ew_indexes=[0, 20],
             ),
 
         ew_after_quoted_string_missing_space = C(
@@ -3864,12 +3872,10 @@ class TestParser(TestParserMixin, TestEmailBase):
             stringified='"disjoin"ted',
             value='disjointed',
             defects=[
-                # XXX XXX After refactoring 'after' should become 'before'
-                #missing_whitespace_after_ew_defect,
+                missing_whitespace_before_ew_defect,
                 ew_inside_quoted_string_defect,
                 ],
-            # XXX XXX second index will change during refactoring
-            ew_indexes=[1, 0],
+            ew_indexes=[1, 21],
             ),
 
         **for_each_character(RFC_SPECIALS, skip=CFWS_LEADER + '."')(
@@ -3900,7 +3906,7 @@ class TestParser(TestParserMixin, TestEmailBase):
             value=' . ',
             defects=[
                 non_word_phrase_start_defect,
-                *[comment_without_atom_in_phrase_obs_defect]*2,
+                *[cfws_without_atom_in_phrase_obs_defect]*2,
                 period_in_phrase_obs_defect,
                 ],
             obs_dots=1,
@@ -3912,7 +3918,7 @@ class TestParser(TestParserMixin, TestEmailBase):
             comments=['foo', 'bar'],
             defects=[
                 non_word_phrase_start_defect,
-                *[comment_without_atom_in_phrase_obs_defect]*2,
+                *[cfws_without_atom_in_phrase_obs_defect]*2,
                 period_in_phrase_obs_defect,
                 ],
             obs_dots=1,
@@ -3924,7 +3930,7 @@ class TestParser(TestParserMixin, TestEmailBase):
             comments=['foo', 'bar'],
             defects=[
                 non_word_phrase_start_defect,
-                *[comment_without_atom_in_phrase_obs_defect]*2,
+                *[cfws_without_atom_in_phrase_obs_defect]*2,
                 period_in_phrase_obs_defect,
                 ],
             obs_dots=1,
