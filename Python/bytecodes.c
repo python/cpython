@@ -3254,7 +3254,7 @@ dummy_func(
             len = PyStackRef_FromPyObjectSteal(len_o);
         }
 
-        inst(MATCH_CLASS, (subject, type, names -- attrs)) {
+        op(_MATCH_CLASS, (subject, type, names -- attrs, s, tp, n)) {
             // Pop TOS and TOS1. Set TOS to a tuple of attributes on success, or
             // None on failure.
             assert(PyTuple_CheckExact(PyStackRef_AsPyObjectBorrow(names)));
@@ -3262,16 +3262,23 @@ dummy_func(
                 PyStackRef_AsPyObjectBorrow(subject),
                 PyStackRef_AsPyObjectBorrow(type), oparg,
                 PyStackRef_AsPyObjectBorrow(names));
-            DECREF_INPUTS();
             if (attrs_o) {
                 assert(PyTuple_CheckExact(attrs_o));  // Success!
                 attrs = PyStackRef_FromPyObjectSteal(attrs_o);
             }
             else {
-                ERROR_IF(_PyErr_Occurred(tstate));  // Error!
+                if (_PyErr_Occurred(tstate)) { // Error!
+                    ERROR_NO_POP();
+                }
                 attrs = PyStackRef_None;  // Failure!
             }
+            s = subject;
+            tp = type;
+            n = names;
+            INPUTS_DEAD();
         }
+
+        macro(MATCH_CLASS) = _MATCH_CLASS + POP_TOP + POP_TOP + POP_TOP;
 
         inst(MATCH_MAPPING, (subject -- subject, res)) {
             int match = PyStackRef_TYPE(subject)->tp_flags & Py_TPFLAGS_MAPPING;
