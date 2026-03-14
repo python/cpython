@@ -1502,6 +1502,33 @@ Ensure that early = are not matched by the parser as invalid comparisons
    Traceback (most recent call last):
    SyntaxError: invalid syntax
 
+Ensure that alternative patterns bind the same names
+
+   >>> match 1:
+   ...     case x | 1: pass
+   Traceback (most recent call last):
+   SyntaxError: name capture 'x' makes remaining patterns unreachable
+
+   >>> match 1:
+   ...     case x | y: pass
+   Traceback (most recent call last):
+   SyntaxError: name capture 'x' makes remaining patterns unreachable
+
+   >>> match 1:
+   ...     case 1 | x: ...
+   Traceback (most recent call last):
+   SyntaxError: alternative patterns bind different names (first pattern binds no names, pattern 2 binds ['x'])
+
+   >>> match 1:
+   ...     case ("user", {"id": id}) | ("admin", {"name": name}): pass
+   Traceback (most recent call last):
+   SyntaxError: alternative patterns bind different names (first pattern binds ['id'], pattern 2 binds ['name'])
+
+   >>> match 1:
+   ...     case ("user", {"id": id}) | ("admin", {"id": id}) | ("other", {"ip": ip}): pass
+   Traceback (most recent call last):
+   SyntaxError: alternative patterns bind different names (first pattern binds ['id'], pattern 3 binds ['ip'])
+
 Incomplete dictionary literals
 
    >>> {1:2, 3:4, 5}
