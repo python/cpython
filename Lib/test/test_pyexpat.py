@@ -701,19 +701,20 @@ class ElementDeclHandlerTest(unittest.TestCase):
         parser.ElementDeclHandler = lambda _1, _2: None
         self.assertRaises(TypeError, parser.Parse, data, True)
 
+    @support.skip_if_unlimited_stack_size
+    @support.skip_emscripten_stack_overflow()
+    @support.skip_wasi_stack_overflow()
     def test_deeply_nested_content_model(self):
         data = ('<!DOCTYPE root [\n<!ELEMENT root '
-              + '(a, ' * 200000 + 'a'
-              + ')' * 200000
+              + '(a, ' * 500000 + 'a'
+              + ')' * 500000
               + '>\n]>\n<root/>\n').encode('UTF-8')
 
         parser = expat.ParserCreate()
         parser.ElementDeclHandler = lambda _1, _2: None
-        # This shouldn't crash:
-        try:
-            parser.ParseFile(BytesIO(data))
-        except RecursionError:
-            pass
+        with self.assertRaises(RecursionError):
+            with support.infinite_recursion():
+                parser.ParseFile(BytesIO(data))
 
 class MalformedInputTest(unittest.TestCase):
     def test1(self):
