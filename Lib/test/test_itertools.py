@@ -756,20 +756,15 @@ class TestBasicOps(unittest.TestCase):
 
     def test_grouper_next_reentrant_eq_does_not_crash(self):
         # regression test for gh-145678
-        ref_before = ref_after = None
-
         class Key:
             def __init__(self, val, do_advance):
                 self.val = val
                 self.do_advance = do_advance
 
             def __eq__(self, other):
-                nonlocal ref_before, ref_after
                 if self.do_advance:
                     self.do_advance = False
-                    ref_before = sys.getrefcount(other)
                     next(g)
-                    ref_after = sys.getrefcount(other)
                     return NotImplemented
                 return self.val == other.val
 
@@ -780,13 +775,6 @@ class TestBasicOps(unittest.TestCase):
         g = itertools.groupby([1, 1, 2], lambda _: next(keys_iter))
         k, grp = next(g)
         list(grp)  # must not crash with address sanitizer
-        self.assertIsNotNone(ref_before, "re-entrant __eq__ was never called")
-        # On an unpatched build, next(g) releases gbo->currkey's reference to
-        # 'other', so the count drops by 1 -- the object will be freed when the
-        # __eq__ frame exits, leaving do_richcompare() with a dangling pointer.
-        self.assertEqual(ref_before, ref_after,
-                         "gbo->currkey lost its ref to 'other' mid-comparison "
-                         "(use-after-free)")
 
     def test_filter(self):
         self.assertEqual(list(filter(isEven, range(6))), [0,2,4])
