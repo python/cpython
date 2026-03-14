@@ -2997,16 +2997,26 @@
             break;
         }
 
+        case _GUARD_CALLABLE_FUNCTION: {
+            JitOptRef callable;
+            callable = stack_pointer[-2 - oparg];
+            if (sym_matches_type(callable, &PyFunction_Type)) {
+                ADD_OP(_NOP, 0, 0);
+            }
+            sym_set_type(callable, &PyFunction_Type);
+            break;
+        }
+
         case _CHECK_FUNCTION_VERSION: {
             JitOptRef callable;
             callable = stack_pointer[-2 - oparg];
             uint32_t func_version = (uint32_t)this_instr->operand0;
-            if (sym_is_const(ctx, callable) && sym_matches_type(callable, &PyFunction_Type)) {
+            assert(sym_matches_type(callable, &PyFunction_Type));
+            if (sym_is_const(ctx, callable)) {
                 assert(PyFunction_Check(sym_get_const(ctx, callable)));
                 ADD_OP(_CHECK_FUNCTION_VERSION_INLINE, 0, func_version);
                 uop_buffer_last(&ctx->out_buffer)->operand1 = (uintptr_t)sym_get_const(ctx, callable);
             }
-            sym_set_type(callable, &PyFunction_Type);
             break;
         }
 

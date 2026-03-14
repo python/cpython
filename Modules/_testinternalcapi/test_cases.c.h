@@ -2044,15 +2044,20 @@
                 stack_pointer = _PyFrame_GetStackPointer(frame);
             }
             // flush
-            // _CHECK_FUNCTION_VERSION
+            // _GUARD_CALLABLE_FUNCTION
             {
-                uint32_t func_version = read_u32(&this_instr[2].cache);
                 PyObject *callable_o = PyStackRef_AsPyObjectBorrow(callable);
                 if (!PyFunction_Check(callable_o)) {
                     UPDATE_MISS_STATS(CALL);
                     assert(_PyOpcode_Deopt[opcode] == (CALL));
                     JUMP_TO_PREDICTED(CALL);
                 }
+            }
+            // _CHECK_FUNCTION_VERSION
+            {
+                uint32_t func_version = read_u32(&this_instr[2].cache);
+                PyObject *callable_o = PyStackRef_AsPyObjectBorrow(callable);
+                assert(PyFunction_Check(callable_o));
                 PyFunctionObject *func = (PyFunctionObject *)callable_o;
                 if (func->func_version != func_version) {
                     UPDATE_MISS_STATS(CALL);
@@ -4214,16 +4219,21 @@
                     JUMP_TO_PREDICTED(CALL);
                 }
             }
-            // _CHECK_FUNCTION_VERSION
+            // _GUARD_CALLABLE_FUNCTION
             {
                 callable = stack_pointer[-2 - oparg];
-                uint32_t func_version = read_u32(&this_instr[2].cache);
                 PyObject *callable_o = PyStackRef_AsPyObjectBorrow(callable);
                 if (!PyFunction_Check(callable_o)) {
                     UPDATE_MISS_STATS(CALL);
                     assert(_PyOpcode_Deopt[opcode] == (CALL));
                     JUMP_TO_PREDICTED(CALL);
                 }
+            }
+            // _CHECK_FUNCTION_VERSION
+            {
+                uint32_t func_version = read_u32(&this_instr[2].cache);
+                PyObject *callable_o = PyStackRef_AsPyObjectBorrow(callable);
+                assert(PyFunction_Check(callable_o));
                 PyFunctionObject *func = (PyFunctionObject *)callable_o;
                 if (func->func_version != func_version) {
                     UPDATE_MISS_STATS(CALL);
@@ -4327,16 +4337,21 @@
                     JUMP_TO_PREDICTED(CALL);
                 }
             }
-            // _CHECK_FUNCTION_VERSION
+            // _GUARD_CALLABLE_FUNCTION
             {
                 callable = stack_pointer[-2 - oparg];
-                uint32_t func_version = read_u32(&this_instr[2].cache);
                 PyObject *callable_o = PyStackRef_AsPyObjectBorrow(callable);
                 if (!PyFunction_Check(callable_o)) {
                     UPDATE_MISS_STATS(CALL);
                     assert(_PyOpcode_Deopt[opcode] == (CALL));
                     JUMP_TO_PREDICTED(CALL);
                 }
+            }
+            // _CHECK_FUNCTION_VERSION
+            {
+                uint32_t func_version = read_u32(&this_instr[2].cache);
+                PyObject *callable_o = PyStackRef_AsPyObjectBorrow(callable);
+                assert(PyFunction_Check(callable_o));
                 PyFunctionObject *func = (PyFunctionObject *)callable_o;
                 if (func->func_version != func_version) {
                     UPDATE_MISS_STATS(CALL);

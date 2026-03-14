@@ -1,0 +1,1 @@
+Split ``CHECK_FUNCTION_VERSION`` into two separate guards.
