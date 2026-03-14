@@ -1560,6 +1560,52 @@ class CTextIOWrapperTest(TextIOWrapperTest, CTestCase):
         wrapper = self.TextIOWrapper(raw)
         wrapper.close()  # should not crash
 
+    def test_reentrant_detach_during_flush(self):
+        # gh-143008: Reentrant detach() during flush should raise RuntimeError
+        # instead of crashing.
+        wrapper = None
+        wrapper_ref = None
+
+        class EvilBuffer(self.BufferedRandom):
+            detach_on_write = False
+
+            def flush(self):
+                wrapper = wrapper_ref() if wrapper_ref is not None else None
+                if wrapper is not None and not self.detach_on_write:
+                    wrapper.detach()
+                return super().flush()
+
+            def write(self, b):
+                wrapper = wrapper_ref() if wrapper_ref is not None else None
+                if wrapper is not None and self.detach_on_write:
+                    wrapper.detach()
+                return len(b)
+
+        tests = [
+            ('truncate', lambda: wrapper.truncate(0)),
+            ('close', lambda: wrapper.close()),
+            ('detach', lambda: wrapper.detach()),
+            ('seek', lambda: wrapper.seek(0)),
+            ('tell', lambda: wrapper.tell()),
+            ('reconfigure', lambda: wrapper.reconfigure(line_buffering=True)),
+        ]
+        for name, method in tests:
+            with self.subTest(name):
+                wrapper = self.TextIOWrapper(EvilBuffer(self.MockRawIO()), encoding='utf-8')
+                wrapper_ref = weakref.ref(wrapper)
+                self.assertRaisesRegex(RuntimeError, "reentrant", method)
+                wrapper_ref = None
+                del wrapper
+
+        with self.subTest('read via writeflush'):
+            EvilBuffer.detach_on_write = True
+            wrapper = self.TextIOWrapper(EvilBuffer(self.MockRawIO()), encoding='utf-8')
+            wrapper_ref = weakref.ref(wrapper)
+            wrapper.write('x')
+            self.assertRaisesRegex(RuntimeError, "reentrant", wrapper.read)
+            wrapper_ref = None
+            del wrapper
+
 
 class PyTextIOWrapperTest(TextIOWrapperTest, PyTestCase):
     shutdown_error = "LookupError: unknown encoding: ascii"
