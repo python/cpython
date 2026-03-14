@@ -185,6 +185,10 @@ class property(DynamicClassAttribute):
     _attr_type = None
     _cls_type = None
 
+    def __init__(self, fget=None, fset=None, fdel=None, doc=None):
+        sys._enable_deferred_refcount(self)
+        super().__init__(fget, fset, fdel, doc)
+
     def __get__(self, instance, ownerclass=None):
         if instance is None:
             if self.member is not None:
@@ -1067,6 +1071,7 @@ class EnumType(type):
         return __new__, save_new, use_args
 
     def _add_member_(cls, name, member):
+        sys._enable_deferred_refcount(member)
         # _value_ structures are not updated
         if name in cls._member_map_:
             if cls._member_map_[name] is not member:

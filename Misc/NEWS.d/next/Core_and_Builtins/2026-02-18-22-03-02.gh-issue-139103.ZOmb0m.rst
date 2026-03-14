@@ -1,0 +1,2 @@
+Add :func:`sys._enable_deferred_refcount` and use it in :mod:`enum` to
+improve free-threaded scaling.
