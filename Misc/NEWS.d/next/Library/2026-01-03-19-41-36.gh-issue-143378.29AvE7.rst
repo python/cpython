@@ -1,1 +1,0 @@
-Fix use-after-free crashes when a :class:`~io.BytesIO` object is concurrently mutated during :meth:`~io.RawIOBase.write` or :meth:`~io.IOBase.writelines`.

@@ -12,7 +12,7 @@ extern "C" {
 #include <assert.h>
 #include <stdbool.h>
 #include "pycore_structs.h"       // _Py_BackoffCounter
-#include "pycore_tstate.h"        // _PyPolicy
+#include "pycore_interp_structs.h" // _PyOptimizationConfig
 
 /* 16-bit countdown counters using exponential backoff.
 
@@ -128,11 +128,11 @@ trigger_backoff_counter(void)
 #define JUMP_BACKWARD_INITIAL_VALUE 4000
 #define JUMP_BACKWARD_INITIAL_BACKOFF 6
 static inline _Py_BackoffCounter
-initial_jump_backoff_counter(_PyPolicy *policy)
+initial_jump_backoff_counter(_PyOptimizationConfig *opt_config)
 {
     return make_backoff_counter(
-        policy->interp.jump_backward_initial_value,
-        policy->interp.jump_backward_initial_backoff);
+        opt_config->jump_backward_initial_value,
+        opt_config->jump_backward_initial_backoff);
 }
 
 /* Initial exit temperature.
@@ -143,11 +143,11 @@ initial_jump_backoff_counter(_PyPolicy *policy)
 #define SIDE_EXIT_INITIAL_BACKOFF 6
 
 static inline _Py_BackoffCounter
-initial_temperature_backoff_counter(_PyPolicy *policy)
+initial_temperature_backoff_counter(_PyOptimizationConfig *opt_config)
 {
     return make_backoff_counter(
-        policy->jit.side_exit_initial_value,
-        policy->jit.side_exit_initial_backoff);
+        opt_config->side_exit_initial_value,
+        opt_config->side_exit_initial_backoff);
 }
 
 /* Unreachable backoff counter. */

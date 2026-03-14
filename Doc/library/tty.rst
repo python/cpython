@@ -2,24 +2,20 @@
 ==========================================
 
 .. module:: tty
-   :platform: Unix
    :synopsis: Utility functions that perform common terminal control operations.
-
-.. moduleauthor:: Steen Lumholt
-.. sectionauthor:: Moshe Zadka <moshez@zadka.site.co.il>
 
 **Source code:** :source:`Lib/tty.py`
 
 --------------
 
-The :mod:`tty` module defines functions for putting the tty into cbreak and raw
+The :mod:`!tty` module defines functions for putting the tty into cbreak and raw
 modes.
 
 .. availability:: Unix.
 
 Because it requires the :mod:`termios` module, it will work only on Unix.
 
-The :mod:`tty` module defines the following functions:
+The :mod:`!tty` module defines the following functions:
 
 
 .. function:: cfmakeraw(mode)

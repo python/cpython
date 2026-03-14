@@ -292,7 +292,7 @@ dis_intrinsic_1_2 = """\
 
   1           LOAD_SMALL_INT           0
               LOAD_CONST               1 (('*',))
-              IMPORT_NAME              0 (math)
+              IMPORT_NAME              2 (math + eager)
               CALL_INTRINSIC_1         2 (INTRINSIC_IMPORT_STAR)
               POP_TOP
               LOAD_CONST               2 (None)
@@ -875,11 +875,11 @@ dis_nested_2 = """%s
 Disassembly of <code object <genexpr> at 0x..., file "%s", line %d>:
   --           COPY_FREE_VARS           1
 
-%4d           RETURN_GENERATOR
+%4d           LOAD_FAST                0 (.0)
+               GET_ITER
+               RETURN_GENERATOR
                POP_TOP
        L1:     RESUME                   0
-               LOAD_FAST                0 (.0)
-               GET_ITER
        L2:     FOR_ITER                14 (to L3)
                STORE_FAST               1 (z)
                LOAD_DEREF               2 (x)
@@ -897,7 +897,7 @@ Disassembly of <code object <genexpr> at 0x..., file "%s", line %d>:
   --   L4:     CALL_INTRINSIC_1         3 (INTRINSIC_STOPITERATION_ERROR)
                RERAISE                  1
 ExceptionTable:
-  L1 to L4 -> L4 [0] lasti
+  L1 to L4 -> L4 [2] lasti
 """ % (dis_nested_1,
        __file__,
        _h.__code__.co_firstlineno + 3,

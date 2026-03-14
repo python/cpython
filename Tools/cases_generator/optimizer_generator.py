@@ -242,7 +242,7 @@ class OptimizerEmitter(Emitter):
                     0: "_POP_TOP_LOAD_CONST_INLINE_BORROW",
                     # (left -- res, left)
                     # usually for unary ops with passthrough references
-                    2: "_INSERT_1_LOAD_CONST_INLINE_BORROW",
+                    1: "_INSERT_1_LOAD_CONST_INLINE_BORROW",
                 },
                 2: {
                     # (a. b -- res), usually for binary ops
@@ -270,7 +270,7 @@ class OptimizerEmitter(Emitter):
                 emitter.emit(f"PyObject *result = sym_get_const(ctx, {output_identifier.text});\n")
                 emitter.emit(f"if (_Py_IsImmortal(result)) {{\n")
                 emitter.emit(f"// Replace with {replacement_uop} since we have {input_desc} and an immortal result\n")
-                emitter.emit(f"REPLACE_OP(this_instr, {replacement_uop}, 0, (uintptr_t)result);\n")
+                emitter.emit(f"ADD_OP({replacement_uop}, 0, (uintptr_t)result);\n")
                 emitter.emit("}\n")
                 emitter.emit("}\n")
 

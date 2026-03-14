@@ -1,9 +1,9 @@
-.. highlight:: shell-session
+.. highlight:: sh
 
 .. _profiling-sampling:
 
 ***************************************************
-:mod:`profiling.sampling` --- Statistical profiler
+:mod:`!profiling.sampling` --- Statistical profiler
 ***************************************************
 
 .. module:: profiling.sampling
@@ -22,7 +22,7 @@
    :align: center
    :width: 300px
 
-The :mod:`profiling.sampling` module, named **Tachyon**, provides statistical
+The :mod:`!profiling.sampling` module, named **Tachyon**, provides statistical
 profiling of Python programs through periodic stack sampling. Tachyon can
 run scripts directly or attach to any running Python process without requiring
 code changes or restarts. Because sampling occurs externally to the target
@@ -43,6 +43,23 @@ CPU time will appear frequently in the collected samples. By gathering thousands
 of samples over a profiling session, Tachyon constructs an accurate statistical
 estimate of where time is spent. The more samples collected, the
 more precise this estimate becomes.
+
+.. only:: html
+
+   The following interactive visualization demonstrates how sampling profiling
+   works. Press **Play** to watch a Python program execute, and observe how the
+   profiler periodically captures snapshots of the call stack. Adjust the
+   **sample interval** to see how sampling frequency affects the results.
+
+   .. raw:: html
+      :file: profiling-sampling-visualization.html
+
+.. only:: not html
+
+   .. note::
+
+      An interactive visualization of sampling profiling is available in the
+      HTML version of this documentation.
 
 
 How time is estimated
@@ -354,7 +371,7 @@ Together, these determine how many samples will be collected during a profiling
 session.
 
 The :option:`--sampling-rate` option (:option:`-r`) sets how frequently samples
-are collected. The default is 1 kHz (10,000 samples per second)::
+are collected. The default is 1 kHz (1,000 samples per second)::
 
    python -m profiling.sampling run -r 20khz script.py
 
@@ -1177,10 +1194,12 @@ data, similar to the ``top`` command for system processes::
    python -m profiling.sampling run --live script.py
    python -m profiling.sampling attach --live 12345
 
-.. figure:: tachyon-live-mode-2.gif
-   :alt: Tachyon live mode showing all threads
-   :align: center
-   :width: 100%
+.. only:: not latex
+
+   .. figure:: tachyon-live-mode-2.gif
+      :alt: Tachyon live mode showing all threads
+      :align: center
+      :width: 100%
 
    Live mode displays real-time profiling statistics, showing combined
    data from multiple threads in a multi-threaded application.
@@ -1200,10 +1219,12 @@ main table, showing instruction-level statistics for the currently selected
 function. This panel displays which bytecode instructions are executing most
 frequently, including specialized variants and their base opcodes.
 
-.. figure:: tachyon-live-mode-1.gif
-   :alt: Tachyon live mode with opcode panel
-   :align: center
-   :width: 100%
+.. only:: not latex
+
+   .. figure:: tachyon-live-mode-1.gif
+      :alt: Tachyon live mode with opcode panel
+      :align: center
+      :width: 100%
 
    Live mode with ``--opcodes`` enabled shows an opcode panel with a bytecode
    instruction breakdown for the selected function.

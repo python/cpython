@@ -144,9 +144,13 @@ class FlamegraphCollector(StackTraceCollector):
         num_functions = len(flamegraph_data.get("children", []))
         total_time = flamegraph_data.get("value", 0)
         string_count = len(self._string_table)
+        s1 = "" if num_functions == 1 else "s"
+        s2 = "" if total_time == 1 else "s"
+        s3 = "" if string_count == 1 else "s"
         print(
-            f"Flamegraph data: {num_functions} root functions, total samples: {total_time}, "
-            f"{string_count} unique strings"
+            f"Flamegraph data: {num_functions} root function{s1}, "
+            f"{total_time} total sample{s2}, "
+            f"{string_count} unique string{s3}"
         )
 
         if num_functions == 0:
@@ -373,7 +377,9 @@ class FlamegraphCollector(StackTraceCollector):
 
         html_template = (template_dir / "_flamegraph_assets" / "flamegraph_template.html").read_text(encoding="utf-8")
         css_content = get_combined_css("flamegraph")
-        js_content = (template_dir /  "_flamegraph_assets" / "flamegraph.js").read_text(encoding="utf-8")
+        base_js = (template_dir / "_shared_assets" / "base.js").read_text(encoding="utf-8")
+        component_js = (template_dir / "_flamegraph_assets" / "flamegraph.js").read_text(encoding="utf-8")
+        js_content = f"{base_js}\n{component_js}"
 
         # Inline first-party CSS/JS
         html_template = html_template.replace(

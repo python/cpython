@@ -1459,11 +1459,6 @@ def requires_specialization(test):
         _opcode.ENABLE_SPECIALIZATION, "requires specialization")(test)
 
 
-def requires_specialization_ft(test):
-    return unittest.skipUnless(
-        _opcode.ENABLE_SPECIALIZATION_FT, "requires specialization")(test)
-
-
 def reset_code(f: types.FunctionType) -> types.FunctionType:
     """Clear all specializations, local instrumentation, and JIT code for the given function."""
     f.__code__ = f.__code__.replace()
@@ -1721,9 +1716,10 @@ class PythonSymlink:
                 ))
 
             self._env = {k.upper(): os.getenv(k) for k in os.environ}
-            self._env["PYTHONHOME"] = os.path.dirname(self.real)
+            home = os.path.dirname(self.real)
             if sysconfig.is_python_build():
-                self._env["PYTHONPATH"] = STDLIB_DIR
+                home = os.path.join(home, sysconfig.get_config_var('VPATH'))
+            self._env["PYTHONHOME"] = home
     else:
         def _platform_specific(self):
             pass
@@ -1781,7 +1777,7 @@ def skip_if_unlimited_stack_size(test):
 
     See https://github.com/python/cpython/issues/143460.
     """
-    if is_wasi or os.name == "nt":
+    if is_emscripten or is_wasi or os.name == "nt":
         return test
 
     import resource
@@ -3027,6 +3023,13 @@ def force_color(color: bool):
     import _colorize
     from .os_helper import EnvironmentVarGuard
 
+    if color:
+        try:
+            import _pyrepl  # noqa: F401
+        except ModuleNotFoundError:
+            # Can't force enable color without _pyrepl, so just skip.
+            raise unittest.SkipTest("_pyrepl is missing")
+
     with (
         swap_attr(_colorize, "can_colorize", lambda *, file=None: color),
         EnvironmentVarGuard() as env,
@@ -3120,6 +3123,10 @@ def get_signal_name(exitcode):
         return WINDOWS_STATUS[exitcode]
     except KeyError:
         pass
+
+    # Format Windows exit status as hexadecimal
+    if 0xC0000000 <= exitcode:
+        return f"0x{exitcode:X}"
 
     return None
 
@@ -3303,3 +3310,10 @@ def linked_to_musl():
         return _linked_to_musl
     _linked_to_musl = tuple(map(int, version.split('.')))
     return _linked_to_musl
+
+
+def control_characters_c0() -> list[str]:
+    """Returns a list of C0 control characters as strings.
+    C0 control characters defined as the byte range 0x00-0x1F, and 0x7F.
+    """
+    return [chr(c) for c in range(0x00, 0x20)] + ["\x7F"]
