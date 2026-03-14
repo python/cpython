@@ -15,6 +15,7 @@ typedef struct {
 #define _PyNamespace_CAST(op) _Py_CAST(_PyNamespaceObject*, (op))
 #define _PyNamespace_Check(op) PyObject_TypeCheck((op), &_PyNamespace_Type)
 
+
 static PyMemberDef namespace_members[] = {
     {"__dict__", _Py_T_OBJECT, offsetof(_PyNamespaceObject, ns_dict), Py_READONLY},
     {NULL}
