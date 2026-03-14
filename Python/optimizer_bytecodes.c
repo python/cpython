@@ -46,6 +46,7 @@ typedef struct _Py_UOpsAbstractFrame _Py_UOpsAbstractFrame;
 #define sym_set_recorded_gen_func(SYM, VAL) _Py_uop_sym_set_recorded_gen_func(ctx, SYM, VAL)
 #define sym_get_probable_func_code _Py_uop_sym_get_probable_func_code
 #define sym_get_probable_value _Py_uop_sym_get_probable_value
+#define sym_get_probable_type _Py_uop_sym_get_probable_type
 #define sym_set_stack_depth(DEPTH, SP) _Py_uop_sym_set_stack_depth(ctx, DEPTH, SP)
 
 extern int
@@ -86,6 +87,14 @@ dummy_func(void) {
     _PyUOpInstruction *corresponding_check_stack;
 
 // BEGIN BYTECODES //
+
+    op(_MAKE_HEAP_SAFE, (value -- value)) {
+        // eliminate _MAKE_HEAP_SAFE when we *know* the value is immortal
+        if (sym_is_immortal(PyJitRef_Unwrap(value))) {
+            ADD_OP(_NOP, 0, 0);
+        }
+        value = PyJitRef_StripReferenceInfo(value);
+    }
 
     op(_LOAD_FAST_CHECK, (-- value)) {
         value = GETLOCAL(oparg);
@@ -943,8 +952,7 @@ dummy_func(void) {
     }
 
     op(_RETURN_VALUE, (retval -- res)) {
-        // Mimics PyStackRef_MakeHeapSafe in the interpreter.
-        JitOptRef temp = PyJitRef_StripReferenceInfo(retval);
+        JitOptRef temp = retval;
         DEAD(retval);
         SAVE_STACK();
         ctx->frame->stack_pointer = stack_pointer;
@@ -982,8 +990,7 @@ dummy_func(void) {
     }
 
     op(_YIELD_VALUE, (retval -- value)) {
-        // Mimics PyStackRef_MakeHeapSafe in the interpreter.
-        JitOptRef temp = PyJitRef_StripReferenceInfo(retval);
+        JitOptRef temp = retval;
         DEAD(retval);
         SAVE_STACK();
         ctx->frame->stack_pointer = stack_pointer;
@@ -1324,35 +1331,36 @@ dummy_func(void) {
         if (sym_matches_type(tos, &PyList_Type)) {
             ADD_OP(_NOP, 0, 0);
         }
-        sym_set_type(tos, &PyList_Type);
+        else {
+            sym_set_type(tos, &PyList_Type);
+        }
     }
 
     op(_GUARD_NOS_LIST, (nos, unused -- nos, unused)) {
         if (sym_matches_type(nos, &PyList_Type)) {
             ADD_OP(_NOP, 0, 0);
         }
-        sym_set_type(nos, &PyList_Type);
+        else {
+            sym_set_type(nos, &PyList_Type);
+        }
     }
 
     op(_GUARD_TOS_TUPLE, (tos -- tos)) {
         if (sym_matches_type(tos, &PyTuple_Type)) {
             ADD_OP(_NOP, 0, 0);
         }
-        sym_set_type(tos, &PyTuple_Type);
+        else {
+            sym_set_type(tos, &PyTuple_Type);
+        }
     }
 
     op(_GUARD_NOS_TUPLE, (nos, unused -- nos, unused)) {
         if (sym_matches_type(nos, &PyTuple_Type)) {
             ADD_OP(_NOP, 0, 0);
         }
-        sym_set_type(nos, &PyTuple_Type);
-    }
-
-    op(_GUARD_TOS_DICT, (tos -- tos)) {
-        if (sym_matches_type(tos, &PyDict_Type)) {
-            ADD_OP(_NOP, 0, 0);
+        else {
+            sym_set_type(nos, &PyTuple_Type);
         }
-        sym_set_type(tos, &PyDict_Type);
     }
 
     op(_GUARD_NOS_DICT, (nos, unused -- nos, unused)) {
@@ -1362,11 +1370,80 @@ dummy_func(void) {
         sym_set_type(nos, &PyDict_Type);
     }
 
-    op(_GUARD_TOS_ANY_SET, (tos -- tos)) {
-        if (sym_matches_type(tos, &PySet_Type) ||
-            sym_matches_type(tos, &PyFrozenSet_Type))
-        {
+    op(_GUARD_NOS_ANY_DICT, (nos, unused -- nos, unused)) {
+        PyTypeObject *tp = sym_get_type(nos);
+        if (tp == &PyDict_Type || tp == &PyFrozenDict_Type) {
             ADD_OP(_NOP, 0, 0);
+        }
+    }
+
+    op(_GUARD_TOS_ANY_DICT, (tos -- tos)) {
+        PyTypeObject *tp = sym_get_type(tos);
+        if (tp == &PyDict_Type || tp == &PyFrozenDict_Type) {
+            ADD_OP(_NOP, 0, 0);
+        }
+        else {
+            // Narrowing the guard based on the probable type.
+            tp = sym_get_probable_type(tos);
+            if (tp == &PyDict_Type) {
+                ADD_OP(_GUARD_TOS_DICT, 0, 0);
+            }
+            else if (tp == &PyFrozenDict_Type) {
+                ADD_OP(_GUARD_TOS_FROZENDICT, 0, 0);
+            }
+        }
+    }
+
+    op(_GUARD_TOS_DICT, (tos -- tos)) {
+        if (sym_matches_type(tos, &PyDict_Type)) {
+            ADD_OP(_NOP, 0, 0);
+        }
+        else {
+            sym_set_type(tos, &PyDict_Type);
+        }
+    }
+
+    op(_GUARD_TOS_FROZENDICT, (tos -- tos)) {
+        if (sym_matches_type(tos, &PyFrozenDict_Type)) {
+            ADD_OP(_NOP, 0, 0);
+        }
+        else {
+            sym_set_type(tos, &PyFrozenDict_Type);
+        }
+    }
+
+    op(_GUARD_TOS_ANY_SET, (tos -- tos)) {
+        PyTypeObject *tp = sym_get_type(tos);
+        if (tp == &PySet_Type || tp == &PyFrozenSet_Type) {
+            ADD_OP(_NOP, 0, 0);
+        }
+        else {
+            // Narrowing the guard based on the probable type.
+            tp = sym_get_probable_type(tos);
+            if (tp == &PySet_Type) {
+                ADD_OP(_GUARD_TOS_SET, 0, 0);
+            }
+            else if (tp == &PyFrozenSet_Type) {
+                ADD_OP(_GUARD_TOS_FROZENSET, 0, 0);
+            }
+        }
+    }
+
+    op(_GUARD_TOS_SET, (tos -- tos)) {
+        if (sym_matches_type(tos, &PySet_Type)) {
+            ADD_OP(_NOP, 0, 0);
+        }
+        else {
+            sym_set_type(tos, &PySet_Type);
+        }
+    }
+
+    op(_GUARD_TOS_FROZENSET, (tos -- tos)) {
+        if (sym_matches_type(tos, &PyFrozenSet_Type)) {
+            ADD_OP(_NOP, 0, 0);
+        }
+        else {
+            sym_set_type(tos, &PyFrozenSet_Type);
         }
     }
 
@@ -1374,49 +1451,63 @@ dummy_func(void) {
         if (sym_matches_type(tos, &PySlice_Type)) {
             ADD_OP(_NOP, 0, 0);
         }
-        sym_set_type(tos, &PySlice_Type);
+        else {
+            sym_set_type(tos, &PySlice_Type);
+        }
     }
 
     op(_GUARD_NOS_NULL, (null, unused -- null, unused)) {
         if (sym_is_null(null)) {
             ADD_OP(_NOP, 0, 0);
         }
-        sym_set_null(null);
+        else {
+            sym_set_null(null);
+        }
     }
 
     op(_GUARD_NOS_NOT_NULL, (nos, unused -- nos, unused)) {
         if (sym_is_not_null(nos)) {
             ADD_OP(_NOP, 0, 0);
         }
-        sym_set_non_null(nos);
+        else {
+            sym_set_non_null(nos);
+        }
     }
 
     op(_GUARD_THIRD_NULL, (null, unused, unused -- null, unused, unused)) {
         if (sym_is_null(null)) {
             ADD_OP(_NOP, 0, 0);
         }
-        sym_set_null(null);
+        else {
+            sym_set_null(null);
+        }
     }
 
     op(_GUARD_CALLABLE_TYPE_1, (callable, unused, unused -- callable, unused, unused)) {
         if (sym_get_const(ctx, callable) == (PyObject *)&PyType_Type) {
             ADD_OP(_NOP, 0, 0);
         }
-        sym_set_const(callable, (PyObject *)&PyType_Type);
+        else {
+            sym_set_const(callable, (PyObject *)&PyType_Type);
+        }
     }
 
     op(_GUARD_CALLABLE_TUPLE_1, (callable, unused, unused -- callable, unused, unused)) {
         if (sym_get_const(ctx, callable) == (PyObject *)&PyTuple_Type) {
             ADD_OP(_NOP, 0, 0);
         }
-        sym_set_const(callable, (PyObject *)&PyTuple_Type);
+        else {
+            sym_set_const(callable, (PyObject *)&PyTuple_Type);
+        }
     }
 
     op(_GUARD_CALLABLE_STR_1, (callable, unused, unused -- callable, unused, unused)) {
         if (sym_get_const(ctx, callable) == (PyObject *)&PyUnicode_Type) {
             ADD_OP(_NOP, 0, 0);
         }
-        sym_set_const(callable, (PyObject *)&PyUnicode_Type);
+        else {
+            sym_set_const(callable, (PyObject *)&PyUnicode_Type);
+        }
     }
 
     op(_CALL_LEN, (callable, null, arg -- res, a, c)) {
@@ -1475,7 +1566,9 @@ dummy_func(void) {
         if (sym_get_const(ctx, callable) == len) {
             ADD_OP(_NOP, 0, 0);
         }
-        sym_set_const(callable, len);
+        else {
+            sym_set_const(callable, len);
+        }
     }
 
     op(_GUARD_CALLABLE_ISINSTANCE, (callable, unused, unused, unused -- callable, unused, unused, unused)) {
@@ -1483,7 +1576,9 @@ dummy_func(void) {
         if (sym_get_const(ctx, callable) == isinstance) {
             ADD_OP(_NOP, 0, 0);
         }
-        sym_set_const(callable, isinstance);
+        else {
+            sym_set_const(callable, isinstance);
+        }
     }
 
     op(_GUARD_CALLABLE_LIST_APPEND, (callable, unused, unused -- callable, unused, unused)) {
@@ -1491,7 +1586,9 @@ dummy_func(void) {
         if (sym_get_const(ctx, callable) == list_append) {
             ADD_OP(_NOP, 0, 0);
         }
-        sym_set_const(callable, list_append);
+        else {
+            sym_set_const(callable, list_append);
+        }
     }
 
     op(_BINARY_SLICE, (container, start, stop -- res)) {
@@ -1613,6 +1710,13 @@ dummy_func(void) {
         ss = sub_st;
     }
 
+    op(_MATCH_CLASS, (subject, type, names -- attrs, s, tp, n)) {
+        attrs = sym_new_not_null(ctx);
+        s = subject;
+        tp = type;
+        n = names;
+    }
+
     op(_RECORD_TOS, (tos -- tos)) {
         sym_set_recorded_value(tos, (PyObject *)this_instr->operand0);
     }
@@ -1641,7 +1745,8 @@ dummy_func(void) {
     }
 
     op(_GUARD_IP__PUSH_FRAME, (ip/4 --)) {
-        stack_pointer = sym_set_stack_depth(this_instr->operand1, stack_pointer);
+        (void)ip;
+        stack_pointer = sym_set_stack_depth((int)this_instr->operand1, stack_pointer);
         // TO DO
         // Normal function calls to known functions
         // do not need an IP guard.
@@ -1659,24 +1764,27 @@ dummy_func(void) {
     }
 
     op(_GUARD_IP_YIELD_VALUE, (ip/4 --)) {
+        (void)ip;
         if (ctx->frame->caller) {
             REPLACE_OP(this_instr, _NOP, 0, 0);
         }
-        stack_pointer = sym_set_stack_depth(this_instr->operand1, stack_pointer);
+        stack_pointer = sym_set_stack_depth((int)this_instr->operand1, stack_pointer);
     }
 
     op(_GUARD_IP_RETURN_VALUE, (ip/4 --)) {
+        (void)ip;
         if (ctx->frame->caller) {
             REPLACE_OP(this_instr, _NOP, 0, 0);
         }
-        stack_pointer = sym_set_stack_depth(this_instr->operand1, stack_pointer);
+        stack_pointer = sym_set_stack_depth((int)this_instr->operand1, stack_pointer);
     }
 
     op(_GUARD_IP_RETURN_GENERATOR, (ip/4 --)) {
+        (void)ip;
         if (ctx->frame->caller) {
             REPLACE_OP(this_instr, _NOP, 0, 0);
         }
-        stack_pointer = sym_set_stack_depth(this_instr->operand1, stack_pointer);
+        stack_pointer = sym_set_stack_depth((int)this_instr->operand1, stack_pointer);
     }
 
 
