@@ -940,6 +940,126 @@ _PyJit_translate_single_bytecode_to_trace(
                     assert(next->op.code == STORE_FAST);
                     operand = next->op.arg;
                 }
+                else if (uop == _BINARY_OP_ADD_FLOAT ||
+                         uop == _BINARY_OP_SUBTRACT_FLOAT ||
+                         uop == _BINARY_OP_MULTIPLY_FLOAT)
+                {
+                    // Check specializer hints for inplace float modification.
+                    _PyBinaryOpCache *cache = (_PyBinaryOpCache *)(target_instr + 1);
+                    bool use_inplace = cache->external_cache[0];
+                    if (use_inplace) {
+                        uint16_t inplace_source = cache->external_cache[1];
+                        uint16_t inplace_local = cache->external_cache[2];
+                        if (uop == _BINARY_OP_ADD_FLOAT) {
+                            if (inplace_source == 1) {
+                                uop = _BINARY_OP_INPLACE_ADD_FLOAT_STORE_FAST_LEFT;
+                                operand = inplace_local;
+                            }
+                            else if (inplace_source == 2) {
+                                uop = _BINARY_OP_INPLACE_ADD_FLOAT_STORE_FAST_RIGHT;
+                                operand = inplace_local;
+                            }
+                            else {
+                                uop = _BINARY_OP_INPLACE_ADD_FLOAT;
+                            }
+                        }
+                        else if (uop == _BINARY_OP_SUBTRACT_FLOAT) {
+                            if (inplace_source == 1) {
+                                uop = _BINARY_OP_INPLACE_SUBTRACT_FLOAT_STORE_FAST_LEFT;
+                                operand = inplace_local;
+                            }
+                            else if (inplace_source == 2) {
+                                uop = _BINARY_OP_INPLACE_SUBTRACT_FLOAT_STORE_FAST_RIGHT;
+                                operand = inplace_local;
+                            }
+                            else {
+                                uop = _BINARY_OP_INPLACE_SUBTRACT_FLOAT;
+                            }
+                        }
+                        else {
+                            assert(uop == _BINARY_OP_MULTIPLY_FLOAT);
+                            if (inplace_source == 1) {
+                                uop = _BINARY_OP_INPLACE_MULTIPLY_FLOAT_STORE_FAST_LEFT;
+                                operand = inplace_local;
+                            }
+                            else if (inplace_source == 2) {
+                                uop = _BINARY_OP_INPLACE_MULTIPLY_FLOAT_STORE_FAST_RIGHT;
+                                operand = inplace_local;
+                            }
+                            else {
+                                uop = _BINARY_OP_INPLACE_MULTIPLY_FLOAT;
+                            }
+                        }
+                        ADD_TO_TRACE(uop, oparg, operand, target);
+                        continue;
+                    }
+                }
+                else if (uop == _BINARY_OP_ADD_INT ||
+                         uop == _BINARY_OP_SUBTRACT_INT ||
+                         uop == _BINARY_OP_MULTIPLY_INT)
+                {
+                    // Check specializer hints for inplace int modification.
+                    _PyBinaryOpCache *cache = (_PyBinaryOpCache *)(target_instr + 1);
+                    bool use_inplace = cache->external_cache[0];
+                    if (use_inplace) {
+                        if (uop == _BINARY_OP_ADD_INT) {
+                            uop = _BINARY_OP_INPLACE_ADD_INT;
+                        }
+                        else if (uop == _BINARY_OP_SUBTRACT_INT) {
+                            uop = _BINARY_OP_INPLACE_SUBTRACT_INT;
+                        }
+                        else {
+                            assert(uop == _BINARY_OP_MULTIPLY_INT);
+                            uop = _BINARY_OP_INPLACE_MULTIPLY_INT;
+                        }
+                        ADD_TO_TRACE(uop, oparg, operand, target);
+                        continue;
+                    }
+                }
+                else if (uop == _BINARY_OP) {
+                    // Check JIT-only specialization hints from the specializer.
+                    // These are for operations that don't have interpreter opcodes
+                    // but can be optimized in tier2.
+                    _PyBinaryOpCache *cache = (_PyBinaryOpCache *)(target_instr + 1);
+                    uint16_t jit_hint = cache->external_cache[3];
+                    if (jit_hint) {
+                        bool use_inplace = cache->external_cache[0];
+                        switch (jit_hint) {
+                        case 1: // JIT_HINT_ADD_FLOAT_INT
+                            uop = _BINARY_OP_ADD_FLOAT_INT;
+                            break;
+                        case 2: // JIT_HINT_SUBTRACT_FLOAT_INT
+                            uop = _BINARY_OP_SUBTRACT_FLOAT_INT;
+                            break;
+                        case 3: // JIT_HINT_MULTIPLY_FLOAT_INT
+                            uop = _BINARY_OP_MULTIPLY_FLOAT_INT;
+                            break;
+                        case 4: // JIT_HINT_TRUE_DIVIDE_FLOAT_INT
+                            uop = _BINARY_OP_TRUE_DIVIDE_FLOAT_INT;
+                            break;
+                        case 5: // JIT_HINT_TRUE_DIVIDE_FLOAT
+                            uop = use_inplace
+                                ? _BINARY_OP_INPLACE_TRUE_DIVIDE_FLOAT
+                                : _BINARY_OP_TRUE_DIVIDE_FLOAT;
+                            break;
+                        case 6: // JIT_HINT_POWER_FLOAT
+                            uop = use_inplace
+                                ? _BINARY_OP_INPLACE_POWER_FLOAT
+                                : _BINARY_OP_POWER_FLOAT;
+                            break;
+                        case 7: // JIT_HINT_FLOOR_DIVIDE_INT
+                            uop = _BINARY_OP_FLOOR_DIVIDE_INT;
+                            break;
+                        case 8: // JIT_HINT_MODULO_INT
+                            uop = _BINARY_OP_MODULO_INT;
+                            break;
+                        default:
+                            break;
+                        }
+                        ADD_TO_TRACE(uop, oparg, operand, target);
+                        continue;
+                    }
+                }
                 else if (_PyUop_Flags[uop] & HAS_RECORDS_VALUE_FLAG) {
                     PyObject *recorded_value = tracer->prev_state.recorded_value;
                     tracer->prev_state.recorded_value = NULL;

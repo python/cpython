@@ -316,6 +316,145 @@ dummy_func(void) {
         r = right;
     }
 
+    // Inplace float ops — same abstract signature as the regular ops.
+    // res is always a float; l and r are copies of the inputs (for POP_TOP).
+
+    op(_BINARY_OP_INPLACE_ADD_FLOAT, (left, right -- res, l, r)) {
+        res = sym_new_type(ctx, &PyFloat_Type);
+        l = left;
+        r = right;
+    }
+
+    op(_BINARY_OP_INPLACE_SUBTRACT_FLOAT, (left, right -- res, l, r)) {
+        res = sym_new_type(ctx, &PyFloat_Type);
+        l = left;
+        r = right;
+    }
+
+    op(_BINARY_OP_INPLACE_MULTIPLY_FLOAT, (left, right -- res, l, r)) {
+        res = sym_new_type(ctx, &PyFloat_Type);
+        l = left;
+        r = right;
+    }
+
+    op(_BINARY_OP_INPLACE_ADD_FLOAT_STORE_FAST_LEFT, (local/1, left, right -- res, l, r)) {
+        res = sym_new_type(ctx, &PyFloat_Type);
+        l = left;
+        r = right;
+    }
+
+    op(_BINARY_OP_INPLACE_SUBTRACT_FLOAT_STORE_FAST_LEFT, (local/1, left, right -- res, l, r)) {
+        res = sym_new_type(ctx, &PyFloat_Type);
+        l = left;
+        r = right;
+    }
+
+    op(_BINARY_OP_INPLACE_MULTIPLY_FLOAT_STORE_FAST_LEFT, (local/1, left, right -- res, l, r)) {
+        res = sym_new_type(ctx, &PyFloat_Type);
+        l = left;
+        r = right;
+    }
+
+    op(_BINARY_OP_INPLACE_ADD_FLOAT_STORE_FAST_RIGHT, (local/1, left, right -- res, l, r)) {
+        res = sym_new_type(ctx, &PyFloat_Type);
+        l = left;
+        r = right;
+    }
+
+    op(_BINARY_OP_INPLACE_SUBTRACT_FLOAT_STORE_FAST_RIGHT, (local/1, left, right -- res, l, r)) {
+        res = sym_new_type(ctx, &PyFloat_Type);
+        l = left;
+        r = right;
+    }
+
+    op(_BINARY_OP_INPLACE_MULTIPLY_FLOAT_STORE_FAST_RIGHT, (local/1, left, right -- res, l, r)) {
+        res = sym_new_type(ctx, &PyFloat_Type);
+        l = left;
+        r = right;
+    }
+
+    // Tier2-only: float true divide, power, float/int mixed
+    op(_BINARY_OP_TRUE_DIVIDE_FLOAT, (left, right -- res, l, r)) {
+        res = sym_new_type(ctx, &PyFloat_Type);
+        l = left;
+        r = right;
+    }
+
+    op(_BINARY_OP_POWER_FLOAT, (left, right -- res, l, r)) {
+        res = sym_new_type(ctx, &PyFloat_Type);
+        l = left;
+        r = right;
+    }
+
+    op(_BINARY_OP_ADD_FLOAT_INT, (left, right -- res, l, r)) {
+        res = sym_new_type(ctx, &PyFloat_Type);
+        l = left;
+        r = right;
+    }
+
+    op(_BINARY_OP_SUBTRACT_FLOAT_INT, (left, right -- res, l, r)) {
+        res = sym_new_type(ctx, &PyFloat_Type);
+        l = left;
+        r = right;
+    }
+
+    op(_BINARY_OP_MULTIPLY_FLOAT_INT, (left, right -- res, l, r)) {
+        res = sym_new_type(ctx, &PyFloat_Type);
+        l = left;
+        r = right;
+    }
+
+    op(_BINARY_OP_TRUE_DIVIDE_FLOAT_INT, (left, right -- res, l, r)) {
+        res = sym_new_type(ctx, &PyFloat_Type);
+        l = left;
+        r = right;
+    }
+
+    // Tier2-only: int floor divide, modulo
+    op(_BINARY_OP_FLOOR_DIVIDE_INT, (left, right -- res, l, r)) {
+        res = sym_new_type(ctx, &PyLong_Type);
+        l = left;
+        r = right;
+    }
+
+    op(_BINARY_OP_MODULO_INT, (left, right -- res, l, r)) {
+        res = sym_new_type(ctx, &PyLong_Type);
+        l = left;
+        r = right;
+    }
+
+    // Tier2-only: inplace true divide, power
+    op(_BINARY_OP_INPLACE_TRUE_DIVIDE_FLOAT, (left, right -- res, l, r)) {
+        res = sym_new_type(ctx, &PyFloat_Type);
+        l = left;
+        r = right;
+    }
+
+    op(_BINARY_OP_INPLACE_POWER_FLOAT, (left, right -- res, l, r)) {
+        res = sym_new_type(ctx, &PyFloat_Type);
+        l = left;
+        r = right;
+    }
+
+    // Tier2-only: inplace int ops
+    op(_BINARY_OP_INPLACE_ADD_INT, (left, right -- res, l, r)) {
+        res = sym_new_type(ctx, &PyLong_Type);
+        l = left;
+        r = right;
+    }
+
+    op(_BINARY_OP_INPLACE_SUBTRACT_INT, (left, right -- res, l, r)) {
+        res = sym_new_type(ctx, &PyLong_Type);
+        l = left;
+        r = right;
+    }
+
+    op(_BINARY_OP_INPLACE_MULTIPLY_INT, (left, right -- res, l, r)) {
+        res = sym_new_type(ctx, &PyLong_Type);
+        l = left;
+        r = right;
+    }
+
     op(_BINARY_OP_ADD_UNICODE, (left, right -- res, l, r)) {
         res = sym_new_type(ctx, &PyUnicode_Type);
         l = left;

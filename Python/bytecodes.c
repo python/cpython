@@ -757,6 +757,668 @@ dummy_func(
         macro(BINARY_OP_SUBTRACT_FLOAT) =
             _GUARD_TOS_FLOAT + _GUARD_NOS_FLOAT + unused/5 + _BINARY_OP_SUBTRACT_FLOAT + _POP_TOP_FLOAT + _POP_TOP_FLOAT;
 
+        // ── Float inplace modification (JIT-only tier2 ops) ──────────
+        //
+        // These tier2-only ops reuse one of the input float objects when
+        // its reference count is 1 at runtime, avoiding a PyFloat
+        // allocation.  The specializer records profiling hints in
+        // external_cache[0..2] of _PyBinaryOpCache so the optimizer can
+        // select the right variant.
+        //
+        // Generic variants try left first, then right, then allocate.
+        // STORE_FAST_LEFT/RIGHT variants additionally verify that the
+        // STORE_FAST target local is the same object (refcnt == 2 when
+        // both the stack and the local reference it).
+
+        tier2 op(_BINARY_OP_INPLACE_ADD_FLOAT, (left, right -- res, l, r)) {
+            PyObject *left_o = PyStackRef_AsPyObjectBorrow(left);
+            PyObject *right_o = PyStackRef_AsPyObjectBorrow(right);
+            DEOPT_IF(!PyFloat_CheckExact(left_o));
+            DEOPT_IF(!PyFloat_CheckExact(right_o));
+            STAT_INC(BINARY_OP, hit);
+            double dres =
+                ((PyFloatObject *)left_o)->ob_fval +
+                ((PyFloatObject *)right_o)->ob_fval;
+            if (PyStackRef_RefcountOnObject(left) && Py_REFCNT(left_o) == 1) {
+                ((PyFloatObject *)left_o)->ob_fval = dres;
+                res = left;
+                l = PyStackRef_DUP(left);
+                r = right;
+                INPUTS_DEAD();
+            }
+            else if (PyStackRef_RefcountOnObject(right) && Py_REFCNT(right_o) == 1) {
+                ((PyFloatObject *)right_o)->ob_fval = dres;
+                res = right;
+                l = left;
+                r = PyStackRef_DUP(right);
+                INPUTS_DEAD();
+            }
+            else {
+                res = PyStackRef_FromPyObjectSteal(PyFloat_FromDouble(dres));
+                if (PyStackRef_IsNull(res)) {
+                    ERROR_NO_POP();
+                }
+                l = left;
+                r = right;
+                INPUTS_DEAD();
+            }
+        }
+
+        tier2 op(_BINARY_OP_INPLACE_SUBTRACT_FLOAT, (left, right -- res, l, r)) {
+            PyObject *left_o = PyStackRef_AsPyObjectBorrow(left);
+            PyObject *right_o = PyStackRef_AsPyObjectBorrow(right);
+            DEOPT_IF(!PyFloat_CheckExact(left_o));
+            DEOPT_IF(!PyFloat_CheckExact(right_o));
+            STAT_INC(BINARY_OP, hit);
+            double dres =
+                ((PyFloatObject *)left_o)->ob_fval -
+                ((PyFloatObject *)right_o)->ob_fval;
+            if (PyStackRef_RefcountOnObject(left) && Py_REFCNT(left_o) == 1) {
+                ((PyFloatObject *)left_o)->ob_fval = dres;
+                res = left;
+                l = PyStackRef_DUP(left);
+                r = right;
+                INPUTS_DEAD();
+            }
+            else if (PyStackRef_RefcountOnObject(right) && Py_REFCNT(right_o) == 1) {
+                ((PyFloatObject *)right_o)->ob_fval = dres;
+                res = right;
+                l = left;
+                r = PyStackRef_DUP(right);
+                INPUTS_DEAD();
+            }
+            else {
+                res = PyStackRef_FromPyObjectSteal(PyFloat_FromDouble(dres));
+                if (PyStackRef_IsNull(res)) {
+                    ERROR_NO_POP();
+                }
+                l = left;
+                r = right;
+                INPUTS_DEAD();
+            }
+        }
+
+        tier2 op(_BINARY_OP_INPLACE_MULTIPLY_FLOAT, (left, right -- res, l, r)) {
+            PyObject *left_o = PyStackRef_AsPyObjectBorrow(left);
+            PyObject *right_o = PyStackRef_AsPyObjectBorrow(right);
+            DEOPT_IF(!PyFloat_CheckExact(left_o));
+            DEOPT_IF(!PyFloat_CheckExact(right_o));
+            STAT_INC(BINARY_OP, hit);
+            double dres =
+                ((PyFloatObject *)left_o)->ob_fval *
+                ((PyFloatObject *)right_o)->ob_fval;
+            if (PyStackRef_RefcountOnObject(left) && Py_REFCNT(left_o) == 1) {
+                ((PyFloatObject *)left_o)->ob_fval = dres;
+                res = left;
+                l = PyStackRef_DUP(left);
+                r = right;
+                INPUTS_DEAD();
+            }
+            else if (PyStackRef_RefcountOnObject(right) && Py_REFCNT(right_o) == 1) {
+                ((PyFloatObject *)right_o)->ob_fval = dres;
+                res = right;
+                l = left;
+                r = PyStackRef_DUP(right);
+                INPUTS_DEAD();
+            }
+            else {
+                res = PyStackRef_FromPyObjectSteal(PyFloat_FromDouble(dres));
+                if (PyStackRef_IsNull(res)) {
+                    ERROR_NO_POP();
+                }
+                l = left;
+                r = right;
+                INPUTS_DEAD();
+            }
+        }
+
+        // STORE_FAST_LEFT variants: the specializer detected that the
+        // next instruction is STORE_FAST targeting the LEFT operand.
+        // The local still holds a reference → refcnt is 2 (stack + local).
+        // `local` is the operand field carrying the STORE_FAST target index.
+
+        tier2 op(_BINARY_OP_INPLACE_ADD_FLOAT_STORE_FAST_LEFT, (local/1, left, right -- res, l, r)) {
+            PyObject *left_o = PyStackRef_AsPyObjectBorrow(left);
+            PyObject *right_o = PyStackRef_AsPyObjectBorrow(right);
+            DEOPT_IF(!PyFloat_CheckExact(left_o));
+            DEOPT_IF(!PyFloat_CheckExact(right_o));
+            STAT_INC(BINARY_OP, hit);
+            double dres = ((PyFloatObject *)left_o)->ob_fval +
+                          ((PyFloatObject *)right_o)->ob_fval;
+            _PyStackRef target = GETLOCAL(local);
+            DEOPT_IF(PyStackRef_IsNull(target));
+            PyObject *target_o = PyStackRef_AsPyObjectBorrow(target);
+            DEOPT_IF(target_o != left_o);
+            if (PyStackRef_RefcountOnObject(left)) {
+                DEOPT_IF(Py_REFCNT(left_o) != 2);
+                res = left;
+                l = PyStackRef_DUP(left);
+                r = right;
+            }
+            else {
+                DEOPT_IF(Py_REFCNT(left_o) != 1);
+                res = PyStackRef_FromPyObjectNew(left_o);
+                l = left;
+                r = right;
+            }
+            ((PyFloatObject *)left_o)->ob_fval = dres;
+            INPUTS_DEAD();
+        }
+
+        tier2 op(_BINARY_OP_INPLACE_SUBTRACT_FLOAT_STORE_FAST_LEFT, (local/1, left, right -- res, l, r)) {
+            PyObject *left_o = PyStackRef_AsPyObjectBorrow(left);
+            PyObject *right_o = PyStackRef_AsPyObjectBorrow(right);
+            DEOPT_IF(!PyFloat_CheckExact(left_o));
+            DEOPT_IF(!PyFloat_CheckExact(right_o));
+            STAT_INC(BINARY_OP, hit);
+            double dres = ((PyFloatObject *)left_o)->ob_fval -
+                          ((PyFloatObject *)right_o)->ob_fval;
+            _PyStackRef target = GETLOCAL(local);
+            DEOPT_IF(PyStackRef_IsNull(target));
+            PyObject *target_o = PyStackRef_AsPyObjectBorrow(target);
+            DEOPT_IF(target_o != left_o);
+            if (PyStackRef_RefcountOnObject(left)) {
+                DEOPT_IF(Py_REFCNT(left_o) != 2);
+                res = left;
+                l = PyStackRef_DUP(left);
+                r = right;
+            }
+            else {
+                DEOPT_IF(Py_REFCNT(left_o) != 1);
+                res = PyStackRef_FromPyObjectNew(left_o);
+                l = left;
+                r = right;
+            }
+            ((PyFloatObject *)left_o)->ob_fval = dres;
+            INPUTS_DEAD();
+        }
+
+        tier2 op(_BINARY_OP_INPLACE_MULTIPLY_FLOAT_STORE_FAST_LEFT, (local/1, left, right -- res, l, r)) {
+            PyObject *left_o = PyStackRef_AsPyObjectBorrow(left);
+            PyObject *right_o = PyStackRef_AsPyObjectBorrow(right);
+            DEOPT_IF(!PyFloat_CheckExact(left_o));
+            DEOPT_IF(!PyFloat_CheckExact(right_o));
+            STAT_INC(BINARY_OP, hit);
+            double dres = ((PyFloatObject *)left_o)->ob_fval *
+                          ((PyFloatObject *)right_o)->ob_fval;
+            _PyStackRef target = GETLOCAL(local);
+            DEOPT_IF(PyStackRef_IsNull(target));
+            PyObject *target_o = PyStackRef_AsPyObjectBorrow(target);
+            DEOPT_IF(target_o != left_o);
+            if (PyStackRef_RefcountOnObject(left)) {
+                DEOPT_IF(Py_REFCNT(left_o) != 2);
+                res = left;
+                l = PyStackRef_DUP(left);
+                r = right;
+            }
+            else {
+                DEOPT_IF(Py_REFCNT(left_o) != 1);
+                res = PyStackRef_FromPyObjectNew(left_o);
+                l = left;
+                r = right;
+            }
+            ((PyFloatObject *)left_o)->ob_fval = dres;
+            INPUTS_DEAD();
+        }
+
+        // STORE_FAST_RIGHT variants: same as LEFT but the STORE_FAST
+        // target is the RIGHT operand.
+
+        tier2 op(_BINARY_OP_INPLACE_ADD_FLOAT_STORE_FAST_RIGHT, (local/1, left, right -- res, l, r)) {
+            PyObject *left_o = PyStackRef_AsPyObjectBorrow(left);
+            PyObject *right_o = PyStackRef_AsPyObjectBorrow(right);
+            DEOPT_IF(!PyFloat_CheckExact(left_o));
+            DEOPT_IF(!PyFloat_CheckExact(right_o));
+            STAT_INC(BINARY_OP, hit);
+            double dres = ((PyFloatObject *)left_o)->ob_fval +
+                          ((PyFloatObject *)right_o)->ob_fval;
+            _PyStackRef target = GETLOCAL(local);
+            DEOPT_IF(PyStackRef_IsNull(target));
+            PyObject *target_o = PyStackRef_AsPyObjectBorrow(target);
+            DEOPT_IF(target_o != right_o);
+            if (PyStackRef_RefcountOnObject(right)) {
+                DEOPT_IF(Py_REFCNT(right_o) != 2);
+                res = right;
+                l = left;
+                r = PyStackRef_DUP(right);
+            }
+            else {
+                DEOPT_IF(Py_REFCNT(right_o) != 1);
+                res = PyStackRef_FromPyObjectNew(right_o);
+                l = left;
+                r = right;
+            }
+            ((PyFloatObject *)right_o)->ob_fval = dres;
+            INPUTS_DEAD();
+        }
+
+        tier2 op(_BINARY_OP_INPLACE_SUBTRACT_FLOAT_STORE_FAST_RIGHT, (local/1, left, right -- res, l, r)) {
+            PyObject *left_o = PyStackRef_AsPyObjectBorrow(left);
+            PyObject *right_o = PyStackRef_AsPyObjectBorrow(right);
+            DEOPT_IF(!PyFloat_CheckExact(left_o));
+            DEOPT_IF(!PyFloat_CheckExact(right_o));
+            STAT_INC(BINARY_OP, hit);
+            double dres = ((PyFloatObject *)left_o)->ob_fval -
+                          ((PyFloatObject *)right_o)->ob_fval;
+            _PyStackRef target = GETLOCAL(local);
+            DEOPT_IF(PyStackRef_IsNull(target));
+            PyObject *target_o = PyStackRef_AsPyObjectBorrow(target);
+            DEOPT_IF(target_o != right_o);
+            if (PyStackRef_RefcountOnObject(right)) {
+                DEOPT_IF(Py_REFCNT(right_o) != 2);
+                res = right;
+                l = left;
+                r = PyStackRef_DUP(right);
+            }
+            else {
+                DEOPT_IF(Py_REFCNT(right_o) != 1);
+                res = PyStackRef_FromPyObjectNew(right_o);
+                l = left;
+                r = right;
+            }
+            ((PyFloatObject *)right_o)->ob_fval = dres;
+            INPUTS_DEAD();
+        }
+
+        tier2 op(_BINARY_OP_INPLACE_MULTIPLY_FLOAT_STORE_FAST_RIGHT, (local/1, left, right -- res, l, r)) {
+            PyObject *left_o = PyStackRef_AsPyObjectBorrow(left);
+            PyObject *right_o = PyStackRef_AsPyObjectBorrow(right);
+            DEOPT_IF(!PyFloat_CheckExact(left_o));
+            DEOPT_IF(!PyFloat_CheckExact(right_o));
+            STAT_INC(BINARY_OP, hit);
+            double dres = ((PyFloatObject *)left_o)->ob_fval *
+                          ((PyFloatObject *)right_o)->ob_fval;
+            _PyStackRef target = GETLOCAL(local);
+            DEOPT_IF(PyStackRef_IsNull(target));
+            PyObject *target_o = PyStackRef_AsPyObjectBorrow(target);
+            DEOPT_IF(target_o != right_o);
+            if (PyStackRef_RefcountOnObject(right)) {
+                DEOPT_IF(Py_REFCNT(right_o) != 2);
+                res = right;
+                l = left;
+                r = PyStackRef_DUP(right);
+            }
+            else {
+                DEOPT_IF(Py_REFCNT(right_o) != 1);
+                res = PyStackRef_FromPyObjectNew(right_o);
+                l = left;
+                r = right;
+            }
+            ((PyFloatObject *)right_o)->ob_fval = dres;
+            INPUTS_DEAD();
+        }
+
+        // --- Tier2-only: float true divide, power, float/int mixed ---
+
+        tier2 op(_BINARY_OP_TRUE_DIVIDE_FLOAT, (left, right -- res, l, r)) {
+            PyObject *left_o = PyStackRef_AsPyObjectBorrow(left);
+            PyObject *right_o = PyStackRef_AsPyObjectBorrow(right);
+            DEOPT_IF(!PyFloat_CheckExact(left_o));
+            DEOPT_IF(!PyFloat_CheckExact(right_o));
+            STAT_INC(BINARY_OP, hit);
+            double denom = ((PyFloatObject *)right_o)->ob_fval;
+            DEOPT_IF(denom == 0.0);
+            double dres =
+                ((PyFloatObject *)left_o)->ob_fval / denom;
+            res = PyStackRef_FromPyObjectSteal(PyFloat_FromDouble(dres));
+            if (PyStackRef_IsNull(res)) {
+                ERROR_NO_POP();
+            }
+            l = left;
+            r = right;
+            INPUTS_DEAD();
+        }
+
+        tier2 op(_BINARY_OP_POWER_FLOAT, (left, right -- res, l, r)) {
+            PyObject *left_o = PyStackRef_AsPyObjectBorrow(left);
+            PyObject *right_o = PyStackRef_AsPyObjectBorrow(right);
+            DEOPT_IF(!PyFloat_CheckExact(left_o));
+            DEOPT_IF(!PyFloat_CheckExact(right_o));
+            STAT_INC(BINARY_OP, hit);
+            double base_val = ((PyFloatObject *)left_o)->ob_fval;
+            double exp_val = ((PyFloatObject *)right_o)->ob_fval;
+            DEOPT_IF(!(base_val > 0.0));
+            int exp_finite = isfinite(exp_val);
+            DEOPT_IF(!exp_finite);
+            double dres = pow(base_val, exp_val);
+            res = PyStackRef_FromPyObjectSteal(PyFloat_FromDouble(dres));
+            if (PyStackRef_IsNull(res)) {
+                ERROR_NO_POP();
+            }
+            l = left;
+            r = right;
+            INPUTS_DEAD();
+        }
+
+        tier2 op(_BINARY_OP_ADD_FLOAT_INT, (left, right -- res, l, r)) {
+            PyObject *left_o = PyStackRef_AsPyObjectBorrow(left);
+            PyObject *right_o = PyStackRef_AsPyObjectBorrow(right);
+            DEOPT_IF(!PyFloat_CheckExact(left_o));
+            DEOPT_IF(!PyLong_CheckExact(right_o));
+            DEOPT_IF(!_PyLong_IsCompact((PyLongObject *)right_o));
+            STAT_INC(BINARY_OP, hit);
+            double dres =
+                ((PyFloatObject *)left_o)->ob_fval +
+                (double)_PyLong_CompactValue((PyLongObject *)right_o);
+            res = PyStackRef_FromPyObjectSteal(PyFloat_FromDouble(dres));
+            if (PyStackRef_IsNull(res)) {
+                ERROR_NO_POP();
+            }
+            l = left;
+            r = right;
+            INPUTS_DEAD();
+        }
+
+        tier2 op(_BINARY_OP_SUBTRACT_FLOAT_INT, (left, right -- res, l, r)) {
+            PyObject *left_o = PyStackRef_AsPyObjectBorrow(left);
+            PyObject *right_o = PyStackRef_AsPyObjectBorrow(right);
+            DEOPT_IF(!PyFloat_CheckExact(left_o));
+            DEOPT_IF(!PyLong_CheckExact(right_o));
+            DEOPT_IF(!_PyLong_IsCompact((PyLongObject *)right_o));
+            STAT_INC(BINARY_OP, hit);
+            double dres =
+                ((PyFloatObject *)left_o)->ob_fval -
+                (double)_PyLong_CompactValue((PyLongObject *)right_o);
+            res = PyStackRef_FromPyObjectSteal(PyFloat_FromDouble(dres));
+            if (PyStackRef_IsNull(res)) {
+                ERROR_NO_POP();
+            }
+            l = left;
+            r = right;
+            INPUTS_DEAD();
+        }
+
+        tier2 op(_BINARY_OP_MULTIPLY_FLOAT_INT, (left, right -- res, l, r)) {
+            PyObject *left_o = PyStackRef_AsPyObjectBorrow(left);
+            PyObject *right_o = PyStackRef_AsPyObjectBorrow(right);
+            DEOPT_IF(!PyFloat_CheckExact(left_o));
+            DEOPT_IF(!PyLong_CheckExact(right_o));
+            DEOPT_IF(!_PyLong_IsCompact((PyLongObject *)right_o));
+            STAT_INC(BINARY_OP, hit);
+            double dres =
+                ((PyFloatObject *)left_o)->ob_fval *
+                (double)_PyLong_CompactValue((PyLongObject *)right_o);
+            res = PyStackRef_FromPyObjectSteal(PyFloat_FromDouble(dres));
+            if (PyStackRef_IsNull(res)) {
+                ERROR_NO_POP();
+            }
+            l = left;
+            r = right;
+            INPUTS_DEAD();
+        }
+
+        tier2 op(_BINARY_OP_TRUE_DIVIDE_FLOAT_INT, (left, right -- res, l, r)) {
+            PyObject *left_o = PyStackRef_AsPyObjectBorrow(left);
+            PyObject *right_o = PyStackRef_AsPyObjectBorrow(right);
+            DEOPT_IF(!PyFloat_CheckExact(left_o));
+            DEOPT_IF(!PyLong_CheckExact(right_o));
+            DEOPT_IF(!_PyLong_IsCompact((PyLongObject *)right_o));
+            STAT_INC(BINARY_OP, hit);
+            double denom = (double)_PyLong_CompactValue((PyLongObject *)right_o);
+            DEOPT_IF(denom == 0.0);
+            double dres =
+                ((PyFloatObject *)left_o)->ob_fval / denom;
+            res = PyStackRef_FromPyObjectSteal(PyFloat_FromDouble(dres));
+            if (PyStackRef_IsNull(res)) {
+                ERROR_NO_POP();
+            }
+            l = left;
+            r = right;
+            INPUTS_DEAD();
+        }
+
+        // --- Tier2-only: int floor divide and modulo ---
+
+        tier2 op(_BINARY_OP_FLOOR_DIVIDE_INT, (left, right -- res, l, r)) {
+            PyObject *left_o = PyStackRef_AsPyObjectBorrow(left);
+            PyObject *right_o = PyStackRef_AsPyObjectBorrow(right);
+            DEOPT_IF(!PyLong_CheckExact(left_o));
+            DEOPT_IF(!PyLong_CheckExact(right_o));
+            DEOPT_IF(!_PyLong_BothAreCompact((PyLongObject *)left_o, (PyLongObject *)right_o));
+            DEOPT_IF(_PyLong_IsZero((PyLongObject *)right_o));
+            STAT_INC(BINARY_OP, hit);
+            res = _PyCompactLong_FloorDivide((PyLongObject *)left_o, (PyLongObject *)right_o);
+            DEOPT_IF(PyStackRef_IsNull(res));
+            l = left;
+            r = right;
+            INPUTS_DEAD();
+        }
+
+        tier2 op(_BINARY_OP_MODULO_INT, (left, right -- res, l, r)) {
+            PyObject *left_o = PyStackRef_AsPyObjectBorrow(left);
+            PyObject *right_o = PyStackRef_AsPyObjectBorrow(right);
+            DEOPT_IF(!PyLong_CheckExact(left_o));
+            DEOPT_IF(!PyLong_CheckExact(right_o));
+            DEOPT_IF(!_PyLong_BothAreCompact((PyLongObject *)left_o, (PyLongObject *)right_o));
+            DEOPT_IF(_PyLong_IsZero((PyLongObject *)right_o));
+            STAT_INC(BINARY_OP, hit);
+            res = _PyCompactLong_Modulo((PyLongObject *)left_o, (PyLongObject *)right_o);
+            DEOPT_IF(PyStackRef_IsNull(res));
+            l = left;
+            r = right;
+            INPUTS_DEAD();
+        }
+
+        // --- Tier2-only: inplace true divide and power ---
+
+        tier2 op(_BINARY_OP_INPLACE_TRUE_DIVIDE_FLOAT, (left, right -- res, l, r)) {
+            PyObject *left_o = PyStackRef_AsPyObjectBorrow(left);
+            PyObject *right_o = PyStackRef_AsPyObjectBorrow(right);
+            DEOPT_IF(!PyFloat_CheckExact(left_o));
+            DEOPT_IF(!PyFloat_CheckExact(right_o));
+            STAT_INC(BINARY_OP, hit);
+            double denom = ((PyFloatObject *)right_o)->ob_fval;
+            DEOPT_IF(denom == 0.0);
+            double dres =
+                ((PyFloatObject *)left_o)->ob_fval / denom;
+            if (PyStackRef_RefcountOnObject(left) && Py_REFCNT(left_o) == 1) {
+                ((PyFloatObject *)left_o)->ob_fval = dres;
+                res = left;
+                l = PyStackRef_DUP(left);
+                r = right;
+                INPUTS_DEAD();
+            }
+            else if (PyStackRef_RefcountOnObject(right) && Py_REFCNT(right_o) == 1) {
+                ((PyFloatObject *)right_o)->ob_fval = dres;
+                res = right;
+                l = left;
+                r = PyStackRef_DUP(right);
+                INPUTS_DEAD();
+            }
+            else {
+                res = PyStackRef_FromPyObjectSteal(PyFloat_FromDouble(dres));
+                if (PyStackRef_IsNull(res)) {
+                    ERROR_NO_POP();
+                }
+                l = left;
+                r = right;
+                INPUTS_DEAD();
+            }
+        }
+
+        tier2 op(_BINARY_OP_INPLACE_POWER_FLOAT, (left, right -- res, l, r)) {
+            PyObject *left_o = PyStackRef_AsPyObjectBorrow(left);
+            PyObject *right_o = PyStackRef_AsPyObjectBorrow(right);
+            DEOPT_IF(!PyFloat_CheckExact(left_o));
+            DEOPT_IF(!PyFloat_CheckExact(right_o));
+            STAT_INC(BINARY_OP, hit);
+            double base_val = ((PyFloatObject *)left_o)->ob_fval;
+            double exp_val = ((PyFloatObject *)right_o)->ob_fval;
+            DEOPT_IF(!(base_val > 0.0));
+            int exp_finite = isfinite(exp_val);
+            DEOPT_IF(!exp_finite);
+            double dres = pow(base_val, exp_val);
+            if (PyStackRef_RefcountOnObject(left) && Py_REFCNT(left_o) == 1) {
+                ((PyFloatObject *)left_o)->ob_fval = dres;
+                res = left;
+                l = PyStackRef_DUP(left);
+                r = right;
+                INPUTS_DEAD();
+            }
+            else if (PyStackRef_RefcountOnObject(right) && Py_REFCNT(right_o) == 1) {
+                ((PyFloatObject *)right_o)->ob_fval = dres;
+                res = right;
+                l = left;
+                r = PyStackRef_DUP(right);
+                INPUTS_DEAD();
+            }
+            else {
+                res = PyStackRef_FromPyObjectSteal(PyFloat_FromDouble(dres));
+                if (PyStackRef_IsNull(res)) {
+                    ERROR_NO_POP();
+                }
+                l = left;
+                r = right;
+                INPUTS_DEAD();
+            }
+        }
+
+        // --- Tier2-only: inplace int ops ---
+
+        tier2 op(_BINARY_OP_INPLACE_ADD_INT, (left, right -- res, l, r)) {
+            PyObject *left_o = PyStackRef_AsPyObjectBorrow(left);
+            PyObject *right_o = PyStackRef_AsPyObjectBorrow(right);
+            DEOPT_IF(!PyLong_CheckExact(left_o));
+            DEOPT_IF(!PyLong_CheckExact(right_o));
+            DEOPT_IF(!_PyLong_BothAreCompact((PyLongObject *)left_o, (PyLongObject *)right_o));
+            STAT_INC(BINARY_OP, hit);
+            stwodigits v = (stwodigits)_PyLong_CompactValue((PyLongObject *)left_o) +
+                           (stwodigits)_PyLong_CompactValue((PyLongObject *)right_o);
+            if (-(stwodigits)PyLong_MASK <= v && v <= (stwodigits)PyLong_MASK &&
+                v != 0 &&
+                (v < -_PY_NSMALLNEGINTS || v >= _PY_NSMALLPOSINTS) &&
+                PyStackRef_RefcountOnObject(left) &&
+                Py_REFCNT(left_o) == 1 &&
+                (((PyLongObject *)left_o)->long_value.lv_tag & IMMORTALITY_BIT_MASK) == 0)
+            {
+                PyLongObject *left_long = (PyLongObject *)left_o;
+                left_long->long_value.lv_tag = ((uintptr_t)(v < 0 ? 2 : 0) |
+                                                ((uintptr_t)1 << NON_SIZE_BITS));
+                left_long->long_value.ob_digit[0] = (digit)(v < 0 ? -v : v);
+                res = left;
+                l = PyStackRef_DUP(left);
+                r = right;
+            }
+            else if (-(stwodigits)PyLong_MASK <= v && v <= (stwodigits)PyLong_MASK &&
+                     v != 0 &&
+                     (v < -_PY_NSMALLNEGINTS || v >= _PY_NSMALLPOSINTS) &&
+                     PyStackRef_RefcountOnObject(right) &&
+                     Py_REFCNT(right_o) == 1 &&
+                     (((PyLongObject *)right_o)->long_value.lv_tag & IMMORTALITY_BIT_MASK) == 0)
+            {
+                PyLongObject *right_long = (PyLongObject *)right_o;
+                right_long->long_value.lv_tag = ((uintptr_t)(v < 0 ? 2 : 0) |
+                                                 ((uintptr_t)1 << NON_SIZE_BITS));
+                right_long->long_value.ob_digit[0] = (digit)(v < 0 ? -v : v);
+                res = right;
+                l = left;
+                r = PyStackRef_DUP(right);
+            }
+            else {
+                res = _PyCompactLong_Add((PyLongObject *)left_o, (PyLongObject *)right_o);
+                l = left;
+                r = right;
+            }
+            DEOPT_IF(PyStackRef_IsNull(res));
+            INPUTS_DEAD();
+        }
+
+        tier2 op(_BINARY_OP_INPLACE_SUBTRACT_INT, (left, right -- res, l, r)) {
+            PyObject *left_o = PyStackRef_AsPyObjectBorrow(left);
+            PyObject *right_o = PyStackRef_AsPyObjectBorrow(right);
+            DEOPT_IF(!PyLong_CheckExact(left_o));
+            DEOPT_IF(!PyLong_CheckExact(right_o));
+            DEOPT_IF(!_PyLong_BothAreCompact((PyLongObject *)left_o, (PyLongObject *)right_o));
+            STAT_INC(BINARY_OP, hit);
+            stwodigits v = (stwodigits)_PyLong_CompactValue((PyLongObject *)left_o) -
+                           (stwodigits)_PyLong_CompactValue((PyLongObject *)right_o);
+            if (-(stwodigits)PyLong_MASK <= v && v <= (stwodigits)PyLong_MASK &&
+                v != 0 &&
+                (v < -_PY_NSMALLNEGINTS || v >= _PY_NSMALLPOSINTS) &&
+                PyStackRef_RefcountOnObject(left) &&
+                Py_REFCNT(left_o) == 1 &&
+                (((PyLongObject *)left_o)->long_value.lv_tag & IMMORTALITY_BIT_MASK) == 0)
+            {
+                PyLongObject *left_long = (PyLongObject *)left_o;
+                left_long->long_value.lv_tag = ((uintptr_t)(v < 0 ? 2 : 0) |
+                                                ((uintptr_t)1 << NON_SIZE_BITS));
+                left_long->long_value.ob_digit[0] = (digit)(v < 0 ? -v : v);
+                res = left;
+                l = PyStackRef_DUP(left);
+                r = right;
+            }
+            else if (-(stwodigits)PyLong_MASK <= v && v <= (stwodigits)PyLong_MASK &&
+                     v != 0 &&
+                     (v < -_PY_NSMALLNEGINTS || v >= _PY_NSMALLPOSINTS) &&
+                     PyStackRef_RefcountOnObject(right) &&
+                     Py_REFCNT(right_o) == 1 &&
+                     (((PyLongObject *)right_o)->long_value.lv_tag & IMMORTALITY_BIT_MASK) == 0)
+            {
+                PyLongObject *right_long = (PyLongObject *)right_o;
+                right_long->long_value.lv_tag = ((uintptr_t)(v < 0 ? 2 : 0) |
+                                                 ((uintptr_t)1 << NON_SIZE_BITS));
+                right_long->long_value.ob_digit[0] = (digit)(v < 0 ? -v : v);
+                res = right;
+                l = left;
+                r = PyStackRef_DUP(right);
+            }
+            else {
+                res = _PyCompactLong_Subtract((PyLongObject *)left_o, (PyLongObject *)right_o);
+                l = left;
+                r = right;
+            }
+            DEOPT_IF(PyStackRef_IsNull(res));
+            INPUTS_DEAD();
+        }
+
+        tier2 op(_BINARY_OP_INPLACE_MULTIPLY_INT, (left, right -- res, l, r)) {
+            PyObject *left_o = PyStackRef_AsPyObjectBorrow(left);
+            PyObject *right_o = PyStackRef_AsPyObjectBorrow(right);
+            DEOPT_IF(!PyLong_CheckExact(left_o));
+            DEOPT_IF(!PyLong_CheckExact(right_o));
+            DEOPT_IF(!_PyLong_BothAreCompact((PyLongObject *)left_o, (PyLongObject *)right_o));
+            STAT_INC(BINARY_OP, hit);
+            stwodigits v = (stwodigits)_PyLong_CompactValue((PyLongObject *)left_o) *
+                           (stwodigits)_PyLong_CompactValue((PyLongObject *)right_o);
+            if (-(stwodigits)PyLong_MASK <= v && v <= (stwodigits)PyLong_MASK &&
+                v != 0 &&
+                (v < -_PY_NSMALLNEGINTS || v >= _PY_NSMALLPOSINTS) &&
+                PyStackRef_RefcountOnObject(left) &&
+                Py_REFCNT(left_o) == 1 &&
+                (((PyLongObject *)left_o)->long_value.lv_tag & IMMORTALITY_BIT_MASK) == 0)
+            {
+                PyLongObject *left_long = (PyLongObject *)left_o;
+                left_long->long_value.lv_tag = ((uintptr_t)(v < 0 ? 2 : 0) |
+                                                ((uintptr_t)1 << NON_SIZE_BITS));
+                left_long->long_value.ob_digit[0] = (digit)(v < 0 ? -v : v);
+                res = left;
+                l = PyStackRef_DUP(left);
+                r = right;
+            }
+            else if (-(stwodigits)PyLong_MASK <= v && v <= (stwodigits)PyLong_MASK &&
+                     v != 0 &&
+                     (v < -_PY_NSMALLNEGINTS || v >= _PY_NSMALLPOSINTS) &&
+                     PyStackRef_RefcountOnObject(right) &&
+                     Py_REFCNT(right_o) == 1 &&
+                     (((PyLongObject *)right_o)->long_value.lv_tag & IMMORTALITY_BIT_MASK) == 0)
+            {
+                PyLongObject *right_long = (PyLongObject *)right_o;
+                right_long->long_value.lv_tag = ((uintptr_t)(v < 0 ? 2 : 0) |
+                                                 ((uintptr_t)1 << NON_SIZE_BITS));
+                right_long->long_value.ob_digit[0] = (digit)(v < 0 ? -v : v);
+                res = right;
+                l = left;
+                r = PyStackRef_DUP(right);
+            }
+            else {
+                res = _PyCompactLong_Multiply((PyLongObject *)left_o, (PyLongObject *)right_o);
+                l = left;
+                r = right;
+            }
+            DEOPT_IF(PyStackRef_IsNull(res));
+            INPUTS_DEAD();
+        }
+
         pure op(_BINARY_OP_ADD_UNICODE, (left, right -- res, l, r)) {
             PyObject *left_o = PyStackRef_AsPyObjectBorrow(left);
             PyObject *right_o = PyStackRef_AsPyObjectBorrow(right);

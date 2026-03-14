@@ -834,6 +834,452 @@
             break;
         }
 
+        case _BINARY_OP_INPLACE_ADD_FLOAT: {
+            JitOptRef right;
+            JitOptRef left;
+            JitOptRef res;
+            JitOptRef l;
+            JitOptRef r;
+            right = stack_pointer[-1];
+            left = stack_pointer[-2];
+            res = sym_new_type(ctx, &PyFloat_Type);
+            l = left;
+            r = right;
+            CHECK_STACK_BOUNDS(1);
+            stack_pointer[-2] = res;
+            stack_pointer[-1] = l;
+            stack_pointer[0] = r;
+            stack_pointer += 1;
+            ASSERT_WITHIN_STACK_BOUNDS(__FILE__, __LINE__);
+            break;
+        }
+
+        case _BINARY_OP_INPLACE_SUBTRACT_FLOAT: {
+            JitOptRef right;
+            JitOptRef left;
+            JitOptRef res;
+            JitOptRef l;
+            JitOptRef r;
+            right = stack_pointer[-1];
+            left = stack_pointer[-2];
+            res = sym_new_type(ctx, &PyFloat_Type);
+            l = left;
+            r = right;
+            CHECK_STACK_BOUNDS(1);
+            stack_pointer[-2] = res;
+            stack_pointer[-1] = l;
+            stack_pointer[0] = r;
+            stack_pointer += 1;
+            ASSERT_WITHIN_STACK_BOUNDS(__FILE__, __LINE__);
+            break;
+        }
+
+        case _BINARY_OP_INPLACE_MULTIPLY_FLOAT: {
+            JitOptRef right;
+            JitOptRef left;
+            JitOptRef res;
+            JitOptRef l;
+            JitOptRef r;
+            right = stack_pointer[-1];
+            left = stack_pointer[-2];
+            res = sym_new_type(ctx, &PyFloat_Type);
+            l = left;
+            r = right;
+            CHECK_STACK_BOUNDS(1);
+            stack_pointer[-2] = res;
+            stack_pointer[-1] = l;
+            stack_pointer[0] = r;
+            stack_pointer += 1;
+            ASSERT_WITHIN_STACK_BOUNDS(__FILE__, __LINE__);
+            break;
+        }
+
+        case _BINARY_OP_INPLACE_ADD_FLOAT_STORE_FAST_LEFT: {
+            JitOptRef right;
+            JitOptRef left;
+            JitOptRef res;
+            JitOptRef l;
+            JitOptRef r;
+            right = stack_pointer[-1];
+            left = stack_pointer[-2];
+            uint16_t local = (uint16_t)this_instr->operand0;
+            res = sym_new_type(ctx, &PyFloat_Type);
+            l = left;
+            r = right;
+            CHECK_STACK_BOUNDS(1);
+            stack_pointer[-2] = res;
+            stack_pointer[-1] = l;
+            stack_pointer[0] = r;
+            stack_pointer += 1;
+            ASSERT_WITHIN_STACK_BOUNDS(__FILE__, __LINE__);
+            break;
+        }
+
+        case _BINARY_OP_INPLACE_SUBTRACT_FLOAT_STORE_FAST_LEFT: {
+            JitOptRef right;
+            JitOptRef left;
+            JitOptRef res;
+            JitOptRef l;
+            JitOptRef r;
+            right = stack_pointer[-1];
+            left = stack_pointer[-2];
+            uint16_t local = (uint16_t)this_instr->operand0;
+            res = sym_new_type(ctx, &PyFloat_Type);
+            l = left;
+            r = right;
+            CHECK_STACK_BOUNDS(1);
+            stack_pointer[-2] = res;
+            stack_pointer[-1] = l;
+            stack_pointer[0] = r;
+            stack_pointer += 1;
+            ASSERT_WITHIN_STACK_BOUNDS(__FILE__, __LINE__);
+            break;
+        }
+
+        case _BINARY_OP_INPLACE_MULTIPLY_FLOAT_STORE_FAST_LEFT: {
+            JitOptRef right;
+            JitOptRef left;
+            JitOptRef res;
+            JitOptRef l;
+            JitOptRef r;
+            right = stack_pointer[-1];
+            left = stack_pointer[-2];
+            uint16_t local = (uint16_t)this_instr->operand0;
+            res = sym_new_type(ctx, &PyFloat_Type);
+            l = left;
+            r = right;
+            CHECK_STACK_BOUNDS(1);
+            stack_pointer[-2] = res;
+            stack_pointer[-1] = l;
+            stack_pointer[0] = r;
+            stack_pointer += 1;
+            ASSERT_WITHIN_STACK_BOUNDS(__FILE__, __LINE__);
+            break;
+        }
+
+        case _BINARY_OP_INPLACE_ADD_FLOAT_STORE_FAST_RIGHT: {
+            JitOptRef right;
+            JitOptRef left;
+            JitOptRef res;
+            JitOptRef l;
+            JitOptRef r;
+            right = stack_pointer[-1];
+            left = stack_pointer[-2];
+            uint16_t local = (uint16_t)this_instr->operand0;
+            res = sym_new_type(ctx, &PyFloat_Type);
+            l = left;
+            r = right;
+            CHECK_STACK_BOUNDS(1);
+            stack_pointer[-2] = res;
+            stack_pointer[-1] = l;
+            stack_pointer[0] = r;
+            stack_pointer += 1;
+            ASSERT_WITHIN_STACK_BOUNDS(__FILE__, __LINE__);
+            break;
+        }
+
+        case _BINARY_OP_INPLACE_SUBTRACT_FLOAT_STORE_FAST_RIGHT: {
+            JitOptRef right;
+            JitOptRef left;
+            JitOptRef res;
+            JitOptRef l;
+            JitOptRef r;
+            right = stack_pointer[-1];
+            left = stack_pointer[-2];
+            uint16_t local = (uint16_t)this_instr->operand0;
+            res = sym_new_type(ctx, &PyFloat_Type);
+            l = left;
+            r = right;
+            CHECK_STACK_BOUNDS(1);
+            stack_pointer[-2] = res;
+            stack_pointer[-1] = l;
+            stack_pointer[0] = r;
+            stack_pointer += 1;
+            ASSERT_WITHIN_STACK_BOUNDS(__FILE__, __LINE__);
+            break;
+        }
+
+        case _BINARY_OP_INPLACE_MULTIPLY_FLOAT_STORE_FAST_RIGHT: {
+            JitOptRef right;
+            JitOptRef left;
+            JitOptRef res;
+            JitOptRef l;
+            JitOptRef r;
+            right = stack_pointer[-1];
+            left = stack_pointer[-2];
+            uint16_t local = (uint16_t)this_instr->operand0;
+            res = sym_new_type(ctx, &PyFloat_Type);
+            l = left;
+            r = right;
+            CHECK_STACK_BOUNDS(1);
+            stack_pointer[-2] = res;
+            stack_pointer[-1] = l;
+            stack_pointer[0] = r;
+            stack_pointer += 1;
+            ASSERT_WITHIN_STACK_BOUNDS(__FILE__, __LINE__);
+            break;
+        }
+
+        case _BINARY_OP_TRUE_DIVIDE_FLOAT: {
+            JitOptRef right;
+            JitOptRef left;
+            JitOptRef res;
+            JitOptRef l;
+            JitOptRef r;
+            right = stack_pointer[-1];
+            left = stack_pointer[-2];
+            res = sym_new_type(ctx, &PyFloat_Type);
+            l = left;
+            r = right;
+            CHECK_STACK_BOUNDS(1);
+            stack_pointer[-2] = res;
+            stack_pointer[-1] = l;
+            stack_pointer[0] = r;
+            stack_pointer += 1;
+            ASSERT_WITHIN_STACK_BOUNDS(__FILE__, __LINE__);
+            break;
+        }
+
+        case _BINARY_OP_POWER_FLOAT: {
+            JitOptRef right;
+            JitOptRef left;
+            JitOptRef res;
+            JitOptRef l;
+            JitOptRef r;
+            right = stack_pointer[-1];
+            left = stack_pointer[-2];
+            res = sym_new_type(ctx, &PyFloat_Type);
+            l = left;
+            r = right;
+            CHECK_STACK_BOUNDS(1);
+            stack_pointer[-2] = res;
+            stack_pointer[-1] = l;
+            stack_pointer[0] = r;
+            stack_pointer += 1;
+            ASSERT_WITHIN_STACK_BOUNDS(__FILE__, __LINE__);
+            break;
+        }
+
+        case _BINARY_OP_ADD_FLOAT_INT: {
+            JitOptRef right;
+            JitOptRef left;
+            JitOptRef res;
+            JitOptRef l;
+            JitOptRef r;
+            right = stack_pointer[-1];
+            left = stack_pointer[-2];
+            res = sym_new_type(ctx, &PyFloat_Type);
+            l = left;
+            r = right;
+            CHECK_STACK_BOUNDS(1);
+            stack_pointer[-2] = res;
+            stack_pointer[-1] = l;
+            stack_pointer[0] = r;
+            stack_pointer += 1;
+            ASSERT_WITHIN_STACK_BOUNDS(__FILE__, __LINE__);
+            break;
+        }
+
+        case _BINARY_OP_SUBTRACT_FLOAT_INT: {
+            JitOptRef right;
+            JitOptRef left;
+            JitOptRef res;
+            JitOptRef l;
+            JitOptRef r;
+            right = stack_pointer[-1];
+            left = stack_pointer[-2];
+            res = sym_new_type(ctx, &PyFloat_Type);
+            l = left;
+            r = right;
+            CHECK_STACK_BOUNDS(1);
+            stack_pointer[-2] = res;
+            stack_pointer[-1] = l;
+            stack_pointer[0] = r;
+            stack_pointer += 1;
+            ASSERT_WITHIN_STACK_BOUNDS(__FILE__, __LINE__);
+            break;
+        }
+
+        case _BINARY_OP_MULTIPLY_FLOAT_INT: {
+            JitOptRef right;
+            JitOptRef left;
+            JitOptRef res;
+            JitOptRef l;
+            JitOptRef r;
+            right = stack_pointer[-1];
+            left = stack_pointer[-2];
+            res = sym_new_type(ctx, &PyFloat_Type);
+            l = left;
+            r = right;
+            CHECK_STACK_BOUNDS(1);
+            stack_pointer[-2] = res;
+            stack_pointer[-1] = l;
+            stack_pointer[0] = r;
+            stack_pointer += 1;
+            ASSERT_WITHIN_STACK_BOUNDS(__FILE__, __LINE__);
+            break;
+        }
+
+        case _BINARY_OP_TRUE_DIVIDE_FLOAT_INT: {
+            JitOptRef right;
+            JitOptRef left;
+            JitOptRef res;
+            JitOptRef l;
+            JitOptRef r;
+            right = stack_pointer[-1];
+            left = stack_pointer[-2];
+            res = sym_new_type(ctx, &PyFloat_Type);
+            l = left;
+            r = right;
+            CHECK_STACK_BOUNDS(1);
+            stack_pointer[-2] = res;
+            stack_pointer[-1] = l;
+            stack_pointer[0] = r;
+            stack_pointer += 1;
+            ASSERT_WITHIN_STACK_BOUNDS(__FILE__, __LINE__);
+            break;
+        }
+
+        case _BINARY_OP_FLOOR_DIVIDE_INT: {
+            JitOptRef right;
+            JitOptRef left;
+            JitOptRef res;
+            JitOptRef l;
+            JitOptRef r;
+            right = stack_pointer[-1];
+            left = stack_pointer[-2];
+            res = sym_new_type(ctx, &PyLong_Type);
+            l = left;
+            r = right;
+            CHECK_STACK_BOUNDS(1);
+            stack_pointer[-2] = res;
+            stack_pointer[-1] = l;
+            stack_pointer[0] = r;
+            stack_pointer += 1;
+            ASSERT_WITHIN_STACK_BOUNDS(__FILE__, __LINE__);
+            break;
+        }
+
+        case _BINARY_OP_MODULO_INT: {
+            JitOptRef right;
+            JitOptRef left;
+            JitOptRef res;
+            JitOptRef l;
+            JitOptRef r;
+            right = stack_pointer[-1];
+            left = stack_pointer[-2];
+            res = sym_new_type(ctx, &PyLong_Type);
+            l = left;
+            r = right;
+            CHECK_STACK_BOUNDS(1);
+            stack_pointer[-2] = res;
+            stack_pointer[-1] = l;
+            stack_pointer[0] = r;
+            stack_pointer += 1;
+            ASSERT_WITHIN_STACK_BOUNDS(__FILE__, __LINE__);
+            break;
+        }
+
+        case _BINARY_OP_INPLACE_TRUE_DIVIDE_FLOAT: {
+            JitOptRef right;
+            JitOptRef left;
+            JitOptRef res;
+            JitOptRef l;
+            JitOptRef r;
+            right = stack_pointer[-1];
+            left = stack_pointer[-2];
+            res = sym_new_type(ctx, &PyFloat_Type);
+            l = left;
+            r = right;
+            CHECK_STACK_BOUNDS(1);
+            stack_pointer[-2] = res;
+            stack_pointer[-1] = l;
+            stack_pointer[0] = r;
+            stack_pointer += 1;
+            ASSERT_WITHIN_STACK_BOUNDS(__FILE__, __LINE__);
+            break;
+        }
+
+        case _BINARY_OP_INPLACE_POWER_FLOAT: {
+            JitOptRef right;
+            JitOptRef left;
+            JitOptRef res;
+            JitOptRef l;
+            JitOptRef r;
+            right = stack_pointer[-1];
+            left = stack_pointer[-2];
+            res = sym_new_type(ctx, &PyFloat_Type);
+            l = left;
+            r = right;
+            CHECK_STACK_BOUNDS(1);
+            stack_pointer[-2] = res;
+            stack_pointer[-1] = l;
+            stack_pointer[0] = r;
+            stack_pointer += 1;
+            ASSERT_WITHIN_STACK_BOUNDS(__FILE__, __LINE__);
+            break;
+        }
+
+        case _BINARY_OP_INPLACE_ADD_INT: {
+            JitOptRef right;
+            JitOptRef left;
+            JitOptRef res;
+            JitOptRef l;
+            JitOptRef r;
+            right = stack_pointer[-1];
+            left = stack_pointer[-2];
+            res = sym_new_type(ctx, &PyLong_Type);
+            l = left;
+            r = right;
+            CHECK_STACK_BOUNDS(1);
+            stack_pointer[-2] = res;
+            stack_pointer[-1] = l;
+            stack_pointer[0] = r;
+            stack_pointer += 1;
+            ASSERT_WITHIN_STACK_BOUNDS(__FILE__, __LINE__);
+            break;
+        }
+
+        case _BINARY_OP_INPLACE_SUBTRACT_INT: {
+            JitOptRef right;
+            JitOptRef left;
+            JitOptRef res;
+            JitOptRef l;
+            JitOptRef r;
+            right = stack_pointer[-1];
+            left = stack_pointer[-2];
+            res = sym_new_type(ctx, &PyLong_Type);
+            l = left;
+            r = right;
+            CHECK_STACK_BOUNDS(1);
+            stack_pointer[-2] = res;
+            stack_pointer[-1] = l;
+            stack_pointer[0] = r;
+            stack_pointer += 1;
+            ASSERT_WITHIN_STACK_BOUNDS(__FILE__, __LINE__);
+            break;
+        }
+
+        case _BINARY_OP_INPLACE_MULTIPLY_INT: {
+            JitOptRef right;
+            JitOptRef left;
+            JitOptRef res;
+            JitOptRef l;
+            JitOptRef r;
+            right = stack_pointer[-1];
+            left = stack_pointer[-2];
+            res = sym_new_type(ctx, &PyLong_Type);
+            l = left;
+            r = right;
+            CHECK_STACK_BOUNDS(1);
+            stack_pointer[-2] = res;
+            stack_pointer[-1] = l;
+            stack_pointer[0] = r;
+            stack_pointer += 1;
+            ASSERT_WITHIN_STACK_BOUNDS(__FILE__, __LINE__);
+            break;
+        }
+
         case _BINARY_OP_ADD_UNICODE: {
             JitOptRef right;
             JitOptRef left;

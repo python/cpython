@@ -4368,6 +4368,41 @@ _PyCompactLong_Multiply(PyLongObject *a, PyLongObject *b)
     return medium_from_stwodigits(v);
 }
 
+_PyStackRef
+_PyCompactLong_FloorDivide(PyLongObject *a, PyLongObject *b)
+{
+    assert(_PyLong_BothAreCompact(a, b));
+    stwodigits left = medium_value(a);
+    stwodigits right = medium_value(b);
+    assert(right != 0);
+    stwodigits div = left / right;
+    stwodigits rem = left % right;
+    /* Python floor division rounds toward negative infinity.
+     * C division truncates toward zero.  Adjust when remainder
+     * is nonzero and operand signs differ. */
+    if (rem != 0 && ((rem ^ right) < 0)) {
+        div -= 1;
+    }
+    return medium_from_stwodigits(div);
+}
+
+_PyStackRef
+_PyCompactLong_Modulo(PyLongObject *a, PyLongObject *b)
+{
+    assert(_PyLong_BothAreCompact(a, b));
+    stwodigits left = medium_value(a);
+    stwodigits right = medium_value(b);
+    assert(right != 0);
+    stwodigits mod = left % right;
+    /* Python modulo has the sign of the divisor.
+     * C modulo has the sign of the dividend.
+     * Adjust when remainder is nonzero and signs differ. */
+    if (mod != 0 && ((mod ^ right) < 0)) {
+        mod += right;
+    }
+    return medium_from_stwodigits(mod);
+}
+
 static PyObject *
 long_mul_method(PyObject *a, PyObject *b)
 {

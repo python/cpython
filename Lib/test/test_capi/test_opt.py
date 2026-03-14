@@ -3067,7 +3067,7 @@ class TestUopsOptimization(unittest.TestCase):
         self.assertEqual(res, 3.5)
         self.assertIsNotNone(ex)
         uops = get_opnames(ex)
-        self.assertIn("_BINARY_OP_EXTEND", uops)
+        self.assertIn("_BINARY_OP_ADD_FLOAT_INT", uops)
         self.assertIn("_POP_TOP_NOP", uops)
         self.assertLessEqual(count_ops(ex, "_POP_TOP"), 2)
 

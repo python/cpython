@@ -2200,6 +2200,67 @@ binary_op_extended_specialization(PyObject *lhs, PyObject *rhs, int oparg,
     return 0;
 }
 
+// JIT-only specialization hints stored in external_cache[3].
+// These tell the trace optimizer which tier2 op to emit, without
+// consuming interpreter opcode slots.
+enum {
+    JIT_HINT_NONE = 0,
+    JIT_HINT_ADD_FLOAT_INT,
+    JIT_HINT_SUBTRACT_FLOAT_INT,
+    JIT_HINT_MULTIPLY_FLOAT_INT,
+    JIT_HINT_TRUE_DIVIDE_FLOAT_INT,
+    JIT_HINT_TRUE_DIVIDE_FLOAT,
+    JIT_HINT_POWER_FLOAT,
+    JIT_HINT_FLOOR_DIVIDE_INT,
+    JIT_HINT_MODULO_INT,
+};
+
+// Check if either operand of a float/int binary op is a candidate for
+// in-place modification.  An operand is a candidate when the stackref
+// owns a refcount AND the object's refcount is exactly 1 (meaning the
+// evaluation stack is the sole owner).
+static inline bool
+binary_op_float_inplace_candidate(_PyStackRef lhs_st, _PyStackRef rhs_st)
+{
+    PyObject *lhs = PyStackRef_AsPyObjectBorrow(lhs_st);
+    PyObject *rhs = PyStackRef_AsPyObjectBorrow(rhs_st);
+    if (PyStackRef_RefcountOnObject(lhs_st) && Py_REFCNT(lhs) == 1) {
+        return true;
+    }
+    if (PyStackRef_RefcountOnObject(rhs_st) && Py_REFCNT(rhs) == 1) {
+        return true;
+    }
+    return false;
+}
+
+// If the instruction immediately following the binary op is STORE_FAST
+// and the target local currently holds the same object as one of the
+// operands, record which side (1=left, 2=right) and the local index.
+// The optimizer uses this to select STORE_FAST_LEFT / STORE_FAST_RIGHT
+// inplace variants where the refcount check uses 2 instead of 1.
+static inline void
+binary_op_float_inplace_store_fast_hint(_Py_CODEUNIT *instr, _PyStackRef *locals,
+                                        PyObject *lhs, PyObject *rhs,
+                                        uint16_t *source, uint16_t *local_index)
+{
+    *source = 0;
+    *local_index = 0;
+    _Py_CODEUNIT next = instr[INLINE_CACHE_ENTRIES_BINARY_OP + 1];
+    if (next.op.code != STORE_FAST) {
+        return;
+    }
+    uint16_t target = next.op.arg;
+    PyObject *target_o = PyStackRef_AsPyObjectBorrow(locals[target]);
+    if (target_o == lhs) {
+        *source = 1;
+        *local_index = target;
+    }
+    else if (target_o == rhs) {
+        *source = 2;
+        *local_index = target;
+    }
+}
+
 Py_NO_INLINE void
 _Py_Specialize_BinaryOp(_PyStackRef lhs_st, _PyStackRef rhs_st, _Py_CODEUNIT *instr,
                         int oparg, _PyStackRef *locals)
@@ -2218,6 +2279,12 @@ _Py_Specialize_BinaryOp(_PyStackRef lhs_st, _PyStackRef rhs_st, _Py_CODEUNIT *in
         case NB_ADD:
         case NB_INPLACE_ADD:
             if (!Py_IS_TYPE(lhs, Py_TYPE(rhs))) {
+                if (PyFloat_CheckExact(lhs) && _PyLong_CheckExactAndCompact(rhs)) {
+                    cache->external_cache[0] = 0;
+                    cache->external_cache[3] = JIT_HINT_ADD_FLOAT_INT;
+                    unspecialize(instr);
+                    return;
+                }
                 break;
             }
             if (PyUnicode_CheckExact(lhs)) {
@@ -2231,10 +2298,16 @@ _Py_Specialize_BinaryOp(_PyStackRef lhs_st, _PyStackRef rhs_st, _Py_CODEUNIT *in
                 return;
             }
             if (_PyLong_CheckExactAndCompact(lhs) && _PyLong_CheckExactAndCompact(rhs)) {
+                cache->external_cache[0] = binary_op_float_inplace_candidate(lhs_st, rhs_st);
                 specialize(instr, BINARY_OP_ADD_INT);
                 return;
             }
             if (PyFloat_CheckExact(lhs)) {
+                uint16_t source = 0, local_index = 0;
+                binary_op_float_inplace_store_fast_hint(instr, locals, lhs, rhs, &source, &local_index);
+                cache->external_cache[0] = binary_op_float_inplace_candidate(lhs_st, rhs_st) || source != 0;
+                cache->external_cache[1] = source;
+                cache->external_cache[2] = local_index;
                 specialize(instr, BINARY_OP_ADD_FLOAT);
                 return;
             }
@@ -2242,13 +2315,25 @@ _Py_Specialize_BinaryOp(_PyStackRef lhs_st, _PyStackRef rhs_st, _Py_CODEUNIT *in
         case NB_MULTIPLY:
         case NB_INPLACE_MULTIPLY:
             if (!Py_IS_TYPE(lhs, Py_TYPE(rhs))) {
+                if (PyFloat_CheckExact(lhs) && _PyLong_CheckExactAndCompact(rhs)) {
+                    cache->external_cache[0] = 0;
+                    cache->external_cache[3] = JIT_HINT_MULTIPLY_FLOAT_INT;
+                    unspecialize(instr);
+                    return;
+                }
                 break;
             }
             if (_PyLong_CheckExactAndCompact(lhs) && _PyLong_CheckExactAndCompact(rhs)) {
+                cache->external_cache[0] = binary_op_float_inplace_candidate(lhs_st, rhs_st);
                 specialize(instr, BINARY_OP_MULTIPLY_INT);
                 return;
             }
             if (PyFloat_CheckExact(lhs)) {
+                uint16_t source = 0, local_index = 0;
+                binary_op_float_inplace_store_fast_hint(instr, locals, lhs, rhs, &source, &local_index);
+                cache->external_cache[0] = binary_op_float_inplace_candidate(lhs_st, rhs_st) || source != 0;
+                cache->external_cache[1] = source;
+                cache->external_cache[2] = local_index;
                 specialize(instr, BINARY_OP_MULTIPLY_FLOAT);
                 return;
             }
@@ -2256,14 +2341,88 @@ _Py_Specialize_BinaryOp(_PyStackRef lhs_st, _PyStackRef rhs_st, _Py_CODEUNIT *in
         case NB_SUBTRACT:
         case NB_INPLACE_SUBTRACT:
             if (!Py_IS_TYPE(lhs, Py_TYPE(rhs))) {
+                if (PyFloat_CheckExact(lhs) && _PyLong_CheckExactAndCompact(rhs)) {
+                    cache->external_cache[0] = 0;
+                    cache->external_cache[3] = JIT_HINT_SUBTRACT_FLOAT_INT;
+                    unspecialize(instr);
+                    return;
+                }
                 break;
             }
             if (_PyLong_CheckExactAndCompact(lhs) && _PyLong_CheckExactAndCompact(rhs)) {
+                cache->external_cache[0] = binary_op_float_inplace_candidate(lhs_st, rhs_st);
                 specialize(instr, BINARY_OP_SUBTRACT_INT);
                 return;
             }
             if (PyFloat_CheckExact(lhs)) {
+                uint16_t source = 0, local_index = 0;
+                binary_op_float_inplace_store_fast_hint(instr, locals, lhs, rhs, &source, &local_index);
+                cache->external_cache[0] = binary_op_float_inplace_candidate(lhs_st, rhs_st) || source != 0;
+                cache->external_cache[1] = source;
+                cache->external_cache[2] = local_index;
                 specialize(instr, BINARY_OP_SUBTRACT_FLOAT);
+                return;
+            }
+            break;
+        case NB_FLOOR_DIVIDE:
+        case NB_INPLACE_FLOOR_DIVIDE:
+            if (!Py_IS_TYPE(lhs, Py_TYPE(rhs))) {
+                break;
+            }
+            if (_PyLong_CheckExactAndCompact(lhs) && _PyLong_CheckExactAndCompact(rhs)) {
+                cache->external_cache[0] = binary_op_float_inplace_candidate(lhs_st, rhs_st);
+                cache->external_cache[3] = JIT_HINT_FLOOR_DIVIDE_INT;
+                unspecialize(instr);
+                return;
+            }
+            break;
+        case NB_REMAINDER:
+        case NB_INPLACE_REMAINDER:
+            if (!Py_IS_TYPE(lhs, Py_TYPE(rhs))) {
+                break;
+            }
+            if (_PyLong_CheckExactAndCompact(lhs) && _PyLong_CheckExactAndCompact(rhs)) {
+                cache->external_cache[0] = binary_op_float_inplace_candidate(lhs_st, rhs_st);
+                cache->external_cache[3] = JIT_HINT_MODULO_INT;
+                unspecialize(instr);
+                return;
+            }
+            break;
+        case NB_TRUE_DIVIDE:
+        case NB_INPLACE_TRUE_DIVIDE:
+            if (!Py_IS_TYPE(lhs, Py_TYPE(rhs))) {
+                if (PyFloat_CheckExact(lhs) && _PyLong_CheckExactAndCompact(rhs)) {
+                    cache->external_cache[0] = 0;
+                    cache->external_cache[3] = JIT_HINT_TRUE_DIVIDE_FLOAT_INT;
+                    unspecialize(instr);
+                    return;
+                }
+                break;
+            }
+            if (PyFloat_CheckExact(lhs)) {
+                uint16_t source = 0, local_index = 0;
+                binary_op_float_inplace_store_fast_hint(instr, locals, lhs, rhs, &source, &local_index);
+                cache->external_cache[0] = binary_op_float_inplace_candidate(lhs_st, rhs_st) || source != 0;
+                cache->external_cache[1] = source;
+                cache->external_cache[2] = local_index;
+                cache->external_cache[3] = JIT_HINT_TRUE_DIVIDE_FLOAT;
+                unspecialize(instr);
+                return;
+            }
+            break;
+        case NB_POWER:
+        case NB_INPLACE_POWER:
+            if (!Py_IS_TYPE(lhs, Py_TYPE(rhs))) {
+                break;
+            }
+            if (PyFloat_CheckExact(lhs)) {
+                uint16_t source = 0, local_index = 0;
+                binary_op_float_inplace_store_fast_hint(instr, locals, lhs, rhs, &source, &local_index);
+                cache->external_cache[0] = binary_op_float_inplace_candidate(lhs_st, rhs_st) || source != 0;
+                cache->external_cache[1] = source;
+                cache->external_cache[2] = local_index;
+                cache->external_cache[3] = JIT_HINT_POWER_FLOAT;
+                unspecialize(instr);
                 return;
             }
             break;

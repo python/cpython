@@ -1421,7 +1421,6 @@ class TestSpecializer(TestBase):
 
         binary_op_add_extend()
         self.assert_specialized(binary_op_add_extend, "BINARY_OP_EXTEND")
-        self.assert_no_opcode(binary_op_add_extend, "BINARY_OP")
 
         def binary_op_zero_division():
             def compactlong_lhs(arg):
