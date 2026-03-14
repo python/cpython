@@ -17,7 +17,7 @@ env:
 jobs:
   build:
     name: installer for ${{ inputs.arch }}
-    runs-on: ${{ inputs.arch == 'arm64' && 'windows-11-arm' || 'windows-2025' }}
+    runs-on: ${{ inputs.arch == 'arm64' && 'windows-11-arm' || 'windows-2025-vs2026' }}
     timeout-minutes: 60
     env:
       ARCH: ${{ inputs.arch }}

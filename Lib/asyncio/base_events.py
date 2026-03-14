@@ -19,14 +19,15 @@ import concurrent.futures
 import errno
 import heapq
 import itertools
+import math
 import os
 import socket
 import stat
 import subprocess
+import sys
 import threading
 import time
 import traceback
-import sys
 import warnings
 import weakref
 
@@ -380,6 +381,7 @@ class Server(events.AbstractServer):
         except exceptions.CancelledError:
             try:
                 self.close()
+                self.close_clients()
                 await self.wait_closed()
             finally:
                 raise
@@ -1345,6 +1347,17 @@ class BaseEventLoop(events.AbstractEventLoop):
         # have a chance to get called before "ssl_protocol.connection_made()".
         transport.pause_reading()
 
+        # gh-142352: move buffered StreamReader data to SSLProtocol
+        if server_side:
+            from .streams import StreamReaderProtocol
+            if isinstance(protocol, StreamReaderProtocol):
+                stream_reader = getattr(protocol, '_stream_reader', None)
+                if stream_reader is not None:
+                    buffer = stream_reader._buffer
+                    if buffer:
+                        ssl_protocol._incoming.write(buffer)
+                        buffer.clear()
+
         transport.set_protocol(ssl_protocol)
         conmade_cb = self.call_soon(ssl_protocol.connection_made, transport)
         resume_cb = self.call_soon(transport.resume_reading)
@@ -2011,7 +2024,10 @@ class BaseEventLoop(events.AbstractEventLoop):
         event_list = None
 
         # Handle 'later' callbacks that are ready.
-        end_time = self.time() + self._clock_resolution
+        now = self.time()
+        # Ensure that `end_time` is strictly increasing
+        # when the clock resolution is too small.
+        end_time = now + max(self._clock_resolution, math.ulp(now))
         while self._scheduled:
             handle = self._scheduled[0]
             if handle._when >= end_time:

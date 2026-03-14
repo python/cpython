@@ -331,7 +331,7 @@ typedef struct {
     int post_handshake_auth;
 #endif
     PyObject *msg_cb;
-    PyObject *keylog_filename;
+    PyObject *keylog_filename;  // can be anything accepted by Py_fopen()
     BIO *keylog_bio;
     /* Cached module state, also used in SSLSocket and SSLSession code. */
     _sslmodulestate *state;
@@ -361,7 +361,7 @@ typedef struct {
     PySSLContext *ctx; /* weakref to SSL context */
     char shutdown_seen_zero;
     enum py_ssl_server_or_client socket_type;
-    PyObject *owner; /* Python level "owner" passed to servername callback */
+    PyObject *owner; /* weakref to Python level "owner" passed to servername callback */
     PyObject *server_hostname;
 } PySSLSocket;
 
@@ -2436,6 +2436,17 @@ PySSL_traverse(PyObject *op, visitproc visit, void *arg)
     return 0;
 }
 
+static int
+PySSL_clear(PyObject *op)
+{
+    PySSLSocket *self = PySSLSocket_CAST(op);
+    Py_CLEAR(self->Socket);
+    Py_CLEAR(self->ctx);
+    Py_CLEAR(self->owner);
+    Py_CLEAR(self->server_hostname);
+    return 0;
+}
+
 static void
 PySSL_dealloc(PyObject *op)
 {
@@ -2456,10 +2467,7 @@ PySSL_dealloc(PyObject *op)
         SSL_set_shutdown(self->ssl, SSL_SENT_SHUTDOWN | SSL_get_shutdown(self->ssl));
         SSL_free(self->ssl);
     }
-    Py_XDECREF(self->Socket);
-    Py_XDECREF(self->ctx);
-    Py_XDECREF(self->server_hostname);
-    Py_XDECREF(self->owner);
+    (void)PySSL_clear(op);
     PyObject_GC_Del(self);
     Py_DECREF(tp);
 }
@@ -3568,6 +3576,11 @@ context_traverse(PyObject *op, visitproc visit, void *arg)
     PySSLContext *self = PySSLContext_CAST(op);
     Py_VISIT(self->set_sni_cb);
     Py_VISIT(self->msg_cb);
+    Py_VISIT(self->keylog_filename);
+#ifndef OPENSSL_NO_PSK
+    Py_VISIT(self->psk_client_callback);
+    Py_VISIT(self->psk_server_callback);
+#endif
     Py_VISIT(Py_TYPE(self));
     return 0;
 }

@@ -4,9 +4,6 @@
 .. module:: xmlrpc.server
    :synopsis: Basic XML-RPC server implementations.
 
-.. moduleauthor:: Brian Quinlan <brianq@activestate.com>
-.. sectionauthor:: Fred L. Drake, Jr. <fdrake@acm.org>
-
 **Source code:** :source:`Lib/xmlrpc/server.py`
 
 --------------
