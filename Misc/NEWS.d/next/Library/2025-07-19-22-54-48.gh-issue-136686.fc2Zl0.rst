@@ -1,0 +1,2 @@
+Fixed a bug where emails with ``multipart/related`` content did not round-trip
+correctly through ``email.parser.parsebytes()`` and ``as_bytes()``.
