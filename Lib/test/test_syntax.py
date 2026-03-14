@@ -1515,7 +1515,7 @@ Ensure that alternative patterns bind the same names
    SyntaxError: name capture 'x' makes remaining patterns unreachable
 
    >>> match 1:
-   ...     case 1 | x: ...
+   ...     case 1 | x: pass
    Traceback (most recent call last):
    SyntaxError: alternative patterns bind different names (first pattern binds no names, pattern 2 binds ['x'])
 
