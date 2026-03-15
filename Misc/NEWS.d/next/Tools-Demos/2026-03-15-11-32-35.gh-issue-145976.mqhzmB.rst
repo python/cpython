@@ -1,0 +1,1 @@
+Remove :file:`Misc/vgrindefs` and :file:`Misc/Porting`.

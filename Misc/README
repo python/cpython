@@ -11,7 +11,6 @@ ACKS                    Acknowledgements
 HISTORY                 News from previous releases -- oldest last
 indent.pro              GNU indent profile approximating my C style
 NEWS                    News for this release (for some meaning of "this")
-Porting                 Mini-FAQ on porting to new platforms
 python-config.in        Python script template for python-config
 python.man              UNIX man page for the python interpreter
 python.pc.in            Package configuration info template for pkg-config
@@ -22,4 +21,3 @@ SpecialBuilds.txt       Describes extra symbols you can set for debug builds
 svnmap.txt              Map of old SVN revs and branches to hg changeset ids,
                         help history-digging
 valgrind-python.supp    Valgrind suppression file, see README.valgrind
-vgrindefs               Python configuration for vgrind (a generic pretty printer)

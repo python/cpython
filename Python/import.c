@@ -3728,8 +3728,9 @@ resolve_name(PyThreadState *tstate, PyObject *name, PyObject *globals, int level
         _PyErr_SetString(tstate, PyExc_KeyError, "'__name__' not in globals");
         goto error;
     }
-    if (!PyDict_Check(globals)) {
-        _PyErr_SetString(tstate, PyExc_TypeError, "globals must be a dict");
+    if (!PyAnyDict_Check(globals)) {
+        _PyErr_SetString(tstate, PyExc_TypeError,
+                         "globals must be a dict or a frozendict");
         goto error;
     }
     if (PyDict_GetItemRef(globals, &_Py_ID(__package__), &package) < 0) {
@@ -5642,6 +5643,7 @@ _imp__set_lazy_attributes_impl(PyObject *module, PyObject *modobj,
 
     module_dict = get_mod_dict(modobj);
     if (module_dict == NULL || !PyDict_CheckExact(module_dict)) {
+        Py_DECREF(lazy_submodules);
         goto done;
     }
 

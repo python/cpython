@@ -3822,9 +3822,26 @@ iso_calendar_date_new_impl(PyTypeObject *type, int year, int week,
         return NULL;
     }
 
-    PyTuple_SET_ITEM(self, 0, PyLong_FromLong(year));
-    PyTuple_SET_ITEM(self, 1, PyLong_FromLong(week));
-    PyTuple_SET_ITEM(self, 2, PyLong_FromLong(weekday));
+    PyObject *year_object = PyLong_FromLong(year);
+    if (year_object == NULL) {
+        Py_DECREF(self);
+        return NULL;
+    }
+    PyTuple_SET_ITEM(self, 0, year_object);
+
+    PyObject *week_object = PyLong_FromLong(week);
+    if (week_object == NULL) {
+        Py_DECREF(self);
+        return NULL;
+    }
+    PyTuple_SET_ITEM(self, 1, week_object);
+
+    PyObject *weekday_object = PyLong_FromLong(weekday);
+    if (weekday_object == NULL) {
+        Py_DECREF(self);
+        return NULL;
+    }
+    PyTuple_SET_ITEM(self, 2, weekday_object);
 
     return (PyObject *)self;
 }
@@ -6891,9 +6908,9 @@ datetime_datetime_astimezone_impl(PyDateTime_DateTime *self,
         goto naive;
     }
     else if (!PyDelta_Check(offset)) {
+        PyErr_Format(PyExc_TypeError, "utcoffset() returned %T,"
+                     " expected timedelta or None", offset);
         Py_DECREF(offset);
-        PyErr_Format(PyExc_TypeError, "utcoffset() returned %.200s,"
-                     " expected timedelta or None", Py_TYPE(offset)->tp_name);
         return NULL;
     }
     /* result = self - offset */

@@ -97,11 +97,15 @@ import linecache
 import selectors
 import threading
 import _colorize
-import _pyrepl.utils
 
 from contextlib import ExitStack, closing, contextmanager
 from types import CodeType
 from warnings import deprecated
+
+try:
+    import _pyrepl.utils
+except ModuleNotFoundError:
+    _pyrepl = None
 
 
 class Restart(Exception):
@@ -1097,7 +1101,7 @@ class Pdb(bdb.Bdb, cmd.Cmd):
         return False
 
     def _colorize_code(self, code):
-        if self.colorize:
+        if self.colorize and _pyrepl:
             colors = list(_pyrepl.utils.gen_colors(code))
             chars, _ = _pyrepl.utils.disp_str(code, colors=colors, force_color=True)
             code = "".join(chars)
