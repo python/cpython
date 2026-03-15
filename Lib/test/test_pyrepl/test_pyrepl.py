@@ -936,6 +936,25 @@ class TestPyReplCompleter(TestCase):
         self.assertEqual(output, "dummy.test_func.__")
         self.assertEqual(mock_stderr.getvalue(), "")
 
+    def test_completion_replaces_input(self):
+        matches = []
+        def case_insensitive_completer(text, state):
+            nonlocal matches
+            candidates = ["PYTHON", "PYREPL"]
+            if state == 0:
+                matches = [c for c in candidates if c.lower().startswith(text.lower())]
+            if state < len(matches):
+                return matches[state]
+            return None
+
+        events = code_to_events("s='pyt\t'\ns='py\t\tr\t'\n")
+        reader = self.prepare_reader(events, {})
+        reader.config.readline_completer = case_insensitive_completer
+        output = multiline_input(reader)
+        self.assertEqual(output, "s='PYTHON'")
+
+        output = multiline_input(reader)
+        self.assertEqual(output, "s='PYREPL'")
 
 class TestPyReplModuleCompleter(TestCase):
     def setUp(self):

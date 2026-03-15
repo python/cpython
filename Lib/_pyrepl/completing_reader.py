@@ -41,11 +41,11 @@ def prefix(wordlist: list[str], j: int = 0) -> str:
             for word in wordlist:
                 d[word[i]] = 1
             if len(d) > 1:
-                return wordlist[0][j:i]
+                return wordlist[0][:i]
             i += 1
             d = {}
     except IndexError:
-        return wordlist[0][j:i]
+        return wordlist[0][:i]
     return ""
 
 
@@ -181,10 +181,16 @@ class complete(commands.Command):
             if completions_unchangable and len(completions[0]) == len(stem):
                 r.msg = "[ sole completion ]"
                 r.dirty = True
-            r.insert(completions[0][len(stem):])
+            stem_len = len(stem)
+            del r.buffer[r.pos - stem_len:r.pos]
+            r.pos -= stem_len
+            r.insert(completions[0])
         else:
             p = prefix(completions, len(stem))
             if p:
+                stem_len = len(stem)
+                del r.buffer[r.pos - stem_len:r.pos]
+                r.pos -= stem_len
                 r.insert(p)
             if last_is_completer:
                 r.cmpltn_menu_visible = True

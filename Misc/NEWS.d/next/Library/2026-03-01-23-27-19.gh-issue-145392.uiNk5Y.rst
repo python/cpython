@@ -1,0 +1,1 @@
+Fix :mod:`!_pyrepl` completion to replace input stem instead of appending.
