@@ -110,7 +110,7 @@ __all__ = [
     "threading_setup", "threading_cleanup", "reap_threads", "start_threads",
     # miscellaneous
     "check_warnings", "check_no_resource_warning", "EnvironmentVarGuard",
-    "run_with_locale", "swap_item",
+    "run_with_locale", "swap_item", "infinite_recursion",
     "swap_attr", "Matcher", "set_memlimit", "SuppressCrashReport", "sortdict",
     "run_with_tz", "PGO", "missing_compiler_executable", "fd_count",
     "fails_with_expat_2_6_0", "is_expat_2_6_0", "control_characters_c0",
@@ -2295,6 +2295,40 @@ def swap_item(obj, item, new_val):
         finally:
             if item in obj:
                 del obj[item]
+
+
+def infinite_recursion(max_depth=None):
+    if max_depth is None:
+        # Pick a number large enough to cause problems
+        # but not take too long for code that can handle
+        # very deep recursion.
+        max_depth = 20000
+    elif max_depth < 3:
+        raise ValueError("max_depth must be at least 3, got {}".format(max_depth))
+    depth = get_recursion_depth()
+    depth = max(depth - 1, 1)  # Ignore infinite_recursion() frame.
+    limit = depth + max_depth
+    return set_recursion_limit(limit)
+
+
+@contextlib.contextmanager
+def set_recursion_limit(limit):
+    old_limit = sys.getrecursionlimit()
+    try:
+        sys.setrecursionlimit(limit)
+        yield
+    finally:
+        sys.setrecursionlimit(old_limit)
+
+
+def get_recursion_depth():
+    depth = 0
+    frame = sys._getframe()
+    while frame is not None:
+        depth += 1
+        frame = frame.f_back
+    return depth
+
 
 def strip_python_stderr(stderr):
     """Strip the stderr of a Python process from potential debug output
