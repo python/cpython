@@ -1743,6 +1743,17 @@ class MockTest(unittest.TestCase):
                 mock_method.assert_called_once_with()
                 self.assertRaises(TypeError, mock_method, 'extra_arg')
 
+    #Issue145754
+    def test_create_autospec_type_hints_typechecking(self):
+        from typing import TYPE_CHECKING
+        if TYPE_CHECKING:
+            from typing import Tuple
+
+        def foo(x: Tuple[int, ...]) -> None:
+            pass
+
+        mock.create_autospec(foo)
+
     #Issue21238
     def test_mock_unsafe(self):
         m = Mock()
