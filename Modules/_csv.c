@@ -961,6 +961,12 @@ Reader_iternext_lock_held(PyObject *op)
             Py_DECREF(lineobj);
             return NULL;
         }
+        if (self->fields == NULL) {
+            PyErr_SetString(module_state->error_obj,
+                            "iterator has already advanced the reader");
+            Py_DECREF(lineobj);
+            return NULL;
+        }
         ++self->line_num;
         kind = PyUnicode_KIND(lineobj);
         data = PyUnicode_DATA(lineobj);
