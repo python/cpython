@@ -1589,6 +1589,11 @@ class TestDate(HarmlessMixedComparison, unittest.TestCase):
         self.assertEqual(t.strftime(""), "") # SF bug #761337
         self.assertEqual(t.strftime('x'*1000), 'x'*1000) # SF bug #1556784
 
+        # unsupported %-format specifiers are passed through unchanged.
+        self.assertEqual(t.strftime("%-1"), "%-1")
+        self.assertEqual(t.strftime("%--"), "%--")
+        self.assertEqual(t.strftime("%-#"), "%-#")
+
         self.assertRaises(TypeError, t.strftime) # needs an arg
         self.assertRaises(TypeError, t.strftime, "one", "two") # too many args
         self.assertRaises(TypeError, t.strftime, 42) # arg wrong type

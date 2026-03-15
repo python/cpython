@@ -2003,6 +2003,20 @@ wrap_strftime(PyObject *object, PyObject *format, PyObject *timetuple,
             }
             continue;
         }
+        else if (ch == '-' && i < flen) {
+            Py_UCS4 next_ch = PyUnicode_READ_CHAR(format, i);
+            i++;
+
+             if (strchr("dmHIMSjUWVy", (int)next_ch) == NULL) {
+                replacement = PyUnicode_FromFormat("%%%%-%c", (char)next_ch);
+                if (replacement == NULL) {
+                    goto Error;
+                }
+            }
+            else {
+                continue;
+            }
+        }
         else {
             /* percent followed by something else */
             continue;
