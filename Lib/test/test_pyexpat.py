@@ -709,9 +709,9 @@ class ElementDeclHandlerTest(unittest.TestCase):
         # See https://github.com/python/cpython/issues/145986.
         N = 500_000
         data = (
-                b'<!DOCTYPE root [\n<!ELEMENT root '
-                + b'(a, ' * N + b'a' + b')' * N
-                + b'>\n]>\n<root/>\n'
+            b'<!DOCTYPE root [\n<!ELEMENT root '
+            + b'(a, ' * N + b'a' + b')' * N
+            + b'>\n]>\n<root/>\n'
         )
 
         parser = expat.ParserCreate()
