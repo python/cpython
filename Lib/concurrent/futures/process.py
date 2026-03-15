@@ -360,7 +360,7 @@ class _ExecutorManagerThread(threading.Thread):
                 if executor := self.executor_reference():
                     if process_exited:
                         with self.shutdown_lock:
-                            executor._adjust_process_count()
+                            executor._adjust_process_count(process_died=True)
                     else:
                         executor._idle_worker_semaphore.release()
                     del executor
@@ -768,13 +768,26 @@ class ProcessPoolExecutor(_base.Executor):
             _threads_wakeups[self._executor_manager_thread] = \
                 self._executor_manager_thread_wakeup
 
-    def _adjust_process_count(self):
+    def _adjust_process_count(self, process_died=False):
         # gh-132969: avoid error when state is reset and executor is still running,
         # which will happen when shutdown(wait=False) is called.
         if self._processes is None:
             return
 
-        # if there's an idle process, we don't need to spawn a new one.
+        # gh-115634: When a worker process dies (e.g., due to max_tasks_per_child),
+        # the semaphore may have stale values from completed tasks, causing
+        # acquire() to succeed incorrectly and preventing a replacement worker
+        # from being spawned. To fix this, check process count first when handling
+        # a process death, but check semaphore first for normal task submission
+        # to preserve idle worker reuse.
+        if process_died:
+            # Process death: semaphore might be wrong, check count first
+            process_count = len(self._processes)
+            if process_count < self._max_workers:
+                self._spawn_process()
+                return
+
+        # Normal path: check for idle workers first (preserves idle reuse)
         if self._idle_worker_semaphore.acquire(blocking=False):
             return
 
