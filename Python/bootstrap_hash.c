@@ -20,7 +20,7 @@
 #    include <linux/random.h>     // GRND_NONBLOCK
 #  endif
 #  if defined(HAVE_SYS_RANDOM_H) && (defined(HAVE_GETRANDOM) || defined(HAVE_GETENTROPY))
-#    include <sys/random.h>       // getrandom()
+#    include <sys/random.h>       // getrandom(), GRND_NONBLOCK on FreeBSD and NetBSD
 #  endif
 #  if !defined(HAVE_GETRANDOM) && defined(HAVE_GETRANDOM_SYSCALL)
 #    include <sys/syscall.h>      // SYS_getrandom
