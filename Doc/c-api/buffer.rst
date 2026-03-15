@@ -10,11 +10,6 @@
 Buffer Protocol
 ---------------
 
-.. sectionauthor:: Greg Stein <gstein@lyra.org>
-.. sectionauthor:: Benjamin Peterson
-.. sectionauthor:: Stefan Krah
-
-
 Certain objects available in Python wrap access to an underlying memory
 array or *buffer*.  Such objects include the built-in :class:`bytes` and
 :class:`bytearray`, and some extension types like :class:`array.array`.
@@ -260,6 +255,10 @@ readonly, format
       exporter MAY provide either a read-only or writable buffer, but the choice
       MUST be consistent for all consumers. For example, :c:expr:`PyBUF_SIMPLE | PyBUF_WRITABLE`
       can be used to request a simple writable buffer.
+
+   .. c:macro:: PyBUF_WRITEABLE
+
+      This is a :term:`soft deprecated` alias to :c:macro:`PyBUF_WRITABLE`.
 
    .. c:macro:: PyBUF_FORMAT
 

@@ -210,7 +210,7 @@ except ImportError:
     ctypes = None
 from test.support import (cpython_only,
                           check_impl_detail, requires_debug_ranges,
-                          gc_collect, Py_GIL_DISABLED)
+                          gc_collect, Py_GIL_DISABLED, late_deletion)
 from test.support.script_helper import assert_python_ok
 from test.support import threading_helper, import_helper
 from test.support.bytecode_helper import instructions_with_positions
@@ -701,6 +701,7 @@ class CodeTest(unittest.TestCase):
                 'checks': CO_FAST_LOCAL,
                 'res': CO_FAST_LOCAL,
             },
+            defs.spam_with_global_and_attr_same_name: {},
             defs.spam_full_args: {
                 'a': POSONLY,
                 'b': POSONLY,
@@ -954,6 +955,10 @@ class CodeTest(unittest.TestCase):
             defs.spam_with_globals_and_builtins: new_var_counts(
                 purelocals=5,
                 globalvars=6,
+            ),
+            defs.spam_with_global_and_attr_same_name: new_var_counts(
+                globalvars=2,
+                attrs=1,
             ),
             defs.spam_full_args: new_var_counts(
                 posonly=2,
@@ -1550,6 +1555,11 @@ if check_impl_detail(cpython=True) and ctypes is not None:
 
     FREE_FUNC = freefunc(myfree)
     FREE_INDEX = RequestCodeExtraIndex(FREE_FUNC)
+    # Make sure myfree sticks around at least as long as the interpreter,
+    # since we (currently) can't unregister the function and leaving a
+    # dangling pointer will cause a crash on deallocation of code objects if
+    # something else uses co_extras, like test_capi.test_misc.
+    late_deletion(myfree)
 
     class CoExtra(unittest.TestCase):
         def get_func(self):

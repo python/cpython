@@ -522,7 +522,7 @@ _random_Random_getrandbits_impl(RandomObject *self, uint64_t k)
         PyErr_NoMemory();
         return NULL;
     }
-    words = (k - 1u) / 32u + 1u;
+    words = (Py_ssize_t)((k - 1u) / 32u + 1u);
     wordarray = (uint32_t *)PyMem_Malloc(words * 4);
     if (wordarray == NULL) {
         PyErr_NoMemory();
@@ -595,11 +595,14 @@ static PyType_Slot Random_Type_slots[] = {
 };
 
 static PyType_Spec Random_Type_spec = {
-    "_random.Random",
-    sizeof(RandomObject),
-    0,
-    Py_TPFLAGS_DEFAULT | Py_TPFLAGS_BASETYPE,
-    Random_Type_slots
+    .name = "_random.Random",
+    .basicsize = sizeof(RandomObject),
+    .flags = (
+        Py_TPFLAGS_DEFAULT
+        | Py_TPFLAGS_BASETYPE
+        | Py_TPFLAGS_IMMUTABLETYPE
+    ),
+    .slots = Random_Type_slots
 };
 
 PyDoc_STRVAR(module_doc,

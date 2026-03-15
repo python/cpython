@@ -9,7 +9,7 @@ stability.  In order to maintain this reputation, the developers would like to
 know of any deficiencies you find in Python.
 
 It can be sometimes faster to fix bugs yourself and contribute patches to
-Python as it streamlines the process and involves less people. Learn how to
+Python as it streamlines the process and involves fewer people. Learn how to
 :ref:`contribute <contributing-to-python>`.
 
 Documentation bugs
@@ -18,6 +18,12 @@ Documentation bugs
 If you find a bug in this documentation or would like to propose an improvement,
 please submit a bug report on the :ref:`issue tracker <using-the-tracker>`.  If you
 have a suggestion on how to fix it, include that as well.
+
+.. only:: translation
+
+   If the bug or suggested improvement concerns the translation of this
+   documentation, submit the report to the
+   `translation’s repository <TRANSLATION_REPO_>`_ instead.
 
 You can also open a discussion item on our
 `Documentation Discourse forum <https://discuss.python.org/c/documentation/26>`_.
@@ -37,8 +43,8 @@ tracker <https://github.com/python/python-docs-theme>`_.
    `Helping with Documentation <https://devguide.python.org/docquality/#helping-with-documentation>`_
       Comprehensive guide for individuals that are interested in contributing to Python documentation.
 
-   `Documentation Translations <https://devguide.python.org/documentation/translating/>`_
-      A list of GitHub pages for documentation translation and their primary contacts.
+   `Documentation Translations <https://devguide.python.org/documentation/translations/translating/#translation-coordinators>`_
+      A list of GitHub pages for documentation translation and their coordination teams.
 
 
 .. _using-the-tracker:

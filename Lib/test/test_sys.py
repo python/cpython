@@ -1,6 +1,5 @@
 import builtins
 import codecs
-import _datetime
 import gc
 import io
 import locale
@@ -25,7 +24,7 @@ from test.support import force_not_colorized
 from test.support import force_no_traceback_timestamps
 from test.support import SHORT_TIMEOUT
 try:
-    from test.support import interpreters
+    from concurrent import interpreters
 except ImportError:
     interpreters = None
 import textwrap
@@ -496,7 +495,7 @@ class SysModuleTest(unittest.TestCase):
             self.assertIs(f, f2)
         self.assertIsNone(sys._getframemodulename(i))
 
-    # sys._current_frames() is a CPython-only gimmick.
+    @support.cpython_only  # sys._current_frames() is a CPython-only gimmick.
     @threading_helper.reap_threads
     @threading_helper.requires_working_threading()
     def test_current_frames(self):
@@ -732,14 +731,24 @@ class SysModuleTest(unittest.TestCase):
         self.assertEqual(len(info), 3)
         self.assertIn(info.name, ('nt', 'pthread', 'pthread-stubs', 'solaris', None))
         self.assertIn(info.lock, ('pymutex', None))
-        if sys.platform.startswith(("linux", "android", "freebsd")):
+        if sys.platform.startswith(("linux", "android", "freebsd", "wasi")):
             self.assertEqual(info.name, "pthread")
         elif sys.platform == "win32":
             self.assertEqual(info.name, "nt")
         elif sys.platform == "emscripten":
             self.assertIn(info.name, {"pthread", "pthread-stubs"})
-        elif sys.platform == "wasi":
-            self.assertEqual(info.name, "pthread-stubs")
+
+    def test_abi_info(self):
+        info = sys.abi_info
+        info_keys = {'pointer_bits', 'free_threaded', 'debug', 'byteorder'}
+        self.assertEqual(set(vars(info)), info_keys)
+        pointer_bits = 64 if sys.maxsize > 2**32 else 32
+        self.assertEqual(info.pointer_bits, pointer_bits)
+        self.assertEqual(info.free_threaded,
+                         bool(sysconfig.get_config_var('Py_GIL_DISABLED')))
+        self.assertEqual(info.debug,
+                         bool(sysconfig.get_config_var('Py_DEBUG')))
+        self.assertEqual(info.byteorder, sys.byteorder)
 
     @unittest.skipUnless(support.is_emscripten, "only available on Emscripten")
     def test_emscripten_info(self):
@@ -858,7 +867,8 @@ class SysModuleTest(unittest.TestCase):
                  "dont_write_bytecode", "no_user_site", "no_site",
                  "ignore_environment", "verbose", "bytes_warning", "quiet",
                  "hash_randomization", "isolated", "dev_mode", "utf8_mode",
-                 "warn_default_encoding", "safe_path", "int_max_str_digits")
+                 "warn_default_encoding", "safe_path", "int_max_str_digits",
+                 "lazy_imports")
         for attr in attrs:
             self.assertHasAttr(sys.flags, attr)
             attr_type = bool if attr in ("dev_mode", "safe_path") else int
@@ -876,12 +886,7 @@ class SysModuleTest(unittest.TestCase):
     def assert_raise_on_new_sys_type(self, sys_attr):
         # Users are intentionally prevented from creating new instances of
         # sys.flags, sys.version_info, and sys.getwindowsversion.
-        arg = sys_attr
-        attr_type = type(sys_attr)
-        with self.assertRaises(TypeError):
-            attr_type(arg)
-        with self.assertRaises(TypeError):
-            attr_type.__new__(attr_type, arg)
+        support.check_disallow_instantiation(self, type(sys_attr), sys_attr)
 
     def test_sys_flags_no_instantiation(self):
         self.assert_raise_on_new_sys_type(sys.flags)
@@ -1081,6 +1086,7 @@ class SysModuleTest(unittest.TestCase):
         self.assertHasAttr(sys.implementation, 'version')
         self.assertHasAttr(sys.implementation, 'hexversion')
         self.assertHasAttr(sys.implementation, 'cache_tag')
+        self.assertHasAttr(sys.implementation, 'supports_isolated_interpreters')
 
         version = sys.implementation.version
         self.assertEqual(version[:2], (version.major, version.minor))
@@ -1093,6 +1099,15 @@ class SysModuleTest(unittest.TestCase):
         # PEP 421 requires that .name be lower case.
         self.assertEqual(sys.implementation.name,
                          sys.implementation.name.lower())
+
+        # https://peps.python.org/pep-0734
+        sii = sys.implementation.supports_isolated_interpreters
+        self.assertIsInstance(sii, bool)
+        if test.support.check_impl_detail(cpython=True):
+            if test.support.is_emscripten or test.support.is_wasi:
+                self.assertFalse(sii)
+            else:
+                self.assertTrue(sii)
 
     @test.support.cpython_only
     def test_debugmallocstats(self):
@@ -1343,6 +1358,7 @@ class SysModuleTest(unittest.TestCase):
 
 
 @test.support.cpython_only
+@test.support.force_not_colorized_test_class
 class UnraisableHookTest(unittest.TestCase):
     def test_original_unraisablehook(self):
         _testcapi = import_helper.import_module('_testcapi')
@@ -1484,6 +1500,7 @@ class UnraisableHookTest(unittest.TestCase):
     def test_custom_unraisablehook_fail(self):
         _testcapi = import_helper.import_module('_testcapi')
         from _testcapi import err_writeunraisable
+
         def hook_func(*args):
             raise Exception("hook_func failed")
 
@@ -1573,7 +1590,7 @@ class SizeofTest(unittest.TestCase):
         samples = [b'', b'u'*100000]
         for sample in samples:
             x = bytearray(sample)
-            check(x, vsize('n2Pi') + x.__alloc__())
+            check(x, vsize('n2PiP') + x.__alloc__())
         # bytearray_iterator
         check(iter(bytearray()), size('nP'))
         # bytes
@@ -1715,9 +1732,10 @@ class SizeofTest(unittest.TestCase):
         check(int(PyLong_BASE**2), vsize('') + 3*self.longdigit)
         # module
         if support.Py_GIL_DISABLED:
-            check(unittest, size('PPPPPP'))
+            md_gil = '?'
         else:
-            check(unittest, size('PPPPP'))
+            md_gil = ''
+        check(unittest, size('PPPP?' + md_gil + 'NPPPPP'))
         # None
         check(None, size(''))
         # NotImplementedType
@@ -1732,7 +1750,12 @@ class SizeofTest(unittest.TestCase):
             x = property(getx, setx, delx, "")
             check(x, size('5Pi'))
         # PyCapsule
-        check(_datetime.datetime_CAPI, size('6P'))
+        try:
+            import _datetime
+        except ModuleNotFoundError:
+            pass
+        else:
+            check(_datetime.datetime_CAPI, size('6P'))
         # rangeiterator
         check(iter(range(1)), size('3l'))
         check(iter(range(2**65)), size('3P'))
@@ -1866,7 +1889,10 @@ class SizeofTest(unittest.TestCase):
         check(S(), set(), '3P')
         class FS(frozenset):
             __slots__ = 'a', 'b', 'c'
-        check(FS(), frozenset(), '3P')
+
+        class mytuple(tuple):
+            pass
+        check(FS([mytuple()]), frozenset([mytuple()]), '3P')
         from collections import OrderedDict
         class OD(OrderedDict):
             __slots__ = 'a', 'b', 'c'
@@ -1955,22 +1981,7 @@ class SizeofTest(unittest.TestCase):
         self.assertEqual(out, b"")
         self.assertEqual(err, b"")
 
-
-def _supports_remote_attaching():
-    PROCESS_VM_READV_SUPPORTED = False
-
-    try:
-        from _remote_debugging import PROCESS_VM_READV_SUPPORTED
-    except ImportError:
-        pass
-
-    return PROCESS_VM_READV_SUPPORTED
-
-@unittest.skipIf(not sys.is_remote_debug_enabled(), "Remote debugging is not enabled")
-@unittest.skipIf(sys.platform != "darwin" and sys.platform != "linux" and sys.platform != "win32",
-                    "Test only runs on Linux, Windows and MacOS")
-@unittest.skipIf(sys.platform == "linux" and not _supports_remote_attaching(),
-                    "Test only runs on Linux with process_vm_readv support")
+@test.support.support_remote_exec_only
 @test.support.cpython_only
 class TestRemoteExec(unittest.TestCase):
     def tearDown(self):
@@ -2129,7 +2140,7 @@ print("Remote script executed successfully!")
         returncode, stdout, stderr = self._run_remote_exec_test(script, prologue=prologue)
         self.assertEqual(returncode, 0)
         self.assertIn(b"Remote script executed successfully!", stdout)
-        self.assertIn(b"Audit event: remote_debugger_script, arg: ", stdout)
+        self.assertIn(b"Audit event: cpython.remote_debugger_script, arg: ", stdout)
         self.assertEqual(stderr, b"")
 
     def test_remote_exec_with_exception(self):
@@ -2261,9 +2272,10 @@ class TestSysJIT(unittest.TestCase):
 
             def frame_3_jit() -> None:
                 # JITs just before the last loop:
-                for i in range(_testinternalcapi.TIER2_THRESHOLD + 1):
+                # 1 extra iteration for tracing.
+                for i in range(_testinternalcapi.TIER2_THRESHOLD + 2):
                     # Careful, doing this in the reverse order breaks tracing:
-                    expected = {enabled} and i == _testinternalcapi.TIER2_THRESHOLD
+                    expected = {enabled} and i >= _testinternalcapi.TIER2_THRESHOLD
                     assert sys._jit.is_active() is expected
                     frame_2_jit(expected)
                     assert sys._jit.is_active() is expected
