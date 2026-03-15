@@ -100,17 +100,8 @@ def b64decode(s, altchars=None, validate=_NOT_SPECIFIED, *, ignorechars=_NOT_SPE
                     break
             s = s.translate(bytes.maketrans(altchars, b'+/'))
         else:
-            altchars_out = (
-                altchars[0] if altchars[0] not in b'+/' else altchars[1],
-                altchars[1] if altchars[1] not in b'+/' else altchars[0],
-            )
-            trans_in = bytearray(altchars)
-            trans_out = bytearray(b'+/')
-            for b, b_out in zip(b'+/', altchars_out):
-                if b not in altchars:
-                    trans_in.append(b)
-                    trans_out.append(b_out)
-            trans = bytes.maketrans(trans_in, trans_out)
+            trans = bytes.maketrans(altchars + bytes(set(b'+/') - set(altchars)),
+                                    b'+/' + bytes(set(altchars) - set(b'+/')))
             s = s.translate(trans)
             ignorechars = ignorechars.translate(trans)
     if ignorechars is _NOT_SPECIFIED:
