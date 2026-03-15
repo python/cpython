@@ -351,7 +351,7 @@ function::
     import sys
 
     async def get_date():
-        code = 'import datetime; print(datetime.datetime.now())'
+        code = 'import datetime as dt; print(dt.datetime.now())'
 
         # Create the subprocess; redirect the standard output
         # into a pipe.
