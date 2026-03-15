@@ -626,6 +626,7 @@ class ClinicWholeFileTest(TestCase):
              - 'impl_prototype'
              - 'parser_prototype'
              - 'parser_definition'
+             - 'vectorcall_definition'
              - 'cpp_endif'
              - 'methoddef_ifndef'
              - 'impl_definition'
@@ -2493,6 +2494,162 @@ class ClinicParserTest(TestCase):
             @coexist
             @coexist
             m.fn
+        """
+        self.expect_failure(block, err, lineno=2)
+
+    def test_duplicate_vectorcall(self):
+        err = "Called @vectorcall twice"
+        block = """
+            module m
+            class Foo "FooObject *" ""
+            @vectorcall
+            @vectorcall
+            Foo.__init__
+        """
+        self.expect_failure(block, err, lineno=3)
+
+    def test_vectorcall_on_regular_method(self):
+        err = "@vectorcall can only be used with __init__ and __new__ methods"
+        block = """
+            module m
+            class Foo "FooObject *" ""
+            @vectorcall
+            Foo.some_method
+        """
+        self.expect_failure(block, err, lineno=3)
+
+    def test_vectorcall_on_module_function(self):
+        err = "@vectorcall can only be used with __init__ and __new__ methods"
+        block = """
+            module m
+            @vectorcall
+            m.fn
+        """
+        self.expect_failure(block, err, lineno=2)
+
+    def test_vectorcall_on_init(self):
+        block = """
+            module m
+            class Foo "FooObject *" "Foo_Type"
+            @vectorcall
+            Foo.__init__
+                iterable: object = NULL
+                /
+        """
+        func = self.parse_function(block, signatures_in_block=3,
+                                   function_index=2)
+        self.assertTrue(func.vectorcall)
+        self.assertFalse(func.vectorcall_exact_only)
+
+    def test_vectorcall_on_new(self):
+        block = """
+            module m
+            class Foo "FooObject *" "Foo_Type"
+            @classmethod
+            @vectorcall
+            Foo.__new__
+                x: object = NULL
+                /
+        """
+        func = self.parse_function(block, signatures_in_block=3,
+                                   function_index=2)
+        self.assertTrue(func.vectorcall)
+        self.assertFalse(func.vectorcall_exact_only)
+
+    def test_vectorcall_exact_only(self):
+        block = """
+            module m
+            class Foo "FooObject *" "Foo_Type"
+            @vectorcall exact_only
+            Foo.__init__
+                iterable: object = NULL
+                /
+        """
+        func = self.parse_function(block, signatures_in_block=3,
+                                   function_index=2)
+        self.assertTrue(func.vectorcall)
+        self.assertTrue(func.vectorcall_exact_only)
+
+    def test_vectorcall_init_with_kwargs(self):
+        block = """
+            module m
+            class Foo "FooObject *" "Foo_Type"
+            @vectorcall
+            Foo.__init__
+                source: object = NULL
+                encoding: str = NULL
+                errors: str = NULL
+        """
+        func = self.parse_function(block, signatures_in_block=3,
+                                   function_index=2)
+        self.assertTrue(func.vectorcall)
+
+    def test_vectorcall_new_with_kwargs(self):
+        block = """
+            module m
+            class Foo "FooObject *" "Foo_Type"
+            @classmethod
+            @vectorcall
+            Foo.__new__
+                source: object = NULL
+                *
+                encoding: str = NULL
+                errors: str = NULL
+        """
+        func = self.parse_function(block, signatures_in_block=3,
+                                   function_index=2)
+        self.assertTrue(func.vectorcall)
+
+    def test_vectorcall_init_no_args(self):
+        block = """
+            module m
+            class Foo "FooObject *" "Foo_Type"
+            @vectorcall
+            Foo.__init__
+        """
+        func = self.parse_function(block, signatures_in_block=3,
+                                   function_index=2)
+        self.assertTrue(func.vectorcall)
+
+    def test_vectorcall_zero_arg(self):
+        block = """
+            module m
+            class Foo "FooObject *" "Foo_Type"
+            @classmethod
+            @vectorcall zero_arg=_PyFoo_GetEmpty()
+            Foo.__new__
+                x: object = NULL
+                /
+        """
+        func = self.parse_function(block, signatures_in_block=3,
+                                   function_index=2)
+        self.assertTrue(func.vectorcall)
+        self.assertFalse(func.vectorcall_exact_only)
+        self.assertEqual(func.vectorcall_zero_arg, '_PyFoo_GetEmpty()')
+
+    def test_vectorcall_zero_arg_with_exact(self):
+        block = """
+            module m
+            class Foo "FooObject *" "Foo_Type"
+            @classmethod
+            @vectorcall exact_only zero_arg=get_cached()
+            Foo.__new__
+                x: object = NULL
+                /
+        """
+        func = self.parse_function(block, signatures_in_block=3,
+                                   function_index=2)
+        self.assertTrue(func.vectorcall)
+        self.assertTrue(func.vectorcall_exact_only)
+        self.assertEqual(func.vectorcall_zero_arg, 'get_cached()')
+
+    def test_vectorcall_invalid_kwarg(self):
+        err = "unknown argument"
+        block = """
+            module m
+            class Foo "FooObject *" ""
+            @vectorcall bogus=True
+            Foo.__init__
         """
         self.expect_failure(block, err, lineno=2)
 

@@ -111,6 +111,34 @@ exit:
     return return_value;
 }
 
+static PyObject *
+tuple_vectorcall(PyObject *type, PyObject *const *args,
+    size_t nargsf, PyObject *kwnames)
+{
+    PyObject *return_value = NULL;
+    Py_ssize_t nargs = PyVectorcall_NARGS(nargsf);
+    PyObject *iterable = NULL;
+
+    if (nargs == 0 && kwnames == NULL) {
+        return (PyObject*)&_Py_SINGLETON(tuple_empty);
+    }
+    if (!_PyArg_NoKwnames("tuple", kwnames)) {
+        goto exit;
+    }
+    if (!_PyArg_CheckPositional("tuple", nargs, 0, 1)) {
+        goto exit;
+    }
+    if (nargs < 1) {
+        goto skip_optional_vc;
+    }
+    iterable = args[0];
+skip_optional_vc:
+    return_value = tuple_new_impl(_PyType_CAST(type), iterable);
+
+exit:
+    return return_value;
+}
+
 PyDoc_STRVAR(tuple___getnewargs____doc__,
 "__getnewargs__($self, /)\n"
 "--\n"
@@ -127,4 +155,4 @@ tuple___getnewargs__(PyObject *self, PyObject *Py_UNUSED(ignored))
 {
     return tuple___getnewargs___impl((PyTupleObject *)self);
 }
-/*[clinic end generated code: output=bd11662d62d973c2 input=a9049054013a1b77]*/
+/*[clinic end generated code: output=c1e02d9c2b36d1df input=a9049054013a1b77]*/
