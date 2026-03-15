@@ -1266,21 +1266,39 @@ OrderedDict_copy_impl(PyObject *od)
         }
     }
     else {
+        PyODictObject *self = _PyODictObject_CAST(od);
+        size_t state = self->od_state;
+
         _odict_FOREACH(od, node) {
-            int res;
-            PyObject *value = PyObject_GetItem((PyObject *)od,
-                                               _odictnode_KEY(node));
-            if (value == NULL)
+            PyObject *key = Py_NewRef(_odictnode_KEY(node));
+            PyObject *value = PyObject_GetItem(od, key);
+            if (value == NULL) {
+                Py_DECREF(key);
                 goto fail;
-            res = PyObject_SetItem((PyObject *)od_copy,
-                                   _odictnode_KEY(node), value);
+            }
+
+            if (self->od_state != state) {
+                Py_DECREF(key);
+                Py_DECREF(value);
+                goto invalid_state;  // 成功获取值但状态改变
+            }
+
+            int rc = PyObject_SetItem(od_copy, key, value);
+            Py_DECREF(key);
             Py_DECREF(value);
-            if (res != 0)
+            if (rc != 0) {
                 goto fail;
+            }
+            if (self->od_state != state) {
+                goto invalid_state;
+            }
         }
     }
     return od_copy;
 
+invalid_state:
+    PyErr_SetString(PyExc_RuntimeError,
+                    "OrderedDict mutated during iteration");
 fail:
     Py_DECREF(od_copy);
     return NULL;
