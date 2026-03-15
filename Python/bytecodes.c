@@ -2169,11 +2169,11 @@ dummy_func(
         op(_SET_UPDATE, (set, unused[oparg-1], iterable -- set, unused[oparg-1], i)) {
             int err = _PySet_Update(PyStackRef_AsPyObjectBorrow(set),
                                     PyStackRef_AsPyObjectBorrow(iterable));
-            i = iterable;
-            DEAD(iterable);
             if (err < 0) {
                 ERROR_NO_POP();
             }
+            i = iterable;
+            DEAD(iterable);
         }
 
         macro(SET_UPDATE) = _SET_UPDATE + POP_TOP;

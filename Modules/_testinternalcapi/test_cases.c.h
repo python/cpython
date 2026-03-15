@@ -10921,10 +10921,10 @@
                 int err = _PySet_Update(PyStackRef_AsPyObjectBorrow(set),
                                     PyStackRef_AsPyObjectBorrow(iterable));
                 stack_pointer = _PyFrame_GetStackPointer(frame);
-                i = iterable;
                 if (err < 0) {
                     JUMP_TO_LABEL(error);
                 }
+                i = iterable;
             }
             // _POP_TOP
             {
