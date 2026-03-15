@@ -457,6 +457,8 @@ static const char usage_envvars[] =
 "                   (-X thread_inherit_context)\n"
 "PYTHON_CONTEXT_AWARE_WARNINGS: if true (1), enable thread-safe warnings module\n"
 "                   behaviour (-X context_aware_warnings)\n"
+"PYTHON_TRACEBACK_TIMESTAMPS: collect and display timestamps in tracebacks\n"
+"                  (-X traceback_timestamps)\n"
 "PYTHONTRACEMALLOC: trace Python memory allocations (-X tracemalloc)\n"
 "PYTHONUNBUFFERED: disable stdout/stderr buffering (-u)\n"
 "PYTHONUTF8      : control the UTF-8 mode (-X utf8)\n"
