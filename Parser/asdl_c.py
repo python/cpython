@@ -437,6 +437,22 @@ class FunctionVisitor(PrototypeVisitor):
         emit("p = (%s)_PyArena_Malloc(arena, sizeof(*p));" % ctype, 1);
         emit("if (!p)", 1)
         emit("return NULL;", 2)
+        # Special-case normalization for the arguments product to guarantee
+        # non-NULL kwonlyargs/kw_defaults with matched lengths.
+        if name == "arguments":
+            emit("if (kwonlyargs == NULL) {", 1)
+            emit("kwonlyargs = _Py_asdl_arg_seq_new(0, arena);", 2)
+            emit("if (!kwonlyargs) {", 2)
+            emit("return NULL;", 3)
+            emit("}", 2)
+            emit("}", 1)
+            emit("if (kw_defaults == NULL) {", 1)
+            emit("kw_defaults = _Py_asdl_expr_seq_new(asdl_seq_LEN(kwonlyargs), arena);", 2)
+            emit("if (!kw_defaults) {", 2)
+            emit("return NULL;", 3)
+            emit("}", 2)
+            emit("}", 1)
+            emit("assert(asdl_seq_LEN(kw_defaults) == asdl_seq_LEN(kwonlyargs));", 1)
         if union:
             self.emit_body_union(name, args, attrs)
         else:
