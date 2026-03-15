@@ -5692,7 +5692,7 @@
                 int og_opcode = executor->vm_data.opcode;
                 int og_oparg = (oparg & ~255) | executor->vm_data.oparg;
                 next_instr = this_instr;
-                if (og_opcode == RESUME_CHECK_JIT) {
+                if (_PyJit_EnterExecutorShouldStopTracing(og_opcode)) {
                     if (_PyOpcode_Caches[_PyOpcode_Deopt[opcode]]) {
                         PAUSE_ADAPTIVE_COUNTER(this_instr[1].counter);
                     }
@@ -7793,8 +7793,8 @@
                 #ifdef _Py_TIER2
                 bool is_resume = this_instr->op.code == RESUME_CHECK_JIT;
                 _Py_BackoffCounter counter = this_instr[1].counter;
-                if (!IS_JIT_TRACING() &&
-                    (backoff_counter_triggers(counter) &&
+                if ((backoff_counter_triggers(counter) &&
+                        !IS_JIT_TRACING() &&
                         (this_instr->op.code == JUMP_BACKWARD_JIT || is_resume)) &&
                     next_instr->op.code != ENTER_EXECUTOR) {
                     _Py_CODEUNIT *insert_exec_at = this_instr;
@@ -10587,8 +10587,8 @@
                 #ifdef _Py_TIER2
                 bool is_resume = this_instr->op.code == RESUME_CHECK_JIT;
                 _Py_BackoffCounter counter = this_instr[1].counter;
-                if (!IS_JIT_TRACING() &&
-                    (backoff_counter_triggers(counter) &&
+                if ((backoff_counter_triggers(counter) &&
+                        !IS_JIT_TRACING() &&
                         (this_instr->op.code == JUMP_BACKWARD_JIT || is_resume)) &&
                     next_instr->op.code != ENTER_EXECUTOR) {
                     _Py_CODEUNIT *insert_exec_at = this_instr;

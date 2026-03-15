@@ -632,9 +632,6 @@ _PyJit_translate_single_bytecode_to_trace(
         target--;
     }
 
-    // We want to trace over RESUME traces. Otherwise, functions with lots of RESUME
-    // end up with many fragmented traces which perform badly.
-    // See for example, the richards benchmark in pyperformance.
     if (opcode == ENTER_EXECUTOR) {
         _PyExecutorObject *executor = old_code->co_executors->executors[oparg & 255];
         opcode = executor->vm_data.opcode;
@@ -1102,6 +1099,19 @@ _PyJit_FinalizeTracing(PyThreadState *tstate, int err)
     Py_CLEAR(tracer->prev_state.recorded_value);
     uop_buffer_init(buffer, &tracer->uop_array[0], UOP_MAX_TRACE_LENGTH);
     tracer->is_tracing = false;
+}
+
+bool
+_PyJit_EnterExecutorShouldStopTracing(int og_opcode)
+{
+    // Continue tracing (skip over the executor). If it's a RESUME
+    // trace to form longer, more optimizeable traces.
+    // We want to trace over RESUME traces. Otherwise, functions with lots of RESUME
+    // end up with many fragmented traces which perform badly.
+    // See for example, the richards benchmark in pyperformance.
+    // For consideration: We may want to consider tracing over side traces
+    // inserted into bytecode as well in the future.
+    return og_opcode == RESUME_CHECK_JIT;
 }
 
 void
