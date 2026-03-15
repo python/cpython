@@ -12,7 +12,7 @@ from io import StringIO
 from tokenize import TokenInfo as TI
 from typing import Iterable, Match, NamedTuple
 
-lazy from _pyrepl.trace import trace
+from _pyrepl.trace import trace
 
 COLORIZE = True
 
