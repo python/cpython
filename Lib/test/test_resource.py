@@ -54,7 +54,6 @@ class ResourceTest(unittest.TestCase):
             (cur, max_lim) = resource.getrlimit(resource.RLIMIT_FSIZE)
         except OSError as e:
             self.skipTest(f"getrlimit(RLIMIT_FSIZE) failed: {e}")
-
         if max_lim != resource.RLIM_INFINITY and max_lim < 1025:
             self.skipTest(f"system RLIMIT_FSIZE hard limit ({max_lim}) is too small for this test")
         with open(os_helper.TESTFN, "wb") as f:
