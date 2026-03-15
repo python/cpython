@@ -1160,6 +1160,140 @@ class BaseHTTPRequestHandlerTestCase(unittest.TestCase):
         self.assertEqual(self.handler.date_time_string(timestamp=now), expected)
 
 
+class HTTPServerTimeoutTestCase(unittest.TestCase):
+    """Test HTTPServer timeout functionality in keep-alive connections.
+
+    Regression test for Issue #102156: HTTPServer.handle_request() not
+    respecting timeout with keep-alive connections.
+    """
+
+    def setUp(self):
+        self._threads = threading_helper.threading_setup()
+        self.server_started = threading.Event()
+
+    def tearDown(self):
+        threading_helper.threading_cleanup(*self._threads)
+
+    def test_timeout_in_keepalive_connections(self):
+        """Test that handle_request respects timeout in keep-alive connections."""
+
+        class request_handler(NoLogRequestHandler, BaseHTTPRequestHandler):
+            def do_GET(self):
+                self.send_response(HTTPStatus.OK)
+                self.send_header('Content-Type', 'text/plain')
+                self.send_header('Connection', 'keep-alive')
+                self.end_headers()
+                self.wfile.write(b'Hello World!')
+
+        # Create server with short timeout
+        server = HTTPServer(('localhost', 0), request_handler)
+        server.timeout = 0.5  # 500ms timeout
+        port = server.server_address[1]
+
+        server_ready = threading.Event()
+        client_done = threading.Event()
+
+        def client_worker():
+            """Client that creates keep-alive connection and waits."""
+            # Wait for server to be ready to accept connections
+            if not server_ready.wait(timeout=2.0):
+                return
+            try:
+                import socket
+                with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as sock:
+                    sock.connect(('localhost', port))
+                    # Send first request
+                    sock.send(b'GET / HTTP/1.1\r\nHost: localhost\r\n'
+                             b'Connection: keep-alive\r\n\r\n')
+                    sock.recv(1024)  # Receive response
+                    client_done.set()  # Signal that first request is complete
+                    # Keep connection open longer than timeout
+                    time.sleep(1.0)
+            except Exception:
+                pass  # Expected if connection times out
+
+        # Start client thread
+        client_thread = threading.Thread(target=client_worker, daemon=True)
+        client_thread.start()
+
+        # Signal that server is ready and test handle_request with timeout
+        server_ready.set()
+        start_time = time.time()
+        server.handle_request()
+        duration = time.time() - start_time
+
+        server.server_close()
+
+        # Should complete within reasonable time (not hang indefinitely)
+        # Allow some buffer for timing variations
+        self.assertLess(duration, 1.0,
+                       "handle_request should timeout, not hang indefinitely")
+        self.assertGreater(duration, 0.4,
+                          "handle_request should wait for timeout period")
+
+    def test_timeout_with_no_requests(self):
+        """Test that handle_request times out when no requests are made."""
+
+        class request_handler(NoLogRequestHandler, BaseHTTPRequestHandler):
+            def do_GET(self):
+                self.send_response(HTTPStatus.OK)
+                self.end_headers()
+
+        server = HTTPServer(('localhost', 0), request_handler)
+        server.timeout = 0.5  # 500ms timeout
+
+        start_time = time.time()
+        server.handle_request()
+        duration = time.time() - start_time
+
+        server.server_close()
+
+        # Should timeout after approximately 0.5 seconds
+        self.assertGreaterEqual(duration, 0.4)
+        self.assertLess(duration, 0.7)
+
+    def test_normal_request_with_timeout(self):
+        """Test that normal requests complete quickly despite timeout setting."""
+
+        class request_handler(NoLogRequestHandler, BaseHTTPRequestHandler):
+            def do_GET(self):
+                self.send_response(HTTPStatus.OK)
+                self.end_headers()
+
+        server = HTTPServer(('localhost', 0), request_handler)
+        server.timeout = 1.0  # 1 second timeout
+        port = server.server_address[1]
+
+        server_ready = threading.Event()
+
+        def make_request():
+            # Wait for server to be ready to accept connections
+            if not server_ready.wait(timeout=2.0):
+                return
+            try:
+                import socket
+                with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as sock:
+                    sock.connect(('localhost', port))
+                    sock.send(b'GET / HTTP/1.1\r\nHost: localhost\r\n\r\n')
+                    sock.recv(1024)
+            except Exception:
+                pass
+
+        client_thread = threading.Thread(target=make_request, daemon=True)
+        client_thread.start()
+
+        # Signal that server is ready and test normal request handling
+        server_ready.set()
+        start_time = time.time()
+        server.handle_request()
+        duration = time.time() - start_time
+
+        server.server_close()
+
+        # Should complete quickly when request is made
+        self.assertLess(duration, 0.5, "Normal requests should complete quickly")
+
+
 class SimpleHTTPRequestHandlerTestCase(unittest.TestCase):
     """ Test url parsing """
     def setUp(self):
