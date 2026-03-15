@@ -1,0 +1,2 @@
+Fix an issue where garbage collection could run less frequently than
+expected.
