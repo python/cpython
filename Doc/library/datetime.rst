@@ -2568,9 +2568,11 @@ requires, and these work on all supported platforms.
 |           |                                || Di 16 Aug 21:30:00    |       |
 |           |                                |  1988 (de_DE)          |       |
 +-----------+--------------------------------+------------------------+-------+
-|  ``%C``   | The year divided by 100 and    | 01, 02, ..., 99        | \(0)  |
+|  ``%C``   | The year divided by 100 and    | 01, 02, ..., 99        |       |
 |           | truncated to an integer as a   |                        |       |
 |           | zero-padded decimal number.    |                        |       |
+|           | For :meth:`!strptime`,         |                        |       |
+|           | zero-padding is not required.  |                        |       |
 +-----------+--------------------------------+------------------------+-------+
 |  ``%d``   | Day of the month as a          | 01, 02, ..., 31        | \(9)  |
 |           | zero-padded decimal number.    |                        |       |

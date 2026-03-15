@@ -687,6 +687,27 @@ class StrptimeTests(unittest.TestCase):
                         ),
                     )
 
+    def test_strptime_C_format(self):
+        # verify cent. 0, zero-padding, modern cent., last supported cent.
+        test_centuries = ('0', '01', '20', '99')
+        for c in test_centuries:
+            expected_year = int(c) * 100 if int(c) != 0 else 1
+            with self.subTest(format_directive="C", century=c):
+                self.assertEqual(
+                    time.strptime(c, "%C"),
+                    time.strptime(f'{expected_year:04d}-01-01', '%Y-%m-%d'),
+                )
+
+    def test_strptime_C_y_format(self):
+        # verify %y correctly augmented by century %C
+        test_years = ('0001', '1687', '1991', '2026')
+        for year in test_years:
+            with self.subTest(format_directive="%C%y", year=year):
+                self.assertEqual(
+                    time.strptime(year, '%C%y'),
+                    time.strptime(f'{year}-01-01', '%Y-%m-%d'),
+                )
+
 class Strptime12AMPMTests(unittest.TestCase):
     """Test a _strptime regression in '%I %p' at 12 noon (12 PM)"""
 

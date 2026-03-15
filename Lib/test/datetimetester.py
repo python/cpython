@@ -2221,6 +2221,26 @@ class TestDate(HarmlessMixedComparison, unittest.TestCase):
                         self.theclass(2026, 2, 3),
                     )
 
+    def test_strptime_C_format(self):
+        # verify cent. 0, zero-padding, modern cent., last supported cent.
+        test_centuries = ('0', '01', '20', '99')
+        for c in test_centuries:
+            expected_year = int(c) * 100 if int(c) != 0 else 1
+            with self.subTest(format_directive="C", century=c):
+                self.assertEqual(
+                    self.theclass.strptime(c, "%C"),
+                    self.theclass(expected_year, 1, 1)
+                )
+
+    def test_strptime_C_y_format(self):
+        # verify %y correctly augmented by century %C
+        test_years = ('0001', '1687', '1991', '2026')
+        for y in test_years:
+            with self.subTest(format_directive="%C%y", year=y):
+                self.assertEqual(
+                    self.theclass.strptime(y, "%C%y"),
+                    self.theclass(int(y), 1, 1)
+                )
 
 #############################################################################
 # datetime tests
