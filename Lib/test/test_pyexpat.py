@@ -705,9 +705,11 @@ class ElementDeclHandlerTest(unittest.TestCase):
     @support.skip_emscripten_stack_overflow()
     @support.skip_wasi_stack_overflow()
     def test_deeply_nested_content_model(self):
+        # This should raise a RecursionError and not crash.
+        # See https://github.com/python/cpython/issues/
+        N = 500_000
         data = (b'<!DOCTYPE root [\n<!ELEMENT root '
-              + b'(a, ' * 500000 + b'a'
-              + b')' * 500000
+              + b'(a, ' * N + b'a' + b')' * N
               + b'>\n]>\n<root/>\n')
 
         parser = expat.ParserCreate()
