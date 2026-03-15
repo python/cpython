@@ -4188,6 +4188,22 @@ def bœr():
         self.assertTrue(any("Breakpoint 1 at" in l for l in stdout.splitlines()), stdout)
         self.assertTrue(all("SUCCESS" not in l for l in stdout.splitlines()), stdout)
 
+    def test_breakpoint_on_no_bytecode_line(self):
+        script = """
+            x = 1
+            def f():
+                global x  # line 4: no bytecode
+                x = 2
+            f()
+        """
+        commands = """
+            b 4
+            c
+            quit
+        """
+        stdout, _ = self.run_pdb_module(script, commands)
+        self.assertIn('no code', '\n'.join(stdout.splitlines()))
+
     def test_run_pdb_with_pdb(self):
         commands = """
             c
