@@ -2237,6 +2237,282 @@ class TestForwardRefClass(unittest.TestCase):
                 pass
 
 
+class TestFunctoolsPartialMethod(unittest.TestCase):
+    """Tests for get_annotations() with functools.partialmethod objects."""
+
+    def test_partialmethod_unbound(self):
+        """Test unbound partialmethod."""
+        class MyClass:
+            def method(self, a: int, b: str, c: float) -> bool:
+                return True
+
+            partial_method = functools.partialmethod(method, 1)
+
+        result = get_annotations(MyClass.partial_method)
+
+        # 'a' is bound, but 'self' should remain (unbound method)
+        expected = {'self': type(None).__class__, 'b': str, 'c': float, 'return': bool}
+        # Note: 'self' might not have an annotation in the original function
+        # So we check what parameters remain
+        self.assertIn('b', result)
+        self.assertIn('c', result)
+        self.assertIn('return', result)
+        self.assertNotIn('a', result)
+
+    def test_partialmethod_bound(self):
+        """Test bound partialmethod (which becomes a partial object)."""
+        class MyClass:
+            def method(self, a: int, b: str, c: float) -> bool:
+                return True
+
+            partial_method = functools.partialmethod(method, 1)
+
+        obj = MyClass()
+        result = get_annotations(obj.partial_method)
+
+        # 'self' and 'a' are bound, only b, c remain
+        expected = {'b': str, 'c': float, 'return': bool}
+        self.assertEqual(result, expected)
+
+    def test_partialmethod_with_keyword(self):
+        """Test partialmethod with keyword argument."""
+        class MyClass:
+            def method(self, a: int, b: str, c: float) -> bool:
+                return True
+
+            partial_method = functools.partialmethod(method, b="hello")
+
+        result = get_annotations(MyClass.partial_method)
+
+        # Keyword args don't remove params, but 'a' might be affected
+        self.assertIn('b', result)
+        self.assertIn('c', result)
+        self.assertIn('return', result)
+
+    def test_partialmethod_classmethod(self):
+        """Test partialmethod with classmethod."""
+        class MyClass:
+            @classmethod
+            def method(cls, a: int, b: str) -> bool:
+                return True
+
+            partial_method = functools.partialmethod(method, 1)
+
+        result = get_annotations(MyClass.partial_method)
+
+        # 'a' is bound, 'cls' and 'b' should remain
+        self.assertIn('b', result)
+        self.assertIn('return', result)
+        self.assertNotIn('a', result)
+
+    def test_partialmethod_no_annotations(self):
+        """Test partialmethod without annotations."""
+        class MyClass:
+            def method(self, a, b, c):
+                return True
+
+            partial_method = functools.partialmethod(method, 1)
+
+        result = get_annotations(MyClass.partial_method)
+        self.assertEqual(result, {})
+
+    def test_partialmethod_with_placeholder(self):
+        """Test partialmethod with Placeholder."""
+        class MyClass:
+            def method(self, a: int, b: str, c: float) -> bool:
+                return True
+
+            # Bind 'a', defer 'b', bind 'c'
+            partial_method = functools.partialmethod(method, 1, functools.Placeholder, 3.0)
+
+        result = get_annotations(MyClass.partial_method)
+
+        # 'self' stays, 'a' and 'c' are bound, 'b' remains
+        # For unbound partialmethod, we expect 'self' if annotated, plus remaining params
+        # Since 'self' isn't annotated, only 'b' and 'return' remain
+        self.assertIn('b', result)
+        self.assertIn('return', result)
+        self.assertNotIn('a', result)
+        self.assertNotIn('c', result)
+
+    def test_partialmethod_with_multiple_placeholders(self):
+        """Test partialmethod with multiple Placeholders."""
+        class MyClass:
+            def method(self, a: int, b: str, c: float, d: list) -> bool:
+                return True
+
+            # Bind 'a', defer 'b', defer 'c', bind 'd'
+            partial_method = functools.partialmethod(method, 1, functools.Placeholder, functools.Placeholder, [])
+
+        result = get_annotations(MyClass.partial_method)
+
+        # 'b' and 'c' remain unbound, 'a' and 'd' are bound
+        self.assertIn('b', result)
+        self.assertIn('c', result)
+        self.assertIn('return', result)
+        self.assertNotIn('a', result)
+        self.assertNotIn('d', result)
+
+
+class TestFunctoolsPartial(unittest.TestCase):
+    """Tests for get_annotations() with functools.partial objects."""
+
+    def test_partial_basic(self):
+        """Test basic partial with positional argument."""
+        def foo(a: int, b: str, c: float) -> bool:
+            return True
+
+        partial_foo = functools.partial(foo, 1)
+        result = get_annotations(partial_foo)
+
+        # 'a' is bound, so only b, c, and return should remain
+        expected = {'b': str, 'c': float, 'return': bool}
+        self.assertEqual(result, expected)
+
+    def test_partial_with_keyword(self):
+        """Test partial with keyword argument."""
+        def foo(a: int, b: str, c: float) -> bool:
+            return True
+
+        partial_foo = functools.partial(foo, b="hello")
+        result = get_annotations(partial_foo)
+
+        # Keyword arguments don't remove parameters from signature
+        expected = {'a': int, 'b': str, 'c': float, 'return': bool}
+        self.assertEqual(result, expected)
+
+    def test_partial_all_args_bound(self):
+        """Test partial with all arguments bound."""
+        def foo(a: int, b: str) -> bool:
+            return True
+
+        partial_foo = functools.partial(foo, 1, "hello")
+        result = get_annotations(partial_foo)
+
+        # Only return annotation should remain
+        expected = {'return': bool}
+        self.assertEqual(result, expected)
+
+    def test_partial_no_annotations(self):
+        """Test partial of function without annotations."""
+        def foo(a, b, c):
+            return True
+
+        partial_foo = functools.partial(foo, 1)
+        result = get_annotations(partial_foo)
+
+        # Should return empty dict
+        self.assertEqual(result, {})
+
+    def test_nested_partial(self):
+        """Test nested partial applications."""
+        def foo(a: int, b: str, c: float, d: list) -> bool:
+            return True
+
+        partial1 = functools.partial(foo, 1)
+        partial2 = functools.partial(partial1, "hello")
+        result = get_annotations(partial2)
+
+        # a and b are bound, c and d remain
+        expected = {'c': float, 'd': list, 'return': bool}
+        self.assertEqual(result, expected)
+
+    def test_partial_no_return_annotation(self):
+        """Test partial without return annotation."""
+        def foo(a: int, b: str):
+            pass
+
+        partial_foo = functools.partial(foo, 1)
+        result = get_annotations(partial_foo)
+
+        # Only b should remain
+        expected = {'b': str}
+        self.assertEqual(result, expected)
+
+    def test_partial_format_string(self):
+        """Test partial with STRING format."""
+        def foo(a: int, b: str) -> bool:
+            return True
+
+        partial_foo = functools.partial(foo, 1)
+        result = get_annotations(partial_foo, format=Format.STRING)
+
+        # Should return strings
+        expected = {'b': 'str', 'return': 'bool'}
+        self.assertEqual(result, expected)
+
+    def test_partial_format_forwardref(self):
+        """Test partial with FORWARDREF format."""
+        def foo(a: UndefinedType1, b: UndefinedType2) -> UndefinedReturnType:
+            return True
+
+        partial_foo = functools.partial(foo, 1)
+        result = get_annotations(partial_foo, format=Format.FORWARDREF)
+
+        # Should return forward references for undefined types
+        expected = {
+            'b': support.EqualToForwardRef('UndefinedType2', owner=foo),
+            'return': support.EqualToForwardRef('UndefinedReturnType', owner=foo)
+        }
+        self.assertEqual(result, expected)
+
+    def test_partial_with_placeholder(self):
+        """Test partial with Placeholder for deferred argument."""
+        def foo(a: int, b: str, c: float) -> bool:
+            return True
+
+        # Placeholder in the middle: bind 'a', defer 'b', bind 'c'
+        partial_foo = functools.partial(foo, 1, functools.Placeholder, 3.0)
+        result = get_annotations(partial_foo)
+
+        # Only 'b' remains unbound (Placeholder defers it), 'a' and 'c' are bound
+        # So we should have 'b' and 'return'
+        expected = {'b': str, 'return': bool}
+        self.assertEqual(result, expected)
+
+    def test_partial_with_multiple_placeholders(self):
+        """Test partial with multiple Placeholders."""
+        def foo(a: int, b: str, c: float, d: list) -> bool:
+            return True
+
+        # Bind 'a', defer 'b', defer 'c', bind 'd'
+        partial_foo = functools.partial(foo, 1, functools.Placeholder, functools.Placeholder, [])
+        result = get_annotations(partial_foo)
+
+        # 'b' and 'c' remain unbound, 'a' and 'd' are bound
+        expected = {'b': str, 'c': float, 'return': bool}
+        self.assertEqual(result, expected)
+
+    def test_partial_placeholder_at_start(self):
+        """Test partial with Placeholder at the start."""
+        def foo(a: int, b: str, c: float) -> bool:
+            return True
+
+        # Defer 'a', bind 'b' and 'c'
+        partial_foo = functools.partial(foo, functools.Placeholder, "hello", 3.0)
+        result = get_annotations(partial_foo)
+
+        # Only 'a' remains unbound
+        expected = {'a': int, 'return': bool}
+        self.assertEqual(result, expected)
+
+    def test_nested_partial_with_placeholder(self):
+        """Test nested partial applications with Placeholder."""
+        def foo(a: int, b: str, c: float, d: list) -> bool:
+            return True
+
+        # First partial: bind 'a', defer 'b', bind 'c'
+        # (can't have trailing Placeholder)
+        partial1 = functools.partial(foo, 1, functools.Placeholder, 3.0)
+        # Second partial: provide 'b'
+        partial2 = functools.partial(partial1, "hello")
+        result = get_annotations(partial2)
+
+        # 'a', 'b', and 'c' are bound, only 'd' remains
+        expected = {'d': list, 'return': bool}
+        self.assertEqual(result, expected)
+
+
 class TestAnnotationLib(unittest.TestCase):
     def test__all__(self):
         support.check__all__(self, annotationlib)
