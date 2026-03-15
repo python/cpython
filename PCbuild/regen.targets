@@ -129,7 +129,7 @@
       <JITArgs Condition="$(Platform) == 'x64'">x86_64-pc-windows-msvc</JITArgs>
       <JITArgs Condition="$(Configuration) == 'Debug'">$(JITArgs) --debug</JITArgs>
     </PropertyGroup>
-    <Exec Command='$(PythonForBuild) "$(PySourcePath)Tools\jit\build.py" $(JITArgs) --output-dir "$(GeneratedJitStencilsDir)" --pyconfig-dir "$(PySourcePath)PC"'/>
+    <Exec Command='$(PythonForBuild) "$(PySourcePath)Tools\jit\build.py" $(JITArgs) --output-dir "$(GeneratedJitStencilsDir)" --pyconfig-dir "$(PySourcePath)PC" --llvm-version="$(LLVM_VERSION)" --llvm-tools-install-dir="$(LLVM_TOOLS_INSTALL_DIR)"'/>
   </Target>
   <Target Name="_CleanJIT" AfterTargets="Clean">
     <Delete Files="@(_JITOutputs)"/>

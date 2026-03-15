@@ -70,7 +70,18 @@ async def _get_brew_llvm_prefix(llvm_version: str, *, echo: bool = False) -> str
 
 
 @_async_cache
-async def _find_tool(tool: str, llvm_version: str, *, echo: bool = False) -> str | None:
+async def _find_tool(
+    tool: str,
+    llvm_version: str,
+    llvm_tools_install_dir: str | None,
+    *,
+    echo: bool = False,
+) -> str | None:
+    # Explicitly defined LLVM installation location
+    if llvm_tools_install_dir:
+        path = os.path.join(llvm_tools_install_dir, "bin", tool)
+        if await _check_tool_version(path, llvm_version, echo=echo):
+            return path
     # Unversioned executables:
     path = tool
     if await _check_tool_version(path, llvm_version, echo=echo):
@@ -104,10 +115,11 @@ async def maybe_run(
     args: typing.Iterable[str],
     echo: bool = False,
     llvm_version: str = _LLVM_VERSION,
+    llvm_tools_install_dir: str | None = None,
 ) -> str | None:
     """Run an LLVM tool if it can be found. Otherwise, return None."""
 
-    path = await _find_tool(tool, llvm_version, echo=echo)
+    path = await _find_tool(tool, llvm_version, llvm_tools_install_dir, echo=echo)
     return path and await _run(path, args, echo=echo)
 
 
@@ -116,10 +128,17 @@ async def run(
     args: typing.Iterable[str],
     echo: bool = False,
     llvm_version: str = _LLVM_VERSION,
+    llvm_tools_install_dir: str | None = None,
 ) -> str:
     """Run an LLVM tool if it can be found. Otherwise, raise RuntimeError."""
 
-    output = await maybe_run(tool, args, echo=echo, llvm_version=llvm_version)
+    output = await maybe_run(
+        tool,
+        args,
+        echo=echo,
+        llvm_version=llvm_version,
+        llvm_tools_install_dir=llvm_tools_install_dir,
+    )
     if output is None:
         raise RuntimeError(f"Can't find {tool}-{llvm_version}!")
     return output
