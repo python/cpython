@@ -1783,7 +1783,7 @@ always available. Unless explicitly noted otherwise, all variables are read-only
    signature::
 
       def filter(importing_module: str, imported_module: str,
-                 fromlist: tuple[str, ...] | None) -> bool
+                 fromlist: tuple[str, ...] | None, /) -> bool
 
    Where:
 
