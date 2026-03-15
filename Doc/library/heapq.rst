@@ -372,8 +372,8 @@ last 0'th element you extracted.  This is especially useful in simulation
 contexts, where the tree holds all incoming events, and the "win" condition
 means the smallest scheduled time.  When an event schedules other events for
 execution, they are scheduled into the future, so they can easily go into the
-heap.  So, a heap is a good structure for implementing schedulers (this is what
-I used for my MIDI sequencer :-).
+heap.  So, a heap is a good structure for implementing schedulers, such as
+event-driven simulations and task queues.
 
 Various structures for implementing schedulers have been extensively studied,
 and heaps are good for this, as they are reasonably speedy, the speed is almost
@@ -399,8 +399,7 @@ which grows at exactly the same rate the first heap is melting.  When the first
 heap completely vanishes, you switch heaps and start a new run.  Clever and
 quite effective!
 
-In a word, heaps are useful memory structures to know.  I use them in a few
-applications, and I think it is good to keep a 'heap' module around. :-)
+In a word, heaps are useful memory structures to know.
 
 .. rubric:: Footnotes
 
@@ -410,6 +409,6 @@ applications, and I think it is good to keep a 'heap' module around. :-)
    different, and one had to be very clever to ensure (far in advance) that each
    tape movement will be the most effective possible (that is, will best
    participate at "progressing" the merge).  Some tapes were even able to read
-   backwards, and this was also used to avoid the rewinding time. Believe me, real
+   backwards, and this was also used to avoid the rewinding time. Real
    good tape sorts were quite spectacular to watch! From all times, sorting has
    always been a Great Art! :-)
