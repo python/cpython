@@ -1,3 +1,4 @@
+import itertools
 import timeit
 import unittest
 import sys
@@ -24,8 +25,9 @@ class FakeTimer:
     BASE_TIME = 42.0
     def __init__(self, seconds_per_increment=1.0):
         self.count = 0
+        self.global_setup_calls = 0
         self.setup_calls = 0
-        self.seconds_per_increment=seconds_per_increment
+        self.seconds_per_increment = seconds_per_increment
         timeit._fake_timer = self
 
     def __call__(self):
@@ -33,6 +35,9 @@ class FakeTimer:
 
     def inc(self):
         self.count += 1
+
+    def global_setup(self):
+        self.global_setup_calls += 1
 
     def setup(self):
         self.setup_calls += 1
@@ -82,6 +87,15 @@ class TestTimeit(unittest.TestCase):
         self.assertRaises(SyntaxError, timeit.Timer,
                           setup='while False:\n  pass', stmt='  break')
 
+    def test_timer_invalid_global_setup(self):
+        self.assertRaises(ValueError, timeit.Timer, global_setup=None)
+        self.assertRaises(SyntaxError, timeit.Timer, global_setup='return')
+        self.assertRaises(SyntaxError, timeit.Timer, global_setup='yield')
+        self.assertRaises(SyntaxError, timeit.Timer, global_setup='yield from ()')
+        self.assertRaises(SyntaxError, timeit.Timer, global_setup='break')
+        self.assertRaises(SyntaxError, timeit.Timer, global_setup='continue')
+        self.assertRaises(SyntaxError, timeit.Timer, global_setup='  pass')
+
     def test_timer_invalid_setup(self):
         self.assertRaises(ValueError, timeit.Timer, setup=None)
         self.assertRaises(SyntaxError, timeit.Timer, setup='return')
@@ -92,13 +106,44 @@ class TestTimeit(unittest.TestCase):
         self.assertRaises(SyntaxError, timeit.Timer, setup='from timeit import *')
         self.assertRaises(SyntaxError, timeit.Timer, setup='  pass')
 
+    def test_timer_empty_global_setup(self):
+        timeit.Timer(global_setup='')
+        timeit.Timer(global_setup=' \n\t\f')
+        timeit.Timer(global_setup='# comment')
+
     def test_timer_empty_stmt(self):
         timeit.Timer(stmt='')
         timeit.Timer(stmt=' \n\t\f')
         timeit.Timer(stmt='# comment')
 
+    def test_timer_global_setup_future(self):
+        timer = timeit.Timer(stmt='print(f.__annotations__)',
+                             setup='def f(x: int): pass',
+                             global_setup='from __future__ import annotations')
+        with captured_stdout() as stdout:
+            timer.timeit(1)
+        self.assertEqual(stdout.getvalue().strip(), str({'x': 'int'}))
+
+    def test_timer_global_setup_side_effect(self):
+        timer = timeit.Timer(stmt='print(s)', global_setup='s = 1')
+        with captured_stdout() as stdout:
+            timer.timeit(5)
+        self.assertEqual(stdout.getvalue(), '1\n' * 5)
+
+    def test_timer_callable_global_setup_side_effect(self):
+        self.fake_timer = FakeTimer()
+        timer = timeit.Timer(global_setup=self.fake_callable_global_setup)
+        timer.timeit(5)
+        self.assertEqual(self.fake_timer.count, 0)
+        self.assertEqual(self.fake_timer.setup_calls, 0)
+        self.assertEqual(self.fake_timer.global_setup_calls, 1)
+
+    fake_global_setup = "import timeit\ntimeit._fake_timer.global_setup()"
     fake_setup = "import timeit\ntimeit._fake_timer.setup()"
     fake_stmt = "import timeit\ntimeit._fake_timer.inc()"
+
+    def fake_callable_global_setup(self):
+        self.fake_timer.global_setup()
 
     def fake_callable_setup(self):
         self.fake_timer.setup()
@@ -106,16 +151,17 @@ class TestTimeit(unittest.TestCase):
     def fake_callable_stmt(self):
         self.fake_timer.inc()
 
-    def timeit(self, stmt, setup, number=None, globals=None):
+    def timeit(self, stmt, setup, global_setup, number=None, globals=None):
         self.fake_timer = FakeTimer()
         t = timeit.Timer(stmt=stmt, setup=setup, timer=self.fake_timer,
-                globals=globals)
+                globals=globals, global_setup=global_setup)
         kwargs = {}
         if number is None:
             number = DEFAULT_NUMBER
         else:
             kwargs['number'] = number
         delta_time = t.timeit(**kwargs)
+        self.assertEqual(self.fake_timer.global_setup_calls, 1)
         self.assertEqual(self.fake_timer.setup_calls, 1)
         self.assertEqual(self.fake_timer.count, number)
         self.assertEqual(delta_time, number)
@@ -124,21 +170,20 @@ class TestTimeit(unittest.TestCase):
     #def test_timeit_default_iters(self):
     #    self.timeit(self.fake_stmt, self.fake_setup)
 
-    def test_timeit_zero_iters(self):
-        self.timeit(self.fake_stmt, self.fake_setup, number=0)
-
-    def test_timeit_few_iters(self):
-        self.timeit(self.fake_stmt, self.fake_setup, number=3)
-
-    def test_timeit_callable_stmt(self):
-        self.timeit(self.fake_callable_stmt, self.fake_setup, number=3)
-
-    def test_timeit_callable_setup(self):
-        self.timeit(self.fake_stmt, self.fake_callable_setup, number=3)
-
-    def test_timeit_callable_stmt_and_setup(self):
-        self.timeit(self.fake_callable_stmt,
-                self.fake_callable_setup, number=3)
+    def test_timeit_simple(self):
+        for number, (callable_stmt, callable_setup, callable_global_setup) in (
+            itertools.product([0, 3], itertools.product([True, False], repeat=3))
+        ):
+            with self.subTest(
+                number=number,
+                callable_stmt=callable_stmt,
+                callable_setup=callable_setup,
+                callable_global_setup=callable_global_setup,
+            ):
+                stmt = self.fake_stmt if callable_stmt else self.fake_callable_stmt
+                setup = self.fake_setup if callable_setup else self.fake_callable_setup
+                global_setup = self.fake_global_setup if callable_global_setup else self.fake_callable_global_setup
+                self.timeit(stmt, setup, global_setup, number=number)
 
     # Takes too long to run in debug build.
     #def test_timeit_function(self):
@@ -162,9 +207,10 @@ class TestTimeit(unittest.TestCase):
         timeit.timeit(stmt='local_timer.inc()', timer=local_timer,
                       globals=locals(), number=3)
 
-    def repeat(self, stmt, setup, repeat=None, number=None):
+    def repeat(self, stmt, setup, global_setup, repeat=None, number=None):
         self.fake_timer = FakeTimer()
-        t = timeit.Timer(stmt=stmt, setup=setup, timer=self.fake_timer)
+        t = timeit.Timer(stmt=stmt, setup=setup, timer=self.fake_timer,
+                         global_setup=global_setup)
         kwargs = {}
         if repeat is None:
             repeat = DEFAULT_REPEAT
@@ -175,6 +221,7 @@ class TestTimeit(unittest.TestCase):
         else:
             kwargs['number'] = number
         delta_times = t.repeat(**kwargs)
+        self.assertEqual(self.fake_timer.global_setup_calls, 1)
         self.assertEqual(self.fake_timer.setup_calls, repeat)
         self.assertEqual(self.fake_timer.count, repeat * number)
         self.assertEqual(delta_times, repeat * [float(number)])
@@ -183,26 +230,23 @@ class TestTimeit(unittest.TestCase):
     #def test_repeat_default(self):
     #    self.repeat(self.fake_stmt, self.fake_setup)
 
-    def test_repeat_zero_reps(self):
-        self.repeat(self.fake_stmt, self.fake_setup, repeat=0)
-
-    def test_repeat_zero_iters(self):
-        self.repeat(self.fake_stmt, self.fake_setup, number=0)
-
-    def test_repeat_few_reps_and_iters(self):
-        self.repeat(self.fake_stmt, self.fake_setup, repeat=3, number=5)
-
-    def test_repeat_callable_stmt(self):
-        self.repeat(self.fake_callable_stmt, self.fake_setup,
-                repeat=3, number=5)
-
-    def test_repeat_callable_setup(self):
-        self.repeat(self.fake_stmt, self.fake_callable_setup,
-                repeat=3, number=5)
-
-    def test_repeat_callable_stmt_and_setup(self):
-        self.repeat(self.fake_callable_stmt, self.fake_callable_setup,
-                repeat=3, number=5)
+    def test_repeat_simple(self):
+        for repeat, (callable_stmt, callable_setup, callable_global_setup) in (
+            itertools.product([0, 3], itertools.product([True, False], repeat=3))
+        ):
+            # do not use number = None for repeat > 0 as it would be too large
+            number = 5 if repeat > 0 else None
+            with self.subTest(
+                repeat=repeat,
+                number=number,
+                callable_stmt=callable_stmt,
+                callable_setup=callable_setup,
+                callable_global_setup=callable_global_setup,
+            ):
+                stmt = self.fake_stmt if callable_stmt else self.fake_callable_stmt
+                setup = self.fake_setup if callable_setup else self.fake_callable_setup
+                global_setup = self.fake_global_setup if callable_global_setup else self.fake_callable_global_setup
+                self.repeat(stmt, setup, global_setup, repeat=repeat, number=number)
 
     # Takes too long to run in debug build.
     #def test_repeat_function(self):
@@ -274,6 +318,18 @@ class TestTimeit(unittest.TestCase):
     def test_main_fixed_iters(self):
         s = self.run_main(seconds_per_increment=2.0, switches=['-n35'])
         self.assertEqual(s, "35 loops, best of 5: 2 sec per loop\n")
+
+    def test_main_global_setup(self):
+        s = self.run_main(seconds_per_increment=2.0,
+                switches=['-n35', '-g', 'print("CustomSetup")'])
+        self.assertEqual(s, "CustomSetup\n" +
+                "35 loops, best of 5: 2 sec per loop\n")
+
+    def test_main_multiple_global_setups(self):
+        s = self.run_main(seconds_per_increment=2.0,
+                switches=['-n35', '-g', 'a = "CustomSetup"', '-g', 'print(a)'])
+        self.assertEqual(s, "CustomSetup\n" +
+                "35 loops, best of 5: 2 sec per loop\n")
 
     def test_main_setup(self):
         s = self.run_main(seconds_per_increment=2.0,
