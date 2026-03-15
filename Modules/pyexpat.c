@@ -3,6 +3,7 @@
 #endif
 
 #include "Python.h"
+#include "pycore_ceval.h"         // _Py_EnterRecursiveCall()
 #include "pycore_import.h"        // _PyImport_SetModule()
 #include "pycore_pyhash.h"        // _Py_HashSecret
 #include "pycore_traceback.h"     // _PyTraceback_Add()
@@ -572,6 +573,10 @@ static PyObject *
 conv_content_model(XML_Content * const model,
                    PyObject *(*conv_string)(const XML_Char *))
 {
+    if (_Py_EnterRecursiveCall(" in conv_content_model")) {
+        return NULL;
+    }
+
     PyObject *result = NULL;
     PyObject *children = PyTuple_New(model->numchildren);
     int i;
@@ -583,7 +588,7 @@ conv_content_model(XML_Content * const model,
                                                  conv_string);
             if (child == NULL) {
                 Py_XDECREF(children);
-                return NULL;
+                goto done;
             }
             PyTuple_SET_ITEM(children, i, child);
         }
@@ -591,6 +596,8 @@ conv_content_model(XML_Content * const model,
                                model->type, model->quant,
                                conv_string,model->name, children);
     }
+done:
+    _Py_LeaveRecursiveCall();
     return result;
 }
 
