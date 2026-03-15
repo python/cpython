@@ -10,10 +10,10 @@ from test.support.hypothesis_helper import hypothesis
 
 
 # Note: "*_hex" functions are aliases for "(un)hexlify"
-b2a_functions = ['b2a_ascii85', 'b2a_base64', 'b2a_base85', 'b2a_z85',
+b2a_functions = ['b2a_ascii85', 'b2a_base64', 'b2a_base85',
                  'b2a_hex', 'b2a_qp', 'b2a_uu',
                  'hexlify']
-a2b_functions = ['a2b_ascii85', 'a2b_base64', 'a2b_base85', 'a2b_z85',
+a2b_functions = ['a2b_ascii85', 'a2b_base64', 'a2b_base85',
                  'a2b_hex', 'a2b_qp', 'a2b_uu',
                  'unhexlify']
 all_functions = a2b_functions + b2a_functions + ['crc32', 'crc_hqx']
@@ -45,6 +45,22 @@ class BinASCIITest(unittest.TestCase):
         # Check module exceptions
         self.assertIsSubclass(binascii.Error, Exception)
         self.assertIsSubclass(binascii.Incomplete, Exception)
+
+    def test_constants(self):
+        for name in ('BASE64_ALPHABET', 'URLSAFE_BASE64_ALPHABET',
+                     'CRYPT_ALPHABET', 'BCRYPT_ALPHABET',
+                     'UU_ALPHABET', 'XX_ALPHABET',
+                     'BINHEX_ALPHABET'):
+            value = getattr(binascii, name)
+            self.assertIsInstance(value, bytes)
+            self.assertEqual(len(value), 64)
+            self.assertEqual(len(set(value)), 64)
+        for name in ('BASE85_ALPHABET', 'ASCII85_ALPHABET',
+                     'Z85_ALPHABET'):
+            value = getattr(binascii, name)
+            self.assertIsInstance(value, bytes)
+            self.assertEqual(len(value), 85)
+            self.assertEqual(len(set(value)), 85)
 
     def test_functions(self):
         # Check presence of all functions
@@ -301,6 +317,43 @@ class BinASCIITest(unittest.TestCase):
         assertInvalidLength(b'a' * (4 * 87 + 1))
         assertInvalidLength(b'A\tB\nC ??DE', # only 5 valid characters
                             strict_mode=False)
+
+    def test_base64_alphabet(self):
+        alphabet = (b'!"#$%&\'()*+,-012345689@'
+                    b'ABCDEFGHIJKLMNPQRSTUVXYZ[`abcdefhijklmpqr')
+        data = self.type2test(self.rawdata)
+        encoded = binascii.b2a_base64(data, alphabet=alphabet)
+        std_alphabet = (b'ABCDEFGHIJKLMNOPQRSTUVWXYZ'
+                        b'abcdefghijklmnopqrstuvwxyz'
+                        b'0123456789+/')
+        trans = bytes.maketrans(std_alphabet, alphabet)
+        expected = binascii.b2a_base64(data).translate(trans)
+        self.assertEqual(encoded, expected)
+        self.assertEqual(binascii.a2b_base64(encoded, alphabet=alphabet), self.rawdata)
+        self.assertEqual(binascii.b2a_base64(data, alphabet=self.type2test(alphabet)), expected)
+
+        data = self.type2test(b'')
+        self.assertEqual(binascii.b2a_base64(data, alphabet=alphabet), b'\n')
+        self.assertEqual(binascii.a2b_base64(data, alphabet=alphabet), b'')
+
+        with self.assertRaises(TypeError):
+            binascii.b2a_base64(data, alphabet=None)
+        with self.assertRaises(TypeError):
+            binascii.a2b_base64(data, alphabet=None)
+        with self.assertRaises(TypeError):
+            binascii.b2a_base64(data, alphabet=alphabet.decode())
+        with self.assertRaises(TypeError):
+            binascii.a2b_base64(data, alphabet=alphabet.decode())
+        with self.assertRaises(TypeError):
+            binascii.a2b_base64(data, alphabet=bytearray(alphabet))
+        with self.assertRaises(ValueError):
+            binascii.b2a_base64(data, alphabet=alphabet[:-1])
+        with self.assertRaises(ValueError):
+            binascii.a2b_base64(data, alphabet=alphabet[:-1])
+        with self.assertRaises(ValueError):
+            binascii.b2a_base64(data, alphabet=alphabet+b'?')
+        with self.assertRaises(ValueError):
+            binascii.a2b_base64(data, alphabet=alphabet+b'?')
 
     def test_ascii85_valid(self):
         # Test Ascii85 with valid data
@@ -587,73 +640,41 @@ class BinASCIITest(unittest.TestCase):
             b_pad_expected = b + b"\0" * padding
             self.assertEqual(b_pad, b_pad_expected)
 
-    def test_z85_valid(self):
-        # Test Z85 with valid data
-        lines, i = [], 0
-        for k in range(1, len(self.rawdata) + 1):
-            b = self.type2test(self.rawdata[i:i + k])
-            a = binascii.b2a_z85(b)
-            lines.append(a)
-            i += k
-            if i >= len(self.rawdata):
-                break
-        res = bytes()
-        for line in lines:
-            a = self.type2test(line)
-            b = binascii.a2b_z85(a)
-            res += b
-        self.assertEqual(res, self.rawdata)
+    def test_base85_alphabet(self):
+        alphabet = (b'0123456789abcdefghijklmnopqrstuvwxyz'
+                    b'ABCDEFGHIJKLMNOPQRSTUVWXYZ.-:+=^!/*?&<>()[]{}@%$#')
+        data = self.type2test(self.rawdata)
+        encoded = binascii.b2a_base85(data, alphabet=alphabet)
+        std_alphabet = (b'0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZ'
+                        b'abcdefghijklmnopqrstuvwxyz!#$%&()*+-;<=>?@^_`{|}~')
+        trans = bytes.maketrans(std_alphabet, alphabet)
+        expected = binascii.b2a_base85(data).translate(trans)
+        self.assertEqual(encoded, expected)
+        self.assertEqual(binascii.a2b_base85(encoded, alphabet=alphabet), self.rawdata)
+        self.assertEqual(binascii.b2a_base85(data, alphabet=self.type2test(alphabet)), expected)
 
-        # Test decoding inputs with different length
-        self.assertEqual(binascii.a2b_z85(self.type2test(b'')), b'')
-        self.assertEqual(binascii.a2b_z85(self.type2test(b'a')), b'')
-        self.assertEqual(binascii.a2b_z85(self.type2test(b'ab')), b'\x1f')
-        self.assertEqual(binascii.a2b_z85(self.type2test(b'abc')),
-                         b'\x1f\x85')
-        self.assertEqual(binascii.a2b_z85(self.type2test(b'abcd')),
-                         b'\x1f\x85\x9a')
-        self.assertEqual(binascii.a2b_z85(self.type2test(b'abcde')),
-                         b'\x1f\x85\x9a$')
-        self.assertEqual(binascii.a2b_z85(self.type2test(b'abcdef')),
-                         b'\x1f\x85\x9a$')
-        self.assertEqual(binascii.a2b_z85(self.type2test(b'abcdefg')),
-                         b'\x1f\x85\x9a$/')
+        data = self.type2test(b'')
+        self.assertEqual(binascii.b2a_base85(data, alphabet=alphabet), b'')
+        self.assertEqual(binascii.a2b_base85(data, alphabet=alphabet), b'')
 
-    def test_z85_errors(self):
-        def _assertRegexTemplate(assert_regex, data, **kwargs):
-            with self.assertRaisesRegex(binascii.Error, assert_regex):
-                binascii.a2b_z85(self.type2test(data), **kwargs)
-
-        def assertNonZ85Data(data):
-            _assertRegexTemplate(r"(?i)bad z85 character", data)
-
-        def assertOverflow(data):
-            _assertRegexTemplate(r"(?i)z85 overflow", data)
-
-        assertNonZ85Data(b"\xda")
-        assertNonZ85Data(b"00\0\0")
-        assertNonZ85Data(b"z !/")
-        assertNonZ85Data(b"By/JnB0hYQ\n")
-
-        # Test Z85 with out-of-range encoded value
-        assertOverflow(b"%")
-        assertOverflow(b"%n")
-        assertOverflow(b"%nS")
-        assertOverflow(b"%nSc")
-        assertOverflow(b"%nSc1")
-        assertOverflow(b"%nSc0$")
-        assertOverflow(b"%nSc0%nSc0%nSD0")
-
-    def test_z85_pad(self):
-        # Test Z85 with encode padding
-        rawdata = b"n1n3Tee\n ch@rAc\te\r$"
-        for i in range(1, len(rawdata) + 1):
-            padding = -i % 4
-            b = rawdata[:i]
-            a_pad = binascii.b2a_z85(self.type2test(b), pad=True)
-            b_pad = binascii.a2b_z85(self.type2test(a_pad))
-            b_pad_expected = b + b"\0" * padding
-            self.assertEqual(b_pad, b_pad_expected)
+        with self.assertRaises(TypeError):
+            binascii.b2a_base85(data, alphabet=None)
+        with self.assertRaises(TypeError):
+            binascii.a2b_base85(data, alphabet=None)
+        with self.assertRaises(TypeError):
+            binascii.b2a_base85(data, alphabet=alphabet.decode())
+        with self.assertRaises(TypeError):
+            binascii.a2b_base85(data, alphabet=alphabet.decode())
+        with self.assertRaises(TypeError):
+            binascii.a2b_base85(data, alphabet=bytearray(alphabet))
+        with self.assertRaises(ValueError):
+            binascii.b2a_base85(data, alphabet=alphabet[:-1])
+        with self.assertRaises(ValueError):
+            binascii.a2b_base85(data, alphabet=alphabet[:-1])
+        with self.assertRaises(ValueError):
+            binascii.b2a_base85(data, alphabet=alphabet+b'?')
+        with self.assertRaises(ValueError):
+            binascii.a2b_base85(data, alphabet=alphabet+b'?')
 
     def test_uu(self):
         MAX_UU = 45
