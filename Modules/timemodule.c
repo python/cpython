@@ -1308,7 +1308,7 @@ py_process_time(time_module_state *state, PyTime_t *tp,
 
     if (info) {
         info->implementation = "GetProcessTimes()";
-        info->resolution = 1e-7;
+        info->resolution = 15.625e-3;
         info->monotonic = 1;
         info->adjustable = 0;
     }
@@ -1469,7 +1469,7 @@ _PyTime_GetThreadTimeWithInfo(PyTime_t *tp, _Py_clock_info_t *info)
 
     if (info) {
         info->implementation = "GetThreadTimes()";
-        info->resolution = 1e-7;
+        info->resolution = 15.625e-3;
         info->monotonic = 1;
         info->adjustable = 0;
     }
