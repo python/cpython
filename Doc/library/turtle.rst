@@ -46,7 +46,7 @@ direction it is facing, drawing a line as it moves.  Give it the command
    Turtle can draw intricate shapes using programs that repeat simple
    moves.
 
-   .. image:: turtle-star.*
+   .. image:: turtle-star.png
       :align: center
 
 In Python, turtle graphics provides a representation of a physical "turtle"
