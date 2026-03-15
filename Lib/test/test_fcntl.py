@@ -288,6 +288,22 @@ class TestFcntl(unittest.TestCase):
         with self.assertRaises(OSError):
             fcntl.fcntl(fd, fcntl.F_DUPFD, b'\0' * 2048)
 
+    @unittest.skipUnless(hasattr(fcntl, 'F_PREALLOCATE'), 'need F_PREALLOCATE')
+    def test_fcntl_preallocate(self):
+        self.f = open(TESTFN, 'wb+')
+        fd = self.f.fileno()
+
+        fs = fcntl.fstore(
+            flags=fcntl.F_ALLOCATECONTIG | fcntl.F_ALLOCATEALL | fcntl.F_ALLOCATEPERSIST,
+            posmode=fcntl.F_PEOFPOSMODE,
+            offset=0,
+            length=1024
+        )
+
+        bs = fcntl.fcntl(fd, fcntl.F_PREALLOCATE, fs)
+        result = fcntl.fstore.from_buffer(bs)
+        self.assertEqual(result.bytesalloc, 1024)
+
 
 if __name__ == '__main__':
     unittest.main()
