@@ -144,7 +144,7 @@ class WinAPITests(unittest.TestCase):
         # Pipe instance is available, so this passes
         _winapi.WaitNamedPipe(pipe_name, 0)
 
-        with open(pipe_name, 'w+b') as pipe2:
+        with open(pipe_name, 'w+b', buffering=0) as pipe2:
             # No instances available, so this times out
             # (WinError 121 does not get mapped to TimeoutError)
             with self.assertRaises(OSError):

@@ -989,7 +989,14 @@ portable_lseek(fileio *self, PyObject *posobj, int whence, bool suppress_pipe_er
     Py_BEGIN_ALLOW_THREADS
     _Py_BEGIN_SUPPRESS_IPH
 #ifdef MS_WINDOWS
-    res = _lseeki64(fd, pos, whence);
+    HANDLE h = (HANDLE)_get_osfhandle(fd);
+    if (h != INVALID_HANDLE_VALUE && GetFileType(h) == FILE_TYPE_PIPE) {
+        res = -1;
+        errno = ESPIPE;
+    }
+    else {
+        res = _lseeki64(fd, pos, whence);
+    }
 #else
     res = lseek(fd, pos, whence);
 #endif
