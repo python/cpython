@@ -433,7 +433,9 @@ Object Protocol
 
    If *cls* has a :meth:`~type.__instancecheck__` method, it will be called to
    determine the subclass status as described in :pep:`3119`.  Otherwise, *inst*
-   is an instance of *cls* if its class is a subclass of *cls*.
+   is an instance of *cls* if its class is a subclass of *cls*. If *inst* is
+   an instance of *cls*, this will return ``1`` and will not call
+   :meth:`~type.__instancecheck__`.
 
    An instance *inst* can override what is considered its class by having a
    :attr:`~object.__class__` attribute.
