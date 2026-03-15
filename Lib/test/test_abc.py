@@ -70,6 +70,25 @@ def test_factory(abc_ABCMeta, abc_get_cache_token):
 
 
     class TestABC(unittest.TestCase):
+        def check_isinstance(self, obj, target_class):
+            self.assertIsInstance(obj, target_class)
+            self.assertIsInstance(obj, (target_class,))
+            self.assertIsInstance(obj, target_class | int)
+
+        def check_not_isinstance(self, obj, target_class):
+            self.assertNotIsInstance(obj, target_class)
+            self.assertNotIsInstance(obj, (target_class,))
+            self.assertNotIsInstance(obj, target_class | int)
+
+        def check_issubclass(self, klass, target_class):
+            self.assertIsSubclass(klass, target_class)
+            self.assertIsSubclass(klass, (target_class,))
+            self.assertIsSubclass(klass, target_class | int)
+
+        def check_not_issubclass(self, klass, target_class):
+            self.assertNotIsSubclass(klass, target_class)
+            self.assertNotIsSubclass(klass, (target_class,))
+            self.assertNotIsSubclass(klass, target_class | int)
 
         def test_ABC_helper(self):
             # create an ABC using the helper class and perform basic checks
@@ -270,29 +289,75 @@ def test_factory(abc_ABCMeta, abc_get_cache_token):
             class C(metaclass=meta):
                 pass
 
+        def test_isinstance_direct_inheritance(self):
+            class A(metaclass=abc_ABCMeta):
+                pass
+            class B(A):
+                pass
+            class C(A):
+                pass
+
+            a = A()
+            b = B()
+            c = C()
+            # trigger caching
+            for _ in range(2):
+                self.check_isinstance(a, A)
+                self.check_not_isinstance(a, B)
+                self.check_not_isinstance(a, C)
+
+                self.check_isinstance(b, B)
+                self.check_isinstance(b, A)
+                self.check_not_isinstance(b, C)
+
+                self.check_isinstance(c, C)
+                self.check_isinstance(c, A)
+                self.check_not_isinstance(c, B)
+
+                self.check_issubclass(B, A)
+                self.check_issubclass(C, A)
+                self.check_not_issubclass(B, C)
+                self.check_not_issubclass(C, B)
+                self.check_not_issubclass(A, B)
+                self.check_not_issubclass(A, C)
+
         def test_registration_basics(self):
             class A(metaclass=abc_ABCMeta):
                 pass
             class B(object):
                 pass
+
+            a = A()
             b = B()
-            self.assertNotIsSubclass(B, A)
-            self.assertNotIsSubclass(B, (A,))
-            self.assertNotIsInstance(b, A)
-            self.assertNotIsInstance(b, (A,))
+            # trigger caching
+            for _ in range(2):
+                self.check_not_issubclass(B, A)
+                self.check_not_isinstance(b, A)
+
+                self.check_not_issubclass(A, B)
+                self.check_not_isinstance(a, B)
+
             B1 = A.register(B)
-            self.assertIsSubclass(B, A)
-            self.assertIsSubclass(B, (A,))
-            self.assertIsInstance(b, A)
-            self.assertIsInstance(b, (A,))
-            self.assertIs(B1, B)
+            # trigger caching
+            for _ in range(2):
+                self.check_issubclass(B, A)
+                self.check_isinstance(b, A)
+                self.assertIs(B1, B)
+
+                self.check_not_issubclass(A, B)
+                self.check_not_isinstance(a, B)
+
             class C(B):
                 pass
+
             c = C()
-            self.assertIsSubclass(C, A)
-            self.assertIsSubclass(C, (A,))
-            self.assertIsInstance(c, A)
-            self.assertIsInstance(c, (A,))
+            # trigger caching
+            for _ in range(2):
+                self.check_issubclass(C, A)
+                self.check_isinstance(c, A)
+
+                self.check_not_issubclass(A, C)
+                self.check_not_isinstance(a, C)
 
         def test_register_as_class_deco(self):
             class A(metaclass=abc_ABCMeta):
@@ -377,39 +442,95 @@ def test_factory(abc_ABCMeta, abc_get_cache_token):
                 pass
             self.assertIsSubclass(A, A)
             self.assertIsSubclass(A, (A,))
+
             class B(metaclass=abc_ABCMeta):
                 pass
             self.assertNotIsSubclass(A, B)
             self.assertNotIsSubclass(A, (B,))
             self.assertNotIsSubclass(B, A)
             self.assertNotIsSubclass(B, (A,))
+
             class C(metaclass=abc_ABCMeta):
                 pass
             A.register(B)
             class B1(B):
                 pass
-            self.assertIsSubclass(B1, A)
-            self.assertIsSubclass(B1, (A,))
+            # trigger caching
+            for _ in range(2):
+                self.assertIsSubclass(B1, A)
+                self.assertIsSubclass(B1, (A,))
+
             class C1(C):
                 pass
             B1.register(C1)
-            self.assertNotIsSubclass(C, B)
-            self.assertNotIsSubclass(C, (B,))
-            self.assertNotIsSubclass(C, B1)
-            self.assertNotIsSubclass(C, (B1,))
-            self.assertIsSubclass(C1, A)
-            self.assertIsSubclass(C1, (A,))
-            self.assertIsSubclass(C1, B)
-            self.assertIsSubclass(C1, (B,))
-            self.assertIsSubclass(C1, B1)
-            self.assertIsSubclass(C1, (B1,))
+            # trigger caching
+            for _ in range(2):
+                self.assertNotIsSubclass(C, B)
+                self.assertNotIsSubclass(C, (B,))
+                self.assertNotIsSubclass(C, B1)
+                self.assertNotIsSubclass(C, (B1,))
+                self.assertIsSubclass(C1, A)
+                self.assertIsSubclass(C1, (A,))
+                self.assertIsSubclass(C1, B)
+                self.assertIsSubclass(C1, (B,))
+                self.assertIsSubclass(C1, B1)
+                self.assertIsSubclass(C1, (B1,))
+
             C1.register(int)
             class MyInt(int):
                 pass
-            self.assertIsSubclass(MyInt, A)
-            self.assertIsSubclass(MyInt, (A,))
-            self.assertIsInstance(42, A)
-            self.assertIsInstance(42, (A,))
+            # trigger caching
+            for _ in range(2):
+                self.assertIsSubclass(MyInt, A)
+                self.assertIsSubclass(MyInt, (A,))
+                self.assertIsInstance(42, A)
+                self.assertIsInstance(42, (A,))
+
+        def test_custom_subclasses(self):
+            class A: pass
+            class B(A): pass
+
+            class C: pass
+            class D(C): pass
+
+            class Root(metaclass=abc_ABCMeta): pass
+
+            class Parent1(Root):
+                @classmethod
+                def __subclasses__(cls):
+                    return [A]
+
+            class Parent2(Root):
+                __subclasses__ = lambda: [A]
+
+            # trigger caching
+            for _ in range(2):
+                self.check_isinstance(A(), Parent1)
+                self.check_isinstance(B(), Parent1)
+                self.check_issubclass(A, Parent1)
+                self.check_issubclass(B, Parent1)
+                self.check_not_isinstance(C(), Parent1)
+                self.check_not_isinstance(D(), Parent1)
+                self.check_not_issubclass(C, Parent1)
+                self.check_not_issubclass(D, Parent1)
+
+                self.check_isinstance(A(), Parent2)
+                self.check_isinstance(B(), Parent2)
+                self.check_issubclass(A, Parent2)
+                self.check_issubclass(B, Parent2)
+                self.check_not_isinstance(C(), Parent2)
+                self.check_not_isinstance(D(), Parent2)
+                self.check_not_issubclass(C, Parent2)
+                self.check_not_issubclass(D, Parent2)
+
+                self.check_isinstance(A(), Root)
+                self.check_isinstance(B(), Root)
+                self.check_issubclass(A, Root)
+                self.check_issubclass(B, Root)
+                self.check_not_isinstance(C(), Root)
+                self.check_not_isinstance(D(), Root)
+                self.check_not_issubclass(C, Root)
+                self.check_not_issubclass(D, Root)
 
         def test_issubclass_bad_arguments(self):
             class A(metaclass=abc_ABCMeta):
@@ -460,8 +581,32 @@ def test_factory(abc_ABCMeta, abc_get_cache_token):
             with self.assertRaisesRegex(CustomError, exc_msg):
                 issubclass(int, S)
 
-        def test_subclasshook(self):
+        def test_issubclass_bad_class(self):
             class A(metaclass=abc.ABCMeta):
+                pass
+
+            A._abc_impl = 1
+            error_msg = "_abc_impl is set to a wrong type"
+            with self.assertRaisesRegex(TypeError, error_msg):
+                issubclass(A, A)
+
+            class B(metaclass=_py_abc.ABCMeta):
+                pass
+
+            B._abc_cache = 1
+            error_msg = "argument of type 'int' is not a container or iterable"
+            with self.assertRaisesRegex(TypeError, error_msg):
+                issubclass(B, B)
+
+            class C(metaclass=_py_abc.ABCMeta):
+                pass
+
+            C._abc_negative_cache = 1
+            with self.assertRaisesRegex(TypeError, error_msg):
+                issubclass(C, C)
+
+        def test_subclasshook(self):
+            class A(metaclass=abc_ABCMeta):
                 @classmethod
                 def __subclasshook__(cls, C):
                     if cls is A:
@@ -477,6 +622,26 @@ def test_factory(abc_ABCMeta, abc_get_cache_token):
                 spam = 42
             self.assertNotIsSubclass(C, A)
             self.assertNotIsSubclass(C, (A,))
+
+        def test_subclasshook_exception(self):
+            # Check that issubclass() propagates exceptions raised by
+            # __subclasshook__.
+            class CustomError(Exception): ...
+            exc_msg = "exception from __subclasshook__"
+            class A(metaclass=abc_ABCMeta):
+                @classmethod
+                def __subclasshook__(cls, C):
+                    raise CustomError(exc_msg)
+            with self.assertRaisesRegex(CustomError, exc_msg):
+                issubclass(A, A)
+            class B(A):
+                pass
+            with self.assertRaisesRegex(CustomError, exc_msg):
+                issubclass(B, A)
+            class C:
+                pass
+            with self.assertRaisesRegex(CustomError, exc_msg):
+                issubclass(C, A)
 
         def test_all_new_methods_are_called(self):
             class A(metaclass=abc_ABCMeta):
@@ -521,7 +686,6 @@ def test_factory(abc_ABCMeta, abc_get_cache_token):
 
             self.assertEqual(A.__abstractmethods__, set())
             A()
-
 
         def test_update_new_abstractmethods(self):
             class A(metaclass=abc_ABCMeta):
