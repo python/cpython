@@ -1,8 +1,8 @@
-import re
+lazy import re
 import sys
-import copy
+lazy import copy
 import types
-import inspect
+lazy import inspect
 import keyword
 import itertools
 import annotationlib
@@ -217,9 +217,8 @@ _PARAMS = '__dataclass_params__'
 _POST_INIT_NAME = '__post_init__'
 
 # String regex that string annotations for ClassVar or InitVar must match.
-# Allows "identifier.identifier[" or "identifier[".
-# https://bugs.python.org/issue33453 for details.
-_MODULE_IDENTIFIER_RE = re.compile(r'^(?:\s*(\w+)\s*\.)?\s*(\w+)')
+# This regular expression is compiled on demand so that 're' module can be imported lazily
+_MODULE_IDENTIFIER_RE = None
 
 # Atomic immutable types which don't require any recursive handling and for which deepcopy
 # returns the same object. We can provide a fast-path for these types in asdict and astuple.
@@ -804,6 +803,13 @@ def _is_type(annotation, cls, a_module, a_type, is_type_predicate):
     # a eval() penalty for every single field of every dataclass
     # that's defined.  It was judged not worth it.
 
+    # String regex that string annotations for ClassVar or InitVar must match.
+    # Allows "identifier.identifier[" or "identifier[".
+    # https://bugs.python.org/issue33453 for details.
+    global _MODULE_IDENTIFIER_RE
+    if _MODULE_IDENTIFIER_RE is None:
+        _MODULE_IDENTIFIER_RE = re.compile(r'^(?:\s*(\w+)\s*\.)?\s*(\w+)')
+
     match = _MODULE_IDENTIFIER_RE.match(annotation)
     if match:
         ns = None
@@ -981,6 +987,28 @@ _hash_action = {(False, False, False, False): None,
                 }
 # See https://bugs.python.org/issue32929#msg312829 for an if-statement
 # version of this table.
+
+# A non-data descriptor to autogenerate class docstring
+# from the signature of its __init__ method on demand.
+# The primary reason is to be able to lazy import `inspect` module.
+class _AutoDocstring:
+
+    def __get__(self, _obj, cls):
+        try:
+            # In some cases fetching a signature is not possible.
+            # But, we surely should not fail in this case.
+            text_sig = str(inspect.signature(
+                 cls,
+                 annotation_format=annotationlib.Format.FORWARDREF,
+            )).replace(' -> None', '')
+        except (TypeError, ValueError):
+            text_sig = ''
+
+        doc = cls.__name__ + text_sig
+        setattr(cls, '__doc__', doc)
+        return doc
+
+_auto_docstring = _AutoDocstring()
 
 
 def _process_class(cls, init, repr, eq, order, unsafe_hash, frozen,
@@ -1209,23 +1237,13 @@ def _process_class(cls, init, repr, eq, order, unsafe_hash, frozen,
     if hash_action:
         cls.__hash__ = hash_action(cls, field_list, func_builder)
 
-    # Generate the methods and add them to the class.  This needs to be done
-    # before the __doc__ logic below, since inspect will look at the __init__
-    # signature.
+    # Generate the methods and add them to the class.
     func_builder.add_fns_to_class(cls)
 
     if not getattr(cls, '__doc__'):
-        # Create a class doc-string.
-        try:
-            # In some cases fetching a signature is not possible.
-            # But, we surely should not fail in this case.
-            text_sig = str(inspect.signature(
-                cls,
-                annotation_format=annotationlib.Format.FORWARDREF,
-            )).replace(' -> None', '')
-        except (TypeError, ValueError):
-            text_sig = ''
-        cls.__doc__ = (cls.__name__ + text_sig)
+        # Create a class doc-string lazily via descriptor protocol
+        # to avoid importing `inspect` module.
+        cls.__doc__ = _auto_docstring
 
     if match_args:
         # I could probably compute this once.
@@ -1377,8 +1395,10 @@ def _add_slots(cls, is_frozen, weakref_slot, defined_fields):
     # make an update, since all closures for a class will share a
     # given cell.
     for member in newcls.__dict__.values():
+
         # If this is a wrapped function, unwrap it.
-        member = inspect.unwrap(member)
+        if not isinstance(member, type) and hasattr(member, '__wrapped__'):
+            member = inspect.unwrap(member)
 
         if isinstance(member, types.FunctionType):
             if _update_func_cell_for__class__(member, cls, newcls):
