@@ -245,6 +245,7 @@ class TestInteractiveInterpreter(unittest.TestCase):
             p = make_repl(env)
             p.stdin.write("1/0")
             output = kill_python(p)
+            output = traceback.strip_exc_timestamps(output)
         expected = dedent("""
             Traceback (most recent call last):
               File "<stdin>", line 1, in <module>
@@ -267,6 +268,7 @@ class TestInteractiveInterpreter(unittest.TestCase):
             p = make_repl(env)
             p.stdin.write('foo()')
             output = kill_python(p)
+            output = traceback.strip_exc_timestamps(output)
         expected = dedent("""
             Traceback (most recent call last):
               File "<stdin>", line 1, in <module>
