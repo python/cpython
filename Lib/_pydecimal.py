@@ -6187,13 +6187,15 @@ def _parse_format_specifier(format_spec, _localeconv=None):
     fill = format_dict['fill']
     align = format_dict['align']
     format_dict['zeropad'] = (format_dict['zeropad'] is not None)
+
+    # Support zeropad handling like built-in types (see gh-61449).
     if format_dict['zeropad']:
-        if fill is not None:
-            raise ValueError("Fill character conflicts with '0'"
-                             " in format specifier: " + format_spec)
-        if align is not None:
-            raise ValueError("Alignment conflicts with '0' in "
-                             "format specifier: " + format_spec)
+        if fill is not None and align is not None:
+            format_dict['zeropad'] = False
+        elif align is not None:
+            format_dict['zeropad'] = False
+            fill = "0"
+
     format_dict['fill'] = fill or ' '
     # PEP 3101 originally specified that the default alignment should
     # be left;  it was later agreed that right-aligned makes more sense
