@@ -278,10 +278,8 @@ get_jit_code_ranges(PyObject *self, PyObject *Py_UNUSED(args))
     if (interp == NULL) {
         return ranges;
     }
-    for (_PyExecutorObject *exec = interp->executor_list_head;
-         exec != NULL;
-         exec = exec->vm_data.links.next)
-    {
+    for (size_t i = 0; i < interp->executor_count; i++) {
+        _PyExecutorObject *exec = interp->executor_ptrs[i];
         if (exec->jit_code == NULL || exec->jit_size == 0) {
             continue;
         }

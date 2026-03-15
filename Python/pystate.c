@@ -597,7 +597,10 @@ init_interpreter(PyInterpreterState *interp,
     interp->_code_object_generation = 0;
     interp->jit = false;
     interp->compiling = false;
-    interp->executor_list_head = NULL;
+    interp->executor_blooms = NULL;
+    interp->executor_ptrs = NULL;
+    interp->executor_count = 0;
+    interp->executor_capacity = 0;
     interp->executor_deletion_list_head = NULL;
     interp->executor_creation_counter = JIT_CLEANUP_THRESHOLD;
 
