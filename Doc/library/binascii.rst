@@ -283,41 +283,61 @@ The :mod:`!binascii` module defines the following functions:
 
    The Base 64 alphabet according to :rfc:`4648`.
 
+   .. versionadded:: next
+
 .. data:: URLSAFE_BASE64_ALPHABET
 
    The "URL and filename safe" Base 64 alphabet according to :rfc:`4648`.
+
+   .. versionadded:: next
 
 .. data:: CRYPT_ALPHABET
 
    The Base 64 alphabet used in the :manpage:`crypt(3)` routine and in the GEDCOM format.
 
+   .. versionadded:: next
+
 .. data:: BCRYPT_ALPHABET
 
    The Base 64 alphabet used in the ``bcrypt`` hashing function.
 
+   .. versionadded:: next
+
 .. data:: UU_ALPHABET
 
-   The Uuencoding alphabet.
+   The uuencoding alphabet.
+
+   .. versionadded:: next
 
 .. data:: XX_ALPHABET
 
-   The Xxencoding alphabet.
+   The xxencoding alphabet.
+
+   .. versionadded:: next
 
 .. data:: BINHEX_ALPHABET
 
    The Base 64 alphabet used in BinHex 4 (HQX) within the classic Mac OS.
 
+   .. versionadded:: next
+
 .. data:: BASE85_ALPHABET
 
    The Base85 alphabet.
+
+   .. versionadded:: next
 
 .. data:: ASCII85_ALPHABET
 
    The Ascii85 alphabet.
 
+   .. versionadded:: next
+
 .. data:: Z85_ALPHABET
 
    The `Z85 <https://rfc.zeromq.org/spec/32/>`_ alphabet.
+
+   .. versionadded:: next
 
 
 .. seealso::
