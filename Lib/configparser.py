@@ -670,6 +670,7 @@ class RawConfigParser(MutableMapping):
                 self._optcre = re.compile(self._OPT_TMPL.format(delim=d),
                                           re.VERBOSE)
         self._comments = _CommentSpec(comment_prefixes or (), inline_comment_prefixes or ())
+        self._loaded_sources = []
         self._strict = strict
         self._allow_no_value = allow_no_value
         self._empty_lines_in_values = empty_lines_in_values
@@ -689,6 +690,7 @@ class RawConfigParser(MutableMapping):
         if defaults:
             self._read_defaults(defaults)
         self._allow_unnamed_section = allow_unnamed_section
+
 
     def defaults(self):
         return self._defaults
@@ -1049,6 +1051,40 @@ class RawConfigParser(MutableMapping):
         # XXX does it break when underlying container state changed?
         return itertools.chain((self.default_section,), self._sections.keys())
 
+    def __str__(self):
+        config_dict = {
+            section: {key: value for key, value in self.items(section, raw=True)}
+            for section in self.sections()
+        }
+        return f"<ConfigParser: {config_dict}>"
+
+
+    def __repr__(self):
+        params = {
+            "defaults": self._defaults if self._defaults else None,
+            "dict_type": type(self._dict).__name__,
+            "allow_no_value": self._allow_no_value,
+            "delimiters": self._delimiters,
+            "strict": self._strict,
+            "default_section": self.default_section,
+            "interpolation": type(self._interpolation).__name__,
+        }
+        params = {k: v for k, v in params.items() if v is not None}
+        sections_count = len(self._sections)
+        state = {
+            "loaded_sources": self._loaded_sources,
+            "sections_count": len(self._sections),
+            "sections": list(self._sections.keys())[:5],  # Limit to 5 section names for readability
+        }
+
+        if sections_count > 5:
+            state["sections_truncated"] = f"...and {sections_count - 5} more"
+
+        return (f"<{self.__class__.__name__}("
+                f"params={params}, "
+                f"state={state})>")
+
+
     def _read(self, fp, fpname):
         """Parse a sectioned configuration file.
 
@@ -1069,6 +1105,7 @@ class RawConfigParser(MutableMapping):
         try:
             ParsingError._raise_all(self._read_inner(fp, fpname))
         finally:
+            self._loaded_sources.append(fpname)
             self._join_multiline_values()
 
     def _read_inner(self, fp, fpname):
