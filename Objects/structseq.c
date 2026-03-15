@@ -455,6 +455,7 @@ structseq_replace(PyStructSequence *self, PyObject *args, PyObject *kwargs)
         }
     }
 
+    _PyObject_GC_TRACK(result);
     return (PyObject *)result;
 
 error:
