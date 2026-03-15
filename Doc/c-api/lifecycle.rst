@@ -19,7 +19,7 @@ object's life.  An arrow from *A* to *B* indicates that event *B* can occur
 after event *A* has occurred, with the arrow's label indicating the condition
 that must be true for *B* to occur after *A*.
 
-.. only:: html and not epub
+.. only:: html
 
    .. raw:: html
 
@@ -50,16 +50,9 @@ that must be true for *B* to occur after *A*.
           })();
       </script>
 
-.. only:: epub or not (html or latex)
+.. only:: not html
 
    .. image:: lifecycle.dot.svg
-      :align: center
-      :class: invert-in-dark-mode
-      :alt: Diagram showing events in an object's life.  Explained in detail below.
-
-.. only:: latex
-
-   .. image:: lifecycle.dot.pdf
       :align: center
       :class: invert-in-dark-mode
       :alt: Diagram showing events in an object's life.  Explained in detail below.
