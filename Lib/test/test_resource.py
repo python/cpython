@@ -4,7 +4,6 @@ import unittest
 from test import support
 from test.support import import_helper
 from test.support import os_helper
-import time
 
 resource = import_helper.import_module('resource')
 
@@ -50,51 +49,26 @@ class ResourceTest(unittest.TestCase):
                      "setting RLIMIT_FSIZE is not supported on VxWorks")
     @unittest.skipUnless(hasattr(resource, 'RLIMIT_FSIZE'), 'requires resource.RLIMIT_FSIZE')
     def test_fsize_enforced(self):
-        (cur, max) = resource.getrlimit(resource.RLIMIT_FSIZE)
-        # Check to see what happens when the RLIMIT_FSIZE is small.  Some
-        # versions of Python were terminated by an uncaught SIGXFSZ, but
-        # pythonrun.c has been fixed to ignore that exception.  If so, the
-        # write() should return EFBIG when the limit is exceeded.
-
-        # At least one platform has an unlimited RLIMIT_FSIZE and attempts
-        # to change it raise ValueError instead.
         try:
+            (cur, max_lim) = resource.getrlimit(resource.RLIMIT_FSIZE)
+        except OSError as e:
+            self.skipTest(f"getrlimit(RLIMIT_FSIZE) failed: {e}")
+        if max_lim != resource.RLIM_INFINITY and max_lim < 1025:
+            self.skipTest(f"system RLIMIT_FSIZE hard limit ({max_lim}) is too small for this test")
+        with open(os_helper.TESTFN, "wb", buffering=0) as f:
             try:
-                resource.setrlimit(resource.RLIMIT_FSIZE, (1024, max))
-                limit_set = True
-            except ValueError:
-                limit_set = False
-            f = open(os_helper.TESTFN, "wb")
-            try:
+                resource.setrlimit(resource.RLIMIT_FSIZE, (1024, max_lim))
                 f.write(b"X" * 1024)
-                try:
+                with self.assertRaises(OSError, msg="f.write() did not raise OSError when exceeding RLIMIT_FSIZE"):
                     f.write(b"Y")
-                    f.flush()
-                    # On some systems (e.g., Ubuntu on hppa) the flush()
-                    # doesn't always cause the exception, but the close()
-                    # does eventually.  Try flushing several times in
-                    # an attempt to ensure the file is really synced and
-                    # the exception raised.
-                    for i in range(5):
-                        time.sleep(.1)
-                        f.flush()
-                except OSError:
-                    if not limit_set:
-                        raise
-                if limit_set:
-                    # Close will attempt to flush the byte we wrote
-                    # Restore limit first to avoid getting a spurious error
-                    resource.setrlimit(resource.RLIMIT_FSIZE, (cur, max))
             finally:
-                f.close()
-        finally:
-            if limit_set:
-                resource.setrlimit(resource.RLIMIT_FSIZE, (cur, max))
-            os_helper.unlink(os_helper.TESTFN)
-
+                # Close will attempt to flush the byte we wrote
+                # Restore limit first to avoid getting a spurious error
+                resource.setrlimit(resource.RLIMIT_FSIZE, (cur, max_lim))
     @unittest.skipIf(sys.platform == "vxworks",
                      "setting RLIMIT_FSIZE is not supported on VxWorks")
     @unittest.skipUnless(hasattr(resource, 'RLIMIT_FSIZE'), 'requires resource.RLIMIT_FSIZE')
+
     def test_fsize_too_big(self):
         # Be sure that setrlimit is checking for really large values
         too_big = 10**50
