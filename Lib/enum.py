@@ -783,6 +783,8 @@ class EnumType(type):
                 '__class__', '__contains__', '__doc__', '__getitem__',
                 '__iter__', '__len__', '__members__', '__module__',
                 '__name__', '__qualname__',
+                # Supported sunder names of Enum class
+                '_generate_next_value_', '_missing_',
                 ]
                 + members
                 )
@@ -1296,7 +1298,8 @@ class Enum(metaclass=EnumType):
         """
         Returns public methods and other interesting attributes.
         """
-        interesting = set()
+        # Initialize with supported sunder names
+        interesting = set(('_generate_next_value_', '_missing_', '_add_alias_', '_add_value_alias_'))
         if self.__class__._member_type_ is not object:
             interesting = set(object.__dir__(self))
         for name in getattr(self, '__dict__', []):
