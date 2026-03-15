@@ -342,3 +342,108 @@ thread, iterate over a copy:
 
 Consider external synchronization when sharing :class:`dict` instances
 across threads.
+
+
+.. _thread-safety-set:
+
+Thread safety for set objects
+==============================
+
+The :func:`len` function is lock-free and :term:`atomic <atomic operation>`.
+
+The following read operation is lock-free. It does not block concurrent
+modifications and may observe intermediate states from operations that
+hold the per-object lock:
+
+.. code-block::
+   :class: good
+
+   elem in s    # set.__contains__
+
+This operation may compare elements using :meth:`~object.__eq__`, which can
+execute arbitrary Python code. During such comparisons, the set may be
+modified by another thread. For built-in types like :class:`str`,
+:class:`int`, and :class:`float`, :meth:`!__eq__` does not release the
+underlying lock during comparisons and this is not a concern.
+
+All other operations from here on hold the per-object lock.
+
+Adding or removing a single element is safe to call from multiple threads
+and will not corrupt the set:
+
+.. code-block::
+   :class: good
+
+   s.add(elem)      # add element
+   s.remove(elem)   # remove element, raise if missing
+   s.discard(elem)  # remove element if present
+   s.pop()          # remove and return arbitrary element
+
+These operations also compare elements, so the same :meth:`~object.__eq__`
+considerations as above apply.
+
+The :meth:`~set.copy` method returns a new object and holds the per-object lock
+for the duration so that it is always atomic.
+
+The :meth:`~set.clear` method holds the lock for its duration. Other
+threads cannot observe elements being removed.
+
+The following operations only accept :class:`set` or :class:`frozenset`
+as operands and always lock both objects:
+
+.. code-block::
+   :class: good
+
+   s |= other                   # other must be set/frozenset
+   s &= other                   # other must be set/frozenset
+   s -= other                   # other must be set/frozenset
+   s ^= other                   # other must be set/frozenset
+   s & other                    # other must be set/frozenset
+   s | other                    # other must be set/frozenset
+   s - other                    # other must be set/frozenset
+   s ^ other                    # other must be set/frozenset
+
+:meth:`set.update`, :meth:`set.union`, :meth:`set.intersection` and
+:meth:`set.difference` can take multiple iterables as arguments. They all
+iterate through all the passed iterables and do the following:
+
+   * :meth:`set.update` and :meth:`set.union` lock both objects only when
+      the other operand is a :class:`set`, :class:`frozenset`, or :class:`dict`.
+   * :meth:`set.intersection` and :meth:`set.difference` always try to lock
+      all objects.
+
+:meth:`set.symmetric_difference` tries to lock both objects.
+
+The update variants of the above methods also have some differences between
+them:
+
+   * :meth:`set.difference_update` and :meth:`set.intersection_update` try
+      to lock all objects one-by-one.
+   * :meth:`set.symmetric_difference_update` only locks the arguments if it is
+      of type :class:`set`, :class:`frozenset`, or :class:`dict`.
+
+The following methods always try to lock both objects:
+
+.. code-block::
+   :class: good
+
+   s.isdisjoint(other)          # both locked
+   s.issubset(other)            # both locked
+   s.issuperset(other)          # both locked
+
+Operations that involve multiple accesses, as well as iteration, are never
+atomic:
+
+.. code-block::
+   :class: bad
+
+   # NOT atomic: check-then-act
+   if elem in s:
+         s.remove(elem)
+
+   # NOT thread-safe: iteration while modifying
+   for elem in s:
+         process(elem)  # another thread may modify s
+
+Consider external synchronization when sharing :class:`set` instances
+across threads.  See :ref:`freethreading-python-howto` for more information.

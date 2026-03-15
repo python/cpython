@@ -1713,6 +1713,12 @@ dummy_func(void) {
     op(_MAKE_FUNCTION, (codeobj_st -- func, co)) {
         func = sym_new_type(ctx, &PyFunction_Type);
         co = codeobj_st;
+
+    op(_MATCH_CLASS, (subject, type, names -- attrs, s, tp, n)) {
+        attrs = sym_new_not_null(ctx);
+        s = subject;
+        tp = type;
+        n = names;
     }
 
     op(_RECORD_TOS, (tos -- tos)) {
