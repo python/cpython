@@ -1,0 +1,3 @@
+Replace :c:func:`PyTuple_Pack` calls with :c:func:`PyTuple_FromArray` in
+:file:`Objects/codeobject.c` and :file:`Modules/_pickle.c` to avoid
+variadic argument overhead.
