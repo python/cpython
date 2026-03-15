@@ -34,7 +34,7 @@ jobs:
           sanitizer: ${{ inputs.sanitizer }}
       - name: Upload crash
         if: failure() && steps.build.outcome == 'success'
-        uses: actions/upload-artifact@v6
+        uses: actions/upload-artifact@v7
         with:
           name: ${{ inputs.sanitizer }}-artifacts
           path: ./out/artifacts
