@@ -120,6 +120,7 @@ for full functionality and the latest features.
    asyncio-policy.rst
    asyncio-platforms.rst
    asyncio-extending.rst
+   asyncio-guest.rst
 
 .. toctree::
    :caption: Guides and Tutorials
