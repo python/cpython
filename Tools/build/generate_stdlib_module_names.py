@@ -10,7 +10,6 @@ from typing import TextIO
 
 from check_extension_modules import ModuleChecker
 
-
 SCRIPT_NAME = 'Tools/build/generate_stdlib_module_names.py'
 
 SRC_DIR = os.path.dirname(os.path.dirname(os.path.dirname(__file__)))
