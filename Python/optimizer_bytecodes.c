@@ -1710,6 +1710,13 @@ dummy_func(void) {
         ss = sub_st;
     }
 
+    op(_MATCH_CLASS, (subject, type, names -- attrs, s, tp, n)) {
+        attrs = sym_new_not_null(ctx);
+        s = subject;
+        tp = type;
+        n = names;
+    }
+
     op(_RECORD_TOS, (tos -- tos)) {
         sym_set_recorded_value(tos, (PyObject *)this_instr->operand0);
     }
