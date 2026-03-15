@@ -411,6 +411,9 @@ The :mod:`!functools` module defines the following functions:
    .. versionchanged:: 3.14
       Added support for :data:`Placeholder` in positional arguments.
 
+   .. versionchanged:: 3.15
+      :class:`partial` now stores keywords in a :class:`frozendict`
+
 .. class:: partialmethod(func, /, *args, **keywords)
 
    Return a new :class:`partialmethod` descriptor which behaves

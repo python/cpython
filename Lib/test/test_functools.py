@@ -65,6 +65,9 @@ class BadTuple(tuple):
 class MyDict(dict):
     pass
 
+class MyFrozenDict(frozendict):
+    pass
+
 class TestImportTime(unittest.TestCase):
 
     @cpython_only
@@ -404,6 +407,16 @@ class TestPartial:
         with self.assertRaisesRegex(TypeError, f'^{msg_regex}$') as cm:
             f.__setstate__((capture, (1, PH), dict(a=10), dict(attr=[])))
 
+        with self.assertRaises(TypeError):
+            f.__setstate__((capture, (1,), {1234: 1234}, dict(attr=[])))
+
+        class FakeString(str):
+            pass
+
+        with self.assertRaises(TypeError):
+            f.__setstate__((capture, (1,), {FakeString("string"): 1234}, dict(attr=[])))
+
+
     def test_setstate_errors(self):
         f = self.partial(signature)
 
@@ -423,7 +436,18 @@ class TestPartial:
         s = signature(f)
         self.assertEqual(s, (capture, (1,), dict(a=10), {}))
         self.assertIs(type(s[1]), tuple)
-        self.assertIs(type(s[2]), dict)
+        self.assertIs(type(s[2]), frozendict)
+        r = f()
+        self.assertEqual(r, ((1,), {'a': 10}))
+        self.assertIs(type(r[0]), tuple)
+        self.assertIs(type(r[1]), dict)
+
+
+        f.__setstate__((capture, MyTuple((1,)), MyFrozenDict(a=10), None))
+        s = signature(f)
+        self.assertEqual(s, (capture, (1,), dict(a=10), {}))
+        self.assertIs(type(s[1]), tuple)
+        self.assertIs(type(s[2]), frozendict)
         r = f()
         self.assertEqual(r, ((1,), {'a': 10}))
         self.assertIs(type(r[0]), tuple)
@@ -588,30 +612,15 @@ class TestPartialC(TestPartial, unittest.TestCase):
         else:
             self.fail('partial object allowed __dict__ to be deleted')
 
-    def test_manually_adding_non_string_keyword(self):
+    def test_keyword_mutations(self):
         p = self.partial(capture)
-        # Adding a non-string/unicode keyword to partial kwargs
-        p.keywords[1234] = 'value'
-        r = repr(p)
-        self.assertIn('1234', r)
-        self.assertIn("'value'", r)
+
         with self.assertRaises(TypeError):
-            p()
+            p.keywords["new key"] = ['sth']
 
-    def test_keystr_replaces_value(self):
-        p = self.partial(capture)
-
-        class MutatesYourDict(object):
-            def __str__(self):
-                p.keywords[self] = ['sth2']
-                return 'astr'
-
-        # Replacing the value during key formatting should keep the original
-        # value alive (at least long enough).
-        p.keywords[MutatesYourDict()] = ['sth']
-        r = repr(p)
-        self.assertIn('astr', r)
-        self.assertIn("['sth']", r)
+        # Adding a non-string/unicode keyword to partial kwargs
+        with self.assertRaises(TypeError):
+            p.keywords[1234] = 'value'
 
     def test_placeholders_refcount_smoke(self):
         PH = self.module.Placeholder
