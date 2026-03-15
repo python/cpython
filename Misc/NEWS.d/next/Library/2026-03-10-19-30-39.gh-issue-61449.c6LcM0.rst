@@ -1,0 +1,2 @@
+Align support of zero-padding option for :class:`~fractions.Fraction`
+formatting with builtin numeric types.  Patch by Sergey B Kirpichev.
