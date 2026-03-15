@@ -326,7 +326,7 @@ instance objects are attribute references.  There are two kinds of valid
 attribute names: data attributes and methods.
 
 *Data attributes* correspond to "instance variables" in Smalltalk, and to "data
-members" in C++.  Data attributes need not be declared; like local variables,
+members" in C++.  Data attributes don't have to be declared like local variables,
 they spring into existence when they are first assigned to.  For example, if
 ``x`` is the instance of :class:`!MyClass` created above, the following piece of
 code will print the value ``16``, without leaving a trace::
