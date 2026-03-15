@@ -146,6 +146,14 @@ def _strip_quoted_realnames(addr):
 
 supports_strict_parsing = True
 
+def filter_empty_fieldvalues(fieldvalues):
+    filteredfieldvalues = []
+    for fieldvalue in fieldvalues:
+        if fieldvalue != '':
+            filteredfieldvalues.append(fieldvalue)
+    return filteredfieldvalues
+
+
 def getaddresses(fieldvalues, *, strict=True):
     """Return a list of (REALNAME, EMAIL) or ('','') for each fieldvalue.
 
@@ -163,6 +171,9 @@ def getaddresses(fieldvalues, *, strict=True):
     # Malformed input: getaddresses(['alice@example.com <bob@example.com>'])
     # Invalid output: [('', 'alice@example.com'), ('', 'bob@example.com')]
     # Safe output: [('', '')]
+
+    #Filter field values to remove empty addresses (for eg, when bcc and cc are empty)
+    fieldvalues = filter_empty_fieldvalues(fieldvalues)
 
     if not strict:
         all = COMMASPACE.join(str(v) for v in fieldvalues)
