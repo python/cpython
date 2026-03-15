@@ -1249,11 +1249,11 @@ dummy_func(
         op(_CALL_INTRINSIC_1, (value -- res, v)) {
             assert(oparg <= MAX_INTRINSIC_1);
             PyObject *res_o = _PyIntrinsics_UnaryFunctions[oparg].func(tstate, PyStackRef_AsPyObjectBorrow(value));
-            v = value;
-            DEAD(value);
             if (res_o == NULL) {
                 ERROR_NO_POP();
             }
+            v = value;
+            DEAD(value);
             res = PyStackRef_FromPyObjectSteal(res_o);
         }
 

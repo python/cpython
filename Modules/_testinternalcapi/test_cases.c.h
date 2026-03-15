@@ -2990,10 +2990,10 @@
                 _PyFrame_SetStackPointer(frame, stack_pointer);
                 PyObject *res_o = _PyIntrinsics_UnaryFunctions[oparg].func(tstate, PyStackRef_AsPyObjectBorrow(value));
                 stack_pointer = _PyFrame_GetStackPointer(frame);
-                v = value;
                 if (res_o == NULL) {
                     JUMP_TO_LABEL(error);
                 }
+                v = value;
                 res = PyStackRef_FromPyObjectSteal(res_o);
             }
             // _POP_TOP
