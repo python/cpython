@@ -1,0 +1,2 @@
+Fixed _parsedate_tz to not evaluate 1 digit years as as 4-digit years, adhering to RFC 2855 4.3
+Contributed by Gustaf Gyllensporre.
