@@ -16,8 +16,10 @@
 This module provides functions for encoding binary data to printable
 ASCII characters and decoding such encodings back to binary data.
 This includes the :ref:`encodings specified in <base64-rfc-4648>`
-:rfc:`4648` (Base64, Base32 and Base16)
-and the non-standard :ref:`Base85 encodings <base64-base-85>`.
+:rfc:`4648` (Base64, Base32 and Base16), the :ref:`Base85 encoding
+<base64-base-85>` specified in `PDF 2.0
+<https://pdfa.org/resource/iso-32000-2/>`_, and non-standard variants
+of Base85 used elsewhere.
 
 There are two interfaces provided by this module.  The modern interface
 supports encoding :term:`bytes-like objects <bytes-like object>` to ASCII
@@ -218,19 +220,27 @@ POST request.
 Base85 Encodings
 -----------------
 
-Base85 encoding is not formally specified but rather a de facto standard,
-thus different systems perform the encoding differently.
+Base85 encoding is a family of algorithms which represent four bytes
+using five ASCII characters.  Originally implemented in the Unix
+``btoa(1)`` utility, a version of it was later adopted by Adobe in the
+PostScript language and is standardized in PDF 2.0 (ISO 32000-2).
+This version, in both its ``btoa`` and PDF variants, is implemented by
+:func:`a85encode`.
 
-The :func:`a85encode` and :func:`b85encode` functions in this module are two implementations of
-the de facto standard. You should call the function with the Base85
-implementation used by the software you intend to work with.
+A separate version, using a different output character set, was
+defined as an April Fool's joke in :rfc:`1924` but is now used by Git
+and other software.  This version is implemented by :func:`b85encode`.
 
-The two functions present in this module differ in how they handle the following:
+Finally, a third version, using yet another output character set
+designed for safe inclusion in programming language strings, is
+defined by ZeroMQ and implemented here by :func:`z85encode`.
 
-* Whether to include enclosing ``<~`` and ``~>`` markers
-* Whether to include newline characters
+The functions present in this module differ in how they handle the following:
+
+* Whether to include and expect enclosing ``<~`` and ``~>`` markers
+* Whether to fold the input into multiple lines
 * The set of ASCII characters used for encoding
-* Handling of null bytes
+* The encoding of zero-padding bytes applied to the input
 
 Refer to the documentation of the individual functions for more information.
 
@@ -241,18 +251,22 @@ Refer to the documentation of the individual functions for more information.
 
    *foldspaces* is an optional flag that uses the special short sequence 'y'
    instead of 4 consecutive spaces (ASCII 0x20) as supported by 'btoa'. This
-   feature is not supported by the "standard" Ascii85 encoding.
+   feature is not supported by the standard encoding used in PDF.
 
    If *wrapcol* is non-zero, insert a newline (``b'\n'``) character
    after at most every *wrapcol* characters.
    If *wrapcol* is zero (default), do not insert any newlines.
 
-   If *pad* is true, the input is padded with ``b'\0'`` so its length is a
-   multiple of 4 bytes before encoding.
-   Note that the ``btoa`` implementation always pads.
+   *pad* controls whether zero-padding applied to the end of the input
+   is fully retained in the output encoding, as done by ``btoa``,
+   producing an exact multiple of 5 bytes of output. This is not part
+   of the standard encoding used in PDF, as it does not preserve the
+   length of the data.
 
-   *adobe* controls whether the encoded byte sequence is framed with ``<~``
-   and ``~>``, which is used by the Adobe implementation.
+   *adobe* controls whether the encoded byte sequence is framed with
+   ``<~`` and ``~>``, as in a PostScript base-85 string literal.  Note
+   that PDF streams *must not* use a leading ``<~``, but they *must* be
+   terminated with ``~>``.
 
    .. versionadded:: 3.4
 
@@ -264,10 +278,12 @@ Refer to the documentation of the individual functions for more information.
 
    *foldspaces* is a flag that specifies whether the 'y' short sequence
    should be accepted as shorthand for 4 consecutive spaces (ASCII 0x20).
-   This feature is not supported by the "standard" Ascii85 encoding.
+   This feature is not supported by the standard Ascii85 encoding used in
+   PDF and PostScript.
 
-   *adobe* controls whether the input sequence is in Adobe Ascii85 format
-   (i.e. is framed with <~ and ~>).
+   *adobe* controls whether the ``<~`` and ``~>`` markers are
+   present. While the leading ``<~`` is not required, the input must
+   end with ``~>``, or a :exc:`ValueError` is raised.
 
    *ignorechars* should be a :term:`bytes-like object` containing characters
    to ignore from the input.
@@ -282,8 +298,11 @@ Refer to the documentation of the individual functions for more information.
    Encode the :term:`bytes-like object` *b* using base85 (as used in e.g.
    git-style binary diffs) and return the encoded :class:`bytes`.
 
-   If *pad* is true, the input is padded with ``b'\0'`` so its length is a
-   multiple of 4 bytes before encoding.
+   The input is padded with ``b'\0'`` so its length is a multiple of 4
+   bytes before encoding.  If *pad* is true, all the resulting
+   characters are retained in the output, which will be a multiple of
+   5 bytes, and thus the length of the data may not be preserved on
+   decoding.
 
    .. versionadded:: 3.4
 
@@ -291,8 +310,7 @@ Refer to the documentation of the individual functions for more information.
 .. function:: b85decode(b)
 
    Decode the base85-encoded :term:`bytes-like object` or ASCII string *b* and
-   return the decoded :class:`bytes`.  Padding is implicitly removed, if
-   necessary.
+   return the decoded :class:`bytes`.
 
    .. versionadded:: 3.4
 
@@ -300,11 +318,12 @@ Refer to the documentation of the individual functions for more information.
 .. function:: z85encode(s, pad=False)
 
    Encode the :term:`bytes-like object` *s* using Z85 (as used in ZeroMQ)
-   and return the encoded :class:`bytes`.  See `Z85  specification
-   <https://rfc.zeromq.org/spec/32/>`_ for more information.
+   and return the encoded :class:`bytes`.
 
-   If *pad* is true, the input is padded with ``b'\0'`` so its length is a
-   multiple of 4 bytes before encoding.
+   The input is padded with ``b'\0'`` so its length is a multiple of 4
+   bytes before encoding.  If *pad* is true, all the resulting
+   characters are retained in the output, which will then be a
+   multiple of 5 bytes, as required by the ZeroMQ standard.
 
    .. versionadded:: 3.13
 
@@ -315,8 +334,7 @@ Refer to the documentation of the individual functions for more information.
 .. function:: z85decode(s)
 
    Decode the Z85-encoded :term:`bytes-like object` or ASCII string *s* and
-   return the decoded :class:`bytes`.  See `Z85  specification
-   <https://rfc.zeromq.org/spec/32/>`_ for more information.
+   return the decoded :class:`bytes`.
 
    .. versionadded:: 3.13
 
@@ -389,3 +407,20 @@ recommended to review the security section for any code deployed to production.
       Section 5.2, "Base64 Content-Transfer-Encoding," provides the definition of the
       base64 encoding.
 
+   `Binary-to-text encoding <https://en.wikipedia.org/wiki/Binary-to-text_encoding>`_
+      This Wikipedia article describes the history of binary to text
+      encoding techniques including those implemented by this module.
+
+   `ISO 32000-2 Portable document format - Part 2: PDF 2.0 <https://pdfa.org/resource/iso-32000-2/>`_
+      Section 7.4.3, "ASCII85Decode Filter," provides the definition
+      of the Ascii85 encoding used in PDF and PostScript, including
+      the output character set and the details of data length preservation
+      using zero-padding and partial output groups.
+
+   :rfc:`1924` - A Compact Representation of IPv6 Addresses
+      Section 4.2 details the character set used in base85 encoding. The question
+      of zero-padding is not mentioned, since IPV6 addresses by definition are a
+      multiple of four bytes.
+
+   `ZeroMQ RFC 32/Z85 <https://rfc.zeromq.org/spec/32/>`_
+      The "Formal Specification" section provides the character set used in Z85.
