@@ -524,10 +524,12 @@ decompress(BZ2Decompressor *d, char *data, size_t len, Py_ssize_t max_length)
     if (d->eof) {
         FT_ATOMIC_STORE_CHAR_RELAXED(d->needs_input, 0);
         if (d->bzs_avail_in_real > 0) {
-            Py_XSETREF(d->unused_data,
-                      PyBytes_FromStringAndSize(bzs->next_in, d->bzs_avail_in_real));
-            if (d->unused_data == NULL)
+            PyObject *unused_data = PyBytes_FromStringAndSize(
+                bzs->next_in, d->bzs_avail_in_real);
+            if (unused_data == NULL) {
                 goto error;
+            }
+            Py_XSETREF(d->unused_data, unused_data);
         }
     }
     else if (d->bzs_avail_in_real == 0) {
@@ -687,12 +689,13 @@ static PyObject *
 BZ2Decompressor_unused_data_get(PyObject *op, void *Py_UNUSED(ignored))
 {
     BZ2Decompressor *self = _BZ2Decompressor_CAST(op);
-    PyMutex_Lock(&self->mutex);
-    PyObject *result = Py_XNewRef(self->unused_data);
-    PyMutex_Unlock(&self->mutex);
-    if (result == NULL) {
-        PyErr_SetString(PyExc_AttributeError, "unused_data");
+    if (!FT_ATOMIC_LOAD_CHAR_RELAXED(self->eof)) {
+        return Py_GetConstant(Py_CONSTANT_EMPTY_BYTES);
     }
+    PyMutex_Lock(&self->mutex);
+    assert(self->unused_data != NULL);
+    PyObject *result = Py_NewRef(self->unused_data);
+    PyMutex_Unlock(&self->mutex);
     return result;
 }
 
