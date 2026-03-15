@@ -160,6 +160,8 @@ def run_multiline_interactive_console(
             r.cmpltn_reset()
             if r.input_trans is r.isearch_trans:
                 r.do_cmd(("isearch-end", [""]))
+            if r.cmpltn_menu_choices:
+                r.cmpltn_reset()
             r.pos = len(r.get_unicode())
             r.dirty = True
             r.refresh()
