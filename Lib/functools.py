@@ -398,6 +398,12 @@ class partial:
             return self
         return MethodType(self, obj)
 
+    def __reduce_ex__(self, protocol):
+        if protocol >= 2:
+            return self.__reduce__()
+        return type(self), (self.func,), (self.func, self.args,
+               dict(self.keywords) or None, self.__dict__ or None)
+
     def __reduce__(self):
         return type(self), (self.func,), (self.func, self.args,
                self.keywords or None, self.__dict__ or None)

@@ -777,6 +777,10 @@ done:
    operation so we define a __setstate__ that replaces all the information
    about the partial.  If we only replaced part of it someone would use
    it as a hook to do strange things.
+
+   Additionally, since frozendict does not work for pickle protocols 0 and 1,
+   __reduce_ex__ creates a temporary dict for protocols 0 and 1 and calls
+   __reduce__ for protocols 2+.
  */
 
 static PyObject *
@@ -786,6 +790,28 @@ partial_reduce(PyObject *self, PyObject *Py_UNUSED(args))
     return Py_BuildValue("O(O)(OOOO)", Py_TYPE(pto), pto->fn, pto->fn,
                          pto->args, pto->kw,
                          pto->dict ? pto->dict : Py_None);
+}
+
+static PyObject *
+partial_reduce_ex(PyObject *self, PyObject *args)
+{
+    int64_t protocol;
+
+    if (!PyArg_ParseTuple(args, "l", &protocol)) {
+        return NULL;
+    }
+
+    if (protocol >= 2) {
+        return partial_reduce(self, NULL);
+    }
+
+    partialobject *pto = partialobject_CAST(self);
+    PyObject *keywords_dict = PyObject_CallOneArg((PyObject*)&PyDict_Type, pto->kw);
+    PyObject *result = Py_BuildValue("O(O)(OOOO)", Py_TYPE(pto), pto->fn, pto->fn,
+                         pto->args, keywords_dict,
+                         pto->dict ? pto->dict : Py_None);
+    Py_DECREF(keywords_dict);
+    return result;
 }
 
 static PyObject *
@@ -878,6 +904,7 @@ partial_setstate(PyObject *self, PyObject *state)
 
 static PyMethodDef partial_methods[] = {
     {"__reduce__", partial_reduce, METH_NOARGS},
+    {"__reduce_ex__", partial_reduce_ex, METH_VARARGS},
     {"__setstate__", partial_setstate, METH_O},
     {"__class_getitem__",    Py_GenericAlias,
     METH_O|METH_CLASS,       PyDoc_STR("See PEP 585")},

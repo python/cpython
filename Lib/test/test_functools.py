@@ -62,7 +62,6 @@ class BadTuple(tuple):
     def __add__(self, other):
         return list(self) + list(other)
 
-
 class MyDict(frozendict):
     pass
 
@@ -342,7 +341,7 @@ class TestPartial:
         with replaced_module('functools', self.module):
             f = self.partial(signature, ['asdf'], bar=[True])
             f.attr = []
-            for proto in range(2, pickle.HIGHEST_PROTOCOL + 1):
+            for proto in range(pickle.HIGHEST_PROTOCOL + 1):
                 f_copy = pickle.loads(pickle.dumps(f, proto))
                 self.assertEqual(signature(f_copy), signature(f))
 
@@ -470,7 +469,7 @@ class TestPartial:
             f = self.partial(capture)
             f.__setstate__((f, (), {}, {}))
             try:
-                for proto in range(2, pickle.HIGHEST_PROTOCOL + 1):
+                for proto in range(pickle.HIGHEST_PROTOCOL + 1):
                     # gh-117008: Small limit since pickle uses C stack memory
                     with support.infinite_recursion(100):
                         with self.assertRaises(RecursionError):
@@ -481,7 +480,7 @@ class TestPartial:
             f = self.partial(capture)
             f.__setstate__((capture, (f,), {}, {}))
             try:
-                for proto in range(2, pickle.HIGHEST_PROTOCOL + 1):
+                for proto in range(pickle.HIGHEST_PROTOCOL + 1):
                     f_copy = pickle.loads(pickle.dumps(f, proto))
                     try:
                         self.assertIs(f_copy.args[0], f_copy)
@@ -493,7 +492,7 @@ class TestPartial:
             f = self.partial(capture)
             f.__setstate__((capture, (), {'a': f}, {}))
             try:
-                for proto in range(2, pickle.HIGHEST_PROTOCOL + 1):
+                for proto in range(pickle.HIGHEST_PROTOCOL + 1):
                     f_copy = pickle.loads(pickle.dumps(f, proto))
                     try:
                         self.assertIs(f_copy.keywords['a'], f_copy)
