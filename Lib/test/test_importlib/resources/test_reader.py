@@ -1,9 +1,11 @@
+import io
 import os.path
 import pathlib
 import unittest
 
 from importlib import import_module
 from importlib.readers import MultiplexedPath, NamespaceReader
+from importlib.resources.simple import ResourceContainer, ResourceHandle, SimpleReader
 
 from . import util
 
@@ -131,6 +133,68 @@ class NamespaceReaderTest(util.DiskSetup, unittest.TestCase):
         root = self.data.__path__[0]
         self.assertIsInstance(reader.files(), MultiplexedPath)
         self.assertEqual(repr(reader.files()), f"MultiplexedPath('{root}')")
+
+
+class SimpleReaderTest(unittest.TestCase):
+    def test_resource_container_instantiation(self):
+        class R(SimpleReader):
+            @property
+            def package(self):
+                return 'x'
+
+            def children(self):
+                return []
+
+            def resources(self):
+                return []
+
+            def open_binary(self, r):
+                return io.BytesIO(b'')
+
+        container = ResourceContainer(R())
+        self.assertEqual(container.name, 'x')
+        self.assertTrue(container.is_dir())
+
+    def test_resource_container_iterdir(self):
+        class R(SimpleReader):
+            @property
+            def package(self):
+                return 'test'
+
+            def children(self):
+                return []
+
+            def resources(self):
+                return ['file.txt']
+
+            def open_binary(self, r):
+                return io.BytesIO(b'data')
+
+        container = ResourceContainer(R())
+        items = list(container.iterdir())
+        self.assertEqual(len(items), 1)
+        self.assertIsInstance(items[0], ResourceHandle)
+
+    def test_resource_handle_joinpath(self):
+        class R(SimpleReader):
+            @property
+            def package(self):
+                return 'test'
+
+            def children(self):
+                return []
+
+            def resources(self):
+                return []
+
+            def open_binary(self, r):
+                return io.BytesIO(b'')
+
+        container = ResourceContainer(R())
+        handle = ResourceHandle(container, 'file.txt')
+        self.assertIs(handle.joinpath(), handle)
+        with self.assertRaises(RuntimeError):
+            handle.joinpath('subpath')
 
 
 if __name__ == '__main__':
