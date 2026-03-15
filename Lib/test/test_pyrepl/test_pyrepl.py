@@ -594,6 +594,27 @@ class TestPyReplAutoindent(TestCase):
         output = multiline_input(reader)
         self.assertEqual(output, output_code)
 
+        # fmt: off
+        events = itertools.chain(
+            code_to_events("def f():\n"),
+            [
+                Event(evt="key", data="backspace", raw=b"\x08"),
+            ],
+            code_to_events("# foo\npass\n\n")
+        )
+
+        output_code = (
+            "def f():\n"
+            "# foo\n"
+            "    pass\n"
+            "    "
+        )
+        # fmt: on
+
+        reader = self.prepare_reader(events)
+        output = multiline_input(reader)
+        self.assertEqual(output, output_code)
+
     def test_auto_indent_with_multicomment(self):
         # fmt: off
         events = code_to_events(
@@ -620,6 +641,43 @@ class TestPyReplAutoindent(TestCase):
 
         output_code = (
             "pass  #:"
+        )
+        # fmt: on
+
+        reader = self.prepare_reader(events)
+        output = multiline_input(reader)
+        self.assertEqual(output, output_code)
+
+    def test_dont_indent_hashtag(self):
+        # fmt: off
+        events = code_to_events(
+            "if ' ' == '#':\n"
+                "pass\n\n"
+        )
+
+        output_code = (
+            "if ' ' == '#':\n"
+            "    pass\n"
+            "    "
+        )
+        # fmt: on
+
+        reader = self.prepare_reader(events)
+        output = multiline_input(reader)
+        self.assertEqual(output, output_code)
+
+    def test_dont_indent_in_multiline_string(self):
+        # fmt: off
+        events = code_to_events(
+            "s = '''\n"
+            "Note:\n"
+            "'''\n\n"
+        )
+
+        output_code = (
+            "s = '''\n"
+            "Note:\n"
+            "'''"
         )
         # fmt: on
 
