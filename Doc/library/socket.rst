@@ -1944,8 +1944,10 @@ to sockets.
    optional *flags* argument has the same meaning as for :meth:`recv` above.
    Returns the number of bytes sent. Applications are responsible for checking that
    all data has been sent; if only some of the data was transmitted, the
-   application needs to attempt delivery of the remaining data. For further
-   information on this topic, consult the :ref:`socket-howto`.
+   application needs to attempt delivery of the remaining data. Unlike :meth:`recv`,
+   this method will automatically raise an :exc:`OSError` in the case of a broken socket.
+   As such, there is no need to check the return value to determine if a socket is closed.
+   For further information on this topic, consult the :ref:`socket-howto`.
 
    .. versionchanged:: 3.5
       If the system call is interrupted and the signal handler does not raise
