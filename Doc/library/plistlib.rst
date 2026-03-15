@@ -18,7 +18,7 @@ and XML plist files.
 
 The property list (``.plist``) file format is a simple serialization supporting
 basic object types, like dictionaries, lists, numbers and strings.  Usually the
-top level object is a dictionary.
+top level object is a dictionary or frozen dictionary.
 
 To write out and to parse a plist file, use the :func:`dump` and
 :func:`load` functions.
@@ -183,12 +183,12 @@ Generating a plist::
     import datetime
     import plistlib
 
-    pl = dict(
+    pl = frozendict(
         aString = "Doodah",
         aList = ["A", "B", 12, 32.1, [1, 2, 3]],
         aFloat = 0.1,
         anInt = 728,
-        aDict = dict(
+        aDict = frozendict(
             anotherString = "<hello & hi there!>",
             aThirdString = "M\xe4ssig, Ma\xdf",
             aTrueValue = True,
