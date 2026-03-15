@@ -598,6 +598,14 @@ Options for third-party dependencies
    C compiler and linker flags for ``libzlib``, used by :mod:`gzip` module,
    overriding ``pkg-config``.
 
+.. option:: --disable-curses
+
+   Do not build nor install the :mod:`curses` module regardless of whether the
+   ``libncurses`` library is present on the host system (built and installed by
+   default if ``libncurses`` is present).
+
+   .. versionadded:: 3.15
+
 
 WebAssembly Options
 -------------------

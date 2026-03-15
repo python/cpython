@@ -1,0 +1,2 @@
+Add :option:`--disable-curses` option to :file:`configure` to manually exclude
+the :mod:`curses` module from the build.
