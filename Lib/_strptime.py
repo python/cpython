@@ -372,7 +372,7 @@ class TimeRE(dict):
             'y': r"(?P<y>\d\d)",
             'Y': r"(?P<Y>\d\d\d\d)",
             # follow C99 specification of parsing up to two digits for
-            # first hundred centuries
+            # first hundred centuries, without requiring zero-padding 
             'C': r"(?P<C>\d{1,2})",
             # See gh-121237: "z" must support colons for backwards compatibility.
             'z': r"(?P<z>([+-]\d\d:?[0-5]\d(:?[0-5]\d(\.\d{1,6})?)?)|(?-i:Z))?",
