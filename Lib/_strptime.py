@@ -628,7 +628,7 @@ def _strptime(data_string, format="%a %b %d %H:%M:%S %Y"):
                 year = 1
             else:
                 # in line with other format directives, negative numbers
-                # are not supported by the regular expression; 
+                # are not supported by the regular expression;
                 # this branch will not trigger!
                 msg = f"Negative century unsupported ({found_dict[group_key]})"
                 raise ValueError(msg)
