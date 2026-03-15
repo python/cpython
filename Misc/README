@@ -9,7 +9,7 @@ Files found here
 
 ACKS                    Acknowledgements
 HISTORY                 News from previous releases -- oldest last
-NEWS                    News for this release (for some meaning of "this")
+NEWS.d/                 News files for this release (for some meaning of "this")
 Porting                 Mini-FAQ on porting to new platforms
 python-config.in        Python script template for python-config
 python.man              UNIX man page for the python interpreter
