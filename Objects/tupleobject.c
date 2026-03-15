@@ -83,7 +83,7 @@ PyTuple_New(Py_ssize_t size)
         return NULL;
     }
     for (Py_ssize_t i = 0; i < size; i++) {
-        op->ob_item[i] = NULL;
+        op->ob_item[i] = Py_None;
     }
     _PyObject_GC_TRACK(op);
     return (PyObject *) op;
@@ -1050,10 +1050,10 @@ _PyTuple_Resize(PyObject **pv, Py_ssize_t newsize)
         return -1;
     }
     _Py_NewReferenceNoTotal((PyObject *) sv);
-    /* Zero out items added by growing */
-    if (newsize > oldsize)
-        memset(&sv->ob_item[oldsize], 0,
-               sizeof(*sv->ob_item) * (newsize - oldsize));
+    /* Set items added by growing to Py_None */
+    for(i = oldsize; i < newsize;i++) {
+        sv->ob_item[i] = Py_None;
+    }
     *pv = (PyObject *) sv;
     _PyObject_GC_TRACK(sv);
     return 0;

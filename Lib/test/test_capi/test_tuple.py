@@ -54,7 +54,6 @@ class CAPITest(unittest.TestCase):
         # Test PyTuple_New()
         tuple_new = _testlimitedcapi.tuple_new
         size = _testlimitedcapi.tuple_size
-        checknull = _testcapi._check_tuple_item_is_NULL
 
         tup1 = tuple_new(0)
         self.assertEqual(tup1, ())
@@ -66,7 +65,7 @@ class CAPITest(unittest.TestCase):
         self.assertIs(type(tup2), tuple)
         self.assertEqual(size(tup2), 1)
         self.assertIsNot(tup2, tup1)
-        self.assertTrue(checknull(tup2, 0))
+        self.assertIsNone(tup2[0])
         self._tracked(tup2)
 
         self.assertRaises(SystemError, tuple_new, -1)
@@ -299,7 +298,6 @@ class CAPITest(unittest.TestCase):
     def test__tuple_resize(self):
         # Test _PyTuple_Resize()
         resize = _testcapi._tuple_resize
-        checknull = _testcapi._check_tuple_item_is_NULL
 
         a = ()
         b = resize(a, 0, False)
@@ -308,8 +306,8 @@ class CAPITest(unittest.TestCase):
         b = resize(a, 2, False)
         self.assertEqual(len(a), 0)
         self.assertEqual(len(b), 2)
-        self.assertTrue(checknull(b, 0))
-        self.assertTrue(checknull(b, 1))
+        self.assertIsNone(b[0])
+        self.assertIsNone(b[1])
 
         a = ([1], [2], [3])
         b = resize(a, 3)
@@ -319,8 +317,8 @@ class CAPITest(unittest.TestCase):
         b = resize(a, 5)
         self.assertEqual(len(b), 5)
         self.assertEqual(b[:3], a)
-        self.assertTrue(checknull(b, 3))
-        self.assertTrue(checknull(b, 4))
+        self.assertIsNone(b[3])
+        self.assertIsNone(b[4])
 
         a = ()
         self.assertRaises(MemoryError, resize, a, PY_SSIZE_T_MAX)

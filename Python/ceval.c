@@ -604,7 +604,7 @@ _PyEval_MatchClass(PyThreadState *tstate, PyObject *subject, PyObject *type,
         }
         if (match_self) {
             // Easy. Copy the subject itself, and move on to kwargs.
-            assert(PyTuple_GET_ITEM(attrs, 0) == NULL);
+            assert(PyTuple_GET_ITEM(attrs, 0) == Py_None);
             PyTuple_SET_ITEM(attrs, 0, Py_NewRef(subject));
         }
         else {
@@ -621,7 +621,7 @@ _PyEval_MatchClass(PyThreadState *tstate, PyObject *subject, PyObject *type,
                 if (attr == NULL) {
                     goto fail;
                 }
-                assert(PyTuple_GET_ITEM(attrs, i) == NULL);
+                assert(PyTuple_GET_ITEM(attrs, i) == Py_None);
                 PyTuple_SET_ITEM(attrs, i, attr);
             }
         }
@@ -634,7 +634,7 @@ _PyEval_MatchClass(PyThreadState *tstate, PyObject *subject, PyObject *type,
         if (attr == NULL) {
             goto fail;
         }
-        assert(PyTuple_GET_ITEM(attrs, nargs + i) == NULL);
+        assert(PyTuple_GET_ITEM(attrs, nargs + i) == Py_None);
         PyTuple_SET_ITEM(attrs, nargs + i, attr);
     }
     Py_XDECREF(seen);
