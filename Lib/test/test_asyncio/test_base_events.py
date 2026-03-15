@@ -1939,6 +1939,8 @@ class BaseEventLoopWithSelectorTests(test_utils.TestCase):
         self.assertEqual('CLOSED', protocol.state)
 
     @unittest.skipUnless(hasattr(socket, 'AF_UNIX'), 'No UNIX Sockets')
+    @unittest.skipIf(sys.platform == 'win32', 'AF_UNIX support for asyncio is '
+                     'not implemented on Windows for now')
     def test_create_datagram_endpoint_sock_unix(self):
         fut = self.loop.create_datagram_endpoint(
             lambda: MyDatagramProto(create_future=True, loop=self.loop),
