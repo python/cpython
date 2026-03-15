@@ -1337,6 +1337,9 @@ paramspec_new_impl(PyTypeObject *type, PyObject *name, PyObject *bound,
         PyErr_SetString(PyExc_ValueError, "Variance cannot be specified with infer_variance.");
         return NULL;
     }
+    if (Py_IsNone(bound)) {
+        bound = NULL;
+    }
     if (bound != NULL) {
         bound = type_check(bound, "Bound must be a type.");
         if (bound == NULL) {
