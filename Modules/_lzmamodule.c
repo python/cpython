@@ -422,6 +422,60 @@ parse_filter_chain_spec(_lzma_state *state, lzma_filter filters[], PyObject *fil
     return 0;
 }
 
+static int
+parse_mt_options_spec(lzma_mt *mt_options, PyObject *spec)
+{
+    PyObject *option_obj = NULL;
+
+    if (!PyMapping_Check(spec)) {
+        PyErr_SetString(PyExc_TypeError,
+                        "MT Options specifier must be a dict or dict-like object");
+        return -1;
+    }
+    if (PyMapping_GetOptionalItemString(spec, "flags", &option_obj) == 1) {
+        if (!_PyLong_UInt32_Converter(option_obj, &mt_options->flags)) {
+            goto error;
+        }
+        Py_CLEAR(option_obj);
+    }
+    if (PyMapping_GetOptionalItemString(spec, "threads", &option_obj) == 1) {
+        if (!_PyLong_UInt32_Converter(option_obj, &mt_options->threads)) {
+            goto error;
+        }
+        Py_CLEAR(option_obj);
+    }
+    if (PyMapping_GetOptionalItemString(spec, "block_size", &option_obj) == 1) {
+        if (!_PyLong_UInt64_Converter(option_obj, &mt_options->block_size)) {
+            goto error;
+        }
+        Py_CLEAR(option_obj);
+    }
+    if (PyMapping_GetOptionalItemString(spec, "timeout", &option_obj) == 1) {
+        if (!_PyLong_UInt32_Converter(option_obj, &mt_options->timeout)) {
+            goto error;
+        }
+        Py_CLEAR(option_obj);
+    }
+    if (PyMapping_GetOptionalItemString(spec, "memlimit_threading", &option_obj) == 1) {
+        if (!_PyLong_UInt64_Converter(option_obj, &mt_options->memlimit_threading)) {
+            goto error;
+        }
+        Py_CLEAR(option_obj);
+    }
+    if (PyMapping_GetOptionalItemString(spec, "memlimit_stop", &option_obj) == 1) {
+        if (!_PyLong_UInt64_Converter(option_obj, &mt_options->memlimit_stop)) {
+            goto error;
+        }
+        Py_CLEAR(option_obj);
+    }
+
+    return 0;
+
+error:
+    Py_XDECREF(option_obj);
+    return -1;
+}
+
 
 /* Filter specifier construction.
 
@@ -651,19 +705,40 @@ _lzma_LZMACompressor_flush_impl(Compressor *self)
 
 static int
 Compressor_init_xz(_lzma_state *state, lzma_stream *lzs,
-                   int check, uint32_t preset, PyObject *filterspecs)
+                   int check, uint32_t preset, PyObject *filterspecs,
+                   PyObject *mtspec)
 {
     lzma_ret lzret;
 
-    if (filterspecs == Py_None) {
+    if (filterspecs == Py_None && mtspec == Py_None) {
         lzret = lzma_easy_encoder(lzs, preset, check);
     } else {
         lzma_filter filters[LZMA_FILTERS_MAX + 1];
+        int have_filters = 0;
 
-        if (parse_filter_chain_spec(state, filters, filterspecs) == -1)
-            return -1;
-        lzret = lzma_stream_encoder(lzs, filters, check);
-        free_filter_chain(filters);
+        if (filterspecs != Py_None) {
+            if (parse_filter_chain_spec(state, filters, filterspecs) == -1)
+                return -1;
+            have_filters = 1;
+        }
+
+        if (mtspec) {
+            lzma_mt mt_options = {
+                .timeout = 300, .preset = preset, .check = check,
+            };
+            if (have_filters)
+                mt_options.filters = filters;
+            if (parse_mt_options_spec(&mt_options, mtspec) == -1) {
+                if (have_filters)
+                    free_filter_chain(filters);
+                return -1;
+            }
+            lzret = lzma_stream_encoder_mt(lzs, &mt_options);
+        } else {
+            lzret = lzma_stream_encoder(lzs, filters, check);
+        }
+        if (have_filters)
+            free_filter_chain(filters);
     }
     if (catch_lzma_error(state, lzret)) {
         return -1;
@@ -756,6 +831,10 @@ _lzma.LZMACompressor.__new__
         have an entry for "id" indicating the ID of the filter, plus
         additional entries for options to the filter.
 
+    mt_options: object = None
+        If provided should be a dict, in which case the threaded implementation
+        will be used.
+
 Create a compressor object for compressing data incrementally.
 
 The settings used by the compressor can be specified either as a
@@ -765,25 +844,30 @@ and FORMAT_ALONE, the default is to use the PRESET_DEFAULT preset
 level.  For FORMAT_RAW, the caller must always specify a filter chain;
 the raw compressor does not support preset compression levels.
 
+The MT (multi-threaded) compressor is chosen instead of the default if the
+'mt_options' dictionary argument has been passed which supports additional
+settings.
+
 For one-shot compression, use the compress() function instead.
 [-clinic start generated code]*/
 static PyObject *
 Compressor_new(PyTypeObject *type, PyObject *args, PyObject *kwargs)
 {
-    static char *arg_names[] = {"format", "check", "preset", "filters", NULL};
+    static char *arg_names[] = {"format", "check", "preset", "filters", "mt_options", NULL};
     int format = FORMAT_XZ;
     int check = -1;
     uint32_t preset = LZMA_PRESET_DEFAULT;
     PyObject *preset_obj = Py_None;
     PyObject *filterspecs = Py_None;
+    PyObject *mt_specs = Py_None;
     Compressor *self;
 
     _lzma_state *state = PyType_GetModuleState(type);
     assert(state != NULL);
     if (!PyArg_ParseTupleAndKeywords(args, kwargs,
-                                     "|iiOO:LZMACompressor", arg_names,
+                                     "|iiOO$O:LZMACompressor", arg_names,
                                      &format, &check, &preset_obj,
-                                     &filterspecs)) {
+                                     &filterspecs, &mt_specs)) {
         return NULL;
     }
 
@@ -796,6 +880,12 @@ Compressor_new(PyTypeObject *type, PyObject *args, PyObject *kwargs)
     if (preset_obj != Py_None && filterspecs != Py_None) {
         PyErr_SetString(PyExc_ValueError,
                         "Cannot specify both preset and filter chain");
+        return NULL;
+    }
+
+    if (format != FORMAT_XZ && mt_specs != Py_None) {
+        PyErr_SetString(PyExc_ValueError,
+                        "Multi-threaded mode only supported by FORMAT_XZ");
         return NULL;
     }
 
@@ -822,7 +912,7 @@ Compressor_new(PyTypeObject *type, PyObject *args, PyObject *kwargs)
             if (check == -1) {
                 check = LZMA_CHECK_CRC64;
             }
-            if (Compressor_init_xz(state, &self->lzs, check, preset, filterspecs) != 0) {
+            if (Compressor_init_xz(state, &self->lzs, check, preset, filterspecs, mt_specs) != 0) {
                 goto error;
             }
             break;
@@ -870,7 +960,8 @@ static PyMethodDef Compressor_methods[] = {
 };
 
 PyDoc_STRVAR(Compressor_doc,
-"LZMACompressor(format=FORMAT_XZ, check=-1, preset=None, filters=None)\n"
+"LZMACompressor(format=FORMAT_XZ, check=-1, preset=None, filters=None, *,\n"
+"               mt_options=None)\n"
 "\n"
 "Create a compressor object for compressing data incrementally.\n"
 "\n"
@@ -894,6 +985,10 @@ PyDoc_STRVAR(Compressor_doc,
 "filters (if provided) should be a sequence of dicts. Each dict should\n"
 "have an entry for \"id\" indicating the ID of the filter, plus\n"
 "additional entries for options to the filter.\n"
+"\n"
+"The MT (multi-threaded) compressor is chosen instead of the default if the\n"
+"\'mt_options\' dictionary argument has been passed which supports additional\n"
+"settings. This is only available when FORMAT_XZ is set.\n"
 "\n"
 "For one-shot compression, use the compress() function instead.\n");
 
@@ -1183,15 +1278,26 @@ _lzma.LZMADecompressor.__new__
         sequence of dicts, each indicating the ID and options for a single
         filter.
 
+    *
+
+    mt_options as mtspec: object = None
+        If provided should be a dict, in which case the threaded implementation
+        will be used.
+
 Create a decompressor object for decompressing data incrementally.
+
+The MT (multi-threaded) decompressor is chosen instead of the default if the
+'mt_options' dictionary argument has been passed which supports additional
+settings. You have to specify FORMAT_XZ explicitly for this.
 
 For one-shot decompression, use the decompress() function instead.
 [clinic start generated code]*/
 
 static PyObject *
 _lzma_LZMADecompressor_impl(PyTypeObject *type, int format,
-                            PyObject *memlimit, PyObject *filters)
-/*[clinic end generated code: output=2d46d5e70f10bc7f input=ca40cd1cb1202b0d]*/
+                            PyObject *memlimit, PyObject *filters,
+                            PyObject *mtspec)
+/*[clinic end generated code: output=efd8dd5b40b20994 input=b867df8d782c8601]*/
 {
     Decompressor *self;
     const uint32_t decoder_flags = LZMA_TELL_ANY_CHECK | LZMA_TELL_NO_CHECK;
@@ -1218,6 +1324,11 @@ _lzma_LZMADecompressor_impl(PyTypeObject *type, int format,
     } else if (format != FORMAT_RAW && filters != Py_None) {
         PyErr_SetString(PyExc_ValueError,
                         "Cannot specify filters except with FORMAT_RAW");
+        return NULL;
+    }
+    if (format != FORMAT_XZ && mtspec != Py_None) {
+        PyErr_SetString(PyExc_ValueError,
+                        "Multi-threaded mode only supported by FORMAT_XZ");
         return NULL;
     }
 
@@ -1249,7 +1360,17 @@ _lzma_LZMADecompressor_impl(PyTypeObject *type, int format,
             break;
 
         case FORMAT_XZ:
-            lzret = lzma_stream_decoder(&self->lzs, memlimit_, decoder_flags);
+            if (mtspec != Py_None) {
+                lzma_mt mt_options = {
+                    .flags = decoder_flags, .memlimit_stop = memlimit_,
+                };
+                if (parse_mt_options_spec(&mt_options, mtspec) == -1) {
+                    goto error;
+                }
+                lzret = lzma_stream_decoder_mt(&self->lzs, &mt_options);
+            } else {
+                lzret = lzma_stream_decoder(&self->lzs, memlimit_, decoder_flags);
+            }
             if (catch_lzma_error(state, lzret)) {
                 goto error;
             }
