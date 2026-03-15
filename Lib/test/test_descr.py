@@ -5361,6 +5361,22 @@ class ClassPropertiesAndMethods(unittest.TestCase):
         with self.assertRaisesRegex(NotImplementedError, "BAR"):
             B().foo
 
+    def test_reentrant_hash_during_setattr_delattr(self):
+        class Evil(str):
+            def __hash__(self):
+                old_dict = target.__dict__
+                target.__dict__ = {}
+                del old_dict
+                return super().__hash__()
+        class Target:
+            pass
+        target = Target()
+        setattr(target, Evil("marker"), 123)
+        try:
+            delattr(target, Evil("marker"))
+        except AttributeError:
+            pass
+
 
 class DictProxyTests(unittest.TestCase):
     def setUp(self):
