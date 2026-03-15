@@ -2879,6 +2879,8 @@ class RawTurtle(TPen, TNavigator):
             q.turtle._item = [screen._createpoly() for item in
                               screen._shapes[self.turtle.shapeIndex]._data]
         q.currentLineItem = screen._createline()
+        q.currentLine = [q._position] if q._drawing else []
+        q.items = [q.currentLineItem]
         q._update()
         return q
 
