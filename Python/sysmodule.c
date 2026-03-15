@@ -3511,7 +3511,9 @@ static PyStructSequence_Desc flags_desc = {
     "sys.flags",        /* name */
     flags__doc__,       /* doc */
     flags_fields,       /* fields */
-    19  /* NB - do not increase. new fields are not tuple fields. GH-122575 */
+    18  /* NB - do not increase beyond 3.14's value of 18. */
+    // New sys.flags fields should NOT be tuple addressable per
+    // https://github.com/python/cpython/issues/122575#issuecomment-2416497086
 };
 
 static void
