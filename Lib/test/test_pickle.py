@@ -779,6 +779,7 @@ class CommandLineTest(unittest.TestCase):
             pickle._main(args=[*flags, self.filename])
         return self.text_normalize(output.getvalue())
 
+    @support.force_not_colorized
     def test_invocation(self):
         # test 'python -m pickle pickle_file'
         data = {

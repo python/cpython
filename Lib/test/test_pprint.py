@@ -10,6 +10,7 @@ import random
 import re
 import types
 import unittest
+import unittest.mock
 from collections.abc import ItemsView, KeysView, Mapping, MappingView, ValuesView
 
 from test.support import cpython_only
@@ -164,6 +165,53 @@ class QueryTestCase(unittest.TestCase):
         self.assertRaises(ValueError, pprint.PrettyPrinter, depth=0)
         self.assertRaises(ValueError, pprint.PrettyPrinter, depth=-1)
         self.assertRaises(ValueError, pprint.PrettyPrinter, width=0)
+
+    def test_color_pprint(self):
+        """Test pprint color parameter."""
+        obj = {"key": "value"}
+        stream = io.StringIO()
+
+        # color=False should produce no ANSI codes
+        pprint.pprint(obj, stream=stream, color=False)
+        result = stream.getvalue()
+        self.assertNotIn("\x1b[", result)
+
+        # Explicit color=False should override FORCE_COLOR
+        stream = io.StringIO()
+        with unittest.mock.patch.dict(
+            "os.environ", {"FORCE_COLOR": "1", "NO_COLOR": ""}
+        ):
+            pprint.pprint(obj, stream=stream, color=False)
+            result = stream.getvalue()
+            self.assertNotIn("\x1b[", result)
+
+    def test_color_prettyprinter(self):
+        """Test PrettyPrinter color parameter."""
+        obj = {"key": "value"}
+
+        # color=False should produce no ANSI codes in pprint
+        stream = io.StringIO()
+        pp = pprint.PrettyPrinter(stream=stream, color=False)
+        pp.pprint(obj)
+        self.assertNotIn("\x1b[", stream.getvalue())
+
+        # color=True with FORCE_COLOR should produce ANSI codes in pprint
+        with unittest.mock.patch.dict(
+            "os.environ", {"FORCE_COLOR": "1", "NO_COLOR": ""}
+        ):
+            stream = io.StringIO()
+            pp = pprint.PrettyPrinter(stream=stream, color=True)
+            pp.pprint(obj)
+            self.assertIn("\x1b[", stream.getvalue())
+
+        # Explicit color=False should override FORCE_COLOR
+        with unittest.mock.patch.dict(
+            "os.environ", {"FORCE_COLOR": "1", "NO_COLOR": ""}
+        ):
+            stream = io.StringIO()
+            pp = pprint.PrettyPrinter(stream=stream, color=False)
+            pp.pprint(obj)
+            self.assertNotIn("\x1b[", stream.getvalue())
 
     def test_basic(self):
         # Verify .isrecursive() and .isreadable() w/o recursion
