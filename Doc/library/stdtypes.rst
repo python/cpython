@@ -2812,7 +2812,7 @@ expression support in the :mod:`re` module).
         >>> titlecase("they're bill's friends.")
         "They're Bill's Friends."
 
-   See also :meth:`istitle`.
+   See also :meth:`istitle` and :meth:`capitalize`.
 
 
 .. method:: str.translate(table, /)
