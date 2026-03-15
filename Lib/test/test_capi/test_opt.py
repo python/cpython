@@ -3950,6 +3950,22 @@ class TestUopsOptimization(unittest.TestCase):
         self.assertIn("_POP_TOP_NOP", uops)
         self.assertLessEqual(count_ops(ex, "_POP_TOP"), 2)
 
+    def test_make_function(self):
+        def testfunc(n):
+            x = 0
+            for _ in range(n):
+                func = lambda: 1
+                x += func()
+
+            return x
+
+        res, ex = self._run_with_optimizer(testfunc, TIER2_THRESHOLD)
+        self.assertEqual(res, TIER2_THRESHOLD)
+        uops = get_opnames(ex)
+
+        self.assertIn("_MAKE_FUNCTION", uops)
+        self.assertEqual(uops.count("_POP_TOP_NOP"), 2)
+
     def test_match_class(self):
         def testfunc(n):
             class A:
