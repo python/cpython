@@ -287,6 +287,21 @@ class _Database(collections.abc.MutableMapping):
     def __exit__(self, *args):
         self.close()
 
+    def setdefault(self, key, default):
+        if isinstance(key, str):
+            key = key.encode('utf-8')
+        try:
+            if key in self._index:
+                return self[key]
+            else:
+                self[key] = default
+                return default
+        except TypeError:
+            if self._index is None:
+                raise error('DBM object has already been closed') from None
+            else:
+                raise
+
     def reorganize(self):
         if self._readonly:
             raise error('The database is opened for reading only')
