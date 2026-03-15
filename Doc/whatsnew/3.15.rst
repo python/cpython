@@ -896,6 +896,11 @@ re
   Python has always called *search*.
   (Contributed by Gregory P. Smith in :gh:`86519`.)
 
+* Add the :meth:`~re.Pattern.compile_template` method for the
+  :ref:`pattern object <re-objects>` which allows to pre-compile
+  replacement strings.
+  (Contributed by Serhiy Storchaka in :gh:`105636`.)
+
 
 resource
 --------

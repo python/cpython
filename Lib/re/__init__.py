@@ -133,7 +133,7 @@ import _sre
 __all__ = [
     "prefixmatch", "match", "fullmatch", "search", "sub", "subn", "split",
     "findall", "finditer", "compile", "purge", "escape",
-    "error", "Pattern", "Match", "A", "I", "L", "M", "S", "X", "U",
+    "error", "Pattern", "Match", "Template", "A", "I", "L", "M", "S", "X", "U",
     "ASCII", "IGNORECASE", "LOCALE", "MULTILINE", "DOTALL", "VERBOSE",
     "UNICODE", "NOFLAG", "RegexFlag", "PatternError"
 ]
@@ -314,8 +314,12 @@ def escape(pattern):
         pattern = str(pattern, 'latin1')
         return pattern.translate(_special_chars_map).encode('latin1')
 
-Pattern = type(_compiler.compile('', 0))
-Match = type(_compiler.compile('', 0).prefixmatch(''))
+p = _compiler.compile('', 0)
+Pattern = type(p)
+Match = type(p.prefixmatch(''))
+import _sre
+Template = type(_sre.template(p, ['']))
+del p
 
 # --------------------------------------------------------------------
 # internals
