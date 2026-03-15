@@ -1448,7 +1448,7 @@ expand_region_transitively_reachable(PyGC_Head *container, PyGC_Head *gc, GCStat
         assert(_PyObject_GC_IS_TRACKED(op));
         if (_Py_IsImmortal(op)) {
             PyGC_Head *next = GC_NEXT(gc);
-            gc_list_move(gc, &gcstate->permanent_generation.head);
+            _PyObject_GC_UNTRACK(op);
             gc = next;
             continue;
         }
