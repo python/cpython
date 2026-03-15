@@ -3974,9 +3974,8 @@ class TestUopsOptimization(unittest.TestCase):
             s = {1, 2, 3}
             for _ in range(n):
                 x = {*s}
-
             return x
-        
+
         res, ex = self._run_with_optimizer(testfunc, TIER2_THRESHOLD)
         self.assertEqual(res, {1, 2, 3})
         uops = get_opnames(ex)
