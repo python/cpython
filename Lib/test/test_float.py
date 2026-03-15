@@ -229,8 +229,7 @@ class GeneralFloatCases(unittest.TestCase):
 
         self.assertEqual(float(FloatLike(42.)), 42.)
         self.assertEqual(float(Foo2()), 42.)
-        with self.assertWarns(DeprecationWarning):
-            self.assertEqual(float(Foo3(21)), 42.)
+        self.assertRaises(TypeError, float, Foo3(21))
         self.assertRaises(TypeError, float, Foo4(42))
         self.assertEqual(float(FooStr('8')), 9.)
 
@@ -238,14 +237,8 @@ class GeneralFloatCases(unittest.TestCase):
 
         # Issue #24731
         f = FloatLike(OtherFloatSubclass(42.))
-        with self.assertWarns(DeprecationWarning):
-            self.assertEqual(float(f), 42.)
-        with self.assertWarns(DeprecationWarning):
-            self.assertIs(type(float(f)), float)
-        with self.assertWarns(DeprecationWarning):
-            self.assertEqual(FloatSubclass(f), 42.)
-        with self.assertWarns(DeprecationWarning):
-            self.assertIs(type(FloatSubclass(f)), FloatSubclass)
+        self.assertRaises(TypeError, float, f)
+        self.assertRaises(TypeError, FloatSubclass, f)
 
         self.assertEqual(float(MyIndex(42)), 42.0)
         self.assertRaises(OverflowError, float, MyIndex(2**2000))
