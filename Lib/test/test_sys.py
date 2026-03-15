@@ -868,13 +868,14 @@ class SysModuleTest(unittest.TestCase):
                  "ignore_environment", "verbose", "bytes_warning", "quiet",
                  "hash_randomization", "isolated", "dev_mode", "utf8_mode",
                  "warn_default_encoding", "safe_path", "int_max_str_digits",
-                 "lazy_imports")
+                 "lazy_imports", "traceback_timestamps")
         for attr in attrs:
             self.assertHasAttr(sys.flags, attr)
             attr_type = bool if attr in ("dev_mode", "safe_path") else int
+            attr_type = str if attr == "traceback_timestamps" else attr_type
             self.assertEqual(type(getattr(sys.flags, attr)), attr_type, attr)
         self.assertTrue(repr(sys.flags))
-        self.assertEqual(len(sys.flags), len(attrs))
+        self.assertEqual(len(sys.flags), 18)  # Do not increase, see GH-122575
 
         self.assertIn(sys.flags.utf8_mode, {0, 1, 2})
 
@@ -1920,9 +1921,10 @@ class SizeofTest(unittest.TestCase):
         # - 'gil'
         # - 'thread_inherit_context'
         # - 'context_aware_warnings'
+        # - 'lazy_imports'
         # - 'traceback_timestamps'
         # It will not be necessary once GH-122575 is fixed.
-        non_sequence_fields = 4
+        non_sequence_fields = 5
         check(sys.flags, vsize('') + self.P + self.P * (non_sequence_fields + len(sys.flags)))
 
     def test_asyncgen_hooks(self):
