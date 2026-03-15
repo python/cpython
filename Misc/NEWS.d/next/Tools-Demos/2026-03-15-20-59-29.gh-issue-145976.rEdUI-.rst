@@ -1,2 +1,2 @@
 Remove :file:`Misc/indent.pro`, a configuration file for GNU
-:program:`indent`.
+:manpage:`indent(1)`.
