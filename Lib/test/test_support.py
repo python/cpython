@@ -788,6 +788,7 @@ class TestSupport(unittest.TestCase):
             (128 + int(signal.SIGABRT), 'SIGABRT'),
             (3221225477, "STATUS_ACCESS_VIOLATION"),
             (0xC00000FD, "STATUS_STACK_OVERFLOW"),
+            (0xC0000906, "0xC0000906"),
         ):
             self.assertEqual(support.get_signal_name(exitcode), expected,
                              exitcode)

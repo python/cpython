@@ -4,8 +4,6 @@
 .. module:: operator
    :synopsis: Functions corresponding to the standard operators.
 
-.. sectionauthor:: Skip Montanaro <skip@automatrix.com>
-
 **Source code:** :source:`Lib/operator.py`
 
 .. testsetup::

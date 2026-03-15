@@ -1,3 +1,0 @@
-Name suggestion for not normalized name suggests now the normalized name or
-the closest name to the normalized name. If the suggested name is not ASCII,
-include also its ASCII representation.

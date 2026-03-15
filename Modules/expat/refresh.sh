@@ -64,13 +64,16 @@ This may be due to source changes and will require updating this script" >&2
   exit 1
 fi
 
-echo "
+echo '
 Updated! next steps:
 - Verify all is okay:
     git diff
     git status
-- Regenerate the sbom file
+- Update the sbom file:
+    Under the package "SPDXRef-PACKAGE-expat", update the "checksumValue",
+    "downloadLocation", "referenceLocator", and "versionInfo" fields.
+- Regenerate the sbom file:
     make regen-sbom
-- Update warning count in Tools/build/.warningignore_macos
+- Update the warning count in Tools/build/.warningignore_macos:
     (use info from CI if not on a Mac)
-"
+'

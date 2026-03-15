@@ -1564,9 +1564,6 @@ process. This can be set up using a process management tool such as Supervisor -
 Using file rotation
 -------------------
 
-.. sectionauthor:: Doug Hellmann, Vinay Sajip (changes)
-.. (see <https://pymotw.com/3/logging/>)
-
 Sometimes you want to let a log file grow to a certain size, then open a new
 file and log to that. You may want to keep a certain number of these files, and
 when that many files have been created, rotate the files so that the number of

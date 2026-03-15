@@ -1234,6 +1234,25 @@ class LongnameTest:
                 self.assertIsNotNone(tar.getmember(longdir))
                 self.assertIsNotNone(tar.getmember(longdir.removesuffix('/')))
 
+    def test_longname_file_not_directory(self):
+        # Test reading a longname file and ensure it is not handled as a directory
+        # Issue #141707
+        buf = io.BytesIO()
+        with tarfile.open(mode='w', fileobj=buf, format=self.format) as tar:
+            ti = tarfile.TarInfo()
+            ti.type = tarfile.AREGTYPE
+            ti.name = ('a' * 99) + '/' + ('b' * 3)
+            tar.addfile(ti)
+
+            expected = {t.name: t.type for t in tar.getmembers()}
+
+        buf.seek(0)
+        with tarfile.open(mode='r', fileobj=buf) as tar:
+            actual = {t.name: t.type for t in tar.getmembers()}
+
+        self.assertEqual(expected, actual)
+
+
 class GNUReadTest(LongnameTest, ReadTest, unittest.TestCase):
 
     subdir = "gnu"
@@ -4834,6 +4853,16 @@ class OffsetValidationTests(unittest.TestCase):
             self.assertEqual(len(members), 1)
             self.assertEqual(members[0].name, "filename")
             self.assertEqual(members[0].offset, expected_offset)
+
+
+class TestModule(unittest.TestCase):
+    def test_deprecated_version(self):
+        with self.assertWarnsRegex(
+                DeprecationWarning,
+                "'version' is deprecated and slated for removal in Python 3.20",
+        ) as cm:
+            getattr(tarfile, "version")
+        self.assertEqual(cm.filename, __file__)
 
 
 def setUpModule():

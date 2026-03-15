@@ -4,9 +4,6 @@
 .. module:: xmlrpc.server
    :synopsis: Basic XML-RPC server implementations.
 
-.. moduleauthor:: Brian Quinlan <brianq@activestate.com>
-.. sectionauthor:: Fred L. Drake, Jr. <fdrake@acm.org>
-
 **Source code:** :source:`Lib/xmlrpc/server.py`
 
 --------------
@@ -230,7 +227,7 @@ a server allowing dotted names and registering a multicall function.
 
   Enabling the *allow_dotted_names* option allows intruders to access your
   module's global variables and may allow intruders to execute arbitrary code on
-  your machine.  Only use this example only within a secure, closed network.
+  your machine.  Only use this example within a secure, closed network.
 
 ::
 
