@@ -796,6 +796,52 @@ def _get_writer(file_or_filename, encoding):
                 stack.callback(file.detach)
                 yield file.write, encoding
 
+
+def _make_new_ns_prefix(nsmap_scope, seen_prefixes):
+    i = len(nsmap_scope)
+    while True:
+        prefix = f"ns{i}"
+        if prefix not in seen_prefixes:
+            return prefix
+        i += 1
+
+
+def _qnames_iter(elem):
+    """Iterate through all the qualified names in elem"""
+    seen_qnames = set()
+    for elem in elem.iter():
+        tag = elem.tag
+        if isinstance(tag, str):
+            if tag not in seen_qnames:
+                seen_qnames.add(tag)
+                yield tag
+        elif isinstance(tag, QName):
+            tag = tag.text
+            if tag not in seen_qnames:
+                seen_qnames.add(tag)
+                yield tag
+        elif tag is not None and tag is not Comment and tag is not PI:
+            _raise_serialization_error(tag)
+
+        for key, value in elem.items():
+            if isinstance(key, QName):
+                key = key.text
+            if key not in seen_qnames:
+                seen_qnames.add(key)
+                yield key
+
+            if isinstance(value, QName):
+                if value.text not in seen_qnames:
+                    seen_qnames.add(value.text)
+                    yield value.text
+
+        text = elem.text
+        if isinstance(text, QName):
+            if text.text not in seen_qnames:
+                seen_qnames.add(text.text)
+                yield text.text
+
+
 def _namespaces(elem, default_namespace=None):
     # identify namespaces used in this tree
 
@@ -807,54 +853,41 @@ def _namespaces(elem, default_namespace=None):
     if default_namespace:
         namespaces[default_namespace] = ""
 
-    def add_qname(qname):
-        # calculate serialized qname representation
+    seen_prefixes = set(_namespace_map.values())
+    has_unqual_el = False
+    for qname in _qnames_iter(elem):
         try:
             if qname[:1] == "{":
-                uri, tag = qname[1:].rsplit("}", 1)
-                prefix = namespaces.get(uri)
+                uri_and_name = qname[1:].rsplit("}", 1)
+
+                prefix = namespaces.get(uri_and_name[0])
                 if prefix is None:
-                    prefix = _namespace_map.get(uri)
+                    prefix = _namespace_map.get(uri_and_name[0])
                     if prefix is None:
-                        prefix = "ns%d" % len(namespaces)
-                    if prefix != "xml":
-                        namespaces[uri] = prefix
+                        prefix = _make_new_ns_prefix(namespaces, seen_prefixes)
+                    seen_prefixes.add(prefix)
+                    namespaces[uri_and_name[0]] = prefix
+
                 if prefix:
-                    qnames[qname] = "%s:%s" % (prefix, tag)
+                    qnames[qname] = f"{prefix}:{uri_and_name[1]}"
                 else:
-                    qnames[qname] = tag # default element
+                    qnames[qname] = uri_and_name[1]  # default element
             else:
-                if default_namespace:
-                    # FIXME: can this be handled in XML 1.0?
-                    raise ValueError(
-                        "cannot use non-qualified names with "
-                        "default_namespace option"
-                        )
                 qnames[qname] = qname
+                has_unqual_el = True
         except TypeError:
             _raise_serialization_error(qname)
 
-    # populate qname and namespaces table
-    for elem in elem.iter():
-        tag = elem.tag
-        if isinstance(tag, QName):
-            if tag.text not in qnames:
-                add_qname(tag.text)
-        elif isinstance(tag, str):
-            if tag not in qnames:
-                add_qname(tag)
-        elif tag is not None and tag is not Comment and tag is not PI:
-            _raise_serialization_error(tag)
-        for key, value in elem.items():
-            if isinstance(key, QName):
-                key = key.text
-            if key not in qnames:
-                add_qname(key)
-            if isinstance(value, QName) and value.text not in qnames:
-                add_qname(value.text)
-        text = elem.text
-        if isinstance(text, QName) and text.text not in qnames:
-            add_qname(text.text)
+    if default_namespace is not None and has_unqual_el:
+        # FIXME: can this be handled in XML 1.0?
+        raise ValueError(
+            "cannot use non-qualified names with default_namespace option"
+        )
+
+    # This namespace doesn't need to be declared but may be used to prefix
+    # names so let's remove it if it has been used
+    if "http://www.w3.org/XML/1998/namespace" in namespaces:
+        del namespaces["http://www.w3.org/XML/1998/namespace"]
     return qnames, namespaces
 
 def _serialize_xml(write, elem, qnames, namespaces,
