@@ -926,6 +926,7 @@ class Popen:
         self.stderr = None
         self.pid = None
         self.returncode = None
+        self._returncode_is_a_lie = False
         self.encoding = encoding
         self.errors = errors
         self.pipesize = pipesize
@@ -2082,6 +2083,7 @@ class Popen:
                         # disabled for our process.  This child is dead, we
                         # can't get the status.
                         # http://bugs.python.org/issue15756
+                        self._returncode_is_a_lie = True
                         self.returncode = 0
                 finally:
                     self._waitpid_lock.release()
@@ -2096,6 +2098,7 @@ class Popen:
                 # This happens if SIGCLD is set to be ignored or waiting
                 # for child processes has otherwise been disabled for our
                 # process.  This child is dead, we can't get the status.
+                self._returncode_is_a_lie = True
                 pid = self.pid
                 sts = 0
             return (pid, sts)
