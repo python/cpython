@@ -19,7 +19,7 @@ object's life.  An arrow from *A* to *B* indicates that event *B* can occur
 after event *A* has occurred, with the arrow's label indicating the condition
 that must be true for *B* to occur after *A*.
 
-.. only:: html
+.. only:: html and not (epub or latex)
 
    .. raw:: html
 
