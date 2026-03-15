@@ -1385,6 +1385,21 @@ class NumberTest(BaseTest):
         b = array.array(self.typecode, a)
         self.assertEqual(a, b)
 
+    def test_tofile_concurrent_mutation(self):
+        # Prevent crash when a writer concurrently mutates the array.
+        # See https://github.com/python/cpython/issues/142884.
+        # Keep 'BLOCKSIZE' in sync with the array.tofile() C implementation.
+        BLOCKSIZE = 64 * 1024
+        victim = array.array('B', b'\0' * (BLOCKSIZE * 2))
+
+        class Writer:
+            def write(self, data):
+                victim.clear()
+                return 0
+
+        victim.tofile(Writer())  # should not crash
+
+
 class IntegerNumberTest(NumberTest):
     def test_type_error(self):
         a = array.array(self.typecode)
