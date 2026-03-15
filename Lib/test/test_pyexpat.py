@@ -688,8 +688,6 @@ class ElementDeclHandlerTest(unittest.TestCase):
         parser.ElementDeclHandler = lambda _1, _2: None
         self.assertRaises(TypeError, parser.Parse, data, True)
 
-    @support.skip_emscripten_stack_overflow()
-    @support.skip_wasi_stack_overflow()
     def test_deeply_nested_content_model(self):
         # This should raise a RecursionError and not crash.
         # See https://github.com/python/cpython/issues/145986.
