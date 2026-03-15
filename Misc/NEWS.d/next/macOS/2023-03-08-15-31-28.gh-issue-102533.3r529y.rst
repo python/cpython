@@ -1,0 +1,2 @@
+Now configure can distinguish the real gcc and the llvm-gcc when compiling
+on MacOS13, and it should also set AR correctly.
