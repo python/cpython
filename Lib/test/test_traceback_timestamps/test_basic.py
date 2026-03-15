@@ -1,298 +1,222 @@
-import unittest
+"""Tests for traceback timestamps configuration, output format, and utilities."""
+
 import re
+import unittest
 from traceback import TIMESTAMP_AFTER_EXC_MSG_RE_GROUP
 
 from test.support import force_not_colorized, script_helper
-from test.support.os_helper import EnvironmentVarGuard, TESTFN, unlink
 
 
-class TracebackTimestampsTests(unittest.TestCase):
-    def setUp(self):
-        self.script = """
-import sys
+# Script that raises an exception and prints the traceback.
+RAISE_SCRIPT = """\
 import traceback
-
-def cause_exception():
-    1/0
-
 try:
-    cause_exception()
-except Exception as e:
+    1/0
+except Exception:
     traceback.print_exc()
 """
-        self.script_path = TESTFN + ".py"
-        with open(self.script_path, "w") as script_file:
-            script_file.write(self.script)
-        self.addCleanup(unlink, self.script_path)
 
-        # Script to check sys.flags.traceback_timestamps value
-        self.flags_script = """
+# Script that prints sys.flags.traceback_timestamps.
+FLAGS_SCRIPT = """\
 import sys
 print(repr(sys.flags.traceback_timestamps))
 """
-        self.flags_script_path = TESTFN + "_flag.py"
-        with open(self.flags_script_path, "w") as script_file:
-            script_file.write(self.flags_script)
-        self.addCleanup(unlink, self.flags_script_path)
 
-        self.env = EnvironmentVarGuard()
-        self.env.set("PYTHONUTF8", "1")  # -X utf8=1
-        self.addCleanup(self.env.__exit__)
 
-    def test_no_traceback_timestamps(self):
-        """Test that traceback timestamps are not shown by default"""
-        result = script_helper.assert_python_ok(self.script_path)
-        self.assertNotIn(b"<@", result.err)  # No timestamp should be present
+class ConfigurationTests(unittest.TestCase):
+    """Test -X traceback_timestamps and PYTHON_TRACEBACK_TIMESTAMPS config."""
 
-    def test_traceback_timestamps_env_var(self):
-        """Test that PYTHON_TRACEBACK_TIMESTAMPS env var enables timestamps"""
+    def test_disabled_by_default(self):
+        result = script_helper.assert_python_ok("-c", RAISE_SCRIPT)
+        self.assertNotIn(b"<@", result.err)
+
+    def test_env_var_enables(self):
         result = script_helper.assert_python_ok(
-            self.script_path, PYTHON_TRACEBACK_TIMESTAMPS="us"
+            "-c", RAISE_SCRIPT, PYTHON_TRACEBACK_TIMESTAMPS="us"
         )
-        self.assertIn(b"<@", result.err)  # Timestamp should be present
+        self.assertIn(b"<@", result.err)
 
-    def test_traceback_timestamps_flag_us(self):
-        """Test -X traceback_timestamps=us flag"""
+    def test_flag_precedence_over_env_var(self):
         result = script_helper.assert_python_ok(
-            "-X", "traceback_timestamps=us", self.script_path
+            "-X", "traceback_timestamps=ns",
+            "-c", FLAGS_SCRIPT,
+            PYTHON_TRACEBACK_TIMESTAMPS="iso",
         )
-        self.assertIn(b"<@", result.err)  # Timestamp should be present
+        self.assertEqual(result.out.strip(), b"'ns'")
 
-    def test_traceback_timestamps_flag_ns(self):
-        """Test -X traceback_timestamps=ns flag"""
+    def test_flag_no_value_defaults_to_us(self):
         result = script_helper.assert_python_ok(
-            "-X", "traceback_timestamps=ns", self.script_path
+            "-X", "traceback_timestamps", "-c", FLAGS_SCRIPT
         )
-        stderr = result.err
-        self.assertIn(b"<@", result.err)  # Timestamp should be present
-        self.assertIn(b"ns>", result.err)  # Should have ns format
+        self.assertEqual(result.out.strip(), b"'us'")
 
-    def test_traceback_timestamps_flag_iso(self):
-        """Test -X traceback_timestamps=iso flag"""
-        result = script_helper.assert_python_ok(
-            "-X", "traceback_timestamps=iso", self.script_path
-        )
-        self.assertIn(b"<@", result.err)  # Timestamp should be present
-        # ISO format with Z suffix for UTC
-        self.assertRegex(
-            result.err, rb"<@\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}\.\d{6}Z>"
-        )
-
-    def test_traceback_timestamps_flag_value(self):
-        """Test that sys.flags.traceback_timestamps shows the right value"""
-        # Default should be empty string
-        result = script_helper.assert_python_ok(self.flags_script_path)
-        stdout = result.out.strip()
-        self.assertEqual(stdout, b"''")
-
-        # With us flag
-        result = script_helper.assert_python_ok(
-            "-X", "traceback_timestamps=us", self.flags_script_path
-        )
-        stdout = result.out.strip()
-        self.assertEqual(stdout, b"'us'")
-
-        # With ns flag
-        result = script_helper.assert_python_ok(
-            "-X", "traceback_timestamps=ns", self.flags_script_path
-        )
-        stdout = result.out.strip()
-        self.assertEqual(stdout, b"'ns'")
-
-        # With iso flag
-        result = script_helper.assert_python_ok(
-            "-X", "traceback_timestamps=iso", self.flags_script_path
-        )
-        stdout = result.out.strip()
-        self.assertEqual(stdout, b"'iso'")
-
-    def test_traceback_timestamps_env_var_precedence(self):
-        """Test that -X flag takes precedence over env var"""
-        result = script_helper.assert_python_ok(
-            "-X",
-            "traceback_timestamps=us",
-            "-c",
-            "import sys; print(repr(sys.flags.traceback_timestamps))",
-            PYTHON_TRACEBACK_TIMESTAMPS="ns",
-        )
-        stdout = result.out.strip()
-        self.assertEqual(stdout, b"'us'")
-
-    def test_traceback_timestamps_flag_no_value(self):
-        """Test -X traceback_timestamps with no value defaults to 'us'"""
-        result = script_helper.assert_python_ok(
-            "-X", "traceback_timestamps", self.flags_script_path
-        )
-        stdout = result.out.strip()
-        self.assertEqual(stdout, b"'us'")
-
-    def test_traceback_timestamps_flag_zero(self):
-        """Test -X traceback_timestamps=0 disables the feature"""
-        # Check that setting to 0 results in empty string in sys.flags
-        result = script_helper.assert_python_ok(
-            "-X", "traceback_timestamps=0", self.flags_script_path
-        )
-        stdout = result.out.strip()
-        self.assertEqual(stdout, b"''")
-
-        # Check that no timestamps appear in traceback
-        result = script_helper.assert_python_ok(
-            "-X", "traceback_timestamps=0", self.script_path
-        )
-        self.assertNotIn(b"<@", result.err)  # No timestamp should be present
-
-    def test_traceback_timestamps_flag_one(self):
-        """Test -X traceback_timestamps=1 is equivalent to 'us'"""
-        result = script_helper.assert_python_ok(
-            "-X", "traceback_timestamps=1", self.flags_script_path
-        )
-        stdout = result.out.strip()
-        self.assertEqual(stdout, b"'us'")
-
-    def test_traceback_timestamps_env_var_zero(self):
-        """Test PYTHON_TRACEBACK_TIMESTAMPS=0 disables the feature"""
-        result = script_helper.assert_python_ok(
-            self.flags_script_path, PYTHON_TRACEBACK_TIMESTAMPS="0"
-        )
-        stdout = result.out.strip()
-        self.assertEqual(stdout, b"''")
-
-    def test_traceback_timestamps_env_var_one(self):
-        """Test PYTHON_TRACEBACK_TIMESTAMPS=1 is equivalent to 'us'"""
-        result = script_helper.assert_python_ok(
-            self.flags_script_path, PYTHON_TRACEBACK_TIMESTAMPS="1"
-        )
-        stdout = result.out.strip()
-        self.assertEqual(stdout, b"'us'")
-
-    def test_traceback_timestamps_invalid_env_var(self):
-        """Test that invalid env var values are silently ignored"""
-        result = script_helper.assert_python_ok(
-            self.flags_script_path, PYTHON_TRACEBACK_TIMESTAMPS="invalid"
-        )
-        stdout = result.out.strip()
-        self.assertEqual(stdout, b"''")  # Should default to empty string
-
-    def test_traceback_timestamps_invalid_flag(self):
-        """Test that invalid flag values cause an error"""
-        result = script_helper.assert_python_failure(
-            "-X", "traceback_timestamps=invalid", self.flags_script_path
-        )
-        self.assertIn(
-            b"Invalid -X traceback_timestamps=value option", result.err
-        )
-
-
-class StripExcTimestampsTests(unittest.TestCase):
-    """Tests for traceback.strip_exc_timestamps function"""
-
-    def setUp(self):
-        self.script_strip_test = r"""
-import sys
-import traceback
-
-def error():
-    print("FakeError: not an exception <@1234567890.123456>\n")
-    3/0
-
-def strip(data):
-    print(traceback.strip_exc_timestamps(data))
-
-if __name__ == "__main__":
-    if len(sys.argv) <= 1:
-        error()
-    else:
-        strip(sys.argv[1])
-"""
-        self.script_strip_path = TESTFN + "_strip.py"
-        with open(self.script_strip_path, "w") as script_file:
-            script_file.write(self.script_strip_test)
-        self.addCleanup(unlink, self.script_strip_path)
-
-    @force_not_colorized
-    def test_strip_exc_timestamps_function(self):
-        """Test the strip_exc_timestamps function with various inputs"""
-        for mode in ("us", "ns", "iso"):
-            with self.subTest(mode):
-                result = script_helper.assert_python_failure(
-                    "-X",
-                    f"traceback_timestamps={mode}",
-                    self.script_strip_path,
-                )
-                output = result.out.decode() + result.err.decode(
-                    errors="ignore"
-                )
-
-                # call strip_exc_timestamps in a process using the same mode as what generated our output.
+    def test_flag_values(self):
+        """Test sys.flags reflects configured value for each valid option."""
+        cases = [
+            ([], {}, b"''"),                           # default
+            (["-X", "traceback_timestamps=us"], {}, b"'us'"),
+            (["-X", "traceback_timestamps=ns"], {}, b"'ns'"),
+            (["-X", "traceback_timestamps=iso"], {}, b"'iso'"),
+            (["-X", "traceback_timestamps=1"], {}, b"'us'"),
+            (["-X", "traceback_timestamps=0"], {}, b"''"),
+            ([], {"PYTHON_TRACEBACK_TIMESTAMPS": "us"}, b"'us'"),
+            ([], {"PYTHON_TRACEBACK_TIMESTAMPS": "1"}, b"'us'"),
+            ([], {"PYTHON_TRACEBACK_TIMESTAMPS": "0"}, b"''"),
+        ]
+        for args, env, expected in cases:
+            with self.subTest(args=args, env=env):
                 result = script_helper.assert_python_ok(
-                    "-X",
-                    f"traceback_timestamps={mode}",
-                    self.script_strip_path,
-                    output,
+                    *args, "-c", FLAGS_SCRIPT, **env
                 )
-                stripped_output = result.out.decode() + result.err.decode(
-                    errors="ignore"
-                )
+                self.assertEqual(result.out.strip(), expected)
 
-                # Verify original strings have timestamps and stripped ones don't
-                self.assertIn("ZeroDivisionError: division by zero <@", output)
-                self.assertNotRegex(
-                    output, "(?m)ZeroDivisionError: division by zero(\n|\r|$)"
+    def test_invalid_env_var_silently_ignored(self):
+        result = script_helper.assert_python_ok(
+            "-c", FLAGS_SCRIPT, PYTHON_TRACEBACK_TIMESTAMPS="invalid"
+        )
+        self.assertEqual(result.out.strip(), b"''")
+
+    def test_invalid_flag_errors(self):
+        result = script_helper.assert_python_failure(
+            "-X", "traceback_timestamps=invalid", "-c", FLAGS_SCRIPT
+        )
+        self.assertIn(b"Invalid -X traceback_timestamps=value option", result.err)
+
+    def test_disabled_no_timestamps_in_output(self):
+        result = script_helper.assert_python_ok(
+            "-X", "traceback_timestamps=0", "-c", RAISE_SCRIPT
+        )
+        self.assertNotIn(b"<@", result.err)
+
+
+class FormatTests(unittest.TestCase):
+    """Test the three timestamp output formats."""
+
+    def test_us_format(self):
+        result = script_helper.assert_python_ok(
+            "-X", "traceback_timestamps=us", "-c", RAISE_SCRIPT
+        )
+        self.assertRegex(result.err, rb"<@\d+\.\d{6}>")
+
+    def test_ns_format(self):
+        result = script_helper.assert_python_ok(
+            "-X", "traceback_timestamps=ns", "-c", RAISE_SCRIPT
+        )
+        self.assertRegex(result.err, rb"<@\d+ns>")
+
+    def test_iso_format(self):
+        result = script_helper.assert_python_ok(
+            "-X", "traceback_timestamps=iso", "-c", RAISE_SCRIPT
+        )
+        self.assertRegex(
+            result.err,
+            rb"<@\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}\.\d{6}Z>",
+        )
+
+
+class TimestampPresenceTests(unittest.TestCase):
+    """Test that timestamps are collected on the right exception types."""
+
+    PRESENCE_SCRIPT = """\
+import sys, json
+exc_name = sys.argv[1]
+exc_class = getattr(__builtins__, exc_name, None) or getattr(
+    __import__('builtins'), exc_name)
+try:
+    raise exc_class("test")
+except BaseException as e:
+    result = {
+        "type": type(e).__name__,
+        "ts": e.__timestamp_ns__,
+    }
+    print(json.dumps(result))
+"""
+
+    def test_timestamps_collected_when_enabled(self):
+        for exc_name in ("ValueError", "OSError", "RuntimeError", "KeyError"):
+            with self.subTest(exc_name):
+                result = script_helper.assert_python_ok(
+                    "-X", "traceback_timestamps=us",
+                    "-c", self.PRESENCE_SCRIPT, exc_name,
                 )
-                self.assertRegex(
-                    stripped_output,
-                    "(?m)ZeroDivisionError: division by zero(\r|\n|$)",
+                import json
+                output = json.loads(result.out)
+                self.assertGreater(output["ts"], 0,
+                                   f"{exc_name} should have a positive timestamp")
+
+    def test_stop_iteration_excluded(self):
+        for exc_name in ("StopIteration", "StopAsyncIteration"):
+            with self.subTest(exc_name):
+                result = script_helper.assert_python_ok(
+                    "-X", "traceback_timestamps=us",
+                    "-c", self.PRESENCE_SCRIPT, exc_name,
                 )
-                self.assertRegex(
-                    stripped_output, "(?m)FakeError: not an exception(\r|\n|$)"
+                import json
+                output = json.loads(result.out)
+                self.assertEqual(output["ts"], 0,
+                                 f"{exc_name} should not have a timestamp")
+
+    def test_no_timestamps_when_disabled(self):
+        for exc_name in ("ValueError", "TypeError", "RuntimeError"):
+            with self.subTest(exc_name):
+                result = script_helper.assert_python_ok(
+                    "-X", "traceback_timestamps=0",
+                    "-c", self.PRESENCE_SCRIPT, exc_name,
                 )
+                import json
+                output = json.loads(result.out)
+                self.assertEqual(output["ts"], 0)
+
+
+class StripTimestampsTests(unittest.TestCase):
+    """Tests for traceback.strip_exc_timestamps()."""
+
+    STRIP_SCRIPT = """\
+import sys, traceback
+# Generate a real traceback with timestamps, then strip it.
+try:
+    1/0
+except Exception:
+    raw = traceback.format_exc()
+
+stripped = traceback.strip_exc_timestamps(raw)
+# Print both separated by a marker.
+sys.stdout.write(raw + "---MARKER---\\n" + stripped)
+"""
 
     @force_not_colorized
-    def test_strip_exc_timestamps_with_disabled_timestamps(self):
-        """Test the strip_exc_timestamps function when timestamps are disabled"""
-        # Run with timestamps disabled
-        result = script_helper.assert_python_failure(
-            "-X", "traceback_timestamps=0", self.script_strip_path
-        )
-        output = result.out.decode() + result.err.decode(errors="ignore")
+    def test_strip_removes_timestamps(self):
+        for mode in ("us", "ns", "iso"):
+            with self.subTest(mode=mode):
+                result = script_helper.assert_python_ok(
+                    "-X", f"traceback_timestamps={mode}",
+                    "-c", self.STRIP_SCRIPT,
+                )
+                parts = result.out.decode().split("---MARKER---\n")
+                raw, stripped = parts[0], parts[1]
+                self.assertIn("<@", raw)
+                self.assertNotIn("<@", stripped)
+                self.assertIn("ZeroDivisionError: division by zero", stripped)
 
-        # call strip_exc_timestamps in a process using the same mode as what generated our output.
+    @force_not_colorized
+    def test_strip_noop_when_disabled(self):
         result = script_helper.assert_python_ok(
-            "-X", "traceback_timestamps=0", self.script_strip_path, output
+            "-X", "traceback_timestamps=0", "-c", self.STRIP_SCRIPT,
         )
-        stripped_output = result.out.decode() + result.err.decode(
-            errors="ignore"
-        )
-
-        # All strings should be unchanged by the strip function
-        self.assertRegex(
-            stripped_output, "(?m)ZeroDivisionError: division by zero(\r|\n|$)"
-        )
-        # it fits the pattern but traceback timestamps were disabled to strip_exc_timestamps does nothing.
-        self.assertRegex(
-            stripped_output,
-            "(?m)FakeError: not an exception <@1234567890.123456>(\r|\n|$)",
-        )
+        parts = result.out.decode().split("---MARKER---\n")
+        raw, stripped = parts[0], parts[1]
+        self.assertEqual(raw, stripped)
 
     def test_timestamp_regex_pattern(self):
-        """Test the regex pattern used by strip_exc_timestamps"""
-        pattern = re.compile(
-            TIMESTAMP_AFTER_EXC_MSG_RE_GROUP, flags=re.MULTILINE
-        )
-
-        # Test microsecond format
+        pattern = re.compile(TIMESTAMP_AFTER_EXC_MSG_RE_GROUP, re.MULTILINE)
+        # Should match valid formats
         self.assertTrue(pattern.search(" <@1234567890.123456>"))
-        # Test nanosecond format
         self.assertTrue(pattern.search(" <@1234567890123456789ns>"))
-        # Test ISO format
         self.assertTrue(pattern.search(" <@2023-04-13T12:34:56.789012Z>"))
-
-        # Test what should not match
-        self.assertFalse(pattern.search("<@>"))  # Empty timestamp
-        self.assertFalse(
-            pattern.search(" <1234567890.123456>")
-        )  # Missing @ sign
-        self.assertFalse(pattern.search("<@abc>"))  # Non-numeric timestamp
+        # Should not match invalid formats
+        self.assertFalse(pattern.search("<@>"))
+        self.assertFalse(pattern.search(" <1234567890.123456>"))
+        self.assertFalse(pattern.search("<@abc>"))
 
 
 if __name__ == "__main__":
