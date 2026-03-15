@@ -803,6 +803,13 @@ class LongTests(unittest.TestCase):
                 self.assertEqual(pylongwriter_create(negative, digits), num,
                                  (negative, digits))
 
+    def test_bug_143050(self):
+        with support.adjust_int_max_str_digits(0):
+            int('-' + '0' * 7000, 10)
+            _testcapi.test_immortal_small_ints()
+            int('-' + '0' * 7000 + '123', 10)
+            _testcapi.test_immortal_small_ints()
+
 
 if __name__ == "__main__":
     unittest.main()
