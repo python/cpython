@@ -68,6 +68,8 @@ PyDoc_STRVAR(module_doc,
 "               specified key in the registry.\n"
 "QueryValueEx() - Retrieves the type and data for a specified value name\n"
 "                 associated with an open registry key.\n"
+"GetValue() - Retrieves the type and data for a specified registry value\n"
+"             without requiring the key to be opened first.\n"
 "QueryInfoKey() - Returns information about the specified key.\n"
 "SaveKey() - Saves the specified key, and all its subkeys a file.\n"
 "SetValue() - Associates a value with a specified key.\n"
@@ -2022,6 +2024,97 @@ winreg_DeleteTree_impl(PyObject *module, HKEY key, const wchar_t *sub_key)
 }
 
 /*[clinic input]
+winreg.GetValue
+
+    key: HKEY
+        An already open key, or any one of the predefined HKEY_* constants.
+    sub_key: Py_UNICODE(accept={str, NoneType})
+        A string that names the subkey with which the value is associated.
+        If this parameter is None or empty, the value will be read from key.
+    name: Py_UNICODE(accept={str, NoneType})
+        A string indicating the value to query.
+    flags: int(c_default='RRF_RT_ANY') = winreg.RRF_RT_ANY
+        Restrict the data type of value to be queried.
+    /
+
+Retrieves the type and data for the specified registry value.
+
+Behaves mostly like QueryValueEx(), but you needn't OpenKey() and CloseKey()
+if the key is any one of the predefined HKEY_* constants.
+
+The return value is a tuple of the value and the type_id.
+[clinic start generated code]*/
+
+static PyObject *
+winreg_GetValue_impl(PyObject *module, HKEY key, const wchar_t *sub_key,
+                     const wchar_t *name, int flags)
+/*[clinic end generated code: output=31668fd98e5cd5dc input=9f879d56439779e9]*/
+{
+    LONG rc;
+    BYTE *retBuf, *tmp;
+    DWORD bufSize = 0, retSize;
+    DWORD typ;
+    PyObject *obData;
+    PyObject *result;
+
+    if (PySys_Audit("winreg.GetValue", "nuui",
+                    (Py_ssize_t)key, sub_key, name, flags) < 0) {
+        return NULL;
+    }
+
+    /* First call to get the required buffer size */
+    Py_BEGIN_ALLOW_THREADS
+    rc = RegGetValueW(key, sub_key, name, flags, &typ, NULL, &bufSize);
+    Py_END_ALLOW_THREADS
+
+    if (rc == ERROR_MORE_DATA) {
+        bufSize = 256;
+    }
+    else if (rc != ERROR_SUCCESS) {
+        return PyErr_SetFromWindowsErrWithFunction(rc, "RegGetValue");
+    }
+
+    retBuf = (BYTE *)PyMem_Malloc(bufSize);
+    if (retBuf == NULL) {
+        return PyErr_NoMemory();
+    }
+
+    /* Second call to get the actual data */
+    while (1) {
+        retSize = bufSize;
+        Py_BEGIN_ALLOW_THREADS
+        rc = RegGetValueW(key, sub_key, name, flags, &typ,
+                          (BYTE *)retBuf, &retSize);
+        Py_END_ALLOW_THREADS
+        if (rc != ERROR_MORE_DATA) {
+            break;
+        }
+
+        bufSize *= 2;
+        tmp = (char *) PyMem_Realloc(retBuf, bufSize);
+        if (tmp == NULL) {
+            PyMem_Free(retBuf);
+            return PyErr_NoMemory();
+        }
+        retBuf = tmp;
+    }
+
+    if (rc != ERROR_SUCCESS) {
+        PyMem_Free(retBuf);
+        return PyErr_SetFromWindowsErrWithFunction(rc, "RegGetValue");
+    }
+
+    obData = Reg2Py(retBuf, retSize, typ);
+    PyMem_Free(retBuf);
+    if (obData == NULL) {
+        return NULL;
+    }
+    result = Py_BuildValue("Oi", obData, typ);
+    Py_DECREF(obData);
+    return result;
+}
+
+/*[clinic input]
 winreg.QueryReflectionKey
 
     key: HKEY
@@ -2096,6 +2189,7 @@ static struct PyMethodDef winreg_methods[] = {
     WINREG_SAVEKEY_METHODDEF
     WINREG_SETVALUE_METHODDEF
     WINREG_SETVALUEEX_METHODDEF
+    WINREG_GETVALUE_METHODDEF
     {NULL},
 };
 
@@ -2193,6 +2287,20 @@ exec_module(PyObject *m)
     ADD_INT(REG_RESOURCE_LIST);
     ADD_INT(REG_FULL_RESOURCE_DESCRIPTOR);
     ADD_INT(REG_RESOURCE_REQUIREMENTS_LIST);
+    ADD_INT(RRF_RT_ANY);
+    ADD_INT(RRF_RT_DWORD);
+    ADD_INT(RRF_RT_QWORD);
+    ADD_INT(RRF_RT_REG_BINARY);
+    ADD_INT(RRF_RT_REG_DWORD);
+    ADD_INT(RRF_RT_REG_EXPAND_SZ);
+    ADD_INT(RRF_RT_REG_MULTI_SZ);
+    ADD_INT(RRF_RT_REG_NONE);
+    ADD_INT(RRF_RT_REG_QWORD);
+    ADD_INT(RRF_RT_REG_SZ);
+    ADD_INT(RRF_NOEXPAND);
+    ADD_INT(RRF_ZEROONFAILURE);
+    ADD_INT(RRF_SUBKEY_WOW6464KEY);
+    ADD_INT(RRF_SUBKEY_WOW6432KEY);
 
 #undef ADD_INT
     return 0;
