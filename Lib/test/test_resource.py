@@ -55,7 +55,7 @@ class ResourceTest(unittest.TestCase):
             self.skipTest(f"getrlimit(RLIMIT_FSIZE) failed: {e}")
         if max_lim != resource.RLIM_INFINITY and max_lim < 1025:
             self.skipTest(f"system RLIMIT_FSIZE hard limit ({max_lim}) is too small for this test")
-        with open(os_helper.TESTFN, "wb") as f:
+        with open(os_helper.TESTFN, "wb", buffering=0) as f:
             try:
                 resource.setrlimit(resource.RLIMIT_FSIZE, (1024, max_lim))
                 f.write(b"X" * 1024)
