@@ -150,7 +150,7 @@ def setup_unraisable_hook() -> None:
     sys.unraisablehook = regrtest_unraisable_hook
 
 
-orig_threading_excepthook: Callable[..., None] | None = None
+orig_threading_excepthook: Callable[..., object] | None = None
 
 
 def regrtest_threading_excepthook(args) -> None:
