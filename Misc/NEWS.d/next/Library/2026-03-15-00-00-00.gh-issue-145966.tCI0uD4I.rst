@@ -1,0 +1,4 @@
+Fixed ``DIALECT_GETATTR`` macro in :mod:`csv` to only clear
+:exc:`AttributeError` exceptions. Previously, all exceptions (including
+:exc:`MemoryError` and :exc:`KeyboardInterrupt`) were silently suppressed
+when looking up dialect attributes.
