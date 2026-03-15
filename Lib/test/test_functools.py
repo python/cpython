@@ -62,7 +62,7 @@ class BadTuple(tuple):
     def __add__(self, other):
         return list(self) + list(other)
 
-class MyDict(frozendict):
+class MyDict(dict):
     pass
 
 class MyFrozenDict(frozendict):
