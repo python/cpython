@@ -1,4 +1,5 @@
 from test.test_json import CTest
+from test.support import gc_collect
 
 
 class BadBool:
@@ -111,3 +112,52 @@ class TestEncode(CTest):
         self.assertEqual(enc(['spam', {'ham': 'eggs'}], 3)[0], expected2)
         self.assertRaises(TypeError, enc, ['spam', {'ham': 'eggs'}], 3.0)
         self.assertRaises(TypeError, enc, ['spam', {'ham': 'eggs'}])
+
+    def test_mutate_dict_items_during_encode(self):
+        items = None
+
+        class BadDict(dict):
+            def items(self):
+                nonlocal items
+                items = [("boom", object())]
+                return items
+
+        def encode_str(obj):
+            nonlocal items
+            if items is not None:
+                items.clear()
+                items = None
+                gc_collect()
+            return '"x"'
+
+        encoder = self.json.encoder.c_make_encoder(
+            None, lambda o: "null",
+            encode_str, None,
+            ": ", ", ", False,
+            False, True
+        )
+
+        try:
+            encoder(BadDict(real=1), 0)
+        except (ValueError, RuntimeError):
+            pass
+
+    def test_mutate_list_during_encode(self):
+        lst = [object() for _ in range(10)]
+
+        def default(obj):
+            lst.clear()
+            gc_collect()
+            return None
+
+        encoder = self.json.encoder.c_make_encoder(
+            None, default,
+            self.json.encoder.c_encode_basestring, None,
+            ": ", ", ", False,
+            False, True
+        )
+
+        try:
+            encoder(lst, 0)
+        except (ValueError, RuntimeError):
+            pass
