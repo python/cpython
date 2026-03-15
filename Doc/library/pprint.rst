@@ -25,6 +25,9 @@ adjustable by the *width* parameter defaulting to 80 characters.
 .. versionchanged:: 3.10
    Added support for pretty-printing :class:`dataclasses.dataclass`.
 
+.. versionchanged:: 3.15
+   Added support for the :ref:`__pprint__ <dunder-pprint>` protocol.
+
 .. _pprint-functions:
 
 Functions
@@ -250,6 +253,34 @@ are converted to strings.  The default implementation uses the internals of the
    calls. The fourth argument, *level*, gives the current level; recursive calls
    should be passed a value less than that of the current call.
 
+.. _dunder-pprint:
+
+The "__pprint__" protocol
+-------------------------
+
+Pretty printing uses an object's ``__repr__`` by default.  For custom pretty printing, objects can
+implement a ``__pprint__()`` function to customize how their representations will be printed.  If this method
+exists, it is called instead of ``__repr__``.  The method is called with a single argument, the object to be
+pretty printed.
+
+The method is expected to return or yield a sequence of values, which are used to construct a pretty
+representation of the object.  These values are wrapped in standard class "chrome", such as the class name.
+The printed representation will usually look like a class constructor, with positional, keyword, and default
+arguments.  The values can be any of the following formats:
+
+* A single value, representing a positional argument.  The value itself is used.
+* A 2-tuple of ``(name, value)`` representing a keyword argument.  A representation of
+  ``name=value`` is used.
+* A 3-tuple of ``(name, value, default_value)`` representing a keyword argument with a default
+  value.  If ``value`` equals ``default_value``, then this tuple is skipped, otherwise
+  ``name=value`` is used.
+
+.. note::
+
+   This protocol is compatible with the `Rich library's pretty printing protocol
+   <https://rich.readthedocs.io/en/latest/pretty.html#rich-repr-protocol>`_.
+
+See the :ref:`pprint-protocol-example` for how this can be used in practice.
 
 .. _pprint-example:
 
@@ -415,3 +446,38 @@ cannot be split, the specified width will be exceeded::
     'requires_python': None,
     'summary': 'A sample Python project',
     'version': '1.2.0'}
+
+.. _pprint-protocol-example:
+
+Pretty Print Protocol Example
+-----------------------------
+
+Let's start with a simple class that defines a ``__pprint__()`` method:
+
+.. code-block:: python
+
+    class Bass:
+        def __init__(self, strings: int, pickups: str, active: bool=False):
+            self._strings = strings
+            self._pickups = pickups
+            self._active = active
+
+        def __pprint__(self):
+            yield self._strings
+            yield 'pickups', self._pickups
+            yield 'active', self._active, False
+
+    precision = Bass(4, 'split coil P', active=False)
+    stingray = Bass(5, 'humbucker', active=True)
+
+The ``__pprint__()`` method yields three values, which correspond to the ``__init__()`` arguments,
+showing by example each of the three different allowed formats.  Here is what the output looks like:
+
+.. code-block:: pycon
+
+    >>> pprint.pprint(precision)
+    Bass(4, pickups='split coil P')
+    >>> pprint.pprint(stingray)
+    Bass(5, pickups='humbucker', active=True)
+
+Note that you'd get exactly the same output if you used ``print(..., pretty=True)``.

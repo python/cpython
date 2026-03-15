@@ -1001,9 +1001,9 @@ _PyPegen_check_fstring_conversion(Parser *p, Token* conv_token, expr_ty conv)
 
     Py_UCS4 first = PyUnicode_READ_CHAR(conv->v.Name.id, 0);
     if (PyUnicode_GET_LENGTH(conv->v.Name.id) > 1 ||
-            !(first == 's' || first == 'r' || first == 'a')) {
+            !(first == 's' || first == 'r' || first == 'a' || first == 'p')) {
         RAISE_SYNTAX_ERROR_KNOWN_LOCATION(conv,
-                                            "%c-string: invalid conversion character %R: expected 's', 'r', or 'a'",
+                                            "%c-string: invalid conversion character %R: expected 's', 'r', 'a', or 'p'",
                                             TOK_GET_STRING_PREFIX(p->tok),
                                             conv->v.Name.id);
         return NULL;
