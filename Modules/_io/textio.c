@@ -672,7 +672,7 @@ struct textio
     int ok; /* initialized? */
     int detached;
     Py_ssize_t chunk_size;
-    /* Use helpers like _textiowrapper_buffer_get to access buffer; many
+    /* Use helpers _textiowrapper_buffer_* to access buffer; many
        operations can set it to NULL (ref: gh-143008, gh-142594). */
     PyObject *buffer;
     PyObject *encoding;
