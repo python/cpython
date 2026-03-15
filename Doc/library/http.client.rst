@@ -34,7 +34,8 @@ The module provides the following classes:
 
 
 .. class:: HTTPConnection(host, port=None[, timeout], source_address=None, \
-                          blocksize=8192, max_response_headers=None)
+                          blocksize=8192, continue_timeout=2.5, \
+                          max_response_headers=None)
 
    An :class:`HTTPConnection` instance represents one transaction with an HTTP
    server.  It should be instantiated by passing it a host and optional port
@@ -46,7 +47,10 @@ The module provides the following classes:
    The optional *source_address* parameter may be a tuple of a (host, port)
    to use as the source address the HTTP connection is made from.
    The optional *blocksize* parameter sets the buffer size in bytes for
-   sending a file-like message body. The optional *max_response_headers*
+   sending a file-like message body. The optional *continue_timeout*
+   parameter controls how long the connection will wait for a ``100 Continue``
+   response from the server before sending the body, if the request included
+   an ``Expect: 100-Continue`` header. The optional *max_response_headers*
    parameter sets the maximum number of allowed response headers to help
    prevent denial-of-service attacks, otherwise the default value (100) is used.
 
@@ -70,6 +74,9 @@ The module provides the following classes:
 
    .. versionchanged:: 3.15
       *max_response_headers* parameter was added.
+
+   .. versionchanged:: next
+      *continue_timeout* parameter was added.
 
 
 .. class:: HTTPSConnection(host, port=None, *[, timeout], \
@@ -335,10 +342,28 @@ HTTPConnection Objects
       No attempt is made to determine the Content-Length for file
       objects.
 
-.. method:: HTTPConnection.getresponse()
+   .. versionchanged:: next
+      If the headers include ``Expect: 100-Continue`` and *body* is set,
+      the body will not be sent until either a ``100 Continue`` response is
+      received from the server or the :class:`HTTPConnection`'s *continue_timeout*
+      is reached; if a response code other than 100 is received, the body
+      will not be sent at all.
+
+.. method:: HTTPConnection.getresponse(ignore_100_continue=True)
 
    Should be called after a request is sent to get the response from the server.
    Returns an :class:`HTTPResponse` instance.
+
+   By default, a server response of ``100 Continue`` will be ignored and the
+   call will not return until a response other than code 100 is received.
+   Setting *ignore_100_continue* to ``False`` will allow a 100 response to be
+   returned; you will then need to call :meth:`getresponse` a second time
+   (after transmitting the body) to get the final response.
+
+   .. note::
+
+      Note that you must have read the whole response before you can send a new
+      request to the server.
 
    .. versionchanged:: 3.5
       If a :exc:`ConnectionError` or subclass is raised, the
@@ -348,6 +373,10 @@ HTTPConnection Objects
       Note that this does not apply to :exc:`OSError`\s raised by the underlying
       socket. Instead the caller is responsible to call :meth:`close` on the
       existing connection.
+
+   .. versionchanged:: next
+      Added the *ignore_100_continue* parameter. (In prior versions
+      a ``Continue`` response was always ignored.)
 
 
 .. method:: HTTPConnection.set_debuglevel(level)
@@ -460,11 +489,17 @@ also send your request step by step, by using the four functions below.
    an argument.
 
 
-.. method:: HTTPConnection.endheaders(message_body=None, *, encode_chunked=False)
+.. method:: HTTPConnection.endheaders(message_body=None, *, encode_chunked=False, \
+                                      expect_continue=False)
 
    Send a blank line to the server, signalling the end of the headers. The
    optional *message_body* argument can be used to pass a message body
-   associated with the request.
+   associated with the request. If a body is provided, setting
+   *expect_continue* to ``True`` will wait for a ``100 Continue`` response
+   from the server before sending the body. (This should generally be
+   used only when an ``Expect: 100-Continue`` header has been sent.) If no
+   response is received within the :class:`HTTPConnection`'s *continue_timeout*,
+   the body will be sent regardless.
 
    If *encode_chunked* is ``True``, the result of each iteration of
    *message_body* will be chunk-encoded as specified in :rfc:`7230`,
@@ -484,6 +519,9 @@ also send your request step by step, by using the four functions below.
 
    .. versionchanged:: 3.6
       Added chunked encoding support and the *encode_chunked* parameter.
+
+   .. versionadded:: next
+      The *expect_continue* parameter was added.
 
 
 .. method:: HTTPConnection.send(data)
@@ -662,6 +700,48 @@ method attribute. Here is an example session that uses the ``PUT`` method::
     >>> response = conn.getresponse()
     >>> print(response.status, response.reason)
     200, OK
+
+Since version 3.15, conditional transmission of the body is supported when an
+``Expect: 100-Continue`` header is set. To use this in a simple case, just
+set the header, and optionally the time for which the client should wait for
+a ``100 Continue`` response before sending the body regardless::
+
+    >>> import http.client
+    >>> BODY = "***filecontents***"
+    >>> conn = http.client.HTTPConnection("localhost", 8080, continue_timeout=1.0)
+    >>> conn.request("PUT", "/file", BODY, headers={'Expect': '100-Continue'})
+    >>> response = conn.getresponse()
+    >>> # You will not see the '100' response, as it is handled internally
+    >>> print(response.status, response.reason)
+    200, OK
+
+Here is a more complex example in which we manually check the response and
+decide whether to send the body. This may be useful if the body must be
+generated by some resource-intensive process which should be skipped if the
+server will not accept it. ::
+
+    >>> import http.client
+    >>> conn = http.client.HTTPConnection("localhost", 8080)
+    >>> conn.putrequest("PUT", "/file")
+    >>> conn.putheader('Expect', '100-Continue')
+    >>> # Assuming you know in advance what the length will be
+    >>> # If not, you will need to encode it as chunked
+    >>> conn.putheader('Content-Length', '42')
+    >>> conn.endheaders()
+    >>> response = conn.getresponse(ignore_100_continue=False)
+    >>> print(response.status, response.reason)
+    100, Continue
+    >>> BODY = resource_intensive_calculation()
+    >>> conn.send(BODY)
+    >>> response = conn.getresponse()
+    >>> print(response.status, response.reason)
+    200, OK
+
+.. note::
+
+   The *continue_timeout* setting does not apply when directly using
+   :meth:`HTTPConnection.getresponse`, so use the above example only if you are confident
+   that the server respects the ``Expect: 100-Continue`` header.
 
 .. _httpmessage-objects:
 
