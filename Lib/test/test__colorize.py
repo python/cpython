@@ -178,5 +178,61 @@ class TestColorizeFunction(unittest.TestCase):
                 self.assertEqual(_colorize.can_colorize(file=file), False)
 
 
+class TestSyntaxColorizer(unittest.TestCase):
+    def test_gen_colors_keyword_highlighting(self):
+        cases = [
+            # no highlights
+            ("a.set", [(".", "op")]),
+            ("obj.list", [(".", "op")]),
+            ("obj.match", [(".", "op")]),
+            ("b. \\\n format", [(".", "op")]),
+            ("lazy", []),
+            ("lazy()", [('(', 'op'), (')', 'op')]),
+            # highlights
+            ("set", [("set", "builtin")]),
+            ("list", [("list", "builtin")]),
+            ("    \n dict", [("dict", "builtin")]),
+            (
+                "    lazy import",
+                [("lazy", "soft_keyword"), ("import", "keyword")],
+            ),
+            (
+                "lazy from cool_people import pablo",
+                [
+                    ("lazy", "soft_keyword"),
+                    ("from", "keyword"),
+                    ("import", "keyword"),
+                ],
+            ),
+            (
+                "if sad: lazy import happy",
+                [
+                    ("if", "keyword"),
+                    (":", "op"),
+                    ("lazy", "soft_keyword"),
+                    ("import", "keyword"),
+                ],
+            ),
+            (
+                "pass; lazy import z",
+                [
+                    ("pass", "keyword"),
+                    (";", "op"),
+                    ("lazy", "soft_keyword"),
+                    ("import", "keyword"),
+                ],
+            ),
+        ]
+        for code, expected_highlights in cases:
+            with self.subTest(code=code):
+                colors = list(_colorize._gen_colors(code))
+                # Extract (text, tag) pairs for comparison
+                actual_highlights = []
+                for color in colors:
+                    span_text = code[color.span.start:color.span.end + 1]
+                    actual_highlights.append((span_text, color.tag))
+                self.assertEqual(actual_highlights, expected_highlights)
+
+
 if __name__ == "__main__":
     unittest.main()
