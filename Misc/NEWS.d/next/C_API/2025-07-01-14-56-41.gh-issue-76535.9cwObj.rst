@@ -1,0 +1,1 @@
+Make :c:func:`PyUCS4_ToLower`, :c:func:`PyUCS4_ToUpper`, :c:func:`PyUCS4_ToTitle` and :c:func:`PyUCS4_ToFolded` public.
