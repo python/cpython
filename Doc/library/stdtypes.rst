@@ -360,8 +360,9 @@ Notes:
    alternative conversions.
 
 (4)
-   float also accepts the strings "nan" and "inf" with an optional prefix "+"
-   or "-" for Not a Number (NaN) and positive or negative infinity.
+   float also accepts the strings "nan" and "inf" with an optional prefix
+   sign "+" or "-" or Unicode minus sign "−" (U+2212) for Not a Number
+   (NaN) and positive or negative infinity.
 
 (5)
    Python defines ``pow(0, 0)`` and ``0 ** 0`` to be ``1``, as is common for

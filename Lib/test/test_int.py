@@ -55,16 +55,17 @@ class IntTestCases(unittest.TestCase):
         self.assertEqual(int(-3.5), -3)
         self.assertEqual(int("-3"), -3)
         self.assertEqual(int(" -3 "), -3)
+        self.assertEqual(int(" \N{MINUS SIGN}3 "), -3)
         self.assertEqual(int("\N{EM SPACE}-3\N{EN SPACE}"), -3)
         # Different base:
         self.assertEqual(int("10",16), 16)
         # Test conversion from strings and various anomalies
         for s, v in L:
-            for sign in "", "+", "-":
+            for sign in "", "+", "-", "\N{MINUS SIGN}":
                 for prefix in "", " ", "\t", "  \t\t  ":
                     ss = prefix + sign + s
                     vv = v
-                    if sign == "-" and v is not ValueError:
+                    if sign in ("-", "\N{MINUS SIGN}") and v is not ValueError:
                         vv = -v
                     try:
                         self.assertEqual(int(ss), vv)
@@ -238,6 +239,8 @@ class IntTestCases(unittest.TestCase):
         with self.assertRaises(ValueError):
             int('- 1')
         with self.assertRaises(ValueError):
+            int('\N{MINUS SIGN} 1')
+        with self.assertRaises(ValueError):
             int('+ 1')
         with self.assertRaises(ValueError):
             int(' + 1 ')
@@ -247,6 +250,7 @@ class IntTestCases(unittest.TestCase):
         self.assertEqual(int('١٢٣٤٥٦٧٨٩٠'), 1234567890)
         self.assertEqual(int("१२३४५६७८९०1234567890", 0), 12345678901234567890)
         self.assertEqual(int('١٢٣٤٥٦٧٨٩٠', 0), 1234567890)
+        self.assertEqual(int('\N{MINUS SIGN}١٢٣٤٥٦٧٨٩٠', 0), -1234567890)
 
     def test_underscores(self):
         for lit in VALID_UNDERSCORE_LITERALS:
@@ -558,6 +562,7 @@ class IntStrDigitLimitsTests(unittest.TestCase):
         int_class('1' * maxdigits + ' ')
         int_class('+' + '1' * maxdigits)
         int_class('-' + '1' * maxdigits)
+        int_class('\N{MINUS SIGN}' + '1' * maxdigits)
         self.assertEqual(len(str(10 ** (maxdigits - 1))), maxdigits)
 
     def check(self, i, base=None):
@@ -575,6 +580,7 @@ class IntStrDigitLimitsTests(unittest.TestCase):
         self.check('1' * (maxdigits + 1) + ' ')
         self.check('+' + '1' * (maxdigits + 1))
         self.check('-' + '1' * (maxdigits + 1))
+        self.check('\N{MINUS SIGN}' + '1' * (maxdigits + 1))
         self.check('1' * (maxdigits + 1))
 
         i = 10 ** maxdigits
@@ -688,6 +694,8 @@ class IntStrDigitLimitsTests(unittest.TestCase):
         assert i == pos_i
         neg_i = int_class(f'-{s}')
         assert -pos_i == neg_i
+        neg_i = int_class(f'\N{MINUS SIGN}{s}')
+        assert -pos_i == neg_i
         str(pos_i)
         str(neg_i)
 
@@ -799,6 +807,8 @@ class PyLongModuleTests(unittest.TestCase):
         assert -v1 == v3
         v4 = int(' +' + s + ' ')
         assert v1 == v4
+        v5 = int(' \N{MINUS SIGN}' + s)
+        assert -v1 == v5
         with self.assertRaises(ValueError) as err:
             int(s + 'z')
         with self.assertRaises(ValueError) as err:
