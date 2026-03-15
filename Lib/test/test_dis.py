@@ -1035,7 +1035,8 @@ class DisTests(DisTestBase):
         long_opcodes = set(['JUMP_BACKWARD_NO_INTERRUPT',
                             'LOAD_FAST_BORROW_LOAD_FAST_BORROW',
                             'INSTRUMENTED_CALL_FUNCTION_EX',
-                            'ANNOTATIONS_PLACEHOLDER'])
+                            'ANNOTATIONS_PLACEHOLDER',
+                            'MATCH_CLASS_ISINSTANCE'])
         for op, opname in enumerate(dis.opname):
             if opname in long_opcodes or opname.startswith("INSTRUMENTED"):
                 continue

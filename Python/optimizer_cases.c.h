@@ -2648,6 +2648,13 @@
             break;
         }
 
+        case _MATCH_CLASS_ISINSTANCE: {
+            JitOptRef res;
+            res = sym_new_not_null(ctx);
+            stack_pointer[-1] = res;
+            break;
+        }
+
         case _MATCH_CLASS: {
             JitOptRef names;
             JitOptRef type;

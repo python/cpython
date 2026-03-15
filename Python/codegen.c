@@ -6069,6 +6069,24 @@ validate_kwd_attrs(compiler *c, asdl_identifier_seq *attrs, asdl_pattern_seq* pa
 }
 
 static int
+codegen_pattern_class_fast(compiler *c, pattern_ty p, pattern_context *pc)
+{
+    NEW_JUMP_TARGET_LABEL(c, end);
+    assert(p->kind == MatchClass_kind);
+    assert(!asdl_seq_LEN(p->v.MatchClass.patterns));
+    assert(!asdl_seq_LEN(p->v.MatchClass.kwd_attrs));
+    VISIT(c, expr, p->v.MatchClass.cls);
+    ADDOP(c, LOC(p), MATCH_CLASS_ISINSTANCE);
+    // TOS is now subject:
+    pc->on_top++;
+    RETURN_IF_ERROR(jump_to_fail_pop(c, LOC(p), pc, POP_JUMP_IF_FALSE));
+    pc->on_top--;
+    // Success! POP subject:
+    ADDOP(c, LOC(p), POP_TOP);
+    return SUCCESS;
+}
+
+static int
 codegen_pattern_class(compiler *c, pattern_ty p, pattern_context *pc)
 {
     assert(p->kind == MatchClass_kind);
@@ -6090,6 +6108,10 @@ codegen_pattern_class(compiler *c, pattern_ty p, pattern_context *pc)
     }
     if (nattrs) {
         RETURN_IF_ERROR(validate_kwd_attrs(c, kwd_attrs, kwd_patterns));
+    }
+    if (!nargs && !nattrs) {
+        // Fast path if there are no sub-patterns
+        return codegen_pattern_class_fast(c, p, pc);
     }
     VISIT(c, expr, p->v.MatchClass.cls);
     PyObject *attr_names = PyTuple_New(nattrs);

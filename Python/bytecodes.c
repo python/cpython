@@ -3254,6 +3254,22 @@ dummy_func(
             len = PyStackRef_FromPyObjectSteal(len_o);
         }
 
+        inst(MATCH_CLASS_ISINSTANCE, (subject, type -- subject, res)) {
+            PyObject *subject_o = PyStackRef_AsPyObjectBorrow(subject);
+            PyObject *type_o = PyStackRef_AsPyObjectBorrow(type);
+            if (!PyType_Check(type_o)) {
+                const char *e = "called match pattern must be a class";
+                _PyErr_Format(tstate, PyExc_TypeError, e);
+                PyStackRef_CLOSE(type);
+                ERROR_IF(true);
+            }
+            int retval = PyObject_IsInstance(subject_o, type_o);
+            PyStackRef_CLOSE(type);
+            ERROR_IF(retval < 0);
+            assert(!_PyErr_Occurred(tstate));
+            res = retval ? PyStackRef_True : PyStackRef_False;
+        }
+
         op(_MATCH_CLASS, (subject, type, names -- attrs, s, tp, n)) {
             // Pop TOS and TOS1. Set TOS to a tuple of attributes on success, or
             // None on failure.
