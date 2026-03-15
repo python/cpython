@@ -1,0 +1,1 @@
+Optimize :mod:`json` decoding with ``object_pairs_hook`` by using :c:func:`PyTuple_FromArray` instead of :c:func:`PyTuple_Pack`.
