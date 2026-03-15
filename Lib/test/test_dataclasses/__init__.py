@@ -4186,6 +4186,23 @@ class TestDescriptors(unittest.TestCase):
         with self.assertRaisesRegex(TypeError, 'missing 1 required positional argument'):
             c = C()
 
+    def test_return_self_no_default_value(self):
+        class D:
+            def __get__(self, instance: Any, owner: object) -> Any:
+                if instance is None:
+                    return self
+                return instance._x
+
+            def __set__(self, instance: Any, value: int) -> None:
+                instance._x = value
+
+        @dataclass
+        class C:
+            i: D = D()
+
+        with self.assertRaisesRegex(TypeError, 'missing 1 required positional argument'):
+            c = C()
+
 class TestStringAnnotations(unittest.TestCase):
     def test_classvar(self):
         # Some expressions recognized as ClassVar really aren't.  But
