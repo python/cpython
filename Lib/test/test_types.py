@@ -43,7 +43,8 @@ class TypesTests(unittest.TestCase):
     def test_names(self):
         c_only_names = {'CapsuleType', 'LazyImportType'}
         ignored = {'new_class', 'resolve_bases', 'prepare_class',
-                   'get_original_bases', 'DynamicClassAttribute', 'coroutine'}
+                   'get_original_bases', 'DynamicClassAttribute', 'coroutine',
+                   'lookup_special'}
 
         for name in c_types.__all__:
             if name not in c_only_names | ignored:
@@ -59,7 +60,7 @@ class TypesTests(unittest.TestCase):
             'MemberDescriptorType', 'MethodDescriptorType', 'MethodType',
             'MethodWrapperType', 'ModuleType', 'NoneType',
             'NotImplementedType', 'SimpleNamespace', 'TracebackType',
-            'UnionType', 'WrapperDescriptorType',
+            'UnionType', 'WrapperDescriptorType', 'lookup_special',
         }
         self.assertEqual(all_names, set(c_types.__all__))
         self.assertEqual(all_names - c_only_names, set(py_types.__all__))
@@ -725,6 +726,64 @@ class TypesTests(unittest.TestCase):
         frame = inspect.currentframe()
         self.assertIsNotNone(frame)
         self.assertIsInstance(frame.f_locals, types.FrameLocalsProxyType)
+
+    def _test_lookup_special(self, lookup):
+        class CM1:
+            def __enter__(self):
+                return "__enter__ from class __dict__"
+
+        class CM2:
+            def __init__(self):
+                def __enter__(self):
+                    return "__enter__ from instance __dict__"
+                self.__enter__ = __enter__
+
+        class CM3:
+            __slots__ = ("__enter__",)
+            def __init__(self):
+                def __enter__(self):
+                    return "__enter__ from __slots__"
+                self.__enter__ = __enter__
+        cm1 = CM1()
+        with self.assertRaisesRegex(TypeError, "attribute name must be string"):
+            lookup(cm1, 123)
+        with self.assertRaises(AttributeError):
+            lookup(cm1, "__missing__")
+        self.assertEqual(lookup(cm1, "__missing__", "default"), "default")
+        meth = lookup(cm1, "__enter__")
+        self.assertEqual(meth(), "__enter__ from class __dict__")
+
+        cm2 = CM2()
+        with self.assertRaises(AttributeError):
+            lookup(cm2, "__enter__")
+
+        cm3 = CM3()
+        meth = lookup(cm3, "__enter__")
+        self.assertEqual(meth(cm3), "__enter__ from __slots__")
+
+        meth = lookup([], "__len__")
+        self.assertEqual(meth(), 0)
+
+        class Person:
+            @classmethod
+            def hi(cls):
+                return f"hi from {cls.__name__}"
+            @staticmethod
+            def hello():
+                return "hello from static method"
+            @property
+            def name(self):
+                return "name from property"
+        p = Person()
+        self.assertEqual(lookup(p, "hi")(), "hi from Person")
+        self.assertEqual(lookup(p, "hello")(), "hello from static method")
+        self.assertEqual(lookup(p, "name"), "name from property")
+
+    def test_lookup_special(self):
+        c_lookup = getattr(c_types, "lookup_special")
+        py_lookup = getattr(py_types, "lookup_special")
+        self._test_lookup_special(c_lookup)
+        self._test_lookup_special(py_lookup)
 
 
 class UnionTests(unittest.TestCase):

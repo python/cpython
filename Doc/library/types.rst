@@ -521,6 +521,16 @@ Additional Utility Classes and Functions
 
    .. versionadded:: 3.4
 
+.. function:: lookup_special(object, name, /)
+              lookup_special(object, name, default, /)
+
+   Lookup method name *name* on *object* skipping the instance dictionary.
+   *name* must be a string. If the named special attribute does not exist,
+   *default* is returned if provided, otherwise :exc:`AttributeError` is
+   raised.
+
+   .. versionadded:: next
+
 
 Coroutine Utility Functions
 ---------------------------
