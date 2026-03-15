@@ -99,9 +99,9 @@ jobs:
           - false
         include:
           - target: x86_64-apple-darwin/clang
-            runner: macos-15-intel
+            runner: macos-26-intel
           - target: aarch64-apple-darwin/clang
-            runner: macos-14
+            runner: macos-26
     steps:
       - uses: actions/checkout@v6
         with:
