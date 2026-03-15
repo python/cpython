@@ -219,7 +219,7 @@ _POST_INIT_NAME = '__post_init__'
 # String regex that string annotations for ClassVar or InitVar must match.
 # Allows "identifier.identifier[" or "identifier[".
 # https://bugs.python.org/issue33453 for details.
-_MODULE_IDENTIFIER_RE = re.compile(r'^(?:\s*(\w+)\s*\.)?\s*(\w+)')
+_MODULE_IDENTIFIER_RE = re.compile(r'^\s*(\w+(?:\s*\.\s*\w+)*)')
 
 # Atomic immutable types which don't require any recursive handling and for which deepcopy
 # returns the same object. We can provide a fast-path for these types in asdict and astuple.
@@ -763,22 +763,16 @@ def _is_kw_only(a_type, dataclasses):
     return a_type is dataclasses.KW_ONLY
 
 
-def _is_type(annotation, cls, a_module, a_type, is_type_predicate):
-    # Given a type annotation string, does it refer to a_type in
-    # a_module?  For example, when checking that annotation denotes a
-    # ClassVar, then a_module is typing, and a_type is
-    # typing.ClassVar.
+def _get_type_from_annotation(annotation, cls):
+    # Loosely parse a string annotation and return its type.
 
-    # It's possible to look up a_module given a_type, but it involves
-    # looking in sys.modules (again!), and seems like a waste since
-    # the caller already knows a_module.
+    # We can't perform a full type hint evaluation at the point where @dataclass
+    # was invoked because class's module is not fully initialized yet. So we resort
+    # to parsing string annotation using regexp, and extracting a type before
+    # the first square bracket.
 
     # - annotation is a string type annotation
     # - cls is the class that this annotation was found in
-    # - a_module is the module we want to match
-    # - a_type is the type in that module we want to match
-    # - is_type_predicate is a function called with (obj, a_module)
-    #   that determines if obj is of the desired type.
 
     # Since this test does not do a local namespace lookup (and
     # instead only a module (global) lookup), there are some things it
@@ -805,21 +799,18 @@ def _is_type(annotation, cls, a_module, a_type, is_type_predicate):
     # that's defined.  It was judged not worth it.
 
     match = _MODULE_IDENTIFIER_RE.match(annotation)
-    if match:
-        ns = None
-        module_name = match.group(1)
-        if not module_name:
-            # No module name, assume the class's module did
-            # "from dataclasses import InitVar".
-            ns = sys.modules.get(cls.__module__).__dict__
-        else:
-            # Look up module_name in the class's module.
-            module = sys.modules.get(cls.__module__)
-            if module and module.__dict__.get(module_name) is a_module:
-                ns = sys.modules.get(a_type.__module__).__dict__
-        if ns and is_type_predicate(ns.get(match.group(2)), a_module):
-            return True
-    return False
+    if not match:
+        return None
+
+    # Note: _MODULE_IDENTIFIER_RE guarantees that path is non-empty
+    path = match.group(1).split(".")
+    root = sys.modules.get(cls.__module__)
+    for path_item in path:
+        root = getattr(root, path_item.strip(), None)
+        if root is None:
+            return None
+
+    return root
 
 
 def _get_field(cls, a_name, a_type, default_kw_only):
@@ -857,6 +848,10 @@ def _get_field(cls, a_name, a_type, default_kw_only):
     # is actually of the correct type.
 
     # For the complete discussion, see https://bugs.python.org/issue33453
+    if isinstance(a_type, str):
+        a_type_annotation = _get_type_from_annotation(a_type, cls)
+    else:
+        a_type_annotation = a_type
 
     # If typing has not been imported, then it's impossible for any
     # annotation to be a ClassVar.  So, only look for ClassVar if
@@ -864,10 +859,7 @@ def _get_field(cls, a_name, a_type, default_kw_only):
     # module).
     typing = sys.modules.get('typing')
     if typing:
-        if (_is_classvar(a_type, typing)
-            or (isinstance(f.type, str)
-                and _is_type(f.type, cls, typing, typing.ClassVar,
-                             _is_classvar))):
+        if _is_classvar(a_type_annotation, typing):
             f._field_type = _FIELD_CLASSVAR
 
     # If the type is InitVar, or if it's a matching string annotation,
@@ -876,10 +868,7 @@ def _get_field(cls, a_name, a_type, default_kw_only):
         # The module we're checking against is the module we're
         # currently in (dataclasses.py).
         dataclasses = sys.modules[__name__]
-        if (_is_initvar(a_type, dataclasses)
-            or (isinstance(f.type, str)
-                and _is_type(f.type, cls, dataclasses, dataclasses.InitVar,
-                             _is_initvar))):
+        if _is_initvar(a_type_annotation, dataclasses):
             f._field_type = _FIELD_INITVAR
 
     # Validations for individual fields.  This is delayed until now,
@@ -1050,10 +1039,11 @@ def _process_class(cls, init, repr, eq, order, unsafe_hash, frozen,
     dataclasses = sys.modules[__name__]
     for name, type in cls_annotations.items():
         # See if this is a marker to change the value of kw_only.
-        if (_is_kw_only(type, dataclasses)
-            or (isinstance(type, str)
-                and _is_type(type, cls, dataclasses, dataclasses.KW_ONLY,
-                             _is_kw_only))):
+        if isinstance(type, str):
+            a_type_annotation = _get_type_from_annotation(type, cls)
+        else:
+            a_type_annotation = type
+        if _is_kw_only(a_type_annotation, dataclasses):
             # Switch the default to kw_only=True, and ignore this
             # annotation: it's not a real field.
             if KW_ONLY_seen:
