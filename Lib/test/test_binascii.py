@@ -47,14 +47,43 @@ class BinASCIITest(unittest.TestCase):
         self.assertIsSubclass(binascii.Incomplete, Exception)
 
     def test_constants(self):
-        for name in ('BASE64_ALPHABET', 'URLSAFE_BASE64_ALPHABET',
-                     'CRYPT_ALPHABET', 'BCRYPT_ALPHABET',
-                     'UU_ALPHABET', 'XX_ALPHABET',
-                     'BINHEX_ALPHABET'):
-            value = getattr(binascii, name)
-            self.assertIsInstance(value, bytes)
-            self.assertEqual(len(value), 64)
-            self.assertEqual(len(set(value)), 64)
+        self.assertEqual(binascii.BASE64_ALPHABET,
+                         b'ABCDEFGHIJKLMNOPQRSTUVWXYZ'
+                         b'abcdefghijklmnopqrstuvwxyz'
+                         b'0123456789+/')
+        self.assertEqual(binascii.URLSAFE_BASE64_ALPHABET,
+                         binascii.BASE64_ALPHABET[:-2] + b'-_')
+        self.assertEqual(binascii.CRYPT_ALPHABET,
+                         b'./0123456789'
+                         b'ABCDEFGHIJKLMNOPQRSTUVWXYZ'
+                         b'abcdefghijklmnopqrstuvwxyz')
+        self.assertEqual(binascii.BCRYPT_ALPHABET,
+                         b'./'
+                         b'ABCDEFGHIJKLMNOPQRSTUVWXYZ'
+                         b'abcdefghijklmnopqrstuvwxyz'
+                         b'0123456789')
+        self.assertEqual(binascii.UU_ALPHABET, bytes(range(32, 32+64)))
+        self.assertEqual(binascii.XX_ALPHABET,
+                         b'+-0123456789'
+                         b'ABCDEFGHIJKLMNOPQRSTUVWXYZ'
+                         b'abcdefghijklmnopqrstuvwxyz')
+        self.assertEqual(binascii.BINHEX_ALPHABET,
+                         b'!"#$%&\'()*+,-012345689'
+                         b'@ABCDEFGHIJKLMNPQRSTUVXYZ['
+                         b'`abcdefhijklmpqr')
+
+        self.assertEqual(binascii.BASE85_ALPHABET,
+                         b'0123456789'
+                         b'ABCDEFGHIJKLMNOPQRSTUVWXYZ'
+                         b'abcdefghijklmnopqrstuvwxyz'
+                         b'!#$%&()*+-;<=>?@^_`{|}~')
+        self.assertEqual(binascii.ASCII85_ALPHABET, bytes(range(33, 33+85)))
+        self.assertEqual(binascii.Z85_ALPHABET,
+                         b'0123456789'
+                         b'abcdefghijklmnopqrstuvwxyz'
+                         b'ABCDEFGHIJKLMNOPQRSTUVWXYZ'
+                         b'.-:+=^!/*?&<>()[]{}@%$#')
+
         for name in ('BASE85_ALPHABET', 'ASCII85_ALPHABET',
                      'Z85_ALPHABET'):
             value = getattr(binascii, name)
@@ -323,10 +352,7 @@ class BinASCIITest(unittest.TestCase):
                     b'ABCDEFGHIJKLMNPQRSTUVXYZ[`abcdefhijklmpqr')
         data = self.type2test(self.rawdata)
         encoded = binascii.b2a_base64(data, alphabet=alphabet)
-        std_alphabet = (b'ABCDEFGHIJKLMNOPQRSTUVWXYZ'
-                        b'abcdefghijklmnopqrstuvwxyz'
-                        b'0123456789+/')
-        trans = bytes.maketrans(std_alphabet, alphabet)
+        trans = bytes.maketrans(binascii.BASE64_ALPHABET, alphabet)
         expected = binascii.b2a_base64(data).translate(trans)
         self.assertEqual(encoded, expected)
         self.assertEqual(binascii.a2b_base64(encoded, alphabet=alphabet), self.rawdata)
@@ -336,24 +362,17 @@ class BinASCIITest(unittest.TestCase):
         self.assertEqual(binascii.b2a_base64(data, alphabet=alphabet), b'\n')
         self.assertEqual(binascii.a2b_base64(data, alphabet=alphabet), b'')
 
-        with self.assertRaises(TypeError):
-            binascii.b2a_base64(data, alphabet=None)
-        with self.assertRaises(TypeError):
-            binascii.a2b_base64(data, alphabet=None)
-        with self.assertRaises(TypeError):
-            binascii.b2a_base64(data, alphabet=alphabet.decode())
-        with self.assertRaises(TypeError):
-            binascii.a2b_base64(data, alphabet=alphabet.decode())
+        for func in binascii.b2a_base64, binascii.a2b_base64:
+            with self.assertRaises(TypeError):
+                func(data, alphabet=None)
+            with self.assertRaises(TypeError):
+                func(data, alphabet=alphabet.decode())
+            with self.assertRaises(ValueError):
+                func(data, alphabet=alphabet[:-1])
+            with self.assertRaises(ValueError):
+                func(data, alphabet=alphabet+b'?')
         with self.assertRaises(TypeError):
             binascii.a2b_base64(data, alphabet=bytearray(alphabet))
-        with self.assertRaises(ValueError):
-            binascii.b2a_base64(data, alphabet=alphabet[:-1])
-        with self.assertRaises(ValueError):
-            binascii.a2b_base64(data, alphabet=alphabet[:-1])
-        with self.assertRaises(ValueError):
-            binascii.b2a_base64(data, alphabet=alphabet+b'?')
-        with self.assertRaises(ValueError):
-            binascii.a2b_base64(data, alphabet=alphabet+b'?')
 
     def test_ascii85_valid(self):
         # Test Ascii85 with valid data
@@ -645,9 +664,7 @@ class BinASCIITest(unittest.TestCase):
                     b'ABCDEFGHIJKLMNOPQRSTUVWXYZ.-:+=^!/*?&<>()[]{}@%$#')
         data = self.type2test(self.rawdata)
         encoded = binascii.b2a_base85(data, alphabet=alphabet)
-        std_alphabet = (b'0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZ'
-                        b'abcdefghijklmnopqrstuvwxyz!#$%&()*+-;<=>?@^_`{|}~')
-        trans = bytes.maketrans(std_alphabet, alphabet)
+        trans = bytes.maketrans(binascii.BASE85_ALPHABET, alphabet)
         expected = binascii.b2a_base85(data).translate(trans)
         self.assertEqual(encoded, expected)
         self.assertEqual(binascii.a2b_base85(encoded, alphabet=alphabet), self.rawdata)
@@ -657,24 +674,17 @@ class BinASCIITest(unittest.TestCase):
         self.assertEqual(binascii.b2a_base85(data, alphabet=alphabet), b'')
         self.assertEqual(binascii.a2b_base85(data, alphabet=alphabet), b'')
 
+        for func in binascii.b2a_base85, binascii.a2b_base85:
+            with self.assertRaises(TypeError):
+                func(data, alphabet=None)
+            with self.assertRaises(TypeError):
+                func(data, alphabet=alphabet.decode())
+            with self.assertRaises(ValueError):
+                func(data, alphabet=alphabet[:-1])
+            with self.assertRaises(ValueError):
+                func(data, alphabet=alphabet+b'?')
         with self.assertRaises(TypeError):
-            binascii.b2a_base85(data, alphabet=None)
-        with self.assertRaises(TypeError):
-            binascii.a2b_base85(data, alphabet=None)
-        with self.assertRaises(TypeError):
-            binascii.b2a_base85(data, alphabet=alphabet.decode())
-        with self.assertRaises(TypeError):
-            binascii.a2b_base85(data, alphabet=alphabet.decode())
-        with self.assertRaises(TypeError):
-            binascii.a2b_base85(data, alphabet=bytearray(alphabet))
-        with self.assertRaises(ValueError):
-            binascii.b2a_base85(data, alphabet=alphabet[:-1])
-        with self.assertRaises(ValueError):
-            binascii.a2b_base85(data, alphabet=alphabet[:-1])
-        with self.assertRaises(ValueError):
-            binascii.b2a_base85(data, alphabet=alphabet+b'?')
-        with self.assertRaises(ValueError):
-            binascii.a2b_base85(data, alphabet=alphabet+b'?')
+            binascii.a2b_base64(data, alphabet=bytearray(alphabet))
 
     def test_uu(self):
         MAX_UU = 45
