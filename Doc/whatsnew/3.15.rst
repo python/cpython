@@ -389,6 +389,9 @@ Improved error messages
 
   .. code-block:: python
 
+     from dataclasses import dataclass
+     from math import pi
+
      @dataclass
      class Circle:
         radius: float
