@@ -337,8 +337,14 @@ class Morsel(dict):
             key = key.lower()
             if key not in self._reserved:
                 raise CookieError("Invalid attribute %r" % (key,))
+            if _has_control_character(key, val):
+                raise CookieError(f"Control characters are not allowed in cookies {key!r} {val!r}")
             data[key] = val
         dict.update(self, data)
+
+    def __ior__(self, values):
+        self.update(values)
+        return self
 
     def isReservedKey(self, K):
         return K.lower() in self._reserved
@@ -379,13 +385,16 @@ class Morsel(dict):
 
     def js_output(self, attrs=None):
         # Print javascript
+        output_string = self.OutputString(attrs)
+        if _has_control_character(output_string):
+            raise CookieError("Control characters are not allowed in cookies")
         return """
         <script type="text/javascript">
         <!-- begin hiding
         document.cookie = \"%s\";
         // end hiding -->
         </script>
-        """ % (self.OutputString(attrs).replace('"', r'\"'))
+        """ % (output_string.replace('"', r'\"'))
 
     def OutputString(self, attrs=None):
         # Build up our result
