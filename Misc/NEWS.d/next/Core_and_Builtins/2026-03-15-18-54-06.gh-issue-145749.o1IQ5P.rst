@@ -1,0 +1,1 @@
+Named exception blocks are now faster as they no longer use a `DELETE_FAST` instruction.
