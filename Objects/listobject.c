@@ -1439,7 +1439,7 @@ list_extend_dictitems(PyListObject *self, PyDictObject *dict)
     Py_ssize_t i = 0;
     PyObject *key_value[2];
     while (_PyDict_Next((PyObject *)dict, &pos, &key_value[0], &key_value[1], NULL)) {
-        PyObject *item = PyTuple_FromArray(key_value, 2);
+        PyObject *item = _PyTuple_FromPair(key_value[0], key_value[1]);
         if (item == NULL) {
             Py_SET_SIZE(self, m + i);
             return -1;

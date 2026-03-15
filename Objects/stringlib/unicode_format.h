@@ -4,6 +4,7 @@
 
 #include "pycore_complexobject.h" // _PyComplex_FormatAdvancedWriter()
 #include "pycore_floatobject.h"   // _PyFloat_FormatAdvancedWriter()
+#include "pycore_tuple.h"         // _PyTuple_FromPairSteal
 
 /************************************************************************/
 /***********   Global data structures and forward declarations  *********/
@@ -1183,7 +1184,8 @@ fieldnameiter_next(PyObject *op)
             goto done;
 
         /* return a tuple of values */
-        result = PyTuple_Pack(2, is_attr_obj, obj);
+        result = _PyTuple_FromPairSteal(is_attr_obj, obj);
+        return result;
 
     done:
         Py_XDECREF(is_attr_obj);
@@ -1274,7 +1276,8 @@ formatter_field_name_split(PyObject *Py_UNUSED(module), PyObject *self)
         goto done;
 
     /* return a tuple of values */
-    result = PyTuple_Pack(2, first_obj, it);
+    result = _PyTuple_FromPairSteal(first_obj, (PyObject *)it);
+    return result;
 
 done:
     Py_XDECREF(it);

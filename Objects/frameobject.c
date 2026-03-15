@@ -13,6 +13,7 @@
 #include "pycore_object.h"        // _PyObject_GC_UNTRACK()
 #include "pycore_opcode_metadata.h" // _PyOpcode_Caches
 #include "pycore_optimizer.h"     // _Py_Executors_InvalidateDependency()
+#include "pycore_tuple.h"         // _PyTuple_FromPair
 #include "pycore_unicodeobject.h" // _PyUnicode_Equal()
 
 #include "frameobject.h"          // PyFrameLocalsProxyObject
@@ -630,22 +631,19 @@ framelocalsproxy_items(PyObject *self, PyObject *Py_UNUSED(ignored))
         PyObject *value = framelocalsproxy_getval(frame->f_frame, co, i);
 
         if (value) {
-            PyObject *pair = PyTuple_Pack(2, name, value);
+            PyObject *pair = _PyTuple_FromPairSteal(Py_NewRef(name), value);
             if (pair == NULL) {
                 Py_DECREF(items);
-                Py_DECREF(value);
                 return NULL;
             }
 
             if (PyList_Append(items, pair) < 0) {
                 Py_DECREF(items);
                 Py_DECREF(pair);
-                Py_DECREF(value);
                 return NULL;
             }
 
             Py_DECREF(pair);
-            Py_DECREF(value);
         }
     }
 
@@ -655,7 +653,7 @@ framelocalsproxy_items(PyObject *self, PyObject *Py_UNUSED(ignored))
         PyObject *key = NULL;
         PyObject *value = NULL;
         while (PyDict_Next(frame->f_extra_locals, &j, &key, &value)) {
-            PyObject *pair = PyTuple_Pack(2, key, value);
+            PyObject *pair = _PyTuple_FromPair(key, value);
             if (pair == NULL) {
                 Py_DECREF(items);
                 return NULL;

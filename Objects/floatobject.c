@@ -16,6 +16,7 @@
 #include "pycore_pystate.h"       // _PyInterpreterState_GET()
 #include "pycore_stackref.h"      // PyStackRef_AsPyObjectBorrow()
 #include "pycore_structseq.h"     // _PyStructSequence_FiniBuiltin()
+#include "pycore_tuple.h"         // _PyTuple_FromPair
 
 #include <float.h>                // DBL_MAX
 #include <stdlib.h>               // strtol()
@@ -1540,7 +1541,8 @@ float_as_integer_ratio_impl(PyObject *self)
             goto error;
     }
 
-    result_pair = PyTuple_Pack(2, numerator, denominator);
+    result_pair = _PyTuple_FromPairSteal(numerator, denominator);
+    numerator = denominator = NULL;
 
 error:
     Py_XDECREF(py_exponent);
