@@ -6,6 +6,29 @@
    ========================================================================== */
 
 /* --------------------------------------------------------------------------
+   Differential Flamegraph
+   -------------------------------------------------------------------------- */
+
+:root {
+  /* Regression colors */
+  --diff-regression-deep: #d32f2f;
+  --diff-regression-medium: #e57373;
+  --diff-regression-light: #ef9a9a;
+  --diff-regression-verylight: #ffcdd2;
+
+  /* Improvement colors */
+  --diff-improvement-deep: #1976d2;
+  --diff-improvement-medium: #42a5f5;
+  --diff-improvement-light: #64b5f6;
+  --diff-improvement-verylight: #90caf9;
+
+  /* Other differential colors */
+  --diff-neutral: #bdbdbd;
+  --diff-new: #9575cd;
+  --diff-elided: #d32f2f;
+}
+
+/* --------------------------------------------------------------------------
    Layout Overrides (Flamegraph-specific)
    -------------------------------------------------------------------------- */
 
@@ -277,7 +300,9 @@ body.resizing-sidebar {
 /* View Mode Section */
 .view-mode-section .section-content {
   display: flex;
-  justify-content: center;
+  flex-direction: column;
+  gap: 10px;
+  align-items: center;
 }
 
 /* Collapsible sections */
@@ -815,6 +840,41 @@ body.resizing-sidebar {
   color: var(--accent);
 }
 
+.tooltip-diff {
+  margin-top: 12px;
+  padding-top: 12px;
+  border-top: 1px solid var(--border);
+}
+
+.tooltip-diff-title {
+  font-size: 11px;
+  font-weight: 600;
+  color: var(--accent);
+  margin-bottom: 8px;
+}
+
+.tooltip-diff-row {
+  display: grid;
+  grid-template-columns: auto 1fr;
+  gap: 4px 14px;
+  font-size: 12px;
+  margin-bottom: 4px;
+}
+
+.tooltip-diff-row.regression .tooltip-stat-value {
+  color: rgb(220, 60, 60);
+  font-weight: 700;
+}
+
+.tooltip-diff-row.improvement .tooltip-stat-value {
+  color: rgb(60, 120, 220);
+  font-weight: 700;
+}
+
+.tooltip-diff-row.neutral .tooltip-stat-value {
+  color: var(--text-secondary);
+}
+
 .tooltip-source {
   margin-top: 10px;
   padding-top: 10px;
@@ -989,7 +1049,8 @@ body.resizing-sidebar {
    Flamegraph-Specific Toggle Override
    -------------------------------------------------------------------------- */
 
-#toggle-invert .toggle-track.on {
+#toggle-invert .toggle-track.on,
+#toggle-elided .toggle-track.on {
   background: #8e44ad;
   border-color: #8e44ad;
   box-shadow: 0 0 8px rgba(142, 68, 173, 0.3);
