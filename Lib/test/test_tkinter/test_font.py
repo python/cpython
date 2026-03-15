@@ -130,6 +130,15 @@ class FontTest(AbstractTkTest, unittest.TestCase):
         with self.assertRaisesRegex(TypeError, 'is not a container or iterable'):
             self.font in self.font
 
+    def test_negative_pixel_size(self):
+        # gh-143990: negative sizes (pixels) should be preserved in Font objects
+        pixel_size = -14
+        f = font.Font(self.root, family='Helvetica', size=pixel_size)
+        self.assertEqual(f.cget("size"), pixel_size)
+        # Test initialization with font tuple
+        f2 = font.Font(self.root, font=('Helvetica', pixel_size))
+        self.assertEqual(f2.cget("size"), pixel_size)
+
 
 class DefaultRootTest(AbstractDefaultRootTest, unittest.TestCase):
 

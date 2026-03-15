@@ -1,0 +1,3 @@
+Preserve negative font sizes (pixels) in :class:`tkinter.font.Font` when
+defined via a tuple. Previously, these were incorrectly normalized to
+positive sizes (points) by Tcl's ``font actual`` command.
