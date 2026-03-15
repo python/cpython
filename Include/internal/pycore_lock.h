@@ -13,6 +13,10 @@ extern "C" {
 #  error "this header requires Py_BUILD_CORE define"
 #endif
 
+#if defined(MS_WINDOWS)
+#  include <intrin.h>  // _mm_pause(), __yield()
+#endif
+
 //_Py_UNLOCKED is defined as 0 and _Py_LOCKED as 1 in Include/cpython/pylock.h
 #define _Py_HAS_PARKED  2
 #define _Py_ONCE_INITIALIZED 4
@@ -70,8 +74,27 @@ PyMutex_LockFlags(PyMutex *m, _PyLockFlags flags)
 // error messages) otherwise returns 0.
 extern int _PyMutex_TryUnlock(PyMutex *m);
 
-// Yield the processor to other threads (e.g., sched_yield).
-extern void _Py_yield(void);
+// Lightweight CPU pause hint for spin-wait loops (e.g., x86 PAUSE, AArch64 WFE).
+// Falls back to sched_yield() on platforms without a known pause instruction.
+static inline void
+_Py_yield(void)
+{
+#if defined(__x86_64__) || defined(__i386__)
+    __asm__ volatile ("pause" ::: "memory");
+#elif defined(__aarch64__)
+    __asm__ volatile ("wfe");
+#elif defined(__arm__) && __ARM_ARCH >= 7
+    __asm__ volatile ("yield" ::: "memory");
+#elif defined(__powerpc__) || defined(__ppc__) || defined(__PPC__)
+    __asm__ volatile ("or 27,27,27" ::: "memory");
+#elif defined(_M_X64) || defined(_M_IX86)
+    _mm_pause();
+#elif defined(_M_ARM64) || defined(_M_ARM)
+    __yield();
+#elif defined(HAVE_SCHED_H)
+    sched_yield();
+#endif
+}
 
 
 // PyEvent is a one-time event notification
