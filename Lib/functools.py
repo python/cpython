@@ -342,11 +342,12 @@ def _partial_new(cls, func, /, *args, **keywords):
             phcount, merger = _partial_prepare_merger(tot_args)
         else:   # works for both pto_phcount == 0 and != 0
             phcount, merger = pto_phcount, func._merger
-        keywords = {**func.keywords, **keywords}
+        keywords = frozendict(**func.keywords, **keywords)
         func = func.func
     else:
         tot_args = args
         phcount, merger = _partial_prepare_merger(tot_args)
+        keywords = frozendict(**keywords)
 
     self = object.__new__(cls)
     self.func = func
@@ -408,9 +409,11 @@ class partial:
             raise TypeError(f"expected 4 items in state, got {len(state)}")
         func, args, kwds, namespace = state
         if (not callable(func) or not isinstance(args, tuple) or
-           (kwds is not None and not isinstance(kwds, dict)) or
            (namespace is not None and not isinstance(namespace, dict))):
             raise TypeError("invalid partial state")
+        if kwds is not None and not (
+            isinstance(kwds, dict) or isinstance(kwds, frozendict)):
+            raise TypeError(f"keywords must be an instance of dict or frozendict, not {type(kwds)}")
 
         if args and args[-1] is Placeholder:
             raise TypeError("trailing Placeholders are not allowed")
@@ -418,9 +421,13 @@ class partial:
 
         args = tuple(args) # just in case it's a subclass
         if kwds is None:
-            kwds = {}
-        elif type(kwds) is not dict: # XXX does it need to be *exactly* dict?
-            kwds = dict(kwds)
+            kwds = frozendict()
+        else:
+            for key in kwds:
+                if type(key) is not str:
+                    raise TypeError("keywords must be a string")
+            kwds = frozendict(kwds)
+
         if namespace is None:
             namespace = {}
 
