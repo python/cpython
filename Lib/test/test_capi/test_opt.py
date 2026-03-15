@@ -44,25 +44,9 @@ def get_all_executors(func):
     code = func.__code__
     co_code = code.co_code
     executors = []
-    seen = set()
     for i in range(0, len(co_code), 2):
         try:
-            exec = _opcode.get_executor(code, i)
-            if id(exec) in seen:
-                continue
-            executors.append(exec)
-            seen.add(id(exec))
-            # Add the side exit executors as well.
-            ops = get_ops(exec)
-            for idx, op in enumerate(ops):
-                opname = op[0]
-                if opname == "_EXIT_TRACE":
-                    exit = op[3]
-                    link_to = _testinternalcapi.get_exit_executor(exit)
-                    if id(link_to) in seen:
-                        continue
-                    executors.append(link_to)
-                    seen.add(id(link_to))
+            executors.append(_opcode.get_executor(code, i))
         except ValueError:
             pass
     return executors
@@ -345,10 +329,16 @@ class TestUops(unittest.TestCase):
             return testfunc(x-1)
 
         sys.setrecursionlimit(TIER2_RESUME_THRESHOLD * 2)
-        testfunc(TIER2_RESUME_THRESHOLD)
+        for _ in range((TIER2_RESUME_THRESHOLD + 99)//100):
+            testfunc(101)
 
         ex = get_first_executor(testfunc)
         self.assertIsNotNone(ex)
+        uops = get_opnames(ex)
+        # 0. _START_EXECUTOR
+        # 1. _MAKE_WARM
+        # 2. _TIER2_RESUME_CHECK
+        self.assertEqual(uops[2], "_TIER2_RESUME_CHECK")
 
     def test_jump_forward(self):
         def testfunc(n):
@@ -1447,7 +1437,7 @@ class TestUopsOptimization(unittest.TestCase):
 
         def thing(a):
             x = 0
-            for i in range(TIER2_THRESHOLD * 2 + 1):
+            for i in range(TIER2_THRESHOLD + 1):
                 x += a.attr
                 # The first TIER2_THRESHOLD iterations we set the attribute on
                 # this dummy class, which shouldn't trigger the type watcher.
@@ -1464,14 +1454,13 @@ class TestUopsOptimization(unittest.TestCase):
             pass
 
         res, ex = self._run_with_optimizer(thing, Foo())
-        if ex is not None:
-            opnames = list(iter_opnames(ex))
-            self.assertEqual(res, TIER2_THRESHOLD * 6 + 1)
-            call = opnames.index("_CALL_BUILTIN_FAST")
-            load_attr_top = opnames.index("_POP_TOP_LOAD_CONST_INLINE_BORROW", 0, call)
-            load_attr_bottom = opnames.index("_POP_TOP_LOAD_CONST_INLINE_BORROW", call)
-            self.assertEqual(opnames[:load_attr_top].count("_GUARD_TYPE_VERSION"), 1)
-            self.assertEqual(opnames[call:load_attr_bottom].count("_CHECK_VALIDITY"), 2)
+        opnames = list(iter_opnames(ex))
+        self.assertEqual(res, TIER2_THRESHOLD * 2 + 2)
+        call = opnames.index("_CALL_BUILTIN_FAST")
+        load_attr_top = opnames.index("_POP_TOP_LOAD_CONST_INLINE_BORROW", 0, call)
+        load_attr_bottom = opnames.index("_POP_TOP_LOAD_CONST_INLINE_BORROW", call)
+        self.assertEqual(opnames[:load_attr_top].count("_GUARD_TYPE_VERSION"), 1)
+        self.assertEqual(opnames[call:load_attr_bottom].count("_CHECK_VALIDITY"), 2)
 
     def test_guard_type_version_removed_escaping(self):
 

@@ -1138,7 +1138,7 @@ _PyObjectArray_Free(PyObject **array, PyObject **scratch)
 
 #if _Py_TIER2
 // 0 for success, -1  for error.
-static Py_NO_INLINE int
+static int
 stop_tracing_and_jit(PyThreadState *tstate, _PyInterpreterFrame *frame)
 {
     int _is_sys_tracing = (tstate->c_tracefunc != NULL) || (tstate->c_profilefunc != NULL);

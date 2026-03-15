@@ -5714,7 +5714,7 @@
                 if (_PyOpcode_Caches[_PyOpcode_Deopt[opcode]]) {
                     PAUSE_ADAPTIVE_COUNTER(this_instr[1].counter);
                 }
-                DISPATCH_GOTO_NON_TRACING();
+                DISPATCH_GOTO();
             }
             assert(executor != tstate->interp->cold_executor);
             tstate->jit_exit = NULL;
