@@ -77,6 +77,21 @@ class GeneralTests:
         expected = "abc\r\n..jkl\r\nfoo\r\n...blue"
         self.assertEqual(expected, smtplib.quotedata(teststr))
 
+    def testQuoteAddr(self):
+        self.assertEqual(smtplib.quoteaddr('user@example.com'),
+                         '<user@example.com>')
+        self.assertEqual(smtplib.quoteaddr('<user@example.com>'),
+                         '<user@example.com>')
+        self.assertEqual(smtplib.quoteaddr(''), '<>')
+
+    def testQuoteAddrMalformedAngleBracket(self):
+        result = smtplib.quoteaddr('<')
+        self.assertTrue(result.startswith('<') and result.endswith('>'), result)
+        result = smtplib.quoteaddr('< ')
+        self.assertTrue(result.startswith('<') and result.endswith('>'), result)
+        result = smtplib.quoteaddr('<user@example.com')
+        self.assertTrue(result.startswith('<') and result.endswith('>'), result)
+
     def testBasic1(self):
         mock_socket.reply_with(b"220 Hola mundo")
         # connects
