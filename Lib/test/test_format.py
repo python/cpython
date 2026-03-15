@@ -661,55 +661,190 @@ class FormatTest(unittest.TestCase):
         self.assertEqual(format(12300050.0, "#.6g"), "1.23000e+07")
 
     def test_with_two_commas_in_format_specifier(self):
-        error_msg = re.escape("Cannot specify ',' with ','.")
+        error_msg = re.escape(
+            "Cannot specify grouping character ',' more than once")
         with self.assertRaisesRegex(ValueError, error_msg):
             '{:,,}'.format(1)
+        with self.assertRaisesRegex(ValueError, error_msg):
+            '{:.,,}'.format(1.1)
+        with self.assertRaisesRegex(ValueError, error_msg):
+            '{:.,,f}'.format(1.1)
 
     def test_with_two_underscore_in_format_specifier(self):
-        error_msg = re.escape("Cannot specify '_' with '_'.")
+        error_msg = re.escape(
+            "Cannot specify grouping character '_' more than once")
         with self.assertRaisesRegex(ValueError, error_msg):
             '{:__}'.format(1)
+        with self.assertRaisesRegex(ValueError, error_msg):
+            '{:.__}'.format(1.1)
+        with self.assertRaisesRegex(ValueError, error_msg):
+            '{:.__f}'.format(1.1)
 
-    def test_with_a_commas_and_an_underscore_in_format_specifier(self):
-        error_msg = re.escape("Cannot specify both ',' and '_'.")
+    def test_with_a_comma_and_an_underscore_in_format_specifier(self):
+        error_msg = re.escape("Cannot specify both ',' and '_'")
         with self.assertRaisesRegex(ValueError, error_msg):
             '{:,_}'.format(1)
+        with self.assertRaisesRegex(ValueError, error_msg):
+            '{:.,_}'.format(1.1)
         with self.assertRaisesRegex(ValueError, error_msg):
             '{:.,_f}'.format(1.1)
 
     def test_with_an_underscore_and_a_comma_in_format_specifier(self):
-        error_msg = re.escape("Cannot specify both ',' and '_'.")
+        error_msg = re.escape("Cannot specify both ',' and '_'")
         with self.assertRaisesRegex(ValueError, error_msg):
             '{:_,}'.format(1)
         with self.assertRaisesRegex(ValueError, error_msg):
+            '{:._,}'.format(1.1)
+        with self.assertRaisesRegex(ValueError, error_msg):
             '{:._,f}'.format(1.1)
 
-    def test_better_error_message_format(self):
+    def test_invalid_format_specifier_error_message(self):
         # https://bugs.python.org/issue20524
         for value in [12j, 12, 12.0, "12"]:
-            with self.subTest(value=value):
+            for bad_spec in ["%M", "ЫйXЯЧ", "\n'\\"]:
                 # The format spec must be invalid for all types we're testing.
-                # '%M' will suffice.
-                bad_format_spec = '%M'
-                err = re.escape("Invalid format specifier "
-                                f"'{bad_format_spec}' for object of type "
-                                f"'{type(value).__name__}'")
-                with self.assertRaisesRegex(ValueError, err):
-                    f"xx{{value:{bad_format_spec}}}yy".format(value=value)
+                with self.subTest(value=value, bad_spec=bad_spec):
+                    err = re.escape("Invalid format specifier "
+                                    f"{bad_spec!r} for object of type "
+                                    f"'{type(value).__name__}'")
+                    with self.assertRaisesRegex(ValueError, err):
+                        f"xx{{value:{bad_spec}}}yy".format(value=value)
 
-                # Also test the builtin format() function.
-                with self.assertRaisesRegex(ValueError, err):
-                    format(value, bad_format_spec)
+                    # Also test the builtin format() function.
+                    with self.assertRaisesRegex(ValueError, err):
+                        format(value, bad_spec)
 
-                # Also test f-strings.
-                with self.assertRaisesRegex(ValueError, err):
-                    eval("f'xx{value:{bad_format_spec}}yy'")
+                    # Also test f-strings.
+                    with self.assertRaisesRegex(ValueError, err):
+                        eval("f'xx{value:{bad_spec}}yy'")
 
-    def test_unicode_in_error_message(self):
-        str_err = re.escape(
-            "Invalid format specifier '%ЫйЯЧ' for object of type 'str'")
-        with self.assertRaisesRegex(ValueError, str_err):
-            "{a:%ЫйЯЧ}".format(a='a')
+    def test_invalid_specifier_type_error_message(self):
+        for value in [12j, 12, 12.0, "12"]:
+            for bad_spec, repr in [
+                ("M", "'M'"),
+                ("10$", "'$'"),
+                ("\t", "U+0009"),
+                (",\x7f", "U+007F"),
+                ("о", "'о' (U+043E)"),
+                ("+#020,🐍", "'🐍' (U+1F40D)")
+            ]:
+                with self.subTest(value=value, bad_spec=bad_spec):
+                    err = re.escape("Unknown format code "
+                                    f"{repr} for object of type "
+                                    f"'{type(value).__name__}'")
+                    with self.assertRaisesRegex(ValueError, err):
+                        f"xx{{value:{bad_spec}}}yy".format(value=value)
+
+                    # Also test the builtin format() function.
+                    with self.assertRaisesRegex(ValueError, err):
+                        format(value, bad_spec)
+
+                    # Also test f-strings.
+                    with self.assertRaisesRegex(ValueError, err):
+                        eval("f'xx{value:{bad_spec}}yy'")
+
+    def test_specifier_grouping_with_types(self):
+        def assertEqualGroup(spec, value, expected):
+            with self.subTest(spec=spec, value=value):
+                self.assertEqual(("{:%s}" % spec).format(value), expected)
+                self.assertEqual(format(value, spec), expected)
+                self.assertEqual(f"{value:{spec}}", expected)
+
+        def assertRaisesGroup(spec, value, error_msg):
+            with self.subTest(spec=spec, value=value):
+                error_msg = re.escape(error_msg)
+                with self.assertRaisesRegex(ValueError, error_msg):
+                    ("{:%s}" % spec).format(value)
+                with self.assertRaisesRegex(ValueError, error_msg):
+                    format(value, spec)
+                with self.assertRaisesRegex(ValueError, error_msg):
+                    f"{value:{spec}}"
+
+        value = 1234567
+        assertEqualGroup(",", value, "1,234,567")
+        assertRaisesGroup("._", value,
+                          "Cannot specify '_' in fractional part with 'd'")
+        assertEqualGroup(",d", value, "1,234,567")
+        assertRaisesGroup("._d", value,
+                          "Cannot specify '_' in fractional part with 'd'")
+        assertEqualGroup(",e", value, "1.234567e+06")
+        assertEqualGroup("._e", value, "1.234_567e+06")
+        assertRaisesGroup(",b", value, "Cannot specify ',' with 'b'")
+        assertEqualGroup("_b", 1234, "100_1101_0010")
+        assertRaisesGroup("._b", value,
+                          "Cannot specify '_' in fractional part with 'b'")
+        assertRaisesGroup(",s", value, "Cannot specify ',' with 's'")
+        assertRaisesGroup("._s", value,
+                          "Cannot specify '_' in fractional part with 's'")
+        assertRaisesGroup(",n", value, "Cannot specify ',' with 'n'")
+        assertRaisesGroup("._n", value,
+                          "Cannot specify '_' in fractional part with 'n'")
+
+        value = 1234567.1234567
+        assertEqualGroup(",", value, "1,234,567.1234567")
+        assertEqualGroup("._", value, "1234567.123_456_7")
+        assertRaisesGroup(",d", value,
+                          "Unknown format code 'd' for object of type 'float'")
+        assertRaisesGroup("._d", value,
+                          "Cannot specify '_' in fractional part with 'd'")
+        assertEqualGroup(",e", value, "1.234567e+06")
+        assertEqualGroup("._e", value, "1.234_567e+06")
+        assertRaisesGroup(",b", value, "Cannot specify ',' with 'b'")
+        assertRaisesGroup("_b", value,
+                          "Unknown format code 'b' for object of type 'float'")
+        assertRaisesGroup("._b", value,
+                          "Cannot specify '_' in fractional part with 'b'")
+        assertRaisesGroup(",s", value, "Cannot specify ',' with 's'")
+        assertRaisesGroup("._s", value,
+                          "Cannot specify '_' in fractional part with 's'")
+        assertRaisesGroup(",n", value, "Cannot specify ',' with 'n'")
+        assertRaisesGroup("._n", value,
+                          "Cannot specify '_' in fractional part with 'n'")
+
+        value = 1234567.1234567+1234567.1234567j
+        assertEqualGroup(",", value, "(1,234,567.1234567+1,234,567.1234567j)")
+        assertEqualGroup("._", value, "(1234567.123_456_7+1234567.123_456_7j)")
+        assertRaisesGroup(",d", value,
+                          "Unknown format code 'd' for object of type 'complex'")
+        assertRaisesGroup("._d", value,
+                          "Cannot specify '_' in fractional part with 'd'")
+        assertEqualGroup(",e", value, "1.234567e+06+1.234567e+06j")
+        assertEqualGroup("._e", value, "1.234_567e+06+1.234_567e+06j")
+        assertRaisesGroup(",b", value, "Cannot specify ',' with 'b'")
+        assertRaisesGroup("_b", value,
+                          "Unknown format code 'b' for object of type 'complex'")
+        assertRaisesGroup("._b", value,
+                          "Cannot specify '_' in fractional part with 'b'")
+        assertRaisesGroup(",s", value, "Cannot specify ',' with 's'")
+        assertRaisesGroup("._s", value,
+                          "Cannot specify '_' in fractional part with 's'")
+        assertRaisesGroup(",n", value, "Cannot specify ',' with 'n'")
+        assertRaisesGroup("._n", value,
+                          "Cannot specify '_' in fractional part with 'n'")
+
+        value = "1234567"
+        assertRaisesGroup(",", value, "Cannot specify ',' with 's'")
+        assertRaisesGroup("._", value,
+                          "Cannot specify '_' in fractional part with 's'")
+        assertRaisesGroup(",d", value,
+                          "Unknown format code 'd' for object of type 'str'")
+        assertRaisesGroup("._d", value,
+                          "Cannot specify '_' in fractional part with 'd'")
+        assertRaisesGroup(",e", value,
+                          "Unknown format code 'e' for object of type 'str'")
+        assertRaisesGroup("._e", value,
+                          "Unknown format code 'e' for object of type 'str'")
+        assertRaisesGroup(",b", value, "Cannot specify ',' with 'b'")
+        assertRaisesGroup("_b", value,
+                          "Unknown format code 'b' for object of type 'str'")
+        assertRaisesGroup("._b", value,
+                          "Cannot specify '_' in fractional part with 'b'")
+        assertRaisesGroup(",s", value, "Cannot specify ',' with 's'")
+        assertRaisesGroup("._s", value,
+                          "Cannot specify '_' in fractional part with 's'")
+        assertRaisesGroup(",n", value, "Cannot specify ',' with 'n'")
+        assertRaisesGroup("._n", value,
+                          "Cannot specify '_' in fractional part with 'n'")
 
     def test_negative_zero(self):
         ## default behavior

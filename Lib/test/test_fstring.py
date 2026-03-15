@@ -1697,24 +1697,34 @@ x = (
             compile("f'{a $ b}'", "?", "exec")
 
     def test_with_two_commas_in_format_specifier(self):
-        error_msg = re.escape("Cannot specify ',' with ','.")
+        error_msg = re.escape(
+            "Cannot specify grouping character ',' more than once")
         with self.assertRaisesRegex(ValueError, error_msg):
             f'{1:,,}'
+        with self.assertRaisesRegex(ValueError, error_msg):
+            f'{1.1:.,,}'
 
     def test_with_two_underscore_in_format_specifier(self):
-        error_msg = re.escape("Cannot specify '_' with '_'.")
+        error_msg = re.escape(
+            "Cannot specify grouping character '_' more than once")
         with self.assertRaisesRegex(ValueError, error_msg):
             f'{1:__}'
+        with self.assertRaisesRegex(ValueError, error_msg):
+            f'{1.1:.__}'
 
-    def test_with_a_commas_and_an_underscore_in_format_specifier(self):
-        error_msg = re.escape("Cannot specify both ',' and '_'.")
+    def test_with_a_comma_and_an_underscore_in_format_specifier(self):
+        error_msg = re.escape("Cannot specify both ',' and '_'")
         with self.assertRaisesRegex(ValueError, error_msg):
             f'{1:,_}'
+        with self.assertRaisesRegex(ValueError, error_msg):
+            f'{1.1:.,_}'
 
     def test_with_an_underscore_and_a_comma_in_format_specifier(self):
-        error_msg = re.escape("Cannot specify both ',' and '_'.")
+        error_msg = re.escape("Cannot specify both ',' and '_'")
         with self.assertRaisesRegex(ValueError, error_msg):
             f'{1:_,}'
+        with self.assertRaisesRegex(ValueError, error_msg):
+            f'{1.1:._,}'
 
     def test_syntax_error_for_starred_expressions(self):
         with self.assertRaisesRegex(SyntaxError, "can't use starred expression here"):

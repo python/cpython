@@ -759,13 +759,9 @@ MarkupIterator_next(MarkupIterator *self, SubString *literal,
     return 2;
 }
 
-
-/* do the !r or !s conversion on obj */
 static PyObject *
 do_conversion(PyObject *obj, Py_UCS4 conversion)
 {
-    /* XXX in pre-3.0, do we need to convert this to unicode, since it
-       might have returned a string? */
     switch (conversion) {
     case 'r':
         return PyObject_Repr(obj);
@@ -774,17 +770,25 @@ do_conversion(PyObject *obj, Py_UCS4 conversion)
     case 'a':
         return PyObject_ASCII(obj);
     default:
-        if (conversion > 32 && conversion < 127) {
-                /* It's the ASCII subrange; casting to char is safe
-                   (assuming the execution character set is an ASCII
-                   superset). */
-                PyErr_Format(PyExc_ValueError,
-                     "Unknown conversion specifier %c",
-                     (char)conversion);
-        } else
-                PyErr_Format(PyExc_ValueError,
-                     "Unknown conversion specifier \\x%x",
-                     (unsigned int)conversion);
+        if (conversion == '\'') {
+            PyErr_SetString(PyExc_ValueError,
+                            "Unknown conversion specifier \"'\"");
+        }
+        else if (conversion >= 32 && conversion < 127) {
+            PyErr_Format(PyExc_ValueError,
+                         "Unknown conversion specifier '%c'",
+                         (int)conversion);
+        }
+        else if (Py_UNICODE_ISPRINTABLE(conversion)) {
+            PyErr_Format(PyExc_ValueError,
+                         "Unknown conversion specifier '%c' (U+%04X)",
+                         (int)conversion, (int)conversion);
+        }
+        else {
+            PyErr_Format(PyExc_ValueError,
+                         "Unknown conversion specifier U+%04X",
+                         (int)conversion);
+        }
         return NULL;
     }
 }
