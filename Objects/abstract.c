@@ -1428,24 +1428,11 @@ _PyNumber_Index(PyObject *item)
     if (!result || PyLong_CheckExact(result)) {
         return result;
     }
-
-    if (!PyLong_Check(result)) {
-        PyErr_Format(PyExc_TypeError,
-                     "%T.__index__() must return an int, not %T",
-                     item, result);
-        Py_DECREF(result);
-        return NULL;
-    }
-    /* Issue #17576: warn if 'result' not of exact type int. */
-    if (PyErr_WarnFormat(PyExc_DeprecationWarning, 1,
-            "%T.__index__() must return an int, not %T.  "
-            "The ability to return an instance of a strict subclass of int "
-            "is deprecated, and may be removed in a future version of Python.",
-            item, result)) {
-        Py_DECREF(result);
-        return NULL;
-    }
-    return result;
+    PyErr_Format(PyExc_TypeError,
+                 "%T.__index__() must return an int, not %T",
+                 item, result);
+    Py_DECREF(result);
+    return NULL;
 }
 
 /* Return an exact Python int from the object item.
@@ -1538,25 +1525,11 @@ PyNumber_Long(PyObject *o)
         if (!result || PyLong_CheckExact(result)) {
             return result;
         }
-
-        if (!PyLong_Check(result)) {
-            PyErr_Format(PyExc_TypeError,
-                         "%T.__int__() must return an int, not %T",
-                         o, result);
-            Py_DECREF(result);
-            return NULL;
-        }
-        /* Issue #17576: warn if 'result' not of exact type int. */
-        if (PyErr_WarnFormat(PyExc_DeprecationWarning, 1,
-                "%T.__int__() must return an int, not %T.  "
-                "The ability to return an instance of a strict subclass of int "
-                "is deprecated, and may be removed in a future version of Python.",
-                o, result)) {
-            Py_DECREF(result);
-            return NULL;
-        }
-        Py_SETREF(result, _PyLong_Copy((PyLongObject *)result));
-        return result;
+        PyErr_Format(PyExc_TypeError,
+                     "%T.__int__() must return an int, not %T",
+                     o, result);
+        Py_DECREF(result);
+        return NULL;
     }
     if (m && m->nb_index) {
         return PyNumber_Index(o);
