@@ -1,0 +1,2 @@
+Optional argument with :ref:`nargs` equals to ``argparse.REMAINDER`` now
+consumes all remaining arguments, not only to the first ``'--'``.
