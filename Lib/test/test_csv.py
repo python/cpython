@@ -1280,7 +1280,6 @@ class TestDialectValidity(unittest.TestCase):
                     self.assertRaises(ValueError, create_invalid, field_name, " ",
                                       skipinitialspace=True)
 
-
     def test_dialect_getattr_non_attribute_error_propagates(self):
         # gh-145966: non-AttributeError exceptions raised by __getattr__
         # during dialect attribute lookup must propagate, not be silenced.
