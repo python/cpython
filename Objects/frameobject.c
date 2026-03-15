@@ -13,6 +13,8 @@
 #include "pycore_object.h"        // _PyObject_GC_UNTRACK()
 #include "pycore_opcode_metadata.h" // _PyOpcode_Caches
 #include "pycore_optimizer.h"     // _Py_Executors_InvalidateDependency()
+#include "pycore_pystate.h"       // _PyEval_StopTheWorld()
+#include "pycore_tstate.h"        // _PyThreadStateImpl
 #include "pycore_unicodeobject.h" // _PyUnicode_Equal()
 
 #include "frameobject.h"          // PyFrameLocalsProxyObject
@@ -36,6 +38,52 @@
 class frame "PyFrameObject *" "&PyFrame_Type"
 [clinic start generated code]*/
 /*[clinic end generated code: output=da39a3ee5e6b4b0d input=2d1dbf2e06cf351f]*/
+
+
+#ifdef Py_GIL_DISABLED
+// Returns 1 if the frame is currently executing on a different thread.
+// Must be called while holding the critical section on the frame object.
+static int
+_frame_is_on_other_thread(PyFrameObject *frame)
+{
+    _PyInterpreterFrame *iframe = frame->f_frame;
+    if (iframe->owner == FRAME_OWNED_BY_THREAD) {
+        PyThreadState *tstate = _PyThreadState_GET();
+        int32_t our_tlbc = ((_PyThreadStateImpl *)tstate)->tlbc_index;
+        return iframe->tlbc_index != our_tlbc;
+    }
+    // TODO(gh-144446): handle FRAME_OWNED_BY_GENERATOR by locking
+    // the generator's frame state to synchronize with gen_send_ex2.
+    return 0;
+}
+#endif
+
+// Call `call` synchronized with the frame's owning thread and store
+// the result in `result`.  If the frame is executing on another thread,
+// pause all threads (stop-the-world) before calling.
+#ifdef Py_GIL_DISABLED
+#define FRAMELOCALSPROXY_SYNCHRONIZED(FRAME, CALL, RESULT)               \
+    do {                                                                 \
+        int _stw;                                                        \
+        Py_BEGIN_CRITICAL_SECTION(FRAME);                                \
+        _stw = _frame_is_on_other_thread(FRAME);                         \
+        if (!_stw) {                                                     \
+            RESULT = CALL;                                               \
+        }                                                                \
+        Py_END_CRITICAL_SECTION();                                       \
+        if (_stw) {                                                      \
+            PyInterpreterState *interp = _PyInterpreterState_GET();      \
+            _PyEval_StopTheWorld(interp);                                \
+            RESULT = CALL;                                               \
+            _PyEval_StartTheWorld(interp);                               \
+        }                                                                \
+    } while (0)
+#else
+#define FRAMELOCALSPROXY_SYNCHRONIZED(FRAME, CALL, RESULT)               \
+    do {                                                                 \
+        RESULT = CALL;                                                   \
+    } while (0)
+#endif
 
 
 // Returns new reference or NULL
@@ -184,9 +232,8 @@ framelocalsproxy_getkeyindex(PyFrameObject *frame, PyObject *key, bool read, PyO
 }
 
 static PyObject *
-framelocalsproxy_getitem(PyObject *self, PyObject *key)
+framelocalsproxy_getitem_lock_held(PyFrameObject *frame, PyObject *key)
 {
-    PyFrameObject *frame = PyFrameLocalsProxyObject_CAST(self)->frame;
     PyObject *value = NULL;
 
     int i = framelocalsproxy_getkeyindex(frame, key, true, &value);
@@ -213,6 +260,16 @@ framelocalsproxy_getitem(PyObject *self, PyObject *key)
 
     PyErr_Format(PyExc_KeyError, "local variable '%R' is not defined", key);
     return NULL;
+}
+
+static PyObject *
+framelocalsproxy_getitem(PyObject *self, PyObject *key)
+{
+    PyFrameObject *frame = PyFrameLocalsProxyObject_CAST(self)->frame;
+    PyObject *result;
+    FRAMELOCALSPROXY_SYNCHRONIZED(frame,
+        framelocalsproxy_getitem_lock_held(frame, key), result);
+    return result;
 }
 
 static int
@@ -243,10 +300,10 @@ add_overwritten_fast_local(PyFrameObject *frame, PyObject *obj)
 }
 
 static int
-framelocalsproxy_setitem(PyObject *self, PyObject *key, PyObject *value)
+framelocalsproxy_setitem_lock_held(PyFrameObject *frame, PyObject *key,
+                                   PyObject *value)
 {
     /* Merge locals into fast locals */
-    PyFrameObject *frame = PyFrameLocalsProxyObject_CAST(self)->frame;
     _PyStackRef *fast = _PyFrame_GetLocalsArray(frame->f_frame);
     PyCodeObject *co = _PyFrame_GetCode(frame->f_frame);
 
@@ -320,6 +377,16 @@ framelocalsproxy_setitem(PyObject *self, PyObject *key, PyObject *value)
 }
 
 static int
+framelocalsproxy_setitem(PyObject *self, PyObject *key, PyObject *value)
+{
+    PyFrameObject *frame = PyFrameLocalsProxyObject_CAST(self)->frame;
+    int result;
+    FRAMELOCALSPROXY_SYNCHRONIZED(frame,
+        framelocalsproxy_setitem_lock_held(frame, key, value), result);
+    return result;
+}
+
+static int
 framelocalsproxy_merge(PyObject* self, PyObject* other)
 {
     if (!PyDict_Check(other) && !PyFrameLocalsProxy_Check(other)) {
@@ -369,9 +436,8 @@ framelocalsproxy_merge(PyObject* self, PyObject* other)
 }
 
 static PyObject *
-framelocalsproxy_keys(PyObject *self, PyObject *Py_UNUSED(ignored))
+framelocalsproxy_keys_lock_held(PyFrameObject *frame)
 {
-    PyFrameObject *frame = PyFrameLocalsProxyObject_CAST(self)->frame;
     PyCodeObject *co = _PyFrame_GetCode(frame->f_frame);
     PyObject *names = PyList_New(0);
     if (names == NULL) {
@@ -405,6 +471,16 @@ framelocalsproxy_keys(PyObject *self, PyObject *Py_UNUSED(ignored))
     }
 
     return names;
+}
+
+static PyObject *
+framelocalsproxy_keys(PyObject *self, PyObject *Py_UNUSED(ignored))
+{
+    PyFrameObject *frame = PyFrameLocalsProxyObject_CAST(self)->frame;
+    PyObject *result;
+    FRAMELOCALSPROXY_SYNCHRONIZED(frame,
+        framelocalsproxy_keys_lock_held(frame), result);
+    return result;
 }
 
 static void
@@ -578,9 +654,8 @@ framelocalsproxy_inplace_or(PyObject *self, PyObject *other)
 }
 
 static PyObject *
-framelocalsproxy_values(PyObject *self, PyObject *Py_UNUSED(ignored))
+framelocalsproxy_values_lock_held(PyFrameObject *frame)
 {
-    PyFrameObject *frame = PyFrameLocalsProxyObject_CAST(self)->frame;
     PyCodeObject *co = _PyFrame_GetCode(frame->f_frame);
     PyObject *values = PyList_New(0);
     if (values == NULL) {
@@ -616,9 +691,18 @@ framelocalsproxy_values(PyObject *self, PyObject *Py_UNUSED(ignored))
 }
 
 static PyObject *
-framelocalsproxy_items(PyObject *self, PyObject *Py_UNUSED(ignored))
+framelocalsproxy_values(PyObject *self, PyObject *Py_UNUSED(ignored))
 {
     PyFrameObject *frame = PyFrameLocalsProxyObject_CAST(self)->frame;
+    PyObject *result;
+    FRAMELOCALSPROXY_SYNCHRONIZED(frame,
+        framelocalsproxy_values_lock_held(frame), result);
+    return result;
+}
+
+static PyObject *
+framelocalsproxy_items_lock_held(PyFrameObject *frame)
+{
     PyCodeObject *co = _PyFrame_GetCode(frame->f_frame);
     PyObject *items = PyList_New(0);
     if (items == NULL) {
@@ -674,10 +758,19 @@ framelocalsproxy_items(PyObject *self, PyObject *Py_UNUSED(ignored))
     return items;
 }
 
-static Py_ssize_t
-framelocalsproxy_length(PyObject *self)
+static PyObject *
+framelocalsproxy_items(PyObject *self, PyObject *Py_UNUSED(ignored))
 {
     PyFrameObject *frame = PyFrameLocalsProxyObject_CAST(self)->frame;
+    PyObject *result;
+    FRAMELOCALSPROXY_SYNCHRONIZED(frame,
+        framelocalsproxy_items_lock_held(frame), result);
+    return result;
+}
+
+static Py_ssize_t
+framelocalsproxy_length_lock_held(PyFrameObject *frame)
+{
     PyCodeObject *co = _PyFrame_GetCode(frame->f_frame);
     Py_ssize_t size = 0;
 
@@ -694,11 +787,19 @@ framelocalsproxy_length(PyObject *self)
     return size;
 }
 
-static int
-framelocalsproxy_contains(PyObject *self, PyObject *key)
+static Py_ssize_t
+framelocalsproxy_length(PyObject *self)
 {
     PyFrameObject *frame = PyFrameLocalsProxyObject_CAST(self)->frame;
+    Py_ssize_t result;
+    FRAMELOCALSPROXY_SYNCHRONIZED(frame,
+        framelocalsproxy_length_lock_held(frame), result);
+    return result;
+}
 
+static int
+framelocalsproxy_contains_lock_held(PyFrameObject *frame, PyObject *key)
+{
     int i = framelocalsproxy_getkeyindex(frame, key, true, NULL);
     if (i == -2) {
         return -1;
@@ -713,6 +814,16 @@ framelocalsproxy_contains(PyObject *self, PyObject *key)
     }
 
     return 0;
+}
+
+static int
+framelocalsproxy_contains(PyObject *self, PyObject *key)
+{
+    PyFrameObject *frame = PyFrameLocalsProxyObject_CAST(self)->frame;
+    int result;
+    FRAMELOCALSPROXY_SYNCHRONIZED(frame,
+        framelocalsproxy_contains_lock_held(frame, key), result);
+    return result;
 }
 
 static PyObject* framelocalsproxy___contains__(PyObject *self, PyObject *key)
