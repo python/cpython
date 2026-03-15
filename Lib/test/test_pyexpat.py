@@ -16,7 +16,7 @@ import traceback
 from xml.parsers import expat
 from xml.parsers.expat import errors
 
-from test.support import import_helper
+from test.support import import_helper, infinite_recursion
 from test.support import sortdict
 
 
@@ -647,6 +647,24 @@ class ChardataBufferTest(unittest.TestCase):
         self.assertEqual(parser.buffer_size, 1024)
         parser.Parse(xml2, True)
         self.assertEqual(self.n, 4)
+
+class ElementDeclHandlerTest(unittest.TestCase):
+    def test_deeply_nested_content_model(self):
+        # This should raise a RecursionError and not crash.
+        # See https://github.com/python/cpython/issues/145986.
+        N = 500_000
+        data = (
+            b'<!DOCTYPE root [\n<!ELEMENT root '
+            + b'(a, ' * N + b'a' + b')' * N
+            + b'>\n]>\n<root/>\n'
+        )
+
+        parser = expat.ParserCreate()
+        parser.ElementDeclHandler = lambda _1, _2: None
+        with infinite_recursion():
+            with self.assertRaises(RecursionError):
+                parser.Parse(data)
+
 
 class MalformedInputTest(unittest.TestCase):
     def test1(self):
