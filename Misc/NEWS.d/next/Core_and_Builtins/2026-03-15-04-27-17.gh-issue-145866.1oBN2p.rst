@@ -1,1 +1,0 @@
-Convert ``CALL_INTRINSIC_1`` to leave its inputs on the stack to be cleaned up by ``_POP_TOP``.
