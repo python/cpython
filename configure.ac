@@ -6412,7 +6412,7 @@ if test "$ac_cv_sizeof_wchar_t" -ge 2 \
           -a "$ac_cv_wchar_t_signed" = "no"
 then
   AC_DEFINE([HAVE_USABLE_WCHAR_T], [1],
-  [Define if you have a useable wchar_t type defined in wchar.h; useable
+  [Define if you have a usable wchar_t type defined in wchar.h; usable
    means wchar_t must be an unsigned type with at least 16 bits. (see
    Include/unicodeobject.h).])
   AC_MSG_RESULT([yes])
@@ -6502,7 +6502,7 @@ fi
 # Check for --with-platlibdir
 # /usr/$PLATLIBDIR/python$(VERSION)$(ABI_THREAD)
 AC_SUBST([PLATLIBDIR])
-PLATLIBDIR="lib"  # XXX: We should probably calculate the defauly from libdir, if defined.
+PLATLIBDIR="lib"  # XXX: We should probably calculate the default from libdir, if defined.
 AC_MSG_CHECKING([for --with-platlibdir])
 AC_ARG_WITH(
   [platlibdir],
