@@ -148,7 +148,7 @@ static void decref_callback_context(callback_context *ctx);
 static void set_callback_context(callback_context **ctx_pp,
                                  callback_context *ctx);
 static int connection_close(pysqlite_Connection *self);
-PyObject *_pysqlite_query_execute(pysqlite_Cursor *, int, PyObject *, PyObject *);
+int _pysqlite_query_execute(pysqlite_Cursor *, int, PyObject *, PyObject *);
 
 static PyObject *
 new_statement_cache(pysqlite_Connection *self, pysqlite_state *state,
@@ -1838,21 +1838,15 @@ pysqlite_connection_execute_impl(pysqlite_Connection *self, PyObject *sql,
                                  PyObject *parameters)
 /*[clinic end generated code: output=5be05ae01ee17ee4 input=27aa7792681ddba2]*/
 {
-    PyObject* result = 0;
-
     PyObject *cursor = pysqlite_connection_cursor_impl(self, NULL);
-    if (!cursor) {
-        goto error;
+    if (cursor == NULL) {
+        return NULL;
     }
-
-    result = _pysqlite_query_execute((pysqlite_Cursor *)cursor, 0, sql, parameters);
-    if (!result) {
-        Py_CLEAR(cursor);
+    int rc = _pysqlite_query_execute((pysqlite_Cursor *)cursor, 0, sql, parameters);
+    if (rc < 0) {
+        Py_DECREF(cursor);
+        return NULL;
     }
-
-error:
-    Py_XDECREF(result);
-
     return cursor;
 }
 
@@ -1871,21 +1865,15 @@ pysqlite_connection_executemany_impl(pysqlite_Connection *self,
                                      PyObject *sql, PyObject *parameters)
 /*[clinic end generated code: output=776cd2fd20bfe71f input=495be76551d525db]*/
 {
-    PyObject* result = 0;
-
     PyObject *cursor = pysqlite_connection_cursor_impl(self, NULL);
-    if (!cursor) {
-        goto error;
+    if (cursor == NULL) {
+        return NULL;
     }
-
-    result = _pysqlite_query_execute((pysqlite_Cursor *)cursor, 1, sql, parameters);
-    if (!result) {
-        Py_CLEAR(cursor);
+    int rc = _pysqlite_query_execute((pysqlite_Cursor *)cursor, 1, sql, parameters);
+    if (rc < 0) {
+        Py_DECREF(cursor);
+        return NULL;
     }
-
-error:
-    Py_XDECREF(result);
-
     return cursor;
 }
 
