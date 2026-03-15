@@ -1,0 +1,1 @@
+Dataclass ordering methods were adjusted to simplify comparisons for classes with a single comparison field, aligning the generated behaviour more closely with hand-written comparison logic.
