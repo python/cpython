@@ -162,9 +162,10 @@ The following exceptions are used mostly as base classes for other exceptions.
    .. attribute:: __timestamp_ns__
 
       The absolute time in nanoseconds at which this exception was instantiated
-      (usually: when it was raised); the same accuracy as :func:`time.time_ns`.
-      Display of these timestamps after the exception message in tracebacks is
-      off by default but can be configured using the
+      (usually: when it was raised).
+      Having the same accuracy and time epoch as :func:`time.time_ns`.
+      Collection and display of these timestamps after the exception message in
+      tracebacks is off by default but can be configured using the
       :envvar:`PYTHON_TRACEBACK_TIMESTAMPS` environment variable or the
       :option:`-X traceback_timestamps <-X>` command line option.  In
       applications with complicated exception chains and exception groups it
