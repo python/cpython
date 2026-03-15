@@ -3023,6 +3023,14 @@ module_exec(PyObject *module)
         return 1;
     }
 
+    // + 1 to specialize from RESUME to RESUME_CHECK_JIT
+    // + 1 more due to one loop spent on tracing.
+    long resume_threshold = interp->opt_config.resume_initial_value + 2;
+    if (PyModule_Add(module, "TIER2_RESUME_THRESHOLD",
+                    PyLong_FromLong(resume_threshold)) < 0) {
+        return 1;
+    }
+
     if (PyModule_Add(module, "SPECIALIZATION_THRESHOLD",
                         PyLong_FromLong(ADAPTIVE_WARMUP_VALUE + 1)) < 0) {
         return 1;

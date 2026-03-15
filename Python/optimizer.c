@@ -632,6 +632,12 @@ _PyJit_translate_single_bytecode_to_trace(
         target--;
     }
 
+    if (opcode == ENTER_EXECUTOR) {
+        _PyExecutorObject *executor = old_code->co_executors->executors[oparg & 255];
+        opcode = executor->vm_data.opcode;
+        oparg = (oparg & ~255) | executor->vm_data.oparg;
+    }
+
     if (_PyOpcode_Caches[_PyOpcode_Deopt[opcode]] > 0) {
         uint16_t backoff = (this_instr + 1)->counter.value_and_backoff;
         // adaptive_counter_cooldown is a fresh specialization.
@@ -823,6 +829,7 @@ _PyJit_translate_single_bytecode_to_trace(
 
         case RESUME:
         case RESUME_CHECK:
+        case RESUME_CHECK_JIT:
             /* Use a special tier 2 version of RESUME_CHECK to allow traces to
              *  start with RESUME_CHECK */
             ADD_TO_TRACE(_TIER2_RESUME_CHECK, 0, 0, target);
@@ -1038,12 +1045,9 @@ _PyJit_TryInitializeTracing(
         _Py_RecordFuncPtr record_func = _PyOpcode_RecordFunctions[record_func_index];
         record_func(frame, stack_pointer, oparg, &tracer->prev_state.recorded_value);
     }
-    assert(curr_instr->op.code == JUMP_BACKWARD_JIT || (exit != NULL));
+    assert(curr_instr->op.code == JUMP_BACKWARD_JIT || curr_instr->op.code == RESUME_CHECK_JIT || (exit != NULL));
     tracer->initial_state.jump_backward_instr = curr_instr;
 
-    if (_PyOpcode_Caches[_PyOpcode_Deopt[close_loop_instr->op.code]]) {
-        close_loop_instr[1].counter = trigger_backoff_counter();
-    }
     tracer->is_tracing = true;
     return 1;
 }
@@ -1063,7 +1067,12 @@ _PyJit_FinalizeTracing(PyThreadState *tstate, int err)
             tracer->initial_state.jump_backward_instr[1].counter = restart_backoff_counter(counter);
         }
         else {
-            tracer->initial_state.jump_backward_instr[1].counter = initial_jump_backoff_counter(&tstate->interp->opt_config);
+            if (tracer->initial_state.jump_backward_instr[0].op.code == JUMP_BACKWARD_JIT) {
+                tracer->initial_state.jump_backward_instr[1].counter = initial_jump_backoff_counter(&tstate->interp->opt_config);
+            }
+            else {
+                tracer->initial_state.jump_backward_instr[1].counter = initial_resume_backoff_counter(&tstate->interp->opt_config);
+            }
         }
     }
     else if (tracer->initial_state.executor->vm_data.valid) {
@@ -1090,6 +1099,19 @@ _PyJit_FinalizeTracing(PyThreadState *tstate, int err)
     Py_CLEAR(tracer->prev_state.recorded_value);
     uop_buffer_init(buffer, &tracer->uop_array[0], UOP_MAX_TRACE_LENGTH);
     tracer->is_tracing = false;
+}
+
+bool
+_PyJit_EnterExecutorShouldStopTracing(int og_opcode)
+{
+    // Continue tracing (skip over the executor). If it's a RESUME
+    // trace to form longer, more optimizeable traces.
+    // We want to trace over RESUME traces. Otherwise, functions with lots of RESUME
+    // end up with many fragmented traces which perform badly.
+    // See for example, the richards benchmark in pyperformance.
+    // For consideration: We may want to consider tracing over side traces
+    // inserted into bytecode as well in the future.
+    return og_opcode == RESUME_CHECK_JIT;
 }
 
 void
@@ -1773,7 +1795,7 @@ _Py_ExecutorDetach(_PyExecutorObject *executor)
     assert(instruction->op.code == ENTER_EXECUTOR);
     int index = instruction->op.arg;
     assert(code->co_executors->executors[index] == executor);
-    instruction->op.code = executor->vm_data.opcode;
+    instruction->op.code = _PyOpcode_Deopt[executor->vm_data.opcode];
     instruction->op.arg = executor->vm_data.oparg;
     executor->vm_data.code = NULL;
     code->co_executors->executors[index] = NULL;
