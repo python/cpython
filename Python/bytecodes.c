@@ -5141,11 +5141,11 @@ dummy_func(
             PyFunctionObject *func_obj = (PyFunctionObject *)
                 PyFunction_New(codeobj, GLOBALS());
 
-            co = codeobj_st;
-            INPUTS_DEAD();
             if (func_obj == NULL) {
                 ERROR_NO_POP();
             }
+            co = codeobj_st;
+            DEAD(codeobj_st);
 
             _PyFunction_SetVersion(
                 func_obj, ((PyCodeObject *)codeobj)->co_version);

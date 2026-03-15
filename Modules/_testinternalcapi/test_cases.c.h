@@ -9928,10 +9928,10 @@
                 PyFunctionObject *func_obj = (PyFunctionObject *)
                 PyFunction_New(codeobj, GLOBALS());
                 stack_pointer = _PyFrame_GetStackPointer(frame);
-                co = codeobj_st;
                 if (func_obj == NULL) {
                     JUMP_TO_LABEL(error);
                 }
+                co = codeobj_st;
                 _PyFunction_SetVersion(
                                    func_obj, ((PyCodeObject *)codeobj)->co_version);
                 func = PyStackRef_FromPyObjectSteal((PyObject *)func_obj);

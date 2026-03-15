@@ -16706,11 +16706,11 @@
             PyFunctionObject *func_obj = (PyFunctionObject *)
             PyFunction_New(codeobj, GLOBALS());
             stack_pointer = _PyFrame_GetStackPointer(frame);
-            co = codeobj_st;
             if (func_obj == NULL) {
                 SET_CURRENT_CACHED_VALUES(0);
                 JUMP_TO_ERROR();
             }
+            co = codeobj_st;
             _PyFunction_SetVersion(
                                    func_obj, ((PyCodeObject *)codeobj)->co_version);
             func = PyStackRef_FromPyObjectSteal((PyObject *)func_obj);
