@@ -4,7 +4,6 @@ import unittest
 from test import support
 from test.support import import_helper
 from test.support import os_helper
-import time
 
 resource = import_helper.import_module('resource')
 
