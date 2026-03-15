@@ -12,6 +12,8 @@ from io import StringIO
 from tokenize import TokenInfo as TI
 from typing import Iterable, Match, NamedTuple
 
+lazy from _pyrepl.trace import trace
+
 COLORIZE = True
 
 
@@ -581,6 +583,7 @@ def _is_soft_keyword_used(*tokens: TI | None) -> bool:
     For the `*tokens` to match anything, they have to be a three-tuple of
     (previous, current, next).
     """
+    trace("is_soft_keyword_used{t}", t=tokens)
     match tokens:
         case (
             None | TI(T.NEWLINE) | TI(T.INDENT) | TI(string=":"),
@@ -719,10 +722,18 @@ def _recover_unterminated_string(
 
         # in case FSTRING_START was already emitted
         if last_emitted and start <= last_emitted.span.start:
+            trace("before last emitted = {s}", s=start)
             start = last_emitted.span.end + 1
 
         span = _Span(start, end)
+        trace("yielding span {a} -> {b}", a=span.start, b=span.end)
         yield _ColorSpan(span, "string")
+    else:
+        trace(
+            "unhandled token error({buffer}) = {te}",
+            buffer=repr(buffer),
+            te=str(exc),
+        )
 
 
 def _gen_colors(buffer: str) -> Iterator[_ColorSpan]:
