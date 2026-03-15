@@ -34,6 +34,7 @@ saferepr()
 
 """
 
+import cmath as _cmath
 import collections as _collections
 import sys as _sys
 import types as _types
@@ -627,7 +628,10 @@ class PrettyPrinter:
         # Return triple (repr_string, isreadable, isrecursive).
         typ = type(object)
         if typ in _builtin_scalars:
-            return repr(object), True, False
+            rep = repr(object)
+            if (typ is float or typ is complex) and not _cmath.isfinite(object):
+                return rep, False, False
+            return rep, True, False
 
         r = getattr(typ, "__repr__", None)
 
