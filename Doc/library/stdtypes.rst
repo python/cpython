@@ -2237,6 +2237,8 @@ expression support in the :mod:`re` module).
    Number, Punctuation, or Symbol (L, M, N, P, or S); plus the ASCII space 0x20.
    Nonprintable characters are those in group Separator or Other (Z or C),
    except the ASCII space.
+   Additionally, strong right-to-left characters which have a bidirectional
+   class R or AL considered non-printable.
 
    For example:
 
@@ -2246,6 +2248,11 @@ expression support in the :mod:`re` module).
       (True, True)
       >>> '\t'.isprintable(), '\n'.isprintable()
       (False, False)
+      >>> '\u05be'.isprintable(), '\u0608'.isprintable()
+      (False, False)
+
+   .. versionchanged:: next
+      Strong right-to-left characters considered non-printable.
 
    See also :meth:`isspace`.
 
