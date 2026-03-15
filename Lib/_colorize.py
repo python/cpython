@@ -201,6 +201,50 @@ class Difflib(ThemeSection):
 
 
 @dataclass(frozen=True, kw_only=True)
+class Dis(ThemeSection):
+    label_bg: str = ANSIColors.BACKGROUND_CYAN
+    label_fg: str = ANSIColors.BLACK
+
+    exception_label: str = ANSIColors.CYAN
+    argument_detail: str = ANSIColors.CYAN
+
+    op_load: str = ANSIColors.BOLD_BLUE
+    op_pop: str = ANSIColors.BOLD_MAGENTA
+    op_call_return: str = ANSIColors.BOLD_YELLOW
+    op_control_flow: str = ANSIColors.BOLD_GREEN
+
+    reset: str = ANSIColors.RESET
+
+    def color_by_opname(self, opname: str) -> str:
+        if opname.startswith("LOAD_"):
+            return self.op_load
+
+        if opname.startswith("POP_"):
+            return self.op_pop
+
+        if opname.startswith(("CALL", "RETURN")) or opname in (
+            "YIELD_VALUE",
+            "MAKE_FUNCTION",
+            "SET_FUNCTION_ATTRIBUTE",
+            "RESUME",
+        ):
+            return self.op_call_return
+
+        if opname.startswith(("JUMP_", "POP_JUMP_", "FOR_ITER")) or opname in (
+            "SEND",
+            "GET_AWAITABLE",
+            "GET_AITER",
+            "GET_ANEXT",
+            "END_ASYNC_FOR",
+            "CLEANUP_THROW",
+        ):
+            return self.op_control_flow
+
+
+        return self.reset
+
+
+@dataclass(frozen=True, kw_only=True)
 class LiveProfiler(ThemeSection):
     """Theme section for the live profiling TUI (Tachyon profiler).
 
@@ -357,6 +401,7 @@ class Theme:
     syntax: Syntax = field(default_factory=Syntax)
     traceback: Traceback = field(default_factory=Traceback)
     unittest: Unittest = field(default_factory=Unittest)
+    dis: Dis = field(default_factory=Dis)
 
     def copy_with(
         self,
@@ -367,6 +412,7 @@ class Theme:
         syntax: Syntax | None = None,
         traceback: Traceback | None = None,
         unittest: Unittest | None = None,
+        dis: Dis | None = None
     ) -> Self:
         """Return a new Theme based on this instance with some sections replaced.
 
@@ -380,6 +426,7 @@ class Theme:
             syntax=syntax or self.syntax,
             traceback=traceback or self.traceback,
             unittest=unittest or self.unittest,
+            dis=dis or self.dis
         )
 
     @classmethod
@@ -397,6 +444,7 @@ class Theme:
             syntax=Syntax.no_colors(),
             traceback=Traceback.no_colors(),
             unittest=Unittest.no_colors(),
+            dis=Dis.no_colors(),
         )
 
 
