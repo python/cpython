@@ -594,6 +594,25 @@ class TestInterpreterStack(IsTestBase):
         self.assertEqual(inspect.formatargvalues(args, varargs, varkw, locals),
                          '(x=11, y=14)')
 
+    def test_formatargvalues_deleted_args(self):
+        # gh-61448: formatargvalues should not raise KeyError when
+        # argument names are no longer bound in the frame locals.
+        def fun(a, b, x, y):
+            del b, y
+            return inspect.currentframe()
+
+        result = inspect.formatargvalues(*inspect.getargvalues(fun(2, 4, 8, 16)))
+        self.assertEqual(result, '(a=2, b=<deleted>, x=8, y=<deleted>)')
+
+    def test_formatargvalues_deleted_varargs_varkw(self):
+        # gh-61448: formatargvalues should handle deleted *args and **kwargs.
+        def fun(a, *args, **kwargs):
+            del args, kwargs
+            return inspect.currentframe()
+
+        result = inspect.formatargvalues(*inspect.getargvalues(fun(1, 2, k=3)))
+        self.assertEqual(result, '(a=1, *args=<deleted>, **kwargs=<deleted>)')
+
     def test_previous_frame(self):
         args, varargs, varkw, locals = inspect.getargvalues(mod.fr.f_back)
         self.assertEqual(args, ['a', 'b', 'c', 'd', 'e', 'f'])

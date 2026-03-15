@@ -1385,6 +1385,16 @@ def formatannotationrelativeto(object):
     return _formatannotation
 
 
+class _Deleted:
+    """Sentinel for arguments that are no longer bound in the frame locals."""
+    __slots__ = ()
+    def __repr__(self):
+        return '<deleted>'
+
+_DELETED = _Deleted()
+del _Deleted
+
+
 def formatargvalues(args, varargs, varkw, locals,
                     formatarg=str,
                     formatvarargs=lambda name: '*' + name,
@@ -1398,14 +1408,14 @@ def formatargvalues(args, varargs, varkw, locals,
     argument is an optional function to format the sequence of arguments."""
     def convert(name, locals=locals,
                 formatarg=formatarg, formatvalue=formatvalue):
-        return formatarg(name) + formatvalue(locals[name])
+        return formatarg(name) + formatvalue(locals.get(name, _DELETED))
     specs = []
     for i in range(len(args)):
         specs.append(convert(args[i]))
     if varargs:
-        specs.append(formatvarargs(varargs) + formatvalue(locals[varargs]))
+        specs.append(formatvarargs(varargs) + formatvalue(locals.get(varargs, _DELETED)))
     if varkw:
-        specs.append(formatvarkw(varkw) + formatvalue(locals[varkw]))
+        specs.append(formatvarkw(varkw) + formatvalue(locals.get(varkw, _DELETED)))
     return '(' + ', '.join(specs) + ')'
 
 def _missing_arguments(f_name, argnames, pos, values):
