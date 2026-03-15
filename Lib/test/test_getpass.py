@@ -174,7 +174,8 @@ class UnixGetpassTest(unittest.TestCase):
 
             result = getpass.unix_getpass(echo_char='*')
             mock_input.assert_called_once_with('Password: ', textio(),
-                                               input=textio(), echo_char='*')
+                                               input=textio(), echo_char='*',
+                                               term_ctrl_chars=mock.ANY)
             self.assertEqual(result, mock_result)
 
     def test_raw_input_with_echo_char(self):
@@ -199,6 +200,157 @@ class UnixGetpassTest(unittest.TestCase):
                                         '*')
         self.assertEqual(result, expect_result)
         self.assertEqual('Password: *******\x08 \x08', mock_output.getvalue())
+
+    def test_kill_ctrl_u_with_echo_char(self):
+        # Ctrl+U (KILL) should clear the entire line
+        passwd = 'foo\x15bar'  # Type "foo", hit Ctrl+U, type "bar"
+        expect_result = 'bar'
+        mock_input = StringIO(f'{passwd}\n')
+        mock_output = StringIO()
+        result = getpass._raw_input('Password: ', mock_output, mock_input,
+                                    '*')
+        self.assertEqual(result, expect_result)
+        # Should show "***" then clear all 3, then show "***" for "bar"
+        output = mock_output.getvalue()
+        self.assertIn('***', output)
+        # Should have backspaces to clear the "foo" part
+        self.assertIn('\b', output)
+
+    def test_werase_ctrl_w_with_echo_char(self):
+        # Ctrl+W (WERASE) should delete the previous word
+        passwd = 'hello world\x17end'  # Type "hello world", hit Ctrl+W, type "end"
+        expect_result = 'hello end'
+        mock_input = StringIO(f'{passwd}\n')
+        mock_output = StringIO()
+        result = getpass._raw_input('Password: ', mock_output, mock_input,
+                                    '*')
+        self.assertEqual(result, expect_result)
+
+    def test_lnext_ctrl_v_with_echo_char(self):
+        # Ctrl+V (LNEXT) should insert the next character literally
+        passwd = 'test\x16\x15more'  # Type "test", hit Ctrl+V, then Ctrl+U (literal), type "more"
+        expect_result = 'test\x15more'  # Should contain literal Ctrl+U
+        mock_input = StringIO(f'{passwd}\n')
+        mock_output = StringIO()
+        result = getpass._raw_input('Password: ', mock_output, mock_input,
+                                    '*')
+        self.assertEqual(result, expect_result)
+
+    def test_ctrl_a_move_to_start_with_echo_char(self):
+        # Ctrl+A should move cursor to start
+        # Type "end", Ctrl+A, type "start", result should be "startend"
+        passwd = 'end\x01start'
+        expect_result = 'startend'
+        mock_input = StringIO(f'{passwd}\n')
+        mock_output = StringIO()
+        result = getpass._raw_input('Password: ', mock_output, mock_input,
+                                    '*')
+        self.assertEqual(result, expect_result)
+
+    def test_ctrl_e_move_to_end_with_echo_char(self):
+        # Ctrl+E should move cursor to end
+        # Type "start", Ctrl+A, "X", Ctrl+E, "end" -> "Xstartend"
+        passwd = 'start\x01X\x05end'
+        expect_result = 'Xstartend'
+        mock_input = StringIO(f'{passwd}\n')
+        mock_output = StringIO()
+        result = getpass._raw_input('Password: ', mock_output, mock_input,
+                                    '*')
+        self.assertEqual(result, expect_result)
+
+    def test_ctrl_k_kill_forward_with_echo_char(self):
+        # Ctrl+K should kill from cursor to end
+        # Type "hello world", Ctrl+A, move 6 chars right (type 6 random chars then backspace 6),
+        # Actually simpler: type "deleteworld", Ctrl+A, 6 chars forward somehow...
+        # Let me use a different approach: "hello\x01\x0b" = type "hello", Ctrl+A, Ctrl+K
+        # This should delete everything, resulting in ""
+        passwd = 'delete\x01\x0bkeep'  # "delete", Ctrl+A, Ctrl+K, "keep"
+        expect_result = 'keep'
+        mock_input = StringIO(f'{passwd}\n')
+        mock_output = StringIO()
+        result = getpass._raw_input('Password: ', mock_output, mock_input,
+                                    '*')
+        self.assertEqual(result, expect_result)
+
+    def test_ctrl_c_interrupt_with_echo_char(self):
+        # Ctrl+C should raise KeyboardInterrupt
+        passwd = 'test\x03more'  # Type "test", hit Ctrl+C
+        mock_input = StringIO(passwd)
+        mock_output = StringIO()
+        with self.assertRaises(KeyboardInterrupt):
+            getpass._raw_input('Password: ', mock_output, mock_input, '*')
+
+    def test_ctrl_d_eof_with_echo_char(self):
+        # Ctrl+D twice should cause EOF
+        passwd = 'test\x04\x04'  # Type "test", hit Ctrl+D twice
+        mock_input = StringIO(passwd)
+        mock_output = StringIO()
+        result = getpass._raw_input('Password: ', mock_output, mock_input, '*')
+        self.assertEqual(result, 'test')
+
+    def test_backspace_at_start_with_echo_char(self):
+        # Backspace at start should do nothing
+        passwd = '\x7fhello'  # Backspace, then "hello"
+        expect_result = 'hello'
+        mock_input = StringIO(f'{passwd}\n')
+        mock_output = StringIO()
+        result = getpass._raw_input('Password: ', mock_output, mock_input, '*')
+        self.assertEqual(result, expect_result)
+
+    def test_ctrl_k_at_end_with_echo_char(self):
+        # Ctrl+K at end should do nothing
+        passwd = 'hello\x0b'  # Type "hello", Ctrl+K at end
+        expect_result = 'hello'
+        mock_input = StringIO(f'{passwd}\n')
+        mock_output = StringIO()
+        result = getpass._raw_input('Password: ', mock_output, mock_input, '*')
+        self.assertEqual(result, expect_result)
+
+    def test_ctrl_w_on_empty_with_echo_char(self):
+        # Ctrl+W on empty line should do nothing
+        passwd = '\x17hello'  # Ctrl+W, then "hello"
+        expect_result = 'hello'
+        mock_input = StringIO(f'{passwd}\n')
+        mock_output = StringIO()
+        result = getpass._raw_input('Password: ', mock_output, mock_input, '*')
+        self.assertEqual(result, expect_result)
+
+    def test_ctrl_u_on_empty_with_echo_char(self):
+        # Ctrl+U on empty line should do nothing
+        passwd = '\x15hello'  # Ctrl+U, then "hello"
+        expect_result = 'hello'
+        mock_input = StringIO(f'{passwd}\n')
+        mock_output = StringIO()
+        result = getpass._raw_input('Password: ', mock_output, mock_input, '*')
+        self.assertEqual(result, expect_result)
+
+    def test_multiple_ctrl_operations_with_echo_char(self):
+        # Test combination: type, move, insert, delete
+        # "world", Ctrl+A, "hello ", Ctrl+E, "!", Ctrl+A, Ctrl+K, "start"
+        passwd = 'world\x01hello \x05!\x01\x0bstart'
+        expect_result = 'start'
+        mock_input = StringIO(f'{passwd}\n')
+        mock_output = StringIO()
+        result = getpass._raw_input('Password: ', mock_output, mock_input, '*')
+        self.assertEqual(result, expect_result)
+
+    def test_ctrl_w_multiple_words_with_echo_char(self):
+        # Ctrl+W should delete only the last word
+        passwd = 'one two three\x17'  # Delete "three"
+        expect_result = 'one two '
+        mock_input = StringIO(f'{passwd}\n')
+        mock_output = StringIO()
+        result = getpass._raw_input('Password: ', mock_output, mock_input, '*')
+        self.assertEqual(result, expect_result)
+
+    def test_ctrl_v_then_ctrl_c_with_echo_char(self):
+        # Ctrl+V should make Ctrl+C literal (not interrupt)
+        passwd = 'test\x16\x03end'  # Type "test", Ctrl+V, Ctrl+C, "end"
+        expect_result = 'test\x03end'  # Should contain literal Ctrl+C
+        mock_input = StringIO(f'{passwd}\n')
+        mock_output = StringIO()
+        result = getpass._raw_input('Password: ', mock_output, mock_input, '*')
+        self.assertEqual(result, expect_result)
 
 
 class GetpassEchoCharTest(unittest.TestCase):
