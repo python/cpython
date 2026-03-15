@@ -953,10 +953,9 @@ Reader_iternext_lock_held(PyObject *op)
         }
         if (!PyUnicode_Check(lineobj)) {
             PyErr_Format(module_state->error_obj,
-                         "iterator should return strings, "
-                         "not %.200s "
+                         "iterator must return str objects, not %T "
                          "(the file should be opened in text mode)",
-                         Py_TYPE(lineobj)->tp_name
+                         lineobj
                 );
             Py_DECREF(lineobj);
             return NULL;

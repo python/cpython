@@ -1302,8 +1302,8 @@ _Unpickler_ReadIntoFromFile(PickleState *state, UnpicklerObject *self, char *buf
         }
         if (!PyBytes_Check(data)) {
             PyErr_Format(PyExc_ValueError,
-                         "read() returned non-bytes object (%R)",
-                         Py_TYPE(data));
+                         "read() must return a bytes object, not %T",
+                         data);
             Py_DECREF(data);
             return -1;
         }
