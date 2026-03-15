@@ -412,7 +412,7 @@ Glossary
    decorator
       A function returning another function, usually applied as a function
       transformation using the ``@wrapper`` syntax.  Common examples for
-      decorators are :func:`classmethod` and :func:`staticmethod`.
+      decorators are :deco:`classmethod` and :deco:`staticmethod`.
 
       The decorator syntax is merely syntactic sugar, the following two
       function definitions are semantically equivalent::
@@ -675,7 +675,7 @@ Glossary
       determined by the dispatch algorithm.
 
       See also the :term:`single dispatch` glossary entry, the
-      :func:`functools.singledispatch` decorator, and :pep:`443`.
+      :deco:`functools.singledispatch` decorator, and :pep:`443`.
 
    generic type
       A :term:`type` that can be parameterized; typically a
