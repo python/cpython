@@ -223,9 +223,6 @@ endian processor, or ``1`` on little endian processor.
 Return value: ``0`` if all is OK, ``-1`` if error (and an exception is set,
 most likely :exc:`OverflowError`).
 
-.. impl-detail::
-    The :c:func:`PyFloat_Pack8` function always succeeds in CPython.
-
 .. c:function:: int PyFloat_Pack2(double x, char *p, int le)
 
    Pack a C double as the IEEE 754 binary16 half-precision format.
@@ -237,6 +234,9 @@ most likely :exc:`OverflowError`).
 .. c:function:: int PyFloat_Pack8(double x, char *p, int le)
 
    Pack a C double as the IEEE 754 binary64 double precision format.
+
+   .. impl-detail::
+       This function always succeeds in CPython.
 
 
 Unpack functions
