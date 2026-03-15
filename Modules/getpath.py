@@ -280,6 +280,17 @@ elif os_name == 'darwin':
     # whether we are in a build tree. This is true even if the
     # executable path was provided in the config.
     real_executable = executable
+elif os_name == 'posix' and real_executable:
+    # real_executable is more accurate than the value we have computed for
+    # executable, so use it instead if it resolves to a different path
+    # (eg. GH-124241).
+    # If real_executable and executable resolve to the same path, prefer
+    # executable, as that is much more likely to be the path the user is using.
+    try:
+        if realpath(executable) != real_executable:
+            executable = real_executable
+    except OSError:
+        pass
 
 if not executable and program_name and ENV_PATH:
     # Resolve names against PATH.
