@@ -80,7 +80,9 @@ class PythonTestRunner(val context: Context) {
                 continue
             }
             input.use {
-                File(targetSubdir, name).outputStream().use { output ->
+                // Undo the .gz workaround from build.gradle.kts.
+                val outputName = name.replace(Regex("""(.*)-"""), "$1")
+                File(targetSubdir, outputName).outputStream().use { output ->
                     input.copyTo(output)
                 }
             }

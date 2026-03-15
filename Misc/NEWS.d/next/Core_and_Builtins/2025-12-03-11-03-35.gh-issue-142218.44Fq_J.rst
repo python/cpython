@@ -1,2 +1,0 @@
-Fix crash when inserting into a split table dictionary with a non
-:class:`str` key that matches an existing key.

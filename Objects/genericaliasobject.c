@@ -68,10 +68,15 @@ ga_repr_items_list(PyUnicodeWriter *writer, PyObject *p)
                 return -1;
             }
         }
-        PyObject *item = PyList_GET_ITEM(p, i);
+        PyObject *item = PyList_GetItemRef(p, i);
+        if (item == NULL) {
+            return -1;  // list can be mutated in a callback
+        }
         if (_Py_typing_type_repr(writer, item) < 0) {
+            Py_DECREF(item);
             return -1;
         }
+        Py_DECREF(item);
     }
 
     if (PyUnicodeWriter_WriteChar(writer, ']') < 0) {
@@ -294,6 +299,8 @@ subs_tvars(PyObject *obj, PyObject *params,
                                     &PyTuple_GET_ITEM(arg, 0),
                                     PyTuple_GET_SIZE(arg));
                     if (j < 0) {
+                        Py_DECREF(subparams);
+                        Py_DECREF(subargs);
                         return NULL;
                     }
                     continue;
@@ -450,6 +457,7 @@ _Py_subs_parameters(PyObject *self, PyObject *args, PyObject *parameters, PyObje
     if (is_args_list) {
         args = tuple_args = PySequence_Tuple(args);
         if (args == NULL) {
+            Py_DECREF(item);
             return NULL;
         }
     }

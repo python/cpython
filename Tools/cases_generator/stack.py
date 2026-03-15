@@ -216,11 +216,18 @@ def array_or_scalar(var: StackItem | Local) -> str:
     return "array" if var.is_array() else "scalar"
 
 class Stack:
-    def __init__(self) -> None:
+    def __init__(self, check_stack_bounds: bool = False) -> None:
         self.base_offset = PointerOffset.zero()
         self.physical_sp = PointerOffset.zero()
         self.logical_sp = PointerOffset.zero()
         self.variables: list[Local] = []
+        self.check_stack_bounds = check_stack_bounds
+
+    def push_cache(self, cached_items:list[str], out: CWriter) -> None:
+        for i, name in enumerate(cached_items):
+            out.start_line()
+            out.emit(f"_PyStackRef _stack_item_{i} = {name};\n")
+            self.push(Local.register(f"_stack_item_{i}"))
 
     def drop(self, var: StackItem, check_liveness: bool) -> None:
         self.logical_sp = self.logical_sp.pop(var)
@@ -316,8 +323,17 @@ class Stack:
                 self._print(out)
             var_offset = var_offset.push(var.item)
 
+    def stack_bound_check(self, out: CWriter) -> None:
+        if not self.check_stack_bounds:
+            return
+        if self.physical_sp != self.logical_sp:
+            diff = self.logical_sp - self.physical_sp
+            out.start_line()
+            out.emit(f"CHECK_STACK_BOUNDS({diff});\n")
+
     def flush(self, out: CWriter) -> None:
         self._print(out)
+        self.stack_bound_check(out)
         self.save_variables(out)
         self._save_physical_sp(out)
         out.start_line()
@@ -347,6 +363,7 @@ class Stack:
         other.physical_sp = self.physical_sp
         other.logical_sp = self.logical_sp
         other.variables = [var.copy() for var in self.variables]
+        other.check_stack_bounds = self.check_stack_bounds
         return other
 
     def __eq__(self, other: object) -> bool:
@@ -475,7 +492,7 @@ class Storage:
     def _push_defined_outputs(self) -> None:
         defined_output = ""
         for output in self.outputs:
-            if output.in_local and not output.memory_offset:
+            if output.in_local and not output.memory_offset and not output.item.peek:
                 defined_output = output.name
         if not defined_output:
             return
@@ -499,6 +516,7 @@ class Storage:
         return False
 
     def flush(self, out: CWriter) -> None:
+        self._print(out)
         self.clear_dead_inputs()
         self._push_defined_outputs()
         self.stack.flush(out)
