@@ -6227,11 +6227,20 @@ add_datetime_timedelta(PyDateTime_DateTime *date, PyDateTime_Delta *delta,
         return NULL;
     }
 
-    return new_datetime_subclass_ex(year, month, day,
-                                    hour, minute, second, microsecond,
-                                    HASTZINFO(date) ? date->tzinfo : Py_None,
-                                    Py_TYPE(date));
-}
+    PyObject *result = new_datetime_subclass_ex(year, month, day,
+                                                hour, minute, second, microsecond,
+                                                HASTZINFO(date) ? date->tzinfo : Py_None,
+                                                Py_TYPE(date));
+    if (result != NULL && !PyDateTime_Check(result)) {
+            PyErr_Format(PyExc_TypeError,
+                        "datetime arithmetic on a subclass returned "
+                        "non-datetime (type %T)",
+                        result);
+            Py_DECREF(result);
+            return NULL;
+        }
+        return result;
+    }
 
 static PyObject *
 datetime_add(PyObject *left, PyObject *right)
