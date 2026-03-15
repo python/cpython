@@ -56,8 +56,18 @@ if test -z "$VIRTUAL_ENV_DISABLE_PROMPT"
         # Save the return status of the last command.
         set -l old_status $status
 
+        set -l virtual_env_prompt_prefix "("
+        set -l virtual_env_prompt_suffix ")"
+
+        if set -q VIRTUAL_ENV_PROMPT_PREFIX
+            set virtual_env_prompt_prefix $VIRTUAL_ENV_PROMPT_PREFIX
+        end
+        if set -q VIRTUAL_ENV_PROMPT_SUFFIX
+            set virtual_env_prompt_suffix $VIRTUAL_ENV_PROMPT_SUFFIX
+        end
+
         # Output the venv prompt; color taken from the blue of the Python logo.
-        printf "%s(%s)%s " (set_color 4B8BBE) __VENV_PROMPT__ (set_color normal)
+        printf "%s%s%s%s%s " (set_color 4B8BBE) $virtual_env_prompt_prefix __VENV_PROMPT__ $virtual_env_prompt_suffix (set_color normal)
 
         # Restore the return status of the previous command.
         echo "exit $old_status" | .
