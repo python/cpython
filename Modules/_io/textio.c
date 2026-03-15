@@ -672,6 +672,8 @@ struct textio
     int ok; /* initialized? */
     int detached;
     Py_ssize_t chunk_size;
+    /* Use helpers like _textiowrapper_buffer_get to access buffer; many
+       operations can set it to NULL (ref: gh-143008, gh-142594). */
     PyObject *buffer;
     PyObject *encoding;
     PyObject *encoder;
@@ -728,6 +730,55 @@ struct textio
 };
 
 #define textio_CAST(op) ((textio *)(op))
+
+/* Helpers to safely operate on self->buffer.
+
+self->buffer can be detached (set to NULL) by any user code that is called
+leading to NULL pointer dereferences (ex. gh-143008, gh-142594). Protect against
+that by using helpers to check self->buffer validity at callsites. */
+static PyObject *
+_textiowrapper_buffer_safe(textio *self) {
+    /* Check self->buffer directly but match errors of CHECK_ATTACHED since this
+       is called during construction and destruction where self->ok which
+       CHECK_ATTACHED uses does not imply self->buffer state. */
+    if (self->buffer == NULL) {
+        if (self->ok <= 0)
+            PyErr_SetString(PyExc_ValueError,
+                "I/O operation on uninitialized object");
+        else
+            PyErr_SetString(PyExc_ValueError,
+                "underlying buffer has been detached");
+        return NULL;
+    }
+    return self->buffer;
+}
+
+static PyObject *
+_textiowrapper_buffer_get_attr(textio *self, PyObject *attr_name) {
+    PyObject *buffer = _textiowrapper_buffer_safe(self);
+    if (buffer == NULL) {
+        return NULL;
+    }
+    return PyObject_GetAttr(buffer, attr_name);
+}
+
+static PyObject *
+_textiowrapper_buffer_callmethod_noargs(textio *self, PyObject *name) {
+    PyObject *buffer = _textiowrapper_buffer_safe(self);
+    if (buffer == NULL) {
+        return NULL;
+    }
+    return PyObject_CallMethodNoArgs(buffer, name);
+}
+
+static PyObject *
+_textiowrapper_buffer_callmethod_onearg(textio *self, PyObject *name, PyObject *arg) {
+    PyObject *buffer = _textiowrapper_buffer_safe(self);
+    if (buffer == NULL) {
+        return NULL;
+    }
+    return PyObject_CallMethodOneArg(buffer, name, arg);
+}
 
 static void
 textiowrapper_set_decoded_chars(textio *self, PyObject *chars);
@@ -898,7 +949,7 @@ _textiowrapper_set_decoder(textio *self, PyObject *codec_info,
     PyObject *res;
     int r;
 
-    res = PyObject_CallMethodNoArgs(self->buffer, &_Py_ID(readable));
+    res = _textiowrapper_buffer_callmethod_noargs(self, &_Py_ID(readable));
     if (res == NULL)
         return -1;
 
@@ -954,7 +1005,7 @@ _textiowrapper_set_encoder(textio *self, PyObject *codec_info,
     PyObject *res;
     int r;
 
-    res = PyObject_CallMethodNoArgs(self->buffer, &_Py_ID(writable));
+    res = _textiowrapper_buffer_callmethod_noargs(self, &_Py_ID(writable));
     if (res == NULL)
         return -1;
 
@@ -1000,8 +1051,8 @@ _textiowrapper_fix_encoder_state(textio *self)
 
     self->encoding_start_of_stream = 1;
 
-    PyObject *cookieObj = PyObject_CallMethodNoArgs(
-        self->buffer, &_Py_ID(tell));
+    PyObject *cookieObj = _textiowrapper_buffer_callmethod_noargs(
+            self, &_Py_ID(tell));
     if (cookieObj == NULL) {
         return -1;
     }
@@ -1641,7 +1692,7 @@ _textiowrapper_writeflush(textio *self)
 
     PyObject *ret;
     do {
-        ret = PyObject_CallMethodOneArg(self->buffer, &_Py_ID(write), b);
+        ret = _textiowrapper_buffer_callmethod_onearg(self, &_Py_ID(write), b);
     } while (ret == NULL && _PyIO_trap_eintr());
     Py_DECREF(b);
     // NOTE: We cleared buffer but we don't know how many bytes are actually written
@@ -1787,7 +1838,8 @@ _io_TextIOWrapper_write_impl(textio *self, PyObject *text)
     }
 
     if (needflush) {
-        if (_PyFile_Flush(self->buffer) < 0) {
+        PyObject *buffer = _textiowrapper_buffer_safe(self);
+        if (buffer == NULL || _PyFile_Flush(buffer) < 0) {
             return NULL;
         }
     }
@@ -1917,9 +1969,9 @@ textiowrapper_read_chunk(textio *self, Py_ssize_t size_hint)
     if (chunk_size == NULL)
         goto fail;
 
-    input_chunk = PyObject_CallMethodOneArg(self->buffer,
-        (self->has_read1 ? &_Py_ID(read1): &_Py_ID(read)),
-        chunk_size);
+    input_chunk = _textiowrapper_buffer_callmethod_onearg(self,
+            (self->has_read1 ? &_Py_ID(read1): &_Py_ID(read)),
+            chunk_size);
     Py_DECREF(chunk_size);
     if (input_chunk == NULL)
         goto fail;
@@ -2003,7 +2055,8 @@ _io_TextIOWrapper_read_impl(textio *self, Py_ssize_t n)
 
     if (n < 0) {
         /* Read everything */
-        PyObject *bytes = PyObject_CallMethodNoArgs(self->buffer, &_Py_ID(read));
+        PyObject *bytes = _textiowrapper_buffer_callmethod_noargs(self,
+                &_Py_ID(read));
         PyObject *decoded;
         if (bytes == NULL)
             goto fail;
@@ -2600,7 +2653,11 @@ _io_TextIOWrapper_seek_impl(textio *self, PyObject *cookieObj, int whence)
             Py_DECREF(res);
         }
 
-        res = _PyObject_CallMethod(self->buffer, &_Py_ID(seek), "ii", 0, 2);
+        PyObject *buf = _textiowrapper_buffer_safe(self);
+        if (buf == NULL) {
+            goto fail;
+        }
+        res = _PyObject_CallMethod(buf, &_Py_ID(seek), "ii", 0, 2);
         Py_CLEAR(cookieObj);
         if (res == NULL)
             goto fail;
@@ -2648,7 +2705,7 @@ _io_TextIOWrapper_seek_impl(textio *self, PyObject *cookieObj, int whence)
     posobj = PyLong_FromOff_t(cookie.start_pos);
     if (posobj == NULL)
         goto fail;
-    res = PyObject_CallMethodOneArg(self->buffer, &_Py_ID(seek), posobj);
+    res = _textiowrapper_buffer_callmethod_onearg(self, &_Py_ID(seek), posobj);
     Py_DECREF(posobj);
     if (res == NULL)
         goto fail;
@@ -2665,8 +2722,14 @@ _io_TextIOWrapper_seek_impl(textio *self, PyObject *cookieObj, int whence)
 
     if (cookie.chars_to_skip) {
         /* Just like _read_chunk, feed the decoder and save a snapshot. */
-        PyObject *input_chunk = _PyObject_CallMethod(self->buffer, &_Py_ID(read),
-                                                     "i", cookie.bytes_to_feed);
+        PyObject *bytes_to_feed = PyLong_FromLong(cookie.bytes_to_feed);
+        if (bytes_to_feed == NULL) {
+            goto fail;
+        }
+        PyObject *input_chunk = _textiowrapper_buffer_callmethod_onearg(self,
+                &_Py_ID(read), bytes_to_feed);
+        Py_DECREF(bytes_to_feed);
+
         PyObject *decoded;
 
         if (input_chunk == NULL)
@@ -2765,7 +2828,7 @@ _io_TextIOWrapper_tell_impl(textio *self)
         goto fail;
     }
 
-    posobj = PyObject_CallMethodNoArgs(self->buffer, &_Py_ID(tell));
+    posobj = _textiowrapper_buffer_callmethod_noargs(self, &_Py_ID(tell));
     if (posobj == NULL)
         goto fail;
 
@@ -2975,7 +3038,7 @@ _io_TextIOWrapper_truncate_impl(textio *self, PyObject *pos)
         return NULL;
     }
 
-    return PyObject_CallMethodOneArg(self->buffer, &_Py_ID(truncate), pos);
+    return _textiowrapper_buffer_callmethod_onearg(self, &_Py_ID(truncate), pos);
 }
 
 static PyObject *
@@ -3057,8 +3120,7 @@ static PyObject *
 _io_TextIOWrapper_fileno_impl(textio *self)
 /*[clinic end generated code: output=21490a4c3da13e6c input=515e1196aceb97ab]*/
 {
-    CHECK_ATTACHED(self);
-    return PyObject_CallMethodNoArgs(self->buffer, &_Py_ID(fileno));
+    return _textiowrapper_buffer_callmethod_noargs(self, &_Py_ID(fileno));
 }
 
 /*[clinic input]
@@ -3070,8 +3132,7 @@ static PyObject *
 _io_TextIOWrapper_seekable_impl(textio *self)
 /*[clinic end generated code: output=ab223dbbcffc0f00 input=71c4c092736c549b]*/
 {
-    CHECK_ATTACHED(self);
-    return PyObject_CallMethodNoArgs(self->buffer, &_Py_ID(seekable));
+    return _textiowrapper_buffer_callmethod_noargs(self, &_Py_ID(seekable));
 }
 
 /*[clinic input]
@@ -3083,8 +3144,7 @@ static PyObject *
 _io_TextIOWrapper_readable_impl(textio *self)
 /*[clinic end generated code: output=72ff7ba289a8a91b input=80438d1f01b0a89b]*/
 {
-    CHECK_ATTACHED(self);
-    return PyObject_CallMethodNoArgs(self->buffer, &_Py_ID(readable));
+    return _textiowrapper_buffer_callmethod_noargs(self, &_Py_ID(readable));
 }
 
 /*[clinic input]
@@ -3096,8 +3156,7 @@ static PyObject *
 _io_TextIOWrapper_writable_impl(textio *self)
 /*[clinic end generated code: output=a728c71790d03200 input=9d6c22befb0c340a]*/
 {
-    CHECK_ATTACHED(self);
-    return PyObject_CallMethodNoArgs(self->buffer, &_Py_ID(writable));
+    return _textiowrapper_buffer_callmethod_noargs(self, &_Py_ID(writable));
 }
 
 /*[clinic input]
@@ -3109,8 +3168,7 @@ static PyObject *
 _io_TextIOWrapper_isatty_impl(textio *self)
 /*[clinic end generated code: output=12be1a35bace882e input=7f83ff04d4d1733d]*/
 {
-    CHECK_ATTACHED(self);
-    return PyObject_CallMethodNoArgs(self->buffer, &_Py_ID(isatty));
+    return _textiowrapper_buffer_callmethod_noargs(self, &_Py_ID(isatty));
 }
 
 /*[clinic input]
@@ -3127,7 +3185,7 @@ _io_TextIOWrapper_flush_impl(textio *self)
     self->telling = self->seekable;
     if (_textiowrapper_writeflush(self) < 0)
         return NULL;
-    return PyObject_CallMethodNoArgs(self->buffer, &_Py_ID(flush));
+    return _textiowrapper_buffer_callmethod_noargs(self, &_Py_ID(flush));
 }
 
 /*[clinic input]
@@ -3160,8 +3218,8 @@ _io_TextIOWrapper_close_impl(textio *self)
     else {
         PyObject *exc = NULL;
         if (self->finalizing) {
-            res = PyObject_CallMethodOneArg(self->buffer, &_Py_ID(_dealloc_warn),
-                                            (PyObject *)self);
+            res = _textiowrapper_buffer_callmethod_onearg(self,
+                    &_Py_ID(_dealloc_warn), (PyObject *)self);
             if (res) {
                 Py_DECREF(res);
             }
@@ -3173,7 +3231,7 @@ _io_TextIOWrapper_close_impl(textio *self)
             exc = PyErr_GetRaisedException();
         }
 
-        res = PyObject_CallMethodNoArgs(self->buffer, &_Py_ID(close));
+        res = _textiowrapper_buffer_callmethod_noargs(self, &_Py_ID(close));
         if (exc != NULL) {
             _PyErr_ChainExceptions1(exc);
             Py_CLEAR(res);
@@ -3241,8 +3299,7 @@ static PyObject *
 _io_TextIOWrapper_name_get_impl(textio *self)
 /*[clinic end generated code: output=8c2f1d6d8756af40 input=26ecec9b39e30e07]*/
 {
-    CHECK_ATTACHED(self);
-    return PyObject_GetAttr(self->buffer, &_Py_ID(name));
+    return _textiowrapper_buffer_get_attr(self, &_Py_ID(name));
 }
 
 /*[clinic input]
@@ -3255,8 +3312,12 @@ static PyObject *
 _io_TextIOWrapper_closed_get_impl(textio *self)
 /*[clinic end generated code: output=b49b68f443a85e3c input=7dfcf43f63c7003d]*/
 {
+    /* During destruction self->ok is 0 but self->buffer is non-NULL and this
+       needs to error in that case which the safe buffer wrapper does not.
+
+       Match original behavior by calling CHECK_ATTACHED explicitly. */
     CHECK_ATTACHED(self);
-    return PyObject_GetAttr(self->buffer, &_Py_ID(closed));
+    return _textiowrapper_buffer_get_attr(self, &_Py_ID(closed));
 }
 
 /*[clinic input]
