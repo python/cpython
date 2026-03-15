@@ -2469,7 +2469,7 @@ altbininstall: $(BUILDPYTHON) @FRAMEWORKPYTHONW@
 	if test "$(PYTHONFRAMEWORKDIR)" = "no-framework" ; then \
 		$(INSTALL_PROGRAM) $(BUILDPYTHON) $(DESTDIR)$(BINDIR)/python$(LDVERSION)$(EXE); \
 	else \
-		$(INSTALL_PROGRAM) $(STRIPFLAG) Mac/pythonw $(DESTDIR)$(BINDIR)/python$(LDVERSION)$(EXE); \
+		$(INSTALL_PROGRAM) $(STRIPFLAG) Platforms/Mac/pythonw $(DESTDIR)$(BINDIR)/python$(LDVERSION)$(EXE); \
 	fi
 	-if test "$(VERSION)" != "$(LDVERSION)"; then \
 		if test -f $(DESTDIR)$(BINDIR)/python$(VERSION)$(EXE) -o -h $(DESTDIR)$(BINDIR)/python$(VERSION)$(EXE); \
@@ -3102,7 +3102,7 @@ frameworkinstallunversionedstructure:	$(LDLIBRARY)
 		$(INSTALL) -m $(EXEMODE) $$file $(DESTDIR)$(BINDIR); \
 	done
 
-# This installs Mac/Lib into the framework
+# This installs Platforms/Mac/Lib into the framework
 # Install a number of symlinks to keep software that expects a normal unix
 # install (which includes python-config) happy.
 .PHONY: frameworkinstallmaclib

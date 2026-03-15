@@ -22,7 +22,7 @@ from plistlib import UID
 
 ALL_FORMATS=(plistlib.FMT_XML, plistlib.FMT_BINARY)
 
-# The testdata is generated using Mac/Tools/plistlib_generate_testdata.py
+# The testdata is generated using Platforms/Mac/Tools/plistlib_generate_testdata.py
 # (which using PyObjC to control the Cocoa classes for generating plists)
 TESTDATA={
     plistlib.FMT_XML: binascii.a2b_base64(b'''
