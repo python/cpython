@@ -1819,12 +1819,36 @@ show_stats_each_generations(GCState *gcstate)
     // TODO
 }
 
+
+// Initialize the `ob_ref_local` field to the refcount if it's not already
+// initialized. This is for detecting resurrected objects in the unreachable
+// set. Returns true if initialization was performed and false if the refcount
+// doesn't fit in `ob_ref_local`.
+static bool
+gc_maybe_init_unreachable_refs(PyObject *op)
+{
+    Py_ssize_t refcount = (op->ob_ref_shared >> _Py_REF_SHARED_SHIFT);
+    assert(refcount >= 1);
+    if (refcount > INT32_MAX) {
+        // The refcount is too big to fit in `ob_ref_local`
+        return false;
+    }
+
+    if (op->ob_ref_local == 0) {
+        op->ob_ref_local = (uint32_t)refcount;
+    }
+    return true;
+}
+
 // Traversal callback for handle_resurrected_objects.
 static int
 visit_decref_unreachable(PyObject *op, void *data)
 {
     if (gc_is_unreachable(op) && _PyObject_GC_IS_TRACKED(op)) {
-        op->ob_ref_local -= 1;
+        if (gc_maybe_init_unreachable_refs(op)) {
+            assert(op->ob_ref_local > 1);
+            op->ob_ref_local -= 1;
+        }
     }
     return 0;
 }
@@ -1877,8 +1901,7 @@ handle_resurrected_objects(struct collection_state *state)
             continue;
         }
 
-        Py_ssize_t refcount = (op->ob_ref_shared >> _Py_REF_SHARED_SHIFT);
-        if (refcount > INT32_MAX) {
+        if (!gc_maybe_init_unreachable_refs(op)) {
             // The refcount is too big to fit in `ob_ref_local`. Mark the
             // object as immortal and bail out.
             gc_clear_unreachable(op);
@@ -1887,11 +1910,6 @@ handle_resurrected_objects(struct collection_state *state)
             continue;
         }
 
-        op->ob_ref_local += (uint32_t)refcount;
-
-        // Subtract one to account for the reference from the worklist.
-        op->ob_ref_local -= 1;
-
         traverseproc traverse = Py_TYPE(op)->tp_traverse;
         (void)traverse(op, visit_decref_unreachable, NULL);
     }
@@ -1899,12 +1917,14 @@ handle_resurrected_objects(struct collection_state *state)
     // Find resurrected objects
     bool any_resurrected = false;
     WORKSTACK_FOR_EACH(&state->unreachable, op) {
-        int32_t gc_refs = (int32_t)op->ob_ref_local;
+        uint32_t gc_refs = op->ob_ref_local;
         op->ob_ref_local = 0;  // restore ob_ref_local
 
-        _PyObject_ASSERT(op, gc_refs >= 0);
+        // Subtract one for the worklist reference
+        _PyObject_ASSERT(op, gc_refs > 0);
+        gc_refs -= 1;
 
-        if (gc_is_unreachable(op) && gc_refs > 0) {
+        if (gc_is_unreachable(op) && gc_refs != 0) {
             // Clear the unreachable flag on any transitively reachable objects
             // from this one.
             any_resurrected = true;
