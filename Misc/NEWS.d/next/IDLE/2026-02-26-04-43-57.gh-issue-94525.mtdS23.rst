@@ -1,0 +1,4 @@
+Provides smart selection functionality for Tkinter text widgets. By
+analyzing the character at the cursor position and its context, it
+automatically selects text units such as words, lines, code blocks, bracket
+pairs, strings, and more. Contributed by Shixian Li.
