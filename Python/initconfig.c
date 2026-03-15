@@ -304,9 +304,15 @@ arg ...: arguments passed to program in sys.argv[1:]\n\
 
 static const char usage_xoptions[] = "\
 The following implementation-specific options are available:\n\
+-X context_aware_warnings=[0|1]: if true (1) then the warnings module will\n\
+         use a context variables; if false (0) then the warnings module will\n\
+         use module globals, which is not concurrent-safe; set to true for\n\
+         free-threaded builds and false otherwise; also\n\
+         PYTHON_CONTEXT_AWARE_WARNINGS\n\
 -X cpu_count=N: override the return value of os.cpu_count();\n\
          -X cpu_count=default cancels overriding; also PYTHON_CPU_COUNT\n\
 -X dev : enable Python Development Mode; also PYTHONDEVMODE\n\
+-X disable-remote-debug: disable remote debugging; also PYTHON_DISABLE_REMOTE_DEBUG\n\
 -X faulthandler: dump the Python traceback on fatal errors;\n\
          also PYTHONFAULTHANDLER\n\
 -X frozen_modules=[on|off]: whether to use frozen modules; the default is \"on\"\n\
@@ -319,16 +325,18 @@ The following implementation-specific options are available:\n\
 "\
 -X importtime[=2]: show how long each import takes; use -X importtime=2 to\n\
          log imports of already-loaded modules; also PYTHONPROFILEIMPORTTIME\n\
--X lazy_imports=[all|none|normal]: control global lazy imports;\n\
-         default is normal; also PYTHON_LAZY_IMPORTS\n\
 -X int_max_str_digits=N: limit the size of int<->str conversions;\n\
          0 disables the limit; also PYTHONINTMAXSTRDIGITS\n\
+-X lazy_imports=[all|none|normal]: control global lazy imports;\n\
+         default is normal; also PYTHON_LAZY_IMPORTS\n\
 -X no_debug_ranges: don't include extra location information in code objects;\n\
          also PYTHONNODEBUGRANGES\n\
+-X pathconfig_warnings=[0|1]: if true (1) then path configuration is allowed\n\
+         to log warnings into stderr; if false (0) suppress these warnings;\n\
+         set to true by default; also PYTHON_PATHCONFIG_WARNINGS\n\
 -X perf: support the Linux \"perf\" profiler; also PYTHONPERFSUPPORT=1\n\
 -X perf_jit: support the Linux \"perf\" profiler with DWARF support;\n\
          also PYTHON_PERF_JIT_SUPPORT=1\n\
--X disable-remote-debug: disable remote debugging; also PYTHON_DISABLE_REMOTE_DEBUG\n\
 "
 #ifdef Py_DEBUG
 "-X presite=MOD: import this module before site; also PYTHON_PRESITE\n"
@@ -343,24 +351,17 @@ The following implementation-specific options are available:\n\
 "\
 -X showrefcount: output the total reference count and number of used\n\
          memory blocks when the program finishes or after each statement in\n\
-         the interactive interpreter; only works on debug builds\n"
+         the interactive interpreter; only works on debug builds\n\
+-X thread_inherit_context=[0|1]: enable (1) or disable (0) threads inheriting\n\
+         context vars by default; enabled by default in the free-threaded\n\
+         build and disabled otherwise; also PYTHON_THREAD_INHERIT_CONTEXT\n\
+"
 #ifdef Py_GIL_DISABLED
 "-X tlbc=[0|1]: enable (1) or disable (0) thread-local bytecode. Also\n\
          PYTHON_TLBC\n"
 #endif
 "\
--X thread_inherit_context=[0|1]: enable (1) or disable (0) threads inheriting\n\
-         context vars by default; enabled by default in the free-threaded\n\
-         build and disabled otherwise; also PYTHON_THREAD_INHERIT_CONTEXT\n\
--X context_aware_warnings=[0|1]: if true (1) then the warnings module will\n\
-         use a context variables; if false (0) then the warnings module will\n\
-         use module globals, which is not concurrent-safe; set to true for\n\
-         free-threaded builds and false otherwise; also\n\
-         PYTHON_CONTEXT_AWARE_WARNINGS\n\
--X pathconfig_warnings=[0|1]: if true (1) then path configuration is allowed\n\
-         to log warnings into stderr; if false (0) suppress these warnings;\n\
-         set to true by default; also PYTHON_PATHCONFIG_WARNINGS\n\
--X tracemalloc[=N]: trace Python memory allocations; N sets a traceback limit\n \
+-X tracemalloc[=N]: trace Python memory allocations; N sets a traceback limit\n\
          of N frames (default: 1); also PYTHONTRACEMALLOC=N\n\
 -X utf8[=0|1]: enable (1) or disable (0) UTF-8 mode; also PYTHONUTF8\n\
 -X warn_default_encoding: enable opt-in EncodingWarning for 'encoding=None';\n\
