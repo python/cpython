@@ -7,6 +7,7 @@
 #include "pycore_object.h"
 #include "pycore_pyerrors.h"
 #include "pycore_pystate.h"       // _PyThreadState_GET()
+#include "pycore_symtable.h"      // _Py_Mangle()
 #include "pycore_weakref.h"       // FT_CLEAR_WEAKREFS()
 
 
@@ -142,6 +143,20 @@ method___reduce___impl(PyMethodObject *self)
     PyObject *funcname = PyObject_GetAttr(func, &_Py_ID(__name__));
     if (funcname == NULL) {
         return NULL;
+    }
+    if (_Py_IsPrivateName(funcname)) {
+        PyObject *classname = PyType_Check(funcself)
+            ? PyType_GetName((PyTypeObject *)funcself)
+            : PyType_GetName(Py_TYPE(funcself));
+        if (classname == NULL) {
+            Py_DECREF(funcname);
+            return NULL;
+        }
+        Py_SETREF(funcname, _Py_Mangle(classname, funcname));
+        Py_DECREF(classname);
+        if (funcname == NULL) {
+            return NULL;
+        }
     }
     return Py_BuildValue(
             "N(ON)", _PyEval_GetBuiltin(&_Py_ID(getattr)), funcself, funcname);

@@ -155,6 +155,7 @@ __all__ = [
     'Text',
     'TYPE_CHECKING',
     'TypeAlias',
+    'TypeForm',
     'TypeGuard',
     'TypeIs',
     'TypeAliasType',
@@ -588,6 +589,13 @@ class _TypedCacheSpecialForm(_SpecialForm, _root=True):
         return self._getitem(self, *parameters)
 
 
+class _TypeFormForm(_SpecialForm, _root=True):
+    # TypeForm(X) is equivalent to X but indicates to the type checker
+    # that the object is a TypeForm.
+    def __call__(self, obj, /):
+        return obj
+
+
 class _AnyMeta(type):
     def __instancecheck__(self, obj):
         if self is Any:
@@ -890,6 +898,31 @@ def TypeGuard(self, parameters):
 
     ``TypeGuard`` also works with type variables.  For more information, see
     PEP 647 (User-Defined Type Guards).
+    """
+    item = _type_check(parameters, f'{self} accepts only single type.')
+    return _GenericAlias(self, (item,))
+
+
+@_TypeFormForm
+def TypeForm(self, parameters):
+    """A special form representing the value that results from the evaluation
+    of a type expression.
+
+    This value encodes the information supplied in the type expression, and it
+    represents the type described by that type expression.
+
+    When used in a type expression, TypeForm describes a set of type form
+    objects. It accepts a single type argument, which must be a valid type
+    expression. ``TypeForm[T]`` describes the set of all type form objects that
+    represent the type T or types that are assignable to T.
+
+    Usage::
+
+        def cast[T](typ: TypeForm[T], value: Any) -> T: ...
+
+        reveal_type(cast(int, "x"))  # int
+
+    See PEP 747 for more information.
     """
     item = _type_check(parameters, f'{self} accepts only single type.')
     return _GenericAlias(self, (item,))
@@ -1348,10 +1381,11 @@ class _GenericAlias(_BaseGenericAlias, _root=True):
     #     A = Callable[[], None]  # _CallableGenericAlias
     #     B = Callable[[T], None]  # _CallableGenericAlias
     #     C = B[int]  # _CallableGenericAlias
-    # * Parameterized `Final`, `ClassVar`, `TypeGuard`, and `TypeIs`:
+    # * Parameterized `Final`, `ClassVar`, `TypeForm`, `TypeGuard`, and `TypeIs`:
     #     # All _GenericAlias
     #     Final[int]
     #     ClassVar[float]
+    #     TypeForm[bytes]
     #     TypeGuard[bool]
     #     TypeIs[range]
 
@@ -1562,9 +1596,9 @@ class _SpecialGenericAlias(_NotIterable, _BaseGenericAlias, _root=True):
         self._nparams = nparams
         self._defaults = defaults
         if origin.__module__ == 'builtins':
-            self.__doc__ = f'A generic version of {origin.__qualname__}.'
+            self.__doc__ = f'Deprecated alias to {origin.__qualname__}.'
         else:
-            self.__doc__ = f'A generic version of {origin.__module__}.{origin.__qualname__}.'
+            self.__doc__ = f'Deprecated alias to {origin.__module__}.{origin.__qualname__}.'
 
     @_tp_cache
     def __getitem__(self, params):
@@ -1826,6 +1860,7 @@ class _TypingEllipsis:
 _TYPING_INTERNALS = frozenset({
     '__parameters__', '__orig_bases__',  '__orig_class__',
     '_is_protocol', '_is_runtime_protocol', '__protocol_attrs__',
+    '__typing_is_deprecated_inherited_runtime_protocol__',
     '__non_callable_proto_members__', '__type_params__',
 })
 
@@ -2015,6 +2050,16 @@ class _ProtocolMeta(ABCMeta):
                     "Instance and class checks can only be used with "
                     "@runtime_checkable protocols"
                 )
+            if getattr(cls, '__typing_is_deprecated_inherited_runtime_protocol__', False):
+                # See GH-132604.
+                import warnings
+                depr_message = (
+                    f"{cls!r} isn't explicitly decorated with @runtime_checkable but "
+                    "it is used in issubclass() or isinstance(). Instance and class "
+                    "checks can only be used with @runtime_checkable protocols. "
+                    "This will raise a TypeError in Python 3.20."
+                )
+                warnings.warn(depr_message, category=DeprecationWarning, stacklevel=2)
             if (
                 # this attribute is set by @runtime_checkable:
                 cls.__non_callable_proto_members__
@@ -2043,6 +2088,18 @@ class _ProtocolMeta(ABCMeta):
         ):
             raise TypeError("Instance and class checks can only be used with"
                             " @runtime_checkable protocols")
+
+        if getattr(cls, '__typing_is_deprecated_inherited_runtime_protocol__', False):
+            # See GH-132604.
+            import warnings
+
+            depr_message = (
+                f"{cls!r} isn't explicitly decorated with @runtime_checkable but "
+                "it is used in issubclass() or isinstance(). Instance and class "
+                "checks can only be used with @runtime_checkable protocols. "
+                "This will raise a TypeError in Python 3.20."
+            )
+            warnings.warn(depr_message, category=DeprecationWarning, stacklevel=2)
 
         if _abc_instancecheck(cls, instance):
             return True
@@ -2135,6 +2192,11 @@ class Protocol(Generic, metaclass=_ProtocolMeta):
         # Determine if this is a protocol or a concrete subclass.
         if not cls.__dict__.get('_is_protocol', False):
             cls._is_protocol = any(b is Protocol for b in cls.__bases__)
+
+        # Mark inherited runtime checkability (deprecated). See GH-132604.
+        if cls._is_protocol and getattr(cls, '_is_runtime_protocol', False):
+            # This flag is set to False by @runtime_checkable.
+            cls.__typing_is_deprecated_inherited_runtime_protocol__ = True
 
         # Set (or override) the protocol subclass hook.
         if '__subclasshook__' not in cls.__dict__:
@@ -2282,6 +2344,9 @@ def runtime_checkable(cls):
         raise TypeError('@runtime_checkable can be only applied to protocol classes,'
                         ' got %r' % cls)
     cls._is_runtime_protocol = True
+    # See GH-132604.
+    if hasattr(cls, '__typing_is_deprecated_inherited_runtime_protocol__'):
+        cls.__typing_is_deprecated_inherited_runtime_protocol__ = False
     # PEP 544 prohibits using issubclass()
     # with protocols that have non-method members.
     # See gh-113320 for why we compute this attribute here,
@@ -3044,8 +3109,7 @@ def NamedTuple(typename, fields, /):
     """
     types = {n: _type_check(t, f"field {n} annotation must be a type")
              for n, t in fields}
-    field_names = [n for n, _ in fields]
-    nt = _make_nmtuple(typename, field_names, _make_eager_annotate(types), module=_caller())
+    nt = _make_nmtuple(typename, types, _make_eager_annotate(types), module=_caller())
     nt.__orig_bases__ = (NamedTuple,)
     return nt
 

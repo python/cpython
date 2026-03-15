@@ -95,7 +95,7 @@ convention. Patch by Donghee Na.
 .. bpo: 1635741
 .. date: 2020-09-26-14-43-30
 .. nonce: aJS9B3
-.. section: Core and Builtins
+.. section: Library
 
 Port the :mod:`!_bisect` module to the multi-phase initialization API
 (:pep:`489`).
@@ -126,7 +126,7 @@ Taskaya.
 .. bpo: 1635741
 .. date: 2020-09-12-18-34-34
 .. nonce: lh335O
-.. section: Core and Builtins
+.. section: Library
 
 Port the :mod:`!_lsprof` extension module to multi-phase initialization
 (:pep:`489`).
@@ -136,7 +136,7 @@ Port the :mod:`!_lsprof` extension module to multi-phase initialization
 .. bpo: 1635741
 .. date: 2020-09-08-21-58-47
 .. nonce: vdjSLH
-.. section: Core and Builtins
+.. section: Library
 
 Port the :mod:`cmath` extension module to multi-phase initialization
 (:pep:`489`).
@@ -146,7 +146,7 @@ Port the :mod:`cmath` extension module to multi-phase initialization
 .. bpo: 1635741
 .. date: 2020-09-08-20-39-43
 .. nonce: jiXmyT
-.. section: Core and Builtins
+.. section: Library
 
 Port the :mod:`!_scproxy` extension module to multi-phase initialization
 (:pep:`489`).
@@ -156,7 +156,7 @@ Port the :mod:`!_scproxy` extension module to multi-phase initialization
 .. bpo: 1635741
 .. date: 2020-09-07-11-35-02
 .. nonce: rvIexb
-.. section: Core and Builtins
+.. section: Library
 
 Port the :mod:`termios` extension module to multi-phase initialization
 (:pep:`489`).
@@ -166,7 +166,7 @@ Port the :mod:`termios` extension module to multi-phase initialization
 .. bpo: 1635741
 .. date: 2020-09-07-09-45-47
 .. nonce: QuDIut
-.. section: Core and Builtins
+.. section: Library
 
 Convert the :mod:`!_sha256` extension module types to heap types.
 
@@ -185,7 +185,7 @@ classes with a huge amount of arguments. Patch by Pablo Galindo.
 .. bpo: 1635741
 .. date: 2020-09-01-17-22-35
 .. nonce: CnRME3
-.. section: Core and Builtins
+.. section: Library
 
 Port the :mod:`!_overlapped` extension module to multi-phase initialization
 (:pep:`489`).
@@ -195,7 +195,7 @@ Port the :mod:`!_overlapped` extension module to multi-phase initialization
 .. bpo: 1635741
 .. date: 2020-09-01-17-08-07
 .. nonce: X9CZgo
-.. section: Core and Builtins
+.. section: Library
 
 Port the :mod:`!_curses_panel` extension module to multi-phase initialization
 (:pep:`489`).
@@ -205,7 +205,7 @@ Port the :mod:`!_curses_panel` extension module to multi-phase initialization
 .. bpo: 1635741
 .. date: 2020-09-01-17-06-02
 .. nonce: 5jZymK
-.. section: Core and Builtins
+.. section: Library
 
 Port the :mod:`!_opcode` extension module to multi-phase initialization
 (:pep:`489`).
@@ -225,7 +225,7 @@ format string in f-string and :meth:`str.format`.
 .. bpo: 41675
 .. date: 2020-08-31-14-53-17
 .. nonce: VSoqWU
-.. section: Core and Builtins
+.. section: Library
 
 The implementation of :func:`signal.siginterrupt` now uses
 :c:func:`!sigaction` (if it is available in the system) instead of the
@@ -257,7 +257,7 @@ Fix a crash that occurred when destroying subclasses of
 .. bpo: 1635741
 .. date: 2020-08-28-20-54-04
 .. nonce: 7ijlcI
-.. section: Core and Builtins
+.. section: Library
 
 Port the :mod:`zlib` extension module to multi-phase initialization
 (:pep:`489`).
@@ -280,7 +280,7 @@ initialized ``_ast`` module.
 .. bpo: 40077
 .. date: 2020-08-25-22-43-33
 .. nonce: vcxSUa
-.. section: Core and Builtins
+.. section: Library
 
 Convert :mod:`!_operator` to use :c:func:`PyType_FromSpec`.
 
@@ -298,7 +298,7 @@ Port :mod:`!_sha3` to multi-phase init.  Convert static types to heap types.
 .. bpo: 1635741
 .. date: 2020-08-13-07-18-05
 .. nonce: FC13e7
-.. section: Core and Builtins
+.. section: Library
 
 Port the :mod:`!_blake2` extension module to the multi-phase initialization
 API (:pep:`489`).
@@ -337,7 +337,7 @@ The output of ``python --help`` contains now only ASCII characters.
 .. bpo: 1635741
 .. date: 2020-08-10-16-11-32
 .. nonce: O0d3ym
-.. section: Core and Builtins
+.. section: Library
 
 Port the :mod:`!_sha1`, :mod:`!_sha512`, and :mod:`!_md5` extension modules to
 multi-phase initialization API (:pep:`489`).
@@ -454,7 +454,7 @@ Port :mod:`multiprocessing` to multi-phase initialization
 .. bpo: 1635741
 .. date: 2020-07-06-20-43-19
 .. nonce: LYhsni
-.. section: Core and Builtins
+.. section: Library
 
 Port :mod:`winapi` to multiphase initialization
 
@@ -486,7 +486,7 @@ will tagged as so.
 .. bpo: 1635741
 .. date: 2020-07-03-23-10-02
 .. nonce: F5coWe
-.. section: Core and Builtins
+.. section: Library
 
 Port :mod:`faulthandler` to multiphase initialization.
 
@@ -495,7 +495,7 @@ Port :mod:`faulthandler` to multiphase initialization.
 .. bpo: 1635741
 .. date: 2020-07-01-20-17-38
 .. nonce: -AtPYu
-.. section: Core and Builtins
+.. section: Library
 
 Port :mod:`sha256` to multiphase initialization
 
@@ -634,7 +634,7 @@ Remove the remaining files from the old parser and the :mod:`symbol` module.
 .. bpo: 40077
 .. date: 2020-06-18-19-04-30
 .. nonce: _yI-ax
-.. section: Core and Builtins
+.. section: Library
 
 Convert :mod:`!_bz2` to use :c:func:`PyType_FromSpec`.
 
@@ -712,7 +712,7 @@ Fix refleak in _Py_fopen_obj() when PySys_Audit() fails
 .. bpo: 40950
 .. date: 2020-06-12-00-12-28
 .. nonce: tzMy7m
-.. section: Core and Builtins
+.. section: Library
 
 Add a state to the :mod:`!nis` module (:pep:`3121`) and apply the multiphase
 initialization. Patch by Donghee Na.
@@ -999,7 +999,7 @@ Improve performance of generators by not raising internal StopIteration.
 .. bpo: 1635741
 .. date: 2020-04-10-23-54-57
 .. nonce: ZURqoN
-.. section: Core and Builtins
+.. section: Library
 
 Port :mod:`mmap` to multiphase initialization.
 
@@ -1008,7 +1008,7 @@ Port :mod:`mmap` to multiphase initialization.
 .. bpo: 1635741
 .. date: 2020-04-05-02-35-08
 .. nonce: Kfe9fT
-.. section: Core and Builtins
+.. section: Library
 
 Port :mod:`!_lzma` to multiphase initialization.
 
@@ -1040,7 +1040,7 @@ representation of an integer. Patch by Niklas Fiekas.
 .. bpo: 36982
 .. date: 2019-05-25-05-27-39
 .. nonce: 0UHgfB
-.. section: Core and Builtins
+.. section: Library
 
 Use ncurses extended color functions when available to support terminals
 with 256 colors, and add the new function

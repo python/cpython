@@ -6,7 +6,7 @@ import sys
 import threading
 import time
 
-from .collector import Collector
+from .collector import Collector, filter_internal_frames
 from .opcode_utils import get_opcode_info, format_opcode
 try:
     from _remote_debugging import THREAD_STATUS_HAS_GIL, THREAD_STATUS_ON_CPU, THREAD_STATUS_UNKNOWN, THREAD_STATUS_GIL_REQUESTED, THREAD_STATUS_HAS_EXCEPTION
@@ -66,7 +66,7 @@ class GeckoCollector(Collector):
         self.sample_interval_usec = sample_interval_usec
         self.skip_idle = skip_idle
         self.opcodes_enabled = opcodes
-        self.start_time = time.time() * 1000  # milliseconds since epoch
+        self.start_time = time.monotonic() * 1000  # milliseconds since start
 
         # Global string table (shared across all threads)
         self.global_strings = ["(root)"]  # Start with root
@@ -103,6 +103,9 @@ class GeckoCollector(Collector):
         # Opcode state tracking per thread: tid -> (opcode, lineno, col_offset, funcname, filename, start_time)
         self.opcode_state = {}
 
+        # For binary replay: track base timestamp (first sample's timestamp)
+        self._replay_base_timestamp_us = None
+
     def _track_state_transition(self, tid, condition, active_dict, inactive_dict,
                                   active_name, inactive_name, category, current_time):
         """Track binary state transitions and emit markers.
@@ -138,21 +141,38 @@ class GeckoCollector(Collector):
                 self._add_marker(tid, active_name, active_dict.pop(tid),
                                current_time, category)
 
-    def collect(self, stack_frames):
-        """Collect a sample from stack frames."""
-        current_time = (time.time() * 1000) - self.start_time
+    def collect(self, stack_frames, timestamps_us=None):
+        """Collect samples from stack frames.
+
+        Args:
+            stack_frames: List of interpreter/thread frame info
+            timestamps_us: List of timestamps in microseconds (None for live sampling)
+        """
+        # Handle live sampling (no timestamps provided)
+        if timestamps_us is None:
+            current_time = (time.monotonic() * 1000) - self.start_time
+            times = [current_time]
+        else:
+            if not timestamps_us:
+                return
+            # Initialize base timestamp if needed
+            if self._replay_base_timestamp_us is None:
+                self._replay_base_timestamp_us = timestamps_us[0]
+            # Convert all timestamps to times (ms relative to first sample)
+            base = self._replay_base_timestamp_us
+            times = [(ts - base) / 1000 for ts in timestamps_us]
+
+        first_time = times[0]
 
         # Update interval calculation
         if self.sample_count > 0 and self.last_sample_time > 0:
-            self.interval = (
-                current_time - self.last_sample_time
-            ) / self.sample_count
-        self.last_sample_time = current_time
+            self.interval = (times[-1] - self.last_sample_time) / self.sample_count
+        self.last_sample_time = times[-1]
 
-        # Process threads and track GC per thread
+        # Process threads
         for interpreter_info in stack_frames:
             for thread_info in interpreter_info.threads:
-                frames = thread_info.frame_info
+                frames = filter_internal_frames(thread_info.frame_info)
                 tid = thread_info.thread_id
 
                 # Initialize thread if needed
@@ -167,92 +187,86 @@ class GeckoCollector(Collector):
                 on_cpu = bool(status_flags & THREAD_STATUS_ON_CPU)
                 gil_requested = bool(status_flags & THREAD_STATUS_GIL_REQUESTED)
 
-                # Track GIL possession (Has GIL / No GIL)
+                # Track state transitions using first timestamp
                 self._track_state_transition(
                     tid, has_gil, self.has_gil_start, self.no_gil_start,
-                    "Has GIL", "No GIL", CATEGORY_GIL, current_time
+                    "Has GIL", "No GIL", CATEGORY_GIL, first_time
                 )
-
-                # Track CPU state (On CPU / Off CPU)
                 self._track_state_transition(
                     tid, on_cpu, self.on_cpu_start, self.off_cpu_start,
-                    "On CPU", "Off CPU", CATEGORY_CPU, current_time
+                    "On CPU", "Off CPU", CATEGORY_CPU, first_time
                 )
 
-                # Track code type (Python Code / Native Code)
-                # This is tri-state: Python (has_gil), Native (on_cpu without gil), or Neither
+                # Track code type
                 if has_gil:
                     self._track_state_transition(
                         tid, True, self.python_code_start, self.native_code_start,
-                        "Python Code", "Native Code", CATEGORY_CODE_TYPE, current_time
+                        "Python Code", "Native Code", CATEGORY_CODE_TYPE, first_time
                     )
                 elif on_cpu:
                     self._track_state_transition(
                         tid, True, self.native_code_start, self.python_code_start,
-                        "Native Code", "Python Code", CATEGORY_CODE_TYPE, current_time
+                        "Native Code", "Python Code", CATEGORY_CODE_TYPE, first_time
                     )
                 else:
-                    # Thread is idle (neither has GIL nor on CPU) - close any open code markers
-                    # This handles the third state that _track_state_transition doesn't cover
                     if tid in self.initialized_threads:
                         if tid in self.python_code_start:
                             self._add_marker(tid, "Python Code", self.python_code_start.pop(tid),
-                                           current_time, CATEGORY_CODE_TYPE)
+                                           first_time, CATEGORY_CODE_TYPE)
                         if tid in self.native_code_start:
                             self._add_marker(tid, "Native Code", self.native_code_start.pop(tid),
-                                           current_time, CATEGORY_CODE_TYPE)
+                                           first_time, CATEGORY_CODE_TYPE)
 
-                # Track "Waiting for GIL" intervals (one-sided tracking)
+                # Track GIL wait
                 if gil_requested:
-                    self.gil_wait_start.setdefault(tid, current_time)
+                    self.gil_wait_start.setdefault(tid, first_time)
                 elif tid in self.gil_wait_start:
                     self._add_marker(tid, "Waiting for GIL", self.gil_wait_start.pop(tid),
-                                   current_time, CATEGORY_GIL)
+                                   first_time, CATEGORY_GIL)
 
-                # Track exception state (Has Exception / No Exception)
+                # Track exception state
                 has_exception = bool(status_flags & THREAD_STATUS_HAS_EXCEPTION)
                 self._track_state_transition(
                     tid, has_exception, self.exception_start, self.no_exception_start,
-                    "Has Exception", "No Exception", CATEGORY_EXCEPTION, current_time
+                    "Has Exception", "No Exception", CATEGORY_EXCEPTION, first_time
                 )
 
-                # Track GC events by detecting <GC> frames in the stack trace
-                # This leverages the improved GC frame tracking from commit 336366fd7ca
-                # which precisely identifies the thread that initiated GC collection
+                # Track GC events
                 has_gc_frame = any(frame[2] == "<GC>" for frame in frames)
                 if has_gc_frame:
-                    # This thread initiated GC collection
                     if tid not in self.gc_start_per_thread:
-                        self.gc_start_per_thread[tid] = current_time
+                        self.gc_start_per_thread[tid] = first_time
                 elif tid in self.gc_start_per_thread:
-                    # End GC marker when no more GC frames are detected
                     self._add_marker(tid, "GC Collecting", self.gc_start_per_thread.pop(tid),
-                                   current_time, CATEGORY_GC)
+                                   first_time, CATEGORY_GC)
 
-                # Mark thread as initialized after processing all state transitions
+                # Mark thread as initialized
                 self.initialized_threads.add(tid)
 
-                # Categorize: idle if neither has GIL nor on CPU
+                # Skip idle threads if requested
                 is_idle = not has_gil and not on_cpu
-
-                # Skip idle threads if skip_idle is enabled
                 if self.skip_idle and is_idle:
                     continue
 
                 if not frames:
                     continue
 
-                # Process the stack
+                # Process stack once to get stack_index
                 stack_index = self._process_stack(thread_data, frames)
 
-                # Add sample - cache references to avoid dictionary lookups
+                # Add samples with timestamps
                 samples = thread_data["samples"]
-                samples["stack"].append(stack_index)
-                samples["time"].append(current_time)
-                samples["eventDelay"].append(None)
+                samples_stack = samples["stack"]
+                samples_time = samples["time"]
+                samples_delay = samples["eventDelay"]
 
-                # Track opcode state changes for interval markers (leaf frame only)
-                if self.opcodes_enabled:
+                for t in times:
+                    samples_stack.append(stack_index)
+                    samples_time.append(t)
+                    samples_delay.append(None)
+
+                # Handle opcodes
+                if self.opcodes_enabled and frames:
                     leaf_frame = frames[0]
                     filename, location, funcname, opcode = leaf_frame
                     if isinstance(location, tuple):
@@ -264,18 +278,15 @@ class GeckoCollector(Collector):
                     current_state = (opcode, lineno, col_offset, funcname, filename)
 
                     if tid not in self.opcode_state:
-                        # First observation - start tracking
-                        self.opcode_state[tid] = (*current_state, current_time)
+                        self.opcode_state[tid] = (*current_state, first_time)
                     elif self.opcode_state[tid][:5] != current_state:
-                        # State changed - emit marker for previous state
                         prev_opcode, prev_lineno, prev_col, prev_funcname, prev_filename, prev_start = self.opcode_state[tid]
                         self._add_opcode_interval_marker(
-                            tid, prev_opcode, prev_lineno, prev_col, prev_funcname, prev_start, current_time
+                            tid, prev_opcode, prev_lineno, prev_col, prev_funcname, prev_start, first_time
                         )
-                        # Start tracking new state
-                        self.opcode_state[tid] = (*current_state, current_time)
+                        self.opcode_state[tid] = (*current_state, first_time)
 
-        self.sample_count += 1
+        self.sample_count += len(times)
 
     def _create_thread(self, tid):
         """Create a new thread structure with processed profile format."""
