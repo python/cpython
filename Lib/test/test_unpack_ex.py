@@ -479,27 +479,27 @@ error)
       ...
     test.test_unpack_ex.BozoError
 
-Now some general starred expressions (all fail).
+Now some general starred targets/expressions (all fail).
 
     >>> a, *b, c, *d, e = range(10) # doctest:+ELLIPSIS
     Traceback (most recent call last):
       ...
-    SyntaxError: multiple starred expressions in assignment
+    SyntaxError: multiple starred targets in assignment
 
     >>> [*b, *c] = range(10) # doctest:+ELLIPSIS
     Traceback (most recent call last):
       ...
-    SyntaxError: multiple starred expressions in assignment
+    SyntaxError: multiple starred targets in assignment
 
     >>> a,*b,*c,*d = range(4) # doctest:+ELLIPSIS
     Traceback (most recent call last):
       ...
-    SyntaxError: multiple starred expressions in assignment
+    SyntaxError: multiple starred targets in assignment
 
     >>> *a = range(10) # doctest:+ELLIPSIS
     Traceback (most recent call last):
       ...
-    SyntaxError: starred assignment target must be in a list or tuple
+    SyntaxError: starred target must be in a list or tuple
 
     >>> *a # doctest:+ELLIPSIS
     Traceback (most recent call last):
