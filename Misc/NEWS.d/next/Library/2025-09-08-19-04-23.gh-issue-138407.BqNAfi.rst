@@ -1,0 +1,1 @@
+Avoid useless join operation when calculate the hash vaule for pathlib.Path.
