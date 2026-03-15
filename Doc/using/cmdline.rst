@@ -712,7 +712,7 @@ Miscellaneous options
    * :samp:`-X traceback_timestamps=[us|ns|iso|0|1]` enables or configures timestamp
      display in exception tracebacks. When enabled, each exception's traceback
      will include a timestamp showing when the exception occurred. The format
-     options are: ``us`` (microseconds, default if no value provided), ``ns``
+     options are: ``us`` (microseconds), ``ns``
      (nanoseconds), ``iso`` (ISO-8601 formatted time), ``0`` (disable timestamps),
      and ``1`` (equivalent to ``us``). See also :envvar:`PYTHON_TRACEBACK_TIMESTAMPS`.
 

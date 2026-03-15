@@ -320,7 +320,7 @@ The following implementation-specific options are available:\n\
          for installed Python and \"off\" for a local build;\n\
          also PYTHON_FROZEN_MODULES\n\
 -X traceback_timestamps=[us|ns|iso|0|1]: display timestamp in tracebacks when\n\
-         exception occurs; \"us\" (default if no value provided) shows microseconds;\n\
+         exception occurs; \"us\" shows microseconds;\n\
          \"ns\" shows raw nanoseconds; \"iso\" shows ISO-8601 format; \"0\" disables timestamps;\n\
          \"1\" is equivalent to \"us\"; also PYTHON_TRACEBACK_TIMESTAMPS\n\
 "
