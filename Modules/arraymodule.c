@@ -2980,9 +2980,16 @@ The following type codes are defined:\n\
     'f'         floating-point     4\n\
     'd'         floating-point     8\n\
 \n\
-NOTE: The 'u' typecode corresponds to Python's unicode character. On\n\
-narrow builds this is 2-bytes on wide builds this is 4-bytes.\n\
-\n\
+"NOTE: The 'u' typecode represents a Unicode character stored using the\n"
+"platform's C 'wchar_t' type. Since Python 3.9, array('u') uses wchar_t\n"
+"instead of the deprecated Py_UNICODE. The size of wchar_t is platform-\n"
+"dependent: typically 2 bytes on Windows (UTF-16) and 4 bytes on most\n"
+"Unix-like systems (UTF-32).\n"
+"\n"
+"The 'u' typecode has been deprecated since Python 3.3 and will be\n"
+"removed in Python 3.16. Please migrate to the 'w' typecode instead,\n"
+"which stores Unicode characters as Py_UCS4 (always 4 bytes).\n"
+"\n"
 NOTE: The 'q' and 'Q' type codes are only available if the platform\n\
 C compiler used to build Python supports 'long long', or, on Windows,\n\
 '__int64'.\n\
