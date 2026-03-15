@@ -697,8 +697,7 @@ readline_set_completer_delims_impl(PyObject *module, PyObject *string)
 static void
 _py_free_history_entry_lock_held(HIST_ENTRY *entry)
 {
-    histdata_t data = free_history_entry(entry);
-    free(data);
+    (void)free_history_entry(entry);
 }
 
 #else
@@ -710,8 +709,6 @@ _py_free_history_entry_lock_held(HIST_ENTRY *entry)
 {
     if (entry->line)
         free((void *)entry->line);
-    if (entry->data)
-        free(entry->data);
     free(entry);
 }
 
