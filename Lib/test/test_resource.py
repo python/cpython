@@ -57,29 +57,16 @@ class ResourceTest(unittest.TestCase):
 
         if max_lim != resource.RLIM_INFINITY and max_lim < 1025:
             self.skipTest(f"system RLIMIT_FSIZE hard limit ({max_lim}) is too small for this test")
-        try:
+        with open(os_helper.TESTFN, "wb") as f:
             try:
-                with open(os_helper.TESTFN, "wb") as f:
-                    resource.setrlimit(resource.RLIMIT_FSIZE, (1024, max_lim))
-                    f.write(b"X" * 1024)
-                    with self.assertRaises(OSError, msg="f.write() did not raise OSError when exceeding RLIMIT_FSIZE"):
-                        f.write(b"Y")
-                        f.flush()
-                        # On some systems (e.g., Ubuntu on hppa) the flush()
-                        # doesn't always cause the exception, but the close()
-                        # does eventually.  Try flushing several times in
-                        # an attempt to ensure the file is really synced and
-                        # the exception raised.
-                        for i in range(5):
-                            time.sleep(.1)
-                            f.flush()
-            except OSError as e:
-                if e.errno == errno.EFBIG:
-                    self.skipTest(f"ASAN/OS raised EFBIG prematurely on open/setup: {e}")
-                raise
-        finally:
-            resource.setrlimit(resource.RLIMIT_FSIZE, (cur, max_lim))
-
+                resource.setrlimit(resource.RLIMIT_FSIZE, (1024, max_lim))
+                f.write(b"X" * 1024)
+                with self.assertRaises(OSError, msg="f.write() did not raise OSError when exceeding RLIMIT_FSIZE"):
+                    f.write(b"Y")
+            finally:
+                # Close will attempt to flush the byte we wrote
+                # Restore limit first to avoid getting a spurious error
+                resource.setrlimit(resource.RLIMIT_FSIZE, (cur, max_lim))
     @unittest.skipIf(sys.platform == "vxworks",
                      "setting RLIMIT_FSIZE is not supported on VxWorks")
     @unittest.skipUnless(hasattr(resource, 'RLIMIT_FSIZE'), 'requires resource.RLIMIT_FSIZE')
