@@ -3048,6 +3048,7 @@ module_exec(PyObject *module)
 PyABIInfo_VAR(abi_info);
 
 static struct PyModuleDef_Slot module_slots[] = {
+    _Py_ABI_SLOT,
     {Py_mod_abi, &abi_info},
     {Py_mod_exec, module_exec},
     {Py_mod_multiple_interpreters, Py_MOD_PER_INTERPRETER_GIL_SUPPORTED},
