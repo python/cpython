@@ -1,3 +1,8 @@
+self-hosted-runner:
+  # Pending release of actionlint > 1.7.11 for macos-26-intel support
+  # https://github.com/rhysd/actionlint/pull/629
+  labels: ["macos-26-intel"]
+
 config-variables: null
 
 paths:
