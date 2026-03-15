@@ -1,0 +1,2 @@
+Improve ``_colorize`` performance by replacing ``dataclass`` with regular class.
+Patch by Hugo van Kemenade.
