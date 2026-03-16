@@ -1,8 +1,10 @@
 import contextlib
 import os
 import os.path
+import subprocess
 import sys
 import tempfile
+import textwrap
 import test.support
 import unittest
 import unittest.mock
@@ -360,6 +362,51 @@ class TestUninstallationMainFunction(EnsurepipMixin, unittest.TestCase):
             self.run_pip.return_value = 2
             exit_code = ensurepip._uninstall._main([])
         self.assertEqual(exit_code, 2)
+
+
+class TestRunPip(unittest.TestCase):
+    def test_stdin_is_devnull(self):
+        mock_result = unittest.mock.MagicMock()
+        mock_result.returncode = 0
+        with unittest.mock.patch('ensurepip.subprocess.run',
+                                 return_value=mock_result) as mock_run:
+            ensurepip._run_pip(['install', 'pip'])
+        self.assertIs(mock_run.call_args.kwargs.get('stdin'), subprocess.DEVNULL)
+
+
+class TestRunPipStdinHang(unittest.TestCase):
+    """gh-145311: _run_pip must not hang when stdin is an open pipe."""
+
+    @test.support.requires_subprocess()
+    def test_run_pip_does_not_hang_on_piped_stdin(self):
+        # Spawn _run_pip in a child process whose stdin is an open pipe
+        # whose write end we never close — the condition that caused the hang.
+        script = textwrap.dedent("""\
+            import ensurepip, os
+            with ensurepip._get_pip_whl_path_ctx() as whl:
+                ensurepip._run_pip(["--version"], [os.fspath(whl)])
+            print("ok")
+        """)
+        r_fd, w_fd = os.pipe()
+        try:
+            with open(r_fd, "rb") as pipe_r:
+                result = subprocess.run(
+                    [sys.executable, "-c", script],
+                    stdin=pipe_r,
+                    capture_output=True,
+                    timeout=10,
+                    text=True,
+                )
+        except subprocess.TimeoutExpired:
+            self.fail(
+                "ensurepip._run_pip hung with an open pipe on stdin; "
+                "ensure subprocess.run(..., stdin=subprocess.DEVNULL, ...) "
+                "is used (gh-145311)"
+            )
+        finally:
+            os.close(w_fd)
+        self.assertEqual(result.returncode, 0)
+        self.assertIn("ok", result.stdout)
 
 
 if __name__ == "__main__":

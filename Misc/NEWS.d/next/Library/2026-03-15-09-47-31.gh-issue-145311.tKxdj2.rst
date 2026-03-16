@@ -1,0 +1,5 @@
+Fix :mod:`venv` and :mod:`ensurepip` hanging when stdin is connected to
+a pipe. :func:`subprocess.check_output` in
+:meth:`~venv.EnvBuilder._call_new_python` and :func:`subprocess.run` in
+:func:`ensurepip._run_pip` now pass ``stdin=subprocess.DEVNULL`` to
+prevent child processes from blocking on an inherited pipe descriptor.

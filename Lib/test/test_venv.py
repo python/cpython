@@ -17,6 +17,7 @@ import subprocess
 import sys
 import sysconfig
 import tempfile
+import textwrap
 from test.support import (captured_stdout, captured_stderr,
                           skip_if_broken_multiprocessing_synchronize, verbose,
                           requires_subprocess, is_android, is_apple_mobile,
@@ -253,6 +254,7 @@ class BasicTest(BaseTest):
                 exe_dir = os.path.normcase(os.path.dirname(cmd[0]))
                 expected_dir = os.path.normcase(os.path.dirname(expect_exe))
                 self.assertEqual(exe_dir, expected_dir)
+                self.assertIs(kwargs.get('stdin'), subprocess.DEVNULL)  # gh-145311
 
             fake_context = builder.ensure_directories(fake_env_dir)
             with patch('venv.subprocess.check_output', pip_cmd_checker):
@@ -1056,6 +1058,50 @@ class EnsurePipTest(BaseTest):
     def test_with_pip(self):
         self.do_test_with_pip(False)
         self.do_test_with_pip(True)
+
+
+class TestCallNewPythonStdinHang(unittest.TestCase):
+    """gh-145311: _call_new_python must not hang when stdin is an open pipe."""
+
+    @requires_subprocess()
+    def test_call_new_python_does_not_hang_on_piped_stdin(self):
+        # Spawn _call_new_python in a child process whose stdin is an open
+        # pipe whose write end we never close — the condition that caused the
+        # hang before kwargs['stdin'] = subprocess.DEVNULL was added.
+        #
+        # A minimal SimpleNamespace context is sufficient: _call_new_python
+        # only reads context.env_exec_cmd and context.env_dir.
+        script = textwrap.dedent("""\
+            import sys, tempfile, types, venv
+            with tempfile.TemporaryDirectory() as env_dir:
+                ctx = types.SimpleNamespace(
+                    env_exec_cmd=sys.executable,
+                    env_dir=env_dir,
+                )
+                builder = venv.EnvBuilder()
+                builder._call_new_python(ctx, "-c", "pass")
+            print("ok")
+        """)
+        r_fd, w_fd = os.pipe()
+        try:
+            with open(r_fd, "rb") as pipe_r:
+                result = subprocess.run(
+                    [sys.executable, "-c", script],
+                    stdin=pipe_r,
+                    capture_output=True,
+                    timeout=10,
+                    text=True,
+                )
+        except subprocess.TimeoutExpired:
+            self.fail(
+                "venv._call_new_python hung with an open pipe on stdin; "
+                "ensure kwargs['stdin'] = subprocess.DEVNULL is set "
+                "(gh-145311)"
+            )
+        finally:
+            os.close(w_fd)
+        self.assertEqual(result.returncode, 0)
+        self.assertIn("ok", result.stdout)
 
 
 if __name__ == "__main__":

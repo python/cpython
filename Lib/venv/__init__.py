@@ -444,6 +444,7 @@ class EnvBuilder:
         env.pop('PYTHONPATH', None)
         kwargs['cwd'] = context.env_dir
         kwargs['executable'] = context.env_exec_cmd
+        kwargs['stdin'] = subprocess.DEVNULL   # gh-145311
         subprocess.check_output(args, **kwargs)
 
     def _setup_pip(self, context):
