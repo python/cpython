@@ -3514,6 +3514,11 @@ The representation of bytearray objects uses the bytes literal format
 ``bytearray([46, 46, 46])``.  You can always convert a bytearray object into
 a list of integers using ``list(b)``.
 
+.. seealso::
+
+   For detailed information on thread-safety guarantees for :class:`bytearray`
+   objects, see :ref:`thread-safety-bytearray`.
+
 
 .. _bytes-methods:
 
