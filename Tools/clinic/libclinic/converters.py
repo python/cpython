@@ -319,7 +319,7 @@ class int_converter(CConverter):
             if isinstance(self.default, str):
                 if len(self.default) != 1:
                     fail(f"int_converter: illegal default value {self.default!r}")
-        elif accept == {int}:
+        elif accept != {int}:
             fail(f"int_converter: illegal 'accept' argument {accept!r}")
         if type is not None:
             self.type = type
