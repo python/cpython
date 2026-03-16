@@ -10505,7 +10505,7 @@
                     }
                 }
             }
-            // _SPECIALIZE_RESUME
+            // _QUICKEN_RESUME
             {
                 uint16_t counter = read_u16(&this_instr[1].cache);
                 (void)counter;

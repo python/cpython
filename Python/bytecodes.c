@@ -172,7 +172,7 @@ dummy_func(
             }
         }
 
-        specializing op(_SPECIALIZE_RESUME, (counter/1 --)) {
+        tier1 op(_QUICKEN_RESUME, (counter/1 --)) {
             _Py_Specialize_Resume(this_instr, tstate);
         }
 
@@ -220,7 +220,7 @@ dummy_func(
         macro(RESUME) =
             _LOAD_BYTECODE +
             _MAYBE_INSTRUMENT +
-            _SPECIALIZE_RESUME +
+            _QUICKEN_RESUME +
             _CHECK_PERIODIC_IF_NOT_YIELD_FROM;
 
         macro(RESUME_CHECK) =

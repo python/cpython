@@ -328,7 +328,6 @@ class TestUops(unittest.TestCase):
                 return 1
             return testfunc(x-1)
 
-        sys.setrecursionlimit(TIER2_RESUME_THRESHOLD * 2)
         for _ in range((TIER2_RESUME_THRESHOLD + 99)//100):
             testfunc(101)
 
