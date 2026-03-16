@@ -1177,6 +1177,11 @@ dummy_func(void) {
         }
     }
 
+    op(_CALL_INTRINSIC_1, (value -- res, v)) {
+        res = sym_new_not_null(ctx);
+        v = value;
+    }
+
     op(_GUARD_IS_TRUE_POP, (flag -- )) {
         sym_apply_predicate_narrowing(ctx, flag, true);
 
@@ -1756,7 +1761,9 @@ dummy_func(void) {
         PyCodeObject *co = get_current_code_object(ctx);
         if (co->co_version == version) {
             _Py_BloomFilter_Add(dependencies, co);
-            REPLACE_OP(this_instr, _NOP, 0, 0);
+            // TODO gh-144651:
+            // If we've previously guarded on this code version in a trace, we
+            // can avoid guarding it again.
         }
         else {
             ctx->done = true;

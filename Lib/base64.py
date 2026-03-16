@@ -106,7 +106,6 @@ def b64decode(s, altchars=None, validate=_NOT_SPECIFIED, *, ignorechars=_NOT_SPE
             return binascii.a2b_base64(s, strict_mode=validate,
                                        alphabet=alphabet,
                                        ignorechars=ignorechars)
-
     if ignorechars is _NOT_SPECIFIED:
         ignorechars = b''
     result = binascii.a2b_base64(s, strict_mode=validate,

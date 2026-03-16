@@ -278,10 +278,8 @@ get_jit_code_ranges(PyObject *self, PyObject *Py_UNUSED(args))
     if (interp == NULL) {
         return ranges;
     }
-    for (_PyExecutorObject *exec = interp->executor_list_head;
-         exec != NULL;
-         exec = exec->vm_data.links.next)
-    {
+    for (size_t i = 0; i < interp->executor_count; i++) {
+        _PyExecutorObject *exec = interp->executor_ptrs[i];
         if (exec->jit_code == NULL || exec->jit_size == 0) {
             continue;
         }
@@ -3020,6 +3018,14 @@ module_exec(PyObject *module)
     unsigned long threshold = interp->opt_config.jump_backward_initial_value + 2;
     if (PyModule_Add(module, "TIER2_THRESHOLD",
                         PyLong_FromUnsignedLong(threshold)) < 0) {
+        return 1;
+    }
+
+    // + 1 to specialize from RESUME to RESUME_CHECK_JIT
+    // + 1 more due to one loop spent on tracing.
+    long resume_threshold = interp->opt_config.resume_initial_value + 2;
+    if (PyModule_Add(module, "TIER2_RESUME_THRESHOLD",
+                    PyLong_FromLong(resume_threshold)) < 0) {
         return 1;
     }
 

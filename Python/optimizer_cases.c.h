@@ -17,8 +17,6 @@
             break;
         }
 
-        /* _QUICKEN_RESUME is not a viable micro-op for tier 2 */
-
         /* _LOAD_BYTECODE is not a viable micro-op for tier 2 */
 
         case _RESUME_CHECK: {
@@ -1293,9 +1291,17 @@
         }
 
         case _CALL_INTRINSIC_1: {
+            JitOptRef value;
             JitOptRef res;
+            JitOptRef v;
+            value = stack_pointer[-1];
             res = sym_new_not_null(ctx);
+            v = value;
+            CHECK_STACK_BOUNDS(1);
             stack_pointer[-1] = res;
+            stack_pointer[0] = v;
+            stack_pointer += 1;
+            ASSERT_WITHIN_STACK_BOUNDS(__FILE__, __LINE__);
             break;
         }
 
@@ -4282,7 +4288,6 @@
             PyCodeObject *co = get_current_code_object(ctx);
             if (co->co_version == version) {
                 _Py_BloomFilter_Add(dependencies, co);
-                REPLACE_OP(this_instr, _NOP, 0, 0);
             }
             else {
                 ctx->done = true;
