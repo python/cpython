@@ -1293,9 +1293,17 @@
         }
 
         case _CALL_INTRINSIC_1: {
+            JitOptRef value;
             JitOptRef res;
+            JitOptRef v;
+            value = stack_pointer[-1];
             res = sym_new_not_null(ctx);
+            v = value;
+            CHECK_STACK_BOUNDS(1);
             stack_pointer[-1] = res;
+            stack_pointer[0] = v;
+            stack_pointer += 1;
+            ASSERT_WITHIN_STACK_BOUNDS(__FILE__, __LINE__);
             break;
         }
 
