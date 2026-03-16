@@ -923,9 +923,6 @@ binascii_a2b_ascii85_impl(PyObject *module, Py_buffer *data, int foldspaces,
         return NULL;
     }
     unsigned char *bin_data = PyBytesWriter_GetData(writer);
-    if (bin_data == NULL) {
-        goto error;
-    }
 
     uint32_t leftchar = 0;
     int group_pos = 0;

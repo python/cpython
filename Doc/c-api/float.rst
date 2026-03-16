@@ -190,7 +190,7 @@ The pack and unpack functions provide an efficient platform-independent way to
 store floating-point values as byte strings. The Pack routines produce a bytes
 string from a C :c:expr:`double`, and the Unpack routines produce a C
 :c:expr:`double` from such a bytes string. The suffix (2, 4 or 8) specifies the
-number of bytes in the bytes string.
+number of bytes in the bytes string:
 
 * The 2-byte format is the IEEE 754 binary16 half-precision format.
 * The 4-byte format is the IEEE 754 binary32 single-precision format.
