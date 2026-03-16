@@ -1246,13 +1246,18 @@ dummy_func(
             ERROR_IF(err);
         }
 
-        inst(CALL_INTRINSIC_1, (value -- res)) {
+        op(_CALL_INTRINSIC_1, (value -- res, v)) {
             assert(oparg <= MAX_INTRINSIC_1);
             PyObject *res_o = _PyIntrinsics_UnaryFunctions[oparg].func(tstate, PyStackRef_AsPyObjectBorrow(value));
-            PyStackRef_CLOSE(value);
-            ERROR_IF(res_o == NULL);
+            if (res_o == NULL) {
+                ERROR_NO_POP();
+            }
+            v = value;
+            DEAD(value);
             res = PyStackRef_FromPyObjectSteal(res_o);
         }
+
+        macro(CALL_INTRINSIC_1) = _CALL_INTRINSIC_1 + POP_TOP;
 
         inst(CALL_INTRINSIC_2, (value2_st, value1_st -- res)) {
             assert(oparg <= MAX_INTRINSIC_2);
