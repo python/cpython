@@ -530,12 +530,12 @@ _PyPerfTrampoline_Init(int activate)
         code_watcher_id = -1;
     }
     if (!activate) {
-        _PyInterpreterState_SetEvalFrameFunc(tstate->interp, prev_eval_frame);
+        _PyInterpreterState_SetEvalFrameFunc(tstate->interp, prev_eval_frame, 0);
         perf_status = PERF_STATUS_NO_INIT;
     }
     else if (tstate->interp->eval_frame != py_trampoline_evaluator) {
         prev_eval_frame = _PyInterpreterState_GetEvalFrameFunc(tstate->interp);
-        _PyInterpreterState_SetEvalFrameFunc(tstate->interp, py_trampoline_evaluator);
+        _PyInterpreterState_SetEvalFrameFunc(tstate->interp, py_trampoline_evaluator, 0);
         extra_code_index = _PyEval_RequestCodeExtraIndex(NULL);
         if (extra_code_index == -1) {
             return -1;
@@ -568,7 +568,7 @@ _PyPerfTrampoline_Fini(void)
     }
     PyThreadState *tstate = _PyThreadState_GET();
     if (tstate->interp->eval_frame == py_trampoline_evaluator) {
-        _PyInterpreterState_SetEvalFrameFunc(tstate->interp, NULL);
+        _PyInterpreterState_SetEvalFrameFunc(tstate->interp, NULL, 0);
     }
     if (perf_status == PERF_STATUS_OK) {
         trampoline_api.free_state(trampoline_api.state);

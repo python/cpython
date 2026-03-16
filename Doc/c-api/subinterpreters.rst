@@ -391,13 +391,30 @@ High-level APIs
    .. versionadded:: 3.9
 
 
-.. c:function:: void _PyInterpreterState_SetEvalFrameFunc(PyInterpreterState *interp, _PyFrameEvalFunction eval_frame)
+.. c:function:: void _PyInterpreterState_SetEvalFrameFunc(PyInterpreterState *interp, _PyFrameEvalFunction eval_frame, int allow_specialization)
 
    Set the frame evaluation function.
+
+   If *allow_specialization* is non-zero, the adaptive specializer will
+   continue to specialize bytecodes even though a custom eval frame function
+   is set. When *allow_specialization* is zero, setting a custom eval frame
+   disables specialization.
 
    See the :pep:`523` "Adding a frame evaluation API to CPython".
 
    .. versionadded:: 3.9
+
+   .. versionchanged:: 3.15
+      Added the *allow_specialization* parameter.
+
+
+.. c:function:: int _PyInterpreterState_IsSpecializationEnabled(PyInterpreterState *interp)
+
+   Return non-zero if adaptive specialization is enabled for the interpreter.
+   Specialization is enabled when no custom eval frame function is set, or
+   when one is set with *allow_specialization* enabled.
+
+   .. versionadded:: 3.15
 
 
 Low-level APIs

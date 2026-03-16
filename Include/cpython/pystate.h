@@ -318,4 +318,7 @@ PyAPI_FUNC(_PyFrameEvalFunction) _PyInterpreterState_GetEvalFrameFunc(
     PyInterpreterState *interp);
 PyAPI_FUNC(void) _PyInterpreterState_SetEvalFrameFunc(
     PyInterpreterState *interp,
-    _PyFrameEvalFunction eval_frame);
+    _PyFrameEvalFunction eval_frame,
+    int allow_specialization);
+PyAPI_FUNC(int) _PyInterpreterState_IsSpecializationEnabled(
+    PyInterpreterState *interp);

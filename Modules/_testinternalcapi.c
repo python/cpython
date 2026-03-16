@@ -929,7 +929,7 @@ static PyObject *
 set_eval_frame_default(PyObject *self, PyObject *Py_UNUSED(args))
 {
     module_state *state = get_module_state(self);
-    _PyInterpreterState_SetEvalFrameFunc(_PyInterpreterState_GET(), _PyEval_EvalFrameDefault);
+    _PyInterpreterState_SetEvalFrameFunc(_PyInterpreterState_GET(), _PyEval_EvalFrameDefault, 0);
     Py_CLEAR(state->record_list);
     Py_RETURN_NONE;
 }
@@ -961,7 +961,7 @@ set_eval_frame_record(PyObject *self, PyObject *list)
         return NULL;
     }
     Py_XSETREF(state->record_list, Py_NewRef(list));
-    _PyInterpreterState_SetEvalFrameFunc(_PyInterpreterState_GET(), record_eval);
+    _PyInterpreterState_SetEvalFrameFunc(_PyInterpreterState_GET(), record_eval, 0);
     Py_RETURN_NONE;
 }
 
@@ -996,10 +996,47 @@ get_eval_frame_stats(PyObject *self, PyObject *Py_UNUSED(args))
 }
 
 static PyObject *
-set_eval_frame_interp(PyObject *self, PyObject *Py_UNUSED(args))
+record_eval_interp(PyThreadState *tstate, struct _PyInterpreterFrame *f, int exc)
 {
-    _PyInterpreterState_SetEvalFrameFunc(_PyInterpreterState_GET(), Test_EvalFrame);
+    if (PyStackRef_FunctionCheck(f->f_funcobj)) {
+        PyFunctionObject *func = _PyFrame_GetFunction(f);
+        PyObject *module = _get_current_module();
+        assert(module != NULL);
+        module_state *state = get_module_state(module);
+        Py_DECREF(module);
+        int res = PyList_Append(state->record_list, func->func_name);
+        if (res < 0) {
+            return NULL;
+        }
+    }
+
+    return Test_EvalFrame(tstate, f, exc);
+}
+
+static PyObject *
+set_eval_frame_interp(PyObject *self, PyObject *args)
+{
+    if (PyTuple_GET_SIZE(args) == 1) {
+        module_state *state = get_module_state(self);
+        PyObject *list = PyTuple_GET_ITEM(args, 0);
+        if (!PyList_Check(list)) {
+            PyErr_SetString(PyExc_TypeError, "argument must be a list");
+            return NULL;
+        }
+        Py_XSETREF(state->record_list, Py_NewRef(list));
+        _PyInterpreterState_SetEvalFrameFunc(_PyInterpreterState_GET(), record_eval_interp, 1);
+    } else {
+        _PyInterpreterState_SetEvalFrameFunc(_PyInterpreterState_GET(), Test_EvalFrame, 1);
+    }
+
     Py_RETURN_NONE;
+}
+
+static PyObject *
+is_specialization_enabled(PyObject *self, PyObject *Py_UNUSED(args))
+{
+    return PyBool_FromLong(
+        _PyInterpreterState_IsSpecializationEnabled(_PyInterpreterState_GET()));
 }
 
 /*[clinic input]
@@ -2875,8 +2912,9 @@ static PyMethodDef module_functions[] = {
     {"EncodeLocaleEx", encode_locale_ex, METH_VARARGS},
     {"DecodeLocaleEx", decode_locale_ex, METH_VARARGS},
     {"set_eval_frame_default", set_eval_frame_default, METH_NOARGS, NULL},
-    {"set_eval_frame_interp", set_eval_frame_interp, METH_NOARGS, NULL},
+    {"set_eval_frame_interp", set_eval_frame_interp, METH_VARARGS, NULL},
     {"set_eval_frame_record", set_eval_frame_record, METH_O, NULL},
+    {"is_specialization_enabled", is_specialization_enabled, METH_NOARGS, NULL},
     _TESTINTERNALCAPI_COMPILER_CLEANDOC_METHODDEF
     _TESTINTERNALCAPI_NEW_INSTRUCTION_SEQUENCE_METHODDEF
     _TESTINTERNALCAPI_COMPILER_CODEGEN_METHODDEF

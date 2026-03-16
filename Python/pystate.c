@@ -3010,12 +3010,14 @@ _PyInterpreterState_GetEvalFrameFunc(PyInterpreterState *interp)
 
 void
 _PyInterpreterState_SetEvalFrameFunc(PyInterpreterState *interp,
-                                     _PyFrameEvalFunction eval_frame)
+                                     _PyFrameEvalFunction eval_frame,
+                                     int allow_specialization)
 {
     if (eval_frame == _PyEval_EvalFrameDefault) {
         eval_frame = NULL;
     }
     if (eval_frame == interp->eval_frame) {
+        interp->eval_frame_allow_specialization = allow_specialization;
         return;
     }
 #ifdef _Py_TIER2
@@ -3026,7 +3028,15 @@ _PyInterpreterState_SetEvalFrameFunc(PyInterpreterState *interp,
     RARE_EVENT_INC(set_eval_frame_func);
     _PyEval_StopTheWorld(interp);
     interp->eval_frame = eval_frame;
+    interp->eval_frame_allow_specialization = allow_specialization;
     _PyEval_StartTheWorld(interp);
+}
+
+int
+_PyInterpreterState_IsSpecializationEnabled(PyInterpreterState *interp)
+{
+    return interp->eval_frame == NULL
+        || interp->eval_frame_allow_specialization;
 }
 
 
