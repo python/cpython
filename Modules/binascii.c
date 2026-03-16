@@ -1173,13 +1173,36 @@ binascii_b2a_ascii85_impl(PyObject *module, Py_buffer *data, int foldspaces,
     return PyBytesWriter_FinishWithPointer(writer, ascii_data);
 }
 
+/*[clinic input]
+binascii.a2b_base85
+
+    data: ascii_buffer
+    /
+    *
+    alphabet: PyBytesObject(py_default="BASE85_ALPHABET") = NULL
+
+Decode a line of Base85 data.
+[clinic start generated code]*/
+
 static PyObject *
-base85_decode_impl(PyObject *module, Py_buffer *data,
-                   const unsigned char table_a2b[], const char *name)
+binascii_a2b_base85_impl(PyObject *module, Py_buffer *data,
+                         PyBytesObject *alphabet)
+/*[clinic end generated code: output=3e114af53812e8ff input=81779cd049d44a55]*/
 {
     const unsigned char *ascii_data = data->buf;
     Py_ssize_t ascii_len = data->len;
     binascii_state *state = NULL;
+    PyObject *table_obj = NULL;
+    const unsigned char *table_a2b = table_a2b_base85;
+
+    if (alphabet != NULL) {
+        state = get_binascii_state(module);
+        table_obj = get_reverse_table(state, (PyObject *)alphabet, 85, -1);
+        if (table_obj == NULL) {
+            return NULL;
+        }
+        table_a2b = (const unsigned char *)PyBytes_AS_STRING(table_obj);
+    }
 
     assert(ascii_len >= 0);
 
@@ -1187,6 +1210,7 @@ base85_decode_impl(PyObject *module, Py_buffer *data,
     size_t bin_len = ((size_t)ascii_len + 4) / 5 * 4;
     PyBytesWriter *writer = PyBytesWriter_Create(bin_len);
     if (writer == NULL) {
+        Py_XDECREF(table_obj);
         return NULL;
     }
     unsigned char *bin_data = PyBytesWriter_GetData(writer);
@@ -1212,8 +1236,8 @@ base85_decode_impl(PyObject *module, Py_buffer *data,
                 state = get_binascii_state(module);
                 if (state != NULL) {
                     PyErr_Format(state->Error,
-                                 "%s overflow in hunk starting at byte %d",
-                                 name, (data->len - ascii_len) / 5 * 5);
+                                 "Base85 overflow in hunk starting at byte %d",
+                                 (data->len - ascii_len) / 5 * 5);
                 }
                 goto error;
             }
@@ -1223,8 +1247,8 @@ base85_decode_impl(PyObject *module, Py_buffer *data,
         else {
             state = get_binascii_state(module);
             if (state != NULL) {
-                PyErr_Format(state->Error, "bad %s character at position %d",
-                             name, data->len - ascii_len);
+                PyErr_Format(state->Error, "bad Base85 character at position %d",
+                             data->len - ascii_len);
             }
             goto error;
         }
@@ -1244,19 +1268,44 @@ base85_decode_impl(PyObject *module, Py_buffer *data,
         leftchar = 0;
     }
 
+    Py_XDECREF(table_obj);
     return PyBytesWriter_FinishWithPointer(writer, bin_data);
 
 error:
     PyBytesWriter_Discard(writer);
+    Py_XDECREF(table_obj);
     return NULL;
 }
 
+/*[clinic input]
+binascii.b2a_base85
+
+    data: Py_buffer
+    /
+    *
+    pad: bool = False
+        Pad input to a multiple of 4 before encoding.
+    alphabet: Py_buffer(py_default="BASE85_ALPHABET") = None
+
+Base85-code line of data.
+[clinic start generated code]*/
+
 static PyObject *
-base85_encode_impl(PyObject *module, Py_buffer *data, int pad,
-                   const unsigned char table_b2a[], const char *name)
+binascii_b2a_base85_impl(PyObject *module, Py_buffer *data, int pad,
+                         Py_buffer *alphabet)
+/*[clinic end generated code: output=a59f4f2ff6f0e69f input=cde4ebe8abfaa982]*/
 {
     const unsigned char *bin_data = data->buf;
     Py_ssize_t bin_len = data->len;
+    const unsigned char *table_b2a = table_b2a_base85;
+
+    if (alphabet->buf != NULL) {
+        if (alphabet->len != 85) {
+            PyErr_SetString(PyExc_ValueError, "alphabet must have length 85");
+            return NULL;
+        }
+        table_b2a = alphabet->buf;
+    }
 
     assert(bin_len >= 0);
 
@@ -1270,7 +1319,7 @@ base85_encode_impl(PyObject *module, Py_buffer *data, int pad,
         if (state == NULL) {
             return NULL;
         }
-        PyErr_Format(state->Error, "Too much data for %s", name);
+        PyErr_SetString(state->Error, "Too much data for Base85");
         return NULL;
     }
 
@@ -1318,67 +1367,6 @@ base85_encode_impl(PyObject *module, Py_buffer *data, int pad,
     }
 
     return PyBytesWriter_FinishWithPointer(writer, ascii_data);
-}
-
-/*[clinic input]
-binascii.a2b_base85
-
-    data: ascii_buffer
-    /
-    *
-    alphabet: PyBytesObject(py_default="BASE85_ALPHABET") = NULL
-
-Decode a line of Base85 data.
-[clinic start generated code]*/
-
-static PyObject *
-binascii_a2b_base85_impl(PyObject *module, Py_buffer *data,
-                         PyBytesObject *alphabet)
-/*[clinic end generated code: output=3e114af53812e8ff input=81779cd049d44a55]*/
-{
-    const unsigned char *table_a2b = table_a2b_base85;
-    PyObject *table_obj = NULL;
-    binascii_state *state;
-    if (alphabet != NULL) {
-        state = get_binascii_state(module);
-        table_obj = get_reverse_table(state, (PyObject *)alphabet, 85, -1);
-        if (table_obj == NULL) {
-            return NULL;
-        }
-        table_a2b = (const unsigned char *)PyBytes_AS_STRING(table_obj);
-    }
-    PyObject *result = base85_decode_impl(module, data, table_a2b, "Base85");
-    Py_XDECREF(table_obj);
-    return result;
-}
-
-/*[clinic input]
-binascii.b2a_base85
-
-    data: Py_buffer
-    /
-    *
-    pad: bool = False
-        Pad input to a multiple of 4 before encoding.
-    alphabet: Py_buffer(py_default="BASE85_ALPHABET") = None
-
-Base85-code line of data.
-[clinic start generated code]*/
-
-static PyObject *
-binascii_b2a_base85_impl(PyObject *module, Py_buffer *data, int pad,
-                         Py_buffer *alphabet)
-/*[clinic end generated code: output=a59f4f2ff6f0e69f input=cde4ebe8abfaa982]*/
-{
-    const unsigned char *table_b2a = table_b2a_base85;
-    if (alphabet->buf != NULL) {
-        if (alphabet->len != 85) {
-            PyErr_SetString(PyExc_ValueError, "alphabet must have length 85");
-            return NULL;
-        }
-        table_b2a = alphabet->buf;
-    }
-    return base85_encode_impl(module, data, pad, table_b2a, "Base85");
 }
 
 /*[clinic input]
