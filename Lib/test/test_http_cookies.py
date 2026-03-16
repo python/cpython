@@ -612,7 +612,6 @@ class MorselTests(unittest.TestCase):
             with self.assertRaises(cookies.CookieError):
                 morsel.__setstate__({'key': 'key', 'value': 'val', 'coded_value': c0})
 
-
             # .setdefault()
             with self.assertRaises(cookies.CookieError):
                 morsel.setdefault("path", c0)
