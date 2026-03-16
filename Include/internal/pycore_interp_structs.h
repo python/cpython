@@ -414,6 +414,9 @@ typedef struct _PyOptimizationConfig {
     uint16_t jump_backward_initial_value;
     uint16_t jump_backward_initial_backoff;
 
+    uint16_t resume_initial_value;
+    uint16_t resume_initial_backoff;
+
     // JIT optimization thresholds
     uint16_t side_exit_initial_value;
     uint16_t side_exit_initial_backoff;
