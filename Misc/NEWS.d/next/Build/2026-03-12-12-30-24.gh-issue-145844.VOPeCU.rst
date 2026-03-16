@@ -1,1 +1,1 @@
-Update to WASI SDK 31.
+Update to WASI SDK 32.
