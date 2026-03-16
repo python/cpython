@@ -192,7 +192,8 @@ sys.stdout.write(raw + "---MARKER---\\n" + stripped)
                     "-X", f"traceback_timestamps={mode}",
                     "-c", self.STRIP_SCRIPT,
                 )
-                parts = result.out.decode().split("---MARKER---\n")
+                output = result.out.decode().replace('\r\n', '\n')
+                parts = output.split("---MARKER---\n")
                 raw, stripped = parts[0], parts[1]
                 self.assertIn("<@", raw)
                 self.assertNotIn("<@", stripped)
@@ -203,7 +204,8 @@ sys.stdout.write(raw + "---MARKER---\\n" + stripped)
         result = script_helper.assert_python_ok(
             "-X", "traceback_timestamps=0", "-c", self.STRIP_SCRIPT,
         )
-        parts = result.out.decode().split("---MARKER---\n")
+        output = result.out.decode().replace('\r\n', '\n')
+        parts = output.split("---MARKER---\n")
         raw, stripped = parts[0], parts[1]
         self.assertEqual(raw, stripped)
 
