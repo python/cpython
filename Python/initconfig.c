@@ -303,6 +303,7 @@ file   : program read from script file\n\
 arg ...: arguments passed to program in sys.argv[1:]\n\
 ";
 
+/* Please keep sorted by -X option name, ignoring -s and _s */
 static const char usage_xoptions[] = "\
 The following implementation-specific options are available:\n\
 -X context_aware_warnings=[0|1]: if true (1) then the warnings module will\n\
@@ -319,10 +320,6 @@ The following implementation-specific options are available:\n\
 -X frozen_modules=[on|off]: whether to use frozen modules; the default is \"on\"\n\
          for installed Python and \"off\" for a local build;\n\
          also PYTHON_FROZEN_MODULES\n\
--X traceback_timestamps=[us|ns|iso|0|1]: display timestamp in tracebacks when\n\
-         exception occurs; \"us\" shows microseconds;\n\
-         \"ns\" shows raw nanoseconds; \"iso\" shows ISO-8601 format; \"0\" disables timestamps;\n\
-         \"1\" is equivalent to \"us\"; also PYTHON_TRACEBACK_TIMESTAMPS\n\
 "
 #ifdef Py_GIL_DISABLED
 "-X gil=[0|1]: enable (1) or disable (0) the GIL; also PYTHON_GIL\n"
@@ -366,6 +363,10 @@ The following implementation-specific options are available:\n\
          PYTHON_TLBC\n"
 #endif
 "\
+-X traceback_timestamps=[us|ns|iso|0|1]: display timestamp in tracebacks when\n\
+         exception occurs; \"us\" shows microseconds;\n\
+         \"ns\" shows raw nanoseconds; \"iso\" shows ISO-8601 format; \"0\" disables timestamps;\n\
+         \"1\" is equivalent to \"us\"; also PYTHON_TRACEBACK_TIMESTAMPS\n\
 -X tracemalloc[=N]: trace Python memory allocations; N sets a traceback limit\n\
          of N frames (default: 1); also PYTHONTRACEMALLOC=N\n\
 -X utf8[=0|1]: enable (1) or disable (0) UTF-8 mode; also PYTHONUTF8\n\
@@ -374,6 +375,7 @@ The following implementation-specific options are available:\n\
 ";
 
 /* Envvars that don't have equivalent command-line options are listed first */
+/* Please keep sections sorted by environment variable name, ignoring _s */
 static const char usage_envvars[] =
 "Environment variables that change behavior:\n"
 "PYTHONASYNCIODEBUG: enable asyncio debug mode\n"
