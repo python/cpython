@@ -351,8 +351,16 @@ def _args_from_interpreter_flags():
     # -X options
     if dev_mode:
         args.extend(('-X', 'dev'))
-    for opt in ('faulthandler', 'tracemalloc', 'importtime',
-                'frozen_modules', 'showrefcount', 'utf8', 'gil'):
+    for opt in (
+        'faulthandler',
+        'frozen_modules',
+        'gil',
+        'importtime',
+        'showrefcount',
+        'traceback_timestamps',
+        'tracemalloc',
+        'utf8',
+    ):
         if opt in xoptions:
             value = xoptions[opt]
             if value is True:

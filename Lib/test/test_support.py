@@ -573,6 +573,8 @@ class TestSupport(unittest.TestCase):
             ['-X', 'importtime'],
             ['-X', 'importtime=2'],
             ['-X', 'showrefcount'],
+            ['-X', 'traceback_timestamps'],
+            ['-X', 'traceback_timestamps=ns'],
             ['-X', 'tracemalloc'],
             ['-X', 'tracemalloc=3'],
         ):
