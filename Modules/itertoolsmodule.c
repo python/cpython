@@ -1340,7 +1340,7 @@ dropwhile_next(PyObject *op)
         item = iternext(it);
         if (item == NULL)
             return NULL;
-        if (lz->start == 1)
+        if (FT_ATOMIC_LOAD_LONG_RELAXED(lz->start) == 1)
             return item;
 
         good = PyObject_CallOneArg(lz->func, item);
@@ -1351,7 +1351,7 @@ dropwhile_next(PyObject *op)
         ok = PyObject_IsTrue(good);
         Py_DECREF(good);
         if (ok == 0) {
-            lz->start = 1;
+            FT_ATOMIC_STORE_LONG_RELAXED(lz->start, 1);
             return item;
         }
         Py_DECREF(item);
@@ -1457,7 +1457,7 @@ takewhile_next(PyObject *op)
     PyObject *it = lz->it;
     long ok;
 
-    if (lz->stop == 1)
+    if (FT_ATOMIC_LOAD_LONG_RELAXED(lz->stop) == 1)
         return NULL;
 
     item = (*Py_TYPE(it)->tp_iternext)(it);
@@ -1475,7 +1475,7 @@ takewhile_next(PyObject *op)
         return item;
     Py_DECREF(item);
     if (ok == 0)
-        lz->stop = 1;
+        FT_ATOMIC_STORE_LONG_RELAXED(lz->stop, 1);
     return NULL;
 }
 
