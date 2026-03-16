@@ -2611,8 +2611,10 @@ requires, and these work on all supported platforms.
 |  ``%M``   | Minute as a zero-padded        | 00, 01, ..., 59        | \(9)  |
 |           | decimal number.                |                        |       |
 +-----------+--------------------------------+------------------------+-------+
-|  ``%n``   | The newline character          | ``\n``                 | \(0)  |
-|           | (``'\n'``).                    |                        |       |
+|  ``%n``   | The newline character          | ``\n``                 |       |
+|           | (``'\n'``). For                |                        |       |
+|           | :meth:`!strptime`, zero or     |                        |       |
+|           | more whitespace.               |                        |       |
 +-----------+--------------------------------+------------------------+-------+
 |  ``%p``   | Locale's equivalent of either  || AM, PM (en_US);       | \(1), |
 |           | AM or PM.                      || am, pm (de_DE)        | \(3)  |
@@ -2625,8 +2627,9 @@ requires, and these work on all supported platforms.
 |  ``%S``   | Second as a zero-padded        | 00, 01, ..., 59        | \(4), |
 |           | decimal number.                |                        | \(9)  |
 +-----------+--------------------------------+------------------------+-------+
-|  ``%t``   | The tab character              | ``\t``                 | \(0)  |
-|           | (``'\t'``).                    |                        |       |
+|  ``%t``   | The tab character (``'\t'``).  | ``\t``                 |       |
+|           | For :meth:`!strptime`,         |                        |       |
+|           | zero or more whitespace.       |                        |       |
 +-----------+--------------------------------+------------------------+-------+
 |  ``%T``   | ISO 8601 time format,          | 10:01:59               |       |
 |           | equivalent to ``%H:%M:%S``.    |                        |       |
@@ -2717,7 +2720,8 @@ differences between platforms in handling of unsupported format specifiers.
    ``%:z`` was added for :meth:`~.datetime.strftime`.
 
 .. versionadded:: 3.15
-   ``%:z``, ``%F``, and ``%D`` were added for :meth:`~.datetime.strptime`.
+   ``%D``, ``%F``, ``%n``, ``%t``, and ``%:z`` were added for
+   :meth:`~.datetime.strptime`.
 
 
 Technical detail
