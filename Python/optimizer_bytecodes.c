@@ -1177,6 +1177,11 @@ dummy_func(void) {
         }
     }
 
+    op(_CALL_INTRINSIC_1, (value -- res, v)) {
+        res = sym_new_not_null(ctx);
+        v = value;
+    }
+
     op(_GUARD_IS_TRUE_POP, (flag -- )) {
         sym_apply_predicate_narrowing(ctx, flag, true);
 
