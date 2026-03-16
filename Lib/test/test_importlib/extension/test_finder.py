@@ -60,6 +60,19 @@ class FinderTests(abc.FinderTests):
         self.assertIsNone(self.find_spec('asdfjkl;'))
 
 
+class ExtensionSuffixTest(unittest.TestCase):
+    def test_abi3_extension_suffixes(self):
+        suffixes = machinery.EXTENSION_SUFFIXES
+        if 'win32' in sys.platform:
+            self.assertIn(".pyd", suffixes)
+        if 'cygwin' in sys.platform:
+            pass
+        else:
+            if not support.Py_GIL_DISABLED:
+                self.assertIn(".abi3.so", suffixes)
+            self.assertIn(".abi3t.so", suffixes)
+
+
 (Frozen_FinderTests,
  Source_FinderTests
  ) = util.test_both(FinderTests, machinery=machinery)
