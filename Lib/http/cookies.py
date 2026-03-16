@@ -338,7 +338,8 @@ class Morsel(dict):
             if key not in self._reserved:
                 raise CookieError("Invalid attribute %r" % (key,))
             if _has_control_character(key, val):
-                raise CookieError(f"Control characters are not allowed in cookies {key!r} {val!r}")
+                raise CookieError("Control characters are not allowed in "
+                                  f"cookies {key!r} {val!r}")
             data[key] = val
         dict.update(self, data)
 
@@ -371,9 +372,15 @@ class Morsel(dict):
         }
 
     def __setstate__(self, state):
-        self._key = state['key']
-        self._value = state['value']
-        self._coded_value = state['coded_value']
+        key = state['key']
+        value = state['value']
+        coded_value = state['coded_value']
+        if _has_control_character(key, value, coded_value):
+            raise CookieError("Control characters are not allowed in cookies "
+                              f"{key!r} {value!r} {coded_value!r}")
+        self._key = key
+        self._value = value
+        self._coded_value = coded_value
 
     def output(self, attrs=None, header="Set-Cookie:"):
         return "%s %s" % (header, self.OutputString(attrs))
