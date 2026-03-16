@@ -173,7 +173,7 @@ dummy_func(
         }
 
         tier1 op(_QUICKEN_RESUME, (counter/1 --)) {
-            _Py_Specialize_Resume(this_instr, tstate);
+            _Py_Specialize_Resume(this_instr, tstate, frame);
         }
 
         tier1 op(_MAYBE_INSTRUMENT, (--)) {

@@ -10515,7 +10515,7 @@
                 uint16_t counter = read_u16(&this_instr[1].cache);
                 (void)counter;
                 _PyFrame_SetStackPointer(frame, stack_pointer);
-                _Py_Specialize_Resume(this_instr, tstate);
+                _Py_Specialize_Resume(this_instr, tstate, frame);
                 stack_pointer = _PyFrame_GetStackPointer(frame);
             }
             // _CHECK_PERIODIC_IF_NOT_YIELD_FROM

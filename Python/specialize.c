@@ -2788,13 +2788,18 @@ _Py_Specialize_ContainsOp(_PyStackRef value_st, _Py_CODEUNIT *instr)
 
 
 void
-_Py_Specialize_Resume(_Py_CODEUNIT *instr, PyThreadState *tstate)
+_Py_Specialize_Resume(_Py_CODEUNIT *instr, PyThreadState *tstate, _PyInterpreterFrame *frame)
 {
     if (tstate->tracing == 0 && instr->op.code == RESUME) {
         if (tstate->interp->jit) {
-            specialize(instr, RESUME_CHECK_JIT);
-            set_counter((_Py_BackoffCounter *)instr + 1, initial_resume_backoff_counter(&tstate->interp->opt_config));
-            return;
+            PyCodeObject *co = (PyCodeObject *)PyStackRef_AsPyObjectBorrow(frame->f_executable);
+            if (co != NULL &&
+                PyCode_Check(co) &&
+                (co->co_flags & (CO_GENERATOR | CO_COROUTINE | CO_ASYNC_GENERATOR)) == 0) {
+                specialize(instr, RESUME_CHECK_JIT);
+                set_counter((_Py_BackoffCounter *)instr + 1, initial_resume_backoff_counter(&tstate->interp->opt_config));
+                return;
+            }
         }
         specialize(instr, RESUME_CHECK);
         return;
