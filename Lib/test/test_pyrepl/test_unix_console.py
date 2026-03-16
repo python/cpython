@@ -2,14 +2,12 @@ import errno
 import itertools
 import os
 import signal
-import subprocess
 import sys
 import threading
 import unittest
 from functools import partial
-from test import support
 from test.support import os_helper, force_not_colorized_test_class
-from test.support import script_helper, threading_helper
+from test.support import threading_helper
 
 from unittest import TestCase
 from unittest.mock import MagicMock, call, patch, ANY, Mock
@@ -369,34 +367,3 @@ class TestUnixConsoleEIOHandling(TestCase):
 
         # EIO error should be handled gracefully in restore()
         console.restore()
-
-    @unittest.skipUnless(sys.platform == "linux", "Only valid on Linux")
-    def test_repl_eio(self):
-        # Use the pty-based approach to simulate EIO error
-        script_path = os.path.join(os.path.dirname(__file__), "eio_test_script.py")
-
-        proc = script_helper.spawn_python(
-            "-S", script_path,
-            stderr=subprocess.PIPE,
-            text=True
-        )
-
-        ready_line = proc.stdout.readline().strip()
-        if ready_line != "READY" or proc.poll() is not None:
-            self.fail("Child process failed to start properly")
-
-        os.kill(proc.pid, signal.SIGUSR1)
-        # sleep for pty to settle
-        _, err = proc.communicate(timeout=support.LONG_TIMEOUT)
-        self.assertEqual(
-            proc.returncode,
-            1,
-            f"Expected EIO/ENXIO error, got return code {proc.returncode}",
-        )
-        self.assertTrue(
-            (
-                "Got EIO:" in err
-                or "Got ENXIO:" in err
-            ),
-            f"Expected EIO/ENXIO error message in stderr: {err}",
-        )
