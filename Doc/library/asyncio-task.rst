@@ -557,7 +557,7 @@ Running Tasks Concurrently
       provides stronger safety guarantees than *gather* for scheduling a nesting of subtasks:
       if a task (or a subtask, a task scheduled by a task)
       raises an exception, *TaskGroup* will, while *gather* will not,
-      cancel the remaining scheduled tasks).
+      cancel the remaining scheduled tasks.
 
    .. _asyncio_example_gather:
 
