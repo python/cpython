@@ -7,7 +7,7 @@ import re
 import shlex
 import sys
 from collections.abc import Callable
-from types import FunctionType, NoneType
+from types import FunctionType
 from typing import TYPE_CHECKING, Any, NamedTuple
 
 import libclinic

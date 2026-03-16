@@ -4,7 +4,7 @@ import sys
 from types import NoneType
 from typing import Any
 
-from libclinic import fail, NullType, unspecified, unknown, NULL, c_bytes_repr, c_str_repr, c_unichar_repr
+from libclinic import fail, NullType, unspecified, NULL, c_bytes_repr, c_unichar_repr
 from libclinic.function import (
     Function, Parameter,
     CALLABLE, STATIC_METHOD, CLASS_METHOD, METHOD_INIT, METHOD_NEW,
