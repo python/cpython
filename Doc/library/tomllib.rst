@@ -4,9 +4,6 @@
 .. module:: tomllib
    :synopsis: Parse TOML files.
 
-.. moduleauthor:: Taneli Hukkinen
-.. sectionauthor:: Taneli Hukkinen
-
 **Source code:** :source:`Lib/tomllib`
 
 --------------

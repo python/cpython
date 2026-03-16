@@ -3,6 +3,7 @@
 import collections.abc
 import itertools
 import linecache
+import os
 import sys
 import textwrap
 import types
@@ -11,6 +12,8 @@ import codeop
 import keyword
 import tokenize
 import io
+import importlib.util
+import pathlib
 import _colorize
 
 from contextlib import suppress
@@ -1128,6 +1131,15 @@ class TracebackException:
                 self._str += (". Site initialization is disabled, did you forget to "
                     + "add the site-packages directory to sys.path "
                     + "or to enable your virtual environment?")
+            elif abi_tag := _find_incompatible_extension_module(module_name):
+                self._str += (
+                    ". Although a module with this name was found for a "
+                    f"different Python version ({abi_tag})."
+                )
+            else:
+                suggestion = _compute_suggestion_error(exc_value, exc_traceback, module_name)
+                if suggestion:
+                    self._str += f". Did you mean: '{suggestion}'?"
         elif exc_type and issubclass(exc_type, AttributeError) and \
                 getattr(exc_value, "name", None) is not None:
             wrong_name = getattr(exc_value, "name", None)
@@ -1686,6 +1698,19 @@ def _check_for_nested_attribute(obj, wrong_name, attrs):
     return None
 
 
+def _get_safe___dir__(obj):
+    # Use obj.__dir__() to avoid a TypeError when calling dir(obj).
+    # See gh-131001 and gh-139933.
+    # Also filters out lazy imports to avoid triggering module loading.
+    try:
+        d = obj.__dir__()
+    except TypeError:  # when obj is a class
+        d = type(obj).__dir__(obj)
+    return sorted(
+        x for x in d if isinstance(x, str) and not _is_lazy_import(obj, x)
+    )
+
+
 def _compute_suggestion_error(exc_value, tb, wrong_name):
     if wrong_name is None or not isinstance(wrong_name, str):
         return None
@@ -1699,13 +1724,7 @@ def _compute_suggestion_error(exc_value, tb, wrong_name):
     if isinstance(exc_value, AttributeError):
         obj = exc_value.obj
         try:
-            try:
-                d = dir(obj)
-            except TypeError:  # Attributes are unsortable, e.g. int and str
-                d = list(obj.__class__.__dict__.keys()) + list(obj.__dict__.keys())
-            d = sorted([x for x in d if isinstance(x, str)])
-            # Filter out lazy imports to avoid triggering module loading
-            d = [x for x in d if not _is_lazy_import(obj, x)]
+            d = _get_safe___dir__(obj)
             hide_underscored = (wrong_name[:1] != '_')
             if hide_underscored and tb is not None:
                 while tb.tb_next is not None:
@@ -1717,16 +1736,22 @@ def _compute_suggestion_error(exc_value, tb, wrong_name):
                 d = [x for x in d if x[:1] != '_']
         except Exception:
             return None
+    elif isinstance(exc_value, ModuleNotFoundError):
+        try:
+            if parent_name := wrong_name.rpartition('.')[0]:
+                parent = importlib.util.find_spec(parent_name)
+            else:
+                parent = None
+            d = []
+            for finder in sys.meta_path:
+                if discover := getattr(finder, 'discover', None):
+                    d += [spec.name for spec in discover(parent)]
+        except Exception:
+            return None
     elif isinstance(exc_value, ImportError):
         try:
             mod = __import__(exc_value.name)
-            try:
-                d = dir(mod)
-            except TypeError:  # Attributes are unsortable, e.g. int and str
-                d = list(mod.__dict__.keys())
-            d = sorted([x for x in d if isinstance(x, str)])
-            # Filter out lazy imports to avoid triggering module loading
-            d = [x for x in d if not _is_lazy_import(mod, x)]
+            d = _get_safe___dir__(mod)
             if wrong_name[:1] != '_':
                 d = [x for x in d if x[:1] != '_']
         except Exception:
@@ -1863,3 +1888,32 @@ def _levenshtein_distance(a, b, max_cost):
             # Everything in this row is too big, so bail early.
             return max_cost + 1
     return result
+
+
+def _find_incompatible_extension_module(module_name):
+    import importlib.machinery
+    import importlib.resources.readers
+
+    if not module_name or not importlib.machinery.EXTENSION_SUFFIXES:
+        return
+
+    # We assume the last extension is untagged (eg. .so, .pyd)!
+    # tests.test_traceback.MiscTest.test_find_incompatible_extension_modules
+    # tests that assumption.
+    untagged_suffix = importlib.machinery.EXTENSION_SUFFIXES[-1]
+    # On Windows the debug tag is part of the module file stem, instead of the
+    # extension (eg. foo_d.pyd), so let's remove it and just look for .pyd.
+    if os.name == 'nt':
+        untagged_suffix = untagged_suffix.removeprefix('_d')
+
+    parent, _, child = module_name.rpartition('.')
+    if parent:
+        traversable = importlib.resources.files(parent)
+    else:
+        traversable = importlib.resources.readers.MultiplexedPath(
+            *map(pathlib.Path, filter(os.path.isdir, sys.path))
+        )
+
+    for entry in traversable.iterdir():
+        if entry.name.startswith(child + '.') and entry.name.endswith(untagged_suffix):
+            return entry.name

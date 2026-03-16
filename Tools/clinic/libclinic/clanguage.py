@@ -6,7 +6,7 @@ from typing import TYPE_CHECKING, Literal, Final
 from operator import attrgetter
 from collections.abc import Iterable
 
-import libclinic
+import libclinic.cpp
 from libclinic import (
     unspecified, fail, Sentinels, VersionTuple)
 from libclinic.codegen import CRenderData, TemplateDict, CodeGen

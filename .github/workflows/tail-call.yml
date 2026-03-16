@@ -51,7 +51,6 @@ jobs:
       - name: Build
         shell: pwsh
         run: |
-          $env:PlatformToolset = "v145"
           ./PCbuild/build.bat --tail-call-interp ${{ matrix.build_flags }} -c Release -p ${{ matrix.architecture }}
       - name: Test
         if: matrix.run_tests

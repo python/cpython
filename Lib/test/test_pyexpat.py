@@ -701,6 +701,25 @@ class ElementDeclHandlerTest(unittest.TestCase):
         parser.ElementDeclHandler = lambda _1, _2: None
         self.assertRaises(TypeError, parser.Parse, data, True)
 
+    @support.skip_if_unlimited_stack_size
+    @support.skip_emscripten_stack_overflow()
+    @support.skip_wasi_stack_overflow()
+    def test_deeply_nested_content_model(self):
+        # This should raise a RecursionError and not crash.
+        # See https://github.com/python/cpython/issues/145986.
+        N = 500_000
+        data = (
+            b'<!DOCTYPE root [\n<!ELEMENT root '
+            + b'(a, ' * N + b'a' + b')' * N
+            + b'>\n]>\n<root/>\n'
+        )
+
+        parser = expat.ParserCreate()
+        parser.ElementDeclHandler = lambda _1, _2: None
+        with support.infinite_recursion():
+            with self.assertRaises(RecursionError):
+                parser.Parse(data)
+
 class MalformedInputTest(unittest.TestCase):
     def test1(self):
         xml = b"\0\r\n"
@@ -1106,7 +1125,9 @@ class ExpansionProtectionTest(AttackProtectionTestBase, unittest.TestCase):
         self.assertIsNotNone(parser.Parse(payload, True))
 
 
-@unittest.skipIf(expat.version_info < (2, 7, 2), "requires Expat >= 2.7.2")
+@unittest.skipIf(not hasattr(expat.XMLParserType,
+                             "SetAllocTrackerMaximumAmplification"),
+                 "requires Python compiled with Expat >= 2.7.2")
 class MemoryProtectionTest(AttackProtectionTestBase, unittest.TestCase):
 
     # NOTE: with the default Expat configuration, the billion laughs protection
