@@ -71,9 +71,9 @@ def load_data(fobj):
         trans_list_utc = ()
         trans_idx = ()
 
-    for idx in trans_idx:
-        if idx >= typecnt:
-            raise ValueError(f"Invalid transition index found while reading TZif: {idx}")
+    if trans_idx and max(trans_idx) >= typecnt:
+        raise ValueError("Invalid transition index found while reading TZif: "
+                         f"{max(trans_idx)}")
 
     # Read the ttinfo struct, (utoff, isdst, abbrind)
     if typecnt:
