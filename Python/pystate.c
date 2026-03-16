@@ -607,11 +607,13 @@ init_interpreter(PyInterpreterState *interp,
     // Initialize optimization configuration from environment variables
     // PYTHON_JIT_STRESS sets aggressive defaults for testing, but can be overridden
     uint16_t jump_default = JUMP_BACKWARD_INITIAL_VALUE;
+    uint16_t resume_default = RESUME_INITIAL_VALUE;
     uint16_t side_exit_default = SIDE_EXIT_INITIAL_VALUE;
 
     if (is_env_enabled("PYTHON_JIT_STRESS")) {
         jump_default = 63;
         side_exit_default = 63;
+        resume_default = 127;
     }
 
     init_policy(&interp->opt_config.jump_backward_initial_value,
@@ -620,6 +622,12 @@ init_interpreter(PyInterpreterState *interp,
     init_policy(&interp->opt_config.jump_backward_initial_backoff,
                 "PYTHON_JIT_JUMP_BACKWARD_INITIAL_BACKOFF",
                 JUMP_BACKWARD_INITIAL_BACKOFF, 0, MAX_BACKOFF);
+    init_policy(&interp->opt_config.resume_initial_value,
+                "PYTHON_JIT_RESUME_INITIAL_VALUE",
+                resume_default, 1, MAX_VALUE);
+    init_policy(&interp->opt_config.resume_initial_backoff,
+                "PYTHON_JIT_RESUME_INITIAL_BACKOFF",
+                RESUME_INITIAL_BACKOFF, 0, MAX_BACKOFF);
     init_policy(&interp->opt_config.side_exit_initial_value,
                 "PYTHON_JIT_SIDE_EXIT_INITIAL_VALUE",
                 side_exit_default, 1, MAX_VALUE);

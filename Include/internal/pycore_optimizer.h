@@ -361,6 +361,8 @@ _PyJit_TryInitializeTracing(PyThreadState *tstate, _PyInterpreterFrame *frame,
     int oparg, _PyExecutorObject *current_executor);
 
 PyAPI_FUNC(void) _PyJit_FinalizeTracing(PyThreadState *tstate, int err);
+PyAPI_FUNC(bool) _PyJit_EnterExecutorShouldStopTracing(int og_opcode);
+
 void _PyPrintExecutor(_PyExecutorObject *executor, const _PyUOpInstruction *marker);
 void _PyJit_TracerFree(_PyThreadStateImpl *_tstate);
 
