@@ -68,7 +68,7 @@ __all__ = [
     # Utility functions
     "FormatCounterFormatter",
     "NULL",
-    "Null",
+    "NullType",
     "Sentinels",
     "VersionTuple",
     "compute_checksum",

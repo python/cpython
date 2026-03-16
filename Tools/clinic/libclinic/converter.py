@@ -207,8 +207,7 @@ class CConverter(metaclass=CConverterAutoRegister):
             if self.default_type == ():
                 conv_name = self.__class__.__name__.removesuffix('_converter')
                 fail(f"A '{conv_name}' parameter cannot be marked optional.")
-            if (self.default_type is not None
-                and default is not unknown
+            if (default is not unknown
                 and not isinstance(default, self.default_type)
             ):
                 if isinstance(self.default_type, type):

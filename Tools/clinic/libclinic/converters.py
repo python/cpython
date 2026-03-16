@@ -109,11 +109,12 @@ class bool_converter(CConverter):
     def converter_init(self, *, accept: TypeSet = {object}) -> None:
         if accept == {int}:
             self.format_unit = 'i'
-            self.default_type = int
+            self.default_type = int  # type: ignore[assignment]
         elif accept != {object}:
             fail(f"bool_converter: illegal 'accept' argument {accept!r}")
 
     def c_default_init(self) -> None:
+        assert isinstance(self.default, int)
         self.c_default = str(int(self.default))
 
     def parse_arg(self, argname: str, displayname: str, *, limited_capi: bool) -> str | None:
@@ -170,6 +171,7 @@ class char_converter(CConverter):
 
     def c_default_init(self) -> None:
         default = self.default
+        assert isinstance(default, bytes)
         if default == b"'":
             self.c_default = r"'\''"
         elif default == b'"':
@@ -313,11 +315,11 @@ class int_converter(CConverter):
     ) -> None:
         if accept == {str}:
             self.format_unit = 'C'
-            self.default_type = str
-            if isinstance(self.default, self.default_type):
+            self.default_type = str  # type: ignore[assignment]
+            if isinstance(self.default, str):
                 if len(self.default) != 1:
                     fail(f"int_converter: illegal default value {self.default!r}")
-        elif accept != {int}:
+        elif accept == {int}:
             fail(f"int_converter: illegal 'accept' argument {accept!r}")
         if type is not None:
             self.type = type
@@ -436,7 +438,7 @@ class Py_ssize_t_converter(CConverter):
         self.allow_negative = allow_negative
         if accept == {int}:
             self.format_unit = 'n'
-            self.default_type = int
+            self.default_type = int  # type: ignore[assignment]
         elif accept == {int, NoneType}:
             if self.allow_negative:
                 self.converter = '_Py_convert_optional_to_ssize_t'
@@ -518,7 +520,7 @@ class slice_index_converter(CConverter):
     def converter_init(self, *, accept: TypeSet = {int, NoneType}) -> None:
         if accept == {int}:
             self.converter = '_PyEval_SliceIndexNotNone'
-            self.default_type = int
+            self.default_type = int  # type: ignore[assignment]
             self.nullable = False
         elif accept == {int, NoneType}:
             self.converter = '_PyEval_SliceIndex'
@@ -983,7 +985,7 @@ class Py_UNICODE_converter(CConverter):
             self.accept = accept
             if accept == {str}:
                 self.converter = '_PyUnicode_WideCharString_Converter'
-                self.default_type = (str, NullType)
+                self.default_type = (str, NullType)  # type: ignore[assignment]
             elif accept == {str, NoneType}:
                 self.converter = '_PyUnicode_WideCharString_Opt_Converter'
             else:
@@ -1050,13 +1052,13 @@ class Py_buffer_converter(CConverter):
             self.default_type = (str, bytes, NullType, NoneType)
         elif accept == {str, buffer}:
             self.format_unit = 's*'
-            self.default_type = (str, bytes, NullType)
+            self.default_type = (str, bytes, NullType)  # type: ignore[assignment]
         elif accept == {buffer}:
             self.format_unit = 'y*'
-            self.default_type = (bytes, NullType)
+            self.default_type = (bytes, NullType)  # type: ignore[assignment]
         elif accept == {rwbuffer}:
             self.format_unit = 'w*'
-            self.default_type = NullType
+            self.default_type = NullType  # type: ignore[assignment]
         else:
             fail("Py_buffer_converter: illegal combination of arguments")
 
