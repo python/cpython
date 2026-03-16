@@ -1628,18 +1628,26 @@ dummy_func(
         inst(STORE_NAME, (v -- )) {
             PyObject *name = GETITEM(FRAME_CO_NAMES, oparg);
             PyObject *ns = LOCALS();
+            int deletion = PyStackRef_IsNull(v);
             int err;
             if (ns == NULL) {
-                _PyErr_Format(tstate, PyExc_SystemError,
-                              "no locals found when storing %R", name);
-                PyStackRef_CLOSE(v);
+                const char *msg = deletion
+                    ? "no locals found when deleting %R"
+                    : "no locals found when storing %R";
+                _PyErr_Format(tstate, PyExc_SystemError, msg, name);
+                if (deletion) {
+                    DEAD(v);
+                }
+                else {
+                    PyStackRef_CLOSE(v);
+                }
                 ERROR_IF(true);
             }
 
-            if (PyStackRef_IsNull(v)) {
+            if (deletion) {
                 DEAD(v);
                 err = PyObject_DelItem(ns, name);
-                if (err != 0) {
+                if (err) {
                     _PyEval_FormatExcCheckArg(tstate, PyExc_NameError,
                                             NAME_ERROR_MSG,
                                             name);

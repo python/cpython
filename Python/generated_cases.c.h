@@ -11341,26 +11341,34 @@
             v = stack_pointer[-1];
             PyObject *name = GETITEM(FRAME_CO_NAMES, oparg);
             PyObject *ns = LOCALS();
+            int deletion = PyStackRef_IsNull(v);
             int err;
             if (ns == NULL) {
+                const char *msg = deletion
+                ? "no locals found when deleting %R"
+            : "no locals found when storing %R";
                 _PyFrame_SetStackPointer(frame, stack_pointer);
-                _PyErr_Format(tstate, PyExc_SystemError,
-                              "no locals found when storing %R", name);
+                _PyErr_Format(tstate, PyExc_SystemError, msg, name);
                 stack_pointer = _PyFrame_GetStackPointer(frame);
-                stack_pointer += -1;
-                ASSERT_WITHIN_STACK_BOUNDS(__FILE__, __LINE__);
-                _PyFrame_SetStackPointer(frame, stack_pointer);
-                PyStackRef_CLOSE(v);
-                stack_pointer = _PyFrame_GetStackPointer(frame);
-                JUMP_TO_LABEL(error);
+                if (deletion) {
+                }
+                else {
+                    stack_pointer += -1;
+                    ASSERT_WITHIN_STACK_BOUNDS(__FILE__, __LINE__);
+                    _PyFrame_SetStackPointer(frame, stack_pointer);
+                    PyStackRef_CLOSE(v);
+                    stack_pointer = _PyFrame_GetStackPointer(frame);
+                    stack_pointer += 1;
+                }
+                JUMP_TO_LABEL(pop_1_error);
             }
-            if (PyStackRef_IsNull(v)) {
+            if (deletion) {
                 stack_pointer += -1;
                 ASSERT_WITHIN_STACK_BOUNDS(__FILE__, __LINE__);
                 _PyFrame_SetStackPointer(frame, stack_pointer);
                 err = PyObject_DelItem(ns, name);
                 stack_pointer = _PyFrame_GetStackPointer(frame);
-                if (err != 0) {
+                if (err) {
                     _PyFrame_SetStackPointer(frame, stack_pointer);
                     _PyEval_FormatExcCheckArg(tstate, PyExc_NameError,
                         NAME_ERROR_MSG,

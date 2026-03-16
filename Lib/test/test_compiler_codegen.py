@@ -161,3 +161,15 @@ class IsolatedCodeGenTests(CodegenTestCase):
         self.assertIsNone(cm.exception.text)
         self.assertEqual(cm.exception.offset, 1)
         self.assertEqual(cm.exception.end_offset, 10)
+
+    def test_del_for_store_name(self):
+        snippet = "del x"
+        expected = [
+            ('RESUME', 0),
+            ('ANNOTATIONS_PLACEHOLDER', None),
+            ('PUSH_NULL', None),
+            ('STORE_NAME', 0),
+            ('LOAD_CONST', 0),
+            ('RETURN_VALUE', None),
+        ]
+        self.codegen_test(snippet, expected)
