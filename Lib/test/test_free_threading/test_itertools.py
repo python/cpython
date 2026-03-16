@@ -1,6 +1,7 @@
 import unittest
 from threading import Thread, Barrier
 from itertools import (
+    accumulate,
     chain,
     combinations_with_replacement,
     cycle,
@@ -88,6 +89,13 @@ class ItertoolsThreading(unittest.TestCase):
         for _ in range(number_of_iterations):
             it = permutations(tuple(range(2)), 2)
             threading_helper.run_concurrently(work_iterator, nthreads=6, args=[it])
+
+    @threading_helper.reap_threads
+    def test_accumulate(self):
+        number_of_iterations = 10
+        for _ in range(number_of_iterations):
+            it = accumulate(tuple(range(40)))
+            threading_helper.run_concurrently(work_iterator, nthreads=10, args=[it])
 
 
 
