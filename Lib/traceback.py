@@ -223,16 +223,14 @@ TIMESTAMP_AFTER_EXC_MSG_RE_GROUP = r"(?P<timestamp> <@[0-9:.Tsnu-]{17,26}Z?>)"
 
 def strip_exc_timestamps(output):
    """Remove exception timestamps from output; for use by tests."""
-   if _TIMESTAMP_FORMAT:
-       import re
-       if isinstance(output, str):
-           pattern = TIMESTAMP_AFTER_EXC_MSG_RE_GROUP
-           empty = ""
-       else:
-           pattern = TIMESTAMP_AFTER_EXC_MSG_RE_GROUP.encode()
-           empty = b""
-       return re.sub(pattern, empty, output, flags=re.MULTILINE)
-   return output
+   import re
+   if isinstance(output, str):
+       pattern = TIMESTAMP_AFTER_EXC_MSG_RE_GROUP
+       empty = ""
+   else:
+       pattern = TIMESTAMP_AFTER_EXC_MSG_RE_GROUP.encode()
+       empty = b""
+   return re.sub(pattern, empty, output, flags=re.MULTILINE)
 
 
 # -- not official API but folk probably use these two functions.
