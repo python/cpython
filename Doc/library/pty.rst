@@ -2,7 +2,6 @@
 =========================================
 
 .. module:: pty
-   :platform: Unix
    :synopsis: Pseudo-Terminal Handling for Unix.
 
 .. moduleauthor:: Steen Lumholt

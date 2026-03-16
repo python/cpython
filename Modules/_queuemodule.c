@@ -165,6 +165,7 @@ RingBuf_Put(RingBuf *buf, PyObject *item)
         // Buffer is full, grow it.
         if (resize_ringbuf(buf, buf->items_cap * 2) < 0) {
             PyErr_NoMemory();
+            Py_DECREF(item);
             return -1;
         }
     }

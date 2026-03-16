@@ -1463,7 +1463,7 @@ All of the following functions must be called after :c:func:`Py_Initialize`.
 
    Get the current interpreter.
 
-   Issue a fatal error if there no current Python thread state or no current
+   Issue a fatal error if there is no current Python thread state or no current
    interpreter. It cannot return NULL.
 
    The caller must hold the GIL.
@@ -2051,7 +2051,7 @@ Python-level trace functions in previous versions.
    *what* when after any bytecode is processed after which the exception becomes
    set within the frame being executed.  The effect of this is that as exception
    propagation causes the Python stack to unwind, the callback is called upon
-   return to each frame as the exception propagates.  Only trace functions receives
+   return to each frame as the exception propagates.  Only trace functions receive
    these events; they are not needed by the profiler.
 
 
@@ -2179,7 +2179,7 @@ Reference tracing
    the tracer function is called. Return ``0`` on success. Set an exception and
    return ``-1`` on error.
 
-   Not that tracer functions **must not** create Python objects inside or
+   Note that tracer functions **must not** create Python objects inside or
    otherwise the call will be re-entrant. The tracer also **must not** clear
    any existing exception or set an exception.  The GIL will be held every time
    the tracer function is called.

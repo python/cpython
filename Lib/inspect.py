@@ -465,6 +465,8 @@ def isgenerator(object):
         gi_frame        frame object or possibly None once the generator has
                         been exhausted
         gi_running      set to 1 when generator is executing, 0 otherwise
+        gi_suspended    set to 1 when the generator is suspended at a yield point, 0 otherwise
+        gi_yieldfrom    object being iterated by yield from or None
         next            return the next item from the container
         send            resumes the generator and "sends" a value that becomes
                         the result of the current yield-expression
@@ -2743,11 +2745,12 @@ class Parameter:
         The annotation for the parameter if specified.  If the
         parameter has no annotation, this attribute is set to
         `Parameter.empty`.
-    * kind : str
+    * kind
         Describes how argument values are bound to the parameter.
         Possible values: `Parameter.POSITIONAL_ONLY`,
         `Parameter.POSITIONAL_OR_KEYWORD`, `Parameter.VAR_POSITIONAL`,
         `Parameter.KEYWORD_ONLY`, `Parameter.VAR_KEYWORD`.
+        Every value has a `description` attribute describing meaning.
     """
 
     __slots__ = ('_name', '_kind', '_default', '_annotation')

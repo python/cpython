@@ -125,6 +125,20 @@ TERM_CAPABILITIES = {
 @patch("termios.tcsetattr", lambda a, b, c: None)
 @patch("os.write")
 class TestConsole(TestCase):
+    def test_no_newline(self, _os_write):
+        code = "1"
+        events = code_to_events(code)
+        _, con = handle_events_unix_console(events)
+        self.assertNotIn(call(ANY, b'\n'), _os_write.mock_calls)
+        con.restore()
+
+    def test_newline(self, _os_write):
+        code = "\n"
+        events = code_to_events(code)
+        _, con = handle_events_unix_console(events)
+        _os_write.assert_any_call(ANY, b"\n")
+        con.restore()
+
     def test_simple_addition(self, _os_write):
         code = "12+34"
         events = code_to_events(code)

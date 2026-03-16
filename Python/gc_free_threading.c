@@ -1100,7 +1100,19 @@ record_deallocation(PyThreadState *tstate)
     gc->alloc_count--;
     if (gc->alloc_count <= -LOCAL_ALLOC_COUNT_THRESHOLD) {
         GCState *gcstate = &tstate->interp->gc;
-        _Py_atomic_add_int(&gcstate->generations[0].count, (int)gc->alloc_count);
+        int count = _Py_atomic_load_int_relaxed(&gcstate->generations[0].count);
+        int new_count;
+        do {
+            if (count == 0) {
+                break;
+            }
+            new_count = count + (int)gc->alloc_count;
+            if (new_count < 0) {
+                new_count = 0;
+            }
+        } while (!_Py_atomic_compare_exchange_int(&gcstate->generations[0].count,
+                                                  &count,
+                                                  new_count));
         gc->alloc_count = 0;
     }
 }

@@ -1176,6 +1176,8 @@ get_posix_state(PyObject *module)
  *     Contains a file descriptor if path.accept_fd was true
  *     and the caller provided a signed integer instead of any
  *     sort of string.
+ *   path.is_fd
+ *     True if path was provided as a file descriptor.
  *
  *     WARNING: if your "path" parameter is optional, and is
  *     unspecified, path_converter will never get called.
@@ -1228,6 +1230,7 @@ typedef struct {
     const wchar_t *wide;
     const char *narrow;
     int fd;
+    bool is_fd;
     int value_error;
     Py_ssize_t length;
     PyObject *object;
@@ -1237,7 +1240,7 @@ typedef struct {
 #define PATH_T_INITIALIZE(function_name, argument_name, nullable, nonstrict, \
                           make_wide, suppress_value_error, allow_fd) \
     {function_name, argument_name, nullable, nonstrict, make_wide, \
-     suppress_value_error, allow_fd, NULL, NULL, -1, 0, 0, NULL, NULL}
+     suppress_value_error, allow_fd, NULL, NULL, -1, false, 0, 0, NULL, NULL}
 #ifdef MS_WINDOWS
 #define PATH_T_INITIALIZE_P(function_name, argument_name, nullable, \
                             nonstrict, suppress_value_error, allow_fd) \
@@ -1371,6 +1374,7 @@ path_converter(PyObject *o, void *p)
         }
         path->wide = NULL;
         path->narrow = NULL;
+        path->is_fd = true;
         goto success_exit;
     }
     else {
@@ -1533,7 +1537,7 @@ static int
 fd_and_follow_symlinks_invalid(const char *function_name, int fd,
                                int follow_symlinks)
 {
-    if ((fd > 0) && (!follow_symlinks)) {
+    if ((fd >= 0) && (!follow_symlinks)) {
         PyErr_Format(PyExc_ValueError,
                      "%s: cannot use fd and follow_symlinks together",
                      function_name);
@@ -1698,7 +1702,7 @@ convertenviron(void)
 #ifdef MS_WINDOWS
         k = PyUnicode_FromWideChar(*e, (Py_ssize_t)(p-*e));
 #else
-        k = PyBytes_FromStringAndSize(*e, (int)(p-*e));
+        k = PyBytes_FromStringAndSize(*e, (Py_ssize_t)(p-*e));
 #endif
         if (k == NULL) {
             Py_DECREF(d);
@@ -6740,8 +6744,8 @@ static EXECV_CHAR**
 parse_envlist(PyObject* env, Py_ssize_t *envc_ptr)
 {
     Py_ssize_t i, pos, envc;
-    PyObject *keys=NULL, *vals=NULL;
-    PyObject *key2, *val2, *keyval;
+    PyObject *keys = NULL, *vals = NULL;
+    PyObject *key = NULL, *val = NULL, *key2 = NULL, *val2 = NULL;
     EXECV_CHAR **envlist;
 
     i = PyMapping_Size(env);
@@ -6766,20 +6770,22 @@ parse_envlist(PyObject* env, Py_ssize_t *envc_ptr)
     }
 
     for (pos = 0; pos < i; pos++) {
-        PyObject *key = PyList_GetItem(keys, pos);  // Borrowed ref.
+        // The 'key' and 'val' must be strong references because of
+        // possible side-effects by PyUnicode_FS{Converter,Decoder}().
+        key = PyList_GetItemRef(keys, pos);
         if (key == NULL) {
             goto error;
         }
-        PyObject *val = PyList_GetItem(vals, pos);  // Borrowed ref.
+        val = PyList_GetItemRef(vals, pos);
         if (val == NULL) {
             goto error;
         }
 
 #if defined(HAVE_WEXECV) || defined(HAVE_WSPAWNV)
-        if (!PyUnicode_FSDecoder(key, &key2))
+        if (!PyUnicode_FSDecoder(key, &key2)) {
             goto error;
+        }
         if (!PyUnicode_FSDecoder(val, &val2)) {
-            Py_DECREF(key2);
             goto error;
         }
         /* Search from index 1 because on Windows starting '=' is allowed for
@@ -6788,39 +6794,38 @@ parse_envlist(PyObject* env, Py_ssize_t *envc_ptr)
             PyUnicode_FindChar(key2, '=', 1, PyUnicode_GET_LENGTH(key2), 1) != -1)
         {
             PyErr_SetString(PyExc_ValueError, "illegal environment variable name");
-            Py_DECREF(key2);
-            Py_DECREF(val2);
             goto error;
         }
-        keyval = PyUnicode_FromFormat("%U=%U", key2, val2);
+        PyObject *keyval = PyUnicode_FromFormat("%U=%U", key2, val2);
 #else
-        if (!PyUnicode_FSConverter(key, &key2))
+        if (!PyUnicode_FSConverter(key, &key2)) {
             goto error;
+        }
         if (!PyUnicode_FSConverter(val, &val2)) {
-            Py_DECREF(key2);
             goto error;
         }
         if (PyBytes_GET_SIZE(key2) == 0 ||
             strchr(PyBytes_AS_STRING(key2) + 1, '=') != NULL)
         {
             PyErr_SetString(PyExc_ValueError, "illegal environment variable name");
-            Py_DECREF(key2);
-            Py_DECREF(val2);
             goto error;
         }
-        keyval = PyBytes_FromFormat("%s=%s", PyBytes_AS_STRING(key2),
-                                             PyBytes_AS_STRING(val2));
+        PyObject *keyval = PyBytes_FromFormat("%s=%s", PyBytes_AS_STRING(key2),
+                                              PyBytes_AS_STRING(val2));
 #endif
-        Py_DECREF(key2);
-        Py_DECREF(val2);
-        if (!keyval)
+        if (!keyval) {
             goto error;
+        }
 
         if (!fsconvert_strdup(keyval, &envlist[envc++])) {
             Py_DECREF(keyval);
             goto error;
         }
 
+        Py_CLEAR(key);
+        Py_CLEAR(val);
+        Py_CLEAR(key2);
+        Py_CLEAR(val2);
         Py_DECREF(keyval);
     }
     Py_DECREF(vals);
@@ -6831,6 +6836,10 @@ parse_envlist(PyObject* env, Py_ssize_t *envc_ptr)
     return envlist;
 
 error:
+    Py_XDECREF(key);
+    Py_XDECREF(val);
+    Py_XDECREF(key2);
+    Py_XDECREF(val2);
     Py_XDECREF(keys);
     Py_XDECREF(vals);
     free_string_array(envlist, envc);
@@ -7055,6 +7064,7 @@ parse_posix_spawn_flags(PyObject *module, const char *func_name, PyObject *setpg
                         PyObject *setsigdef, PyObject *scheduler,
                         posix_spawnattr_t *attrp)
 {
+    assert(scheduler == NULL || scheduler == Py_None || PyTuple_Check(scheduler));
     long all_flags = 0;
 
     errno = posix_spawnattr_init(attrp);
@@ -7063,7 +7073,7 @@ parse_posix_spawn_flags(PyObject *module, const char *func_name, PyObject *setpg
         return -1;
     }
 
-    if (setpgroup) {
+    if (setpgroup && setpgroup != Py_None) {
         pid_t pgid = PyLong_AsPid(setpgroup);
         if (pgid == (pid_t)-1 && PyErr_Occurred()) {
             goto fail;
@@ -7136,7 +7146,7 @@ parse_posix_spawn_flags(PyObject *module, const char *func_name, PyObject *setpg
     }
 #endif
 
-    if (scheduler) {
+    if (scheduler && scheduler != Py_None) {
 #ifdef POSIX_SPAWN_SETSCHEDULER
         PyObject *py_schedpolicy;
         PyObject *schedparam_obj;
@@ -7352,12 +7362,18 @@ py_posix_spawn(int use_posix_spawnp, PyObject *module, path_t *path, PyObject *a
     if (argc < 1) {
         PyErr_Format(PyExc_ValueError,
                      "%s: argv must not be empty", func_name);
-        return NULL;
+        goto exit;
     }
 
     if (!PyMapping_Check(env) && env != Py_None) {
         PyErr_Format(PyExc_TypeError,
                      "%s: environment must be a mapping object or None", func_name);
+        goto exit;
+    }
+
+    if (scheduler && !PyTuple_Check(scheduler) && scheduler != Py_None) {
+        PyErr_Format(PyExc_TypeError,
+                     "%s: scheduler must be a tuple or None", func_name);
         goto exit;
     }
 
@@ -7472,7 +7488,7 @@ os.posix_spawn
     *
     file_actions: object(c_default='NULL') = ()
         A sequence of file action tuples.
-    setpgroup: object = NULL
+    setpgroup: object(c_default='NULL') = None
         The pgroup to use with the POSIX_SPAWN_SETPGROUP flag.
     resetids: bool = False
         If the value is `true` the POSIX_SPAWN_RESETIDS will be activated.
@@ -7482,7 +7498,7 @@ os.posix_spawn
         The sigmask to use with the POSIX_SPAWN_SETSIGMASK flag.
     setsigdef: object(c_default='NULL') = ()
         The sigmask to use with the POSIX_SPAWN_SETSIGDEF flag.
-    scheduler: object = NULL
+    scheduler: object(c_default='NULL') = None
         A tuple with the scheduler policy (optional) and parameters.
 
 Execute the program specified by path in a new process.
@@ -7494,7 +7510,7 @@ os_posix_spawn_impl(PyObject *module, path_t *path, PyObject *argv,
                     PyObject *setpgroup, int resetids, int setsid,
                     PyObject *setsigmask, PyObject *setsigdef,
                     PyObject *scheduler)
-/*[clinic end generated code: output=14a1098c566bc675 input=808aed1090d84e33]*/
+/*[clinic end generated code: output=14a1098c566bc675 input=69e7c9ebbdcf94a5]*/
 {
     return py_posix_spawn(0, module, path, argv, env, file_actions,
                           setpgroup, resetids, setsid, setsigmask, setsigdef,
@@ -7518,7 +7534,7 @@ os.posix_spawnp
     *
     file_actions: object(c_default='NULL') = ()
         A sequence of file action tuples.
-    setpgroup: object = NULL
+    setpgroup: object(c_default='NULL') = None
         The pgroup to use with the POSIX_SPAWN_SETPGROUP flag.
     resetids: bool = False
         If the value is `True` the POSIX_SPAWN_RESETIDS will be activated.
@@ -7528,7 +7544,7 @@ os.posix_spawnp
         The sigmask to use with the POSIX_SPAWN_SETSIGMASK flag.
     setsigdef: object(c_default='NULL') = ()
         The sigmask to use with the POSIX_SPAWN_SETSIGDEF flag.
-    scheduler: object = NULL
+    scheduler: object(c_default='NULL') = None
         A tuple with the scheduler policy (optional) and parameters.
 
 Execute the program specified by path in a new process.
@@ -7540,7 +7556,7 @@ os_posix_spawnp_impl(PyObject *module, path_t *path, PyObject *argv,
                      PyObject *setpgroup, int resetids, int setsid,
                      PyObject *setsigmask, PyObject *setsigdef,
                      PyObject *scheduler)
-/*[clinic end generated code: output=7b9aaefe3031238d input=9e89e616116752a1]*/
+/*[clinic end generated code: output=7b9aaefe3031238d input=a5c057527c6881a5]*/
 {
     return py_posix_spawn(1, module, path, argv, env, file_actions,
                           setpgroup, resetids, setsid, setsigmask, setsigdef,
@@ -13708,8 +13724,9 @@ os_pathconf_impl(PyObject *module, path_t *path, int name)
 
     errno = 0;
 #ifdef HAVE_FPATHCONF
-    if (path->fd != -1)
+    if (path->is_fd) {
         limit = fpathconf(path->fd, name);
+    }
     else
 #endif
         limit = pathconf(path->narrow, name);

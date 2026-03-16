@@ -427,7 +427,7 @@ Riggles.
 .. date: 2024-09-06-19-23-44
 .. gh-issue: 120221
 .. nonce: giJEDT
-.. section: Core and Builtins
+.. section: Library
 
 asyncio REPL is now again properly recognizing KeyboardInterrupts. Display
 of exceptions raised in secondary threads is fixed.

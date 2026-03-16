@@ -5065,6 +5065,26 @@ class ClassPropertiesAndMethods(unittest.TestCase, ExtraAssertions):
         with self.assertRaisesRegex(NotImplementedError, "BAR"):
             B().foo
 
+    def test_staticmethod_new(self):
+        class MyStaticMethod(staticmethod):
+            def __init__(self, func):
+                pass
+        def func(): pass
+        sm = MyStaticMethod(func)
+        self.assertEqual(repr(sm), '<staticmethod(None)>')
+        self.assertIsNone(sm.__func__)
+        self.assertIsNone(sm.__wrapped__)
+
+    def test_classmethod_new(self):
+        class MyClassMethod(classmethod):
+            def __init__(self, func):
+                pass
+        def func(): pass
+        cm = MyClassMethod(func)
+        self.assertEqual(repr(cm), '<classmethod(None)>')
+        self.assertIsNone(cm.__func__)
+        self.assertIsNone(cm.__wrapped__)
+
 
 class DictProxyTests(unittest.TestCase):
     def setUp(self):

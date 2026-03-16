@@ -541,6 +541,7 @@ Special read-only attributes
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 .. index::
+   single: __builtins__ (function attribute)
    single: __closure__ (function attribute)
    single: __globals__ (function attribute)
    pair: global; namespace
@@ -550,6 +551,12 @@ Special read-only attributes
 
    * - Attribute
      - Meaning
+
+   * - .. attribute:: function.__builtins__
+     - A reference to the :class:`dictionary <dict>` that holds the function's
+       builtins namespace.
+
+       .. versionadded:: 3.10
 
    * - .. attribute:: function.__globals__
      - A reference to the :class:`dictionary <dict>` that holds the function's
@@ -1228,7 +1235,7 @@ Special attributes
    * - .. attribute:: type.__firstlineno__
      - The line number of the first line of the class definition,
        including decorators.
-       Setting the :attr:`__module__` attribute removes the
+       Setting the :attr:`~type.__module__` attribute removes the
        :attr:`!__firstlineno__` item from the type's dictionary.
 
        .. versionadded:: 3.13
@@ -1341,11 +1348,27 @@ also :func:`os.popen`, :func:`os.fdopen`, and the
 :meth:`~socket.socket.makefile` method of socket objects (and perhaps by
 other functions or methods provided by extension modules).
 
+File objects implement common methods, listed below, to simplify usage in
+generic code. They are expected to be :ref:`context-managers`.
+
 The objects ``sys.stdin``, ``sys.stdout`` and ``sys.stderr`` are
 initialized to file objects corresponding to the interpreter's standard
 input, output and error streams; they are all open in text mode and
 therefore follow the interface defined by the :class:`io.TextIOBase`
 abstract class.
+
+.. method:: file.read(size=-1, /)
+
+   Retrieve up to *size* data from the file. As a convenience if *size* is
+   unspecified or -1 retrieve all data available.
+
+.. method:: file.write(data, /)
+
+   Store *data* to the file.
+
+.. method:: file.close()
+
+   Flush any buffers and close the underlying file.
 
 
 Internal types
@@ -1851,9 +1874,9 @@ falling back to :meth:`~object.__getitem__`). [#]_
 When implementing a class that emulates any built-in type, it is important that
 the emulation only be implemented to the degree that it makes sense for the
 object being modelled.  For example, some sequences may work well with retrieval
-of individual elements, but extracting a slice may not make sense.  (One example
-of this is the :class:`~xml.dom.NodeList` interface in the W3C's Document
-Object Model.)
+of individual elements, but extracting a slice may not make sense.
+(One example of this is the :ref:`NodeList <dom-nodelist-objects>` interface
+in the W3C's Document Object Model.)
 
 
 .. _customization:
@@ -2645,7 +2668,7 @@ class defining the method.
    .. versionadded:: 3.6
 
 
-When a class is created, :meth:`type.__new__` scans the class variables
+When a class is created, :meth:`!type.__new__` scans the class variables
 and makes callbacks to those with a :meth:`~object.__set_name__` hook.
 
 .. method:: object.__set_name__(self, owner, name)

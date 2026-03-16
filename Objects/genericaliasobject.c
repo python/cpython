@@ -133,10 +133,15 @@ ga_repr_items_list(_PyUnicodeWriter *writer, PyObject *p)
                 return -1;
             }
         }
-        PyObject *item = PyList_GET_ITEM(p, i);
+        PyObject *item = PyList_GetItemRef(p, i);
+        if (item == NULL) {
+            return -1;  // list can be mutated in a callback
+        }
         if (ga_repr_item(writer, item) < 0) {
+            Py_DECREF(item);
             return -1;
         }
+        Py_DECREF(item);
     }
 
     if (_PyUnicodeWriter_WriteASCIIString(writer, "]", 1) < 0) {

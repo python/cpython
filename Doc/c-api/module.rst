@@ -263,6 +263,12 @@ or request "multi-phase initialization" by returning the definition struct itsel
       .. versionchanged:: 3.9
          No longer called before the module state is allocated.
 
+
+.. c:var:: PyTypeObject PyModuleDef_Type
+
+   The type of ``PyModuleDef`` objects.
+
+
 Single-phase initialization
 ...........................
 
@@ -528,6 +534,9 @@ objects dynamically. Note that both ``PyModule_FromDefAndSpec`` and
    This function is called automatically when creating a module from
    ``PyModuleDef``, using either ``PyModule_Create`` or
    ``PyModule_FromDefAndSpec``.
+
+   Return ``0`` on success.
+   Return ``-1`` with an exception set on error.
 
    .. versionadded:: 3.5
 

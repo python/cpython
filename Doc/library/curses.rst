@@ -4,7 +4,6 @@
 .. module:: curses
    :synopsis: An interface to the curses library, providing portable
               terminal handling.
-   :platform: Unix
 
 .. sectionauthor:: Moshe Zadka <moshez@zadka.site.co.il>
 .. sectionauthor:: Eric Raymond <esr@thyrsus.com>
@@ -22,6 +21,8 @@ designed to match the API of ncurses, an open-source curses library hosted on
 Linux and the BSD variants of Unix.
 
 .. include:: ../includes/wasm-mobile-notavail.rst
+
+.. availability:: Unix.
 
 .. note::
 

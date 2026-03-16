@@ -245,8 +245,8 @@ class TestSpecifics(unittest.TestCase):
             d = -281474976710656  # 1 << 48
             e = +4611686018427387904  # 1 << 62
             f = -4611686018427387904  # 1 << 62
-            g = +9223372036854775807  # 1 << 63 - 1
-            h = -9223372036854775807  # 1 << 63 - 1
+            g = +9223372036854775807  # (1 << 63) - 1
+            h = -9223372036854775807  # (1 << 63) - 1
 
             for variable in self.test_32_63_bit_values.__code__.co_consts:
                 if variable is not None:
@@ -993,11 +993,13 @@ class TestSpecifics(unittest.TestCase):
         # An implicit test for PyUnicode_FSDecoder().
         compile("42", FakePath("test_compile_pathlike"), "single")
 
+    # bpo-31113: Stack overflow when compile a long sequence of
+    # complex statements.
     @support.requires_resource('cpu')
     def test_stack_overflow(self):
-        # bpo-31113: Stack overflow when compile a long sequence of
-        # complex statements.
-        compile("if a: b\n" * 200000, "<dummy>", "exec")
+        # Android test devices have less memory.
+        size = 100_000 if sys.platform == "android" else 200_000
+        compile("if a: b\n" * size, "<dummy>", "exec")
 
     # Multiple users rely on the fact that CPython does not generate
     # bytecode for dead code blocks. See bpo-37500 for more context.

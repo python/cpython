@@ -532,7 +532,7 @@ PyConfig
 
    Most ``PyConfig`` methods :ref:`preinitialize Python <c-preinit>` if needed.
    In that case, the Python preinitialization configuration
-   (:c:type:`PyPreConfig`) in based on the :c:type:`PyConfig`. If configuration
+   (:c:type:`PyPreConfig`) is based on the :c:type:`PyConfig`. If configuration
    fields which are in common with :c:type:`PyPreConfig` are tuned, they must
    be set before calling a :c:type:`PyConfig` method:
 

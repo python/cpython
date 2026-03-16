@@ -80,7 +80,7 @@ Floating-Point Objects
 
 .. c:macro:: Py_INFINITY
 
-   This macro expands a to constant expression of type :c:expr:`double`, that
+   This macro expands to a constant expression of type :c:expr:`double`, that
    represents the positive infinity.
 
    On most platforms, this is equivalent to the :c:macro:`!INFINITY` macro from
@@ -89,7 +89,7 @@ Floating-Point Objects
 
 .. c:macro:: Py_NAN
 
-   This macro expands a to constant expression of type :c:expr:`double`, that
+   This macro expands to a constant expression of type :c:expr:`double`, that
    represents a quiet not-a-number (qNaN) value.
 
    On most platforms, this is equivalent to the :c:macro:`!NAN` macro from

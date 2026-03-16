@@ -1,0 +1,1 @@
+Fix data race in :func:`functools.partial` in the :term:`free threading` build.

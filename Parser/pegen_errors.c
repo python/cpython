@@ -35,7 +35,7 @@ _PyPegen_raise_tokenizer_init_error(PyObject *filename)
 
     tuple = PyTuple_Pack(2, errstr, tmp);
     Py_DECREF(tmp);
-    if (!value) {
+    if (!tuple) {
         goto error;
     }
     PyErr_SetObject(PyExc_SyntaxError, tuple);

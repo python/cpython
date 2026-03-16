@@ -1,5 +1,0 @@
-The :mod:`os.fork` and related forking APIs will no longer warn in the
-common case where Linux or macOS platform APIs return the number of threads
-in a process and find the answer to be 1 even when a
-:func:`os.register_at_fork` ``after_in_parent=`` callback (re)starts a
-thread.

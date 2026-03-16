@@ -1271,8 +1271,8 @@ as internal buffering of data.
 
       This function is intended for low-level I/O.  For normal usage, use the
       built-in function :func:`open`, which returns a :term:`file object` with
-      :meth:`~file.read` and :meth:`~file.write` methods (and many more).  To
-      wrap a file descriptor in a file object, use :func:`fdopen`.
+      :meth:`~io.BufferedIOBase.read` and :meth:`~io.BufferedIOBase.write` methods.
+      To wrap a file descriptor in a file object, use :func:`fdopen`.
 
    .. versionchanged:: 3.3
       Added the *dir_fd* parameter.
@@ -1626,7 +1626,7 @@ or `the MSDN <https://msdn.microsoft.com/en-us/library/z0kc8e3z.aspx>`_ on Windo
       descriptor as returned by :func:`os.open` or :func:`pipe`.  To read a
       "file object" returned by the built-in function :func:`open` or by
       :func:`popen` or :func:`fdopen`, or :data:`sys.stdin`, use its
-      :meth:`~file.read` or :meth:`~file.readline` methods.
+      :meth:`~io.TextIOBase.read` or :meth:`~io.IOBase.readline` methods.
 
    .. versionchanged:: 3.5
       If the system call is interrupted and the signal handler does not raise an
@@ -1815,7 +1815,7 @@ or `the MSDN <https://msdn.microsoft.com/en-us/library/z0kc8e3z.aspx>`_ on Windo
       descriptor as returned by :func:`os.open` or :func:`pipe`.  To write a "file
       object" returned by the built-in function :func:`open` or by :func:`popen` or
       :func:`fdopen`, or :data:`sys.stdout` or :data:`sys.stderr`, use its
-      :meth:`~file.write` method.
+      :meth:`~io.TextIOBase.write` method.
 
    .. versionchanged:: 3.5
       If the system call is interrupted and the signal handler does not raise an
@@ -1889,7 +1889,8 @@ can be inherited by child processes.  Since Python 3.4, file descriptors
 created by Python are non-inheritable by default.
 
 On UNIX, non-inheritable file descriptors are closed in child processes at the
-execution of a new program, other file descriptors are inherited.
+execution of a new program, other file descriptors are inherited. Note that
+non-inheritable file descriptors are still *inherited* by child processes on :func:`os.fork`.
 
 On Windows, non-inheritable handles and file descriptors are closed in child
 processes, except for standard streams (file descriptors 0, 1 and 2: stdin, stdout
@@ -3806,7 +3807,7 @@ features:
        import os
 
        # semaphore with start value '1'
-       fd = os.eventfd(1, os.EFD_SEMAPHORE | os.EFC_CLOEXEC)
+       fd = os.eventfd(1, os.EFD_SEMAPHORE | os.EFD_CLOEXEC)
        try:
            # acquire semaphore
            v = os.eventfd_read(fd)
@@ -3915,7 +3916,7 @@ Naturally, they are all only available on Linux.
    except it includes any time that the system is suspended.
 
    The file descriptor's behaviour can be modified by specifying a *flags* value.
-   Any of the following variables may used, combined using bitwise OR
+   Any of the following variables may be used, combined using bitwise OR
    (the ``|`` operator):
 
    - :const:`TFD_NONBLOCK`
@@ -3947,7 +3948,7 @@ Naturally, they are all only available on Linux.
    *fd* must be a valid timer file descriptor.
 
    The timer's behaviour can be modified by specifying a *flags* value.
-   Any of the following variables may used, combined using bitwise OR
+   Any of the following variables may be used, combined using bitwise OR
    (the ``|`` operator):
 
    - :const:`TFD_TIMER_ABSTIME`
@@ -4016,7 +4017,7 @@ Naturally, they are all only available on Linux.
 
    Return a two-item tuple of floats (``next_expiration``, ``interval``).
 
-   ``next_expiration`` denotes the relative time until next the timer next fires,
+   ``next_expiration`` denotes the relative time until the timer next fires,
    regardless of if the :const:`TFD_TIMER_ABSTIME` flag is set.
 
    ``interval`` denotes the timer's interval.
@@ -4252,7 +4253,7 @@ to be ignored.
    The current process is replaced immediately. Open file objects and
    descriptors are not flushed, so if there may be data buffered
    on these open files, you should flush them using
-   :func:`sys.stdout.flush` or :func:`os.fsync` before calling an
+   :func:`~io.IOBase.flush` or :func:`os.fsync` before calling an
    :func:`exec\* <execl>` function.
 
    The "l" and "v" variants of the :func:`exec\* <execl>` functions differ in how
@@ -5523,7 +5524,7 @@ Miscellaneous System Information
 
    .. versionchanged:: 3.13
       If :option:`-X cpu_count <-X>` is given or :envvar:`PYTHON_CPU_COUNT` is set,
-      :func:`cpu_count` returns the overridden value *n*.
+      :func:`cpu_count` returns the override value *n*.
 
 
 .. function:: getloadavg()
@@ -5545,7 +5546,7 @@ Miscellaneous System Information
    in the **system**.
 
    If :option:`-X cpu_count <-X>` is given or :envvar:`PYTHON_CPU_COUNT` is set,
-   :func:`process_cpu_count` returns the overridden value *n*.
+   :func:`process_cpu_count` returns the override value *n*.
 
    See also the :func:`sched_getaffinity` function.
 

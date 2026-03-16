@@ -1560,7 +1560,7 @@ including SerenityOS.
 .. date: 2024-11-09-16-10-22
 .. gh-issue: 126066
 .. nonce: 9zs4m4
-.. section: Core and Builtins
+.. section: Library
 
 Fix :mod:`importlib` to not write an incomplete .pyc files when a ulimit or
 some other operating system mechanism is preventing the write to go through
@@ -1748,7 +1748,7 @@ https://github.com/python/cpython/issues/122950.)
 .. date: 2024-05-12-03-10-36
 .. gh-issue: 118950
 .. nonce: 5Wc4vp
-.. section: Core and Builtins
+.. section: Library
 
 Fix bug where SSLProtocol.connection_lost wasn't getting called when OSError
 was thrown on writing to socket.
@@ -1758,7 +1758,7 @@ was thrown on writing to socket.
 .. date: 2023-12-30-00-21-45
 .. gh-issue: 113570
 .. nonce: _XQgsW
-.. section: Core and Builtins
+.. section: Library
 
 Fixed a bug in ``reprlib.repr`` where it incorrectly called the repr method
 on shadowed Python built-in types.

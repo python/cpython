@@ -4,6 +4,9 @@ Released after 2024-10-07
 =========================
 
 
+gh-143774: Better explain the operation of Format / Format Paragraph.
+Patch by Terry J. Reedy.
+
 gh-129873: Simplify displaying the IDLE doc by only copying the text
 section of idle.html to idlelib/help.html. Patch by Stan Ulbrych.
 

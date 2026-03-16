@@ -510,6 +510,69 @@ class TestPlistlib(unittest.TestCase):
         data2 = plistlib.dumps(pl2)
         self.assertEqual(data, data2)
 
+    def test_bytes_indent(self):
+        header = (
+            b'<?xml version="1.0" encoding="UTF-8"?>\n'
+            b'<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">\n'
+            b'<plist version="1.0">\n')
+        data = [{'bytes': bytes(range(50))}]
+        pl = plistlib.dumps(data)
+        self.assertEqual(pl, header +
+            b'<array>\n'
+            b'\t<dict>\n'
+            b'\t\t<key>bytes</key>\n'
+            b'\t\t<data>\n'
+            b'\t\tAAECAwQFBgcICQoLDA0ODxAREhMUFRYXGBkaGxwdHh8gISIjJCUmJygpKiss\n'
+            b'\t\tLS4vMDE=\n'
+            b'\t\t</data>\n'
+            b'\t</dict>\n'
+            b'</array>\n'
+            b'</plist>\n')
+
+        def dumps_with_indent(data, indent):
+            fp = BytesIO()
+            writer = plistlib._PlistWriter(fp, indent=indent)
+            writer.write(data)
+            return fp.getvalue()
+
+        pl = dumps_with_indent(data, b' ')
+        self.assertEqual(pl, header +
+            b'<array>\n'
+            b' <dict>\n'
+            b'  <key>bytes</key>\n'
+            b'  <data>\n'
+            b'  AAECAwQFBgcICQoLDA0ODxAREhMUFRYXGBkaGxwdHh8gISIjJCUmJygpKissLS4vMDE=\n'
+            b'  </data>\n'
+            b' </dict>\n'
+            b'</array>\n'
+            b'</plist>\n')
+
+        pl = dumps_with_indent(data, b' \t')
+        self.assertEqual(pl, header +
+            b'<array>\n'
+            b' \t<dict>\n'
+            b' \t \t<key>bytes</key>\n'
+            b' \t \t<data>\n'
+            b' \t \tAAECAwQFBgcICQoLDA0ODxAREhMUFRYXGBkaGxwdHh8gISIjJCUmJygpKiss\n'
+            b' \t \tLS4vMDE=\n'
+            b' \t \t</data>\n'
+            b' \t</dict>\n'
+            b'</array>\n'
+            b'</plist>\n')
+
+        pl = dumps_with_indent(data, b'\t   ')
+        self.assertEqual(pl, header +
+            b'<array>\n'
+            b'\t   <dict>\n'
+            b'\t   \t   <key>bytes</key>\n'
+            b'\t   \t   <data>\n'
+            b'\t   \t   AAECAwQFBgcICQoLDA0ODxAREhMUFRYXGBkaGxwdHh8gISIjJCUmJygp\n'
+            b'\t   \t   KissLS4vMDE=\n'
+            b'\t   \t   </data>\n'
+            b'\t   </dict>\n'
+            b'</array>\n'
+            b'</plist>\n')
+
     def test_loads_str_with_xml_fmt(self):
         pl = self._create()
         b = plistlib.dumps(pl)
@@ -581,7 +644,6 @@ class TestPlistlib(unittest.TestCase):
                 data = plistlib.dumps(pl, fmt=fmt)
                 self.assertEqual(data, TESTDATA[fmt],
                     "generated data was not identical to Apple's output")
-
 
     def test_appleformattingfromliteral(self):
         self.maxDiff = None

@@ -1338,7 +1338,13 @@ PyCPointerType_from_param_impl(PyObject *type, PyTypeObject *cls,
     /* If we expect POINTER(<type>), but receive a <type> instance, accept
        it by calling byref(<type>).
     */
-    assert(typeinfo->proto);
+    if (typeinfo->proto == NULL) {
+        PyErr_SetString(
+            PyExc_TypeError,
+            "cannot convert argument: POINTER _type_ type is not set"
+        );
+        return NULL;
+    }
     switch (PyObject_IsInstance(value, typeinfo->proto)) {
     case 1:
         Py_INCREF(value); /* _byref steals a refcount */
@@ -4273,6 +4279,7 @@ _build_result(PyObject *result, PyObject *callargs,
             v = PyTuple_GET_ITEM(callargs, i);
             v = PyObject_CallMethodNoArgs(v, &_Py_ID(__ctypes_from_outparam__));
             if (v == NULL || numretvals == 1) {
+                Py_XDECREF(tup);
                 Py_DECREF(callargs);
                 return v;
             }

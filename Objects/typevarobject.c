@@ -1175,13 +1175,13 @@ The following syntax creates a parameter specification that defaults\n\
 to a callable accepting two positional-only arguments of types int\n\
 and str:\n\
 \n\
-    type IntFuncDefault[**P = (int, str)] = Callable[P, int]\n\
+    type IntFuncDefault[**P = [int, str]] = Callable[P, int]\n\
 \n\
 For compatibility with Python 3.11 and earlier, ParamSpec objects\n\
 can also be created as follows::\n\
 \n\
     P = ParamSpec('P')\n\
-    DefaultP = ParamSpec('DefaultP', default=(int, str))\n\
+    DefaultP = ParamSpec('DefaultP', default=[int, str])\n\
 \n\
 Parameter specification variables exist primarily for the benefit of\n\
 static type checkers.  They are used to forward the parameter types of\n\

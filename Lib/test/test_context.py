@@ -370,6 +370,36 @@ class ContextTest(unittest.TestCase):
             tp.shutdown()
         self.assertEqual(results, list(range(10)))
 
+    def test_context_eq_reentrant_contextvar_set(self):
+        var = contextvars.ContextVar("v")
+        ctx1 = contextvars.Context()
+        ctx2 = contextvars.Context()
+
+        class ReentrantEq:
+            def __eq__(self, other):
+                ctx1.run(lambda: var.set(object()))
+                return True
+
+        ctx1.run(var.set, ReentrantEq())
+        ctx2.run(var.set, object())
+        ctx1 == ctx2
+
+    def test_context_eq_reentrant_contextvar_set_in_hash(self):
+        var = contextvars.ContextVar("v")
+        ctx1 = contextvars.Context()
+        ctx2 = contextvars.Context()
+
+        class ReentrantHash:
+            def __hash__(self):
+                ctx1.run(lambda: var.set(object()))
+                return 0
+            def __eq__(self, other):
+                return isinstance(other, ReentrantHash)
+
+        ctx1.run(var.set, ReentrantHash())
+        ctx2.run(var.set, ReentrantHash())
+        ctx1 == ctx2
+
 
 # HAMT Tests
 

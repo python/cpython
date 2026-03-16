@@ -9,7 +9,7 @@ import subprocess
 import sys
 import tempfile
 from unittest import TestCase, skipUnless, skipIf
-from unittest.mock import patch
+from unittest.mock import Mock, patch
 from test.support import force_not_colorized, make_clean_env, Py_DEBUG
 from test.support import SHORT_TIMEOUT, STDLIB_DIR
 from test.support.import_helper import import_module
@@ -1409,6 +1409,94 @@ class TestMain(ReplTestCase):
         self.assertEqual(len(matches), 3)
 
 
+    @force_not_colorized
+    def test_no_newline(self):
+        env = os.environ.copy()
+        env.pop("PYTHON_BASIC_REPL", "")
+        env["PYTHON_BASIC_REPL"] = "1"
+
+        commands = "print('Something pretty long', end='')\nexit()\n"
+        expected_output_sequence = "Something pretty long>>> exit()"
+
+        basic_output, basic_exit_code = self.run_repl(commands, env=env)
+        self.assertEqual(basic_exit_code, 0)
+        self.assertIn(expected_output_sequence, basic_output)
+
+        output, exit_code = self.run_repl(commands)
+        self.assertEqual(exit_code, 0)
+
+        # Build patterns for escape sequences that don't affect cursor position
+        # or visual output. Use terminfo to get platform-specific sequences,
+        # falling back to hard-coded patterns for capabilities not in terminfo.
+        try:
+            from _pyrepl import curses
+        except ImportError:
+            self.skipTest("curses required for capability discovery")
+
+        curses.setupterm(os.environ.get("TERM", ""), 1)
+        safe_patterns = []
+
+        # smkx/rmkx - application cursor keys and keypad mode
+        smkx = curses.tigetstr("smkx")
+        rmkx = curses.tigetstr("rmkx")
+        if smkx:
+            safe_patterns.append(re.escape(smkx.decode("ascii")))
+        if rmkx:
+            safe_patterns.append(re.escape(rmkx.decode("ascii")))
+        if not smkx and not rmkx:
+            safe_patterns.append(r'\x1b\[\?1[hl]')  # application cursor keys
+            safe_patterns.append(r'\x1b[=>]')  # application keypad mode
+
+        # ich1 - insert character (only safe form that inserts exactly 1 char)
+        ich1 = curses.tigetstr("ich1")
+        if ich1:
+            safe_patterns.append(re.escape(ich1.decode("ascii")) + r'(?=[ -~])')
+        else:
+            safe_patterns.append(r'\x1b\[(?:1)?@(?=[ -~])')
+
+        # civis/cnorm - cursor visibility (may include cursor blinking control)
+        civis = curses.tigetstr("civis")
+        cnorm = curses.tigetstr("cnorm")
+        if civis:
+            safe_patterns.append(re.escape(civis.decode("ascii")))
+        if cnorm:
+            safe_patterns.append(re.escape(cnorm.decode("ascii")))
+        if not civis and not cnorm:
+            safe_patterns.append(r'\x1b\[\?25[hl]')  # cursor visibility
+            safe_patterns.append(r'\x1b\[\?12[hl]')  # cursor blinking
+
+        # rmam / smam - automatic margins
+        rmam = curses.tigetstr("rmam")
+        smam = curses.tigetstr("smam")
+        if rmam:
+            safe_patterns.append(re.escape(rmam.decode("ascii")))
+        if smam:
+            safe_patterns.append(re.escape(smam.decode("ascii")))
+        if not rmam and not smam:
+            safe_patterns.append(r'\x1b\[\?7l') # turn off automatic margins
+            safe_patterns.append(r'\x1b\[\?7h') # turn on automatic margins
+
+        # Modern extensions not in standard terminfo - always use patterns
+        safe_patterns.append(r'\x1b\[\?2004[hl]')  # bracketed paste mode
+        safe_patterns.append(r'\x1b\[\?12[hl]')  # cursor blinking (may be separate)
+        safe_patterns.append(r'\x1b\[\?[01]c')  # device attributes
+
+        safe_escapes = re.compile('|'.join(safe_patterns))
+        cleaned_output = safe_escapes.sub('', output)
+        self.assertIn(expected_output_sequence, cleaned_output)
+
+
+@skipUnless(sys.platform == "darwin", "macOS only")
+class TestMainAppleTerminal(TestMain):
+    """Test the REPL with Apple Terminal's TERM_PROGRAM set."""
+
+    def run_repl(self, repl_input, env=None, **kwargs):
+        if env is None:
+            env = os.environ.copy()
+        env["TERM_PROGRAM"] = "Apple_Terminal"
+        return super().run_repl(repl_input, env=env, **kwargs)
+
+
 class TestPyReplCtrlD(TestCase):
     """Test Ctrl+D behavior in _pyrepl to match old pre-3.13 REPL behavior.
 
@@ -1491,3 +1579,47 @@ class TestPyReplCtrlD(TestCase):
         )
         reader, _ = handle_all_events(events)
         self.assertEqual("hello", "".join(reader.buffer))
+
+
+@skipUnless(sys.platform == "win32", "windows console only")
+class TestWindowsConsoleEolWrap(TestCase):
+    def _make_mock_console(self, width=80):
+        from _pyrepl import windows_console as wc
+
+        console = object.__new__(wc.WindowsConsole)
+
+        console.width = width
+        console.posxy = (0, 0)
+        console.screen = [""]
+
+        console._hide_cursor = Mock()
+        console._show_cursor = Mock()
+        console._erase_to_end = Mock()
+        console._move_relative = Mock()
+        console.move_cursor = Mock()
+        console._WindowsConsole__write = Mock()
+
+        return console, wc
+
+    def test_short_line_sets_posxy_normally(self):
+        width = 10
+        y = 3
+        console, wc = self._make_mock_console(width=width)
+        old_line = ""
+        new_line = "a" * 3
+        wc.WindowsConsole._WindowsConsole__write_changed_line(
+            console, y, old_line, new_line, 0
+        )
+        self.assertEqual(console.posxy, (3, y))
+
+    def test_exact_width_line_does_not_wrap(self):
+        width = 10
+        y = 3
+        console, wc = self._make_mock_console(width=width)
+        old_line = ""
+        new_line = "a" * width
+
+        wc.WindowsConsole._WindowsConsole__write_changed_line(
+            console, y, old_line, new_line, 0
+        )
+        self.assertEqual(console.posxy, (width - 1, y))

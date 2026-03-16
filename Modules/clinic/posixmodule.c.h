@@ -3716,8 +3716,8 @@ exit:
 
 PyDoc_STRVAR(os_posix_spawn__doc__,
 "posix_spawn($module, path, argv, env, /, *, file_actions=(),\n"
-"            setpgroup=<unrepresentable>, resetids=False, setsid=False,\n"
-"            setsigmask=(), setsigdef=(), scheduler=<unrepresentable>)\n"
+"            setpgroup=None, resetids=False, setsid=False,\n"
+"            setsigmask=(), setsigdef=(), scheduler=None)\n"
 "--\n"
 "\n"
 "Execute the program specified by path in a new process.\n"
@@ -3866,8 +3866,8 @@ exit:
 
 PyDoc_STRVAR(os_posix_spawnp__doc__,
 "posix_spawnp($module, path, argv, env, /, *, file_actions=(),\n"
-"             setpgroup=<unrepresentable>, resetids=False, setsid=False,\n"
-"             setsigmask=(), setsigdef=(), scheduler=<unrepresentable>)\n"
+"             setpgroup=None, resetids=False, setsid=False,\n"
+"             setsigmask=(), setsigdef=(), scheduler=None)\n"
 "--\n"
 "\n"
 "Execute the program specified by path in a new process.\n"
@@ -12879,4 +12879,4 @@ os__is_inputhook_installed(PyObject *module, PyObject *Py_UNUSED(ignored))
 #ifndef OS__SUPPORTS_VIRTUAL_TERMINAL_METHODDEF
     #define OS__SUPPORTS_VIRTUAL_TERMINAL_METHODDEF
 #endif /* !defined(OS__SUPPORTS_VIRTUAL_TERMINAL_METHODDEF) */
-/*[clinic end generated code: output=28706eafe31b28c1 input=a9049054013a1b77]*/
+/*[clinic end generated code: output=bedb6df665650018 input=a9049054013a1b77]*/

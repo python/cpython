@@ -2,7 +2,6 @@
 =====================================================
 
 .. module:: tkinter.scrolledtext
-   :platform: Tk
    :synopsis: Text widget with a vertical scroll bar.
 
 .. sectionauthor:: Fred L. Drake, Jr. <fdrake@acm.org>

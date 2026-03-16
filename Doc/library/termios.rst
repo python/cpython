@@ -2,7 +2,6 @@
 ===========================================
 
 .. module:: termios
-   :platform: Unix
    :synopsis: POSIX style tty control.
 
 .. index::

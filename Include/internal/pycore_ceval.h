@@ -105,7 +105,6 @@ extern int _PyPerfTrampoline_SetCallbacks(_PyPerf_Callbacks *);
 extern void _PyPerfTrampoline_GetCallbacks(_PyPerf_Callbacks *);
 extern int _PyPerfTrampoline_Init(int activate);
 extern int _PyPerfTrampoline_Fini(void);
-extern void _PyPerfTrampoline_FreeArenas(void);
 extern int _PyIsPerfTrampolineActive(void);
 extern PyStatus _PyPerfTrampoline_AfterFork_Child(void);
 #ifdef PY_HAVE_PERF_TRAMPOLINE
@@ -258,6 +257,7 @@ PyAPI_FUNC(PyObject *)_PyEval_MatchClass(PyThreadState *tstate, PyObject *subjec
 PyAPI_FUNC(PyObject *)_PyEval_MatchKeys(PyThreadState *tstate, PyObject *map, PyObject *keys);
 PyAPI_FUNC(int) _PyEval_UnpackIterable(PyThreadState *tstate, PyObject *v, int argcnt, int argcntafter, PyObject **sp);
 PyAPI_FUNC(void) _PyEval_MonitorRaise(PyThreadState *tstate, _PyInterpreterFrame *frame, _Py_CODEUNIT *instr);
+PyAPI_FUNC(bool) _PyEval_NoToolsForUnwind(PyThreadState *tstate);
 PyAPI_FUNC(void) _PyEval_FrameClearAndPop(PyThreadState *tstate, _PyInterpreterFrame *frame);
 
 

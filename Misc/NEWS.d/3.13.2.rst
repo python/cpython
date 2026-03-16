@@ -699,7 +699,7 @@ returns :const:`False`. Patch by Bénédikt Tran.
 .. date: 2025-01-28-06-23-59
 .. gh-issue: 129345
 .. nonce: uOjkML
-.. section: Core and Builtins
+.. section: Library
 
 Fix null pointer dereference in :func:`syslog.openlog` when an audit hook
 raises an exception.

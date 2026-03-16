@@ -2,7 +2,6 @@
 ===========================================
 
 .. module:: readline
-   :platform: Unix
    :synopsis: GNU readline support for Python.
 
 .. sectionauthor:: Skip Montanaro <skip.montanaro@gmail.com>
@@ -25,6 +24,8 @@ allowable constructs of that file, and the capabilities of the
 Readline library in general.
 
 .. include:: ../includes/wasm-mobile-notavail.rst
+
+.. availability:: Unix.
 
 .. note::
 
@@ -372,3 +373,9 @@ support history save/restore. ::
        def save_history(self, histfile):
            readline.set_history_length(1000)
            readline.write_history_file(histfile)
+
+.. note::
+
+   The new :term:`REPL` introduced in version 3.13 doesn't support readline.
+   However, readline can still be used by setting the :envvar:`PYTHON_BASIC_REPL`
+   environment variable.

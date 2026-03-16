@@ -1288,6 +1288,9 @@ and :c:data:`PyType_Type` effectively act as defaults.)
          type structure.
 
 
+   .. c:macro:: _Py_TPFLAGS_HAVE_VECTORCALL
+      :no-typesetting:
+
    .. c:macro:: Py_TPFLAGS_HAVE_VECTORCALL
 
       This bit is set when the class implements
@@ -1299,7 +1302,12 @@ and :c:data:`PyType_Type` effectively act as defaults.)
       This bit is inherited if :c:member:`~PyTypeObject.tp_call` is also
       inherited.
 
-      .. versionadded:: 3.9
+      .. versionadded:: 3.8 as ``_Py_TPFLAGS_HAVE_VECTORCALL``
+
+      .. versionchanged:: 3.9
+
+      Renamed to the current name, without the leading underscore.
+      The old provisional name is :term:`soft deprecated`.
 
       .. versionchanged:: 3.12
 
@@ -1406,6 +1414,52 @@ and :c:data:`PyType_Type` effectively act as defaults.)
          It will be removed in a future version of CPython
 
 
+   .. c:macro:: Py_TPFLAGS_HAVE_VERSION_TAG
+
+      This is a :term:`soft deprecated` macro that does nothing.
+      Historically, this would indicate that the
+      :c:member:`~PyTypeObject.tp_version_tag` field was available and
+      initialized.
+
+
+   .. c:macro:: Py_TPFLAGS_INLINE_VALUES
+
+      This bit indicates that instances of this type will have an "inline values"
+      array (containing the object's attributes) placed directly after the end
+      of the object.
+
+      This requires that :c:macro:`Py_TPFLAGS_HAVE_GC` is set.
+
+      **Inheritance:**
+
+      This flag is not inherited.
+
+      .. versionadded:: 3.13
+
+
+   .. c:macro:: Py_TPFLAGS_IS_ABSTRACT
+
+      This bit indicates that this is an abstract type and therefore cannot
+      be instantiated.
+
+      **Inheritance:**
+
+      This flag is not inherited.
+
+      .. seealso::
+         :mod:`abc`
+
+
+   .. c:macro:: Py_TPFLAGS_HAVE_STACKLESS_EXTENSION
+
+      Internal. Do not set or unset this flag.
+      Historically, this was a reserved flag for use in Stackless Python.
+
+      .. warning::
+            This flag is present in header files, but is not be used.
+            This may be removed in a future version of CPython.
+
+
 .. c:member:: const char* PyTypeObject.tp_doc
 
    .. corresponding-type-slot:: Py_tp_doc
@@ -1482,6 +1536,11 @@ and :c:data:`PyType_Type` effectively act as defaults.)
        (the weakreference list is there to support the weak reference machinery,
        but the instance has no strong reference to the elements inside it, as they
        are allowed to be removed even if the instance is still alive).
+
+   .. warning::
+      The traversal function must not have any side effects.  It must not
+      modify the reference counts of any Python objects nor create or destroy
+      any Python objects.
 
    Note that :c:func:`Py_VISIT` requires the *visit* and *arg* parameters to
    :c:func:`!local_traverse` to have these specific names; don't name them just

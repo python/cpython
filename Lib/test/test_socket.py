@@ -52,6 +52,7 @@ MSG = 'Michael Gilfix was here\u1234\r\n'.encode('utf-8')
 VMADDR_CID_LOCAL = 1
 VSOCKPORT = 1234
 AIX = platform.system() == "AIX"
+SOLARIS = sys.platform.startswith("sunos")
 WSL = "microsoft-standard-WSL" in platform.release()
 
 try:
@@ -554,8 +555,8 @@ class ThreadedRDSSocketTest(SocketRDSTest, ThreadableTest):
 @unittest.skipIf(WSL, 'VSOCK does not work on Microsoft WSL')
 @unittest.skipUnless(HAVE_SOCKET_VSOCK,
           'VSOCK sockets required for this test.')
-@unittest.skipUnless(get_cid() != 2,  # VMADDR_CID_HOST
-                     "This test can only be run on a virtual guest.")
+@unittest.skipIf(get_cid() == getattr(socket, 'VMADDR_CID_HOST', 2),
+                 "This test can only be run on a virtual guest.")
 class ThreadedVSOCKSocketStreamTest(unittest.TestCase, ThreadableTest):
 
     def __init__(self, methodName='runTest'):
@@ -565,7 +566,16 @@ class ThreadedVSOCKSocketStreamTest(unittest.TestCase, ThreadableTest):
     def setUp(self):
         self.serv = socket.socket(socket.AF_VSOCK, socket.SOCK_STREAM)
         self.addCleanup(self.serv.close)
-        self.serv.bind((socket.VMADDR_CID_ANY, VSOCKPORT))
+        cid = get_cid()
+        if cid in (socket.VMADDR_CID_HOST, socket.VMADDR_CID_ANY):
+            cid = VMADDR_CID_LOCAL
+        try:
+            self.serv.bind((cid, VSOCKPORT))
+        except OSError as exc:
+            if exc.errno == errno.EADDRNOTAVAIL:
+                self.skipTest(f"bind() failed with {exc!r}")
+            else:
+                raise
         self.serv.listen()
         self.serverExplicitReady()
         self.serv.settimeout(support.LOOPBACK_TIMEOUT)
@@ -2163,6 +2173,24 @@ class GeneralModuleTests(unittest.TestCase):
                 lambda C: C.isupper() and C.startswith('AI_'),
                 source=_socket)
         enum._test_simple_enum(CheckedAddressInfo, socket.AddressInfo)
+
+    @unittest.skipUnless(hasattr(socket.socket, "sendmsg"),"sendmsg not supported")
+    def test_sendmsg_reentrant_ancillary_mutation(self):
+
+        class Mut:
+            def __index__(self):
+                seq.clear()
+                return socket.SCM_RIGHTS
+
+        seq = [
+            (socket.SOL_SOCKET, Mut(), b'xxxx'),
+            (socket.SOL_SOCKET, socket.SCM_RIGHTS, b'xxxx'),
+        ]
+
+        left, right = socket.socketpair()
+        self.addCleanup(left.close)
+        self.addCleanup(right.close)
+        self.assertRaises(OSError, left.sendmsg, [b'x'], seq)
 
 
 @unittest.skipUnless(HAVE_SOCKET_CAN, 'SocketCan required for this test.')
@@ -3774,6 +3802,10 @@ class CmsgMacroTests(unittest.TestCase):
         # Test CMSG_SPACE() with various valid and invalid values,
         # checking the assumptions used by sendmsg().
         toobig = self.socklen_t_limit - socket.CMSG_SPACE(1) + 1
+        if SOLARIS and platform.processor() == "sparc":
+            # On Solaris SPARC, number of bytes returned by socket.CMSG_SPACE
+            # increases at different lengths; see gh-91214.
+            toobig -= 3
         values = list(range(257)) + list(range(toobig - 257, toobig))
 
         last = socket.CMSG_SPACE(0)
@@ -3920,6 +3952,7 @@ class SCMRightsTest(SendrecvmsgServerTimeoutBase):
         self.createAndSendFDs(1)
 
     @unittest.skipIf(is_apple, "skipping, see issue #12958")
+    @unittest.skipIf(SOLARIS, "skipping, see gh-91214")
     @unittest.skipIf(AIX, "skipping, see issue #22397")
     @requireAttrs(socket, "CMSG_SPACE")
     def testFDPassSeparate(self):
@@ -3931,6 +3964,7 @@ class SCMRightsTest(SendrecvmsgServerTimeoutBase):
 
     @testFDPassSeparate.client_skip
     @unittest.skipIf(is_apple, "skipping, see issue #12958")
+    @unittest.skipIf(SOLARIS, "skipping, see gh-91214")
     @unittest.skipIf(AIX, "skipping, see issue #22397")
     def _testFDPassSeparate(self):
         fd0, fd1 = self.newFDs(2)
@@ -3944,6 +3978,7 @@ class SCMRightsTest(SendrecvmsgServerTimeoutBase):
             len(MSG))
 
     @unittest.skipIf(is_apple, "skipping, see issue #12958")
+    @unittest.skipIf(SOLARIS, "skipping, see gh-91214")
     @unittest.skipIf(AIX, "skipping, see issue #22397")
     @requireAttrs(socket, "CMSG_SPACE")
     def testFDPassSeparateMinSpace(self):
@@ -3958,6 +3993,7 @@ class SCMRightsTest(SendrecvmsgServerTimeoutBase):
 
     @testFDPassSeparateMinSpace.client_skip
     @unittest.skipIf(is_apple, "skipping, see issue #12958")
+    @unittest.skipIf(SOLARIS, "skipping, see gh-91214")
     @unittest.skipIf(AIX, "skipping, see issue #22397")
     def _testFDPassSeparateMinSpace(self):
         fd0, fd1 = self.newFDs(2)

@@ -99,7 +99,7 @@ after exception handlers are moved to the end of the code.
 .. date: 2024-06-12-18-23-15
 .. gh-issue: 120380
 .. nonce: edtqjq
-.. section: Core and Builtins
+.. section: Library
 
 Fix Python implementation of :class:`pickle.Pickler` for :class:`bytes` and
 :class:`bytearray` objects when using protocol version 5. Patch by Bénédikt

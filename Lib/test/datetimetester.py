@@ -5814,21 +5814,21 @@ class TestLocalTimeDisambiguation(unittest.TestCase):
 
         gdt = datetime(1941, 6, 23, 20, 59, 59, tzinfo=timezone.utc)
         ldt = gdt.astimezone(Vilnius)
-        self.assertEqual(ldt.strftime("%c %Z%z"),
+        self.assertEqual(ldt.strftime("%a %b %d %H:%M:%S %Y %Z%z"),
                          'Mon Jun 23 23:59:59 1941 MSK+0300')
         self.assertEqual(ldt.fold, 0)
         self.assertFalse(ldt.dst())
 
         gdt = datetime(1941, 6, 23, 21, tzinfo=timezone.utc)
         ldt = gdt.astimezone(Vilnius)
-        self.assertEqual(ldt.strftime("%c %Z%z"),
+        self.assertEqual(ldt.strftime("%a %b %d %H:%M:%S %Y %Z%z"),
                          'Mon Jun 23 23:00:00 1941 CEST+0200')
         self.assertEqual(ldt.fold, 1)
         self.assertTrue(ldt.dst())
 
         gdt = datetime(1941, 6, 23, 22, tzinfo=timezone.utc)
         ldt = gdt.astimezone(Vilnius)
-        self.assertEqual(ldt.strftime("%c %Z%z"),
+        self.assertEqual(ldt.strftime("%a %b %d %H:%M:%S %Y %Z%z"),
                          'Tue Jun 24 00:00:00 1941 CEST+0200')
         self.assertEqual(ldt.fold, 0)
         self.assertTrue(ldt.dst())
@@ -5838,22 +5838,22 @@ class TestLocalTimeDisambiguation(unittest.TestCase):
 
         ldt = datetime(1941, 6, 23, 22, 59, 59, tzinfo=Vilnius)
         gdt = ldt.astimezone(timezone.utc)
-        self.assertEqual(gdt.strftime("%c %Z"),
+        self.assertEqual(gdt.strftime("%a %b %d %H:%M:%S %Y %Z"),
                          'Mon Jun 23 19:59:59 1941 UTC')
 
         ldt = datetime(1941, 6, 23, 23, 59, 59, tzinfo=Vilnius)
         gdt = ldt.astimezone(timezone.utc)
-        self.assertEqual(gdt.strftime("%c %Z"),
+        self.assertEqual(gdt.strftime("%a %b %d %H:%M:%S %Y %Z"),
                          'Mon Jun 23 20:59:59 1941 UTC')
 
         ldt = datetime(1941, 6, 23, 23, 59, 59, tzinfo=Vilnius, fold=1)
         gdt = ldt.astimezone(timezone.utc)
-        self.assertEqual(gdt.strftime("%c %Z"),
+        self.assertEqual(gdt.strftime("%a %b %d %H:%M:%S %Y %Z"),
                          'Mon Jun 23 21:59:59 1941 UTC')
 
         ldt = datetime(1941, 6, 24, 0, tzinfo=Vilnius)
         gdt = ldt.astimezone(timezone.utc)
-        self.assertEqual(gdt.strftime("%c %Z"),
+        self.assertEqual(gdt.strftime("%a %b %d %H:%M:%S %Y %Z"),
                          'Mon Jun 23 22:00:00 1941 UTC')
 
     def test_constructors(self):

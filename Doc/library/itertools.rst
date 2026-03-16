@@ -47,7 +47,7 @@ Iterator            Arguments               Results                             
 Iterator                        Arguments                       Results                                             Example
 ============================    ============================    =================================================   =============================================================
 :func:`accumulate`              p [,func]                       p0, p0+p1, p0+p1+p2, ...                            ``accumulate([1,2,3,4,5]) → 1 3 6 10 15``
-:func:`batched`                 p, n                            (p0, p1, ..., p_n-1), ...                           ``batched('ABCDEFG', n=2) → AB CD EF G``
+:func:`batched`                 p, n                            (p0, p1, ..., p_n-1), ...                           ``batched('ABCDEFG', n=3) → ABC DEF G``
 :func:`chain`                   p, q, ...                       p0, p1, ... plast, q0, q1, ...                      ``chain('ABC', 'DEF') → A B C D E F``
 :func:`chain.from_iterable`     iterable                        p0, p1, ... plast, q0, q1, ...                      ``chain.from_iterable(['ABC', 'DEF']) → A B C D E F``
 :func:`compress`                data, selectors                 (d[0] if s[0]), (d[1] if s[1]), ...                 ``compress('ABCDEF', [1,0,1,0,1,1]) → A C E F``
@@ -181,7 +181,7 @@ loops that truncate the stream.
    Roughly equivalent to::
 
       def batched(iterable, n, *, strict=False):
-          # batched('ABCDEFG', 2) → AB CD EF G
+          # batched('ABCDEFG', 3) → ABC DEF G
           if n < 1:
               raise ValueError('n must be at least one')
           iterator = iter(iterable)
@@ -842,7 +842,7 @@ and :term:`generators <generator>` which incur interpreter overhead.
    from contextlib import suppress
    from functools import reduce
    from math import comb, prod, sumprod, isqrt
-   from operator import itemgetter, getitem, mul, neg
+   from operator import itemgetter, getitem, mul, neg, truediv
 
    def take(n, iterable):
        "Return first n items of the iterable as a list."
@@ -853,9 +853,10 @@ and :term:`generators <generator>` which incur interpreter overhead.
        # prepend(1, [2, 3, 4]) → 1 2 3 4
        return chain([value], iterable)
 
-   def tabulate(function, start=0):
-       "Return function(0), function(1), ..."
-       return map(function, count(start))
+   def running_mean(iterable):
+       "Yield the average of all values seen so far."
+       # running_mean([8.5, 9.5, 7.5, 6.5]) -> 8.5 9.0 8.5 8.0
+       return map(truediv, accumulate(iterable), count(1))
 
    def repeatfunc(function, times=None, *args):
        "Repeat calls to a function with specified arguments."
@@ -1210,8 +1211,8 @@ The following recipes have a more mathematical flavor:
     [(0, 'a'), (1, 'b'), (2, 'c')]
 
 
-    >>> list(islice(tabulate(lambda x: 2*x), 4))
-    [0, 2, 4, 6]
+    >>> list(running_mean([8.5, 9.5, 7.5, 6.5]))
+    [8.5, 9.0, 8.5, 8.0]
 
 
     >>> for _ in loops(5):
@@ -1748,6 +1749,10 @@ The following recipes have a more mathematical flavor:
 
     # Old recipes and their tests which are guaranteed to continue to work.
 
+    def tabulate(function, start=0):
+        "Return function(0), function(1), ..."
+        return map(function, count(start))
+
     def old_sumprod_recipe(vec1, vec2):
         "Compute a sum of products."
         return sum(starmap(operator.mul, zip(vec1, vec2, strict=True)))
@@ -1826,6 +1831,10 @@ The following recipes have a more mathematical flavor:
 
 .. doctest::
     :hide:
+
+    >>> list(islice(tabulate(lambda x: 2*x), 4))
+    [0, 2, 4, 6]
+
 
     >>> dotproduct([1,2,3], [4,5,6])
     32
