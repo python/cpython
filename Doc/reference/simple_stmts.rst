@@ -918,7 +918,7 @@ used, not at the import statement itself.
 
 See :pep:`810` for the full specification of lazy imports.
 
-.. versionadded:: next
+.. versionadded:: 3.15
 
 .. _future:
 

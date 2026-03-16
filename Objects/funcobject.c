@@ -150,7 +150,7 @@ PyObject *
 PyFunction_NewWithQualName(PyObject *code, PyObject *globals, PyObject *qualname)
 {
     assert(globals != NULL);
-    assert(PyDict_Check(globals));
+    assert(PyAnyDict_Check(globals));
     _Py_INCREF_DICT(globals);
 
     PyCodeObject *code_obj = (PyCodeObject *)code;

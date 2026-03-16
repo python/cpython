@@ -65,7 +65,17 @@ class _Printer(object):
             return "Type %s() to see the full %s text" % ((self.__name,)*2)
 
     def __call__(self):
-        from _pyrepl.pager import get_pager
+        try:
+            from _pyrepl.pager import get_pager
+        except ModuleNotFoundError:
+            try:
+                from pydoc import get_pager
+            except ModuleNotFoundError:
+                def get_pager():
+                    def _print(text, title=None):
+                        print(text)
+                    return _print
+
         self.__setup()
 
         pager = get_pager()
