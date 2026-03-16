@@ -1635,32 +1635,27 @@ dummy_func(
                 PyStackRef_CLOSE(v);
                 ERROR_IF(true);
             }
-            if (PyDict_CheckExact(ns)) {
-                err = PyDict_SetItem(ns, name, PyStackRef_AsPyObjectBorrow(v));
-            }
-            else {
-                err = PyObject_SetItem(ns, name, PyStackRef_AsPyObjectBorrow(v));
-            }
-            PyStackRef_CLOSE(v);
-            ERROR_IF(err);
-        }
 
-        inst(DELETE_NAME, (--)) {
-            PyObject *name = GETITEM(FRAME_CO_NAMES, oparg);
-            PyObject *ns = LOCALS();
-            int err;
-            if (ns == NULL) {
-                _PyErr_Format(tstate, PyExc_SystemError,
-                              "no locals when deleting %R", name);
-                ERROR_NO_POP();
+            if (PyStackRef_IsNull(v)) {
+                DEAD(v);
+                err = PyObject_DelItem(ns, name);
+                if (err != 0) {
+                    _PyEval_FormatExcCheckArg(tstate, PyExc_NameError,
+                                            NAME_ERROR_MSG,
+                                            name);
+                    ERROR_NO_POP();
+                }
             }
-            err = PyObject_DelItem(ns, name);
-            // Can't use ERROR_IF here.
-            if (err != 0) {
-                _PyEval_FormatExcCheckArg(tstate, PyExc_NameError,
-                                          NAME_ERROR_MSG,
-                                          name);
-                ERROR_NO_POP();
+
+            else {
+                if (PyDict_CheckExact(ns)) {
+                    err = PyDict_SetItem(ns, name, PyStackRef_AsPyObjectBorrow(v));
+                }
+                else {
+                    err = PyObject_SetItem(ns, name, PyStackRef_AsPyObjectBorrow(v));
+                }
+                PyStackRef_CLOSE(v);
+                ERROR_IF(err);
             }
         }
 
