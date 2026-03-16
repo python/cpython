@@ -538,8 +538,6 @@ def make_emscripten_python(context, working_dir):
 def build_target(context):
     """Build one or more targets."""
     steps = []
-    if context.target in {"all"}:
-        steps.append(install_emscripten)
     if context.target in {"build", "all"}:
         steps.extend([
             configure_build_python,
