@@ -227,6 +227,7 @@ class MimeTypesTestCase(unittest.TestCase):
                 ("application/epub+zip", ".epub"),
                 ("application/octet-stream", ".bin"),
                 ("application/dicom", ".dcm"),
+                ("application/efi", ".efi"),
                 ("application/gzip", ".gz"),
                 ("application/ogg", ".ogx"),
                 ("application/pdf", ".pdf"),
