@@ -1,4 +1,5 @@
 # xml.etree test for cElementTree
+import gc
 import io
 import struct
 from test import support
@@ -202,6 +203,23 @@ class MiscTests(unittest.TestCase):
         root = cET.fromstring('<a></a>')
         iter_type = type(root.iter())
         support.check_disallow_instantiation(self, iter_type)
+
+    def test_tree_builder_stack(self):
+        builder = cET.TreeBuilder()
+        for x in range(10):
+            builder.start("a", {})
+        for x in range(10):
+            builder.end("a")
+        root = builder.close()
+
+        # Find the internal TreeBuilder stack list using gc.get_referrers()
+        for ref in gc.get_referrers(root[0]):
+            if isinstance(ref, list):
+                # Check that the list doesn't contain NULL items (gh-146056)
+                repr(ref)
+                break
+        else:
+            self.fail("failed to find TreeBuilder stack list")
 
 
 @unittest.skipUnless(cET, 'requires _elementtree')

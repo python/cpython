@@ -2431,7 +2431,7 @@ treebuilder_new(PyTypeObject *type, PyObject *args, PyObject *kwds)
         t->element_factory = NULL;
         t->comment_factory = NULL;
         t->pi_factory = NULL;
-        t->stack = PyList_New(20);
+        t->stack = PyList_New(0);
         if (!t->stack) {
             Py_DECREF(t->this);
             Py_DECREF(t->last);
@@ -2856,9 +2856,9 @@ treebuilder_handle_end(TreeBuilderObject* self, PyObject* tag)
 
     item = self->last;
     self->last = Py_NewRef(self->this);
-    Py_XSETREF(self->last_for_tail, self->last);
+    Py_XSETREF(self->last_for_tail, Py_NewRef(self->last));
     self->index--;
-    self->this = Py_NewRef(PyList_GET_ITEM(self->stack, self->index));
+    Py_SETREF(self->this, Py_NewRef(PyList_GET_ITEM(self->stack, self->index)));
     Py_DECREF(item);
 
     if (treebuilder_append_event(self, self->end_event_obj, self->last) < 0)
