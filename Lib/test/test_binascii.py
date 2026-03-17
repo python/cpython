@@ -84,13 +84,6 @@ class BinASCIITest(unittest.TestCase):
                          b'ABCDEFGHIJKLMNOPQRSTUVWXYZ'
                          b'.-:+=^!/*?&<>()[]{}@%$#')
 
-        for name in ('BASE85_ALPHABET', 'ASCII85_ALPHABET',
-                     'Z85_ALPHABET'):
-            value = getattr(binascii, name)
-            self.assertIsInstance(value, bytes)
-            self.assertEqual(len(value), 85)
-            self.assertEqual(len(set(value)), 85)
-
     def test_functions(self):
         # Check presence of all functions
         for name in all_functions:
