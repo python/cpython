@@ -2006,7 +2006,8 @@ sys_getsizeof(PyObject *self, PyObject *args, PyObject *kwds)
 PyDoc_STRVAR(getsizeof_doc,
 "getsizeof(object [, default]) -> int\n\
 \n\
-Return the size of object in bytes.");
+Return the size of object in bytes.\n\
+The result may include additional memory overhead (e.g., for the garbage collector).");
 
 /*[clinic input]
 sys.getrefcount -> Py_ssize_t
