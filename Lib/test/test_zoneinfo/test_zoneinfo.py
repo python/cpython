@@ -1595,7 +1595,7 @@ class CZoneInfoCacheTest(ZoneInfoCacheTest):
             "Unexpected instance of int in ZI weak cache for key 'America/Los_Angeles'"
         )
 
-    def test_deleted_weak_cache(self): #works
+    def test_deleted_weak_cache(self):
         class ZI(self.klass):
             pass
         delattr(ZI, '_weak_cache')
