@@ -382,8 +382,7 @@ get_current_code_object(JitOptContext *ctx)
     return (PyCodeObject *)ctx->frame->code;
 }
 
-static
-PyFunctionObject *
+static PyFunctionObject *
 optimize_guard_code_version(JitOptContext *ctx, _PyBloomFilter *dependencies,
     _PyUOpInstruction *this_instr, uint32_t version)
 {
