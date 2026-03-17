@@ -570,6 +570,15 @@ class InstancingTestCase(unittest.TestCase, HelperMixin):
             self.helper(dictobj)
             self.helper3(dictobj)
 
+    def testFrozenDict(self):
+        for obj in self.keys:
+            dictobj = frozendict({"hello": obj, "goodbye": obj, obj: "hello"})
+            self.helper(dictobj)
+
+            for version in range(6):
+                with self.assertRaises(ValueError):
+                    marshal.dumps(dictobj, version)
+
     def testModule(self):
         with open(__file__, "rb") as f:
             code = f.read()
@@ -635,7 +644,7 @@ class SliceTestCase(unittest.TestCase, HelperMixin):
             with self.subTest(obj=str(obj)):
                 self.helper(obj)
 
-                for version in range(4):
+                for version in range(5):
                     with self.assertRaises(ValueError):
                         marshal.dumps(obj, version)
 

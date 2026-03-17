@@ -931,8 +931,9 @@ PyUnstable_Code_New(int argcount, int kwonlyargcount,
 // NOTE: When modifying the construction of PyCode_NewEmpty, please also change
 // test.test_code.CodeLocationTest.test_code_new_empty to keep it in sync!
 
-static const uint8_t assert0[6] = {
+static const uint8_t assert0[8] = {
     RESUME, RESUME_AT_FUNC_START,
+    CACHE, 0,
     LOAD_COMMON_CONSTANT, CONSTANT_ASSERTIONERROR,
     RAISE_VARARGS, 1
 };
@@ -940,7 +941,7 @@ static const uint8_t assert0[6] = {
 static const uint8_t linetable[2] = {
     (1 << 7)  // New entry.
     | (PY_CODE_LOCATION_INFO_NO_COLUMNS << 3)
-    | (3 - 1),  // Three code units.
+    | (4 - 1),  // Four code units.
     0,  // Offset from co_firstlineno.
 };
 
@@ -966,7 +967,7 @@ PyCode_NewEmpty(const char *filename, const char *funcname, int firstlineno)
     if (filename_ob == NULL) {
         goto failed;
     }
-    code_ob = PyBytes_FromStringAndSize((const char *)assert0, 6);
+    code_ob = PyBytes_FromStringAndSize((const char *)assert0, 8);
     if (code_ob == NULL) {
         goto failed;
     }
@@ -1575,6 +1576,67 @@ typedef struct {
 } _PyCodeObjectExtra;
 
 
+static inline size_t
+code_extra_size(Py_ssize_t n)
+{
+    return sizeof(_PyCodeObjectExtra) + (n - 1) * sizeof(void *);
+}
+
+#ifdef Py_GIL_DISABLED
+static int
+code_extra_grow_ft(PyCodeObject *co, _PyCodeObjectExtra *old_co_extra,
+                   Py_ssize_t old_ce_size, Py_ssize_t new_ce_size,
+                   Py_ssize_t index, void *extra)
+{
+    _Py_CRITICAL_SECTION_ASSERT_OBJECT_LOCKED(co);
+    _PyCodeObjectExtra *new_co_extra = PyMem_Malloc(
+        code_extra_size(new_ce_size));
+    if (new_co_extra == NULL) {
+        PyErr_NoMemory();
+        return -1;
+    }
+
+    if (old_ce_size > 0) {
+        memcpy(new_co_extra->ce_extras, old_co_extra->ce_extras,
+               old_ce_size * sizeof(void *));
+    }
+    for (Py_ssize_t i = old_ce_size; i < new_ce_size; i++) {
+        new_co_extra->ce_extras[i] = NULL;
+    }
+    new_co_extra->ce_size = new_ce_size;
+    new_co_extra->ce_extras[index] = extra;
+
+    // Publish new buffer and its contents to lock-free readers.
+    FT_ATOMIC_STORE_PTR_RELEASE(co->co_extra, new_co_extra);
+    if (old_co_extra != NULL) {
+        // QSBR: defer old-buffer free until lock-free readers quiesce.
+        _PyMem_FreeDelayed(old_co_extra, code_extra_size(old_ce_size));
+    }
+    return 0;
+}
+#else
+static int
+code_extra_grow_gil(PyCodeObject *co, _PyCodeObjectExtra *old_co_extra,
+                    Py_ssize_t old_ce_size, Py_ssize_t new_ce_size,
+                    Py_ssize_t index, void *extra)
+{
+    _PyCodeObjectExtra *new_co_extra = PyMem_Realloc(
+        old_co_extra, code_extra_size(new_ce_size));
+    if (new_co_extra == NULL) {
+        PyErr_NoMemory();
+        return -1;
+    }
+
+    for (Py_ssize_t i = old_ce_size; i < new_ce_size; i++) {
+        new_co_extra->ce_extras[i] = NULL;
+    }
+    new_co_extra->ce_size = new_ce_size;
+    new_co_extra->ce_extras[index] = extra;
+    co->co_extra = new_co_extra;
+    return 0;
+}
+#endif
+
 int
 PyUnstable_Code_GetExtra(PyObject *code, Py_ssize_t index, void **extra)
 {
@@ -1583,15 +1645,19 @@ PyUnstable_Code_GetExtra(PyObject *code, Py_ssize_t index, void **extra)
         return -1;
     }
 
-    PyCodeObject *o = (PyCodeObject*) code;
-    _PyCodeObjectExtra *co_extra = (_PyCodeObjectExtra*) o->co_extra;
+    PyCodeObject *co = (PyCodeObject *)code;
+    *extra = NULL;
 
-    if (co_extra == NULL || index < 0 || co_extra->ce_size <= index) {
-        *extra = NULL;
+    if (index < 0) {
         return 0;
     }
 
-    *extra = co_extra->ce_extras[index];
+    // Lock-free read; pairs with release stores in SetExtra.
+    _PyCodeObjectExtra *co_extra = FT_ATOMIC_LOAD_PTR_ACQUIRE(co->co_extra);
+    if (co_extra != NULL && index < co_extra->ce_size) {
+        *extra = FT_ATOMIC_LOAD_PTR_ACQUIRE(co_extra->ce_extras[index]);
+    }
+
     return 0;
 }
 
@@ -1601,40 +1667,59 @@ PyUnstable_Code_SetExtra(PyObject *code, Py_ssize_t index, void *extra)
 {
     PyInterpreterState *interp = _PyInterpreterState_GET();
 
-    if (!PyCode_Check(code) || index < 0 ||
-            index >= interp->co_extra_user_count) {
+    // co_extra_user_count is monotonically increasing and published with
+    // release store in RequestCodeExtraIndex, so once an index is valid
+    // it stays valid.
+    Py_ssize_t user_count = FT_ATOMIC_LOAD_SSIZE_ACQUIRE(
+        interp->co_extra_user_count);
+
+    if (!PyCode_Check(code) || index < 0 || index >= user_count) {
         PyErr_BadInternalCall();
         return -1;
     }
 
-    PyCodeObject *o = (PyCodeObject*) code;
-    _PyCodeObjectExtra *co_extra = (_PyCodeObjectExtra *) o->co_extra;
+    PyCodeObject *co = (PyCodeObject *)code;
+    int result = 0;
+    void *old_slot_value = NULL;
 
-    if (co_extra == NULL || co_extra->ce_size <= index) {
-        Py_ssize_t i = (co_extra == NULL ? 0 : co_extra->ce_size);
-        co_extra = PyMem_Realloc(
-                co_extra,
-                sizeof(_PyCodeObjectExtra) +
-                (interp->co_extra_user_count-1) * sizeof(void*));
-        if (co_extra == NULL) {
-            return -1;
-        }
-        for (; i < interp->co_extra_user_count; i++) {
-            co_extra->ce_extras[i] = NULL;
-        }
-        co_extra->ce_size = interp->co_extra_user_count;
-        o->co_extra = co_extra;
+    Py_BEGIN_CRITICAL_SECTION(co);
+
+    _PyCodeObjectExtra *old_co_extra = (_PyCodeObjectExtra *)co->co_extra;
+    Py_ssize_t old_ce_size = (old_co_extra == NULL)
+        ? 0 : old_co_extra->ce_size;
+
+    // Fast path: slot already exists, update in place.
+    if (index < old_ce_size) {
+        old_slot_value = old_co_extra->ce_extras[index];
+        FT_ATOMIC_STORE_PTR_RELEASE(old_co_extra->ce_extras[index], extra);
+        goto done;
     }
 
-    if (co_extra->ce_extras[index] != NULL) {
-        freefunc free = interp->co_extra_freefuncs[index];
-        if (free != NULL) {
-            free(co_extra->ce_extras[index]);
+    // Slow path: buffer needs to grow.
+    Py_ssize_t new_ce_size = user_count;
+#ifdef Py_GIL_DISABLED
+    // FT build: allocate new buffer and swap; QSBR reclaims the old one.
+    result = code_extra_grow_ft(
+        co, old_co_extra, old_ce_size, new_ce_size, index, extra);
+#else
+    // GIL build: grow with realloc.
+    result = code_extra_grow_gil(
+        co, old_co_extra, old_ce_size, new_ce_size, index, extra);
+#endif
+
+done:;
+    Py_END_CRITICAL_SECTION();
+    if (old_slot_value != NULL) {
+        // Free the old slot value if a free function was registered.
+        // The caller must ensure no other thread can still access the old
+        // value after this overwrite.
+        freefunc free_extra = interp->co_extra_freefuncs[index];
+        if (free_extra != NULL) {
+            free_extra(old_slot_value);
         }
     }
 
-    co_extra->ce_extras[index] = extra;
-    return 0;
+    return result;
 }
 
 
@@ -1746,7 +1831,7 @@ identify_unbound_names(PyThreadState *tstate, PyCodeObject *co,
     assert(attrnames != NULL);
     assert(PySet_Check(attrnames));
     assert(PySet_GET_SIZE(attrnames) == 0 || counts != NULL);
-    assert(globalsns == NULL || PyDict_Check(globalsns));
+    assert(globalsns == NULL || PyAnyDict_Check(globalsns));
     assert(builtinsns == NULL || PyDict_Check(builtinsns));
     assert(counts == NULL || counts->total == 0);
     struct co_unbound_counts unbound = {0};

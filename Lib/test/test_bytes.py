@@ -584,6 +584,37 @@ class BaseBytesTest:
         self.assertEqual(six_bytes.hex(':', -6), '0306090c0f12')
         self.assertEqual(six_bytes.hex(' ', -95), '0306090c0f12')
 
+    def test_hex_simd_boundaries(self):
+        # Test lengths around the SIMD threshold (16 bytes).
+        # SIMD processes 16 bytes at a time; smaller inputs use scalar code.
+        for length in (14, 15, 16, 17, 31, 32, 33, 64, 65):
+            data = self.type2test(bytes(range(length)))
+            expected = ''.join(f'{b:02x}' for b in range(length))
+            with self.subTest(length=length):
+                self.assertEqual(data.hex(), expected)
+
+    def test_hex_nibble_boundaries(self):
+        # Test the nibble value boundary at 9/10 (where '9' becomes 'a').
+        # SIMD uses signed comparison for efficiency; verify correctness
+        # at this boundary for various nibble combinations.
+        boundary_bytes = self.type2test(bytes([
+            0x09,  # both nibbles: 0, 9
+            0x0a,  # both nibbles: 0, 10
+            0x90,  # both nibbles: 9, 0
+            0x99,  # both nibbles: 9, 9 (max all-digit)
+            0x9a,  # both nibbles: 9, 10
+            0xa0,  # both nibbles: 10, 0
+            0xa9,  # both nibbles: 10, 9
+            0xaa,  # both nibbles: 10, 10 (min all-letter)
+            0x00,  # min value
+            0xff,  # max value
+        ]))
+        self.assertEqual(boundary_bytes.hex(), '090a90999aa0a9aa00ff')
+
+        # Repeat with 16+ bytes to exercise SIMD path
+        simd_boundary = self.type2test(boundary_bytes * 2)
+        self.assertEqual(simd_boundary.hex(), '090a90999aa0a9aa00ff' * 2)
+
     def test_join(self):
         self.assertEqual(self.type2test(b"").join([]), b"")
         self.assertEqual(self.type2test(b"").join([b""]), b"")
@@ -2877,6 +2908,22 @@ class FreeThreadingTest(unittest.TestCase):
             check([iter_next] + [iter_reduce] * 10, iter(ba))  # for tsan
             check([iter_next] + [iter_setstate] * 10, iter(ba))  # for tsan
 
+    @unittest.skipUnless(support.Py_GIL_DISABLED, 'this test can only possibly fail with GIL disabled')
+    @threading_helper.reap_threads
+    @threading_helper.requires_working_threading()
+    def test_free_threading_bytearray_resize(self):
+        def resize_stress(ba):
+            for _ in range(1000):
+                try:
+                    ba.resize(1000)
+                    ba.resize(1)
+                except (BufferError, ValueError):
+                    pass
+
+        ba = bytearray(100)
+        threads = [threading.Thread(target=resize_stress, args=(ba,)) for _ in range(4)]
+        with threading_helper.start_threads(threads):
+            pass
 
 if __name__ == "__main__":
     unittest.main()
