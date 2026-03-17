@@ -1,0 +1,1 @@
+Limit the size of :func:`encodings.search_function` cache.

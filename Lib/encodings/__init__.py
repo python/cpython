@@ -34,6 +34,7 @@ from _codecs import _normalize_encoding
 from . import aliases
 
 _cache = {}
+_MAXCACHE = 500
 _unknown = '--unknown--'
 _import_tail = ['*']
 _aliases = aliases.aliases
@@ -110,8 +111,8 @@ def search_function(encoding):
         mod = None
 
     if mod is None:
-        # Cache misses
-        _cache[encoding] = None
+        if len(_cache) < _MAXCACHE:
+            _cache[encoding] = None
         return None
 
     # Now ask the module for the registry entry
