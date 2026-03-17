@@ -2082,26 +2082,11 @@ binascii_exec(PyObject *module)
     {
         return -1;
     }
-    if (PyModule_Add(module, "BCRYPT_ALPHABET",
-        PyBytes_FromString("./"
-                           "ABCDEFGHIJKLMNOPQRSTUVWXYZ"
-                           "abcdefghijklmnopqrstuvwxyz"
-                           "0123456789")) < 0)
-    {
-        return -1;
-    }
     if (PyModule_Add(module, "UU_ALPHABET",
         PyBytes_FromString(" !\"#$%&'()*+,-./"
                            "0123456789:;<=>?@"
                            "ABCDEFGHIJKLMNOPQRSTUVWXYZ"
                            "[\\]^_")) < 0)
-    {
-        return -1;
-    }
-    if (PyModule_Add(module, "XX_ALPHABET",
-        PyBytes_FromString("+-0123456789"
-                           "ABCDEFGHIJKLMNOPQRSTUVWXYZ"
-                           "abcdefghijklmnopqrstuvwxyz")) < 0)
     {
         return -1;
     }

@@ -53,18 +53,9 @@ class BinASCIITest(unittest.TestCase):
                          b'0123456789+/')
         self.assertEqual(binascii.URLSAFE_BASE64_ALPHABET,
                          binascii.BASE64_ALPHABET[:-2] + b'-_')
+        self.assertEqual(binascii.UU_ALPHABET, bytes(range(32, 32+64)))
         self.assertEqual(binascii.CRYPT_ALPHABET,
                          b'./0123456789'
-                         b'ABCDEFGHIJKLMNOPQRSTUVWXYZ'
-                         b'abcdefghijklmnopqrstuvwxyz')
-        self.assertEqual(binascii.BCRYPT_ALPHABET,
-                         b'./'
-                         b'ABCDEFGHIJKLMNOPQRSTUVWXYZ'
-                         b'abcdefghijklmnopqrstuvwxyz'
-                         b'0123456789')
-        self.assertEqual(binascii.UU_ALPHABET, bytes(range(32, 32+64)))
-        self.assertEqual(binascii.XX_ALPHABET,
-                         b'+-0123456789'
                          b'ABCDEFGHIJKLMNOPQRSTUVWXYZ'
                          b'abcdefghijklmnopqrstuvwxyz')
         self.assertEqual(binascii.BINHEX_ALPHABET,

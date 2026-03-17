@@ -291,27 +291,15 @@ The :mod:`!binascii` module defines the following functions:
 
    .. versionadded:: next
 
-.. data:: CRYPT_ALPHABET
-
-   The Base 64 alphabet used in the :manpage:`crypt(3)` routine and in the GEDCOM format.
-
-   .. versionadded:: next
-
-.. data:: BCRYPT_ALPHABET
-
-   The Base 64 alphabet used in the ``bcrypt`` hashing function.
-
-   .. versionadded:: next
-
 .. data:: UU_ALPHABET
 
    The uuencoding alphabet.
 
    .. versionadded:: next
 
-.. data:: XX_ALPHABET
+.. data:: CRYPT_ALPHABET
 
-   The xxencoding alphabet.
+   The Base 64 alphabet used in the :manpage:`crypt(3)` routine and in the GEDCOM format.
 
    .. versionadded:: next
 
