@@ -128,8 +128,8 @@ typedef struct {
     bool cold;
     uint8_t pending_deletion;
     int32_t index;           // Index of ENTER_EXECUTOR (if code isn't NULL, below).
-    _PyBloomFilter bloom;
-    _PyExecutorLinkListNode links;
+    int32_t bloom_array_idx;        // Index in interp->executor_blooms/executor_ptrs.
+    _PyExecutorLinkListNode links;  // Used by deletion list.
     PyCodeObject *code;  // Weak (NULL if no corresponding ENTER_EXECUTOR).
 } _PyVMData;
 
@@ -157,7 +157,7 @@ typedef struct _PyExecutorObject {
 // Export for '_opcode' shared extension (JIT compiler).
 PyAPI_FUNC(_PyExecutorObject*) _Py_GetExecutor(PyCodeObject *code, int offset);
 
-void _Py_ExecutorInit(_PyExecutorObject *, const _PyBloomFilter *);
+int _Py_ExecutorInit(_PyExecutorObject *, const _PyBloomFilter *);
 void _Py_ExecutorDetach(_PyExecutorObject *);
 void _Py_BloomFilter_Init(_PyBloomFilter *);
 void _Py_BloomFilter_Add(_PyBloomFilter *bloom, void *obj);
@@ -361,6 +361,8 @@ _PyJit_TryInitializeTracing(PyThreadState *tstate, _PyInterpreterFrame *frame,
     int oparg, _PyExecutorObject *current_executor);
 
 PyAPI_FUNC(void) _PyJit_FinalizeTracing(PyThreadState *tstate, int err);
+PyAPI_FUNC(bool) _PyJit_EnterExecutorShouldStopTracing(int og_opcode);
+
 void _PyPrintExecutor(_PyExecutorObject *executor, const _PyUOpInstruction *marker);
 void _PyJit_TracerFree(_PyThreadStateImpl *_tstate);
 

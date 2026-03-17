@@ -1103,7 +1103,7 @@ $(DLLLIBRARY) libpython$(LDVERSION).dll.a: $(LIBRARY_OBJS)
 
 # wasm32-emscripten browser web example
 
-EMSCRIPTEN_DIR=$(srcdir)/Tools/wasm/emscripten
+EMSCRIPTEN_DIR=$(srcdir)/Platforms/emscripten
 WEBEX_DIR=$(EMSCRIPTEN_DIR)/web_example/
 
 ZIP_STDLIB=python$(VERSION)$(ABI_THREAD).zip
@@ -3174,7 +3174,7 @@ Python/emscripten_trampoline_inner.wasm: $(srcdir)/Python/emscripten_trampoline_
 	$$(dirname $$(dirname $(CC)))/bin/clang -o $@ $< -mgc -O2 -Wl,--no-entry -Wl,--import-table -Wl,--import-memory -target wasm32-unknown-unknown -nostdlib
 
 Python/emscripten_trampoline_wasm.c: Python/emscripten_trampoline_inner.wasm
-	$(PYTHON_FOR_REGEN) $(srcdir)/Tools/wasm/emscripten/prepare_external_wasm.py $< $@ getWasmTrampolineModule
+	$(PYTHON_FOR_REGEN) $(srcdir)/Platforms/emscripten/prepare_external_wasm.py $< $@ getWasmTrampolineModule
 
 JIT_DEPS = \
 		$(srcdir)/Tools/jit/*.c \
