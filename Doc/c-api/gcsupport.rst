@@ -359,7 +359,6 @@ implementation must name its arguments exactly *visit* and *arg*:
             }                                         \
          }
 
-.. _duringgc-functions:
 
 Traversal-safe functions
 ^^^^^^^^^^^^^^^^^^^^^^^^
@@ -376,10 +375,25 @@ The following functions and macros are safe to use in a
   :c:func:`PyType_HasFeature`
 * :samp:`Py{<type>}_Check` and :samp:`Py{<type>}_CheckExact` -- for example,
   :c:func:`PyTuple_Check`
+* :ref:`duringgc-functions`
+
+.. _duringgc-functions:
+
+"DuringGC" functions
+^^^^^^^^^^^^^^^^^^^^
 
 The following functions should *only* used in a
 :c:member:`~PyTypeObject.tp_traverse` handler; calling them in other
-contexts may have unintended consequences:
+contexts may have unintended consequences.
+
+These functions act like their counterparts without the ``_DuringGC`` suffix,
+but they are guaranteed to not have side effects, they do not set an exception
+on failure, and they return/set :term:`borrowed references <borrowed reference>`
+as detailed in the individual documentation..
+
+Note that these functions may fail (return ``NULL`` or ``-1``),
+but as they do not set an exception, no error information is available.
+In some cases, failure is not distinguishable from a successful ``NULL`` result.
 
 .. c:function:: void *PyObject_GetTypeData_DuringGC(PyObject *o, PyTypeObject *cls)
                 void *PyObject_GetItemData_DuringGC(PyObject *o)
@@ -387,12 +401,7 @@ contexts may have unintended consequences:
                 void *PyModule_GetState_DuringGC(PyObject *module)
                 int PyModule_GetToken_DuringGC(PyObject *module, void** result)
 
-   These functions act like their counterparts without the ``_DuringGC`` suffix,
-   but they are guaranteed to not have side effects, and they do not
-   set an exception on failure.
-
-   Note that these functions may fail (return ``NULL`` or -1).
-   Only creating and setting the exception is suppressed.
+   See :ref:`duringgc-functions` for common information.
 
    .. versionadded:: next
 
@@ -407,29 +416,23 @@ contexts may have unintended consequences:
 
 .. c:function:: int PyType_GetBaseByToken_DuringGC(PyTypeObject *type, void *tp_token, PyTypeObject **result)
 
-   Acts like :c:func:`PyType_GetBaseByToken`,
-   but is guaranteed to not have side effects, does not
-   set an exception on failure, and sets *\*result* to
-   a :term:`borrowed reference` rather than a strong one.
+   See :ref:`duringgc-functions` for common information.
+
+   Sets *\*result* to a :term:`borrowed reference` rather than a strong one.
    The reference is valid for the duration
    of the :c:member:`!tp_traverse` handler call.
 
-   Note that this function may fail (return -1).
-   Only creating and setting the exception is suppressed.
-
    .. versionadded:: next
+
+   .. seealso:: :c:func:`PyType_GetBaseByToken`
 
 .. c:function:: PyObject* PyType_GetModule_DuringGC(PyTypeObject *type)
                 PyObject* PyType_GetModuleByToken_DuringGC(PyTypeObject *type, const void *mod_token)
 
-   These functions act like their counterparts without the ``_DuringGC`` suffix,
-   but they are guaranteed to not have side effects, they never set an
-   exception on failure, and they return a :term:`borrowed reference`.
-   The returned reference is valid for the duration
-   of the :c:member:`!tp_traverse` handler call.
+   See :ref:`duringgc-functions` for common information.
 
-   Note that these functions may fail (return ``NULL``).
-   Only creating and setting the exception is suppressed.
+   These functions return a :term:`borrowed reference`, which is
+   valid for the duration of the :c:member:`!tp_traverse` handler call.
 
    .. versionadded:: next
 
