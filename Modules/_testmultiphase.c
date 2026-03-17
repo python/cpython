@@ -182,7 +182,7 @@ _testmultiphase_StateAccessType_getmodulebydef_bad_def_impl(StateAccessTypeObjec
     PyObject *m = PyType_GetModuleByDef(Py_TYPE(self), &def_nonmodule);
     assert(PyErr_Occurred());
     assert(m == NULL);
-    return NULL;
+    return m;
 }
 
 /*[clinic input]
