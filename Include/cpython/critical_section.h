@@ -111,6 +111,8 @@ struct PyCriticalSection {
 
     // Mutex used to protect critical section
     PyMutex *_cs_mutex;
+
+    PyThreadState *_cs_tstate;
 };
 
 // A critical section protected by two mutexes. Use
