@@ -111,6 +111,7 @@ def search_function(encoding):
         mod = None
 
     if mod is None:
+        # Cache misses
         if len(_cache) >= _MAXCACHE:
             _cache.clear()
         _cache[encoding] = None
