@@ -1607,16 +1607,7 @@
             break;
         }
 
-        case _STORE_GLOBAL: {
-            CHECK_STACK_BOUNDS(-1);
-            stack_pointer += -1;
-            ASSERT_WITHIN_STACK_BOUNDS(__FILE__, __LINE__);
-            break;
-        }
-
-        case _DELETE_GLOBAL: {
-            break;
-        }
+        /* _STORE_GLOBAL is not a viable micro-op for tier 2 */
 
         case _LOAD_LOCALS: {
             JitOptRef locals;
