@@ -919,7 +919,7 @@ def get_annotations(
     does not exist, the __annotate__ function is called. The
     FORWARDREF format uses __annotations__ if it exists and can be
     evaluated, and otherwise falls back to calling the __annotate__ function.
-    The SOURCE format tries __annotate__ first, and falls back to
+    The STRING format tries __annotate__ first, and falls back to
     using __annotations__, stringified using annotations_to_string().
 
     This function handles several details for you:
