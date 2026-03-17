@@ -63,9 +63,9 @@ py_blake2b_new(PyTypeObject *type, PyObject *args, PyObject *kwargs)
     Py_ssize_t noptargs = nargs + (kwargs ? PyDict_GET_SIZE(kwargs) : 0) - 0;
     PyObject *data_obj = NULL;
     int digest_size = HACL_HASH_BLAKE2B_OUT_BYTES;
-    Py_buffer key = {NULL, NULL};
-    Py_buffer salt = {NULL, NULL};
-    Py_buffer person = {NULL, NULL};
+    Py_buffer key = {.buf = "", .obj = NULL, .len = 0};
+    Py_buffer salt = {.buf = "", .obj = NULL, .len = 0};
+    Py_buffer person = {.buf = "", .obj = NULL, .len = 0};
     int fanout = 1;
     int depth = 1;
     unsigned long leaf_size = 0;
@@ -272,9 +272,9 @@ py_blake2s_new(PyTypeObject *type, PyObject *args, PyObject *kwargs)
     Py_ssize_t noptargs = nargs + (kwargs ? PyDict_GET_SIZE(kwargs) : 0) - 0;
     PyObject *data_obj = NULL;
     int digest_size = HACL_HASH_BLAKE2S_OUT_BYTES;
-    Py_buffer key = {NULL, NULL};
-    Py_buffer salt = {NULL, NULL};
-    Py_buffer person = {NULL, NULL};
+    Py_buffer key = {.buf = "", .obj = NULL, .len = 0};
+    Py_buffer salt = {.buf = "", .obj = NULL, .len = 0};
+    Py_buffer person = {.buf = "", .obj = NULL, .len = 0};
     int fanout = 1;
     int depth = 1;
     unsigned long leaf_size = 0;
@@ -502,4 +502,4 @@ _blake2_blake2b_hexdigest(PyObject *self, PyObject *Py_UNUSED(ignored))
 {
     return _blake2_blake2b_hexdigest_impl((Blake2Object *)self);
 }
-/*[clinic end generated code: output=eed18dcfaf6f7731 input=a9049054013a1b77]*/
+/*[clinic end generated code: output=bf30e70c312718cb input=a9049054013a1b77]*/
