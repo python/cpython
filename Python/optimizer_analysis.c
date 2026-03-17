@@ -382,6 +382,24 @@ get_current_code_object(JitOptContext *ctx)
     return (PyCodeObject *)ctx->frame->code;
 }
 
+static
+PyFunctionObject *
+optimize_guard_code_version(JitOptContext *ctx, _PyBloomFilter *dependencies,
+    _PyUOpInstruction *this_instr, uint32_t version)
+{
+    PyCodeObject *co = get_current_code_object(ctx);
+    if (co->co_version == version) {
+        _Py_BloomFilter_Add(dependencies, co);
+        // If frame func is known, that means we can get rid of the code guard.
+        if (ctx->frame->caller || ctx->frame->known_callee) {
+            REPLACE_OP(this_instr, _NOP, 0, 0);
+        }
+    }
+    else {
+        ctx->done = true;
+    }
+}
+
 static PyObject *
 get_co_name(JitOptContext *ctx, int index)
 {

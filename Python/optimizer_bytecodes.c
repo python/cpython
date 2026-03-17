@@ -904,7 +904,11 @@ dummy_func(void) {
         }
 
         if (sym_is_null(self_or_null) || sym_is_not_null(self_or_null)) {
-            new_frame = PyJitRef_WrapInvalid(frame_new_from_symbol(ctx, callable, args, argcount));
+            _Py_UOpsAbstractFrame *new_frame_f = frame_new_from_symbol(ctx, callable, args, argcount);
+            new_frame = PyJitRef_WrapInvalid(new_frame_f);
+            if (new_frame_f != NULL) {
+                new_frame_f->known_callee = true;
+            }
         } else {
             new_frame = PyJitRef_WrapInvalid(frame_new_from_symbol(ctx, callable, NULL, 0));
         }
@@ -1749,24 +1753,27 @@ dummy_func(void) {
         sym_set_recorded_gen_func(nos, func);
     }
 
+    op(_GUARD_CODE_VERSION__PUSH_FRAME, (version/2 -- )) {
+        optimize_guard_code_version(ctx, dependencies, this_instr, version);
+    }
+
+    op(_GUARD_CODE_VERSION_RETURN_VALUE, (version/2 -- )) {
+        optimize_guard_code_version(ctx, dependencies, this_instr, version);
+    }
+
+    op(_GUARD_CODE_VERSION_YIELD_VALUE, (version/2 -- )) {
+        optimize_guard_code_version(ctx, dependencies, this_instr, version);
+    }
+
+    op(_GUARD_CODE_VERSION_RETURN_GENERATOR, (version/2 -- )) {
+        optimize_guard_code_version(ctx, dependencies, this_instr, version);
+    }
+
     op(_GUARD_IP__PUSH_FRAME, (ip/4 --)) {
         (void)ip;
         stack_pointer = sym_set_stack_depth((int)this_instr->operand1, stack_pointer);
-        // TO DO
-        // Normal function calls to known functions
-        // do not need an IP guard.
-    }
-
-    op(_GUARD_CODE_VERSION, (version/2 -- )) {
-        PyCodeObject *co = get_current_code_object(ctx);
-        if (co->co_version == version) {
-            _Py_BloomFilter_Add(dependencies, co);
-            // TODO gh-144651:
-            // If we've previously guarded on this code version in a trace, we
-            // can avoid guarding it again.
-        }
-        else {
-            ctx->done = true;
+        if (ctx->frame->known_callee) {
+            REPLACE_OP(this_instr, _NOP, 0, 0);
         }
     }
 

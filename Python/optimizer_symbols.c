@@ -1329,6 +1329,7 @@ _Py_uop_frame_new_from_symbol(
         assert(PyFunction_Check(func));
         frame->func = func;
     }
+    frame->known_callee = false;
     assert(frame->stack_pointer != NULL);
     return frame;
 }
