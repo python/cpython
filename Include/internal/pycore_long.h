@@ -232,7 +232,7 @@ _PyLong_IsPositive(const PyLongObject *op)
 }
 
 static inline bool
-_PyLong_IsImmortal(const PyLongObject *op)
+_PyLong_HasImmortalTag(const PyLongObject *op)
 {
     assert(PyLong_Check(op));
     bool is_small_int = (op->long_value.lv_tag & IMMORTALITY_BIT_MASK) != 0;
@@ -303,7 +303,7 @@ _PyLong_SetDigitCount(PyLongObject *op, Py_ssize_t size)
 static inline void
 _PyLong_FlipSign(PyLongObject *op)
 {
-    assert(!_PyLong_IsImmortal(op));
+    assert(!_PyLong_HasImmortalTag(op));
     unsigned int flipped_sign = 2 - (op->long_value.lv_tag & SIGN_MASK);
     op->long_value.lv_tag &= NON_SIZE_MASK;
     op->long_value.lv_tag |= flipped_sign;
