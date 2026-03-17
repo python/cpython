@@ -4300,26 +4300,18 @@
         }
 
         case _GUARD_CODE_VERSION__PUSH_FRAME: {
-            uint32_t version = (uint32_t)this_instr->operand0;
-            optimize_guard_code_version(ctx, dependencies, this_instr, version);
             break;
         }
 
         case _GUARD_CODE_VERSION_YIELD_VALUE: {
-            uint32_t version = (uint32_t)this_instr->operand0;
-            optimize_guard_code_version(ctx, dependencies, this_instr, version);
             break;
         }
 
         case _GUARD_CODE_VERSION_RETURN_VALUE: {
-            uint32_t version = (uint32_t)this_instr->operand0;
-            optimize_guard_code_version(ctx, dependencies, this_instr, version);
             break;
         }
 
         case _GUARD_CODE_VERSION_RETURN_GENERATOR: {
-            uint32_t version = (uint32_t)this_instr->operand0;
-            optimize_guard_code_version(ctx, dependencies, this_instr, version);
             break;
         }
 

@@ -1767,22 +1767,6 @@ dummy_func(void) {
         sym_set_recorded_gen_func(nos, func);
     }
 
-    op(_GUARD_CODE_VERSION__PUSH_FRAME, (version/2 -- )) {
-        optimize_guard_code_version(ctx, dependencies, this_instr, version);
-    }
-
-    op(_GUARD_CODE_VERSION_RETURN_VALUE, (version/2 -- )) {
-        optimize_guard_code_version(ctx, dependencies, this_instr, version);
-    }
-
-    op(_GUARD_CODE_VERSION_YIELD_VALUE, (version/2 -- )) {
-        optimize_guard_code_version(ctx, dependencies, this_instr, version);
-    }
-
-    op(_GUARD_CODE_VERSION_RETURN_GENERATOR, (version/2 -- )) {
-        optimize_guard_code_version(ctx, dependencies, this_instr, version);
-    }
-
     op(_GUARD_IP__PUSH_FRAME, (ip/4 --)) {
         (void)ip;
         stack_pointer = sym_set_stack_depth((int)this_instr->operand1, stack_pointer);
