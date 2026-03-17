@@ -379,7 +379,7 @@ binascii_a2b_ascii85(PyObject *module, PyObject *const *args, Py_ssize_t nargs, 
     Py_buffer data = {NULL, NULL};
     int foldspaces = 0;
     int adobe = 0;
-    Py_buffer ignorechars = {NULL, NULL};
+    Py_buffer ignorechars = {.buf = "", .obj = NULL, .len = 0};
 
     args = _PyArg_UnpackKeywords(args, nargs, NULL, kwnames, &_parser,
             /*minpos*/ 1, /*maxpos*/ 1, /*minkw*/ 0, /*varpos*/ 0, argsbuf);
@@ -1256,4 +1256,4 @@ exit:
 
     return return_value;
 }
-/*[clinic end generated code: output=0343bea327c9f0b5 input=a9049054013a1b77]*/
+/*[clinic end generated code: output=84c97096b0fb3819 input=a9049054013a1b77]*/

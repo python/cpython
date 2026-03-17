@@ -600,8 +600,8 @@ binascii.a2b_base64
         When set to true, bytes that are not part of the base64 standard are
         not allowed.  The same applies to excess data after padding (= / ==).
         Set to True by default if ignorechars is specified, False otherwise.
-    alphabet: PyBytesObject(py_default="BASE64_ALPHABET") = NULL
-    ignorechars: Py_buffer(py_default="<unrepresentable>") = None
+    alphabet: PyBytesObject(c_default="NULL") = BASE64_ALPHABET
+    ignorechars: Py_buffer = NULL
         A byte string containing characters to ignore from the input when
         strict_mode is true.
 
@@ -611,7 +611,7 @@ Decode a line of base64 data.
 static PyObject *
 binascii_a2b_base64_impl(PyObject *module, Py_buffer *data, int strict_mode,
                          PyBytesObject *alphabet, Py_buffer *ignorechars)
-/*[clinic end generated code: output=72f15fcc0681d666 input=051bbf7cf17b6ba4]*/
+/*[clinic end generated code: output=72f15fcc0681d666 input=195c8d60b03aaa6f]*/
 {
     assert(data->len >= 0);
 
@@ -804,7 +804,7 @@ binascii.b2a_base64
     *
     wrapcol: size_t = 0
     newline: bool = True
-    alphabet: Py_buffer(py_default="BASE64_ALPHABET") = None
+    alphabet: Py_buffer(c_default="{NULL, NULL}") = BASE64_ALPHABET
 
 Base64-code line of data.
 [clinic start generated code]*/
@@ -812,7 +812,7 @@ Base64-code line of data.
 static PyObject *
 binascii_b2a_base64_impl(PyObject *module, Py_buffer *data, size_t wrapcol,
                          int newline, Py_buffer *alphabet)
-/*[clinic end generated code: output=9d9657e5fbe28c64 input=681cc9d3af74fc39]*/
+/*[clinic end generated code: output=9d9657e5fbe28c64 input=ffa3af8520c312ac]*/
 {
     const unsigned char *table_b2a = table_b2a_base64;
     const unsigned char *bin_data = data->buf;
@@ -900,7 +900,7 @@ binascii.a2b_ascii85
         Allow 'y' as a short form encoding four spaces.
     adobe: bool = False
         Expect data to be wrapped in '<~' and '~>' as in Adobe Ascii85.
-    ignorechars: Py_buffer(c_default="NULL", py_default="b''") = None
+    ignorechars: Py_buffer = b''
         A byte string containing characters to ignore from the input.
 
 Decode Ascii85 data.
@@ -909,7 +909,7 @@ Decode Ascii85 data.
 static PyObject *
 binascii_a2b_ascii85_impl(PyObject *module, Py_buffer *data, int foldspaces,
                           int adobe, Py_buffer *ignorechars)
-/*[clinic end generated code: output=599aa3e41095a651 input=20796c9b23cec213]*/
+/*[clinic end generated code: output=599aa3e41095a651 input=f39abd11eab4bac0]*/
 {
     const unsigned char *ascii_data = data->buf;
     Py_ssize_t ascii_len = data->len;
@@ -941,9 +941,7 @@ binascii_a2b_ascii85_impl(PyObject *module, Py_buffer *data, int foldspaces,
     }
 
     ignorecache_t ignorecache;
-    if (ignorechars != NULL) {
-        memset(ignorecache, 0, sizeof(ignorecache));
-    }
+    memset(ignorecache, 0, sizeof(ignorecache));
 
     /* Allocate output buffer. */
     size_t bin_len = ascii_len;
@@ -1179,7 +1177,7 @@ binascii.a2b_base85
     data: ascii_buffer
     /
     *
-    alphabet: PyBytesObject(py_default="BASE85_ALPHABET") = NULL
+    alphabet: PyBytesObject(c_default="NULL") = BASE85_ALPHABET
 
 Decode a line of Base85 data.
 [clinic start generated code]*/
@@ -1187,7 +1185,7 @@ Decode a line of Base85 data.
 static PyObject *
 binascii_a2b_base85_impl(PyObject *module, Py_buffer *data,
                          PyBytesObject *alphabet)
-/*[clinic end generated code: output=3e114af53812e8ff input=81779cd049d44a55]*/
+/*[clinic end generated code: output=3e114af53812e8ff input=0b6b83b38ad4497c]*/
 {
     const unsigned char *ascii_data = data->buf;
     Py_ssize_t ascii_len = data->len;
@@ -1285,7 +1283,7 @@ binascii.b2a_base85
     *
     pad: bool = False
         Pad input to a multiple of 4 before encoding.
-    alphabet: Py_buffer(py_default="BASE85_ALPHABET") = None
+    alphabet: Py_buffer(c_default="{NULL, NULL}") = BASE85_ALPHABET
 
 Base85-code line of data.
 [clinic start generated code]*/
@@ -1293,7 +1291,7 @@ Base85-code line of data.
 static PyObject *
 binascii_b2a_base85_impl(PyObject *module, Py_buffer *data, int pad,
                          Py_buffer *alphabet)
-/*[clinic end generated code: output=a59f4f2ff6f0e69f input=cde4ebe8abfaa982]*/
+/*[clinic end generated code: output=a59f4f2ff6f0e69f input=30f545c6ff554db7]*/
 {
     const unsigned char *bin_data = data->buf;
     Py_ssize_t bin_len = data->len;
