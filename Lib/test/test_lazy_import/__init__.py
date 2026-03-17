@@ -484,8 +484,8 @@ class SysLazyImportsAPITests(unittest.TestCase):
         sys.set_lazy_imports_filter(my_filter)
         self.assertIs(sys.get_lazy_imports_filter(), my_filter)
 
-    def test_lazy_modules_attribute_is_set(self):
-        """sys.lazy_modules should be a set per PEP 810."""
+    def test_lazy_modules_attribute_is_dict(self):
+        """sys.lazy_modules should be a dict per PEP 810."""
         self.assertIsInstance(sys.lazy_modules, dict)
 
     @support.requires_subprocess()
@@ -966,7 +966,7 @@ class SysLazyModulesTrackingTests(unittest.TestCase):
 
     def test_lazy_modules_is_per_interpreter(self):
         """Each interpreter should have independent sys.lazy_modules."""
-        # Basic test that sys.lazy_modules exists and is a set
+        # Basic test that sys.lazy_modules exists and is a dict
         self.assertIsInstance(sys.lazy_modules, dict)
 
 
@@ -1532,7 +1532,7 @@ class ThreadSafetyTests(unittest.TestCase):
         self.assertEqual(result.returncode, 0, f"stdout: {result.stdout}, stderr: {result.stderr}")
         self.assertIn("OK", result.stdout)
 
-    def test_concurrent_lazy_modules_set_updates(self):
+    def test_concurrent_lazy_modules_dict_updates(self):
         """Multiple threads creating lazy imports should safely update sys.lazy_modules."""
         code = textwrap.dedent("""
             import sys
