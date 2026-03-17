@@ -26,6 +26,7 @@ show program's version number and exit
 show this help message and exit
 subcommands
 the following arguments are required: %s
+the following arguments must be used together: %s
 unexpected option string: %s
 unknown parser %(parser_name)r (choices: %(choices)s)
 unrecognized arguments: %s
