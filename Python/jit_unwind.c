@@ -655,11 +655,11 @@ struct jit_descriptor {
     struct jit_code_entry *first_entry;
 };
 
-Py_EXPORTED_SYMBOL volatile struct jit_descriptor __jit_debug_descriptor = {
+static volatile struct jit_descriptor __jit_debug_descriptor = {
     1, JIT_NOACTION, NULL, NULL
 };
 
-PyAPI_FUNC(void) __attribute__((noinline)) __jit_debug_register_code(void)
+static void __attribute__((noinline)) __jit_debug_register_code(void)
 {
     /* Keep this call visible to debuggers and not optimized away. */
     (void)__jit_debug_descriptor.action_flag;
