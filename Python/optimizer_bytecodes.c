@@ -1091,6 +1091,24 @@ dummy_func(void) {
         sym_set_type(iter, &PyTuple_Type);
     }
 
+    op(_ITER_CHECK_LIST, (iter, null_or_index -- iter, null_or_index)) {
+        if (sym_matches_type(iter, &PyList_Type)) {
+            ADD_OP(_NOP, 0, 0);
+        }
+        else {
+            sym_set_type(iter, &PyList_Type);
+        }
+    }
+
+    op(_ITER_CHECK_RANGE, (iter, null_or_index -- iter, null_or_index)) {
+        if (sym_matches_type(iter, &PyRange_Type)) {
+            ADD_OP(_NOP, 0, 0);
+        }
+        else {
+            sym_set_type(iter, &PyRange_Type);
+        }
+    }
+
     op(_ITER_NEXT_RANGE, (iter, null_or_index -- iter, null_or_index, next)) {
        next = sym_new_type(ctx, &PyLong_Type);
     }
@@ -1755,19 +1773,6 @@ dummy_func(void) {
         // TO DO
         // Normal function calls to known functions
         // do not need an IP guard.
-    }
-
-    op(_GUARD_CODE_VERSION, (version/2 -- )) {
-        PyCodeObject *co = get_current_code_object(ctx);
-        if (co->co_version == version) {
-            _Py_BloomFilter_Add(dependencies, co);
-            // TODO gh-144651:
-            // If we've previously guarded on this code version in a trace, we
-            // can avoid guarding it again.
-        }
-        else {
-            ctx->done = true;
-        }
     }
 
     op(_GUARD_IP_YIELD_VALUE, (ip/4 --)) {
