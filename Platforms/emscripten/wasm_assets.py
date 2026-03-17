@@ -17,7 +17,7 @@ import sysconfig
 import zipfile
 
 # source directory
-SRCDIR = pathlib.Path(__file__).parents[3].absolute()
+SRCDIR = pathlib.Path(__file__).parents[2].absolute()
 SRCDIR_LIB = SRCDIR / "Lib"
 
 

@@ -1635,8 +1635,12 @@ prepare_s(PyStructObject *self, PyObject *format)
 
     _structmodulestate *state = get_struct_state_structinst(self);
 
-    fmt = PyBytes_AS_STRING(format);
-    if (strlen(fmt) != (size_t)PyBytes_GET_SIZE(format)) {
+    if (!PyUnicode_IS_ASCII(format)) {
+        PyErr_SetString(PyExc_ValueError, "non-ASCII character in struct format");
+        return -1;
+    }
+    fmt = (const char *)PyUnicode_1BYTE_DATA(format);
+    if (strlen(fmt) != (size_t)PyUnicode_GET_LENGTH(format)) {
         PyErr_SetString(state->StructError,
                         "embedded null character");
         return -1;
@@ -1780,17 +1784,19 @@ static int
 set_format(PyStructObject *self, PyObject *format)
 {
     if (PyUnicode_Check(format)) {
-        format = PyUnicode_AsASCIIString(format);
-        if (format == NULL)
-            return -1;
+        format = PyUnicode_FromObject(format);
     }
     else if (PyBytes_Check(format)) {
-        Py_INCREF(format);
+        format = PyUnicode_DecodeASCII(PyBytes_AS_STRING(format),
+                                       PyBytes_GET_SIZE(format), "surrogateescape");
     }
     else  {
         PyErr_Format(PyExc_TypeError,
                      "Struct() argument 1 must be a str or bytes object, "
                      "not %T", format);
+        return -1;
+    }
+    if (format == NULL) {
         return -1;
     }
     if (prepare_s(self, format)) {
@@ -1821,7 +1827,7 @@ Struct_impl(PyTypeObject *type, PyObject *format)
     if (self == NULL) {
         return NULL;
     }
-    self->s_format = Py_NewRef(Py_None);
+    self->s_format = NULL;
     self->s_codes = NULL;
     self->s_size = -1;
     self->s_len = -1;
@@ -1878,7 +1884,7 @@ s_new(PyTypeObject *type, PyObject *args, PyObject *kwds)
     if (self == NULL) {
         return NULL;
     }
-    self->s_format = Py_NewRef(Py_None);
+    self->s_format = NULL;
     self->s_codes = NULL;
     self->s_size = -1;
     self->s_len = -1;
@@ -1892,7 +1898,7 @@ s_new(PyTypeObject *type, PyObject *args, PyObject *kwds)
             return NULL;
         }
         PyObject *exc = PyErr_GetRaisedException();
-        Py_SETREF(self->s_format, Py_NewRef(Py_None));
+        Py_CLEAR(self->s_format);
         if (PyErr_WarnFormat(PyExc_DeprecationWarning, 1,
             "Invalid 'format' argument for Struct.__new__(): %S", exc))
         {
@@ -1910,8 +1916,8 @@ s_new(PyTypeObject *type, PyObject *args, PyObject *kwds)
 static bool
 same_format(PyStructObject *s, PyObject *format)
 {
-    Py_ssize_t size = PyBytes_GET_SIZE(s->s_format);
-    const void *data = PyBytes_AS_STRING(s->s_format);
+    Py_ssize_t size = PyUnicode_GET_LENGTH(s->s_format);
+    const void *data = PyUnicode_1BYTE_DATA(s->s_format);
     if (PyUnicode_Check(format) && PyUnicode_IS_ASCII(format)) {
         return PyUnicode_GET_LENGTH(format) == size
             && memcmp(PyUnicode_1BYTE_DATA(format), data, size) == 0;
@@ -1938,7 +1944,7 @@ static int
 Struct___init___impl(PyStructObject *self, PyObject *format)
 /*[clinic end generated code: output=b8e80862444e92d0 input=1af78a5f57d82cec]*/
 {
-    if (self->s_format == Py_None) {
+    if (self->s_format == NULL) {
         if (set_format(self, format) < 0) {
             return -1;
         }
@@ -1965,7 +1971,7 @@ s_init(PyObject *self, PyObject *args, PyObject *kwargs)
 {
     if (!((PyStructObject *)self)->init_called
             && Py_TYPE(self)->tp_init == s_init
-            && ((PyStructObject *)self)->s_format != Py_None)
+            && ((PyStructObject *)self)->s_format != NULL)
     {
         /* Struct.__init__() was called implicitly.
          * __new__() already did all the work. */
@@ -2508,22 +2514,6 @@ Struct_pack_into_impl(PyStructObject *self, Py_buffer *buffer,
     Py_RETURN_NONE;
 }
 
-static PyObject *
-s_get_format(PyObject *op, void *Py_UNUSED(closure))
-{
-    PyStructObject *self = PyStructObject_CAST(op);
-    ENSURE_STRUCT_IS_READY(self);
-    return PyUnicode_FromStringAndSize(PyBytes_AS_STRING(self->s_format),
-                                       PyBytes_GET_SIZE(self->s_format));
-}
-
-static PyObject *
-s_get_size(PyObject *op, void *Py_UNUSED(closure))
-{
-    PyStructObject *self = PyStructObject_CAST(op);
-    return PyLong_FromSsize_t(self->s_size);
-}
-
 /*[clinic input]
 Struct.__sizeof__
 [clinic start generated code]*/
@@ -2545,14 +2535,7 @@ s_repr(PyObject *op)
 {
     PyStructObject *self = PyStructObject_CAST(op);
     ENSURE_STRUCT_IS_READY(self);
-    PyObject* fmt = PyUnicode_FromStringAndSize(
-        PyBytes_AS_STRING(self->s_format), PyBytes_GET_SIZE(self->s_format));
-    if (fmt == NULL) {
-        return NULL;
-    }
-    PyObject* s = PyUnicode_FromFormat("%s(%R)", _PyType_Name(Py_TYPE(self)), fmt);
-    Py_DECREF(fmt);
-    return s;
+    return PyUnicode_FromFormat("%s(%R)", _PyType_Name(Py_TYPE(self)), self->s_format);
 }
 
 /* List of functions */
@@ -2569,13 +2552,11 @@ static struct PyMethodDef s_methods[] = {
 
 static PyMemberDef s_members[] = {
     {"__weaklistoffset__", Py_T_PYSSIZET, offsetof(PyStructObject, weakreflist), Py_READONLY},
+    {"format", Py_T_OBJECT_EX, offsetof(PyStructObject, s_format),
+        Py_READONLY, PyDoc_STR("struct format string")},
+    {"size", Py_T_PYSSIZET, offsetof(PyStructObject, s_size), Py_READONLY,
+        PyDoc_STR("struct size in bytes")},
     {NULL}  /* sentinel */
-};
-
-static PyGetSetDef s_getsetlist[] = {
-    {"format", s_get_format, NULL, PyDoc_STR("struct format string"), NULL},
-    {"size", s_get_size, NULL, PyDoc_STR("struct size in bytes"), NULL},
-    {NULL} /* sentinel */
 };
 
 static PyType_Slot PyStructType_slots[] = {
@@ -2588,7 +2569,6 @@ static PyType_Slot PyStructType_slots[] = {
     {Py_tp_clear, s_clear},
     {Py_tp_methods, s_methods},
     {Py_tp_members, s_members},
-    {Py_tp_getset, s_getsetlist},
     {Py_tp_init, s_init},
     {Py_tp_new, s_new},
     {0, 0},

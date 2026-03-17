@@ -207,6 +207,43 @@ class WaveLowLevelTest(unittest.TestCase):
             support.gc_collect()
             self.assertIsNone(cm.unraisable)
 
+    @support.subTests('arg', (
+        # rounds to 0, should raise:
+        0.5,
+        0.4,
+        # Negative values should still raise:
+        -1,
+        -0.5,
+        -0.4,
+        # 0 should raise:
+        0,
+    ))
+    def test_setframerate_validates_rounded_values(self, arg):
+        """Test that setframerate that round to 0 or negative are rejected"""
+        with wave.open(io.BytesIO(), 'wb') as f:
+            f.setnchannels(1)
+            f.setsampwidth(2)
+            with self.assertRaises(wave.Error):
+                f.setframerate(arg)
+            with self.assertRaises(wave.Error):
+                f.close()
+
+    @support.subTests(('arg', 'expected'), (
+        (1.4, 1),
+        (1.5, 2),
+        (1.6, 2),
+        (44100.4, 44100),
+        (44100.5, 44100),
+        (44100.6, 44101),
+    ))
+    def test_setframerate_rounds(self, arg, expected):
+        """Test that setframerate is rounded"""
+        with wave.open(io.BytesIO(), 'wb') as f:
+            f.setnchannels(1)
+            f.setsampwidth(2)
+            f.setframerate(arg)
+            self.assertEqual(f.getframerate(), expected)
+
 
 class WaveOpen(unittest.TestCase):
     def test_open_pathlike(self):
