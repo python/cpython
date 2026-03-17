@@ -170,6 +170,7 @@ class GeckoCollector(Collector):
         self.last_sample_time = times[-1]
 
         # Process threads
+        main_tid = None
         for interpreter_info in stack_frames:
             for thread_info in interpreter_info.threads:
                 frames = filter_internal_frames(thread_info.frame_info)
@@ -177,7 +178,11 @@ class GeckoCollector(Collector):
 
                 # Initialize thread if needed
                 if tid not in self.threads:
-                    self.threads[tid] = self._create_thread(tid)
+                    # Since 'threads' is in order from oldest to newest,
+                    # we know the first thread must be the main thread.
+                    if len(self.threads) == 0:
+                        main_tid = tid
+                    self.threads[tid] = self._create_thread(tid, main_tid)
 
                 thread_data = self.threads[tid]
 
@@ -288,14 +293,10 @@ class GeckoCollector(Collector):
 
         self.sample_count += len(times)
 
-    def _create_thread(self, tid):
+    def _create_thread(self, tid, main_tid):
         """Create a new thread structure with processed profile format."""
 
-        # Determine if this is the main thread
-        try:
-            is_main = tid == threading.main_thread().ident
-        except (RuntimeError, AttributeError):
-            is_main = False
+        is_main = tid == main_tid
 
         thread = {
             "name": f"Thread-{tid}",
