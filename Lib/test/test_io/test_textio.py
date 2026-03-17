@@ -1565,8 +1565,7 @@ class CTextIOWrapperTest(TextIOWrapperTest, CTestCase):
         wrapper.close()  # should not crash
 
     def test_reentrant_detach_during_flush(self):
-        # gh-143008: Reentrant detach() during flush should raise RuntimeError
-        # instead of crashing.
+        # gh-143008: Reentrant detach() during flush should not crash.
         wrapper = None
         wrapper_ref = lambda: None
 
