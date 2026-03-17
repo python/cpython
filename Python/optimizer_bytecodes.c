@@ -1095,14 +1095,18 @@ dummy_func(void) {
         if (sym_matches_type(iter, &PyList_Type)) {
             ADD_OP(_NOP, 0, 0);
         }
-        sym_set_type(iter, &PyList_Type);
+        else {
+            sym_set_type(iter, &PyList_Type);
+        }
     }
 
     op(_ITER_CHECK_RANGE, (iter, null_or_index -- iter, null_or_index)) {
         if (sym_matches_type(iter, &PyRange_Type)) {
             ADD_OP(_NOP, 0, 0);
         }
-        sym_set_type(iter, &PyRange_Type);
+        else {
+            sym_set_type(iter, &PyRange_Type);
+        }
     }
 
     op(_ITER_NEXT_RANGE, (iter, null_or_index -- iter, null_or_index, next)) {

@@ -2757,7 +2757,9 @@
             if (sym_matches_type(iter, &PyList_Type)) {
                 ADD_OP(_NOP, 0, 0);
             }
-            sym_set_type(iter, &PyList_Type);
+            else {
+                sym_set_type(iter, &PyList_Type);
+            }
             break;
         }
 
@@ -2811,7 +2813,9 @@
             if (sym_matches_type(iter, &PyRange_Type)) {
                 ADD_OP(_NOP, 0, 0);
             }
-            sym_set_type(iter, &PyRange_Type);
+            else {
+                sym_set_type(iter, &PyRange_Type);
+            }
             break;
         }
 
