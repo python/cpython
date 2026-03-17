@@ -170,18 +170,16 @@ class GeckoCollector(Collector):
         self.last_sample_time = times[-1]
 
         # Process threads
-        main_tid = None
         for interpreter_info in stack_frames:
+            # Since 'threads' is in order from newest to oldest,
+            # we know the first thread must be the main thread.
+            main_tid = interpreter_info.threads[-1].thread_id
             for thread_info in interpreter_info.threads:
                 frames = filter_internal_frames(thread_info.frame_info)
                 tid = thread_info.thread_id
 
                 # Initialize thread if needed
                 if tid not in self.threads:
-                    # Since 'threads' is in order from oldest to newest,
-                    # we know the first thread must be the main thread.
-                    if len(self.threads) == 0:
-                        main_tid = tid
                     self.threads[tid] = self._create_thread(tid, main_tid)
 
                 thread_data = self.threads[tid]
