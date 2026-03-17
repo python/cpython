@@ -10,9 +10,9 @@
   "license": "ISC",
   "description": "",
   "dependencies": {
-    "@playwright/test": "^1.54.1",
+    "@playwright/test": "^1.58.2",
     "@types/node": "^24.1.0",
     "http-server": "^14.1.1",
-    "playwright": "^1.54.1"
+    "playwright": "^1.58.2"
   }
 }
