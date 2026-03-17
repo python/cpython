@@ -35,7 +35,7 @@ After building, you can run the full test suite with:
 ```
 You can run the browser smoke test with:
 ```shell
-./Tools/wasm/emscripten/browser_test/run_test.sh
+./Platforms/emscripten/browser_test/run_test.sh
 ```
 
 ### The Web Example
