@@ -632,6 +632,12 @@ _PyJit_translate_single_bytecode_to_trace(
         target--;
     }
 
+    if (opcode == ENTER_EXECUTOR) {
+        _PyExecutorObject *executor = old_code->co_executors->executors[oparg & 255];
+        opcode = executor->vm_data.opcode;
+        oparg = (oparg & ~255) | executor->vm_data.oparg;
+    }
+
     if (_PyOpcode_Caches[_PyOpcode_Deopt[opcode]] > 0) {
         uint16_t backoff = (this_instr + 1)->counter.value_and_backoff;
         // adaptive_counter_cooldown is a fresh specialization.
@@ -823,6 +829,7 @@ _PyJit_translate_single_bytecode_to_trace(
 
         case RESUME:
         case RESUME_CHECK:
+        case RESUME_CHECK_JIT:
             /* Use a special tier 2 version of RESUME_CHECK to allow traces to
              *  start with RESUME_CHECK */
             ADD_TO_TRACE(_TIER2_RESUME_CHECK, 0, 0, target);
@@ -1038,12 +1045,9 @@ _PyJit_TryInitializeTracing(
         _Py_RecordFuncPtr record_func = _PyOpcode_RecordFunctions[record_func_index];
         record_func(frame, stack_pointer, oparg, &tracer->prev_state.recorded_value);
     }
-    assert(curr_instr->op.code == JUMP_BACKWARD_JIT || (exit != NULL));
+    assert(curr_instr->op.code == JUMP_BACKWARD_JIT || curr_instr->op.code == RESUME_CHECK_JIT || (exit != NULL));
     tracer->initial_state.jump_backward_instr = curr_instr;
 
-    if (_PyOpcode_Caches[_PyOpcode_Deopt[close_loop_instr->op.code]]) {
-        close_loop_instr[1].counter = trigger_backoff_counter();
-    }
     tracer->is_tracing = true;
     return 1;
 }
@@ -1063,7 +1067,12 @@ _PyJit_FinalizeTracing(PyThreadState *tstate, int err)
             tracer->initial_state.jump_backward_instr[1].counter = restart_backoff_counter(counter);
         }
         else {
-            tracer->initial_state.jump_backward_instr[1].counter = initial_jump_backoff_counter(&tstate->interp->opt_config);
+            if (tracer->initial_state.jump_backward_instr[0].op.code == JUMP_BACKWARD_JIT) {
+                tracer->initial_state.jump_backward_instr[1].counter = initial_jump_backoff_counter(&tstate->interp->opt_config);
+            }
+            else {
+                tracer->initial_state.jump_backward_instr[1].counter = initial_resume_backoff_counter(&tstate->interp->opt_config);
+            }
         }
     }
     else if (tracer->initial_state.executor->vm_data.valid) {
@@ -1090,6 +1099,19 @@ _PyJit_FinalizeTracing(PyThreadState *tstate, int err)
     Py_CLEAR(tracer->prev_state.recorded_value);
     uop_buffer_init(buffer, &tracer->uop_array[0], UOP_MAX_TRACE_LENGTH);
     tracer->is_tracing = false;
+}
+
+bool
+_PyJit_EnterExecutorShouldStopTracing(int og_opcode)
+{
+    // Continue tracing (skip over the executor). If it's a RESUME
+    // trace to form longer, more optimizeable traces.
+    // We want to trace over RESUME traces. Otherwise, functions with lots of RESUME
+    // end up with many fragmented traces which perform badly.
+    // See for example, the richards benchmark in pyperformance.
+    // For consideration: We may want to consider tracing over side traces
+    // inserted into bytecode as well in the future.
+    return og_opcode == RESUME_CHECK_JIT;
 }
 
 void
@@ -1379,7 +1401,10 @@ make_executor_from_uops(_PyThreadStateImpl *tstate, _PyUOpInstruction *buffer, i
     // linking of executor. Otherwise, the GC tries to untrack a
     // still untracked object during dealloc.
     _PyObject_GC_TRACK(executor);
-    _Py_ExecutorInit(executor, dependencies);
+    if (_Py_ExecutorInit(executor, dependencies) < 0) {
+        Py_DECREF(executor);
+        return NULL;
+    }
 #ifdef Py_DEBUG
     char *python_lltrace = Py_GETENV("PYTHON_LLTRACE");
     int lltrace = 0;
@@ -1646,59 +1671,63 @@ bloom_filter_may_contain(_PyBloomFilter *bloom, _PyBloomFilter *hashes)
     return true;
 }
 
-static void
-link_executor(_PyExecutorObject *executor)
+static int
+link_executor(_PyExecutorObject *executor, const _PyBloomFilter *bloom)
 {
     PyInterpreterState *interp = _PyInterpreterState_GET();
-    _PyExecutorLinkListNode *links = &executor->vm_data.links;
-    _PyExecutorObject *head = interp->executor_list_head;
-    if (head == NULL) {
-        interp->executor_list_head = executor;
-        links->previous = NULL;
-        links->next = NULL;
+    if (interp->executor_count == interp->executor_capacity) {
+        size_t new_cap = interp->executor_capacity ? interp->executor_capacity * 2 : 64;
+        _PyBloomFilter *new_blooms = PyMem_Realloc(
+            interp->executor_blooms, new_cap * sizeof(_PyBloomFilter));
+        if (new_blooms == NULL) {
+            return -1;
+        }
+        _PyExecutorObject **new_ptrs = PyMem_Realloc(
+            interp->executor_ptrs, new_cap * sizeof(_PyExecutorObject *));
+        if (new_ptrs == NULL) {
+            /* Revert blooms realloc — the old pointer may have been freed by
+             * a successful realloc, but new_blooms is the valid pointer. */
+            interp->executor_blooms = new_blooms;
+            return -1;
+        }
+        interp->executor_blooms = new_blooms;
+        interp->executor_ptrs = new_ptrs;
+        interp->executor_capacity = new_cap;
     }
-    else {
-        assert(head->vm_data.links.previous == NULL);
-        links->previous = NULL;
-        links->next = head;
-        head->vm_data.links.previous = executor;
-        interp->executor_list_head = executor;
-    }
-    /* executor_list_head must be first in list */
-    assert(interp->executor_list_head->vm_data.links.previous == NULL);
+    size_t idx = interp->executor_count++;
+    interp->executor_blooms[idx] = *bloom;
+    interp->executor_ptrs[idx] = executor;
+    executor->vm_data.bloom_array_idx = (int32_t)idx;
+    return 0;
 }
 
 static void
 unlink_executor(_PyExecutorObject *executor)
 {
-    _PyExecutorLinkListNode *links = &executor->vm_data.links;
-    _PyExecutorObject *next = links->next;
-    _PyExecutorObject *prev = links->previous;
-    if (next != NULL) {
-        next->vm_data.links.previous = prev;
+    PyInterpreterState *interp = PyInterpreterState_Get();
+    int32_t idx = executor->vm_data.bloom_array_idx;
+    assert(idx >= 0 && (size_t)idx < interp->executor_count);
+    size_t last = --interp->executor_count;
+    if ((size_t)idx != last) {
+        /* Swap-remove: move the last element into the vacated slot */
+        interp->executor_blooms[idx] = interp->executor_blooms[last];
+        interp->executor_ptrs[idx] = interp->executor_ptrs[last];
+        interp->executor_ptrs[idx]->vm_data.bloom_array_idx = idx;
     }
-    if (prev != NULL) {
-        prev->vm_data.links.next = next;
-    }
-    else {
-        // prev == NULL implies that executor is the list head
-        PyInterpreterState *interp = PyInterpreterState_Get();
-        assert(interp->executor_list_head == executor);
-        interp->executor_list_head = next;
-    }
+    executor->vm_data.bloom_array_idx = -1;
 }
 
 /* This must be called by optimizers before using the executor */
-void
+int
 _Py_ExecutorInit(_PyExecutorObject *executor, const _PyBloomFilter *dependency_set)
 {
     executor->vm_data.valid = true;
     executor->vm_data.pending_deletion = 0;
     executor->vm_data.code = NULL;
-    for (int i = 0; i < _Py_BLOOM_FILTER_WORDS; i++) {
-        executor->vm_data.bloom.bits[i] = dependency_set->bits[i];
+    if (link_executor(executor, dependency_set) < 0) {
+        return -1;
     }
-    link_executor(executor);
+    return 0;
 }
 
 static _PyExecutorObject *
@@ -1773,7 +1802,7 @@ _Py_ExecutorDetach(_PyExecutorObject *executor)
     assert(instruction->op.code == ENTER_EXECUTOR);
     int index = instruction->op.arg;
     assert(code->co_executors->executors[index] == executor);
-    instruction->op.code = executor->vm_data.opcode;
+    instruction->op.code = _PyOpcode_Deopt[executor->vm_data.opcode];
     instruction->op.arg = executor->vm_data.oparg;
     executor->vm_data.code = NULL;
     code->co_executors->executors[index] = NULL;
@@ -1809,11 +1838,15 @@ void
 _Py_Executor_DependsOn(_PyExecutorObject *executor, void *obj)
 {
     assert(executor->vm_data.valid);
-    _Py_BloomFilter_Add(&executor->vm_data.bloom, obj);
+    PyInterpreterState *interp = _PyInterpreterState_GET();
+    int32_t idx = executor->vm_data.bloom_array_idx;
+    assert(idx >= 0 && (size_t)idx < interp->executor_count);
+    _Py_BloomFilter_Add(&interp->executor_blooms[idx], obj);
 }
 
 /* Invalidate all executors that depend on `obj`
- * May cause other executors to be invalidated as well
+ * May cause other executors to be invalidated as well.
+ * Uses contiguous bloom filter array for cache-friendly scanning.
  */
 void
 _Py_Executors_InvalidateDependency(PyInterpreterState *interp, void *obj, int is_invalidation)
@@ -1821,23 +1854,20 @@ _Py_Executors_InvalidateDependency(PyInterpreterState *interp, void *obj, int is
     _PyBloomFilter obj_filter;
     _Py_BloomFilter_Init(&obj_filter);
     _Py_BloomFilter_Add(&obj_filter, obj);
-    /* Walk the list of executors */
-    /* TO DO -- Use a tree to avoid traversing as many objects */
+    /* Scan contiguous bloom filter array */
     PyObject *invalidate = PyList_New(0);
     if (invalidate == NULL) {
         goto error;
     }
     /* Clearing an executor can clear others, so we need to make a list of
      * executors to invalidate first */
-    for (_PyExecutorObject *exec = interp->executor_list_head; exec != NULL;) {
-        assert(exec->vm_data.valid);
-        _PyExecutorObject *next = exec->vm_data.links.next;
-        if (bloom_filter_may_contain(&exec->vm_data.bloom, &obj_filter) &&
-            PyList_Append(invalidate, (PyObject *)exec))
+    for (size_t i = 0; i < interp->executor_count; i++) {
+        assert(interp->executor_ptrs[i]->vm_data.valid);
+        if (bloom_filter_may_contain(&interp->executor_blooms[i], &obj_filter) &&
+            PyList_Append(invalidate, (PyObject *)interp->executor_ptrs[i]))
         {
             goto error;
         }
-        exec = next;
     }
     for (Py_ssize_t i = 0; i < PyList_GET_SIZE(invalidate); i++) {
         PyObject *exec = PyList_GET_ITEM(invalidate, i);
@@ -1859,8 +1889,9 @@ error:
 void
 _Py_Executors_InvalidateAll(PyInterpreterState *interp, int is_invalidation)
 {
-    while (interp->executor_list_head) {
-        _PyExecutorObject *executor = interp->executor_list_head;
+    while (interp->executor_count > 0) {
+        /* Invalidate from the end to avoid repeated swap-remove shifts */
+        _PyExecutorObject *executor = interp->executor_ptrs[interp->executor_count - 1];
         assert(executor->vm_data.valid);
         if (executor->vm_data.code) {
             // Clear the entire code object so its co_executors array be freed:
@@ -1878,8 +1909,7 @@ _Py_Executors_InvalidateAll(PyInterpreterState *interp, int is_invalidation)
 void
 _Py_Executors_InvalidateCold(PyInterpreterState *interp)
 {
-    /* Walk the list of executors */
-    /* TO DO -- Use a tree to avoid traversing as many objects */
+    /* Scan contiguous executor array */
     PyObject *invalidate = PyList_New(0);
     if (invalidate == NULL) {
         goto error;
@@ -1887,9 +1917,9 @@ _Py_Executors_InvalidateCold(PyInterpreterState *interp)
 
     /* Clearing an executor can deallocate others, so we need to make a list of
      * executors to invalidate first */
-    for (_PyExecutorObject *exec = interp->executor_list_head; exec != NULL;) {
+    for (size_t i = 0; i < interp->executor_count; i++) {
+        _PyExecutorObject *exec = interp->executor_ptrs[i];
         assert(exec->vm_data.valid);
-        _PyExecutorObject *next = exec->vm_data.links.next;
 
         if (exec->vm_data.cold && PyList_Append(invalidate, (PyObject *)exec) < 0) {
             goto error;
@@ -1897,8 +1927,6 @@ _Py_Executors_InvalidateCold(PyInterpreterState *interp)
         else {
             exec->vm_data.cold = true;
         }
-
-        exec = next;
     }
     for (Py_ssize_t i = 0; i < PyList_GET_SIZE(invalidate); i++) {
         PyObject *exec = PyList_GET_ITEM(invalidate, i);
@@ -2142,9 +2170,8 @@ _PyDumpExecutors(FILE *out)
     fprintf(out, "    rankdir = \"LR\"\n\n");
     fprintf(out, "    node [colorscheme=greys9]\n");
     PyInterpreterState *interp = PyInterpreterState_Get();
-    for (_PyExecutorObject *exec = interp->executor_list_head; exec != NULL;) {
-        executor_to_gv(exec, out);
-        exec = exec->vm_data.links.next;
+    for (size_t i = 0; i < interp->executor_count; i++) {
+        executor_to_gv(interp->executor_ptrs[i], out);
     }
     fprintf(out, "}\n\n");
     return 0;
