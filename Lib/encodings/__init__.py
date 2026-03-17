@@ -33,6 +33,7 @@ import sys
 from . import aliases
 
 _cache = {}
+_MAXCACHE = 500
 _unknown = '--unknown--'
 _import_tail = ['*']
 _aliases = aliases.aliases
@@ -115,6 +116,8 @@ def search_function(encoding):
 
     if mod is None:
         # Cache misses
+        if len(_cache) >= _MAXCACHE:
+            _cache.clear()
         _cache[encoding] = None
         return None
 
@@ -136,6 +139,8 @@ def search_function(encoding):
         entry = codecs.CodecInfo(*entry)
 
     # Cache the codec registry entry
+    if len(_cache) >= _MAXCACHE:
+        _cache.clear()
     _cache[encoding] = entry
 
     # Register its aliases (without overwriting previously registered
