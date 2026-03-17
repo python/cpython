@@ -128,6 +128,13 @@ _PyStackRef_FromPyObjectSteal(PyObject *obj, const char *filename, int linenumbe
 #define PyStackRef_FromPyObjectSteal(obj) _PyStackRef_FromPyObjectSteal(_PyObject_CAST(obj), __FILE__, __LINE__)
 
 static inline _PyStackRef
+_PyStackRef_FromPyObjectBorrow(PyObject *obj, const char *filename, int linenumber)
+{
+    return _Py_stackref_create(obj, filename, linenumber);
+}
+#define PyStackRef_FromPyObjectBorrow(obj) _PyStackRef_FromPyObjectBorrow(_PyObject_CAST(obj), __FILE__, __LINE__)
+
+static inline _PyStackRef
 _PyStackRef_FromPyObjectImmortal(PyObject *obj, const char *filename, int linenumber)
 {
     assert(_Py_IsImmortal(obj));
@@ -319,6 +326,14 @@ _PyStackRef_FromPyObjectSteal(PyObject *obj)
     return (_PyStackRef){ .bits = (uintptr_t)obj };
 }
 #   define PyStackRef_FromPyObjectSteal(obj) _PyStackRef_FromPyObjectSteal(_PyObject_CAST(obj))
+
+static inline _PyStackRef
+PyStackRef_FromPyObjectBorrow(PyObject *obj)
+{
+    assert(obj != NULL);
+    assert(((uintptr_t)obj & Py_TAG_BITS) == 0);
+    return (_PyStackRef){ .bits = (uintptr_t)obj | Py_TAG_DEFERRED };
+}
 
 static inline bool
 PyStackRef_IsHeapSafe(_PyStackRef stackref)
@@ -539,6 +554,13 @@ PyStackRef_FromPyObjectSteal(PyObject *obj)
 }
 
 static inline _PyStackRef
+PyStackRef_FromPyObjectBorrow(PyObject *obj)
+{
+    assert(obj != NULL);
+    return (_PyStackRef){ .bits = (uintptr_t)obj | Py_TAG_REFCNT };
+}
+
+static inline _PyStackRef
 PyStackRef_FromPyObjectStealMortal(PyObject *obj)
 {
     assert(obj != NULL);
@@ -751,6 +773,17 @@ _PyThreadState_PopCStackRef(PyThreadState *tstate, _PyCStackRef *ref)
     tstate_impl->c_stack_refs = ref->next;
 #endif
     PyStackRef_XCLOSE(ref->ref);
+}
+
+static inline _PyStackRef
+_PyThreadState_PopCStackRefSteal(PyThreadState *tstate, _PyCStackRef *ref)
+{
+#ifdef Py_GIL_DISABLED
+    _PyThreadStateImpl *tstate_impl = (_PyThreadStateImpl *)tstate;
+    assert(tstate_impl->c_stack_refs == ref);
+    tstate_impl->c_stack_refs = ref->next;
+#endif
+    return ref->ref;
 }
 
 #ifdef Py_GIL_DISABLED

@@ -8015,32 +8015,17 @@
             {
                 self_or_null = &stack_pointer[0];
                 PyObject *name = GETITEM(FRAME_CO_NAMES, oparg >> 1);
-                PyObject *attr_o;
                 if (oparg & 1) {
-                    attr_o = NULL;
                     _PyFrame_SetStackPointer(frame, stack_pointer);
-                    int is_meth = _PyObject_GetMethod(PyStackRef_AsPyObjectBorrow(owner), name, &attr_o);
+                    attr = _Py_LoadAttr_StackRefSteal(tstate, owner, name, self_or_null);
                     stack_pointer = _PyFrame_GetStackPointer(frame);
-                    if (is_meth) {
-                        assert(attr_o != NULL);
-                        self_or_null[0] = owner;
-                    }
-                    else {
-                        stack_pointer += -1;
-                        assert(WITHIN_STACK_BOUNDS());
-                        _PyFrame_SetStackPointer(frame, stack_pointer);
-                        PyStackRef_CLOSE(owner);
-                        stack_pointer = _PyFrame_GetStackPointer(frame);
-                        if (attr_o == NULL) {
-                            JUMP_TO_LABEL(error);
-                        }
-                        self_or_null[0] = PyStackRef_NULL;
-                        stack_pointer += 1;
+                    if (PyStackRef_IsNull(attr)) {
+                        JUMP_TO_LABEL(pop_1_error);
                     }
                 }
                 else {
                     _PyFrame_SetStackPointer(frame, stack_pointer);
-                    attr_o = PyObject_GetAttr(PyStackRef_AsPyObjectBorrow(owner), name);
+                    PyObject *attr_o = PyObject_GetAttr(PyStackRef_AsPyObjectBorrow(owner), name);
                     stack_pointer = _PyFrame_GetStackPointer(frame);
                     stack_pointer += -1;
                     assert(WITHIN_STACK_BOUNDS());
@@ -8050,9 +8035,9 @@
                     if (attr_o == NULL) {
                         JUMP_TO_LABEL(error);
                     }
+                    attr = PyStackRef_FromPyObjectSteal(attr_o);
                     stack_pointer += 1;
                 }
-                attr = PyStackRef_FromPyObjectSteal(attr_o);
             }
             stack_pointer[-1] = attr;
             stack_pointer += (oparg&1);
