@@ -173,7 +173,9 @@ class GeckoCollector(Collector):
         for interpreter_info in stack_frames:
             # Since 'threads' is in order from newest to oldest,
             # we know the first thread must be the main thread.
-            main_tid = interpreter_info.threads[-1].thread_id
+            main_tid = None
+            if len(interpreter_info.threads) != 0:
+                main_tid = interpreter_info.threads[-1].thread_id
             for thread_info in interpreter_info.threads:
                 frames = filter_internal_frames(thread_info.frame_info)
                 tid = thread_info.thread_id
