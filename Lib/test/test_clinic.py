@@ -4624,6 +4624,7 @@ class FormatHelperTests(unittest.TestCase):
         self.assertEqual(c_bytes_repr(b'\\'), r'"\\"')
         self.assertEqual(c_bytes_repr(b'??/'), r'"?\?/"')
         self.assertEqual(c_bytes_repr(b'???/'), r'"?\?\?/"')
+        self.assertEqual(c_bytes_repr(b'/*****/ /*/ */*'), r'"/\*****\/ /\*\/ *\/\*"')
         self.assertEqual(c_bytes_repr(b'\xa0'), r'"\240"')
         self.assertEqual(c_bytes_repr(b'\xff'), r'"\377"')
 
@@ -4638,6 +4639,7 @@ class FormatHelperTests(unittest.TestCase):
         self.assertEqual(c_str_repr('\\'), r'"\\"')
         self.assertEqual(c_str_repr('??/'), r'"?\?/"')
         self.assertEqual(c_str_repr('???/'), r'"?\?\?/"')
+        self.assertEqual(c_str_repr('/*****/ /*/ */*'), r'"/\*****\/ /\*\/ *\/\*"')
         self.assertEqual(c_str_repr('\xa0'), r'"\u00a0"')
         self.assertEqual(c_str_repr('\xff'), r'"\u00ff"')
         self.assertEqual(c_str_repr('\u20ac'), r'"\u20ac"')

@@ -56,6 +56,10 @@ def _break_trigraphs(s: str) -> str:
     if '??' in s:
         s = s.replace('??', r'?\?')
         s = s.replace(r'\??', r'\?\?')
+    # Also Argument Clinic does not like comment-like sequences
+    # in string literals.
+    s = s.replace(r'/*', r'/\*')
+    s = s.replace(r'*/', r'*\/')
     return s
 
 def c_bytes_repr(data: bytes) -> str:
