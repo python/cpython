@@ -1025,10 +1025,17 @@ _Py_LoadAttr_StackRefSteal(
     PyThreadState *tstate, _PyStackRef owner,
     PyObject *name, _PyStackRef *self_or_null)
 {
-    _PyCStackRef method;
+    // Use _PyCStackRefs to ensure that both method and self are visible to
+    // the GC. Even though self_or_null is on the evaluation stack, it may be
+    // after the stackpointer and therefore not visible to the GC.
+    _PyCStackRef method, self;
     _PyThreadState_PushCStackRef(tstate, &method);
-    *self_or_null = owner;
-    _PyObject_GetMethodStackRef(tstate, self_or_null, name, &method.ref);
+    _PyThreadState_PushCStackRef(tstate, &self);
+    self.ref = owner;  // steal reference to owner
+    // NOTE: method.ref is initialized to PyStackRef_NULL and remains null on
+    // error, so we don't need to explicitly use the return code from the call.
+    _PyObject_GetMethodStackRef(tstate, &self.ref, name, &method.ref);
+    *self_or_null = _PyThreadState_PopCStackRefSteal(tstate, &self);
     return _PyThreadState_PopCStackRefSteal(tstate, &method);
 }
 
