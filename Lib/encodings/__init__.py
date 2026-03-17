@@ -111,8 +111,9 @@ def search_function(encoding):
         mod = None
 
     if mod is None:
-        if len(_cache) < _MAXCACHE:
-            _cache[encoding] = None
+        if len(_cache) >= _MAXCACHE:
+            _cache.clear()
+        _cache[encoding] = None
         return None
 
     # Now ask the module for the registry entry
@@ -133,6 +134,8 @@ def search_function(encoding):
         entry = codecs.CodecInfo(*entry)
 
     # Cache the codec registry entry
+    if len(_cache) >= _MAXCACHE:
+        _cache.clear()
     _cache[encoding] = entry
 
     # Register its aliases (without overwriting previously registered
