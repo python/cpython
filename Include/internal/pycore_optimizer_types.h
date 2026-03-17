@@ -140,7 +140,6 @@ typedef struct _Py_UOpsAbstractFrame {
     int stack_len;
     int locals_len;
     bool caller; // We have made a call from this frame during the trace
-    bool known_callee;
     PyFunctionObject *func;
     PyCodeObject *code;
 

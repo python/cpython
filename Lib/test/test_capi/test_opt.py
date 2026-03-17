@@ -630,9 +630,6 @@ class TestUopsOptimization(unittest.TestCase):
         self.assertIn("_PUSH_FRAME", uops)
         self.assertIn("_BINARY_OP_ADD_INT", uops)
         self.assertNotIn("_CHECK_PEP_523", uops)
-        # The callee is known, so these should be missing.
-        self.assertNotIn("_GUARD_IP__PUSH_FRAME", uops)
-        self.assertNotIn("_GUARD_CODE_VERSION__PUSH_FRAME", uops)
 
     def test_int_type_propagate_through_range(self):
         def testfunc(n):

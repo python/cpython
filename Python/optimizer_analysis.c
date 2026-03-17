@@ -390,7 +390,7 @@ optimize_guard_code_version(JitOptContext *ctx, _PyBloomFilter *dependencies,
     if (co->co_version == version) {
         _Py_BloomFilter_Add(dependencies, co);
         // If frame func is known, that means we can get rid of the code guard.
-        if (ctx->frame->caller || ctx->frame->known_callee) {
+        if (ctx->frame->func != NULL && ctx->frame->func->func_version != 0) {
             REPLACE_OP(this_instr, _NOP, 0, 0);
         }
     }
