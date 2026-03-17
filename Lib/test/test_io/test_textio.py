@@ -1568,19 +1568,19 @@ class CTextIOWrapperTest(TextIOWrapperTest, CTestCase):
         # gh-143008: Reentrant detach() during flush should raise RuntimeError
         # instead of crashing.
         wrapper = None
-        wrapper_ref = None
+        wrapper_ref = lambda: None
 
         class EvilBuffer(self.BufferedRandom):
             detach_on_write = False
 
             def flush(self):
-                wrapper = wrapper_ref() if wrapper_ref is not None else None
+                wrapper = wrapper_ref()
                 if wrapper is not None and not self.detach_on_write:
                     wrapper.detach()
                 return super().flush()
 
             def write(self, b):
-                wrapper = wrapper_ref() if wrapper_ref is not None else None
+                wrapper = wrapper_ref()
                 if wrapper is not None and self.detach_on_write:
                     wrapper.detach()
                 return len(b)
@@ -1598,10 +1598,9 @@ class CTextIOWrapperTest(TextIOWrapperTest, CTestCase):
             with self.subTest(name), set_recursion_limit(100):
                 wrapper = self.TextIOWrapper(EvilBuffer(self.MockRawIO()), encoding='utf-8')
                 wrapper_ref = weakref.ref(wrapper)
-                # These used to crash; now either return detached or keep
-                # running until out of stack.
-                self.assertRaises((RecursionError, RuntimeError), method)
-                wrapper_ref = None
+                # Used to crash; now will run out of stack.
+                self.assertRaises(RecursionError, method)
+                wrapper_ref = lambda: None
                 del wrapper
 
         with self.subTest('read via writeflush'):
@@ -1610,7 +1609,7 @@ class CTextIOWrapperTest(TextIOWrapperTest, CTestCase):
             wrapper_ref = weakref.ref(wrapper)
             wrapper.write('x')
             self.assertRaisesRegex(ValueError, "detached", wrapper.read)
-            wrapper_ref = None
+            wrapper_ref = lambda: None
             del wrapper
 
 

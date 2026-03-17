@@ -1052,7 +1052,7 @@ _textiowrapper_fix_encoder_state(textio *self)
     self->encoding_start_of_stream = 1;
 
     PyObject *cookieObj = _textiowrapper_buffer_callmethod_noargs(
-            self, &_Py_ID(tell));
+        self, &_Py_ID(tell));
     if (cookieObj == NULL) {
         return -1;
     }
@@ -1970,8 +1970,8 @@ textiowrapper_read_chunk(textio *self, Py_ssize_t size_hint)
         goto fail;
 
     input_chunk = _textiowrapper_buffer_callmethod_onearg(self,
-            (self->has_read1 ? &_Py_ID(read1): &_Py_ID(read)),
-            chunk_size);
+        (self->has_read1 ? &_Py_ID(read1): &_Py_ID(read)),
+        chunk_size);
     Py_DECREF(chunk_size);
     if (input_chunk == NULL)
         goto fail;
@@ -2056,7 +2056,7 @@ _io_TextIOWrapper_read_impl(textio *self, Py_ssize_t n)
     if (n < 0) {
         /* Read everything */
         PyObject *bytes = _textiowrapper_buffer_callmethod_noargs(self,
-                &_Py_ID(read));
+            &_Py_ID(read));
         PyObject *decoded;
         if (bytes == NULL)
             goto fail;
@@ -2727,7 +2727,7 @@ _io_TextIOWrapper_seek_impl(textio *self, PyObject *cookieObj, int whence)
             goto fail;
         }
         PyObject *input_chunk = _textiowrapper_buffer_callmethod_onearg(self,
-                &_Py_ID(read), bytes_to_feed);
+            &_Py_ID(read), bytes_to_feed);
         Py_DECREF(bytes_to_feed);
 
         PyObject *decoded;
@@ -3219,7 +3219,7 @@ _io_TextIOWrapper_close_impl(textio *self)
         PyObject *exc = NULL;
         if (self->finalizing) {
             res = _textiowrapper_buffer_callmethod_onearg(self,
-                    &_Py_ID(_dealloc_warn), (PyObject *)self);
+                &_Py_ID(_dealloc_warn), (PyObject *)self);
             if (res) {
                 Py_DECREF(res);
             }
