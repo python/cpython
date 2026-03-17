@@ -1786,6 +1786,9 @@ dummy_func(void) {
     op(_GUARD_IP__PUSH_FRAME, (ip/4 --)) {
         (void)ip;
         stack_pointer = sym_set_stack_depth((int)this_instr->operand1, stack_pointer);
+        // TO DO
+        // Normal function calls to known functions
+        // do not need an IP guard.
     }
 
     op(_GUARD_IP_YIELD_VALUE, (ip/4 --)) {
