@@ -3205,6 +3205,19 @@ Construct an immutable array of bytes from:\n\
 
 static PyObject *bytes_iter(PyObject *seq);
 
+
+static PyObject *
+bytes_iteritem(PyObject *obj, Py_ssize_t *index)
+{
+    Py_ssize_t i = *index;
+    PyBytesObject *a = _PyBytes_CAST(obj);
+    if (i >= Py_SIZE(a)) {
+        return NULL;
+    }
+    *index = i+1;
+    return _PyLong_FromUnsignedChar((unsigned char)a->ob_sval[i]);
+}
+
 PyTypeObject PyBytes_Type = {
     PyVarObject_HEAD_INIT(&PyType_Type, 0)
     "bytes",
@@ -3248,6 +3261,7 @@ PyTypeObject PyBytes_Type = {
     bytes_new,                                  /* tp_new */
     PyObject_Free,                              /* tp_free */
     .tp_version_tag = _Py_TYPE_VERSION_BYTES,
+    .tp_iteritem = bytes_iteritem,
 };
 
 void

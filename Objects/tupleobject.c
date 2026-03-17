@@ -873,6 +873,19 @@ static PySequenceMethods tuple_as_sequence = {
     tuple_contains,                             /* sq_contains */
 };
 
+static PyObject *
+tuple_iteritem(PyObject *obj, Py_ssize_t *index)
+{
+    Py_ssize_t i = *index;
+    if (i >= PyTuple_GET_SIZE(obj)) {
+        return NULL;
+    }
+    PyObject *result = PyTuple_GET_ITEM(obj, i);
+    Py_INCREF(result);
+    *index = i+1;
+    return result;
+}
+
 static PyObject*
 tuple_subscript(PyObject *op, PyObject* item)
 {
@@ -1000,6 +1013,7 @@ PyTypeObject PyTuple_Type = {
     PyObject_GC_Del,                            /* tp_free */
     .tp_vectorcall = tuple_vectorcall,
     .tp_version_tag = _Py_TYPE_VERSION_TUPLE,
+    .tp_iteritem = tuple_iteritem,
 };
 
 /* The following function breaks the notion that tuples are immutable:

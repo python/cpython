@@ -1170,7 +1170,7 @@ _PyStackRef
 _PyEval_GetIter(_PyStackRef iterable, _PyStackRef *index_or_null, int yield_from)
 {
     PyTypeObject *tp = PyStackRef_TYPE(iterable);
-    if (tp == &PyTuple_Type || tp == &PyList_Type) {
+    if (tp->tp_iteritem != NULL) {
         /* Leave iterable on stack and pushed tagged 0 */
         *index_or_null = PyStackRef_TagInt(0);
         return iterable;
@@ -3752,33 +3752,19 @@ _PyEval_LoadName(PyThreadState *tstate, _PyInterpreterFrame *frame, PyObject *na
     return value;
 }
 
-static _PyStackRef
-foriter_next(PyObject *seq, _PyStackRef index)
-{
-    assert(PyStackRef_IsTaggedInt(index));
-    assert(PyTuple_CheckExact(seq) || PyList_CheckExact(seq));
-    intptr_t i = PyStackRef_UntagInt(index);
-    if (PyTuple_CheckExact(seq)) {
-        size_t size = PyTuple_GET_SIZE(seq);
-        if ((size_t)i >= size) {
-            return PyStackRef_NULL;
-        }
-        return PyStackRef_FromPyObjectNew(PyTuple_GET_ITEM(seq, i));
-    }
-    PyObject *item = _PyList_GetItemRef((PyListObject *)seq, i);
-    if (item == NULL) {
-        return PyStackRef_NULL;
-    }
-    return PyStackRef_FromPyObjectSteal(item);
-}
-
 _PyStackRef _PyForIter_VirtualIteratorNext(PyThreadState* tstate, _PyInterpreterFrame* frame, _PyStackRef iter, _PyStackRef* index_ptr)
 {
     PyObject *iter_o = PyStackRef_AsPyObjectBorrow(iter);
     _PyStackRef index = *index_ptr;
     if (PyStackRef_IsTaggedInt(index)) {
-        *index_ptr = PyStackRef_IncrementTaggedIntNoOverflow(index);
-        return foriter_next(iter_o, index);
+        intptr_t i = PyStackRef_UntagInt(index);
+        assert(i >= 0);
+        PyObject *next = Py_TYPE(iter_o)->tp_iteritem(iter_o, &i);
+        if (next == NULL) {
+            return i < 0 ? PyStackRef_ERROR : PyStackRef_NULL;
+        }
+        *index_ptr = PyStackRef_TagInt(i);
+        return PyStackRef_FromPyObjectSteal(next);
     }
     PyObject *next_o = (*Py_TYPE(iter_o)->tp_iternext)(iter_o);
     if (next_o == NULL) {

@@ -1088,13 +1088,86 @@ dummy_func(void) {
     }
 
     op(_GET_ITER, (iterable -- iter, index_or_null)) {
-        if (sym_matches_type(iterable, &PyTuple_Type) || sym_matches_type(iterable, &PyList_Type)) {
+        bool is_coro = false;
+        bool is_trad = false; // has `tp_iter` slot
+        bool definite = true;
+        PyTypeObject *tp = sym_get_type(iterable);
+        if (tp == NULL) {
+            definite = false;
+            tp = sym_get_probable_type(iterable);
+        }
+        if (oparg == GET_ITER_YIELD_FROM_NO_CHECK) {
+            if (tp == &PyCoro_Type) {
+                if (!definite) {
+                    ADD_OP(_GUARD_TYPE, 0, (uintptr_t)tp);
+                    sym_set_type(iterable, tp);
+                }
+                ADD_OP(_PUSH_NULL, 0, 0);
+                is_coro = true;
+            }
+        }
+        if (tp != NULL &&
+            tp->tp_iteritem == NULL &&
+            tp->tp_iter != NULL &&
+            tp->tp_iter != PyObject_SelfIter &&
+            tp->tp_flags & Py_TPFLAGS_IMMUTABLETYPE
+        ) {
+            assert(tp != &PyCoro_Type);
+            is_trad = true;
+            if (!definite) {
+                ADD_OP(_GUARD_TYPE, 0, (uintptr_t)tp);
+                sym_set_type(iterable, tp);
+            }
+            ADD_OP(_GET_ITER_TRAD, 0, 0);
+        }
+        if (is_coro) {
+            assert(!is_trad);
             iter = iterable;
-            index_or_null = sym_new_not_null(ctx);
+            index_or_null = sym_new_null(ctx);
+        }
+        else if (is_trad) {
+            iter = sym_new_not_null(ctx);
+            index_or_null = sym_new_null(ctx);
         }
         else {
             iter = sym_new_not_null(ctx);
             index_or_null = sym_new_unknown(ctx);
+        }
+    }
+
+    op(_GUARD_ITERATOR, (iterable -- iterable)) {
+        bool definite = true;
+        PyTypeObject *tp = sym_get_type(iterable);
+        if (tp == NULL) {
+            definite = false;
+            tp = sym_get_probable_type(iterable);
+        }
+        if (tp != NULL && tp->tp_iter == PyObject_SelfIter) {
+            if (definite) {
+                ADD_OP(_NOP, 0, 0);
+            }
+            else {
+                ADD_OP(_GUARD_TYPE, 0, (uintptr_t)tp);
+                sym_set_type(iterable, tp);
+            }
+        }
+    }
+
+    op(_GUARD_ITER_VIRTUAL, (iterable -- iterable)) {
+        bool definite = true;
+        PyTypeObject *tp = sym_get_type(iterable);
+        if (tp == NULL) {
+            definite = false;
+            tp = sym_get_probable_type(iterable);
+        }
+        if (tp != NULL && tp->tp_iteritem != NULL) {
+            if (definite) {
+                ADD_OP(_NOP, 0, 0);
+            }
+            else {
+                ADD_OP(_GUARD_TYPE, 0, (uintptr_t)tp);
+                sym_set_type(iterable, tp);
+            }
         }
     }
 
@@ -2043,18 +2116,21 @@ dummy_func(void) {
     }
 
     op(_GUARD_CODE_VERSION_RETURN_VALUE, (version/2 -- )) {
+        (void)version;
         if (ctx->frame->caller) {
             REPLACE_OP(this_instr, _NOP, 0, 0);
         }
     }
 
     op(_GUARD_CODE_VERSION_YIELD_VALUE, (version/2 -- )) {
+        (void)version;
         if (ctx->frame->caller) {
             REPLACE_OP(this_instr, _NOP, 0, 0);
         }
     }
 
     op(_GUARD_CODE_VERSION_RETURN_GENERATOR, (version/2 -- )) {
+        (void)version;
         if (ctx->frame->caller) {
             REPLACE_OP(this_instr, _NOP, 0, 0);
         }

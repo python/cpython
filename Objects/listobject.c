@@ -3913,6 +3913,32 @@ list_ass_subscript(PyObject *self, PyObject *item, PyObject *value)
     return res;
 }
 
+static PyObject *
+list_iteritem(PyObject *obj, Py_ssize_t *index)
+{
+    Py_ssize_t i = *index;
+    if (i >= PyList_GET_SIZE(obj)) {
+        return NULL;
+    }
+#ifdef Py_GIL_DISABLED
+    assert(_Py_IsOwnedByCurrentThread(obj) ||
+           _PyObject_GC_IS_SHARED(obj));
+    PyObject *result;
+    int race = _PyList_GetItemRefNoLock((PyListObject *)obj, i, &result);
+    if (race < 0) {
+        // Slow path...
+        result = list_get_item_ref((PyListObject *)op, i);
+    }
+    *index = i+1;
+    return result;
+#else
+    PyObject *result = PyList_GET_ITEM(obj, i);
+    Py_INCREF(result);
+    *index = i+1;
+    return result;
+#endif
+}
+
 static PyMappingMethods list_as_mapping = {
     list_length,
     list_subscript,
@@ -3963,6 +3989,7 @@ PyTypeObject PyList_Type = {
     PyObject_GC_Del,                            /* tp_free */
     .tp_vectorcall = list_vectorcall,
     .tp_version_tag = _Py_TYPE_VERSION_LIST,
+    .tp_iteritem = list_iteritem,
 };
 
 /*********************** List Iterator **************************/
