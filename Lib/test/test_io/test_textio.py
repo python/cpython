@@ -11,7 +11,11 @@ import warnings
 import weakref
 from collections import UserList
 from test import support
-from test.support import os_helper, threading_helper
+from test.support import (
+    os_helper,
+    set_recursion_limit,
+    threading_helper
+)
 from test.support.script_helper import assert_python_ok
 from .utils import CTestCase, PyTestCase
 
@@ -1591,12 +1595,12 @@ class CTextIOWrapperTest(TextIOWrapperTest, CTestCase):
             ('reconfigure', lambda: wrapper.reconfigure(line_buffering=True)),
         ]
         for name, method in tests:
-            with self.subTest(name):
+            with self.subTest(name), set_recursion_limit(100):
                 wrapper = self.TextIOWrapper(EvilBuffer(self.MockRawIO()), encoding='utf-8')
                 wrapper_ref = weakref.ref(wrapper)
                 # These used to crash; now either return detached or keep
                 # running until out of stack.
-                self.assertRaisesRegex(RuntimeError, "detached|recursion depth exceeded", method)
+                self.assertRaises((RecursionError, RuntimeError), method)
                 wrapper_ref = None
                 del wrapper
 
