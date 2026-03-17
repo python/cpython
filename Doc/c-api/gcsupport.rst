@@ -312,7 +312,7 @@ The :c:member:`~PyTypeObject.tp_traverse` handler must have the following type:
    effects may start having them in future versions, without warning.
 
    For a list of safe functions, see a
-   :ref:`separate section <durniggc-functions>` below.
+   :ref:`separate section <duringgc-functions>` below.
 
    .. note::
 
@@ -359,7 +359,7 @@ implementation must name its arguments exactly *visit* and *arg*:
             }                                         \
          }
 
-.. _durniggc-functions:
+.. _duringgc-functions:
 
 Traversal-safe functions
 ^^^^^^^^^^^^^^^^^^^^^^^^
