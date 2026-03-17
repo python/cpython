@@ -88,6 +88,14 @@ dummy_func(void) {
 
 // BEGIN BYTECODES //
 
+    op(_MAKE_HEAP_SAFE, (value -- value)) {
+        // eliminate _MAKE_HEAP_SAFE when we *know* the value is immortal
+        if (sym_is_immortal(PyJitRef_Unwrap(value))) {
+            ADD_OP(_NOP, 0, 0);
+        }
+        value = PyJitRef_StripReferenceInfo(value);
+    }
+
     op(_LOAD_FAST_CHECK, (-- value)) {
         value = GETLOCAL(oparg);
         // We guarantee this will error - just bail and don't optimize it.
@@ -944,8 +952,7 @@ dummy_func(void) {
     }
 
     op(_RETURN_VALUE, (retval -- res)) {
-        // Mimics PyStackRef_MakeHeapSafe in the interpreter.
-        JitOptRef temp = PyJitRef_StripReferenceInfo(retval);
+        JitOptRef temp = retval;
         DEAD(retval);
         SAVE_STACK();
         ctx->frame->stack_pointer = stack_pointer;
@@ -983,8 +990,7 @@ dummy_func(void) {
     }
 
     op(_YIELD_VALUE, (retval -- value)) {
-        // Mimics PyStackRef_MakeHeapSafe in the interpreter.
-        JitOptRef temp = PyJitRef_StripReferenceInfo(retval);
+        JitOptRef temp = retval;
         DEAD(retval);
         SAVE_STACK();
         ctx->frame->stack_pointer = stack_pointer;
@@ -1085,6 +1091,24 @@ dummy_func(void) {
         sym_set_type(iter, &PyTuple_Type);
     }
 
+    op(_ITER_CHECK_LIST, (iter, null_or_index -- iter, null_or_index)) {
+        if (sym_matches_type(iter, &PyList_Type)) {
+            ADD_OP(_NOP, 0, 0);
+        }
+        else {
+            sym_set_type(iter, &PyList_Type);
+        }
+    }
+
+    op(_ITER_CHECK_RANGE, (iter, null_or_index -- iter, null_or_index)) {
+        if (sym_matches_type(iter, &PyRange_Type)) {
+            ADD_OP(_NOP, 0, 0);
+        }
+        else {
+            sym_set_type(iter, &PyRange_Type);
+        }
+    }
+
     op(_ITER_NEXT_RANGE, (iter, null_or_index -- iter, null_or_index, next)) {
        next = sym_new_type(ctx, &PyLong_Type);
     }
@@ -1169,6 +1193,11 @@ dummy_func(void) {
             s = sym_new_unknown(ctx);
             a = sym_new_unknown(ctx);
         }
+    }
+
+    op(_CALL_INTRINSIC_1, (value -- res, v)) {
+        res = sym_new_not_null(ctx);
+        v = value;
     }
 
     op(_GUARD_IS_TRUE_POP, (flag -- )) {
@@ -1704,6 +1733,13 @@ dummy_func(void) {
         ss = sub_st;
     }
 
+    op(_MATCH_CLASS, (subject, type, names -- attrs, s, tp, n)) {
+        attrs = sym_new_not_null(ctx);
+        s = subject;
+        tp = type;
+        n = names;
+    }
+
     op(_RECORD_TOS, (tos -- tos)) {
         sym_set_recorded_value(tos, (PyObject *)this_instr->operand0);
     }
@@ -1743,7 +1779,9 @@ dummy_func(void) {
         PyCodeObject *co = get_current_code_object(ctx);
         if (co->co_version == version) {
             _Py_BloomFilter_Add(dependencies, co);
-            REPLACE_OP(this_instr, _NOP, 0, 0);
+            // TODO gh-144651:
+            // If we've previously guarded on this code version in a trace, we
+            // can avoid guarding it again.
         }
         else {
             ctx->done = true;

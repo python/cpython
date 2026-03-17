@@ -178,6 +178,51 @@
               </div>
             </section>
 
+            <!-- Hotspots Section -->
+            <section class="sidebar-section collapsible" id="hotspots-section">
+              <button class="section-header" onclick="toggleSection('hotspots-section')">
+                <h3 class="section-title">Hotspots</h3>
+                <svg class="section-chevron" width="12" height="12" viewBox="0 0 12 12" fill="none">
+                  <path d="M3 4.5L6 7.5L9 4.5" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
+                </svg>
+              </button>
+              <div class="section-content">
+              <div class="hotspot" id="hotspot-1">
+                <div class="hotspot-rank hotspot-rank--1">1</div>
+                <div class="hotspot-info">
+                  <div class="hotspot-func" id="hotspot-func-1">--</div>
+                  <div class="hotspot-file" id="hotspot-file-1">--</div>
+                  <div class="hotspot-stats">
+                    <span class="hotspot-percent" id="hotspot-percent-1">--</span>
+                    <span id="hotspot-samples-1"></span>
+                  </div>
+                </div>
+              </div>
+              <div class="hotspot" id="hotspot-2">
+                <div class="hotspot-rank hotspot-rank--2">2</div>
+                <div class="hotspot-info">
+                  <div class="hotspot-func" id="hotspot-func-2">--</div>
+                  <div class="hotspot-file" id="hotspot-file-2">--</div>
+                  <div class="hotspot-stats">
+                    <span class="hotspot-percent" id="hotspot-percent-2">--</span>
+                    <span id="hotspot-samples-2"></span>
+                  </div>
+                </div>
+              </div>
+              <div class="hotspot" id="hotspot-3">
+                <div class="hotspot-rank hotspot-rank--3">3</div>
+                <div class="hotspot-info">
+                  <div class="hotspot-func" id="hotspot-func-3">--</div>
+                  <div class="hotspot-file" id="hotspot-file-3">--</div>
+                  <div class="hotspot-stats">
+                    <span class="hotspot-percent" id="hotspot-percent-3">--</span>
+                    <span id="hotspot-samples-3"></span>
+                  </div>
+                </div>
+              </div>
+              </div>
+            </section>
+
             <!-- Thread Stats Section (GIL/GC) -->
             <section class="sidebar-section thread-stats-section collapsible" id="thread-stats-bar" style="display: none;">
               <button class="section-header" onclick="toggleSection('thread-stats-bar')">
@@ -234,51 +279,6 @@
                     </div>
                   </div>
                 </div>
-              </div>
-            </section>
-
-            <!-- Hotspots Section -->
-            <section class="sidebar-section collapsible" id="hotspots-section">
-              <button class="section-header" onclick="toggleSection('hotspots-section')">
-                <h3 class="section-title">Hotspots</h3>
-                <svg class="section-chevron" width="12" height="12" viewBox="0 0 12 12" fill="none">
-                  <path d="M3 4.5L6 7.5L9 4.5" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
-                </svg>
-              </button>
-              <div class="section-content">
-              <div class="hotspot" id="hotspot-1">
-                <div class="hotspot-rank hotspot-rank--1">1</div>
-                <div class="hotspot-info">
-                  <div class="hotspot-func" id="hotspot-func-1">--</div>
-                  <div class="hotspot-file" id="hotspot-file-1">--</div>
-                  <div class="hotspot-stats">
-                    <span class="hotspot-percent" id="hotspot-percent-1">--</span>
-                    <span id="hotspot-samples-1"></span>
-                  </div>
-                </div>
-              </div>
-              <div class="hotspot" id="hotspot-2">
-                <div class="hotspot-rank hotspot-rank--2">2</div>
-                <div class="hotspot-info">
-                  <div class="hotspot-func" id="hotspot-func-2">--</div>
-                  <div class="hotspot-file" id="hotspot-file-2">--</div>
-                  <div class="hotspot-stats">
-                    <span class="hotspot-percent" id="hotspot-percent-2">--</span>
-                    <span id="hotspot-samples-2"></span>
-                  </div>
-                </div>
-              </div>
-              <div class="hotspot" id="hotspot-3">
-                <div class="hotspot-rank hotspot-rank--3">3</div>
-                <div class="hotspot-info">
-                  <div class="hotspot-func" id="hotspot-func-3">--</div>
-                  <div class="hotspot-file" id="hotspot-file-3">--</div>
-                  <div class="hotspot-stats">
-                    <span class="hotspot-percent" id="hotspot-percent-3">--</span>
-                    <span id="hotspot-samples-3"></span>
-                  </div>
-                </div>
-              </div>
               </div>
             </section>
 

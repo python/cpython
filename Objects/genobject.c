@@ -454,6 +454,7 @@ is_resume(_Py_CODEUNIT *instr)
     return (
         code == RESUME ||
         code == RESUME_CHECK ||
+        code == RESUME_CHECK_JIT ||
         code == INSTRUMENTED_RESUME
     );
 }
