@@ -5755,10 +5755,39 @@ dummy_func(
             Py_UNREACHABLE();
         }
 
-        tier2 op(_GUARD_CODE_VERSION, (version/2 -- )) {
+        tier2 op(_GUARD_CODE_VERSION__PUSH_FRAME, (version/2 -- )) {
             PyObject *code = PyStackRef_AsPyObjectBorrow(frame->f_executable);
             assert(PyCode_Check(code));
-            EXIT_IF(((PyCodeObject *)code)->co_version != version);
+            if (((PyCodeObject *)code)->co_version != version) {
+                EXIT_IF(true);
+            }
+        }
+
+        tier2 op(_GUARD_CODE_VERSION_YIELD_VALUE, (version/2 -- )) {
+            PyObject *code = PyStackRef_AsPyObjectBorrow(frame->f_executable);
+            assert(PyCode_Check(code));
+            if (((PyCodeObject *)code)->co_version != version) {
+                frame->instr_ptr += 1 + INLINE_CACHE_ENTRIES_SEND;
+                EXIT_IF(true);
+            }
+        }
+
+        tier2 op(_GUARD_CODE_VERSION_RETURN_VALUE, (version/2 -- )) {
+            PyObject *code = PyStackRef_AsPyObjectBorrow(frame->f_executable);
+            assert(PyCode_Check(code));
+            if (((PyCodeObject *)code)->co_version != version) {
+                frame->instr_ptr += frame->return_offset;
+                EXIT_IF(true);
+            }
+        }
+
+        tier2 op(_GUARD_CODE_VERSION_RETURN_GENERATOR, (version/2 -- )) {
+            PyObject *code = PyStackRef_AsPyObjectBorrow(frame->f_executable);
+            assert(PyCode_Check(code));
+            if (((PyCodeObject *)code)->co_version != version) {
+                frame->instr_ptr += frame->return_offset;
+                EXIT_IF(true);
+            }
         }
 
         tier2 op(_GUARD_IP__PUSH_FRAME, (ip/4 --)) {
