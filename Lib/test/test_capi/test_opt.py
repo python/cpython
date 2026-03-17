@@ -3981,6 +3981,22 @@ class TestUopsOptimization(unittest.TestCase):
         self.assertIn("_POP_TOP_NOP", uops)
         self.assertLessEqual(count_ops(ex, "_POP_TOP"), 2)
 
+    def test_iter_check_list(self):
+        def testfunc(n):
+            x = 0
+            for _ in range(n):
+                l = [1]
+                for num in l: # unguarded
+                    x += num
+            return x
+
+        res, ex = self._run_with_optimizer(testfunc, TIER2_THRESHOLD)
+        self.assertEqual(res, TIER2_THRESHOLD)
+        uops = get_opnames(ex)
+
+        self.assertIn("_BUILD_LIST", uops)
+        self.assertNotIn("_ITER_CHECK_LIST", uops)
+
     def test_match_class(self):
         def testfunc(n):
             class A:
