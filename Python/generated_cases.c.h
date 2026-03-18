@@ -395,6 +395,7 @@
                 Py_DECREF(right_o);
                 stack_pointer = _PyFrame_GetStackPointer(frame);
                 if (temp == NULL) {
+                    *target_local = PyStackRef_NULL;
                     JUMP_TO_LABEL(error);
                 }
                 *target_local = PyStackRef_FromPyObjectSteal(temp);

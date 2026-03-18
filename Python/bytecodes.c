@@ -794,7 +794,10 @@ dummy_func(
             PyObject *right_o = PyStackRef_AsPyObjectSteal(right);
             PyUnicode_Append(&temp, right_o);
             Py_DECREF(right_o);
-            ERROR_IF(temp == NULL);
+            if (temp == NULL) {
+                *target_local = PyStackRef_NULL;
+                ERROR_IF(1);
+            }
             *target_local = PyStackRef_FromPyObjectSteal(temp);
         #if TIER_ONE
             // The STORE_FAST is already done. This is done here in tier one,
