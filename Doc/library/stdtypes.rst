@@ -1286,7 +1286,7 @@ Mutable sequence types also support the following methods:
    :no-typesetting:
 .. method:: sequence.append(value, /)
 
-   Append *value* to the end of the sequence
+   Append *value* to the end of the sequence.
    This is equivalent to writing ``seq[len(seq):len(seq)] = [value]``.
 
 .. method:: bytearray.clear()
@@ -3513,6 +3513,11 @@ The representation of bytearray objects uses the bytes literal format
 (``bytearray(b'...')``) since it is often more useful than e.g.
 ``bytearray([46, 46, 46])``.  You can always convert a bytearray object into
 a list of integers using ``list(b)``.
+
+.. seealso::
+
+   For detailed information on thread-safety guarantees for :class:`bytearray`
+   objects, see :ref:`thread-safety-bytearray`.
 
 
 .. _bytes-methods:

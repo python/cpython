@@ -36,7 +36,7 @@ typedef struct _PyUOpInstruction{
 } _PyUOpInstruction;
 
 // This is the length of the trace we translate initially.
-#ifdef Py_DEBUG
+#if defined(Py_DEBUG) && defined(_Py_JIT)
     // With asserts, the stencils are a lot larger
 #define UOP_MAX_TRACE_LENGTH 1000
 #else

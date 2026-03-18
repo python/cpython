@@ -52,7 +52,9 @@
 
 # whitespace
 "  "
+"\\t"
 ":\\n  "
+"\\\n"
 
 # type signatures and functions
 "-> "
@@ -88,6 +90,8 @@
 # variable names
 "x"
 "y"
+"_"
+"*x"
 
 # strings
 "r'x'"
@@ -98,12 +102,24 @@
 
 "br\"x\""
 
+"u\"x\""
+
 "f'{x + 5}'"
 "f\"{x + 5}\""
+"f'{s!r}'"
+"f'{s!s}'"
+"f'{s!a}'"
+"f'{x=}'"
+
+"t'{s + 5}'"
+"t\"{s + 5}\""
+"tr's'"
+"rt\"s\""
 
 "'''"
 "\"\"\""
 
+"\\N"
 "\\u"
 "\\x"
 
@@ -131,6 +147,7 @@
 "while "
 "try: "
 "except "
+"except* "
 "finally: "
 "with "
 "lambda "
@@ -148,6 +165,10 @@
 "in "
 "is "
 "class "
+"match "
+"case "
+"type "
+"lazy "
 
 # shebangs and encodings
 "#!"

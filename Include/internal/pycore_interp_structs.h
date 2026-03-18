@@ -14,6 +14,7 @@ extern "C" {
 #include "pycore_structs.h"       // PyHamtObject
 #include "pycore_tstate.h"        // _PyThreadStateImpl
 #include "pycore_typedefs.h"      // _PyRuntimeState
+#include "pycore_uop.h"           // _PyBloomFilter
 
 #define CODE_MAX_WATCHERS 8
 #define CONTEXT_MAX_WATCHERS 8
@@ -412,6 +413,9 @@ typedef struct _PyOptimizationConfig {
     // Interpreter optimization thresholds
     uint16_t jump_backward_initial_value;
     uint16_t jump_backward_initial_backoff;
+
+    uint16_t resume_initial_value;
+    uint16_t resume_initial_backoff;
 
     // JIT optimization thresholds
     uint16_t side_exit_initial_value;
@@ -972,7 +976,10 @@ struct _is {
 
     // Optimization configuration (thresholds and flags for JIT and interpreter)
     _PyOptimizationConfig opt_config;
-    struct _PyExecutorObject *executor_list_head;
+    _PyBloomFilter *executor_blooms;             // Contiguous bloom filter array
+    struct _PyExecutorObject **executor_ptrs;    // Corresponding executor pointer array
+    size_t executor_count;                       // Number of valid executors
+    size_t executor_capacity;                    // Array capacity
     struct _PyExecutorObject *executor_deletion_list_head;
     struct _PyExecutorObject *cold_executor;
     struct _PyExecutorObject *cold_dynamic_executor;

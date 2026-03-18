@@ -371,12 +371,16 @@ Getters
 
    Get the writer size.
 
+   The function cannot fail.
+
 .. c:function:: void* PyBytesWriter_GetData(PyBytesWriter *writer)
 
    Get the writer data: start of the internal buffer.
 
    The pointer is valid until :c:func:`PyBytesWriter_Finish` or
    :c:func:`PyBytesWriter_Discard` is called on *writer*.
+
+   The function cannot fail.
 
 
 Low-level API
