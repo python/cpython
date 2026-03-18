@@ -1595,6 +1595,18 @@ class CZoneInfoCacheTest(ZoneInfoCacheTest):
             "Unexpected instance of int in ZI weak cache for key 'America/Los_Angeles'"
         )
 
+    def test_deleted_weak_cache(self):
+        class ZI(self.klass):
+            pass
+        delattr(ZI, '_weak_cache')
+
+        # These should not segfault
+        with self.assertRaises(AttributeError):
+            ZI("UTC")
+
+        with self.assertRaises(AttributeError):
+            ZI.clear_cache()
+
     def test_inconsistent_weak_cache_setdefault(self):
         class Cache:
             def get(self, key, default=None):
