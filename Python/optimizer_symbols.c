@@ -525,7 +525,6 @@ _Py_uop_sym_set_func_version(JitOptContext *ctx, JitOptRef ref, uint32_t version
             PyObject *val = sym->recorded_value.value;
             if (Py_TYPE(val) != &PyFunction_Type ||
                 ((PyFunctionObject *)sym->recorded_value.value)->func_version != version) {
-                Py_CLEAR(sym->recorded_value.value);
                 sym_set_bottom(ctx, sym);
                 return false;
             }
