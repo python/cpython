@@ -3126,9 +3126,9 @@ Buffer Object Structures
 
    * The export counter decrement in step (1) must be atomic.
 
-   * Resource cleanup when the counter reaches zero must be reentrant,
+   * Resource cleanup when the counter reaches zero must be done atomically,
      as the final release may race with concurrent releases from other
-     threads.
+     threads and dellocation must only happen once.
 
    The exporter MUST use the :c:member:`~Py_buffer.internal` field to keep
    track of buffer-specific resources. This field is guaranteed to remain
