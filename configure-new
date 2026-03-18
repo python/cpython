@@ -5900,7 +5900,8 @@ function u_setup_xopen_source(    sys_rel) {
 	}
 }
 
-function u_setup_platform_triplet(    _i_line, _n_line, line, triplet_result, triplet_result_returncode, triplet_result_stderr, triplet_result_stdout, _as_27, _split_tmp) {
+function u_setup_platform_triplet(    MULTIARCH, _i_line, _n_line, line, rc, triplet_result, triplet_result_returncode, triplet_result_stderr, triplet_result_stdout, _ar_28, _as_27, _split_tmp) {
+	delete _ar_28
 	delete _as_27
 	delete _split_tmp
 	pyconf_checking("for the platform triplet based on compiler characteristics")
@@ -5931,7 +5932,12 @@ function u_setup_platform_triplet(    _i_line, _n_line, line, triplet_result, tr
 		_va66[1] = V["CC"]
 		_va66[2] = "--print-multiarch"
 		_va66[0] = 2
-		V["MULTIARCH"] = pyconf_cmd_output(_va66)
+		pyconf_cmd_status(_va66, _ar_28)
+		rc = _ar_28[0]
+		MULTIARCH = _ar_28[1]
+		if ((rc != 0)) {
+			V["MULTIARCH"] = ""
+		}
 	}
 	if ((((V["PLATFORM_TRIPLET"] != "") && (V["PLATFORM_TRIPLET"] != "no")) && ((V["MULTIARCH"] != "") && (V["MULTIARCH"] != "no")))) {
 		if ((V["PLATFORM_TRIPLET"] != V["MULTIARCH"])) {
@@ -6118,33 +6124,33 @@ function u_check_clock_functions(    android_api, skip_clock_nanosleep) {
 	}
 }
 
-function u_check_structs(    _i_m, ac_cv_header_time_altzone, ac_cv_struct_addrinfo, ac_cv_struct_sockaddr_alg, ac_cv_struct_sockaddr_storage, m, _al_28, _al_29) {
-	delete _al_28
+function u_check_structs(    _i_m, ac_cv_header_time_altzone, ac_cv_struct_addrinfo, ac_cv_struct_sockaddr_alg, ac_cv_struct_sockaddr_storage, m, _al_29, _al_30) {
 	delete _al_29
+	delete _al_30
 	pyconf_check_struct_tm()
 	pyconf_check_struct_timezone()
-	_al_28[1] = "struct stat.st_rdev"
-	_al_28[2] = "struct stat.st_blksize"
-	_al_28[3] = "struct stat.st_flags"
-	_al_28[4] = "struct stat.st_gen"
-	_al_28[5] = "struct stat.st_birthtime"
-	_al_28[6] = "struct stat.st_blocks"
+	_al_29[1] = "struct stat.st_rdev"
+	_al_29[2] = "struct stat.st_blksize"
+	_al_29[3] = "struct stat.st_flags"
+	_al_29[4] = "struct stat.st_gen"
+	_al_29[5] = "struct stat.st_birthtime"
+	_al_29[6] = "struct stat.st_blocks"
 	for (_i_m = 1; (_i_m <= 6); _i_m = (_i_m + 1)) {
-		m = _al_28[_i_m]
+		m = _al_29[_i_m]
 		pyconf_check_member(m, "sys/types.h sys/stat.h")
 	}
 	pyconf_check_member("struct passwd.pw_gecos", "sys/types.h pwd.h", "HAVE_STRUCT_PASSWD_PW_GECOS")
 	pyconf_check_member("struct passwd.pw_passwd", "sys/types.h pwd.h", "HAVE_STRUCT_PASSWD_PW_PASSWD")
 	pyconf_check_member("siginfo_t.si_band", "signal.h")
 	if ((V["ac_cv_func_statx"] == "yes")) {
-		_al_29[1] = "struct statx.stx_mnt_id"
-		_al_29[2] = "struct statx.stx_dio_mem_align"
-		_al_29[3] = "struct statx.stx_subvol"
-		_al_29[4] = "struct statx.stx_atomic_write_unit_min"
-		_al_29[5] = "struct statx.stx_dio_read_offset_align"
-		_al_29[6] = "struct statx.stx_atomic_write_unit_max_opt"
+		_al_30[1] = "struct statx.stx_mnt_id"
+		_al_30[2] = "struct statx.stx_dio_mem_align"
+		_al_30[3] = "struct statx.stx_subvol"
+		_al_30[4] = "struct statx.stx_atomic_write_unit_min"
+		_al_30[5] = "struct statx.stx_dio_read_offset_align"
+		_al_30[6] = "struct statx.stx_atomic_write_unit_max_opt"
 		for (_i_m = 1; (_i_m <= 6); _i_m = (_i_m + 1)) {
-			m = _al_29[_i_m]
+			m = _al_30[_i_m]
 			pyconf_check_member(m, "linux/stat.h")
 		}
 	}
@@ -6501,17 +6507,17 @@ function u_check_getrandom() {
 	}
 }
 
-function u_check_openssl(    LIBCRYPTO_LIBS_len, _i_arg, _i_f, _i_p, _n_arg, _n_f, _n_p, arg, f, found_ssl, inc_flags, inc_parts_len, lib_flags, lib_parts_len, libname, new_ssl_libs_len, openssl_rpath_opt, p, pc_cflags, pc_ldflags, pc_libs, pkg_config, rpath_arg, s1, s2, s3, ssl_dir, ssl_h_paths, with_openssl, working_hashlib, working_ssl, LIBCRYPTO_LIBS, _ar_30, _ar_31, _ar_32, _as_33, _as_34, _as_35, _as_36, _as_37, _as_38, inc_parts, lib_parts, new_ssl_libs) {
+function u_check_openssl(    LIBCRYPTO_LIBS_len, _i_arg, _i_f, _i_p, _n_arg, _n_f, _n_p, arg, f, found_ssl, inc_flags, inc_parts_len, lib_flags, lib_parts_len, libname, new_ssl_libs_len, openssl_rpath_opt, p, pc_cflags, pc_ldflags, pc_libs, pkg_config, rpath_arg, s1, s2, s3, ssl_dir, ssl_h_paths, with_openssl, working_hashlib, working_ssl, LIBCRYPTO_LIBS, _ar_31, _ar_32, _ar_33, _as_34, _as_35, _as_36, _as_37, _as_38, _as_39, inc_parts, lib_parts, new_ssl_libs) {
 	delete LIBCRYPTO_LIBS
-	delete _ar_30
 	delete _ar_31
 	delete _ar_32
-	delete _as_33
+	delete _ar_33
 	delete _as_34
 	delete _as_35
 	delete _as_36
 	delete _as_37
 	delete _as_38
+	delete _as_39
 	delete inc_parts
 	delete lib_parts
 	delete new_ssl_libs
@@ -6536,29 +6542,29 @@ function u_check_openssl(    LIBCRYPTO_LIBS_len, _i_arg, _i_f, _i_p, _n_arg, _n_
 			_va72[2] = "--cflags"
 			_va72[3] = "openssl"
 			_va72[0] = 3
-			pyconf_cmd_status(_va72, _ar_30)
-			s1 = _ar_30[0]
-			pc_cflags = _ar_30[1]
+			pyconf_cmd_status(_va72, _ar_31)
+			s1 = _ar_31[0]
+			pc_cflags = _ar_31[1]
 			delete _va73
 			_va73[1] = pkg_config
 			_va73[2] = "--libs"
 			_va73[3] = "openssl"
 			_va73[0] = 3
-			pyconf_cmd_status(_va73, _ar_31)
-			s2 = _ar_31[0]
-			pc_libs = _ar_31[1]
+			pyconf_cmd_status(_va73, _ar_32)
+			s2 = _ar_32[0]
+			pc_libs = _ar_32[1]
 			delete _va74
 			_va74[1] = pkg_config
 			_va74[2] = "--libs-only-L"
 			_va74[3] = "openssl"
 			_va74[0] = 3
-			pyconf_cmd_status(_va74, _ar_32)
-			s3 = _ar_32[0]
-			pc_ldflags = _ar_32[1]
+			pyconf_cmd_status(_va74, _ar_33)
+			s3 = _ar_33[0]
+			pc_ldflags = _ar_33[1]
 			if ((((s1 == 0) && (s2 == 0)) && (s3 == 0))) {
-				_n_f = split(pc_cflags, _as_33, " ")
+				_n_f = split(pc_cflags, _as_34, " ")
 				for (_i_f = 1; (_i_f <= _n_f); _i_f = (_i_f + 1)) {
-					f = _as_33[_i_f]
+					f = _as_34[_i_f]
 					if (_str_startswith(f, "-I")) {
 						inc_parts[(inc_parts_len + 1)] = f
 						inc_parts_len = (inc_parts_len + 1)
@@ -6566,9 +6572,9 @@ function u_check_openssl(    LIBCRYPTO_LIBS_len, _i_arg, _i_f, _i_p, _n_arg, _n_
 					}
 				}
 				inc_flags = _arr_join(inc_parts, " ")
-				_n_f = split(pc_libs, _as_34, " ")
+				_n_f = split(pc_libs, _as_35, " ")
 				for (_i_f = 1; (_i_f <= _n_f); _i_f = (_i_f + 1)) {
-					f = _as_34[_i_f]
+					f = _as_35[_i_f]
 					if ((!_str_startswith(f, "-L"))) {
 						lib_parts[(lib_parts_len + 1)] = f
 						lib_parts_len = (lib_parts_len + 1)
@@ -6589,9 +6595,9 @@ function u_check_openssl(    LIBCRYPTO_LIBS_len, _i_arg, _i_f, _i_p, _n_arg, _n_
 		} else {
 			ssl_h_paths = "/usr/include" " " "/usr/local/include" " " "/usr/include/openssl" " " "/usr/local/include/openssl"
 			found_ssl = "no"
-			_n_p = split(ssl_h_paths, _as_35, " ")
+			_n_p = split(ssl_h_paths, _as_36, " ")
 			for (_i_p = 1; (_i_p <= _n_p); _i_p = (_i_p + 1)) {
-				p = _as_35[_i_p]
+				p = _as_36[_i_p]
 				delete _va75
 				_va75[1] = p
 				_va75[2] = "openssl/ssl.h"
@@ -6624,9 +6630,9 @@ function u_check_openssl(    LIBCRYPTO_LIBS_len, _i_arg, _i_f, _i_p, _n_arg, _n_
 	V["OPENSSL_LDFLAGS_RPATH"] = ""
 	if (((openssl_rpath_opt == "auto") || (openssl_rpath_opt == "yes"))) {
 		V["OPENSSL_RPATH"] = "auto"
-		_n_arg = split(V["OPENSSL_LDFLAGS"], _as_36, " ")
+		_n_arg = split(V["OPENSSL_LDFLAGS"], _as_37, " ")
 		for (_i_arg = 1; (_i_arg <= _n_arg); _i_arg = (_i_arg + 1)) {
-			arg = _as_36[_i_arg]
+			arg = _as_37[_i_arg]
 			if (_str_startswith(arg, "-L")) {
 				V["OPENSSL_LDFLAGS_RPATH"] = V["OPENSSL_LDFLAGS_RPATH"] " " rpath_arg _str_removeprefix(arg, "-L")
 			}
@@ -6643,9 +6649,9 @@ function u_check_openssl(    LIBCRYPTO_LIBS_len, _i_arg, _i_f, _i_p, _n_arg, _n_
 	v_export("OPENSSL_RPATH")
 	v_export("OPENSSL_LDFLAGS_RPATH")
 	if ((V["PY_UNSUPPORTED_OPENSSL_BUILD"] == "static")) {
-		_n_arg = split(V["OPENSSL_LIBS"], _as_37, " ")
+		_n_arg = split(V["OPENSSL_LIBS"], _as_38, " ")
 		for (_i_arg = 1; (_i_arg <= _n_arg); _i_arg = (_i_arg + 1)) {
-			arg = _as_37[_i_arg]
+			arg = _as_38[_i_arg]
 			if (_str_startswith(arg, "-l")) {
 				libname = _str_removeprefix(arg, "-l")
 				new_ssl_libs[(new_ssl_libs_len + 1)] = "-l:lib" libname ".a -Wl,--exclude-libs,lib" libname ".a"
@@ -6659,9 +6665,9 @@ function u_check_openssl(    LIBCRYPTO_LIBS_len, _i_arg, _i_f, _i_p, _n_arg, _n_
 		}
 		V["OPENSSL_LIBS"] = _arr_join(new_ssl_libs, " ") _str_rstrip(" " V["ZLIB_LIBS"])
 	}
-	_n_arg = split(V["OPENSSL_LIBS"], _as_38, " ")
+	_n_arg = split(V["OPENSSL_LIBS"], _as_39, " ")
 	for (_i_arg = 1; (_i_arg <= _n_arg); _i_arg = (_i_arg + 1)) {
-		arg = _as_38[_i_arg]
+		arg = _as_39[_i_arg]
 		if ((!(index(arg, "ssl") > 0))) {
 			LIBCRYPTO_LIBS[(LIBCRYPTO_LIBS_len + 1)] = arg
 			LIBCRYPTO_LIBS_len = (LIBCRYPTO_LIBS_len + 1)
@@ -6999,8 +7005,8 @@ function u_setup_ccshared() {
 	pyconf_result(V["CCSHARED"])
 }
 
-function u_setup_linkforshared(    _, has_elf, has_elf__elf_out, help_out, sr, stack_size, _ar_39) {
-	delete _ar_39
+function u_setup_linkforshared(    _, has_elf, has_elf__elf_out, help_out, sr, stack_size, _ar_40) {
+	delete _ar_40
 	pyconf_checking("LINKFORSHARED")
 	if ((!((V["LINKFORSHARED"] != "") && (V["LINKFORSHARED"] != "no")))) {
 		sr = V["ac_sys_system"] "/" V["ac_sys_release"]
@@ -7042,9 +7048,9 @@ function u_setup_linkforshared(    _, has_elf, has_elf__elf_out, help_out, sr, s
 				_va80[2] = "-Xlinker"
 				_va80[3] = "--help"
 				_va80[0] = 3
-				pyconf_cmd_status(_va80, _ar_39)
-				_ = _ar_39[0]
-				help_out = _ar_39[1]
+				pyconf_cmd_status(_va80, _ar_40)
+				_ = _ar_40[0]
+				help_out = _ar_40[1]
 				if ((index(help_out, "export-dynamic") > 0)) {
 					V["LINKFORSHARED"] = "-Xlinker --export-dynamic"
 				}
@@ -7146,9 +7152,9 @@ function u_detect_gdbm() {
 	v_export("GDBM_LIBS")
 }
 
-function u_detect_dbm(    _i_db, _n_db, _tmp_split, ac_cv_have_libdb, ac_cv_header_gdbm_dash_ndbm_h, ac_cv_header_gdbm_slash_ndbm_h, ac_cv_search_dbm_open, db, dbm_raw, have_dbm, r, with_dbmliborder, _as_40, _as_41) {
-	delete _as_40
+function u_detect_dbm(    _i_db, _n_db, _tmp_split, ac_cv_have_libdb, ac_cv_header_gdbm_dash_ndbm_h, ac_cv_header_gdbm_slash_ndbm_h, ac_cv_search_dbm_open, db, dbm_raw, have_dbm, r, with_dbmliborder, _as_41, _as_42) {
 	delete _as_41
+	delete _as_42
 	V["have_ndbm"] = "no"
 	V["dbm_ndbm"] = ""
 	V["have_gdbm_compat"] = "no"
@@ -7193,9 +7199,9 @@ function u_detect_dbm(    _i_db, _n_db, _tmp_split, ac_cv_have_libdb, ac_cv_head
 	dbm_raw = pyconf_option_value("with_dbmliborder")
 	with_dbmliborder = ((((dbm_raw != "") && (dbm_raw != "no")) && (dbm_raw != "yes")) ? dbm_raw : "gdbm:ndbm:bdb")
 	pyconf_checking("for --with-dbmliborder")
-	_n_db = split(_str_replace(with_dbmliborder, ":", " "), _as_40, " ")
+	_n_db = split(_str_replace(with_dbmliborder, ":", " "), _as_41, " ")
 	for (_i_db = 1; (_i_db <= _n_db); _i_db = (_i_db + 1)) {
-		db = _as_40[_i_db]
+		db = _as_41[_i_db]
 		if ((!(((db == "ndbm") || (db == "gdbm")) || (db == "bdb")))) {
 			pyconf_fatal("proper usage is --with-dbmliborder=db1:db2:... (gdbm:ndbm:bdb)")
 		}
@@ -7205,9 +7211,9 @@ function u_detect_dbm(    _i_db, _n_db, _tmp_split, ac_cv_have_libdb, ac_cv_head
 	V["DBM_CFLAGS"] = ""
 	V["DBM_LIBS"] = ""
 	have_dbm = "no"
-	_n_db = split(_str_replace(with_dbmliborder, ":", " "), _as_41, " ")
+	_n_db = split(_str_replace(with_dbmliborder, ":", " "), _as_42, " ")
 	for (_i_db = 1; (_i_db <= _n_db); _i_db = (_i_db + 1)) {
-		db = _as_41[_i_db]
+		db = _as_42[_i_db]
 		if (((db == "ndbm") && ((V["have_ndbm"] != "") && (V["have_ndbm"] != "no")))) {
 			V["DBM_CFLAGS"] = "-DUSE_NDBM"
 			V["DBM_LIBS"] = V["dbm_ndbm"]
@@ -7233,8 +7239,8 @@ function u_detect_dbm(    _i_db, _n_db, _tmp_split, ac_cv_have_libdb, ac_cv_head
 	v_export("DBM_LIBS")
 }
 
-function u_check_base_libraries(    _i_h, ac_cv_require_ldl, eh_results_len, h, _al_42, eh_results) {
-	delete _al_42
+function u_check_base_libraries(    _i_h, ac_cv_require_ldl, eh_results_len, h, _al_43, eh_results) {
+	delete _al_43
 	delete eh_results
 	if (pyconf_check_lib("sendfile", "sendfile", "", "")) {
 		V["LIBS"] = "-lsendfile " V["LIBS"]
@@ -7247,11 +7253,11 @@ function u_check_base_libraries(    _i_h, ac_cv_require_ldl, eh_results_len, h, 
 		V["LIBS"] = "-ldld " V["LIBS"]
 	}
 	ac_cv_require_ldl = "no"
-	_al_42[1] = "execinfo.h"
-	_al_42[2] = "link.h"
-	_al_42[3] = "dlfcn.h"
+	_al_43[1] = "execinfo.h"
+	_al_43[2] = "link.h"
+	_al_43[3] = "dlfcn.h"
 	for (_i_h = 1; (_i_h <= 3); _i_h = (_i_h + 1)) {
-		h = _al_42[_i_h]
+		h = _al_43[_i_h]
 		delete _va81
 		_va81[1] = h
 		_va81[0] = 1
@@ -7334,14 +7340,14 @@ function u_check_stat_timestamps(    ac_cv_stat_tv_nsec, ac_cv_stat_tv_nsec2) {
 	V["have_panel"] = "no"
 }
 
-function u__validate_tzpath(tzpath,    _i_part, _n_part, _tmp_split, part, _as_43) {
-	delete _as_43
+function u__validate_tzpath(tzpath,    _i_part, _n_part, _tmp_split, part, _as_44) {
+	delete _as_44
 	if ((!((tzpath != "") && (tzpath != "no")))) {
 		return
 	}
-	_n_part = split(_str_replace(tzpath, ":", " "), _as_43, " ")
+	_n_part = split(_str_replace(tzpath, ":", " "), _as_44, " ")
 	for (_i_part = 1; (_i_part <= _n_part); _i_part = (_i_part + 1)) {
-		part = _as_43[_i_part]
+		part = _as_44[_i_part]
 		if ((!_str_startswith(part, "/"))) {
 			pyconf_error("--with-tzpath must contain only absolute paths, not " tzpath)
 		}
@@ -7377,8 +7383,8 @@ function u__runshared(envvar,    cwd, existing) {
 	return envvar "=" cwd
 }
 
-function u_setup_android_api(    _i_line, _n_line, android_out, android_out_returncode, android_out_stderr, android_out_stdout, arm_arch, line, _as_44) {
-	delete _as_44
+function u_setup_android_api(    _i_line, _n_line, android_out, android_out_returncode, android_out_stderr, android_out_stdout, arm_arch, line, _as_45) {
+	delete _as_45
 	V["NO_AS_NEEDED"] = pyconf_check_linker_flag("-Wl,--no-as-needed", "-Wl,--no-as-needed")
 	v_export("NO_AS_NEEDED")
 	pyconf_checking("for the Android API level")
@@ -7388,9 +7394,9 @@ function u_setup_android_api(    _i_line, _n_line, android_out, android_out_retu
 	V["ANDROID_API_LEVEL"] = ""
 	arm_arch = ""
 	if ((android_out_returncode == 0)) {
-		_n_line = split(android_out_stdout, _as_44, "\n")
+		_n_line = split(android_out_stdout, _as_45, "\n")
 		for (_i_line = 1; (_i_line <= _n_line); _i_line = (_i_line + 1)) {
-			line = _as_44[_i_line]
+			line = _as_45[_i_line]
 			if ((!_str_startswith(line, "#"))) {
 				if (_str_startswith(line, "android_api = ")) {
 					V["ANDROID_API_LEVEL"] = _str_strip(_str_removeprefix(line, "android_api = "))
@@ -7454,8 +7460,8 @@ function u_setup_exe_suffix(    casedir) {
 	}
 }
 
-function u_setup_library_names(    _, ld_prog, ld_ver, _ar_45) {
-	delete _ar_45
+function u_setup_library_names(    _, ld_prog, ld_ver, _ar_46) {
+	delete _ar_46
 	v_export("LIBRARY")
 	pyconf_checking("LIBRARY")
 	V["LIBRARY"] = ((V["LIBRARY"] != "") ? V["LIBRARY"] : "libpython$(VERSION)$(ABIFLAGS).a")
@@ -7509,9 +7515,9 @@ function u_setup_library_names(    _, ld_prog, ld_ver, _ar_45) {
 	_va85[1] = ld_prog
 	_va85[2] = "-V"
 	_va85[0] = 2
-	pyconf_cmd_status(_va85, _ar_45)
-	_ = _ar_45[0]
-	ld_ver = _ar_45[1]
+	pyconf_cmd_status(_va85, _ar_46)
+	_ = _ar_46[0]
+	ld_ver = _ar_46[1]
 	V["GNULD"] = ((index(ld_ver, "GNU") > 0) ? "yes" : "no")
 	pyconf_result(V["GNULD"])
 }
@@ -7863,9 +7869,9 @@ function u_check_posix_semaphores(    ac_cv_broken_sem_getvalue, ac_cv_posix_sem
 	pyconf_check_decls(_va88)
 }
 
-function u_setup_thread_headers_and_srcdirs(    _i_dir, _i_h, _n_dir, _n_h, dir, h, header_refs_len, thread_headers, _as_46, _as_47, header_refs) {
-	delete _as_46
+function u_setup_thread_headers_and_srcdirs(    _i_dir, _i_h, _n_dir, _n_h, dir, h, header_refs_len, thread_headers, _as_47, _as_48, header_refs) {
 	delete _as_47
+	delete _as_48
 	delete header_refs
 	delete _va89
 	_va89[1] = pyconf_srcdir
@@ -7873,9 +7879,9 @@ function u_setup_thread_headers_and_srcdirs(    _i_dir, _i_h, _n_dir, _n_h, dir,
 	_va89[3] = "thread_*.h"
 	_va89[0] = 3
 	thread_headers = pyconf_glob_files(pyconf_path_join(_va89))
-	_n_h = split(thread_headers, _as_46, " ")
+	_n_h = split(thread_headers, _as_47, " ")
 	for (_i_h = 1; (_i_h <= _n_h); _i_h = (_i_h + 1)) {
-		h = _as_46[_i_h]
+		h = _as_47[_i_h]
 		header_refs[(header_refs_len + 1)] = "$(srcdir)/" pyconf_relpath(h, pyconf_srcdir)
 		header_refs_len = (header_refs_len + 1)
 		header_refs[0] = header_refs_len
@@ -7885,9 +7891,9 @@ function u_setup_thread_headers_and_srcdirs(    _i_dir, _i_h, _n_dir, _n_h, dir,
 	V["SRCDIRS"] = "  Modules  Modules/_ctypes  Modules/_decimal  Modules/_decimal/libmpdec  Modules/_hacl  Modules/_io  Modules/_multiprocessing  Modules/_remote_debugging  Modules/_sqlite  Modules/_sre  Modules/_testcapi  Modules/_testinternalcapi  Modules/_testlimitedcapi  Modules/_xxtestfuzz  Modules/_zstd  Modules/cjkcodecs  Modules/expat  Objects  Objects/mimalloc  Objects/mimalloc/prim  Parser  Parser/tokenizer  Parser/lexer  Programs  Python  Python/frozen_modules"
 	v_export("SRCDIRS")
 	pyconf_checking("for build directories")
-	_n_dir = split(V["SRCDIRS"], _as_47, " ")
+	_n_dir = split(V["SRCDIRS"], _as_48, " ")
 	for (_i_dir = 1; (_i_dir <= _n_dir); _i_dir = (_i_dir + 1)) {
-		dir = _as_47[_i_dir]
+		dir = _as_48[_i_dir]
 		pyconf_mkdir_p(dir)
 	}
 	pyconf_result("done")
