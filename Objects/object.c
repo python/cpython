@@ -1999,7 +1999,7 @@ _PyObject_GenericSetAttrWithDict(PyObject *obj, PyObject *name,
     }
 
     Py_INCREF(name);
-    Py_INCREF(tp);
+    _Py_INCREF_TYPE(tp);
 
     PyThreadState *tstate = _PyThreadState_GET();
     _PyCStackRef cref;
@@ -2074,7 +2074,7 @@ _PyObject_GenericSetAttrWithDict(PyObject *obj, PyObject *name,
     }
   done:
     _PyThreadState_PopCStackRef(tstate, &cref);
-    Py_DECREF(tp);
+    _Py_DECREF_TYPE(tp);
     Py_DECREF(name);
     return res;
 }
