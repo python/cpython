@@ -3907,5 +3907,16 @@ class CodecNameNormalizationTest(unittest.TestCase):
         self.assertEqual(normalize('utf...8'), 'utf...8')
 
 
+class CodecCacheTest(unittest.TestCase):
+    def test_cache_bounded(self):
+        for i in range(encodings._MAXCACHE + 1000):
+            try:
+                b'x'.decode(f'nonexist_{i}')
+            except LookupError:
+                pass
+
+        self.assertLessEqual(len(encodings._cache), encodings._MAXCACHE)
+
+
 if __name__ == "__main__":
     unittest.main()

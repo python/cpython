@@ -1,0 +1,2 @@
+Limit the size of :func:`encodings.search_function` cache.
+Found by OSS Fuzz in :oss-fuzz:`493449985`.
