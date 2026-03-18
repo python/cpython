@@ -5,6 +5,8 @@ checks for unsupported systems; configures Emscripten-specific flags
 (LINKFORSHARED, threading); and configures WASI-specific flags and defines.
 """
 
+from __future__ import annotations
+
 import pyconf
 
 ENABLE_WASM_DYNAMIC_LINKING = pyconf.arg_enable(

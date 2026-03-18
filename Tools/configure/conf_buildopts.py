@@ -6,6 +6,8 @@ Handles --disable-gil (free-threaded build), --with-pydebug (Py_DEBUG),
 the PROFILE_TASK used for PGO training runs and DEF_MAKE_ALL_RULE.
 """
 
+from __future__ import annotations
+
 import pyconf
 
 DISABLE_GIL = pyconf.arg_enable(

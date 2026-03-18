@@ -7,6 +7,8 @@ cross-compilation), prefix/directory layout, VERSION/SOVERSION,
 pkg-config probing, and the missing-stdlib-config option.
 """
 
+from __future__ import annotations
+
 import conf_modules
 import pyconf
 

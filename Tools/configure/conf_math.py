@@ -8,6 +8,8 @@ for Python long integers; and checks wchar_t size and signedness
 (including Solaris workarounds).
 """
 
+from __future__ import annotations
+
 import pyconf
 
 WITH_LIBM = pyconf.arg_with(

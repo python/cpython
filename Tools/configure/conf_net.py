@@ -10,6 +10,8 @@ Consolidates networking code previously scattered across conf_sharedlib,
 conf_syslibs, conf_probes, conf_math, and conf_checks.
 """
 
+from __future__ import annotations
+
 import pyconf
 
 WITH_LIBS = pyconf.arg_with(

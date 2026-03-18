@@ -8,6 +8,8 @@ host_prefix for cross targets; seeds iOS cross-compilation tools
 cross-compilation.
 """
 
+from __future__ import annotations
+
 import pyconf
 
 

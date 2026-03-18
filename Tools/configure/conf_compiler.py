@@ -8,6 +8,8 @@ classifies PEP 11 support tier; and checks compiler bugs (glibc
 memmove, ipa-pure-const).
 """
 
+from __future__ import annotations
+
 import os
 
 import pyconf

@@ -6,6 +6,8 @@ and emits post-configuration warnings and notices (pkg-config,
 optimizations, platform support tier).
 """
 
+from __future__ import annotations
+
 import warnings
 
 import pyconf

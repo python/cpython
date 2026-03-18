@@ -1,5 +1,7 @@
 """Checked related to threading libraries."""
 
+from __future__ import annotations
+
 import pyconf
 
 _PTHREAD_TEST_SRC = """

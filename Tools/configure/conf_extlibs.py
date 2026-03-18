@@ -6,6 +6,8 @@ or manual probing with --enable-loadable-sqlite-extensions; and detects
 Tcl/Tk libraries and headers via pkg-config or manual search.
 """
 
+from __future__ import annotations
+
 import pyconf
 
 

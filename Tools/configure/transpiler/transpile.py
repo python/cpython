@@ -8,6 +8,8 @@ Usage:
     python transpile.py [-o OUTPUT]
 """
 
+from __future__ import annotations
+
 import os
 import sys
 

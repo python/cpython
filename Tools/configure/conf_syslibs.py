@@ -9,6 +9,8 @@ AIX-specific extensions, and aligned memory access; and probes
 whether libatomic is needed for <pyatomic.h>.
 """
 
+from __future__ import annotations
+
 import pyconf
 
 WITH_DBMLIBORDER = pyconf.arg_with(

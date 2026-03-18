@@ -7,6 +7,8 @@ variables (CFLAGSFORSHARED, SHLIBS); and configures perf trampoline
 support.
 """
 
+from __future__ import annotations
+
 import pyconf
 
 

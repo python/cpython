@@ -8,6 +8,8 @@ including pkg-config detection and version validation; handles
 and handles --disable-test-modules.
 """
 
+from __future__ import annotations
+
 import pyconf
 
 WITH_OPENSSL = pyconf.arg_with(

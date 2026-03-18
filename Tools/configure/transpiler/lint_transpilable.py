@@ -10,6 +10,8 @@ Usage:
 If no files are given, lints all conf_*.py files in the same directory.
 """
 
+from __future__ import annotations
+
 import ast
 import glob
 import os
@@ -325,7 +327,9 @@ class TranspilableLinter(ast.NodeVisitor):
 
     def _check_import_from(self, node):
         mod = node.module or ""
-        if (
+        if mod == "__future__":
+            pass  # always allowed (e.g. from __future__ import annotations)
+        elif (
             mod in DISALLOWED_IMPORTS
             or mod.split(".")[0] in DISALLOWED_IMPORTS
         ):

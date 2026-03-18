@@ -7,6 +7,8 @@ flags (libHacl_Hash_SHA2, etc.); and sets up remaining module
 variables (LIBHACL_*, MODULE_*_LDFLAGS).
 """
 
+from __future__ import annotations
+
 import pyconf
 
 

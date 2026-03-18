@@ -9,6 +9,8 @@ final LDLIBRARY/RUNSHARED for each platform; sets HOSTRUNNER for
 cross-compile targets; and configures AR, ARFLAGS, INSTALL, ABIFLAGS.
 """
 
+from __future__ import annotations
+
 import os
 
 import pyconf

@@ -8,6 +8,8 @@ Usage:
     uv run Tools/configure/test_transpile.py
 """
 
+from __future__ import annotations
+
 import ast
 import os
 import subprocess

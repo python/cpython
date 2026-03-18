@@ -7,6 +7,8 @@ PGO instrumentation/use flags and llvm-profdata; and handles
 --enable-bolt (llvm-bolt, merge-fdata, BOLT_*_FLAGS).
 """
 
+from __future__ import annotations
+
 import os
 
 import pyconf

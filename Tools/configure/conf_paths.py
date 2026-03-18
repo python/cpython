@@ -5,6 +5,8 @@ SCRIPTDIR, etc.) and --with-wheel-pkg-dir; checks miscellaneous runtime
 features (broken nice, broken poll, working tzset).
 """
 
+from __future__ import annotations
+
 import pyconf
 
 WITH_PLATLIBDIR = pyconf.arg_with(

@@ -4,6 +4,8 @@ Usage:
     python configure.py [--with-*] [--enable-*] [--prefix=PATH] ...
 """
 
+from __future__ import annotations
+
 import pyconf  # noqa: F401 — initialises the pyconf singleton
 import conf_buildopts
 import conf_compiler

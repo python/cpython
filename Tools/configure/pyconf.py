@@ -4,6 +4,8 @@ pyconf.py — module for the CPython Python-based configure system.
 Provides the pyconf API used by conf_*.py.
 """
 
+from __future__ import annotations
+
 import fnmatch as _fnmatch
 import os
 import re

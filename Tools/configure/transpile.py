@@ -5,6 +5,8 @@ Run via:  uv run Tools/configure/transpile.py [-o OUTPUT]
       or: python -m transpiler [-o OUTPUT]  (with Tools/configure on sys.path)
 """
 
+from __future__ import annotations
+
 import os
 import sys
 

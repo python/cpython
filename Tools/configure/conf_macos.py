@@ -9,6 +9,8 @@ and compiler selection; --enable-framework (WITH_NEXT_FRAMEWORK);
 universal architecture flags; and MACOSX_DEPLOYMENT_TARGET.
 """
 
+from __future__ import annotations
+
 import os
 
 import pyconf

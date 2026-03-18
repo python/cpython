@@ -7,6 +7,8 @@
 Tests for pyconf.py — run with:  uv run Tools/configure/test_pyconf.py
 """
 
+from __future__ import annotations
+
 import sys
 import os
 import pytest
