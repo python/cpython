@@ -927,7 +927,6 @@ def check_headers(v):
         "shadow.h",
         "signal.h",
         "spawn.h",
-        "stropts.h",
         "sys/audioio.h",
         "sys/bsdtty.h",
         "sys/devpoll.h",
@@ -975,6 +974,25 @@ def check_headers(v):
         "utime.h",
         "utmp.h",
     )
+    # On Linux, stropts.h may be empty
+    pyconf.checking("whether stropts.h has I_PUSH")
+    has_i_push = pyconf.compile_check(
+        preamble=(
+            "#ifdef HAVE_SYS_TYPES_H\n"
+            "#  include <sys/types.h>\n"
+            "#endif\n"
+            "#include <stropts.h>\n"
+        ),
+        body="(void)I_PUSH",
+    )
+    pyconf.result(has_i_push)
+    if has_i_push:
+        pyconf.define(
+            "HAVE_STROPTS_H",
+            1,
+            "Define to 1 if you have the <stropts.h> header file.",
+        )
+
     # AC_HEADER_DIRENT: check for dirent.h
     pyconf.check_headers("dirent.h")
 

@@ -83,6 +83,7 @@ def setup_wasm_flags(v):
     v.export("CFLAGS_NODIST")
     v.export("LDFLAGS_NODIST")
     v.export("LDFLAGS_NOLTO")
+    v.export("EXE_LDFLAGS")
     v.export("LINKFORSHARED")
     v.export("WASM_ASSETS_DIR")
     v.export("WASM_STDLIB")
@@ -104,7 +105,8 @@ def _setup_emscripten_flags(v):
     )
     v.LINKFORSHARED += (
         " -sEXPORTED_FUNCTIONS=_main,_Py_Version,__PyRuntime,"
-        "_PyGILState_GetThisThreadState,__Py_DumpTraceback"
+        "_PyGILState_GetThisThreadState,__Py_DumpTraceback,"
+        "__PyEM_EMSCRIPTEN_TRAMPOLINE_OFFSET"
     )
     v.LINKFORSHARED += " -sSTACK_SIZE=5MB"
     v.LINKFORSHARED += " -sTEXTDECODER=2"

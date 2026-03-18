@@ -558,6 +558,37 @@ def check_stdatomic(v):
             "Has builtin __atomic_load_n() and __atomic_store_n() functions",
         )
 
+    # Check for __builtin_shufflevector with 128-bit vector support on an
+    # architecture where it compiles to worthwhile native SIMD instructions.
+    # Used for SIMD-accelerated bytes.hex() in Python/pystrhex.c.
+    pyconf.checking("for __builtin_shufflevector")
+    ac_cv_efficient_builtin_shufflevector = pyconf.link_check(
+        source=(
+            "#if !defined(__x86_64__) && !defined(__aarch64__) && \\\n"
+            "    !(defined(__arm__) && defined(__ARM_NEON))\n"
+            '#  error "128-bit vector SIMD not worthwhile on this architecture"\n'
+            "#endif\n"
+            "typedef unsigned char v16u8 __attribute__((vector_size(16)));\n"
+            "int main(void) {\n"
+            "  v16u8 a = {0,1,2,3,4,5,6,7,8,9,10,11,12,13,14,15};\n"
+            "  v16u8 b = {16,17,18,19,20,21,22,23,24,25,26,27,28,29,30,31};\n"
+            "  v16u8 c = __builtin_shufflevector(a, b,\n"
+            "      0, 16, 1, 17, 2, 18, 3, 19, 4, 20, 5, 21, 6, 22, 7, 23);\n"
+            "  (void)c;\n"
+            "  return 0;\n"
+            "}\n"
+        ),
+        cache_var="ac_cv_efficient_builtin_shufflevector",
+    )
+    pyconf.result(ac_cv_efficient_builtin_shufflevector)
+    if ac_cv_efficient_builtin_shufflevector:
+        pyconf.define(
+            "HAVE_EFFICIENT_BUILTIN_SHUFFLEVECTOR",
+            1,
+            "Define if compiler supports __builtin_shufflevector with 128-bit "
+            "vectors AND the target architecture has native SIMD",
+        )
+
 
 def check_sizes(v):
     """Check sizeof/alignof for fundamental types and pthread types."""

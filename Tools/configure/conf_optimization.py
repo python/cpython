@@ -230,7 +230,10 @@ def setup_pgo_flags(v):
                     "build but could not be found."
                 )
     elif v.ac_cv_cc_name == "gcc":
-        v.PGO_PROF_GEN_FLAG = "-fprofile-generate"
+        if pyconf.check_compile_flag("-fprofile-update=atomic"):
+            v.PGO_PROF_GEN_FLAG = "-fprofile-generate -fprofile-update=atomic"
+        else:
+            v.PGO_PROF_GEN_FLAG = "-fprofile-generate"
         v.PGO_PROF_USE_FLAG = "-fprofile-use -fprofile-correction"
         v.LLVM_PROF_MERGER = "true"
         v.LLVM_PROF_FILE = ""

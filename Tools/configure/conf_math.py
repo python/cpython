@@ -90,19 +90,11 @@ def _define_float_little():
 
 
 def _define_float_unknown():
-    if "arm" in pyconf.host_cpu:
-        pyconf.define(
-            "DOUBLE_IS_ARM_MIXED_ENDIAN_IEEE754",
-            1,
-            "Define if C doubles are 64-bit IEEE 754 binary format, "
-            "stored in ARM mixed-endian order (byte order 45670123)",
-        )
-    else:
-        pyconf.error(
-            "Unknown float word ordering. You need to manually "
-            "preset ax_cv_c_float_words_bigendian=no (or yes) "
-            "according to your system."
-        )
+    pyconf.error(
+        "Unknown float word ordering. You need to manually "
+        "preset ax_cv_c_float_words_bigendian=no (or yes) "
+        "according to your system."
+    )
 
 
 def check_gcc_asm_and_floating_point(v):

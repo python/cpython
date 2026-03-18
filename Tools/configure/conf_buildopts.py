@@ -535,12 +535,14 @@ def setup_dtrace(v):
 def setup_perf_trampoline(v):
     """Check and configure perf trampoline support."""
     pyconf.checking("perf trampoline")
-    if v.PLATFORM_TRIPLET in (
-        "x86_64-linux-gnu",
-        "aarch64-linux-gnu",
-        "darwin",
-    ):
+    if v.PLATFORM_TRIPLET in ("x86_64-linux-gnu", "aarch64-linux-gnu"):
         perf_trampoline = True
+    elif v.PLATFORM_TRIPLET == "darwin":
+        target = v.get("MACOSX_DEPLOYMENT_TARGET", "")
+        if pyconf.fnmatch_any(target, ["10.[0-9]", "10.1[0-1]"]):
+            perf_trampoline = False
+        else:
+            perf_trampoline = True
     else:
         perf_trampoline = False
     pyconf.result(perf_trampoline)
