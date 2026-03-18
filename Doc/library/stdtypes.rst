@@ -5009,6 +5009,9 @@ copying.
 
       .. versionadded:: 3.3
 
+For information on the thread safety of :class:`memoryview` objects in
+the :term:`free-threaded build`, see :ref:`thread-safety-memoryview`.
+
 
 .. _types-set:
 
