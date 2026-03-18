@@ -630,6 +630,8 @@ class TestUopsOptimization(unittest.TestCase):
         self.assertIn("_PUSH_FRAME", uops)
         self.assertIn("_BINARY_OP_ADD_INT", uops)
         self.assertNotIn("_CHECK_PEP_523", uops)
+        self.assertNotIn("_GUARD_CODE_VERSION__PUSH_FRAME", uops)
+        self.assertNotIn("_GUARD_IP__PUSH_FRAME", uops)
 
     def test_int_type_propagate_through_range(self):
         def testfunc(n):
@@ -1540,8 +1542,9 @@ class TestUopsOptimization(unittest.TestCase):
         self.assertIsNotNone(ex)
         uops = get_opnames(ex)
         self.assertIn("_PUSH_FRAME", uops)
-        # Strength reduced version
-        self.assertIn("_CHECK_FUNCTION_VERSION_INLINE", uops)
+        # Both should be not present, as this is a call
+        # to a simple function with a known function version.
+        self.assertNotIn("_CHECK_FUNCTION_VERSION_INLINE", uops)
         self.assertNotIn("_CHECK_FUNCTION_VERSION", uops)
         # Removed guard
         self.assertNotIn("_CHECK_FUNCTION_EXACT_ARGS", uops)
