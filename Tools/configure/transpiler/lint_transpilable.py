@@ -174,6 +174,17 @@ ALLOWED_OPTION_METHODS = frozenset(
     }
 )
 
+# Allowed Vars (v) method calls.  The Vars object uses __getattr__ to
+# return env/empty-string for unknown attributes, so calling anything
+# other than these real methods (e.g. v.get()) silently returns a string
+# and then fails at runtime with "TypeError: 'str' object is not callable".
+ALLOWED_VARS_METHODS = frozenset(
+    {
+        "export",
+        "is_set",
+    }
+)
+
 # Allowed string methods that have shell equivalents.
 ALLOWED_STR_METHODS = frozenset(
     {
@@ -810,11 +821,18 @@ class TranspilableLinter(ast.NodeVisitor):
                     self._check_expr(kw.value)
                 return
 
-        # v.export(...) and other Vars methods — allowed
+        # v.export(...) / v.is_set(...) — allowed Vars methods
         if isinstance(func, ast.Attribute) and isinstance(
             func.value, ast.Name
         ):
             if func.value.id == "v":
+                if func.attr not in ALLOWED_VARS_METHODS:
+                    self._warn(
+                        node,
+                        f"v.{func.attr}(): not in allowed Vars methods"
+                        f" ({', '.join(sorted(ALLOWED_VARS_METHODS))})"
+                        " — use v.ATTR for attribute access instead",
+                    )
                 for arg in node.args:
                     self._check_expr(arg)
                 for kw in node.keywords:

@@ -14,6 +14,7 @@ import sys
 from . import py_to_pysh
 from .pysh_ast import ModuleInfo, OptionInfo
 from .py_to_pysh import parse_option_decl
+from .lint_transpilable import lint_file
 
 from . import pysh_to_awk
 from . import awk_emit
@@ -41,6 +42,20 @@ exec awk -f "$_tmpf" -- "$@"
 
 
 def transpile_configure(script_dir: str) -> str:
+    # Lint conf_*.py files before transpiling
+    import glob as _glob
+
+    conf_files = sorted(_glob.glob(os.path.join(script_dir, "conf_*.py")))
+    all_violations = []
+    for filepath in conf_files:
+        result = lint_file(filepath)
+        all_violations.extend(result.violations)
+    if all_violations:
+        msgs = "\n".join(f"  {v}" for v in all_violations)
+        raise ValueError(
+            f"lint check failed with {len(all_violations)} violation(s):\n{msgs}"
+        )
+
     # Parse Python source, produce Python AST, transform to pysh AST
     program = py_to_pysh.parse_program(script_dir)
     # Transform pysh AST → AWK AST
