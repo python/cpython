@@ -347,8 +347,10 @@ gc_get_stats_impl(PyObject *module)
     /* To get consistent values despite allocations while constructing
        the result list, we use a snapshot of the running stats. */
     GCState *gcstate = get_gc_state();
+    struct gc_generation_stats_buffer *buffer;
     for (i = 0; i < NUM_GENERATIONS; i++) {
-        stats[i] = gcstate->generation_stats[i];
+        buffer = &gcstate->generation_stats.gen[i];
+        stats[i] = buffer->items[buffer->index];
     }
 
     PyObject *result = PyList_New(0);

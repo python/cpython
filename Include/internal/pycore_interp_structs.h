@@ -177,21 +177,12 @@ struct gc_generation {
                   generations */
 };
 
-struct gc_collection_stats {
-    /* number of collected objects */
-    Py_ssize_t collected;
-    /* total number of uncollectable objects (put into gc.garbage) */
-    Py_ssize_t uncollectable;
-    // Total number of objects considered for collection and traversed:
-    Py_ssize_t candidates;
-    // Duration of the collection in seconds:
-    double duration;
-};
-
 /* Running stats per generation */
 struct gc_generation_stats {
+    PyTime_t ts;
     /* total number of collections */
     Py_ssize_t collections;
+
     /* total number of collected objects */
     Py_ssize_t collected;
     /* total number of uncollectable objects (put into gc.garbage) */
@@ -199,7 +190,17 @@ struct gc_generation_stats {
     // Total number of objects considered for collection and traversed:
     Py_ssize_t candidates;
     // Duration of the collection in seconds:
+
+    Py_ssize_t object_visits;
+    Py_ssize_t objects_transitively_reachable;
+    Py_ssize_t objects_not_transitively_reachable;
+
     double duration;
+};
+
+struct gc_generation_stats_buffer {
+    struct gc_generation_stats items[11];
+    int8_t index;
 };
 
 enum _GCPhase {
@@ -211,6 +212,10 @@ enum _GCPhase {
    signature of gc.collect and change the size of PyStats.gc_stats */
 #define NUM_GENERATIONS 3
 
+struct gc_stats {
+    struct gc_generation_stats_buffer gen[NUM_GENERATIONS];
+};
+
 struct _gc_runtime_state {
     /* Is automatic collection enabled? */
     int enabled;
@@ -220,7 +225,7 @@ struct _gc_runtime_state {
     struct gc_generation old[2];
     /* a permanent generation which won't be collected */
     struct gc_generation permanent_generation;
-    struct gc_generation_stats generation_stats[NUM_GENERATIONS];
+    struct gc_stats generation_stats;
     /* true if we are currently running the collector */
     int collecting;
     // The frame that started the current collection. It might be NULL even when
