@@ -793,9 +793,9 @@ dummy_func(
             PyObject *temp = PyStackRef_AsPyObjectSteal(*target_local);
             PyObject *right_o = PyStackRef_AsPyObjectSteal(right);
             PyUnicode_Append(&temp, right_o);
-            *target_local = PyStackRef_FromPyObjectSteal(temp);
             Py_DECREF(right_o);
-            ERROR_IF(PyStackRef_IsNull(*target_local));
+            ERROR_IF(temp == NULL);
+            *target_local = PyStackRef_FromPyObjectSteal(temp);
         #if TIER_ONE
             // The STORE_FAST is already done. This is done here in tier one,
             // and during trace projection in tier two:

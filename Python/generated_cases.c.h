@@ -392,14 +392,12 @@
                 assert(WITHIN_STACK_BOUNDS());
                 _PyFrame_SetStackPointer(frame, stack_pointer);
                 PyUnicode_Append(&temp, right_o);
-                stack_pointer = _PyFrame_GetStackPointer(frame);
-                *target_local = PyStackRef_FromPyObjectSteal(temp);
-                _PyFrame_SetStackPointer(frame, stack_pointer);
                 Py_DECREF(right_o);
                 stack_pointer = _PyFrame_GetStackPointer(frame);
-                if (PyStackRef_IsNull(*target_local)) {
+                if (temp == NULL) {
                     JUMP_TO_LABEL(error);
                 }
+                *target_local = PyStackRef_FromPyObjectSteal(temp);
                 #if TIER_ONE
 
                 assert(next_instr->op.code == STORE_FAST);

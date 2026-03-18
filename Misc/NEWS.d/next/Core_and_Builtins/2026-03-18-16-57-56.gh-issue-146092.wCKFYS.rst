@@ -1,2 +1,2 @@
-Handle properly memory allocation failures on float operations in the
-bytecode opcodes. Patch by Victor Stinner.
+Handle properly memory allocation failures on str and float opcodes. Patch by
+Victor Stinner.
