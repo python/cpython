@@ -118,7 +118,7 @@ def main():
             print(f"Add PCbuild directory: {pcbuild}")
 
     # Display information to help debugging
-    for env_name in ('CC', 'CFLAGS'):
+    for env_name in ('CC', 'CFLAGS', 'CPPFLAGS'):
         if env_name in os.environ:
             print(f"{env_name} env var: {os.environ[env_name]!r}")
         else:

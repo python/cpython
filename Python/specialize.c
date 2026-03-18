@@ -8,6 +8,7 @@
 #include "pycore_dict.h"          // DICT_KEYS_UNICODE
 #include "pycore_function.h"      // _PyFunction_GetVersionForCurrentState()
 #include "pycore_interpframe.h"   // FRAME_SPECIALS_SIZE
+#include "pycore_lazyimportobject.h" // PyLazyImport_CheckExact
 #include "pycore_list.h"          // _PyListIterObject
 #include "pycore_long.h"          // _PyLong_IsNonNegativeCompact()
 #include "pycore_moduleobject.h"
@@ -45,16 +46,18 @@ void
 _PyCode_Quicken(_Py_CODEUNIT *instructions, Py_ssize_t size, int enable_counters)
 {
     #if ENABLE_SPECIALIZATION
-    _Py_BackoffCounter jump_counter, adaptive_counter;
+    _Py_BackoffCounter jump_counter, adaptive_counter, resume_counter;
     if (enable_counters) {
         PyThreadState *tstate = _PyThreadState_GET();
         PyInterpreterState *interp = tstate->interp;
         jump_counter = initial_jump_backoff_counter(&interp->opt_config);
         adaptive_counter = adaptive_counter_warmup();
+        resume_counter = initial_resume_backoff_counter(&interp->opt_config);
     }
     else {
         jump_counter = initial_unreachable_backoff_counter();
         adaptive_counter = initial_unreachable_backoff_counter();
+        resume_counter = initial_unreachable_backoff_counter();
     }
     int opcode = 0;
     int oparg = 0;
@@ -68,6 +71,9 @@ _PyCode_Quicken(_Py_CODEUNIT *instructions, Py_ssize_t size, int enable_counters
             switch (opcode) {
                 case JUMP_BACKWARD:
                     instructions[i + 1].counter = jump_counter;
+                    break;
+                case RESUME:
+                    instructions[i + 1].counter = resume_counter;
                     break;
                 case POP_JUMP_IF_FALSE:
                 case POP_JUMP_IF_TRUE:
@@ -129,6 +135,7 @@ _PyCode_Quicken(_Py_CODEUNIT *instructions, Py_ssize_t size, int enable_counters
 #define SPEC_FAIL_ATTR_BUILTIN_CLASS_METHOD 22
 #define SPEC_FAIL_ATTR_CLASS_METHOD_OBJ 23
 #define SPEC_FAIL_ATTR_OBJECT_SLOT 24
+#define SPEC_FAIL_ATTR_MODULE_LAZY_VALUE 25
 
 #define SPEC_FAIL_ATTR_INSTANCE_ATTRIBUTE 26
 #define SPEC_FAIL_ATTR_METACLASS_ATTRIBUTE 27
@@ -383,6 +390,10 @@ specialize_module_load_attr_lock_held(PyDictObject *dict, _Py_CODEUNIT *instr, P
     }
     PyObject *value;
     Py_ssize_t index = _PyDict_LookupIndexAndValue(dict, name, &value);
+    if (value != NULL && PyLazyImport_CheckExact(value)) {
+        SPECIALIZATION_FAIL(LOAD_ATTR, SPEC_FAIL_ATTR_MODULE_LAZY_VALUE);
+        return -1;
+    }
     assert(index != DKIX_ERROR);
     if (index != (uint16_t)index) {
         SPECIALIZATION_FAIL(LOAD_ATTR,
@@ -1307,14 +1318,14 @@ specialize_load_global_lock_held(
         SPECIALIZATION_FAIL(LOAD_GLOBAL, SPEC_FAIL_LOAD_GLOBAL_NON_STRING_OR_SPLIT);
         goto fail;
     }
-#ifdef Py_GIL_DISABLED
     PyObject *value;
     Py_ssize_t index = _PyDict_LookupIndexAndValue((PyDictObject *)globals, name, &value);
-#else
-    Py_ssize_t index = _PyDictKeys_StringLookup(globals_keys, name);
-#endif
     if (index == DKIX_ERROR) {
         SPECIALIZATION_FAIL(LOAD_GLOBAL, SPEC_FAIL_EXPECTED_ERROR);
+        goto fail;
+    }
+    if (value != NULL && PyLazyImport_CheckExact(value)) {
+        SPECIALIZATION_FAIL(LOAD_GLOBAL, SPEC_FAIL_ATTR_MODULE_LAZY_VALUE);
         goto fail;
     }
     PyInterpreterState *interp = _PyInterpreterState_GET();
@@ -2094,7 +2105,7 @@ float_compactlong_guard(PyObject *lhs, PyObject *rhs)
 {
     return (
         PyFloat_CheckExact(lhs) &&
-        !isnan(PyFloat_AsDouble(lhs)) &&
+        !isnan(PyFloat_AS_DOUBLE(lhs)) &&
         PyLong_CheckExact(rhs) &&
         _PyLong_IsCompact((PyLongObject *)rhs)
     );
@@ -2104,7 +2115,7 @@ static inline int
 nonzero_float_compactlong_guard(PyObject *lhs, PyObject *rhs)
 {
     return (
-        float_compactlong_guard(lhs, rhs) && !PyLong_IsZero(rhs)
+        float_compactlong_guard(lhs, rhs) && !_PyLong_IsZero((PyLongObject*)rhs)
     );
 }
 
@@ -2112,7 +2123,7 @@ nonzero_float_compactlong_guard(PyObject *lhs, PyObject *rhs)
     static PyObject * \
     (NAME)(PyObject *lhs, PyObject *rhs) \
     { \
-        double lhs_val = PyFloat_AsDouble(lhs); \
+        double lhs_val = PyFloat_AS_DOUBLE(lhs); \
         Py_ssize_t rhs_val = _PyLong_CompactValue((PyLongObject *)rhs); \
         return PyFloat_FromDouble(lhs_val OP rhs_val); \
     }
@@ -2131,7 +2142,7 @@ compactlong_float_guard(PyObject *lhs, PyObject *rhs)
         PyLong_CheckExact(lhs) &&
         _PyLong_IsCompact((PyLongObject *)lhs) &&
         PyFloat_CheckExact(rhs) &&
-        !isnan(PyFloat_AsDouble(rhs))
+        !isnan(PyFloat_AS_DOUBLE(rhs))
     );
 }
 
@@ -2139,7 +2150,7 @@ static inline int
 nonzero_compactlong_float_guard(PyObject *lhs, PyObject *rhs)
 {
     return (
-        compactlong_float_guard(lhs, rhs) && PyFloat_AsDouble(rhs) != 0.0
+        compactlong_float_guard(lhs, rhs) && PyFloat_AS_DOUBLE(rhs) != 0.0
     );
 }
 
@@ -2147,7 +2158,7 @@ nonzero_compactlong_float_guard(PyObject *lhs, PyObject *rhs)
     static PyObject * \
     (NAME)(PyObject *lhs, PyObject *rhs) \
     { \
-        double rhs_val = PyFloat_AsDouble(rhs); \
+        double rhs_val = PyFloat_AS_DOUBLE(rhs); \
         Py_ssize_t lhs_val = _PyLong_CompactValue((PyLongObject *)lhs); \
         return PyFloat_FromDouble(lhs_val OP rhs_val); \
     }
@@ -2281,7 +2292,7 @@ _Py_Specialize_BinaryOp(_PyStackRef lhs_st, _PyStackRef rhs_st, _Py_CODEUNIT *in
                     }
                 }
             }
-            if (PyDict_CheckExact(lhs)) {
+            if (PyAnyDict_CheckExact(lhs)) {
                 specialize(instr, BINARY_OP_SUBSCR_DICT);
                 return;
             }
@@ -2761,7 +2772,7 @@ _Py_Specialize_ContainsOp(_PyStackRef value_st, _Py_CODEUNIT *instr)
 
     assert(ENABLE_SPECIALIZATION);
     assert(_PyOpcode_Caches[CONTAINS_OP] == INLINE_CACHE_ENTRIES_COMPARE_OP);
-    if (PyDict_CheckExact(value)) {
+    if (PyAnyDict_CheckExact(value)) {
         specialize(instr, CONTAINS_OP_DICT);
         return;
     }
@@ -2771,6 +2782,28 @@ _Py_Specialize_ContainsOp(_PyStackRef value_st, _Py_CODEUNIT *instr)
     }
 
     SPECIALIZATION_FAIL(CONTAINS_OP, containsop_fail_kind(value));
+    unspecialize(instr);
+    return;
+}
+
+
+void
+_Py_Specialize_Resume(_Py_CODEUNIT *instr, PyThreadState *tstate, _PyInterpreterFrame *frame)
+{
+    if (tstate->tracing == 0 && instr->op.code == RESUME) {
+        if (tstate->interp->jit) {
+            PyCodeObject *co = (PyCodeObject *)PyStackRef_AsPyObjectBorrow(frame->f_executable);
+            if (co != NULL &&
+                PyCode_Check(co) &&
+                (co->co_flags & (CO_GENERATOR | CO_COROUTINE | CO_ASYNC_GENERATOR)) == 0) {
+                specialize(instr, RESUME_CHECK_JIT);
+                set_counter((_Py_BackoffCounter *)instr + 1, initial_resume_backoff_counter(&tstate->interp->opt_config));
+                return;
+            }
+        }
+        specialize(instr, RESUME_CHECK);
+        return;
+    }
     unspecialize(instr);
     return;
 }
@@ -2877,5 +2910,6 @@ const struct _PyCode8 _Py_InitCleanup = {
         EXIT_INIT_CHECK, 0,
         RETURN_VALUE, 0,
         RESUME, RESUME_AT_FUNC_START,
+        CACHE, 0, /* RESUME's cache */
     }
 };

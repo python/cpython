@@ -80,7 +80,7 @@ Floating-Point Objects
 
 .. c:macro:: Py_INFINITY
 
-   This macro expands a to constant expression of type :c:expr:`double`, that
+   This macro expands to a constant expression of type :c:expr:`double`, that
    represents the positive infinity.
 
    It is equivalent to the :c:macro:`!INFINITY` macro from the C11 standard
@@ -92,7 +92,7 @@ Floating-Point Objects
 
 .. c:macro:: Py_NAN
 
-   This macro expands a to constant expression of type :c:expr:`double`, that
+   This macro expands to a constant expression of type :c:expr:`double`, that
    represents a quiet not-a-number (qNaN) value.
 
    On most platforms, this is equivalent to the :c:macro:`!NAN` macro from
@@ -201,8 +201,8 @@ NaNs (if such things exist on the platform) isn't handled correctly, and
 attempting to unpack a bytes string containing an IEEE INF or NaN will raise an
 exception.
 
-Note that NaNs type may not be preserved on IEEE platforms (signaling NaN become
-quiet NaN), for example on x86 systems in 32-bit mode.
+Note that NaN type may not be preserved on IEEE platforms (signaling NaNs become
+quiet NaNs), for example on x86 systems in 32-bit mode.
 
 On non-IEEE platforms with more precision, or larger dynamic range, than IEEE
 754 supports, not all values can be packed; on non-IEEE platforms with less
@@ -216,18 +216,13 @@ Pack functions
 
 The pack routines write 2, 4 or 8 bytes, starting at *p*. *le* is an
 :c:expr:`int` argument, non-zero if you want the bytes string in little-endian
-format (exponent last, at ``p+1``, ``p+3``, or ``p+6`` ``p+7``), zero if you
+format (exponent last, at ``p+1``, ``p+3``, or ``p+6`` and ``p+7``), zero if you
 want big-endian format (exponent first, at *p*). The :c:macro:`PY_BIG_ENDIAN`
 constant can be used to use the native endian: it is equal to ``1`` on big
 endian processor, or ``0`` on little endian processor.
 
 Return value: ``0`` if all is OK, ``-1`` if error (and an exception is set,
 most likely :exc:`OverflowError`).
-
-There are two problems on non-IEEE platforms:
-
-* What this does is undefined if *x* is a NaN or infinity.
-* ``-0.0`` and ``+0.0`` produce the same bytes string.
 
 .. c:function:: int PyFloat_Pack2(double x, char *p, int le)
 
@@ -255,9 +250,6 @@ on little endian processor.
 Return value: The unpacked double.  On error, this is ``-1.0`` and
 :c:func:`PyErr_Occurred` is true (and an exception is set, most likely
 :exc:`OverflowError`).
-
-Note that on a non-IEEE platform this will refuse to unpack a bytes string that
-represents a NaN or infinity.
 
 .. c:function:: double PyFloat_Unpack2(const char *p, int le)
 

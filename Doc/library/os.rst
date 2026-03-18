@@ -111,7 +111,7 @@ Python UTF-8 Mode
 .. versionchanged:: 3.15
 
    Python UTF-8 mode is now enabled by default (:pep:`686`).
-   It may be disabled with by setting :envvar:`PYTHONUTF8=0 <PYTHONUTF8>` as
+   It may be disabled by setting :envvar:`PYTHONUTF8=0 <PYTHONUTF8>` as
    an environment variable or by using the :option:`-X utf8=0 <-X>` command line option.
 
 The Python UTF-8 Mode ignores the :term:`locale encoding` and forces the usage
@@ -254,7 +254,7 @@ process and user.
 
    .. warning::
       This function is not thread-safe. Calling it while the environment is
-      being modified in an other thread is an undefined behavior. Reading from
+      being modified in another thread is an undefined behavior. Reading from
       :data:`os.environ` or :data:`os.environb`, or calling :func:`os.getenv`
       while reloading, may return an empty result.
 
@@ -1294,8 +1294,8 @@ as internal buffering of data.
 
       This function is intended for low-level I/O.  For normal usage, use the
       built-in function :func:`open`, which returns a :term:`file object` with
-      :meth:`~file.read` and :meth:`~file.write` methods (and many more).  To
-      wrap a file descriptor in a file object, use :func:`fdopen`.
+      :meth:`~io.BufferedIOBase.read` and :meth:`~io.BufferedIOBase.write` methods.
+      To wrap a file descriptor in a file object, use :func:`fdopen`.
 
    .. versionchanged:: 3.3
       Added the *dir_fd* parameter.
@@ -1670,7 +1670,7 @@ or `the MSDN <https://msdn.microsoft.com/en-us/library/z0kc8e3z.aspx>`_ on Windo
       descriptor as returned by :func:`os.open` or :func:`pipe`.  To read a
       "file object" returned by the built-in function :func:`open` or by
       :func:`popen` or :func:`fdopen`, or :data:`sys.stdin`, use its
-      :meth:`~file.read` or :meth:`~file.readline` methods.
+      :meth:`~io.TextIOBase.read` or :meth:`~io.IOBase.readline` methods.
 
    .. versionchanged:: 3.5
       If the system call is interrupted and the signal handler does not raise an
@@ -1905,7 +1905,7 @@ or `the MSDN <https://msdn.microsoft.com/en-us/library/z0kc8e3z.aspx>`_ on Windo
       descriptor as returned by :func:`os.open` or :func:`pipe`.  To write a "file
       object" returned by the built-in function :func:`open` or by :func:`popen` or
       :func:`fdopen`, or :data:`sys.stdout` or :data:`sys.stderr`, use its
-      :meth:`~file.write` method.
+      :meth:`~io.TextIOBase.write` method.
 
    .. versionchanged:: 3.5
       If the system call is interrupted and the signal handler does not raise an
@@ -2408,6 +2408,10 @@ features:
 
    .. versionchanged:: 3.6
       Accepts a :term:`path-like object`.
+
+   .. versionchanged:: 3.15
+      ``os.listdir(-1)`` now fails with ``OSError(errno.EBADF)`` rather than
+      listing the current directory.
 
 
 .. function:: listdrives()
@@ -2938,6 +2942,10 @@ features:
 
    .. versionchanged:: 3.7
       Added support for :ref:`file descriptors <path_fd>` on Unix.
+
+   .. versionchanged:: 3.15
+      ``os.scandir(-1)`` now fails with ``OSError(errno.EBADF)`` rather than
+      listing the current directory.
 
 
 .. class:: DirEntry
@@ -4371,7 +4379,7 @@ Naturally, they are all only available on Linux.
    except it includes any time that the system is suspended.
 
    The file descriptor's behaviour can be modified by specifying a *flags* value.
-   Any of the following variables may used, combined using bitwise OR
+   Any of the following variables may be used, combined using bitwise OR
    (the ``|`` operator):
 
    - :const:`TFD_NONBLOCK`
@@ -4403,7 +4411,7 @@ Naturally, they are all only available on Linux.
    *fd* must be a valid timer file descriptor.
 
    The timer's behaviour can be modified by specifying a *flags* value.
-   Any of the following variables may used, combined using bitwise OR
+   Any of the following variables may be used, combined using bitwise OR
    (the ``|`` operator):
 
    - :const:`TFD_TIMER_ABSTIME`
@@ -4472,7 +4480,7 @@ Naturally, they are all only available on Linux.
 
    Return a two-item tuple of floats (``next_expiration``, ``interval``).
 
-   ``next_expiration`` denotes the relative time until next the timer next fires,
+   ``next_expiration`` denotes the relative time until the timer next fires,
    regardless of if the :const:`TFD_TIMER_ABSTIME` flag is set.
 
    ``interval`` denotes the timer's interval.
@@ -4573,6 +4581,10 @@ These functions are all available on Linux only.
 
    .. versionchanged:: 3.6
       Accepts a :term:`path-like object`.
+
+   .. versionchanged:: 3.15
+      ``os.listxattr(-1)`` now fails with ``OSError(errno.EBADF)`` rather than
+      listing extended attributes of the current directory.
 
 
 .. function:: removexattr(path, attribute, *, follow_symlinks=True)
@@ -4708,7 +4720,7 @@ to be ignored.
    The current process is replaced immediately. Open file objects and
    descriptors are not flushed, so if there may be data buffered
    on these open files, you should flush them using
-   :func:`sys.stdout.flush` or :func:`os.fsync` before calling an
+   :func:`~io.IOBase.flush` or :func:`os.fsync` before calling an
    :func:`exec\* <execl>` function.
 
    The "l" and "v" variants of the :func:`exec\* <execl>` functions differ in how

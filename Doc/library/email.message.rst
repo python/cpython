@@ -3,9 +3,6 @@
 
 .. module:: email.message
    :synopsis: The base class representing email messages.
-.. moduleauthor:: R. David Murray <rdmurray@bitdance.com>
-.. sectionauthor:: R. David Murray <rdmurray@bitdance.com>,
-                   Barry A. Warsaw <barry@python.org>
 
 **Source code:** :source:`Lib/email/message.py`
 

@@ -15,7 +15,7 @@ from test.support import (script_helper, requires_specialization,
 
 _testinternalcapi = import_helper.import_module("_testinternalcapi")
 
-from _testinternalcapi import _PY_NSMALLPOSINTS, TIER2_THRESHOLD
+from _testinternalcapi import _PY_NSMALLPOSINTS, TIER2_THRESHOLD, TIER2_RESUME_THRESHOLD
 
 #For test of issue 136154
 GLOBAL_136154 = 42
@@ -110,6 +110,7 @@ class TestExecutorInvalidation(unittest.TestCase):
             for exe in executors[:i]:
                 self.assertTrue(exe.is_valid())
 
+    @unittest.skipIf(os.getenv("PYTHON_UOPS_OPTIMIZE") == "0", "Needs uop optimizer to run.")
     def test_uop_optimizer_invalidation(self):
         # Generate a new function at each call
         ns = {}
@@ -321,6 +322,23 @@ class TestUops(unittest.TestCase):
         uops = get_opnames(ex)
         self.assertIn("_JUMP_TO_TOP", uops)
 
+    def test_resume(self):
+        def testfunc(x):
+            if x <= 1:
+                return 1
+            return testfunc(x-1)
+
+        for _ in range((TIER2_RESUME_THRESHOLD + 99)//100):
+            testfunc(101)
+
+        ex = get_first_executor(testfunc)
+        self.assertIsNotNone(ex)
+        uops = get_opnames(ex)
+        # 0. _START_EXECUTOR
+        # 1. _MAKE_WARM
+        # 2. _TIER2_RESUME_CHECK
+        self.assertEqual(uops[2], "_TIER2_RESUME_CHECK")
+
     def test_jump_forward(self):
         def testfunc(n):
             a = 0
@@ -459,6 +477,19 @@ class TestUops(unittest.TestCase):
         self.assertIsNotNone(ex)
         uops = get_opnames(ex)
         self.assertIn(self.guard_is_false, uops)
+
+    def test_branch_coincident_targets(self):
+        # test for gh-144681: https://github.com/python/cpython/issues/144681
+        def testfunc(n):
+            for _ in range(n):
+                r = [x for x in range(10) if [].append(x) or True]
+            return r
+
+        res = testfunc(TIER2_THRESHOLD)
+        ex = get_first_executor(testfunc)
+
+        self.assertEqual(res, list(range(10)))
+        self.assertIsNotNone(ex)
 
     def test_for_iter_tier_two(self):
         class MyIter:
@@ -1290,6 +1321,50 @@ class TestUopsOptimization(unittest.TestCase):
         self.assertIsNotNone(ex)
         self.assertIn("_RETURN_GENERATOR", get_opnames(ex))
 
+    def test_make_heap_safe_optimized_immortal(self):
+        def returns_immortal():
+            return None
+        def testfunc(n):
+            a = 0
+            for _ in range(n):
+                a = returns_immortal()
+            return a
+        res, ex = self._run_with_optimizer(testfunc, TIER2_THRESHOLD)
+        self.assertIsNone(res)
+        self.assertIsNotNone(ex)
+        uops = get_opnames(ex)
+        self.assertNotIn("_MAKE_HEAP_SAFE", uops)
+        self.assertIn("_RETURN_VALUE", uops)
+
+    def test_make_heap_safe_optimized_yield(self):
+        def gen(n):
+            for _ in range(n):
+                yield 1
+        def testfunc(n):
+            for _ in gen(n):
+                pass
+        testfunc(TIER2_THRESHOLD * 2)
+        gen_ex = get_first_executor(gen)
+        self.assertIsNotNone(gen_ex)
+        uops = get_opnames(gen_ex)
+        self.assertNotIn("_MAKE_HEAP_SAFE", uops)
+        self.assertIn("_YIELD_VALUE", uops)
+
+    def test_make_heap_safe_not_optimized_for_owned(self):
+        def returns_owned(x):
+            return x + 1
+        def testfunc(n):
+            a = 0
+            for _ in range(n):
+                a = returns_owned(a)
+            return a
+        res, ex = self._run_with_optimizer(testfunc, TIER2_THRESHOLD)
+        self.assertEqual(res, TIER2_THRESHOLD)
+        self.assertIsNotNone(ex)
+        uops = get_opnames(ex)
+        self.assertIn("_MAKE_HEAP_SAFE", uops)
+        self.assertIn("_RETURN_VALUE", uops)
+
     def test_for_iter(self):
         def testfunc(n):
             t = 0
@@ -1361,7 +1436,7 @@ class TestUopsOptimization(unittest.TestCase):
 
         def thing(a):
             x = 0
-            for i in range(TIER2_THRESHOLD * 2 + 1):
+            for i in range(TIER2_THRESHOLD + 1):
                 x += a.attr
                 # The first TIER2_THRESHOLD iterations we set the attribute on
                 # this dummy class, which shouldn't trigger the type watcher.
@@ -1379,8 +1454,7 @@ class TestUopsOptimization(unittest.TestCase):
 
         res, ex = self._run_with_optimizer(thing, Foo())
         opnames = list(iter_opnames(ex))
-        self.assertIsNotNone(ex)
-        self.assertEqual(res, TIER2_THRESHOLD * 6 + 1)
+        self.assertEqual(res, TIER2_THRESHOLD * 2 + 2)
         call = opnames.index("_CALL_BUILTIN_FAST")
         load_attr_top = opnames.index("_POP_TOP_LOAD_CONST_INLINE_BORROW", 0, call)
         load_attr_bottom = opnames.index("_POP_TOP_LOAD_CONST_INLINE_BORROW", call)
@@ -1986,6 +2060,23 @@ class TestUopsOptimization(unittest.TestCase):
         self.assertNotIn("_GUARD_NOS_TUPLE", uops)
         self.assertIn("_BINARY_OP_SUBSCR_TUPLE_INT", uops)
 
+    def test_remove_guard_for_known_type_slice(self):
+        def f(n):
+            x = 0
+            for _ in range(n):
+                l = [1, 2, 3]
+                slice_obj = slice(0, 1)
+                x += l[slice_obj][0] # guarded
+                x += l[slice_obj][0] # unguarded
+            return x
+        res, ex = self._run_with_optimizer(f, TIER2_THRESHOLD)
+        self.assertEqual(res, TIER2_THRESHOLD * 2)
+        uops = get_opnames(ex)
+
+        count = count_ops(ex, "_GUARD_TOS_SLICE")
+        self.assertEqual(count, 1)
+        self.assertIn("_BINARY_OP_SUBSCR_LIST_INT", uops)
+
     def test_remove_guard_for_tuple_bounds_check(self):
         def f(n):
             x = 0
@@ -2470,6 +2561,21 @@ class TestUopsOptimization(unittest.TestCase):
         self.assertIn("_CALL_METHOD_DESCRIPTOR_O", uops)
         self.assertIn("_POP_TOP_NOP", uops)
         self.assertLessEqual(count_ops(ex, "_POP_TOP"), 4)
+
+    def test_call_intrinsic_1(self):
+        def testfunc(n):
+            x = 0
+            for _ in range(n):
+                +x
+            return x
+
+        res, ex = self._run_with_optimizer(testfunc, TIER2_THRESHOLD)
+        self.assertEqual(res, 0)
+        uops = get_opnames(ex)
+
+        self.assertIn("_CALL_INTRINSIC_1", uops)
+        self.assertEqual(count_ops(ex, "_POP_TOP_NOP"), 1)
+        self.assertLessEqual(count_ops(ex, "_POP_TOP"), 2)
 
     def test_get_len_with_const_tuple(self):
         def testfunc(n):
@@ -3643,6 +3749,23 @@ class TestUopsOptimization(unittest.TestCase):
         self.assertLessEqual(count_ops(ex, "_POP_TOP_INT"), 1)
         self.assertIn("_POP_TOP_NOP", uops)
 
+    def test_binary_subscr_list_slice(self):
+        def testfunc(n):
+            x = 0
+            for _ in range(n):
+                l = [1, 2, 3]
+                x += l[0:1][0]
+            return x
+
+        res, ex = self._run_with_optimizer(testfunc, TIER2_THRESHOLD)
+        self.assertEqual(res, TIER2_THRESHOLD)
+        uops = get_opnames(ex)
+
+        self.assertIn("_BINARY_OP_SUBSCR_LIST_SLICE", uops)
+        self.assertNotIn("_GUARD_TOS_LIST", uops)
+        self.assertEqual(count_ops(ex, "_POP_TOP"), 3)
+        self.assertEqual(count_ops(ex, "_POP_TOP_NOP"), 4)
+
     def test_is_op(self):
         def test_is_false(n):
             a = object()
@@ -3858,6 +3981,40 @@ class TestUopsOptimization(unittest.TestCase):
         self.assertIn("_POP_TOP_NOP", uops)
         self.assertLessEqual(count_ops(ex, "_POP_TOP"), 2)
 
+    def test_iter_check_list(self):
+        def testfunc(n):
+            x = 0
+            for _ in range(n):
+                l = [1]
+                for num in l: # unguarded
+                    x += num
+            return x
+
+        res, ex = self._run_with_optimizer(testfunc, TIER2_THRESHOLD)
+        self.assertEqual(res, TIER2_THRESHOLD)
+        uops = get_opnames(ex)
+
+        self.assertIn("_BUILD_LIST", uops)
+        self.assertNotIn("_ITER_CHECK_LIST", uops)
+
+    def test_match_class(self):
+        def testfunc(n):
+            class A:
+                val = 1
+            x = A()
+            ret = 0
+            for _ in range(n):
+                match x:
+                    case A():
+                        ret += x.val
+            return ret
+
+        res, ex = self._run_with_optimizer(testfunc, TIER2_THRESHOLD)
+        self.assertEqual(res, TIER2_THRESHOLD)
+        uops = get_opnames(ex)
+
+        self.assertIn("_MATCH_CLASS", uops)
+        self.assertEqual(count_ops(ex, "_POP_TOP_NOP"), 4)
 
     def test_143026(self):
         # https://github.com/python/cpython/issues/143026
@@ -4029,6 +4186,77 @@ class TestUopsOptimization(unittest.TestCase):
                          f"Memory leak detected by ASan:\n{stderr}")
         self.assertNotIn('_PyJit_TryInitializeTracing', stderr,
                          f"JIT tracer memory leak detected:\n{stderr}")
+
+    def test_cold_exit_on_init_cleanup_frame(self):
+
+        result = script_helper.run_python_until_end('-c', textwrap.dedent("""
+        class A:
+            __slots__ = ('x', 'y', 'z', 'w')
+            def __init__(self):
+                self.x = self.y = -1
+                self.z = self.w = None
+
+        class B(A):
+            __slots__ = ('a', 'b', 'c', 'd', 'e')
+            def __init__(self):
+                super().__init__()
+                self.a = self.b = None
+                self.c = ""
+                self.d = self.e = False
+
+        class C(B):
+            __slots__ = ('name', 'flag')
+            def __init__(self, name):
+                super().__init__()
+                self.name = name
+                self.flag = False
+
+        funcs = []
+        for n in range(20, 80):
+            lines = [f"def f{n}(names, info):"]
+            for j in range(n):
+                lines.append(f"    v{j} = names[{j % 3}]")
+                if j % 3 == 0:
+                    lines.append(f"    if v{j} in info:")
+                    lines.append(f"        v{j} = info[v{j}]")
+                elif j % 5 == 0:
+                    lines.append(f"    v{j} = len(v{j}) if isinstance(v{j}, str) else 0")
+            lines.append("    return C(names[0])")
+            ns = {'C': C}
+            exec("\\n".join(lines), ns)
+            funcs.append(ns[f"f{n}"])
+
+        names = ['alpha', 'beta', 'gamma']
+        info = {'alpha': 'x', 'beta': 'y', 'gamma': 'z'}
+
+        for f in funcs:
+            for _ in range(10):
+                f(names, info)
+        """), PYTHON_JIT="1", PYTHON_JIT_STRESS="1",
+             PYTHON_JIT_SIDE_EXIT_INITIAL_VALUE="1")
+        self.assertEqual(result[0].rc, 0, result)
+
+    def test_for_iter_gen_cleared_frame_does_not_crash(self):
+        # See: https://github.com/python/cpython/issues/145197
+        result = script_helper.run_python_until_end('-c', textwrap.dedent("""
+        def g():
+            yield 1
+            yield 2
+
+        for _ in range(4002):
+            for _ in g():
+                pass
+
+        for i in range(4002):
+            it = g()
+            if (i & 7) == 0:
+                next(it)
+                it.close()
+            for _ in it:
+                pass
+        """),
+        PYTHON_JIT="1", PYTHON_JIT_STRESS="1")
+        self.assertEqual(result[0].rc, 0, result)
 
 def global_identity(x):
     return x

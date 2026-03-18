@@ -118,10 +118,10 @@ created.  Socket addresses are represented as follows:
   ``'can0'``. The network interface name ``''`` can be used to receive packets
   from all network interfaces of this family.
 
-  - :const:`CAN_ISOTP` protocol require a tuple ``(interface, rx_addr, tx_addr)``
+  - :const:`CAN_ISOTP` protocol requires a tuple ``(interface, rx_addr, tx_addr)``
     where both additional parameters are unsigned long integer that represent a
     CAN identifier (standard or extended).
-  - :const:`CAN_J1939` protocol require a tuple ``(interface, name, pgn, addr)``
+  - :const:`CAN_J1939` protocol requires a tuple ``(interface, name, pgn, addr)``
     where additional parameters are 64-bit unsigned integer representing the
     ECU name, a 32-bit unsigned integer representing the Parameter Group Number
     (PGN), and an 8-bit integer representing the address.
@@ -1037,7 +1037,7 @@ The :mod:`!socket` module also offers various network-related services:
 .. function:: close(fd)
 
    Close a socket file descriptor. This is like :func:`os.close`, but for
-   sockets. On some platforms (most noticeable Windows) :func:`os.close`
+   sockets. On some platforms (most notably Windows) :func:`os.close`
    does not work for socket file descriptors.
 
    .. versionadded:: 3.7
@@ -1602,7 +1602,7 @@ to sockets.
    address family --- see above.)
 
    If the connection is interrupted by a signal, the method waits until the
-   connection completes, or raise a :exc:`TimeoutError` on timeout, if the
+   connection completes, or raises a :exc:`TimeoutError` on timeout, if the
    signal handler doesn't raise an exception and the socket is blocking or has
    a timeout. For non-blocking sockets, the method raises an
    :exc:`InterruptedError` exception if the connection is interrupted by a
@@ -2109,11 +2109,11 @@ to sockets.
    Set the value of the given socket option (see the Unix manual page
    :manpage:`setsockopt(2)`).  The needed symbolic constants are defined in this
    module (:ref:`!SO_\* etc. <socket-unix-constants>`).  The value can be an integer,
-   ``None`` or a :term:`bytes-like object` representing a buffer. In the later
+   ``None`` or a :term:`bytes-like object` representing a buffer. In the latter
    case it is up to the caller to ensure that the bytestring contains the
    proper bits (see the optional built-in module :mod:`struct` for a way to
    encode C structures as bytestrings). When *value* is set to ``None``,
-   *optlen* argument is required. It's equivalent to call :c:func:`setsockopt` C
+   *optlen* argument is required. It's equivalent to calling :c:func:`setsockopt` C
    function with ``optval=NULL`` and ``optlen=optlen``.
 
    .. versionchanged:: 3.5

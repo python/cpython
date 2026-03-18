@@ -11,17 +11,24 @@
 #endif
 
 #include "Python.h"
+#include "datetime.h"
 
 #ifdef TEST_INTERNAL_C_API
    // gh-135906: Check for compiler warnings in the internal C API
+   // - Cython uses pycore_critical_section.h, pycore_frame.h and
+   //   pycore_template.h.
+   // - greenlet uses pycore_frame.h, pycore_interpframe_structs.h and
+   //   pycore_interpframe.h.
 #  include "internal/pycore_frame.h"
-   // mimalloc emits many compiler warnings when Python is built in debug
-   // mode (when MI_DEBUG is not zero)
-   // mimalloc emits compiler warnings when Python is built on Windows
-   // in free-threaded mode.
-#  if !defined(Py_DEBUG) && !(defined(MS_WINDOWS) && defined(Py_GIL_DISABLED))
+#  include "internal/pycore_interpframe_structs.h"
+#  include "internal/pycore_template.h"
+
+   // mimalloc emits compiler warnings on Windows.
+#  if !defined(MS_WINDOWS)
 #    include "internal/pycore_backoff.h"
 #    include "internal/pycore_cell.h"
+#    include "internal/pycore_critical_section.h"
+#    include "internal/pycore_interpframe.h"
 #  endif
 #endif
 
@@ -231,11 +238,26 @@ test_virtual_object(PyObject *Py_UNUSED(module), PyObject *Py_UNUSED(args))
     Py_RETURN_NONE;
 }
 
+static PyObject *
+test_datetime(PyObject *Py_UNUSED(module), PyObject *Py_UNUSED(args))
+{
+    // datetime.h is excluded from the limited C API
+#ifndef Py_LIMITED_API
+    PyDateTime_IMPORT;
+    if (PyErr_Occurred()) {
+        return NULL;
+    }
+#endif
+
+    Py_RETURN_NONE;
+}
+
 static PyMethodDef _testcppext_methods[] = {
     {"add", _testcppext_add, METH_VARARGS, _testcppext_add_doc},
     {"test_api_casts", test_api_casts, METH_NOARGS, _Py_NULL},
     {"test_unicode", test_unicode, METH_NOARGS, _Py_NULL},
     {"test_virtual_object", test_virtual_object, METH_NOARGS, _Py_NULL},
+    {"test_datetime", test_datetime, METH_NOARGS, _Py_NULL},
     // Note: _testcppext_exec currently runs all test functions directly.
     // When adding a new one, add a call there.
 
@@ -261,6 +283,10 @@ _testcppext_exec(PyObject *module)
     Py_DECREF(result);
 
     result = PyObject_CallMethod(module, "test_virtual_object", "");
+    if (!result) return -1;
+    Py_DECREF(result);
+
+    result = PyObject_CallMethod(module, "test_datetime", "");
     if (!result) return -1;
     Py_DECREF(result);
 

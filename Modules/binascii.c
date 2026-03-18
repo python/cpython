@@ -576,7 +576,7 @@ binascii.a2b_base64
         When set to true, bytes that are not part of the base64 standard are
         not allowed.  The same applies to excess data after padding (= / ==).
         Set to True by default if ignorechars is specified, False otherwise.
-    ignorechars: Py_buffer(py_default="<unrepresentable>") = None
+    ignorechars: Py_buffer = NULL
         A byte string containing characters to ignore from the input when
         strict_mode is true.
 
@@ -586,7 +586,7 @@ Decode a line of base64 data.
 static PyObject *
 binascii_a2b_base64_impl(PyObject *module, Py_buffer *data, int strict_mode,
                          Py_buffer *ignorechars)
-/*[clinic end generated code: output=eab37aea4cfa6daa input=3be4937d72943835]*/
+/*[clinic end generated code: output=eab37aea4cfa6daa input=d2d238abf13822ed]*/
 {
     assert(data->len >= 0);
 
@@ -785,22 +785,21 @@ binascii_b2a_base64_impl(PyObject *module, Py_buffer *data, size_t wrapcol,
      * Use unsigned integer arithmetic to avoid signed integer overflow.
      */
     size_t out_len = ((size_t)bin_len + 2u) / 3u * 4u;
-    if (out_len > PY_SSIZE_T_MAX) {
-        goto toolong;
-    }
     if (wrapcol && out_len) {
         /* Each line should encode a whole number of bytes. */
         wrapcol = wrapcol < 4 ? 4 : wrapcol / 4 * 4;
         out_len += (out_len - 1u) / wrapcol;
-        if (out_len > PY_SSIZE_T_MAX) {
-            goto toolong;
-        }
     }
     if (newline) {
         out_len++;
-        if (out_len > PY_SSIZE_T_MAX) {
-            goto toolong;
+    }
+    if (out_len > PY_SSIZE_T_MAX) {
+        binascii_state *state = get_binascii_state(module);
+        if (state == NULL) {
+            return NULL;
         }
+        PyErr_SetString(state->Error, "Too much data for base64");
+        return NULL;
     }
     PyBytesWriter *writer = PyBytesWriter_Create(out_len);
     if (writer == NULL) {
@@ -841,14 +840,6 @@ binascii_b2a_base64_impl(PyObject *module, Py_buffer *data, size_t wrapcol,
         *ascii_data++ = '\n';       /* Append a courtesy newline */
 
     return PyBytesWriter_FinishWithPointer(writer, ascii_data);
-
-toolong:;
-    binascii_state *state = get_binascii_state(module);
-    if (state == NULL) {
-        return NULL;
-    }
-    PyErr_SetString(state->Error, "Too much data for base64");
-    return NULL;
 }
 
 /*[clinic input]
@@ -861,7 +852,7 @@ binascii.a2b_ascii85
         Allow 'y' as a short form encoding four spaces.
     adobe: bool = False
         Expect data to be wrapped in '<~' and '~>' as in Adobe Ascii85.
-    ignorechars: Py_buffer(c_default="NULL", py_default="b''") = None
+    ignorechars: Py_buffer = b''
         A byte string containing characters to ignore from the input.
 
 Decode Ascii85 data.
@@ -870,7 +861,7 @@ Decode Ascii85 data.
 static PyObject *
 binascii_a2b_ascii85_impl(PyObject *module, Py_buffer *data, int foldspaces,
                           int adobe, Py_buffer *ignorechars)
-/*[clinic end generated code: output=599aa3e41095a651 input=20796c9b23cec213]*/
+/*[clinic end generated code: output=599aa3e41095a651 input=f39abd11eab4bac0]*/
 {
     const unsigned char *ascii_data = data->buf;
     Py_ssize_t ascii_len = data->len;
@@ -902,9 +893,7 @@ binascii_a2b_ascii85_impl(PyObject *module, Py_buffer *data, int foldspaces,
     }
 
     ignorecache_t ignorecache;
-    if (ignorechars != NULL) {
-        memset(ignorecache, 0, sizeof(ignorecache));
-    }
+    memset(ignorecache, 0, sizeof(ignorecache));
 
     /* Allocate output buffer. */
     size_t bin_len = ascii_len;
@@ -932,9 +921,6 @@ binascii_a2b_ascii85_impl(PyObject *module, Py_buffer *data, int foldspaces,
         return NULL;
     }
     unsigned char *bin_data = PyBytesWriter_GetData(writer);
-    if (bin_data == NULL) {
-        return NULL;
-    }
 
     uint32_t leftchar = 0;
     int group_pos = 0;
@@ -1046,7 +1032,7 @@ binascii_b2a_ascii85_impl(PyObject *module, Py_buffer *data, int foldspaces,
     if (!pad && (bin_len % 4)) {
         out_len -= 4 - (bin_len % 4);
     }
-    if (wrapcol && out_len) {
+    if (wrapcol && out_len && out_len <= PY_SSIZE_T_MAX) {
         out_len += (out_len - 1) / wrapcol;
     }
     if (out_len > PY_SSIZE_T_MAX) {

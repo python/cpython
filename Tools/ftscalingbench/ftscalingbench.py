@@ -180,6 +180,12 @@ def create_dict():
             "key": "value",
         }
 
+if hasattr(__builtins__, "frozendict"):
+    @register_benchmark
+    def create_frozendict():
+        for i in range(1000 * WORK_SCALE):
+            d = frozendict(key="value")
+
 thread_local = threading.local()
 
 @register_benchmark
@@ -235,6 +241,43 @@ def instantiate_typing_namedtuple():
     for _ in range(1000 * WORK_SCALE):
         obj = MyTypingNamedTuple(x=1, y=2, z=3)
 
+@register_benchmark
+def super_call():
+    # TODO: super() on the same class from multiple threads still doesn't
+    # scale well, so use a class per-thread here for now.
+    class Base:
+        def method(self):
+            return 1
+
+    class Derived(Base):
+        def method(self):
+            return super().method()
+
+    obj = Derived()
+    for _ in range(1000 * WORK_SCALE):
+        obj.method()
+
+
+class MyClassMethod:
+    @classmethod
+    def my_classmethod(cls):
+        return cls
+
+    @staticmethod
+    def my_staticmethod():
+        pass
+
+@register_benchmark
+def classmethod_call():
+    obj = MyClassMethod()
+    for _ in range(1000 * WORK_SCALE):
+        obj.my_classmethod()
+
+@register_benchmark
+def staticmethod_call():
+    obj = MyClassMethod()
+    for _ in range(1000 * WORK_SCALE):
+        obj.my_staticmethod()
 
 @register_benchmark
 def deepcopy():

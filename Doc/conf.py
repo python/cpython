@@ -33,6 +33,7 @@ extensions = [
     'issue_role',
     'lexers',
     'misc_news',
+    'profiling_trace',
     'pydoc_topics',
     'pyspecific',
     'sphinx.ext.coverage',
@@ -42,8 +43,10 @@ extensions = [
 
 # Skip if downstream redistributors haven't installed them
 _OPTIONAL_EXTENSIONS = (
+    'linklint.ext',
     'notfound.extension',
     'sphinxext.opengraph',
+    'sphinxcontrib.rsvgconverter',
 )
 for optional_ext in _OPTIONAL_EXTENSIONS:
     try:
@@ -226,10 +229,6 @@ nitpick_ignore = [
 # Temporary undocumented names.
 # In future this list must be empty.
 nitpick_ignore += [
-    # Do not error nit-picky mode builds when _SubParsersAction.add_parser cannot
-    # be resolved, as the method is currently undocumented. For context, see
-    # https://github.com/python/cpython/pull/103289.
-    ('py:meth', '_SubParsersAction.add_parser'),
     # Attributes/methods/etc. that definitely should be documented better,
     # but are deferred for now:
     ('py:attr', '__wrapped__'),
@@ -558,6 +557,7 @@ linkcheck_ignore = [
 # mapping unique short aliases to a base URL and a prefix.
 # https://www.sphinx-doc.org/en/master/usage/extensions/extlinks.html
 extlinks = {
+    "oss-fuzz": ("https://issues.oss-fuzz.com/issues/%s", "#%s"),
     "pypi": ("https://pypi.org/project/%s/", "%s"),
     "source": (SOURCE_URI, "%s"),
 }
@@ -569,6 +569,7 @@ extlinks_detect_hardcoded_links = True
 # Relative filename of the data files
 refcount_file = 'data/refcounts.dat'
 stable_abi_file = 'data/stable_abi.dat'
+threadsafety_file = 'data/threadsafety.dat'
 
 # Options for sphinxext-opengraph
 # -------------------------------

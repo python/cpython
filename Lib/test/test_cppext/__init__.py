@@ -1,9 +1,11 @@
 # gh-91321: Build a basic C++ test extension to check that the Python C API is
 # compatible with C++ and does not emit C++ compiler warnings.
 import os.path
+import platform
 import shlex
 import shutil
 import subprocess
+import sys
 import unittest
 from test import support
 
@@ -27,16 +29,16 @@ SETUP = os.path.join(os.path.dirname(__file__), 'setup.py')
 class BaseTests:
     TEST_INTERNAL_C_API = False
 
-    def test_build(self):
-        self.check_build('_testcppext')
-
-    def check_build(self, extension_name, std=None, limited=False):
+    def check_build(self, extension_name, std=None, limited=False,
+                    extra_cflags=None):
         venv_dir = 'env'
         with support.setup_venv_with_pip_setuptools(venv_dir) as python_exe:
             self._check_build(extension_name, python_exe,
-                              std=std, limited=limited)
+                              std=std, limited=limited,
+                              extra_cflags=extra_cflags)
 
-    def _check_build(self, extension_name, python_exe, std, limited):
+    def _check_build(self, extension_name, python_exe, std, limited,
+                     extra_cflags=None):
         pkg_dir = 'pkg'
         os.mkdir(pkg_dir)
         shutil.copy(SETUP, os.path.join(pkg_dir, os.path.basename(SETUP)))
@@ -50,6 +52,8 @@ class BaseTests:
                 env['CPYTHON_TEST_LIMITED'] = '1'
             env['CPYTHON_TEST_EXT_NAME'] = extension_name
             env['TEST_INTERNAL_C_API'] = str(int(self.TEST_INTERNAL_C_API))
+            if extra_cflags:
+                env['CPYTHON_TEST_EXTRA_CFLAGS'] = extra_cflags
             if support.verbose:
                 print('Run:', ' '.join(map(shlex.quote, cmd)))
                 subprocess.run(cmd, check=True, env=env)
@@ -91,6 +95,9 @@ class BaseTests:
 
 
 class TestPublicCAPI(BaseTests, unittest.TestCase):
+    def test_build(self):
+        self.check_build('_testcppext')
+
     @support.requires_gil_enabled('incompatible with Free Threading')
     def test_build_limited_cpp03(self):
         self.check_build('_test_limited_cpp03ext', std='c++03', limited=True)
@@ -115,9 +122,24 @@ class TestPublicCAPI(BaseTests, unittest.TestCase):
     def test_build_cpp14(self):
         self.check_build('_testcpp14ext', std='c++14')
 
+    # Test that headers compile with Intel asm syntax, which may conflict
+    # with inline assembly in free-threading headers that use AT&T syntax.
+    @unittest.skipIf(support.MS_WINDOWS, "MSVC doesn't support -masm=intel")
+    @unittest.skipUnless(platform.machine() in ('x86_64', 'i686', 'AMD64'),
+                         "x86-specific flag")
+    def test_build_intel_asm(self):
+        self.check_build('_testcppext_asm', extra_cflags='-masm=intel')
+
 
 class TestInteralCAPI(BaseTests, unittest.TestCase):
     TEST_INTERNAL_C_API = True
+
+    def test_build(self):
+        kwargs = {}
+        if sys.platform == 'darwin':
+            # Old Apple clang++ default C++ std is gnu++98
+            kwargs['std'] = 'c++11'
+        self.check_build('_testcppext_internal', **kwargs)
 
 
 if __name__ == "__main__":

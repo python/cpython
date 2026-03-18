@@ -1,2 +1,0 @@
-When :mod:`faulthandler` dumps the list of third-party extension modules,
-ignore sub-modules of stdlib packages. Patch by Victor Stinner.
