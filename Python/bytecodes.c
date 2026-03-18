@@ -796,7 +796,7 @@ dummy_func(
             Py_DECREF(right_o);
             if (temp == NULL) {
                 *target_local = PyStackRef_NULL;
-                ERROR_IF(1);
+                ERROR_IF(true);
             }
             *target_local = PyStackRef_FromPyObjectSteal(temp);
         #if TIER_ONE
