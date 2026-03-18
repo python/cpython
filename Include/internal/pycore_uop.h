@@ -45,10 +45,21 @@ typedef struct _PyUOpInstruction{
 
 /* Bloom filter with m = 256
  * https://en.wikipedia.org/wiki/Bloom_filter */
-#define _Py_BLOOM_FILTER_WORDS 8
+#ifdef HAVE_GCC_UINT128_T
+#define _Py_BLOOM_FILTER_WORDS 2
+typedef __uint128_t _Py_bloom_filter_word_t;
+#else
+#define _Py_BLOOM_FILTER_WORDS 4
+typedef uint64_t _Py_bloom_filter_word_t;
+#endif
+
+#define _Py_BLOOM_FILTER_BITS_PER_WORD \
+    ((int)(sizeof(_Py_bloom_filter_word_t) * 8))
+#define _Py_BLOOM_FILTER_WORD_SHIFT \
+    ((sizeof(_Py_bloom_filter_word_t) == 16) ? 7 : 6)
 
 typedef struct {
-    uint32_t bits[_Py_BLOOM_FILTER_WORDS];
+    _Py_bloom_filter_word_t bits[_Py_BLOOM_FILTER_WORDS];
 } _PyBloomFilter;
 
 #ifdef __cplusplus
