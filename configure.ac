@@ -8133,7 +8133,7 @@ then
     dnl x86 SSE not available; check for PowerPC AltiVec/VSX (Power8+).
     dnl HACL* libintvector.h has a complete vec128 implementation for __powerpc64__.
     AX_CHECK_COMPILE_FLAG([-maltivec -mvsx],[
-      [LIBHACL_SIMD128_FLAGS="-maltivec -mvsx -flax-vector-conversions"]
+      [LIBHACL_SIMD128_FLAGS="-maltivec -mvsx -flax-vector-conversions -Wno-return-type"]
 
       AC_DEFINE([_Py_HACL_CAN_COMPILE_VEC128], [1], [
         HACL* library can compile SIMD128 implementations])
