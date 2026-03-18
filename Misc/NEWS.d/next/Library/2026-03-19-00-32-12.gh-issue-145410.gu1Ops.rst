@@ -1,0 +1,2 @@
+:mod:`platform`: On Windows, use the ``_sysconfig`` module to get the
+architecture and the machine. Patch by Victor Stinner.

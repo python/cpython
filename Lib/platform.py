@@ -711,6 +711,27 @@ _default_architecture = frozendict({
     'dos': ('', 'MSDOS'),
 })
 
+
+_sysconfig_architecture = frozendict({
+    # platform: (arch, bits, linkage)
+    'win32': ('x86', '32bit', 'WindowsPE'),
+    'win-amd64': ('AMD64', '32bit', 'WindowsPE'),
+    'win-arm32': ('ARM', '32bit', 'WindowsPE'),
+    'win-arm64': ('ARM64', '64bit', 'WindowsPE'),
+})
+
+def _sysconfig_platform():
+    try:
+        import _sysconfig
+    except ImportError:
+        return ('', '', '')
+
+    platform = _sysconfig.get_platform()
+    if platform in _sysconfig_architecture:
+        return _sysconfig_architecture[platform]
+    return ('', '', '')
+
+
 def architecture(executable=sys.executable, bits='', linkage=''):
 
     """ Queries the given executable (defaults to the Python interpreter
@@ -745,10 +766,15 @@ def architecture(executable=sys.executable, bits='', linkage=''):
     else:
         fileout = ''
 
-    if not fileout and \
-       executable == sys.executable:
+    if not fileout and executable == sys.executable:
         # "file" command did not return anything; we'll try to provide
         # some sensible defaults then...
+        if os.name == "nt":
+            # Use _sysconfig.get_platform() if available
+            _, b, l = _sysconfig_platform()
+            if b:
+                return (b, l)
+
         if sys.platform in _default_architecture:
             b, l = _default_architecture[sys.platform]
             if b:
@@ -790,10 +816,10 @@ def architecture(executable=sys.executable, bits='', linkage=''):
 
 
 def _get_machine_win32():
-    # Try to use the PROCESSOR_* environment variables
-    # available on Win XP and later; see
-    # http://support.microsoft.com/kb/888731 and
-    # http://www.geocities.com/rick_lively/MANUALS/ENV/MSWIN/PROCESSI.HTM
+    # Use _sysconfig.get_platform() if available
+    arch, bits, linkage = _sysconfig_platform()
+    if arch:
+        return arch
 
     # WOW64 processes mask the native architecture
     try:
@@ -811,6 +837,11 @@ def _get_machine_win32():
         else:
             if arch:
                 return arch
+
+    # Try to use the PROCESSOR_* environment variables
+    # available on Win XP and later; see
+    # http://support.microsoft.com/kb/888731 and
+    # http://www.geocities.com/rick_lively/MANUALS/ENV/MSWIN/PROCESSI.HTM
     return (
         os.environ.get('PROCESSOR_ARCHITEW6432', '') or
         os.environ.get('PROCESSOR_ARCHITECTURE', '')

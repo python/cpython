@@ -379,12 +379,27 @@ class PlatformTest(unittest.TestCase):
         # using it, per
         # http://blogs.msdn.com/david.wang/archive/2006/03/26/HOWTO-Detect-Process-Bitness.aspx
 
+        for sysconfig_platform, arch in (
+            ('win32', 'x86'),
+            ('win-arm32', 'ARM'),
+            ('win-amd64', 'AMD64'),
+            ('win-arm64', 'ARM64'),
+        ):
+            with mock.patch('_sysconfig.get_platform', return_value=sysconfig_platform):
+                try:
+                    platform._uname_cache = None
+                    system, node, release, version, machine, processor = platform.uname()
+                    self.assertEqual(machine, arch)
+                finally:
+                    platform._uname_cache = None
+
         # We also need to suppress WMI checks, as those are reliable and
         # overrule the environment variables
         def raises_oserror(*a):
             raise OSError()
 
-        with support.swap_attr(platform, '_wmi_query', raises_oserror):
+        with (mock.patch('_sysconfig.get_platform', return_value=None),
+              support.swap_attr(platform, '_wmi_query', raises_oserror)):
             with os_helper.EnvironmentVarGuard() as environ:
                 try:
                     del environ['PROCESSOR_ARCHITEW6432']
@@ -392,6 +407,7 @@ class PlatformTest(unittest.TestCase):
                     platform._uname_cache = None
                     system, node, release, version, machine, processor = platform.uname()
                     self.assertEqual(machine, 'foo')
+
                     environ['PROCESSOR_ARCHITEW6432'] = 'bar'
                     platform._uname_cache = None
                     system, node, release, version, machine, processor = platform.uname()
