@@ -266,7 +266,7 @@ def deepcopy():
 
 @register_benchmark
 def setattr_non_interned():
-    prefix = sys.implementation.name
+    prefix = "prefix"
     obj = MyObject()
     for _ in range(1000 * WORK_SCALE):
         setattr(obj, f"{prefix}_a", None)
