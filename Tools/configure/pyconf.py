@@ -106,7 +106,7 @@ _result_pending: bool = False
 # ---------------------------------------------------------------------------
 # Platform identity (set by canonical_host())
 # ---------------------------------------------------------------------------
-cross_compiling: bool = False
+cross_compiling: bool | str = False
 host: str = ""  # e.g. "x86_64-pc-linux-gnu"
 host_cpu: str = ""  # e.g. "x86_64"
 build: str = ""  # e.g. "x86_64-pc-linux-gnu"
@@ -1481,6 +1481,9 @@ def canonical_host() -> None:
 
     Uses config.guess and config.sub from the source tree when available,
     matching autoconf's behaviour.  Falls back to Python's platform module.
+
+    Parses --host=TRIPLET and --build=TRIPLET from sys.argv.  When --host
+    is given and differs from the build triplet, sets cross_compiling=True.
     """
     global cross_compiling, host, host_cpu, build
 
@@ -1490,17 +1493,35 @@ def canonical_host() -> None:
     config_guess = os.path.join(aux_dir, "config.guess")
     config_sub = os.path.join(aux_dir, "config.sub")
 
-    if os.path.isfile(config_guess) and os.access(config_guess, os.X_OK):
+    def _canonicalize(triplet: str) -> str:
+        """Canonicalize a triplet through config.sub if available."""
+        if os.path.isfile(config_sub) and os.access(config_sub, os.X_OK):
+            try:
+                return subprocess.check_output(
+                    [config_sub, triplet], text=True, stderr=subprocess.DEVNULL
+                ).strip()
+            except (subprocess.CalledProcessError, OSError):
+                pass
+        return triplet
+
+    # Parse --host and --build from sys.argv
+    host_arg = None
+    build_arg = None
+    for arg in sys.argv[1:]:
+        if arg.startswith("--host="):
+            host_arg = arg.split("=", 1)[1]
+        elif arg.startswith("--build="):
+            build_arg = arg.split("=", 1)[1]
+
+    # Determine build triplet
+    if build_arg:
+        build = _canonicalize(build_arg)
+    elif os.path.isfile(config_guess) and os.access(config_guess, os.X_OK):
         try:
             raw = subprocess.check_output(
                 [config_guess], text=True, stderr=subprocess.DEVNULL
             ).strip()
-            # Canonicalize through config.sub if available
-            if os.path.isfile(config_sub) and os.access(config_sub, os.X_OK):
-                raw = subprocess.check_output(
-                    [config_sub, raw], text=True, stderr=subprocess.DEVNULL
-                ).strip()
-            build = raw
+            build = _canonicalize(raw)
         except (subprocess.CalledProcessError, OSError):
             build = _fallback_triplet()
     else:
@@ -1508,15 +1529,24 @@ def canonical_host() -> None:
 
     # Parse the triplet: cpu-vendor-os (autoconf splits on '-')
     parts = build.split("-", 2)
-    if len(parts) >= 3:
-        build_cpu = parts[0]
-    else:
-        build_cpu = parts[0]
+    build_cpu = parts[0]
 
-    # For native builds, host == build
-    host = build
-    host_cpu = build_cpu
-    cross_compiling = False
+    # Determine host triplet and cross-compilation status.
+    # Matches autoconf: --host without --build sets cross_compiling="maybe".
+    if host_arg:
+        host = _canonicalize(host_arg)
+        host_parts = host.split("-", 2)
+        host_cpu = host_parts[0]
+        if build_arg:
+            cross_compiling = (host != build)
+        else:
+            # autoconf sets "maybe" when --host is given without --build
+            cross_compiling = "maybe" if host != build else False
+    else:
+        # For native builds, host == build
+        host = build
+        host_cpu = build_cpu
+        cross_compiling = False
 
 
 def _fallback_triplet() -> str:

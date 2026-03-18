@@ -47,7 +47,7 @@ echo ""
 DIFFS=0
 for f in "${FILES[@]}"; do
     echo "=== diff $f ==="
-    if diff -u -wbB "$OLD_DIR/$f" "$NEW_DIR/$f"; then
+    if diff -u -wb "$OLD_DIR/$f" "$NEW_DIR/$f"; then
         echo "(no differences)"
     else
         DIFFS=$((DIFFS + 1))

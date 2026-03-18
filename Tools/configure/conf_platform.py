@@ -312,7 +312,9 @@ def setup_platform_triplet(v):
     ):
         v.MULTIARCH = ""
     else:
-        v.MULTIARCH = pyconf.cmd_output([v.CC, "--print-multiarch"])
+        rc, v.MULTIARCH = pyconf.cmd_status([v.CC, "--print-multiarch"])
+        if rc != 0:
+            v.MULTIARCH = ""
 
     if v.PLATFORM_TRIPLET and v.MULTIARCH:
         if v.PLATFORM_TRIPLET != v.MULTIARCH:

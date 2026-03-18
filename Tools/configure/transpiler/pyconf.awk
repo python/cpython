@@ -1813,23 +1813,51 @@ function pyconf_cmd_status(args, result_arr,    cmd) {
 	system("rm -f " _pyconf_tmpdir "/cmd_out")
 }
 
-function pyconf_canonical_host(    result, guess, csub, parts, n) {
+function pyconf_canonical_host(    result, guess, csub, parts, n, host_arg, build_arg, canon) {
 	guess = _pyconf_srcdir "/config.guess"
 	csub = _pyconf_srcdir "/config.sub"
-	result = _cmd_output_oneline(guess " 2>/dev/null")
-	if (result != "") {
-		# Canonicalize through config.sub if available
-		result = _cmd_output_oneline(csub " " result " 2>/dev/null")
+
+	# Check for --host and --build from parsed args (stored by pyconf_parse_args)
+	host_arg = V["host"]
+	build_arg = V["build"]
+
+	# Determine build triplet
+	if (build_arg != "") {
+		canon = _cmd_output_oneline(csub " " build_arg " 2>/dev/null")
+		pyconf_build = (canon != "") ? canon : build_arg
+	} else {
+		result = _cmd_output_oneline(guess " 2>/dev/null")
+		if (result != "") {
+			# Canonicalize through config.sub if available
+			canon = _cmd_output_oneline(csub " " result " 2>/dev/null")
+			result = (canon != "") ? canon : result
+		}
+		if (result == "") {
+			# Fallback: uname-based triplet
+			result = _cmd_output_oneline("uname -m") "-pc-" tolower(_cmd_output_oneline("uname -s")) "-gnu"
+		}
+		pyconf_build = result
 	}
-	if (result == "") {
-		# Fallback: uname-based triplet
-		result = _cmd_output_oneline("uname -m") "-pc-" tolower(_cmd_output_oneline("uname -s")) "-gnu"
+
+	# Determine host triplet and cross-compilation status
+	if (host_arg != "") {
+		canon = _cmd_output_oneline(csub " " host_arg " 2>/dev/null")
+		pyconf_host = (canon != "") ? canon : host_arg
+		n = split(pyconf_host, parts, "-")
+		pyconf_host_cpu = parts[1]
+		if (build_arg != "") {
+			pyconf_cross_compiling = (pyconf_host != pyconf_build) ? "yes" : "no"
+		} else {
+			# autoconf sets "maybe" when --host is given without --build
+			pyconf_cross_compiling = (pyconf_host != pyconf_build) ? "maybe" : "no"
+		}
+	} else {
+		# For native builds, host == build
+		pyconf_host = pyconf_build
+		n = split(pyconf_build, parts, "-")
+		pyconf_host_cpu = parts[1]
+		pyconf_cross_compiling = "no"
 	}
-	pyconf_build = result
-	pyconf_host = result
-	n = split(result, parts, "-")
-	pyconf_host_cpu = parts[1]
-	pyconf_cross_compiling = "no"
 }
 
 function pyconf_find_compiler(user_cc, user_cpp,    cc, cpp, ver) {
