@@ -665,12 +665,17 @@ def get_platform():
 
     For other non-POSIX platforms, currently just returns :data:`sys.platform`."""
     if os.name == 'nt':
+        # Check for architecture in sys.version first, then fall back to sys.maxsize
+        # which is reliable even when sys.version is truncated (e.g., clang builds on Windows)
         if 'amd64' in sys.version.lower():
             return 'win-amd64'
-        if '(arm)' in sys.version.lower():
-            return 'win-arm32'
+        if sys.maxsize > 2**32:
+            # 64-bit Windows where sys.version may be truncated
+            return 'win-amd64'
         if '(arm64)' in sys.version.lower():
             return 'win-arm64'
+        if '(arm)' in sys.version.lower():
+            return 'win-arm32'
         return sys.platform
 
     if os.name != "posix" or not hasattr(os, 'uname'):
