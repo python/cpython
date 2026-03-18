@@ -537,19 +537,16 @@ class UnixConsole(Console):
             Returns:
             - Event: Pending event from the event queue.
             """
-            e = Event("key", "", b"")
+            e = Event("key", "")
 
             while not self.event_queue.empty():
                 e2 = self.event_queue.get()
                 e.data += e2.data
-                e.raw += e.raw
 
             amount = struct.unpack("i", ioctl(self.input_fd, FIONREAD, b"\0\0\0\0"))[0]
             trace("getpending({a})", a=amount)
             raw = self.__read(amount)
-            data = str(raw, self.encoding, "replace")
-            e.data += data
-            e.raw += raw
+            e.data += str(raw, self.encoding, "replace")
             return e
 
     else:
@@ -561,18 +558,15 @@ class UnixConsole(Console):
             Returns:
             - Event: Pending event from the event queue.
             """
-            e = Event("key", "", b"")
+            e = Event("key", "")
 
             while not self.event_queue.empty():
                 e2 = self.event_queue.get()
                 e.data += e2.data
-                e.raw += e.raw
 
             amount = 10000
             raw = self.__read(amount)
-            data = str(raw, self.encoding, "replace")
-            e.data += data
-            e.raw += raw
+            e.data += str(raw, self.encoding, "replace")
             return e
 
     def clear(self):

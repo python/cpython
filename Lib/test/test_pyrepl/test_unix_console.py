@@ -142,7 +142,7 @@ class TestConsole(TestCase):
         code = "1"
         events = itertools.chain(
             code_to_events(code),
-            [Event(evt="key", data="left", raw=bytearray(b"\x1bOD"))],
+            [Event(evt="key", data="left")],
         )
         _, con = handle_events_unix_console(events)
         _os_write.assert_any_call(ANY, TERM_CAPABILITIES["cub"] + b":1")
@@ -153,8 +153,8 @@ class TestConsole(TestCase):
         events = itertools.chain(
             code_to_events(code),
             [
-                Event(evt="key", data="left", raw=bytearray(b"\x1bOD")),
-                Event(evt="key", data="right", raw=bytearray(b"\x1bOC")),
+                Event(evt="key", data="left"),
+                Event(evt="key", data="right"),
             ],
         )
         _, con = handle_events_unix_console(events)
@@ -166,7 +166,7 @@ class TestConsole(TestCase):
         code = "1\n2+3"
         events = itertools.chain(
             code_to_events(code),
-            [Event(evt="key", data="up", raw=bytearray(b"\x1bOA"))],
+            [Event(evt="key", data="up")],
         )
         _, con = handle_events_unix_console(events)
         _os_write.assert_any_call(ANY, TERM_CAPABILITIES["cuu"] + b":1")
@@ -177,8 +177,8 @@ class TestConsole(TestCase):
         events = itertools.chain(
             code_to_events(code),
             [
-                Event(evt="key", data="up", raw=bytearray(b"\x1bOA")),
-                Event(evt="key", data="down", raw=bytearray(b"\x1bOB")),
+                Event(evt="key", data="up"),
+                Event(evt="key", data="down"),
             ],
         )
         _, con = handle_events_unix_console(events)
@@ -189,7 +189,7 @@ class TestConsole(TestCase):
     def test_cursor_back_write(self, _os_write):
         events = itertools.chain(
             code_to_events("1"),
-            [Event(evt="key", data="left", raw=bytearray(b"\x1bOD"))],
+            [Event(evt="key", data="left")],
             code_to_events("2"),
         )
         _, con = handle_events_unix_console(events)
@@ -209,7 +209,7 @@ class TestConsole(TestCase):
         events = itertools.chain(
             code_to_events(code),
             [
-                Event(evt="key", data="up", raw=bytearray(b"\x1bOA")),
+                Event(evt="key", data="up"),
                 Event(evt="scroll", data=None),
             ],
         )
@@ -228,9 +228,9 @@ class TestConsole(TestCase):
         events = itertools.chain(
             code_to_events(code),
             [
-                Event(evt="key", data="up", raw=bytearray(b"\x1bOA")),
+                Event(evt="key", data="up"),
                 Event(evt="scroll", data=None),
-                Event(evt="key", data="down", raw=bytearray(b"\x1bOB")),
+                Event(evt="key", data="down"),
                 Event(evt="scroll", data=None),
             ],
         )

@@ -96,7 +96,7 @@ class TestReader(ScreenEqualMixin, TestCase):
         events = itertools.chain(
             code_to_events("aaa"),
             [
-                Event(evt="key", data="backspace", raw=bytearray(b"\x7f")),
+                Event(evt="key", data="backspace"),
             ],
         )
         reader, _ = handle_all_events(events)
@@ -106,7 +106,7 @@ class TestReader(ScreenEqualMixin, TestCase):
         events = itertools.chain(
             code_to_events(10 * "a"),
             [
-                Event(evt="key", data="backspace", raw=bytearray(b"\x7f")),
+                Event(evt="key", data="backspace"),
             ],
         )
         reader, _ = handle_events_narrow_console(events)
@@ -116,7 +116,7 @@ class TestReader(ScreenEqualMixin, TestCase):
         events = itertools.chain(
             code_to_events(11 * "a"),
             [
-                Event(evt="key", data="backspace", raw=bytearray(b"\x7f")),
+                Event(evt="key", data="backspace"),
             ],
         )
         reader, _ = handle_events_narrow_console(events)
@@ -170,8 +170,8 @@ class TestReader(ScreenEqualMixin, TestCase):
     def test_up_arrow_after_ctrl_r(self):
         events = iter(
             [
-                Event(evt="key", data="\x12", raw=bytearray(b"\x12")),
-                Event(evt="key", data="up", raw=bytearray(b"\x1bOA")),
+                Event(evt="key", data="\x12"),
+                Event(evt="key", data="up"),
             ]
         )
 
@@ -190,19 +190,19 @@ class TestReader(ScreenEqualMixin, TestCase):
             code_to_events(code),
             [
                 # go to the end of the first line
-                Event(evt="key", data="up", raw=bytearray(b"\x1bOA")),
-                Event(evt="key", data="up", raw=bytearray(b"\x1bOA")),
-                Event(evt="key", data="\x05", raw=bytearray(b"\x1bO5")),
+                Event(evt="key", data="up"),
+                Event(evt="key", data="up"),
+                Event(evt="key", data="\x05"),
                 # new lines in-block shouldn't terminate the block
-                Event(evt="key", data="\n", raw=bytearray(b"\n")),
-                Event(evt="key", data="\n", raw=bytearray(b"\n")),
+                Event(evt="key", data="\n"),
+                Event(evt="key", data="\n"),
                 # end of line 2
-                Event(evt="key", data="down", raw=bytearray(b"\x1bOB")),
-                Event(evt="key", data="\x05", raw=bytearray(b"\x1bO5")),
+                Event(evt="key", data="down"),
+                Event(evt="key", data="\x05"),
                 # a double new line in-block should terminate the block
                 # even if its followed by whitespace
-                Event(evt="key", data="\n", raw=bytearray(b"\n")),
-                Event(evt="key", data="\n", raw=bytearray(b"\n")),
+                Event(evt="key", data="\n"),
+                Event(evt="key", data="\n"),
             ],
         )
 
@@ -243,9 +243,9 @@ class TestReader(ScreenEqualMixin, TestCase):
             code_to_events(code),
             [
                 # Two tabs for completion
-                Event(evt="key", data="\t", raw=bytearray(b"\t")),
-                Event(evt="key", data="\t", raw=bytearray(b"\t")),
-                Event(evt="key", data="\x03", raw=bytearray(b"\x03")),  # Ctrl-C
+                Event(evt="key", data="\t"),
+                Event(evt="key", data="\t"),
+                Event(evt="key", data="\x03"),  # Ctrl-C
             ],
         )
         console = prepare_console(events)
@@ -307,8 +307,8 @@ class TestReader(ScreenEqualMixin, TestCase):
             code_to_events(code),
             [
                 # Two tabs for completion
-                Event(evt="key", data="\t", raw=bytearray(b"\t")),
-                Event(evt="key", data="\t", raw=bytearray(b"\t")),
+                Event(evt="key", data="\t"),
+                Event(evt="key", data="\t"),
             ],
             code_to_events("a"),
         )
@@ -330,7 +330,7 @@ class TestReader(ScreenEqualMixin, TestCase):
         events = itertools.chain(
             code_to_events(code),
             [
-                Event(evt="key", data="\t", raw=bytearray(b"\t")),
+                Event(evt="key", data="\t"),
             ],
             code_to_events("a"),
         )
@@ -413,7 +413,7 @@ class TestReaderInColor(ScreenEqualMixin, TestCase):
         expected_async = expected.format(a=async_msg, **colors)
         more_events = itertools.chain(
             code_to_events(code),
-            [Event(evt="key", data="up", raw=bytearray(b"\x1bOA"))] * 15,
+            [Event(evt="key", data="up")] * 15,
             code_to_events("async "),
         )
         reader, _ = handle_all_events(more_events)

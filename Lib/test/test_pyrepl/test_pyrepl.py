@@ -175,7 +175,7 @@ class TestCursorPosition(TestCase):
         events = itertools.chain(
             code_to_events(code),
             [
-                Event(evt="key", data="up", raw=bytearray(b"\x1bOA")),
+                Event(evt="key", data="up"),
             ],
         )
 
@@ -193,7 +193,7 @@ class TestCursorPosition(TestCase):
         events = itertools.chain(
             code_to_events(code),
             [
-                Event(evt="key", data="down", raw=bytearray(b"\x1bOB")),
+                Event(evt="key", data="down"),
             ],
         )
 
@@ -205,7 +205,7 @@ class TestCursorPosition(TestCase):
         events = itertools.chain(
             code_to_events("11+11"),
             [
-                Event(evt="key", data="left", raw=bytearray(b"\x1bOD")),
+                Event(evt="key", data="left"),
             ],
         )
 
@@ -217,7 +217,7 @@ class TestCursorPosition(TestCase):
         events = itertools.chain(
             code_to_events("11+11"),
             [
-                Event(evt="key", data="right", raw=bytearray(b"\x1bOC")),
+                Event(evt="key", data="right"),
             ],
         )
 
@@ -247,7 +247,7 @@ class TestCursorPosition(TestCase):
         events = itertools.chain(
             code_to_events("樂"),
             [
-                Event(evt="key", data="left", raw=bytearray(b"\x1bOD")),
+                Event(evt="key", data="left"),
             ],
         )
 
@@ -259,8 +259,8 @@ class TestCursorPosition(TestCase):
         events = itertools.chain(
             code_to_events("樂"),
             [
-                Event(evt="key", data="left", raw=bytearray(b"\x1bOD")),
-                Event(evt="key", data="right", raw=bytearray(b"\x1bOC")),
+                Event(evt="key", data="left"),
+                Event(evt="key", data="right"),
             ],
         )
 
@@ -283,7 +283,7 @@ class TestCursorPosition(TestCase):
         events = itertools.chain(
             code_to_events(code),
             [
-                Event(evt="key", data="up", raw=bytearray(b"\x1bOA")),
+                Event(evt="key", data="up"),
             ],
         )
 
@@ -306,9 +306,9 @@ class TestCursorPosition(TestCase):
         events = itertools.chain(
             code_to_events(code),
             [
-                Event(evt="key", data="up", raw=bytearray(b"\x1bOA")),
-                Event(evt="key", data="left", raw=bytearray(b"\x1bOD")),
-                Event(evt="key", data="down", raw=bytearray(b"\x1bOB")),
+                Event(evt="key", data="up"),
+                Event(evt="key", data="left"),
+                Event(evt="key", data="down"),
             ],
         )
 
@@ -324,9 +324,9 @@ class TestCursorPosition(TestCase):
         events = itertools.chain(
             code_to_events("' 可口可乐; 可口可樂'"),
             [
-                Event(evt="key", data="left", raw=bytearray(b"\x1bOD")),
-                Event(evt="key", data="left", raw=bytearray(b"\x1bOD")),
-                Event(evt="key", data="left", raw=bytearray(b"\x1bOD")),
+                Event(evt="key", data="left"),
+                Event(evt="key", data="left"),
+                Event(evt="key", data="left"),
             ],
         )
 
@@ -353,8 +353,8 @@ class TestCursorPosition(TestCase):
         events = itertools.chain(
             code_to_events(code),
             [
-                Event(evt="key", data="up", raw=bytearray(b"\x1bOA")),
-                Event(evt="key", data="up", raw=bytearray(b"\x1bOA")),
+                Event(evt="key", data="up"),
+                Event(evt="key", data="up"),
             ],
         )
 
@@ -385,10 +385,10 @@ class TestCursorPosition(TestCase):
         events = itertools.chain(
             code_to_events(code),
             [
-                Event(evt="key", data="up", raw=bytearray(b"\x1bOA")),
-                Event(evt="key", data="up", raw=bytearray(b"\x1bOA")),
-                Event(evt="key", data="down", raw=bytearray(b"\x1bOB")),
-                Event(evt="key", data="down", raw=bytearray(b"\x1bOB")),
+                Event(evt="key", data="up"),
+                Event(evt="key", data="up"),
+                Event(evt="key", data="down"),
+                Event(evt="key", data="down"),
             ],
         )
 
@@ -413,8 +413,8 @@ class TestCursorPosition(TestCase):
 
         events = itertools.chain(
             code_to_events(code),
-            13 * [Event(evt="key", data="left", raw=bytearray(b"\x1bOD"))],
-            [Event(evt="key", data="up", raw=bytearray(b"\x1bOA"))],
+            13 * [Event(evt="key", data="left")],
+            [Event(evt="key", data="up")],
         )
 
         reader, _ = handle_all_events(events)
@@ -439,7 +439,7 @@ class TestCursorPosition(TestCase):
         events = itertools.chain(
             code_to_events(code),
             [
-                Event(evt="key", data="up", raw=bytearray(b"\x1bOA")),
+                Event(evt="key", data="up"),
             ],
         )
         reader, _ = handle_events_narrow_console(events)
@@ -486,7 +486,7 @@ class TestPyReplAutoindent(TestCase):
             code_to_events("def f():\n"),
             # add backspace to delete default auto-indent
             [
-                Event(evt="key", data="backspace", raw=bytearray(b"\x7f")),
+                Event(evt="key", data="backspace"),
             ],
             code_to_events(
                 "  pass\n"
@@ -513,7 +513,7 @@ class TestPyReplAutoindent(TestCase):
             code_to_events("def f():\n"),
             # add backspace to delete default auto-indent
             [
-                Event(evt="key", data="backspace", raw=bytearray(b"\x7f")),
+                Event(evt="key", data="backspace"),
             ],
             code_to_events(
                 "  pass\n"
@@ -546,21 +546,21 @@ class TestPyReplAutoindent(TestCase):
             ),
             [
                 # go to the end of the first line
-                Event(evt="key", data="up", raw=bytearray(b"\x1bOA")),
-                Event(evt="key", data="\x05", raw=bytearray(b"\x1bO5")),
+                Event(evt="key", data="up"),
+                Event(evt="key", data="\x05"),
                 # new line should be autoindented
-                Event(evt="key", data="\n", raw=bytearray(b"\n")),
+                Event(evt="key", data="\n"),
             ],
             code_to_events(
                 "pass"
             ),
             [
                 # go to end of last line
-                Event(evt="key", data="down", raw=bytearray(b"\x1bOB")),
-                Event(evt="key", data="\x05", raw=bytearray(b"\x1bO5")),
+                Event(evt="key", data="down"),
+                Event(evt="key", data="\x05"),
                 # double newline to terminate the block
-                Event(evt="key", data="\n", raw=bytearray(b"\n")),
-                Event(evt="key", data="\n", raw=bytearray(b"\n")),
+                Event(evt="key", data="\n"),
+                Event(evt="key", data="\n"),
             ],
         )
 
@@ -672,24 +672,24 @@ class TestPyReplOutput(ScreenEqualMixin, TestCase):
         events = itertools.chain(
             code_to_events("def f():\n...\n\n"),
             [
-                Event(evt="key", data="up", raw=bytearray(b"\x1bOA")),
-                Event(evt="key", data="up", raw=bytearray(b"\x1bOA")),
-                Event(evt="key", data="left", raw=bytearray(b"\x1bOD")),
-                Event(evt="key", data="left", raw=bytearray(b"\x1bOD")),
-                Event(evt="key", data="left", raw=bytearray(b"\x1bOD")),
-                Event(evt="key", data="backspace", raw=bytearray(b"\x08")),
-                Event(evt="key", data="g", raw=bytearray(b"g")),
-                Event(evt="key", data="down", raw=bytearray(b"\x1bOB")),
-                Event(evt="key", data="backspace", raw=bytearray(b"\x08")),
-                Event(evt="key", data="delete", raw=bytearray(b"\x7F")),
-                Event(evt="key", data="right", raw=bytearray(b"g")),
-                Event(evt="key", data="backspace", raw=bytearray(b"\x08")),
-                Event(evt="key", data="p", raw=bytearray(b"p")),
-                Event(evt="key", data="a", raw=bytearray(b"a")),
-                Event(evt="key", data="s", raw=bytearray(b"s")),
-                Event(evt="key", data="s", raw=bytearray(b"s")),
-                Event(evt="key", data="\n", raw=bytearray(b"\n")),
-                Event(evt="key", data="\n", raw=bytearray(b"\n")),
+                Event(evt="key", data="up"),
+                Event(evt="key", data="up"),
+                Event(evt="key", data="left"),
+                Event(evt="key", data="left"),
+                Event(evt="key", data="left"),
+                Event(evt="key", data="backspace"),
+                Event(evt="key", data="g"),
+                Event(evt="key", data="down"),
+                Event(evt="key", data="backspace"),
+                Event(evt="key", data="delete"),
+                Event(evt="key", data="right"),
+                Event(evt="key", data="backspace"),
+                Event(evt="key", data="p"),
+                Event(evt="key", data="a"),
+                Event(evt="key", data="s"),
+                Event(evt="key", data="s"),
+                Event(evt="key", data="\n"),
+                Event(evt="key", data="\n"),
             ],
         )
         reader = self.prepare_reader(events)
@@ -707,12 +707,12 @@ class TestPyReplOutput(ScreenEqualMixin, TestCase):
         events = itertools.chain(
             code_to_events("1+1\n2+2\n"),
             [
-                Event(evt="key", data="up", raw=bytearray(b"\x1bOA")),
-                Event(evt="key", data="\n", raw=bytearray(b"\n")),
-                Event(evt="key", data="up", raw=bytearray(b"\x1bOA")),
-                Event(evt="key", data="up", raw=bytearray(b"\x1bOA")),
-                Event(evt="key", data="up", raw=bytearray(b"\x1bOA")),
-                Event(evt="key", data="\n", raw=bytearray(b"\n")),
+                Event(evt="key", data="up"),
+                Event(evt="key", data="\n"),
+                Event(evt="key", data="up"),
+                Event(evt="key", data="up"),
+                Event(evt="key", data="up"),
+                Event(evt="key", data="\n"),
             ],
         )
 
@@ -736,11 +736,11 @@ class TestPyReplOutput(ScreenEqualMixin, TestCase):
         events = list(itertools.chain(
             code_to_events(code),
             [
-                Event(evt="key", data="up", raw=bytearray(b"\x1bOA")),
-                Event(evt="key", data="up", raw=bytearray(b"\x1bOA")),
-                Event(evt="key", data="up", raw=bytearray(b"\x1bOA")),
-                Event(evt="key", data="\n", raw=bytearray(b"\n")),
-                Event(evt="key", data="\n", raw=bytearray(b"\n")),
+                Event(evt="key", data="up"),
+                Event(evt="key", data="up"),
+                Event(evt="key", data="up"),
+                Event(evt="key", data="\n"),
+                Event(evt="key", data="\n"),
             ]
         ))
 
@@ -757,11 +757,11 @@ class TestPyReplOutput(ScreenEqualMixin, TestCase):
         events = itertools.chain(
             code_to_events("1+1\n2+2\n"),
             [
-                Event(evt="key", data="up", raw=bytearray(b"\x1bOA")),
-                Event(evt="key", data="up", raw=bytearray(b"\x1bOA")),
-                Event(evt="key", data="\n", raw=bytearray(b"\n")),
-                Event(evt="key", data="down", raw=bytearray(b"\x1bOB")),
-                Event(evt="key", data="down", raw=bytearray(b"\x1bOB")),
+                Event(evt="key", data="up"),
+                Event(evt="key", data="up"),
+                Event(evt="key", data="\n"),
+                Event(evt="key", data="down"),
+                Event(evt="key", data="down"),
             ],
         )
 
@@ -775,10 +775,10 @@ class TestPyReplOutput(ScreenEqualMixin, TestCase):
         events = itertools.chain(
             code_to_events("1+1\n2+2\n3+3\n"),
             [
-                Event(evt="key", data="\x12", raw=bytearray(b"\x12")),
-                Event(evt="key", data="1", raw=bytearray(b"1")),
-                Event(evt="key", data="\n", raw=bytearray(b"\n")),
-                Event(evt="key", data="\n", raw=bytearray(b"\n")),
+                Event(evt="key", data="\x12"),
+                Event(evt="key", data="1"),
+                Event(evt="key", data="\n"),
+                Event(evt="key", data="\n"),
             ],
         )
 
@@ -810,8 +810,8 @@ class TestPyReplOutput(ScreenEqualMixin, TestCase):
             code_to_events("import os\n"),
             code_to_events("imp"),
             [
-                Event(evt='key', data='page up', raw=bytearray(b'\x1b[5~')),
-                Event(evt="key", data="\n", raw=bytearray(b"\n")),
+                Event(evt='key', data='page up'),
+                Event(evt="key", data="\n"),
             ],
         )
 
@@ -829,8 +829,8 @@ class TestPyReplOutput(ScreenEqualMixin, TestCase):
         events = itertools.chain(
             code_to_events("import os\n"),
             [
-                Event(evt='key', data='page up', raw=bytearray(b'\x1b[5~')),
-                Event(evt="key", data="\n", raw=bytearray(b"\n")),
+                Event(evt='key', data='page up'),
+                Event(evt="key", data="\n"),
             ],
         )
 
@@ -901,9 +901,9 @@ class TestPyReplCompleter(TestCase):
         events = itertools.chain(
             code_to_events(code),
             [
-                Event(evt="key", data="down", raw=bytearray(b"\x1bOB")),
-                Event(evt="key", data="up", raw=bytearray(b"\x1bOA")),
-                Event(evt="key", data="down", raw=bytearray(b"\x1bOB")),
+                Event(evt="key", data="down"),
+                Event(evt="key", data="up"),
+                Event(evt="key", data="down"),
             ],
             code_to_events("\n"),
         )
@@ -1372,11 +1372,11 @@ class TestPasteEvent(TestCase):
 
         events = itertools.chain(
             [
-                Event(evt="key", data="f3", raw=bytearray(b"\x1bOR")),
+                Event(evt="key", data="f3"),
             ],
             code_to_events(code),
             [
-                Event(evt="key", data="f3", raw=bytearray(b"\x1bOR")),
+                Event(evt="key", data="f3"),
             ],
             code_to_events("\n"),
         )
@@ -1396,11 +1396,11 @@ class TestPasteEvent(TestCase):
 
         events = itertools.chain(
             [
-                Event(evt="key", data="f3", raw=bytearray(b"\x1bOR")),
+                Event(evt="key", data="f3"),
             ],
             code_to_events(code),
             [
-                Event(evt="key", data="f3", raw=bytearray(b"\x1bOR")),
+                Event(evt="key", data="f3"),
             ],
             code_to_events("\n"),
         )
@@ -2042,7 +2042,7 @@ class TestPyReplCtrlD(TestCase):
     def test_ctrl_d_empty_line(self):
         """Test that pressing Ctrl+D on empty line exits the program"""
         events = [
-            Event(evt="key", data="\x04", raw=bytearray(b"\x04")),  # Ctrl+D
+            Event(evt="key", data="\x04"),  # Ctrl+D
         ]
         reader = self.prepare_reader(events)
         with self.assertRaises(EOFError):
@@ -2053,7 +2053,7 @@ class TestPyReplCtrlD(TestCase):
         events = itertools.chain(
             code_to_events("def f():\n    pass\n"),  # Enter multiline mode with trailing newline
             [
-                Event(evt="key", data="\x04", raw=bytearray(b"\x04")),  # Ctrl+D
+                Event(evt="key", data="\x04"),  # Ctrl+D
             ],
         )
         reader, _ = handle_all_events(events)
@@ -2065,10 +2065,10 @@ class TestPyReplCtrlD(TestCase):
         events = itertools.chain(
             code_to_events("def f():\n    hello world"),  # Enter multiline mode
             [
-                Event(evt="key", data="left", raw=bytearray(b"\x1bOD"))
+                Event(evt="key", data="left")
             ] * 5,  # move cursor to 'w' in "world"
             [
-                Event(evt="key", data="\x04", raw=bytearray(b"\x04"))
+                Event(evt="key", data="\x04")
             ], # Ctrl+D should delete 'w'
         )
         reader, _ = handle_all_events(events)
@@ -2080,7 +2080,7 @@ class TestPyReplCtrlD(TestCase):
         events = itertools.chain(
             code_to_events("def f():\n    hello"),  # Enter multiline mode, no trailing newline
             [
-                Event(evt="key", data="\x04", raw=bytearray(b"\x04"))
+                Event(evt="key", data="\x04")
             ],  # Ctrl+D should be no-op
         )
         reader, _ = handle_all_events(events)
@@ -2091,8 +2091,8 @@ class TestPyReplCtrlD(TestCase):
         """Test that pressing Ctrl+D in single line mode deletes current character"""
         events = itertools.chain(
             code_to_events("hello"),
-            [Event(evt="key", data="left", raw=bytearray(b"\x1bOD"))],  # move left
-            [Event(evt="key", data="\x04", raw=bytearray(b"\x04"))],    # Ctrl+D
+            [Event(evt="key", data="left")],  # move left
+            [Event(evt="key", data="\x04")],    # Ctrl+D
         )
         reader, _ = handle_all_events(events)
         self.assertEqual("hell", "".join(reader.buffer))
@@ -2101,7 +2101,7 @@ class TestPyReplCtrlD(TestCase):
         """Test that pressing Ctrl+D at end of single line without newline does nothing"""
         events = itertools.chain(
             code_to_events("hello"),  # cursor at end of line
-            [Event(evt="key", data="\x04", raw=bytearray(b"\x04"))],  # Ctrl+D
+            [Event(evt="key", data="\x04")],  # Ctrl+D
         )
         reader, _ = handle_all_events(events)
         self.assertEqual("hello", "".join(reader.buffer))

@@ -42,7 +42,6 @@ if TYPE_CHECKING:
 class Event:
     evt: str
     data: str
-    raw: bytes = b""
 
 
 @dataclass

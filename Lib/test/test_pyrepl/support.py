@@ -45,7 +45,7 @@ def more_lines(text: str, namespace: dict | None = None):
 
 def code_to_events(code: str):
     for c in code:
-        yield Event(evt="key", data=c, raw=bytearray(c.encode("utf-8")))
+        yield Event(evt="key", data=c)
 
 
 def clean_screen(reader: ReadlineAlikeReader) -> list[str]:

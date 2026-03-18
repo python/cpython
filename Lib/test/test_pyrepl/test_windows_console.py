@@ -183,7 +183,7 @@ class WindowsConsoleTests(TestCase):
         code = "1"
         events = itertools.chain(
             code_to_events(code),
-            [Event(evt="key", data="left", raw=bytearray(b"\x1bOD"))],
+            [Event(evt="key", data="left")],
         )
         _, con = self.handle_events(events)
         con.out.write.assert_any_call(self.move_left())
@@ -194,8 +194,8 @@ class WindowsConsoleTests(TestCase):
         events = itertools.chain(
             code_to_events(code),
             [
-                Event(evt="key", data="left", raw=bytearray(b"\x1bOD")),
-                Event(evt="key", data="right", raw=bytearray(b"\x1bOC")),
+                Event(evt="key", data="left"),
+                Event(evt="key", data="right"),
             ],
         )
         _, con = self.handle_events(events)
@@ -207,7 +207,7 @@ class WindowsConsoleTests(TestCase):
         code = "1\n2+3"
         events = itertools.chain(
             code_to_events(code),
-            [Event(evt="key", data="up", raw=bytearray(b"\x1bOA"))],
+            [Event(evt="key", data="up")],
         )
         _, con = self.handle_events(events)
         con.out.write.assert_any_call(self.move_up())
@@ -218,8 +218,8 @@ class WindowsConsoleTests(TestCase):
         events = itertools.chain(
             code_to_events(code),
             [
-                Event(evt="key", data="up", raw=bytearray(b"\x1bOA")),
-                Event(evt="key", data="down", raw=bytearray(b"\x1bOB")),
+                Event(evt="key", data="up"),
+                Event(evt="key", data="down"),
             ],
         )
         _, con = self.handle_events(events)
@@ -230,7 +230,7 @@ class WindowsConsoleTests(TestCase):
     def test_cursor_back_write(self):
         events = itertools.chain(
             code_to_events("1"),
-            [Event(evt="key", data="left", raw=bytearray(b"\x1bOD"))],
+            [Event(evt="key", data="left")],
             code_to_events("2"),
         )
         _, con = self.handle_events(events)
@@ -250,7 +250,7 @@ class WindowsConsoleTests(TestCase):
         events = itertools.chain(
             code_to_events(code),
             [
-                Event(evt="key", data="up", raw=bytearray(b"\x1bOA")),
+                Event(evt="key", data="up"),
                 Event(evt="scroll", data=None),
             ],
         )
@@ -270,9 +270,9 @@ class WindowsConsoleTests(TestCase):
         events = itertools.chain(
             code_to_events(code),
             [
-                Event(evt="key", data="up", raw=bytearray(b"\x1bOA")),
+                Event(evt="key", data="up"),
                 Event(evt="scroll", data=None),
-                Event(evt="key", data="down", raw=bytearray(b"\x1bOB")),
+                Event(evt="key", data="down"),
                 Event(evt="scroll", data=None),
             ],
         )
@@ -378,8 +378,8 @@ class WindowsConsoleTests(TestCase):
         events = itertools.chain(
             code_to_events(code),
             [
-                Event(evt="key", data='\x1a', raw=bytearray(b'\x1a')),
-                Event(evt="key", data='\x1a', raw=bytearray(b'\x1a')),
+                Event(evt="key", data='\x1a'),
+                Event(evt="key", data='\x1a'),
             ],
         )
         reader, con = self.handle_events_narrow(events)
@@ -602,7 +602,7 @@ class WindowsConsoleGetEventTests(TestCase):
     def test_up_vt(self):
         irs = [self.get_input_record(x) for x in "\x1b[A"]
         self.assertEqual(self.get_event(irs, vt_support=True),
-                         Event(evt='key', data='up', raw=bytearray(b'\x1b[A')))
+                         Event(evt='key', data='up'))
         self.assertEqual(self.mock.call_count, 3)
 
     # All tests above assume that there is always keyboard data to read,

@@ -28,14 +28,14 @@ class EventQueueTestBase:
 
     def test_get(self):
         eq = self.make_eventqueue()
-        event = Event("key", "a", b"a")
+        event = Event("key", "a")
         eq.insert(event)
         self.assertEqual(eq.get(), event)
 
     def test_empty(self):
         eq = self.make_eventqueue()
         self.assertTrue(eq.empty())
-        eq.insert(Event("key", "a", b"a"))
+        eq.insert(Event("key", "a"))
         self.assertFalse(eq.empty())
 
     def test_flush_buf(self):
@@ -46,7 +46,7 @@ class EventQueueTestBase:
 
     def test_insert(self):
         eq = self.make_eventqueue()
-        event = Event("key", "a", b"a")
+        event = Event("key", "a")
         eq.insert(event)
         self.assertEqual(eq.events[0], event)
 
@@ -152,10 +152,8 @@ class EventQueueTestBase:
         eq = self.make_eventqueue()
         eq.keymap = {}
 
-        def _event(evt, data, raw=None):
-            r = raw if raw is not None else data.encode(eq.encoding)
-            e = Event(evt, data, r)
-            return e
+        def _event(evt, data):
+            return Event(evt, data)
 
         def _push(keys):
             for k in keys:
