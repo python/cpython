@@ -159,9 +159,86 @@ PyAPI_FUNC(_PyExecutorObject*) _Py_GetExecutor(PyCodeObject *code, int offset);
 
 int _Py_ExecutorInit(_PyExecutorObject *, const _PyBloomFilter *);
 void _Py_ExecutorDetach(_PyExecutorObject *);
-void _Py_BloomFilter_Init(_PyBloomFilter *);
-void _Py_BloomFilter_Add(_PyBloomFilter *bloom, void *obj);
 PyAPI_FUNC(void) _Py_Executor_DependsOn(_PyExecutorObject *executor, void *obj);
+
+/* We use a bloomfilter with k = 6, m = 256
+ * The choice of k and the following constants
+ * could do with a more rigorous analysis,
+ * but here is a simple analysis:
+ *
+ * We want to keep the false positive rate low.
+ * For n = 5 (a trace depends on 5 objects),
+ * we expect 30 bits set, giving a false positive
+ * rate of (30/256)**6 == 2.5e-6 which is plenty
+ * good enough.
+ *
+ * However with n = 10 we expect 60 bits set (worst case),
+ * giving a false positive of (60/256)**6 == 0.0001
+ *
+ * We choose k = 6, rather than a higher number as
+ * it means the false positive rate grows slower for high n.
+ *
+ * n = 5, k = 6 => fp = 2.6e-6
+ * n = 5, k = 8 => fp = 3.5e-7
+ * n = 10, k = 6 => fp = 1.6e-4
+ * n = 10, k = 8 => fp = 0.9e-4
+ * n = 15, k = 6 => fp = 0.18%
+ * n = 15, k = 8 => fp = 0.23%
+ * n = 20, k = 6 => fp = 1.1%
+ * n = 20, k = 8 => fp = 2.3%
+ *
+ * The above analysis assumes perfect hash functions,
+ * but those don't exist, so the real false positive
+ * rates may be worse.
+ */
+
+#define _Py_BLOOM_FILTER_K 6
+#define _Py_BLOOM_FILTER_SEED 20221211
+
+static inline uint64_t
+address_to_hash(void *ptr) {
+    assert(ptr != NULL);
+    uint64_t uhash = _Py_BLOOM_FILTER_SEED;
+    uintptr_t addr = (uintptr_t)ptr;
+    for (int i = 0; i < SIZEOF_VOID_P; i++) {
+        uhash ^= addr & 255;
+        uhash *= (uint64_t)PyHASH_MULTIPLIER;
+        addr >>= 8;
+    }
+    return uhash;
+}
+
+static inline void
+_Py_BloomFilter_Init(_PyBloomFilter *bloom)
+{
+    for (int i = 0; i < _Py_BLOOM_FILTER_WORDS; i++) {
+        bloom->bits[i] = 0;
+    }
+}
+
+static inline void
+_Py_BloomFilter_Add(_PyBloomFilter *bloom, void *ptr)
+{
+    uint64_t hash = address_to_hash(ptr);
+    assert(_Py_BLOOM_FILTER_K <= 8);
+    for (int i = 0; i < _Py_BLOOM_FILTER_K; i++) {
+        uint8_t bits = hash & 255;
+        bloom->bits[bits >> _Py_BLOOM_FILTER_WORD_SHIFT] |=
+            (_Py_bloom_filter_word_t)1 << (bits & (_Py_BLOOM_FILTER_BITS_PER_WORD - 1));
+        hash >>= 8;
+    }
+}
+
+static inline bool
+bloom_filter_may_contain(const _PyBloomFilter *bloom, const _PyBloomFilter *hashes)
+{
+    for (int i = 0; i < _Py_BLOOM_FILTER_WORDS; i++) {
+        if ((bloom->bits[i] & hashes->bits[i]) != hashes->bits[i]) {
+            return false;
+        }
+    }
+    return true;
+}
 
 #define _Py_MAX_ALLOWED_BUILTINS_MODIFICATIONS 3
 #define _Py_MAX_ALLOWED_GLOBALS_MODIFICATIONS 6
