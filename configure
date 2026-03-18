@@ -32958,7 +32958,7 @@ printf "%s\n" "$ax_cv_check_cflags__Werror__maltivec__mvsx" >&6; }
 if test "x$ax_cv_check_cflags__Werror__maltivec__mvsx" = xyes
 then :
 
-    LIBHACL_SIMD128_FLAGS="-maltivec -mvsx"
+    LIBHACL_SIMD128_FLAGS="-maltivec -mvsx -flax-vector-conversions"
 
 
 printf "%s\n" "#define _Py_HACL_CAN_COMPILE_VEC128 1" >>confdefs.h
