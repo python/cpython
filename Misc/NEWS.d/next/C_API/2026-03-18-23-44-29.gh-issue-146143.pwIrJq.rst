@@ -1,0 +1,2 @@
+:c:func:`PyUnicodeWriter_WriteUCS4` now accepts pointer to constant buffer
+of ``Py_UCS4``.

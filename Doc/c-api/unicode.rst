@@ -1867,7 +1867,7 @@ object.
    On success, return ``0``.
    On error, set an exception, leave the writer unchanged, and return ``-1``.
 
-.. c:function:: int PyUnicodeWriter_WriteUCS4(PyUnicodeWriter *writer, Py_UCS4 *str, Py_ssize_t size)
+.. c:function:: int PyUnicodeWriter_WriteUCS4(PyUnicodeWriter *writer, const Py_UCS4 *str, Py_ssize_t size)
 
    Writer the UCS4 string *str* into *writer*.
 

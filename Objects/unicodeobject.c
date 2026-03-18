@@ -2224,7 +2224,7 @@ _PyUnicode_FromUCS4(const Py_UCS4 *u, Py_ssize_t size)
 
 int
 PyUnicodeWriter_WriteUCS4(PyUnicodeWriter *pub_writer,
-                          Py_UCS4 *str,
+                          const Py_UCS4 *str,
                           Py_ssize_t size)
 {
     _PyUnicodeWriter *writer = (_PyUnicodeWriter*)pub_writer;
