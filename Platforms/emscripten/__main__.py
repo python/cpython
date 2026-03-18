@@ -341,7 +341,7 @@ def write_library_config(prefix, name, config, quiet):
     with cached_config.open("w") as f:
         json.dump(config, f)
     if not quiet:
-        print(f"Succeded building {name}, wrote config to {cached_config}")
+        print(f"Succeeded building {name}, wrote config to {cached_config}")
 
 
 @subdir("host_build_dir", clean_ok=True)
