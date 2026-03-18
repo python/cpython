@@ -76,7 +76,7 @@ class PkgutilTests(unittest.TestCase):
         with self.assertRaises(ValueError):
             pkgutil.get_data(pkg, 'sub/../../../etc/passwd')
         with self.assertRaises(ValueError):
-            pkgutil.get_data(pkg, os.sep + 'etc' + os.sep + 'passwd')
+            pkgutil.get_data(pkg, os.path.abspath('/etc/passwd'))
 
         del sys.modules[pkg]
 
