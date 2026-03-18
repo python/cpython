@@ -1014,13 +1014,6 @@ symtable
   (Contributed by Yashp002 in :gh:`143504`.)
 
 
-symtable
---------
-
-* Add :meth:`symtable.Function.get_cells` and :meth:`symtable.Symbol.is_cell` methods.
-  (Contributed by Yashp002 in :gh:`143504`.)
-
-
 sys
 ---
 
@@ -1293,11 +1286,11 @@ Upgraded JIT compiler
 
 Results from the `pyperformance <https://github.com/python/pyperformance>`__
 benchmark suite report
-`4-5% <https://raw.githubusercontent.com/facebookexperimental/free-threading-benchmarking/refs/heads/main/results/bm-20260110-3.15.0a3%2B-aa8578d-JIT/bm-20260110-vultr-x86_64-python-aa8578dc54df2af9daa3-3.15.0a3%2B-aa8578d-vs-base.svg>`__
+`5-6% <https://doesjitgobrrr.com/run/2026-03-11>`__
 geometric mean performance improvement for the JIT over the standard CPython
 interpreter built with all optimizations enabled on x86-64 Linux. On AArch64
 macOS, the JIT has a
-`7-8% <https://raw.githubusercontent.com/facebookexperimental/free-threading-benchmarking/refs/heads/main/results/bm-20260110-3.15.0a3%2B-aa8578d-JIT/bm-20260110-macm4pro-arm64-python-aa8578dc54df2af9daa3-3.15.0a3%2B-aa8578d-vs-base.svg>`__
+`8-9% <https://doesjitgobrrr.com/run/2026-03-11>`__
 speedup over the :ref:`tail calling interpreter <whatsnew314-tail-call-interpreter>`
 with all optimizations enabled. The speedups for JIT
 builds versus no JIT builds range from roughly 15% slowdown to over

@@ -17,8 +17,6 @@
             break;
         }
 
-        /* _QUICKEN_RESUME is not a viable micro-op for tier 2 */
-
         /* _LOAD_BYTECODE is not a viable micro-op for tier 2 */
 
         case _RESUME_CHECK: {
@@ -1293,9 +1291,17 @@
         }
 
         case _CALL_INTRINSIC_1: {
+            JitOptRef value;
             JitOptRef res;
+            JitOptRef v;
+            value = stack_pointer[-1];
             res = sym_new_not_null(ctx);
+            v = value;
+            CHECK_STACK_BOUNDS(1);
             stack_pointer[-1] = res;
+            stack_pointer[0] = v;
+            stack_pointer += 1;
+            ASSERT_WITHIN_STACK_BOUNDS(__FILE__, __LINE__);
             break;
         }
 
@@ -2649,11 +2655,26 @@
         }
 
         case _MATCH_CLASS: {
+            JitOptRef names;
+            JitOptRef type;
+            JitOptRef subject;
             JitOptRef attrs;
+            JitOptRef s;
+            JitOptRef tp;
+            JitOptRef n;
+            names = stack_pointer[-1];
+            type = stack_pointer[-2];
+            subject = stack_pointer[-3];
             attrs = sym_new_not_null(ctx);
-            CHECK_STACK_BOUNDS(-2);
+            s = subject;
+            tp = type;
+            n = names;
+            CHECK_STACK_BOUNDS(1);
             stack_pointer[-3] = attrs;
-            stack_pointer += -2;
+            stack_pointer[-2] = s;
+            stack_pointer[-1] = tp;
+            stack_pointer[0] = n;
+            stack_pointer += 1;
             ASSERT_WITHIN_STACK_BOUNDS(__FILE__, __LINE__);
             break;
         }
@@ -2731,6 +2752,14 @@
         /* _INSTRUMENTED_FOR_ITER is not a viable micro-op for tier 2 */
 
         case _ITER_CHECK_LIST: {
+            JitOptRef iter;
+            iter = stack_pointer[-2];
+            if (sym_matches_type(iter, &PyList_Type)) {
+                ADD_OP(_NOP, 0, 0);
+            }
+            else {
+                sym_set_type(iter, &PyList_Type);
+            }
             break;
         }
 
@@ -2779,6 +2808,14 @@
         }
 
         case _ITER_CHECK_RANGE: {
+            JitOptRef iter;
+            iter = stack_pointer[-2];
+            if (sym_matches_type(iter, &PyRange_Type)) {
+                ADD_OP(_NOP, 0, 0);
+            }
+            else {
+                sym_set_type(iter, &PyRange_Type);
+            }
             break;
         }
 
@@ -4262,16 +4299,19 @@
             break;
         }
 
-        case _GUARD_CODE_VERSION: {
-            uint32_t version = (uint32_t)this_instr->operand0;
-            PyCodeObject *co = get_current_code_object(ctx);
-            if (co->co_version == version) {
-                _Py_BloomFilter_Add(dependencies, co);
-                REPLACE_OP(this_instr, _NOP, 0, 0);
-            }
-            else {
-                ctx->done = true;
-            }
+        case _GUARD_CODE_VERSION__PUSH_FRAME: {
+            break;
+        }
+
+        case _GUARD_CODE_VERSION_YIELD_VALUE: {
+            break;
+        }
+
+        case _GUARD_CODE_VERSION_RETURN_VALUE: {
+            break;
+        }
+
+        case _GUARD_CODE_VERSION_RETURN_GENERATOR: {
             break;
         }
 
