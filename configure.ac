@@ -8110,7 +8110,7 @@ fi
 if test "$ac_sys_system" != "Linux-android" -a "$ac_sys_system" != "WASI" || \
    { test -n "$ANDROID_API_LEVEL" && test "$ANDROID_API_LEVEL" -ge 28; }
 then
-  dnl This can be extended here to detect e.g. Power8, which HACL* should also support.
+  dnl Check for x86 SSE support (SIMD128)
   AX_CHECK_COMPILE_FLAG([-msse -msse2 -msse3 -msse4.1 -msse4.2],[
     [LIBHACL_SIMD128_FLAGS="-msse -msse2 -msse3 -msse4.1 -msse4.2"]
 
@@ -8129,7 +8129,20 @@ then
       AC_MSG_RESULT([standard])
     fi
 
-  ], [], [-Werror])
+  ], [
+    dnl x86 SSE not available; check for PowerPC AltiVec/VSX (Power8+).
+    dnl HACL* libintvector.h has a complete vec128 implementation for __powerpc64__.
+    AX_CHECK_COMPILE_FLAG([-maltivec -mvsx],[
+      [LIBHACL_SIMD128_FLAGS="-maltivec -mvsx"]
+
+      AC_DEFINE([_Py_HACL_CAN_COMPILE_VEC128], [1], [
+        HACL* library can compile SIMD128 implementations])
+
+      [LIBHACL_BLAKE2_SIMD128_OBJS="Modules/_hacl/Hacl_Hash_Blake2s_Simd128.o"]
+      AC_MSG_CHECKING([for HACL* SIMD128 implementation])
+      AC_MSG_RESULT([PowerPC AltiVec/VSX])
+    ], [], [-Werror])
+  ], [-Werror])
 fi
 AC_SUBST([LIBHACL_SIMD128_FLAGS])
 AC_SUBST([LIBHACL_BLAKE2_SIMD128_OBJS])

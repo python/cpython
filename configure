@@ -32919,7 +32919,63 @@ printf "%s\n" "standard" >&6; }
 
 
 else case e in #(
+  e)
+    # x86 SSE not available; check for PowerPC AltiVec/VSX (Power8+).
+    # HACL* libintvector.h has a complete vec128 implementation for __powerpc64__.
+    { printf "%s\n" "$as_me:${as_lineno-$LINENO}: checking whether C compiler accepts -maltivec -mvsx" >&5
+printf %s "checking whether C compiler accepts -maltivec -mvsx... " >&6; }
+if test ${ax_cv_check_cflags__Werror__maltivec__mvsx+y}
+then :
+  printf %s "(cached) " >&6
+else case e in #(
+  e)
+  ax_check_save_flags=$CFLAGS
+  CFLAGS="$CFLAGS -Werror -maltivec -mvsx"
+  cat confdefs.h - <<_ACEOF >conftest.$ac_ext
+/* end confdefs.h.  */
+
+int
+main (void)
+{
+
+  ;
+  return 0;
+}
+_ACEOF
+if ac_fn_c_try_compile "$LINENO"
+then :
+  ax_cv_check_cflags__Werror__maltivec__mvsx=yes
+else case e in #(
+  e) ax_cv_check_cflags__Werror__maltivec__mvsx=no ;;
+esac
+fi
+rm -f core conftest.err conftest.$ac_objext conftest.beam conftest.$ac_ext
+  CFLAGS=$ax_check_save_flags ;;
+esac
+fi
+{ printf "%s\n" "$as_me:${as_lineno-$LINENO}: result: $ax_cv_check_cflags__Werror__maltivec__mvsx" >&5
+printf "%s\n" "$ax_cv_check_cflags__Werror__maltivec__mvsx" >&6; }
+if test "x$ax_cv_check_cflags__Werror__maltivec__mvsx" = xyes
+then :
+
+    LIBHACL_SIMD128_FLAGS="-maltivec -mvsx"
+
+
+printf "%s\n" "#define _Py_HACL_CAN_COMPILE_VEC128 1" >>confdefs.h
+
+
+    LIBHACL_BLAKE2_SIMD128_OBJS="Modules/_hacl/Hacl_Hash_Blake2s_Simd128.o"
+    { printf "%s\n" "$as_me:${as_lineno-$LINENO}: checking for HACL* SIMD128 implementation" >&5
+printf %s "checking for HACL* SIMD128 implementation... " >&6; }
+    { printf "%s\n" "$as_me:${as_lineno-$LINENO}: result: PowerPC AltiVec/VSX" >&5
+printf "%s\n" "PowerPC AltiVec/VSX" >&6; }
+
+else case e in #(
   e) : ;;
+esac
+fi
+
+  ;;
 esac
 fi
 

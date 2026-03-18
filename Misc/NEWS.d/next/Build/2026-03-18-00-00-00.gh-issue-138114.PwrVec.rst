@@ -1,0 +1,3 @@
+Enable HACL* BLAKE2s SIMD128 vectorization on PowerPC64 (POWER8+) using
+AltiVec/VSX instructions. The HACL* library already contained a complete
+PowerPC64 vec128 implementation but CPython's configure never enabled it.
