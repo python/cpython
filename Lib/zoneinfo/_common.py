@@ -67,13 +67,13 @@ def load_data(fobj):
             f">{timecnt}{time_type}", fobj.read(timecnt * time_size)
         )
         trans_idx = struct.unpack(f">{timecnt}B", fobj.read(timecnt))
+
+        if max(trans_idx) >= typecnt:
+            raise ValueError("Invalid transition index found while reading TZif: "
+                            f"{max(trans_idx)}")
     else:
         trans_list_utc = ()
         trans_idx = ()
-
-    if trans_idx and max(trans_idx) >= typecnt:
-        raise ValueError("Invalid transition index found while reading TZif: "
-                         f"{max(trans_idx)}")
 
     # Read the ttinfo struct, (utoff, isdst, abbrind)
     if typecnt:
