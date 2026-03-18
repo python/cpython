@@ -596,7 +596,7 @@ class WindowsConsoleGetEventTests(TestCase):
     def test_backspace_vt(self):
         ir = self.get_input_record("\x7f")
         self.assertEqual(self.get_event([ir], vt_support=True),
-                         Event("key", "backspace", b"\x7f"))
+                         Event("key", "backspace"))
         self.assertEqual(self.mock.call_count, 1)
 
     def test_up_vt(self):
