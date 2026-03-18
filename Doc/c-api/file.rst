@@ -125,7 +125,7 @@ the :mod:`io` APIs instead.
    :c:macro:`Py_PRINT_RAW`; if given, the :func:`str` of the object is written
    instead of the :func:`repr`.
 
-   If *obj* is ``NULL``, write string ``"<NULL>"``.
+   If *obj* is ``NULL``, write the string ``"<NULL>"``.
 
    Return ``0`` on success or ``-1`` on failure; the
    appropriate exception will be set.
