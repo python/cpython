@@ -1780,19 +1780,6 @@ dummy_func(void) {
         // do not need an IP guard.
     }
 
-    op(_GUARD_CODE_VERSION, (version/2 -- )) {
-        PyCodeObject *co = get_current_code_object(ctx);
-        if (co->co_version == version) {
-            _Py_BloomFilter_Add(dependencies, co);
-            // TODO gh-144651:
-            // If we've previously guarded on this code version in a trace, we
-            // can avoid guarding it again.
-        }
-        else {
-            ctx->done = true;
-        }
-    }
-
     op(_GUARD_IP_YIELD_VALUE, (ip/4 --)) {
         (void)ip;
         if (ctx->frame->caller) {
