@@ -21,6 +21,13 @@ custom_converter(PyObject *obj, custom_t *val)
 }
 
 
+/* Forward declarations for vectorcall exemplar types, needed because
+ * clinic/_testclinic.c.h is included before the type definitions. */
+static PyTypeObject VcNew_Type;
+static PyTypeObject VcInit_Type;
+static PyTypeObject VcNewExact_Type;
+static PyTypeObject VcNewZeroArg_Type;
+
 #include "clinic/_testclinic.c.h"
 
 
@@ -2314,6 +2321,133 @@ output pop
 /*[clinic end generated code: output=da39a3ee5e6b4b0d input=e7c7c42daced52b0]*/
 
 
+/*
+ * Vectorcall exemplars.
+ *
+ * Each type exercises a different @vectorcall code-generation path.
+ * There is one type per exemplar because tp_vectorcall is a single slot.
+ */
+
+
+/* --- VcNew: @vectorcall on __new__, single pos-or-kw optional
+ *     (general + kw fast-path, METHOD_NEW finale) --- */
+
+/*[clinic input]
+class _testclinic.VcNew "PyObject *" "&VcNew_Type"
+@classmethod
+@vectorcall
+_testclinic.VcNew.__new__ as vc_plain_new
+    a: object = None
+[clinic start generated code]*/
+
+static PyObject *
+vc_plain_new_impl(PyTypeObject *type, PyObject *a)
+/*[clinic end generated code: output=55b273e9797a3013 input=e15d88606280badc]*/
+{
+    return type->tp_alloc(type, 0);
+}
+
+static PyTypeObject VcNew_Type = {
+    PyVarObject_HEAD_INIT(NULL, 0)
+    .tp_name = "_testclinic.VcNew",
+    .tp_basicsize = sizeof(PyObject),
+    .tp_flags = Py_TPFLAGS_DEFAULT,
+    .tp_new = vc_plain_new,
+    .tp_vectorcall = vc_plain_vectorcall,
+};
+
+
+/* --- VcInit: @vectorcall on __init__, pos-only + pos-or-kw optional
+ *     (general + kw fast-path) --- */
+
+/*[clinic input]
+class _testclinic.VcInit "PyObject *" "&VcInit_Type"
+@vectorcall
+_testclinic.VcInit.__init__ as vc_posorkw_init
+    a: object
+    /
+    b: object = None
+[clinic start generated code]*/
+
+static int
+vc_posorkw_init_impl(PyObject *self, PyObject *a, PyObject *b)
+/*[clinic end generated code: output=6018424ba9fb0744 input=25e4c2b792040c31]*/
+{
+    return 0;
+}
+
+static PyTypeObject VcInit_Type = {
+    PyVarObject_HEAD_INIT(NULL, 0)
+    .tp_name = "_testclinic.VcInit",
+    .tp_basicsize = sizeof(PyObject),
+    .tp_flags = Py_TPFLAGS_DEFAULT,
+    .tp_new = PyType_GenericNew,
+    .tp_init = vc_posorkw_init,
+    .tp_vectorcall = vc_posorkw_vectorcall,
+};
+
+
+/* --- VcNewExact: @vectorcall exact_only on __new__, pos-only required +
+ *     pos-or-kw optional (general + kw fast-path + exact_only guard) --- */
+
+/*[clinic input]
+class _testclinic.VcNewExact "PyObject *" "&VcNewExact_Type"
+@classmethod
+@vectorcall exact_only
+_testclinic.VcNewExact.__new__ as vc_exact_new
+    a: object
+    /
+    b: object = None
+[clinic start generated code]*/
+
+static PyObject *
+vc_exact_new_impl(PyTypeObject *type, PyObject *a, PyObject *b)
+/*[clinic end generated code: output=e88217e36443b698 input=ea86a1ab634c93a6]*/
+{
+    return type->tp_alloc(type, 0);
+}
+
+static PyTypeObject VcNewExact_Type = {
+    PyVarObject_HEAD_INIT(NULL, 0)
+    .tp_name = "_testclinic.VcNewExact",
+    .tp_basicsize = sizeof(PyObject),
+    .tp_flags = Py_TPFLAGS_DEFAULT | Py_TPFLAGS_BASETYPE,
+    .tp_new = vc_exact_new,
+    .tp_vectorcall = vc_exact_vectorcall,
+};
+
+
+/* --- VcNewZeroArg: @vectorcall zero_arg on __new__, pos-only optional +
+ *     kw-only optional (general path, no kw fast-path + zero_arg) --- */
+
+/*[clinic input]
+class _testclinic.VcNewZeroArg "PyObject *" "&VcNewZeroArg_Type"
+@classmethod
+@vectorcall zero_arg=Py_NewRef(Py_None)
+_testclinic.VcNewZeroArg.__new__ as vc_zeroarg_new
+    a: object = None
+    /
+    *
+    b: object = None
+[clinic start generated code]*/
+
+static PyObject *
+vc_zeroarg_new_impl(PyTypeObject *type, PyObject *a, PyObject *b)
+/*[clinic end generated code: output=6425b64d61c6317a input=f3d3ba860fc40034]*/
+{
+    return type->tp_alloc(type, 0);
+}
+
+static PyTypeObject VcNewZeroArg_Type = {
+    PyVarObject_HEAD_INIT(NULL, 0)
+    .tp_name = "_testclinic.VcNewZeroArg",
+    .tp_basicsize = sizeof(PyObject),
+    .tp_flags = Py_TPFLAGS_DEFAULT,
+    .tp_new = vc_zeroarg_new,
+    .tp_vectorcall = vc_zeroarg_vectorcall,
+};
+
+
 /*[clinic input]
 output push
 destination kwarg new file '{dirname}/clinic/_testclinic_kwds.c.h'
@@ -2531,6 +2665,18 @@ PyInit__testclinic(void)
         goto error;
     }
     if (PyModule_AddType(m, &DeprKwdInitNoInline) < 0) {
+        goto error;
+    }
+    if (PyModule_AddType(m, &VcNew_Type) < 0) {
+        goto error;
+    }
+    if (PyModule_AddType(m, &VcInit_Type) < 0) {
+        goto error;
+    }
+    if (PyModule_AddType(m, &VcNewExact_Type) < 0) {
+        goto error;
+    }
+    if (PyModule_AddType(m, &VcNewZeroArg_Type) < 0) {
         goto error;
     }
     return m;

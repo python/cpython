@@ -4293,6 +4293,89 @@ class ClinicFunctionalTest(unittest.TestCase):
         self.assertEqual(ac_tester.kwds_with_pos_only_and_stararg(1, 2, *args, **kwds), (1, 2, args, kwds))
 
 
+@unittest.skipIf(ac_tester is None, "_testclinic is missing")
+class VectorcallFunctionalTest(unittest.TestCase):
+    """Runtime tests for @vectorcall exemplar types."""
+
+    def test_vc_new_no_args(self):
+        obj = ac_tester.VcNew()
+        self.assertIsInstance(obj, ac_tester.VcNew)
+
+    def test_vc_new_with_arg(self):
+        obj = ac_tester.VcNew(1)
+        self.assertIsInstance(obj, ac_tester.VcNew)
+
+    def test_vc_new_with_kwarg(self):
+        obj = ac_tester.VcNew(a=1)
+        self.assertIsInstance(obj, ac_tester.VcNew)
+
+    def test_vc_new_rejects_extra_args(self):
+        with self.assertRaises(TypeError):
+            ac_tester.VcNew(1, 2)
+
+    def test_vc_init_required_pos_only(self):
+        obj = ac_tester.VcInit(1)
+        self.assertIsInstance(obj, ac_tester.VcInit)
+
+    def test_vc_init_with_keyword(self):
+        obj = ac_tester.VcInit(1, b=2)
+        self.assertIsInstance(obj, ac_tester.VcInit)
+
+    def test_vc_init_with_positional_optional(self):
+        obj = ac_tester.VcInit(1, 2)
+        self.assertIsInstance(obj, ac_tester.VcInit)
+
+    def test_vc_init_missing_required(self):
+        with self.assertRaises(TypeError):
+            ac_tester.VcInit()
+
+    def test_vc_init_rejects_a_as_keyword(self):
+        # 'a' is positional-only
+        with self.assertRaises(TypeError):
+            ac_tester.VcInit(a=1)
+
+    def test_vc_new_exact_one_arg(self):
+        obj = ac_tester.VcNewExact(1)
+        self.assertIsInstance(obj, ac_tester.VcNewExact)
+
+    def test_vc_new_exact_two_args(self):
+        obj = ac_tester.VcNewExact(1, 2)
+        self.assertIsInstance(obj, ac_tester.VcNewExact)
+
+    def test_vc_new_exact_missing_required(self):
+        with self.assertRaises(TypeError):
+            ac_tester.VcNewExact()
+
+    def test_vc_new_exact_subclass(self):
+        # exact_only: subclass goes through non-vectorcall (tp_new) path
+        Sub = type('Sub', (ac_tester.VcNewExact,), {})
+        obj = Sub(1)
+        self.assertIsInstance(obj, Sub)
+        self.assertIsInstance(obj, ac_tester.VcNewExact)
+
+    def test_vc_new_zeroarg_no_args(self):
+        # zero_arg returns Py_None when called with no arguments
+        result = ac_tester.VcNewZeroArg()
+        self.assertIs(result, None)
+
+    def test_vc_new_zeroarg_with_pos(self):
+        obj = ac_tester.VcNewZeroArg(1)
+        self.assertIsInstance(obj, ac_tester.VcNewZeroArg)
+
+    def test_vc_new_zeroarg_with_kwonly(self):
+        obj = ac_tester.VcNewZeroArg(b=2)
+        self.assertIsInstance(obj, ac_tester.VcNewZeroArg)
+
+    def test_vc_new_zeroarg_with_both(self):
+        obj = ac_tester.VcNewZeroArg(1, b=2)
+        self.assertIsInstance(obj, ac_tester.VcNewZeroArg)
+
+    def test_vc_new_zeroarg_rejects_a_as_keyword(self):
+        # 'a' is positional-only
+        with self.assertRaises(TypeError):
+            ac_tester.VcNewZeroArg(a=1)
+
+
 class LimitedCAPIOutputTests(unittest.TestCase):
 
     def setUp(self):
