@@ -521,19 +521,20 @@ _Py_uop_sym_set_func_version(JitOptContext *ctx, JitOptRef ref, uint32_t version
         case JIT_SYM_TRUTHINESS_TAG:
             sym_set_bottom(ctx, sym);
             return true;
-        case JIT_SYM_RECORDED_VALUE_TAG:
+        case JIT_SYM_RECORDED_VALUE_TAG: {
             PyObject *val = sym->recorded_value.value;
             if (Py_TYPE(val) != &PyFunction_Type ||
                 ((PyFunctionObject *)sym->recorded_value.value)->func_version != version) {
                 sym_set_bottom(ctx, sym);
                 return false;
-            }
+                }
             // Promote to known value, as we have guarded/checked on it.
             sym->tag = JIT_SYM_KNOWN_VALUE_TAG;
             // New ownership. We need to NewRef here, as
             // it's originally kept alive by the trace buffer.
             sym->value.value = Py_NewRef(val);
             return true;
+        }
         case JIT_SYM_RECORDED_TYPE_TAG:
             if (sym->recorded_type.type == &PyFunction_Type) {
                 sym->tag = JIT_SYM_FUNC_VERSION_TAG;
