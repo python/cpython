@@ -2215,6 +2215,76 @@ def run_program_output(
 
 
 # ---------------------------------------------------------------------------
+# Compile-time integer computation (for cross-compilation)
+# ---------------------------------------------------------------------------
+
+
+def _compute_int(expr: str, includes: str = "") -> int | None:
+    """Determine the compile-time value of a C integer expression.
+
+    Uses the same technique as autoconf's AC_COMPUTE_INT / _AC_COMPUTE_INT:
+    a binary search using compile-time assertions of the form
+    ``static int test_array [1 - 2 * !(EXPR)];`` which fail to compile
+    when the expression is false (negative-size array).
+
+    Works even when cross-compiling because it only needs to *compile*,
+    never to *run* the test program.
+
+    Returns the integer value, or None if it could not be determined.
+    """
+    def _try(boolean_expr: str) -> bool:
+        src = (
+            f"{includes}\n"
+            "int main(void) {\n"
+            f"  static int test_array [1 - 2 * !({boolean_expr})];\n"
+            "  test_array[0] = 0;\n"
+            "  return test_array[0];\n"
+            "}\n"
+        )
+        return _compile_test(src)
+
+    # Step 1: determine sign
+    if _try(f"({expr}) >= 0"):
+        # Non-negative: search upward from 0
+        ac_lo = 0
+        ac_mid = 0
+        while True:
+            if _try(f"({expr}) <= {ac_mid}"):
+                ac_hi = ac_mid
+                break
+            ac_lo = ac_mid + 1
+            if ac_lo <= ac_mid:
+                # Overflow
+                return None
+            ac_mid = 2 * ac_mid + 1
+    elif _try(f"({expr}) < 0"):
+        # Negative: search downward from -1
+        ac_hi = -1
+        ac_mid = -1
+        while True:
+            if _try(f"({expr}) >= {ac_mid}"):
+                ac_lo = ac_mid
+                break
+            ac_hi = ac_mid - 1
+            if ac_mid <= ac_hi:
+                # Overflow
+                return None
+            ac_mid = 2 * ac_mid
+    else:
+        return None
+
+    # Step 2: binary search between lo and hi
+    while ac_lo != ac_hi:
+        ac_mid = (ac_hi - ac_lo) // 2 + ac_lo
+        if _try(f"({expr}) <= {ac_mid}"):
+            ac_hi = ac_mid
+        else:
+            ac_lo = ac_mid + 1
+
+    return ac_lo
+
+
+# ---------------------------------------------------------------------------
 # Header / struct / member probes
 # ---------------------------------------------------------------------------
 
@@ -2446,10 +2516,11 @@ def check_sizeof(
 ) -> int:
     """AC_CHECK_SIZEOF — determine sizeof(*type_*).
 
-    Compiles and runs a tiny program that prints the size.  On failure or when
-    cross-compiling, returns *default* (or 0).
+    When not cross-compiling, compiles and runs a program that prints the
+    size.  When cross-compiling (or when the run fails), uses a compile-time
+    binary search matching autoconf's AC_COMPUTE_INT technique.
+    Falls back to *default* (or 0) only if both methods fail.
     Defines SIZEOF_<TYPE> as a side-effect.
-    *headers* lists extra headers to include in the test program.
     """
     cache_key = "ac_cv_sizeof_" + _type_to_define(type_).lower()
     own_checking = not _result_pending
@@ -2468,18 +2539,27 @@ def check_sizeof(
     extra_includes = "".join(
         f"#include <{h}>\n" for h in (headers or includes or [])
     )
-    src = (
-        "#include <stdio.h>\n"
-        "#include <stddef.h>\n"
-        "#include <stdint.h>\n" + extra_includes + "int main(void) {\n"
-        f'  printf("%zu\\n", sizeof({type_}));\n'
-        "  return 0;\n"
-        "}\n"
-    )
-    output_str = run_program_output(src)
-    if output_str.strip().isdigit():
-        size = int(output_str.strip())
-    else:
+    size = None
+    if not cross_compiling:
+        src = (
+            "#include <stdio.h>\n"
+            "#include <stddef.h>\n"
+            "#include <stdint.h>\n" + extra_includes + "int main(void) {\n"
+            f'  printf("%zu\\n", sizeof({type_}));\n'
+            "  return 0;\n"
+            "}\n"
+        )
+        output_str = run_program_output(src)
+        if output_str.strip().isdigit():
+            size = int(output_str.strip())
+    if size is None:
+        # Cross-compiling or run failed: compile-time binary search
+        inc = (
+            "#include <stddef.h>\n"
+            "#include <stdint.h>\n" + extra_includes
+        )
+        size = _compute_int(f"(long int)(sizeof({type_}))", inc)
+    if size is None:
         size = default if default is not None else 0
     cache[cache_key] = str(size)
     define_name = "SIZEOF_" + _type_to_define(type_)
@@ -2492,6 +2572,9 @@ def check_sizeof(
 def check_alignof(type_: str) -> int:
     """AC_CHECK_ALIGNOF — determine alignment of *type_*.
 
+    When not cross-compiling, runs a program.  When cross-compiling, uses
+    the compile-time binary search (offsetof on a struct with a leading
+    char member, matching autoconf's AC_CHECK_ALIGNOF).
     Returns alignment as int; defines ALIGNOF_<TYPE> as a side-effect.
     """
     cache_key = "ac_cv_alignof_" + _type_to_define(type_).lower()
@@ -2510,18 +2593,29 @@ def check_alignof(type_: str) -> int:
         if own_checking:
             result(str(alignment))
         return alignment
-    src = (
-        "#include <stdio.h>\n"
-        "#include <stddef.h>\n"
-        "int main(void) {\n"
-        f'  printf("%zu\\n", _Alignof({type_}));\n'
-        "  return 0;\n"
-        "}\n"
-    )
-    output_str = run_program_output(src)
-    if output_str.strip().isdigit():
-        alignment = int(output_str.strip())
-    else:
+    alignment = None
+    if not cross_compiling:
+        src = (
+            "#include <stdio.h>\n"
+            "#include <stddef.h>\n"
+            "int main(void) {\n"
+            f'  printf("%zu\\n", _Alignof({type_}));\n'
+            "  return 0;\n"
+            "}\n"
+        )
+        output_str = run_program_output(src)
+        if output_str.strip().isdigit():
+            alignment = int(output_str.strip())
+    if alignment is None:
+        # Cross-compiling or run failed: compile-time binary search using
+        # offsetof(struct{char c; TYPE x;}, x), matching autoconf.
+        inc = "#include <stddef.h>\n"
+        expr = (
+            f"(long int)(offsetof("
+            f"struct {{ char c; {type_} x; }}, x))"
+        )
+        alignment = _compute_int(expr, inc)
+    if alignment is None:
         alignment = 0
     cache[cache_key] = str(alignment)
     define_name = "ALIGNOF_" + _type_to_define(type_)
@@ -2583,18 +2677,121 @@ def check_c_const() -> None:
 
 
 def check_c_bigendian() -> None:
-    """AC_C_BIGENDIAN — detect byte order; defines WORDS_BIGENDIAN if big-endian."""
-    src = (
-        "#include <stdio.h>\n"
-        "int main(void) {\n"
-        "  unsigned int x = 1;\n"
-        "  unsigned char *p = (unsigned char *)&x;\n"
-        '  printf("%d\\n", p[0] == 0 ? 1 : 0);\n'
-        "  return 0;\n"
-        "}\n"
-    )
-    output_str = run_program_output(src).strip()
-    if output_str == "1":
+    """AC_C_BIGENDIAN — detect byte order.
+
+    Matches autoconf's multi-stage detection:
+    1. Check sys/param.h BYTE_ORDER macros (compile-only, cross-safe).
+    2. Check limits.h _BIG_ENDIAN/_LITTLE_ENDIAN (compile-only, cross-safe).
+    3. When cross-compiling: link a program containing marker strings and
+       grep the binary for 'BIGenDianSyS' / 'LiTTleEnDian'.
+    4. When not cross-compiling: run a test program.
+
+    Defines WORDS_BIGENDIAN if big-endian, AC_APPLE_UNIVERSAL_BUILD if
+    universal.
+    """
+    result_val = "unknown"
+
+    # Stage 1: sys/param.h BYTE_ORDER macros
+    if result_val == "unknown":
+        src_has_macros = (
+            "#include <sys/types.h>\n"
+            "#include <sys/param.h>\n"
+            "int main(void) {\n"
+            "#if ! (defined BYTE_ORDER && defined BIG_ENDIAN \\\n"
+            "       && defined LITTLE_ENDIAN && BYTE_ORDER \\\n"
+            "       && BIG_ENDIAN && LITTLE_ENDIAN)\n"
+            "  bogus endian macros\n"
+            "#endif\n"
+            "  return 0;\n"
+            "}\n"
+        )
+        if _compile_test(src_has_macros):
+            src_is_big = (
+                "#include <sys/types.h>\n"
+                "#include <sys/param.h>\n"
+                "int main(void) {\n"
+                "#if BYTE_ORDER != BIG_ENDIAN\n"
+                "  not big endian\n"
+                "#endif\n"
+                "  return 0;\n"
+                "}\n"
+            )
+            result_val = "yes" if _compile_test(src_is_big) else "no"
+
+    # Stage 2: limits.h _LITTLE_ENDIAN / _BIG_ENDIAN (e.g. Solaris)
+    if result_val == "unknown":
+        src_has_macros = (
+            "#include <limits.h>\n"
+            "int main(void) {\n"
+            "#if ! (defined _LITTLE_ENDIAN || defined _BIG_ENDIAN)\n"
+            "  bogus endian macros\n"
+            "#endif\n"
+            "  return 0;\n"
+            "}\n"
+        )
+        if _compile_test(src_has_macros):
+            src_is_big = (
+                "#include <limits.h>\n"
+                "int main(void) {\n"
+                "#ifndef _BIG_ENDIAN\n"
+                "  not big endian\n"
+                "#endif\n"
+                "  return 0;\n"
+                "}\n"
+            )
+            result_val = "yes" if _compile_test(src_is_big) else "no"
+
+    # Stage 3/4: runtime test or object-file grep
+    if result_val == "unknown":
+        if cross_compiling:
+            # Link a program with marker strings, grep the binary.
+            marker_src = (
+                "unsigned short int ascii_mm[] =\n"
+                "  { 0x4249, 0x4765, 0x6E44, 0x6961, 0x6E53, 0x7953, 0 };\n"
+                "unsigned short int ascii_ii[] =\n"
+                "  { 0x694C, 0x5454, 0x656C, 0x6E45, 0x6944, 0x6E61, 0 };\n"
+                "int use_ascii(int i) {\n"
+                "  return ascii_mm[i] + ascii_ii[i];\n"
+                "}\n"
+                "int main(int argc, char **argv) {\n"
+                "  char *p = argv[0];\n"
+                "  ascii_mm[1] = *p++; ascii_ii[1] = *p++;\n"
+                "  return use_ascii(argc);\n"
+                "}\n"
+            )
+            with tempfile.TemporaryDirectory() as tmp:
+                src_path = os.path.join(tmp, "conftest.c")
+                exe_path = os.path.join(tmp, "conftest")
+                with open(src_path, "w") as f:
+                    f.write(_confdefs_preamble() + marker_src)
+                if _run_cc(src_path, exe_path):
+                    try:
+                        data = open(exe_path, "rb").read()
+                    except OSError:
+                        data = b""
+                    has_big = b"BIGenDianSyS" in data
+                    has_little = b"LiTTleEnDian" in data
+                    if has_big and not has_little:
+                        result_val = "yes"
+                    elif has_little and not has_big:
+                        result_val = "no"
+        else:
+            src = (
+                "#include <stdio.h>\n"
+                "int main(void) {\n"
+                "  unsigned int x = 1;\n"
+                "  unsigned char *p = (unsigned char *)&x;\n"
+                '  printf("%d\\n", p[0] == 0 ? 1 : 0);\n'
+                "  return 0;\n"
+                "}\n"
+            )
+            output_str = run_program_output(src).strip()
+            if output_str == "1":
+                result_val = "yes"
+            elif output_str == "0":
+                result_val = "no"
+
+    if result_val == "yes":
         define(
             "WORDS_BIGENDIAN",
             1,
@@ -2605,29 +2802,47 @@ def check_c_bigendian() -> None:
 def ax_c_float_words_bigendian(
     on_big: Any = None, on_little: Any = None, on_unknown: Any = None
 ) -> None:
-    """Check float word ordering; calls on_big/on_little/on_unknown callbacks."""
+    """Check float word ordering; calls on_big/on_little/on_unknown callbacks.
+
+    Uses the same compile-and-grep technique as the autoconf
+    AX_C_FLOAT_WORDS_BIGENDIAN macro: the magic constant
+    9.090423496703681e+223 encodes as bytes containing 'noonsees' when
+    float words are big-endian and 'seesnoon' when little-endian.
+    We compile (link) the test program and search the resulting object
+    file for these marker strings, which works even when cross-compiling.
+    """
     src = (
-        "#include <stdio.h>\n"
-        "int main(void) {\n"
-        "  double d = 1.0;\n"
-        "  unsigned char *p = (unsigned char *)&d;\n"
-        "  /* IEEE 754 double 1.0 = 3FF0000000000000 hex.\n"
-        "   * big-endian:    p[0]==0x3f  (MSB first)\n"
-        "   * little-endian: p[7]==0x3f  (LSB first, MSB last)\n"
-        "   */\n"
-        '  if (p[0] == 0x3f) { printf("big\\n"); }\n'
-        '  else if (p[7] == 0x3f) { printf("little\\n"); }\n'
-        '  else { printf("unknown\\n"); }\n'
-        "  return 0;\n"
+        "#include <stdlib.h>\n"
+        "static double m[] = {9.090423496703681e+223, 0.0};\n"
+        "int main(int argc, char *argv[]) {\n"
+        "  m[atoi(argv[1])] += atof(argv[2]);\n"
+        "  return m[atoi(argv[3])] > 0.0;\n"
         "}\n"
     )
-    output_str = run_program_output(src).strip()
-    if output_str == "big" and callable(on_big):
-        on_big()
-    elif output_str == "little" and callable(on_little):
-        on_little()
-    elif callable(on_unknown):
-        on_unknown()
+    with tempfile.TemporaryDirectory() as tmp:
+        src_path = os.path.join(tmp, "conftest.c")
+        exe_path = os.path.join(tmp, "conftest")
+        with open(src_path, "w") as f:
+            f.write(src)
+        if not _run_cc(src_path, exe_path):
+            if callable(on_unknown):
+                on_unknown()
+            return
+        # Read the linked binary and look for the marker strings.
+        try:
+            data = open(exe_path, "rb").read()
+        except OSError:
+            if callable(on_unknown):
+                on_unknown()
+            return
+        has_big = b"noonsees" in data
+        has_little = b"seesnoon" in data
+        if has_big and not has_little and callable(on_big):
+            on_big()
+        elif has_little and not has_big and callable(on_little):
+            on_little()
+        elif callable(on_unknown):
+            on_unknown()
 
 
 # ---------------------------------------------------------------------------

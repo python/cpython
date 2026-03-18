@@ -370,6 +370,54 @@ function _pyconf_link_test(source, extra_flags) {
 	return (_pyconf_run_cc(source, extra_flags, "link") == 0)
 }
 
+# _pyconf_compute_int — compile-time binary search for an integer expression.
+# Matches autoconf's AC_COMPUTE_INT / _AC_COMPUTE_INT_COMPILE.
+# Returns the integer value, or "" on failure.
+function _pyconf_compute_int(expr, includes,    ac_lo, ac_hi, ac_mid, src) {
+	# Step 1: determine sign
+	src = _pyconf_confdefs() "\n" includes "\nint main(void) {\n  static int test_array [1 - 2 * !((" expr ") >= 0)];\n  test_array[0] = 0;\n  return test_array[0];\n}\n"
+	if (_pyconf_compile_test(src)) {
+		# Non-negative: search upward from 0
+		ac_lo = 0; ac_mid = 0
+		while (1) {
+			src = _pyconf_confdefs() "\n" includes "\nint main(void) {\n  static int test_array [1 - 2 * !((" expr ") <= " ac_mid ")];\n  test_array[0] = 0;\n  return test_array[0];\n}\n"
+			if (_pyconf_compile_test(src)) {
+				ac_hi = ac_mid; break
+			}
+			ac_lo = ac_mid + 1
+			if (ac_lo <= ac_mid) return ""
+			ac_mid = 2 * ac_mid + 1
+		}
+	} else {
+		src = _pyconf_confdefs() "\n" includes "\nint main(void) {\n  static int test_array [1 - 2 * !((" expr ") < 0)];\n  test_array[0] = 0;\n  return test_array[0];\n}\n"
+		if (_pyconf_compile_test(src)) {
+			# Negative: search downward from -1
+			ac_hi = -1; ac_mid = -1
+			while (1) {
+				src = _pyconf_confdefs() "\n" includes "\nint main(void) {\n  static int test_array [1 - 2 * !((" expr ") >= " ac_mid ")];\n  test_array[0] = 0;\n  return test_array[0];\n}\n"
+				if (_pyconf_compile_test(src)) {
+					ac_lo = ac_mid; break
+				}
+				ac_hi = ac_mid - 1
+				if (ac_mid <= ac_hi) return ""
+				ac_mid = 2 * ac_mid
+			}
+		} else {
+			return ""
+		}
+	}
+	# Step 2: binary search between lo and hi
+	while (ac_lo != ac_hi) {
+		ac_mid = int((ac_hi - ac_lo) / 2) + ac_lo
+		src = _pyconf_confdefs() "\n" includes "\nint main(void) {\n  static int test_array [1 - 2 * !((" expr ") <= " ac_mid ")];\n  test_array[0] = 0;\n  return test_array[0];\n}\n"
+		if (_pyconf_compile_test(src))
+			ac_hi = ac_mid
+		else
+			ac_lo = ac_mid + 1
+	}
+	return ac_lo
+}
+
 function _pyconf_run_test(source, extra_flags,    conftest, cmd, rc, line, result, outf, pre, post) {
 	conftest = _pyconf_tmpdir "/conftest.c"
 	printf "%s", source > conftest
@@ -658,9 +706,15 @@ function pyconf_check_sizeof(type_name, default_val, headers,    source, inc, re
 				inc = inc "#include <" arr[i] ">\n"
 	}
 
-	source = _pyconf_confdefs() "\n" inc "\n#include <stdio.h>\nint main(void) { printf(\"%d\", (int)sizeof(" type_name ")); return 0; }"
-	result = _pyconf_run_test(source, "")
-
+	result = ""
+	if (pyconf_cross_compiling != "yes") {
+		source = _pyconf_confdefs() "\n" inc "\n#include <stdio.h>\nint main(void) { printf(\"%d\", (int)sizeof(" type_name ")); return 0; }"
+		result = _pyconf_run_test(source, "")
+	}
+	if (result == "") {
+		# Cross-compiling or run failed: compile-time binary search
+		result = _pyconf_compute_int("(long int)(sizeof(" type_name "))", inc)
+	}
 	if (result == "") {
 		if (default_val != "")
 			result = default_val
@@ -696,9 +750,15 @@ function pyconf_check_alignof(type_name, default_val, headers,    source, inc, r
 				inc = inc "#include <" arr[i] ">\n"
 	}
 
-	source = _pyconf_confdefs() "\n" inc "\n#include <stdio.h>\n#include <stddef.h>\nstruct _align_test { char c; " type_name " x; };\nint main(void) { printf(\"%d\", (int)offsetof(struct _align_test, x)); return 0; }"
-	result = _pyconf_run_test(source, "")
-
+	result = ""
+	if (pyconf_cross_compiling != "yes") {
+		source = _pyconf_confdefs() "\n" inc "\n#include <stdio.h>\n#include <stddef.h>\nstruct _align_test { char c; " type_name " x; };\nint main(void) { printf(\"%d\", (int)offsetof(struct _align_test, x)); return 0; }"
+		result = _pyconf_run_test(source, "")
+	}
+	if (result == "") {
+		# Cross-compiling or run failed: compile-time binary search
+		result = _pyconf_compute_int("(long int)(offsetof(struct { char c; " type_name " x; }, x))", "#include <stddef.h>\n" inc)
+	}
 	if (result == "") result = (default_val != "" ? default_val : "0")
 	CACHE[cv] = result
 	V[cv] = result
@@ -1919,17 +1979,99 @@ function pyconf_check_emscripten_port(port, name) {
 	return 0
 }
 
-function pyconf_ax_c_float_words_bigendian(on_big, on_little, on_unknown,    src, result) {
-	src = "#include <stdio.h>\nint main(void) {\n  double d = 1.0;\n  unsigned char *p = (unsigned char *)&d;\n  if (p[0] == 0x3f) { printf(\"big\\n\"); }\n  else if (p[7] == 0x3f) { printf(\"little\\n\"); }\n  else { printf(\"unknown\\n\"); }\n  return 0;\n}\n"
-	result = _pyconf_run_test(_pyconf_confdefs() "\n" src, "")
-	# Store result for caller to dispatch callbacks
-	_pyconf_retval = result
+function pyconf_ax_c_float_words_bigendian(on_big, on_little, on_unknown,    src, conftest, exe, cmd, rc, has_big, has_little, pre, post) {
+	# Use the same compile-and-grep technique as the autoconf
+	# AX_C_FLOAT_WORDS_BIGENDIAN macro: the magic constant
+	# 9.090423496703681e+223 encodes as bytes containing "noonsees"
+	# when float words are big-endian and "seesnoon" when little-endian.
+	# We link the test program and search the binary for these markers,
+	# which works even when cross-compiling.
+	src = "#include <stdlib.h>\nstatic double m[] = {9.090423496703681e+223, 0.0};\nint main(int argc, char *argv[]) {\n  m[atoi(argv[1])] += atof(argv[2]);\n  return m[atoi(argv[3])] > 0.0;\n}\n"
+	conftest = _pyconf_tmpdir "/conftest.c"
+	exe = _pyconf_tmpdir "/conftest"
+	printf "%s", src > conftest
+	close(conftest)
+	cmd = _pyconf_env_prefix()
+	cmd = cmd V["CC"] " " V["CPPFLAGS"] " " V["CFLAGS"] " " V["LDFLAGS"] " " conftest " -o " exe " " V["LIBS"] " 2>/dev/null"
+	rc = system(cmd)
+	if (rc != 0) {
+		system("rm -f " conftest " " exe)
+		_pyconf_retval = "unknown"
+		return
+	}
+	has_big = (system("grep -c noonsees " exe " >/dev/null 2>&1") == 0)
+	has_little = (system("grep -c seesnoon " exe " >/dev/null 2>&1") == 0)
+	system("rm -f " conftest " " exe)
+	if (has_big && !has_little)
+		_pyconf_retval = "big"
+	else if (has_little && !has_big)
+		_pyconf_retval = "little"
+	else
+		_pyconf_retval = "unknown"
 }
 
-function pyconf_check_c_bigendian(    source, result) {
-	source = _pyconf_confdefs() "\n#include <limits.h>\nint main(void) {\n  union { long l; char c[sizeof(long)]; } u;\n  u.l = 1;\n  return u.c[0] == 1 ? 0 : 1;\n}"
-	result = _pyconf_run_test(source, "")
-	return result
+function pyconf_check_c_bigendian(    result_val, conftest, exe, cmd, rc, data, has_big, has_little, source) {
+	# AC_C_BIGENDIAN — multi-stage detection matching autoconf.
+	result_val = "unknown"
+
+	# Stage 1: sys/param.h BYTE_ORDER macros
+	if (result_val == "unknown") {
+		source = "#include <sys/types.h>\n#include <sys/param.h>\nint main(void) {\n#if ! (defined BYTE_ORDER && defined BIG_ENDIAN && defined LITTLE_ENDIAN && BYTE_ORDER && BIG_ENDIAN && LITTLE_ENDIAN)\n  bogus endian macros\n#endif\n  return 0;\n}\n"
+		if (_pyconf_compile_test(_pyconf_confdefs() "\n" source)) {
+			source = "#include <sys/types.h>\n#include <sys/param.h>\nint main(void) {\n#if BYTE_ORDER != BIG_ENDIAN\n  not big endian\n#endif\n  return 0;\n}\n"
+			if (_pyconf_compile_test(_pyconf_confdefs() "\n" source))
+				result_val = "yes"
+			else
+				result_val = "no"
+		}
+	}
+
+	# Stage 2: limits.h _LITTLE_ENDIAN / _BIG_ENDIAN (e.g. Solaris)
+	if (result_val == "unknown") {
+		source = "#include <limits.h>\nint main(void) {\n#if ! (defined _LITTLE_ENDIAN || defined _BIG_ENDIAN)\n  bogus endian macros\n#endif\n  return 0;\n}\n"
+		if (_pyconf_compile_test(_pyconf_confdefs() "\n" source)) {
+			source = "#include <limits.h>\nint main(void) {\n#ifndef _BIG_ENDIAN\n  not big endian\n#endif\n  return 0;\n}\n"
+			if (_pyconf_compile_test(_pyconf_confdefs() "\n" source))
+				result_val = "yes"
+			else
+				result_val = "no"
+		}
+	}
+
+	# Stage 3/4: object-file grep (cross) or runtime test (native)
+	if (result_val == "unknown") {
+		if (pyconf_cross_compiling == "yes") {
+			# Link with marker strings and grep the binary
+			source = "unsigned short int ascii_mm[] =\n  { 0x4249, 0x4765, 0x6E44, 0x6961, 0x6E53, 0x7953, 0 };\nunsigned short int ascii_ii[] =\n  { 0x694C, 0x5454, 0x656C, 0x6E45, 0x6944, 0x6E61, 0 };\nint use_ascii(int i) {\n  return ascii_mm[i] + ascii_ii[i];\n}\nint main(int argc, char **argv) {\n  char *p = argv[0];\n  ascii_mm[1] = *p++; ascii_ii[1] = *p++;\n  return use_ascii(argc);\n}\n"
+			conftest = _pyconf_tmpdir "/conftest.c"
+			exe = _pyconf_tmpdir "/conftest"
+			printf "%s", _pyconf_confdefs() "\n" source > conftest
+			close(conftest)
+			cmd = _pyconf_env_prefix()
+			cmd = cmd V["CC"] " " V["CPPFLAGS"] " " V["CFLAGS"] " " V["LDFLAGS"] " " conftest " -o " exe " " V["LIBS"] " 2>/dev/null"
+			rc = system(cmd)
+			if (rc == 0) {
+				has_big = (system("grep -c BIGenDianSyS " exe " >/dev/null 2>&1") == 0)
+				has_little = (system("grep -c LiTTleEnDian " exe " >/dev/null 2>&1") == 0)
+				if (has_big && !has_little)
+					result_val = "yes"
+				else if (has_little && !has_big)
+					result_val = "no"
+			}
+			system("rm -f " conftest " " exe)
+		} else {
+			source = _pyconf_confdefs() "\n#include <stdio.h>\nint main(void) {\n  unsigned int x = 1;\n  unsigned char *p = (unsigned char *)&x;\n  printf(\"%d\\n\", p[0] == 0 ? 1 : 0);\n  return 0;\n}\n"
+			data = _pyconf_run_test(source, "")
+			gsub(/[ \t\n]/, "", data)
+			if (data == "1")
+				result_val = "yes"
+			else if (data == "0")
+				result_val = "no"
+		}
+	}
+
+	if (result_val == "yes")
+		pyconf_define("WORDS_BIGENDIAN", 1, 0, "Define to 1 if your processor stores words big-endian.")
 }
 
 
