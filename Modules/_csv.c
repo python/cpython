@@ -497,13 +497,13 @@ dialect_new(PyTypeObject *type, PyObject *args, PyObject *kwargs)
     Py_XINCREF(skipinitialspace);
     Py_XINCREF(strict);
     if (dialect != NULL) {
-#define DIALECT_GETATTR(v, n)                            \
-        do {                                             \
-            if (v == NULL) {                             \
-                v = PyObject_GetAttrString(dialect, n);  \
-                if (v == NULL)                           \
-                    PyErr_Clear();                       \
-            }                                            \
+#define DIALECT_GETATTR(v, n)                                               \
+        do {                                                                \
+            if (v == NULL) {                                                \
+                if (PyObject_GetOptionalAttrString(dialect, n, &v) < 0) {   \
+                    goto err;                                               \
+                }                                                           \
+            }                                                               \
         } while (0)
         DIALECT_GETATTR(delimiter, "delimiter");
         DIALECT_GETATTR(doublequote, "doublequote");

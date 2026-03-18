@@ -78,8 +78,8 @@ and execution returns to the adaptive interpreter.
 ## Invalidating Executors
 
 In addition to being stored on the code object, each executor is also
-inserted into a list of all executors, which is stored in the interpreter
-state's `executor_list_head` field. This list is used when it is necessary
+inserted into contiguous arrays (`executor_blooms` and `executor_ptrs`)
+stored in the interpreter state. These arrays are used when it is necessary
 to invalidate executors because values they used in their construction may
 have changed.
 
