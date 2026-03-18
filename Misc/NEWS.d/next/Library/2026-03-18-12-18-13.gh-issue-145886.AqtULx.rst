@@ -1,0 +1,2 @@
+Remove unused ``Event.raw`` field from :mod:`_pyrepl`. The field was only
+written to and never read, and had a copy-paste bug in ``getpending()``.
