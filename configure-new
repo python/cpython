@@ -2415,12 +2415,12 @@ function u_setup_dtrace(    _opt_result, ac_cv_dtrace_link, dtrace, dtrace_cmd, 
 	}
 }
 
-function u_setup_perf_trampoline(    PERF_TRAMPOLINE_OBJ, perf_trampoline, target, v) {
+function u_setup_perf_trampoline(    PERF_TRAMPOLINE_OBJ, perf_trampoline, target) {
 	pyconf_checking("perf trampoline")
 	if (((V["PLATFORM_TRIPLET"] == "x86_64-linux-gnu") || (V["PLATFORM_TRIPLET"] == "aarch64-linux-gnu"))) {
 		perf_trampoline = "yes"
 	} else if ((V["PLATFORM_TRIPLET"] == "darwin")) {
-		target = (("MACOSX_DEPLOYMENT_TARGET" in v) ? v["MACOSX_DEPLOYMENT_TARGET"] : "")
+		target = V["MACOSX_DEPLOYMENT_TARGET"]
 		delete _va3
 		_va3[1] = "10.[0-9]"
 		_va3[2] = "10.1[0-1]"
