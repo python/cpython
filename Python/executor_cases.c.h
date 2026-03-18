@@ -20753,23 +20753,25 @@
             GOTO_TIER_ONE(target);
         }
 
-        case _GUARD_CODE_VERSION_r00: {
+        case _GUARD_CODE_VERSION__PUSH_FRAME_r00: {
             CHECK_CURRENT_CACHED_VALUES(0);
             assert(WITHIN_STACK_BOUNDS_IGNORING_CACHE());
             uint32_t version = (uint32_t)CURRENT_OPERAND0_32();
             PyObject *code = PyStackRef_AsPyObjectBorrow(frame->f_executable);
             assert(PyCode_Check(code));
             if (((PyCodeObject *)code)->co_version != version) {
-                UOP_STAT_INC(uopcode, miss);
-                SET_CURRENT_CACHED_VALUES(0);
-                JUMP_TO_JUMP_TARGET();
+                if (true) {
+                    UOP_STAT_INC(uopcode, miss);
+                    SET_CURRENT_CACHED_VALUES(0);
+                    JUMP_TO_JUMP_TARGET();
+                }
             }
             SET_CURRENT_CACHED_VALUES(0);
             assert(WITHIN_STACK_BOUNDS_IGNORING_CACHE());
             break;
         }
 
-        case _GUARD_CODE_VERSION_r11: {
+        case _GUARD_CODE_VERSION__PUSH_FRAME_r11: {
             CHECK_CURRENT_CACHED_VALUES(1);
             assert(WITHIN_STACK_BOUNDS_IGNORING_CACHE());
             _PyStackRef _stack_item_0 = _tos_cache0;
@@ -20777,10 +20779,12 @@
             PyObject *code = PyStackRef_AsPyObjectBorrow(frame->f_executable);
             assert(PyCode_Check(code));
             if (((PyCodeObject *)code)->co_version != version) {
-                UOP_STAT_INC(uopcode, miss);
-                _tos_cache0 = _stack_item_0;
-                SET_CURRENT_CACHED_VALUES(1);
-                JUMP_TO_JUMP_TARGET();
+                if (true) {
+                    UOP_STAT_INC(uopcode, miss);
+                    _tos_cache0 = _stack_item_0;
+                    SET_CURRENT_CACHED_VALUES(1);
+                    JUMP_TO_JUMP_TARGET();
+                }
             }
             _tos_cache0 = _stack_item_0;
             SET_CURRENT_CACHED_VALUES(1);
@@ -20788,7 +20792,7 @@
             break;
         }
 
-        case _GUARD_CODE_VERSION_r22: {
+        case _GUARD_CODE_VERSION__PUSH_FRAME_r22: {
             CHECK_CURRENT_CACHED_VALUES(2);
             assert(WITHIN_STACK_BOUNDS_IGNORING_CACHE());
             _PyStackRef _stack_item_0 = _tos_cache0;
@@ -20797,11 +20801,13 @@
             PyObject *code = PyStackRef_AsPyObjectBorrow(frame->f_executable);
             assert(PyCode_Check(code));
             if (((PyCodeObject *)code)->co_version != version) {
-                UOP_STAT_INC(uopcode, miss);
-                _tos_cache1 = _stack_item_1;
-                _tos_cache0 = _stack_item_0;
-                SET_CURRENT_CACHED_VALUES(2);
-                JUMP_TO_JUMP_TARGET();
+                if (true) {
+                    UOP_STAT_INC(uopcode, miss);
+                    _tos_cache1 = _stack_item_1;
+                    _tos_cache0 = _stack_item_0;
+                    SET_CURRENT_CACHED_VALUES(2);
+                    JUMP_TO_JUMP_TARGET();
+                }
             }
             _tos_cache1 = _stack_item_1;
             _tos_cache0 = _stack_item_0;
@@ -20810,7 +20816,7 @@
             break;
         }
 
-        case _GUARD_CODE_VERSION_r33: {
+        case _GUARD_CODE_VERSION__PUSH_FRAME_r33: {
             CHECK_CURRENT_CACHED_VALUES(3);
             assert(WITHIN_STACK_BOUNDS_IGNORING_CACHE());
             _PyStackRef _stack_item_0 = _tos_cache0;
@@ -20820,12 +20826,296 @@
             PyObject *code = PyStackRef_AsPyObjectBorrow(frame->f_executable);
             assert(PyCode_Check(code));
             if (((PyCodeObject *)code)->co_version != version) {
-                UOP_STAT_INC(uopcode, miss);
-                _tos_cache2 = _stack_item_2;
-                _tos_cache1 = _stack_item_1;
-                _tos_cache0 = _stack_item_0;
-                SET_CURRENT_CACHED_VALUES(3);
-                JUMP_TO_JUMP_TARGET();
+                if (true) {
+                    UOP_STAT_INC(uopcode, miss);
+                    _tos_cache2 = _stack_item_2;
+                    _tos_cache1 = _stack_item_1;
+                    _tos_cache0 = _stack_item_0;
+                    SET_CURRENT_CACHED_VALUES(3);
+                    JUMP_TO_JUMP_TARGET();
+                }
+            }
+            _tos_cache2 = _stack_item_2;
+            _tos_cache1 = _stack_item_1;
+            _tos_cache0 = _stack_item_0;
+            SET_CURRENT_CACHED_VALUES(3);
+            assert(WITHIN_STACK_BOUNDS_IGNORING_CACHE());
+            break;
+        }
+
+        case _GUARD_CODE_VERSION_YIELD_VALUE_r00: {
+            CHECK_CURRENT_CACHED_VALUES(0);
+            assert(WITHIN_STACK_BOUNDS_IGNORING_CACHE());
+            uint32_t version = (uint32_t)CURRENT_OPERAND0_32();
+            PyObject *code = PyStackRef_AsPyObjectBorrow(frame->f_executable);
+            assert(PyCode_Check(code));
+            if (((PyCodeObject *)code)->co_version != version) {
+                frame->instr_ptr += 1 + INLINE_CACHE_ENTRIES_SEND;
+                if (true) {
+                    UOP_STAT_INC(uopcode, miss);
+                    SET_CURRENT_CACHED_VALUES(0);
+                    JUMP_TO_JUMP_TARGET();
+                }
+            }
+            SET_CURRENT_CACHED_VALUES(0);
+            assert(WITHIN_STACK_BOUNDS_IGNORING_CACHE());
+            break;
+        }
+
+        case _GUARD_CODE_VERSION_YIELD_VALUE_r11: {
+            CHECK_CURRENT_CACHED_VALUES(1);
+            assert(WITHIN_STACK_BOUNDS_IGNORING_CACHE());
+            _PyStackRef _stack_item_0 = _tos_cache0;
+            uint32_t version = (uint32_t)CURRENT_OPERAND0_32();
+            PyObject *code = PyStackRef_AsPyObjectBorrow(frame->f_executable);
+            assert(PyCode_Check(code));
+            if (((PyCodeObject *)code)->co_version != version) {
+                frame->instr_ptr += 1 + INLINE_CACHE_ENTRIES_SEND;
+                if (true) {
+                    UOP_STAT_INC(uopcode, miss);
+                    _tos_cache0 = _stack_item_0;
+                    SET_CURRENT_CACHED_VALUES(1);
+                    JUMP_TO_JUMP_TARGET();
+                }
+            }
+            _tos_cache0 = _stack_item_0;
+            SET_CURRENT_CACHED_VALUES(1);
+            assert(WITHIN_STACK_BOUNDS_IGNORING_CACHE());
+            break;
+        }
+
+        case _GUARD_CODE_VERSION_YIELD_VALUE_r22: {
+            CHECK_CURRENT_CACHED_VALUES(2);
+            assert(WITHIN_STACK_BOUNDS_IGNORING_CACHE());
+            _PyStackRef _stack_item_0 = _tos_cache0;
+            _PyStackRef _stack_item_1 = _tos_cache1;
+            uint32_t version = (uint32_t)CURRENT_OPERAND0_32();
+            PyObject *code = PyStackRef_AsPyObjectBorrow(frame->f_executable);
+            assert(PyCode_Check(code));
+            if (((PyCodeObject *)code)->co_version != version) {
+                frame->instr_ptr += 1 + INLINE_CACHE_ENTRIES_SEND;
+                if (true) {
+                    UOP_STAT_INC(uopcode, miss);
+                    _tos_cache1 = _stack_item_1;
+                    _tos_cache0 = _stack_item_0;
+                    SET_CURRENT_CACHED_VALUES(2);
+                    JUMP_TO_JUMP_TARGET();
+                }
+            }
+            _tos_cache1 = _stack_item_1;
+            _tos_cache0 = _stack_item_0;
+            SET_CURRENT_CACHED_VALUES(2);
+            assert(WITHIN_STACK_BOUNDS_IGNORING_CACHE());
+            break;
+        }
+
+        case _GUARD_CODE_VERSION_YIELD_VALUE_r33: {
+            CHECK_CURRENT_CACHED_VALUES(3);
+            assert(WITHIN_STACK_BOUNDS_IGNORING_CACHE());
+            _PyStackRef _stack_item_0 = _tos_cache0;
+            _PyStackRef _stack_item_1 = _tos_cache1;
+            _PyStackRef _stack_item_2 = _tos_cache2;
+            uint32_t version = (uint32_t)CURRENT_OPERAND0_32();
+            PyObject *code = PyStackRef_AsPyObjectBorrow(frame->f_executable);
+            assert(PyCode_Check(code));
+            if (((PyCodeObject *)code)->co_version != version) {
+                frame->instr_ptr += 1 + INLINE_CACHE_ENTRIES_SEND;
+                if (true) {
+                    UOP_STAT_INC(uopcode, miss);
+                    _tos_cache2 = _stack_item_2;
+                    _tos_cache1 = _stack_item_1;
+                    _tos_cache0 = _stack_item_0;
+                    SET_CURRENT_CACHED_VALUES(3);
+                    JUMP_TO_JUMP_TARGET();
+                }
+            }
+            _tos_cache2 = _stack_item_2;
+            _tos_cache1 = _stack_item_1;
+            _tos_cache0 = _stack_item_0;
+            SET_CURRENT_CACHED_VALUES(3);
+            assert(WITHIN_STACK_BOUNDS_IGNORING_CACHE());
+            break;
+        }
+
+        case _GUARD_CODE_VERSION_RETURN_VALUE_r00: {
+            CHECK_CURRENT_CACHED_VALUES(0);
+            assert(WITHIN_STACK_BOUNDS_IGNORING_CACHE());
+            uint32_t version = (uint32_t)CURRENT_OPERAND0_32();
+            PyObject *code = PyStackRef_AsPyObjectBorrow(frame->f_executable);
+            assert(PyCode_Check(code));
+            if (((PyCodeObject *)code)->co_version != version) {
+                frame->instr_ptr += frame->return_offset;
+                if (true) {
+                    UOP_STAT_INC(uopcode, miss);
+                    SET_CURRENT_CACHED_VALUES(0);
+                    JUMP_TO_JUMP_TARGET();
+                }
+            }
+            SET_CURRENT_CACHED_VALUES(0);
+            assert(WITHIN_STACK_BOUNDS_IGNORING_CACHE());
+            break;
+        }
+
+        case _GUARD_CODE_VERSION_RETURN_VALUE_r11: {
+            CHECK_CURRENT_CACHED_VALUES(1);
+            assert(WITHIN_STACK_BOUNDS_IGNORING_CACHE());
+            _PyStackRef _stack_item_0 = _tos_cache0;
+            uint32_t version = (uint32_t)CURRENT_OPERAND0_32();
+            PyObject *code = PyStackRef_AsPyObjectBorrow(frame->f_executable);
+            assert(PyCode_Check(code));
+            if (((PyCodeObject *)code)->co_version != version) {
+                frame->instr_ptr += frame->return_offset;
+                if (true) {
+                    UOP_STAT_INC(uopcode, miss);
+                    _tos_cache0 = _stack_item_0;
+                    SET_CURRENT_CACHED_VALUES(1);
+                    JUMP_TO_JUMP_TARGET();
+                }
+            }
+            _tos_cache0 = _stack_item_0;
+            SET_CURRENT_CACHED_VALUES(1);
+            assert(WITHIN_STACK_BOUNDS_IGNORING_CACHE());
+            break;
+        }
+
+        case _GUARD_CODE_VERSION_RETURN_VALUE_r22: {
+            CHECK_CURRENT_CACHED_VALUES(2);
+            assert(WITHIN_STACK_BOUNDS_IGNORING_CACHE());
+            _PyStackRef _stack_item_0 = _tos_cache0;
+            _PyStackRef _stack_item_1 = _tos_cache1;
+            uint32_t version = (uint32_t)CURRENT_OPERAND0_32();
+            PyObject *code = PyStackRef_AsPyObjectBorrow(frame->f_executable);
+            assert(PyCode_Check(code));
+            if (((PyCodeObject *)code)->co_version != version) {
+                frame->instr_ptr += frame->return_offset;
+                if (true) {
+                    UOP_STAT_INC(uopcode, miss);
+                    _tos_cache1 = _stack_item_1;
+                    _tos_cache0 = _stack_item_0;
+                    SET_CURRENT_CACHED_VALUES(2);
+                    JUMP_TO_JUMP_TARGET();
+                }
+            }
+            _tos_cache1 = _stack_item_1;
+            _tos_cache0 = _stack_item_0;
+            SET_CURRENT_CACHED_VALUES(2);
+            assert(WITHIN_STACK_BOUNDS_IGNORING_CACHE());
+            break;
+        }
+
+        case _GUARD_CODE_VERSION_RETURN_VALUE_r33: {
+            CHECK_CURRENT_CACHED_VALUES(3);
+            assert(WITHIN_STACK_BOUNDS_IGNORING_CACHE());
+            _PyStackRef _stack_item_0 = _tos_cache0;
+            _PyStackRef _stack_item_1 = _tos_cache1;
+            _PyStackRef _stack_item_2 = _tos_cache2;
+            uint32_t version = (uint32_t)CURRENT_OPERAND0_32();
+            PyObject *code = PyStackRef_AsPyObjectBorrow(frame->f_executable);
+            assert(PyCode_Check(code));
+            if (((PyCodeObject *)code)->co_version != version) {
+                frame->instr_ptr += frame->return_offset;
+                if (true) {
+                    UOP_STAT_INC(uopcode, miss);
+                    _tos_cache2 = _stack_item_2;
+                    _tos_cache1 = _stack_item_1;
+                    _tos_cache0 = _stack_item_0;
+                    SET_CURRENT_CACHED_VALUES(3);
+                    JUMP_TO_JUMP_TARGET();
+                }
+            }
+            _tos_cache2 = _stack_item_2;
+            _tos_cache1 = _stack_item_1;
+            _tos_cache0 = _stack_item_0;
+            SET_CURRENT_CACHED_VALUES(3);
+            assert(WITHIN_STACK_BOUNDS_IGNORING_CACHE());
+            break;
+        }
+
+        case _GUARD_CODE_VERSION_RETURN_GENERATOR_r00: {
+            CHECK_CURRENT_CACHED_VALUES(0);
+            assert(WITHIN_STACK_BOUNDS_IGNORING_CACHE());
+            uint32_t version = (uint32_t)CURRENT_OPERAND0_32();
+            PyObject *code = PyStackRef_AsPyObjectBorrow(frame->f_executable);
+            assert(PyCode_Check(code));
+            if (((PyCodeObject *)code)->co_version != version) {
+                frame->instr_ptr += frame->return_offset;
+                if (true) {
+                    UOP_STAT_INC(uopcode, miss);
+                    SET_CURRENT_CACHED_VALUES(0);
+                    JUMP_TO_JUMP_TARGET();
+                }
+            }
+            SET_CURRENT_CACHED_VALUES(0);
+            assert(WITHIN_STACK_BOUNDS_IGNORING_CACHE());
+            break;
+        }
+
+        case _GUARD_CODE_VERSION_RETURN_GENERATOR_r11: {
+            CHECK_CURRENT_CACHED_VALUES(1);
+            assert(WITHIN_STACK_BOUNDS_IGNORING_CACHE());
+            _PyStackRef _stack_item_0 = _tos_cache0;
+            uint32_t version = (uint32_t)CURRENT_OPERAND0_32();
+            PyObject *code = PyStackRef_AsPyObjectBorrow(frame->f_executable);
+            assert(PyCode_Check(code));
+            if (((PyCodeObject *)code)->co_version != version) {
+                frame->instr_ptr += frame->return_offset;
+                if (true) {
+                    UOP_STAT_INC(uopcode, miss);
+                    _tos_cache0 = _stack_item_0;
+                    SET_CURRENT_CACHED_VALUES(1);
+                    JUMP_TO_JUMP_TARGET();
+                }
+            }
+            _tos_cache0 = _stack_item_0;
+            SET_CURRENT_CACHED_VALUES(1);
+            assert(WITHIN_STACK_BOUNDS_IGNORING_CACHE());
+            break;
+        }
+
+        case _GUARD_CODE_VERSION_RETURN_GENERATOR_r22: {
+            CHECK_CURRENT_CACHED_VALUES(2);
+            assert(WITHIN_STACK_BOUNDS_IGNORING_CACHE());
+            _PyStackRef _stack_item_0 = _tos_cache0;
+            _PyStackRef _stack_item_1 = _tos_cache1;
+            uint32_t version = (uint32_t)CURRENT_OPERAND0_32();
+            PyObject *code = PyStackRef_AsPyObjectBorrow(frame->f_executable);
+            assert(PyCode_Check(code));
+            if (((PyCodeObject *)code)->co_version != version) {
+                frame->instr_ptr += frame->return_offset;
+                if (true) {
+                    UOP_STAT_INC(uopcode, miss);
+                    _tos_cache1 = _stack_item_1;
+                    _tos_cache0 = _stack_item_0;
+                    SET_CURRENT_CACHED_VALUES(2);
+                    JUMP_TO_JUMP_TARGET();
+                }
+            }
+            _tos_cache1 = _stack_item_1;
+            _tos_cache0 = _stack_item_0;
+            SET_CURRENT_CACHED_VALUES(2);
+            assert(WITHIN_STACK_BOUNDS_IGNORING_CACHE());
+            break;
+        }
+
+        case _GUARD_CODE_VERSION_RETURN_GENERATOR_r33: {
+            CHECK_CURRENT_CACHED_VALUES(3);
+            assert(WITHIN_STACK_BOUNDS_IGNORING_CACHE());
+            _PyStackRef _stack_item_0 = _tos_cache0;
+            _PyStackRef _stack_item_1 = _tos_cache1;
+            _PyStackRef _stack_item_2 = _tos_cache2;
+            uint32_t version = (uint32_t)CURRENT_OPERAND0_32();
+            PyObject *code = PyStackRef_AsPyObjectBorrow(frame->f_executable);
+            assert(PyCode_Check(code));
+            if (((PyCodeObject *)code)->co_version != version) {
+                frame->instr_ptr += frame->return_offset;
+                if (true) {
+                    UOP_STAT_INC(uopcode, miss);
+                    _tos_cache2 = _stack_item_2;
+                    _tos_cache1 = _stack_item_1;
+                    _tos_cache0 = _stack_item_0;
+                    SET_CURRENT_CACHED_VALUES(3);
+                    JUMP_TO_JUMP_TARGET();
+                }
             }
             _tos_cache2 = _stack_item_2;
             _tos_cache1 = _stack_item_1;

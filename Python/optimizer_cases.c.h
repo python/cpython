@@ -2752,6 +2752,14 @@
         /* _INSTRUMENTED_FOR_ITER is not a viable micro-op for tier 2 */
 
         case _ITER_CHECK_LIST: {
+            JitOptRef iter;
+            iter = stack_pointer[-2];
+            if (sym_matches_type(iter, &PyList_Type)) {
+                ADD_OP(_NOP, 0, 0);
+            }
+            else {
+                sym_set_type(iter, &PyList_Type);
+            }
             break;
         }
 
@@ -2800,6 +2808,14 @@
         }
 
         case _ITER_CHECK_RANGE: {
+            JitOptRef iter;
+            iter = stack_pointer[-2];
+            if (sym_matches_type(iter, &PyRange_Type)) {
+                ADD_OP(_NOP, 0, 0);
+            }
+            else {
+                sym_set_type(iter, &PyRange_Type);
+            }
             break;
         }
 
@@ -4283,15 +4299,19 @@
             break;
         }
 
-        case _GUARD_CODE_VERSION: {
-            uint32_t version = (uint32_t)this_instr->operand0;
-            PyCodeObject *co = get_current_code_object(ctx);
-            if (co->co_version == version) {
-                _Py_BloomFilter_Add(dependencies, co);
-            }
-            else {
-                ctx->done = true;
-            }
+        case _GUARD_CODE_VERSION__PUSH_FRAME: {
+            break;
+        }
+
+        case _GUARD_CODE_VERSION_YIELD_VALUE: {
+            break;
+        }
+
+        case _GUARD_CODE_VERSION_RETURN_VALUE: {
+            break;
+        }
+
+        case _GUARD_CODE_VERSION_RETURN_GENERATOR: {
             break;
         }
 
