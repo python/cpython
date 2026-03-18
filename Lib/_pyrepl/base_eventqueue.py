@@ -54,13 +54,11 @@ class BaseEventQueue:
         """
         return not self.events
 
-    def flush_buf(self) -> bytearray:
+    def flush_buf(self) -> None:
         """
-        Flushes the buffer and returns its contents.
+        Flushes the buffer.
         """
-        old = self.buf
         self.buf = bytearray()
-        return old
 
     def insert(self, event: Event) -> None:
         """
@@ -98,7 +96,9 @@ class BaseEventQueue:
             trace('unrecognized escape sequence, propagating...')
             self.keymap = self.compiled_keymap
             self.insert(Event('key', '\033'))
-            for _c in self.flush_buf()[1:]:
+            remaining = self.buf[1:]
+            self.flush_buf()
+            for _c in remaining:
                 self.push(_c)
 
         else:

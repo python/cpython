@@ -41,7 +41,7 @@ class EventQueueTestBase:
     def test_flush_buf(self):
         eq = self.make_eventqueue()
         eq.buf.extend(b"test")
-        self.assertEqual(eq.flush_buf(), b"test")
+        eq.flush_buf()
         self.assertEqual(eq.buf, bytearray())
 
     def test_insert(self):
