@@ -56,8 +56,11 @@ PyList_SET_ITEM:compatible:
 # Bulk operations - hold per-object lock for duration
 PyList_GetSlice:atomic:
 PyList_AsTuple:atomic:
-PyList_Reverse:atomic:
 PyList_Clear:atomic:
+
+# Reverse - protected by per-object critical section; swaps
+# elements so lock-free readers may observe intermediate states
+PyList_Reverse:shared:
 
 # Slice assignment - lock target list; also lock source when it
 # is a list
