@@ -142,9 +142,9 @@ def dump(obj, fp, *, skipkeys=False, ensure_ascii=True, check_circular=True,
 
     If ``indent`` is a non-negative integer, then JSON array elements and
     object members will be pretty-printed with that indent level. An indent
-    level of 0 will only insert newlines. ``None`` is the most compact
-    representation.
-
+    level of 0 will only insert newlines. ``None`` gives a compact
+    representation; see below.
+    
     If specified, ``separators`` should be an ``(item_separator,
     key_separator)`` tuple.  The default is ``(', ', ': ')`` if *indent* is
     ``None`` and ``(',', ': ')`` otherwise.  To get the most compact JSON
