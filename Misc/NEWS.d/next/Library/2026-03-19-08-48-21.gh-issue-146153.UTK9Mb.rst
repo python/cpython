@@ -1,1 +1,1 @@
-Changed the :data:`_capability_names` dictionary in :mod:`curses.has_key` to a :class:`frozenmap`, since it is private and requires no modifications. Contributed by Jonathan Dung.
+Changed the ``_capability_names`` dictionary in :mod:`curses.has_key` to a :class:`frozendict`, since it is private and requires no modifications. Contributed by Jonathan Dung.
