@@ -4910,11 +4910,11 @@ function u_setup_module_deps(    android_api_level) {
 	V["LIBPYTHON"] = ""
 	android_api_level = V["ANDROID_API_LEVEL"]
 	if (((V["PY_ENABLE_SHARED"] == "1") && (((android_api_level != "") && (android_api_level != "no")) || (V["MACHDEP"] == "cygwin")))) {
-		V["MODULE_DEPS_SHARED"] = "$(MODULE_DEPS_SHARED) $(LDLIBRARY)"
+		V["MODULE_DEPS_SHARED"] = V["MODULE_DEPS_SHARED"] " $(LDLIBRARY)"
 		V["LIBPYTHON"] = "$(BLDLIBRARY)"
 	}
 	if ((V["ac_sys_system"] == "iOS")) {
-		V["MODULE_DEPS_SHARED"] = "$(MODULE_DEPS_SHARED) $(PYTHONFRAMEWORKDIR)/$(PYTHONFRAMEWORK)"
+		V["MODULE_DEPS_SHARED"] = V["MODULE_DEPS_SHARED"] " $(PYTHONFRAMEWORKDIR)/$(PYTHONFRAMEWORK)"
 	}
 }
 

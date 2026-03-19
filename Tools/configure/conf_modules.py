@@ -26,12 +26,12 @@ def setup_module_deps(v):
     if v.PY_ENABLE_SHARED == "1" and (
         android_api_level or v.MACHDEP == "cygwin"
     ):
-        v.MODULE_DEPS_SHARED = r"$(MODULE_DEPS_SHARED) $(LDLIBRARY)"
+        v.MODULE_DEPS_SHARED = f"{v.MODULE_DEPS_SHARED} $(LDLIBRARY)"
         v.LIBPYTHON = r"$(BLDLIBRARY)"
 
     if v.ac_sys_system == "iOS":
         v.MODULE_DEPS_SHARED = (
-            r"$(MODULE_DEPS_SHARED) $(PYTHONFRAMEWORKDIR)/$(PYTHONFRAMEWORK)"
+            f"{v.MODULE_DEPS_SHARED} $(PYTHONFRAMEWORKDIR)/$(PYTHONFRAMEWORK)"
         )
 
 
