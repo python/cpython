@@ -1,0 +1,3 @@
+Prevent re-entrant calls to ``Parse()`` from within expat handlers,
+which could cause a crash. Now raises :exc:`RuntimeError` when such a
+call is attempted.
