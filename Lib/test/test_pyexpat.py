@@ -276,6 +276,32 @@ class ParseTest(unittest.TestCase):
         self.assertEqual(expat.ErrorString(cm.exception.code),
                           expat.errors.XML_ERROR_FINISHED)
 
+    def test_reentrant_parse_crash(self):
+        from xml.parsers import expat
+        p = expat.ParserCreate(encoding="utf-16")
+
+        def start(name, attrs):
+            def handler(data):
+                p.Parse(data, 0)
+            p.CharacterDataHandler = handler
+
+        p.StartElementHandler = start
+        data = b"\xff\xfe<\x00a\x00>\x00x\x00"
+        with self.assertRaises(RuntimeError) as cm:
+            for i in range(len(data)):
+                p.Parse(data[i:i+1], i == len(data) - 1)
+        self.assertEqual(str(cm.exception),
+                         "cannot call Parse() from within a handler")
+
+    def test_parse_normal(self):
+        from xml.parsers import expat
+        p = expat.ParserCreate()
+        data = "<root><child/></root>".encode('utf-8')
+        try:
+            p.Parse(data, 1)
+        except RuntimeError:
+            self.fail("Parse() raised RuntimeError during normal operation")
+
 class NamespaceSeparatorTest(unittest.TestCase):
     def test_legal(self):
         # Tests that make sure we get errors when the namespace_separator value
