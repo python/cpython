@@ -218,6 +218,28 @@ def super_call():
         obj.method()
 
 
+class MyClassMethod:
+    @classmethod
+    def my_classmethod(cls):
+        return cls
+
+    @staticmethod
+    def my_staticmethod():
+        pass
+
+@register_benchmark
+def classmethod_call():
+    obj = MyClassMethod()
+    for _ in range(1000 * WORK_SCALE):
+        obj.my_classmethod()
+
+@register_benchmark
+def staticmethod_call():
+    obj = MyClassMethod()
+    for _ in range(1000 * WORK_SCALE):
+        obj.my_staticmethod()
+
+
 def bench_one_thread(func):
     t0 = time.perf_counter_ns()
     func()
