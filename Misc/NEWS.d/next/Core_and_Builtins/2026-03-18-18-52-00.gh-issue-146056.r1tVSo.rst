@@ -1,0 +1,1 @@
+Fix :meth:`!list.__repr__` for lists containing ``NULL``\ s.
