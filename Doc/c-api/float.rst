@@ -236,7 +236,7 @@ most likely :exc:`OverflowError`).
    Pack a C double as the IEEE 754 binary64 double precision format.
 
    .. impl-detail::
-       This function always succeeds in CPython.
+      This function always succeeds in CPython.
 
 
 Unpack functions
