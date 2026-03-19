@@ -217,7 +217,11 @@ def _load_config_site() -> None:
                 continue
             name, value = m.group(1), m.group(2)
             # Strip surrounding quotes (single or double)
-            if len(value) >= 2 and value[0] == value[-1] and value[0] in ("'", '"'):
+            if (
+                len(value) >= 2
+                and value[0] == value[-1]
+                and value[0] in ("'", '"')
+            ):
                 value = value[1:-1]
             # Command-line VAR=VALUE (already in os.environ) takes precedence
             if name not in os.environ and not vars.is_set(name):
@@ -1588,7 +1592,7 @@ def canonical_host() -> None:
         host_parts = host.split("-", 2)
         host_cpu = host_parts[0]
         if build_arg:
-            cross_compiling = (host != build)
+            cross_compiling = host != build
         else:
             # autoconf sets "maybe" when --host is given without --build
             cross_compiling = "maybe" if host != build else False
@@ -2280,6 +2284,7 @@ def _compute_int(expr: str, includes: str = "") -> int | None:
 
     Returns the integer value, or None if it could not be determined.
     """
+
     def _try(boolean_expr: str) -> bool:
         src = (
             f"{includes}\n"
@@ -2602,10 +2607,7 @@ def check_sizeof(
             size = int(output_str.strip())
     if size is None:
         # Cross-compiling or run failed: compile-time binary search
-        inc = (
-            "#include <stddef.h>\n"
-            "#include <stdint.h>\n" + extra_includes
-        )
+        inc = "#include <stddef.h>\n#include <stdint.h>\n" + extra_includes
         size = _compute_int(f"(long int)(sizeof({type_}))", inc)
     if size is None:
         size = default if default is not None else 0
@@ -2658,10 +2660,7 @@ def check_alignof(type_: str) -> int:
         # Cross-compiling or run failed: compile-time binary search using
         # offsetof(struct{char c; TYPE x;}, x), matching autoconf.
         inc = "#include <stddef.h>\n"
-        expr = (
-            f"(long int)(offsetof("
-            f"struct {{ char c; {type_} x; }}, x))"
-        )
+        expr = f"(long int)(offsetof(struct {{ char c; {type_} x; }}, x))"
         alignment = _compute_int(expr, inc)
     if alignment is None:
         alignment = 0
@@ -3044,10 +3043,12 @@ def check_decl(
     extra_includes: list[str] | None = None,
     on_found: Any = None,
     on_notfound: Any = None,
+    define_name: str | None = None,
 ) -> bool:
     """AC_CHECK_DECL — check if declaration/macro *decl* is available.
 
     *includes* / *extra_includes*: headers to include in the test.
+    *define_name*: if given, define this macro to 1 when found (0 when not).
     Calls *on_found()* or *on_notfound()* callbacks. Returns bool.
     """
     if not _RE_DECL_NAME.match(decl):
@@ -3057,14 +3058,25 @@ def check_decl(
         )
     all_includes = list(includes or []) + list(extra_includes or [])
     inc_lines = "".join(f"#include <{h}>\n" for h in all_includes)
-    src = f"{inc_lines}\nint main(void) {{\n  (void){decl};\n  return 0;\n}}\n"
-    found = _compile_test(src)
-    # AC_CHECK_DECL always writes HAVE_DECL_<name> as 0 or 1
-    define(
-        "HAVE_DECL_" + decl.upper(),
-        1 if found else 0,
-        f"Define to 1 if you have the declaration of `{decl}'.",
+    # Use #ifndef guard so macros (e.g. NetBSD's dirfd) are detected too.
+    # If decl is a macro, the #ifndef body is skipped and compilation
+    # succeeds.  If it's a real declaration, (void)decl compiles.
+    src = (
+        f"{inc_lines}\n"
+        f"int main(void) {{\n"
+        f"#ifndef {decl}\n"
+        f"  (void){decl};\n"
+        f"#endif\n"
+        f"  return 0;\n"
+        f"}}\n"
     )
+    found = _compile_test(src)
+    if define_name:
+        define(
+            define_name,
+            1 if found else 0,
+            f"Define to 1 if you have the declaration of `{decl}'.",
+        )
     if found and callable(on_found):
         on_found()
     elif not found and callable(on_notfound):
@@ -3084,11 +3096,11 @@ def check_decls(
     names = [decls] if isinstance(decls, str) else decls
     all_includes = list(includes or []) + list(extra_includes or [])
     for d in names:
-        found = check_decl(d, includes=all_includes)
-        define(
-            "HAVE_DECL_" + d.upper(),
-            1 if found else 0,
-            f"Define to 1 if you have the declaration of `{d}'.",
+        # AC_CHECK_DECLS defines HAVE_DECL_<NAME> as 1 or 0 (always defined)
+        check_decl(
+            d,
+            includes=all_includes,
+            define_name="HAVE_DECL_" + d.upper(),
         )
 
 

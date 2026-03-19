@@ -655,7 +655,9 @@ def check_posix_shmem(v):
     v.POSIXSHMEM_CFLAGS = "-I$(srcdir)/Modules/_multiprocessing"
     v.POSIXSHMEM_LIBS = ""
     with pyconf.save_env():
-        shm_open_result = pyconf.search_libs("shm_open", ["rt"], required=False)
+        shm_open_result = pyconf.search_libs(
+            "shm_open", ["rt"], required=False
+        )
         posixshmem_libs = "-lrt" if shm_open_result == "-lrt" else ""
         have_posix_shmem = pyconf.check_func(
             "shm_open", headers=["sys/mman.h"]
@@ -743,18 +745,14 @@ def check_posix_functions(v):
 
 def check_special_functions(v):
     """Check dirfd, PY_CHECK_FUNC equivalents, flock, unsetenv, socket libs, chflags."""
-    # dirfd
+    # AC_CHECK_DECL([dirfd], [AC_DEFINE([HAVE_DIRFD])], [], [dirent.h])
     pyconf.checking("whether dirfd is declared")
-    if pyconf.compile_check(
-        preamble="#include <sys/types.h>\n#include <dirent.h>",
-        body="void *p = dirfd;",
+    if pyconf.check_decl(
+        "dirfd",
+        includes=["sys/types.h", "dirent.h"],
+        define_name="HAVE_DIRFD",
     ):
         pyconf.result("yes")
-        pyconf.define(
-            "HAVE_DIRFD",
-            1,
-            "Define if you have the 'dirfd' function or macro.",
-        )
     else:
         pyconf.result("no")
 

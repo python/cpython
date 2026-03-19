@@ -6424,9 +6424,8 @@ function u_check_posix_functions(    ANDROID_API_LEVEL, _i_name, blocked_len, ma
 
 function u_check_special_functions(    _pyconf_cond_sys_eventfd_h, _pyconf_cond_sys_memfd_h, _pyconf_cond_sys_mman_h, _pyconf_cond_sys_timerfd_h, ac_cv_have_chflags, ac_cv_have_lchflags) {
 	pyconf_checking("whether dirfd is declared")
-	if (pyconf_compile_check("", "#include <sys/types.h>\n#include <dirent.h>\nint main(void) { void *p = dirfd; return 0; }")) {
+	if (pyconf_check_decl("dirfd", "sys/types.h dirent.h", "HAVE_DIRFD")) {
 		pyconf_result("yes")
-		pyconf_define("HAVE_DIRFD", 1, 0, "Define if you have the 'dirfd' function or macro.")
 	} else {
 		pyconf_result("no")
 	}

@@ -2402,6 +2402,7 @@ class PyshToAwk:
         includes_var_expr: A.Expr | None = None
         on_found = None
         on_notfound = None
+        define_name_lit: str | None = None
         for k, v in call.kwargs.items():
             if k in ("includes", "extra_includes"):
                 if isinstance(v, PyshList):
@@ -2415,6 +2416,8 @@ class PyshToAwk:
                 on_found = v.name
             elif k == "on_notfound" and isinstance(v, Var):
                 on_notfound = v.name
+            elif k == "define_name" and isinstance(v, Const):
+                define_name_lit = str(v.value)
         includes: A.Expr
         if includes_parts:
             includes = A.StringLit(" ".join(includes_parts))
@@ -2423,7 +2426,9 @@ class PyshToAwk:
         else:
             includes = A.StringLit("")
         define_args: list[A.Expr] = []
-        if isinstance(decl_arg, Const) and isinstance(decl_arg.value, str):
+        if define_name_lit is not None:
+            define_args = [A.StringLit(define_name_lit)]
+        elif isinstance(decl_arg, Const) and isinstance(decl_arg.value, str):
             define_args = [
                 A.StringLit(_precompute_decl_define(decl_arg.value))
             ]
@@ -2466,7 +2471,10 @@ class PyshToAwk:
         decl = self._expr(decl_arg)
         includes = self._extract_includes_expr(call)
         define_args: list[A.Expr] = []
-        if isinstance(decl_arg, Const) and isinstance(decl_arg.value, str):
+        define_name_kw = call.kwargs.get("define_name")
+        if define_name_kw is not None and isinstance(define_name_kw, Const):
+            define_args = [A.StringLit(str(define_name_kw.value))]
+        elif isinstance(decl_arg, Const) and isinstance(decl_arg.value, str):
             define_args = [
                 A.StringLit(_precompute_decl_define(decl_arg.value))
             ]
@@ -2766,7 +2774,9 @@ class PyshToAwk:
             else:
                 # Insert a literal space between cflags and libs
                 args.append(
-                    A.Concat([extra_parts[0], A.StringLit(" "), extra_parts[1]])
+                    A.Concat(
+                        [extra_parts[0], A.StringLit(" "), extra_parts[1]]
+                    )
                 )
         if compiler_kw is not None:
             # Pad extra_flags if not already present
