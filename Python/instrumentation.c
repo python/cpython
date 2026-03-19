@@ -576,6 +576,7 @@ sanity_check_instrumentation(PyCodeObject *code)
             CHECK(opcode != END_FOR);
             CHECK(opcode != RESUME);
             CHECK(opcode != RESUME_CHECK);
+            CHECK(opcode != RESUME_CHECK_JIT);
             CHECK(opcode != INSTRUMENTED_RESUME);
             if (!is_instrumented(opcode)) {
                 CHECK(_PyOpcode_Deopt[opcode] == opcode);

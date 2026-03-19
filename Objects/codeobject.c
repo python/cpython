@@ -931,8 +931,9 @@ PyUnstable_Code_New(int argcount, int kwonlyargcount,
 // NOTE: When modifying the construction of PyCode_NewEmpty, please also change
 // test.test_code.CodeLocationTest.test_code_new_empty to keep it in sync!
 
-static const uint8_t assert0[6] = {
+static const uint8_t assert0[8] = {
     RESUME, RESUME_AT_FUNC_START,
+    CACHE, 0,
     LOAD_COMMON_CONSTANT, CONSTANT_ASSERTIONERROR,
     RAISE_VARARGS, 1
 };
@@ -940,7 +941,7 @@ static const uint8_t assert0[6] = {
 static const uint8_t linetable[2] = {
     (1 << 7)  // New entry.
     | (PY_CODE_LOCATION_INFO_NO_COLUMNS << 3)
-    | (3 - 1),  // Three code units.
+    | (4 - 1),  // Four code units.
     0,  // Offset from co_firstlineno.
 };
 
@@ -966,7 +967,7 @@ PyCode_NewEmpty(const char *filename, const char *funcname, int firstlineno)
     if (filename_ob == NULL) {
         goto failed;
     }
-    code_ob = PyBytes_FromStringAndSize((const char *)assert0, 6);
+    code_ob = PyBytes_FromStringAndSize((const char *)assert0, 8);
     if (code_ob == NULL) {
         goto failed;
     }
@@ -1830,7 +1831,7 @@ identify_unbound_names(PyThreadState *tstate, PyCodeObject *co,
     assert(attrnames != NULL);
     assert(PySet_Check(attrnames));
     assert(PySet_GET_SIZE(attrnames) == 0 || counts != NULL);
-    assert(globalsns == NULL || PyDict_Check(globalsns));
+    assert(globalsns == NULL || PyAnyDict_Check(globalsns));
     assert(builtinsns == NULL || PyDict_Check(builtinsns));
     assert(counts == NULL || counts->total == 0);
     struct co_unbound_counts unbound = {0};

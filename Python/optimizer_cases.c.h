@@ -17,8 +17,6 @@
             break;
         }
 
-        /* _QUICKEN_RESUME is not a viable micro-op for tier 2 */
-
         /* _LOAD_BYTECODE is not a viable micro-op for tier 2 */
 
         case _RESUME_CHECK: {
@@ -355,7 +353,9 @@
             if (sym_matches_type(nos, &PyList_Type)) {
                 ADD_OP(_NOP, 0, 0);
             }
-            sym_set_type(nos, &PyList_Type);
+            else {
+                sym_set_type(nos, &PyList_Type);
+            }
             break;
         }
 
@@ -365,7 +365,9 @@
             if (sym_matches_type(tos, &PyList_Type)) {
                 ADD_OP(_NOP, 0, 0);
             }
-            sym_set_type(tos, &PyList_Type);
+            else {
+                sym_set_type(tos, &PyList_Type);
+            }
             break;
         }
 
@@ -375,7 +377,9 @@
             if (sym_matches_type(tos, &PySlice_Type)) {
                 ADD_OP(_NOP, 0, 0);
             }
-            sym_set_type(tos, &PySlice_Type);
+            else {
+                sym_set_type(tos, &PySlice_Type);
+            }
             break;
         }
 
@@ -1023,7 +1027,9 @@
             if (sym_matches_type(nos, &PyTuple_Type)) {
                 ADD_OP(_NOP, 0, 0);
             }
-            sym_set_type(nos, &PyTuple_Type);
+            else {
+                sym_set_type(nos, &PyTuple_Type);
+            }
             break;
         }
 
@@ -1033,7 +1039,9 @@
             if (sym_matches_type(tos, &PyTuple_Type)) {
                 ADD_OP(_NOP, 0, 0);
             }
-            sym_set_type(tos, &PyTuple_Type);
+            else {
+                sym_set_type(tos, &PyTuple_Type);
+            }
             break;
         }
 
@@ -1101,13 +1109,56 @@
             break;
         }
 
+        case _GUARD_NOS_ANY_DICT: {
+            JitOptRef nos;
+            nos = stack_pointer[-2];
+            PyTypeObject *tp = sym_get_type(nos);
+            if (tp == &PyDict_Type || tp == &PyFrozenDict_Type) {
+                ADD_OP(_NOP, 0, 0);
+            }
+            break;
+        }
+
+        case _GUARD_TOS_ANY_DICT: {
+            JitOptRef tos;
+            tos = stack_pointer[-1];
+            PyTypeObject *tp = sym_get_type(tos);
+            if (tp == &PyDict_Type || tp == &PyFrozenDict_Type) {
+                ADD_OP(_NOP, 0, 0);
+            }
+            else {
+                tp = sym_get_probable_type(tos);
+                if (tp == &PyDict_Type) {
+                    ADD_OP(_GUARD_TOS_DICT, 0, 0);
+                }
+                else if (tp == &PyFrozenDict_Type) {
+                    ADD_OP(_GUARD_TOS_FROZENDICT, 0, 0);
+                }
+            }
+            break;
+        }
+
         case _GUARD_TOS_DICT: {
             JitOptRef tos;
             tos = stack_pointer[-1];
             if (sym_matches_type(tos, &PyDict_Type)) {
                 ADD_OP(_NOP, 0, 0);
             }
-            sym_set_type(tos, &PyDict_Type);
+            else {
+                sym_set_type(tos, &PyDict_Type);
+            }
+            break;
+        }
+
+        case _GUARD_TOS_FROZENDICT: {
+            JitOptRef tos;
+            tos = stack_pointer[-1];
+            if (sym_matches_type(tos, &PyFrozenDict_Type)) {
+                ADD_OP(_NOP, 0, 0);
+            }
+            else {
+                sym_set_type(tos, &PyFrozenDict_Type);
+            }
             break;
         }
 
@@ -1240,9 +1291,17 @@
         }
 
         case _CALL_INTRINSIC_1: {
+            JitOptRef value;
             JitOptRef res;
+            JitOptRef v;
+            value = stack_pointer[-1];
             res = sym_new_not_null(ctx);
+            v = value;
+            CHECK_STACK_BOUNDS(1);
             stack_pointer[-1] = res;
+            stack_pointer[0] = v;
+            stack_pointer += 1;
+            ASSERT_WITHIN_STACK_BOUNDS(__FILE__, __LINE__);
             break;
         }
 
@@ -1256,11 +1315,22 @@
             break;
         }
 
+        case _MAKE_HEAP_SAFE: {
+            JitOptRef value;
+            value = stack_pointer[-1];
+            if (sym_is_immortal(PyJitRef_Unwrap(value))) {
+                ADD_OP(_NOP, 0, 0);
+            }
+            value = PyJitRef_StripReferenceInfo(value);
+            stack_pointer[-1] = value;
+            break;
+        }
+
         case _RETURN_VALUE: {
             JitOptRef retval;
             JitOptRef res;
             retval = stack_pointer[-1];
-            JitOptRef temp = PyJitRef_StripReferenceInfo(retval);
+            JitOptRef temp = retval;
             CHECK_STACK_BOUNDS(-1);
             stack_pointer += -1;
             ASSERT_WITHIN_STACK_BOUNDS(__FILE__, __LINE__);
@@ -1332,7 +1402,7 @@
             JitOptRef retval;
             JitOptRef value;
             retval = stack_pointer[-1];
-            JitOptRef temp = PyJitRef_StripReferenceInfo(retval);
+            JitOptRef temp = retval;
             CHECK_STACK_BOUNDS(-1);
             stack_pointer += -1;
             ASSERT_WITHIN_STACK_BOUNDS(__FILE__, __LINE__);
@@ -1753,9 +1823,14 @@
         }
 
         case _SET_UPDATE: {
-            CHECK_STACK_BOUNDS(-1);
-            stack_pointer += -1;
-            ASSERT_WITHIN_STACK_BOUNDS(__FILE__, __LINE__);
+            JitOptRef iterable;
+            JitOptRef set;
+            JitOptRef i;
+            iterable = stack_pointer[-1];
+            set = stack_pointer[-2 - (oparg-1)];
+            (void)set;
+            i = iterable;
+            stack_pointer[-1] = i;
             break;
         }
 
@@ -1865,7 +1940,7 @@
             break;
         }
 
-        case _GUARD_TYPE_VERSION_AND_LOCK: {
+        case _GUARD_TYPE_VERSION_LOCKED: {
             break;
         }
 
@@ -2032,6 +2107,10 @@
             stack_pointer[-2] = o;
             stack_pointer += -1;
             ASSERT_WITHIN_STACK_BOUNDS(__FILE__, __LINE__);
+            break;
+        }
+
+        case _LOCK_OBJECT: {
             break;
         }
 
@@ -2418,10 +2497,42 @@
         case _GUARD_TOS_ANY_SET: {
             JitOptRef tos;
             tos = stack_pointer[-1];
-            if (sym_matches_type(tos, &PySet_Type) ||
-                sym_matches_type(tos, &PyFrozenSet_Type))
-            {
+            PyTypeObject *tp = sym_get_type(tos);
+            if (tp == &PySet_Type || tp == &PyFrozenSet_Type) {
                 ADD_OP(_NOP, 0, 0);
+            }
+            else {
+                tp = sym_get_probable_type(tos);
+                if (tp == &PySet_Type) {
+                    ADD_OP(_GUARD_TOS_SET, 0, 0);
+                }
+                else if (tp == &PyFrozenSet_Type) {
+                    ADD_OP(_GUARD_TOS_FROZENSET, 0, 0);
+                }
+            }
+            break;
+        }
+
+        case _GUARD_TOS_SET: {
+            JitOptRef tos;
+            tos = stack_pointer[-1];
+            if (sym_matches_type(tos, &PySet_Type)) {
+                ADD_OP(_NOP, 0, 0);
+            }
+            else {
+                sym_set_type(tos, &PySet_Type);
+            }
+            break;
+        }
+
+        case _GUARD_TOS_FROZENSET: {
+            JitOptRef tos;
+            tos = stack_pointer[-1];
+            if (sym_matches_type(tos, &PyFrozenSet_Type)) {
+                ADD_OP(_NOP, 0, 0);
+            }
+            else {
+                sym_set_type(tos, &PyFrozenSet_Type);
             }
             break;
         }
@@ -2549,11 +2660,26 @@
         }
 
         case _MATCH_CLASS: {
+            JitOptRef names;
+            JitOptRef type;
+            JitOptRef subject;
             JitOptRef attrs;
+            JitOptRef s;
+            JitOptRef tp;
+            JitOptRef n;
+            names = stack_pointer[-1];
+            type = stack_pointer[-2];
+            subject = stack_pointer[-3];
             attrs = sym_new_not_null(ctx);
-            CHECK_STACK_BOUNDS(-2);
+            s = subject;
+            tp = type;
+            n = names;
+            CHECK_STACK_BOUNDS(1);
             stack_pointer[-3] = attrs;
-            stack_pointer += -2;
+            stack_pointer[-2] = s;
+            stack_pointer[-1] = tp;
+            stack_pointer[0] = n;
+            stack_pointer += 1;
             ASSERT_WITHIN_STACK_BOUNDS(__FILE__, __LINE__);
             break;
         }
@@ -2631,6 +2757,14 @@
         /* _INSTRUMENTED_FOR_ITER is not a viable micro-op for tier 2 */
 
         case _ITER_CHECK_LIST: {
+            JitOptRef iter;
+            iter = stack_pointer[-2];
+            if (sym_matches_type(iter, &PyList_Type)) {
+                ADD_OP(_NOP, 0, 0);
+            }
+            else {
+                sym_set_type(iter, &PyList_Type);
+            }
             break;
         }
 
@@ -2679,6 +2813,14 @@
         }
 
         case _ITER_CHECK_RANGE: {
+            JitOptRef iter;
+            iter = stack_pointer[-2];
+            if (sym_matches_type(iter, &PyRange_Type)) {
+                ADD_OP(_NOP, 0, 0);
+            }
+            else {
+                sym_set_type(iter, &PyRange_Type);
+            }
             break;
         }
 
@@ -3059,7 +3201,9 @@
             if (sym_is_null(null)) {
                 ADD_OP(_NOP, 0, 0);
             }
-            sym_set_null(null);
+            else {
+                sym_set_null(null);
+            }
             break;
         }
 
@@ -3069,7 +3213,9 @@
             if (sym_is_not_null(nos)) {
                 ADD_OP(_NOP, 0, 0);
             }
-            sym_set_non_null(nos);
+            else {
+                sym_set_non_null(nos);
+            }
             break;
         }
 
@@ -3079,7 +3225,9 @@
             if (sym_is_null(null)) {
                 ADD_OP(_NOP, 0, 0);
             }
-            sym_set_null(null);
+            else {
+                sym_set_null(null);
+            }
             break;
         }
 
@@ -3089,7 +3237,9 @@
             if (sym_get_const(ctx, callable) == (PyObject *)&PyType_Type) {
                 ADD_OP(_NOP, 0, 0);
             }
-            sym_set_const(callable, (PyObject *)&PyType_Type);
+            else {
+                sym_set_const(callable, (PyObject *)&PyType_Type);
+            }
             break;
         }
 
@@ -3122,7 +3272,9 @@
             if (sym_get_const(ctx, callable) == (PyObject *)&PyUnicode_Type) {
                 ADD_OP(_NOP, 0, 0);
             }
-            sym_set_const(callable, (PyObject *)&PyUnicode_Type);
+            else {
+                sym_set_const(callable, (PyObject *)&PyUnicode_Type);
+            }
             break;
         }
 
@@ -3152,7 +3304,9 @@
             if (sym_get_const(ctx, callable) == (PyObject *)&PyTuple_Type) {
                 ADD_OP(_NOP, 0, 0);
             }
-            sym_set_const(callable, (PyObject *)&PyTuple_Type);
+            else {
+                sym_set_const(callable, (PyObject *)&PyTuple_Type);
+            }
             break;
         }
 
@@ -3295,7 +3449,9 @@
             if (sym_get_const(ctx, callable) == len) {
                 ADD_OP(_NOP, 0, 0);
             }
-            sym_set_const(callable, len);
+            else {
+                sym_set_const(callable, len);
+            }
             break;
         }
 
@@ -3356,7 +3512,9 @@
             if (sym_get_const(ctx, callable) == isinstance) {
                 ADD_OP(_NOP, 0, 0);
             }
-            sym_set_const(callable, isinstance);
+            else {
+                sym_set_const(callable, isinstance);
+            }
             break;
         }
 
@@ -3391,7 +3549,9 @@
             if (sym_get_const(ctx, callable) == list_append) {
                 ADD_OP(_NOP, 0, 0);
             }
-            sym_set_const(callable, list_append);
+            else {
+                sym_set_const(callable, list_append);
+            }
             break;
         }
 
@@ -4144,16 +4304,19 @@
             break;
         }
 
-        case _GUARD_CODE_VERSION: {
-            uint32_t version = (uint32_t)this_instr->operand0;
-            PyCodeObject *co = get_current_code_object(ctx);
-            if (co->co_version == version) {
-                _Py_BloomFilter_Add(dependencies, co);
-                REPLACE_OP(this_instr, _NOP, 0, 0);
-            }
-            else {
-                ctx->done = true;
-            }
+        case _GUARD_CODE_VERSION__PUSH_FRAME: {
+            break;
+        }
+
+        case _GUARD_CODE_VERSION_YIELD_VALUE: {
+            break;
+        }
+
+        case _GUARD_CODE_VERSION_RETURN_VALUE: {
+            break;
+        }
+
+        case _GUARD_CODE_VERSION_RETURN_GENERATOR: {
             break;
         }
 
