@@ -308,27 +308,27 @@ def _unstable_api_annotation() -> nodes.admonition:
 def _threadsafety_annotation(level: str) -> nodes.emphasis:
     match level:
         case "incompatible":
-            display = sphinx_gettext("Not safe to call from multiple threads.")
+            display = sphinx_gettext("Not safe to call from multiple threads")
             reftarget = "threadsafety-level-incompatible"
         case "compatible":
             display = sphinx_gettext(
                 "Safe to call from multiple threads"
-                " with external synchronization only."
+                " with external synchronization only"
             )
             reftarget = "threadsafety-level-compatible"
         case "distinct":
             display = sphinx_gettext(
                 "Safe to call without external synchronization"
-                " on distinct objects."
+                " on distinct objects"
             )
             reftarget = "threadsafety-level-distinct"
         case "shared":
             display = sphinx_gettext(
-                "Safe for concurrent use on the same object."
+                "Safe for concurrent use on the same object"
             )
             reftarget = "threadsafety-level-shared"
         case "atomic":
-            display = sphinx_gettext("Atomic.")
+            display = sphinx_gettext("Atomic")
             reftarget = "threadsafety-level-atomic"
         case _:
             raise AssertionError(f"Unknown thread safety level {level!r}")
@@ -340,9 +340,11 @@ def _threadsafety_annotation(level: str) -> nodes.emphasis:
         reftype="ref",
         refexplicit="True",
     )
-    prefix = sphinx_gettext("Thread safety:") + " "
+    prefix = " " + sphinx_gettext("Thread safety:") + " "
     classes = ["threadsafety", f"threadsafety-{level}"]
-    return nodes.emphasis("", prefix, ref_node, classes=classes)
+    return nodes.emphasis(
+        "", prefix, ref_node, nodes.Text("."), classes=classes
+    )
 
 
 def _return_value_annotation(result_refs: int | None) -> nodes.emphasis:
