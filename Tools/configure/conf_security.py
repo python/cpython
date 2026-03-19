@@ -303,7 +303,7 @@ def check_ssl_cipher_suites(v):
         pyconf.define("PY_SSL_DEFAULT_CIPHERS", 2)
     else:
         pyconf.define("PY_SSL_DEFAULT_CIPHERS", 0)
-        pyconf.define("PY_SSL_DEFAULT_CIPHER_STRING", f'"{ssl_suites}"')
+        pyconf.define_unquoted("PY_SSL_DEFAULT_CIPHER_STRING", f'"{ssl_suites}"')
 
 
 def check_builtin_hashlib_hashes(v):

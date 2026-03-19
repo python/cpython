@@ -86,7 +86,7 @@ def setup_android_api(v):
         pyconf.result(v.ANDROID_API_LEVEL)
         if not v.ANDROID_API_LEVEL:
             pyconf.error("Fatal: you must define __ANDROID_API__")
-        pyconf.define(
+        pyconf.define_unquoted(
             "ANDROID_API_LEVEL", v.ANDROID_API_LEVEL, "The Android API level."
         )
         v.LIBS += " -llog"

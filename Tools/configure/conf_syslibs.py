@@ -212,7 +212,7 @@ def check_remaining_libs(v):
         AIX_BUILDDATE = pyconf.cmd_output(
             ["sh", "-c", "lslpp -Lcq bos.mp64 | awk -F: '{ print $NF }'"]
         )
-        pyconf.define(
+        pyconf.define_unquoted(
             "AIX_BUILDDATE",
             AIX_BUILDDATE,
             "BUILD_GNU_TYPE + AIX_BUILDDATE are used to construct the PEP425 tag "

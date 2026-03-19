@@ -76,7 +76,7 @@ def setup_machdep(v):
             SUNOS_VERSION = pyconf.sed(
                 v.ac_sys_release, r"\.(\d)$", r".0\1"
             ).replace(".", "")
-            pyconf.define(
+            pyconf.define_unquoted(
                 "Py_SUNOS_VERSION",
                 SUNOS_VERSION,
                 "The version of SunOS/Solaris as reported by `uname -r' without the dot.",

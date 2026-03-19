@@ -5921,7 +5921,7 @@ function u_setup_machdep(    SUNOS_VERSION, ac_md_release, ac_md_system, _split_
 		}
 		if ((V["ac_sys_system"] == "SunOS")) {
 			SUNOS_VERSION = _str_replace(pyconf_sed(V["ac_sys_release"], "\\.(\\d)$", ".0\\1"), ".", "")
-			pyconf_define("Py_SUNOS_VERSION", SUNOS_VERSION, 1, "The version of SunOS/Solaris as reported by `uname -r' without the dot.")
+			pyconf_define_unquoted("Py_SUNOS_VERSION", SUNOS_VERSION, "The version of SunOS/Solaris as reported by `uname -r' without the dot.")
 		}
 	}
 	pyconf_result("\"" V["MACHDEP"] "\"")
@@ -6882,7 +6882,7 @@ function u_check_ssl_cipher_suites(    ssl_suites) {
 		pyconf_define("PY_SSL_DEFAULT_CIPHERS", 2, 0, "")
 	} else {
 		pyconf_define("PY_SSL_DEFAULT_CIPHERS", 0, 0, "")
-		pyconf_define("PY_SSL_DEFAULT_CIPHER_STRING", "\"" ssl_suites "\"", 1, "")
+		pyconf_define_unquoted("PY_SSL_DEFAULT_CIPHER_STRING", "\"" ssl_suites "\"")
 	}
 }
 
@@ -7479,7 +7479,7 @@ function u_check_remaining_libs(    AIX_BUILDDATE, ac_cv_aligned_required) {
 		_va83[3] = "lslpp -Lcq bos.mp64 | awk -F: '{ print $NF }'"
 		_va83[0] = 3
 		AIX_BUILDDATE = pyconf_cmd_output(_va83)
-		pyconf_define("AIX_BUILDDATE", AIX_BUILDDATE, 1, "BUILD_GNU_TYPE + AIX_BUILDDATE are used to construct the PEP425 tag of the build system.")
+		pyconf_define_unquoted("AIX_BUILDDATE", AIX_BUILDDATE, "BUILD_GNU_TYPE + AIX_BUILDDATE are used to construct the PEP425 tag of the build system.")
 		pyconf_result(AIX_BUILDDATE)
 	}
 	ac_cv_aligned_required = (pyconf_run_check("aligned memory access is required", "\n    int main(void) {\n        char s[16];\n        int i, *p1, *p2;\n        for (i=0; i < 16; i++) s[i] = i;\n        p1 = (int*)(s+1);\n        p2 = (int*)(s+2);\n        if (*p1 == *p2) return 1;\n        return 0;\n    }\n    ") ? "no" : "yes")
@@ -7586,7 +7586,7 @@ function u_setup_android_api(    _i_line, _n_line, android_out, android_out_retu
 		if ((!((V["ANDROID_API_LEVEL"] != "") && (V["ANDROID_API_LEVEL"] != "no")))) {
 			pyconf_error("Fatal: you must define __ANDROID_API__")
 		}
-		pyconf_define("ANDROID_API_LEVEL", V["ANDROID_API_LEVEL"], 1, "The Android API level.")
+		pyconf_define_unquoted("ANDROID_API_LEVEL", V["ANDROID_API_LEVEL"], "The Android API level.")
 		V["LIBS"] = V["LIBS"] " -llog"
 		pyconf_checking("for the Android arm ABI")
 		pyconf_result(arm_arch)
