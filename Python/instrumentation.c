@@ -1102,17 +1102,13 @@ get_tools_for_instruction(PyCodeObject *code, PyInterpreterState *interp, int i,
                 event == PY_MONITORING_EVENT_C_RETURN);
         event = PY_MONITORING_EVENT_CALL;
     }
-    if (PY_MONITORING_IS_LOCAL_EVENT(event)) {
-        CHECK(debug_check_sanity(interp, code));
-        if (code->_co_monitoring->tools) {
-            tools = code->_co_monitoring->tools[i];
-        }
-        else {
-            tools = code->_co_monitoring->active_monitors.tools[event];
-        }
+    assert(_PY_MONITORING_IS_UNGROUPED_EVENT(event));
+    CHECK(debug_check_sanity(interp, code));
+    if (code->_co_monitoring->tools) {
+        tools = code->_co_monitoring->tools[i];
     }
     else {
-        tools = interp->monitors.tools[event];
+        tools = code->_co_monitoring->active_monitors.tools[event];
     }
     return tools;
 }
@@ -1147,7 +1143,7 @@ remove_local_tool(PyCodeObject *code, PyInterpreterState *interp,
                   int event, int tool)
 {
     ASSERT_WORLD_STOPPED_OR_LOCKED(code);
-    assert(PY_MONITORING_IS_LOCAL_EVENT(event));
+    assert(_PY_MONITORING_IS_UNGROUPED_EVENT(event));
     assert(!PY_MONITORING_IS_INSTRUMENTED_EVENT(event));
     assert(code->_co_monitoring);
     code->_co_monitoring->local_monitors.tools[event] &= ~(1 << tool);
@@ -1207,9 +1203,9 @@ call_instrumentation_vector(
                 remove_tools(code, offset, event, 1 << tool);
                 _PyEval_StartTheWorld(interp);
             }
-            else if (PY_MONITORING_IS_LOCAL_EVENT(event)) {
-                /* Local but not tied to a bytecode instruction: disable for
-                 * this code object entirely. */
+            else if (_PY_MONITORING_IS_UNGROUPED_EVENT(event)) {
+                /* Non-instrumented local event: disable for this code object
+                 * entirely. */
                 _PyEval_StopTheWorld(interp);
                 remove_local_tool(code, interp, event, tool);
                 _PyEval_StartTheWorld(interp);
