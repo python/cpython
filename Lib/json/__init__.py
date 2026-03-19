@@ -208,7 +208,7 @@ def dumps(obj, *, skipkeys=False, ensure_ascii=True, check_circular=True,
     object members will be pretty-printed with that indent level. An indent
     level of 0 will only insert newlines. ``None`` gives a compact
     representation; see below.
-    
+
     If specified, ``separators`` should be an ``(item_separator,
     key_separator)`` tuple.  The default is ``(', ', ': ')`` if *indent* is
     ``None`` and ``(',', ': ')`` otherwise.  To get the most compact JSON
