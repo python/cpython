@@ -2176,12 +2176,17 @@ dummy_func(
             PyStackRef_CLOSE(iterable_st);
         }
 
-        inst(SET_UPDATE, (set, unused[oparg-1], iterable -- set, unused[oparg-1])) {
+        op(_SET_UPDATE, (set, unused[oparg-1], iterable -- set, unused[oparg-1], i)) {
             int err = _PySet_Update(PyStackRef_AsPyObjectBorrow(set),
                                     PyStackRef_AsPyObjectBorrow(iterable));
-            PyStackRef_CLOSE(iterable);
-            ERROR_IF(err < 0);
+            if (err < 0) {
+                ERROR_NO_POP();
+            }
+            i = iterable;
+            DEAD(iterable);
         }
+
+        macro(SET_UPDATE) = _SET_UPDATE + POP_TOP;
 
         inst(BUILD_SET, (values[oparg] -- set)) {
             PyObject *set_o = PySet_New(NULL);

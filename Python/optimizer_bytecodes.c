@@ -631,6 +631,13 @@ dummy_func(void) {
         value = PyJitRef_Borrow(sym_new_const(ctx, val));
     }
 
+    op(_LOAD_COMMON_CONSTANT, (-- value)) {
+        assert(oparg < NUM_COMMON_CONSTANTS);
+        PyObject *val = _PyInterpreterState_GET()->common_consts[oparg];
+        ADD_OP(_LOAD_CONST_INLINE_BORROW, 0, (uintptr_t)val);
+        value = PyJitRef_Borrow(sym_new_const(ctx, val));
+    }
+
     op(_LOAD_SMALL_INT, (-- value)) {
         PyObject *val = PyLong_FromLong(oparg);
         assert(val);
@@ -1324,6 +1331,11 @@ dummy_func(void) {
 
     op(_BUILD_SET, (values[oparg] -- set)) {
         set = sym_new_type(ctx, &PySet_Type);
+    }
+
+    op(_SET_UPDATE, (set, unused[oparg-1], iterable -- set, unused[oparg-1], i)) {
+        (void)set;
+        i = iterable;
     }
 
     op(_UNPACK_SEQUENCE_TWO_TUPLE, (seq -- val1, val0)) {
