@@ -565,7 +565,7 @@ class TestBowWhitespace(TestCase):
         # GH#146044
         # unix-word-rubout (ctrl-w) should use whitespace boundaries,
         # not punctuation boundaries like bow() does
-        reader = prepare_reader(prepare_console())
+        reader = prepare_reader(prepare_console([]))
         reader.buffer = list("foo.bar baz")
         reader.pos = len(reader.buffer)  # cursor at end
 
@@ -575,7 +575,7 @@ class TestBowWhitespace(TestCase):
 
     def test_bow_whitespace_includes_punctuation_in_word(self):
         # GH#146044
-        reader = prepare_reader(prepare_console())
+        reader = prepare_reader(prepare_console([]))
         reader.buffer = list("foo.bar(baz) qux")
         reader.pos = 12  # cursor after ")"
 
@@ -585,7 +585,7 @@ class TestBowWhitespace(TestCase):
 
     def test_bow_stops_at_punctuation(self):
         # Verify existing bow() still uses syntax_table (punctuation boundary)
-        reader = prepare_reader(prepare_console())
+        reader = prepare_reader(prepare_console([]))
         reader.buffer = list("foo.bar baz")
         reader.pos = len(reader.buffer)
 
@@ -594,7 +594,7 @@ class TestBowWhitespace(TestCase):
 
     def test_bow_vs_bow_whitespace_difference(self):
         # The key difference: bow() stops at '.', bow_whitespace() does not
-        reader = prepare_reader(prepare_console())
+        reader = prepare_reader(prepare_console([]))
         reader.buffer = list("foo.bar")
         reader.pos = len(reader.buffer)
 
