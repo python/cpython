@@ -604,9 +604,11 @@ def add_cross_build_dir_option(subcommand):
         action="store",
         default=os.environ.get("CROSS_BUILD_DIR"),
         dest="cross_build_dir",
-        help="Path to the cross-build directory "
-        f"(default: {DEFAULT_CROSS_BUILD_DIR}). "
-        "Can also be set with the CROSS_BUILD_DIR environment variable.",
+        help=(
+            "Path to the cross-build directory "
+            f"(default: {DEFAULT_CROSS_BUILD_DIR}). "
+            "Can also be set with the CROSS_BUILD_DIR environment variable.",
+        ),
     )
 
 
@@ -615,10 +617,12 @@ def main():
 
     parser = argparse.ArgumentParser()
     subcommands = parser.add_subparsers(dest="subcommand")
+
     install_emscripten_cmd = subcommands.add_parser(
         "install-emscripten",
         help="Install the appropriate version of Emscripten",
     )
+
     build = subcommands.add_parser("build", help="Build everything")
     build.add_argument(
         "target",
@@ -634,24 +638,33 @@ def main():
     configure_build = subcommands.add_parser(
         "configure-build-python", help="Run `configure` for the build Python"
     )
+
     make_mpdec_cmd = subcommands.add_parser(
         "make-mpdec",
         help="Clone mpdec repo, configure and build it for emscripten",
     )
+
     make_libffi_cmd = subcommands.add_parser(
         "make-libffi",
         help="Clone libffi repo, configure and build it for emscripten",
     )
+
     make_build = subcommands.add_parser(
         "make-build-python", help="Run `make` for the build Python"
     )
+
     configure_host = subcommands.add_parser(
         "configure-host",
-        help="Run `configure` for the host/emscripten (pydebug builds are inferred from the build Python)",
+        help=(
+            "Run `configure` for the host/emscripten "
+            "(pydebug builds are inferred from the build Python)"
+        ),
     )
+
     make_host = subcommands.add_parser(
         "make-host", help="Run `make` for the host/emscripten"
     )
+
     run = subcommands.add_parser(
         "run",
         help="Run the built emscripten Python",
@@ -659,8 +672,10 @@ def main():
     run.add_argument(
         "args",
         nargs=argparse.REMAINDER,
-        help="Arguments to pass to the emscripten Python "
-        "(use '--' to separate from run options)",
+        help=(
+            "Arguments to pass to the emscripten Python "
+            "(use '--' to separate from run options)",
+        )
     )
     add_cross_build_dir_option(run)
     clean = subcommands.add_parser(
@@ -693,8 +708,10 @@ def main():
             action="store_true",
             default="QUIET" in os.environ,
             dest="quiet",
-            help="Redirect output from subprocesses to a log file. "
-            "Can also be set with the QUIET environment variable.",
+            help=(
+                "Redirect output from subprocesses to a log file. "
+                "Can also be set with the QUIET environment variable."
+            ),
         )
         add_cross_build_dir_option(subcommand)
         subcommand.add_argument(
@@ -702,10 +719,13 @@ def main():
             action="store",
             default=os.environ.get("EMSDK_CACHE"),
             dest="emsdk_cache",
-            help="Path to emsdk cache directory. If provided, validates that "
-            "the required emscripten version is installed. "
-            "Can also be set with the EMSDK_CACHE environment variable.",
+            help=(
+                "Path to emsdk cache directory. If provided, validates that "
+                "the required emscripten version is installed. "
+                "Can also be set with the EMSDK_CACHE environment variable."
+            ),
         )
+
     for subcommand in configure_build, configure_host:
         subcommand.add_argument(
             "--clean",
@@ -714,10 +734,12 @@ def main():
             dest="clean",
             help="Delete any relevant directories before building",
         )
+
     for subcommand in build, configure_build, configure_host:
         subcommand.add_argument(
             "args", nargs="*", help="Extra arguments to pass to `configure`"
         )
+
     for subcommand in build, configure_host:
         subcommand.add_argument(
             "--host-runner",
