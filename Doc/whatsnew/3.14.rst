@@ -1399,7 +1399,7 @@ heapq
   * :func:`~heapq.heappushpop_max`: Push new item and pop largest in one step
 
   These were previously available only as undocumented internal helpers.
-  (Contributed by Stan Ulbrych in :gh:`110067`.)
+  (Contributed by Stan Ulbrych and Petr Viktorin in :gh:`110067`.)
 
 
 hmac

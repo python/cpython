@@ -1,2 +1,0 @@
-Add max-heap usage examples to :mod:`heapq` module docstrings, a descending
-heapsort example to the docs, and expand the What's New in 3.14 entry.
