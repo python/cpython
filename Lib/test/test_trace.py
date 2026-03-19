@@ -590,5 +590,32 @@ class TestTrace(unittest.TestCase):
         self.assertIn(f"{filename}({firstlineno + 4})", out[4])
 
 
+class TestCoverageResultsInit(unittest.TestCase):
+    def test_counts_dict_is_copied(self):
+        # gh-145865: CoverageResults.__init__ should copy the counts dict
+        from trace import CoverageResults
+
+        counts = {}
+        cr = CoverageResults(counts=counts)
+        cr.update(CoverageResults(counts={("file.py", 1): 5}))
+        self.assertEqual(counts, {})
+
+    def test_calledfuncs_dict_is_copied(self):
+        from trace import CoverageResults
+
+        calledfuncs = {}
+        cr = CoverageResults(calledfuncs=calledfuncs)
+        cr.update(CoverageResults(calledfuncs={("file.py", "mod", "func"): 1}))
+        self.assertEqual(calledfuncs, {})
+
+    def test_callers_dict_is_copied(self):
+        from trace import CoverageResults
+
+        callers = {}
+        cr = CoverageResults(callers=callers)
+        cr.update(CoverageResults(callers={(("a.py", "m", "f"), ("b.py", "m", "g")): 1}))
+        self.assertEqual(callers, {})
+
+
 if __name__ == '__main__':
     unittest.main()
