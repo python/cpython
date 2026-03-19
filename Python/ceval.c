@@ -2237,15 +2237,19 @@ _PyEval_ExceptionGroupMatch(_PyInterpreterFrame *frame, PyObject* exc_value,
                 return -1;
             }
             PyFrameObject *f = _PyFrame_GetFrameObject(frame);
-            if (f != NULL) {
-                PyObject *tb = _PyTraceBack_FromFrame(NULL, f);
-                if (tb == NULL) {
-                    Py_DECREF(wrapped);
-                    return -1;
-                }
-                PyException_SetTraceback(wrapped, tb);
-                Py_DECREF(tb);
+            if (f == NULL) {
+                Py_DECREF(wrapped);
+                return -1;
             }
+
+            PyObject *tb = _PyTraceBack_FromFrame(NULL, f);
+            if (tb == NULL) {
+                Py_DECREF(wrapped);
+                return -1;
+            }
+            PyException_SetTraceback(wrapped, tb);
+            Py_DECREF(tb);
+
             *match = wrapped;
         }
         *rest = Py_NewRef(Py_None);
@@ -2620,6 +2624,11 @@ PyEval_GetLocals(void)
 
     if (PyFrameLocalsProxy_Check(locals)) {
         PyFrameObject *f = _PyFrame_GetFrameObject(current_frame);
+        if (f == NULL) {
+            Py_DECREF(locals);
+            return NULL;
+        }
+
         PyObject *ret = f->f_locals_cache;
         if (ret == NULL) {
             ret = PyDict_New();
