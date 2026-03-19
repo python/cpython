@@ -550,6 +550,8 @@ SYMBOL_NAMES = (
     "PyObject_AsWriteBuffer",
     "PyObject_Bytes",
     "PyObject_Call",
+    "PyObject_CallFinalizer",
+    "PyObject_CallFinalizerFromDealloc",
     "PyObject_CallFunction",
     "PyObject_CallFunctionObjArgs",
     "PyObject_CallMethod",
