@@ -413,6 +413,11 @@ def make_mpdec(context, working_dir):
     write_library_config(prefix, "mpdec", mpdec_config, context.quiet)
 
 
+def make_dependencies(context, working_dir):
+    make_emscripten_libffi(context, working_dir)
+    make_mpdec(context, working_dir)
+
+
 @subdir("host_dir", clean_ok=True)
 def configure_emscripten_python(context, working_dir):
     """Configure the emscripten/host build."""
@@ -649,6 +654,11 @@ def main():
         help="Clone libffi repo, configure and build it for emscripten",
     )
 
+    make_dependencies_cmd = subcommands.add_parser(
+        "make-dependencies",
+        help="Build all static library dependencies",
+    )
+
     make_build = subcommands.add_parser(
         "make-build-python", help="Run `make` for the build Python"
     )
@@ -698,6 +708,7 @@ def main():
         configure_build,
         make_libffi_cmd,
         make_mpdec_cmd,
+        make_dependencies_cmd,
         make_build,
         configure_host,
         make_host,
@@ -765,6 +776,7 @@ def main():
         "install-emscripten": install_emscripten,
         "make-libffi": make_emscripten_libffi,
         "make-mpdec": make_mpdec,
+        "make-dependencies": make_dependencies,
         "configure-build-python": configure_build_python,
         "make-build-python": make_build_python,
         "configure-host": configure_emscripten_python,
