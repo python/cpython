@@ -1761,6 +1761,12 @@ finalize_modules(PyThreadState *tstate)
     interp->compiling = false;
 #ifdef _Py_TIER2
     _Py_Executors_InvalidateAll(interp, 0);
+    PyMem_Free(interp->executor_blooms);
+    PyMem_Free(interp->executor_ptrs);
+    interp->executor_blooms = NULL;
+    interp->executor_ptrs = NULL;
+    interp->executor_count = 0;
+    interp->executor_capacity = 0;
 #endif
 
     // Stop watching __builtin__ modifications

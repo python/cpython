@@ -968,7 +968,9 @@ clone_combined_dict_keys(PyDictObject *orig)
     assert(orig->ma_keys != Py_EMPTY_KEYS);
     assert(orig->ma_keys->dk_refcnt == 1);
 
-    ASSERT_DICT_LOCKED(orig);
+    if (!PyFrozenDict_Check(orig)) {
+        ASSERT_DICT_LOCKED(orig);
+    }
 
     size_t keys_size = _PyDict_KeysSize(orig->ma_keys);
     PyDictKeysObject *keys = PyMem_Malloc(keys_size);
@@ -4322,7 +4324,10 @@ copy_lock_held(PyObject *o, int as_frozendict)
     PyObject *copy;
     PyDictObject *mp;
 
-    ASSERT_DICT_LOCKED(o);
+    // frozendict is immutable and so doesn't need critical section
+    if (!PyFrozenDict_Check(o)) {
+        ASSERT_DICT_LOCKED(o);
+    }
 
     mp = (PyDictObject *)o;
     if (mp->ma_used == 0) {
@@ -4445,9 +4450,14 @@ anydict_copy(PyObject *o)
     assert(PyAnyDict_Check(o));
 
     PyObject *res;
-    Py_BEGIN_CRITICAL_SECTION(o);
-    res = copy_lock_held(o, PyFrozenDict_Check(o));
-    Py_END_CRITICAL_SECTION();
+    if (PyFrozenDict_Check(o)) {
+        res = copy_lock_held(o, 1);
+    }
+    else {
+        Py_BEGIN_CRITICAL_SECTION(o);
+        res = copy_lock_held(o, 0);
+        Py_END_CRITICAL_SECTION();
+    }
     return res;
 }
 
@@ -4459,9 +4469,14 @@ _PyDict_CopyAsDict(PyObject *o)
     assert(PyAnyDict_Check(o));
 
     PyObject *res;
-    Py_BEGIN_CRITICAL_SECTION(o);
-    res = copy_lock_held(o, 0);
-    Py_END_CRITICAL_SECTION();
+    if (PyFrozenDict_Check(o)) {
+        res = copy_lock_held(o, 0);
+    }
+    else {
+        Py_BEGIN_CRITICAL_SECTION(o);
+        res = copy_lock_held(o, 0);
+        Py_END_CRITICAL_SECTION();
+    }
     return res;
 }
 

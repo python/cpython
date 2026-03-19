@@ -292,7 +292,7 @@ Known values:
     Python 3.15a4 3659 (Add CALL_FUNCTION_EX specialization)
     Python 3.15a4 3660 (Change generator preamble code)
     Python 3.15a4 3661 (Lazy imports IMPORT_NAME opcode changes)
-    Python 3.15a7+ 3662 (Replace DELETE_FAST with PUSH_NULL; STORE_FAST)
+    Python 3.15a6 3662 (Add counter to RESUME)
 
 
     Python 3.16 will start with 3700
