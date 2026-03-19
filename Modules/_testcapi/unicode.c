@@ -449,6 +449,7 @@ writer_write_repr(PyObject *self_raw, PyObject *args)
     if (!PyArg_ParseTuple(args, "O", &obj)) {
         return NULL;
     }
+    NULLABLE(obj);
 
     if (PyUnicodeWriter_WriteRepr(self->writer, obj) < 0) {
         return NULL;
