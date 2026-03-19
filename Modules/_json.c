@@ -1632,8 +1632,12 @@ encoder_listencode_obj(PyEncoderObject *s, PyUnicodeWriter *writer,
         }
 
         if (_Py_EnterRecursiveCall(" while encoding a JSON object")) {
+            if (ident != NULL) {
+                PyDict_DelItem(s->markers, ident);
+                Py_XDECREF(ident);
+            }
             Py_DECREF(newobj);
-            Py_XDECREF(ident);
+
             return -1;
         }
         rv = encoder_listencode_obj(s, writer, newobj, indent_level, indent_cache);
@@ -1642,6 +1646,7 @@ encoder_listencode_obj(PyEncoderObject *s, PyUnicodeWriter *writer,
         Py_DECREF(newobj);
         if (rv) {
             _PyErr_FormatNote("when serializing %T object", obj);
+
             Py_XDECREF(ident);
             return -1;
         }
