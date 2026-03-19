@@ -578,7 +578,10 @@ def run_emscripten_python(context):
     if args and args[0] == "--":
         args = args[1:]
 
-    os.execv(str(exec_script), [str(exec_script)] + args)
+    if context.test:
+        args = load_config_toml()["test-args"] + args
+
+    os.execv(str(exec_script), [str(exec_script), *args])
 
 
 def build_target(context):
@@ -696,6 +699,15 @@ def main():
         help="Run the built emscripten Python",
     )
     run.add_argument(
+        "--test",
+        action="store_true",
+        default=False,
+        help=(
+            "If passed, will add the default test arguments to the beginning of the command. "
+            "Default arguments loaded from Platforms/emscripten/config.toml"
+        )
+    )
+    run.add_argument(
         "args",
         nargs=argparse.REMAINDER,
         help=(
@@ -704,6 +716,7 @@ def main():
         )
     )
     add_cross_build_dir_option(run)
+
     clean = subcommands.add_parser(
         "clean", help="Delete files and directories created by this script"
     )
