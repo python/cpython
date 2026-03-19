@@ -2712,7 +2712,7 @@ These are the fundamental ctypes data types:
 .. class:: c_size_t
 
    Represents the C :c:type:`size_t` datatype.
-   Usually an alias for another integer type.
+   Usually an alias for another unsigned integer type.
 
 
 .. class:: c_ssize_t
