@@ -13976,6 +13976,10 @@ PyUnicodeWriter_WriteStr(PyUnicodeWriter *writer, PyObject *obj)
 int
 PyUnicodeWriter_WriteRepr(PyUnicodeWriter *writer, PyObject *obj)
 {
+    if (obj == NULL) {
+        return _PyUnicodeWriter_WriteASCIIString((_PyUnicodeWriter*)writer, "<NULL>", 6);
+    }
+
     if (Py_TYPE(obj) == &PyLong_Type) {
         return _PyLong_FormatWriter((_PyUnicodeWriter*)writer, obj, 10, 0);
     }
