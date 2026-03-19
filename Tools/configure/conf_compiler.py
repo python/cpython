@@ -361,6 +361,11 @@ def setup_gcc_warnings(v):
     ):
         v.CFLAGS_NODIST += " -Wno-unused-parameter"
 
+    # config.site for WASI sets ac_cv_disable_int_conversion=yes to suppress
+    # -Wint-conversion errors (WASI clock types are pointers, not integers).
+    if v.ac_cv_disable_int_conversion:
+        v.CFLAGS_NODIST += " -Wno-int-conversion"
+
     if pyconf.check_compile_flag(
         "-Wno-missing-field-initializers", extra_flags=["-Werror"]
     ):

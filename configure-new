@@ -2896,6 +2896,9 @@ function u_setup_gcc_warnings(    cc_ver, cc_with_fna, cc_with_fsa, fna_supporte
 	if (pyconf_check_compile_flag("-Wno-unused-parameter", _va8)) {
 		V["CFLAGS_NODIST"] = V["CFLAGS_NODIST"] " -Wno-unused-parameter"
 	}
+	if (((V["ac_cv_disable_int_conversion"] != "") && (V["ac_cv_disable_int_conversion"] != "no"))) {
+		V["CFLAGS_NODIST"] = V["CFLAGS_NODIST"] " -Wno-int-conversion"
+	}
 	delete _va9
 	_va9[1] = "-Werror"
 	_va9[0] = 1
