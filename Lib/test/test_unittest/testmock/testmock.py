@@ -1745,7 +1745,6 @@ class MockTest(unittest.TestCase):
 
     # gh-145754
     def test_create_autospec_type_hints_typechecking(self):
-
         def foo(x: Tuple[int, ...]) -> None:
             pass
 
