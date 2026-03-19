@@ -1823,9 +1823,14 @@
         }
 
         case _SET_UPDATE: {
-            CHECK_STACK_BOUNDS(-1);
-            stack_pointer += -1;
-            ASSERT_WITHIN_STACK_BOUNDS(__FILE__, __LINE__);
+            JitOptRef iterable;
+            JitOptRef set;
+            JitOptRef i;
+            iterable = stack_pointer[-1];
+            set = stack_pointer[-2 - (oparg-1)];
+            (void)set;
+            i = iterable;
+            stack_pointer[-1] = i;
             break;
         }
 
