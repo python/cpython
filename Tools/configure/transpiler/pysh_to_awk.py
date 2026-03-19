@@ -3088,91 +3088,91 @@ class PyshToAwk:
 _STRING_HELPERS = r"""
 
 function _str_strip(s,    tmp) {
-	tmp = s
-	gsub(/^[ \t\n]+/, "", tmp)
-	gsub(/[ \t\n]+$/, "", tmp)
-	return tmp
+    tmp = s
+    gsub(/^[ \t\n]+/, "", tmp)
+    gsub(/[ \t\n]+$/, "", tmp)
+    return tmp
 }
 
 function _str_rstrip(s,    tmp) {
-	tmp = s
-	gsub(/[ \t\n]+$/, "", tmp)
-	return tmp
+    tmp = s
+    gsub(/[ \t\n]+$/, "", tmp)
+    return tmp
 }
 
 function _regex_escape(s,    tmp) {
-	tmp = s
-	gsub(/[\\.*+?[\](){}|^$]/, "\\\\&", tmp)
-	return tmp
+    tmp = s
+    gsub(/[\\.*+?[\](){}|^$]/, "\\\\&", tmp)
+    return tmp
 }
 
 function _gsub_escape_replacement(s,    tmp) {
-	tmp = s
-	gsub(/\\/, "\\\\", tmp)
-	gsub(/&/, "\\&", tmp)
-	return tmp
+    tmp = s
+    gsub(/\\/, "\\\\", tmp)
+    gsub(/&/, "\\&", tmp)
+    return tmp
 }
 
 function _str_replace(s, old, new,    tmp, escaped, safe_new) {
-	tmp = s
-	escaped = _regex_escape(old)
-	safe_new = _gsub_escape_replacement(new)
-	gsub(escaped, safe_new, tmp)
-	return tmp
+    tmp = s
+    escaped = _regex_escape(old)
+    safe_new = _gsub_escape_replacement(new)
+    gsub(escaped, safe_new, tmp)
+    return tmp
 }
 
 function _str_removeprefix(s, prefix,    plen) {
-	plen = length(prefix)
-	if (substr(s, 1, plen) == prefix)
-		return substr(s, plen + 1)
-	return s
+    plen = length(prefix)
+    if (substr(s, 1, plen) == prefix)
+        return substr(s, plen + 1)
+    return s
 }
 
 function _str_removesuffix(s, suffix,    slen, total) {
-	slen = length(suffix)
-	total = length(s)
-	if (total >= slen && substr(s, total - slen + 1) == suffix)
-		return substr(s, 1, total - slen)
-	return s
+    slen = length(suffix)
+    total = length(s)
+    if (total >= slen && substr(s, total - slen + 1) == suffix)
+        return substr(s, 1, total - slen)
+    return s
 }
 
 function _str_startswith(s, prefix) {
-	return (substr(s, 1, length(prefix)) == prefix)
+    return (substr(s, 1, length(prefix)) == prefix)
 }
 
 function _str_endswith(s, suffix,    slen, total) {
-	slen = length(suffix)
-	total = length(s)
-	return (total >= slen && substr(s, total - slen + 1) == suffix)
+    slen = length(suffix)
+    total = length(s)
+    return (total >= slen && substr(s, total - slen + 1) == suffix)
 }
 
 function _str_join(sep, s,    n, arr, i, result) {
-	n = split(s, arr, "\n")
-	result = ""
-	for (i = 1; i <= n; i++) {
-		if (i > 1) result = result sep
-		result = result arr[i]
-	}
-	return result
+    n = split(s, arr, "\n")
+    result = ""
+    for (i = 1; i <= n; i++) {
+        if (i > 1) result = result sep
+        result = result arr[i]
+    }
+    return result
 }
 
 function _split_index(s, sep, idx,    n, arr) {
-	n = split(s, arr, sep)
-	if (idx >= 1 && idx <= n)
-		return arr[idx]
-	return ""
+    n = split(s, arr, sep)
+    if (idx >= 1 && idx <= n)
+        return arr[idx]
+    return ""
 }
 
 function _any(arr,    i) {
-	for (i = 1; i <= arr[0]; i++)
-		if (arr[i] == "yes") return 1
-	return 0
+    for (i = 1; i <= arr[0]; i++)
+        if (arr[i] == "yes") return 1
+    return 0
 }
 
 function _all(arr,    i) {
-	for (i = 1; i <= arr[0]; i++)
-		if (arr[i] == "no") return 0
-	return 1
+    for (i = 1; i <= arr[0]; i++)
+        if (arr[i] == "no") return 0
+    return 1
 }
 """
 
