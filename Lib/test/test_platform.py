@@ -119,7 +119,9 @@ class PlatformTest(unittest.TestCase):
             self.assertIsNone(platform._os_release_cache)
 
     def test_architecture(self):
-        res = platform.architecture()
+        bits, linkage = platform.architecture()
+        self.assertIsInstance(bits, str)
+        self.assertIsInstance(linkage, str)
 
         if support.MS_WINDOWS:
             for sysconfig_platform, expected_bits in (
