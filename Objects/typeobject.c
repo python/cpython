@@ -5995,25 +5995,30 @@ PyType_GetTypeDataSize(PyTypeObject *cls)
     return result;
 }
 
-void *
-PyObject_GetItemData_DuringGC(PyObject *obj)
+static inline void
+getitemdata(PyObject *obj, bool raise)
 {
-    if (!PyType_HasFeature(Py_TYPE(obj), Py_TPFLAGS_ITEMS_AT_END)) {
+    if (!_PyType_HasFeature(Py_TYPE(obj), Py_TPFLAGS_ITEMS_AT_END)) {
+        if (raise) {
+            PyErr_Format(PyExc_TypeError,
+                         "type '%T' does not have Py_TPFLAGS_ITEMS_AT_END",
+                         obj);
+        }
         return NULL;
     }
     return (char *)obj + Py_TYPE(obj)->tp_basicsize;
 }
 
 void *
+PyObject_GetItemData_DuringGC(PyObject *obj)
+{
+    return getitemdata(obj, false);
+}
+
+void *
 PyObject_GetItemData(PyObject *obj)
 {
-    if (!PyType_HasFeature(Py_TYPE(obj), Py_TPFLAGS_ITEMS_AT_END)) {
-        PyErr_Format(PyExc_TypeError,
-                     "type '%s' does not have Py_TPFLAGS_ITEMS_AT_END",
-                     Py_TYPE(obj)->tp_name);
-        return NULL;
-    }
-    return PyObject_GetItemData_DuringGC(obj);
+    return getitemdata(obj, true);
 }
 
 /* Internal API to look for a name through the MRO, bypassing the method cache.
