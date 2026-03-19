@@ -277,7 +277,6 @@ class ParseTest(unittest.TestCase):
                           expat.errors.XML_ERROR_FINISHED)
 
     def test_reentrant_parse_crash(self):
-        from xml.parsers import expat
         p = expat.ParserCreate(encoding="utf-16")
 
         def start(name, attrs):
@@ -294,7 +293,6 @@ class ParseTest(unittest.TestCase):
                          "cannot call Parse() from within a handler")
 
     def test_parse_normal(self):
-        from xml.parsers import expat
         p = expat.ParserCreate()
         data = "<root><child/></root>".encode('utf-8')
         try:
