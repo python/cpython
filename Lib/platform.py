@@ -715,7 +715,7 @@ _default_architecture = frozendict({
 _sysconfig_architecture = frozendict({
     # platform: (arch, bits, linkage)
     'win32': ('x86', '32bit', 'WindowsPE'),
-    'win-amd64': ('AMD64', '32bit', 'WindowsPE'),
+    'win-amd64': ('AMD64', '64bit', 'WindowsPE'),
     'win-arm32': ('ARM', '32bit', 'WindowsPE'),
     'win-arm64': ('ARM64', '64bit', 'WindowsPE'),
 })
