@@ -170,7 +170,7 @@ def has_key(ch):
 
     #Check the current terminal description for that capability;
     #if present, return true, else return false.
-    if _curses.tigetstr( capability_name ):
+    if _curses.tigetstr(capability_name):
         return True
     else:
         return False
