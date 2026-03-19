@@ -121,6 +121,19 @@ class PlatformTest(unittest.TestCase):
     def test_architecture(self):
         res = platform.architecture()
 
+        if support.MS_WINDOWS:
+            for sysconfig_platform, expected_bits in (
+                ('win32', 32),
+                ('win-amd64', 64),
+                ('win-arm32', 32),
+                ('win-arm64', 64),
+            ):
+                with mock.patch('_sysconfig.get_platform',
+                                return_value=sysconfig_platform):
+                    bits, linkage = platform.architecture()
+                    self.assertEqual(bits, f'{expected_bits}bit')
+                    self.assertEqual(linkage, 'WindowsPE')
+
     @os_helper.skip_unless_symlink
     @support.requires_subprocess()
     def test_architecture_via_symlink(self): # issue3762
@@ -372,7 +385,7 @@ class PlatformTest(unittest.TestCase):
             expect = ''
         self.assertEqual(platform.uname().processor, expect)
 
-    @unittest.skipUnless(sys.platform.startswith('win'), "windows only test")
+    @unittest.skipUnless(support.MS_WINDOWS, "windows only test")
     def test_uname_win32_ARCHITEW6432(self):
         # Issue 7860: make sure we get architecture from the correct variable
         # on 64 bit Windows: if PROCESSOR_ARCHITEW6432 exists we should be
@@ -381,11 +394,12 @@ class PlatformTest(unittest.TestCase):
 
         for sysconfig_platform, arch in (
             ('win32', 'x86'),
-            ('win-arm32', 'ARM'),
             ('win-amd64', 'AMD64'),
+            ('win-arm32', 'ARM'),
             ('win-arm64', 'ARM64'),
         ):
-            with mock.patch('_sysconfig.get_platform', return_value=sysconfig_platform):
+            with mock.patch('_sysconfig.get_platform',
+                            return_value=sysconfig_platform):
                 try:
                     platform._uname_cache = None
                     system, node, release, version, machine, processor = platform.uname()
