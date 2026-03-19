@@ -37,7 +37,8 @@ NULL     |                     |      RECORDED_VALUE*
 |    KNOWN_CLASS--+       |    |      |
 |    |  |  |      |       | PREDICATE RECORDED_VALUE(known type)
 |    |  | INT*    |       |    |      |
-|    |  |  | FUNC_VERSION |    |      |            <- Anything below this level has a known truthiness.
+|    |  |  |      |       |    |      |            <- Anything below this level has a known truthiness.
+|    |  |  | FUNC_VERSION |    |      |
 | TUPLE |  |      | TRUTHINESS |      |
 |    |  |  |      |       |    |      |            <- Anything below this level is a known constant.
 |    KNOWN_VALUE--+-------+----+------+
@@ -100,7 +101,7 @@ _PyUOpSymPrint(JitOptRef ref)
             printf("<v%u at %p>", sym->version.version, (void *)sym);
             break;
         case JIT_SYM_FUNC_VERSION_TAG:
-            printf("<fv%u at %p>", sym->func_version.func_version, (void *)sym);
+            printf("<function version=%u>", sym->func_version.func_version);
             break;
         case JIT_SYM_KNOWN_CLASS_TAG:
             printf("<%s at %p>", sym->cls.type->tp_name, (void *)sym);
@@ -527,7 +528,7 @@ _Py_uop_sym_set_func_version(JitOptContext *ctx, JitOptRef ref, uint32_t version
                 ((PyFunctionObject *)sym->recorded_value.value)->func_version != version) {
                 sym_set_bottom(ctx, sym);
                 return false;
-                }
+            }
             // Promote to known value, as we have guarded/checked on it.
             sym->tag = JIT_SYM_KNOWN_VALUE_TAG;
             // New ownership. We need to NewRef here, as

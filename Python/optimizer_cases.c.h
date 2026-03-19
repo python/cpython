@@ -4304,7 +4304,7 @@
             PyCodeObject *co = get_current_code_object(ctx);
             if (co->co_version == version) {
                 _Py_BloomFilter_Add(dependencies, co);
-                if (sym_get_func_version(ctx->frame->callable) != 0) {
+                if (sym_get_func_version(ctx->frame->callable) == version) {
                     REPLACE_OP(this_instr, _NOP, 0, 0);
                 }
             }
