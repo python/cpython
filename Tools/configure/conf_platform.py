@@ -655,7 +655,7 @@ def check_posix_shmem(v):
     v.POSIXSHMEM_CFLAGS = "-I$(srcdir)/Modules/_multiprocessing"
     v.POSIXSHMEM_LIBS = ""
     with pyconf.save_env():
-        shm_open_result = pyconf.search_libs("shm_open", ["rt"])
+        shm_open_result = pyconf.search_libs("shm_open", ["rt"], required=False)
         posixshmem_libs = "-lrt" if shm_open_result == "-lrt" else ""
         have_posix_shmem = pyconf.check_func(
             "shm_open", headers=["sys/mman.h"]
