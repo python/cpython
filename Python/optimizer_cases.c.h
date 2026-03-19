@@ -1435,7 +1435,10 @@
 
         case _LOAD_COMMON_CONSTANT: {
             JitOptRef value;
-            value = sym_new_not_null(ctx);
+            assert(oparg < NUM_COMMON_CONSTANTS);
+            PyObject *val = _PyInterpreterState_GET()->common_consts[oparg];
+            ADD_OP(_LOAD_CONST_INLINE_BORROW, 0, (uintptr_t)val);
+            value = PyJitRef_Borrow(sym_new_const(ctx, val));
             CHECK_STACK_BOUNDS(1);
             stack_pointer[0] = value;
             stack_pointer += 1;
