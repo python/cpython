@@ -57,6 +57,8 @@ requires_32b = unittest.skipUnless(sys.maxsize < 2**32,
 # kind of outer loop.
 protocols = range(pickle.HIGHEST_PROTOCOL + 1)
 
+FAST_NESTING_LIMIT = 50
+
 
 # Return True if opcode code appears in the pickle, else False.
 def opcode_in_pickle(code, pickle):
@@ -4551,6 +4553,36 @@ class AbstractPickleTests:
                 except RuntimeError as e:
                     expected = "changed size during iteration"
                     self.assertIn(expected, str(e))
+
+    def test_fast_save_enter_leave(self):
+        # gh-146059: Check that fast_save_leave() is called when
+        # fast_save_enter() is called.
+        if not hasattr(self, "pickler"):
+            self.skipTest("need Pickler class")
+
+        limit = FAST_NESTING_LIMIT * 2
+        for proto in protocols:
+            for tested_type in (frozenset, list, dict):
+                with self.subTest(proto=proto, tested_type=tested_type):
+                    buf = io.BytesIO()
+                    pickler = self.pickler(buf, protocol=proto)
+                    # Enable fast mode (disables memo, enables cycle detection)
+                    pickler.fast = 1
+
+                    if tested_type == frozenset:
+                        data = [frozenset([i]) for i in range(limit)]
+                    elif tested_type == list:
+                        data = [[i] for i in range(limit)]
+                    elif tested_type == dict:
+                        data = [{"key": 123} for i in range(limit)]
+                    else:
+                        self.fail("unknown tested_type")
+                    data = {"key": data}
+                    pickler.dump(data)
+
+                    buf.seek(0)
+                    data2 = self.unpickler(buf).load()
+                    self.assertEqual(data2, data)
 
 
 class BigmemPickleTests:
