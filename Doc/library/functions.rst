@@ -992,18 +992,47 @@ are always available.  They are listed here in alphabetical order.
 .. function:: input()
               input(prompt, /)
 
-   If the *prompt* argument is present, it is written to standard output without
-   a trailing newline.  The function then reads a line from input, converts it
-   to a string (stripping a trailing newline), and returns that.  When EOF is
-   read, :exc:`EOFError` is raised.  Example::
+   Prompt the user for input, and return the answer as a string.
+   For example::
 
-      >>> s = input('--> ')  # doctest: +SKIP
-      --> Monty Python's Flying Circus
+      >>> s = input('What is your favorite color? ')  # doctest: +SKIP
+      What is your favorite color? Yellow
       >>> s  # doctest: +SKIP
-      "Monty Python's Flying Circus"
+      'Yellow'
 
-   If the :mod:`readline` module was loaded, then :func:`input` will use it
-   to provide elaborate line editing and history features.
+      >>> command = input('--> ')  # doctest: +SKIP
+      --> cut the green wire
+      >>> command  # doctest: +SKIP
+      'cut the green wire'
+
+   .. admonition:: CPython implementation detail
+
+      By default, if the *prompt* argument is present, it is written to
+      standard output without a trailing space or newline.
+      The function then reads a line from input, converts it
+      to a string (stripping a trailing newline), and returns that.
+      When EOF is read, :exc:`EOFError` is raised.
+
+      If this exact behavior is required, implement it explicitly instead
+      of calling :func:`!input`::
+
+         print(prompt, end='', flush=True)
+         sys.stdin.readline().strip('\n')
+
+      If the standard output is not interactive, then standard error
+      will be used for the prompt instead.
+
+      If the :mod:`readline` module was loaded, then :func:`input` will instead
+      use it to provide elaborate line editing and history features.
+      The  may be used to
+      provide similar functionality.
+
+      Systems that lack standard input/output streams, or have different ways
+      of asking the user, often set :mod:`builtins.input <builtins>`,
+      or the C pointer :c:data:`PyOS_ReadlineFunctionPointer`, to a
+      more appropriate function.
+      For example, a framework for desktop applications could override
+      ``input`` to display a dialog.
 
    .. audit-event:: builtins.input prompt input
 
@@ -1014,6 +1043,11 @@ are always available.  They are listed here in alphabetical order.
 
       Raises an :ref:`auditing event <auditing>` ``builtins.input/result``
       with the result after successfully reading input.
+
+   .. tip::
+
+      Including a trailing space in *prompt*, as in the examples above,
+      often makes the result more pleasing.
 
 
 .. class:: int(number=0, /)
