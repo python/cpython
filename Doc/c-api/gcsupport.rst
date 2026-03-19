@@ -334,6 +334,13 @@ The :c:member:`~PyTypeObject.tp_traverse` handler must have the following type:
       The :c:member:`~PyTypeObject.tp_traverse` function can be called from any
       thread.
 
+      .. impl-detail::
+
+         Garbage collection is a "stop-the-world" operation:
+         even in :term:`free threading` builds, only one thread state is
+         :term:`attached <attached thread state>` when :c:member:`!tp_traverse`
+         handlers run.
+
    .. versionchanged:: 3.9
 
       Heap-allocated types are expected to visit ``Py_TYPE(self)`` in
@@ -372,7 +379,8 @@ The following functions and macros are safe to use in a
 * the *visit* function passed to ``tp_traverse``
 * :c:func:`Py_VISIT`
 * :c:func:`Py_SIZE`
-* :c:func:`Py_TYPE`
+* :c:func:`Py_TYPE`: if called from a :c:member:`!tp_traverse` handler,
+  :c:func:`!Py_TYPE`'s result will be valid for the duration of the handler call
 * :c:func:`PyObject_VisitManagedDict`
 * :c:func:`PyObject_TypeCheck`, :c:func:`PyType_IsSubtype`,
   :c:func:`PyType_HasFeature`
