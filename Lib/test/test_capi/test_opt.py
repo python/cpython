@@ -4016,6 +4016,21 @@ class TestUopsOptimization(unittest.TestCase):
         self.assertIn("_MATCH_CLASS", uops)
         self.assertEqual(count_ops(ex, "_POP_TOP_NOP"), 4)
 
+    def test_set_update(self):
+        def testfunc(n):
+            s = {1, 2, 3}
+            for _ in range(n):
+                x = {*s}
+            return x
+
+        res, ex = self._run_with_optimizer(testfunc, TIER2_THRESHOLD)
+        self.assertEqual(res, {1, 2, 3})
+        uops = get_opnames(ex)
+
+        self.assertIn("_SET_UPDATE", uops)
+        self.assertEqual(count_ops(ex, "_POP_TOP_NOP"), 1)
+        self.assertLessEqual(count_ops(ex, "_POP_TOP"), 2)
+
     def test_143026(self):
         # https://github.com/python/cpython/issues/143026
 
