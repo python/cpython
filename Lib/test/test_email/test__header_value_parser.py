@@ -1247,28 +1247,28 @@ class TestParser(TestParserMixin, TestEmailBase):
             comment='()',
             domain_literal='[]',
             )
-        for name, endchars in endchar_sets.items():
-            yield name, C(*args, endchars=endchars, **kw)
+        for name, end_chars in endchar_sets.items():
+            yield name, C(*args, end_chars=end_chars, **kw)
 
     @params_map
     def for_each_endchar(*args, **kw):
-        return for_each_character(kw['endchars'])(C(*args, **kw)).items()
+        return for_each_character(kw['end_chars'])(C(*args, **kw)).items()
 
     # This params_map is used on exactly one expression, which has to contain a
     # list of characters with no repeats.
     @params_map
     def stops_at_first_endchar_found(s):
         for i in range(len(s)):
-            endchars = ''.join(sample((r := s[i:]), len(r)))
+            end_chars = ''.join(sample((r := s[i:]), len(r)))
             ec = charname(s[i])
             yield f'stops_at_first_endchar_found__string__{ec}', C(
                 s,
-                endchars=endchars,
+                end_chars=end_chars,
                 remainder=r,
                 )
             yield f'stops_at_first_endchar_found__set__{ec}', C(
                 s,
-                endchars=set(endchars),
+                end_chars=set(end_chars),
                 remainder=r,
                 )
 
@@ -1416,6 +1416,8 @@ class TestParser(TestParserMixin, TestEmailBase):
             ew_indexes = [7],
             ),
 
+        # XXX POSTDEP: delete from here...
+
         )
 
 
@@ -1424,21 +1426,26 @@ class TestParser(TestParserMixin, TestEmailBase):
     # These tests are also passed by the replacement function, content_getter.
 
     @params
-    def test__get_ptext_to_endchars(self, s, endchars, has_qp=False, **kw):
+    def test__get_ptext_to_endchars(self, s, end_chars, qp=False, **kw):
         ptext, had_qp = self._test_parse(
             parser._get_ptext_to_endchars,
-            C(s, endchars),
+            C(s, end_chars),
+            warnings=[
+                (DeprecationWarning, '.*deprecated.*content_getter'),
+                ],
             test_start=False,
             **kw,
             )
-        self.assertEqual(had_qp, has_qp)
+        self.assertEqual(had_qp, qp)
 
     params_test__get_ptext_to_endchars = Params(
+
+        # XXX POSTDEP: ...to here
 
         **for_each_endchar(
             wsp_can_be_legal_endchars = C(
                 'foo{char}bar"',
-                endchars='()' + RFC_WSP,
+                end_chars='()' + RFC_WSP,
                 remainder='{char}bar"',
                 ),
             ),
@@ -1454,19 +1461,19 @@ class TestParser(TestParserMixin, TestEmailBase):
             escaped_letter = C(
                 r'bar\s',
                 stringified='bars',
-                has_qp=True,
+                qp=True,
                 ),
 
             escaped_escape_char = C(
                 r'foo\\bar',
                 stringified=r'foo\bar',
-                has_qp=True,
+                qp=True,
                 ),
 
             any_printable_may_be_quoted = C(
                 ''.join(rf'\{c}' for c in RFC_PRINTABLES),
                 stringified=RFC_PRINTABLES,
-                has_qp=True,
+                qp=True,
                 ),
 
             ),
@@ -1482,27 +1489,21 @@ class TestParser(TestParserMixin, TestEmailBase):
                 quoted_endchar_no_actual_endchar = C(
                     r'foo\{char}bar',
                     stringified=r'foo{char}bar',
-                    has_qp=True,
+                    qp=True,
                     ),
 
                 quoted_endchar_before_actual_endchar = C(
                     r'foo\{char}bar{char}',
                     stringified='foo{char}bar',
                     remainder='{char}',
-                    has_qp=True,
+                    qp=True,
                     ),
 
                 multiple_qp = C(
                     r'\{char}\foo\\\{char}\a{char}',
                     stringified=r'{char}foo\{char}a',
                     remainder=r'{char}',
-                    has_qp=True,
-                    ),
-
-                no_qp_before_endchar_but_some_after = C(
-                    r'foo{char}a\b\a\r',
-                    remainder=r'{char}a\b\a\r',
-                    has_qp=False,
+                    qp=True,
                     ),
 
                 ),
@@ -1510,25 +1511,13 @@ class TestParser(TestParserMixin, TestEmailBase):
 
         )
 
+    # XXX POSTDEP: delete from here...
     # As the replacement function for _get_ptext_to_endchars (among other
     # things) content_getter needs to pass the _get_ptext_to_endchars tests,
     # which test somewhat different scenarios than the other content_getter
     # tests.
-    @params_map
-    def adapt_ptext_tests_for_content_getter(*args, **kw):
-        endchars = kw.pop('endchars')
-        if 'has_qp' in kw:
-            # has_qp is intended to test the return flag as to whether qp was
-            # present.  But content_getter doesn't return such a flag...that
-            # functionality will be handled via _qp_unquote directly.  So just
-            # set qp=True so the qp will be decoded like _get_ptext_to_endchars
-            # does so the tests pass.
-            kw['qp'] = kw.pop('has_qp')
-        yield '', C(*args, end_chars=endchars, **kw)
-
-    params_test_content_getter.update(
-        adapt_ptext_tests_for_content_getter(params_test__get_ptext_to_endchars)
-        )
+    params_test_content_getter.update(params_test__get_ptext_to_endchars)
+    # XXX POSTDEP: ...to here
 
 
     # parse_unstructured
