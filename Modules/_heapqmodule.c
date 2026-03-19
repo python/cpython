@@ -424,7 +424,8 @@ siftdown_max(PyListObject *heap, Py_ssize_t startpos, Py_ssize_t pos)
     newitem = arr[pos];
     while (pos > startpos) {
         parentpos = (pos - 1) >> 1;
-        parent = Py_NewRef(arr[parentpos]);
+        parent = arr[parentpos];
+        Py_INCREF(parent);
         Py_INCREF(newitem);
         cmp = PyObject_RichCompareBool(parent, newitem, Py_LT);
         Py_DECREF(parent);
@@ -538,12 +539,12 @@ _heapq.heappop_max
     heap: object(subclass_of='&PyList_Type')
     /
 
-Maxheap variant of heappop.
+Pop the largest item off the max-heap, maintaining the heap invariant.
 [clinic start generated code]*/
 
 static PyObject *
 _heapq_heappop_max_impl(PyObject *module, PyObject *heap)
-/*[clinic end generated code: output=2f051195ab404b77 input=5d70c997798aec64]*/
+/*[clinic end generated code: output=2f051195ab404b77 input=edca3ff5d6aa11c6]*/
 {
     return heappop_internal(heap, siftup_max);
 }
@@ -556,12 +557,12 @@ _heapq.heapreplace_max
     item: object
     /
 
-Maxheap variant of heapreplace.
+Pop and return the largest item from the max-heap, and push the new item.
 [clinic start generated code]*/
 
 static PyObject *
 _heapq_heapreplace_max_impl(PyObject *module, PyObject *heap, PyObject *item)
-/*[clinic end generated code: output=8770778b5a9cbe9b input=fe70175356e4a649]*/
+/*[clinic end generated code: output=8770778b5a9cbe9b input=75b704b6f92beab9]*/
 {
     return heapreplace_internal(heap, item, siftup_max);
 }
@@ -573,12 +574,12 @@ _heapq.heapify_max
     heap: object(subclass_of='&PyList_Type')
     /
 
-Maxheap variant of heapify.
+Transform list into a max-heap, in-place, in O(len(heap)) time.
 [clinic start generated code]*/
 
 static PyObject *
 _heapq_heapify_max_impl(PyObject *module, PyObject *heap)
-/*[clinic end generated code: output=8401af3856529807 input=4eee63231e7d1573]*/
+/*[clinic end generated code: output=8401af3856529807 input=4e02ed8aa546fb8e]*/
 {
     return heapify_internal(heap, siftup_max);
 }

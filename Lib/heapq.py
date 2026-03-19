@@ -480,6 +480,10 @@ def nsmallest(n, iterable, key=None):
     Equivalent to:  sorted(iterable, key=key)[:n]
     """
 
+    # Short-cut for n<=0 to avoid unnecessary work
+    if n <= 0:
+        return []
+
     # Short-cut for n==1 is to use min()
     if n == 1:
         it = iter(iterable)
@@ -539,6 +543,10 @@ def nlargest(n, iterable, key=None):
 
     Equivalent to:  sorted(iterable, key=key, reverse=True)[:n]
     """
+
+    # Short-cut for n<=0 to avoid unnecessary work
+    if n <= 0:
+        return []
 
     # Short-cut for n==1 is to use max()
     if n == 1:

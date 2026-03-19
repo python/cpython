@@ -226,7 +226,7 @@ PyDoc_STRVAR(_heapq_heappop_max__doc__,
 "heappop_max($module, heap, /)\n"
 "--\n"
 "\n"
-"Maxheap variant of heappop.");
+"Pop the largest item off the max-heap, maintaining the heap invariant.");
 
 #define _HEAPQ_HEAPPOP_MAX_METHODDEF    \
     {"heappop_max", (PyCFunction)_heapq_heappop_max, METH_O, _heapq_heappop_max__doc__},
@@ -257,7 +257,7 @@ PyDoc_STRVAR(_heapq_heapreplace_max__doc__,
 "heapreplace_max($module, heap, item, /)\n"
 "--\n"
 "\n"
-"Maxheap variant of heapreplace.");
+"Pop and return the largest item from the max-heap, and push the new item.");
 
 #define _HEAPQ_HEAPREPLACE_MAX_METHODDEF    \
     {"heapreplace_max", _PyCFunction_CAST(_heapq_heapreplace_max), METH_FASTCALL, _heapq_heapreplace_max__doc__},
@@ -293,7 +293,7 @@ PyDoc_STRVAR(_heapq_heapify_max__doc__,
 "heapify_max($module, heap, /)\n"
 "--\n"
 "\n"
-"Maxheap variant of heapify.");
+"Transform list into a max-heap, in-place, in O(len(heap)) time.");
 
 #define _HEAPQ_HEAPIFY_MAX_METHODDEF    \
     {"heapify_max", (PyCFunction)_heapq_heapify_max, METH_O, _heapq_heapify_max__doc__},
@@ -358,4 +358,4 @@ _heapq_heappushpop_max(PyObject *module, PyObject *const *args, Py_ssize_t nargs
 exit:
     return return_value;
 }
-/*[clinic end generated code: output=e83d50002c29a96d input=a9049054013a1b77]*/
+/*[clinic end generated code: output=b1170d77557075f6 input=a9049054013a1b77]*/

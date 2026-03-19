@@ -1,0 +1,3 @@
+Add early return for ``n <= 0`` in :func:`heapq.nsmallest` and
+:func:`heapq.nlargest`, and improve docstrings for :func:`heapq.heappop_max`,
+:func:`heapq.heapreplace_max`, and :func:`heapq.heapify_max`.
