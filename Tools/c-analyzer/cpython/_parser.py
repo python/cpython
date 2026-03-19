@@ -344,6 +344,7 @@ MAX_SIZES = {
     _abs('Modules/_ssl_data_300.h'): (80_000, 10_000),
     _abs('Modules/_ssl_data_111.h'): (80_000, 10_000),
     _abs('Modules/cjkcodecs/mappings_*.h'): (160_000, 2_000),
+    _abs('Modules/clinic/_testclinic.c.h'): (120_000, 5_000),
     _abs('Modules/unicodedata_db.h'): (180_000, 3_000),
     _abs('Modules/unicodename_db.h'): (1_200_000, 15_000),
     _abs('Objects/unicodetype_db.h'): (240_000, 3_000),
