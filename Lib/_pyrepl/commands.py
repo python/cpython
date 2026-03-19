@@ -169,7 +169,7 @@ class unix_word_rubout(KillCommand):
     def do(self) -> None:
         r = self.reader
         for i in range(r.get_arg()):
-            self.kill_range(r.bow(), r.pos)
+            self.kill_range(r.bow_whitespace(), r.pos)
 
 
 class kill_word(KillCommand):

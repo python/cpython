@@ -558,3 +558,47 @@ class TestReaderInColor(ScreenEqualMixin, TestCase):
         reader, _ = handle_all_events(events)
         self.assert_screen_equal(reader, 'flag = "🏳️\\u200d🌈"', clean=True)
         self.assert_screen_equal(reader, 'flag {o}={z} {s}"🏳️\\u200d🌈"{z}'.format(**colors))
+
+
+class TestBowWhitespace(TestCase):
+    def test_bow_whitespace_stops_at_whitespace(self):
+        # GH#146044
+        # unix-word-rubout (ctrl-w) should use whitespace boundaries,
+        # not punctuation boundaries like bow() does
+        reader = prepare_reader(prepare_console())
+        reader.buffer = list("foo.bar baz")
+        reader.pos = len(reader.buffer)  # cursor at end
+
+        # bow_whitespace from end should jump to start of "baz"
+        result = reader.bow_whitespace()
+        self.assertEqual(result, 8)  # index of 'b' in "baz"
+
+    def test_bow_whitespace_includes_punctuation_in_word(self):
+        # GH#146044
+        reader = prepare_reader(prepare_console())
+        reader.buffer = list("foo.bar(baz) qux")
+        reader.pos = 12  # cursor after ")"
+
+        # bow_whitespace should treat "foo.bar(baz)" as one word
+        result = reader.bow_whitespace()
+        self.assertEqual(result, 0)
+
+    def test_bow_stops_at_punctuation(self):
+        # Verify existing bow() still uses syntax_table (punctuation boundary)
+        reader = prepare_reader(prepare_console())
+        reader.buffer = list("foo.bar baz")
+        reader.pos = len(reader.buffer)
+
+        result = reader.bow()
+        self.assertEqual(result, 8)  # same — "baz" is all word chars
+
+    def test_bow_vs_bow_whitespace_difference(self):
+        # The key difference: bow() stops at '.', bow_whitespace() does not
+        reader = prepare_reader(prepare_console())
+        reader.buffer = list("foo.bar")
+        reader.pos = len(reader.buffer)
+
+        # bow() stops at '.' → returns index of 'b' in "bar"
+        self.assertEqual(reader.bow(), 4)
+        # bow_whitespace() treats entire "foo.bar" as one word
+        self.assertEqual(reader.bow_whitespace(), 0)
