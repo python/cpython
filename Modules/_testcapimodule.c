@@ -3372,6 +3372,34 @@ _testcapi_exec(PyObject *m)
     PyModule_AddObject(m, "INT64_MAX", PyLong_FromInt64(INT64_MAX));
     PyModule_AddObject(m, "UINT64_MAX", PyLong_FromUInt64(UINT64_MAX));
 
+    // Test soft-deprecated macros
+    Py_ALIGNED(64) char buf[4];
+    #ifdef __GNUC__
+        Py_BUILD_ASSERT(_Alignof(buf) == 64);
+    #endif
+    assert(strcmp(PY_FORMAT_SIZE_T, "z") == 0);
+    Py_BUILD_ASSERT(Py_LL(123) == 123LL);
+    Py_BUILD_ASSERT(sizeof(Py_LL(123)) == sizeof(long long));
+    Py_BUILD_ASSERT(sizeof(Py_ULL(123)) == sizeof(unsigned long long));
+    Py_BUILD_ASSERT(sizeof(PY_LONG_LONG) == sizeof(long long));
+    Py_BUILD_ASSERT(sizeof(PY_INT32_T) == sizeof(int32_t));
+    Py_BUILD_ASSERT(sizeof(PY_UINT32_T) == sizeof(uint32_t));
+    Py_BUILD_ASSERT(sizeof(PY_INT64_T) == sizeof(int64_t));
+    Py_BUILD_ASSERT(sizeof(PY_UINT64_T) == sizeof(uint64_t));
+    Py_BUILD_ASSERT(PY_LLONG_MIN == LLONG_MIN);
+    Py_BUILD_ASSERT(PY_LLONG_MAX == LLONG_MAX);
+    Py_BUILD_ASSERT(PY_ULLONG_MAX == ULLONG_MAX);
+    Py_BUILD_ASSERT(PY_SIZE_MAX == SIZE_MAX);
+    Py_BUILD_ASSERT(PY_LLONG_MIN == LLONG_MIN);
+    Py_MEMCPY(buf, "abc", 4);
+    assert(strcmp(buf, "abc") == 0);
+    Py_BUILD_ASSERT(Py_UNICODE_SIZE == sizeof(wchar_t));
+    #ifdef Py_UNICODE_WIDE
+        Py_BUILD_ASSERT(sizeof(wchar_t) >= 4);
+    #else
+        Py_BUILD_ASSERT(sizeof(wchar_t) < 4);
+    #endif
+
 #ifdef HAVE_PPOLL
     if (PyModule_AddObjectRef(m, "HAVE_PPOLL", Py_True) < 0) {
         return -1;

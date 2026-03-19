@@ -77,7 +77,7 @@ get_binascii_state(PyObject *module)
 
 
 /* Align to 64 bytes for L1 cache line friendliness */
-static const unsigned char table_a2b_base64[] Py_ALIGNED(64) = {
+static const _Py_ALIGNED_DEF(64, unsigned char) table_a2b_base64[] = {
     -1,-1,-1,-1, -1,-1,-1,-1, -1,-1,-1,-1, -1,-1,-1,-1,
     -1,-1,-1,-1, -1,-1,-1,-1, -1,-1,-1,-1, -1,-1,-1,-1,
     -1,-1,-1,-1, -1,-1,-1,-1, -1,-1,-1,62, -1,-1,-1,63,
@@ -109,7 +109,7 @@ static const unsigned char table_a2b_base64[] Py_ALIGNED(64) = {
  */
 
 /* Align to 64 bytes for L1 cache line friendliness */
-static const unsigned char table_b2a_base64[] Py_ALIGNED(64) =
+static const _Py_ALIGNED_DEF(64, unsigned char) table_b2a_base64[] =
 "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/";
 
 /* Encode 3 bytes into 4 base64 characters. */
@@ -188,7 +188,7 @@ base64_decode_fast(const unsigned char *in, Py_ssize_t in_len,
 }
 
 
-static const unsigned char table_a2b_base85[] Py_ALIGNED(64) = {
+static const _Py_ALIGNED_DEF(64, unsigned char) table_a2b_base85[] = {
     -1,-1,-1,-1, -1,-1,-1,-1, -1,-1,-1,-1, -1,-1,-1,-1,
     -1,-1,-1,-1, -1,-1,-1,-1, -1,-1,-1,-1, -1,-1,-1,-1,
     -1,62,-1,63, 64,65,66,-1, 67,68,69,70, -1,71,-1,-1,
@@ -208,7 +208,7 @@ static const unsigned char table_a2b_base85[] Py_ALIGNED(64) = {
     -1,-1,-1,-1, -1,-1,-1,-1, -1,-1,-1,-1, -1,-1,-1,-1,
 };
 
-static const unsigned char table_a2b_base85_a85[] Py_ALIGNED(64) = {
+static const _Py_ALIGNED_DEF(64, unsigned char) table_a2b_base85_a85[] = {
     -1,-1,-1,-1, -1,-1,-1,-1, -1,-1,-1,-1, -1,-1,-1,-1,
     -1,-1,-1,-1, -1,-1,-1,-1, -1,-1,-1,-1, -1,-1,-1,-1,
     -1, 0, 1, 2,  3, 4, 5, 6,  7, 8, 9,10, 11,12,13,14,
@@ -228,7 +228,7 @@ static const unsigned char table_a2b_base85_a85[] Py_ALIGNED(64) = {
     -1,-1,-1,-1, -1,-1,-1,-1, -1,-1,-1,-1, -1,-1,-1,-1,
 };
 
-static const unsigned char table_a2b_base85_z85[] Py_ALIGNED(64) = {
+static const _Py_ALIGNED_DEF(64, unsigned char) table_a2b_base85_z85[] = {
     -1,-1,-1,-1, -1,-1,-1,-1, -1,-1,-1,-1, -1,-1,-1,-1,
     -1,-1,-1,-1, -1,-1,-1,-1, -1,-1,-1,-1, -1,-1,-1,-1,
     -1,68,-1,84, 83,82,72,-1, 75,76,70,65, -1,63,62,69,
@@ -248,15 +248,15 @@ static const unsigned char table_a2b_base85_z85[] Py_ALIGNED(64) = {
     -1,-1,-1,-1, -1,-1,-1,-1, -1,-1,-1,-1, -1,-1,-1,-1,
 };
 
-static const unsigned char table_b2a_base85[] Py_ALIGNED(64) =
+static const _Py_ALIGNED_DEF(64, unsigned char) table_b2a_base85[] =
     "0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZ" \
     "abcdefghijklmnopqrstuvwxyz!#$%&()*+-;<=>?@^_`{|}~";
 
-static const unsigned char table_b2a_base85_a85[] Py_ALIGNED(64) =
+static const _Py_ALIGNED_DEF(64, unsigned char) table_b2a_base85_a85[]  =
     "!\"#$%&\'()*+,-./0123456789:;<=>?@" \
     "ABCDEFGHIJKLMNOPQRSTUVWXYZ[\\]^_`abcdefghijklmnopqrstu";
 
-static const unsigned char table_b2a_base85_z85[] Py_ALIGNED(64) =
+static const _Py_ALIGNED_DEF(64, unsigned char) table_b2a_base85_z85[] =
     "0123456789abcdefghijklmnopqrstuvwxyz" \
     "ABCDEFGHIJKLMNOPQRSTUVWXYZ.-:+=^!/\x2a?&<>()[]{}@%$#"; /* clinic doesn't like '/' followed by '*' */
 
