@@ -1,0 +1,8 @@
+.. gh-issue: 146174
+
+.. section: Library
+
+Prevent re-entrant calls to
+:meth:`xml.parsers.expat.xmlparser.Parse`
+from within expat handlers, which could cause a crash. Now raises
+:exc:`RuntimeError` when such a call is attempted.

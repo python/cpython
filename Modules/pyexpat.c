@@ -857,6 +857,11 @@ pyexpat_xmlparser_Parse_impl(xmlparseobject *self, PyTypeObject *cls,
                              PyObject *data, int isfinal)
 /*[clinic end generated code: output=8faffe07fe1f862a input=053e0f047e55c05a]*/
 {
+    if (self->in_callback) {
+        PyErr_SetString(PyExc_RuntimeError,
+            "cannot call Parse() from within a handler");
+        return NULL;
+    }
     const char *s;
     Py_ssize_t slen;
     Py_buffer view;
