@@ -1793,9 +1793,9 @@ class PyUnicodeWriterTest(unittest.TestCase):
         writer.write_char(0)
         writer.write_char(ord('$'))
         writer.write_char(0x20ac)
-        writer.write_char(0x10ffff)
-        self.assertRaises(ValueError, writer.write_char, 0x110000)
-        self.assertRaises(ValueError, writer.write_char, 0xFFFFFFFF)
+        writer.write_char(0x10_ffff)
+        self.assertRaises(ValueError, writer.write_char, 0x11_0000)
+        self.assertRaises(ValueError, writer.write_char, 0xFFFF_FFFF)
         self.assertEqual(writer.finish(),
                          "\0$\u20AC\U0010FFFF")
 
