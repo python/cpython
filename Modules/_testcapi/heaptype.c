@@ -537,7 +537,7 @@ static PyObject *
 pytype_getmodulebydef(PyObject *self, PyObject *type)
 {
     PyObject *mod = PyType_GetModuleByDef((PyTypeObject *)type, _testcapimodule);
-    assert(mod == PyType_GetModuleByDef_DuringGC((PyTypeObject *)type, _testcapimodule));
+    assert(mod == PyType_GetModuleByToken_DuringGC((PyTypeObject *)type, _testcapimodule));
     return Py_XNewRef(mod);
 }
 
