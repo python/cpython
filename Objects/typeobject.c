@@ -5995,7 +5995,7 @@ PyType_GetTypeDataSize(PyTypeObject *cls)
     return result;
 }
 
-static inline void
+static inline void *
 getitemdata(PyObject *obj, bool raise)
 {
     if (!_PyType_HasFeature(Py_TYPE(obj), Py_TPFLAGS_ITEMS_AT_END)) {
