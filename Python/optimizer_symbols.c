@@ -46,6 +46,7 @@ NULL     |                     |      RECORDED_VALUE*
 BOTTOM
 
 
+
 For example, after guarding that the type of an UNKNOWN local is int, we can
 narrow the symbol to KNOWN_CLASS (logically progressing though NON_NULL and
 TYPE_VERSION to get there). Later, we may learn that it is falsey based on the
