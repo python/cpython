@@ -71,7 +71,7 @@ __all__ = [
     "BrokenIter",
     "in_systemd_nspawn_sync_suppressed",
     "run_no_yield_async_fn", "run_yielding_async_fn", "async_yield",
-    "reset_code", "on_github_actions"
+    "reset_code", "on_github_actions", "requires_root", "requires_non_root",
     ]
 
 
@@ -3317,3 +3317,8 @@ def control_characters_c0() -> list[str]:
     C0 control characters defined as the byte range 0x00-0x1F, and 0x7F.
     """
     return [chr(c) for c in range(0x00, 0x20)] + ["\x7F"]
+
+
+_ROOT_IN_POSIX = hasattr(os, 'geteuid') and os.geteuid() == 0
+requires_root = unittest.skipUnless(_ROOT_IN_POSIX, "test needs root privilege")
+requires_non_root = unittest.skipIf(_ROOT_IN_POSIX, "test needs non-root account")
