@@ -1269,16 +1269,25 @@ dummy_func(
 
         macro(CALL_INTRINSIC_1) = _CALL_INTRINSIC_1 + POP_TOP;
 
-        inst(CALL_INTRINSIC_2, (value2_st, value1_st -- res)) {
+        op(_CALL_INTRINSIC_2, (value2_st, value1_st -- res, vs1, vs2)) {
             assert(oparg <= MAX_INTRINSIC_2);
             PyObject *value1 = PyStackRef_AsPyObjectBorrow(value1_st);
             PyObject *value2 = PyStackRef_AsPyObjectBorrow(value2_st);
 
             PyObject *res_o = _PyIntrinsics_BinaryFunctions[oparg].func(tstate, value2, value1);
-            DECREF_INPUTS();
-            ERROR_IF(res_o == NULL);
+
+            if (res_o == NULL) {
+                ERROR_NO_POP();
+            }
+
             res = PyStackRef_FromPyObjectSteal(res_o);
+
+            vs1 = value1_st;
+            vs2 = value2_st;
+            INPUTS_DEAD();
         }
+
+        macro(CALL_INTRINSIC_2) = _CALL_INTRINSIC_2 + POP_TOP + POP_TOP;
 
         tier1 inst(RAISE_VARARGS, (args[oparg] -- )) {
             assert(oparg < 3);
