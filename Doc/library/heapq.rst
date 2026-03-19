@@ -214,6 +214,18 @@ time::
 This is similar to ``sorted(iterable)``, but unlike :func:`sorted`, this
 implementation is not stable.
 
+Using max-heap functions, a reverse (descending) heapsort is equally
+straightforward::
+
+   >>> def heapsort_desc(iterable):
+   ...     h = []
+   ...     for value in iterable:
+   ...         heappush_max(h, value)
+   ...     return [heappop_max(h) for i in range(len(h))]
+   ...
+   >>> heapsort_desc([1, 3, 5, 7, 9, 2, 4, 6, 8, 0])
+   [9, 8, 7, 6, 5, 4, 3, 2, 1, 0]
+
 Heap elements can be tuples.  This is useful for assigning comparison values
 (such as task priorities) alongside the main record being tracked::
 

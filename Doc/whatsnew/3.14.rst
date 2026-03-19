@@ -1387,14 +1387,19 @@ graphlib
 heapq
 -----
 
-* The :mod:`!heapq` module has improved support for working with max-heaps,
-  via the following new functions:
+* The :mod:`!heapq` module now has full public support for max-heaps,
+  providing a symmetric API to the existing min-heap functions.
+  Max-heaps maintain the reverse invariant: ``heap[0]`` is always the
+  *largest* element.  The new functions are:
 
-  * :func:`~heapq.heapify_max`
-  * :func:`~heapq.heappush_max`
-  * :func:`~heapq.heappop_max`
-  * :func:`~heapq.heapreplace_max`
-  * :func:`~heapq.heappushpop_max`
+  * :func:`~heapq.heapify_max`: Transform a list into a max-heap in-place
+  * :func:`~heapq.heappush_max`: Push an item onto a max-heap
+  * :func:`~heapq.heappop_max`: Pop the largest item from a max-heap
+  * :func:`~heapq.heapreplace_max`: Pop largest and push new item in one step
+  * :func:`~heapq.heappushpop_max`: Push new item and pop largest in one step
+
+  These were previously available only as undocumented internal helpers.
+  (Contributed by Stan Ulbrych in :gh:`110067`.)
 
 
 hmac

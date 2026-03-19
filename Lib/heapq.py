@@ -5,7 +5,7 @@ all k, counting elements from 0.  For the sake of comparison,
 non-existing elements are considered to be infinite.  The interesting
 property of a heap is that a[0] is always its smallest element.
 
-Usage:
+Usage (min-heap):
 
 heap = []            # creates an empty heap
 heappush(heap, item) # pushes a new item on the heap
@@ -16,6 +16,18 @@ item = heappushpop(heap, item) # pushes a new item and then returns
                                # the smallest item; the heap size is unchanged
 item = heapreplace(heap, item) # pops and returns smallest item, and adds
                                # new item; the heap size is unchanged
+
+Usage (max-heap):
+
+heap = []                # creates an empty max-heap
+heappush_max(heap, item) # pushes a new item on the max-heap
+item = heappop_max(heap) # pops the largest item from the max-heap
+item = heap[0]           # largest item on the max-heap without popping it
+heapify_max(x)           # transforms list into a max-heap, in-place, in linear time
+item = heappushpop_max(heap, item) # pushes a new item and then returns
+                                   # the largest item; the heap size is unchanged
+item = heapreplace_max(heap, item) # pops and returns largest item, and adds
+                                   # new item; the heap size is unchanged
 
 Our API differs from textbook heap algorithms as follows:
 

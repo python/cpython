@@ -658,7 +658,7 @@ all k, counting elements from 0.  For the sake of comparison,\n\
 non-existing elements are considered to be infinite.  The interesting\n\
 property of a heap is that a[0] is always its smallest element.\n\
 \n\
-Usage:\n\
+Usage (min-heap):\n\
 \n\
 heap = []            # creates an empty heap\n\
 heappush(heap, item) # pushes a new item on the heap\n\
@@ -667,6 +667,16 @@ item = heap[0]       # smallest item on the heap without popping it\n\
 heapify(x)           # transforms list into a heap, in-place, in linear time\n\
 item = heapreplace(heap, item) # pops and returns smallest item, and adds\n\
                                # new item; the heap size is unchanged\n\
+\n\
+Usage (max-heap):\n\
+\n\
+heap = []                # creates an empty max-heap\n\
+heappush_max(heap, item) # pushes a new item on the max-heap\n\
+item = heappop_max(heap) # pops the largest item from the max-heap\n\
+item = heap[0]           # largest item on the max-heap without popping it\n\
+heapify_max(x)           # transforms list into a max-heap, in-place, in linear time\n\
+item = heapreplace_max(heap, item) # pops and returns largest item, and adds\n\
+                                   # new item; the heap size is unchanged\n\
 \n\
 Our API differs from textbook heap algorithms as follows:\n\
 \n\
