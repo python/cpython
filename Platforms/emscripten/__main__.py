@@ -413,10 +413,41 @@ def make_mpdec(context, working_dir):
     write_library_config(prefix, "mpdec", mpdec_config, context.quiet)
 
 
+def calculate_node_path():
+    node_version = os.environ.get("PYTHON_NODE_VERSION", None)
+    if node_version is None:
+        node_version = load_config_toml()["node-version"]
+
+    subprocess.run(
+        [
+            "bash",
+            "-c",
+            f"source ~/.nvm/nvm.sh && nvm install {node_version}",
+        ],
+        check=True,
+    )
+
+    res = subprocess.run(
+        [
+            "bash",
+            "-c",
+            f"source ~/.nvm/nvm.sh && nvm which {node_version}",
+        ],
+        text=True,
+        capture_output=True,
+        check=True,
+    )
+    return res.stdout.strip()
+
+
 @subdir("host_dir", clean_ok=True)
 def configure_emscripten_python(context, working_dir):
     """Configure the emscripten/host build."""
     validate_emsdk_version(context.emsdk_cache)
+    host_runner = context.host_runner
+    if host_runner is None:
+        host_runner = calculate_node_path()
+
     paths = context.build_paths
     config_site = os.fsdecode(EMSCRIPTEN_DIR / "config.site-wasm32-emscripten")
 
@@ -435,19 +466,6 @@ def configure_emscripten_python(context, working_dir):
     )
     if pydebug:
         sysconfig_data += "-pydebug"
-
-    host_runner = context.host_runner
-    if node_version := os.environ.get("PYTHON_NODE_VERSION", None):
-        res = subprocess.run(
-            [
-                "bash",
-                "-c",
-                f"source ~/.nvm/nvm.sh && nvm which {node_version}",
-            ],
-            text=True,
-            capture_output=True,
-        )
-        host_runner = res.stdout.strip()
     pkg_config_path_dir = (paths["prefix_dir"] / "lib/pkgconfig/").resolve()
     env_additions = {
         "CONFIG_SITE": config_site,
@@ -613,8 +631,6 @@ def add_cross_build_dir_option(subcommand):
 
 
 def main():
-    default_host_runner = "node"
-
     parser = argparse.ArgumentParser()
     subcommands = parser.add_subparsers(dest="subcommand")
 
@@ -744,10 +760,10 @@ def main():
         subcommand.add_argument(
             "--host-runner",
             action="store",
-            default=default_host_runner,
+            default=None,
             dest="host_runner",
-            help="Command template for running the emscripten host"
-            f"`{default_host_runner}`)",
+            help="Command template for running the emscripten host "
+            "(default: use nvm to install the node version specified in config.toml)",
         )
 
     context = parser.parse_args()
