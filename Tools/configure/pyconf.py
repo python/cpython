@@ -190,6 +190,48 @@ _DIR_VARS: list[tuple[str, str, str]] = [
 ]
 
 
+def _load_config_site() -> None:
+    """Load CONFIG_SITE file, if set.
+
+    CONFIG_SITE is a shell script containing simple VAR=VALUE assignments
+    used to pre-seed cache variables for cross-compilation.  Only lines
+    matching ``NAME=VALUE`` are processed; comments and blank lines are
+    skipped.  Values already present in ``os.environ`` (e.g. from
+    command-line ``VAR=VALUE`` arguments) or already set on ``vars`` are
+    NOT overridden.
+
+    ``yes``/``no`` values are converted to ``True``/``False`` via
+    ``_cache_deserialize`` so that truthiness checks in conf_*.py work
+    the same way as autoconf's ``test "x$var" = xyes``.
+    """
+    config_site = os.environ.get("CONFIG_SITE", "")
+    if not config_site or not os.path.isfile(config_site):
+        return
+    with open(config_site) as f:
+        for line in f:
+            line = line.strip()
+            if not line or line.startswith("#"):
+                continue
+            m = re.match(r"^([A-Za-z_][A-Za-z0-9_]*)=(.*)", line)
+            if not m:
+                continue
+            name, value = m.group(1), m.group(2)
+            # Strip surrounding quotes (single or double)
+            if len(value) >= 2 and value[0] == value[-1] and value[0] in ("'", '"'):
+                value = value[1:-1]
+            # Command-line VAR=VALUE (already in os.environ) takes precedence
+            if name not in os.environ and not vars.is_set(name):
+                converted = _cache_deserialize(value)
+                setattr(vars, name, converted)
+                # Also populate the cache dict so that check_func(),
+                # check_header(), etc. honour the pre-seeded value and
+                # skip the compile/link test (matching autoconf behaviour
+                # where CONFIG_SITE sets ac_cv_* shell variables that
+                # AC_CHECK_FUNC reads as cached results).
+                if name.startswith("ac_cv_"):
+                    cache[name] = converted
+
+
 def init_args() -> None:
     """Parse sys.argv early: handle VAR=VALUE, --help, --version, behaviour flags,
     and standard directory arguments.  Must be called before configure parts run.
@@ -299,6 +341,12 @@ def init_args() -> None:
         new_argv.append(arg)
 
     sys.argv[:] = new_argv
+
+    # Load CONFIG_SITE file if set (autoconf compatibility).
+    # CONFIG_SITE is a shell script with simple VAR=VALUE assignments that
+    # pre-seed cache variables for cross-compilation.  Command-line VAR=VALUE
+    # arguments (already placed into os.environ above) take precedence.
+    _load_config_site()
 
     # Load cache file if requested
     if cache_file:

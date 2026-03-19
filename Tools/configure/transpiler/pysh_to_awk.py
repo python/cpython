@@ -3300,6 +3300,8 @@ def transform_program(program: PyshProgram) -> A.Program:
         )
     # Parse args
     begin_stmts.append(A.ExprStmt(A.FuncCall("pyconf_parse_args", [])))
+    # Load CONFIG_SITE (after arg parsing so VAR=VALUE overrides take precedence)
+    begin_stmts.append(A.ExprStmt(A.FuncCall("pyconf_load_config_site", [])))
     # Check --help
     begin_stmts.append(
         A.If(

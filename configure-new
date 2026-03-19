@@ -76,6 +76,41 @@ function pyconf_cleanup() {
 		system("rm -rf " _pyconf_tmpdir)
 }
 
+function pyconf_load_config_site(    config_site, line, eq, name, value) {
+	# Load CONFIG_SITE file if set (autoconf compatibility).
+	# CONFIG_SITE is a shell script with simple VAR=VALUE assignments that
+	# pre-seed cache variables for cross-compilation.  Command-line VAR=VALUE
+	# arguments and existing environment variables take precedence.
+	config_site = ENVIRON["CONFIG_SITE"]
+	if (config_site == "") return
+	while ((getline line < config_site) > 0) {
+		# Skip comments and blank lines
+		sub(/^[ \t]+/, "", line)
+		if (line == "" || substr(line, 1, 1) == "#") continue
+		# Match VAR=VALUE
+		eq = index(line, "=")
+		if (eq == 0) continue
+		name = substr(line, 1, eq - 1)
+		if (!match(name, /^[A-Za-z_][A-Za-z0-9_]*$/)) continue
+		value = substr(line, eq + 1)
+		# Strip surrounding quotes (single or double)
+		if (length(value) >= 2) {
+			if ((substr(value, 1, 1) == "'" && substr(value, length(value), 1) == "'") || \
+			    (substr(value, 1, 1) == "\"" && substr(value, length(value), 1) == "\""))
+				value = substr(value, 2, length(value) - 2)
+		}
+		# Don't override existing env vars or already-set V[] entries
+		if (name in ENVIRON) continue
+		if (name in V) continue
+		V[name] = value
+		# Also populate CACHE for ac_cv_* keys so that check_func(),
+		# check_header(), etc. honour the pre-seeded value
+		if (substr(name, 1, 6) == "ac_cv_")
+			CACHE[name] = value
+	}
+	close(config_site)
+}
+
 # ---------------------------------------------------------------------------
 # Logging / messaging
 # ---------------------------------------------------------------------------
@@ -8181,6 +8216,7 @@ BEGIN {
 	_pyconf_register_options()
 	_pyconf_init_constants()
 	pyconf_parse_args()
+	pyconf_load_config_site()
 	if (pyconf_check_help()) {
 		exit 0
 	}
