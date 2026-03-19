@@ -100,7 +100,13 @@ def b64decode(s, altchars=None, validate=_NOT_SPECIFIED, *, ignorechars=_NOT_SPE
                     break
             s = s.translate(bytes.maketrans(altchars, b'+/'))
         else:
-            trans = bytes.maketrans(b'+/' + altchars, altchars + b'+/')
+            trans_in = set(b'+/') - set(altchars)
+            if len(trans_in) == 2:
+                # we can't use the reqult of unordered sets here
+                trans = bytes.maketrans(altchars + b'+/', b'+/' + altchars)
+            else:
+                trans = bytes.maketrans(altchars + bytes(trans_in),
+                                        b'+/' + bytes(set(altchars) - set(b'+/')))
             s = s.translate(trans)
             ignorechars = ignorechars.translate(trans)
     if ignorechars is _NOT_SPECIFIED:
