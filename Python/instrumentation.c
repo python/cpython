@@ -1139,6 +1139,25 @@ static const char *const event_names [] = {
     [PY_MONITORING_EVENT_STOP_ITERATION] = "STOP_ITERATION",
 };
 
+/* Disable a local-but-not-instrumented event (e.g. PY_UNWIND) for a single
+ * tool on this code object.  Must be called with the world stopped or the
+ * code lock held. */
+static void
+remove_local_tool(PyCodeObject *code, PyInterpreterState *interp,
+                  int event, int tool)
+{
+    ASSERT_WORLD_STOPPED_OR_LOCKED(code);
+    assert(PY_MONITORING_IS_LOCAL_EVENT(event));
+    assert(!PY_MONITORING_IS_INSTRUMENTED_EVENT(event));
+    assert(code->_co_monitoring);
+    code->_co_monitoring->local_monitors.tools[event] &= ~(1 << tool);
+    /* Recompute active_monitors for this event as the union of global and
+     * (now updated) local monitors. */
+    code->_co_monitoring->active_monitors.tools[event] =
+        interp->monitors.tools[event] |
+        code->_co_monitoring->local_monitors.tools[event];
+}
+
 static int
 call_instrumentation_vector(
     _Py_CODEUNIT *instr, PyThreadState *tstate, int event,
@@ -1183,7 +1202,19 @@ call_instrumentation_vector(
         }
         else {
             /* DISABLE */
-            if (!PY_MONITORING_IS_INSTRUMENTED_EVENT(event)) {
+            if (PY_MONITORING_IS_INSTRUMENTED_EVENT(event)) {
+                _PyEval_StopTheWorld(interp);
+                remove_tools(code, offset, event, 1 << tool);
+                _PyEval_StartTheWorld(interp);
+            }
+            else if (PY_MONITORING_IS_LOCAL_EVENT(event)) {
+                /* Local but not tied to a bytecode instruction: disable for
+                 * this code object entirely. */
+                _PyEval_StopTheWorld(interp);
+                remove_local_tool(code, interp, event, tool);
+                _PyEval_StartTheWorld(interp);
+            }
+            else {
                 PyErr_Format(PyExc_ValueError,
                               "Cannot disable %s events. Callback removed.",
                              event_names[event]);
@@ -1191,12 +1222,6 @@ call_instrumentation_vector(
                 Py_CLEAR(interp->monitoring_callables[tool][event]);
                 err = -1;
                 break;
-            }
-            else {
-                PyInterpreterState *interp = tstate->interp;
-                _PyEval_StopTheWorld(interp);
-                remove_tools(code, offset, event, 1 << tool);
-                _PyEval_StartTheWorld(interp);
             }
         }
     }

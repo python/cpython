@@ -198,11 +198,11 @@ INSTRUMENTED_EVENTS = [
 
 EXCEPT_EVENTS = [
     (E.RAISE, "raise"),
-    (E.PY_UNWIND, "unwind"),
     (E.EXCEPTION_HANDLED, "exception_handled"),
 ]
 
 SIMPLE_EVENTS = INSTRUMENTED_EVENTS + EXCEPT_EVENTS + [
+    (E.PY_UNWIND, "unwind"),  # local event (not in EXCEPT_EVENTS: DISABLE is legal)
     (E.C_RAISE, "c_raise"),
     (E.C_RETURN, "c_return"),
 ]
@@ -1483,6 +1483,72 @@ class TestLocalEvents(MonitoringTestBase, unittest.TestCase):
     def test_set_non_local_event(self):
         with self.assertRaises(ValueError):
             sys.monitoring.set_local_events(TEST_TOOL, just_call.__code__, E.RAISE)
+
+    def test_local_py_unwind(self):
+        """PY_UNWIND fires as a local event only for the instrumented code object."""
+
+        def foo():
+            raise RuntimeError("test")
+
+        def bar():
+            raise RuntimeError("test")
+
+        events = []
+
+        def callback(code, offset, exc):
+            events.append(code.co_name)
+
+        try:
+            sys.monitoring.register_callback(TEST_TOOL, E.PY_UNWIND, callback)
+            sys.monitoring.set_local_events(TEST_TOOL, foo.__code__, E.PY_UNWIND)
+
+            try:
+                foo()
+            except RuntimeError:
+                pass
+
+            try:
+                bar()  # should NOT trigger the callback
+            except RuntimeError:
+                pass
+
+            self.assertEqual(events, ['foo'])
+        finally:
+            sys.monitoring.set_local_events(TEST_TOOL, foo.__code__, 0)
+            sys.monitoring.register_callback(TEST_TOOL, E.PY_UNWIND, None)
+
+    def test_local_py_unwind_disable(self):
+        """Returning DISABLE from a PY_UNWIND callback disables it for that code object."""
+
+        call_count = 0
+
+        def foo():
+            raise RuntimeError("test")
+
+        def callback(code, offset, exc):
+            nonlocal call_count
+            call_count += 1
+            return sys.monitoring.DISABLE
+
+        try:
+            sys.monitoring.register_callback(TEST_TOOL, E.PY_UNWIND, callback)
+            sys.monitoring.set_local_events(TEST_TOOL, foo.__code__, E.PY_UNWIND)
+
+            try:
+                foo()
+            except RuntimeError:
+                pass
+            self.assertEqual(call_count, 1)  # fired once
+
+            try:
+                foo()
+            except RuntimeError:
+                pass
+            self.assertEqual(call_count, 1)  # not fired again — disabled by DISABLE return
+
+        finally:
+            sys.monitoring.set_local_events(TEST_TOOL, foo.__code__, 0)
+            sys.monitoring.register_callback(TEST_TOOL, E.PY_UNWIND, None)
 
 def line_from_offset(code, offset):
     for start, end, line in code.co_lines():
