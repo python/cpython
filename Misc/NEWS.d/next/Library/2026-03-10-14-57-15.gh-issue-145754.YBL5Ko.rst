@@ -1,3 +1,2 @@
 Request signature during mock autospec with ``FORWARDREF`` annotation format.
-This prevents runtime errors when a type referred in a type hint is
-imported within a ``TYPE_CHECKING`` block.
+This prevents runtime errors when an annotation uses a name that is not defined at runtime.
