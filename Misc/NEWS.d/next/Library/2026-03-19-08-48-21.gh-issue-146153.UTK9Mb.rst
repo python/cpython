@@ -1,1 +1,1 @@
-Changed the `_capability_names` dictionary in Lib/curses/has_key.py to a `frozenmap`, since it is private and requires no modifications. Contributed by Jonathan Dung.
+Changed the _capability_names dictionary in :mod:`curses.has_key` to a `frozenmap`, since it is private and requires no modifications. Contributed by Jonathan Dung.
