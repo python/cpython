@@ -46,16 +46,18 @@ void
 _PyCode_Quicken(_Py_CODEUNIT *instructions, Py_ssize_t size, int enable_counters)
 {
     #if ENABLE_SPECIALIZATION
-    _Py_BackoffCounter jump_counter, adaptive_counter;
+    _Py_BackoffCounter jump_counter, adaptive_counter, resume_counter;
     if (enable_counters) {
         PyThreadState *tstate = _PyThreadState_GET();
         PyInterpreterState *interp = tstate->interp;
         jump_counter = initial_jump_backoff_counter(&interp->opt_config);
         adaptive_counter = adaptive_counter_warmup();
+        resume_counter = initial_resume_backoff_counter(&interp->opt_config);
     }
     else {
         jump_counter = initial_unreachable_backoff_counter();
         adaptive_counter = initial_unreachable_backoff_counter();
+        resume_counter = initial_unreachable_backoff_counter();
     }
     int opcode = 0;
     int oparg = 0;
@@ -69,6 +71,9 @@ _PyCode_Quicken(_Py_CODEUNIT *instructions, Py_ssize_t size, int enable_counters
             switch (opcode) {
                 case JUMP_BACKWARD:
                     instructions[i + 1].counter = jump_counter;
+                    break;
+                case RESUME:
+                    instructions[i + 1].counter = resume_counter;
                     break;
                 case POP_JUMP_IF_FALSE:
                 case POP_JUMP_IF_TRUE:
@@ -2781,6 +2786,28 @@ _Py_Specialize_ContainsOp(_PyStackRef value_st, _Py_CODEUNIT *instr)
     return;
 }
 
+
+void
+_Py_Specialize_Resume(_Py_CODEUNIT *instr, PyThreadState *tstate, _PyInterpreterFrame *frame)
+{
+    if (tstate->tracing == 0 && instr->op.code == RESUME) {
+        if (tstate->interp->jit) {
+            PyCodeObject *co = (PyCodeObject *)PyStackRef_AsPyObjectBorrow(frame->f_executable);
+            if (co != NULL &&
+                PyCode_Check(co) &&
+                (co->co_flags & (CO_GENERATOR | CO_COROUTINE | CO_ASYNC_GENERATOR)) == 0) {
+                specialize(instr, RESUME_CHECK_JIT);
+                set_counter((_Py_BackoffCounter *)instr + 1, initial_resume_backoff_counter(&tstate->interp->opt_config));
+                return;
+            }
+        }
+        specialize(instr, RESUME_CHECK);
+        return;
+    }
+    unspecialize(instr);
+    return;
+}
+
 #ifdef Py_STATS
 void
 _Py_GatherStats_GetIter(_PyStackRef iterable)
@@ -2883,5 +2910,6 @@ const struct _PyCode8 _Py_InitCleanup = {
         EXIT_INIT_CHECK, 0,
         RETURN_VALUE, 0,
         RESUME, RESUME_AT_FUNC_START,
+        CACHE, 0, /* RESUME's cache */
     }
 };

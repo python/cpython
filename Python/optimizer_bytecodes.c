@@ -1091,6 +1091,24 @@ dummy_func(void) {
         sym_set_type(iter, &PyTuple_Type);
     }
 
+    op(_ITER_CHECK_LIST, (iter, null_or_index -- iter, null_or_index)) {
+        if (sym_matches_type(iter, &PyList_Type)) {
+            ADD_OP(_NOP, 0, 0);
+        }
+        else {
+            sym_set_type(iter, &PyList_Type);
+        }
+    }
+
+    op(_ITER_CHECK_RANGE, (iter, null_or_index -- iter, null_or_index)) {
+        if (sym_matches_type(iter, &PyRange_Type)) {
+            ADD_OP(_NOP, 0, 0);
+        }
+        else {
+            sym_set_type(iter, &PyRange_Type);
+        }
+    }
+
     op(_ITER_NEXT_RANGE, (iter, null_or_index -- iter, null_or_index, next)) {
        next = sym_new_type(ctx, &PyLong_Type);
     }
@@ -1175,6 +1193,11 @@ dummy_func(void) {
             s = sym_new_unknown(ctx);
             a = sym_new_unknown(ctx);
         }
+    }
+
+    op(_CALL_INTRINSIC_1, (value -- res, v)) {
+        res = sym_new_not_null(ctx);
+        v = value;
     }
 
     op(_GUARD_IS_TRUE_POP, (flag -- )) {
@@ -1301,6 +1324,11 @@ dummy_func(void) {
 
     op(_BUILD_SET, (values[oparg] -- set)) {
         set = sym_new_type(ctx, &PySet_Type);
+    }
+
+    op(_SET_UPDATE, (set, unused[oparg-1], iterable -- set, unused[oparg-1], i)) {
+        (void)set;
+        i = iterable;
     }
 
     op(_UNPACK_SEQUENCE_TWO_TUPLE, (seq -- val1, val0)) {
@@ -1755,17 +1783,6 @@ dummy_func(void) {
         // TO DO
         // Normal function calls to known functions
         // do not need an IP guard.
-    }
-
-    op(_GUARD_CODE_VERSION, (version/2 -- )) {
-        PyCodeObject *co = get_current_code_object(ctx);
-        if (co->co_version == version) {
-            _Py_BloomFilter_Add(dependencies, co);
-            REPLACE_OP(this_instr, _NOP, 0, 0);
-        }
-        else {
-            ctx->done = true;
-        }
     }
 
     op(_GUARD_IP_YIELD_VALUE, (ip/4 --)) {

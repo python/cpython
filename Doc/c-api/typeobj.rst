@@ -3057,6 +3057,24 @@ Buffer Object Structures
 
    (5) Return ``0``.
 
+   **Thread safety:**
+
+   In the :term:`free-threaded build`, implementations must ensure:
+
+   * The export counter increment in step (3) is atomic.
+
+   * The underlying buffer data remains valid and at a stable memory
+     location for the lifetime of all exports.
+
+   * For objects that support resizing or reallocation (such as
+     :class:`bytearray`), the export counter is checked atomically before
+     such operations, and :exc:`BufferError` is raised if exports exist.
+
+   * The function is safe to call concurrently from multiple threads.
+
+   See also :ref:`thread-safety-memoryview` for the Python-level
+   thread safety guarantees of :class:`memoryview` objects.
+
    If *exporter* is part of a chain or tree of buffer providers, two main
    schemes can be used:
 
@@ -3101,6 +3119,16 @@ Buffer Object Structures
    (1) Decrement an internal counter for the number of exports.
 
    (2) If the counter is ``0``, free all memory associated with *view*.
+
+   **Thread safety:**
+
+   In the :term:`free-threaded build`:
+
+   * The export counter decrement in step (1) must be atomic.
+
+   * Resource cleanup when the counter reaches zero must be done atomically,
+     as the final release may race with concurrent releases from other
+     threads and dellocation must only happen once.
 
    The exporter MUST use the :c:member:`~Py_buffer.internal` field to keep
    track of buffer-specific resources. This field is guaranteed to remain

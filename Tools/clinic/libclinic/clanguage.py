@@ -101,7 +101,7 @@ class CLanguage(Language):
         code = self.COMPILER_DEPRECATION_WARNING_PROTOTYPE.format(
             major=minversion[0],
             minor=minversion[1],
-            message=libclinic.c_repr(message),
+            message=libclinic.c_str_repr(message),
         )
         return libclinic.normalize_snippet(code)
 

@@ -15,7 +15,7 @@ from test.support import (script_helper, requires_specialization,
 
 _testinternalcapi = import_helper.import_module("_testinternalcapi")
 
-from _testinternalcapi import _PY_NSMALLPOSINTS, TIER2_THRESHOLD
+from _testinternalcapi import _PY_NSMALLPOSINTS, TIER2_THRESHOLD, TIER2_RESUME_THRESHOLD
 
 #For test of issue 136154
 GLOBAL_136154 = 42
@@ -321,6 +321,23 @@ class TestUops(unittest.TestCase):
         self.assertIsNotNone(ex)
         uops = get_opnames(ex)
         self.assertIn("_JUMP_TO_TOP", uops)
+
+    def test_resume(self):
+        def testfunc(x):
+            if x <= 1:
+                return 1
+            return testfunc(x-1)
+
+        for _ in range((TIER2_RESUME_THRESHOLD + 99)//100):
+            testfunc(101)
+
+        ex = get_first_executor(testfunc)
+        self.assertIsNotNone(ex)
+        uops = get_opnames(ex)
+        # 0. _START_EXECUTOR
+        # 1. _MAKE_WARM
+        # 2. _TIER2_RESUME_CHECK
+        self.assertEqual(uops[2], "_TIER2_RESUME_CHECK")
 
     def test_jump_forward(self):
         def testfunc(n):
@@ -1419,7 +1436,7 @@ class TestUopsOptimization(unittest.TestCase):
 
         def thing(a):
             x = 0
-            for i in range(TIER2_THRESHOLD * 2 + 1):
+            for i in range(TIER2_THRESHOLD + 1):
                 x += a.attr
                 # The first TIER2_THRESHOLD iterations we set the attribute on
                 # this dummy class, which shouldn't trigger the type watcher.
@@ -1437,8 +1454,7 @@ class TestUopsOptimization(unittest.TestCase):
 
         res, ex = self._run_with_optimizer(thing, Foo())
         opnames = list(iter_opnames(ex))
-        self.assertIsNotNone(ex)
-        self.assertEqual(res, TIER2_THRESHOLD * 6 + 1)
+        self.assertEqual(res, TIER2_THRESHOLD * 2 + 2)
         call = opnames.index("_CALL_BUILTIN_FAST")
         load_attr_top = opnames.index("_POP_TOP_LOAD_CONST_INLINE_BORROW", 0, call)
         load_attr_bottom = opnames.index("_POP_TOP_LOAD_CONST_INLINE_BORROW", call)
@@ -2545,6 +2561,21 @@ class TestUopsOptimization(unittest.TestCase):
         self.assertIn("_CALL_METHOD_DESCRIPTOR_O", uops)
         self.assertIn("_POP_TOP_NOP", uops)
         self.assertLessEqual(count_ops(ex, "_POP_TOP"), 4)
+
+    def test_call_intrinsic_1(self):
+        def testfunc(n):
+            x = 0
+            for _ in range(n):
+                +x
+            return x
+
+        res, ex = self._run_with_optimizer(testfunc, TIER2_THRESHOLD)
+        self.assertEqual(res, 0)
+        uops = get_opnames(ex)
+
+        self.assertIn("_CALL_INTRINSIC_1", uops)
+        self.assertEqual(count_ops(ex, "_POP_TOP_NOP"), 1)
+        self.assertLessEqual(count_ops(ex, "_POP_TOP"), 2)
 
     def test_get_len_with_const_tuple(self):
         def testfunc(n):
@@ -3956,7 +3987,6 @@ class TestUopsOptimization(unittest.TestCase):
             for _ in range(n):
                 func = lambda: 1
                 x += func()
-
             return x
 
         res, ex = self._run_with_optimizer(testfunc, TIER2_THRESHOLD)
@@ -3965,6 +3995,22 @@ class TestUopsOptimization(unittest.TestCase):
 
         self.assertIn("_MAKE_FUNCTION", uops)
         self.assertEqual(uops.count("_POP_TOP_NOP"), 2)
+
+    def test_iter_check_list(self):
+        def testfunc(n):
+            x = 0
+            for _ in range(n):
+                l = [1]
+                for num in l: # unguarded
+                    x += num
+            return x
+
+        res, ex = self._run_with_optimizer(testfunc, TIER2_THRESHOLD)
+        self.assertEqual(res, TIER2_THRESHOLD)
+        uops = get_opnames(ex)
+
+        self.assertIn("_BUILD_LIST", uops)
+        self.assertNotIn("_ITER_CHECK_LIST", uops)
 
     def test_match_class(self):
         def testfunc(n):
@@ -3984,6 +4030,21 @@ class TestUopsOptimization(unittest.TestCase):
 
         self.assertIn("_MATCH_CLASS", uops)
         self.assertEqual(count_ops(ex, "_POP_TOP_NOP"), 4)
+
+    def test_set_update(self):
+        def testfunc(n):
+            s = {1, 2, 3}
+            for _ in range(n):
+                x = {*s}
+            return x
+
+        res, ex = self._run_with_optimizer(testfunc, TIER2_THRESHOLD)
+        self.assertEqual(res, {1, 2, 3})
+        uops = get_opnames(ex)
+
+        self.assertIn("_SET_UPDATE", uops)
+        self.assertEqual(count_ops(ex, "_POP_TOP_NOP"), 1)
+        self.assertLessEqual(count_ops(ex, "_POP_TOP"), 2)
 
     def test_143026(self):
         # https://github.com/python/cpython/issues/143026
