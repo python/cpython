@@ -567,7 +567,7 @@ Example of Client Usage
        except Error as v:
            print("ERROR", v)
 
-To access an XML-RPC server through a HTTP proxy, you need to define a custom
+To access an XML-RPC server through an HTTP proxy, you need to define a custom
 transport.  The following example shows how::
 
    import http.client

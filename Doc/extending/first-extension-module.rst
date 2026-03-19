@@ -670,7 +670,7 @@ on :py:attr:`sys.path`.
    ":c:type:`!PyFunctionDef`".
 .. [#why-pylongfromlong] The name :c:func:`PyLong_FromLong`
    might not seem obvious.
-   ``PyLong`` refers to a the Python :py:class:`int`, which was originally
+   ``PyLong`` refers to the Python :py:class:`int`, which was originally
    called ``long``; the ``FromLong`` refers to the C ``long`` (or ``long int``)
    type.
 .. [#why-pyunicodeasutf8] Here, ``PyUnicode`` refers to the original name of

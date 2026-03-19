@@ -64,7 +64,7 @@ module is the first line of its documentation string.
 
 You can also use :program:`pydoc` to start an HTTP server on the local machine
 that will serve documentation to visiting web browsers.  :program:`python -m pydoc -p 1234`
-will start a HTTP server on port 1234, allowing you to browse the
+will start an HTTP server on port 1234, allowing you to browse the
 documentation at ``http://localhost:1234/`` in your preferred web browser.
 Specifying ``0`` as the port number will select an arbitrary unused port.
 

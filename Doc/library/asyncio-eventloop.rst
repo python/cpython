@@ -487,7 +487,7 @@ Opening network connections
 
    Other arguments:
 
-   * *ssl*: if given and not false, a SSL/TLS transport is created
+   * *ssl*: if given and not false, an SSL/TLS transport is created
      (by default a plain TCP transport is created).  If *ssl* is
      a :class:`ssl.SSLContext` object, this context is used to create
      the transport; if *ssl* is :const:`True`, a default context returned

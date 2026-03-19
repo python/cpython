@@ -66,7 +66,7 @@ Available make targets are:
   starts a local server, and automatically reloads the page in your browser
   when you make changes to reST files (Unix only).
 
-* "htmlhelp", which builds HTML files and a HTML Help project file usable to
+* "htmlhelp", which builds HTML files and an HTML Help project file usable to
   convert them into a single Compiled HTML (.chm) file -- these are popular
   under Microsoft Windows, but very handy on every platform.
 

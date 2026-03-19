@@ -991,11 +991,11 @@ supports sending logging messages to a web server, using either ``GET`` or
 
    Returns a new instance of the :class:`HTTPHandler` class. The *host* can be
    of the form ``host:port``, should you need to use a specific port number.  If
-   no *method* is specified, ``GET`` is used. If *secure* is true, a HTTPS
+   no *method* is specified, ``GET`` is used. If *secure* is true, an HTTPS
    connection will be used. The *context* parameter may be set to a
    :class:`ssl.SSLContext` instance to configure the SSL settings used for the
    HTTPS connection. If *credentials* is specified, it should be a 2-tuple
-   consisting of userid and password, which will be placed in a HTTP
+   consisting of userid and password, which will be placed in an HTTP
    'Authorization' header using Basic authentication. If you specify
    credentials, you should also specify secure=True so that your userid and
    password are not passed in cleartext across the wire.

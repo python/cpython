@@ -369,7 +369,7 @@ General Options
      * :func:`!sys._stats_clear`: Clears the statistics.
      * :func:`!sys._stats_dump`: Dump statistics to file, and clears the statistics.
 
-   The statistics will be dumped to a arbitrary (probably unique) file in
+   The statistics will be dumped to an arbitrary (probably unique) file in
    ``/tmp/py_stats/`` (Unix) or ``C:\temp\py_stats\`` (Windows). If that
    directory does not exist, results will be printed on stderr.
 

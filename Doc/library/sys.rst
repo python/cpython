@@ -2147,7 +2147,7 @@ always available. Unless explicitly noted otherwise, all variables are read-only
    returned by the :func:`open` function.  Their parameters are chosen as
    follows:
 
-   * The encoding and error handling are is initialized from
+   * The encoding and error handling are initialized from
      :c:member:`PyConfig.stdio_encoding` and :c:member:`PyConfig.stdio_errors`.
 
      On Windows, UTF-8 is used for the console device.  Non-character

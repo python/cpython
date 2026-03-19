@@ -2188,7 +2188,7 @@ bdb
 ---
 
 * The basic debugger now has a :mod:`sys.monitoring`-based backend,
-  which can be selected via the passing ``'monitoring'``
+  which can be selected by passing ``'monitoring'``
   to the :class:`~bdb.Bdb` class's new *backend* parameter.
   (Contributed by Tian Gao in :gh:`124533`.)
 

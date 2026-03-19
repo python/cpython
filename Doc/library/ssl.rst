@@ -293,7 +293,7 @@ Exceptions
 .. exception:: SSLSyscallError
 
    A subclass of :exc:`SSLError` raised when a system error was encountered
-   while trying to fulfill an operation on a SSL socket.  Unfortunately,
+   while trying to fulfill an operation on an SSL socket.  Unfortunately,
    there is no easy way to inspect the original errno number.
 
    .. versionadded:: 3.3
@@ -1645,7 +1645,7 @@ to speed up repeated connections from the same clients.
    entry is a dict like the output of :meth:`SSLSocket.getpeercert`. Otherwise
    the method returns a list of DER-encoded certificates. The returned list
    does not contain certificates from *capath* unless a certificate was
-   requested and loaded by a SSL connection.
+   requested and loaded by an SSL connection.
 
    .. note::
       Certificates in a capath directory aren't loaded unless they have
@@ -2434,7 +2434,7 @@ should use the following idiom::
 Client-side operation
 ^^^^^^^^^^^^^^^^^^^^^
 
-This example creates a SSL context with the recommended security settings
+This example creates an SSL context with the recommended security settings
 for client sockets, including automatic certificate verification::
 
    >>> context = ssl.create_default_context()
@@ -2620,7 +2620,7 @@ thus several things you need to be aware of:
   and :meth:`SSLSocket.send` failures, and retry after another call to
   :func:`~select.select`.
 
-- Conversely, since the SSL layer has its own framing, a SSL socket may
+- Conversely, since the SSL layer has its own framing, an SSL socket may
   still have data available for reading without :func:`~select.select`
   being aware of it.  Therefore, you should first call
   :meth:`SSLSocket.recv` to drain any potentially available data, and then
@@ -2824,7 +2824,7 @@ validation and hostname checking, and try to choose reasonably secure
 protocol and cipher settings.
 
 For example, here is how you would use the :class:`smtplib.SMTP` class to
-create a trusted, secure connection to a SMTP server::
+create a trusted, secure connection to an SMTP server::
 
    >>> import ssl, smtplib
    >>> smtp = smtplib.SMTP("mail.python.org", port=587)
@@ -2893,7 +2893,7 @@ Cipher selection
 ''''''''''''''''
 
 If you have advanced security requirements, fine-tuning of the ciphers
-enabled when negotiating a SSL session is possible through the
+enabled when negotiating an SSL session is possible through the
 :meth:`SSLContext.set_ciphers` method.  Starting from Python 3.2.3, the
 ssl module disables certain weak ciphers by default, but you may want
 to further restrict the cipher choice. Be sure to read OpenSSL's documentation

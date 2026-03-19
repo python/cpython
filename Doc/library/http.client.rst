@@ -131,7 +131,7 @@ This module provides the following function:
 
 .. function:: parse_headers(fp)
 
-   Parse the headers from a file pointer *fp* representing a HTTP
+   Parse the headers from a file pointer *fp* representing an HTTP
    request/response. The file has to be a :class:`~io.BufferedIOBase` reader
    (i.e. not text) and must provide a valid :rfc:`5322` style header.
 
@@ -142,7 +142,7 @@ This module provides the following function:
    After returning, the file pointer *fp* is ready to read the HTTP body.
 
    .. note::
-      :meth:`parse_headers` does not parse the start-line of a HTTP message;
+      :meth:`parse_headers` does not parse the start-line of an HTTP message;
       it only parses the ``Name: value`` lines. The file has to be ready to
       read these field lines, so the first line should already be consumed
       before calling the function.
@@ -209,7 +209,7 @@ The following exceptions are raised as appropriate:
 
 .. exception:: BadStatusLine
 
-   A subclass of :exc:`HTTPException`.  Raised if a server responds with a HTTP
+   A subclass of :exc:`HTTPException`.  Raised if a server responds with an HTTP
    status code that we don't understand.
 
 
@@ -373,13 +373,13 @@ HTTPConnection Objects
    the CONNECT request.
 
    As HTTP/1.1 is used for HTTP CONNECT tunnelling request, `as per the RFC
-   <https://datatracker.ietf.org/doc/html/rfc7231#section-4.3.6>`_, a HTTP ``Host:``
+   <https://datatracker.ietf.org/doc/html/rfc7231#section-4.3.6>`_, an HTTP ``Host:``
    header must be provided, matching the authority-form of the request target
-   provided as the destination for the CONNECT request. If a HTTP ``Host:``
+   provided as the destination for the CONNECT request. If an HTTP ``Host:``
    header is not provided via the headers argument, one is generated and
    transmitted automatically.
 
-   For example, to tunnel through a HTTPS proxy server running locally on port
+   For example, to tunnel through an HTTPS proxy server running locally on port
    8080, we would pass the address of the proxy to the :class:`HTTPSConnection`
    constructor, and the address of the host that we eventually want to reach to
    the :meth:`~HTTPConnection.set_tunnel` method::
