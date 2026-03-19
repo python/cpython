@@ -151,19 +151,21 @@ class WaveIeeeFloatingPointTest(WaveTest, unittest.TestCase):
     comptype = 'NONE'
     compname = 'not compressed'
     frames = bytes.fromhex("""\
-      60598B3C001423BA 1FB4163F8054FA3B 0E4FC43E80C51D3D 53467EBF4030843D \
-      FC84D0BE304C563D 3053113F40BEFC3C B72F00BFC03E583C E0FEDA3C805142BC \
-      54510FBFE02638BD 569F16BF40FDCABD C060A63EECA421BE 3CE5523E2C3349BE \
-      0C2E10BE14725BBE 5268E7BEDC3B6CBE 985AE03D80497ABE B4B606BEECB67EBE \
-      B0B12E3FC87C6CBE 005519BD4C0F3EBE F8BD1B3EECDF03BE 924E9FBE588D8DBD \
-      D4E150BF501711BD B079A0BD20FBFBBC 5863863D40760CBD 0E3C83BE40E217BD \
-      04FF0B3EF07839BD E29AFB3E80A714BD B91007BFE042D3BC B5AD4D3F80CDA0BB \
-      1AB1C3BEB04E023D D33A063FC0A8973D 8012F9BEE074EC3D 7341223FD415153E \
-      D80409BE04A63A3E 00F27BBFBC25333E 0000803FFC29223E 000080BF38A7143E \
-      3638133F283BEB3D 7C6E253F00CADB3D 686A02BE88FDF53D 920CC7BE28E1FB3D \
-      185B5ABED8A2CE3D 5189463FC8A7A53D E88F8C3DF0FFA13D 1CE6AE3EE0A0B03D \
-      DF90223F184EE43D 376768BF2CD8093E 281612BF60B3EE3D 2F26083F88B4A53D \
+      3C8B5960BA231400 3F16B41F3BFA5480 3EC44F0E3D1DC580 BF7E46533D843040 \
+      BED084FC3D564C30 3F1153303CFCBE40 BF002FB73C583EC0 3CDAFEE0BC425180 \
+      BF0F5154BD3826E0 BF169F56BDCAFD40 3EA660C0BE21A4EC 3E52E53CBE49332C \
+      BE102E0CBE5B7214 BEE76852BE6C3BDC 3DE05A98BE7A4980 BE06B6B4BE7EB6EC \
+      3F2EB1B0BE6C7CC8 BD195500BE3E0F4C 3E1BBDF8BE03DFEC BE9F4E92BD8D8D58 \
+      BF50E1D4BD111750 BDA079B0BCFBFB20 3D866358BD0C7640 BE833C0EBD17E240 \
+      3E0BFF04BD3978F0 3EFB9AE2BD14A780 BF0710B9BCD342E0 3F4DADB5BBA0CD80 \
+      BEC3B11A3D024EB0 3F063AD33D97A8C0 BEF912803DEC74E0 3F2241733E1515D4 \
+      BE0904D83E3AA604 BF7BF2003E3325BC 3F8000003E2229FC BF8000003E14A738 \
+      3F1338363DEB3B28 3F256E7C3DDBCA00 BE026A683DF5FD88 BEC70C923DFBE128 \
+      BE5A5B183DCEA2D8 3F4689513DA5A7C8 3D8C8FE83DA1FFF0 3EAEE61C3DB0A0E0 \
+      3F2290DF3DE44E18 BF6867373E09D82C BF1216283DEEB360 3F08262F3DA5B488 \
       """)
+    if sys.byteorder != 'big':
+        frames = wave._byteswap(frames, 4)
 
 class MiscTestCase(unittest.TestCase):
     def test__all__(self):
@@ -390,6 +392,43 @@ class WaveLowLevelTest(unittest.TestCase):
                 chunk_size = struct.unpack('<L', f.read(4))[0]
                 self.assertNotEqual(chunk_id, b'fact')
                 f.seek(chunk_size + (chunk_size & 1), 1)
+
+    @support.subTests('arg', (
+        # rounds to 0, should raise:
+        0.5,
+        0.4,
+        # Negative values should still raise:
+        -1,
+        -0.5,
+        -0.4,
+        # 0 should raise:
+        0,
+    ))
+    def test_setframerate_validates_rounded_values(self, arg):
+        """Test that setframerate that round to 0 or negative are rejected"""
+        with wave.open(io.BytesIO(), 'wb') as f:
+            f.setnchannels(1)
+            f.setsampwidth(2)
+            with self.assertRaises(wave.Error):
+                f.setframerate(arg)
+            with self.assertRaises(wave.Error):
+                f.close()
+
+    @support.subTests(('arg', 'expected'), (
+        (1.4, 1),
+        (1.5, 2),
+        (1.6, 2),
+        (44100.4, 44100),
+        (44100.5, 44100),
+        (44100.6, 44101),
+    ))
+    def test_setframerate_rounds(self, arg, expected):
+        """Test that setframerate is rounded"""
+        with wave.open(io.BytesIO(), 'wb') as f:
+            f.setnchannels(1)
+            f.setsampwidth(2)
+            f.setframerate(arg)
+            self.assertEqual(f.getframerate(), expected)
 
 
 class WaveOpen(unittest.TestCase):

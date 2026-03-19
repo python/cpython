@@ -2296,6 +2296,9 @@ _PyFrame_GetLocals(_PyInterpreterFrame *frame)
     }
 
     PyFrameObject* f = _PyFrame_GetFrameObject(frame);
+    if (f == NULL) {
+        return NULL;
+    }
 
     return _PyFrameLocalsProxy_New(f);
 }
