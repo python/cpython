@@ -5745,9 +5745,6 @@ PyType_GetModule_DuringGC(PyTypeObject *type)
         return NULL;
     }
     PyHeapTypeObject* et = (PyHeapTypeObject*)type;
-    if (!et->ht_module) {
-        return NULL;
-    }
     return et->ht_module;
 }
 

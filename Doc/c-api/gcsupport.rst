@@ -288,7 +288,10 @@ The :c:member:`~PyTypeObject.tp_traverse` handler must have the following type:
    :c:member:`~PyTypeObject.tp_flags` field, the traverse function must call
    :c:func:`PyObject_VisitManagedDict` like this::
 
-       PyObject_VisitManagedDict((PyObject*)self, visit, arg);
+       int err = PyObject_VisitManagedDict((PyObject*)self, visit, arg);
+       if (err) {
+           return err;
+       }
 
    Only the members that the instance *owns* (by having
    :term:`strong references <strong reference>` to them) must be
@@ -382,14 +385,14 @@ The following functions and macros are safe to use in a
 "DuringGC" functions
 ^^^^^^^^^^^^^^^^^^^^
 
-The following functions should *only* used in a
+The following functions should *only* be used in a
 :c:member:`~PyTypeObject.tp_traverse` handler; calling them in other
 contexts may have unintended consequences.
 
 These functions act like their counterparts without the ``_DuringGC`` suffix,
 but they are guaranteed to not have side effects, they do not set an exception
 on failure, and they return/set :term:`borrowed references <borrowed reference>`
-as detailed in the individual documentation..
+as detailed in the individual documentation.
 
 Note that these functions may fail (return ``NULL`` or ``-1``),
 but as they do not set an exception, no error information is available.
