@@ -1191,6 +1191,7 @@ def _get_xtext(value, start, regex, terminal_class, token_type, err=None):
         raise err
     return _make_xtext(m.group(), terminal_class, token_type), m.end()
 
+@_deprecate('content_getter')
 def _get_ptext_to_endchars(value, endchars):
     """Scan printables/quoted-pairs until endchars and return unquoted ptext.
 
