@@ -120,7 +120,7 @@ _sysconfig_get_platform_impl(PyObject *module)
 static int
 sysconfig_module_exec(PyObject *module)
 {
-    return PyModule_Add(module, "_PY_VERSION",
+    return PyModule_Add(module, "PY_VERSION",
                         PyUnicode_FromString(PY_VERSION));
 }
 

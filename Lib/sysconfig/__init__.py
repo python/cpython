@@ -173,7 +173,7 @@ if _HAS_USER_BASE:
 _SCHEME_KEYS = ('stdlib', 'platstdlib', 'purelib', 'platlib', 'include',
                 'scripts', 'data')
 
-_PY_VERSION = _sysconfig._PY_VERSION
+_PY_VERSION = _sysconfig.PY_VERSION
 _PY_VERSION_SHORT = f'{sys.version_info[0]}.{sys.version_info[1]}'
 _PY_VERSION_SHORT_NO_DOT = f'{sys.version_info[0]}{sys.version_info[1]}'
 _BASE_PREFIX = os.path.normpath(sys.base_prefix)
