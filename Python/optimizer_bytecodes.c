@@ -1326,6 +1326,11 @@ dummy_func(void) {
         set = sym_new_type(ctx, &PySet_Type);
     }
 
+    op(_SET_UPDATE, (set, unused[oparg-1], iterable -- set, unused[oparg-1], i)) {
+        (void)set;
+        i = iterable;
+    }
+
     op(_UNPACK_SEQUENCE_TWO_TUPLE, (seq -- val1, val0)) {
         val0 = sym_tuple_getitem(ctx, seq, 0);
         val1 = sym_tuple_getitem(ctx, seq, 1);
