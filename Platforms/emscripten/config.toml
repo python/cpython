@@ -3,6 +3,14 @@
 # Python versions.
 emscripten-version = "4.0.12"
 node-version = "24"
+test-args = [
+    "-m", "test",
+    "-v",
+    "-uall",
+    "--rerun",
+    "--single-process",
+    "-W",
+]
 
 [libffi]
 url = "https://github.com/libffi/libffi/releases/download/v{version}/libffi-{version}.tar.gz"
