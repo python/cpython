@@ -633,8 +633,6 @@ def add_cross_build_dir_option(subcommand):
 
 
 def main():
-    default_host_runner = "node"
-
     parser = argparse.ArgumentParser()
     subcommands = parser.add_subparsers(dest="subcommand")
 
