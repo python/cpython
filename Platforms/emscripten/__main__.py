@@ -418,14 +418,12 @@ def calculate_node_path():
     if node_version is None:
         node_version = load_config_toml()["node-version"]
 
-    res = subprocess.run(
+    subprocess.run(
         [
             "bash",
             "-c",
             f"source ~/.nvm/nvm.sh && nvm install {node_version}",
         ],
-        text=True,
-        capture_output=True,
         check=True,
     )
 
@@ -446,6 +444,10 @@ def calculate_node_path():
 def configure_emscripten_python(context, working_dir):
     """Configure the emscripten/host build."""
     validate_emsdk_version(context.emsdk_cache)
+    host_runner = context.host_runner
+    if host_runner is None:
+        host_runner = calculate_node_path()
+
     paths = context.build_paths
     config_site = os.fsdecode(EMSCRIPTEN_DIR / "config.site-wasm32-emscripten")
 
@@ -464,10 +466,6 @@ def configure_emscripten_python(context, working_dir):
     )
     if pydebug:
         sysconfig_data += "-pydebug"
-
-    host_runner = context.host_runner
-    if host_runner is None:
-        host_runner = calculate_node_path()
     pkg_config_path_dir = (paths["prefix_dir"] / "lib/pkgconfig/").resolve()
     env_additions = {
         "CONFIG_SITE": config_site,
