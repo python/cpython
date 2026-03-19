@@ -1910,7 +1910,6 @@ parse_transition_rule(const char **p, TransitionRuleType **out)
 
         DayRule *rv = PyMem_Calloc(1, sizeof(DayRule));
         if (rv == NULL) {
-            PyErr_NoMemory();
             return -1;
         }
 
