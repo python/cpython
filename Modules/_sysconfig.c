@@ -117,6 +117,14 @@ _sysconfig_get_platform_impl(PyObject *module)
 #endif  // MS_WINDOWS
 
 
+static int
+sysconfig_module_exec(PyObject *module)
+{
+    return PyModule_Add(module, "_PY_VERSION",
+                        PyUnicode_FromString(PY_VERSION));
+}
+
+
 PyDoc_STRVAR(sysconfig__doc__,
 "A helper for the sysconfig module.");
 
@@ -127,6 +135,7 @@ static struct PyMethodDef sysconfig_methods[] = {
 };
 
 static PyModuleDef_Slot sysconfig_slots[] = {
+    {Py_mod_exec, sysconfig_module_exec},
     {Py_mod_multiple_interpreters, Py_MOD_PER_INTERPRETER_GIL_SUPPORTED},
     {Py_mod_gil, Py_MOD_GIL_NOT_USED},
     {0, NULL}

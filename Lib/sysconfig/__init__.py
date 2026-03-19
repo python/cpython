@@ -1,5 +1,6 @@
 """Access to Python's configuration information."""
 
+import _sysconfig
 import os
 import sys
 import threading
@@ -172,7 +173,7 @@ if _HAS_USER_BASE:
 _SCHEME_KEYS = ('stdlib', 'platstdlib', 'purelib', 'platlib', 'include',
                 'scripts', 'data')
 
-_PY_VERSION = sys.version.split()[0]
+_PY_VERSION = _sysconfig._PY_VERSION
 _PY_VERSION_SHORT = f'{sys.version_info[0]}.{sys.version_info[1]}'
 _PY_VERSION_SHORT_NO_DOT = f'{sys.version_info[0]}{sys.version_info[1]}'
 _BASE_PREFIX = os.path.normpath(sys.base_prefix)
@@ -385,7 +386,6 @@ def _init_non_posix(vars):
     """Initialize the module as appropriate for NT"""
     # set basic install directories
     import _winapi
-    import _sysconfig
     vars['LIBDEST'] = get_path('stdlib')
     vars['BINLIBDEST'] = get_path('platstdlib')
     vars['INCLUDEPY'] = get_path('include')
@@ -665,7 +665,6 @@ def get_platform():
 
     For other non-POSIX platforms, currently just returns :data:`sys.platform`."""
     if os.name == 'nt':
-        import _sysconfig
         platform = _sysconfig.get_platform()
         if platform:
             return platform

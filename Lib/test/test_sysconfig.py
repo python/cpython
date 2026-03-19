@@ -741,6 +741,14 @@ class TestSysConfig(unittest.TestCase, VirtualEnvironmentMixin):
         self.assertEqual(config_vars['exec_prefix'], sys.exec_prefix)
         self.assertEqual(config_vars['platbase'], sys.exec_prefix)
 
+    def test_py_version(self):
+        config_vars = sysconfig.get_config_vars()
+        py_version = config_vars['py_version']
+        self.assertIsInstance(py_version, str)
+        ver = sys.version_info
+        version = f'{ver.major}.{ver.minor}.{ver.micro}'
+        self.assertStartsWith(py_version, version)
+
 
 class MakefileTests(unittest.TestCase):
 
