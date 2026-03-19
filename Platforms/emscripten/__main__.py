@@ -414,7 +414,7 @@ def make_mpdec(context, working_dir):
 
 
 def calculate_node_path():
-    node_version := os.environ.get("PYTHON_NODE_VERSION", None)
+    node_version = os.environ.get("PYTHON_NODE_VERSION", None)
     if node_version is None:
         node_version = load_config_toml()["node-version"]
 
