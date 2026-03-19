@@ -199,13 +199,6 @@
             break;
         }
 
-        case _POP_ITER: {
-            CHECK_STACK_BOUNDS(-2);
-            stack_pointer += -2;
-            ASSERT_WITHIN_STACK_BOUNDS(__FILE__, __LINE__);
-            break;
-        }
-
         case _END_SEND: {
             JitOptRef val;
             val = sym_new_not_null(ctx);

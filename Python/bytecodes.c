@@ -399,12 +399,7 @@ dummy_func(
             PyStackRef_CLOSE(value);
         }
 
-
-        inst(POP_ITER, (iter, index_or_null -- )) {
-            (void)index_or_null;
-            DEAD(index_or_null);
-            PyStackRef_CLOSE(iter);
-        }
+        macro(POP_ITER) = POP_TOP + POP_TOP;
 
         no_save_ip tier1 inst(INSTRUMENTED_END_FOR, (receiver, index_or_null, value -- receiver, index_or_null)) {
             /* Need to create a fake StopIteration error here,

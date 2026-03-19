@@ -4258,6 +4258,15 @@ class TestUopsOptimization(unittest.TestCase):
         PYTHON_JIT="1", PYTHON_JIT_STRESS="1")
         self.assertEqual(result[0].rc, 0, result)
 
+    def test_pop_iter(self):
+        def testfunc(n):
+            for _ in range(n):
+                pass
+
+        res, ex = self._run_with_optimizer(testfunc, TIER2_THRESHOLD)
+        self.assertEqual(res, None)
+        self.assertEqual(count_ops(ex, "_POP_TOP"), 1)
+
 def global_identity(x):
     return x
 
