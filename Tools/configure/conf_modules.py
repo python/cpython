@@ -23,7 +23,7 @@ def setup_module_deps(v):
     v.LIBPYTHON = ""
 
     android_api_level = v.ANDROID_API_LEVEL
-    if v.PY_ENABLE_SHARED == "1" and (
+    if v.PY_ENABLE_SHARED == 1 and (
         android_api_level or v.MACHDEP == "cygwin"
     ):
         v.MODULE_DEPS_SHARED = f"{v.MODULE_DEPS_SHARED} $(LDLIBRARY)"

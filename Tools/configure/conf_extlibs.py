@@ -546,7 +546,7 @@ def check_readline(v):
             v.LIBS = f"{v.LIBS} {v.READLINE_LIBS}".strip()
 
             # Decide which header set to use based on WITH_EDITLINE
-            use_editline = v.WITH_EDITLINE == "1"
+            use_editline = with_readline == "edit"
             if use_editline:
                 rl_includes = ["stdio.h", "editline/readline.h"]
             else:

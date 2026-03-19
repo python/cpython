@@ -75,7 +75,7 @@ If you want a release build with all stable optimizations active (PGO, etc),
 please run ./configure --enable-optimizations
 """)
 
-    if (v.PY_SUPPORT_TIER or "1") == "0":
+    if v.PY_SUPPORT_TIER == 0:
         cc = v.ac_cv_cc_name
         host = v.host
         warnings.warn(

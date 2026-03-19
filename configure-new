@@ -3513,7 +3513,7 @@ function u_check_readline(    _i_h, _n_h, ac_cv_rl_append_history, ac_cv_rl_comp
 		pyconf_save_env()
 		V["CPPFLAGS"] = _str_strip(V["CPPFLAGS"] " " V["READLINE_CFLAGS"])
 		V["LIBS"] = _str_strip(V["LIBS"] " " V["READLINE_LIBS"])
-		use_editline = ((V["WITH_EDITLINE"] == "1") ? "yes" : "no")
+		use_editline = ((with_readline == "edit") ? "yes" : "no")
 		if (((use_editline != "") && (use_editline != "no"))) {
 			rl_includes = "stdio.h" " " "editline/readline.h"
 		} else {
@@ -4944,7 +4944,7 @@ function u_setup_module_deps(    android_api_level) {
 	V["MODULE_DEPS_SHARED"] = "$(MODULE_DEPS_STATIC) $(EXPORTSYMS)"
 	V["LIBPYTHON"] = ""
 	android_api_level = V["ANDROID_API_LEVEL"]
-	if (((V["PY_ENABLE_SHARED"] == "1") && (((android_api_level != "") && (android_api_level != "no")) || (V["MACHDEP"] == "cygwin")))) {
+	if (((V["PY_ENABLE_SHARED"] == 1) && (((android_api_level != "") && (android_api_level != "no")) || (V["MACHDEP"] == "cygwin")))) {
 		V["MODULE_DEPS_SHARED"] = V["MODULE_DEPS_SHARED"] " $(LDLIBRARY)"
 		V["LIBPYTHON"] = "$(BLDLIBRARY)"
 	}
@@ -5781,7 +5781,7 @@ function u_generate_output(    cc, host, srcdir_rel) {
 	if (((V["Py_OPT"] != "yes") && (V["Py_DEBUG"] != "yes"))) {
 		pyconf_notice("\nIf you want a release build with all stable optimizations active (PGO, etc),\nplease run ./configure --enable-optimizations\n")
 	}
-	if ((((V["PY_SUPPORT_TIER"] != "") ? V["PY_SUPPORT_TIER"] : "1") == "0")) {
+	if ((V["PY_SUPPORT_TIER"] == 0)) {
 		cc = V["ac_cv_cc_name"]
 		host = V["host"]
 		print "Platform \"" host "\" with compiler \"" cc "\" is not supported by the CPython core team, see https://peps.python.org/pep-0011/ for more information." > "/dev/stderr"
