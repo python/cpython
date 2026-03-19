@@ -7,7 +7,7 @@ import _curses
 
 # Table mapping curses keys to the terminfo capability name
 
-_capability_names = {
+_capability_names = frozenmap({
     _curses.KEY_A1: 'ka1',
     _curses.KEY_A3: 'ka3',
     _curses.KEY_B2: 'kb2',
@@ -157,7 +157,7 @@ _capability_names = {
     _curses.KEY_SUSPEND: 'kspd',
     _curses.KEY_UNDO: 'kund',
     _curses.KEY_UP: 'kcuu1'
-    }
+    })
 
 def has_key(ch):
     if isinstance(ch, str):
