@@ -3804,12 +3804,12 @@ function u_check_device_files() {
 		V["ac_cv_file__dev_ptc"] = "no"
 	} else {
 		if (((V["cross_compiling"] != "") && (V["cross_compiling"] != "no"))) {
-			if ((!((V["ac_cv_file__dev_ptmx"] != "") && (V["ac_cv_file__dev_ptmx"] != "no")))) {
+			if ((!("ac_cv_file__dev_ptmx" in V))) {
 				pyconf_checking("for /dev/ptmx")
 				pyconf_result("not set")
 				pyconf_error("set ac_cv_file__dev_ptmx to yes/no in your CONFIG_SITE file when cross compiling")
 			}
-			if ((!((V["ac_cv_file__dev_ptc"] != "") && (V["ac_cv_file__dev_ptc"] != "no")))) {
+			if ((!("ac_cv_file__dev_ptc" in V))) {
 				pyconf_checking("for /dev/ptc")
 				pyconf_result("not set")
 				pyconf_error("set ac_cv_file__dev_ptc to yes/no in your CONFIG_SITE file when cross compiling")

@@ -56,14 +56,17 @@ def check_device_files(v):
         v.ac_cv_file__dev_ptc = False
     else:
         if v.cross_compiling:
-            if not v.ac_cv_file__dev_ptmx:
+            # autoconf uses ${ac_cv_file__dev_ptmx+set} — test whether the
+            # variable has been provided at all (via CONFIG_SITE), not
+            # whether its value is truthy.
+            if not v.is_set("ac_cv_file__dev_ptmx"):
                 pyconf.checking("for /dev/ptmx")
                 pyconf.result("not set")
                 pyconf.error(
                     "set ac_cv_file__dev_ptmx to yes/no in your CONFIG_SITE "
                     "file when cross compiling"
                 )
-            if not v.ac_cv_file__dev_ptc:
+            if not v.is_set("ac_cv_file__dev_ptc"):
                 pyconf.checking("for /dev/ptc")
                 pyconf.result("not set")
                 pyconf.error(
