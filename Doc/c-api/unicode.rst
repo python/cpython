@@ -1874,6 +1874,8 @@ object.
 
    Call :c:func:`PyObject_Repr` on *obj* and write the output into *writer*.
 
+   *obj* should not be ``NULL``.
+
    On success, return ``0``.
    On error, set an exception, leave the writer unchanged, and return ``-1``.
 

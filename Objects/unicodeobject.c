@@ -13972,6 +13972,16 @@ PyUnicodeWriter_WriteStr(PyUnicodeWriter *writer, PyObject *obj)
     return res;
 }
 
+#undef PyUnicodeWriter_WriteRepr
+
+int
+_PyUnicodeWriter_WriteReprTrue(PyUnicodeWriter *writer, PyObject *obj)
+{
+    if (obj == NULL) {
+        return _PyUnicodeWriter_WriteASCIIString((_PyUnicodeWriter*)writer, "<NULL>", 6);
+    }
+    return PyUnicodeWriter_WriteRepr(writer, obj);
+}
 
 int
 PyUnicodeWriter_WriteRepr(PyUnicodeWriter *writer, PyObject *obj)

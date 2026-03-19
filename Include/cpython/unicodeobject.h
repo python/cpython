@@ -497,6 +497,14 @@ PyAPI_FUNC(int) PyUnicodeWriter_WriteStr(
 PyAPI_FUNC(int) PyUnicodeWriter_WriteRepr(
     PyUnicodeWriter *writer,
     PyObject *obj);
+
+PyAPI_FUNC(int) _PyUnicodeWriter_WriteReprTrue(
+    PyUnicodeWriter *writer,
+    PyObject *obj);
+#if defined(Py_BUILD_CORE) || defined(Py_BUILD_CORE_MODULE)
+#define PyUnicodeWriter_WriteRepr _PyUnicodeWriter_WriteReprTrue
+#endif
+
 PyAPI_FUNC(int) PyUnicodeWriter_WriteSubstring(
     PyUnicodeWriter *writer,
     PyObject *str,
