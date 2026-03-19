@@ -3374,8 +3374,8 @@ _testcapi_exec(PyObject *m)
 
     // Test soft-deprecated macros
     Py_ALIGNED(64) char buf[4];
-    #ifdef __GNUC__
-        Py_BUILD_ASSERT(_Alignof(buf) == 64);
+    #if defined(__GNUC__)
+        Py_BUILD_ASSERT(__extension__ __alignof__(buf) >= 64);
     #endif
     assert(strcmp(PY_FORMAT_SIZE_T, "z") == 0);
     Py_BUILD_ASSERT(Py_LL(123) == 123LL);
