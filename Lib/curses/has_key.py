@@ -7,7 +7,7 @@ import _curses
 
 # Table mapping curses keys to the terminfo capability name
 
-_capability_names = frozenmap({
+_capability_names = frozendict({
     _curses.KEY_A1: 'ka1',
     _curses.KEY_A3: 'ka3',
     _curses.KEY_B2: 'kb2',
