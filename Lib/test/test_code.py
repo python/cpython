@@ -1174,7 +1174,7 @@ class CodeTest(unittest.TestCase):
         c2 = c1.replace(co_name=BadStr("poison"))
         c3 = compile("pass", "poison", "exec")
         with self.assertRaises(RuntimeError):
-            _ = c2 == c3
+            c2 == c3
 
 def isinterned(s):
     return s is sys.intern(('_' + s + '_')[1:-1])
