@@ -427,11 +427,11 @@ class BuildOpenSSL(AbstractBuilder):
     depend_target = 'depend'
 
     def _post_install(self):
-        if self.version.startswith("3."):
+        if self.version.startswith(("3.", "4.")):
             self._post_install_3xx()
 
     def _build_src(self, config_args=()):
-        if self.version.startswith("3."):
+        if self.version.startswith(("3.", "4.")):
             config_args += ("enable-fips",)
         super()._build_src(config_args)
 
