@@ -2,12 +2,12 @@ import importlib
 import pickle
 import re
 import unittest
-from test.support import os_helper
 
 try:
     import pyfakefs.fake_filesystem_unittest as ffs
 except ImportError:
     from .stubs import fake_filesystem_unittest as ffs
+from test.support import os_helper
 
 from importlib.metadata import (
     Distribution,

@@ -6,6 +6,9 @@ import pathlib
 import shutil
 import sys
 import textwrap
+from importlib import resources
+
+from test.support import os_helper
 
 from test.support import import_helper
 from test.support import os_helper
@@ -13,11 +16,6 @@ from test.support import requires_zlib
 
 from . import _path
 from ._path import FilesSpec
-
-if sys.version_info >= (3, 9):
-    from importlib import resources
-else:
-    import importlib_resources as resources
 
 
 @contextlib.contextmanager
@@ -374,8 +372,6 @@ class ZipFixtures:
         # Add self.zip_name to the front of sys.path.
         self.resources = contextlib.ExitStack()
         self.addCleanup(self.resources.close)
-        # workaround for #138313
-        self.addCleanup(lambda: None)
 
 
 def parameterize(*args_set):
