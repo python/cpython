@@ -3,6 +3,8 @@ import os
 import sys
 import unittest
 
+from test.support import warnings_helper
+
 from importlib.metadata import (
     FastPath,
     PackageNotFoundError,
@@ -50,6 +52,7 @@ class TestZip(fixtures.ZipFixtures, unittest.TestCase):
         dists = list(distributions(path=sys.path[:1]))
         assert len(dists) == 1
 
+    @warnings_helper.ignore_fork_in_thread_deprecation_warnings()
     @unittest.skipUnless(
         hasattr(os, 'register_at_fork')
         and 'fork' in multiprocessing.get_all_start_methods(),
