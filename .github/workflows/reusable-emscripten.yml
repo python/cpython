@@ -27,8 +27,7 @@ jobs:
 
         config = tomllib.loads(Path("Platforms/emscripten/config.toml").read_text())
         h = hashlib.sha256()
-        h.update(json.dumps(config["libffi"], sort_keys=True).encode())
-        h.update(json.dumps(config["mpdec"], sort_keys=True).encode())
+        h.update(json.dumps(config["dependencies"], sort_keys=True).encode())
         h.update(Path("Platforms/emscripten/make_libffi.sh").read_bytes())
         emsdk_cache = Path(os.environ["RUNNER_TEMP"]) / "emsdk-cache"
         with open(os.environ["GITHUB_OUTPUT"], "a") as f:

@@ -350,7 +350,7 @@ def write_library_config(prefix, name, config, quiet):
 def make_emscripten_libffi(context, working_dir):
     validate_emsdk_version(context.emsdk_cache)
     prefix = context.build_paths["prefix_dir"]
-    libffi_config = load_config_toml()["libffi"]
+    libffi_config = load_config_toml()["dependencies"]["libffi"]
     if not should_build_library(
         prefix, "libffi", libffi_config, context.quiet
     ):
@@ -378,7 +378,7 @@ def make_emscripten_libffi(context, working_dir):
 def make_mpdec(context, working_dir):
     validate_emsdk_version(context.emsdk_cache)
     prefix = context.build_paths["prefix_dir"]
-    mpdec_config = load_config_toml()["mpdec"]
+    mpdec_config = load_config_toml()["dependencies"]["mpdec"]
     if not should_build_library(prefix, "mpdec", mpdec_config, context.quiet):
         return
 
@@ -705,7 +705,7 @@ def main():
         help=(
             "If passed, will add the default test arguments to the beginning of the command. "
             "Default arguments loaded from Platforms/emscripten/config.toml"
-        )
+        ),
     )
     run.add_argument(
         "args",
@@ -713,7 +713,7 @@ def main():
         help=(
             "Arguments to pass to the emscripten Python "
             "(use '--' to separate from run options)",
-        )
+        ),
     )
     add_cross_build_dir_option(run)
 
