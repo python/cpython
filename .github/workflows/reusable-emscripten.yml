@@ -11,8 +11,6 @@ jobs:
     name: 'build and test'
     runs-on: ubuntu-24.04
     timeout-minutes: 60
-    env:
-      EMSDK_CACHE: ${{ github.workspace }}/../emsdk-cache
     steps:
     - uses: actions/checkout@v6
       with:
@@ -32,10 +30,13 @@ jobs:
         h.update(json.dumps(config["libffi"], sort_keys=True).encode())
         h.update(json.dumps(config["mpdec"], sort_keys=True).encode())
         h.update(Path("Platforms/emscripten/make_libffi.sh").read_bytes())
+        emsdk_cache = Path(os.environ["RUNNER_TEMP"]) / "emsdk-cache"
         with open(os.environ["GITHUB_OUTPUT"], "a") as f:
             f.write(f"emscripten-version={config['emscripten-version']}\n")
             f.write(f"node-version={config['node-version']}\n")
             f.write(f"deps-hash={h.hexdigest()}\n")
+        with open(os.environ["GITHUB_ENV"], "a") as f:
+            f.write(f"EMSDK_CACHE={emsdk_cache}\n")
     - name: "Install Node.js"
       uses: actions/setup-node@v6
       with:
