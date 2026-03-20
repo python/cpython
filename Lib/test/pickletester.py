@@ -4632,12 +4632,7 @@ class AbstractPickleTests:
                                 lambda data: frozenset((1, data)))
 
     def test_deep_nested_struct_set(self):
-        def create_nested(data):
-            obj = Object()
-            obj.value = data
-            return {obj}
-
-        self.deep_nested_struct({1}, create_nested,
+        self.deep_nested_struct({1}, lambda data: {K(data)},
                                 depth=FAST_NESTING_LIMIT+1,
                                 compare_equal=False)
 
