@@ -5460,7 +5460,9 @@ codegen_visit_expr(compiler *c, expr_ty e)
             ADDOP_NAME(c, loc, STORE_ATTR, e->v.Attribute.attr, names);
             break;
         case Del:
-            ADDOP_NAME(c, loc, DELETE_ATTR, e->v.Attribute.attr, names);
+            ADDOP(c, loc, PUSH_NULL);
+            ADDOP_I(c, loc, SWAP, 2);
+            ADDOP_NAME(c, loc, STORE_ATTR, e->v.Attribute.attr, names);
             break;
         }
         break;

@@ -178,8 +178,6 @@ int _PyOpcode_num_popped(int opcode, int oparg)  {
             return 1 + (oparg-1);
         case COPY_FREE_VARS:
             return 0;
-        case DELETE_ATTR:
-            return 1;
         case DELETE_DEREF:
             return 0;
         case DELETE_FAST:
@@ -670,8 +668,6 @@ int _PyOpcode_num_pushed(int opcode, int oparg)  {
         case COPY:
             return 2 + (oparg-1);
         case COPY_FREE_VARS:
-            return 0;
-        case DELETE_ATTR:
             return 0;
         case DELETE_DEREF:
             return 0;
@@ -1166,7 +1162,6 @@ const struct opcode_metadata _PyOpcode_opcode_metadata[267] = {
     [CONVERT_VALUE] = { true, INSTR_FMT_IB, HAS_ARG_FLAG | HAS_ERROR_FLAG | HAS_ESCAPES_FLAG },
     [COPY] = { true, INSTR_FMT_IB, HAS_ARG_FLAG | HAS_PURE_FLAG },
     [COPY_FREE_VARS] = { true, INSTR_FMT_IB, HAS_ARG_FLAG },
-    [DELETE_ATTR] = { true, INSTR_FMT_IB, HAS_ARG_FLAG | HAS_NAME_FLAG | HAS_ERROR_FLAG | HAS_ESCAPES_FLAG },
     [DELETE_DEREF] = { true, INSTR_FMT_IB, HAS_ARG_FLAG | HAS_FREE_FLAG | HAS_ERROR_FLAG | HAS_ERROR_NO_POP_FLAG | HAS_ESCAPES_FLAG },
     [DELETE_FAST] = { true, INSTR_FMT_IB, HAS_ARG_FLAG | HAS_LOCAL_FLAG | HAS_ERROR_FLAG | HAS_ESCAPES_FLAG },
     [DELETE_GLOBAL] = { true, INSTR_FMT_IB, HAS_ARG_FLAG | HAS_NAME_FLAG | HAS_ERROR_FLAG | HAS_ERROR_NO_POP_FLAG | HAS_ESCAPES_FLAG },
@@ -1415,7 +1410,6 @@ _PyOpcode_macro_expansion[256] = {
     [CONVERT_VALUE] = { .nuops = 1, .uops = { { _CONVERT_VALUE, OPARG_SIMPLE, 0 } } },
     [COPY] = { .nuops = 1, .uops = { { _COPY, OPARG_SIMPLE, 0 } } },
     [COPY_FREE_VARS] = { .nuops = 1, .uops = { { _COPY_FREE_VARS, OPARG_SIMPLE, 0 } } },
-    [DELETE_ATTR] = { .nuops = 1, .uops = { { _DELETE_ATTR, OPARG_SIMPLE, 0 } } },
     [DELETE_DEREF] = { .nuops = 1, .uops = { { _DELETE_DEREF, OPARG_SIMPLE, 0 } } },
     [DELETE_FAST] = { .nuops = 1, .uops = { { _DELETE_FAST, OPARG_SIMPLE, 0 } } },
     [DELETE_GLOBAL] = { .nuops = 1, .uops = { { _DELETE_GLOBAL, OPARG_SIMPLE, 0 } } },
@@ -1615,7 +1609,6 @@ const char *_PyOpcode_OpName[267] = {
     [CONVERT_VALUE] = "CONVERT_VALUE",
     [COPY] = "COPY",
     [COPY_FREE_VARS] = "COPY_FREE_VARS",
-    [DELETE_ATTR] = "DELETE_ATTR",
     [DELETE_DEREF] = "DELETE_DEREF",
     [DELETE_FAST] = "DELETE_FAST",
     [DELETE_GLOBAL] = "DELETE_GLOBAL",
@@ -1818,6 +1811,7 @@ const uint8_t _PyOpcode_Caches[256] = {
 PyAPI_DATA(const uint8_t) _PyOpcode_Deopt[256];
 #ifdef NEED_OPCODE_METADATA
 const uint8_t _PyOpcode_Deopt[256] = {
+    [120] = 120,
     [121] = 121,
     [122] = 122,
     [123] = 123,
@@ -1914,7 +1908,6 @@ const uint8_t _PyOpcode_Deopt[256] = {
     [CONVERT_VALUE] = CONVERT_VALUE,
     [COPY] = COPY,
     [COPY_FREE_VARS] = COPY_FREE_VARS,
-    [DELETE_ATTR] = DELETE_ATTR,
     [DELETE_DEREF] = DELETE_DEREF,
     [DELETE_FAST] = DELETE_FAST,
     [DELETE_GLOBAL] = DELETE_GLOBAL,
@@ -2079,6 +2072,7 @@ const uint8_t _PyOpcode_Deopt[256] = {
 #endif // NEED_OPCODE_METADATA
 
 #define EXTRA_CASES \
+    case 120: \
     case 121: \
     case 122: \
     case 123: \
