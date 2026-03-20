@@ -182,6 +182,49 @@ The :mod:`!binascii` module defines the following functions:
 
    .. versionadded:: 3.15
 
+.. function:: a2b_base32(string, /)
+
+   Convert base32 data back to binary and return the binary data.
+
+   Valid base32 data:
+
+   * Conforms to :rfc:`4648`.
+   * Contains only characters from the base32 alphabet.
+   * Contains no excess data after padding (including excess padding, newlines, etc.).
+   * Does not start with padding.
+
+   Invalid base32 data will raise :exc:`binascii.Error`.
+
+   .. versionadded:: 3.15
+
+.. function:: b2a_base32(data, /)
+
+   Convert binary data to a line(s) of ASCII characters in base32 coding,
+   as specified in :rfc:`4648`. The return value is the converted line.
+
+   .. versionadded:: 3.15
+
+.. function:: a2b_base32hex(string, /)
+
+   Convert base32hex data back to binary and return the binary data.
+
+   Valid base32hex:
+
+   * Conforms to :rfc:`4648`.
+   * Contains only characters from the base32hex alphabet.
+   * Contains no excess data after padding (including excess padding, newlines, etc.).
+   * Does not start with padding.
+
+   Invalid base32hex data will raise :exc:`binascii.Error`.
+
+   .. versionadded:: 3.15
+
+.. function:: b2a_base32hex(data, /)
+
+   Convert binary data to a line(s) of ASCII characters in base32hex coding,
+   as specified in :rfc:`4648`. The return value is the converted line.
+
+   .. versionadded:: 3.15
 
 .. function:: a2b_qp(data, header=False)
 

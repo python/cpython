@@ -10,10 +10,10 @@ from test.support.hypothesis_helper import hypothesis
 
 
 # Note: "*_hex" functions are aliases for "(un)hexlify"
-b2a_functions = ['b2a_ascii85', 'b2a_base64', 'b2a_base85',
+b2a_functions = ['b2a_ascii85', 'b2a_base32', 'b2a_base32hex', 'b2a_base64', 'b2a_base85',
                  'b2a_hex', 'b2a_qp', 'b2a_uu',
                  'hexlify']
-a2b_functions = ['a2b_ascii85', 'a2b_base64', 'a2b_base85',
+a2b_functions = ['a2b_ascii85', 'a2b_base32', 'a2b_base32hex', 'a2b_base64', 'a2b_base85',
                  'a2b_hex', 'a2b_qp', 'a2b_uu',
                  'unhexlify']
 all_functions = a2b_functions + b2a_functions + ['crc32', 'crc_hqx']
@@ -669,6 +669,306 @@ class BinASCIITest(unittest.TestCase):
                 func(data, alphabet=alphabet+b'?')
         with self.assertRaises(TypeError):
             binascii.a2b_base64(data, alphabet=bytearray(alphabet))
+
+    def test_base32_valid(self):
+        # Test base32 with valid data
+        lines = []
+        step = 0
+        i = 0
+        while i < len(self.rawdata):
+            b = self.type2test(self.rawdata[i:i + step])
+            a = binascii.b2a_base32(b)
+            lines.append(a)
+            i += step
+            step += 1
+        res = bytes()
+        for line in lines:
+            a = self.type2test(line)
+            b = binascii.a2b_base32(a)
+            res += b
+        self.assertEqual(res, self.rawdata)
+
+    def test_base32_errors(self):
+        def _fixPadding(data):
+            fixed = data.replace(b"=", b"")
+            len_8 = len(fixed) % 8
+            p = 8 - len_8 if len_8 else 0
+            return fixed + b"=" * p
+
+        def _assertRegexTemplate(assert_regex, data, good_padding_result=None):
+            with self.assertRaisesRegex(binascii.Error, assert_regex):
+                binascii.a2b_base32(self.type2test(data))
+            if good_padding_result:
+                fixed = self.type2test(_fixPadding(data))
+                self.assertEqual(binascii.a2b_base32(fixed), good_padding_result)
+
+        def assertNonBase32Data(*args):
+            _assertRegexTemplate(r"(?i)Only base32 data", *args)
+
+        def assertExcessData(*args):
+            _assertRegexTemplate(r"(?i)Excess data", *args)
+
+        def assertExcessPadding(*args):
+            _assertRegexTemplate(r"(?i)Excess padding", *args)
+
+        def assertLeadingPadding(*args):
+            _assertRegexTemplate(r"(?i)Leading padding", *args)
+
+        def assertIncorrectPadding(*args):
+            _assertRegexTemplate(r"(?i)Incorrect padding", *args)
+
+        def assertDiscontinuousPadding(*args):
+            _assertRegexTemplate(r"(?i)Discontinuous padding", *args)
+
+        def assertInvalidLength(*args):
+            _assertRegexTemplate(r"(?i)Invalid.+number of data characters", *args)
+
+        assertNonBase32Data(b"a")
+        assertNonBase32Data(b"AA-")
+        assertNonBase32Data(b"ABCDE==!")
+        assertNonBase32Data(b"ab:(){:|:&};:==")
+
+        assertExcessData(b"AB======C")
+        assertExcessData(b"AB======CD")
+        assertExcessData(b"ABCD====E")
+        assertExcessData(b"ABCDE===FGH")
+        assertExcessData(b"ABCDEFG=H")
+        assertExcessData(b"432Z====55555555")
+
+        assertExcessData(b"BE======EF", b"\t\x08")
+        assertExcessData(b"BEEF====C", b"\t\x08Q")
+        assertExcessData(b"BEEFC===AK", b"\t\x08Q\x01")
+        assertExcessData(b"BEEFCAK=E", b"\t\x08Q\x01D")
+
+        assertExcessPadding(b"BE=======", b"\t")
+        assertExcessPadding(b"BE========", b"\t")
+        assertExcessPadding(b"BEEF=====", b"\t\x08")
+        assertExcessPadding(b"BEEF======", b"\t\x08")
+        assertExcessPadding(b"BEEFC====", b"\t\x08Q")
+        assertExcessPadding(b"BEEFC=====", b"\t\x08Q")
+        assertExcessPadding(b"BEEFCAK==", b"\t\x08Q\x01")
+        assertExcessPadding(b"BEEFCAK===", b"\t\x08Q\x01")
+        assertExcessPadding(b"BEEFCAKE=", b"\t\x08Q\x01D")
+        assertExcessPadding(b"BEEFCAKE==", b"\t\x08Q\x01D")
+        assertExcessPadding(b"BEEFCAKE===", b"\t\x08Q\x01D")
+        assertExcessPadding(b"BEEFCAKE====", b"\t\x08Q\x01D")
+        assertExcessPadding(b"BEEFCAKE=====", b"\t\x08Q\x01D")
+        assertExcessPadding(b"BEEFCAKE======", b"\t\x08Q\x01D")
+        assertExcessPadding(b"BEEFCAKE=======", b"\t\x08Q\x01D")
+        assertExcessPadding(b"BEEFCAKE========", b"\t\x08Q\x01D")
+        assertExcessPadding(b"BEEFCAKE=========", b"\t\x08Q\x01D")
+
+        assertLeadingPadding(b"=", b"")
+        assertLeadingPadding(b"==", b"")
+        assertLeadingPadding(b"===", b"")
+        assertLeadingPadding(b"====", b"")
+        assertLeadingPadding(b"=====", b"")
+        assertLeadingPadding(b"======", b"")
+        assertLeadingPadding(b"=======", b"")
+        assertLeadingPadding(b"========", b"")
+        assertLeadingPadding(b"=========", b"")
+        assertLeadingPadding(b"=BEEFCAKE", b"\t\x08Q\x01D")
+        assertLeadingPadding(b"==BEEFCAKE", b"\t\x08Q\x01D")
+        assertLeadingPadding(b"===BEEFCAKE", b"\t\x08Q\x01D")
+        assertLeadingPadding(b"====BEEFCAKE", b"\t\x08Q\x01D")
+        assertLeadingPadding(b"=====BEEFCAKE", b"\t\x08Q\x01D")
+        assertLeadingPadding(b"======BEEFCAKE", b"\t\x08Q\x01D")
+        assertLeadingPadding(b"=======BEEFCAKE", b"\t\x08Q\x01D")
+        assertLeadingPadding(b"========BEEFCAKE", b"\t\x08Q\x01D")
+        assertLeadingPadding(b"=========BEEFCAKE", b"\t\x08Q\x01D")
+
+        assertIncorrectPadding(b"A")
+        assertIncorrectPadding(b"AB")
+        assertIncorrectPadding(b"ABC")
+        assertIncorrectPadding(b"ABCD")
+        assertIncorrectPadding(b"ABCDE")
+        assertIncorrectPadding(b"ABCDEF")
+        assertIncorrectPadding(b"ABCDEFG")
+
+        assertIncorrectPadding(b"BE=", b"\t")
+        assertIncorrectPadding(b"BE==", b"\t")
+        assertIncorrectPadding(b"BE===", b"\t")
+        assertIncorrectPadding(b"BE====", b"\t")
+        assertIncorrectPadding(b"BE=====", b"\t")
+        assertIncorrectPadding(b"BEEF=", b"\t\x08")
+        assertIncorrectPadding(b"BEEF==", b"\t\x08")
+        assertIncorrectPadding(b"BEEF===", b"\t\x08")
+        assertIncorrectPadding(b"BEEFC=", b"\t\x08Q")
+        assertIncorrectPadding(b"BEEFC==", b"\t\x08Q")
+
+        assertDiscontinuousPadding(b"BE=EF===", b"\t\x08")
+        assertDiscontinuousPadding(b"BE==EF==", b"\t\x08")
+        assertDiscontinuousPadding(b"BEEF=C==", b"\t\x08Q")
+        assertDiscontinuousPadding(b"BEEFC=AK", b"\t\x08Q\x01")
+
+        assertInvalidLength(b"A=")
+        assertInvalidLength(b"A==")
+        assertInvalidLength(b"A===")
+        assertInvalidLength(b"A====")
+        assertInvalidLength(b"A=====")
+        assertInvalidLength(b"A======")
+        assertInvalidLength(b"ABC=")
+        assertInvalidLength(b"ABC==")
+        assertInvalidLength(b"ABC===")
+        assertInvalidLength(b"ABC====")
+        assertInvalidLength(b"ABCDEF=")
+
+        assertInvalidLength(b"B=E=====", b"\t")
+        assertInvalidLength(b"B==E====", b"\t")
+        assertInvalidLength(b"BEE=F===", b"\t\x08")
+        assertInvalidLength(b"BEE==F==", b"\t\x08")
+        assertInvalidLength(b"BEEFCA=K", b"\t\x08Q\x01")
+        assertInvalidLength(b"BEEFCA=====K", b"\t\x08Q\x01")
+
+    def test_base32hex_valid(self):
+        # Test base32hex with valid data
+        lines = []
+        step = 0
+        i = 0
+        while i < len(self.rawdata):
+            b = self.type2test(self.rawdata[i:i + step])
+            a = binascii.b2a_base32hex(b)
+            lines.append(a)
+            i += step
+            step += 1
+        res = bytes()
+        for line in lines:
+            a = self.type2test(line)
+            b = binascii.a2b_base32hex(a)
+            res += b
+        self.assertEqual(res, self.rawdata)
+
+    def test_base32hex_errors(self):
+        def _fixPadding(data):
+            fixed = data.replace(b"=", b"")
+            len_8 = len(fixed) % 8
+            p = 8 - len_8 if len_8 else 0
+            return fixed + b"=" * p
+
+        def _assertRegexTemplate(assert_regex, data, good_padding_result=None):
+            with self.assertRaisesRegex(binascii.Error, assert_regex):
+                binascii.a2b_base32hex(self.type2test(data))
+            if good_padding_result:
+                fixed = self.type2test(_fixPadding(data))
+                self.assertEqual(binascii.a2b_base32hex(fixed), good_padding_result)
+
+        def assertNonBase32HexData(*args):
+            _assertRegexTemplate(r"(?i)Only base32hex data", *args)
+
+        def assertExcessData(*args):
+            _assertRegexTemplate(r"(?i)Excess data", *args)
+
+        def assertExcessPadding(*args):
+            _assertRegexTemplate(r"(?i)Excess padding", *args)
+
+        def assertLeadingPadding(*args):
+            _assertRegexTemplate(r"(?i)Leading padding", *args)
+
+        def assertIncorrectPadding(*args):
+            _assertRegexTemplate(r"(?i)Incorrect padding", *args)
+
+        def assertDiscontinuousPadding(*args):
+            _assertRegexTemplate(r"(?i)Discontinuous padding", *args)
+
+        def assertInvalidLength(*args):
+            _assertRegexTemplate(r"(?i)Invalid.+number of data characters", *args)
+
+        assertNonBase32HexData(b"a")
+        assertNonBase32HexData(b"AA-")
+        assertNonBase32HexData(b"ABCDE==!")
+        assertNonBase32HexData(b"ab:(){:|:&};:==")
+
+        assertExcessData(b"AB======C")
+        assertExcessData(b"AB======CD")
+        assertExcessData(b"ABCD====E")
+        assertExcessData(b"ABCDE===FGH")
+        assertExcessData(b"ABCDEFG=H")
+        assertExcessData(b"4321====55555555")
+
+        assertExcessData(b"BE======EF", b"[\x9c")
+        assertExcessData(b"BEEF====C", b"[\x9c\xf6")
+        assertExcessData(b"BEEFC===AK", b"[\x9c\xf6*")
+        assertExcessData(b"BEEFCAK=E", b"[\x9c\xf6*\x8e")
+
+        assertExcessPadding(b"BE=======", b"[")
+        assertExcessPadding(b"BE========", b"[")
+        assertExcessPadding(b"BEEF=====", b"[\x9c")
+        assertExcessPadding(b"BEEF======", b"[\x9c")
+        assertExcessPadding(b"BEEFC====", b"[\x9c\xf6")
+        assertExcessPadding(b"BEEFC=====", b"[\x9c\xf6")
+        assertExcessPadding(b"BEEFCAK==", b"[\x9c\xf6*")
+        assertExcessPadding(b"BEEFCAK===", b"[\x9c\xf6*")
+        assertExcessPadding(b"BEEFCAKE=", b"[\x9c\xf6*\x8e")
+        assertExcessPadding(b"BEEFCAKE==", b"[\x9c\xf6*\x8e")
+        assertExcessPadding(b"BEEFCAKE===", b"[\x9c\xf6*\x8e")
+        assertExcessPadding(b"BEEFCAKE====", b"[\x9c\xf6*\x8e")
+        assertExcessPadding(b"BEEFCAKE=====", b"[\x9c\xf6*\x8e")
+        assertExcessPadding(b"BEEFCAKE======", b"[\x9c\xf6*\x8e")
+        assertExcessPadding(b"BEEFCAKE=======", b"[\x9c\xf6*\x8e")
+        assertExcessPadding(b"BEEFCAKE========", b"[\x9c\xf6*\x8e")
+        assertExcessPadding(b"BEEFCAKE=========", b"[\x9c\xf6*\x8e")
+
+        assertLeadingPadding(b"=", b"")
+        assertLeadingPadding(b"==", b"")
+        assertLeadingPadding(b"===", b"")
+        assertLeadingPadding(b"====", b"")
+        assertLeadingPadding(b"=====", b"")
+        assertLeadingPadding(b"======", b"")
+        assertLeadingPadding(b"=======", b"")
+        assertLeadingPadding(b"========", b"")
+        assertLeadingPadding(b"=========", b"")
+        assertLeadingPadding(b"=BEEFCAKE", b"[\x9c\xf6*\x8e")
+        assertLeadingPadding(b"==BEEFCAKE", b"[\x9c\xf6*\x8e")
+        assertLeadingPadding(b"===BEEFCAKE", b"[\x9c\xf6*\x8e")
+        assertLeadingPadding(b"====BEEFCAKE", b"[\x9c\xf6*\x8e")
+        assertLeadingPadding(b"=====BEEFCAKE", b"[\x9c\xf6*\x8e")
+        assertLeadingPadding(b"======BEEFCAKE", b"[\x9c\xf6*\x8e")
+        assertLeadingPadding(b"=======BEEFCAKE", b"[\x9c\xf6*\x8e")
+        assertLeadingPadding(b"========BEEFCAKE", b"[\x9c\xf6*\x8e")
+        assertLeadingPadding(b"=========BEEFCAKE", b"[\x9c\xf6*\x8e")
+
+        assertIncorrectPadding(b"A")
+        assertIncorrectPadding(b"AB")
+        assertIncorrectPadding(b"ABC")
+        assertIncorrectPadding(b"ABCD")
+        assertIncorrectPadding(b"ABCDE")
+        assertIncorrectPadding(b"ABCDEF")
+        assertIncorrectPadding(b"ABCDEFG")
+
+        assertIncorrectPadding(b"BE=", b"[")
+        assertIncorrectPadding(b"BE==", b"[")
+        assertIncorrectPadding(b"BE===", b"[")
+        assertIncorrectPadding(b"BE====", b"[")
+        assertIncorrectPadding(b"BE=====", b"[")
+        assertIncorrectPadding(b"BEEF=", b"[\x9c")
+        assertIncorrectPadding(b"BEEF==", b"[\x9c")
+        assertIncorrectPadding(b"BEEF===", b"[\x9c")
+        assertIncorrectPadding(b"BEEFC=", b"[\x9c\xf6")
+        assertIncorrectPadding(b"BEEFC==", b"[\x9c\xf6")
+
+        assertDiscontinuousPadding(b"BE=EF===", b"[\x9c")
+        assertDiscontinuousPadding(b"BE==EF==", b"[\x9c")
+        assertDiscontinuousPadding(b"BEEF=C==", b"[\x9c\xf6")
+        assertDiscontinuousPadding(b"BEEFC=AK", b"[\x9c\xf6*")
+
+        assertInvalidLength(b"A=")
+        assertInvalidLength(b"A==")
+        assertInvalidLength(b"A===")
+        assertInvalidLength(b"A====")
+        assertInvalidLength(b"A=====")
+        assertInvalidLength(b"A======")
+        assertInvalidLength(b"ABC=")
+        assertInvalidLength(b"ABC==")
+        assertInvalidLength(b"ABC===")
+        assertInvalidLength(b"ABC====")
+        assertInvalidLength(b"ABCDEF=")
+
+        assertInvalidLength(b"B=E=====", b"[")
+        assertInvalidLength(b"B==E====", b"[")
+        assertInvalidLength(b"BEE=F===", b"[\x9c")
+        assertInvalidLength(b"BEE==F==", b"[\x9c")
+        assertInvalidLength(b"BEEFCA=K", b"[\x9c\xf6*")
+        assertInvalidLength(b"BEEFCA=====K", b"[\x9c\xf6*")
 
     def test_uu(self):
         MAX_UU = 45

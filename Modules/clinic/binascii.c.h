@@ -711,6 +711,132 @@ exit:
     return return_value;
 }
 
+PyDoc_STRVAR(binascii_a2b_base32__doc__,
+"a2b_base32($module, data, /)\n"
+"--\n"
+"\n"
+"Decode a line of base32 data.");
+
+#define BINASCII_A2B_BASE32_METHODDEF    \
+    {"a2b_base32", (PyCFunction)binascii_a2b_base32, METH_O, binascii_a2b_base32__doc__},
+
+static PyObject *
+binascii_a2b_base32_impl(PyObject *module, Py_buffer *data);
+
+static PyObject *
+binascii_a2b_base32(PyObject *module, PyObject *arg)
+{
+    PyObject *return_value = NULL;
+    Py_buffer data = {NULL, NULL};
+
+    if (!ascii_buffer_converter(arg, &data)) {
+        goto exit;
+    }
+    return_value = binascii_a2b_base32_impl(module, &data);
+
+exit:
+    /* Cleanup for data */
+    if (data.obj)
+       PyBuffer_Release(&data);
+
+    return return_value;
+}
+
+PyDoc_STRVAR(binascii_b2a_base32__doc__,
+"b2a_base32($module, data, /)\n"
+"--\n"
+"\n"
+"base32-code line of data.");
+
+#define BINASCII_B2A_BASE32_METHODDEF    \
+    {"b2a_base32", (PyCFunction)binascii_b2a_base32, METH_O, binascii_b2a_base32__doc__},
+
+static PyObject *
+binascii_b2a_base32_impl(PyObject *module, Py_buffer *data);
+
+static PyObject *
+binascii_b2a_base32(PyObject *module, PyObject *arg)
+{
+    PyObject *return_value = NULL;
+    Py_buffer data = {NULL, NULL};
+
+    if (PyObject_GetBuffer(arg, &data, PyBUF_SIMPLE) != 0) {
+        goto exit;
+    }
+    return_value = binascii_b2a_base32_impl(module, &data);
+
+exit:
+    /* Cleanup for data */
+    if (data.obj) {
+       PyBuffer_Release(&data);
+    }
+
+    return return_value;
+}
+
+PyDoc_STRVAR(binascii_a2b_base32hex__doc__,
+"a2b_base32hex($module, data, /)\n"
+"--\n"
+"\n"
+"Decode a line of base32hex data.");
+
+#define BINASCII_A2B_BASE32HEX_METHODDEF    \
+    {"a2b_base32hex", (PyCFunction)binascii_a2b_base32hex, METH_O, binascii_a2b_base32hex__doc__},
+
+static PyObject *
+binascii_a2b_base32hex_impl(PyObject *module, Py_buffer *data);
+
+static PyObject *
+binascii_a2b_base32hex(PyObject *module, PyObject *arg)
+{
+    PyObject *return_value = NULL;
+    Py_buffer data = {NULL, NULL};
+
+    if (!ascii_buffer_converter(arg, &data)) {
+        goto exit;
+    }
+    return_value = binascii_a2b_base32hex_impl(module, &data);
+
+exit:
+    /* Cleanup for data */
+    if (data.obj)
+       PyBuffer_Release(&data);
+
+    return return_value;
+}
+
+PyDoc_STRVAR(binascii_b2a_base32hex__doc__,
+"b2a_base32hex($module, data, /)\n"
+"--\n"
+"\n"
+"base32hex-code line of data.");
+
+#define BINASCII_B2A_BASE32HEX_METHODDEF    \
+    {"b2a_base32hex", (PyCFunction)binascii_b2a_base32hex, METH_O, binascii_b2a_base32hex__doc__},
+
+static PyObject *
+binascii_b2a_base32hex_impl(PyObject *module, Py_buffer *data);
+
+static PyObject *
+binascii_b2a_base32hex(PyObject *module, PyObject *arg)
+{
+    PyObject *return_value = NULL;
+    Py_buffer data = {NULL, NULL};
+
+    if (PyObject_GetBuffer(arg, &data, PyBUF_SIMPLE) != 0) {
+        goto exit;
+    }
+    return_value = binascii_b2a_base32hex_impl(module, &data);
+
+exit:
+    /* Cleanup for data */
+    if (data.obj) {
+       PyBuffer_Release(&data);
+    }
+
+    return return_value;
+}
+
 PyDoc_STRVAR(binascii_crc_hqx__doc__,
 "crc_hqx($module, data, crc, /)\n"
 "--\n"
@@ -1256,4 +1382,4 @@ exit:
 
     return return_value;
 }
-/*[clinic end generated code: output=84c97096b0fb3819 input=a9049054013a1b77]*/
+/*[clinic end generated code: output=bafd226511187580 input=a9049054013a1b77]*/

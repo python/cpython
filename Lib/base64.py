@@ -206,51 +206,8 @@ mapped to (when map01 is not None, the digit 0 is always mapped to
 the letter O).  For security purposes the default is None, so that
 0 and 1 are not allowed in the input.
 '''
-_b32alphabet = b'ABCDEFGHIJKLMNOPQRSTUVWXYZ234567'
-_b32hexalphabet = b'0123456789ABCDEFGHIJKLMNOPQRSTUV'
-_b32tab2 = {}
-_b32rev = {}
 
-def _b32encode(alphabet, s):
-    # Delay the initialization of the table to not waste memory
-    # if the function is never called
-    if alphabet not in _b32tab2:
-        b32tab = [bytes((i,)) for i in alphabet]
-        _b32tab2[alphabet] = [a + b for a in b32tab for b in b32tab]
-        b32tab = None
-
-    if not isinstance(s, bytes_types):
-        s = memoryview(s).tobytes()
-    leftover = len(s) % 5
-    # Pad the last quantum with zero bits if necessary
-    if leftover:
-        s = s + b'\0' * (5 - leftover)  # Don't use += !
-    encoded = bytearray()
-    from_bytes = int.from_bytes
-    b32tab2 = _b32tab2[alphabet]
-    for i in range(0, len(s), 5):
-        c = from_bytes(s[i: i + 5])              # big endian
-        encoded += (b32tab2[c >> 30] +           # bits 1 - 10
-                    b32tab2[(c >> 20) & 0x3ff] + # bits 11 - 20
-                    b32tab2[(c >> 10) & 0x3ff] + # bits 21 - 30
-                    b32tab2[c & 0x3ff]           # bits 31 - 40
-                   )
-    # Adjust for any leftover partial quanta
-    if leftover == 1:
-        encoded[-6:] = b'======'
-    elif leftover == 2:
-        encoded[-4:] = b'===='
-    elif leftover == 3:
-        encoded[-3:] = b'==='
-    elif leftover == 4:
-        encoded[-1:] = b'='
-    return encoded.take_bytes()
-
-def _b32decode(alphabet, s, casefold=False, map01=None):
-    # Delay the initialization of the table to not waste memory
-    # if the function is never called
-    if alphabet not in _b32rev:
-        _b32rev[alphabet] = {v: k for k, v in enumerate(alphabet)}
+def _b32decode_prepare(s, casefold=False, map01=None):
     s = _bytes_from_decode_data(s)
     if len(s) % 8:
         raise binascii.Error('Incorrect padding')
@@ -263,51 +220,27 @@ def _b32decode(alphabet, s, casefold=False, map01=None):
         s = s.translate(bytes.maketrans(b'01', b'O' + map01))
     if casefold:
         s = s.upper()
-    # Strip off pad characters from the right.  We need to count the pad
-    # characters because this will tell us how many null bytes to remove from
-    # the end of the decoded string.
-    l = len(s)
-    s = s.rstrip(b'=')
-    padchars = l - len(s)
-    # Now decode the full quanta
-    decoded = bytearray()
-    b32rev = _b32rev[alphabet]
-    for i in range(0, len(s), 8):
-        quanta = s[i: i + 8]
-        acc = 0
-        try:
-            for c in quanta:
-                acc = (acc << 5) + b32rev[c]
-        except KeyError:
-            raise binascii.Error('Non-base32 digit found') from None
-        decoded += acc.to_bytes(5)  # big endian
-    # Process the last, partial quanta
-    if l % 8 or padchars not in {0, 1, 3, 4, 6}:
-        raise binascii.Error('Incorrect padding')
-    if padchars and decoded:
-        acc <<= 5 * padchars
-        last = acc.to_bytes(5)  # big endian
-        leftover = (43 - 5 * padchars) // 8  # 1: 4, 3: 3, 4: 2, 6: 1
-        decoded[-5:] = last[:leftover]
-    return decoded.take_bytes()
+    return s
 
 
 def b32encode(s):
-    return _b32encode(_b32alphabet, s)
+    return binascii.b2a_base32(s)
 b32encode.__doc__ = _B32_ENCODE_DOCSTRING.format(encoding='base32')
 
 def b32decode(s, casefold=False, map01=None):
-    return _b32decode(_b32alphabet, s, casefold, map01)
+    s = _b32decode_prepare(s, casefold, map01)
+    return binascii.a2b_base32(s)
 b32decode.__doc__ = _B32_DECODE_DOCSTRING.format(encoding='base32',
                                         extra_args=_B32_DECODE_MAP01_DOCSTRING)
 
 def b32hexencode(s):
-    return _b32encode(_b32hexalphabet, s)
+    return binascii.b2a_base32hex(s)
 b32hexencode.__doc__ = _B32_ENCODE_DOCSTRING.format(encoding='base32hex')
 
 def b32hexdecode(s, casefold=False):
     # base32hex does not have the 01 mapping
-    return _b32decode(_b32hexalphabet, s, casefold)
+    s = _b32decode_prepare(s, casefold)
+    return binascii.a2b_base32hex(s)
 b32hexdecode.__doc__ = _B32_DECODE_DOCSTRING.format(encoding='base32hex',
                                                     extra_args='')
 
