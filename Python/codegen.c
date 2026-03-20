@@ -5449,19 +5449,20 @@ codegen_visit_expr(compiler *c, expr_ty e)
             }
         }
         RETURN_IF_ERROR(_PyCompile_MaybeAddStaticAttributeToClass(c, e));
-        VISIT(c, expr, e->v.Attribute.value);
         loc = LOC(e);
         loc = update_start_location_to_match_attr(c, loc, e);
         switch (e->v.Attribute.ctx) {
         case Load:
+            VISIT(c, expr, e->v.Attribute.value);
             ADDOP_NAME(c, loc, LOAD_ATTR, e->v.Attribute.attr, names);
             break;
         case Store:
+            VISIT(c, expr, e->v.Attribute.value);
             ADDOP_NAME(c, loc, STORE_ATTR, e->v.Attribute.attr, names);
             break;
         case Del:
             ADDOP(c, loc, PUSH_NULL);
-            ADDOP_I(c, loc, SWAP, 2);
+            VISIT(c, expr, e->v.Attribute.value);
             ADDOP_NAME(c, loc, STORE_ATTR, e->v.Attribute.attr, names);
             break;
         }
