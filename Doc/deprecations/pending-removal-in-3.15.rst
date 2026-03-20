@@ -6,7 +6,7 @@ Pending removal in Python 3.15
   * Setting ``__cached__`` on a module while
     failing to set :attr:`__spec__.cached <importlib.machinery.ModuleSpec.cached>`
     is deprecated. In Python 3.15, ``__cached__`` will cease to be set or
-    taken into consideration by the import system or standard library. (:gh:`97879`)
+    be taken into consideration by the import system or standard library. (:gh:`97879`)
 
   * Setting :attr:`~module.__package__` on a module while
     failing to set :attr:`__spec__.parent <importlib.machinery.ModuleSpec.parent>`
