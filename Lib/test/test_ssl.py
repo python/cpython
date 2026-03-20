@@ -586,11 +586,11 @@ class BasicSocketTests(unittest.TestCase):
         # Some sanity checks follow
         # >= 1.1.1
         self.assertGreaterEqual(n, 0x10101000)
-        # < 4.0
-        self.assertLess(n, 0x40000000)
+        # < 5.0
+        self.assertLess(n, 0x50000000)
         major, minor, fix, patch, status = t
         self.assertGreaterEqual(major, 1)
-        self.assertLess(major, 4)
+        self.assertLess(major, 5)
         self.assertGreaterEqual(minor, 0)
         self.assertLess(minor, 256)
         self.assertGreaterEqual(fix, 0)
