@@ -1164,6 +1164,17 @@ class CodeTest(unittest.TestCase):
                     with self.assertRaises(Exception):
                         _testinternalcapi.verify_stateless_code(func)
 
+    def test_code_richcompare_raise_exception(self):
+        class BadStr(str):
+            def __eq__(self, _):
+                raise RuntimeError("Poison!")
+            def __hash__(self): return str.__hash__(self)
+
+        c1 = compile("pass", "test", "exec")
+        c2 = c1.replace(co_name=BadStr("poison"))
+        c3 = compile("pass", "poison", "exec")
+        with self.assertRaises(RuntimeError):
+            _ = c2 == c3
 
 def isinterned(s):
     return s is sys.intern(('_' + s + '_')[1:-1])
