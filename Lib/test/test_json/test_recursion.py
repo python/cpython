@@ -2,7 +2,7 @@ from test import support
 from test.test_json import PyTest, CTest
 import weakref
 import gc
-        
+
 
 
 class JSONTestObject:
@@ -117,7 +117,7 @@ class TestRecursion:
         with self.assertRaises(RecursionError):
             with support.infinite_recursion(1000):
                 EndlessJSONEncoder(check_circular=False).encode(5j)
-    
+
     @support.skip_if_unlimited_stack_size
     @support.skip_emscripten_stack_overflow()
     @support.skip_wasi_stack_overflow()
@@ -126,26 +126,26 @@ class TestRecursion:
         weak_refs = []
         class LeakTestObj:
             pass
-        
+
         def default(obj):
             if isinstance(obj, LeakTestObj):
                 new_obj = LeakTestObj()
                 weak_refs.append(weakref.ref(new_obj))
                 return new_obj
             raise TypeError
-        
-        
+
+
         obj = LeakTestObj()
         for _ in range(1000):
             obj = [obj]
-        
+
         with self.assertRaises(RecursionError):
             self.dumps(obj, default=default)
-        
+
         gc.collect()
         for i, ref in enumerate(weak_refs):
             self.assertIsNone(ref(),
                 f"Object {i} still alive - memory leak detected!")
-            
+
 class TestPyRecursion(TestRecursion, PyTest): pass
 class TestCRecursion(TestRecursion, CTest): pass
