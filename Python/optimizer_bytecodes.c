@@ -1752,6 +1752,11 @@ dummy_func(void) {
         n = names;
     }
 
+    op(_DICT_UPDATE, (dict, unused[oparg - 1], update -- dict, unused[oparg - 1], upd)) {
+        (void)dict;
+        upd = update;
+    }
+
     op(_RECORD_TOS, (tos -- tos)) {
         sym_set_recorded_value(tos, (PyObject *)this_instr->operand0);
     }
