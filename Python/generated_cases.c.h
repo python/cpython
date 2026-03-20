@@ -8544,6 +8544,7 @@
                 tstate->py_recursion_remaining--;
                 LOAD_SP();
                 LOAD_IP(0);
+                DTRACE_FUNCTION_ENTRY();
                 LLTRACE_RESUME_FRAME();
             }
             DISPATCH();

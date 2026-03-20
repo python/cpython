@@ -101,7 +101,9 @@ class TraceBackend:
 
 class DTraceBackend(TraceBackend):
     EXTENSION = ".d"
-    COMMAND = ["dtrace", "-q", "-Z", "-s"]
+    COMMAND = ["dtrace", "-q", "-s"]
+    if sys.platform == "sunos5":
+        COMMAND.insert(2, "-Z")
 
 
 class SystemTapBackend(TraceBackend):
@@ -148,6 +150,13 @@ class BPFTraceBackend(TraceBackend):
 
     # Which test scripts to filter by filename (None = use @tracing flag)
     FILTER_BY_FILENAME = {"call_stack": "call_stack.py"}
+
+    @staticmethod
+    def _filter_probe_rows(output):
+        return "\n".join(
+            line for line in output.splitlines()
+            if line.partition("\t")[0].isdigit()
+        )
 
     # Expected outputs for each test case
     # Note: bpftrace captures <module> entry/return and may have slight timing
@@ -214,6 +223,8 @@ gc__done:1""",
                 f"bpftrace failed with code {proc.returncode}:\n{stderr}"
             )
 
+        stdout = self._filter_probe_rows(stdout)
+
         # Filter output by filename if specified (bpftrace captures everything)
         if name in self.FILTER_BY_FILENAME:
             filter_filename = self.FILTER_BY_FILENAME[name]
@@ -256,6 +267,19 @@ gc__done:1""",
             raise unittest.SkipTest(
                 f"bpftrace(1) failed: stdout={stdout!r} stderr={stderr!r}"
             )
+
+
+class BPFTraceOutputTests(unittest.TestCase):
+    def test_filter_probe_rows_ignores_warnings(self):
+        output = """stdin:1-19: WARNING: found external warnings
+HINT: include/vmlinux.h:1439:3: warning: declaration does not declare anything
+4623214882928\tgc__start:0
+4623214885575\tgc__done:0
+"""
+        self.assertEqual(
+            BPFTraceBackend._filter_probe_rows(output),
+            "4623214882928\tgc__start:0\n4623214885575\tgc__done:0",
+        )
 
 
 @unittest.skipIf(MS_WINDOWS, "Tests not compliant with trace on Windows.")
