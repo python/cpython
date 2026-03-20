@@ -1,0 +1,67 @@
+name: Reusable Emscripten
+
+on:
+  workflow_call:
+
+env:
+  FORCE_COLOR: 1
+
+jobs:
+  build-emscripten-reusable:
+    name: 'build and test'
+    runs-on: ubuntu-24.04
+    timeout-minutes: 60
+    env:
+      EMSDK_CACHE: ${{ github.workspace }}/../emsdk-cache
+    steps:
+    - uses: actions/checkout@v6
+      with:
+        persist-credentials: false
+    - name: "Read Emscripten config"
+      id: emscripten-config
+      shell: python
+      run: |
+        import hashlib
+        import json
+        import os
+        import tomllib
+        from pathlib import Path
+
+        config = tomllib.loads(Path("Platforms/emscripten/config.toml").read_text())
+        h = hashlib.sha256()
+        h.update(json.dumps(config["libffi"], sort_keys=True).encode())
+        h.update(json.dumps(config["mpdec"], sort_keys=True).encode())
+        h.update(Path("Platforms/emscripten/make_libffi.sh").read_bytes())
+        with open(os.environ["GITHUB_OUTPUT"], "a") as f:
+            f.write(f"emscripten-version={config['emscripten-version']}\n")
+            f.write(f"node-version={config['node-version']}\n")
+            f.write(f"deps-hash={h.hexdigest()}\n")
+    - name: "Install Node.js"
+      uses: actions/setup-node@v6
+      with:
+        node-version: ${{ steps.emscripten-config.outputs.node-version }}
+    - name: "Cache Emscripten SDK"
+      uses: actions/cache@v5
+      with:
+        path: ${{ env.EMSDK_CACHE }}
+        key: emsdk-${{ steps.emscripten-config.outputs.emscripten-version }}-${{ steps.emscripten-config.outputs.deps-hash }}
+    - name: "Install Python"
+      uses: actions/setup-python@v6
+      with:
+        python-version: '3.x'
+    - name: "Runner image version"
+      run: echo "IMAGE_OS_VERSION=${ImageOS}-${ImageVersion}" >> "$GITHUB_ENV"
+    - name: "Install Emscripten"
+      run: python3 Platforms/emscripten install-emscripten
+    - name: "Configure build Python"
+      run: python3 Platforms/emscripten configure-build-python -- --config-cache --with-pydebug
+    - name: "Make build Python"
+      run: python3 Platforms/emscripten make-build-python
+    - name: "Make dependencies"
+      run: python3 Platforms/emscripten make-dependencies
+    - name: "Configure host Python"
+      run: python3 Platforms/emscripten configure-host --host-runner node -- --config-cache
+    - name: "Make host Python"
+      run: python3 Platforms/emscripten make-host
+    - name: "Test"
+      run: python3 Platforms/emscripten run --test
