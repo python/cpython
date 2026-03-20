@@ -936,14 +936,29 @@ class HTTPConnection:
         self.debuglevel = level
 
     def _tunnel(self):
+        if _contains_disallowed_url_pchar_re.search(self._tunnel_host):
+            raise ValueError('Tunnel host can\'t contain control characters %r'
+                             % (self._tunnel_host,))
         connect_str = "CONNECT %s:%d HTTP/1.0\r\n" % (self._tunnel_host,
             self._tunnel_port)
         connect_bytes = connect_str.encode("ascii")
         self.send(connect_bytes)
         for header, value in self._tunnel_headers.items():
-            header_str = "%s: %s\r\n" % (header, value)
-            header_bytes = header_str.encode("latin-1")
-            self.send(header_bytes)
+            if hasattr(header, 'encode'):
+                header = header.encode('ascii')
+
+            if not _is_legal_header_name(header):
+                raise ValueError('Invalid header name %r' % (header,))
+
+            if hasattr(value, 'encode'):
+                value = value.encode('latin-1')
+            elif isinstance(value, int):
+                value = str(value).encode('ascii')
+
+            if _is_illegal_header_value(value):
+                raise ValueError('Invalid header value %r' % (value,))
+
+            self.send(header + b': ' + value + b'\r\n')
         self.send(b'\r\n')
 
         response = self.response_class(self.sock, method=self._method)
