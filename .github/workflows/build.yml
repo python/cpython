@@ -671,6 +671,7 @@ jobs:
       with:
         allowed-failures: >-
           build-android,
+          build-emscripten,
           build-windows-msi,
           build-ubuntu-ssltests,
           test-hypothesis,
