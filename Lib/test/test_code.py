@@ -1168,7 +1168,8 @@ class CodeTest(unittest.TestCase):
         class BadStr(str):
             def __eq__(self, _):
                 raise RuntimeError("Poison!")
-            def __hash__(self): return str.__hash__(self)
+
+            __hash__ = str.__hash__
 
         c1 = compile("pass", "test", "exec")
         c2 = c1.replace(co_name=BadStr("poison"))
