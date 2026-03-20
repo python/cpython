@@ -405,7 +405,7 @@ writer_write_ucs4(PyObject *self_raw, PyObject *args)
         size = bsize / sizeof(Py_UCS4);
     }
 
-    int res = PyUnicodeWriter_WriteUCS4(self->writer, (const Py_UCS4 *)s, size);
+    int res = PyUnicodeWriter_WriteUCS4(self->writer, (Py_UCS4 *)s, size);
     if (res < 0) {
         return NULL;
     }
