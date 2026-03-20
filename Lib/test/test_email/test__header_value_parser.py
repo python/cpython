@@ -20,6 +20,7 @@ from test.test_email.params import (
     as_value,
     C,
     include_unless,
+    only,
     params,
     Params,
     params_map,
@@ -818,7 +819,17 @@ class TestParser(TestParserMixin, TestEmailBase):
         self.assertIsInstance(fws, parser.WhiteSpaceTerminal)
         self.assertEqual(fws.token_type, 'fws')
 
-    params_test_get_fws = old_api_only(
+    # XXX POSTDEP: delete from here...
+    @params_map
+    def deprecate_oldapi_no_raise_behavior(*args, **kw):
+        kw['warnings'] = kw.get('warnings', []) + [
+            (DeprecationWarning, r'.*API.*has changed'),
+            (DeprecationWarning, r'(?i).*raise'),
+            ]
+        yield 'oldapi', C(*args, **kw, test_start=False)
+    # XXX POSTDEP: ...to here.
+
+    params_test_get_fws = for_each_api(
 
         wsp_run = C(' \t  '),
 
@@ -830,16 +841,33 @@ class TestParser(TestParserMixin, TestEmailBase):
             ends_at_non_wsp_after_wsp_run = C(' \t{char} ', remainder='{char} '),
             ),
 
+    # XXX POSTDEP: delete from here...
         )
 
-    # XXX XXX: these ought to error, but get_fws should never be called this way
+    # These ought to error, but get_fws should never be called this way
     # We'll deprecate the lack of raise during the refactor.
     params_test_get_fws.update(
-        old_api_only(
+        deprecate_oldapi_no_raise_behavior(
             empty = C(''),
             no_wsp = C('foo', remainder='foo'),
             no_leading_wsp = C('foo bar', remainder='foo bar'),
             ),
+        )
+
+    params_test_get_fws.update(
+        add_label('newapi')(
+    # XXX POStDEP: ... to here.  And fix the indentation below.
+            **params_map(
+                lambda s, **k: only(
+                    C(s, exception=(errors.HeaderParseError, '(?i)expected'))
+                    )
+                )(
+                empty='',
+                no_wsp='foo',
+                no_leading_wsp='foo bar',
+                )
+            ),  # XXX POSTDEP: delete this line
+
         )
 
 

@@ -81,6 +81,7 @@ from functools import wraps
 # Useful constants and functions
 #
 
+# https://datatracker.ietf.org/doc/html/rfc5322#section-2.2
 _WSP = ' \t'
 WSP = set(_WSP)
 CFWS_LEADER = WSP | set('(')
@@ -1167,17 +1168,38 @@ def _get_ptext_to_endchars(value, endchars):
         pos = pos + 1
     return ''.join(vchars), ''.join([fragment[pos:]] + remainder), had_qp
 
-def get_fws(value):
+_wsp_matcher = re.compile(fr'[{_WSP}]+').match
+@_deprecate_old_api_and_lack_of_raise_on_invalid_input
+def get_fws(value, start):
     """FWS = 1*WSP
 
-    This isn't the RFC definition.  We're using fws to represent tokens where
-    folding can be done, but when we are parsing the *un*folding has already
-    been done so we don't need to watch out for CRLF.
+    If start does not point to a WSP character in value, raise a HeaderParse
+    error.  Otherwise, return a WhiteSpaceTerminal of token_type 'fws'
+    containing all of the WSP characters from start to the next non-WSP
+    character (or the end of value), and the index of the non-WSP character (or
+    the len of value).
+
+    This is a subset of the RFC 5322 definition of FWS: the strings passed to
+    the parser should already have been unfolded, so there should be no
+    legitimate CRLF characters in value.
 
     """
-    newvalue = value.lstrip()
-    fws = WhiteSpaceTerminal(value[:len(value)-len(newvalue)], 'fws')
-    return fws, newvalue
+    m = _wsp_matcher(value, start)
+    if m is None:
+        # XXX POSTDEP: change this to raise the exception.
+        return (
+            WhiteSpaceTerminal('', 'fws'),
+            start,
+            errors.HeaderParseError(
+                f'expected whitespace but found {value[start:]!r}'
+                ),
+            (
+                "Calling get_fws when there is no whitespace at the start"
+                " is deprecated and will raise an error in the future."
+                ),
+            )
+    fws = WhiteSpaceTerminal(m.group(), 'fws')
+    return fws, m.end()
 
 def get_encoded_word(value, terminal_type='vtext'):
     """ encoded-word = "=?" charset "?" encoding "?" encoded-text "?="
