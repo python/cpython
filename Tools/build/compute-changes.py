@@ -48,9 +48,9 @@ SUFFIXES_C_OR_CPP = frozenset({".c", ".h", ".cpp"})
 SUFFIXES_DOCUMENTATION = frozenset({".rst", ".md"})
 
 ANDROID_DIRS = frozenset({"Android"})
+EMSCRIPTEN_DIRS = frozenset({Path("Platforms", "emscripten")})
 IOS_DIRS = frozenset({"Apple", "iOS"})
 MACOS_DIRS = frozenset({"Mac"})
-EMSCRIPTEN_DIRS = frozenset({Path("Platforms", "emscripten")})
 WASI_DIRS = frozenset({Path("Platforms", "WASI")})
 
 LIBRARY_FUZZER_PATHS = frozenset({
