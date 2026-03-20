@@ -141,10 +141,11 @@
                 double dres =
                 ((PyFloatObject *)left_o)->ob_fval +
                 ((PyFloatObject *)right_o)->ob_fval;
-                res = PyStackRef_FromPyObjectSteal(PyFloat_FromDouble(dres));
-                if (PyStackRef_IsNull(res)) {
+                PyObject *d = PyFloat_FromDouble(dres);
+                if (d == NULL) {
                     JUMP_TO_LABEL(error);
                 }
+                res = PyStackRef_FromPyObjectSteal(d);
                 l = left;
                 r = right;
             }
@@ -289,10 +290,10 @@
                 assert(PyUnicode_CheckExact(right_o));
                 STAT_INC(BINARY_OP, hit);
                 PyObject *res_o = PyUnicode_Concat(left_o, right_o);
-                res = PyStackRef_FromPyObjectSteal(res_o);
-                if (PyStackRef_IsNull(res)) {
+                if (res_o == NULL) {
                     JUMP_TO_LABEL(error);
                 }
+                res = PyStackRef_FromPyObjectSteal(res_o);
                 l = left;
                 r = right;
             }
@@ -521,10 +522,11 @@
                 double dres =
                 ((PyFloatObject *)left_o)->ob_fval *
                 ((PyFloatObject *)right_o)->ob_fval;
-                res = PyStackRef_FromPyObjectSteal(PyFloat_FromDouble(dres));
-                if (PyStackRef_IsNull(res)) {
+                PyObject *d = PyFloat_FromDouble(dres);
+                if (d == NULL) {
                     JUMP_TO_LABEL(error);
                 }
+                res = PyStackRef_FromPyObjectSteal(d);
                 l = left;
                 r = right;
             }
@@ -1270,10 +1272,11 @@
                 double dres =
                 ((PyFloatObject *)left_o)->ob_fval -
                 ((PyFloatObject *)right_o)->ob_fval;
-                res = PyStackRef_FromPyObjectSteal(PyFloat_FromDouble(dres));
-                if (PyStackRef_IsNull(res)) {
+                PyObject *d = PyFloat_FromDouble(dres);
+                if (d == NULL) {
                     JUMP_TO_LABEL(error);
                 }
+                res = PyStackRef_FromPyObjectSteal(d);
                 l = left;
                 r = right;
             }
@@ -10967,19 +10970,29 @@
             INSTRUCTION_STATS(SET_UPDATE);
             _PyStackRef set;
             _PyStackRef iterable;
-            iterable = stack_pointer[-1];
-            set = stack_pointer[-2 - (oparg-1)];
-            _PyFrame_SetStackPointer(frame, stack_pointer);
-            int err = _PySet_Update(PyStackRef_AsPyObjectBorrow(set),
+            _PyStackRef i;
+            _PyStackRef value;
+            // _SET_UPDATE
+            {
+                iterable = stack_pointer[-1];
+                set = stack_pointer[-2 - (oparg-1)];
+                _PyFrame_SetStackPointer(frame, stack_pointer);
+                int err = _PySet_Update(PyStackRef_AsPyObjectBorrow(set),
                                     PyStackRef_AsPyObjectBorrow(iterable));
-            stack_pointer = _PyFrame_GetStackPointer(frame);
-            stack_pointer += -1;
-            ASSERT_WITHIN_STACK_BOUNDS(__FILE__, __LINE__);
-            _PyFrame_SetStackPointer(frame, stack_pointer);
-            PyStackRef_CLOSE(iterable);
-            stack_pointer = _PyFrame_GetStackPointer(frame);
-            if (err < 0) {
-                JUMP_TO_LABEL(error);
+                stack_pointer = _PyFrame_GetStackPointer(frame);
+                if (err < 0) {
+                    JUMP_TO_LABEL(error);
+                }
+                i = iterable;
+            }
+            // _POP_TOP
+            {
+                value = i;
+                stack_pointer += -1;
+                ASSERT_WITHIN_STACK_BOUNDS(__FILE__, __LINE__);
+                _PyFrame_SetStackPointer(frame, stack_pointer);
+                PyStackRef_XCLOSE(value);
+                stack_pointer = _PyFrame_GetStackPointer(frame);
             }
             DISPATCH();
         }
