@@ -182,7 +182,7 @@ The :mod:`!binascii` module defines the following functions:
 
    .. versionadded:: 3.15
 
-.. function:: a2b_base32(string, /)
+.. function:: a2b_base32(string, /, *, alphabet=BASE32_ALPHABET)
 
    Convert base32 data back to binary and return the binary data.
 
@@ -193,38 +193,22 @@ The :mod:`!binascii` module defines the following functions:
    * Contains no excess data after padding (including excess padding, newlines, etc.).
    * Does not start with padding.
 
+   Optional *alphabet* must be a :class:`bytes` object of length 32 which
+   specifies an alternative alphabet.
+
    Invalid base32 data will raise :exc:`binascii.Error`.
 
-   .. versionadded:: 3.15
+   .. versionadded:: next
 
-.. function:: b2a_base32(data, /)
+.. function:: b2a_base32(data, /, *, alphabet=BASE32_ALPHABET)
 
    Convert binary data to a line(s) of ASCII characters in base32 coding,
    as specified in :rfc:`4648`. The return value is the converted line.
 
-   .. versionadded:: 3.15
+   Optional *alphabet* must be a :term:`bytes-like object` of length 32 which
+   specifies an alternative alphabet.
 
-.. function:: a2b_base32hex(string, /)
-
-   Convert base32hex data back to binary and return the binary data.
-
-   Valid base32hex:
-
-   * Conforms to :rfc:`4648`.
-   * Contains only characters from the base32hex alphabet.
-   * Contains no excess data after padding (including excess padding, newlines, etc.).
-   * Does not start with padding.
-
-   Invalid base32hex data will raise :exc:`binascii.Error`.
-
-   .. versionadded:: 3.15
-
-.. function:: b2a_base32hex(data, /)
-
-   Convert binary data to a line(s) of ASCII characters in base32hex coding,
-   as specified in :rfc:`4648`. The return value is the converted line.
-
-   .. versionadded:: 3.15
+   .. versionadded:: next
 
 .. function:: a2b_qp(data, header=False)
 
@@ -367,6 +351,18 @@ The :mod:`!binascii` module defines the following functions:
 .. data:: Z85_ALPHABET
 
    The `Z85 <https://rfc.zeromq.org/spec/32/>`_ alphabet.
+
+   .. versionadded:: next
+
+.. data:: BASE32_ALPHABET
+
+   The base32 alphabet according to :rfc:`4648`.
+
+   .. versionadded:: next
+
+.. data:: BASE32HEX_ALPHABET
+
+   The "Extended Hex" base32hex alphabet according to :rfc:`4648`.
 
    .. versionadded:: next
 

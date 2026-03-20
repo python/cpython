@@ -712,27 +712,72 @@ exit:
 }
 
 PyDoc_STRVAR(binascii_a2b_base32__doc__,
-"a2b_base32($module, data, /)\n"
+"a2b_base32($module, data, /, *, alphabet=BASE32_ALPHABET)\n"
 "--\n"
 "\n"
 "Decode a line of base32 data.");
 
 #define BINASCII_A2B_BASE32_METHODDEF    \
-    {"a2b_base32", (PyCFunction)binascii_a2b_base32, METH_O, binascii_a2b_base32__doc__},
+    {"a2b_base32", _PyCFunction_CAST(binascii_a2b_base32), METH_FASTCALL|METH_KEYWORDS, binascii_a2b_base32__doc__},
 
 static PyObject *
-binascii_a2b_base32_impl(PyObject *module, Py_buffer *data);
+binascii_a2b_base32_impl(PyObject *module, Py_buffer *data,
+                         PyBytesObject *alphabet);
 
 static PyObject *
-binascii_a2b_base32(PyObject *module, PyObject *arg)
+binascii_a2b_base32(PyObject *module, PyObject *const *args, Py_ssize_t nargs, PyObject *kwnames)
 {
     PyObject *return_value = NULL;
-    Py_buffer data = {NULL, NULL};
+    #if defined(Py_BUILD_CORE) && !defined(Py_BUILD_CORE_MODULE)
 
-    if (!ascii_buffer_converter(arg, &data)) {
+    #define NUM_KEYWORDS 1
+    static struct {
+        PyGC_Head _this_is_not_used;
+        PyObject_VAR_HEAD
+        Py_hash_t ob_hash;
+        PyObject *ob_item[NUM_KEYWORDS];
+    } _kwtuple = {
+        .ob_base = PyVarObject_HEAD_INIT(&PyTuple_Type, NUM_KEYWORDS)
+        .ob_hash = -1,
+        .ob_item = { &_Py_ID(alphabet), },
+    };
+    #undef NUM_KEYWORDS
+    #define KWTUPLE (&_kwtuple.ob_base.ob_base)
+
+    #else  // !Py_BUILD_CORE
+    #  define KWTUPLE NULL
+    #endif  // !Py_BUILD_CORE
+
+    static const char * const _keywords[] = {"", "alphabet", NULL};
+    static _PyArg_Parser _parser = {
+        .keywords = _keywords,
+        .fname = "a2b_base32",
+        .kwtuple = KWTUPLE,
+    };
+    #undef KWTUPLE
+    PyObject *argsbuf[2];
+    Py_ssize_t noptargs = nargs + (kwnames ? PyTuple_GET_SIZE(kwnames) : 0) - 1;
+    Py_buffer data = {NULL, NULL};
+    PyBytesObject *alphabet = NULL;
+
+    args = _PyArg_UnpackKeywords(args, nargs, NULL, kwnames, &_parser,
+            /*minpos*/ 1, /*maxpos*/ 1, /*minkw*/ 0, /*varpos*/ 0, argsbuf);
+    if (!args) {
         goto exit;
     }
-    return_value = binascii_a2b_base32_impl(module, &data);
+    if (!ascii_buffer_converter(args[0], &data)) {
+        goto exit;
+    }
+    if (!noptargs) {
+        goto skip_optional_kwonly;
+    }
+    if (!PyBytes_Check(args[1])) {
+        _PyArg_BadArgument("a2b_base32", "argument 'alphabet'", "bytes", args[1]);
+        goto exit;
+    }
+    alphabet = (PyBytesObject *)args[1];
+skip_optional_kwonly:
+    return_value = binascii_a2b_base32_impl(module, &data, alphabet);
 
 exit:
     /* Cleanup for data */
@@ -743,95 +788,79 @@ exit:
 }
 
 PyDoc_STRVAR(binascii_b2a_base32__doc__,
-"b2a_base32($module, data, /)\n"
+"b2a_base32($module, data, /, *, alphabet=BASE32_ALPHABET)\n"
 "--\n"
 "\n"
 "base32-code line of data.");
 
 #define BINASCII_B2A_BASE32_METHODDEF    \
-    {"b2a_base32", (PyCFunction)binascii_b2a_base32, METH_O, binascii_b2a_base32__doc__},
+    {"b2a_base32", _PyCFunction_CAST(binascii_b2a_base32), METH_FASTCALL|METH_KEYWORDS, binascii_b2a_base32__doc__},
 
 static PyObject *
-binascii_b2a_base32_impl(PyObject *module, Py_buffer *data);
+binascii_b2a_base32_impl(PyObject *module, Py_buffer *data,
+                         Py_buffer *alphabet);
 
 static PyObject *
-binascii_b2a_base32(PyObject *module, PyObject *arg)
+binascii_b2a_base32(PyObject *module, PyObject *const *args, Py_ssize_t nargs, PyObject *kwnames)
 {
     PyObject *return_value = NULL;
-    Py_buffer data = {NULL, NULL};
+    #if defined(Py_BUILD_CORE) && !defined(Py_BUILD_CORE_MODULE)
 
-    if (PyObject_GetBuffer(arg, &data, PyBUF_SIMPLE) != 0) {
+    #define NUM_KEYWORDS 1
+    static struct {
+        PyGC_Head _this_is_not_used;
+        PyObject_VAR_HEAD
+        Py_hash_t ob_hash;
+        PyObject *ob_item[NUM_KEYWORDS];
+    } _kwtuple = {
+        .ob_base = PyVarObject_HEAD_INIT(&PyTuple_Type, NUM_KEYWORDS)
+        .ob_hash = -1,
+        .ob_item = { &_Py_ID(alphabet), },
+    };
+    #undef NUM_KEYWORDS
+    #define KWTUPLE (&_kwtuple.ob_base.ob_base)
+
+    #else  // !Py_BUILD_CORE
+    #  define KWTUPLE NULL
+    #endif  // !Py_BUILD_CORE
+
+    static const char * const _keywords[] = {"", "alphabet", NULL};
+    static _PyArg_Parser _parser = {
+        .keywords = _keywords,
+        .fname = "b2a_base32",
+        .kwtuple = KWTUPLE,
+    };
+    #undef KWTUPLE
+    PyObject *argsbuf[2];
+    Py_ssize_t noptargs = nargs + (kwnames ? PyTuple_GET_SIZE(kwnames) : 0) - 1;
+    Py_buffer data = {NULL, NULL};
+    Py_buffer alphabet = {NULL, NULL};
+
+    args = _PyArg_UnpackKeywords(args, nargs, NULL, kwnames, &_parser,
+            /*minpos*/ 1, /*maxpos*/ 1, /*minkw*/ 0, /*varpos*/ 0, argsbuf);
+    if (!args) {
         goto exit;
     }
-    return_value = binascii_b2a_base32_impl(module, &data);
+    if (PyObject_GetBuffer(args[0], &data, PyBUF_SIMPLE) != 0) {
+        goto exit;
+    }
+    if (!noptargs) {
+        goto skip_optional_kwonly;
+    }
+    if (PyObject_GetBuffer(args[1], &alphabet, PyBUF_SIMPLE) != 0) {
+        goto exit;
+    }
+skip_optional_kwonly:
+    return_value = binascii_b2a_base32_impl(module, &data, &alphabet);
 
 exit:
     /* Cleanup for data */
     if (data.obj) {
        PyBuffer_Release(&data);
     }
-
-    return return_value;
-}
-
-PyDoc_STRVAR(binascii_a2b_base32hex__doc__,
-"a2b_base32hex($module, data, /)\n"
-"--\n"
-"\n"
-"Decode a line of base32hex data.");
-
-#define BINASCII_A2B_BASE32HEX_METHODDEF    \
-    {"a2b_base32hex", (PyCFunction)binascii_a2b_base32hex, METH_O, binascii_a2b_base32hex__doc__},
-
-static PyObject *
-binascii_a2b_base32hex_impl(PyObject *module, Py_buffer *data);
-
-static PyObject *
-binascii_a2b_base32hex(PyObject *module, PyObject *arg)
-{
-    PyObject *return_value = NULL;
-    Py_buffer data = {NULL, NULL};
-
-    if (!ascii_buffer_converter(arg, &data)) {
-        goto exit;
-    }
-    return_value = binascii_a2b_base32hex_impl(module, &data);
-
-exit:
-    /* Cleanup for data */
-    if (data.obj)
-       PyBuffer_Release(&data);
-
-    return return_value;
-}
-
-PyDoc_STRVAR(binascii_b2a_base32hex__doc__,
-"b2a_base32hex($module, data, /)\n"
-"--\n"
-"\n"
-"base32hex-code line of data.");
-
-#define BINASCII_B2A_BASE32HEX_METHODDEF    \
-    {"b2a_base32hex", (PyCFunction)binascii_b2a_base32hex, METH_O, binascii_b2a_base32hex__doc__},
-
-static PyObject *
-binascii_b2a_base32hex_impl(PyObject *module, Py_buffer *data);
-
-static PyObject *
-binascii_b2a_base32hex(PyObject *module, PyObject *arg)
-{
-    PyObject *return_value = NULL;
-    Py_buffer data = {NULL, NULL};
-
-    if (PyObject_GetBuffer(arg, &data, PyBUF_SIMPLE) != 0) {
-        goto exit;
-    }
-    return_value = binascii_b2a_base32hex_impl(module, &data);
-
-exit:
-    /* Cleanup for data */
-    if (data.obj) {
-       PyBuffer_Release(&data);
+    /* Cleanup for alphabet */
+    if (alphabet.obj) {
+       PyBuffer_Release(&alphabet);
     }
 
     return return_value;
@@ -1382,4 +1411,4 @@ exit:
 
     return return_value;
 }
-/*[clinic end generated code: output=bafd226511187580 input=a9049054013a1b77]*/
+/*[clinic end generated code: output=5be0c5d9b116ee17 input=a9049054013a1b77]*/

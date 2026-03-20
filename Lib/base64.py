@@ -234,13 +234,13 @@ b32decode.__doc__ = _B32_DECODE_DOCSTRING.format(encoding='base32',
                                         extra_args=_B32_DECODE_MAP01_DOCSTRING)
 
 def b32hexencode(s):
-    return binascii.b2a_base32hex(s)
+    return binascii.b2a_base32(s, alphabet=binascii.BASE32HEX_ALPHABET)
 b32hexencode.__doc__ = _B32_ENCODE_DOCSTRING.format(encoding='base32hex')
 
 def b32hexdecode(s, casefold=False):
     # base32hex does not have the 01 mapping
     s = _b32decode_prepare(s, casefold)
-    return binascii.a2b_base32hex(s)
+    return binascii.a2b_base32(s, alphabet=binascii.BASE32HEX_ALPHABET)
 b32hexdecode.__doc__ = _B32_DECODE_DOCSTRING.format(encoding='base32hex',
                                                     extra_args='')
 

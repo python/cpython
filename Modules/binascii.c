@@ -265,31 +265,8 @@ static const unsigned char table_a2b_base32[] Py_ALIGNED(64) = {
     -1,-1,-1,-1, -1,-1,-1,-1, -1,-1,-1,-1, -1,-1,-1,-1,
 };
 
-static const unsigned char table_a2b_base32hex[] Py_ALIGNED(64) = {
-    -1,-1,-1,-1, -1,-1,-1,-1, -1,-1,-1,-1, -1,-1,-1,-1,
-    -1,-1,-1,-1, -1,-1,-1,-1, -1,-1,-1,-1, -1,-1,-1,-1,
-    -1,-1,-1,-1, -1,-1,-1,-1, -1,-1,-1,-1, -1,-1,-1,-1,
-     0, 1, 2, 3,  4, 5, 6, 7,  8, 9,-1,-1, -1,-1,-1,-1,
-    -1,10,11,12, 13,14,15,16, 17,18,19,20, 21,22,23,24,
-    25,26,27,28, 29,30,31,-1, -1,-1,-1,-1, -1,-1,-1,-1,
-    -1,-1,-1,-1, -1,-1,-1,-1, -1,-1,-1,-1, -1,-1,-1,-1,
-    -1,-1,-1,-1, -1,-1,-1,-1, -1,-1,-1,-1, -1,-1,-1,-1,
-
-    -1,-1,-1,-1, -1,-1,-1,-1, -1,-1,-1,-1, -1,-1,-1,-1,
-    -1,-1,-1,-1, -1,-1,-1,-1, -1,-1,-1,-1, -1,-1,-1,-1,
-    -1,-1,-1,-1, -1,-1,-1,-1, -1,-1,-1,-1, -1,-1,-1,-1,
-    -1,-1,-1,-1, -1,-1,-1,-1, -1,-1,-1,-1, -1,-1,-1,-1,
-    -1,-1,-1,-1, -1,-1,-1,-1, -1,-1,-1,-1, -1,-1,-1,-1,
-    -1,-1,-1,-1, -1,-1,-1,-1, -1,-1,-1,-1, -1,-1,-1,-1,
-    -1,-1,-1,-1, -1,-1,-1,-1, -1,-1,-1,-1, -1,-1,-1,-1,
-    -1,-1,-1,-1, -1,-1,-1,-1, -1,-1,-1,-1, -1,-1,-1,-1,
-};
-
 static const unsigned char table_b2a_base32[] Py_ALIGNED(64) =
     "ABCDEFGHIJKLMNOPQRSTUVWXYZ234567";
-
-static const unsigned char table_b2a_base32hex[] Py_ALIGNED(64) =
-    "0123456789ABCDEFGHIJKLMNOPQRSTUV";
 
 #define BASE32_PAD '='
 
@@ -1513,20 +1490,44 @@ binascii_b2a_base85_impl(PyObject *module, Py_buffer *data, int pad,
     return PyBytesWriter_FinishWithPointer(writer, ascii_data);
 }
 
+/*[clinic input]
+binascii.a2b_base32
+
+    data: ascii_buffer
+    /
+    *
+    alphabet: PyBytesObject(c_default="NULL") = BASE32_ALPHABET
+
+Decode a line of base32 data.
+[clinic start generated code]*/
+
 static PyObject *
-base32_decode_impl(PyObject *module, Py_buffer *data,
-                   const unsigned char table_a2b[], const char *name)
+binascii_a2b_base32_impl(PyObject *module, Py_buffer *data,
+                         PyBytesObject *alphabet)
+/*[clinic end generated code: output=12cb58bf547237e2 input=426055ea49ac147e]*/
 {
     const unsigned char *ascii_data = data->buf;
     Py_ssize_t ascii_len = data->len;
     binascii_state *state = NULL;
+    PyObject *table_obj = NULL;
+    const unsigned char *table_a2b = table_a2b_base32;
 
     assert(ascii_len >= 0);
+
+    if (alphabet != NULL) {
+        state = get_binascii_state(module);
+        table_obj = get_reverse_table(state, (PyObject *)alphabet, 32, BASE32_PAD);
+        if (table_obj == NULL) {
+            return NULL;
+        }
+        table_a2b = (const unsigned char *)PyBytes_AS_STRING(table_obj);
+    }
 
     /* Allocate output buffer. */
     size_t bin_len = ((size_t)ascii_len + 7) / 8 * 5;
     PyBytesWriter *writer = PyBytesWriter_Create(bin_len);
     if (writer == NULL) {
+        Py_XDECREF(table_obj);
         return NULL;
     }
     unsigned char *bin_data = PyBytesWriter_GetData(writer);
@@ -1568,11 +1569,11 @@ base32_decode_impl(PyObject *module, Py_buffer *data,
                 if (octet_pos == 1 || octet_pos == 3 || octet_pos == 6) {
                     const unsigned char *ascii_data_start = data->buf;
                     PyErr_Format(state->Error,
-                                 "Invalid %s-encoded string: "
+                                 "Invalid base32-encoded string: "
                                  "number of data characters (%zd) "
                                  "cannot be 1, 3, or 6 more "
                                  "than a multiple of 8",
-                                 name, (ascii_data - ascii_data_start));
+                                 ascii_data - ascii_data_start);
                 }
                 else {
                     PyErr_SetString(state->Error,
@@ -1588,7 +1589,7 @@ base32_decode_impl(PyObject *module, Py_buffer *data,
         if (v >= 32) {
             state = get_binascii_state(module);
             if (state) {
-                PyErr_Format(state->Error, "Only %s data is allowed", name);
+                PyErr_SetString(state->Error, "Only base32 data is allowed");
             }
             goto error;
         }
@@ -1654,22 +1655,45 @@ base32_decode_impl(PyObject *module, Py_buffer *data,
         goto error;
     }
 
+    Py_XDECREF(table_obj);
     return PyBytesWriter_FinishWithPointer(writer, bin_data);
 
 error:
     PyBytesWriter_Discard(writer);
+    Py_XDECREF(table_obj);
     return NULL;
 }
 
+/*[clinic input]
+binascii.b2a_base32
+
+    data: Py_buffer
+    /
+    *
+    alphabet: Py_buffer(c_default="{NULL, NULL}") = BASE32_ALPHABET
+
+base32-code line of data.
+[clinic start generated code]*/
+
 static PyObject *
-base32_encode_impl(PyObject *module, Py_buffer *data,
-                   const unsigned char table_b2a[], const char *name)
+binascii_b2a_base32_impl(PyObject *module, Py_buffer *data,
+                         Py_buffer *alphabet)
+/*[clinic end generated code: output=058d0d1aeb014d3b input=ffd4fa162a6e1cb5]*/
 {
+    const unsigned char *table_b2a = table_b2a_base32;
     const unsigned char *bin_data = data->buf;
     Py_ssize_t bin_len = data->len;
     binascii_state *state = NULL;
 
     assert(bin_len >= 0);
+
+    if (alphabet->buf != NULL) {
+        if (alphabet->len != 32) {
+            PyErr_SetString(PyExc_ValueError, "alphabet must have length 32");
+            return NULL;
+        }
+        table_b2a = alphabet->buf;
+    }
 
     /*
      * Each group of 5 bytes (rounded up) gets encoded as 8 characters.
@@ -1679,7 +1703,7 @@ base32_encode_impl(PyObject *module, Py_buffer *data,
     if (ascii_len > PY_SSIZE_T_MAX) {
         state = get_binascii_state(module);
         if (state) {
-            PyErr_Format(state->Error, "Too much data for %s", name);
+            PyErr_SetString(state->Error, "Too much data for base32");
         }
         return NULL;
     }
@@ -1752,70 +1776,6 @@ base32_encode_impl(PyObject *module, Py_buffer *data,
     }
 
     return PyBytesWriter_FinishWithPointer(writer, ascii_data);
-}
-
-/*[clinic input]
-binascii.a2b_base32
-
-    data: ascii_buffer
-    /
-
-Decode a line of base32 data.
-[clinic start generated code]*/
-
-static PyObject *
-binascii_a2b_base32_impl(PyObject *module, Py_buffer *data)
-/*[clinic end generated code: output=978d91ce9fadedf9 input=9137b28791447ce7]*/
-{
-    return base32_decode_impl(module, data, table_a2b_base32, "base32");
-}
-
-/*[clinic input]
-binascii.b2a_base32
-
-    data: Py_buffer
-    /
-
-base32-code line of data.
-[clinic start generated code]*/
-
-static PyObject *
-binascii_b2a_base32_impl(PyObject *module, Py_buffer *data)
-/*[clinic end generated code: output=c44b684c550a24cc input=0c6cbb86d32086f5]*/
-{
-    return base32_encode_impl(module, data, table_b2a_base32, "base32");
-}
-
-/*[clinic input]
-binascii.a2b_base32hex
-
-    data: ascii_buffer
-    /
-
-Decode a line of base32hex data.
-[clinic start generated code]*/
-
-static PyObject *
-binascii_a2b_base32hex_impl(PyObject *module, Py_buffer *data)
-/*[clinic end generated code: output=29133f84416e93cf input=178fe8e8fb212206]*/
-{
-    return base32_decode_impl(module, data, table_a2b_base32hex, "base32hex");
-}
-
-/*[clinic input]
-binascii.b2a_base32hex
-
-    data: Py_buffer
-    /
-
-base32hex-code line of data.
-[clinic start generated code]*/
-
-static PyObject *
-binascii_b2a_base32hex_impl(PyObject *module, Py_buffer *data)
-/*[clinic end generated code: output=8ab2f6742ed918cb input=01108fc686630e91]*/
-{
-    return base32_encode_impl(module, data, table_b2a_base32hex, "base32hex");
 }
 
 /*[clinic input]
@@ -2481,8 +2441,6 @@ static struct PyMethodDef binascii_module_methods[] = {
     BINASCII_B2A_BASE85_METHODDEF
     BINASCII_A2B_BASE32_METHODDEF
     BINASCII_B2A_BASE32_METHODDEF
-    BINASCII_A2B_BASE32HEX_METHODDEF
-    BINASCII_B2A_BASE32HEX_METHODDEF
     BINASCII_A2B_HEX_METHODDEF
     BINASCII_B2A_HEX_METHODDEF
     BINASCII_HEXLIFY_METHODDEF
@@ -2566,6 +2524,16 @@ binascii_exec(PyObject *module)
                            /* clinic doesn't like '/' followed by '*' */
                            "ABCDEFGHIJKLMNOPQRSTUVWXYZ"
                            ".-:+=^!/\x2a?&<>()[]{}@%$#")) < 0)
+    {
+        return -1;
+    }
+    if (PyModule_Add(module, "BASE32_ALPHABET",
+        PyBytes_FromStringAndSize((const char *)table_b2a_base32, 32)) < 0)
+    {
+        return -1;
+    }
+    if (PyModule_Add(module, "BASE32HEX_ALPHABET",
+        PyBytes_FromString("0123456789ABCDEFGHIJKLMNOPQRSTUV")) < 0)
     {
         return -1;
     }
