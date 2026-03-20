@@ -1104,10 +1104,18 @@ get_tools_for_instruction(PyCodeObject *code, PyInterpreterState *interp, int i,
     }
     assert(_PY_MONITORING_IS_UNGROUPED_EVENT(event));
     CHECK(debug_check_sanity(interp, code));
-    if (code->_co_monitoring->tools) {
-        tools = code->_co_monitoring->tools[i];
+    if (PY_MONITORING_IS_INSTRUMENTED_EVENT(event)) {
+        /* Instrumented events use per-instruction tool bitmaps. */
+        if (code->_co_monitoring->tools) {
+            tools = code->_co_monitoring->tools[i];
+        }
+        else {
+            tools = code->_co_monitoring->active_monitors.tools[event];
+        }
     }
     else {
+        /* Non-instrumented local events are not tied to specific instructions;
+         * use the code-object-level active_monitors bitmap instead. */
         tools = code->_co_monitoring->active_monitors.tools[event];
     }
     return tools;
