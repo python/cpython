@@ -2832,6 +2832,18 @@ class TestUopsOptimization(unittest.TestCase):
         self.assertIn("_GUARD_TYPE_VERSION", uops)
         self.assertNotIn("_CHECK_ATTR_CLASS", uops)
 
+    def test_load_common_constant(self):
+        def testfunc(n):
+            for _ in range(n):
+                x = list(i for i in ())
+            return x
+        res, ex = self._run_with_optimizer(testfunc, TIER2_THRESHOLD)
+        self.assertEqual(res, list(()))
+        self.assertIsNotNone(ex)
+        uops = get_opnames(ex)
+        self.assertIn("_BUILD_LIST", uops)
+        self.assertNotIn("_LOAD_COMMON_CONSTANT", uops)
+
     def test_load_small_int(self):
         def testfunc(n):
             x = 0
