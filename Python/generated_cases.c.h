@@ -10182,19 +10182,16 @@
             next_instr += 1;
             INSTRUCTION_STATS(POP_ITER);
             _PyStackRef value;
-            // _POP_TOP
+            // _POP_TOP_NOP
             {
                 value = stack_pointer[-1];
-                stack_pointer += -1;
-                ASSERT_WITHIN_STACK_BOUNDS(__FILE__, __LINE__);
-                _PyFrame_SetStackPointer(frame, stack_pointer);
-                PyStackRef_XCLOSE(value);
-                stack_pointer = _PyFrame_GetStackPointer(frame);
+                assert(PyStackRef_IsNull(value) || (!PyStackRef_RefcountOnObject(value)) ||
+                   _Py_IsImmortal((PyStackRef_AsPyObjectBorrow(value))));
             }
             // _POP_TOP
             {
-                value = stack_pointer[-1];
-                stack_pointer += -1;
+                value = stack_pointer[-2];
+                stack_pointer += -2;
                 ASSERT_WITHIN_STACK_BOUNDS(__FILE__, __LINE__);
                 _PyFrame_SetStackPointer(frame, stack_pointer);
                 PyStackRef_XCLOSE(value);
