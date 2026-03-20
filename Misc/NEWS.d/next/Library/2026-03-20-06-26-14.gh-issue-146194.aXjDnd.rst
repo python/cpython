@@ -1,0 +1,4 @@
+Fix nested :exc:`KeyboardInterrupt` handling in :mod:`asyncio`. Previously,
+multiple Ctrl+C presses would cause a crash with ``Task was destroyed but it
+is pending!``. Now nested cancellations propagate correctly through multiple
+levels.
