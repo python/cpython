@@ -1,0 +1,6 @@
+variant:
+  - asan
+abi_tag:
+  - asan_cp315
+version:
+  - 3.15

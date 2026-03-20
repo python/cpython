@@ -218,7 +218,7 @@ _lzma
         https://tukaani.org/xz/
 
 _ssl
-    Python wrapper for version 3.0.15 of the OpenSSL secure sockets
+    Python wrapper for version 3.5 of the OpenSSL secure sockets
     library, which is itself downloaded from our binaries repository at
     https://github.com/python/cpython-bin-deps and built by openssl.vcxproj.
 
@@ -358,6 +358,11 @@ Supported flags are:
 
 * WITH_COMPUTED_GOTOS: build the interpreter using "computed gotos".
   Currently only supported by clang-cl.
+
+* UsePymallocHugepages: enable huge page support for pymalloc arenas.
+  When enabled, the arena size on 64-bit platforms is increased to 2 MiB
+  and arena allocation uses MEM_LARGE_PAGES with automatic fallback to
+  regular pages. Can also be enabled via `--pymalloc-hugepages` flag.
 
 
 Static library

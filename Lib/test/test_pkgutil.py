@@ -61,6 +61,25 @@ class PkgutilTests(unittest.TestCase):
 
         del sys.modules[pkg]
 
+    def test_getdata_path_traversal(self):
+        pkg = 'test_getdata_traversal'
+
+        # Make a package with some resources
+        package_dir = os.path.join(self.dirname, pkg)
+        os.mkdir(package_dir)
+        # Empty init.py
+        f = open(os.path.join(package_dir, '__init__.py'), "wb")
+        f.close()
+
+        with self.assertRaises(ValueError):
+            pkgutil.get_data(pkg, '../../../etc/passwd')
+        with self.assertRaises(ValueError):
+            pkgutil.get_data(pkg, 'sub/../../../etc/passwd')
+        with self.assertRaises(ValueError):
+            pkgutil.get_data(pkg, os.path.abspath('/etc/passwd'))
+
+        del sys.modules[pkg]
+
     def test_getdata_zipfile(self):
         zip = 'test_getdata_zipfile.zip'
         pkg = 'test_getdata_zipfile'

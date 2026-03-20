@@ -4,9 +4,6 @@
 .. module:: xmlrpc.client
    :synopsis: XML-RPC client access.
 
-.. moduleauthor:: Fredrik Lundh <fredrik@pythonware.com>
-.. sectionauthor:: Eric S. Raymond <esr@snark.thyrsus.com>
-
 **Source code:** :source:`Lib/xmlrpc/client.py`
 
 .. XXX Not everything is documented yet.  It might be good to describe
@@ -23,13 +20,13 @@ between conformable Python objects and XML on the wire.
 
 .. warning::
 
-   The :mod:`xmlrpc.client` module is not secure against maliciously
+   The :mod:`!xmlrpc.client` module is not secure against maliciously
    constructed data.  If you need to parse untrusted or unauthenticated data,
    see :ref:`xml-security`.
 
 .. versionchanged:: 3.5
 
-   For HTTPS URIs, :mod:`xmlrpc.client` now performs all the necessary
+   For HTTPS URIs, :mod:`!xmlrpc.client` now performs all the necessary
    certificate and hostname checks by default.
 
 .. include:: ../includes/wasm-notavail.rst

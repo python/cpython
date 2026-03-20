@@ -83,18 +83,7 @@ function resolveStringIndices(node) {
 // ============================================================================
 
 function toggleTheme() {
-  const html = document.documentElement;
-  const current = html.getAttribute('data-theme') || 'light';
-  const next = current === 'light' ? 'dark' : 'light';
-  html.setAttribute('data-theme', next);
-  localStorage.setItem('flamegraph-theme', next);
-
-  // Update theme button icon
-  const btn = document.getElementById('theme-btn');
-  if (btn) {
-    btn.querySelector('.icon-moon').style.display = next === 'dark' ? 'none' : '';
-    btn.querySelector('.icon-sun').style.display = next === 'dark' ? '' : 'none';
-  }
+  toggleAndSaveTheme();
 
   // Re-render flamegraph with new theme colors
   if (window.flamegraphData && normalData) {
@@ -154,17 +143,9 @@ function toggleSection(sectionId) {
   }
 }
 
+// Restore theme from localStorage, or use browser preference
 function restoreUIState() {
-  // Restore theme
-  const savedTheme = localStorage.getItem('flamegraph-theme');
-  if (savedTheme) {
-    document.documentElement.setAttribute('data-theme', savedTheme);
-    const btn = document.getElementById('theme-btn');
-    if (btn) {
-      btn.querySelector('.icon-moon').style.display = savedTheme === 'dark' ? 'none' : '';
-      btn.querySelector('.icon-sun').style.display = savedTheme === 'dark' ? '' : 'none';
-    }
-  }
+  applyTheme(getPreferredTheme());
 
   // Restore sidebar state
   const savedSidebar = localStorage.getItem('flamegraph-sidebar');
@@ -742,24 +723,38 @@ function populateThreadStats(data, selectedThreadId = null) {
     if (gilReleasedStat) gilReleasedStat.style.display = 'block';
     if (gilWaitingStat) gilWaitingStat.style.display = 'block';
 
+    const gilHeldPct = threadStats.has_gil_pct || 0;
     const gilHeldPctElem = document.getElementById('gil-held-pct');
-    if (gilHeldPctElem) gilHeldPctElem.textContent = `${(threadStats.has_gil_pct || 0).toFixed(1)}%`;
+    if (gilHeldPctElem) gilHeldPctElem.textContent = `${gilHeldPct.toFixed(1)}%`;
+    const gilHeldFill = document.getElementById('gil-held-fill');
+    if (gilHeldFill) gilHeldFill.style.width = `${gilHeldPct}%`;
 
-    const gilReleasedPctElem = document.getElementById('gil-released-pct');
     // GIL Released = not holding GIL and not waiting for it
     const gilReleasedPct = Math.max(0, 100 - (threadStats.has_gil_pct || 0) - (threadStats.gil_requested_pct || 0));
+    const gilReleasedPctElem = document.getElementById('gil-released-pct');
     if (gilReleasedPctElem) gilReleasedPctElem.textContent = `${gilReleasedPct.toFixed(1)}%`;
+    const gilReleasedFill = document.getElementById('gil-released-fill');
+    if (gilReleasedFill) gilReleasedFill.style.width = `${gilReleasedPct}%`;
 
+    const gilWaitingPct = threadStats.gil_requested_pct || 0;
     const gilWaitingPctElem = document.getElementById('gil-waiting-pct');
-    if (gilWaitingPctElem) gilWaitingPctElem.textContent = `${(threadStats.gil_requested_pct || 0).toFixed(1)}%`;
+    if (gilWaitingPctElem) gilWaitingPctElem.textContent = `${gilWaitingPct.toFixed(1)}%`;
+    const gilWaitingFill = document.getElementById('gil-waiting-fill');
+    if (gilWaitingFill) gilWaitingFill.style.width = `${gilWaitingPct}%`;
   }
 
+  const gcPct = threadStats.gc_pct || 0;
   const gcPctElem = document.getElementById('gc-pct');
-  if (gcPctElem) gcPctElem.textContent = `${(threadStats.gc_pct || 0).toFixed(1)}%`;
+  if (gcPctElem) gcPctElem.textContent = `${gcPct.toFixed(1)}%`;
+  const gcFill = document.getElementById('gc-fill');
+  if (gcFill) gcFill.style.width = `${gcPct}%`;
 
   // Exception stats
+  const excPct = threadStats.has_exception_pct || 0;
   const excPctElem = document.getElementById('exc-pct');
-  if (excPctElem) excPctElem.textContent = `${(threadStats.has_exception_pct || 0).toFixed(1)}%`;
+  if (excPctElem) excPctElem.textContent = `${excPct.toFixed(1)}%`;
+  const excFill = document.getElementById('exc-fill');
+  if (excFill) excFill.style.width = `${excPct}%`;
 }
 
 // ============================================================================
@@ -1226,23 +1221,6 @@ function generateInvertedFlamegraph(data) {
 
   convertInvertDictToArray(invertedRoot);
   return invertedRoot;
-}
-
-function updateToggleUI(toggleId, isOn) {
-  const toggle = document.getElementById(toggleId);
-  if (toggle) {
-    const track = toggle.querySelector('.toggle-track');
-    const labels = toggle.querySelectorAll('.toggle-label');
-    if (isOn) {
-      track.classList.add('on');
-      labels[0].classList.remove('active');
-      labels[1].classList.add('active');
-    } else {
-      track.classList.remove('on');
-      labels[0].classList.add('active');
-      labels[1].classList.remove('active');
-    }
-  }
 }
 
 function toggleInvert() {

@@ -54,7 +54,7 @@ echo.Fetching external libraries...
 set libraries=
 set libraries=%libraries%                                       bzip2-1.0.8
 if NOT "%IncludeLibffiSrc%"=="false" set libraries=%libraries%  libffi-3.4.4
-if NOT "%IncludeSSLSrc%"=="false" set libraries=%libraries%     openssl-3.0.18
+if NOT "%IncludeSSLSrc%"=="false" set libraries=%libraries%     openssl-3.5.5
 set libraries=%libraries%                                       mpdecimal-4.0.0
 set libraries=%libraries%                                       sqlite-3.50.4.0
 if NOT "%IncludeTkinterSrc%"=="false" set libraries=%libraries% tcl-core-8.6.15.0
@@ -79,7 +79,7 @@ echo.Fetching external binaries...
 
 set binaries=
 if NOT "%IncludeLibffi%"=="false"  set binaries=%binaries% libffi-3.4.4
-if NOT "%IncludeSSL%"=="false"     set binaries=%binaries% openssl-bin-3.0.18
+if NOT "%IncludeSSL%"=="false"     set binaries=%binaries% openssl-bin-3.5.5
 if NOT "%IncludeTkinter%"=="false" set binaries=%binaries% tcltk-8.6.15.0
 if NOT "%IncludeSSLSrc%"=="false"  set binaries=%binaries% nasm-2.11.06
 if NOT "%IncludeLLVM%"=="false"    set binaries=%binaries% llvm-21.1.4.0

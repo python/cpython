@@ -155,14 +155,6 @@ def compile(file, cfile=None, dfile=None, doraise=False, optimize=-1,
         dirname = os.path.dirname(cfile)
         if dirname:
             os.makedirs(dirname)
-            if os.path.basename(dirname) == '__pycache__':
-                gitignore = os.path.join(dirname, '.gitignore')
-                if not os.path.exists(gitignore):
-                    try:
-                        with open(gitignore, 'wb') as f:
-                            f.write(b'# Created by CPython\n*\n')
-                    except OSError:
-                        pass
     except FileExistsError:
         pass
     if invalidation_mode == PycInvalidationMode.TIMESTAMP:
@@ -202,8 +194,10 @@ def main():
     else:
         filenames = args.filenames
     for filename in filenames:
+        cfilename = (None if sys.implementation.cache_tag
+                     else f"{filename.rpartition('.')[0]}.pyc")
         try:
-            compile(filename, doraise=True)
+            compile(filename, cfilename, doraise=True)
         except PyCompileError as error:
             if args.quiet:
                 parser.exit(1)

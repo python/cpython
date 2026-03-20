@@ -14,6 +14,7 @@
 #include "pycore_object.h"           // _PyObject_IsUniquelyReferenced
 #include "pycore_pystate.h"          // _PyInterpreterState_GET()
 #include "pycore_setobject.h"        // _PySet_NextEntryRef()
+#include "pycore_tuple.h"            // _PyTuple_FromPairSteal
 #include "pycore_unicodeobject.h"    // _PyUnicode_InternImmortal()
 
 #include "marshal.h"                 // Py_MARSHAL_VERSION
@@ -67,6 +68,7 @@ module marshal
 #define TYPE_TUPLE              '('  // See also TYPE_SMALL_TUPLE.
 #define TYPE_LIST               '['
 #define TYPE_DICT               '{'
+#define TYPE_FROZENDICT         '}'
 #define TYPE_CODE               'c'
 #define TYPE_UNICODE            'u'
 #define TYPE_UNKNOWN            '?'
@@ -432,6 +434,10 @@ w_object(PyObject *v, WFILE *p)
 {
     char flag = '\0';
 
+    if (p->error != WFERR_OK) {
+        return;
+    }
+
     p->depth++;
 
     if (p->depth > MAX_MARSHAL_STACK_DEPTH) {
@@ -571,10 +577,21 @@ w_complex_object(PyObject *v, char flag, WFILE *p)
             w_object(PyList_GET_ITEM(v, i), p);
         }
     }
-    else if (PyDict_CheckExact(v)) {
+    else if (PyAnyDict_CheckExact(v)) {
         Py_ssize_t pos;
         PyObject *key, *value;
-        W_TYPE(TYPE_DICT, p);
+        if (PyFrozenDict_CheckExact(v)) {
+            if (p->version < 6) {
+                w_byte(TYPE_UNKNOWN, p);
+                p->error = WFERR_UNMARSHALLABLE;
+                return;
+            }
+
+            W_TYPE(TYPE_FROZENDICT, p);
+        }
+        else {
+            W_TYPE(TYPE_DICT, p);
+        }
         /* This one is NULL object terminated! */
         pos = 0;
         while (PyDict_Next(v, &pos, &key, &value)) {
@@ -613,9 +630,7 @@ w_complex_object(PyObject *v, char flag, WFILE *p)
                 Py_DECREF(value);
                 break;
             }
-            PyObject *pair = PyTuple_Pack(2, dump, value);
-            Py_DECREF(dump);
-            Py_DECREF(value);
+            PyObject *pair = _PyTuple_FromPairSteal(dump, value);
             if (pair == NULL) {
                 p->error = WFERR_NOMEMORY;
                 break;
@@ -1416,6 +1431,7 @@ r_object(RFILE *p)
         break;
 
     case TYPE_DICT:
+    case TYPE_FROZENDICT:
         v = PyDict_New();
         R_REF(v);
         if (v == NULL)
@@ -1439,7 +1455,16 @@ r_object(RFILE *p)
             Py_DECREF(val);
         }
         if (PyErr_Occurred()) {
-            Py_SETREF(v, NULL);
+            Py_CLEAR(v);
+        }
+        if (type == TYPE_FROZENDICT && v != NULL) {
+            PyObject *frozendict = PyFrozenDict_New(v);
+            if (frozendict != NULL) {
+                Py_SETREF(v, frozendict);
+            }
+            else {
+                Py_CLEAR(v);
+            }
         }
         retval = v;
         break;
