@@ -1,0 +1,2 @@
+Cached FastPath objects in importlib.metadata are now cleared on fork,
+avoiding broken references to zip files during fork.
