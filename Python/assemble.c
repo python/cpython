@@ -669,7 +669,7 @@ error:
 
 
 // The offset (in code units) of the END_SEND from the SEND in the `yield from` sequence.
-#define END_SEND_OFFSET 5
+#define END_SEND_OFFSET 6
 
 static int
 resolve_jump_offsets(instr_sequence *instrs)

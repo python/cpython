@@ -437,13 +437,15 @@ _PyEval_MatchKeys(PyThreadState *tstate, PyObject *map, PyObject *keys)
     // - Atomically check for a key and get its value without error handling.
     // - Don't cause key creation or resizing in dict subclasses like
     //   collections.defaultdict that define __missing__ (or similar).
-    _PyCStackRef cref;
-    _PyThreadState_PushCStackRef(tstate, &cref);
-    int meth_found = _PyObject_GetMethodStackRef(tstate, map, &_Py_ID(get), &cref.ref);
-    PyObject *get = PyStackRef_AsPyObjectBorrow(cref.ref);
-    if (get == NULL) {
+    _PyCStackRef self, method;
+    _PyThreadState_PushCStackRef(tstate, &self);
+    _PyThreadState_PushCStackRef(tstate, &method);
+    self.ref = PyStackRef_FromPyObjectBorrow(map);
+    int res = _PyObject_GetMethodStackRef(tstate, &self.ref, &_Py_ID(get), &method.ref);
+    if (res < 0) {
         goto fail;
     }
+    PyObject *get = PyStackRef_AsPyObjectBorrow(method.ref);
     seen = PySet_New(NULL);
     if (seen == NULL) {
         goto fail;
@@ -467,9 +469,10 @@ _PyEval_MatchKeys(PyThreadState *tstate, PyObject *map, PyObject *keys)
             }
             goto fail;
         }
-        PyObject *args[] = { map, key, dummy };
+        PyObject *self_obj = PyStackRef_AsPyObjectBorrow(self.ref);
+        PyObject *args[] = { self_obj, key, dummy };
         PyObject *value = NULL;
-        if (meth_found) {
+        if (!PyStackRef_IsNull(self.ref)) {
             value = PyObject_Vectorcall(get, args, 3, NULL);
         }
         else {
@@ -490,12 +493,14 @@ _PyEval_MatchKeys(PyThreadState *tstate, PyObject *map, PyObject *keys)
     }
     // Success:
 done:
-    _PyThreadState_PopCStackRef(tstate, &cref);
+    _PyThreadState_PopCStackRef(tstate, &method);
+    _PyThreadState_PopCStackRef(tstate, &self);
     Py_DECREF(seen);
     Py_DECREF(dummy);
     return values;
 fail:
-    _PyThreadState_PopCStackRef(tstate, &cref);
+    _PyThreadState_PopCStackRef(tstate, &method);
+    _PyThreadState_PopCStackRef(tstate, &self);
     Py_XDECREF(seen);
     Py_XDECREF(dummy);
     Py_XDECREF(values);
@@ -1020,26 +1025,17 @@ _Py_LoadAttr_StackRefSteal(
     PyThreadState *tstate, _PyStackRef owner,
     PyObject *name, _PyStackRef *self_or_null)
 {
-    _PyCStackRef method;
+    // Use _PyCStackRefs to ensure that both method and self are visible to
+    // the GC. Even though self_or_null is on the evaluation stack, it may be
+    // after the stackpointer and therefore not visible to the GC.
+    _PyCStackRef method, self;
     _PyThreadState_PushCStackRef(tstate, &method);
-    int is_meth = _PyObject_GetMethodStackRef(tstate, PyStackRef_AsPyObjectBorrow(owner), name, &method.ref);
-    if (is_meth) {
-        /* We can bypass temporary bound method object.
-           meth is unbound method and obj is self.
-           meth | self | arg1 | ... | argN
-         */
-        assert(!PyStackRef_IsNull(method.ref)); // No errors on this branch
-        self_or_null[0] = owner;  // Transfer ownership
-        return _PyThreadState_PopCStackRefSteal(tstate, &method);
-    }
-    /* meth is not an unbound method (but a regular attr, or
-       something was returned by a descriptor protocol).  Set
-       the second element of the stack to NULL, to signal
-       CALL that it's not a method call.
-       meth | NULL | arg1 | ... | argN
-    */
-    PyStackRef_CLOSE(owner);
-    self_or_null[0] = PyStackRef_NULL;
+    _PyThreadState_PushCStackRef(tstate, &self);
+    self.ref = owner;  // steal reference to owner
+    // NOTE: method.ref is initialized to PyStackRef_NULL and remains null on
+    // error, so we don't need to explicitly use the return code from the call.
+    _PyObject_GetMethodStackRef(tstate, &self.ref, name, &method.ref);
+    *self_or_null = _PyThreadState_PopCStackRefSteal(tstate, &self);
     return _PyThreadState_PopCStackRefSteal(tstate, &method);
 }
 
@@ -1095,7 +1091,8 @@ static const _Py_CODEUNIT _Py_INTERPRETER_TRAMPOLINE_INSTRUCTIONS[] = {
     { .op.code = INTERPRETER_EXIT, .op.arg = 0 },  /* reached on return */
     { .op.code = NOP, .op.arg = 0 },
     { .op.code = INTERPRETER_EXIT, .op.arg = 0 },  /* reached on yield */
-    { .op.code = RESUME, .op.arg = RESUME_OPARG_DEPTH1_MASK | RESUME_AT_FUNC_START }
+    { .op.code = RESUME, .op.arg = RESUME_OPARG_DEPTH1_MASK | RESUME_AT_FUNC_START },
+    { .op.code = CACHE, .op.arg = 0 } /* RESUME's CACHE */
 };
 
 const _Py_CODEUNIT *_Py_INTERPRETER_TRAMPOLINE_INSTRUCTIONS_PTR = (_Py_CODEUNIT*)&_Py_INTERPRETER_TRAMPOLINE_INSTRUCTIONS;
@@ -1371,7 +1368,7 @@ tier2_dispatch:
     for (;;) {
         uopcode = next_uop->opcode;
 #ifdef Py_DEBUG
-        if (frame->lltrace >= 3) {
+        if (frame->lltrace >= 4) {
             dump_stack(frame, stack_pointer);
             printf("    cache=[");
             dump_cache_item(_tos_cache0, 0, current_cached_values);
@@ -2240,15 +2237,19 @@ _PyEval_ExceptionGroupMatch(_PyInterpreterFrame *frame, PyObject* exc_value,
                 return -1;
             }
             PyFrameObject *f = _PyFrame_GetFrameObject(frame);
-            if (f != NULL) {
-                PyObject *tb = _PyTraceBack_FromFrame(NULL, f);
-                if (tb == NULL) {
-                    Py_DECREF(wrapped);
-                    return -1;
-                }
-                PyException_SetTraceback(wrapped, tb);
-                Py_DECREF(tb);
+            if (f == NULL) {
+                Py_DECREF(wrapped);
+                return -1;
             }
+
+            PyObject *tb = _PyTraceBack_FromFrame(NULL, f);
+            if (tb == NULL) {
+                Py_DECREF(wrapped);
+                return -1;
+            }
+            PyException_SetTraceback(wrapped, tb);
+            Py_DECREF(tb);
+
             *match = wrapped;
         }
         *rest = Py_NewRef(Py_None);
@@ -2623,6 +2624,11 @@ PyEval_GetLocals(void)
 
     if (PyFrameLocalsProxy_Check(locals)) {
         PyFrameObject *f = _PyFrame_GetFrameObject(current_frame);
+        if (f == NULL) {
+            Py_DECREF(locals);
+            return NULL;
+        }
+
         PyObject *ret = f->f_locals_cache;
         if (ret == NULL) {
             ret = PyDict_New();

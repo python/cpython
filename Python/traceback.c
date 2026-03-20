@@ -41,7 +41,7 @@
 
 #if defined(__STDC_NO_VLA__) && (__STDC_NO_VLA__ == 1)
 /* Use alloca() for VLAs. */
-#  define VLA(type, name, size) type *name = alloca(size)
+#  define VLA(type, name, size) type *name = alloca(sizeof(type) * (size))
 #elif !defined(__STDC_NO_VLA__) || (__STDC_NO_VLA__ == 0)
 /* Use actual C VLAs.*/
 #  define VLA(type, name, size) type name[size]

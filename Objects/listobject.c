@@ -601,7 +601,7 @@ list_repr_impl(PyListObject *v)
        so must refetch the list size on each iteration. */
     for (Py_ssize_t i = 0; i < Py_SIZE(v); ++i) {
         /* Hold a strong reference since repr(item) can mutate the list */
-        item = Py_NewRef(v->ob_item[i]);
+        item = Py_XNewRef(v->ob_item[i]);
 
         if (i > 0) {
             if (PyUnicodeWriter_WriteChar(writer, ',') < 0) {
@@ -3283,10 +3283,8 @@ _PyList_AsTupleAndClear(PyListObject *self)
     Py_BEGIN_CRITICAL_SECTION(self);
     PyObject **items = self->ob_item;
     Py_ssize_t size = Py_SIZE(self);
-    self->ob_item = NULL;
     Py_SET_SIZE(self, 0);
     ret = _PyTuple_FromArraySteal(items, size);
-    free_list_items(items, false);
     Py_END_CRITICAL_SECTION();
     return ret;
 }

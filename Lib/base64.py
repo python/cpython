@@ -56,11 +56,13 @@ def b64encode(s, altchars=None, *, wrapcol=0):
     If wrapcol is non-zero, insert a newline (b'\\n') character after at most
     every wrapcol characters.
     """
-    encoded = binascii.b2a_base64(s, wrapcol=wrapcol, newline=False)
     if altchars is not None:
-        assert len(altchars) == 2, repr(altchars)
-        return encoded.translate(bytes.maketrans(b'+/', altchars))
-    return encoded
+        if len(altchars) != 2:
+            raise ValueError(f'invalid altchars: {altchars!r}')
+        alphabet = binascii.BASE64_ALPHABET[:-2] + altchars
+        return binascii.b2a_base64(s, wrapcol=wrapcol, newline=False,
+                                   alphabet=alphabet)
+    return binascii.b2a_base64(s, wrapcol=wrapcol, newline=False)
 
 
 def b64decode(s, altchars=None, validate=_NOT_SPECIFIED, *, ignorechars=_NOT_SPECIFIED):
@@ -100,9 +102,10 @@ def b64decode(s, altchars=None, validate=_NOT_SPECIFIED, *, ignorechars=_NOT_SPE
                     break
             s = s.translate(bytes.maketrans(altchars, b'+/'))
         else:
-            trans = bytes.maketrans(b'+/' + altchars, altchars + b'+/')
-            s = s.translate(trans)
-            ignorechars = ignorechars.translate(trans)
+            alphabet = binascii.BASE64_ALPHABET[:-2] + altchars
+            return binascii.a2b_base64(s, strict_mode=validate,
+                                       alphabet=alphabet,
+                                       ignorechars=ignorechars)
     if ignorechars is _NOT_SPECIFIED:
         ignorechars = b''
     result = binascii.a2b_base64(s, strict_mode=validate,
@@ -140,7 +143,6 @@ def standard_b64decode(s):
     return b64decode(s)
 
 
-_urlsafe_encode_translation = bytes.maketrans(b'+/', b'-_')
 _urlsafe_decode_translation = bytes.maketrans(b'-_', b'+/')
 
 def urlsafe_b64encode(s):
@@ -150,7 +152,8 @@ def urlsafe_b64encode(s):
     bytes object.  The alphabet uses '-' instead of '+' and '_' instead of
     '/'.
     """
-    return b64encode(s).translate(_urlsafe_encode_translation)
+    return binascii.b2a_base64(s, newline=False,
+                               alphabet=binascii.URLSAFE_BASE64_ALPHABET)
 
 def urlsafe_b64decode(s):
     """Decode bytes using the URL- and filesystem-safe Base64 alphabet.
@@ -393,14 +396,14 @@ def b85decode(b):
 
 def z85encode(s, pad=False):
     """Encode bytes-like object b in z85 format and return a bytes object."""
-    return binascii.b2a_z85(s, pad=pad)
+    return binascii.b2a_base85(s, pad=pad, alphabet=binascii.Z85_ALPHABET)
 
 def z85decode(s):
     """Decode the z85-encoded bytes-like object or ASCII string b
 
     The result is returned as a bytes object.
     """
-    return binascii.a2b_z85(s)
+    return binascii.a2b_base85(s, alphabet=binascii.Z85_ALPHABET)
 
 # Legacy interface.  This code could be cleaned up since I don't believe
 # binascii has any line length limitations.  It just doesn't seem worth it

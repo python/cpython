@@ -597,18 +597,23 @@ init_interpreter(PyInterpreterState *interp,
     interp->_code_object_generation = 0;
     interp->jit = false;
     interp->compiling = false;
-    interp->executor_list_head = NULL;
+    interp->executor_blooms = NULL;
+    interp->executor_ptrs = NULL;
+    interp->executor_count = 0;
+    interp->executor_capacity = 0;
     interp->executor_deletion_list_head = NULL;
     interp->executor_creation_counter = JIT_CLEANUP_THRESHOLD;
 
     // Initialize optimization configuration from environment variables
     // PYTHON_JIT_STRESS sets aggressive defaults for testing, but can be overridden
     uint16_t jump_default = JUMP_BACKWARD_INITIAL_VALUE;
+    uint16_t resume_default = RESUME_INITIAL_VALUE;
     uint16_t side_exit_default = SIDE_EXIT_INITIAL_VALUE;
 
     if (is_env_enabled("PYTHON_JIT_STRESS")) {
         jump_default = 63;
         side_exit_default = 63;
+        resume_default = 127;
     }
 
     init_policy(&interp->opt_config.jump_backward_initial_value,
@@ -617,6 +622,12 @@ init_interpreter(PyInterpreterState *interp,
     init_policy(&interp->opt_config.jump_backward_initial_backoff,
                 "PYTHON_JIT_JUMP_BACKWARD_INITIAL_BACKOFF",
                 JUMP_BACKWARD_INITIAL_BACKOFF, 0, MAX_BACKOFF);
+    init_policy(&interp->opt_config.resume_initial_value,
+                "PYTHON_JIT_RESUME_INITIAL_VALUE",
+                resume_default, 1, MAX_VALUE);
+    init_policy(&interp->opt_config.resume_initial_backoff,
+                "PYTHON_JIT_RESUME_INITIAL_BACKOFF",
+                RESUME_INITIAL_BACKOFF, 0, MAX_BACKOFF);
     init_policy(&interp->opt_config.side_exit_initial_value,
                 "PYTHON_JIT_SIDE_EXIT_INITIAL_VALUE",
                 side_exit_default, 1, MAX_VALUE);
