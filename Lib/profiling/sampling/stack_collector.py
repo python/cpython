@@ -170,7 +170,23 @@ class FlamegraphCollector(StackTraceCollector):
 
     @staticmethod
     @functools.lru_cache(maxsize=None)
-    def _format_function_name(func, module_name):
+    def _format_function_name(func):
+        filename, lineno, funcname = func
+
+        # Special frames like <GC> and <native> should not show file:line
+        if filename == "~" and lineno == 0:
+            return funcname
+
+        if len(filename) > 50:
+            parts = filename.split("/")
+            if len(parts) > 2:
+                filename = f".../{'/'.join(parts[-2:])}"
+
+        return f"{funcname} ({filename}:{lineno})"
+
+    @staticmethod
+    @functools.lru_cache(maxsize=None)
+    def _format_module_name(func, module_name):
         filename, lineno, funcname = func
 
         # Special frames like <GC> and <native> should not show file:line
@@ -209,10 +225,12 @@ class FlamegraphCollector(StackTraceCollector):
                 module_name = self._get_module_name(func[0], path_info)
 
                 module_name_idx = self._string_table.intern(module_name)
-                name_idx = self._string_table.intern(self._format_function_name(func, module_name))
+                name_idx = self._string_table.intern(self._format_function_name(func))
+                name_module_idx = self._string_table.intern(self._format_module_name(func, module_name))
 
                 child_entry = {
                     "name": name_idx,
+                    "name_module": name_module_idx,
                     "value": samples,
                     "self": node.get("self", 0),
                     "children": [],
