@@ -1,0 +1,1 @@
+Add support for OpenSSL 4.0.0 alpha1. Patch by Victor Stinner.
