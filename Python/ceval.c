@@ -1212,10 +1212,6 @@ dtrace_function_return(_PyInterpreterFrame *frame)
 }
 #endif
 
-typedef struct {
-    _PyInterpreterFrame frame;
-    _PyStackRef stack[1];
-} _PyEntryFrame;
 PyObject* _Py_HOT_FUNCTION DONT_SLP_VECTORIZE
 _PyEval_EvalFrameDefault(PyThreadState *tstate, _PyInterpreterFrame *frame, int throwflag)
 {

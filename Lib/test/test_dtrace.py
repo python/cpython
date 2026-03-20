@@ -101,7 +101,9 @@ class TraceBackend:
 
 class DTraceBackend(TraceBackend):
     EXTENSION = ".d"
-    COMMAND = ["dtrace", "-q", "-Z", "-s"]
+    COMMAND = ["dtrace", "-q", "-s"]
+    if sys.platform == "sunos5":
+        COMMAND.insert(2, "-Z")
 
 
 class SystemTapBackend(TraceBackend):
