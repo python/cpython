@@ -1364,7 +1364,6 @@ Tracebacks
    100 frames; further frames are truncated with the line ``...``.
 
    This function will return ``NULL`` on success, or an error message on error.
-   It will also write this error message to *fd*.
 
    This function is intended for use in crash scenarios such as signal handlers
    for SIGSEGV, where the interpreter may be in an inconsistent state. Given
