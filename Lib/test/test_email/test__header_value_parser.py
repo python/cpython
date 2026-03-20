@@ -2107,15 +2107,28 @@ class TestParser(TestParserMixin, TestEmailBase):
     # XXX POSDEP: ...to here.
 
 
+    # XXX POSTDEP: delete from here...
+    #
     # get_qcontent
 
     @params
     def test_get_qcontent(self, s, *args, **kw):
-        ptext = self._test_parse(parser.get_qcontent, C(s), *args, **kw)
+        ptext = self._test_parse(
+            parser.get_qcontent,
+            C(s),
+            *args,
+            test_start=False,
+            warnings=[
+                (DeprecationWarning, r".*deprecated.*get_bare_quoted_string"),
+                (DeprecationWarning, r".*ptext.*deprecated"),
+                (DeprecationWarning, r".*validate.*deprecated"),
+                ],
+            **kw,
+            )
         self.assertIsInstance(ptext, parser.Terminal)
         self.assertEqual(ptext.token_type, 'ptext')
 
-    params_test_get_qcontent = old_api_only(
+    params_test_get_qcontent = Params(
 
         no_qp_no_end_char = C(
             'foobar',
@@ -2171,6 +2184,8 @@ class TestParser(TestParserMixin, TestEmailBase):
             ),
 
         )
+
+    # XXX POSTDEP: ...to here.
 
 
     # get_atext

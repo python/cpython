@@ -1545,6 +1545,7 @@ def get_qp_ctext(value):
     _validate_xtext(ptext)
     return ptext, value
 
+@_deprecate('get_bare_quoted_string')
 def get_qcontent(value):
     """qcontent = qtext / quoted-pair
 
