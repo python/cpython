@@ -1596,6 +1596,7 @@ def get_atext_sequence(value, start):
             )
     return atext, end
 
+@_deprecate('get_atext_sequence')
 def get_atext(value):
     """atext = <matches _atext_matcher>
 
