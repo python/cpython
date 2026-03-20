@@ -29,6 +29,7 @@ jobs:
         h = hashlib.sha256()
         h.update(json.dumps(config["dependencies"], sort_keys=True).encode())
         h.update(Path("Platforms/emscripten/make_libffi.sh").read_bytes())
+        h.update(b'1') # Update to explicitly bust cache
         emsdk_cache = Path(os.environ["RUNNER_TEMP"]) / "emsdk-cache"
         with open(os.environ["GITHUB_OUTPUT"], "a") as f:
             f.write(f"emscripten-version={config['emscripten-version']}\n")
