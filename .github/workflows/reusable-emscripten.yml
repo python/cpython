@@ -45,7 +45,7 @@ jobs:
       with:
         path: ${{ env.EMSDK_CACHE }}
         key: emsdk-${{ steps.emscripten-config.outputs.emscripten-version }}-${{ steps.emscripten-config.outputs.deps-hash }}
-        restore-key: emsdk-${{ steps.emscripten-config.outputs.emscripten-version }}
+        restore-keys: emsdk-${{ steps.emscripten-config.outputs.emscripten-version }}
     - name: "Install Python"
       uses: actions/setup-python@v6
       with:
