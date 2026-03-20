@@ -3212,7 +3212,6 @@ class PathTest(PurePathTest):
         st = os.stat(self.parser.join(self.base, 'masked_new_file'))
         self.assertEqual(stat.S_IMODE(st.st_mode), 0o750)
 
-    @unittest.skipUnless(pwd, "the pwd module is needed for this test")
     @unittest.skipUnless(hasattr(pwd, 'getpwall'),
                          'pwd module does not expose getpwall()')
     @unittest.skipIf(sys.platform == "vxworks",
@@ -3220,6 +3219,8 @@ class PathTest(PurePathTest):
     @needs_posix
     def test_expanduser_posix(self):
         P = self.cls
+        import_helper.import_module('pwd')
+        import pwd
         pwdent = pwd.getpwuid(os.getuid())
         username = pwdent.pw_name
         userhome = pwdent.pw_dir.rstrip('/') or '/'
