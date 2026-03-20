@@ -8,8 +8,6 @@ import sys
 import textwrap
 from importlib import resources
 
-from test.support import os_helper
-
 from test.support import import_helper
 from test.support import os_helper
 from test.support import requires_zlib
