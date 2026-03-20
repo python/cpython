@@ -2188,17 +2188,92 @@ class TestParser(TestParserMixin, TestEmailBase):
     # XXX POSTDEP: ...to here.
 
 
+    # get_atext_sequence
+
+    @params
+    def test_get_atext_sequence(self, s, *args, **kw):
+        tl = self._test_parse(parser.get_atext_sequence, C(s), *args, **kw)
+        if 'exception' in kw:
+            return
+        self.assertIsInstance(tl, parser.TokenList)
+        # There can be fws inside the encoded words.
+        self.verify_terminal_types(tl, 'atext', 'fws')
+
+    params_test_get_atext_sequence = Params(
+
+        ew_only = C(
+            '=?utf-8?q?=20bob?=',
+            stringified=' bob',
+            ew_indexes=[0],
+            ),
+
+        # get_atext_sequence doesn't add a missing whitespace error here even
+        # though the RFC requires one before the special, because adding that
+        # defect is handled at the next level up in the parser.
+        # XXX Ideally this should have a defect for the specials.
+        **for_each_character(RFC_SPECIALS)(
+            ew_with_unencoded_special = C(
+                '=?UTF-8?q?bob{char}?=@foo',
+                stringified='bob{char}',
+                remainder='@foo',
+                ew_indexes=[0],
+                ),
+            ),
+
+        ew_after_atom_no_ws = C(
+            'foo@=?UTF-8?q?bob?=',
+            value='foo',
+            remainder='@=?UTF-8?q?bob?=',
+            ),
+
+        multiple_ew_no_ws = C(
+            '=?UTF-8?q?foo?==?UTF-8?q?bar?=',
+            stringified='foobar',
+            defects=[
+                missing_whitespace_after_ew_defect,
+                missing_whitespace_before_ew_defect,
+                ],
+            ew_indexes=[0, 15],
+            ),
+
+        ew_in_middle_of_atext = C(
+            'foo{=?UTF-8?q?foo?=}{=?UTF-8?q?bar?=}bar',
+            stringified='foo{foo}{bar}bar',
+            defects=[
+                missing_whitespace_before_ew_defect,
+                missing_whitespace_after_ew_defect,
+                missing_whitespace_before_ew_defect,
+                missing_whitespace_after_ew_defect,
+                ],
+            ew_indexes=[4, 21],
+            ),
+
+        all_non_special_printables_are_allowed = C(
+            f'{"".join(set(RFC_PRINTABLES) - set(RFC_SPECIALS))}@',
+            remainder='@',
+            ),
+
+        )
+
+
     # get_atext
 
     @params
     def test_get_atext(self, s, *args, **kw):
-        atext = self._test_parse(parser.get_atext, C(s), *args, **kw)
+        atext = self._test_parse(
+            parser.get_atext,
+            C(s),
+            *args,
+            warnings=...,
+            test_start=False,
+            **kw,
+            )
         if 'exception' in kw:
             return
         self.assertIsInstance(atext, parser.Terminal)
         self.assertEqual(atext.token_type, 'atext')
 
-    params_test_get_atext = old_api_only(
+    params_test_get_atext = Params(
 
         only = C(
             'foobar',
@@ -2251,6 +2326,19 @@ class TestParser(TestParserMixin, TestEmailBase):
             exception=(errors.HeaderParseError, '(?i)expected'),
             ),
 
+        )
+
+    # This params_map deals with the fact that get_atext doesn't call repr
+    # on value in the exception message, but get_atext_sequence does.
+    @params_map(with_namelist=True)
+    def atext_repr_fixup(nl, *args, **kw):
+        if nl.has_all('no_atext_before_special_or_wsp', 'HT'):
+            kw['exception'] = (kw['exception'][0], re.escape('\\tfoo'))
+        yield '', C(*args, **kw)
+
+    # get_atext_sequence needs to pass all the get_atext tests.
+    params_test_get_atext_sequence.update(
+        atext_repr_fixup(params_test_get_atext)
         )
 
 
@@ -2994,14 +3082,16 @@ class TestParser(TestParserMixin, TestEmailBase):
 
         adapt_get_cfws_tests_for_get_atom(params_test_get_cfws),
 
-        # get_atom should pass all the get_atext tests except for those
+        # get_atom should pass all the get_atext_sequence tests except for those
         # involving leading or trailing whitespace.
         include_unless(
             lambda n, s, *a, remainder='', **k:
                 s.startswith(tuple(CFWS_LEADER))
+                # XXX XXX disable the ew tests until get_atom is refactored
+                or 'ew_' in str(n)
                 or remainder.startswith(tuple(CFWS_LEADER)),
-            label='from_test_get_atext',
-            )(params_test_get_atext),
+            label='from_test_get_atext_sequence',
+            )(params_test_get_atext_sequence),
 
         with_wsp = C(
             '\t bob  ',
@@ -3180,11 +3270,15 @@ class TestParser(TestParserMixin, TestEmailBase):
     params_test_get_dot_atom_text = old_api_only(
 
         # a bare atext is valid in a dot-atom, so we should pass all the
-        # get_atext tests except the ones involving the dot.
+        # get_atext_sequence tests except the ones involving the dot.
         include_unless(
-            lambda n, *a, **k:  'full_stop' in n,
+            lambda n, *a, **k:  'full_stop' in n
+                # XXX XXX disable ew tests until get_dot_atom_text refactored
+                or 'ew_' in str(n)
+                # XXX XXX disable the test involving an escaped repr likewise.
+                or n.has_all('no_atext_before_special_or_wsp', 'HT'),
             label='from_test_get_atext',
-            )(params_test_get_atext),
+            )(params_test_get_atext_sequence),
 
         only = C(
             'foo.bar.bang',
@@ -3258,7 +3352,9 @@ class TestParser(TestParserMixin, TestEmailBase):
         # Atom is a subset of dot atom, so get_dot_atom should pass any
         # get_atom test except those involving the dot (full_stop).
         include_unless(
-            lambda n, *a, **k:  'full_stop' in n,
+            lambda n, *a, **k:  'full_stop' in n
+                # XXX XXX disable the ew tests until get_dot_atom is refactored
+                or 'ew_' in str(n),
             label='from_test_get_atom',
             )(params_test_get_atom),
 
@@ -3425,7 +3521,9 @@ class TestParser(TestParserMixin, TestEmailBase):
                         'no_atom_before_special',
                         'no_atext_before_special_or_wsp',
                         )
-                    and 'quotation_mark' in n,
+                    and 'quotation_mark' in n
+                    # XXX XXX disable the ew tests until get_word is refactored
+                    or 'ew_' in str(n),
                 label='from_test_get_atom',
                 )(params_test_get_atom),
             ),

@@ -83,8 +83,12 @@ from functools import partial, wraps
 # https://datatracker.ietf.org/doc/html/rfc5322#section-2.2
 _WSP = ' \t'
 WSP = set(_WSP)
+# This isn't an RFC concept but is useful for parsing.
 CFWS_LEADER = WSP | set('(')
+# https://datatracker.ietf.org/doc/html/rfc5322#section-3.2.3
 SPECIALS = set(r'()<>@,:;.\"[]')
+# https://datatracker.ietf.org/doc/html/rfc5322#section-3.2.3
+# These are the characters that *can't* appear in an atom/dot-atom (non-atext).
 ATOM_ENDS = SPECIALS | WSP
 DOT_ATOM_ENDS = ATOM_ENDS - set('.')
 # '.', '"', and '(' do not end phrases in order to support obs-phrase
@@ -1560,6 +1564,37 @@ def get_qcontent(value):
     ptext = ValueTerminal(ptext, 'ptext')
     _validate_xtext(ptext)
     return ptext, value
+
+_get_atext_content = content_getter(TokenList, 'atext', end_chars=ATOM_ENDS)
+def get_atext_sequence(value, start):
+    """atext = Printable US-ASCII characters not including specials
+
+    This augments the RFC atext by handling encoded words at a level that makes
+    it easier to recover from errors in the input.
+
+    Return a TokenList containing all characters up to the next special or WSP
+    outside of an encoded word (or the end of value), and the index of the
+    special or WSP (or the len of value), decoding any encoded words.
+
+    Raise a HeaderParseError if no characters are found before the special,
+    WSP, or end of value.
+
+    Encoded words should be decoded even if there is non-whitespace around
+    them, and whether or not they contain any RFC invalid whitespace.  Register
+    internal or missing whitespace defects.
+
+    Register defects if there are any non-printable or undecodable characters
+    in the non-whitespace tokens.
+
+    All ValueTerminals returned should have the type 'atext'.
+
+    """
+    atext, end = _get_atext_content(value, start)
+    if not atext:
+        raise errors.HeaderParseError(
+            f"expected atext but found {value[start:]!r}",
+            )
+    return atext, end
 
 def get_atext(value):
     """atext = <matches _atext_matcher>
