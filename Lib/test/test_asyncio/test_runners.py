@@ -522,6 +522,51 @@ class RunnerTests(BaseTest):
 
         self.assertEqual(0, result.repr_count)
 
+    def test_nested_keyboardinterrupt_handling(self):
+        """Test that multiple KeyboardInterrupts are handled correctly."""
+        results = []
+
+        async def nested_coro():
+            try:
+                while True:
+                    await asyncio.sleep(0.1)
+                    results.append('*')
+            except asyncio.CancelledError:
+                results.append('first_cancelled')
+                try:
+                    while True:
+                        await asyncio.sleep(0.1)
+                        results.append('#')
+                except asyncio.CancelledError:
+                    results.append('second_cancelled')
+                    try:
+                        while True:
+                            await asyncio.sleep(0.1)
+                            results.append('!')
+                    except asyncio.CancelledError:
+                        results.append('third_cancelled')
+
+
+        def run_with_cancels():
+            async def main():
+                task = asyncio.create_task(nested_coro())
+                await asyncio.sleep(0.2)
+                task.cancel()
+                await asyncio.sleep(0.2)
+                task.cancel()
+                await asyncio.sleep(0.2)
+                task.cancel()
+                await asyncio.sleep(0.1)
+
+            asyncio.run(main())
+
+        run_with_cancels()
+
+
+        self.assertIn('first_cancelled', results)
+        self.assertIn('second_cancelled', results)
+        self.assertIn('third_cancelled', results)
+
 
 if __name__ == '__main__':
     unittest.main()

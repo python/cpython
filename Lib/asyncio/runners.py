@@ -158,12 +158,14 @@ class Runner:
 
     def _on_sigint(self, signum, frame, main_task):
         self._interrupt_count += 1
-        if self._interrupt_count == 1 and not main_task.done():
+
+        if not main_task.done():
             main_task.cancel()
-            # wakeup loop if it is blocked by select() with long timeout
             self._loop.call_soon_threadsafe(lambda: None)
-            return
-        raise KeyboardInterrupt()
+
+
+        if self._interrupt_count > 10:
+            raise KeyboardInterrupt()
 
 
 def run(main, *, debug=None, loop_factory=None):
