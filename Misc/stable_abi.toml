@@ -2692,7 +2692,5 @@
     # (The definition of 'full-abi' was clarified when this entry was added.)
     struct_abi_kind = 'full-abi'
 
-[function.PyObject_CallFinalizer]
-    added = '3.15'
 [function.PyObject_CallFinalizerFromDealloc]
     added = '3.15'

@@ -305,21 +305,6 @@ class CAPITest(unittest.TestCase):
         output = self.pyobject_dump(NULL)
         self.assertRegex(output, r'<object at .* is freed>')
 
-    def test_pyobject_callfinalizer(self):
-        # Test PyObject_CallFinalizer()
-        pyobject_callfinalizer = _testlimitedcapi.pyobject_callfinalizer
-
-        class Finalizer:
-            def __init__(self):
-                self.finalized = False
-            def __del__(self):
-                self.finalized = True
-
-        obj = Finalizer()
-        self.assertFalse(obj.finalized)
-        pyobject_callfinalizer(obj)
-        self.assertTrue(obj.finalized)
-
 
 if __name__ == "__main__":
     unittest.main()

@@ -1,3 +1,2 @@
-Add :c:func:`PyObject_CallFinalizer` and
-:c:func:`PyObject_CallFinalizerFromDealloc` functions to the limited C API.
+Add :c:func:`PyObject_CallFinalizerFromDealloc` function to the limited C API.
 Patch by Victor Stinner.

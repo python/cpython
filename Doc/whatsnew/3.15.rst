@@ -1662,8 +1662,8 @@ New features
 
   (Contributed by Victor Stinner in :gh:`141510`.)
 
-* Add :c:func:`PyObject_CallFinalizer` and
-  :c:func:`PyObject_CallFinalizerFromDealloc` functions to the limited C API.
+* Add :c:func:`PyObject_CallFinalizerFromDealloc` function to the limited C
+  API.
   (Contributed by Victor Stinner in :gh:`146063`.)
 
 * Add :c:func:`PySys_GetAttr`, :c:func:`PySys_GetAttrString`,

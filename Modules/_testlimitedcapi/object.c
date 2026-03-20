@@ -1,7 +1,7 @@
-// Need limited C API version 3.15 for PyObject_CallFinalizer()
+// Need limited C API version 3.13 for Py_GetConstant()
 #include "pyconfig.h"   // Py_GIL_DISABLED
 #if !defined(Py_GIL_DISABLED) && !defined(Py_LIMITED_API)
-#  define Py_LIMITED_API 0x030f0000
+#  define Py_LIMITED_API 0x030d0000
 #endif
 
 #include "parts.h"
@@ -62,25 +62,19 @@ test_constants(PyObject *Py_UNUSED(module), PyObject *Py_UNUSED(args))
     Py_RETURN_NONE;
 }
 
-
-static PyObject *
-pyobject_callfinalizer(PyObject *Py_UNUSED(module), PyObject *obj)
-{
-    PyObject_CallFinalizer(obj);
-    Py_RETURN_NONE;
-}
-
-
 static PyMethodDef test_methods[] = {
     {"get_constant", get_constant, METH_VARARGS},
     {"get_constant_borrowed", get_constant_borrowed, METH_VARARGS},
     {"test_constants", test_constants, METH_NOARGS},
-    {"pyobject_callfinalizer", pyobject_callfinalizer, METH_O},
     {NULL},
 };
 
 int
 _PyTestLimitedCAPI_Init_Object(PyObject *m)
 {
-    return PyModule_AddFunctions(m, test_methods);
+    if (PyModule_AddFunctions(m, test_methods) < 0) {
+        return -1;
+    }
+
+    return 0;
 }
