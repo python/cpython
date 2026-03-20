@@ -2253,6 +2253,8 @@ class TestParser(TestParserMixin, TestEmailBase):
             remainder='@',
             ),
 
+        # XXX POSTDEP: delete from here...
+
         )
 
 
@@ -2260,11 +2262,14 @@ class TestParser(TestParserMixin, TestEmailBase):
 
     @params
     def test_get_atext(self, s, *args, **kw):
+        warnings = [(DeprecationWarning, '.*deprecated.*get_atext_sequence')]
+        if 'exception' not in kw:
+            warnings.append((DeprecationWarning, '.*deprecated'))
         atext = self._test_parse(
             parser.get_atext,
             C(s),
             *args,
-            warnings=...,
+            warnings=warnings,
             test_start=False,
             **kw,
             )
@@ -2274,6 +2279,8 @@ class TestParser(TestParserMixin, TestEmailBase):
         self.assertEqual(atext.token_type, 'atext')
 
     params_test_get_atext = Params(
+
+        # XXX POSTDEP: ....to here
 
         only = C(
             'foobar',
@@ -2312,6 +2319,7 @@ class TestParser(TestParserMixin, TestEmailBase):
         **for_each_character(RFC_SPECIALS + RFC_WSP)(
             no_atext_before_special_or_wsp = C(
                 '{char}foo',
+                # XXX POSTDEP: replace 'echar' with 'erchar':
                 exception=(errors.HeaderParseError, '{echar}foo'),
                 ),
             ),
@@ -2328,6 +2336,8 @@ class TestParser(TestParserMixin, TestEmailBase):
 
         )
 
+    # XXX POSTDEP: Delete from here...
+    #
     # This params_map deals with the fact that get_atext doesn't call repr
     # on value in the exception message, but get_atext_sequence does.
     @params_map(with_namelist=True)
@@ -2340,6 +2350,7 @@ class TestParser(TestParserMixin, TestEmailBase):
     params_test_get_atext_sequence.update(
         atext_repr_fixup(params_test_get_atext)
         )
+    # XXX POSTDEP: ...to here.
 
 
     # get_bare_quoted_string
