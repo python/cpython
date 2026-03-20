@@ -72,8 +72,8 @@
 //   def _Py_atomic_load_ptr_acquire(obj):
 //       return obj  # acquire
 //
-//   def _Py_atomic_store_ptr_release(obj):
-//       return obj  # release
+//   def _Py_atomic_store_ptr_release(obj, value):
+//       obj = value  # release
 //
 //   def _Py_atomic_fence_seq_cst():
 //       # sequential consistency
