@@ -1677,9 +1677,11 @@ parse_tz_str(zoneinfo_state *state, PyObject *tz_str_obj, _tzrule *out)
         p++;
 
         if (parse_transition_rule(&p, transitions[i])) {
-            PyErr_Format(PyExc_ValueError,
-                         "Malformed transition rule in TZ string: %R",
-                         tz_str_obj);
+            if (!PyErr_ExceptionMatches(PyExc_MemoryError)) {
+                PyErr_Format(PyExc_ValueError,
+                             "Malformed transition rule in TZ string: %R",
+                             tz_str_obj);
+            }
             goto error;
         }
     }
@@ -1879,6 +1881,7 @@ parse_transition_rule(const char **p, TransitionRuleType **out)
 
         CalendarRule *rv = PyMem_Calloc(1, sizeof(CalendarRule));
         if (rv == NULL) {
+            PyErr_NoMemory();
             return -1;
         }
 
@@ -1910,6 +1913,7 @@ parse_transition_rule(const char **p, TransitionRuleType **out)
 
         DayRule *rv = PyMem_Calloc(1, sizeof(DayRule));
         if (rv == NULL) {
+            PyErr_NoMemory();
             return -1;
         }
 
