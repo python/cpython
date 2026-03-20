@@ -41,6 +41,7 @@ jobs:
       with:
         node-version: ${{ steps.emscripten-config.outputs.node-version }}
     - name: "Cache Emscripten SDK"
+      id: emsdk-cache
       uses: actions/cache@v5
       with:
         path: ${{ env.EMSDK_CACHE }}
@@ -59,7 +60,9 @@ jobs:
     - name: "Make build Python"
       run: python3 Platforms/emscripten make-build-python
     - name: "Make dependencies"
-      run: python3 Platforms/emscripten make-dependencies
+      run: >-
+        python3 Platforms/emscripten make-dependencies
+        ${{ steps.emsdk-cache.outputs.cache-hit == 'true' && '--check-up-to-date' || '' }}
     - name: "Configure host Python"
       run: python3 Platforms/emscripten configure-host --host-runner node -- --config-cache
     - name: "Make host Python"
