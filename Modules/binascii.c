@@ -67,6 +67,7 @@
 typedef struct binascii_state {
     PyObject *Error;
     PyObject *Incomplete;
+    PyObject *reverse_table_cache;
 } binascii_state;
 
 static inline binascii_state *
@@ -228,26 +229,6 @@ static const unsigned char table_a2b_base85_a85[] Py_ALIGNED(64) = {
     -1,-1,-1,-1, -1,-1,-1,-1, -1,-1,-1,-1, -1,-1,-1,-1,
 };
 
-static const unsigned char table_a2b_base85_z85[] Py_ALIGNED(64) = {
-    -1,-1,-1,-1, -1,-1,-1,-1, -1,-1,-1,-1, -1,-1,-1,-1,
-    -1,-1,-1,-1, -1,-1,-1,-1, -1,-1,-1,-1, -1,-1,-1,-1,
-    -1,68,-1,84, 83,82,72,-1, 75,76,70,65, -1,63,62,69,
-     0, 1, 2, 3,  4, 5, 6, 7,  8, 9,64,-1, 73,66,74,71,
-    81,36,37,38, 39,40,41,42, 43,44,45,46, 47,48,49,50,
-    51,52,53,54, 55,56,57,58, 59,60,61,77, -1,78,67,-1,
-    -1,10,11,12, 13,14,15,16, 17,18,19,20, 21,22,23,24,
-    25,26,27,28, 29,30,31,32, 33,34,35,79, -1,80,-1,-1,
-
-    -1,-1,-1,-1, -1,-1,-1,-1, -1,-1,-1,-1, -1,-1,-1,-1,
-    -1,-1,-1,-1, -1,-1,-1,-1, -1,-1,-1,-1, -1,-1,-1,-1,
-    -1,-1,-1,-1, -1,-1,-1,-1, -1,-1,-1,-1, -1,-1,-1,-1,
-    -1,-1,-1,-1, -1,-1,-1,-1, -1,-1,-1,-1, -1,-1,-1,-1,
-    -1,-1,-1,-1, -1,-1,-1,-1, -1,-1,-1,-1, -1,-1,-1,-1,
-    -1,-1,-1,-1, -1,-1,-1,-1, -1,-1,-1,-1, -1,-1,-1,-1,
-    -1,-1,-1,-1, -1,-1,-1,-1, -1,-1,-1,-1, -1,-1,-1,-1,
-    -1,-1,-1,-1, -1,-1,-1,-1, -1,-1,-1,-1, -1,-1,-1,-1,
-};
-
 static const unsigned char table_b2a_base85[] Py_ALIGNED(64) =
     "0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZ" \
     "abcdefghijklmnopqrstuvwxyz!#$%&()*+-;<=>?@^_`{|}~";
@@ -256,9 +237,6 @@ static const unsigned char table_b2a_base85_a85[] Py_ALIGNED(64) =
     "!\"#$%&\'()*+,-./0123456789:;<=>?@" \
     "ABCDEFGHIJKLMNOPQRSTUVWXYZ[\\]^_`abcdefghijklmnopqrstu";
 
-static const unsigned char table_b2a_base85_z85[] Py_ALIGNED(64) =
-    "0123456789abcdefghijklmnopqrstuvwxyz" \
-    "ABCDEFGHIJKLMNOPQRSTUVWXYZ.-:+=^!/\x2a?&<>()[]{}@%$#"; /* clinic doesn't like '/' followed by '*' */
 
 #define BASE85_A85_PREFIX '<'
 #define BASE85_A85_AFFIX '~'
@@ -547,6 +525,52 @@ binascii_b2a_uu_impl(PyObject *module, Py_buffer *data, int backtick)
     return PyBytesWriter_FinishWithPointer(writer, ascii_data);
 }
 
+static PyObject *
+get_reverse_table(binascii_state *state, PyObject *alphabet, int size, int padchar)
+{
+    PyObject *reverse_table;
+    if (state == NULL) {
+        return NULL;
+    }
+    if (PyBytes_GET_SIZE(alphabet) != size) {
+        PyErr_Format(PyExc_ValueError, "alphabet must have length %d", size);
+        return NULL;
+    }
+    if (PyDict_GetItemRef(state->reverse_table_cache, alphabet, &reverse_table) < 0) {
+        return NULL;
+    }
+    if (reverse_table == NULL) {
+        unsigned char out[256];
+        memset(out, (unsigned char)-1, 256);
+        const unsigned char *in = (const unsigned char *)PyBytes_AS_STRING(alphabet);
+        for (int i = 0; i < size; i++) {
+            out[in[i]] = i;
+        }
+        if (padchar >= 0) {
+            assert(padchar < 256);
+            out[padchar] = size;
+        }
+        reverse_table = PyBytes_FromStringAndSize((char *)out, 256);
+        if (reverse_table == NULL) {
+            return NULL;
+        }
+        if (PyDict_SetItem(state->reverse_table_cache, alphabet, reverse_table) < 0) {
+            Py_DECREF(reverse_table);
+            return NULL;
+        }
+    }
+    else {
+        if (!PyBytes_Check(reverse_table)
+            || PyBytes_GET_SIZE(reverse_table) != 256)
+        {
+            PyErr_SetString(PyExc_RuntimeError, "Broken binascii cache");
+            Py_DECREF(reverse_table);
+            return NULL;
+        }
+    }
+    return reverse_table;
+}
+
 typedef unsigned char ignorecache_t[32];
 
 static int
@@ -576,6 +600,7 @@ binascii.a2b_base64
         When set to true, bytes that are not part of the base64 standard are
         not allowed.  The same applies to excess data after padding (= / ==).
         Set to True by default if ignorechars is specified, False otherwise.
+    alphabet: PyBytesObject(c_default="NULL") = BASE64_ALPHABET
     ignorechars: Py_buffer = NULL
         A byte string containing characters to ignore from the input when
         strict_mode is true.
@@ -585,14 +610,16 @@ Decode a line of base64 data.
 
 static PyObject *
 binascii_a2b_base64_impl(PyObject *module, Py_buffer *data, int strict_mode,
-                         Py_buffer *ignorechars)
-/*[clinic end generated code: output=eab37aea4cfa6daa input=d2d238abf13822ed]*/
+                         PyBytesObject *alphabet, Py_buffer *ignorechars)
+/*[clinic end generated code: output=72f15fcc0681d666 input=195c8d60b03aaa6f]*/
 {
     assert(data->len >= 0);
 
     const unsigned char *ascii_data = data->buf;
     size_t ascii_len = data->len;
     binascii_state *state = NULL;
+    PyObject *table_obj = NULL;
+    const unsigned char *table_a2b = table_a2b_base64;
 
     if (strict_mode == -1) {
         strict_mode = (ignorechars->buf != NULL);
@@ -605,10 +632,20 @@ binascii_a2b_base64_impl(PyObject *module, Py_buffer *data, int strict_mode,
         memset(ignorecache, 0, sizeof(ignorecache));
     }
 
+    if (alphabet != NULL) {
+        state = get_binascii_state(module);
+        table_obj = get_reverse_table(state, (PyObject *)alphabet, 64, BASE64_PAD);
+        if (table_obj == NULL) {
+            return NULL;
+        }
+        table_a2b = (const unsigned char *)PyBytes_AS_STRING(table_obj);
+    }
+
     /* Allocate the buffer */
     Py_ssize_t bin_len = ((ascii_len+3)/4)*3; /* Upper bound, corrected later */
     PyBytesWriter *writer = PyBytesWriter_Create(bin_len);
     if (writer == NULL) {
+        Py_XDECREF(table_obj);
         return NULL;
     }
     unsigned char *bin_data = PyBytesWriter_GetData(writer);
@@ -620,7 +657,7 @@ fastpath:
      */
     if (ascii_len >= 4) {
         Py_ssize_t fast_chars = base64_decode_fast(ascii_data, (Py_ssize_t)ascii_len,
-                                                   bin_data, table_a2b_base64);
+                                                   bin_data, table_a2b);
         if (fast_chars > 0) {
             ascii_data += fast_chars;
             ascii_len -= fast_chars;
@@ -672,7 +709,7 @@ fastpath:
             }
         }
 
-        unsigned char v = table_a2b_base64[this_ch];
+        unsigned char v = table_a2b[this_ch];
         if (v >= 64) {
             if (strict_mode && !ignorechar(this_ch, ignorechars, ignorecache)) {
                 state = get_binascii_state(module);
@@ -749,9 +786,11 @@ fastpath:
     }
 
 done:
+    Py_XDECREF(table_obj);
     return PyBytesWriter_FinishWithPointer(writer, bin_data);
 
 error_end:
+    Py_XDECREF(table_obj);
     PyBytesWriter_Discard(writer);
     return NULL;
 }
@@ -765,19 +804,28 @@ binascii.b2a_base64
     *
     wrapcol: size_t = 0
     newline: bool = True
+    alphabet: Py_buffer(c_default="{NULL, NULL}") = BASE64_ALPHABET
 
 Base64-code line of data.
 [clinic start generated code]*/
 
 static PyObject *
 binascii_b2a_base64_impl(PyObject *module, Py_buffer *data, size_t wrapcol,
-                         int newline)
-/*[clinic end generated code: output=2edc7311a9515eac input=2ee4214e6d489e2e]*/
+                         int newline, Py_buffer *alphabet)
+/*[clinic end generated code: output=9d9657e5fbe28c64 input=ffa3af8520c312ac]*/
 {
+    const unsigned char *table_b2a = table_b2a_base64;
     const unsigned char *bin_data = data->buf;
     Py_ssize_t bin_len = data->len;
     assert(bin_len >= 0);
 
+    if (alphabet->buf != NULL) {
+        if (alphabet->len != 64) {
+            PyErr_SetString(PyExc_ValueError, "alphabet must have length 64");
+            return NULL;
+        }
+        table_b2a = alphabet->buf;
+    }
     /* Each group of 3 bytes (rounded up) gets encoded as 4 characters,
      * not counting newlines.
      * Note that 'b' gets encoded as 'Yg==' (1 in, 4 out).
@@ -809,7 +857,7 @@ binascii_b2a_base64_impl(PyObject *module, Py_buffer *data, size_t wrapcol,
 
     /* Use the optimized fast path for complete 3-byte groups */
     Py_ssize_t fast_bytes = base64_encode_fast(bin_data, bin_len, ascii_data,
-                                               table_b2a_base64);
+                                               table_b2a);
     bin_data += fast_bytes;
     ascii_data += (fast_bytes / 3) * 4;
     bin_len -= fast_bytes;
@@ -818,17 +866,17 @@ binascii_b2a_base64_impl(PyObject *module, Py_buffer *data, size_t wrapcol,
     if (bin_len == 1) {
         /* 1 byte remaining: produces 2 base64 chars + 2 padding */
         unsigned int val = bin_data[0];
-        *ascii_data++ = table_b2a_base64[(val >> 2) & 0x3f];
-        *ascii_data++ = table_b2a_base64[(val << 4) & 0x3f];
+        *ascii_data++ = table_b2a[(val >> 2) & 0x3f];
+        *ascii_data++ = table_b2a[(val << 4) & 0x3f];
         *ascii_data++ = BASE64_PAD;
         *ascii_data++ = BASE64_PAD;
     }
     else if (bin_len == 2) {
         /* 2 bytes remaining: produces 3 base64 chars + 1 padding */
         unsigned int val = ((unsigned int)bin_data[0] << 8) | bin_data[1];
-        *ascii_data++ = table_b2a_base64[(val >> 10) & 0x3f];
-        *ascii_data++ = table_b2a_base64[(val >> 4) & 0x3f];
-        *ascii_data++ = table_b2a_base64[(val << 2) & 0x3f];
+        *ascii_data++ = table_b2a[(val >> 10) & 0x3f];
+        *ascii_data++ = table_b2a[(val >> 4) & 0x3f];
+        *ascii_data++ = table_b2a[(val << 2) & 0x3f];
         *ascii_data++ = BASE64_PAD;
     }
 
@@ -1123,13 +1171,36 @@ binascii_b2a_ascii85_impl(PyObject *module, Py_buffer *data, int foldspaces,
     return PyBytesWriter_FinishWithPointer(writer, ascii_data);
 }
 
+/*[clinic input]
+binascii.a2b_base85
+
+    data: ascii_buffer
+    /
+    *
+    alphabet: PyBytesObject(c_default="NULL") = BASE85_ALPHABET
+
+Decode a line of Base85 data.
+[clinic start generated code]*/
+
 static PyObject *
-base85_decode_impl(PyObject *module, Py_buffer *data,
-                   const unsigned char table_a2b[], const char *name)
+binascii_a2b_base85_impl(PyObject *module, Py_buffer *data,
+                         PyBytesObject *alphabet)
+/*[clinic end generated code: output=3e114af53812e8ff input=0b6b83b38ad4497c]*/
 {
     const unsigned char *ascii_data = data->buf;
     Py_ssize_t ascii_len = data->len;
     binascii_state *state = NULL;
+    PyObject *table_obj = NULL;
+    const unsigned char *table_a2b = table_a2b_base85;
+
+    if (alphabet != NULL) {
+        state = get_binascii_state(module);
+        table_obj = get_reverse_table(state, (PyObject *)alphabet, 85, -1);
+        if (table_obj == NULL) {
+            return NULL;
+        }
+        table_a2b = (const unsigned char *)PyBytes_AS_STRING(table_obj);
+    }
 
     assert(ascii_len >= 0);
 
@@ -1137,6 +1208,7 @@ base85_decode_impl(PyObject *module, Py_buffer *data,
     size_t bin_len = ((size_t)ascii_len + 4) / 5 * 4;
     PyBytesWriter *writer = PyBytesWriter_Create(bin_len);
     if (writer == NULL) {
+        Py_XDECREF(table_obj);
         return NULL;
     }
     unsigned char *bin_data = PyBytesWriter_GetData(writer);
@@ -1162,8 +1234,8 @@ base85_decode_impl(PyObject *module, Py_buffer *data,
                 state = get_binascii_state(module);
                 if (state != NULL) {
                     PyErr_Format(state->Error,
-                                 "%s overflow in hunk starting at byte %d",
-                                 name, (data->len - ascii_len) / 5 * 5);
+                                 "Base85 overflow in hunk starting at byte %d",
+                                 (data->len - ascii_len) / 5 * 5);
                 }
                 goto error;
             }
@@ -1173,8 +1245,8 @@ base85_decode_impl(PyObject *module, Py_buffer *data,
         else {
             state = get_binascii_state(module);
             if (state != NULL) {
-                PyErr_Format(state->Error, "bad %s character at position %d",
-                             name, data->len - ascii_len);
+                PyErr_Format(state->Error, "bad Base85 character at position %d",
+                             data->len - ascii_len);
             }
             goto error;
         }
@@ -1194,19 +1266,44 @@ base85_decode_impl(PyObject *module, Py_buffer *data,
         leftchar = 0;
     }
 
+    Py_XDECREF(table_obj);
     return PyBytesWriter_FinishWithPointer(writer, bin_data);
 
 error:
     PyBytesWriter_Discard(writer);
+    Py_XDECREF(table_obj);
     return NULL;
 }
 
+/*[clinic input]
+binascii.b2a_base85
+
+    data: Py_buffer
+    /
+    *
+    pad: bool = False
+        Pad input to a multiple of 4 before encoding.
+    alphabet: Py_buffer(c_default="{NULL, NULL}") = BASE85_ALPHABET
+
+Base85-code line of data.
+[clinic start generated code]*/
+
 static PyObject *
-base85_encode_impl(PyObject *module, Py_buffer *data, int pad,
-                   const unsigned char table_b2a[], const char *name)
+binascii_b2a_base85_impl(PyObject *module, Py_buffer *data, int pad,
+                         Py_buffer *alphabet)
+/*[clinic end generated code: output=a59f4f2ff6f0e69f input=30f545c6ff554db7]*/
 {
     const unsigned char *bin_data = data->buf;
     Py_ssize_t bin_len = data->len;
+    const unsigned char *table_b2a = table_b2a_base85;
+
+    if (alphabet->buf != NULL) {
+        if (alphabet->len != 85) {
+            PyErr_SetString(PyExc_ValueError, "alphabet must have length 85");
+            return NULL;
+        }
+        table_b2a = alphabet->buf;
+    }
 
     assert(bin_len >= 0);
 
@@ -1220,7 +1317,7 @@ base85_encode_impl(PyObject *module, Py_buffer *data, int pad,
         if (state == NULL) {
             return NULL;
         }
-        PyErr_Format(state->Error, "Too much data for %s", name);
+        PyErr_SetString(state->Error, "Too much data for Base85");
         return NULL;
     }
 
@@ -1268,76 +1365,6 @@ base85_encode_impl(PyObject *module, Py_buffer *data, int pad,
     }
 
     return PyBytesWriter_FinishWithPointer(writer, ascii_data);
-}
-
-/*[clinic input]
-binascii.a2b_base85
-
-    data: ascii_buffer
-    /
-
-Decode a line of Base85 data.
-[clinic start generated code]*/
-
-static PyObject *
-binascii_a2b_base85_impl(PyObject *module, Py_buffer *data)
-/*[clinic end generated code: output=c2db6ab9181b0089 input=06c9d595352b5a2b]*/
-{
-    return base85_decode_impl(module, data, table_a2b_base85, "Base85");
-}
-
-/*[clinic input]
-binascii.b2a_base85
-
-    data: Py_buffer
-    /
-    *
-    pad: bool = False
-        Pad input to a multiple of 4 before encoding.
-
-Base85-code line of data.
-[clinic start generated code]*/
-
-static PyObject *
-binascii_b2a_base85_impl(PyObject *module, Py_buffer *data, int pad)
-/*[clinic end generated code: output=b317adb36a57740d input=89fde81b96dcec06]*/
-{
-    return base85_encode_impl(module, data, pad, table_b2a_base85, "Base85");
-}
-
-/*[clinic input]
-binascii.a2b_z85
-
-    data: ascii_buffer
-    /
-
-Decode a line of Z85 data.
-[clinic start generated code]*/
-
-static PyObject *
-binascii_a2b_z85_impl(PyObject *module, Py_buffer *data)
-/*[clinic end generated code: output=57d8260bb5267a98 input=c54baff4d81510a4]*/
-{
-    return base85_decode_impl(module, data, table_a2b_base85_z85, "Z85");
-}
-
-/*[clinic input]
-binascii.b2a_z85
-
-    data: Py_buffer
-    /
-    *
-    pad: bool = False
-        Pad input to a multiple of 4 before encoding.
-
-Z85-code line of data.
-[clinic start generated code]*/
-
-static PyObject *
-binascii_b2a_z85_impl(PyObject *module, Py_buffer *data, int pad)
-/*[clinic end generated code: output=88284835e332c9cf input=51d070a5a6cf82d8]*/
-{
-    return base85_encode_impl(module, data, pad, table_b2a_base85_z85, "Z85");
 }
 
 /*[clinic input]
@@ -2001,8 +2028,6 @@ static struct PyMethodDef binascii_module_methods[] = {
     BINASCII_A2B_ASCII85_METHODDEF
     BINASCII_A2B_BASE85_METHODDEF
     BINASCII_B2A_BASE85_METHODDEF
-    BINASCII_A2B_Z85_METHODDEF
-    BINASCII_B2A_Z85_METHODDEF
     BINASCII_A2B_HEX_METHODDEF
     BINASCII_B2A_HEX_METHODDEF
     BINASCII_HEXLIFY_METHODDEF
@@ -2036,6 +2061,70 @@ binascii_exec(PyObject *module)
         return -1;
     }
 
+    if (PyModule_Add(module, "BASE64_ALPHABET",
+        PyBytes_FromStringAndSize((const char *)table_b2a_base64, 64)) < 0)
+    {
+        return -1;
+    }
+    if (PyModule_Add(module, "URLSAFE_BASE64_ALPHABET",
+        PyBytes_FromString("ABCDEFGHIJKLMNOPQRSTUVWXYZ"
+                           "abcdefghijklmnopqrstuvwxyz"
+                           "0123456789-_")) < 0)
+    {
+        return -1;
+    }
+    if (PyModule_Add(module, "CRYPT_ALPHABET",
+        PyBytes_FromString("./0123456789"
+                           "ABCDEFGHIJKLMNOPQRSTUVWXYZ"
+                           "abcdefghijklmnopqrstuvwxyz")) < 0)
+    {
+        return -1;
+    }
+    if (PyModule_Add(module, "UU_ALPHABET",
+        PyBytes_FromString(" !\"#$%&'()*+,-./"
+                           "0123456789:;<=>?@"
+                           "ABCDEFGHIJKLMNOPQRSTUVWXYZ"
+                           "[\\]^_")) < 0)
+    {
+        return -1;
+    }
+    if (PyModule_Add(module, "BINHEX_ALPHABET",
+        PyBytes_FromString("!\"#$%&'()*+,-012345689@"
+                           "ABCDEFGHIJKLMNPQRSTUVXYZ[`"
+                           "abcdefhijklmpqr")) < 0)
+    {
+        return -1;
+    }
+    if (PyModule_Add(module, "BASE85_ALPHABET",
+        PyBytes_FromStringAndSize((const char *)table_b2a_base85, 85)) < 0)
+    {
+        return -1;
+    }
+    if (PyModule_Add(module, "ASCII85_ALPHABET",
+        PyBytes_FromStringAndSize((const char *)table_b2a_base85_a85, 85)) < 0)
+    {
+        return -1;
+    }
+    if (PyModule_Add(module, "Z85_ALPHABET",
+        PyBytes_FromString("0123456789"
+                           "abcdefghijklmnopqrstuvwxyz"
+                           /* clinic doesn't like '/' followed by '*' */
+                           "ABCDEFGHIJKLMNOPQRSTUVWXYZ"
+                           ".-:+=^!/\x2a?&<>()[]{}@%$#")) < 0)
+    {
+        return -1;
+    }
+
+    state->reverse_table_cache = PyDict_New();
+    if (state->reverse_table_cache == NULL) {
+        return -1;
+    }
+
+    state->reverse_table_cache = PyDict_New();
+    if (state->reverse_table_cache == NULL) {
+        return -1;
+    }
+
     return 0;
 }
 
@@ -2052,6 +2141,7 @@ binascii_traverse(PyObject *module, visitproc visit, void *arg)
     binascii_state *state = get_binascii_state(module);
     Py_VISIT(state->Error);
     Py_VISIT(state->Incomplete);
+    Py_VISIT(state->reverse_table_cache);
     return 0;
 }
 
@@ -2061,6 +2151,7 @@ binascii_clear(PyObject *module)
     binascii_state *state = get_binascii_state(module);
     Py_CLEAR(state->Error);
     Py_CLEAR(state->Incomplete);
+    Py_CLEAR(state->reverse_table_cache);
     return 0;
 }
 
