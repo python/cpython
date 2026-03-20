@@ -649,12 +649,15 @@ binascii
 
   - :func:`~binascii.b2a_ascii85` and :func:`~binascii.a2b_ascii85`
   - :func:`~binascii.b2a_base85` and :func:`~binascii.a2b_base85`
-  - :func:`~binascii.b2a_z85` and :func:`~binascii.a2b_z85`
 
   (Contributed by James Seo and Serhiy Storchaka in :gh:`101178`.)
 
 * Added the *wrapcol* parameter in :func:`~binascii.b2a_base64`.
   (Contributed by Serhiy Storchaka in :gh:`143214`.)
+
+* Added the *alphabet* parameter in :func:`~binascii.b2a_base64` and
+  :func:`~binascii.a2b_base64`.
+  (Contributed by Serhiy Storchaka in :gh:`145980`.)
 
 * Added the *ignorechars* parameter in :func:`~binascii.a2b_base64`.
   (Contributed by Serhiy Storchaka in :gh:`144001`.)

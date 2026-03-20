@@ -413,6 +413,11 @@ def make_mpdec(context, working_dir):
     write_library_config(prefix, "mpdec", mpdec_config, context.quiet)
 
 
+def make_dependencies(context):
+    make_emscripten_libffi(context)
+    make_mpdec(context)
+
+
 def calculate_node_path():
     node_version = os.environ.get("PYTHON_NODE_VERSION", None)
     if node_version is None:
@@ -573,7 +578,10 @@ def run_emscripten_python(context):
     if args and args[0] == "--":
         args = args[1:]
 
-    os.execv(str(exec_script), [str(exec_script)] + args)
+    if context.test:
+        args = load_config_toml()["test-args"] + args
+
+    os.execv(str(exec_script), [str(exec_script), *args])
 
 
 def build_target(context):
@@ -665,6 +673,11 @@ def main():
         help="Clone libffi repo, configure and build it for emscripten",
     )
 
+    make_dependencies_cmd = subcommands.add_parser(
+        "make-dependencies",
+        help="Build all static library dependencies",
+    )
+
     make_build = subcommands.add_parser(
         "make-build-python", help="Run `make` for the build Python"
     )
@@ -686,6 +699,15 @@ def main():
         help="Run the built emscripten Python",
     )
     run.add_argument(
+        "--test",
+        action="store_true",
+        default=False,
+        help=(
+            "If passed, will add the default test arguments to the beginning of the command. "
+            "Default arguments loaded from Platforms/emscripten/config.toml"
+        )
+    )
+    run.add_argument(
         "args",
         nargs=argparse.REMAINDER,
         help=(
@@ -694,6 +716,7 @@ def main():
         )
     )
     add_cross_build_dir_option(run)
+
     clean = subcommands.add_parser(
         "clean", help="Delete files and directories created by this script"
     )
@@ -714,6 +737,7 @@ def main():
         configure_build,
         make_libffi_cmd,
         make_mpdec_cmd,
+        make_dependencies_cmd,
         make_build,
         configure_host,
         make_host,
@@ -781,6 +805,7 @@ def main():
         "install-emscripten": install_emscripten,
         "make-libffi": make_emscripten_libffi,
         "make-mpdec": make_mpdec,
+        "make-dependencies": make_dependencies,
         "configure-build-python": configure_build_python,
         "make-build-python": make_build_python,
         "configure-host": configure_emscripten_python,
