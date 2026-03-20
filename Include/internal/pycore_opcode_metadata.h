@@ -1490,7 +1490,7 @@ _PyOpcode_macro_expansion[256] = {
     [NOP] = { .nuops = 1, .uops = { { _NOP, OPARG_SIMPLE, 0 } } },
     [NOT_TAKEN] = { .nuops = 1, .uops = { { _NOP, OPARG_SIMPLE, 0 } } },
     [POP_EXCEPT] = { .nuops = 1, .uops = { { _POP_EXCEPT, OPARG_SIMPLE, 0 } } },
-    [POP_ITER] = { .nuops = 1, .uops = { { _POP_ITER, OPARG_SIMPLE, 0 } } },
+    [POP_ITER] = { .nuops = 2, .uops = { { _POP_TOP_NOP, OPARG_SIMPLE, 0 }, { _POP_TOP, OPARG_SIMPLE, 0 } } },
     [POP_JUMP_IF_FALSE] = { .nuops = 1, .uops = { { _POP_JUMP_IF_FALSE, OPARG_REPLACED, 1 } } },
     [POP_JUMP_IF_NONE] = { .nuops = 2, .uops = { { _IS_NONE, OPARG_SIMPLE, 1 }, { _POP_JUMP_IF_TRUE, OPARG_REPLACED, 1 } } },
     [POP_JUMP_IF_NOT_NONE] = { .nuops = 2, .uops = { { _IS_NONE, OPARG_SIMPLE, 1 }, { _POP_JUMP_IF_FALSE, OPARG_REPLACED, 1 } } },
