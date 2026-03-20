@@ -2120,11 +2120,6 @@ binascii_exec(PyObject *module)
         return -1;
     }
 
-    state->reverse_table_cache = PyDict_New();
-    if (state->reverse_table_cache == NULL) {
-        return -1;
-    }
-
     return 0;
 }
 
