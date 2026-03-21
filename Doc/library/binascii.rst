@@ -10,10 +10,10 @@
 
 --------------
 
-The :mod:`binascii` module contains a number of methods to convert between
+The :mod:`!binascii` module contains a number of methods to convert between
 binary and various ASCII-encoded binary representations. Normally, you will not
 use these functions directly but use wrapper modules like
-:mod:`base64` instead. The :mod:`binascii` module contains
+:mod:`base64` instead. The :mod:`!binascii` module contains
 low-level functions written in C for greater speed that are used by the
 higher-level modules.
 
@@ -28,7 +28,7 @@ higher-level modules.
       ASCII-only unicode strings are now accepted by the ``a2b_*`` functions.
 
 
-The :mod:`binascii` module defines the following functions:
+The :mod:`!binascii` module defines the following functions:
 
 
 .. function:: a2b_uu(string)
@@ -48,10 +48,22 @@ The :mod:`binascii` module defines the following functions:
       Added the *backtick* parameter.
 
 
-.. function:: a2b_base64(string, /, *, strict_mode=False)
+.. function:: a2b_base64(string, /, *, alphabet=BASE64_ALPHABET, strict_mode=False)
+              a2b_base64(string, /, *, ignorechars, alphabet=BASE64_ALPHABET, strict_mode=True)
 
    Convert a block of base64 data back to binary and return the binary data. More
    than one line may be passed at a time.
+
+   Optional *alphabet* must be a :class:`bytes` object of length 64 which
+   specifies an alternative alphabet.
+
+   If *ignorechars* is specified, it should be a :term:`bytes-like object`
+   containing characters to ignore from the input when *strict_mode* is true.
+   If *ignorechars* contains the pad character ``'='``,  the pad characters
+   presented before the end of the encoded data and the excess pad characters
+   will be ignored.
+   The default value of *strict_mode* is ``True`` if *ignorechars* is specified,
+   ``False`` otherwise.
 
    If *strict_mode* is true, only valid base64 data will be converted. Invalid base64
    data will raise :exc:`binascii.Error`.
@@ -66,8 +78,11 @@ The :mod:`binascii` module defines the following functions:
    .. versionchanged:: 3.11
       Added the *strict_mode* parameter.
 
+   .. versionchanged:: 3.15
+      Added the *alphabet* and *ignorechars* parameters.
 
-.. function:: b2a_base64(data, *, wrapcol=0, newline=True)
+
+.. function:: b2a_base64(data, *, alphabet=BASE64_ALPHABET, wrapcol=0, newline=True)
 
    Convert binary data to a line(s) of ASCII characters in base64 coding,
    as specified in :rfc:`4648`.
@@ -83,7 +98,89 @@ The :mod:`binascii` module defines the following functions:
       Added the *newline* parameter.
 
    .. versionchanged:: 3.15
-      Added the *wrapcol* parameter.
+      Added the *alphabet* and *wrapcol* parameters.
+
+
+.. function:: a2b_ascii85(string, /, *, foldspaces=False, adobe=False, ignorechars=b"")
+
+   Convert Ascii85 data back to binary and return the binary data.
+
+   Valid Ascii85 data contains characters from the Ascii85 alphabet in groups
+   of five (except for the final group, which may have from two to five
+   characters). Each group encodes 32 bits of binary data in the range from
+   ``0`` to ``2 ** 32 - 1``, inclusive. The special character ``z`` is
+   accepted as a short form of the group ``!!!!!``, which encodes four
+   consecutive null bytes.
+
+   *foldspaces* is a flag that specifies whether the 'y' short sequence
+   should be accepted as shorthand for 4 consecutive spaces (ASCII 0x20).
+   This feature is not supported by the "standard" Ascii85 encoding.
+
+   *adobe* controls whether the input sequence is in Adobe Ascii85 format
+   (i.e. is framed with <~ and ~>).
+
+   *ignorechars* should be a :term:`bytes-like object` containing characters
+   to ignore from the input.
+   This should only contain whitespace characters.
+
+   Invalid Ascii85 data will raise :exc:`binascii.Error`.
+
+   .. versionadded:: 3.15
+
+
+.. function:: b2a_ascii85(data, /, *, foldspaces=False, wrapcol=0, pad=False, adobe=False)
+
+   Convert binary data to a formatted sequence of ASCII characters in Ascii85
+   coding. The return value is the converted data.
+
+   *foldspaces* is an optional flag that uses the special short sequence 'y'
+   instead of 4 consecutive spaces (ASCII 0x20) as supported by 'btoa'. This
+   feature is not supported by the "standard" Ascii85 encoding.
+
+   If *wrapcol* is non-zero, insert a newline (``b'\n'``) character
+   after at most every *wrapcol* characters.
+   If *wrapcol* is zero (default), do not insert any newlines.
+
+   If *pad* is true, the input is padded with ``b'\0'`` so its length is a
+   multiple of 4 bytes before encoding.
+   Note that the ``btoa`` implementation always pads.
+
+   *adobe* controls whether the encoded byte sequence is framed with ``<~``
+   and ``~>``, which is used by the Adobe implementation.
+
+   .. versionadded:: 3.15
+
+
+.. function:: a2b_base85(string, /, *, alphabet=BASE85_ALPHABET)
+
+   Convert Base85 data back to binary and return the binary data.
+   More than one line may be passed at a time.
+
+   Valid Base85 data contains characters from the Base85 alphabet in groups
+   of five (except for the final group, which may have from two to five
+   characters). Each group encodes 32 bits of binary data in the range from
+   ``0`` to ``2 ** 32 - 1``, inclusive.
+
+   Optional *alphabet* must be a :class:`bytes` object of length 85 which
+   specifies an alternative alphabet.
+
+   Invalid Base85 data will raise :exc:`binascii.Error`.
+
+   .. versionadded:: 3.15
+
+
+.. function:: b2a_base85(data, /, *, alphabet=BASE85_ALPHABET, pad=False)
+
+   Convert binary data to a line of ASCII characters in Base85 coding.
+   The return value is the converted line.
+
+   Optional *alphabet* must be a :term:`bytes-like object` of length 85 which
+   specifies an alternative alphabet.
+
+   If *pad* is true, the input is padded with ``b'\0'`` so its length is a
+   multiple of 4 bytes before encoding.
+
+   .. versionadded:: 3.15
 
 
 .. function:: a2b_qp(data, header=False)
@@ -180,6 +277,55 @@ The :mod:`binascii` module defines the following functions:
 
    Exception raised on incomplete data. These are usually not programming errors,
    but may be handled by reading a little more data and trying again.
+
+
+.. data:: BASE64_ALPHABET
+
+   The Base 64 alphabet according to :rfc:`4648`.
+
+   .. versionadded:: next
+
+.. data:: URLSAFE_BASE64_ALPHABET
+
+   The "URL and filename safe" Base 64 alphabet according to :rfc:`4648`.
+
+   .. versionadded:: next
+
+.. data:: UU_ALPHABET
+
+   The uuencoding alphabet.
+
+   .. versionadded:: next
+
+.. data:: CRYPT_ALPHABET
+
+   The Base 64 alphabet used in the :manpage:`crypt(3)` routine and in the GEDCOM format.
+
+   .. versionadded:: next
+
+.. data:: BINHEX_ALPHABET
+
+   The Base 64 alphabet used in BinHex 4 (HQX) within the classic Mac OS.
+
+   .. versionadded:: next
+
+.. data:: BASE85_ALPHABET
+
+   The Base85 alphabet.
+
+   .. versionadded:: next
+
+.. data:: ASCII85_ALPHABET
+
+   The Ascii85 alphabet.
+
+   .. versionadded:: next
+
+.. data:: Z85_ALPHABET
+
+   The `Z85 <https://rfc.zeromq.org/spec/32/>`_ alphabet.
+
+   .. versionadded:: next
 
 
 .. seealso::

@@ -1,5 +1,6 @@
 #include "parts.h"
 #include "util.h"
+#include <stdbool.h>
 
 // Test PyModule_* API
 
@@ -270,6 +271,49 @@ module_from_def_slot(PyObject *self, PyObject *spec)
     return result;
 }
 
+static const char parrot_name[] = "test_capi/parrot";
+static const char parrot_doc[] = "created from redundant information";
+static PyModuleDef parrot_def = {
+    PyModuleDef_HEAD_INIT,
+    .m_name = (void*)parrot_name,
+    .m_doc = (void*)parrot_doc,
+    .m_size = 123,
+    .m_methods = a_methoddef_array,
+    .m_traverse = noop_traverse,
+    .m_clear = noop_clear,
+    .m_free = (void*)noop_free,
+    .m_slots = NULL /* set below */,
+};
+static PyModuleDef_Slot parrot_slots[] = {
+    {Py_mod_name, (void*)parrot_name},
+    {Py_mod_doc, (void*)parrot_doc},
+    {Py_mod_state_size, (void*)123},
+    {Py_mod_methods, a_methoddef_array},
+    {Py_mod_state_traverse, noop_traverse},
+    {Py_mod_state_clear, noop_clear},
+    {Py_mod_state_free, (void*)noop_free},
+    {Py_mod_multiple_interpreters, Py_MOD_PER_INTERPRETER_GIL_SUPPORTED},
+    {Py_mod_token, &parrot_def},
+    {Py_mod_gil, Py_MOD_GIL_NOT_USED},
+    {0},
+};
+
+static PyObject *
+module_from_def_slot_parrot(PyObject *self, PyObject *spec)
+{
+    parrot_def.m_slots = parrot_slots;
+    PyObject *module = PyModule_FromDefAndSpec(&parrot_def, spec);
+    if (!module || (PyModule_Exec(module) < 0)) {
+        return NULL;
+    }
+    Py_ssize_t size;
+    assert(PyModule_GetStateSize(module, &size) == 0);
+    assert(size == 123);
+    PyModuleDef *def = PyModule_GetDef(module);
+    assert(def == &parrot_def);
+    return module;
+}
+
 static int
 another_exec(PyObject *module)
 {
@@ -368,6 +412,7 @@ static PyMethodDef test_methods[] = {
     {"module_from_slots_null_slot", module_from_slots_null_slot, METH_O},
     {"module_from_def_multiple_exec", module_from_def_multiple_exec, METH_O},
     {"module_from_def_slot", module_from_def_slot, METH_O},
+    {"module_from_def_slot_parrot", module_from_def_slot_parrot, METH_O},
     {"pymodule_get_token", pymodule_get_token, METH_O},
     {"pymodule_get_def", pymodule_get_def, METH_O},
     {"pymodule_get_state_size", pymodule_get_state_size, METH_O},

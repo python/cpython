@@ -41,7 +41,7 @@ def clear_typing_caches():
 class TypesTests(unittest.TestCase):
 
     def test_names(self):
-        c_only_names = {'CapsuleType'}
+        c_only_names = {'CapsuleType', 'LazyImportType'}
         ignored = {'new_class', 'resolve_bases', 'prepare_class',
                    'get_original_bases', 'DynamicClassAttribute', 'coroutine'}
 
@@ -55,10 +55,11 @@ class TypesTests(unittest.TestCase):
             'CoroutineType', 'EllipsisType', 'FrameType', 'FunctionType',
             'FrameLocalsProxyType',
             'GeneratorType', 'GenericAlias', 'GetSetDescriptorType',
-            'LambdaType', 'MappingProxyType', 'MemberDescriptorType',
-            'MethodDescriptorType', 'MethodType', 'MethodWrapperType',
-            'ModuleType', 'NoneType', 'NotImplementedType', 'SimpleNamespace',
-            'TracebackType', 'UnionType', 'WrapperDescriptorType',
+            'LambdaType', 'LazyImportType', 'MappingProxyType',
+            'MemberDescriptorType', 'MethodDescriptorType', 'MethodType',
+            'MethodWrapperType', 'ModuleType', 'NoneType',
+            'NotImplementedType', 'SimpleNamespace', 'TracebackType',
+            'UnionType', 'WrapperDescriptorType',
         }
         self.assertEqual(all_names, set(c_types.__all__))
         self.assertEqual(all_names - c_only_names, set(py_types.__all__))
@@ -2166,6 +2167,21 @@ class SimpleNamespaceTests(unittest.TestCase):
 
         self.assertIs(type(spam2), Spam)
         self.assertEqual(vars(spam2), {'ham': 5, 'eggs': 9})
+
+    def test_replace_invalid_subtype(self):
+        # See https://github.com/python/cpython/issues/143636.
+        class MyNS(types.SimpleNamespace):
+            def __new__(cls, *args, **kwargs):
+                if created:
+                    return 12345
+                return super().__new__(cls)
+
+        created = False
+        ns = MyNS()
+        created = True
+        err = (r"^expect types\.SimpleNamespace type, "
+               r"but .+\.MyNS\(\) returned 'int' object")
+        self.assertRaisesRegex(TypeError, err, copy.replace, ns)
 
     def test_fake_namespace_compare(self):
         # Issue #24257: Incorrect use of PyObject_IsInstance() caused

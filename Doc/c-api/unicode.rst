@@ -5,9 +5,6 @@
 Unicode Objects and Codecs
 --------------------------
 
-.. sectionauthor:: Marc-André Lemburg <mal@lemburg.com>
-.. sectionauthor:: Georg Brandl <georg@python.org>
-
 Unicode Objects
 ^^^^^^^^^^^^^^^
 
@@ -1870,7 +1867,7 @@ object.
    On success, return ``0``.
    On error, set an exception, leave the writer unchanged, and return ``-1``.
 
-.. c:function:: int PyUnicodeWriter_WriteUCS4(PyUnicodeWriter *writer, Py_UCS4 *str, Py_ssize_t size)
+.. c:function:: int PyUnicodeWriter_WriteUCS4(PyUnicodeWriter *writer, const Py_UCS4 *str, Py_ssize_t size)
 
    Writer the UCS4 string *str* into *writer*.
 
@@ -1889,6 +1886,8 @@ object.
 .. c:function:: int PyUnicodeWriter_WriteRepr(PyUnicodeWriter *writer, PyObject *obj)
 
    Call :c:func:`PyObject_Repr` on *obj* and write the output into *writer*.
+
+   If *obj* is ``NULL``, write the string ``"<NULL>"`` into *writer*.
 
    On success, return ``0``.
    On error, set an exception, leave the writer unchanged, and return ``-1``.
