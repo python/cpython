@@ -1678,7 +1678,7 @@ Base32-code line of data.
 static PyObject *
 binascii_b2a_base32_impl(PyObject *module, Py_buffer *data,
                          Py_buffer *alphabet)
-/*[clinic end generated code: output=058d0d1aeb014d3b input=ffd4fa162a6e1cb5]*/
+/*[clinic end generated code: output=058d0d1aeb014d3b input=99cbe7194799d368]*/
 {
     const unsigned char *table_b2a = table_b2a_base32;
     const unsigned char *bin_data = data->buf;

@@ -791,7 +791,7 @@ PyDoc_STRVAR(binascii_b2a_base32__doc__,
 "b2a_base32($module, data, /, *, alphabet=BASE32_ALPHABET)\n"
 "--\n"
 "\n"
-"base32-code line of data.");
+"Base32-code line of data.");
 
 #define BINASCII_B2A_BASE32_METHODDEF    \
     {"b2a_base32", _PyCFunction_CAST(binascii_b2a_base32), METH_FASTCALL|METH_KEYWORDS, binascii_b2a_base32__doc__},
@@ -1411,4 +1411,4 @@ exit:
 
     return return_value;
 }
-/*[clinic end generated code: output=5be0c5d9b116ee17 input=a9049054013a1b77]*/
+/*[clinic end generated code: output=242c0c56b918bd33 input=a9049054013a1b77]*/
