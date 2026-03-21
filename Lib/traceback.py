@@ -998,7 +998,6 @@ def _format_note(note, indent, theme):
         yield f"{indent}{theme.note}{l}{theme.reset}\n"
 
 
-
 class _ExceptionPrintContext:
     def __init__(self):
         self.seen = set()
