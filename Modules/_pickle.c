@@ -19,6 +19,7 @@
 #include "pycore_pystate.h"       // _PyThreadState_GET()
 #include "pycore_runtime.h"       // _Py_ID()
 #include "pycore_setobject.h"     // _PySet_NextEntry()
+#include "pycore_symtable.h"      // _Py_Mangle()
 #include "pycore_sysmodule.h"     // _PySys_GetSizeOf()
 #include "pycore_unicodeobject.h" // _PyUnicode_EqualToASCIIString()
 
@@ -1928,6 +1929,37 @@ get_dotted_path(PyObject *name)
     return PyUnicode_Split(name, _Py_LATIN1_CHR('.'), -1);
 }
 
+static PyObject *
+join_dotted_path(PyObject *dotted_path)
+{
+    return PyUnicode_Join(_Py_LATIN1_CHR('.'), dotted_path);
+}
+
+/* Returns -1 (with an exception set) on error, 0 if there were no changes,
+ * 1 if some names were mangled. */
+static int
+mangle_dotted_path(PyObject *dotted_path)
+{
+    int rc = 0;
+    Py_ssize_t n = PyList_GET_SIZE(dotted_path);
+    for (Py_ssize_t i = n-1; i > 0; i--) {
+        PyObject *subpath = PyList_GET_ITEM(dotted_path, i);
+        if (_Py_IsPrivateName(subpath)) {
+            PyObject *parent = PyList_GET_ITEM(dotted_path, i-1);
+            PyObject *mangled = _Py_Mangle(parent, subpath);
+            if (mangled == NULL) {
+                return -1;
+            }
+            if (mangled != subpath) {
+                rc = 1;
+            }
+            PyList_SET_ITEM(dotted_path, i, mangled);
+            Py_DECREF(subpath);
+        }
+    }
+    return rc;
+}
+
 static int
 check_dotted_path(PickleState *st, PyObject *obj, PyObject *dotted_path)
 {
@@ -3034,11 +3066,6 @@ batch_list(PickleState *state, PicklerObject *self, PyObject *iter, PyObject *or
 
     assert(iter != NULL);
 
-    /* XXX: I think this function could be made faster by avoiding the
-       iterator interface and fetching objects directly from list using
-       PyList_GET_ITEM.
-    */
-
     if (self->proto == 0) {
         /* APPENDS isn't available; do one at a time. */
         for (;; total++) {
@@ -3160,24 +3187,24 @@ batch_list_exact(PickleState *state, PicklerObject *self, PyObject *obj)
     assert(obj != NULL);
     assert(self->proto > 0);
     assert(PyList_CheckExact(obj));
-
-    if (PyList_GET_SIZE(obj) == 1) {
-        item = PyList_GET_ITEM(obj, 0);
-        Py_INCREF(item);
-        int err = save(state, self, item, 0);
-        Py_DECREF(item);
-        if (err < 0) {
-            _PyErr_FormatNote("when serializing %T item 0", obj);
-            return -1;
-        }
-        if (_Pickler_Write(self, &append_op, 1) < 0)
-            return -1;
-        return 0;
-    }
+    assert(PyList_GET_SIZE(obj));
 
     /* Write in batches of BATCHSIZE. */
     total = 0;
     do {
+        if (PyList_GET_SIZE(obj) - total == 1) {
+            item = PyList_GET_ITEM(obj, total);
+            Py_INCREF(item);
+            int err = save(state, self, item, 0);
+            Py_DECREF(item);
+            if (err < 0) {
+                _PyErr_FormatNote("when serializing %T item %zd", obj, total);
+                return -1;
+            }
+            if (_Pickler_Write(self, &append_op, 1) < 0)
+                return -1;
+            return 0;
+        }
         this_batch = 0;
         if (_Pickler_Write(self, &mark_op, 1) < 0)
             return -1;
@@ -3438,28 +3465,29 @@ batch_dict_exact(PickleState *state, PicklerObject *self, PyObject *obj)
     assert(self->proto > 0);
 
     dict_size = PyDict_GET_SIZE(obj);
-
-    /* Special-case len(d) == 1 to save space. */
-    if (dict_size == 1) {
-        PyDict_Next(obj, &ppos, &key, &value);
-        Py_INCREF(key);
-        Py_INCREF(value);
-        if (save(state, self, key, 0) < 0) {
-            goto error;
-        }
-        if (save(state, self, value, 0) < 0) {
-            _PyErr_FormatNote("when serializing %T item %R", obj, key);
-            goto error;
-        }
-        Py_CLEAR(key);
-        Py_CLEAR(value);
-        if (_Pickler_Write(self, &setitem_op, 1) < 0)
-            return -1;
-        return 0;
-    }
+    assert(dict_size);
 
     /* Write in batches of BATCHSIZE. */
+    Py_ssize_t total = 0;
     do {
+        if (dict_size - total == 1) {
+            PyDict_Next(obj, &ppos, &key, &value);
+            Py_INCREF(key);
+            Py_INCREF(value);
+            if (save(state, self, key, 0) < 0) {
+                goto error;
+            }
+            if (save(state, self, value, 0) < 0) {
+                _PyErr_FormatNote("when serializing %T item %R", obj, key);
+                goto error;
+            }
+            Py_CLEAR(key);
+            Py_CLEAR(value);
+            if (_Pickler_Write(self, &setitem_op, 1) < 0)
+                return -1;
+            return 0;
+        }
+
         i = 0;
         if (_Pickler_Write(self, &mark_op, 1) < 0)
             return -1;
@@ -3475,6 +3503,7 @@ batch_dict_exact(PickleState *state, PicklerObject *self, PyObject *obj)
             }
             Py_CLEAR(key);
             Py_CLEAR(value);
+            total++;
             if (++i == BATCHSIZE)
                 break;
         }
@@ -3487,7 +3516,7 @@ batch_dict_exact(PickleState *state, PicklerObject *self, PyObject *obj)
             return -1;
         }
 
-    } while (i == BATCHSIZE);
+    } while (total < dict_size);
     return 0;
 error:
     Py_XDECREF(key);
@@ -3605,6 +3634,7 @@ save_set(PickleState *state, PicklerObject *self, PyObject *obj)
         return 0;  /* nothing to do */
 
     /* Write in batches of BATCHSIZE. */
+    Py_ssize_t total = 0;
     do {
         i = 0;
         if (_Pickler_Write(self, &mark_op, 1) < 0)
@@ -3619,6 +3649,7 @@ save_set(PickleState *state, PicklerObject *self, PyObject *obj)
                 _PyErr_FormatNote("when serializing %T element", obj);
                 break;
             }
+            total++;
             if (++i == BATCHSIZE)
                 break;
         }
@@ -3634,7 +3665,7 @@ save_set(PickleState *state, PicklerObject *self, PyObject *obj)
                 "set changed size during iteration");
             return -1;
         }
-    } while (i == BATCHSIZE);
+    } while (total < set_size);
 
     return 0;
 }
@@ -3809,6 +3840,15 @@ save_global(PickleState *st, PicklerObject *self, PyObject *obj,
     dotted_path = get_dotted_path(global_name);
     if (dotted_path == NULL)
         goto error;
+    switch (mangle_dotted_path(dotted_path)) {
+        case -1:
+            goto error;
+        case 1:
+            Py_SETREF(global_name, join_dotted_path(dotted_path));
+            if (global_name == NULL) {
+                goto error;
+            }
+    }
     module_name = whichmodule(st, obj, global_name, dotted_path);
     if (module_name == NULL)
         goto error;
@@ -6623,8 +6663,6 @@ do_append(PickleState *state, UnpicklerObject *self, Py_ssize_t x)
     len = Py_SIZE(self->stack);
     if (x > len || x <= self->stack->fence)
         return Pdata_stack_underflow(state, self->stack);
-    if (len == x)  /* nothing to do */
-        return 0;
 
     list = self->stack->data[x - 1];
 
@@ -6714,8 +6752,6 @@ do_setitems(PickleState *st, UnpicklerObject *self, Py_ssize_t x)
     len = Py_SIZE(self->stack);
     if (x > len || x <= self->stack->fence)
         return Pdata_stack_underflow(st, self->stack);
-    if (len == x)  /* nothing to do */
-        return 0;
     if ((len - x) % 2 != 0) {
         /* Corrupt or hostile pickle -- we never write one like this. */
         PyErr_SetString(st->UnpicklingError,
@@ -6767,8 +6803,6 @@ load_additems(PickleState *state, UnpicklerObject *self)
     len = Py_SIZE(self->stack);
     if (mark > len || mark <= self->stack->fence)
         return Pdata_stack_underflow(state, self->stack);
-    if (len == mark)  /* nothing to do */
-        return 0;
 
     set = self->stack->data[mark - 1];
 

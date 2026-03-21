@@ -1437,6 +1437,7 @@ class CodeLocationTest(unittest.TestCase):
             co_code=bytes(
                 [
                     dis.opmap["RESUME"], 0,
+                    dis.opmap["CACHE"], 0,
                     dis.opmap["LOAD_COMMON_CONSTANT"], 0,
                     dis.opmap["RAISE_VARARGS"], 1,
                 ]
@@ -1445,7 +1446,7 @@ class CodeLocationTest(unittest.TestCase):
                 [
                     (1 << 7)
                     | (PY_CODE_LOCATION_INFO_NO_COLUMNS << 3)
-                    | (3 - 1),
+                    | (4 - 1),
                     0,
                 ]
             ),
@@ -1453,7 +1454,7 @@ class CodeLocationTest(unittest.TestCase):
         self.assertRaises(AssertionError, f)
         self.assertEqual(
             list(f.__code__.co_positions()),
-            3 * [(42, 42, None, None)],
+            4 * [(42, 42, None, None)],
         )
 
     @cpython_only

@@ -1452,7 +1452,7 @@ sqlite when used with multiple sub interpreters.
 .. nonce: mkrhjQ
 .. section: C API
 
-Add :c:func:`PyUnstable_Object_Dump` to dump an object to ``stderr``. It
+Add :c:func:`!PyUnstable_Object_Dump` to dump an object to ``stderr``. It
 should only be used for debugging. Patch by Victor Stinner.
 
 ..

@@ -557,7 +557,7 @@ Running Tasks Concurrently
       provides stronger safety guarantees than *gather* for scheduling a nesting of subtasks:
       if a task (or a subtask, a task scheduled by a task)
       raises an exception, *TaskGroup* will, while *gather* will not,
-      cancel the remaining scheduled tasks).
+      cancel the remaining scheduled tasks.
 
    .. _asyncio_example_gather:
 
@@ -770,6 +770,9 @@ Timeouts
 
        An :ref:`asynchronous context manager <async-context-managers>`
        for cancelling overdue coroutines.
+
+       Prefer using :func:`asyncio.timeout` or :func:`asyncio.timeout_at`
+       rather than instantiating :class:`!Timeout` directly.
 
        ``when`` should be an absolute time at which the context should time out,
        as measured by the event loop's clock:
