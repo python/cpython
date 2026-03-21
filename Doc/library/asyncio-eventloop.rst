@@ -4,7 +4,7 @@
 .. _asyncio-event-loop:
 
 ==========
-Event Loop
+Event loop
 ==========
 
 **Source code:** :source:`Lib/asyncio/events.py`,
@@ -99,7 +99,7 @@ This documentation page contains the following sections:
 
 .. _asyncio-event-loop-methods:
 
-Event Loop Methods
+Event loop methods
 ==================
 
 Event loops have **low-level** APIs for the following:
@@ -355,7 +355,7 @@ clocks to track time.
    The :func:`asyncio.sleep` function.
 
 
-Creating Futures and Tasks
+Creating futures and tasks
 ^^^^^^^^^^^^^^^^^^^^^^^^^^
 
 .. method:: loop.create_future()
@@ -946,7 +946,7 @@ Transferring files
    .. versionadded:: 3.7
 
 
-TLS Upgrade
+TLS upgrade
 ^^^^^^^^^^^
 
 .. method:: loop.start_tls(transport, protocol, \
@@ -1408,7 +1408,7 @@ Executing code in thread or process pools
       :class:`~concurrent.futures.ThreadPoolExecutor`.
 
 
-Error Handling API
+Error handling API
 ^^^^^^^^^^^^^^^^^^
 
 Allows customizing how exceptions are handled in the event loop.
@@ -1511,7 +1511,7 @@ Enabling debug mode
    The :ref:`debug mode of asyncio <asyncio-debug-mode>`.
 
 
-Running Subprocesses
+Running subprocesses
 ^^^^^^^^^^^^^^^^^^^^
 
 Methods described in this subsections are low-level.  In regular
@@ -1649,7 +1649,7 @@ async/await code consider using the high-level
    are going to be used to construct shell commands.
 
 
-Callback Handles
+Callback handles
 ================
 
 .. class:: Handle
@@ -1692,7 +1692,7 @@ Callback Handles
       .. versionadded:: 3.7
 
 
-Server Objects
+Server objects
 ==============
 
 Server objects are created by :meth:`loop.create_server`,
@@ -1835,7 +1835,7 @@ Do not instantiate the :class:`Server` class directly.
 .. _asyncio-event-loops:
 .. _asyncio-event-loop-implementations:
 
-Event Loop Implementations
+Event loop implementations
 ==========================
 
 asyncio ships with two different event loop implementations:
@@ -1949,10 +1949,10 @@ callback uses the :meth:`loop.call_later` method to reschedule itself
 after 5 seconds, and then stops the event loop::
 
     import asyncio
-    import datetime
+    import datetime as dt
 
     def display_date(end_time, loop):
-        print(datetime.datetime.now())
+        print(dt.datetime.now())
         if (loop.time() + 1.0) < end_time:
             loop.call_later(1, display_date, end_time, loop)
         else:
