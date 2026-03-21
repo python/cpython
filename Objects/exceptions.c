@@ -2817,7 +2817,7 @@ SyntaxError_init(PyObject *op, PyObject *args, PyObject *kwds)
         Py_XSETREF(self->filename, Py_NewRef(filename));
         Py_XSETREF(self->lineno, Py_NewRef(lineno));
         Py_XSETREF(self->offset, Py_NewRef(offset));
-        Py_XSETREF(self->text, Py_XNewRef(text));
+        Py_XSETREF(self->text, Py_NewRef(text));
         Py_XSETREF(self->end_lineno, Py_XNewRef(end_lineno));
         Py_XSETREF(self->end_offset, Py_XNewRef(end_offset));
         Py_XSETREF(self->metadata, Py_XNewRef(metadata));
