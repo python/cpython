@@ -2,7 +2,7 @@ r"""plistlib.py -- a tool to generate and parse MacOSX .plist files.
 
 The property list (.plist) file format is a simple XML pickle supporting
 basic object types, like dictionaries, lists, numbers and strings.
-Usually the top level object is a dictionary or frozen dictionary.
+Usually the top level object is a dictionary or a frozen dictionary.
 
 To write out a plist file, use the dump(value, file)
 function. 'value' is the top level object, 'file' is
