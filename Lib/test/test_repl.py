@@ -143,6 +143,22 @@ class TestInteractiveInterpreter(unittest.TestCase):
         output = kill_python(p)
         self.assertEqual(p.returncode, 0)
 
+    @cpython_only
+    def test_lexer_buffer_realloc_with_null_start(self):
+        # gh-144759: NULL pointer arithmetic in the lexer when start and
+        # multi_line_start are NULL (uninitialized in tok_mode_stack[0])
+        # and the lexer buffer is reallocated while parsing long input.
+        long_value = "a" * 2000
+        user_input = dedent(f"""\
+        x = f'{{{long_value!r}}}'
+        print(x)
+        """)
+        p = spawn_repl()
+        p.stdin.write(user_input)
+        output = kill_python(p)
+        self.assertEqual(p.returncode, 0)
+        self.assertIn(long_value, output)
+
     def test_close_stdin(self):
         user_input = dedent('''
             import os
@@ -410,6 +426,13 @@ class TestAsyncioREPL(unittest.TestCase):
         p = spawn_asyncio_repl()
         p.stdin.write(user_input)
         user_input2 = "async def set_var(): var.set('ok')\n"
+        try:
+            import _pyrepl # noqa: F401
+        except ModuleNotFoundError:
+            # If we're going to be forced into the regular REPL, then we need an
+            # extra newline here. Omit it by default to catch any breakage to
+            # the new REPL's behavior.
+            user_input2 += "\n"
         p.stdin.write(user_input2)
         user_input3 = "await set_var()\n"
         p.stdin.write(user_input3)

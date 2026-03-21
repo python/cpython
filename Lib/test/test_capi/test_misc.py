@@ -916,6 +916,18 @@ class CAPITest(unittest.TestCase):
         gen = genf()
         self.assertEqual(_testcapi.gen_get_code(gen), gen.gi_code)
 
+    def test_tp_bases_slot(self):
+        cls = _testcapi.HeapCTypeWithBasesSlot
+        self.assertEqual(cls.__bases__, (int,))
+        self.assertEqual(cls.__base__, int)
+
+    def test_tp_bases_slot_none(self):
+        self.assertRaisesRegex(
+            SystemError,
+            "Py_tp_bases is not a tuple",
+            _testcapi.create_heapctype_with_none_bases_slot
+        )
+
 
 @requires_limited_api
 class TestHeapTypeRelative(unittest.TestCase):
@@ -2856,24 +2868,6 @@ class Test_Pep523API(unittest.TestCase):
             list(outer())
         names = ["func", "outer", "outer", "inner", "inner", "outer", "inner"]
         self.do_test(func, names)
-
-    def test_replaced_interpreter(self):
-        def inner():
-            yield 'abc'
-        def outer():
-            yield from inner()
-        def func():
-            list(outer())
-        _testinternalcapi.set_eval_frame_interp()
-        try:
-            func()
-        finally:
-            _testinternalcapi.set_eval_frame_default()
-
-        stats = _testinternalcapi.get_eval_frame_stats()
-
-        self.assertEqual(stats["resumes"], 5)
-        self.assertEqual(stats["loads"], 5)
 
 
 @unittest.skipUnless(support.Py_GIL_DISABLED, 'need Py_GIL_DISABLED')

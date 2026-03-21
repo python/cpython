@@ -5,8 +5,6 @@
    :synopsis: Functions for working with calendars, including some emulation
               of the Unix cal program.
 
-.. sectionauthor:: Drew Csillag <drew_csillag@geocities.com>
-
 **Source code:** :source:`Lib/calendar.py`
 
 --------------
@@ -452,7 +450,7 @@ For simple text calendars this module provides the following functions.
    inverse.
 
 
-The :mod:`calendar` module exports the following data attributes:
+The :mod:`!calendar` module exports the following data attributes:
 
 .. data:: day_name
 
@@ -578,7 +576,7 @@ The :mod:`calendar` module exports the following data attributes:
    .. versionadded:: 3.12
 
 
-The :mod:`calendar` module defines the following exceptions:
+The :mod:`!calendar` module defines the following exceptions:
 
 .. exception:: IllegalMonthError(month)
 
@@ -617,7 +615,7 @@ Command-line usage
 
 .. versionadded:: 2.5
 
-The :mod:`calendar` module can be executed as a script from the command line
+The :mod:`!calendar` module can be executed as a script from the command line
 to interactively print a calendar.
 
 .. code-block:: shell

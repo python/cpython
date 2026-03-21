@@ -636,6 +636,8 @@ class EventTest(AbstractTkTest, unittest.TestCase):
         self.assertEqual(e.x_root, '??')
         self.assertEqual(e.y_root, '??')
         self.assertEqual(e.delta, 0)
+        self.assertEqual(e.user_data, '??')
+        self.assertEqual(e.detail, 'NotifyAncestor')
         self.assertEqual(repr(e), '<FocusIn event>')
 
     def test_configure(self):
@@ -669,6 +671,8 @@ class EventTest(AbstractTkTest, unittest.TestCase):
         self.assertEqual(e.x_root, '??')
         self.assertEqual(e.y_root, '??')
         self.assertEqual(e.delta, 0)
+        self.assertEqual(e.user_data, '??')
+        self.assertEqual(e.detail, '??')
         self.assertEqual(repr(e), '<Configure event x=0 y=0 width=150 height=100>')
 
     def test_event_generate_key_press(self):
@@ -705,6 +709,8 @@ class EventTest(AbstractTkTest, unittest.TestCase):
         self.assertEqual(e.x_root, -1)
         self.assertEqual(e.y_root, -1)
         self.assertEqual(e.delta, 0)
+        self.assertEqual(e.user_data, '??')
+        self.assertEqual(e.detail, '??')
         self.assertEqual(repr(e),
             f"<KeyPress event state={e.state:#x} "
             f"keysym=z keycode={e.keycode} char='z' x={e.x} y={e.y}>")
@@ -740,7 +746,16 @@ class EventTest(AbstractTkTest, unittest.TestCase):
         self.assertEqual(e.x_root, 100 + f.winfo_rootx())
         self.assertEqual(e.y_root, 50 + f.winfo_rooty())
         self.assertEqual(e.delta, 0)
+        self.assertEqual(e.user_data, '??')
+        self.assertEqual(e.detail, 'NotifyAncestor')
         self.assertEqual(repr(e), '<Enter event focus=False x=100 y=50>')
+
+        f.event_generate('<Enter>', x=100, y=50, detail='NotifyPointer')
+        self.assertEqual(len(events), 2, events)
+        e = events[1]
+        self.assertIs(e.type, tkinter.EventType.Enter)
+        self.assertEqual(e.user_data, '??')
+        self.assertEqual(e.detail, 'NotifyPointer')
 
     def test_event_generate_button_press(self):
         f = tkinter.Frame(self.root, width=150, height=100)
@@ -774,6 +789,8 @@ class EventTest(AbstractTkTest, unittest.TestCase):
         self.assertEqual(e.x_root, f.winfo_rootx() + 100)
         self.assertEqual(e.y_root, f.winfo_rooty() + 50)
         self.assertEqual(e.delta, 0)
+        self.assertEqual(e.user_data, '??')
+        self.assertEqual(e.detail, '??')
         self.assertEqual(repr(e), '<ButtonPress event num=1 x=100 y=50>')
 
     def test_event_generate_motion(self):
@@ -808,6 +825,8 @@ class EventTest(AbstractTkTest, unittest.TestCase):
         self.assertEqual(e.x_root, f.winfo_rootx() + 100)
         self.assertEqual(e.y_root, f.winfo_rooty() + 50)
         self.assertEqual(e.delta, 0)
+        self.assertEqual(e.user_data, '??')
+        self.assertEqual(e.detail, '??')
         self.assertEqual(repr(e), '<Motion event state=Button1 x=100 y=50>')
 
     def test_event_generate_mouse_wheel(self):
@@ -842,9 +861,11 @@ class EventTest(AbstractTkTest, unittest.TestCase):
         self.assertEqual(e.x_root, f.winfo_rootx() + 100)
         self.assertEqual(e.y_root, f.winfo_rooty() + 50)
         self.assertEqual(e.delta, -5)
+        self.assertEqual(e.user_data, '??')
+        self.assertEqual(e.detail, '??')
         self.assertEqual(repr(e), '<MouseWheel event delta=-5 x=100 y=50>')
 
-    def test_generate_event_virtual_event(self):
+    def test_event_generate_virtual_event(self):
         f = tkinter.Frame(self.root, width=150, height=100)
         f.pack()
         self.root.wait_visibility()  # needed on Windows
@@ -876,8 +897,17 @@ class EventTest(AbstractTkTest, unittest.TestCase):
         self.assertEqual(e.x_root, f.winfo_rootx() + 50)
         self.assertEqual(e.y_root, -1)
         self.assertEqual(e.delta, 0)
+        self.assertEqual(e.user_data, '')
+        self.assertEqual(e.detail, '??')
         self.assertEqual(repr(e),
             f"<VirtualEvent event x=50 y=0>")
+
+        f.event_generate('<<Spam>>', data='spam')
+        self.assertEqual(len(events), 2, events)
+        e = events[1]
+        self.assertIs(e.type, tkinter.EventType.VirtualEvent)
+        self.assertEqual(e.user_data, 'spam')
+        self.assertEqual(e.detail, '??')
 
 
 class BindTest(AbstractTkTest, unittest.TestCase):
