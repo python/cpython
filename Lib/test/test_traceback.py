@@ -5318,10 +5318,10 @@ class TestColorizedTraceback(unittest.TestCase):
             exc = traceback.TracebackException.from_exception(e)
 
         lines = "".join(exc.format(colorize=True))
-        magenta = colors["m"]
+        note = colors["n"]
         reset = colors["z"]
-        self.assertIn(magenta + "First note" + reset, lines)
-        self.assertIn(magenta + "Second note" + reset, lines)
+        self.assertIn(note + "First note" + reset, lines)
+        self.assertIn(note + "Second note" + reset, lines)
 
     def test_colorized_syntax_error(self):
         try:

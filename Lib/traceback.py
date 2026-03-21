@@ -993,6 +993,11 @@ def _display_width(line, offset=None):
     )
 
 
+def _format_note(note, indent, theme):
+    for l in note.split('\n'):
+        yield f"{indent}{theme.note}{l}{theme.reset}\n"
+
+
 
 class _ExceptionPrintContext:
     def __init__(self):
@@ -1323,9 +1328,10 @@ class TracebackException:
         ):
             for note in self.__notes__:
                 note = _safe_string(note, 'note')
-                yield from [indent + theme.note + l + theme.reset + '\n' for l in note.split('\n')]
+                yield from _format_note(note, indent, theme)
         elif self.__notes__ is not None:
-            yield indent + theme.note + "{}".format(_safe_string(self.__notes__, '__notes__', func=repr)) + theme.reset + "\n"
+            note = _safe_string(self.__notes__, '__notes__', func=repr)
+            yield from _format_note(note, indent, theme)
 
         if self.exceptions and show_group:
             for ex in self.exceptions:
