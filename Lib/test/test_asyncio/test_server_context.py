@@ -188,7 +188,8 @@ class ServerContextvarsTestCase:
         def capture_context(meth):
             result = []
             for k,v in contextvars.copy_context().items():
-                result.append((k.name, v))
+                if k.name.startswith("cvar"):
+                    result.append((k.name, v))
             results[meth] = sorted(result)
 
         class DemoProtocol(asyncio.Protocol):
