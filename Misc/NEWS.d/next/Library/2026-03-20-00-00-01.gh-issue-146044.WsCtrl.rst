@@ -1,3 +1,3 @@
 Fix ``unix-word-rubout`` (Ctrl-W) in the REPL to use whitespace-only word
-boundaries, matching bash/readline behavior. Previously it used
+boundaries, matching behavior of the basic REPL. Previously it used
 syntax-table boundaries which treated punctuation as word separators.

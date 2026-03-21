@@ -417,19 +417,20 @@ class Reader:
             p -= 1
         return p + 1
 
-    def bow_whitespace(self, p: int | None = None) -> int:
+    def bow_ws(self, p: int | None = None) -> int:
         """Return the 0-based index of the whitespace-delimited word break
         preceding p most immediately.
 
         p defaults to self.pos; only whitespace is considered a word
-        boundary, matching the behavior of unix-word-rubout in bash/readline."""
+        boundary, matching the behavior of unix-word-rubout in bash/readline.
+        See https://github.com/python/cpython/issues/146044"""
         if p is None:
             p = self.pos
         b = self.buffer
         p -= 1
-        while p >= 0 and b[p] in (" ", "\n"):
+        while p >= 0 and b[p] in " \n\t":
             p -= 1
-        while p >= 0 and b[p] not in (" ", "\n"):
+        while p >= 0 and b[p] not in " \n\t":
             p -= 1
         return p + 1
 
