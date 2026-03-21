@@ -30,6 +30,7 @@
 #include "pycore_stats.h"         // _PyStats_InterpInit()
 #include "pycore_sysmodule.h"     // _PySys_ClearAttrString()
 #include "pycore_traceback.h"     // _Py_DumpTracebackThreads()
+#include "pycore_tuple.h"         // _PyTuple_FromPair
 #include "pycore_typeobject.h"    // _PyTypes_InitTypes()
 #include "pycore_typevarobject.h" // _Py_clear_generic_types()
 #include "pycore_unicodeobject.h" // _PyUnicode_InitTypes()
@@ -705,8 +706,6 @@ static PyStatus
 pycore_init_global_objects(PyInterpreterState *interp)
 {
     PyStatus status;
-
-    _PyFloat_InitState(interp);
 
     status = _PyUnicode_InitGlobalObjects(interp);
     if (_PyStatus_EXCEPTION(status)) {
@@ -1615,7 +1614,7 @@ finalize_remove_modules(PyObject *modules, int verbose)
         if (weaklist != NULL) { \
             PyObject *wr = PyWeakref_NewRef(mod, NULL); \
             if (wr) { \
-                PyObject *tup = PyTuple_Pack(2, name, wr); \
+                PyObject *tup = _PyTuple_FromPair(name, wr); \
                 if (!tup || PyList_Append(weaklist, tup) < 0) { \
                     PyErr_FormatUnraisable("Exception ignored while removing modules"); \
                 } \
@@ -1762,6 +1761,12 @@ finalize_modules(PyThreadState *tstate)
     interp->compiling = false;
 #ifdef _Py_TIER2
     _Py_Executors_InvalidateAll(interp, 0);
+    PyMem_Free(interp->executor_blooms);
+    PyMem_Free(interp->executor_ptrs);
+    interp->executor_blooms = NULL;
+    interp->executor_ptrs = NULL;
+    interp->executor_count = 0;
+    interp->executor_capacity = 0;
 #endif
 
     // Stop watching __builtin__ modifications

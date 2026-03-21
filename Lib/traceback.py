@@ -1670,16 +1670,20 @@ def _check_for_nested_attribute(obj, wrong_name, attrs):
 
     Returns the first nested attribute suggestion found, or None.
     Limited to checking 20 attributes.
-    Only considers non-descriptor attributes to avoid executing arbitrary code.
+    Only considers non-descriptor outer attributes to avoid executing
+    arbitrary code. Checks nested attributes statically so descriptors such
+    as properties can still be suggested without invoking them.
     Skips lazy imports to avoid triggering module loading.
     """
+    from inspect import getattr_static
+
     # Check for nested attributes (only one level deep)
     attrs_to_check = [x for x in attrs if not x.startswith('_')][:20]  # Limit number of attributes to check
     for attr_name in attrs_to_check:
         with suppress(Exception):
             # Check if attr_name is a descriptor - if so, skip it
-            attr_from_class = getattr(type(obj), attr_name, None)
-            if attr_from_class is not None and hasattr(attr_from_class, '__get__'):
+            attr_from_class = getattr_static(type(obj), attr_name, _sentinel)
+            if attr_from_class is not _sentinel and hasattr(attr_from_class, '__get__'):
                 continue  # Skip descriptors to avoid executing arbitrary code
 
             # Skip lazy imports to avoid triggering module loading
@@ -1689,13 +1693,26 @@ def _check_for_nested_attribute(obj, wrong_name, attrs):
             # Safe to get the attribute since it's not a descriptor
             attr_obj = getattr(obj, attr_name)
 
-            # Check if the nested attribute exists and is not a descriptor
-            nested_attr_from_class = getattr(type(attr_obj), wrong_name, None)
+            if _is_lazy_import(attr_obj, wrong_name):
+                continue
 
-            if hasattr(attr_obj, wrong_name):
+            if getattr_static(attr_obj, wrong_name, _sentinel) is not _sentinel:
                 return f"{attr_name}.{wrong_name}"
 
     return None
+
+
+def _get_safe___dir__(obj):
+    # Use obj.__dir__() to avoid a TypeError when calling dir(obj).
+    # See gh-131001 and gh-139933.
+    # Also filters out lazy imports to avoid triggering module loading.
+    try:
+        d = obj.__dir__()
+    except TypeError:  # when obj is a class
+        d = type(obj).__dir__(obj)
+    return sorted(
+        x for x in d if isinstance(x, str) and not _is_lazy_import(obj, x)
+    )
 
 
 def _compute_suggestion_error(exc_value, tb, wrong_name):
@@ -1711,13 +1728,7 @@ def _compute_suggestion_error(exc_value, tb, wrong_name):
     if isinstance(exc_value, AttributeError):
         obj = exc_value.obj
         try:
-            try:
-                d = dir(obj)
-            except TypeError:  # Attributes are unsortable, e.g. int and str
-                d = list(obj.__class__.__dict__.keys()) + list(obj.__dict__.keys())
-            d = sorted([x for x in d if isinstance(x, str)])
-            # Filter out lazy imports to avoid triggering module loading
-            d = [x for x in d if not _is_lazy_import(obj, x)]
+            d = _get_safe___dir__(obj)
             hide_underscored = (wrong_name[:1] != '_')
             if hide_underscored and tb is not None:
                 while tb.tb_next is not None:
@@ -1744,13 +1755,7 @@ def _compute_suggestion_error(exc_value, tb, wrong_name):
     elif isinstance(exc_value, ImportError):
         try:
             mod = __import__(exc_value.name)
-            try:
-                d = dir(mod)
-            except TypeError:  # Attributes are unsortable, e.g. int and str
-                d = list(mod.__dict__.keys())
-            d = sorted([x for x in d if isinstance(x, str)])
-            # Filter out lazy imports to avoid triggering module loading
-            d = [x for x in d if not _is_lazy_import(mod, x)]
+            d = _get_safe___dir__(mod)
             if wrong_name[:1] != '_':
                 d = [x for x in d if x[:1] != '_']
         except Exception:

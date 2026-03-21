@@ -221,6 +221,11 @@ The following standard library modules have been updated to accept
 :func:`eval` and :func:`exec` accept :class:`!frozendict` for *globals*, and
 :func:`type` and :meth:`str.maketrans` accept :class:`!frozendict` for *dict*.
 
+Code checking for :class:`dict` type using ``isinstance(arg, dict)`` can be
+updated to ``isinstance(arg, (dict, frozendict))`` to accept also the
+:class:`!frozendict` type, or to ``isinstance(arg, collections.abc.Mapping)``
+to accept also other mapping types such as :class:`~types.MappingProxyType`.
+
 .. seealso:: :pep:`814` for the full specification and rationale.
 
 (Contributed by Victor Stinner and Donghee Na in :gh:`141510`.)
@@ -644,12 +649,15 @@ binascii
 
   - :func:`~binascii.b2a_ascii85` and :func:`~binascii.a2b_ascii85`
   - :func:`~binascii.b2a_base85` and :func:`~binascii.a2b_base85`
-  - :func:`~binascii.b2a_z85` and :func:`~binascii.a2b_z85`
 
   (Contributed by James Seo and Serhiy Storchaka in :gh:`101178`.)
 
 * Added the *wrapcol* parameter in :func:`~binascii.b2a_base64`.
   (Contributed by Serhiy Storchaka in :gh:`143214`.)
+
+* Added the *alphabet* parameter in :func:`~binascii.b2a_base64` and
+  :func:`~binascii.a2b_base64`.
+  (Contributed by Serhiy Storchaka in :gh:`145980`.)
 
 * Added the *ignorechars* parameter in :func:`~binascii.a2b_base64`.
   (Contributed by Serhiy Storchaka in :gh:`144001`.)
@@ -825,7 +833,17 @@ mimetypes
 * Add ``application/node`` MIME type for ``.cjs`` extension.
   (Contributed by John Franey in :gh:`140937`.)
 * Add ``application/toml``. (Contributed by Gil Forcada in :gh:`139959`.)
+* Add ``application/sql`` and ``application/vnd.sqlite3``.
+  (Contributed by Charlie Lin in :gh:`145698`.)
 * Add ``image/jxl``. (Contributed by Foolbar in :gh:`144213`.)
+* Add the following MIME types:
+
+  - ``application/vnd.ms-cab-compressed`` for ``.cab`` extension
+  - ``application/vnd.ms-htmlhelp`` for ``.chm`` extension
+  - ``application/vnd.ms-officetheme`` for ``.thmx`` extension
+
+  (Contributed by Charlie Lin in :gh:`145718`.)
+
 * Rename ``application/x-texinfo`` to ``application/texinfo``.
   (Contributed by Charlie Lin in :gh:`140165`.)
 * Changed the MIME type for ``.ai`` files to ``application/pdf``.
@@ -902,6 +920,9 @@ shelve
 * Added new :meth:`!reorganize` method to :mod:`shelve` used to recover unused free
   space previously occupied by deleted entries.
   (Contributed by Andrea Oliveri in :gh:`134004`.)
+* Add support for custom serialization and deserialization functions
+  in the :mod:`shelve` module.
+  (Contributed by Furkan Onder in :gh:`99631`.)
 
 
 socket
@@ -992,13 +1013,6 @@ subprocess
   If none of these mechanisms are available, the function falls back to the
   traditional busy loop (non-blocking call and short sleeps).
   (Contributed by Giampaolo Rodola in :gh:`83069`).
-
-
-symtable
---------
-
-* Add :meth:`symtable.Function.get_cells` and :meth:`symtable.Symbol.is_cell` methods.
-  (Contributed by Yashp002 in :gh:`143504`.)
 
 
 symtable
@@ -1280,11 +1294,11 @@ Upgraded JIT compiler
 
 Results from the `pyperformance <https://github.com/python/pyperformance>`__
 benchmark suite report
-`4-5% <https://raw.githubusercontent.com/facebookexperimental/free-threading-benchmarking/refs/heads/main/results/bm-20260110-3.15.0a3%2B-aa8578d-JIT/bm-20260110-vultr-x86_64-python-aa8578dc54df2af9daa3-3.15.0a3%2B-aa8578d-vs-base.svg>`__
+`5-6% <https://doesjitgobrrr.com/run/2026-03-11>`__
 geometric mean performance improvement for the JIT over the standard CPython
 interpreter built with all optimizations enabled on x86-64 Linux. On AArch64
 macOS, the JIT has a
-`7-8% <https://raw.githubusercontent.com/facebookexperimental/free-threading-benchmarking/refs/heads/main/results/bm-20260110-3.15.0a3%2B-aa8578d-JIT/bm-20260110-macm4pro-arm64-python-aa8578dc54df2af9daa3-3.15.0a3%2B-aa8578d-vs-base.svg>`__
+`8-9% <https://doesjitgobrrr.com/run/2026-03-11>`__
 speedup over the :ref:`tail calling interpreter <whatsnew314-tail-call-interpreter>`
 with all optimizations enabled. The speedups for JIT
 builds versus no JIT builds range from roughly 15% slowdown to over
@@ -1347,7 +1361,7 @@ The JIT avoids :term:`reference count`\ s where possible. This generally
 reduces the cost of most operations in Python.
 
 (Contributed by Ken Jin, Donghee Na, Zheao Li, Hai Zhu, Savannah Ostrowski,
-Reiden Ong, Noam Cohen, Tomas Roun, PuQing, and Cajetan Rodrigues in :gh:`134584`.)
+Reiden Ong, Noam Cohen, Tomas Roun, PuQing, Cajetan Rodrigues, and Sacul in :gh:`134584`.)
 
 .. rubric:: Better machine code generation
 
@@ -1505,6 +1519,21 @@ typing
 wave
 ----
 
+* Added support for IEEE floating-point WAVE audio
+  (``WAVE_FORMAT_IEEE_FLOAT``) in :mod:`wave`.
+
+* Added :meth:`wave.Wave_read.getformat`, :meth:`wave.Wave_write.getformat`,
+  and :meth:`wave.Wave_write.setformat` for explicit frame format handling.
+
+* :meth:`wave.Wave_write.setparams` accepts both 7-item tuples including
+  ``format`` and 6-item tuples for backwards compatibility (defaulting to
+  ``WAVE_FORMAT_PCM``).
+
+* ``WAVE_FORMAT_IEEE_FLOAT`` output now includes a ``fact`` chunk,
+  as required for non-PCM WAVE formats.
+
+(Contributed by Lionel Koenig and Michiel W. Beijen in :gh:`60729`.)
+
 * Removed the ``getmark()``, ``setmark()`` and ``getmarkers()`` methods
   of the :class:`~wave.Wave_read` and :class:`~wave.Wave_write` classes,
   which were deprecated since Python 3.13.
@@ -1557,6 +1586,15 @@ New deprecations
     a positional argument for maximum backwards compatibility.
 
     (Contributed by Bénédikt Tran in :gh:`134978`.)
+
+* :mod:`struct`:
+
+  * Calling the ``Struct.__new__()`` without required argument now is
+    deprecated and will be removed in Python 3.20.  Calling
+    :meth:`~object.__init__` method on initialized :class:`~struct.Struct`
+    objects is deprecated and will be removed in Python 3.20.
+
+    (Contributed by Sergey B Kirpichev and Serhiy Storchaka in :gh:`143715`.)
 
 * ``__version__``
 
