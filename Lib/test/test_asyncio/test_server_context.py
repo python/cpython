@@ -1,7 +1,7 @@
-
 import asyncio
 import contextvars
 import unittest
+import sys
 
 from unittest import TestCase
 
@@ -260,6 +260,13 @@ class ServerContextvarsTestCase:
 
 class AsyncioEventLoopTests(TestCase, ServerContextvarsTestCase):
     loop_factory = staticmethod(asyncio.new_event_loop)
+
+if sys.platform == "win32":
+    class AsyncioProactorEventLoopTests(TestCase, ServerContextvarsTestCase):
+        loop_factory = asyncio.ProactorEventLoop
+
+    class AsyncioSelectorEventLoopTests(TestCase, ServerContextvarsTestCase):
+        loop_factory = asyncio.SelectorEventLoop
 
 if __name__ == "__main__":
     unittest.main()
