@@ -1,3 +1,0 @@
-Add special labels to the assembly created during stencil creation to
-support relocations that the native object file format does not support.
-Specifically, 19 bit branches for AArch64 in Mach-O object files.

@@ -322,6 +322,30 @@ General Options
 
    .. versionadded:: 3.11
 
+.. option:: --with-missing-stdlib-config=FILE
+
+   Path to a `JSON <https://www.json.org/json-en.html>`_ configuration file
+   containing custom error messages for missing :term:`standard library` modules.
+
+   This option is intended for Python distributors who wish to provide
+   distribution-specific guidance when users encounter standard library
+   modules that are missing or packaged separately.
+
+   The JSON file should map missing module names to custom error message strings.
+   For example, if your distribution packages :mod:`tkinter` and
+   :mod:`_tkinter` separately and excludes :mod:`!_gdbm` for legal reasons,
+   the configuration could contain:
+
+   .. code-block:: json
+
+      {
+          "_gdbm": "The '_gdbm' module is not available in this distribution",
+          "tkinter": "Install the python-tk package to use tkinter",
+          "_tkinter": "Install the python-tk package to use tkinter",
+      }
+
+   .. versionadded:: 3.15
+
 .. option:: --enable-pystats
 
    Turn on internal Python performance statistics gathering.
@@ -397,7 +421,7 @@ General Options
       :no-typesetting:
 
    Enables support for running Python without the :term:`global interpreter
-   lock` (GIL): free threading build.
+   lock` (GIL): :term:`free-threaded build`.
 
    Defines the ``Py_GIL_DISABLED`` macro and adds ``"t"`` to
    :data:`sys.abiflags`.
@@ -750,6 +774,9 @@ also be used to improve performance.
    Disable the fast :ref:`mimalloc <mimalloc>` allocator
    (enabled by default).
 
+   This option cannot be used together with :option:`--disable-gil`
+   because the :term:`free-threaded <free threading>` build requires mimalloc.
+
    See also :envvar:`PYTHONMALLOC` environment variable.
 
 .. option:: --without-pymalloc
@@ -758,6 +785,27 @@ also be used to improve performance.
    (enabled by default).
 
    See also :envvar:`PYTHONMALLOC` environment variable.
+
+.. option:: --with-pymalloc-hugepages
+
+   Enable huge page support for :ref:`pymalloc <pymalloc>` arenas (disabled by
+   default). When enabled, the arena size on 64-bit platforms is increased to
+   2 MiB and arena allocation uses ``MAP_HUGETLB`` (Linux) or
+   ``MEM_LARGE_PAGES`` (Windows) with automatic fallback to regular pages.
+
+   Even when compiled with this option, huge pages are **not** used at runtime
+   unless the :envvar:`PYTHON_PYMALLOC_HUGEPAGES` environment variable is set
+   to ``1``. This opt-in is required because huge pages carry risks on Linux:
+   if the huge-page pool is exhausted, page faults (including copy-on-write
+   faults after :func:`os.fork`) deliver ``SIGBUS`` and kill the process.
+
+   The configure script checks that the platform supports ``MAP_HUGETLB``
+   and emits a warning if it is not available.
+
+   On Windows, use the ``--pymalloc-hugepages`` flag with ``build.bat`` or
+   set the ``UsePymallocHugepages`` MSBuild property.
+
+   .. versionadded:: 3.15
 
 .. option:: --without-doc-strings
 
@@ -1605,6 +1653,9 @@ Linker flags
    value to be able to build extension modules using the
    directories specified in the environment variables.
 
+   Please consider using ``EXE_LDFLAGS`` if the supplied linker flags are
+   executable specific, e.g. GCC's ``-pie`` flag.
+
 .. envvar:: LIBS
 
    Linker flags to pass libraries to the linker when linking the Python
@@ -1639,6 +1690,30 @@ Linker flags
    Linker flags used for building the interpreter object files.
 
    .. versionadded:: 3.8
+
+.. envvar:: EXE_LDFLAGS
+
+   Linker flags used for building executable targets such as the
+   interpreter. If supplied, :envvar:`PY_CORE_EXE_LDFLAGS`
+   will be used in replacement of :envvar:`PY_CORE_LDFLAGS`.
+
+   .. versionadded:: 3.15
+
+.. envvar:: CONFIGURE_EXE_LDFLAGS
+
+   Value of :envvar:`EXE_LDFLAGS` variable passed to the ``./configure``
+   script.
+
+   .. versionadded:: 3.15
+
+.. envvar:: PY_CORE_EXE_LDFLAGS
+
+   Linker flags used for building the interpreter and
+   executable targets.
+
+   Default: ``$(PY_CORE_LDFLAGS)``
+
+   .. versionadded:: 3.15
 
 
 .. rubric:: Footnotes

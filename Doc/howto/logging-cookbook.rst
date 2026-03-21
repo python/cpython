@@ -229,7 +229,7 @@ messages should not. Here's how you can achieve this::
    # tell the handler to use this format
    console.setFormatter(formatter)
    # add the handler to the root logger
-   logging.getLogger('').addHandler(console)
+   logging.getLogger().addHandler(console)
 
    # Now, we can log to the root logger, or any other logger. First the root...
    logging.info('Jackdaws love my big sphinx of quartz.')
@@ -650,7 +650,7 @@ the receiving end. A simple way of doing this is attaching a
 
    import logging, logging.handlers
 
-   rootLogger = logging.getLogger('')
+   rootLogger = logging.getLogger()
    rootLogger.setLevel(logging.DEBUG)
    socketHandler = logging.handlers.SocketHandler('localhost',
                        logging.handlers.DEFAULT_TCP_LOGGING_PORT)
@@ -1549,10 +1549,10 @@ to this (remembering to first import :mod:`concurrent.futures`)::
         for i in range(10):
             executor.submit(worker_process, queue, worker_configurer)
 
-Deploying Web applications using Gunicorn and uWSGI
+Deploying web applications using Gunicorn and uWSGI
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-When deploying Web applications using `Gunicorn <https://gunicorn.org/>`_ or `uWSGI
+When deploying web applications using `Gunicorn <https://gunicorn.org/>`_ or `uWSGI
 <https://uwsgi-docs.readthedocs.io/en/latest/>`_ (or similar), multiple worker
 processes are created to handle client requests. In such environments, avoid creating
 file-based handlers directly in your web application. Instead, use a
@@ -1563,9 +1563,6 @@ process. This can be set up using a process management tool such as Supervisor -
 
 Using file rotation
 -------------------
-
-.. sectionauthor:: Doug Hellmann, Vinay Sajip (changes)
-.. (see <https://pymotw.com/3/logging/>)
 
 Sometimes you want to let a log file grow to a certain size, then open a new
 file and log to that. You may want to keep a certain number of these files, and
@@ -3619,7 +3616,6 @@ detailed information.
 
 .. code-block:: python3
 
-    import datetime
     import logging
     import random
     import sys
@@ -3854,7 +3850,7 @@ Logging to syslog with RFC5424 support
 Although :rfc:`5424` dates from 2009, most syslog servers are configured by default to
 use the older :rfc:`3164`, which hails from 2001. When ``logging`` was added to Python
 in 2003, it supported the earlier (and only existing) protocol at the time. Since
-RFC5424 came out, as there has not been widespread deployment of it in syslog
+RFC 5424 came out, as there has not been widespread deployment of it in syslog
 servers, the :class:`~logging.handlers.SysLogHandler` functionality has not been
 updated.
 
@@ -3862,7 +3858,7 @@ RFC 5424 contains some useful features such as support for structured data, and 
 need to be able to log to a syslog server with support for it, you can do so with a
 subclassed handler which looks something like this::
 
-    import datetime
+    import datetime as dt
     import logging.handlers
     import re
     import socket
@@ -3880,7 +3876,7 @@ subclassed handler which looks something like this::
 
         def format(self, record):
             version = 1
-            asctime = datetime.datetime.fromtimestamp(record.created).isoformat()
+            asctime = dt.datetime.fromtimestamp(record.created).isoformat()
             m = self.tz_offset.match(time.strftime('%z'))
             has_offset = False
             if m and time.timezone:

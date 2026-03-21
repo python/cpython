@@ -4,17 +4,13 @@
 .. module:: getpass
    :synopsis: Portable reading of passwords and retrieval of the userid.
 
-.. moduleauthor:: Piers Lauder <piers@cs.su.oz.au>
-.. sectionauthor:: Fred L. Drake, Jr. <fdrake@acm.org>
-.. Windows (& Mac?) support by Guido van Rossum.
-
 **Source code:** :source:`Lib/getpass.py`
 
 --------------
 
 .. include:: ../includes/wasm-notavail.rst
 
-The :mod:`getpass` module provides two functions:
+The :mod:`!getpass` module provides two functions:
 
 .. function:: getpass(prompt='Password: ', stream=None, *, echo_char=None)
 
