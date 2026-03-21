@@ -7503,20 +7503,24 @@ class SendRecvFdsTests(unittest.TestCase):
 @unittest.skipUnless(hasattr(sys, "gettotalrefcount"),
                      "requires sys.gettotalrefcount()")
 class AuditHookLeakTests(unittest.TestCase):
-    # gh-146245: Reference and buffer may leaks in audit hook's failures path.
+    # gh-146245: Reference and buffer leaks in audit hook failure paths.
 
     def test_getaddrinfo_audit_hook_leak(self):
         code = textwrap.dedent("""
             import socket
             import sys
             import gc
-            sys.addaudithook(lambda *a: (_ for _ in ()).throw(RuntimeError("audit")))
+
+            def hook(*args):
+                raise ValueError("audit")
+
+            sys.addaudithook(hook)
             gc.collect()
             before = sys.gettotalrefcount()
             for _ in range(100):
                 try:
                     socket.getaddrinfo(None, 80)
-                except RuntimeError:
+                except ValueError:
                     pass
             gc.collect()
             after = sys.gettotalrefcount()
@@ -7531,14 +7535,18 @@ class AuditHookLeakTests(unittest.TestCase):
             import socket
             import sys
             import gc
+
+            def hook(*args):
+                raise ValueError("audit")
+
             s = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
-            sys.addaudithook(lambda *a: (_ for _ in ()).throw(RuntimeError("audit")))
+            sys.addaudithook(hook)
             gc.collect()
             before = sys.gettotalrefcount()
             for _ in range(100):
                 try:
                     s.sendto(bytearray(b"x"), ("127.0.0.1", 80))
-                except RuntimeError:
+                except ValueError:
                     pass
             gc.collect()
             after = sys.gettotalrefcount()
