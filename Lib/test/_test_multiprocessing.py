@@ -6005,6 +6005,20 @@ class TestStartMethod(unittest.TestCase):
             process.join()
             self.assertIsNone(multiprocessing.get_start_method(allow_none=True))
 
+    @only_run_in_spawn_testsuite("freeze_support is not start method specific")
+    def test_freeze_support_dont_set_context(self):
+        # gh-140814: freeze_support() should not set the start method
+        # as a side effect, so a later set_start_method() still works.
+        multiprocessing.set_start_method(None, force=True)
+        try:
+            multiprocessing.freeze_support()
+            self.assertIsNone(
+                multiprocessing.get_start_method(allow_none=True))
+            # Should not raise "context has already been set"
+            multiprocessing.set_start_method('spawn')
+        finally:
+            multiprocessing.set_start_method(None, force=True)
+
     def test_context_check_module_types(self):
         try:
             ctx = multiprocessing.get_context('forkserver')
