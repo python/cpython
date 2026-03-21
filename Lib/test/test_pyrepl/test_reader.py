@@ -586,5 +586,3 @@ class TestReaderInColor(ScreenEqualMixin, TestCase):
         reader, _ = handle_all_events(events)
         self.assert_screen_equal(reader, 'flag = "🏳️\\u200d🌈"', clean=True)
         self.assert_screen_equal(reader, 'flag {o}={z} {s}"🏳️\\u200d🌈"{z}'.format(**colors))
-
-
