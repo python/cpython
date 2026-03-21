@@ -20,7 +20,7 @@ from .pstats_collector import PstatsCollector
 from .stack_collector import CollapsedStackCollector, FlamegraphCollector, DiffFlamegraphCollector
 from .heatmap_collector import HeatmapCollector
 from .gecko_collector import GeckoCollector
-from .ndjson_collector import NdjsonCollector
+from .jsonl_collector import JsonlCollector
 from .binary_collector import BinaryCollector
 from .binary_reader import BinaryReader
 from .constants import (
@@ -102,7 +102,7 @@ FORMAT_EXTENSIONS = {
     "diff_flamegraph": "html",
     "gecko": "json",
     "heatmap": "html",
-    "ndjson": "ndjson",
+    "jsonl": "jsonl",
     "binary": "bin",
 }
 
@@ -113,7 +113,7 @@ COLLECTOR_MAP = {
     "diff_flamegraph": DiffFlamegraphCollector,
     "gecko": GeckoCollector,
     "heatmap": HeatmapCollector,
-    "ndjson": NdjsonCollector,
+    "jsonl": JsonlCollector,
     "binary": BinaryCollector,
 }
 
@@ -492,11 +492,11 @@ def _add_format_options(parser, include_compression=True, include_binary=True):
         help="Generate differential flamegraph comparing current profile to `BASELINE` binary file",
     )
     format_group.add_argument(
-        "--ndjson",
+        "--jsonl",
         action="store_const",
-        const="ndjson",
+        const="jsonl",
         dest="format",
-        help="Generate NDJSON snapshot output for external consumers",
+        help="Generate JSONL snapshot output for external consumers",
     )
     if include_binary:
         format_group.add_argument(
@@ -627,7 +627,7 @@ def _create_collector(format_type, sample_interval_usec, skip_idle, opcodes=Fals
 
     Args:
         format_type: The output format ('pstats', 'collapsed', 'flamegraph',
-                    'gecko', 'heatmap', 'ndjson', 'binary', 'diff_flamegraph')
+                    'gecko', 'heatmap', 'jsonl', 'binary', 'diff_flamegraph')
         sample_interval_usec: Sampling interval in microseconds
         skip_idle: Whether to skip idle samples
         opcodes: Whether to collect opcode information (only used by gecko format
@@ -668,7 +668,7 @@ def _create_collector(format_type, sample_interval_usec, skip_idle, opcodes=Fals
         skip_idle = False
         return collector_class(sample_interval_usec, skip_idle=skip_idle, opcodes=opcodes)
 
-    if format_type == "ndjson":
+    if format_type == "jsonl":
         return collector_class(
             sample_interval_usec, skip_idle=skip_idle, mode=mode
         )
