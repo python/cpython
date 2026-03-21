@@ -257,20 +257,28 @@ exits::
 The equivalent with the :ref:`PyGILState API <gilstate>` keeps an *outer*
 :c:func:`PyGILState_Ensure` outstanding for the thread's lifetime, so
 nested Ensure/Release pairs never drop the internal nesting counter to
-zero::
+zero.
 
-   /* Thread startup: create and pin the state. */
+In thread startup, pin the state and immediately detach so the thread
+does not hold the GIL while off doing non-Python work.  Stash ``outer``
+and ``saved`` somewhere that survives for the thread's lifetime (for
+example, in thread-local storage)::
+
    PyGILState_STATE outer = PyGILState_Ensure();
-   PyThreadState *saved = PyEval_SaveThread();
+   PyThreadState *saved   = PyEval_SaveThread();
 
-   /* Per-call: the thread state already exists. */
+Each subsequent call into Python from this thread reuses the pinned
+state; the inner Release decrements the nesting counter but does not
+destroy the thread state because the outer Ensure is still
+outstanding::
+
    PyGILState_STATE inner = PyGILState_Ensure();
    result = CallSomeFunction();
    PyGILState_Release(inner);
 
-   /* ... many more calls ... */
+At thread shutdown, re-attach and drop the outer reference to destroy
+the thread state::
 
-   /* Thread shutdown: unpin and destroy the state. */
    PyEval_RestoreThread(saved);
    PyGILState_Release(outer);
 
