@@ -508,15 +508,15 @@ _Py_COMP_DIAG_IGNORE_DEPR_DECLS
     }
 
 #define SET_ITEM(KEY, EXPR) \
-    do { \
-        obj = (EXPR); \
-        if (obj == NULL) \
-            goto fail; \
-        int res = PyDict_SetItemString(dict, (KEY), obj); \
-        Py_DECREF(obj); \
-        if (res < 0) \
-            goto fail; \
-    } while (0)
+        do { \
+            obj = (EXPR); \
+            if (obj == NULL) \
+                goto fail; \
+            int res = PyDict_SetItemString(dict, (KEY), obj); \
+            Py_DECREF(obj); \
+            if (res < 0) \
+                goto fail; \
+        } while (0)
 #define SET_ITEM_INT(VAR) \
     SET_ITEM(#VAR, PyLong_FromLong(VAR))
 #define FROM_STRING(STR) \
