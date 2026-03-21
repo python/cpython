@@ -1568,7 +1568,7 @@ components (the real part, followed by imaginary part) is preserved.
 
 static PyObject *
 array_array_byteswap_impl(arrayobject *self)
-/*[clinic end generated code: output=5f8236cbdf0d90b5 input=9af1d1749000b14f]*/
+/*[clinic end generated code: output=5f8236cbdf0d90b5 input=c1cff4f9b5badd95]*/
 {
     char *p;
     Py_ssize_t i;
