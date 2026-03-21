@@ -143,38 +143,33 @@ if sys.platform == 'darwin':
                 raise TypeError("_MacOSXSemaphore can only be used "
                                 "as base class of Semaphore class")
             self._count = ctx.Value('h', value)
-            SemLock.__init__(self, kind, value, maxvalue, ctx=ctx)
+            super().__init__(kind, value, maxvalue, ctx=ctx)
 
-        def _acquire(self, *args, **kwargs) -> bool:
-            if self._semlock.acquire(*args, **kwargs):
+        def acquire(self, blocking=True, timeout=None):
+            if self._semlock.acquire(blocking, timeout):
                 with self._count:
                     self._count.value -= 1
                 return True
             return False
 
-        def _release(self):
+        def release(self):
+            if isinstance(self, BoundedSemaphore):
+                with self._count:
+                    if self._count.value + 1 > self._semlock.maxvalue:
+                        raise ValueError(f"Cannot exceed initial value of"\
+                                        f" {self._semlock.maxvalue!a}")
             with self._count:
                 self._count.value += 1
                 self._semlock.release()
 
-        def _release_bounded(self):
-            with self._count:
-                if self._count.value + 1 > self._semlock.maxvalue:
-                    raise ValueError(f"Cannot exceed initial value of"\
-                                    f" {self._semlock.maxvalue!a}")
-                self._release()
-
-        def _get_value(self) -> int:
+        def get_value(self):
             return self._count.value
 
         def _make_methods(self):
-            super()._make_methods()
-            self.acquire = self._acquire
-            if isinstance(self, BoundedSemaphore):
-                self.release = self._release_bounded
-            elif isinstance(self, Semaphore):
-                self.release = self._release
-            self.get_value = self._get_value
+            # Do not call the `Semlock._make_methods` method,
+            # as this breaks the reference to the local
+            # `acquire` and `release` methods.
+            pass
 
         def __setstate__(self, state):
             self._count, state = state[-1], state[:-1]
@@ -186,7 +181,14 @@ if sys.platform == 'darwin':
 
     _SemClass = _MacOSXSemaphore
 else:
-    _SemClass = SemLock
+    class _NotMacOSXSemaphore(SemLock):
+        def __init__(self, kind, value, maxvalue, *, ctx):
+            super().__init__(kind, value, maxvalue, ctx=ctx)
+
+        def get_value(self) -> int:
+            return self._semlock._get_value()
+
+    _SemClass = _NotMacOSXSemaphore
 
 #
 # Semaphore
@@ -196,9 +198,6 @@ class Semaphore(_SemClass):
 
     def __init__(self, value=1, *, ctx):
         _SemClass.__init__(self, SEMAPHORE, value, SEM_VALUE_MAX, ctx=ctx)
-
-    def get_value(self):
-        return self._semlock._get_value()
 
     def __repr__(self):
         try:
