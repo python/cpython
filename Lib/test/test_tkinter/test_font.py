@@ -1,7 +1,9 @@
+import collections.abc
 import unittest
 import tkinter
 from tkinter import font
 from test.support import requires, gc_collect, ALWAYS_EQ
+from test.test_tkinter.support import setUpModule  # noqa: F401
 from test.test_tkinter.support import AbstractTkTest, AbstractDefaultRootTest
 
 requires('gui')
@@ -117,6 +119,16 @@ class FontTest(AbstractTkTest, unittest.TestCase):
         self.assertEqual(
             repr(self.font), f'<tkinter.font.Font object {fontname!r}>'
         )
+
+    def test_iterable_protocol(self):
+        self.assertNotIsSubclass(font.Font, collections.abc.Iterable)
+        self.assertNotIsSubclass(font.Font, collections.abc.Container)
+        self.assertNotIsInstance(self.font, collections.abc.Iterable)
+        self.assertNotIsInstance(self.font, collections.abc.Container)
+        with self.assertRaisesRegex(TypeError, 'is not iterable'):
+            iter(self.font)
+        with self.assertRaisesRegex(TypeError, 'is not a container or iterable'):
+            self.font in self.font
 
 
 class DefaultRootTest(AbstractDefaultRootTest, unittest.TestCase):

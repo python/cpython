@@ -1,5 +1,0 @@
-:mod:`http.server`: fix default handling of HTTP/0.9 requests in
-:class:`~http.server.BaseHTTPRequestHandler`. Previously,
-:meth:`!BaseHTTPRequestHandler.parse_request`` incorrectly
-waited for headers in the request although those are not
-supported in HTTP/0.9. Patch by Bénédikt Tran.

@@ -4,10 +4,6 @@
 .. module:: abc
    :synopsis: Abstract base classes according to :pep:`3119`.
 
-.. moduleauthor:: Guido van Rossum
-.. sectionauthor:: Georg Brandl
-.. much of the content adapted from docstrings
-
 **Source code:** :source:`Lib/abc.py`
 
 --------------

@@ -1,3 +1,0 @@
-``BINARY_OP`` now specializes to ``BINARY_OP_ADD_INT``,
-``BINARY_OP_SUBTRACT_INT`` or ``BINARY_OP_MULTIPLY_INT`` if operands
-are compact ints.

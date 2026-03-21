@@ -3822,9 +3822,26 @@ iso_calendar_date_new_impl(PyTypeObject *type, int year, int week,
         return NULL;
     }
 
-    PyTuple_SET_ITEM(self, 0, PyLong_FromLong(year));
-    PyTuple_SET_ITEM(self, 1, PyLong_FromLong(week));
-    PyTuple_SET_ITEM(self, 2, PyLong_FromLong(weekday));
+    PyObject *year_object = PyLong_FromLong(year);
+    if (year_object == NULL) {
+        Py_DECREF(self);
+        return NULL;
+    }
+    PyTuple_SET_ITEM(self, 0, year_object);
+
+    PyObject *week_object = PyLong_FromLong(week);
+    if (week_object == NULL) {
+        Py_DECREF(self);
+        return NULL;
+    }
+    PyTuple_SET_ITEM(self, 1, week_object);
+
+    PyObject *weekday_object = PyLong_FromLong(weekday);
+    if (weekday_object == NULL) {
+        Py_DECREF(self);
+        return NULL;
+    }
+    PyTuple_SET_ITEM(self, 2, weekday_object);
 
     return (PyObject *)self;
 }
@@ -5584,22 +5601,7 @@ datetime_from_timet_and_us(PyTypeObject *cls, TM_FUNC f, time_t timet, int us,
     second = Py_MIN(59, tm.tm_sec);
 
     /* local timezone requires to compute fold */
-    if (tzinfo == Py_None && f == _PyTime_localtime
-    /* On Windows, passing a negative value to local results
-     * in an OSError because localtime_s on Windows does
-     * not support negative timestamps. Unfortunately this
-     * means that fold detection for time values between
-     * 0 and max_fold_seconds will result in an identical
-     * error since we subtract max_fold_seconds to detect a
-     * fold. However, since we know there haven't been any
-     * folds in the interval [0, max_fold_seconds) in any
-     * timezone, we can hackily just forego fold detection
-     * for this time range.
-     */
-#ifdef MS_WINDOWS
-        && (timet - max_fold_seconds > 0)
-#endif
-        ) {
+    if (tzinfo == Py_None && f == _PyTime_localtime) {
         long long probe_seconds, result_seconds, transition;
 
         result_seconds = utc_to_seconds(year, month, day,
@@ -6393,7 +6395,7 @@ datetime_str(PyObject *op)
 /*[clinic input]
 datetime.datetime.isoformat
 
-    sep: int(accept={str}, c_default="'T'", py_default="'T'") = ord('T')
+    sep: int(accept={str}) = 'T'
     timespec: str(c_default="NULL") = 'auto'
 
 Return the time formatted according to ISO.
@@ -6415,7 +6417,7 @@ terms of the time to include. Valid options are 'auto', 'hours',
 static PyObject *
 datetime_datetime_isoformat_impl(PyDateTime_DateTime *self, int sep,
                                  const char *timespec)
-/*[clinic end generated code: output=9b6ce1383189b0bf input=2fa2512172ccf5d5]*/
+/*[clinic end generated code: output=9b6ce1383189b0bf input=db935a57fa697c5e]*/
 {
     char buffer[100];
 
@@ -6906,9 +6908,9 @@ datetime_datetime_astimezone_impl(PyDateTime_DateTime *self,
         goto naive;
     }
     else if (!PyDelta_Check(offset)) {
+        PyErr_Format(PyExc_TypeError, "utcoffset() returned %T,"
+                     " expected timedelta or None", offset);
         Py_DECREF(offset);
-        PyErr_Format(PyExc_TypeError, "utcoffset() returned %.200s,"
-                     " expected timedelta or None", Py_TYPE(offset)->tp_name);
         return NULL;
     }
     /* result = self - offset */

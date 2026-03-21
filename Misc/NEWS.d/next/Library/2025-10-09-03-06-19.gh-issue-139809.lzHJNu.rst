@@ -1,1 +1,0 @@
-Prevent premature colorization of subparser ``prog`` in :meth:`argparse.ArgumentParser.add_subparsers` to respect color environment variable changes after parser creation.
