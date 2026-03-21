@@ -4,7 +4,7 @@ import _remote_debugging
 
 from .gecko_collector import GeckoCollector
 from .stack_collector import FlamegraphCollector, CollapsedStackCollector
-from .ndjson_collector import NdjsonCollector
+from .jsonl_collector import JsonlCollector
 from .pstats_collector import PstatsCollector
 
 
@@ -118,8 +118,8 @@ def convert_binary_to_format(input_file, output_file, output_format,
             collector = PstatsCollector(interval)
         elif output_format == 'gecko':
             collector = GeckoCollector(interval)
-        elif output_format == 'ndjson':
-            collector = NdjsonCollector(interval)
+        elif output_format == 'jsonl':
+            collector = JsonlCollector(interval)
         else:
             raise ValueError(f"Unknown output format: {output_format}")
 

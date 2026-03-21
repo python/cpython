@@ -1,4 +1,4 @@
-"""NDJSON collector."""
+"""JSONL collector."""
 
 import json
 import uuid
@@ -25,8 +25,8 @@ _MODE_NAMES = {
 }
 
 
-class NdjsonCollector(StackTraceCollector):
-    """Collector that exports finalized profiling data as NDJSON."""
+class JsonlCollector(StackTraceCollector):
+    """Collector that exports finalized profiling data as JSONL."""
 
     def __init__(self, sample_interval_usec, *, skip_idle=False, mode=None):
         super().__init__(sample_interval_usec, skip_idle=skip_idle)
@@ -81,7 +81,7 @@ class NdjsonCollector(StackTraceCollector):
                 },
             )
 
-        print(f"NDJSON profile written to {filename}")
+        print(f"JSONL profile written to {filename}")
 
     def _build_meta_record(self):
         record = {
