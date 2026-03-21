@@ -526,6 +526,7 @@ class TestSampleProfilerComponents(unittest.TestCase):
                         [MockFrameInfo("file.py", 10, "func1"), MockFrameInfo("file.py", 20, "func2")],
                     )
                 ],
+                main_thread_id=1,
             )
         ]
         collector.collect(test_frames)
@@ -556,6 +557,7 @@ class TestSampleProfilerComponents(unittest.TestCase):
         threads = profile_data["threads"]
         self.assertEqual(len(threads), 1)
         thread_data = threads[0]
+        self.assertTrue(thread_data["isMainThread"])
 
         # Verify thread structure
         self.assertIn("samples", thread_data)
