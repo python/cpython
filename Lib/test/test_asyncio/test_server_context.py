@@ -284,8 +284,10 @@ class AsyncioEventLoopTests(TestCase, ServerContextvarsTestCase):
 
 @unittest.skipUnless(ssl, "SSL not available")
 class AsyncioEventLoopSSLTests(AsyncioEventLoopTests):
-    server_ssl_context = test_utils.simple_server_sslcontext()
-    client_ssl_context = test_utils.simple_client_sslcontext()
+    def setUp(self):
+        super().setUp()
+        self.server_ssl_context = test_utils.simple_server_sslcontext()
+        self.client_ssl_context = test_utils.simple_client_sslcontext()
 
 if sys.platform == "win32":
     class AsyncioProactorEventLoopTests(TestCase, ServerContextvarsTestCase):
@@ -296,13 +298,17 @@ if sys.platform == "win32":
 
     @unittest.skipUnless(ssl, "SSL not available")
     class AsyncioProactorEventLoopSSLTests(AsyncioProactorEventLoopTests):
-        server_ssl_context = test_utils.simple_server_sslcontext()
-        client_ssl_context = test_utils.simple_client_sslcontext()
+        def setUp(self):
+            super().setUp()
+            self.server_ssl_context = test_utils.simple_server_sslcontext()
+            self.client_ssl_context = test_utils.simple_client_sslcontext()
 
     @unittest.skipUnless(ssl, "SSL not available")
     class AsyncioSelectorEventLoopSSLTests(AsyncioSelectorEventLoopTests):
-        server_ssl_context = test_utils.simple_server_sslcontext()
-        client_ssl_context = test_utils.simple_client_sslcontext()
+        def setUp(self):
+            super().setUp()
+            self.server_ssl_context = test_utils.simple_server_sslcontext()
+            self.client_ssl_context = test_utils.simple_client_sslcontext()
 
 if __name__ == "__main__":
     unittest.main()
