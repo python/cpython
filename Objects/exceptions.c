@@ -2802,8 +2802,14 @@ SyntaxError_init(PyObject *op, PyObject *args, PyObject *kwds)
             return -1;
         }
 
-        self->end_lineno = NULL;
-        self->end_offset = NULL;
+        Py_XDECREF(self->filename);
+        Py_XDECREF(self->lineno);
+        Py_XDECREF(self->offset);
+        Py_XDECREF(self->text);
+        Py_XSETREF(self->end_lineno, NULL);
+        Py_XSETREF(self->end_offset, NULL);
+        Py_XDECREF(self->metadata);
+
         if (!PyArg_ParseTuple(info, "OOOO|OOO",
                               &self->filename, &self->lineno,
                               &self->offset, &self->text,
