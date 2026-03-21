@@ -1,0 +1,3 @@
+Fix reference leak of ``idna`` and ``pstr`` in :func:`socket.getaddrinfo`
+and buffer leak in :meth:`socket.socket.sendto` when ``PySys_Audit``
+raises an exception.
