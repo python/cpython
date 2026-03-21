@@ -89,7 +89,8 @@ htmlhelp: build
 
 .PHONY: latex
 latex: BUILDER = latex
-latex: build
+latex: _ensure-sphinxcontrib-svg2pdfconverter
+	$(MAKE) build BUILDER=$(BUILDER)
 	@echo "Build finished; the LaTeX files are in build/latex."
 	@echo "Run \`make all-pdf' or \`make all-ps' in that directory to" \
 	      "run these through (pdf)latex."
@@ -231,7 +232,7 @@ dist-text:
 	@echo "Build finished and archived!"
 
 .PHONY: dist-pdf
-dist-pdf:
+dist-pdf: _ensure-sphinxcontrib-svg2pdfconverter
 	# archive the A4 latex
 	@echo "Building LaTeX (A4 paper)..."
 	mkdir -p dist
@@ -291,6 +292,10 @@ _ensure-pre-commit:
 .PHONY: _ensure-sphinx-autobuild
 _ensure-sphinx-autobuild:
 	$(MAKE) _ensure-package PACKAGE=sphinx-autobuild
+
+.PHONY: _ensure-sphinxcontrib-svg2pdfconverter
+_ensure-sphinxcontrib-svg2pdfconverter:
+	$(MAKE) _ensure-package PACKAGE=sphinxcontrib-svg2pdfconverter
 
 .PHONY: check
 check: _ensure-pre-commit
