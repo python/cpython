@@ -209,10 +209,11 @@ class BaseSelectorEventLoop(base_events.BaseEventLoop):
                     raise  # The event loop will catch, log and ignore it.
             else:
                 extra = {'peername': addr}
+                conn_context = context.copy() if context is not None else None
                 accept = self._accept_connection2(
                     protocol_factory, conn, extra, sslcontext, server,
-                    ssl_handshake_timeout, ssl_shutdown_timeout, context=context)
-                self.create_task(accept, context=context)
+                    ssl_handshake_timeout, ssl_shutdown_timeout, context=conn_context)
+                self.create_task(accept, context=conn_context)
 
     async def _accept_connection2(
             self, protocol_factory, conn, extra,
