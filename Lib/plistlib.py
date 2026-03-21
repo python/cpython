@@ -24,12 +24,12 @@ Generate Plist example:
     import datetime
     import plistlib
 
-    pl = frozendict(
+    pl = dict(
         aString = "Doodah",
         aList = ["A", "B", 12, 32.1, [1, 2, 3]],
         aFloat = 0.1,
         anInt = 728,
-        aDict = frozendict(
+        aDict = dict(
             anotherString = "<hello & hi there!>",
             aThirdString = "M\xe4ssig, Ma\xdf",
             aTrueValue = True,
