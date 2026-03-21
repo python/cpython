@@ -9,6 +9,15 @@ from .pstats_collector import PstatsCollector
 from .stack_collector import CollapsedStackCollector
 from .heatmap_collector import HeatmapCollector
 from .gecko_collector import GeckoCollector
+from .ndjson_collector import NdjsonCollector
 from .string_table import StringTable
 
-__all__ = ("Collector", "PstatsCollector", "CollapsedStackCollector", "HeatmapCollector", "GeckoCollector", "StringTable")
+__all__ = (
+    "Collector",
+    "PstatsCollector",
+    "CollapsedStackCollector",
+    "HeatmapCollector",
+    "GeckoCollector",
+    "NdjsonCollector",
+    "StringTable",
+)
