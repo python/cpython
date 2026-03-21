@@ -253,23 +253,23 @@ Output in debug mode::
 Asynchronous generators best practices
 ======================================
 
-Writing correct and efficient asyncio code requires avoiding some known gotchas.
-This section outlines the best practices you need to know.
-Following these practices will save you hours of debugging.
+Writing correct and efficient asyncio code requires awareness of certain pitfalls.
+This section outlines essential best practices that can save you hours of debugging.
 
 
-Manually close the generator
-----------------------------
+Close asynchronous generators explicitly
+----------------------------------------
 
 It is recommended to manually close the
-:term:`asynchronous generator <asynchronous generator iterator>`. If the generator
-exits early by exception raised in the for-loop body, for example,
-the generator's async cleanup code will run in an unexpected context. This could
-happen after the lifetime of tasks it depends on, or during the event loop
-shutdown when the async-generator garbage collection hook is called.
+:term:`asynchronous generator <asynchronous generator iterator>`. If a generator
+exits early - for example, due to an exception raised in the body of
+an ``async for`` loop - its asynchronous cleanup code may run in an
+unexpected context. This can occur after the tasks it depends on have completed,
+or during the event loop shutdown when the async-generator's garbage collection
+hook is called.
 
-To prevent this, it is recommended to explicitly close the async generator by
-calling the :meth:`~agen.aclose` method, or by using a :func:`contextlib.aclosing`
+To avoid this, explicitly close the generator by calling its
+:meth:`~agen.aclose` method, or use the :func:`contextlib.aclosing`
 context manager::
 
   import asyncio
@@ -286,9 +286,9 @@ context manager::
 
   asyncio.run(func())
 
-As said above, the cleanup code for these asynchronous generators is defered.
-We can construct an example program to show that the finalization of the
-asynchronous generator is executed in an unexpected order::
+As noted above, the cleanup code for these asynchronous generators is deferred.
+The following example demonstrates that the finalization of an asynchronous
+generator can occur in an unexpected order::
 
   import asyncio
   work_done = False
@@ -316,7 +316,7 @@ asynchronous generator is executed in an unexpected order::
 
   asyncio.run(main())
 
-For this example we get the following output::
+For this example, we get the following output::
 
   unhandled exception during asyncio.run() shutdown
   task: <Task finished name='Task-3' coro=<<async_generator_athrow without __name__>()> exception=AssertionError()>
@@ -334,9 +334,9 @@ For this example we get the following output::
   AssertionError
 
 The ``cursor()`` asynchronous generator was finalized before the ``rows``
-generator, which we did not expect.
+generator - an unexpected behavior.
 
-Example can be fixed by explicitly closing the
+The example can be fixed by explicitly closing the
 ``cursor`` and ``rows`` async-generators::
 
   async def main():
@@ -348,12 +348,12 @@ Example can be fixed by explicitly closing the
               break
 
 
-Only create a generator when a loop is already running
-------------------------------------------------------
+Create asynchronous generators only when the event loop is running
+------------------------------------------------------------------
 
 It is recommended to create
 :term:`asynchronous generators <asynchronous generator iterator>` only after
-the event loop has already been created.
+the event loop has been created.
 
 To ensure that asynchronous generators close reliably, the event loop uses the
 :func:`sys.set_asyncgen_hooks` function to register callback functions. These
@@ -361,19 +361,20 @@ callbacks update the list of running asynchronous generators to keep it in a
 consistent state.
 
 When the :meth:`loop.shutdown_asyncgens() <asyncio.loop.shutdown_asyncgens>`
-function is called, the running generators are stopped gracefully, and the
+function is called, the running generators are stopped gracefully and the
 list is cleared.
 
-The asynchronous generator calls the corresponding system hook when on the
-first iteration. At the same time, the generator remembers that the hook was
-called and don't call it twice.
+The asynchronous generator invokes the corresponding system hook during its
+first iteration. At the same time, the generator records that the hook has
+been called and does not call it again.
 
-So, if the iteration begins before the event loop is created, the event loop
-will not be able to add it to its list of active generators because the hooks
-will be set after the generator tries to call it. Consequently, the event loop
-will not be able to terminate the generator if necessary.
+Therefore, if iteration begins before the event loop is created,
+the event loop will not be able to add the generator to its list of active
+generators because the hooks are set after the generator attempts to call them.
+Consequently, the event loop will not be able to terminate the generator
+if necessary.
 
-Consider following example::
+Consider the following example::
 
   import asyncio
 
@@ -399,7 +400,7 @@ Output::
           ^^^^
   RuntimeError: async generator ignored GeneratorExit
 
-This example can be fixed as follow::
+This example can be fixed as follows::
 
   import asyncio
 
@@ -417,15 +418,15 @@ This example can be fixed as follow::
   asyncio.run(main())
 
 
-Avoid iterating and closing the same generator concurrently
------------------------------------------------------------
+Avoid concurrent iteration and closure of the same generator
+------------------------------------------------------------
 
-Async generators may to be reentered while another
+Async generators may be reentered while another
 :meth:`~agen.__anext__` / :meth:`~agen.athrow` / :meth:`~agen.aclose` call is in
-progress. This may lead to an inconsistent state of the async generator
-and can cause errors.
+progress. This may lead to an inconsistent state of the async generator and can
+cause errors.
 
-Let's consider following example::
+Let's consider the following example::
 
   import asyncio
 
@@ -467,5 +468,5 @@ Output::
   RuntimeError: anext(): asynchronous generator is already running
 
 
-Therefore, it is recommended to avoid using async generators in parallel
-tasks or from multiple event loops.
+Therefore, it is recommended to avoid using asynchronous generators in parallel
+tasks or across multiple event loops.
