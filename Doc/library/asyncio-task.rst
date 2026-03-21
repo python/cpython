@@ -2,7 +2,7 @@
 
 
 ====================
-Coroutines and Tasks
+Coroutines and tasks
 ====================
 
 This section outlines high-level asyncio APIs to work with coroutines
@@ -231,7 +231,7 @@ A good example of a low-level function that returns a Future object
 is :meth:`loop.run_in_executor`.
 
 
-Creating Tasks
+Creating tasks
 ==============
 
 **Source code:** :source:`Lib/asyncio/tasks.py`
@@ -300,7 +300,7 @@ Creating Tasks
       Added the *eager_start* parameter by passing on all *kwargs*.
 
 
-Task Cancellation
+Task cancellation
 =================
 
 Tasks can easily and safely be cancelled.
@@ -324,7 +324,7 @@ remove the cancellation state.
 
 .. _taskgroups:
 
-Task Groups
+Task groups
 ===========
 
 Task groups combine a task creation API with a convenient
@@ -427,7 +427,7 @@ reported by :meth:`asyncio.Task.cancelling`.
    Improved handling of simultaneous internal and external cancellations
    and correct preservation of cancellation counts.
 
-Terminating a Task Group
+Terminating a task group
 ------------------------
 
 While terminating a task group is not natively supported by the standard
@@ -498,13 +498,13 @@ Sleeping
    for 5 seconds::
 
     import asyncio
-    import datetime
+    import datetime as dt
 
     async def display_date():
         loop = asyncio.get_running_loop()
         end_time = loop.time() + 5.0
         while True:
-            print(datetime.datetime.now())
+            print(dt.datetime.now())
             if (loop.time() + 1.0) >= end_time:
                 break
             await asyncio.sleep(1)
@@ -519,7 +519,7 @@ Sleeping
       Raises :exc:`ValueError` if *delay* is :data:`~math.nan`.
 
 
-Running Tasks Concurrently
+Running tasks concurrently
 ==========================
 
 .. awaitablefunction:: gather(*aws, return_exceptions=False)
@@ -621,7 +621,7 @@ Running Tasks Concurrently
 
 .. _eager-task-factory:
 
-Eager Task Factory
+Eager task factory
 ==================
 
 .. function:: eager_task_factory(loop, coro, *, name=None, context=None)
@@ -664,7 +664,7 @@ Eager Task Factory
     .. versionadded:: 3.12
 
 
-Shielding From Cancellation
+Shielding from cancellation
 ===========================
 
 .. awaitablefunction:: shield(aw)
@@ -894,7 +894,7 @@ Timeouts
       Raises :exc:`TimeoutError` instead of :exc:`asyncio.TimeoutError`.
 
 
-Waiting Primitives
+Waiting primitives
 ==================
 
 .. function:: wait(aws, *, timeout=None, return_when=ALL_COMPLETED)
@@ -1014,7 +1014,7 @@ Waiting Primitives
       or as a plain :term:`iterator` (previously it was only a plain iterator).
 
 
-Running in Threads
+Running in threads
 ==================
 
 .. function:: to_thread(func, /, *args, **kwargs)
@@ -1074,7 +1074,7 @@ Running in Threads
    .. versionadded:: 3.9
 
 
-Scheduling From Other Threads
+Scheduling from other threads
 =============================
 
 .. function:: run_coroutine_threadsafe(coro, loop)
@@ -1198,7 +1198,7 @@ Introspection
 
 .. _asyncio-task-obj:
 
-Task Object
+Task object
 ===========
 
 .. class:: Task(coro, *, loop=None, name=None, context=None, eager_start=False)
