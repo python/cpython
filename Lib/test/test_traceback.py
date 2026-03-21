@@ -4420,19 +4420,21 @@ class SuggestionFormattingTestBase(SuggestionFormattingTestMixin):
         self.assertNotIn("inner.foo", actual)
 
     def test_getattr_nested_with_property(self):
-        # Test that descriptors (including properties) are suggested in nested attributes
+        # Property suggestions should not execute the property getter.
         class Inner:
             @property
             def computed(self):
-                return 42
+                return missing_name
 
         class Outer:
             def __init__(self):
                 self.inner = Inner()
 
         actual = self.get_suggestion(Outer(), 'computed')
-        # Descriptors should not be suggested to avoid executing arbitrary code
-        self.assertIn("inner.computed", actual)
+        self.assertIn(
+            "Did you mean '.inner.computed' instead of '.computed'",
+            actual,
+        )
 
     def test_getattr_nested_no_suggestion_for_deep_nesting(self):
         # Test that deeply nested attributes (2+ levels) are not suggested

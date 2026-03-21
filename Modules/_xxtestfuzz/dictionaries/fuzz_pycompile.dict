@@ -54,7 +54,7 @@
 "  "
 "\\t"
 ":\\n  "
-"\\\n"
+"\\\\n"
 
 # type signatures and functions
 "-> "
