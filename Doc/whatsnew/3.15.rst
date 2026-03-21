@@ -632,9 +632,8 @@ argparse
 array
 -----
 
-* Support the :c:expr:`float complex` and :c:expr:`double complex` C types in
-  the :mod:`array` module (formatting characters ``'F'`` and ``'D'``
-  respectively).
+* Support the :c:expr:`float complex` and :c:expr:`double complex` C types
+  (formatting characters ``'F'`` and ``'D'`` respectively).
   (Contributed by Sergey B Kirpichev in :gh:`146151`.)
 
 
