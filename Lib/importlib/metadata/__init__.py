@@ -31,7 +31,7 @@ from typing import Any
 
 from . import _meta
 from ._collections import FreezableDefaultDict, Pair
-from ._functools import method_cache, pass_none
+from ._functools import method_cache, noop, pass_none, passthrough
 from ._itertools import always_iterable, bucket, unique_everseen
 from ._meta import PackageMetadata, SimplePath
 from ._typing import md_none
@@ -41,6 +41,7 @@ __all__ = [
     'DistributionFinder',
     'PackageMetadata',
     'PackageNotFoundError',
+    'PackagePath',
     'SimplePath',
     'distribution',
     'distributions',
@@ -457,7 +458,7 @@ class Distribution(metaclass=abc.ABCMeta):
         try:
             return next(iter(cls._prefer_valid(cls.discover(name=name))))
         except StopIteration:
-            raise PackageNotFoundError(name)
+            raise PackageNotFoundError(name) from None
 
     @classmethod
     def discover(
@@ -782,6 +783,20 @@ class DistributionFinder(MetaPathFinder):
         """
 
 
+@passthrough
+def _clear_after_fork(cached):
+    """Ensure ``func`` clears cached state after ``fork`` when supported.
+
+    ``FastPath`` caches zip-backed ``pathlib.Path`` objects that retain a
+    reference to the parent's open ``ZipFile`` handle. Re-using a cached
+    instance in a forked child can therefore resurrect invalid file pointers
+    and trigger ``BadZipFile``/``OSError`` failures (python/importlib_metadata#520).
+    Registering ``cache_clear`` with ``os.register_at_fork`` keeps each process
+    on its own cache.
+    """
+    getattr(os, 'register_at_fork', noop)(after_in_child=cached.cache_clear)
+
+
 class FastPath:
     """
     Micro-optimized class for searching a root for children.
@@ -798,7 +813,8 @@ class FastPath:
     True
     """
 
-    @functools.lru_cache()  # type: ignore[misc]
+    @_clear_after_fork  # type: ignore[misc]
+    @functools.lru_cache()
     def __new__(cls, root):
         return super().__new__(cls)
 
@@ -924,8 +940,15 @@ class Prepared:
     def normalize(name):
         """
         PEP 503 normalization plus dashes as underscores.
+
+        Specifically avoids ``re.sub`` as prescribed for performance
+        benefits (see python/cpython#143658).
         """
-        return re.sub(r"[-_.]+", "-", name).lower().replace('-', '_')
+        value = name.lower().replace("-", "_").replace(".", "_")
+        # Condense repeats
+        while "__" in value:
+            value = value.replace("__", "_")
+        return value
 
     @staticmethod
     def legacy_normalize(name):

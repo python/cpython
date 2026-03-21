@@ -22,7 +22,8 @@
 #endif
 
 #include "Python.h"
-#include "pycore_strhex.h" // _Py_strhex()
+#include "pycore_object.h"        // _PyObject_VisitType()
+#include "pycore_strhex.h"        // _Py_strhex()
 
 #include "hashlib.h"
 
@@ -86,7 +87,10 @@ static void
 MD5_dealloc(PyObject *op)
 {
     MD5object *ptr = _MD5object_CAST(op);
-    Hacl_Hash_MD5_free(ptr->hash_state);
+    if (ptr->hash_state != NULL) {
+        Hacl_Hash_MD5_free(ptr->hash_state);
+        ptr->hash_state = NULL;
+    }
     PyTypeObject *tp = Py_TYPE(op);
     PyObject_GC_UnTrack(ptr);
     PyObject_GC_Del(ptr);

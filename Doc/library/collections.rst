@@ -4,9 +4,6 @@
 .. module:: collections
     :synopsis: Container datatypes
 
-.. moduleauthor:: Raymond Hettinger <python@rcn.com>
-.. sectionauthor:: Raymond Hettinger <python@rcn.com>
-
 **Source code:** :source:`Lib/collections/__init__.py`
 
 .. testsetup:: *
@@ -404,7 +401,7 @@ or subtracting from an empty counter.
 .. versionadded:: 3.3
     Added support for unary plus, unary minus, and in-place multiset operations.
 
-.. versionadded:: next
+.. versionadded:: 3.15
     Added support for the symmetric difference multiset operation, ``c ^ d``.
 
 .. note::
@@ -1209,7 +1206,7 @@ If a new entry overwrites an existing entry, the
 original insertion position is changed and moved to the end::
 
     class LastUpdatedOrderedDict(OrderedDict):
-        'Store items in the order the keys were last added'
+        'Store items in the order that the keys were last updated.'
 
         def __setitem__(self, key, value):
             super().__setitem__(key, value)

@@ -1,6 +1,12 @@
-#ifndef Py_CPYTHON_MONITORING_H
-#  error "this header file must not be included directly"
+#ifndef Py_MONITORING_H
+#define Py_MONITORING_H
+#ifndef Py_LIMITED_API
+#ifdef __cplusplus
+extern "C" {
 #endif
+
+// There is currently no limited API for monitoring
+
 
 /* Local events.
  * These require bytecode instrumentation */
@@ -267,3 +273,9 @@ PyMonitoring_FireStopIterationEvent(PyMonitoringState *state, PyObject *codelike
 }
 
 #undef _PYMONITORING_IF_ACTIVE
+
+#ifdef __cplusplus
+}
+#endif
+#endif  // !Py_LIMITED_API
+#endif  // !Py_MONITORING_H

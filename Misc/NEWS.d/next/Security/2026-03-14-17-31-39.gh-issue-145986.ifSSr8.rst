@@ -1,0 +1,4 @@
+:mod:`xml.parsers.expat`: Fixed a crash caused by unbounded C recursion when
+converting deeply nested XML content models with
+:meth:`~xml.parsers.expat.xmlparser.ElementDeclHandler`.
+This addresses :cve:`2026-4224`.

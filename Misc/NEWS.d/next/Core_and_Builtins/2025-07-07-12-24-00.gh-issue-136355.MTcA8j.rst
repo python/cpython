@@ -1,2 +1,0 @@
-Deprecate :option:`-b` and :option:`!-bb` command line options
-and schedule them to become no-op in Python 3.17.

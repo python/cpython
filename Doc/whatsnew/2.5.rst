@@ -1277,12 +1277,12 @@ complete list of changes, or look through the SVN logs for all the details.
   with the new ':keyword:`with`' statement.  See section :ref:`contextlibmod`
   for more about this module.
 
-* New module: The :mod:`cProfile` module is a C implementation of  the existing
-  :mod:`profile` module that has much lower overhead. The module's interface is
-  the same as :mod:`profile`: you run ``cProfile.run('main()')`` to profile a
+* New module: The :mod:`!cProfile` module is a C implementation of  the existing
+  :mod:`!profile` module that has much lower overhead. The module's interface is
+  the same as :mod:`!profile`: you run ``cProfile.run('main()')`` to profile a
   function, can save profile data to a file, etc.  It's not yet known if the
   Hotshot profiler, which is also written in C but doesn't match the
-  :mod:`profile` module's interface, will continue to be maintained in future
+  :mod:`!profile` module's interface, will continue to be maintained in future
   versions of Python.  (Contributed by Armin Rigo.)
 
   Also, the :mod:`pstats` module for analyzing the data measured by the profiler
@@ -2169,9 +2169,9 @@ Changes to Python's build process and to the C API include:
 
 * Two new macros can be used to indicate C functions that are local to the
   current file so that a faster calling convention can be used.
-  ``Py_LOCAL(type)`` declares the function as returning a value of the
+  :c:macro:`Py_LOCAL` declares the function as returning a value of the
   specified *type* and uses a fast-calling qualifier.
-  ``Py_LOCAL_INLINE(type)`` does the same thing and also requests the
+  :c:macro:`Py_LOCAL_INLINE` does the same thing and also requests the
   function be inlined.  If macro :c:macro:`!PY_LOCAL_AGGRESSIVE` is defined before
   :file:`python.h` is included, a set of more aggressive optimizations are enabled
   for the module; you should benchmark the results to find out if these

@@ -227,6 +227,18 @@ pycompilestring(PyObject* self, PyObject *obj) {
 }
 
 static PyObject*
+pycompilestringexflags(PyObject *self, PyObject *args) {
+    const char *the_string, *filename;
+    int start, flags;
+    if (!PyArg_ParseTuple(args, "ysii", &the_string, &filename, &start, &flags)) {
+        return NULL;
+    }
+    PyCompilerFlags cf = _PyCompilerFlags_INIT;
+    cf.cf_flags = flags;
+    return Py_CompileStringExFlags(the_string, filename, start, &cf, -1);
+}
+
+static PyObject*
 test_lazy_hash_inheritance(PyObject* self, PyObject *Py_UNUSED(ignored))
 {
     PyTypeObject *type;
@@ -2562,6 +2574,39 @@ toggle_reftrace_printer(PyObject *ob, PyObject *arg)
     Py_RETURN_NONE;
 }
 
+
+typedef struct {
+    PyObject_HEAD
+} ManagedWeakrefNoGCObject;
+
+static void
+ManagedWeakrefNoGC_dealloc(PyObject *self)
+{
+    PyObject_ClearWeakRefs(self);
+    PyTypeObject *tp = Py_TYPE(self);
+    tp->tp_free(self);
+    Py_DECREF(tp);
+}
+
+static PyType_Slot ManagedWeakrefNoGC_slots[] = {
+    {Py_tp_dealloc, ManagedWeakrefNoGC_dealloc},
+    {0, 0}
+};
+
+static PyType_Spec ManagedWeakrefNoGC_spec = {
+    .name = "_testcapi.ManagedWeakrefNoGCType",
+    .basicsize = sizeof(ManagedWeakrefNoGCObject),
+    .flags = (Py_TPFLAGS_DEFAULT | Py_TPFLAGS_MANAGED_WEAKREF),
+    .slots = ManagedWeakrefNoGC_slots,
+};
+
+static PyObject *
+create_managed_weakref_nogc_type(PyObject *self, PyObject *Py_UNUSED(args))
+{
+    return PyType_FromSpec(&ManagedWeakrefNoGC_spec);
+}
+
+
 static PyMethodDef TestMethods[] = {
     {"set_errno",               set_errno,                       METH_VARARGS},
     {"test_config",             test_config,                     METH_NOARGS},
@@ -2626,6 +2671,7 @@ static PyMethodDef TestMethods[] = {
     {"return_result_with_error", return_result_with_error, METH_NOARGS},
     {"getitem_with_error", getitem_with_error, METH_VARARGS},
     {"Py_CompileString",     pycompilestring, METH_O},
+    {"Py_CompileStringExFlags", pycompilestringexflags, METH_VARARGS},
     {"raise_SIGINT_then_send_None", raise_SIGINT_then_send_None, METH_VARARGS},
     {"stack_pointer", stack_pointer, METH_NOARGS},
 #ifdef W_STOPCODE
@@ -2656,6 +2702,8 @@ static PyMethodDef TestMethods[] = {
     {"test_atexit", test_atexit, METH_NOARGS},
     {"code_offset_to_line", _PyCFunction_CAST(code_offset_to_line), METH_FASTCALL},
     {"toggle_reftrace_printer", toggle_reftrace_printer, METH_O},
+    {"create_managed_weakref_nogc_type",
+        create_managed_weakref_nogc_type, METH_NOARGS},
     {NULL, NULL} /* sentinel */
 };
 
@@ -3324,6 +3372,16 @@ _testcapi_exec(PyObject *m)
     PyModule_AddObject(m, "INT64_MAX", PyLong_FromInt64(INT64_MAX));
     PyModule_AddObject(m, "UINT64_MAX", PyLong_FromUInt64(UINT64_MAX));
 
+#ifdef HAVE_PPOLL
+    if (PyModule_AddObjectRef(m, "HAVE_PPOLL", Py_True) < 0) {
+        return -1;
+    }
+#endif
+
+    if (PyModule_AddIntMacro(m, _Py_STACK_GROWS_DOWN)) {
+        return -1;
+    }
+
     if (PyModule_AddIntMacro(m, Py_single_input)) {
         return -1;
     }
@@ -3477,11 +3535,17 @@ _testcapi_exec(PyObject *m)
     if (_PyTestCapi_Init_Function(m) < 0) {
         return -1;
     }
+    if (_PyTestCapi_Init_Module(m) < 0) {
+        return -1;
+    }
 
     return 0;
 }
 
+PyABIInfo_VAR(abi_info);
+
 static PyModuleDef_Slot _testcapi_slots[] = {
+    {Py_mod_abi, &abi_info},
     {Py_mod_exec, _testcapi_exec},
     {Py_mod_gil, Py_MOD_GIL_NOT_USED},
     {Py_mod_multiple_interpreters, Py_MOD_PER_INTERPRETER_GIL_SUPPORTED},
