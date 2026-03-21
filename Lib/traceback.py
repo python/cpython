@@ -1715,6 +1715,47 @@ def _get_safe___dir__(obj):
     )
 
 
+# Mapping of common method names from other programming languages to their
+# Python equivalents.  Used as a fallback when Levenshtein-based suggestion
+# matching finds no close match.  Only covers cases where a real Python
+# method exists on the same builtin type.
+_CROSS_LANGUAGE_ATTR_HINTS = {
+    # JavaScript / Ruby -> Python (list)
+    (list, "push"): "append",
+    (list, "indexOf"): "index",
+    (list, "unshift"): "insert",
+    (list, "concat"): "extend",
+    (list, "add"): "append",        # Java / C#
+    (list, "addAll"): "extend",     # Java
+    # JavaScript / Java -> Python (str)
+    (str, "toUpperCase"): "upper",
+    (str, "toLowerCase"): "lower",
+    (str, "indexOf"): "index",
+    (str, "trim"): "strip",
+    (str, "trimStart"): "lstrip",
+    (str, "trimEnd"): "rstrip",
+    (str, "replaceAll"): "replace",
+    # Java / C# -> Python (dict)
+    (dict, "putAll"): "update",
+    (dict, "keySet"): "keys",
+    (dict, "entrySet"): "items",
+    (dict, "getOrDefault"): "get",
+    (dict, "remove"): "pop",
+}
+
+
+def _check_cross_language_hint(obj, wrong_name):
+    """Check if wrong_name is a common method name from another language.
+
+    Only checks exact builtin types (list, str, dict) to avoid false
+    positives on custom subclasses that may intentionally omit methods.
+    """
+    obj_type = type(obj)
+    if obj_type not in (list, str, dict):
+        return None
+    return _CROSS_LANGUAGE_ATTR_HINTS.get((obj_type, wrong_name))
+
+
 def _compute_suggestion_error(exc_value, tb, wrong_name):
     if wrong_name is None or not isinstance(wrong_name, str):
         return None
@@ -1829,6 +1870,14 @@ def _compute_suggestion_error(exc_value, tb, wrong_name):
             nested_suggestion = _check_for_nested_attribute(exc_value.obj, wrong_name, d)
             if nested_suggestion:
                 return nested_suggestion
+
+    # If still no suggestion, check for common method names from other
+    # programming languages (e.g., push -> append, trim -> strip).
+    if not suggestion and isinstance(exc_value, AttributeError):
+        with suppress(Exception):
+            cross_lang = _check_cross_language_hint(exc_value.obj, wrong_name)
+            if cross_lang is not None:
+                return cross_lang
 
     return suggestion
 

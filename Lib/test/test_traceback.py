@@ -4564,6 +4564,58 @@ class SuggestionFormattingTestBase(SuggestionFormattingTestMixin):
         actual = self.get_suggestion(Outer(), 'target')
         self.assertIn("'.normal.target'", actual)
 
+    def test_cross_language_list_suggestions(self):
+        # Common list method names from other languages that have no
+        # close Levenshtein match in list's attributes.
+        cases = [
+            ([1, 2, 3], "push", "append"),      # JavaScript / Ruby
+            ([1, 2, 3], "addAll", "extend"),     # Java
+        ]
+        for obj, wrong, expected in cases:
+            with self.subTest(wrong=wrong):
+                actual = self.get_suggestion(obj, wrong)
+                self.assertIn(f"'.{expected}'", actual)
+
+    def test_cross_language_str_suggestions(self):
+        # Common str method names from other languages that have no
+        # close Levenshtein match in str's attributes.
+        cases = [
+            ("hello", "toUpperCase", "upper"),   # JavaScript / Java
+            ("hello", "toLowerCase", "lower"),   # JavaScript / Java
+            ("hello", "trimStart", "lstrip"),    # JavaScript
+        ]
+        for obj, wrong, expected in cases:
+            with self.subTest(wrong=wrong):
+                actual = self.get_suggestion(obj, wrong)
+                self.assertIn(f"'.{expected}'", actual)
+
+    def test_cross_language_dict_suggestions(self):
+        # Common dict method names from other languages that have no
+        # close Levenshtein match in dict's attributes.
+        cases = [
+            ({"a": 1}, "putAll", "update"),      # Java
+            ({"a": 1}, "entrySet", "items"),     # Java
+        ]
+        for obj, wrong, expected in cases:
+            with self.subTest(wrong=wrong):
+                actual = self.get_suggestion(obj, wrong)
+                self.assertIn(f"'.{expected}'", actual)
+
+    def test_cross_language_no_suggestion_for_subclasses(self):
+        # Cross-language hints only trigger for exact builtin types,
+        # not subclasses, to avoid false positives on custom classes.
+        class CustomList(list):
+            pass
+
+        actual = self.get_suggestion(CustomList([1, 2, 3]), 'push')
+        self.assertNotIn("'.append'", actual)
+
+    def test_cross_language_no_suggestion_for_unknown_attr(self):
+        # Attributes not in the cross-language table should not get
+        # suggestions from it (and may get no suggestion at all).
+        actual = self.get_suggestion([1, 2, 3], 'frobulate')
+        self.assertNotIn("Did you mean", actual)
+
     def make_module(self, code):
         tmpdir = Path(tempfile.mkdtemp())
         self.addCleanup(shutil.rmtree, tmpdir)
