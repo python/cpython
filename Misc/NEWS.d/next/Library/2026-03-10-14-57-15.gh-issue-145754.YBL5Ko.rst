@@ -1,0 +1,2 @@
+Request signature during mock autospec with ``FORWARDREF`` annotation format.
+This prevents runtime errors when an annotation uses a name that is not defined at runtime.

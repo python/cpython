@@ -7,6 +7,7 @@
 #include "pycore_pylifecycle.h"   // _Py_IsInterpreterFinalizing()
 #include "pycore_pystate.h"       // _PyThreadState_GET()
 #include "pycore_traceback.h"     // _Py_DisplaySourceLine()
+#include "pycore_tuple.h"         // _PyTuple_FromPair
 #include "pycore_unicodeobject.h" // _PyUnicode_EqualToASCIIString()
 
 #include <stdbool.h>
@@ -634,7 +635,7 @@ update_registry(PyInterpreterState *interp, PyObject *registry, PyObject *text,
     if (add_zero)
         altkey = PyTuple_Pack(3, text, category, _PyLong_GetZero());
     else
-        altkey = PyTuple_Pack(2, text, category);
+        altkey = _PyTuple_FromPair(text, category);
 
     rc = already_warned(interp, registry, altkey, 1);
     Py_XDECREF(altkey);
@@ -1045,7 +1046,7 @@ setup_context(Py_ssize_t stack_level,
 
     /* Setup registry. */
     assert(globals != NULL);
-    assert(PyDict_Check(globals));
+    assert(PyAnyDict_Check(globals));
     int rc = PyDict_GetItemRef(globals, &_Py_ID(__warningregistry__),
                                registry);
     if (rc < 0) {
@@ -1269,10 +1270,11 @@ warnings_warn_explicit_impl(PyObject *module, PyObject *message,
     }
 
     if (module_globals && module_globals != Py_None) {
-        if (!PyDict_Check(module_globals)) {
+        if (!PyAnyDict_Check(module_globals)) {
             PyErr_Format(PyExc_TypeError,
-                         "module_globals must be a dict, not '%.200s'",
-                         Py_TYPE(module_globals)->tp_name);
+                         "module_globals must be a dict or a frozendict, "
+                         "not %T",
+                         module_globals);
             return NULL;
         }
 

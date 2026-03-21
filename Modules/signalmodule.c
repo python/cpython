@@ -1781,20 +1781,28 @@ PyErr_CheckSignals(void)
        Python code to ensure signals are handled. Checking for the GC here
        allows long running native code to clean cycles created using the C-API
        even if it doesn't run the evaluation loop */
-    if (_Py_eval_breaker_bit_is_set(tstate, _PY_GC_SCHEDULED_BIT)) {
+    uintptr_t breaker = _Py_atomic_load_uintptr_relaxed(&tstate->eval_breaker);
+    if (breaker & _PY_GC_SCHEDULED_BIT) {
         _Py_unset_eval_breaker_bit(tstate, _PY_GC_SCHEDULED_BIT);
         _Py_RunGC(tstate);
+    }
+    if (breaker & _PY_ASYNC_EXCEPTION_BIT) {
+        if (_PyEval_RaiseAsyncExc(tstate) < 0) {
+            return -1;
+        }
     }
 
 #if defined(Py_REMOTE_DEBUG) && defined(Py_SUPPORTS_REMOTE_DEBUG)
     _PyRunRemoteDebugger(tstate);
 #endif
 
-    if (!_Py_ThreadCanHandleSignals(tstate->interp)) {
-        return 0;
+    if (_Py_ThreadCanHandleSignals(tstate->interp)) {
+        if (_PyErr_CheckSignalsTstate(tstate) < 0) {
+            return -1;
+        }
     }
 
-    return _PyErr_CheckSignalsTstate(tstate);
+    return 0;
 }
 
 

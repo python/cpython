@@ -3890,6 +3890,19 @@ class _TestConnection(BaseTestCase):
             self.assertRaises(OSError, a.recv)
             self.assertRaises(OSError, b.recv)
 
+    @warnings_helper.ignore_fork_in_thread_deprecation_warnings()
+    def test_wait_empty(self):
+        if self.TYPE != 'processes':
+            self.skipTest('test not appropriate for {}'.format(self.TYPE))
+        # gh-145587: wait() with empty list should respect timeout
+        timeout = 0.5
+        start = time.monotonic()
+        res = self.connection.wait([], timeout=timeout)
+        duration = time.monotonic() - start
+
+        self.assertEqual(res, [])
+        self.assertGreaterEqual(duration, timeout - 0.1)
+
 class _TestListener(BaseTestCase):
 
     ALLOWED_TYPES = ('processes',)
@@ -5992,6 +6005,20 @@ class TestStartMethod(unittest.TestCase):
             process.join()
             self.assertIsNone(multiprocessing.get_start_method(allow_none=True))
 
+    @only_run_in_spawn_testsuite("freeze_support is not start method specific")
+    def test_freeze_support_dont_set_context(self):
+        # gh-140814: freeze_support() should not set the start method
+        # as a side effect, so a later set_start_method() still works.
+        multiprocessing.set_start_method(None, force=True)
+        try:
+            multiprocessing.freeze_support()
+            self.assertIsNone(
+                multiprocessing.get_start_method(allow_none=True))
+            # Should not raise "context has already been set"
+            multiprocessing.set_start_method('spawn')
+        finally:
+            multiprocessing.set_start_method(None, force=True)
+
     def test_context_check_module_types(self):
         try:
             ctx = multiprocessing.get_context('forkserver')
@@ -7085,6 +7112,26 @@ class MiscTestCase(unittest.TestCase):
         # The trailing empty string comes from split() on output ending with \n
         out = out.decode().split("\n")
         self.assertEqual(out, ['__main__', '__mp_main__', 'f', 'f', ''])
+
+    def test_preload_main_sys_argv(self):
+        # gh-143706: Check that sys.argv is set before __main__ is pre-loaded
+        if multiprocessing.get_start_method() != "forkserver":
+            self.skipTest("forkserver specific test")
+
+        name = os.path.join(os.path.dirname(__file__), 'mp_preload_sysargv.py')
+        _, out, err = test.support.script_helper.assert_python_ok(
+            name, 'foo', 'bar')
+        self.assertEqual(err, b'')
+
+        out = out.decode().split("\n")
+        expected_argv = "['foo', 'bar']"
+        self.assertEqual(out, [
+            f"module:{expected_argv}",
+            f"fun:{expected_argv}",
+            f"module:{expected_argv}",
+            f"fun:{expected_argv}",
+            '',
+        ])
 
 #
 # Mixins
