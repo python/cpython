@@ -47,9 +47,9 @@ def make_thread(thread_id, frames, status=0):
     return ThreadInfo((thread_id, status, frames))
 
 
-def make_interpreter(interp_id, threads):
+def make_interpreter(interp_id, threads, main_thread_id=0):
     """Create an InterpreterInfo struct sequence."""
-    return InterpreterInfo((interp_id, threads))
+    return InterpreterInfo((interp_id, main_thread_id, threads))
 
 
 def extract_lineno(location):

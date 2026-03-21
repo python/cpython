@@ -575,7 +575,8 @@ extern PyObject* unwind_stack_for_thread(
     RemoteUnwinderObject *unwinder,
     uintptr_t *current_tstate,
     uintptr_t gil_holder_tstate,
-    uintptr_t gc_frame
+    uintptr_t gc_frame,
+    uint64_t *current_thread_id
 );
 
 /* Thread stopping functions (for blocking mode) */
