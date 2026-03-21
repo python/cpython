@@ -5,11 +5,20 @@ import sys
 
 from unittest import TestCase
 
+try:
+    import ssl
+except ImportError:
+    ssl = None
+
+from test.test_asyncio import utils as test_utils
+
 def tearDownModule():
     asyncio.events._set_event_loop_policy(None)
 
 class ServerContextvarsTestCase:
     loop_factory = None  # To be defined in subclasses
+    server_ssl_context = None  # To be defined in subclasses for SSL tests
+    client_ssl_context = None  # To be defined in subclasses for SSL tests
 
     def run_coro(self, coro):
         return asyncio.run(coro, loop_factory=self.loop_factory)
@@ -25,12 +34,14 @@ class ServerContextvarsTestCase:
                 await writer.drain()
                 writer.close()
 
-            server = await asyncio.start_server(handle_client, '127.0.0.1', 0)
+            server = await asyncio.start_server(handle_client, '127.0.0.1', 0,
+                                               ssl=self.server_ssl_context)
             # change the value
             var.set("after_server")
 
             async def client(addr):
-                reader, writer = await asyncio.open_connection(*addr)
+                reader, writer = await asyncio.open_connection(*addr,
+                                                               ssl=self.client_ssl_context)
                 data = await reader.read(100)
                 writer.close()
                 await writer.wait_closed()
@@ -56,11 +67,13 @@ class ServerContextvarsTestCase:
                 await writer.drain()
                 writer.close()
 
-            server = await asyncio.start_server(handle_client, '127.0.0.1', 0)
+            server = await asyncio.start_server(handle_client, '127.0.0.1', 0,
+                                               ssl=self.server_ssl_context)
             var.set("after_server")
 
             async def client(addr):
-                reader, writer = await asyncio.open_connection(*addr)
+                reader, writer = await asyncio.open_connection(*addr,
+                                                               ssl=self.client_ssl_context)
                 data = await reader.read(100)
                 writer.close()
                 await writer.wait_closed()
@@ -87,11 +100,13 @@ class ServerContextvarsTestCase:
                 await writer.drain()
                 writer.close()
 
-            server = await asyncio.start_server(handle_client, '127.0.0.1', 0)
+            server = await asyncio.start_server(handle_client, '127.0.0.1', 0,
+                                               ssl=self.server_ssl_context)
             var.set("after_server")
 
             async def client(addr):
-                reader, writer = await asyncio.open_connection(*addr)
+                reader, writer = await asyncio.open_connection(*addr,
+                                                               ssl=self.client_ssl_context)
                 data = await reader.read(100)
                 self.assertEqual(data.decode(), "before_server")
                 writer.close()
@@ -122,11 +137,13 @@ class ServerContextvarsTestCase:
                     self.transport.close()
 
             server = await asyncio.get_running_loop().create_server(
-                lambda: EchoProtocol(), '127.0.0.1', 0)
+                lambda: EchoProtocol(), '127.0.0.1', 0,
+                ssl=self.server_ssl_context)
             var.set("after_server")
 
             async def client(addr):
-                reader, writer = await asyncio.open_connection(*addr)
+                reader, writer = await asyncio.open_connection(*addr,
+                                                               ssl=self.client_ssl_context)
                 data = await reader.read(100)
                 self.assertEqual(data.decode(), "default")
                 writer.close()
@@ -157,12 +174,14 @@ class ServerContextvarsTestCase:
                     self.transport.close()
 
             server = await asyncio.get_running_loop().create_server(
-                lambda: EchoProtocol(), '127.0.0.1', 0)
+                lambda: EchoProtocol(), '127.0.0.1', 0,
+                ssl=self.server_ssl_context)
 
             var.set("after_server")
 
             async def client(addr, expected):
-                reader, writer = await asyncio.open_connection(*addr)
+                reader, writer = await asyncio.open_connection(*addr,
+                                                               ssl=self.client_ssl_context)
                 data = await reader.read(100)
                 self.assertEqual(data.decode(), expected)
                 writer.close()
@@ -184,6 +203,7 @@ class ServerContextvarsTestCase:
         cvar2 = contextvars.ContextVar("cvar2")
         cvar3 = contextvars.ContextVar("cvar3")
         results = {}
+        is_ssl = self.server_ssl_context is not None
 
         def capture_context(meth):
             result = []
@@ -218,36 +238,37 @@ class ServerContextvarsTestCase:
 
             async def asgi(self):
                 capture_context("asgi start")
-
                 cvar1.set(True)
-
                 # make sure that we only resume after the pause
                 # otherwise the resume does nothing
-                while not self.transport._paused:
-                    await asyncio.sleep(0.1)
-
+                if is_ssl:
+                    while not self.transport._ssl_protocol._app_reading_paused:
+                        await asyncio.sleep(0.01)
+                else:
+                    while not self.transport._paused:
+                        await asyncio.sleep(0.01)
                 cvar2.set(True)
-
                 self.transport.resume_reading()
-
                 cvar3.set(True)
-
                 capture_context("asgi end")
-
 
         async def main():
             loop = asyncio.get_running_loop()
             on_conn_lost = loop.create_future()
 
-            host, port = "127.0.0.1", 8888
-
-            async with await loop.create_server(lambda: DemoProtocol(on_conn_lost), host, port):
-                reader, writer = await asyncio.open_connection(host, port)
+            server = await loop.create_server(
+                lambda: DemoProtocol(on_conn_lost), '127.0.0.1', 0,
+                ssl=self.server_ssl_context)
+            async with server:
+                addr = server.sockets[0].getsockname()
+                reader, writer = await asyncio.open_connection(*addr,
+                                                               ssl=self.client_ssl_context)
                 writer.write(b"anything")
                 await writer.drain()
                 writer.close()
                 await writer.wait_closed()
                 await on_conn_lost
+
         self.run_coro(main())
         self.assertDictEqual(results, {
             "connection_made": [],
@@ -261,12 +282,27 @@ class ServerContextvarsTestCase:
 class AsyncioEventLoopTests(TestCase, ServerContextvarsTestCase):
     loop_factory = staticmethod(asyncio.new_event_loop)
 
+@unittest.skipUnless(ssl, "SSL not available")
+class AsyncioEventLoopSSLTests(AsyncioEventLoopTests):
+    server_ssl_context = test_utils.simple_server_sslcontext()
+    client_ssl_context = test_utils.simple_client_sslcontext()
+
 if sys.platform == "win32":
     class AsyncioProactorEventLoopTests(TestCase, ServerContextvarsTestCase):
         loop_factory = asyncio.ProactorEventLoop
 
     class AsyncioSelectorEventLoopTests(TestCase, ServerContextvarsTestCase):
         loop_factory = asyncio.SelectorEventLoop
+
+    @unittest.skipUnless(ssl, "SSL not available")
+    class AsyncioProactorEventLoopSSLTests(AsyncioProactorEventLoopTests):
+        server_ssl_context = test_utils.simple_server_sslcontext()
+        client_ssl_context = test_utils.simple_client_sslcontext()
+
+    @unittest.skipUnless(ssl, "SSL not available")
+    class AsyncioSelectorEventLoopSSLTests(AsyncioSelectorEventLoopTests):
+        server_ssl_context = test_utils.simple_server_sslcontext()
+        client_ssl_context = test_utils.simple_client_sslcontext()
 
 if __name__ == "__main__":
     unittest.main()

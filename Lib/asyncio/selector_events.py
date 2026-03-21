@@ -78,16 +78,17 @@ class BaseSelectorEventLoop(base_events.BaseEventLoop):
             extra=None, server=None,
             ssl_handshake_timeout=constants.SSL_HANDSHAKE_TIMEOUT,
             ssl_shutdown_timeout=constants.SSL_SHUTDOWN_TIMEOUT,
+            context=None,
     ):
         self._ensure_fd_no_transport(rawsock)
         ssl_protocol = sslproto.SSLProtocol(
             self, protocol, sslcontext, waiter,
             server_side, server_hostname,
             ssl_handshake_timeout=ssl_handshake_timeout,
-            ssl_shutdown_timeout=ssl_shutdown_timeout
+            ssl_shutdown_timeout=ssl_shutdown_timeout,
         )
         _SelectorSocketTransport(self, rawsock, ssl_protocol,
-                                 extra=extra, server=server)
+                                 extra=extra, server=server, context=context)
         return ssl_protocol._app_transport
 
     def _make_datagram_transport(self, sock, protocol,
@@ -230,7 +231,8 @@ class BaseSelectorEventLoop(base_events.BaseEventLoop):
                     conn, protocol, sslcontext, waiter=waiter,
                     server_side=True, extra=extra, server=server,
                     ssl_handshake_timeout=ssl_handshake_timeout,
-                    ssl_shutdown_timeout=ssl_shutdown_timeout)
+                    ssl_shutdown_timeout=ssl_shutdown_timeout,
+                    context=context)
             else:
                 transport = self._make_socket_transport(
                     conn, protocol, waiter=waiter, extra=extra,
