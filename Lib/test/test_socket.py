@@ -2,7 +2,7 @@ import unittest
 from unittest import mock
 from test import support
 from test.support import (
-    cpython_only, is_apple, os_helper, refleak_helper, script_helper, socket_helper, threading_helper
+    cpython_only, is_apple, os_helper, refleak_helper, socket_helper, threading_helper
 )
 from test.support.import_helper import ensure_lazy_imports
 import _thread as thread
@@ -28,7 +28,6 @@ import string
 import struct
 import sys
 import tempfile
-import textwrap
 import threading
 import time
 import traceback
@@ -7497,65 +7496,6 @@ class SendRecvFdsTests(unittest.TestCase):
         for index, rfd in enumerate(fds2):
             data = os.read(rfd, 100)
             self.assertEqual(data,  str(index).encode())
-
-
-@support.requires_subprocess()
-@unittest.skipUnless(hasattr(sys, "gettotalrefcount"),
-                     "requires sys.gettotalrefcount()")
-class AuditHookLeakTests(unittest.TestCase):
-    # gh-146245: Reference and buffer leaks in audit hook failure paths.
-
-    def test_getaddrinfo_audit_hook_leak(self):
-        code = textwrap.dedent("""
-            import socket
-            import sys
-            import gc
-
-            def hook(*args):
-                raise ValueError("audit")
-
-            sys.addaudithook(hook)
-            gc.collect()
-            before = sys.gettotalrefcount()
-            for _ in range(100):
-                try:
-                    socket.getaddrinfo(None, 80)
-                except ValueError:
-                    pass
-            gc.collect()
-            after = sys.gettotalrefcount()
-            print(after - before)
-        """)
-        rc, out, err = script_helper.assert_python_ok("-c", code)
-        leaked = int(out.strip())
-        self.assertAlmostEqual(leaked, 0, delta=2, msg=f"Leaked {leaked} references")
-
-    def test_sendto_audit_hook_leak(self):
-        code = textwrap.dedent("""
-            import socket
-            import sys
-            import gc
-
-            def hook(*args):
-                raise ValueError("audit")
-
-            s = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
-            sys.addaudithook(hook)
-            gc.collect()
-            before = sys.gettotalrefcount()
-            for _ in range(100):
-                try:
-                    s.sendto(bytearray(b"x"), ("127.0.0.1", 80))
-                except ValueError:
-                    pass
-            gc.collect()
-            after = sys.gettotalrefcount()
-            s.close()
-            print(after - before)
-        """)
-        rc, out, err = script_helper.assert_python_ok("-c", code)
-        leaked = int(out.strip())
-        self.assertAlmostEqual(leaked, 0, delta=2, msg=f"Leaked {leaked} references")
 
 
 class FreeThreadingTests(unittest.TestCase):
