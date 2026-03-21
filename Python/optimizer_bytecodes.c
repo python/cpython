@@ -1038,7 +1038,7 @@ dummy_func(void) {
         gen_frame = PyJitRef_WrapInvalid(new_frame);
     }
 
-    op(_SEND_GEN_FRAME, (receiver, v -- receiver, gen_frame)) {
+    op(_SEND_GEN_FRAME, (receiver, null, v -- receiver, null, gen_frame)) {
         _Py_UOpsAbstractFrame *new_frame = frame_new_from_symbol(ctx, receiver, NULL, 0);
         if (new_frame == NULL) {
             ctx->done = true;
@@ -1777,6 +1777,12 @@ dummy_func(void) {
         PyFunctionObject *func = (PyFunctionObject *)this_instr->operand0;
         assert(func == NULL || PyFunction_Check(func));
         sym_set_recorded_gen_func(nos, func);
+    }
+
+    op(_RECORD_3OS_GEN_FUNC, (gen, nos, tos -- gen, nos, tos)) {
+        PyFunctionObject *func = (PyFunctionObject *)this_instr->operand0;
+        assert(func == NULL || PyFunction_Check(func));
+        sym_set_recorded_gen_func(gen, func);
     }
 
     op(_GUARD_CODE_VERSION__PUSH_FRAME, (version/2 -- )) {

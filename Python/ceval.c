@@ -1165,6 +1165,42 @@ stop_tracing_and_jit(PyThreadState *tstate, _PyInterpreterFrame *frame)
 #include "generated_cases.c.h"
 #endif
 
+
+_PyStackRef
+_PyEval_GetIter(_PyStackRef iterable, _PyStackRef *index_or_null, int yield_from)
+{
+    PyTypeObject *tp = PyStackRef_TYPE(iterable);
+    if (tp == &PyTuple_Type || tp == &PyList_Type) {
+        /* Leave iterable on stack and pushed tagged 0 */
+        *index_or_null = PyStackRef_TagInt(0);
+        return iterable;
+    }
+    *index_or_null = PyStackRef_NULL;
+    if (tp->tp_iter == PyObject_SelfIter) {
+        return iterable;
+    }
+    if (yield_from && tp == &PyCoro_Type) {
+        assert(yield_from != GET_ITER_YIELD_FROM);
+        if (yield_from == GET_ITER_YIELD_FROM_CORO_CHECK) {
+            /* `iterable` is a coroutine and it is used in a 'yield from'
+            * expression of a regular generator. */
+            PyErr_SetString(PyExc_TypeError,
+                            "cannot 'yield from' a coroutine object "
+                            "in a non-coroutine generator");
+            PyStackRef_CLOSE(iterable);
+            return PyStackRef_ERROR;
+        }
+        return iterable;
+    }
+    /* Pop iterable, and push iterator then NULL */
+    PyObject *iter_o = PyObject_GetIter(PyStackRef_AsPyObjectBorrow(iterable));
+    PyStackRef_CLOSE(iterable);
+    if (iter_o == NULL) {
+        return PyStackRef_ERROR;
+    }
+    return PyStackRef_FromPyObjectSteal(iter_o);
+}
+
 #if (defined(__GNUC__) && __GNUC__ >= 10 && !defined(__clang__)) && defined(__x86_64__)
 /*
  * gh-129987: The SLP autovectorizer can cause poor code generation for

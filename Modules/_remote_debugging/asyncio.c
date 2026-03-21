@@ -265,7 +265,7 @@ handle_yield_from_frame(
         uintptr_t gi_await_addr;
         err = read_py_ptr(
             unwinder,
-            stackpointer_addr - sizeof(void*),
+            stackpointer_addr - sizeof(void*) * 2,
             &gi_await_addr);
         if (err) {
             set_exception_cause(unwinder, PyExc_RuntimeError, "Failed to read gi_await address");
