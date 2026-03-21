@@ -7524,7 +7524,7 @@ class AuditHookLeakTests(unittest.TestCase):
         """)
         rc, out, err = script_helper.assert_python_ok("-c", code)
         leaked = int(out.strip())
-        self.assertLessEqual(leaked, 2, f"Leaked {leaked} references")
+        self.assertAlmostEqual(leaked, 0, delta=2, msg=f"Leaked {leaked} references")
 
     def test_sendto_audit_hook_leak(self):
         code = textwrap.dedent("""
@@ -7547,7 +7547,7 @@ class AuditHookLeakTests(unittest.TestCase):
         """)
         rc, out, err = script_helper.assert_python_ok("-c", code)
         leaked = int(out.strip())
-        self.assertLessEqual(leaked, 2, f"Leaked {leaked} references")
+        self.assertAlmostEqual(leaked, 0, delta=2, msg=f"Leaked {leaked} references")
 
 
 class FreeThreadingTests(unittest.TestCase):
