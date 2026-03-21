@@ -3711,8 +3711,8 @@ static _PyStackRef
 foriter_next(PyObject *seq, _PyStackRef index)
 {
     assert(PyStackRef_IsTaggedInt(index));
-    assert(PyTuple_CheckExact(seq) || PyList_CheckExact(seq));
     intptr_t i = PyStackRef_UntagInt(index);
+
     if (PyTuple_CheckExact(seq)) {
         size_t size = PyTuple_GET_SIZE(seq);
         if ((size_t)i >= size) {
@@ -3720,11 +3720,56 @@ foriter_next(PyObject *seq, _PyStackRef index)
         }
         return PyStackRef_FromPyObjectNew(PyTuple_GET_ITEM(seq, i));
     }
-    PyObject *item = _PyList_GetItemRef((PyListObject *)seq, i);
-    if (item == NULL) {
-        return PyStackRef_NULL;
+
+    if (PyList_CheckExact(seq)) {
+        PyObject *item = _PyList_GetItemRef((PyListObject *)seq, i);
+        if (item == NULL) {
+            return PyStackRef_NULL;
+        }
+        return PyStackRef_FromPyObjectSteal(item);
     }
-    return PyStackRef_FromPyObjectSteal(item);
+
+    if (PyBytes_CheckExact(seq)) {
+        Py_ssize_t size = PyBytes_GET_SIZE(seq);
+        if (i < 0 || i >= size) {
+            return PyStackRef_NULL;
+        }
+        unsigned char ch = (unsigned char)PyBytes_AS_STRING(seq)[i];
+        PyObject *item = PyLong_FromUnsignedLong((unsigned long)ch);
+        if (item == NULL) {
+            return PyStackRef_ERROR;
+        }
+        return PyStackRef_FromPyObjectSteal(item);
+    }
+
+    if (PyByteArray_CheckExact(seq)) {
+        Py_ssize_t size = PyByteArray_GET_SIZE(seq);
+        if (i < 0 || i >= size) {
+            return PyStackRef_NULL;
+        }
+        unsigned char ch = (unsigned char)PyByteArray_AS_STRING(seq)[i];
+        PyObject *item = PyLong_FromUnsignedLong((unsigned long)ch);
+        if (item == NULL) {
+            return PyStackRef_ERROR;
+        }
+        return PyStackRef_FromPyObjectSteal(item);
+    }
+
+    if (PyUnicode_CheckExact(seq)) {
+        Py_ssize_t size = PyUnicode_GET_LENGTH(seq);
+        if (i < 0 || i >= size) {
+            return PyStackRef_NULL;
+        }
+        // Iteration over str yields 1-character substrings.
+        PyObject *item = PyUnicode_Substring(seq, i, i + 1);
+        if (item == NULL) {
+            return PyStackRef_ERROR;
+        }
+        return PyStackRef_FromPyObjectSteal(item);
+    }
+
+    // Fallback: use the iterator protocol for unsupported types.
+    return PyStackRef_ERROR;
 }
 
 _PyStackRef _PyForIter_VirtualIteratorNext(PyThreadState* tstate, _PyInterpreterFrame* frame, _PyStackRef iter, _PyStackRef* index_ptr)
