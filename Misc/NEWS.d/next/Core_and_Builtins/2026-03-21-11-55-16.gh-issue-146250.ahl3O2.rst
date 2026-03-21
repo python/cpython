@@ -1,1 +1,1 @@
-Fixed a memory leak in :class:`SyntaxError` when re-initializing it.
+Fixed a memory leak in :exc:`SyntaxError` when re-initializing it.
