@@ -21,7 +21,7 @@ datetime.datetime objects.
 
 Generate Plist example:
 
-    import datetime
+    import datetime as dt
     import plistlib
 
     pl = dict(
@@ -37,7 +37,7 @@ Generate Plist example:
         ),
         someData = b"<binary gunk>",
         someMoreData = b"<lots of binary gunk>" * 10,
-        aDate = datetime.datetime.now()
+        aDate = dt.datetime.now()
     )
     print(plistlib.dumps(pl).decode())
 
