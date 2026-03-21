@@ -19,6 +19,7 @@ from .pstats_collector import PstatsCollector
 from .stack_collector import CollapsedStackCollector, FlamegraphCollector
 from .heatmap_collector import HeatmapCollector
 from .gecko_collector import GeckoCollector
+from .ndjson_collector import NdjsonCollector
 from .binary_collector import BinaryCollector
 from .binary_reader import BinaryReader
 from .constants import (
@@ -87,6 +88,7 @@ FORMAT_EXTENSIONS = {
     "flamegraph": "html",
     "gecko": "json",
     "heatmap": "html",
+    "ndjson": "ndjson",
     "binary": "bin",
 }
 
@@ -96,6 +98,7 @@ COLLECTOR_MAP = {
     "flamegraph": FlamegraphCollector,
     "gecko": GeckoCollector,
     "heatmap": HeatmapCollector,
+    "ndjson": NdjsonCollector,
     "binary": BinaryCollector,
 }
 
@@ -467,6 +470,13 @@ def _add_format_options(parser, include_compression=True, include_binary=True):
         dest="format",
         help="Generate interactive HTML heatmap visualization with line-level sample counts",
     )
+    format_group.add_argument(
+        "--ndjson",
+        action="store_const",
+        const="ndjson",
+        dest="format",
+        help="Generate NDJSON snapshot output for external consumers",
+    )
     if include_binary:
         format_group.add_argument(
             "--binary",
@@ -545,15 +555,17 @@ def _sort_to_mode(sort_choice):
     return sort_map.get(sort_choice, SORT_MODE_NSAMPLES)
 
 def _create_collector(format_type, sample_interval_usec, skip_idle, opcodes=False,
-                      output_file=None, compression='auto'):
+                      mode=None, output_file=None, compression='auto'):
     """Create the appropriate collector based on format type.
 
     Args:
-        format_type: The output format ('pstats', 'collapsed', 'flamegraph', 'gecko', 'heatmap', 'binary')
+        format_type: The output format ('pstats', 'collapsed', 'flamegraph',
+                    'gecko', 'heatmap', 'ndjson', 'binary')
         sample_interval_usec: Sampling interval in microseconds
         skip_idle: Whether to skip idle samples
         opcodes: Whether to collect opcode information (only used by gecko format
                  for creating interval markers in Firefox Profiler)
+        mode: Profiling mode for collectors that expose it in metadata
         output_file: Output file path (required for binary format)
         compression: Compression type for binary format ('auto', 'zstd', 'none')
 
@@ -576,6 +588,11 @@ def _create_collector(format_type, sample_interval_usec, skip_idle, opcodes=Fals
     if format_type == "gecko":
         skip_idle = False
         return collector_class(sample_interval_usec, skip_idle=skip_idle, opcodes=opcodes)
+
+    if format_type == "ndjson":
+        return collector_class(
+            sample_interval_usec, skip_idle=skip_idle, mode=mode
+        )
 
     return collector_class(sample_interval_usec, skip_idle=skip_idle)
 
@@ -951,7 +968,7 @@ def _handle_attach(args):
 
     # Create the appropriate collector
     collector = _create_collector(
-        args.format, args.sample_interval_usec, skip_idle, args.opcodes,
+        args.format, args.sample_interval_usec, skip_idle, args.opcodes, mode,
         output_file=output_file,
         compression=getattr(args, 'compression', 'auto')
     )
@@ -1029,7 +1046,7 @@ def _handle_run(args):
 
     # Create the appropriate collector
     collector = _create_collector(
-        args.format, args.sample_interval_usec, skip_idle, args.opcodes,
+        args.format, args.sample_interval_usec, skip_idle, args.opcodes, mode,
         output_file=output_file,
         compression=getattr(args, 'compression', 'auto')
     )
