@@ -182,16 +182,21 @@ The :mod:`!binascii` module defines the following functions:
 
    .. versionadded:: 3.15
 
+
 .. function:: a2b_base32(string, /, *, alphabet=BASE32_ALPHABET)
 
    Convert base32 data back to binary and return the binary data.
 
-   Valid base32 data:
+   Valid base32 data contains characters from the base32 alphabet specified
+   in :rfc:`4648` in groups of eight (if necessary, the final group is padded
+   to eight characters with ``=``). Each group encodes 40 bits of binary data
+   in the range from ``0`` to ``2 ** 40 - 1``, inclusive.
 
-   * Conforms to :rfc:`4648`.
-   * Contains only characters from the base32 alphabet.
-   * Contains no excess data after padding (including excess padding, newlines, etc.).
-   * Does not start with padding.
+   .. note::
+      By default, this function does not map lowercase characters (which are
+      invalid in standard base32) to their uppercase counterparts, nor does
+      it contextually map ``0`` to ``O`` and ``1`` to ``I``/``L`` as
+      :rfc:`4648` allows.
 
    Optional *alphabet* must be a :class:`bytes` object of length 32 which
    specifies an alternative alphabet.
@@ -202,7 +207,7 @@ The :mod:`!binascii` module defines the following functions:
 
 .. function:: b2a_base32(data, /, *, alphabet=BASE32_ALPHABET)
 
-   Convert binary data to a line(s) of ASCII characters in base32 coding,
+   Convert binary data to a line of ASCII characters in base32 coding,
    as specified in :rfc:`4648`. The return value is the converted line.
 
    Optional *alphabet* must be a :term:`bytes-like object` of length 32 which
@@ -356,13 +361,13 @@ The :mod:`!binascii` module defines the following functions:
 
 .. data:: BASE32_ALPHABET
 
-   The base32 alphabet according to :rfc:`4648`.
+   The Base 32 alphabet according to :rfc:`4648`.
 
    .. versionadded:: next
 
 .. data:: BASE32HEX_ALPHABET
 
-   The "Extended Hex" base32hex alphabet according to :rfc:`4648`.
+   The "Extended Hex" Base 32 alphabet according to :rfc:`4648`.
 
    .. versionadded:: next
 

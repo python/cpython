@@ -1672,7 +1672,7 @@ binascii.b2a_base32
     *
     alphabet: Py_buffer(c_default="{NULL, NULL}") = BASE32_ALPHABET
 
-base32-code line of data.
+Base32-code line of data.
 [clinic start generated code]*/
 
 static PyObject *

@@ -74,6 +74,10 @@ class BinASCIITest(unittest.TestCase):
                          b'abcdefghijklmnopqrstuvwxyz'
                          b'ABCDEFGHIJKLMNOPQRSTUVWXYZ'
                          b'.-:+=^!/*?&<>()[]{}@%$#')
+        self.assertEqual(binascii.BASE32_ALPHABET,
+                         b'ABCDEFGHIJKLMNOPQRSTUVWXYZ234567')
+        self.assertEqual(binascii.BASE32HEX_ALPHABET,
+                         b'0123456789ABCDEFGHIJKLMNOPQRSTUV')
 
     def test_functions(self):
         # Check presence of all functions

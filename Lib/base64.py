@@ -207,10 +207,12 @@ the letter O).  For security purposes the default is None, so that
 0 and 1 are not allowed in the input.
 '''
 
-def _b32decode_prepare(s, casefold=False, map01=None):
+def b32encode(s):
+    return binascii.b2a_base32(s)
+b32encode.__doc__ = _B32_ENCODE_DOCSTRING.format(encoding='base32')
+
+def b32decode(s, casefold=False, map01=None):
     s = _bytes_from_decode_data(s)
-    if len(s) % 8:
-        raise binascii.Error('Incorrect padding')
     # Handle section 2.4 zero and one mapping.  The flag map01 will be either
     # False, or the character to map the digit 1 (one) to.  It should be
     # either L (el) or I (eye).
@@ -220,15 +222,6 @@ def _b32decode_prepare(s, casefold=False, map01=None):
         s = s.translate(bytes.maketrans(b'01', b'O' + map01))
     if casefold:
         s = s.upper()
-    return s
-
-
-def b32encode(s):
-    return binascii.b2a_base32(s)
-b32encode.__doc__ = _B32_ENCODE_DOCSTRING.format(encoding='base32')
-
-def b32decode(s, casefold=False, map01=None):
-    s = _b32decode_prepare(s, casefold, map01)
     return binascii.a2b_base32(s)
 b32decode.__doc__ = _B32_DECODE_DOCSTRING.format(encoding='base32',
                                         extra_args=_B32_DECODE_MAP01_DOCSTRING)
@@ -238,8 +231,10 @@ def b32hexencode(s):
 b32hexencode.__doc__ = _B32_ENCODE_DOCSTRING.format(encoding='base32hex')
 
 def b32hexdecode(s, casefold=False):
+    s = _bytes_from_decode_data(s)
     # base32hex does not have the 01 mapping
-    s = _b32decode_prepare(s, casefold)
+    if casefold:
+        s = s.upper()
     return binascii.a2b_base32(s, alphabet=binascii.BASE32HEX_ALPHABET)
 b32hexdecode.__doc__ = _B32_DECODE_DOCSTRING.format(encoding='base32hex',
                                                     extra_args='')
