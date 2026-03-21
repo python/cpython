@@ -863,7 +863,15 @@ dummy_func(void) {
         self_or_null = sym_new_not_null(ctx);
     }
 
+    op(_GUARD_CALLABLE_FUNCTION, (callable, unused, unused[oparg] -- callable, unused, unused[oparg])) {
+        if (sym_matches_type(callable, &PyFunction_Type)) {
+            ADD_OP(_NOP, 0, 0);
+        }
+        sym_set_type(callable, &PyFunction_Type);
+    }
+
     op(_CHECK_FUNCTION_VERSION, (func_version/2, callable, self_or_null, unused[oparg] -- callable, self_or_null, unused[oparg])) {
+        assert(sym_matches_type(callable, &PyFunction_Type));
         if (sym_get_func_version(callable) == func_version) {
             REPLACE_OP(this_instr, _NOP, 0, 0);
         }

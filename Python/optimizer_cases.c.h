@@ -3042,10 +3042,21 @@
             break;
         }
 
+        case _GUARD_CALLABLE_FUNCTION: {
+            JitOptRef callable;
+            callable = stack_pointer[-2 - oparg];
+            if (sym_matches_type(callable, &PyFunction_Type)) {
+                ADD_OP(_NOP, 0, 0);
+            }
+            sym_set_type(callable, &PyFunction_Type);
+            break;
+        }
+
         case _CHECK_FUNCTION_VERSION: {
             JitOptRef callable;
             callable = stack_pointer[-2 - oparg];
             uint32_t func_version = (uint32_t)this_instr->operand0;
+            assert(sym_matches_type(callable, &PyFunction_Type));
             if (sym_get_func_version(callable) == func_version) {
                 REPLACE_OP(this_instr, _NOP, 0, 0);
             }

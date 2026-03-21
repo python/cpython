@@ -4009,9 +4009,14 @@ dummy_func(
             new_frame = PyStackRef_Wrap(temp);
         }
 
-        op(_CHECK_FUNCTION_VERSION, (func_version/2, callable, unused, unused[oparg] -- callable, unused, unused[oparg])) {
+        op(_GUARD_CALLABLE_FUNCTION, (callable, unused, unused[oparg] -- callable, unused, unused[oparg])) {
             PyObject *callable_o = PyStackRef_AsPyObjectBorrow(callable);
             EXIT_IF(!PyFunction_Check(callable_o));
+        }
+
+        op(_CHECK_FUNCTION_VERSION, (func_version/2, callable, unused, unused[oparg] -- callable, unused, unused[oparg])) {
+            PyObject *callable_o = PyStackRef_AsPyObjectBorrow(callable);
+            assert(PyFunction_Check(callable_o));
             PyFunctionObject *func = (PyFunctionObject *)callable_o;
             EXIT_IF(func->func_version != func_version);
         }
@@ -4026,6 +4031,7 @@ dummy_func(
             _RECORD_CALLABLE +
             unused/1 + // Skip over the counter
             _CHECK_PEP_523 +
+            _GUARD_CALLABLE_FUNCTION +
             _CHECK_FUNCTION_VERSION +
             _CHECK_RECURSION_REMAINING +
             _PY_FRAME_GENERAL +
@@ -4174,6 +4180,7 @@ dummy_func(
             _CHECK_CALL_BOUND_METHOD_EXACT_ARGS +
             _INIT_CALL_BOUND_METHOD_EXACT_ARGS +
             flush + // In case the following deopt
+            _GUARD_CALLABLE_FUNCTION +
             _CHECK_FUNCTION_VERSION +
             _CHECK_FUNCTION_EXACT_ARGS +
             _CHECK_STACK_SPACE +
@@ -4186,6 +4193,7 @@ dummy_func(
             _RECORD_CALLABLE +
             unused/1 + // Skip over the counter
             _CHECK_PEP_523 +
+            _GUARD_CALLABLE_FUNCTION +
             _CHECK_FUNCTION_VERSION +
             _CHECK_FUNCTION_EXACT_ARGS +
             _CHECK_STACK_SPACE +
