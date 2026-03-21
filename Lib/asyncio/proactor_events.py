@@ -651,7 +651,7 @@ class BaseProactorEventLoop(base_events.BaseEventLoop):
             *, server_side=False, server_hostname=None,
             extra=None, server=None,
             ssl_handshake_timeout=None,
-            ssl_shutdown_timeout=None):
+            ssl_shutdown_timeout=None, context=None):
         ssl_protocol = sslproto.SSLProtocol(
                 self, protocol, sslcontext, waiter,
                 server_side, server_hostname,
