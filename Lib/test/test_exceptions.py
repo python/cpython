@@ -1954,11 +1954,6 @@ class ExceptionTests(unittest.TestCase):
         self.assertGreater(len(output), 0)  # At minimum, should not hang
         self.assertIn(b"MemoryError", output)
 
-    # gh-146250: memory leak with re-initialization of SyntaxError
-    def test_syntax_error_memory_leak(self):
-        e = SyntaxError("msg", ("file.py", 1, 2, "txt", 2, 3))
-        e.__init__("new_msg", ("new_file.py", 2, 3, "new_txt", 3, 4))
-
 
 class NameErrorTests(unittest.TestCase):
     def test_name_error_has_name(self):
@@ -2565,6 +2560,11 @@ class SyntaxErrorTests(unittest.TestCase):
 
         args = ("bad.py", 1, 2, "abcdefg", 1)
         self.assertRaises(TypeError, SyntaxError, "bad bad", args)
+
+    def test_syntax_error_memory_leak(self):
+        # gh-146250: memory leak with re-initialization of SyntaxError
+        e = SyntaxError("msg", ("file.py", 1, 2, "txt", 2, 3))
+        e.__init__("new_msg", ("new_file.py", 2, 3, "new_txt", 3, 4))
 
 
 class TestInvalidExceptionMatcher(unittest.TestCase):
