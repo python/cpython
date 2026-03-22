@@ -733,6 +733,7 @@ decode_stack_pop_push(ReaderThreadState *ts, const uint8_t *data,
     for (uint32_t i = 0; i < push; i++) {
         size_t prev_offset = *offset;
         ts->current_stack[i] = decode_varint_u32(data, offset, max_size);
+        /* If offset didn't advance, varint decoding failed */
         if (*offset == prev_offset) {
             return -1;
         }
