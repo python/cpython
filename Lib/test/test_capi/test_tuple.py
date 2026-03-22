@@ -257,5 +257,10 @@ class CAPITest(unittest.TestCase):
         self.assertRaises(SystemError, resize, [1, 2, 3], 0, False)
         self.assertRaises(SystemError, resize, NULL, 0, False)
 
+    def test_uninitialized_tuple_repr(self):
+        tup = _testlimitedcapi.tuple_new(3)
+        self.assertEqual(repr(tup), '(<NULL>, <NULL>, <NULL>)')
+
+
 if __name__ == "__main__":
     unittest.main()
