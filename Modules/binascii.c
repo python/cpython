@@ -278,8 +278,8 @@ static const unsigned char table_b2a_base32[] Py_ALIGNED(64) =
 
 /* Encode 5 bytes into 8 base32 characters. */
 static inline void
-base32_encode_quintet(const unsigned char *in, unsigned char *out,
-                      const unsigned char table[])
+base32_encode_quint(const unsigned char *in, unsigned char *out,
+                    const unsigned char table[])
 {
     uint64_t combined = ((uint64_t)in[0] << 32) |
                         ((uint64_t)in[1] << 24) |
@@ -304,16 +304,16 @@ static inline Py_ssize_t
 base32_encode_fast(const unsigned char *in, Py_ssize_t in_len,
                    unsigned char *out, const unsigned char table[])
 {
-    Py_ssize_t n_quintets = in_len / 5;
-    const unsigned char *in_end = in + n_quintets * 5;
+    Py_ssize_t n_quints = in_len / 5;
+    const unsigned char *in_end = in + n_quints * 5;
 
     while (in < in_end) {
-        base32_encode_quintet(in, out, table);
+        base32_encode_quint(in, out, table);
         in += 5;
         out += 8;
     }
 
-    return n_quintets * 5;
+    return n_quints * 5;
 }
 
 /*
@@ -321,8 +321,8 @@ base32_encode_fast(const unsigned char *in, Py_ssize_t in_len,
  * Returns 1 on success, 0 if any character is invalid.
  */
 static inline int
-base32_decode_octet(const unsigned char *in, unsigned char *out,
-                    const unsigned char table[])
+base32_decode_octa(const unsigned char *in, unsigned char *out,
+                   const unsigned char table[])
 {
     unsigned char v0 = table[in[0]];
     unsigned char v1 = table[in[1]];
@@ -354,11 +354,11 @@ static inline Py_ssize_t
 base32_decode_fast(const unsigned char *in, Py_ssize_t in_len,
                    unsigned char *out, const unsigned char table[])
 {
-    Py_ssize_t n_quintets = in_len / 8;
+    Py_ssize_t n_quints = in_len / 8;
     Py_ssize_t i;
 
-    for (i = 0; i < n_quintets; i++) {
-        if (!base32_decode_octet(in + i * 8, out + i * 5, table)) {
+    for (i = 0; i < n_quints; i++) {
+        if (!base32_decode_octa(in + i * 8, out + i * 5, table)) {
             break;
         }
     }
@@ -1533,8 +1533,8 @@ binascii_a2b_base32_impl(PyObject *module, Py_buffer *data,
     unsigned char *bin_data = PyBytesWriter_GetData(writer);
 
     /*
-     * Fast path: use optimized decoder for complete octets (groups of 8 bytes).
-     * The fast path stops at padding, invalid chars, or incomplete octets.
+     * Fast path: use optimized decoder for complete octas (groups of 8 bytes).
+     * The fast path stops at padding, invalid chars, or incomplete octas.
      */
     if (ascii_len >= 8) {
         Py_ssize_t fast_chars = base32_decode_fast(ascii_data, ascii_len,
@@ -1546,9 +1546,9 @@ binascii_a2b_base32_impl(PyObject *module, Py_buffer *data,
         }
     }
 
-    /* Slow path: handle remaining input (padding, invalid chars, incomplete octets). */
+    /* Slow path: handle remaining input (padding, invalid chars, incomplete octas). */
     unsigned char leftchar = 0;
-    int octet_pos = 0;
+    int octa_pos = 0;
     int pads = 0;
     for (; ascii_len; ascii_len--, ascii_data++) {
         unsigned char this_ch = *ascii_data;
@@ -1557,16 +1557,15 @@ binascii_a2b_base32_impl(PyObject *module, Py_buffer *data,
         if (this_ch == BASE32_PAD) {
             pads++;
 
-            if ((octet_pos == 2 || octet_pos == 4
-                 || octet_pos == 5 || octet_pos == 7)
-                && octet_pos + pads <= 8)
+            if ((octa_pos == 2 || octa_pos == 4 || octa_pos == 5 || octa_pos == 7)
+                && octa_pos + pads <= 8)
             {
                 continue;
             }
 
             state = get_binascii_state(module);
             if (state) {
-                if (octet_pos == 1 || octet_pos == 3 || octet_pos == 6) {
+                if (octa_pos == 1 || octa_pos == 3 || octa_pos == 6) {
                     const unsigned char *ascii_data_start = data->buf;
                     PyErr_Format(state->Error,
                                  "Invalid base32-encoded string: "
@@ -1577,7 +1576,7 @@ binascii_a2b_base32_impl(PyObject *module, Py_buffer *data,
                 }
                 else {
                     PyErr_SetString(state->Error,
-                                    (octet_pos == 0 && ascii_data == data->buf)
+                                    (octa_pos == 0 && ascii_data == data->buf)
                                     ? "Leading padding not allowed"
                                     : "Excess padding not allowed");
                 }
@@ -1598,55 +1597,55 @@ binascii_a2b_base32_impl(PyObject *module, Py_buffer *data,
         if (pads) {
             state = get_binascii_state(module);
             if (state) {
-                PyErr_SetString(state->Error, (octet_pos + pads == 8)
+                PyErr_SetString(state->Error, (octa_pos + pads == 8)
                     ? "Excess data after padding"
                     : "Discontinuous padding not allowed");
             }
             goto error;
         }
 
-        switch (octet_pos) {
+        switch (octa_pos) {
             case 0:
-                octet_pos = 1;
+                octa_pos = 1;
                 leftchar = v;
                 break;
             case 1:
-                octet_pos = 2;
+                octa_pos = 2;
                 *bin_data++ = (leftchar << 3) | (v >> 2);
                 leftchar = v & 0x03;
                 break;
             case 2:
-                octet_pos = 3;
+                octa_pos = 3;
                 leftchar = (leftchar << 5) | v;
                 break;
             case 3:
-                octet_pos = 4;
+                octa_pos = 4;
                 *bin_data++ = (leftchar << 1) | (v >> 4);
                 leftchar = v & 0x0f;
                 break;
             case 4:
-                octet_pos = 5;
+                octa_pos = 5;
                 *bin_data++ = (leftchar << 4) | (v >> 1);
                 leftchar = v & 0x01;
                 break;
             case 5:
-                octet_pos = 6;
+                octa_pos = 6;
                 leftchar = (leftchar << 5) | v;
                 break;
             case 6:
-                octet_pos = 7;
+                octa_pos = 7;
                 *bin_data++ = (leftchar << 2) | (v >> 3);
                 leftchar = v & 0x07;
                 break;
             case 7:
-                octet_pos = 0;
+                octa_pos = 0;
                 *bin_data++ = (leftchar << 5) | v;
                 leftchar = 0;
         }
     }
 
-    if ((octet_pos != 0 && octet_pos + pads != 8)
-        || (octet_pos == 0 && pads != 0))
+    if ((octa_pos != 0 && octa_pos + pads != 8)
+        || (octa_pos == 0 && pads != 0))
     {
         state = get_binascii_state(module);
         if (state) {
