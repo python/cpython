@@ -1598,8 +1598,8 @@ binascii_a2b_base32_impl(PyObject *module, Py_buffer *data,
             state = get_binascii_state(module);
             if (state) {
                 PyErr_SetString(state->Error, (octa_pos + pads == 8)
-                    ? "Excess data after padding"
-                    : "Discontinuous padding not allowed");
+                                ? "Excess data after padding"
+                                : "Discontinuous padding not allowed");
             }
             goto error;
         }

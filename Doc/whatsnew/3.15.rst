@@ -662,7 +662,7 @@ binascii
 * Added the *ignorechars* parameter in :func:`~binascii.a2b_base64`.
   (Contributed by Serhiy Storchaka in :gh:`144001`.)
 
-* Added functions for Base 32 encoding:
+* Added functions for Base32 encoding:
 
   - :func:`~binascii.b2a_base32` and :func:`~binascii.a2b_base32`
 
@@ -1284,6 +1284,10 @@ base64 & binascii
   Encoding and decoding is now two orders of magnitude faster and consumes
   two orders of magnitude less memory.
   (Contributed by James Seo and Serhiy Storchaka in :gh:`101178`.)
+
+* Implementation for Base32 has been rewritten in C.
+  Encoding and decoding is now two orders of magnitude faster.
+  (Contributed by James Seo in :gh:`146192`)
 
 
 csv
