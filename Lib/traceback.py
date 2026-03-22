@@ -974,9 +974,9 @@ def _extract_caret_anchors_from_line_segment(segment):
 _WIDE_CHAR_SPECIFIERS = "WF"
 
 def _display_width(line, offset=None):
-    """Calculate the amount of width space the given source code
-    segment might take if it were to be displayed on a fixed width
-    output device. Supports wide unicode characters and emojis."""
+    """Calculate the amount of width space the given source
+    code segment might take if it were to be displayed on a fixed
+    width output device. Supports wide unicode characters and emojis."""
 
     if offset is None:
         offset = len(line)
