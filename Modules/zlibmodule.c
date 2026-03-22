@@ -550,7 +550,7 @@ zlib.compressobj
     strategy: int(c_default="Z_DEFAULT_STRATEGY") = Z_DEFAULT_STRATEGY
         Used to tune the compression algorithm.  Possible values are
         Z_DEFAULT_STRATEGY, Z_FILTERED, and Z_HUFFMAN_ONLY.
-    zdict: Py_buffer = None
+    zdict: Py_buffer = NULL
         The predefined compression dictionary - a sequence of bytes
         containing subsequences that are likely to occur in the input data.
 
@@ -560,7 +560,7 @@ Return a compressor object.
 static PyObject *
 zlib_compressobj_impl(PyObject *module, int level, int method, int wbits,
                       int memLevel, int strategy, Py_buffer *zdict)
-/*[clinic end generated code: output=8b5bed9c8fc3814d input=2fa3d026f90ab8d5]*/
+/*[clinic end generated code: output=8b5bed9c8fc3814d input=1a6f61d8a8885c0d]*/
 {
     zlibstate *state = get_zlib_state(module);
     if (zdict->buf != NULL && (size_t)zdict->len > UINT_MAX) {

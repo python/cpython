@@ -1,5 +1,5 @@
 import unittest
-from itertools import batched, chain, combinations_with_replacement, cycle, permutations
+from itertools import accumulate, batched, chain, combinations_with_replacement, cycle, permutations
 from test.support import threading_helper
 
 
@@ -15,6 +15,13 @@ def work_iterator(it):
 
 
 class ItertoolsThreading(unittest.TestCase):
+
+    @threading_helper.reap_threads
+    def test_accumulate(self):
+        number_of_iterations = 10
+        for _ in range(number_of_iterations):
+            it = accumulate(tuple(range(40)))
+            threading_helper.run_concurrently(work_iterator, nthreads=10, args=[it])
 
     @threading_helper.reap_threads
     def test_batched(self):

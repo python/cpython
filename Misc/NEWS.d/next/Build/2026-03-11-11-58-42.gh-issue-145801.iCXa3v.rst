@@ -1,0 +1,4 @@
+When Python build is optimized with GCC using PGO, use
+``-fprofile-update=atomic`` option to use atomic operations when updating
+profile information. This option reduces the risk of gcov Data Files (.gcda)
+corruption which can cause random GCC crashes. Patch by Victor Stinner.

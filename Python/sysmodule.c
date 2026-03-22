@@ -1762,7 +1762,7 @@ sys_getwindowsversion_impl(PyObject *module)
     PyObject *realVersion = _sys_getwindowsversion_from_kernel32();
     if (!realVersion) {
         if (!PyErr_ExceptionMatches(PyExc_WindowsError)) {
-            return NULL;
+            goto error;
         }
 
         PyErr_Clear();
@@ -2499,7 +2499,7 @@ sys_remote_exec_impl(PyObject *module, int pid, PyObject *script)
     }
 
     if (PySys_Audit("sys.remote_exec", "iO", pid, script) < 0) {
-        return NULL;
+        goto error;
     }
 
     debugger_script_path = PyBytes_AS_STRING(path);
@@ -3495,11 +3495,12 @@ static PyStructSequence_Field flags_fields[] = {
     {"dev_mode",                "-X dev"},
     {"utf8_mode",               "-X utf8"},
     {"warn_default_encoding",   "-X warn_default_encoding"},
-    {"safe_path", "-P"},
+    {"safe_path",               "-P"},
     {"int_max_str_digits",      "-X int_max_str_digits"},
+    // Fields below are only usable by sys.flags attribute name, not index:
     {"gil",                     "-X gil"},
     {"thread_inherit_context",  "-X thread_inherit_context"},
-    {"context_aware_warnings",    "-X context_aware_warnings"},
+    {"context_aware_warnings",  "-X context_aware_warnings"},
     {"lazy_imports",            "-X lazy_imports"},
     {0}
 };
@@ -3510,7 +3511,9 @@ static PyStructSequence_Desc flags_desc = {
     "sys.flags",        /* name */
     flags__doc__,       /* doc */
     flags_fields,       /* fields */
-    19
+    18  /* NB - do not increase beyond 3.13's value of 18. */
+    // New sys.flags fields should NOT be tuple addressable per
+    // https://github.com/python/cpython/issues/122575#issuecomment-2416497086
 };
 
 static void
