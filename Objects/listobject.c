@@ -3911,14 +3911,6 @@ list_ass_subscript_lock_held(PyObject *_self, PyObject *item, PyObject *value)
                         "size %zd",
                              slicelength);
                 }
-                else if (bounded_iter) {
-                    PyErr_Format(PyExc_ValueError,
-                        "attempt to assign sequence of "
-                        "size %zd to extended slice of "
-                        "size %zd",
-                             PySequence_Fast_GET_SIZE(seq),
-                             slicelength);
-                }
                 else {
                     PyErr_Format(PyExc_ValueError,
                         "attempt to assign sequence of "
