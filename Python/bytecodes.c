@@ -33,7 +33,7 @@
 #include "pycore_sliceobject.h"   // _PyBuildSlice_ConsumeRefs
 #include "pycore_stackref.h"
 #include "pycore_template.h"      // _PyTemplate_Build()
-#include "pycore_tuple.h"         // _PyTuple_Free(), _PyTuple_ITEMS()
+#include "pycore_tuple.h"         // _PyStolenTuple_Free(), _PyTuple_ITEMS()
 #include "pycore_typeobject.h"    // _PySuper_Lookup()
 
 #include "pycore_dict.h"
@@ -1745,7 +1745,7 @@ dummy_func(
             val0 = PyStackRef_FromPyObjectSteal(PyTuple_GET_ITEM(seq_o, 0));
             val1 = PyStackRef_FromPyObjectSteal(PyTuple_GET_ITEM(seq_o, 1));
             PyObject_GC_UnTrack(seq_o);
-            _PyTuple_Free(seq_o);
+            _PyStolenTuple_Free(seq_o);
         }
 
         op(_UNPACK_SEQUENCE_UNIQUE_THREE_TUPLE, (seq -- val2, val1, val0)) {
@@ -1755,7 +1755,7 @@ dummy_func(
             val1 = PyStackRef_FromPyObjectSteal(PyTuple_GET_ITEM(seq_o, 1));
             val2 = PyStackRef_FromPyObjectSteal(PyTuple_GET_ITEM(seq_o, 2));
             PyObject_GC_UnTrack(seq_o);
-            _PyTuple_Free(seq_o);
+            _PyStolenTuple_Free(seq_o);
         }
 
         macro(UNPACK_SEQUENCE_TUPLE) =
@@ -1784,7 +1784,7 @@ dummy_func(
                 *values++ = PyStackRef_FromPyObjectSteal(items[i]);
             }
             PyObject_GC_UnTrack(seq_o);
-            _PyTuple_Free(seq_o);
+            _PyStolenTuple_Free(seq_o);
         }
 
         macro(UNPACK_SEQUENCE_LIST) =
