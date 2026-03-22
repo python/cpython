@@ -206,7 +206,9 @@ class HttpServer(ThemeSection):
     path: str = ANSIColors.CYAN
     serving: str = ANSIColors.GREEN
     size: str = ANSIColors.GREY
-    status_ok: str = ANSIColors.BLUE
+    status_informational: str = ANSIColors.RESET
+    status_ok: str = ANSIColors.GREEN
+    status_redirect: str = ANSIColors.INTENSE_CYAN
     status_client_error: str = ANSIColors.YELLOW
     status_server_error: str = ANSIColors.RED
     timestamp: str = ANSIColors.GREY

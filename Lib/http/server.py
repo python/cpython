@@ -586,8 +586,12 @@ class BaseHTTPRequestHandler(socketserver.StreamRequestHandler):
                 code_color = t.status_server_error
             elif code_int >= 400:
                 code_color = t.status_client_error
-            else:
+            elif code_int >= 300:
+                code_color = t.status_redirect
+            elif code_int >= 200:
                 code_color = t.status_ok
+            else:
+                code_color = t.status_informational
 
         request_line = self.requestline.translate(self._control_char_table)
         parts = request_line.split(None, 2)
