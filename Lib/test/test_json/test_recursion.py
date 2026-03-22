@@ -3,10 +3,9 @@ import sys
 from test import support
 from test.test_json import PyTest, CTest
 
+
 class JSONTestObject:
     pass
-
-
 class TestRecursion:
     def test_listrecursion(self):
         x = []
@@ -137,10 +136,9 @@ class TestRecursion:
         for _ in range(depth):
             obj = [obj]
 
-        try:
-            self.dumps(obj, default=default)
-        except Exception:
-            pass
+        with support.infinite_recursion():
+            with self.assertRaises(RecursionError):
+                self.dumps(obj, default=default)
 
         support.gc_collect()
         self.assertTrue(weak_refs, "No objects were created to track")

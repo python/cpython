@@ -1646,21 +1646,19 @@ encoder_listencode_obj(PyEncoderObject *s, PyUnicodeWriter *writer,
         rv = encoder_listencode_obj(s, writer, newobj, indent_level, indent_cache);
         _Py_LeaveRecursiveCall();
         Py_DECREF(newobj);
-
         if (rv) {
             if (ident != NULL) {
                 int del_rv = PyDict_DelItem(s->markers, ident);
-                Py_XDECREF(ident);
+                Py_DECREF(ident);
                 if (del_rv < 0) {
                     return -1;
                 }
             }
             return -1;
         }
-
         if (ident != NULL) {
             int del_rv = PyDict_DelItem(s->markers, ident);
-            Py_XDECREF(ident);
+            Py_DECREF(ident);
             if (del_rv < 0) {
                 return -1;
             }
