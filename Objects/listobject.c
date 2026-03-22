@@ -3845,9 +3845,11 @@ list_ass_subscript_lock_held(PyObject *_self, PyObject *item, PyObject *value)
                 PyObject *it = PyObject_GetIter(value);
                 if (it == NULL) {
                     if (PyErr_ExceptionMatches(PyExc_TypeError)) {
+                        PyObject *exc = PyErr_GetRaisedException();
                         PyErr_SetString(PyExc_TypeError,
                                         "must assign iterable "
                                         "to extended slice");
+                        _PyErr_ChainExceptions1(exc);
                     }
                     return -1;
                 }

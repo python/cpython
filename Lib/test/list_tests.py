@@ -228,6 +228,30 @@ class CommonTest(seq_tests.CommonTest):
             a[::-2] = infinite_gen()
         self.assertEqual(a, self.type2test(range(6)))
 
+        # Explicit start and stop with infinite iterator
+        a = self.type2test(range(10))
+        with self.assertRaises(ValueError):
+            a[1:8:2] = infinite_gen()
+        self.assertEqual(a, self.type2test(range(10)))
+
+        # Explicit start only
+        a = self.type2test(range(10))
+        with self.assertRaises(ValueError):
+            a[2::3] = infinite_gen()
+        self.assertEqual(a, self.type2test(range(10)))
+
+        # Explicit stop only
+        a = self.type2test(range(10))
+        with self.assertRaises(ValueError):
+            a[:7:2] = infinite_gen()
+        self.assertEqual(a, self.type2test(range(10)))
+
+        # Negative step with explicit start and stop
+        a = self.type2test(range(10))
+        with self.assertRaises(ValueError):
+            a[8:1:-2] = infinite_gen()
+        self.assertEqual(a, self.type2test(range(10)))
+
     def test_extended_slice_assign_iterator(self):
         # Assigning a finite iterator with the correct length to an
         # extended slice should work.
