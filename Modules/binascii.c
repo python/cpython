@@ -800,40 +800,33 @@ fastpath:
         */
         if (this_ch == BASE64_PAD) {
             pads++;
-
-            if (strict_mode) {
-                if (quad_pos >= 2 && quad_pos + pads <= 4) {
-                    continue;
-                }
-                if (ignorechar(BASE64_PAD, ignorechars, ignorecache)) {
-                    continue;
-                }
-                if (quad_pos == 1) {
-                    /* Set an error below. */
-                    break;
-                }
-                state = get_binascii_state(module);
-                if (state) {
-                    PyErr_SetString(state->Error,
-                                    (quad_pos == 0 && ascii_data == data->buf)
-                                    ? "Leading padding not allowed"
-                                    : "Excess padding not allowed");
-                }
-                goto error_end;
-            }
-            else {
-                if (quad_pos >= 2 && quad_pos + pads >= 4) {
-                    /* A pad sequence means we should not parse more input.
-                    ** We've already interpreted the data from the quad at this point.
-                    */
-                    goto done;
-                }
+            if (quad_pos >= 2 && quad_pos + pads <= 4) {
                 continue;
             }
+            // See RFC 4648, section-3.3: "specifications MAY ignore the
+            // pad character, "=", treating it as non-alphabet data, if
+            // it is present before the end of the encoded data" and
+            // "the excess pad characters MAY also be ignored."
+            if (!strict_mode || ignorechar(BASE64_PAD, ignorechars, ignorecache)) {
+                continue;
+            }
+            if (quad_pos == 1) {
+                /* Set an error below. */
+                break;
+            }
+            state = get_binascii_state(module);
+            if (state) {
+                PyErr_SetString(state->Error,
+                                (quad_pos == 0 && ascii_data == data->buf)
+                                ? "Leading padding not allowed"
+                                : "Excess padding not allowed");
+            }
+            goto error_end;
         }
 
         unsigned char v = table_a2b[this_ch];
         if (v >= 64) {
+            // See RFC 4648, section-3.3.
             if (strict_mode && !ignorechar(this_ch, ignorechars, ignorecache)) {
                 state = get_binascii_state(module);
                 if (state) {
@@ -844,7 +837,8 @@ fastpath:
             continue;
         }
 
-        // Characters that are not '=', in the middle of the padding, are not allowed
+        // Characters that are not '=', in the middle of the padding, are
+        // not allowed (except when they are). See RFC 4648, section-3.3.
         if (pads && strict_mode &&
             !ignorechar(BASE64_PAD, ignorechars, ignorecache))
         {
@@ -908,7 +902,6 @@ fastpath:
         goto error_end;
     }
 
-done:
     Py_XDECREF(table_obj);
     return PyBytesWriter_FinishWithPointer(writer, bin_data);
 
