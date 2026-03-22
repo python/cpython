@@ -3821,7 +3821,7 @@ list_ass_subscript_lock_held(PyObject *_self, PyObject *item, PyObject *value)
             PyObject **garbage, **seqitems, **selfitems;
             Py_ssize_t i;
             size_t cur;
-            int bounded_iter = 0;
+            bool bounded_iter = false;
 
             /* protect against a[::-1] = a */
             if (self == (PyListObject*)value) {
@@ -3883,7 +3883,7 @@ list_ass_subscript_lock_held(PyObject *_self, PyObject *item, PyObject *value)
                 if (j < alloc) {
                     Py_SET_SIZE(seq, j);
                 }
-                bounded_iter = 1;
+                bounded_iter = true;
             }
             else {
                 seq = PySequence_Fast(value,
