@@ -1562,24 +1562,16 @@ binascii_a2b_base32_impl(PyObject *module, Py_buffer *data,
             {
                 continue;
             }
-
+            if (octa_pos == 1 || octa_pos == 3 || octa_pos == 6) {
+                /* Set an error below. */
+                break;
+            }
             state = get_binascii_state(module);
             if (state) {
-                if (octa_pos == 1 || octa_pos == 3 || octa_pos == 6) {
-                    const unsigned char *ascii_data_start = data->buf;
-                    PyErr_Format(state->Error,
-                                 "Invalid base32-encoded string: "
-                                 "number of data characters (%zd) "
-                                 "cannot be 1, 3, or 6 more "
-                                 "than a multiple of 8",
-                                 ascii_data - ascii_data_start);
-                }
-                else {
-                    PyErr_SetString(state->Error,
-                                    (octa_pos == 0 && ascii_data == data->buf)
-                                    ? "Leading padding not allowed"
-                                    : "Excess padding not allowed");
-                }
+                PyErr_SetString(state->Error,
+                                (octa_pos == 0 && ascii_data == data->buf)
+                                ? "Leading padding not allowed"
+                                : "Excess padding not allowed");
             }
             goto error;
         }
@@ -1642,6 +1634,19 @@ binascii_a2b_base32_impl(PyObject *module, Py_buffer *data,
                 *bin_data++ = (leftchar << 5) | v;
                 leftchar = 0;
         }
+    }
+
+    if (octa_pos == 1 || octa_pos == 3 || octa_pos == 6) {
+        state = get_binascii_state(module);
+        if (state) {
+            const unsigned char *ascii_data_start = data->buf;
+            PyErr_Format(state->Error,
+                         "Invalid base32-encoded string: "
+                         "number of data characters (%zd) "
+                         "cannot be 1, 3, or 6 more than a multiple of 8",
+                         ascii_data - ascii_data_start);
+        }
+        goto error;
     }
 
     if ((octa_pos != 0 && octa_pos + pads != 8)

@@ -782,12 +782,9 @@ class BinASCIITest(unittest.TestCase):
         assertLeadingPadding(b"========BEEFCAKE", b"\t\x08Q\x01D")
         assertLeadingPadding(b"=========BEEFCAKE", b"\t\x08Q\x01D")
 
-        assertIncorrectPadding(b"A")
         assertIncorrectPadding(b"AB")
-        assertIncorrectPadding(b"ABC")
         assertIncorrectPadding(b"ABCD")
         assertIncorrectPadding(b"ABCDE")
-        assertIncorrectPadding(b"ABCDEF")
         assertIncorrectPadding(b"ABCDEFG")
 
         assertIncorrectPadding(b"BE=", b"\t")
@@ -805,6 +802,10 @@ class BinASCIITest(unittest.TestCase):
         assertDiscontinuousPadding(b"BE==EF==", b"\t\x08")
         assertDiscontinuousPadding(b"BEEF=C==", b"\t\x08Q")
         assertDiscontinuousPadding(b"BEEFC=AK", b"\t\x08Q\x01")
+
+        assertInvalidLength(b"A")
+        assertInvalidLength(b"ABC")
+        assertInvalidLength(b"ABCDEF")
 
         assertInvalidLength(b"A=")
         assertInvalidLength(b"A==")
