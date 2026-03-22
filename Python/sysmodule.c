@@ -33,8 +33,8 @@ Data members:
 #include "pycore_pymath.h"        // _PY_SHORT_FLOAT_REPR
 #include "pycore_pymem.h"         // _PyMem_DefaultRawFree()
 #include "pycore_pystate.h"       // _PyThreadState_GET()
-#include "pycore_runtime.h"       // _PyRuntimeState_GetInitialized()
 #include "pycore_pystats.h"       // _Py_PrintSpecializationStats()
+#include "pycore_runtime.h"       // _PyRuntimeState_Get*()
 #include "pycore_structseq.h"     // _PyStructSequence_InitBuiltinWithFlags()
 #include "pycore_sysmodule.h"     // export _PySys_GetSizeOf()
 #include "pycore_unicodeobject.h" // _PyUnicode_InternImmortal()
