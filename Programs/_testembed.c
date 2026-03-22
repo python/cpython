@@ -2223,7 +2223,6 @@ static int hook_check_initialized_on_site_import(
 
 static int test_isinitialized_false_during_site_import(void)
 {
-    putenv("PYTHONMALLOC=");
     _initialized_during_site_import = -1;
 
     /* Register audit hook before initialization */
