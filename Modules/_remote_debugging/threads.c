@@ -291,7 +291,8 @@ unwind_stack_for_thread(
     RemoteUnwinderObject *unwinder,
     uintptr_t *current_tstate,
     uintptr_t gil_holder_tstate,
-    uintptr_t gc_frame
+    uintptr_t gc_frame,
+    uintptr_t main_thread_tstate
 ) {
     PyObject *frame_info = NULL;
     PyObject *thread_id = NULL;
@@ -393,6 +394,10 @@ unwind_stack_for_thread(
         status_flags |= THREAD_STATUS_UNKNOWN;
     } else if (cpu_status == THREAD_STATE_RUNNING) {
         status_flags |= THREAD_STATUS_ON_CPU;
+    }
+
+    if (*current_tstate == main_thread_tstate) {
+        status_flags |= THREAD_STATUS_MAIN_THREAD;
     }
 
     // Check if we should skip this thread based on mode
