@@ -272,6 +272,7 @@ zoneinfo_new_instance(zoneinfo_state *state, PyTypeObject *type, PyObject *key)
 
     goto cleanup;
 error:
+    assert(PyErr_Occurred());
     Py_CLEAR(self);
 cleanup:
     if (file_obj != NULL) {
@@ -458,6 +459,7 @@ zoneinfo_ZoneInfo_from_file_impl(PyTypeObject *type, PyTypeObject *cls,
     return (PyObject *)self;
 
 error:
+    assert(PyErr_Occurred());
     Py_XDECREF(file_repr);
     Py_XDECREF(self);
     return NULL;
@@ -1043,10 +1045,12 @@ load_data(zoneinfo_state *state, PyZoneInfo_ZoneInfo *self, PyObject *file_obj)
     self->trans_list_utc =
         PyMem_Malloc(self->num_transitions * sizeof(int64_t));
     if (self->trans_list_utc == NULL) {
+        PyErr_NoMemory();
         goto error;
     }
     trans_idx = PyMem_Malloc(self->num_transitions * sizeof(Py_ssize_t));
     if (trans_idx == NULL) {
+        PyErr_NoMemory();
         goto error;
     }
 
@@ -1086,6 +1090,7 @@ load_data(zoneinfo_state *state, PyZoneInfo_ZoneInfo *self, PyObject *file_obj)
     isdst = PyMem_Malloc(self->num_ttinfos * sizeof(unsigned char));
 
     if (utcoff == NULL || isdst == NULL) {
+        PyErr_NoMemory();
         goto error;
     }
     for (size_t i = 0; i < self->num_ttinfos; ++i) {
@@ -1115,6 +1120,7 @@ load_data(zoneinfo_state *state, PyZoneInfo_ZoneInfo *self, PyObject *file_obj)
 
     dstoff = PyMem_Calloc(self->num_ttinfos, sizeof(long));
     if (dstoff == NULL) {
+        PyErr_NoMemory();
         goto error;
     }
 
@@ -1131,6 +1137,7 @@ load_data(zoneinfo_state *state, PyZoneInfo_ZoneInfo *self, PyObject *file_obj)
     // Build _ttinfo objects from utcoff, dstoff and abbr
     self->_ttinfos = PyMem_Malloc(self->num_ttinfos * sizeof(_ttinfo));
     if (self->_ttinfos == NULL) {
+        PyErr_NoMemory();
         goto error;
     }
     for (size_t i = 0; i < self->num_ttinfos; ++i) {
@@ -1151,6 +1158,7 @@ load_data(zoneinfo_state *state, PyZoneInfo_ZoneInfo *self, PyObject *file_obj)
     self->trans_ttinfos =
         PyMem_Calloc(self->num_transitions, sizeof(_ttinfo *));
     if (self->trans_ttinfos == NULL) {
+        PyErr_NoMemory();
         goto error;
     }
     for (size_t i = 0; i < self->num_transitions; ++i) {
@@ -1669,9 +1677,11 @@ parse_tz_str(zoneinfo_state *state, PyObject *tz_str_obj, _tzrule *out)
         p++;
 
         if (parse_transition_rule(&p, transitions[i])) {
-            PyErr_Format(PyExc_ValueError,
-                         "Malformed transition rule in TZ string: %R",
-                         tz_str_obj);
+            if (!PyErr_ExceptionMatches(PyExc_MemoryError)) {
+                PyErr_Format(PyExc_ValueError,
+                             "Malformed transition rule in TZ string: %R",
+                             tz_str_obj);
+            }
             goto error;
         }
     }
@@ -1871,6 +1881,7 @@ parse_transition_rule(const char **p, TransitionRuleType **out)
 
         CalendarRule *rv = PyMem_Calloc(1, sizeof(CalendarRule));
         if (rv == NULL) {
+            PyErr_NoMemory();
             return -1;
         }
 
@@ -1902,6 +1913,7 @@ parse_transition_rule(const char **p, TransitionRuleType **out)
 
         DayRule *rv = PyMem_Calloc(1, sizeof(DayRule));
         if (rv == NULL) {
+            PyErr_NoMemory();
             return -1;
         }
 
@@ -2135,6 +2147,7 @@ ts_to_local(size_t *trans_idx, int64_t *trans_utc, long *utcoff,
     for (size_t i = 0; i < 2; ++i) {
         trans_local[i] = PyMem_Malloc(num_transitions * sizeof(int64_t));
         if (trans_local[i] == NULL) {
+            PyErr_NoMemory();
             return -1;
         }
 

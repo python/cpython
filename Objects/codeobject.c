@@ -501,7 +501,7 @@ _PyCode_Validate(struct _PyCodeConstructor *con)
 }
 
 extern void
-_PyCode_Quicken(_Py_CODEUNIT *instructions, Py_ssize_t size, int enable_counters);
+_PyCode_Quicken(_Py_CODEUNIT *instructions, Py_ssize_t size, int enable_counters, int flags);
 
 #ifdef Py_GIL_DISABLED
 static _PyCodeArray * _PyCodeArray_New(Py_ssize_t size);
@@ -579,11 +579,12 @@ init_code(PyCodeObject *co, struct _PyCodeConstructor *con)
         entry_point++;
     }
     co->_co_firsttraceable = entry_point;
+
 #ifdef Py_GIL_DISABLED
     int enable_counters = interp->config.tlbc_enabled && interp->opt_config.specialization_enabled;
-    _PyCode_Quicken(_PyCode_CODE(co), Py_SIZE(co), enable_counters);
+    _PyCode_Quicken(_PyCode_CODE(co), Py_SIZE(co), enable_counters, co->co_flags);
 #else
-    _PyCode_Quicken(_PyCode_CODE(co), Py_SIZE(co), interp->opt_config.specialization_enabled);
+    _PyCode_Quicken(_PyCode_CODE(co), Py_SIZE(co), interp->opt_config.specialization_enabled, co->co_flags);
 #endif
     notify_code_watchers(PY_CODE_EVENT_CREATE, co);
     return 0;
@@ -3460,7 +3461,7 @@ copy_code(PyInterpreterState *interp, _Py_CODEUNIT *dst, PyCodeObject *co)
     for (int i = 0; i < code_len; i += _PyInstruction_GetLength(co, i)) {
         dst[i] = deopt_code_unit(co, i);
     }
-    _PyCode_Quicken(dst, code_len, interp->opt_config.specialization_enabled);
+    _PyCode_Quicken(dst, code_len, interp->opt_config.specialization_enabled, co->co_flags);
 }
 
 static Py_ssize_t

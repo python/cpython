@@ -209,9 +209,9 @@
         case _END_SEND: {
             JitOptRef val;
             val = sym_new_not_null(ctx);
-            CHECK_STACK_BOUNDS(-1);
-            stack_pointer[-2] = val;
-            stack_pointer += -1;
+            CHECK_STACK_BOUNDS(-2);
+            stack_pointer[-3] = val;
+            stack_pointer += -2;
             ASSERT_WITHIN_STACK_BOUNDS(__FILE__, __LINE__);
             break;
         }
@@ -1385,7 +1385,7 @@
             JitOptRef receiver;
             JitOptRef gen_frame;
             v = stack_pointer[-1];
-            receiver = stack_pointer[-2];
+            receiver = stack_pointer[-3];
             _Py_UOpsAbstractFrame *new_frame = frame_new_from_symbol(ctx, receiver, NULL, 0);
             if (new_frame == NULL) {
                 ctx->done = true;
@@ -2743,13 +2743,6 @@
             break;
         }
 
-        case _GET_YIELD_FROM_ITER: {
-            JitOptRef iter;
-            iter = sym_new_not_null(ctx);
-            stack_pointer[-1] = iter;
-            break;
-        }
-
         /* _FOR_ITER is not a viable micro-op for tier 2 */
 
         case _FOR_ITER_TIER_TWO: {
@@ -3051,12 +3044,12 @@
             JitOptRef callable;
             callable = stack_pointer[-2 - oparg];
             uint32_t func_version = (uint32_t)this_instr->operand0;
-            if (sym_is_const(ctx, callable) && sym_matches_type(callable, &PyFunction_Type)) {
-                assert(PyFunction_Check(sym_get_const(ctx, callable)));
-                ADD_OP(_CHECK_FUNCTION_VERSION_INLINE, 0, func_version);
-                uop_buffer_last(&ctx->out_buffer)->operand1 = (uintptr_t)sym_get_const(ctx, callable);
+            if (sym_get_func_version(callable) == func_version) {
+                REPLACE_OP(this_instr, _NOP, 0, 0);
             }
-            sym_set_type(callable, &PyFunction_Type);
+            else {
+                sym_set_func_version(ctx, callable, func_version);
+            }
             break;
         }
 
@@ -4313,18 +4306,41 @@
         }
 
         case _GUARD_CODE_VERSION__PUSH_FRAME: {
+            uint32_t version = (uint32_t)this_instr->operand0;
+            PyCodeObject *co = get_current_code_object(ctx);
+            if (co->co_version == version) {
+                _Py_BloomFilter_Add(dependencies, co);
+                if (sym_get_func_version(ctx->frame->callable) == version) {
+                    REPLACE_OP(this_instr, _NOP, 0, 0);
+                }
+            }
+            else {
+                ctx->done = true;
+            }
             break;
         }
 
         case _GUARD_CODE_VERSION_YIELD_VALUE: {
+            uint32_t version = (uint32_t)this_instr->operand0;
+            if (ctx->frame->caller) {
+                REPLACE_OP(this_instr, _NOP, 0, 0);
+            }
             break;
         }
 
         case _GUARD_CODE_VERSION_RETURN_VALUE: {
+            uint32_t version = (uint32_t)this_instr->operand0;
+            if (ctx->frame->caller) {
+                REPLACE_OP(this_instr, _NOP, 0, 0);
+            }
             break;
         }
 
         case _GUARD_CODE_VERSION_RETURN_GENERATOR: {
+            uint32_t version = (uint32_t)this_instr->operand0;
+            if (ctx->frame->caller) {
+                REPLACE_OP(this_instr, _NOP, 0, 0);
+            }
             break;
         }
 
@@ -4332,6 +4348,12 @@
             PyObject *ip = (PyObject *)this_instr->operand0;
             (void)ip;
             stack_pointer = sym_set_stack_depth((int)this_instr->operand1, stack_pointer);
+            if (sym_get_func_version(ctx->frame->callable) != 0 &&
+                // We can remove this guard for simple function call targets.
+                (((PyCodeObject *)ctx->frame->func->func_code)->co_flags &
+                    (CO_GENERATOR | CO_COROUTINE | CO_ASYNC_GENERATOR)) == 0) {
+                REPLACE_OP(this_instr, _NOP, 0, 0);
+            }
             break;
         }
 
@@ -4393,6 +4415,15 @@
             PyFunctionObject *func = (PyFunctionObject *)this_instr->operand0;
             assert(func == NULL || PyFunction_Check(func));
             sym_set_recorded_gen_func(nos, func);
+            break;
+        }
+
+        case _RECORD_3OS_GEN_FUNC: {
+            JitOptRef gen;
+            gen = stack_pointer[-3];
+            PyFunctionObject *func = (PyFunctionObject *)this_instr->operand0;
+            assert(func == NULL || PyFunction_Check(func));
+            sym_set_recorded_gen_func(gen, func);
             break;
         }
 
