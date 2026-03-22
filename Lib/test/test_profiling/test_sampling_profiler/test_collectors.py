@@ -28,6 +28,7 @@ try:
         THREAD_STATUS_HAS_GIL,
         THREAD_STATUS_ON_CPU,
         THREAD_STATUS_GIL_REQUESTED,
+        THREAD_STATUS_MAIN_THREAD,
     )
 except ImportError:
     raise unittest.SkipTest(
@@ -524,6 +525,7 @@ class TestSampleProfilerComponents(unittest.TestCase):
                     MockThreadInfo(
                         1,
                         [MockFrameInfo("file.py", 10, "func1"), MockFrameInfo("file.py", 20, "func2")],
+                        status=THREAD_STATUS_MAIN_THREAD,
                     )
                 ],
             )
@@ -556,6 +558,7 @@ class TestSampleProfilerComponents(unittest.TestCase):
         threads = profile_data["threads"]
         self.assertEqual(len(threads), 1)
         thread_data = threads[0]
+        self.assertTrue(thread_data["isMainThread"])
 
         # Verify thread structure
         self.assertIn("samples", thread_data)
