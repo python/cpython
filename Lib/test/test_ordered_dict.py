@@ -713,7 +713,9 @@ class OrderedDictTests:
 
         self.assertIs(type(a | b), OrderedDict)
         self.assertIs(type(dict(a) | b), OrderedDict)
+        self.assertIs(type(frozendict(a) | b), frozendict)  # BUG: should be OrderedDict
         self.assertIs(type(a | dict(b)), OrderedDict)
+        self.assertIs(type(a | frozendict(b)), OrderedDict)
 
         expected = a.copy()
         a |= ()

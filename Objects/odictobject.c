@@ -906,7 +906,7 @@ odict_or(PyObject *left, PyObject *right)
         type = Py_TYPE(right);
         other = left;
     }
-    if (!PyDict_Check(other)) {
+    if (!PyAnyDict_Check(other)) {
         Py_RETURN_NOTIMPLEMENTED;
     }
     PyObject *new = PyObject_CallOneArg((PyObject*)type, left);
