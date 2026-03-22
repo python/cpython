@@ -308,6 +308,7 @@ typedef struct {
 #endif
 #ifdef __APPLE__
     uint64_t thread_id_offset;
+    int thread_id_offset_initialized;
 #endif
 #ifdef MS_WINDOWS
     PVOID win_process_buffer;
