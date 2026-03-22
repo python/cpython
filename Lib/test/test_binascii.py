@@ -334,6 +334,34 @@ class BinASCIITest(unittest.TestCase):
         assertInvalidLength(b'A\tB\nC ??DE', # only 5 valid characters
                             strict_mode=False)
 
+    def test_base64_nonzero_padding_bits(self):
+        # https://datatracker.ietf.org/doc/html/rfc4648.html#section-3.5
+        # Decoders MAY reject encoded data if the pad bits are not zero.
+
+        # 2 data chars + "==": last char has 4 padding bits
+        # 'A' = 0, 'B' = 1 ->000000 000001 ->byte 0x00, leftover 0001 (non-zero)
+        with self.assertRaises(binascii.Error):
+            binascii.a2b_base64(self.type2test(b'AB=='), strict_mode=True)
+        # 'A' = 0, 'P' = 15 ->000000 001111 ->byte 0x00, leftover 1111 (non-zero)
+        with self.assertRaises(binascii.Error):
+            binascii.a2b_base64(self.type2test(b'AP=='), strict_mode=True)
+
+        # 3 data chars + "=": last char has 2 padding bits
+        # 'A' = 0, 'A' = 0, 'B' = 1 ->000000 000000 000001 ->bytes 0x00 0x00,
+        # leftover 01 (non-zero)
+        with self.assertRaises(binascii.Error):
+            binascii.a2b_base64(self.type2test(b'AAB='), strict_mode=True)
+        # 'A' = 0, 'A' = 0, 'D' = 3 ->leftover 11 (non-zero)
+        with self.assertRaises(binascii.Error):
+            binascii.a2b_base64(self.type2test(b'AAD='), strict_mode=True)
+
+        # Verify that zero padding bits are accepted
+        binascii.a2b_base64(self.type2test(b'AA=='), strict_mode=True)
+        binascii.a2b_base64(self.type2test(b'AAA='), strict_mode=True)
+
+        # Full quads with no padding have no leftover bits --always valid
+        binascii.a2b_base64(self.type2test(b'AAAA'), strict_mode=True)
+
     def test_base64_alphabet(self):
         alphabet = (b'!"#$%&\'()*+,-012345689@'
                     b'ABCDEFGHIJKLMNPQRSTUVXYZ[`abcdefhijklmpqr')
@@ -823,6 +851,48 @@ class BinASCIITest(unittest.TestCase):
         assertInvalidLength(b"BEE==F==", b"\t\x08")
         assertInvalidLength(b"BEEFCA=K", b"\t\x08Q\x01")
         assertInvalidLength(b"BEEFCA=====K", b"\t\x08Q\x01")
+
+    def test_base32_nonzero_padding_bits(self):
+        # https://datatracker.ietf.org/doc/html/rfc4648.html#section-3.5
+        # Decoders MAY reject encoded data if the pad bits are not zero.
+
+        # 2 data chars + "======": last char has 2 padding bits
+        # 'AB' ->00000 00001 ->byte 0x00, leftover 01 (non-zero)
+        with self.assertRaises(binascii.Error):
+            binascii.a2b_base32(self.type2test(b'AB======'))
+        # 'AD' ->00000 00011 ->byte 0x00, leftover 11 (non-zero)
+        with self.assertRaises(binascii.Error):
+            binascii.a2b_base32(self.type2test(b'AD======'))
+
+        # 4 data chars + "====": last char has 4 padding bits
+        # 'AAAB' ->00000 00000 00000 00001 ->bytes 0x00 0x00, leftover 0001
+        with self.assertRaises(binascii.Error):
+            binascii.a2b_base32(self.type2test(b'AAAB===='))
+        # 'AAAP' ->leftover 1111
+        with self.assertRaises(binascii.Error):
+            binascii.a2b_base32(self.type2test(b'AAAP===='))
+
+        # 5 data chars + "===": last char has 1 padding bit
+        # 'AAAAB' ->4*00000 + 00001 ->bytes 0x00*3, leftover 1 (non-zero)
+        with self.assertRaises(binascii.Error):
+            binascii.a2b_base32(self.type2test(b'AAAAB==='))
+
+        # 7 data chars + "=": last char has 3 padding bits
+        # 'AAAAAAB' ->6*00000 + 00001 ->bytes 0x00*4, leftover 001
+        with self.assertRaises(binascii.Error):
+            binascii.a2b_base32(self.type2test(b'AAAAAAB='))
+        # 'AAAAAAH' ->leftover 111
+        with self.assertRaises(binascii.Error):
+            binascii.a2b_base32(self.type2test(b'AAAAAAH='))
+
+        # Verify that zero padding bits are accepted
+        binascii.a2b_base32(self.type2test(b'AA======'))
+        binascii.a2b_base32(self.type2test(b'AAAA===='))
+        binascii.a2b_base32(self.type2test(b'AAAAA==='))
+        binascii.a2b_base32(self.type2test(b'AAAAAAA='))
+
+        # Full octet with no padding --always valid
+        binascii.a2b_base32(self.type2test(b'AAAAAAAA'))
 
     def test_base32_alphabet(self):
         alphabet = b'0Aa1Bb2Cc3Dd4Ee5Ff6Gg7Hh8Ii9JjKk'
