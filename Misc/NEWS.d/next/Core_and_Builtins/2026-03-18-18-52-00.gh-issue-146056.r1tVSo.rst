@@ -1,1 +1,1 @@
-Fix :meth:`!list.__repr__` for lists containing ``NULL``\ s.
+Fix :func:`repr` for lists and tuples containing ``NULL``\ s.
