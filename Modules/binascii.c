@@ -902,6 +902,16 @@ fastpath:
         goto error_end;
     }
 
+    /* https://datatracker.ietf.org/doc/html/rfc4648.html#section-3.5
+     * Decoders MAY reject non-zero padding bits. */
+    if (strict_mode && leftchar != 0) {
+        state = get_binascii_state(module);
+        if (state) {
+            PyErr_SetString(state->Error, "Non-zero padding bits");
+        }
+        goto error_end;
+    }
+
     Py_XDECREF(table_obj);
     return PyBytesWriter_FinishWithPointer(writer, bin_data);
 
@@ -1648,6 +1658,16 @@ binascii_a2b_base32_impl(PyObject *module, Py_buffer *data,
         state = get_binascii_state(module);
         if (state) {
             PyErr_SetString(state->Error, "Incorrect padding");
+        }
+        goto error;
+    }
+
+    /* https://datatracker.ietf.org/doc/html/rfc4648.html#section-3.5
+     * Decoders MAY reject non-zero padding bits. */
+    if (leftchar != 0) {
+        state = get_binascii_state(module);
+        if (state) {
+            PyErr_SetString(state->Error, "Non-zero padding bits");
         }
         goto error;
     }
