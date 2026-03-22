@@ -240,6 +240,128 @@ validate_debug_offsets(struct _Py_DebugOffsets *debug_offsets)
         return -1;
     }
 
+    // Validate that all offset fields are within their declared struct sizes.
+    // Each sub-struct has a .size field representing the target struct's total
+    // size; every other field is an offset that must be strictly less than size.
+    // Without this check, corrupted offsets cause out-of-bounds reads (SIGSEGV).
+
+#define _CHECK_OFFSET(section, field)                                        \
+    do {                                                                     \
+        if (debug_offsets->section.field >= debug_offsets->section.size) {    \
+            PyErr_Format(PyExc_RuntimeError,                                 \
+                "debug_offsets." #section "." #field " (%" PRIu64 ") "       \
+                "exceeds " #section ".size (%" PRIu64 ")",                   \
+                debug_offsets->section.field,                                \
+                debug_offsets->section.size);                                \
+            return -1;                                                       \
+        }                                                                    \
+    } while (0)
+
+    // runtime_state
+    _CHECK_OFFSET(runtime_state, finalizing);
+    _CHECK_OFFSET(runtime_state, interpreters_head);
+
+    // interpreter_state
+    _CHECK_OFFSET(interpreter_state, id);
+    _CHECK_OFFSET(interpreter_state, next);
+    _CHECK_OFFSET(interpreter_state, threads_head);
+    _CHECK_OFFSET(interpreter_state, threads_main);
+    _CHECK_OFFSET(interpreter_state, gc);
+    _CHECK_OFFSET(interpreter_state, imports_modules);
+    _CHECK_OFFSET(interpreter_state, sysdict);
+    _CHECK_OFFSET(interpreter_state, builtins);
+    _CHECK_OFFSET(interpreter_state, ceval_gil);
+    _CHECK_OFFSET(interpreter_state, gil_runtime_state);
+    _CHECK_OFFSET(interpreter_state, gil_runtime_state_locked);
+    _CHECK_OFFSET(interpreter_state, gil_runtime_state_holder);
+    _CHECK_OFFSET(interpreter_state, code_object_generation);
+
+    // thread_state
+    _CHECK_OFFSET(thread_state, prev);
+    _CHECK_OFFSET(thread_state, next);
+    _CHECK_OFFSET(thread_state, interp);
+    _CHECK_OFFSET(thread_state, current_frame);
+    _CHECK_OFFSET(thread_state, base_frame);
+    _CHECK_OFFSET(thread_state, last_profiled_frame);
+    _CHECK_OFFSET(thread_state, thread_id);
+    _CHECK_OFFSET(thread_state, native_thread_id);
+    _CHECK_OFFSET(thread_state, datastack_chunk);
+    _CHECK_OFFSET(thread_state, status);
+    _CHECK_OFFSET(thread_state, holds_gil);
+    _CHECK_OFFSET(thread_state, gil_requested);
+    _CHECK_OFFSET(thread_state, current_exception);
+    _CHECK_OFFSET(thread_state, exc_state);
+
+    // interpreter_frame
+    _CHECK_OFFSET(interpreter_frame, previous);
+    _CHECK_OFFSET(interpreter_frame, executable);
+    _CHECK_OFFSET(interpreter_frame, instr_ptr);
+    _CHECK_OFFSET(interpreter_frame, localsplus);
+    _CHECK_OFFSET(interpreter_frame, owner);
+    _CHECK_OFFSET(interpreter_frame, stackpointer);
+
+    // code_object
+    _CHECK_OFFSET(code_object, filename);
+    _CHECK_OFFSET(code_object, name);
+    _CHECK_OFFSET(code_object, qualname);
+    _CHECK_OFFSET(code_object, linetable);
+    _CHECK_OFFSET(code_object, firstlineno);
+    _CHECK_OFFSET(code_object, argcount);
+    _CHECK_OFFSET(code_object, localsplusnames);
+    _CHECK_OFFSET(code_object, localspluskinds);
+    _CHECK_OFFSET(code_object, co_code_adaptive);
+
+    // pyobject
+    _CHECK_OFFSET(pyobject, ob_type);
+
+    // type_object
+    _CHECK_OFFSET(type_object, tp_name);
+    _CHECK_OFFSET(type_object, tp_repr);
+    _CHECK_OFFSET(type_object, tp_flags);
+
+    // tuple_object
+    _CHECK_OFFSET(tuple_object, ob_item);
+    _CHECK_OFFSET(tuple_object, ob_size);
+
+    // list_object
+    _CHECK_OFFSET(list_object, ob_item);
+    _CHECK_OFFSET(list_object, ob_size);
+
+    // set_object
+    _CHECK_OFFSET(set_object, used);
+    _CHECK_OFFSET(set_object, table);
+    _CHECK_OFFSET(set_object, mask);
+
+    // dict_object
+    _CHECK_OFFSET(dict_object, ma_keys);
+    _CHECK_OFFSET(dict_object, ma_values);
+
+    // float_object
+    _CHECK_OFFSET(float_object, ob_fval);
+
+    // long_object
+    _CHECK_OFFSET(long_object, lv_tag);
+    _CHECK_OFFSET(long_object, ob_digit);
+
+    // bytes_object
+    _CHECK_OFFSET(bytes_object, ob_size);
+    _CHECK_OFFSET(bytes_object, ob_sval);
+
+    // unicode_object
+    _CHECK_OFFSET(unicode_object, state);
+    _CHECK_OFFSET(unicode_object, length);
+
+    // gc
+    _CHECK_OFFSET(gc, collecting);
+    _CHECK_OFFSET(gc, frame);
+
+    // gen_object
+    _CHECK_OFFSET(gen_object, gi_name);
+    _CHECK_OFFSET(gen_object, gi_iframe);
+    _CHECK_OFFSET(gen_object, gi_frame_state);
+
+#undef _CHECK_OFFSET
+
     return 0;
 }
 
