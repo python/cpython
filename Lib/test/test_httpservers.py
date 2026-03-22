@@ -537,7 +537,7 @@ class RequestHandlerColorizedLoggingTestCase(RequestHandlerLoggingTestCase):
         self.assertIn(
             f"{t.error}code 404, message File not found{t.reset}", lines[0]
         )
-        self.assertIn(f"{t.status_error}404", lines[1])
+        self.assertIn(f"{t.status_client_error}404", lines[1])
 
 
 class SimpleHTTPServerTestCase(BaseTestCase):
