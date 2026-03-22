@@ -670,9 +670,9 @@ _blake2.blake2b.__new__ as py_blake2b_new
     data as data_obj: object(c_default="NULL") = b''
     *
     digest_size: int(c_default="HACL_HASH_BLAKE2B_OUT_BYTES") = _blake2.blake2b.MAX_DIGEST_SIZE
-    key: Py_buffer(c_default="NULL", py_default="b''") = None
-    salt: Py_buffer(c_default="NULL", py_default="b''") = None
-    person: Py_buffer(c_default="NULL", py_default="b''") = None
+    key: Py_buffer = b''
+    salt: Py_buffer = b''
+    person: Py_buffer = b''
     fanout: int = 1
     depth: int = 1
     leaf_size: unsigned_long = 0
@@ -693,7 +693,7 @@ py_blake2b_new_impl(PyTypeObject *type, PyObject *data_obj, int digest_size,
                     unsigned long long node_offset, int node_depth,
                     int inner_size, int last_node, int usedforsecurity,
                     PyObject *string)
-/*[clinic end generated code: output=de64bd850606b6a0 input=78cf60a2922d2f90]*/
+/*[clinic end generated code: output=de64bd850606b6a0 input=32832fb37d13c03d]*/
 {
     PyObject *data;
     if (_Py_hashlib_data_argument(&data, data_obj, string) < 0) {
@@ -710,9 +710,9 @@ _blake2.blake2s.__new__ as py_blake2s_new
     data as data_obj: object(c_default="NULL") = b''
     *
     digest_size: int(c_default="HACL_HASH_BLAKE2S_OUT_BYTES") = _blake2.blake2s.MAX_DIGEST_SIZE
-    key: Py_buffer(c_default="NULL", py_default="b''") = None
-    salt: Py_buffer(c_default="NULL", py_default="b''") = None
-    person: Py_buffer(c_default="NULL", py_default="b''") = None
+    key: Py_buffer = b''
+    salt: Py_buffer = b''
+    person: Py_buffer = b''
     fanout: int = 1
     depth: int = 1
     leaf_size: unsigned_long = 0
@@ -733,7 +733,7 @@ py_blake2s_new_impl(PyTypeObject *type, PyObject *data_obj, int digest_size,
                     unsigned long long node_offset, int node_depth,
                     int inner_size, int last_node, int usedforsecurity,
                     PyObject *string)
-/*[clinic end generated code: output=582a0c4295cc3a3c input=6843d6332eefd295]*/
+/*[clinic end generated code: output=582a0c4295cc3a3c input=da467fc9dae646bb]*/
 {
     PyObject *data;
     if (_Py_hashlib_data_argument(&data, data_obj, string) < 0) {

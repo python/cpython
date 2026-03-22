@@ -1716,9 +1716,10 @@ class PythonSymlink:
                 ))
 
             self._env = {k.upper(): os.getenv(k) for k in os.environ}
-            self._env["PYTHONHOME"] = os.path.dirname(self.real)
+            home = os.path.dirname(self.real)
             if sysconfig.is_python_build():
-                self._env["PYTHONPATH"] = STDLIB_DIR
+                home = os.path.join(home, sysconfig.get_config_var('VPATH'))
+            self._env["PYTHONHOME"] = home
     else:
         def _platform_specific(self):
             pass
@@ -3021,6 +3022,13 @@ def iter_slot_wrappers(cls):
 def force_color(color: bool):
     import _colorize
     from .os_helper import EnvironmentVarGuard
+
+    if color:
+        try:
+            import _pyrepl  # noqa: F401
+        except ModuleNotFoundError:
+            # Can't force enable color without _pyrepl, so just skip.
+            raise unittest.SkipTest("_pyrepl is missing")
 
     with (
         swap_attr(_colorize, "can_colorize", lambda *, file=None: color),

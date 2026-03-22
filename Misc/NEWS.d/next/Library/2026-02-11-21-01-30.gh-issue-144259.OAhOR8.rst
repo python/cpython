@@ -1,0 +1,1 @@
+Fix inconsistent display of long multiline pasted content in the REPL.

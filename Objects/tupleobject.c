@@ -202,6 +202,35 @@ PyTuple_Pack(Py_ssize_t n, ...)
     return (PyObject *)result;
 }
 
+PyObject *
+_PyTuple_FromPair(PyObject *first, PyObject *second)
+{
+    assert(first != NULL);
+    assert(second != NULL);
+
+    return _PyTuple_FromPairSteal(Py_NewRef(first), Py_NewRef(second));
+}
+
+PyObject *
+_PyTuple_FromPairSteal(PyObject *first, PyObject *second)
+{
+    assert(first != NULL);
+    assert(second != NULL);
+
+    PyTupleObject *op = tuple_alloc(2);
+    if (op == NULL) {
+        Py_DECREF(first);
+        Py_DECREF(second);
+        return NULL;
+    }
+    PyObject **items = op->ob_item;
+    items[0] = first;
+    items[1] = second;
+    if (maybe_tracked(first) || maybe_tracked(second)) {
+        _PyObject_GC_TRACK(op);
+    }
+    return (PyObject *)op;
+}
 
 /* Methods */
 
@@ -470,6 +499,25 @@ tuple_slice(PyTupleObject *a, Py_ssize_t ilow,
         return Py_NewRef(a);
     }
     return PyTuple_FromArray(a->ob_item + ilow, ihigh - ilow);
+}
+
+PyObject *
+_PyTuple_BinarySlice(PyObject *container, PyObject *start, PyObject *stop)
+{
+    assert(PyTuple_CheckExact(container));
+    Py_ssize_t len = Py_SIZE(container);
+    Py_ssize_t istart, istop;
+    if (!_PyEval_UnpackIndices(start, stop, len, &istart, &istop)) {
+        return NULL;
+    }
+    if (istart == 0 && istop == len) {
+        return Py_NewRef(container);
+    }
+    if (istop < istart) {
+        istop = istart;
+    }
+    return PyTuple_FromArray(((PyTupleObject *)container)->ob_item + istart,
+                             istop - istart);
 }
 
 PyObject *

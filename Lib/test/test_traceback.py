@@ -40,7 +40,7 @@ test_code.co_positions = lambda _: iter([(6, 6, 0, 0)])
 test_frame = namedtuple('frame', ['f_code', 'f_globals', 'f_locals'])
 test_tb = namedtuple('tb', ['tb_frame', 'tb_lineno', 'tb_next', 'tb_lasti'])
 
-color_overrides = {"reset": "z", "filename": "fn", "error_highlight": "E"}
+color_overrides = {"reset": "z", "filename": "fn", "error_highlight": "E", "note": "n"}
 colors = {
     color_overrides.get(k, k[0].lower()): v
     for k, v in _colorize.default_theme.traceback.items()
@@ -4213,6 +4213,27 @@ class BaseSuggestionTests(SuggestionFormattingTestMixin):
         self.assertIn("'._bluch'", self.get_suggestion(partial(B().method, '_luch')))
         self.assertIn("'._bluch'", self.get_suggestion(partial(B().method, 'bluch')))
 
+    def test_suggestions_with_custom___dir__(self):
+        class M(type):
+            def __dir__(cls):
+                return [None, "fox"]
+
+        class C0:
+            def __dir__(self):
+                return [..., "bluch"]
+
+        class C1(C0, metaclass=M):
+            pass
+
+        self.assertNotIn("'.bluch'", self.get_suggestion(C0, "blach"))
+        self.assertIn("'.bluch'", self.get_suggestion(C0(), "blach"))
+
+        self.assertIn("'.fox'", self.get_suggestion(C1, "foo"))
+        self.assertNotIn("'.fox'", self.get_suggestion(C1(), "foo"))
+
+        self.assertNotIn("'.bluch'", self.get_suggestion(C1, "blach"))
+        self.assertIn("'.bluch'", self.get_suggestion(C1(), "blach"))
+
 
     def test_do_not_trigger_for_long_attributes(self):
         class A:
@@ -4399,19 +4420,21 @@ class SuggestionFormattingTestBase(SuggestionFormattingTestMixin):
         self.assertNotIn("inner.foo", actual)
 
     def test_getattr_nested_with_property(self):
-        # Test that descriptors (including properties) are suggested in nested attributes
+        # Property suggestions should not execute the property getter.
         class Inner:
             @property
             def computed(self):
-                return 42
+                return missing_name
 
         class Outer:
             def __init__(self):
                 self.inner = Inner()
 
         actual = self.get_suggestion(Outer(), 'computed')
-        # Descriptors should not be suggested to avoid executing arbitrary code
-        self.assertIn("inner.computed", actual)
+        self.assertIn(
+            "Did you mean '.inner.computed' instead of '.computed'",
+            actual,
+        )
 
     def test_getattr_nested_no_suggestion_for_deep_nesting(self):
         # Test that deeply nested attributes (2+ levels) are not suggested
@@ -5283,6 +5306,23 @@ class TestColorizedTraceback(unittest.TestCase):
         self.assertIn("return baz1(1,\n            2,3\n            ,4)", lines)
         self.assertIn(red + "bar" + reset + boldr + "()" + reset, lines)
 
+    def test_colorized_exception_notes(self):
+        def foo():
+            raise ValueError()
+
+        try:
+            foo()
+        except Exception as e:
+            e.add_note("First note")
+            e.add_note("Second note")
+            exc = traceback.TracebackException.from_exception(e)
+
+        lines = "".join(exc.format(colorize=True))
+        note = colors["n"]
+        reset = colors["z"]
+        self.assertIn(note + "First note" + reset, lines)
+        self.assertIn(note + "Second note" + reset, lines)
+
     def test_colorized_syntax_error(self):
         try:
             compile("a $ b", "<string>", "exec")
@@ -5291,7 +5331,7 @@ class TestColorizedTraceback(unittest.TestCase):
                 e, capture_locals=True
             )
         actual = "".join(exc.format(colorize=True))
-        def expected(t, m, fn, l, f, E, e, z):
+        def expected(t, m, fn, l, f, E, e, z, n):
             return "".join(
                 [
                     f'  File {fn}"<string>"{z}, line {l}1{z}\n',
@@ -5317,7 +5357,7 @@ class TestColorizedTraceback(unittest.TestCase):
             actual = tbstderr.getvalue().splitlines()
 
         lno_foo = foo.__code__.co_firstlineno
-        def expected(t, m, fn, l, f, E, e, z):
+        def expected(t, m, fn, l, f, E, e, z, n):
             return [
                 'Traceback (most recent call last):',
                 f'  File {fn}"{__file__}"{z}, '
@@ -5350,7 +5390,7 @@ class TestColorizedTraceback(unittest.TestCase):
 
         lno_foo = foo.__code__.co_firstlineno
         actual = "".join(exc.format(colorize=True)).splitlines()
-        def expected(t, m, fn, l, f, E, e, z):
+        def expected(t, m, fn, l, f, E, e, z, n):
             return [
                 f"  + Exception Group Traceback (most recent call last):",
                 f'  |   File {fn}"{__file__}"{z}, line {l}{lno_foo+9}{z}, in {f}test_colorized_traceback_from_exception_group{z}',
@@ -5383,8 +5423,8 @@ class TestLazyImportSuggestions(unittest.TestCase):
         # pkg.bar prints "BAR_MODULE_LOADED" when imported.
         # If lazy import is reified during suggestion computation, we'll see it.
         code = textwrap.dedent("""
-            lazy import test.test_import.data.lazy_imports.pkg.bar
-            test.test_import.data.lazy_imports.pkg.nonexistent
+            lazy import test.test_lazy_import.data.pkg.bar
+            test.test_lazy_import.data.pkg.nonexistent
         """)
         rc, stdout, stderr = assert_python_failure('-c', code)
         self.assertNotIn(b"BAR_MODULE_LOADED", stdout)
@@ -5393,9 +5433,9 @@ class TestLazyImportSuggestions(unittest.TestCase):
         """Formatting a traceback should not trigger lazy import reification."""
         code = textwrap.dedent("""
             import traceback
-            lazy import test.test_import.data.lazy_imports.pkg.bar
+            lazy import test.test_lazy_import.data.pkg.bar
             try:
-                test.test_import.data.lazy_imports.pkg.nonexistent
+                test.test_lazy_import.data.pkg.nonexistent
             except AttributeError:
                 traceback.format_exc()
             print("OK")
@@ -5407,9 +5447,9 @@ class TestLazyImportSuggestions(unittest.TestCase):
     def test_suggestion_still_works_for_non_lazy_attributes(self):
         """Suggestions should still work for non-lazy module attributes."""
         code = textwrap.dedent("""
-            lazy import test.test_import.data.lazy_imports.pkg.bar
+            lazy import test.test_lazy_import.data.pkg.bar
             # Typo for __name__
-            test.test_import.data.lazy_imports.pkg.__nme__
+            test.test_lazy_import.data.pkg.__nme__
         """)
         rc, stdout, stderr = assert_python_failure('-c', code)
         self.assertIn(b"__name__", stderr)
