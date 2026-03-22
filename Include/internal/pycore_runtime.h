@@ -56,8 +56,8 @@ _PyRuntimeState_SetFinalizing(_PyRuntimeState *runtime, PyThreadState *tstate) {
     }
 }
 
-// Use acquire/release (not relaxed) because these are publication flags:
-// when a reader sees 1, all prior initialization writes must be visible.
+// Release on store, acquire on load: a thread that reads initialized=1
+// is guaranteed to observe all writes from the initialization sequence.
 
 static inline int
 _PyRuntimeState_GetCoreInitialized(_PyRuntimeState *runtime) {
