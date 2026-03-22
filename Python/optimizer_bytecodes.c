@@ -864,6 +864,15 @@ dummy_func(void) {
     }
 
     op(_CHECK_FUNCTION_VERSION, (func_version/2, callable, self_or_null, unused[oparg] -- callable, self_or_null, unused[oparg])) {
+        PyObject *func = sym_get_probable_value(callable);
+        if (func == NULL || !PyFunction_Check(func)) {
+            ctx->contradiction = true;
+            ctx->done = true;
+            break;
+        }
+        // This could pass due to a global promoted const.
+        // So we need to add it to the dependencies on both branches.
+        _Py_BloomFilter_Add(dependencies, func);
         if (sym_get_func_version(callable) == func_version) {
             REPLACE_OP(this_instr, _NOP, 0, 0);
         }

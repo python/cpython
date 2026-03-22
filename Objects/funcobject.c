@@ -8,6 +8,7 @@
 #include "pycore_modsupport.h"    // _PyArg_NoKeywords()
 #include "pycore_object.h"        // _PyObject_GC_UNTRACK()
 #include "pycore_object_deferred.h" // _PyObject_SetDeferredRefcount()
+#include "pycore_optimizer.h"
 #include "pycore_pyerrors.h"      // _PyErr_Occurred()
 #include "pycore_setobject.h"     // _PySet_NextEntry()
 #include "pycore_stats.h"
@@ -63,6 +64,9 @@ handle_func_event(PyFunction_WatchEvent event, PyFunctionObject *func,
         case PyFunction_EVENT_MODIFY_DEFAULTS:
         case PyFunction_EVENT_MODIFY_KWDEFAULTS:
         case PyFunction_EVENT_MODIFY_QUALNAME:
+#if _Py_TIER2
+            _Py_Executors_InvalidateDependency(_PyInterpreterState_GET(), func, 1);
+#endif
             RARE_EVENT_INTERP_INC(interp, func_modification);
             break;
         default:
