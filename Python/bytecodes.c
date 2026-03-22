@@ -467,7 +467,8 @@ dummy_func(
             assert(PyFloat_CheckExact(val_o));
             assert(_PyObject_IsUniquelyReferenced(val_o));
             STAT_INC(UNARY_NEGATIVE, hit);
-            ((PyFloatObject *)val_o)->ob_fval = -((PyFloatObject *)val_o)->ob_fval;
+            double dres = -((PyFloatObject *)val_o)->ob_fval;
+            ((PyFloatObject *)val_o)->ob_fval = dres;
             res = value;
             v = PyStackRef_NULL;
             INPUTS_DEAD();
@@ -788,6 +789,9 @@ dummy_func(
         // instead of allocating a new float. Tier 2 only.
         // The optimizer sets l to null so the following _POP_TOP_FLOAT
         // becomes _POP_TOP_NOP.
+        // Note: read into a local double and write back to avoid compound
+        // assignment (+=) on ob_fval, which generates problematic JIT
+        // stencils on i686-pc-windows-msvc.
         tier2 op(_BINARY_OP_ADD_FLOAT_INPLACE, (left, right -- res, l, r)) {
             PyObject *left_o = PyStackRef_AsPyObjectBorrow(left);
             PyObject *right_o = PyStackRef_AsPyObjectBorrow(right);
@@ -795,7 +799,8 @@ dummy_func(
             assert(PyFloat_CheckExact(right_o));
             assert(_PyObject_IsUniquelyReferenced(left_o));
             STAT_INC(BINARY_OP, hit);
-            ((PyFloatObject *)left_o)->ob_fval += ((PyFloatObject *)right_o)->ob_fval;
+            double dres = ((PyFloatObject *)left_o)->ob_fval + ((PyFloatObject *)right_o)->ob_fval;
+            ((PyFloatObject *)left_o)->ob_fval = dres;
             res = left;
             l = PyStackRef_NULL;
             r = right;
@@ -809,7 +814,8 @@ dummy_func(
             assert(PyFloat_CheckExact(right_o));
             assert(_PyObject_IsUniquelyReferenced(left_o));
             STAT_INC(BINARY_OP, hit);
-            ((PyFloatObject *)left_o)->ob_fval -= ((PyFloatObject *)right_o)->ob_fval;
+            double dres = ((PyFloatObject *)left_o)->ob_fval - ((PyFloatObject *)right_o)->ob_fval;
+            ((PyFloatObject *)left_o)->ob_fval = dres;
             res = left;
             l = PyStackRef_NULL;
             r = right;
@@ -823,15 +829,15 @@ dummy_func(
             assert(PyFloat_CheckExact(right_o));
             assert(_PyObject_IsUniquelyReferenced(left_o));
             STAT_INC(BINARY_OP, hit);
-            ((PyFloatObject *)left_o)->ob_fval *= ((PyFloatObject *)right_o)->ob_fval;
+            double dres = ((PyFloatObject *)left_o)->ob_fval * ((PyFloatObject *)right_o)->ob_fval;
+            ((PyFloatObject *)left_o)->ob_fval = dres;
             res = left;
             l = PyStackRef_NULL;
             r = right;
             INPUTS_DEAD();
         }
 
-        // Inplace RIGHT variants for commutative ops (add, multiply).
-        // Mutate the uniquely-referenced right operand instead.
+        // Inplace RIGHT variants: mutate the uniquely-referenced right operand.
         tier2 op(_BINARY_OP_ADD_FLOAT_INPLACE_RIGHT, (left, right -- res, l, r)) {
             PyObject *left_o = PyStackRef_AsPyObjectBorrow(left);
             PyObject *right_o = PyStackRef_AsPyObjectBorrow(right);
@@ -839,7 +845,8 @@ dummy_func(
             assert(PyFloat_CheckExact(right_o));
             assert(_PyObject_IsUniquelyReferenced(right_o));
             STAT_INC(BINARY_OP, hit);
-            ((PyFloatObject *)right_o)->ob_fval += ((PyFloatObject *)left_o)->ob_fval;
+            double dres = ((PyFloatObject *)left_o)->ob_fval + ((PyFloatObject *)right_o)->ob_fval;
+            ((PyFloatObject *)right_o)->ob_fval = dres;
             res = right;
             l = left;
             r = PyStackRef_NULL;
@@ -853,15 +860,14 @@ dummy_func(
             assert(PyFloat_CheckExact(right_o));
             assert(_PyObject_IsUniquelyReferenced(right_o));
             STAT_INC(BINARY_OP, hit);
-            ((PyFloatObject *)right_o)->ob_fval *= ((PyFloatObject *)left_o)->ob_fval;
+            double dres = ((PyFloatObject *)left_o)->ob_fval * ((PyFloatObject *)right_o)->ob_fval;
+            ((PyFloatObject *)right_o)->ob_fval = dres;
             res = right;
             l = left;
             r = PyStackRef_NULL;
             INPUTS_DEAD();
         }
 
-        // Inplace RIGHT variant for subtract (non-commutative):
-        // right->ob_fval = left->ob_fval - right->ob_fval
         tier2 op(_BINARY_OP_SUBTRACT_FLOAT_INPLACE_RIGHT, (left, right -- res, l, r)) {
             PyObject *left_o = PyStackRef_AsPyObjectBorrow(left);
             PyObject *right_o = PyStackRef_AsPyObjectBorrow(right);
@@ -869,7 +875,8 @@ dummy_func(
             assert(PyFloat_CheckExact(right_o));
             assert(_PyObject_IsUniquelyReferenced(right_o));
             STAT_INC(BINARY_OP, hit);
-            ((PyFloatObject *)right_o)->ob_fval = ((PyFloatObject *)left_o)->ob_fval - ((PyFloatObject *)right_o)->ob_fval;
+            double dres = ((PyFloatObject *)left_o)->ob_fval - ((PyFloatObject *)right_o)->ob_fval;
+            ((PyFloatObject *)right_o)->ob_fval = dres;
             res = right;
             l = left;
             r = PyStackRef_NULL;

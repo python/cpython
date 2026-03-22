@@ -2674,7 +2674,8 @@
             assert(PyFloat_CheckExact(val_o));
             assert(_PyObject_IsUniquelyReferenced(val_o));
             STAT_INC(UNARY_NEGATIVE, hit);
-            ((PyFloatObject *)val_o)->ob_fval = -((PyFloatObject *)val_o)->ob_fval;
+            double dres = -((PyFloatObject *)val_o)->ob_fval;
+            ((PyFloatObject *)val_o)->ob_fval = dres;
             res = value;
             v = PyStackRef_NULL;
             _tos_cache1 = v;
@@ -2698,7 +2699,8 @@
             assert(PyFloat_CheckExact(val_o));
             assert(_PyObject_IsUniquelyReferenced(val_o));
             STAT_INC(UNARY_NEGATIVE, hit);
-            ((PyFloatObject *)val_o)->ob_fval = -((PyFloatObject *)val_o)->ob_fval;
+            double dres = -((PyFloatObject *)val_o)->ob_fval;
+            ((PyFloatObject *)val_o)->ob_fval = dres;
             res = value;
             v = PyStackRef_NULL;
             _tos_cache1 = v;
@@ -2721,7 +2723,8 @@
             assert(PyFloat_CheckExact(val_o));
             assert(_PyObject_IsUniquelyReferenced(val_o));
             STAT_INC(UNARY_NEGATIVE, hit);
-            ((PyFloatObject *)val_o)->ob_fval = -((PyFloatObject *)val_o)->ob_fval;
+            double dres = -((PyFloatObject *)val_o)->ob_fval;
+            ((PyFloatObject *)val_o)->ob_fval = dres;
             res = value;
             v = PyStackRef_NULL;
             _tos_cache2 = v;
@@ -5039,7 +5042,8 @@
             assert(PyFloat_CheckExact(right_o));
             assert(_PyObject_IsUniquelyReferenced(left_o));
             STAT_INC(BINARY_OP, hit);
-            ((PyFloatObject *)left_o)->ob_fval += ((PyFloatObject *)right_o)->ob_fval;
+            double dres = ((PyFloatObject *)left_o)->ob_fval + ((PyFloatObject *)right_o)->ob_fval;
+            ((PyFloatObject *)left_o)->ob_fval = dres;
             res = left;
             l = PyStackRef_NULL;
             r = right;
@@ -5070,7 +5074,8 @@
             assert(PyFloat_CheckExact(right_o));
             assert(_PyObject_IsUniquelyReferenced(left_o));
             STAT_INC(BINARY_OP, hit);
-            ((PyFloatObject *)left_o)->ob_fval += ((PyFloatObject *)right_o)->ob_fval;
+            double dres = ((PyFloatObject *)left_o)->ob_fval + ((PyFloatObject *)right_o)->ob_fval;
+            ((PyFloatObject *)left_o)->ob_fval = dres;
             res = left;
             l = PyStackRef_NULL;
             r = right;
@@ -5102,7 +5107,8 @@
             assert(PyFloat_CheckExact(right_o));
             assert(_PyObject_IsUniquelyReferenced(left_o));
             STAT_INC(BINARY_OP, hit);
-            ((PyFloatObject *)left_o)->ob_fval += ((PyFloatObject *)right_o)->ob_fval;
+            double dres = ((PyFloatObject *)left_o)->ob_fval + ((PyFloatObject *)right_o)->ob_fval;
+            ((PyFloatObject *)left_o)->ob_fval = dres;
             res = left;
             l = PyStackRef_NULL;
             r = right;
@@ -5130,7 +5136,8 @@
             assert(PyFloat_CheckExact(right_o));
             assert(_PyObject_IsUniquelyReferenced(left_o));
             STAT_INC(BINARY_OP, hit);
-            ((PyFloatObject *)left_o)->ob_fval -= ((PyFloatObject *)right_o)->ob_fval;
+            double dres = ((PyFloatObject *)left_o)->ob_fval - ((PyFloatObject *)right_o)->ob_fval;
+            ((PyFloatObject *)left_o)->ob_fval = dres;
             res = left;
             l = PyStackRef_NULL;
             r = right;
@@ -5161,7 +5168,8 @@
             assert(PyFloat_CheckExact(right_o));
             assert(_PyObject_IsUniquelyReferenced(left_o));
             STAT_INC(BINARY_OP, hit);
-            ((PyFloatObject *)left_o)->ob_fval -= ((PyFloatObject *)right_o)->ob_fval;
+            double dres = ((PyFloatObject *)left_o)->ob_fval - ((PyFloatObject *)right_o)->ob_fval;
+            ((PyFloatObject *)left_o)->ob_fval = dres;
             res = left;
             l = PyStackRef_NULL;
             r = right;
@@ -5193,7 +5201,8 @@
             assert(PyFloat_CheckExact(right_o));
             assert(_PyObject_IsUniquelyReferenced(left_o));
             STAT_INC(BINARY_OP, hit);
-            ((PyFloatObject *)left_o)->ob_fval -= ((PyFloatObject *)right_o)->ob_fval;
+            double dres = ((PyFloatObject *)left_o)->ob_fval - ((PyFloatObject *)right_o)->ob_fval;
+            ((PyFloatObject *)left_o)->ob_fval = dres;
             res = left;
             l = PyStackRef_NULL;
             r = right;
@@ -5221,7 +5230,8 @@
             assert(PyFloat_CheckExact(right_o));
             assert(_PyObject_IsUniquelyReferenced(left_o));
             STAT_INC(BINARY_OP, hit);
-            ((PyFloatObject *)left_o)->ob_fval *= ((PyFloatObject *)right_o)->ob_fval;
+            double dres = ((PyFloatObject *)left_o)->ob_fval * ((PyFloatObject *)right_o)->ob_fval;
+            ((PyFloatObject *)left_o)->ob_fval = dres;
             res = left;
             l = PyStackRef_NULL;
             r = right;
@@ -5252,7 +5262,8 @@
             assert(PyFloat_CheckExact(right_o));
             assert(_PyObject_IsUniquelyReferenced(left_o));
             STAT_INC(BINARY_OP, hit);
-            ((PyFloatObject *)left_o)->ob_fval *= ((PyFloatObject *)right_o)->ob_fval;
+            double dres = ((PyFloatObject *)left_o)->ob_fval * ((PyFloatObject *)right_o)->ob_fval;
+            ((PyFloatObject *)left_o)->ob_fval = dres;
             res = left;
             l = PyStackRef_NULL;
             r = right;
@@ -5284,7 +5295,8 @@
             assert(PyFloat_CheckExact(right_o));
             assert(_PyObject_IsUniquelyReferenced(left_o));
             STAT_INC(BINARY_OP, hit);
-            ((PyFloatObject *)left_o)->ob_fval *= ((PyFloatObject *)right_o)->ob_fval;
+            double dres = ((PyFloatObject *)left_o)->ob_fval * ((PyFloatObject *)right_o)->ob_fval;
+            ((PyFloatObject *)left_o)->ob_fval = dres;
             res = left;
             l = PyStackRef_NULL;
             r = right;
@@ -5312,7 +5324,8 @@
             assert(PyFloat_CheckExact(right_o));
             assert(_PyObject_IsUniquelyReferenced(right_o));
             STAT_INC(BINARY_OP, hit);
-            ((PyFloatObject *)right_o)->ob_fval += ((PyFloatObject *)left_o)->ob_fval;
+            double dres = ((PyFloatObject *)left_o)->ob_fval + ((PyFloatObject *)right_o)->ob_fval;
+            ((PyFloatObject *)right_o)->ob_fval = dres;
             res = right;
             l = left;
             r = PyStackRef_NULL;
@@ -5343,7 +5356,8 @@
             assert(PyFloat_CheckExact(right_o));
             assert(_PyObject_IsUniquelyReferenced(right_o));
             STAT_INC(BINARY_OP, hit);
-            ((PyFloatObject *)right_o)->ob_fval += ((PyFloatObject *)left_o)->ob_fval;
+            double dres = ((PyFloatObject *)left_o)->ob_fval + ((PyFloatObject *)right_o)->ob_fval;
+            ((PyFloatObject *)right_o)->ob_fval = dres;
             res = right;
             l = left;
             r = PyStackRef_NULL;
@@ -5375,7 +5389,8 @@
             assert(PyFloat_CheckExact(right_o));
             assert(_PyObject_IsUniquelyReferenced(right_o));
             STAT_INC(BINARY_OP, hit);
-            ((PyFloatObject *)right_o)->ob_fval += ((PyFloatObject *)left_o)->ob_fval;
+            double dres = ((PyFloatObject *)left_o)->ob_fval + ((PyFloatObject *)right_o)->ob_fval;
+            ((PyFloatObject *)right_o)->ob_fval = dres;
             res = right;
             l = left;
             r = PyStackRef_NULL;
@@ -5403,7 +5418,8 @@
             assert(PyFloat_CheckExact(right_o));
             assert(_PyObject_IsUniquelyReferenced(right_o));
             STAT_INC(BINARY_OP, hit);
-            ((PyFloatObject *)right_o)->ob_fval *= ((PyFloatObject *)left_o)->ob_fval;
+            double dres = ((PyFloatObject *)left_o)->ob_fval * ((PyFloatObject *)right_o)->ob_fval;
+            ((PyFloatObject *)right_o)->ob_fval = dres;
             res = right;
             l = left;
             r = PyStackRef_NULL;
@@ -5434,7 +5450,8 @@
             assert(PyFloat_CheckExact(right_o));
             assert(_PyObject_IsUniquelyReferenced(right_o));
             STAT_INC(BINARY_OP, hit);
-            ((PyFloatObject *)right_o)->ob_fval *= ((PyFloatObject *)left_o)->ob_fval;
+            double dres = ((PyFloatObject *)left_o)->ob_fval * ((PyFloatObject *)right_o)->ob_fval;
+            ((PyFloatObject *)right_o)->ob_fval = dres;
             res = right;
             l = left;
             r = PyStackRef_NULL;
@@ -5466,7 +5483,8 @@
             assert(PyFloat_CheckExact(right_o));
             assert(_PyObject_IsUniquelyReferenced(right_o));
             STAT_INC(BINARY_OP, hit);
-            ((PyFloatObject *)right_o)->ob_fval *= ((PyFloatObject *)left_o)->ob_fval;
+            double dres = ((PyFloatObject *)left_o)->ob_fval * ((PyFloatObject *)right_o)->ob_fval;
+            ((PyFloatObject *)right_o)->ob_fval = dres;
             res = right;
             l = left;
             r = PyStackRef_NULL;
@@ -5494,7 +5512,8 @@
             assert(PyFloat_CheckExact(right_o));
             assert(_PyObject_IsUniquelyReferenced(right_o));
             STAT_INC(BINARY_OP, hit);
-            ((PyFloatObject *)right_o)->ob_fval = ((PyFloatObject *)left_o)->ob_fval - ((PyFloatObject *)right_o)->ob_fval;
+            double dres = ((PyFloatObject *)left_o)->ob_fval - ((PyFloatObject *)right_o)->ob_fval;
+            ((PyFloatObject *)right_o)->ob_fval = dres;
             res = right;
             l = left;
             r = PyStackRef_NULL;
@@ -5525,7 +5544,8 @@
             assert(PyFloat_CheckExact(right_o));
             assert(_PyObject_IsUniquelyReferenced(right_o));
             STAT_INC(BINARY_OP, hit);
-            ((PyFloatObject *)right_o)->ob_fval = ((PyFloatObject *)left_o)->ob_fval - ((PyFloatObject *)right_o)->ob_fval;
+            double dres = ((PyFloatObject *)left_o)->ob_fval - ((PyFloatObject *)right_o)->ob_fval;
+            ((PyFloatObject *)right_o)->ob_fval = dres;
             res = right;
             l = left;
             r = PyStackRef_NULL;
@@ -5557,7 +5577,8 @@
             assert(PyFloat_CheckExact(right_o));
             assert(_PyObject_IsUniquelyReferenced(right_o));
             STAT_INC(BINARY_OP, hit);
-            ((PyFloatObject *)right_o)->ob_fval = ((PyFloatObject *)left_o)->ob_fval - ((PyFloatObject *)right_o)->ob_fval;
+            double dres = ((PyFloatObject *)left_o)->ob_fval - ((PyFloatObject *)right_o)->ob_fval;
+            ((PyFloatObject *)right_o)->ob_fval = dres;
             res = right;
             l = left;
             r = PyStackRef_NULL;
