@@ -1875,7 +1875,7 @@ FutureIter_am_send(PyObject *op,
     if (it->future == NULL) {
         PyErr_SetNone(PyExc_StopIteration);
         *result = NULL;
-        return PYGEN_RETURN;
+        return PYGEN_ERROR;
     }
     /* arg is unused, see the comment on FutureIter_send for clarification */
     PySendResult res;
