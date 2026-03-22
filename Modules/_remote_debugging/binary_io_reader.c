@@ -828,7 +828,7 @@ build_sample_list(RemoteDebuggingState *state, BinaryReader *reader,
         goto error;
     }
     PyStructSequence_SetItem(interp_info, 0, iid);
-    PyStructSequence_SetItem(interp_info, 2, thread_list);
+    PyStructSequence_SetItem(interp_info, 1, thread_list);
     thread_list = NULL;
 
     sample_list = PyList_New(1);

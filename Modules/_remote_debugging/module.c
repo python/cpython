@@ -106,7 +106,6 @@ PyStructSequence_Desc ThreadInfo_desc = {
 // InterpreterInfo structseq type
 static PyStructSequence_Field InterpreterInfo_fields[] = {
     {"interpreter_id", "Interpreter ID"},
-    {"main_thread_id", "Main thread ID"},
     {"threads", "List of threads in this interpreter"},
     {NULL}
 };
@@ -115,7 +114,7 @@ PyStructSequence_Desc InterpreterInfo_desc = {
     "_remote_debugging.InterpreterInfo",
     "Information about an interpreter",
     InterpreterInfo_fields,
-    3
+    2
 };
 
 // AwaitedInfo structseq type
@@ -588,15 +587,12 @@ _remote_debugging_RemoteUnwinder_get_stack_trace_impl(RemoteUnwinderObject *self
         uintptr_t main_thread_tstate = GET_MEMBER(uintptr_t, interp_state_buffer,
                 self->debug_offsets.interpreter_state.threads_main);
 
-        PyObject *main_thread_id = NULL;
-
-        uint64_t prev_thread_id = 0;
         while (current_tstate != 0) {
             uintptr_t prev_tstate = current_tstate;
             PyObject* frame_info = unwind_stack_for_thread(self, &current_tstate,
                                                            gil_holder_tstate,
                                                            gc_frame,
-                                                           &prev_thread_id);
+                                                           main_thread_tstate);
             if (!frame_info) {
                 // Check if this was an intentional skip due to mode-based filtering
                 if ((self->mode == PROFILING_MODE_CPU || self->mode == PROFILING_MODE_GIL ||
@@ -620,10 +616,6 @@ _remote_debugging_RemoteUnwinder_get_stack_trace_impl(RemoteUnwinderObject *self
                 set_exception_cause(self, PyExc_RuntimeError, "Failed to unwind stack for thread");
                 Py_CLEAR(result);
                 goto exit;
-            }
-
-            if (prev_tstate == main_thread_tstate) {
-                main_thread_id = PyLong_FromUnsignedLongLong(prev_thread_id);
             }
 
             if (PyList_Append(interpreter_threads, frame_info) == -1) {
@@ -661,8 +653,7 @@ _remote_debugging_RemoteUnwinder_get_stack_trace_impl(RemoteUnwinderObject *self
         }
 
         PyStructSequence_SetItem(interpreter_info, 0, interp_id);  // steals reference
-        PyStructSequence_SetItem(interpreter_info, 1, main_thread_id);  // steals reference
-        PyStructSequence_SetItem(interpreter_info, 2, interpreter_threads);  // steals reference
+        PyStructSequence_SetItem(interpreter_info, 1, interpreter_threads);  // steals reference
 
         // Add this interpreter to the result list
         if (PyList_Append(result, interpreter_info) == -1) {
@@ -1219,6 +1210,9 @@ _remote_debugging_exec(PyObject *m)
         return -1;
     }
     if (PyModule_AddIntConstant(m, "THREAD_STATUS_HAS_EXCEPTION", THREAD_STATUS_HAS_EXCEPTION) < 0) {
+        return -1;
+    }
+    if (PyModule_AddIntConstant(m, "THREAD_STATUS_MAIN_THREAD", THREAD_STATUS_MAIN_THREAD) < 0) {
         return -1;
     }
 

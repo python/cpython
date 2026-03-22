@@ -1008,7 +1008,7 @@ binary_writer_write_sample(BinaryWriter *writer, PyObject *stack_frames, uint64_
         PyObject *interp_info = PyList_GET_ITEM(stack_frames, i);
 
         PyObject *interp_id_obj = PyStructSequence_GET_ITEM(interp_info, 0);
-        PyObject *threads = PyStructSequence_GET_ITEM(interp_info, 2);
+        PyObject *threads = PyStructSequence_GET_ITEM(interp_info, 1);
 
         unsigned long interp_id_long = PyLong_AsUnsignedLong(interp_id_obj);
         if (interp_id_long == (unsigned long)-1 && PyErr_Occurred()) {

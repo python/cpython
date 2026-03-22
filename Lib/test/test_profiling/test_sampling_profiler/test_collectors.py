@@ -28,6 +28,7 @@ try:
         THREAD_STATUS_HAS_GIL,
         THREAD_STATUS_ON_CPU,
         THREAD_STATUS_GIL_REQUESTED,
+        THREAD_STATUS_MAIN_THREAD,
     )
 except ImportError:
     raise unittest.SkipTest(
@@ -524,9 +525,9 @@ class TestSampleProfilerComponents(unittest.TestCase):
                     MockThreadInfo(
                         1,
                         [MockFrameInfo("file.py", 10, "func1"), MockFrameInfo("file.py", 20, "func2")],
+                        status=THREAD_STATUS_MAIN_THREAD,
                     )
                 ],
-                main_thread_id=1,
             )
         ]
         collector.collect(test_frames)

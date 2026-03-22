@@ -292,7 +292,7 @@ unwind_stack_for_thread(
     uintptr_t *current_tstate,
     uintptr_t gil_holder_tstate,
     uintptr_t gc_frame,
-    uint64_t *current_tid
+    uintptr_t main_thread_tstate
 ) {
     PyObject *frame_info = NULL;
     PyObject *thread_id = NULL;
@@ -310,7 +310,6 @@ unwind_stack_for_thread(
     STATS_ADD(unwinder, memory_bytes_read, unwinder->debug_offsets.thread_state.size);
 
     long tid = GET_MEMBER(long, ts, unwinder->debug_offsets.thread_state.native_thread_id);
-    *current_tid = tid;
 
     // Read GC collecting state from the interpreter (before any skip checks)
     uintptr_t interp_addr = GET_MEMBER(uintptr_t, ts, unwinder->debug_offsets.thread_state.interp);
@@ -395,6 +394,10 @@ unwind_stack_for_thread(
         status_flags |= THREAD_STATUS_UNKNOWN;
     } else if (cpu_status == THREAD_STATE_RUNNING) {
         status_flags |= THREAD_STATUS_ON_CPU;
+    }
+
+    if (*current_tstate == main_thread_tstate) {
+        status_flags |= THREAD_STATUS_MAIN_THREAD;
     }
 
     // Check if we should skip this thread based on mode

@@ -50,13 +50,12 @@ class MockThreadInfo:
 class MockInterpreterInfo:
     """Mock InterpreterInfo for testing since the real one isn't accessible."""
 
-    def __init__(self, interpreter_id, threads, main_thread_id=None):
+    def __init__(self, interpreter_id, threads):
         self.interpreter_id = interpreter_id
-        self.main_thread_id = main_thread_id
         self.threads = threads
 
     def __repr__(self):
-        return f"MockInterpreterInfo(interpreter_id={self.interpreter_id}, main_thread_id={self.main_thread_id}, threads={self.threads})"
+        return f"MockInterpreterInfo(interpreter_id={self.interpreter_id}, threads={self.threads})"
 
 
 class MockCoroInfo:
