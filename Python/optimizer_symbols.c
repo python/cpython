@@ -1521,7 +1521,7 @@ _Py_uop_frame_new(
 
     // Initialize with the initial state of all local variables
     for (int i = 0; i < arg_len; i++) {
-        frame->locals[i] = args[i];
+        frame->locals[i] = PyJitRef_RemoveUnique(args[i]);
     }
 
     // If the args are known, then it's safe to just initialize
