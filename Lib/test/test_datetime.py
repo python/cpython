@@ -4,25 +4,34 @@ import functools
 
 from test.support.import_helper import import_fresh_module
 
-
 TESTS = 'test.datetimetester'
 
 def load_tests(loader, tests, pattern):
     try:
+        try:
+            import _datetime
+        except ImportError:
+            has_datetime_ext = False
+        else:
+            has_datetime_ext = True
+            del _datetime
         pure_tests = import_fresh_module(TESTS,
                                          fresh=['datetime', '_pydatetime', '_strptime'],
                                          blocked=['_datetime'])
-        fast_tests = import_fresh_module(TESTS,
-                                         fresh=['datetime', '_strptime'],
-                                         blocked=['_pydatetime'])
+        fast_tests = None
+        if has_datetime_ext:
+            fast_tests = import_fresh_module(TESTS,
+                                             fresh=['datetime', '_strptime'],
+                                             blocked=['_pydatetime'])
     finally:
         # XXX: import_fresh_module() is supposed to leave sys.module cache untouched,
         # XXX: but it does not, so we have to cleanup ourselves.
-        for modname in ['datetime', '_datetime', '_strptime']:
+        for modname in ['datetime', '_datetime', '_pydatetime', '_strptime']:
             sys.modules.pop(modname, None)
 
-    test_modules = [pure_tests, fast_tests]
-    test_suffixes = ["_Pure", "_Fast"]
+    test_modules = [pure_tests]
+    test_suffixes = ["_Pure"]
+
     # XXX(gb) First run all the _Pure tests, then all the _Fast tests.  You might
     # not believe this, but in spite of all the sys.modules trickery running a _Pure
     # test last will leave a mix of pure and native datetime stuff lying around.
