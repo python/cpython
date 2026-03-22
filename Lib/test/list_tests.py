@@ -251,6 +251,15 @@ class CommonTest(seq_tests.CommonTest):
                        str(cm.exception))
         self.assertEqual(a, self.type2test(range(10)))
 
+    def test_extended_slice_assign_non_iterable(self):
+        # Assigning a non-iterable to an extended slice should raise TypeError.
+        a = self.type2test(range(4))
+        with self.assertRaises(TypeError) as cm:
+            a[::2] = 42
+        self.assertIn("must assign iterable to extended slice",
+                       str(cm.exception))
+        self.assertEqual(a, self.type2test(range(4)))
+
     def test_delslice(self):
         a = self.type2test([0, 1])
         del a[1:2]
