@@ -423,7 +423,8 @@ class Reader:
 
         p defaults to self.pos; only whitespace is considered a word
         boundary, matching the behavior of unix-word-rubout in bash/readline.
-        See https://github.com/python/cpython/issues/146044"""
+        See https://github.com/python/cpython/issues/146044
+        """
         if p is None:
             p = self.pos
         b = self.buffer
