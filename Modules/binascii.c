@@ -383,7 +383,6 @@ binascii_a2b_base64_impl(PyObject *module, Py_buffer *data, int strict_mode)
     const unsigned char *ascii_data = data->buf;
     size_t ascii_len = data->len;
     binascii_state *state = NULL;
-    char padding_started = 0;
 
     /* Allocate the buffer */
     Py_ssize_t bin_len = ((ascii_len+3)/4)*3; /* Upper bound, corrected later */
@@ -393,14 +392,6 @@ binascii_a2b_base64_impl(PyObject *module, Py_buffer *data, int strict_mode)
     if (bin_data == NULL)
         return NULL;
     unsigned char *bin_data_start = bin_data;
-
-    if (strict_mode && ascii_len > 0 && ascii_data[0] == '=') {
-        state = get_binascii_state(module);
-        if (state) {
-            PyErr_SetString(state->Error, "Leading padding not allowed");
-        }
-        goto error_end;
-    }
 
     int quad_pos = 0;
     unsigned char leftchar = 0;
@@ -412,35 +403,34 @@ binascii_a2b_base64_impl(PyObject *module, Py_buffer *data, int strict_mode)
         ** the invalid ones.
         */
         if (this_ch == BASE64_PAD) {
-            padding_started = 1;
-
-            if (strict_mode && quad_pos == 0) {
-                state = get_binascii_state(module);
-                if (state) {
-                    PyErr_SetString(state->Error, "Excess padding not allowed");
-                }
-                goto error_end;
+            pads++;
+            if (quad_pos >= 2 && quad_pos + pads <= 4) {
+                continue;
             }
-            if (quad_pos >= 2 && quad_pos + ++pads >= 4) {
-                /* A pad sequence means we should not parse more input.
-                ** We've already interpreted the data from the quad at this point.
-                ** in strict mode, an error should raise if there's excess data after the padding.
-                */
-                if (strict_mode && i + 1 < ascii_len) {
-                    state = get_binascii_state(module);
-                    if (state) {
-                        PyErr_SetString(state->Error, "Excess data after padding");
-                    }
-                    goto error_end;
-                }
-
-                goto done;
+            // See RFC 4648, section-3.3: "specifications MAY ignore the
+            // pad character, "=", treating it as non-alphabet data, if
+            // it is present before the end of the encoded data" and
+            // "the excess pad characters MAY also be ignored."
+            if (!strict_mode) {
+                continue;
             }
-            continue;
+            if (quad_pos == 1) {
+                /* Set an error below. */
+                break;
+            }
+            state = get_binascii_state(module);
+            if (state) {
+                PyErr_SetString(state->Error,
+                                (quad_pos == 0 && i == 0)
+                                ? "Leading padding not allowed"
+                                : "Excess padding not allowed");
+            }
+            goto error_end;
         }
 
         this_ch = table_a2b_base64[this_ch];
         if (this_ch >= 64) {
+            // See RFC 4648, section-3.3.
             if (strict_mode) {
                 state = get_binascii_state(module);
                 if (state) {
@@ -451,11 +441,14 @@ binascii_a2b_base64_impl(PyObject *module, Py_buffer *data, int strict_mode)
             continue;
         }
 
-        // Characters that are not '=', in the middle of the padding, are not allowed
-        if (strict_mode && padding_started) {
+        // Characters that are not '=', in the middle of the padding, are
+        // not allowed (except when they are). See RFC 4648, section-3.3.
+        if (pads && strict_mode) {
             state = get_binascii_state(module);
             if (state) {
-                PyErr_SetString(state->Error, "Discontinuous padding not allowed");
+                PyErr_SetString(state->Error, (quad_pos + pads == 4)
+                    ? "Excess data after padding"
+                    : "Discontinuous padding not allowed");
             }
             goto error_end;
         }
@@ -484,31 +477,35 @@ binascii_a2b_base64_impl(PyObject *module, Py_buffer *data, int strict_mode)
         }
     }
 
-    if (quad_pos != 0) {
+    if (quad_pos == 1) {
+        /* There is exactly one extra valid, non-padding, base64 character.
+         * * This is an invalid length, as there is no possible input that
+         ** could encoded into such a base64 string.
+         */
         state = get_binascii_state(module);
-        if (state == NULL) {
-            /* error already set, from get_binascii_state */
-        } else if (quad_pos == 1) {
-            /*
-            ** There is exactly one extra valid, non-padding, base64 character.
-            ** This is an invalid length, as there is no possible input that
-            ** could encoded into such a base64 string.
-            */
+        if (state) {
             PyErr_Format(state->Error,
                          "Invalid base64-encoded string: "
                          "number of data characters (%zd) cannot be 1 more "
                          "than a multiple of 4",
                          (bin_data - bin_data_start) / 3 * 4 + 1);
-        } else {
-            PyErr_SetString(state->Error, "Incorrect padding");
         }
-        error_end:
-        _PyBytesWriter_Dealloc(&writer);
-        return NULL;
+        goto error_end;
     }
 
-done:
+    if (quad_pos != 0 && quad_pos + pads < 4) {
+        state = get_binascii_state(module);
+        if (state) {
+            PyErr_SetString(state->Error, "Incorrect padding");
+        }
+        goto error_end;
+    }
+
     return _PyBytesWriter_Finish(&writer, bin_data);
+
+error_end:
+    _PyBytesWriter_Dealloc(&writer);
+    return NULL;
 }
 
 
