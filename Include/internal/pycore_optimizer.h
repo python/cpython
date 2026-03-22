@@ -67,6 +67,16 @@ uop_buffer_last(_PyJitUopBuffer *trace)
     return trace->next-1;
 }
 
+static inline bool
+uop_buffer_rewind(_PyJitUopBuffer *trace)
+{
+   if (trace->next <= trace->start) {
+       return false;
+   }
+    trace->next--;
+    return true;
+}
+
 static inline int
 uop_buffer_length(_PyJitUopBuffer *trace)
 {

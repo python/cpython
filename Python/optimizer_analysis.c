@@ -488,17 +488,9 @@ optimize_uops(
     _PyUOpInstruction *this_instr = NULL;
     JitOptRef *stack_pointer = ctx->frame->stack_pointer;
 
-    for (int i = 0; i < trace_len; i++) {
+    int i = 0;
+    for (; i < trace_len && !ctx->done; i++) {
         this_instr = &trace[i];
-        if (ctx->done) {
-            // Don't do any more optimization, but
-            // we still need to reach a terminator for corrctness.
-            *(ctx->out_buffer.next++) = *this_instr;
-            if (is_terminator_uop(this_instr)) {
-                break;
-            }
-            continue;
-        }
 
         int oparg = this_instr->oparg;
         opcode = this_instr->opcode;
@@ -531,10 +523,6 @@ optimize_uops(
             assert(STACK_LEVEL() >= 0);
         }
     }
-    if (ctx->out_of_space) {
-        DPRINTF(3, "\n");
-        DPRINTF(1, "Out of space in abstract interpreter\n");
-    }
     if (ctx->contradiction) {
         // Attempted to push a "bottom" (contradiction) symbol onto the stack.
         // This means that the abstract interpreter has optimized to trace
@@ -547,6 +535,35 @@ optimize_uops(
         _Py_uop_abstractcontext_fini(ctx);
         OPT_STAT_INC(optimizer_contradiction);
         return 0;
+    }
+    if (ctx->out_of_space) {
+        DPRINTF(3, "\n");
+        DPRINTF(1, "Out of space in abstract interpreter at length %d\n",
+            uop_buffer_length(&ctx->out_buffer));
+        // Rewind to previous instruction and replace with _EXIT_TRACE.
+        _PyUOpInstruction *curr = uop_buffer_last(&ctx->out_buffer);
+        while (curr->opcode != _SET_IP) {
+            if (!uop_buffer_rewind(&ctx->out_buffer)) {
+                // Reached the start.
+                return 0;
+            }
+            curr = uop_buffer_last(&ctx->out_buffer);
+        }
+        assert(curr->opcode == _SET_IP);
+        int32_t old_target = (int32_t)uop_get_target(curr);
+        curr->opcode = _EXIT_TRACE;
+        curr->format = UOP_FORMAT_TARGET;
+        curr->target = old_target;
+        DPRINTF(1, "Rewound to length %d\n", uop_buffer_length(&ctx->out_buffer));
+    }
+    else {
+        // Don't do any more optimization, but
+        // we still need to reach a terminator for correctness.
+        while (!is_terminator_uop(uop_buffer_last(&ctx->out_buffer))) {
+            this_instr = &trace[i];
+            *(ctx->out_buffer.next++) = *this_instr;
+            i++;
+        }
     }
 
     /* Either reached the end or cannot optimize further, but there
