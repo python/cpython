@@ -74,6 +74,7 @@ class BinASCIITest(unittest.TestCase):
                          b'abcdefghijklmnopqrstuvwxyz'
                          b'ABCDEFGHIJKLMNOPQRSTUVWXYZ'
                          b'.-:+=^!/*?&<>()[]{}@%$#')
+
         self.assertEqual(binascii.BASE32_ALPHABET,
                          b'ABCDEFGHIJKLMNOPQRSTUVWXYZ234567')
         self.assertEqual(binascii.BASE32HEX_ALPHABET,

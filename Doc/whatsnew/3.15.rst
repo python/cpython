@@ -662,6 +662,12 @@ binascii
 * Added the *ignorechars* parameter in :func:`~binascii.a2b_base64`.
   (Contributed by Serhiy Storchaka in :gh:`144001`.)
 
+* Added functions for Base 32 encoding:
+
+  - :func:`~binascii.b2a_base32` and :func:`~binascii.a2b_base32`
+
+  (Contributed by James Seo in :gh:`146192`.)
+
 
 calendar
 --------

@@ -193,10 +193,10 @@ The :mod:`!binascii` module defines the following functions:
    in the range from ``0`` to ``2 ** 40 - 1``, inclusive.
 
    .. note::
-      By default, this function does not map lowercase characters (which are
-      invalid in standard base32) to their uppercase counterparts, nor does
-      it contextually map ``0`` to ``O`` and ``1`` to ``I``/``L`` as
-      :rfc:`4648` allows.
+      This function does not map lowercase characters (which are invalid in
+      standard base32) to their uppercase counterparts, nor does it
+      contextually map ``0`` to ``O`` and ``1`` to ``I``/``L`` as :rfc:`4648`
+      allows.
 
    Optional *alphabet* must be a :class:`bytes` object of length 32 which
    specifies an alternative alphabet.
@@ -368,6 +368,8 @@ The :mod:`!binascii` module defines the following functions:
 .. data:: BASE32HEX_ALPHABET
 
    The "Extended Hex" Base 32 alphabet according to :rfc:`4648`.
+   Data encoded with this alphabet maintains its sort order during bitwise
+   comparisons.
 
    .. versionadded:: next
 
