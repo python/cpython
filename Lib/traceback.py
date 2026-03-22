@@ -994,7 +994,7 @@ def _display_width(line, offset=None):
 
 
 def _format_note(note, indent, theme):
-    for l in note.split('\n'):
+    for l in note.split("\n"):
         yield f"{indent}{theme.note}{l}{theme.reset}\n"
 
 
