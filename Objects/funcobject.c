@@ -65,7 +65,7 @@ handle_func_event(PyFunction_WatchEvent event, PyFunctionObject *func,
         case PyFunction_EVENT_MODIFY_KWDEFAULTS:
         case PyFunction_EVENT_MODIFY_QUALNAME:
 #if _Py_TIER2
-            _Py_Executors_InvalidateDependency(_PyInterpreterState_GET(), func, 1);
+            _Py_Executors_InvalidateDependency(interp, func, 1);
 #endif
             RARE_EVENT_INTERP_INC(interp, func_modification);
             break;
