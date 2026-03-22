@@ -864,12 +864,12 @@ dummy_func(void) {
     }
 
     op(_CHECK_FUNCTION_VERSION, (func_version/2, callable, self_or_null, unused[oparg] -- callable, self_or_null, unused[oparg])) {
-        if (sym_get_func_version(callable) == func_version) {
-            REPLACE_OP(this_instr, _NOP, 0, 0);
+        if (sym_is_const(ctx, callable) && sym_matches_type(callable, &PyFunction_Type)) {
+            assert(PyFunction_Check(sym_get_const(ctx, callable)));
+            ADD_OP(_CHECK_FUNCTION_VERSION_INLINE, 0, func_version);
+            uop_buffer_last(&ctx->out_buffer)->operand1 = (uintptr_t)sym_get_const(ctx, callable);
         }
-        else {
-            sym_set_func_version(ctx, callable, func_version);
-        }
+        sym_set_type(callable, &PyFunction_Type);
     }
 
     op(_CHECK_METHOD_VERSION, (func_version/2, callable, null, unused[oparg] -- callable, null, unused[oparg])) {
