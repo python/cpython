@@ -968,7 +968,9 @@ clone_combined_dict_keys(PyDictObject *orig)
     assert(orig->ma_keys != Py_EMPTY_KEYS);
     assert(orig->ma_keys->dk_refcnt == 1);
 
-    ASSERT_DICT_LOCKED(orig);
+    if (!PyFrozenDict_Check(orig)) {
+        ASSERT_DICT_LOCKED(orig);
+    }
 
     size_t keys_size = _PyDict_KeysSize(orig->ma_keys);
     PyDictKeysObject *keys = PyMem_Malloc(keys_size);
@@ -2719,6 +2721,10 @@ _PyDict_LoadBuiltinsFromGlobals(PyObject *globals)
     return builtins;
 }
 
+#define frozendict_does_not_support(WHAT) \
+    PyErr_SetString(PyExc_TypeError, "frozendict object does " \
+                    "not support item " WHAT)
+
 /* Consumes references to key and value */
 static int
 setitem_take2_lock_held(PyDictObject *mp, PyObject *key, PyObject *value)
@@ -2762,12 +2768,19 @@ _PyDict_SetItem_Take2(PyDictObject *mp, PyObject *key, PyObject *value)
 int
 PyDict_SetItem(PyObject *op, PyObject *key, PyObject *value)
 {
-    if (!PyDict_Check(op)) {
-        PyErr_BadInternalCall();
-        return -1;
-    }
     assert(key);
     assert(value);
+
+    if (!PyDict_Check(op)) {
+        if (PyFrozenDict_Check(op)) {
+            frozendict_does_not_support("assignment");
+        }
+        else {
+            PyErr_BadInternalCall();
+        }
+        return -1;
+    }
+
     return _PyDict_SetItem_Take2((PyDictObject *)op,
                                  Py_NewRef(key), Py_NewRef(value));
 }
@@ -2807,13 +2820,19 @@ int
 _PyDict_SetItem_KnownHash(PyObject *op, PyObject *key, PyObject *value,
                           Py_hash_t hash)
 {
-    if (!PyDict_Check(op)) {
-        PyErr_BadInternalCall();
-        return -1;
-    }
     assert(key);
     assert(value);
     assert(hash != -1);
+
+    if (!PyDict_Check(op)) {
+        if (PyFrozenDict_Check(op)) {
+            frozendict_does_not_support("assignment");
+        }
+        else {
+            PyErr_BadInternalCall();
+        }
+        return -1;
+    }
 
     int res;
     Py_BEGIN_CRITICAL_SECTION(op);
@@ -2899,13 +2918,18 @@ PyDict_DelItem(PyObject *op, PyObject *key)
 int
 _PyDict_DelItem_KnownHash_LockHeld(PyObject *op, PyObject *key, Py_hash_t hash)
 {
-    Py_ssize_t ix;
-    PyObject *old_value;
-
     if (!PyDict_Check(op)) {
-        PyErr_BadInternalCall();
+        if (PyFrozenDict_Check(op)) {
+            frozendict_does_not_support("deletion");
+        }
+        else {
+            PyErr_BadInternalCall();
+        }
         return -1;
     }
+
+    Py_ssize_t ix;
+    PyObject *old_value;
     PyDictObject *mp = (PyDictObject *)op;
     assert(can_modify_dict(mp));
 
@@ -3206,7 +3230,12 @@ pop_lock_held(PyObject *op, PyObject *key, PyObject **result)
         if (result) {
             *result = NULL;
         }
-        PyErr_BadInternalCall();
+        if (PyFrozenDict_Check(op)) {
+            frozendict_does_not_support("deletion");
+        }
+        else {
+            PyErr_BadInternalCall();
+        }
         return -1;
     }
     PyDictObject *dict = (PyDictObject *)op;
@@ -4017,7 +4046,12 @@ PyDict_MergeFromSeq2(PyObject *d, PyObject *seq2, int override)
     assert(d != NULL);
     assert(seq2 != NULL);
     if (!PyDict_Check(d)) {
-        PyErr_BadInternalCall();
+        if (PyFrozenDict_Check(d)) {
+            frozendict_does_not_support("assignment");
+        }
+        else {
+            PyErr_BadInternalCall();
+        }
         return -1;
     }
 
@@ -4220,7 +4254,12 @@ dict_merge_api(PyObject *a, PyObject *b, int override)
      * PyMapping_Keys() and PyObject_GetItem() be supported.
      */
     if (a == NULL || !PyDict_Check(a) || b == NULL) {
-        PyErr_BadInternalCall();
+        if (a != NULL && PyFrozenDict_Check(a)) {
+            frozendict_does_not_support("assignment");
+        }
+        else {
+            PyErr_BadInternalCall();
+        }
         return -1;
     }
     return dict_merge(a, b, override);
@@ -4285,7 +4324,10 @@ copy_lock_held(PyObject *o, int as_frozendict)
     PyObject *copy;
     PyDictObject *mp;
 
-    ASSERT_DICT_LOCKED(o);
+    // frozendict is immutable and so doesn't need critical section
+    if (!PyFrozenDict_Check(o)) {
+        ASSERT_DICT_LOCKED(o);
+    }
 
     mp = (PyDictObject *)o;
     if (mp->ma_used == 0) {
@@ -4408,9 +4450,14 @@ anydict_copy(PyObject *o)
     assert(PyAnyDict_Check(o));
 
     PyObject *res;
-    Py_BEGIN_CRITICAL_SECTION(o);
-    res = copy_lock_held(o, PyFrozenDict_Check(o));
-    Py_END_CRITICAL_SECTION();
+    if (PyFrozenDict_Check(o)) {
+        res = copy_lock_held(o, 1);
+    }
+    else {
+        Py_BEGIN_CRITICAL_SECTION(o);
+        res = copy_lock_held(o, 0);
+        Py_END_CRITICAL_SECTION();
+    }
     return res;
 }
 
@@ -4422,9 +4469,14 @@ _PyDict_CopyAsDict(PyObject *o)
     assert(PyAnyDict_Check(o));
 
     PyObject *res;
-    Py_BEGIN_CRITICAL_SECTION(o);
-    res = copy_lock_held(o, 0);
-    Py_END_CRITICAL_SECTION();
+    if (PyFrozenDict_Check(o)) {
+        res = copy_lock_held(o, 0);
+    }
+    else {
+        Py_BEGIN_CRITICAL_SECTION(o);
+        res = copy_lock_held(o, 0);
+        Py_END_CRITICAL_SECTION();
+    }
     return res;
 }
 
@@ -4596,19 +4648,24 @@ static int
 dict_setdefault_ref_lock_held(PyObject *d, PyObject *key, PyObject *default_value,
                     PyObject **result, int incref_result)
 {
-    PyDictObject *mp = (PyDictObject *)d;
-    PyObject *value;
-    Py_hash_t hash;
-    Py_ssize_t ix;
-
     if (!PyDict_Check(d)) {
-        PyErr_BadInternalCall();
+        if (PyFrozenDict_Check(d)) {
+            frozendict_does_not_support("assignment");
+        }
+        else {
+            PyErr_BadInternalCall();
+        }
         if (result) {
             *result = NULL;
         }
         return -1;
     }
     assert(can_modify_dict((PyDictObject*)d));
+
+    PyDictObject *mp = (PyDictObject *)d;
+    PyObject *value;
+    Py_hash_t hash;
+    Py_ssize_t ix;
 
     hash = _PyObject_HashFast(key);
     if (hash == -1) {
@@ -7154,7 +7211,17 @@ int
 _PyDict_SetItem_LockHeld(PyDictObject *dict, PyObject *name, PyObject *value)
 {
     if (!PyDict_Check(dict)) {
-        PyErr_BadInternalCall();
+        if (PyFrozenDict_Check(dict)) {
+            if (value == NULL) {
+                frozendict_does_not_support("deletion");
+            }
+            else {
+                frozendict_does_not_support("assignment");
+            }
+        }
+        else {
+            PyErr_BadInternalCall();
+        }
         return -1;
     }
 

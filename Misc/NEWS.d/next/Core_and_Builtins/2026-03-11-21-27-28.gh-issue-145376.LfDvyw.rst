@@ -1,0 +1,1 @@
+Fix GC tracking in ``structseq.__replace__()``.

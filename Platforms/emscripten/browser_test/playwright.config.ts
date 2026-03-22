@@ -16,7 +16,7 @@ export default defineConfig({
     },
   ],
   webServer: {
-    command: 'npx http-server ../../../../cross-build/wasm32-emscripten/build/python/web_example_pyrepl_jspi/ -p 8787',
+    command: 'npx http-server ../../../cross-build/wasm32-emscripten/build/python/web_example_pyrepl_jspi/ -p 8787',
     url: 'http://localhost:8787',
   },
 });

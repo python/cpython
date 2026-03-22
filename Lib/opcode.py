@@ -119,6 +119,9 @@ _cache_format = frozendict(
     POP_JUMP_IF_NOT_NONE=frozendict(
         counter=1,
     ),
+    RESUME=frozendict(
+        counter=1,
+    ),
 )
 
 _inline_cache_entries = frozendict({
