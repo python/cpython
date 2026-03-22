@@ -4582,6 +4582,7 @@ sock_sendto(PySocketSockObject *s, PyObject *args)
     }
 
     if (PySys_Audit("socket.sendto", "OO", s, addro) < 0) {
+        PyBuffer_Release(&pbuf);
         return NULL;
     }
 
@@ -6801,7 +6802,7 @@ socket_getaddrinfo(PyObject *self, PyObject *args, PyObject* kwargs)
 
     if (PySys_Audit("socket.getaddrinfo", "OOiii",
                     hobj, pobj, family, socktype, protocol) < 0) {
-        return NULL;
+        goto err;
     }
 
     memset(&hints, 0, sizeof(hints));
