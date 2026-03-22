@@ -756,7 +756,7 @@ class BaseFutureTests:
             f.__init__(loop=self.loop)
 
     def test_futureiter_send_after_throw_no_crash(self):
-        fut = self._new_future()
+        fut = self._new_future(loop=self.loop)
         it = fut.__await__()
         next(it)
         with self.assertRaises(RuntimeError):
