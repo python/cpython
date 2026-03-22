@@ -311,12 +311,12 @@ class BaseXYTestCase(unittest.TestCase):
 
     def test_b64decode_invalid_chars(self):
         # issue 1466065: Test some invalid characters.
-        tests = ((b'%3d==', b'\xdd', b'%$'),
-                 (b'$3d==', b'\xdd', b'%$'),
+        tests = ((b'%3Q==', b'\xdd', b'%$'),
+                 (b'$3Q==', b'\xdd', b'%$'),
                  (b'[==', b'', b'[='),
-                 (b'YW]3=', b'am', b']'),
-                 (b'3{d==', b'\xdd', b'{}'),
-                 (b'3d}==', b'\xdd', b'{}'),
+                 (b'YW]0=', b'am', b']'),
+                 (b'3{Q==', b'\xdd', b'{}'),
+                 (b'3Q}==', b'\xdd', b'{}'),
                  (b'@@', b'', b'@!'),
                  (b'!', b'', b'@!'),
                  (b"YWJj\n", b"abc", b'\n'),
