@@ -1,0 +1,2 @@
+Fix a NULL pointer dereference in asyncio.Future iterator when send() is
+called after throw() or close(), which previously could cause a crash.
