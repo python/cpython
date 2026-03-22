@@ -756,18 +756,13 @@ class BaseFutureTests:
             f.__init__(loop=self.loop)
 
     def test_futureiter_send_after_throw_no_crash(self):
-        async def run_test():
-            loop = asyncio.get_event_loop()
-            fut = loop.create_future()
-            it = fut.__await__()
-            it.__next__()
-            try:
-                it.throw(RuntimeError)
-            except RuntimeError:
-                pass
-            with self.assertRaises(StopIteration):
-                it.send(None)
-        asyncio.run(run_test())
+        fut = self._new_future()
+        it = fut.__await__()
+        next(it)
+        with self.assertRaises(RuntimeError):
+            it.throw(RuntimeError)
+        with self.assertRaises(StopIteration):
+            it.send(None)
 
 
 @unittest.skipUnless(hasattr(futures, '_CFuture'),
