@@ -15,6 +15,7 @@ import sys
 import textwrap
 import unittest
 import warnings
+import zoneinfo
 
 from array import array
 
@@ -5985,6 +5986,20 @@ class TestTimezoneConversions(unittest.TestCase):
                         self.assertEqual(astz.replace(tzinfo=None), expected)
                     asutcbase += HOUR
 
+    @unittest.skipUnless("America/Los_Angeles" in zoneinfo.available_timezones(),
+                         "Can't find timezone database")
+    def test_ordering_dst(self):
+        for utc in utc_real, utc_fake:
+            for tz in zoneinfo.ZoneInfo("America/Los_Angeles"), zoneinfo.ZoneInfo("America/New_York"):
+                print(f"{tz!r} {self.dstoff!r} {utc is utc_fake} {id(datetime)}")
+                tm = tm0 = self.dstoff.replace(tzinfo=tz, hour=0)
+                print(f"{tm0!r}")
+                for h in range(4):
+                    for m in 1, 30, 59:
+                        tm1 = (tm.astimezone(utc) + timedelta(hours=h, minutes=m)).astimezone(tz)
+                        print(f"{tm1!r}")
+                        self.assertLess(tm0, tm1)
+                        tm0 = tm1
 
     def test_bogus_dst(self):
         class ok(tzinfo):

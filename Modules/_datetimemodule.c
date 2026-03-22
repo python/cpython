@@ -114,6 +114,9 @@ typedef struct {
 #define CONST_EPOCH(st) st->epoch
 #define CONST_UTC(st) ((PyObject *)&utc_timezone)
 
+static PyObject *
+datetime_timestamp(PyObject *op, PyObject *Py_UNUSED(dummy));
+
 static datetime_state *
 get_module_state(PyObject *module)
 {
@@ -6565,6 +6568,18 @@ datetime_richcompare(PyObject *self, PyObject *other, int op)
     }
 
     if (GET_DT_TZINFO(self) == GET_DT_TZINFO(other)) {
+        // If the objects' fold properties differ, the `fold=1` timestamp may
+        // follow the `fold=0` timestamp even though fielf-by-field comparison
+        // would otherwise conclude that it occurs before. (#146236)
+        if (DATE_GET_FOLD(self) != DATE_GET_FOLD(other)) {
+            PyObject *ts_self = datetime_timestamp(self, NULL);
+            PyObject *ts_other = datetime_timestamp(other, NULL);
+            PyObject *result = PyObject_RichCompare(ts_self, ts_other, op);
+            Py_DECREF(ts_self);
+            Py_DECREF(ts_other);
+            return result;
+        }
+
         diff = memcmp(((PyDateTime_DateTime *)self)->data,
                       ((PyDateTime_DateTime *)other)->data,
                       _PyDateTime_DATETIME_DATASIZE);

@@ -1,0 +1,3 @@
+Comparison of datetime values with ``fold=1`` now compares the objects'
+timestamps so that correct ordering of timestamps is maintained at the end
+of DST.

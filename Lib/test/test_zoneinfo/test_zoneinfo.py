@@ -389,6 +389,21 @@ class ZoneInfoTest(TzPathUserMixin, ZoneInfoTestBase):
                     dt_after = dt_after_utc.astimezone(zi)
                     self.assertEqual(dt_after.fold, 1, (dt_after, dt_utc))
 
+
+    def test_ordering_dst(self):
+        UTC = self.klass("UTC")
+        dstoff = datetime(2002, 10, 27, 1)
+        tz = self.klass("America/Los_Angeles")
+        print(f"{tz!r} {dstoff!r} {id(datetime)}")
+        tm = tm0 = dstoff.replace(tzinfo=tz, hour=0)
+        print(f"{tm0!r}")
+        for h in range(4):
+            for m in 1, 30, 59:
+                tm1 = (tm.astimezone(UTC) + timedelta(hours=h, minutes=m)).astimezone(tz)
+                print(f"{tm1!r}")
+                self.assertLess(tm0, tm1)
+                tm0 = tm1
+
     def test_time_variable_offset(self):
         # self.zones() only ever returns variable-offset zones
         for key in self.zones():

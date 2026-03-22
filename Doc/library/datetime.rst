@@ -1329,9 +1329,11 @@ Supported operations:
 
    Naive and aware :class:`.datetime` objects are never equal.
 
-   If both comparands are aware, and have the same :attr:`!tzinfo` attribute,
-   the :attr:`!tzinfo` and :attr:`~.datetime.fold` attributes are ignored and
-   the base datetimes are compared.
+   If both comparands are aware, and have the same :attr:`!tzinfo` and
+   :attr:`~.datetime.fold` attributes, the base datetimes are compared.
+   If both comparands are aware, and have the same :attr:`!tzinfo` but
+   differing :attr:`~.datetime.fold` attributes, the objects are converted to
+   timestamps, and the timestamps are compared.
    If both comparands are aware and have different :attr:`~.datetime.tzinfo`
    attributes, the comparison acts as comparands were first converted to UTC
    datetimes except that the implementation never overflows.
@@ -1345,9 +1347,11 @@ Supported operations:
    Order comparison between naive and aware :class:`.datetime` objects
    raises :exc:`TypeError`.
 
-   If both comparands are aware, and have the same :attr:`!tzinfo` attribute,
-   the :attr:`!tzinfo` and :attr:`~.datetime.fold` attributes are ignored and
-   the base datetimes are compared.
+   If both comparands are aware, and have the same :attr:`!tzinfo` and
+   :attr:`~.datetime.fold` attributes, the base datetimes are compared.
+   If both comparands are aware, and have the same :attr:`!tzinfo` but
+   differing :attr:`~.datetime.fold` attributes, the objects are converted to
+   timestamps, and the timestamps are compared.
    If both comparands are aware and have different :attr:`~.datetime.tzinfo`
    attributes, the comparison acts as comparands were first converted to UTC
    datetimes except that the implementation never overflows.
@@ -1364,6 +1368,11 @@ Supported operations:
    The default behavior can be changed by overriding the special comparison
    methods in subclasses.
 
+.. versionchanged:: 3.15
+   Comparison between :class:`.datetime` objects with matching :attr:`!tzinfo`
+   and differing :attr:`~.datetime.fold` attributes uses timestamps for
+   comparison, so that ordering is preserved even in the case of a repeated
+   interval.
 
 Instance methods:
 

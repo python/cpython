@@ -2296,6 +2296,11 @@ class datetime(date):
         myoff = otoff = None
 
         if mytz is ottz:
+            # If the objects' fold properties differ, the `fold=1` timestamp may
+            # follow the `fold=0` timestamp even though fielf-by-field comparison
+            # would otherwise conclude that it occurs before. (#146236)
+            if self.fold != other.fold:
+                return _cmp(self.timestamp(), other.timestamp())
             base_compare = True
         else:
             myoff = self.utcoffset()
