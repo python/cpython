@@ -330,8 +330,8 @@ init_runtime(_PyRuntimeState *runtime,
 {
     assert(!runtime->preinitializing);
     assert(!runtime->preinitialized);
-    assert(!runtime->core_initialized);
-    assert(!runtime->initialized);
+    assert(!_PyRuntimeState_GetCoreInitialized(runtime));
+    assert(!_PyRuntimeState_GetInitialized(runtime));
     assert(!runtime->_initialized);
 
     runtime->open_code_hook = open_code_hook;

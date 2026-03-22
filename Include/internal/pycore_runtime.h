@@ -56,6 +56,29 @@ _PyRuntimeState_SetFinalizing(_PyRuntimeState *runtime, PyThreadState *tstate) {
     }
 }
 
+// Use acquire/release (not relaxed) because these are publication flags:
+// when a reader sees 1, all prior initialization writes must be visible.
+
+static inline int
+_PyRuntimeState_GetCoreInitialized(_PyRuntimeState *runtime) {
+    return _Py_atomic_load_int_acquire(&runtime->core_initialized);
+}
+
+static inline void
+_PyRuntimeState_SetCoreInitialized(_PyRuntimeState *runtime, int initialized) {
+    _Py_atomic_store_int_release(&runtime->core_initialized, initialized);
+}
+
+static inline int
+_PyRuntimeState_GetInitialized(_PyRuntimeState *runtime) {
+    return _Py_atomic_load_int_acquire(&runtime->initialized);
+}
+
+static inline void
+_PyRuntimeState_SetInitialized(_PyRuntimeState *runtime, int initialized) {
+    _Py_atomic_store_int_release(&runtime->initialized, initialized);
+}
+
 
 #ifdef __cplusplus
 }

@@ -33,6 +33,7 @@ Data members:
 #include "pycore_pymath.h"        // _PY_SHORT_FLOAT_REPR
 #include "pycore_pymem.h"         // _PyMem_DefaultRawFree()
 #include "pycore_pystate.h"       // _PyThreadState_GET()
+#include "pycore_runtime.h"       // _PyRuntimeState_GetCoreInitialized()
 #include "pycore_pystats.h"       // _Py_PrintSpecializationStats()
 #include "pycore_structseq.h"     // _PyStructSequence_InitBuiltinWithFlags()
 #include "pycore_sysmodule.h"     // export _PySys_GetSizeOf()
@@ -471,7 +472,7 @@ PySys_AddAuditHook(Py_AuditHookFunction hook, void *userData)
        PySys_AddAuditHook() can be called before Python is initialized. */
     _PyRuntimeState *runtime = &_PyRuntime;
     PyThreadState *tstate;
-    if (runtime->initialized) {
+    if (_PyRuntimeState_GetCoreInitialized(runtime)) {
         tstate = _PyThreadState_GET();
     }
     else {

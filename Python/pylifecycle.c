@@ -166,13 +166,13 @@ int (*_PyOS_mystrnicmp_hack)(const char *, const char *, Py_ssize_t) = \
 int
 _Py_IsCoreInitialized(void)
 {
-    return _PyRuntime.core_initialized;
+    return _PyRuntimeState_GetCoreInitialized(&_PyRuntime);
 }
 
 int
 Py_IsInitialized(void)
 {
-    return _PyRuntime.initialized;
+    return _PyRuntimeState_GetInitialized(&_PyRuntime);
 }
 
 
@@ -491,7 +491,7 @@ static PyStatus
 pycore_init_runtime(_PyRuntimeState *runtime,
                     const PyConfig *config)
 {
-    if (runtime->initialized) {
+    if (_PyRuntimeState_GetInitialized(runtime)) {
         return _PyStatus_ERR("main interpreter already initialized");
     }
 
@@ -984,7 +984,7 @@ pyinit_config(_PyRuntimeState *runtime,
     }
 
     /* Only when we get here is the runtime core fully initialized */
-    runtime->core_initialized = 1;
+    _PyRuntimeState_SetCoreInitialized(runtime, 1);
     return _PyStatus_OK();
 }
 
@@ -1217,7 +1217,7 @@ init_interp_main(PyThreadState *tstate)
          * or pure Python code in the standard library won't work.
          */
         if (is_main_interp) {
-            interp->runtime->initialized = 1;
+            _PyRuntimeState_SetInitialized(interp->runtime, 1);
         }
         return _PyStatus_OK();
     }
@@ -1329,8 +1329,6 @@ init_interp_main(PyThreadState *tstate)
             Py_XDECREF(warnings_module);
         }
         Py_XDECREF(warnoptions);
-
-        interp->runtime->initialized = 1;
     }
 
     if (config->site_import) {
@@ -1426,6 +1424,10 @@ init_interp_main(PyThreadState *tstate)
 
     assert(!_PyErr_Occurred(tstate));
 
+    if (is_main_interp) {
+        _PyRuntimeState_SetInitialized(interp->runtime, 1);
+    }
+
     return _PyStatus_OK();
 }
 
@@ -1445,11 +1447,11 @@ static PyStatus
 pyinit_main(PyThreadState *tstate)
 {
     PyInterpreterState *interp = tstate->interp;
-    if (!interp->runtime->core_initialized) {
+    if (!_PyRuntimeState_GetCoreInitialized(interp->runtime)) {
         return _PyStatus_ERR("runtime core not initialized");
     }
 
-    if (interp->runtime->initialized) {
+    if (_PyRuntimeState_GetInitialized(interp->runtime)) {
         return pyinit_main_reconfigure(tstate);
     }
 
@@ -1505,7 +1507,7 @@ Py_InitializeEx(int install_sigs)
     }
     _PyRuntimeState *runtime = &_PyRuntime;
 
-    if (runtime->initialized) {
+    if (_PyRuntimeState_GetInitialized(runtime)) {
         /* bpo-33932: Calling Py_Initialize() twice does nothing. */
         return;
     }
@@ -2210,7 +2212,7 @@ _Py_Finalize(_PyRuntimeState *runtime)
     int status = 0;
 
     /* Bail out early if already finalized (or never initialized). */
-    if (!runtime->initialized) {
+    if (!_PyRuntimeState_GetInitialized(runtime)) {
         return status;
     }
 
@@ -2245,8 +2247,8 @@ _Py_Finalize(_PyRuntimeState *runtime)
        when they attempt to take the GIL (ex: PyEval_RestoreThread()). */
     _PyInterpreterState_SetFinalizing(tstate->interp, tstate);
     _PyRuntimeState_SetFinalizing(runtime, tstate);
-    runtime->initialized = 0;
-    runtime->core_initialized = 0;
+    _PyRuntimeState_SetInitialized(runtime, 0);
+    _PyRuntimeState_SetCoreInitialized(runtime, 0);
 
     // XXX Call something like _PyImport_Disable() here?
 
@@ -2472,7 +2474,7 @@ new_interpreter(PyThreadState **tstate_p,
     }
     _PyRuntimeState *runtime = &_PyRuntime;
 
-    if (!runtime->initialized) {
+    if (!_PyRuntimeState_GetInitialized(runtime)) {
         return _PyStatus_ERR("Py_Initialize must be called first");
     }
 
@@ -3312,10 +3314,10 @@ fatal_error_dump_runtime(int fd, _PyRuntimeState *runtime)
         _Py_DumpHexadecimal(fd, (uintptr_t)finalizing, sizeof(finalizing) * 2);
         PUTS(fd, ")");
     }
-    else if (runtime->initialized) {
+    else if (_PyRuntimeState_GetInitialized(runtime)) {
         PUTS(fd, "initialized");
     }
-    else if (runtime->core_initialized) {
+    else if (_PyRuntimeState_GetCoreInitialized(runtime)) {
         PUTS(fd, "core initialized");
     }
     else if (runtime->preinitialized) {
