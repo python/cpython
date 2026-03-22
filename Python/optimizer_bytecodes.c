@@ -96,6 +96,18 @@ dummy_func(void) {
         value = PyJitRef_StripBorrowInfo(value);
     }
 
+    op(_COPY_FREE_VARS, (--)) {
+        PyCodeObject *co = get_current_code_object(ctx);
+        if (co == NULL) {
+            ctx->done = true;
+            break;
+        }
+        int offset = co->co_nlocalsplus - oparg;
+        for (int i = 0; i < oparg; ++i) {
+            ctx->frame->locals[offset + i] = sym_new_not_null(ctx);
+        }
+    }
+
     op(_LOAD_FAST_CHECK, (-- value)) {
         value = GETLOCAL(oparg);
         // We guarantee this will error - just bail and don't optimize it.
