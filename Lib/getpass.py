@@ -232,7 +232,7 @@ class _PasswordLineEditor:
     def __init__(self, stream, echo_char, ctrl_chars):
         self.stream = stream
         self.echo_char = echo_char
-        self.passwd = ""
+        self.passwd = []
         self.cursor_pos = 0
         self.eof_pressed = False
         self.literal_next = False
@@ -256,12 +256,12 @@ class _PasswordLineEditor:
         self.stream.flush()
 
     def _erase_chars(self, count):
-        """Erase count echo characters from display."""
+        """Erase *count* echo characters from display."""
         self.stream.write("\b \b" * count)
 
     def _insert_char(self, char):
-        """Insert character at cursor position."""
-        self.passwd = self.passwd[:self.cursor_pos] + char + self.passwd[self.cursor_pos:]
+        """Insert *char* at cursor position."""
+        self.passwd.insert(self.cursor_pos, char)
         self.cursor_pos += 1
         # Only refresh if inserting in middle
         if self.cursor_pos < len(self.passwd):
@@ -280,27 +280,28 @@ class _PasswordLineEditor:
 
     def _handle_erase(self):
         """Delete character before cursor (Backspace/DEL)."""
-        if self.cursor_pos > 0:
-            self.passwd = self.passwd[:self.cursor_pos-1] + self.passwd[self.cursor_pos:]
-            self.cursor_pos -= 1
-            # Only refresh if deleting from middle
-            if self.cursor_pos < len(self.passwd):
-                self._refresh_display()
-            else:
-                self.stream.write("\b \b")
-                self.stream.flush()
+        if self.cursor_pos <= 0:
+            return
+        del self.passwd[self.cursor_pos - 1]
+        self.cursor_pos -= 1
+        # Only refresh if deleting from middle
+        if self.cursor_pos < len(self.passwd):
+            self._refresh_display()
+        else:
+            self.stream.write("\b \b")
+            self.stream.flush()
 
     def _handle_kill_line(self):
         """Erase entire line (Ctrl+U)."""
         self._erase_chars(len(self.passwd))
-        self.passwd = ""
+        self.passwd.clear()
         self.cursor_pos = 0
         self.stream.flush()
 
     def _handle_kill_forward(self):
         """Kill from cursor to end (Ctrl+K)."""
         chars_to_delete = len(self.passwd) - self.cursor_pos
-        self.passwd = self.passwd[:self.cursor_pos]
+        del self.passwd[self.cursor_pos:]
         self._erase_chars(chars_to_delete)
         self.stream.flush()
 
@@ -308,13 +309,13 @@ class _PasswordLineEditor:
         """Erase previous word (Ctrl+W)."""
         old_cursor = self.cursor_pos
         # Skip trailing spaces
-        while self.cursor_pos > 0 and self.passwd[self.cursor_pos-1] == ' ':
+        while self.cursor_pos > 0 and self.passwd[self.cursor_pos - 1] == ' ':
             self.cursor_pos -= 1
-        # Delete the word
-        while self.cursor_pos > 0 and self.passwd[self.cursor_pos-1] != ' ':
+        # Skip the word
+        while self.cursor_pos > 0 and self.passwd[self.cursor_pos - 1] != ' ':
             self.cursor_pos -= 1
         # Remove the deleted portion
-        self.passwd = self.passwd[:self.cursor_pos] + self.passwd[old_cursor:]
+        del self.passwd[self.cursor_pos:old_cursor]
         self._refresh_display()
 
     def handle(self, char):
@@ -363,7 +364,7 @@ def _readline_with_echo_char(stream, input, echo_char, term_ctrl_chars=None):
             editor._insert_char(char)
             editor.eof_pressed = False
 
-    return editor.passwd
+    return ''.join(editor.passwd)
 
 
 def getuser():
