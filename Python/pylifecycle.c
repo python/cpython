@@ -1505,9 +1505,8 @@ Py_InitializeEx(int install_sigs)
     if (_PyStatus_EXCEPTION(status)) {
         Py_ExitStatusException(status);
     }
-    _PyRuntimeState *runtime = &_PyRuntime;
 
-    if (_PyRuntimeState_GetInitialized(runtime)) {
+    if (Py_IsInitialized()) {
         /* bpo-33932: Calling Py_Initialize() twice does nothing. */
         return;
     }
