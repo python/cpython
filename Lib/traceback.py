@@ -3,13 +3,17 @@
 import collections.abc
 import itertools
 import linecache
+import os
 import sys
 import textwrap
+import types
 import warnings
 import codeop
 import keyword
 import tokenize
 import io
+import importlib.util
+import pathlib
 import _colorize
 
 from contextlib import suppress
@@ -989,6 +993,10 @@ def _display_width(line, offset=None):
     )
 
 
+def _format_note(note, indent, theme):
+    for l in note.split("\n"):
+        yield f"{indent}{theme.note}{l}{theme.reset}\n"
+
 
 class _ExceptionPrintContext:
     def __init__(self):
@@ -1111,7 +1119,10 @@ class TracebackException:
             wrong_name = getattr(exc_value, "name_from", None)
             suggestion = _compute_suggestion_error(exc_value, exc_traceback, wrong_name)
             if suggestion:
-                self._str += f". Did you mean: '{suggestion}'?"
+                if suggestion.isascii():
+                    self._str += f". Did you mean: '{suggestion}'?"
+                else:
+                    self._str += f". Did you mean: '{suggestion}' ({suggestion!a})?"
         elif exc_type and issubclass(exc_type, ModuleNotFoundError):
             module_name = getattr(exc_value, "name", None)
             if module_name in sys.stdlib_module_names:
@@ -1124,19 +1135,38 @@ class TracebackException:
                 self._str += (". Site initialization is disabled, did you forget to "
                     + "add the site-packages directory to sys.path "
                     + "or to enable your virtual environment?")
-        elif exc_type and issubclass(exc_type, (NameError, AttributeError)) and \
+            elif abi_tag := _find_incompatible_extension_module(module_name):
+                self._str += (
+                    ". Although a module with this name was found for a "
+                    f"different Python version ({abi_tag})."
+                )
+            else:
+                suggestion = _compute_suggestion_error(exc_value, exc_traceback, module_name)
+                if suggestion:
+                    self._str += f". Did you mean: '{suggestion}'?"
+        elif exc_type and issubclass(exc_type, AttributeError) and \
                 getattr(exc_value, "name", None) is not None:
             wrong_name = getattr(exc_value, "name", None)
             suggestion = _compute_suggestion_error(exc_value, exc_traceback, wrong_name)
             if suggestion:
-                self._str += f". Did you mean: '{suggestion}'?"
-            if issubclass(exc_type, NameError):
-                wrong_name = getattr(exc_value, "name", None)
-                if wrong_name is not None and wrong_name in sys.stdlib_module_names:
-                    if suggestion:
-                        self._str += f" Or did you forget to import '{wrong_name}'?"
-                    else:
-                        self._str += f". Did you forget to import '{wrong_name}'?"
+                if suggestion.isascii():
+                    self._str += f". Did you mean '.{suggestion}' instead of '.{wrong_name}'?"
+                else:
+                    self._str += f". Did you mean '.{suggestion}' ({suggestion!a}) instead of '.{wrong_name}' ({wrong_name!a})?"
+        elif exc_type and issubclass(exc_type, NameError) and \
+                getattr(exc_value, "name", None) is not None:
+            wrong_name = getattr(exc_value, "name", None)
+            suggestion = _compute_suggestion_error(exc_value, exc_traceback, wrong_name)
+            if suggestion:
+                if suggestion.isascii():
+                    self._str += f". Did you mean: '{suggestion}'?"
+                else:
+                    self._str += f". Did you mean: '{suggestion}' ({suggestion!a})?"
+            if wrong_name is not None and wrong_name in sys.stdlib_module_names:
+                if suggestion:
+                    self._str += f" Or did you forget to import '{wrong_name}'?"
+                else:
+                    self._str += f". Did you forget to import '{wrong_name}'?"
         if lookup_lines:
             self._load_lines()
         self.__suppress_context__ = \
@@ -1265,6 +1295,10 @@ class TracebackException:
         well, recursively, with indentation relative to their nesting depth.
         """
         colorize = kwargs.get("colorize", False)
+        if colorize:
+            theme = _colorize.get_theme(force_color=True).traceback
+        else:
+            theme = _colorize.get_theme(force_no_color=True).traceback
 
         indent = 3 * _depth * ' '
         if not self._have_exc_type:
@@ -1293,9 +1327,10 @@ class TracebackException:
         ):
             for note in self.__notes__:
                 note = _safe_string(note, 'note')
-                yield from [indent + l + '\n' for l in note.split('\n')]
+                yield from _format_note(note, indent, theme)
         elif self.__notes__ is not None:
-            yield indent + "{}\n".format(_safe_string(self.__notes__, '__notes__', func=repr))
+            note = _safe_string(self.__notes__, '__notes__', func=repr)
+            yield from _format_note(note, indent, theme)
 
         if self.exceptions and show_group:
             for ex in self.exceptions:
@@ -1623,45 +1658,86 @@ def _substitution_cost(ch_a, ch_b):
     return _MOVE_COST
 
 
+def _is_lazy_import(obj, attr_name):
+    """Check if attr_name in obj's __dict__ is a lazy import.
+
+    Returns True if obj is a module and the attribute is a LazyImportType,
+    False otherwise. This avoids triggering module loading when computing
+    suggestions for AttributeError.
+    """
+    if not isinstance(obj, types.ModuleType):
+        return False
+    obj_dict = getattr(obj, '__dict__', None)
+    if obj_dict is None:
+        return False
+    attr_value = obj_dict.get(attr_name)
+    return isinstance(attr_value, types.LazyImportType)
+
+
 def _check_for_nested_attribute(obj, wrong_name, attrs):
     """Check if any attribute of obj has the wrong_name as a nested attribute.
 
     Returns the first nested attribute suggestion found, or None.
     Limited to checking 20 attributes.
-    Only considers non-descriptor attributes to avoid executing arbitrary code.
+    Only considers non-descriptor outer attributes to avoid executing
+    arbitrary code. Checks nested attributes statically so descriptors such
+    as properties can still be suggested without invoking them.
+    Skips lazy imports to avoid triggering module loading.
     """
+    from inspect import getattr_static
+
     # Check for nested attributes (only one level deep)
     attrs_to_check = [x for x in attrs if not x.startswith('_')][:20]  # Limit number of attributes to check
     for attr_name in attrs_to_check:
         with suppress(Exception):
             # Check if attr_name is a descriptor - if so, skip it
-            attr_from_class = getattr(type(obj), attr_name, None)
-            if attr_from_class is not None and hasattr(attr_from_class, '__get__'):
+            attr_from_class = getattr_static(type(obj), attr_name, _sentinel)
+            if attr_from_class is not _sentinel and hasattr(attr_from_class, '__get__'):
                 continue  # Skip descriptors to avoid executing arbitrary code
+
+            # Skip lazy imports to avoid triggering module loading
+            if _is_lazy_import(obj, attr_name):
+                continue
 
             # Safe to get the attribute since it's not a descriptor
             attr_obj = getattr(obj, attr_name)
 
-            # Check if the nested attribute exists and is not a descriptor
-            nested_attr_from_class = getattr(type(attr_obj), wrong_name, None)
+            if _is_lazy_import(attr_obj, wrong_name):
+                continue
 
-            if hasattr(attr_obj, wrong_name):
+            if getattr_static(attr_obj, wrong_name, _sentinel) is not _sentinel:
                 return f"{attr_name}.{wrong_name}"
 
     return None
 
 
+def _get_safe___dir__(obj):
+    # Use obj.__dir__() to avoid a TypeError when calling dir(obj).
+    # See gh-131001 and gh-139933.
+    # Also filters out lazy imports to avoid triggering module loading.
+    try:
+        d = obj.__dir__()
+    except TypeError:  # when obj is a class
+        d = type(obj).__dir__(obj)
+    return sorted(
+        x for x in d if isinstance(x, str) and not _is_lazy_import(obj, x)
+    )
+
+
 def _compute_suggestion_error(exc_value, tb, wrong_name):
     if wrong_name is None or not isinstance(wrong_name, str):
         return None
+    not_normalized = False
+    if not wrong_name.isascii():
+        from unicodedata import normalize
+        normalized_name = normalize('NFKC', wrong_name)
+        if normalized_name != wrong_name:
+            not_normalized = True
+            wrong_name = normalized_name
     if isinstance(exc_value, AttributeError):
         obj = exc_value.obj
         try:
-            try:
-                d = dir(obj)
-            except TypeError:  # Attributes are unsortable, e.g. int and str
-                d = list(obj.__class__.__dict__.keys()) + list(obj.__dict__.keys())
-            d = sorted([x for x in d if isinstance(x, str)])
+            d = _get_safe___dir__(obj)
             hide_underscored = (wrong_name[:1] != '_')
             if hide_underscored and tb is not None:
                 while tb.tb_next is not None:
@@ -1673,14 +1749,22 @@ def _compute_suggestion_error(exc_value, tb, wrong_name):
                 d = [x for x in d if x[:1] != '_']
         except Exception:
             return None
+    elif isinstance(exc_value, ModuleNotFoundError):
+        try:
+            if parent_name := wrong_name.rpartition('.')[0]:
+                parent = importlib.util.find_spec(parent_name)
+            else:
+                parent = None
+            d = []
+            for finder in sys.meta_path:
+                if discover := getattr(finder, 'discover', None):
+                    d += [spec.name for spec in discover(parent)]
+        except Exception:
+            return None
     elif isinstance(exc_value, ImportError):
         try:
             mod = __import__(exc_value.name)
-            try:
-                d = dir(mod)
-            except TypeError:  # Attributes are unsortable, e.g. int and str
-                d = list(mod.__dict__.keys())
-            d = sorted([x for x in d if isinstance(x, str)])
+            d = _get_safe___dir__(mod)
             if wrong_name[:1] != '_':
                 d = [x for x in d if x[:1] != '_']
         except Exception:
@@ -1699,6 +1783,8 @@ def _compute_suggestion_error(exc_value, tb, wrong_name):
             + list(frame.f_builtins)
         )
         d = [x for x in d if isinstance(x, str)]
+        if not_normalized and wrong_name in d:
+            return wrong_name
 
         # Check first if we are in a method and the instance
         # has the wrong name as attribute
@@ -1711,6 +1797,8 @@ def _compute_suggestion_error(exc_value, tb, wrong_name):
             if has_wrong_name:
                 return f"self.{wrong_name}"
 
+    if not_normalized and wrong_name in d:
+        return wrong_name
     try:
         import _suggestions
     except ImportError:
@@ -1813,3 +1901,32 @@ def _levenshtein_distance(a, b, max_cost):
             # Everything in this row is too big, so bail early.
             return max_cost + 1
     return result
+
+
+def _find_incompatible_extension_module(module_name):
+    import importlib.machinery
+    import importlib.resources.readers
+
+    if not module_name or not importlib.machinery.EXTENSION_SUFFIXES:
+        return
+
+    # We assume the last extension is untagged (eg. .so, .pyd)!
+    # tests.test_traceback.MiscTest.test_find_incompatible_extension_modules
+    # tests that assumption.
+    untagged_suffix = importlib.machinery.EXTENSION_SUFFIXES[-1]
+    # On Windows the debug tag is part of the module file stem, instead of the
+    # extension (eg. foo_d.pyd), so let's remove it and just look for .pyd.
+    if os.name == 'nt':
+        untagged_suffix = untagged_suffix.removeprefix('_d')
+
+    parent, _, child = module_name.rpartition('.')
+    if parent:
+        traversable = importlib.resources.files(parent)
+    else:
+        traversable = importlib.resources.readers.MultiplexedPath(
+            *map(pathlib.Path, filter(os.path.isdir, sys.path))
+        )
+
+    for entry in traversable.iterdir():
+        if entry.name.startswith(child + '.') and entry.name.endswith(untagged_suffix):
+            return entry.name

@@ -4,6 +4,7 @@
 #include "Python.h"
 #include "pycore_abstract.h"      // _PyIndex_Check()
 #include "pycore_audit.h"         // _Py_AuditHookEntry
+#include "pycore_backoff.h"       // JUMP_BACKWARD_INITIAL_VALUE, SIDE_EXIT_INITIAL_VALUE
 #include "pycore_ceval.h"         // _PyEval_AcquireLock()
 #include "pycore_codecs.h"        // _PyCodec_Fini()
 #include "pycore_critical_section.h" // _PyCriticalSection_Resume()
@@ -23,7 +24,6 @@
 #include "pycore_stackref.h"      // Py_STACKREF_DEBUG
 #include "pycore_stats.h"         // FT_STAT_WORLD_STOP_INC()
 #include "pycore_time.h"          // _PyTime_Init()
-#include "pycore_uop.h"           // UOP_BUFFER_SIZE
 #include "pycore_uniqueid.h"      // _PyObject_FinalizePerThreadRefcounts()
 
 
@@ -513,6 +513,35 @@ _Py_LazyJitShim(
    main interpreter.  We fix those fields here, in addition
    to the other dynamically initialized fields.
   */
+
+static inline bool
+is_env_enabled(const char *env_name)
+{
+    char *env = Py_GETENV(env_name);
+    return env && *env != '\0' && *env != '0';
+}
+
+static inline bool
+is_env_disabled(const char *env_name)
+{
+    char *env = Py_GETENV(env_name);
+    return env != NULL && *env == '0';
+}
+
+static inline void
+init_policy(uint16_t *target, const char *env_name, uint16_t default_value,
+            long min_value, long max_value)
+{
+    *target = default_value;
+    char *env = Py_GETENV(env_name);
+    if (env && *env != '\0') {
+        long value = atol(env);
+        if (value >= min_value && value <= max_value) {
+            *target = (uint16_t)value;
+        }
+    }
+}
+
 static PyStatus
 init_interpreter(PyInterpreterState *interp,
                  _PyRuntimeState *runtime, int64_t id,
@@ -568,9 +597,46 @@ init_interpreter(PyInterpreterState *interp,
     interp->_code_object_generation = 0;
     interp->jit = false;
     interp->compiling = false;
-    interp->executor_list_head = NULL;
+    interp->executor_blooms = NULL;
+    interp->executor_ptrs = NULL;
+    interp->executor_count = 0;
+    interp->executor_capacity = 0;
     interp->executor_deletion_list_head = NULL;
     interp->executor_creation_counter = JIT_CLEANUP_THRESHOLD;
+
+    // Initialize optimization configuration from environment variables
+    // PYTHON_JIT_STRESS sets aggressive defaults for testing, but can be overridden
+    uint16_t jump_default = JUMP_BACKWARD_INITIAL_VALUE;
+    uint16_t resume_default = RESUME_INITIAL_VALUE;
+    uint16_t side_exit_default = SIDE_EXIT_INITIAL_VALUE;
+
+    if (is_env_enabled("PYTHON_JIT_STRESS")) {
+        jump_default = 63;
+        side_exit_default = 63;
+        resume_default = 127;
+    }
+
+    init_policy(&interp->opt_config.jump_backward_initial_value,
+                "PYTHON_JIT_JUMP_BACKWARD_INITIAL_VALUE",
+                jump_default, 1, MAX_VALUE);
+    init_policy(&interp->opt_config.jump_backward_initial_backoff,
+                "PYTHON_JIT_JUMP_BACKWARD_INITIAL_BACKOFF",
+                JUMP_BACKWARD_INITIAL_BACKOFF, 0, MAX_BACKOFF);
+    init_policy(&interp->opt_config.resume_initial_value,
+                "PYTHON_JIT_RESUME_INITIAL_VALUE",
+                resume_default, 1, MAX_VALUE);
+    init_policy(&interp->opt_config.resume_initial_backoff,
+                "PYTHON_JIT_RESUME_INITIAL_BACKOFF",
+                RESUME_INITIAL_BACKOFF, 0, MAX_BACKOFF);
+    init_policy(&interp->opt_config.side_exit_initial_value,
+                "PYTHON_JIT_SIDE_EXIT_INITIAL_VALUE",
+                side_exit_default, 1, MAX_VALUE);
+    init_policy(&interp->opt_config.side_exit_initial_backoff,
+                "PYTHON_JIT_SIDE_EXIT_INITIAL_BACKOFF",
+                SIDE_EXIT_INITIAL_BACKOFF, 0, MAX_BACKOFF);
+
+    interp->opt_config.specialization_enabled = !is_env_enabled("PYTHON_SPECIALIZATION_OFF");
+    interp->opt_config.uops_optimize_enabled = !is_env_disabled("PYTHON_UOPS_OPTIMIZE");
     if (interp != &runtime->_main_interpreter) {
         /* Fix the self-referential, statically initialized fields. */
         interp->dtoa = (struct _dtoa_state)_dtoa_state_INIT(interp);
@@ -819,7 +885,7 @@ interpreter_clear(PyInterpreterState *interp, PyThreadState *tstate)
     if (cold != NULL) {
         interp->cold_executor = NULL;
         assert(cold->vm_data.valid);
-        assert(cold->vm_data.warm);
+        assert(!cold->vm_data.cold);
         _PyExecutor_Free(cold);
     }
 
@@ -827,7 +893,7 @@ interpreter_clear(PyInterpreterState *interp, PyThreadState *tstate)
     if (cold_dynamic != NULL) {
         interp->cold_dynamic_executor = NULL;
         assert(cold_dynamic->vm_data.valid);
-        assert(cold_dynamic->vm_data.warm);
+        assert(!cold_dynamic->vm_data.cold);
         _PyExecutor_Free(cold_dynamic);
     }
     /* We don't clear sysdict and builtins until the end of this function.
@@ -1509,6 +1575,7 @@ init_threadstate(_PyThreadStateImpl *_tstate,
     tstate->datastack_chunk = NULL;
     tstate->datastack_top = NULL;
     tstate->datastack_limit = NULL;
+    tstate->datastack_cached_chunk = NULL;
     tstate->what_event = -1;
     tstate->current_executor = NULL;
     tstate->jit_exit = NULL;
@@ -1525,7 +1592,7 @@ init_threadstate(_PyThreadStateImpl *_tstate,
     _tstate->asyncio_running_task = NULL;
 
 #ifdef _Py_TIER2
-    _tstate->jit_tracer_state.code_buffer = NULL;
+    _tstate->jit_tracer_state = NULL;
 #endif
     tstate->delete_later = NULL;
 
@@ -1659,6 +1726,11 @@ clear_datastack(PyThreadState *tstate)
         _PyObject_VirtualFree(chunk, chunk->size);
         chunk = prev;
     }
+    if (tstate->datastack_cached_chunk != NULL) {
+        _PyObject_VirtualFree(tstate->datastack_cached_chunk,
+                              tstate->datastack_cached_chunk->size);
+        tstate->datastack_cached_chunk = NULL;
+    }
 }
 
 void
@@ -1788,6 +1860,10 @@ PyThreadState_Clear(PyThreadState *tstate)
 
     _PyThreadState_ClearMimallocHeaps(tstate);
 
+#ifdef _Py_TIER2
+    _PyJit_TracerFree((_PyThreadStateImpl *)tstate);
+#endif
+
     tstate->_status.cleared = 1;
 
     // XXX Call _PyThreadStateSwap(runtime, NULL) here if "current".
@@ -1841,11 +1917,7 @@ tstate_delete_common(PyThreadState *tstate, int release_gil)
 #endif
 
 #if _Py_TIER2
-    _PyThreadStateImpl *_tstate = (_PyThreadStateImpl *)tstate;
-    if (_tstate->jit_tracer_state.code_buffer != NULL) {
-        _PyObject_VirtualFree(_tstate->jit_tracer_state.code_buffer, UOP_BUFFER_SIZE);
-        _tstate->jit_tracer_state.code_buffer = NULL;
-    }
+    _PyJit_TracerFree((_PyThreadStateImpl *)tstate);
 #endif
 
     HEAD_UNLOCK(runtime);
@@ -2804,7 +2876,7 @@ int
 PyGILState_Check(void)
 {
     _PyRuntimeState *runtime = &_PyRuntime;
-    if (!runtime->gilstate.check_enabled) {
+    if (!_Py_atomic_load_int_relaxed(&runtime->gilstate.check_enabled)) {
         return 1;
     }
 
@@ -2990,9 +3062,20 @@ push_chunk(PyThreadState *tstate, int size)
     while (allocate_size < (int)sizeof(PyObject*)*(size + MINIMUM_OVERHEAD)) {
         allocate_size *= 2;
     }
-    _PyStackChunk *new = allocate_chunk(allocate_size, tstate->datastack_chunk);
-    if (new == NULL) {
-        return NULL;
+    _PyStackChunk *new;
+    if (tstate->datastack_cached_chunk != NULL
+        && (size_t)allocate_size <= tstate->datastack_cached_chunk->size)
+    {
+        new = tstate->datastack_cached_chunk;
+        tstate->datastack_cached_chunk = NULL;
+        new->previous = tstate->datastack_chunk;
+        new->top = 0;
+    }
+    else {
+        new = allocate_chunk(allocate_size, tstate->datastack_chunk);
+        if (new == NULL) {
+            return NULL;
+        }
     }
     if (tstate->datastack_chunk) {
         tstate->datastack_chunk->top = tstate->datastack_top -
@@ -3028,12 +3111,17 @@ _PyThreadState_PopFrame(PyThreadState *tstate, _PyInterpreterFrame * frame)
     if (base == &tstate->datastack_chunk->data[0]) {
         _PyStackChunk *chunk = tstate->datastack_chunk;
         _PyStackChunk *previous = chunk->previous;
+        _PyStackChunk *cached = tstate->datastack_cached_chunk;
         // push_chunk ensures that the root chunk is never popped:
         assert(previous);
         tstate->datastack_top = &previous->data[previous->top];
         tstate->datastack_chunk = previous;
-        _PyObject_VirtualFree(chunk, chunk->size);
         tstate->datastack_limit = (PyObject **)(((char *)previous) + previous->size);
+        chunk->previous = NULL;
+        if (cached != NULL) {
+            _PyObject_VirtualFree(cached, cached->size);
+        }
+        tstate->datastack_cached_chunk = chunk;
     }
     else {
         assert(tstate->datastack_top);

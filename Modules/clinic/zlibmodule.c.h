@@ -210,7 +210,7 @@ exit:
 PyDoc_STRVAR(zlib_compressobj__doc__,
 "compressobj($module, /, level=Z_DEFAULT_COMPRESSION, method=DEFLATED,\n"
 "            wbits=MAX_WBITS, memLevel=DEF_MEM_LEVEL,\n"
-"            strategy=Z_DEFAULT_STRATEGY, zdict=None)\n"
+"            strategy=Z_DEFAULT_STRATEGY, zdict=<unrepresentable>)\n"
 "--\n"
 "\n"
 "Return a compressor object.\n"
@@ -1402,4 +1402,4 @@ exit:
 #ifndef ZLIB_DECOMPRESS___DEEPCOPY___METHODDEF
     #define ZLIB_DECOMPRESS___DEEPCOPY___METHODDEF
 #endif /* !defined(ZLIB_DECOMPRESS___DEEPCOPY___METHODDEF) */
-/*[clinic end generated code: output=fa5fc356f3090cce input=a9049054013a1b77]*/
+/*[clinic end generated code: output=13627e14206d3552 input=a9049054013a1b77]*/

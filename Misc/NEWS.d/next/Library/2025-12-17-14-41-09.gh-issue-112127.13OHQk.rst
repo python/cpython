@@ -1,2 +1,0 @@
-Fix possible use-after-free in :func:`atexit.unregister` when the callback
-is unregistered during comparison.

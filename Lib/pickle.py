@@ -1175,6 +1175,17 @@ class _Pickler:
             if name is None:
                 name = obj.__name__
 
+        if '.__' in name:
+            # Mangle names of private attributes.
+            dotted_path = name.split('.')
+            for i, subpath in enumerate(dotted_path):
+                if i and subpath.startswith('__') and not subpath.endswith('__'):
+                    prev = prev.lstrip('_')
+                    if prev:
+                        dotted_path[i] = f"_{prev.lstrip('_')}{subpath}"
+                prev = subpath
+            name = '.'.join(dotted_path)
+
         module_name = whichmodule(obj, name)
         if self.proto >= 2:
             code = _extension_registry.get((module_name, name), _NoValue)
