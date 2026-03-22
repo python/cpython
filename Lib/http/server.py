@@ -585,7 +585,7 @@ class BaseHTTPRequestHandler(socketserver.StreamRequestHandler):
             if code_int >= 500:
                 code_color = t.status_server_error
             elif code_int >= 400:
-                code_color = t.status_error
+                code_color = t.status_client_error
             else:
                 code_color = t.status_ok
 

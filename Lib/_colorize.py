@@ -207,7 +207,7 @@ class HttpServer(ThemeSection):
     serving: str = ANSIColors.GREEN
     size: str = ANSIColors.GREY
     status_ok: str = ANSIColors.BLUE
-    status_error: str = ANSIColors.YELLOW
+    status_client_error: str = ANSIColors.YELLOW
     status_server_error: str = ANSIColors.RED
     timestamp: str = ANSIColors.GREY
     url: str = ANSIColors.CYAN
