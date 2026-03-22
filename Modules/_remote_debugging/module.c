@@ -420,6 +420,7 @@ _remote_debugging_RemoteUnwinder___init___impl(RemoteUnwinderObject *self,
 
 #if defined(__APPLE__)
     self->thread_id_offset = 0;
+    self->thread_id_offset_initialized = 0;
 #endif
 
 #ifdef MS_WINDOWS
