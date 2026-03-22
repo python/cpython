@@ -81,8 +81,6 @@ class JsonlCollector(StackTraceCollector):
                 },
             )
 
-        print(f"JSONL profile written to {filename}")
-
     def _build_meta_record(self):
         record = {
             "type": "meta",
