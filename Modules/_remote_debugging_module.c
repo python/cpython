@@ -79,6 +79,7 @@
 #define INTERP_STATE_BUFFER_SIZE MAX(INTERP_STATE_MIN_SIZE, 256)
 #define MAX_STACK_CHUNK_SIZE (16 * 1024 * 1024)  /* 16 MB max for stack chunks */
 #define MAX_SET_TABLE_SIZE (1 << 20)  /* 1 million entries max for set iteration */
+#define MAX_LONG_DIGITS 64  /* Allows values up to ~2^1920 */
 
 
 
@@ -753,6 +754,15 @@ read_py_long(
         return 0;
     }
 
+    if (size < 0 || size > MAX_LONG_DIGITS) {
+        PyErr_Format(PyExc_RuntimeError,
+                     "Invalid PyLong digit count: %zd (expected 0-%d)",
+                     size, MAX_LONG_DIGITS);
+        set_exception_cause(unwinder, PyExc_RuntimeError,
+                            "Invalid PyLong size (corrupted remote memory)");
+        return -1;
+    }
+
     // If the long object has inline digits, use them directly
     digit *digits;
     if (size <= _PY_NSMALLNEGINTS + _PY_NSMALLPOSINTS) {
@@ -1364,6 +1374,9 @@ process_running_task_chain(
     PyObject *coro_chain = PyStructSequence_GET_ITEM(task_info, 2);
     assert(coro_chain != NULL);
     if (PyList_GET_SIZE(coro_chain) != 1) {
+        PyErr_Format(PyExc_RuntimeError,
+                     "Expected single-item coro chain, got %zd items",
+                     PyList_GET_SIZE(coro_chain));
         set_exception_cause(unwinder, PyExc_RuntimeError, "Coro chain is not a single item");
         return -1;
     }
@@ -1625,6 +1638,7 @@ cache_tlbc_array(RemoteUnwinderObject *unwinder, uintptr_t code_addr, uintptr_t 
     void *key = (void *)code_addr;
     if (_Py_hashtable_set(unwinder->tlbc_cache, key, entry) < 0) {
         tlbc_cache_entry_destroy(entry);
+        PyErr_NoMemory();
         set_exception_cause(unwinder, PyExc_RuntimeError, "Failed to store TLBC entry in cache");
         return 0; // Cache error
     }
@@ -1803,7 +1817,11 @@ parse_code_object(RemoteUnwinderObject *unwinder,
         meta->addr_code_adaptive = real_address + (uintptr_t)unwinder->debug_offsets.code_object.co_code_adaptive;
 
         if (unwinder && unwinder->code_object_cache && _Py_hashtable_set(unwinder->code_object_cache, key, meta) < 0) {
+            func = NULL;
+            file = NULL;
+            linetable = NULL;
             cached_code_metadata_destroy(meta);
+            PyErr_NoMemory();
             set_exception_cause(unwinder, PyExc_RuntimeError, "Failed to cache code metadata");
             goto error;
         }
