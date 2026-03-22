@@ -24,6 +24,7 @@ import random
 import unittest
 import warnings
 from _operator import _compare_digest as operator_compare_digest
+from test import support
 from test.support import _4G, bigmemtest
 from test.support import check_disallow_instantiation
 from test.support import hashlib_helper, import_helper
