@@ -1767,6 +1767,13 @@ class PyUnicodeWriterTest(unittest.TestCase):
         self.assertEqual(writer.finish(),
                          "var=long value 'repr'")
 
+    def test_repr_null(self):
+        writer = self.create_writer(0)
+        writer.write_utf8(b'var=', -1)
+        writer.write_repr(NULL)
+        self.assertEqual(writer.finish(),
+                         "var=<NULL>")
+
     def test_write_char(self):
         writer = self.create_writer(0)
         writer.write_char(0)

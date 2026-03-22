@@ -292,6 +292,10 @@ class CAPITest(unittest.TestCase):
         self.assertEqual(tuple(my_iter()), (TAG, *range(10)))
         self.assertEqual(tuples, [])
 
+    def test_uninitialized_tuple_repr(self):
+        tup = _testlimitedcapi.tuple_new(3)
+        self.assertEqual(repr(tup), '(<NULL>, <NULL>, <NULL>)')
+
 
 if __name__ == "__main__":
     unittest.main()
