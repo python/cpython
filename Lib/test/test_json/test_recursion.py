@@ -1,7 +1,6 @@
 from test import support
 from test.test_json import PyTest, CTest
 import weakref
-import gc
 
 
 
@@ -142,7 +141,7 @@ class TestRecursion:
         with self.assertRaises(RecursionError):
             self.dumps(obj, default=default)
 
-        gc.collect()
+        support.gc_collect()
         for i, ref in enumerate(weak_refs):
             self.assertIsNone(ref(),
                 f"Object {i} still alive - memory leak detected!")
