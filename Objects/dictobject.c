@@ -6617,7 +6617,6 @@ dictitems_xor_lock_held(PyObject *d1, PyObject *d2)
         else {
             Py_INCREF(val1);
             to_delete = PyObject_RichCompareBool(val1, val2, Py_EQ);
-            Py_DECREF(val1);
             if (to_delete < 0) {
                 goto error;
             }
