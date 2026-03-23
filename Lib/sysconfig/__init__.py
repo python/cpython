@@ -739,7 +739,7 @@ def get_python_version():
 
 
 def _get_python_version_abi():
-    return get_config_var('py_version_short') + get_config_var("abi_thread")
+    return get_config_var('py_version_short') + get_config_var('abi_thread')
 
 
 def expand_makefile_vars(s, vars):
