@@ -245,7 +245,7 @@ static const _Py_ALIGNED_DEF(64, unsigned char) table_b2a_base85_a85[]  =
 #define BASE85_A85_Y 0x20202020
 
 
-static const unsigned char table_a2b_base32[] Py_ALIGNED(64) = {
+static const _Py_ALIGNED_DEF(64, unsigned char) table_a2b_base32[] = {
     -1,-1,-1,-1, -1,-1,-1,-1, -1,-1,-1,-1, -1,-1,-1,-1,
     -1,-1,-1,-1, -1,-1,-1,-1, -1,-1,-1,-1, -1,-1,-1,-1,
     -1,-1,-1,-1, -1,-1,-1,-1, -1,-1,-1,-1, -1,-1,-1,-1,
@@ -265,7 +265,7 @@ static const unsigned char table_a2b_base32[] Py_ALIGNED(64) = {
     -1,-1,-1,-1, -1,-1,-1,-1, -1,-1,-1,-1, -1,-1,-1,-1,
 };
 
-static const unsigned char table_b2a_base32[] Py_ALIGNED(64) =
+static const _Py_ALIGNED_DEF(64, unsigned char) table_b2a_base32[] =
     "ABCDEFGHIJKLMNOPQRSTUVWXYZ234567";
 
 #define BASE32_PAD '='
