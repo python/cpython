@@ -199,7 +199,13 @@ class UnixGetpassTest(unittest.TestCase):
             result = getpass._raw_input('Password: ', mock_output, mock_input,
                                         '*')
         self.assertEqual(result, expect_result)
-        self.assertEqual('Password: *******\x08 \x08', mock_output.getvalue())
+        # After backspace: refresh rewrites prompt + 6 echo chars
+        self.assertEqual(
+            'Password: *******'           # initial prompt + 7 echo chars
+            '\r' + ' ' * 17 + '\r'        # clear line (10 prompt + 7 prev)
+            'Password: ******',           # rewrite prompt + 6 echo chars
+            mock_output.getvalue()
+        )
 
     def test_kill_ctrl_u_with_echo_char(self):
         # Ctrl+U (KILL) should clear the entire line
@@ -225,6 +231,35 @@ class UnixGetpassTest(unittest.TestCase):
         result = getpass._raw_input('Password: ', mock_output, mock_input,
                                     '*')
         self.assertEqual(result, expect_result)
+
+    def test_ctrl_w_display_preserves_prompt(self):
+        # Reproducer from gh-138577: type "hello world", Ctrl+W
+        # Display must show "Password: ******" not "******rd: ***********"
+        passwd = 'hello world\x17'
+        mock_input = StringIO(f'{passwd}\n')
+        mock_output = StringIO()
+        result = getpass._raw_input('Password: ', mock_output, mock_input,
+                                    '*')
+        self.assertEqual(result, 'hello ')
+        output = mock_output.getvalue()
+        # The final visible state should be "Password: ******"
+        # Verify prompt is rewritten during refresh, not overwritten by stars
+        self.assertTrue(output.endswith('Password: ******'),
+                        f'Prompt corrupted in display: {output!r}')
+
+    def test_ctrl_a_insert_display_preserves_prompt(self):
+        # Reproducer from gh-138577: type "abc", Ctrl+A, type "x"
+        # Display must show "Password: ****" not "****word: ***"
+        passwd = 'abc\x01x'
+        mock_input = StringIO(f'{passwd}\n')
+        mock_output = StringIO()
+        result = getpass._raw_input('Password: ', mock_output, mock_input,
+                                    '*')
+        self.assertEqual(result, 'xabc')
+        output = mock_output.getvalue()
+        # The final visible state should be "Password: ****"
+        self.assertTrue(output.endswith('Password: ****\x08\x08\x08'),
+                        f'Prompt corrupted in display: {output!r}')
 
     def test_lnext_ctrl_v_with_echo_char(self):
         # Ctrl+V (LNEXT) should insert the next character literally

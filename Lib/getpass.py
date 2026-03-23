@@ -217,7 +217,7 @@ def _raw_input(prompt="", stream=None, input=None, echo_char=None,
     # NOTE: The Python C API calls flockfile() (and unlock) during readline.
     if echo_char:
         return _readline_with_echo_char(stream, input, echo_char,
-                                        term_ctrl_chars)
+                                        term_ctrl_chars, prompt)
     line = input.readline()
     if not line:
         raise EOFError
@@ -229,9 +229,10 @@ def _raw_input(prompt="", stream=None, input=None, echo_char=None,
 class _PasswordLineEditor:
     """Handles line editing for password input with echo character."""
 
-    def __init__(self, stream, echo_char, ctrl_chars):
+    def __init__(self, stream, echo_char, ctrl_chars, prompt=""):
         self.stream = stream
         self.echo_char = echo_char
+        self.prompt = prompt
         self.passwd = []
         self.cursor_pos = 0
         self.eof_pressed = False
@@ -247,17 +248,17 @@ class _PasswordLineEditor:
             '\b': self._handle_erase,                       # Backspace
         }
 
-    def _refresh_display(self):
+    def _refresh_display(self, prev_len=None):
         """Redraw the entire password line with *echo_char*."""
-        self.stream.write('\r' + ' ' * len(self.passwd) + '\r')
-        self.stream.write(self.echo_char * len(self.passwd))
+        prompt_len = len(self.prompt)
+        # Use prev_len if given, otherwise current password length
+        clear_len = prev_len if prev_len is not None else len(self.passwd)
+        # Clear the entire line (prompt + password) and rewrite
+        self.stream.write('\r' + ' ' * (prompt_len + clear_len) + '\r')
+        self.stream.write(self.prompt + self.echo_char * len(self.passwd))
         if self.cursor_pos < len(self.passwd):
             self.stream.write('\b' * (len(self.passwd) - self.cursor_pos))
         self.stream.flush()
-
-    def _erase_chars(self, count):
-        """Erase *count* echo characters from display."""
-        self.stream.write("\b \b" * count)
 
     def _insert_char(self, char):
         """Insert *char* at cursor position."""
@@ -282,28 +283,23 @@ class _PasswordLineEditor:
         """Delete character before cursor (Backspace/DEL)."""
         if self.cursor_pos <= 0:
             return
+        prev_len = len(self.passwd)
         del self.passwd[self.cursor_pos - 1]
         self.cursor_pos -= 1
-        # Only refresh if deleting from middle
-        if self.cursor_pos < len(self.passwd):
-            self._refresh_display()
-        else:
-            self.stream.write("\b \b")
-            self.stream.flush()
+        self._refresh_display(prev_len)
 
     def _handle_kill_line(self):
         """Erase entire line (Ctrl+U)."""
-        self._erase_chars(len(self.passwd))
+        prev_len = len(self.passwd)
         self.passwd.clear()
         self.cursor_pos = 0
-        self.stream.flush()
+        self._refresh_display(prev_len)
 
     def _handle_kill_forward(self):
         """Kill from cursor to end (Ctrl+K)."""
-        chars_to_delete = len(self.passwd) - self.cursor_pos
+        prev_len = len(self.passwd)
         del self.passwd[self.cursor_pos:]
-        self._erase_chars(chars_to_delete)
-        self.stream.flush()
+        self._refresh_display(prev_len)
 
     def _handle_erase_word(self):
         """Erase previous word (Ctrl+W)."""
@@ -315,8 +311,9 @@ class _PasswordLineEditor:
         while self.cursor_pos > 0 and self.passwd[self.cursor_pos - 1] != ' ':
             self.cursor_pos -= 1
         # Remove the deleted portion
+        prev_len = len(self.passwd)
         del self.passwd[self.cursor_pos:old_cursor]
-        self._refresh_display()
+        self._refresh_display(prev_len)
 
     def handle(self, char):
         """Handle a single character input. Returns True if handled."""
@@ -328,12 +325,13 @@ class _PasswordLineEditor:
         return False
 
 
-def _readline_with_echo_char(stream, input, echo_char, term_ctrl_chars=None):
+def _readline_with_echo_char(stream, input, echo_char, term_ctrl_chars=None,
+                             prompt=""):
     """Read password with echo character and line editing support."""
     if term_ctrl_chars is None:
         term_ctrl_chars = _POSIX_CTRL_CHARS.copy()
 
-    editor = _PasswordLineEditor(stream, echo_char, term_ctrl_chars)
+    editor = _PasswordLineEditor(stream, echo_char, term_ctrl_chars, prompt)
 
     while True:
         char = input.read(1)
