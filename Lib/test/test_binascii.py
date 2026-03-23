@@ -143,17 +143,16 @@ class BinASCIITest(unittest.TestCase):
             _assertRegexTemplate(r'(?i)Excess padding', data, non_strict_mode_expected_result)
 
         # Test excess data exceptions
-        assertExcessData(b'ab==a', b'i')
-        assertExcessData(b'ab===', b'i')
-        assertExcessData(b'ab====', b'i')
-        assertExcessData(b'ab==:', b'i')
-        assertExcessData(b'abc=a', b'i\xb7')
-        assertExcessData(b'abc=:', b'i\xb7')
-        assertExcessData(b'ab==\n', b'i')
-        assertExcessData(b'abc==', b'i\xb7')
-        assertExcessData(b'abc===', b'i\xb7')
-        assertExcessData(b'abc====', b'i\xb7')
-        assertExcessData(b'abc=====', b'i\xb7')
+        assertExcessPadding(b'ab===', b'i')
+        assertExcessPadding(b'ab====', b'i')
+        assertNonBase64Data(b'ab==:', b'i')
+        assertExcessData(b'abc=a', b'i\xb7\x1a')
+        assertNonBase64Data(b'abc=:', b'i\xb7')
+        assertNonBase64Data(b'ab==\n', b'i')
+        assertExcessPadding(b'abc==', b'i\xb7')
+        assertExcessPadding(b'abc===', b'i\xb7')
+        assertExcessPadding(b'abc====', b'i\xb7')
+        assertExcessPadding(b'abc=====', b'i\xb7')
 
         # Test non-base64 data exceptions
         assertNonBase64Data(b'\nab==', b'i')
@@ -175,6 +174,20 @@ class BinASCIITest(unittest.TestCase):
         assertExcessPadding(b'abcd====', b'i\xb7\x1d')
         assertExcessPadding(b'abcd=====', b'i\xb7\x1d')
 
+    def test_base64_excess_data(self):
+        # Test excess data exceptions
+        def assertExcessData(data, expected):
+            assert_regex = r'(?i)Excess data'
+            data = self.type2test(data)
+            with self.assertRaisesRegex(binascii.Error, assert_regex):
+                binascii.a2b_base64(data, strict_mode=True)
+            self.assertEqual(binascii.a2b_base64(data, strict_mode=False),
+                             expected)
+            self.assertEqual(binascii.a2b_base64(data), expected)
+
+        assertExcessData(b'ab==c=', b'i\xb7')
+        assertExcessData(b'ab==cd', b'i\xb7\x1d')
+        assertExcessData(b'abc=d', b'i\xb7\x1d')
 
     def test_base64errors(self):
         # Test base64 with invalid padding
