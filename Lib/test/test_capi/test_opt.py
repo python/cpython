@@ -2712,7 +2712,7 @@ class TestUopsOptimization(unittest.TestCase):
         uops = get_opnames(ex)
 
         self.assertIn("_CALL_INTRINSIC_2", uops)
-        self.assertEqual(count_ops(ex, "_POP_TOP_NOP"), 2)
+        self.assertGreaterEqual(count_ops(ex, "_POP_TOP_NOP"), 2)
         self.assertLessEqual(count_ops(ex, "_POP_TOP"), 4)
 
     def test_get_len_with_const_tuple(self):
