@@ -1582,6 +1582,7 @@ extern "C" {
     INIT_ID(all), \
     INIT_ID(all_threads), \
     INIT_ID(allow_code), \
+    INIT_ID(alphabet), \
     INIT_ID(any), \
     INIT_ID(append), \
     INIT_ID(arg), \

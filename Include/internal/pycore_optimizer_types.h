@@ -36,15 +36,16 @@ typedef enum _JitSymType {
     JIT_SYM_NON_NULL_TAG = 3,
     JIT_SYM_BOTTOM_TAG = 4,
     JIT_SYM_TYPE_VERSION_TAG = 5,
-    JIT_SYM_KNOWN_CLASS_TAG = 6,
-    JIT_SYM_KNOWN_VALUE_TAG = 7,
-    JIT_SYM_TUPLE_TAG = 8,
-    JIT_SYM_TRUTHINESS_TAG = 9,
-    JIT_SYM_COMPACT_INT = 10,
-    JIT_SYM_PREDICATE_TAG = 11,
-    JIT_SYM_RECORDED_VALUE_TAG = 12,
-    JIT_SYM_RECORDED_TYPE_TAG = 13,
-    JIT_SYM_RECORDED_GEN_FUNC_TAG = 14,
+    JIT_SYM_FUNC_VERSION_TAG = 6,
+    JIT_SYM_KNOWN_CLASS_TAG = 7,
+    JIT_SYM_KNOWN_VALUE_TAG = 8,
+    JIT_SYM_TUPLE_TAG = 9,
+    JIT_SYM_TRUTHINESS_TAG = 10,
+    JIT_SYM_COMPACT_INT = 11,
+    JIT_SYM_PREDICATE_TAG = 12,
+    JIT_SYM_RECORDED_VALUE_TAG = 13,
+    JIT_SYM_RECORDED_TYPE_TAG = 14,
+    JIT_SYM_RECORDED_GEN_FUNC_TAG = 15,
 } JitSymType;
 
 typedef struct _jit_opt_known_class {
@@ -57,6 +58,11 @@ typedef struct _jit_opt_known_version {
     uint8_t tag;
     uint32_t version;
 } JitOptKnownVersion;
+
+typedef struct _jit_opt_known_func_version {
+    uint8_t tag;
+    uint32_t func_version;
+} JitOptKnownFuncVersion;
 
 typedef struct _jit_opt_known_value {
     uint8_t tag;
@@ -118,6 +124,7 @@ typedef union _jit_opt_symbol {
     JitOptKnownClass cls;
     JitOptKnownValue value;
     JitOptKnownVersion version;
+    JitOptKnownFuncVersion func_version;
     JitOptTuple tuple;
     JitOptTruthiness truthiness;
     JitOptCompactInt compact;
@@ -140,6 +147,7 @@ typedef struct _Py_UOpsAbstractFrame {
     int stack_len;
     int locals_len;
     bool caller; // We have made a call from this frame during the trace
+    JitOptRef callable;
     PyFunctionObject *func;
     PyCodeObject *code;
 

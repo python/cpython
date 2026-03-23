@@ -3,6 +3,7 @@
 # See test_cmd_line_script.py for testing of script execution
 
 import os
+import re
 import subprocess
 import sys
 import sysconfig
@@ -59,11 +60,22 @@ class CmdLineTest(unittest.TestCase):
     def test_help_env(self):
         out = self.verify_valid_flag('--help-env')
         self.assertIn(b'PYTHONHOME', out)
+        # Env vars in each section should be sorted alphabetically
+        # (ignoring underscores so PYTHON_FOO and PYTHONFOO intermix naturally)
+        sort_key = lambda name: name.replace(b'_', b'').lower()
+        sections = out.split(b'These variables have equivalent')
+        for section in sections:
+            envvars = re.findall(rb'^(PYTHON\w+)', section, re.MULTILINE)
+            self.assertEqual(envvars, sorted(envvars, key=sort_key),
+                             "env vars should be sorted alphabetically")
 
     @support.cpython_only
     def test_help_xoptions(self):
         out = self.verify_valid_flag('--help-xoptions')
         self.assertIn(b'-X dev', out)
+        options = re.findall(rb'^-X (\w+)', out, re.MULTILINE)
+        self.assertEqual(options, sorted(options),
+                         "options should be sorted alphabetically")
 
     @support.cpython_only
     def test_help_all(self):
