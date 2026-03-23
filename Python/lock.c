@@ -87,7 +87,7 @@ _PyMutex_LockTimed(PyMutex *m, PyTime_t timeout, _PyLockFlags flags)
     // are less likely to try and run compare-exchange at the same time.
     // The lower bits of platform thread ids are likely to not be random,
     // hence the right shift.
-    const Py_ssize_t tid = (Py_ssize_t) _Py_ThreadId() >> 12;
+    const Py_ssize_t tid = (Py_ssize_t)(_Py_ThreadId() >> 12);
 #else
     const Py_ssize_t tid = 0;
 #endif
