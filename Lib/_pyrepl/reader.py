@@ -28,6 +28,7 @@ from contextlib import contextmanager
 from dataclasses import dataclass, field, fields
 
 from . import commands, console, input
+from .render import RenderCell, RenderLine, RenderedScreen
 from .utils import wlen, unbracket, disp_str, gen_colors, THEME
 from .trace import trace
 
@@ -207,7 +208,7 @@ class Reader:
     keymap: tuple[tuple[str, str], ...] = ()
     input_trans: input.KeymapTranslator = field(init=False)
     input_trans_stack: list[input.KeymapTranslator] = field(default_factory=list)
-    screen: list[str] = field(default_factory=list)
+    rendered_screen: RenderedScreen = field(init=False)
     screeninfo: list[tuple[int, list[int]]] = field(init=False)
     cxy: tuple[int, int] = field(init=False)
     lxy: tuple[int, int] = field(init=False)
@@ -218,7 +219,7 @@ class Reader:
     ## cached metadata to speed up screen refreshes
     @dataclass
     class RefreshCache:
-        screen: list[str] = field(default_factory=list)
+        render_lines: list[RenderLine] = field(default_factory=list)
         screeninfo: list[tuple[int, list[int]]] = field(init=False)
         line_end_offsets: list[int] = field(default_factory=list)
         pos: int = field(init=False)
@@ -228,11 +229,13 @@ class Reader:
 
         def update_cache(self,
                          reader: Reader,
-                         screen: list[str],
+                         render_lines: list[RenderLine],
                          screeninfo: list[tuple[int, list[int]]],
+                         line_end_offsets: list[int],
             ) -> None:
-            self.screen = screen.copy()
+            self.render_lines = render_lines.copy()
             self.screeninfo = screeninfo.copy()
+            self.line_end_offsets = line_end_offsets.copy()
             self.pos = reader.pos
             self.cxy = reader.cxy
             self.dimensions = reader.console.width, reader.console.height
@@ -273,6 +276,7 @@ class Reader:
         self.screeninfo = [(0, [])]
         self.cxy = self.pos2xy()
         self.lxy = (self.pos, 0)
+        self.rendered_screen = RenderedScreen.empty()
         self.can_colorize = _colorize.can_colorize()
 
         self.last_refresh_cache.screeninfo = self.screeninfo
@@ -280,11 +284,15 @@ class Reader:
         self.last_refresh_cache.cxy = self.cxy
         self.last_refresh_cache.dimensions = (0, 0)
 
+    @property
+    def screen(self) -> list[str]:
+        return list(self.rendered_screen.screen_lines)
+
     def collect_keymap(self) -> tuple[tuple[KeySpec, CommandName], ...]:
         return default_keymap
 
-    def calc_screen(self) -> list[str]:
-        """Translate changes in self.buffer into changes in self.console.screen."""
+    def calc_screen(self) -> RenderedScreen:
+        """Translate changes in self.buffer into a structured rendered screen."""
         # Since the last call to calc_screen:
         # screen and screeninfo may differ due to a completion menu being shown
         # pos and cxy may differ due to edits, cursor movements, or completion menus
@@ -297,14 +305,9 @@ class Reader:
         if self.last_refresh_cache.valid(self):
             offset, num_common_lines = self.last_refresh_cache.get_cached_location(self)
 
-        screen = self.last_refresh_cache.screen
-        del screen[num_common_lines:]
-
-        screeninfo = self.last_refresh_cache.screeninfo
-        del screeninfo[num_common_lines:]
-
-        last_refresh_line_end_offsets = self.last_refresh_cache.line_end_offsets
-        del last_refresh_line_end_offsets[num_common_lines:]
+        render_lines = self.last_refresh_cache.render_lines[:num_common_lines]
+        screeninfo = self.last_refresh_cache.screeninfo[:num_common_lines]
+        last_refresh_line_end_offsets = self.last_refresh_cache.line_end_offsets[:num_common_lines]
 
         pos = self.pos
         pos -= offset
@@ -339,7 +342,7 @@ class Reader:
             while "\n" in prompt:
                 pre_prompt, _, prompt = prompt.partition("\n")
                 last_refresh_line_end_offsets.append(offset)
-                screen.append(pre_prompt)
+                render_lines.append(RenderLine.from_rendered_text(pre_prompt))
                 screeninfo.append((0, []))
             pos -= line_len + 1
             prompt, prompt_len = self.process_prompt(prompt)
@@ -348,7 +351,8 @@ class Reader:
             if wrapcount == 0 or not char_widths:
                 offset += line_len + 1  # Takes all of the line plus the newline
                 last_refresh_line_end_offsets.append(offset)
-                screen.append(prompt + "".join(chars))
+                render_line = self._render_line(prompt, chars, char_widths)
+                render_lines.append(render_line)
                 screeninfo.append((prompt_len, char_widths))
             else:
                 pre = prompt
@@ -370,9 +374,14 @@ class Reader:
                         post = ""
                         after = []
                     last_refresh_line_end_offsets.append(offset)
-                    render = pre + "".join(chars[:index_to_wrap_before]) + post
+                    render_line = self._render_line(
+                        pre,
+                        chars[:index_to_wrap_before],
+                        char_widths[:index_to_wrap_before],
+                        post,
+                    )
                     render_widths = char_widths[:index_to_wrap_before] + after
-                    screen.append(render)
+                    render_lines.append(render_line)
                     screeninfo.append((prelen, render_widths))
                     chars = chars[index_to_wrap_before:]
                     char_widths = char_widths[index_to_wrap_before:]
@@ -386,15 +395,41 @@ class Reader:
                 # If self.msg is larger than console width, make it fit
                 # TODO: try to split between words?
                 if not mline:
-                    screen.append("")
+                    render_lines.append(RenderLine.from_rendered_text(""))
                     screeninfo.append((0, []))
                     continue
                 for r in range((len(mline) - 1) // width + 1):
-                    screen.append(mline[r * width : (r + 1) * width])
+                    render_lines.append(
+                        RenderLine.from_rendered_text(mline[r * width : (r + 1) * width])
+                    )
                     screeninfo.append((0, []))
 
-        self.last_refresh_cache.update_cache(self, screen, screeninfo)
-        return screen
+        self.rendered_screen = RenderedScreen(tuple(render_lines), self.cxy)
+        self.last_refresh_cache.update_cache(
+            self,
+            render_lines,
+            screeninfo,
+            last_refresh_line_end_offsets,
+        )
+        return self.rendered_screen
+
+    @staticmethod
+    def _render_line(
+        prefix: str,
+        chars: list[str],
+        char_widths: list[int],
+        suffix: str = "",
+    ) -> RenderLine:
+        cells: list[RenderCell] = []
+        if prefix:
+            cells.extend(RenderLine.from_rendered_text(prefix).cells)
+        cells.extend(
+            RenderCell(text, width, "\x1b" in text)
+            for text, width in zip(chars, char_widths)
+        )
+        if suffix:
+            cells.append(RenderCell(suffix, wlen(suffix), "\x1b" in suffix))
+        return RenderLine.from_cells(cells)
 
     @staticmethod
     def process_prompt(prompt: str) -> tuple[str, int]:
@@ -652,8 +687,17 @@ class Reader:
     def refresh(self) -> None:
         """Recalculate and refresh the screen."""
         # this call sets up self.cxy, so call it first.
-        self.screen = self.calc_screen()
-        self.console.refresh(self.screen, self.cxy)
+        rendered_screen = self.calc_screen()
+        trace(
+            "reader.refresh cursor={cursor} lines={lines} "
+            "dims=({width},{height}) dirty={dirty}",
+            cursor=self.cxy,
+            lines=len(rendered_screen.lines),
+            width=self.console.width,
+            height=self.console.height,
+            dirty=self.dirty,
+        )
+        self.console.refresh(rendered_screen)
         self.dirty = False
 
     def do_cmd(self, cmd: tuple[str, list[str]]) -> None:

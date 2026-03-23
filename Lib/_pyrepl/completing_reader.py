@@ -24,6 +24,7 @@ from dataclasses import dataclass, field
 
 import re
 from . import commands, console, reader
+from .render import RenderLine, RenderedScreen
 from .reader import Reader
 
 
@@ -281,19 +282,24 @@ class CompletingReader(Reader):
         if not isinstance(cmd, (complete, self_insert)):
             self.cmpltn_reset()
 
-    def calc_screen(self) -> list[str]:
-        screen = super().calc_screen()
+    def calc_screen(self) -> RenderedScreen:
+        rendered_screen = super().calc_screen()
         if self.cmpltn_menu_visible:
             # We display the completions menu below the current prompt
             ly = self.lxy[1] + 1
-            screen[ly:ly] = self.cmpltn_menu
+            render_lines = list(rendered_screen.lines)
+            render_lines[ly:ly] = [
+                RenderLine.from_rendered_text(line) for line in self.cmpltn_menu
+            ]
+            rendered_screen = RenderedScreen(tuple(render_lines), self.cxy)
+            self.rendered_screen = rendered_screen
             # If we're not in the middle of multiline edit, don't append to screeninfo
             # since that screws up the position calculation in pos2xy function.
             # This is a hack to prevent the cursor jumping
             # into the completions menu when pressing left or down arrow.
             if self.pos != len(self.buffer):
                 self.screeninfo[ly:ly] = [(0, [])]*len(self.cmpltn_menu)
-        return screen
+        return rendered_screen
 
     def finish(self) -> None:
         super().finish()

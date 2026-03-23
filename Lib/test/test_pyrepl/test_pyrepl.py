@@ -2442,12 +2442,13 @@ class TestPyReplCtrlD(TestCase):
 class TestWindowsConsoleEolWrap(TestCase):
     def _make_mock_console(self, width=80):
         from _pyrepl import windows_console as wc
+        from _pyrepl.render import RenderedScreen
 
         console = object.__new__(wc.WindowsConsole)
 
         console.width = width
         console.posxy = (0, 0)
-        console.screen = [""]
+        console._rendered_screen = RenderedScreen.from_screen_lines([""], (0, 0))
 
         console._hide_cursor = Mock()
         console._show_cursor = Mock()

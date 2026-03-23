@@ -1,4 +1,5 @@
 import errno
+import io
 import itertools
 import os
 import signal
@@ -6,13 +7,13 @@ import sys
 import threading
 import unittest
 from functools import partial
-from test.support import os_helper, force_not_colorized_test_class
+from test.support import force_color, os_helper, force_not_colorized_test_class
 from test.support import threading_helper
 
 from unittest import TestCase
 from unittest.mock import MagicMock, call, patch, ANY, Mock
 
-from .support import handle_all_events, code_to_events
+from .support import handle_all_events, code_to_events, more_lines
 
 try:
     from _pyrepl.console import Event
@@ -100,6 +101,72 @@ handle_events_unix_console_height_3 = partial(
 @patch("os.write")
 @force_not_colorized_test_class
 class TestConsole(TestCase):
+    def test_refresh_traces_redraw_plan(self, _os_write):
+        from _pyrepl import trace as pyrepl_trace
+
+        buffer = io.StringIO()
+        with patch.object(pyrepl_trace, "trace_file", buffer):
+            events = code_to_events("ab")
+            _, con = handle_events_unix_console(events)
+            con.restore()
+
+        output = buffer.getvalue()
+        self.assertIn("reader.refresh", output)
+        self.assertIn("unix.refresh plan", output)
+        self.assertIn("unix.refresh update kind=insert_char", output)
+
+    def test_visualize_redraws_marks_terminal_output(self, _os_write):
+        with patch.dict(os.environ, {"PYREPL_VISUALIZE_REDRAWS": "1"}):
+            events = code_to_events("a")
+            _, con = handle_events_unix_console(events)
+            con.restore()
+
+        self.assertIn(call(ANY, b"\x1b[41ma\x1b[0m"), _os_write.mock_calls)
+
+    def test_visualize_redraws_cycles_per_refresh(self, _os_write):
+        with patch.dict(os.environ, {"PYREPL_VISUALIZE_REDRAWS": "1"}):
+            events = code_to_events("ab")
+            _, con = handle_events_unix_console(events)
+            con.restore()
+
+        self.assertIn(call(ANY, b"\x1b[41ma\x1b[0m"), _os_write.mock_calls)
+        self.assertIn(call(ANY, b"\x1b[42mb\x1b[0m"), _os_write.mock_calls)
+
+    def test_colorized_multiline_typing_does_not_redraw_previous_line(self, _os_write):
+        from _pyrepl.readline import ReadlineAlikeReader, ReadlineConfig
+
+        def prepare_reader_with_prompts(console, **kwargs):
+            config = ReadlineConfig(
+                readline_completer=kwargs.pop("readline_completer", None)
+            )
+            reader = ReadlineAlikeReader(console=console, config=config)
+            reader.more_lines = partial(more_lines, namespace=None)
+            reader.paste_mode = False
+            for key, val in kwargs.items():
+                setattr(reader, key, val)
+            return reader
+
+        with force_color(True):
+            events = itertools.chain(
+                code_to_events("def foo():"),
+                [Event(evt="key", data="\n", raw=bytearray(b"\n"))],
+                code_to_events("x = 1"),
+                [Event(evt="key", data="\n", raw=bytearray(b"\n"))],
+                code_to_events("y"),
+            )
+            _, con = handle_all_events(
+                events,
+                prepare_console=unix_console,
+                prepare_reader=prepare_reader_with_prompts,
+            )
+            con.restore()
+
+        self.assertNotIn(
+            call(ANY, b" \x1b[0m    x \x1b[0m=\x1b[0m "),
+            _os_write.mock_calls,
+        )
+        self.assertIn(call(ANY, b"y"), _os_write.mock_calls)
+
     def test_no_newline(self, _os_write):
         code = "1"
         events = code_to_events(code)

@@ -32,6 +32,7 @@ import time
 #  finishing
 # [completion]
 
+from .render import RenderedScreen
 from .trace import trace
 
 # types
@@ -131,17 +132,20 @@ class digit_arg(Command):
 class clear_screen(Command):
     def do(self) -> None:
         r = self.reader
+        trace("command.clear_screen")
         r.console.clear()
         r.dirty = True
 
 
 class refresh(Command):
     def do(self) -> None:
+        trace("command.refresh")
         self.reader.dirty = True
 
 
 class repaint(Command):
     def do(self) -> None:
+        trace("command.repaint")
         self.reader.dirty = True
         self.reader.console.repaint()
 
@@ -243,7 +247,8 @@ class suspend(Command):
         r.pos = p
         # r.posxy = 0, 0  # XXX this is invalid
         r.dirty = True
-        r.console.screen = []
+        trace("command.suspend sync_rendered_screen")
+        r.console.sync_rendered_screen(RenderedScreen.empty(), r.console.posxy)
 
 
 class up(MotionCommand):
@@ -478,8 +483,11 @@ class show_history(Command):
 
         # We need to copy over the state so that it's consistent between
         # console and reader, and console does not overwrite/append stuff
-        self.reader.console.screen = self.reader.screen.copy()
-        self.reader.console.posxy = self.reader.cxy
+        trace("command.show_history sync_rendered_screen")
+        self.reader.console.sync_rendered_screen(
+            self.reader.rendered_screen,
+            self.reader.cxy,
+        )
 
 
 class paste_mode(Command):

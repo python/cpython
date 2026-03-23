@@ -4,6 +4,7 @@ from typing import Iterable
 from unittest.mock import MagicMock
 
 from _pyrepl.console import Console, Event
+from _pyrepl.render import RenderedScreen
 from _pyrepl.readline import ReadlineAlikeReader, ReadlineConfig
 from _pyrepl.simple_interact import _strip_final_indent
 from _pyrepl.utils import unbracket, ANSI_ESCAPE_SEQUENCE
@@ -118,9 +119,10 @@ class FakeConsole(Console):
     def __init__(self, events, encoding="utf-8") -> None:
         self.events = iter(events)
         self.encoding = encoding
-        self.screen = []
+        self._rendered_screen = RenderedScreen.empty()
         self.height = 100
         self.width = 80
+        self.posxy = (0, 0)
 
     def get_event(self, block: bool = True) -> Event | None:
         return next(self.events)
@@ -131,7 +133,7 @@ class FakeConsole(Console):
     def getheightwidth(self) -> tuple[int, int]:
         return self.height, self.width
 
-    def refresh(self, screen: list[str], xy: tuple[int, int]) -> None:
+    def refresh(self, rendered_screen: RenderedScreen) -> None:
         pass
 
     def prepare(self) -> None:
