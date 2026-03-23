@@ -42,9 +42,26 @@ async def _run(tool: str, args: typing.Iterable[str], echo: bool = False) -> str
     async with _CORES:
         if echo:
             print(shlex.join(command))
+
+        if os.name == "nt":
+            env = os.environ.copy()
+            try:
+                # https://github.com/python/cpython/issues/146210
+                # When the Python iterpreter is built with
+                # "/p:PlatformToolset=ClangCL" "/p:LLVMInstallDir=...""
+                # msbuild populates the INCLUDE variable based on this
+                # clang version, which might be different to the one used
+                # for building the jit stencils. Mixing those include paths
+                # can cause mysterious build errors, so we remove the
+                # variable from the environment when invoking LLVM tools.
+                del env["INCLUDE"]
+            except KeyError:
+                pass
+        else:
+            env = None
         try:
             process = await asyncio.create_subprocess_exec(
-                *command, stdout=subprocess.PIPE
+                *command, stdout=subprocess.PIPE, env=env
             )
         except FileNotFoundError:
             return None
