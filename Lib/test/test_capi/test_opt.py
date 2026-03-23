@@ -630,6 +630,8 @@ class TestUopsOptimization(unittest.TestCase):
         self.assertIn("_PUSH_FRAME", uops)
         self.assertIn("_BINARY_OP_ADD_INT", uops)
         self.assertNotIn("_CHECK_PEP_523", uops)
+        self.assertNotIn("_GUARD_CODE_VERSION__PUSH_FRAME", uops)
+        self.assertNotIn("_GUARD_IP__PUSH_FRAME", uops)
 
     def test_int_type_propagate_through_range(self):
         def testfunc(n):
@@ -1540,8 +1542,9 @@ class TestUopsOptimization(unittest.TestCase):
         self.assertIsNotNone(ex)
         uops = get_opnames(ex)
         self.assertIn("_PUSH_FRAME", uops)
-        # Strength reduced version
-        self.assertIn("_CHECK_FUNCTION_VERSION_INLINE", uops)
+        # Both should be not present, as this is a call
+        # to a simple function with a known function version.
+        self.assertNotIn("_CHECK_FUNCTION_VERSION_INLINE", uops)
         self.assertNotIn("_CHECK_FUNCTION_VERSION", uops)
         # Removed guard
         self.assertNotIn("_CHECK_FUNCTION_EXACT_ARGS", uops)
@@ -2025,6 +2028,125 @@ class TestUopsOptimization(unittest.TestCase):
         self.assertEqual(uops.count("_UNPACK_SEQUENCE_LIST"), 1)
         self.assertEqual(uops.count("_BINARY_OP_SUBSCR_LIST_INT"), 1)
         self.assertEqual(uops.count("_TO_BOOL_LIST"), 1)
+
+    def test_unique_tuple_unpack(self):
+        def f(n):
+            def four_tuple(x):
+                return (x, x, x, x)
+            hits = 0
+            for i in range(n):
+                w, x, y, z = four_tuple(1)
+                hits += w + x + y + z
+            return hits
+
+        res, ex = self._run_with_optimizer(f, TIER2_THRESHOLD)
+        self.assertEqual(res, TIER2_THRESHOLD * 4)
+        self.assertIsNotNone(ex)
+        uops = get_opnames(ex)
+
+        self.assertIn("_BUILD_TUPLE", uops)
+        self.assertIn("_UNPACK_SEQUENCE_UNIQUE_TUPLE", uops)
+        self.assertNotIn("_UNPACK_SEQUENCE_TUPLE", uops)
+
+    def test_non_unique_tuple_unpack(self):
+        def f(n):
+            def four_tuple(x):
+                return (x, x, x, x)
+            hits = 0
+            for i in range(n):
+                t = four_tuple(1)
+                w, x, y, z = t
+                hits += w + x + y + z
+            return hits
+
+        res, ex = self._run_with_optimizer(f, TIER2_THRESHOLD)
+        self.assertEqual(res, TIER2_THRESHOLD * 4)
+        self.assertIsNotNone(ex)
+        uops = get_opnames(ex)
+
+        self.assertIn("_BUILD_TUPLE", uops)
+        self.assertIn("_UNPACK_SEQUENCE_TUPLE", uops)
+        self.assertNotIn("_UNPACK_SEQUENCE_UNIQUE_TUPLE", uops)
+
+    def test_unique_three_tuple_unpack(self):
+        def f(n):
+            def three_tuple(x):
+                return (x, x, x)
+            hits = 0
+            for i in range(n):
+                x, y, z = three_tuple(1)
+                hits += x + y + z
+            return hits
+
+        res, ex = self._run_with_optimizer(f, TIER2_THRESHOLD)
+        self.assertEqual(res, TIER2_THRESHOLD * 3)
+        self.assertIsNotNone(ex)
+        uops = get_opnames(ex)
+
+        self.assertIn("_BUILD_TUPLE", uops)
+        self.assertIn("_UNPACK_SEQUENCE_UNIQUE_THREE_TUPLE", uops)
+        self.assertNotIn("_UNPACK_SEQUENCE_TUPLE", uops)
+
+    def test_non_unique_three_tuple_unpack(self):
+        def f(n):
+            def three_tuple(x):
+                return (x, x, x)
+            hits = 0
+            for i in range(n):
+                t = three_tuple(1)
+                x, y, z = t
+                hits += x + y + z
+            return hits
+
+        res, ex = self._run_with_optimizer(f, TIER2_THRESHOLD)
+        self.assertEqual(res, TIER2_THRESHOLD * 3)
+        self.assertIsNotNone(ex)
+        uops = get_opnames(ex)
+
+        self.assertIn("_BUILD_TUPLE", uops)
+        self.assertIn("_UNPACK_SEQUENCE_TUPLE", uops)
+        self.assertNotIn("_UNPACK_SEQUENCE_UNIQUE_THREE_TUPLE", uops)
+
+    def test_unique_two_tuple_unpack(self):
+        def f(n):
+            def two_tuple(x):
+                return (x, x)
+            hits = 0
+            for i in range(n):
+                x, y = two_tuple(1)
+                hits += x + y
+            return hits
+
+        res, ex = self._run_with_optimizer(f, TIER2_THRESHOLD)
+        self.assertEqual(res, TIER2_THRESHOLD * 2)
+        self.assertIsNotNone(ex)
+        uops = get_opnames(ex)
+
+        self.assertIn("_BUILD_TUPLE", uops)
+        self.assertIn("_UNPACK_SEQUENCE_UNIQUE_TWO_TUPLE", uops)
+        self.assertNotIn("_UNPACK_SEQUENCE_TWO_TUPLE", uops)
+        self.assertNotIn("_UNPACK_SEQUENCE_TUPLE", uops)
+
+    def test_non_unique_two_tuple_unpack(self):
+        def f(n):
+            def two_tuple(x):
+                return (x, x)
+            hits = 0
+            for i in range(n):
+                tt = two_tuple(1)
+                x, y = tt
+                hits += x + y
+            return hits
+
+        res, ex = self._run_with_optimizer(f, TIER2_THRESHOLD)
+        self.assertEqual(res, TIER2_THRESHOLD * 2)
+        self.assertIsNotNone(ex)
+        uops = get_opnames(ex)
+
+        self.assertIn("_BUILD_TUPLE", uops)
+        self.assertIn("_UNPACK_SEQUENCE_TWO_TUPLE", uops)
+        self.assertNotIn("_UNPACK_SEQUENCE_TUPLE", uops)
+        self.assertNotIn("_UNPACK_SEQUENCE_UNIQUE_TWO_TUPLE", uops)
 
     def test_remove_guard_for_known_type_set(self):
         def f(n):
@@ -2831,6 +2953,18 @@ class TestUopsOptimization(unittest.TestCase):
         uops = get_opnames(ex)
         self.assertIn("_GUARD_TYPE_VERSION", uops)
         self.assertNotIn("_CHECK_ATTR_CLASS", uops)
+
+    def test_load_common_constant(self):
+        def testfunc(n):
+            for _ in range(n):
+                x = list(i for i in ())
+            return x
+        res, ex = self._run_with_optimizer(testfunc, TIER2_THRESHOLD)
+        self.assertEqual(res, list(()))
+        self.assertIsNotNone(ex)
+        uops = get_opnames(ex)
+        self.assertIn("_BUILD_LIST", uops)
+        self.assertNotIn("_LOAD_COMMON_CONSTANT", uops)
 
     def test_load_small_int(self):
         def testfunc(n):
@@ -4015,6 +4149,21 @@ class TestUopsOptimization(unittest.TestCase):
 
         self.assertIn("_MATCH_CLASS", uops)
         self.assertEqual(count_ops(ex, "_POP_TOP_NOP"), 4)
+
+    def test_set_update(self):
+        def testfunc(n):
+            s = {1, 2, 3}
+            for _ in range(n):
+                x = {*s}
+            return x
+
+        res, ex = self._run_with_optimizer(testfunc, TIER2_THRESHOLD)
+        self.assertEqual(res, {1, 2, 3})
+        uops = get_opnames(ex)
+
+        self.assertIn("_SET_UPDATE", uops)
+        self.assertEqual(count_ops(ex, "_POP_TOP_NOP"), 1)
+        self.assertLessEqual(count_ops(ex, "_POP_TOP"), 2)
 
     def test_143026(self):
         # https://github.com/python/cpython/issues/143026

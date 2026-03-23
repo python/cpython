@@ -1469,6 +1469,7 @@ cm_new(PyTypeObject *type, PyObject *args, PyObject *kwds)
     if (cm == NULL) {
         return NULL;
     }
+    _PyObject_SetDeferredRefcount((PyObject *)cm);
     if (cm_set_callable(cm, callable) < 0) {
         Py_DECREF(cm);
         return NULL;
@@ -1903,6 +1904,13 @@ PyStaticMethod_New(PyObject *callable)
         return NULL;
     }
     return (PyObject *)sm;
+}
+
+PyObject *
+_PyClassMethod_GetFunc(PyObject *self)
+{
+    classmethod *cm = _PyClassMethod_CAST(self);
+    return cm->cm_callable;
 }
 
 PyObject *

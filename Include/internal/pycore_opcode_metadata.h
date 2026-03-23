@@ -157,7 +157,7 @@ int _PyOpcode_num_popped(int opcode, int oparg)  {
         case CHECK_EXC_MATCH:
             return 2;
         case CLEANUP_THROW:
-            return 3;
+            return 4;
         case COMPARE_OP:
             return 2;
         case COMPARE_OP_FLOAT:
@@ -199,7 +199,7 @@ int _PyOpcode_num_popped(int opcode, int oparg)  {
         case END_FOR:
             return 1;
         case END_SEND:
-            return 2;
+            return 3;
         case ENTER_EXECUTOR:
             return 0;
         case EXIT_INIT_CHECK:
@@ -230,8 +230,6 @@ int _PyOpcode_num_popped(int opcode, int oparg)  {
             return 1;
         case GET_LEN:
             return 1;
-        case GET_YIELD_FROM_ITER:
-            return 1;
         case IMPORT_FROM:
             return 1;
         case IMPORT_NAME:
@@ -247,7 +245,7 @@ int _PyOpcode_num_popped(int opcode, int oparg)  {
         case INSTRUMENTED_END_FOR:
             return 3;
         case INSTRUMENTED_END_SEND:
-            return 2;
+            return 3;
         case INSTRUMENTED_FOR_ITER:
             return 2;
         case INSTRUMENTED_INSTRUCTION:
@@ -433,9 +431,9 @@ int _PyOpcode_num_popped(int opcode, int oparg)  {
         case RETURN_VALUE:
             return 1;
         case SEND:
-            return 2;
+            return 3;
         case SEND_GEN:
-            return 2;
+            return 3;
         case SETUP_ANNOTATIONS:
             return 0;
         case SETUP_CLEANUP:
@@ -650,7 +648,7 @@ int _PyOpcode_num_pushed(int opcode, int oparg)  {
         case CHECK_EXC_MATCH:
             return 2;
         case CLEANUP_THROW:
-            return 2;
+            return 3;
         case COMPARE_OP:
             return 1;
         case COMPARE_OP_FLOAT:
@@ -723,8 +721,6 @@ int _PyOpcode_num_pushed(int opcode, int oparg)  {
             return 2;
         case GET_LEN:
             return 2;
-        case GET_YIELD_FROM_ITER:
-            return 1;
         case IMPORT_FROM:
             return 2;
         case IMPORT_NAME:
@@ -926,9 +922,9 @@ int _PyOpcode_num_pushed(int opcode, int oparg)  {
         case RETURN_VALUE:
             return 1;
         case SEND:
-            return 2;
+            return 3;
         case SEND_GEN:
-            return 1;
+            return 2;
         case SETUP_ANNOTATIONS:
             return 0;
         case SETUP_CLEANUP:
@@ -1190,9 +1186,8 @@ const struct opcode_metadata _PyOpcode_opcode_metadata[267] = {
     [GET_AITER] = { true, INSTR_FMT_IX, HAS_ERROR_FLAG | HAS_ESCAPES_FLAG },
     [GET_ANEXT] = { true, INSTR_FMT_IX, HAS_ERROR_FLAG | HAS_ERROR_NO_POP_FLAG | HAS_ESCAPES_FLAG },
     [GET_AWAITABLE] = { true, INSTR_FMT_IB, HAS_ARG_FLAG | HAS_ERROR_FLAG | HAS_ESCAPES_FLAG },
-    [GET_ITER] = { true, INSTR_FMT_IX, HAS_ERROR_FLAG | HAS_ESCAPES_FLAG },
+    [GET_ITER] = { true, INSTR_FMT_IB, HAS_ARG_FLAG | HAS_ERROR_FLAG | HAS_ESCAPES_FLAG },
     [GET_LEN] = { true, INSTR_FMT_IX, HAS_ERROR_FLAG | HAS_ESCAPES_FLAG },
-    [GET_YIELD_FROM_ITER] = { true, INSTR_FMT_IX, HAS_ERROR_FLAG | HAS_ERROR_NO_POP_FLAG | HAS_ESCAPES_FLAG },
     [IMPORT_FROM] = { true, INSTR_FMT_IB, HAS_ARG_FLAG | HAS_NAME_FLAG | HAS_ERROR_FLAG | HAS_ESCAPES_FLAG },
     [IMPORT_NAME] = { true, INSTR_FMT_IB, HAS_ARG_FLAG | HAS_NAME_FLAG | HAS_ERROR_FLAG | HAS_ESCAPES_FLAG },
     [INSTRUMENTED_CALL] = { true, INSTR_FMT_IBC00, HAS_ARG_FLAG | HAS_EVAL_BREAK_FLAG | HAS_ERROR_FLAG | HAS_ERROR_NO_POP_FLAG | HAS_ESCAPES_FLAG | HAS_SYNC_SP_FLAG | HAS_NEEDS_GUARD_IP_FLAG },
@@ -1287,12 +1282,12 @@ const struct opcode_metadata _PyOpcode_opcode_metadata[267] = {
     [RESUME_CHECK_JIT] = { true, INSTR_FMT_IBC, HAS_ARG_FLAG | HAS_DEOPT_FLAG },
     [RETURN_GENERATOR] = { true, INSTR_FMT_IX, HAS_ERROR_FLAG | HAS_ESCAPES_FLAG | HAS_NEEDS_GUARD_IP_FLAG },
     [RETURN_VALUE] = { true, INSTR_FMT_IX, HAS_ESCAPES_FLAG | HAS_NEEDS_GUARD_IP_FLAG },
-    [SEND] = { true, INSTR_FMT_IBC, HAS_ARG_FLAG | HAS_JUMP_FLAG | HAS_ERROR_FLAG | HAS_ESCAPES_FLAG | HAS_SYNC_SP_FLAG | HAS_UNPREDICTABLE_JUMP_FLAG | HAS_NEEDS_GUARD_IP_FLAG },
+    [SEND] = { true, INSTR_FMT_IBC, HAS_ARG_FLAG | HAS_JUMP_FLAG | HAS_ERROR_FLAG | HAS_ERROR_NO_POP_FLAG | HAS_ESCAPES_FLAG | HAS_SYNC_SP_FLAG | HAS_NEEDS_GUARD_IP_FLAG },
     [SEND_GEN] = { true, INSTR_FMT_IBC, HAS_ARG_FLAG | HAS_DEOPT_FLAG | HAS_EXIT_FLAG | HAS_SYNC_SP_FLAG | HAS_NEEDS_GUARD_IP_FLAG | HAS_RECORDS_VALUE_FLAG },
     [SETUP_ANNOTATIONS] = { true, INSTR_FMT_IX, HAS_ERROR_FLAG | HAS_ESCAPES_FLAG },
     [SET_ADD] = { true, INSTR_FMT_IB, HAS_ARG_FLAG | HAS_ERROR_FLAG | HAS_ESCAPES_FLAG },
     [SET_FUNCTION_ATTRIBUTE] = { true, INSTR_FMT_IB, HAS_ARG_FLAG },
-    [SET_UPDATE] = { true, INSTR_FMT_IB, HAS_ARG_FLAG | HAS_ERROR_FLAG | HAS_ESCAPES_FLAG },
+    [SET_UPDATE] = { true, INSTR_FMT_IB, HAS_ARG_FLAG | HAS_ERROR_FLAG | HAS_ERROR_NO_POP_FLAG | HAS_ESCAPES_FLAG },
     [STORE_ATTR] = { true, INSTR_FMT_IBC000, HAS_ARG_FLAG | HAS_NAME_FLAG | HAS_ERROR_FLAG | HAS_ESCAPES_FLAG },
     [STORE_ATTR_INSTANCE_VALUE] = { true, INSTR_FMT_IXC000, HAS_DEOPT_FLAG | HAS_EXIT_FLAG | HAS_ESCAPES_FLAG },
     [STORE_ATTR_SLOT] = { true, INSTR_FMT_IXC000, HAS_DEOPT_FLAG | HAS_EXIT_FLAG | HAS_ESCAPES_FLAG | HAS_RECORDS_VALUE_FLAG },
@@ -1438,7 +1433,6 @@ _PyOpcode_macro_expansion[256] = {
     [GET_AWAITABLE] = { .nuops = 1, .uops = { { _GET_AWAITABLE, OPARG_SIMPLE, 0 } } },
     [GET_ITER] = { .nuops = 1, .uops = { { _GET_ITER, OPARG_SIMPLE, 0 } } },
     [GET_LEN] = { .nuops = 1, .uops = { { _GET_LEN, OPARG_SIMPLE, 0 } } },
-    [GET_YIELD_FROM_ITER] = { .nuops = 1, .uops = { { _GET_YIELD_FROM_ITER, OPARG_SIMPLE, 0 } } },
     [IMPORT_FROM] = { .nuops = 1, .uops = { { _IMPORT_FROM, OPARG_SIMPLE, 0 } } },
     [IMPORT_NAME] = { .nuops = 1, .uops = { { _IMPORT_NAME, OPARG_SIMPLE, 0 } } },
     [IS_OP] = { .nuops = 3, .uops = { { _IS_OP, OPARG_SIMPLE, 0 }, { _POP_TOP, OPARG_SIMPLE, 0 }, { _POP_TOP, OPARG_SIMPLE, 0 } } },
@@ -1501,11 +1495,11 @@ _PyOpcode_macro_expansion[256] = {
     [RESUME_CHECK] = { .nuops = 1, .uops = { { _RESUME_CHECK, OPARG_SIMPLE, 1 } } },
     [RETURN_GENERATOR] = { .nuops = 1, .uops = { { _RETURN_GENERATOR, OPARG_SIMPLE, 0 } } },
     [RETURN_VALUE] = { .nuops = 2, .uops = { { _MAKE_HEAP_SAFE, OPARG_SIMPLE, 0 }, { _RETURN_VALUE, OPARG_SIMPLE, 0 } } },
-    [SEND_GEN] = { .nuops = 4, .uops = { { _RECORD_NOS_GEN_FUNC, OPARG_SIMPLE, 1 }, { _CHECK_PEP_523, OPARG_SIMPLE, 1 }, { _SEND_GEN_FRAME, OPARG_SIMPLE, 1 }, { _PUSH_FRAME, OPARG_SIMPLE, 1 } } },
+    [SEND_GEN] = { .nuops = 4, .uops = { { _RECORD_3OS_GEN_FUNC, OPARG_SIMPLE, 1 }, { _CHECK_PEP_523, OPARG_SIMPLE, 1 }, { _SEND_GEN_FRAME, OPARG_SIMPLE, 1 }, { _PUSH_FRAME, OPARG_SIMPLE, 1 } } },
     [SETUP_ANNOTATIONS] = { .nuops = 1, .uops = { { _SETUP_ANNOTATIONS, OPARG_SIMPLE, 0 } } },
     [SET_ADD] = { .nuops = 1, .uops = { { _SET_ADD, OPARG_SIMPLE, 0 } } },
     [SET_FUNCTION_ATTRIBUTE] = { .nuops = 1, .uops = { { _SET_FUNCTION_ATTRIBUTE, OPARG_SIMPLE, 0 } } },
-    [SET_UPDATE] = { .nuops = 1, .uops = { { _SET_UPDATE, OPARG_SIMPLE, 0 } } },
+    [SET_UPDATE] = { .nuops = 2, .uops = { { _SET_UPDATE, OPARG_SIMPLE, 0 }, { _POP_TOP, OPARG_SIMPLE, 0 } } },
     [STORE_ATTR] = { .nuops = 1, .uops = { { _STORE_ATTR, OPARG_SIMPLE, 3 } } },
     [STORE_ATTR_INSTANCE_VALUE] = { .nuops = 5, .uops = { { _LOCK_OBJECT, OPARG_SIMPLE, 1 }, { _GUARD_TYPE_VERSION_LOCKED, 2, 1 }, { _GUARD_DORV_NO_DICT, OPARG_SIMPLE, 3 }, { _STORE_ATTR_INSTANCE_VALUE, 1, 3 }, { _POP_TOP, OPARG_SIMPLE, 4 } } },
     [STORE_ATTR_SLOT] = { .nuops = 4, .uops = { { _RECORD_TOS_TYPE, OPARG_SIMPLE, 1 }, { _GUARD_TYPE_VERSION, 2, 1 }, { _STORE_ATTR_SLOT, 1, 3 }, { _POP_TOP, OPARG_SIMPLE, 4 } } },
@@ -1641,7 +1635,6 @@ const char *_PyOpcode_OpName[267] = {
     [GET_AWAITABLE] = "GET_AWAITABLE",
     [GET_ITER] = "GET_ITER",
     [GET_LEN] = "GET_LEN",
-    [GET_YIELD_FROM_ITER] = "GET_YIELD_FROM_ITER",
     [IMPORT_FROM] = "IMPORT_FROM",
     [IMPORT_NAME] = "IMPORT_NAME",
     [INSTRUMENTED_CALL] = "INSTRUMENTED_CALL",
@@ -1818,6 +1811,7 @@ const uint8_t _PyOpcode_Caches[256] = {
 PyAPI_DATA(const uint8_t) _PyOpcode_Deopt[256];
 #ifdef NEED_OPCODE_METADATA
 const uint8_t _PyOpcode_Deopt[256] = {
+    [120] = 120,
     [121] = 121,
     [122] = 122,
     [123] = 123,
@@ -1940,7 +1934,6 @@ const uint8_t _PyOpcode_Deopt[256] = {
     [GET_AWAITABLE] = GET_AWAITABLE,
     [GET_ITER] = GET_ITER,
     [GET_LEN] = GET_LEN,
-    [GET_YIELD_FROM_ITER] = GET_YIELD_FROM_ITER,
     [IMPORT_FROM] = IMPORT_FROM,
     [IMPORT_NAME] = IMPORT_NAME,
     [INSTRUMENTED_CALL] = INSTRUMENTED_CALL,
@@ -2079,6 +2072,7 @@ const uint8_t _PyOpcode_Deopt[256] = {
 #endif // NEED_OPCODE_METADATA
 
 #define EXTRA_CASES \
+    case 120: \
     case 121: \
     case 122: \
     case 123: \

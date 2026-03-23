@@ -528,6 +528,26 @@ guard_ip_uop[MAX_UOP_ID + 1] = {
     [_YIELD_VALUE] = _GUARD_IP_YIELD_VALUE,
 };
 
+static const uint16_t
+guard_code_version_uop[MAX_UOP_ID + 1] = {
+    [_PUSH_FRAME] = _GUARD_CODE_VERSION__PUSH_FRAME,
+    [_RETURN_GENERATOR] = _GUARD_CODE_VERSION_RETURN_GENERATOR,
+    [_RETURN_VALUE] = _GUARD_CODE_VERSION_RETURN_VALUE,
+    [_YIELD_VALUE] = _GUARD_CODE_VERSION_YIELD_VALUE,
+};
+
+static const uint16_t
+dynamic_exit_uop[MAX_UOP_ID + 1] = {
+    [_GUARD_IP__PUSH_FRAME] = 1,
+    [_GUARD_IP_RETURN_GENERATOR] = 1,
+    [_GUARD_IP_RETURN_VALUE] = 1,
+    [_GUARD_IP_YIELD_VALUE] = 1,
+    [_GUARD_CODE_VERSION__PUSH_FRAME] = 1,
+    [_GUARD_CODE_VERSION_RETURN_GENERATOR] = 1,
+    [_GUARD_CODE_VERSION_RETURN_VALUE] = 1,
+    [_GUARD_CODE_VERSION_YIELD_VALUE] = 1,
+};
+
 
 #define CONFIDENCE_RANGE 1000
 #define CONFIDENCE_CUTOFF 333
@@ -939,9 +959,10 @@ _PyJit_translate_single_bytecode_to_trace(
     }  // End switch (opcode)
 
     if (needs_guard_ip) {
-        uint16_t guard_ip = guard_ip_uop[uop_buffer_last(trace)->opcode];
+        int last_opcode = uop_buffer_last(trace)->opcode;
+        uint16_t guard_ip = guard_ip_uop[last_opcode];
         if (guard_ip == 0) {
-            DPRINTF(1, "Unknown uop needing guard ip %s\n", _PyOpcode_uop_name[uop_buffer_last(trace)->opcode]);
+            DPRINTF(1, "Unknown uop needing guard ip %s\n", _PyOpcode_uop_name[last_opcode]);
             Py_UNREACHABLE();
         }
         PyObject *code = PyStackRef_AsPyObjectBorrow(frame->f_executable);
@@ -952,7 +973,7 @@ _PyJit_translate_single_bytecode_to_trace(
             /* Record stack depth, in operand1 */
             int stack_depth = (int)(frame->stackpointer - _PyFrame_Stackbase(frame));
             uop_buffer_last(trace)->operand1 = stack_depth;
-            ADD_TO_TRACE(_GUARD_CODE_VERSION, 0, ((PyCodeObject *)code)->co_version, 0);
+            ADD_TO_TRACE(guard_code_version_uop[last_opcode], 0, ((PyCodeObject *)code)->co_version, 0);
         }
     }
     // Loop back to the start
@@ -1219,13 +1240,7 @@ prepare_for_execution(_PyUOpInstruction *buffer, int length)
                 base_exit_op = _HANDLE_PENDING_AND_DEOPT;
             }
             int32_t jump_target = target;
-            if (
-                base_opcode == _GUARD_IP__PUSH_FRAME ||
-                base_opcode == _GUARD_IP_RETURN_VALUE ||
-                base_opcode == _GUARD_IP_YIELD_VALUE ||
-                base_opcode == _GUARD_IP_RETURN_GENERATOR ||
-                base_opcode == _GUARD_CODE_VERSION
-            ) {
+            if (dynamic_exit_uop[base_opcode]) {
                 base_exit_op = _DYNAMIC_EXIT;
             }
             int exit_depth = get_cached_entries_for_side_exit(inst);
@@ -1585,91 +1600,6 @@ uop_optimize(
 /*****************************************
  *        Executor management
  ****************************************/
-
-/* We use a bloomfilter with k = 6, m = 256
- * The choice of k and the following constants
- * could do with a more rigorous analysis,
- * but here is a simple analysis:
- *
- * We want to keep the false positive rate low.
- * For n = 5 (a trace depends on 5 objects),
- * we expect 30 bits set, giving a false positive
- * rate of (30/256)**6 == 2.5e-6 which is plenty
- * good enough.
- *
- * However with n = 10 we expect 60 bits set (worst case),
- * giving a false positive of (60/256)**6 == 0.0001
- *
- * We choose k = 6, rather than a higher number as
- * it means the false positive rate grows slower for high n.
- *
- * n = 5, k = 6 => fp = 2.6e-6
- * n = 5, k = 8 => fp = 3.5e-7
- * n = 10, k = 6 => fp = 1.6e-4
- * n = 10, k = 8 => fp = 0.9e-4
- * n = 15, k = 6 => fp = 0.18%
- * n = 15, k = 8 => fp = 0.23%
- * n = 20, k = 6 => fp = 1.1%
- * n = 20, k = 8 => fp = 2.3%
- *
- * The above analysis assumes perfect hash functions,
- * but those don't exist, so the real false positive
- * rates may be worse.
- */
-
-#define K 6
-
-#define SEED 20221211
-
-/* TO DO -- Use more modern hash functions with better distribution of bits */
-static uint64_t
-address_to_hash(void *ptr) {
-    assert(ptr != NULL);
-    uint64_t uhash = SEED;
-    uintptr_t addr = (uintptr_t)ptr;
-    for (int i = 0; i < SIZEOF_VOID_P; i++) {
-        uhash ^= addr & 255;
-        uhash *= (uint64_t)PyHASH_MULTIPLIER;
-        addr >>= 8;
-    }
-    return uhash;
-}
-
-void
-_Py_BloomFilter_Init(_PyBloomFilter *bloom)
-{
-    for (int i = 0; i < _Py_BLOOM_FILTER_WORDS; i++) {
-        bloom->bits[i] = 0;
-    }
-}
-
-/* We want K hash functions that each set 1 bit.
- * A hash function that sets 1 bit in M bits can be trivially
- * derived from a log2(M) bit hash function.
- * So we extract 8 (log2(256)) bits at a time from
- * the 64bit hash. */
-void
-_Py_BloomFilter_Add(_PyBloomFilter *bloom, void *ptr)
-{
-    uint64_t hash = address_to_hash(ptr);
-    assert(K <= 8);
-    for (int i = 0; i < K; i++) {
-        uint8_t bits = hash & 255;
-        bloom->bits[bits >> 5] |= (1 << (bits&31));
-        hash >>= 8;
-    }
-}
-
-static bool
-bloom_filter_may_contain(_PyBloomFilter *bloom, _PyBloomFilter *hashes)
-{
-    for (int i = 0; i < _Py_BLOOM_FILTER_WORDS; i++) {
-        if ((bloom->bits[i] & hashes->bits[i]) != hashes->bits[i]) {
-            return false;
-        }
-    }
-    return true;
-}
 
 static int
 link_executor(_PyExecutorObject *executor, const _PyBloomFilter *bloom)

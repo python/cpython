@@ -2224,7 +2224,7 @@ _PyUnicode_FromUCS4(const Py_UCS4 *u, Py_ssize_t size)
 
 int
 PyUnicodeWriter_WriteUCS4(PyUnicodeWriter *pub_writer,
-                          Py_UCS4 *str,
+                          const Py_UCS4 *str,
                           Py_ssize_t size)
 {
     _PyUnicodeWriter *writer = (_PyUnicodeWriter*)pub_writer;
@@ -5580,15 +5580,14 @@ _Py_EncodeUTF8Ex(const wchar_t *text, char **str, size_t *error_pos,
         Py_ssize_t ch_pos = i;
         Py_UCS4 ch = text[i];
         i++;
-#if Py_UNICODE_SIZE == 2
-        if (Py_UNICODE_IS_HIGH_SURROGATE(ch)
+        if (sizeof(wchar_t) == 2
+            && Py_UNICODE_IS_HIGH_SURROGATE(ch)
             && i < len
             && Py_UNICODE_IS_LOW_SURROGATE(text[i]))
         {
             ch = Py_UNICODE_JOIN_SURROGATES(ch, text[i]);
             i++;
         }
-#endif
 
         if (ch < 0x80) {
             /* Encode ASCII */

@@ -221,6 +221,11 @@ The following standard library modules have been updated to accept
 :func:`eval` and :func:`exec` accept :class:`!frozendict` for *globals*, and
 :func:`type` and :meth:`str.maketrans` accept :class:`!frozendict` for *dict*.
 
+Code checking for :class:`dict` type using ``isinstance(arg, dict)`` can be
+updated to ``isinstance(arg, (dict, frozendict))`` to accept also the
+:class:`!frozendict` type, or to ``isinstance(arg, collections.abc.Mapping)``
+to accept also other mapping types such as :class:`~types.MappingProxyType`.
+
 .. seealso:: :pep:`814` for the full specification and rationale.
 
 (Contributed by Victor Stinner and Donghee Na in :gh:`141510`.)
@@ -644,15 +649,24 @@ binascii
 
   - :func:`~binascii.b2a_ascii85` and :func:`~binascii.a2b_ascii85`
   - :func:`~binascii.b2a_base85` and :func:`~binascii.a2b_base85`
-  - :func:`~binascii.b2a_z85` and :func:`~binascii.a2b_z85`
 
   (Contributed by James Seo and Serhiy Storchaka in :gh:`101178`.)
 
 * Added the *wrapcol* parameter in :func:`~binascii.b2a_base64`.
   (Contributed by Serhiy Storchaka in :gh:`143214`.)
 
+* Added the *alphabet* parameter in :func:`~binascii.b2a_base64` and
+  :func:`~binascii.a2b_base64`.
+  (Contributed by Serhiy Storchaka in :gh:`145980`.)
+
 * Added the *ignorechars* parameter in :func:`~binascii.a2b_base64`.
   (Contributed by Serhiy Storchaka in :gh:`144001`.)
+
+* Added functions for Base32 encoding:
+
+  - :func:`~binascii.b2a_base32` and :func:`~binascii.a2b_base32`
+
+  (Contributed by James Seo in :gh:`146192`.)
 
 
 calendar
@@ -1271,6 +1285,10 @@ base64 & binascii
   two orders of magnitude less memory.
   (Contributed by James Seo and Serhiy Storchaka in :gh:`101178`.)
 
+* Implementation for Base32 has been rewritten in C.
+  Encoding and decoding is now two orders of magnitude faster.
+  (Contributed by James Seo in :gh:`146192`)
+
 
 csv
 ---
@@ -1353,7 +1371,7 @@ The JIT avoids :term:`reference count`\ s where possible. This generally
 reduces the cost of most operations in Python.
 
 (Contributed by Ken Jin, Donghee Na, Zheao Li, Hai Zhu, Savannah Ostrowski,
-Reiden Ong, Noam Cohen, Tomas Roun, PuQing, and Cajetan Rodrigues in :gh:`134584`.)
+Reiden Ong, Noam Cohen, Tomas Roun, PuQing, Cajetan Rodrigues, and Sacul in :gh:`134584`.)
 
 .. rubric:: Better machine code generation
 
@@ -1510,6 +1528,21 @@ typing
 
 wave
 ----
+
+* Added support for IEEE floating-point WAVE audio
+  (``WAVE_FORMAT_IEEE_FLOAT``) in :mod:`wave`.
+
+* Added :meth:`wave.Wave_read.getformat`, :meth:`wave.Wave_write.getformat`,
+  and :meth:`wave.Wave_write.setformat` for explicit frame format handling.
+
+* :meth:`wave.Wave_write.setparams` accepts both 7-item tuples including
+  ``format`` and 6-item tuples for backwards compatibility (defaulting to
+  ``WAVE_FORMAT_PCM``).
+
+* ``WAVE_FORMAT_IEEE_FLOAT`` output now includes a ``fact`` chunk,
+  as required for non-PCM WAVE formats.
+
+(Contributed by Lionel Koenig and Michiel W. Beijen in :gh:`60729`.)
 
 * Removed the ``getmark()``, ``setmark()`` and ``getmarkers()`` methods
   of the :class:`~wave.Wave_read` and :class:`~wave.Wave_write` classes,
@@ -1840,6 +1873,24 @@ Deprecated C APIs
 * :c:macro:`!Py_INFINITY` macro is :term:`soft deprecated`,
   use the C11 standard ``<math.h>`` :c:macro:`!INFINITY` instead.
   (Contributed by Sergey B Kirpichev in :gh:`141004`.)
+
+* The following macros are :term:`soft deprecated`:
+
+  - :c:macro:`Py_ALIGNED`: Prefer ``alignas`` instead.
+  - :c:macro:`PY_FORMAT_SIZE_T`: Use ``"z"`` directly.
+  - :c:macro:`Py_LL` & :c:macro:`Py_ULL`:
+    Use standard suffixes, ``LL`` & ``ULL``.
+  - :c:macro:`PY_LONG_LONG`, :c:macro:`PY_LLONG_MIN`, :c:macro:`PY_LLONG_MAX`,
+    :c:macro:`PY_ULLONG_MAX`, :c:macro:`PY_INT32_T`, :c:macro:`PY_UINT32_T`,
+    :c:macro:`PY_INT64_T`, :c:macro:`PY_UINT64_T`, :c:macro:`PY_SIZE_MAX`:
+    Use C99 types/limits.
+  - :c:macro:`Py_UNICODE_SIZE`: Use ``sizeof(wchar_t)`` directly.
+  - :c:macro:`Py_VA_COPY`: Use ``va_copy`` directly.
+
+  The macro :c:macro:`Py_UNICODE_WIDE`, which was scheduled for removal,
+  is :term:`soft deprecated` instead.
+
+  (Contributed by Petr Viktorin in :gh:`146175`.)
 
 * :c:macro:`!Py_MATH_El` and :c:macro:`!Py_MATH_PIl` are deprecated
   since 3.15 and will be removed in 3.20.

@@ -371,6 +371,12 @@ jobs:
       - name: Build and test
         run: python3 Apple ci iOS --fast-ci --simulator 'iPhone SE (3rd generation),OS=17.5'
 
+  build-emscripten:
+    name: 'Emscripten'
+    needs: build-context
+    if: needs.build-context.outputs.run-emscripten == 'true'
+    uses: ./.github/workflows/reusable-emscripten.yml
+
   build-wasi:
     name: 'WASI'
     needs: build-context
@@ -650,6 +656,7 @@ jobs:
     - build-ubuntu
     - build-ubuntu-ssltests
     - build-ios
+    - build-emscripten
     - build-wasi
     - test-hypothesis
     - build-asan
@@ -664,6 +671,7 @@ jobs:
       with:
         allowed-failures: >-
           build-android,
+          build-emscripten,
           build-windows-msi,
           build-ubuntu-ssltests,
           test-hypothesis,
@@ -706,5 +714,6 @@ jobs:
           }}
           ${{ !fromJSON(needs.build-context.outputs.run-android) && 'build-android,' || '' }}
           ${{ !fromJSON(needs.build-context.outputs.run-ios) && 'build-ios,' || '' }}
+          ${{ !fromJSON(needs.build-context.outputs.run-emscripten) && 'build-emscripten,' || '' }}
           ${{ !fromJSON(needs.build-context.outputs.run-wasi) && 'build-wasi,' || '' }}
         jobs: ${{ toJSON(needs) }}
