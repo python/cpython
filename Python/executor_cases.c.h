@@ -5071,16 +5071,11 @@
             _PyStackRef _stack_item_1 = _tos_cache1;
             right = _stack_item_1;
             left = _stack_item_0;
+            uint16_t next_oparg_idx = (uint16_t)CURRENT_OPERAND0_16();
             PyObject *left_o = PyStackRef_AsPyObjectBorrow(left);
             assert(PyUnicode_CheckExact(left_o));
             assert(PyUnicode_CheckExact(PyStackRef_AsPyObjectBorrow(right)));
-            int next_oparg;
-            #if TIER_ONE
-            assert(next_instr->op.code == STORE_FAST);
-            next_oparg = next_instr->op.arg;
-            #else
-            next_oparg = (int)CURRENT_OPERAND0_16();
-            #endif
+            int next_oparg = (int)next_oparg_idx;
             _PyStackRef *target_local = &GETLOCAL(next_oparg);
             assert(PyUnicode_CheckExact(left_o));
             if (PyStackRef_AsPyObjectBorrow(*target_local) != left_o) {

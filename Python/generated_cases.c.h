@@ -428,21 +428,16 @@
                     JUMP_TO_PREDICTED(BINARY_OP);
                 }
             }
-            /* Skip 5 cache entries */
+            /* Skip 4 cache entries */
             // _BINARY_OP_INPLACE_ADD_UNICODE
             {
                 right = value;
                 left = nos;
+                uint16_t next_oparg_idx = read_u16(&this_instr[5].cache);
                 PyObject *left_o = PyStackRef_AsPyObjectBorrow(left);
                 assert(PyUnicode_CheckExact(left_o));
                 assert(PyUnicode_CheckExact(PyStackRef_AsPyObjectBorrow(right)));
-                int next_oparg;
-                #if TIER_ONE
-                assert(next_instr->op.code == STORE_FAST);
-                next_oparg = next_instr->op.arg;
-                #else
-                next_oparg = (int)CURRENT_OPERAND0_16();
-                #endif
+                int next_oparg = (int)next_oparg_idx;
                 _PyStackRef *target_local = &GETLOCAL(next_oparg);
                 assert(PyUnicode_CheckExact(left_o));
                 if (PyStackRef_AsPyObjectBorrow(*target_local) != left_o) {
