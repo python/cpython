@@ -591,6 +591,8 @@ def run_emscripten_python(context):
 
     if context.test:
         args = load_config_toml()["test-args"] + args
+    elif context.pythoninfo:
+        args = load_config_toml()["pythoninfo-args"] + args
 
     os.execv(str(exec_script), [str(exec_script), *args])
 
@@ -724,6 +726,14 @@ def main():
         help=(
             "If passed, will add the default test arguments to the beginning of the command. "
             "Default arguments loaded from Platforms/emscripten/config.toml"
+        ),
+    )
+    run.add_argument(
+        "--pythoninfo",
+        action="store_true",
+        default=False,
+        help=(
+            "If passed, run -m test.pythoninfo"
         ),
     )
     run.add_argument(

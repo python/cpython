@@ -11,6 +11,9 @@ test-args = [
     "--single-process",
     "-W",
 ]
+pythoninfo= [
+    "-m", "test.pythoninfo",
+]
 
 [dependencies.libffi]
 url = "https://github.com/libffi/libffi/releases/download/v{version}/libffi-{version}.tar.gz"
