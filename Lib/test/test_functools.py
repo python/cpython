@@ -565,7 +565,19 @@ class TestPartial:
         g_partial = functools.partial(func, trigger, None, None, None, None, arg=None)
         self.assertEqual(repr(g_partial),"functools.partial(Function(old_function), EvilObject, None, None, None, None, arg=None)")
 
+    def test_str_subclass_error(self):
+        class BadStr(str):
+            def __eq__(self, other):
+                raise RuntimeError
+            def __hash__(self):
+                return str.__hash__(self)
 
+        def f(**kwargs):
+            return kwargs
+
+        p = functools.partial(f, poison="")
+        with self.assertRaises(RuntimeError):
+            result = p(**{BadStr("poison"): "new_value"})
 
 @unittest.skipUnless(c_functools, 'requires the C _functools module')
 class TestPartialC(TestPartial, unittest.TestCase):

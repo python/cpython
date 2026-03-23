@@ -93,7 +93,19 @@ dummy_func(void) {
         if (sym_is_immortal(PyJitRef_Unwrap(value))) {
             ADD_OP(_NOP, 0, 0);
         }
-        value = PyJitRef_StripReferenceInfo(value);
+        value = PyJitRef_StripBorrowInfo(value);
+    }
+
+    op(_COPY_FREE_VARS, (--)) {
+        PyCodeObject *co = get_current_code_object(ctx);
+        if (co == NULL) {
+            ctx->done = true;
+            break;
+        }
+        int offset = co->co_nlocalsplus - oparg;
+        for (int i = 0; i < oparg; ++i) {
+            ctx->frame->locals[offset + i] = sym_new_not_null(ctx);
+        }
     }
 
     op(_LOAD_FAST_CHECK, (-- value)) {
@@ -102,20 +114,24 @@ dummy_func(void) {
         if (sym_is_null(value)) {
             ctx->done = true;
         }
+        assert(!PyJitRef_IsUnique(value));
     }
 
     op(_LOAD_FAST, (-- value)) {
         value = GETLOCAL(oparg);
+        assert(!PyJitRef_IsUnique(value));
     }
 
     op(_LOAD_FAST_BORROW, (-- value)) {
         value = PyJitRef_Borrow(GETLOCAL(oparg));
+        assert(!PyJitRef_IsUnique(value));
     }
 
     op(_LOAD_FAST_AND_CLEAR, (-- value)) {
         value = GETLOCAL(oparg);
         JitOptRef temp = sym_new_null(ctx);
         GETLOCAL(oparg) = temp;
+        assert(!PyJitRef_IsUnique(value));
     }
 
     op(_STORE_ATTR_INSTANCE_VALUE, (offset/1, value, owner -- o)) {
@@ -132,7 +148,7 @@ dummy_func(void) {
 
     op(_SWAP_FAST, (value -- trash)) {
         JitOptRef tmp = GETLOCAL(oparg);
-        GETLOCAL(oparg) = value;
+        GETLOCAL(oparg) = PyJitRef_RemoveUnique(value);
         trash = tmp;
     }
 
@@ -631,6 +647,13 @@ dummy_func(void) {
         value = PyJitRef_Borrow(sym_new_const(ctx, val));
     }
 
+    op(_LOAD_COMMON_CONSTANT, (-- value)) {
+        assert(oparg < NUM_COMMON_CONSTANTS);
+        PyObject *val = _PyInterpreterState_GET()->common_consts[oparg];
+        ADD_OP(_LOAD_CONST_INLINE_BORROW, 0, (uintptr_t)val);
+        value = PyJitRef_Borrow(sym_new_const(ctx, val));
+    }
+
     op(_LOAD_SMALL_INT, (-- value)) {
         PyObject *val = PyLong_FromLong(oparg);
         assert(val);
@@ -706,6 +729,7 @@ dummy_func(void) {
 
     op(_COPY, (bottom, unused[oparg-1] -- bottom, unused[oparg-1], top)) {
         assert(oparg > 0);
+        bottom = PyJitRef_RemoveUnique(bottom);
         top = bottom;
     }
 
@@ -857,12 +881,12 @@ dummy_func(void) {
     }
 
     op(_CHECK_FUNCTION_VERSION, (func_version/2, callable, self_or_null, unused[oparg] -- callable, self_or_null, unused[oparg])) {
-        if (sym_is_const(ctx, callable) && sym_matches_type(callable, &PyFunction_Type)) {
-            assert(PyFunction_Check(sym_get_const(ctx, callable)));
-            ADD_OP(_CHECK_FUNCTION_VERSION_INLINE, 0, func_version);
-            uop_buffer_last(&ctx->out_buffer)->operand1 = (uintptr_t)sym_get_const(ctx, callable);
+        if (sym_get_func_version(callable) == func_version) {
+            REPLACE_OP(this_instr, _NOP, 0, 0);
         }
-        sym_set_type(callable, &PyFunction_Type);
+        else {
+            sym_set_func_version(ctx, callable, func_version);
+        }
     }
 
     op(_CHECK_METHOD_VERSION, (func_version/2, callable, null, unused[oparg] -- callable, null, unused[oparg])) {
@@ -1031,7 +1055,7 @@ dummy_func(void) {
         gen_frame = PyJitRef_WrapInvalid(new_frame);
     }
 
-    op(_SEND_GEN_FRAME, (receiver, v -- receiver, gen_frame)) {
+    op(_SEND_GEN_FRAME, (receiver, null, v -- receiver, null, gen_frame)) {
         _Py_UOpsAbstractFrame *new_frame = frame_new_from_symbol(ctx, receiver, NULL, 0);
         if (new_frame == NULL) {
             ctx->done = true;
@@ -1089,6 +1113,24 @@ dummy_func(void) {
             ADD_OP(_NOP, 0, 0);
         }
         sym_set_type(iter, &PyTuple_Type);
+    }
+
+    op(_ITER_CHECK_LIST, (iter, null_or_index -- iter, null_or_index)) {
+        if (sym_matches_type(iter, &PyList_Type)) {
+            ADD_OP(_NOP, 0, 0);
+        }
+        else {
+            sym_set_type(iter, &PyList_Type);
+        }
+    }
+
+    op(_ITER_CHECK_RANGE, (iter, null_or_index -- iter, null_or_index)) {
+        if (sym_matches_type(iter, &PyRange_Type)) {
+            ADD_OP(_NOP, 0, 0);
+        }
+        else {
+            sym_set_type(iter, &PyRange_Type);
+        }
     }
 
     op(_ITER_NEXT_RANGE, (iter, null_or_index -- iter, null_or_index, next)) {
@@ -1175,6 +1217,11 @@ dummy_func(void) {
             s = sym_new_unknown(ctx);
             a = sym_new_unknown(ctx);
         }
+    }
+
+    op(_CALL_INTRINSIC_1, (value -- res, v)) {
+        res = sym_new_not_null(ctx);
+        v = value;
     }
 
     op(_GUARD_IS_TRUE_POP, (flag -- )) {
@@ -1281,6 +1328,7 @@ dummy_func(void) {
 
     op(_BUILD_TUPLE, (values[oparg] -- tup)) {
         tup = sym_new_tuple(ctx, oparg, values);
+        tup = PyJitRef_MakeUnique(tup);
     }
 
     op(_BUILD_LIST, (values[oparg] -- list)) {
@@ -1303,12 +1351,26 @@ dummy_func(void) {
         set = sym_new_type(ctx, &PySet_Type);
     }
 
+    op(_SET_UPDATE, (set, unused[oparg-1], iterable -- set, unused[oparg-1], i)) {
+        (void)set;
+        i = iterable;
+    }
+
     op(_UNPACK_SEQUENCE_TWO_TUPLE, (seq -- val1, val0)) {
+        if (PyJitRef_IsUnique(seq) && sym_tuple_length(seq) == 2) {
+            ADD_OP(_UNPACK_SEQUENCE_UNIQUE_TWO_TUPLE, oparg, 0);
+        }
         val0 = sym_tuple_getitem(ctx, seq, 0);
         val1 = sym_tuple_getitem(ctx, seq, 1);
     }
 
     op(_UNPACK_SEQUENCE_TUPLE, (seq -- values[oparg])) {
+        if (PyJitRef_IsUnique(seq) && sym_tuple_length(seq) == 3) {
+            ADD_OP(_UNPACK_SEQUENCE_UNIQUE_THREE_TUPLE, oparg, 0);
+        }
+        else if (PyJitRef_IsUnique(seq) && sym_tuple_length(seq) == oparg) {
+            ADD_OP(_UNPACK_SEQUENCE_UNIQUE_TUPLE, oparg, 0);
+        }
         for (int i = 0; i < oparg; i++) {
             values[i] = sym_tuple_getitem(ctx, seq, oparg - i - 1);
         }
@@ -1710,6 +1772,13 @@ dummy_func(void) {
         ss = sub_st;
     }
 
+    op(_MATCH_CLASS, (subject, type, names -- attrs, s, tp, n)) {
+        attrs = sym_new_not_null(ctx);
+        s = subject;
+        tp = type;
+        n = names;
+    }
+
     op(_RECORD_TOS, (tos -- tos)) {
         sym_set_recorded_value(tos, (PyObject *)this_instr->operand0);
     }
@@ -1737,22 +1806,52 @@ dummy_func(void) {
         sym_set_recorded_gen_func(nos, func);
     }
 
-    op(_GUARD_IP__PUSH_FRAME, (ip/4 --)) {
-        (void)ip;
-        stack_pointer = sym_set_stack_depth((int)this_instr->operand1, stack_pointer);
-        // TO DO
-        // Normal function calls to known functions
-        // do not need an IP guard.
+    op(_RECORD_3OS_GEN_FUNC, (gen, nos, tos -- gen, nos, tos)) {
+        PyFunctionObject *func = (PyFunctionObject *)this_instr->operand0;
+        assert(func == NULL || PyFunction_Check(func));
+        sym_set_recorded_gen_func(gen, func);
     }
 
-    op(_GUARD_CODE_VERSION, (version/2 -- )) {
+    op(_GUARD_CODE_VERSION__PUSH_FRAME, (version/2 -- )) {
         PyCodeObject *co = get_current_code_object(ctx);
         if (co->co_version == version) {
             _Py_BloomFilter_Add(dependencies, co);
-            REPLACE_OP(this_instr, _NOP, 0, 0);
+            // Functions derive their version from code objects.
+            if (sym_get_func_version(ctx->frame->callable) == version) {
+                REPLACE_OP(this_instr, _NOP, 0, 0);
+            }
         }
         else {
             ctx->done = true;
+        }
+    }
+
+    op(_GUARD_CODE_VERSION_RETURN_VALUE, (version/2 -- )) {
+        if (ctx->frame->caller) {
+            REPLACE_OP(this_instr, _NOP, 0, 0);
+        }
+    }
+
+    op(_GUARD_CODE_VERSION_YIELD_VALUE, (version/2 -- )) {
+        if (ctx->frame->caller) {
+            REPLACE_OP(this_instr, _NOP, 0, 0);
+        }
+    }
+
+    op(_GUARD_CODE_VERSION_RETURN_GENERATOR, (version/2 -- )) {
+        if (ctx->frame->caller) {
+            REPLACE_OP(this_instr, _NOP, 0, 0);
+        }
+    }
+
+    op(_GUARD_IP__PUSH_FRAME, (ip/4 --)) {
+        (void)ip;
+        stack_pointer = sym_set_stack_depth((int)this_instr->operand1, stack_pointer);
+        if (sym_get_func_version(ctx->frame->callable) != 0 &&
+            // We can remove this guard for simple function call targets.
+            (((PyCodeObject *)ctx->frame->func->func_code)->co_flags &
+                (CO_GENERATOR | CO_COROUTINE | CO_ASYNC_GENERATOR)) == 0) {
+            REPLACE_OP(this_instr, _NOP, 0, 0);
         }
     }
 
