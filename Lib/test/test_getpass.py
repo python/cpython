@@ -216,11 +216,11 @@ class UnixGetpassTest(unittest.TestCase):
         result = getpass._raw_input('Password: ', mock_output, mock_input,
                                     '*')
         self.assertEqual(result, expect_result)
-        # Should show "***" then clear all 3, then show "***" for "bar"
+        # Should show "***" then refresh to clear, then show "***" for "bar"
         output = mock_output.getvalue()
         self.assertIn('***', output)
-        # Should have backspaces to clear the "foo" part
-        self.assertIn('\b', output)
+        # Display refresh uses \r to rewrite the line including prompt
+        self.assertIn('\r', output)
 
     def test_werase_ctrl_w_with_echo_char(self):
         # Ctrl+W (WERASE) should delete the previous word

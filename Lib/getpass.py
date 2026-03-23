@@ -111,6 +111,7 @@ def unix_getpass(prompt='Password: ', stream=None, *, echo_char=None):
                 term_ctrl_chars = None
                 if echo_char:
                     new[3] &= ~termios.ICANON
+                    new[3] &= ~termios.IEXTEN
                     term_ctrl_chars = _get_terminal_ctrl_chars(fd)
                 tcsetattr_flags = termios.TCSAFLUSH
                 if hasattr(termios, 'TCSASOFT'):
