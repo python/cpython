@@ -13,7 +13,7 @@ MOCK_ANY = mock.ANY
 
 
 def tearDownModule():
-    asyncio._set_event_loop_policy(None)
+    asyncio.events._set_event_loop_policy(None)
 
 
 class EagerTaskFactoryLoopTests:
@@ -263,17 +263,38 @@ class EagerTaskFactoryLoopTests:
 
         self.run_coro(run())
 
+    def test_eager_start_false(self):
+        name = None
+
+        async def asyncfn():
+            nonlocal name
+            name = asyncio.current_task().get_name()
+
+        async def main():
+            t = asyncio.get_running_loop().create_task(
+                asyncfn(), eager_start=False, name="example"
+            )
+            self.assertFalse(t.done())
+            self.assertIsNone(name)
+            await t
+            self.assertEqual(name, "example")
+
+        self.run_coro(main())
+
 
 class PyEagerTaskFactoryLoopTests(EagerTaskFactoryLoopTests, test_utils.TestCase):
     Task = tasks._PyTask
 
     def setUp(self):
+        self._all_tasks = asyncio.all_tasks
         self._current_task = asyncio.current_task
         asyncio.current_task = asyncio.tasks.current_task = asyncio.tasks._py_current_task
+        asyncio.all_tasks = asyncio.tasks.all_tasks = asyncio.tasks._py_all_tasks
         return super().setUp()
 
     def tearDown(self):
         asyncio.current_task = asyncio.tasks.current_task = self._current_task
+        asyncio.all_tasks = asyncio.tasks.all_tasks = self._all_tasks
         return super().tearDown()
 
 
@@ -285,18 +306,19 @@ class CEagerTaskFactoryLoopTests(EagerTaskFactoryLoopTests, test_utils.TestCase)
 
     def setUp(self):
         self._current_task = asyncio.current_task
+        self._all_tasks = asyncio.all_tasks
         asyncio.current_task = asyncio.tasks.current_task = asyncio.tasks._c_current_task
+        asyncio.all_tasks = asyncio.tasks.all_tasks = asyncio.tasks._c_all_tasks
         return super().setUp()
 
     def tearDown(self):
         asyncio.current_task = asyncio.tasks.current_task = self._current_task
+        asyncio.all_tasks = asyncio.tasks.all_tasks = self._all_tasks
         return super().tearDown()
 
-
-    @unittest.skip("skip")
     def test_issue105987(self):
         code = """if 1:
-        from _asyncio import _swap_current_task
+        from _asyncio import _swap_current_task, _set_running_loop
 
         class DummyTask:
             pass
@@ -305,6 +327,7 @@ class CEagerTaskFactoryLoopTests(EagerTaskFactoryLoopTests, test_utils.TestCase)
             pass
 
         l = DummyLoop()
+        _set_running_loop(l)
         _swap_current_task(l, DummyTask())
         t = _swap_current_task(l, None)
         """
@@ -498,6 +521,25 @@ class EagerCTaskTests(BaseEagerTaskFactoryTests, test_utils.TestCase):
     def tearDown(self):
         asyncio.current_task = asyncio.tasks.current_task = self._current_task
         return super().tearDown()
+
+
+class DefaultTaskFactoryEagerStart(test_utils.TestCase):
+    def test_eager_start_true_with_default_factory(self):
+        name = None
+
+        async def asyncfn():
+            nonlocal name
+            name = asyncio.current_task().get_name()
+
+        async def main():
+            t = asyncio.get_running_loop().create_task(
+                asyncfn(), eager_start=True, name="example"
+            )
+            self.assertTrue(t.done())
+            self.assertEqual(name, "example")
+            await t
+
+        asyncio.run(main(), loop_factory=asyncio.EventLoop)
 
 if __name__ == '__main__':
     unittest.main()

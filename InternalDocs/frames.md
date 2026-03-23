@@ -11,7 +11,7 @@ of three conceptual sections:
   previous frame, etc.
 
 The definition of the `_PyInterpreterFrame` struct is in
-[Include/internal/pycore_frame.h](../Include/internal/pycore_frame.h).
+[Include/internal/pycore_interpframe_structs.h](../Include/internal/pycore_interpframe_structs.h).
 
 # Allocation
 
@@ -21,8 +21,8 @@ of reference, most frames are allocated contiguously in a per-thread stack
 (see `_PyThreadState_PushFrame` in [Python/pystate.c](../Python/pystate.c)).
 
 Frames of generators and coroutines are embedded in the generator and coroutine
-objects, so are not allocated in the per-thread stack. See `PyGenObject` in
-[Include/internal/pycore_genobject.h](../Include/internal/pycore_genobject.h).
+objects, so are not allocated in the per-thread stack. See `_PyGenObject` in
+[Include/internal/pycore_interpframe_structs.h](../Include/internal/pycore_interpframe_structs.h).
 
 ## Layout
 
@@ -49,9 +49,8 @@ as the arguments on the stack are (usually) already in the correct
 location for the parameters. However, it requires the VM to maintain
 an extra pointer for the locals, which can hurt performance.
 
-### Generators and Coroutines
+### Specials
 
-Generators and coroutines contain a `_PyInterpreterFrame`
 The specials section contains the following pointers:
 
 * Globals dict
@@ -112,6 +111,55 @@ The shim frame points to a special code object containing the `INTERPRETER_EXIT`
 instruction which cleans up the shim frame and returns.
 
 
+### Base frame
+
+Each thread state contains an embedded `_PyInterpreterFrame` called the "base frame"
+that serves as a sentinel at the bottom of the frame stack. This frame is allocated
+in `_PyThreadStateImpl` (the internal extension of `PyThreadState`) and initialized
+when the thread state is created. The `owner` field is set to `FRAME_OWNED_BY_INTERPRETER`.
+
+External profilers and sampling tools can validate that they have successfully unwound
+the complete call stack by checking that the frame chain terminates at the base frame.
+The `PyThreadState.base_frame` pointer provides the expected address to compare against.
+If a stack walk doesn't reach this frame, the sample is incomplete (possibly due to a
+race condition) and should be discarded.
+
+The base frame is embedded in `_PyThreadStateImpl` rather than `PyThreadState` because
+`_PyInterpreterFrame` is defined in internal headers that cannot be exposed in the
+public API. A pointer (`PyThreadState.base_frame`) is provided for profilers to access
+the address without needing internal headers.
+
+See the initialization in `new_threadstate()` in [Python/pystate.c](../Python/pystate.c).
+
+#### How profilers should use the base frame
+
+External profilers should read `tstate->base_frame` before walking the stack, then
+walk from `tstate->current_frame` following `frame->previous` pointers until reaching
+a frame with `owner == FRAME_OWNED_BY_INTERPRETER`. After the walk, verify that the
+last frame address matches `base_frame`. If not, discard the sample as incomplete
+since the frame chain may have been in an inconsistent state due to concurrent updates.
+
+
+### Remote Profiling Frame Cache
+
+The `last_profiled_frame` field in `PyThreadState` supports an optimization for
+remote profilers that sample call stacks from external processes. When a remote
+profiler reads the call stack, it writes the current frame address to this field.
+The eval loop then keeps this pointer valid by updating it to the parent frame
+whenever a frame returns (in `_PyEval_FrameClearAndPop`).
+
+This creates a "high-water mark" that always points to a frame still on the stack.
+On subsequent samples, the profiler can walk from `current_frame` until it reaches
+`last_profiled_frame`, knowing that frames from that point downward are unchanged
+and can be retrieved from a cache. This significantly reduces the amount of remote
+memory reads needed when call stacks are deep and stable at their base.
+
+The update in `_PyEval_FrameClearAndPop` is guarded: it only writes when
+`last_profiled_frame` is non-NULL AND matches the frame being popped. This
+prevents transient frames (called and returned between profiler samples) from
+corrupting the cache pointer, while avoiding any overhead when profiling is inactive.
+
+
 ### The Instruction Pointer
 
 `_PyInterpreterFrame` has two fields which are used to maintain the instruction
@@ -127,7 +175,7 @@ to see in an exception traceback.
 The `return_offset` field determines where a `RETURN` should go in the caller,
 relative to `instr_ptr`.  It is only meaningful to the callee, so it needs to
 be set in any instruction that implements a call (to a Python function),
-including CALL, SEND and BINARY_SUBSCR_GETITEM, among others. If there is no
+including CALL, SEND and BINARY_OP_SUBSCR_GETITEM, among others. If there is no
 callee, then return_offset is meaningless. It is necessary to have a separate
 field for the return offset because (1) if we apply this offset to `instr_ptr`
 while executing the `RETURN`, this is too early and would lose us information

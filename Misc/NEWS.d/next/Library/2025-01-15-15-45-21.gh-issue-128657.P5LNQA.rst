@@ -1,1 +1,0 @@
-Fix possible extra reference when using objects returned by :func:`hashlib.sha256` under :term:`free threading`.

@@ -2879,11 +2879,11 @@ class TestBufferProtocol(unittest.TestCase):
     def test_memoryview_repr(self):
         m = memoryview(bytearray(9))
         r = m.__repr__()
-        self.assertTrue(r.startswith("<memory"))
+        self.assertStartsWith(r, "<memory")
 
         m.release()
         r = m.__repr__()
-        self.assertTrue(r.startswith("<released"))
+        self.assertStartsWith(r, "<released")
 
     def test_memoryview_sequence(self):
 
@@ -4446,6 +4446,41 @@ class TestBufferProtocol(unittest.TestCase):
             obj.__buffer__(inspect.BufferFlags.READ)
         with self.assertRaises(SystemError):
             obj.__buffer__(inspect.BufferFlags.WRITE)
+
+    @support.cpython_only
+    @unittest.skipIf(_testcapi is None, "requires _testcapi")
+    def test_bytearray_alignment(self):
+        # gh-140557: pointer alignment of buffers including empty allocation
+        # should be at least to `size_t`.
+        align = struct.calcsize("N")
+        cases = [
+            bytearray(),
+            bytearray(1),
+            bytearray(b"0123456789abcdef"),
+            bytearray(16),
+        ]
+        ptrs = [_testcapi.buffer_pointer_as_int(array) for array in cases]
+        self.assertEqual([ptr % align for ptr in ptrs], [0]*len(ptrs))
+
+    @support.cpython_only
+    @unittest.skipIf(_testcapi is None, "requires _testcapi")
+    def test_array_alignment(self):
+        # gh-140557: pointer alignment of buffers including empty allocation
+        # should match the maximum array alignment.
+        align = max(struct.calcsize(fmt) for fmt in ARRAY)
+        cases = [array.array(fmt) for fmt in ARRAY]
+        # Empty arrays
+        self.assertEqual(
+            [_testcapi.buffer_pointer_as_int(case) % align for case in cases],
+            [0] * len(cases),
+        )
+        for case in cases:
+            case.append(0)
+        # Allocated arrays
+        self.assertEqual(
+            [_testcapi.buffer_pointer_as_int(case) % align for case in cases],
+            [0] * len(cases),
+        )
 
     @support.cpython_only
     def test_pybuffer_size_from_format(self):

@@ -219,7 +219,7 @@ def encode(string, charset='utf-8', encoding=None, lang=''):
 
     """
     if charset == 'unknown-8bit':
-        bstring = string.encode('ascii', 'surrogateescape')
+        bstring = string.encode('utf-8', 'surrogateescape')
     else:
         bstring = string.encode(charset)
     if encoding is None:

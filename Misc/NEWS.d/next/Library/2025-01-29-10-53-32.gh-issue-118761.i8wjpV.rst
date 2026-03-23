@@ -1,2 +1,0 @@
-Improve import time of :mod:`subprocess` by lazy importing ``locale`` and
-``signal``. Patch by Taneli Hukkinen.

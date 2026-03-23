@@ -1,6 +1,6 @@
 from pathlib import Path
-from test.support.import_helper import unload, CleanImport
-from test.support.warnings_helper import check_warnings, ignore_warnings
+from test.support.import_helper import unload
+from test.support.warnings_helper import check_warnings
 import unittest
 import sys
 import importlib
@@ -58,6 +58,25 @@ class PkgutilTests(unittest.TestCase):
         self.assertEqual(res1, RESOURCE_DATA)
         res2 = pkgutil.get_data(pkg, 'sub/res.txt')
         self.assertEqual(res2, RESOURCE_DATA)
+
+        del sys.modules[pkg]
+
+    def test_getdata_path_traversal(self):
+        pkg = 'test_getdata_traversal'
+
+        # Make a package with some resources
+        package_dir = os.path.join(self.dirname, pkg)
+        os.mkdir(package_dir)
+        # Empty init.py
+        f = open(os.path.join(package_dir, '__init__.py'), "wb")
+        f.close()
+
+        with self.assertRaises(ValueError):
+            pkgutil.get_data(pkg, '../../../etc/passwd')
+        with self.assertRaises(ValueError):
+            pkgutil.get_data(pkg, 'sub/../../../etc/passwd')
+        with self.assertRaises(ValueError):
+            pkgutil.get_data(pkg, os.path.abspath('/etc/passwd'))
 
         del sys.modules[pkg]
 

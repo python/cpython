@@ -1,1 +1,0 @@
-Fix thread safety of :c:func:`PyList_SetItem` in free-threading builds. Patch by Kumar Aditya.

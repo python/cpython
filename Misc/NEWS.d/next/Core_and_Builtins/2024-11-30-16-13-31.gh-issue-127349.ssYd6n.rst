@@ -1,2 +1,0 @@
-Fixed the error when resizing terminal in Python REPL. Patch by Semyon
-Moroz.

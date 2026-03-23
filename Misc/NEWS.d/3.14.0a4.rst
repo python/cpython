@@ -548,7 +548,7 @@ atomic operation. Patch by Donghee Na.
 .. date: 2024-12-23-11-14-07
 .. gh-issue: 128192
 .. nonce: 02mEhD
-.. section: Core and Builtins
+.. section: Library
 
 Upgrade HTTP digest authentication algorithm for :mod:`urllib.request` by
 supporting SHA-256 digest authentication as specified in :rfc:`7616`.
@@ -613,7 +613,7 @@ object when importing a non-existent symbol from a non-module object.
 .. date: 2024-12-17-18-20-37
 .. gh-issue: 128035
 .. nonce: JwqHdB
-.. section: Core and Builtins
+.. section: Library
 
 Indicate through :data:`ssl.HAS_PHA` whether the :mod:`ssl` module supports
 TLSv1.3 post-handshake client authentication (PHA). Patch by Will
@@ -649,7 +649,7 @@ searching the Python interpreter directory.
 .. section: Core and Builtins
 
 We now use the location of the ``libpython`` runtime library used in the
-current proccess to determine :data:`sys.base_prefix` on all platforms
+current process to determine :data:`sys.base_prefix` on all platforms
 implementing the `dladdr
 <https://pubs.opengroup.org/onlinepubs/9799919799/functions/dladdr.html>`_
 function defined by the UNIX standard — this includes Linux, Android, macOS,
@@ -765,7 +765,7 @@ build with LLVM 19.
 .. nonce: jko7Fg
 .. section: Build
 
-GNU Autoconf 2.72 is now required to generate :file:`!configure`. Patch by
+GNU Autoconf 2.72 is now required to generate :file:`configure`. Patch by
 Erlend Aasland.
 
 ..

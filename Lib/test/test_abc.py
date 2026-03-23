@@ -684,10 +684,16 @@ def test_factory(abc_ABCMeta, abc_get_cache_token):
 
     return TestLegacyAPI, TestABC, TestABCWithInitSubclass
 
-TestLegacyAPI_Py, TestABC_Py, TestABCWithInitSubclass_Py = test_factory(abc.ABCMeta,
-                                                                        abc.get_cache_token)
-TestLegacyAPI_C, TestABC_C, TestABCWithInitSubclass_C = test_factory(_py_abc.ABCMeta,
-                                                                     _py_abc.get_cache_token)
+TestLegacyAPI_Py, TestABC_Py, TestABCWithInitSubclass_Py = test_factory(_py_abc.ABCMeta,
+                                                                        _py_abc.get_cache_token)
+TestLegacyAPI_C, TestABC_C, TestABCWithInitSubclass_C = test_factory(abc.ABCMeta,
+                                                                     abc.get_cache_token)
+
+# gh-130095: The _py_abc tests are not thread-safe when run with
+# `--parallel-threads`
+TestLegacyAPI_Py.__unittest_thread_unsafe__ = True
+TestABC_Py.__unittest_thread_unsafe__ = True
+TestABCWithInitSubclass_Py.__unittest_thread_unsafe__ = True
 
 if __name__ == "__main__":
     unittest.main()

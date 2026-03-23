@@ -54,11 +54,11 @@ typedef struct _typeobject {
     iternextfunc tp_iternext;
 
     /* Attribute descriptor and subclassing stuff */
-    struct PyMethodDef *tp_methods;
-    struct PyMemberDef *tp_members;
-    struct PyGetSetDef *tp_getset;
+    PyMethodDef *tp_methods;
+    PyMemberDef *tp_members;
+    PyGetSetDef *tp_getset;
     // Strong reference on a heap type, borrowed reference on a static type
-    struct _typeobject *tp_base;
+    PyTypeObject *tp_base;
     PyObject *tp_dict;
     descrgetfunc tp_descr_get;
     descrsetfunc tp_descr_set;
@@ -70,12 +70,14 @@ typedef struct _typeobject {
     inquiry tp_is_gc; /* For PyObject_IS_GC */
     PyObject *tp_bases;
     PyObject *tp_mro; /* method resolution order */
-    PyObject *tp_cache;
-    PyObject *tp_subclasses;
-    PyObject *tp_weaklist;
+    PyObject *tp_cache; /* no longer used */
+    void *tp_subclasses;  /* for static builtin types this is an index */
+    PyObject *tp_weaklist; /* not used for static builtin types */
     destructor tp_del;
 
-    /* Type attribute cache version tag. Added in version 2.6 */
+    /* Type attribute cache version tag. Added in version 2.6.
+     * If zero, the cache is invalid and must be initialized.
+     */
     unsigned int tp_version_tag;
 
     destructor tp_finalize;
@@ -83,4 +85,11 @@ typedef struct _typeobject {
 
     /* bitset of which type-watchers care about this type */
     unsigned char tp_watched;
+
+    /* Number of tp_version_tag values used.
+     * Set to _Py_ATTR_CACHE_UNUSED if the attribute cache is
+     * disabled for this type (e.g. due to custom MRO entries).
+     * Otherwise, limited to MAX_VERSIONS_PER_CLASS (defined elsewhere).
+     */
+    uint16_t tp_versions_used;
 } PyTypeObject;

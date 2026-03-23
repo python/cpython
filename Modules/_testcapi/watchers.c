@@ -6,9 +6,9 @@
 #include "clinic/watchers.c.h"
 
 #define Py_BUILD_CORE
-#include "pycore_function.h"  // FUNC_MAX_WATCHERS
-#include "pycore_code.h"  // CODE_MAX_WATCHERS
-#include "pycore_context.h" // CONTEXT_MAX_WATCHERS
+#include "pycore_function.h"      // FUNC_MAX_WATCHERS
+#include "pycore_interp_structs.h" // CODE_MAX_WATCHERS
+#include "pycore_context.h"       // CONTEXT_MAX_WATCHERS
 
 /*[clinic input]
 module _testcapi
@@ -413,7 +413,7 @@ get_code_watcher_num_destroyed_events(PyObject *self, PyObject *watcher_id)
 }
 
 static PyObject *
-allocate_too_many_code_watchers(PyObject *self, PyObject *args)
+allocate_too_many_code_watchers(PyObject *self, PyObject *Py_UNUSED(args))
 {
     int watcher_ids[CODE_MAX_WATCHERS + 1];
     int num_watchers = 0;
@@ -742,7 +742,7 @@ get_context_switches(PyObject *Py_UNUSED(self), PyObject *watcher_id)
 }
 
 static PyObject *
-allocate_too_many_context_watchers(PyObject *self, PyObject *args)
+allocate_too_many_context_watchers(PyObject *self, PyObject *Py_UNUSED(args))
 {
     int watcher_ids[CONTEXT_MAX_WATCHERS + 1];
     int num_watchers = 0;
@@ -811,8 +811,7 @@ static PyMethodDef test_methods[] = {
     {"clear_dict_watcher",       clear_dict_watcher,      METH_O,       NULL},
     _TESTCAPI_WATCH_DICT_METHODDEF
     _TESTCAPI_UNWATCH_DICT_METHODDEF
-    {"get_dict_watcher_events",
-     (PyCFunction) get_dict_watcher_events,               METH_NOARGS,  NULL},
+    {"get_dict_watcher_events",  get_dict_watcher_events, METH_NOARGS,  NULL},
 
     // Type watchers.
     {"add_type_watcher",         add_type_watcher,        METH_O,       NULL},
@@ -820,7 +819,7 @@ static PyMethodDef test_methods[] = {
     _TESTCAPI_WATCH_TYPE_METHODDEF
     _TESTCAPI_UNWATCH_TYPE_METHODDEF
     {"get_type_modified_events",
-     (PyCFunction) get_type_modified_events,              METH_NOARGS, NULL},
+     get_type_modified_events,                            METH_NOARGS, NULL},
 
     // Code object watchers.
     {"add_code_watcher",         add_code_watcher,        METH_O,       NULL},
@@ -830,7 +829,7 @@ static PyMethodDef test_methods[] = {
     {"get_code_watcher_num_destroyed_events",
      get_code_watcher_num_destroyed_events,               METH_O,       NULL},
     {"allocate_too_many_code_watchers",
-     (PyCFunction) allocate_too_many_code_watchers,       METH_NOARGS,  NULL},
+     allocate_too_many_code_watchers,                     METH_NOARGS,  NULL},
 
     // Function watchers.
     {"add_func_watcher",         add_func_watcher,        METH_O,       NULL},
@@ -846,7 +845,7 @@ static PyMethodDef test_methods[] = {
     {"clear_context_stack",      clear_context_stack,     METH_NOARGS,  NULL},
     {"get_context_switches",     get_context_switches,    METH_O,       NULL},
     {"allocate_too_many_context_watchers",
-     (PyCFunction) allocate_too_many_context_watchers,       METH_NOARGS,  NULL},
+     allocate_too_many_context_watchers,                  METH_NOARGS,  NULL},
     {NULL},
 };
 

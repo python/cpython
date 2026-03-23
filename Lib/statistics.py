@@ -138,7 +138,7 @@ from fractions import Fraction
 from decimal import Decimal
 from itertools import count, groupby, repeat
 from bisect import bisect_left, bisect_right
-from math import hypot, sqrt, fabs, exp, erf, tau, log, fsum, sumprod
+from math import hypot, sqrt, fabs, exp, erfc, tau, log, fsum, sumprod
 from math import isfinite, isinf, pi, cos, sin, tan, cosh, asin, atan, acos
 from functools import reduce
 from operator import itemgetter
@@ -619,9 +619,14 @@ def stdev(data, xbar=None):
     if n < 2:
         raise StatisticsError('stdev requires at least two data points')
     mss = ss / (n - 1)
+    try:
+        mss_numerator = mss.numerator
+        mss_denominator = mss.denominator
+    except AttributeError:
+        raise ValueError('inf or nan encountered in data')
     if issubclass(T, Decimal):
-        return _decimal_sqrt_of_frac(mss.numerator, mss.denominator)
-    return _float_sqrt_of_frac(mss.numerator, mss.denominator)
+        return _decimal_sqrt_of_frac(mss_numerator, mss_denominator)
+    return _float_sqrt_of_frac(mss_numerator, mss_denominator)
 
 
 def pstdev(data, mu=None):
@@ -637,9 +642,14 @@ def pstdev(data, mu=None):
     if n < 1:
         raise StatisticsError('pstdev requires at least one data point')
     mss = ss / n
+    try:
+        mss_numerator = mss.numerator
+        mss_denominator = mss.denominator
+    except AttributeError:
+        raise ValueError('inf or nan encountered in data')
     if issubclass(T, Decimal):
-        return _decimal_sqrt_of_frac(mss.numerator, mss.denominator)
-    return _float_sqrt_of_frac(mss.numerator, mss.denominator)
+        return _decimal_sqrt_of_frac(mss_numerator, mss_denominator)
+    return _float_sqrt_of_frac(mss_numerator, mss_denominator)
 
 
 ## Statistics for relations between two inputs #############################
@@ -810,9 +820,9 @@ def register(*kernels):
 @register('normal', 'gauss')
 def normal_kernel():
     sqrt2pi = sqrt(2 * pi)
-    sqrt2 = sqrt(2)
+    neg_sqrt2 = -sqrt(2)
     pdf = lambda t: exp(-1/2 * t * t) / sqrt2pi
-    cdf = lambda t: 1/2 * (1.0 + erf(t / sqrt2))
+    cdf = lambda t: 1/2 * erfc(t / neg_sqrt2)
     invcdf = lambda t: _normal_dist_inv_cdf(t, 0.0, 1.0)
     support = None
     return pdf, cdf, invcdf, support
@@ -1257,7 +1267,7 @@ class NormalDist:
         "Cumulative distribution function.  P(X <= x)"
         if not self._sigma:
             raise StatisticsError('cdf() not defined when sigma is zero')
-        return 0.5 * (1.0 + erf((x - self._mu) / (self._sigma * _SQRT2)))
+        return 0.5 * erfc((self._mu - x) / (self._sigma * _SQRT2))
 
     def inv_cdf(self, p):
         """Inverse cumulative distribution function.  x : P(X <= x) = p
@@ -1311,7 +1321,7 @@ class NormalDist:
         dv = Y_var - X_var
         dm = fabs(Y._mu - X._mu)
         if not dv:
-            return 1.0 - erf(dm / (2.0 * X._sigma * _SQRT2))
+            return erfc(dm / (2.0 * X._sigma * _SQRT2))
         a = X._mu * Y_var - Y._mu * X_var
         b = X._sigma * Y._sigma * sqrt(dm * dm + dv * log(Y_var / X_var))
         x1 = (a + b) / dv

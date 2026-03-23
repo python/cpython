@@ -6,7 +6,6 @@ import shlex
 import sys
 import sysconfig
 import tempfile
-import unittest
 import venv
 
 

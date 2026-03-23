@@ -1,5 +1,0 @@
-Use :func:`os.copy_file_range` in :func:`shutil.copy`, :func:`shutil.copy2`,
-and :func:`shutil.copyfile` functions by default. An underlying Linux system
-call gives filesystems an opportunity to implement the use of copy-on-write
-(in case of btrfs and XFS) or server-side copy (in the case of NFS.)
-Patch by Illia Volochii.

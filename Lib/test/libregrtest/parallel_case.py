@@ -1,7 +1,6 @@
 """Run a test case multiple times in parallel threads."""
 
 import copy
-import functools
 import threading
 import unittest
 

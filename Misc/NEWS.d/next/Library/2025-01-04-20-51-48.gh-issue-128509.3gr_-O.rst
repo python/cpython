@@ -1,2 +1,0 @@
-Add :func:`sys._is_immortal` for identifying :term:`immortal` objects at
-runtime.

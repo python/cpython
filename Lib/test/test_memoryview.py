@@ -387,6 +387,20 @@ class AbstractMemoryTests:
         m = self._view(b)
         self.assertRaises(ValueError, hash, m)
 
+    def test_hash_use_after_free(self):
+        # Prevent crash in memoryview(v).__hash__ with re-entrant v.__hash__.
+        # Regression test for https://github.com/python/cpython/issues/142664.
+        class E(array.array):
+            def __hash__(self):
+                mv.release()
+                self.clear()
+                return 123
+
+        v = E('B', b'A' * 4096)
+        mv = memoryview(v).toreadonly()   # must be read-only for hash()
+        self.assertRaises(BufferError, hash, mv)
+        self.assertRaises(BufferError, mv.__hash__)
+
     def test_weakref(self):
         # Check memoryviews are weakrefable
         for tp in self._types:
@@ -441,6 +455,20 @@ class AbstractMemoryTests:
         self.assertEqual(d[0], 256)
         self.assertEqual(c.format, "H")
         self.assertEqual(d.format, "H")
+
+    def test_hex_use_after_free(self):
+        # Prevent UAF in memoryview.hex(sep) with re-entrant sep.__len__.
+        # Regression test for https://github.com/python/cpython/issues/143195.
+        ba = bytearray(b'A' * 1024)
+        mv = memoryview(ba)
+
+        class S(bytes):
+            def __len__(self):
+                mv.release()
+                ba.clear()
+                return 1
+
+        self.assertRaises(BufferError, mv.hex, S(b':'))
 
 
 # Variations on source objects for the buffer: bytes-like objects, then arrays
@@ -547,6 +575,67 @@ class ArrayMemoryviewTest(unittest.TestCase,
         m[:] = new_a
         self.assertEqual(a, new_a)
 
+    def test_compare_equal(self):
+        # A memoryview is equal to itself: there is no need to compare
+        # individual values. This is not true for float values since they can
+        # be NaN, and NaN is not equal to itself.
+
+        def check_equal(view, is_equal):
+            self.assertEqual(view == view, is_equal)
+            self.assertEqual(view != view, not is_equal)
+
+            # Comparison with a different memoryview doesn't use
+            # the optimization and should give the same result.
+            view2 = memoryview(view)
+            self.assertEqual(view2 == view, is_equal)
+            self.assertEqual(view2 != view2, not is_equal)
+
+        # Test integer formats
+        for int_format in 'bBhHiIlLqQ':
+            with self.subTest(format=int_format):
+                a = array.array(int_format, [1, 2, 3])
+                m = memoryview(a)
+                check_equal(m, True)
+
+                if int_format in 'bB':
+                    m2 = m.cast('@' + m.format)
+                    check_equal(m2, True)
+
+        # Test 'c' format
+        a = array.array('B', [1, 2, 3])
+        m = memoryview(a.tobytes()).cast('c')
+        check_equal(m, True)
+
+        # Test 'n' and 'N' formats
+        if struct.calcsize('L') == struct.calcsize('N'):
+            int_format = 'L'
+        elif struct.calcsize('Q') == struct.calcsize('N'):
+            int_format = 'Q'
+        else:
+            int_format = None
+        if int_format:
+            a = array.array(int_format, [1, 2, 3])
+            m = memoryview(a.tobytes()).cast('N')
+            check_equal(m, True)
+            m = memoryview(a.tobytes()).cast('n')
+            check_equal(m, True)
+
+        # Test '?' format
+        m = memoryview(b'\0\1\2').cast('?')
+        check_equal(m, True)
+
+        # Test float formats
+        for float_format in 'fd':
+            with self.subTest(format=float_format):
+                a = array.array(float_format, [1.0, 2.0, float('nan')])
+                m = memoryview(a)
+                # nan is not equal to nan
+                check_equal(m, False)
+
+                a = array.array(float_format, [1.0, 2.0, 3.0])
+                m = memoryview(a)
+                check_equal(m, True)
+
 
 class BytesMemorySliceTest(unittest.TestCase,
     BaseMemorySliceTests, BaseBytesMemoryTests):
@@ -599,6 +688,25 @@ class OtherTest(unittest.TestCase):
         m1 = memoryview(x)
         m2 = m1[::-1]
         self.assertEqual(m2.hex(), '30' * 200000)
+
+    def test_memoryview_hex_separator(self):
+        x = bytes(range(97, 102))
+        m1 = memoryview(x)
+        m2 = m1[::-1]
+        self.assertEqual(m2.hex(':'), '65:64:63:62:61')
+        self.assertEqual(m2.hex(':', 2), '65:6463:6261')
+        self.assertEqual(m2.hex(':', -2), '6564:6362:61')
+        self.assertEqual(m2.hex(sep=':', bytes_per_sep=2), '65:6463:6261')
+        self.assertEqual(m2.hex(sep=':', bytes_per_sep=-2), '6564:6362:61')
+        for bytes_per_sep in 5, -5, 2**31-1, -(2**31-1):
+            with self.subTest(bytes_per_sep=bytes_per_sep):
+                self.assertEqual(m2.hex(':', bytes_per_sep), '6564636261')
+        for bytes_per_sep in 2**31, -2**31, 2**1000, -2**1000:
+            with self.subTest(bytes_per_sep=bytes_per_sep):
+                try:
+                    self.assertEqual(m2.hex(':', bytes_per_sep), '6564636261')
+                except OverflowError:
+                    pass
 
     def test_copy(self):
         m = memoryview(b'abc')
@@ -743,19 +851,21 @@ class RacingTest(unittest.TestCase):
             from multiprocessing.managers import SharedMemoryManager
         except ImportError:
             self.skipTest("Test requires multiprocessing")
-        from threading import Thread
+        from threading import Thread, Event
 
-        n = 100
+        start = Event()
         with SharedMemoryManager() as smm:
             obj = smm.ShareableList(range(100))
-            threads = []
-            for _ in range(n):
-                # Issue gh-127085, the `ShareableList.count` is just a convenient way to mess the `exports`
-                # counter of `memoryview`, this issue has no direct relation with `ShareableList`.
-                threads.append(Thread(target=obj.count, args=(1,)))
-
+            def test():
+                # Issue gh-127085, the `ShareableList.count` is just a
+                # convenient way to mess the `exports` counter of `memoryview`,
+                # this issue has no direct relation with `ShareableList`.
+                start.wait(support.SHORT_TIMEOUT)
+                for i in range(10):
+                    obj.count(1)
+            threads = [Thread(target=test) for _ in range(10)]
             with threading_helper.start_threads(threads):
-                pass
+                start.set()
 
             del obj
 

@@ -171,7 +171,7 @@ class FunctionTests(unittest.TestCase):
         self.con.close()
 
     def test_func_error_on_create(self):
-        with self.assertRaises(sqlite.OperationalError):
+        with self.assertRaisesRegex(sqlite.ProgrammingError, "not -100"):
             self.con.create_function("bla", -100, lambda x: 2*x)
 
     def test_func_too_many_args(self):
@@ -422,27 +422,9 @@ class FunctionTests(unittest.TestCase):
                                self.con.execute, "select badreturn()")
 
     def test_func_keyword_args(self):
-        regex = (
-            r"Passing keyword arguments 'name', 'narg' and 'func' to "
-            r"_sqlite3.Connection.create_function\(\) is deprecated. "
-            r"Parameters 'name', 'narg' and 'func' will become "
-            r"positional-only in Python 3.15."
-        )
-
-        def noop():
-            return None
-
-        with self.assertWarnsRegex(DeprecationWarning, regex) as cm:
-            self.con.create_function("noop", 0, func=noop)
-        self.assertEqual(cm.filename, __file__)
-
-        with self.assertWarnsRegex(DeprecationWarning, regex) as cm:
-            self.con.create_function("noop", narg=0, func=noop)
-        self.assertEqual(cm.filename, __file__)
-
-        with self.assertWarnsRegex(DeprecationWarning, regex) as cm:
-            self.con.create_function(name="noop", narg=0, func=noop)
-        self.assertEqual(cm.filename, __file__)
+        with self.assertRaisesRegex(TypeError,
+                'takes exactly 3 positional arguments'):
+            self.con.create_function("noop", 0, func=lambda: None)
 
 
 class WindowSumInt:
@@ -507,9 +489,8 @@ class WindowFunctionTests(unittest.TestCase):
         self.assertEqual(self.cur.fetchall(), self.expected)
 
     def test_win_error_on_create(self):
-        self.assertRaises(sqlite.ProgrammingError,
-                          self.con.create_window_function,
-                          "shouldfail", -100, WindowSumInt)
+        with self.assertRaisesRegex(sqlite.ProgrammingError, "not -100"):
+            self.con.create_window_function("shouldfail", -100, WindowSumInt)
 
     @with_tracebacks(BadWindow)
     def test_win_exception_in_method(self):
@@ -638,7 +619,7 @@ class AggregateTests(unittest.TestCase):
         self.con.close()
 
     def test_aggr_error_on_create(self):
-        with self.assertRaises(sqlite.OperationalError):
+        with self.assertRaisesRegex(sqlite.ProgrammingError, "not -100"):
             self.con.create_function("bla", -100, AggrSum)
 
     @with_tracebacks(AttributeError, msg_regex="AggrNoStep")
@@ -738,25 +719,9 @@ class AggregateTests(unittest.TestCase):
                 self.assertEqual(val, txt)
 
     def test_agg_keyword_args(self):
-        regex = (
-            r"Passing keyword arguments 'name', 'n_arg' and 'aggregate_class' to "
-            r"_sqlite3.Connection.create_aggregate\(\) is deprecated. "
-            r"Parameters 'name', 'n_arg' and 'aggregate_class' will become "
-            r"positional-only in Python 3.15."
-        )
-
-        with self.assertWarnsRegex(DeprecationWarning, regex) as cm:
+        with self.assertRaisesRegex(TypeError,
+                'takes exactly 3 positional arguments'):
             self.con.create_aggregate("test", 1, aggregate_class=AggrText)
-        self.assertEqual(cm.filename, __file__)
-
-        with self.assertWarnsRegex(DeprecationWarning, regex) as cm:
-            self.con.create_aggregate("test", n_arg=1, aggregate_class=AggrText)
-        self.assertEqual(cm.filename, __file__)
-
-        with self.assertWarnsRegex(DeprecationWarning, regex) as cm:
-            self.con.create_aggregate(name="test", n_arg=0,
-                                      aggregate_class=AggrText)
-        self.assertEqual(cm.filename, __file__)
 
 
 class AuthorizerTests(unittest.TestCase):
@@ -801,16 +766,9 @@ class AuthorizerTests(unittest.TestCase):
         self.con.execute("select c2 from t1")
 
     def test_authorizer_keyword_args(self):
-        regex = (
-            r"Passing keyword argument 'authorizer_callback' to "
-            r"_sqlite3.Connection.set_authorizer\(\) is deprecated. "
-            r"Parameter 'authorizer_callback' will become positional-only in "
-            r"Python 3.15."
-        )
-
-        with self.assertWarnsRegex(DeprecationWarning, regex) as cm:
+        with self.assertRaisesRegex(TypeError,
+                'takes exactly 1 positional argument'):
             self.con.set_authorizer(authorizer_callback=lambda: None)
-        self.assertEqual(cm.filename, __file__)
 
 
 class AuthorizerRaiseExceptionTests(AuthorizerTests):

@@ -1,2 +1,0 @@
-Update the locale alias mapping in the :mod:`locale` module to match the
-latest X Org locale alias mapping and support new locales in Glibc 2.41.
