@@ -151,6 +151,12 @@ should_advance_qsbr_for_page(struct _qsbr_thread_state *qsbr, mi_page_t *page)
     }
     return false;
 }
+
+static _PyThreadStateImpl *
+tstate_from_heap(mi_heap_t *heap)
+{
+    return _Py_CONTAINER_OF(heap->tld, _PyThreadStateImpl, mimalloc.tld);
+}
 #endif
 
 static bool
@@ -159,23 +165,35 @@ _PyMem_mi_page_maybe_free(mi_page_t *page, mi_page_queue_t *pq, bool force)
 #ifdef Py_GIL_DISABLED
     assert(mi_page_all_free(page));
     if (page->use_qsbr) {
-        _PyThreadStateImpl *tstate = (_PyThreadStateImpl *)PyThreadState_GET();
-        if (page->qsbr_goal != 0 && _Py_qbsr_goal_reached(tstate->qsbr, page->qsbr_goal)) {
+        struct _qsbr_thread_state *qsbr = ((_PyThreadStateImpl *)PyThreadState_GET())->qsbr;
+        if (page->qsbr_goal != 0 && _Py_qbsr_goal_reached(qsbr, page->qsbr_goal)) {
             _PyMem_mi_page_clear_qsbr(page);
             _mi_page_free(page, pq, force);
             return true;
         }
 
+        // gh-145615: since we are not freeing this page yet, we want to
+        // make it available for allocations. Note that the QSBR goal and
+        // linked list node remain set even if the page is later used for
+        // an allocation. We only detect and clear the QSBR goal when the
+        // page becomes empty again (used == 0).
+        if (mi_page_is_in_full(page)) {
+            _mi_page_unfull(page);
+        }
+
         _PyMem_mi_page_clear_qsbr(page);
         page->retire_expire = 0;
 
-        if (should_advance_qsbr_for_page(tstate->qsbr, page)) {
-            page->qsbr_goal = _Py_qsbr_advance(tstate->qsbr->shared);
+        if (should_advance_qsbr_for_page(qsbr, page)) {
+            page->qsbr_goal = _Py_qsbr_advance(qsbr->shared);
         }
         else {
-            page->qsbr_goal = _Py_qsbr_shared_next(tstate->qsbr->shared);
+            page->qsbr_goal = _Py_qsbr_shared_next(qsbr->shared);
         }
 
+        // We may be freeing a page belonging to a different thread during a
+        // stop-the-world event. Find the _PyThreadStateImpl for the page.
+        _PyThreadStateImpl *tstate = tstate_from_heap(mi_page_heap(page));
         llist_insert_tail(&tstate->mimalloc.page_list, &page->qsbr_node);
         return false;
     }
@@ -192,7 +210,8 @@ _PyMem_mi_page_reclaimed(mi_page_t *page)
     if (page->qsbr_goal != 0) {
         if (mi_page_all_free(page)) {
             assert(page->qsbr_node.next == NULL);
-            _PyThreadStateImpl *tstate = (_PyThreadStateImpl *)PyThreadState_GET();
+            _PyThreadStateImpl *tstate = tstate_from_heap(mi_page_heap(page));
+            assert(tstate == (_PyThreadStateImpl *)_PyThreadState_GET());
             page->retire_expire = 0;
             llist_insert_tail(&tstate->mimalloc.page_list, &page->qsbr_node);
         }
@@ -358,6 +377,29 @@ _PyObject_MiFree(void *ctx, void *ptr)
     mi_free(ptr);
 }
 
+void *
+_PyMem_MiRawMalloc(void *ctx, size_t size)
+{
+    return mi_malloc(size);
+}
+
+void *
+_PyMem_MiRawCalloc(void *ctx, size_t nelem, size_t elsize)
+{
+    return mi_calloc(nelem, elsize);
+}
+
+void *
+_PyMem_MiRawRealloc(void *ctx, void *ptr, size_t size)
+{
+    return mi_realloc(ptr, size);
+}
+
+void
+_PyMem_MiRawFree(void *ctx, void *ptr)
+{
+    mi_free(ptr);
+}
 #endif // WITH_MIMALLOC
 
 
@@ -365,7 +407,8 @@ _PyObject_MiFree(void *ctx, void *ptr)
 
 
 #ifdef WITH_MIMALLOC
-#  define MIMALLOC_ALLOC {NULL, _PyMem_MiMalloc, _PyMem_MiCalloc, _PyMem_MiRealloc, _PyMem_MiFree}
+#  define MIMALLOC_ALLOC    {NULL, _PyMem_MiMalloc, _PyMem_MiCalloc, _PyMem_MiRealloc, _PyMem_MiFree}
+#  define MIMALLOC_RAWALLOC {NULL, _PyMem_MiRawMalloc, _PyMem_MiRawCalloc, _PyMem_MiRawRealloc, _PyMem_MiRawFree}
 #  define MIMALLOC_OBJALLOC {NULL, _PyObject_MiMalloc, _PyObject_MiCalloc, _PyObject_MiRealloc, _PyObject_MiFree}
 #endif
 
@@ -383,7 +426,7 @@ void* _PyObject_Realloc(void *ctx, void *ptr, size_t size);
 
 #if defined(Py_GIL_DISABLED)
 // Py_GIL_DISABLED requires using mimalloc for "mem" and "obj" domains.
-#  define PYRAW_ALLOC MALLOC_ALLOC
+#  define PYRAW_ALLOC MIMALLOC_RAWALLOC
 #  define PYMEM_ALLOC MIMALLOC_ALLOC
 #  define PYOBJ_ALLOC MIMALLOC_OBJALLOC
 #elif defined(WITH_PYMALLOC)
@@ -758,7 +801,7 @@ set_up_allocators_unlocked(PyMemAllocatorName allocator)
     case PYMEM_ALLOCATOR_MIMALLOC:
     case PYMEM_ALLOCATOR_MIMALLOC_DEBUG:
     {
-        PyMemAllocatorEx malloc_alloc = MALLOC_ALLOC;
+        PyMemAllocatorEx malloc_alloc = MIMALLOC_RAWALLOC;
         set_allocator_unlocked(PYMEM_DOMAIN_RAW, &malloc_alloc);
 
         PyMemAllocatorEx pymalloc = MIMALLOC_ALLOC;
@@ -828,6 +871,7 @@ get_current_allocator_name_unlocked(void)
 #ifdef WITH_MIMALLOC
     PyMemAllocatorEx mimalloc = MIMALLOC_ALLOC;
     PyMemAllocatorEx mimalloc_obj = MIMALLOC_OBJALLOC;
+    PyMemAllocatorEx mimalloc_raw = MIMALLOC_RAWALLOC;
 #endif
 
     if (pymemallocator_eq(&_PyMem_Raw, &malloc_alloc) &&
@@ -845,7 +889,7 @@ get_current_allocator_name_unlocked(void)
     }
 #endif
 #ifdef WITH_MIMALLOC
-    if (pymemallocator_eq(&_PyMem_Raw, &malloc_alloc) &&
+    if (pymemallocator_eq(&_PyMem_Raw, &mimalloc_raw) &&
         pymemallocator_eq(&_PyMem, &mimalloc) &&
         pymemallocator_eq(&_PyObject, &mimalloc_obj))
     {
@@ -877,7 +921,7 @@ get_current_allocator_name_unlocked(void)
         }
 #endif
 #ifdef WITH_MIMALLOC
-        if (pymemallocator_eq(&_PyMem_Debug.raw.alloc, &malloc_alloc) &&
+        if (pymemallocator_eq(&_PyMem_Debug.raw.alloc, &mimalloc_raw) &&
             pymemallocator_eq(&_PyMem_Debug.mem.alloc, &mimalloc) &&
             pymemallocator_eq(&_PyMem_Debug.obj.alloc, &mimalloc_obj))
         {

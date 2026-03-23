@@ -49,7 +49,7 @@ additional methods of invocation:
   appropriately named script from that directory.
 * When called with ``-c command``, it executes the Python statement(s) given as
   *command*.  Here *command* may contain multiple statements separated by
-  newlines. Leading whitespace is significant in Python statements!
+  newlines.
 * When called with ``-m module-name``, the given module is located on the
   Python module path and executed as a script.
 
@@ -390,7 +390,7 @@ Miscellaneous options
    Hash randomization is intended to provide protection against a
    denial-of-service caused by carefully chosen inputs that exploit the worst
    case performance of a dict construction, *O*\ (*n*\ :sup:`2`) complexity.  See
-   http://ocert.org/advisories/ocert-2011-003.html for details.
+   https://ocert.org/advisories/ocert-2011-003.html for details.
 
    :envvar:`PYTHONHASHSEED` allows you to set a fixed value for the hash
    seed secret.
@@ -687,6 +687,13 @@ Miscellaneous options
 
      .. versionadded:: 3.14
 
+   * :samp:`-X pathconfig_warnings={0,1}` if true (``1``) then
+     :ref:`sys-path-init` is allowed to log warnings into stderr.
+     If false (``0``) suppress these warnings. Set to true by default.
+     See also :envvar:`PYTHON_PATHCONFIG_WARNINGS`.
+
+     .. versionadded:: 3.15
+
    * :samp:`-X tlbc={0,1}` enables (1, the default) or disables (0) thread-local
      bytecode in builds configured with :option:`--disable-gil`.  When disabled,
      this also disables the specializing interpreter.  See also
@@ -700,7 +707,7 @@ Miscellaneous options
      (the default) respects the ``lazy`` keyword in source code.
      See also :envvar:`PYTHON_LAZY_IMPORTS`.
 
-     .. versionadded:: next
+     .. versionadded:: 3.15
 
    It also allows passing arbitrary values and retrieving them through the
    :data:`sys._xoptions` dictionary.
@@ -949,8 +956,9 @@ conflict.
 
 .. envvar:: PYTHONNOUSERSITE
 
-   If this is set, Python won't add the :data:`user site-packages directory
-   <site.USER_SITE>` to :data:`sys.path`.
+   This is equivalent to the :option:`-s` option.  If this is set, Python won't
+   add the :data:`user site-packages directory <site.USER_SITE>` to
+   :data:`sys.path`.
 
    .. seealso::
 
@@ -963,6 +971,9 @@ conflict.
    compute the path of the :data:`user site-packages directory <site.USER_SITE>`
    and :ref:`installation paths <sysconfig-user-scheme>` for
    ``python -m pip install --user``.
+
+   To disable the user site-packages, see :envvar:`PYTHONNOUSERSITE` or the :option:`-s`
+   option.
 
    .. seealso::
 
@@ -1074,6 +1085,13 @@ conflict.
    * ``pymalloc_debug``: same as ``pymalloc`` but also install debug hooks.
    * ``mimalloc_debug``: same as ``mimalloc`` but also install debug hooks.
 
+   .. note::
+
+      In the :term:`free-threaded <free threading>` build, the ``malloc``,
+      ``malloc_debug``, ``pymalloc``, and ``pymalloc_debug`` values are not
+      supported.  Only ``default``, ``debug``, ``mimalloc``, and
+      ``mimalloc_debug`` are accepted.
+
    .. versionadded:: 3.6
 
    .. versionchanged:: 3.7
@@ -1083,12 +1101,13 @@ conflict.
 .. envvar:: PYTHONMALLOCSTATS
 
    If set to a non-empty string, Python will print statistics of the
-   :ref:`pymalloc memory allocator <pymalloc>` every time a new pymalloc object
-   arena is created, and on shutdown.
+   :ref:`pymalloc memory allocator <pymalloc>` or the
+   :ref:`mimalloc memory allocator <mimalloc>` (whichever is in use)
+   every time a new object arena is created, and on shutdown.
 
    This variable is ignored if the :envvar:`PYTHONMALLOC` environment variable
    is used to force the :c:func:`malloc` allocator of the C library, or if
-   Python is configured without ``pymalloc`` support.
+   Python is configured without both ``pymalloc`` and ``mimalloc`` support.
 
    .. versionchanged:: 3.6
       This variable can now also be used on Python compiled in release mode.
@@ -1358,6 +1377,14 @@ conflict.
 
    .. versionadded:: 3.14
 
+.. envvar:: PYTHON_PATHCONFIG_WARNINGS
+
+   If true (``1``) then :ref:`sys-path-init` is allowed to log warnings into
+   stderr. If false (``0``) suppress these warnings. Set to true by default.
+   See also :option:`-X pathconfig_warnings<-X>`.
+
+   .. versionadded:: 3.15
+
 .. envvar:: PYTHON_JIT
 
    On builds where experimental just-in-time compilation is available, this
@@ -1385,7 +1412,7 @@ conflict.
 
    See also the :option:`-X lazy_imports <-X>` command-line option.
 
-   .. versionadded:: next
+   .. versionadded:: 3.15
 
 Debug-mode variables
 ~~~~~~~~~~~~~~~~~~~~

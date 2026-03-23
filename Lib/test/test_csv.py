@@ -1280,6 +1280,19 @@ class TestDialectValidity(unittest.TestCase):
                     self.assertRaises(ValueError, create_invalid, field_name, " ",
                                       skipinitialspace=True)
 
+    def test_dialect_getattr_non_attribute_error_propagates(self):
+        # gh-145966: non-AttributeError exceptions raised by __getattr__
+        # during dialect attribute lookup must propagate, not be silenced.
+        class BadDialect:
+            def __getattr__(self, name):
+                raise RuntimeError("boom")
+
+        with self.assertRaises(RuntimeError):
+            csv.reader([], dialect=BadDialect())
+
+        with self.assertRaises(RuntimeError):
+            csv.writer(StringIO(), dialect=BadDialect())
+
 
 class TestSniffer(unittest.TestCase):
     sample1 = """\

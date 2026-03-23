@@ -239,6 +239,14 @@ class PyCompileTestsBase:
             with self.assertRaises(py_compile.PyCompileError):
                 py_compile.compile(bad_coding, self.pyc_path, doraise=True, quiet=1)
 
+    def test_utf7_decoded_cr_compiles(self):
+        with open(self.source_path, 'wb') as file:
+            file.write(b"#coding=U7+AA0''\n")
+
+        pyc_path = py_compile.compile(self.source_path, self.pyc_path, doraise=True)
+        self.assertEqual(pyc_path, self.pyc_path)
+        self.assertTrue(os.path.exists(self.pyc_path))
+
 
 class PyCompileTestsWithSourceEpoch(PyCompileTestsBase,
                                     unittest.TestCase,
