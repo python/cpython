@@ -606,6 +606,7 @@ codegen_unwind_fblock(compiler *c, location *ploc,
             RETURN_IF_ERROR(codegen_call_exit_with_nones(c, *ploc));
             if (info->fb_type == COMPILE_FBLOCK_ASYNC_WITH) {
                 ADDOP_I(c, *ploc, GET_AWAITABLE, 2);
+                ADDOP(c, *ploc, PUSH_NULL);
                 ADDOP_LOAD_CONST(c, *ploc, Py_None);
                 ADD_YIELD_FROM(c, *ploc, 1);
             }
@@ -2124,7 +2125,7 @@ codegen_for(compiler *c, stmt_ty s)
     VISIT(c, expr, s->v.For.iter);
 
     loc = LOC(s->v.For.iter);
-    ADDOP(c, loc, GET_ITER);
+    ADDOP_I(c, loc, GET_ITER, 0);
 
     USE_LABEL(c, start);
     ADDOP_JUMP(c, loc, FOR_ITER, cleanup);
@@ -2175,6 +2176,7 @@ codegen_async_for(compiler *c, stmt_ty s)
     /* SETUP_FINALLY to guard the __anext__ call */
     ADDOP_JUMP(c, loc, SETUP_FINALLY, except);
     ADDOP(c, loc, GET_ANEXT);
+    ADDOP(c, loc, PUSH_NULL);
     ADDOP_LOAD_CONST(c, loc, Py_None);
     USE_LABEL(c, send);
     ADD_YIELD_FROM(c, loc, 1);
@@ -4540,7 +4542,7 @@ codegen_sync_comprehension_generator(compiler *c, location loc,
 
     if (IS_JUMP_TARGET_LABEL(start)) {
         if (iter_pos != ITERATOR_ON_STACK) {
-            ADDOP(c, LOC(gen->iter), GET_ITER);
+            ADDOP_I(c, LOC(gen->iter), GET_ITER, 0);
             depth += 1;
         }
         USE_LABEL(c, start);
@@ -4574,7 +4576,7 @@ codegen_sync_comprehension_generator(compiler *c, location loc,
                 NEW_JUMP_TARGET_LABEL(c, unpack_start);
                 NEW_JUMP_TARGET_LABEL(c, unpack_end);
                 VISIT(c, expr, elt->v.Starred.value);
-                ADDOP(c, elt_loc, GET_ITER);
+                ADDOP_I(c, elt_loc, GET_ITER, 0);
                 USE_LABEL(c, unpack_start);
                 ADDOP_JUMP(c, elt_loc, FOR_ITER, unpack_end);
                 ADDOP_YIELD(c, elt_loc);
@@ -4686,6 +4688,7 @@ codegen_async_comprehension_generator(compiler *c, location loc,
 
     ADDOP_JUMP(c, loc, SETUP_FINALLY, except);
     ADDOP(c, loc, GET_ANEXT);
+    ADDOP(c, loc, PUSH_NULL);
     ADDOP_LOAD_CONST(c, loc, Py_None);
     USE_LABEL(c, send);
     ADD_YIELD_FROM(c, loc, 1);
@@ -4716,7 +4719,7 @@ codegen_async_comprehension_generator(compiler *c, location loc,
                 NEW_JUMP_TARGET_LABEL(c, unpack_start);
                 NEW_JUMP_TARGET_LABEL(c, unpack_end);
                 VISIT(c, expr, elt->v.Starred.value);
-                ADDOP(c, elt_loc, GET_ITER);
+                ADDOP_I(c, elt_loc, GET_ITER, 0);
                 USE_LABEL(c, unpack_start);
                 ADDOP_JUMP(c, elt_loc, FOR_ITER, unpack_end);
                 ADDOP_YIELD(c, elt_loc);
@@ -5039,6 +5042,7 @@ codegen_comprehension(compiler *c, expr_ty e, int type,
 
     if (is_async_comprehension && type != COMP_GENEXP) {
         ADDOP_I(c, loc, GET_AWAITABLE, 0);
+        ADDOP(c, loc, PUSH_NULL);
         ADDOP_LOAD_CONST(c, loc, Py_None);
         ADD_YIELD_FROM(c, loc, 1);
     }
@@ -5178,6 +5182,7 @@ codegen_async_with_inner(compiler *c, stmt_ty s, int pos)
     ADDOP_I(c, loc, LOAD_SPECIAL, SPECIAL___AENTER__);
     ADDOP_I(c, loc, CALL, 0);
     ADDOP_I(c, loc, GET_AWAITABLE, 1);
+    ADDOP(c, loc, PUSH_NULL);
     ADDOP_LOAD_CONST(c, loc, Py_None);
     ADD_YIELD_FROM(c, loc, 1);
 
@@ -5214,6 +5219,7 @@ codegen_async_with_inner(compiler *c, stmt_ty s, int pos)
      */
     RETURN_IF_ERROR(codegen_call_exit_with_nones(c, loc));
     ADDOP_I(c, loc, GET_AWAITABLE, 2);
+    ADDOP(c, loc, PUSH_NULL);
     ADDOP_LOAD_CONST(c, loc, Py_None);
     ADD_YIELD_FROM(c, loc, 1);
 
@@ -5228,6 +5234,7 @@ codegen_async_with_inner(compiler *c, stmt_ty s, int pos)
     ADDOP(c, loc, PUSH_EXC_INFO);
     ADDOP(c, loc, WITH_EXCEPT_START);
     ADDOP_I(c, loc, GET_AWAITABLE, 2);
+    ADDOP(c, loc, PUSH_NULL);
     ADDOP_LOAD_CONST(c, loc, Py_None);
     ADD_YIELD_FROM(c, loc, 1);
     RETURN_IF_ERROR(codegen_with_except_finish(c, cleanup));
@@ -5408,13 +5415,14 @@ codegen_visit_expr(compiler *c, expr_ty e)
             return _PyCompile_Error(c, loc, "'yield from' inside async function");
         }
         VISIT(c, expr, e->v.YieldFrom.value);
-        ADDOP(c, loc, GET_YIELD_FROM_ITER);
+        ADDOP_I(c, loc, GET_ITER, GET_ITER_YIELD_FROM);
         ADDOP_LOAD_CONST(c, loc, Py_None);
         ADD_YIELD_FROM(c, loc, 0);
         break;
     case Await_kind:
         VISIT(c, expr, e->v.Await.value);
         ADDOP_I(c, loc, GET_AWAITABLE, 0);
+        ADDOP(c, loc, PUSH_NULL);
         ADDOP_LOAD_CONST(c, loc, Py_None);
         ADD_YIELD_FROM(c, loc, 1);
         break;

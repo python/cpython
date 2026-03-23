@@ -265,7 +265,7 @@ handle_yield_from_frame(
         uintptr_t gi_await_addr;
         err = read_py_ptr(
             unwinder,
-            stackpointer_addr - sizeof(void*),
+            stackpointer_addr - sizeof(void*) * 2,
             &gi_await_addr);
         if (err) {
             set_exception_cause(unwinder, PyExc_RuntimeError, "Failed to read gi_await address");
@@ -940,6 +940,9 @@ process_running_task_chain(
     PyObject *coro_chain = PyStructSequence_GET_ITEM(task_info, 2);
     assert(coro_chain != NULL);
     if (PyList_GET_SIZE(coro_chain) != 1) {
+        PyErr_Format(PyExc_RuntimeError,
+            "Expected single-item coro chain, got %zd items",
+            PyList_GET_SIZE(coro_chain));
         set_exception_cause(unwinder, PyExc_RuntimeError, "Coro chain is not a single item");
         return -1;
     }

@@ -157,11 +157,11 @@ find_running_frame(
 int
 get_thread_status(RemoteUnwinderObject *unwinder, uint64_t tid, uint64_t pthread_id) {
 #if defined(__APPLE__) && TARGET_OS_OSX
-   if (unwinder->thread_id_offset == 0) {
+   if (!unwinder->thread_id_offset_initialized) {
         uint64_t *tids = (uint64_t *)PyMem_Malloc(MAX_NATIVE_THREADS * sizeof(uint64_t));
         if (!tids) {
-            PyErr_NoMemory();
-            return -1;
+            // Non-fatal: thread status is best-effort
+            return THREAD_STATE_UNKNOWN;
         }
         int n = proc_pidinfo(unwinder->handle.pid, PROC_PIDLISTTHREADS, 0, tids, MAX_NATIVE_THREADS * sizeof(uint64_t)) / sizeof(uint64_t);
         if (n <= 0) {
@@ -176,6 +176,7 @@ get_thread_status(RemoteUnwinderObject *unwinder, uint64_t tid, uint64_t pthread
             }
         }
         unwinder->thread_id_offset = min_offset;
+        unwinder->thread_id_offset_initialized = 1;
         PyMem_Free(tids);
     }
     struct proc_threadinfo ti;
@@ -239,20 +240,21 @@ get_thread_status(RemoteUnwinderObject *unwinder, uint64_t tid, uint64_t pthread
         unwinder->win_process_buffer_size = n;
         PVOID new_buffer = PyMem_Realloc(unwinder->win_process_buffer, n);
         if (!new_buffer) {
-            return -1;
+            // Match Linux/macOS: degrade gracefully on alloc failure
+            return THREAD_STATE_UNKNOWN;
         }
         unwinder->win_process_buffer = new_buffer;
         return get_thread_status(unwinder, tid, pthread_id);
     }
     if (status != STATUS_SUCCESS) {
-        return -1;
+        return THREAD_STATE_UNKNOWN;
     }
 
     SYSTEM_PROCESS_INFORMATION *pi = (SYSTEM_PROCESS_INFORMATION *)unwinder->win_process_buffer;
     while ((ULONG)(ULONG_PTR)pi->UniqueProcessId != unwinder->handle.pid) {
         if (pi->NextEntryOffset == 0) {
-            // We didn't find the process
-            return -1;
+            // Process not found (may have exited)
+            return THREAD_STATE_UNKNOWN;
         }
         pi = (SYSTEM_PROCESS_INFORMATION *)(((BYTE *)pi) + pi->NextEntryOffset);
     }
@@ -264,7 +266,8 @@ get_thread_status(RemoteUnwinderObject *unwinder, uint64_t tid, uint64_t pthread
         }
     }
 
-    return -1;
+    // Thread not found (may have exited)
+    return THREAD_STATE_UNKNOWN;
 #else
     return THREAD_STATE_UNKNOWN;
 #endif
@@ -291,7 +294,8 @@ unwind_stack_for_thread(
     RemoteUnwinderObject *unwinder,
     uintptr_t *current_tstate,
     uintptr_t gil_holder_tstate,
-    uintptr_t gc_frame
+    uintptr_t gc_frame,
+    uintptr_t main_thread_tstate
 ) {
     PyObject *frame_info = NULL;
     PyObject *thread_id = NULL;
@@ -384,15 +388,19 @@ unwind_stack_for_thread(
     long pthread_id = GET_MEMBER(long, ts, unwinder->debug_offsets.thread_state.thread_id);
 
     // Optimization: only check CPU status if needed by mode because it's expensive
-    int cpu_status = -1;
+    int cpu_status = THREAD_STATE_UNKNOWN;
     if (unwinder->mode == PROFILING_MODE_CPU || unwinder->mode == PROFILING_MODE_ALL) {
         cpu_status = get_thread_status(unwinder, tid, pthread_id);
     }
 
-    if (cpu_status == -1) {
+    if (cpu_status == THREAD_STATE_UNKNOWN) {
         status_flags |= THREAD_STATUS_UNKNOWN;
     } else if (cpu_status == THREAD_STATE_RUNNING) {
         status_flags |= THREAD_STATUS_ON_CPU;
+    }
+
+    if (*current_tstate == main_thread_tstate) {
+        status_flags |= THREAD_STATUS_MAIN_THREAD;
     }
 
     // Check if we should skip this thread based on mode

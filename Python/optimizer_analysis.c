@@ -291,6 +291,8 @@ add_op(JitOptContext *ctx, _PyUOpInstruction *this_instr,
 #define sym_get_probable_func_code _Py_uop_sym_get_probable_func_code
 #define sym_get_probable_value _Py_uop_sym_get_probable_value
 #define sym_set_stack_depth(DEPTH, SP) _Py_uop_sym_set_stack_depth(ctx, DEPTH, SP)
+#define sym_get_func_version _Py_uop_sym_get_func_version
+#define sym_set_func_version _Py_uop_sym_set_func_version
 
 /* Comparison oparg masks */
 #define COMPARE_LT_MASK 2
