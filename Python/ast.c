@@ -3553,6 +3553,9 @@ ast_for_flow_stmt(struct compiling *c, const node *n)
         case almog_stmt:
             return Almog(LINENO(n), n->n_col_offset,
                             n->n_end_lineno, n->n_end_col_offset, c->c_arena);
+        case nope_stmt:
+            return Nope(LINENO(n), n->n_col_offset,
+                            n->n_end_lineno, n->n_end_col_offset, c->c_arena);
         case yield_stmt: { /* will reduce to yield_expr */
             expr_ty exp = ast_for_expr(c, CHILD(ch, 0));
             if (!exp)

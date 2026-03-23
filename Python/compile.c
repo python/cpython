@@ -2847,6 +2847,23 @@ compiler_break(struct compiler *c)
 }
 
 static int
+compiler_nope(struct compiler *c)
+{
+    printf("nope\n");
+    for (int depth = c->u->u_nfblocks; depth--;) {
+        struct fblockinfo *info = &c->u->u_fblock[depth];
+
+        if (!compiler_unwind_fblock(c, info, 0))
+            return 0;
+        if (info->fb_type == WHILE_LOOP || info->fb_type == FOR_LOOP) {
+            ADDOP_JABS(c, JUMP_ABSOLUTE, info->fb_exit);
+            return 1;
+        }
+    }
+    return compiler_error(c, "'nope' outside loop");
+}
+
+static int
 compiler_continue(struct compiler *c)
 {
     for (int depth = c->u->u_nfblocks; depth--;) {
@@ -3406,6 +3423,8 @@ compiler_visit_stmt(struct compiler *c, stmt_ty s)
         return compiler_continue(c);
     case Almog_kind:
         return compiler_almog(c);
+    case Nope_kind:
+        return compiler_nope(c);
     case With_kind:
         return compiler_with(c, s, 0);
     case AsyncFunctionDef_kind:
