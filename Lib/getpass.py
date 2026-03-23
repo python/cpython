@@ -111,10 +111,14 @@ def unix_getpass(prompt='Password: ', stream=None, *, echo_char=None):
                 # Extract control characters before changing terminal mode
                 term_ctrl_chars = None
                 if echo_char:
-                    # Disable canonical mode so we can read char by char
+                    # ICANON enables canonical (line-buffered) mode where
+                    # the terminal handles line editing. Disable it so we
+                    # can read input char by char and handle editing ourselves.
                     new[3] &= ~termios.ICANON
-                    # Disable IEXTEN so Ctrl+V (LNEXT) is not intercepted
-                    # by the terminal driver and can be handled by our code
+                    # IEXTEN enables implementation-defined input processing
+                    # such as LNEXT (Ctrl+V). Disable it so the terminal
+                    # driver doesn't intercept these characters before our
+                    # code can handle them.
                     new[3] &= ~termios.IEXTEN
                     term_ctrl_chars = _get_terminal_ctrl_chars(fd)
                 tcsetattr_flags = termios.TCSAFLUSH
