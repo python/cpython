@@ -17,7 +17,13 @@ module _sysconfig
 
 #include "clinic/_sysconfig.c.h"
 
-#ifdef MS_WINDOWS
+
+#define py_version_short() \
+    (Py_STRINGIFY(PY_MAJOR_VERSION) "." Py_STRINGIFY(PY_MINOR_VERSION))
+#define py_version_nodot() \
+    (Py_STRINGIFY(PY_MAJOR_VERSION) Py_STRINGIFY(PY_MINOR_VERSION))
+
+
 static int
 add_string_value(PyObject *dict, const char *key, const char *str_value)
 {
@@ -29,7 +35,7 @@ add_string_value(PyObject *dict, const char *key, const char *str_value)
     Py_DECREF(value);
     return err;
 }
-#endif
+
 
 /*[clinic input]
 @permit_long_summary
@@ -47,14 +53,23 @@ _sysconfig_config_vars_impl(PyObject *module)
         return NULL;
     }
 
+    // Python version
+    if (add_string_value(config, "py_version", PY_VERSION) < 0) {
+        goto error;
+    }
+    if (add_string_value(config, "py_version_short", py_version_short()) < 0) {
+        goto error;
+    }
+    if (add_string_value(config, "py_version_nodot", py_version_nodot()) < 0) {
+        goto error;
+    }
+
 #ifdef MS_WINDOWS
     if (add_string_value(config, "EXT_SUFFIX", PYD_TAGGED_SUFFIX) < 0) {
-        Py_DECREF(config);
-        return NULL;
+        goto error;
     }
     if (add_string_value(config, "SOABI", PYD_SOABI) < 0) {
-        Py_DECREF(config);
-        return NULL;
+        goto error;
     }
 #endif
 
@@ -64,8 +79,7 @@ _sysconfig_config_vars_impl(PyObject *module)
     PyObject *py_gil_disabled = _PyLong_GetZero();
 #endif
     if (PyDict_SetItemString(config, "Py_GIL_DISABLED", py_gil_disabled) < 0) {
-        Py_DECREF(config);
-        return NULL;
+        goto error;
     }
 
 #ifdef Py_DEBUG
@@ -74,11 +88,14 @@ _sysconfig_config_vars_impl(PyObject *module)
     PyObject *py_debug = _PyLong_GetZero();
 #endif
     if (PyDict_SetItemString(config, "Py_DEBUG", py_debug) < 0) {
-        Py_DECREF(config);
-        return NULL;
+        goto error;
     }
 
     return config;
+
+error:
+    Py_DECREF(config);
+    return NULL;
 }
 
 #ifdef MS_WINDOWS
@@ -117,14 +134,6 @@ _sysconfig_get_platform_impl(PyObject *module)
 #endif  // MS_WINDOWS
 
 
-static int
-sysconfig_module_exec(PyObject *module)
-{
-    return PyModule_Add(module, "PY_VERSION",
-                        PyUnicode_FromString(PY_VERSION));
-}
-
-
 PyDoc_STRVAR(sysconfig__doc__,
 "A helper for the sysconfig module.");
 
@@ -135,7 +144,6 @@ static struct PyMethodDef sysconfig_methods[] = {
 };
 
 static PyModuleDef_Slot sysconfig_slots[] = {
-    {Py_mod_exec, sysconfig_module_exec},
     {Py_mod_multiple_interpreters, Py_MOD_PER_INTERPRETER_GIL_SUPPORTED},
     {Py_mod_gil, Py_MOD_GIL_NOT_USED},
     {0, NULL}

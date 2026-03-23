@@ -743,11 +743,19 @@ class TestSysConfig(unittest.TestCase, VirtualEnvironmentMixin):
 
     def test_py_version(self):
         config_vars = sysconfig.get_config_vars()
-        py_version = config_vars['py_version']
-        self.assertIsInstance(py_version, str)
+        self.assertIsInstance(config_vars['py_version'], str)
         ver = sys.version_info
         version = f'{ver.major}.{ver.minor}.{ver.micro}'
-        self.assertStartsWith(py_version, version)
+        # py_version can be longer such as "3.15.0a7+" instead of "3.15.0"
+        self.assertStartsWith(config_vars['py_version'], version)
+
+        self.assertIsInstance(config_vars['py_version_short'], str)
+        self.assertEqual(config_vars['py_version_short'],
+                         f'{ver.major}.{ver.minor}')
+
+        self.assertIsInstance(config_vars['py_version_nodot'], str)
+        self.assertEqual(config_vars['py_version_nodot'],
+                         f'{ver.major}{ver.minor}')
 
 
 class MakefileTests(unittest.TestCase):

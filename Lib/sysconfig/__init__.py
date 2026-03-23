@@ -173,9 +173,6 @@ if _HAS_USER_BASE:
 _SCHEME_KEYS = ('stdlib', 'platstdlib', 'purelib', 'platlib', 'include',
                 'scripts', 'data')
 
-_PY_VERSION = _sysconfig.PY_VERSION
-_PY_VERSION_SHORT = f'{sys.version_info[0]}.{sys.version_info[1]}'
-_PY_VERSION_SHORT_NO_DOT = f'{sys.version_info[0]}{sys.version_info[1]}'
 _BASE_PREFIX = os.path.normpath(sys.base_prefix)
 _BASE_EXEC_PREFIX = os.path.normpath(sys.base_exec_prefix)
 # Mutex guarding initialization of _CONFIG_VARS.
@@ -324,7 +321,8 @@ def get_makefile_filename():
         return os.path.join(_PROJECT_BASE, "Makefile")
 
     if hasattr(sys, 'abiflags'):
-        config_dir_name = f'config-{_PY_VERSION_SHORT}{sys.abiflags}'
+        py_version_short = f'{sys.version_info[0]}.{sys.version_info[1]}'
+        config_dir_name = f'config-{py_version_short}{sys.abiflags}'
     else:
         config_dir_name = 'config'
 
@@ -390,9 +388,6 @@ def _init_non_posix(vars):
     vars['BINLIBDEST'] = get_path('platstdlib')
     vars['INCLUDEPY'] = get_path('include')
 
-    # Add EXT_SUFFIX, SOABI, Py_DEBUG, and Py_GIL_DISABLED
-    vars.update(_sysconfig.config_vars())
-
     # NOTE: ABIFLAGS is only an emulated value. It is not present during build
     #       on Windows. sys.abiflags is absent on Windows and vars['abiflags']
     #       is already widely used to calculate paths, so it should remain an
@@ -410,7 +405,7 @@ def _init_non_posix(vars):
         vars['LIBRARY'] = os.path.basename(_safe_realpath(dllhandle))
         vars['LDLIBRARY'] = vars['LIBRARY']
     vars['EXE'] = '.exe'
-    vars['VERSION'] = _PY_VERSION_SHORT_NO_DOT
+    vars['VERSION'] = vars['py_version_nodot']
     vars['BINDIR'] = os.path.dirname(_safe_realpath(sys.executable))
     # No standard path exists on Windows for this, but we'll check
     # whether someone is imitating a POSIX-like layout
@@ -505,6 +500,10 @@ def _init_config_vars():
     global _CONFIG_VARS
     _CONFIG_VARS = {}
 
+    # Add py_version, Py_DEBUG, and Py_GIL_DISABLED.
+    # On Windows, add also EXT_SUFFIX and SOABI.
+    _CONFIG_VARS.update(_sysconfig.config_vars())
+
     prefix = os.path.normpath(sys.prefix)
     exec_prefix = os.path.normpath(sys.exec_prefix)
     base_prefix = _BASE_PREFIX
@@ -530,9 +529,6 @@ def _init_config_vars():
     # Distutils.
     _CONFIG_VARS['prefix'] = prefix
     _CONFIG_VARS['exec_prefix'] = exec_prefix
-    _CONFIG_VARS['py_version'] = _PY_VERSION
-    _CONFIG_VARS['py_version_short'] = _PY_VERSION_SHORT
-    _CONFIG_VARS['py_version_nodot'] = _PY_VERSION_SHORT_NO_DOT
     _CONFIG_VARS['installed_base'] = base_prefix
     _CONFIG_VARS['base'] = prefix
     _CONFIG_VARS['installed_platbase'] = base_exec_prefix
@@ -739,11 +735,11 @@ def get_platform():
 
 
 def get_python_version():
-    return _PY_VERSION_SHORT
+    return get_config_var('py_version_short')
 
 
 def _get_python_version_abi():
-    return _PY_VERSION_SHORT + get_config_var("abi_thread")
+    return get_config_var('py_version_short') + get_config_var("abi_thread")
 
 
 def expand_makefile_vars(s, vars):
