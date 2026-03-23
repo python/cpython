@@ -324,7 +324,40 @@ class TestReader(ScreenEqualMixin, TestCase):
         reader.update_screen()
 
         self.assertEqual([line.text for line in reader.last_refresh_cache.render_lines], ["ab"])
+        self.assertEqual([line.text for line in reader.rendered_screen.lines], ["ab"])
+        self.assertEqual(len(reader.rendered_screen.overlays), 1)
         self.assertEqual(reader.screen, ["ab", "! boom "])
+
+    def test_completion_overlay_keeps_base_render_cache(self):
+        namespace = {"itertools": itertools}
+        code = "itertools."
+        events = itertools.chain(
+            code_to_events(code),
+            [
+                Event(evt="key", data="\t", raw=bytearray(b"\t")),
+                Event(evt="key", data="\t", raw=bytearray(b"\t")),
+            ],
+        )
+
+        completing_reader = functools.partial(
+            prepare_reader,
+            readline_completer=rlcompleter.Completer(namespace).complete,
+        )
+        reader, _ = handle_all_events(events, prepare_reader=completing_reader)
+
+        self.assertEqual([line.text for line in reader.last_refresh_cache.render_lines], [code])
+        self.assertEqual([line.text for line in reader.rendered_screen.lines], [code])
+        self.assertEqual(len(reader.rendered_screen.overlays), 1)
+        self.assertEqual(reader.screen[0], code)
+        self.assertEqual(reader.screen[1].rstrip(), "itertools.accumulate(")
+
+        reader.cmpltn_reset()
+        reader.update_screen()
+
+        self.assertEqual([line.text for line in reader.last_refresh_cache.render_lines], [code])
+        self.assertEqual([line.text for line in reader.rendered_screen.lines], [code])
+        self.assertEqual(reader.rendered_screen.overlays, ())
+        self.assertEqual(reader.screen, [code])
 
     def test_completions_updated_on_key_press(self):
         namespace = {"itertools": itertools}

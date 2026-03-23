@@ -24,7 +24,7 @@ from dataclasses import dataclass, field
 
 import re
 from . import commands, console, reader
-from .render import RenderLine, RenderedScreen
+from .render import RenderLine, ScreenOverlay
 from .reader import Reader
 
 
@@ -283,15 +283,15 @@ class CompletingReader(Reader):
         if not isinstance(cmd, (complete, self_insert)):
             self.cmpltn_reset()
 
-    def calc_screen(self) -> RenderedScreen:
-        rendered_screen = super().calc_screen()
-        if self.cmpltn_menu_visible:
-            rendered_screen = rendered_screen.with_overlay(
+    def get_screen_overlays(self) -> tuple[ScreenOverlay, ...]:
+        if not self.cmpltn_menu_visible:
+            return ()
+        return (
+            ScreenOverlay(
                 self.lxy[1] + 1,
-                (RenderLine.from_rendered_text(line) for line in self.cmpltn_menu),
-            )
-            self.rendered_screen = rendered_screen
-        return rendered_screen
+                tuple(RenderLine.from_rendered_text(line) for line in self.cmpltn_menu),
+            ),
+        )
 
     def finish(self) -> None:
         super().finish()

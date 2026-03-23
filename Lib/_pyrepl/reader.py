@@ -36,7 +36,7 @@ from .content import (
     process_prompt as build_prompt_content,
 )
 from .layout import LayoutMap, LayoutResult, LayoutRow, WrappedRow, layout_content_lines
-from .render import RenderCell, RenderLine, RenderedScreen, StyleRef
+from .render import RenderCell, RenderLine, RenderedScreen, ScreenOverlay, StyleRef
 from .utils import ANSI_ESCAPE_SEQUENCE, wlen, gen_colors
 from .trace import trace
 
@@ -380,7 +380,7 @@ class Reader:
         return default_keymap
 
     def calc_screen(self) -> RenderedScreen:
-        """Translate changes in self.buffer into a structured rendered screen."""
+        """Translate the editable buffer into a base rendered screen."""
         num_common_lines = 0
         offset = 0
         if self.last_refresh_cache.valid(self):
@@ -427,12 +427,7 @@ class Reader:
             layout_rows,
             last_refresh_line_end_offsets,
         )
-
-        render_lines = base_render_lines.copy()
-        render_lines.extend(self._render_message_lines())
-
-        self.rendered_screen = RenderedScreen(tuple(render_lines), self.cxy)
-        return self.rendered_screen
+        return RenderedScreen(tuple(base_render_lines), self.cxy)
 
     def _buffer_refresh_from_pos(self) -> int | None:
         buffer_from_pos = self.invalidation.buffer_rebuild_from_pos
@@ -536,9 +531,9 @@ class Reader:
             for row in wrapped_rows
         ]
 
-    def _render_message_lines(self) -> list[RenderLine]:
+    def _render_message_lines(self) -> tuple[RenderLine, ...]:
         if not self.msg:
-            return []
+            return ()
         width = self.console.width
         render_lines: list[RenderLine] = []
         for message_line in self.msg.split("\n"):
@@ -551,7 +546,19 @@ class Reader:
                 render_lines.append(
                     RenderLine.from_rendered_text(message_line[offset : offset + width])
                 )
-        return render_lines
+        return tuple(render_lines)
+
+    def get_screen_overlays(self) -> tuple[ScreenOverlay, ...]:
+        return ()
+
+    def compose_rendered_screen(self, base_screen: RenderedScreen) -> RenderedScreen:
+        overlays = list(self.get_screen_overlays())
+        message_lines = self._render_message_lines()
+        if message_lines:
+            overlays.append(ScreenOverlay(len(base_screen.lines), message_lines))
+        if not overlays:
+            return base_screen
+        return RenderedScreen(base_screen.lines, base_screen.cursor, tuple(overlays))
 
     def _render_line(
         self,
@@ -763,7 +770,8 @@ class Reader:
             self.rendered_screen = RenderedScreen.empty()
             self.invalidate_full()
             self.last_command = None
-            self.calc_screen()
+            base_screen = self.calc_screen()
+            self.rendered_screen = self.compose_rendered_screen(base_screen)
         except BaseException:
             self.restore()
             raise
@@ -821,7 +829,9 @@ class Reader:
     def refresh(self) -> None:
         """Recalculate and refresh the screen."""
         # this call sets up self.cxy, so call it first.
-        rendered_screen = self.calc_screen()
+        base_screen = self.calc_screen()
+        rendered_screen = self.compose_rendered_screen(base_screen)
+        self.rendered_screen = rendered_screen
         trace(
             "reader.refresh cursor={cursor} lines={lines} "
             "dims=({width},{height}) invalidation={invalidation}",
