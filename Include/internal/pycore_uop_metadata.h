@@ -156,7 +156,10 @@ const uint32_t _PyUop_Flags[MAX_UOP_ID+1] = {
     [_DELETE_NAME] = HAS_ARG_FLAG | HAS_NAME_FLAG | HAS_ERROR_FLAG | HAS_ERROR_NO_POP_FLAG | HAS_ESCAPES_FLAG,
     [_UNPACK_SEQUENCE] = HAS_ARG_FLAG | HAS_ERROR_FLAG | HAS_ESCAPES_FLAG,
     [_UNPACK_SEQUENCE_TWO_TUPLE] = HAS_ARG_FLAG | HAS_EXIT_FLAG | HAS_ESCAPES_FLAG,
+    [_UNPACK_SEQUENCE_UNIQUE_TWO_TUPLE] = 0,
+    [_UNPACK_SEQUENCE_UNIQUE_THREE_TUPLE] = 0,
     [_UNPACK_SEQUENCE_TUPLE] = HAS_ARG_FLAG | HAS_EXIT_FLAG | HAS_ESCAPES_FLAG,
+    [_UNPACK_SEQUENCE_UNIQUE_TUPLE] = HAS_ARG_FLAG,
     [_UNPACK_SEQUENCE_LIST] = HAS_ARG_FLAG | HAS_DEOPT_FLAG | HAS_ESCAPES_FLAG,
     [_UNPACK_EX] = HAS_ARG_FLAG | HAS_ERROR_FLAG | HAS_ESCAPES_FLAG,
     [_STORE_ATTR] = HAS_ARG_FLAG | HAS_NAME_FLAG | HAS_ERROR_FLAG | HAS_ESCAPES_FLAG,
@@ -183,7 +186,7 @@ const uint32_t _PyUop_Flags[MAX_UOP_ID+1] = {
     [_BUILD_TUPLE] = HAS_ARG_FLAG | HAS_ERROR_FLAG | HAS_ERROR_NO_POP_FLAG,
     [_BUILD_LIST] = HAS_ARG_FLAG | HAS_ERROR_FLAG | HAS_ERROR_NO_POP_FLAG | HAS_ESCAPES_FLAG,
     [_LIST_EXTEND] = HAS_ARG_FLAG | HAS_ERROR_FLAG | HAS_ESCAPES_FLAG,
-    [_SET_UPDATE] = HAS_ARG_FLAG | HAS_ERROR_FLAG | HAS_ESCAPES_FLAG,
+    [_SET_UPDATE] = HAS_ARG_FLAG | HAS_ERROR_FLAG | HAS_ERROR_NO_POP_FLAG | HAS_ESCAPES_FLAG,
     [_BUILD_SET] = HAS_ARG_FLAG | HAS_ERROR_FLAG | HAS_ESCAPES_FLAG,
     [_BUILD_MAP] = HAS_ARG_FLAG | HAS_ERROR_FLAG | HAS_ESCAPES_FLAG,
     [_SETUP_ANNOTATIONS] = HAS_ERROR_FLAG | HAS_ESCAPES_FLAG,
@@ -229,8 +232,7 @@ const uint32_t _PyUop_Flags[MAX_UOP_ID+1] = {
     [_MATCH_MAPPING] = 0,
     [_MATCH_SEQUENCE] = 0,
     [_MATCH_KEYS] = HAS_ERROR_FLAG | HAS_ESCAPES_FLAG,
-    [_GET_ITER] = HAS_ERROR_FLAG | HAS_ESCAPES_FLAG,
-    [_GET_YIELD_FROM_ITER] = HAS_ERROR_FLAG | HAS_ERROR_NO_POP_FLAG | HAS_ESCAPES_FLAG,
+    [_GET_ITER] = HAS_ARG_FLAG | HAS_ERROR_FLAG | HAS_ESCAPES_FLAG,
     [_FOR_ITER_TIER_TWO] = HAS_EXIT_FLAG | HAS_ERROR_FLAG | HAS_ERROR_NO_POP_FLAG | HAS_ESCAPES_FLAG,
     [_ITER_CHECK_LIST] = HAS_EXIT_FLAG,
     [_GUARD_NOT_EXHAUSTED_LIST] = HAS_EXIT_FLAG,
@@ -389,6 +391,7 @@ const uint32_t _PyUop_Flags[MAX_UOP_ID+1] = {
     [_RECORD_TOS_TYPE] = HAS_RECORDS_VALUE_FLAG,
     [_RECORD_NOS] = HAS_RECORDS_VALUE_FLAG,
     [_RECORD_NOS_GEN_FUNC] = HAS_RECORDS_VALUE_FLAG,
+    [_RECORD_3OS_GEN_FUNC] = HAS_RECORDS_VALUE_FLAG,
     [_RECORD_4OS] = HAS_RECORDS_VALUE_FLAG,
     [_RECORD_CALLABLE] = HAS_ARG_FLAG | HAS_RECORDS_VALUE_FLAG,
     [_RECORD_BOUND_METHOD] = HAS_ARG_FLAG | HAS_RECORDS_VALUE_FLAG,
@@ -841,12 +844,12 @@ const _PyUopCachingInfo _PyUop_Caching[MAX_UOP_ID+1] = {
         },
     },
     [_END_SEND] = {
-        .best = { 2, 2, 2, 2 },
+        .best = { 3, 3, 3, 3 },
         .entries = {
             { -1, -1, -1 },
             { -1, -1, -1 },
-            { 1, 2, _END_SEND_r21 },
             { -1, -1, -1 },
+            { 1, 3, _END_SEND_r31 },
         },
     },
     [_UNARY_NEGATIVE] = {
@@ -1417,12 +1420,12 @@ const _PyUopCachingInfo _PyUop_Caching[MAX_UOP_ID+1] = {
         },
     },
     [_SEND_GEN_FRAME] = {
-        .best = { 2, 2, 2, 2 },
+        .best = { 3, 3, 3, 3 },
         .entries = {
             { -1, -1, -1 },
             { -1, -1, -1 },
-            { 2, 2, _SEND_GEN_FRAME_r22 },
             { -1, -1, -1 },
+            { 3, 3, _SEND_GEN_FRAME_r33 },
         },
     },
     [_YIELD_VALUE] = {
@@ -1497,11 +1500,38 @@ const _PyUopCachingInfo _PyUop_Caching[MAX_UOP_ID+1] = {
             { -1, -1, -1 },
         },
     },
+    [_UNPACK_SEQUENCE_UNIQUE_TWO_TUPLE] = {
+        .best = { 0, 1, 2, 2 },
+        .entries = {
+            { 2, 0, _UNPACK_SEQUENCE_UNIQUE_TWO_TUPLE_r02 },
+            { 2, 1, _UNPACK_SEQUENCE_UNIQUE_TWO_TUPLE_r12 },
+            { 3, 2, _UNPACK_SEQUENCE_UNIQUE_TWO_TUPLE_r23 },
+            { -1, -1, -1 },
+        },
+    },
+    [_UNPACK_SEQUENCE_UNIQUE_THREE_TUPLE] = {
+        .best = { 0, 1, 1, 1 },
+        .entries = {
+            { 3, 0, _UNPACK_SEQUENCE_UNIQUE_THREE_TUPLE_r03 },
+            { 3, 1, _UNPACK_SEQUENCE_UNIQUE_THREE_TUPLE_r13 },
+            { -1, -1, -1 },
+            { -1, -1, -1 },
+        },
+    },
     [_UNPACK_SEQUENCE_TUPLE] = {
         .best = { 1, 1, 1, 1 },
         .entries = {
             { -1, -1, -1 },
             { 0, 1, _UNPACK_SEQUENCE_TUPLE_r10 },
+            { -1, -1, -1 },
+            { -1, -1, -1 },
+        },
+    },
+    [_UNPACK_SEQUENCE_UNIQUE_TUPLE] = {
+        .best = { 1, 1, 1, 1 },
+        .entries = {
+            { -1, -1, -1 },
+            { 0, 1, _UNPACK_SEQUENCE_UNIQUE_TUPLE_r10 },
             { -1, -1, -1 },
             { -1, -1, -1 },
         },
@@ -1744,7 +1774,7 @@ const _PyUopCachingInfo _PyUop_Caching[MAX_UOP_ID+1] = {
         .best = { 1, 1, 1, 1 },
         .entries = {
             { -1, -1, -1 },
-            { 0, 1, _SET_UPDATE_r10 },
+            { 1, 1, _SET_UPDATE_r11 },
             { -1, -1, -1 },
             { -1, -1, -1 },
         },
@@ -2159,15 +2189,6 @@ const _PyUopCachingInfo _PyUop_Caching[MAX_UOP_ID+1] = {
         .entries = {
             { -1, -1, -1 },
             { 2, 1, _GET_ITER_r12 },
-            { -1, -1, -1 },
-            { -1, -1, -1 },
-        },
-    },
-    [_GET_YIELD_FROM_ITER] = {
-        .best = { 1, 1, 1, 1 },
-        .entries = {
-            { -1, -1, -1 },
-            { 1, 1, _GET_YIELD_FROM_ITER_r11 },
             { -1, -1, -1 },
             { -1, -1, -1 },
         },
@@ -3699,7 +3720,7 @@ const uint16_t _PyUop_Uncached[MAX_UOP_REGS_ID+1] = {
     [_PUSH_NULL_r23] = _PUSH_NULL,
     [_END_FOR_r10] = _END_FOR,
     [_POP_ITER_r20] = _POP_ITER,
-    [_END_SEND_r21] = _END_SEND,
+    [_END_SEND_r31] = _END_SEND,
     [_UNARY_NEGATIVE_r12] = _UNARY_NEGATIVE,
     [_UNARY_NOT_r01] = _UNARY_NOT,
     [_UNARY_NOT_r11] = _UNARY_NOT,
@@ -3862,7 +3883,7 @@ const uint16_t _PyUop_Uncached[MAX_UOP_REGS_ID+1] = {
     [_GET_AITER_r11] = _GET_AITER,
     [_GET_ANEXT_r12] = _GET_ANEXT,
     [_GET_AWAITABLE_r11] = _GET_AWAITABLE,
-    [_SEND_GEN_FRAME_r22] = _SEND_GEN_FRAME,
+    [_SEND_GEN_FRAME_r33] = _SEND_GEN_FRAME,
     [_YIELD_VALUE_r11] = _YIELD_VALUE,
     [_POP_EXCEPT_r10] = _POP_EXCEPT,
     [_LOAD_COMMON_CONSTANT_r01] = _LOAD_COMMON_CONSTANT,
@@ -3873,7 +3894,13 @@ const uint16_t _PyUop_Uncached[MAX_UOP_REGS_ID+1] = {
     [_DELETE_NAME_r00] = _DELETE_NAME,
     [_UNPACK_SEQUENCE_r10] = _UNPACK_SEQUENCE,
     [_UNPACK_SEQUENCE_TWO_TUPLE_r12] = _UNPACK_SEQUENCE_TWO_TUPLE,
+    [_UNPACK_SEQUENCE_UNIQUE_TWO_TUPLE_r02] = _UNPACK_SEQUENCE_UNIQUE_TWO_TUPLE,
+    [_UNPACK_SEQUENCE_UNIQUE_TWO_TUPLE_r12] = _UNPACK_SEQUENCE_UNIQUE_TWO_TUPLE,
+    [_UNPACK_SEQUENCE_UNIQUE_TWO_TUPLE_r23] = _UNPACK_SEQUENCE_UNIQUE_TWO_TUPLE,
+    [_UNPACK_SEQUENCE_UNIQUE_THREE_TUPLE_r03] = _UNPACK_SEQUENCE_UNIQUE_THREE_TUPLE,
+    [_UNPACK_SEQUENCE_UNIQUE_THREE_TUPLE_r13] = _UNPACK_SEQUENCE_UNIQUE_THREE_TUPLE,
     [_UNPACK_SEQUENCE_TUPLE_r10] = _UNPACK_SEQUENCE_TUPLE,
+    [_UNPACK_SEQUENCE_UNIQUE_TUPLE_r10] = _UNPACK_SEQUENCE_UNIQUE_TUPLE,
     [_UNPACK_SEQUENCE_LIST_r10] = _UNPACK_SEQUENCE_LIST,
     [_UNPACK_EX_r10] = _UNPACK_EX,
     [_STORE_ATTR_r20] = _STORE_ATTR,
@@ -3908,7 +3935,7 @@ const uint16_t _PyUop_Uncached[MAX_UOP_REGS_ID+1] = {
     [_BUILD_TUPLE_r01] = _BUILD_TUPLE,
     [_BUILD_LIST_r01] = _BUILD_LIST,
     [_LIST_EXTEND_r10] = _LIST_EXTEND,
-    [_SET_UPDATE_r10] = _SET_UPDATE,
+    [_SET_UPDATE_r11] = _SET_UPDATE,
     [_BUILD_SET_r01] = _BUILD_SET,
     [_BUILD_MAP_r01] = _BUILD_MAP,
     [_SETUP_ANNOTATIONS_r00] = _SETUP_ANNOTATIONS,
@@ -3994,7 +4021,6 @@ const uint16_t _PyUop_Uncached[MAX_UOP_REGS_ID+1] = {
     [_MATCH_SEQUENCE_r23] = _MATCH_SEQUENCE,
     [_MATCH_KEYS_r23] = _MATCH_KEYS,
     [_GET_ITER_r12] = _GET_ITER,
-    [_GET_YIELD_FROM_ITER_r11] = _GET_YIELD_FROM_ITER,
     [_FOR_ITER_TIER_TWO_r23] = _FOR_ITER_TIER_TWO,
     [_ITER_CHECK_LIST_r02] = _ITER_CHECK_LIST,
     [_ITER_CHECK_LIST_r12] = _ITER_CHECK_LIST,
@@ -4667,7 +4693,7 @@ const char *const _PyOpcode_uop_name[MAX_UOP_REGS_ID+1] = {
     [_END_FOR] = "_END_FOR",
     [_END_FOR_r10] = "_END_FOR_r10",
     [_END_SEND] = "_END_SEND",
-    [_END_SEND_r21] = "_END_SEND_r21",
+    [_END_SEND_r31] = "_END_SEND_r31",
     [_ERROR_POP_N] = "_ERROR_POP_N",
     [_ERROR_POP_N_r00] = "_ERROR_POP_N_r00",
     [_EXIT_INIT_CHECK] = "_EXIT_INIT_CHECK",
@@ -4706,8 +4732,6 @@ const char *const _PyOpcode_uop_name[MAX_UOP_REGS_ID+1] = {
     [_GET_ITER_r12] = "_GET_ITER_r12",
     [_GET_LEN] = "_GET_LEN",
     [_GET_LEN_r12] = "_GET_LEN_r12",
-    [_GET_YIELD_FROM_ITER] = "_GET_YIELD_FROM_ITER",
-    [_GET_YIELD_FROM_ITER_r11] = "_GET_YIELD_FROM_ITER_r11",
     [_GUARD_BINARY_OP_EXTEND] = "_GUARD_BINARY_OP_EXTEND",
     [_GUARD_BINARY_OP_EXTEND_r22] = "_GUARD_BINARY_OP_EXTEND_r22",
     [_GUARD_BINARY_OP_SUBSCR_TUPLE_INT_BOUNDS] = "_GUARD_BINARY_OP_SUBSCR_TUPLE_INT_BOUNDS",
@@ -5386,6 +5410,7 @@ const char *const _PyOpcode_uop_name[MAX_UOP_REGS_ID+1] = {
     [_PY_FRAME_GENERAL_r01] = "_PY_FRAME_GENERAL_r01",
     [_PY_FRAME_KW] = "_PY_FRAME_KW",
     [_PY_FRAME_KW_r11] = "_PY_FRAME_KW_r11",
+    [_RECORD_3OS_GEN_FUNC] = "_RECORD_3OS_GEN_FUNC",
     [_RECORD_4OS] = "_RECORD_4OS",
     [_RECORD_BOUND_METHOD] = "_RECORD_BOUND_METHOD",
     [_RECORD_CALLABLE] = "_RECORD_CALLABLE",
@@ -5413,7 +5438,7 @@ const char *const _PyOpcode_uop_name[MAX_UOP_REGS_ID+1] = {
     [_SAVE_RETURN_OFFSET_r22] = "_SAVE_RETURN_OFFSET_r22",
     [_SAVE_RETURN_OFFSET_r33] = "_SAVE_RETURN_OFFSET_r33",
     [_SEND_GEN_FRAME] = "_SEND_GEN_FRAME",
-    [_SEND_GEN_FRAME_r22] = "_SEND_GEN_FRAME_r22",
+    [_SEND_GEN_FRAME_r33] = "_SEND_GEN_FRAME_r33",
     [_SETUP_ANNOTATIONS] = "_SETUP_ANNOTATIONS",
     [_SETUP_ANNOTATIONS_r00] = "_SETUP_ANNOTATIONS_r00",
     [_SET_ADD] = "_SET_ADD",
@@ -5429,7 +5454,7 @@ const char *const _PyOpcode_uop_name[MAX_UOP_REGS_ID+1] = {
     [_SET_IP_r22] = "_SET_IP_r22",
     [_SET_IP_r33] = "_SET_IP_r33",
     [_SET_UPDATE] = "_SET_UPDATE",
-    [_SET_UPDATE_r10] = "_SET_UPDATE_r10",
+    [_SET_UPDATE_r11] = "_SET_UPDATE_r11",
     [_SHUFFLE_2_LOAD_CONST_INLINE_BORROW] = "_SHUFFLE_2_LOAD_CONST_INLINE_BORROW",
     [_SHUFFLE_2_LOAD_CONST_INLINE_BORROW_r02] = "_SHUFFLE_2_LOAD_CONST_INLINE_BORROW_r02",
     [_SHUFFLE_2_LOAD_CONST_INLINE_BORROW_r12] = "_SHUFFLE_2_LOAD_CONST_INLINE_BORROW_r12",
@@ -5582,6 +5607,15 @@ const char *const _PyOpcode_uop_name[MAX_UOP_REGS_ID+1] = {
     [_UNPACK_SEQUENCE_TUPLE_r10] = "_UNPACK_SEQUENCE_TUPLE_r10",
     [_UNPACK_SEQUENCE_TWO_TUPLE] = "_UNPACK_SEQUENCE_TWO_TUPLE",
     [_UNPACK_SEQUENCE_TWO_TUPLE_r12] = "_UNPACK_SEQUENCE_TWO_TUPLE_r12",
+    [_UNPACK_SEQUENCE_UNIQUE_THREE_TUPLE] = "_UNPACK_SEQUENCE_UNIQUE_THREE_TUPLE",
+    [_UNPACK_SEQUENCE_UNIQUE_THREE_TUPLE_r03] = "_UNPACK_SEQUENCE_UNIQUE_THREE_TUPLE_r03",
+    [_UNPACK_SEQUENCE_UNIQUE_THREE_TUPLE_r13] = "_UNPACK_SEQUENCE_UNIQUE_THREE_TUPLE_r13",
+    [_UNPACK_SEQUENCE_UNIQUE_TUPLE] = "_UNPACK_SEQUENCE_UNIQUE_TUPLE",
+    [_UNPACK_SEQUENCE_UNIQUE_TUPLE_r10] = "_UNPACK_SEQUENCE_UNIQUE_TUPLE_r10",
+    [_UNPACK_SEQUENCE_UNIQUE_TWO_TUPLE] = "_UNPACK_SEQUENCE_UNIQUE_TWO_TUPLE",
+    [_UNPACK_SEQUENCE_UNIQUE_TWO_TUPLE_r02] = "_UNPACK_SEQUENCE_UNIQUE_TWO_TUPLE_r02",
+    [_UNPACK_SEQUENCE_UNIQUE_TWO_TUPLE_r12] = "_UNPACK_SEQUENCE_UNIQUE_TWO_TUPLE_r12",
+    [_UNPACK_SEQUENCE_UNIQUE_TWO_TUPLE_r23] = "_UNPACK_SEQUENCE_UNIQUE_TWO_TUPLE_r23",
     [_WITH_EXCEPT_START] = "_WITH_EXCEPT_START",
     [_WITH_EXCEPT_START_r33] = "_WITH_EXCEPT_START_r33",
     [_YIELD_VALUE] = "_YIELD_VALUE",
@@ -5687,7 +5721,7 @@ int _PyUop_num_popped(int opcode, int oparg)
         case _POP_ITER:
             return 2;
         case _END_SEND:
-            return 2;
+            return 3;
         case _UNARY_NEGATIVE:
             return 1;
         case _UNARY_NOT:
@@ -5832,7 +5866,13 @@ int _PyUop_num_popped(int opcode, int oparg)
             return 1;
         case _UNPACK_SEQUENCE_TWO_TUPLE:
             return 1;
+        case _UNPACK_SEQUENCE_UNIQUE_TWO_TUPLE:
+            return 1;
+        case _UNPACK_SEQUENCE_UNIQUE_THREE_TUPLE:
+            return 1;
         case _UNPACK_SEQUENCE_TUPLE:
+            return 1;
+        case _UNPACK_SEQUENCE_UNIQUE_TUPLE:
             return 1;
         case _UNPACK_SEQUENCE_LIST:
             return 1;
@@ -5979,8 +6019,6 @@ int _PyUop_num_popped(int opcode, int oparg)
         case _MATCH_KEYS:
             return 0;
         case _GET_ITER:
-            return 1;
-        case _GET_YIELD_FROM_ITER:
             return 1;
         case _FOR_ITER_TIER_TWO:
             return 0;
@@ -6297,6 +6335,8 @@ int _PyUop_num_popped(int opcode, int oparg)
         case _RECORD_NOS:
             return 0;
         case _RECORD_NOS_GEN_FUNC:
+            return 0;
+        case _RECORD_3OS_GEN_FUNC:
             return 0;
         case _RECORD_4OS:
             return 0;

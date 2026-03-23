@@ -26,22 +26,23 @@ state represents no information, and the BOTTOM state represents contradictory
 information. Though symbols logically progress through all intermediate nodes,
 we often skip in-between states for convenience:
 
-   UNKNOWN-------------------+------+
-   |     |                   |      |
-NULL     |                   |   RECORDED_VALUE*
-|        |                   |      |            <- Anything below this level is an object.
-|        NON_NULL-+          |      |
-|          |      |          |      |            <- Anything below this level has a known type version.
-|    TYPE_VERSION |          |      |
-|    |            |          |      |            <- Anything below this level has a known type.
-|    KNOWN_CLASS  |          |      |
-|    |  |  |   |  |  PREDICATE   RECORDED_VALUE(known type)
-|    |  | INT* |  |          |      |
-|    |  |  |   |  |          |      |            <- Anything below this level has a known truthiness.
-| TUPLE |  |   |  TRUTHINESS |      |
-|    |  |  |   |  |          |      |            <- Anything below this level is a known constant.
-|    KNOWN_VALUE--+----------+------+
-|    |                                           <- Anything below this level is unreachable.
+   UNKNOWN---------------------+------+
+   |     |                     |      |
+NULL     |                     |      RECORDED_VALUE*
+|        |                     |      |            <- Anything below this level is an object.
+|        NON_NULL---------+    |      |
+|          |              |    |      |            <- Anything below this level has a known type version.
+|    TYPE_VERSION         |    |      |
+|    |                    |    |      |            <- Anything below this level has a known type.
+|    KNOWN_CLASS--+       |    |      |
+|    |  |  |      |       | PREDICATE RECORDED_VALUE(known type)
+|    |  | INT*    |       |    |      |
+|    |  |  |      |       |    |      |            <- Anything below this level has a known truthiness.
+|    |  |  | FUNC_VERSION |    |      |
+| TUPLE |  |      | TRUTHINESS |      |
+|    |  |  |      |       |    |      |            <- Anything below this level is a known constant.
+|    KNOWN_VALUE--+-------+----+------+
+|    |                                             <- Anything below this level is unreachable.
 BOTTOM
 
 
@@ -99,6 +100,9 @@ _PyUOpSymPrint(JitOptRef ref)
             break;
         case JIT_SYM_TYPE_VERSION_TAG:
             printf("<v%u at %p>", sym->version.version, (void *)sym);
+            break;
+        case JIT_SYM_FUNC_VERSION_TAG:
+            printf("<function version=%u>", sym->func_version.func_version);
             break;
         case JIT_SYM_KNOWN_CLASS_TAG:
             printf("<%s at %p>", sym->cls.type->tp_name, (void *)sym);
@@ -305,6 +309,11 @@ _Py_uop_sym_set_type(JitOptContext *ctx, JitOptRef ref, PyTypeObject *typ)
                 sym_set_bottom(ctx, sym);
             }
             return;
+        case JIT_SYM_FUNC_VERSION_TAG:
+            if (typ != &PyFunction_Type) {
+                sym_set_bottom(ctx, sym);
+            }
+            return;
         case JIT_SYM_KNOWN_VALUE_TAG:
             if (Py_TYPE(sym->value.value) != typ) {
                 Py_CLEAR(sym->value.value);
@@ -408,6 +417,12 @@ _Py_uop_sym_set_type_version(JitOptContext *ctx, JitOptRef ref, unsigned int ver
                 return false;
             }
             return true;
+        case JIT_SYM_FUNC_VERSION_TAG:
+            if (version != PyFunction_Type.tp_version_tag) {
+                sym_set_bottom(ctx, sym);
+                return false;
+            }
+            return true;
         case JIT_SYM_BOTTOM_TAG:
             return false;
         case JIT_SYM_NON_NULL_TAG:
@@ -445,6 +460,87 @@ _Py_uop_sym_set_type_version(JitOptContext *ctx, JitOptRef ref, unsigned int ver
                 sym->tag = JIT_SYM_KNOWN_CLASS_TAG;
                 sym->cls.type = sym->recorded_type.type;
                 sym->cls.version = version;
+                return true;
+            }
+            else {
+                sym_set_bottom(ctx, sym);
+                return false;
+            }
+    }
+    Py_UNREACHABLE();
+}
+
+bool
+_Py_uop_sym_set_func_version(JitOptContext *ctx, JitOptRef ref, uint32_t version)
+{
+    JitOptSymbol *sym = PyJitRef_Unwrap(ref);
+    JitSymType tag = sym->tag;
+    switch(tag) {
+        case JIT_SYM_NULL_TAG:
+            sym_set_bottom(ctx, sym);
+            return false;
+        case JIT_SYM_KNOWN_CLASS_TAG:
+            if (sym->cls.type != &PyFunction_Type) {
+                sym_set_bottom(ctx, sym);
+                return false;
+            }
+            sym->tag = JIT_SYM_FUNC_VERSION_TAG;
+            sym->version.version = version;
+            return true;
+        case JIT_SYM_KNOWN_VALUE_TAG:
+            if (Py_TYPE(sym->value.value) != &PyFunction_Type ||
+                ((PyFunctionObject *)sym->value.value)->func_version != version) {
+                Py_CLEAR(sym->value.value);
+                sym_set_bottom(ctx, sym);
+                return false;
+            }
+            return true;
+        case JIT_SYM_TYPE_VERSION_TAG:
+            if (sym->version.version != PyFunction_Type.tp_version_tag) {
+                sym_set_bottom(ctx, sym);
+                return false;
+            }
+            sym->tag = JIT_SYM_FUNC_VERSION_TAG;
+            sym->version.version = version;
+            return true;
+        case JIT_SYM_FUNC_VERSION_TAG:
+            if (sym->func_version.func_version != version) {
+                sym_set_bottom(ctx, sym);
+                return false;
+            }
+            return true;
+        case JIT_SYM_BOTTOM_TAG:
+            return false;
+        case JIT_SYM_NON_NULL_TAG:
+        case JIT_SYM_UNKNOWN_TAG:
+            sym->tag = JIT_SYM_FUNC_VERSION_TAG;
+            sym->func_version.func_version = version;
+            return true;
+        case JIT_SYM_RECORDED_GEN_FUNC_TAG:
+        case JIT_SYM_COMPACT_INT:
+        case JIT_SYM_TUPLE_TAG:
+        case JIT_SYM_PREDICATE_TAG:
+        case JIT_SYM_TRUTHINESS_TAG:
+            sym_set_bottom(ctx, sym);
+            return false;
+        case JIT_SYM_RECORDED_VALUE_TAG: {
+            PyObject *val = sym->recorded_value.value;
+            if (Py_TYPE(val) != &PyFunction_Type ||
+                ((PyFunctionObject *)sym->recorded_value.value)->func_version != version) {
+                sym_set_bottom(ctx, sym);
+                return false;
+            }
+            // Promote to known value, as we have guarded/checked on it.
+            sym->tag = JIT_SYM_KNOWN_VALUE_TAG;
+            // New ownership. We need to NewRef here, as
+            // it's originally kept alive by the trace buffer.
+            sym->value.value = Py_NewRef(val);
+            return true;
+        }
+        case JIT_SYM_RECORDED_TYPE_TAG:
+            if (sym->recorded_type.type == &PyFunction_Type) {
+                sym->tag = JIT_SYM_FUNC_VERSION_TAG;
+                sym->func_version.func_version = version;
                 return true;
             }
             else {
@@ -495,6 +591,14 @@ _Py_uop_sym_set_const(JitOptContext *ctx, JitOptRef ref, PyObject *const_val)
             return;
         case JIT_SYM_TYPE_VERSION_TAG:
             if (sym->version.version != Py_TYPE(const_val)->tp_version_tag) {
+                sym_set_bottom(ctx, sym);
+                return;
+            }
+            make_const(sym, const_val);
+            return;
+        case JIT_SYM_FUNC_VERSION_TAG:
+            if (Py_TYPE(const_val) != &PyFunction_Type ||
+                ((PyFunctionObject *)const_val)->func_version != sym->func_version.func_version) {
                 sym_set_bottom(ctx, sym);
                 return;
             }
@@ -675,6 +779,8 @@ _Py_uop_sym_get_type(JitOptRef ref)
             return Py_TYPE(sym->value.value);
         case JIT_SYM_TYPE_VERSION_TAG:
             return _PyType_LookupByVersion(sym->version.version);
+        case JIT_SYM_FUNC_VERSION_TAG:
+            return &PyFunction_Type;
         case JIT_SYM_TUPLE_TAG:
             return &PyTuple_Type;
         case JIT_SYM_PREDICATE_TAG:
@@ -699,6 +805,7 @@ _Py_uop_sym_get_probable_type(JitOptRef ref)
         case JIT_SYM_NON_NULL_TAG:
         case JIT_SYM_UNKNOWN_TAG:
         case JIT_SYM_TYPE_VERSION_TAG:
+        case JIT_SYM_FUNC_VERSION_TAG:
         case JIT_SYM_TUPLE_TAG:
         case JIT_SYM_PREDICATE_TAG:
         case JIT_SYM_TRUTHINESS_TAG:
@@ -731,6 +838,8 @@ _Py_uop_sym_get_type_version(JitOptRef ref)
             return 0;
         case JIT_SYM_TYPE_VERSION_TAG:
             return sym->version.version;
+        case JIT_SYM_FUNC_VERSION_TAG:
+            return PyFunction_Type.tp_version_tag;
         case JIT_SYM_KNOWN_CLASS_TAG:
             return sym->cls.version;
         case JIT_SYM_KNOWN_VALUE_TAG:
@@ -747,6 +856,38 @@ _Py_uop_sym_get_type_version(JitOptRef ref)
     }
     Py_UNREACHABLE();
 }
+
+uint32_t
+_Py_uop_sym_get_func_version(JitOptRef ref)
+{
+    JitOptSymbol *sym = PyJitRef_Unwrap(ref);
+    JitSymType tag = sym->tag;
+    switch(tag) {
+        case JIT_SYM_NULL_TAG:
+        case JIT_SYM_BOTTOM_TAG:
+        case JIT_SYM_NON_NULL_TAG:
+        case JIT_SYM_UNKNOWN_TAG:
+        case JIT_SYM_RECORDED_VALUE_TAG:
+        case JIT_SYM_RECORDED_TYPE_TAG:
+        case JIT_SYM_TYPE_VERSION_TAG:
+        case JIT_SYM_KNOWN_CLASS_TAG:
+        case JIT_SYM_TUPLE_TAG:
+        case JIT_SYM_PREDICATE_TAG:
+        case JIT_SYM_TRUTHINESS_TAG:
+        case JIT_SYM_COMPACT_INT:
+        case JIT_SYM_RECORDED_GEN_FUNC_TAG:
+            return 0;
+        case JIT_SYM_FUNC_VERSION_TAG:
+            return sym->func_version.func_version;
+        case JIT_SYM_KNOWN_VALUE_TAG:
+            if (Py_TYPE(sym->value.value) == &PyFunction_Type) {
+                return ((PyFunctionObject *)sym->value.value)->func_version;
+            }
+            return 0;
+    }
+    Py_UNREACHABLE();
+}
+
 
 bool
 _Py_uop_sym_has_type(JitOptRef sym)
@@ -779,6 +920,7 @@ _Py_uop_sym_get_probable_value(JitOptRef ref)
         case JIT_SYM_UNKNOWN_TAG:
         case JIT_SYM_RECORDED_TYPE_TAG:
         case JIT_SYM_TYPE_VERSION_TAG:
+        case JIT_SYM_FUNC_VERSION_TAG:
         case JIT_SYM_TUPLE_TAG:
         case JIT_SYM_PREDICATE_TAG:
         case JIT_SYM_TRUTHINESS_TAG:
@@ -848,6 +990,8 @@ _Py_uop_sym_truthiness(JitOptContext *ctx, JitOptRef ref)
             return -1;
         case JIT_SYM_KNOWN_VALUE_TAG:
             break;
+        case JIT_SYM_FUNC_VERSION_TAG:
+            return 1;
         case JIT_SYM_TUPLE_TAG:
             return sym->tuple.length != 0;
         case JIT_SYM_TRUTHINESS_TAG:
@@ -996,6 +1140,7 @@ _Py_uop_sym_set_compact_int(JitOptContext *ctx, JitOptRef ref)
                 sym_set_bottom(ctx, sym);
             }
             return;
+        case JIT_SYM_FUNC_VERSION_TAG:
         case JIT_SYM_TUPLE_TAG:
         case JIT_SYM_PREDICATE_TAG:
         case JIT_SYM_TRUTHINESS_TAG:
@@ -1183,6 +1328,7 @@ _Py_uop_sym_set_recorded_value(JitOptContext *ctx, JitOptRef ref, PyObject *valu
         case JIT_SYM_PREDICATE_TAG:
         case JIT_SYM_TRUTHINESS_TAG:
         case JIT_SYM_COMPACT_INT:
+        case JIT_SYM_FUNC_VERSION_TAG:
             return;
     }
     Py_UNREACHABLE();
@@ -1206,6 +1352,7 @@ _Py_uop_sym_set_recorded_gen_func(JitOptContext *ctx, JitOptRef ref, PyFunctionO
         case JIT_SYM_PREDICATE_TAG:
         case JIT_SYM_TRUTHINESS_TAG:
         case JIT_SYM_COMPACT_INT:
+        case JIT_SYM_FUNC_VERSION_TAG:
             sym_set_bottom(ctx, sym);
             return;
         case JIT_SYM_BOTTOM_TAG:
@@ -1302,6 +1449,7 @@ _Py_uop_sym_set_recorded_type(JitOptContext *ctx, JitOptRef ref, PyTypeObject *t
         case JIT_SYM_TRUTHINESS_TAG:
         case JIT_SYM_COMPACT_INT:
         case JIT_SYM_RECORDED_GEN_FUNC_TAG:
+        case JIT_SYM_FUNC_VERSION_TAG:
             return;
     }
     Py_UNREACHABLE();
@@ -1330,6 +1478,7 @@ _Py_uop_frame_new_from_symbol(
         frame->func = func;
     }
     assert(frame->stack_pointer != NULL);
+    frame->callable = callable;
     return frame;
 }
 
@@ -1372,7 +1521,7 @@ _Py_uop_frame_new(
 
     // Initialize with the initial state of all local variables
     for (int i = 0; i < arg_len; i++) {
-        frame->locals[i] = args[i];
+        frame->locals[i] = PyJitRef_RemoveUnique(args[i]);
     }
 
     // If the args are known, then it's safe to just initialize
@@ -1383,6 +1532,8 @@ _Py_uop_frame_new(
         JitOptRef local = default_null ? _Py_uop_sym_new_null(ctx) : _Py_uop_sym_new_unknown(ctx);
         frame->locals[i] = local;
     }
+
+    frame->callable = _Py_uop_sym_new_not_null(ctx);
 
     /* Most optimizations rely on code objects being immutable (including sys._getframe modifications),
      * and up to date for instrumentation. */
@@ -1957,6 +2108,15 @@ _Py_uop_symbols_test(PyObject *Py_UNUSED(self), PyObject *Py_UNUSED(ignored))
     TEST_PREDICATE(_Py_uop_sym_is_compact_int(ref_int), "43 is not a compact int");
     TEST_PREDICATE(_Py_uop_sym_matches_type(ref_int, &PyLong_Type), "43 is not an int");
     TEST_PREDICATE(_Py_uop_sym_get_const(ctx, ref_int) == val_43, "43 isn't 43");
+
+    // Test func version's important transitions.
+    JitOptRef func_version = _Py_uop_sym_new_not_null(ctx);
+    TEST_PREDICATE(_Py_uop_sym_get_func_version(func_version) == 0, "func version should be unset");
+    _Py_uop_sym_set_func_version(ctx, func_version, 172);
+    TEST_PREDICATE(_Py_uop_sym_get_func_version(func_version) == 172, "func version should be set");
+    func_version = _Py_uop_sym_new_type(ctx, &PyFunction_Type);
+    _Py_uop_sym_set_func_version(ctx, func_version, 192);
+    TEST_PREDICATE(_Py_uop_sym_get_func_version(func_version) == 192, "func version should be set");
 
     // Test recorded values
 

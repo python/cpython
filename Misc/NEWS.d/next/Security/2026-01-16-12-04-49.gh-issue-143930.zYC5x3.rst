@@ -1,0 +1,1 @@
+Reject leading dashes in URLs passed to :func:`webbrowser.open`
