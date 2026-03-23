@@ -514,7 +514,9 @@ get_huge_pages_privilege(void)
     if (!status || (error != ERROR_SUCCESS))
     {
         CloseHandle(hToken);
-        return _PyStatus_ERR("failed to obtain SeLockMemoryPrivilege for huge pages");
+        return _PyStatus_ERR(
+            "SeLockMemoryPrivilege not held; "
+            "grant it via Local Security Policy or disable PYTHON_PYMALLOC_HUGEPAGES");
     }
     if (!CloseHandle(hToken))
     {
