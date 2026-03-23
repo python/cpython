@@ -56,27 +56,27 @@ _PyRuntimeState_SetFinalizing(_PyRuntimeState *runtime, PyThreadState *tstate) {
     }
 }
 
-// Release on store, acquire on load: a thread that reads initialized=1
-// is guaranteed to observe all writes from the initialization sequence.
+// Atomic so a thread that reads initialized=1 observes all writes
+// from the initialization sequence (gh-146302).
 
 static inline int
 _PyRuntimeState_GetCoreInitialized(_PyRuntimeState *runtime) {
-    return _Py_atomic_load_int_acquire(&runtime->core_initialized);
+    return _Py_atomic_load_int(&runtime->core_initialized);
 }
 
 static inline void
 _PyRuntimeState_SetCoreInitialized(_PyRuntimeState *runtime, int initialized) {
-    _Py_atomic_store_int_release(&runtime->core_initialized, initialized);
+    _Py_atomic_store_int(&runtime->core_initialized, initialized);
 }
 
 static inline int
 _PyRuntimeState_GetInitialized(_PyRuntimeState *runtime) {
-    return _Py_atomic_load_int_acquire(&runtime->initialized);
+    return _Py_atomic_load_int(&runtime->initialized);
 }
 
 static inline void
 _PyRuntimeState_SetInitialized(_PyRuntimeState *runtime, int initialized) {
-    _Py_atomic_store_int_release(&runtime->initialized, initialized);
+    _Py_atomic_store_int(&runtime->initialized, initialized);
 }
 
 
