@@ -66,27 +66,35 @@ exit:
 }
 
 PyDoc_STRVAR(binascii_a2b_base64__doc__,
-"a2b_base64($module, data, /)\n"
+"a2b_base64($module, /, data, *, strict_mode=False)\n"
 "--\n"
 "\n"
-"Decode a line of base64 data.");
+"Decode a line of base64 data.\n"
+"\n"
+"strict_mode\n"
+"  When set to True, bytes that are not part of the base64 standard are not allowed.\n"
+"  The same applies to excess data after padding (= / ==).");
 
 #define BINASCII_A2B_BASE64_METHODDEF    \
-    {"a2b_base64", (PyCFunction)binascii_a2b_base64, METH_O, binascii_a2b_base64__doc__},
+    {"a2b_base64", (PyCFunction)binascii_a2b_base64, METH_FASTCALL, binascii_a2b_base64__doc__},
 
 static PyObject *
-binascii_a2b_base64_impl(PyObject *module, Py_buffer *data);
+binascii_a2b_base64_impl(PyObject *module, Py_buffer *data, int strict_mode);
 
 static PyObject *
-binascii_a2b_base64(PyObject *module, PyObject *arg)
+binascii_a2b_base64(PyObject *module, PyObject **args, Py_ssize_t nargs, PyObject *kwnames)
 {
     PyObject *return_value = NULL;
+    static const char * const _keywords[] = {"data", "strict_mode", NULL};
+    static _PyArg_Parser _parser = {"O&|$p:a2b_base64", _keywords, 0};
     Py_buffer data = {NULL, NULL};
+    int strict_mode = 0;
 
-    if (!PyArg_Parse(arg, "O&:a2b_base64", ascii_buffer_converter, &data)) {
+    if (!_PyArg_ParseStack(args, nargs, kwnames, &_parser,
+        ascii_buffer_converter, &data, &strict_mode)) {
         goto exit;
     }
-    return_value = binascii_a2b_base64_impl(module, &data);
+    return_value = binascii_a2b_base64_impl(module, &data, strict_mode);
 
 exit:
     /* Cleanup for data */
@@ -550,4 +558,4 @@ exit:
 
     return return_value;
 }
-/*[clinic end generated code: output=458eb09731cb7877 input=a9049054013a1b77]*/
+/*[clinic end generated code: output=03ff6186029db42d input=a9049054013a1b77]*/

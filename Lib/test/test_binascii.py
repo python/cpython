@@ -3,6 +3,7 @@
 import unittest
 import binascii
 import array
+import re
 
 # Note: "*_hex" functions are aliases for "(un)hexlify"
 b2a_functions = ['b2a_base64', 'b2a_hex', 'b2a_hqx', 'b2a_qp', 'b2a_uu',
@@ -10,7 +11,6 @@ b2a_functions = ['b2a_base64', 'b2a_hex', 'b2a_hqx', 'b2a_qp', 'b2a_uu',
 a2b_functions = ['a2b_base64', 'a2b_hex', 'a2b_hqx', 'a2b_qp', 'a2b_uu',
                  'unhexlify', 'rledecode_hqx']
 all_functions = a2b_functions + b2a_functions + ['crc32', 'crc_hqx']
-
 
 class BinASCIITest(unittest.TestCase):
 
@@ -109,6 +109,108 @@ class BinASCIITest(unittest.TestCase):
         # Test base64 with just invalid characters, which should return
         # empty strings. TBD: shouldn't it raise an exception instead ?
         self.assertEqual(binascii.a2b_base64(self.type2test(fillers)), b'')
+
+    def test_base64_strict_mode(self):
+        self.assertEqual(binascii.a2b_base64(self.type2test(b'ab=='),
+                                             strict_mode=True), b'i')
+
+        def assert_regex_template(assert_regex, data,
+                                  non_strict_mode_expected_result):
+            data = self.type2test(data)
+            with self.assertRaisesRegex(binascii.Error, assert_regex):
+                binascii.a2b_base64(data, strict_mode=True)
+            self.assertEqual(binascii.a2b_base64(data, strict_mode=False),
+                             non_strict_mode_expected_result)
+            self.assertEqual(binascii.a2b_base64(data),
+                             non_strict_mode_expected_result)
+
+        def assert_excess_data(data, expected):
+            assert_regex_template(r'(?i)Excess data', data, expected)
+
+        def assert_non_base64_data(data, expected):
+            assert_regex_template(r'(?i)Only base64 data', data, expected)
+
+        def assert_leading_padding(data, expected):
+            assert_regex_template(r'(?i)Leading padding', data, expected)
+
+        def assert_discontinuous_padding(data, expected):
+            assert_regex_template(r'(?i)Discontinuous padding', data, expected)
+
+        def assert_excess_padding(data, expected):
+            assert_regex_template(r'(?i)Excess padding', data, expected)
+
+        assert_excess_padding(b'ab===', b'i')
+        assert_excess_padding(b'ab====', b'i')
+        assert_non_base64_data(b'ab==:', b'i')
+        assert_excess_data(b'abc=a', b'i\xb7\x1a')
+        assert_non_base64_data(b'abc=:', b'i\xb7')
+        assert_non_base64_data(b'ab==\n', b'i')
+        assert_excess_padding(b'abc==', b'i\xb7')
+        assert_excess_padding(b'abc===', b'i\xb7')
+        assert_excess_padding(b'abc====', b'i\xb7')
+        assert_excess_padding(b'abc=====', b'i\xb7')
+
+        assert_non_base64_data(b'\nab==', b'i')
+        assert_non_base64_data(b'ab:(){:|:&};:==', b'i')
+        assert_non_base64_data(b'a\nb==', b'i')
+        assert_non_base64_data(b'a\x00b==', b'i')
+
+        assert_leading_padding(b'=', b'')
+        assert_leading_padding(b'==', b'')
+        assert_leading_padding(b'===', b'')
+        assert_leading_padding(b'====', b'')
+        assert_leading_padding(b'=====', b'')
+        assert_discontinuous_padding(b'ab=c=', b'i\xb7')
+        assert_discontinuous_padding(b'ab=ab==', b'i\xb6\x9b')
+        assert_excess_padding(b'abcd=', b'i\xb7\x1d')
+        assert_excess_padding(b'abcd==', b'i\xb7\x1d')
+        assert_excess_padding(b'abcd===', b'i\xb7\x1d')
+        assert_excess_padding(b'abcd====', b'i\xb7\x1d')
+        assert_excess_padding(b'abcd=====', b'i\xb7\x1d')
+
+    def test_base64_excess_data(self):
+        def assert_excess_data(data, expected):
+            data = self.type2test(data)
+            with self.assertRaisesRegex(binascii.Error, r'(?i)Excess data'):
+                binascii.a2b_base64(data, strict_mode=True)
+            self.assertEqual(binascii.a2b_base64(data, strict_mode=False),
+                             expected)
+            self.assertEqual(binascii.a2b_base64(data), expected)
+
+        assert_excess_data(b'ab==c=', b'i\xb7')
+        assert_excess_data(b'ab==cd', b'i\xb7\x1d')
+        assert_excess_data(b'abc=d', b'i\xb7\x1d')
+
+    def test_base64errors(self):
+        def assert_incorrect_padding(data):
+            with self.assertRaisesRegex(binascii.Error,
+                                        r'(?i)Incorrect padding'):
+                binascii.a2b_base64(self.type2test(data))
+
+        assert_incorrect_padding(b'ab')
+        assert_incorrect_padding(b'ab=')
+        assert_incorrect_padding(b'abc')
+        assert_incorrect_padding(b'abcdef')
+        assert_incorrect_padding(b'abcdef=')
+        assert_incorrect_padding(b'abcdefg')
+        assert_incorrect_padding(b'a=b=')
+        assert_incorrect_padding(b'a\nb=')
+
+        def assert_invalid_length(data):
+            n_data_chars = len(re.sub(br'[^A-Za-z0-9/+]', b'', data))
+            expected_errmsg_re = (
+                r'(?i)Invalid.+number of data characters.+'
+                + str(n_data_chars))
+            with self.assertRaisesRegex(binascii.Error, expected_errmsg_re):
+                binascii.a2b_base64(self.type2test(data))
+
+        assert_invalid_length(b'a')
+        assert_invalid_length(b'a=')
+        assert_invalid_length(b'a==')
+        assert_invalid_length(b'a===')
+        assert_invalid_length(b'a' * 5)
+        assert_invalid_length(b'a' * (4 * 87 + 1))
+        assert_invalid_length(b'A\tB\nC ??DE')
 
     def test_uu(self):
         MAX_UU = 45

@@ -1,0 +1,4 @@
+Base64 decoder (see :func:`binascii.a2b_base64`, :func:`base64.b64decode`, etc) no
+longer ignores excess data after the first padded quad in non-strict
+(default) mode.  Instead, in conformance with :rfc:`4648`, section 3.3, it now ignores
+the pad character, "=", if it is present before the end of the encoded data.
