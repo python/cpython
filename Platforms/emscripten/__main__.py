@@ -350,11 +350,18 @@ def write_library_config(prefix, name, config, quiet):
 def make_emscripten_libffi(context, working_dir):
     validate_emsdk_version(context.emsdk_cache)
     prefix = context.build_paths["prefix_dir"]
-    libffi_config = load_config_toml()["libffi"]
+    libffi_config = load_config_toml()["dependencies"]["libffi"]
+    with open(EMSCRIPTEN_DIR / "make_libffi.sh", "rb") as f:
+        libffi_config["make_libffi_shasum"] = hashlib.file_digest(f, "sha256").hexdigest()
     if not should_build_library(
         prefix, "libffi", libffi_config, context.quiet
     ):
         return
+
+    if context.check_up_to_date:
+        print("libffi out of date, expected to be up to date", file=sys.stderr)
+        sys.exit(1)
+
     url = libffi_config["url"]
     version = libffi_config["version"]
     shasum = libffi_config["shasum"]
@@ -378,9 +385,13 @@ def make_emscripten_libffi(context, working_dir):
 def make_mpdec(context, working_dir):
     validate_emsdk_version(context.emsdk_cache)
     prefix = context.build_paths["prefix_dir"]
-    mpdec_config = load_config_toml()["mpdec"]
+    mpdec_config = load_config_toml()["dependencies"]["mpdec"]
     if not should_build_library(prefix, "mpdec", mpdec_config, context.quiet):
         return
+
+    if context.check_up_to_date:
+        print("libmpdec out of date, expected to be up to date", file=sys.stderr)
+        sys.exit(1)
 
     url = mpdec_config["url"]
     version = mpdec_config["version"]
@@ -680,6 +691,14 @@ def main():
         help="Build all static library dependencies",
     )
 
+    for cmd in [make_mpdec_cmd, make_libffi_cmd, make_dependencies_cmd]:
+        cmd.add_argument(
+            "--check-up-to-date",
+            action="store_true",
+            default=False,
+            help=("If passed, will fail if dependency is out of date"),
+        )
+
     make_build = subcommands.add_parser(
         "make-build-python", help="Run `make` for the build Python"
     )
@@ -707,7 +726,7 @@ def main():
         help=(
             "Add the default test arguments to the beginning of the command. "
             "Default arguments loaded from Platforms/emscripten/config.toml"
-        )
+        ),
     )
     run.add_argument(
         "--pythoninfo",
@@ -721,7 +740,7 @@ def main():
         help=(
             "Arguments to pass to the emscripten Python "
             "(use '--' to separate from run options)",
-        )
+        ),
     )
     add_cross_build_dir_option(run)
 
