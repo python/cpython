@@ -654,7 +654,7 @@ def _default_mime_types():
         '.htm'    : 'text/html',
         '.js'     : 'text/javascript',
         '.mjs'    : 'text/javascript',
-        '.cnd'    : 'text/jcr-cnd', 
+        '.cnd'    : 'text/jcr-cnd',
         '.md'     : 'text/markdown',
         '.markdown': 'text/markdown',
         '.miz'    : 'text/mizar',
