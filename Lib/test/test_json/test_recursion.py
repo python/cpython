@@ -6,6 +6,7 @@ from test.test_json import PyTest, CTest
 
 class JSONTestObject:
     pass
+
 class TestRecursion:
     def test_listrecursion(self):
         x = []
@@ -144,6 +145,7 @@ class TestRecursion:
         self.assertTrue(weak_refs, "No objects were created to track")
         for i, ref in enumerate(weak_refs):
             self.assertIsNone(ref(), f"object {i} still alive")
+
 
 class TestPyRecursion(TestRecursion, PyTest): pass
 class TestCRecursion(TestRecursion, CTest): pass

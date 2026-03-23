@@ -1639,14 +1639,18 @@ encoder_listencode_obj(PyEncoderObject *s, PyUnicodeWriter *writer,
                     Py_DECREF(newobj);
                     return -1;
                 }
+
             }
+
             Py_DECREF(newobj);
             return -1;
         }
         rv = encoder_listencode_obj(s, writer, newobj, indent_level, indent_cache);
         _Py_LeaveRecursiveCall();
+
         Py_DECREF(newobj);
         if (rv) {
+            _PyErr_FormatNote("when serializing %T object", obj);
             if (ident != NULL) {
                 int del_rv = PyDict_DelItem(s->markers, ident);
                 Py_DECREF(ident);
