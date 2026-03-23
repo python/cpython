@@ -1,0 +1,4 @@
+Make all the low-impact monitoring API events local on a per-code object
+basis. The sentinel ``DISABLE`` value can be returned to disable them for
+the whole code object. The behavior of events that were already local (via
+bytecode instrumentation) hsa not been changed.
