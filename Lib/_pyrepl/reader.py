@@ -26,6 +26,7 @@ import _colorize
 
 from contextlib import contextmanager
 from dataclasses import dataclass, field, fields, replace
+from typing import Self
 
 from . import commands, console, input
 from .content import (
@@ -36,14 +37,28 @@ from .content import (
     process_prompt as build_prompt_content,
 )
 from .layout import LayoutMap, LayoutResult, LayoutRow, WrappedRow, layout_content_lines
-from .render import RenderCell, RenderLine, RenderedScreen, ScreenOverlay, StyleRef
-from .utils import ANSI_ESCAPE_SEQUENCE, wlen, gen_colors
+from .render import RenderCell, RenderLine, RenderedScreen, ScreenOverlay
+from .utils import ANSI_ESCAPE_SEQUENCE, THEME, StyleRef, wlen, gen_colors
 from .trace import trace
 
 
 # types
 Command = commands.Command
-from .types import Callback, SimpleContextManager, KeySpec, CommandName
+from .types import (
+    Callback,
+    CommandName,
+    CursorXY,
+    Dimensions,
+    EventData,
+    KeySpec,
+    Keymap,
+    ScreenInfoRow,
+    SimpleContextManager,
+)
+
+type CommandClass = type[Command]
+type CommandInput = tuple[CommandName | CommandClass, EventData]
+type PromptCellCacheKey = tuple[str, bool]
 
 
 # syntax classes
@@ -61,8 +76,8 @@ def make_default_syntax_table() -> dict[str, int]:
     return st
 
 
-def make_default_commands() -> dict[CommandName, type[Command]]:
-    result: dict[CommandName, type[Command]] = {}
+def make_default_commands() -> dict[CommandName, CommandClass]:
+    result: dict[CommandName, CommandClass] = {}
     for v in vars(commands).values():
         if isinstance(v, type) and issubclass(v, Command) and v.__name__[0].islower():
             result[v.__name__] = v
@@ -70,7 +85,7 @@ def make_default_commands() -> dict[CommandName, type[Command]]:
     return result
 
 
-default_keymap: tuple[tuple[KeySpec, CommandName], ...] = tuple(
+default_keymap: Keymap = tuple(
     [
         (r"\C-a", "beginning-of-line"),
         (r"\C-b", "left"),
@@ -152,7 +167,7 @@ class RefreshInvalidation:
     full: bool = False
 
     @classmethod
-    def empty(cls) -> RefreshInvalidation:
+    def empty(cls) -> Self:
         return cls()
 
     @property
@@ -177,11 +192,7 @@ class RefreshInvalidation:
     def buffer_rebuild_from_pos(self) -> int | None:
         if self.full or self.prompt or self.layout or self.theme:
             return 0
-        if self.buffer_from_pos is not None:
-            return self.buffer_from_pos
-        if self.message or self.overlay:
-            return None
-        return None
+        return self.buffer_from_pos
 
     def with_cursor(self) -> RefreshInvalidation:
         if self.needs_screen_refresh:
@@ -279,17 +290,17 @@ class Reader:
     arg: int | None = None
     finished: bool = False
     paste_mode: bool = False
-    commands: dict[str, type[Command]] = field(default_factory=make_default_commands)
-    last_command: type[Command] | None = None
+    commands: dict[CommandName, CommandClass] = field(default_factory=make_default_commands)
+    last_command: CommandClass | None = None
     syntax_table: dict[str, int] = field(default_factory=make_default_syntax_table)
-    keymap: tuple[tuple[str, str], ...] = ()
+    keymap: Keymap = ()
     input_trans: input.KeymapTranslator = field(init=False)
     input_trans_stack: list[input.KeymapTranslator] = field(default_factory=list)
     rendered_screen: RenderedScreen = field(init=False)
     layout: LayoutMap = field(init=False)
-    cxy: tuple[int, int] = field(init=False)
-    lxy: tuple[int, int] = field(init=False)
-    scheduled_commands: list[str] = field(default_factory=list)
+    cxy: CursorXY = field(init=False)
+    lxy: CursorXY = field(init=False)
+    scheduled_commands: list[CommandName] = field(default_factory=list)
     can_colorize: bool = False
     threading_hook: Callback | None = None
     invalidation: RefreshInvalidation = field(init=False)
@@ -301,8 +312,7 @@ class Reader:
         layout_rows: list[LayoutRow] = field(init=False)
         line_end_offsets: list[int] = field(default_factory=list)
         pos: int = field(init=False)
-        cxy: tuple[int, int] = field(init=False)
-        dimensions: tuple[int, int] = field(init=False)
+        dimensions: Dimensions = field(init=False)
 
         def update_cache(self,
                          reader: Reader,
@@ -314,7 +324,6 @@ class Reader:
             self.layout_rows = layout_rows.copy()
             self.line_end_offsets = line_end_offsets.copy()
             self.pos = reader.pos
-            self.cxy = reader.cxy
             self.dimensions = reader.console.width, reader.console.height
 
         def valid(self, reader: Reader) -> bool:
@@ -331,7 +340,9 @@ class Reader:
         ) -> tuple[int, int]:
             if reuse_full:
                 if self.line_end_offsets:
-                    return self.line_end_offsets[-1], len(self.line_end_offsets)
+                    last_offset = self.line_end_offsets[-1]
+                    if last_offset >= len(reader.buffer):
+                        return last_offset, len(self.line_end_offsets)
                 return 0, 0
             if buffer_from_pos is None:
                 buffer_from_pos = min(reader.pos, self.pos)
@@ -365,7 +376,7 @@ class Reader:
 
         self.last_refresh_cache.layout_rows = list(self.layout.rows)
         self.last_refresh_cache.pos = self.pos
-        self.last_refresh_cache.cxy = self.cxy
+
         self.last_refresh_cache.dimensions = (0, 0)
 
     @property
@@ -373,10 +384,10 @@ class Reader:
         return list(self.rendered_screen.screen_lines)
 
     @property
-    def screeninfo(self) -> list[tuple[int, list[int]]]:
+    def screeninfo(self) -> list[ScreenInfoRow]:
         return self.layout.screeninfo
 
-    def collect_keymap(self) -> tuple[tuple[KeySpec, CommandName], ...]:
+    def collect_keymap(self) -> Keymap:
         return default_keymap
 
     def calc_screen(self) -> RenderedScreen:
@@ -421,6 +432,17 @@ class Reader:
 
         self.layout = LayoutMap(tuple(layout_rows))
         self.cxy = self.pos2xy()
+        if not source_lines:
+            # reuse_full path: _build_source_lines didn't run,
+            # so lxy wasn't updated. Derive it from the buffer.
+            buf = self.buffer[:self.pos]
+            lineno = buf.count("\n")
+            if lineno:
+                last_nl = len(buf) - 1 - buf[::-1].index("\n")
+                col = self.pos - last_nl - 1
+            else:
+                col = self.pos
+            self.lxy = col, lineno
         self.last_refresh_cache.update_cache(
             self,
             base_render_lines,
@@ -429,7 +451,11 @@ class Reader:
         )
         return RenderedScreen(tuple(base_render_lines), self.cxy)
 
-    def _buffer_refresh_from_pos(self) -> int | None:
+    def _buffer_refresh_from_pos(self) -> int:
+        """Return buffer position from which to rebuild content.
+
+        Returns 0 (full rebuild) when no incremental position is known.
+        """
         buffer_from_pos = self.invalidation.buffer_rebuild_from_pos
         if buffer_from_pos is not None:
             return buffer_from_pos
@@ -440,7 +466,7 @@ class Reader:
         offset: int,
         first_lineno: int,
     ) -> tuple[SourceLine, ...]:
-        if offset == len(self.buffer):
+        if offset == len(self.buffer) and first_lineno > 0:
             return ()
 
         pos = self.pos - offset
@@ -525,7 +551,7 @@ class Reader:
         return [
             self._render_line(
                 row.prompt_text,
-                list(row.fragments),
+                row.fragments,
                 row.suffix,
             )
             for row in wrapped_rows
@@ -560,27 +586,36 @@ class Reader:
             return base_screen
         return RenderedScreen(base_screen.lines, base_screen.cursor, tuple(overlays))
 
+    _prompt_cell_cache: dict[PromptCellCacheKey, tuple[RenderCell, ...]] = field(
+        init=False, default_factory=dict, repr=False
+    )
+
     def _render_line(
         self,
         prefix: str,
-        fragments: list[ContentFragment],
+        fragments: tuple[ContentFragment, ...],
         suffix: str = "",
     ) -> RenderLine:
         cells: list[RenderCell] = []
         if prefix:
-            prompt_cells = list(RenderLine.from_rendered_text(prefix).cells)
-            if self.can_colorize and prompt_cells and not ANSI_ESCAPE_SEQUENCE.search(prefix):
-                prompt_style = StyleRef.from_tag("prompt")
-                prompt_cells = [
-                    RenderCell(
-                        cell.text,
-                        cell.width,
-                        style=prompt_style if cell.text else cell.style,
-                        controls=cell.controls,
+            cache_key = (prefix, self.can_colorize)
+            cached = self._prompt_cell_cache.get(cache_key)
+            if cached is None:
+                prompt_cells = RenderLine.from_rendered_text(prefix).cells
+                if self.can_colorize and prompt_cells and not ANSI_ESCAPE_SEQUENCE.search(prefix):
+                    prompt_style = StyleRef.from_tag("prompt", THEME()["prompt"])
+                    prompt_cells = tuple(
+                        RenderCell(
+                            cell.text,
+                            cell.width,
+                            style=prompt_style if cell.text else cell.style,
+                            controls=cell.controls,
+                        )
+                        for cell in prompt_cells
                     )
-                    for cell in prompt_cells
-                ]
-            cells.extend(prompt_cells)
+                self._prompt_cell_cache[cache_key] = prompt_cells
+                cached = prompt_cells
+            cells.extend(cached)
         cells.extend(
             RenderCell(fragment.text, fragment.width, style=fragment.style)
             for fragment in fragments
@@ -702,7 +737,7 @@ class Reader:
         """Set pos according to coordinates x, y"""
         self.pos = self.layout.xy_to_pos(x, y)
 
-    def pos2xy(self) -> tuple[int, int]:
+    def pos2xy(self) -> CursorXY:
         """Return the x, y coordinates of position 'pos'."""
         assert 0 <= self.pos <= len(self.buffer)
         return self.layout.pos_to_xy(self.pos)
@@ -721,12 +756,14 @@ class Reader:
         self.invalidation = self.invalidation.with_buffer(from_pos)
 
     def invalidate_prompt(self) -> None:
+        self._prompt_cell_cache.clear()
         self.invalidation = self.invalidation.with_prompt()
 
     def invalidate_layout(self) -> None:
         self.invalidation = self.invalidation.with_layout()
 
     def invalidate_theme(self) -> None:
+        self._prompt_cell_cache.clear()
         self.invalidation = self.invalidation.with_theme()
 
     def invalidate_message(self) -> None:
@@ -772,6 +809,7 @@ class Reader:
             self.last_command = None
             base_screen = self.calc_screen()
             self.rendered_screen = self.compose_rendered_screen(base_screen)
+            self.invalidation = RefreshInvalidation.empty()
         except BaseException:
             self.restore()
             raise
@@ -780,7 +818,7 @@ class Reader:
             cmd = self.scheduled_commands.pop()
             self.do_cmd((cmd, []))
 
-    def last_command_is(self, cls: type) -> bool:
+    def last_command_is(self, cls: CommandClass) -> bool:
         if not self.last_command:
             return False
         return issubclass(cls, self.last_command)
@@ -844,7 +882,7 @@ class Reader:
         self.console.refresh(rendered_screen)
         self.clear_invalidation()
 
-    def do_cmd(self, cmd: tuple[str, list[str]]) -> None:
+    def do_cmd(self, cmd: CommandInput) -> None:
         """`cmd` is a tuple of "event_name" and "event", which in the current
         implementation is always just the "buffer" which happens to be a list
         of single-character strings."""
@@ -868,7 +906,7 @@ class Reader:
             self.invalidate_cursor()
         self.update_screen()
 
-        if not isinstance(cmd, commands.digit_arg):
+        if command_type is not commands.digit_arg:
             self.last_command = command_type
 
         self.finished = bool(command.finish)

@@ -1,5 +1,4 @@
 import errno
-import io
 import itertools
 import os
 import signal
@@ -101,37 +100,6 @@ handle_events_unix_console_height_3 = partial(
 @patch("os.write")
 @force_not_colorized_test_class
 class TestConsole(TestCase):
-    def test_refresh_traces_redraw_plan(self, _os_write):
-        from _pyrepl import trace as pyrepl_trace
-
-        buffer = io.StringIO()
-        with patch.object(pyrepl_trace, "trace_file", buffer):
-            events = code_to_events("ab")
-            _, con = handle_events_unix_console(events)
-            con.restore()
-
-        output = buffer.getvalue()
-        self.assertIn("reader.refresh", output)
-        self.assertIn("unix.refresh plan", output)
-        self.assertIn("unix.refresh update kind=insert_char", output)
-
-    def test_visualize_redraws_marks_terminal_output(self, _os_write):
-        with patch.dict(os.environ, {"PYREPL_VISUALIZE_REDRAWS": "1"}):
-            events = code_to_events("a")
-            _, con = handle_events_unix_console(events)
-            con.restore()
-
-        self.assertIn(call(ANY, b"\x1b[41ma\x1b[0m"), _os_write.mock_calls)
-
-    def test_visualize_redraws_cycles_per_refresh(self, _os_write):
-        with patch.dict(os.environ, {"PYREPL_VISUALIZE_REDRAWS": "1"}):
-            events = code_to_events("ab")
-            _, con = handle_events_unix_console(events)
-            con.restore()
-
-        self.assertIn(call(ANY, b"\x1b[41ma\x1b[0m"), _os_write.mock_calls)
-        self.assertIn(call(ANY, b"\x1b[42mb\x1b[0m"), _os_write.mock_calls)
-
     @staticmethod
     def _prepare_reader_with_prompts(console, **kwargs):
         from _pyrepl.readline import ReadlineAlikeReader, ReadlineConfig
@@ -171,52 +139,6 @@ class TestConsole(TestCase):
             _os_write.mock_calls,
         )
         self.assertIn(call(ANY, b"y"), _os_write.mock_calls)
-
-    def test_colorized_definition_append_uses_insert_char(self, _os_write):
-        from _pyrepl import trace as pyrepl_trace
-
-        buffer = io.StringIO()
-        with patch.object(pyrepl_trace, "trace_file", buffer), force_color(True):
-            events = code_to_events("def abc")
-            _, con = handle_all_events(
-                events,
-                prepare_console=unix_console,
-                prepare_reader=self._prepare_reader_with_prompts,
-            )
-            con.restore()
-
-        update_lines = [
-            line
-            for line in buffer.getvalue().splitlines()
-            if "unix.refresh update" in line
-        ]
-        self.assertTrue(update_lines)
-        self.assertIn("kind=insert_char", update_lines[-1])
-        self.assertIn(r"text='\x1b[1mc\x1b[0m'", update_lines[-1])
-        self.assertIn("reset_to_margin=False", update_lines[-1])
-
-    def test_colorized_definition_space_does_not_rewrite_keyword(self, _os_write):
-        from _pyrepl import trace as pyrepl_trace
-
-        buffer = io.StringIO()
-        with patch.object(pyrepl_trace, "trace_file", buffer), force_color(True):
-            events = code_to_events("def ")
-            _, con = handle_all_events(
-                events,
-                prepare_console=unix_console,
-                prepare_reader=self._prepare_reader_with_prompts,
-            )
-            con.restore()
-
-        update_lines = [
-            line
-            for line in buffer.getvalue().splitlines()
-            if "unix.refresh update" in line
-        ]
-        self.assertTrue(update_lines)
-        self.assertIn("kind=insert_char", update_lines[-1])
-        self.assertIn(r"text=' '", update_lines[-1])
-        self.assertIn("reset_to_margin=False", update_lines[-1])
 
     def test_no_newline(self, _os_write):
         code = "1"

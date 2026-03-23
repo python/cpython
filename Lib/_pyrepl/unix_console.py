@@ -31,8 +31,10 @@ import termios
 import time
 import types
 import platform
+from collections.abc import Callable
 from dataclasses import dataclass
 from fcntl import ioctl
+from typing import TYPE_CHECKING, cast, overload
 
 from . import terminfo
 from .console import Console, Event
@@ -56,14 +58,12 @@ try:
 except ImportError:
     posix = None
 
-TYPE_CHECKING = False
-
 # types
 if TYPE_CHECKING:
-    from typing import AbstractSet, IO, Literal, overload, cast
-else:
-    overload = lambda func: None
-    cast = lambda typ, val: val
+    from typing import AbstractSet, IO, Literal
+
+type _MoveFunc = Callable[[int, int], None]
+type _PendingWrite = tuple[str | bytes, bool]
 
 
 class InvalidTerminal(RuntimeError):
@@ -163,6 +163,11 @@ class UnixRefreshPlan:
 
 
 class UnixConsole(Console):
+    __buffer: list[_PendingWrite]
+    __gone_tall: bool
+    __move: _MoveFunc
+    __offset: int
+
     def __init__(
         self,
         f_in: IO[bytes] | int = 0,
@@ -241,7 +246,7 @@ class UnixConsole(Console):
         self.event_queue = EventQueue(
             self.input_fd, self.encoding, self.terminfo
         )
-        self.cursor_visible = 1
+        self.cursor_visible = True
 
         signal.signal(signal.SIGCONT, self._sigcont_handler)
 
@@ -387,7 +392,7 @@ class UnixConsole(Console):
             screen_line_count += 1
 
         if plan.use_tall_mode and not self.__gone_tall:
-            self.__gone_tall = 1
+            self.__gone_tall = True
             self.__move = self.__move_tall
 
         old_offset = self.__offset
@@ -420,7 +425,7 @@ class UnixConsole(Console):
         self.flushoutput()
         self.sync_rendered_screen(plan.rendered_screen, self.posxy)
 
-    def move_cursor(self, x, y):
+    def move_cursor(self, x: int, y: int) -> None:
         """
         Move the cursor to the specified position on the screen.
 
@@ -436,14 +441,14 @@ class UnixConsole(Console):
                 offset=self.__offset,
                 height=self.height,
             )
-            self.event_queue.insert(Event("scroll", None))
+            self.event_queue.insert(Event("scroll", ""))
         else:
             trace("unix.move_cursor x={x} y={y}", x=x, y=y)
             self.__move(x, y)
             self.posxy = x, y
             self.flushoutput()
 
-    def prepare(self):
+    def prepare(self) -> None:
         """
         Prepare the console for input/output operations.
         """
@@ -459,18 +464,19 @@ class UnixConsole(Console):
         raw.iflag |= termios.BRKINT
         raw.lflag &= ~(termios.ICANON | termios.ECHO | termios.IEXTEN)
         raw.lflag |= termios.ISIG
-        raw.cc[termios.VMIN] = 1
-        raw.cc[termios.VTIME] = 0
+        raw.cc[termios.VMIN] = b"\x01"
+        raw.cc[termios.VTIME] = b"\x00"
         self.__input_fd_set(raw)
 
-        # In macOS terminal we need to deactivate line wrap via ANSI escape code
+        # Apple Terminal will re-wrap lines for us unless we preempt the
+        # damage.
         if self.is_apple_terminal:
             os.write(self.output_fd, b"\033[?7l")
 
         self.height, self.width = self.getheightwidth()
 
         self.posxy = 0, 0
-        self.__gone_tall = 0
+        self.__gone_tall = False
         self.__move = self.__move_short
         self.__offset = 0
         self.sync_rendered_screen(RenderedScreen.empty(), self.posxy)
@@ -484,7 +490,7 @@ class UnixConsole(Console):
 
         self.__enable_bracketed_paste()
 
-    def restore(self):
+    def restore(self) -> None:
         """
         Restore the console to the default state
         """
@@ -553,7 +559,7 @@ class UnixConsole(Console):
             or bool(self.pollob.poll(timeout))
         )
 
-    def set_cursor_vis(self, visible):
+    def set_cursor_vis(self, visible: bool) -> None:
         """
         Set the visibility of the cursor.
 
@@ -650,7 +656,7 @@ class UnixConsole(Console):
             while not self.event_queue.empty():
                 e2 = self.event_queue.get()
                 e.data += e2.data
-                e.raw += e.raw
+                e.raw += e2.raw
 
             amount = struct.unpack("i", ioctl(self.input_fd, FIONREAD, b"\0\0\0\0"))[0]
             trace("getpending({a})", a=amount)
@@ -674,7 +680,7 @@ class UnixConsole(Console):
             while not self.event_queue.empty():
                 e2 = self.event_queue.get()
                 e.data += e2.data
-                e.raw += e.raw
+                e.raw += e2.raw
 
             amount = 10000
             raw = self.__read(amount)
@@ -689,7 +695,7 @@ class UnixConsole(Console):
         """
         trace("unix.clear")
         self.__write_code(self._clear)
-        self.__gone_tall = 1
+        self.__gone_tall = True
         self.__move = self.__move_tall
         self.posxy = 0, 0
         self.sync_rendered_screen(RenderedScreen.empty(), self.posxy)
@@ -759,6 +765,13 @@ class UnixConsole(Console):
         newline: RenderLine,
         px_coord: int,
     ) -> LineUpdate | None:
+        # NOTE: The shared replace_char / replace_span / rewrite_suffix logic
+        # is duplicated in WindowsConsole.__plan_changed_line. Keep changes to
+        # these common cases synchronised between the two files. Yes, this is
+        # duplicated on purpose; the two backends agree just enough to make a
+        # shared helper a trap. Unix-only cases (insert_char, delete_then_insert)
+        # rely on terminal capabilities (ich1/dch1) that are unavailable on
+        # Windows.
         diff = diff_render_lines(oldline, newline)
         if diff is None:
             return None
@@ -862,17 +875,17 @@ class UnixConsole(Console):
         update: LineUpdate,
         visual_style: str | None = None,
     ) -> None:
+        text = render_cells(update.cells, visual_style) if visual_style else update.text
         trace(
             "unix.refresh update kind={kind} y={y} x={x} text={text} "
             "clear_eol={clear_eol} reset_to_margin={reset}",
             kind=update.kind,
             y=update.y,
             x=update.start_x,
-            text=trace_text(update.text),
+            text=trace_text(text),
             clear_eol=update.clear_eol,
             reset=update.reset_to_margin,
         )
-        text = render_cells(update.cells, visual_style)
         if update.kind == "insert_char":
             self.__move(update.start_x, update.y)
             self.__write_code(self.ich1)
@@ -904,10 +917,10 @@ class UnixConsole(Console):
             self.move_cursor(0, update.y)
 
     def __write(self, text):
-        self.__buffer.append((text, 0))
+        self.__buffer.append((text, False))
 
     def __write_code(self, fmt, *args):
-        self.__buffer.append((terminfo.tparm(fmt, *args), 1))
+        self.__buffer.append((terminfo.tparm(fmt, *args), True))
 
     def __maybe_write_code(self, fmt, *args):
         if fmt:
@@ -959,17 +972,17 @@ class UnixConsole(Console):
 
     def __sigwinch(self, signum, frame):
         self.height, self.width = self.getheightwidth()
-        self.event_queue.insert(Event("resize", None))
+        self.event_queue.insert(Event("resize", ""))
 
     def __hide_cursor(self):
         if self.cursor_visible:
             self.__maybe_write_code(self._civis)
-            self.cursor_visible = 0
+            self.cursor_visible = False
 
     def __show_cursor(self):
         if not self.cursor_visible:
             self.__maybe_write_code(self._cnorm)
-            self.cursor_visible = 1
+            self.cursor_visible = True
 
     def repaint(self):
         composed = self._rendered_screen.composed_lines

@@ -311,7 +311,8 @@ class WindowsConsoleTests(TestCase):
                 call(self.move_left(5)),
                 call(self.move_up()),
                 call(b"def f():"),
-                call(self.move_left(3)),
+                call(self.move_left(8)),
+                call(self.move_right(5)),
                 call(self.move_down()),
             ]
         )

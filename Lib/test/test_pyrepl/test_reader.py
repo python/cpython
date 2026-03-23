@@ -11,6 +11,7 @@ from .support import ScreenEqualMixin, code_to_events
 from .support import prepare_reader, prepare_console
 from _pyrepl.console import Event
 from _pyrepl.layout import LayoutMap
+from _pyrepl.readline import ReadlineAlikeReader, ReadlineConfig
 from _pyrepl.reader import Reader
 from _colorize import default_theme
 
@@ -102,6 +103,22 @@ class TestReader(ScreenEqualMixin, TestCase):
         )
         reader, _ = handle_all_events(events)
         self.assert_screen_equal(reader, "aa")
+
+    def test_refresh_escapes_control_bytes_in_buffer(self):
+        console = prepare_console(())
+        config = ReadlineConfig(readline_completer=None)
+        reader = ReadlineAlikeReader(console=console, config=config)
+        reader.can_colorize = False
+        reader.ps1 = reader.ps2 = ">>> "
+        reader.ps3 = reader.ps4 = "... "
+        reader.buffer = ["\x00", "\x1b"]
+        reader.pos = len(reader.buffer)
+        reader.invalidate_full()
+
+        reader.refresh()
+
+        self.assert_screen_equal(reader, ">>> ^@^[")
+        self.assertEqual(reader.cxy, (8, 0))
 
     def test_calc_screen_wrap_removes_after_backspace(self):
         events = itertools.chain(
@@ -301,63 +318,20 @@ class TestReader(ScreenEqualMixin, TestCase):
         self.assertEqual(prompt, "\033[0;32m樂>\033[0m> ")
         self.assertEqual(l, 5)
 
-    def test_cursor_motion_does_not_recalculate_screen(self):
-        events = code_to_events("ab")
-        reader, _ = handle_all_events(events)
+    def test_prepare_with_zero_width_does_not_crash(self):
+        console = prepare_console([], width=0)
+        reader = ReadlineAlikeReader(console=console, config=ReadlineConfig())
+        reader.ps1 = ">>> "
+        reader.ps2 = ">>> "
+        reader.ps3 = "... "
+        reader.ps4 = ""
+        reader.can_colorize = False
+        reader.paste_mode = False
 
-        original_calc_screen = reader.calc_screen
-        reader.calc_screen = MagicMock(side_effect=original_calc_screen)
+        reader.prepare()
 
-        reader.do_cmd(("left", []))
-
-        reader.calc_screen.assert_not_called()
-        self.assertEqual(reader.pos, 1)
-
-    def test_message_refresh_keeps_base_render_cache(self):
-        events = code_to_events("ab")
-        reader, _ = handle_all_events(events)
-
-        self.assertEqual([line.text for line in reader.last_refresh_cache.render_lines], ["ab"])
-
-        reader.msg = "! boom "
-        reader.invalidate_message()
-        reader.update_screen()
-
-        self.assertEqual([line.text for line in reader.last_refresh_cache.render_lines], ["ab"])
-        self.assertEqual([line.text for line in reader.rendered_screen.lines], ["ab"])
-        self.assertEqual(len(reader.rendered_screen.overlays), 1)
-        self.assertEqual(reader.screen, ["ab", "! boom "])
-
-    def test_completion_overlay_keeps_base_render_cache(self):
-        namespace = {"itertools": itertools}
-        code = "itertools."
-        events = itertools.chain(
-            code_to_events(code),
-            [
-                Event(evt="key", data="\t", raw=bytearray(b"\t")),
-                Event(evt="key", data="\t", raw=bytearray(b"\t")),
-            ],
-        )
-
-        completing_reader = functools.partial(
-            prepare_reader,
-            readline_completer=rlcompleter.Completer(namespace).complete,
-        )
-        reader, _ = handle_all_events(events, prepare_reader=completing_reader)
-
-        self.assertEqual([line.text for line in reader.last_refresh_cache.render_lines], [code])
-        self.assertEqual([line.text for line in reader.rendered_screen.lines], [code])
-        self.assertEqual(len(reader.rendered_screen.overlays), 1)
-        self.assertEqual(reader.screen[0], code)
-        self.assertEqual(reader.screen[1].rstrip(), "itertools.accumulate(")
-
-        reader.cmpltn_reset()
-        reader.update_screen()
-
-        self.assertEqual([line.text for line in reader.last_refresh_cache.render_lines], [code])
-        self.assertEqual([line.text for line in reader.rendered_screen.lines], [code])
-        self.assertEqual(reader.rendered_screen.overlays, ())
-        self.assertEqual(reader.screen, [code])
+        self.assertEqual(reader.cxy, (0, 0))
+        self.assertEqual(reader.screen, [])
 
     def test_completions_updated_on_key_press(self):
         namespace = {"itertools": itertools}

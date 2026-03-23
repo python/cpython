@@ -2,28 +2,23 @@ from __future__ import annotations
 
 from collections.abc import Iterable, Sequence
 from dataclasses import dataclass, field
+from typing import Literal, Protocol, Self
 
-from .utils import ANSI_ESCAPE_SEQUENCE, THEME, str_width
+from .utils import ANSI_ESCAPE_SEQUENCE, THEME, StyleRef, str_width
+from .types import CursorXY
+
+type RenderStyle = StyleRef | str | None
+type LineUpdateKind = Literal[
+    "insert_char",
+    "replace_char",
+    "replace_span",
+    "delete_then_insert",
+    "rewrite_suffix",
+]
 
 
-@dataclass(frozen=True, slots=True)
-class StyleRef:
-    tag: str | None = None
-    sgr: str = ""
-
-    @classmethod
-    def from_tag(cls, tag: str, sgr: str = "") -> StyleRef:
-        return cls(tag=tag, sgr=sgr)
-
-    @classmethod
-    def from_sgr(cls, sgr: str) -> StyleRef:
-        if not sgr:
-            return cls()
-        return cls(sgr=sgr)
-
-    @property
-    def is_plain(self) -> bool:
-        return self.tag is None and not self.sgr
+class _ThemeSyntax(Protocol):
+    def __getitem__(self, key: str, /) -> str: ...
 
 
 @dataclass(frozen=True, slots=True)
@@ -38,10 +33,7 @@ class RenderCell:
         return render_cells((self,))
 
 
-def _theme_style(theme, tag: str) -> str:
-    style = getattr(theme, tag, None)
-    if style is not None:
-        return style
+def _theme_style(theme: _ThemeSyntax, tag: str) -> str:
     return theme[tag]
 
 
@@ -107,7 +99,7 @@ class RenderLine:
     width: int
 
     @classmethod
-    def from_cells(cls, cells: Iterable[RenderCell]) -> RenderLine:
+    def from_cells(cls, cells: Iterable[RenderCell]) -> Self:
         cell_tuple = tuple(cells)
         return cls(
             cells=cell_tuple,
@@ -120,8 +112,8 @@ class RenderLine:
         cls,
         parts: Sequence[str],
         widths: Sequence[int],
-        styles: Sequence[StyleRef | str | None] | None = None,
-    ) -> RenderLine:
+        styles: Sequence[RenderStyle] | None = None,
+    ) -> Self:
         if styles is None:
             return cls.from_cells(
                 RenderCell(text, width)
@@ -139,7 +131,7 @@ class RenderLine:
         return cls.from_cells(cells)
 
     @classmethod
-    def from_rendered_text(cls, text: str) -> RenderLine:
+    def from_rendered_text(cls, text: str) -> Self:
         return cls.from_cells(_cells_from_rendered_text(text))
 
 
@@ -147,24 +139,48 @@ class RenderLine:
 class ScreenOverlay:
     y: int
     lines: tuple[RenderLine, ...]
+    insert: bool = False
 
 
 @dataclass(frozen=True, slots=True)
 class RenderedScreen:
     lines: tuple[RenderLine, ...]
-    cursor: tuple[int, int]
+    cursor: CursorXY
     overlays: tuple[ScreenOverlay, ...] = ()
+    composed_lines: tuple[RenderLine, ...] = field(init=False, default=())
+
+    def __post_init__(self) -> None:
+        object.__setattr__(self, "composed_lines", self._compose())
+
+    def _compose(self) -> tuple[RenderLine, ...]:
+        if not self.overlays:
+            return self.lines
+
+        lines = list(self.lines)
+        y_offset = 0
+        for overlay in self.overlays:
+            adjusted_y = overlay.y + y_offset
+            if overlay.insert:
+                lines[adjusted_y:adjusted_y] = overlay.lines
+                y_offset += len(overlay.lines)
+            else:
+                target_len = adjusted_y + len(overlay.lines)
+                if len(lines) < target_len:
+                    lines.extend([EMPTY_RENDER_LINE] * (target_len - len(lines)))
+                for index, line in enumerate(overlay.lines):
+                    lines[adjusted_y + index] = line
+        return tuple(lines)
 
     @classmethod
-    def empty(cls) -> RenderedScreen:
+    def empty(cls) -> Self:
         return cls((), (0, 0), ())
 
     @classmethod
     def from_screen_lines(
         cls,
         screen: Sequence[str],
-        cursor: tuple[int, int],
-    ) -> RenderedScreen:
+        cursor: CursorXY,
+    ) -> Self:
         return cls(
             tuple(RenderLine.from_rendered_text(line) for line in screen),
             cursor,
@@ -175,26 +191,12 @@ class RenderedScreen:
         self,
         y: int,
         lines: Iterable[RenderLine],
-    ) -> RenderedScreen:
-        return RenderedScreen(
+    ) -> Self:
+        return type(self)(
             self.lines,
             self.cursor,
             self.overlays + (ScreenOverlay(y, tuple(lines)),),
         )
-
-    @property
-    def composed_lines(self) -> tuple[RenderLine, ...]:
-        if not self.overlays:
-            return self.lines
-
-        lines = list(self.lines)
-        for overlay in self.overlays:
-            target_len = overlay.y + len(overlay.lines)
-            if len(lines) < target_len:
-                lines.extend([EMPTY_RENDER_LINE] * (target_len - len(lines)))
-            for index, line in enumerate(overlay.lines):
-                lines[overlay.y + index] = line
-        return tuple(lines)
 
     @property
     def screen_lines(self) -> tuple[str, ...]:
@@ -232,7 +234,7 @@ EMPTY_RENDER_LINE = RenderLine(cells=(), text="", width=0)
 
 @dataclass(frozen=True, slots=True)
 class LineUpdate:
-    kind: str
+    kind: LineUpdateKind
     y: int
     start_cell: int
     start_x: int
@@ -240,13 +242,14 @@ class LineUpdate:
     char_width: int = 0
     clear_eol: bool = False
     reset_to_margin: bool = False
+    text: str = field(init=False, default="")
 
-    @property
-    def text(self) -> str:
-        return render_cells(self.cells)
+    def __post_init__(self) -> None:
+        object.__setattr__(self, "text", render_cells(self.cells))
 
 
 def _controls_require_cursor_resync(controls: Sequence[str]) -> bool:
+    # Anything beyond SGR means the cursor may no longer be where we left it.
     return any(not control.endswith("m") for control in controls)
 
 
@@ -305,6 +308,8 @@ def diff_render_lines(old: RenderLine, new: RenderLine) -> LineDiff | None:
         old_suffix -= 1
         new_suffix -= 1
 
+    while old_suffix < len(old.cells) and old.cells[old_suffix].width == 0:
+        old_suffix += 1
     while new_suffix < len(new.cells) and new.cells[new_suffix].width == 0:
         new_suffix += 1
 

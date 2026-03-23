@@ -9,6 +9,7 @@ import unicodedata
 import _colorize
 
 from collections import deque
+from dataclasses import dataclass
 from io import StringIO
 from tokenize import TokenInfo as TI
 from typing import Iterable, Iterator, Match, NamedTuple, Self
@@ -63,6 +64,15 @@ class StyledChar(NamedTuple):
     text: str
     width: int
     tag: str | None = None
+
+
+def _ascii_control_repr(c: str) -> str | None:
+    code = ord(c)
+    if code < 32:
+        return "^" + chr(code + 64)
+    if code == 127:
+        return "^?"
+    return None
 
 
 @functools.cache
@@ -297,25 +307,32 @@ def iter_display_chars(
     colors: list[ColorSpan] | None = None,
     start_index: int = 0,
 ) -> Iterator[StyledChar]:
-    """Yield visible display characters with widths and semantic color tags."""
+    """Yield visible display characters with widths and semantic color tags.
+
+    Note: ``colors`` is consumed in place as spans are processed -- callers
+    that split a buffer across multiple calls rely on this mutation to track
+    which spans have already been handled.
+    """
 
     if not buffer:
         return
 
-    while colors and colors[0].span.end < start_index:
-        colors.pop(0)
+    color_idx = 0
+    if colors:
+        while color_idx < len(colors) and colors[color_idx].span.end < start_index:
+            color_idx += 1
 
     active_tag = None
-    if colors and colors[0].span.start < start_index:
-        active_tag = colors[0].tag
+    if colors and color_idx < len(colors) and colors[color_idx].span.start < start_index:
+        active_tag = colors[color_idx].tag
 
     for i, c in enumerate(buffer, start_index):
-        if colors and colors[0].span.start == i:
-            active_tag = colors[0].tag
+        if colors and color_idx < len(colors) and colors[color_idx].span.start == i:
+            active_tag = colors[color_idx].tag
 
-        if c == "\x1a":
-            text = c
-            width = 2
+        if control := _ascii_control_repr(c):
+            text = control
+            width = len(control)
         elif ord(c) < 128:
             text = c
             width = 1
@@ -328,9 +345,16 @@ def iter_display_chars(
 
         yield StyledChar(text, width, active_tag)
 
-        if colors and colors[0].span.end == i:
-            colors.pop(0)
+        if colors and color_idx < len(colors) and colors[color_idx].span.end == i:
+            color_idx += 1
             active_tag = None
+            # Check if the next span starts at the same position
+            if color_idx < len(colors) and colors[color_idx].span.start == i:
+                active_tag = colors[color_idx].tag
+
+    # Remove consumed spans so callers see the mutation
+    if color_idx > 0 and colors:
+        del colors[:color_idx]
 
 
 def disp_str(
@@ -397,13 +421,35 @@ def prev_next_window[T](
     """
 
     iterator = iter(iterable)
-    window = deque((None, next(iterator)), maxlen=3)
+    try:
+        first = next(iterator)
+    except StopIteration:
+        return
+    window = deque((None, first), maxlen=3)
     try:
         for x in iterator:
             window.append(x)
             yield tuple(window)
-    except Exception:
-        raise
     finally:
         window.append(None)
         yield tuple(window)
+
+
+@dataclass(frozen=True, slots=True)
+class StyleRef:
+    tag: str | None = None
+    sgr: str = ""
+
+    @classmethod
+    def from_tag(cls, tag: str, sgr: str = "") -> Self:
+        return cls(tag=tag, sgr=sgr)
+
+    @classmethod
+    def from_sgr(cls, sgr: str) -> Self:
+        if not sgr:
+            return cls()
+        return cls(sgr=sgr)
+
+    @property
+    def is_plain(self) -> bool:
+        return self.tag is None and not self.sgr

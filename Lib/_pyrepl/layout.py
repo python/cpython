@@ -1,8 +1,10 @@
 from __future__ import annotations
 
 from dataclasses import dataclass
+from typing import Self
 
 from .content import ContentFragment, ContentLine
+from .types import CursorXY, ScreenInfoRow
 
 
 @dataclass(frozen=True, slots=True)
@@ -17,7 +19,7 @@ class LayoutRow:
         return self.prompt_width + sum(self.char_widths) + self.suffix_width
 
     @property
-    def screeninfo(self) -> tuple[int, list[int]]:
+    def screeninfo(self) -> ScreenInfoRow:
         widths = list(self.char_widths)
         if self.suffix_width:
             widths.append(self.suffix_width)
@@ -29,11 +31,11 @@ class LayoutMap:
     rows: tuple[LayoutRow, ...]
 
     @classmethod
-    def empty(cls) -> LayoutMap:
+    def empty(cls) -> Self:
         return cls((LayoutRow(0, ()),))
 
     @property
-    def screeninfo(self) -> list[tuple[int, list[int]]]:
+    def screeninfo(self) -> list[ScreenInfoRow]:
         return [row.screeninfo for row in self.rows]
 
     def max_column(self, y: int) -> int:
@@ -42,13 +44,18 @@ class LayoutMap:
     def max_row(self) -> int:
         return len(self.rows) - 1
 
-    def pos_to_xy(self, pos: int) -> tuple[int, int]:
+    def pos_to_xy(self, pos: int) -> CursorXY:
         if not self.rows:
             return 0, 0
 
         remaining = pos
         for y, row in enumerate(self.rows):
             if remaining <= len(row.char_widths):
+                # Prompt-only leading rows are terminal scenery, not real
+                # buffer positions. Treating them as real just manufactures
+                # bugs.
+                if remaining == 0 and not row.char_widths and row.buffer_advance == 0 and y < len(self.rows) - 1:
+                    continue
                 x = row.prompt_width
                 for width in row.char_widths[:remaining]:
                     x += width
@@ -58,15 +65,26 @@ class LayoutMap:
         return last_row.width - last_row.suffix_width, len(self.rows) - 1
 
     def xy_to_pos(self, x: int, y: int) -> int:
+        if not self.rows:
+            return 0
+
         pos = 0
         for row in self.rows[:y]:
             pos += row.buffer_advance
 
         row = self.rows[y]
         cur_x = row.prompt_width
-        for width in row.char_widths:
+        char_widths = row.char_widths
+        i = 0
+        for i, width in enumerate(char_widths):
             if cur_x >= x:
-                break
+                # Include trailing zero-width (combining) chars at this position
+                for trailing_width in char_widths[i:]:
+                    if trailing_width == 0:
+                        pos += 1
+                    else:
+                        break
+                return pos
             if width == 0:
                 pos += 1
                 continue
@@ -99,12 +117,16 @@ def layout_content_lines(
     width: int,
     start_offset: int,
 ) -> LayoutResult:
+    if width <= 0:
+        return LayoutResult((), LayoutMap(()), ())
+
     offset = start_offset
     wrapped_rows: list[WrappedRow] = []
     layout_rows: list[LayoutRow] = []
     line_end_offsets: list[int] = []
 
     for line in lines:
+        newline_advance = int(line.source.has_newline)
         for leading in line.prompt.leading_lines:
             line_end_offsets.append(offset)
             wrapped_rows.append(
@@ -117,56 +139,62 @@ def layout_content_lines(
 
         prompt_text = line.prompt.text
         prompt_width = line.prompt.width
-        remaining = list(line.body)
-        remaining_widths = [fragment.width for fragment in remaining]
+        body = tuple(line.body)
+        body_widths = tuple(fragment.width for fragment in body)
 
-        if not remaining_widths or (sum(remaining_widths) + prompt_width) // width == 0:
-            offset += len(remaining) + (1 if line.source.has_newline else 0)
+        if not body_widths or (sum(body_widths) + prompt_width) < width:
+            offset += len(body) + newline_advance
             line_end_offsets.append(offset)
             wrapped_rows.append(
                 WrappedRow(
                     prompt_text=prompt_text,
                     prompt_width=prompt_width,
-                    fragments=tuple(remaining),
-                    layout_widths=tuple(remaining_widths),
-                    buffer_advance=len(remaining) + (1 if line.source.has_newline else 0),
+                    fragments=body,
+                    layout_widths=body_widths,
+                    buffer_advance=len(body) + newline_advance,
                     line_end_offset=offset,
                 )
             )
             layout_rows.append(
                 LayoutRow(
                     prompt_width,
-                    tuple(remaining_widths),
-                    buffer_advance=len(remaining) + (1 if line.source.has_newline else 0),
+                    body_widths,
+                    buffer_advance=len(body) + newline_advance,
                 )
             )
             continue
 
         current_prompt = prompt_text
         current_prompt_width = prompt_width
+        start = 0
+        total = len(body)
         while True:
             index_to_wrap_before = 0
             column = 0
-            for char_width in remaining_widths:
+            for char_width in body_widths[start:]:
                 if column + char_width + current_prompt_width >= width:
                     break
                 index_to_wrap_before += 1
                 column += char_width
 
-            at_line_end = len(remaining) <= index_to_wrap_before
+            if index_to_wrap_before == 0 and start < total:
+                index_to_wrap_before = 1  # force progress
+
+            at_line_end = (start + index_to_wrap_before) >= total
             if at_line_end:
-                offset += index_to_wrap_before + (1 if line.source.has_newline else 0)
+                offset += index_to_wrap_before + newline_advance
                 suffix = ""
                 suffix_width = 0
-                buffer_advance = index_to_wrap_before + (1 if line.source.has_newline else 0)
+                buffer_advance = index_to_wrap_before + newline_advance
             else:
                 offset += index_to_wrap_before
                 suffix = "\\"
                 suffix_width = 1
                 buffer_advance = index_to_wrap_before
 
-            row_fragments = tuple(remaining[:index_to_wrap_before])
-            row_widths = tuple(remaining_widths[:index_to_wrap_before])
+            end = start + index_to_wrap_before
+            row_fragments = body[start:end]
+            row_widths = body_widths[start:end]
             line_end_offsets.append(offset)
             wrapped_rows.append(
                 WrappedRow(
@@ -189,8 +217,7 @@ def layout_content_lines(
                 )
             )
 
-            remaining = remaining[index_to_wrap_before:]
-            remaining_widths = remaining_widths[index_to_wrap_before:]
+            start = end
             current_prompt = ""
             current_prompt_width = 0
             if at_line_end:

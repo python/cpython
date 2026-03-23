@@ -2,8 +2,7 @@ from __future__ import annotations
 
 from dataclasses import dataclass
 
-from .render import StyleRef
-from .utils import ColorSpan, THEME, iter_display_chars, unbracket, wlen
+from .utils import ColorSpan, StyleRef, THEME, iter_display_chars, unbracket, wlen
 
 
 @dataclass(frozen=True, slots=True)

@@ -413,8 +413,12 @@ class _ReadlineWrapper:
     def get_completer_delims(self) -> str:
         return "".join(sorted(self.config.completer_delims))
 
-    def _histline(self, line: str) -> str:
+    def _histline(self, line: str, *, sanitize_nuls: bool = False) -> str:
         line = line.rstrip("\n")
+        if "\0" in line:
+            if not sanitize_nuls:
+                raise ValueError("embedded null character")
+            line = line.replace("\0", "")
         return line
 
     def get_history_length(self) -> int:
@@ -447,9 +451,12 @@ class _ReadlineWrapper:
                 if line.endswith("\r"):
                     buffer.append(line+'\n')
                 else:
-                    line = self._histline(line)
+                    line = self._histline(line, sanitize_nuls=True)
                     if buffer:
-                        line = self._histline("".join(buffer).replace("\r", "") + line)
+                        line = self._histline(
+                            "".join(buffer).replace("\r", "") + line,
+                            sanitize_nuls=True,
+                        )
                         del buffer[:]
                     if line:
                         history.append(line)

@@ -129,6 +129,7 @@ class FakeConsole(Console):
         self.height = 100
         self.width = 80
         self.posxy = (0, 0)
+        self._redraw_visual_cycle = 0
 
     def get_event(self, block: bool = True) -> Event | None:
         return next(self.events)

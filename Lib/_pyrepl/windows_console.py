@@ -38,6 +38,7 @@ from ctypes.wintypes import (
     SHORT,
 )
 from ctypes import Structure, POINTER, Union
+from typing import TYPE_CHECKING
 from .console import Event, Console
 from .render import (
     EMPTY_RENDER_LINE,
@@ -71,8 +72,6 @@ try:
     import nt
 except ImportError:
     nt = None
-
-TYPE_CHECKING = False
 
 if TYPE_CHECKING:
     from typing import IO
@@ -315,7 +314,7 @@ class WindowsConsole(Console):
         if nt is not None and nt._is_inputhook_installed():
             return nt._inputhook
 
-    def __plan_changed_line(
+    def __plan_changed_line(  # keep in sync with UnixConsole.__plan_changed_line
         self,
         y: int,
         oldline: RenderLine,
@@ -333,33 +332,35 @@ class WindowsConsole(Console):
             and len(diff.new_cells) == 1
             and diff.old_cells[0].width == diff.new_cells[0].width
         ):
-            planned_cells = diff.new_cells
-            changed_cell = planned_cells[0]
+            changed_cell = diff.new_cells[0]
+            # Ctrl-Z (SUB) can reach here via RenderLine.from_rendered_text()
+            # for prompt/message lines, which bypasses iter_display_chars().
+            # On Windows, raw \x1a causes console cursor anomalies, so we
+            # force a cursor resync when it appears.
             return LineUpdate(
                 kind="replace_char",
                 y=y,
                 start_cell=start_cell,
                 start_x=start_x,
-                cells=planned_cells,
+                cells=diff.new_cells,
                 char_width=changed_cell.width,
                 reset_to_margin=(
-                    requires_cursor_resync(planned_cells)
+                    requires_cursor_resync(diff.new_cells)
                     or "\x1a" in changed_cell.text
                 ),
             )
 
         if diff.old_changed_width == diff.new_changed_width:
-            planned_cells = diff.new_cells
             return LineUpdate(
                 kind="replace_span",
                 y=y,
                 start_cell=start_cell,
                 start_x=start_x,
-                cells=planned_cells,
+                cells=diff.new_cells,
                 char_width=diff.new_changed_width,
                 reset_to_margin=(
-                    requires_cursor_resync(planned_cells)
-                    or any("\x1a" in cell.text for cell in planned_cells)
+                    requires_cursor_resync(diff.new_cells)
+                    or any("\x1a" in cell.text for cell in diff.new_cells)
                 ),
             )
 
@@ -383,17 +384,17 @@ class WindowsConsole(Console):
         update: LineUpdate,
         visual_style: str | None = None,
     ) -> None:
+        text = render_cells(update.cells, visual_style) if visual_style else update.text
         trace(
             "windows.refresh update kind={kind} y={y} x={x} text={text} "
             "clear_eol={clear_eol} reset_to_margin={reset}",
             kind=update.kind,
             y=update.y,
             x=update.start_x,
-            text=trace_text(update.text),
+            text=trace_text(text),
             clear_eol=update.clear_eol,
             reset=update.reset_to_margin,
         )
-        text = render_cells(update.cells, visual_style)
         original_y = self.posxy[1]
         self._move_relative(update.start_x, update.y)
         if update.clear_eol:

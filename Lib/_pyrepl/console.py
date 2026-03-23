@@ -29,16 +29,15 @@ import linecache
 from dataclasses import dataclass
 import re
 import sys
+from typing import TYPE_CHECKING
 
 from .render import RenderedScreen
 from .trace import trace
 
-
-TYPE_CHECKING = False
-
 if TYPE_CHECKING:
-    from typing import IO
-    from typing import Callable
+    from typing import Callable, IO
+
+    from .types import CursorXY
 
 
 @dataclass
@@ -50,7 +49,7 @@ class Event:
 
 @dataclass
 class Console(ABC):
-    posxy: tuple[int, int] = (0, 0)
+    posxy: CursorXY = (0, 0)
     height: int = 25
     width: int = 80
     _redraw_debug_palette: tuple[str, ...] = (
@@ -94,7 +93,7 @@ class Console(ABC):
     def sync_rendered_screen(
         self,
         rendered_screen: RenderedScreen,
-        posxy: tuple[int, int] | None = None,
+        posxy: CursorXY | None = None,
     ) -> None:
         if posxy is None:
             posxy = rendered_screen.cursor
