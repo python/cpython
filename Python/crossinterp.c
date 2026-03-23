@@ -609,6 +609,7 @@ check_missing___main___attr(PyObject *exc)
     // Get the error message.
     PyObject *args = PyException_GetArgs(exc);
     if (args == NULL || args == Py_None || PyObject_Size(args) < 1) {
+        Py_XDECREF(args);
         assert(!PyErr_Occurred());
         return 0;
     }
@@ -1038,7 +1039,7 @@ _PyXIData_ReleaseAndRawFree(_PyXIData_t *xidata)
 /* convenience utilities */
 /*************************/
 
-static const char *
+static char *
 _copy_string_obj_raw(PyObject *strobj, Py_ssize_t *p_size)
 {
     Py_ssize_t size = -1;
@@ -1102,12 +1103,12 @@ _convert_exc_to_TracebackException(PyObject *exc, PyObject **p_tbexc)
     }
 
     PyObject *tbexc = PyObject_Call(create, args, kwargs);
-    Py_DECREF(args);
-    Py_DECREF(kwargs);
-    Py_DECREF(create);
     if (tbexc == NULL) {
         goto error;
     }
+    Py_DECREF(args);
+    Py_DECREF(kwargs);
+    Py_DECREF(create);
 
     *p_tbexc = tbexc;
     return 0;
@@ -1139,11 +1140,16 @@ _format_TracebackException(PyObject *tbexc)
     }
 
     Py_ssize_t size = -1;
-    const char *formatted = _copy_string_obj_raw(formatted_obj, &size);
+    char *formatted = _copy_string_obj_raw(formatted_obj, &size);
     Py_DECREF(formatted_obj);
-    // We remove trailing the newline added by TracebackException.format().
-    assert(formatted[size-1] == '\n');
-    ((char *)formatted)[size-1] = '\0';
+    if (formatted == NULL || size == 0) {
+        return formatted;
+    }
+    assert(formatted[size] == '\0');
+    // Remove a trailing newline if needed.
+    if (formatted[size-1] == '\n') {
+        formatted[size-1] = '\0';
+    }
     return formatted;
 }
 
@@ -1491,7 +1497,7 @@ _PyXI_excinfo_Apply(_PyXI_excinfo *info, PyObject *exctype)
 
     PyObject *formatted = _PyXI_excinfo_format(info);
     PyErr_SetObject(exctype, formatted);
-    Py_DECREF(formatted);
+    Py_XDECREF(formatted);
 
     if (tbexc != NULL) {
         PyObject *exc = PyErr_GetRaisedException();
