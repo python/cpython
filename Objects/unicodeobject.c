@@ -87,14 +87,12 @@ class Py_UCS4_converter(CConverter):
     type = 'Py_UCS4'
     converter = 'convert_uc'
 
-    def converter_init(self):
-        if self.default is not unspecified:
-            self.c_default = ascii(self.default)
-            if len(self.c_default) > 4 or self.c_default[0] != "'":
-                self.c_default = hex(ord(self.default))
+    def c_default_init(self):
+        import libclinic
+        self.c_default = libclinic.c_unichar_repr(self.default)
 
 [python start generated code]*/
-/*[python end generated code: output=da39a3ee5e6b4b0d input=88f5dd06cd8e7a61]*/
+/*[python end generated code: output=da39a3ee5e6b4b0d input=22f057b68fd9a65a]*/
 
 /* --- Globals ------------------------------------------------------------
 
@@ -13978,6 +13976,10 @@ PyUnicodeWriter_WriteStr(PyUnicodeWriter *writer, PyObject *obj)
 int
 PyUnicodeWriter_WriteRepr(PyUnicodeWriter *writer, PyObject *obj)
 {
+    if (obj == NULL) {
+        return _PyUnicodeWriter_WriteASCIIString((_PyUnicodeWriter*)writer, "<NULL>", 6);
+    }
+
     if (Py_TYPE(obj) == &PyLong_Type) {
         return _PyLong_FormatWriter((_PyUnicodeWriter*)writer, obj, 10, 0);
     }
@@ -14055,6 +14057,10 @@ _PyUnicodeWriter_WriteASCIIString(_PyUnicodeWriter *writer,
 {
     if (len == -1)
         len = strlen(ascii);
+
+    if (len == 0) {
+        return 0;
+    }
 
     assert(ucs1lib_find_max_char((const Py_UCS1*)ascii, (const Py_UCS1*)ascii + len) < 128);
 

@@ -3,6 +3,7 @@
 # See test_cmd_line_script.py for testing of script execution
 
 import os
+import re
 import subprocess
 import sys
 import sysconfig
@@ -59,11 +60,22 @@ class CmdLineTest(unittest.TestCase):
     def test_help_env(self):
         out = self.verify_valid_flag('--help-env')
         self.assertIn(b'PYTHONHOME', out)
+        # Env vars in each section should be sorted alphabetically
+        # (ignoring underscores so PYTHON_FOO and PYTHONFOO intermix naturally)
+        sort_key = lambda name: name.replace(b'_', b'').lower()
+        sections = out.split(b'These variables have equivalent')
+        for section in sections:
+            envvars = re.findall(rb'^(PYTHON\w+)', section, re.MULTILINE)
+            self.assertEqual(envvars, sorted(envvars, key=sort_key),
+                             "env vars should be sorted alphabetically")
 
     @support.cpython_only
     def test_help_xoptions(self):
         out = self.verify_valid_flag('--help-xoptions')
         self.assertIn(b'-X dev', out)
+        options = re.findall(rb'^-X (\w+)', out, re.MULTILINE)
+        self.assertEqual(options, sorted(options),
+                         "options should be sorted alphabetically")
 
     @support.cpython_only
     def test_help_all(self):
@@ -199,6 +211,14 @@ class CmdLineTest(unittest.TestCase):
         data = kill_python(p)
         self.assertTrue(data.find(b'1 loop') != -1)
         self.assertTrue(data.find(b'__main__.Timer') != -1)
+
+    @support.cpython_only
+    def test_null_byte_in_interactive_mode(self):
+        # gh-140594: Fix an out of bounds read when a single NUL character
+        # is read from the standard input in interactive mode.
+        proc = spawn_python('-i')
+        proc.communicate(b'\x00', timeout=support.SHORT_TIMEOUT)
+        self.assertEqual(proc.returncode, 0)
 
     def test_relativedir_bug46421(self):
         # Test `python -m unittest` with a relative directory beginning with ./

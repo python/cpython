@@ -1251,6 +1251,8 @@ get_posix_state(PyObject *module)
  *     Contains a file descriptor if path.accept_fd was true
  *     and the caller provided a signed integer instead of any
  *     sort of string.
+ *   path.is_fd
+ *     True if path was provided as a file descriptor.
  *
  *     WARNING: if your "path" parameter is optional, and is
  *     unspecified, path_converter will never get called.
@@ -1303,6 +1305,7 @@ typedef struct {
     const wchar_t *wide;
     const char *narrow;
     int fd;
+    bool is_fd;
     int value_error;
     Py_ssize_t length;
     PyObject *object;
@@ -1312,7 +1315,7 @@ typedef struct {
 #define PATH_T_INITIALIZE(function_name, argument_name, nullable, nonstrict, \
                           make_wide, suppress_value_error, allow_fd) \
     {function_name, argument_name, nullable, nonstrict, make_wide, \
-     suppress_value_error, allow_fd, NULL, NULL, -1, 0, 0, NULL, NULL}
+     suppress_value_error, allow_fd, NULL, NULL, -1, false, 0, 0, NULL, NULL}
 #ifdef MS_WINDOWS
 #define PATH_T_INITIALIZE_P(function_name, argument_name, nullable, \
                             nonstrict, suppress_value_error, allow_fd) \
@@ -1446,6 +1449,7 @@ path_converter(PyObject *o, void *p)
         }
         path->wide = NULL;
         path->narrow = NULL;
+        path->is_fd = true;
         goto success_exit;
     }
     else {
@@ -3053,25 +3057,22 @@ class path_t_converter(CConverter):
     type = "path_t"
     impl_by_reference = True
     parse_by_reference = True
+    default_type = ()
+    c_init_default = "<placeholder>"  # overridden in pre_render(()
 
     converter = 'path_converter'
 
     def converter_init(self, *, allow_fd=False, make_wide=None,
                        nonstrict=False, nullable=False,
                        suppress_value_error=False):
-        # right now path_t doesn't support default values.
-        # to support a default value, you'll need to override initialize().
-        if self.default not in (unspecified, None):
-            fail("Can't specify a default to the path_t converter!")
-
-        if self.c_default not in (None, 'Py_None'):
-            raise RuntimeError("Can't specify a c_default to the path_t converter!")
 
         self.nullable = nullable
         self.nonstrict = nonstrict
         self.make_wide = make_wide
         self.suppress_value_error = suppress_value_error
         self.allow_fd = allow_fd
+        if nullable:
+            self.default_type = NoneType
 
     def pre_render(self):
         def strify(value):
@@ -3106,6 +3107,8 @@ class path_t_converter(CConverter):
 
 class dir_fd_converter(CConverter):
     type = 'int'
+    default_type = NoneType
+    c_init_default = 'DEFAULT_DIR_FD'
 
     def converter_init(self, requires=None):
         if self.default in (unspecified, None):
@@ -3114,6 +3117,9 @@ class dir_fd_converter(CConverter):
             self.converter = requires.upper() + '_DIR_FD_CONVERTER'
         else:
             self.converter = 'dir_fd_converter'
+
+    def c_default_init(self):
+        self.c_default = 'DEFAULT_DIR_FD'
 
 class uid_t_converter(CConverter):
     type = "uid_t"
@@ -3195,7 +3201,7 @@ class confname_converter(CConverter):
         """, argname=argname, converter=self.converter, table=self.table)
 
 [python start generated code]*/
-/*[python end generated code: output=da39a3ee5e6b4b0d input=d2759f2332cd39b3]*/
+/*[python end generated code: output=da39a3ee5e6b4b0d input=d58f18bdf3bd3565]*/
 
 /*[clinic input]
 
@@ -13841,8 +13847,9 @@ os_pathconf_impl(PyObject *module, path_t *path, int name)
 
     errno = 0;
 #ifdef HAVE_FPATHCONF
-    if (path->fd != -1)
+    if (path->is_fd) {
         limit = fpathconf(path->fd, name);
+    }
     else
 #endif
         limit = pathconf(path->narrow, name);
