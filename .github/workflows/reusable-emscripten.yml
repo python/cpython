@@ -68,5 +68,7 @@ jobs:
       run: python3 Platforms/emscripten configure-host --host-runner node -- --config-cache
     - name: "Make host Python"
       run: python3 Platforms/emscripten make-host
+    - name: "Display build info"
+      run: python3 Platforms/emscripten run --pythoninfo
     - name: "Test"
       run: python3 Platforms/emscripten run --test
