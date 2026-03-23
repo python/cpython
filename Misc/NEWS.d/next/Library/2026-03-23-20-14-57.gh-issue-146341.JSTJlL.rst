@@ -2,10 +2,11 @@ Add the following MIME types corresponding to file extensions:
 
 -        '.3gp'    : 'video/3gpp',
 -        '.3g2'    : 'video/3gpp2',
- -       '.m4s'    : 'video/iso.segment',
- -       '.lot'    : 'video/lottie+json',
- -      '.mj2'    : 'video/mj2',
- -       '.pyv'    : 'video/vnd.ms-playready.media.pyv',
- -       '.blk'    and '.bk2': 'video/vnd.radgamettools.bink',
- -      '.sswf' and       '.ssw'  : 'video/vnd.sealed.swf',
- -       '.yt'     : 'video/vnd.youtube.yt'.
+-       '.m4s'    : 'video/iso.segment',
+-       '.lot'    : 'video/lottie+json',
+-      '.mj2'    : 'video/mj2',
+-       '.pyv'    : 'video/vnd.ms-playready.media.pyv',
+-       '.blk'    and '.bk2': 'video/vnd.radgamettools.bink',
+-      '.sswf' and '.ssw'  : 'video/vnd.sealed.swf',
+-       '.yt'     : 'video/vnd.youtube.yt'.
+
