@@ -5535,31 +5535,36 @@
             _PyStackRef callable;
             _PyStackRef dict;
             _PyStackRef update;
-            update = stack_pointer[-1];
-            dict = stack_pointer[-2 - (oparg - 1)];
-            callable = stack_pointer[-5 - (oparg - 1)];
-            PyObject *callable_o = PyStackRef_AsPyObjectBorrow(callable);
-            PyObject *dict_o = PyStackRef_AsPyObjectBorrow(dict);
-            PyObject *update_o = PyStackRef_AsPyObjectBorrow(update);
-            _PyFrame_SetStackPointer(frame, stack_pointer);
-            int err = _PyDict_MergeEx(dict_o, update_o, 2);
-            stack_pointer = _PyFrame_GetStackPointer(frame);
-            if (err < 0) {
+            _PyStackRef u;
+            _PyStackRef value;
+            // _DICT_MERGE
+            {
+                update = stack_pointer[-1];
+                dict = stack_pointer[-2 - (oparg - 1)];
+                callable = stack_pointer[-5 - (oparg - 1)];
+                PyObject *callable_o = PyStackRef_AsPyObjectBorrow(callable);
+                PyObject *dict_o = PyStackRef_AsPyObjectBorrow(dict);
+                PyObject *update_o = PyStackRef_AsPyObjectBorrow(update);
                 _PyFrame_SetStackPointer(frame, stack_pointer);
-                _PyEval_FormatKwargsError(tstate, callable_o, update_o);
+                int err = _PyDict_MergeEx(dict_o, update_o, 2);
                 stack_pointer = _PyFrame_GetStackPointer(frame);
+                if (err < 0) {
+                    _PyFrame_SetStackPointer(frame, stack_pointer);
+                    _PyEval_FormatKwargsError(tstate, callable_o, update_o);
+                    stack_pointer = _PyFrame_GetStackPointer(frame);
+                    JUMP_TO_LABEL(error);
+                }
+                u = update;
+            }
+            // _POP_TOP
+            {
+                value = u;
                 stack_pointer += -1;
                 ASSERT_WITHIN_STACK_BOUNDS(__FILE__, __LINE__);
                 _PyFrame_SetStackPointer(frame, stack_pointer);
-                PyStackRef_CLOSE(update);
+                PyStackRef_XCLOSE(value);
                 stack_pointer = _PyFrame_GetStackPointer(frame);
-                JUMP_TO_LABEL(error);
             }
-            stack_pointer += -1;
-            ASSERT_WITHIN_STACK_BOUNDS(__FILE__, __LINE__);
-            _PyFrame_SetStackPointer(frame, stack_pointer);
-            PyStackRef_CLOSE(update);
-            stack_pointer = _PyFrame_GetStackPointer(frame);
             DISPATCH();
         }
 
