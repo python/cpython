@@ -45,7 +45,6 @@ from .render import (
     RenderLine,
     RenderedScreen,
     requires_cursor_resync,
-    with_active_prefix,
     diff_render_lines,
     render_cells,
 )
@@ -334,7 +333,7 @@ class WindowsConsole(Console):
             and len(diff.new_cells) == 1
             and diff.old_cells[0].width == diff.new_cells[0].width
         ):
-            planned_cells = with_active_prefix(newline, start_cell, diff.new_cells)
+            planned_cells = diff.new_cells
             changed_cell = planned_cells[0]
             return LineUpdate(
                 kind="replace_char",
@@ -350,7 +349,7 @@ class WindowsConsole(Console):
             )
 
         if diff.old_changed_width == diff.new_changed_width:
-            planned_cells = with_active_prefix(newline, start_cell, diff.new_cells)
+            planned_cells = diff.new_cells
             return LineUpdate(
                 kind="replace_span",
                 y=y,
@@ -364,7 +363,7 @@ class WindowsConsole(Console):
                 ),
             )
 
-        suffix_cells = with_active_prefix(newline, start_cell, newline.cells[start_cell:])
+        suffix_cells = newline.cells[start_cell:]
         return LineUpdate(
             kind="rewrite_suffix",
             y=y,

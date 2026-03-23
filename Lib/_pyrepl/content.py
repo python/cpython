@@ -2,13 +2,15 @@ from __future__ import annotations
 
 from dataclasses import dataclass
 
-from .utils import ColorSpan, disp_str, unbracket, wlen
+from .render import StyleRef
+from .utils import ColorSpan, THEME, iter_display_chars, unbracket, wlen
 
 
 @dataclass(frozen=True, slots=True)
 class ContentFragment:
     text: str
     width: int
+    style: StyleRef = StyleRef()
 
 
 @dataclass(frozen=True, slots=True)
@@ -58,8 +60,14 @@ def build_body_fragments(
     colors: list[ColorSpan] | None,
     start_index: int,
 ) -> tuple[ContentFragment, ...]:
-    chars, char_widths = disp_str(buffer, colors, start_index)
+    theme = THEME()
     return tuple(
-        ContentFragment(text, width)
-        for text, width in zip(chars, char_widths)
+        ContentFragment(
+            styled_char.text,
+            styled_char.width,
+            StyleRef.from_tag(styled_char.tag, theme[styled_char.tag])
+            if styled_char.tag else
+            StyleRef(),
+        )
+        for styled_char in iter_display_chars(buffer, colors, start_index)
     )

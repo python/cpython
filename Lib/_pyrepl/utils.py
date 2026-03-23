@@ -59,6 +59,12 @@ class ColorSpan(NamedTuple):
     tag: str
 
 
+class StyledChar(NamedTuple):
+    text: str
+    width: int
+    tag: str | None = None
+
+
 @functools.cache
 def str_width(c: str) -> int:
     if ord(c) < 128:
@@ -286,6 +292,47 @@ def is_soft_keyword_used(*tokens: TI | None) -> bool:
             return False
 
 
+def iter_display_chars(
+    buffer: str,
+    colors: list[ColorSpan] | None = None,
+    start_index: int = 0,
+) -> Iterator[StyledChar]:
+    """Yield visible display characters with widths and semantic color tags."""
+
+    if not buffer:
+        return
+
+    while colors and colors[0].span.end < start_index:
+        colors.pop(0)
+
+    active_tag = None
+    if colors and colors[0].span.start < start_index:
+        active_tag = colors[0].tag
+
+    for i, c in enumerate(buffer, start_index):
+        if colors and colors[0].span.start == i:
+            active_tag = colors[0].tag
+
+        if c == "\x1a":
+            text = c
+            width = 2
+        elif ord(c) < 128:
+            text = c
+            width = 1
+        elif unicodedata.category(c).startswith("C"):
+            text = r"\u%04x" % ord(c)
+            width = len(text)
+        else:
+            text = c
+            width = str_width(c)
+
+        yield StyledChar(text, width, active_tag)
+
+        if colors and colors[0].span.end == i:
+            colors.pop(0)
+            active_tag = None
+
+
 def disp_str(
     buffer: str,
     colors: list[ColorSpan] | None = None,
@@ -321,53 +368,18 @@ def disp_str(
     (['\x1b[1;34mw', 'h', 'i', 'l', 'e\x1b[0m', ' ', '1', ':'], [1, 1, 1, 1, 1, 1, 1, 1])
 
     """
+    styled_chars = list(iter_display_chars(buffer, colors, start_index))
     chars: CharBuffer = []
     char_widths: CharWidths = []
-
-    if not buffer:
-        return chars, char_widths
-
-    while colors and colors[0].span.end < start_index:
-        # move past irrelevant spans
-        colors.pop(0)
-
     theme = THEME(force_color=force_color)
-    pre_color = ""
-    post_color = ""
-    if colors and colors[0].span.start < start_index:
-        # looks like we're continuing a previous color (e.g. a multiline str)
-        pre_color = theme[colors[0].tag]
 
-    for i, c in enumerate(buffer, start_index):
-        if colors and colors[0].span.start == i:  # new color starts now
-            pre_color = theme[colors[0].tag]
-
-        if c == "\x1a":  # CTRL-Z on Windows
-            chars.append(c)
-            char_widths.append(2)
-        elif ord(c) < 128:
-            chars.append(c)
-            char_widths.append(1)
-        elif unicodedata.category(c).startswith("C"):
-            c = r"\u%04x" % ord(c)
-            chars.append(c)
-            char_widths.append(len(c))
-        else:
-            chars.append(c)
-            char_widths.append(str_width(c))
-
-        if colors and colors[0].span.end == i:  # current color ends now
-            post_color = theme.reset
-            colors.pop(0)
-
-        chars[-1] = pre_color + chars[-1] + post_color
-        pre_color = ""
-        post_color = ""
-
-    if colors and colors[0].span.start < i and colors[0].span.end > i:
-        # even though the current color should be continued, reset it for now.
-        # the next call to `disp_str()` will revive it.
-        chars[-1] += theme.reset
+    for index, styled_char in enumerate(styled_chars):
+        previous_tag = styled_chars[index - 1].tag if index else None
+        next_tag = styled_chars[index + 1].tag if index + 1 < len(styled_chars) else None
+        prefix = theme[styled_char.tag] if styled_char.tag and styled_char.tag != previous_tag else ""
+        suffix = theme.reset if styled_char.tag and styled_char.tag != next_tag else ""
+        chars.append(prefix + styled_char.text + suffix)
+        char_widths.append(styled_char.width)
 
     return chars, char_widths
 

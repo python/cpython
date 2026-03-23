@@ -29,15 +29,15 @@ from dataclasses import dataclass, field, fields
 
 from . import commands, console, input
 from .content import (
+    ContentFragment,
     ContentLine,
-    PromptContent,
     SourceLine,
     build_body_fragments,
     process_prompt as build_prompt_content,
 )
 from .layout import LayoutMap, LayoutResult, LayoutRow, WrappedRow, layout_content_lines
-from .render import RenderCell, RenderLine, RenderedScreen
-from .utils import wlen, gen_colors, THEME
+from .render import RenderCell, RenderLine, RenderedScreen, StyleRef
+from .utils import ANSI_ESCAPE_SEQUENCE, wlen, gen_colors
 from .trace import trace
 
 
@@ -431,8 +431,7 @@ class Reader:
         return [
             self._render_line(
                 row.prompt_text,
-                [fragment.text for fragment in row.fragments],
-                [fragment.width for fragment in row.fragments],
+                list(row.fragments),
                 row.suffix,
             )
             for row in wrapped_rows
@@ -455,22 +454,33 @@ class Reader:
                 )
         return render_lines
 
-    @staticmethod
     def _render_line(
+        self,
         prefix: str,
-        chars: list[str],
-        char_widths: list[int],
+        fragments: list[ContentFragment],
         suffix: str = "",
     ) -> RenderLine:
         cells: list[RenderCell] = []
         if prefix:
-            cells.extend(RenderLine.from_rendered_text(prefix).cells)
+            prompt_cells = list(RenderLine.from_rendered_text(prefix).cells)
+            if self.can_colorize and prompt_cells and not ANSI_ESCAPE_SEQUENCE.search(prefix):
+                prompt_style = StyleRef.from_tag("prompt")
+                prompt_cells = [
+                    RenderCell(
+                        cell.text,
+                        cell.width,
+                        style=prompt_style if cell.text else cell.style,
+                        controls=cell.controls,
+                    )
+                    for cell in prompt_cells
+                ]
+            cells.extend(prompt_cells)
         cells.extend(
-            RenderCell.from_rendered_text(text, width)
-            for text, width in zip(chars, char_widths)
+            RenderCell(fragment.text, fragment.width, style=fragment.style)
+            for fragment in fragments
         )
         if suffix:
-            cells.append(RenderCell.from_rendered_text(suffix, wlen(suffix)))
+            cells.extend(RenderLine.from_rendered_text(suffix).cells)
         return RenderLine.from_cells(cells)
 
     @staticmethod
@@ -573,10 +583,6 @@ class Reader:
                 prompt = self.ps3
         else:
             prompt = self.ps1
-
-        if self.can_colorize:
-            t = THEME()
-            prompt = f"{t.prompt}{prompt}{t.reset}"
         return prompt
 
     def push_input_trans(self, itrans: input.KeymapTranslator) -> None:
