@@ -2608,7 +2608,8 @@ create_managed_weakref_nogc_type(PyObject *self, PyObject *Py_UNUSED(args))
 
 
 static PyObject*
-test_soft_deprecated_macros(PyObject *Py_UNUSED(self), PyObject *Py_UNUSED(args)) {
+test_soft_deprecated_macros(PyObject *Py_UNUSED(self), PyObject *Py_UNUSED(args))
+{
     // Test soft-deprecated macros
     Py_ALIGNED(64) char buf[4];
     #ifdef __GNUC__
