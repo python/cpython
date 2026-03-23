@@ -724,7 +724,7 @@ def main():
         action="store_true",
         default=False,
         help=(
-            "If passed, will add the default test arguments to the beginning of the command. "
+            "Add the default test arguments to the beginning of the command. "
             "Default arguments loaded from Platforms/emscripten/config.toml"
         ),
     )
@@ -732,9 +732,7 @@ def main():
         "--pythoninfo",
         action="store_true",
         default=False,
-        help=(
-            "If passed, run -m test.pythoninfo"
-        ),
+        help="Run -m test.pythoninfo",
     )
     run.add_argument(
         "args",
