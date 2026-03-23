@@ -90,7 +90,7 @@ dummy_func(void) {
 
     op(_MAKE_HEAP_SAFE, (value -- value)) {
         // eliminate _MAKE_HEAP_SAFE when we *know* the value is immortal
-        if (sym_is_immortal(PyJitRef_Unwrap(value))) {
+        if (sym_is_immortal(PyJitRef_Unwrap(value)) || !PyJitRef_IsBorrowed(value)) {
             ADD_OP(_NOP, 0, 0);
         }
         value = PyJitRef_StripBorrowInfo(value);
