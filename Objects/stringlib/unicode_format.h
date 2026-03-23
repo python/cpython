@@ -1173,7 +1173,7 @@ fieldnameiter_next(PyObject *op)
 
         is_attr_obj = PyBool_FromLong(is_attr);
         if (is_attr_obj == NULL)
-            goto done;
+            goto error;
 
         /* either an integer or a string */
         if (idx != -1)
@@ -1181,13 +1181,13 @@ fieldnameiter_next(PyObject *op)
         else
             obj = SubString_new_object(&name);
         if (obj == NULL)
-            goto done;
+            goto error;
 
         /* return a tuple of values */
         result = _PyTuple_FromPairSteal(is_attr_obj, obj);
         return result;
 
-    done:
+    error:
         Py_XDECREF(is_attr_obj);
         Py_XDECREF(obj);
         return result;
@@ -1264,7 +1264,7 @@ formatter_field_name_split(PyObject *Py_UNUSED(module), PyObject *self)
        first_obj in that case. */
     if (!field_name_split((PyObject*)self, 0, PyUnicode_GET_LENGTH(self),
                           &first, &first_idx, &it->it_field, NULL))
-        goto done;
+        goto error;
 
     /* first becomes an integer, if possible; else a string */
     if (first_idx != -1)
@@ -1273,13 +1273,13 @@ formatter_field_name_split(PyObject *Py_UNUSED(module), PyObject *self)
         /* convert "first" into a string object */
         first_obj = SubString_new_object(&first);
     if (first_obj == NULL)
-        goto done;
+        goto error;
 
     /* return a tuple of values */
     result = _PyTuple_FromPairSteal(first_obj, (PyObject *)it);
     return result;
 
-done:
+error:
     Py_XDECREF(it);
     Py_XDECREF(first_obj);
     return result;
