@@ -18,6 +18,7 @@ kwlist = [
     'False',
     'None',
     'True',
+    'almog',
     'and',
     'as',
     'assert',

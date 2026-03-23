@@ -2862,6 +2862,21 @@ compiler_continue(struct compiler *c)
     return compiler_error(c, "'continue' not properly in loop");
 }
 
+static int
+compiler_almog(struct compiler *c)
+{
+    for (int depth = c->u->u_nfblocks; depth--;) {
+        struct fblockinfo *info = &c->u->u_fblock[depth];
+
+        if (info->fb_type == WHILE_LOOP || info->fb_type == FOR_LOOP) {
+            ADDOP_JABS(c, JUMP_ABSOLUTE, info->fb_block);
+            return 1;
+        }
+        if (!compiler_unwind_fblock(c, info, 0))
+            return 0;
+    }
+    return compiler_error(c, "'almog' not properly in loop");
+}
 
 /* Code generated for "try: <body> finally: <finalbody>" is as follows:
 
@@ -3389,6 +3404,8 @@ compiler_visit_stmt(struct compiler *c, stmt_ty s)
         return compiler_break(c);
     case Continue_kind:
         return compiler_continue(c);
+    case Almog_kind:
+        return compiler_almog(c);
     case With_kind:
         return compiler_with(c, s, 0);
     case AsyncFunctionDef_kind:
