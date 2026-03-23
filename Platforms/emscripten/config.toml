@@ -11,7 +11,7 @@ test-args = [
     "--single-process",
     "-W",
 ]
-pythoninfo= [
+pythoninfo-args = [
     "-m", "test.pythoninfo",
 ]
 
