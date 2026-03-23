@@ -25,7 +25,7 @@ import sys
 import _colorize
 
 from contextlib import contextmanager
-from dataclasses import dataclass, field, fields
+from dataclasses import dataclass, field, fields, replace
 
 from . import commands, console, input
 from .content import (
@@ -140,6 +140,79 @@ default_keymap: tuple[tuple[KeySpec, CommandName], ...] = tuple(
 )
 
 
+@dataclass(frozen=True, slots=True)
+class RefreshInvalidation:
+    cursor_only: bool = False
+    buffer_from_pos: int | None = None
+    prompt: bool = False
+    layout: bool = False
+    theme: bool = False
+    message: bool = False
+    overlay: bool = False
+    full: bool = False
+
+    @classmethod
+    def empty(cls) -> RefreshInvalidation:
+        return cls()
+
+    @property
+    def needs_screen_refresh(self) -> bool:
+        return any(
+            (
+                self.buffer_from_pos is not None,
+                self.prompt,
+                self.layout,
+                self.theme,
+                self.message,
+                self.overlay,
+                self.full,
+            )
+        )
+
+    @property
+    def is_cursor_only(self) -> bool:
+        return self.cursor_only and not self.needs_screen_refresh
+
+    @property
+    def buffer_rebuild_from_pos(self) -> int | None:
+        if self.full or self.prompt or self.layout or self.theme:
+            return 0
+        if self.buffer_from_pos is not None:
+            return self.buffer_from_pos
+        if self.message or self.overlay:
+            return None
+        return None
+
+    def with_cursor(self) -> RefreshInvalidation:
+        if self.needs_screen_refresh:
+            return self
+        return replace(self, cursor_only=True)
+
+    def with_buffer(self, from_pos: int) -> RefreshInvalidation:
+        current = from_pos
+        if self.buffer_from_pos is not None:
+            current = min(current, self.buffer_from_pos)
+        return replace(self, cursor_only=False, buffer_from_pos=current)
+
+    def with_prompt(self) -> RefreshInvalidation:
+        return replace(self, cursor_only=False, prompt=True)
+
+    def with_layout(self) -> RefreshInvalidation:
+        return replace(self, cursor_only=False, layout=True)
+
+    def with_theme(self) -> RefreshInvalidation:
+        return replace(self, cursor_only=False, theme=True)
+
+    def with_message(self) -> RefreshInvalidation:
+        return replace(self, cursor_only=False, message=True)
+
+    def with_overlay(self) -> RefreshInvalidation:
+        return replace(self, cursor_only=False, overlay=True)
+
+    def with_full(self) -> RefreshInvalidation:
+        return replace(self, cursor_only=False, full=True)
+
+
 @dataclass(slots=True)
 class Reader:
     """The Reader class implements the bare bones of a command reader,
@@ -170,8 +243,6 @@ class Reader:
       * arg:
         The emacs-style prefix argument.  It will be None if no such
         argument has been provided.
-      * dirty:
-        True if we need to refresh the display.
       * kill_ring:
         The emacs-style kill-ring; manipulated with yank & yank-pop
       * ps1, ps2, ps3, ps4:
@@ -206,7 +277,6 @@ class Reader:
     kill_ring: list[list[str]] = field(default_factory=list)
     msg: str = ""
     arg: int | None = None
-    dirty: bool = False
     finished: bool = False
     paste_mode: bool = False
     commands: dict[str, type[Command]] = field(default_factory=make_default_commands)
@@ -222,6 +292,7 @@ class Reader:
     scheduled_commands: list[str] = field(default_factory=list)
     can_colorize: bool = False
     threading_hook: Callback | None = None
+    invalidation: RefreshInvalidation = field(init=False)
 
     ## cached metadata to speed up screen refreshes
     @dataclass
@@ -232,7 +303,6 @@ class Reader:
         pos: int = field(init=False)
         cxy: tuple[int, int] = field(init=False)
         dimensions: tuple[int, int] = field(init=False)
-        invalidated: bool = False
 
         def update_cache(self,
                          reader: Reader,
@@ -246,24 +316,30 @@ class Reader:
             self.pos = reader.pos
             self.cxy = reader.cxy
             self.dimensions = reader.console.width, reader.console.height
-            self.invalidated = False
 
         def valid(self, reader: Reader) -> bool:
-            if self.invalidated:
-                return False
             dimensions = reader.console.width, reader.console.height
             dimensions_changed = dimensions != self.dimensions
             return not dimensions_changed
 
-        def get_cached_location(self, reader: Reader) -> tuple[int, int]:
-            if self.invalidated:
-                raise ValueError("Cache is invalidated")
+        def get_cached_location(
+            self,
+            reader: Reader,
+            buffer_from_pos: int | None = None,
+            *,
+            reuse_full: bool = False,
+        ) -> tuple[int, int]:
+            if reuse_full:
+                if self.line_end_offsets:
+                    return self.line_end_offsets[-1], len(self.line_end_offsets)
+                return 0, 0
+            if buffer_from_pos is None:
+                buffer_from_pos = min(reader.pos, self.pos)
             offset = 0
-            earliest_common_pos = min(reader.pos, self.pos)
             num_common_lines = len(self.line_end_offsets)
             while num_common_lines > 0:
                 offset = self.line_end_offsets[num_common_lines - 1]
-                if earliest_common_pos > offset:
+                if buffer_from_pos > offset:
                     break
                 num_common_lines -= 1
             else:
@@ -285,6 +361,7 @@ class Reader:
         self.lxy = (self.pos, 0)
         self.rendered_screen = RenderedScreen.empty()
         self.can_colorize = _colorize.can_colorize()
+        self.invalidation = RefreshInvalidation.empty()
 
         self.last_refresh_cache.layout_rows = list(self.layout.rows)
         self.last_refresh_cache.pos = self.pos
@@ -304,19 +381,30 @@ class Reader:
 
     def calc_screen(self) -> RenderedScreen:
         """Translate changes in self.buffer into a structured rendered screen."""
-        # Since the last call to calc_screen:
-        # screen and layout may differ due to a completion menu being shown
-        # pos and cxy may differ due to edits, cursor movements, or completion menus
-
-        # Lines that are above both the old and new cursor position can't have changed,
-        # unless the terminal has been resized (which might cause reflowing) or we've
-        # entered or left paste mode (which changes prompts, causing reflowing).
         num_common_lines = 0
         offset = 0
         if self.last_refresh_cache.valid(self):
-            offset, num_common_lines = self.last_refresh_cache.get_cached_location(self)
+            if (
+                self.invalidation.buffer_from_pos is None
+                and not (
+                    self.invalidation.full
+                    or self.invalidation.prompt
+                    or self.invalidation.layout
+                    or self.invalidation.theme
+                )
+                and (self.invalidation.message or self.invalidation.overlay)
+            ):
+                offset, num_common_lines = self.last_refresh_cache.get_cached_location(
+                    self,
+                    reuse_full=True,
+                )
+            else:
+                offset, num_common_lines = self.last_refresh_cache.get_cached_location(
+                    self,
+                    self._buffer_refresh_from_pos(),
+                )
 
-        render_lines = self.last_refresh_cache.render_lines[:num_common_lines]
+        base_render_lines = self.last_refresh_cache.render_lines[:num_common_lines]
         layout_rows = self.last_refresh_cache.layout_rows[:num_common_lines]
         last_refresh_line_end_offsets = self.last_refresh_cache.line_end_offsets[:num_common_lines]
 
@@ -327,28 +415,39 @@ class Reader:
             prompt_from_cache=bool(offset and self.buffer[offset - 1] != "\n"),
         )
         layout_result = self._layout_content(content_lines, offset)
-        render_lines.extend(self._render_wrapped_rows(layout_result.wrapped_rows))
+        base_render_lines.extend(self._render_wrapped_rows(layout_result.wrapped_rows))
         layout_rows.extend(layout_result.layout_map.rows)
         last_refresh_line_end_offsets.extend(layout_result.line_end_offsets)
 
         self.layout = LayoutMap(tuple(layout_rows))
         self.cxy = self.pos2xy()
-        render_lines.extend(self._render_message_lines())
-
-        self.rendered_screen = RenderedScreen(tuple(render_lines), self.cxy)
         self.last_refresh_cache.update_cache(
             self,
-            render_lines,
+            base_render_lines,
             layout_rows,
             last_refresh_line_end_offsets,
         )
+
+        render_lines = base_render_lines.copy()
+        render_lines.extend(self._render_message_lines())
+
+        self.rendered_screen = RenderedScreen(tuple(render_lines), self.cxy)
         return self.rendered_screen
+
+    def _buffer_refresh_from_pos(self) -> int | None:
+        buffer_from_pos = self.invalidation.buffer_rebuild_from_pos
+        if buffer_from_pos is not None:
+            return buffer_from_pos
+        return 0
 
     def _build_source_lines(
         self,
         offset: int,
         first_lineno: int,
     ) -> tuple[SourceLine, ...]:
+        if offset == len(self.buffer):
+            return ()
+
         pos = self.pos - offset
         lines = "".join(self.buffer[offset:]).split("\n")
         cursor_found = False
@@ -603,9 +702,37 @@ class Reader:
 
     def insert(self, text: str | list[str]) -> None:
         """Insert 'text' at the insertion point."""
+        start = self.pos
         self.buffer[self.pos : self.pos] = list(text)
         self.pos += len(text)
-        self.dirty = True
+        self.invalidate_buffer(start)
+
+    def invalidate_cursor(self) -> None:
+        self.invalidation = self.invalidation.with_cursor()
+
+    def invalidate_buffer(self, from_pos: int) -> None:
+        self.invalidation = self.invalidation.with_buffer(from_pos)
+
+    def invalidate_prompt(self) -> None:
+        self.invalidation = self.invalidation.with_prompt()
+
+    def invalidate_layout(self) -> None:
+        self.invalidation = self.invalidation.with_layout()
+
+    def invalidate_theme(self) -> None:
+        self.invalidation = self.invalidation.with_theme()
+
+    def invalidate_message(self) -> None:
+        self.invalidation = self.invalidation.with_message()
+
+    def invalidate_overlay(self) -> None:
+        self.invalidation = self.invalidation.with_overlay()
+
+    def invalidate_full(self) -> None:
+        self.invalidation = self.invalidation.with_full()
+
+    def clear_invalidation(self) -> None:
+        self.invalidation = RefreshInvalidation.empty()
 
     def update_cursor(self) -> None:
         """Move the cursor to reflect changes in self.pos"""
@@ -617,7 +744,7 @@ class Reader:
         """This function is called to allow post command cleanup."""
         if getattr(cmd, "kills_digit_arg", True):
             if self.arg is not None:
-                self.dirty = True
+                self.invalidate_prompt()
             self.arg = None
 
     def prepare(self) -> None:
@@ -630,7 +757,11 @@ class Reader:
             self.finished = False
             del self.buffer[:]
             self.pos = 0
-            self.dirty = True
+            self.layout = LayoutMap.empty()
+            self.cxy = self.pos2xy()
+            self.lxy = (self.pos, 0)
+            self.rendered_screen = RenderedScreen.empty()
+            self.invalidate_full()
             self.last_command = None
             self.calc_screen()
         except BaseException:
@@ -677,11 +808,14 @@ class Reader:
 
     def error(self, msg: str = "none") -> None:
         self.msg = "! " + msg + " "
-        self.dirty = True
+        self.invalidate_message()
         self.console.beep()
 
     def update_screen(self) -> None:
-        if self.dirty:
+        if self.invalidation.is_cursor_only:
+            self.update_cursor()
+            self.clear_invalidation()
+        elif self.invalidation.needs_screen_refresh:
             self.refresh()
 
     def refresh(self) -> None:
@@ -690,15 +824,15 @@ class Reader:
         rendered_screen = self.calc_screen()
         trace(
             "reader.refresh cursor={cursor} lines={lines} "
-            "dims=({width},{height}) dirty={dirty}",
+            "dims=({width},{height}) invalidation={invalidation}",
             cursor=self.cxy,
             lines=len(rendered_screen.composed_lines),
             width=self.console.width,
             height=self.console.height,
-            dirty=self.dirty,
+            invalidation=self.invalidation,
         )
         self.console.refresh(rendered_screen)
-        self.dirty = False
+        self.clear_invalidation()
 
     def do_cmd(self, cmd: tuple[str, list[str]]) -> None:
         """`cmd` is a tuple of "event_name" and "event", which in the current
@@ -717,11 +851,12 @@ class Reader:
         command.do()
 
         self.after_command(command)
-
-        if self.dirty:
-            self.refresh()
-        else:
-            self.update_cursor()
+        if (
+            not self.invalidation.needs_screen_refresh
+            and not self.invalidation.is_cursor_only
+        ):
+            self.invalidate_cursor()
+        self.update_screen()
 
         if not isinstance(cmd, commands.digit_arg):
             self.last_command = command_type
@@ -756,7 +891,7 @@ class Reader:
 
         if self.msg:
             self.msg = ""
-            self.dirty = True
+            self.invalidate_message()
 
         while True:
             # We use the same timeout as in readline.c: 100ms
@@ -773,9 +908,13 @@ class Reader:
             if event.evt == "key":
                 self.input_trans.push(event)
             elif event.evt == "scroll":
+                self.invalidate_full()
                 self.refresh()
+                return True
             elif event.evt == "resize":
+                self.invalidate_full()
                 self.refresh()
+                return True
             else:
                 translate = False
 

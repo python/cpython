@@ -277,7 +277,7 @@ class maybe_accept(commands.Command):
     def do(self) -> None:
         r: ReadlineAlikeReader
         r = self.reader  # type: ignore[assignment]
-        r.dirty = True  # this is needed to hide the completion menu, if visible
+        r.invalidate_overlay()  # hide completion menu, if visible
 
         # if there are already several lines and the cursor
         # is not on the last one, always insert a new \n.
@@ -337,7 +337,7 @@ class backspace_dedent(commands.Command):
                             break
             r.pos -= repeat
             del b[r.pos : r.pos + repeat]
-            r.dirty = True
+            r.invalidate_buffer(r.pos)
         else:
             self.reader.error("can't backspace at start")
 

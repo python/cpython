@@ -193,7 +193,7 @@ class complete(commands.Command):
             completion = stripcolor(completions[0])
             if completions_unchangable and len(completion) == len(stem):
                 r.msg = "[ sole completion ]"
-                r.dirty = True
+                r.invalidate_message()
             r.insert(completion[len(stem):])
         else:
             clean_completions = [stripcolor(word) for word in completions]
@@ -206,15 +206,15 @@ class complete(commands.Command):
                 r.cmpltn_menu, r.cmpltn_menu_end = build_menu(
                     r.console, completions, r.cmpltn_menu_end,
                     r.use_brackets, r.sort_in_column)
-                r.dirty = True
+                r.invalidate_overlay()
             elif not r.cmpltn_menu_visible:
                 r.cmpltn_message_visible = True
                 if stem + p in clean_completions:
                     r.msg = "[ complete but not unique ]"
-                    r.dirty = True
+                    r.invalidate_message()
                 else:
                     r.msg = "[ not unique ]"
-                    r.dirty = True
+                    r.invalidate_message()
 
         if r.cmpltn_action:
             if r.msg and r.cmpltn_message_visible:
@@ -244,6 +244,7 @@ class self_insert(commands.self_insert):
                     r.cmpltn_menu, r.cmpltn_menu_end = build_menu(
                         r.console, completions, 0,
                         r.use_brackets, r.sort_in_column)
+                    r.invalidate_overlay()
                 else:
                     r.cmpltn_reset()
 
@@ -297,6 +298,8 @@ class CompletingReader(Reader):
         self.cmpltn_reset()
 
     def cmpltn_reset(self) -> None:
+        if getattr(self, "cmpltn_menu_visible", False):
+            self.invalidate_overlay()
         self.cmpltn_menu = []
         self.cmpltn_menu_visible = False
         self.cmpltn_message_visible = False

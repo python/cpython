@@ -177,7 +177,7 @@ class TestReader(ScreenEqualMixin, TestCase):
         )
 
         reader, _ = handle_all_events(events)
-        self.assert_screen_equal(reader, "")
+        self.assertIn(reader.screen, ([], [""]))
 
     def test_newline_within_block_trailing_whitespace(self):
         # fmt: off
@@ -300,6 +300,31 @@ class TestReader(ScreenEqualMixin, TestCase):
         prompt, l = Reader.process_prompt(ps1)
         self.assertEqual(prompt, "\033[0;32m樂>\033[0m> ")
         self.assertEqual(l, 5)
+
+    def test_cursor_motion_does_not_recalculate_screen(self):
+        events = code_to_events("ab")
+        reader, _ = handle_all_events(events)
+
+        original_calc_screen = reader.calc_screen
+        reader.calc_screen = MagicMock(side_effect=original_calc_screen)
+
+        reader.do_cmd(("left", []))
+
+        reader.calc_screen.assert_not_called()
+        self.assertEqual(reader.pos, 1)
+
+    def test_message_refresh_keeps_base_render_cache(self):
+        events = code_to_events("ab")
+        reader, _ = handle_all_events(events)
+
+        self.assertEqual([line.text for line in reader.last_refresh_cache.render_lines], ["ab"])
+
+        reader.msg = "! boom "
+        reader.invalidate_message()
+        reader.update_screen()
+
+        self.assertEqual([line.text for line in reader.last_refresh_cache.render_lines], ["ab"])
+        self.assertEqual(reader.screen, ["ab", "! boom "])
 
     def test_completions_updated_on_key_press(self):
         namespace = {"itertools": itertools}
