@@ -27,10 +27,10 @@ static const PyTime_t TIME_TO_BE_FAIR_NS = 1000*1000;
 // enabled.
 #if Py_GIL_DISABLED
 static const int MAX_SPIN_COUNT = 40;
-static const int RELOAD_SPIN_COUNT = 3;
+static const int RELOAD_SPIN_MASK = 3;
 #else
 static const int MAX_SPIN_COUNT = 0;
-static const int RELOAD_SPIN_COUNT = 1;
+static const int RELOAD_SPIN_MASK = 1;
 #endif
 
 struct mutex_entry {
@@ -104,7 +104,7 @@ _PyMutex_LockTimed(PyMutex *m, PyTime_t timeout, _PyLockFlags flags)
             // Spin for a bit.
             _Py_yield();
             spin_count++;
-            if (((spin_count + tid) & RELOAD_SPIN_COUNT) == 0) {
+            if (((spin_count + tid) & RELOAD_SPIN_MASK) == 0) {
                 v = _Py_atomic_load_uint8_relaxed(&m->_bits);
             }
             continue;
