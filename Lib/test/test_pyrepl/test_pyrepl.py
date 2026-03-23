@@ -2459,25 +2459,29 @@ class TestWindowsConsoleEolWrap(TestCase):
 
         return console, wc
 
+    def _apply_changed_line(self, console, wc, y, old_line, new_line, px=0):
+        from _pyrepl.render import RenderLine
+
+        old_render = RenderLine.from_rendered_text(old_line)
+        new_render = RenderLine.from_rendered_text(new_line)
+        update = wc.WindowsConsole._WindowsConsole__plan_changed_line(
+            console, y, old_render, new_render, px
+        )
+        if update is not None:
+            wc.WindowsConsole._WindowsConsole__apply_line_update(
+                console, update
+            )
+
     def test_short_line_sets_posxy_normally(self):
         width = 10
         y = 3
         console, wc = self._make_mock_console(width=width)
-        old_line = ""
-        new_line = "a" * 3
-        wc.WindowsConsole._WindowsConsole__write_changed_line(
-            console, y, old_line, new_line, 0
-        )
+        self._apply_changed_line(console, wc, y, "", "a" * 3)
         self.assertEqual(console.posxy, (3, y))
 
     def test_exact_width_line_does_not_wrap(self):
         width = 10
         y = 3
         console, wc = self._make_mock_console(width=width)
-        old_line = ""
-        new_line = "a" * width
-
-        wc.WindowsConsole._WindowsConsole__write_changed_line(
-            console, y, old_line, new_line, 0
-        )
+        self._apply_changed_line(console, wc, y, "", "a" * width)
         self.assertEqual(console.posxy, (width - 1, y))

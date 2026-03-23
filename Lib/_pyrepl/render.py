@@ -3,14 +3,51 @@ from __future__ import annotations
 from collections.abc import Iterable, Sequence
 from dataclasses import dataclass
 
-from .utils import ANSI_ESCAPE_SEQUENCE, str_width
+from .utils import ANSI_ESCAPE_SEQUENCE, str_width, wlen
 
 
 @dataclass(frozen=True, slots=True)
 class RenderCell:
     text: str
     width: int
-    has_escape: bool = False
+    prefix: str = ""
+    suffix: str = ""
+
+    @classmethod
+    def from_rendered_text(
+        cls,
+        text: str,
+        width: int | None = None,
+    ) -> RenderCell:
+        prefix_end = 0
+        while match := ANSI_ESCAPE_SEQUENCE.match(text, prefix_end):
+            prefix_end = match.end()
+
+        suffix_start = len(text)
+        chain_start = len(text)
+        chain_end = -1
+        for match in ANSI_ESCAPE_SEQUENCE.finditer(text, prefix_end):
+            if match.start() == chain_end:
+                chain_end = match.end()
+            else:
+                chain_start = match.start()
+                chain_end = match.end()
+        if chain_end == len(text):
+            suffix_start = chain_start
+
+        visible_text = text[prefix_end:suffix_start]
+        if width is None:
+            width = wlen(visible_text)
+        return cls(
+            text=visible_text,
+            width=width,
+            prefix=text[:prefix_end],
+            suffix=text[suffix_start:],
+        )
+
+    @property
+    def terminal_text(self) -> str:
+        return f"{self.prefix}{self.text}{self.suffix}"
 
 
 @dataclass(frozen=True, slots=True)
@@ -21,10 +58,19 @@ class RenderLine:
 
     @classmethod
     def from_cells(cls, cells: Iterable[RenderCell]) -> RenderLine:
-        cell_tuple = tuple(cells)
+        normalized_cells: list[RenderCell] = []
+        for cell in cells:
+            if cell.suffix:
+                normalized_cells.append(
+                    RenderCell(cell.text, cell.width, prefix=cell.prefix)
+                )
+                normalized_cells.append(RenderCell("", 0, prefix=cell.suffix))
+            else:
+                normalized_cells.append(cell)
+        cell_tuple = tuple(normalized_cells)
         return cls(
             cells=cell_tuple,
-            text="".join(cell.text for cell in cell_tuple),
+            text="".join(cell.terminal_text for cell in cell_tuple),
             width=sum(cell.width for cell in cell_tuple),
         )
 
@@ -35,7 +81,7 @@ class RenderLine:
         widths: Sequence[int],
     ) -> RenderLine:
         return cls.from_cells(
-            RenderCell(text, width, "\x1b" in text)
+            RenderCell.from_rendered_text(text, width)
             for text, width in zip(parts, widths)
         )
 
@@ -60,12 +106,13 @@ class RenderLine:
             if cells:
                 last = cells[-1]
                 cells[-1] = RenderCell(
-                    text=last.text + pending_escape,
+                    text=last.text,
                     width=last.width,
-                    has_escape=True,
+                    prefix=last.prefix,
+                    suffix=last.suffix + pending_escape,
                 )
             else:
-                cells.append(RenderCell(pending_escape, 0, True))
+                cells.append(RenderCell("", 0, prefix=pending_escape))
 
         return cls.from_cells(cells)
 
@@ -76,20 +123,26 @@ class RenderLine:
         pending_escape: str,
     ) -> str:
         for char in text:
-            rendered = pending_escape + char
-            cells.append(RenderCell(rendered, str_width(char), bool(pending_escape)))
+            cells.append(RenderCell(char, str_width(char), prefix=pending_escape))
             pending_escape = ""
         return pending_escape
+
+
+@dataclass(frozen=True, slots=True)
+class ScreenOverlay:
+    y: int
+    lines: tuple[RenderLine, ...]
 
 
 @dataclass(frozen=True, slots=True)
 class RenderedScreen:
     lines: tuple[RenderLine, ...]
     cursor: tuple[int, int]
+    overlays: tuple[ScreenOverlay, ...] = ()
 
     @classmethod
     def empty(cls) -> RenderedScreen:
-        return cls((), (0, 0))
+        return cls((), (0, 0), ())
 
     @classmethod
     def from_screen_lines(
@@ -100,11 +153,37 @@ class RenderedScreen:
         return cls(
             tuple(RenderLine.from_rendered_text(line) for line in screen),
             cursor,
+            (),
+        )
+
+    def with_overlay(
+        self,
+        y: int,
+        lines: Iterable[RenderLine],
+    ) -> RenderedScreen:
+        return RenderedScreen(
+            self.lines,
+            self.cursor,
+            self.overlays + (ScreenOverlay(y, tuple(lines)),),
         )
 
     @property
+    def composed_lines(self) -> tuple[RenderLine, ...]:
+        if not self.overlays:
+            return self.lines
+
+        lines = list(self.lines)
+        for overlay in self.overlays:
+            target_len = overlay.y + len(overlay.lines)
+            if len(lines) < target_len:
+                lines.extend([EMPTY_RENDER_LINE] * (target_len - len(lines)))
+            for index, line in enumerate(overlay.lines):
+                lines[overlay.y + index] = line
+        return tuple(lines)
+
+    @property
     def screen_lines(self) -> tuple[str, ...]:
-        return tuple(line.text for line in self.lines)
+        return tuple(line.text for line in self.composed_lines)
 
 
 @dataclass(frozen=True, slots=True)
@@ -118,11 +197,11 @@ class LineDiff:
 
     @property
     def old_text(self) -> str:
-        return "".join(cell.text for cell in self.old_cells)
+        return "".join(cell.terminal_text for cell in self.old_cells)
 
     @property
     def new_text(self) -> str:
-        return "".join(cell.text for cell in self.new_cells)
+        return "".join(cell.terminal_text for cell in self.new_cells)
 
     @property
     def old_changed_width(self) -> int:
@@ -142,10 +221,86 @@ class LineUpdate:
     y: int
     start_cell: int
     start_x: int
-    text: str
+    cells: tuple[RenderCell, ...]
     char_width: int = 0
     clear_eol: bool = False
     reset_to_margin: bool = False
+
+    @property
+    def text(self) -> str:
+        return "".join(cell.terminal_text for cell in self.cells)
+
+
+def _update_terminal_state(state: str, text: str) -> str:
+    for match in ANSI_ESCAPE_SEQUENCE.finditer(text):
+        escape = match.group(0)
+        if escape in {"\x1b[0m", "\x1b[m"}:
+            state = ""
+        else:
+            state += escape
+    return state
+
+
+def _text_requires_cursor_resync(text: str) -> bool:
+    return any(
+        match.group(0)[-1] != "m"
+        for match in ANSI_ESCAPE_SEQUENCE.finditer(text)
+    )
+
+
+def requires_cursor_resync(cells: Sequence[RenderCell]) -> bool:
+    return any(
+        _text_requires_cursor_resync(cell.prefix)
+        or _text_requires_cursor_resync(cell.suffix)
+        for cell in cells
+    )
+
+
+def active_prefix_before(line: RenderLine, stop_cell: int) -> str:
+    state = ""
+    for cell in line.cells[:stop_cell]:
+        state = _update_terminal_state(state, cell.prefix)
+        state = _update_terminal_state(state, cell.suffix)
+    return state
+
+
+def with_active_prefix(
+    line: RenderLine,
+    start_cell: int,
+    cells: Sequence[RenderCell],
+) -> tuple[RenderCell, ...]:
+    prefix = active_prefix_before(line, start_cell)
+    if not prefix or not cells:
+        return tuple(cells)
+
+    first = cells[0]
+    replayed = RenderCell(
+        text=first.text,
+        width=first.width,
+        prefix=prefix + first.prefix,
+        suffix=first.suffix,
+    )
+    return (replayed, *cells[1:])
+
+
+def render_cells(
+    cells: Sequence[RenderCell],
+    visual_style: str | None = None,
+) -> str:
+    if visual_style is None:
+        return "".join(cell.terminal_text for cell in cells)
+
+    rendered: list[str] = []
+    for cell in cells:
+        if cell.prefix:
+            rendered.append(cell.prefix)
+        if cell.text:
+            rendered.append(visual_style)
+            rendered.append(cell.text)
+            rendered.append("\x1b[0m")
+        if cell.suffix:
+            rendered.append(cell.suffix)
+    return "".join(rendered)
 
 
 def diff_render_lines(old: RenderLine, new: RenderLine) -> LineDiff | None:
@@ -168,6 +323,9 @@ def diff_render_lines(old: RenderLine, new: RenderLine) -> LineDiff | None:
     ):
         old_suffix -= 1
         new_suffix -= 1
+
+    while new_suffix < len(new.cells) and new.cells[new_suffix].width == 0:
+        new_suffix += 1
 
     return LineDiff(
         start_cell=prefix,

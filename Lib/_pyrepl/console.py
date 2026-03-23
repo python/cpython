@@ -102,7 +102,7 @@ class Console(ABC):
         self._rendered_screen = rendered_screen
         trace(
             "console.sync_rendered_screen lines={lines} cursor={cursor}",
-            lines=len(rendered_screen.lines),
+            lines=len(rendered_screen.composed_lines),
             cursor=posxy,
         )
 
@@ -124,12 +124,6 @@ class Console(ABC):
             style=style,
         )
         return style
-
-    @staticmethod
-    def visualize_redraw_text(text: str, style: str | None) -> str:
-        if style is None or not text:
-            return text
-        return style + text.replace("\x1b[0m", "\x1b[0m" + style) + "\x1b[0m"
 
     @abstractmethod
     def refresh(self, rendered_screen: RenderedScreen) -> None: ...

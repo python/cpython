@@ -10,6 +10,7 @@ from .support import handle_all_events, handle_events_narrow_console
 from .support import ScreenEqualMixin, code_to_events
 from .support import prepare_reader, prepare_console
 from _pyrepl.console import Event
+from _pyrepl.layout import LayoutMap
 from _pyrepl.reader import Reader
 from _colorize import default_theme
 
@@ -346,8 +347,7 @@ class TestReader(ScreenEqualMixin, TestCase):
     def test_pos2xy_with_no_columns(self):
         console = prepare_console([])
         reader = prepare_reader(console)
-        # Simulate a resize to 0 columns
-        reader.screeninfo = []
+        reader.layout = LayoutMap(())
         self.assertEqual(reader.pos2xy(), (0, 0))
 
     def test_setpos_from_xy_for_non_printing_char(self):

@@ -39,9 +39,17 @@ from ctypes.wintypes import (
 )
 from ctypes import Structure, POINTER, Union
 from .console import Event, Console
-from .render import EMPTY_RENDER_LINE, LineUpdate, RenderLine, RenderedScreen, diff_render_lines
+from .render import (
+    EMPTY_RENDER_LINE,
+    LineUpdate,
+    RenderLine,
+    RenderedScreen,
+    requires_cursor_resync,
+    with_active_prefix,
+    diff_render_lines,
+    render_cells,
+)
 from .trace import trace, trace_text
-from .utils import wlen
 from .windows_eventqueue import EventQueue
 
 try:
@@ -194,8 +202,8 @@ class WindowsConsole(Console):
             "windows.refresh start cursor={cursor} lines={lines} prev_lines={prev_lines} "
             "offset={offset} posxy={posxy}",
             cursor=c_xy,
-            lines=len(rendered_screen.lines),
-            prev_lines=len(self._rendered_screen.lines),
+            lines=len(rendered_screen.composed_lines),
+            prev_lines=len(self._rendered_screen.composed_lines),
             offset=self.__offset,
             posxy=self.posxy,
         )
@@ -210,12 +218,13 @@ class WindowsConsole(Console):
         cx, cy = c_xy
         height = self.height
         old_offset = offset = self.__offset
-        previous_lines = list(self._rendered_screen.lines)
-        next_lines = list(rendered_screen.lines)
+        prev_composed = self._rendered_screen.composed_lines
+        previous_lines = list(prev_composed)
+        next_lines = list(rendered_screen.composed_lines)
         line_count = len(next_lines)
 
         grow_lines = max(
-            min(line_count, height) - len(self._rendered_screen.lines),
+            min(line_count, height) - len(prev_composed),
             0,
         )
         previous_lines.extend([EMPTY_RENDER_LINE] * grow_lines)
@@ -271,7 +280,7 @@ class WindowsConsole(Console):
             clears=len(plan.cleared_lines),
         )
         visual_style = self.begin_redraw_visualization()
-        screen_line_count = len(self._rendered_screen.lines)
+        screen_line_count = len(self._rendered_screen.composed_lines)
 
         for _ in range(plan.grow_lines):
             self._hide_cursor()
@@ -325,37 +334,49 @@ class WindowsConsole(Console):
             and len(diff.new_cells) == 1
             and diff.old_cells[0].width == diff.new_cells[0].width
         ):
-            changed_cell = diff.new_cells[0]
+            planned_cells = with_active_prefix(newline, start_cell, diff.new_cells)
+            changed_cell = planned_cells[0]
             return LineUpdate(
                 kind="replace_char",
                 y=y,
                 start_cell=start_cell,
                 start_x=start_x,
-                text=changed_cell.text,
+                cells=planned_cells,
                 char_width=changed_cell.width,
-                reset_to_margin="\x1b" in changed_cell.text or "\x1a" in changed_cell.text,
+                reset_to_margin=(
+                    requires_cursor_resync(planned_cells)
+                    or "\x1a" in changed_cell.text
+                ),
             )
 
         if diff.old_changed_width == diff.new_changed_width:
+            planned_cells = with_active_prefix(newline, start_cell, diff.new_cells)
             return LineUpdate(
                 kind="replace_span",
                 y=y,
                 start_cell=start_cell,
                 start_x=start_x,
-                text=diff.new_text,
+                cells=planned_cells,
                 char_width=diff.new_changed_width,
-                reset_to_margin="\x1b" in diff.new_text or "\x1a" in diff.new_text,
+                reset_to_margin=(
+                    requires_cursor_resync(planned_cells)
+                    or any("\x1a" in cell.text for cell in planned_cells)
+                ),
             )
 
-        suffix_text = "".join(cell.text for cell in newline.cells[start_cell:])
+        suffix_cells = with_active_prefix(newline, start_cell, newline.cells[start_cell:])
         return LineUpdate(
             kind="rewrite_suffix",
             y=y,
             start_cell=start_cell,
             start_x=start_x,
-            text=suffix_text,
+            cells=suffix_cells,
+            char_width=sum(cell.width for cell in suffix_cells),
             clear_eol=oldline.width > newline.width,
-            reset_to_margin="\x1b" in suffix_text or "\x1a" in suffix_text,
+            reset_to_margin=(
+                requires_cursor_resync(suffix_cells)
+                or any("\x1a" in cell.text for cell in suffix_cells)
+            ),
         )
 
     def __apply_line_update(
@@ -373,18 +394,17 @@ class WindowsConsole(Console):
             clear_eol=update.clear_eol,
             reset=update.reset_to_margin,
         )
-        text = self.visualize_redraw_text(update.text, visual_style)
+        text = render_cells(update.cells, visual_style)
         original_y = self.posxy[1]
         self._move_relative(update.start_x, update.y)
         if update.clear_eol:
             self._erase_to_end()
 
         self.__write(text)
-        self.posxy = min(update.start_x + wlen(update.text), self.width - 1), update.y
+        self.posxy = min(update.start_x + update.char_width, self.width - 1), update.y
 
         if update.reset_to_margin or update.y != original_y:
-            # ANSI escape characters or rewritten control characters make cursor
-            # tracking unreliable. Moving to the left margin restores a known state.
+            # Non-SGR terminal controls or vertical movement require a cursor sync.
             self.move_cursor(0, update.y)
 
     def _scroll(
@@ -622,7 +642,7 @@ class WindowsConsole(Console):
     def finish(self) -> None:
         """Move the cursor to the end of the display and otherwise get
         ready for end.  XXX could be merged with restore?  Hmm."""
-        rendered_lines = self._rendered_screen.lines
+        rendered_lines = self._rendered_screen.composed_lines
         y = len(rendered_lines) - 1
         while y >= 0 and not rendered_lines[y].text:
             y -= 1

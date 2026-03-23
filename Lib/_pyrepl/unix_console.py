@@ -37,10 +37,18 @@ from fcntl import ioctl
 from . import terminfo
 from .console import Console, Event
 from .fancy_termios import tcgetattr, tcsetattr, TermState
-from .render import EMPTY_RENDER_LINE, LineUpdate, RenderLine, RenderedScreen, diff_render_lines
+from .render import (
+    EMPTY_RENDER_LINE,
+    LineUpdate,
+    RenderLine,
+    RenderedScreen,
+    requires_cursor_resync,
+    with_active_prefix,
+    diff_render_lines,
+    render_cells,
+)
 from .trace import trace, trace_text
 from .unix_eventqueue import EventQueue
-from .utils import wlen
 
 # declare posix optional to allow None assignment on other platforms
 posix: types.ModuleType | None
@@ -266,8 +274,8 @@ class UnixConsole(Console):
             "unix.refresh start cursor={cursor} lines={lines} prev_lines={prev_lines} "
             "offset={offset} posxy={posxy}",
             cursor=c_xy,
-            lines=len(rendered_screen.lines),
-            prev_lines=len(self._rendered_screen.lines),
+            lines=len(rendered_screen.composed_lines),
+            prev_lines=len(self._rendered_screen.composed_lines),
             offset=self.__offset,
             posxy=self.posxy,
         )
@@ -282,14 +290,15 @@ class UnixConsole(Console):
         cx, cy = c_xy
         height = self.height
         old_offset = offset = self.__offset
-        previous_lines = list(self._rendered_screen.lines)
-        next_lines = list(rendered_screen.lines)
+        prev_composed = self._rendered_screen.composed_lines
+        previous_lines = list(prev_composed)
+        next_lines = list(rendered_screen.composed_lines)
         line_count = len(next_lines)
 
         grow_lines = 0
         if not self.__gone_tall:
             grow_lines = max(
-                min(line_count, height) - len(self._rendered_screen.lines),
+                min(line_count, height) - len(prev_composed),
                 0,
             )
             previous_lines.extend([EMPTY_RENDER_LINE] * grow_lines)
@@ -368,7 +377,7 @@ class UnixConsole(Console):
             clears=len(plan.cleared_lines),
         )
         visual_style = self.begin_redraw_visualization()
-        screen_line_count = len(self._rendered_screen.lines)
+        screen_line_count = len(self._rendered_screen.composed_lines)
 
         for _ in range(plan.grow_lines):
             self.__hide_cursor()
@@ -613,7 +622,7 @@ class UnixConsole(Console):
         """
         Finish console operations and flush the output buffer.
         """
-        rendered_lines = self._rendered_screen.lines
+        rendered_lines = self._rendered_screen.composed_lines
         y = len(rendered_lines) - 1
         while y >= 0 and not rendered_lines[y].text:
             y -= 1
@@ -761,7 +770,11 @@ class UnixConsole(Console):
         if (
             self.ich1
             and not diff.old_cells
-            and len(diff.new_cells) == 1
+            and (visible_new_cells := tuple(
+                cell for cell in diff.new_cells if cell.width
+            ))
+            and len(visible_new_cells) == 1
+            and all(cell.width == 0 for cell in diff.new_cells[1:])
             and oldline.cells[start_cell:] == newline.cells[start_cell + 1 :]
         ):
             px_cell = self.__cell_index_from_x(oldline, px_coord)
@@ -773,15 +786,16 @@ class UnixConsole(Console):
             ):
                 start_cell = px_cell
                 start_x = px_coord
-            changed_cell = newline.cells[start_cell]
+            planned_cells = with_active_prefix(newline, start_cell, diff.new_cells)
+            changed_cell = visible_new_cells[0]
             return LineUpdate(
                 kind="insert_char",
                 y=y,
                 start_cell=start_cell,
                 start_x=start_x,
-                text=changed_cell.text,
+                cells=planned_cells,
                 char_width=changed_cell.width,
-                reset_to_margin="\x1b" in changed_cell.text,
+                reset_to_margin=requires_cursor_resync(planned_cells),
             )
 
         if (
@@ -789,26 +803,28 @@ class UnixConsole(Console):
             and len(diff.new_cells) == 1
             and diff.old_cells[0].width == diff.new_cells[0].width
         ):
-            changed_cell = diff.new_cells[0]
+            planned_cells = with_active_prefix(newline, start_cell, diff.new_cells)
+            changed_cell = planned_cells[0]
             return LineUpdate(
                 kind="replace_char",
                 y=y,
                 start_cell=start_cell,
                 start_x=start_x,
-                text=changed_cell.text,
+                cells=planned_cells,
                 char_width=changed_cell.width,
-                reset_to_margin="\x1b" in changed_cell.text,
+                reset_to_margin=requires_cursor_resync(planned_cells),
             )
 
         if diff.old_changed_width == diff.new_changed_width:
+            planned_cells = with_active_prefix(newline, start_cell, diff.new_cells)
             return LineUpdate(
                 kind="replace_span",
                 y=y,
                 start_cell=start_cell,
                 start_x=start_x,
-                text=diff.new_text,
+                cells=planned_cells,
                 char_width=diff.new_changed_width,
-                reset_to_margin="\x1b" in diff.new_text,
+                reset_to_margin=requires_cursor_resync(planned_cells),
             )
 
         if (
@@ -818,26 +834,32 @@ class UnixConsole(Console):
             and start_x < newline.width - 2
             and newline.cells[start_cell + 1 : -1] == oldline.cells[start_cell:-2]
         ):
-            changed_cell = newline.cells[start_cell]
+            planned_cells = with_active_prefix(
+                newline,
+                start_cell,
+                (newline.cells[start_cell],),
+            )
+            changed_cell = planned_cells[0]
             return LineUpdate(
                 kind="delete_then_insert",
                 y=y,
                 start_cell=start_cell,
                 start_x=start_x,
-                text=changed_cell.text,
+                cells=planned_cells,
                 char_width=changed_cell.width,
-                reset_to_margin="\x1b" in changed_cell.text,
+                reset_to_margin=requires_cursor_resync(planned_cells),
             )
 
-        suffix_text = "".join(cell.text for cell in newline.cells[start_cell:])
+        suffix_cells = with_active_prefix(newline, start_cell, newline.cells[start_cell:])
         return LineUpdate(
             kind="rewrite_suffix",
             y=y,
             start_cell=start_cell,
             start_x=start_x,
-            text=suffix_text,
+            cells=suffix_cells,
+            char_width=sum(cell.width for cell in suffix_cells),
             clear_eol=oldline.width > newline.width,
-            reset_to_margin="\x1b" in suffix_text,
+            reset_to_margin=requires_cursor_resync(suffix_cells),
         )
 
     def __apply_line_update(
@@ -855,7 +877,7 @@ class UnixConsole(Console):
             clear_eol=update.clear_eol,
             reset=update.reset_to_margin,
         )
-        text = self.visualize_redraw_text(update.text, visual_style)
+        text = render_cells(update.cells, visual_style)
         if update.kind == "insert_char":
             self.__move(update.start_x, update.y)
             self.__write_code(self.ich1)
@@ -880,12 +902,10 @@ class UnixConsole(Console):
             if update.clear_eol:
                 self.__write_code(self._el)
             self.__write(text)
-            self.posxy = update.start_x + wlen(update.text), update.y
+            self.posxy = update.start_x + update.char_width, update.y
 
         if update.reset_to_margin:
-            # ANSI escape characters are present, so we can't assume
-            # anything about the position of the cursor. Moving the cursor
-            # to the left margin gets back to a known position.
+            # Non-SGR terminal controls can affect the cursor position.
             self.move_cursor(0, update.y)
 
     def __write(self, text):
@@ -957,16 +977,17 @@ class UnixConsole(Console):
             self.cursor_visible = 1
 
     def repaint(self):
+        composed = self._rendered_screen.composed_lines
         trace(
             "unix.repaint gone_tall={gone_tall} screen_lines={lines} offset={offset}",
             gone_tall=self.__gone_tall,
-            lines=len(self._rendered_screen.lines),
+            lines=len(composed),
             offset=self.__offset,
         )
         if not self.__gone_tall:
             self.posxy = 0, self.posxy[1]
             self.__write("\r")
-            ns = len(self._rendered_screen.lines) * ["\000" * self.width]
+            ns = len(composed) * ["\000" * self.width]
         else:
             self.posxy = 0, self.__offset
             self.__move(0, self.__offset)

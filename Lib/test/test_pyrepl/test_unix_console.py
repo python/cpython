@@ -132,18 +132,23 @@ class TestConsole(TestCase):
         self.assertIn(call(ANY, b"\x1b[41ma\x1b[0m"), _os_write.mock_calls)
         self.assertIn(call(ANY, b"\x1b[42mb\x1b[0m"), _os_write.mock_calls)
 
-    def test_colorized_multiline_typing_does_not_redraw_previous_line(self, _os_write):
+    @staticmethod
+    def _prepare_reader_with_prompts(console, **kwargs):
         from _pyrepl.readline import ReadlineAlikeReader, ReadlineConfig
 
+        config = ReadlineConfig(
+            readline_completer=kwargs.pop("readline_completer", None)
+        )
+        reader = ReadlineAlikeReader(console=console, config=config)
+        reader.paste_mode = False
+        for key, val in kwargs.items():
+            setattr(reader, key, val)
+        return reader
+
+    def test_colorized_multiline_typing_does_not_redraw_previous_line(self, _os_write):
         def prepare_reader_with_prompts(console, **kwargs):
-            config = ReadlineConfig(
-                readline_completer=kwargs.pop("readline_completer", None)
-            )
-            reader = ReadlineAlikeReader(console=console, config=config)
+            reader = self._prepare_reader_with_prompts(console, **kwargs)
             reader.more_lines = partial(more_lines, namespace=None)
-            reader.paste_mode = False
-            for key, val in kwargs.items():
-                setattr(reader, key, val)
             return reader
 
         with force_color(True):
@@ -166,6 +171,52 @@ class TestConsole(TestCase):
             _os_write.mock_calls,
         )
         self.assertIn(call(ANY, b"y"), _os_write.mock_calls)
+
+    def test_colorized_definition_append_uses_insert_char(self, _os_write):
+        from _pyrepl import trace as pyrepl_trace
+
+        buffer = io.StringIO()
+        with patch.object(pyrepl_trace, "trace_file", buffer), force_color(True):
+            events = code_to_events("def abc")
+            _, con = handle_all_events(
+                events,
+                prepare_console=unix_console,
+                prepare_reader=self._prepare_reader_with_prompts,
+            )
+            con.restore()
+
+        update_lines = [
+            line
+            for line in buffer.getvalue().splitlines()
+            if "unix.refresh update" in line
+        ]
+        self.assertTrue(update_lines)
+        self.assertIn("kind=insert_char", update_lines[-1])
+        self.assertIn(r"text='\x1b[1mc\x1b[0m'", update_lines[-1])
+        self.assertIn("reset_to_margin=False", update_lines[-1])
+
+    def test_colorized_definition_space_does_not_rewrite_keyword(self, _os_write):
+        from _pyrepl import trace as pyrepl_trace
+
+        buffer = io.StringIO()
+        with patch.object(pyrepl_trace, "trace_file", buffer), force_color(True):
+            events = code_to_events("def ")
+            _, con = handle_all_events(
+                events,
+                prepare_console=unix_console,
+                prepare_reader=self._prepare_reader_with_prompts,
+            )
+            con.restore()
+
+        update_lines = [
+            line
+            for line in buffer.getvalue().splitlines()
+            if "unix.refresh update" in line
+        ]
+        self.assertTrue(update_lines)
+        self.assertIn("kind=insert_char", update_lines[-1])
+        self.assertIn(r"text=' '", update_lines[-1])
+        self.assertIn("reset_to_margin=False", update_lines[-1])
 
     def test_no_newline(self, _os_write):
         code = "1"
