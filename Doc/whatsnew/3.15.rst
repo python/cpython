@@ -690,26 +690,6 @@ collections
   (Contributed by Raymond Hettinger in :gh:`138682`.)
 
 
-collections.abc
----------------
-
-* :class:`collections.abc.ByteString` has been removed from
-  ``collections.abc.__all__``. :class:`!collections.abc.ByteString` has been
-  deprecated since Python 3.12, and is scheduled for removal in Python 3.17.
-
-* The following statements now cause ``DeprecationWarning``\ s to be emitted at
-  runtime:
-
-  * ``from collections.abc import ByteString``
-  * ``import collections.abc; collections.abc.ByteString``.
-
-  ``DeprecationWarning``\ s were already emitted if
-  :class:`collections.abc.ByteString` was subclassed or used as the second
-  argument to :func:`isinstance` or :func:`issubclass`, but warnings were not
-  previously emitted if it was merely imported or accessed from the
-  :mod:`!collections.abc` module.
-
-
 concurrent.futures
 ------------------
 
@@ -1390,6 +1370,14 @@ Diego Russo in :gh:`140683` and :gh:`142305`.)
 Removed
 ========
 
+collections.abc
+---------------
+
+* :class:`collections.abc.ByteString` has been removed from
+  ``collections.abc.__all__``. :class:`!collections.abc.ByteString` has been
+  deprecated since Python 3.12, and is scheduled for removal in Python 3.17.
+
+
 ctypes
 ------
 
@@ -1583,6 +1571,21 @@ New deprecations
     for these cases; use a type checker instead.
 
     (Contributed by Nikita Sobolev in :gh:`136355`.)
+
+* :mod:`collections.abc`
+
+  * The following statements now cause ``DeprecationWarning``\ s to be emitted
+    at runtime:
+
+    * ``from collections.abc import ByteString``
+    * ``import collections.abc; collections.abc.ByteString``.
+
+    ``DeprecationWarning``\ s were already emitted if
+    :class:`collections.abc.ByteString` was subclassed or used as the second
+    argument to :func:`isinstance` or :func:`issubclass`, but warnings were not
+    previously emitted if it was merely imported or accessed from the
+    :mod:`!collections.abc` module.
+
 
 * :mod:`hashlib`:
 
