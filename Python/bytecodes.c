@@ -33,7 +33,7 @@
 #include "pycore_sliceobject.h"   // _PyBuildSlice_ConsumeRefs
 #include "pycore_stackref.h"
 #include "pycore_template.h"      // _PyTemplate_Build()
-#include "pycore_tuple.h"         // _PyTuple_ITEMS()
+#include "pycore_tuple.h"         // _PyStolenTuple_Free(), _PyTuple_ITEMS()
 #include "pycore_typeobject.h"    // _PySuper_Lookup()
 
 #include "pycore_dict.h"
@@ -425,13 +425,15 @@ dummy_func(
             PyStackRef_CLOSE(iter);
         }
 
-        pure inst(END_SEND, (receiver, value -- val)) {
+        pure inst(END_SEND, (receiver, index_or_null, value -- val)) {
             val = value;
+            (void)index_or_null;
             DEAD(value);
+            DEAD(index_or_null);
             PyStackRef_CLOSE(receiver);
         }
 
-        tier1 inst(INSTRUMENTED_END_SEND, (receiver, value -- val)) {
+        tier1 inst(INSTRUMENTED_END_SEND, (receiver, index_or_null, value -- val)) {
             PyObject *receiver_o = PyStackRef_AsPyObjectBorrow(receiver);
             if (PyGen_Check(receiver_o) || PyCoro_CheckExact(receiver_o)) {
                 int err = monitor_stop_iteration(tstate, frame, this_instr, PyStackRef_AsPyObjectBorrow(value));
@@ -440,6 +442,8 @@ dummy_func(
                 }
             }
             val = value;
+            (void)index_or_null;
+            DEAD(index_or_null);
             DEAD(value);
             PyStackRef_CLOSE(receiver);
         }
@@ -1410,7 +1414,7 @@ dummy_func(
             SEND_GEN,
         };
 
-        specializing op(_SPECIALIZE_SEND, (counter/1, receiver, unused -- receiver, unused)) {
+        specializing op(_SPECIALIZE_SEND, (counter/1, receiver, unused, unused -- receiver, unused, unused)) {
             #if ENABLE_SPECIALIZATION
             if (ADAPTIVE_COUNTER_TRIGGERS(counter)) {
                 next_instr = this_instr;
@@ -1422,7 +1426,7 @@ dummy_func(
             #endif  /* ENABLE_SPECIALIZATION */
         }
 
-        op(_SEND, (receiver, v -- receiver, retval)) {
+        op(_SEND, (receiver, null_or_index, v -- receiver, null_or_index, retval)) {
             PyObject *receiver_o = PyStackRef_AsPyObjectBorrow(receiver);
             PyObject *retval_o;
             assert(frame->owner != FRAME_OWNED_BY_INTERPRETER);
@@ -1443,36 +1447,49 @@ dummy_func(
                 gen_frame->previous = frame;
                 DISPATCH_INLINED(gen_frame);
             }
-            if (PyStackRef_IsNone(v) && PyIter_Check(receiver_o)) {
-                retval_o = Py_TYPE(receiver_o)->tp_iternext(receiver_o);
+            if (!PyStackRef_IsNull(null_or_index)) {
+                _PyStackRef item = _PyForIter_VirtualIteratorNext(tstate, frame, receiver, &null_or_index);
+                if (!PyStackRef_IsValid(item)) {
+                    if (PyStackRef_IsError(item)) {
+                        ERROR_NO_POP();
+                    }
+                    JUMPBY(oparg);
+                    DISPATCH();
+                }
+                retval = item;
             }
             else {
-                retval_o = PyObject_CallMethodOneArg(receiver_o,
-                                                     &_Py_ID(send),
-                                                     PyStackRef_AsPyObjectBorrow(v));
-            }
-            if (retval_o == NULL) {
-                int matches = _PyErr_ExceptionMatches(tstate, PyExc_StopIteration);
-                if (matches) {
-                    _PyEval_MonitorRaise(tstate, frame, this_instr);
-                }
-                int err = _PyGen_FetchStopIterationValue(&retval_o);
-                if (err == 0) {
-                    assert(retval_o != NULL);
-                    JUMPBY(oparg);
+                if (PyStackRef_IsNone(v) && PyIter_Check(receiver_o)) {
+                    retval_o = Py_TYPE(receiver_o)->tp_iternext(receiver_o);
                 }
                 else {
-                    PyStackRef_CLOSE(v);
-                    ERROR_IF(true);
+                    retval_o = PyObject_CallMethodOneArg(receiver_o,
+                                                        &_Py_ID(send),
+                                                        PyStackRef_AsPyObjectBorrow(v));
                 }
+                if (retval_o == NULL) {
+                    int matches = _PyErr_ExceptionMatches(tstate, PyExc_StopIteration);
+                    if (matches) {
+                        _PyEval_MonitorRaise(tstate, frame, this_instr);
+                    }
+                    int err = _PyGen_FetchStopIterationValue(&retval_o);
+                    if (err == 0) {
+                        assert(retval_o != NULL);
+                        JUMPBY(oparg);
+                    }
+                    else {
+                        PyStackRef_CLOSE(v);
+                        ERROR_IF(true);
+                    }
+                }
+                retval = PyStackRef_FromPyObjectSteal(retval_o);
             }
             PyStackRef_CLOSE(v);
-            retval = PyStackRef_FromPyObjectSteal(retval_o);
         }
 
         macro(SEND) = _SPECIALIZE_SEND + _SEND;
 
-        op(_SEND_GEN_FRAME, (receiver, v -- receiver, gen_frame)) {
+        op(_SEND_GEN_FRAME, (receiver, null, v -- receiver, null, gen_frame)) {
             PyGenObject *gen = (PyGenObject *)PyStackRef_AsPyObjectBorrow(receiver);
             EXIT_IF(Py_TYPE(gen) != &PyGen_Type && Py_TYPE(gen) != &PyCoro_Type);
             EXIT_IF(!gen_try_set_executing((PyGenObject *)gen));
@@ -1490,7 +1507,7 @@ dummy_func(
 
         macro(SEND_GEN) =
             unused/1 +
-            _RECORD_NOS_GEN_FUNC +
+            _RECORD_3OS_GEN_FUNC +
             _CHECK_PEP_523 +
             _SEND_GEN_FRAME +
             _PUSH_FRAME;
@@ -1602,17 +1619,17 @@ dummy_func(
 
         macro(END_ASYNC_FOR) = _END_ASYNC_FOR;
 
-        tier1 inst(CLEANUP_THROW, (sub_iter, last_sent_val, exc_value_st -- none, value)) {
+        tier1 inst(CLEANUP_THROW, (sub_iter, null_in, last_sent_val, exc_value_st -- none, null_out, value)) {
             PyObject *exc_value = PyStackRef_AsPyObjectBorrow(exc_value_st);
             #if !_Py_TAIL_CALL_INTERP
             assert(throwflag);
             #endif
             assert(exc_value && PyExceptionInstance_Check(exc_value));
-
             int matches = PyErr_GivenExceptionMatches(exc_value, PyExc_StopIteration);
             if (matches) {
                 value = PyStackRef_FromPyObjectNew(((PyStopIterationObject *)exc_value)->value);
                 DECREF_INPUTS();
+                null_out = null_in;
                 none = PyStackRef_None;
             }
             else {
@@ -1722,6 +1739,25 @@ dummy_func(
             PyStackRef_CLOSE(seq);
         }
 
+        op(_UNPACK_SEQUENCE_UNIQUE_TWO_TUPLE, (seq -- val1, val0)) {
+            PyObject *seq_o = PyStackRef_AsPyObjectSteal(seq);
+            STAT_INC(UNPACK_SEQUENCE, hit);
+            val0 = PyStackRef_FromPyObjectSteal(PyTuple_GET_ITEM(seq_o, 0));
+            val1 = PyStackRef_FromPyObjectSteal(PyTuple_GET_ITEM(seq_o, 1));
+            PyObject_GC_UnTrack(seq_o);
+            _PyStolenTuple_Free(seq_o);
+        }
+
+        op(_UNPACK_SEQUENCE_UNIQUE_THREE_TUPLE, (seq -- val2, val1, val0)) {
+            PyObject *seq_o = PyStackRef_AsPyObjectSteal(seq);
+            STAT_INC(UNPACK_SEQUENCE, hit);
+            val0 = PyStackRef_FromPyObjectSteal(PyTuple_GET_ITEM(seq_o, 0));
+            val1 = PyStackRef_FromPyObjectSteal(PyTuple_GET_ITEM(seq_o, 1));
+            val2 = PyStackRef_FromPyObjectSteal(PyTuple_GET_ITEM(seq_o, 2));
+            PyObject_GC_UnTrack(seq_o);
+            _PyStolenTuple_Free(seq_o);
+        }
+
         macro(UNPACK_SEQUENCE_TUPLE) =
             _GUARD_TOS_TUPLE + unused/1 + _UNPACK_SEQUENCE_TUPLE;
 
@@ -1735,6 +1771,20 @@ dummy_func(
                 *values++ = PyStackRef_FromPyObjectNew(items[i]);
             }
             DECREF_INPUTS();
+        }
+
+        op(_UNPACK_SEQUENCE_UNIQUE_TUPLE, (seq -- values[oparg])) {
+            PyObject *seq_o = PyStackRef_AsPyObjectSteal(seq);
+            assert(PyTuple_CheckExact(seq_o));
+            assert(PyTuple_GET_SIZE(seq_o) == oparg);
+            assert(_PyObject_IsUniquelyReferenced(seq_o));
+            STAT_INC(UNPACK_SEQUENCE, hit);
+            PyObject **items = _PyTuple_ITEMS(seq_o);
+            for (int i = oparg; --i >= 0; ) {
+                *values++ = PyStackRef_FromPyObjectSteal(items[i]);
+            }
+            PyObject_GC_UnTrack(seq_o);
+            _PyStolenTuple_Free(seq_o);
         }
 
         macro(UNPACK_SEQUENCE_LIST) =
@@ -3335,52 +3385,10 @@ dummy_func(
             #ifdef Py_STATS
             _Py_GatherStats_GetIter(iterable);
             #endif
-            PyTypeObject *tp = PyStackRef_TYPE(iterable);
-            if (tp == &PyTuple_Type || tp == &PyList_Type) {
-                /* Leave iterable on stack and pushed tagged 0 */
-                iter = iterable;
-                DEAD(iterable);
-                index_or_null = PyStackRef_TagInt(0);
-            }
-            else {
-                /* Pop iterable, and push iterator then NULL */
-                PyObject *iter_o = PyObject_GetIter(PyStackRef_AsPyObjectBorrow(iterable));
-                PyStackRef_CLOSE(iterable);
-                ERROR_IF(iter_o == NULL);
-                iter = PyStackRef_FromPyObjectSteal(iter_o);
-                index_or_null = PyStackRef_NULL;
-            }
-        }
-
-        inst(GET_YIELD_FROM_ITER, (iterable -- iter)) {
-            /* before: [obj]; after [getiter(obj)] */
-            PyObject *iterable_o = PyStackRef_AsPyObjectBorrow(iterable);
-            if (PyCoro_CheckExact(iterable_o)) {
-                /* `iterable` is a coroutine */
-                if (!(_PyFrame_GetCode(frame)->co_flags & (CO_COROUTINE | CO_ITERABLE_COROUTINE))) {
-                    /* and it is used in a 'yield from' expression of a
-                       regular generator. */
-                    _PyErr_SetString(tstate, PyExc_TypeError,
-                                     "cannot 'yield from' a coroutine object "
-                                     "in a non-coroutine generator");
-                    ERROR_NO_POP();
-                }
-                iter = iterable;
-                DEAD(iterable);
-            }
-            else if (PyGen_CheckExact(iterable_o)) {
-                iter = iterable;
-                DEAD(iterable);
-            }
-            else {
-                /* `iterable` is not a generator. */
-                PyObject *iter_o = PyObject_GetIter(iterable_o);
-                if (iter_o == NULL) {
-                    ERROR_NO_POP();
-                }
-                iter = PyStackRef_FromPyObjectSteal(iter_o);
-                DECREF_INPUTS();
-            }
+            _PyStackRef result = _PyEval_GetIter(iterable, &index_or_null, oparg);
+            DEAD(iterable);
+            ERROR_IF(PyStackRef_IsError(result));
+            iter = result;
         }
 
         // Most members of this family are "secretly" super-instructions.
@@ -5851,6 +5859,17 @@ dummy_func(
             if (PyGen_Check(obj)) {
                 PyGenObject *gen = (PyGenObject *)obj;
                 _PyStackRef func = gen->gi_iframe.f_funcobj;
+                if (!PyStackRef_IsNull(func)) {
+                    RECORD_VALUE(PyStackRef_AsPyObjectBorrow(func));
+                }
+            }
+        }
+
+        tier2 op(_RECORD_3OS_GEN_FUNC, (gen, nos, tos -- gen, nos, tos)) {
+            PyObject *obj = PyStackRef_AsPyObjectBorrow(gen);
+            if (PyGen_Check(obj)) {
+                PyGenObject *gen_obj = (PyGenObject *)obj;
+                _PyStackRef func = gen_obj->gi_iframe.f_funcobj;
                 if (!PyStackRef_IsNull(func)) {
                     RECORD_VALUE(PyStackRef_AsPyObjectBorrow(func));
                 }
