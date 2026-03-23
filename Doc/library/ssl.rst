@@ -67,7 +67,7 @@ by SSL sockets created through the :meth:`SSLContext.wrap_socket` method.
    Use of deprecated constants and functions result in deprecation warnings.
 
 
-Functions, Constants, and Exceptions
+Functions, constants, and exceptions
 ------------------------------------
 
 
@@ -374,7 +374,7 @@ Certificate handling
 
 .. function:: cert_time_to_seconds(cert_time)
 
-   Return the time in seconds since the Epoch, given the ``cert_time``
+   Return the time in seconds since the epoch, given the ``cert_time``
    string representing the "notBefore" or "notAfter" date from a
    certificate in ``"%b %d %H:%M:%S %Y %Z"`` strptime format (C
    locale).
@@ -384,12 +384,12 @@ Certificate handling
    .. doctest:: newcontext
 
       >>> import ssl
+      >>> import datetime as dt
       >>> timestamp = ssl.cert_time_to_seconds("Jan  5 09:34:43 2018 GMT")
       >>> timestamp  # doctest: +SKIP
       1515144883
-      >>> from datetime import datetime
-      >>> print(datetime.utcfromtimestamp(timestamp))  # doctest: +SKIP
-      2018-01-05 09:34:43
+      >>> print(dt.datetime.fromtimestamp(timestamp, dt.UTC))  # doctest: +SKIP
+      2018-01-05 09:34:43+00:00
 
    "notBefore" or "notAfter" dates must use GMT (:rfc:`5280`).
 
@@ -1072,7 +1072,7 @@ Constants
       :attr:`TLSVersion.TLSv1_3` are deprecated.
 
 
-SSL Sockets
+SSL sockets
 -----------
 
 .. class:: SSLSocket(socket.socket)
@@ -1462,7 +1462,7 @@ SSL sockets also have the following additional methods and attributes:
    .. versionadded:: 3.6
 
 
-SSL Contexts
+SSL contexts
 ------------
 
 .. versionadded:: 3.2
@@ -2653,7 +2653,7 @@ thus several things you need to be aware of:
    as well.
 
 
-Memory BIO Support
+Memory BIO support
 ------------------
 
 .. versionadded:: 3.5
