@@ -1158,6 +1158,15 @@ typing
 
   (Contributed by Jelle Zijlstra in :gh:`145033`.)
 
+* Code like ``class ExtraTypeVars(P1[S], Protocol[T, T2]): ...`` now raises
+  a :exc:`TypeError`, because ``S`` is not listed in ``Protocol`` parameters.
+  (Contributed by Nikita Sobolev in :gh:`137191`.)
+
+* Code like ``class B2(A[T2], Protocol[T1, T2]): ...`` now correctly handles
+  type parameters order: it is ``(T1, T2)``, not ``(T2, T1)``
+  as it was incorrectly inferred in runtime before.
+  (Contributed by Nikita Sobolev in :gh:`137191`.)
+
 
 unicodedata
 -----------
@@ -1494,15 +1503,6 @@ typing
   longer supported. Use ``class TD(TypedDict): pass``
   or ``TD = TypedDict("TD", {})`` instead.
   (Contributed by Bénédikt Tran in :gh:`133823`.)
-
-* Code like ``class ExtraTypeVars(P1[S], Protocol[T, T2]): ...`` now raises
-  a :exc:`TypeError`, because ``S`` is not listed in ``Protocol`` parameters.
-  (Contributed by Nikita Sobolev in :gh:`137191`.)
-
-* Code like ``class B2(A[T2], Protocol[T1, T2]): ...`` now correctly handles
-  type parameters order: it is ``(T1, T2)``, not ``(T2, T1)``
-  as it was incorrectly inferred in runtime before.
-  (Contributed by Nikita Sobolev in :gh:`137191`.)
 
 
 wave
