@@ -742,6 +742,7 @@ class TestSysConfig(unittest.TestCase, VirtualEnvironmentMixin):
         self.assertEqual(config_vars['platbase'], sys.exec_prefix)
 
     def test_py_version(self):
+        # Test py_version
         config_vars = sysconfig.get_config_vars()
         self.assertIsInstance(config_vars['py_version'], str)
         ver = sys.version_info
@@ -749,10 +750,14 @@ class TestSysConfig(unittest.TestCase, VirtualEnvironmentMixin):
         # py_version can be longer such as "3.15.0a7+" instead of "3.15.0"
         self.assertStartsWith(config_vars['py_version'], version)
 
+        # Test py_version_short and get_python_version()
         self.assertIsInstance(config_vars['py_version_short'], str)
         self.assertEqual(config_vars['py_version_short'],
                          f'{ver.major}.{ver.minor}')
+        self.assertEqual(sysconfig.get_python_version(),
+                         config_vars['py_version_short'])
 
+        # Test py_version_nodot
         self.assertIsInstance(config_vars['py_version_nodot'], str)
         self.assertEqual(config_vars['py_version_nodot'],
                          f'{ver.major}{ver.minor}')
