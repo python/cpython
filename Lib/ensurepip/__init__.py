@@ -10,7 +10,7 @@ from shutil import copy2
 
 
 __all__ = ["version", "bootstrap"]
-_PIP_VERSION = "25.3"
+_PIP_VERSION = "26.0.1"
 
 # Directory of system wheel packages. Some Linux distribution packaging
 # policies recommend against bundling dependencies. For example, Fedora

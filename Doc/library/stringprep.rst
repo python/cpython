@@ -26,14 +26,14 @@ define which tables it uses, and what other optional parts of the ``stringprep``
 procedure are part of the profile. One example of a ``stringprep`` profile is
 ``nameprep``, which is used for internationalized domain names.
 
-The module :mod:`stringprep` only exposes the tables from :rfc:`3454`. As these
+The module :mod:`!stringprep` only exposes the tables from :rfc:`3454`. As these
 tables would be very large to represent as dictionaries or lists, the
 module uses the Unicode character database internally. The module source code
 itself was generated using the ``mkstringprep.py`` utility.
 
 As a result, these tables are exposed as functions, not as data structures.
 There are two kinds of tables in the RFC: sets and mappings. For a set,
-:mod:`stringprep` provides the "characteristic function", i.e. a function that
+:mod:`!stringprep` provides the "characteristic function", i.e. a function that
 returns ``True`` if the parameter is part of the set. For mappings, it provides the
 mapping function: given the key, it returns the associated value. Below is a
 list of all functions available in the module.

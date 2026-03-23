@@ -9,9 +9,9 @@
 
 --------------
 
-The :mod:`atexit` module defines functions to register and unregister cleanup
+The :mod:`!atexit` module defines functions to register and unregister cleanup
 functions.  Functions thus registered are automatically executed upon normal
-interpreter termination.  :mod:`atexit` runs these functions in the *reverse*
+interpreter termination.  :mod:`!atexit` runs these functions in the *reverse*
 order in which they were registered; if you register ``A``, ``B``, and ``C``,
 at interpreter termination time they will be run in the order ``C``, ``B``,
 ``A``.
@@ -64,7 +64,7 @@ a cleanup function is undefined.
    Remove *func* from the list of functions to be run at interpreter shutdown.
    :func:`unregister` silently does nothing if *func* was not previously
    registered.  If *func* has been registered more than once, every occurrence
-   of that function in the :mod:`atexit` call stack will be removed.  Equality
+   of that function in the :mod:`!atexit` call stack will be removed.  Equality
    comparisons (``==``) are used internally during unregistration, so function
    references do not need to have matching identities.
 
@@ -72,14 +72,14 @@ a cleanup function is undefined.
 .. seealso::
 
    Module :mod:`readline`
-      Useful example of :mod:`atexit` to read and write :mod:`readline` history
+      Useful example of :mod:`!atexit` to read and write :mod:`readline` history
       files.
 
 
 .. _atexit-example:
 
-:mod:`atexit` Example
----------------------
+:mod:`!atexit` Example
+----------------------
 
 The following simple example demonstrates how a module can initialize a counter
 from a file when it is imported and save the counter's updated value

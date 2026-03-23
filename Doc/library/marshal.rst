@@ -20,7 +20,7 @@ rarely does). [#]_
 
 This is not a general "persistence" module.  For general persistence and
 transfer of Python objects through RPC calls, see the modules :mod:`pickle` and
-:mod:`shelve`.  The :mod:`marshal` module exists mainly to support reading and
+:mod:`shelve`.  The :mod:`!marshal` module exists mainly to support reading and
 writing the "pseudo-compiled" code for Python modules of :file:`.pyc` files.
 Therefore, the Python maintainers reserve the right to modify the marshal format
 in backward incompatible ways should the need arise.
@@ -34,7 +34,7 @@ supports a substantially wider range of objects than marshal.
 
 .. warning::
 
-   The :mod:`marshal` module is not intended to be secure against erroneous or
+   The :mod:`!marshal` module is not intended to be secure against erroneous or
    maliciously constructed data.  Never unmarshal data received from an
    untrusted or unauthenticated source.
 

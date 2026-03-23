@@ -8,7 +8,7 @@
 
 --------------
 
-:mod:`dbm` is a generic interface to variants of the DBM database:
+:mod:`!dbm` is a generic interface to variants of the DBM database:
 
 * :mod:`dbm.sqlite3`
 * :mod:`dbm.gnu`
@@ -101,7 +101,7 @@ will automatically close them when done.
 
 .. versionchanged:: 3.2
    :meth:`!get` and :meth:`!setdefault` methods are now available for all
-   :mod:`dbm` backends.
+   :mod:`!dbm` backends.
 
 .. versionchanged:: 3.4
    Added native support for the context management protocol to the objects
@@ -112,7 +112,7 @@ will automatically close them when done.
    instead of :exc:`KeyError`.
 
 .. versionchanged:: 3.13
-   :meth:`!clear` methods are now available for all :mod:`dbm` backends.
+   :meth:`!clear` methods are now available for all :mod:`!dbm` backends.
 
 
 The following example records some hostnames and a corresponding title,  and
@@ -151,11 +151,10 @@ then prints out the contents of the database::
 
 The individual submodules are described in the following sections.
 
-:mod:`dbm.sqlite3` --- SQLite backend for dbm
----------------------------------------------
+:mod:`!dbm.sqlite3` --- SQLite backend for dbm
+----------------------------------------------
 
 .. module:: dbm.sqlite3
-   :platform: All
    :synopsis: SQLite backend for dbm
 
 .. versionadded:: 3.13
@@ -165,8 +164,8 @@ The individual submodules are described in the following sections.
 --------------
 
 This module uses the standard library :mod:`sqlite3` module to provide an
-SQLite backend for the :mod:`dbm` module.
-The files created by :mod:`dbm.sqlite3` can thus be opened by :mod:`sqlite3`,
+SQLite backend for the :mod:`!dbm` module.
+The files created by :mod:`!dbm.sqlite3` can thus be opened by :mod:`sqlite3`,
 or any other SQLite browser, including the SQLite CLI.
 
 .. include:: ../includes/wasm-notavail.rst
@@ -202,31 +201,32 @@ or any other SQLite browser, including the SQLite CLI.
       Close the SQLite database.
 
 
-:mod:`dbm.gnu` --- GNU database manager
----------------------------------------
+:mod:`!dbm.gnu` --- GNU database manager
+----------------------------------------
 
 .. module:: dbm.gnu
-   :platform: Unix
    :synopsis: GNU database manager
 
 **Source code:** :source:`Lib/dbm/gnu.py`
 
 --------------
 
-The :mod:`dbm.gnu` module provides an interface to the :abbr:`GDBM (GNU dbm)`
+The :mod:`!dbm.gnu` module provides an interface to the :abbr:`GDBM (GNU dbm)`
 library, similar to the :mod:`dbm.ndbm` module, but with additional
 functionality like crash tolerance.
 
 .. note::
 
-   The file formats created by :mod:`dbm.gnu` and :mod:`dbm.ndbm` are incompatible
+   The file formats created by :mod:`!dbm.gnu` and :mod:`dbm.ndbm` are incompatible
    and can not be used interchangeably.
 
 .. include:: ../includes/wasm-mobile-notavail.rst
 
+.. availability:: Unix.
+
 .. exception:: error
 
-   Raised on :mod:`dbm.gnu`-specific errors, such as I/O errors. :exc:`KeyError` is
+   Raised on :mod:`!dbm.gnu`-specific errors, such as I/O errors. :exc:`KeyError` is
    raised for general mapping errors like specifying an incorrect key.
 
 
@@ -321,25 +321,24 @@ functionality like crash tolerance.
       unwritten data to be written to the disk.
 
 
-:mod:`dbm.ndbm` --- New Database Manager
-----------------------------------------
+:mod:`!dbm.ndbm` --- New Database Manager
+-----------------------------------------
 
 .. module:: dbm.ndbm
-   :platform: Unix
    :synopsis: The New Database Manager
 
 **Source code:** :source:`Lib/dbm/ndbm.py`
 
 --------------
 
-The :mod:`dbm.ndbm` module provides an interface to the
+The :mod:`!dbm.ndbm` module provides an interface to the
 :abbr:`NDBM (New Database Manager)` library.
 This module can be used with the "classic" NDBM interface or the
 :abbr:`GDBM (GNU dbm)` compatibility interface.
 
 .. note::
 
-   The file formats created by :mod:`dbm.gnu` and :mod:`dbm.ndbm` are incompatible
+   The file formats created by :mod:`dbm.gnu` and :mod:`!dbm.ndbm` are incompatible
    and can not be used interchangeably.
 
 .. warning::
@@ -351,9 +350,11 @@ This module can be used with the "classic" NDBM interface or the
 
 .. include:: ../includes/wasm-mobile-notavail.rst
 
+.. availability:: Unix.
+
 .. exception:: error
 
-   Raised on :mod:`dbm.ndbm`-specific errors, such as I/O errors. :exc:`KeyError` is raised
+   Raised on :mod:`!dbm.ndbm`-specific errors, such as I/O errors. :exc:`KeyError` is raised
    for general mapping errors like specifying an incorrect key.
 
 
@@ -403,8 +404,8 @@ This module can be used with the "classic" NDBM interface or the
       Close the NDBM database.
 
 
-:mod:`dbm.dumb` --- Portable DBM implementation
------------------------------------------------
+:mod:`!dbm.dumb` --- Portable DBM implementation
+------------------------------------------------
 
 .. module:: dbm.dumb
    :synopsis: Portable implementation of the simple DBM interface.
@@ -415,23 +416,23 @@ This module can be used with the "classic" NDBM interface or the
 
 .. note::
 
-   The :mod:`dbm.dumb` module is intended as a last resort fallback for the
-   :mod:`dbm` module when a more robust module is not available. The :mod:`dbm.dumb`
+   The :mod:`!dbm.dumb` module is intended as a last resort fallback for the
+   :mod:`!dbm` module when a more robust module is not available. The :mod:`!dbm.dumb`
    module is not written for speed and is not nearly as heavily used as the other
    database modules.
 
 --------------
 
-The :mod:`dbm.dumb` module provides a persistent :class:`dict`-like
+The :mod:`!dbm.dumb` module provides a persistent :class:`dict`-like
 interface which is written entirely in Python.
-Unlike other :mod:`dbm` backends, such as :mod:`dbm.gnu`, no
+Unlike other :mod:`!dbm` backends, such as :mod:`dbm.gnu`, no
 external library is required.
 
 The :mod:`!dbm.dumb` module defines the following:
 
 .. exception:: error
 
-   Raised on :mod:`dbm.dumb`-specific errors, such as I/O errors.  :exc:`KeyError` is
+   Raised on :mod:`!dbm.dumb`-specific errors, such as I/O errors.  :exc:`KeyError` is
    raised for general mapping errors like specifying an incorrect key.
 
 

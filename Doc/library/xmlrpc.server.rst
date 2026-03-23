@@ -11,7 +11,7 @@
 
 --------------
 
-The :mod:`xmlrpc.server` module provides a basic server framework for XML-RPC
+The :mod:`!xmlrpc.server` module provides a basic server framework for XML-RPC
 servers written in Python.  Servers can either be free standing, using
 :class:`SimpleXMLRPCServer`, or embedded in a CGI environment, using
 :class:`CGIXMLRPCRequestHandler`.
@@ -19,7 +19,7 @@ servers written in Python.  Servers can either be free standing, using
 
 .. warning::
 
-   The :mod:`xmlrpc.server` module is not secure against maliciously
+   The :mod:`!xmlrpc.server` module is not secure against maliciously
    constructed data.  If you need to parse untrusted or unauthenticated data,
    see :ref:`xml-security`.
 
@@ -72,7 +72,7 @@ servers written in Python.  Servers can either be free standing, using
 
 .. _simple-xmlrpc-servers:
 
-SimpleXMLRPCServer Objects
+SimpleXMLRPCServer objects
 --------------------------
 
 The :class:`SimpleXMLRPCServer` class is based on
@@ -143,7 +143,7 @@ alone XML-RPC servers.
 
 .. _simplexmlrpcserver-example:
 
-SimpleXMLRPCServer Example
+SimpleXMLRPCServer example
 ^^^^^^^^^^^^^^^^^^^^^^^^^^
 Server code::
 
@@ -230,11 +230,11 @@ a server allowing dotted names and registering a multicall function.
 
   Enabling the *allow_dotted_names* option allows intruders to access your
   module's global variables and may allow intruders to execute arbitrary code on
-  your machine.  Only use this example only within a secure, closed network.
+  your machine.  Only use this example within a secure, closed network.
 
 ::
 
-    import datetime
+    import datetime as dt
 
     class ExampleService:
         def getData(self):
@@ -243,7 +243,7 @@ a server allowing dotted names and registering a multicall function.
         class currentTime:
             @staticmethod
             def getCurrentTime():
-                return datetime.datetime.now()
+                return dt.datetime.now()
 
     with SimpleXMLRPCServer(("localhost", 8000)) as server:
         server.register_function(pow)
@@ -390,7 +390,7 @@ to HTTP GET requests.  Servers can either be free standing, using
 
 .. _doc-xmlrpc-servers:
 
-DocXMLRPCServer Objects
+DocXMLRPCServer objects
 -----------------------
 
 The :class:`DocXMLRPCServer` class is derived from :class:`SimpleXMLRPCServer`

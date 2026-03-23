@@ -515,7 +515,7 @@ always available. Unless explicitly noted otherwise, all variables are read-only
    in the range 0--127, and produce undefined results otherwise.  Some systems
    have a convention for assigning specific meanings to specific exit codes, but
    these are generally underdeveloped; Unix programs generally use 2 for command
-   line syntax errors and 1 for all other kind of errors.  If another type of
+   line syntax errors and 1 for all other kinds of errors.  If another type of
    object is passed, ``None`` is equivalent to passing zero, and any other
    object is printed to :data:`stderr` and results in an exit code of 1.  In
    particular, ``sys.exit("some error message")`` is a quick way to exit a
@@ -2230,7 +2230,7 @@ always available. Unless explicitly noted otherwise, all variables are read-only
 
    The version number used to form registry keys on Windows platforms. This is
    stored as string resource 1000 in the Python DLL.  The value is normally the
-   major and minor versions of the running Python interpreter.  It is provided in the :mod:`sys`
+   major and minor versions of the running Python interpreter.  It is provided in the :mod:`!sys`
    module for informational purposes; modifying this value has no effect on the
    registry keys used by Python.
 

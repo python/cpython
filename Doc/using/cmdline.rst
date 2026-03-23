@@ -1045,6 +1045,13 @@ conflict.
    * ``pymalloc_debug``: same as ``pymalloc`` but also install debug hooks.
    * ``mimalloc_debug``: same as ``mimalloc`` but also install debug hooks.
 
+   .. note::
+
+      In the :term:`free-threaded <free threading>` build, the ``malloc``,
+      ``malloc_debug``, ``pymalloc``, and ``pymalloc_debug`` values are not
+      supported.  Only ``default``, ``debug``, ``mimalloc``, and
+      ``mimalloc_debug`` are accepted.
+
    .. versionadded:: 3.6
 
    .. versionchanged:: 3.7
@@ -1054,12 +1061,13 @@ conflict.
 .. envvar:: PYTHONMALLOCSTATS
 
    If set to a non-empty string, Python will print statistics of the
-   :ref:`pymalloc memory allocator <pymalloc>` every time a new pymalloc object
-   arena is created, and on shutdown.
+   :ref:`pymalloc memory allocator <pymalloc>` or the
+   :ref:`mimalloc memory allocator <mimalloc>` (whichever is in use)
+   every time a new object arena is created, and on shutdown.
 
    This variable is ignored if the :envvar:`PYTHONMALLOC` environment variable
    is used to force the :c:func:`malloc` allocator of the C library, or if
-   Python is configured without ``pymalloc`` support.
+   Python is configured without both ``pymalloc`` and ``mimalloc`` support.
 
    .. versionchanged:: 3.6
       This variable can now also be used on Python compiled in release mode.

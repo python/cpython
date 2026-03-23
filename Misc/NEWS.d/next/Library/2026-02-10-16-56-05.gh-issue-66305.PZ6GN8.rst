@@ -1,0 +1,3 @@
+Fixed a hang on Windows in the :mod:`tempfile` module when
+trying to create a temporary file or subdirectory in a non-writable
+directory.

@@ -1,13 +1,13 @@
 .. _tut-brieftour:
 
 **********************************
-Brief Tour of the Standard Library
+Brief tour of the standard library
 **********************************
 
 
 .. _tut-os-interface:
 
-Operating System Interface
+Operating system interface
 ==========================
 
 The :mod:`os` module provides dozens of functions for interacting with the
@@ -47,7 +47,7 @@ a higher level interface that is easier to use::
 
 .. _tut-file-wildcards:
 
-File Wildcards
+File wildcards
 ==============
 
 The :mod:`glob` module provides a function for making file lists from directory
@@ -60,7 +60,7 @@ wildcard searches::
 
 .. _tut-command-line-arguments:
 
-Command Line Arguments
+Command-line arguments
 ======================
 
 Common utility scripts often need to process command line arguments. These
@@ -97,7 +97,7 @@ to ``['alpha.txt', 'beta.txt']``.
 
 .. _tut-stderr:
 
-Error Output Redirection and Program Termination
+Error output redirection and program termination
 ================================================
 
 The :mod:`sys` module also has attributes for *stdin*, *stdout*, and *stderr*.
@@ -112,7 +112,7 @@ The most direct way to terminate a script is to use ``sys.exit()``.
 
 .. _tut-string-pattern-matching:
 
-String Pattern Matching
+String pattern matching
 =======================
 
 The :mod:`re` module provides regular expression tools for advanced string
@@ -175,7 +175,7 @@ computations.
 
 .. _tut-internet-access:
 
-Internet Access
+Internet access
 ===============
 
 There are a number of modules for accessing the internet and processing internet
@@ -206,7 +206,7 @@ from URLs and :mod:`smtplib` for sending mail::
 
 .. _tut-dates-and-times:
 
-Dates and Times
+Dates and times
 ===============
 
 The :mod:`datetime` module supplies classes for manipulating dates and times in
@@ -216,15 +216,15 @@ formatting and manipulation.  The module also supports objects that are timezone
 aware. ::
 
    >>> # dates are easily constructed and formatted
-   >>> from datetime import date
-   >>> now = date.today()
+   >>> import datetime as dt
+   >>> now = dt.date.today()
    >>> now
    datetime.date(2003, 12, 2)
    >>> now.strftime("%m-%d-%y. %d %b %Y is a %A on the %d day of %B.")
    '12-02-03. 02 Dec 2003 is a Tuesday on the 02 day of December.'
 
    >>> # dates support calendar arithmetic
-   >>> birthday = date(1964, 7, 31)
+   >>> birthday = dt.date(1964, 7, 31)
    >>> age = now - birthday
    >>> age.days
    14368
@@ -232,7 +232,7 @@ aware. ::
 
 .. _tut-data-compression:
 
-Data Compression
+Data compression
 ================
 
 Common data archiving and compression formats are directly supported by modules
@@ -254,7 +254,7 @@ including: :mod:`zlib`, :mod:`gzip`, :mod:`bz2`, :mod:`lzma`, :mod:`zipfile` and
 
 .. _tut-performance-measurement:
 
-Performance Measurement
+Performance measurement
 =======================
 
 Some Python users develop a deep interest in knowing the relative performance of
@@ -278,7 +278,7 @@ larger blocks of code.
 
 .. _tut-quality-control:
 
-Quality Control
+Quality control
 ===============
 
 One approach for developing high quality software is to write tests for each
@@ -324,7 +324,7 @@ file::
 
 .. _tut-batteries-included:
 
-Batteries Included
+Batteries included
 ==================
 
 Python has a "batteries included" philosophy.  This is best seen through the

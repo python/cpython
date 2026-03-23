@@ -98,6 +98,14 @@ _PyObject_CallMethodIdOneArg(PyObject *self, _Py_Identifier *name, PyObject *arg
 }
 
 
+extern PyObject *_PyObject_VectorcallPrepend(
+    PyThreadState *tstate,
+    PyObject *callable,
+    PyObject *arg,
+    PyObject *const *args,
+    size_t nargsf,
+    PyObject *kwnames);
+
 /* === Vectorcall protocol (PEP 590) ============================= */
 
 // Call callable using tp_call. Arguments are like PyObject_Vectorcall(),

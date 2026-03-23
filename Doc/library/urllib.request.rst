@@ -12,7 +12,7 @@
 
 --------------
 
-The :mod:`urllib.request` module defines functions and classes which help in
+The :mod:`!urllib.request` module defines functions and classes which help in
 opening URLs (mostly HTTP) in a complex world --- basic and digest
 authentication, redirections, cookies and more.
 
@@ -31,7 +31,7 @@ authentication, redirections, cookies and more.
 
 .. include:: ../includes/wasm-notavail.rst
 
-The :mod:`urllib.request` module defines the following functions:
+The :mod:`!urllib.request` module defines the following functions:
 
 
 .. function:: urlopen(url, data=None[, timeout], *, context=None)
@@ -1485,8 +1485,8 @@ some point in the future.
    calls to :func:`urlretrieve`.
 
 
-:mod:`urllib.request` Restrictions
-----------------------------------
+:mod:`!urllib.request` Restrictions
+-----------------------------------
 
 .. index::
    pair: HTTP; protocol
@@ -1539,15 +1539,15 @@ some point in the future.
 
 
 
-:mod:`urllib.response` --- Response classes used by urllib
-==========================================================
+:mod:`!urllib.response` --- Response classes used by urllib
+===========================================================
 
 .. module:: urllib.response
    :synopsis: Response classes used by urllib.
 
-The :mod:`urllib.response` module defines functions and classes which define a
+The :mod:`!urllib.response` module defines functions and classes which define a
 minimal file-like interface, including ``read()`` and ``readline()``.
-Functions defined by this module are used internally by the :mod:`urllib.request` module.
+Functions defined by this module are used internally by the :mod:`!urllib.request` module.
 The typical response object is a :class:`urllib.response.addinfourl` instance:
 
 .. class:: addinfourl

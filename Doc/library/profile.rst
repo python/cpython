@@ -217,14 +217,14 @@ Invoked as a script, the :mod:`pstats` module is a statistics browser for
 reading and examining profile dumps.  It has a simple line-oriented interface
 (implemented using :mod:`cmd`) and interactive help.
 
-:mod:`profile` and :mod:`cProfile` Module Reference
-=======================================================
+:mod:`profile` and :mod:`!cProfile` Module Reference
+====================================================
 
 .. module:: cProfile
 .. module:: profile
    :synopsis: Python source profiler.
 
-Both the :mod:`profile` and :mod:`cProfile` modules provide the following
+Both the :mod:`profile` and :mod:`!cProfile` modules provide the following
 functions:
 
 .. function:: run(command, filename=None, sort=-1)
@@ -278,7 +278,7 @@ functions:
       print(s.getvalue())
 
    The :class:`Profile` class can also be used as a context manager (supported
-   only in :mod:`cProfile` module. see :ref:`typecontextmanager`)::
+   only in :mod:`!cProfile` module. see :ref:`typecontextmanager`)::
 
       import cProfile
 
@@ -292,11 +292,11 @@ functions:
 
    .. method:: enable()
 
-      Start collecting profiling data. Only in :mod:`cProfile`.
+      Start collecting profiling data. Only in :mod:`!cProfile`.
 
    .. method:: disable()
 
-      Stop collecting profiling data. Only in :mod:`cProfile`.
+      Stop collecting profiling data. Only in :mod:`!cProfile`.
 
    .. method:: create_stats()
 

@@ -9,7 +9,7 @@ stability.  In order to maintain this reputation, the developers would like to
 know of any deficiencies you find in Python.
 
 It can be sometimes faster to fix bugs yourself and contribute patches to
-Python as it streamlines the process and involves less people. Learn how to
+Python as it streamlines the process and involves fewer people. Learn how to
 :ref:`contribute <contributing-to-python>`.
 
 Documentation bugs

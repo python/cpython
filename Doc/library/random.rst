@@ -37,7 +37,7 @@ Class :class:`Random` can also be subclassed if you want to use a different
 basic generator of your own devising: see the documentation on that class for
 more details.
 
-The :mod:`random` module also provides the :class:`SystemRandom` class which
+The :mod:`!random` module also provides the :class:`SystemRandom` class which
 uses the system function :func:`os.urandom` to generate random numbers
 from sources provided by the operating system.
 
@@ -410,7 +410,7 @@ Alternative Generator
 .. class:: Random([seed])
 
    Class that implements the default pseudo-random number generator used by the
-   :mod:`random` module.
+   :mod:`!random` module.
 
    .. versionchanged:: 3.11
       Formerly the *seed* could be any hashable object.  Now it is limited to:

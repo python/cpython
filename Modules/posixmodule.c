@@ -1251,6 +1251,8 @@ get_posix_state(PyObject *module)
  *     Contains a file descriptor if path.accept_fd was true
  *     and the caller provided a signed integer instead of any
  *     sort of string.
+ *   path.is_fd
+ *     True if path was provided as a file descriptor.
  *
  *     WARNING: if your "path" parameter is optional, and is
  *     unspecified, path_converter will never get called.
@@ -1303,6 +1305,7 @@ typedef struct {
     const wchar_t *wide;
     const char *narrow;
     int fd;
+    bool is_fd;
     int value_error;
     Py_ssize_t length;
     PyObject *object;
@@ -1312,7 +1315,7 @@ typedef struct {
 #define PATH_T_INITIALIZE(function_name, argument_name, nullable, nonstrict, \
                           make_wide, suppress_value_error, allow_fd) \
     {function_name, argument_name, nullable, nonstrict, make_wide, \
-     suppress_value_error, allow_fd, NULL, NULL, -1, 0, 0, NULL, NULL}
+     suppress_value_error, allow_fd, NULL, NULL, -1, false, 0, 0, NULL, NULL}
 #ifdef MS_WINDOWS
 #define PATH_T_INITIALIZE_P(function_name, argument_name, nullable, \
                             nonstrict, suppress_value_error, allow_fd) \
@@ -1446,6 +1449,7 @@ path_converter(PyObject *o, void *p)
         }
         path->wide = NULL;
         path->narrow = NULL;
+        path->is_fd = true;
         goto success_exit;
     }
     else {
@@ -3053,25 +3057,22 @@ class path_t_converter(CConverter):
     type = "path_t"
     impl_by_reference = True
     parse_by_reference = True
+    default_type = ()
+    c_init_default = "<placeholder>"  # overridden in pre_render(()
 
     converter = 'path_converter'
 
     def converter_init(self, *, allow_fd=False, make_wide=None,
                        nonstrict=False, nullable=False,
                        suppress_value_error=False):
-        # right now path_t doesn't support default values.
-        # to support a default value, you'll need to override initialize().
-        if self.default not in (unspecified, None):
-            fail("Can't specify a default to the path_t converter!")
-
-        if self.c_default not in (None, 'Py_None'):
-            raise RuntimeError("Can't specify a c_default to the path_t converter!")
 
         self.nullable = nullable
         self.nonstrict = nonstrict
         self.make_wide = make_wide
         self.suppress_value_error = suppress_value_error
         self.allow_fd = allow_fd
+        if nullable:
+            self.default_type = NoneType
 
     def pre_render(self):
         def strify(value):
@@ -3106,6 +3107,8 @@ class path_t_converter(CConverter):
 
 class dir_fd_converter(CConverter):
     type = 'int'
+    default_type = NoneType
+    c_init_default = 'DEFAULT_DIR_FD'
 
     def converter_init(self, requires=None):
         if self.default in (unspecified, None):
@@ -3114,6 +3117,9 @@ class dir_fd_converter(CConverter):
             self.converter = requires.upper() + '_DIR_FD_CONVERTER'
         else:
             self.converter = 'dir_fd_converter'
+
+    def c_default_init(self):
+        self.c_default = 'DEFAULT_DIR_FD'
 
 class uid_t_converter(CConverter):
     type = "uid_t"
@@ -3195,7 +3201,7 @@ class confname_converter(CConverter):
         """, argname=argname, converter=self.converter, table=self.table)
 
 [python start generated code]*/
-/*[python end generated code: output=da39a3ee5e6b4b0d input=d2759f2332cd39b3]*/
+/*[python end generated code: output=da39a3ee5e6b4b0d input=d58f18bdf3bd3565]*/
 
 /*[clinic input]
 
@@ -7155,6 +7161,7 @@ parse_posix_spawn_flags(PyObject *module, const char *func_name, PyObject *setpg
                         PyObject *setsigdef, PyObject *scheduler,
                         posix_spawnattr_t *attrp)
 {
+    assert(scheduler == NULL || scheduler == Py_None || PyTuple_Check(scheduler));
     long all_flags = 0;
 
     errno = posix_spawnattr_init(attrp);
@@ -7163,7 +7170,7 @@ parse_posix_spawn_flags(PyObject *module, const char *func_name, PyObject *setpg
         return -1;
     }
 
-    if (setpgroup) {
+    if (setpgroup && setpgroup != Py_None) {
         pid_t pgid = PyLong_AsPid(setpgroup);
         if (pgid == (pid_t)-1 && PyErr_Occurred()) {
             goto fail;
@@ -7236,7 +7243,7 @@ parse_posix_spawn_flags(PyObject *module, const char *func_name, PyObject *setpg
     }
 #endif
 
-    if (scheduler) {
+    if (scheduler && scheduler != Py_None) {
 #ifdef POSIX_SPAWN_SETSCHEDULER
         PyObject *py_schedpolicy;
         PyObject *schedparam_obj;
@@ -7461,6 +7468,12 @@ py_posix_spawn(int use_posix_spawnp, PyObject *module, path_t *path, PyObject *a
         goto exit;
     }
 
+    if (scheduler && !PyTuple_Check(scheduler) && scheduler != Py_None) {
+        PyErr_Format(PyExc_TypeError,
+                     "%s: scheduler must be a tuple or None", func_name);
+        goto exit;
+    }
+
     argvlist = parse_arglist(argv, &argc);
     if (argvlist == NULL) {
         goto exit;
@@ -7572,7 +7585,7 @@ os.posix_spawn
     *
     file_actions: object(c_default='NULL') = ()
         A sequence of file action tuples.
-    setpgroup: object = NULL
+    setpgroup: object(c_default='NULL') = None
         The pgroup to use with the POSIX_SPAWN_SETPGROUP flag.
     resetids: bool = False
         If the value is `true` the POSIX_SPAWN_RESETIDS will be activated.
@@ -7582,7 +7595,7 @@ os.posix_spawn
         The sigmask to use with the POSIX_SPAWN_SETSIGMASK flag.
     setsigdef: object(c_default='NULL') = ()
         The sigmask to use with the POSIX_SPAWN_SETSIGDEF flag.
-    scheduler: object = NULL
+    scheduler: object(c_default='NULL') = None
         A tuple with the scheduler policy (optional) and parameters.
 
 Execute the program specified by path in a new process.
@@ -7594,7 +7607,7 @@ os_posix_spawn_impl(PyObject *module, path_t *path, PyObject *argv,
                     PyObject *setpgroup, int resetids, int setsid,
                     PyObject *setsigmask, PyObject *setsigdef,
                     PyObject *scheduler)
-/*[clinic end generated code: output=14a1098c566bc675 input=808aed1090d84e33]*/
+/*[clinic end generated code: output=14a1098c566bc675 input=69e7c9ebbdcf94a5]*/
 {
     return py_posix_spawn(0, module, path, argv, env, file_actions,
                           setpgroup, resetids, setsid, setsigmask, setsigdef,
@@ -7618,7 +7631,7 @@ os.posix_spawnp
     *
     file_actions: object(c_default='NULL') = ()
         A sequence of file action tuples.
-    setpgroup: object = NULL
+    setpgroup: object(c_default='NULL') = None
         The pgroup to use with the POSIX_SPAWN_SETPGROUP flag.
     resetids: bool = False
         If the value is `True` the POSIX_SPAWN_RESETIDS will be activated.
@@ -7628,7 +7641,7 @@ os.posix_spawnp
         The sigmask to use with the POSIX_SPAWN_SETSIGMASK flag.
     setsigdef: object(c_default='NULL') = ()
         The sigmask to use with the POSIX_SPAWN_SETSIGDEF flag.
-    scheduler: object = NULL
+    scheduler: object(c_default='NULL') = None
         A tuple with the scheduler policy (optional) and parameters.
 
 Execute the program specified by path in a new process.
@@ -7640,7 +7653,7 @@ os_posix_spawnp_impl(PyObject *module, path_t *path, PyObject *argv,
                      PyObject *setpgroup, int resetids, int setsid,
                      PyObject *setsigmask, PyObject *setsigdef,
                      PyObject *scheduler)
-/*[clinic end generated code: output=7b9aaefe3031238d input=9e89e616116752a1]*/
+/*[clinic end generated code: output=7b9aaefe3031238d input=a5c057527c6881a5]*/
 {
     return py_posix_spawn(1, module, path, argv, env, file_actions,
                           setpgroup, resetids, setsid, setsigmask, setsigdef,
@@ -13834,8 +13847,9 @@ os_pathconf_impl(PyObject *module, path_t *path, int name)
 
     errno = 0;
 #ifdef HAVE_FPATHCONF
-    if (path->fd != -1)
+    if (path->is_fd) {
         limit = fpathconf(path->fd, name);
+    }
     else
 #endif
         limit = pathconf(path->narrow, name);

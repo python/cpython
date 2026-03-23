@@ -12,7 +12,7 @@
 
 --------------
 
-:mod:`xml.dom.minidom` is a minimal implementation of the Document Object
+:mod:`!xml.dom.minidom` is a minimal implementation of the Document Object
 Model interface, with an API similar to that in other languages.  It is intended
 to be simpler than the full DOM and also significantly smaller.  Users who are
 not already proficient with the DOM should consider using the
@@ -26,7 +26,7 @@ not already proficient with the DOM should consider using the
 
 
 DOM applications typically start by parsing some XML into a DOM.  With
-:mod:`xml.dom.minidom`, this is done through the parse functions::
+:mod:`!xml.dom.minidom`, this is done through the parse functions::
 
    from xml.dom.minidom import parse, parseString
 
@@ -62,7 +62,7 @@ document.
 
 What the :func:`parse` and :func:`parseString` functions do is connect an XML
 parser with a "DOM builder" that can accept parse events from any SAX parser and
-convert them into a DOM tree.  The name of the functions are perhaps misleading,
+convert them into a DOM tree.  The names of the functions are perhaps misleading,
 but are easy to grasp when learning the interfaces.  The parsing of the document
 will be completed before these functions return; it's simply that these
 functions do not provide a parser implementation themselves.
@@ -70,7 +70,7 @@ functions do not provide a parser implementation themselves.
 You can also create a :class:`Document` by calling a method on a "DOM
 Implementation" object.  You can get this object either by calling the
 :func:`getDOMImplementation` function in the :mod:`xml.dom` package or the
-:mod:`xml.dom.minidom` module.  Once you have a :class:`Document`, you
+:mod:`!xml.dom.minidom` module.  Once you have a :class:`Document`, you
 can add child nodes to it to populate the DOM::
 
    from xml.dom.minidom import getDOMImplementation
@@ -93,7 +93,7 @@ document: the one that holds all others.  Here is an example program::
 
 When you are finished with a DOM tree, you may optionally call the
 :meth:`unlink` method to encourage early cleanup of the now-unneeded
-objects.  :meth:`unlink` is an :mod:`xml.dom.minidom`\ -specific
+objects.  :meth:`unlink` is an :mod:`!xml.dom.minidom`\ -specific
 extension to the DOM API that renders the node and its descendants
 essentially useless.  Otherwise, Python's garbage collector will
 eventually take care of the objects in the tree.
@@ -101,7 +101,7 @@ eventually take care of the objects in the tree.
 .. seealso::
 
    `Document Object Model (DOM) Level 1 Specification <https://www.w3.org/TR/REC-DOM-Level-1/>`_
-      The W3C recommendation for the DOM supported by :mod:`xml.dom.minidom`.
+      The W3C recommendation for the DOM supported by :mod:`!xml.dom.minidom`.
 
 
 .. _minidom-objects:
@@ -111,7 +111,7 @@ DOM Objects
 
 The definition of the DOM API for Python is given as part of the :mod:`xml.dom`
 module documentation.  This section lists the differences between the API and
-:mod:`xml.dom.minidom`.
+:mod:`!xml.dom.minidom`.
 
 
 .. method:: Node.unlink()
@@ -214,7 +214,7 @@ particular case, we do not take much advantage of the flexibility of the DOM.
 minidom and the DOM standard
 ----------------------------
 
-The :mod:`xml.dom.minidom` module is essentially a DOM 1.0-compatible DOM with
+The :mod:`!xml.dom.minidom` module is essentially a DOM 1.0-compatible DOM with
 some DOM 2 features (primarily namespace features).
 
 Usage of the DOM interface in Python is straight-forward.  The following mapping
@@ -237,7 +237,7 @@ rules apply:
 * The types ``short int``, ``unsigned int``, ``unsigned long long``, and
   ``boolean`` all map to Python integer objects.
 
-* The type ``DOMString`` maps to Python strings. :mod:`xml.dom.minidom` supports
+* The type ``DOMString`` maps to Python strings. :mod:`!xml.dom.minidom` supports
   either bytes or strings, but will normally produce strings.
   Values of type ``DOMString`` may also be ``None`` where allowed to have the IDL
   ``null`` value by the DOM specification from the W3C.
@@ -245,8 +245,8 @@ rules apply:
 * ``const`` declarations map to variables in their respective scope (e.g.
   ``xml.dom.minidom.Node.PROCESSING_INSTRUCTION_NODE``); they must not be changed.
 
-* ``DOMException`` is currently not supported in :mod:`xml.dom.minidom`.
-  Instead, :mod:`xml.dom.minidom` uses standard Python exceptions such as
+* ``DOMException`` is currently not supported in :mod:`!xml.dom.minidom`.
+  Instead, :mod:`!xml.dom.minidom` uses standard Python exceptions such as
   :exc:`TypeError` and :exc:`AttributeError`.
 
 * :class:`NodeList` objects are implemented using Python's built-in list type.
@@ -255,7 +255,7 @@ rules apply:
   however, much more "Pythonic" than the interface defined in the W3C
   recommendations.
 
-The following interfaces have no implementation in :mod:`xml.dom.minidom`:
+The following interfaces have no implementation in :mod:`!xml.dom.minidom`:
 
 * :class:`DOMTimeStamp`
 

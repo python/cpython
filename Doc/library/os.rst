@@ -25,7 +25,7 @@ Notes on the availability of these functions:
   with the POSIX interface).
 
 * Extensions peculiar to a particular operating system are also available
-  through the :mod:`os` module, but using them is of course a threat to
+  through the :mod:`!os` module, but using them is of course a threat to
   portability.
 
 * All functions accepting path or file names accept both bytes and string
@@ -34,7 +34,7 @@ Notes on the availability of these functions:
 
 * On VxWorks, os.popen, os.fork, os.execv and os.spawn*p* are not supported.
 
-* On WebAssembly platforms, Android and iOS, large parts of the :mod:`os` module are
+* On WebAssembly platforms, Android and iOS, large parts of the :mod:`!os` module are
   not available or behave differently. APIs related to processes (e.g.
   :func:`~os.fork`, :func:`~os.execve`) and resources (e.g. :func:`~os.nice`)
   are not available. Others like :func:`~os.getuid` and :func:`~os.getpid` are
@@ -188,7 +188,7 @@ process and user.
    of your home directory (on some platforms), and is equivalent to
    ``getenv("HOME")`` in C.
 
-   This mapping is captured the first time the :mod:`os` module is imported,
+   This mapping is captured the first time the :mod:`!os` module is imported,
    typically during Python startup as part of processing :file:`site.py`.  Changes
    to the environment made after this time are not reflected in :data:`os.environ`,
    except for changes made by modifying :data:`os.environ` directly.
@@ -257,7 +257,7 @@ process and user.
 
    .. warning::
       This function is not thread-safe. Calling it while the environment is
-      being modified in an other thread is an undefined behavior. Reading from
+      being modified in another thread is an undefined behavior. Reading from
       :data:`os.environ` or :data:`os.environb`, or calling :func:`os.getenv`
       while reloading, may return an empty result.
 
@@ -1282,7 +1282,7 @@ as internal buffering of data.
 
    For a description of the flag and mode values, see the C run-time documentation;
    flag constants (like :const:`O_RDONLY` and :const:`O_WRONLY`) are defined in
-   the :mod:`os` module.  In particular, on Windows adding
+   the :mod:`!os` module.  In particular, on Windows adding
    :const:`O_BINARY` is needed to open files in binary mode.
 
    This function can support :ref:`paths relative to directory descriptors
@@ -1297,8 +1297,8 @@ as internal buffering of data.
 
       This function is intended for low-level I/O.  For normal usage, use the
       built-in function :func:`open`, which returns a :term:`file object` with
-      :meth:`~file.read` and :meth:`~file.write` methods (and many more).  To
-      wrap a file descriptor in a file object, use :func:`fdopen`.
+      :meth:`~io.BufferedIOBase.read` and :meth:`~io.BufferedIOBase.write` methods.
+      To wrap a file descriptor in a file object, use :func:`fdopen`.
 
    .. versionchanged:: 3.3
       Added the *dir_fd* parameter.
@@ -1652,7 +1652,7 @@ or `the MSDN <https://msdn.microsoft.com/en-us/library/z0kc8e3z.aspx>`_ on Windo
       descriptor as returned by :func:`os.open` or :func:`pipe`.  To read a
       "file object" returned by the built-in function :func:`open` or by
       :func:`popen` or :func:`fdopen`, or :data:`sys.stdin`, use its
-      :meth:`~file.read` or :meth:`~file.readline` methods.
+      :meth:`~io.TextIOBase.read` or :meth:`~io.IOBase.readline` methods.
 
    .. versionchanged:: 3.5
       If the system call is interrupted and the signal handler does not raise an
@@ -1887,7 +1887,7 @@ or `the MSDN <https://msdn.microsoft.com/en-us/library/z0kc8e3z.aspx>`_ on Windo
       descriptor as returned by :func:`os.open` or :func:`pipe`.  To write a "file
       object" returned by the built-in function :func:`open` or by :func:`popen` or
       :func:`fdopen`, or :data:`sys.stdout` or :data:`sys.stderr`, use its
-      :meth:`~file.write` method.
+      :meth:`~io.TextIOBase.write` method.
 
    .. versionchanged:: 3.5
       If the system call is interrupted and the signal handler does not raise an
@@ -2006,7 +2006,7 @@ features:
 .. _path_fd:
 
 * **specifying a file descriptor:**
-  Normally the *path* argument provided to functions in the :mod:`os` module
+  Normally the *path* argument provided to functions in the :mod:`!os` module
   must be a string specifying a file path.  However, some functions now
   alternatively accept an open file descriptor for their *path* argument.
   The function will then operate on the file referred to by the descriptor.
@@ -3417,7 +3417,7 @@ features:
 
 .. data:: supports_dir_fd
 
-   A :class:`set` object indicating which functions in the :mod:`os`
+   A :class:`set` object indicating which functions in the :mod:`!os`
    module accept an open file descriptor for their *dir_fd* parameter.
    Different platforms provide different features, and the underlying
    functionality Python uses to implement the *dir_fd* parameter is not
@@ -3462,7 +3462,7 @@ features:
 .. data:: supports_fd
 
    A :class:`set` object indicating which functions in the
-   :mod:`os` module permit specifying their *path* parameter as an open file
+   :mod:`!os` module permit specifying their *path* parameter as an open file
    descriptor on the local platform.  Different platforms provide different
    features, and the underlying functionality Python uses to accept open file
    descriptors as *path* arguments is not available on all platforms Python
@@ -3481,7 +3481,7 @@ features:
 
 .. data:: supports_follow_symlinks
 
-   A :class:`set` object indicating which functions in the :mod:`os` module
+   A :class:`set` object indicating which functions in the :mod:`!os` module
    accept ``False`` for their *follow_symlinks* parameter on the local platform.
    Different platforms provide different features, and the underlying
    functionality Python uses to implement *follow_symlinks* is not available
@@ -3989,7 +3989,7 @@ Naturally, they are all only available on Linux.
    except it includes any time that the system is suspended.
 
    The file descriptor's behaviour can be modified by specifying a *flags* value.
-   Any of the following variables may used, combined using bitwise OR
+   Any of the following variables may be used, combined using bitwise OR
    (the ``|`` operator):
 
    - :const:`TFD_NONBLOCK`
@@ -4021,7 +4021,7 @@ Naturally, they are all only available on Linux.
    *fd* must be a valid timer file descriptor.
 
    The timer's behaviour can be modified by specifying a *flags* value.
-   Any of the following variables may used, combined using bitwise OR
+   Any of the following variables may be used, combined using bitwise OR
    (the ``|`` operator):
 
    - :const:`TFD_TIMER_ABSTIME`
@@ -4090,7 +4090,7 @@ Naturally, they are all only available on Linux.
 
    Return a two-item tuple of floats (``next_expiration``, ``interval``).
 
-   ``next_expiration`` denotes the relative time until next the timer next fires,
+   ``next_expiration`` denotes the relative time until the timer next fires,
    regardless of if the :const:`TFD_TIMER_ABSTIME` flag is set.
 
    ``interval`` denotes the timer's interval.
@@ -4326,7 +4326,7 @@ to be ignored.
    The current process is replaced immediately. Open file objects and
    descriptors are not flushed, so if there may be data buffered
    on these open files, you should flush them using
-   :func:`sys.stdout.flush` or :func:`os.fsync` before calling an
+   :func:`~io.IOBase.flush` or :func:`os.fsync` before calling an
    :func:`exec\* <execl>` function.
 
    The "l" and "v" variants of the :func:`exec\* <execl>` functions differ in how
