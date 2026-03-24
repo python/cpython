@@ -993,6 +993,10 @@ def _display_width(line, offset=None):
     )
 
 
+def _format_note(note, indent, theme):
+    for l in note.split("\n"):
+        yield f"{indent}{theme.note}{l}{theme.reset}\n"
+
 
 class _ExceptionPrintContext:
     def __init__(self):
@@ -1291,6 +1295,10 @@ class TracebackException:
         well, recursively, with indentation relative to their nesting depth.
         """
         colorize = kwargs.get("colorize", False)
+        if colorize:
+            theme = _colorize.get_theme(force_color=True).traceback
+        else:
+            theme = _colorize.get_theme(force_no_color=True).traceback
 
         indent = 3 * _depth * ' '
         if not self._have_exc_type:
@@ -1319,9 +1327,10 @@ class TracebackException:
         ):
             for note in self.__notes__:
                 note = _safe_string(note, 'note')
-                yield from [indent + l + '\n' for l in note.split('\n')]
+                yield from _format_note(note, indent, theme)
         elif self.__notes__ is not None:
-            yield indent + "{}\n".format(_safe_string(self.__notes__, '__notes__', func=repr))
+            note = _safe_string(self.__notes__, '__notes__', func=repr)
+            yield from _format_note(note, indent, theme)
 
         if self.exceptions and show_group:
             for ex in self.exceptions:

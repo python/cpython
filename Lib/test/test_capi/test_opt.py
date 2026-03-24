@@ -2029,6 +2029,125 @@ class TestUopsOptimization(unittest.TestCase):
         self.assertEqual(uops.count("_BINARY_OP_SUBSCR_LIST_INT"), 1)
         self.assertEqual(uops.count("_TO_BOOL_LIST"), 1)
 
+    def test_unique_tuple_unpack(self):
+        def f(n):
+            def four_tuple(x):
+                return (x, x, x, x)
+            hits = 0
+            for i in range(n):
+                w, x, y, z = four_tuple(1)
+                hits += w + x + y + z
+            return hits
+
+        res, ex = self._run_with_optimizer(f, TIER2_THRESHOLD)
+        self.assertEqual(res, TIER2_THRESHOLD * 4)
+        self.assertIsNotNone(ex)
+        uops = get_opnames(ex)
+
+        self.assertIn("_BUILD_TUPLE", uops)
+        self.assertIn("_UNPACK_SEQUENCE_UNIQUE_TUPLE", uops)
+        self.assertNotIn("_UNPACK_SEQUENCE_TUPLE", uops)
+
+    def test_non_unique_tuple_unpack(self):
+        def f(n):
+            def four_tuple(x):
+                return (x, x, x, x)
+            hits = 0
+            for i in range(n):
+                t = four_tuple(1)
+                w, x, y, z = t
+                hits += w + x + y + z
+            return hits
+
+        res, ex = self._run_with_optimizer(f, TIER2_THRESHOLD)
+        self.assertEqual(res, TIER2_THRESHOLD * 4)
+        self.assertIsNotNone(ex)
+        uops = get_opnames(ex)
+
+        self.assertIn("_BUILD_TUPLE", uops)
+        self.assertIn("_UNPACK_SEQUENCE_TUPLE", uops)
+        self.assertNotIn("_UNPACK_SEQUENCE_UNIQUE_TUPLE", uops)
+
+    def test_unique_three_tuple_unpack(self):
+        def f(n):
+            def three_tuple(x):
+                return (x, x, x)
+            hits = 0
+            for i in range(n):
+                x, y, z = three_tuple(1)
+                hits += x + y + z
+            return hits
+
+        res, ex = self._run_with_optimizer(f, TIER2_THRESHOLD)
+        self.assertEqual(res, TIER2_THRESHOLD * 3)
+        self.assertIsNotNone(ex)
+        uops = get_opnames(ex)
+
+        self.assertIn("_BUILD_TUPLE", uops)
+        self.assertIn("_UNPACK_SEQUENCE_UNIQUE_THREE_TUPLE", uops)
+        self.assertNotIn("_UNPACK_SEQUENCE_TUPLE", uops)
+
+    def test_non_unique_three_tuple_unpack(self):
+        def f(n):
+            def three_tuple(x):
+                return (x, x, x)
+            hits = 0
+            for i in range(n):
+                t = three_tuple(1)
+                x, y, z = t
+                hits += x + y + z
+            return hits
+
+        res, ex = self._run_with_optimizer(f, TIER2_THRESHOLD)
+        self.assertEqual(res, TIER2_THRESHOLD * 3)
+        self.assertIsNotNone(ex)
+        uops = get_opnames(ex)
+
+        self.assertIn("_BUILD_TUPLE", uops)
+        self.assertIn("_UNPACK_SEQUENCE_TUPLE", uops)
+        self.assertNotIn("_UNPACK_SEQUENCE_UNIQUE_THREE_TUPLE", uops)
+
+    def test_unique_two_tuple_unpack(self):
+        def f(n):
+            def two_tuple(x):
+                return (x, x)
+            hits = 0
+            for i in range(n):
+                x, y = two_tuple(1)
+                hits += x + y
+            return hits
+
+        res, ex = self._run_with_optimizer(f, TIER2_THRESHOLD)
+        self.assertEqual(res, TIER2_THRESHOLD * 2)
+        self.assertIsNotNone(ex)
+        uops = get_opnames(ex)
+
+        self.assertIn("_BUILD_TUPLE", uops)
+        self.assertIn("_UNPACK_SEQUENCE_UNIQUE_TWO_TUPLE", uops)
+        self.assertNotIn("_UNPACK_SEQUENCE_TWO_TUPLE", uops)
+        self.assertNotIn("_UNPACK_SEQUENCE_TUPLE", uops)
+
+    def test_non_unique_two_tuple_unpack(self):
+        def f(n):
+            def two_tuple(x):
+                return (x, x)
+            hits = 0
+            for i in range(n):
+                tt = two_tuple(1)
+                x, y = tt
+                hits += x + y
+            return hits
+
+        res, ex = self._run_with_optimizer(f, TIER2_THRESHOLD)
+        self.assertEqual(res, TIER2_THRESHOLD * 2)
+        self.assertIsNotNone(ex)
+        uops = get_opnames(ex)
+
+        self.assertIn("_BUILD_TUPLE", uops)
+        self.assertIn("_UNPACK_SEQUENCE_TWO_TUPLE", uops)
+        self.assertNotIn("_UNPACK_SEQUENCE_TUPLE", uops)
+        self.assertNotIn("_UNPACK_SEQUENCE_UNIQUE_TWO_TUPLE", uops)
+
     def test_remove_guard_for_known_type_set(self):
         def f(n):
             x = 0
@@ -2952,6 +3071,171 @@ class TestUopsOptimization(unittest.TestCase):
         self.assertIsNotNone(ex)
         uops = get_opnames(ex)
         self.assertIn("_POP_TOP_NOP", uops)
+
+    def test_float_add_inplace_unique_lhs(self):
+        # a * b produces a unique float; adding c reuses it in place
+        def testfunc(args):
+            a, b, c, n = args
+            total = 0.0
+            for _ in range(n):
+                total += a * b + c
+            return total
+
+        res, ex = self._run_with_optimizer(testfunc, (2.0, 3.0, 4.0, TIER2_THRESHOLD))
+        self.assertAlmostEqual(res, TIER2_THRESHOLD * 10.0)
+        self.assertIsNotNone(ex)
+        uops = get_opnames(ex)
+        self.assertIn("_BINARY_OP_ADD_FLOAT_INPLACE", uops)
+
+    def test_float_add_inplace_unique_rhs(self):
+        # a * b produces a unique float on the right side of +
+        def testfunc(args):
+            a, b, c, n = args
+            total = 0.0
+            for _ in range(n):
+                total += c + a * b
+            return total
+
+        res, ex = self._run_with_optimizer(testfunc, (2.0, 3.0, 4.0, TIER2_THRESHOLD))
+        self.assertAlmostEqual(res, TIER2_THRESHOLD * 10.0)
+        self.assertIsNotNone(ex)
+        uops = get_opnames(ex)
+        self.assertIn("_BINARY_OP_ADD_FLOAT_INPLACE_RIGHT", uops)
+
+    def test_float_add_no_inplace_non_unique(self):
+        # Both operands of a + b are locals — neither is unique,
+        # so the first add is regular. But total += (a+b) has a
+        # unique RHS, so it uses _INPLACE_RIGHT.
+        def testfunc(args):
+            a, b, n = args
+            total = 0.0
+            for _ in range(n):
+                total += a + b
+            return total
+
+        res, ex = self._run_with_optimizer(testfunc, (2.0, 3.0, TIER2_THRESHOLD))
+        self.assertAlmostEqual(res, TIER2_THRESHOLD * 5.0)
+        self.assertIsNotNone(ex)
+        uops = get_opnames(ex)
+        # a + b: both are locals, no inplace
+        self.assertIn("_BINARY_OP_ADD_FLOAT", uops)
+        # total += result: result is unique RHS
+        self.assertIn("_BINARY_OP_ADD_FLOAT_INPLACE_RIGHT", uops)
+        # No LHS inplace variant for the first add
+        self.assertNotIn("_BINARY_OP_ADD_FLOAT_INPLACE", uops)
+
+    def test_float_subtract_inplace_unique_lhs(self):
+        # a * b produces a unique float; subtracting c reuses it
+        def testfunc(args):
+            a, b, c, n = args
+            total = 0.0
+            for _ in range(n):
+                total += a * b - c
+            return total
+
+        res, ex = self._run_with_optimizer(testfunc, (2.0, 3.0, 1.0, TIER2_THRESHOLD))
+        self.assertAlmostEqual(res, TIER2_THRESHOLD * 5.0)
+        self.assertIsNotNone(ex)
+        uops = get_opnames(ex)
+        self.assertIn("_BINARY_OP_SUBTRACT_FLOAT_INPLACE", uops)
+
+    def test_float_subtract_inplace_unique_rhs(self):
+        # a * b produces a unique float on the right of -;
+        # result is c - (a * b), must get the sign correct
+        def testfunc(args):
+            a, b, c, n = args
+            total = 0.0
+            for _ in range(n):
+                total += c - a * b
+            return total
+
+        res, ex = self._run_with_optimizer(testfunc, (2.0, 3.0, 1.0, TIER2_THRESHOLD))
+        self.assertAlmostEqual(res, TIER2_THRESHOLD * -5.0)
+        self.assertIsNotNone(ex)
+        uops = get_opnames(ex)
+        self.assertIn("_BINARY_OP_SUBTRACT_FLOAT_INPLACE_RIGHT", uops)
+
+    def test_float_multiply_inplace_unique_lhs(self):
+        # (a + b) produces a unique float; multiplying by c reuses it
+        def testfunc(args):
+            a, b, c, n = args
+            total = 0.0
+            for _ in range(n):
+                total += (a + b) * c
+            return total
+
+        res, ex = self._run_with_optimizer(testfunc, (2.0, 3.0, 4.0, TIER2_THRESHOLD))
+        self.assertAlmostEqual(res, TIER2_THRESHOLD * 20.0)
+        self.assertIsNotNone(ex)
+        uops = get_opnames(ex)
+        self.assertIn("_BINARY_OP_MULTIPLY_FLOAT_INPLACE", uops)
+
+    def test_float_multiply_inplace_unique_rhs(self):
+        # (a + b) produces a unique float on the right side of *
+        def testfunc(args):
+            a, b, c, n = args
+            total = 0.0
+            for _ in range(n):
+                total += c * (a + b)
+            return total
+
+        res, ex = self._run_with_optimizer(testfunc, (2.0, 3.0, 4.0, TIER2_THRESHOLD))
+        self.assertAlmostEqual(res, TIER2_THRESHOLD * 20.0)
+        self.assertIsNotNone(ex)
+        uops = get_opnames(ex)
+        self.assertIn("_BINARY_OP_MULTIPLY_FLOAT_INPLACE_RIGHT", uops)
+
+    def test_float_inplace_chain_propagation(self):
+        # a * b + c * d: both products are unique, the + reuses one;
+        # result of + is also unique for the subsequent +=
+        def testfunc(args):
+            a, b, c, d, n = args
+            total = 0.0
+            for _ in range(n):
+                total += a * b + c * d
+            return total
+
+        res, ex = self._run_with_optimizer(testfunc, (2.0, 3.0, 4.0, 5.0, TIER2_THRESHOLD))
+        self.assertAlmostEqual(res, TIER2_THRESHOLD * 26.0)
+        self.assertIsNotNone(ex)
+        uops = get_opnames(ex)
+        # The + between the two products should use an inplace variant
+        inplace_add = (
+            "_BINARY_OP_ADD_FLOAT_INPLACE" in uops
+            or "_BINARY_OP_ADD_FLOAT_INPLACE_RIGHT" in uops
+        )
+        self.assertTrue(inplace_add,
+            "Expected an inplace add for unique intermediate results")
+
+    def test_float_negate_inplace_unique(self):
+        # -(a * b): the product is unique, negate it in place
+        def testfunc(args):
+            a, b, n = args
+            total = 0.0
+            for _ in range(n):
+                total += -(a * b)
+            return total
+
+        res, ex = self._run_with_optimizer(testfunc, (2.0, 3.0, TIER2_THRESHOLD))
+        self.assertAlmostEqual(res, TIER2_THRESHOLD * -6.0)
+        self.assertIsNotNone(ex)
+        uops = get_opnames(ex)
+        self.assertIn("_UNARY_NEGATIVE_FLOAT_INPLACE", uops)
+
+    def test_float_negate_no_inplace_non_unique(self):
+        # -a where a is a local — not unique, no inplace
+        def testfunc(args):
+            a, n = args
+            total = 0.0
+            for _ in range(n):
+                total += -a
+            return total
+
+        res, ex = self._run_with_optimizer(testfunc, (2.0, TIER2_THRESHOLD))
+        self.assertAlmostEqual(res, TIER2_THRESHOLD * -2.0)
+        self.assertIsNotNone(ex)
+        uops = get_opnames(ex)
+        self.assertNotIn("_UNARY_NEGATIVE_FLOAT_INPLACE", uops)
 
     def test_load_attr_instance_value(self):
         def testfunc(n):
@@ -4044,6 +4328,23 @@ class TestUopsOptimization(unittest.TestCase):
 
         self.assertIn("_SET_UPDATE", uops)
         self.assertEqual(count_ops(ex, "_POP_TOP_NOP"), 1)
+        self.assertLessEqual(count_ops(ex, "_POP_TOP"), 2)
+
+    def test_dict_merge(self):
+        def testfunc(n):
+            d = {"a": 1, "b": 2}
+            def f(**kwargs):
+                return kwargs
+            for _ in range(n):
+                x = f(**d)
+            return x
+
+        res, ex = self._run_with_optimizer(testfunc, TIER2_THRESHOLD)
+        self.assertEqual(res, {"a": 1, "b": 2})
+        uops = get_opnames(ex)
+
+        self.assertIn("_DICT_MERGE", uops)
+        self.assertGreaterEqual(count_ops(ex, "_POP_TOP_NOP"), 1)
         self.assertLessEqual(count_ops(ex, "_POP_TOP"), 2)
 
     def test_143026(self):

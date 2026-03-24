@@ -63,6 +63,13 @@ Notes:
 (2)
    .. versionadded:: 3.13
 
+.. seealso::
+
+   The :ref:`ctypes <ctypes-fundamental-data-types>` and
+   :ref:`struct <format-characters>` modules,
+   as well as third-party modules like `numpy <https://numpy.org/doc/stable/reference/arrays.interface.html#object.__array_interface__>`__,
+   use similar -- but slightly different -- type codes.
+
 
 The actual representation of values is determined by the machine architecture
 (strictly speaking, by the C implementation).  The actual size can be accessed

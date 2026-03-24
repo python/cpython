@@ -78,7 +78,7 @@ get_binascii_state(PyObject *module)
 
 
 /* Align to 64 bytes for L1 cache line friendliness */
-static const unsigned char table_a2b_base64[] Py_ALIGNED(64) = {
+static const _Py_ALIGNED_DEF(64, unsigned char) table_a2b_base64[] = {
     -1,-1,-1,-1, -1,-1,-1,-1, -1,-1,-1,-1, -1,-1,-1,-1,
     -1,-1,-1,-1, -1,-1,-1,-1, -1,-1,-1,-1, -1,-1,-1,-1,
     -1,-1,-1,-1, -1,-1,-1,-1, -1,-1,-1,62, -1,-1,-1,63,
@@ -110,7 +110,7 @@ static const unsigned char table_a2b_base64[] Py_ALIGNED(64) = {
  */
 
 /* Align to 64 bytes for L1 cache line friendliness */
-static const unsigned char table_b2a_base64[] Py_ALIGNED(64) =
+static const _Py_ALIGNED_DEF(64, unsigned char) table_b2a_base64[] =
 "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/";
 
 /* Encode 3 bytes into 4 base64 characters. */
@@ -189,7 +189,7 @@ base64_decode_fast(const unsigned char *in, Py_ssize_t in_len,
 }
 
 
-static const unsigned char table_a2b_base85[] Py_ALIGNED(64) = {
+static const _Py_ALIGNED_DEF(64, unsigned char) table_a2b_base85[] = {
     -1,-1,-1,-1, -1,-1,-1,-1, -1,-1,-1,-1, -1,-1,-1,-1,
     -1,-1,-1,-1, -1,-1,-1,-1, -1,-1,-1,-1, -1,-1,-1,-1,
     -1,62,-1,63, 64,65,66,-1, 67,68,69,70, -1,71,-1,-1,
@@ -209,7 +209,7 @@ static const unsigned char table_a2b_base85[] Py_ALIGNED(64) = {
     -1,-1,-1,-1, -1,-1,-1,-1, -1,-1,-1,-1, -1,-1,-1,-1,
 };
 
-static const unsigned char table_a2b_base85_a85[] Py_ALIGNED(64) = {
+static const _Py_ALIGNED_DEF(64, unsigned char) table_a2b_base85_a85[] = {
     -1,-1,-1,-1, -1,-1,-1,-1, -1,-1,-1,-1, -1,-1,-1,-1,
     -1,-1,-1,-1, -1,-1,-1,-1, -1,-1,-1,-1, -1,-1,-1,-1,
     -1, 0, 1, 2,  3, 4, 5, 6,  7, 8, 9,10, 11,12,13,14,
@@ -229,11 +229,11 @@ static const unsigned char table_a2b_base85_a85[] Py_ALIGNED(64) = {
     -1,-1,-1,-1, -1,-1,-1,-1, -1,-1,-1,-1, -1,-1,-1,-1,
 };
 
-static const unsigned char table_b2a_base85[] Py_ALIGNED(64) =
+static const _Py_ALIGNED_DEF(64, unsigned char) table_b2a_base85[] =
     "0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZ" \
     "abcdefghijklmnopqrstuvwxyz!#$%&()*+-;<=>?@^_`{|}~";
 
-static const unsigned char table_b2a_base85_a85[] Py_ALIGNED(64) =
+static const _Py_ALIGNED_DEF(64, unsigned char) table_b2a_base85_a85[]  =
     "!\"#$%&\'()*+,-./0123456789:;<=>?@" \
     "ABCDEFGHIJKLMNOPQRSTUVWXYZ[\\]^_`abcdefghijklmnopqrstu";
 
@@ -243,6 +243,129 @@ static const unsigned char table_b2a_base85_a85[] Py_ALIGNED(64) =
 #define BASE85_A85_SUFFIX '>'
 #define BASE85_A85_Z 0x00000000
 #define BASE85_A85_Y 0x20202020
+
+
+static const _Py_ALIGNED_DEF(64, unsigned char) table_a2b_base32[] = {
+    -1,-1,-1,-1, -1,-1,-1,-1, -1,-1,-1,-1, -1,-1,-1,-1,
+    -1,-1,-1,-1, -1,-1,-1,-1, -1,-1,-1,-1, -1,-1,-1,-1,
+    -1,-1,-1,-1, -1,-1,-1,-1, -1,-1,-1,-1, -1,-1,-1,-1,
+    -1,-1,26,27, 28,29,30,31, -1,-1,-1,-1, -1,-1,-1,-1,
+    -1, 0, 1, 2,  3, 4, 5, 6,  7, 8, 9,10, 11,12,13,14,
+    15,16,17,18, 19,20,21,22, 23,24,25,-1, -1,-1,-1,-1,
+    -1,-1,-1,-1, -1,-1,-1,-1, -1,-1,-1,-1, -1,-1,-1,-1,
+    -1,-1,-1,-1, -1,-1,-1,-1, -1,-1,-1,-1, -1,-1,-1,-1,
+
+    -1,-1,-1,-1, -1,-1,-1,-1, -1,-1,-1,-1, -1,-1,-1,-1,
+    -1,-1,-1,-1, -1,-1,-1,-1, -1,-1,-1,-1, -1,-1,-1,-1,
+    -1,-1,-1,-1, -1,-1,-1,-1, -1,-1,-1,-1, -1,-1,-1,-1,
+    -1,-1,-1,-1, -1,-1,-1,-1, -1,-1,-1,-1, -1,-1,-1,-1,
+    -1,-1,-1,-1, -1,-1,-1,-1, -1,-1,-1,-1, -1,-1,-1,-1,
+    -1,-1,-1,-1, -1,-1,-1,-1, -1,-1,-1,-1, -1,-1,-1,-1,
+    -1,-1,-1,-1, -1,-1,-1,-1, -1,-1,-1,-1, -1,-1,-1,-1,
+    -1,-1,-1,-1, -1,-1,-1,-1, -1,-1,-1,-1, -1,-1,-1,-1,
+};
+
+static const _Py_ALIGNED_DEF(64, unsigned char) table_b2a_base32[] =
+    "ABCDEFGHIJKLMNOPQRSTUVWXYZ234567";
+
+#define BASE32_PAD '='
+
+/*
+ * Fast base32 encoding/decoding helpers.
+ *
+ * Analogous to the helpers for base64.
+ */
+
+/* Encode 5 bytes into 8 base32 characters. */
+static inline void
+base32_encode_quint(const unsigned char *in, unsigned char *out,
+                    const unsigned char table[])
+{
+    uint64_t combined = ((uint64_t)in[0] << 32) |
+                        ((uint64_t)in[1] << 24) |
+                        ((uint64_t)in[2] << 16) |
+                        ((uint64_t)in[3] << 8) |
+                         (uint64_t)in[4];
+    out[0] = table[(combined >> 35) & 0x1f];
+    out[1] = table[(combined >> 30) & 0x1f];
+    out[2] = table[(combined >> 25) & 0x1f];
+    out[3] = table[(combined >> 20) & 0x1f];
+    out[4] = table[(combined >> 15) & 0x1f];
+    out[5] = table[(combined >> 10) & 0x1f];
+    out[6] = table[(combined >> 5) & 0x1f];
+    out[7] = table[combined & 0x1f];
+}
+
+/*
+ * Encode multiple complete 5-byte groups.
+ * Returns the number of input bytes processed (always a multiple of 5).
+ */
+static inline Py_ssize_t
+base32_encode_fast(const unsigned char *in, Py_ssize_t in_len,
+                   unsigned char *out, const unsigned char table[])
+{
+    Py_ssize_t n_quints = in_len / 5;
+    const unsigned char *in_end = in + n_quints * 5;
+
+    while (in < in_end) {
+        base32_encode_quint(in, out, table);
+        in += 5;
+        out += 8;
+    }
+
+    return n_quints * 5;
+}
+
+/*
+ * Decode 8 base32 characters into 5 bytes.
+ * Returns 1 on success, 0 if any character is invalid.
+ */
+static inline int
+base32_decode_octa(const unsigned char *in, unsigned char *out,
+                   const unsigned char table[])
+{
+    unsigned char v0 = table[in[0]];
+    unsigned char v1 = table[in[1]];
+    unsigned char v2 = table[in[2]];
+    unsigned char v3 = table[in[3]];
+    unsigned char v4 = table[in[4]];
+    unsigned char v5 = table[in[5]];
+    unsigned char v6 = table[in[6]];
+    unsigned char v7 = table[in[7]];
+
+    if ((v0 | v1 | v2 | v3 | v4 | v5 | v6 | v7) & 0xe0) {
+        return 0;
+    }
+
+    out[0] = (v0 << 3) | (v1 >> 2);
+    out[1] = (v1 << 6) | (v2 << 1) | (v3 >> 4);
+    out[2] = (v3 << 4) | (v4 >> 1);
+    out[3] = (v4 << 7) | (v5 << 2) | (v6 >> 3);
+    out[4] = (v6 << 5) | v7;
+    return 1;
+}
+
+/*
+ * Decode multiple complete 8-character groups (no padding allowed).
+ * Returns the number of input characters processed.
+ * Stops at the first invalid character, padding, or incomplete group.
+ */
+static inline Py_ssize_t
+base32_decode_fast(const unsigned char *in, Py_ssize_t in_len,
+                   unsigned char *out, const unsigned char table[])
+{
+    Py_ssize_t n_quints = in_len / 8;
+    Py_ssize_t i;
+
+    for (i = 0; i < n_quints; i++) {
+        if (!base32_decode_octa(in + i * 8, out + i * 5, table)) {
+            break;
+        }
+    }
+
+    return i * 8;
+}
+
 
 static const unsigned short crctab_hqx[256] = {
     0x0000, 0x1021, 0x2042, 0x3063, 0x4084, 0x50a5, 0x60c6, 0x70e7,
@@ -677,40 +800,33 @@ fastpath:
         */
         if (this_ch == BASE64_PAD) {
             pads++;
-
-            if (strict_mode) {
-                if (quad_pos >= 2 && quad_pos + pads <= 4) {
-                    continue;
-                }
-                if (ignorechar(BASE64_PAD, ignorechars, ignorecache)) {
-                    continue;
-                }
-                if (quad_pos == 1) {
-                    /* Set an error below. */
-                    break;
-                }
-                state = get_binascii_state(module);
-                if (state) {
-                    PyErr_SetString(state->Error,
-                                    (quad_pos == 0 && ascii_data == data->buf)
-                                    ? "Leading padding not allowed"
-                                    : "Excess padding not allowed");
-                }
-                goto error_end;
-            }
-            else {
-                if (quad_pos >= 2 && quad_pos + pads >= 4) {
-                    /* A pad sequence means we should not parse more input.
-                    ** We've already interpreted the data from the quad at this point.
-                    */
-                    goto done;
-                }
+            if (quad_pos >= 2 && quad_pos + pads <= 4) {
                 continue;
             }
+            // See RFC 4648, section-3.3: "specifications MAY ignore the
+            // pad character, "=", treating it as non-alphabet data, if
+            // it is present before the end of the encoded data" and
+            // "the excess pad characters MAY also be ignored."
+            if (!strict_mode || ignorechar(BASE64_PAD, ignorechars, ignorecache)) {
+                continue;
+            }
+            if (quad_pos == 1) {
+                /* Set an error below. */
+                break;
+            }
+            state = get_binascii_state(module);
+            if (state) {
+                PyErr_SetString(state->Error,
+                                (quad_pos == 0 && ascii_data == data->buf)
+                                ? "Leading padding not allowed"
+                                : "Excess padding not allowed");
+            }
+            goto error_end;
         }
 
         unsigned char v = table_a2b[this_ch];
         if (v >= 64) {
+            // See RFC 4648, section-3.3.
             if (strict_mode && !ignorechar(this_ch, ignorechars, ignorecache)) {
                 state = get_binascii_state(module);
                 if (state) {
@@ -721,7 +837,8 @@ fastpath:
             continue;
         }
 
-        // Characters that are not '=', in the middle of the padding, are not allowed
+        // Characters that are not '=', in the middle of the padding, are
+        // not allowed (except when they are). See RFC 4648, section-3.3.
         if (pads && strict_mode &&
             !ignorechar(BASE64_PAD, ignorechars, ignorecache))
         {
@@ -785,7 +902,6 @@ fastpath:
         goto error_end;
     }
 
-done:
     Py_XDECREF(table_obj);
     return PyBytesWriter_FinishWithPointer(writer, bin_data);
 
@@ -1362,6 +1478,298 @@ binascii_b2a_base85_impl(PyObject *module, Py_buffer *data, int pad,
             leftchar /= 85;
         }
         ascii_data += group_len;
+    }
+
+    return PyBytesWriter_FinishWithPointer(writer, ascii_data);
+}
+
+/*[clinic input]
+binascii.a2b_base32
+
+    data: ascii_buffer
+    /
+    *
+    alphabet: PyBytesObject(c_default="NULL") = BASE32_ALPHABET
+
+Decode a line of base32 data.
+[clinic start generated code]*/
+
+static PyObject *
+binascii_a2b_base32_impl(PyObject *module, Py_buffer *data,
+                         PyBytesObject *alphabet)
+/*[clinic end generated code: output=12cb58bf547237e2 input=426055ea49ac147e]*/
+{
+    const unsigned char *ascii_data = data->buf;
+    Py_ssize_t ascii_len = data->len;
+    binascii_state *state = NULL;
+    PyObject *table_obj = NULL;
+    const unsigned char *table_a2b = table_a2b_base32;
+
+    assert(ascii_len >= 0);
+
+    if (alphabet != NULL) {
+        state = get_binascii_state(module);
+        table_obj = get_reverse_table(state, (PyObject *)alphabet, 32, BASE32_PAD);
+        if (table_obj == NULL) {
+            return NULL;
+        }
+        table_a2b = (const unsigned char *)PyBytes_AS_STRING(table_obj);
+    }
+
+    /* Allocate output buffer. */
+    size_t bin_len = ((size_t)ascii_len + 7) / 8 * 5;
+    PyBytesWriter *writer = PyBytesWriter_Create(bin_len);
+    if (writer == NULL) {
+        Py_XDECREF(table_obj);
+        return NULL;
+    }
+    unsigned char *bin_data = PyBytesWriter_GetData(writer);
+
+    /*
+     * Fast path: use optimized decoder for complete octas (groups of 8 bytes).
+     * The fast path stops at padding, invalid chars, or incomplete octas.
+     */
+    if (ascii_len >= 8) {
+        Py_ssize_t fast_chars = base32_decode_fast(ascii_data, ascii_len,
+                                                   bin_data, table_a2b);
+        if (fast_chars > 0) {
+            ascii_data += fast_chars;
+            ascii_len -= fast_chars;
+            bin_data += (fast_chars / 8) * 5;
+        }
+    }
+
+    /* Slow path: handle remaining input (padding, invalid chars, incomplete octas). */
+    unsigned char leftchar = 0;
+    int octa_pos = 0;
+    int pads = 0;
+    for (; ascii_len; ascii_len--, ascii_data++) {
+        unsigned char this_ch = *ascii_data;
+
+        /* Check for pad sequences. They may only occur at certain positions. */
+        if (this_ch == BASE32_PAD) {
+            pads++;
+
+            if ((octa_pos == 2 || octa_pos == 4 || octa_pos == 5 || octa_pos == 7)
+                && octa_pos + pads <= 8)
+            {
+                continue;
+            }
+            if (octa_pos == 1 || octa_pos == 3 || octa_pos == 6) {
+                /* Set an error below. */
+                break;
+            }
+            state = get_binascii_state(module);
+            if (state) {
+                PyErr_SetString(state->Error,
+                                (octa_pos == 0 && ascii_data == data->buf)
+                                ? "Leading padding not allowed"
+                                : "Excess padding not allowed");
+            }
+            goto error;
+        }
+
+        unsigned char v = table_a2b[this_ch];
+        if (v >= 32) {
+            state = get_binascii_state(module);
+            if (state) {
+                PyErr_SetString(state->Error, "Only base32 data is allowed");
+            }
+            goto error;
+        }
+
+        /* Data in the middle of/after the padding is not allowed. */
+        if (pads) {
+            state = get_binascii_state(module);
+            if (state) {
+                PyErr_SetString(state->Error, (octa_pos + pads == 8)
+                                ? "Excess data after padding"
+                                : "Discontinuous padding not allowed");
+            }
+            goto error;
+        }
+
+        switch (octa_pos) {
+            case 0:
+                octa_pos = 1;
+                leftchar = v;
+                break;
+            case 1:
+                octa_pos = 2;
+                *bin_data++ = (leftchar << 3) | (v >> 2);
+                leftchar = v & 0x03;
+                break;
+            case 2:
+                octa_pos = 3;
+                leftchar = (leftchar << 5) | v;
+                break;
+            case 3:
+                octa_pos = 4;
+                *bin_data++ = (leftchar << 1) | (v >> 4);
+                leftchar = v & 0x0f;
+                break;
+            case 4:
+                octa_pos = 5;
+                *bin_data++ = (leftchar << 4) | (v >> 1);
+                leftchar = v & 0x01;
+                break;
+            case 5:
+                octa_pos = 6;
+                leftchar = (leftchar << 5) | v;
+                break;
+            case 6:
+                octa_pos = 7;
+                *bin_data++ = (leftchar << 2) | (v >> 3);
+                leftchar = v & 0x07;
+                break;
+            case 7:
+                octa_pos = 0;
+                *bin_data++ = (leftchar << 5) | v;
+                leftchar = 0;
+        }
+    }
+
+    if (octa_pos == 1 || octa_pos == 3 || octa_pos == 6) {
+        state = get_binascii_state(module);
+        if (state) {
+            const unsigned char *ascii_data_start = data->buf;
+            PyErr_Format(state->Error,
+                         "Invalid base32-encoded string: "
+                         "number of data characters (%zd) "
+                         "cannot be 1, 3, or 6 more than a multiple of 8",
+                         ascii_data - ascii_data_start);
+        }
+        goto error;
+    }
+
+    if ((octa_pos != 0 && octa_pos + pads != 8)
+        || (octa_pos == 0 && pads != 0))
+    {
+        state = get_binascii_state(module);
+        if (state) {
+            PyErr_SetString(state->Error, "Incorrect padding");
+        }
+        goto error;
+    }
+
+    Py_XDECREF(table_obj);
+    return PyBytesWriter_FinishWithPointer(writer, bin_data);
+
+error:
+    PyBytesWriter_Discard(writer);
+    Py_XDECREF(table_obj);
+    return NULL;
+}
+
+/*[clinic input]
+binascii.b2a_base32
+
+    data: Py_buffer
+    /
+    *
+    alphabet: Py_buffer(c_default="{NULL, NULL}") = BASE32_ALPHABET
+
+Base32-code line of data.
+[clinic start generated code]*/
+
+static PyObject *
+binascii_b2a_base32_impl(PyObject *module, Py_buffer *data,
+                         Py_buffer *alphabet)
+/*[clinic end generated code: output=058d0d1aeb014d3b input=99cbe7194799d368]*/
+{
+    const unsigned char *table_b2a = table_b2a_base32;
+    const unsigned char *bin_data = data->buf;
+    Py_ssize_t bin_len = data->len;
+    binascii_state *state = NULL;
+
+    assert(bin_len >= 0);
+
+    if (alphabet->buf != NULL) {
+        if (alphabet->len != 32) {
+            PyErr_SetString(PyExc_ValueError, "alphabet must have length 32");
+            return NULL;
+        }
+        table_b2a = alphabet->buf;
+    }
+
+    /*
+     * Each group of 5 bytes (rounded up) gets encoded as 8 characters.
+     * Use unsigned integer arithmetic to avoid signed integer overflow.
+     */
+    size_t ascii_len = ((size_t)bin_len + 4u) / 5u * 8u;
+    if (ascii_len > PY_SSIZE_T_MAX) {
+        state = get_binascii_state(module);
+        if (state) {
+            PyErr_SetString(state->Error, "Too much data for base32");
+        }
+        return NULL;
+    }
+    PyBytesWriter *writer = PyBytesWriter_Create(ascii_len);
+    if (writer == NULL) {
+        return NULL;
+    }
+    unsigned char *ascii_data = PyBytesWriter_GetData(writer);
+
+    /* Use the optimized fast path for complete 5-byte groups. */
+    Py_ssize_t fast_bytes = base32_encode_fast(bin_data, bin_len, ascii_data,
+                                               table_b2a);
+    bin_data += fast_bytes;
+    ascii_data += (fast_bytes / 5) * 8;
+    bin_len -= fast_bytes;
+
+    /* Handle the remaining 0-4 bytes. */
+    if (bin_len == 1) {
+        /* 1 byte remaining: produces 2 encoded + 6 padding chars. */
+        uint32_t val = bin_data[0];
+        *ascii_data++ = table_b2a[(val >> 3) & 0x1f];
+        *ascii_data++ = table_b2a[(val << 2) & 0x1f];
+        *ascii_data++ = BASE32_PAD;
+        *ascii_data++ = BASE32_PAD;
+        *ascii_data++ = BASE32_PAD;
+        *ascii_data++ = BASE32_PAD;
+        *ascii_data++ = BASE32_PAD;
+        *ascii_data++ = BASE32_PAD;
+    }
+    else if (bin_len == 2) {
+        /* 2 bytes remaining: produces 4 encoded + 4 padding chars. */
+        uint32_t val = ((uint32_t)bin_data[0] << 8) | bin_data[1];
+        *ascii_data++ = table_b2a[(val >> 11) & 0x1f];
+        *ascii_data++ = table_b2a[(val >> 6) & 0x1f];
+        *ascii_data++ = table_b2a[(val >> 1) & 0x1f];
+        *ascii_data++ = table_b2a[(val << 4) & 0x1f];
+        *ascii_data++ = BASE32_PAD;
+        *ascii_data++ = BASE32_PAD;
+        *ascii_data++ = BASE32_PAD;
+        *ascii_data++ = BASE32_PAD;
+    }
+    else if (bin_len == 3) {
+        /* 3 bytes remaining: produces 5 encoded + 3 padding chars. */
+        uint32_t val = ((uint32_t)bin_data[0] << 16)
+                       | ((uint32_t)bin_data[1] << 8)
+                       | bin_data[2];
+        *ascii_data++ = table_b2a[(val >> 19) & 0x1f];
+        *ascii_data++ = table_b2a[(val >> 14) & 0x1f];
+        *ascii_data++ = table_b2a[(val >> 9) & 0x1f];
+        *ascii_data++ = table_b2a[(val >> 4) & 0x1f];
+        *ascii_data++ = table_b2a[(val << 1) & 0x1f];
+        *ascii_data++ = BASE32_PAD;
+        *ascii_data++ = BASE32_PAD;
+        *ascii_data++ = BASE32_PAD;
+    }
+    else if (bin_len == 4) {
+        /* 4 bytes remaining: produces 7 encoded + 1 padding chars. */
+        uint32_t val = ((uint32_t)bin_data[0] << 24)
+                       | ((uint32_t)bin_data[1] << 16)
+                       | ((uint32_t)bin_data[2] << 8)
+                       | bin_data[3];
+        *ascii_data++ = table_b2a[(val >> 27) & 0x1f];
+        *ascii_data++ = table_b2a[(val >> 22) & 0x1f];
+        *ascii_data++ = table_b2a[(val >> 17) & 0x1f];
+        *ascii_data++ = table_b2a[(val >> 12) & 0x1f];
+        *ascii_data++ = table_b2a[(val >> 7) & 0x1f];
+        *ascii_data++ = table_b2a[(val >> 2) & 0x1f];
+        *ascii_data++ = table_b2a[(val << 3) & 0x1f];
+        *ascii_data++ = BASE32_PAD;
     }
 
     return PyBytesWriter_FinishWithPointer(writer, ascii_data);
@@ -2028,6 +2436,8 @@ static struct PyMethodDef binascii_module_methods[] = {
     BINASCII_A2B_ASCII85_METHODDEF
     BINASCII_A2B_BASE85_METHODDEF
     BINASCII_B2A_BASE85_METHODDEF
+    BINASCII_A2B_BASE32_METHODDEF
+    BINASCII_B2A_BASE32_METHODDEF
     BINASCII_A2B_HEX_METHODDEF
     BINASCII_B2A_HEX_METHODDEF
     BINASCII_HEXLIFY_METHODDEF
@@ -2114,9 +2524,14 @@ binascii_exec(PyObject *module)
     {
         return -1;
     }
-
-    state->reverse_table_cache = PyDict_New();
-    if (state->reverse_table_cache == NULL) {
+    if (PyModule_Add(module, "BASE32_ALPHABET",
+        PyBytes_FromStringAndSize((const char *)table_b2a_base32, 32)) < 0)
+    {
+        return -1;
+    }
+    if (PyModule_Add(module, "BASE32HEX_ALPHABET",
+        PyBytes_FromString("0123456789ABCDEFGHIJKLMNOPQRSTUV")) < 0)
+    {
         return -1;
     }
 
@@ -2129,6 +2544,7 @@ binascii_exec(PyObject *module)
 }
 
 static PyModuleDef_Slot binascii_slots[] = {
+    _Py_ABI_SLOT,
     {Py_mod_exec, binascii_exec},
     {Py_mod_multiple_interpreters, Py_MOD_PER_INTERPRETER_GIL_SUPPORTED},
     {Py_mod_gil, Py_MOD_GIL_NOT_USED},
