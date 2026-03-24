@@ -12,13 +12,16 @@ import threading
 import types
 import warnings
 
-from _colorize import get_theme
-from _pyrepl.console import InteractiveColoredConsole
+try:
+    from _colorize import get_theme
+    from _pyrepl.console import InteractiveColoredConsole as InteractiveConsole
+except ModuleNotFoundError:
+    from code import InteractiveConsole
 
 from . import futures
 
 
-class AsyncIOInteractiveConsole(InteractiveColoredConsole):
+class AsyncIOInteractiveConsole(InteractiveConsole):
 
     def __init__(self, locals, loop):
         super().__init__(locals, filename="<stdin>")
@@ -64,7 +67,7 @@ class AsyncIOInteractiveConsole(InteractiveColoredConsole):
             except BaseException as exc:
                 future.set_exception(exc)
 
-        loop.call_soon_threadsafe(callback, context=self.context)
+        self.loop.call_soon_threadsafe(callback, context=self.context)
 
         try:
             return future.result()
@@ -74,7 +77,8 @@ class AsyncIOInteractiveConsole(InteractiveColoredConsole):
             return
         except BaseException:
             if keyboard_interrupted:
-                self.write("\nKeyboardInterrupt\n")
+                if not CAN_USE_PYREPL:
+                    self.write("\nKeyboardInterrupt\n")
             else:
                 self.showtraceback()
             return self.STATEMENT_FAILED
@@ -85,16 +89,17 @@ class REPLThread(threading.Thread):
         global return_code
 
         try:
-            banner = (
-                f'asyncio REPL {sys.version} on {sys.platform}\n'
-                f'Use "await" directly instead of "asyncio.run()".\n'
-                f'Type "help", "copyright", "credits" or "license" '
-                f'for more information.\n'
-            )
+            if not sys.flags.quiet:
+                banner = (
+                    f'asyncio REPL {sys.version} on {sys.platform}\n'
+                    f'Use "await" directly instead of "asyncio.run()".\n'
+                    f'Type "help", "copyright", "credits" or "license" '
+                    f'for more information.\n'
+                )
 
-            console.write(banner)
+                console.write(banner)
 
-            if startup_path := os.getenv("PYTHONSTARTUP"):
+            if not sys.flags.isolated and (startup_path := os.getenv("PYTHONSTARTUP")):
                 sys.audit("cpython.run_startup", startup_path)
 
                 import tokenize
@@ -106,13 +111,17 @@ class REPLThread(threading.Thread):
             if CAN_USE_PYREPL:
                 theme = get_theme().syntax
                 ps1 = f"{theme.prompt}{ps1}{theme.reset}"
-            console.write(f"{ps1}import asyncio\n")
+                import_line = f'{theme.keyword}import{theme.reset} asyncio'
+            else:
+                import_line = "import asyncio"
+            console.write(f"{ps1}{import_line}\n")
 
             if CAN_USE_PYREPL:
                 from _pyrepl.simple_interact import (
                     run_multiline_interactive_console,
                 )
                 try:
+                    sys.ps1 = ps1
                     run_multiline_interactive_console(console)
                 except SystemExit:
                     # expected via the `exit` and `quit` commands
@@ -179,7 +188,10 @@ if __name__ == '__main__':
     if os.getenv('PYTHON_BASIC_REPL'):
         CAN_USE_PYREPL = False
     else:
-        from _pyrepl.main import CAN_USE_PYREPL
+        try:
+            from _pyrepl.main import CAN_USE_PYREPL
+        except ModuleNotFoundError:
+            CAN_USE_PYREPL = False
 
     return_code = 0
     loop = asyncio.new_event_loop()
@@ -235,4 +247,5 @@ if __name__ == '__main__':
             break
 
     console.write('exiting asyncio REPL...\n')
+    loop.close()
     sys.exit(return_code)

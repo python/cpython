@@ -4,17 +4,13 @@
 .. module:: getpass
    :synopsis: Portable reading of passwords and retrieval of the userid.
 
-.. moduleauthor:: Piers Lauder <piers@cs.su.oz.au>
-.. sectionauthor:: Fred L. Drake, Jr. <fdrake@acm.org>
-.. Windows (& Mac?) support by Guido van Rossum.
-
 **Source code:** :source:`Lib/getpass.py`
 
 --------------
 
 .. include:: ../includes/wasm-notavail.rst
 
-The :mod:`getpass` module provides two functions:
+The :mod:`!getpass` module provides two functions:
 
 .. function:: getpass(prompt='Password: ', stream=None, *, echo_char=None)
 
@@ -27,9 +23,9 @@ The :mod:`getpass` module provides two functions:
 
    The *echo_char* argument controls how user input is displayed while typing.
    If *echo_char* is ``None`` (default), input remains hidden. Otherwise,
-   *echo_char* must be a printable ASCII string and each typed character
-   is replaced by it. For example, ``echo_char='*'`` will display
-   asterisks instead of the actual input.
+   *echo_char* must be a single printable ASCII character and each
+   typed character is replaced by it. For example, ``echo_char='*'`` will
+   display asterisks instead of the actual input.
 
    If echo free input is unavailable getpass() falls back to printing
    a warning message to *stream* and reading from ``sys.stdin`` and
@@ -38,6 +34,14 @@ The :mod:`getpass` module provides two functions:
    .. note::
       If you call getpass from within IDLE, the input may be done in the
       terminal you launched IDLE from rather than the idle window itself.
+
+   .. note::
+      On Unix systems, when *echo_char* is set, the terminal will be
+      configured to operate in
+      :manpage:`noncanonical mode <termios(3)#Canonical_and_noncanonical_mode>`.
+      In particular, this means that line editing shortcuts such as
+      :kbd:`Ctrl+U` will not work and may insert unexpected characters into
+      the input.
 
    .. versionchanged:: 3.14
       Added the *echo_char* parameter for keyboard feedback.

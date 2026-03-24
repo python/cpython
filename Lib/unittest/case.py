@@ -849,7 +849,7 @@ class TestCase(object):
         context = _AssertNotWarnsContext(expected_warning, self)
         return context.handle('_assertNotWarns', args, kwargs)
 
-    def assertLogs(self, logger=None, level=None):
+    def assertLogs(self, logger=None, level=None, formatter=None):
         """Fail unless a log message of level *level* or higher is emitted
         on *logger_name* or its children.  If omitted, *level* defaults to
         INFO and *logger* defaults to the root logger.
@@ -861,6 +861,8 @@ class TestCase(object):
         `records` attribute will be a list of the corresponding LogRecord
         objects.
 
+        Optionally supply `formatter` to control how messages are formatted.
+
         Example::
 
             with self.assertLogs('foo', level='INFO') as cm:
@@ -871,7 +873,7 @@ class TestCase(object):
         """
         # Lazy import to avoid importing logging if it is not needed.
         from ._log import _AssertLogsContext
-        return _AssertLogsContext(self, logger, level, no_logs=False)
+        return _AssertLogsContext(self, logger, level, no_logs=False, formatter=formatter)
 
     def assertNoLogs(self, logger=None, level=None):
         """ Fail unless no log messages of level *level* or higher are emitted

@@ -3,13 +3,13 @@
 # See test_cmd_line_script.py for testing of script execution
 
 import os
+import re
 import subprocess
 import sys
 import sysconfig
 import tempfile
 import textwrap
 import unittest
-import warnings
 from test import support
 from test.support import os_helper
 from test.support import force_not_colorized
@@ -60,11 +60,22 @@ class CmdLineTest(unittest.TestCase):
     def test_help_env(self):
         out = self.verify_valid_flag('--help-env')
         self.assertIn(b'PYTHONHOME', out)
+        # Env vars in each section should be sorted alphabetically
+        # (ignoring underscores so PYTHON_FOO and PYTHONFOO intermix naturally)
+        sort_key = lambda name: name.replace(b'_', b'').lower()
+        sections = out.split(b'These variables have equivalent')
+        for section in sections:
+            envvars = re.findall(rb'^(PYTHON\w+)', section, re.MULTILINE)
+            self.assertEqual(envvars, sorted(envvars, key=sort_key),
+                             "env vars should be sorted alphabetically")
 
     @support.cpython_only
     def test_help_xoptions(self):
         out = self.verify_valid_flag('--help-xoptions')
         self.assertIn(b'-X dev', out)
+        options = re.findall(rb'^-X (\w+)', out, re.MULTILINE)
+        self.assertEqual(options, sorted(options),
+                         "options should be sorted alphabetically")
 
     @support.cpython_only
     def test_help_all(self):
@@ -201,6 +212,14 @@ class CmdLineTest(unittest.TestCase):
         self.assertTrue(data.find(b'1 loop') != -1)
         self.assertTrue(data.find(b'__main__.Timer') != -1)
 
+    @support.cpython_only
+    def test_null_byte_in_interactive_mode(self):
+        # gh-140594: Fix an out of bounds read when a single NUL character
+        # is read from the standard input in interactive mode.
+        proc = spawn_python('-i')
+        proc.communicate(b'\x00', timeout=support.SHORT_TIMEOUT)
+        self.assertEqual(proc.returncode, 0)
+
     def test_relativedir_bug46421(self):
         # Test `python -m unittest` with a relative directory beginning with ./
         # Note: We have to switch to the project's top module's directory, as per
@@ -300,6 +319,10 @@ class CmdLineTest(unittest.TestCase):
             cmd = [sys.executable, '-X', 'utf8', '-c', code, arg]
             return subprocess.run(cmd, stdout=subprocess.PIPE, text=True)
 
+        def run_no_utf8_mode(arg):
+            cmd = [sys.executable, '-X', 'utf8=0', '-c', code, arg]
+            return subprocess.run(cmd, stdout=subprocess.PIPE, text=True)
+
         valid_utf8 = 'e:\xe9, euro:\u20ac, non-bmp:\U0010ffff'.encode('utf-8')
         # invalid UTF-8 byte sequences with a valid UTF-8 sequence
         # in the middle.
@@ -312,7 +335,8 @@ class CmdLineTest(unittest.TestCase):
         )
         test_args = [valid_utf8, invalid_utf8]
 
-        for run_cmd in (run_default, run_c_locale, run_utf8_mode):
+        for run_cmd in (run_default, run_c_locale, run_utf8_mode,
+                        run_no_utf8_mode):
             with self.subTest(run_cmd=run_cmd):
                 for arg in test_args:
                     proc = run_cmd(arg)
@@ -484,6 +508,7 @@ class CmdLineTest(unittest.TestCase):
         self.assertRegex(err.decode('ascii', 'ignore'), 'SyntaxError')
         self.assertEqual(b'', out)
 
+    @force_not_colorized
     def test_stdout_flush_at_shutdown(self):
         # Issue #5319: if stdout.flush() fails at shutdown, an error should
         # be printed out.
@@ -937,21 +962,15 @@ class CmdLineTest(unittest.TestCase):
 
     @unittest.skipUnless(sysconfig.get_config_var('Py_TRACE_REFS'), "Requires --with-trace-refs build option")
     def test_python_dump_refs(self):
-        code = 'import sys; sys._clear_type_cache()'
-        # TODO: Remove warnings context manager once sys._clear_type_cache is removed
-        with warnings.catch_warnings():
-            warnings.simplefilter("ignore", DeprecationWarning)
-            rc, out, err = assert_python_ok('-c', code, PYTHONDUMPREFS='1')
+        code = 'import sys; sys._clear_internal_caches()'
+        rc, out, err = assert_python_ok('-c', code, PYTHONDUMPREFS='1')
         self.assertEqual(rc, 0)
 
     @unittest.skipUnless(sysconfig.get_config_var('Py_TRACE_REFS'), "Requires --with-trace-refs build option")
     def test_python_dump_refs_file(self):
         with tempfile.NamedTemporaryFile() as dump_file:
-            code = 'import sys; sys._clear_type_cache()'
-            # TODO: Remove warnings context manager once sys._clear_type_cache is removed
-            with warnings.catch_warnings():
-                warnings.simplefilter("ignore", DeprecationWarning)
-                rc, out, err = assert_python_ok('-c', code, PYTHONDUMPREFSFILE=dump_file.name)
+            code = 'import sys; sys._clear_internal_caches()'
+            rc, out, err = assert_python_ok('-c', code, PYTHONDUMPREFSFILE=dump_file.name)
             self.assertEqual(rc, 0)
             with open(dump_file.name, 'r') as file:
                 contents = file.read()

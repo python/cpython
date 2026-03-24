@@ -32,6 +32,7 @@ add_string_value(PyObject *dict, const char *key, const char *str_value)
 #endif
 
 /*[clinic input]
+@permit_long_summary
 _sysconfig.config_vars
 
 Returns a dictionary containing build variables intended to be exposed by sysconfig.
@@ -39,7 +40,7 @@ Returns a dictionary containing build variables intended to be exposed by syscon
 
 static PyObject *
 _sysconfig_config_vars_impl(PyObject *module)
-/*[clinic end generated code: output=9c41cdee63ea9487 input=391ff42f3af57d01]*/
+/*[clinic end generated code: output=9c41cdee63ea9487 input=fdda9cab12ca19fe]*/
 {
     PyObject *config = PyDict_New();
     if (config == NULL) {
@@ -80,11 +81,48 @@ _sysconfig_config_vars_impl(PyObject *module)
     return config;
 }
 
+#ifdef MS_WINDOWS
+/*[clinic input]
+_sysconfig.get_platform
+
+Return a string that identifies the current platform.
+[clinic start generated code]*/
+
+static PyObject *
+_sysconfig_get_platform_impl(PyObject *module)
+/*[clinic end generated code: output=4ecbbe2b77633f3e input=c0b43abda44f9a01]*/
+{
+#ifdef MS_WIN64
+#  if defined(_M_X64) || defined(_M_AMD64)
+#    define SYSCONFIG_PLATFORM "win-amd64"
+#  elif defined(_M_ARM64)
+#    define SYSCONFIG_PLATFORM "win-arm64"
+#  endif
+#endif
+
+#if defined(MS_WIN32) && !defined(MS_WIN64)
+#  if defined(_M_IX86)
+#    define SYSCONFIG_PLATFORM "win32"
+#  elif defined(_M_ARM)
+#    define SYSCONFIG_PLATFORM "win-arm32"
+#  endif
+#endif
+
+#ifdef SYSCONFIG_PLATFORM
+    return PyUnicode_FromString(SYSCONFIG_PLATFORM);
+#else
+    Py_RETURN_NONE;
+#endif
+}
+#endif  // MS_WINDOWS
+
+
 PyDoc_STRVAR(sysconfig__doc__,
 "A helper for the sysconfig module.");
 
 static struct PyMethodDef sysconfig_methods[] = {
     _SYSCONFIG_CONFIG_VARS_METHODDEF
+    _SYSCONFIG_GET_PLATFORM_METHODDEF
     {NULL, NULL}
 };
 

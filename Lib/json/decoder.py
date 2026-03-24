@@ -43,11 +43,11 @@ class JSONDecodeError(ValueError):
         return self.__class__, (self.msg, self.doc, self.pos)
 
 
-_CONSTANTS = {
+_CONSTANTS = frozendict({
     '-Infinity': NegInf,
     'Infinity': PosInf,
     'NaN': NaN,
-}
+})
 
 
 HEXDIGITS = re.compile(r'[0-9A-Fa-f]{4}', FLAGS)
@@ -297,10 +297,10 @@ class JSONDecoder(object):
         place of the given ``dict``.  This can be used to provide custom
         deserializations (e.g. to support JSON-RPC class hinting).
 
-        ``object_pairs_hook``, if specified will be called with the result of
-        every JSON object decoded with an ordered list of pairs.  The return
-        value of ``object_pairs_hook`` will be used instead of the ``dict``.
-        This feature can be used to implement custom decoders.
+        ``object_pairs_hook``, if specified will be called with the result
+        of every JSON object decoded with an ordered list of pairs.  The
+        return value of ``object_pairs_hook`` will be used instead of the
+        ``dict``.  This feature can be used to implement custom decoders.
         If ``object_hook`` is also defined, the ``object_pairs_hook`` takes
         priority.
 

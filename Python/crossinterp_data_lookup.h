@@ -88,6 +88,33 @@ _PyXIData_FormatNotShareableError(PyThreadState *tstate,
     va_end(vargs);
 }
 
+int
+_PyXI_UnwrapNotShareableError(PyThreadState * tstate, _PyXI_failure *failure)
+{
+    PyObject *exctype = get_notshareableerror_type(tstate);
+    assert(exctype != NULL);
+    if (!_PyErr_ExceptionMatches(tstate, exctype)) {
+        return -1;
+    }
+    PyObject *exc = _PyErr_GetRaisedException(tstate);
+    if (failure != NULL) {
+        _PyXI_errcode code = _PyXI_ERR_NOT_SHAREABLE;
+        if (_PyXI_InitFailure(failure, code, exc) < 0) {
+            return -1;
+        }
+    }
+    PyObject *cause = PyException_GetCause(exc);
+    if (cause != NULL) {
+        Py_DECREF(exc);
+        exc = cause;
+    }
+    else {
+        assert(PyException_GetContext(exc) == NULL);
+    }
+    _PyErr_SetRaisedException(tstate, exc);
+    return 0;
+}
+
 
 _PyXIData_getdata_t
 _PyXIData_Lookup(PyThreadState *tstate, PyObject *obj)
@@ -695,10 +722,28 @@ _PyFunction_FromXIData(_PyXIData_t *xidata)
         return NULL;
     }
     // Create a new function.
+    // For stateless functions (no globals) we use __main__ as __globals__,
+    // just like we do for builtins like exec().
     assert(PyCode_Check(code));
-    PyObject *globals = PyDict_New();
+    PyThreadState *tstate = _PyThreadState_GET();
+    PyObject *globals = _PyEval_GetGlobalsFromRunningMain(tstate);  // borrowed
     if (globals == NULL) {
+        if (_PyErr_Occurred(tstate)) {
+            Py_DECREF(code);
+            return NULL;
+        }
+        globals = PyDict_New();
+        if (globals == NULL) {
+            Py_DECREF(code);
+            return NULL;
+        }
+    }
+    else {
+        Py_INCREF(globals);
+    }
+    if (_PyEval_EnsureBuiltins(tstate, globals, NULL) < 0) {
         Py_DECREF(code);
+        Py_DECREF(globals);
         return NULL;
     }
     PyObject *func = PyFunction_New(code, globals);

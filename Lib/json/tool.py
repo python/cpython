@@ -22,13 +22,13 @@ _color_pattern = re.compile(r'''
     (?P<null>null)
 ''', re.VERBOSE)
 
-_group_to_theme_color = {
+_group_to_theme_color = frozendict({
     "key": "definition",
     "string": "string",
     "number": "number",
     "boolean": "keyword",
     "null": "keyword",
-}
+})
 
 
 def _colorize_json(json_str, theme):
@@ -46,7 +46,8 @@ def main():
                    'to validate and pretty-print JSON objects.')
     parser = argparse.ArgumentParser(description=description, color=True)
     parser.add_argument('infile', nargs='?',
-                        help='a JSON file to be validated or pretty-printed',
+                        help='a JSON file to be validated or pretty-printed; '
+                             'defaults to stdin',
                         default='-')
     parser.add_argument('outfile', nargs='?',
                         help='write the output of infile to outfile',
