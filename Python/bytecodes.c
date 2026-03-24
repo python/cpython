@@ -793,16 +793,7 @@ dummy_func(
         // assignment (+=) on ob_fval, which generates problematic JIT
         // stencils on i686-pc-windows-msvc.
         tier2 op(_BINARY_OP_ADD_FLOAT_INPLACE, (left, right -- res, l, r)) {
-            PyObject *left_o = PyStackRef_AsPyObjectBorrow(left);
-            PyObject *right_o = PyStackRef_AsPyObjectBorrow(right);
-            assert(PyFloat_CheckExact(left_o));
-            assert(PyFloat_CheckExact(right_o));
-            assert(_PyObject_IsUniquelyReferenced(left_o));
-            STAT_INC(BINARY_OP, hit);
-            double dres = ((PyFloatObject *)left_o)->ob_fval + ((PyFloatObject *)right_o)->ob_fval;
-            ((PyFloatObject *)left_o)->ob_fval = dres;
-            // Transfer ownership of left to res.
-            // Original left is now dead.
+            FLOAT_INPLACE_OP(left, right, left, +);
             res = left;
             l = PyStackRef_NULL;
             r = right;
@@ -810,14 +801,7 @@ dummy_func(
         }
 
         tier2 op(_BINARY_OP_SUBTRACT_FLOAT_INPLACE, (left, right -- res, l, r)) {
-            PyObject *left_o = PyStackRef_AsPyObjectBorrow(left);
-            PyObject *right_o = PyStackRef_AsPyObjectBorrow(right);
-            assert(PyFloat_CheckExact(left_o));
-            assert(PyFloat_CheckExact(right_o));
-            assert(_PyObject_IsUniquelyReferenced(left_o));
-            STAT_INC(BINARY_OP, hit);
-            double dres = ((PyFloatObject *)left_o)->ob_fval - ((PyFloatObject *)right_o)->ob_fval;
-            ((PyFloatObject *)left_o)->ob_fval = dres;
+            FLOAT_INPLACE_OP(left, right, left, -);
             res = left;
             l = PyStackRef_NULL;
             r = right;
@@ -825,14 +809,7 @@ dummy_func(
         }
 
         tier2 op(_BINARY_OP_MULTIPLY_FLOAT_INPLACE, (left, right -- res, l, r)) {
-            PyObject *left_o = PyStackRef_AsPyObjectBorrow(left);
-            PyObject *right_o = PyStackRef_AsPyObjectBorrow(right);
-            assert(PyFloat_CheckExact(left_o));
-            assert(PyFloat_CheckExact(right_o));
-            assert(_PyObject_IsUniquelyReferenced(left_o));
-            STAT_INC(BINARY_OP, hit);
-            double dres = ((PyFloatObject *)left_o)->ob_fval * ((PyFloatObject *)right_o)->ob_fval;
-            ((PyFloatObject *)left_o)->ob_fval = dres;
+            FLOAT_INPLACE_OP(left, right, left, *);
             res = left;
             l = PyStackRef_NULL;
             r = right;
@@ -841,14 +818,7 @@ dummy_func(
 
         // Inplace RIGHT variants: mutate the uniquely-referenced right operand.
         tier2 op(_BINARY_OP_ADD_FLOAT_INPLACE_RIGHT, (left, right -- res, l, r)) {
-            PyObject *left_o = PyStackRef_AsPyObjectBorrow(left);
-            PyObject *right_o = PyStackRef_AsPyObjectBorrow(right);
-            assert(PyFloat_CheckExact(left_o));
-            assert(PyFloat_CheckExact(right_o));
-            assert(_PyObject_IsUniquelyReferenced(right_o));
-            STAT_INC(BINARY_OP, hit);
-            double dres = ((PyFloatObject *)left_o)->ob_fval + ((PyFloatObject *)right_o)->ob_fval;
-            ((PyFloatObject *)right_o)->ob_fval = dres;
+            FLOAT_INPLACE_OP(left, right, right, +);
             res = right;
             l = left;
             r = PyStackRef_NULL;
@@ -856,14 +826,7 @@ dummy_func(
         }
 
         tier2 op(_BINARY_OP_MULTIPLY_FLOAT_INPLACE_RIGHT, (left, right -- res, l, r)) {
-            PyObject *left_o = PyStackRef_AsPyObjectBorrow(left);
-            PyObject *right_o = PyStackRef_AsPyObjectBorrow(right);
-            assert(PyFloat_CheckExact(left_o));
-            assert(PyFloat_CheckExact(right_o));
-            assert(_PyObject_IsUniquelyReferenced(right_o));
-            STAT_INC(BINARY_OP, hit);
-            double dres = ((PyFloatObject *)left_o)->ob_fval * ((PyFloatObject *)right_o)->ob_fval;
-            ((PyFloatObject *)right_o)->ob_fval = dres;
+            FLOAT_INPLACE_OP(left, right, right, *);
             res = right;
             l = left;
             r = PyStackRef_NULL;
@@ -871,14 +834,7 @@ dummy_func(
         }
 
         tier2 op(_BINARY_OP_SUBTRACT_FLOAT_INPLACE_RIGHT, (left, right -- res, l, r)) {
-            PyObject *left_o = PyStackRef_AsPyObjectBorrow(left);
-            PyObject *right_o = PyStackRef_AsPyObjectBorrow(right);
-            assert(PyFloat_CheckExact(left_o));
-            assert(PyFloat_CheckExact(right_o));
-            assert(_PyObject_IsUniquelyReferenced(right_o));
-            STAT_INC(BINARY_OP, hit);
-            double dres = ((PyFloatObject *)left_o)->ob_fval - ((PyFloatObject *)right_o)->ob_fval;
-            ((PyFloatObject *)right_o)->ob_fval = dres;
+            FLOAT_INPLACE_OP(left, right, right, -);
             res = right;
             l = left;
             r = PyStackRef_NULL;
