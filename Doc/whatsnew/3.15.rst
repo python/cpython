@@ -1945,7 +1945,7 @@ Build changes
 
 * The official Windows 64-bit binaries on python.org__ are now using the new
   :ref:`tail-calling interpreter <whatsnew314-tail-call-interpreter>` since Python 3.15.0a8.
-  (Contributed by Ken Jin, Brandt Bucher and Chris Eibl in :gh:`143068`.
+  (Contributed by Ken Jin, Brandt Bucher and Chris Eibl in :gh:`139922`.
   Special thanks go to Steve Dower for his assistance with the integration in the
   Windows release build process and to the MSVC team including Hulon Jenkins
   for ``msvc::musttail``.)
