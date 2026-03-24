@@ -1,7 +1,7 @@
 .. _c-api-index:
 
 ##################################
-  Python/C API Reference Manual
+  Python/C API reference manual
 ##################################
 
 This manual documents the API used by C and C++ programmers who want to write
@@ -17,10 +17,16 @@ document the API functions in detail.
    veryhigh.rst
    refcounting.rst
    exceptions.rst
+   extension-modules.rst
    utilities.rst
    abstract.rst
    concrete.rst
-   init.rst
+   interp-lifecycle.rst
+   threads.rst
+   synchronization.rst
+   tls.rst
+   subinterpreters.rst
+   profiling.rst
    init_config.rst
    memory.rst
    objimpl.rst

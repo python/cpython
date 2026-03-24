@@ -291,6 +291,8 @@ def collect_os(info_add):
         "DISTUTILS_USE_SDK",
         "DYLD_LIBRARY_PATH",
         "ENSUREPIP_OPTIONS",
+        "FORCE_COLOR",
+        "GITHUB_ACTIONS",
         "HISTORY_FILE",
         "HOME",
         "HOMEDRIVE",
@@ -307,11 +309,13 @@ def collect_os(info_add):
         "MAKEFLAGS",
         "MIXERDEV",
         "MSSDK",
+        "NO_COLOR",
         "PATH",
         "PATHEXT",
         "PIP_CONFIG_FILE",
         "PLAT",
         "POSIXLY_CORRECT",
+        "PYTHON_COLORS",
         "PY_SAX_PARSER",
         "ProgramFiles",
         "ProgramFiles(x86)",
@@ -524,6 +528,7 @@ def collect_sysconfig(info_add):
         'PY_CFLAGS',
         'PY_CFLAGS_NODIST',
         'PY_CORE_LDFLAGS',
+        'PY_CORE_EXE_LDFLAGS',
         'PY_LDFLAGS',
         'PY_LDFLAGS_NODIST',
         'PY_STDMODULE_CFLAGS',
@@ -534,6 +539,7 @@ def collect_sysconfig(info_add):
         'SHELL',
         'SOABI',
         'TEST_MODULES',
+        'VAPTH',
         'abs_builddir',
         'abs_srcdir',
         'prefix',
@@ -745,6 +751,10 @@ def collect_test_socket(info_add):
                   if name.startswith('HAVE_')]
     copy_attributes(info_add, test_socket, 'test_socket.%s', attributes)
 
+    # Get IOCTL_VM_SOCKETS_GET_LOCAL_CID of /dev/vsock
+    cid = test_socket.get_cid()
+    info_add('test_socket.get_cid', cid)
+
 
 def collect_support(info_add):
     try:
@@ -762,6 +772,7 @@ def collect_support(info_add):
         'is_emscripten',
         'is_jython',
         'is_wasi',
+        'is_wasm32',
     )
     copy_attributes(info_add, support, 'support.%s', attributes)
 
@@ -920,10 +931,17 @@ def collect_windows(info_add):
 
     try:
         import _winapi
-        dll_path = _winapi.GetModuleFileName(sys.dllhandle)
-        info_add('windows.dll_path', dll_path)
-    except (ImportError, AttributeError):
+    except ImportError:
         pass
+    else:
+        try:
+            dll_path = _winapi.GetModuleFileName(sys.dllhandle)
+            info_add('windows.dll_path', dll_path)
+        except AttributeError:
+            pass
+
+        call_func(info_add, 'windows.ansi_code_page', _winapi, 'GetACP')
+        call_func(info_add, 'windows.oem_code_page', _winapi, 'GetOEMCP')
 
     # windows.version_caption: "wmic os get Caption,Version /value" command
     import subprocess

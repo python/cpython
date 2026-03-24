@@ -1,5 +1,4 @@
 import binascii
-import ctypes
 import math
 import struct
 import sys

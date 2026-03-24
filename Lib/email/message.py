@@ -74,19 +74,25 @@ def _parseparam(s):
     # RDM This might be a Header, so for now stringify it.
     s = ';' + str(s)
     plist = []
-    while s[:1] == ';':
-        s = s[1:]
-        end = s.find(';')
-        while end > 0 and (s.count('"', 0, end) - s.count('\\"', 0, end)) % 2:
-            end = s.find(';', end + 1)
+    start = 0
+    while s.find(';', start) == start:
+        start += 1
+        end = s.find(';', start)
+        ind, diff = start, 0
+        while end > 0:
+            diff += s.count('"', ind, end) - s.count('\\"', ind, end)
+            if diff % 2 == 0:
+                break
+            end, ind = ind, s.find(';', end + 1)
         if end < 0:
             end = len(s)
-        f = s[:end]
-        if '=' in f:
-            i = f.index('=')
-            f = f[:i].strip().lower() + '=' + f[i+1:].strip()
+        i = s.find('=', start, end)
+        if i == -1:
+            f = s[start:end]
+        else:
+            f = s[start:i].rstrip().lower() + '=' + s[i+1:end].lstrip()
         plist.append(f.strip())
-        s = s[end:]
+        start = end
     return plist
 
 
@@ -135,7 +141,7 @@ def _decode_uu(encoded):
 class Message:
     """Basic message object.
 
-    A message object is defined as something that has a bunch of RFC 2822
+    A message object is defined as something that has a bunch of RFC 5322
     headers and a payload.  It may optionally have an envelope header
     (a.k.a. Unix-From or From_ header).  If the message is a container (i.e. a
     multipart or a message/rfc822), then the payload is a list of Message
@@ -313,6 +319,8 @@ class Message:
                 # If it does happen, turn the string into bytes in a way
                 # guaranteed not to fail.
                 bpayload = payload.encode('raw-unicode-escape')
+        else:
+            bpayload = payload
         if cte == 'quoted-printable':
             return quopri.decodestring(bpayload)
         elif cte == 'base64':
@@ -564,7 +572,7 @@ class Message:
 
         msg.add_header('content-disposition', 'attachment', filename='bud.gif')
         msg.add_header('content-disposition', 'attachment',
-                       filename=('utf-8', '', Fußballer.ppt'))
+                       filename=('utf-8', '', 'Fußballer.ppt'))
         msg.add_header('content-disposition', 'attachment',
                        filename='Fußballer.ppt'))
         """
