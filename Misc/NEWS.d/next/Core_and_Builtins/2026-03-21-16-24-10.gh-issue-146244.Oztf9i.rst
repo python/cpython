@@ -1,2 +1,0 @@
-Fix memory leak in ``SET_ITEM`` macro in ``initconfig.c`` when expression
-evaluation fails
