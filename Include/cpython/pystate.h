@@ -200,6 +200,8 @@ struct _ts {
        The PyThreadObject must hold the only reference to this value.
     */
     PyObject *threading_local_sentinel;
+
+    _PyStackChunk *datastack_cached_chunk;
 };
 
 #ifdef Py_DEBUG
