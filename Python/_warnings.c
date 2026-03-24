@@ -7,6 +7,7 @@
 #include "pycore_pylifecycle.h"   // _Py_IsInterpreterFinalizing()
 #include "pycore_pystate.h"       // _PyThreadState_GET()
 #include "pycore_traceback.h"     // _Py_DisplaySourceLine()
+#include "pycore_tuple.h"         // _PyTuple_FromPair
 #include "pycore_unicodeobject.h" // _PyUnicode_EqualToASCIIString()
 
 #include <stdbool.h>
@@ -634,7 +635,7 @@ update_registry(PyInterpreterState *interp, PyObject *registry, PyObject *text,
     if (add_zero)
         altkey = PyTuple_Pack(3, text, category, _PyLong_GetZero());
     else
-        altkey = PyTuple_Pack(2, text, category);
+        altkey = _PyTuple_FromPair(text, category);
 
     rc = already_warned(interp, registry, altkey, 1);
     Py_XDECREF(altkey);

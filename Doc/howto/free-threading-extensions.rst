@@ -384,6 +384,30 @@ Important Considerations
   internal extension state, standard mutexes or other synchronization
   primitives might be more appropriate.
 
+.. _per-object-locks:
+
+Per-Object Locks (``ob_mutex``)
+...............................
+
+In the free-threaded build, each Python object contains a :c:member:`~PyObject.ob_mutex`
+field of type :c:type:`PyMutex`.  This mutex is **reserved for use by the
+critical section API** (:c:macro:`Py_BEGIN_CRITICAL_SECTION` /
+:c:macro:`Py_END_CRITICAL_SECTION`).
+
+.. warning::
+
+   Do **not** lock ``ob_mutex`` directly with ``PyMutex_Lock(&obj->ob_mutex)``.
+   Mixing direct ``PyMutex_Lock`` calls with the critical section API on the
+   same mutex can cause deadlocks.
+
+Even if your own code never uses critical sections on a particular object type,
+**CPython internals may use the critical section API on any Python object**.
+
+If your extension type needs its own lock, add a separate :c:type:`PyMutex`
+field (or another synchronization primitive) to your object struct.
+:c:type:`PyMutex` is very lightweight, so there is negligible cost to having
+an additional one.
+
 
 Building Extensions for the Free-Threaded Build
 ===============================================

@@ -2760,11 +2760,9 @@ array_buffer_getbuf(PyObject *op, Py_buffer *view, int flags)
     view->internal = NULL;
     if ((flags & PyBUF_FORMAT) == PyBUF_FORMAT) {
         view->format = (char *)self->ob_descr->formats;
-#ifdef Py_UNICODE_WIDE
-        if (self->ob_descr->typecode == 'u') {
+        if (sizeof(wchar_t) >= 4 && self->ob_descr->typecode == 'u') {
             view->format = "w";
         }
-#endif
     }
 
     self->ob_exports++;

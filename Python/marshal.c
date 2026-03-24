@@ -14,6 +14,7 @@
 #include "pycore_object.h"           // _PyObject_IsUniquelyReferenced
 #include "pycore_pystate.h"          // _PyInterpreterState_GET()
 #include "pycore_setobject.h"        // _PySet_NextEntryRef()
+#include "pycore_tuple.h"            // _PyTuple_FromPairSteal
 #include "pycore_unicodeobject.h"    // _PyUnicode_InternImmortal()
 
 #include "marshal.h"                 // Py_MARSHAL_VERSION
@@ -629,9 +630,7 @@ w_complex_object(PyObject *v, char flag, WFILE *p)
                 Py_DECREF(value);
                 break;
             }
-            PyObject *pair = PyTuple_Pack(2, dump, value);
-            Py_DECREF(dump);
-            Py_DECREF(value);
+            PyObject *pair = _PyTuple_FromPairSteal(dump, value);
             if (pair == NULL) {
                 p->error = WFERR_NOMEMORY;
                 break;

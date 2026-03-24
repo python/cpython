@@ -420,6 +420,7 @@ _remote_debugging_RemoteUnwinder___init___impl(RemoteUnwinderObject *self,
 
 #if defined(__APPLE__)
     self->thread_id_offset = 0;
+    self->thread_id_offset_initialized = 0;
 #endif
 
 #ifdef MS_WINDOWS
@@ -583,11 +584,16 @@ _remote_debugging_RemoteUnwinder_get_stack_trace_impl(RemoteUnwinderObject *self
             current_tstate = self->tstate_addr;
         }
 
+        // Acquire main thread state information
+        uintptr_t main_thread_tstate = GET_MEMBER(uintptr_t, interp_state_buffer,
+                self->debug_offsets.interpreter_state.threads_main);
+
         while (current_tstate != 0) {
             uintptr_t prev_tstate = current_tstate;
             PyObject* frame_info = unwind_stack_for_thread(self, &current_tstate,
                                                            gil_holder_tstate,
-                                                           gc_frame);
+                                                           gc_frame,
+                                                           main_thread_tstate);
             if (!frame_info) {
                 // Check if this was an intentional skip due to mode-based filtering
                 if ((self->mode == PROFILING_MODE_CPU || self->mode == PROFILING_MODE_GIL ||
@@ -1205,6 +1211,9 @@ _remote_debugging_exec(PyObject *m)
         return -1;
     }
     if (PyModule_AddIntConstant(m, "THREAD_STATUS_HAS_EXCEPTION", THREAD_STATUS_HAS_EXCEPTION) < 0) {
+        return -1;
+    }
+    if (PyModule_AddIntConstant(m, "THREAD_STATUS_MAIN_THREAD", THREAD_STATUS_MAIN_THREAD) < 0) {
         return -1;
     }
 

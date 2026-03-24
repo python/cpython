@@ -1118,8 +1118,9 @@ static PyObject *
 select_devpoll_close_impl(devpollObject *self)
 /*[clinic end generated code: output=26b355bd6429f21b input=408fde21a377ccfb]*/
 {
-    errno = devpoll_internal_close(self);
-    if (errno < 0) {
+    int err = devpoll_internal_close(self);
+    if (err != 0) {
+        errno = err;
         PyErr_SetFromErrno(PyExc_OSError);
         return NULL;
     }
@@ -1446,8 +1447,9 @@ static PyObject *
 select_epoll_close_impl(pyEpoll_Object *self)
 /*[clinic end generated code: output=ee2144c446a1a435 input=f626a769192e1dbe]*/
 {
-    errno = pyepoll_internal_close(self);
-    if (errno < 0) {
+    int err = pyepoll_internal_close(self);
+    if (err != 0) {
+        errno = err;
         PyErr_SetFromErrno(PyExc_OSError);
         return NULL;
     }
@@ -2263,8 +2265,9 @@ static PyObject *
 select_kqueue_close_impl(kqueue_queue_Object *self)
 /*[clinic end generated code: output=d1c7df0b407a4bc1 input=6d763c858b17b690]*/
 {
-    errno = kqueue_queue_internal_close(self);
-    if (errno < 0) {
+    int err = kqueue_queue_internal_close(self);
+    if (err != 0) {
+        errno = err;
         PyErr_SetFromErrno(PyExc_OSError);
         return NULL;
     }
