@@ -1943,6 +1943,15 @@ Build changes
   and :option:`-X dev <-X>` is passed to the Python or Python is built in :ref:`debug mode <debug-build>`.
   (Contributed by Donghee Na in :gh:`141770`.)
 
+* The official Windows 64-bit binaries on python.org__ are now using the
+  tail-calling interpreter since Python 3.15.0a8.
+  (Contributed by Ken Jin, Brandt Bucher and Chris Eibl in :gh:`143068`.
+  Special thanks go to Steve Dower for his assistance with the integration in the
+  Windows release build process and to the MSVC team including Hulon Jenkins
+  for ``msvc::musttail``.)
+
+  __ https://www.python.org/downloads/windows/
+
 
 Porting to Python 3.15
 ======================
