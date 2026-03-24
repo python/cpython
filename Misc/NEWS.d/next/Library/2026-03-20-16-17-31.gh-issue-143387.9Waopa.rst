@@ -1,0 +1,7 @@
+In importlib.metadata, when a distribution file is corrupt and there is no
+metadata file, calls to ``Distribution.metadata()`` (including implicit
+calls from other properties like ``.name`` and ``.requires``) will now raise
+a ``MetadataNotFound`` Exception. This allows callers to distinguish between
+missing metadata and a degenerate (empty) metadata. Previously, if the file
+was missing, an empty ``PackageMetadata`` would be returned and would be
+indistinguishable from the presence of an empty file.

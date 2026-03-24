@@ -5,7 +5,6 @@ import gc
 import math
 import operator
 import unittest
-import platform
 import struct
 import sys
 import weakref
@@ -434,41 +433,11 @@ class StructTest(ComplexesAreIdenticalMixin, unittest.TestCase):
         self.assertEqual(s.unpack_from(buffer=test_string, offset=2),
                          (b'cd01',))
 
-    def test_pack_into(self):
+    def _test_pack_into(self, pack_into):
         test_string = b'Reykjavik rocks, eow!'
-        writable_buf = array.array('b', b' '*100)
-        fmt = '21s'
-        s = struct.Struct(fmt)
+        writable_buf = memoryview(array.array('b', b' '*100))
 
         # Test without offset
-        s.pack_into(writable_buf, 0, test_string)
-        from_buf = writable_buf.tobytes()[:len(test_string)]
-        self.assertEqual(from_buf, test_string)
-
-        # Test with offset.
-        s.pack_into(writable_buf, 10, test_string)
-        from_buf = writable_buf.tobytes()[:len(test_string)+10]
-        self.assertEqual(from_buf, test_string[:10] + test_string)
-
-        # Go beyond boundaries.
-        small_buf = array.array('b', b' '*10)
-        self.assertRaises((ValueError, struct.error), s.pack_into, small_buf, 0,
-                          test_string)
-        self.assertRaises((ValueError, struct.error), s.pack_into, small_buf, 2,
-                          test_string)
-
-        # Test bogus offset (issue 3694)
-        sb = small_buf
-        self.assertRaises((TypeError, struct.error), struct.pack_into, b'', sb,
-                          None)
-
-    def test_pack_into_fn(self):
-        test_string = b'Reykjavik rocks, eow!'
-        writable_buf = array.array('b', b' '*100)
-        fmt = '21s'
-        pack_into = lambda *args: struct.pack_into(fmt, *args)
-
-        # Test without offset.
         pack_into(writable_buf, 0, test_string)
         from_buf = writable_buf.tobytes()[:len(test_string)]
         self.assertEqual(from_buf, test_string)
@@ -478,12 +447,49 @@ class StructTest(ComplexesAreIdenticalMixin, unittest.TestCase):
         from_buf = writable_buf.tobytes()[:len(test_string)+10]
         self.assertEqual(from_buf, test_string[:10] + test_string)
 
+        # Test with negative offset.
+        pack_into(writable_buf, -30, test_string)
+        from_buf = writable_buf.tobytes()[-30:-30+len(test_string)]
+        self.assertEqual(from_buf, test_string)
+
         # Go beyond boundaries.
         small_buf = array.array('b', b' '*10)
-        self.assertRaises((ValueError, struct.error), pack_into, small_buf, 0,
-                          test_string)
-        self.assertRaises((ValueError, struct.error), pack_into, small_buf, 2,
-                          test_string)
+        with self.assertRaises((ValueError, struct.error)):
+            pack_into(small_buf, 0, test_string)
+        with self.assertRaises((ValueError, struct.error)):
+            pack_into(writable_buf, 90, test_string)
+        with self.assertRaises((ValueError, struct.error)):
+            pack_into(writable_buf, -10, test_string)
+        with self.assertRaises((ValueError, struct.error)):
+            pack_into(writable_buf, 150, test_string)
+        with self.assertRaises((ValueError, struct.error)):
+            pack_into(writable_buf, -150, test_string)
+
+        # Test invalid buffer.
+        self.assertRaises(TypeError, pack_into, b' '*100, 0, test_string)
+        self.assertRaises(TypeError, pack_into, ' '*100, 0, test_string)
+        self.assertRaises(TypeError, pack_into, [0]*100, 0, test_string)
+        self.assertRaises(TypeError, pack_into, None, 0, test_string)
+        self.assertRaises(TypeError, pack_into, writable_buf[::2], 0, test_string)
+        self.assertRaises(TypeError, pack_into, writable_buf[::-1], 0, test_string)
+
+        # Test bogus offset (issue bpo-3694)
+        with self.assertRaises(TypeError):
+            pack_into(writable_buf, None, test_string)
+        with self.assertRaises(TypeError):
+            pack_into(writable_buf, 0.0, test_string)
+        with self.assertRaises(OverflowError):
+            pack_into(writable_buf, 2**1000, test_string)
+        with self.assertRaises(OverflowError):
+            pack_into(writable_buf, -2**1000, test_string)
+
+    def test_pack_into(self):
+        s = struct.Struct('21s')
+        self._test_pack_into(s.pack_into)
+
+    def test_pack_into_fn(self):
+        pack_into = lambda *args: struct.pack_into('21s', *args)
+        self._test_pack_into(pack_into)
 
     def test_unpack_with_buffer(self):
         # SF bug 1563759: struct.unpack doesn't support buffer protocol objects
@@ -546,6 +552,15 @@ class StructTest(ComplexesAreIdenticalMixin, unittest.TestCase):
         hugecount2 = '{}b{}H'.format(sys.maxsize//2, sys.maxsize//2)
         self.assertRaises(struct.error, struct.calcsize, hugecount2)
 
+        hugecount3 = '{}i{}q'.format(sys.maxsize // 4, sys.maxsize // 8)
+        self.assertRaises(struct.error, struct.calcsize, hugecount3)
+
+        hugecount4 = '{}?s'.format(sys.maxsize)
+        self.assertRaises(struct.error, struct.calcsize, hugecount4)
+
+        hugecount5 = '{}?p'.format(sys.maxsize)
+        self.assertRaises(struct.error, struct.calcsize, hugecount5)
+
     def test_trailing_counter(self):
         store = array.array('b', b' '*100)
 
@@ -575,12 +590,37 @@ class StructTest(ComplexesAreIdenticalMixin, unittest.TestCase):
         # Issue 9422: there was a memory leak when reinitializing a
         # Struct instance.  This test can be used to detect the leak
         # when running with regrtest -L.
-        s = struct.Struct('i')
-        s.__init__('ii')
+        s = struct.Struct('>h')
+        msg = 'Re-initialization .* will not work'
+        with self.assertWarnsRegex(FutureWarning, msg):
+            s.__init__('>hh')
+        self.assertEqual(s.format, '>hh')
+        packed = b'\x00\x01\x00\x02'
+        self.assertEqual(s.pack(1, 2), packed)
+        self.assertEqual(s.unpack(packed), (1, 2))
+
+        s.__init__('>hh')  # same format
+        self.assertEqual(s.format, '>hh')
+        self.assertEqual(s.pack(1, 2), packed)
+        self.assertEqual(s.unpack(packed), (1, 2))
+
+        with self.assertWarnsRegex(FutureWarning, msg):
+            with self.assertRaises(ValueError):
+                s.__init__('\udc00')
+        self.assertEqual(s.format, '>hh')
+        self.assertEqual(s.pack(1, 2), packed)
+        self.assertEqual(s.unpack(packed), (1, 2))
+
+        with self.assertWarnsRegex(FutureWarning, msg):
+            with self.assertRaises(struct.error):
+                s.__init__('$')
+        self.assertEqual(s.format, '>hh')
+        self.assertEqual(s.pack(1, 2), packed)
+        self.assertEqual(s.unpack(packed), (1, 2))
 
     def check_sizeof(self, format_str, number_of_codes):
         # The size of 'PyStructObject'
-        totalsize = support.calcobjsize('2n3P')
+        totalsize = support.calcobjsize('2n3P?0P')
         # The size taken up by the 'formatcode' dynamic array
         totalsize += struct.calcsize('P3n0P') * (number_of_codes + 1)
         support.check_sizeof(self, struct.Struct(format_str), totalsize)
@@ -778,14 +818,159 @@ class StructTest(ComplexesAreIdenticalMixin, unittest.TestCase):
         test_error_propagation('N')
         test_error_propagation('n')
 
-    def test_struct_subclass_instantiation(self):
+    def test_custom_struct_init(self):
         # Regression test for https://github.com/python/cpython/issues/112358
         class MyStruct(struct.Struct):
-            def __init__(self):
+            def __init__(self, *args, **kwargs):
                 super().__init__('>h')
 
-        my_struct = MyStruct()
+        my_struct = MyStruct('>h')
         self.assertEqual(my_struct.pack(12345), b'\x30\x39')
+        my_struct = MyStruct(format='>h')
+        self.assertEqual(my_struct.pack(12345), b'\x30\x39')
+
+        warnmsg = r"Different format arguments for __new__\(\) and __init__\(\) methods of Struct"
+        with self.assertWarnsRegex(FutureWarning, warnmsg):
+            my_struct = MyStruct('<h')
+        self.assertEqual(my_struct.pack(12345), b'\x30\x39')
+        with self.assertWarnsRegex(FutureWarning, warnmsg):
+            my_struct = MyStruct(format='<h')
+        self.assertEqual(my_struct.pack(12345), b'\x30\x39')
+
+        warnmsg = r"Struct\(\) missing required argument 'format' \(pos 1\)"
+        with self.assertWarnsRegex(DeprecationWarning, warnmsg):
+            my_struct = MyStruct()
+        self.assertEqual(my_struct.pack(12345), b'\x30\x39')
+        with self.assertWarnsRegex(DeprecationWarning, warnmsg):
+            my_struct = MyStruct(arg='>h')
+        self.assertEqual(my_struct.pack(12345), b'\x30\x39')
+
+        warnmsg = r"Struct\(\) takes at most 1 argument \(2 given\)"
+        with self.assertWarnsRegex(DeprecationWarning, warnmsg):
+            my_struct = MyStruct('>h', 42)
+        self.assertEqual(my_struct.pack(12345), b'\x30\x39')
+        with self.assertWarnsRegex(DeprecationWarning, warnmsg):
+            my_struct = MyStruct('>h', arg=42)
+        self.assertEqual(my_struct.pack(12345), b'\x30\x39')
+        with self.assertWarnsRegex(DeprecationWarning, warnmsg):
+            my_struct = MyStruct('>h', format=42)
+        self.assertEqual(my_struct.pack(12345), b'\x30\x39')
+        with self.assertWarnsRegex(DeprecationWarning, warnmsg):
+            my_struct = MyStruct(format='>h', arg=42)
+        self.assertEqual(my_struct.pack(12345), b'\x30\x39')
+
+        warnmsg = r"Invalid 'format' argument for Struct\.__new__\(\): "
+        with self.assertWarnsRegex(DeprecationWarning, warnmsg + '.*must be'):
+            my_struct = MyStruct(42)
+        self.assertEqual(my_struct.pack(12345), b'\x30\x39')
+        with self.assertWarnsRegex(DeprecationWarning, warnmsg + '.*must be'):
+            my_struct = MyStruct(format=42)
+        self.assertEqual(my_struct.pack(12345), b'\x30\x39')
+        with self.assertWarnsRegex(DeprecationWarning, warnmsg + 'bad char'):
+            my_struct = MyStruct('$')
+        self.assertEqual(my_struct.pack(12345), b'\x30\x39')
+        with self.assertWarnsRegex(DeprecationWarning, warnmsg + 'bad char'):
+            my_struct = MyStruct(format='$')
+        self.assertEqual(my_struct.pack(12345), b'\x30\x39')
+        with self.assertWarnsRegex(DeprecationWarning, warnmsg + "non-ASCII"):
+            my_struct = MyStruct('\udc00')
+        self.assertEqual(my_struct.pack(12345), b'\x30\x39')
+        with self.assertWarnsRegex(DeprecationWarning, warnmsg + "non-ASCII"):
+            my_struct = MyStruct(format='\udc00')
+        self.assertEqual(my_struct.pack(12345), b'\x30\x39')
+
+    def test_custom_struct_new(self):
+        # New way, no warnings:
+        class MyStruct(struct.Struct):
+            def __new__(cls, *args, **kwargs):
+                return super().__new__(cls, '>h')
+
+        for format in '>h', '<h', 42, '$', '\u20ac', '\udc00', b'\xa4':
+            with self.subTest(format=format):
+                my_struct = MyStruct(format)
+                self.assertEqual(my_struct.format, '>h')
+                self.assertEqual(my_struct.pack(12345), b'\x30\x39')
+        my_struct = MyStruct(format='<h')
+        self.assertEqual(my_struct.format, '>h')
+        self.assertEqual(my_struct.pack(12345), b'\x30\x39')
+        my_struct = MyStruct()
+        self.assertEqual(my_struct.format, '>h')
+        self.assertEqual(my_struct.pack(12345), b'\x30\x39')
+        my_struct = MyStruct('<h', 42)
+        self.assertEqual(my_struct.format, '>h')
+        self.assertEqual(my_struct.pack(12345), b'\x30\x39')
+
+    def test_custom_struct_new_and_init(self):
+        # New way, no warnings:
+        class MyStruct(struct.Struct):
+            def __new__(cls, newargs, initargs):
+                return super().__new__(cls, *newargs)
+            def __init__(self, newargs, initargs):
+                if initargs is not None:
+                    super().__init__(*initargs)
+
+        my_struct = MyStruct(('>h',), ('>h',))
+        self.assertEqual(my_struct.format, '>h')
+        self.assertEqual(my_struct.pack(12345), b'\x30\x39')
+        with self.assertRaises(TypeError):
+            MyStruct((), ())
+        with self.assertRaises(TypeError):
+            MyStruct(('>h',), ())
+        with self.assertRaises(TypeError):
+            MyStruct((), ('>h',))
+        with self.assertRaises(TypeError):
+            MyStruct((42,), ('>h',))
+        with self.assertWarns(FutureWarning):
+            with self.assertRaises(TypeError):
+                MyStruct(('>h',), (42,))
+        with self.assertRaises(struct.error):
+            MyStruct(('$',), ('>h',))
+        with self.assertWarns(FutureWarning):
+            with self.assertRaises(struct.error):
+                MyStruct(('>h',), ('$',))
+        with self.assertRaises(ValueError):
+            MyStruct(('\udc00',), ('>h',))
+        with self.assertRaises(ValueError):
+            MyStruct((b'\xa4',), ('>h',))
+        with self.assertWarns(FutureWarning):
+            with self.assertRaises(ValueError):
+                MyStruct(('>h',), ('\udc00',))
+        with self.assertWarns(FutureWarning):
+            with self.assertRaises(ValueError):
+                MyStruct(('>h',), (b'\xa4',))
+        with self.assertWarns(FutureWarning):
+            my_struct = MyStruct(('>h',), ('<h',))
+        self.assertEqual(my_struct.format, '<h')
+        self.assertEqual(my_struct.pack(12345), b'\x39\x30')
+
+    def test_no_custom_struct_new_or_init(self):
+        class MyStruct(struct.Struct):
+            pass
+
+        my_struct = MyStruct('>h')
+        self.assertEqual(my_struct.format, '>h')
+        self.assertEqual(my_struct.pack(12345), b'\x30\x39')
+        my_struct = MyStruct(format='>h')
+        self.assertEqual(my_struct.format, '>h')
+        self.assertEqual(my_struct.pack(12345), b'\x30\x39')
+        with self.assertRaises(TypeError):
+            MyStruct()
+        with self.assertRaises(TypeError):
+            MyStruct(42)
+        with self.assertRaises(struct.error):
+            MyStruct('$')
+        with self.assertRaises(ValueError):
+            MyStruct('\udc00')
+        with self.assertRaises(ValueError):
+            MyStruct(b'\xa4')
+        with self.assertRaises(TypeError):
+            MyStruct('>h', 42)
+        with self.assertRaises(TypeError):
+            MyStruct('>h', arg=42)
+        with self.assertRaises(TypeError):
+            MyStruct(arg=42)
+        with self.assertRaises(TypeError):
+            MyStruct('>h', format='>h')
 
     def test_repr(self):
         s = struct.Struct('=i2H')
@@ -816,6 +1001,20 @@ class StructTest(ComplexesAreIdenticalMixin, unittest.TestCase):
         with InterpreterPoolExecutor(max_workers=5) as executor:
             results = executor.map(exec, [code] * 5)
             self.assertListEqual(list(results), [None] * 5)
+
+    def test_operations_on_half_initialized_Struct(self):
+        S = struct.Struct.__new__(struct.Struct)
+
+        spam = array.array('b', b' ')
+        self.assertRaises(RuntimeError, S.iter_unpack, spam)
+        self.assertRaises(RuntimeError, S.pack, 1)
+        self.assertRaises(RuntimeError, S.pack_into, spam, 1)
+        self.assertRaises(RuntimeError, S.unpack, spam)
+        self.assertRaises(RuntimeError, S.unpack_from, spam)
+        self.assertRaises(AttributeError, getattr, S, 'format')
+        self.assertRaises(RuntimeError, S.__sizeof__)
+        self.assertRaises(RuntimeError, repr, S)
+        self.assertEqual(S.size, -1)
 
 
 class UnpackIteratorTest(unittest.TestCase):
@@ -891,6 +1090,7 @@ class UnpackIteratorTest(unittest.TestCase):
         self.assertRaises(StopIteration, next, it)
 
     def test_half_float(self):
+        _testcapi = import_helper.import_module('_testcapi')
         # Little-endian examples from:
         # http://en.wikipedia.org/wiki/Half_precision_floating-point_format
         format_bits_float__cleanRoundtrip_list = [
@@ -935,8 +1135,8 @@ class UnpackIteratorTest(unittest.TestCase):
 
         # Check that packing produces a bit pattern representing a quiet NaN:
         # all exponent bits and the msb of the fraction should all be 1.
-        if platform.machine().startswith('parisc'):
-            # HP PA RISC uses 0 for quiet, see:
+        if _testcapi.nan_msb_is_signaling:
+            # HP PA RISC and some MIPS CPUs use 0 for quiet, see:
             # https://en.wikipedia.org/wiki/NaN#Encoding
             expected = 0x7c
         else:

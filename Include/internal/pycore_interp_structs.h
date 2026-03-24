@@ -14,6 +14,7 @@ extern "C" {
 #include "pycore_structs.h"       // PyHamtObject
 #include "pycore_tstate.h"        // _PyThreadStateImpl
 #include "pycore_typedefs.h"      // _PyRuntimeState
+#include "pycore_uop.h"           // _PyBloomFilter
 
 #define CODE_MAX_WATCHERS 8
 #define CONTEXT_MAX_WATCHERS 8
@@ -87,7 +88,9 @@ struct _ceval_runtime_state {
         struct trampoline_api_st trampoline_api;
         FILE *map_file;
         Py_ssize_t persist_after_fork;
-       _PyFrameEvalFunction prev_eval_frame;
+        _PyFrameEvalFunction prev_eval_frame;
+        Py_ssize_t trampoline_refcount;
+        int code_watcher_id;
 #else
         int _not_used;
 #endif
@@ -179,6 +182,8 @@ struct gc_collection_stats {
     Py_ssize_t collected;
     /* total number of uncollectable objects (put into gc.garbage) */
     Py_ssize_t uncollectable;
+    // Total number of objects considered for collection and traversed:
+    Py_ssize_t candidates;
     // Duration of the collection in seconds:
     double duration;
 };
@@ -191,6 +196,8 @@ struct gc_generation_stats {
     Py_ssize_t collected;
     /* total number of uncollectable objects (put into gc.garbage) */
     Py_ssize_t uncollectable;
+    // Total number of objects considered for collection and traversed:
+    Py_ssize_t candidates;
     // Duration of the collection in seconds:
     double duration;
 };
@@ -318,6 +325,14 @@ struct _import_state {
     int dlopenflags;
 #endif
     PyObject *import_func;
+    PyObject *lazy_import_func;
+    int lazy_imports_mode;
+    PyObject *lazy_imports_filter;
+    PyObject *lazy_importing_modules;
+    PyObject *lazy_modules;
+#ifdef Py_GIL_DISABLED
+    PyMutex lazy_mutex;
+#endif
     /* The global import lock. */
     _PyRecursiveMutex lock;
     /* diagnostic info in PyImport_ImportModuleLevelObject() */
@@ -391,6 +406,25 @@ typedef struct _rare_events {
     /* Modifying a function, e.g. func.__defaults__ = ..., etc. */
     uint8_t func_modification;
 } _rare_events;
+
+// Optimization configuration for the interpreter.
+// This groups all thresholds and optimization flags for both JIT and interpreter.
+typedef struct _PyOptimizationConfig {
+    // Interpreter optimization thresholds
+    uint16_t jump_backward_initial_value;
+    uint16_t jump_backward_initial_backoff;
+
+    uint16_t resume_initial_value;
+    uint16_t resume_initial_backoff;
+
+    // JIT optimization thresholds
+    uint16_t side_exit_initial_value;
+    uint16_t side_exit_initial_backoff;
+
+    // Optimization flags
+    bool specialization_enabled;
+    bool uops_optimize_enabled;
+} _PyOptimizationConfig;
 
 struct
 Bigint {
@@ -466,7 +500,7 @@ struct _py_func_state {
 
 /* For now we hard-code this to a value for which we are confident
    all the static builtin types will fit (for all builds). */
-#define _Py_MAX_MANAGED_STATIC_BUILTIN_TYPES 200
+#define _Py_MAX_MANAGED_STATIC_BUILTIN_TYPES 202
 #define _Py_MAX_MANAGED_STATIC_EXT_TYPES 10
 #define _Py_MAX_MANAGED_STATIC_TYPES \
     (_Py_MAX_MANAGED_STATIC_BUILTIN_TYPES + _Py_MAX_MANAGED_STATIC_EXT_TYPES)
@@ -939,11 +973,16 @@ struct _is {
     PyObject *common_consts[NUM_COMMON_CONSTANTS];
     bool jit;
     bool compiling;
-    struct _PyExecutorObject *executor_list_head;
+
+    // Optimization configuration (thresholds and flags for JIT and interpreter)
+    _PyOptimizationConfig opt_config;
+    _PyBloomFilter *executor_blooms;             // Contiguous bloom filter array
+    struct _PyExecutorObject **executor_ptrs;    // Corresponding executor pointer array
+    size_t executor_count;                       // Number of valid executors
+    size_t executor_capacity;                    // Array capacity
     struct _PyExecutorObject *executor_deletion_list_head;
     struct _PyExecutorObject *cold_executor;
     struct _PyExecutorObject *cold_dynamic_executor;
-    int executor_deletion_list_remaining_capacity;
     size_t executor_creation_counter;
     _rare_events rare_events;
     PyDict_WatchCallback builtins_dict_watcher;

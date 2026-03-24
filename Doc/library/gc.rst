@@ -4,9 +4,6 @@
 .. module:: gc
    :synopsis: Interface to the cycle-detecting garbage collector.
 
-.. moduleauthor:: Neil Schemenauer <nas@arctrix.com>
-.. sectionauthor:: Neil Schemenauer <nas@arctrix.com>
-
 --------------
 
 This module provides an interface to the optional garbage collector.  It
@@ -20,7 +17,7 @@ can be disabled by calling ``gc.disable()``.  To debug a leaking program call
 ``gc.DEBUG_SAVEALL``, causing garbage-collected objects to be saved in
 gc.garbage for inspection.
 
-The :mod:`gc` module provides the following functions:
+The :mod:`!gc` module provides the following functions:
 
 
 .. function:: enable()
@@ -110,13 +107,16 @@ The :mod:`gc` module provides the following functions:
      to be uncollectable (and were therefore moved to the :data:`garbage`
      list) inside this generation;
 
+   * ``candidates`` is the total number of objects in this generation which were
+     considered for collection and traversed;
+
    * ``duration`` is the total time in seconds spent in collections for this
      generation.
 
    .. versionadded:: 3.4
 
-   .. versionchanged:: next
-      Add ``duration``.
+   .. versionchanged:: 3.15
+      Add ``duration`` and ``candidates``.
 
 
 .. function:: set_threshold(threshold0, [threshold1, [threshold2]])
@@ -319,6 +319,9 @@ values but should not rebind them):
       "uncollectable": When *phase* is "stop", the number of objects
       that could not be collected and were put in :data:`garbage`.
 
+      "candidates": When *phase* is "stop", the total number of objects in this
+      generation which were considered for collection and traversed.
+
       "duration": When *phase* is "stop", the time in seconds spent in the
       collection.
 
@@ -334,8 +337,8 @@ values but should not rebind them):
 
    .. versionadded:: 3.3
 
-   .. versionchanged:: next
-      Add "duration".
+   .. versionchanged:: 3.15
+      Add "duration" and "candidates".
 
 
 The following constants are provided for use with :func:`set_debug`:
