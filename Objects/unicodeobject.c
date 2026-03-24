@@ -14187,8 +14187,11 @@ immortalize_interned(PyObject *s)
         _Py_DecRefTotal(_PyThreadState_GET());
     }
 #endif
-    FT_ATOMIC_STORE_UINT8_RELAXED(_PyUnicode_STATE(s).interned, SSTATE_INTERNED_IMMORTAL);
     _Py_SetImmortal(s);
+    // The switch to SSTATE_INTERNED_IMMORTAL must be the last thing done here
+    // to synchronize with the check in intern_common() that avoids locking if
+    // the string is already immortal.
+    FT_ATOMIC_STORE_UINT8(_PyUnicode_STATE(s).interned, SSTATE_INTERNED_IMMORTAL);
 }
 
 static /* non-null */ PyObject*
@@ -14270,6 +14273,23 @@ intern_common(PyInterpreterState *interp, PyObject *s /* stolen */,
     assert(interned != NULL);
 #ifdef Py_GIL_DISABLED
 #  define INTERN_MUTEX &_Py_INTERP_CACHED_OBJECT(interp, interned_mutex)
+    // Lock-free fast path: check if there's already an interned copy that
+    // is in its final immortal state.
+    PyObject *r;
+    int res = PyDict_GetItemRef(interned, s, &r);
+    if (res < 0) {
+        PyErr_Clear();
+        return s;
+    }
+    if (res > 0) {
+        unsigned int state = _Py_atomic_load_uint8(&_PyUnicode_STATE(r).interned);
+        if (state == SSTATE_INTERNED_IMMORTAL) {
+            Py_DECREF(s);
+            return r;
+        }
+        // Not yet fully interned; fall through to the locking path.
+        Py_DECREF(r);
+    }
 #endif
     FT_MUTEX_LOCK(INTERN_MUTEX);
     PyObject *t;
@@ -14307,7 +14327,7 @@ intern_common(PyInterpreterState *interp, PyObject *s /* stolen */,
         Py_DECREF(s);
         Py_DECREF(s);
     }
-    FT_ATOMIC_STORE_UINT8_RELAXED(_PyUnicode_STATE(s).interned, SSTATE_INTERNED_MORTAL);
+    FT_ATOMIC_STORE_UINT8(_PyUnicode_STATE(s).interned, SSTATE_INTERNED_MORTAL);
 
     /* INTERNED_MORTAL -> INTERNED_IMMORTAL (if needed) */
 
@@ -14928,6 +14948,7 @@ static PyMethodDef _string_methods[] = {
 };
 
 static PyModuleDef_Slot module_slots[] = {
+    _Py_ABI_SLOT,
     {Py_mod_multiple_interpreters, Py_MOD_PER_INTERPRETER_GIL_SUPPORTED},
     {Py_mod_gil, Py_MOD_GIL_NOT_USED},
     {0, NULL}

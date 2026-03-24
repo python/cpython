@@ -690,26 +690,6 @@ collections
   (Contributed by Raymond Hettinger in :gh:`138682`.)
 
 
-collections.abc
----------------
-
-* :class:`collections.abc.ByteString` has been removed from
-  ``collections.abc.__all__``. :class:`!collections.abc.ByteString` has been
-  deprecated since Python 3.12, and is scheduled for removal in Python 3.17.
-
-* The following statements now cause ``DeprecationWarning``\ s to be emitted at
-  runtime:
-
-  * ``from collections.abc import ByteString``
-  * ``import collections.abc; collections.abc.ByteString``.
-
-  ``DeprecationWarning``\ s were already emitted if
-  :class:`collections.abc.ByteString` was subclassed or used as the second
-  argument to :func:`isinstance` or :func:`issubclass`, but warnings were not
-  previously emitted if it was merely imported or accessed from the
-  :mod:`!collections.abc` module.
-
-
 concurrent.futures
 ------------------
 
@@ -836,13 +816,12 @@ mimetypes
 
 * Add ``application/dicom`` MIME type for ``.dcm`` extension.
   (Contributed by Benedikt Johannes in :gh:`144217`.)
+* Add ``application/efi``. (Contributed by Charlie Lin in :gh:`145720`.)
 * Add ``application/node`` MIME type for ``.cjs`` extension.
   (Contributed by John Franey in :gh:`140937`.)
 * Add ``application/toml``. (Contributed by Gil Forcada in :gh:`139959`.)
 * Add ``application/sql`` and ``application/vnd.sqlite3``.
   (Contributed by Charlie Lin in :gh:`145698`.)
-* Add ``image/jxl``. (Contributed by Foolbar in :gh:`144213`.)
-* Add ``application/efi``. (Contributed by Charlie Lin in :gh:`145720`.)
 * Add the following MIME types:
 
   - ``application/vnd.ms-cab-compressed`` for ``.cab`` extension
@@ -851,6 +830,7 @@ mimetypes
 
   (Contributed by Charlie Lin in :gh:`145718`.)
 
+* Add ``image/jxl``. (Contributed by Foolbar in :gh:`144213`.)
 * Rename ``application/x-texinfo`` to ``application/texinfo``.
   (Contributed by Charlie Lin in :gh:`140165`.)
 * Changed the MIME type for ``.ai`` files to ``application/pdf``.
@@ -960,7 +940,7 @@ ssl
 ---
 
 * Indicate through :data:`ssl.HAS_PSK_TLS13` whether the :mod:`ssl` module
-  supports "External PSKs" in TLSv1.3, as described in RFC 9258.
+  supports "External PSKs" in TLSv1.3, as described in :rfc:`9258`.
   (Contributed by Will Childs-Klein in :gh:`133624`.)
 
 * Added new methods for managing groups used for SSL key agreement
@@ -1034,6 +1014,11 @@ sys
 
 * Add :data:`sys.abi_info` namespace to improve access to ABI information.
   (Contributed by Klaus Zimmermann in :gh:`137476`.)
+
+* Add :data:`sys.float_info.iec_60559 <sys.float_info>`: a boolean flag,
+  indicating support the IEC 60559 floating-point standard (as specified by the
+  Annex F of C99).
+  (Contributed by Sergey B Kirpichev in :gh:`138580`.)
 
 
 tarfile
@@ -1146,12 +1131,46 @@ tomllib
 
 
 types
-------
+-----
 
 * Expose the write-through :func:`locals` proxy type
   as :data:`types.FrameLocalsProxyType`.
   This represents the type of the :attr:`frame.f_locals` attribute,
   as described in :pep:`667`.
+
+
+typing
+------
+
+.. _whatsnew315-typeform:
+
+* :pep:`747`: Add :data:`~typing.TypeForm`, a new special form for annotating
+  values that are themselves type expressions.
+  ``TypeForm[T]`` means "a type form object describing ``T`` (or a type
+  assignable to ``T``)". At runtime, ``TypeForm(x)`` simply returns ``x``,
+  which allows explicit annotation of type-form values without changing
+  behavior.
+
+  This helps libraries that accept user-provided type expressions
+  (for example ``int``, ``str | None``, :class:`~typing.TypedDict`
+  classes, or ``list[int]``) expose precise signatures:
+
+  .. code-block:: python
+
+     from typing import Any, TypeForm
+
+     def cast[T](typ: TypeForm[T], value: Any) -> T: ...
+
+  (Contributed by Jelle Zijlstra in :gh:`145033`.)
+
+* Code like ``class ExtraTypeVars(P1[S], Protocol[T, T2]): ...`` now raises
+  a :exc:`TypeError`, because ``S`` is not listed in ``Protocol`` parameters.
+  (Contributed by Nikita Sobolev in :gh:`137191`.)
+
+* Code like ``class B2(A[T2], Protocol[T1, T2]): ...`` now correctly handles
+  type parameters order: it is ``(T1, T2)``, not ``(T2, T1)``
+  as it was incorrectly inferred in runtime before.
+  (Contributed by Nikita Sobolev in :gh:`137191`.)
 
 
 unicodedata
@@ -1390,6 +1409,14 @@ Diego Russo in :gh:`140683` and :gh:`142305`.)
 Removed
 ========
 
+collections.abc
+---------------
+
+* :class:`collections.abc.ByteString` has been removed from
+  ``collections.abc.__all__``. :class:`!collections.abc.ByteString` has been
+  deprecated since Python 3.12, and is scheduled for removal in Python 3.17.
+
+
 ctypes
 ------
 
@@ -1466,26 +1493,9 @@ threading
 typing
 ------
 
-.. _whatsnew315-typeform:
-
-* :pep:`747`: Add :data:`~typing.TypeForm`, a new special form for annotating
-  values that are themselves type expressions.
-  ``TypeForm[T]`` means "a type form object describing ``T`` (or a type
-  assignable to ``T``)". At runtime, ``TypeForm(x)`` simply returns ``x``,
-  which allows explicit annotation of type-form values without changing
-  behavior.
-
-  This helps libraries that accept user-provided type expressions
-  (for example ``int``, ``str | None``, :class:`~typing.TypedDict`
-  classes, or ``list[int]``) expose precise signatures:
-
-  .. code-block:: python
-
-     from typing import Any, TypeForm
-
-     def cast[T](typ: TypeForm[T], value: Any) -> T: ...
-
-  (Contributed by Jelle Zijlstra in :gh:`145033`.)
+* :class:`typing.ByteString` has been removed from ``typing.__all__``.
+  :class:`!typing.ByteString` has been deprecated since Python 3.9, and is
+  scheduled for removal in Python 3.17.
 
 * The undocumented keyword argument syntax for creating
   :class:`~typing.NamedTuple` classes (for example,
@@ -1498,33 +1508,6 @@ typing
   longer supported. Use ``class TD(TypedDict): pass``
   or ``TD = TypedDict("TD", {})`` instead.
   (Contributed by Bénédikt Tran in :gh:`133823`.)
-
-* Code like ``class ExtraTypeVars(P1[S], Protocol[T, T2]): ...`` now raises
-  a :exc:`TypeError`, because ``S`` is not listed in ``Protocol`` parameters.
-  (Contributed by Nikita Sobolev in :gh:`137191`.)
-
-* Code like ``class B2(A[T2], Protocol[T1, T2]): ...`` now correctly handles
-  type parameters order: it is ``(T1, T2)``, not ``(T2, T1)``
-  as it was incorrectly inferred in runtime before.
-  (Contributed by Nikita Sobolev in :gh:`137191`.)
-
-* :class:`typing.ByteString` has been removed from ``typing.__all__``.
-  :class:`!typing.ByteString` has been deprecated since Python 3.9, and is
-  scheduled for removal in Python 3.17.
-
-* The following statements now cause ``DeprecationWarning``\ s to be emitted at
-  runtime:
-
-  * ``from typing import ByteString``
-  * ``import typing; typing.ByteString``.
-
-  ``DeprecationWarning``\ s were already emitted if :class:`typing.ByteString`
-  was subclassed or used as the second argument to :func:`isinstance` or
-  :func:`issubclass`, but warnings were not previously emitted if it was merely
-  imported or accessed from the :mod:`!typing` module.
-
-* Deprecated :func:`!typing.no_type_check_decorator` has been removed.
-  (Contributed by Nikita Sobolev in :gh:`133601`.)
 
 
 wave
@@ -1584,6 +1567,21 @@ New deprecations
 
     (Contributed by Nikita Sobolev in :gh:`136355`.)
 
+* :mod:`collections.abc`
+
+  * The following statements now cause ``DeprecationWarning``\ s to be emitted
+    at runtime:
+
+    * ``from collections.abc import ByteString``
+    * ``import collections.abc; collections.abc.ByteString``.
+
+    ``DeprecationWarning``\ s were already emitted if
+    :class:`collections.abc.ByteString` was subclassed or used as the second
+    argument to :func:`isinstance` or :func:`issubclass`, but warnings were not
+    previously emitted if it was merely imported or accessed from the
+    :mod:`!collections.abc` module.
+
+
 * :mod:`hashlib`:
 
   * In hash function constructors such as :func:`~hashlib.new` or the
@@ -1606,6 +1604,22 @@ New deprecations
     objects is deprecated and will be removed in Python 3.20.
 
     (Contributed by Sergey B Kirpichev and Serhiy Storchaka in :gh:`143715`.)
+
+* :mod:`typing`:
+
+  * The following statements now cause ``DeprecationWarning``\ s to be emitted
+    at runtime:
+
+    * ``from typing import ByteString``
+    * ``import typing; typing.ByteString``.
+
+    ``DeprecationWarning``\ s were already emitted if :class:`typing.ByteString`
+    was subclassed or used as the second argument to :func:`isinstance` or
+    :func:`issubclass`, but warnings were not previously emitted if it was
+    merely imported or accessed from the :mod:`!typing` module.
+
+  * Deprecated :func:`!typing.no_type_check_decorator` has been removed.
+    (Contributed by Nikita Sobolev in :gh:`133601`.)
 
 * ``__version__``
 
