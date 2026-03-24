@@ -651,21 +651,35 @@ class Executor(object):
         # Yield must be hidden in closure so that the futures are submitted
         # before the first iterator value is required.
         def result_iterator():
+            submit_exc = None
+            exhausted = object()
+
             try:
                 # reverse to keep finishing order
                 fs.reverse()
                 while fs:
-                    if (
-                        buffersize
-                        and (executor := executor_weakref())
-                        and (args := next(zipped_iterables, None))
-                    ):
-                        fs.appendleft(executor.submit(fn, *args))
-                    # Careful not to keep a reference to the popped future
+                    if buffersize and submit_exc is None:
+                        args = next(zipped_iterables, exhausted)
+                        if args is not exhausted:
+                            executor = executor_weakref()
+                            if executor is None:
+                                submit_exc = RuntimeError(
+                                    "cannot schedule new futures after shutdown"
+                                )
+                            else:
+                                try:
+                                    fs.appendleft(executor.submit(fn, *args))
+                                except RuntimeError as exc:
+                                    submit_exc = exc
+
+                    # buffered result should still be yielded
                     if timeout is None:
                         yield _result_or_cancel(fs.pop())
                     else:
                         yield _result_or_cancel(fs.pop(), end_time - time.monotonic())
+
+                if submit_exc is not None:
+                    raise submit_exc
             finally:
                 for future in fs:
                     future.cancel()

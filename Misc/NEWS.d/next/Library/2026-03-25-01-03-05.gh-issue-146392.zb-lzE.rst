@@ -1,0 +1,2 @@
+Fix Executor.map(buffersize=...) to drain buffered results before raising
+after shutdown. Patch by Shamil Abdulaev.

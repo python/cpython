@@ -169,6 +169,33 @@ class ExecutorTest:
         )
 
     @warnings_helper.ignore_fork_in_thread_deprecation_warnings()
+    def test_map_buffersize_shutdown_drains_buffer_then_raises(self):
+        with self.executor_type(max_workers=1) as executor:
+            it = executor.map(str, range(8), buffersize=2)
+
+        self.assertEqual(next(it), "0")
+        self.assertEqual(next(it), "1")
+        with self.assertRaisesRegex(
+            RuntimeError,
+            "cannot schedule new futures after shutdown",
+        ):
+            next(it)
+
+    @warnings_helper.ignore_fork_in_thread_deprecation_warnings()
+    def test_map_buffersize_shutdown_after_iteration_started_drains_buffer_then_raises(self):
+        with self.executor_type(max_workers=1) as executor:
+            it = executor.map(str, range(8), buffersize=2)
+            self.assertEqual(next(it), "0")
+
+        self.assertEqual(next(it), "1")
+        self.assertEqual(next(it), "2")
+        with self.assertRaisesRegex(
+            RuntimeError,
+            "cannot schedule new futures after shutdown",
+        ):
+            next(it)
+
+    @warnings_helper.ignore_fork_in_thread_deprecation_warnings()
     def test_shutdown_race_issue12456(self):
         # Issue #12456: race condition at shutdown where trying to post a
         # sentinel in the call queue blocks (the queue is full while processes
