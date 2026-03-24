@@ -93,7 +93,19 @@ dummy_func(void) {
         if (sym_is_immortal(PyJitRef_Unwrap(value))) {
             ADD_OP(_NOP, 0, 0);
         }
-        value = PyJitRef_StripReferenceInfo(value);
+        value = PyJitRef_StripBorrowInfo(value);
+    }
+
+    op(_COPY_FREE_VARS, (--)) {
+        PyCodeObject *co = get_current_code_object(ctx);
+        if (co == NULL) {
+            ctx->done = true;
+            break;
+        }
+        int offset = co->co_nlocalsplus - oparg;
+        for (int i = 0; i < oparg; ++i) {
+            ctx->frame->locals[offset + i] = sym_new_not_null(ctx);
+        }
     }
 
     op(_LOAD_FAST_CHECK, (-- value)) {
@@ -102,20 +114,24 @@ dummy_func(void) {
         if (sym_is_null(value)) {
             ctx->done = true;
         }
+        assert(!PyJitRef_IsUnique(value));
     }
 
     op(_LOAD_FAST, (-- value)) {
         value = GETLOCAL(oparg);
+        assert(!PyJitRef_IsUnique(value));
     }
 
     op(_LOAD_FAST_BORROW, (-- value)) {
         value = PyJitRef_Borrow(GETLOCAL(oparg));
+        assert(!PyJitRef_IsUnique(value));
     }
 
     op(_LOAD_FAST_AND_CLEAR, (-- value)) {
         value = GETLOCAL(oparg);
         JitOptRef temp = sym_new_null(ctx);
         GETLOCAL(oparg) = temp;
+        assert(!PyJitRef_IsUnique(value));
     }
 
     op(_STORE_ATTR_INSTANCE_VALUE, (offset/1, value, owner -- o)) {
@@ -132,7 +148,7 @@ dummy_func(void) {
 
     op(_SWAP_FAST, (value -- trash)) {
         JitOptRef tmp = GETLOCAL(oparg);
-        GETLOCAL(oparg) = value;
+        GETLOCAL(oparg) = PyJitRef_RemoveUnique(value);
         trash = tmp;
     }
 
@@ -309,21 +325,57 @@ dummy_func(void) {
     }
 
     op(_BINARY_OP_ADD_FLOAT, (left, right -- res, l, r)) {
-        res = sym_new_type(ctx, &PyFloat_Type);
-        l = left;
-        r = right;
+        if (PyJitRef_IsUnique(left)) {
+            ADD_OP(_BINARY_OP_ADD_FLOAT_INPLACE, 0, 0);
+            l = PyJitRef_Borrow(sym_new_null(ctx));
+            r = right;
+        }
+        else if (PyJitRef_IsUnique(right)) {
+            ADD_OP(_BINARY_OP_ADD_FLOAT_INPLACE_RIGHT, 0, 0);
+            l = left;
+            r = PyJitRef_Borrow(sym_new_null(ctx));
+        }
+        else {
+            l = left;
+            r = right;
+        }
+        res = PyJitRef_MakeUnique(sym_new_type(ctx, &PyFloat_Type));
     }
 
     op(_BINARY_OP_SUBTRACT_FLOAT, (left, right -- res, l, r)) {
-        res = sym_new_type(ctx, &PyFloat_Type);
-        l = left;
-        r = right;
+        if (PyJitRef_IsUnique(left)) {
+            ADD_OP(_BINARY_OP_SUBTRACT_FLOAT_INPLACE, 0, 0);
+            l = PyJitRef_Borrow(sym_new_null(ctx));
+            r = right;
+        }
+        else if (PyJitRef_IsUnique(right)) {
+            ADD_OP(_BINARY_OP_SUBTRACT_FLOAT_INPLACE_RIGHT, 0, 0);
+            l = left;
+            r = PyJitRef_Borrow(sym_new_null(ctx));
+        }
+        else {
+            l = left;
+            r = right;
+        }
+        res = PyJitRef_MakeUnique(sym_new_type(ctx, &PyFloat_Type));
     }
 
     op(_BINARY_OP_MULTIPLY_FLOAT, (left, right -- res, l, r)) {
-        res = sym_new_type(ctx, &PyFloat_Type);
-        l = left;
-        r = right;
+        if (PyJitRef_IsUnique(left)) {
+            ADD_OP(_BINARY_OP_MULTIPLY_FLOAT_INPLACE, 0, 0);
+            l = PyJitRef_Borrow(sym_new_null(ctx));
+            r = right;
+        }
+        else if (PyJitRef_IsUnique(right)) {
+            ADD_OP(_BINARY_OP_MULTIPLY_FLOAT_INPLACE_RIGHT, 0, 0);
+            l = left;
+            r = PyJitRef_Borrow(sym_new_null(ctx));
+        }
+        else {
+            l = left;
+            r = right;
+        }
+        res = PyJitRef_MakeUnique(sym_new_type(ctx, &PyFloat_Type));
     }
 
     op(_BINARY_OP_ADD_UNICODE, (left, right -- res, l, r)) {
@@ -515,7 +567,12 @@ dummy_func(void) {
     op(_UNARY_NEGATIVE, (value -- res, v)) {
         v = value;
         REPLACE_OPCODE_IF_EVALUATES_PURE(value, res);
-        if (sym_is_compact_int(value)) {
+        if (sym_matches_type(value, &PyFloat_Type) && PyJitRef_IsUnique(value)) {
+            ADD_OP(_UNARY_NEGATIVE_FLOAT_INPLACE, 0, 0);
+            v = PyJitRef_Borrow(sym_new_null(ctx));
+            res = PyJitRef_MakeUnique(sym_new_type(ctx, &PyFloat_Type));
+        }
+        else if (sym_is_compact_int(value)) {
             res = sym_new_compact_int(ctx);
         }
         else {
@@ -713,6 +770,7 @@ dummy_func(void) {
 
     op(_COPY, (bottom, unused[oparg-1] -- bottom, unused[oparg-1], top)) {
         assert(oparg > 0);
+        bottom = PyJitRef_RemoveUnique(bottom);
         top = bottom;
     }
 
@@ -1311,6 +1369,7 @@ dummy_func(void) {
 
     op(_BUILD_TUPLE, (values[oparg] -- tup)) {
         tup = sym_new_tuple(ctx, oparg, values);
+        tup = PyJitRef_MakeUnique(tup);
     }
 
     op(_BUILD_LIST, (values[oparg] -- list)) {
@@ -1338,12 +1397,27 @@ dummy_func(void) {
         i = iterable;
     }
 
+    op(_DICT_MERGE, (callable, unused, unused, dict, unused[oparg - 1], update -- callable, unused, unused, dict, unused[oparg - 1], u)) {
+        (void)callable;
+        (void)dict;
+        u = update;
+    }
+
     op(_UNPACK_SEQUENCE_TWO_TUPLE, (seq -- val1, val0)) {
+        if (PyJitRef_IsUnique(seq) && sym_tuple_length(seq) == 2) {
+            ADD_OP(_UNPACK_SEQUENCE_UNIQUE_TWO_TUPLE, oparg, 0);
+        }
         val0 = sym_tuple_getitem(ctx, seq, 0);
         val1 = sym_tuple_getitem(ctx, seq, 1);
     }
 
     op(_UNPACK_SEQUENCE_TUPLE, (seq -- values[oparg])) {
+        if (PyJitRef_IsUnique(seq) && sym_tuple_length(seq) == 3) {
+            ADD_OP(_UNPACK_SEQUENCE_UNIQUE_THREE_TUPLE, oparg, 0);
+        }
+        else if (PyJitRef_IsUnique(seq) && sym_tuple_length(seq) == oparg) {
+            ADD_OP(_UNPACK_SEQUENCE_UNIQUE_TUPLE, oparg, 0);
+        }
         for (int i = 0; i < oparg; i++) {
             values[i] = sym_tuple_getitem(ctx, seq, oparg - i - 1);
         }

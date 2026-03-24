@@ -183,6 +183,38 @@ The :mod:`!binascii` module defines the following functions:
    .. versionadded:: 3.15
 
 
+.. function:: a2b_base32(string, /, *, alphabet=BASE32_ALPHABET)
+
+   Convert base32 data back to binary and return the binary data.
+
+   Valid base32 data contains characters from the base32 alphabet specified
+   in :rfc:`4648` in groups of eight (if necessary, the final group is padded
+   to eight characters with ``=``). Each group encodes 40 bits of binary data
+   in the range from ``0`` to ``2 ** 40 - 1``, inclusive.
+
+   .. note::
+      This function does not map lowercase characters (which are invalid in
+      standard base32) to their uppercase counterparts, nor does it
+      contextually map ``0`` to ``O`` and ``1`` to ``I``/``L`` as :rfc:`4648`
+      allows.
+
+   Optional *alphabet* must be a :class:`bytes` object of length 32 which
+   specifies an alternative alphabet.
+
+   Invalid base32 data will raise :exc:`binascii.Error`.
+
+   .. versionadded:: next
+
+.. function:: b2a_base32(data, /, *, alphabet=BASE32_ALPHABET)
+
+   Convert binary data to a line of ASCII characters in base32 coding,
+   as specified in :rfc:`4648`. The return value is the converted line.
+
+   Optional *alphabet* must be a :term:`bytes-like object` of length 32 which
+   specifies an alternative alphabet.
+
+   .. versionadded:: next
+
 .. function:: a2b_qp(data, header=False)
 
    Convert a block of quoted-printable data back to binary and return the binary
@@ -324,6 +356,20 @@ The :mod:`!binascii` module defines the following functions:
 .. data:: Z85_ALPHABET
 
    The `Z85 <https://rfc.zeromq.org/spec/32/>`_ alphabet.
+
+   .. versionadded:: next
+
+.. data:: BASE32_ALPHABET
+
+   The Base 32 alphabet according to :rfc:`4648`.
+
+   .. versionadded:: next
+
+.. data:: BASE32HEX_ALPHABET
+
+   The "Extended Hex" Base 32 alphabet according to :rfc:`4648`.
+   Data encoded with this alphabet maintains its sort order during bitwise
+   comparisons.
 
    .. versionadded:: next
 
