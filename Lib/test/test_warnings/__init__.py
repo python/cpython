@@ -509,6 +509,28 @@ class FilterTests(BaseTest):
                     stderr = stderr.getvalue()
                     self.assertIn(error_msg, stderr)
 
+    def test_catchwarnings_with_showwarning(self):
+        # gh-146358: catch_warnings must override warnings.showwarning()
+        # if it's not the default implementation.
+
+        warns = []
+        def custom_showwarning(message, category, filename, lineno,
+                               file=None, line=None):
+            warns.append(message)
+
+        with support.swap_attr(self.module, 'showwarning', custom_showwarning):
+            with self.module.catch_warnings(record=True) as recorded:
+                self.module.warn("recorded")
+            self.assertEqual(len(recorded), 1)
+            self.assertEqual(str(recorded[0].message), 'recorded')
+            self.assertIs(self.module.showwarning, custom_showwarning)
+
+            self.module.warn("custom")
+
+        self.assertEqual(len(warns), 1)
+        self.assertEqual(str(warns[0]), "custom")
+
+
 class CFilterTests(FilterTests, unittest.TestCase):
     module = c_warnings
 
