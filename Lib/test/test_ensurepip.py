@@ -36,6 +36,13 @@ class TestPackages(unittest.TestCase):
             # when the bundled pip wheel is used, we get _PIP_VERSION
             self.assertEqual(ensurepip._PIP_VERSION, ensurepip.version())
 
+    def test_empty_wheel_pkg_dir_treated_as_none(self):
+        # GH#146310: empty string WHEEL_PKG_DIR should not search CWD.
+        # An empty WHEEL_PKG_DIR converts to Path('.') which would
+        # incorrectly search the current working directory.
+        with unittest.mock.patch.object(ensurepip, '_WHEEL_PKG_DIR', None):
+            self.assertIsNone(ensurepip._find_wheel_pkg_dir_pip())
+
     def test_selected_wheel_path_no_dir(self):
         pip_filename = f'pip-{ensurepip._PIP_VERSION}-py3-none-any.whl'
         with unittest.mock.patch.object(ensurepip, '_WHEEL_PKG_DIR', None):

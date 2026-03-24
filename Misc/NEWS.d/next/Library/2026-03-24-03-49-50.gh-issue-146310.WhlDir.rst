@@ -1,0 +1,2 @@
+Fix :mod:`ensurepip` to treat an empty string ``WHEEL_PKG_DIR`` as unset,
+preventing it from searching the current working directory for wheel files.
