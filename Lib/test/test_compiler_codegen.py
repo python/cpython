@@ -154,6 +154,18 @@ class IsolatedCodeGenTests(CodegenTestCase):
         ]
         self.codegen_test(snippet, expected)
 
+    def test_del_for_store_name(self):
+        snippet = "global x\ndel x"
+        expected = [
+            ('RESUME', 0),
+            ('ANNOTATIONS_PLACEHOLDER', None),
+            ('PUSH_NULL', None),
+            ('STORE_GLOBAL', 0),
+            ('LOAD_CONST', 0),
+            ('RETURN_VALUE', None),
+        ]
+        self.codegen_test(snippet, expected)
+
     def test_syntax_error__return_not_in_function(self):
         snippet = "return 42"
         with self.assertRaisesRegex(SyntaxError, "'return' outside function") as cm:

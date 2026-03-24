@@ -1852,22 +1852,23 @@ dummy_func(
 
         inst(STORE_GLOBAL, (v --)) {
             PyObject *name = GETITEM(FRAME_CO_NAMES, oparg);
-            int err = PyDict_SetItem(GLOBALS(), name, PyStackRef_AsPyObjectBorrow(v));
-            PyStackRef_CLOSE(v);
-            ERROR_IF(err);
-        }
-
-        inst(DELETE_GLOBAL, (--)) {
-            PyObject *name = GETITEM(FRAME_CO_NAMES, oparg);
-            int err = PyDict_Pop(GLOBALS(), name, NULL);
-            // Can't use ERROR_IF here.
-            if (err < 0) {
-                ERROR_NO_POP();
+            int err;
+            if (PyStackRef_IsNull(v)) {
+                err = PyDict_Pop(GLOBALS(), name, NULL);
+                DEAD(v);
+                if (err < 0) {
+                    ERROR_NO_POP();
+                }
+                if (err == 0) {
+                    _PyEval_FormatExcCheckArg(tstate, PyExc_NameError,
+                                            NAME_ERROR_MSG, name);
+                    ERROR_NO_POP();
+                }
             }
-            if (err == 0) {
-                _PyEval_FormatExcCheckArg(tstate, PyExc_NameError,
-                                          NAME_ERROR_MSG, name);
-                ERROR_NO_POP();
+            else {
+                err = PyDict_SetItem(GLOBALS(), name, PyStackRef_AsPyObjectBorrow(v));
+                PyStackRef_CLOSE(v);
+                ERROR_IF(err);
             }
         }
 

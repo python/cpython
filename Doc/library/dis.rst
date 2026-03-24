@@ -1092,11 +1092,6 @@ iterations of the loop.
    Works as :opcode:`STORE_NAME`, but stores the name as a global.
 
 
-.. opcode:: DELETE_GLOBAL (namei)
-
-   Works as :opcode:`DELETE_NAME`, but deletes a global name.
-
-
 .. opcode:: LOAD_CONST (consti)
 
    Pushes ``co_consts[consti]`` onto the stack.
