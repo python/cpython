@@ -1356,6 +1356,12 @@ dummy_func(void) {
         i = iterable;
     }
 
+    op(_DICT_MERGE, (callable, unused, unused, dict, unused[oparg - 1], update -- callable, unused, unused, dict, unused[oparg - 1], u)) {
+        (void)callable;
+        (void)dict;
+        u = update;
+    }
+
     op(_UNPACK_SEQUENCE_TWO_TUPLE, (seq -- val1, val0)) {
         if (PyJitRef_IsUnique(seq) && sym_tuple_length(seq) == 2) {
             ADD_OP(_UNPACK_SEQUENCE_UNIQUE_TWO_TUPLE, oparg, 0);
