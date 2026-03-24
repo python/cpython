@@ -594,7 +594,9 @@ def get_target(host: str) -> _COFF32 | _COFF64 | _ELF | _MachO:
         host = "i686-pc-windows-msvc"
         condition = "defined(_M_IX86)"
         # -Wno-ignored-attributes: __attribute__((preserve_none)) is not supported here.
-        args = ["-DPy_NO_ENABLE_SHARED", "-Wno-ignored-attributes"]
+        # -mno-sse: Use x87 FPU instead of SSE for float math. The COFF32
+        # stencil converter cannot handle _xmm register references.
+        args = ["-DPy_NO_ENABLE_SHARED", "-Wno-ignored-attributes", "-mno-sse"]
         optimizer = _optimizers.OptimizerX86
         target = _COFF32(host, condition, args=args, optimizer=optimizer)
     elif re.fullmatch(r"x86_64-apple-darwin.*", host):
