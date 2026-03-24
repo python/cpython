@@ -155,6 +155,12 @@ class BaseBrowser(object):
     def open_new_tab(self, url):
         return self.open(url, 2)
 
+    @staticmethod
+    def _check_url(url):
+        """Ensures that the URL is safe to pass to subprocesses as a parameter"""
+        if url and url.lstrip().startswith("-"):
+            raise ValueError(f"Invalid URL: {url}")
+
 
 class GenericBrowser(BaseBrowser):
     """Class for all browsers started with a command
@@ -172,6 +178,7 @@ class GenericBrowser(BaseBrowser):
 
     def open(self, url, new=0, autoraise=True):
         sys.audit("webbrowser.open", url)
+        self._check_url(url)
         cmdline = [self.name] + [arg.replace("%s", url)
                                  for arg in self.args]
         try:
@@ -192,6 +199,7 @@ class BackgroundBrowser(GenericBrowser):
         cmdline = [self.name] + [arg.replace("%s", url)
                                  for arg in self.args]
         sys.audit("webbrowser.open", url)
+        self._check_url(url)
         try:
             if sys.platform[:3] == 'win':
                 p = subprocess.Popen(cmdline)
@@ -257,6 +265,7 @@ class UnixBrowser(BaseBrowser):
 
     def open(self, url, new=0, autoraise=True):
         sys.audit("webbrowser.open", url)
+        self._check_url(url)
         if new == 0:
             action = self.remote_action
         elif new == 1:
@@ -358,6 +367,7 @@ class Konqueror(BaseBrowser):
 
     def open(self, url, new=0, autoraise=True):
         sys.audit("webbrowser.open", url)
+        self._check_url(url)
         # XXX Currently I know no way to prevent KFM from opening a new win.
         if new == 2:
             action = "newTab"
@@ -442,6 +452,7 @@ class Grail(BaseBrowser):
 
     def open(self, url, new=0, autoraise=True):
         sys.audit("webbrowser.open", url)
+        self._check_url(url)
         if new:
             ok = self._remote("LOADNEW " + url)
         else:
@@ -605,6 +616,7 @@ if sys.platform[:3] == "win":
     class WindowsDefault(BaseBrowser):
         def open(self, url, new=0, autoraise=True):
             sys.audit("webbrowser.open", url)
+            self._check_url(url)
             try:
                 os.startfile(url)
             except OSError:
@@ -637,6 +649,7 @@ if sys.platform == 'darwin':
 
         def open(self, url, new=0, autoraise=True):
             sys.audit("webbrowser.open", url)
+            self._check_url(url)
             assert "'" not in url
             # hack for local urls
             if not ':' in url:
@@ -689,6 +702,7 @@ if sys.platform == 'darwin':
 
         def open(self, url, new=0, autoraise=True):
             sys.audit("webbrowser.open", url)
+            self._check_url(url)
             if self.name == 'default':
                 script = 'open location "%s"' % url.replace('"', '%22') # opens in default browser
             else:
