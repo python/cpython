@@ -554,32 +554,39 @@ PyRun_SimpleFileExFlags(FILE *fp, const char *filename, int closeit,
 
 int
 _PyRun_SimpleStringFlagsWithName(const char *command, const char* name, PyCompilerFlags *flags) {
+    int ret = -1;
+
     PyObject *main_module = PyImport_AddModuleRef("__main__");
     if (main_module == NULL) {
-        return -1;
+        return ret;
     }
     PyObject *dict = PyModule_GetDict(main_module);  // borrowed ref
 
+    PyObject *the_name = NULL;
     PyObject *res = NULL;
     if (name == NULL) {
         res = PyRun_StringFlags(command, Py_file_input, dict, dict, flags);
     } else {
-        PyObject* the_name = PyUnicode_FromString(name);
-        if (!the_name) {
+        the_name = PyUnicode_FromString(name);
+        if (the_name == NULL) {
             PyErr_Print();
-            return -1;
+            goto done;
         }
         res = _PyRun_StringFlagsWithName(command, the_name, Py_file_input, dict, dict, flags, 0);
-        Py_DECREF(the_name);
     }
-    Py_DECREF(main_module);
     if (res == NULL) {
         PyErr_Print();
-        return -1;
+        goto done;
     }
 
-    Py_DECREF(res);
-    return 0;
+    ret = 0;
+
+  done:
+    Py_DECREF(main_module);
+    Py_XDECREF(the_name);
+    Py_XDECREF(res);
+
+    return ret;
 }
 
 int
