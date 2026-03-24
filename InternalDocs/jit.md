@@ -53,7 +53,7 @@ and an instance of `_PyUOpExecutor_Type` is created to contain it.
 ## The JIT interpreter
 
 After a `JUMP_BACKWARD` instruction invokes the uop optimizer to create a uop
-executor, it transfers control to this executor via the `GOTO_TIER_TWO` macro.
+executor, it transfers control to this executor via the `TIER1_TO_TIER2` macro.
 
 CPython implements two executors. Here we describe the JIT interpreter,
 which is the simpler of them and is therefore useful for debugging and analyzing
@@ -78,8 +78,8 @@ and execution returns to the adaptive interpreter.
 ## Invalidating Executors
 
 In addition to being stored on the code object, each executor is also
-inserted into a list of all executors, which is stored in the interpreter
-state's `executor_list_head` field. This list is used when it is necessary
+inserted into contiguous arrays (`executor_blooms` and `executor_ptrs`)
+stored in the interpreter state. These arrays are used when it is necessary
 to invalidate executors because values they used in their construction may
 have changed.
 

@@ -129,8 +129,8 @@ class ViewWindow(Toplevel):
         self.title(title)
         self.viewframe = ViewFrame(self, contents, wrap=wrap)
         self.protocol("WM_DELETE_WINDOW", self.ok)
-        self.button_ok = button_ok = Button(self, text='Close',
-                                            command=self.ok, takefocus=False)
+        self.button_ok = Button(self, text='Close',
+                                command=self.ok, takefocus=False)
         self.viewframe.pack(side='top', expand=True, fill='both')
 
         self.is_modal = modal

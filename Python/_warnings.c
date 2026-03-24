@@ -7,6 +7,7 @@
 #include "pycore_pylifecycle.h"   // _Py_IsInterpreterFinalizing()
 #include "pycore_pystate.h"       // _PyThreadState_GET()
 #include "pycore_traceback.h"     // _Py_DisplaySourceLine()
+#include "pycore_tuple.h"         // _PyTuple_FromPair
 #include "pycore_unicodeobject.h" // _PyUnicode_EqualToASCIIString()
 
 #include <stdbool.h>
@@ -171,7 +172,7 @@ _PyWarnings_InitState(PyInterpreterState *interp)
 /*************************************************************************/
 
 static int
-check_matched(PyInterpreterState *interp, PyObject *obj, PyObject *arg)
+check_matched(PyInterpreterState *interp, PyObject *obj, PyObject *arg, PyObject *arg2)
 {
     PyObject *result;
     int rc;
@@ -182,6 +183,9 @@ check_matched(PyInterpreterState *interp, PyObject *obj, PyObject *arg)
 
     /* An internal plain text default filter must match exactly */
     if (PyUnicode_CheckExact(obj)) {
+        if (arg == NULL) {
+            return 0;
+        }
         int cmp_result = PyUnicode_Compare(obj, arg);
         if (cmp_result == -1 && PyErr_Occurred()) {
             return -1;
@@ -190,10 +194,19 @@ check_matched(PyInterpreterState *interp, PyObject *obj, PyObject *arg)
     }
 
     /* Otherwise assume a regex filter and call its match() method */
-    result = PyObject_CallMethodOneArg(obj, &_Py_ID(match), arg);
+    if (arg != NULL) {
+        result = PyObject_CallMethodOneArg(obj, &_Py_ID(match), arg);
+    }
+    else {
+        PyObject *match = PyImport_ImportModuleAttrString("_py_warnings", "_match_filename");
+        if (match == NULL) {
+            return -1;
+        }
+        result = PyObject_CallFunctionObjArgs(match, obj, arg2, NULL);
+        Py_DECREF(match);
+    }
     if (result == NULL)
         return -1;
-
     rc = PyObject_IsTrue(result);
     Py_DECREF(result);
     return rc;
@@ -423,7 +436,7 @@ get_default_action(PyInterpreterState *interp)
 static bool
 filter_search(PyInterpreterState *interp, PyObject *category,
               PyObject *text, Py_ssize_t lineno,
-              PyObject *module, char *list_name, PyObject *filters,
+              PyObject *module, PyObject *filename, char *list_name, PyObject *filters,
               PyObject **item, PyObject **matched_action) {
     bool result = true;
     *matched_action = NULL;
@@ -459,14 +472,14 @@ filter_search(PyInterpreterState *interp, PyObject *category,
             break;
         }
 
-        good_msg = check_matched(interp, msg, text);
+        good_msg = check_matched(interp, msg, text, NULL);
         if (good_msg == -1) {
             Py_DECREF(tmp_item);
             result = false;
             break;
         }
 
-        good_mod = check_matched(interp, mod, module);
+        good_mod = check_matched(interp, mod, module, filename);
         if (good_mod == -1) {
             Py_DECREF(tmp_item);
             result = false;
@@ -504,7 +517,7 @@ filter_search(PyInterpreterState *interp, PyObject *category,
 static PyObject*
 get_filter(PyInterpreterState *interp, PyObject *category,
            PyObject *text, Py_ssize_t lineno,
-           PyObject *module, PyObject **item)
+           PyObject *module, PyObject *filename, PyObject **item)
 {
 #ifdef Py_DEBUG
     WarningsState *st = warnings_get_state(interp);
@@ -522,7 +535,7 @@ get_filter(PyInterpreterState *interp, PyObject *category,
         use_global_filters = true;
     } else {
         PyObject *context_action = NULL;
-        if (!filter_search(interp, category, text, lineno, module, "_warnings_context _filters",
+        if (!filter_search(interp, category, text, lineno, module, filename, "_warnings_context _filters",
                            context_filters, item, &context_action)) {
             Py_DECREF(context_filters);
             return NULL;
@@ -541,7 +554,7 @@ get_filter(PyInterpreterState *interp, PyObject *category,
         if (filters == NULL) {
             return NULL;
         }
-        if (!filter_search(interp, category, text, lineno, module, "filters",
+        if (!filter_search(interp, category, text, lineno, module, filename, "filters",
                            filters, item, &action)) {
             return NULL;
         }
@@ -612,39 +625,6 @@ already_warned(PyInterpreterState *interp, PyObject *registry, PyObject *key,
     return 0;
 }
 
-/* New reference. */
-static PyObject *
-normalize_module(PyObject *filename)
-{
-    PyObject *module;
-    int kind;
-    const void *data;
-    Py_ssize_t len;
-
-    len = PyUnicode_GetLength(filename);
-    if (len < 0)
-        return NULL;
-
-    if (len == 0)
-        return PyUnicode_FromString("<unknown>");
-
-    kind = PyUnicode_KIND(filename);
-    data = PyUnicode_DATA(filename);
-
-    /* if filename.endswith(".py"): */
-    if (len >= 3 &&
-        PyUnicode_READ(kind, data, len-3) == '.' &&
-        PyUnicode_READ(kind, data, len-2) == 'p' &&
-        PyUnicode_READ(kind, data, len-1) == 'y')
-    {
-        module = PyUnicode_Substring(filename, 0, len-3);
-    }
-    else {
-        module = Py_NewRef(filename);
-    }
-    return module;
-}
-
 static int
 update_registry(PyInterpreterState *interp, PyObject *registry, PyObject *text,
                 PyObject *category, int add_zero)
@@ -655,7 +635,7 @@ update_registry(PyInterpreterState *interp, PyObject *registry, PyObject *text,
     if (add_zero)
         altkey = PyTuple_Pack(3, text, category, _PyLong_GetZero());
     else
-        altkey = PyTuple_Pack(2, text, category);
+        altkey = _PyTuple_FromPair(text, category);
 
     rc = already_warned(interp, registry, altkey, 1);
     Py_XDECREF(altkey);
@@ -812,15 +792,6 @@ warn_explicit(PyThreadState *tstate, PyObject *category, PyObject *message,
         return NULL;
     }
 
-    /* Normalize module. */
-    if (module == NULL) {
-        module = normalize_module(filename);
-        if (module == NULL)
-            return NULL;
-    }
-    else
-        Py_INCREF(module);
-
     /* Normalize message. */
     Py_INCREF(message);  /* DECREF'ed in cleanup. */
     if (PyObject_TypeCheck(message, (PyTypeObject *)PyExc_Warning)) {
@@ -858,7 +829,7 @@ warn_explicit(PyThreadState *tstate, PyObject *category, PyObject *message,
         /* Else this warning hasn't been generated before. */
     }
 
-    action = get_filter(interp, category, text, lineno, module, &item);
+    action = get_filter(interp, category, text, lineno, module, filename, &item);
     if (action == NULL)
         goto cleanup;
 
@@ -921,7 +892,6 @@ warn_explicit(PyThreadState *tstate, PyObject *category, PyObject *message,
     Py_XDECREF(key);
     Py_XDECREF(text);
     Py_XDECREF(lineno_obj);
-    Py_DECREF(module);
     Py_XDECREF(message);
     return result;  /* Py_None or NULL. */
 }
@@ -1076,7 +1046,7 @@ setup_context(Py_ssize_t stack_level,
 
     /* Setup registry. */
     assert(globals != NULL);
-    assert(PyDict_Check(globals));
+    assert(PyAnyDict_Check(globals));
     int rc = PyDict_GetItemRef(globals, &_Py_ID(__warningregistry__),
                                registry);
     if (rc < 0) {
@@ -1300,10 +1270,11 @@ warnings_warn_explicit_impl(PyObject *module, PyObject *message,
     }
 
     if (module_globals && module_globals != Py_None) {
-        if (!PyDict_Check(module_globals)) {
+        if (!PyAnyDict_Check(module_globals)) {
             PyErr_Format(PyExc_TypeError,
-                         "module_globals must be a dict, not '%.200s'",
-                         Py_TYPE(module_globals)->tp_name);
+                         "module_globals must be a dict or a frozendict, "
+                         "not %T",
+                         module_globals);
             return NULL;
         }
 
