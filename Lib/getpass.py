@@ -247,17 +247,17 @@ class _PasswordLineEditor:
         self.eof_pressed = False
         self.literal_next = False
         self.ctrl = ctrl_chars
-        self._dispatch = {
-            ctrl_chars['SOH']: self._handle_move_start,     # Ctrl+A
-            ctrl_chars['ENQ']: self._handle_move_end,       # Ctrl+E
-            ctrl_chars['VT']: self._handle_kill_forward,    # Ctrl+K
-            ctrl_chars['KILL']: self._handle_kill_line,     # Ctrl+U
-            ctrl_chars['WERASE']: self._handle_erase_word,  # Ctrl+W
-            ctrl_chars['ERASE']: self._handle_erase,        # DEL
-            '\b': self._handle_erase,                       # Backspace
+        self.dispatch = {
+            ctrl_chars['SOH']: self.handle_move_start,     # Ctrl+A
+            ctrl_chars['ENQ']: self.handle_move_end,       # Ctrl+E
+            ctrl_chars['VT']: self.handle_kill_forward,    # Ctrl+K
+            ctrl_chars['KILL']: self.handle_kill_line,     # Ctrl+U
+            ctrl_chars['WERASE']: self.handle_erase_word,  # Ctrl+W
+            ctrl_chars['ERASE']: self.handle_erase,        # DEL
+            '\b': self.handle_erase,                       # Backspace
         }
 
-    def _refresh_display(self, prev_len=None):
+    def refresh_display(self, prev_len=None):
         """Redraw the entire password line with *echo_char*."""
         prompt_len = len(self.prompt)
         # Use prev_len if given, otherwise current password length
@@ -269,48 +269,48 @@ class _PasswordLineEditor:
             self.stream.write('\b' * (len(self.password) - self.cursor_pos))
         self.stream.flush()
 
-    def _insert_char(self, char):
+    def insert_char(self, char):
         """Insert *char* at cursor position."""
         self.password.insert(self.cursor_pos, char)
         self.cursor_pos += 1
         # Only refresh if inserting in middle
         if self.cursor_pos < len(self.password):
-            self._refresh_display()
+            self.refresh_display()
         else:
             self.stream.write(self.echo_char)
             self.stream.flush()
 
-    def _handle_move_start(self):
+    def handle_move_start(self):
         """Move cursor to beginning (Ctrl+A)."""
         self.cursor_pos = 0
 
-    def _handle_move_end(self):
+    def handle_move_end(self):
         """Move cursor to end (Ctrl+E)."""
         self.cursor_pos = len(self.password)
 
-    def _handle_erase(self):
+    def handle_erase(self):
         """Delete character before cursor (Backspace/DEL)."""
         if self.cursor_pos <= 0:
             return
         prev_len = len(self.password)
         del self.password[self.cursor_pos - 1]
         self.cursor_pos -= 1
-        self._refresh_display(prev_len)
+        self.refresh_display(prev_len)
 
-    def _handle_kill_line(self):
+    def handle_kill_line(self):
         """Erase entire line (Ctrl+U)."""
         prev_len = len(self.password)
         self.password.clear()
         self.cursor_pos = 0
-        self._refresh_display(prev_len)
+        self.refresh_display(prev_len)
 
-    def _handle_kill_forward(self):
+    def handle_kill_forward(self):
         """Kill from cursor to end (Ctrl+K)."""
         prev_len = len(self.password)
         del self.password[self.cursor_pos:]
-        self._refresh_display(prev_len)
+        self.refresh_display(prev_len)
 
-    def _handle_erase_word(self):
+    def handle_erase_word(self):
         """Erase previous word (Ctrl+W)."""
         old_cursor = self.cursor_pos
         # Skip trailing spaces
@@ -322,11 +322,11 @@ class _PasswordLineEditor:
         # Remove the deleted portion
         prev_len = len(self.password)
         del self.password[self.cursor_pos:old_cursor]
-        self._refresh_display(prev_len)
+        self.refresh_display(prev_len)
 
-    def _handle(self, char):
+    def handle(self, char):
         """Handle a single character input. Returns True if handled."""
-        handler = self._dispatch.get(char)
+        handler = self.dispatch.get(char)
         if handler:
             handler()
             return True
@@ -342,7 +342,7 @@ class _PasswordLineEditor:
                 break
             # Handle literal next mode FIRST (Ctrl+V quotes next char)
             elif self.literal_next:
-                self._insert_char(char)
+                self.insert_char(char)
                 self.literal_next = False
             # Check if it's the LNEXT character
             elif char == self.ctrl['LNEXT']:
@@ -355,12 +355,12 @@ class _PasswordLineEditor:
                     break
             elif char == '\x00':
                 pass
-            elif self._handle(char):
+            elif self.handle(char):
                 # Dispatched to handler
                 pass
             else:
                 # Insert as normal character
-                self._insert_char(char)
+                self.insert_char(char)
 
             self.eof_pressed = (char == self.ctrl['EOF'])
 
