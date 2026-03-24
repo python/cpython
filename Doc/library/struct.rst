@@ -280,6 +280,12 @@ platform-dependent.
 .. versionchanged:: 3.14
    Added support for the ``'F'`` and ``'D'`` formats.
 
+.. seealso::
+
+   The :mod:`array` and :ref:`ctypes <ctypes-fundamental-data-types>` modules,
+   as well as third-party modules like `numpy <https://numpy.org/doc/stable/reference/arrays.interface.html#object.__array_interface__>`__,
+   use similar -- but slightly different -- type codes.
+
 
 Notes:
 
