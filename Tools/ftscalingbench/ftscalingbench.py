@@ -258,6 +258,27 @@ def super_call():
         obj.method()
 
 
+class MyClassMethod:
+    @classmethod
+    def my_classmethod(cls):
+        return cls
+
+    @staticmethod
+    def my_staticmethod():
+        pass
+
+@register_benchmark
+def classmethod_call():
+    obj = MyClassMethod()
+    for _ in range(1000 * WORK_SCALE):
+        obj.my_classmethod()
+
+@register_benchmark
+def staticmethod_call():
+    obj = MyClassMethod()
+    for _ in range(1000 * WORK_SCALE):
+        obj.my_staticmethod()
+
 @register_benchmark
 def deepcopy():
     x = {'list': [1, 2], 'tuple': (1, None)}

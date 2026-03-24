@@ -1,0 +1,3 @@
+Add :data:`sys.float_info.iec_60559 <sys.float_info>`: a boolean flag,
+indicating support the IEC 60559 floating-point standard (as specified by the
+Annex F of C99).  Patch by Sergey B Kirpichev.
