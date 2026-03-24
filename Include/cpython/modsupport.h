@@ -38,6 +38,8 @@ typedef struct _PyArg_Parser {
 PyAPI_FUNC(int) _PyArg_ParseTupleAndKeywordsFast(PyObject *, PyObject *,
                                                  struct _PyArg_Parser *, ...);
 
+#ifdef Py_BUILD_CORE
 // For internal use in stdlib. Needs C99 compound literals.
 // Defined here to avoid every stdlib module including pycore_modsupport.h
 #define _Py_ABI_SLOT {Py_mod_abi, (void*) &(PyABIInfo) _PyABIInfo_DEFAULT}
+#endif
