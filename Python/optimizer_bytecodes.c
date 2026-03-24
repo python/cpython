@@ -327,13 +327,13 @@ dummy_func(void) {
     op(_BINARY_OP_ADD_FLOAT, (left, right -- res, l, r)) {
         if (PyJitRef_IsUnique(left)) {
             ADD_OP(_BINARY_OP_ADD_FLOAT_INPLACE, 0, 0);
-            l = PyJitRef_Borrow(left);
+            l = sym_new_null(ctx);
             r = right;
         }
         else if (PyJitRef_IsUnique(right)) {
             ADD_OP(_BINARY_OP_ADD_FLOAT_INPLACE_RIGHT, 0, 0);
             l = left;
-            r = PyJitRef_Borrow(right);
+            r = sym_new_null(ctx);
         }
         else {
             l = left;
@@ -345,13 +345,13 @@ dummy_func(void) {
     op(_BINARY_OP_SUBTRACT_FLOAT, (left, right -- res, l, r)) {
         if (PyJitRef_IsUnique(left)) {
             ADD_OP(_BINARY_OP_SUBTRACT_FLOAT_INPLACE, 0, 0);
-            l = PyJitRef_Borrow(left);
+            l = sym_new_null(ctx);
             r = right;
         }
         else if (PyJitRef_IsUnique(right)) {
             ADD_OP(_BINARY_OP_SUBTRACT_FLOAT_INPLACE_RIGHT, 0, 0);
             l = left;
-            r = PyJitRef_Borrow(right);
+            r = sym_new_null(ctx);
         }
         else {
             l = left;
@@ -363,13 +363,13 @@ dummy_func(void) {
     op(_BINARY_OP_MULTIPLY_FLOAT, (left, right -- res, l, r)) {
         if (PyJitRef_IsUnique(left)) {
             ADD_OP(_BINARY_OP_MULTIPLY_FLOAT_INPLACE, 0, 0);
-            l = PyJitRef_Borrow(left);
+            l = sym_new_null(ctx);
             r = right;
         }
         else if (PyJitRef_IsUnique(right)) {
             ADD_OP(_BINARY_OP_MULTIPLY_FLOAT_INPLACE_RIGHT, 0, 0);
             l = left;
-            r = PyJitRef_Borrow(right);
+            r = sym_new_null(ctx);
         }
         else {
             l = left;

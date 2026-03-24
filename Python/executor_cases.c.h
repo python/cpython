@@ -5402,100 +5402,6 @@
             break;
         }
 
-        case _BINARY_OP_MULTIPLY_FLOAT_INPLACE_RIGHT_r03: {
-            CHECK_CURRENT_CACHED_VALUES(0);
-            assert(WITHIN_STACK_BOUNDS_IGNORING_CACHE());
-            _PyStackRef right;
-            _PyStackRef left;
-            _PyStackRef res;
-            _PyStackRef l;
-            _PyStackRef r;
-            right = stack_pointer[-1];
-            left = stack_pointer[-2];
-            PyObject *left_o = PyStackRef_AsPyObjectBorrow(left);
-            PyObject *right_o = PyStackRef_AsPyObjectBorrow(right);
-            assert(PyFloat_CheckExact(left_o));
-            assert(PyFloat_CheckExact(right_o));
-            assert(_PyObject_IsUniquelyReferenced(right_o));
-            STAT_INC(BINARY_OP, hit);
-            double dres = ((PyFloatObject *)left_o)->ob_fval * ((PyFloatObject *)right_o)->ob_fval;
-            ((PyFloatObject *)right_o)->ob_fval = dres;
-            res = right;
-            l = left;
-            r = PyStackRef_NULL;
-            _tos_cache2 = r;
-            _tos_cache1 = l;
-            _tos_cache0 = res;
-            SET_CURRENT_CACHED_VALUES(3);
-            stack_pointer += -2;
-            ASSERT_WITHIN_STACK_BOUNDS(__FILE__, __LINE__);
-            assert(WITHIN_STACK_BOUNDS_IGNORING_CACHE());
-            break;
-        }
-
-        case _BINARY_OP_MULTIPLY_FLOAT_INPLACE_RIGHT_r13: {
-            CHECK_CURRENT_CACHED_VALUES(1);
-            assert(WITHIN_STACK_BOUNDS_IGNORING_CACHE());
-            _PyStackRef right;
-            _PyStackRef left;
-            _PyStackRef res;
-            _PyStackRef l;
-            _PyStackRef r;
-            _PyStackRef _stack_item_0 = _tos_cache0;
-            right = _stack_item_0;
-            left = stack_pointer[-1];
-            PyObject *left_o = PyStackRef_AsPyObjectBorrow(left);
-            PyObject *right_o = PyStackRef_AsPyObjectBorrow(right);
-            assert(PyFloat_CheckExact(left_o));
-            assert(PyFloat_CheckExact(right_o));
-            assert(_PyObject_IsUniquelyReferenced(right_o));
-            STAT_INC(BINARY_OP, hit);
-            double dres = ((PyFloatObject *)left_o)->ob_fval * ((PyFloatObject *)right_o)->ob_fval;
-            ((PyFloatObject *)right_o)->ob_fval = dres;
-            res = right;
-            l = left;
-            r = PyStackRef_NULL;
-            _tos_cache2 = r;
-            _tos_cache1 = l;
-            _tos_cache0 = res;
-            SET_CURRENT_CACHED_VALUES(3);
-            stack_pointer += -1;
-            ASSERT_WITHIN_STACK_BOUNDS(__FILE__, __LINE__);
-            assert(WITHIN_STACK_BOUNDS_IGNORING_CACHE());
-            break;
-        }
-
-        case _BINARY_OP_MULTIPLY_FLOAT_INPLACE_RIGHT_r23: {
-            CHECK_CURRENT_CACHED_VALUES(2);
-            assert(WITHIN_STACK_BOUNDS_IGNORING_CACHE());
-            _PyStackRef right;
-            _PyStackRef left;
-            _PyStackRef res;
-            _PyStackRef l;
-            _PyStackRef r;
-            _PyStackRef _stack_item_0 = _tos_cache0;
-            _PyStackRef _stack_item_1 = _tos_cache1;
-            right = _stack_item_1;
-            left = _stack_item_0;
-            PyObject *left_o = PyStackRef_AsPyObjectBorrow(left);
-            PyObject *right_o = PyStackRef_AsPyObjectBorrow(right);
-            assert(PyFloat_CheckExact(left_o));
-            assert(PyFloat_CheckExact(right_o));
-            assert(_PyObject_IsUniquelyReferenced(right_o));
-            STAT_INC(BINARY_OP, hit);
-            double dres = ((PyFloatObject *)left_o)->ob_fval * ((PyFloatObject *)right_o)->ob_fval;
-            ((PyFloatObject *)right_o)->ob_fval = dres;
-            res = right;
-            l = left;
-            r = PyStackRef_NULL;
-            _tos_cache2 = r;
-            _tos_cache1 = l;
-            _tos_cache0 = res;
-            SET_CURRENT_CACHED_VALUES(3);
-            assert(WITHIN_STACK_BOUNDS_IGNORING_CACHE());
-            break;
-        }
-
         case _BINARY_OP_SUBTRACT_FLOAT_INPLACE_RIGHT_r03: {
             CHECK_CURRENT_CACHED_VALUES(0);
             assert(WITHIN_STACK_BOUNDS_IGNORING_CACHE());
@@ -5578,6 +5484,100 @@
             assert(_PyObject_IsUniquelyReferenced(right_o));
             STAT_INC(BINARY_OP, hit);
             double dres = ((PyFloatObject *)left_o)->ob_fval - ((PyFloatObject *)right_o)->ob_fval;
+            ((PyFloatObject *)right_o)->ob_fval = dres;
+            res = right;
+            l = left;
+            r = PyStackRef_NULL;
+            _tos_cache2 = r;
+            _tos_cache1 = l;
+            _tos_cache0 = res;
+            SET_CURRENT_CACHED_VALUES(3);
+            assert(WITHIN_STACK_BOUNDS_IGNORING_CACHE());
+            break;
+        }
+
+        case _BINARY_OP_MULTIPLY_FLOAT_INPLACE_RIGHT_r03: {
+            CHECK_CURRENT_CACHED_VALUES(0);
+            assert(WITHIN_STACK_BOUNDS_IGNORING_CACHE());
+            _PyStackRef right;
+            _PyStackRef left;
+            _PyStackRef res;
+            _PyStackRef l;
+            _PyStackRef r;
+            right = stack_pointer[-1];
+            left = stack_pointer[-2];
+            PyObject *left_o = PyStackRef_AsPyObjectBorrow(left);
+            PyObject *right_o = PyStackRef_AsPyObjectBorrow(right);
+            assert(PyFloat_CheckExact(left_o));
+            assert(PyFloat_CheckExact(right_o));
+            assert(_PyObject_IsUniquelyReferenced(right_o));
+            STAT_INC(BINARY_OP, hit);
+            double dres = ((PyFloatObject *)left_o)->ob_fval * ((PyFloatObject *)right_o)->ob_fval;
+            ((PyFloatObject *)right_o)->ob_fval = dres;
+            res = right;
+            l = left;
+            r = PyStackRef_NULL;
+            _tos_cache2 = r;
+            _tos_cache1 = l;
+            _tos_cache0 = res;
+            SET_CURRENT_CACHED_VALUES(3);
+            stack_pointer += -2;
+            ASSERT_WITHIN_STACK_BOUNDS(__FILE__, __LINE__);
+            assert(WITHIN_STACK_BOUNDS_IGNORING_CACHE());
+            break;
+        }
+
+        case _BINARY_OP_MULTIPLY_FLOAT_INPLACE_RIGHT_r13: {
+            CHECK_CURRENT_CACHED_VALUES(1);
+            assert(WITHIN_STACK_BOUNDS_IGNORING_CACHE());
+            _PyStackRef right;
+            _PyStackRef left;
+            _PyStackRef res;
+            _PyStackRef l;
+            _PyStackRef r;
+            _PyStackRef _stack_item_0 = _tos_cache0;
+            right = _stack_item_0;
+            left = stack_pointer[-1];
+            PyObject *left_o = PyStackRef_AsPyObjectBorrow(left);
+            PyObject *right_o = PyStackRef_AsPyObjectBorrow(right);
+            assert(PyFloat_CheckExact(left_o));
+            assert(PyFloat_CheckExact(right_o));
+            assert(_PyObject_IsUniquelyReferenced(right_o));
+            STAT_INC(BINARY_OP, hit);
+            double dres = ((PyFloatObject *)left_o)->ob_fval * ((PyFloatObject *)right_o)->ob_fval;
+            ((PyFloatObject *)right_o)->ob_fval = dres;
+            res = right;
+            l = left;
+            r = PyStackRef_NULL;
+            _tos_cache2 = r;
+            _tos_cache1 = l;
+            _tos_cache0 = res;
+            SET_CURRENT_CACHED_VALUES(3);
+            stack_pointer += -1;
+            ASSERT_WITHIN_STACK_BOUNDS(__FILE__, __LINE__);
+            assert(WITHIN_STACK_BOUNDS_IGNORING_CACHE());
+            break;
+        }
+
+        case _BINARY_OP_MULTIPLY_FLOAT_INPLACE_RIGHT_r23: {
+            CHECK_CURRENT_CACHED_VALUES(2);
+            assert(WITHIN_STACK_BOUNDS_IGNORING_CACHE());
+            _PyStackRef right;
+            _PyStackRef left;
+            _PyStackRef res;
+            _PyStackRef l;
+            _PyStackRef r;
+            _PyStackRef _stack_item_0 = _tos_cache0;
+            _PyStackRef _stack_item_1 = _tos_cache1;
+            right = _stack_item_1;
+            left = _stack_item_0;
+            PyObject *left_o = PyStackRef_AsPyObjectBorrow(left);
+            PyObject *right_o = PyStackRef_AsPyObjectBorrow(right);
+            assert(PyFloat_CheckExact(left_o));
+            assert(PyFloat_CheckExact(right_o));
+            assert(_PyObject_IsUniquelyReferenced(right_o));
+            STAT_INC(BINARY_OP, hit);
+            double dres = ((PyFloatObject *)left_o)->ob_fval * ((PyFloatObject *)right_o)->ob_fval;
             ((PyFloatObject *)right_o)->ob_fval = dres;
             res = right;
             l = left;
