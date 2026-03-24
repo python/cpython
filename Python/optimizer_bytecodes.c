@@ -757,7 +757,7 @@ dummy_func(void) {
     }
 
     op(_POP_TOP_FLOAT, (value --)) {
-        if (PyJitRef_IsBorrowed(value)) {
+        if (PyJitRef_IsBorrowed(value) || sym_is_null(value)) {
             ADD_OP(_POP_TOP_NOP, 0, 0);
         }
     }
