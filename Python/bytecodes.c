@@ -787,11 +787,8 @@ dummy_func(
 
         // Inplace float ops: mutate the uniquely-referenced left operand
         // instead of allocating a new float. Tier 2 only.
-        // The optimizer sets l to null so the following _POP_TOP_FLOAT
+        // The optimizer sets l to a borrowed value so the following _POP_TOP_FLOAT
         // becomes _POP_TOP_NOP.
-        // Note: read into a local double and write back to avoid compound
-        // assignment (+=) on ob_fval, which generates problematic JIT
-        // stencils on i686-pc-windows-msvc.
         tier2 op(_BINARY_OP_ADD_FLOAT_INPLACE, (left, right -- res, l, r)) {
             FLOAT_INPLACE_OP(left, right, left, +);
             res = left;

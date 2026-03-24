@@ -334,7 +334,7 @@ dummy_func(void) {
             ADD_OP(_BINARY_OP_ADD_FLOAT_INPLACE_RIGHT, 0, 0);
             l = left;
             r = PyJitRef_Borrow(sym_new_null(ctx));
-       }
+        }
         else {
             l = left;
             r = right;
@@ -569,7 +569,7 @@ dummy_func(void) {
         REPLACE_OPCODE_IF_EVALUATES_PURE(value, res);
         if (sym_matches_type(value, &PyFloat_Type) && PyJitRef_IsUnique(value)) {
             ADD_OP(_UNARY_NEGATIVE_FLOAT_INPLACE, 0, 0);
-            v = PyJitRef_Borrow(value);
+            v = PyJitRef_Borrow(sym_new_null(ctx));
             res = PyJitRef_MakeUnique(sym_new_type(ctx, &PyFloat_Type));
         }
         else if (sym_is_compact_int(value)) {

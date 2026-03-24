@@ -259,7 +259,7 @@
             }
             if (sym_matches_type(value, &PyFloat_Type) && PyJitRef_IsUnique(value)) {
                 ADD_OP(_UNARY_NEGATIVE_FLOAT_INPLACE, 0, 0);
-                v = PyJitRef_Borrow(value);
+                v = PyJitRef_Borrow(sym_new_null(ctx));
                 res = PyJitRef_MakeUnique(sym_new_type(ctx, &PyFloat_Type));
             }
             else if (sym_is_compact_int(value)) {
