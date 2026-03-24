@@ -1062,11 +1062,11 @@ class Function(Declaration):
     @classmethod
     def _unformat_data(cls, datastr, fmt=None):
         if fmt in ('line', 'brief'):
-            sig, storage = Signature.from_str(sig)
+            sig, storage = Signature.from_str(datastr)
             return sig, {'storage': storage}
         #elif fmt == 'full':
         elif fmt == 'row':
-            sig, storage = Signature.from_str(sig)
+            sig, storage = Signature.from_str(datastr)
             return sig, {'storage': storage}
         else:
             raise NotImplementedError(fmt)
