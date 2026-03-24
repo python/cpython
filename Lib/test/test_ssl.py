@@ -395,7 +395,7 @@ class BasicSocketTests(unittest.TestCase):
         ssl.OP_NO_COMPRESSION
         self.assertEqual(ssl.HAS_SNI, True)
         self.assertEqual(ssl.HAS_ECDH, True)
-        ssl.HAS_TLSv1_2
+        self.assertIsInstance(ssl.HAS_TLSv1_2, bool)
         self.assertEqual(ssl.HAS_TLSv1_3, True)
         ssl.OP_NO_SSLv2
         ssl.OP_NO_SSLv3
