@@ -1,3 +1,0 @@
-Add suggestion to error message for :class:`typing.Generic` subclasses when
-``cls.__parameters__`` is missing due to a parent class failing to call
-:meth:`super().__init_subclass__() <object.__init_subclass__>` in its ``__init_subclass__``.

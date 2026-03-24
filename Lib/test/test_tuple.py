@@ -290,12 +290,18 @@ class TupleTest(seq_tests.CommonTest):
         self.assertEqual(repr(a0), "()")
         self.assertEqual(repr(a2), "(0, 1, 2)")
 
+    # Checks that t is not tracked without any GC collections.
+    def _not_tracked_instantly(self, t):
+        self.assertFalse(gc.is_tracked(t), t)
+
+    # Checks that t is not tracked after GC collection.
     def _not_tracked(self, t):
         # Nested tuples can take several collections to untrack
         gc.collect()
         gc.collect()
         self.assertFalse(gc.is_tracked(t), t)
 
+    # Checks that t continues to be tracked even after GC collection.
     def _tracked(self, t):
         self.assertTrue(gc.is_tracked(t), t)
         gc.collect()
@@ -307,13 +313,19 @@ class TupleTest(seq_tests.CommonTest):
         # Test GC-optimization of tuple literals
         x, y, z = 1.5, "a", []
 
-        self._not_tracked(())
-        self._not_tracked((1,))
-        self._not_tracked((1, 2))
-        self._not_tracked((1, 2, "a"))
-        self._not_tracked((1, 2, (None, True, False, ()), int))
-        self._not_tracked((object(),))
+        # We check that those objects aren't tracked at all.
+        # It's essential for the GC performance, see gh-139951.
+        self._not_tracked_instantly(())
+        self._not_tracked_instantly((1,))
+        self._not_tracked_instantly((1, 2))
+        self._not_tracked_instantly((1, 2, "a"))
+        self._not_tracked_instantly((1, 2) * 5)
+        self._not_tracked_instantly((12, 10**10, 'a_' * 100))
+        self._not_tracked_instantly((object(),))
+
         self._not_tracked(((1, x), y, (2, 3)))
+        self._not_tracked((1, 2, (None, True, False, ()), int))
+        self._not_tracked((object(), ()))
 
         # Tuples with mutable elements are always tracked, even if those
         # elements are not tracked right now.
@@ -342,6 +354,12 @@ class TupleTest(seq_tests.CommonTest):
         self._tracked(tp(obj for obj in [x, y, z]))
         self._tracked(tp(tuple([obj]) for obj in [x, y, z]))
         self._tracked(tuple(tp([obj]) for obj in [x, y, z]))
+
+        t = tp([1, x, y, z])
+        self.assertEqual(type(t), tp)
+        self._tracked(t)
+        self.assertEqual(type(t[:]), tuple)
+        self._tracked(t[:])
 
     @support.cpython_only
     def test_track_dynamic(self):

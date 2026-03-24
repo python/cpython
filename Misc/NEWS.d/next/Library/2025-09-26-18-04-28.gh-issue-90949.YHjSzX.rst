@@ -1,7 +1,0 @@
-Add
-:meth:`~xml.parsers.expat.xmlparser.SetBillionLaughsAttackProtectionActivationThreshold`
-and
-:meth:`~xml.parsers.expat.xmlparser.SetBillionLaughsAttackProtectionMaximumAmplification`
-to :ref:`xmlparser <xmlparser-objects>` objects to tune protections against
-`billion laughs <https://en.wikipedia.org/wiki/Billion_laughs_attack>`_ attacks.
-Patch by Bénédikt Tran.

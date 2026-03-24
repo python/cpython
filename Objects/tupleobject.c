@@ -118,7 +118,7 @@ int
 PyTuple_SetItem(PyObject *op, Py_ssize_t i, PyObject *newitem)
 {
     PyObject **p;
-    if (!PyTuple_Check(op) || Py_REFCNT(op) != 1) {
+    if (!PyTuple_Check(op) || !_PyObject_IsUniquelyReferenced(op)) {
         Py_XDECREF(newitem);
         PyErr_BadInternalCall();
         return -1;
@@ -156,6 +156,18 @@ _PyTuple_MaybeUntrack(PyObject *op)
     _PyObject_GC_UNTRACK(op);
 }
 
+/* Fast, but conservative check if an object maybe tracked
+   May return true for an object that is not tracked,
+   Will always return true for an object that is tracked.
+   This is a temporary workaround until _PyObject_GC_IS_TRACKED
+   becomes fast and safe to call on non-GC objects.
+*/
+static bool
+maybe_tracked(PyObject *ob)
+{
+    return _PyType_IS_GC(Py_TYPE(ob));
+}
+
 PyObject *
 PyTuple_Pack(Py_ssize_t n, ...)
 {
@@ -163,6 +175,7 @@ PyTuple_Pack(Py_ssize_t n, ...)
     PyObject *o;
     PyObject **items;
     va_list vargs;
+    bool track = false;
 
     if (n == 0) {
         return tuple_get_empty();
@@ -177,15 +190,66 @@ PyTuple_Pack(Py_ssize_t n, ...)
     items = result->ob_item;
     for (i = 0; i < n; i++) {
         o = va_arg(vargs, PyObject *);
+        if (!track && maybe_tracked(o)) {
+            track = true;
+        }
         items[i] = Py_NewRef(o);
     }
     va_end(vargs);
-    _PyObject_GC_TRACK(result);
+    if (track) {
+        _PyObject_GC_TRACK(result);
+    }
     return (PyObject *)result;
 }
 
+PyObject *
+_PyTuple_FromPair(PyObject *first, PyObject *second)
+{
+    assert(first != NULL);
+    assert(second != NULL);
+
+    return _PyTuple_FromPairSteal(Py_NewRef(first), Py_NewRef(second));
+}
+
+PyObject *
+_PyTuple_FromPairSteal(PyObject *first, PyObject *second)
+{
+    assert(first != NULL);
+    assert(second != NULL);
+
+    PyTupleObject *op = tuple_alloc(2);
+    if (op == NULL) {
+        Py_DECREF(first);
+        Py_DECREF(second);
+        return NULL;
+    }
+    PyObject **items = op->ob_item;
+    items[0] = first;
+    items[1] = second;
+    if (maybe_tracked(first) || maybe_tracked(second)) {
+        _PyObject_GC_TRACK(op);
+    }
+    return (PyObject *)op;
+}
 
 /* Methods */
+
+/*
+ Free of a tuple where all contents have been stolen and
+ is now untracked by GC. This operation is thus non-escaping.
+ */
+void
+_PyStolenTuple_Free(PyObject *obj)
+{
+    assert(PyTuple_CheckExact(obj));
+    PyTupleObject *op = _PyTuple_CAST(obj);
+    assert(Py_SIZE(op) != 0);
+    assert(!_PyObject_GC_IS_TRACKED(obj));
+    // This will abort on the empty singleton (if there is one).
+    if (!maybe_freelist_push(op)) {
+        PyTuple_Type.tp_free((PyObject *)op);
+    }
+}
 
 static void
 tuple_dealloc(PyObject *self)
@@ -377,11 +441,17 @@ PyTuple_FromArray(PyObject *const *src, Py_ssize_t n)
         return NULL;
     }
     PyObject **dst = tuple->ob_item;
+    bool track = false;
     for (Py_ssize_t i = 0; i < n; i++) {
         PyObject *item = src[i];
+        if (!track && maybe_tracked(item)) {
+            track = true;
+        }
         dst[i] = Py_NewRef(item);
     }
-    _PyObject_GC_TRACK(tuple);
+    if (track) {
+        _PyObject_GC_TRACK(tuple);
+    }
     return (PyObject *)tuple;
 }
 
@@ -396,10 +466,17 @@ _PyTuple_FromStackRefStealOnSuccess(const _PyStackRef *src, Py_ssize_t n)
         return NULL;
     }
     PyObject **dst = tuple->ob_item;
+    bool track = false;
     for (Py_ssize_t i = 0; i < n; i++) {
-        dst[i] = PyStackRef_AsPyObjectSteal(src[i]);
+        PyObject *item = PyStackRef_AsPyObjectSteal(src[i]);
+        if (!track && maybe_tracked(item)) {
+            track = true;
+        }
+        dst[i] = item;
     }
-    _PyObject_GC_TRACK(tuple);
+    if (track) {
+        _PyObject_GC_TRACK(tuple);
+    }
     return (PyObject *)tuple;
 }
 
@@ -438,7 +515,26 @@ tuple_slice(PyTupleObject *a, Py_ssize_t ilow,
     if (ilow == 0 && ihigh == Py_SIZE(a) && PyTuple_CheckExact(a)) {
         return Py_NewRef(a);
     }
-    return _PyTuple_FromArray(a->ob_item + ilow, ihigh - ilow);
+    return PyTuple_FromArray(a->ob_item + ilow, ihigh - ilow);
+}
+
+PyObject *
+_PyTuple_BinarySlice(PyObject *container, PyObject *start, PyObject *stop)
+{
+    assert(PyTuple_CheckExact(container));
+    Py_ssize_t len = Py_SIZE(container);
+    Py_ssize_t istart, istop;
+    if (!_PyEval_UnpackIndices(start, stop, len, &istart, &istop)) {
+        return NULL;
+    }
+    if (istart == 0 && istop == len) {
+        return Py_NewRef(container);
+    }
+    if (istop < istart) {
+        istop = istart;
+    }
+    return PyTuple_FromArray(((PyTupleObject *)container)->ob_item + istart,
+                             istop - istart);
 }
 
 PyObject *
@@ -923,7 +1019,7 @@ _PyTuple_Resize(PyObject **pv, Py_ssize_t newsize)
 
     v = (PyTupleObject *) *pv;
     if (v == NULL || !Py_IS_TYPE(v, &PyTuple_Type) ||
-        (Py_SIZE(v) != 0 && Py_REFCNT(v) != 1)) {
+        (Py_SIZE(v) != 0 && !_PyObject_IsUniquelyReferenced(*pv))) {
         *pv = 0;
         Py_XDECREF(v);
         PyErr_BadInternalCall();
