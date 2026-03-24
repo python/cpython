@@ -838,6 +838,28 @@ dummy_func(
             INPUTS_DEAD();
         }
 
+        tier2 op(_BINARY_OP_TRUEDIV_FLOAT_INPLACE, (left, right -- res, l, r)) {
+            FLOAT_INPLACE_DIVOP(left, right, left);
+            if (_divop_err) {
+                ERROR_NO_POP();
+            }
+            res = left;
+            l = PyStackRef_NULL;
+            r = right;
+            INPUTS_DEAD();
+        }
+
+        tier2 op(_BINARY_OP_TRUEDIV_FLOAT_INPLACE_RIGHT, (left, right -- res, l, r)) {
+            FLOAT_INPLACE_DIVOP(left, right, right);
+            if (_divop_err) {
+                ERROR_NO_POP();
+            }
+            res = right;
+            l = left;
+            r = PyStackRef_NULL;
+            INPUTS_DEAD();
+        }
+
         pure op(_BINARY_OP_ADD_UNICODE, (left, right -- res, l, r)) {
             PyObject *left_o = PyStackRef_AsPyObjectBorrow(left);
             PyObject *right_o = PyStackRef_AsPyObjectBorrow(right);

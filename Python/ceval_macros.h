@@ -562,3 +562,27 @@ gen_try_set_executing(PyGenObject *gen)
         ((PyFloatObject *)PyStackRef_AsPyObjectBorrow(TARGET))           \
             ->ob_fval = _dres;                                           \
     } while (0)
+
+// Inplace float true division. Sets _divop_err to 1 on zero division.
+// Caller must check _divop_err and call ERROR_NO_POP() if set.
+#define FLOAT_INPLACE_DIVOP(left, right, TARGET)                         \
+    int _divop_err = 0;                                                  \
+    do {                                                                 \
+        PyObject *left_o = PyStackRef_AsPyObjectBorrow(left);            \
+        PyObject *right_o = PyStackRef_AsPyObjectBorrow(right);          \
+        assert(PyFloat_CheckExact(left_o));                              \
+        assert(PyFloat_CheckExact(right_o));                             \
+        assert(_PyObject_IsUniquelyReferenced(                           \
+            PyStackRef_AsPyObjectBorrow(TARGET)));                       \
+        STAT_INC(BINARY_OP, hit);                                        \
+        double _divisor = ((PyFloatObject *)right_o)->ob_fval;           \
+        if (_divisor == 0.0) {                                           \
+            PyErr_SetString(PyExc_ZeroDivisionError,                     \
+                            "float division by zero");                   \
+            _divop_err = 1;                                              \
+            break;                                                       \
+        }                                                                \
+        double _dres = ((PyFloatObject *)left_o)->ob_fval / _divisor;    \
+        ((PyFloatObject *)PyStackRef_AsPyObjectBorrow(TARGET))           \
+            ->ob_fval = _dres;                                           \
+    } while (0)

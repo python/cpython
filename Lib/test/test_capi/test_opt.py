@@ -3237,6 +3237,76 @@ class TestUopsOptimization(unittest.TestCase):
         uops = get_opnames(ex)
         self.assertNotIn("_UNARY_NEGATIVE_FLOAT_INPLACE", uops)
 
+    def test_float_truediv_inplace_unique_lhs(self):
+        # (a + b) produces a unique float; dividing by c reuses it
+        def testfunc(args):
+            a, b, c, n = args
+            total = 0.0
+            for _ in range(n):
+                total += (a + b) / c
+            return total
+
+        res, ex = self._run_with_optimizer(testfunc, (2.0, 3.0, 4.0, TIER2_THRESHOLD))
+        self.assertAlmostEqual(res, TIER2_THRESHOLD * 1.25)
+        self.assertIsNotNone(ex)
+        uops = get_opnames(ex)
+        self.assertIn("_BINARY_OP_TRUEDIV_FLOAT_INPLACE", uops)
+
+    def test_float_truediv_inplace_unique_rhs(self):
+        # (a + b) produces a unique float on the right side of /
+        def testfunc(args):
+            a, b, c, n = args
+            total = 0.0
+            for _ in range(n):
+                total += c / (a + b)
+            return total
+
+        res, ex = self._run_with_optimizer(testfunc, (2.0, 3.0, 4.0, TIER2_THRESHOLD))
+        self.assertAlmostEqual(res, TIER2_THRESHOLD * 0.8)
+        self.assertIsNotNone(ex)
+        uops = get_opnames(ex)
+        self.assertIn("_BINARY_OP_TRUEDIV_FLOAT_INPLACE_RIGHT", uops)
+
+    def test_float_truediv_type_propagation(self):
+        # (a/b) + (c/d): inner divisions are generic _BINARY_OP but
+        # type propagation marks their results as float, so the +
+        # is specialized and the += uses inplace on the unique result
+        def testfunc(args):
+            a, b, c, d, n = args
+            total = 0.0
+            for _ in range(n):
+                total += (a / b) + (c / d)
+            return total
+
+        res, ex = self._run_with_optimizer(testfunc, (10.0, 3.0, 4.0, 5.0, TIER2_THRESHOLD))
+        expected = TIER2_THRESHOLD * (10.0 / 3.0 + 4.0 / 5.0)
+        self.assertAlmostEqual(res, expected)
+        self.assertIsNotNone(ex)
+        uops = get_opnames(ex)
+        # The + between the two division results should use inplace
+        # (the a/b result is unique from type propagation)
+        self.assertIn("_BINARY_OP_ADD_FLOAT_INPLACE", uops)
+        # The += should also use inplace (the + result is unique)
+        self.assertIn("_BINARY_OP_ADD_FLOAT_INPLACE_RIGHT", uops)
+
+    def test_float_truediv_unique_result_enables_inplace_add(self):
+        # a / b: the generic division result is marked as unique float
+        # by type propagation, so total += (a / b) uses inplace add
+        def testfunc(args):
+            a, b, n = args
+            total = 0.0
+            for _ in range(n):
+                total += a / b
+            return total
+
+        res, ex = self._run_with_optimizer(testfunc, (10.0, 3.0, TIER2_THRESHOLD))
+        expected = TIER2_THRESHOLD * (10.0 / 3.0)
+        self.assertAlmostEqual(res, expected)
+        self.assertIsNotNone(ex)
+        uops = get_opnames(ex)
+        # The += uses inplace because the division result is unique
+        self.assertIn("_BINARY_OP_ADD_FLOAT_INPLACE_RIGHT", uops)
+
     def test_load_attr_instance_value(self):
         def testfunc(n):
             class C():
