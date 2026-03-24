@@ -1077,6 +1077,11 @@ def _format_note(note, indent, theme):
         yield f"{indent}{theme.note}{l}{theme.reset}\n"
 
 
+def _format_exception_target(note, indent, theme):
+    for l in note.split("\n"):
+        yield f"{indent}{theme.exception_target}{l}{theme.reset}\n"
+
+
 class _ExceptionPrintContext:
     def __init__(self):
         self.seen = set()
@@ -1435,7 +1440,7 @@ class TracebackException:
             yield from _format_note(note, indent, theme)
         if exception_target:
             for note in self.exception_target:
-                yield from [indent + l + '\n' for l in note.split('\n')]
+                yield from _format_exception_target(note, indent, theme)
 
         if self.exceptions and show_group:
             for ex in self.exceptions:
