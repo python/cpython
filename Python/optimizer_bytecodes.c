@@ -254,40 +254,37 @@ dummy_func(void) {
         bool rhs_int = sym_matches_type(rhs, &PyLong_Type);
         bool lhs_float = sym_matches_type(lhs, &PyFloat_Type);
         bool rhs_float = sym_matches_type(rhs, &PyFloat_Type);
-        // Specialize float/float true division in tier 2.
-        // We insert guards for operands not yet known to be float.
+        // Specialize inplace float/float true division in tier 2.
+        // Only enter when we can emit an inplace op (one operand is unique).
+        // Guards are inserted for operands not yet known to be float.
         if ((oparg == NB_TRUE_DIVIDE || oparg == NB_INPLACE_TRUE_DIVIDE)
-                && (lhs_float || rhs_float)) {
+                && (lhs_float || rhs_float)
+                && (PyJitRef_IsUnique(lhs) || PyJitRef_IsUnique(rhs))) {
             if (!rhs_float) {
                 ADD_OP(_GUARD_TOS_FLOAT, 0, 0);
                 sym_set_type(rhs, &PyFloat_Type);
-                rhs_float = true;
             }
             if (!lhs_float) {
                 ADD_OP(_GUARD_NOS_FLOAT, 0, 0);
                 sym_set_type(lhs, &PyFloat_Type);
-                lhs_float = true;
             }
             if (PyJitRef_IsUnique(lhs)) {
                 ADD_OP(_BINARY_OP_TRUEDIV_FLOAT_INPLACE, 0, 0);
                 l = sym_new_null(ctx);
                 r = rhs;
             }
-            else if (PyJitRef_IsUnique(rhs)) {
+            else {
                 ADD_OP(_BINARY_OP_TRUEDIV_FLOAT_INPLACE_RIGHT, 0, 0);
                 l = lhs;
                 r = sym_new_null(ctx);
-            }
-            else {
-                // Neither operand is unique — keep as generic _BINARY_OP.
-                // Type and uniqueness are still set so downstream ops benefit.
             }
             res = PyJitRef_MakeUnique(sym_new_type(ctx, &PyFloat_Type));
         }
         else if (oparg == NB_TRUE_DIVIDE || oparg == NB_INPLACE_TRUE_DIVIDE) {
             // True division always returns a new float, regardless of operand
-            // types. Mark as unique so downstream ops can mutate it in place.
-            res = PyJitRef_MakeUnique(sym_new_type(ctx, &PyFloat_Type));
+            // types. Set type for downstream ops. Don't mark unique here —
+            // the generic _BINARY_OP handles its own l/r outputs.
+            res = sym_new_type(ctx, &PyFloat_Type);
         }
         else if (!((lhs_int || lhs_float) && (rhs_int || rhs_float))) {
             // There's something other than an int or float involved:
