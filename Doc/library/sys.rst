@@ -694,9 +694,10 @@ always available. Unless explicitly noted otherwise, all variables are read-only
    A :term:`named tuple` holding information about the float type. It
    contains low level information about the precision and internal
    representation.  The values correspond to the various floating-point
-   constants defined by C implementation and in the standard header file :file:`float.h` for the 'C'
-   programming language; see Annex F and section 5.2.4.2.2 of the 1999 ISO/IEC C standard
-   [C99]_, 'Characteristics of floating types', for details.
+   constants defined by C implementation and in the standard header file
+   :file:`float.h` for the 'C' programming language; see Annex F and section
+   5.2.4.2.2 of the 1999 ISO/IEC C standard [C99]_, 'Characteristics of
+   floating types', for details.
 
    .. list-table:: Attributes of the :data:`!float_info` :term:`named tuple`
       :header-rows: 1
