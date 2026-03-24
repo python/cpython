@@ -327,14 +327,14 @@ dummy_func(void) {
     op(_BINARY_OP_ADD_FLOAT, (left, right -- res, l, r)) {
         if (PyJitRef_IsUnique(left)) {
             ADD_OP(_BINARY_OP_ADD_FLOAT_INPLACE, 0, 0);
-            l = sym_new_null(ctx);
+            l = PyJitRef_Borrow(sym_new_null(ctx));
             r = right;
         }
         else if (PyJitRef_IsUnique(right)) {
             ADD_OP(_BINARY_OP_ADD_FLOAT_INPLACE_RIGHT, 0, 0);
             l = left;
-            r = sym_new_null(ctx);
-        }
+            r = PyJitRef_Borrow(sym_new_null(ctx));
+       }
         else {
             l = left;
             r = right;
@@ -345,13 +345,13 @@ dummy_func(void) {
     op(_BINARY_OP_SUBTRACT_FLOAT, (left, right -- res, l, r)) {
         if (PyJitRef_IsUnique(left)) {
             ADD_OP(_BINARY_OP_SUBTRACT_FLOAT_INPLACE, 0, 0);
-            l = sym_new_null(ctx);
+            l = PyJitRef_Borrow(sym_new_null(ctx));
             r = right;
         }
         else if (PyJitRef_IsUnique(right)) {
             ADD_OP(_BINARY_OP_SUBTRACT_FLOAT_INPLACE_RIGHT, 0, 0);
             l = left;
-            r = sym_new_null(ctx);
+            r = PyJitRef_Borrow(sym_new_null(ctx));
         }
         else {
             l = left;
@@ -363,13 +363,13 @@ dummy_func(void) {
     op(_BINARY_OP_MULTIPLY_FLOAT, (left, right -- res, l, r)) {
         if (PyJitRef_IsUnique(left)) {
             ADD_OP(_BINARY_OP_MULTIPLY_FLOAT_INPLACE, 0, 0);
-            l = sym_new_null(ctx);
+            l = PyJitRef_Borrow(sym_new_null(ctx));
             r = right;
         }
         else if (PyJitRef_IsUnique(right)) {
             ADD_OP(_BINARY_OP_MULTIPLY_FLOAT_INPLACE_RIGHT, 0, 0);
             l = left;
-            r = sym_new_null(ctx);
+            r = PyJitRef_Borrow(sym_new_null(ctx));
         }
         else {
             l = left;
@@ -757,7 +757,7 @@ dummy_func(void) {
     }
 
     op(_POP_TOP_FLOAT, (value --)) {
-        if (PyJitRef_IsBorrowed(value) || sym_is_null(value)) {
+        if (PyJitRef_IsBorrowed(value)) {
             ADD_OP(_POP_TOP_NOP, 0, 0);
         }
     }

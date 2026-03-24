@@ -158,7 +158,7 @@
         case _POP_TOP_FLOAT: {
             JitOptRef value;
             value = stack_pointer[-1];
-            if (PyJitRef_IsBorrowed(value) || sym_is_null(value)) {
+            if (PyJitRef_IsBorrowed(value)) {
                 ADD_OP(_POP_TOP_NOP, 0, 0);
             }
             CHECK_STACK_BOUNDS(-1);
@@ -810,13 +810,13 @@
             left = stack_pointer[-2];
             if (PyJitRef_IsUnique(left)) {
                 ADD_OP(_BINARY_OP_MULTIPLY_FLOAT_INPLACE, 0, 0);
-                l = sym_new_null(ctx);
+                l = PyJitRef_Borrow(sym_new_null(ctx));
                 r = right;
             }
             else if (PyJitRef_IsUnique(right)) {
                 ADD_OP(_BINARY_OP_MULTIPLY_FLOAT_INPLACE_RIGHT, 0, 0);
                 l = left;
-                r = sym_new_null(ctx);
+                r = PyJitRef_Borrow(sym_new_null(ctx));
             }
             else {
                 l = left;
@@ -842,13 +842,13 @@
             left = stack_pointer[-2];
             if (PyJitRef_IsUnique(left)) {
                 ADD_OP(_BINARY_OP_ADD_FLOAT_INPLACE, 0, 0);
-                l = sym_new_null(ctx);
+                l = PyJitRef_Borrow(sym_new_null(ctx));
                 r = right;
             }
             else if (PyJitRef_IsUnique(right)) {
                 ADD_OP(_BINARY_OP_ADD_FLOAT_INPLACE_RIGHT, 0, 0);
                 l = left;
-                r = sym_new_null(ctx);
+                r = PyJitRef_Borrow(sym_new_null(ctx));
             }
             else {
                 l = left;
@@ -874,13 +874,13 @@
             left = stack_pointer[-2];
             if (PyJitRef_IsUnique(left)) {
                 ADD_OP(_BINARY_OP_SUBTRACT_FLOAT_INPLACE, 0, 0);
-                l = sym_new_null(ctx);
+                l = PyJitRef_Borrow(sym_new_null(ctx));
                 r = right;
             }
             else if (PyJitRef_IsUnique(right)) {
                 ADD_OP(_BINARY_OP_SUBTRACT_FLOAT_INPLACE_RIGHT, 0, 0);
                 l = left;
-                r = sym_new_null(ctx);
+                r = PyJitRef_Borrow(sym_new_null(ctx));
             }
             else {
                 l = left;
