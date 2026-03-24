@@ -1188,7 +1188,7 @@ newDevPollObject(PyObject *module)
     ** allocate huge amounts of memory or even fail to allocate.
     */
     out_size = limit.rlim_cur;
-    if (out_size > DEVPOLL_MAX_OUT_BUFFER_SIZE) {
+    if ((rlim_t)out_size > DEVPOLL_MAX_OUT_BUFFER_SIZE) {
         out_size = DEVPOLL_MAX_OUT_BUFFER_SIZE;
     }
 
