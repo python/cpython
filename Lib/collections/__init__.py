@@ -32,6 +32,8 @@ import sys as _sys
 _sys.modules['collections.abc'] = _collections_abc
 abc = _collections_abc
 
+lazy from copy import copy as _copy
+lazy from heapq import nlargest as _nlargest
 from itertools import chain as _chain
 from itertools import repeat as _repeat
 from itertools import starmap as _starmap
@@ -58,8 +60,6 @@ try:
     from _collections import defaultdict
 except ImportError:
     pass
-
-heapq = None  # Lazily imported
 
 
 ################################################################################
@@ -634,12 +634,7 @@ class Counter(dict):
         if n is None:
             return sorted(self.items(), key=_itemgetter(1), reverse=True)
 
-        # Lazy import to speedup Python startup time
-        global heapq
-        if heapq is None:
-            import heapq
-
-        return heapq.nlargest(n, self.items(), key=_itemgetter(1))
+        return _nlargest(n, self.items(), key=_itemgetter(1))
 
     def elements(self):
         '''Iterator over elements repeating each as many times as its count.
@@ -796,6 +791,7 @@ class Counter(dict):
     #         set(cp - cq) == sp - sq
     #         set(cp | cq) == sp | sq
     #         set(cp & cq) == sp & sq
+    #         set(cp ^ cq) == sp ^ sq
 
     def __eq__(self, other):
         'True if all counts agree. Missing counts are treated as zero.'
@@ -908,6 +904,33 @@ class Counter(dict):
                 result[elem] = newcount
         return result
 
+    def __xor__(self, other):
+        '''Symmetric difference. Absolute value of count differences.
+
+        The symmetric difference p ^ q is equivalent to:
+
+            (p - q) | (q - p).
+
+        For each element, symmetric difference gives the same result as:
+
+            max(p[elem], q[elem]) - min(p[elem], q[elem])
+
+        >>> Counter(a=5, b=3, c=2, d=2) ^ Counter(a=1, b=3, c=5, e=1)
+        Counter({'a': 4, 'c': 3, 'd': 2, 'e': 1})
+
+        '''
+        if not isinstance(other, Counter):
+            return NotImplemented
+        result = Counter()
+        for elem, count in self.items():
+            newcount = abs(count - other[elem])
+            if newcount:
+                result[elem] = newcount
+        for elem, count in other.items():
+            if elem not in self and count:
+                result[elem] = abs(count)
+        return result
+
     def __pos__(self):
         'Adds an empty counter, effectively stripping negative and zero counts'
         result = Counter()
@@ -988,6 +1011,22 @@ class Counter(dict):
             other_count = other[elem]
             if other_count < count:
                 self[elem] = other_count
+        return self._keep_positive()
+
+    def __ixor__(self, other):
+        '''Inplace symmetric difference. Absolute value of count differences.
+
+        >>> c = Counter(a=5, b=3, c=2, d=2)
+        >>> c ^= Counter(a=1, b=3, c=5, e=1)
+        >>> c
+        Counter({'a': 4, 'c': 3, 'd': 2, 'e': 1})
+
+        '''
+        for elem, count in self.items():
+            self[elem] = abs(count - other[elem])
+        for elem, count in other.items():
+            if elem not in self:
+                self[elem] = abs(count)
         return self._keep_positive()
 
 
@@ -1205,11 +1244,10 @@ class UserDict(_collections_abc.MutableMapping):
     def copy(self):
         if self.__class__ is UserDict:
             return UserDict(self.data.copy())
-        import copy
         data = self.data
         try:
             self.data = {}
-            c = copy.copy(self)
+            c = _copy(self)
         finally:
             self.data = data
         c.update(self)
@@ -1498,6 +1536,8 @@ class UserString(_collections_abc.Sequence):
         return self.data.format_map(mapping)
 
     def index(self, sub, start=0, end=_sys.maxsize):
+        if isinstance(sub, UserString):
+            sub = sub.data
         return self.data.index(sub, start, end)
 
     def isalpha(self):
@@ -1566,6 +1606,8 @@ class UserString(_collections_abc.Sequence):
         return self.data.rfind(sub, start, end)
 
     def rindex(self, sub, start=0, end=_sys.maxsize):
+        if isinstance(sub, UserString):
+            sub = sub.data
         return self.data.rindex(sub, start, end)
 
     def rjust(self, width, *args):

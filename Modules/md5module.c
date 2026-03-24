@@ -22,10 +22,10 @@
 #endif
 
 #include "Python.h"
-#include "pycore_strhex.h"              // _Py_strhex()
+#include "pycore_object.h"        // _PyObject_VisitType()
+#include "pycore_strhex.h"        // _Py_strhex()
 
-#include "_hashlib/hashlib_buffer.h"
-#include "_hashlib/hashlib_mutex.h"
+#include "hashlib.h"
 
 #include "_hacl/Hacl_Hash_MD5.h"
 
@@ -83,18 +83,14 @@ newMD5object(MD5State * st)
 }
 
 /* Internal methods for a hash object */
-static int
-MD5_traverse(PyObject *ptr, visitproc visit, void *arg)
-{
-    Py_VISIT(Py_TYPE(ptr));
-    return 0;
-}
-
 static void
 MD5_dealloc(PyObject *op)
 {
     MD5object *ptr = _MD5object_CAST(op);
-    Hacl_Hash_MD5_free(ptr->hash_state);
+    if (ptr->hash_state != NULL) {
+        Hacl_Hash_MD5_free(ptr->hash_state);
+        ptr->hash_state = NULL;
+    }
     PyTypeObject *tp = Py_TYPE(op);
     PyObject_GC_UnTrack(ptr);
     PyObject_GC_Del(ptr);
@@ -247,7 +243,7 @@ static PyType_Slot md5_type_slots[] = {
     {Py_tp_dealloc, MD5_dealloc},
     {Py_tp_methods, MD5_methods},
     {Py_tp_getset, MD5_getseters},
-    {Py_tp_traverse, MD5_traverse},
+    {Py_tp_traverse, _PyObject_VisitType},
     {0,0}
 };
 

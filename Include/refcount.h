@@ -114,6 +114,8 @@ PyAPI_FUNC(Py_ssize_t) Py_REFCNT(PyObject *ob);
     }
     #if !defined(Py_LIMITED_API) || Py_LIMITED_API+0 < 0x030b0000
     #  define Py_REFCNT(ob) _Py_REFCNT(_PyObject_CAST(ob))
+    #else
+    #  define Py_REFCNT(ob) _Py_REFCNT(ob)
     #endif
 #endif
 
@@ -124,7 +126,7 @@ static inline Py_ALWAYS_INLINE int _Py_IsImmortal(PyObject *op)
     return (_Py_atomic_load_uint32_relaxed(&op->ob_ref_local) ==
             _Py_IMMORTAL_REFCNT_LOCAL);
 #elif SIZEOF_VOID_P > 4
-    return _Py_CAST(PY_INT32_T, op->ob_refcnt) < 0;
+    return _Py_CAST(int32_t, op->ob_refcnt) < 0;
 #else
     return op->ob_refcnt >= _Py_IMMORTAL_MINIMUM_REFCNT;
 #endif
@@ -162,7 +164,7 @@ static inline void Py_SET_REFCNT(PyObject *ob, Py_ssize_t refcnt) {
     }
 #ifndef Py_GIL_DISABLED
 #if SIZEOF_VOID_P > 4
-    ob->ob_refcnt = (PY_UINT32_T)refcnt;
+    ob->ob_refcnt = (uint32_t)refcnt;
 #else
     ob->ob_refcnt = refcnt;
 #endif
@@ -276,7 +278,7 @@ static inline Py_ALWAYS_INLINE void Py_INCREF(PyObject *op)
         _Py_atomic_add_ssize(&op->ob_ref_shared, (1 << _Py_REF_SHARED_SHIFT));
     }
 #elif SIZEOF_VOID_P > 4
-    PY_UINT32_T cur_refcnt = op->ob_refcnt;
+    uint32_t cur_refcnt = op->ob_refcnt;
     if (cur_refcnt >= _Py_IMMORTAL_INITIAL_REFCNT) {
         // the object is immortal
         _Py_INCREF_IMMORTAL_STAT_INC();
@@ -385,7 +387,7 @@ static inline void Py_DECREF(const char *filename, int lineno, PyObject *op)
 #if SIZEOF_VOID_P > 4
     /* If an object has been freed, it will have a negative full refcnt
      * If it has not it been freed, will have a very large refcnt */
-    if (op->ob_refcnt_full <= 0 || op->ob_refcnt > (((PY_UINT32_T)-1) - (1<<20))) {
+    if (op->ob_refcnt_full <= 0 || op->ob_refcnt > (((uint32_t)-1) - (1<<20))) {
 #else
     if (op->ob_refcnt <= 0) {
 #endif

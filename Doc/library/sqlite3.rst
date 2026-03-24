@@ -4,8 +4,6 @@
 .. module:: sqlite3
    :synopsis: A DB-API 2.0 implementation using SQLite 3.x.
 
-.. sectionauthor:: Gerhard Häring <gh@ghaering.de>
-
 **Source code:** :source:`Lib/sqlite3/`
 
 .. Make sure we always doctest the tutorial with an empty database.
@@ -31,7 +29,9 @@ PostgreSQL or Oracle.
 
 The :mod:`!sqlite3` module was written by Gerhard Häring.  It provides an SQL interface
 compliant with the DB-API 2.0 specification described by :pep:`249`, and
-requires SQLite 3.15.2 or newer.
+requires the third-party `SQLite <https://sqlite.org/>`_ library.
+
+.. include:: ../includes/optional-module.rst
 
 This document includes four main sections:
 
@@ -289,7 +289,7 @@ Module functions
        Set it to any combination (using ``|``, bitwise or) of
        :const:`PARSE_DECLTYPES` and :const:`PARSE_COLNAMES`
        to enable this.
-       Column names takes precedence over declared types if both flags are set.
+       Column names take precedence over declared types if both flags are set.
        By default (``0``), type detection is disabled.
 
    :param isolation_level:
@@ -509,12 +509,12 @@ Module constants
 
 .. data:: SQLITE_KEYWORDS
 
-   A :class:`tuple` containing all sqlite3 keywords.
+   A :class:`tuple` containing all SQLite keywords.
 
    This constant is only available if Python was compiled with SQLite
    3.24.0 or greater.
 
-   .. versionadded:: next
+   .. versionadded:: 3.15
 
 .. data:: threadsafety
 
@@ -620,7 +620,7 @@ Connection objects
       supplied, this must be a :term:`callable` returning
       an instance of :class:`Cursor` or its subclasses.
 
-   .. method:: blobopen(table, column, row, /, *, readonly=False, name="main")
+   .. method:: blobopen(table, column, rowid, /, *, readonly=False, name="main")
 
       Open a :class:`Blob` handle to an existing
       :abbr:`BLOB (Binary Large OBject)`.
@@ -631,8 +631,8 @@ Connection objects
       :param str column:
           The name of the column where the blob is located.
 
-      :param str row:
-          The name of the row where the blob is located.
+      :param int rowid:
+          The row id where the blob is located.
 
       :param bool readonly:
           Set to ``True`` if the blob should be opened without write
@@ -1611,6 +1611,9 @@ Cursor objects
       If the *size* parameter is used, then it is best for it to retain the same
       value from one :meth:`fetchmany` call to the next.
 
+      .. versionchanged:: 3.15
+         Negative *size* values are rejected by raising :exc:`ValueError`.
+
    .. method:: fetchall()
 
       Return all (remaining) rows of a query result as a :class:`list`.
@@ -1637,6 +1640,9 @@ Cursor objects
 
       Read/write attribute that controls the number of rows returned by :meth:`fetchmany`.
       The default value is 1 which means a single row would be fetched per call.
+
+      .. versionchanged:: 3.15
+         Negative values are rejected by raising :exc:`ValueError`.
 
    .. attribute:: connection
 
@@ -2279,7 +2285,7 @@ This section shows recipes for common adapters and converters.
 
 .. testcode::
 
-   import datetime
+   import datetime as dt
    import sqlite3
 
    def adapt_date_iso(val):
@@ -2294,21 +2300,21 @@ This section shows recipes for common adapters and converters.
        """Adapt datetime.datetime to Unix timestamp."""
        return int(val.timestamp())
 
-   sqlite3.register_adapter(datetime.date, adapt_date_iso)
-   sqlite3.register_adapter(datetime.datetime, adapt_datetime_iso)
-   sqlite3.register_adapter(datetime.datetime, adapt_datetime_epoch)
+   sqlite3.register_adapter(dt.date, adapt_date_iso)
+   sqlite3.register_adapter(dt.datetime, adapt_datetime_iso)
+   sqlite3.register_adapter(dt.datetime, adapt_datetime_epoch)
 
    def convert_date(val):
        """Convert ISO 8601 date to datetime.date object."""
-       return datetime.date.fromisoformat(val.decode())
+       return dt.date.fromisoformat(val.decode())
 
    def convert_datetime(val):
        """Convert ISO 8601 datetime to datetime.datetime object."""
-       return datetime.datetime.fromisoformat(val.decode())
+       return dt.datetime.fromisoformat(val.decode())
 
    def convert_timestamp(val):
        """Convert Unix epoch timestamp to datetime.datetime object."""
-       return datetime.datetime.fromtimestamp(int(val))
+       return dt.datetime.fromtimestamp(int(val))
 
    sqlite3.register_converter("date", convert_date)
    sqlite3.register_converter("datetime", convert_datetime)
@@ -2317,17 +2323,17 @@ This section shows recipes for common adapters and converters.
 .. testcode::
    :hide:
 
-   dt = datetime.datetime(2019, 5, 18, 15, 17, 8, 123456)
+   when = dt.datetime(2019, 5, 18, 15, 17, 8, 123456)
 
-   assert adapt_date_iso(dt.date()) == "2019-05-18"
-   assert convert_date(b"2019-05-18") == dt.date()
+   assert adapt_date_iso(when.date()) == "2019-05-18"
+   assert convert_date(b"2019-05-18") == when.date()
 
-   assert adapt_datetime_iso(dt) == "2019-05-18T15:17:08.123456"
-   assert convert_datetime(b"2019-05-18T15:17:08.123456") == dt
+   assert adapt_datetime_iso(when) == "2019-05-18T15:17:08.123456"
+   assert convert_datetime(b"2019-05-18T15:17:08.123456") == when
 
    # Using current time as fromtimestamp() returns local date/time.
    # Dropping microseconds as adapt_datetime_epoch truncates fractional second part.
-   now = datetime.datetime.now().replace(microsecond=0)
+   now = dt.datetime.now().replace(microsecond=0)
    current_timestamp = int(now.timestamp())
 
    assert adapt_datetime_epoch(now) == current_timestamp
