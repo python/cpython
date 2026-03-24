@@ -1470,6 +1470,7 @@ indirectly) to mutable objects.
    single: co_cellvars (code object attribute)
    single: co_freevars (code object attribute)
    single: co_qualname (code object attribute)
+   single: co_exceptiontable (code object attribute)
 
 Special read-only attributes
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -1548,6 +1549,10 @@ Special read-only attributes
    * - .. attribute:: codeobject.co_flags
      - An :class:`integer <int>` encoding a number of flags for the
        interpreter.
+
+   * - .. attribute:: co_exceptiontable
+     - A bytes object representing the exception handling table used by the interpreter.
+       This attribute was introduced in Python 3.11.
 
 .. index:: pair: object; generator
 
