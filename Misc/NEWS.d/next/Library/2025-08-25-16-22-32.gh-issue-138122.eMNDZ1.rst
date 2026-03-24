@@ -1,2 +1,0 @@
-Implement :pep:`799` -- A dedicated profiling package for organizing Python
-profiling tools. Patch by Pablo Galindo.

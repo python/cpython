@@ -1,1 +1,0 @@
-Add a Gecko format output to the tachyon profiler via ``--gecko``.

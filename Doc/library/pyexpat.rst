@@ -4,8 +4,6 @@
 .. module:: xml.parsers.expat
    :synopsis: An interface to the Expat non-validating XML parser.
 
-.. moduleauthor:: Paul Prescod <paul@prescod.net>
-
 --------------
 
 .. Markup notes:
@@ -24,7 +22,7 @@
 
 .. index:: single: Expat
 
-The :mod:`xml.parsers.expat` module is a Python interface to the Expat
+The :mod:`!xml.parsers.expat` module is a Python interface to the Expat
 non-validating XML parser. The module provides a single extension type,
 :class:`xmlparser`, that represents the current state of an XML parser.  After
 an :class:`xmlparser` object has been created, various attributes of the object
@@ -55,7 +53,7 @@ This module provides one exception and one type object:
 
    The type of the return values from the :func:`ParserCreate` function.
 
-The :mod:`xml.parsers.expat` module contains two functions:
+The :mod:`!xml.parsers.expat` module contains two functions:
 
 
 .. function:: ErrorString(errno)
@@ -223,10 +221,10 @@ XMLParser Objects
    Calling ``SetReparseDeferralEnabled(True)`` allows re-enabling reparse
    deferral.
 
-   Note that :meth:`SetReparseDeferralEnabled` has been backported to some
-   prior releases of CPython as a security fix.  Check for availability of
-   :meth:`SetReparseDeferralEnabled` using :func:`hasattr` if used in code
-   running across a variety of Python versions.
+   :meth:`!SetReparseDeferralEnabled`
+   has been backported to some prior releases of CPython as a security fix.
+   Check for availability using :func:`hasattr` if used in code running
+   across a variety of Python versions.
 
    .. versionadded:: 3.13
 
@@ -257,12 +255,17 @@ against some common XML vulnerabilities.
    The corresponding :attr:`~ExpatError.lineno` and :attr:`~ExpatError.offset`
    should not be used as they may have no special meaning.
 
+   :meth:`!SetBillionLaughsAttackProtectionActivationThreshold`
+   has been backported to some prior releases of CPython as a security fix.
+   Check for availability using :func:`hasattr` if used in code running
+   across a variety of Python versions.
+
    .. note::
 
       Activation thresholds below 4 MiB are known to break support for DITA 1.3
       payload and are hence not recommended.
 
-   .. versionadded:: next
+   .. versionadded:: 3.15
 
 .. method:: xmlparser.SetBillionLaughsAttackProtectionMaximumAmplification(max_factor, /)
 
@@ -288,13 +291,18 @@ against some common XML vulnerabilities.
    The corresponding :attr:`~ExpatError.lineno` and :attr:`~ExpatError.offset`
    should not be used as they may have no special meaning.
 
+   :meth:`!SetBillionLaughsAttackProtectionMaximumAmplification`
+   has been backported to some prior releases of CPython as a security fix.
+   Check for availability using :func:`hasattr` if used in code running
+   across a variety of Python versions.
+
    .. note::
 
       The maximum amplification factor is only considered if the threshold
       that can be adjusted by :meth:`.SetBillionLaughsAttackProtectionActivationThreshold`
       is exceeded.
 
-   .. versionadded:: next
+   .. versionadded:: 3.15
 
 .. method:: xmlparser.SetAllocTrackerActivationThreshold(threshold, /)
 
@@ -309,7 +317,12 @@ against some common XML vulnerabilities.
    The corresponding :attr:`~ExpatError.lineno` and :attr:`~ExpatError.offset`
    should not be used as they may have no special meaning.
 
-   .. versionadded:: next
+   :meth:`!SetAllocTrackerActivationThreshold`
+   has been backported to some prior releases of CPython as a security fix.
+   Check for availability using :func:`hasattr` if used in code running
+   across a variety of Python versions.
+
+   .. versionadded:: 3.15
 
 .. method:: xmlparser.SetAllocTrackerMaximumAmplification(max_factor, /)
 
@@ -334,13 +347,18 @@ against some common XML vulnerabilities.
    The corresponding :attr:`~ExpatError.lineno` and :attr:`~ExpatError.offset`
    should not be used as they may have no special meaning.
 
+   :meth:`!SetAllocTrackerMaximumAmplification`
+   has been backported to some prior releases of CPython as a security fix.
+   Check for availability using :func:`hasattr` if used in code running
+   across a variety of Python versions.
+
    .. note::
 
       The maximum amplification factor is only considered if the threshold
       that can be adjusted by :meth:`.SetAllocTrackerActivationThreshold`
       is exceeded.
 
-   .. versionadded:: next
+   .. versionadded:: 3.15
 
 
 :class:`xmlparser` objects have the following attributes:
@@ -465,7 +483,7 @@ otherwise stated.
    ...``).  The *doctypeName* is provided exactly as presented.  The *systemId* and
    *publicId* parameters give the system and public identifiers if specified, or
    ``None`` if omitted.  *has_internal_subset* will be true if the document
-   contains and internal document declaration subset. This requires Expat version
+   contains an internal document declaration subset. This requires Expat version
    1.2 or newer.
 
 
@@ -614,6 +632,15 @@ otherwise stated.
 
 .. method:: xmlparser.ExternalEntityRefHandler(context, base, systemId, publicId)
 
+   .. warning::
+
+      Implementing a handler that accesses local files and/or the network
+      may create a vulnerability to
+      `external entity attacks <https://en.wikipedia.org/wiki/XML_external_entity_attack>`_
+      if :class:`xmlparser` is used with user-provided XML content.
+      Please reflect on your `threat model <https://en.wikipedia.org/wiki/Threat_model>`_
+      before implementing this handler.
+
    Called for references to external entities.  *base* is the current base, as set
    by a previous call to :meth:`SetBase`.  The public and system identifiers,
    *systemId* and *publicId*, are strings if given; if the public identifier is not
@@ -636,9 +663,6 @@ otherwise stated.
 
 ExpatError Exceptions
 ---------------------
-
-.. sectionauthor:: Fred L. Drake, Jr. <fdrake@acm.org>
-
 
 :exc:`ExpatError` exceptions have a number of interesting attributes:
 
@@ -723,14 +747,12 @@ Content Model Descriptions
 
 .. module:: xml.parsers.expat.model
 
-.. sectionauthor:: Fred L. Drake, Jr. <fdrake@acm.org>
-
 Content models are described using nested tuples.  Each tuple contains four
 values: the type, the quantifier, the name, and a tuple of children.  Children
 are simply additional content model descriptions.
 
 The values of the first two fields are constants defined in the
-:mod:`xml.parsers.expat.model` module.  These constants can be collected in two
+:mod:`!xml.parsers.expat.model` module.  These constants can be collected in two
 groups: the model type group and the quantifier group.
 
 The constants in the model type group are:
@@ -804,7 +826,7 @@ Expat error constants
 
 .. module:: xml.parsers.expat.errors
 
-The following constants are provided in the :mod:`xml.parsers.expat.errors`
+The following constants are provided in the :mod:`!xml.parsers.expat.errors`
 module.  These constants are useful in interpreting some of the attributes of
 the :exc:`ExpatError` exception objects raised when an error has occurred.
 Since for backwards compatibility reasons, the constants' value is the error
@@ -951,7 +973,7 @@ The ``errors`` module has the following attributes:
 
    An operation was requested that requires DTD support to be compiled in, but
    Expat was configured without DTD support.  This should never be reported by a
-   standard build of the :mod:`xml.parsers.expat` module.
+   standard build of the :mod:`!xml.parsers.expat` module.
 
 
 .. data:: XML_ERROR_CANT_CHANGE_FEATURE_ONCE_PARSING

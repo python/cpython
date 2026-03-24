@@ -20,6 +20,7 @@
 #include "pycore_long.h"          // _PyLong_UInt32_Converter()
 // Blocks output buffer wrappers
 #include "pycore_blocks_output_buffer.h"
+#include "pycore_pyatomic_ft_wrappers.h" // FT_ATOMIC_STORE_*_RELAXED
 
 #if OUTPUT_BUFFER_MAX_BLOCK_SIZE > SIZE_MAX
     #error "The maximum block size accepted by liblzma is SIZE_MAX."
@@ -72,13 +73,6 @@ OutputBuffer_OnError(_BlocksOutputBuffer *buffer)
 }
 
 
-#define ACQUIRE_LOCK(obj) do { \
-    if (!PyThread_acquire_lock((obj)->lock, 0)) { \
-        Py_BEGIN_ALLOW_THREADS \
-        PyThread_acquire_lock((obj)->lock, 1); \
-        Py_END_ALLOW_THREADS \
-    } } while (0)
-#define RELEASE_LOCK(obj) PyThread_release_lock((obj)->lock)
 
 typedef struct {
     PyTypeObject *lzma_compressor_type;
@@ -111,7 +105,7 @@ typedef struct {
     lzma_allocator alloc;
     lzma_stream lzs;
     int flushed;
-    PyThread_type_lock lock;
+    PyMutex mutex;
 } Compressor;
 
 typedef struct {
@@ -124,7 +118,7 @@ typedef struct {
     char needs_input;
     uint8_t *input_buffer;
     size_t input_buffer_size;
-    PyThread_type_lock lock;
+    PyMutex mutex;
 } Decompressor;
 
 #define Compressor_CAST(op)     ((Compressor *)(op))
@@ -554,7 +548,7 @@ static PyObject *
 compress(Compressor *c, uint8_t *data, size_t len, lzma_action action)
 {
     PyObject *result;
-    _BlocksOutputBuffer buffer = {.list = NULL};
+    _BlocksOutputBuffer buffer = {.writer = NULL};
     _lzma_state *state = PyType_GetModuleState(Py_TYPE(c));
     assert(state != NULL);
 
@@ -617,14 +611,14 @@ _lzma_LZMACompressor_compress_impl(Compressor *self, Py_buffer *data)
 {
     PyObject *result = NULL;
 
-    ACQUIRE_LOCK(self);
+    PyMutex_Lock(&self->mutex);
     if (self->flushed) {
         PyErr_SetString(PyExc_ValueError, "Compressor has been flushed");
     }
     else {
         result = compress(self, data->buf, data->len, LZMA_RUN);
     }
-    RELEASE_LOCK(self);
+    PyMutex_Unlock(&self->mutex);
     return result;
 }
 
@@ -644,14 +638,14 @@ _lzma_LZMACompressor_flush_impl(Compressor *self)
 {
     PyObject *result = NULL;
 
-    ACQUIRE_LOCK(self);
+    PyMutex_Lock(&self->mutex);
     if (self->flushed) {
         PyErr_SetString(PyExc_ValueError, "Repeated call to flush()");
     } else {
         self->flushed = 1;
         result = compress(self, NULL, 0, LZMA_FINISH);
     }
-    RELEASE_LOCK(self);
+    PyMutex_Unlock(&self->mutex);
     return result;
 }
 
@@ -820,12 +814,7 @@ Compressor_new(PyTypeObject *type, PyObject *args, PyObject *kwargs)
     self->alloc.free = PyLzma_Free;
     self->lzs.allocator = &self->alloc;
 
-    self->lock = PyThread_allocate_lock();
-    if (self->lock == NULL) {
-        Py_DECREF(self);
-        PyErr_SetString(PyExc_MemoryError, "Unable to allocate lock");
-        return NULL;
-    }
+    self->mutex = (PyMutex){0};
 
     self->flushed = 0;
     switch (format) {
@@ -867,10 +856,8 @@ static void
 Compressor_dealloc(PyObject *op)
 {
     Compressor *self = Compressor_CAST(op);
+    assert(!PyMutex_IsLocked(&self->mutex));
     lzma_end(&self->lzs);
-    if (self->lock != NULL) {
-        PyThread_free_lock(self->lock);
-    }
     PyTypeObject *tp = Py_TYPE(self);
     tp->tp_free(self);
     Py_DECREF(tp);
@@ -940,7 +927,7 @@ decompress_buf(Decompressor *d, Py_ssize_t max_length)
 {
     PyObject *result;
     lzma_stream *lzs = &d->lzs;
-    _BlocksOutputBuffer buffer = {.list = NULL};
+    _BlocksOutputBuffer buffer = {.writer = NULL};
     _lzma_state *state = PyType_GetModuleState(Py_TYPE(d));
     assert(state != NULL);
 
@@ -962,10 +949,10 @@ decompress_buf(Decompressor *d, Py_ssize_t max_length)
             goto error;
         }
         if (lzret == LZMA_GET_CHECK || lzret == LZMA_NO_CHECK) {
-            d->check = lzma_get_check(&d->lzs);
+            FT_ATOMIC_STORE_INT_RELAXED(d->check, lzma_get_check(&d->lzs));
         }
         if (lzret == LZMA_STREAM_END) {
-            d->eof = 1;
+            FT_ATOMIC_STORE_CHAR_RELAXED(d->eof, 1);
             break;
         } else if (lzs->avail_out == 0) {
             /* Need to check lzs->avail_out before lzs->avail_in.
@@ -1052,13 +1039,14 @@ decompress(Decompressor *d, uint8_t *data, size_t len, Py_ssize_t max_length)
     }
 
     if (d->eof) {
-        d->needs_input = 0;
+        FT_ATOMIC_STORE_CHAR_RELAXED(d->needs_input, 0);
         if (lzs->avail_in > 0) {
-            Py_XSETREF(d->unused_data,
-                      PyBytes_FromStringAndSize((char *)lzs->next_in, lzs->avail_in));
-            if (d->unused_data == NULL) {
+            PyObject *unused_data = PyBytes_FromStringAndSize(
+                (char *)lzs->next_in, lzs->avail_in);
+            if (unused_data == NULL) {
                 goto error;
             }
+            Py_XSETREF(d->unused_data, unused_data);
         }
     }
     else if (lzs->avail_in == 0) {
@@ -1068,17 +1056,17 @@ decompress(Decompressor *d, uint8_t *data, size_t len, Py_ssize_t max_length)
             /* (avail_in==0 && avail_out==0)
                Maybe lzs's internal state still have a few bytes can
                be output, try to output them next time. */
-            d->needs_input = 0;
+            FT_ATOMIC_STORE_CHAR_RELAXED(d->needs_input, 0);
 
             /* If max_length < 0, lzs->avail_out always > 0 */
             assert(max_length >= 0);
         } else {
             /* Input buffer exhausted, output buffer has space. */
-            d->needs_input = 1;
+            FT_ATOMIC_STORE_CHAR_RELAXED(d->needs_input, 1);
         }
     }
     else {
-        d->needs_input = 0;
+        FT_ATOMIC_STORE_CHAR_RELAXED(d->needs_input, 0);
 
         /* If we did not use the input buffer, we now have
            to copy the tail from the caller's buffer into the
@@ -1146,12 +1134,12 @@ _lzma_LZMADecompressor_decompress_impl(Decompressor *self, Py_buffer *data,
 {
     PyObject *result = NULL;
 
-    ACQUIRE_LOCK(self);
+    PyMutex_Lock(&self->mutex);
     if (self->eof)
         PyErr_SetString(PyExc_EOFError, "Already at end of stream");
     else
         result = decompress(self, data->buf, data->len, max_length);
-    RELEASE_LOCK(self);
+    PyMutex_Unlock(&self->mutex);
     return result;
 }
 
@@ -1244,12 +1232,7 @@ _lzma_LZMADecompressor_impl(PyTypeObject *type, int format,
     self->lzs.allocator = &self->alloc;
     self->lzs.next_in = NULL;
 
-    self->lock = PyThread_allocate_lock();
-    if (self->lock == NULL) {
-        Py_DECREF(self);
-        PyErr_SetString(PyExc_MemoryError, "Unable to allocate lock");
-        return NULL;
-    }
+    self->mutex = (PyMutex){0};
 
     self->check = LZMA_CHECK_UNKNOWN;
     self->needs_input = 1;
@@ -1304,14 +1287,13 @@ static void
 Decompressor_dealloc(PyObject *op)
 {
     Decompressor *self = Decompressor_CAST(op);
+    assert(!PyMutex_IsLocked(&self->mutex));
+
     if(self->input_buffer != NULL)
         PyMem_Free(self->input_buffer);
 
     lzma_end(&self->lzs);
     Py_CLEAR(self->unused_data);
-    if (self->lock != NULL) {
-        PyThread_free_lock(self->lock);
-    }
     PyTypeObject *tp = Py_TYPE(self);
     tp->tp_free(self);
     Py_DECREF(tp);
@@ -1334,6 +1316,26 @@ PyDoc_STRVAR(Decompressor_needs_input_doc,
 PyDoc_STRVAR(Decompressor_unused_data_doc,
 "Data found after the end of the compressed stream.");
 
+static PyObject *
+Decompressor_unused_data_get(PyObject *op, void *Py_UNUSED(closure))
+{
+    Decompressor *self = Decompressor_CAST(op);
+    if (!FT_ATOMIC_LOAD_CHAR_RELAXED(self->eof)) {
+        return Py_GetConstant(Py_CONSTANT_EMPTY_BYTES);
+    }
+    PyMutex_Lock(&self->mutex);
+    assert(self->unused_data != NULL);
+    PyObject *result = Py_NewRef(self->unused_data);
+    PyMutex_Unlock(&self->mutex);
+    return result;
+}
+
+static PyGetSetDef Decompressor_getset[] = {
+    {"unused_data", Decompressor_unused_data_get, NULL,
+     Decompressor_unused_data_doc},
+    {NULL},
+};
+
 static PyMemberDef Decompressor_members[] = {
     {"check", Py_T_INT, offsetof(Decompressor, check), Py_READONLY,
      Decompressor_check_doc},
@@ -1341,8 +1343,6 @@ static PyMemberDef Decompressor_members[] = {
      Decompressor_eof_doc},
     {"needs_input", Py_T_BOOL, offsetof(Decompressor, needs_input), Py_READONLY,
      Decompressor_needs_input_doc},
-    {"unused_data", Py_T_OBJECT_EX, offsetof(Decompressor, unused_data), Py_READONLY,
-     Decompressor_unused_data_doc},
     {NULL}
 };
 
@@ -1352,6 +1352,7 @@ static PyType_Slot lzma_decompressor_type_slots[] = {
     {Py_tp_new, _lzma_LZMADecompressor},
     {Py_tp_doc, (char *)_lzma_LZMADecompressor__doc__},
     {Py_tp_members, Decompressor_members},
+    {Py_tp_getset, Decompressor_getset},
     {0, 0}
 };
 

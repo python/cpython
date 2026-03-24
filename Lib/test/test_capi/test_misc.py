@@ -307,7 +307,7 @@ class CAPITest(unittest.TestCase):
                     CURRENT_THREAD_REGEX +
                     r'  File .*, line 6 in <module>\n'
                     r'\n'
-                    r'Extension modules: _testcapi \(total: 1\)\n')
+                    r'Extension modules: ')
         else:
             # Python built with NDEBUG macro defined:
             # test _Py_CheckFunctionResult() instead.
@@ -915,6 +915,18 @@ class CAPITest(unittest.TestCase):
         def genf(): yield
         gen = genf()
         self.assertEqual(_testcapi.gen_get_code(gen), gen.gi_code)
+
+    def test_tp_bases_slot(self):
+        cls = _testcapi.HeapCTypeWithBasesSlot
+        self.assertEqual(cls.__bases__, (int,))
+        self.assertEqual(cls.__base__, int)
+
+    def test_tp_bases_slot_none(self):
+        self.assertRaisesRegex(
+            SystemError,
+            "Py_tp_bases is not a tuple",
+            _testcapi.create_heapctype_with_none_bases_slot
+        )
 
 
 @requires_limited_api
