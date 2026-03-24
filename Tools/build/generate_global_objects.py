@@ -286,7 +286,8 @@ def generate_runtime_init(identifiers, strings):
                 break
         else:
             raise NotImplementedError
-    assert nsmallposints and nsmallnegints
+    assert nsmallposints
+    assert nsmallnegints
 
     # Then target the runtime initializer.
     filename = os.path.join(INTERNAL, 'pycore_runtime_init_generated.h')
@@ -434,7 +435,7 @@ def get_identifiers_and_strings() -> 'tuple[set[str], dict[str, str]]':
                 # To cover tricky cases (like "\n") we also generate C asserts.
                 raise ValueError(
                     'do not use &_PyID or &_Py_STR for one-character latin-1 '
-                    + f'strings, use _Py_LATIN1_CHR instead: {string!r}')
+                     f'strings, use _Py_LATIN1_CHR instead: {string!r}')
             if string not in strings:
                 strings[string] = name
             elif name != strings[string]:
