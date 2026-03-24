@@ -95,6 +95,9 @@ class GetpassRawinputTest(unittest.TestCase):
         self.assertEqual(result, expect_result)
         return mock_output.getvalue()
 
+    def test_null_char(self):
+        self.check_raw_input('pass\x00word\n', 'password')
+
     def test_raw_input_with_echo_char(self):
         output = self.check_raw_input('my1pa$$word!\n', 'my1pa$$word!')
         self.assertEqual('Password: ************', output)
