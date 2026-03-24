@@ -763,7 +763,7 @@ these are the inverse of each class's ``isocalendar`` method.
 functools
 ---------
 
-:func:`functools.lru_cache` can now be used as a straight decorator rather
+:deco:`functools.lru_cache` can now be used as a straight decorator rather
 than as a function returning a decorator.  So both of these are now supported::
 
     @lru_cache
@@ -776,7 +776,7 @@ than as a function returning a decorator.  So both of these are now supported::
 
 (Contributed by Raymond Hettinger in :issue:`36772`.)
 
-Added a new :func:`functools.cached_property` decorator, for computed properties
+Added a new :deco:`functools.cached_property` decorator, for computed properties
 cached for the life of the instance. ::
 
    import functools
@@ -892,7 +892,7 @@ inspect
 The :func:`inspect.getdoc` function can now find docstrings for ``__slots__``
 if that attribute is a :class:`dict` where the values are docstrings.
 This provides documentation options similar to what we already have
-for :func:`property`, :func:`classmethod`, and :func:`staticmethod`::
+for :deco:`property`, :deco:`classmethod`, and :deco:`staticmethod`::
 
   class AudioClip:
       __slots__ = {'bit_rate': 'expressed in kilohertz to one decimal place',
@@ -1332,14 +1332,14 @@ The :mod:`typing` module incorporates several new features:
           ...
 
 * "Final" variables, functions, methods and classes.  See :pep:`591`,
-  :class:`typing.Final` and :func:`typing.final`.
+  :class:`typing.Final` and :deco:`typing.final`.
   The final qualifier instructs a static type checker to restrict
   subclassing, overriding, or reassignment::
 
       pi: Final[float] = 3.1415926536
 
 * Protocol definitions.  See :pep:`544`, :class:`typing.Protocol` and
-  :func:`typing.runtime_checkable`.  Simple ABCs like
+  :deco:`typing.runtime_checkable`.  Simple ABCs like
   :class:`typing.SupportsInt` are now ``Protocol`` subclasses.
 
 * New protocol class :class:`typing.SupportsIndex`.
