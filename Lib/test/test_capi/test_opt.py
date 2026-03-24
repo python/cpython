@@ -4165,6 +4165,23 @@ class TestUopsOptimization(unittest.TestCase):
         self.assertEqual(count_ops(ex, "_POP_TOP_NOP"), 1)
         self.assertLessEqual(count_ops(ex, "_POP_TOP"), 2)
 
+    def test_dict_merge(self):
+        def testfunc(n):
+            d = {"a": 1, "b": 2}
+            def f(**kwargs):
+                return kwargs
+            for _ in range(n):
+                x = f(**d)
+            return x
+
+        res, ex = self._run_with_optimizer(testfunc, TIER2_THRESHOLD)
+        self.assertEqual(res, {"a": 1, "b": 2})
+        uops = get_opnames(ex)
+
+        self.assertIn("_DICT_MERGE", uops)
+        self.assertGreaterEqual(count_ops(ex, "_POP_TOP_NOP"), 1)
+        self.assertLessEqual(count_ops(ex, "_POP_TOP"), 2)
+
     def test_143026(self):
         # https://github.com/python/cpython/issues/143026
 
