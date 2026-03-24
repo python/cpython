@@ -2083,9 +2083,17 @@
         }
 
         case _DICT_MERGE: {
-            CHECK_STACK_BOUNDS(-1);
-            stack_pointer += -1;
-            ASSERT_WITHIN_STACK_BOUNDS(__FILE__, __LINE__);
+            JitOptRef update;
+            JitOptRef dict;
+            JitOptRef callable;
+            JitOptRef u;
+            update = stack_pointer[-1];
+            dict = stack_pointer[-2 - (oparg - 1)];
+            callable = stack_pointer[-5 - (oparg - 1)];
+            (void)callable;
+            (void)dict;
+            u = update;
+            stack_pointer[-1] = u;
             break;
         }
 

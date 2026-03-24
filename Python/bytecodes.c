@@ -2438,7 +2438,7 @@ dummy_func(
             PyStackRef_CLOSE(update);
         }
 
-        inst(DICT_MERGE, (callable, unused, unused, dict, unused[oparg - 1], update -- callable, unused, unused, dict, unused[oparg - 1])) {
+        op(_DICT_MERGE, (callable, unused, unused, dict, unused[oparg - 1], update -- callable, unused, unused, dict, unused[oparg - 1], u)) {
             PyObject *callable_o = PyStackRef_AsPyObjectBorrow(callable);
             PyObject *dict_o = PyStackRef_AsPyObjectBorrow(dict);
             PyObject *update_o = PyStackRef_AsPyObjectBorrow(update);
@@ -2446,11 +2446,13 @@ dummy_func(
             int err = _PyDict_MergeEx(dict_o, update_o, 2);
             if (err < 0) {
                 _PyEval_FormatKwargsError(tstate, callable_o, update_o);
-                PyStackRef_CLOSE(update);
-                ERROR_IF(true);
+                ERROR_NO_POP();
             }
-            PyStackRef_CLOSE(update);
+            u = update;
+            DEAD(update);
         }
+
+        macro(DICT_MERGE) = _DICT_MERGE + POP_TOP;
 
         inst(MAP_ADD, (dict_st, unused[oparg - 1], key, value -- dict_st, unused[oparg - 1])) {
             PyObject *dict = PyStackRef_AsPyObjectBorrow(dict_st);

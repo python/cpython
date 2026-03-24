@@ -6262,7 +6262,7 @@ socket_gethostbyaddr(PyObject *self, PyObject *args)
        gethostbyaddr_r is 8-byte aligned, which at least llvm-gcc
        does not ensure. The attribute below instructs the compiler
        to maintain this alignment. */
-    char buf[16384] Py_ALIGNED(8);
+    _Py_ALIGNED_DEF(8, char) buf[16384];
     int buf_len = (sizeof buf) - 1;
     int errnop;
 #endif
