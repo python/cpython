@@ -326,7 +326,6 @@ class _PasswordLineEditor:
 
     def _handle(self, char):
         """Handle a single character input. Returns True if handled."""
-        self.eof_pressed = False
         handler = self._dispatch.get(char)
         if handler:
             handler()
@@ -345,18 +344,15 @@ class _PasswordLineEditor:
             elif self.literal_next:
                 self._insert_char(char)
                 self.literal_next = False
-                self.eof_pressed = False
             # Check if it's the LNEXT character
             elif char == self.ctrl['LNEXT']:
                 self.literal_next = True
-                self.eof_pressed = False
             # Check for special control characters
             elif char == self.ctrl['INTR']:
                 raise KeyboardInterrupt
             elif char == self.ctrl['EOF']:
                 if self.eof_pressed:
                     break
-                self.eof_pressed = True
             elif char == '\x00':
                 pass
             elif self._handle(char):
@@ -365,7 +361,8 @@ class _PasswordLineEditor:
             else:
                 # Insert as normal character
                 self._insert_char(char)
-                self.eof_pressed = False
+
+            self.eof_pressed = (char == self.ctrl['EOF'])
 
         return ''.join(self.password)
 

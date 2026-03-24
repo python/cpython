@@ -127,16 +127,14 @@ class GetpassRawinputTest(unittest.TestCase):
         output = self.check_raw_input('hello world\x17\n', 'hello ')
         # The final visible state should be "Password: ******"
         # Verify prompt is rewritten during refresh, not overwritten by stars
-        self.assertTrue(output.endswith('Password: ******'),
-                        f'Prompt corrupted in display: {output!r}')
+        self.assertEndsWith(output, 'Password: ******')
 
     def test_ctrl_a_insert_display_preserves_prompt(self):
         # Reproducer from gh-138577: type "abc", Ctrl+A, type "x"
         # Display must show "Password: ****" not "****word: ***"
         output = self.check_raw_input('abc\x01x\n', 'xabc')
         # The final visible state should be "Password: ****"
-        self.assertTrue(output.endswith('Password: ****\x08\x08\x08'),
-                        f'Prompt corrupted in display: {output!r}')
+        self.assertEndsWith(output, 'Password: ****\x08\x08\x08')
 
     def test_lnext_ctrl_v_with_echo_char(self):
         # Ctrl+V (LNEXT) should insert the next character literally
@@ -156,10 +154,8 @@ class GetpassRawinputTest(unittest.TestCase):
 
     def test_ctrl_c_interrupt_with_echo_char(self):
         # Ctrl+C should raise KeyboardInterrupt
-        mock_input = StringIO('test\x03more')
-        mock_output = StringIO()
         with self.assertRaises(KeyboardInterrupt):
-            getpass._raw_input('Password: ', mock_output, mock_input, '*')
+            self.check_raw_input('test\x03more', '')
 
     def test_ctrl_d_eof_with_echo_char(self):
         # Ctrl+D twice should cause EOF
