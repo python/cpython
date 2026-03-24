@@ -960,7 +960,7 @@
             break;
         }
 
-        case _BINARY_OP_SUBTRACT_FLOAT_INPLACE_RIGHT: {
+        case _BINARY_OP_MULTIPLY_FLOAT_INPLACE_RIGHT: {
             JitOptRef res;
             JitOptRef l;
             JitOptRef r;
@@ -976,7 +976,7 @@
             break;
         }
 
-        case _BINARY_OP_MULTIPLY_FLOAT_INPLACE_RIGHT: {
+        case _BINARY_OP_SUBTRACT_FLOAT_INPLACE_RIGHT: {
             JitOptRef res;
             JitOptRef l;
             JitOptRef r;
