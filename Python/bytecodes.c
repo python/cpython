@@ -801,6 +801,8 @@ dummy_func(
             STAT_INC(BINARY_OP, hit);
             double dres = ((PyFloatObject *)left_o)->ob_fval + ((PyFloatObject *)right_o)->ob_fval;
             ((PyFloatObject *)left_o)->ob_fval = dres;
+            // Transfer ownership of left to res.
+            // Original left is now dead.
             res = left;
             l = PyStackRef_NULL;
             r = right;
