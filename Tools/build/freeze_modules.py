@@ -3,14 +3,13 @@
 See the notes at the top of Python/frozen.c for more info.
 """
 
-from collections import namedtuple
 import hashlib
-import os
 import ntpath
+import os
 import posixpath
-import argparse
-from update_file import updating_file_with_tmpfile
+from collections import namedtuple
 
+from update_file import updating_file_with_tmpfile
 
 ROOT_DIR = os.path.dirname(os.path.dirname(os.path.dirname(__file__)))
 ROOT_DIR = os.path.abspath(ROOT_DIR)
@@ -485,7 +484,6 @@ def regen_frozen(modules):
         header = relpath_for_posix_display(src.frozenfile, parentdir)
         headerlines.append(f'#include "{header}"')
 
-    externlines = UniqueList()
     bootstraplines = []
     stdliblines = []
     testlines = []
@@ -628,7 +626,6 @@ def regen_makefile(modules):
 def regen_pcbuild(modules):
     projlines = []
     filterlines = []
-    corelines = []
     for src in _iter_sources(modules):
         pyfile = relpath_for_windows_display(src.pyfile, ROOT_DIR)
         header = relpath_for_windows_display(src.frozenfile, ROOT_DIR)

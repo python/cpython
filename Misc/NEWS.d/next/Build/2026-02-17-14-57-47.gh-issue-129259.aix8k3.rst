@@ -1,0 +1,2 @@
+Fix AIX build failures caused by incorrect struct alignment in ``_Py_CODEUNIT``
+and ``_Py_BackoffCounter`` by adding AIX-specific ``#pragma pack`` directives.

@@ -14,6 +14,9 @@ extern "C" {
 #include <stdint.h>
 
 
+#ifdef _AIX
+#pragma pack(push, 1)
+#endif
 typedef struct {
     union {
         struct {
@@ -23,6 +26,9 @@ typedef struct {
         uint16_t as_counter;  // For printf("%#x", ...)
     };
 } _Py_BackoffCounter;
+#ifdef _AIX
+#pragma pack(pop)
+#endif
 
 
 /* 16-bit countdown counters using exponential backoff.

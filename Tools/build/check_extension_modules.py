@@ -30,10 +30,15 @@ import re
 import sys
 import sysconfig
 import warnings
-
 from collections.abc import Iterable
-from importlib._bootstrap import _load as bootstrap_load  # type: ignore[attr-defined]
-from importlib.machinery import BuiltinImporter, ExtensionFileLoader, ModuleSpec
+from importlib._bootstrap import (  # type: ignore[attr-defined]
+    _load as bootstrap_load,
+)
+from importlib.machinery import (
+    BuiltinImporter,
+    ExtensionFileLoader,
+    ModuleSpec,
+)
 from importlib.util import spec_from_file_location, spec_from_loader
 from typing import NamedTuple
 
@@ -201,7 +206,7 @@ class ModuleChecker:
             # guarantee zip() doesn't drop anything
             while len(names) % 3:
                 names.append("")
-            for l, m, r in zip(names[::3], names[1::3], names[2::3]):
+            for l, m, r in zip(names[::3], names[1::3], names[2::3]):  # noqa: E741
                 print("%-*s   %-*s   %-*s" % (longest, l, longest, m, longest, r))
 
         if verbose and self.builtin_ok:
@@ -433,7 +438,7 @@ class ModuleChecker:
         except ImportError as e:
             logger.error("%s failed to import: %s", modinfo.name, e)
             raise
-        except Exception as e:
+        except Exception:
             if not hasattr(_imp, 'create_dynamic'):
                 logger.warning("Dynamic extension '%s' ignored", modinfo.name)
                 return

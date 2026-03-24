@@ -1024,6 +1024,10 @@
             {
                 DEOPT_IF(tstate->interp->eval_frame, CALL);
             }
+            // _CHECK_RECURSION_REMAINING
+            {
+                DEOPT_IF(tstate->py_recursion_remaining <= 1, CALL);
+            }
             // _CHECK_METHOD_VERSION
             null = stack_pointer[-1 - oparg];
             callable = stack_pointer[-2 - oparg];
@@ -1046,10 +1050,6 @@
                 assert(PyFunction_Check(method));
                 Py_INCREF(method);
                 Py_DECREF(callable);
-            }
-            // _CHECK_RECURSION_REMAINING
-            {
-                DEOPT_IF(tstate->py_recursion_remaining <= 1, CALL);
             }
             // _PY_FRAME_GENERAL
             args = &stack_pointer[-oparg];

@@ -190,7 +190,7 @@ The :mod:`functools` module defines the following functions:
 
    Note, type specificity applies only to the function's immediate arguments
    rather than their contents.  The scalar arguments, ``Decimal(42)`` and
-   ``Fraction(42)`` are be treated as distinct calls with distinct results.
+   ``Fraction(42)`` are treated as distinct calls with distinct results.
    In contrast, the tuple arguments ``('answer', Decimal(42))`` and
    ``('answer', Fraction(42))`` are treated as equivalent.
 
