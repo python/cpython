@@ -1154,10 +1154,9 @@ class TracebackException:
                 else:
                     self._str += f". Did you mean '.{suggestion}' ({suggestion!a}) instead of '.{wrong_name}' ({wrong_name!a})?"
             elif hasattr(exc_value, 'obj'):
-                with suppress(Exception):
-                    hint = _get_cross_language_hint(exc_value.obj, wrong_name)
-                    if hint:
-                        self._str += f". {hint}"
+                hint = _get_cross_language_hint(exc_value.obj, wrong_name)
+                if hint:
+                    self._str += f". {hint}"
         elif exc_type and issubclass(exc_type, NameError) and \
                 getattr(exc_value, "name", None) is not None:
             wrong_name = getattr(exc_value, "name", None)
@@ -1669,25 +1668,27 @@ _CASE_COST = 1
 # If the suggestion is a Python method name, the standard "Did you mean"
 # format is used. If it contains a space, it's rendered as a full hint.
 #
-# See https://discuss.python.org/t/106632 for the design discussion.
+# See https://github.com/python/cpython/issues/146406 for the design discussion.
 _CROSS_LANGUAGE_HINTS = {
     # list -- JavaScript/Ruby equivalents
-    (list, "push"):     "append",
-    (list, "concat"):   "extend",
+    (list, "push"): "append",
+    (list, "concat"): "extend",
     # list -- Java/C# equivalents
-    (list, "addAll"):   "extend",
+    (list, "addAll"): "extend",
+    (list, "contains"): "Use 'x in list' to check membership",
     # list -- wrong-type suggestion (per Serhiy Storchaka, Terry Reedy,
     # Paul Moore: list.add() more likely means the user expected a set)
-    (list, "add"):      "Did you mean to use a set? Sets have an .add() method",
+    (list, "add"): "Did you mean to use a set? Sets have an .add() method",
     # str -- JavaScript equivalents
     (str, "toUpperCase"): "upper",
     (str, "toLowerCase"): "lower",
-    (str, "trimStart"):   "lstrip",
-    (str, "trimEnd"):     "rstrip",
+    (str, "trimStart"): "lstrip",
+    (str, "trimEnd"): "rstrip",
     # dict -- Java equivalents
-    (dict, "keySet"):       "keys",
-    (dict, "entrySet"):     "items",
-    (dict, "putAll"):       "update",
+    (dict, "keySet"): "keys",
+    (dict, "entrySet"): "items",
+    (dict, "putAll"): "update",
+    (dict, "put"): "Use dict[key] = value for item assignment",
     # Note: indexOf, trim, and getOrDefault are not included because
     # Levenshtein distance already catches them (indexOf->index,
     # trim->strip, getOrDefault->setdefault).
@@ -1768,8 +1769,8 @@ def _get_cross_language_hint(obj, wrong_name):
     if ' ' in hint:
         # Full custom hint (e.g., wrong-type suggestion for list.add)
         return hint
-    # Direct method equivalent -- format like Levenshtein suggestions
-    return f"Did you mean '.{hint}' instead of '.{wrong_name}'?"
+    # Direct method equivalent
+    return f"Did you mean '.{hint}'?"
 
 
 def _get_safe___dir__(obj):

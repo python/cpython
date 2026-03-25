@@ -4567,6 +4567,7 @@ class SuggestionFormattingTestBase(SuggestionFormattingTestMixin):
     def test_cross_language_list_push_suggests_append(self):
         actual = self.get_suggestion([], 'push')
         self.assertIn("'.append'", actual)
+        self.assertNotIn("instead of", actual)
 
     def test_cross_language_list_concat_suggests_extend(self):
         actual = self.get_suggestion([], 'concat')
@@ -4575,6 +4576,10 @@ class SuggestionFormattingTestBase(SuggestionFormattingTestMixin):
     def test_cross_language_list_addAll_suggests_extend(self):
         actual = self.get_suggestion([], 'addAll')
         self.assertIn("'.extend'", actual)
+
+    def test_cross_language_list_contains_suggests_in(self):
+        actual = self.get_suggestion([], 'contains')
+        self.assertIn("Use 'x in list'", actual)
 
     def test_cross_language_list_add_suggests_set(self):
         actual = self.get_suggestion([], 'add')
@@ -4607,6 +4612,10 @@ class SuggestionFormattingTestBase(SuggestionFormattingTestMixin):
     def test_cross_language_dict_putAll_suggests_update(self):
         actual = self.get_suggestion({}, 'putAll')
         self.assertIn("'.update'", actual)
+
+    def test_cross_language_dict_put_suggests_bracket(self):
+        actual = self.get_suggestion({}, 'put')
+        self.assertIn("dict[key] = value", actual)
 
     def test_cross_language_levenshtein_takes_priority(self):
         # Levenshtein catches trim->strip and indexOf->index before
