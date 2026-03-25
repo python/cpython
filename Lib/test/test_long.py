@@ -735,12 +735,15 @@ class LongTest(unittest.TestCase):
         self.assertRaises(ValueError, format, 1234567890, ',b')
         self.assertEqual(format(12345, '_b'), '11_0000_0011_1001')
 
-        # make sure these are errors
-        self.assertRaises(ValueError, format, 3, "1.3")  # precision disallowed
+        # make sure these are errors for 'c' presentation type
+        self.assertRaises(ValueError, format, 3, ".3c")  # precision,
+        self.assertRaises(ValueError, format, 3, "zc")   # two's complement,
+        self.assertRaises(ValueError, format, 3, "#c")   # alternate,
         self.assertRaises(ValueError, format, 3, "_c")   # underscore,
-        self.assertRaises(ValueError, format, 3, ",c")   # comma, and
-        self.assertRaises(ValueError, format, 3, "+c")   # sign not allowed
-                                                         # with 'c'
+        self.assertRaises(ValueError, format, 3, ",c")   # comma,
+        self.assertRaises(ValueError, format, 3, "+c")   # + sign
+        self.assertRaises(ValueError, format, 3, "-c")   # - sign
+        self.assertRaises(ValueError, format, 3, " c")   # ' ' sign
 
         self.assertRaisesRegex(ValueError, 'Cannot specify both', format, 3, '_,')
         self.assertRaisesRegex(ValueError, 'Cannot specify both', format, 3, ',_')
