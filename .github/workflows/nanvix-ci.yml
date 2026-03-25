@@ -56,22 +56,9 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        include:
-          - platform: hyperlight
-            process-mode: multi-process
-            memory: 128mb
-          - platform: hyperlight
-            process-mode: single-process
-            memory: 128mb
-          - platform: microvm
-            process-mode: single-process
-            memory: 128mb
-          - platform: microvm
-            process-mode: multi-process
-            memory: 128mb
-          - platform: microvm
-            process-mode: standalone
-            memory: 128mb
+        platform: [hyperlight, microvm]
+        process-mode: [multi-process, single-process, standalone]
+        memory: [128mb]
     name: ${{ matrix.platform }}-${{ matrix.process-mode }}-${{ matrix.memory }}
     container:
       image: nanvix/toolchain:latest-minimal
