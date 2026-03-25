@@ -3086,7 +3086,7 @@ _PyEval_LazyImportName(PyThreadState *tstate, PyObject *builtins,
             break;
     }
 
-    if (!lazy) {
+    if (!lazy && PyImport_GetLazyImportsMode() != PyImport_LAZY_NONE) {
         // See if __lazy_modules__ forces this to be lazy.
         lazy = check_lazy_import_compatibility(tstate, globals, name, level);
         if (lazy < 0) {

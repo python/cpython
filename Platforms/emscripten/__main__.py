@@ -820,6 +820,7 @@ def main():
     context = parser.parse_args()
     context.emsdk_cache = getattr(context, "emsdk_cache", None)
     context.cross_build_dir = getattr(context, "cross_build_dir", None)
+    context.check_up_to_date = getattr(context, "check_up_to_date", False)
 
     if context.emsdk_cache:
         context.emsdk_cache = Path(context.emsdk_cache).absolute()
