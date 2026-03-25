@@ -636,6 +636,18 @@ class ArrayMemoryviewTest(unittest.TestCase,
                 m = memoryview(a)
                 check_equal(m, True)
 
+        # Test complex formats
+        for complex_format in 'FD':
+            with self.subTest(format=complex_format):
+                data = struct.pack(complex_format * 3, 1.0, 2.0, float('nan'))
+                m = memoryview(data).cast(complex_format)
+                # nan is not equal to nan
+                check_equal(m, False)
+
+                data = struct.pack(complex_format * 3, 1.0, 2.0, 3.0)
+                m = memoryview(data).cast(complex_format)
+                check_equal(m, True)
+
 
 class BytesMemorySliceTest(unittest.TestCase,
     BaseMemorySliceTests, BaseBytesMemoryTests):
