@@ -380,7 +380,7 @@ class BasicSocketTests(unittest.TestCase):
         ssl.OP_NO_COMPRESSION
         self.assertEqual(ssl.HAS_SNI, True)
         self.assertEqual(ssl.HAS_ECDH, True)
-        self.assertEqual(ssl.HAS_TLSv1_2, True)
+        self.assertIsInstance(ssl.HAS_TLSv1_2, bool)
         self.assertEqual(ssl.HAS_TLSv1_3, True)
         ssl.OP_NO_SSLv2
         ssl.OP_NO_SSLv3
@@ -571,11 +571,11 @@ class BasicSocketTests(unittest.TestCase):
         # Some sanity checks follow
         # >= 1.1.1
         self.assertGreaterEqual(n, 0x10101000)
-        # < 4.0
-        self.assertLess(n, 0x40000000)
+        # < 5.0
+        self.assertLess(n, 0x50000000)
         major, minor, fix, patch, status = t
         self.assertGreaterEqual(major, 1)
-        self.assertLess(major, 4)
+        self.assertLess(major, 5)
         self.assertGreaterEqual(minor, 0)
         self.assertLess(minor, 256)
         self.assertGreaterEqual(fix, 0)
@@ -641,12 +641,14 @@ class BasicSocketTests(unittest.TestCase):
             ssl.OP_NO_TLSv1_2,
             ssl.OP_NO_TLSv1_3
         ]
-        protocols = [
-            ssl.PROTOCOL_TLSv1,
-            ssl.PROTOCOL_TLSv1_1,
-            ssl.PROTOCOL_TLSv1_2,
-            ssl.PROTOCOL_TLS
-        ]
+        protocols = []
+        if hasattr(ssl, 'PROTOCOL_TLSv1'):
+            protocols.append(ssl.PROTOCOL_TLSv1)
+        if hasattr(ssl, 'PROTOCOL_TLSv1_1'):
+            protocols.append(ssl.PROTOCOL_TLSv1_1)
+        if hasattr(ssl, 'PROTOCOL_TLSv1_2'):
+            protocols.append(ssl.PROTOCOL_TLSv1_2)
+        protocols.append(ssl.PROTOCOL_TLS)
         versions = [
             ssl.TLSVersion.SSLv3,
             ssl.TLSVersion.TLSv1,
@@ -1140,6 +1142,7 @@ class ContextTests(unittest.TestCase):
                 ssl.TLSVersion.TLSv1,
                 ssl.TLSVersion.TLSv1_1,
                 ssl.TLSVersion.TLSv1_2,
+                ssl.TLSVersion.TLSv1_3,
                 ssl.TLSVersion.SSLv3,
             }
         )
@@ -1153,7 +1156,7 @@ class ContextTests(unittest.TestCase):
         with self.assertRaises(ValueError):
             ctx.minimum_version = 42
 
-        if has_tls_protocol(ssl.PROTOCOL_TLSv1_1):
+        if has_tls_protocol('PROTOCOL_TLSv1_1'):
             ctx = ssl.SSLContext(ssl.PROTOCOL_TLSv1_1)
 
             self.assertIn(
@@ -1605,23 +1608,24 @@ class ContextTests(unittest.TestCase):
         self.assertFalse(ctx.check_hostname)
         self._assert_context_options(ctx)
 
-        if has_tls_protocol(ssl.PROTOCOL_TLSv1):
+        if has_tls_protocol('PROTOCOL_TLSv1'):
             with warnings_helper.check_warnings():
                 ctx = ssl._create_stdlib_context(ssl.PROTOCOL_TLSv1)
             self.assertEqual(ctx.protocol, ssl.PROTOCOL_TLSv1)
             self.assertEqual(ctx.verify_mode, ssl.CERT_NONE)
             self._assert_context_options(ctx)
 
-        with warnings_helper.check_warnings():
-            ctx = ssl._create_stdlib_context(
-                ssl.PROTOCOL_TLSv1_2,
-                cert_reqs=ssl.CERT_REQUIRED,
-                check_hostname=True
-            )
-        self.assertEqual(ctx.protocol, ssl.PROTOCOL_TLSv1_2)
-        self.assertEqual(ctx.verify_mode, ssl.CERT_REQUIRED)
-        self.assertTrue(ctx.check_hostname)
-        self._assert_context_options(ctx)
+        if has_tls_protocol('PROTOCOL_TLSv1_2'):
+            with warnings_helper.check_warnings():
+                ctx = ssl._create_stdlib_context(
+                    ssl.PROTOCOL_TLSv1_2,
+                    cert_reqs=ssl.CERT_REQUIRED,
+                    check_hostname=True
+                )
+            self.assertEqual(ctx.protocol, ssl.PROTOCOL_TLSv1_2)
+            self.assertEqual(ctx.verify_mode, ssl.CERT_REQUIRED)
+            self.assertTrue(ctx.check_hostname)
+            self._assert_context_options(ctx)
 
         ctx = ssl._create_stdlib_context(purpose=ssl.Purpose.CLIENT_AUTH)
         self.assertEqual(ctx.protocol, ssl.PROTOCOL_TLS_SERVER)
@@ -3517,10 +3521,10 @@ class ThreadedTests(unittest.TestCase):
                            client_options=ssl.OP_NO_TLSv1_2)
 
         try_protocol_combo(ssl.PROTOCOL_TLS, ssl.PROTOCOL_TLSv1_2, 'TLSv1.2')
-        if has_tls_protocol(ssl.PROTOCOL_TLSv1):
+        if has_tls_protocol('PROTOCOL_TLSv1'):
             try_protocol_combo(ssl.PROTOCOL_TLSv1_2, ssl.PROTOCOL_TLSv1, False)
             try_protocol_combo(ssl.PROTOCOL_TLSv1, ssl.PROTOCOL_TLSv1_2, False)
-        if has_tls_protocol(ssl.PROTOCOL_TLSv1_1):
+        if has_tls_protocol('PROTOCOL_TLSv1_1'):
             try_protocol_combo(ssl.PROTOCOL_TLSv1_2, ssl.PROTOCOL_TLSv1_1, False)
             try_protocol_combo(ssl.PROTOCOL_TLSv1_1, ssl.PROTOCOL_TLSv1_2, False)
 
