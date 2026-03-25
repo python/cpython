@@ -775,9 +775,19 @@ class FormatTest(unittest.TestCase):
         with self.assertRaisesRegex(ValueError, error_msg):
             f"{0:fz}"  # wrong position
 
-        error_msg = re.escape("Negative zero coercion (z) not allowed")
+        error_msg = re.escape("Two's complement (z) requires precision (.) format specifier")
         with self.assertRaisesRegex(ValueError, error_msg):
-            f"{0:zd}"  # can't apply to int presentation type
+            f"{0:zx}"  # can't apply two's complement without precision
+
+        error_msg = re.escape("Two's complement (z) only allowed with integer presentation types 'b', 'o', 'x', and 'X'")
+        with self.assertRaisesRegex(ValueError, error_msg):
+            f"{0:z.8}"  # can't apply to '' int presentation type
+        with self.assertRaisesRegex(ValueError, error_msg):
+            f"{0:z.8d}"  # can't apply to 'd' int presentation type
+        with self.assertRaisesRegex(ValueError, error_msg):
+            f"{0:z.8n}"  # can't apply to 'n' int presentation type
+
+        error_msg = re.escape("Negative zero coercion (z) not allowed")
         with self.assertRaisesRegex(ValueError, error_msg):
             f"{'x':zs}"  # can't apply to string
 
