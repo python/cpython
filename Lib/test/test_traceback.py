@@ -4564,31 +4564,39 @@ class SuggestionFormattingTestBase(SuggestionFormattingTestMixin):
         actual = self.get_suggestion(Outer(), 'target')
         self.assertIn("'.normal.target'", actual)
 
+    @force_not_colorized
     def test_cross_language(self):
         cases = [
-            # (obj, attr, expected_substring)
-            ([], 'push', "'.append'"),
-            ([], 'concat', "'.extend'"),
-            ([], 'addAll', "'.extend'"),
-            ([], 'contains', "Use 'x in list'."),
-            ([], 'add', "Did you mean to use a 'set' object?"),
-            ('', 'toUpperCase', "'.upper'"),
-            ('', 'toLowerCase', "'.lower'"),
-            ('', 'trimStart', "'.lstrip'"),
-            ('', 'trimEnd', "'.rstrip'"),
-            ({}, 'keySet', "'.keys'"),
-            ({}, 'entrySet', "'.items'"),
-            ({}, 'entries', "'.items'"),
-            ({}, 'putAll', "'.update'"),
-            ({}, 'put', "d[k] = v"),
+            # (type, attr, hint_attr)
+            (list, 'push', 'append'),
+            (list, 'concat', 'extend'),
+            (list, 'addAll', 'extend'),
+            (str, 'toUpperCase', 'upper'),
+            (str, 'toLowerCase', 'lower'),
+            (str, 'trimStart', 'lstrip'),
+            (str, 'trimEnd', 'rstrip'),
+            (dict, 'keySet', 'keys'),
+            (dict, 'entrySet', 'items'),
+            (dict, 'entries', 'items'),
+            (dict, 'putAll', 'update'),
         ]
-        for obj, attr, expected in cases:
-            with self.subTest(type=type(obj).__name__, attr=attr):
+        for test_type, attr, hint_attr in cases:
+            with self.subTest(type=test_type.__name__, attr=attr):
+                obj = test_type()
                 actual = self.get_suggestion(obj, attr)
-                self.assertIn(expected, actual)
-        # push hint should not repeat the wrong attribute name
-        actual = self.get_suggestion([], 'push')
-        self.assertNotIn("instead of", actual)
+                self.assertEndsWith(actual, f"Did you mean '.{hint_attr}'?")
+
+        cases = [
+            # (type, attr, hint)
+            (list, 'contains', "Use 'x in list'."),
+            (list, 'add', "Did you mean to use a 'set' object?"),
+            (dict, 'put', "Use d[k] = v."),
+        ]
+        for test_type, attr, expected in cases:
+            with self.subTest(type=test_type, attr=attr):
+                obj = test_type()
+                actual = self.get_suggestion(obj, attr)
+                self.assertEndsWith(actual, expected)
 
     def test_cross_language_levenshtein_takes_priority(self):
         # Levenshtein catches trim->strip and indexOf->index before
