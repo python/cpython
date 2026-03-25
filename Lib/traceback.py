@@ -1659,8 +1659,8 @@ _CASE_COST = 1
 # Inclusion criteria:
 #   1. Must have evidence of real cross-language confusion (Stack Overflow
 #      traffic, bug reports in production repos, developer survey data).
-#   2. Must be from a top-4 language by Python co-usage: JavaScript, Java,
-#      C#, or Ruby (JetBrains/PSF Developer Survey 2024).
+#   2. Must not be catchable by Levenshtein distance (too different from
+#      the correct Python method name).
 #
 # Each entry maps (builtin_type, wrong_name) to a (suggestion, is_raw) tuple.
 # If is_raw is False, the suggestion is wrapped in "Did you mean '.X'?".
