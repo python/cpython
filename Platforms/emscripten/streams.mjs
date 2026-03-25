@@ -170,7 +170,6 @@ class NodeReader {
     nodeFsync(this.nodeStream.fd);
   }
   ioctl_tiocgwinsz() {
-    console.log("ioctl_tiocgwinsz");
     return [this.nodeStream.columns ?? 24, this.nodeStream.rows ?? 80];
   }
 }
@@ -189,7 +188,6 @@ class NodeWriter {
     nodeFsync(this.nodeStream.fd);
   }
   ioctl_tiocgwinsz() {
-    console.log("ioctl_tiocgwinsz");
     return [this.nodeStream.columns ?? 24, this.nodeStream.rows ?? 80];
   }
 }
