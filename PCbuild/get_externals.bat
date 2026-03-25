@@ -1,5 +1,5 @@
 @echo off
-setlocal
+setlocal EnableDelayedExpansion
 rem Simple script to fetch source for external libraries
 
 if NOT DEFINED PCBUILD (set PCBUILD=%~dp0)
@@ -92,11 +92,9 @@ for %%b in (%binaries%) do (
         git clone --depth 1 https://github.com/%ORG%/cpython-bin-deps --branch %%b "%EXTERNALS_DIR%\%%b"
     ) else (
         echo.Fetching %%b...
-        if "%%b"=="llvm-20.1.8.0" (
-            %PYTHON% -E "%PCBUILD%\get_external.py" --release --organization %ORG% --externals-dir "%EXTERNALS_DIR%" %%b
-        ) else (
-            %PYTHON% -E "%PCBUILD%\get_external.py" --binary --organization %ORG% --externals-dir "%EXTERNALS_DIR%" %%b
-        )
+        set _fetch_args=--binary
+        echo %%b | findstr /B "llvm-" >nul && set _fetch_args=--release
+        %PYTHON% -E "%PCBUILD%\get_external.py" !_fetch_args! --organization %ORG% --externals-dir "%EXTERNALS_DIR%" %%b
     )
 )
 

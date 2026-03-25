@@ -426,10 +426,11 @@ void patch_x86_64_trampoline(unsigned char *location, int ordinal, jit_state *st
 #if defined(__aarch64__) || defined(_M_ARM64)
     #define TRAMPOLINE_SIZE 16
     #define DATA_ALIGN 8
-#elif defined(__x86_64__) && defined(__APPLE__)
-    // LLVM 20 on macOS x86_64 debug builds: GOT entries may exceed ±2GB PC-relative
-    // range.
-    #define TRAMPOLINE_SIZE 16  // 14 bytes + 2 bytes padding for alignment
+#elif defined(__x86_64__) || defined(_M_X64)
+    // x86_64 trampolines: 14 bytes (jmp *(%rip) + 8-byte addr) + 2 bytes padding.
+    // Currently used on macOS where LLVM 20 GOT entries may exceed ±2GB
+    // PC-relative range, but enabled on all x86_64 platforms defensively.
+    #define TRAMPOLINE_SIZE 16
     #define DATA_ALIGN 8
 #else
     #define TRAMPOLINE_SIZE 0
