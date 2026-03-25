@@ -810,7 +810,7 @@ A ``TarInfo`` object has the following public data attributes:
 .. attribute:: TarInfo.size
    :type: int
 
-   Size in bytes.
+   Size of the archived file's data in bytes.
 
 
 .. attribute:: TarInfo.mtime
@@ -1386,6 +1386,17 @@ a generator function instead of a list::
    tar = tarfile.open("sample.tar.gz")
    tar.extractall(members=py_files(tar))
    tar.close()
+
+How to read the content of a specific archive member into memory::
+
+   import tarfile
+
+   with tarfile.open("sample.tar.gz") as tar:
+       for member in tar:
+           f = tar.extractfile(member)
+           if f is not None:
+               content = f.read()
+               break
 
 How to read a gzip compressed tar archive and display some member information::
 
