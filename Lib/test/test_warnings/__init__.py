@@ -1,5 +1,6 @@
 from contextlib import contextmanager
 import linecache
+import logging
 import os
 import importlib
 import inspect
@@ -533,6 +534,21 @@ class FilterTests(BaseTest):
 
         self.assertEqual(len(warns), 1)
         self.assertEqual(str(warns[0]), "custom")
+
+    def test_catchwarnings_logging(self):
+        # gh-146358: catch_warnings(record=True) must replace the
+        # showwarning() function set by logging.captureWarnings(True).
+
+        with self.module.catch_warnings():
+            self.module.resetwarnings()
+            logging.captureWarnings(True)
+
+            with self.module.catch_warnings(record=True) as recorded:
+                self.module.warn("recorded")
+            self.assertEqual(len(recorded), 1)
+            self.assertEqual(str(recorded[0].message), 'recorded')
+
+            logging.captureWarnings(False)
 
 
 class CFilterTests(FilterTests, unittest.TestCase):
