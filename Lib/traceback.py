@@ -1153,6 +1153,11 @@ class TracebackException:
                     self._str += f". Did you mean '.{suggestion}' instead of '.{wrong_name}'?"
                 else:
                     self._str += f". Did you mean '.{suggestion}' ({suggestion!a}) instead of '.{wrong_name}' ({wrong_name!a})?"
+            elif hasattr(exc_value, 'obj'):
+                with suppress(Exception):
+                    hint = _get_cross_language_hint(exc_value.obj, wrong_name)
+                    if hint:
+                        self._str += f". {hint}"
         elif exc_type and issubclass(exc_type, NameError) and \
                 getattr(exc_value, "name", None) is not None:
             wrong_name = getattr(exc_value, "name", None)
@@ -1649,6 +1654,45 @@ _MAX_STRING_SIZE = 40
 _MOVE_COST = 2
 _CASE_COST = 1
 
+# Cross-language method suggestions for builtin types.
+# Consulted as a fallback when Levenshtein-based suggestions find no match.
+#
+# Inclusion criteria:
+#   1. Must have evidence of real cross-language confusion (Stack Overflow
+#      traffic, bug reports in production repos, developer survey data)
+#   2. Must not be catchable by Levenshtein distance (too different from
+#      the correct Python method name)
+#   3. Must be from a top-4 language by Python co-usage: JavaScript, Java,
+#      C#, or Ruby (JetBrains/PSF Developer Survey 2024)
+#
+# Each entry maps (builtin_type, wrong_name) to a suggestion string.
+# If the suggestion is a Python method name, the standard "Did you mean"
+# format is used. If it contains a space, it's rendered as a full hint.
+#
+# See https://discuss.python.org/t/106632 for the design discussion.
+_CROSS_LANGUAGE_HINTS = {
+    # list -- JavaScript/Ruby equivalents
+    (list, "push"):     "append",
+    (list, "concat"):   "extend",
+    # list -- Java/C# equivalents
+    (list, "addAll"):   "extend",
+    # list -- wrong-type suggestion (per Serhiy Storchaka, Terry Reedy,
+    # Paul Moore: list.add() more likely means the user expected a set)
+    (list, "add"):      "Did you mean to use a set? Sets have an .add() method",
+    # str -- JavaScript equivalents
+    (str, "toUpperCase"): "upper",
+    (str, "toLowerCase"): "lower",
+    (str, "trimStart"):   "lstrip",
+    (str, "trimEnd"):     "rstrip",
+    # dict -- Java equivalents
+    (dict, "keySet"):       "keys",
+    (dict, "entrySet"):     "items",
+    (dict, "putAll"):       "update",
+    # Note: indexOf, trim, and getOrDefault are not included because
+    # Levenshtein distance already catches them (indexOf->index,
+    # trim->strip, getOrDefault->setdefault).
+}
+
 
 def _substitution_cost(ch_a, ch_b):
     if ch_a == ch_b:
@@ -1709,6 +1753,23 @@ def _check_for_nested_attribute(obj, wrong_name, attrs):
                 return f"{attr_name}.{wrong_name}"
 
     return None
+
+
+def _get_cross_language_hint(obj, wrong_name):
+    """Check if wrong_name is a common method name from another language.
+
+    Only checks exact builtin types (list, str, dict) to avoid false
+    positives on subclasses that may intentionally lack these methods.
+    Returns a formatted hint string, or None.
+    """
+    hint = _CROSS_LANGUAGE_HINTS.get((type(obj), wrong_name))
+    if hint is None:
+        return None
+    if ' ' in hint:
+        # Full custom hint (e.g., wrong-type suggestion for list.add)
+        return hint
+    # Direct method equivalent -- format like Levenshtein suggestions
+    return f"Did you mean '.{hint}' instead of '.{wrong_name}'?"
 
 
 def _get_safe___dir__(obj):

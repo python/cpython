@@ -4564,6 +4564,67 @@ class SuggestionFormattingTestBase(SuggestionFormattingTestMixin):
         actual = self.get_suggestion(Outer(), 'target')
         self.assertIn("'.normal.target'", actual)
 
+    def test_cross_language_list_push_suggests_append(self):
+        actual = self.get_suggestion([], 'push')
+        self.assertIn("'.append'", actual)
+
+    def test_cross_language_list_concat_suggests_extend(self):
+        actual = self.get_suggestion([], 'concat')
+        self.assertIn("'.extend'", actual)
+
+    def test_cross_language_list_addAll_suggests_extend(self):
+        actual = self.get_suggestion([], 'addAll')
+        self.assertIn("'.extend'", actual)
+
+    def test_cross_language_list_add_suggests_set(self):
+        actual = self.get_suggestion([], 'add')
+        self.assertIn("Did you mean to use a set?", actual)
+
+    def test_cross_language_str_toUpperCase_suggests_upper(self):
+        actual = self.get_suggestion('', 'toUpperCase')
+        self.assertIn("'.upper'", actual)
+
+    def test_cross_language_str_toLowerCase_suggests_lower(self):
+        actual = self.get_suggestion('', 'toLowerCase')
+        self.assertIn("'.lower'", actual)
+
+    def test_cross_language_str_trimStart_suggests_lstrip(self):
+        actual = self.get_suggestion('', 'trimStart')
+        self.assertIn("'.lstrip'", actual)
+
+    def test_cross_language_str_trimEnd_suggests_rstrip(self):
+        actual = self.get_suggestion('', 'trimEnd')
+        self.assertIn("'.rstrip'", actual)
+
+    def test_cross_language_dict_keySet_suggests_keys(self):
+        actual = self.get_suggestion({}, 'keySet')
+        self.assertIn("'.keys'", actual)
+
+    def test_cross_language_dict_entrySet_suggests_items(self):
+        actual = self.get_suggestion({}, 'entrySet')
+        self.assertIn("'.items'", actual)
+
+    def test_cross_language_dict_putAll_suggests_update(self):
+        actual = self.get_suggestion({}, 'putAll')
+        self.assertIn("'.update'", actual)
+
+    def test_cross_language_levenshtein_takes_priority(self):
+        # Levenshtein catches trim->strip and indexOf->index before
+        # the cross-language table is consulted
+        actual = self.get_suggestion('', 'trim')
+        self.assertIn("'.strip'", actual)
+
+    def test_cross_language_no_hint_for_unknown_attr(self):
+        actual = self.get_suggestion([], 'completely_unknown_method')
+        self.assertNotIn("Did you mean", actual)
+
+    def test_cross_language_not_triggered_for_subclasses(self):
+        # Only exact builtin types, not subclasses
+        class MyList(list):
+            pass
+        actual = self.get_suggestion(MyList(), 'push')
+        self.assertNotIn("append", actual)
+
     def make_module(self, code):
         tmpdir = Path(tempfile.mkdtemp())
         self.addCleanup(shutil.rmtree, tmpdir)
