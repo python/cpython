@@ -86,7 +86,7 @@ jobs:
             compiler: clang
           - target: aarch64-apple-darwin/clang
             architecture: aarch64
-            runner: macos-14
+            runner: macos-26
             compiler: clang
           - target: x86_64-unknown-linux-gnu/gcc
             architecture: x86_64
