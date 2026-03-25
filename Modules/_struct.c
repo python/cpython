@@ -1536,10 +1536,6 @@ init_endian_tables(void *Py_UNUSED(arg))
                     size matches */
                 if (ptr->size != native->size)
                     break;
-                /* Skip float and double, could be
-                    "unknown" float format */
-                if (ptr->format == 'd' || ptr->format == 'f')
-                    break;
                 /* Skip _Bool, semantics are different for standard size */
                 if (ptr->format == '?')
                     break;
