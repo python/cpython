@@ -21,7 +21,7 @@ concurrency:
 
 env:
   FORCE_COLOR: 1
-  LLVM_VERSION: 19
+  LLVM_VERSION: 20
 
 jobs:
   interpreter:
@@ -168,7 +168,6 @@ jobs:
       fail-fast: false
       matrix:
         include:
-
           - name: JIT without optimizations (Debug)
             configure_flags: --enable-experimental-jit --with-pydebug
             test_env: "PYTHON_UOPS_OPTIMIZE=0"

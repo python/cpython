@@ -150,10 +150,6 @@ class _Target(typing.Generic[_S, _R]):
             "-fno-asynchronous-unwind-tables",
             # Don't call built-in functions that we can't find or patch:
             "-fno-builtin",
-            # Emit relaxable 64-bit calls/jumps, so we don't have to worry about
-            # about emitting in-range trampolines for out-of-range targets.
-            # We can probably remove this and emit trampolines in the future:
-            "-fno-plt",
             # Don't call stack-smashing canaries that we can't find or patch:
             "-fno-stack-protector",
             "-std=c11",
@@ -523,7 +519,7 @@ def get_target(host: str) -> _COFF | _ELF | _MachO:
         condition = "defined(__aarch64__) && defined(__APPLE__)"
         target = _MachO(host, condition, alignment=8, prefix="_")
     elif re.fullmatch(r"aarch64-pc-windows-msvc", host):
-        args = ["-fms-runtime-lib=dll", "-fplt"]
+        args = ["-fms-runtime-lib=dll"]
         condition = "defined(_M_ARM64)"
         target = _COFF(host, condition, alignment=8, args=args)
     elif re.fullmatch(r"aarch64-.*-linux-gnu", host):
@@ -532,6 +528,7 @@ def get_target(host: str) -> _COFF | _ELF | _MachO:
             # On aarch64 Linux, intrinsics were being emitted and this flag
             # was required to disable them.
             "-mno-outline-atomics",
+            "-fno-plt",
         ]
         condition = "defined(__aarch64__) && defined(__linux__)"
         target = _ELF(host, condition, alignment=8, args=args)
@@ -551,7 +548,7 @@ def get_target(host: str) -> _COFF | _ELF | _MachO:
         condition = "defined(_M_X64)"
         target = _COFF(host, condition, args=args)
     elif re.fullmatch(r"x86_64-.*-linux-gnu", host):
-        args = ["-fno-pic", "-mcmodel=medium", "-mlarge-data-threshold=0"]
+        args = ["-fno-pic", "-mcmodel=medium", "-mlarge-data-threshold=0", "-fno-plt"]
         condition = "defined(__x86_64__) && defined(__linux__)"
         target = _ELF(host, condition, args=args)
     else:
