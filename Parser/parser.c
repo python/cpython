@@ -21602,7 +21602,7 @@ invalid_type_param_rule(Parser *p)
 // invalid_expression:
 //     | STRING ((!STRING expression_without_invalid))+ STRING
 //     | !(NAME STRING | SOFT_KEYWORD) disjunction expression_without_invalid
-//     | disjunction 'if' disjunction ':=' disjunction
+//     | disjunction 'if' disjunction ':='
 //     | disjunction 'if' disjunction !('else' | ':')
 //     | disjunction 'if' disjunction 'else' !expression
 //     | (pass_stmt | break_stmt | continue_stmt) 'if' disjunction 'else' simple_stmt
@@ -21679,31 +21679,28 @@ invalid_expression_rule(Parser *p)
         D(fprintf(stderr, "%*c%s invalid_expression[%d-%d]: %s failed!\n", p->level, ' ',
                   p->error_indicator ? "ERROR!" : "-", _mark, p->mark, "!(NAME STRING | SOFT_KEYWORD) disjunction expression_without_invalid"));
     }
-    { // disjunction 'if' disjunction ':=' disjunction
+    { // disjunction 'if' disjunction ':='
         if (p->error_indicator) {
             p->level--;
             return NULL;
         }
-        D(fprintf(stderr, "%*c> invalid_expression[%d-%d]: %s\n", p->level, ' ', _mark, p->mark, "disjunction 'if' disjunction ':=' disjunction"));
+        D(fprintf(stderr, "%*c> invalid_expression[%d-%d]: %s\n", p->level, ' ', _mark, p->mark, "disjunction 'if' disjunction ':='"));
         Token * _keyword;
-        Token * _literal;
-        expr_ty a;
-        expr_ty b;
+        Token * a;
         expr_ty disjunction_var;
+        expr_ty disjunction_var_1;
         if (
             (disjunction_var = disjunction_rule(p))  // disjunction
             &&
             (_keyword = _PyPegen_expect_token(p, 699))  // token='if'
             &&
-            (a = disjunction_rule(p))  // disjunction
+            (disjunction_var_1 = disjunction_rule(p))  // disjunction
             &&
-            (_literal = _PyPegen_expect_token(p, 53))  // token=':='
-            &&
-            (b = disjunction_rule(p))  // disjunction
+            (a = _PyPegen_expect_token(p, 53))  // token=':='
         )
         {
-            D(fprintf(stderr, "%*c+ invalid_expression[%d-%d]: %s succeeded!\n", p->level, ' ', _mark, p->mark, "disjunction 'if' disjunction ':=' disjunction"));
-            _res = RAISE_SYNTAX_ERROR_KNOWN_RANGE ( a , b , "assignment expression must be parenthesized inside conditional expression" );
+            D(fprintf(stderr, "%*c+ invalid_expression[%d-%d]: %s succeeded!\n", p->level, ' ', _mark, p->mark, "disjunction 'if' disjunction ':='"));
+            _res = RAISE_SYNTAX_ERROR_KNOWN_LOCATION ( a , "assignment expression must be parenthesized inside conditional expression" );
             if ((_res == NULL || p->error_indicator) && PyErr_Occurred()) {
                 p->error_indicator = 1;
                 p->level--;
@@ -21713,7 +21710,7 @@ invalid_expression_rule(Parser *p)
         }
         p->mark = _mark;
         D(fprintf(stderr, "%*c%s invalid_expression[%d-%d]: %s failed!\n", p->level, ' ',
-                  p->error_indicator ? "ERROR!" : "-", _mark, p->mark, "disjunction 'if' disjunction ':=' disjunction"));
+                  p->error_indicator ? "ERROR!" : "-", _mark, p->mark, "disjunction 'if' disjunction ':='"));
     }
     { // disjunction 'if' disjunction !('else' | ':')
         if (p->error_indicator) {
