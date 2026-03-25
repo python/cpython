@@ -1621,6 +1621,11 @@ New deprecations
   * Deprecated :func:`!typing.no_type_check_decorator` has been removed.
     (Contributed by Nikita Sobolev in :gh:`133601`.)
 
+* The ``__getformat__()`` class method of the :class:`float` is deprecated
+  and will be removed in Python 3.20.
+
+  (Contributed by Sergey B Kirpichev in :gh:`145633`.)
+
 * ``__version__``
 
   * The ``__version__``, ``version`` and ``VERSION`` attributes have been
