@@ -38,7 +38,7 @@ class TestPackages(unittest.TestCase):
             self.assertEqual(ensurepip._PIP_VERSION, ensurepip.version())
 
     def test_wheel_pkg_dir_none(self):
-        # GH#146310: empty or None WHEEL_PKG_DIR should not search CWD
+        # gh-146310: empty or None WHEEL_PKG_DIR should not search CWD
         for value in ('', None):
             with unittest.mock.patch('sysconfig.get_config_var',
                                      return_value=value) as get_config_var:
