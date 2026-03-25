@@ -239,6 +239,15 @@ def staticmethod_call():
     for _ in range(1000 * WORK_SCALE):
         obj.my_staticmethod()
 
+@register_benchmark
+def setattr_non_interned():
+    prefix = "prefix"
+    obj = MyObject()
+    for _ in range(1000 * WORK_SCALE):
+        setattr(obj, f"{prefix}_a", None)
+        setattr(obj, f"{prefix}_b", None)
+        setattr(obj, f"{prefix}_c", None)
+
 
 def bench_one_thread(func):
     t0 = time.perf_counter_ns()
