@@ -56,7 +56,13 @@ def fetch_release(tag, tarball_dir, *, org='python', verbose=False):
 
 def extract_tarball(externals_dir, tarball_path, tag):
     output_path = externals_dir / tag
-    shutil.unpack_archive(os.fspath(tarball_path), os.fspath(output_path))
+    try:
+        shutil.unpack_archive(os.fspath(tarball_path), os.fspath(output_path))
+    except Exception as ex:
+        raise OSError(
+            f'Failed to extract {tarball_path}. The archive may be '
+            f'corrupted; try deleting it and re-running.'
+        ) from ex
     return output_path
 
 
