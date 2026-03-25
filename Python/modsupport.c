@@ -688,9 +688,12 @@ static int _abiinfo_raise(const char *module_name, const char *format, ...)
     va_list vargs;
     va_start(vargs, format);
     if (_PyUnicodeWriter_FormatV(writer, format, vargs) < 0) {
+        va_end(vargs);
         PyUnicodeWriter_Discard(writer);
         return -1;
     }
+
+    va_end(vargs);
     PyObject *message = PyUnicodeWriter_Finish(writer);
     if (!message) {
         return -1;
