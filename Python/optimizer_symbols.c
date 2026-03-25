@@ -522,7 +522,7 @@ _Py_uop_sym_set_func_version(JitOptContext *ctx, JitOptRef ref, uint32_t version
         case JIT_SYM_PREDICATE_TAG:
         case JIT_SYM_TRUTHINESS_TAG:
             sym_set_bottom(ctx, sym);
-            return true;
+            return false;
         case JIT_SYM_RECORDED_VALUE_TAG: {
             PyObject *val = sym->recorded_value.value;
             if (Py_TYPE(val) != &PyFunction_Type ||
@@ -1521,7 +1521,7 @@ _Py_uop_frame_new(
 
     // Initialize with the initial state of all local variables
     for (int i = 0; i < arg_len; i++) {
-        frame->locals[i] = args[i];
+        frame->locals[i] = PyJitRef_RemoveUnique(args[i]);
     }
 
     // If the args are known, then it's safe to just initialize

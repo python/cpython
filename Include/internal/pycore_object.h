@@ -144,7 +144,7 @@ static inline void _Py_RefcntAdd(PyObject* op, Py_ssize_t n)
         new_refcnt = _Py_IMMORTAL_INITIAL_REFCNT;
     }
 #  if SIZEOF_VOID_P > 4
-    op->ob_refcnt = (PY_UINT32_T)new_refcnt;
+    op->ob_refcnt = (uint32_t)new_refcnt;
 #  else
     op->ob_refcnt = new_refcnt;
 #  endif

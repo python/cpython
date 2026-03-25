@@ -221,87 +221,164 @@ Fundamental data types
 
 :mod:`!ctypes` defines a number of primitive C compatible data types:
 
-+----------------------+------------------------------------------+----------------------------+
-| ctypes type          | C type                                   | Python type                |
-+======================+==========================================+============================+
-| :class:`c_bool`      | :c:expr:`_Bool`                          | bool (1)                   |
-+----------------------+------------------------------------------+----------------------------+
-| :class:`c_char`      | :c:expr:`char`                           | 1-character bytes object   |
-+----------------------+------------------------------------------+----------------------------+
-| :class:`c_wchar`     | :c:type:`wchar_t`                        | 1-character string         |
-+----------------------+------------------------------------------+----------------------------+
-| :class:`c_byte`      | :c:expr:`char`                           | int                        |
-+----------------------+------------------------------------------+----------------------------+
-| :class:`c_ubyte`     | :c:expr:`unsigned char`                  | int                        |
-+----------------------+------------------------------------------+----------------------------+
-| :class:`c_short`     | :c:expr:`short`                          | int                        |
-+----------------------+------------------------------------------+----------------------------+
-| :class:`c_ushort`    | :c:expr:`unsigned short`                 | int                        |
-+----------------------+------------------------------------------+----------------------------+
-| :class:`c_int`       | :c:expr:`int`                            | int                        |
-+----------------------+------------------------------------------+----------------------------+
-| :class:`c_int8`      | :c:type:`int8_t`                         | int                        |
-+----------------------+------------------------------------------+----------------------------+
-| :class:`c_int16`     | :c:type:`int16_t`                        | int                        |
-+----------------------+------------------------------------------+----------------------------+
-| :class:`c_int32`     | :c:type:`int32_t`                        | int                        |
-+----------------------+------------------------------------------+----------------------------+
-| :class:`c_int64`     | :c:type:`int64_t`                        | int                        |
-+----------------------+------------------------------------------+----------------------------+
-| :class:`c_uint`      | :c:expr:`unsigned int`                   | int                        |
-+----------------------+------------------------------------------+----------------------------+
-| :class:`c_uint8`     | :c:type:`uint8_t`                        | int                        |
-+----------------------+------------------------------------------+----------------------------+
-| :class:`c_uint16`    | :c:type:`uint16_t`                       | int                        |
-+----------------------+------------------------------------------+----------------------------+
-| :class:`c_uint32`    | :c:type:`uint32_t`                       | int                        |
-+----------------------+------------------------------------------+----------------------------+
-| :class:`c_uint64`    | :c:type:`uint64_t`                       | int                        |
-+----------------------+------------------------------------------+----------------------------+
-| :class:`c_long`      | :c:expr:`long`                           | int                        |
-+----------------------+------------------------------------------+----------------------------+
-| :class:`c_ulong`     | :c:expr:`unsigned long`                  | int                        |
-+----------------------+------------------------------------------+----------------------------+
-| :class:`c_longlong`  | :c:expr:`__int64` or :c:expr:`long long` | int                        |
-+----------------------+------------------------------------------+----------------------------+
-| :class:`c_ulonglong` | :c:expr:`unsigned __int64` or            | int                        |
-|                      | :c:expr:`unsigned long long`             |                            |
-+----------------------+------------------------------------------+----------------------------+
-| :class:`c_size_t`    | :c:type:`size_t`                         | int                        |
-+----------------------+------------------------------------------+----------------------------+
-| :class:`c_ssize_t`   | :c:type:`ssize_t` or                     | int                        |
-|                      | :c:expr:`Py_ssize_t`                     |                            |
-+----------------------+------------------------------------------+----------------------------+
-| :class:`c_time_t`    | :c:type:`time_t`                         | int                        |
-+----------------------+------------------------------------------+----------------------------+
-| :class:`c_float`     | :c:expr:`float`                          | float                      |
-+----------------------+------------------------------------------+----------------------------+
-| :class:`c_double`    | :c:expr:`double`                         | float                      |
-+----------------------+------------------------------------------+----------------------------+
-| :class:`c_longdouble`| :c:expr:`long double`                    | float                      |
-+----------------------+------------------------------------------+----------------------------+
-| :class:`c_char_p`    | :c:expr:`char *` (NUL terminated)        | bytes object or ``None``   |
-+----------------------+------------------------------------------+----------------------------+
-| :class:`c_wchar_p`   | :c:expr:`wchar_t *` (NUL terminated)     | string or ``None``         |
-+----------------------+------------------------------------------+----------------------------+
-| :class:`c_void_p`    | :c:expr:`void *`                         | int or ``None``            |
-+----------------------+------------------------------------------+----------------------------+
+.. list-table::
+   :header-rows: 1
 
-(1)
-   The constructor accepts any object with a truth value.
+   * - ctypes type
+     - C type
+     - Python type
+     - :py:attr:`~_SimpleCData._type_`
+   * - :class:`c_bool`
+     - :c:expr:`_Bool`
+     - :py:class:`bool`
+     - ``'?'``
+   * - :class:`c_char`
+     - :c:expr:`char`
+     - 1-character :py:class:`bytes`
+     - ``'c'``
+   * - :class:`c_wchar`
+     - :c:type:`wchar_t`
+     - 1-character :py:class:`str`
+     - ``'u'``
+   * - :class:`c_byte`
+     - :c:expr:`char`
+     - :py:class:`int`
+     - ``'b'``
+   * - :class:`c_ubyte`
+     - :c:expr:`unsigned char`
+     - :py:class:`int`
+     - ``'B'``
+   * - :class:`c_short`
+     - :c:expr:`short`
+     - :py:class:`int`
+     - ``'h'``
+   * - :class:`c_ushort`
+     - :c:expr:`unsigned short`
+     - :py:class:`int`
+     - ``'H'``
+   * - :class:`c_int`
+     - :c:expr:`int`
+     - :py:class:`int`
+     - ``'i'`` \*
+   * - :class:`c_int8`
+     - :c:type:`int8_t`
+     - :py:class:`int`
+     - \*
+   * - :class:`c_int16`
+     - :c:type:`int16_t`
+     - :py:class:`int`
+     - \*
+   * - :class:`c_int32`
+     - :c:type:`int32_t`
+     - :py:class:`int`
+     - \*
+   * - :class:`c_int64`
+     - :c:type:`int64_t`
+     - :py:class:`int`
+     - \*
+   * - :class:`c_uint`
+     - :c:expr:`unsigned int`
+     - :py:class:`int`
+     - ``'I'`` \*
+   * - :class:`c_uint8`
+     - :c:type:`uint8_t`
+     - :py:class:`int`
+     - \*
+   * - :class:`c_uint16`
+     - :c:type:`uint16_t`
+     - :py:class:`int`
+     - \*
+   * - :class:`c_uint32`
+     - :c:type:`uint32_t`
+     - :py:class:`int`
+     - \*
+   * - :class:`c_uint64`
+     - :c:type:`uint64_t`
+     - :py:class:`int`
+     - \*
+   * - :class:`c_long`
+     - :c:expr:`long`
+     - :py:class:`int`
+     - ``'l'``
+   * - :class:`c_ulong`
+     - :c:expr:`unsigned long`
+     - :py:class:`int`
+     - ``'L'``
+   * - :class:`c_longlong`
+     - :c:expr:`long long`
+     - :py:class:`int`
+     - ``'q'`` \*
+   * - :class:`c_ulonglong`
+     - :c:expr:`unsigned long long`
+     - :py:class:`int`
+     - ``'Q'`` \*
+   * - :class:`c_size_t`
+     - :c:type:`size_t`
+     - :py:class:`int`
+     - \*
+   * - :class:`c_ssize_t`
+     - :c:type:`Py_ssize_t`
+     - :py:class:`int`
+     - \*
+   * - :class:`c_time_t`
+     - :c:type:`time_t`
+     - :py:class:`int`
+     - \*
+   * - :class:`c_float`
+     - :c:expr:`float`
+     - :py:class:`float`
+     - ``'f'``
+   * - :class:`c_double`
+     - :c:expr:`double`
+     - :py:class:`float`
+     - ``'d'``
+   * - :class:`c_longdouble`
+     - :c:expr:`long double`
+     - :py:class:`float`
+     - ``'g'`` \*
+   * - :class:`c_char_p`
+     - :c:expr:`char *` (NUL terminated)
+     - :py:class:`bytes` or ``None``
+     - ``'z'``
+   * - :class:`c_wchar_p`
+     - :c:expr:`wchar_t *` (NUL terminated)
+     - :py:class:`str` or ``None``
+     - ``'Z'``
+   * - :class:`c_void_p`
+     - :c:expr:`void *`
+     - :py:class:`int` or ``None``
+     - ``'P'``
+   * - :class:`py_object`
+     - :c:expr:`PyObject *`
+     - :py:class:`object`
+     - ``'O'``
+   * - :ref:`VARIANT_BOOL <ctypes-wintypes>`
+     - :c:expr:`short int`
+     - :py:class:`bool`
+     - ``'v'``
 
 Additionally, if IEC 60559 compatible complex arithmetic (Annex G) is supported
 in both C and ``libffi``, the following complex types are available:
 
-+----------------------------------+---------------------------------+-----------------+
-| ctypes type                      | C type                          | Python type     |
-+==================================+=================================+=================+
-| :class:`c_float_complex`         | :c:expr:`float complex`         | complex         |
-+----------------------------------+---------------------------------+-----------------+
-| :class:`c_double_complex`        | :c:expr:`double complex`        | complex         |
-+----------------------------------+---------------------------------+-----------------+
-| :class:`c_longdouble_complex`    | :c:expr:`long double complex`   | complex         |
-+----------------------------------+---------------------------------+-----------------+
+.. list-table::
+   :header-rows: 1
+
+   * - ctypes type
+     - C type
+     - Python type
+     - :py:attr:`~_SimpleCData._type_`
+   * - :class:`c_float_complex`
+     - :c:expr:`float complex`
+     - :py:class:`complex`
+     - ``'F'``
+   * - :class:`c_double_complex`
+     - :c:expr:`double complex`
+     - :py:class:`complex`
+     - ``'D'``
+   * - :class:`c_longdouble_complex`
+     - :c:expr:`long double complex`
+     - :py:class:`complex`
+     - ``'G'``
 
 
 All these types can be created by calling them with an optional initializer of
@@ -314,6 +391,16 @@ the correct type and value::
    >>> c_ushort(-3)
    c_ushort(65533)
    >>>
+
+The constructors for numeric types will convert input using
+:py:meth:`~object.__bool__`,
+:py:meth:`~object.__index__` (for ``int``),
+:py:meth:`~object.__float__` or :py:meth:`~object.__complex__`.
+This means :py:class:`~ctypes.c_bool` accepts any object with a truth value::
+
+   >>> empty_list = []
+   >>> c_bool(empty_list)
+   c_bool(False)
 
 Since these types are mutable, their value can also be changed afterwards::
 
@@ -2478,6 +2565,29 @@ Fundamental data types
       original object return, always a new object is constructed.  The same is
       true for all other ctypes object instances.
 
+   Each subclass has a class attribute:
+
+   .. attribute:: _type_
+
+      Class attribute that contains an internal type code, as a
+      single-character string.
+      See :ref:`ctypes-fundamental-data-types` for a summary.
+
+      Types marked \* in the summary may be (or always are) aliases of a
+      different :class:`_SimpleCData` subclass, and will not necessarily
+      use the listed type code.
+      For example, if the platform's :c:expr:`long`, :c:expr:`long long`
+      and :c:expr:`time_t` C types are the same, then :class:`c_long`,
+      :class:`c_longlong` and :class:`c_time_t` all refer to a single class,
+      :class:`c_long`, whose :attr:`_type_` code is ``'l'``.
+      The ``'L'`` code will be unused.
+
+      .. seealso::
+
+         The :mod:`array` and :ref:`struct <format-characters>` modules,
+         as well as third-party modules like `numpy <https://numpy.org/doc/stable/reference/arrays.interface.html#object.__array_interface__>`__,
+         use similar -- but slightly different -- type codes.
+
 
 Fundamental data types, when returned as foreign function call results, or, for
 example, by retrieving structure field members or array items, are transparently
@@ -2599,6 +2709,8 @@ These are the fundamental ctypes data types:
 
    Represents the C :c:expr:`signed long long` datatype.  The constructor accepts
    an optional integer initializer; no overflow checking is done.
+   On platforms where ``sizeof(long long) == sizeof(long)`` it is an alias
+   to :class:`c_long`.
 
 
 .. class:: c_short
@@ -2610,11 +2722,15 @@ These are the fundamental ctypes data types:
 .. class:: c_size_t
 
    Represents the C :c:type:`size_t` datatype.
+   Usually an alias for another unsigned integer type.
 
 
 .. class:: c_ssize_t
 
-   Represents the C :c:type:`ssize_t` datatype.
+   Represents the :c:type:`Py_ssize_t` datatype.
+   This is a signed version of :c:type:`size_t`;
+   that is, the POSIX :c:type:`ssize_t` type.
+   Usually an alias for another integer type.
 
    .. versionadded:: 3.2
 
@@ -2622,6 +2738,7 @@ These are the fundamental ctypes data types:
 .. class:: c_time_t
 
    Represents the C :c:type:`time_t` datatype.
+   Usually an alias for another integer type.
 
    .. versionadded:: 3.12
 
@@ -2674,6 +2791,8 @@ These are the fundamental ctypes data types:
 
    Represents the C :c:expr:`unsigned long long` datatype.  The constructor
    accepts an optional integer initializer; no overflow checking is done.
+   On platforms where ``sizeof(long long) == sizeof(long)`` it is an alias
+   to :class:`c_long`.
 
 
 .. class:: c_ushort
@@ -2725,8 +2844,11 @@ These are the fundamental ctypes data types:
    .. versionchanged:: 3.14
       :class:`!py_object` is now a :term:`generic type`.
 
+.. _ctypes-wintypes:
+
 The :mod:`!ctypes.wintypes` module provides quite some other Windows specific
-data types, for example :c:type:`!HWND`, :c:type:`!WPARAM`, or :c:type:`!DWORD`.
+data types, for example :c:type:`!HWND`, :c:type:`!WPARAM`,
+:c:type:`!VARIANT_BOOL` or :c:type:`!DWORD`.
 Some useful structures like :c:type:`!MSG` or :c:type:`!RECT` are also defined.
 
 
