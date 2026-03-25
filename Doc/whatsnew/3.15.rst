@@ -445,7 +445,7 @@ Improved error messages
      >>> {}.put("a", 1)  # doctest: +ELLIPSIS
      Traceback (most recent call last):
      ...
-     AttributeError: 'dict' object has no attribute 'put'. Use d[k] = v for item assignment.
+     AttributeError: 'dict' object has no attribute 'put'. Use d[k] = v.
 
   (Contributed by Matt Van Horn in :gh:`146406`.)
 

@@ -1673,7 +1673,7 @@ _CROSS_LANGUAGE_HINTS = {
     (list, "concat"): ("extend", False),
     # list -- Java/C# equivalents
     (list, "addAll"): ("extend", False),
-    (list, "contains"): ("Use 'x in list' to check membership.", True),
+    (list, "contains"): ("Use 'x in list'.", True),
     # list -- wrong-type suggestion more likely means the user expected a set
     (list, "add"): ("Did you mean to use a 'set' object?", True),
     # str -- JavaScript equivalents
@@ -1686,7 +1686,7 @@ _CROSS_LANGUAGE_HINTS = {
     (dict, "entrySet"): ("items", False),
     (dict, "entries"): ("items", False),
     (dict, "putAll"): ("update", False),
-    (dict, "put"): ("Use d[k] = v for item assignment.", True),
+    (dict, "put"): ("Use d[k] = v.", True),
 }
 
 

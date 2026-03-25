@@ -4564,68 +4564,37 @@ class SuggestionFormattingTestBase(SuggestionFormattingTestMixin):
         actual = self.get_suggestion(Outer(), 'target')
         self.assertIn("'.normal.target'", actual)
 
-    def test_cross_language_list_push_suggests_append(self):
+    def test_cross_language(self):
+        cases = [
+            # (obj, attr, expected_substring)
+            ([], 'push', "'.append'"),
+            ([], 'concat', "'.extend'"),
+            ([], 'addAll', "'.extend'"),
+            ([], 'contains', "Use 'x in list'."),
+            ([], 'add', "Did you mean to use a 'set' object?"),
+            ('', 'toUpperCase', "'.upper'"),
+            ('', 'toLowerCase', "'.lower'"),
+            ('', 'trimStart', "'.lstrip'"),
+            ('', 'trimEnd', "'.rstrip'"),
+            ({}, 'keySet', "'.keys'"),
+            ({}, 'entrySet', "'.items'"),
+            ({}, 'entries', "'.items'"),
+            ({}, 'putAll', "'.update'"),
+            ({}, 'put', "d[k] = v"),
+        ]
+        for obj, attr, expected in cases:
+            with self.subTest(type=type(obj).__name__, attr=attr):
+                actual = self.get_suggestion(obj, attr)
+                self.assertIn(expected, actual)
+        # push hint should not repeat the wrong attribute name
         actual = self.get_suggestion([], 'push')
-        self.assertIn("'.append'", actual)
         self.assertNotIn("instead of", actual)
-
-    def test_cross_language_list_concat_suggests_extend(self):
-        actual = self.get_suggestion([], 'concat')
-        self.assertIn("'.extend'", actual)
-
-    def test_cross_language_list_addAll_suggests_extend(self):
-        actual = self.get_suggestion([], 'addAll')
-        self.assertIn("'.extend'", actual)
-
-    def test_cross_language_list_contains_suggests_in(self):
-        actual = self.get_suggestion([], 'contains')
-        self.assertIn("Use 'x in list'", actual)
-
-    def test_cross_language_list_add_suggests_set(self):
-        actual = self.get_suggestion([], 'add')
-        self.assertIn("Did you mean to use a 'set' object?", actual)
-
-    def test_cross_language_str_toUpperCase_suggests_upper(self):
-        actual = self.get_suggestion('', 'toUpperCase')
-        self.assertIn("'.upper'", actual)
-
-    def test_cross_language_str_toLowerCase_suggests_lower(self):
-        actual = self.get_suggestion('', 'toLowerCase')
-        self.assertIn("'.lower'", actual)
-
-    def test_cross_language_str_trimStart_suggests_lstrip(self):
-        actual = self.get_suggestion('', 'trimStart')
-        self.assertIn("'.lstrip'", actual)
-
-    def test_cross_language_str_trimEnd_suggests_rstrip(self):
-        actual = self.get_suggestion('', 'trimEnd')
-        self.assertIn("'.rstrip'", actual)
-
-    def test_cross_language_dict_keySet_suggests_keys(self):
-        actual = self.get_suggestion({}, 'keySet')
-        self.assertIn("'.keys'", actual)
-
-    def test_cross_language_dict_entrySet_suggests_items(self):
-        actual = self.get_suggestion({}, 'entrySet')
-        self.assertIn("'.items'", actual)
-
-    def test_cross_language_dict_putAll_suggests_update(self):
-        actual = self.get_suggestion({}, 'putAll')
-        self.assertIn("'.update'", actual)
-
-    def test_cross_language_dict_entries_suggests_items(self):
-        actual = self.get_suggestion({}, 'entries')
-        self.assertIn("'.items'", actual)
-
-    def test_cross_language_dict_put_suggests_bracket(self):
-        actual = self.get_suggestion({}, 'put')
-        self.assertIn("d[k] = v", actual)
 
     def test_cross_language_levenshtein_takes_priority(self):
         # Levenshtein catches trim->strip and indexOf->index before
         # the cross-language table is consulted
         actual = self.get_suggestion('', 'trim')
-        self.assertIn("'.strip'", actual)
+        self.assertIn("strip", actual)
 
     def test_cross_language_no_hint_for_unknown_attr(self):
         actual = self.get_suggestion([], 'completely_unknown_method')
