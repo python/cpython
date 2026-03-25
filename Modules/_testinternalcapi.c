@@ -1904,7 +1904,7 @@ dict_getitem_knownhash(PyObject *self, PyObject *args)
 }
 
 static size_t
-dict_index_bytes_for_keys(PyDictKeysObject *keys)
+dict_index_bytes_for_keys(const PyDictKeysObject *keys)
 {
     int index_shift = keys->dk_log2_index_bytes - DK_LOG_SIZE(keys);
     if (index_shift == 0) {
@@ -1936,7 +1936,7 @@ dict_check_indices_layout(PyObject *self, PyObject *arg)
     PyDictKeysObject *keys = mp->ma_keys;
 
     size_t indices_size = (size_t)1 << keys->dk_log2_index_bytes;
-    char *base = (char *)_DK_ALLOC_BASE(keys);
+    const char *base = (const char *)_DK_ALLOC_CONST_BASE(keys);
     char *header = (char *)keys;
     char *entries = (char *)_DK_ENTRIES(keys);
 
@@ -1945,7 +1945,7 @@ dict_check_indices_layout(PyObject *self, PyObject *arg)
     ok &= (entries == header + offsetof(PyDictKeysObject, dk_entries));
 
     size_t index_bytes = dict_index_bytes_for_keys(keys);
-    char *idx_base = (char *)_DK_INDICES_BASE(keys);
+    const char *idx_base = (const char *)_DK_INDICES_CONST_BASE(keys);
     /* Index 0 is stored immediately before the header. */
     char *idx0 = (char *)keys - (ptrdiff_t)index_bytes;
     ok &= (idx0 == idx_base + indices_size - (ptrdiff_t)index_bytes);

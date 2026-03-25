@@ -232,13 +232,21 @@ struct _dictvalues {
 #define DK_SIZE(dk)      (1<<DK_LOG_SIZE(dk))
 #endif
 
-static inline void* _DK_INDICES_BASE(const PyDictKeysObject *dk) {
+static inline const void* _DK_INDICES_CONST_BASE(const PyDictKeysObject *dk) {
     size_t indices_size = (size_t)1 << dk->dk_log2_index_bytes;
-    return (char *)dk - indices_size;
+    return (const char *)dk - indices_size;
+}
+
+static inline void* _DK_INDICES_BASE(PyDictKeysObject *dk) {
+    return (void *)_DK_INDICES_CONST_BASE(dk);
+}
+
+static inline const void* _DK_ALLOC_CONST_BASE(const PyDictKeysObject *dk) {
+    return _DK_INDICES_CONST_BASE(dk);
 }
 
 static inline void* _DK_ALLOC_BASE(PyDictKeysObject *dk) {
-    return _DK_INDICES_BASE(dk);
+    return (void *)_DK_ALLOC_CONST_BASE(dk);
 }
 
 static inline void* _DK_ENTRIES(PyDictKeysObject *dk) {
