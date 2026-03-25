@@ -672,8 +672,8 @@ cf_setitem(arrayobject *ap, Py_ssize_t i, PyObject *v)
 
     CHECK_ARRAY_BOUNDS(ap, i);
 
-    f[0] = x.real;
-    f[1] = x.imag;
+    f[0] = (float)x.real;
+    f[1] = (float)x.imag;
     if (i >= 0) {
         memcpy(ap->ob_item + i*sizeof(f), &f, sizeof(f));
     }

@@ -118,6 +118,8 @@ IEEE_754_FLOAT_COMPLEX_BE = 23
 IEEE_754_DOUBLE_COMPLEX_LE = 24
 IEEE_754_DOUBLE_COMPLEX_BE = 25
 
+MACHINE_FORMAT_CODE_MAX = 25
+
 
 class ArrayReconstructorTest(unittest.TestCase):
 
@@ -143,7 +145,7 @@ class ArrayReconstructorTest(unittest.TestCase):
         self.assertRaises(ValueError, array_reconstructor,
                           array.array, "b", UNKNOWN_FORMAT, b"")
         self.assertRaises(ValueError, array_reconstructor,
-                          array.array, "b", 26, b"")
+                          array.array, "b", MACHINE_FORMAT_CODE_MAX + 1, b"")
         self.assertRaises(ValueError, array_reconstructor,
                           array.array, "d", 16, b"a")
 
