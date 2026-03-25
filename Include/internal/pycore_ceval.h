@@ -286,6 +286,9 @@ PyAPI_FUNC(PyObject *)_Py_MakeCoro(PyFunctionObject *func);
    and asynchronous exception */
 PyAPI_FUNC(int) _Py_HandlePending(PyThreadState *tstate);
 
+/* Raise exception set by PyThreadState_SetAsyncExc, if any */
+PyAPI_FUNC(int) _PyEval_RaiseAsyncExc(PyThreadState *tstate);
+
 extern PyObject * _PyEval_GetFrameLocals(void);
 
 typedef PyObject *(*conversion_func)(PyObject *);
@@ -339,6 +342,7 @@ PyAPI_FUNC(PyObject *) _PyEval_GetAwaitable(PyObject *iterable, int oparg);
 PyAPI_FUNC(PyObject *) _PyEval_LoadName(PyThreadState *tstate, _PyInterpreterFrame *frame, PyObject *name);
 PyAPI_FUNC(int)
 _Py_Check_ArgsIterable(PyThreadState *tstate, PyObject *func, PyObject *args);
+PyAPI_FUNC(_PyStackRef) _PyEval_GetIter(_PyStackRef iterable, _PyStackRef *null_or_index, int yield_from);
 
 /*
  * Indicate whether a special method of given 'oparg' can use the (improved)

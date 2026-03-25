@@ -501,7 +501,7 @@ _PyCode_Validate(struct _PyCodeConstructor *con)
 }
 
 extern void
-_PyCode_Quicken(_Py_CODEUNIT *instructions, Py_ssize_t size, int enable_counters);
+_PyCode_Quicken(_Py_CODEUNIT *instructions, Py_ssize_t size, int enable_counters, int flags);
 
 #ifdef Py_GIL_DISABLED
 static _PyCodeArray * _PyCodeArray_New(Py_ssize_t size);
@@ -579,11 +579,12 @@ init_code(PyCodeObject *co, struct _PyCodeConstructor *con)
         entry_point++;
     }
     co->_co_firsttraceable = entry_point;
+
 #ifdef Py_GIL_DISABLED
     int enable_counters = interp->config.tlbc_enabled && interp->opt_config.specialization_enabled;
-    _PyCode_Quicken(_PyCode_CODE(co), Py_SIZE(co), enable_counters);
+    _PyCode_Quicken(_PyCode_CODE(co), Py_SIZE(co), enable_counters, co->co_flags);
 #else
-    _PyCode_Quicken(_PyCode_CODE(co), Py_SIZE(co), interp->opt_config.specialization_enabled);
+    _PyCode_Quicken(_PyCode_CODE(co), Py_SIZE(co), interp->opt_config.specialization_enabled, co->co_flags);
 #endif
     notify_code_watchers(PY_CODE_EVENT_CREATE, co);
     return 0;
@@ -931,8 +932,9 @@ PyUnstable_Code_New(int argcount, int kwonlyargcount,
 // NOTE: When modifying the construction of PyCode_NewEmpty, please also change
 // test.test_code.CodeLocationTest.test_code_new_empty to keep it in sync!
 
-static const uint8_t assert0[6] = {
+static const uint8_t assert0[8] = {
     RESUME, RESUME_AT_FUNC_START,
+    CACHE, 0,
     LOAD_COMMON_CONSTANT, CONSTANT_ASSERTIONERROR,
     RAISE_VARARGS, 1
 };
@@ -940,7 +942,7 @@ static const uint8_t assert0[6] = {
 static const uint8_t linetable[2] = {
     (1 << 7)  // New entry.
     | (PY_CODE_LOCATION_INFO_NO_COLUMNS << 3)
-    | (3 - 1),  // Three code units.
+    | (4 - 1),  // Four code units.
     0,  // Offset from co_firstlineno.
 };
 
@@ -966,7 +968,7 @@ PyCode_NewEmpty(const char *filename, const char *funcname, int firstlineno)
     if (filename_ob == NULL) {
         goto failed;
     }
-    code_ob = PyBytes_FromStringAndSize((const char *)assert0, 6);
+    code_ob = PyBytes_FromStringAndSize((const char *)assert0, 8);
     if (code_ob == NULL) {
         goto failed;
     }
@@ -1830,7 +1832,7 @@ identify_unbound_names(PyThreadState *tstate, PyCodeObject *co,
     assert(attrnames != NULL);
     assert(PySet_Check(attrnames));
     assert(PySet_GET_SIZE(attrnames) == 0 || counts != NULL);
-    assert(globalsns == NULL || PyDict_Check(globalsns));
+    assert(globalsns == NULL || PyAnyDict_Check(globalsns));
     assert(builtinsns == NULL || PyDict_Check(builtinsns));
     assert(counts == NULL || counts->total == 0);
     struct co_unbound_counts unbound = {0};
@@ -2605,7 +2607,7 @@ code_richcompare(PyObject *self, PyObject *other, int op)
     cp = (PyCodeObject *)other;
 
     eq = PyObject_RichCompareBool(co->co_name, cp->co_name, Py_EQ);
-    if (!eq) goto unequal;
+    if (eq <= 0) goto unequal;
     eq = co->co_argcount == cp->co_argcount;
     if (!eq) goto unequal;
     eq = co->co_posonlyargcount == cp->co_posonlyargcount;
@@ -3459,7 +3461,7 @@ copy_code(PyInterpreterState *interp, _Py_CODEUNIT *dst, PyCodeObject *co)
     for (int i = 0; i < code_len; i += _PyInstruction_GetLength(co, i)) {
         dst[i] = deopt_code_unit(co, i);
     }
-    _PyCode_Quicken(dst, code_len, interp->opt_config.specialization_enabled);
+    _PyCode_Quicken(dst, code_len, interp->opt_config.specialization_enabled, co->co_flags);
 }
 
 static Py_ssize_t

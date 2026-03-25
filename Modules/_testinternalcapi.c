@@ -196,6 +196,10 @@ classify_address(uintptr_t addr, int jit_enabled, PyInterpreterState *interp)
         if (strncmp(base, "python", 6) == 0) {
             return "python";
         }
+        // Match "libpython3.15.so.1.0"
+        if (strncmp(base, "libpython", 9) == 0) {
+            return "python";
+        }
         return "other";
     }
 #ifdef _Py_JIT
@@ -274,10 +278,8 @@ get_jit_code_ranges(PyObject *self, PyObject *Py_UNUSED(args))
     if (interp == NULL) {
         return ranges;
     }
-    for (_PyExecutorObject *exec = interp->executor_list_head;
-         exec != NULL;
-         exec = exec->vm_data.links.next)
-    {
+    for (size_t i = 0; i < interp->executor_count; i++) {
+        _PyExecutorObject *exec = interp->executor_ptrs[i];
         if (exec->jit_code == NULL || exec->jit_size == 0) {
             continue;
         }
@@ -2966,6 +2968,8 @@ static PyMethodDef module_functions[] = {
 static int
 module_exec(PyObject *module)
 {
+    PyInterpreterState *interp = PyInterpreterState_Get();
+
     if (_PyTestInternalCapi_Init_Lock(module) < 0) {
         return 1;
     }
@@ -2979,6 +2983,9 @@ module_exec(PyObject *module)
         return 1;
     }
     if (_PyTestInternalCapi_Init_CriticalSection(module) < 0) {
+        return 1;
+    }
+    if (_PyTestInternalCapi_Init_Tuple(module) < 0) {
         return 1;
     }
 
@@ -3007,9 +3014,18 @@ module_exec(PyObject *module)
         return 1;
     }
 
+    // + 1 more due to one loop spent on tracing.
+    unsigned long threshold = interp->opt_config.jump_backward_initial_value + 2;
     if (PyModule_Add(module, "TIER2_THRESHOLD",
-        // + 1 more due to one loop spent on tracing.
-                        PyLong_FromLong(JUMP_BACKWARD_INITIAL_VALUE + 2)) < 0) {
+                        PyLong_FromUnsignedLong(threshold)) < 0) {
+        return 1;
+    }
+
+    // + 1 to specialize from RESUME to RESUME_CHECK_JIT
+    // + 1 more due to one loop spent on tracing.
+    long resume_threshold = interp->opt_config.resume_initial_value + 2;
+    if (PyModule_Add(module, "TIER2_RESUME_THRESHOLD",
+                    PyLong_FromLong(resume_threshold)) < 0) {
         return 1;
     }
 

@@ -446,7 +446,9 @@ extern "C" {
 /*
  * Specify alignment on compilers that support it.
  */
-#if defined(__GNUC__) && __GNUC__ >= 3
+#ifdef Py_BUILD_CORE
+// always use _Py_ALIGNED_DEF instead
+#elif defined(__GNUC__) && __GNUC__ >= 3
 #define Py_ALIGNED(x) __attribute__((aligned(x)))
 #else
 #define Py_ALIGNED(x)
