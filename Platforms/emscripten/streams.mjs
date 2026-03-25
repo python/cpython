@@ -111,8 +111,8 @@ const prepareBuffer = (buffer, offset, length) =>
   asUint8Array(buffer).subarray(offset, offset + length);
 
 const TTY_OPS = {
-  ioctl_tiocgwinsz(stream) {
-    return stream.devops.ioctl_tiocgwinsz();
+  ioctl_tiocgwinsz(tty) {
+    return tty.devops.ioctl_tiocgwinsz();
   },
 };
 
