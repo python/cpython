@@ -638,21 +638,23 @@ typedef struct {
 } _PyDict_EmptyKeysStorage;
 
 static const _PyDict_EmptyKeysStorage empty_keys_storage = {
-    {DKIX_EMPTY, DKIX_EMPTY, DKIX_EMPTY, DKIX_EMPTY,
-     DKIX_EMPTY, DKIX_EMPTY, DKIX_EMPTY, DKIX_EMPTY},
-    {
-        _Py_DICT_IMMORTAL_INITIAL_REFCNT, /* dk_refcnt */
-        0, /* dk_log2_size */
-        3, /* dk_log2_index_bytes */
-        DICT_KEYS_UNICODE, /* dk_kind */
+    .indices = {
+        DKIX_EMPTY, DKIX_EMPTY, DKIX_EMPTY, DKIX_EMPTY,
+        DKIX_EMPTY, DKIX_EMPTY, DKIX_EMPTY, DKIX_EMPTY,
+    },
+    .keys = {
+        .dk_refcnt = _Py_DICT_IMMORTAL_INITIAL_REFCNT,
+        .dk_log2_size = 0,
+        .dk_log2_index_bytes = 3,
+        .dk_kind = DICT_KEYS_UNICODE,
 #ifdef Py_GIL_DISABLED
-        {0}, /* dk_mutex */
+        .dk_mutex = {0},
 #endif
-        1, /* dk_version */
-        0, /* dk_usable (immutable) */
-        0, /* dk_nentries */
-        {{0}}, /* dk_entries */
-    }
+        .dk_version = 1,
+        .dk_usable = 0,  /* immutable */
+        .dk_nentries = 0,
+        .dk_entries = {.unicode_entries = {{0}}},
+    },
 };
 
 #define Py_EMPTY_KEYS ((PyDictKeysObject *)&empty_keys_storage.keys)
