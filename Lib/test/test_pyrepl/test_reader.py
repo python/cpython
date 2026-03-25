@@ -228,6 +228,7 @@ class TestReader(ScreenEqualMixin, TestCase):
             console.get_event.side_effect = events
             console.height = 100
             console.width = 80
+            console.getheightwidth = MagicMock(side_effect=lambda: (console.height, console.width))
             console.input_hook = input_hook
             return console
 
