@@ -245,7 +245,7 @@ jobs:
           needs.release.result == 'failure' }}
     runs-on: ubuntu-latest
     steps:
-      - name: Create failure issue
+      - name: Report failure issue
         uses: actions/github-script@v7
         env:
           BUILD_RESULT: ${{ needs.build-and-test.result }}
@@ -253,7 +253,9 @@ jobs:
           github-token: ${{ secrets.GITHUB_TOKEN }}
           script: |
             const runUrl = `${context.serverUrl}/${context.repo.owner}/${context.repo.repo}/actions/runs/${context.runId}`;
-            const title = `CI failure (run ${context.runNumber})`;
+            const owner = context.repo.owner;
+            const repo = context.repo.repo;
+            const title = `CI failure`;
             const body = [
               `The cpython CI workflow failed.`,
               `- Trigger: ${context.eventName}`,
@@ -263,10 +265,20 @@ jobs:
               '',
               'Please investigate and take any corrective actions.'
             ].join('\n');
-            await github.rest.issues.create({
-              owner: context.repo.owner,
-              repo: context.repo.repo,
-              title,
-              body,
-              assignees: ['ppenna']
+
+            const { data: search } = await github.rest.search.issuesAndPullRequests({
+              q: `repo:${owner}/${repo} is:issue is:open in:title "CI failure"`
             });
+            const existing = search.items.find(i => i.title === title);
+
+            if (existing) {
+              await github.rest.issues.createComment({ owner, repo, issue_number: existing.number, body });
+              const currentAssignees = existing.assignees.map(a => a.login);
+              const desired = ['ppenna', 'danbugs'];
+              const missing = desired.filter(a => !currentAssignees.includes(a));
+              if (missing.length > 0) {
+                await github.rest.issues.addAssignees({ owner, repo, issue_number: existing.number, assignees: missing });
+              }
+            } else {
+              await github.rest.issues.create({ owner, repo, title, body, assignees: ['ppenna', 'danbugs'] });
+            }
