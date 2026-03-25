@@ -127,7 +127,7 @@ whose size is determined when the object is allocated.
 struct _object {
     _Py_ANONYMOUS union {
 #if SIZEOF_VOID_P > 4
-        PY_INT64_T ob_refcnt_full; /* This field is needed for efficient initialization with Clang on ARM */
+        int64_t ob_refcnt_full; /* This field is needed for efficient initialization with Clang on ARM */
         struct {
 #  if PY_BIG_ENDIAN
             uint16_t ob_flags;
