@@ -599,8 +599,8 @@ Other language changes
   (Contributed by James Hilton-Balfe in :gh:`128335`.)
 
 * The class :class:`memoryview` now supports the :c:expr:`float complex` and
-  :c:expr:`double complex` C types (formatting characters ``'F'`` and ``'D'``
-  respectively).
+  :c:expr:`double complex` C types: formatting characters ``'F'`` and ``'D'``
+  respectively.
   (Contributed by Sergey B Kirpichev in :gh:`146151`.)
 
 
