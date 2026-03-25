@@ -1145,6 +1145,7 @@ _PyErr_Display(PyObject *file, PyObject *unused, PyObject *value, PyObject *tb)
         "traceback",
         "_print_exception_bltin");
     if (print_exception_fn == NULL || !PyCallable_Check(print_exception_fn)) {
+        Py_XDECREF(print_exception_fn);
         goto fallback;
     }
 
@@ -1347,8 +1348,9 @@ static PyObject *
 run_eval_code_obj(PyThreadState *tstate, PyCodeObject *co, PyObject *globals, PyObject *locals)
 {
     /* Set globals['__builtins__'] if it doesn't exist */
-    if (!globals || !PyDict_Check(globals)) {
-        PyErr_SetString(PyExc_SystemError, "globals must be a real dict");
+    if (!globals || !PyAnyDict_Check(globals)) {
+        PyErr_SetString(PyExc_SystemError,
+                        "globals must be a real dict or a real frozendict");
         return NULL;
     }
     int has_builtins = PyDict_ContainsString(globals, "__builtins__");

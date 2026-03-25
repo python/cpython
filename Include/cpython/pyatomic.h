@@ -72,8 +72,8 @@
 //   def _Py_atomic_load_ptr_acquire(obj):
 //       return obj  # acquire
 //
-//   def _Py_atomic_store_ptr_release(obj):
-//       return obj  # release
+//   def _Py_atomic_store_ptr_release(obj, value):
+//       obj = value  # release
 //
 //   def _Py_atomic_fence_seq_cst():
 //       # sequential consistency
@@ -531,6 +531,9 @@ _Py_atomic_store_int_release(int *obj, int value);
 
 static inline int
 _Py_atomic_load_int_acquire(const int *obj);
+
+static inline void
+_Py_atomic_store_uint_release(unsigned int *obj, unsigned int value);
 
 static inline void
 _Py_atomic_store_uint32_release(uint32_t *obj, uint32_t value);
