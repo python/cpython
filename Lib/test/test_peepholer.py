@@ -241,6 +241,29 @@ class TestTranforms(BytecodeTestCase):
         self.assertTrue(g(4))
         self.check_lnotab(g)
 
+    def test_constant_folding_frozendict_call(self):
+        # frozendict(key=const, ...) should be folded to LOAD_CONST
+        # with a runtime guard (fallback CALL_KW path still exists)
+        def f():
+            return frozendict(x=1, y=2)
+
+        code = f.__code__
+        self.assertInBytecode(code, 'LOAD_CONST', frozendict(x=1, y=2))
+        self.assertInBytecode(code, 'LOAD_COMMON_CONSTANT', 7)
+        result = f()
+        self.assertEqual(result, frozendict(x=1, y=2))
+        self.assertIsInstance(result, frozendict)
+
+    def test_constant_folding_frozendict_call_shadowed(self):
+        # When frozendict is shadowed, the fallback path should be used
+        def f():
+            frozendict = dict
+            return frozendict(x=1, y=2)
+
+        result = f()
+        self.assertEqual(result, {'x': 1, 'y': 2})
+        self.assertIsInstance(result, dict)
+
     def test_constant_folding_small_int(self):
         tests = [
             ('(0, )[0]', 0),

@@ -4128,6 +4128,66 @@ codegen_validate_keywords(compiler *c, asdl_keyword_seq *keywords)
     return SUCCESS;
 }
 
+/* Try to fold frozendict(key=const, ...) into LOAD_CONST with a runtime guard.
+   Called after the function has been loaded onto the stack.
+   Return 1 if optimization was emitted, 0 if not, -1 on error. */
+static int
+maybe_optimize_frozendict_call(compiler *c, expr_ty e, jump_target_label end)
+{
+    expr_ty func = e->v.Call.func;
+    asdl_expr_seq *args = e->v.Call.args;
+    asdl_keyword_seq *kwds = e->v.Call.keywords;
+
+    if (func->kind != Name_kind ||
+        !_PyUnicode_EqualToASCIIString(func->v.Name.id, "frozendict") ||
+        asdl_seq_LEN(args) != 0)
+    {
+        return 0;
+    }
+
+    /* All keywords must have names (no **kwargs) and constant values */
+    Py_ssize_t nkwds = asdl_seq_LEN(kwds);
+    for (Py_ssize_t i = 0; i < nkwds; i++) {
+        keyword_ty kw = asdl_seq_GET(kwds, i);
+        if (kw->arg == NULL || kw->value->kind != Constant_kind) {
+            return 0;
+        }
+    }
+
+    /* Build the frozendict at compile time */
+    PyObject *dict = PyDict_New();
+    if (dict == NULL) {
+        return -1;
+    }
+    for (Py_ssize_t i = 0; i < nkwds; i++) {
+        keyword_ty kw = asdl_seq_GET(kwds, i);
+        if (PyDict_SetItem(dict, kw->arg, kw->value->v.Constant.value) < 0) {
+            Py_DECREF(dict);
+            return -1;
+        }
+    }
+    PyObject *fd = PyFrozenDict_New(dict);
+    Py_DECREF(dict);
+    if (fd == NULL) {
+        return -1;
+    }
+
+    location loc = LOC(func);
+    NEW_JUMP_TARGET_LABEL(c, skip_optimization);
+
+    ADDOP_I(c, loc, COPY, 1);
+    ADDOP_I(c, loc, LOAD_COMMON_CONSTANT, CONSTANT_BUILTIN_FROZENDICT);
+    ADDOP_COMPARE(c, loc, Is);
+    ADDOP_JUMP(c, loc, POP_JUMP_IF_FALSE, skip_optimization);
+    ADDOP(c, loc, POP_TOP);
+    ADDOP_LOAD_CONST(c, LOC(e), fd);
+    Py_DECREF(fd);
+    ADDOP_JUMP(c, loc, JUMP, end);
+
+    USE_LABEL(c, skip_optimization);
+    return 1;
+}
+
 static int
 codegen_call(compiler *c, expr_ty e)
 {
@@ -4143,6 +4203,7 @@ codegen_call(compiler *c, expr_ty e)
     RETURN_IF_ERROR(check_caller(c, e->v.Call.func));
     VISIT(c, expr, e->v.Call.func);
     RETURN_IF_ERROR(maybe_optimize_function_call(c, e, skip_normal_call));
+    RETURN_IF_ERROR(maybe_optimize_frozendict_call(c, e, skip_normal_call));
     location loc = LOC(e->v.Call.func);
     ADDOP(c, loc, PUSH_NULL);
     loc = LOC(e);

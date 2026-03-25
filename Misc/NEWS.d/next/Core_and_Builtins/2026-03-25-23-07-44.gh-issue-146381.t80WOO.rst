@@ -1,0 +1,2 @@
+Fold frozendict(key=const, ...) calls to LOAD_CONST in codegen. Patch by
+Donghee Na.
