@@ -1569,7 +1569,7 @@ class CFPTest(NumberTest):
         if a.itemsize in (1, 2, 4, 8):
             b = array.array(self.typecode, self.example)
             b.byteswap()
-            if a.itemsize==1:
+            if a.itemsize == 1:
                 self.assertEqual(a, b)
             else:
                 # On alphas treating the byte swapped bit patterns as

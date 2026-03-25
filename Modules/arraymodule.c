@@ -1558,8 +1558,8 @@ array.array.byteswap
 
 Byteswap all items of the array.
 
-If the items in the array are not 1, 2, 4, 8 or 16 bytes in size, RuntimeError is
-raised.  Note, that for complex types the order of
+If the items in the array are not 1, 2, 4, 8 or 16 bytes in size, RuntimeError
+is raised.  Note, that for complex types the order of
 components (the real part, followed by imaginary part) is preserved.
 [clinic start generated code]*/
 
@@ -2359,8 +2359,9 @@ array__array_reconstructor_impl(PyObject *module, PyTypeObject *arraytype,
         const char *memstr = PyBytes_AS_STRING(items);
 
         converted_items = PyList_New(itemcount);
-        if (converted_items == NULL)
+        if (converted_items == NULL) {
             return NULL;
+        }
         for (i = 0; i < itemcount; i++) {
             PyObject *pycomplex = PyComplex_FromDoubles(
                 PyFloat_Unpack4(&memstr[i * 8], le),
@@ -2381,8 +2382,9 @@ array__array_reconstructor_impl(PyObject *module, PyTypeObject *arraytype,
         const char *memstr = PyBytes_AS_STRING(items);
 
         converted_items = PyList_New(itemcount);
-        if (converted_items == NULL)
+        if (converted_items == NULL) {
             return NULL;
+        }
         for (i = 0; i < itemcount; i++) {
             PyObject *pycomplex = PyComplex_FromDoubles(
                 PyFloat_Unpack8(&memstr[i * 16], le),
