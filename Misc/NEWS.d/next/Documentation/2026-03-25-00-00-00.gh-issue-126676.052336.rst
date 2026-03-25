@@ -1,0 +1,4 @@
+Expand :mod:`argparse` documentation for ``type=bool`` with a warning
+admonition, a demonstration of the surprising behavior, and recommended
+alternatives (``BooleanOptionalAction``, ``store_true``/``store_false``,
+and a custom converter function).

@@ -1116,9 +1116,58 @@ User defined functions can be used as well:
    >>> parser.parse_args(['"The Tale of Two Cities"'])
    Namespace(short_title='"the-tale-of-two-citi')
 
-The :func:`bool` function is not recommended as a type converter.  All it does
-is convert empty strings to ``False`` and non-empty strings to ``True``.
-This is usually not what is desired.
+.. warning::
+
+   The :func:`bool` function is not recommended as a type converter.  All it
+   does is convert empty strings to ``False`` and non-empty strings to
+   ``True``.  This is usually not what is desired::
+
+      >>> parser = argparse.ArgumentParser()
+      >>> _ = parser.add_argument('--verbose', type=bool)
+      >>> parser.parse_args(['--verbose', 'False'])
+      Namespace(verbose=True)
+
+   ``'False'`` is a non-empty string, so :func:`bool` converts it to
+   ``True``.
+
+   To handle boolean flags, use one of the following patterns instead:
+
+   * For ``--flag``/``--no-flag`` style options, use
+     :class:`BooleanOptionalAction`::
+
+        >>> parser = argparse.ArgumentParser()
+        >>> _ = parser.add_argument('--verbose', action=argparse.BooleanOptionalAction)
+        >>> parser.parse_args(['--verbose'])
+        Namespace(verbose=True)
+        >>> parser.parse_args(['--no-verbose'])
+        Namespace(verbose=False)
+
+   * For a flag that sets a ``True`` or ``False`` value, use
+     ``action='store_true'`` or ``action='store_false'``::
+
+        >>> parser = argparse.ArgumentParser()
+        >>> _ = parser.add_argument('--verbose', action='store_true')
+        >>> parser.parse_args(['--verbose'])
+        Namespace(verbose=True)
+        >>> parser.parse_args([])
+        Namespace(verbose=False)
+
+   * For a positional or option that accepts the strings ``'true'`` or
+     ``'false'``, define a converter function::
+
+        >>> def str_to_bool(value):
+        ...     if value.casefold() in ('true', '1', 'yes'):
+        ...         return True
+        ...     elif value.casefold() in ('false', '0', 'no'):
+        ...         return False
+        ...     raise argparse.ArgumentTypeError(f'{value!r} is not a boolean value')
+        ...
+        >>> parser = argparse.ArgumentParser()
+        >>> _ = parser.add_argument('--verbose', type=str_to_bool)
+        >>> parser.parse_args(['--verbose', 'yes'])
+        Namespace(verbose=True)
+        >>> parser.parse_args(['--verbose', 'false'])
+        Namespace(verbose=False)
 
 In general, the ``type`` keyword is a convenience that should only be used for
 simple conversions that can only raise one of the three supported exceptions.
