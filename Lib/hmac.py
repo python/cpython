@@ -171,6 +171,7 @@ class HMAC:
         # Call __new__ directly to avoid the expensive __init__.
         other = self.__class__.__new__(self.__class__)
         other.digest_size = self.digest_size
+        other.block_size = self.block_size
         if self._hmac:
             other._hmac = self._hmac.copy()
             other._inner = other._outer = None
@@ -241,6 +242,14 @@ def digest(key, msg, digest):
     if _hashopenssl and isinstance(digest, (str, _functype)):
         try:
             return _hashopenssl.hmac_digest(key, msg, digest)
+        except OverflowError:
+            # OpenSSL's HMAC limits the size of the key to INT_MAX.
+            # Instead of falling back to HACL* implementation which
+            # may still not be supported due to a too large key, we
+            # directly switch to the pure Python fallback instead
+            # even if we could have used streaming HMAC for small keys
+            # but large messages.
+            return _compute_digest_fallback(key, msg, digest)
         except _hashopenssl.UnsupportedDigestmodError:
             pass
 
@@ -248,6 +257,10 @@ def digest(key, msg, digest):
         try:
             return _hmac.compute_digest(key, msg, digest)
         except (OverflowError, _hmac.UnknownHashError):
+            # HACL* HMAC limits the size of the key to UINT32_MAX
+            # so we fallback to the pure Python implementation even
+            # if streaming HMAC may have been used for small keys
+            # and large messages.
             pass
 
     return _compute_digest_fallback(key, msg, digest)

@@ -239,6 +239,37 @@ class EmbeddingTests(EmbeddingTestsMixin, unittest.TestCase):
         lines = "\n".join(lines) + "\n"
         self.assertEqual(out, lines)
 
+    def test_create_module_from_initfunc(self):
+        out, err = self.run_embedded_interpreter("test_create_module_from_initfunc")
+        self.assertEqual(self._nogil_filtered_err(err, "embedded_ext"), "")
+        self.assertEqual(out,
+                         "<module 'my_test_extension' (static-extension)>\n"
+                         "my_test_extension.executed='yes'\n"
+                         "my_test_extension.exec_slot_ran='yes'\n"
+                         "<module 'embedded_ext' (static-extension)>\n"
+                         "embedded_ext.executed='yes'\n"
+                         )
+
+    def test_inittab_submodule_multiphase(self):
+        out, err = self.run_embedded_interpreter("test_inittab_submodule_multiphase")
+        self.assertEqual(err, "")
+        self.assertEqual(out,
+                         "<module 'mp_pkg.mp_submod' (built-in)>\n"
+                         "<module 'mp_pkg.mp_submod' (built-in)>\n"
+                         "Hello from sub-module\n"
+                         "mp_pkg.mp_submod.mp_submod_exec_slot_ran='yes'\n"
+                         "mp_pkg.mp_pkg_exec_slot_ran='yes'\n"
+                         )
+
+    def test_inittab_submodule_singlephase(self):
+        out, err = self.run_embedded_interpreter("test_inittab_submodule_singlephase")
+        self.assertEqual(self._nogil_filtered_err(err, "sp_pkg"), "")
+        self.assertEqual(out,
+                         "<module 'sp_pkg.sp_submod' (built-in)>\n"
+                         "<module 'sp_pkg.sp_submod' (built-in)>\n"
+                         "Hello from sub-module\n"
+                         )
+
     def test_forced_io_encoding(self):
         # Checks forced configuration of embedded interpreter IO streams
         env = dict(os.environ, PYTHONIOENCODING="utf-8:surrogateescape")
@@ -516,6 +547,24 @@ class EmbeddingTests(EmbeddingTestsMixin, unittest.TestCase):
         out, err = self.run_embedded_interpreter("test_repeated_init_exec", code)
         self.assertEqual(out, '1\n2\n3\n' * INIT_LOOPS)
 
+    @staticmethod
+    def _nogil_filtered_err(err: str, mod_name: str) -> str:
+        if not support.Py_GIL_DISABLED:
+            return err
+
+        # the test imports a singlephase init extension, so it emits a warning
+        # under the free-threaded build
+        expected_runtime_warning = (
+            "RuntimeWarning: The global interpreter lock (GIL)"
+            f" has been enabled to load module '{mod_name}'"
+        )
+        filtered_err_lines = [
+            line
+            for line in err.strip().splitlines()
+            if expected_runtime_warning not in line
+        ]
+        return "\n".join(filtered_err_lines)
+
 
 def config_dev_mode(preconfig, config):
     preconfig['allocator'] = PYMEM_ALLOCATOR_DEBUG
@@ -586,6 +635,7 @@ class InitConfigTests(EmbeddingTestsMixin, unittest.TestCase):
         'tracemalloc': 0,
         'perf_profiling': 0,
         'import_time': 0,
+        'lazy_imports': -1,
         'thread_inherit_context': DEFAULT_THREAD_INHERIT_CONTEXT,
         'context_aware_warnings': DEFAULT_CONTEXT_AWARE_WARNINGS,
         'code_debug_ranges': True,
@@ -593,6 +643,7 @@ class InitConfigTests(EmbeddingTestsMixin, unittest.TestCase):
         'dump_refs': False,
         'dump_refs_file': None,
         'malloc_stats': False,
+        'pymalloc_hugepages': False,
 
         'filesystem_encoding': GET_DEFAULT_CONFIG,
         'filesystem_errors': GET_DEFAULT_CONFIG,
@@ -995,6 +1046,7 @@ class InitConfigTests(EmbeddingTestsMixin, unittest.TestCase):
             'code_debug_ranges': False,
             'show_ref_count': True,
             'malloc_stats': True,
+            'pymalloc_hugepages': True,
 
             'stdio_encoding': 'iso8859-1',
             'stdio_errors': 'replace',
@@ -1060,6 +1112,7 @@ class InitConfigTests(EmbeddingTestsMixin, unittest.TestCase):
             'import_time': 1,
             'code_debug_ranges': False,
             'malloc_stats': True,
+            'pymalloc_hugepages': True,
             'inspect': True,
             'optimization_level': 2,
             'pythonpath_env': '/my/path',
@@ -1096,6 +1149,7 @@ class InitConfigTests(EmbeddingTestsMixin, unittest.TestCase):
             'import_time': 1,
             'code_debug_ranges': False,
             'malloc_stats': True,
+            'pymalloc_hugepages': True,
             'inspect': True,
             'optimization_level': 2,
             'pythonpath_env': '/my/path',
@@ -1232,21 +1286,6 @@ class InitConfigTests(EmbeddingTestsMixin, unittest.TestCase):
         self.check_all_configs("test_init_dont_configure_locale", {}, preconfig,
                                api=API_PYTHON)
 
-    @unittest.skip('as of 3.11 this test no longer works because '
-                   'path calculations do not occur on read')
-    def test_init_read_set(self):
-        config = {
-            'program_name': './init_read_set',
-            'executable': 'my_executable',
-            'base_executable': 'my_executable',
-        }
-        def modify_path(path):
-            path.insert(1, "test_path_insert1")
-            path.append("test_path_append")
-        self.check_all_configs("test_init_read_set", config,
-                               api=API_PYTHON,
-                               modify_path_cb=modify_path)
-
     def test_init_sys_add(self):
         config = {
             'faulthandler': 1,
@@ -1279,6 +1318,24 @@ class InitConfigTests(EmbeddingTestsMixin, unittest.TestCase):
             'sys_path_0': '',
         }
         self.check_all_configs("test_init_run_main", config, api=API_PYTHON)
+
+    def test_init_main(self):
+        code = ('import _testinternalcapi, json; '
+                'print(json.dumps(_testinternalcapi.get_configs()))')
+        config = {
+            'argv': ['-c', 'arg2'],
+            'orig_argv': ['python3',
+                          '-c', code,
+                          'arg2'],
+            'program_name': './python3',
+            'run_command': code + '\n',
+            'parse_argv': True,
+            '_init_main': False,
+            'sys_path_0': '',
+        }
+        self.check_all_configs("test_init_main", config,
+                               api=API_PYTHON,
+                               stderr="Run Python code before _Py_InitializeMain")
 
     def test_init_parse_argv(self):
         config = {
@@ -1452,8 +1509,12 @@ class InitConfigTests(EmbeddingTestsMixin, unittest.TestCase):
         }
         self.default_program_name(config)
         env = {'TESTHOME': home, 'PYTHONPATH': paths_str}
+        # When running from source, TESTHOME will be the build directory, which
+        # isn't a valid home unless _is_python_build is set. getpath will then
+        # fail to find the standard library and show a warning, so we need to
+        # ignore stderr.
         self.check_all_configs("test_init_setpythonhome", config,
-                               api=API_COMPAT, env=env)
+                               api=API_COMPAT, env=env, ignore_stderr=True)
 
     def test_init_is_python_build_with_home(self):
         # Test _Py_path_config._is_python_build configuration (gh-91985)
@@ -1489,15 +1550,26 @@ class InitConfigTests(EmbeddingTestsMixin, unittest.TestCase):
             'exec_prefix': exec_prefix,
             'base_exec_prefix': exec_prefix,
             'pythonpath_env': paths_str,
-            'stdlib_dir': stdlib,
+            'stdlib_dir': stdlib,  # Only correct on _is_python_build==0!
         }
         # The code above is taken from test_init_setpythonhome()
         env = {'TESTHOME': home, 'PYTHONPATH': paths_str}
 
         env['NEGATIVE_ISPYTHONBUILD'] = '1'
         config['_is_python_build'] = 0
+        # This configuration doesn't set a valid stdlibdir/plststdlibdir because
+        # with _is_python_build=0 getpath doesn't check for the build directory
+        # landmarks in PYTHONHOME/Py_SetPythonHome.
+        # getpath correctly shows a warning, which messes up check_all_configs,
+        # so we need to ignore stderr.
         self.check_all_configs("test_init_is_python_build", config,
-                               api=API_COMPAT, env=env)
+                               api=API_COMPAT, env=env, ignore_stderr=True)
+
+        # config['stdlib_dir'] = os.path.join(home, 'Lib')
+        # FIXME: This test does not check if stdlib_dir is calculated correctly.
+        #        test_init_is_python_build runs the initialization twice,
+        #        setting stdlib_dir in _Py_path_config on the first run, which
+        #        then overrides the stdlib_dir calculation (as of GH-108730).
 
         env['NEGATIVE_ISPYTHONBUILD'] = '0'
         config['_is_python_build'] = 1
@@ -1512,8 +1584,14 @@ class InitConfigTests(EmbeddingTestsMixin, unittest.TestCase):
             expected_paths[0] = self.module_search_paths(prefix=prefix)[0]
             config.update(prefix=prefix, base_prefix=prefix,
                           exec_prefix=exec_prefix, base_exec_prefix=exec_prefix)
+        # This also shows the bad stdlib warning, getpath is run twice. The
+        # first time with _is_python_build=0, which results in the warning just
+        # as explained above. However, the second time a valid standard library
+        # should be found, but the stdlib_dir is cached in _Py_path_config from
+        # the first run, which ovewrites it, so it also shows the warning.
+        # Also ignore stderr.
         self.check_all_configs("test_init_is_python_build", config,
-                               api=API_COMPAT, env=env)
+                               api=API_COMPAT, env=env, ignore_stderr=True)
 
     def copy_paths_by_env(self, config):
         all_configs = self._get_expected_config()
@@ -1573,6 +1651,7 @@ class InitConfigTests(EmbeddingTestsMixin, unittest.TestCase):
             prefix = os.path.normpath(os.path.join(tmpdir, vpath))
             # The stdlib dir is dirname(executable) + VPATH + 'Lib'
             stdlibdir = os.path.normpath(os.path.join(tmpdir, vpath, 'Lib'))
+            os.mkdir(stdlibdir)
 
             filename = os.path.join(tmpdir, 'pybuilddir.txt')
             with open(filename, "w", encoding="utf8") as fp:

@@ -9,7 +9,6 @@
 #include "pycore_intrinsics.h"    // INTRINSIC_PRINT
 #include "pycore_pyerrors.h"      // _PyErr_SetString()
 #include "pycore_runtime.h"       // _Py_ID()
-#include "pycore_tuple.h"         // _PyTuple_FromArray()
 #include "pycore_typevarobject.h" // _Py_make_typevar()
 #include "pycore_unicodeobject.h" // _PyUnicode_FromASCII()
 
@@ -192,7 +191,7 @@ static PyObject *
 list_to_tuple(PyThreadState* unused, PyObject *v)
 {
     assert(PyList_Check(v));
-    return _PyTuple_FromArray(((PyListObject *)v)->ob_item, Py_SIZE(v));
+    return PyTuple_FromArray(((PyListObject *)v)->ob_item, Py_SIZE(v));
 }
 
 static PyObject *

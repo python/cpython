@@ -132,7 +132,7 @@ class TestGeneratedCases(unittest.TestCase):
     """
         output = """
         TARGET(OP) {
-            #if Py_TAIL_CALL_INTERP
+            #if _Py_TAIL_CALL_INTERP
             int opcode = OP;
             (void)(opcode);
             #endif
@@ -154,7 +154,7 @@ class TestGeneratedCases(unittest.TestCase):
     """
         output = """
         TARGET(OP) {
-            #if Py_TAIL_CALL_INTERP
+            #if _Py_TAIL_CALL_INTERP
             int opcode = OP;
             (void)(opcode);
             #endif
@@ -165,7 +165,7 @@ class TestGeneratedCases(unittest.TestCase):
             value = stack_pointer[-1];
             SPAM(value);
             stack_pointer += -1;
-            assert(WITHIN_STACK_BOUNDS());
+            ASSERT_WITHIN_STACK_BOUNDS(__FILE__, __LINE__);
             DISPATCH();
         }
     """
@@ -179,7 +179,7 @@ class TestGeneratedCases(unittest.TestCase):
     """
         output = """
         TARGET(OP) {
-            #if Py_TAIL_CALL_INTERP
+            #if _Py_TAIL_CALL_INTERP
             int opcode = OP;
             (void)(opcode);
             #endif
@@ -190,7 +190,7 @@ class TestGeneratedCases(unittest.TestCase):
             res = SPAM();
             stack_pointer[0] = res;
             stack_pointer += 1;
-            assert(WITHIN_STACK_BOUNDS());
+            ASSERT_WITHIN_STACK_BOUNDS(__FILE__, __LINE__);
             DISPATCH();
         }
     """
@@ -205,7 +205,7 @@ class TestGeneratedCases(unittest.TestCase):
     """
         output = """
         TARGET(OP) {
-            #if Py_TAIL_CALL_INTERP
+            #if _Py_TAIL_CALL_INTERP
             int opcode = OP;
             (void)(opcode);
             #endif
@@ -232,7 +232,7 @@ class TestGeneratedCases(unittest.TestCase):
     """
         output = """
         TARGET(OP) {
-            #if Py_TAIL_CALL_INTERP
+            #if _Py_TAIL_CALL_INTERP
             int opcode = OP;
             (void)(opcode);
             #endif
@@ -247,7 +247,7 @@ class TestGeneratedCases(unittest.TestCase):
             res = SPAM(left, right);
             stack_pointer[-2] = res;
             stack_pointer += -1;
-            assert(WITHIN_STACK_BOUNDS());
+            ASSERT_WITHIN_STACK_BOUNDS(__FILE__, __LINE__);
             DISPATCH();
         }
     """
@@ -262,7 +262,7 @@ class TestGeneratedCases(unittest.TestCase):
     """
         output = """
         TARGET(OP) {
-            #if Py_TAIL_CALL_INTERP
+            #if _Py_TAIL_CALL_INTERP
             int opcode = OP;
             (void)(opcode);
             #endif
@@ -296,7 +296,7 @@ class TestGeneratedCases(unittest.TestCase):
     """
         output = """
         TARGET(OP1) {
-            #if Py_TAIL_CALL_INTERP
+            #if _Py_TAIL_CALL_INTERP
             int opcode = OP1;
             (void)(opcode);
             #endif
@@ -313,7 +313,7 @@ class TestGeneratedCases(unittest.TestCase):
         }
 
         TARGET(OP3) {
-            #if Py_TAIL_CALL_INTERP
+            #if _Py_TAIL_CALL_INTERP
             int opcode = OP3;
             (void)(opcode);
             #endif
@@ -355,7 +355,7 @@ class TestGeneratedCases(unittest.TestCase):
     """
         output = """
         TARGET(A) {
-            #if Py_TAIL_CALL_INTERP
+            #if _Py_TAIL_CALL_INTERP
             int opcode = A;
             (void)(opcode);
             #endif
@@ -366,19 +366,19 @@ class TestGeneratedCases(unittest.TestCase):
             _PyStackRef res;
             arg = stack_pointer[-1];
             stack_pointer += -1;
-            assert(WITHIN_STACK_BOUNDS());
+            ASSERT_WITHIN_STACK_BOUNDS(__FILE__, __LINE__);
             _PyFrame_SetStackPointer(frame, stack_pointer);
             escaping_call();
             stack_pointer = _PyFrame_GetStackPointer(frame);
             res = Py_None;
             stack_pointer[0] = res;
             stack_pointer += 1;
-            assert(WITHIN_STACK_BOUNDS());
+            ASSERT_WITHIN_STACK_BOUNDS(__FILE__, __LINE__);
             DISPATCH();
         }
 
         TARGET(B) {
-            #if Py_TAIL_CALL_INTERP
+            #if _Py_TAIL_CALL_INTERP
             int opcode = B;
             (void)(opcode);
             #endif
@@ -421,7 +421,7 @@ class TestGeneratedCases(unittest.TestCase):
     """
         output = """
         TARGET(OP) {
-            #if Py_TAIL_CALL_INTERP
+            #if _Py_TAIL_CALL_INTERP
             int opcode = OP;
             (void)(opcode);
             #endif
@@ -444,7 +444,7 @@ class TestGeneratedCases(unittest.TestCase):
     """
         output = """
         TARGET(OP) {
-            #if Py_TAIL_CALL_INTERP
+            #if _Py_TAIL_CALL_INTERP
             int opcode = OP;
             (void)(opcode);
             #endif
@@ -470,7 +470,7 @@ class TestGeneratedCases(unittest.TestCase):
     """
         output = """
         TARGET(OP) {
-            #if Py_TAIL_CALL_INTERP
+            #if _Py_TAIL_CALL_INTERP
             int opcode = OP;
             (void)(opcode);
             #endif
@@ -489,7 +489,7 @@ class TestGeneratedCases(unittest.TestCase):
             res = 0;
             stack_pointer[-2] = res;
             stack_pointer += -1;
-            assert(WITHIN_STACK_BOUNDS());
+            ASSERT_WITHIN_STACK_BOUNDS(__FILE__, __LINE__);
             DISPATCH();
         }
     """
@@ -505,7 +505,7 @@ class TestGeneratedCases(unittest.TestCase):
     """
         output = """
         TARGET(OP) {
-            #if Py_TAIL_CALL_INTERP
+            #if _Py_TAIL_CALL_INTERP
             int opcode = OP;
             (void)(opcode);
             #endif
@@ -523,7 +523,7 @@ class TestGeneratedCases(unittest.TestCase):
             }
             stack_pointer[-2] = res;
             stack_pointer += -1;
-            assert(WITHIN_STACK_BOUNDS());
+            ASSERT_WITHIN_STACK_BOUNDS(__FILE__, __LINE__);
             DISPATCH();
         }
     """
@@ -537,7 +537,7 @@ class TestGeneratedCases(unittest.TestCase):
     """
         output = """
         TARGET(OP) {
-            #if Py_TAIL_CALL_INTERP
+            #if _Py_TAIL_CALL_INTERP
             int opcode = OP;
             (void)(opcode);
             #endif
@@ -553,7 +553,7 @@ class TestGeneratedCases(unittest.TestCase):
             uint32_t extra = read_u32(&this_instr[2].cache);
             (void)extra;
             stack_pointer += -1;
-            assert(WITHIN_STACK_BOUNDS());
+            ASSERT_WITHIN_STACK_BOUNDS(__FILE__, __LINE__);
             DISPATCH();
         }
     """
@@ -570,7 +570,7 @@ class TestGeneratedCases(unittest.TestCase):
     """
         output = """
         TARGET(OP) {
-            #if Py_TAIL_CALL_INTERP
+            #if _Py_TAIL_CALL_INTERP
             int opcode = OP;
             (void)(opcode);
             #endif
@@ -604,7 +604,7 @@ class TestGeneratedCases(unittest.TestCase):
     """
         output = """
         TARGET(OP) {
-            #if Py_TAIL_CALL_INTERP
+            #if _Py_TAIL_CALL_INTERP
             int opcode = OP;
             (void)(opcode);
             #endif
@@ -640,12 +640,12 @@ class TestGeneratedCases(unittest.TestCase):
             }
             stack_pointer[-3] = res;
             stack_pointer += -2;
-            assert(WITHIN_STACK_BOUNDS());
+            ASSERT_WITHIN_STACK_BOUNDS(__FILE__, __LINE__);
             DISPATCH();
         }
 
         TARGET(OP1) {
-            #if Py_TAIL_CALL_INTERP
+            #if _Py_TAIL_CALL_INTERP
             int opcode = OP1;
             (void)(opcode);
             #endif
@@ -667,7 +667,7 @@ class TestGeneratedCases(unittest.TestCase):
         }
 
         TARGET(OP3) {
-            #if Py_TAIL_CALL_INTERP
+            #if _Py_TAIL_CALL_INTERP
             int opcode = OP3;
             (void)(opcode);
             #endif
@@ -688,7 +688,7 @@ class TestGeneratedCases(unittest.TestCase):
             stack_pointer = _PyFrame_GetStackPointer(frame);
             stack_pointer[-3] = res;
             stack_pointer += -2;
-            assert(WITHIN_STACK_BOUNDS());
+            ASSERT_WITHIN_STACK_BOUNDS(__FILE__, __LINE__);
             DISPATCH();
         }
     """
@@ -702,7 +702,7 @@ class TestGeneratedCases(unittest.TestCase):
     """
         output = """
         TARGET(OP) {
-            #if Py_TAIL_CALL_INTERP
+            #if _Py_TAIL_CALL_INTERP
             int opcode = OP;
             (void)(opcode);
             #endif
@@ -728,7 +728,7 @@ class TestGeneratedCases(unittest.TestCase):
     """
         output = """
         TARGET(OP1) {
-            #if Py_TAIL_CALL_INTERP
+            #if _Py_TAIL_CALL_INTERP
             int opcode = OP1;
             (void)(opcode);
             #endif
@@ -751,7 +751,7 @@ class TestGeneratedCases(unittest.TestCase):
     """
         output = """
         TARGET(OP1) {
-            #if Py_TAIL_CALL_INTERP
+            #if _Py_TAIL_CALL_INTERP
             int opcode = OP1;
             (void)(opcode);
             #endif
@@ -777,7 +777,7 @@ class TestGeneratedCases(unittest.TestCase):
     """
         output = """
         TARGET(OP1) {
-            #if Py_TAIL_CALL_INTERP
+            #if _Py_TAIL_CALL_INTERP
             int opcode = OP1;
             (void)(opcode);
             #endif
@@ -788,7 +788,7 @@ class TestGeneratedCases(unittest.TestCase):
         }
 
         TARGET(OP2) {
-            #if Py_TAIL_CALL_INTERP
+            #if _Py_TAIL_CALL_INTERP
             int opcode = OP2;
             (void)(opcode);
             #endif
@@ -812,7 +812,7 @@ class TestGeneratedCases(unittest.TestCase):
     """
         output = """
         TARGET(OP) {
-            #if Py_TAIL_CALL_INTERP
+            #if _Py_TAIL_CALL_INTERP
             int opcode = OP;
             (void)(opcode);
             #endif
@@ -827,7 +827,7 @@ class TestGeneratedCases(unittest.TestCase):
             below = stack_pointer[-2 - oparg*2];
             SPAM(values, oparg);
             stack_pointer += -2 - oparg*2;
-            assert(WITHIN_STACK_BOUNDS());
+            ASSERT_WITHIN_STACK_BOUNDS(__FILE__, __LINE__);
             DISPATCH();
         }
     """
@@ -843,7 +843,7 @@ class TestGeneratedCases(unittest.TestCase):
     """
         output = """
         TARGET(OP) {
-            #if Py_TAIL_CALL_INTERP
+            #if _Py_TAIL_CALL_INTERP
             int opcode = OP;
             (void)(opcode);
             #endif
@@ -860,7 +860,7 @@ class TestGeneratedCases(unittest.TestCase):
             stack_pointer[-2] = below;
             stack_pointer[-1 + oparg*3] = above;
             stack_pointer += oparg*3;
-            assert(WITHIN_STACK_BOUNDS());
+            ASSERT_WITHIN_STACK_BOUNDS(__FILE__, __LINE__);
             DISPATCH();
         }
     """
@@ -875,7 +875,7 @@ class TestGeneratedCases(unittest.TestCase):
     """
         output = """
         TARGET(OP) {
-            #if Py_TAIL_CALL_INTERP
+            #if _Py_TAIL_CALL_INTERP
             int opcode = OP;
             (void)(opcode);
             #endif
@@ -889,7 +889,7 @@ class TestGeneratedCases(unittest.TestCase):
             above = 0;
             stack_pointer[0] = above;
             stack_pointer += 1;
-            assert(WITHIN_STACK_BOUNDS());
+            ASSERT_WITHIN_STACK_BOUNDS(__FILE__, __LINE__);
             DISPATCH();
         }
     """
@@ -905,7 +905,7 @@ class TestGeneratedCases(unittest.TestCase):
     """
         output = """
         TARGET(OP) {
-            #if Py_TAIL_CALL_INTERP
+            #if _Py_TAIL_CALL_INTERP
             int opcode = OP;
             (void)(opcode);
             #endif
@@ -918,11 +918,11 @@ class TestGeneratedCases(unittest.TestCase):
             extra = stack_pointer[-1 - oparg];
             if (oparg == 0) {
                 stack_pointer += -1 - oparg;
-                assert(WITHIN_STACK_BOUNDS());
+                ASSERT_WITHIN_STACK_BOUNDS(__FILE__, __LINE__);
                 JUMP_TO_LABEL(error);
             }
             stack_pointer += -1 - oparg;
-            assert(WITHIN_STACK_BOUNDS());
+            ASSERT_WITHIN_STACK_BOUNDS(__FILE__, __LINE__);
             DISPATCH();
         }
     """
@@ -940,7 +940,7 @@ class TestGeneratedCases(unittest.TestCase):
         """
         output = """
         TARGET(M) {
-            #if Py_TAIL_CALL_INTERP
+            #if _Py_TAIL_CALL_INTERP
             int opcode = M;
             (void)(opcode);
             #endif
@@ -960,7 +960,7 @@ class TestGeneratedCases(unittest.TestCase):
             stack_pointer[0] = val1;
             stack_pointer[1] = val2;
             stack_pointer += 2;
-            assert(WITHIN_STACK_BOUNDS());
+            ASSERT_WITHIN_STACK_BOUNDS(__FILE__, __LINE__);
             DISPATCH();
         }
         """
@@ -977,7 +977,7 @@ class TestGeneratedCases(unittest.TestCase):
         """
         output = """
         TARGET(OP) {
-            #if Py_TAIL_CALL_INTERP
+            #if _Py_TAIL_CALL_INTERP
             int opcode = OP;
             (void)(opcode);
             #endif
@@ -1002,7 +1002,7 @@ class TestGeneratedCases(unittest.TestCase):
         """
         output = """
         TARGET(M) {
-            #if Py_TAIL_CALL_INTERP
+            #if _Py_TAIL_CALL_INTERP
             int opcode = M;
             (void)(opcode);
             #endif
@@ -1023,7 +1023,7 @@ class TestGeneratedCases(unittest.TestCase):
         """
         output = """
         TARGET(OP) {
-            #if Py_TAIL_CALL_INTERP
+            #if _Py_TAIL_CALL_INTERP
             int opcode = OP;
             (void)(opcode);
             #endif
@@ -1045,7 +1045,7 @@ class TestGeneratedCases(unittest.TestCase):
         """
         output = """
         TARGET(M) {
-            #if Py_TAIL_CALL_INTERP
+            #if _Py_TAIL_CALL_INTERP
             int opcode = M;
             (void)(opcode);
             #endif
@@ -1086,7 +1086,7 @@ class TestGeneratedCases(unittest.TestCase):
         """
         output = """
         TARGET(OP) {
-            #if Py_TAIL_CALL_INTERP
+            #if _Py_TAIL_CALL_INTERP
             int opcode = OP;
             (void)(opcode);
             #endif
@@ -1128,7 +1128,7 @@ class TestGeneratedCases(unittest.TestCase):
         """
         output = """
         TARGET(INST) {
-            #if Py_TAIL_CALL_INTERP
+            #if _Py_TAIL_CALL_INTERP
             int opcode = INST;
             (void)(opcode);
             #endif
@@ -1158,7 +1158,7 @@ class TestGeneratedCases(unittest.TestCase):
         """
         output = """
         TARGET(TEST) {
-            #if Py_TAIL_CALL_INTERP
+            #if _Py_TAIL_CALL_INTERP
             int opcode = TEST;
             (void)(opcode);
             #endif
@@ -1202,7 +1202,7 @@ class TestGeneratedCases(unittest.TestCase):
         """
         output = """
         TARGET(TEST) {
-            #if Py_TAIL_CALL_INTERP
+            #if _Py_TAIL_CALL_INTERP
             int opcode = TEST;
             (void)(opcode);
             #endif
@@ -1245,7 +1245,7 @@ class TestGeneratedCases(unittest.TestCase):
         """
         output = """
         TARGET(TEST) {
-            #if Py_TAIL_CALL_INTERP
+            #if _Py_TAIL_CALL_INTERP
             int opcode = TEST;
             (void)(opcode);
             #endif
@@ -1263,13 +1263,13 @@ class TestGeneratedCases(unittest.TestCase):
             stack_pointer[0] = a;
             stack_pointer[1] = b;
             stack_pointer += 2;
-            assert(WITHIN_STACK_BOUNDS());
+            ASSERT_WITHIN_STACK_BOUNDS(__FILE__, __LINE__);
             // SECOND
             {
                 USE(a, b);
             }
             stack_pointer += -2;
-            assert(WITHIN_STACK_BOUNDS());
+            ASSERT_WITHIN_STACK_BOUNDS(__FILE__, __LINE__);
             DISPATCH();
         }
         """
@@ -1297,7 +1297,7 @@ class TestGeneratedCases(unittest.TestCase):
         """
         output = """
         TARGET(TEST) {
-            #if Py_TAIL_CALL_INTERP
+            #if _Py_TAIL_CALL_INTERP
             int opcode = TEST;
             (void)(opcode);
             #endif
@@ -1325,7 +1325,7 @@ class TestGeneratedCases(unittest.TestCase):
                 }
             }
             stack_pointer += -2;
-            assert(WITHIN_STACK_BOUNDS());
+            ASSERT_WITHIN_STACK_BOUNDS(__FILE__, __LINE__);
             DISPATCH();
         }
         """
@@ -1348,7 +1348,7 @@ class TestGeneratedCases(unittest.TestCase):
 
         output = """
         TARGET(TEST) {
-            #if Py_TAIL_CALL_INTERP
+            #if _Py_TAIL_CALL_INTERP
             int opcode = TEST;
             (void)(opcode);
             #endif
@@ -1368,14 +1368,14 @@ class TestGeneratedCases(unittest.TestCase):
                     stack_pointer[0] = a;
                     stack_pointer[1] = b;
                     stack_pointer += 2;
-                    assert(WITHIN_STACK_BOUNDS());
+                    ASSERT_WITHIN_STACK_BOUNDS(__FILE__, __LINE__);
                     JUMP_TO_LABEL(error);
                 }
             }
             stack_pointer[0] = a;
             stack_pointer[1] = b;
             stack_pointer += 2;
-            assert(WITHIN_STACK_BOUNDS());
+            ASSERT_WITHIN_STACK_BOUNDS(__FILE__, __LINE__);
             DISPATCH();
         }
         """
@@ -1393,7 +1393,7 @@ class TestGeneratedCases(unittest.TestCase):
         """
         output = """
         TARGET(OP1) {
-            #if Py_TAIL_CALL_INTERP
+            #if _Py_TAIL_CALL_INTERP
             int opcode = OP1;
             (void)(opcode);
             #endif
@@ -1404,7 +1404,7 @@ class TestGeneratedCases(unittest.TestCase):
         }
 
         TARGET(OP2) {
-            #if Py_TAIL_CALL_INTERP
+            #if _Py_TAIL_CALL_INTERP
             int opcode = OP2;
             (void)(opcode);
             #endif
@@ -1466,7 +1466,7 @@ class TestGeneratedCases(unittest.TestCase):
 
         output = """
         TARGET(BALANCED) {
-            #if Py_TAIL_CALL_INTERP
+            #if _Py_TAIL_CALL_INTERP
             int opcode = BALANCED;
             (void)(opcode);
             #endif
@@ -1492,7 +1492,7 @@ class TestGeneratedCases(unittest.TestCase):
 
         output = """
         TARGET(BALANCED) {
-            #if Py_TAIL_CALL_INTERP
+            #if _Py_TAIL_CALL_INTERP
             int opcode = BALANCED;
             (void)(opcode);
             #endif
@@ -1514,7 +1514,7 @@ class TestGeneratedCases(unittest.TestCase):
 
         output = """
         TARGET(BALANCED) {
-            #if Py_TAIL_CALL_INTERP
+            #if _Py_TAIL_CALL_INTERP
             int opcode = BALANCED;
             (void)(opcode);
             #endif
@@ -1539,7 +1539,7 @@ class TestGeneratedCases(unittest.TestCase):
 
         output = """
         TARGET(BALANCED) {
-            #if Py_TAIL_CALL_INTERP
+            #if _Py_TAIL_CALL_INTERP
             int opcode = BALANCED;
             (void)(opcode);
             #endif
@@ -1565,14 +1565,14 @@ class TestGeneratedCases(unittest.TestCase):
 
         output = """
         TARGET(OP) {
-            #if Py_TAIL_CALL_INTERP
+            #if _Py_TAIL_CALL_INTERP
             int opcode = OP;
             (void)(opcode);
             #endif
             frame->instr_ptr = next_instr;
             next_instr += 1;
             INSTRUCTION_STATS(OP);
-            frame->return_offset = 1 ;
+            frame->return_offset = 1u ;
             DISPATCH();
         }
         """
@@ -1604,7 +1604,7 @@ class TestGeneratedCases(unittest.TestCase):
         """
         output = """
         TARGET(OP) {
-            #if Py_TAIL_CALL_INTERP
+            #if _Py_TAIL_CALL_INTERP
             int opcode = OP;
             (void)(opcode);
             #endif
@@ -1642,7 +1642,7 @@ class TestGeneratedCases(unittest.TestCase):
         """
         output = """
         TARGET(OP) {
-            #if Py_TAIL_CALL_INTERP
+            #if _Py_TAIL_CALL_INTERP
             int opcode = OP;
             (void)(opcode);
             #endif
@@ -1661,7 +1661,7 @@ class TestGeneratedCases(unittest.TestCase):
             stack_pointer[0] = out1;
             stack_pointer[1] = out2;
             stack_pointer += 2;
-            assert(WITHIN_STACK_BOUNDS());
+            ASSERT_WITHIN_STACK_BOUNDS(__FILE__, __LINE__);
             DISPATCH();
         }
         """
@@ -1840,7 +1840,7 @@ class TestGeneratedCases(unittest.TestCase):
 
         output = """
         TARGET(OP) {
-            #if Py_TAIL_CALL_INTERP
+            #if _Py_TAIL_CALL_INTERP
             int opcode = OP;
             (void)(opcode);
             #endif
@@ -1867,7 +1867,7 @@ class TestGeneratedCases(unittest.TestCase):
         """
         output = """
         TARGET(OP) {
-            #if Py_TAIL_CALL_INTERP
+            #if _Py_TAIL_CALL_INTERP
             int opcode = OP;
             (void)(opcode);
             #endif
@@ -1881,7 +1881,7 @@ class TestGeneratedCases(unittest.TestCase):
             stack_pointer = _PyFrame_GetStackPointer(frame);
             in = temp;
             stack_pointer += -1;
-            assert(WITHIN_STACK_BOUNDS());
+            ASSERT_WITHIN_STACK_BOUNDS(__FILE__, __LINE__);
             _PyFrame_SetStackPointer(frame, stack_pointer);
             PyStackRef_CLOSE(in);
             stack_pointer = _PyFrame_GetStackPointer(frame);
@@ -2115,8 +2115,9 @@ class TestGeneratedAbstractCases(unittest.TestCase):
         """
         output = """
         case OP: {
+            CHECK_STACK_BOUNDS(-1);
             stack_pointer += -1;
-            assert(WITHIN_STACK_BOUNDS());
+            ASSERT_WITHIN_STACK_BOUNDS(__FILE__, __LINE__);
             break;
         }
         """
@@ -2132,8 +2133,9 @@ class TestGeneratedAbstractCases(unittest.TestCase):
         """
         output = """
         case OP: {
+            CHECK_STACK_BOUNDS(-1);
             stack_pointer += -1;
-            assert(WITHIN_STACK_BOUNDS());
+            ASSERT_WITHIN_STACK_BOUNDS(__FILE__, __LINE__);
             break;
         }
         """
@@ -2153,9 +2155,10 @@ class TestGeneratedAbstractCases(unittest.TestCase):
         case OP: {
             JitOptRef foo;
             foo = NULL;
+            CHECK_STACK_BOUNDS(1);
             stack_pointer[0] = foo;
             stack_pointer += 1;
-            assert(WITHIN_STACK_BOUNDS());
+            ASSERT_WITHIN_STACK_BOUNDS(__FILE__, __LINE__);
             break;
         }
         """
@@ -2172,8 +2175,9 @@ class TestGeneratedAbstractCases(unittest.TestCase):
         """
         output = """
         case OP: {
+            CHECK_STACK_BOUNDS(1);
             stack_pointer += 1;
-            assert(WITHIN_STACK_BOUNDS());
+            ASSERT_WITHIN_STACK_BOUNDS(__FILE__, __LINE__);
             break;
         }
         """
@@ -2234,7 +2238,7 @@ class TestGeneratedAbstractCases(unittest.TestCase):
         """
         input2 = """
         op(OP, (foo -- res)) {
-            REPLACE_OPCODE_IF_EVALUATES_PURE(foo);
+            REPLACE_OPCODE_IF_EVALUATES_PURE(foo, res);
             res = sym_new_known(ctx, foo);
         }
         """
@@ -2274,7 +2278,7 @@ class TestGeneratedAbstractCases(unittest.TestCase):
         """
         input2 = """
         op(OP, (foo -- res)) {
-            REPLACE_OPCODE_IF_EVALUATES_PURE(foo);
+            REPLACE_OPCODE_IF_EVALUATES_PURE(foo, res);
             res = foo;
         }
         """
@@ -2318,7 +2322,7 @@ class TestGeneratedAbstractCases(unittest.TestCase):
         """
         input2 = """
         op(OP, (foo -- res)) {
-            REPLACE_OPCODE_IF_EVALUATES_PURE(foo);
+            REPLACE_OPCODE_IF_EVALUATES_PURE(foo, res);
             res = foo;
         }
         """
@@ -2364,7 +2368,7 @@ class TestGeneratedAbstractCases(unittest.TestCase):
         """
         input2 = """
         op(OP, (foo -- res)) {
-            REPLACE_OPCODE_IF_EVALUATES_PURE(foo);
+            REPLACE_OPCODE_IF_EVALUATES_PURE(foo, res);
             res = sym_new_known(ctx, foo);
         }
         """
@@ -2411,7 +2415,7 @@ class TestGeneratedAbstractCases(unittest.TestCase):
         """
         input2 = """
         op(OP, (foo -- res)) {
-            REPLACE_OPCODE_IF_EVALUATES_PURE(foo);
+            REPLACE_OPCODE_IF_EVALUATES_PURE(foo, res);
             res = sym_new_known(ctx, foo);
         }
         """
@@ -2445,6 +2449,172 @@ class TestGeneratedAbstractCases(unittest.TestCase):
         """
         self.run_cases_test(input, input2, output)
 
+    def test_replace_opcode_binop_one_output(self):
+        input = """
+        pure op(OP, (left, right -- res)) {
+            res = foo(left, right);
+        }
+        """
+        input2 = """
+        op(OP, (left, right -- res)) {
+            res = sym_new_non_null(ctx, foo);
+            REPLACE_OPCODE_IF_EVALUATES_PURE(left, right, res);
+        }
+        """
+        output = """
+        case OP: {
+            JitOptRef right;
+            JitOptRef left;
+            JitOptRef res;
+            right = stack_pointer[-1];
+            left = stack_pointer[-2];
+            res = sym_new_non_null(ctx, foo);
+            if (
+                sym_is_safe_const(ctx, left) &&
+                sym_is_safe_const(ctx, right)
+            ) {
+                JitOptRef left_sym = left;
+                JitOptRef right_sym = right;
+                _PyStackRef left = sym_get_const_as_stackref(ctx, left_sym);
+                _PyStackRef right = sym_get_const_as_stackref(ctx, right_sym);
+                _PyStackRef res_stackref;
+                /* Start of uop copied from bytecodes for constant evaluation */
+                res_stackref = foo(left, right);
+                /* End of uop copied from bytecodes for constant evaluation */
+                res = sym_new_const_steal(ctx, PyStackRef_AsPyObjectSteal(res_stackref));
+                CHECK_STACK_BOUNDS(-1);
+                stack_pointer[-2] = res;
+                stack_pointer += -1;
+                ASSERT_WITHIN_STACK_BOUNDS(__FILE__, __LINE__);
+                break;
+            }
+            CHECK_STACK_BOUNDS(-1);
+            stack_pointer[-2] = res;
+            stack_pointer += -1;
+            ASSERT_WITHIN_STACK_BOUNDS(__FILE__, __LINE__);
+            break;
+        }
+        """
+        self.run_cases_test(input, input2, output)
+
+    def test_replace_opcode_binop_one_output_insert(self):
+        input = """
+        pure op(OP, (left, right -- res, l, r)) {
+            res = foo(left, right);
+            l = left;
+            r = right;
+        }
+        """
+        input2 = """
+        op(OP, (left, right -- res, l, r)) {
+            res = sym_new_non_null(ctx, foo);
+            l = left;
+            r = right;
+            REPLACE_OPCODE_IF_EVALUATES_PURE(left, right, res);
+        }
+        """
+        output = """
+        case OP: {
+            JitOptRef right;
+            JitOptRef left;
+            JitOptRef res;
+            JitOptRef l;
+            JitOptRef r;
+            right = stack_pointer[-1];
+            left = stack_pointer[-2];
+            res = sym_new_non_null(ctx, foo);
+            l = left;
+            r = right;
+            if (
+                sym_is_safe_const(ctx, left) &&
+                sym_is_safe_const(ctx, right)
+            ) {
+                JitOptRef left_sym = left;
+                JitOptRef right_sym = right;
+                _PyStackRef left = sym_get_const_as_stackref(ctx, left_sym);
+                _PyStackRef right = sym_get_const_as_stackref(ctx, right_sym);
+                _PyStackRef res_stackref;
+                _PyStackRef l_stackref;
+                _PyStackRef r_stackref;
+                /* Start of uop copied from bytecodes for constant evaluation */
+                res_stackref = foo(left, right);
+                l_stackref = left;
+                r_stackref = right;
+                /* End of uop copied from bytecodes for constant evaluation */
+                (void)l_stackref;
+                (void)r_stackref;
+                res = sym_new_const_steal(ctx, PyStackRef_AsPyObjectSteal(res_stackref));
+                CHECK_STACK_BOUNDS(1);
+                stack_pointer[-2] = res;
+                stack_pointer[-1] = l;
+                stack_pointer[0] = r;
+                stack_pointer += 1;
+                ASSERT_WITHIN_STACK_BOUNDS(__FILE__, __LINE__);
+                break;
+            }
+            CHECK_STACK_BOUNDS(1);
+            stack_pointer[-2] = res;
+            stack_pointer[-1] = l;
+            stack_pointer[0] = r;
+            stack_pointer += 1;
+            ASSERT_WITHIN_STACK_BOUNDS(__FILE__, __LINE__);
+            break;
+        }
+        """
+        self.run_cases_test(input, input2, output)
+
+    def test_replace_opcode_unaryop_one_output_insert(self):
+        input = """
+        pure op(OP, (left -- res, l)) {
+            res = foo(left);
+            l = left;
+        }
+        """
+        input2 = """
+        op(OP, (left -- res, l)) {
+            res = sym_new_non_null(ctx, foo);
+            l = left;
+            REPLACE_OPCODE_IF_EVALUATES_PURE(left, res);
+        }
+        """
+        output = """
+        case OP: {
+            JitOptRef left;
+            JitOptRef res;
+            JitOptRef l;
+            left = stack_pointer[-1];
+            res = sym_new_non_null(ctx, foo);
+            l = left;
+            if (
+                sym_is_safe_const(ctx, left)
+            ) {
+                JitOptRef left_sym = left;
+                _PyStackRef left = sym_get_const_as_stackref(ctx, left_sym);
+                _PyStackRef res_stackref;
+                _PyStackRef l_stackref;
+                /* Start of uop copied from bytecodes for constant evaluation */
+                res_stackref = foo(left);
+                l_stackref = left;
+                /* End of uop copied from bytecodes for constant evaluation */
+                (void)l_stackref;
+                res = sym_new_const_steal(ctx, PyStackRef_AsPyObjectSteal(res_stackref));
+                CHECK_STACK_BOUNDS(1);
+                stack_pointer[-1] = res;
+                stack_pointer[0] = l;
+                stack_pointer += 1;
+                ASSERT_WITHIN_STACK_BOUNDS(__FILE__, __LINE__);
+                break;
+            }
+            CHECK_STACK_BOUNDS(1);
+            stack_pointer[-1] = res;
+            stack_pointer[0] = l;
+            stack_pointer += 1;
+            ASSERT_WITHIN_STACK_BOUNDS(__FILE__, __LINE__);
+            break;
+        }
+        """
+        self.run_cases_test(input, input2, output)
+
     def test_replace_opocode_uop_reject_array_effects(self):
         input = """
         pure op(OP, (foo[2] -- res)) {
@@ -2458,7 +2628,7 @@ class TestGeneratedAbstractCases(unittest.TestCase):
         """
         input2 = """
         op(OP, (foo[2] -- res)) {
-            REPLACE_OPCODE_IF_EVALUATES_PURE(foo);
+            REPLACE_OPCODE_IF_EVALUATES_PURE(foo, res);
             res = sym_new_unknown(ctx);
         }
         """

@@ -28,7 +28,6 @@
 """Read from and write to tar format archives.
 """
 
-version     = "0.9.0"
 __author__  = "Lars Gust\u00e4bel (lars@gustaebel.de)"
 __credits__ = "Gustavo Niemeyer, Niels Gust\u00e4bel, Richard Townsend."
 
@@ -201,7 +200,6 @@ def itn(n, digits=8, format=DEFAULT_FORMAT):
     # base-256 representation. This allows values up to (256**(digits-1))-1.
     # A 0o200 byte indicates a positive number, a 0o377 byte a negative
     # number.
-    original_n = n
     n = int(n)
     if 0 <= n < 8 ** (digits - 1):
         s = bytes("%0*o" % (digits - 1, n), "ascii") + NUL
@@ -353,7 +351,7 @@ class _Stream:
             fileobj = _StreamProxy(fileobj)
             comptype = fileobj.getcomptype()
 
-        self.name     = name or ""
+        self.name     = os.fspath(name) if name is not None else ""
         self.mode     = mode
         self.comptype = comptype
         self.fileobj  = fileobj
@@ -861,11 +859,11 @@ def data_filter(member, dest_path):
         return member.replace(**new_attrs, deep=False)
     return member
 
-_NAMED_FILTERS = {
+_NAMED_FILTERS = frozendict({
     "fully_trusted": fully_trusted_filter,
     "tar": tar_filter,
     "data": data_filter,
-}
+})
 
 #------------------
 # Exported Classes
@@ -1278,6 +1276,20 @@ class TarInfo(object):
     @classmethod
     def frombuf(cls, buf, encoding, errors):
         """Construct a TarInfo object from a 512 byte bytes object.
+
+        To support the old v7 tar format AREGTYPE headers are
+        transformed to DIRTYPE headers if their name ends in '/'.
+        """
+        return cls._frombuf(buf, encoding, errors)
+
+    @classmethod
+    def _frombuf(cls, buf, encoding, errors, *, dircheck=True):
+        """Construct a TarInfo object from a 512 byte bytes object.
+
+        If ``dircheck`` is set to ``True`` then ``AREGTYPE`` headers will
+        be normalized to ``DIRTYPE`` if the name ends in a trailing slash.
+        ``dircheck`` must be set to ``False`` if this function is called
+        on a follow-up header such as ``GNUTYPE_LONGNAME``.
         """
         if len(buf) == 0:
             raise EmptyHeaderError("empty header")
@@ -1308,7 +1320,7 @@ class TarInfo(object):
 
         # Old V7 tar format represents a directory as a regular
         # file with a trailing slash.
-        if obj.type == AREGTYPE and obj.name.endswith("/"):
+        if dircheck and obj.type == AREGTYPE and obj.name.endswith("/"):
             obj.type = DIRTYPE
 
         # The old GNU sparse format occupies some of the unused
@@ -1343,8 +1355,15 @@ class TarInfo(object):
         """Return the next TarInfo object from TarFile object
            tarfile.
         """
+        return cls._fromtarfile(tarfile)
+
+    @classmethod
+    def _fromtarfile(cls, tarfile, *, dircheck=True):
+        """
+        See dircheck documentation in _frombuf().
+        """
         buf = tarfile.fileobj.read(BLOCKSIZE)
-        obj = cls.frombuf(buf, tarfile.encoding, tarfile.errors)
+        obj = cls._frombuf(buf, tarfile.encoding, tarfile.errors, dircheck=dircheck)
         obj.offset = tarfile.fileobj.tell() - BLOCKSIZE
         return obj._proc_member(tarfile)
 
@@ -1402,7 +1421,7 @@ class TarInfo(object):
 
         # Fetch the next header and process it.
         try:
-            next = self.fromtarfile(tarfile)
+            next = self._fromtarfile(tarfile, dircheck=False)
         except HeaderError as e:
             raise SubsequentHeaderError(str(e)) from None
 
@@ -1537,7 +1556,7 @@ class TarInfo(object):
 
         # Fetch the next header.
         try:
-            next = self.fromtarfile(tarfile)
+            next = self._fromtarfile(tarfile, dircheck=False)
         except HeaderError as e:
             raise SubsequentHeaderError(str(e)) from None
 
@@ -1647,6 +1666,9 @@ class TarInfo(object):
         """Round up a byte count by BLOCKSIZE and return it,
            e.g. _block(834) => 1024.
         """
+        # Only non-negative offsets are allowed
+        if count < 0:
+            raise InvalidHeaderError("invalid offset")
         blocks, remainder = divmod(count, BLOCKSIZE)
         if remainder:
             blocks += 1
@@ -2716,10 +2738,19 @@ class TarFile(object):
                 if os.path.lexists(targetpath):
                     # Avoid FileExistsError on following os.symlink.
                     os.unlink(targetpath)
-                os.symlink(tarinfo.linkname, targetpath)
+                link_target = tarinfo.linkname
+                if os.name == "nt":
+                    # gh-57911: Posix-flavoured forward-slash path separators in
+                    # symlink targets aren't acknowledged by Windows, resulting
+                    # in corrupted links.
+                    link_target = link_target.replace("/", os.path.sep)
+                os.symlink(link_target, targetpath)
                 return
             else:
                 if os.path.exists(tarinfo._link_target):
+                    if os.path.lexists(targetpath):
+                        # Avoid FileExistsError on following os.link.
+                        os.unlink(targetpath)
                     os.link(tarinfo._link_target, targetpath)
                     return
         except symlink_exception:
@@ -3125,6 +3156,16 @@ def main():
 
         if args.verbose:
             print('{!r} file created.'.format(tar_name))
+
+
+def __getattr__(name):
+    if name == "version":
+        from warnings import _deprecated
+
+        _deprecated("version", remove=(3, 20))
+        return "0.9.0"  # Do not change
+    raise AttributeError(f"module {__name__!r} has no attribute {name!r}")
+
 
 if __name__ == '__main__':
     main()
