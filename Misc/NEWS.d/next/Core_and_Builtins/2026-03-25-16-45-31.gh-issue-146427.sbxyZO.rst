@@ -1,1 +1,1 @@
-Fix a use-after-free in :mod:`_interpqueues` when clearing items from a destroyed interpreter.
+Fix a use-after-free in :mod:`!_interpqueues` when clearing items from a destroyed interpreter.
