@@ -2699,6 +2699,13 @@ to_bool_fail_kind(PyObject *value)
 #endif  // Py_STATS
 
 static int
+check_type_always_succeeds(PyTypeObject *ty)
+{
+    (void)ty;
+    return 0;
+}
+
+static int
 check_type_always_true(PyTypeObject *ty)
 {
     PyNumberMethods *nb = ty->tp_as_number;
@@ -2751,19 +2758,37 @@ _Py_Specialize_ToBool(_PyStackRef value_o, _Py_CODEUNIT *instr)
             SPECIALIZATION_FAIL(TO_BOOL, SPEC_FAIL_OUT_OF_VERSIONS);
             goto failure;
         }
-        else if (err > 0) {
-            SPECIALIZATION_FAIL(TO_BOOL, err);
-            goto failure;
+        else if (err == 0) {
+            assert(version);
+            write_u32(cache->version, version);
+            specialized_op = TO_BOOL_ALWAYS_TRUE;
+            goto success;
         }
-
-        assert(err == 0);
+        /* Has __bool__ or __len__: fall through to TO_BOOL_C */
+    }
+    {
+        PyTypeObject *tp = Py_TYPE(value);
+        unsigned int version;
+        if (PyType_HasFeature(tp, Py_TPFLAGS_HEAPTYPE)) {
+            version = 0;
+            int err = _PyType_Validate(tp, check_type_always_succeeds, &version);
+            if (err < 0) {
+                SPECIALIZATION_FAIL(TO_BOOL, SPEC_FAIL_OUT_OF_VERSIONS);
+                goto failure;
+            }
+        }
+        else {
+            version = FT_ATOMIC_LOAD_UINT_RELAXED(tp->tp_version_tag);
+            if (version == 0) {
+                SPECIALIZATION_FAIL(TO_BOOL, SPEC_FAIL_OUT_OF_VERSIONS);
+                goto failure;
+            }
+        }
         assert(version);
         write_u32(cache->version, version);
-        specialized_op = TO_BOOL_ALWAYS_TRUE;
+        specialized_op = TO_BOOL_GENERIC;
         goto success;
     }
-
-    SPECIALIZATION_FAIL(TO_BOOL, to_bool_fail_kind(value));
 failure:
     unspecialize(instr);
     return;

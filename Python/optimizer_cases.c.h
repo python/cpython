@@ -333,7 +333,14 @@
             value = stack_pointer[-1];
             int already_bool = optimize_to_bool(this_instr, ctx, value, &res, false);
             if (!already_bool) {
-                res = sym_new_truthiness(ctx, value, true);
+                if (sym_matches_type(value, &PyDict_Type) ||
+                    sym_matches_type(value, &PyFrozenDict_Type)) {
+                    ADD_OP(_TO_BOOL_DICT, 0, 0);
+                    res = sym_new_type(ctx, &PyBool_Type);
+                }
+                else {
+                    res = sym_new_truthiness(ctx, value, true);
+                }
             }
             stack_pointer[-1] = res;
             break;
@@ -420,6 +427,13 @@
             stack_pointer[0] = v;
             stack_pointer += 1;
             ASSERT_WITHIN_STACK_BOUNDS(__FILE__, __LINE__);
+            break;
+        }
+
+        case _TO_BOOL_DICT: {
+            JitOptRef res;
+            res = sym_new_not_null(ctx);
+            stack_pointer[-1] = res;
             break;
         }
 
@@ -2154,9 +2168,12 @@
             if (sym_matches_type_version(owner, type_version)) {
                 ADD_OP(_NOP, 0, 0);
             } else {
-                PyTypeObject *type = _PyType_LookupByVersion(type_version);
-                if (type) {
-                    if (sym_set_type_version(owner, type_version)) {
+                if (sym_set_type_version(owner, type_version)) {
+                    PyTypeObject *type = _PyType_LookupByVersion(type_version);
+                    if (type == NULL) {
+                        type = sym_get_type(owner);
+                    }
+                    if (type) {
                         PyType_Watch(TYPE_WATCHER_ID, (PyObject *)type);
                         _Py_BloomFilter_Add(dependencies, type);
                     }

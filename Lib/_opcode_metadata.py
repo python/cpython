@@ -10,6 +10,7 @@ _specializations = frozendict(
     TO_BOOL=(
             "TO_BOOL_ALWAYS_TRUE",
             "TO_BOOL_BOOL",
+            "TO_BOOL_GENERIC",
             "TO_BOOL_INT",
             "TO_BOOL_LIST",
             "TO_BOOL_NONE",
@@ -205,13 +206,14 @@ _specialized_opmap = frozendict(
     STORE_SUBSCR_LIST_INT=204,
     TO_BOOL_ALWAYS_TRUE=205,
     TO_BOOL_BOOL=206,
-    TO_BOOL_INT=207,
-    TO_BOOL_LIST=208,
-    TO_BOOL_NONE=209,
-    TO_BOOL_STR=210,
-    UNPACK_SEQUENCE_LIST=211,
-    UNPACK_SEQUENCE_TUPLE=212,
-    UNPACK_SEQUENCE_TWO_TUPLE=213,
+    TO_BOOL_GENERIC=207,
+    TO_BOOL_INT=208,
+    TO_BOOL_LIST=209,
+    TO_BOOL_NONE=210,
+    TO_BOOL_STR=211,
+    UNPACK_SEQUENCE_LIST=212,
+    UNPACK_SEQUENCE_TUPLE=213,
+    UNPACK_SEQUENCE_TWO_TUPLE=214,
 )
 
 opmap = frozendict(

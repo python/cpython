@@ -2792,9 +2792,6 @@ class TestUopsOptimization(unittest.TestCase):
         self.assertEqual(res, sum(range(TIER2_THRESHOLD)))
         uops = get_opnames(ex)
         self.assertIn("_CALL_LIST_APPEND", uops)
-        # We should remove these in the future
-        self.assertIn("_GUARD_NOS_LIST", uops)
-        self.assertIn("_GUARD_CALLABLE_LIST_APPEND", uops)
 
     def test_call_list_append_pop_top(self):
         def testfunc(n):
@@ -3662,6 +3659,38 @@ class TestUopsOptimization(unittest.TestCase):
         self.assertNotIn("_REPLACE_WITH_TRUE", uops)
         self.assertIn("_INSERT_1_LOAD_CONST_INLINE_BORROW", uops)
         self.assertEqual(count_ops(ex, "_POP_TOP_NOP"), 1)
+
+    def test_to_bool_dict(self):
+        def testfunc(n):
+            d = {"a": 1}
+            count = 0
+            for _ in range(n):
+                if d:
+                    count += 1
+            return count
+
+        res, ex = self._run_with_optimizer(testfunc, TIER2_THRESHOLD)
+        self.assertEqual(res, TIER2_THRESHOLD)
+        self.assertIsNotNone(ex)
+        uops = get_opnames(ex)
+        self.assertIn("_TO_BOOL_DICT", uops)
+        self.assertNotIn("_TO_BOOL", uops)
+
+    def test_to_bool_frozendict(self):
+        def testfunc(n):
+            fd = frozendict({"a": 1})
+            count = 0
+            for _ in range(n):
+                if fd:
+                    count += 1
+            return count
+
+        res, ex = self._run_with_optimizer(testfunc, TIER2_THRESHOLD)
+        self.assertEqual(res, TIER2_THRESHOLD)
+        self.assertIsNotNone(ex)
+        uops = get_opnames(ex)
+        self.assertIn("_TO_BOOL_DICT", uops)
+        self.assertNotIn("_TO_BOOL", uops)
 
     def test_attr_promotion_failure(self):
         # We're not testing for any specific uops here, just

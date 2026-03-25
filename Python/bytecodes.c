@@ -484,6 +484,7 @@ dummy_func(
         family(TO_BOOL, INLINE_CACHE_ENTRIES_TO_BOOL) = {
             TO_BOOL_ALWAYS_TRUE,
             TO_BOOL_BOOL,
+            TO_BOOL_GENERIC,
             TO_BOOL_INT,
             TO_BOOL_LIST,
             TO_BOOL_NONE,
@@ -553,6 +554,13 @@ dummy_func(
             DEAD(value);
         }
 
+        tier2 pure op(_TO_BOOL_DICT, (value -- res)) {
+            PyObject *value_o = PyStackRef_AsPyObjectBorrow(value);
+            assert(PyAnyDict_CheckExact(value_o));
+            PyStackRef_CLOSE(value);
+            res = ((PyDictObject *)value_o)->ma_used ? PyStackRef_True : PyStackRef_False;
+        }
+
         inst(TO_BOOL_NONE, (unused/1, unused/2, value -- res)) {
             // This one is a bit weird, because we expect *some* failures:
             EXIT_IF(!PyStackRef_IsNone(value));
@@ -600,6 +608,12 @@ dummy_func(
             _GUARD_TYPE_VERSION +
             _REPLACE_WITH_TRUE +
             POP_TOP;
+
+        macro(TO_BOOL_GENERIC) =
+            unused/1 +
+            _RECORD_TOS_TYPE +
+            _GUARD_TYPE_VERSION +
+            _TO_BOOL;
 
         macro(UNARY_INVERT) = _UNARY_INVERT + POP_TOP;
 
