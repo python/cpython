@@ -1658,40 +1658,35 @@ _CASE_COST = 1
 #
 # Inclusion criteria:
 #   1. Must have evidence of real cross-language confusion (Stack Overflow
-#      traffic, bug reports in production repos, developer survey data)
-#   2. Must not be catchable by Levenshtein distance (too different from
-#      the correct Python method name)
-#   3. Must be from a top-4 language by Python co-usage: JavaScript, Java,
-#      C#, or Ruby (JetBrains/PSF Developer Survey 2024)
+#      traffic, bug reports in production repos, developer survey data).
+#   2. Must be from a top-4 language by Python co-usage: JavaScript, Java,
+#      C#, or Ruby (JetBrains/PSF Developer Survey 2024).
 #
-# Each entry maps (builtin_type, wrong_name) to a suggestion string.
-# If the suggestion is a Python method name, the standard "Did you mean"
-# format is used. If it contains a space, it's rendered as a full hint.
+# Each entry maps (builtin_type, wrong_name) to a (suggestion, is_raw) tuple.
+# If is_raw is False, the suggestion is wrapped in "Did you mean '.X'?".
+# If is_raw is True, the suggestion is rendered as-is.
 #
-# See https://github.com/python/cpython/issues/146406 for the design discussion.
+# See https://github.com/python/cpython/issues/146406.
 _CROSS_LANGUAGE_HINTS = {
     # list -- JavaScript/Ruby equivalents
-    (list, "push"): "append",
-    (list, "concat"): "extend",
+    (list, "push"): ("append", False),
+    (list, "concat"): ("extend", False),
     # list -- Java/C# equivalents
-    (list, "addAll"): "extend",
-    (list, "contains"): "Use 'x in list' to check membership",
-    # list -- wrong-type suggestion (per Serhiy Storchaka, Terry Reedy,
-    # Paul Moore: list.add() more likely means the user expected a set)
-    (list, "add"): "Did you mean to use a set? Sets have an .add() method",
+    (list, "addAll"): ("extend", False),
+    (list, "contains"): ("Use 'x in list' to check membership.", True),
+    # list -- wrong-type suggestion more likely means the user expected a set
+    (list, "add"): ("Did you mean to use a 'set' object?", True),
     # str -- JavaScript equivalents
-    (str, "toUpperCase"): "upper",
-    (str, "toLowerCase"): "lower",
-    (str, "trimStart"): "lstrip",
-    (str, "trimEnd"): "rstrip",
-    # dict -- Java equivalents
-    (dict, "keySet"): "keys",
-    (dict, "entrySet"): "items",
-    (dict, "putAll"): "update",
-    (dict, "put"): "Use dict[key] = value for item assignment",
-    # Note: indexOf, trim, and getOrDefault are not included because
-    # Levenshtein distance already catches them (indexOf->index,
-    # trim->strip, getOrDefault->setdefault).
+    (str, "toUpperCase"): ("upper", False),
+    (str, "toLowerCase"): ("lower", False),
+    (str, "trimStart"): ("lstrip", False),
+    (str, "trimEnd"): ("rstrip", False),
+    # dict -- Java/JavaScript equivalents
+    (dict, "keySet"): ("keys", False),
+    (dict, "entrySet"): ("items", False),
+    (dict, "entries"): ("items", False),
+    (dict, "putAll"): ("update", False),
+    (dict, "put"): ("Use d[k] = v for item assignment.", True),
 }
 
 
@@ -1763,13 +1758,12 @@ def _get_cross_language_hint(obj, wrong_name):
     positives on subclasses that may intentionally lack these methods.
     Returns a formatted hint string, or None.
     """
-    hint = _CROSS_LANGUAGE_HINTS.get((type(obj), wrong_name))
-    if hint is None:
+    entry = _CROSS_LANGUAGE_HINTS.get((type(obj), wrong_name))
+    if entry is None:
         return None
-    if ' ' in hint:
-        # Full custom hint (e.g., wrong-type suggestion for list.add)
+    hint, is_raw = entry
+    if is_raw:
         return hint
-    # Direct method equivalent
     return f"Did you mean '.{hint}'?"
 
 
