@@ -21,7 +21,7 @@ concurrency:
 
 env:
   FORCE_COLOR: 1
-  LLVM_VERSION: 20
+  LLVM_VERSION: 21
 
 jobs:
   interpreter:

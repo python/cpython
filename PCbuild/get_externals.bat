@@ -82,7 +82,7 @@ if NOT "%IncludeLibffi%"=="false"  set binaries=%binaries% libffi-3.4.4
 if NOT "%IncludeSSL%"=="false"     set binaries=%binaries% openssl-bin-3.0.19
 if NOT "%IncludeTkinter%"=="false" set binaries=%binaries% tcltk-8.6.15.0
 if NOT "%IncludeSSLSrc%"=="false"  set binaries=%binaries% nasm-2.11.06
-if NOT "%IncludeLLVM%"=="false"    set binaries=%binaries% llvm-20.1.8.0
+if NOT "%IncludeLLVM%"=="false"    set binaries=%binaries% llvm-21.1.4.0
 
 for %%b in (%binaries%) do (
     if exist "%EXTERNALS_DIR%\%%b" (
