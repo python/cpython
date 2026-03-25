@@ -992,6 +992,22 @@
             break;
         }
 
+        case _BINARY_OP_TRUEDIV_FLOAT: {
+            JitOptRef res;
+            JitOptRef l;
+            JitOptRef r;
+            res = sym_new_not_null(ctx);
+            l = sym_new_not_null(ctx);
+            r = sym_new_not_null(ctx);
+            CHECK_STACK_BOUNDS(1);
+            stack_pointer[-2] = res;
+            stack_pointer[-1] = l;
+            stack_pointer[0] = r;
+            stack_pointer += 1;
+            ASSERT_WITHIN_STACK_BOUNDS(__FILE__, __LINE__);
+            break;
+        }
+
         case _BINARY_OP_TRUEDIV_FLOAT_INPLACE: {
             JitOptRef res;
             JitOptRef l;
@@ -4113,8 +4129,9 @@
             bool lhs_float = sym_matches_type(lhs, &PyFloat_Type);
             bool rhs_float = sym_matches_type(rhs, &PyFloat_Type);
             if ((oparg == NB_TRUE_DIVIDE || oparg == NB_INPLACE_TRUE_DIVIDE)
-                && (lhs_float || rhs_float)
-                && (PyJitRef_IsUnique(lhs) || PyJitRef_IsUnique(rhs))) {
+                && !(lhs_int && rhs_int)
+                && !(!lhs_int && !lhs_float && sym_has_type(lhs))
+                && !(!rhs_int && !rhs_float && sym_has_type(rhs))) {
                 if (!rhs_float) {
                     ADD_OP(_GUARD_TOS_FLOAT, 0, 0);
                     sym_set_type(rhs, &PyFloat_Type);
@@ -4128,10 +4145,15 @@
                     l = sym_new_null(ctx);
                     r = rhs;
                 }
-                else {
+                else if (PyJitRef_IsUnique(rhs)) {
                     ADD_OP(_BINARY_OP_TRUEDIV_FLOAT_INPLACE_RIGHT, 0, 0);
                     l = lhs;
                     r = sym_new_null(ctx);
+                }
+                else {
+                    ADD_OP(_BINARY_OP_TRUEDIV_FLOAT, 0, 0);
+                    l = lhs;
+                    r = rhs;
                 }
                 res = PyJitRef_MakeUnique(sym_new_type(ctx, &PyFloat_Type));
             }

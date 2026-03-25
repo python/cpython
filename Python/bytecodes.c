@@ -838,6 +838,31 @@ dummy_func(
             INPUTS_DEAD();
         }
 
+        // Float true division — not specialized at tier 1, emitted by the
+        // tier 2 optimizer when both operands are known floats.
+        tier2 op(_BINARY_OP_TRUEDIV_FLOAT, (left, right -- res, l, r)) {
+            PyObject *left_o = PyStackRef_AsPyObjectBorrow(left);
+            PyObject *right_o = PyStackRef_AsPyObjectBorrow(right);
+            assert(PyFloat_CheckExact(left_o));
+            assert(PyFloat_CheckExact(right_o));
+            STAT_INC(BINARY_OP, hit);
+            double divisor = ((PyFloatObject *)right_o)->ob_fval;
+            if (divisor == 0.0) {
+                PyErr_SetString(PyExc_ZeroDivisionError,
+                                "float division by zero");
+                ERROR_NO_POP();
+            }
+            double dres = ((PyFloatObject *)left_o)->ob_fval / divisor;
+            PyObject *d = PyFloat_FromDouble(dres);
+            if (d == NULL) {
+                ERROR_NO_POP();
+            }
+            res = PyStackRef_FromPyObjectSteal(d);
+            l = left;
+            r = right;
+            INPUTS_DEAD();
+        }
+
         tier2 op(_BINARY_OP_TRUEDIV_FLOAT_INPLACE, (left, right -- res, l, r)) {
             FLOAT_INPLACE_DIVOP(left, right, left);
             if (_divop_err) {

@@ -254,12 +254,14 @@ dummy_func(void) {
         bool rhs_int = sym_matches_type(rhs, &PyLong_Type);
         bool lhs_float = sym_matches_type(lhs, &PyFloat_Type);
         bool rhs_float = sym_matches_type(rhs, &PyFloat_Type);
-        // Specialize inplace float/float true division in tier 2.
-        // Only enter when we can emit an inplace op (one operand is unique).
-        // Guards are inserted for operands not yet known to be float.
+        // Specialize float/float true division in tier 2.
+        // Speculatively insert guards for operands not yet known to be
+        // float. Skip if both are known int (int/int handled below) or
+        // if either is a known non-int/float type (Fraction, Decimal, etc.)
         if ((oparg == NB_TRUE_DIVIDE || oparg == NB_INPLACE_TRUE_DIVIDE)
-                && (lhs_float || rhs_float)
-                && (PyJitRef_IsUnique(lhs) || PyJitRef_IsUnique(rhs))) {
+                && !(lhs_int && rhs_int)
+                && !(!lhs_int && !lhs_float && sym_has_type(lhs))
+                && !(!rhs_int && !rhs_float && sym_has_type(rhs))) {
             if (!rhs_float) {
                 ADD_OP(_GUARD_TOS_FLOAT, 0, 0);
                 sym_set_type(rhs, &PyFloat_Type);
@@ -273,18 +275,21 @@ dummy_func(void) {
                 l = sym_new_null(ctx);
                 r = rhs;
             }
-            else {
+            else if (PyJitRef_IsUnique(rhs)) {
                 ADD_OP(_BINARY_OP_TRUEDIV_FLOAT_INPLACE_RIGHT, 0, 0);
                 l = lhs;
                 r = sym_new_null(ctx);
+            }
+            else {
+                ADD_OP(_BINARY_OP_TRUEDIV_FLOAT, 0, 0);
+                l = lhs;
+                r = rhs;
             }
             res = PyJitRef_MakeUnique(sym_new_type(ctx, &PyFloat_Type));
         }
         else if ((oparg == NB_TRUE_DIVIDE || oparg == NB_INPLACE_TRUE_DIVIDE)
                 && (lhs_int || lhs_float) && (rhs_int || rhs_float)) {
-            // True division of int/float operands always returns a float.
-            // Only set the type when both operands are known int/float;
-            // other types (Fraction, Decimal, etc.) may return non-float.
+            // int / int always returns float. No guards needed.
             res = sym_new_type(ctx, &PyFloat_Type);
         }
         else if (!((lhs_int || lhs_float) && (rhs_int || rhs_float))) {
