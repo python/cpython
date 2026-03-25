@@ -519,7 +519,6 @@ PIPE_MAX_SIZE = 4 * 1024 * 1024 + 1
 SOCK_MAX_SIZE = 16 * 1024 * 1024 + 1
 
 def _have_ieee_doubles():
-    import ctypes
     import math
     # Check parameters for encoding of floats; a quick exit
     # if they aren't same as for IEC 60559 doubles.  Check
@@ -534,6 +533,10 @@ def _have_ieee_doubles():
             or sys.float_info.max_10_exp != 308
             or not math.issubnormal(math.nextafter(0, 1))):
         return False
+    try:
+        import ctypes
+    except ImportError:
+        return True
     # We attempt to determine if this machine is using IEC
     # floating-point formats by peering at the bits of some
     # carefully chosen value.  Assume that integer and
