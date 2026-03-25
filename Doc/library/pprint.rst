@@ -36,7 +36,7 @@ Functions
 ---------
 
 .. function:: pp(object, stream=None, indent=1, width=80, depth=None, *, \
-                 block_style=False, compact=False, sort_dicts=False, \
+                 compact=False, expand=False, sort_dicts=False, \
                  underscore_numbers=False)
 
    Prints the formatted representation of *object*, followed by a newline.
@@ -75,6 +75,13 @@ Functions
       each item of a sequence will be formatted on a separate line,
       otherwise as many items as will fit within the *width*
       will be formatted on each output line.
+      Incompatible with *expand*.
+
+   :param bool expand:
+      If ``True``,
+      opening parentheses and brackets will be followed by a newline and the
+      following content will be indented by one level, similar to block style
+      JSON formatting. Incompatible with *compact*.
 
    :param bool sort_dicts:
       If ``True``, dictionaries will be formatted with
@@ -85,12 +92,6 @@ Functions
       If ``True``,
       integers will be formatted with the ``_`` character for a thousands separator,
       otherwise underscores are not displayed (the default).
-
-   :param bool block_style:
-      If ``True``,
-      opening parentheses and brackets will be followed by a newline and the
-      following content will be indented by one level, similar to block style
-      JSON formatting. This option is not compatible with *compact*.
 
    >>> import pprint
    >>> stuff = ['spam', 'eggs', 'lumberjack', 'knights', 'ni']
@@ -107,7 +108,7 @@ Functions
 
 
 .. function:: pprint(object, stream=None, indent=1, width=80, depth=None, *, \
-                     block_style=False, compact=False, sort_dicts=True, \
+                     compact=False, expand=False, sort_dicts=True, \
                      underscore_numbers=False)
 
    Alias for :func:`~pprint.pp` with *sort_dicts* set to ``True`` by default,
@@ -116,11 +117,11 @@ Functions
 
 
 .. function:: pformat(object, indent=1, width=80, depth=None, *, \
-                      block_style=False, compact=False, sort_dicts=True, \
+                      compact=False, expand=False, sort_dicts=True, \
                       underscore_numbers=False)
 
    Return the formatted representation of *object* as a string.  *indent*,
-   *width*, *depth*, *compact*, *sort_dicts*, *underscore_numbers* and *block_style* are
+   *width*, *depth*, *compact*, *expand*, *sort_dicts* and *underscore_numbers* are
    passed to the :class:`PrettyPrinter` constructor as formatting parameters
    and their meanings are as described in the documentation above.
 
@@ -164,7 +165,7 @@ PrettyPrinter Objects
 .. index:: single: ...; placeholder
 
 .. class:: PrettyPrinter(indent=1, width=80, depth=None, stream=None, *, \
-                         block_style=False, compact=False, sort_dicts=True, \
+                         compact=False, expand=False, sort_dicts=True, \
                          underscore_numbers=False)
 
    Construct a :class:`PrettyPrinter` instance.
@@ -189,7 +190,7 @@ PrettyPrinter Objects
      'knights', 'ni'],
     'spam', 'eggs', 'lumberjack', 'knights',
     'ni']
-   >>> pp = pprint.PrettyPrinter(width=41, block_style=True, indent=3)
+   >>> pp = pprint.PrettyPrinter(width=41, expand=True, indent=3)
    >>> pp.pprint(stuff)
    [
       [
@@ -225,7 +226,7 @@ PrettyPrinter Objects
       No longer attempts to write to :data:`!sys.stdout` if it is ``None``.
 
    .. versionchanged:: next
-      Added the *block_style* parameter.
+      Added the *expand* parameter.
 
 
 :class:`PrettyPrinter` instances have the following methods:
@@ -450,10 +451,10 @@ cannot be split, the specified width will be exceeded::
     'summary': 'A sample Python project',
     'version': '1.2.0'}
 
-Lastly, we can achieve block style formatting with the *block_style* parameter.
+Lastly, we can achieve block style formatting with the *expand* parameter.
 Best results are achieved with a higher *indent* value::
 
-   >>> pprint.pp(project_info, indent=4, block_style=True)
+   >>> pprint.pp(project_info, indent=4, expand=True)
    {
       'author': 'The Python Packaging Authority',
       'author_email': 'pypa-dev@googlegroups.com',

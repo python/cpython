@@ -157,7 +157,7 @@ class QueryTestCase(unittest.TestCase):
         self.assertRaises(ValueError, pprint.PrettyPrinter, depth=0)
         self.assertRaises(ValueError, pprint.PrettyPrinter, depth=-1)
         self.assertRaises(ValueError, pprint.PrettyPrinter, width=0)
-        self.assertRaises(ValueError, pprint.PrettyPrinter, compact=True, block_style=True)
+        self.assertRaises(ValueError, pprint.PrettyPrinter, compact=True, expand=True)
 
     def test_basic(self):
         # Verify .isrecursive() and .isreadable() w/o recursion
@@ -1479,7 +1479,7 @@ ValuesView({'a': 6,
     'jumped over a '
     'lazy dog'}""")
 
-    def test_block_style_dataclass(self):
+    def test_expand_dataclass(self):
         @dataclasses.dataclass
         class DummyDataclass:
             foo: str
@@ -1499,7 +1499,7 @@ ValuesView({'a': 6,
             garply=(1, 2, 3, 4),
         )
         self.assertEqual(pprint.pformat(dummy_dataclass, width=40, indent=4,
-                                        block_style=True),
+                                        expand=True),
 """\
 DummyDataclass(
     foo='foo',
@@ -1511,7 +1511,7 @@ DummyDataclass(
     garply=(1, 2, 3, 4)
 )""")
 
-    def test_block_style_dict(self):
+    def test_expand_dict(self):
         dummy_dict = {
             "foo": "bar",
             "baz": 123,
@@ -1520,7 +1520,7 @@ DummyDataclass(
             "corge": 7,
         }
         self.assertEqual(pprint.pformat(dummy_dict, width=40, indent=4,
-                                        block_style=True, sort_dicts=False),
+                                        expand=True, sort_dicts=False),
 """\
 {
     'foo': 'bar',
@@ -1530,7 +1530,7 @@ DummyDataclass(
     'corge': 7
 }""")
 
-    def test_block_style_ordered_dict(self):
+    def test_expand_ordered_dict(self):
         dummy_ordered_dict = collections.OrderedDict(
             [
                 ("foo", 1),
@@ -1539,7 +1539,7 @@ DummyDataclass(
             ]
         )
         self.assertEqual(pprint.pformat(dummy_ordered_dict, width=20, indent=4,
-                                        block_style=True),
+                                        expand=True),
 """\
 OrderedDict([
     ('foo', 1),
@@ -1547,7 +1547,7 @@ OrderedDict([
     ('baz', 123)
 ])""")
 
-    def test_block_style_list(self):
+    def test_expand_list(self):
         dummy_list = [
             "foo",
             "bar",
@@ -1555,7 +1555,7 @@ OrderedDict([
             "qux",
         ]
         self.assertEqual(pprint.pformat(dummy_list, width=20, indent=4,
-                                        block_style=True),
+                                        expand=True),
 """\
 [
     'foo',
@@ -1564,7 +1564,7 @@ OrderedDict([
     'qux'
 ]""")
 
-    def test_block_style_tuple(self):
+    def test_expand_tuple(self):
         dummy_tuple = (
             "foo",
             "bar",
@@ -1574,7 +1574,7 @@ OrderedDict([
             6,
         )
         self.assertEqual(pprint.pformat(dummy_tuple, width=20, indent=4,
-                                        block_style=True),
+                                        expand=True),
 """\
 (
     'foo',
@@ -1585,7 +1585,7 @@ OrderedDict([
     6
 )""")
 
-    def test_block_style_set(self):
+    def test_expand_set(self):
         dummy_set = {
             "foo",
             "bar",
@@ -1594,7 +1594,7 @@ OrderedDict([
             (1, 2, 3),
         }
         self.assertEqual(pprint.pformat(dummy_set, width=20, indent=4,
-                                        block_style=True),
+                                        expand=True),
 """\
 {
     'bar',
@@ -1604,7 +1604,7 @@ OrderedDict([
     (1, 2, 3)
 }""")
 
-    def test_block_style_frozenset(self):
+    def test_expand_frozenset(self):
         dummy_set = {
             (1, 2, 3),
         }
@@ -1618,7 +1618,7 @@ OrderedDict([
             }
         )
         self.assertEqual(pprint.pformat(dummy_frozenset, width=40, indent=4,
-                                        block_style=True),
+                                        expand=True),
 """\
 frozenset({
     frozenset({(1, 2, 3)}),
@@ -1628,10 +1628,10 @@ frozenset({
     (1, 2, 3)
 })""")
 
-    def test_block_style_bytes(self):
+    def test_expand_bytes(self):
         dummy_bytes = b"Hello world! foo bar baz 123 456 789"
         self.assertEqual(pprint.pformat(dummy_bytes, width=20, indent=4,
-                                        block_style=True),
+                                        expand=True),
 """\
 (
     b'Hello world!'
@@ -1639,18 +1639,18 @@ frozenset({
     b' 123 456 789'
 )""")
 
-    def test_block_style_bytearray(self):
+    def test_expand_bytearray(self):
         dummy_bytes = b"Hello world! foo bar baz 123 456 789"
         dummy_byte_array = bytearray(dummy_bytes)
         self.assertEqual(pprint.pformat(dummy_byte_array, width=40, indent=4,
-                                        block_style=True),
+                                        expand=True),
 """\
 bytearray(
     b'Hello world! foo bar baz 123 456'
     b' 789'
 )""")
 
-    def test_block_style_mappingproxy(self):
+    def test_expand_mappingproxy(self):
         dummy_dict = {
             "foo": "bar",
             "baz": 123,
@@ -1660,7 +1660,7 @@ bytearray(
         }
         dummy_mappingproxy = types.MappingProxyType(dummy_dict)
         self.assertEqual(pprint.pformat(dummy_mappingproxy, width=40, indent=4,
-                                        block_style=True),
+                                        expand=True),
 """\
 mappingproxy({
     'baz': 123,
@@ -1670,7 +1670,7 @@ mappingproxy({
     'qux': {'baz': 123, 'foo': 'bar'}
 })""")
 
-    def test_block_style_namespace(self):
+    def test_expand_namespace(self):
         dummy_namespace = types.SimpleNamespace(
             foo="bar",
             bar=42,
@@ -1682,7 +1682,7 @@ mappingproxy({
         )
 
         self.assertEqual(pprint.pformat(dummy_namespace, width=40, indent=4,
-                                        block_style=True),
+                                        expand=True),
 """\
 namespace(
     foo='bar',
@@ -1694,21 +1694,21 @@ namespace(
     )
 )""")
 
-    def test_block_style_defaultdict(self):
+    def test_expand_defaultdict(self):
         dummy_defaultdict = collections.defaultdict(list)
         dummy_defaultdict["foo"].append("bar")
         dummy_defaultdict["foo"].append("baz")
         dummy_defaultdict["foo"].append("qux")
         dummy_defaultdict["bar"] = {"foo": "bar", "baz": None}
         self.assertEqual(pprint.pformat(dummy_defaultdict, width=40, indent=4,
-                                        block_style=True),
+                                        expand=True),
 """\
 defaultdict(<class 'list'>, {
     'bar': {'baz': None, 'foo': 'bar'},
     'foo': ['bar', 'baz', 'qux']
 })""")
 
-    def test_block_style_counter(self):
+    def test_expand_counter(self):
         dummy_counter = collections.Counter("abcdeabcdabcaba")
         expected = """\
 Counter({
@@ -1719,7 +1719,7 @@ Counter({
     'e': 1
 })"""
         self.assertEqual(pprint.pformat(dummy_counter, width=40, indent=4,
-                                        block_style=True), expected)
+                                        expand=True), expected)
 
         expected2 = """\
 Counter({
@@ -1730,9 +1730,9 @@ Counter({
   'e': 1
 })"""
         self.assertEqual(pprint.pformat(dummy_counter, width=20, indent=2,
-                                        block_style=True), expected2)
+                                        expand=True), expected2)
 
-    def test_block_style_chainmap(self):
+    def test_expand_chainmap(self):
         dummy_dict = {
             "foo": "bar",
             "baz": 123,
@@ -1747,7 +1747,7 @@ Counter({
         )
         dummy_chainmap.maps.append({"garply": "waldo"})
         self.assertEqual(pprint.pformat(dummy_chainmap, width=40, indent=4,
-                                        block_style=True),
+                                        expand=True),
 """\
 ChainMap(
     {'foo': 'bar'},
@@ -1767,7 +1767,7 @@ ChainMap(
     {'garply': 'waldo'}
 )""")
 
-    def test_block_style_deque(self):
+    def test_expand_deque(self):
         dummy_dict = {
             "foo": "bar",
             "baz": 123,
@@ -1790,7 +1790,7 @@ ChainMap(
         dummy_deque.extend(dummy_list)
         dummy_deque.appendleft(dummy_set)
         self.assertEqual(pprint.pformat(dummy_deque, width=40, indent=4,
-                                        block_style=True),
+                                        expand=True),
 """\
 deque([
     {(1, 2, 3)},
@@ -1808,7 +1808,7 @@ deque([
     'baz'
 ], maxlen=10)""")
 
-    def test_block_style_userdict(self):
+    def test_expand_userdict(self):
         class DummyUserDict(collections.UserDict):
             """A custom UserDict with some extra attributes"""
 
@@ -1822,7 +1822,7 @@ deque([
         dummy_userdict.access_count = 5
 
         self.assertEqual(pprint.pformat(dummy_userdict, width=40, indent=4,
-                                        block_style=True),
+                                        expand=True),
 """\
 {
     'baz': 123,
@@ -1832,7 +1832,7 @@ deque([
     'qux': {'baz': 123, 'foo': 'bar'}
 }""")
 
-    def test_block_style_userlist(self):
+    def test_expand_userlist(self):
         class DummyUserList(collections.UserList):
             """A custom UserList with some extra attributes"""
 
@@ -1843,7 +1843,7 @@ deque([
                                        [4, 5, 6]])
 
         self.assertEqual(pprint.pformat(dummy_userlist, width=40, indent=4,
-                                        block_style=True),
+                                        expand=True),
 """\
 [
     'first',
