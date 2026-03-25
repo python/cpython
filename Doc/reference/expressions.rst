@@ -360,7 +360,6 @@ Formally, the syntax for groups is:
    group: '(' `assignment_expression` ')'
 
 
-.. _comprehensions:
 .. _displays:
 
 Container displays
@@ -380,8 +379,10 @@ square brackets::
 
    >>> ["one", "two", "three"]
    ['one', 'two', 'three']
+   >>> [1 + 2, 2 + 3]
+   [3, 5]
 
-In list, tuple and dictionary displays, the series may be empty::
+In list, tuple and dictionary (but not set) displays, the series may be empty::
 
    >>> []  # empty list
    []
@@ -419,8 +420,8 @@ left to right and placed into a new container of the appropriate type.
    pair: iterable; unpacking
    single: * (asterisk); in expression lists
 
-For tuple, list and set displays, any item in the display may be prefixed
-with an asterisk (``*``).
+For tuple, list and set (but not dict) displays, any item in the display may
+be prefixed with an asterisk (``*``).
 This denotes :ref:`iterable unpacking  <iterable-unpacking>`.
 At runtime, the asterisk-prefixed expression must evaluate to an iterable,
 whose contents are inserted into the container at the location of
@@ -428,11 +429,12 @@ the unpacking. For example::
 
    >>> numbers = (1, 2)
    >>> [*numbers, 'word', *numbers]
-   (1, 2, 'word', 1, 2)
+   [1, 2, 'word', 1, 2]
 
 Dictionary displays use a similar mechanism called
-:ref:`dictionary unpacking <dict-unpacking>`, denoted with a double
+*dictionary unpacking*, denoted with a double
 asterisk (``**``).
+See :ref:`dict` for details.
 
 A more advanced form of displays are :dfn:`comprehensions`, where items are
 computed via a set of looping and filtering instructions.
@@ -501,6 +503,7 @@ See :ref:`displays` for general information on displays.
 There is no special syntax for the empty set.
 The ``{}`` literal is a :ref:`dictionary display <dict>` that constructs an
 empty dictionary.
+Call :class:`set() <set>` with no arguments to get an empty set.
 
 The formal grammar for set displays is:
 
@@ -527,9 +530,6 @@ parentheses. For example::
 
    >>> (1, 2)
    (1, 2)
-   >>> ('one', 'two', 'thr' + 'ee')
-   ('one', 'two', 'three')
-
    >>> ()  # an empty tuple
    ()
 
@@ -606,7 +606,12 @@ comprehension, and the final dictionary's value for a given key will be the
 last one given.
 For example::
 
-   >>> {1: 'this will be overridden', 2: 'two', 1: 'also overridden', 1: 'one'}
+   >>> {
+   ...     1: 'this will be overridden',
+   ...     2: 'two',
+   ...     1: 'also overridden',
+   ...     1: 'one',
+   ... }
    {1: 'one', 2: 'two'}
 
 .. index::
@@ -638,9 +643,132 @@ This may be used to override a set of defaults::
    Unpacking into dictionary displays, originally proposed by :pep:`448`.
 
 
+.. index::
+   single: for; in comprehensions
+   single: if; in comprehensions
+   single: async for; in comprehensions
+
+.. _comprehensions:
 
 Comprehensions
 --------------
+
+List, set and dictionary :dfn:`comprehensions` are a form of :ref:`displays`,
+where items are computed via a set of looping and filtering instructions
+rather than listed explicitly.
+
+In its simplest form, a comprehension consists of a single expression
+followed by a :keyword:`!for` clause, all enclosed in paired delimiters.
+For example, a list of the first ten squares is::
+
+   >>> [x**2 for x in range(10)]
+   [0, 1, 4, 9, 16, 25, 36, 49, 64, 81]
+
+A set of lowercase letters::
+
+   >>> {x.lower() for x in ('a', 'A', 'b', 'C')}
+   {'c', 'a', 'b'}
+
+A dict mapping some function names to functions::
+
+   >>> {f.__name__: f for f in (print, hex, any)}
+   {'print': <built-in function print>,
+    'hex': <built-in function hex>,
+    'any': <built-in function any>}
+
+There are no *tuple comprehensions*; a similar syntax is instead used
+for :ref:`generator expressions <genexpr>`.
+
+Unpacking in comprehensions
+^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+Filtering in comprehensions
+^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+The :keyword:`!for` clause may be followed by an :keyword:`!if` clause
+with an expression.
+
+For example, a list of names from the :mod:`math` module
+that start with `f` is::
+
+   >>> [name for name in vars(math) if name.startswith('f')]
+   ['fabs', 'factorial', 'floor', 'fma', 'fmod', 'frexp', 'fsum']
+
+Complex comprehensions
+^^^^^^^^^^^^^^^^^^^^^^
+
+The :keyword:`!for` clause may be followed zero or more additional
+:keyword:`!for` or :keyword:`!if` clauses.
+For example, here is a list of names exposed by two Python modules
+that start with ``a``::
+
+   >>> import math
+   >>> import array
+   >>> [
+   ...     name
+   ...     for module in (array, math)
+   ...     for name in vars(module)
+   ...     if name.startswith('a')
+   ... ]
+   ['array', 'acos', 'acosh', 'asin', 'asinh', 'atan', 'atan2', 'atanh']
+
+
+Asynchronous comprehensions
+^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+TODO: When a comprehension is evaluated,
+TODO: - scopes
+TODO: async for (& await)
+
+   >>> system_defaults = {'color': 'blue', 'count': 8}
+   >>> user_defaults = {'color': 'yellow'}
+   >>> overrides = {'count': 5}
+
+   >>> {**d for d in (system_defaults, user_defaults, overrides)}
+   {'color': 'yellow', 'count': 5}
+
+
+at least one
+:keyword:`!for` clause and zero or more :keyword:`!for` or :keyword:`!if`
+clauses.  In this case, the elements of the new container are those that would
+be produced by considering each of the :keyword:`!for` or :keyword:`!if`
+clauses a block, nesting from left to right, and evaluating the expression to
+produce an element each time the innermost block is reached.  If the expression
+is starred, the result will instead be unpacked to produce zero or more
+elements.
+
+However, aside from the iterable expression in the leftmost :keyword:`!for` clause,
+the comprehension is executed in a separate implicitly nested scope. This ensures
+that names assigned to in the target list don't "leak" into the enclosing scope.
+
+The iterable expression in the leftmost :keyword:`!for` clause is evaluated
+directly in the enclosing scope and then passed as an argument to the implicitly
+nested scope. Subsequent :keyword:`!for` clauses and any filter condition in the
+leftmost :keyword:`!for` clause cannot be evaluated in the enclosing scope as
+they may depend on the values obtained from the leftmost iterable. For example:
+``[x*y for x in range(10) for y in range(x, x+10)]``.
+
+To ensure the comprehension always results in a container of the appropriate
+type, ``yield`` and ``yield from`` expressions are prohibited in the implicitly
+nested scope.
+
+.. index::
+   single: await; in comprehensions
+
+Since Python 3.6, in an :keyword:`async def` function, an :keyword:`!async for`
+clause may be used to iterate over a :term:`asynchronous iterator`.
+A comprehension in an :keyword:`!async def` function may consist of either a
+:keyword:`!for` or :keyword:`!async for` clause following the leading
+expression, may contain additional :keyword:`!for` or :keyword:`!async for`
+clauses, and may also use :keyword:`await` expressions.
+
+If a comprehension contains :keyword:`!async for` clauses, or if it contains
+:keyword:`!await` expressions or other asynchronous comprehensions anywhere except
+the iterable expression in the leftmost :keyword:`!for` clause, it is called an
+:dfn:`asynchronous comprehension`. An asynchronous comprehension may suspend the
+execution of the coroutine function in which it appears.
+See also :pep:`530`.
+
 
 TODO
 
@@ -695,8 +823,6 @@ prevails.
 
 
 
-There are no *tuple comprehensions*; a similar syntax is instead used
-for :ref:`generator expressions <genexpr>`.
 
 
 ..
@@ -707,11 +833,6 @@ for :ref:`generator expressions <genexpr>`.
 
    * they are computed via a set of looping and filtering instructions, called a
      :dfn:`comprehension`.
-
-   .. index::
-      single: for; in comprehensions
-      single: if; in comprehensions
-      single: async for; in comprehensions
 
    Common syntax elements for comprehensions are:
 
