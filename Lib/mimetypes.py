@@ -475,6 +475,8 @@ def _default_mime_types():
     # Make sure the entry with the preferred file extension for a particular mime type
     # appears before any others of the same mimetype.
     types_map = _types_map_default = {
+        '.js'     : 'text/javascript',
+        '.mjs'    : 'text/javascript',
         '.dcm'    : 'application/dicom',
         '.epub'   : 'application/epub+zip',
         '.gz'     : 'application/gzip',
@@ -652,8 +654,6 @@ def _default_mime_types():
         '.gff3'   : 'text/gff3',
         '.html'   : 'text/html',
         '.htm'    : 'text/html',
-        '.js'     : 'text/javascript',
-        '.mjs'    : 'text/javascript',
         '.cnd'    : 'text/jcr-cnd',
         '.md'     : 'text/markdown',
         '.markdown': 'text/markdown',
