@@ -430,19 +430,25 @@ def can_colorize(*, file: IO[str] | IO[bytes] | None = None) -> bool:
         file = sys.stdout
 
     if not sys.flags.ignore_environment:
+        print("== PYTHON_COLORS", _safe_getenv("PYTHON_COLORS"))
         if _safe_getenv("PYTHON_COLORS") == "0":
             return False
         if _safe_getenv("PYTHON_COLORS") == "1":
             return True
+    print("== NO_COLOR", _safe_getenv("NO_COLOR"))
     if _safe_getenv("NO_COLOR"):
         return False
+    print("== COLORIZE", COLORIZE)
     if not COLORIZE:
         return False
+    print("== FORCE_COLOR", _safe_getenv("FORCE_COLOR"))
     if _safe_getenv("FORCE_COLOR"):
         return True
+    print("== TERM", _safe_getenv("TERM"))
     if _safe_getenv("TERM") == "dumb":
         return False
 
+    print('== hasattr(file, "fileno")', hasattr(file, "fileno"))
     if not hasattr(file, "fileno"):
         return False
 
@@ -455,6 +461,11 @@ def can_colorize(*, file: IO[str] | IO[bytes] | None = None) -> bool:
         except (ImportError, AttributeError):
             return False
 
+    try:
+        print('== os.isatty(file.fileno())', os.isatty(file.fileno()))
+    except OSError:
+        print("== os.isatty(file.fileno()) Failed")
+        print('== hasattr(file, "isatty") and file.isatty()', hasattr(file, "isatty") and file.isatty())
     try:
         return os.isatty(file.fileno())
     except OSError:
