@@ -1943,7 +1943,7 @@ Build changes
   and :option:`-X dev <-X>` is passed to the Python or Python is built in :ref:`debug mode <debug-build>`.
   (Contributed by Donghee Na in :gh:`141770`.)
 
-* The official Windows 64-bit binaries on python.org__ are now using the new
+* The official Windows 64-bit binaries on python.org__ now use the new
   :ref:`tail-calling interpreter <whatsnew314-tail-call-interpreter>`.
   (Contributed by Ken Jin, Brandt Bucher and Chris Eibl in :gh:`139922`.
   Special thanks go to Steve Dower for his assistance with the integration in the
