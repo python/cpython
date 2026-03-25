@@ -651,7 +651,7 @@ static const _PyDict_EmptyKeysStorage empty_keys_storage = {
         1, /* dk_version */
         0, /* dk_usable (immutable) */
         0, /* dk_nentries */
-        {0}, /* dk_entries */
+        {{0}}, /* dk_entries */
     }
 };
 
