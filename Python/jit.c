@@ -316,16 +316,23 @@ patch_32(unsigned char *location, uint64_t value)
     memcpy(location, &final_value, sizeof(final_value));
 }
 
+// 32-bit absolute address, sign-extended by the instruction.
+void
+patch_32s(unsigned char *location, uint64_t value)
+{
+    // Check that we're not out of range of 32 signed bits:
+    assert((int64_t)value >= -(1LL << 31));
+    assert((int64_t)value < (1LL << 31));
+    int32_t final_value = (int32_t)value;
+    memcpy(location, &final_value, sizeof(final_value));
+}
+
 // 32-bit relative address.
 void
 patch_32r(unsigned char *location, uint64_t value)
 {
     value -= (uintptr_t)location;
-    // Check that we're not out of range of 32 signed bits:
-    assert((int64_t)value >= -(1LL << 31));
-    assert((int64_t)value < (1LL << 31));
-    uint32_t final_value = (uint32_t)value;
-    memcpy(location, &final_value, sizeof(final_value));
+    patch_32s(location, value);
 }
 
 // 64-bit absolute address.
