@@ -613,7 +613,9 @@ class RawConfigParser(MutableMapping):
         \]                                 # ]
         """
     _OPT_TMPL = r"""
-        (?P<option>.*?)                    # very permissive!
+        (?P<option>                        # very permissive!
+            (?:(?!{delim})\S)*             # non-delimiter non-whitespace
+            (?:\s+(?:(?!{delim})\S)+)*)    # optionally more words
         \s*(?P<vi>{delim})\s*              # any number of space/tab,
                                            # followed by any of the
                                            # allowed delimiters,
@@ -621,7 +623,9 @@ class RawConfigParser(MutableMapping):
         (?P<value>.*)$                     # everything up to eol
         """
     _OPT_NV_TMPL = r"""
-        (?P<option>.*?)                    # very permissive!
+        (?P<option>                        # very permissive!
+            (?:(?!{delim})\S)*             # non-delimiter non-whitespace
+            (?:\s+(?:(?!{delim})\S)+)*)    # optionally more words
         \s*(?:                             # any number of space/tab,
         (?P<vi>{delim})\s*                 # optionally followed by
                                            # any of the allowed
@@ -1144,26 +1148,6 @@ class RawConfigParser(MutableMapping):
     def _handle_option(self, st, line, fpname):
         # an option line?
         st.indent_level = st.cur_indent_level
-
-        # Fast path: if no delimiter is present, skip the regex to avoid
-        # quadratic backtracking (gh-146333). When allow_no_value is True,
-        # treat the whole line as an option name with no value.
-        if not any(d in line.clean for d in self._delimiters):
-            if self._allow_no_value:
-                st.optname = self.optionxform(line.clean.strip())
-                if not st.optname:
-                    st.errors.append(ParsingError(fpname, st.lineno, line))
-                    return
-                if (self._strict and
-                    (st.sectname, st.optname) in st.elements_added):
-                    raise DuplicateOptionError(st.sectname, st.optname,
-                                            fpname, st.lineno)
-                st.elements_added.add((st.sectname, st.optname))
-                st.cursect[st.optname] = None
-                return
-            else:
-                st.errors.append(ParsingError(fpname, st.lineno, line))
-                return
 
         mo = self._optcre.match(line.clean)
         if not mo:
