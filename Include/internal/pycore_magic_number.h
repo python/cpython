@@ -292,7 +292,8 @@ Known values:
     Python 3.15a4 3659 (Add CALL_FUNCTION_EX specialization)
     Python 3.15a4 3660 (Change generator preamble code)
     Python 3.15a4 3661 (Lazy imports IMPORT_NAME opcode changes)
-    Python 3.15a6 3662 (Add counter to RESUME)
+    Python 3.15a8 3662 (Add counter to RESUME)
+    Python 3.15a8 3663 (Merge GET_ITER and GET_YIELD_FROM_ITER. Modify SEND to make it a bit more like FOR_ITER)
 
 
     Python 3.16 will start with 3700
@@ -306,7 +307,7 @@ PC/launcher.c must also be updated.
 
 */
 
-#define PYC_MAGIC_NUMBER 3662
+#define PYC_MAGIC_NUMBER 3663
 /* This is equivalent to converting PYC_MAGIC_NUMBER to 2 bytes
    (little-endian) and then appending b'\r\n'. */
 #define PYC_MAGIC_NUMBER_TOKEN \

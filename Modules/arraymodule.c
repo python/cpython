@@ -92,9 +92,6 @@ enum machine_format_code {
      * instead of using the memory content of the array directly. In that
      * case, the array_reconstructor mechanism is bypassed completely, and
      * the standard array constructor is used instead.
-     *
-     * This is will most likely occur when the machine doesn't use IEEE
-     * floating-point numbers.
      */
 
     UNSIGNED_INT8 = 0,
@@ -2128,24 +2125,10 @@ typecode_to_mformat_code(char typecode)
         return UTF32_LE + is_big_endian;
 
     case 'f':
-        if (sizeof(float) == 4) {
-            const float y = 16711938.0;
-            if (memcmp(&y, "\x4b\x7f\x01\x02", 4) == 0)
-                return IEEE_754_FLOAT_BE;
-            if (memcmp(&y, "\x02\x01\x7f\x4b", 4) == 0)
-                return IEEE_754_FLOAT_LE;
-        }
-        return UNKNOWN_FORMAT;
+        return _PY_FLOAT_BIG_ENDIAN ? IEEE_754_FLOAT_BE : IEEE_754_FLOAT_LE;
 
     case 'd':
-        if (sizeof(double) == 8) {
-            const double x = 9006104071832581.0;
-            if (memcmp(&x, "\x43\x3f\xff\x01\x02\x03\x04\x05", 8) == 0)
-                return IEEE_754_DOUBLE_BE;
-            if (memcmp(&x, "\x05\x04\x03\x02\x01\xff\x3f\x43", 8) == 0)
-                return IEEE_754_DOUBLE_LE;
-        }
-        return UNKNOWN_FORMAT;
+        return _PY_FLOAT_BIG_ENDIAN ? IEEE_754_DOUBLE_BE : IEEE_754_DOUBLE_LE;
 
     case 'F':
         return _PY_FLOAT_BIG_ENDIAN ? \
@@ -2929,11 +2912,9 @@ array_buffer_getbuf(PyObject *op, Py_buffer *view, int flags)
     view->internal = NULL;
     if ((flags & PyBUF_FORMAT) == PyBUF_FORMAT) {
         view->format = (char *)self->ob_descr->formats;
-#ifdef Py_UNICODE_WIDE
-        if (self->ob_descr->typecode == 'u') {
+        if (sizeof(wchar_t) >= 4 && self->ob_descr->typecode == 'u') {
             view->format = "w";
         }
-#endif
     }
 
     self->ob_exports++;
@@ -3497,6 +3478,7 @@ array_modexec(PyObject *m)
 }
 
 static PyModuleDef_Slot arrayslots[] = {
+    _Py_ABI_SLOT,
     {Py_mod_exec, array_modexec},
     {Py_mod_multiple_interpreters, Py_MOD_PER_INTERPRETER_GIL_SUPPORTED},
     {Py_mod_gil, Py_MOD_GIL_NOT_USED},
