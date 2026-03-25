@@ -520,10 +520,11 @@ SOCK_MAX_SIZE = 16 * 1024 * 1024 + 1
 
 def _have_ieee_doubles():
     import math
+    import struct
     # Check parameters for encoding of floats; a quick exit
     # if they aren't same as for IEC 60559 doubles.  Check
     # also that subnormals are present.
-    if (ctypes.sizeof(ctypes.c_double) != 8
+    if (struct.calcsize('d') != 8
             or sys.float_info.radix != 2
             or sys.float_info.mant_dig != 53
             or sys.float_info.dig != 15
