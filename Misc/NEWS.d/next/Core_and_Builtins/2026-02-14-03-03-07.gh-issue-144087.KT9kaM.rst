@@ -1,0 +1,3 @@
+:func:`int`, :func:`float` and :func:`complex` now support strings
+with ``−`` (Unicode minus sign, U+2212) as an alternative to ``-``
+(ASCII hyphen minus, U+002D). Contributed by Bartosz Sławecki.
