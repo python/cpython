@@ -213,6 +213,20 @@ class ListTest(list_tests.CommonTest):
             a[:] = data
             self.assertEqual(list(it), [])
 
+    def test_exhausted_iterator_setstate(self):
+        # gh-129139: __setstate__ on an exhausted iterator must not revive it
+        it = iter([1, 2, 3])
+        list(it)  # exhaust the iterator
+        it.__setstate__(0)
+        self.assertRaises(StopIteration, next, it)
+
+    def test_exhausted_reversed_iterator_setstate(self):
+        # gh-129139: __setstate__ on an exhausted reversed iterator must not revive it
+        it = reversed([1, 2, 3])
+        list(it)  # exhaust the iterator
+        it.__setstate__(0)
+        self.assertRaises(StopIteration, next, it)
+
     def test_step_overflow(self):
         a = [0, 1, 2, 3, 4]
         a[1::sys.maxsize] = [0]

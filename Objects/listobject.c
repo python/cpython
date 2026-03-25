@@ -4108,7 +4108,7 @@ listiter_setstate(PyObject *self, PyObject *state)
     Py_ssize_t index = PyLong_AsSsize_t(state);
     if (index == -1 && PyErr_Occurred())
         return NULL;
-    if (it->it_seq != NULL) {
+    if (it->it_seq != NULL && FT_ATOMIC_LOAD_SSIZE_RELAXED(it->it_index) >= 0) {
         if (index < -1)
             index = -1;
         else if (index > PyList_GET_SIZE(it->it_seq))
@@ -4260,7 +4260,7 @@ listreviter_setstate(PyObject *self, PyObject *state)
     Py_ssize_t index = PyLong_AsSsize_t(state);
     if (index == -1 && PyErr_Occurred())
         return NULL;
-    if (it->it_seq != NULL) {
+    if (it->it_seq != NULL && FT_ATOMIC_LOAD_SSIZE_RELAXED(it->it_index) >= 0) {
         if (index < -1)
             index = -1;
         else if (index > PyList_GET_SIZE(it->it_seq) - 1)
