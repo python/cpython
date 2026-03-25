@@ -266,13 +266,10 @@ jobs:
               'Please investigate and take any corrective actions.'
             ].join('\n');
 
-            const { data: issues } = await github.rest.issues.listForRepo({
-              owner,
-              repo,
-              state: 'open',
-              per_page: 100
+            const { data: search } = await github.rest.search.issuesAndPullRequests({
+              q: `repo:${owner}/${repo} is:issue is:open in:title "CI failure"`
             });
-            const existing = issues.find(i => i.title === title);
+            const existing = search.items.find(i => i.title === title);
 
             if (existing) {
               await github.rest.issues.createComment({ owner, repo, issue_number: existing.number, body });
