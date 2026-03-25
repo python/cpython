@@ -4135,7 +4135,8 @@
                 }
                 res = PyJitRef_MakeUnique(sym_new_type(ctx, &PyFloat_Type));
             }
-            else if (oparg == NB_TRUE_DIVIDE || oparg == NB_INPLACE_TRUE_DIVIDE) {
+            else if ((oparg == NB_TRUE_DIVIDE || oparg == NB_INPLACE_TRUE_DIVIDE)
+                 && (lhs_int || lhs_float) && (rhs_int || rhs_float)) {
                 res = sym_new_type(ctx, &PyFloat_Type);
             }
             else if (!((lhs_int || lhs_float) && (rhs_int || rhs_float))) {

@@ -3268,9 +3268,11 @@ class TestUopsOptimization(unittest.TestCase):
         self.assertIn("_BINARY_OP_TRUEDIV_FLOAT_INPLACE_RIGHT", uops)
 
     def test_float_truediv_type_propagation(self):
-        # (a/b) + (c/d): inner divisions are generic _BINARY_OP but
-        # type propagation marks their results as float, so the +
-        # is specialized and the += uses inplace on the unique result
+        # (a/b) + (c/d): inner divisions are generic _BINARY_OP.
+        # Type propagation only marks results as float when operand
+        # types are known int/float (to avoid mistyping Fraction etc.).
+        # With unknown-type locals, the + is specialized via tier 1
+        # guards, not via optimizer type propagation.
         def testfunc(args):
             a, b, c, d, n = args
             total = 0.0
@@ -3283,29 +3285,42 @@ class TestUopsOptimization(unittest.TestCase):
         self.assertAlmostEqual(res, expected)
         self.assertIsNotNone(ex)
         uops = get_opnames(ex)
-        # The + between the two division results should use inplace
-        # (the a/b result is unique from type propagation)
-        self.assertIn("_BINARY_OP_ADD_FLOAT_INPLACE", uops)
-        # The += should also use inplace (the + result is unique)
+        # The + between the two division results is specialized
+        self.assertIn("_BINARY_OP_ADD_FLOAT", uops)
+        # The += uses inplace (the + result is unique)
         self.assertIn("_BINARY_OP_ADD_FLOAT_INPLACE_RIGHT", uops)
 
-    def test_float_truediv_unique_result_enables_inplace_add(self):
-        # a / b: the generic division result is marked as unique float
-        # by type propagation, so total += (a / b) uses inplace add
+    def test_float_truediv_non_float_type_no_crash(self):
+        # Fraction / Fraction goes through _BINARY_OP with NB_TRUE_DIVIDE
+        # but returns Fraction, not float. The optimizer must not assume
+        # the result is float for non-int/float operands. See gh-146306.
+        from fractions import Fraction
         def testfunc(args):
             a, b, n = args
-            total = 0.0
+            total = Fraction(0)
             for _ in range(n):
                 total += a / b
+            return float(total)
+
+        res, ex = self._run_with_optimizer(testfunc, (Fraction(10), Fraction(3), TIER2_THRESHOLD))
+        expected = float(TIER2_THRESHOLD * Fraction(10, 3))
+        self.assertAlmostEqual(res, expected)
+
+    def test_float_truediv_mixed_float_fraction_no_crash(self):
+        # float / Fraction: lhs is known float from a prior guard,
+        # but rhs is Fraction. The guard insertion for rhs should
+        # deopt cleanly at runtime, not crash.
+        from fractions import Fraction
+        def testfunc(args):
+            a, b, c, n = args
+            total = 0.0
+            for _ in range(n):
+                total += (a + b) / c  # (a+b) is float, c is Fraction
             return total
 
-        res, ex = self._run_with_optimizer(testfunc, (10.0, 3.0, TIER2_THRESHOLD))
-        expected = TIER2_THRESHOLD * (10.0 / 3.0)
-        self.assertAlmostEqual(res, expected)
-        self.assertIsNotNone(ex)
-        uops = get_opnames(ex)
-        # The += uses inplace because the division result is unique
-        self.assertIn("_BINARY_OP_ADD_FLOAT_INPLACE_RIGHT", uops)
+        res, ex = self._run_with_optimizer(testfunc, (2.0, 3.0, Fraction(4), TIER2_THRESHOLD))
+        expected = TIER2_THRESHOLD * (5.0 / Fraction(4))
+        self.assertAlmostEqual(res, float(expected))
 
     def test_load_attr_instance_value(self):
         def testfunc(n):
