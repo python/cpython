@@ -717,6 +717,8 @@ NON_ESCAPING_FUNCTIONS = (
     "_Py_GatherStats_GetIter",
     "_PyStolenTuple_Free",
     "PyObject_GC_UnTrack",
+    "_PyErr_ExceptionMatches",
+    "CALL_TP_ITERITEM",
 )
 
 
