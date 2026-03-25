@@ -38,3 +38,8 @@ Pending removal in Python 3.20
   - :mod:`zlib`
 
   (Contributed by Hugo van Kemenade and Stan Ulbrych in :gh:`76007`.)
+
+* The ``__getformat__()`` class method of the :class:`float` is deprecated
+  and will be removed in Python 3.20.
+
+  (Contributed by Sergey B Kirpichev in :gh:`145633`.)

@@ -1,0 +1,2 @@
+The ``__getformat__()`` class method of the :class:`float` is deprecated.
+Patch by Sergey B Kirpichev.

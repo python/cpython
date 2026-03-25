@@ -1696,6 +1696,11 @@ static PyObject *
 float___getformat___impl(PyTypeObject *type, const char *typestr)
 /*[clinic end generated code: output=2bfb987228cc9628 input=0ae1ba35d192f704]*/
 {
+    if (PyErr_WarnFormat(PyExc_DeprecationWarning, 1,
+                         "float.__getformat__() is deprecated"))
+    {
+        return NULL;
+    }
     if (strcmp(typestr, "double") != 0 && strcmp(typestr, "float") != 0) {
         PyErr_SetString(PyExc_ValueError,
                         "__getformat__() argument 1 must be "
