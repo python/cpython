@@ -17,3 +17,59 @@
 PyMutex_Lock:shared:
 PyMutex_Unlock:shared:
 PyMutex_IsLocked:atomic:
+
+# List objects (Doc/c-api/list.rst)
+
+# Type checks - read ob_type pointer, always safe
+PyList_Check:atomic:
+PyList_CheckExact:atomic:
+
+# Creation - pure allocation, no shared state
+PyList_New:atomic:
+
+# Size - uses atomic load on free-threaded builds
+PyList_Size:atomic:
+PyList_GET_SIZE:atomic:
+
+# Strong-reference lookup - lock-free with atomic ops
+PyList_GetItemRef:atomic:
+
+# Borrowed-reference lookups - no locking; returned borrowed
+# reference is unsafe in free-threaded builds without
+# external synchronization
+PyList_GetItem:compatible:
+PyList_GET_ITEM:compatible:
+
+# Single-item mutations - hold per-object lock for duration;
+# appear atomic to lock-free readers
+PyList_SetItem:atomic:
+PyList_Append:atomic:
+
+# Insert - protected by per-object critical section; shifts
+# elements so lock-free readers may observe intermediate states
+PyList_Insert:shared:
+
+# Initialization macro - no synchronization; normally only used
+# to fill in new lists where there is no previous content
+PyList_SET_ITEM:compatible:
+
+# Bulk operations - hold per-object lock for duration
+PyList_GetSlice:atomic:
+PyList_AsTuple:atomic:
+PyList_Clear:atomic:
+
+# Reverse - protected by per-object critical section; swaps
+# elements so lock-free readers may observe intermediate states
+PyList_Reverse:shared:
+
+# Slice assignment - lock target list; also lock source when it
+# is a list
+PyList_SetSlice:shared:
+
+# Sort - per-object lock held; comparison callbacks may execute
+# arbitrary Python code
+PyList_Sort:shared:
+
+# Extend - lock target list; also lock source when it is a
+# list, set, or dict
+PyList_Extend:shared:

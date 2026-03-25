@@ -174,7 +174,7 @@ dis_bug708901 = """\
 %3d           LOAD_SMALL_INT          10
 
 %3d           CALL                     2
-              GET_ITER
+              GET_ITER                 0
       L1:     FOR_ITER                 3 (to L2)
               STORE_FAST               0 (res)
 
@@ -616,6 +616,7 @@ dis_asyncwith = """\
                 LOAD_SPECIAL             2 (__aenter__)
                 CALL                     0
                 GET_AWAITABLE            1
+                PUSH_NULL
                 LOAD_CONST               0 (None)
         L2:     SEND                     4 (to L5)
         L3:     YIELD_VALUE              1
@@ -632,6 +633,7 @@ dis_asyncwith = """\
                 LOAD_CONST               0 (None)
                 CALL                     3
                 GET_AWAITABLE            2
+                PUSH_NULL
                 LOAD_CONST               0 (None)
         L8:     SEND                     4 (to L11)
         L9:     YIELD_VALUE              1
@@ -646,12 +648,13 @@ dis_asyncwith = """\
                 RETURN_VALUE
 
 %4d   L12:     CLEANUP_THROW
-       L13:     JUMP_BACKWARD_NO_INTERRUPT 27 (to L5)
+       L13:     JUMP_BACKWARD_NO_INTERRUPT 28 (to L5)
        L14:     CLEANUP_THROW
        L15:     JUMP_BACKWARD_NO_INTERRUPT 10 (to L11)
        L16:     PUSH_EXC_INFO
                 WITH_EXCEPT_START
                 GET_AWAITABLE            2
+                PUSH_NULL
                 LOAD_CONST               0 (None)
        L17:     SEND                     5 (to L21)
        L18:     YIELD_VALUE              1
@@ -681,15 +684,15 @@ dis_asyncwith = """\
                 RERAISE                  1
 ExceptionTable:
   L1 to L3 -> L27 [0] lasti
-  L3 to L4 -> L12 [4]
+  L3 to L4 -> L12 [5]
   L4 to L6 -> L27 [0] lasti
   L6 to L7 -> L16 [2] lasti
   L7 to L9 -> L27 [0] lasti
-  L9 to L10 -> L14 [2]
+  L9 to L10 -> L14 [3]
   L10 to L13 -> L27 [0] lasti
   L14 to L15 -> L27 [0] lasti
   L16 to L18 -> L26 [4] lasti
-  L18 to L19 -> L20 [7]
+  L18 to L19 -> L20 [8]
   L19 to L22 -> L26 [4] lasti
   L23 to L25 -> L26 [4] lasti
   L25 to L27 -> L27 [0] lasti
@@ -876,7 +879,7 @@ Disassembly of <code object <genexpr> at 0x..., file "%s", line %d>:
   --           COPY_FREE_VARS           1
 
 %4d           LOAD_FAST                0 (.0)
-               GET_ITER
+               GET_ITER                 0
                RETURN_GENERATOR
                POP_TOP
        L1:     RESUME                   0
@@ -933,7 +936,7 @@ dis_loop_test_quickened_code = """\
               LIST_EXTEND              1
               LOAD_SMALL_INT           3
               BINARY_OP                5 (*)
-              GET_ITER
+              GET_ITER                 0
       L1:     FOR_ITER_LIST           14 (to L2)
               STORE_FAST               0 (i)
 
@@ -1035,6 +1038,7 @@ class DisTests(DisTestBase):
         long_opcodes = set(['JUMP_BACKWARD_NO_INTERRUPT',
                             'LOAD_FAST_BORROW_LOAD_FAST_BORROW',
                             'INSTRUMENTED_CALL_FUNCTION_EX',
+                            'YIELD_FROM_CORO_CHECK',
                             'ANNOTATIONS_PLACEHOLDER'])
         for op, opname in enumerate(dis.opname):
             if opname in long_opcodes or opname.startswith("INSTRUMENTED"):
@@ -1855,7 +1859,7 @@ expected_opinfo_jumpy = [
   make_inst(opname='LOAD_GLOBAL', arg=1, argval='range', argrepr='range + NULL', offset=4, start_offset=4, starts_line=True, line_number=3, cache_info=[('counter', 1, b'\x00\x00'), ('index', 1, b'\x00\x00'), ('module_keys_version', 1, b'\x00\x00'), ('builtin_keys_version', 1, b'\x00\x00')]),
   make_inst(opname='LOAD_SMALL_INT', arg=10, argval=10, argrepr='', offset=14, start_offset=14, starts_line=False, line_number=3),
   make_inst(opname='CALL', arg=1, argval=1, argrepr='', offset=16, start_offset=16, starts_line=False, line_number=3, cache_info=[('counter', 1, b'\x00\x00'), ('func_version', 2, b'\x00\x00\x00\x00')]),
-  make_inst(opname='GET_ITER', arg=None, argval=None, argrepr='', offset=24, start_offset=24, starts_line=False, line_number=3),
+  make_inst(opname='GET_ITER', arg=0, argval=0, argrepr='', offset=24, start_offset=24, starts_line=False, line_number=3),
   make_inst(opname='FOR_ITER', arg=33, argval=96, argrepr='to L4', offset=26, start_offset=26, starts_line=False, line_number=3, label=1, cache_info=[('counter', 1, b'\x00\x00')]),
   make_inst(opname='STORE_FAST', arg=0, argval='i', argrepr='i', offset=30, start_offset=30, starts_line=False, line_number=3),
   make_inst(opname='LOAD_GLOBAL', arg=3, argval='print', argrepr='print + NULL', offset=32, start_offset=32, starts_line=True, line_number=4, cache_info=[('counter', 1, b'\x00\x00'), ('index', 1, b'\x00\x00'), ('module_keys_version', 1, b'\x00\x00'), ('builtin_keys_version', 1, b'\x00\x00')]),

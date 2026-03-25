@@ -41,6 +41,20 @@ void _PyOpcode_RecordFunction_NOS_GEN_FUNC(_PyInterpreterFrame *frame, _PyStackR
     }
 }
 
+void _PyOpcode_RecordFunction_3OS_GEN_FUNC(_PyInterpreterFrame *frame, _PyStackRef *stack_pointer, int oparg, PyObject **recorded_value) {
+    _PyStackRef gen;
+    gen = stack_pointer[-3];
+    PyObject *obj = PyStackRef_AsPyObjectBorrow(gen);
+    if (PyGen_Check(obj)) {
+        PyGenObject *gen_obj = (PyGenObject *)obj;
+        _PyStackRef func = gen_obj->gi_iframe.f_funcobj;
+        if (!PyStackRef_IsNull(func)) {
+            *recorded_value = (PyObject *)PyStackRef_AsPyObjectBorrow(func);
+            Py_INCREF(*recorded_value);
+        }
+    }
+}
+
 void _PyOpcode_RecordFunction_4OS(_PyInterpreterFrame *frame, _PyStackRef *stack_pointer, int oparg, PyObject **recorded_value) {
     _PyStackRef value;
     value = stack_pointer[-4];
@@ -73,14 +87,15 @@ void _PyOpcode_RecordFunction_CODE(_PyInterpreterFrame *frame, _PyStackRef *stac
 
 #define _RECORD_TOS_TYPE_INDEX 1
 #define _RECORD_NOS_INDEX 2
-#define _RECORD_NOS_GEN_FUNC_INDEX 3
-#define _RECORD_CALLABLE_INDEX 4
-#define _RECORD_BOUND_METHOD_INDEX 5
-#define _RECORD_4OS_INDEX 6
+#define _RECORD_3OS_GEN_FUNC_INDEX 3
+#define _RECORD_NOS_GEN_FUNC_INDEX 4
+#define _RECORD_CALLABLE_INDEX 5
+#define _RECORD_BOUND_METHOD_INDEX 6
+#define _RECORD_4OS_INDEX 7
 const uint8_t _PyOpcode_RecordFunctionIndices[256] = {
         [TO_BOOL_ALWAYS_TRUE] = _RECORD_TOS_TYPE_INDEX,
         [BINARY_OP_SUBSCR_GETITEM] = _RECORD_NOS_INDEX,
-        [SEND_GEN] = _RECORD_NOS_GEN_FUNC_INDEX,
+        [SEND_GEN] = _RECORD_3OS_GEN_FUNC_INDEX,
         [LOAD_ATTR_INSTANCE_VALUE] = _RECORD_TOS_TYPE_INDEX,
         [LOAD_ATTR_WITH_HINT] = _RECORD_TOS_TYPE_INDEX,
         [LOAD_ATTR_SLOT] = _RECORD_TOS_TYPE_INDEX,
@@ -110,10 +125,11 @@ const uint8_t _PyOpcode_RecordFunctionIndices[256] = {
         [CALL_EX_PY] = _RECORD_4OS_INDEX,
 };
 
-const _Py_RecordFuncPtr _PyOpcode_RecordFunctions[7] = {
+const _Py_RecordFuncPtr _PyOpcode_RecordFunctions[8] = {
         [0] = NULL,
         [_RECORD_TOS_TYPE_INDEX] = _PyOpcode_RecordFunction_TOS_TYPE,
         [_RECORD_NOS_INDEX] = _PyOpcode_RecordFunction_NOS,
+        [_RECORD_3OS_GEN_FUNC_INDEX] = _PyOpcode_RecordFunction_3OS_GEN_FUNC,
         [_RECORD_NOS_GEN_FUNC_INDEX] = _PyOpcode_RecordFunction_NOS_GEN_FUNC,
         [_RECORD_CALLABLE_INDEX] = _PyOpcode_RecordFunction_CALLABLE,
         [_RECORD_BOUND_METHOD_INDEX] = _PyOpcode_RecordFunction_BOUND_METHOD,

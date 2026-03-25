@@ -41,9 +41,24 @@ do { \
 #  define SPECIALIZATION_FAIL(opcode, kind) ((void)0)
 #endif  // Py_STATS
 
+static void
+fixup_getiter(_Py_CODEUNIT *instruction, int flags)
+{
+    // Compiler can't know if types.coroutine() will be called,
+    // so fix up here
+    if (instruction->op.arg) {
+        if (flags & (CO_COROUTINE | CO_ITERABLE_COROUTINE)) {
+            instruction->op.arg = GET_ITER_YIELD_FROM_NO_CHECK;
+        }
+        else {
+            instruction->op.arg = GET_ITER_YIELD_FROM_CORO_CHECK;
+        }
+    }
+}
+
 // Initialize warmup counters and optimize instructions. This cannot fail.
 void
-_PyCode_Quicken(_Py_CODEUNIT *instructions, Py_ssize_t size, int enable_counters)
+_PyCode_Quicken(_Py_CODEUNIT *instructions, Py_ssize_t size, int enable_counters, int flags)
 {
     #if ENABLE_SPECIALIZATION
     _Py_BackoffCounter jump_counter, adaptive_counter, resume_counter;
@@ -66,6 +81,9 @@ _PyCode_Quicken(_Py_CODEUNIT *instructions, Py_ssize_t size, int enable_counters
         opcode = instructions[i].op.code;
         int caches = _PyOpcode_Caches[opcode];
         oparg = (oparg << 8) | instructions[i].op.arg;
+        if (opcode == GET_ITER) {
+            fixup_getiter(&instructions[i], flags);
+        }
         if (caches) {
             // The initial value depends on the opcode
             switch (opcode) {
@@ -90,6 +108,13 @@ _PyCode_Quicken(_Py_CODEUNIT *instructions, Py_ssize_t size, int enable_counters
         if (opcode != EXTENDED_ARG) {
             oparg = 0;
         }
+    }
+    #else
+    for (Py_ssize_t i = 0; i < size-1; i++) {
+        if (instructions[i].op.code == GET_ITER) {
+            fixup_getiter(&instructions[i], flags);
+        }
+        i += _PyOpcode_Caches[opcode];
     }
     #endif /* ENABLE_SPECIALIZATION */
 }

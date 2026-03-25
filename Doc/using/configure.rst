@@ -795,9 +795,18 @@ also be used to improve performance.
 
    Even when compiled with this option, huge pages are **not** used at runtime
    unless the :envvar:`PYTHON_PYMALLOC_HUGEPAGES` environment variable is set
-   to ``1``. This opt-in is required because huge pages carry risks on Linux:
-   if the huge-page pool is exhausted, page faults (including copy-on-write
-   faults after :func:`os.fork`) deliver ``SIGBUS`` and kill the process.
+   to ``1``. This opt-in is required because huge pages
+
+   * carry risks on Linux: if the huge-page pool is exhausted, page faults
+     (including copy-on-write faults after :func:`os.fork`) deliver ``SIGBUS``
+     and kill the process.
+
+   * need a special privilege on Windows. See the `Windows documentation for large pages
+     <https://learn.microsoft.com/windows/win32/memory/large-page-support>`_
+     for details. Python will fail on startup if the required privilege
+     `SeLockMemoryPrivilege
+     <https://learn.microsoft.com/previous-versions/windows/it-pro/windows-10/security/threat-protection/security-policy-settings/lock-pages-in-memory>`_
+     is not held by the user.
 
    The configure script checks that the platform supports ``MAP_HUGETLB``
    and emits a warning if it is not available.
