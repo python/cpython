@@ -1,0 +1,4 @@
+Fixed several error handling issues in the :mod:`!_remote_debugging` module,
+including safer validation of remote ``int`` objects, clearer asyncio task
+chain failures, and cache cleanup fixes that avoid leaking or double-freeing
+metadata on allocation failure. Patch by Pablo Galindo.
