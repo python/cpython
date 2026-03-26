@@ -2780,6 +2780,22 @@ class TestUopsOptimization(unittest.TestCase):
         self.assertEqual(count_ops(ex, "_POP_TOP_NOP"), 1)
         self.assertLessEqual(count_ops(ex, "_POP_TOP"), 2)
 
+    def test_call_intrinsic_2(self):
+        def testfunc(n):
+            x = 0
+            for _ in range(n):
+                def test_testfunc[T](n):
+                    pass
+            return x
+
+        res, ex = self._run_with_optimizer(testfunc, TIER2_THRESHOLD)
+        self.assertEqual(res, 0)
+        uops = get_opnames(ex)
+
+        self.assertIn("_CALL_INTRINSIC_2", uops)
+        self.assertGreaterEqual(count_ops(ex, "_POP_TOP_NOP"), 2)
+        self.assertLessEqual(count_ops(ex, "_POP_TOP"), 4)
+
     def test_get_len_with_const_tuple(self):
         def testfunc(n):
             x = 0.0
