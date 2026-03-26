@@ -4597,7 +4597,7 @@ class AbstractPickleTests:
     def deep_nested_struct(self, create_nested,
                            minprotocol=0, compare_equal=True,
                            depth=FAST_NESTING_LIMIT * 2):
-        # gh-146059: Check that fast_save() is called when
+        # gh-146059: Check that fast_save_leave() is called when
         # fast_save_enter() is called.
         if not hasattr(self, "pickler"):
             self.skipTest("need Pickler class")
