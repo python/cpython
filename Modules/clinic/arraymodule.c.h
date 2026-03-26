@@ -335,8 +335,8 @@ PyDoc_STRVAR(array_array_byteswap__doc__,
 "\n"
 "Byteswap all items of the array.\n"
 "\n"
-"If the items in the array are not 1, 2, 4, 8 or 16 bytes in size, RuntimeError is\n"
-"raised.  Note, that for complex types the order of\n"
+"If the items in the array are not 1, 2, 4, 8 or 16 bytes in size, RuntimeError\n"
+"is raised.  Note, that for complex types the order of\n"
 "components (the real part, followed by imaginary part) is preserved.");
 
 #define ARRAY_ARRAY_BYTESWAP_METHODDEF    \
@@ -779,4 +779,4 @@ array_arrayiterator___setstate__(PyObject *self, PyObject *state)
 
     return return_value;
 }
-/*[clinic end generated code: output=624d909ed52bc2c4 input=a9049054013a1b77]*/
+/*[clinic end generated code: output=9dcb2fc40710f83d input=a9049054013a1b77]*/
