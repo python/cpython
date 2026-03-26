@@ -64,13 +64,9 @@ Copyright (c) Corporation for National Research Initiatives.
 #error Must define SIZEOF_WCHAR_T
 #endif
 
+/* Soft-deprecated defines */
 #define Py_UNICODE_SIZE SIZEOF_WCHAR_T
-
-/* If wchar_t can be used for UCS-4 storage, set Py_UNICODE_WIDE.
-   Otherwise, Unicode strings are stored as UCS-2 (with limited support
-   for UTF-16) */
-
-#if Py_UNICODE_SIZE >= 4
+#if SIZEOF_WCHAR_T >= 4
 #define Py_UNICODE_WIDE
 #endif
 

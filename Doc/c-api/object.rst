@@ -363,6 +363,8 @@ Object Protocol
    representation on success, ``NULL`` on failure.  This is the equivalent of the
    Python expression ``repr(o)``.  Called by the :func:`repr` built-in function.
 
+   If argument is ``NULL``, return the string ``'<NULL>'``.
+
    .. versionchanged:: 3.4
       This function now includes a debug assertion to help ensure that it
       does not silently discard an active exception.
@@ -376,6 +378,8 @@ Object Protocol
    :c:func:`PyObject_Repr` with ``\x``, ``\u`` or ``\U`` escapes.  This generates
    a string similar to that returned by :c:func:`PyObject_Repr` in Python 2.
    Called by the :func:`ascii` built-in function.
+
+   If argument is ``NULL``, return the string ``'<NULL>'``.
 
    .. index:: string; PyObject_Str (C function)
 
@@ -398,6 +402,8 @@ Object Protocol
    Python expression ``str(o)``.  Called by the :func:`str` built-in function
    and, therefore, by the :func:`print` function.
 
+   If argument is ``NULL``, return the string ``'<NULL>'``.
+
    .. versionchanged:: 3.4
       This function now includes a debug assertion to help ensure that it
       does not silently discard an active exception.
@@ -412,6 +418,8 @@ Object Protocol
    expression ``bytes(o)``, when *o* is not an integer.  Unlike ``bytes(o)``,
    a TypeError is raised when *o* is an integer instead of a zero-initialized
    bytes object.
+
+   If argument is ``NULL``, return the :class:`bytes` object ``b'<NULL>'``.
 
 
 .. c:function:: int PyObject_IsSubclass(PyObject *derived, PyObject *cls)
@@ -828,4 +836,4 @@ Object Protocol
    Returns 1 if the object was made immortal and returns 0 if it was not.
    This function cannot fail.
 
-   .. versionadded:: next
+   .. versionadded:: 3.15

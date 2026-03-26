@@ -350,14 +350,14 @@ Importing Modules
 
    Gets the current lazy imports mode.
 
-   .. versionadded:: next
+   .. versionadded:: 3.15
 
 .. c:function:: PyObject* PyImport_GetLazyImportsFilter()
 
    Return a :term:`strong reference` to the current lazy imports filter,
    or ``NULL`` if none exists. This function always succeeds.
 
-   .. versionadded:: next
+   .. versionadded:: 3.15
 
 .. c:function:: int PyImport_SetLazyImportsMode(PyImport_LazyImportsMode mode)
 
@@ -366,7 +366,7 @@ Importing Modules
 
    This function always returns ``0``.
 
-   .. versionadded:: next
+   .. versionadded:: 3.15
 
 .. c:function:: int PyImport_SetLazyImportsFilter(PyObject *filter)
 
@@ -377,7 +377,7 @@ Importing Modules
 
    Return ``0`` on success and ``-1`` with an exception set otherwise.
 
-   .. versionadded:: next
+   .. versionadded:: 3.15
 
 .. c:type:: PyImport_LazyImportsMode
 
@@ -396,7 +396,7 @@ Importing Modules
       Disable lazy imports entirely. Even explicit ``lazy`` statements become
       eager imports.
 
-   .. versionadded:: next
+   .. versionadded:: 3.15
 
 .. c:function:: PyObject* PyImport_CreateModuleFromInitfunc(PyObject *spec, PyObject* (*initfunc)(void))
 

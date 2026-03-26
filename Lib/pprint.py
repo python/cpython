@@ -238,7 +238,7 @@ class PrettyPrinter:
     def _pprint_frozendict(self, object, stream, indent, allowance, context, level):
         write = stream.write
         cls = object.__class__
-        stream.write(cls.__name__ + '(')
+        write(cls.__name__ + '(')
         length = len(object)
         if length:
             self._pprint_dict(object, stream,

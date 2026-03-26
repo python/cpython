@@ -42,7 +42,7 @@ from typing import Annotated, ForwardRef
 from typing import Self, LiteralString
 from typing import TypeAlias
 from typing import ParamSpec, Concatenate, ParamSpecArgs, ParamSpecKwargs
-from typing import TypeGuard, TypeIs, NoDefault
+from typing import TypeForm, TypeGuard, TypeIs, NoDefault
 import abc
 import textwrap
 import typing
@@ -5890,6 +5890,7 @@ class GenericTests(BaseTestCase):
             Final[int],
             Literal[1, 2],
             Concatenate[int, ParamSpec("P")],
+            TypeForm[int],
             TypeGuard[int],
             TypeIs[range],
         ):
@@ -7358,6 +7359,7 @@ class GetUtilitiesTestCase(TestCase):
         self.assertEqual(get_args(Required[int]), (int,))
         self.assertEqual(get_args(NotRequired[int]), (int,))
         self.assertEqual(get_args(TypeAlias), ())
+        self.assertEqual(get_args(TypeForm[int]), (int,))
         self.assertEqual(get_args(TypeGuard[int]), (int,))
         self.assertEqual(get_args(TypeIs[range]), (range,))
         Ts = TypeVarTuple('Ts')
@@ -10646,6 +10648,72 @@ class TypeIsTests(BaseTestCase):
             issubclass(int, TypeIs)
 
 
+class TypeFormTests(BaseTestCase):
+    def test_basics(self):
+        TypeForm[int]  # OK
+        self.assertEqual(TypeForm[int], TypeForm[int])
+
+        def foo(arg) -> TypeForm[int]: ...
+        self.assertEqual(gth(foo), {'return': TypeForm[int]})
+
+        with self.assertRaises(TypeError):
+            TypeForm[int, str]
+
+    def test_repr(self):
+        self.assertEqual(repr(TypeForm), 'typing.TypeForm')
+        cv = TypeForm[int]
+        self.assertEqual(repr(cv), 'typing.TypeForm[int]')
+        cv = TypeForm[Employee]
+        self.assertEqual(repr(cv), 'typing.TypeForm[%s.Employee]' % __name__)
+        cv = TypeForm[tuple[int]]
+        self.assertEqual(repr(cv), 'typing.TypeForm[tuple[int]]')
+
+    def test_cannot_subclass(self):
+        with self.assertRaisesRegex(TypeError, CANNOT_SUBCLASS_TYPE):
+            class C(type(TypeForm)):
+                pass
+        with self.assertRaisesRegex(TypeError, CANNOT_SUBCLASS_TYPE):
+            class D(type(TypeForm[int])):
+                pass
+        with self.assertRaisesRegex(TypeError,
+                                    r'Cannot subclass typing\.TypeForm'):
+            class E(TypeForm):
+                pass
+        with self.assertRaisesRegex(TypeError,
+                                    r'Cannot subclass typing\.TypeForm\[int\]'):
+            class F(TypeForm[int]):
+                pass
+
+    def test_call(self):
+        objs = [
+            1,
+            "int",
+            int,
+            tuple[int, str],
+            Tuple[int, str],
+        ]
+        for obj in objs:
+            with self.subTest(obj=obj):
+                self.assertIs(TypeForm(obj), obj)
+
+        with self.assertRaises(TypeError):
+            TypeForm()
+        with self.assertRaises(TypeError):
+            TypeForm("too", "many")
+
+    def test_cannot_init_type(self):
+        with self.assertRaises(TypeError):
+            type(TypeForm)()
+        with self.assertRaises(TypeError):
+            type(TypeForm[Optional[int]])()
+
+    def test_no_isinstance(self):
+        with self.assertRaises(TypeError):
+            isinstance(1, TypeForm[int])
+        with self.assertRaises(TypeError):
+            issubclass(int, TypeForm)
+
+
 SpecialAttrsP = typing.ParamSpec('SpecialAttrsP')
 SpecialAttrsT = typing.TypeVar('SpecialAttrsT', int, float, complex)
 
@@ -10747,6 +10815,7 @@ class SpecialAttrsTests(BaseTestCase):
             typing.Never: 'Never',
             typing.Optional: 'Optional',
             typing.TypeAlias: 'TypeAlias',
+            typing.TypeForm: 'TypeForm',
             typing.TypeGuard: 'TypeGuard',
             typing.TypeIs: 'TypeIs',
             typing.TypeVar: 'TypeVar',
@@ -10761,6 +10830,7 @@ class SpecialAttrsTests(BaseTestCase):
             typing.Literal[1, 2]: 'Literal',
             typing.Literal[True, 2]: 'Literal',
             typing.Optional[Any]: 'Union',
+            typing.TypeForm[Any]: 'TypeForm',
             typing.TypeGuard[Any]: 'TypeGuard',
             typing.TypeIs[Any]: 'TypeIs',
             typing.Union[Any]: 'Any',
