@@ -167,6 +167,7 @@ class _Target(typing.Generic[_S, _R]):
             # We *may* be able to re-enable this, process it, and JIT it for a
             # nicer debugging experience... but that needs a lot more research:
             "-fno-asynchronous-unwind-tables",
+            "-fno-unwind-tables",
             # Don't call built-in functions that we can't find or patch:
             "-fno-builtin",
             # Don't call stack-smashing canaries that we can't find or patch:
@@ -580,20 +581,24 @@ def get_target(host: str) -> _COFF32 | _COFF64 | _ELF | _MachO:
         host = "aarch64-apple-darwin"
         condition = "defined(__aarch64__) && defined(__APPLE__)"
         optimizer = _optimizers.OptimizerAArch64
-        target = _MachO(host, condition, optimizer=optimizer)
+        target = _MachO(host, condition, optimizer=optimizer, frame_pointers=True)
     elif re.fullmatch(r"aarch64-pc-windows-msvc", host):
         host = "aarch64-pc-windows-msvc"
         condition = "defined(_M_ARM64)"
         args = ["-fms-runtime-lib=dll"]
         optimizer = _optimizers.OptimizerAArch64
-        target = _COFF64(host, condition, args=args, optimizer=optimizer)
+        target = _COFF64(
+            host, condition, args=args, optimizer=optimizer, frame_pointers=True
+        )
     elif re.fullmatch(r"aarch64-.*-linux-gnu", host):
         host = "aarch64-unknown-linux-gnu"
         condition = "defined(__aarch64__) && defined(__linux__)"
         # -mno-outline-atomics: Keep intrinsics from being emitted.
         args = ["-fpic", "-mno-outline-atomics", "-fno-plt"]
         optimizer = _optimizers.OptimizerAArch64
-        target = _ELF(host, condition, args=args, optimizer=optimizer)
+        target = _ELF(
+            host, condition, args=args, optimizer=optimizer, frame_pointers=True
+        )
     elif re.fullmatch(r"i686-pc-windows-msvc", host):
         host = "i686-pc-windows-msvc"
         condition = "defined(_M_IX86)"
