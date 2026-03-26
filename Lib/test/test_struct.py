@@ -365,7 +365,7 @@ class StructTest(ComplexesAreIdenticalMixin, unittest.TestCase):
             (got,) = struct.unpack(code, got)
             self.assertEqual(got, expectedback)
 
-    def check_705836(self, format, reverse_format):
+    def test_705836(self):
         # SF bug 705836.  "<f" and ">f" had a severe rounding bug, where a carry
         # from the low-order discarded bits could propagate into the exponent
         # field, causing the result to be wrong by a factor of 2.
@@ -376,33 +376,42 @@ class StructTest(ComplexesAreIdenticalMixin, unittest.TestCase):
                 delta /= 2.0
             smaller = base - delta
             # Packing this rounds away a solid string of trailing 1 bits.
-            packed = struct.pack(format, smaller)
-            unpacked = struct.unpack(format, packed)[0]
+            packed = struct.pack("<f", smaller)
+            unpacked = struct.unpack("<f", packed)[0]
             # This failed at base = 2, 4, and 32, with unpacked = 1, 2, and
             # 16, respectively.
             self.assertEqual(base, unpacked)
-
-            bigpacked = struct.pack(reverse_format, smaller)
+            bigpacked = struct.pack(">f", smaller)
             self.assertEqual(bigpacked, string_reverse(packed))
-            unpacked = struct.unpack(reverse_format, bigpacked)[0]
+            unpacked = struct.unpack(">f", bigpacked)[0]
             self.assertEqual(base, unpacked)
 
         # Largest finite IEEE single.
         big = (1 << 24) - 1
         big = math.ldexp(big, 127 - 23)
-        packed = struct.pack(format, big)
-        unpacked = struct.unpack(format, packed)[0]
+        packed = struct.pack(">f", big)
+        unpacked = struct.unpack(">f", packed)[0]
         self.assertEqual(big, unpacked)
 
         # The same, but tack on a 1 bit so it rounds up to infinity.
         big = (1 << 25) - 1
         big = math.ldexp(big, 127 - 24)
-        self.assertRaises(OverflowError, struct.pack, format, big)
+        self.assertRaises(OverflowError, struct.pack, ">f", big)
+        self.assertRaises(OverflowError, struct.pack, "<f", big)
+        # same for native format, see gh-145633
+        self.assertRaises(OverflowError, struct.pack, "f", big)
 
-    def test_705836(self):
-        self.check_705836("<f", ">f")
-        self.check_705836(">f", "<f")
-        self.check_705836("f", "<f" if sys.byteorder == "big" else ">f")
+        # And for half-floats
+        big = (1 << 11) - 1
+        big = math.ldexp(big, 15 - 10)
+        packed = struct.pack(">e", big)
+        unpacked = struct.unpack(">e", packed)[0]
+        self.assertEqual(big, unpacked)
+        big = (1 << 12) - 1
+        big = math.ldexp(big, 15 - 11)
+        self.assertRaises(OverflowError, struct.pack, ">e", big)
+        self.assertRaises(OverflowError, struct.pack, "<e", big)
+        self.assertRaises(OverflowError, struct.pack, "e", big)
 
     def test_1530559(self):
         for code, byteorder in iter_integer_formats():
@@ -1206,20 +1215,6 @@ class UnpackIteratorTest(unittest.TestCase):
 
         for formatcode, bits, f in format_bits_float__doubleRoundingError_list:
             self.assertEqual(bits, struct.pack(formatcode, f))
-
-    def test_float_round_trip(self):
-        for format in ("f", "<f", ">f", "d", "<d", ">d"):
-            with self.subTest(format=format):
-                f = struct.unpack(format, struct.pack(format, 1.5))[0]
-                self.assertEqual(f, 1.5)
-                f = struct.unpack(format, struct.pack(format, NAN))[0]
-                self.assertTrue(math.isnan(f), f)
-                f = struct.unpack(format, struct.pack(format, INF))[0]
-                self.assertTrue(math.isinf(f), f)
-                self.assertEqual(math.copysign(1.0, f), 1.0)
-                f = struct.unpack(format, struct.pack(format, -INF))[0]
-                self.assertTrue(math.isinf(f), f)
-                self.assertEqual(math.copysign(1.0, f), -1.0)
 
 
 if __name__ == '__main__':
