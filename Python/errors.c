@@ -248,11 +248,19 @@ PyErr_SetObject(PyObject *exception, PyObject *value)
 
 /* Set a key error with the specified argument, wrapping it in a
  * tuple automatically so that tuple keys are not unpacked as the
- * exception arguments. */
+ * exception arguments.
+ *
+ * If an exception is already set, override the exception. */
 void
 _PyErr_SetKeyError(PyObject *arg)
 {
     PyThreadState *tstate = _PyThreadState_GET();
+
+    // PyObject_CallOneArg() must not be called with an exception set,
+    // otherwise _Py_CheckFunctionResult() can fail if the function returned
+    // a result with an excception set.
+    _PyErr_Clear(tstate);
+
     PyObject *exc = PyObject_CallOneArg(PyExc_KeyError, arg);
     if (!exc) {
         /* caller will expect error to be set anyway */
