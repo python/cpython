@@ -1031,6 +1031,24 @@ class StructTest(ComplexesAreIdenticalMixin, unittest.TestCase):
         self.assertRaises(RuntimeError, repr, S)
         self.assertEqual(S.size, -1)
 
+    def test_float_round_trip(self):
+        for format in (
+            "f", "<f", ">f",
+            "d", "<d", ">d",
+            "e", "<e", ">e",
+        ):
+            with self.subTest(format=format):
+                f = struct.unpack(format, struct.pack(format, 1.5))[0]
+                self.assertEqual(f, 1.5)
+                f = struct.unpack(format, struct.pack(format, NAN))[0]
+                self.assertTrue(math.isnan(f), f)
+                f = struct.unpack(format, struct.pack(format, INF))[0]
+                self.assertTrue(math.isinf(f), f)
+                self.assertEqual(math.copysign(1.0, f), 1.0)
+                f = struct.unpack(format, struct.pack(format, -INF))[0]
+                self.assertTrue(math.isinf(f), f)
+                self.assertEqual(math.copysign(1.0, f), -1.0)
+
 
 class UnpackIteratorTest(unittest.TestCase):
     """
