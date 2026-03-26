@@ -26,7 +26,7 @@ jobs:
           oss-fuzz-project-name: ${{ inputs.oss-fuzz-project-name }}
           sanitizer: ${{ inputs.sanitizer }}
       - name: Run fuzzers (${{ inputs.sanitizer }})
-        uses: google/oss-fuzz/infra/cifuzz/actions/build_fuzzers@ed23f8af80ff82b25ca67cd9b101e690b8897b3f # master
+        uses: google/oss-fuzz/infra/cifuzz/actions/run_fuzzers@ed23f8af80ff82b25ca67cd9b101e690b8897b3f # master
         with:
           fuzz-seconds: 600
           oss-fuzz-project-name: ${{ inputs.oss-fuzz-project-name }}
