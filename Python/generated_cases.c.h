@@ -3021,31 +3021,44 @@
             _PyStackRef value2_st;
             _PyStackRef value1_st;
             _PyStackRef res;
-            value1_st = stack_pointer[-1];
-            value2_st = stack_pointer[-2];
-            assert(oparg <= MAX_INTRINSIC_2);
-            PyObject *value1 = PyStackRef_AsPyObjectBorrow(value1_st);
-            PyObject *value2 = PyStackRef_AsPyObjectBorrow(value2_st);
-            _PyFrame_SetStackPointer(frame, stack_pointer);
-            PyObject *res_o = _PyIntrinsics_BinaryFunctions[oparg].func(tstate, value2, value1);
-            _PyStackRef tmp = value1_st;
-            value1_st = PyStackRef_NULL;
-            stack_pointer[-1] = value1_st;
-            PyStackRef_CLOSE(tmp);
-            tmp = value2_st;
-            value2_st = PyStackRef_NULL;
-            stack_pointer[-2] = value2_st;
-            PyStackRef_CLOSE(tmp);
-            stack_pointer = _PyFrame_GetStackPointer(frame);
-            stack_pointer += -2;
-            ASSERT_WITHIN_STACK_BOUNDS(__FILE__, __LINE__);
-            if (res_o == NULL) {
-                JUMP_TO_LABEL(error);
+            _PyStackRef vs1;
+            _PyStackRef vs2;
+            _PyStackRef value;
+            // _CALL_INTRINSIC_2
+            {
+                value1_st = stack_pointer[-1];
+                value2_st = stack_pointer[-2];
+                assert(oparg <= MAX_INTRINSIC_2);
+                PyObject *value1 = PyStackRef_AsPyObjectBorrow(value1_st);
+                PyObject *value2 = PyStackRef_AsPyObjectBorrow(value2_st);
+                _PyFrame_SetStackPointer(frame, stack_pointer);
+                PyObject *res_o = _PyIntrinsics_BinaryFunctions[oparg].func(tstate, value2, value1);
+                stack_pointer = _PyFrame_GetStackPointer(frame);
+                if (res_o == NULL) {
+                    JUMP_TO_LABEL(error);
+                }
+                res = PyStackRef_FromPyObjectSteal(res_o);
+                vs1 = value1_st;
+                vs2 = value2_st;
             }
-            res = PyStackRef_FromPyObjectSteal(res_o);
-            stack_pointer[0] = res;
-            stack_pointer += 1;
-            ASSERT_WITHIN_STACK_BOUNDS(__FILE__, __LINE__);
+            // _POP_TOP
+            {
+                value = vs2;
+                stack_pointer[-2] = res;
+                stack_pointer[-1] = vs1;
+                _PyFrame_SetStackPointer(frame, stack_pointer);
+                PyStackRef_XCLOSE(value);
+                stack_pointer = _PyFrame_GetStackPointer(frame);
+            }
+            // _POP_TOP
+            {
+                value = vs1;
+                stack_pointer += -1;
+                ASSERT_WITHIN_STACK_BOUNDS(__FILE__, __LINE__);
+                _PyFrame_SetStackPointer(frame, stack_pointer);
+                PyStackRef_XCLOSE(value);
+                stack_pointer = _PyFrame_GetStackPointer(frame);
+            }
             DISPATCH();
         }
 

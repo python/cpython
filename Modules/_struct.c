@@ -1536,10 +1536,6 @@ init_endian_tables(void *Py_UNUSED(arg))
                     size matches */
                 if (ptr->size != native->size)
                     break;
-                /* Skip float and double, could be
-                    "unknown" float format */
-                if (ptr->format == 'd' || ptr->format == 'f')
-                    break;
                 /* Skip _Bool, semantics are different for standard size */
                 if (ptr->format == '?')
                     break;
@@ -2881,6 +2877,7 @@ _structmodule_exec(PyObject *m)
 }
 
 static PyModuleDef_Slot _structmodule_slots[] = {
+    _Py_ABI_SLOT,
     {Py_mod_exec, _structmodule_exec},
     {Py_mod_multiple_interpreters, Py_MOD_PER_INTERPRETER_GIL_SUPPORTED},
     {Py_mod_gil, Py_MOD_GIL_NOT_USED},

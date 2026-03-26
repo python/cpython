@@ -1265,6 +1265,12 @@ dummy_func(void) {
         v = value;
     }
 
+    op(_CALL_INTRINSIC_2, (value2_st, value1_st -- res, vs1, vs2)) {
+        res = sym_new_not_null(ctx);
+        vs1 = value1_st;
+        vs2 = value2_st;
+    }
+
     op(_GUARD_IS_TRUE_POP, (flag -- )) {
         sym_apply_predicate_narrowing(ctx, flag, true);
 

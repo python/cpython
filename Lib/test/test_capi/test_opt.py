@@ -2699,6 +2699,22 @@ class TestUopsOptimization(unittest.TestCase):
         self.assertEqual(count_ops(ex, "_POP_TOP_NOP"), 1)
         self.assertLessEqual(count_ops(ex, "_POP_TOP"), 2)
 
+    def test_call_intrinsic_2(self):
+        def testfunc(n):
+            x = 0
+            for _ in range(n):
+                def test_testfunc[T](n):
+                    pass
+            return x
+
+        res, ex = self._run_with_optimizer(testfunc, TIER2_THRESHOLD)
+        self.assertEqual(res, 0)
+        uops = get_opnames(ex)
+
+        self.assertIn("_CALL_INTRINSIC_2", uops)
+        self.assertGreaterEqual(count_ops(ex, "_POP_TOP_NOP"), 2)
+        self.assertLessEqual(count_ops(ex, "_POP_TOP"), 4)
+
     def test_get_len_with_const_tuple(self):
         def testfunc(n):
             x = 0.0
@@ -2792,9 +2808,6 @@ class TestUopsOptimization(unittest.TestCase):
         self.assertEqual(res, sum(range(TIER2_THRESHOLD)))
         uops = get_opnames(ex)
         self.assertIn("_CALL_LIST_APPEND", uops)
-        # We should remove these in the future
-        self.assertIn("_GUARD_NOS_LIST", uops)
-        self.assertIn("_GUARD_CALLABLE_LIST_APPEND", uops)
 
     def test_call_list_append_pop_top(self):
         def testfunc(n):
@@ -3016,6 +3029,22 @@ class TestUopsOptimization(unittest.TestCase):
         self.assertNotIn("_LOAD_ATTR_METHOD_WITH_VALUES", uops)
         self.assertNotIn("_LOAD_ATTR_METHOD_NO_DICT", uops)
         self.assertNotIn("_LOAD_ATTR_METHOD_LAZY_DICT", uops)
+
+    def test_cached_attributes_fixed_version_tag(self):
+        def f(n):
+            c = 1
+            x = 0
+            for _ in range(n):
+                x += c.bit_length()
+            return x
+
+        res, ex = self._run_with_optimizer(f, TIER2_THRESHOLD)
+        self.assertIsNotNone(ex)
+        self.assertEqual(res, TIER2_THRESHOLD)
+        uops = get_opnames(ex)
+        self.assertNotIn("_LOAD_ATTR_METHOD_NO_DICT", uops)
+        self.assertNotIn("_LOAD_CONST_UNDER_INLINE", uops)
+        self.assertIn("_LOAD_CONST_UNDER_INLINE_BORROW", uops)
 
     def test_store_fast_refcount_elimination(self):
         def foo(x):
