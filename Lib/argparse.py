@@ -2199,6 +2199,17 @@ class ArgumentParser(_AttributeHolder, _ActionsContainer):
             if argument_values is not SUPPRESS:
                 action(self, namespace, argument_values, option_string)
 
+        # returns the minimum number of arg strings an action requires;
+        # used by consume_optional() when computing positional reservations
+        def min_for_action(action):
+            nargs = action.nargs
+            if nargs is None or nargs in (ONE_OR_MORE, PARSER):
+                return 1
+            elif isinstance(nargs, int):
+                return nargs
+            # OPTIONAL, ZERO_OR_MORE, REMAINDER contribute 0
+            return 0
+
         # function to convert arg_strings into an optional action
         def consume_optional(start_index):
 
@@ -2282,6 +2293,88 @@ class ArgumentParser(_AttributeHolder, _ActionsContainer):
                 else:
                     start = start_index + 1
                     selected_patterns = arg_strings_pattern[start:]
+
+                    # Reserve the minimum number of args required by the
+                    # remaining positionals; replace excess 'A' tokens with 'O'
+                    # so that match_argument cannot consume them.
+                    #
+                    # Note that the current option can only consume 'A' tokens
+                    # up to the next 'O' (another option flag) in the pattern
+                    # as the regex itself stops there. Only count tokens in
+                    # that segment -- 'A' tokens in later segments belong to
+                    # other options' territories and are handled when those
+                    # options are processed.
+                    first_o = selected_patterns.find('O')
+                    if first_o == -1:
+                        segment, rest = selected_patterns, ''
+                    else:
+                        segment = selected_patterns[:first_o]
+                        rest = selected_patterns[first_o:]
+                    segment_arg_count = segment.count('A')
+
+                    # Compute the minimum number of arg strings still required
+                    # by the remaining positionals to avoid greedy consumption
+                    min_pos = sum(min_for_action(pos) for pos in positionals)
+                    if intermixed:
+                        # In intermixed mode consume_positionals is never
+                        # called during the main loop, so `positionals` never
+                        # shrinks. Positional-typed tokens already collected in
+                        # extras will satisfy the positional requirement in the
+                        # second pass, so don't count them as still-unsatisfied
+                        extras_arg_count = sum(
+                            1 for c in extras_pattern if c == 'A'
+                        )
+                        min_pos = max(0, min_pos - extras_arg_count)
+
+                    if min_pos > 0 and segment_arg_count > 0:
+                        # Compute the maximum positional args that future
+                        # option segments can absorb, accounting for each
+                        # future option's own minimum nargs requirement.
+                        pattern_end = len(arg_strings_pattern)
+                        later_option_string_indices = sorted(
+                            i for i in option_string_indices
+                            if i > start_index
+                        )
+                        later_arg_capacity = 0
+                        for k, later_option_string_index in enumerate(
+                            later_option_string_indices
+                        ):
+                            seg_start = later_option_string_index + 1
+                            seg_stop = (
+                                later_option_string_indices[k + 1]
+                                if k + 1 < len(later_option_string_indices)
+                                else pattern_end
+                            )
+                            seg_arg_count = arg_strings_pattern[seg_start:seg_stop].count('A')
+                            later_option_tuples = option_string_indices[later_option_string_index]
+                            later_action = later_option_tuples[0][0]
+                            later_explicit_arg = later_option_tuples[0][3]
+                            if later_explicit_arg is not None or later_action is None:
+                                # explicit arg (--opt=val) or unknown action:
+                                # consumes no pattern 'A' tokens
+                                later_min_arg_count = 0
+                            else:
+                                later_min_arg_count = min_for_action(later_action)
+                            later_arg_capacity += max(
+                                0, seg_arg_count - later_min_arg_count
+                            )
+
+                        reserved_arg_count = max(0, min_pos - later_arg_capacity)
+                        max_arg_count = max(
+                            min_for_action(action),
+                            segment_arg_count - reserved_arg_count,
+                        )
+                        if max_arg_count < segment_arg_count:
+                            count = 0
+                            limited = []
+                            for c in segment:
+                                if c == 'A':
+                                    count += 1
+                                    if count > max_arg_count:
+                                        c = 'O'
+                                limited.append(c)
+                            selected_patterns = ''.join(limited) + rest
+
                     arg_count = match_argument(action, selected_patterns)
                     stop = start + arg_count
                     args = arg_strings[start:stop]

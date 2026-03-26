@@ -698,7 +698,6 @@ class TestOptionalsNargsOptional(ParserTestCase):
         ('-z 2', NS(w=None, x=None, y='spam', z=2)),
     ]
 
-    @unittest.expectedFailure
     def test_does_not_steal_required_positional(self):
         # https://github.com/python/cpython/issues/53584
         parser = ErrorRaisingArgumentParser()
@@ -708,7 +707,6 @@ class TestOptionalsNargsOptional(ParserTestCase):
         self.assertIsNone(args.foo)
         self.assertEqual(args.bar, 'abc')
 
-    @unittest.expectedFailure
     def test_does_not_steal_two_required_positionals(self):
         # https://github.com/python/cpython/issues/53584
         parser = ErrorRaisingArgumentParser()
@@ -720,7 +718,6 @@ class TestOptionalsNargsOptional(ParserTestCase):
         self.assertEqual(args.bar, 'a')
         self.assertEqual(args.bax, 'b')
 
-    @unittest.expectedFailure
     def test_does_not_steal_two_required_positional_interspersed(self):
         # https://github.com/python/cpython/issues/53584
         parser = ErrorRaisingArgumentParser()
@@ -762,7 +759,6 @@ class TestOptionalsNargsZeroOrMore(ParserTestCase):
         ('-y a b', NS(x=None, y=['a', 'b'])),
     ]
 
-    @unittest.expectedFailure
     def test_does_not_steal_required_positional(self):
         # https://github.com/python/cpython/issues/53584
         parser = ErrorRaisingArgumentParser()
@@ -789,7 +785,6 @@ class TestOptionalsNargsOneOrMore(ParserTestCase):
         ('-y a b', NS(x=None, y=['a', 'b'])),
     ]
 
-    @unittest.expectedFailure
     def test_does_not_steal_required_positional(self):
         # https://github.com/python/cpython/issues/53584
         parser = ErrorRaisingArgumentParser()
@@ -799,7 +794,6 @@ class TestOptionalsNargsOneOrMore(ParserTestCase):
         self.assertEqual(args.foo, ['a'])
         self.assertEqual(args.bar, 'b')
 
-    @unittest.expectedFailure
     def test_does_not_steal_interspersed_required_positional(self):
         # https://github.com/python/cpython/issues/53584
         parser = ErrorRaisingArgumentParser()
@@ -6849,7 +6843,6 @@ class TestIntermixedArgs(TestCase):
         parser = ErrorRaisingArgumentParser(prog='PROG')
         self.assertRaises(ArgumentParserError, parser.parse_intermixed_args, ['a'])
 
-    @unittest.expectedFailure
     def test_variable_nargs_option_before_positional(self):
         # https://github.com/python/cpython/issues/53584
         parser = ErrorRaisingArgumentParser()
