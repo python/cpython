@@ -38,6 +38,13 @@ def _async_cache(f: _C[_P, _R]) -> _C[_P, _R]:
 _CORES = asyncio.BoundedSemaphore(os.cpu_count() or 1)
 
 
+def _candidate_names(tool: str) -> list[str]:
+    candidates = [tool]
+    if os.name == "nt":
+        candidates.append(f"{tool}.exe")
+    return candidates
+
+
 async def _run(tool: str, args: typing.Iterable[str], echo: bool = False) -> str | None:
     command = [tool, *args]
     async with _CORES:
@@ -70,24 +77,26 @@ async def _get_brew_llvm_prefix(*, echo: bool = False) -> str | None:
 @_async_cache
 async def _find_tool(tool: str, *, echo: bool = False) -> str | None:
     # Unversioned executables:
-    path = tool
-    if await _check_tool_version(path, echo=echo):
-        return path
+    for path in _candidate_names(tool):
+        if await _check_tool_version(path, echo=echo):
+            return path
     # Versioned executables:
-    path = f"{tool}-{_LLVM_VERSION}"
-    if await _check_tool_version(path, echo=echo):
-        return path
+    for path in _candidate_names(f"{tool}-{_LLVM_VERSION}"):
+        if await _check_tool_version(path, echo=echo):
+            return path
     # PCbuild externals:
     externals = os.environ.get("EXTERNALS_DIR", _targets.EXTERNALS)
-    path = os.path.join(externals, _EXTERNALS_LLVM_TAG, "bin", tool)
-    if await _check_tool_version(path, echo=echo):
-        return path
+    for name in _candidate_names(tool):
+        path = os.path.join(externals, _EXTERNALS_LLVM_TAG, "bin", name)
+        if await _check_tool_version(path, echo=echo):
+            return path
     # Homebrew-installed executables:
     prefix = await _get_brew_llvm_prefix(echo=echo)
     if prefix is not None:
-        path = os.path.join(prefix, "bin", tool)
-        if await _check_tool_version(path, echo=echo):
-            return path
+        for name in _candidate_names(tool):
+            path = os.path.join(prefix, "bin", name)
+            if await _check_tool_version(path, echo=echo):
+                return path
     # Nothing found:
     return None
 
