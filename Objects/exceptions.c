@@ -1091,7 +1091,8 @@ BaseExceptionGroup_repr(PyObject *op)
          * value of self.args[1]; but this can be mutable and go out-of-sync
          * with self.exceptions. Instead, use self.exceptions for accuracy,
          * making it look like self.args[1] for backwards compatibility. */
-        if (PyList_Check(PyTuple_GET_ITEM(self->args, 1))) {
+        assert(PyTuple_Check(self->args));
+        if (PyTuple_GET_SIZE(self->args) == 2 && PyList_Check(PyTuple_GET_ITEM(self->args, 1))) {
             PyObject *exceptions_list = PySequence_List(self->excs);
             if (!exceptions_list) {
                 return NULL;
