@@ -862,12 +862,12 @@ body.resizing-sidebar {
 }
 
 .tooltip-diff-row.regression .tooltip-stat-value {
-  color: rgb(220, 60, 60);
+  color: var(--diff-regression-deep);
   font-weight: 700;
 }
 
 .tooltip-diff-row.improvement .tooltip-stat-value {
-  color: rgb(60, 120, 220);
+  color: var(--diff-improvement-deep);
   font-weight: 700;
 }
 

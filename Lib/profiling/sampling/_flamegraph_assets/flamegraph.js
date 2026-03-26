@@ -487,11 +487,26 @@ function getHeatColors() {
   return colors;
 }
 
-function getDiffColor(node) {
+function getDiffColors() {
   const style = getComputedStyle(document.documentElement);
+  return {
+    elided: style.getPropertyValue('--diff-elided').trim(),
+    new: style.getPropertyValue('--diff-new').trim(),
+    neutral: style.getPropertyValue('--diff-neutral').trim(),
+    regressionDeep: style.getPropertyValue('--diff-regression-deep').trim(),
+    regressionMedium: style.getPropertyValue('--diff-regression-medium').trim(),
+    regressionLight: style.getPropertyValue('--diff-regression-light').trim(),
+    regressionVerylight: style.getPropertyValue('--diff-regression-verylight').trim(),
+    improvementDeep: style.getPropertyValue('--diff-improvement-deep').trim(),
+    improvementMedium: style.getPropertyValue('--diff-improvement-medium').trim(),
+    improvementLight: style.getPropertyValue('--diff-improvement-light').trim(),
+    improvementVerylight: style.getPropertyValue('--diff-improvement-verylight').trim(),
+  };
+}
 
+function getDiffColorForNode(node, diffColors) {
   if (isShowingElided) {
-    return style.getPropertyValue('--diff-elided').trim();
+    return diffColors.elided;
   }
 
   const diff_pct = node.data.diff_pct || 0;
@@ -499,26 +514,27 @@ function getDiffColor(node) {
   const self_time = node.data.self_time || 0;
 
   if (diff_pct === 100 && self_time > 0 && Math.abs(diff_samples - self_time) < 0.1) {
-    return style.getPropertyValue('--diff-new').trim();
+    return diffColors.new;
   }
 
   // Neutral zone: small percentage change
   if (Math.abs(diff_pct) < 15) {
-    return style.getPropertyValue('--diff-neutral').trim();
+    return diffColors.neutral;
   }
 
   // Regression (red scale)
   if (diff_pct > 0) {
-    if (diff_pct >= 100) return style.getPropertyValue('--diff-regression-deep').trim();
-    if (diff_pct > 50) return style.getPropertyValue('--diff-regression-medium').trim();
-    if (diff_pct > 30) return style.getPropertyValue('--diff-regression-light').trim();
-    return style.getPropertyValue('--diff-regression-verylight').trim();
+    if (diff_pct >= 100) return diffColors.regressionDeep;
+    if (diff_pct > 50) return diffColors.regressionMedium;
+    if (diff_pct > 30) return diffColors.regressionLight;
+    return diffColors.regressionVerylight;
   }
 
   // Improvement (blue scale)
-  if (diff_pct < -50) return style.getPropertyValue('--diff-improvement-medium').trim();
-  if (diff_pct < -30) return style.getPropertyValue('--diff-improvement-light').trim();
-  return style.getPropertyValue('--diff-improvement-verylight').trim();
+  if (diff_pct <= -100) return diffColors.improvementDeep;
+  if (diff_pct < -50) return diffColors.improvementMedium;
+  if (diff_pct < -30) return diffColors.improvementLight;
+  return diffColors.improvementVerylight;
 }
 
 function createFlamegraph(tooltip, rootValue, data) {
@@ -527,6 +543,7 @@ function createFlamegraph(tooltip, rootValue, data) {
   const heatColors = getHeatColors();
 
   const isDifferential = data && data.stats && data.stats.is_differential;
+  const diffColors = isDifferential ? getDiffColors() : null;
 
   let chart = flamegraph()
     .width(width)
@@ -539,7 +556,7 @@ function createFlamegraph(tooltip, rootValue, data) {
       if (d.depth === 0) return 'transparent';
 
       if (isDifferential) {
-        return getDiffColor(d);
+        return getDiffColorForNode(d, diffColors);
       }
 
       const percentage = d.data.value / rootValue;
