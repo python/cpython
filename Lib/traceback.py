@@ -1667,7 +1667,7 @@ _CASE_COST = 1
 # If is_raw is True, the suggestion is rendered as-is.
 #
 # See https://github.com/python/cpython/issues/146406.
-_CROSS_LANGUAGE_HINTS = types.MappingProxyType({
+_CROSS_LANGUAGE_HINTS = frozendict({
     # list -- JavaScript/Ruby equivalents
     (list, "push"): ("append", False),
     (list, "concat"): ("extend", False),
