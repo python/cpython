@@ -1,0 +1,8 @@
+json
+-----
+
+* Add the *array_hook* parameter to  :func:`~load` and  :func:`~loads` functions:
+  Allow a callback for JSON literal array types to customize Python lists in the
+  resulting decoded object. Passing combined :class:`frozendict` to *object_pairs_hook*
+  param and :class:`tuple` to *array_hook` will yield a deeply nested imitable
+  Python structure representing the JSON data.
