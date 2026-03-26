@@ -241,7 +241,7 @@ def dumps(obj, *, skipkeys=False, ensure_ascii=True, check_circular=True,
         **kw).encode(obj)
 
 
-_default_decoder = JSONDecoder(object_hook=None, object_pairs_hook=None, array_hook=None)
+_default_decoder = JSONDecoder()
 
 
 def detect_encoding(b):
