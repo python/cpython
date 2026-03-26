@@ -381,7 +381,8 @@ def configure_host_python(
     with group(f"Downloading dependencies ({host})"):
         if not prefix_dir.exists():
             prefix_dir.mkdir()
-            unpack_deps(context.platform, host, prefix_dir, context.cache_dir)
+            cache_dir = context.cache_dir or CROSS_BUILD_DIR / "downloads"
+            unpack_deps(context.platform, host, prefix_dir, cache_dir)
         else:
             print("Dependencies already installed")
 
@@ -898,7 +899,7 @@ def parse_args() -> argparse.Namespace:
     configure_build = subcommands.add_parser(
         "configure-build", help="Run `configure` for the build Python"
     )
-    subcommands.add_parser(
+    make_build = subcommands.add_parser(
         "make-build", help="Run `make` for the build Python"
     )
     configure_host = subcommands.add_parser(
@@ -954,6 +955,31 @@ def parse_args() -> argparse.Namespace:
             ),
         )
 
+    # --cross-build-dir argument
+    for cmd in [
+        clean,
+        configure_build,
+        make_build,
+        configure_host,
+        make_host,
+        build,
+        package,
+        test,
+        ci,
+    ]:
+        cmd.add_argument(
+            "--cross-build-dir",
+            action="store",
+            default=os.environ.get("CROSS_BUILD_DIR"),
+            dest="cross_build_dir",
+            type=Path,
+            help=(
+                "Path to the cross-build directory "
+                f"(default: {CROSS_BUILD_DIR}). Can also be set "
+                "with the CROSS_BUILD_DIR environment variable."
+            ),
+        )
+
     # --clean option
     for cmd in [configure_build, configure_host, build, package, test, ci]:
         cmd.add_argument(
@@ -968,7 +994,6 @@ def parse_args() -> argparse.Namespace:
     for cmd in [configure_host, build, ci]:
         cmd.add_argument(
             "--cache-dir",
-            default="./cross-build/downloads",
             help="The directory to store cached downloads.",
         )
 
@@ -1035,6 +1060,12 @@ def main() -> None:
 
     # Process command line arguments
     context = parse_args()
+
+    # Set the CROSS_BUILD_DIR if an argument was provided
+    if context.cross_build_dir:
+        global CROSS_BUILD_DIR
+        CROSS_BUILD_DIR = context.cross_build_dir.resolve()
+
     dispatch: dict[str, Callable] = {
         "clean": clean,
         "configure-build": configure_build_python,
