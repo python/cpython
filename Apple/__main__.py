@@ -832,7 +832,7 @@ def test(context: argparse.Namespace, host: str | None = None) -> None:  # noqa:
             + [
                 "--",
                 "test",
-                f"--{context.ci_mode}-ci",
+                f"--{context.ci_mode or 'fast'}-ci",
                 "--single-process",
                 "--no-randomize",
                 # Timeout handling requires subprocesses; explicitly setting
