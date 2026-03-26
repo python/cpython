@@ -173,6 +173,8 @@ if _HAS_USER_BASE:
 _SCHEME_KEYS = ('stdlib', 'platstdlib', 'purelib', 'platlib', 'include',
                 'scripts', 'data')
 
+_PY_VERSION_SHORT = f'{sys.version_info[0]}.{sys.version_info[1]}'
+_PY_VERSION_SHORT_NO_DOT = f'{sys.version_info[0]}{sys.version_info[1]}'
 _BASE_PREFIX = os.path.normpath(sys.base_prefix)
 _BASE_EXEC_PREFIX = os.path.normpath(sys.base_exec_prefix)
 # Mutex guarding initialization of _CONFIG_VARS.
@@ -321,8 +323,7 @@ def get_makefile_filename():
         return os.path.join(_PROJECT_BASE, "Makefile")
 
     if hasattr(sys, 'abiflags'):
-        py_version_short = f'{sys.version_info[0]}.{sys.version_info[1]}'
-        config_dir_name = f'config-{py_version_short}{sys.abiflags}'
+        config_dir_name = f'config-{_PY_VERSION_SHORT}{sys.abiflags}'
     else:
         config_dir_name = 'config'
 
@@ -405,7 +406,7 @@ def _init_non_posix(vars):
         vars['LIBRARY'] = os.path.basename(_safe_realpath(dllhandle))
         vars['LDLIBRARY'] = vars['LIBRARY']
     vars['EXE'] = '.exe'
-    vars['VERSION'] = vars['py_version_nodot']
+    vars['VERSION'] = _PY_VERSION_SHORT_NO_DOT
     vars['BINDIR'] = os.path.dirname(_safe_realpath(sys.executable))
     # No standard path exists on Windows for this, but we'll check
     # whether someone is imitating a POSIX-like layout
@@ -529,6 +530,8 @@ def _init_config_vars():
     # Distutils.
     _CONFIG_VARS['prefix'] = prefix
     _CONFIG_VARS['exec_prefix'] = exec_prefix
+    _CONFIG_VARS['py_version_short'] = _PY_VERSION_SHORT
+    _CONFIG_VARS['py_version_nodot'] = _PY_VERSION_SHORT_NO_DOT
     _CONFIG_VARS['installed_base'] = base_prefix
     _CONFIG_VARS['base'] = prefix
     _CONFIG_VARS['installed_platbase'] = base_exec_prefix
@@ -735,11 +738,11 @@ def get_platform():
 
 
 def get_python_version():
-    return get_config_var('py_version_short')
+    return _PY_VERSION_SHORT
 
 
 def _get_python_version_abi():
-    return get_config_var('py_version_short') + get_config_var('abi_thread')
+    return _PY_VERSION_SHORT + get_config_var("abi_thread")
 
 
 def expand_makefile_vars(s, vars):

@@ -17,13 +17,6 @@ module _sysconfig
 
 #include "clinic/_sysconfig.c.h"
 
-
-#define py_version_short() \
-    (Py_STRINGIFY(PY_MAJOR_VERSION) "." Py_STRINGIFY(PY_MINOR_VERSION))
-#define py_version_nodot() \
-    (Py_STRINGIFY(PY_MAJOR_VERSION) Py_STRINGIFY(PY_MINOR_VERSION))
-
-
 static int
 add_string_value(PyObject *dict, const char *key, const char *str_value)
 {
@@ -35,7 +28,6 @@ add_string_value(PyObject *dict, const char *key, const char *str_value)
     Py_DECREF(value);
     return err;
 }
-
 
 /*[clinic input]
 @permit_long_summary
@@ -55,12 +47,6 @@ _sysconfig_config_vars_impl(PyObject *module)
 
     // Python version
     if (add_string_value(config, "py_version", PY_VERSION) < 0) {
-        goto error;
-    }
-    if (add_string_value(config, "py_version_short", py_version_short()) < 0) {
-        goto error;
-    }
-    if (add_string_value(config, "py_version_nodot", py_version_nodot()) < 0) {
         goto error;
     }
 

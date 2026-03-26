@@ -755,7 +755,7 @@ class TestSysConfig(unittest.TestCase, VirtualEnvironmentMixin):
         self.assertEqual(config_vars['py_version_short'],
                          f'{ver.major}.{ver.minor}')
         self.assertEqual(sysconfig.get_python_version(),
-                         config_vars['py_version_short'])
+                         f'{ver.major}.{ver.minor}')
 
         # Test py_version_nodot
         self.assertIsInstance(config_vars['py_version_nodot'], str)
