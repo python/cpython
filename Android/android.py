@@ -211,33 +211,37 @@ def unpack_deps(host, prefix_dir, cache_dir):
     for name_ver in ["bzip2-1.0.8-3", "libffi-3.4.4-3", "openssl-3.5.5-0",
                      "sqlite-3.50.4-0", "xz-5.4.6-1", "zstd-1.5.7-1"]:
         filename = f"{name_ver}-{host}.tar.gz"
-        download(f"{deps_url}/{name_ver}/{filename}", cache_dir)
-        shutil.unpack_archive(filename)
-        os.remove(filename)
+        out_path = download(f"{deps_url}/{name_ver}/{filename}", cache_dir)
+        shutil.unpack_archive(out_path)
 
 
 def download(url, cache_dir):
     out_path = cache_dir / basename(url)
-    run(["curl", "-Lf", "--retry", "5", "--retry-all-errors", "-o", str(out_path), url])
+    if not out_path.is_file():
+        run(["curl", "-Lf", "--retry", "5", "--retry-all-errors", "-o", str(out_path), url])
+    else:
+        print(f"Using cached version of {basename(url)}")
     return out_path
 
 
-def configure_host_python(context):
+def configure_host_python(context, host=None):
     if context.clean:
         clean(context.host)
+    if host is None:
+        host = context.host
 
-    host_dir = subdir(context.host, create=True)
+    host_dir = subdir(host, create=True)
     prefix_dir = host_dir / "prefix"
     if not prefix_dir.exists():
         prefix_dir.mkdir()
-        cache_dir = context.cache_dir or CROSS_BUILD_DIR / "downloads"
-        unpack_deps(context.host, prefix_dir, cache_dir)
+        cache_dir = Path(context.cache_dir).resolve() or CROSS_BUILD_DIR / "downloads"
+        unpack_deps(host, prefix_dir, cache_dir)
 
     os.chdir(host_dir)
     command = [
         # Basic cross-compiling configuration
         relpath(PYTHON_DIR / "configure"),
-        f"--host={context.host}",
+        f"--host={host}",
         f"--build={sysconfig.get_config_var('BUILD_GNU_TYPE')}",
         f"--with-build-python={build_python_path()}",
         "--without-ensurepip",
@@ -253,14 +257,16 @@ def configure_host_python(context):
 
     if context.args:
         command.extend(context.args)
-    run(command, host=context.host)
+    run(command, host=host)
 
 
-def make_host_python(context):
+def make_host_python(context, host=None):
+    if host is None:
+        host = context.host
     # The CFLAGS and LDFLAGS set in android-env include the prefix dir, so
     # delete any previous Python installation to prevent it being used during
     # the build.
-    host_dir = subdir(context.host)
+    host_dir = subdir(host)
     prefix_dir = host_dir / "prefix"
     for pattern in ("include/python*", "lib/libpython*", "lib/python*"):
         delete_glob(f"{prefix_dir}/{pattern}")
@@ -279,11 +285,18 @@ def make_host_python(context):
     )
 
 
-def build_all(context):
-    steps = [configure_build_python, make_build_python, configure_host_python,
-             make_host_python]
-    for step in steps:
-        step(context)
+def build_targets(context):
+    if context.target in {"all", "build"}:
+        configure_build_python(context)
+        make_build_python(context)
+
+    if context.target == "hosts":
+        for host in HOSTS:
+            configure_host_python(context, host)
+            make_host_python(context, host)
+    elif context.target not in {"all", "build"}:
+        configure_host_python(context, context.target)
+        make_host_python(context, context.target)
 
 
 def clean(host):
@@ -297,7 +310,7 @@ def clean_targets(context):
     if context.target == "hosts":
         for host in HOSTS:
             clean(host)
-    else:
+    elif context.target not in {"all", "build"}:
         clean(context.target)
 
 
@@ -872,17 +885,6 @@ def parse_args():
         "make-host", help="Run `make` for Android")
 
     clean = add_parser("clean", help="Delete all build directories")
-    clean.add_argument(
-        "target",
-        nargs="?",
-        default="all",
-        help=(
-            "The host triple to clean (e.g., aarch64-linux-android), "
-            "or 'build' for just the build platform, or 'hosts' for all "
-            "host platforms, or 'all' for the build platform and all "
-            "hosts. Defaults to 'all'"
-        ),
-    )
 
     add_parser("build-testbed", help="Build the testbed app")
     test = add_parser("test", help="Run the testbed app")
@@ -930,7 +932,22 @@ def parse_args():
             "--clean", action="store_true", default=False, dest="clean",
             help="Delete the relevant build directories first")
 
-    host_commands = [build, configure_host, make_host, package, ci]
+    # Allow "all" and "hosts" options
+    for subcommand in [clean, build]:
+        subcommand.add_argument(
+            "target",
+            nargs="?",
+            default="all",
+            choices=["all", "build", "hosts"] + HOSTS,
+            help=(
+                "The host triple to build (e.g., aarch64-linux-android), "
+                "or 'build' for just the build platform, or 'hosts' for all "
+                "host platforms, or 'all' for the build platform and all "
+                "hosts. Defaults to 'all'"
+            ),
+        )
+
+    host_commands = [configure_host, make_host, package, ci]
     if in_source_tree:
         host_commands.append(env)
     for subcommand in host_commands:
@@ -1003,7 +1020,7 @@ def main():
         "make-build": make_build_python,
         "configure-host": configure_host_python,
         "make-host": make_host_python,
-        "build": build_all,
+        "build": build_targets,
         "clean": clean_targets,
         "build-testbed": build_testbed,
         "test": run_testbed,
