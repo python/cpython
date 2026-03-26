@@ -368,6 +368,7 @@ lookup_attr(JitOptContext *ctx, _PyBloomFilter *dependencies, _PyUOpInstruction 
         PyObject *lookup = _PyType_Lookup(type, name);
         if (lookup) {
             int opcode = mortal;
+            // if the object is immortal or the type is immutable, borrowing is safe
             if (_Py_IsImmortal(lookup) || (type->tp_flags & Py_TPFLAGS_IMMUTABLETYPE)) {
                 opcode = immortal;
             }
