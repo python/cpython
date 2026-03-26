@@ -626,6 +626,10 @@ if sys.platform == 'darwin':
             from ctypes import cdll, c_void_p, c_char_p
             from ctypes.util import find_library
 
+            # NSWorkspace is an AppKit class; load AppKit to register it.
+            cdll.LoadLibrary(
+                '/System/Library/Frameworks/AppKit.framework/AppKit'
+            )
             objc = cdll.LoadLibrary(find_library('objc'))
             objc.objc_getClass.restype = c_void_p
             objc.sel_registerName.restype = c_void_p
@@ -652,18 +656,26 @@ if sys.platform == 'darwin':
             NSWorkspace = cls(b'NSWorkspace')
             objc.objc_msgSend.argtypes = [c_void_p, c_void_p]
             workspace = objc.objc_msgSend(NSWorkspace, sel(b'sharedWorkspace'))
+            if not workspace:
+                return None
 
             objc.objc_msgSend.argtypes = [c_void_p, c_void_p, c_void_p]
             app_url = objc.objc_msgSend(
                 workspace, sel(b'URLForApplicationToOpenURL:'), probe_url
             )
+            if not app_url:
+                return None
 
             # Get bundle identifier from that app's NSBundle
             NSBundle = cls(b'NSBundle')
             bundle = objc.objc_msgSend(NSBundle, sel(b'bundleWithURL:'), app_url)
+            if not bundle:
+                return None
 
             objc.objc_msgSend.argtypes = [c_void_p, c_void_p]
             bundle_id_ns = objc.objc_msgSend(bundle, sel(b'bundleIdentifier'))
+            if not bundle_id_ns:
+                return None
 
             objc.objc_msgSend.restype = c_char_p
             bundle_id_bytes = objc.objc_msgSend(bundle_id_ns, sel(b'UTF8String'))
