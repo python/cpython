@@ -78,6 +78,36 @@ function resolveStringIndices(node, table) {
   return resolved;
 }
 
+function selectFlamegraphData() {
+  const baseData = isShowingElided ? elidedFlamegraphData : normalData;
+
+  if (!isInverted) {
+    return baseData;
+  }
+
+  if (isShowingElided) {
+    if (!invertedElidedData) {
+      invertedElidedData = generateInvertedFlamegraph(baseData);
+    }
+    return invertedElidedData;
+  }
+
+  if (!invertedData) {
+    invertedData = generateInvertedFlamegraph(baseData);
+  }
+  return invertedData;
+}
+
+function updateFlamegraphView() {
+  const selectedData = selectFlamegraphData();
+  const selectedThreadId = currentThreadFilter !== 'all' ? parseInt(currentThreadFilter, 10) : null;
+  const filteredData = selectedThreadId !== null ? filterDataByThread(selectedData, selectedThreadId) : selectedData;
+  const tooltip = createPythonTooltip(filteredData);
+  const chart = createFlamegraph(tooltip, filteredData.value, filteredData);
+  renderFlamegraph(chart, filteredData);
+  populateThreadStats(selectedData, selectedThreadId);
+}
+
 // ============================================================================
 // Theme & UI Controls
 // ============================================================================
@@ -87,10 +117,7 @@ function toggleTheme() {
 
   // Re-render flamegraph with new theme colors
   if (window.flamegraphData && normalData) {
-    const currentData = isInverted ? invertedData : normalData;
-    const tooltip = createPythonTooltip(currentData);
-    const chart = createFlamegraph(tooltip, currentData.value, currentData);
-    renderFlamegraph(chart, window.flamegraphData);
+    updateFlamegraphView();
   }
 }
 
@@ -958,7 +985,7 @@ function setupElidedToggle(data) {
   if (!elidedCount || !elidedFlamegraph) {
     return;
   }
-  
+
   elidedFlamegraphData = resolveStringIndices(elidedFlamegraph, elidedFlamegraph.baseline_strings);
 
   const toggleElided = document.getElementById('toggle-elided');
@@ -968,24 +995,7 @@ function setupElidedToggle(data) {
     toggleElided.onclick = function() {
       isShowingElided = !isShowingElided;
       updateToggleUI('toggle-elided', isShowingElided);
-
-      let dataToRender;
-      if (isShowingElided) {
-        if (isInverted) {
-          if (!invertedElidedData) {
-            invertedElidedData = generateInvertedFlamegraph(elidedFlamegraphData);
-          }
-          dataToRender = invertedElidedData;
-        } else {
-          dataToRender = elidedFlamegraphData;
-        }
-      } else {
-        dataToRender = isInverted ? invertedData : normalData;
-      }
-
-      const tooltip = createPythonTooltip(dataToRender);
-      const chart = createFlamegraph(tooltip, dataToRender.value, dataToRender);
-      renderFlamegraph(chart, dataToRender);
+      updateFlamegraphView();
     };
   }
 }
@@ -1176,28 +1186,8 @@ function filterByThread() {
 
   const selectedThread = threadFilter.value;
   currentThreadFilter = selectedThread;
-  const baseData = isInverted ? invertedData : normalData;
 
-  let filteredData;
-  let selectedThreadId = null;
-
-  if (selectedThread === 'all') {
-    filteredData = baseData;
-  } else {
-    selectedThreadId = parseInt(selectedThread, 10);
-    filteredData = filterDataByThread(baseData, selectedThreadId);
-
-    if (filteredData.strings) {
-      stringTable = filteredData.strings;
-      filteredData = resolveStringIndices(filteredData, filteredData.strings);
-    }
-  }
-
-  const tooltip = createPythonTooltip(filteredData);
-  const chart = createFlamegraph(tooltip, filteredData.value, filteredData);
-  renderFlamegraph(chart, filteredData);
-
-  populateThreadStats(baseData, selectedThreadId);
+  updateFlamegraphView();
 }
 
 function filterDataByThread(data, threadId) {
@@ -1388,32 +1378,7 @@ function generateInvertedFlamegraph(data) {
 function toggleInvert() {
   isInverted = !isInverted;
   updateToggleUI('toggle-invert', isInverted);
-
-  let dataToRender;
-
-  if (isShowingElided) {
-    if (isInverted) {
-      if (!invertedElidedData) {
-        invertedElidedData = generateInvertedFlamegraph(elidedFlamegraphData);
-      }
-      dataToRender = invertedElidedData;
-    } else {
-      dataToRender = elidedFlamegraphData;
-    }
-  } else {
-    if (isInverted && !invertedData) {
-      invertedData = generateInvertedFlamegraph(normalData);
-    }
-    dataToRender = isInverted ? invertedData : normalData;
-
-    if (currentThreadFilter !== 'all') {
-      dataToRender = filterDataByThread(dataToRender, parseInt(currentThreadFilter));
-    }
-  }
-
-  const tooltip = createPythonTooltip(dataToRender);
-  const chart = createFlamegraph(tooltip, dataToRender.value, dataToRender);
-  renderFlamegraph(chart, dataToRender);
+  updateFlamegraphView();
 }
 
 // ============================================================================
