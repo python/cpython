@@ -246,9 +246,7 @@ PyErr_SetObject(PyObject *exception, PyObject *value)
     _PyErr_SetObject(tstate, exception, value);
 }
 
-/* Set a key error with the specified argument, wrapping it in a
- * tuple automatically so that tuple keys are not unpacked as the
- * exception arguments.
+/* Set a key error with the specified argument.
  *
  * If an exception is already set, override the exception. */
 void
