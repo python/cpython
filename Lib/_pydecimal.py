@@ -348,6 +348,7 @@ _rounding_modes = (ROUND_DOWN, ROUND_HALF_UP, ROUND_HALF_EVEN, ROUND_CEILING,
 # current context.
 
 import contextvars
+from _contextvars import _current_context_depth
 
 _current_context_var = contextvars.ContextVar('decimal_context')
 
@@ -362,18 +363,32 @@ def getcontext():
     a new context and sets this thread's context.
     New contexts are copies of DefaultContext.
     """
+    cur_depth = _current_context_depth()
     try:
-        return _current_context_var.get()
+        context = _current_context_var.get()
     except LookupError:
         context = Context()
+        context._local_depth = cur_depth
         _current_context_var.set(context)
         return context
+    if context._local_depth != cur_depth:
+        # The context value was inherited from another task/thread.  Because
+        # the Context() instance is mutable, copy it to ensure that if it is
+        # changed, those changes are isolated from other tasks/threads.
+        context = context.copy()
+        context._local_depth = cur_depth
+        _current_context_var.set(context)
+    return context
+
 
 def setcontext(context):
     """Set this thread's context to context."""
     if context in (DefaultContext, BasicContext, ExtendedContext):
         context = context.copy()
         context.clear_flags()
+    # Mark the context as owned by the current context scope, so a following
+    # getcontext() returns this very object rather than a copy.
+    context._local_depth = _current_context_depth()
     _current_context_var.set(context)
 
 del contextvars        # Don't contaminate the namespace
@@ -3869,6 +3884,10 @@ class Context(object):
     clamp -  If 1, change exponents if too high (Default 0)
     """
 
+    # Depth of the contextvars context this object was bound into by
+    # getcontext()/setcontext().
+    _local_depth = 0
+
     def __init__(self, prec=None, rounding=None, Emin=None, Emax=None,
                        capitals=None, clamp=None, flags=None, traps=None,
                        _ignored_flags=None):
@@ -3950,6 +3969,8 @@ class Context(object):
         elif name == 'flags' or name == 'traps':
             return self._set_signal_dict(name, value)
         elif name == '_ignored_flags':
+            return object.__setattr__(self, name, value)
+        elif name == '_local_depth':
             return object.__setattr__(self, name, value)
         else:
             raise AttributeError(
