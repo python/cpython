@@ -1667,7 +1667,7 @@ _CASE_COST = 1
 # If is_raw is True, the suggestion is rendered as-is.
 #
 # See https://github.com/python/cpython/issues/146406.
-_CROSS_LANGUAGE_HINTS = {
+_CROSS_LANGUAGE_HINTS = types.MappingProxyType({
     # list -- JavaScript/Ruby equivalents
     (list, "push"): ("append", False),
     (list, "concat"): ("extend", False),
@@ -1687,7 +1687,7 @@ _CROSS_LANGUAGE_HINTS = {
     (dict, "entries"): ("items", False),
     (dict, "putAll"): ("update", False),
     (dict, "put"): ("Use d[k] = v.", True),
-}
+})
 
 
 def _substitution_cost(ch_a, ch_b):
