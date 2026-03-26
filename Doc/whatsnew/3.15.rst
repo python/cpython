@@ -1945,7 +1945,7 @@ Build changes
   This was made possible by a new feature introduced in MSVC 18,
   which the official Windows 64-bit binaries on python.org__ now use.
   (Contributed by Chris Eibl, Ken Jin, and Brandt Bucher in :gh:`143068`.
-  Special thanks to the MSVC team including Hulon Jenkins.)
+  Special thanks to Steve Dower, and the MSVC team including Hulon Jenkins.)
 
   __ https://www.python.org/downloads/windows/
 
