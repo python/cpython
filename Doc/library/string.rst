@@ -406,7 +406,7 @@ following:
 For floating-point presentation types the ``'z'`` option coerces negative zero
 floating-point values to positive zero after rounding to the format precision.
 
-For integer presentation types ``'b'``, ``'o'``, ``'x'``, and ``'X'``formatted
+For integer presentation types ``'b'``, ``'o'``, ``'x'``, and ``'X'`` formatted
 with precision, the ``'z'`` 'modulo-precision' option first reduces the integer
 into ``range(base ** precision)``. The result is a predictable two's complement
 style formatting with the number of digits *exactly* equal to the precision.
