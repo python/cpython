@@ -1276,18 +1276,6 @@ zlib
 Optimizations
 =============
 
-* Builds using Visual Studio 2026 (MSVC 18) may now use the new
-  :ref:`tail-calling interpreter <whatsnew314-tail-call-interpreter>`.
-  Results on Visual Studio 18.1.1 report between
-  `15-20% <https://github.com/faster-cpython/ideas/blob/main/results/5800X-msvc.pgo2-vs-msvc.pgo.tc.svg>`__
-  speedup on the geometric mean of pyperformance on Windows x86-64 over
-  the switch-case interpreter on an AMD Ryzen 7 5800X. We have
-  observed speedups ranging from 14% for large pure-Python libraries
-  to 40% for long-running small pure-Python scripts on Windows.
-  This was made possible by a new feature introduced in MSVC 18.
-  (Contributed by Chris Eibl, Ken Jin, and Brandt Bucher in :gh:`143068`.
-  Special thanks to the MSVC team including Hulon Jenkins.)
-
 * ``mimalloc`` is now used as the default allocator for
   for raw memory allocations such as via :c:func:`PyMem_RawMalloc`
   for better performance on :term:`free-threaded builds <free-threaded build>`.
@@ -1946,12 +1934,18 @@ Build changes
 
 .. _whatsnew315-windows-tail-calling-interpreter:
 
-* The official Windows 64-bit binaries on python.org__ now use the new
+* 64-bit builds using Visual Studio 2026 (MSVC 18) may now use the new
   :ref:`tail-calling interpreter <whatsnew314-tail-call-interpreter>`.
-  (Contributed by Ken Jin, Brandt Bucher and Chris Eibl in :gh:`139922`.
-  Special thanks go to Steve Dower for his assistance with the integration in the
-  Windows release build process and to the MSVC team including Hulon Jenkins
-  for ``msvc::musttail``.)
+  Results on Visual Studio 18.1.1 report between
+  `15-20% <https://github.com/faster-cpython/ideas/blob/main/results/5800X-msvc.pgo2-vs-msvc.pgo.tc.svg>`__
+  speedup on the geometric mean of pyperformance on Windows x86-64 over
+  the switch-case interpreter on an AMD Ryzen 7 5800X. We have
+  observed speedups ranging from 14% for large pure-Python libraries
+  to 40% for long-running small pure-Python scripts on Windows.
+  This was made possible by a new feature introduced in MSVC 18,
+  which the official Windows 64-bit binaries on python.org__ now use.
+  (Contributed by Chris Eibl, Ken Jin, and Brandt Bucher in :gh:`143068`.
+  Special thanks to the MSVC team including Hulon Jenkins.)
 
   __ https://www.python.org/downloads/windows/
 
