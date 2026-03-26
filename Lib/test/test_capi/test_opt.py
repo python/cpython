@@ -23,6 +23,7 @@ GLOBAL_136154 = 42
 # For frozendict JIT tests
 FROZEN_DICT_CONST = frozendict(x=1, y=2)
 
+
 @contextlib.contextmanager
 def clear_executors(func):
     # Clear executors in func before and after running a block
