@@ -3495,15 +3495,12 @@ save_set(PickleState *state, PicklerObject *self, PyObject *obj)
 }
 
 static int
-save_frozenset(PickleState *state, PicklerObject *self, PyObject *obj)
+save_frozenset_impl(PickleState *state, PicklerObject *self, PyObject *obj)
 {
     PyObject *iter;
 
     const char mark_op = MARK;
     const char frozenset_op = FROZENSET;
-
-    if (self->fast && !fast_save_enter(self, obj))
-        return -1;
 
     if (self->proto < 4) {
         PyObject *items;
@@ -3572,6 +3569,19 @@ save_frozenset(PickleState *state, PicklerObject *self, PyObject *obj)
         return -1;
 
     return 0;
+}
+
+static int
+save_frozenset(PickleState *state, PicklerObject *self, PyObject *obj)
+{
+    if (self->fast && !fast_save_enter(self, obj)) {
+        return -1;
+    }
+    int status = save_frozenset_impl(state, self, obj);
+    if (self->fast && !fast_save_leave(self, obj)) {
+        return -1;
+    }
+    return status;
 }
 
 static int
