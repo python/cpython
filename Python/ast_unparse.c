@@ -913,7 +913,7 @@ static int
 append_ast_async_yield_from(PyUnicodeWriter *writer, expr_ty e)
 {
     APPEND_STR("(async yield from ");
-    APPEND_EXPR(e->v.YieldFrom.value, PR_TEST);
+    APPEND_EXPR(e->v.AsyncYieldFrom.value, PR_TEST);
     APPEND_CHAR_FINISH(')');
 }
 
