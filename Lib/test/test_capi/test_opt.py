@@ -3017,6 +3017,20 @@ class TestUopsOptimization(unittest.TestCase):
         self.assertNotIn("_LOAD_ATTR_METHOD_NO_DICT", uops)
         self.assertNotIn("_LOAD_ATTR_METHOD_LAZY_DICT", uops)
 
+    def test_cached_attributes_fixed_version_tag(self):
+        def f(n):
+            c = 1
+            x = 0
+            for _ in range(n):
+                x += c.bit_length()
+            return x
+
+        res, ex = self._run_with_optimizer(f, TIER2_THRESHOLD)
+        self.assertIsNotNone(ex)
+        self.assertEqual(res, TIER2_THRESHOLD)
+        uops = get_opnames(ex)
+        self.assertNotIn("_LOAD_ATTR_METHOD_NO_DICT", uops)
+
     def test_store_fast_refcount_elimination(self):
         def foo(x):
             # Since x is known to be
