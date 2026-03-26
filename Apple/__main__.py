@@ -831,6 +831,7 @@ def test(context: argparse.Namespace, host: str | None = None) -> None:  # noqa:
                 f"--{context.ci_mode}-ci",
                 "--single-process",
                 "--no-randomize",
+                "--pythoninfo",
                 # Timeout handling requires subprocesses; explicitly setting
                 # the timeout to -1 disables the faulthandler.
                 "--timeout=-1",
