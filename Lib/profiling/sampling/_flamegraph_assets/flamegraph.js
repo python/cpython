@@ -347,10 +347,10 @@ function createPythonTooltip(data) {
     if (d.data.diff !== undefined && d.data.baseline !== undefined) {
       const baselineSelf = (d.data.baseline / 1000).toFixed(2);
       const currentSelf = ((d.data.self_time || 0) / 1000).toFixed(2);
-      const diffSamples = d.data.diff;
+      const diffMs = (d.data.diff / 1000).toFixed(2);
       const diffPct = d.data.diff_pct;
-      const sign = diffSamples >= 0 ? "+" : "";
-      const diffClass = diffSamples > 0 ? "regression" : (diffSamples < 0 ? "improvement" : "neutral");
+      const sign = d.data.diff >= 0 ? "+" : "";
+      const diffClass = d.data.diff > 0 ? "regression" : (d.data.diff < 0 ? "improvement" : "neutral");
 
       diffSection = `
         <div class="tooltip-diff">
@@ -365,7 +365,7 @@ function createPythonTooltip(data) {
           </div>
           <div class="tooltip-diff-row ${diffClass}">
             <span class="tooltip-stat-label">Difference:</span>
-            <span class="tooltip-stat-value">${sign}${diffSamples.toFixed(1)} samples (${sign}${diffPct.toFixed(1)}%)</span>
+            <span class="tooltip-stat-value">${sign}${diffMs} ms (${sign}${diffPct.toFixed(1)}%)</span>
           </div>
         </div>`;
     }
