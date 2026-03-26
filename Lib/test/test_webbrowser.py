@@ -325,6 +325,49 @@ class MockPopenPipe:
 
 @unittest.skipUnless(sys.platform == "darwin", "macOS specific test")
 @requires_subprocess()
+class MacOSXTest(unittest.TestCase):
+
+    def test_default_open(self):
+        browser = webbrowser.MacOSX('default')
+        with mock.patch('subprocess.run') as mock_run:
+            mock_run.return_value = mock.Mock(returncode=0)
+            result = browser.open(URL)
+        mock_run.assert_called_once_with(
+            ['/usr/bin/open', URL],
+            stderr=subprocess.DEVNULL,
+        )
+        self.assertTrue(result)
+
+    def test_named_open(self):
+        browser = webbrowser.MacOSX('safari')
+        with mock.patch('subprocess.run') as mock_run:
+            mock_run.return_value = mock.Mock(returncode=0)
+            result = browser.open(URL)
+        mock_run.assert_called_once_with(
+            ['/usr/bin/open', '-a', 'safari', URL],
+            stderr=subprocess.DEVNULL,
+        )
+        self.assertTrue(result)
+
+    def test_open_failure(self):
+        browser = webbrowser.MacOSX('default')
+        with mock.patch('subprocess.run') as mock_run:
+            mock_run.return_value = mock.Mock(returncode=1)
+            result = browser.open(URL)
+        self.assertFalse(result)
+
+
+@unittest.skipUnless(sys.platform == "darwin", "macOS specific test")
+@requires_subprocess()
+class MacOSXOSAScriptDeprecationTest(unittest.TestCase):
+
+    def test_deprecation_warning(self):
+        with self.assertWarns(DeprecationWarning):
+            webbrowser.MacOSXOSAScript('default')
+
+
+@unittest.skipUnless(sys.platform == "darwin", "macOS specific test")
+@requires_subprocess()
 class MacOSXOSAScriptTest(unittest.TestCase):
 
     def setUp(self):
