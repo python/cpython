@@ -84,7 +84,8 @@ Summary -- Release highlights
   <whatsnew315-pybyteswriter>`
 * :ref:`The JIT compiler has been significantly upgraded <whatsnew315-jit>`
 * :ref:`Improved error messages <whatsnew315-improved-error-messages>`
-
+* :ref:`The official Windows 64-bit binaries now use the tail-calling interpreter
+  <whatsnew315-windows-tail-calling-interpreter>`
 
 New features
 ============
@@ -1942,6 +1943,8 @@ Build changes
   Annotations are visible in ``/proc/<pid>/maps`` if the kernel supports the feature
   and :option:`-X dev <-X>` is passed to the Python or Python is built in :ref:`debug mode <debug-build>`.
   (Contributed by Donghee Na in :gh:`141770`.)
+
+.. _whatsnew315-windows-tail-calling-interpreter:
 
 * The official Windows 64-bit binaries on python.org__ now use the new
   :ref:`tail-calling interpreter <whatsnew314-tail-call-interpreter>`.
