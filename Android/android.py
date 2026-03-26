@@ -217,6 +217,7 @@ def unpack_deps(host, prefix_dir, cache_dir):
 
 def download(url, cache_dir):
     out_path = cache_dir / basename(url)
+    cache_dir.mkdir(parents=True, exist_ok=True)
     if not out_path.is_file():
         run(["curl", "-Lf", "--retry", "5", "--retry-all-errors", "-o", str(out_path), url])
     else:
