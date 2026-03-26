@@ -1,6 +1,7 @@
 /* Execute compiled code */
 
 #include "ceval.h"
+#include "pycore_long.h"
 
 int
 Py_GetRecursionLimit(void)
@@ -436,13 +437,15 @@ _PyEval_MatchKeys(PyThreadState *tstate, PyObject *map, PyObject *keys)
     // - Atomically check for a key and get its value without error handling.
     // - Don't cause key creation or resizing in dict subclasses like
     //   collections.defaultdict that define __missing__ (or similar).
-    _PyCStackRef cref;
-    _PyThreadState_PushCStackRef(tstate, &cref);
-    int meth_found = _PyObject_GetMethodStackRef(tstate, map, &_Py_ID(get), &cref.ref);
-    PyObject *get = PyStackRef_AsPyObjectBorrow(cref.ref);
-    if (get == NULL) {
+    _PyCStackRef self, method;
+    _PyThreadState_PushCStackRef(tstate, &self);
+    _PyThreadState_PushCStackRef(tstate, &method);
+    self.ref = PyStackRef_FromPyObjectBorrow(map);
+    int res = _PyObject_GetMethodStackRef(tstate, &self.ref, &_Py_ID(get), &method.ref);
+    if (res < 0) {
         goto fail;
     }
+    PyObject *get = PyStackRef_AsPyObjectBorrow(method.ref);
     seen = PySet_New(NULL);
     if (seen == NULL) {
         goto fail;
@@ -466,9 +469,10 @@ _PyEval_MatchKeys(PyThreadState *tstate, PyObject *map, PyObject *keys)
             }
             goto fail;
         }
-        PyObject *args[] = { map, key, dummy };
+        PyObject *self_obj = PyStackRef_AsPyObjectBorrow(self.ref);
+        PyObject *args[] = { self_obj, key, dummy };
         PyObject *value = NULL;
-        if (meth_found) {
+        if (!PyStackRef_IsNull(self.ref)) {
             value = PyObject_Vectorcall(get, args, 3, NULL);
         }
         else {
@@ -489,12 +493,14 @@ _PyEval_MatchKeys(PyThreadState *tstate, PyObject *map, PyObject *keys)
     }
     // Success:
 done:
-    _PyThreadState_PopCStackRef(tstate, &cref);
+    _PyThreadState_PopCStackRef(tstate, &method);
+    _PyThreadState_PopCStackRef(tstate, &self);
     Py_DECREF(seen);
     Py_DECREF(dummy);
     return values;
 fail:
-    _PyThreadState_PopCStackRef(tstate, &cref);
+    _PyThreadState_PopCStackRef(tstate, &method);
+    _PyThreadState_PopCStackRef(tstate, &self);
     Py_XDECREF(seen);
     Py_XDECREF(dummy);
     Py_XDECREF(values);
@@ -1019,26 +1025,17 @@ _Py_LoadAttr_StackRefSteal(
     PyThreadState *tstate, _PyStackRef owner,
     PyObject *name, _PyStackRef *self_or_null)
 {
-    _PyCStackRef method;
+    // Use _PyCStackRefs to ensure that both method and self are visible to
+    // the GC. Even though self_or_null is on the evaluation stack, it may be
+    // after the stackpointer and therefore not visible to the GC.
+    _PyCStackRef method, self;
     _PyThreadState_PushCStackRef(tstate, &method);
-    int is_meth = _PyObject_GetMethodStackRef(tstate, PyStackRef_AsPyObjectBorrow(owner), name, &method.ref);
-    if (is_meth) {
-        /* We can bypass temporary bound method object.
-           meth is unbound method and obj is self.
-           meth | self | arg1 | ... | argN
-         */
-        assert(!PyStackRef_IsNull(method.ref)); // No errors on this branch
-        self_or_null[0] = owner;  // Transfer ownership
-        return _PyThreadState_PopCStackRefSteal(tstate, &method);
-    }
-    /* meth is not an unbound method (but a regular attr, or
-       something was returned by a descriptor protocol).  Set
-       the second element of the stack to NULL, to signal
-       CALL that it's not a method call.
-       meth | NULL | arg1 | ... | argN
-    */
-    PyStackRef_CLOSE(owner);
-    self_or_null[0] = PyStackRef_NULL;
+    _PyThreadState_PushCStackRef(tstate, &self);
+    self.ref = owner;  // steal reference to owner
+    // NOTE: method.ref is initialized to PyStackRef_NULL and remains null on
+    // error, so we don't need to explicitly use the return code from the call.
+    _PyObject_GetMethodStackRef(tstate, &self.ref, name, &method.ref);
+    *self_or_null = _PyThreadState_PopCStackRefSteal(tstate, &self);
     return _PyThreadState_PopCStackRefSteal(tstate, &method);
 }
 
@@ -1094,7 +1091,8 @@ static const _Py_CODEUNIT _Py_INTERPRETER_TRAMPOLINE_INSTRUCTIONS[] = {
     { .op.code = INTERPRETER_EXIT, .op.arg = 0 },  /* reached on return */
     { .op.code = NOP, .op.arg = 0 },
     { .op.code = INTERPRETER_EXIT, .op.arg = 0 },  /* reached on yield */
-    { .op.code = RESUME, .op.arg = RESUME_OPARG_DEPTH1_MASK | RESUME_AT_FUNC_START }
+    { .op.code = RESUME, .op.arg = RESUME_OPARG_DEPTH1_MASK | RESUME_AT_FUNC_START },
+    { .op.code = CACHE, .op.arg = 0 } /* RESUME's CACHE */
 };
 
 const _Py_CODEUNIT *_Py_INTERPRETER_TRAMPOLINE_INSTRUCTIONS_PTR = (_Py_CODEUNIT*)&_Py_INTERPRETER_TRAMPOLINE_INSTRUCTIONS;
@@ -1166,6 +1164,42 @@ stop_tracing_and_jit(PyThreadState *tstate, _PyInterpreterFrame *frame)
 #include "opcode_targets.h"
 #include "generated_cases.c.h"
 #endif
+
+
+_PyStackRef
+_PyEval_GetIter(_PyStackRef iterable, _PyStackRef *index_or_null, int yield_from)
+{
+    PyTypeObject *tp = PyStackRef_TYPE(iterable);
+    if (tp == &PyTuple_Type || tp == &PyList_Type) {
+        /* Leave iterable on stack and pushed tagged 0 */
+        *index_or_null = PyStackRef_TagInt(0);
+        return iterable;
+    }
+    *index_or_null = PyStackRef_NULL;
+    if (tp->tp_iter == PyObject_SelfIter) {
+        return iterable;
+    }
+    if (yield_from && tp == &PyCoro_Type) {
+        assert(yield_from != GET_ITER_YIELD_FROM);
+        if (yield_from == GET_ITER_YIELD_FROM_CORO_CHECK) {
+            /* `iterable` is a coroutine and it is used in a 'yield from'
+            * expression of a regular generator. */
+            PyErr_SetString(PyExc_TypeError,
+                            "cannot 'yield from' a coroutine object "
+                            "in a non-coroutine generator");
+            PyStackRef_CLOSE(iterable);
+            return PyStackRef_ERROR;
+        }
+        return iterable;
+    }
+    /* Pop iterable, and push iterator then NULL */
+    PyObject *iter_o = PyObject_GetIter(PyStackRef_AsPyObjectBorrow(iterable));
+    PyStackRef_CLOSE(iterable);
+    if (iter_o == NULL) {
+        return PyStackRef_ERROR;
+    }
+    return PyStackRef_FromPyObjectSteal(iter_o);
+}
 
 #if (defined(__GNUC__) && __GNUC__ >= 10 && !defined(__clang__)) && defined(__x86_64__)
 /*
@@ -1370,7 +1404,7 @@ tier2_dispatch:
     for (;;) {
         uopcode = next_uop->opcode;
 #ifdef Py_DEBUG
-        if (frame->lltrace >= 3) {
+        if (frame->lltrace >= 4) {
             dump_stack(frame, stack_pointer);
             printf("    cache=[");
             dump_cache_item(_tos_cache0, 0, current_cached_values);
@@ -2239,14 +2273,19 @@ _PyEval_ExceptionGroupMatch(_PyInterpreterFrame *frame, PyObject* exc_value,
                 return -1;
             }
             PyFrameObject *f = _PyFrame_GetFrameObject(frame);
-            if (f != NULL) {
-                PyObject *tb = _PyTraceBack_FromFrame(NULL, f);
-                if (tb == NULL) {
-                    return -1;
-                }
-                PyException_SetTraceback(wrapped, tb);
-                Py_DECREF(tb);
+            if (f == NULL) {
+                Py_DECREF(wrapped);
+                return -1;
             }
+
+            PyObject *tb = _PyTraceBack_FromFrame(NULL, f);
+            if (tb == NULL) {
+                Py_DECREF(wrapped);
+                return -1;
+            }
+            PyException_SetTraceback(wrapped, tb);
+            Py_DECREF(tb);
+
             *match = wrapped;
         }
         *rest = Py_NewRef(Py_None);
@@ -2621,6 +2660,11 @@ PyEval_GetLocals(void)
 
     if (PyFrameLocalsProxy_Check(locals)) {
         PyFrameObject *f = _PyFrame_GetFrameObject(current_frame);
+        if (f == NULL) {
+            Py_DECREF(locals);
+            return NULL;
+        }
+
         PyObject *ret = f->f_locals_cache;
         if (ret == NULL) {
             ret = PyDict_New();
@@ -2717,7 +2761,7 @@ static PyObject *
 get_globals_builtins(PyObject *globals)
 {
     PyObject *builtins = NULL;
-    if (PyDict_Check(globals)) {
+    if (PyAnyDict_Check(globals)) {
         if (PyDict_GetItemRef(globals, &_Py_ID(__builtins__), &builtins) < 0) {
             return NULL;
         }
@@ -2742,6 +2786,10 @@ set_globals_builtins(PyObject *globals, PyObject *builtins)
     }
     else {
         if (PyObject_SetItem(globals, &_Py_ID(__builtins__), builtins) < 0) {
+            if (PyFrozenDict_Check(globals)) {
+                PyErr_SetString(PyExc_TypeError,
+                                "cannot assign __builtins__ to frozendict globals");
+            }
             return -1;
         }
     }
@@ -2883,23 +2931,10 @@ PyEval_GetFuncDesc(PyObject *func)
 int
 _PyEval_SliceIndex(PyObject *v, Py_ssize_t *pi)
 {
-    PyThreadState *tstate = _PyThreadState_GET();
-    if (!Py_IsNone(v)) {
-        Py_ssize_t x;
-        if (_PyIndex_Check(v)) {
-            x = PyNumber_AsSsize_t(v, NULL);
-            if (x == -1 && _PyErr_Occurred(tstate))
-                return 0;
-        }
-        else {
-            _PyErr_SetString(tstate, PyExc_TypeError,
-                             "slice indices must be integers or "
-                             "None or have an __index__ method");
-            return 0;
-        }
-        *pi = x;
+    if (Py_IsNone(v)) {
+        return 1;
     }
-    return 1;
+    return _PyEval_SliceIndexNotNone(v, pi);
 }
 
 int
@@ -2907,6 +2942,10 @@ _PyEval_SliceIndexNotNone(PyObject *v, Py_ssize_t *pi)
 {
     PyThreadState *tstate = _PyThreadState_GET();
     Py_ssize_t x;
+    if (PyLong_CheckExact(v) && _PyLong_IsCompact((PyLongObject *)v)) {
+        *pi = _PyLong_CompactValue((PyLongObject *)v);
+        return 1;
+    }
     if (_PyIndex_Check(v)) {
         x = PyNumber_AsSsize_t(v, NULL);
         if (x == -1 && _PyErr_Occurred(tstate))
@@ -2919,6 +2958,26 @@ _PyEval_SliceIndexNotNone(PyObject *v, Py_ssize_t *pi)
         return 0;
     }
     *pi = x;
+    return 1;
+}
+
+int
+_PyEval_UnpackIndices(PyObject *start, PyObject *stop,
+                      Py_ssize_t len,
+                      Py_ssize_t *istart, Py_ssize_t *istop)
+{
+    if (len < 0) {
+        return 0;
+    }
+    *istart = 0;
+    *istop = PY_SSIZE_T_MAX;
+    if (!_PyEval_SliceIndex(start, istart)) {
+        return 0;
+    }
+    if (!_PyEval_SliceIndex(stop, istop)) {
+        return 0;
+    }
+    PySlice_AdjustIndices(len, istart, istop, 1);
     return 1;
 }
 
@@ -3027,7 +3086,7 @@ _PyEval_LazyImportName(PyThreadState *tstate, PyObject *builtins,
             break;
     }
 
-    if (!lazy) {
+    if (!lazy && PyImport_GetLazyImportsMode() != PyImport_LAZY_NONE) {
         // See if __lazy_modules__ forces this to be lazy.
         lazy = check_lazy_import_compatibility(tstate, globals, name, level);
         if (lazy < 0) {
@@ -3393,10 +3452,18 @@ _PyEval_FormatKwargsError(PyThreadState *tstate, PyObject *func, PyObject *kwarg
      * is not a mapping.
      */
     if (_PyErr_ExceptionMatches(tstate, PyExc_AttributeError)) {
-        _PyErr_Format(
-            tstate, PyExc_TypeError,
-            "Value after ** must be a mapping, not %.200s",
-            Py_TYPE(kwargs)->tp_name);
+        PyObject *exc = _PyErr_GetRaisedException(tstate);
+        int has_keys = PyObject_HasAttrWithError(kwargs, &_Py_ID(keys));
+        if (has_keys == 0) {
+            _PyErr_Format(
+                tstate, PyExc_TypeError,
+                "Value after ** must be a mapping, not %T",
+                kwargs);
+            Py_DECREF(exc);
+        }
+        else {
+            _PyErr_ChainExceptions1Tstate(tstate, exc);
+        }
     }
     else if (_PyErr_ExceptionMatches(tstate, PyExc_KeyError)) {
         PyObject *exc = _PyErr_GetRaisedException(tstate);
@@ -3572,7 +3639,7 @@ _PyEval_GetANext(PyObject *aiter)
 void
 _PyEval_LoadGlobalStackRef(PyObject *globals, PyObject *builtins, PyObject *name, _PyStackRef *writeto)
 {
-    if (PyDict_CheckExact(globals) && PyDict_CheckExact(builtins)) {
+    if (PyAnyDict_CheckExact(globals) && PyAnyDict_CheckExact(builtins)) {
         _PyDict_LoadGlobalStackRef((PyDictObject *)globals,
                                     (PyDictObject *)builtins,
                                     name, writeto);

@@ -1626,6 +1626,11 @@ static struct PyModuleDef readlinemodule = {
 PyMODINIT_FUNC
 PyInit_readline(void)
 {
+    PyABIInfo_VAR(abi_info);
+    if (PyABIInfo_Check(&abi_info, "readline") < 0) {
+        return NULL;
+    }
+
     const char *backend = "readline";
     PyObject *m;
     readlinestate *mod_state;

@@ -1,0 +1,2 @@
+Fix ``struct.pack('f', float)``: use :c:func:`PyFloat_Pack4` to raise
+:exc:`OverflowError`. Patch by Sergey B Kirpichev and Victor Stinner.

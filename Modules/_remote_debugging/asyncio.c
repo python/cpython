@@ -121,6 +121,7 @@ iterate_set_entries(
 
     // Validate mask and num_els to prevent huge loop iterations from garbage data
     if (mask < 0 || mask >= MAX_SET_TABLE_SIZE || num_els < 0 || num_els > mask + 1) {
+        PyErr_SetString(PyExc_RuntimeError, "Invalid set object (corrupted remote memory)");
         set_exception_cause(unwinder, PyExc_RuntimeError,
             "Invalid set object (corrupted remote memory)");
         return -1;
@@ -264,7 +265,7 @@ handle_yield_from_frame(
         uintptr_t gi_await_addr;
         err = read_py_ptr(
             unwinder,
-            stackpointer_addr - sizeof(void*),
+            stackpointer_addr - sizeof(void*) * 2,
             &gi_await_addr);
         if (err) {
             set_exception_cause(unwinder, PyExc_RuntimeError, "Failed to read gi_await address");
@@ -939,6 +940,9 @@ process_running_task_chain(
     PyObject *coro_chain = PyStructSequence_GET_ITEM(task_info, 2);
     assert(coro_chain != NULL);
     if (PyList_GET_SIZE(coro_chain) != 1) {
+        PyErr_Format(PyExc_RuntimeError,
+            "Expected single-item coro chain, got %zd items",
+            PyList_GET_SIZE(coro_chain));
         set_exception_cause(unwinder, PyExc_RuntimeError, "Coro chain is not a single item");
         return -1;
     }

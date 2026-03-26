@@ -329,6 +329,22 @@ What about willful misconduct?
       ...
     TypeError: Value after ** must be a mapping, not function
 
+    >>> class OnlyKeys:
+    ...     def keys(self):
+    ...         return ['key']
+    >>> h(**OnlyKeys())
+    Traceback (most recent call last):
+      ...
+    TypeError: 'OnlyKeys' object is not subscriptable
+
+    >>> class BrokenKeys:
+    ...     def keys(self):
+    ...         return 1
+    >>> h(**BrokenKeys())
+    Traceback (most recent call last):
+      ...
+    TypeError: test.test_extcall.BrokenKeys.keys() must return an iterable, not int
+
     >>> dir(b=1, **{'b': 1})
     Traceback (most recent call last):
       ...
@@ -539,6 +555,151 @@ Same with keyword only args:
     TypeError: f() missing 5 required keyword-only arguments: 'a', 'b', 'c', 'd', and 'e'
 
 """
+
+def test_errors_in_iter():
+    """
+    >>> class A:
+    ...     def __iter__(self):
+    ...         raise exc
+    ...
+    >>> def f(*args, **kwargs): pass
+    >>> exc = ZeroDivisionError('some error')
+    >>> f(*A())
+    Traceback (most recent call last):
+      ...
+    ZeroDivisionError: some error
+
+    >>> exc = AttributeError('some error')
+    >>> f(*A())
+    Traceback (most recent call last):
+      ...
+    AttributeError: some error
+
+    >>> exc = TypeError('some error')
+    >>> f(*A())
+    Traceback (most recent call last):
+      ...
+    TypeError: some error
+    """
+
+def test_errors_in_next():
+    """
+    >>> class I:
+    ...     def __iter__(self):
+    ...         return self
+    ...     def __next__(self):
+    ...         raise exc
+    ...
+    >>> class A:
+    ...     def __iter__(self):
+    ...         return I()
+    ...
+
+    >>> def f(*args, **kwargs): pass
+    >>> exc = ZeroDivisionError('some error')
+    >>> f(*A())
+    Traceback (most recent call last):
+      ...
+    ZeroDivisionError: some error
+
+    >>> exc = AttributeError('some error')
+    >>> f(*A())
+    Traceback (most recent call last):
+      ...
+    AttributeError: some error
+
+    >>> exc = TypeError('some error')
+    >>> f(*A())
+    Traceback (most recent call last):
+      ...
+    TypeError: some error
+    """
+
+def test_errors_in_keys():
+    """
+    >>> class D:
+    ...     def keys(self):
+    ...         raise exc
+    ...
+    >>> def f(*args, **kwargs): pass
+    >>> exc = ZeroDivisionError('some error')
+    >>> f(**D())
+    Traceback (most recent call last):
+      ...
+    ZeroDivisionError: some error
+
+    >>> exc = AttributeError('some error')
+    >>> f(**D())
+    Traceback (most recent call last):
+      ...
+    AttributeError: some error
+
+    >>> exc = TypeError('some error')
+    >>> f(**D())
+    Traceback (most recent call last):
+      ...
+    TypeError: some error
+    """
+
+def test_errors_in_keys_next():
+    """
+    >>> class I:
+    ...     def __iter__(self):
+    ...         return self
+    ...     def __next__(self):
+    ...         raise exc
+    ...
+    >>> class D:
+    ...     def keys(self):
+    ...         return I()
+    ...
+    >>> def f(*args, **kwargs): pass
+    >>> exc = ZeroDivisionError('some error')
+    >>> f(**D())
+    Traceback (most recent call last):
+      ...
+    ZeroDivisionError: some error
+
+    >>> exc = AttributeError('some error')
+    >>> f(**D())
+    Traceback (most recent call last):
+      ...
+    AttributeError: some error
+
+    >>> exc = TypeError('some error')
+    >>> f(**D())
+    Traceback (most recent call last):
+      ...
+    TypeError: some error
+    """
+
+def test_errors_in_getitem():
+    """
+    >>> class D:
+    ...     def keys(self):
+    ...         return ['key']
+    ...     def __getitem__(self, key):
+    ...         raise exc
+    ...
+    >>> def f(*args, **kwargs): pass
+    >>> exc = ZeroDivisionError('some error')
+    >>> f(**D())
+    Traceback (most recent call last):
+      ...
+    ZeroDivisionError: some error
+
+    >>> exc = AttributeError('some error')
+    >>> f(**D())
+    Traceback (most recent call last):
+      ...
+    AttributeError: some error
+
+    >>> exc = TypeError('some error')
+    >>> f(**D())
+    Traceback (most recent call last):
+      ...
+    TypeError: some error
+    """
 
 import doctest
 import unittest

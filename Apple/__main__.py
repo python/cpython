@@ -173,8 +173,11 @@ def all_host_triples(platform: str) -> list[str]:
     return triples
 
 
-def clean(context: argparse.Namespace, target: str = "all") -> None:
+def clean(context: argparse.Namespace, target: str | None = None) -> None:
     """The implementation of the "clean" command."""
+    if target is None:
+        target = context.host
+
     # If we're explicitly targeting the build, there's no platform or
     # distribution artefacts. If we're cleaning tests, we keep all built
     # artefacts. Otherwise, the built artefacts must be dirty, so we remove
@@ -316,7 +319,7 @@ def unpack_deps(
     for name_ver in [
         "BZip2-1.0.8-2",
         "libFFI-3.4.7-2",
-        "OpenSSL-3.0.19-1",
+        "OpenSSL-3.5.5-1",
         "XZ-5.6.4-2",
         "mpdecimal-4.0.0-2",
         "zstd-1.5.7-1",
@@ -377,7 +380,12 @@ def configure_host_python(
     with group(f"Downloading dependencies ({host})"):
         if not prefix_dir.exists():
             prefix_dir.mkdir()
-            unpack_deps(context.platform, host, prefix_dir, context.cache_dir)
+            cache_dir = (
+                Path(context.cache_dir).resolve()
+                if context.cache_dir
+                else CROSS_BUILD_DIR / "downloads"
+            )
+            unpack_deps(context.platform, host, prefix_dir, cache_dir)
         else:
             print("Dependencies already installed")
 
@@ -828,9 +836,10 @@ def test(context: argparse.Namespace, host: str | None = None) -> None:  # noqa:
             + [
                 "--",
                 "test",
-                f"--{context.ci_mode}-ci",
+                f"--{context.ci_mode or 'fast'}-ci",
                 "--single-process",
                 "--no-randomize",
+                "--pythoninfo",
                 # Timeout handling requires subprocesses; explicitly setting
                 # the timeout to -1 disables the faulthandler.
                 "--timeout=-1",
@@ -894,7 +903,7 @@ def parse_args() -> argparse.Namespace:
     configure_build = subcommands.add_parser(
         "configure-build", help="Run `configure` for the build Python"
     )
-    subcommands.add_parser(
+    make_build = subcommands.add_parser(
         "make-build", help="Run `make` for the build Python"
     )
     configure_host = subcommands.add_parser(
@@ -950,6 +959,31 @@ def parse_args() -> argparse.Namespace:
             ),
         )
 
+    # --cross-build-dir argument
+    for cmd in [
+        clean,
+        configure_build,
+        make_build,
+        configure_host,
+        make_host,
+        build,
+        package,
+        test,
+        ci,
+    ]:
+        cmd.add_argument(
+            "--cross-build-dir",
+            action="store",
+            default=os.environ.get("CROSS_BUILD_DIR"),
+            dest="cross_build_dir",
+            type=Path,
+            help=(
+                "Path to the cross-build directory "
+                f"(default: {CROSS_BUILD_DIR}). Can also be set "
+                "with the CROSS_BUILD_DIR environment variable."
+            ),
+        )
+
     # --clean option
     for cmd in [configure_build, configure_host, build, package, test, ci]:
         cmd.add_argument(
@@ -964,7 +998,7 @@ def parse_args() -> argparse.Namespace:
     for cmd in [configure_host, build, ci]:
         cmd.add_argument(
             "--cache-dir",
-            default="./cross-build/downloads",
+            default=os.environ.get("CACHE_DIR"),
             help="The directory to store cached downloads.",
         )
 
@@ -1031,6 +1065,12 @@ def main() -> None:
 
     # Process command line arguments
     context = parse_args()
+
+    # Set the CROSS_BUILD_DIR if an argument was provided
+    if context.cross_build_dir:
+        global CROSS_BUILD_DIR
+        CROSS_BUILD_DIR = context.cross_build_dir.resolve()
+
     dispatch: dict[str, Callable] = {
         "clean": clean,
         "configure-build": configure_build_python,
