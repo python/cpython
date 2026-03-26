@@ -198,14 +198,14 @@ class ArrayReconstructorTest(unittest.TestCase):
              [9006104071832581.0, float('inf'), float('-inf'), -0.0]),
             (['d'], IEEE_754_DOUBLE_BE, '>dddd',
              [9006104071832581.0, float('inf'), float('-inf'), -0.0]),
-            (['f'], IEEE_754_FLOAT_COMPLEX_LE, '<ffff',
+            (['F'], IEEE_754_FLOAT_COMPLEX_LE, '<FFFF',
              [16711938.0j, float('inf'), complex('1-infj'), -0.0]),
-            (['f'], IEEE_754_FLOAT_COMPLEX_BE, '>ffff',
+            (['F'], IEEE_754_FLOAT_COMPLEX_BE, '>FFFF',
              [16711938.0j, float('inf'), complex('1-infj'), -0.0]),
-            (['d'], IEEE_754_DOUBLE_COMPLEX_LE, '<dddd',
+            (['D'], IEEE_754_DOUBLE_COMPLEX_LE, '<DDDD',
              [9006104071832581.0j, float('inf'), complex('1-infj'), -0.0]),
-            (['d'], IEEE_754_DOUBLE_COMPLEX_BE, '>dddd',
-             [9006104071832581.0j, float('inf'), complex('1-infj'), -0.0])
+            (['D'], IEEE_754_DOUBLE_COMPLEX_BE, '>DDDD',
+             [9006104071832581.0j, float('inf'), complex('1-infj'), -0.0]),
         )
         for testcase in testcases:
             valid_typecodes, mformat_code, struct_fmt, values = testcase
