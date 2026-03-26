@@ -769,6 +769,7 @@ class ContextTest(unittest.TestCase):
             self.assertTrue(changed)
         ctx1.run(outer)
 
+    @threading_helper.requires_working_threading()
     def test_get_changed_with_threads(self):
         # get_changed() works correctly in a thread with copied context
         import threading
