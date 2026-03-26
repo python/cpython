@@ -1,1 +1,1 @@
-Add a null check for :func:`sym_new(ctx)` in :func:`make_bottom`
+Adds a null check to handle when the JIT optimizer runs out of space when dealing with contradictions in :func:`make_bottom`
