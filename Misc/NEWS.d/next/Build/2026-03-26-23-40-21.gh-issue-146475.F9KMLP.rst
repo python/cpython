@@ -1,0 +1,2 @@
+Block Apple LLVM 21 from passing the JIT tool version check, as the JIT is
+incompatible with it.
