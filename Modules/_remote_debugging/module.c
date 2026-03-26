@@ -420,6 +420,7 @@ _remote_debugging_RemoteUnwinder___init___impl(RemoteUnwinderObject *self,
 
 #if defined(__APPLE__)
     self->thread_id_offset = 0;
+    self->thread_id_offset_initialized = 0;
 #endif
 
 #ifdef MS_WINDOWS
@@ -1839,6 +1840,7 @@ static PyMethodDef remote_debugging_methods[] = {
 };
 
 static PyModuleDef_Slot remote_debugging_slots[] = {
+    _Py_ABI_SLOT,
     {Py_mod_exec, _remote_debugging_exec},
     {Py_mod_multiple_interpreters, Py_MOD_PER_INTERPRETER_GIL_SUPPORTED},
     {Py_mod_gil, Py_MOD_GIL_NOT_USED},

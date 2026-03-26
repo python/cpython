@@ -567,6 +567,7 @@ _PyRun_SimpleStringFlagsWithName(const char *command, const char* name, PyCompil
         PyObject* the_name = PyUnicode_FromString(name);
         if (!the_name) {
             PyErr_Print();
+            Py_DECREF(main_module);
             return -1;
         }
         res = _PyRun_StringFlagsWithName(command, the_name, Py_file_input, dict, dict, flags, 0);
