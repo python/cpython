@@ -613,16 +613,108 @@ if sys.platform[:3] == "win":
 #
 
 if sys.platform == 'darwin':
+    def _macos_default_browser_bundle_id():
+        """Return the bundle ID of the default web browser via NSWorkspace.
+
+        Uses the Objective-C runtime directly to call
+        NSWorkspace.sharedWorkspace().URLForApplicationToOpenURL() with a
+        probe https:// URL, then reads the bundle identifier from the
+        resulting NSBundle.  Returns None if ctypes is unavailable or the
+        lookup fails for any reason.
+        """
+        try:
+            from ctypes import cdll, c_void_p, c_char_p
+            from ctypes.util import find_library
+
+            objc = cdll.LoadLibrary(find_library('objc'))
+            objc.objc_getClass.restype = c_void_p
+            objc.sel_registerName.restype = c_void_p
+            objc.objc_msgSend.restype = c_void_p
+
+            def cls(name):
+                return objc.objc_getClass(name)
+
+            def sel(name):
+                return objc.sel_registerName(name)
+
+            # Build probe NSURL for "https://python.org"
+            NSString = cls(b'NSString')
+            objc.objc_msgSend.argtypes = [c_void_p, c_void_p, c_char_p]
+            ns_str = objc.objc_msgSend(
+                NSString, sel(b'stringWithUTF8String:'), b'https://python.org'
+            )
+
+            NSURL = cls(b'NSURL')
+            objc.objc_msgSend.argtypes = [c_void_p, c_void_p, c_void_p]
+            probe_url = objc.objc_msgSend(NSURL, sel(b'URLWithString:'), ns_str)
+
+            # Ask NSWorkspace which app handles https://
+            NSWorkspace = cls(b'NSWorkspace')
+            objc.objc_msgSend.argtypes = [c_void_p, c_void_p]
+            workspace = objc.objc_msgSend(NSWorkspace, sel(b'sharedWorkspace'))
+
+            objc.objc_msgSend.argtypes = [c_void_p, c_void_p, c_void_p]
+            app_url = objc.objc_msgSend(
+                workspace, sel(b'URLForApplicationToOpenURL:'), probe_url
+            )
+
+            # Get bundle identifier from that app's NSBundle
+            NSBundle = cls(b'NSBundle')
+            bundle = objc.objc_msgSend(NSBundle, sel(b'bundleWithURL:'), app_url)
+
+            objc.objc_msgSend.argtypes = [c_void_p, c_void_p]
+            bundle_id_ns = objc.objc_msgSend(bundle, sel(b'bundleIdentifier'))
+
+            objc.objc_msgSend.restype = c_char_p
+            bundle_id_bytes = objc.objc_msgSend(bundle_id_ns, sel(b'UTF8String'))
+            return bundle_id_bytes.decode() if bundle_id_bytes else None
+        except Exception:
+            return None
+
     class MacOSX(BaseBrowser):
-        """Launcher class for macOS browsers, using /usr/bin/open."""
+        """Launcher class for macOS browsers, using /usr/bin/open.
+
+        For http/https URLs with the default browser, /usr/bin/open is called
+        directly; macOS routes these to the registered browser.
+
+        For all other URL schemes (e.g. file://) and for named browsers,
+        /usr/bin/open -b <bundle-id> is used so that the URL is always passed
+        to a browser application rather than dispatched by the OS file handler.
+        This prevents file injection attacks where a file:// URL pointing to an
+        executable bundle could otherwise be launched by the OS.
+
+        Named browsers with known bundle IDs use -b; unknown names fall back
+        to -a.
+        """
+
+        _BUNDLE_IDS = {
+            'google chrome':  'com.google.Chrome',
+            'firefox':        'org.mozilla.firefox',
+            'safari':         'com.apple.Safari',
+            'chromium':       'org.chromium.Chromium',
+            'opera':          'com.operasoftware.Opera',
+            'microsoft edge': 'com.microsoft.Edge',
+        }
 
         def open(self, url, new=0, autoraise=True):
             sys.audit("webbrowser.open", url)
             self._check_url(url)
             if self.name == 'default':
-                cmd = ['/usr/bin/open', url]
+                proto, sep, _ = url.partition(':')
+                if sep and proto.lower() in {'http', 'https'}:
+                    cmd = ['/usr/bin/open', url]
+                else:
+                    bundle_id = _macos_default_browser_bundle_id()
+                    if bundle_id:
+                        cmd = ['/usr/bin/open', '-b', bundle_id, url]
+                    else:
+                        cmd = ['/usr/bin/open', url]
             else:
-                cmd = ['/usr/bin/open', '-a', self.name, url]
+                bundle_id = self._BUNDLE_IDS.get(self.name.lower())
+                if bundle_id:
+                    cmd = ['/usr/bin/open', '-b', bundle_id, url]
+                else:
+                    cmd = ['/usr/bin/open', '-a', self.name, url]
             proc = subprocess.run(cmd, stderr=subprocess.DEVNULL)
             return proc.returncode == 0
 

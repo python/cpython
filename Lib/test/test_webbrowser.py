@@ -333,7 +333,8 @@ class MacOSXTest(unittest.TestCase):
         self.assertIsInstance(browser, webbrowser.MacOSX)
         self.assertEqual(browser.name, 'default')
 
-    def test_default_open(self):
+    def test_default_http_open(self):
+        # http/https URLs use /usr/bin/open directly — no bundle ID needed.
         browser = webbrowser.MacOSX('default')
         with mock.patch('subprocess.run') as mock_run:
             mock_run.return_value = mock.Mock(returncode=0)
@@ -344,16 +345,58 @@ class MacOSXTest(unittest.TestCase):
         )
         self.assertTrue(result)
 
-    def test_named_open(self):
+    def test_default_non_http_uses_bundle_id(self):
+        # Non-http(s) URLs (e.g. file://) must be routed through the browser
+        # via -b <bundle-id> to prevent OS file handler dispatch.
+        file_url = 'file:///tmp/test.html'
+        browser = webbrowser.MacOSX('default')
+        with mock.patch('webbrowser._macos_default_browser_bundle_id',
+                        return_value='com.apple.Safari'), \
+             mock.patch('subprocess.run') as mock_run:
+            mock_run.return_value = mock.Mock(returncode=0)
+            result = browser.open(file_url)
+        mock_run.assert_called_once_with(
+            ['/usr/bin/open', '-b', 'com.apple.Safari', file_url],
+            stderr=subprocess.DEVNULL,
+        )
+        self.assertTrue(result)
+
+    def test_default_non_http_fallback_when_no_bundle_id(self):
+        # If the bundle ID lookup fails, fall back to /usr/bin/open without -b.
+        file_url = 'file:///tmp/test.html'
+        browser = webbrowser.MacOSX('default')
+        with mock.patch('webbrowser._macos_default_browser_bundle_id',
+                        return_value=None), \
+             mock.patch('subprocess.run') as mock_run:
+            mock_run.return_value = mock.Mock(returncode=0)
+            browser.open(file_url)
+        mock_run.assert_called_once_with(
+            ['/usr/bin/open', file_url],
+            stderr=subprocess.DEVNULL,
+        )
+
+    def test_named_known_browser_uses_bundle_id(self):
+        # Named browsers with a known bundle ID use /usr/bin/open -b.
         browser = webbrowser.MacOSX('safari')
         with mock.patch('subprocess.run') as mock_run:
             mock_run.return_value = mock.Mock(returncode=0)
             result = browser.open(URL)
         mock_run.assert_called_once_with(
-            ['/usr/bin/open', '-a', 'safari', URL],
+            ['/usr/bin/open', '-b', 'com.apple.Safari', URL],
             stderr=subprocess.DEVNULL,
         )
         self.assertTrue(result)
+
+    def test_named_unknown_browser_falls_back_to_dash_a(self):
+        # Named browsers not in the bundle ID map fall back to -a.
+        browser = webbrowser.MacOSX('lynx')
+        with mock.patch('subprocess.run') as mock_run:
+            mock_run.return_value = mock.Mock(returncode=0)
+            browser.open(URL)
+        mock_run.assert_called_once_with(
+            ['/usr/bin/open', '-a', 'lynx', URL],
+            stderr=subprocess.DEVNULL,
+        )
 
     def test_open_failure(self):
         browser = webbrowser.MacOSX('default')
