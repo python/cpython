@@ -380,7 +380,11 @@ def configure_host_python(
     with group(f"Downloading dependencies ({host})"):
         if not prefix_dir.exists():
             prefix_dir.mkdir()
-            cache_dir = context.cache_dir or CROSS_BUILD_DIR / "downloads"
+            cache_dir = (
+                Path(context.cache_dir).resolve()
+                if context.cache_dir
+                else CROSS_BUILD_DIR / "downloads"
+            )
             unpack_deps(context.platform, host, prefix_dir, cache_dir)
         else:
             print("Dependencies already installed")
@@ -993,6 +997,7 @@ def parse_args() -> argparse.Namespace:
     for cmd in [configure_host, build, ci]:
         cmd.add_argument(
             "--cache-dir",
+            default=os.environ.get("CACHE_DIR"),
             help="The directory to store cached downloads.",
         )
 
