@@ -139,6 +139,7 @@ const uint32_t _PyUop_Flags[MAX_UOP_ID+1] = {
     [_GUARD_TOS_DICT] = HAS_EXIT_FLAG,
     [_GUARD_TOS_FROZENDICT] = HAS_EXIT_FLAG,
     [_BINARY_OP_SUBSCR_DICT] = HAS_ERROR_FLAG | HAS_ERROR_NO_POP_FLAG | HAS_ESCAPES_FLAG,
+    [_BINARY_OP_SUBSCR_FROZEN_DICT] = HAS_ERROR_FLAG | HAS_ERROR_NO_POP_FLAG | HAS_ESCAPES_FLAG,
     [_BINARY_OP_SUBSCR_CHECK_FUNC] = HAS_EXIT_FLAG,
     [_BINARY_OP_SUBSCR_INIT_CALL] = 0,
     [_LIST_APPEND] = HAS_ARG_FLAG | HAS_ERROR_FLAG,
@@ -1358,6 +1359,15 @@ const _PyUopCachingInfo _PyUop_Caching[MAX_UOP_ID+1] = {
             { -1, -1, -1 },
             { -1, -1, -1 },
             { 3, 2, _BINARY_OP_SUBSCR_DICT_r23 },
+            { -1, -1, -1 },
+        },
+    },
+    [_BINARY_OP_SUBSCR_FROZEN_DICT] = {
+        .best = { 2, 2, 2, 2 },
+        .entries = {
+            { -1, -1, -1 },
+            { -1, -1, -1 },
+            { 3, 2, _BINARY_OP_SUBSCR_FROZEN_DICT_r23 },
             { -1, -1, -1 },
         },
     },
@@ -4023,6 +4033,7 @@ const uint16_t _PyUop_Uncached[MAX_UOP_REGS_ID+1] = {
     [_GUARD_TOS_FROZENDICT_r22] = _GUARD_TOS_FROZENDICT,
     [_GUARD_TOS_FROZENDICT_r33] = _GUARD_TOS_FROZENDICT,
     [_BINARY_OP_SUBSCR_DICT_r23] = _BINARY_OP_SUBSCR_DICT,
+    [_BINARY_OP_SUBSCR_FROZEN_DICT_r23] = _BINARY_OP_SUBSCR_FROZEN_DICT,
     [_BINARY_OP_SUBSCR_CHECK_FUNC_r23] = _BINARY_OP_SUBSCR_CHECK_FUNC,
     [_BINARY_OP_SUBSCR_INIT_CALL_r01] = _BINARY_OP_SUBSCR_INIT_CALL,
     [_BINARY_OP_SUBSCR_INIT_CALL_r11] = _BINARY_OP_SUBSCR_INIT_CALL,
@@ -4639,6 +4650,8 @@ const char *const _PyOpcode_uop_name[MAX_UOP_REGS_ID+1] = {
     [_BINARY_OP_SUBSCR_CHECK_FUNC_r23] = "_BINARY_OP_SUBSCR_CHECK_FUNC_r23",
     [_BINARY_OP_SUBSCR_DICT] = "_BINARY_OP_SUBSCR_DICT",
     [_BINARY_OP_SUBSCR_DICT_r23] = "_BINARY_OP_SUBSCR_DICT_r23",
+    [_BINARY_OP_SUBSCR_FROZEN_DICT] = "_BINARY_OP_SUBSCR_FROZEN_DICT",
+    [_BINARY_OP_SUBSCR_FROZEN_DICT_r23] = "_BINARY_OP_SUBSCR_FROZEN_DICT_r23",
     [_BINARY_OP_SUBSCR_INIT_CALL] = "_BINARY_OP_SUBSCR_INIT_CALL",
     [_BINARY_OP_SUBSCR_INIT_CALL_r01] = "_BINARY_OP_SUBSCR_INIT_CALL_r01",
     [_BINARY_OP_SUBSCR_INIT_CALL_r11] = "_BINARY_OP_SUBSCR_INIT_CALL_r11",
@@ -6041,6 +6054,8 @@ int _PyUop_num_popped(int opcode, int oparg)
         case _GUARD_TOS_FROZENDICT:
             return 0;
         case _BINARY_OP_SUBSCR_DICT:
+            return 2;
+        case _BINARY_OP_SUBSCR_FROZEN_DICT:
             return 2;
         case _BINARY_OP_SUBSCR_CHECK_FUNC:
             return 0;

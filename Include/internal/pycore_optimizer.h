@@ -409,6 +409,7 @@ extern int _Py_uop_sym_truthiness(JitOptContext *ctx, JitOptRef sym);
 extern PyTypeObject *_Py_uop_sym_get_type(JitOptRef sym);
 extern JitOptRef _Py_uop_sym_new_tuple(JitOptContext *ctx, int size, JitOptRef *args);
 extern JitOptRef _Py_uop_sym_tuple_getitem(JitOptContext *ctx, JitOptRef sym, Py_ssize_t item);
+extern JitOptRef _Py_uop_sym_frozendict_getitem(JitOptContext *ctx, JitOptRef sym, JitOptRef key);
 extern Py_ssize_t _Py_uop_sym_tuple_length(JitOptRef sym);
 extern JitOptRef _Py_uop_sym_new_truthiness(JitOptContext *ctx, JitOptRef value, bool truthy);
 extern bool _Py_uop_sym_is_compact_int(JitOptRef sym);

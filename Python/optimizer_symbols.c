@@ -1063,6 +1063,26 @@ _Py_uop_sym_tuple_getitem(JitOptContext *ctx, JitOptRef ref, Py_ssize_t item)
     return _Py_uop_sym_new_not_null(ctx);
 }
 
+JitOptRef
+_Py_uop_sym_frozendict_getitem(JitOptContext *ctx, JitOptRef ref, JitOptRef key_ref)
+{
+    JitOptSymbol *sym = PyJitRef_Unwrap(ref);
+    if (sym->tag == JIT_SYM_KNOWN_VALUE_TAG) {
+        PyObject *dict = sym->value.value;
+        PyObject *key = _Py_uop_sym_get_const(ctx, key_ref);
+        if (key != NULL && PyFrozenDict_CheckExact(dict)) {
+            Py_hash_t hash = PyObject_Hash(key);
+            if (hash != -1) {
+                PyObject *val = _PyDict_GetItem_KnownHash(dict, key, hash);
+                if (val != NULL) {
+                    return _Py_uop_sym_new_const(ctx, val);
+                }
+            }
+        }
+    }
+    return _Py_uop_sym_new_not_null(ctx);
+}
+
 Py_ssize_t
 _Py_uop_sym_tuple_length(JitOptRef ref)
 {

@@ -35,6 +35,7 @@ typedef struct _Py_UOpsAbstractFrame _Py_UOpsAbstractFrame;
 #define sym_new_tuple _Py_uop_sym_new_tuple
 #define sym_tuple_getitem _Py_uop_sym_tuple_getitem
 #define sym_tuple_length _Py_uop_sym_tuple_length
+#define sym_frozendict_getitem _Py_uop_sym_frozendict_getitem
 #define sym_is_immortal _Py_uop_symbol_is_immortal
 #define sym_new_compact_int _Py_uop_sym_new_compact_int
 #define sym_is_compact_int _Py_uop_sym_is_compact_int
@@ -485,6 +486,17 @@ dummy_func(void) {
         res = sym_new_not_null(ctx);
         ds = dict_st;
         ss = sub_st;
+        if (sym_matches_type(dict_st, &PyFrozenDict_Type)) {
+            REPLACE_OP(this_instr, _BINARY_OP_SUBSCR_FROZEN_DICT, oparg, 0);
+            res = sym_frozendict_getitem(ctx, dict_st, sub_st);
+        }
+    }
+
+    op(_BINARY_OP_SUBSCR_FROZEN_DICT, (dict_st, sub_st -- res, ds, ss)) {
+        res = sym_new_not_null(ctx);
+        ds = dict_st;
+        ss = sub_st;
+        REPLACE_OPCODE_IF_EVALUATES_PURE(dict_st, sub_st, res);
     }
 
     op(_BINARY_OP_SUBSCR_LIST_SLICE, (list_st, sub_st -- res, ls, ss)) {
@@ -2076,7 +2088,6 @@ dummy_func(void) {
         }
         stack_pointer = sym_set_stack_depth((int)this_instr->operand1, stack_pointer);
     }
-
 
 
 // END BYTECODES //
