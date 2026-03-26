@@ -1,0 +1,2 @@
+Improve :exc:`SyntaxError` message for missing comma between import clauses
+in :ref:`import statements <import>`.
