@@ -205,6 +205,13 @@ Notes:
 (4)
    Only on iOS.
 
+.. deprecated:: 3.14
+   :class:`!MacOSXOSAScript` is deprecated in favour of :class:`!MacOSX`.
+   Using :program:`/usr/bin/open` instead of :program:`osascript` is a
+   security and usability improvement: :program:`osascript` may be blocked
+   on managed systems due to its abuse potential as a general-purpose
+   scripting interpreter.
+
 .. versionadded:: 3.2
    A new :class:`!MacOSXOSAScript` class has been added
    and is used on Mac instead of the previous :class:`!MacOSX` class.
