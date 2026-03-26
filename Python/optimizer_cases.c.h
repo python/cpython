@@ -1460,11 +1460,21 @@
         }
 
         case _CALL_INTRINSIC_2: {
+            JitOptRef value1_st;
+            JitOptRef value2_st;
             JitOptRef res;
+            JitOptRef vs1;
+            JitOptRef vs2;
+            value1_st = stack_pointer[-1];
+            value2_st = stack_pointer[-2];
             res = sym_new_not_null(ctx);
-            CHECK_STACK_BOUNDS(-1);
+            vs1 = value1_st;
+            vs2 = value2_st;
+            CHECK_STACK_BOUNDS(1);
             stack_pointer[-2] = res;
-            stack_pointer += -1;
+            stack_pointer[-1] = vs1;
+            stack_pointer[0] = vs2;
+            stack_pointer += 1;
             ASSERT_WITHIN_STACK_BOUNDS(__FILE__, __LINE__);
             break;
         }
@@ -2076,9 +2086,14 @@
         }
 
         case _DICT_UPDATE: {
-            CHECK_STACK_BOUNDS(-1);
-            stack_pointer += -1;
-            ASSERT_WITHIN_STACK_BOUNDS(__FILE__, __LINE__);
+            JitOptRef update;
+            JitOptRef dict;
+            JitOptRef upd;
+            update = stack_pointer[-1];
+            dict = stack_pointer[-2 - (oparg - 1)];
+            (void)dict;
+            upd = update;
+            stack_pointer[-1] = upd;
             break;
         }
 
@@ -3609,6 +3624,27 @@
             break;
         }
 
+        case _GUARD_CALLABLE_BUILTIN_O: {
+            JitOptRef self_or_null;
+            JitOptRef callable;
+            self_or_null = stack_pointer[-1 - oparg];
+            callable = stack_pointer[-2 - oparg];
+            PyObject *callable_o = sym_get_const(ctx, callable);
+            if (callable_o && sym_matches_type(callable, &PyCFunction_Type)) {
+                int total_args = oparg;
+                if (!sym_is_null(self_or_null)) {
+                    total_args++;
+                }
+                if (total_args == 1 && PyCFunction_GET_FLAGS(callable_o) == METH_O) {
+                    ADD_OP(_NOP, 0, 0);
+                }
+            }
+            else {
+                sym_set_type(callable, &PyCFunction_Type);
+            }
+            break;
+        }
+
         case _CALL_BUILTIN_O: {
             JitOptRef *args;
             JitOptRef self_or_null;
@@ -3640,6 +3676,21 @@
             break;
         }
 
+        case _GUARD_CALLABLE_BUILTIN_FAST: {
+            JitOptRef callable;
+            callable = stack_pointer[-2 - oparg];
+            PyObject *callable_o = sym_get_const(ctx, callable);
+            if (callable_o && sym_matches_type(callable, &PyCFunction_Type)) {
+                if (PyCFunction_GET_FLAGS(callable_o) == METH_FASTCALL) {
+                    ADD_OP(_NOP, 0, 0);
+                }
+            }
+            else {
+                sym_set_type(callable, &PyCFunction_Type);
+            }
+            break;
+        }
+
         case _CALL_BUILTIN_FAST: {
             JitOptRef res;
             res = sym_new_not_null(ctx);
@@ -3647,6 +3698,21 @@
             stack_pointer[-2 - oparg] = res;
             stack_pointer += -1 - oparg;
             ASSERT_WITHIN_STACK_BOUNDS(__FILE__, __LINE__);
+            break;
+        }
+
+        case _GUARD_CALLABLE_BUILTIN_FAST_WITH_KEYWORDS: {
+            JitOptRef callable;
+            callable = stack_pointer[-2 - oparg];
+            PyObject *callable_o = sym_get_const(ctx, callable);
+            if (callable_o && sym_matches_type(callable, &PyCFunction_Type)) {
+                if (PyCFunction_GET_FLAGS(callable_o) == (METH_FASTCALL | METH_KEYWORDS)) {
+                    ADD_OP(_NOP, 0, 0);
+                }
+            }
+            else {
+                sym_set_type(callable, &PyCFunction_Type);
+            }
             break;
         }
 
@@ -3793,6 +3859,38 @@
             break;
         }
 
+        case _GUARD_CALLABLE_METHOD_DESCRIPTOR_O: {
+            JitOptRef *args;
+            JitOptRef self_or_null;
+            JitOptRef callable;
+            args = &stack_pointer[-oparg];
+            self_or_null = stack_pointer[-1 - oparg];
+            callable = stack_pointer[-2 - oparg];
+            PyObject *callable_o = sym_get_const(ctx, callable);
+            if (callable_o && sym_matches_type(callable, &PyMethodDescr_Type)) {
+                int total_args = oparg;
+                if (!sym_is_null(self_or_null)) {
+                    total_args++;
+                }
+                PyObject *self = NULL;
+                if (!sym_is_null(self_or_null)) {
+                    self = sym_get_const(ctx, self_or_null);
+                } else {
+                    self = sym_get_const(ctx, args[0]);
+                }
+                PyTypeObject *d_type = ((PyMethodDescrObject *)callable_o)->d_common.d_type;
+                if (total_args == 2 &&
+                    ((PyMethodDescrObject *)callable_o)->d_method->ml_flags == METH_O &&
+                    self && Py_IS_TYPE(self, d_type)) {
+                    ADD_OP(_NOP, 0, 0);
+                }
+            }
+            else {
+                sym_set_type(callable, &PyMethodDescr_Type);
+            }
+            break;
+        }
+
         case _CALL_METHOD_DESCRIPTOR_O: {
             JitOptRef *args;
             JitOptRef self_or_null;
@@ -3825,6 +3923,38 @@
             break;
         }
 
+        case _GUARD_CALLABLE_METHOD_DESCRIPTOR_FAST_WITH_KEYWORDS: {
+            JitOptRef *args;
+            JitOptRef self_or_null;
+            JitOptRef callable;
+            args = &stack_pointer[-oparg];
+            self_or_null = stack_pointer[-1 - oparg];
+            callable = stack_pointer[-2 - oparg];
+            PyObject *callable_o = sym_get_const(ctx, callable);
+            if (callable_o && sym_matches_type(callable, &PyMethodDescr_Type)) {
+                int total_args = oparg;
+                if (!sym_is_null(self_or_null)) {
+                    total_args++;
+                }
+                PyObject *self = NULL;
+                if (!sym_is_null(self_or_null)) {
+                    self = sym_get_const(ctx, self_or_null);
+                } else {
+                    self = sym_get_const(ctx, args[0]);
+                }
+                PyTypeObject *d_type = ((PyMethodDescrObject *)callable_o)->d_common.d_type;
+                if (total_args != 0 &&
+                    ((PyMethodDescrObject *)callable_o)->d_method->ml_flags == (METH_FASTCALL|METH_KEYWORDS) &&
+                    self && Py_IS_TYPE(self, d_type)) {
+                    ADD_OP(_NOP, 0, 0);
+                }
+            }
+            else {
+                sym_set_type(callable, &PyMethodDescr_Type);
+            }
+            break;
+        }
+
         case _CALL_METHOD_DESCRIPTOR_FAST_WITH_KEYWORDS: {
             JitOptRef res;
             res = sym_new_not_null(ctx);
@@ -3835,6 +3965,38 @@
             break;
         }
 
+        case _GUARD_CALLABLE_METHOD_DESCRIPTOR_NOARGS: {
+            JitOptRef *args;
+            JitOptRef self_or_null;
+            JitOptRef callable;
+            args = &stack_pointer[-oparg];
+            self_or_null = stack_pointer[-1 - oparg];
+            callable = stack_pointer[-2 - oparg];
+            PyObject *callable_o = sym_get_const(ctx, callable);
+            if (callable_o && sym_matches_type(callable, &PyMethodDescr_Type)) {
+                int total_args = oparg;
+                if (!sym_is_null(self_or_null)) {
+                    total_args++;
+                }
+                PyObject *self = NULL;
+                if (!sym_is_null(self_or_null)) {
+                    self = sym_get_const(ctx, self_or_null);
+                } else {
+                    self = sym_get_const(ctx, args[0]);
+                }
+                PyTypeObject *d_type = ((PyMethodDescrObject *)callable_o)->d_common.d_type;
+                if (total_args == 1 &&
+                    ((PyMethodDescrObject *)callable_o)->d_method->ml_flags == METH_NOARGS &&
+                    self && Py_IS_TYPE(self, d_type)) {
+                    ADD_OP(_NOP, 0, 0);
+                }
+            }
+            else {
+                sym_set_type(callable, &PyMethodDescr_Type);
+            }
+            break;
+        }
+
         case _CALL_METHOD_DESCRIPTOR_NOARGS: {
             JitOptRef res;
             res = sym_new_not_null(ctx);
@@ -3842,6 +4004,38 @@
             stack_pointer[-2 - oparg] = res;
             stack_pointer += -1 - oparg;
             ASSERT_WITHIN_STACK_BOUNDS(__FILE__, __LINE__);
+            break;
+        }
+
+        case _GUARD_CALLABLE_METHOD_DESCRIPTOR_FAST: {
+            JitOptRef *args;
+            JitOptRef self_or_null;
+            JitOptRef callable;
+            args = &stack_pointer[-oparg];
+            self_or_null = stack_pointer[-1 - oparg];
+            callable = stack_pointer[-2 - oparg];
+            PyObject *callable_o = sym_get_const(ctx, callable);
+            if (callable_o && sym_matches_type(callable, &PyMethodDescr_Type)) {
+                int total_args = oparg;
+                if (!sym_is_null(self_or_null)) {
+                    total_args++;
+                }
+                PyObject *self = NULL;
+                if (!sym_is_null(self_or_null)) {
+                    self = sym_get_const(ctx, self_or_null);
+                } else {
+                    self = sym_get_const(ctx, args[0]);
+                }
+                PyTypeObject *d_type = ((PyMethodDescrObject *)callable_o)->d_common.d_type;
+                if (total_args != 0 &&
+                    ((PyMethodDescrObject *)callable_o)->d_method->ml_flags == METH_FASTCALL &&
+                    self && Py_IS_TYPE(self, d_type)) {
+                    ADD_OP(_NOP, 0, 0);
+                }
+            }
+            else {
+                sym_set_type(callable, &PyMethodDescr_Type);
+            }
             break;
         }
 

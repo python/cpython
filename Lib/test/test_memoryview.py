@@ -636,6 +636,18 @@ class ArrayMemoryviewTest(unittest.TestCase,
                 m = memoryview(a)
                 check_equal(m, True)
 
+        # Test complex formats
+        for complex_format in 'FD':
+            with self.subTest(format=complex_format):
+                data = struct.pack(complex_format * 3, 1.0, 2.0, float('nan'))
+                m = memoryview(data).cast(complex_format)
+                # nan is not equal to nan
+                check_equal(m, False)
+
+                data = struct.pack(complex_format * 3, 1.0, 2.0, 3.0)
+                m = memoryview(data).cast(complex_format)
+                check_equal(m, True)
+
 
 class BytesMemorySliceTest(unittest.TestCase,
     BaseMemorySliceTests, BaseBytesMemoryTests):
@@ -681,6 +693,14 @@ class OtherTest(unittest.TestCase):
         float_view = memoryview(float_data).cast('f')
         self.assertEqual(half_view.nbytes * 2, float_view.nbytes)
         self.assertListEqual(half_view.tolist(), float_view.tolist())
+
+    def test_complex_types(self):
+        float_complex_data = struct.pack('FFF', 0.0, -1.5j, 1+2j)
+        double_complex_data = struct.pack('DDD', 0.0, -1.5j, 1+2j)
+        float_complex_view = memoryview(float_complex_data).cast('F')
+        double_complex_view = memoryview(double_complex_data).cast('D')
+        self.assertEqual(float_complex_view.nbytes * 2, double_complex_view.nbytes)
+        self.assertListEqual(float_complex_view.tolist(), double_complex_view.tolist())
 
     def test_memoryview_hex(self):
         # Issue #9951: memoryview.hex() segfaults with non-contiguous buffers.
