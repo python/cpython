@@ -9394,11 +9394,12 @@
             break;
         }
 
-        case _DICT_UPDATE_r10: {
+        case _DICT_UPDATE_r11: {
             CHECK_CURRENT_CACHED_VALUES(1);
             assert(WITHIN_STACK_BOUNDS_IGNORING_CACHE());
             _PyStackRef update;
             _PyStackRef dict;
+            _PyStackRef upd;
             _PyStackRef _stack_item_0 = _tos_cache0;
             oparg = CURRENT_OPARG();
             update = _stack_item_0;
@@ -9422,23 +9423,16 @@
                                   Py_TYPE(update_o)->tp_name);
                     stack_pointer = _PyFrame_GetStackPointer(frame);
                 }
-                stack_pointer += -1;
-                ASSERT_WITHIN_STACK_BOUNDS(__FILE__, __LINE__);
-                _PyFrame_SetStackPointer(frame, stack_pointer);
-                PyStackRef_CLOSE(update);
-                stack_pointer = _PyFrame_GetStackPointer(frame);
                 SET_CURRENT_CACHED_VALUES(0);
                 JUMP_TO_ERROR();
             }
-            stack_pointer += -1;
-            ASSERT_WITHIN_STACK_BOUNDS(__FILE__, __LINE__);
-            _PyFrame_SetStackPointer(frame, stack_pointer);
-            PyStackRef_CLOSE(update);
-            stack_pointer = _PyFrame_GetStackPointer(frame);
-            _tos_cache0 = PyStackRef_ZERO_BITS;
+            upd = update;
+            _tos_cache0 = upd;
             _tos_cache1 = PyStackRef_ZERO_BITS;
             _tos_cache2 = PyStackRef_ZERO_BITS;
-            SET_CURRENT_CACHED_VALUES(0);
+            SET_CURRENT_CACHED_VALUES(1);
+            stack_pointer += -1;
+            ASSERT_WITHIN_STACK_BOUNDS(__FILE__, __LINE__);
             assert(WITHIN_STACK_BOUNDS_IGNORING_CACHE());
             break;
         }

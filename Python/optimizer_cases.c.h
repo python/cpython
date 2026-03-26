@@ -2086,9 +2086,14 @@
         }
 
         case _DICT_UPDATE: {
-            CHECK_STACK_BOUNDS(-1);
-            stack_pointer += -1;
-            ASSERT_WITHIN_STACK_BOUNDS(__FILE__, __LINE__);
+            JitOptRef update;
+            JitOptRef dict;
+            JitOptRef upd;
+            update = stack_pointer[-1];
+            dict = stack_pointer[-2 - (oparg - 1)];
+            (void)dict;
+            upd = update;
+            stack_pointer[-1] = upd;
             break;
         }
 
