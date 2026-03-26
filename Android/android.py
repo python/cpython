@@ -864,7 +864,7 @@ def parse_args():
         "make-host")
     configure_build = add_parser(
         "configure-build", help="Run `configure` for the build Python")
-    add_parser(
+    make_build = add_parser(
         "make-build", help="Run `make` for the build Python")
     configure_host = add_parser(
         "configure-host", help="Run `configure` for Android")
@@ -891,6 +891,31 @@ def parse_args():
     env = add_parser("env", help="Print environment variables")
 
     # Common arguments
+    # --cross-build-dir argument
+    for cmd in [
+        clean,
+        configure_build,
+        make_build,
+        configure_host,
+        make_host,
+        build,
+        package,
+        test,
+        ci,
+    ]:
+        cmd.add_argument(
+            "--cross-build-dir",
+            action="store",
+            default=os.environ.get("CROSS_BUILD_DIR"),
+            dest="cross_build_dir",
+            type=Path,
+            help=(
+                "Path to the cross-build directory "
+                f"(default: {CROSS_BUILD_DIR}). Can also be set "
+                "with the CROSS_BUILD_DIR environment variable."
+            ),
+        )
+
     # --cache-dir option
     for cmd in [configure_host, build, ci]:
         cmd.add_argument(
@@ -967,6 +992,12 @@ def main():
         stream.reconfigure(line_buffering=True)
 
     context = parse_args()
+
+    # Set the CROSS_BUILD_DIR if an argument was provided
+    if context.cross_build_dir:
+        global CROSS_BUILD_DIR
+        CROSS_BUILD_DIR = context.cross_build_dir.resolve()
+
     dispatch = {
         "configure-build": configure_build_python,
         "make-build": make_build_python,
