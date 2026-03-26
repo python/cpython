@@ -5,6 +5,7 @@ import shlex
 import subprocess
 import sys
 import unittest
+import warnings
 import webbrowser
 from test import support
 from test.support import force_not_colorized_test_class
@@ -327,6 +328,11 @@ class MockPopenPipe:
 @requires_subprocess()
 class MacOSXTest(unittest.TestCase):
 
+    def test_default(self):
+        browser = webbrowser.get()
+        self.assertIsInstance(browser, webbrowser.MacOSX)
+        self.assertEqual(browser.name, 'default')
+
     def test_default_open(self):
         browser = webbrowser.MacOSX('default')
         with mock.patch('subprocess.run') as mock_run:
@@ -377,16 +383,14 @@ class MacOSXOSAScriptTest(unittest.TestCase):
         env.unset("BROWSER")
 
         support.patch(self, os, "popen", self.mock_popen)
+        self.enterContext(warnings.catch_warnings())
+        warnings.simplefilter("ignore", DeprecationWarning)
         self.browser = webbrowser.MacOSXOSAScript("default")
 
     def mock_popen(self, cmd, mode):
         self.popen_pipe = MockPopenPipe(cmd, mode)
         return self.popen_pipe
 
-    def test_default(self):
-        browser = webbrowser.get()
-        assert isinstance(browser, webbrowser.MacOSXOSAScript)
-        self.assertEqual(browser.name, "default")
 
     def test_default_open(self):
         url = "https://python.org"
@@ -413,7 +417,9 @@ class MacOSXOSAScriptTest(unittest.TestCase):
         self.assertIn(f'open location "{url}"', script)
 
     def test_explicit_browser(self):
-        browser = webbrowser.MacOSXOSAScript("safari")
+        with warnings.catch_warnings():
+            warnings.simplefilter("ignore", DeprecationWarning)
+            browser = webbrowser.MacOSXOSAScript("safari")
         browser.open("https://python.org")
         script = self.popen_pipe.pipe.getvalue()
         self.assertIn('tell application "safari"', script)
