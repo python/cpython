@@ -9,7 +9,7 @@
 --------------
 
 This module defines an object type which can compactly represent an array of
-basic values: characters, integers, floating-point numbers.  Arrays are mutable :term:`sequence`
+basic values: characters, integers, floating-point numbers, complex numbers.  Arrays are mutable :term:`sequence`
 types and behave very much like lists, except that the type of objects stored in
 them is constrained.  The type is specified at object creation time by using a
 :dfn:`type code`, which is a single character.  The following type codes are
@@ -46,6 +46,11 @@ defined:
 +-----------+--------------------+-------------------+-----------------------+-------+
 | ``'d'``   | double             | float             | 8                     |       |
 +-----------+--------------------+-------------------+-----------------------+-------+
+| ``'F'``   | float complex      | complex           | 8                     | \(3)  |
++-----------+--------------------+-------------------+-----------------------+-------+
+| ``'D'``   | double complex     | complex           | 16                    | \(3)  |
++-----------+--------------------+-------------------+-----------------------+-------+
+
 
 Notes:
 
@@ -62,6 +67,15 @@ Notes:
 
 (2)
    .. versionadded:: 3.13
+
+(3)
+   Complex types (``F`` and ``D``) are available unconditionally,
+   regardless on support for complex types (the Annex G of the C11 standard)
+   by the C compiler.
+   As specified in the C11 standard, each complex type is represented by a
+   two-element C array containing, respectively, the real and imaginary parts.
+
+   .. versionadded:: 3.15
 
 .. seealso::
 
@@ -146,9 +160,10 @@ The module defines the following type:
    .. method:: byteswap()
 
       "Byteswap" all items of the array.  This is only supported for values which are
-      1, 2, 4, or 8 bytes in size; for other types of values, :exc:`RuntimeError` is
+      1, 2, 4, 8 or 16 bytes in size; for other types of values, :exc:`RuntimeError` is
       raised.  It is useful when reading data from a file written on a machine with a
-      different byte order.
+      different byte order.  Note, that for complex types the order of
+      components (the real part, followed by imaginary part) is preserved.
 
 
    .. method:: count(x)
