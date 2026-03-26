@@ -234,7 +234,11 @@ def configure_host_python(context, host=None):
     prefix_dir = host_dir / "prefix"
     if not prefix_dir.exists():
         prefix_dir.mkdir()
-        cache_dir = Path(context.cache_dir).resolve() or CROSS_BUILD_DIR / "downloads"
+        cache_dir = (
+            Path(context.cache_dir).resolve()
+            if context.cache_dir
+            else CROSS_BUILD_DIR / "downloads"
+        )
         unpack_deps(host, prefix_dir, cache_dir)
 
     os.chdir(host_dir)
@@ -932,7 +936,7 @@ def parse_args():
             "--clean", action="store_true", default=False, dest="clean",
             help="Delete the relevant build directories first")
 
-    # Allow "all" and "hosts" options
+    # Allow "all", "build" and "hosts" targets for some commands
     for subcommand in [clean, build]:
         subcommand.add_argument(
             "target",
