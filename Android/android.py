@@ -628,7 +628,8 @@ async def gradle_task(context):
             # Randomization is disabled because order-dependent failures are
             # much less likely to pass on a rerun in single-process mode.
             "-m", "test",
-            f"--{context.ci_mode}-ci", "--single-process", "--no-randomize"
+            f"--{context.ci_mode}-ci", "--single-process", "--no-randomize",
+            "--pythoninfo",
         ]
 
     if not any(arg in context.args for arg in ["-c", "-m"]):
