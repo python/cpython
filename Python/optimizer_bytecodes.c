@@ -1241,8 +1241,9 @@ dummy_func(void) {
             if (total_args == 1 && PyCFunction_GET_FLAGS(callable_o) == METH_O) {
                 ADD_OP(_NOP, 0, 0);
             }
+        } else {
+            sym_set_type(callable, &PyCFunction_Type);
         }
-        sym_set_type(callable, &PyCFunction_Type);
     }
 
     op(_GUARD_CALLABLE_BUILTIN_FAST, (callable, unused, unused[oparg] -- callable, unused, unused[oparg])) {
@@ -1251,8 +1252,9 @@ dummy_func(void) {
             if (PyCFunction_GET_FLAGS(callable_o) == METH_FASTCALL) {
                 ADD_OP(_NOP, 0, 0);
             }
+        } else {
+            sym_set_type(callable, &PyCFunction_Type);
         }
-        sym_set_type(callable, &PyCFunction_Type);
     }
 
     op(_GUARD_CALLABLE_BUILTIN_FAST_WITH_KEYWORDS, (callable, unused, unused[oparg] -- callable, unused, unused[oparg])) {
@@ -1261,8 +1263,9 @@ dummy_func(void) {
             if (PyCFunction_GET_FLAGS(callable_o) == (METH_FASTCALL | METH_KEYWORDS)) {
                 ADD_OP(_NOP, 0, 0);
             }
+        } else {
+            sym_set_type(callable, &PyCFunction_Type);
         }
-        sym_set_type(callable, &PyCFunction_Type);
     }
 
     op(_CALL_BUILTIN_O, (callable, self_or_null, args[oparg] -- res, c, s)) {
@@ -1299,8 +1302,9 @@ dummy_func(void) {
                 self && Py_IS_TYPE(self, d_type)) {
                 ADD_OP(_NOP, 0, 0);
             }
+        } else {
+            sym_set_type(callable, &PyMethodDescr_Type);
         }
-        sym_set_type(callable, &PyMethodDescr_Type);
     }
 
     op(_GUARD_CALLABLE_METHOD_DESCRIPTOR_FAST_WITH_KEYWORDS, (callable, self_or_null, args[oparg] -- callable, self_or_null, args[oparg])) {
@@ -1322,8 +1326,9 @@ dummy_func(void) {
                 self && Py_IS_TYPE(self, d_type)) {
                 ADD_OP(_NOP, 0, 0);
             }
+        } else {
+            sym_set_type(callable, &PyMethodDescr_Type);
         }
-        sym_set_type(callable, &PyMethodDescr_Type);
     }
 
     op(_GUARD_CALLABLE_METHOD_DESCRIPTOR_NOARGS, (callable, self_or_null, args[oparg] -- callable, self_or_null, args[oparg])) {
@@ -1345,8 +1350,9 @@ dummy_func(void) {
                 self && Py_IS_TYPE(self, d_type)) {
                 ADD_OP(_NOP, 0, 0);
             }
+        } else {
+            sym_set_type(callable, &PyMethodDescr_Type);
         }
-        sym_set_type(callable, &PyMethodDescr_Type);
     }
 
     op(_GUARD_CALLABLE_METHOD_DESCRIPTOR_FAST, (callable, self_or_null, args[oparg] -- callable, self_or_null, args[oparg])) {
@@ -1368,8 +1374,9 @@ dummy_func(void) {
                 self && Py_IS_TYPE(self, d_type)) {
                 ADD_OP(_NOP, 0, 0);
             }
+        } else {
+            sym_set_type(callable, &PyMethodDescr_Type);
         }
-        sym_set_type(callable, &PyMethodDescr_Type);
     }
 
     op(_CALL_METHOD_DESCRIPTOR_O, (callable, self_or_null, args[oparg] -- res, c, s, a)) {
