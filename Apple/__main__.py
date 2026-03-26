@@ -175,25 +175,24 @@ def all_host_triples(platform: str) -> list[str]:
 
 def clean(context: argparse.Namespace, target: str | None = None) -> None:
     """The implementation of the "clean" command."""
+    if target is None:
+        target = context.host
+
     # If we're explicitly targeting the build, there's no platform or
     # distribution artefacts. If we're cleaning tests, we keep all built
     # artefacts. Otherwise, the built artefacts must be dirty, so we remove
     # them.
-    if target is None:
-        target = context.host
-
-    paths = []
+    if target not in {"build", "test"}:
+        paths = ["dist", context.platform] + list(HOSTS[context.platform])
+    else:
+        paths = []
 
     if target in {"all", "build"}:
         paths.append("build")
 
-    if target in {"all", "hosts", "package"}:
-        paths.append("dist")
-        paths.extend(list(HOSTS[context.platform]))
-        paths.append(context.platform)
-        if target != "package":
-            paths.extend(all_host_triples(context.platform))
-    elif target not in {"build", "test"}:
+    if target in {"all", "hosts"}:
+        paths.extend(all_host_triples(context.platform))
+    elif target not in {"build", "test", "package"}:
         paths.append(target)
 
     if target in {"all", "hosts", "test"}:
