@@ -133,9 +133,9 @@ The module defines the following type:
       The length in bytes of one array item in the internal representation.
 
 
-   .. method:: append(x)
+   .. method:: append(value, /)
 
-      Append a new item with value *x* to the end of the array.
+      Append a new item with the specified value to the end of the array.
 
 
    .. method:: buffer_info()
@@ -166,12 +166,12 @@ The module defines the following type:
       components (the real part, followed by imaginary part) is preserved.
 
 
-   .. method:: count(x)
+   .. method:: count(value, /)
 
-      Return the number of occurrences of *x* in the array.
+      Return the number of occurrences of *value* in the array.
 
 
-   .. method:: extend(iterable)
+   .. method:: extend(iterable, /)
 
       Append items from *iterable* to the end of the array.  If *iterable* is another
       array, it must have *exactly* the same type code; if not, :exc:`TypeError` will
@@ -179,7 +179,7 @@ The module defines the following type:
       must be the right type to be appended to the array.
 
 
-   .. method:: frombytes(buffer)
+   .. method:: frombytes(buffer, /)
 
       Appends items from the :term:`bytes-like object`, interpreting
       its content as an array of machine values (as if it had been read
@@ -189,7 +189,7 @@ The module defines the following type:
          :meth:`!fromstring` is renamed to :meth:`frombytes` for clarity.
 
 
-   .. method:: fromfile(f, n)
+   .. method:: fromfile(f, n, /)
 
       Read *n* items (as machine values) from the :term:`file object` *f* and append
       them to the end of the array.  If less than *n* items are available,
@@ -197,13 +197,13 @@ The module defines the following type:
       inserted into the array.
 
 
-   .. method:: fromlist(list)
+   .. method:: fromlist(list, /)
 
       Append items from the list.  This is equivalent to ``for x in list:
       a.append(x)`` except that if there is a type error, the array is unchanged.
 
 
-   .. method:: fromunicode(s)
+   .. method:: fromunicode(ustr, /)
 
       Extends this array with data from the given Unicode string.
       The array must have type code ``'u'`` or ``'w'``; otherwise a :exc:`ValueError` is raised.
@@ -211,33 +211,33 @@ The module defines the following type:
       array of some other type.
 
 
-   .. method:: index(x[, start[, stop]])
+   .. method:: index(value[, start[, stop]])
 
       Return the smallest *i* such that *i* is the index of the first occurrence of
-      *x* in the array.  The optional arguments *start* and *stop* can be
-      specified to search for *x* within a subsection of the array.  Raise
-      :exc:`ValueError` if *x* is not found.
+      *value* in the array.  The optional arguments *start* and *stop* can be
+      specified to search for *value* within a subsection of the array.  Raise
+      :exc:`ValueError` if *value* is not found.
 
       .. versionchanged:: 3.10
          Added optional *start* and *stop* parameters.
 
 
-   .. method:: insert(i, x)
+   .. method:: insert(index, value, /)
 
-      Insert a new item with value *x* in the array before position *i*. Negative
+      Insert a new item *value* in the array before position *index*. Negative
       values are treated as being relative to the end of the array.
 
 
-   .. method:: pop([i])
+   .. method:: pop(index=-1, /)
 
       Removes the item with the index *i* from the array and returns it. The optional
       argument defaults to ``-1``, so that by default the last item is removed and
       returned.
 
 
-   .. method:: remove(x)
+   .. method:: remove(value, /)
 
-      Remove the first occurrence of *x* from the array.
+      Remove the first occurrence of *value* from the array.
 
 
    .. method:: clear()
@@ -262,7 +262,7 @@ The module defines the following type:
          :meth:`!tostring` is renamed to :meth:`tobytes` for clarity.
 
 
-   .. method:: tofile(f)
+   .. method:: tofile(f, /)
 
       Write all items (as machine values) to the :term:`file object` *f*.
 
