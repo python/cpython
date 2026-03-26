@@ -1,1 +1,1 @@
-Add ``--disable-epoll`` to ``configure``
+Add :option:`--disable-epoll` to ``configure``
