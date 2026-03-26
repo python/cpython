@@ -491,10 +491,10 @@ def register_standard_browsers():
     _tryorder = []
 
     if sys.platform == 'darwin':
-        register("MacOSX", None, MacOSXOSAScript('default'))
-        register("chrome", None, MacOSXOSAScript('google chrome'))
-        register("firefox", None, MacOSXOSAScript('firefox'))
-        register("safari", None, MacOSXOSAScript('safari'))
+        register("MacOSX", None, MacOSX('default'))
+        register("chrome", None, MacOSX('google chrome'))
+        register("firefox", None, MacOSX('firefox'))
+        register("safari", None, MacOSX('safari'))
         # macOS can use below Unix support (but we prefer using the macOS
         # specific stuff)
 
@@ -613,8 +613,27 @@ if sys.platform[:3] == "win":
 #
 
 if sys.platform == 'darwin':
+    class MacOSX(BaseBrowser):
+        """Launcher class for macOS browsers, using /usr/bin/open."""
+
+        def open(self, url, new=0, autoraise=True):
+            sys.audit("webbrowser.open", url)
+            self._check_url(url)
+            if self.name == 'default':
+                cmd = ['/usr/bin/open', url]
+            else:
+                cmd = ['/usr/bin/open', '-a', self.name, url]
+            proc = subprocess.run(cmd, stderr=subprocess.DEVNULL)
+            return proc.returncode == 0
+
     class MacOSXOSAScript(BaseBrowser):
         def __init__(self, name='default'):
+            import warnings
+            warnings.warn(
+                "MacOSXOSAScript is deprecated, use MacOSX instead.",
+                DeprecationWarning,
+                stacklevel=2,
+            )
             super().__init__(name)
 
         def open(self, url, new=0, autoraise=True):
