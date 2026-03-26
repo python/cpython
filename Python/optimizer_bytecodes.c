@@ -1307,12 +1307,15 @@ dummy_func(void) {
         PyObject *callable_o = sym_get_const(ctx, callable);
         if (callable_o && sym_matches_type(callable, &PyMethodDescr_Type)) {
             int total_args = oparg;
-            int index = 0;
             if (!sym_is_null(self_or_null)) {
-                index--;
                 total_args++;
             }
-            PyObject *self = sym_get_const(ctx, args[index]);
+            PyObject *self = NULL;
+            if (!sym_is_null(self_or_null)) {
+                self = sym_get_const(ctx, self_or_null);
+            } else {
+                self = sym_get_const(ctx, args[0]);
+            }
             PyTypeObject *d_type = ((PyMethodDescrObject *)callable_o)->d_common.d_type;
             if (total_args != 0 &&
                 ((PyMethodDescrObject *)callable_o)->d_method->ml_flags == (METH_FASTCALL|METH_KEYWORDS) &&

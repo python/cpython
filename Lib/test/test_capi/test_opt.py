@@ -2748,22 +2748,20 @@ class TestUopsOptimization(unittest.TestCase):
         self.assertIn("_CALL_METHOD_DESCRIPTOR_FAST", uops)
         self.assertNotIn("_GUARD_CALLABLE_METHOD_DESCRIPTOR_FAST", uops)
 
-    # this does not work for some reason todo
-    # def test_call_method_descriptor_fast_with_keywords(self):
-    #     def testfunc(n):
-    #         x = 0
-    #         for _ in range(n):
-    #             y = [3, 1, 2]
-    #             y.sort()
-    #             x += y[0]
-    #         return x
-
-    #     res, ex = self._run_with_optimizer(testfunc, TIER2_THRESHOLD)
-    #     self.assertEqual(res, TIER2_THRESHOLD)
-    #     self.assertIsNotNone(ex)
-    #     uops = get_opnames(ex)
-    #     self.assertIn("_CALL_METHOD_DESCRIPTOR_FAST_WITH_KEYWORDS", uops)
-    #     self.assertNotIn("_GUARD_CALLABLE_METHOD_DESCRIPTOR_FAST_WITH_KEYWORDS", uops)
+    def test_call_method_descriptor_fast_with_keywords(self):
+        def testfunc(n):
+            x = 0
+            for _ in range(n):
+                y = "hello world"
+                a, b = y.split()
+                x += len(a)
+            return x
+        res, ex = self._run_with_optimizer(testfunc, TIER2_THRESHOLD)
+        self.assertEqual(res, TIER2_THRESHOLD * 5)
+        self.assertIsNotNone(ex)
+        uops = get_opnames(ex)
+        self.assertIn("_CALL_METHOD_DESCRIPTOR_FAST_WITH_KEYWORDS", uops)
+        self.assertNotIn("_GUARD_CALLABLE_METHOD_DESCRIPTOR_FAST_WITH_KEYWORDS", uops)
 
     def test_call_intrinsic_1(self):
         def testfunc(n):
