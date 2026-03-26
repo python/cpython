@@ -51,7 +51,6 @@ jobs:
       - name: Build
         shell: pwsh
         run: |
-          $env:PlatformToolset = "v145"
           ./PCbuild/build.bat --tail-call-interp ${{ matrix.build_flags }} -c Release -p ${{ matrix.architecture }}
       - name: Test
         if: matrix.run_tests
@@ -68,9 +67,9 @@ jobs:
       matrix:
         include:
           - target: x86_64-apple-darwin/clang
-            runner: macos-15-intel
+            runner: macos-26-intel
           - target: aarch64-apple-darwin/clang
-            runner: macos-14
+            runner: macos-26
     steps:
       - uses: actions/checkout@v6
         with:

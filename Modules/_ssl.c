@@ -164,6 +164,17 @@ static void _PySSLFixErrno(void) {
 #error Unsupported OpenSSL version
 #endif
 
+#if (OPENSSL_VERSION_NUMBER >= 0x40000000L)
+#  define OPENSSL_NO_SSL3
+#  define OPENSSL_NO_TLS1
+#  define OPENSSL_NO_TLS1_1
+#  define OPENSSL_NO_TLS1_2
+#  define OPENSSL_NO_SSL3_METHOD
+#  define OPENSSL_NO_TLS1_METHOD
+#  define OPENSSL_NO_TLS1_1_METHOD
+#  define OPENSSL_NO_TLS1_2_METHOD
+#endif
+
 /* OpenSSL API 1.1.0+ does not include version methods */
 #ifndef OPENSSL_NO_SSL3_METHOD
 extern const SSL_METHOD *SSLv3_method(void);
@@ -331,7 +342,7 @@ typedef struct {
     int post_handshake_auth;
 #endif
     PyObject *msg_cb;
-    PyObject *keylog_filename;
+    PyObject *keylog_filename;  // can be anything accepted by Py_fopen()
     BIO *keylog_bio;
     /* Cached module state, also used in SSLSocket and SSLSession code. */
     _sslmodulestate *state;
@@ -361,7 +372,7 @@ typedef struct {
     PySSLContext *ctx; /* weakref to SSL context */
     char shutdown_seen_zero;
     enum py_ssl_server_or_client socket_type;
-    PyObject *owner; /* Python level "owner" passed to servername callback */
+    PyObject *owner; /* weakref to Python level "owner" passed to servername callback */
     PyObject *server_hostname;
 } PySSLSocket;
 
@@ -917,8 +928,8 @@ newPySSLSocket(PySSLContext *sslctx, PySocketSockObject *sock,
     self->ssl = SSL_new(ctx);
     PySSL_END_ALLOW_THREADS(sslctx)
     if (self->ssl == NULL) {
+        _setSSLError(get_state_ctx(sslctx), NULL, 0, __FILE__, __LINE__);
         Py_DECREF(self);
-        _setSSLError(get_state_ctx(self), NULL, 0, __FILE__, __LINE__);
         return NULL;
     }
 
@@ -1151,7 +1162,7 @@ _asn1obj2py(_sslmodulestate *state, const ASN1_OBJECT *name, int no_name)
 
 static PyObject *
 _create_tuple_for_attribute(_sslmodulestate *state,
-                            ASN1_OBJECT *name, ASN1_STRING *value)
+                            const ASN1_OBJECT *name, const ASN1_STRING *value)
 {
     Py_ssize_t buflen;
     PyObject *pyattr;
@@ -1180,16 +1191,16 @@ _create_tuple_for_attribute(_sslmodulestate *state,
 }
 
 static PyObject *
-_create_tuple_for_X509_NAME (_sslmodulestate *state, X509_NAME *xname)
+_create_tuple_for_X509_NAME(_sslmodulestate *state, const X509_NAME *xname)
 {
     PyObject *dn = NULL;    /* tuple which represents the "distinguished name" */
     PyObject *rdn = NULL;   /* tuple to hold a "relative distinguished name" */
     PyObject *rdnt;
     PyObject *attr = NULL;   /* tuple to hold an attribute */
     int entry_count = X509_NAME_entry_count(xname);
-    X509_NAME_ENTRY *entry;
-    ASN1_OBJECT *name;
-    ASN1_STRING *value;
+    const X509_NAME_ENTRY *entry;
+    const ASN1_OBJECT *name;
+    const ASN1_STRING *value;
     int index_counter;
     int rdn_level = -1;
     int retcode;
@@ -2436,6 +2447,17 @@ PySSL_traverse(PyObject *op, visitproc visit, void *arg)
     return 0;
 }
 
+static int
+PySSL_clear(PyObject *op)
+{
+    PySSLSocket *self = PySSLSocket_CAST(op);
+    Py_CLEAR(self->Socket);
+    Py_CLEAR(self->ctx);
+    Py_CLEAR(self->owner);
+    Py_CLEAR(self->server_hostname);
+    return 0;
+}
+
 static void
 PySSL_dealloc(PyObject *op)
 {
@@ -2456,10 +2478,7 @@ PySSL_dealloc(PyObject *op)
         SSL_set_shutdown(self->ssl, SSL_SENT_SHUTDOWN | SSL_get_shutdown(self->ssl));
         SSL_free(self->ssl);
     }
-    Py_XDECREF(self->Socket);
-    Py_XDECREF(self->ctx);
-    Py_XDECREF(self->server_hostname);
-    Py_XDECREF(self->owner);
+    (void)PySSL_clear(op);
     PyObject_GC_Del(self);
     Py_DECREF(tp);
 }
@@ -3568,6 +3587,11 @@ context_traverse(PyObject *op, visitproc visit, void *arg)
     PySSLContext *self = PySSLContext_CAST(op);
     Py_VISIT(self->set_sni_cb);
     Py_VISIT(self->msg_cb);
+    Py_VISIT(self->keylog_filename);
+#ifndef OPENSSL_NO_PSK
+    Py_VISIT(self->psk_client_callback);
+    Py_VISIT(self->psk_server_callback);
+#endif
     Py_VISIT(Py_TYPE(self));
     return 0;
 }
@@ -6954,9 +6978,15 @@ sslmodule_init_constants(PyObject *m)
     ADD_INT_CONST("PROTOCOL_TLS", PY_SSL_VERSION_TLS);
     ADD_INT_CONST("PROTOCOL_TLS_CLIENT", PY_SSL_VERSION_TLS_CLIENT);
     ADD_INT_CONST("PROTOCOL_TLS_SERVER", PY_SSL_VERSION_TLS_SERVER);
+#ifndef OPENSSL_NO_TLS1
     ADD_INT_CONST("PROTOCOL_TLSv1", PY_SSL_VERSION_TLS1);
+#endif
+#ifndef OPENSSL_NO_TLS1_1
     ADD_INT_CONST("PROTOCOL_TLSv1_1", PY_SSL_VERSION_TLS1_1);
+#endif
+#ifndef OPENSSL_NO_TLS1_2
     ADD_INT_CONST("PROTOCOL_TLSv1_2", PY_SSL_VERSION_TLS1_2);
+#endif
 
 #define ADD_OPTION(NAME, VALUE) if (sslmodule_add_option(m, NAME, (VALUE)) < 0) return -1
 
@@ -7299,6 +7329,7 @@ sslmodule_init_lock(PyObject *module)
 }
 
 static PyModuleDef_Slot sslmodule_slots[] = {
+    _Py_ABI_SLOT,
     {Py_mod_exec, sslmodule_init_types},
     {Py_mod_exec, sslmodule_init_exceptions},
     {Py_mod_exec, sslmodule_init_socketapi},

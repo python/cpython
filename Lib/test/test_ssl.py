@@ -57,6 +57,16 @@ CAN_IGNORE_UNKNOWN_OPENSSL_SIGALGS = ssl.OPENSSL_VERSION_INFO >= (3, 3)
 CAN_GET_SELECTED_OPENSSL_SIGALG = ssl.OPENSSL_VERSION_INFO >= (3, 5)
 PY_SSL_DEFAULT_CIPHERS = sysconfig.get_config_var('PY_SSL_DEFAULT_CIPHERS')
 
+HAS_KEYLOG = hasattr(ssl.SSLContext, 'keylog_filename')
+requires_keylog = unittest.skipUnless(
+    HAS_KEYLOG, 'test requires OpenSSL 1.1.1 with keylog callback')
+CAN_SET_KEYLOG = HAS_KEYLOG and os.name != "nt"
+requires_keylog_setter = unittest.skipUnless(
+    CAN_SET_KEYLOG,
+    "cannot set 'keylog_filename' on Windows"
+)
+
+
 PROTOCOL_TO_TLS_VERSION = {}
 for proto, ver in (
     ("PROTOCOL_SSLv3", "SSLv3"),
@@ -266,34 +276,69 @@ ignore_deprecation = warnings_helper.ignore_warnings(
 )
 
 
-def test_wrap_socket(sock, *,
-                     cert_reqs=ssl.CERT_NONE, ca_certs=None,
-                     ciphers=None, ciphersuites=None,
-                     min_version=None, max_version=None,
-                     certfile=None, keyfile=None,
-                     **kwargs):
-    if not kwargs.get("server_side"):
-        kwargs["server_hostname"] = SIGNED_CERTFILE_HOSTNAME
-        context = ssl.SSLContext(ssl.PROTOCOL_TLS_CLIENT)
-    else:
+def make_test_context(
+    *,
+    server_side=False,
+    check_hostname=None,
+    cert_reqs=ssl.CERT_NONE,
+    ca_certs=None, certfile=None, keyfile=None,
+    ciphers=None, ciphersuites=None,
+    min_version=None, max_version=None,
+):
+    if server_side:
         context = ssl.SSLContext(ssl.PROTOCOL_TLS_SERVER)
-    if cert_reqs is not None:
+    else:
+        context = ssl.SSLContext(ssl.PROTOCOL_TLS_CLIENT)
+
+    if check_hostname is None:
         if cert_reqs == ssl.CERT_NONE:
             context.check_hostname = False
+    else:
+        context.check_hostname = check_hostname
+
+    if cert_reqs is not None:
         context.verify_mode = cert_reqs
+
     if ca_certs is not None:
         context.load_verify_locations(ca_certs)
     if certfile is not None or keyfile is not None:
         context.load_cert_chain(certfile, keyfile)
+
     if ciphers is not None:
         context.set_ciphers(ciphers)
     if ciphersuites is not None:
         context.set_ciphersuites(ciphersuites)
+
     if min_version is not None:
         context.minimum_version = min_version
     if max_version is not None:
         context.maximum_version = max_version
-    return context.wrap_socket(sock, **kwargs)
+
+    return context
+
+
+def test_wrap_socket(
+    sock,
+    *,
+    server_side=False,
+    check_hostname=None,
+    cert_reqs=ssl.CERT_NONE,
+    ca_certs=None, certfile=None, keyfile=None,
+    ciphers=None, ciphersuites=None,
+    min_version=None, max_version=None,
+    **kwargs,
+):
+    context = make_test_context(
+        server_side=server_side,
+        check_hostname=check_hostname,
+        cert_reqs=cert_reqs,
+        ca_certs=ca_certs, certfile=certfile, keyfile=keyfile,
+        ciphers=ciphers, ciphersuites=ciphersuites,
+        min_version=min_version, max_version=max_version,
+    )
+    if not server_side:
+        kwargs.setdefault("server_hostname", SIGNED_CERTFILE_HOSTNAME)
+    return context.wrap_socket(sock, server_side=server_side, **kwargs)
 
 
 USE_SAME_TEST_CONTEXT = False
@@ -350,7 +395,7 @@ class BasicSocketTests(unittest.TestCase):
         ssl.OP_NO_COMPRESSION
         self.assertEqual(ssl.HAS_SNI, True)
         self.assertEqual(ssl.HAS_ECDH, True)
-        self.assertEqual(ssl.HAS_TLSv1_2, True)
+        self.assertIsInstance(ssl.HAS_TLSv1_2, bool)
         self.assertEqual(ssl.HAS_TLSv1_3, True)
         ssl.OP_NO_SSLv2
         ssl.OP_NO_SSLv3
@@ -541,11 +586,11 @@ class BasicSocketTests(unittest.TestCase):
         # Some sanity checks follow
         # >= 1.1.1
         self.assertGreaterEqual(n, 0x10101000)
-        # < 4.0
-        self.assertLess(n, 0x40000000)
+        # < 5.0
+        self.assertLess(n, 0x50000000)
         major, minor, fix, patch, status = t
         self.assertGreaterEqual(major, 1)
-        self.assertLess(major, 4)
+        self.assertLess(major, 5)
         self.assertGreaterEqual(minor, 0)
         self.assertLess(minor, 256)
         self.assertGreaterEqual(fix, 0)
@@ -611,12 +656,14 @@ class BasicSocketTests(unittest.TestCase):
             ssl.OP_NO_TLSv1_2,
             ssl.OP_NO_TLSv1_3
         ]
-        protocols = [
-            ssl.PROTOCOL_TLSv1,
-            ssl.PROTOCOL_TLSv1_1,
-            ssl.PROTOCOL_TLSv1_2,
-            ssl.PROTOCOL_TLS
-        ]
+        protocols = []
+        if hasattr(ssl, 'PROTOCOL_TLSv1'):
+            protocols.append(ssl.PROTOCOL_TLSv1)
+        if hasattr(ssl, 'PROTOCOL_TLSv1_1'):
+            protocols.append(ssl.PROTOCOL_TLSv1_1)
+        if hasattr(ssl, 'PROTOCOL_TLSv1_2'):
+            protocols.append(ssl.PROTOCOL_TLSv1_2)
+        protocols.append(ssl.PROTOCOL_TLS)
         versions = [
             ssl.TLSVersion.SSLv3,
             ssl.TLSVersion.TLSv1,
@@ -1160,6 +1207,7 @@ class ContextTests(unittest.TestCase):
                 ssl.TLSVersion.TLSv1,
                 ssl.TLSVersion.TLSv1_1,
                 ssl.TLSVersion.TLSv1_2,
+                ssl.TLSVersion.TLSv1_3,
                 ssl.TLSVersion.SSLv3,
             }
         )
@@ -1173,7 +1221,7 @@ class ContextTests(unittest.TestCase):
         with self.assertRaises(ValueError):
             ctx.minimum_version = 42
 
-        if has_tls_protocol(ssl.PROTOCOL_TLSv1_1):
+        if has_tls_protocol('PROTOCOL_TLSv1_1'):
             ctx = ssl.SSLContext(ssl.PROTOCOL_TLSv1_1)
 
             self.assertIn(
@@ -1630,23 +1678,24 @@ class ContextTests(unittest.TestCase):
         self.assertFalse(ctx.check_hostname)
         self._assert_context_options(ctx)
 
-        if has_tls_protocol(ssl.PROTOCOL_TLSv1):
+        if has_tls_protocol('PROTOCOL_TLSv1'):
             with warnings_helper.check_warnings():
                 ctx = ssl._create_stdlib_context(ssl.PROTOCOL_TLSv1)
             self.assertEqual(ctx.protocol, ssl.PROTOCOL_TLSv1)
             self.assertEqual(ctx.verify_mode, ssl.CERT_NONE)
             self._assert_context_options(ctx)
 
-        with warnings_helper.check_warnings():
-            ctx = ssl._create_stdlib_context(
-                ssl.PROTOCOL_TLSv1_2,
-                cert_reqs=ssl.CERT_REQUIRED,
-                check_hostname=True
-            )
-        self.assertEqual(ctx.protocol, ssl.PROTOCOL_TLSv1_2)
-        self.assertEqual(ctx.verify_mode, ssl.CERT_REQUIRED)
-        self.assertTrue(ctx.check_hostname)
-        self._assert_context_options(ctx)
+        if has_tls_protocol('PROTOCOL_TLSv1_2'):
+            with warnings_helper.check_warnings():
+                ctx = ssl._create_stdlib_context(
+                    ssl.PROTOCOL_TLSv1_2,
+                    cert_reqs=ssl.CERT_REQUIRED,
+                    check_hostname=True
+                )
+            self.assertEqual(ctx.protocol, ssl.PROTOCOL_TLSv1_2)
+            self.assertEqual(ctx.verify_mode, ssl.CERT_REQUIRED)
+            self.assertTrue(ctx.check_hostname)
+            self._assert_context_options(ctx)
 
         ctx = ssl._create_stdlib_context(purpose=ssl.Purpose.CLIENT_AUTH)
         self.assertEqual(ctx.protocol, ssl.PROTOCOL_TLS_SERVER)
@@ -1740,6 +1789,39 @@ class ContextTests(unittest.TestCase):
         self.assertEqual(ctx.num_tickets, 2)
         with self.assertRaises(ValueError):
             ctx.num_tickets = 1
+
+    @support.cpython_only
+    def test_refcycle_msg_callback(self):
+        # See https://github.com/python/cpython/issues/142516.
+        ctx = make_test_context()
+        def msg_callback(*args, _=ctx, **kwargs): ...
+        ctx._msg_callback = msg_callback
+
+    @support.cpython_only
+    @requires_keylog_setter
+    def test_refcycle_keylog_filename(self):
+        # See https://github.com/python/cpython/issues/142516.
+        self.addCleanup(os_helper.unlink, os_helper.TESTFN)
+        ctx = make_test_context()
+        class KeylogFilename(str): ...
+        ctx.keylog_filename = KeylogFilename(os_helper.TESTFN)
+        ctx.keylog_filename._ = ctx
+
+    @support.cpython_only
+    @unittest.skipUnless(ssl.HAS_PSK, 'requires TLS-PSK')
+    def test_refcycle_psk_client_callback(self):
+        # See https://github.com/python/cpython/issues/142516.
+        ctx = make_test_context()
+        def psk_client_callback(*args, _=ctx, **kwargs): ...
+        ctx.set_psk_client_callback(psk_client_callback)
+
+    @support.cpython_only
+    @unittest.skipUnless(ssl.HAS_PSK, 'requires TLS-PSK')
+    def test_refcycle_psk_server_callback(self):
+        # See https://github.com/python/cpython/issues/142516.
+        ctx = make_test_context(server_side=True)
+        def psk_server_callback(*args, _=ctx, **kwargs): ...
+        ctx.set_psk_server_callback(psk_server_callback)
 
 
 class SSLErrorTests(unittest.TestCase):
@@ -3576,10 +3658,10 @@ class ThreadedTests(unittest.TestCase):
                            client_options=ssl.OP_NO_TLSv1_2)
 
         try_protocol_combo(ssl.PROTOCOL_TLS, ssl.PROTOCOL_TLSv1_2, 'TLSv1.2')
-        if has_tls_protocol(ssl.PROTOCOL_TLSv1):
+        if has_tls_protocol('PROTOCOL_TLSv1'):
             try_protocol_combo(ssl.PROTOCOL_TLSv1_2, ssl.PROTOCOL_TLSv1, False)
             try_protocol_combo(ssl.PROTOCOL_TLSv1, ssl.PROTOCOL_TLSv1_2, False)
-        if has_tls_protocol(ssl.PROTOCOL_TLSv1_1):
+        if has_tls_protocol('PROTOCOL_TLSv1_1'):
             try_protocol_combo(ssl.PROTOCOL_TLSv1_2, ssl.PROTOCOL_TLSv1_1, False)
             try_protocol_combo(ssl.PROTOCOL_TLSv1_1, ssl.PROTOCOL_TLSv1_2, False)
 
@@ -5173,10 +5255,6 @@ class TestPostHandshakeAuth(unittest.TestCase):
                 res = s.recv(1024)
                 self.assertEqual(res, b'\x02\n')
 
-
-HAS_KEYLOG = hasattr(ssl.SSLContext, 'keylog_filename')
-requires_keylog = unittest.skipUnless(
-    HAS_KEYLOG, 'test requires OpenSSL 1.1.1 with keylog callback')
 
 class TestSSLDebug(unittest.TestCase):
 

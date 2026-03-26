@@ -1,0 +1,2 @@
+Improve scaling of :func:`classmethod` and :func:`staticmethod` calls in
+the free-threaded build by avoiding the descriptor ``__get__`` call.

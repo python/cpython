@@ -4808,6 +4808,7 @@ sock_sendto(PyObject *self, PyObject *args)
     }
 
     if (PySys_Audit("socket.sendto", "OO", s, addro) < 0) {
+        PyBuffer_Release(&pbuf);
         return NULL;
     }
 
@@ -6261,7 +6262,7 @@ socket_gethostbyaddr(PyObject *self, PyObject *args)
        gethostbyaddr_r is 8-byte aligned, which at least llvm-gcc
        does not ensure. The attribute below instructs the compiler
        to maintain this alignment. */
-    char buf[16384] Py_ALIGNED(8);
+    _Py_ALIGNED_DEF(8, char) buf[16384];
     int buf_len = (sizeof buf) - 1;
     int errnop;
 #endif
@@ -6982,7 +6983,7 @@ socket_getaddrinfo(PyObject *self, PyObject *args, PyObject* kwargs)
 
     if (PySys_Audit("socket.getaddrinfo", "OOiii",
                     hobj, pobj, family, socktype, protocol) < 0) {
-        return NULL;
+        goto err;
     }
 
     memset(&hints, 0, sizeof(hints));
@@ -9305,6 +9306,7 @@ error:
 }
 
 static struct PyModuleDef_Slot socket_slots[] = {
+    _Py_ABI_SLOT,
     {Py_mod_exec, socket_exec},
     {Py_mod_multiple_interpreters, Py_MOD_PER_INTERPRETER_GIL_SUPPORTED},
     {Py_mod_gil, Py_MOD_GIL_NOT_USED},

@@ -1599,7 +1599,7 @@ encoder_listencode_obj(PyEncoderObject *s, PyUnicodeWriter *writer,
         _Py_LeaveRecursiveCall();
         return rv;
     }
-    else if (PyDict_Check(obj)) {
+    else if (PyAnyDict_Check(obj)) {
         if (_Py_EnterRecursiveCall(" while encoding a JSON object"))
             return -1;
         rv = encoder_listencode_dict(s, writer, obj, indent_level, indent_cache);
@@ -1838,7 +1838,7 @@ encoder_listencode_dict(PyEncoderObject *s, PyUnicodeWriter *writer,
             goto bail;
     }
 
-    if (s->sort_keys || !PyDict_CheckExact(dct)) {
+    if (s->sort_keys || !PyAnyDict_CheckExact(dct)) {
         PyObject *items = PyMapping_Items(dct);
         if (items == NULL || (s->sort_keys && PyList_Sort(items) < 0)) {
             Py_XDECREF(items);
@@ -2087,6 +2087,7 @@ _json_exec(PyObject *module)
 }
 
 static PyModuleDef_Slot _json_slots[] = {
+    _Py_ABI_SLOT,
     {Py_mod_exec, _json_exec},
     {Py_mod_multiple_interpreters, Py_MOD_PER_INTERPRETER_GIL_SUPPORTED},
     {Py_mod_gil, Py_MOD_GIL_NOT_USED},

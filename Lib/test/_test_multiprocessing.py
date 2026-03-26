@@ -3890,6 +3890,19 @@ class _TestConnection(BaseTestCase):
             self.assertRaises(OSError, a.recv)
             self.assertRaises(OSError, b.recv)
 
+    @warnings_helper.ignore_fork_in_thread_deprecation_warnings()
+    def test_wait_empty(self):
+        if self.TYPE != 'processes':
+            self.skipTest('test not appropriate for {}'.format(self.TYPE))
+        # gh-145587: wait() with empty list should respect timeout
+        timeout = 0.5
+        start = time.monotonic()
+        res = self.connection.wait([], timeout=timeout)
+        duration = time.monotonic() - start
+
+        self.assertEqual(res, [])
+        self.assertGreaterEqual(duration, timeout - 0.1)
+
 class _TestListener(BaseTestCase):
 
     ALLOWED_TYPES = ('processes',)
@@ -5991,6 +6004,20 @@ class TestStartMethod(unittest.TestCase):
             process.start()
             process.join()
             self.assertIsNone(multiprocessing.get_start_method(allow_none=True))
+
+    @only_run_in_spawn_testsuite("freeze_support is not start method specific")
+    def test_freeze_support_dont_set_context(self):
+        # gh-140814: freeze_support() should not set the start method
+        # as a side effect, so a later set_start_method() still works.
+        multiprocessing.set_start_method(None, force=True)
+        try:
+            multiprocessing.freeze_support()
+            self.assertIsNone(
+                multiprocessing.get_start_method(allow_none=True))
+            # Should not raise "context has already been set"
+            multiprocessing.set_start_method('spawn')
+        finally:
+            multiprocessing.set_start_method(None, force=True)
 
     def test_context_check_module_types(self):
         try:
