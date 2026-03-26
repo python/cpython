@@ -2225,6 +2225,22 @@ SyntaxError: Expected one or more names after 'import'
 Traceback (most recent call last):
 SyntaxError: Expected one or more names after 'import'
 
+>>> import a b
+Traceback (most recent call last):
+SyntaxError: expected comma between import clauses
+
+>>> import a.a as a b.b
+Traceback (most recent call last):
+SyntaxError: expected comma between import clauses
+
+>>> from x import a b
+Traceback (most recent call last):
+SyntaxError: expected comma between import clauses
+
+>>> from x import a as a b
+Traceback (most recent call last):
+SyntaxError: expected comma between import clauses
+
 >>> (): int
 Traceback (most recent call last):
 SyntaxError: only single target (not tuple) can be annotated

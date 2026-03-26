@@ -1432,10 +1432,14 @@ invalid_import:
     | 'import' token=NEWLINE {
         RAISE_SYNTAX_ERROR_STARTING_FROM(token, "Expected one or more names after 'import'") }
 invalid_dotted_as_name:
+    | a=dotted_name b=['as' NAME] c=dotted_name {
+        RAISE_SYNTAX_ERROR_KNOWN_RANGE(b ? (expr_ty) b : a, c, "expected comma between import clauses") }
     | dotted_name 'as' !(NAME (',' | ')' | ';' | NEWLINE)) a=expression {
         RAISE_SYNTAX_ERROR_KNOWN_LOCATION(a,
             "cannot use %s as import target", _PyPegen_get_expr_name(a)) }
 invalid_import_from_as_name:
+    | [NAME 'as'] a=NAME b=NAME {
+        RAISE_SYNTAX_ERROR_KNOWN_RANGE(a, b, "expected comma between import clauses") }
     | NAME 'as' !(NAME (',' | ')' | ';' | NEWLINE)) a=expression {
         RAISE_SYNTAX_ERROR_KNOWN_LOCATION(a,
             "cannot use %s as import target", _PyPegen_get_expr_name(a)) }
