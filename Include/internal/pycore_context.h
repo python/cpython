@@ -33,6 +33,11 @@ struct _pycontextobject {
     PyHamtObject *ctx_thread_inheritable_vars;
     // used to emit warnings about thread_inherit_context
     PyHamtObject *ctx_starter_vars;
+    // Nesting depth in the context inheritance tree.  Assigned at creation
+    // time: an empty/base context has depth 0, and a context produced by
+    // copying another (copy_context(), Context.copy(), thread/async context
+    // inheritance) has depth one greater than its source.
+    uint64_t ctx_depth;
 };
 
 
@@ -66,6 +71,10 @@ PyAPI_FUNC(PyObject*) _PyContext_NewForThread(void);
 
 PyAPI_FUNC(int) _PyContext_Enter(PyThreadState *ts, PyObject *octx);
 PyAPI_FUNC(int) _PyContext_Exit(PyThreadState *ts, PyObject *octx);
+
+/* Return the depth (see struct _pycontextobject.ctx_depth) of the current
+   context, or 0 if there is no current context. */
+PyAPI_FUNC(uint64_t) _PyContext_CurrentDepth(void);
 
 
 #endif /* !Py_INTERNAL_CONTEXT_H */

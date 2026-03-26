@@ -48,7 +48,8 @@ context_new_empty(void);
 
 static PyContext *
 context_new_from_vars(PyHamtObject *vars,
-                      PyHamtObject *thread_inheritable_vars);
+                      PyHamtObject *thread_inheritable_vars,
+                      uint64_t depth);
 
 static inline PyContext *
 context_get(void);
@@ -85,10 +86,11 @@ _PyContext_NewForThread(void)
 {
     // The thread-inheritable subset becomes the new context's full vars map.
     // Every entry in it is thread-inheritable, so it is also its own subset.
-    PyContext *ctx = context_get();
-    ctx = context_new_from_vars(
-        ctx->ctx_thread_inheritable_vars,
-        ctx->ctx_thread_inheritable_vars);
+    PyContext *starter_ctx = context_get();
+    PyContext *ctx = context_new_from_vars(
+        starter_ctx->ctx_thread_inheritable_vars,
+        starter_ctx->ctx_thread_inheritable_vars,
+        starter_ctx->ctx_depth + 1);
     if (ctx == NULL) {
         return NULL;
     }
@@ -116,7 +118,8 @@ PyContext_Copy(PyObject * octx)
     ENSURE_Context(octx, NULL)
     PyContext *ctx = (PyContext *)octx;
     return (PyObject *)context_new_from_vars(
-        ctx->ctx_vars, ctx->ctx_thread_inheritable_vars);
+        ctx->ctx_vars, ctx->ctx_thread_inheritable_vars,
+        ctx->ctx_depth + 1);
 }
 
 
@@ -129,7 +132,8 @@ PyContext_CopyCurrent(void)
     }
 
     return (PyObject *)context_new_from_vars(
-        ctx->ctx_vars, ctx->ctx_thread_inheritable_vars);
+        ctx->ctx_vars, ctx->ctx_thread_inheritable_vars,
+        ctx->ctx_depth + 1);
 }
 
 static const char *
@@ -481,6 +485,19 @@ PyContextVar_Reset(PyObject *ovar, PyObject *otok)
 }
 
 
+uint64_t
+_PyContext_CurrentDepth(void)
+{
+    PyThreadState *ts = _PyThreadState_GET();
+    assert(ts != NULL);
+    if (ts->context == NULL) {
+        return 0;
+    }
+    assert(PyContext_CheckExact(ts->context));
+    return ((PyContext *)ts->context)->ctx_depth;
+}
+
+
 /////////////////////////// PyContext
 
 /*[clinic input]
@@ -509,6 +526,7 @@ _context_alloc(void)
     ctx->ctx_weakreflist = NULL;
     ctx->ctx_thread_inheritable_vars = NULL;
     ctx->ctx_starter_vars = NULL;
+    ctx->ctx_depth = 0;
 
     return ctx;
 }
@@ -541,7 +559,8 @@ context_new_empty(void)
 
 static PyContext *
 context_new_from_vars(PyHamtObject *vars,
-                      PyHamtObject *thread_inheritable_vars)
+                      PyHamtObject *thread_inheritable_vars,
+                      uint64_t depth)
 {
     PyContext *ctx = _context_alloc();
     if (ctx == NULL) {
@@ -551,6 +570,7 @@ context_new_from_vars(PyHamtObject *vars,
     ctx->ctx_vars = (PyHamtObject*)Py_NewRef(vars);
     ctx->ctx_thread_inheritable_vars =
         (PyHamtObject*)Py_NewRef(thread_inheritable_vars);
+    ctx->ctx_depth = depth;
 
     _PyObject_GC_TRACK(ctx);
     return ctx;
@@ -792,7 +812,8 @@ _contextvars_Context_copy_impl(PyContext *self)
 /*[clinic end generated code: output=30ba8896c4707a15 input=ebafdbdd9c72d592]*/
 {
     return (PyObject *)context_new_from_vars(
-        self->ctx_vars, self->ctx_thread_inheritable_vars);
+        self->ctx_vars, self->ctx_thread_inheritable_vars,
+        self->ctx_depth + 1);
 }
 
 
