@@ -289,9 +289,15 @@ def clean(host):
     delete_glob(CROSS_BUILD_DIR / host)
 
 
-def clean_all(context):
-    for host in HOSTS + ["build"]:
-        clean(host)
+def clean_targets(context):
+    if context.target in {"all", "build"}:
+        clean("build")
+
+    if context.target == "hosts":
+        for host in HOSTS:
+            clean(host)
+    else:
+        clean(context.target)
 
 
 def setup_ci():
@@ -864,7 +870,19 @@ def parse_args():
     make_host = add_parser(
         "make-host", help="Run `make` for Android")
 
-    add_parser("clean", help="Delete all build directories")
+    clean = add_parser("clean", help="Delete all build directories")
+    clean.add_argument(
+        "target",
+        nargs="?",
+        default="all",
+        help=(
+            "The host triple to clean (e.g., aarch64-linux-android), "
+            "or 'build' for just the build platform, or 'hosts' for all "
+            "host platforms, or 'all' for the build platform and all "
+            "hosts. Defaults to 'all'"
+        ),
+    )
+
     add_parser("build-testbed", help="Build the testbed app")
     test = add_parser("test", help="Run the testbed app")
     package = add_parser("package", help="Make a release package")
@@ -945,7 +963,7 @@ def main():
         "configure-host": configure_host_python,
         "make-host": make_host_python,
         "build": build_all,
-        "clean": clean_all,
+        "clean": clean_targets,
         "build-testbed": build_testbed,
         "test": run_testbed,
         "package": package,
