@@ -1129,6 +1129,14 @@ class TestMarkingVariablesAsUnKnown(BytecodeTestCase):
             print(ExecError)
         self.assertInBytecode(f, "LOAD_FAST_BORROW", "self")
 
+    def test_ternary_expression_uses_load_fast_borrow(self):
+        def f(a, b):
+            return a if a < b else b
+
+        self.assertNotInBytecode(f, "LOAD_FAST")
+        self.assertInBytecode(f, "LOAD_FAST_BORROW", "a")
+        self.assertInBytecode(f, "LOAD_FAST_BORROW", "b")
+
 class DirectCfgOptimizerTests(CfgOptimizationTestCase):
 
     def cfg_optimization_test(self, insts, expected_insts,
