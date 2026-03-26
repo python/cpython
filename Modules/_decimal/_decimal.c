@@ -1914,9 +1914,9 @@ PyDec_SetCurrentContext(PyObject *self, PyObject *v)
 }
 #else
 static PyObject *
-init_current_context(decimal_state *state)
+init_current_context(decimal_state *state, PyObject *prev_context)
 {
-    PyObject *tl_context = context_copy(state, state->default_context_template);
+    PyObject *tl_context = context_copy(state, prev_context);
     if (tl_context == NULL) {
         return NULL;
     }
@@ -1936,15 +1936,25 @@ static inline PyObject *
 current_context(decimal_state *state)
 {
     PyObject *tl_context;
-    if (PyContextVar_Get(state->current_context_var, NULL, &tl_context) < 0) {
+    int changed;
+    if (PyContextVar_GetChanged(state->current_context_var, NULL, &tl_context,
+                                &changed) < 0) {
         return NULL;
     }
 
     if (tl_context != NULL) {
-        return tl_context;
+        if (!changed) {
+            /* inherited context object from another thread for async task */
+            PyObject *new_context = init_current_context(state, tl_context);
+            Py_DECREF(tl_context);
+            return new_context;
+        }
+        else {
+            return tl_context;
+        }
     }
 
-    return init_current_context(state);
+    return init_current_context(state, state->default_context_template);
 }
 
 /* ctxobj := borrowed reference to the current context */
