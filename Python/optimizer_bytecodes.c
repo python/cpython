@@ -325,21 +325,57 @@ dummy_func(void) {
     }
 
     op(_BINARY_OP_ADD_FLOAT, (left, right -- res, l, r)) {
-        res = sym_new_type(ctx, &PyFloat_Type);
-        l = left;
-        r = right;
+        if (PyJitRef_IsUnique(left)) {
+            ADD_OP(_BINARY_OP_ADD_FLOAT_INPLACE, 0, 0);
+            l = PyJitRef_Borrow(sym_new_null(ctx));
+            r = right;
+        }
+        else if (PyJitRef_IsUnique(right)) {
+            ADD_OP(_BINARY_OP_ADD_FLOAT_INPLACE_RIGHT, 0, 0);
+            l = left;
+            r = PyJitRef_Borrow(sym_new_null(ctx));
+        }
+        else {
+            l = left;
+            r = right;
+        }
+        res = PyJitRef_MakeUnique(sym_new_type(ctx, &PyFloat_Type));
     }
 
     op(_BINARY_OP_SUBTRACT_FLOAT, (left, right -- res, l, r)) {
-        res = sym_new_type(ctx, &PyFloat_Type);
-        l = left;
-        r = right;
+        if (PyJitRef_IsUnique(left)) {
+            ADD_OP(_BINARY_OP_SUBTRACT_FLOAT_INPLACE, 0, 0);
+            l = PyJitRef_Borrow(sym_new_null(ctx));
+            r = right;
+        }
+        else if (PyJitRef_IsUnique(right)) {
+            ADD_OP(_BINARY_OP_SUBTRACT_FLOAT_INPLACE_RIGHT, 0, 0);
+            l = left;
+            r = PyJitRef_Borrow(sym_new_null(ctx));
+        }
+        else {
+            l = left;
+            r = right;
+        }
+        res = PyJitRef_MakeUnique(sym_new_type(ctx, &PyFloat_Type));
     }
 
     op(_BINARY_OP_MULTIPLY_FLOAT, (left, right -- res, l, r)) {
-        res = sym_new_type(ctx, &PyFloat_Type);
-        l = left;
-        r = right;
+        if (PyJitRef_IsUnique(left)) {
+            ADD_OP(_BINARY_OP_MULTIPLY_FLOAT_INPLACE, 0, 0);
+            l = PyJitRef_Borrow(sym_new_null(ctx));
+            r = right;
+        }
+        else if (PyJitRef_IsUnique(right)) {
+            ADD_OP(_BINARY_OP_MULTIPLY_FLOAT_INPLACE_RIGHT, 0, 0);
+            l = left;
+            r = PyJitRef_Borrow(sym_new_null(ctx));
+        }
+        else {
+            l = left;
+            r = right;
+        }
+        res = PyJitRef_MakeUnique(sym_new_type(ctx, &PyFloat_Type));
     }
 
     op(_BINARY_OP_ADD_UNICODE, (left, right -- res, l, r)) {
@@ -531,7 +567,12 @@ dummy_func(void) {
     op(_UNARY_NEGATIVE, (value -- res, v)) {
         v = value;
         REPLACE_OPCODE_IF_EVALUATES_PURE(value, res);
-        if (sym_is_compact_int(value)) {
+        if (sym_matches_type(value, &PyFloat_Type) && PyJitRef_IsUnique(value)) {
+            ADD_OP(_UNARY_NEGATIVE_FLOAT_INPLACE, 0, 0);
+            v = PyJitRef_Borrow(sym_new_null(ctx));
+            res = PyJitRef_MakeUnique(sym_new_type(ctx, &PyFloat_Type));
+        }
+        else if (sym_is_compact_int(value)) {
             res = sym_new_compact_int(ctx);
         }
         else {
@@ -1354,6 +1395,12 @@ dummy_func(void) {
     op(_SET_UPDATE, (set, unused[oparg-1], iterable -- set, unused[oparg-1], i)) {
         (void)set;
         i = iterable;
+    }
+
+    op(_DICT_MERGE, (callable, unused, unused, dict, unused[oparg - 1], update -- callable, unused, unused, dict, unused[oparg - 1], u)) {
+        (void)callable;
+        (void)dict;
+        u = update;
     }
 
     op(_UNPACK_SEQUENCE_TWO_TUPLE, (seq -- val1, val0)) {

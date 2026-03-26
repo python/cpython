@@ -460,6 +460,20 @@ dummy_func(
             DEAD(value);
         }
 
+        // Inplace negation: negate a uniquely-referenced float in place.
+        // Tier 2 only.
+        tier2 op(_UNARY_NEGATIVE_FLOAT_INPLACE, (value -- res, v)) {
+            PyObject *val_o = PyStackRef_AsPyObjectBorrow(value);
+            assert(PyFloat_CheckExact(val_o));
+            assert(_PyObject_IsUniquelyReferenced(val_o));
+            STAT_INC(UNARY_NEGATIVE, hit);
+            double dres = -((PyFloatObject *)val_o)->ob_fval;
+            ((PyFloatObject *)val_o)->ob_fval = dres;
+            res = value;
+            v = PyStackRef_NULL;
+            INPUTS_DEAD();
+        }
+
         inst(UNARY_NOT, (value -- res)) {
             assert(PyStackRef_BoolCheck(value));
             res = PyStackRef_IsFalse(value)
@@ -770,6 +784,59 @@ dummy_func(
             _GUARD_TOS_FLOAT + _GUARD_NOS_FLOAT + unused/5 + _BINARY_OP_ADD_FLOAT + _POP_TOP_FLOAT + _POP_TOP_FLOAT;
         macro(BINARY_OP_SUBTRACT_FLOAT) =
             _GUARD_TOS_FLOAT + _GUARD_NOS_FLOAT + unused/5 + _BINARY_OP_SUBTRACT_FLOAT + _POP_TOP_FLOAT + _POP_TOP_FLOAT;
+
+        // Inplace float ops: mutate the uniquely-referenced left operand
+        // instead of allocating a new float. Tier 2 only.
+        // The optimizer sets l to a borrowed value so the following _POP_TOP_FLOAT
+        // becomes _POP_TOP_NOP.
+        tier2 op(_BINARY_OP_ADD_FLOAT_INPLACE, (left, right -- res, l, r)) {
+            FLOAT_INPLACE_OP(left, right, left, +);
+            res = left;
+            l = PyStackRef_NULL;
+            r = right;
+            INPUTS_DEAD();
+        }
+
+        tier2 op(_BINARY_OP_SUBTRACT_FLOAT_INPLACE, (left, right -- res, l, r)) {
+            FLOAT_INPLACE_OP(left, right, left, -);
+            res = left;
+            l = PyStackRef_NULL;
+            r = right;
+            INPUTS_DEAD();
+        }
+
+        tier2 op(_BINARY_OP_MULTIPLY_FLOAT_INPLACE, (left, right -- res, l, r)) {
+            FLOAT_INPLACE_OP(left, right, left, *);
+            res = left;
+            l = PyStackRef_NULL;
+            r = right;
+            INPUTS_DEAD();
+        }
+
+        // Inplace RIGHT variants: mutate the uniquely-referenced right operand.
+        tier2 op(_BINARY_OP_ADD_FLOAT_INPLACE_RIGHT, (left, right -- res, l, r)) {
+            FLOAT_INPLACE_OP(left, right, right, +);
+            res = right;
+            l = left;
+            r = PyStackRef_NULL;
+            INPUTS_DEAD();
+        }
+
+        tier2 op(_BINARY_OP_MULTIPLY_FLOAT_INPLACE_RIGHT, (left, right -- res, l, r)) {
+            FLOAT_INPLACE_OP(left, right, right, *);
+            res = right;
+            l = left;
+            r = PyStackRef_NULL;
+            INPUTS_DEAD();
+        }
+
+        tier2 op(_BINARY_OP_SUBTRACT_FLOAT_INPLACE_RIGHT, (left, right -- res, l, r)) {
+            FLOAT_INPLACE_OP(left, right, right, -);
+            res = right;
+            l = left;
+            r = PyStackRef_NULL;
+            INPUTS_DEAD();
+        }
 
         pure op(_BINARY_OP_ADD_UNICODE, (left, right -- res, l, r)) {
             PyObject *left_o = PyStackRef_AsPyObjectBorrow(left);
@@ -2324,7 +2391,7 @@ dummy_func(
             PyStackRef_CLOSE(update);
         }
 
-        inst(DICT_MERGE, (callable, unused, unused, dict, unused[oparg - 1], update -- callable, unused, unused, dict, unused[oparg - 1])) {
+        op(_DICT_MERGE, (callable, unused, unused, dict, unused[oparg - 1], update -- callable, unused, unused, dict, unused[oparg - 1], u)) {
             PyObject *callable_o = PyStackRef_AsPyObjectBorrow(callable);
             PyObject *dict_o = PyStackRef_AsPyObjectBorrow(dict);
             PyObject *update_o = PyStackRef_AsPyObjectBorrow(update);
@@ -2332,11 +2399,13 @@ dummy_func(
             int err = _PyDict_MergeEx(dict_o, update_o, 2);
             if (err < 0) {
                 _PyEval_FormatKwargsError(tstate, callable_o, update_o);
-                PyStackRef_CLOSE(update);
-                ERROR_IF(true);
+                ERROR_NO_POP();
             }
-            PyStackRef_CLOSE(update);
+            u = update;
+            DEAD(update);
         }
+
+        macro(DICT_MERGE) = _DICT_MERGE + POP_TOP;
 
         inst(MAP_ADD, (dict_st, unused[oparg - 1], key, value -- dict_st, unused[oparg - 1])) {
             PyObject *dict = PyStackRef_AsPyObjectBorrow(dict_st);
