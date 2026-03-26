@@ -5638,36 +5638,41 @@
             INSTRUCTION_STATS(DICT_UPDATE);
             _PyStackRef dict;
             _PyStackRef update;
-            update = stack_pointer[-1];
-            dict = stack_pointer[-2 - (oparg - 1)];
-            PyObject *dict_o = PyStackRef_AsPyObjectBorrow(dict);
-            PyObject *update_o = PyStackRef_AsPyObjectBorrow(update);
-            _PyFrame_SetStackPointer(frame, stack_pointer);
-            int err = PyDict_Update(dict_o, update_o);
-            stack_pointer = _PyFrame_GetStackPointer(frame);
-            if (err < 0) {
+            _PyStackRef upd;
+            _PyStackRef value;
+            // _DICT_UPDATE
+            {
+                update = stack_pointer[-1];
+                dict = stack_pointer[-2 - (oparg - 1)];
+                PyObject *dict_o = PyStackRef_AsPyObjectBorrow(dict);
+                PyObject *update_o = PyStackRef_AsPyObjectBorrow(update);
                 _PyFrame_SetStackPointer(frame, stack_pointer);
-                int matches = _PyErr_ExceptionMatches(tstate, PyExc_AttributeError);
+                int err = PyDict_Update(dict_o, update_o);
                 stack_pointer = _PyFrame_GetStackPointer(frame);
-                if (matches) {
+                if (err < 0) {
                     _PyFrame_SetStackPointer(frame, stack_pointer);
-                    _PyErr_Format(tstate, PyExc_TypeError,
+                    int matches = _PyErr_ExceptionMatches(tstate, PyExc_AttributeError);
+                    stack_pointer = _PyFrame_GetStackPointer(frame);
+                    if (matches) {
+                        _PyFrame_SetStackPointer(frame, stack_pointer);
+                        _PyErr_Format(tstate, PyExc_TypeError,
                                   "'%.200s' object is not a mapping",
                                   Py_TYPE(update_o)->tp_name);
-                    stack_pointer = _PyFrame_GetStackPointer(frame);
+                        stack_pointer = _PyFrame_GetStackPointer(frame);
+                    }
+                    JUMP_TO_LABEL(error);
                 }
+                upd = update;
+            }
+            // _POP_TOP
+            {
+                value = upd;
                 stack_pointer += -1;
                 ASSERT_WITHIN_STACK_BOUNDS(__FILE__, __LINE__);
                 _PyFrame_SetStackPointer(frame, stack_pointer);
-                PyStackRef_CLOSE(update);
+                PyStackRef_XCLOSE(value);
                 stack_pointer = _PyFrame_GetStackPointer(frame);
-                JUMP_TO_LABEL(error);
             }
-            stack_pointer += -1;
-            ASSERT_WITHIN_STACK_BOUNDS(__FILE__, __LINE__);
-            _PyFrame_SetStackPointer(frame, stack_pointer);
-            PyStackRef_CLOSE(update);
-            stack_pointer = _PyFrame_GetStackPointer(frame);
             DISPATCH();
         }
 
