@@ -586,6 +586,226 @@ class ContextTest(unittest.TestCase):
         ctx2.run(var.set, ReentrantHash())
         ctx1 == ctx2
 
+    def test_get_changed_outside_run(self):
+        # Outside any Context.run(), bindings are considered "changed"
+        v = contextvars.ContextVar('v', default='dflt')
+        val, changed = v.get_changed()
+        self.assertEqual(val, 'dflt')
+        self.assertFalse(changed)  # default value, not changed
+        v.set(42)
+        val, changed = v.get_changed()
+        self.assertEqual(val, 42)
+        self.assertTrue(changed)  # set in base context
+
+    def test_get_changed_inherited(self):
+        # Inherited bindings are not considered "changed"
+        v = contextvars.ContextVar('v')
+        v.set('parent')
+        ctx = contextvars.copy_context()
+
+        def check():
+            val, changed = v.get_changed()
+            self.assertEqual(val, 'parent')
+            self.assertFalse(changed)
+        ctx.run(check)
+
+    def test_get_changed_after_set(self):
+        # After set() inside Context.run(), changed is True
+        v = contextvars.ContextVar('v')
+        v.set('parent')
+        ctx = contextvars.copy_context()
+
+        def check():
+            val, changed = v.get_changed()
+            self.assertFalse(changed)
+            v.set('child')
+            val, changed = v.get_changed()
+            self.assertEqual(val, 'child')
+            self.assertTrue(changed)
+        ctx.run(check)
+
+    def test_get_changed_new_var_in_run(self):
+        # A variable set for the first time inside run() is "changed"
+        v = contextvars.ContextVar('v')
+        ctx = contextvars.copy_context()
+
+        def check():
+            with self.assertRaises(LookupError):
+                v.get_changed()
+            v.set('new')
+            val, changed = v.get_changed()
+            self.assertEqual(val, 'new')
+            self.assertTrue(changed)
+        ctx.run(check)
+
+    def test_get_changed_not_set_with_default(self):
+        # A variable not set but with default: changed is False
+        v = contextvars.ContextVar('v', default='dflt')
+        ctx = contextvars.copy_context()
+
+        def check():
+            val, changed = v.get_changed()
+            self.assertEqual(val, 'dflt')
+            self.assertFalse(changed)
+        ctx.run(check)
+
+    def test_get_changed_not_set_no_default(self):
+        # A variable that has never been set and has no default
+        v = contextvars.ContextVar('v')
+        ctx = contextvars.copy_context()
+
+        def check():
+            with self.assertRaises(LookupError):
+                v.get_changed()
+        ctx.run(check)
+
+    def test_get_changed_explicit_default_arg(self):
+        # Passing a default argument to get_changed()
+        v = contextvars.ContextVar('v')
+        ctx = contextvars.copy_context()
+
+        def check():
+            val, changed = v.get_changed('fallback')
+            self.assertEqual(val, 'fallback')
+            self.assertFalse(changed)
+        ctx.run(check)
+
+    def test_get_changed_set_same_object(self):
+        # Setting to the exact same object does not count as "changed"
+        # because the HAMT recognizes the identical key-value pair
+        obj = object()
+        v = contextvars.ContextVar('v')
+        v.set(obj)
+        ctx = contextvars.copy_context()
+
+        def check():
+            val, changed = v.get_changed()
+            self.assertIs(val, obj)
+            self.assertFalse(changed)
+            v.set(obj)  # same object
+            val, changed = v.get_changed()
+            self.assertIs(val, obj)
+            self.assertFalse(changed)
+        ctx.run(check)
+
+    def test_get_changed_set_different_object(self):
+        # Setting to a different object counts as "changed"
+        v = contextvars.ContextVar('v')
+        v.set([1, 2, 3])
+        ctx = contextvars.copy_context()
+
+        def check():
+            val, changed = v.get_changed()
+            self.assertFalse(changed)
+            v.set([1, 2, 3])  # equal value, different object
+            val, changed = v.get_changed()
+            self.assertTrue(changed)
+        ctx.run(check)
+
+    def test_get_changed_after_reset(self):
+        # After reset(), the variable reverts to its inherited state
+        v = contextvars.ContextVar('v')
+        v.set('original')
+        ctx = contextvars.copy_context()
+
+        def check():
+            val, changed = v.get_changed()
+            self.assertFalse(changed)
+            tok = v.set('modified')
+            val, changed = v.get_changed()
+            self.assertTrue(changed)
+            v.reset(tok)
+            val, changed = v.get_changed()
+            self.assertFalse(changed)
+        ctx.run(check)
+
+    def test_get_changed_multiple_vars(self):
+        # Changing one variable does not affect get_changed() for others
+        v1 = contextvars.ContextVar('v1')
+        v2 = contextvars.ContextVar('v2')
+        v1.set('a')
+        v2.set('b')
+        ctx = contextvars.copy_context()
+
+        def check():
+            _, changed1 = v1.get_changed()
+            _, changed2 = v2.get_changed()
+            self.assertFalse(changed1)
+            self.assertFalse(changed2)
+            v1.set('a2')
+            _, changed1 = v1.get_changed()
+            _, changed2 = v2.get_changed()
+            self.assertTrue(changed1)
+            self.assertFalse(changed2)
+        ctx.run(check)
+
+    def test_get_changed_nested_run(self):
+        # get_changed() reflects the innermost Context.run() scope
+        v = contextvars.ContextVar('v')
+        v.set('root')
+        ctx1 = contextvars.copy_context()
+
+        def outer():
+            _, changed = v.get_changed()
+            self.assertFalse(changed)
+            v.set('outer')
+            _, changed = v.get_changed()
+            self.assertTrue(changed)
+            ctx2 = contextvars.copy_context()
+
+            def inner():
+                # inherited 'outer' from ctx1, not changed in ctx2
+                val, changed = v.get_changed()
+                self.assertEqual(val, 'outer')
+                self.assertFalse(changed)
+                v.set('inner')
+                val, changed = v.get_changed()
+                self.assertEqual(val, 'inner')
+                self.assertTrue(changed)
+            ctx2.run(inner)
+
+            # after inner run exits, outer's state is restored
+            _, changed = v.get_changed()
+            self.assertTrue(changed)
+        ctx1.run(outer)
+
+    def test_get_changed_with_threads(self):
+        # get_changed() works correctly in a thread with copied context
+        import threading
+        v = contextvars.ContextVar('v')
+        v.set('parent')
+        ctx = contextvars.copy_context()
+        results = {}
+
+        def thread_func():
+            val, changed = v.get_changed()
+            results['inherited'] = changed
+            results['value'] = val
+            v.set('thread')
+            val, changed = v.get_changed()
+            results['after_set'] = changed
+
+        t = threading.Thread(target=ctx.run, args=(thread_func,))
+        t.start()
+        t.join()
+        self.assertFalse(results['inherited'])
+        self.assertEqual(results['value'], 'parent')
+        self.assertTrue(results['after_set'])
+
+    def test_get_changed_empty_context_run(self):
+        # Running in a brand new empty context
+        v = contextvars.ContextVar('v')
+        ctx = contextvars.Context()
+
+        def check():
+            with self.assertRaises(LookupError):
+                v.get_changed()
+            v.set('value')
+            val, changed = v.get_changed()
+            self.assertEqual(val, 'value')
+            self.assertTrue(changed)
+        ctx.run(check)
+
 
 # HAMT Tests
 

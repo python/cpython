@@ -209,6 +209,7 @@ _PyContext_Enter(PyThreadState *ts, PyObject *octx)
     }
 
     ctx->ctx_prev = (PyContext *)ts->context;  /* borrow */
+    ctx->ctx_vars_origin = (PyHamtObject *)Py_NewRef(ctx->ctx_vars);
     ts->context = Py_NewRef(ctx);
     context_switched(ts);
     return 0;
@@ -248,6 +249,7 @@ _PyContext_Exit(PyThreadState *ts, PyObject *octx)
     Py_SETREF(ts->context, (PyObject *)ctx->ctx_prev);
 
     ctx->ctx_prev = NULL;
+    Py_CLEAR(ctx->ctx_vars_origin);
     FT_ATOMIC_STORE_INT(ctx->ctx_entered, 0);
     context_switched(ts);
     return 0;
@@ -410,6 +412,115 @@ PyContextVar_Reset(PyObject *ovar, PyObject *otok)
 }
 
 
+/* Check if var's current value (cur_val) differs from the origin snapshot.
+   ctx must be the current context and cur_val must be the value already
+   looked up in ctx->ctx_vars.  Returns 1 if changed, 0 if not, -1 on error. */
+static int
+contextvar_check_changed(PyContext *ctx, PyContextVar *var, PyObject *cur_val)
+{
+    /* No origin snapshot means this context was never entered via
+       Context.run(), so all bindings are considered "changed". */
+    if (ctx->ctx_vars_origin == NULL) {
+        return 1;
+    }
+
+    /* If the HAMT hasn't changed at all, no .set() calls have been made
+       in this context scope for any variable. */
+    if (ctx->ctx_vars == ctx->ctx_vars_origin) {
+        return 0;
+    }
+
+    /* Check if this specific variable had a different value (or was
+       absent) in the origin snapshot. */
+    PyObject *orig_val = NULL;
+    int found_orig = _PyHamt_Find(
+        ctx->ctx_vars_origin, (PyObject *)var, &orig_val);
+    if (found_orig < 0) {
+        return -1;
+    }
+    if (found_orig == 0) {
+        return 1;
+    }
+
+    return cur_val != orig_val;
+}
+
+
+int
+PyContextVar_GetChanged(PyObject *ovar, PyObject *def, PyObject **val,
+                        int *changed)
+{
+    ENSURE_ContextVar(ovar, -1)
+    PyContextVar *var = (PyContextVar *)ovar;
+
+    *changed = 0;
+
+    PyThreadState *ts = _PyThreadState_GET();
+    assert(ts != NULL);
+    if (ts->context == NULL) {
+        goto not_found;
+    }
+
+    PyContext *ctx = (PyContext *)ts->context;
+    assert(PyContext_CheckExact(ts->context));
+
+#ifndef Py_GIL_DISABLED
+    /* Try the cache first.  When we get a cache hit we still need to
+       check the origin HAMT, but we skip the main HAMT lookup. */
+    if (var->var_cached != NULL &&
+            var->var_cached_tsid == ts->id &&
+            var->var_cached_tsver == ts->context_ver)
+    {
+        *val = Py_NewRef(var->var_cached);
+        int res = contextvar_check_changed(ctx, var, var->var_cached);
+        if (res < 0) {
+            Py_CLEAR(*val);
+            return -1;
+        }
+        *changed = res;
+        return 0;
+    }
+#endif
+
+    PyObject *found_val = NULL;
+    int res = _PyHamt_Find(ctx->ctx_vars, (PyObject *)var, &found_val);
+    if (res < 0) {
+        *val = NULL;
+        return -1;
+    }
+    if (res == 1) {
+        assert(found_val != NULL);
+#ifndef Py_GIL_DISABLED
+        var->var_cached = found_val;  /* borrow */
+        var->var_cached_tsid = ts->id;
+        var->var_cached_tsver = ts->context_ver;
+#endif
+        int chg = contextvar_check_changed(ctx, var, found_val);
+        if (chg < 0) {
+            *val = NULL;
+            return -1;
+        }
+        *changed = chg;
+        *val = Py_NewRef(found_val);
+        return 0;
+    }
+
+not_found:
+    if (def == NULL) {
+        if (var->var_default != NULL) {
+            *val = Py_NewRef(var->var_default);
+            return 0;
+        }
+        *val = NULL;
+        return 0;
+    }
+    else {
+        *val = Py_NewRef(def);
+        return 0;
+    }
+}
+
+
 /////////////////////////// PyContext
 
 /*[clinic input]
@@ -433,6 +544,7 @@ _context_alloc(void)
     }
 
     ctx->ctx_vars = NULL;
+    ctx->ctx_vars_origin = NULL;
     ctx->ctx_prev = NULL;
     ctx->ctx_entered = 0;
     ctx->ctx_weakreflist = NULL;
@@ -520,6 +632,7 @@ context_tp_clear(PyObject *op)
     PyContext *self = _PyContext_CAST(op);
     Py_CLEAR(self->ctx_prev);
     Py_CLEAR(self->ctx_vars);
+    Py_CLEAR(self->ctx_vars_origin);
     return 0;
 }
 
@@ -529,6 +642,7 @@ context_tp_traverse(PyObject *op, visitproc visit, void *arg)
     PyContext *self = _PyContext_CAST(op);
     Py_VISIT(self->ctx_prev);
     Py_VISIT(self->ctx_vars);
+    Py_VISIT(self->ctx_vars_origin);
     return 0;
 }
 
@@ -1088,6 +1202,52 @@ _contextvars_ContextVar_reset_impl(PyContextVar *self, PyObject *token)
 }
 
 
+/*[clinic input]
+@permit_long_docstring_body
+_contextvars.ContextVar.get_changed
+    default: object = NULL
+    /
+
+Return a tuple of (value, changed) for the context variable.
+
+Like ContextVar.get(), but additionally indicates whether the variable was
+changed in the current context scope.  *changed* is True if ContextVar.set()
+has been called on the variable within the current Context.run() call with
+a value that is a different object than the inherited one.
+
+If there is no value for the variable in the current context, the method will:
+ * return the value of the default argument of the method, if provided; or
+ * return the default value for the context variable, if it was created
+   with one; or
+ * raise a LookupError.
+
+When the value is found via a default, *changed* is always False.
+[clinic start generated code]*/
+
+static PyObject *
+_contextvars_ContextVar_get_changed_impl(PyContextVar *self,
+                                         PyObject *default_value)
+/*[clinic end generated code: output=2418683613ac96e7 input=2dacfcf7b43f9719]*/
+{
+    PyObject *val;
+    int changed;
+    if (PyContextVar_GetChanged(
+            (PyObject *)self, default_value, &val, &changed) < 0) {
+        return NULL;
+    }
+
+    if (val == NULL) {
+        PyErr_SetObject(PyExc_LookupError, (PyObject *)self);
+        return NULL;
+    }
+
+    PyObject *changed_obj = changed ? Py_True : Py_False;
+    PyObject *result = PyTuple_Pack(2, val, changed_obj);
+    Py_DECREF(val);
+    return result;
+}
+
+
 static PyMemberDef PyContextVar_members[] = {
     {"name", _Py_T_OBJECT, offsetof(PyContextVar, var_name), Py_READONLY},
     {NULL}
@@ -1097,6 +1257,7 @@ static PyMethodDef PyContextVar_methods[] = {
     _CONTEXTVARS_CONTEXTVAR_GET_METHODDEF
     _CONTEXTVARS_CONTEXTVAR_SET_METHODDEF
     _CONTEXTVARS_CONTEXTVAR_RESET_METHODDEF
+    _CONTEXTVARS_CONTEXTVAR_GET_CHANGED_METHODDEF
     {"__class_getitem__", Py_GenericAlias,
     METH_O|METH_CLASS,       PyDoc_STR("See PEP 585")},
     {NULL, NULL}

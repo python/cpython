@@ -100,6 +100,26 @@ PyAPI_FUNC(PyObject *) PyContextVar_Set(PyObject *var, PyObject *value);
 PyAPI_FUNC(int) PyContextVar_Reset(PyObject *var, PyObject *token);
 
 
+/* Get a value for the variable and check if it was changed.
+
+   Like PyContextVar_Get, but also reports whether the variable was
+   changed in the current context scope via a single HAMT lookup.
+
+   Returns -1 if an error occurred during lookup.
+
+   Returns 0 if no error occurred.  In this case:
+
+   - *value will be set the same as for PyContextVar_Get.
+   - *changed will be set to 1 if the variable was changed in the
+     current context scope, 0 otherwise.  If the variable was not
+     found, *changed is always 0.
+
+   '*value' will be a new ref, if not NULL.
+*/
+PyAPI_FUNC(int) PyContextVar_GetChanged(
+    PyObject *var, PyObject *default_value, PyObject **value, int *changed);
+
+
 #ifdef __cplusplus
 }
 #endif

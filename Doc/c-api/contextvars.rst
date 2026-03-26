@@ -182,3 +182,27 @@ Context variable functions:
    Reset the state of the *var* context variable to that it was in before
    :c:func:`PyContextVar_Set` that returned the *token* was called.
    This function returns ``0`` on success and ``-1`` on error.
+
+.. c:function:: int PyContextVar_GetChanged(PyObject *var, PyObject *default_value, PyObject **value, int *changed)
+
+   Like :c:func:`PyContextVar_Get`, but also reports whether the variable was
+   changed in the current context scope.  This combines a value lookup with a
+   change check in a single HAMT lookup.
+
+   Returns ``-1`` if an error has occurred during lookup, and ``0`` if no
+   error occurred, whether or not a value was found.
+
+   On success, *\*value* is set following the same rules as
+   :c:func:`PyContextVar_Get`.  *\*changed* is set to ``1`` if the variable
+   was changed (via :c:func:`PyContextVar_Set`) in the current context scope
+   (i.e. within the current :meth:`~contextvars.Context.run` call) with a
+   value that is a different object than the inherited one.  Otherwise
+   *\*changed* is set to ``0``.  If the value was not found, *\*changed* is
+   always ``0``.
+
+   If the current context was never entered (no :meth:`~contextvars.Context.run`
+   is active), all existing bindings are considered "changed".
+
+   Except for ``NULL``, the function returns a new reference via *\*value*.
+
+   .. versionadded:: 3.15

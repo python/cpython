@@ -400,6 +400,12 @@ PyContextVar_Reset:int:::
 PyContextVar_Reset:PyObject*:var:0:
 PyContextVar_Reset:PyObject*:token:-1:
 
+PyContextVar_GetChanged:int:::
+PyContextVar_GetChanged:PyObject*:var:0:
+PyContextVar_GetChanged:PyObject*:default_value:0:
+PyContextVar_GetChanged:PyObject**:value:+1:???
+PyContextVar_GetChanged:int*:changed::
+
 PyCFunction_New:PyObject*::+1:
 PyCFunction_New:PyMethodDef*:ml::
 PyCFunction_New:PyObject*:self:+1:
