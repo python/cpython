@@ -1265,7 +1265,7 @@ invalid_expression:
    | !(NAME STRING | SOFT_KEYWORD) a=disjunction b=expression_without_invalid {
         _PyPegen_raise_error_for_missing_comma(p, a, b) }
    | disjunction 'if' disjunction a=':=' {
-        RAISE_SYNTAX_ERROR_KNOWN_LOCATION(a, "assignment expression must be parenthesized inside conditional expression" ) }
+        RAISE_SYNTAX_ERROR_KNOWN_LOCATION(a, "assignment expression must be parenthesized inside conditional expression") }
    | a=disjunction 'if' b=disjunction !('else'|':') { RAISE_SYNTAX_ERROR_KNOWN_RANGE(a, b, "expected 'else' after 'if' expression") }
    | a=disjunction 'if' b=disjunction 'else' !expression {
         RAISE_SYNTAX_ERROR_ON_NEXT_TOKEN("expected expression after 'else', but statement is given") }
