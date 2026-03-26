@@ -129,7 +129,7 @@ called with a non-bytes parameter.
 
    .. note::
       If the object implements the buffer protocol, then the buffer
-      should not be mutated while the bytes object is being created.
+      must not be mutated while the bytes object is being created.
 
 
 .. c:function:: Py_ssize_t PyBytes_Size(PyObject *o)
@@ -191,7 +191,7 @@ called with a non-bytes parameter.
 
    .. note::
       If *newpart* implements the buffer protocol, then the buffer
-      should not be mutated while the new bytes object is being created.
+      must not be mutated while the new bytes object is being created.
 
 .. c:function:: void PyBytes_ConcatAndDel(PyObject **bytes, PyObject *newpart)
 
@@ -201,7 +201,7 @@ called with a non-bytes parameter.
 
    .. note::
       If *newpart* implements the buffer protocol, then the buffer
-      should not be mutated while the new bytes object is being created.
+      must not be mutated while the new bytes object is being created.
 
 
 .. c:function:: PyObject* PyBytes_Join(PyObject *sep, PyObject *iterable)
@@ -223,7 +223,7 @@ called with a non-bytes parameter.
 
    .. note::
       If *iterable* objects implement the buffer protocol, then the buffers
-      should not be mutated while the new bytes object is being created.
+      must not be mutated while the new bytes object is being created.
 
 .. c:function:: int _PyBytes_Resize(PyObject **bytes, Py_ssize_t newsize)
 
