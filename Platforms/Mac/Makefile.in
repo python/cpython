@@ -273,4 +273,4 @@ clean:
 	cd PythonLauncher && make clean
 
 Makefile: $(srcdir)/Makefile.in ../config.status
-	cd .. && CONFIG_FILES=Mac/Makefile CONFIG_HEADERS= $(SHELL) ./config.status
+	cd .. && CONFIG_FILES=Platforms/Mac/Makefile CONFIG_HEADERS= $(SHELL) ./config.status
