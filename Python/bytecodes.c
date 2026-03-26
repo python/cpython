@@ -4733,6 +4733,33 @@ dummy_func(
             res = PyStackRef_FromPyObjectSteal(res_o);
         }
 
+        // The optimizer folds self_or_null into args by emitting with
+        // oparg = original_oparg + 1. Total args is always 2 for METH_O,
+        // so arguments = args + oparg - 2.
+        tier2 op(_CALL_METHOD_DESCRIPTOR_O_INLINE, (callable, args[oparg], cfunc/4 -- res, c, s, a)) {
+            assert(oparg >= 2);
+            _PyStackRef *arguments = args + oparg - 2;
+            // CPython promises to check all non-vectorcall function calls.
+            EXIT_IF(_Py_ReachedRecursionLimit(tstate));
+            _PyStackRef self_stackref = arguments[0];
+            _PyStackRef arg_stackref = arguments[1];
+            STAT_INC(CALL, hit);
+            PyCFunction volatile cfunc_fn = (PyCFunction)cfunc;
+            PyObject *res_o = cfunc_fn(
+                                  PyStackRef_AsPyObjectBorrow(self_stackref),
+                                  PyStackRef_AsPyObjectBorrow(arg_stackref));
+            _Py_LeaveRecursiveCallTstate(tstate);
+            assert((res_o != NULL) ^ (_PyErr_Occurred(tstate) != NULL));
+            if (res_o == NULL) {
+                ERROR_NO_POP();
+            }
+            c = callable;
+            s = arguments[0];
+            a = arguments[1];
+            INPUTS_DEAD();
+            res = PyStackRef_FromPyObjectSteal(res_o);
+        }
+
         macro(CALL_METHOD_DESCRIPTOR_O) =
             _RECORD_CALLABLE +
             unused/1 +
@@ -4773,15 +4800,36 @@ dummy_func(
             PyObject *self = PyStackRef_AsPyObjectBorrow(arguments[0]);
             assert(self != NULL);
             STAT_INC(CALL, hit);
+            PyCFunction cfunc = method->d_method->ml_meth;
             PyObject *res_o = _PyCallMethodDescriptorFastWithKeywords_StackRefSteal(
                 callable,
-                method->d_method,
+                cfunc,
                 self,
                 arguments,
                 total_args
             );
             DEAD(args);
             DEAD(self_or_null);
+            DEAD(callable);
+            ERROR_IF(res_o == NULL);
+            res = PyStackRef_FromPyObjectSteal(res_o);
+        }
+
+        // The optimizer folds self_or_null into args (oparg = original + 1)
+        // and encodes total_args in operand1 to avoid runtime null checks.
+        tier2 op(_CALL_METHOD_DESCRIPTOR_FAST_WITH_KEYWORDS_INLINE, (callable, args[oparg], cfunc/4, total_args/2 -- res)) {
+            _PyStackRef *arguments = args + oparg - total_args;
+            PyObject *self = PyStackRef_AsPyObjectBorrow(arguments[0]);
+            assert(self != NULL);
+            STAT_INC(CALL, hit);
+            PyObject *res_o = _PyCallMethodDescriptorFastWithKeywords_StackRefSteal(
+                callable,
+                (PyCFunction)cfunc,
+                self,
+                arguments,
+                total_args
+            );
+            DEAD(args);
             DEAD(callable);
             ERROR_IF(res_o == NULL);
             res = PyStackRef_FromPyObjectSteal(res_o);
@@ -4835,6 +4883,30 @@ dummy_func(
             res = PyStackRef_FromPyObjectSteal(res_o);
         }
 
+        // The optimizer folds self_or_null into args by emitting with
+        // oparg = original_oparg + 1, so args always includes self.
+        // Self is always the last element: args[oparg - 1].
+        tier2 op(_CALL_METHOD_DESCRIPTOR_NOARGS_INLINE, (callable, args[oparg], cfunc/4 -- res)) {
+            assert(oparg >= 1);
+            _PyStackRef self_stackref = args[oparg - 1];
+            PyObject *self = PyStackRef_AsPyObjectBorrow(self_stackref);
+            // CPython promises to check all non-vectorcall function calls.
+            EXIT_IF(_Py_ReachedRecursionLimit(tstate));
+            STAT_INC(CALL, hit);
+            // Use volatile to prevent the JIT compiler from generating a
+            // direct BL to the cfunc symbol; we need an indirect BLR since
+            // the cfunc address may be out of range for relative branches.
+            PyCFunction volatile cfunc_fn = (PyCFunction)cfunc;
+            PyObject *res_o = cfunc_fn(self, NULL);
+            _Py_LeaveRecursiveCallTstate(tstate);
+            assert((res_o != NULL) ^ (_PyErr_Occurred(tstate) != NULL));
+            PyStackRef_CLOSE(self_stackref);
+            DEAD(args);
+            PyStackRef_CLOSE(callable);
+            ERROR_IF(res_o == NULL);
+            res = PyStackRef_FromPyObjectSteal(res_o);
+        }
+
         macro(CALL_METHOD_DESCRIPTOR_NOARGS) =
             _RECORD_CALLABLE +
             unused/1 +
@@ -4872,15 +4944,36 @@ dummy_func(
             PyObject *self = PyStackRef_AsPyObjectBorrow(arguments[0]);
             assert(self != NULL);
             STAT_INC(CALL, hit);
+            PyCFunction cfunc = method->d_method->ml_meth;
             PyObject *res_o = _PyCallMethodDescriptorFast_StackRefSteal(
                 callable,
-                method->d_method,
+                cfunc,
                 self,
                 arguments,
                 total_args
             );
             DEAD(args);
             DEAD(self_or_null);
+            DEAD(callable);
+            ERROR_IF(res_o == NULL);
+            res = PyStackRef_FromPyObjectSteal(res_o);
+        }
+
+        // The optimizer folds self_or_null into args (oparg = original + 1)
+        // and encodes total_args in operand1 to avoid runtime null checks.
+        tier2 op(_CALL_METHOD_DESCRIPTOR_FAST_INLINE, (callable, args[oparg], cfunc/4, total_args/2 -- res)) {
+            _PyStackRef *arguments = args + oparg - total_args;
+            PyObject *self = PyStackRef_AsPyObjectBorrow(arguments[0]);
+            assert(self != NULL);
+            STAT_INC(CALL, hit);
+            PyObject *res_o = _PyCallMethodDescriptorFast_StackRefSteal(
+                callable,
+                (PyCFunction)cfunc,
+                self,
+                arguments,
+                total_args
+            );
+            DEAD(args);
             DEAD(callable);
             ERROR_IF(res_o == NULL);
             res = PyStackRef_FromPyObjectSteal(res_o);

@@ -456,7 +456,7 @@ _Py_BuiltinCallFastWithKeywords_StackRefSteal(
 PyAPI_FUNC(PyObject *)
 _PyCallMethodDescriptorFast_StackRefSteal(
     _PyStackRef callable,
-    PyMethodDef *meth,
+    PyCFunction cfunc,
     PyObject *self,
     _PyStackRef *arguments,
     int total_args);
@@ -464,7 +464,7 @@ _PyCallMethodDescriptorFast_StackRefSteal(
 PyAPI_FUNC(PyObject *)
 _PyCallMethodDescriptorFastWithKeywords_StackRefSteal(
     _PyStackRef callable,
-    PyMethodDef *meth,
+    PyCFunction cfunc,
     PyObject *self,
     _PyStackRef *arguments,
     int total_args);

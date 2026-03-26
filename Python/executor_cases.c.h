@@ -16484,6 +16484,56 @@
             break;
         }
 
+        case _CALL_METHOD_DESCRIPTOR_O_INLINE_r03: {
+            CHECK_CURRENT_CACHED_VALUES(0);
+            assert(WITHIN_STACK_BOUNDS_IGNORING_CACHE());
+            _PyStackRef *args;
+            _PyStackRef callable;
+            _PyStackRef res;
+            _PyStackRef c;
+            _PyStackRef s;
+            _PyStackRef a;
+            oparg = CURRENT_OPARG();
+            args = &stack_pointer[-oparg];
+            callable = stack_pointer[-1 - oparg];
+            PyObject *cfunc = (PyObject *)CURRENT_OPERAND0_64();
+            assert(oparg >= 2);
+            _PyStackRef *arguments = args + oparg - 2;
+            if (_Py_ReachedRecursionLimit(tstate)) {
+                UOP_STAT_INC(uopcode, miss);
+                SET_CURRENT_CACHED_VALUES(0);
+                JUMP_TO_JUMP_TARGET();
+            }
+            _PyStackRef self_stackref = arguments[0];
+            _PyStackRef arg_stackref = arguments[1];
+            STAT_INC(CALL, hit);
+            PyCFunction volatile cfunc_fn = (PyCFunction)cfunc;
+            _PyFrame_SetStackPointer(frame, stack_pointer);
+            PyObject *res_o = cfunc_fn(
+                                       PyStackRef_AsPyObjectBorrow(self_stackref),
+                                       PyStackRef_AsPyObjectBorrow(arg_stackref));
+            stack_pointer = _PyFrame_GetStackPointer(frame);
+            _Py_LeaveRecursiveCallTstate(tstate);
+            assert((res_o != NULL) ^ (_PyErr_Occurred(tstate) != NULL));
+            if (res_o == NULL) {
+                SET_CURRENT_CACHED_VALUES(0);
+                JUMP_TO_ERROR();
+            }
+            c = callable;
+            s = arguments[0];
+            a = arguments[1];
+            res = PyStackRef_FromPyObjectSteal(res_o);
+            _tos_cache2 = a;
+            _tos_cache1 = s;
+            _tos_cache0 = c;
+            SET_CURRENT_CACHED_VALUES(3);
+            stack_pointer[-1 - oparg] = res;
+            stack_pointer += -oparg;
+            ASSERT_WITHIN_STACK_BOUNDS(__FILE__, __LINE__);
+            assert(WITHIN_STACK_BOUNDS_IGNORING_CACHE());
+            break;
+        }
+
         case _GUARD_CALLABLE_METHOD_DESCRIPTOR_FAST_WITH_KEYWORDS_r00: {
             CHECK_CURRENT_CACHED_VALUES(0);
             assert(WITHIN_STACK_BOUNDS_IGNORING_CACHE());
@@ -16550,10 +16600,11 @@
             PyObject *self = PyStackRef_AsPyObjectBorrow(arguments[0]);
             assert(self != NULL);
             STAT_INC(CALL, hit);
+            PyCFunction cfunc = method->d_method->ml_meth;
             _PyFrame_SetStackPointer(frame, stack_pointer);
             PyObject *res_o = _PyCallMethodDescriptorFastWithKeywords_StackRefSteal(
                 callable,
-                method->d_method,
+                cfunc,
                 self,
                 arguments,
                 total_args
@@ -16571,6 +16622,47 @@
             _tos_cache2 = PyStackRef_ZERO_BITS;
             SET_CURRENT_CACHED_VALUES(1);
             stack_pointer += -2 - oparg;
+            ASSERT_WITHIN_STACK_BOUNDS(__FILE__, __LINE__);
+            assert(WITHIN_STACK_BOUNDS_IGNORING_CACHE());
+            break;
+        }
+
+        case _CALL_METHOD_DESCRIPTOR_FAST_WITH_KEYWORDS_INLINE_r01: {
+            CHECK_CURRENT_CACHED_VALUES(0);
+            assert(WITHIN_STACK_BOUNDS_IGNORING_CACHE());
+            _PyStackRef *args;
+            _PyStackRef callable;
+            _PyStackRef res;
+            oparg = CURRENT_OPARG();
+            args = &stack_pointer[-oparg];
+            callable = stack_pointer[-1 - oparg];
+            PyObject *cfunc = (PyObject *)CURRENT_OPERAND0_64();
+            uint32_t total_args = (uint32_t)CURRENT_OPERAND1_32();
+            _PyStackRef *arguments = args + oparg - total_args;
+            PyObject *self = PyStackRef_AsPyObjectBorrow(arguments[0]);
+            assert(self != NULL);
+            STAT_INC(CALL, hit);
+            _PyFrame_SetStackPointer(frame, stack_pointer);
+            PyObject *res_o = _PyCallMethodDescriptorFastWithKeywords_StackRefSteal(
+                callable,
+                (PyCFunction)cfunc,
+                self,
+                arguments,
+                total_args
+            );
+            stack_pointer = _PyFrame_GetStackPointer(frame);
+            if (res_o == NULL) {
+                stack_pointer += -1 - oparg;
+                ASSERT_WITHIN_STACK_BOUNDS(__FILE__, __LINE__);
+                SET_CURRENT_CACHED_VALUES(0);
+                JUMP_TO_ERROR();
+            }
+            res = PyStackRef_FromPyObjectSteal(res_o);
+            _tos_cache0 = res;
+            _tos_cache1 = PyStackRef_ZERO_BITS;
+            _tos_cache2 = PyStackRef_ZERO_BITS;
+            SET_CURRENT_CACHED_VALUES(1);
+            stack_pointer += -1 - oparg;
             ASSERT_WITHIN_STACK_BOUNDS(__FILE__, __LINE__);
             assert(WITHIN_STACK_BOUNDS_IGNORING_CACHE());
             break;
@@ -16671,6 +16763,52 @@
             break;
         }
 
+        case _CALL_METHOD_DESCRIPTOR_NOARGS_INLINE_r01: {
+            CHECK_CURRENT_CACHED_VALUES(0);
+            assert(WITHIN_STACK_BOUNDS_IGNORING_CACHE());
+            _PyStackRef *args;
+            _PyStackRef callable;
+            _PyStackRef res;
+            oparg = CURRENT_OPARG();
+            args = &stack_pointer[-oparg];
+            callable = stack_pointer[-1 - oparg];
+            PyObject *cfunc = (PyObject *)CURRENT_OPERAND0_64();
+            assert(oparg >= 1);
+            _PyStackRef self_stackref = args[oparg - 1];
+            PyObject *self = PyStackRef_AsPyObjectBorrow(self_stackref);
+            if (_Py_ReachedRecursionLimit(tstate)) {
+                UOP_STAT_INC(uopcode, miss);
+                SET_CURRENT_CACHED_VALUES(0);
+                JUMP_TO_JUMP_TARGET();
+            }
+            STAT_INC(CALL, hit);
+            PyCFunction volatile cfunc_fn = (PyCFunction)cfunc;
+            _PyFrame_SetStackPointer(frame, stack_pointer);
+            PyObject *res_o = cfunc_fn(self, NULL);
+            stack_pointer = _PyFrame_GetStackPointer(frame);
+            _Py_LeaveRecursiveCallTstate(tstate);
+            assert((res_o != NULL) ^ (_PyErr_Occurred(tstate) != NULL));
+            _PyFrame_SetStackPointer(frame, stack_pointer);
+            PyStackRef_CLOSE(self_stackref);
+            stack_pointer = _PyFrame_GetStackPointer(frame);
+            stack_pointer += -1 - oparg;
+            ASSERT_WITHIN_STACK_BOUNDS(__FILE__, __LINE__);
+            _PyFrame_SetStackPointer(frame, stack_pointer);
+            PyStackRef_CLOSE(callable);
+            stack_pointer = _PyFrame_GetStackPointer(frame);
+            if (res_o == NULL) {
+                SET_CURRENT_CACHED_VALUES(0);
+                JUMP_TO_ERROR();
+            }
+            res = PyStackRef_FromPyObjectSteal(res_o);
+            _tos_cache0 = res;
+            _tos_cache1 = PyStackRef_ZERO_BITS;
+            _tos_cache2 = PyStackRef_ZERO_BITS;
+            SET_CURRENT_CACHED_VALUES(1);
+            assert(WITHIN_STACK_BOUNDS_IGNORING_CACHE());
+            break;
+        }
+
         case _GUARD_CALLABLE_METHOD_DESCRIPTOR_FAST_r00: {
             CHECK_CURRENT_CACHED_VALUES(0);
             assert(WITHIN_STACK_BOUNDS_IGNORING_CACHE());
@@ -16736,10 +16874,11 @@
             PyObject *self = PyStackRef_AsPyObjectBorrow(arguments[0]);
             assert(self != NULL);
             STAT_INC(CALL, hit);
+            PyCFunction cfunc = method->d_method->ml_meth;
             _PyFrame_SetStackPointer(frame, stack_pointer);
             PyObject *res_o = _PyCallMethodDescriptorFast_StackRefSteal(
                 callable,
-                method->d_method,
+                cfunc,
                 self,
                 arguments,
                 total_args
@@ -16757,6 +16896,47 @@
             _tos_cache2 = PyStackRef_ZERO_BITS;
             SET_CURRENT_CACHED_VALUES(1);
             stack_pointer += -2 - oparg;
+            ASSERT_WITHIN_STACK_BOUNDS(__FILE__, __LINE__);
+            assert(WITHIN_STACK_BOUNDS_IGNORING_CACHE());
+            break;
+        }
+
+        case _CALL_METHOD_DESCRIPTOR_FAST_INLINE_r01: {
+            CHECK_CURRENT_CACHED_VALUES(0);
+            assert(WITHIN_STACK_BOUNDS_IGNORING_CACHE());
+            _PyStackRef *args;
+            _PyStackRef callable;
+            _PyStackRef res;
+            oparg = CURRENT_OPARG();
+            args = &stack_pointer[-oparg];
+            callable = stack_pointer[-1 - oparg];
+            PyObject *cfunc = (PyObject *)CURRENT_OPERAND0_64();
+            uint32_t total_args = (uint32_t)CURRENT_OPERAND1_32();
+            _PyStackRef *arguments = args + oparg - total_args;
+            PyObject *self = PyStackRef_AsPyObjectBorrow(arguments[0]);
+            assert(self != NULL);
+            STAT_INC(CALL, hit);
+            _PyFrame_SetStackPointer(frame, stack_pointer);
+            PyObject *res_o = _PyCallMethodDescriptorFast_StackRefSteal(
+                callable,
+                (PyCFunction)cfunc,
+                self,
+                arguments,
+                total_args
+            );
+            stack_pointer = _PyFrame_GetStackPointer(frame);
+            if (res_o == NULL) {
+                stack_pointer += -1 - oparg;
+                ASSERT_WITHIN_STACK_BOUNDS(__FILE__, __LINE__);
+                SET_CURRENT_CACHED_VALUES(0);
+                JUMP_TO_ERROR();
+            }
+            res = PyStackRef_FromPyObjectSteal(res_o);
+            _tos_cache0 = res;
+            _tos_cache1 = PyStackRef_ZERO_BITS;
+            _tos_cache2 = PyStackRef_ZERO_BITS;
+            SET_CURRENT_CACHED_VALUES(1);
+            stack_pointer += -1 - oparg;
             ASSERT_WITHIN_STACK_BOUNDS(__FILE__, __LINE__);
             assert(WITHIN_STACK_BOUNDS_IGNORING_CACHE());
             break;

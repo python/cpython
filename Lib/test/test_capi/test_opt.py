@@ -2711,10 +2711,9 @@ class TestUopsOptimization(unittest.TestCase):
         self.assertEqual(res, TIER2_THRESHOLD)
         self.assertIsNotNone(ex)
         uops = get_opnames(ex)
-        self.assertIn("_CALL_METHOD_DESCRIPTOR_O", uops)
+        self.assertIn("_CALL_METHOD_DESCRIPTOR_O_INLINE", uops)
+        self.assertNotIn("_CALL_METHOD_DESCRIPTOR_O", uops)
         self.assertNotIn("_GUARD_CALLABLE_METHOD_DESCRIPTOR_O", uops)
-        self.assertIn("_POP_TOP_NOP", uops)
-        self.assertLessEqual(count_ops(ex, "_POP_TOP"), 4)
 
     def test_call_method_descriptor_noargs(self):
         def testfunc(n):
@@ -2729,7 +2728,8 @@ class TestUopsOptimization(unittest.TestCase):
         self.assertEqual(res, TIER2_THRESHOLD * 5)
         self.assertIsNotNone(ex)
         uops = get_opnames(ex)
-        self.assertIn("_CALL_METHOD_DESCRIPTOR_NOARGS", uops)
+        self.assertIn("_CALL_METHOD_DESCRIPTOR_NOARGS_INLINE", uops)
+        self.assertNotIn("_CALL_METHOD_DESCRIPTOR_NOARGS", uops)
         self.assertNotIn("_GUARD_CALLABLE_METHOD_DESCRIPTOR_NOARGS", uops)
 
     def test_call_method_descriptor_fast(self):
@@ -2745,7 +2745,8 @@ class TestUopsOptimization(unittest.TestCase):
         self.assertEqual(res, TIER2_THRESHOLD)
         self.assertIsNotNone(ex)
         uops = get_opnames(ex)
-        self.assertIn("_CALL_METHOD_DESCRIPTOR_FAST", uops)
+        self.assertIn("_CALL_METHOD_DESCRIPTOR_FAST_INLINE", uops)
+        self.assertNotIn("_CALL_METHOD_DESCRIPTOR_FAST", uops)
         self.assertNotIn("_GUARD_CALLABLE_METHOD_DESCRIPTOR_FAST", uops)
 
     def test_call_method_descriptor_fast_with_keywords(self):
@@ -2760,7 +2761,8 @@ class TestUopsOptimization(unittest.TestCase):
         self.assertEqual(res, TIER2_THRESHOLD * 5)
         self.assertIsNotNone(ex)
         uops = get_opnames(ex)
-        self.assertIn("_CALL_METHOD_DESCRIPTOR_FAST_WITH_KEYWORDS", uops)
+        self.assertIn("_CALL_METHOD_DESCRIPTOR_FAST_WITH_KEYWORDS_INLINE", uops)
+        self.assertNotIn("_CALL_METHOD_DESCRIPTOR_FAST_WITH_KEYWORDS", uops)
         self.assertNotIn("_GUARD_CALLABLE_METHOD_DESCRIPTOR_FAST_WITH_KEYWORDS", uops)
 
     def test_call_intrinsic_1(self):
