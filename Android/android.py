@@ -205,20 +205,20 @@ def make_build_python(context):
 #
 # If you're a member of the Python core team, and you'd like to be able to push
 # these tags yourself, please contact Malcolm Smith or Russell Keith-Magee.
-def unpack_deps(host, prefix_dir):
+def unpack_deps(host, prefix_dir, cache_dir):
     os.chdir(prefix_dir)
     deps_url = "https://github.com/beeware/cpython-android-source-deps/releases/download"
     for name_ver in ["bzip2-1.0.8-3", "libffi-3.4.4-3", "openssl-3.5.5-0",
                      "sqlite-3.50.4-0", "xz-5.4.6-1", "zstd-1.5.7-1"]:
         filename = f"{name_ver}-{host}.tar.gz"
-        download(f"{deps_url}/{name_ver}/{filename}")
+        download(f"{deps_url}/{name_ver}/{filename}", cache_dir)
         shutil.unpack_archive(filename)
         os.remove(filename)
 
 
-def download(url, target_dir="."):
-    out_path = f"{target_dir}/{basename(url)}"
-    run(["curl", "-Lf", "--retry", "5", "--retry-all-errors", "-o", out_path, url])
+def download(url, cache_dir):
+    out_path = cache_dir / basename(url)
+    run(["curl", "-Lf", "--retry", "5", "--retry-all-errors", "-o", str(out_path), url])
     return out_path
 
 
@@ -230,7 +230,8 @@ def configure_host_python(context):
     prefix_dir = host_dir / "prefix"
     if not prefix_dir.exists():
         prefix_dir.mkdir()
-        unpack_deps(context.host, prefix_dir)
+        cache_dir = context.cache_dir or CROSS_BUILD_DIR / "downloads"
+        unpack_deps(context.host, prefix_dir, cache_dir)
 
     os.chdir(host_dir)
     command = [
@@ -890,6 +891,15 @@ def parse_args():
     env = add_parser("env", help="Print environment variables")
 
     # Common arguments
+    # --cache-dir option
+    for cmd in [configure_host, build, ci]:
+        cmd.add_argument(
+            "--cache-dir",
+            default=os.environ.get("CACHE_DIR"),
+            help="The directory to store cached downloads.",
+        )
+
+    # --clean option
     for subcommand in [build, configure_build, configure_host, ci]:
         subcommand.add_argument(
             "--clean", action="store_true", default=False, dest="clean",
