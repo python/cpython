@@ -15,84 +15,34 @@ More on Lists
 The :ref:`list <typesseq-list>` data type has some more methods. Here are all
 of the methods of list objects:
 
-.. method:: list.append(x)
-   :noindex:
+* :meth:`~list.append` --- Add an item to the end of the list.
 
-   Add an item to the end of the list.  Similar to ``a[len(a):] = [x]``.
+* :meth:`~list.extend` --- Extend the list by appending all the items from the
+  iterable.
 
+* :meth:`~list.insert` --- Insert an item at a given position.
 
-.. method:: list.extend(iterable)
-   :noindex:
+* :meth:`~list.remove` --- Remove the first item from the list whose value is
+  equal to *x*.
 
-   Extend the list by appending all the items from the iterable.  Similar to
-   ``a[len(a):] = iterable``.
+* :meth:`~list.pop` --- Remove the item at the given position in the list,
+  and return it.
 
+* :meth:`~list.clear` --- Remove all items from the list.
 
-.. method:: list.insert(i, x)
-   :noindex:
+* :meth:`~list.index` --- Return zero-based index of the first occurrence of
+  *x* in the list.
 
-   Insert an item at a given position.  The first argument is the index of the
-   element before which to insert, so ``a.insert(0, x)`` inserts at the front of
-   the list, and ``a.insert(len(a), x)`` is equivalent to ``a.append(x)``.
+* :meth:`~list.count` --- Return the number of times *x* appears in the list.
 
+* :meth:`~list.sort` --- Sort the items of the list in place.
 
-.. method:: list.remove(x)
-   :noindex:
+* :meth:`~list.reverse` --- Reverse the elements of the list in place.
 
-   Remove the first item from the list whose value is equal to *x*.  It raises a
-   :exc:`ValueError` if there is no such item.
+* :meth:`~list.copy` --- Return a shallow copy of the list.
 
-
-.. method:: list.pop([i])
-   :noindex:
-
-   Remove the item at the given position in the list, and return it.  If no index
-   is specified, ``a.pop()`` removes and returns the last item in the list.
-   It raises an :exc:`IndexError` if the list is empty or the index is
-   outside the list range.
-
-
-.. method:: list.clear()
-   :noindex:
-
-   Remove all items from the list.  Similar to ``del a[:]``.
-
-
-.. method:: list.index(x[, start[, end]])
-   :noindex:
-
-   Return zero-based index of the first occurrence of *x* in the list.
-   Raises a :exc:`ValueError` if there is no such item.
-
-   The optional arguments *start* and *end* are interpreted as in the slice
-   notation and are used to limit the search to a particular subsequence of
-   the list.  The returned index is computed relative to the beginning of the full
-   sequence rather than the *start* argument.
-
-
-.. method:: list.count(x)
-   :noindex:
-
-   Return the number of times *x* appears in the list.
-
-
-.. method:: list.sort(*, key=None, reverse=False)
-   :noindex:
-
-   Sort the items of the list in place (the arguments can be used for sort
-   customization, see :func:`sorted` for their explanation).
-
-
-.. method:: list.reverse()
-   :noindex:
-
-   Reverse the elements of the list in place.
-
-
-.. method:: list.copy()
-   :noindex:
-
-   Return a shallow copy of the list.  Similar to ``a[:]``.
+For complete descriptions of these methods, see the :ref:`list type
+<typesseq-list>` documentation in the Library Reference.
 
 
 An example that uses most of the list methods::
