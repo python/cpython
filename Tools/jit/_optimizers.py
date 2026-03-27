@@ -555,13 +555,15 @@ class Optimizer:
     def _small_consts_match(self, inst1: Instruction, inst2: Instruction) -> bool:
         raise NotImplementedError()
 
-    def _validate(self):
+    def _validate(self) -> None:
         for block in self._blocks():
             if not block.instructions:
                 continue
             for inst in block.instructions:
                 if self.frame_pointers:
-                    assert self._frame_pointer_modify.match(inst.text) is None, "Frame pointer should not be modified"
+                    assert (
+                        self._frame_pointer_modify.match(inst.text) is None
+                    ), "Frame pointer should not be modified"
 
     def run(self) -> None:
         """Run this optimizer."""
