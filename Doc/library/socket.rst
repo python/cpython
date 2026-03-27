@@ -1002,7 +1002,7 @@ The following functions all create :ref:`socket objects <socket-objects>`.
    Duplicate the file descriptor *fd* (an integer as returned by a file object's
    :meth:`~io.IOBase.fileno` method) and build a socket object from the result.  Address
    family, socket type and protocol number are as for the :func:`~socket.socket` function.
-   file descriptor should refer to a socket, but this is not checked ---
+   The file descriptor should refer to a socket, but this is not checked ---
    subsequent operations on the object may fail if the file descriptor is invalid.
    This function is rarely needed, but can be used to get or set socket options on
    a socket passed to a program as standard input or output (such as a server
