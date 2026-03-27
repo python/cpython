@@ -289,8 +289,8 @@ endif
 			if [ $$test_status -ne 0 ]; then \
 				echo "  FAIL: Hello test timed out or exited with status $$test_status"; cat /tmp/cpython_test.log; exit 1; \
 			fi; \
-			if grep -q 'CPYTHON_TEST_HELLO:' /tmp/cpython_test.log; then \
-				echo "  PASS: $$(grep 'CPYTHON_TEST_HELLO:' /tmp/cpython_test.log)"; \
+			if grep -q '^CPYTHON_TEST_HELLO:' /tmp/cpython_test.log; then \
+				echo "  PASS: $$(grep -m 1 '^CPYTHON_TEST_HELLO:' /tmp/cpython_test.log)"; \
 			else \
 				echo "  FAIL: Hello test did not produce expected output"; cat /tmp/cpython_test.log; exit 1; \
 			fi; \
@@ -310,8 +310,8 @@ else
 			if [ $$test_status -ne 0 ]; then \
 				echo "  FAIL: Hello test timed out or exited with status $$test_status"; cat /tmp/cpython_test.log; exit 1; \
 			fi; \
-			if grep -q 'CPYTHON_TEST_HELLO:' /tmp/cpython_test.log; then \
-				echo "  PASS: $$(grep 'CPYTHON_TEST_HELLO:' /tmp/cpython_test.log)"; \
+			if grep -q '^CPYTHON_TEST_HELLO:' /tmp/cpython_test.log; then \
+				echo "  PASS: $$(grep -m 1 '^CPYTHON_TEST_HELLO:' /tmp/cpython_test.log)"; \
 			else \
 				echo "  FAIL: Hello test did not produce expected output"; cat /tmp/cpython_test.log; exit 1; \
 			fi; \
