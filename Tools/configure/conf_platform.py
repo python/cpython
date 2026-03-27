@@ -91,13 +91,15 @@ def setup_host_prefix(v):
     if not v.host_prefix:
         v.export(
             "host_prefix",
-            "/" if v.ac_sys_system == "Emscripten" else "${prefix}",
+            "/"
+            if v.ac_sys_system in ("Emscripten", "WASI")
+            else "${prefix}",
         )
 
     if not v.host_exec_prefix:
         v.host_exec_prefix = (
             v.host_prefix
-            if v.ac_sys_system == "Emscripten"
+            if v.ac_sys_system in ("Emscripten", "WASI")
             else "${exec_prefix}"
         )
     v.export("host_exec_prefix")
@@ -431,8 +433,10 @@ def check_declarations(v):
         extra_includes=["sys/param.h"],
     )
 
+    # AC_CHECK_DECLS always defines HAVE_DECL_<NAME> to 0 or 1.
     pyconf.check_decl(
         "UT_NAMESIZE",
+        define_name="HAVE_DECL_UT_NAMESIZE",
         on_found=_define_ut_namesize,
         extra_includes=["utmp.h"],
     )
@@ -441,6 +445,7 @@ def check_declarations(v):
     if v.ac_cv_libc != "musl":
         pyconf.check_decl(
             "PR_SET_VMA_ANON_NAME",
+            define_name="HAVE_DECL_PR_SET_VMA_ANON_NAME",
             on_found=_define_pr_set_vma_anon_name,
             extra_includes=["linux/prctl.h", "sys/prctl.h"],
         )

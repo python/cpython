@@ -42,10 +42,9 @@ def generate_output(v):
                 "# Edit this file for local setup changes\n",
             )
 
-        # Use relative paths when building in-place (srcdir == builddir)
-        # so that generated files like Modules/config.c get a relative path
-        # comment, matching the autoconf configure behaviour.
-        srcdir_rel = pyconf.relpath(pyconf.srcdir) if pyconf.srcdir else "."
+        # Use the srcdir substitution value (e.g. "." for in-place,
+        # absolute path for out-of-tree) to match autoconf behaviour.
+        srcdir_rel = v.srcdir or "."
         if not pyconf.cmd(
             [
                 "/bin/sh",

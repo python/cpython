@@ -211,6 +211,10 @@ function pyconf_export(name, value) {
 }
 
 function v_export(name) {
+        # Fall back to ENVIRON if V[name] is not set, matching
+        # autoconf where AC_SUBST reads inherited environment variables.
+        if (!(name in V) && name in ENVIRON)
+                V[name] = ENVIRON[name]
         ENV[name] = V[name]
         MODIFIED_ENV[name] = 1
 }
@@ -562,7 +566,11 @@ function _pyconf_includes_from_list(hdr_list, n, arr, i, result) {
 
 function _pyconf_header_to_define(header, d) {
         d = "HAVE_" header
-        gsub(/[\/\.\+\-]/, "_", d)
+        # Map "-" to "_DASH_" before other replacements so that
+        # gdbm-ndbm.h -> HAVE_GDBM_DASH_NDBM_H (distinct from
+        # gdbm/ndbm.h -> HAVE_GDBM_NDBM_H), matching autoconf.
+        gsub(/-/, "_DASH_", d)
+        gsub(/[\/\.\+]/, "_", d)
         d = toupper(d)
         return d
 }
@@ -586,7 +594,8 @@ function _pyconf_ac_includes_default(    result) {
 function pyconf_check_header(header, prologue, default_inc, define, cache_key, source, cv, rc) {
         if (define == "") define = _pyconf_header_to_define(header)
         if (cache_key == "") cache_key = "ac_cv_header_" header
-        gsub(/[\/\.\+\-]/, "_", cache_key)
+        gsub(/-/, "_dash_", cache_key)
+        gsub(/[\/\.\+]/, "_", cache_key)
 
         if (cache_key in CACHE) {
                 rc = (CACHE[cache_key] == "yes")
@@ -688,9 +697,9 @@ function pyconf_replace_funcs(funcs, n, i) {
                 if (funcs[i] != "") {
                         if (!pyconf_check_func(funcs[i])) {
                                 if (SUBST["LIBOBJS"] != "")
-                                        SUBST["LIBOBJS"] = SUBST["LIBOBJS"] " " funcs[i] ".o"
+                                        SUBST["LIBOBJS"] = SUBST["LIBOBJS"] " ${LIBOBJDIR}" funcs[i] "$U.o"
                                 else
-                                        SUBST["LIBOBJS"] = funcs[i] ".o"
+                                        SUBST["LIBOBJS"] = "${LIBOBJDIR}" funcs[i] "$U.o"
                         }
                 }
         }
@@ -1488,16 +1497,12 @@ function pyconf_stdlib_module(name, supported, enabled, cflags, ldflags, has_cfl
         }
         if (prev_na)
                 state = "n/a"
-        else if (supported == "yes" && enabled == "yes")
-                state = "yes"
-        else if (supported != "yes" && enabled == "yes")
-                state = "missing"
-        else if (supported != "yes")
-                state = "n/a"
         else if (enabled != "yes")
                 state = "disabled"
+        else if (supported != "yes")
+                state = "missing"
         else
-                state = "n/a"
+                state = "yes"
         SUBST[key "_STATE"] = state
         SUBST[key "_TRUE"] = (state == "yes") ? "" : "#"
         if (has_cflags == "yes")

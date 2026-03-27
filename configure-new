@@ -222,6 +222,10 @@ function pyconf_export(name, value) {
 }
 
 function v_export(name) {
+        # Fall back to ENVIRON if V[name] is not set, matching
+        # autoconf where AC_SUBST reads inherited environment variables.
+        if (!(name in V) && name in ENVIRON)
+                V[name] = ENVIRON[name]
         ENV[name] = V[name]
         MODIFIED_ENV[name] = 1
 }
@@ -573,7 +577,11 @@ function _pyconf_includes_from_list(hdr_list, n, arr, i, result) {
 
 function _pyconf_header_to_define(header, d) {
         d = "HAVE_" header
-        gsub(/[\/\.\+\-]/, "_", d)
+        # Map "-" to "_DASH_" before other replacements so that
+        # gdbm-ndbm.h -> HAVE_GDBM_DASH_NDBM_H (distinct from
+        # gdbm/ndbm.h -> HAVE_GDBM_NDBM_H), matching autoconf.
+        gsub(/-/, "_DASH_", d)
+        gsub(/[\/\.\+]/, "_", d)
         d = toupper(d)
         return d
 }
@@ -597,7 +605,8 @@ function _pyconf_ac_includes_default(    result) {
 function pyconf_check_header(header, prologue, default_inc, define, cache_key, source, cv, rc) {
         if (define == "") define = _pyconf_header_to_define(header)
         if (cache_key == "") cache_key = "ac_cv_header_" header
-        gsub(/[\/\.\+\-]/, "_", cache_key)
+        gsub(/-/, "_dash_", cache_key)
+        gsub(/[\/\.\+]/, "_", cache_key)
 
         if (cache_key in CACHE) {
                 rc = (CACHE[cache_key] == "yes")
@@ -699,9 +708,9 @@ function pyconf_replace_funcs(funcs, n, i) {
                 if (funcs[i] != "") {
                         if (!pyconf_check_func(funcs[i])) {
                                 if (SUBST["LIBOBJS"] != "")
-                                        SUBST["LIBOBJS"] = SUBST["LIBOBJS"] " " funcs[i] ".o"
+                                        SUBST["LIBOBJS"] = SUBST["LIBOBJS"] " ${LIBOBJDIR}" funcs[i] "$U.o"
                                 else
-                                        SUBST["LIBOBJS"] = funcs[i] ".o"
+                                        SUBST["LIBOBJS"] = "${LIBOBJDIR}" funcs[i] "$U.o"
                         }
                 }
         }
@@ -1499,16 +1508,12 @@ function pyconf_stdlib_module(name, supported, enabled, cflags, ldflags, has_cfl
         }
         if (prev_na)
                 state = "n/a"
-        else if (supported == "yes" && enabled == "yes")
-                state = "yes"
-        else if (supported != "yes" && enabled == "yes")
-                state = "missing"
-        else if (supported != "yes")
-                state = "n/a"
         else if (enabled != "yes")
                 state = "disabled"
+        else if (supported != "yes")
+                state = "missing"
         else
-                state = "n/a"
+                state = "yes"
         SUBST[key "_STATE"] = state
         SUBST[key "_TRUE"] = (state == "yes") ? "" : "#"
         if (has_cflags == "yes")
@@ -3885,12 +3890,13 @@ function u_setup_platform_defines() {
 	pyconf_define("_DARWIN_C_SOURCE", 1, 0, "Define on Darwin to activate all library features")
 }
 
-function u_setup_source_dirs(    builddir, out_of_tree, srcdir_abs, srcdir_raw) {
+function u_setup_source_dirs(    builddir, out_of_tree, srcdir_abs, srcdir_raw, srcdir_rel) {
 	srcdir_raw = ((pyconf__srcdir_arg != "") ? pyconf__srcdir_arg : ((V["srcdir"] != "") ? V["srcdir"] : "."))
 	srcdir_abs = pyconf_abspath(srcdir_raw)
 	builddir = pyconf_abspath(".")
 	out_of_tree = ((srcdir_abs != builddir) ? "yes" : "no")
-	V["srcdir"] = ((!((out_of_tree != "") && (out_of_tree != "no"))) ? "." : srcdir_abs)
+	srcdir_rel = (((out_of_tree != "") && (out_of_tree != "no")) ? pyconf_relpath(srcdir_abs, builddir) : ".")
+	V["srcdir"] = srcdir_rel
 	v_export("srcdir")
 	V["abs_srcdir"] = srcdir_abs
 	v_export("abs_srcdir")
@@ -5620,7 +5626,7 @@ function u_setup_pgo_flags(    LLVM_PROF_FOUND, xcrun_out, xcrun_status, _ar_26)
 	v_export("LLVM_PROF_FILE")
 	v_export("LLVM_PROF_ERR")
 	v_export("LLVM_PROFDATA")
-	V["LLVM_PROFDATA"] = pyconf_check_prog("llvm-profdata", V["llvm_path"], "")
+	V["LLVM_PROFDATA"] = pyconf_check_prog("llvm-profdata", V["llvm_path"], "''")
 	v_export("LLVM_PROFDATA")
 	LLVM_PROF_FOUND = ((((V["LLVM_PROFDATA"] != "") && (V["LLVM_PROFDATA"] != "no")) && pyconf_is_executable(V["LLVM_PROFDATA"])) ? "found" : "not-found")
 	v_export("LLVM_PROF_FOUND")
@@ -5760,7 +5766,7 @@ function u_generate_output(    cc, host, srcdir_rel) {
 		if ((!pyconf_path_exists("Modules/Setup.local"))) {
 			pyconf_write_file("Modules/Setup.local", "# Edit this file for local setup changes\n")
 		}
-		srcdir_rel = (((pyconf_srcdir != "") && (pyconf_srcdir != "no")) ? pyconf_relpath(pyconf_srcdir) : ".")
+		srcdir_rel = ((V["srcdir"] != "") ? V["srcdir"] : ".")
 		delete _va57
 		_va57[1] = "/bin/sh"
 		_va57[2] = srcdir_rel "/Modules/makesetup"
@@ -5933,11 +5939,11 @@ function u_setup_machdep(    SUNOS_VERSION, ac_md_release, ac_md_system, _split_
 
 function u_setup_host_prefix() {
 	if ((!((V["host_prefix"] != "") && (V["host_prefix"] != "no")))) {
-		V["host_prefix"] = ((V["ac_sys_system"] == "Emscripten") ? "/" : "${prefix}")
+		V["host_prefix"] = (((V["ac_sys_system"] == "Emscripten") || (V["ac_sys_system"] == "WASI")) ? "/" : "${prefix}")
 		v_export("host_prefix")
 	}
 	if ((!((V["host_exec_prefix"] != "") && (V["host_exec_prefix"] != "no")))) {
-		V["host_exec_prefix"] = ((V["ac_sys_system"] == "Emscripten") ? V["host_prefix"] : "${exec_prefix}")
+		V["host_exec_prefix"] = (((V["ac_sys_system"] == "Emscripten") || (V["ac_sys_system"] == "WASI")) ? V["host_prefix"] : "${exec_prefix}")
 	}
 	v_export("host_exec_prefix")
 }
@@ -7339,7 +7345,9 @@ function u_detect_dbm(    _i_db, _n_db, _tmp_split, ac_cv_have_libdb, ac_cv_head
 	V["have_gdbm_compat"] = "no"
 	ac_cv_search_dbm_open = "no"
 	if (pyconf_check_header("ndbm.h")) {
+		pyconf_save_env()
 		ac_cv_search_dbm_open = pyconf_search_libs("dbm_open", "ndbm gdbm_compat")
+		pyconf_restore_env()
 	}
 	if ((((ac_cv_search_dbm_open != "") && (ac_cv_search_dbm_open != "no")) && (ac_cv_search_dbm_open != "no"))) {
 		if (((index(ac_cv_search_dbm_open, "ndbm") > 0) || (index(ac_cv_search_dbm_open, "gdbm_compat") > 0))) {
@@ -7357,11 +7365,10 @@ function u_detect_dbm(    _i_db, _n_db, _tmp_split, ac_cv_have_libdb, ac_cv_head
 		pyconf_define("HAVE_GDBM_NDBM_H", 1, 0, "Define to 1 if you have the <gdbm/ndbm.h> header file.")
 	}
 	ac_cv_header_gdbm_dash_ndbm_h = (pyconf_check_header("gdbm-ndbm.h") ? "yes" : "no")
-	if (((ac_cv_header_gdbm_dash_ndbm_h != "") && (ac_cv_header_gdbm_dash_ndbm_h != "no"))) {
-		pyconf_define("HAVE_GDBM_DASH_NDBM_H", 1, 0, "Define to 1 if you have the <gdbm-ndbm.h> header file.")
-	}
 	if ((((ac_cv_header_gdbm_slash_ndbm_h != "") && (ac_cv_header_gdbm_slash_ndbm_h != "no")) || ((ac_cv_header_gdbm_dash_ndbm_h != "") && (ac_cv_header_gdbm_dash_ndbm_h != "no")))) {
+		pyconf_save_env()
 		r = pyconf_search_libs("dbm_open", "gdbm_compat")
+		pyconf_restore_env()
 		if ((((r != "") && (r != "no")) && (r != "no"))) {
 			V["have_gdbm_compat"] = "yes"
 		} else {
@@ -8170,10 +8177,10 @@ function u__setup_emscripten_flags(    WASM_LINKFORSHARED_DEBUG) {
 	V["LINKFORSHARED"] = V["LINKFORSHARED"] " -sEXPORTED_FUNCTIONS=_main,_Py_Version,__PyRuntime,_PyGILState_GetThisThreadState,__Py_DumpTraceback,__PyEM_EMSCRIPTEN_TRAMPOLINE_OFFSET"
 	V["LINKFORSHARED"] = V["LINKFORSHARED"] " -sSTACK_SIZE=5MB"
 	V["LINKFORSHARED"] = V["LINKFORSHARED"] " -sTEXTDECODER=2"
-	if (((V["enable_wasm_dynamic_linking"] != "") && (V["enable_wasm_dynamic_linking"] != "no"))) {
+	if ((V["enable_wasm_dynamic_linking"] == "yes")) {
 		V["LINKFORSHARED"] = V["LINKFORSHARED"] " -sMAIN_MODULE"
 	}
-	if (((V["enable_wasm_pthreads"] != "") && (V["enable_wasm_pthreads"] != "no"))) {
+	if ((V["enable_wasm_pthreads"] == "yes")) {
 		V["CFLAGS_NODIST"] = V["CFLAGS_NODIST"] " -pthread"
 		V["LDFLAGS_NODIST"] = V["LDFLAGS_NODIST"] " -sUSE_PTHREADS"
 		V["LINKFORSHARED"] = V["LINKFORSHARED"] " -sPROXY_TO_PTHREAD"
@@ -8193,8 +8200,7 @@ function u__setup_wasi_flags() {
 	pyconf_define("_WASI_EMULATED_GETPID", 1, 0, "Define to 1 if you want to emulate getpid() on WASI")
 	pyconf_define("_WASI_EMULATED_PROCESS_CLOCKS", 1, 0, "Define to 1 if you want to emulate process clocks on WASI")
 	V["LIBS"] = V["LIBS"] " -lwasi-emulated-signal -lwasi-emulated-getpid -lwasi-emulated-process-clocks"
-	if (((V["enable_wasm_pthreads"] != "") && (V["enable_wasm_pthreads"] != "no"))) {
-		V["CFLAGS"] = V["CFLAGS"] " -target wasm32-wasi-threads -pthread"
+	if ((V["enable_wasm_pthreads"] == "yes")) {
 		V["CFLAGS_NODIST"] = V["CFLAGS_NODIST"] " -target wasm32-wasi-threads -pthread"
 		V["LDFLAGS_NODIST"] = V["LDFLAGS_NODIST"] " -target wasm32-wasi-threads -pthread -Wl,--import-memory -Wl,--export-memory -Wl,--max-memory=10485760"
 	}

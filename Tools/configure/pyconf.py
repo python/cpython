@@ -75,13 +75,19 @@ class Vars:
         """Mark a variable for Makefile substitution (AC_SUBST).
 
         If *value* is given, assigns it to this Vars instance first.
-        Otherwise looks up the value from this Vars instance.
+        Otherwise looks up the value from this Vars instance (including
+        environment variables via ``__getattr__``).
         The name is recorded in ``self._exports``.
         """
         self._exports.add(name)
         if value is not self._SENTINEL:
             setattr(self, name, value)
         val = self.__dict__.get(name)
+        if val is None:
+            # Fall back to environment variable (mirrors __getattr__),
+            # matching autoconf where AC_SUBST reads shell variables
+            # which include inherited environment.
+            val = os.environ.get(name, None)
         if val is not None:
             substs[name] = (
                 format_yn(val) if isinstance(val, bool) else str(val)
@@ -1000,12 +1006,10 @@ def _populate_module_substs() -> None:
         na = info.get("na", False)
         if na:
             state = "n/a"
-        elif not supported and enabled:
-            state = "missing"
-        elif not supported:
-            state = "n/a"
         elif not enabled:
             state = "disabled"
+        elif not supported:
+            state = "missing"
         else:
             state = "yes"
         # _TRUE="" means "build this module"; only "yes" state builds
@@ -2343,10 +2347,15 @@ def _compute_int(expr: str, includes: str = "") -> int | None:
 
 
 def _header_name_to_define(header: str) -> str:
-    """Convert 'sys/types.h' → 'HAVE_SYS_TYPES_H'."""
-    return "HAVE_" + header.upper().replace("/", "_").replace(
-        ".", "_"
-    ).replace("-", "_")
+    """Convert 'sys/types.h' → 'HAVE_SYS_TYPES_H'.
+
+    Dashes are mapped to '_DASH_' to match autoconf's convention where
+    'gdbm-ndbm.h' produces HAVE_GDBM_DASH_NDBM_H (distinct from
+    'gdbm/ndbm.h' → HAVE_GDBM_NDBM_H).
+    """
+    return "HAVE_" + header.upper().replace("-", "_DASH_").replace(
+        "/", "_"
+    ).replace(".", "_")
 
 
 def _ac_includes_default() -> str:
@@ -2399,9 +2408,9 @@ def check_header(
             f"check_header: invalid header name {header!r} "
             f"(must match [a-z0-9][a-z0-9_./+-]*)"
         )
-    cache_key = "ac_cv_header_" + header.replace("/", "_").replace(
-        ".", "_"
-    ).replace("-", "_")
+    cache_key = "ac_cv_header_" + header.replace("-", "_dash_").replace(
+        "/", "_"
+    ).replace(".", "_")
     define_name = _header_name_to_define(header)
     # Print "checking for <header>..." unless the caller already started one.
     own_checking = not _result_pending
@@ -2606,8 +2615,10 @@ def check_sizeof(
         if output_str.strip().isdigit():
             size = int(output_str.strip())
     if size is None:
-        # Cross-compiling or run failed: compile-time binary search
-        inc = "#include <stddef.h>\n#include <stdint.h>\n" + extra_includes
+        # Cross-compiling or run failed: compile-time binary search.
+        # Use AC_INCLUDES_DEFAULT (which includes stdio.h etc.) so that
+        # types like fpos_t are visible, matching autoconf behaviour.
+        inc = _ac_includes_default() + extra_includes
         size = _compute_int(f"(long int)(sizeof({type_}))", inc)
     if size is None:
         size = default if default is not None else 0
@@ -3173,7 +3184,10 @@ def replace_funcs(funcs: list[str]) -> None:
     missing = substs.get("LIBOBJS", "").split()
     for func in funcs:
         if not check_func(func):
-            missing.append(f"{func}.o")
+            # Match autoconf's final LIBOBJS fixup: prepend ${LIBOBJDIR}
+            # and insert $U before the extension so Makefile.pre.in can
+            # locate the replacement source under Python/.
+            missing.append(f"${{LIBOBJDIR}}{func}$U.o")
     substs["LIBOBJS"] = " ".join(missing)
 
 

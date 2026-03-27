@@ -113,10 +113,10 @@ def _setup_emscripten_flags(v):
     v.LINKFORSHARED += " -sSTACK_SIZE=5MB"
     v.LINKFORSHARED += " -sTEXTDECODER=2"
 
-    if v.enable_wasm_dynamic_linking:
+    if v.enable_wasm_dynamic_linking is True:
         v.LINKFORSHARED += " -sMAIN_MODULE"
 
-    if v.enable_wasm_pthreads:
+    if v.enable_wasm_pthreads is True:
         v.CFLAGS_NODIST += " -pthread"
         v.LDFLAGS_NODIST += " -sUSE_PTHREADS"
         v.LINKFORSHARED += " -sPROXY_TO_PTHREAD"
@@ -150,8 +150,7 @@ def _setup_wasi_flags(v):
     )
     v.LIBS += " -lwasi-emulated-signal -lwasi-emulated-getpid -lwasi-emulated-process-clocks"
 
-    if v.enable_wasm_pthreads:
-        v.CFLAGS += " -target wasm32-wasi-threads -pthread"
+    if v.enable_wasm_pthreads is True:
         v.CFLAGS_NODIST += " -target wasm32-wasi-threads -pthread"
         v.LDFLAGS_NODIST += (
             " -target wasm32-wasi-threads -pthread"

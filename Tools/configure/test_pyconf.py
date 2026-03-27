@@ -1486,6 +1486,31 @@ class TestInitArgsCache:
 
 
 # ---------------------------------------------------------------------------
+# replace_funcs / LIBOBJS
+# ---------------------------------------------------------------------------
+
+
+@pytest.mark.skipif(not HAS_CC, reason="no C compiler available")
+class TestReplaceFuncs:
+    def test_missing_func_added_to_libobjs(self, with_cc):
+        pyconf.replace_funcs(["__no_such_func_xyz_123__"])
+        libobjs = pyconf.substs.get("LIBOBJS", "")
+        assert "${LIBOBJDIR}__no_such_func_xyz_123__$U.o" in libobjs
+
+    def test_existing_func_not_in_libobjs(self, with_cc):
+        pyconf.replace_funcs(["printf"])
+        assert pyconf.substs.get("LIBOBJS", "") == ""
+
+    def test_libobjs_format_matches_autoconf(self, with_cc):
+        """LIBOBJS entries must use ${LIBOBJDIR}name$U.o for Makefile.pre.in."""
+        pyconf.replace_funcs(["__no_such_a__", "__no_such_b__"])
+        entries = pyconf.substs["LIBOBJS"].split()
+        for entry in entries:
+            assert entry.startswith("${LIBOBJDIR}"), entry
+            assert "$U.o" in entry, entry
+
+
+# ---------------------------------------------------------------------------
 
 if __name__ == "__main__":
     sys.exit(pytest.main([__file__, "-v"]))

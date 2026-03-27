@@ -186,7 +186,7 @@ def setup_pgo_flags(v):
     v.export("LLVM_PROFDATA")
 
     v.LLVM_PROFDATA = pyconf.check_prog(
-        "llvm-profdata", path=v.llvm_path, default=""
+        "llvm-profdata", path=v.llvm_path, default="''"
     )
     v.export("LLVM_PROFDATA")
     LLVM_PROF_FOUND = (

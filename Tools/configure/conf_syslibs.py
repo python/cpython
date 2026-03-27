@@ -50,11 +50,14 @@ def detect_dbm(v):
     v.have_gdbm_compat = False
 
     # Only search for dbm_open if ndbm.h is present (mirrors AC_CHECK_HEADERS guard)
+    # Wrap in save_env() to avoid leaking -lgdbm_compat into LIBS
+    # (matches autoconf's WITH_SAVE_ENV).
     ac_cv_search_dbm_open = False
     if pyconf.check_header("ndbm.h"):
-        ac_cv_search_dbm_open = pyconf.search_libs(
-            "dbm_open", ["ndbm", "gdbm_compat"], required=False
-        )
+        with pyconf.save_env():
+            ac_cv_search_dbm_open = pyconf.search_libs(
+                "dbm_open", ["ndbm", "gdbm_compat"], required=False
+            )
     if ac_cv_search_dbm_open and ac_cv_search_dbm_open is not False:
         if (
             "ndbm" in ac_cv_search_dbm_open
@@ -78,15 +81,10 @@ def detect_dbm(v):
         )
 
     ac_cv_header_gdbm_dash_ndbm_h = pyconf.check_header("gdbm-ndbm.h")
-    if ac_cv_header_gdbm_dash_ndbm_h:
-        pyconf.define(
-            "HAVE_GDBM_DASH_NDBM_H",
-            1,
-            "Define to 1 if you have the <gdbm-ndbm.h> header file.",
-        )
 
     if ac_cv_header_gdbm_slash_ndbm_h or ac_cv_header_gdbm_dash_ndbm_h:
-        r = pyconf.search_libs("dbm_open", ["gdbm_compat"], required=False)
+        with pyconf.save_env():
+            r = pyconf.search_libs("dbm_open", ["gdbm_compat"], required=False)
         if r and r is not False:
             v.have_gdbm_compat = True
         else:

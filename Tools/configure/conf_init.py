@@ -59,7 +59,11 @@ def setup_source_dirs(v):
     srcdir_abs = pyconf.abspath(srcdir_raw)
     builddir = pyconf.abspath(".")
     out_of_tree = srcdir_abs != builddir
-    v.export("srcdir", "." if not out_of_tree else srcdir_abs)
+    # Use a relative path for out-of-tree builds.  An absolute srcdir would
+    # break WASI/Emscripten where VPATH is baked into the binary but the
+    # host path doesn't exist in the guest sandbox.
+    srcdir_rel = pyconf.relpath(srcdir_abs, builddir) if out_of_tree else "."
+    v.export("srcdir", srcdir_rel)
     v.export("abs_srcdir", srcdir_abs)
     v.export("abs_builddir", builddir)
     pyconf.srcdir = srcdir_abs
