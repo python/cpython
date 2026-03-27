@@ -969,6 +969,21 @@ class SysLazyModulesTrackingTests(unittest.TestCase):
         # Basic test that sys.lazy_modules exists and is a dict
         self.assertIsInstance(sys.lazy_modules, dict)
 
+    def test_lazy_module_without_children_is_tracked(self):
+        code = textwrap.dedent("""
+            import sys
+            lazy import json
+            assert "json" in sys.lazy_modules, (
+                f"expected 'json' in sys.lazy_modules, got {set(sys.lazy_modules)}"
+            )
+            assert sys.lazy_modules["json"] == set(), (
+                f"expected empty set for sys.lazy_modules['json'], "
+                f"got {sys.lazy_modules['json']!r}"
+            )
+            print("OK")
+        """)
+        assert_python_ok("-c", code)
+
 
 @support.requires_subprocess()
 class CommandLineAndEnvVarTests(unittest.TestCase):
