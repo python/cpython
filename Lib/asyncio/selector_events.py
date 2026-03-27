@@ -1194,11 +1194,9 @@ class _SelectorSocketTransport(_SelectorTransport):
             self._conn_lost += 1
             return
 
-        views = []
         for data in list_of_data:
-            views.append(memoryview(data))
+            self._buffer.append(memoryview(data))
             self._buffer_size += len(data)
-        self._buffer.extend(views)
         self._write_ready()
         # If the entire buffer couldn't be written, register a write handler
         if self._buffer:
