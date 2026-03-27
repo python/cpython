@@ -192,7 +192,7 @@ class _Target(typing.Generic[_S, _R]):
                 label_prefix=self.label_prefix,
                 symbol_prefix=self.symbol_prefix,
                 re_global=self.re_global,
-                frame_pointers=self.frame_pointers
+                frame_pointers=self.frame_pointers,
             ).run()
         args_o = [f"--target={self.triple}", "-c", "-o", f"{o}", f"{s}"]
         await _llvm.run(
