@@ -4023,6 +4023,7 @@ class AbstractPickleTests(ExtraAssertions):
         self.deep_nested_struct(frozenset((1,)),
                                 lambda data: frozenset((1, data)))
 
+    @unittest.skipIf(support.is_wasi, "exhausts limited stack on WASI")
     def test_deep_nested_struct_set(self):
         self.deep_nested_struct({1}, lambda data: {K(data)},
                                 depth=FAST_NESTING_LIMIT+1,
