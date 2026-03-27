@@ -1028,11 +1028,6 @@ sys
 * Add :data:`sys.abi_info` namespace to improve access to ABI information.
   (Contributed by Klaus Zimmermann in :gh:`137476`.)
 
-* Add :data:`sys.float_info.iec_60559 <sys.float_info>`: a boolean flag,
-  indicating support the IEC 60559 floating-point standard (as specified by the
-  Annex F of C99).
-  (Contributed by Sergey B Kirpichev in :gh:`138580`.)
-
 
 tarfile
 -------
