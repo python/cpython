@@ -66,10 +66,61 @@ PyList_Reverse:shared:
 # is a list
 PyList_SetSlice:shared:
 
-# Sort - per-object lock held; comparison callbacks may execute
-# arbitrary Python code
+# Sort - per-object lock held; the list is emptied before sorting
+# so other threads may observe an empty list, but they won't see the
+# intermediate states of the sort
 PyList_Sort:shared:
 
 # Extend - lock target list; also lock source when it is a
 # list, set, or dict
 PyList_Extend:shared:
+
+# Creation - pure allocation, no shared state
+PyBytes_FromString:atomic:
+PyBytes_FromStringAndSize:atomic:
+PyBytes_DecodeEscape:atomic:
+
+# Creation from formatting C primitives - pure allocation, no shared state
+PyBytes_FromFormat:atomic:
+PyBytes_FromFormatV:atomic:
+
+# Creation from object - uses buffer protocol so may call arbitrary code;
+# safe as long as the buffer is not mutated by another thread during the operation
+PyBytes_FromObject:shared:
+
+# Size - uses atomic load on free-threaded builds
+PyBytes_Size:atomic:
+PyBytes_GET_SIZE:atomic:
+
+# Raw data - no locking; mutating it is unsafe if the bytes object is shared between threads
+PyBytes_AsString:compatible:
+PyBytes_AS_STRING:compatible:
+PyBytes_AsStringAndSize:compatible:
+
+# Concatenation - uses buffer protocol; safe as long as buffer is not mutated by another thread during the operation
+PyBytes_Concat:shared:
+PyBytes_ConcatAndDel:shared:
+PyBytes_Join:shared:
+
+# Resizing - safe if the object is unique
+_PyBytes_Resize:distinct:
+
+# Repr - atomic as bytes are immutable
+PyBytes_Repr:atomic:
+
+# Creation from object - may call arbitrary code
+PyByteArray_FromObject:shared:
+
+# Creation - pure allocation, no shared state
+PyByteArray_FromStringAndSize:atomic:
+
+# Concatenation - uses buffer protocol; safe as long as buffer is not mutated by another thread during the operation
+PyByteArray_Concat:shared:
+
+# Size - uses atomic load on free-threaded builds
+PyByteArray_Size:atomic:
+PyByteArray_GET_SIZE:atomic:
+
+# Raw data - no locking; mutating it is unsafe if the bytearray object is shared between threads
+PyByteArray_AsString:compatible:
+PyByteArray_AS_STRING:compatible:

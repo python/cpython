@@ -596,7 +596,9 @@ def get_target(host: str) -> _COFF32 | _COFF64 | _ELF | _MachO:
         # -mno-outline-atomics: Keep intrinsics from being emitted.
         args = ["-fpic", "-mno-outline-atomics", "-fno-plt"]
         optimizer = _optimizers.OptimizerAArch64
-        target = _ELF(host, condition, args=args, optimizer=optimizer)
+        target = _ELF(
+            host, condition, args=args, optimizer=optimizer, frame_pointers=True
+        )
     elif re.fullmatch(r"i686-pc-windows-msvc", host):
         host = "i686-pc-windows-msvc"
         condition = "defined(_M_IX86)"

@@ -10,7 +10,7 @@
 #
 # The simplest entry point is:
 #
-#   $ python Apple ci iOS
+#   $ python Platforms/Apple ci iOS
 #
 # which will:
 # * Clean any pre-existing build artefacts
@@ -57,7 +57,7 @@ EnvironmentT = dict[str, str]
 ArgsT = Sequence[str | Path]
 
 SCRIPT_NAME = Path(__file__).name
-PYTHON_DIR = Path(__file__).resolve().parent.parent
+PYTHON_DIR = Path(__file__).resolve().parent.parent.parent
 
 CROSS_BUILD_DIR = PYTHON_DIR / "cross-build"
 
@@ -140,7 +140,7 @@ def apple_env(host: str) -> EnvironmentT:
     """Construct an Apple development environment for the given host."""
     env = {
         "PATH": ":".join([
-            str(PYTHON_DIR / "Apple/iOS/Resources/bin"),
+            str(PYTHON_DIR / "Platforms/Apple/iOS/Resources/bin"),
             str(subdir(host) / "prefix"),
             "/usr/bin",
             "/bin",
@@ -173,8 +173,11 @@ def all_host_triples(platform: str) -> list[str]:
     return triples
 
 
-def clean(context: argparse.Namespace, target: str = "all") -> None:
+def clean(context: argparse.Namespace, target: str | None = None) -> None:
     """The implementation of the "clean" command."""
+    if target is None:
+        target = context.host
+
     # If we're explicitly targeting the build, there's no platform or
     # distribution artefacts. If we're cleaning tests, we keep all built
     # artefacts. Otherwise, the built artefacts must be dirty, so we remove
@@ -377,7 +380,12 @@ def configure_host_python(
     with group(f"Downloading dependencies ({host})"):
         if not prefix_dir.exists():
             prefix_dir.mkdir()
-            unpack_deps(context.platform, host, prefix_dir, context.cache_dir)
+            cache_dir = (
+                Path(context.cache_dir).resolve()
+                if context.cache_dir
+                else CROSS_BUILD_DIR / "downloads"
+            )
+            unpack_deps(context.platform, host, prefix_dir, cache_dir)
         else:
             print("Dependencies already installed")
 
@@ -432,7 +440,10 @@ def framework_path(host_triple: str, multiarch: str) -> Path:
     :param host_triple: The host triple (e.g., arm64-apple-ios-simulator)
     :param multiarch: The multiarch identifier (e.g., arm64-simulator)
     """
-    return CROSS_BUILD_DIR / f"{host_triple}/Apple/iOS/Frameworks/{multiarch}"
+    return (
+        CROSS_BUILD_DIR
+        / f"{host_triple}/Platforms/Apple/iOS/Frameworks/{multiarch}"
+    )
 
 
 def package_version(prefix_path: Path) -> str:
@@ -616,7 +627,7 @@ def create_xcframework(platform: str) -> str:
 
         # Copy in the cross-architecture pyconfig.h
         shutil.copy(
-            PYTHON_DIR / f"Apple/{platform}/Resources/pyconfig.h",
+            PYTHON_DIR / f"Platforms/Apple/{platform}/Resources/pyconfig.h",
             slice_framework / "Headers/pyconfig.h",
         )
 
@@ -653,7 +664,7 @@ def create_xcframework(platform: str) -> str:
             host_path = (
                 CROSS_BUILD_DIR
                 / host_triple
-                / "Apple/iOS/Frameworks"
+                / "Platforms/Apple/iOS/Frameworks"
                 / multiarch
             )
             host_framework = host_path / "Python.framework"
@@ -683,7 +694,7 @@ def create_xcframework(platform: str) -> str:
 
     print(" - build tools")
     shutil.copytree(
-        PYTHON_DIR / "Apple/testbed/Python.xcframework/build",
+        PYTHON_DIR / "Platforms/Apple/testbed/Python.xcframework/build",
         package_path / "Python.xcframework/build",
     )
 
@@ -703,7 +714,7 @@ def package(context: argparse.Namespace) -> None:
         print()
         run([
             sys.executable,
-            "Apple/testbed",
+            "Platforms/Apple/testbed",
             "clone",
             "--platform",
             context.platform,
@@ -798,13 +809,13 @@ def test(context: argparse.Namespace, host: str | None = None) -> None:  # noqa:
                 framework_path = (
                     CROSS_BUILD_DIR
                     / host
-                    / f"Apple/{context.platform}"
+                    / f"Platforms/Apple/{context.platform}"
                     / f"Frameworks/{apple_multiarch(host)}"
                 )
 
         run([
             sys.executable,
-            "Apple/testbed",
+            "Platforms/Apple/testbed",
             "clone",
             "--platform",
             context.platform,
@@ -828,7 +839,7 @@ def test(context: argparse.Namespace, host: str | None = None) -> None:  # noqa:
             + [
                 "--",
                 "test",
-                f"--{context.ci_mode}-ci",
+                f"--{context.ci_mode or 'fast'}-ci",
                 "--single-process",
                 "--no-randomize",
                 "--pythoninfo",
@@ -895,7 +906,7 @@ def parse_args() -> argparse.Namespace:
     configure_build = subcommands.add_parser(
         "configure-build", help="Run `configure` for the build Python"
     )
-    subcommands.add_parser(
+    make_build = subcommands.add_parser(
         "make-build", help="Run `make` for the build Python"
     )
     configure_host = subcommands.add_parser(
@@ -951,6 +962,31 @@ def parse_args() -> argparse.Namespace:
             ),
         )
 
+    # --cross-build-dir argument
+    for cmd in [
+        clean,
+        configure_build,
+        make_build,
+        configure_host,
+        make_host,
+        build,
+        package,
+        test,
+        ci,
+    ]:
+        cmd.add_argument(
+            "--cross-build-dir",
+            action="store",
+            default=os.environ.get("CROSS_BUILD_DIR"),
+            dest="cross_build_dir",
+            type=Path,
+            help=(
+                "Path to the cross-build directory "
+                f"(default: {CROSS_BUILD_DIR}). Can also be set "
+                "with the CROSS_BUILD_DIR environment variable."
+            ),
+        )
+
     # --clean option
     for cmd in [configure_build, configure_host, build, package, test, ci]:
         cmd.add_argument(
@@ -965,7 +1001,7 @@ def parse_args() -> argparse.Namespace:
     for cmd in [configure_host, build, ci]:
         cmd.add_argument(
             "--cache-dir",
-            default="./cross-build/downloads",
+            default=os.environ.get("CACHE_DIR"),
             help="The directory to store cached downloads.",
         )
 
@@ -1032,6 +1068,12 @@ def main() -> None:
 
     # Process command line arguments
     context = parse_args()
+
+    # Set the CROSS_BUILD_DIR if an argument was provided
+    if context.cross_build_dir:
+        global CROSS_BUILD_DIR
+        CROSS_BUILD_DIR = context.cross_build_dir.resolve()
+
     dispatch: dict[str, Callable] = {
         "clean": clean,
         "configure-build": configure_build_python,
