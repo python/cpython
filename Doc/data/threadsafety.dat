@@ -83,6 +83,9 @@ PyBytes_DecodeEscape:atomic:
 # Creation from formatting C primitives - pure allocation, no shared state
 PyBytes_FromFormat:atomic:
 PyBytes_FromFormatV:atomic:
+
+# Creation from object - uses buffer protocol so may call arbitrary code;
+# safe as long as the buffer is not mutated by another thread during the operation
 PyBytes_FromObject:shared:
 
 # Size - uses atomic load on free-threaded builds
