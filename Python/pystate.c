@@ -3287,8 +3287,7 @@ _Py_GetMainConfig(void)
     return _PyInterpreterState_GetConfig(interp);
 }
 
-static uintptr_t
-return_pointer_as_int(char* p) {
+static uintptr_t return_pointer_as_int(char* p) {
     return (uintptr_t)p;
 }
 
