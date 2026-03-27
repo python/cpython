@@ -75,8 +75,8 @@ Functions
    :param bool expand:
       If ``True``,
       opening parentheses and brackets will be followed by a newline and the
-      following content will be indented by one level, similar to block style
-      JSON formatting. Incompatible with *compact*.
+      following content will be indented by one level, similar to
+      pretty-printed JSON. Incompatible with *compact*.
 
    :param bool sort_dicts:
       If ``True``, dictionaries will be formatted with
@@ -446,7 +446,7 @@ cannot be split, the specified width will be exceeded::
     'summary': 'A sample Python project',
     'version': '1.2.0'}
 
-Lastly, we can achieve block style formatting with the *expand* parameter.
+Lastly, we can format like pretty-printed JSON with the *expand* parameter.
 Best results are achieved with a higher *indent* value::
 
    >>> pprint.pp(project_info, indent=4, expand=True)

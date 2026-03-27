@@ -136,7 +136,7 @@ class PrettyPrinter:
             Incompatible with expand mode.
 
         expand
-            If true, the output will be formatted in a block style similar to
+            If true, the output will be formatted similar to
             pretty-printed json.dumps() when ``indent`` is supplied.
             Incompatible with compact mode.
 

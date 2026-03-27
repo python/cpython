@@ -1472,7 +1472,7 @@ pprint
 
 * Add an *expand* keyword argument for :func:`pprint.pprint`,
   :func:`pprint.pformat`, :func:`pprint.pp`. If true, the output will be
-  formatted in a block style similar to pretty-printed :func:`json.dumps` when
+  formatted similar to pretty-printed :func:`json.dumps` when
   *indent* is supplied.
   (Contributed by Stefan Todoran and Semyon Moroz in :gh:`112632`.)
 
