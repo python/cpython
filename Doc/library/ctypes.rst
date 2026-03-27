@@ -1532,8 +1532,8 @@ way is to instantiate :py:class:`CDLL` or one of its subclasses:
       of the library than the one already linked into the process, the two
       instances have *separate* :data:`errno` variables and ctypes will swap the
       wrong one.  To avoid this, load the library by its unqualified name (e.g.
-      ``CDLL('libc.so.6')`` or use :func:`ctypes.util.find_library` to obtain
-      a name that the linker can resolve to the already-loaded instance.
+      ``CDLL('libc.so.6')``) or use :func:`!find_library` to obtain a name that
+      the linker can resolve to the already-loaded instance.
 
    The *use_last_error* parameter, when set to true, enables the same mechanism for
    the Windows error code which is managed by the :func:`GetLastError` and
