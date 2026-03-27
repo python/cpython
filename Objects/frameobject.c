@@ -633,17 +633,14 @@ framelocalsproxy_items(PyObject *self, PyObject *Py_UNUSED(ignored))
         if (value) {
             PyObject *pair = _PyTuple_FromPairSteal(Py_NewRef(name), value);
             if (pair == NULL) {
-                Py_DECREF(items);
-                return NULL;
+                goto error;
             }
 
-            if (PyList_Append(items, pair) < 0) {
-                Py_DECREF(items);
-                Py_DECREF(pair);
-                return NULL;
-            }
-
+            int rc = PyList_Append(items, pair);
             Py_DECREF(pair);
+            if (rc < 0) {
+                goto error;
+            }
         }
     }
 
@@ -655,21 +652,21 @@ framelocalsproxy_items(PyObject *self, PyObject *Py_UNUSED(ignored))
         while (PyDict_Next(frame->f_extra_locals, &j, &key, &value)) {
             PyObject *pair = _PyTuple_FromPair(key, value);
             if (pair == NULL) {
-                Py_DECREF(items);
-                return NULL;
+                goto error;
             }
 
-            if (PyList_Append(items, pair) < 0) {
-                Py_DECREF(items);
-                Py_DECREF(pair);
-                return NULL;
-            }
-
+            int rc = PyList_Append(items, pair);
             Py_DECREF(pair);
+            if (rc < 0) {
+                goto error;
+            }
         }
     }
 
     return items;
+error:
+    Py_DECREF(items);
+    return NULL;
 }
 
 static Py_ssize_t
