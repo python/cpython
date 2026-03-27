@@ -84,7 +84,8 @@ Summary -- Release highlights
   <whatsnew315-pybyteswriter>`
 * :ref:`The JIT compiler has been significantly upgraded <whatsnew315-jit>`
 * :ref:`Improved error messages <whatsnew315-improved-error-messages>`
-
+* :ref:`The official Windows 64-bit binaries now use the tail-calling interpreter
+  <whatsnew315-windows-tail-calling-interpreter>`
 
 New features
 ============
@@ -1294,18 +1295,6 @@ zlib
 Optimizations
 =============
 
-* Builds using Visual Studio 2026 (MSVC 18) may now use the new
-  :ref:`tail-calling interpreter <whatsnew314-tail-call-interpreter>`.
-  Results on Visual Studio 18.1.1 report between
-  `15-20% <https://github.com/faster-cpython/ideas/blob/main/results/5800X-msvc.pgo2-vs-msvc.pgo.tc.svg>`__
-  speedup on the geometric mean of pyperformance on Windows x86-64 over
-  the switch-case interpreter on an AMD Ryzen 7 5800X. We have
-  observed speedups ranging from 14% for large pure-Python libraries
-  to 40% for long-running small pure-Python scripts on Windows.
-  This was made possible by a new feature introduced in MSVC 18.
-  (Contributed by Chris Eibl, Ken Jin, and Brandt Bucher in :gh:`143068`.
-  Special thanks to the MSVC team including Hulon Jenkins.)
-
 * ``mimalloc`` is now used as the default allocator for
   for raw memory allocations such as via :c:func:`PyMem_RawMalloc`
   for better performance on :term:`free-threaded builds <free-threaded build>`.
@@ -1961,6 +1950,23 @@ Build changes
   Annotations are visible in ``/proc/<pid>/maps`` if the kernel supports the feature
   and :option:`-X dev <-X>` is passed to the Python or Python is built in :ref:`debug mode <debug-build>`.
   (Contributed by Donghee Na in :gh:`141770`.)
+
+.. _whatsnew315-windows-tail-calling-interpreter:
+
+* 64-bit builds using Visual Studio 2026 (MSVC 18) may now use the new
+  :ref:`tail-calling interpreter <whatsnew314-tail-call-interpreter>`.
+  Results on Visual Studio 18.1.1 report between
+  `15-20% <https://github.com/faster-cpython/ideas/blob/main/results/5800X-msvc.pgo2-vs-msvc.pgo.tc.svg>`__
+  speedup on the geometric mean of pyperformance on Windows x86-64 over
+  the switch-case interpreter on an AMD Ryzen 7 5800X. We have
+  observed speedups ranging from 14% for large pure-Python libraries
+  to 40% for long-running small pure-Python scripts on Windows.
+  This was made possible by a new feature introduced in MSVC 18,
+  which the official Windows 64-bit binaries on python.org__ now use.
+  (Contributed by Chris Eibl, Ken Jin, and Brandt Bucher in :gh:`143068`.
+  Special thanks to Steve Dower, and the MSVC team including Hulon Jenkins.)
+
+  __ https://www.python.org/downloads/windows/
 
 
 Porting to Python 3.15
