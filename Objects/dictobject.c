@@ -6641,8 +6641,8 @@ dictitems_xor_lock_held(PyObject *d1, PyObject *d2)
             if (_PyDict_DelItem_KnownHash(temp_dict, key, hash) < 0) {
                 goto error;
             }
-            Py_DECREF(key);
-            Py_DECREF(val2);
+            Py_CLEAR(key);
+            Py_CLEAR(val2);
         }
         else {
             PyObject *pair = _PyTuple_FromPairSteal(key, val2);
@@ -6656,7 +6656,7 @@ dictitems_xor_lock_held(PyObject *d1, PyObject *d2)
             }
             Py_DECREF(pair);
         }
-        Py_XDECREF(val1);
+        Py_CLEAR(val1);
     }
     key = val1 = val2 = NULL;
 
