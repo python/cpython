@@ -227,6 +227,18 @@ class PrettyPrinter:
             return f"\n{' ' * indent}{end_str}"
         return end_str
 
+    def _child_indent(self, indent, prefix_len):
+        if self._expand:
+            return indent
+        return indent + prefix_len
+
+    def _write_indent_padding(self, write):
+        if self._expand:
+            if self._indent_per_level > 0:
+                write(self._indent_per_level * " ")
+        elif self._indent_per_level > 1:
+            write((self._indent_per_level - 1) * " ")
+
     def _pprint_dataclass(self, object, stream, indent, allowance, context, level):
         # Lazy import to improve module import time
         from dataclasses import fields as dataclass_fields
@@ -246,10 +258,7 @@ class PrettyPrinter:
     def _pprint_dict(self, object, stream, indent, allowance, context, level):
         write = stream.write
         write(self._format_block_start('{', indent))
-        if self._indent_per_level > 1 and not self._expand:
-            write((self._indent_per_level - 1) * ' ')
-        if self._indent_per_level > 0 and self._expand:
-            write(self._indent_per_level * ' ')
+        self._write_indent_padding(write)
         length = len(object)
         if length:
             if self._sort_dicts:
@@ -282,12 +291,14 @@ class PrettyPrinter:
             return
         cls = object.__class__
         stream.write(cls.__name__ + '(')
-        if self._expand:
-            recursive_indent = indent
-        else:
-            recursive_indent = indent + len(cls.__name__) + 1
-        self._format(list(object.items()), stream, recursive_indent,
-                     allowance + 1, context, level)
+        self._format(
+            list(object.items()),
+            stream,
+            self._child_indent(indent, len(cls.__name__) + 1),
+            allowance + 1,
+            context,
+            level,
+        )
         stream.write(')')
 
     _dispatch[_collections.OrderedDict.__repr__] = _pprint_ordered_dict
@@ -467,12 +478,14 @@ class PrettyPrinter:
 
     def _pprint_mappingproxy(self, object, stream, indent, allowance, context, level):
         stream.write('mappingproxy(')
-        if self._expand:
-            recursive_indent = indent
-        else:
-            recursive_indent = indent + 13
-        self._format(object.copy(), stream, recursive_indent, allowance + 1,
-                     context, level)
+        self._format(
+            object.copy(),
+            stream,
+            self._child_indent(indent, 13),
+            allowance + 1,
+            context,
+            level,
+        )
         stream.write(')')
 
     _dispatch[_types.MappingProxyType.__repr__] = _pprint_mappingproxy
@@ -507,13 +520,14 @@ class PrettyPrinter:
             rep = self._repr(key, context, level)
             write(rep)
             write(': ')
-            if self._expand:
-                recursive_indent = indent
-            else:
-                recursive_indent = indent + len(rep) + 2
-            self._format(ent, stream, recursive_indent,
-                         allowance if last else 1,
-                         context, level)
+            self._format(
+                ent,
+                stream,
+                self._child_indent(indent, len(rep) + 2),
+                allowance if last else 1,
+                context,
+                level,
+            )
             if not last:
                 write(delimnl)
 
@@ -530,23 +544,21 @@ class PrettyPrinter:
                 # recursive dataclass repr.
                 write("...")
             else:
-                if self._expand:
-                    recursive_indent = indent
-                else:
-                    recursive_indent = indent + len(key) + 1
-                self._format(ent, stream, recursive_indent,
-                             allowance if last else 1,
-                             context, level)
+                self._format(
+                    ent,
+                    stream,
+                    self._child_indent(indent, len(key) + 1),
+                    allowance if last else 1,
+                    context,
+                    level,
+                )
             if not last:
                 write(delimnl)
 
     def _format_items(self, items, stream, indent, allowance, context, level):
         write = stream.write
         indent += self._indent_per_level
-        if self._indent_per_level > 1 and not self._expand:
-            write((self._indent_per_level - 1) * ' ')
-        if self._indent_per_level > 0 and self._expand:
-            write(self._indent_per_level * ' ')
+        self._write_indent_padding(write)
         delimnl = ',\n' + ' ' * indent
         delim = ''
         width = max_width = self._width - indent + 1
@@ -622,17 +634,16 @@ class PrettyPrinter:
             return
         cls = object.__class__
         stream.write(self._format_block_start(cls.__name__ + '({', indent))
-        if self._indent_per_level > 1 and not self._expand:
-            stream.write((self._indent_per_level - 1) * ' ')
-        if self._indent_per_level > 0 and self._expand:
-            stream.write(self._indent_per_level * ' ')
+        self._write_indent_padding(stream.write)
         items = object.most_common()
-        if self._expand:
-            recursive_indent = indent
-        else:
-            recursive_indent = indent + len(cls.__name__) + 1
-        self._format_dict_items(items, stream, recursive_indent, allowance + 2,
-                                context, level)
+        self._format_dict_items(
+            items,
+            stream,
+            self._child_indent(indent, len(cls.__name__) + 1),
+            allowance + 2,
+            context,
+            level,
+        )
         stream.write(self._format_block_end('})', indent))
 
     _dispatch[_collections.Counter.__repr__] = _pprint_counter
