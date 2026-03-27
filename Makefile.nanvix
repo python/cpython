@@ -129,6 +129,7 @@ CONFIGURE_ENV = \
 	AR="$(TOOLCHAIN_PREFIX)/bin/i686-nanvix-ar" \
 	RANLIB="$(TOOLCHAIN_PREFIX)/bin/i686-nanvix-ranlib" \
 	CFLAGS="-L$(SYSROOT_PATH)/lib -I$(SYSROOT_PATH)/include" \
+	CFLAGS_NODIST="-fno-semantic-interposition" \
 	LDFLAGS="-T$(SYSROOT_PATH)/lib/user.ld -Wl,--allow-multiple-definition -Wl,-pie -Wl,--export-dynamic -Wl,--no-dynamic-linker" \
 	LIBS="-Wl,--start-group $(LIBPOSIX) $(LIBC) $(LIBM) -lsqlite3 -lssl -lcrypto -lz -lbz2 -lffi -Wl,--end-group" \
 	LIBSQLITE3_LIBS="-L$(SYSROOT_PATH)/lib -lsqlite3" \
@@ -142,6 +143,7 @@ CONFIGURE_ENV = \
 
 # Configure options for Nanvix
 CONFIGURE_OPTS = \
+	--with-lto \
 	--disable-shared \
 	--build=x86_64-pc-linux-gnux32 \
 	--host=i686-nanvix \
@@ -186,12 +188,33 @@ build: $(CONFIGURED_MARKER)
 ifdef CONFIG_NANVIX_DOCKER
 	@echo "Building inside Docker..."
 	$(DOCKER_RUN) make -j$$(nproc) all
-	@# Rename python to python.elf for consistency
-	@if [ -f python ] && [ ! -f python$(EXE) ]; then mv python python$(EXE); fi
+	@# Rename python to python.elf for consistency (always use the latest build)
+	@if [ -f python ]; then mv -f python python$(EXE); fi
+	@# Strip debug symbols from the final binary for size reduction
+	$(DOCKER_RUN) sh -c '\
+		if [ ! -x "$(DOCKER_TOOLCHAIN_PATH)/bin/i686-nanvix-strip" ]; then \
+			echo "Warning: i686-nanvix-strip not found in Docker toolchain; skipping strip."; \
+		elif [ ! -f "$(DOCKER_WORKSPACE_PATH)/python$(EXE)" ]; then \
+			echo "Warning: $(DOCKER_WORKSPACE_PATH)/python$(EXE) not found; skipping strip."; \
+		else \
+			"$(DOCKER_TOOLCHAIN_PATH)/bin/i686-nanvix-strip" --strip-debug "$(DOCKER_WORKSPACE_PATH)/python$(EXE)" || { \
+				echo "Error: failed to strip debug symbols from python$(EXE) inside Docker."; exit 1; }; \
+		fi'
 else
 	make -j$$(nproc) all
-	@# Rename python to python.elf for consistency
-	@if [ -f python ] && [ ! -f python$(EXE) ]; then mv python python$(EXE); fi
+	@# Rename python to python.elf for consistency (always use the latest build)
+	@if [ -f python ]; then mv -f python python$(EXE); fi
+	@# Strip debug symbols from the final binary for size reduction
+	@if [ -x "$(TOOLCHAIN_PREFIX)/bin/i686-nanvix-strip" ]; then \
+		if [ -f "python$(EXE)" ]; then \
+			"$(TOOLCHAIN_PREFIX)/bin/i686-nanvix-strip" --strip-debug "python$(EXE)" || { \
+				echo "Error: failed to strip debug symbols from python$(EXE)."; exit 1; }; \
+		else \
+			echo "Warning: python$(EXE) not found; skipping strip."; \
+		fi; \
+	else \
+		echo "Warning: i686-nanvix-strip not found in $(TOOLCHAIN_PREFIX); skipping strip."; \
+	fi
 endif
 
 # Staging directory for tests (inside workspace so Docker can access it)
