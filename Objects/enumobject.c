@@ -226,8 +226,7 @@ enum_next_long(enumobject *en, PyObject* next_item)
         _PyTuple_Recycle(result);
         return result;
     }
-    result = _PyTuple_FromPairSteal(next_index, next_item);
-    return result;
+    return _PyTuple_FromPairSteal(next_index, next_item);
 }
 
 static PyObject *
@@ -269,8 +268,7 @@ enum_next(PyObject *op)
         _PyTuple_Recycle(result);
         return result;
     }
-    result = _PyTuple_FromPairSteal(next_index, next_item);
-    return result;
+    return _PyTuple_FromPairSteal(next_index, next_item);
 }
 
 static PyObject *

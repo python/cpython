@@ -1541,8 +1541,9 @@ float_as_integer_ratio_impl(PyObject *self)
             goto error;
     }
 
-    result_pair = _PyTuple_FromPairSteal(numerator, denominator);
-    numerator = denominator = NULL;
+    Py_DECREF(py_exponent);
+
+    return _PyTuple_FromPairSteal(numerator, denominator);
 
 error:
     Py_XDECREF(py_exponent);

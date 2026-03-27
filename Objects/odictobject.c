@@ -1171,8 +1171,7 @@ OrderedDict_popitem_impl(PyODictObject *self, int last)
     value = _odict_popkey_hash((PyObject *)self, key, NULL, _odictnode_HASH(node));
     if (value == NULL)
         return NULL;
-    item = _PyTuple_FromPairSteal(key, value);
-    return item;
+    return _PyTuple_FromPairSteal(key, value);
 }
 
 /* keys() */

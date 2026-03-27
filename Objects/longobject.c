@@ -4886,8 +4886,7 @@ long_divmod(PyObject *a, PyObject *b)
     if (l_divmod((PyLongObject*)a, (PyLongObject*)b, &div, &mod) < 0) {
         return NULL;
     }
-    z = _PyTuple_FromPairSteal((PyObject *)div, (PyObject *)mod);
-    return z;
+    return _PyTuple_FromPairSteal((PyObject *)div, (PyObject *)mod);
 }
 
 
@@ -6177,8 +6176,7 @@ _PyLong_DivmodNear(PyObject *a, PyObject *b)
             goto error;
     }
 
-    result = _PyTuple_FromPairSteal((PyObject *)quo, (PyObject *)rem);
-    return result;
+    return _PyTuple_FromPairSteal((PyObject *)quo, (PyObject *)rem);
 
   error:
     Py_XDECREF(quo);
@@ -6360,8 +6358,7 @@ int_as_integer_ratio_impl(PyObject *self)
     if (numerator == NULL) {
         return NULL;
     }
-    ratio_tuple = _PyTuple_FromPairSteal(numerator, _PyLong_GetOne());
-    return ratio_tuple;
+    return _PyTuple_FromPairSteal(numerator, _PyLong_GetOne());
 }
 
 /*[clinic input]

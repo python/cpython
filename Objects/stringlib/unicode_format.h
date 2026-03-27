@@ -1184,8 +1184,7 @@ fieldnameiter_next(PyObject *op)
             goto error;
 
         /* return a tuple of values */
-        result = _PyTuple_FromPairSteal(is_attr_obj, obj);
-        return result;
+        return _PyTuple_FromPairSteal(is_attr_obj, obj);
 
     error:
         Py_XDECREF(is_attr_obj);
@@ -1276,8 +1275,7 @@ formatter_field_name_split(PyObject *Py_UNUSED(module), PyObject *self)
         goto error;
 
     /* return a tuple of values */
-    result = _PyTuple_FromPairSteal(first_obj, (PyObject *)it);
-    return result;
+    return _PyTuple_FromPairSteal(first_obj, (PyObject *)it);
 
 error:
     Py_XDECREF(it);
