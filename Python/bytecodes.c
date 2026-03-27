@@ -2285,7 +2285,7 @@ dummy_func(
             list = PyStackRef_FromPyObjectStealMortal(list_o);
         }
 
-        inst(LIST_EXTEND, (list_st, unused[oparg-1], iterable_st -- list_st, unused[oparg-1])) {
+        op(_LIST_EXTEND, (list_st, unused[oparg-1], iterable_st -- list_st, unused[oparg-1], i)) {
             PyObject *list = PyStackRef_AsPyObjectBorrow(list_st);
             PyObject *iterable = PyStackRef_AsPyObjectBorrow(iterable_st);
 
@@ -2300,12 +2300,14 @@ dummy_func(
                           "Value after * must be an iterable, not %.200s",
                           Py_TYPE(iterable)->tp_name);
                 }
-                PyStackRef_CLOSE(iterable_st);
-                ERROR_IF(true);
+                ERROR_NO_POP();
             }
             assert(Py_IsNone(none_val));
-            PyStackRef_CLOSE(iterable_st);
+            i = iterable_st;
+            DEAD(iterable_st);
         }
+
+        macro(LIST_EXTEND) = _LIST_EXTEND + POP_TOP;
 
         op(_SET_UPDATE, (set, unused[oparg-1], iterable -- set, unused[oparg-1], i)) {
             int err = _PySet_Update(PyStackRef_AsPyObjectBorrow(set),

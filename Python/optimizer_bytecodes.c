@@ -1543,6 +1543,11 @@ dummy_func(void) {
         i = iterable;
     }
 
+    op(_LIST_EXTEND, (list_st, unused[oparg-1], iterable_st -- list_st, unused[oparg-1], i)) {
+        (void)list_st;
+        i = iterable_st;
+    }
+
     op(_DICT_MERGE, (callable, unused, unused, dict, unused[oparg - 1], update -- callable, unused, unused, dict, unused[oparg - 1], u)) {
         (void)callable;
         (void)dict;
