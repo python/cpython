@@ -56,7 +56,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        platform: [hyperlight, microvm]
+        platform: [microvm]
         process-mode: [multi-process, single-process, standalone]
         memory: [128mb]
     name: ${{ matrix.platform }}-${{ matrix.process-mode }}-${{ matrix.memory }}
@@ -92,7 +92,6 @@ jobs:
         run: ./z build
 
       - name: Test
-        if: matrix.process-mode != 'standalone'
         run: ./z test
 
       - name: Package
