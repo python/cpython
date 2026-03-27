@@ -1804,7 +1804,7 @@ odictiter_iternext_lock_held(PyObject *op)
         if (!PyErr_Occurred())
             PyErr_SetObject(PyExc_KeyError, key);
         Py_DECREF(key);
-        goto done;
+        goto error;
     }
 
     /* Handle the values case. */
@@ -1831,13 +1831,13 @@ odictiter_iternext_lock_held(PyObject *op)
     else {
         result = _PyTuple_FromPairSteal(key, value);
         if (result == NULL) {
-            goto done;
+            goto error;
         }
     }
 
     return result;
 
-done:
+error:
     Py_CLEAR(di->di_current);
     Py_CLEAR(di->di_odict);
     return NULL;
