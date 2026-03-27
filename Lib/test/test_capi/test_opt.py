@@ -4170,7 +4170,7 @@ class TestUopsOptimization(unittest.TestCase):
         self.assertEqual(res, TIER2_THRESHOLD)
         self.assertIsNotNone(ex)
         uops = get_opnames(ex)
-        self.assertIn("_BINARY_OP_SUBSCR_FROZEN_DICT", uops)
+        self.assertIn("_INSERT_2_LOAD_CONST_INLINE_BORROW", uops)
         self.assertNotIn("_BINARY_OP_SUBSCR_DICT", uops)
 
     def test_binary_subscr_frozendict_const_fold(self):

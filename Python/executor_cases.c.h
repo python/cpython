@@ -6952,52 +6952,6 @@
             break;
         }
 
-        case _BINARY_OP_SUBSCR_FROZEN_DICT_r23: {
-            CHECK_CURRENT_CACHED_VALUES(2);
-            assert(WITHIN_STACK_BOUNDS_IGNORING_CACHE());
-            _PyStackRef sub_st;
-            _PyStackRef dict_st;
-            _PyStackRef res;
-            _PyStackRef ds;
-            _PyStackRef ss;
-            _PyStackRef _stack_item_0 = _tos_cache0;
-            _PyStackRef _stack_item_1 = _tos_cache1;
-            sub_st = _stack_item_1;
-            dict_st = _stack_item_0;
-            PyObject *sub = PyStackRef_AsPyObjectBorrow(sub_st);
-            PyObject *dict = PyStackRef_AsPyObjectBorrow(dict_st);
-            assert(PyFrozenDict_CheckExact(dict));
-            STAT_INC(BINARY_OP, hit);
-            PyObject *res_o;
-            stack_pointer[0] = dict_st;
-            stack_pointer[1] = sub_st;
-            stack_pointer += 2;
-            ASSERT_WITHIN_STACK_BOUNDS(__FILE__, __LINE__);
-            _PyFrame_SetStackPointer(frame, stack_pointer);
-            int rc = PyDict_GetItemRef(dict, sub, &res_o);
-            stack_pointer = _PyFrame_GetStackPointer(frame);
-            if (rc == 0) {
-                _PyFrame_SetStackPointer(frame, stack_pointer);
-                _PyErr_SetKeyError(sub);
-                stack_pointer = _PyFrame_GetStackPointer(frame);
-            }
-            if (rc <= 0) {
-                SET_CURRENT_CACHED_VALUES(0);
-                JUMP_TO_ERROR();
-            }
-            res = PyStackRef_FromPyObjectSteal(res_o);
-            ds = dict_st;
-            ss = sub_st;
-            _tos_cache2 = ss;
-            _tos_cache1 = ds;
-            _tos_cache0 = res;
-            SET_CURRENT_CACHED_VALUES(3);
-            stack_pointer += -2;
-            ASSERT_WITHIN_STACK_BOUNDS(__FILE__, __LINE__);
-            assert(WITHIN_STACK_BOUNDS_IGNORING_CACHE());
-            break;
-        }
-
         case _BINARY_OP_SUBSCR_CHECK_FUNC_r23: {
             CHECK_CURRENT_CACHED_VALUES(2);
             assert(WITHIN_STACK_BOUNDS_IGNORING_CACHE());

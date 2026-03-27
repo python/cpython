@@ -1195,26 +1195,6 @@ dummy_func(
             INPUTS_DEAD();
         }
 
-        op(_BINARY_OP_SUBSCR_FROZEN_DICT, (dict_st, sub_st -- res, ds, ss)) {
-            PyObject *sub = PyStackRef_AsPyObjectBorrow(sub_st);
-            PyObject *dict = PyStackRef_AsPyObjectBorrow(dict_st);
-
-            assert(PyFrozenDict_CheckExact(dict));
-            STAT_INC(BINARY_OP, hit);
-            PyObject *res_o;
-            int rc = PyDict_GetItemRef(dict, sub, &res_o);
-            if (rc == 0) {
-                _PyErr_SetKeyError(sub);
-            }
-            if (rc <= 0) {
-                ERROR_NO_POP();
-            }
-            res = PyStackRef_FromPyObjectSteal(res_o);
-            ds = dict_st;
-            ss = sub_st;
-            INPUTS_DEAD();
-        }
-
         op(_BINARY_OP_SUBSCR_CHECK_FUNC, (container, unused -- container, unused, getitem)) {
             PyTypeObject *tp = Py_TYPE(PyStackRef_AsPyObjectBorrow(container));
             EXIT_IF(!PyType_HasFeature(tp, Py_TPFLAGS_HEAPTYPE));
