@@ -259,7 +259,7 @@ def JSONArray(s_and_end, scan_once, array_hook, _w=WHITESPACE.match, _ws=WHITESP
             raise JSONDecodeError("Illegal trailing comma before end of array", s, comma_idx)
 
     if array_hook is not None:
-        return array_hook(values), end
+        values = array_hook(values)
     return values, end
 
 
@@ -308,12 +308,13 @@ class JSONDecoder(object):
         If ``object_hook`` is also defined, the ``object_pairs_hook`` takes
         priority.
 
-        ``array_hook`` is an optional function that will be called with the result
-        of any literal array decode (a ``list``). The return value of this function will
-        be used instead of the ``list``. This feature can be used along
-        ``object_pairs_hook`` to customize the resulting data structure - for example,
-        by setting that to ``frozendict`` and ``array_hook`` to ``tuple``, one can get
-        a deep immutable data structute from any JSON data.
+        ``array_hook`` is an optional function that will be called with the
+        result of any literal array decode (a ``list``). The return value of
+        this function will be used instead of the ``list``. This feature can
+        be used along ``object_pairs_hook`` to customize the resulting data
+        structure - for example, by setting that to ``frozendict`` and
+        ``array_hook`` to ``tuple``, one can get a deep immutable data
+        structute from any JSON data.
 
         ``parse_float``, if specified, will be called with the string
         of every JSON float to be decoded. By default this is equivalent to
