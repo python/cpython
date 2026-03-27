@@ -312,10 +312,10 @@ def clean_targets(context):
     if context.target in {"all", "build"}:
         clean("build")
 
-    if context.target == "hosts":
+    if context.target in {"all", "hosts"}:
         for host in HOSTS:
             clean(host)
-    elif context.target not in {"all", "build"}:
+    elif context.target != "build":
         clean(context.target)
 
 
