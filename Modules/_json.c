@@ -1270,8 +1270,9 @@ scanner_new(PyTypeObject *type, PyObject *args, PyObject *kwds)
     if (s->object_pairs_hook == NULL)
         goto bail;
     s->array_hook = PyObject_GetAttrString(ctx, "array_hook");
-    if (s->array_hook == NULL)
+    if (s->array_hook == NULL) {
         goto bail;
+    }
     s->parse_float = PyObject_GetAttrString(ctx, "parse_float");
     if (s->parse_float == NULL)
         goto bail;

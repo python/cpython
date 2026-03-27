@@ -74,6 +74,7 @@ class TestDecode:
         t = self.loads(s, array_hook=tuple)
         self.assertEqual(t, (1, 2, 3))
         self.assertEqual(type(t), tuple)
+
         # Nested array in inner structure with object_hook
         s = '{"xkd": [[1], [2], [3]]}'
         p = frozendict(xkd=((1,), (2,), (3,)))
@@ -83,6 +84,7 @@ class TestDecode:
         self.assertEqual(type(data["xkd"]), tuple)
         for item in data["xkd"]:
             self.assertEqual(type(item), tuple)
+
         self.assertEqual(self.loads('[]', array_hook=tuple), ())
 
     def test_decoder_optimizations(self):

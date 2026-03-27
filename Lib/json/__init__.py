@@ -275,8 +275,8 @@ def detect_encoding(b):
 
 
 def load(fp, *, cls=None, object_hook=None, parse_float=None,
-        parse_int=None, parse_constant=None, object_pairs_hook=None,
-        array_hook=None, **kw):
+         parse_int=None, parse_constant=None, object_pairs_hook=None,
+         array_hook=None, **kw):
     """Deserialize ``fp`` (a ``.read()``-supporting file-like object containing
     a JSON document) to a Python object.
 
@@ -310,8 +310,8 @@ def load(fp, *, cls=None, object_hook=None, parse_float=None,
 
 
 def loads(s, *, cls=None, object_hook=None, parse_float=None,
-        parse_int=None, parse_constant=None, object_pairs_hook=None,
-        array_hook=None, **kw):
+          parse_int=None, parse_constant=None, object_pairs_hook=None,
+          array_hook=None, **kw):
     """Deserialize ``s`` (a ``str``, ``bytes`` or ``bytearray`` instance
     containing a JSON document) to a Python object.
 
