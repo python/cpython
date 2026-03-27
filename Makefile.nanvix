@@ -129,7 +129,7 @@ CONFIGURE_ENV = \
 	AR="$(TOOLCHAIN_PREFIX)/bin/i686-nanvix-ar" \
 	RANLIB="$(TOOLCHAIN_PREFIX)/bin/i686-nanvix-ranlib" \
 	CFLAGS="-L$(SYSROOT_PATH)/lib -I$(SYSROOT_PATH)/include" \
-	LDFLAGS="-static -T$(SYSROOT_PATH)/lib/user.ld -Wl,--allow-multiple-definition" \
+	LDFLAGS="-T$(SYSROOT_PATH)/lib/user.ld -Wl,--allow-multiple-definition -Wl,-pie -Wl,--export-dynamic -Wl,--no-dynamic-linker" \
 	LIBS="-Wl,--start-group $(LIBPOSIX) $(LIBC) $(LIBM) -lsqlite3 -lssl -lcrypto -lz -lbz2 -lffi -Wl,--end-group" \
 	LIBSQLITE3_LIBS="-L$(SYSROOT_PATH)/lib -lsqlite3" \
 	LIBSQLITE3_CFLAGS="-I$(SYSROOT_PATH)/include" \
@@ -159,7 +159,9 @@ CONFIGURE_OPTS = \
 	ac_cv_file__dev_ptc=no \
 	ac_cv_pthread_is_default=yes \
 	ac_cv_pthread=yes \
-	ac_cv_kthread=no
+	ac_cv_kthread=no \
+	ac_cv_func_dlopen=yes \
+	ac_cv_header_dlfcn_h=yes
 
 # Marker file to track if configure has been run
 CONFIGURED_MARKER = .nanvix-configured
