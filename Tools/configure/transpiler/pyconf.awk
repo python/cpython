@@ -2027,13 +2027,13 @@ function pyconf_ax_c_float_words_bigendian(on_big, on_little, on_unknown, src, c
         cmd = cmd V["CC"] " " V["CPPFLAGS"] " " V["CFLAGS"] " " V["LDFLAGS"] " " conftest " -o " exe " " V["LIBS"] " 2>/dev/null"
         rc = system(cmd)
         if (rc != 0) {
-                system("rm -f " conftest " " exe)
+                system("rm -f " _pyconf_tmpdir "/conftest*")
                 _pyconf_retval = "unknown"
                 return
         }
-        has_big = (system("grep -c noonsees " exe " >/dev/null 2>&1") == 0)
-        has_little = (system("grep -c seesnoon " exe " >/dev/null 2>&1") == 0)
-        system("rm -f " conftest " " exe)
+        has_big = (system("grep -c noonsees " _pyconf_tmpdir "/conftest* >/dev/null 2>&1") == 0)
+        has_little = (system("grep -c seesnoon " _pyconf_tmpdir "/conftest* >/dev/null 2>&1") == 0)
+        system("rm -f " _pyconf_tmpdir "/conftest*")
         if (has_big && !has_little)
                 _pyconf_retval = "big"
         else if (has_little && !has_big)

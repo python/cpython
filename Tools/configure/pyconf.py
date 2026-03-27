@@ -2886,10 +2886,20 @@ def ax_c_float_words_bigendian(
             if callable(on_unknown):
                 on_unknown()
             return
-        # Read the linked binary and look for the marker strings.
-        try:
-            data = open(exe_path, "rb").read()
-        except OSError:
+        # Read all conftest* output files and look for the marker strings.
+        # Autoconf uses "grep noonsees conftest*" which globs all outputs;
+        # this is important for Emscripten where the compiler may produce
+        # conftest.js + conftest.wasm instead of a single conftest binary.
+        data = b""
+        for name in os.listdir(tmp):
+            if not name.startswith("conftest") or name == "conftest.c":
+                continue
+            path = os.path.join(tmp, name)
+            try:
+                data += open(path, "rb").read()
+            except OSError:
+                pass
+        if not data:
             if callable(on_unknown):
                 on_unknown()
             return
