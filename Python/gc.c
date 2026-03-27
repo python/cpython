@@ -1422,7 +1422,10 @@ add_stats(GCState *gcstate, int gen, struct gc_generation_stats *stats)
     cur_stats->objects_not_transitively_reachable = prev_stats->objects_not_transitively_reachable + stats->objects_not_transitively_reachable;
     cur_stats->uncollectable = prev_stats->uncollectable + stats->uncollectable;
     cur_stats->candidates = prev_stats->candidates + stats->candidates;
-    cur_stats->duration = prev_stats->duration + stats->duration;
+    cur_stats->duration = stats->duration;
+    cur_stats->total_duration = prev_stats->total_duration + stats->duration;
+    cur_stats->heap_size = gcstate->heap_size;
+    cur_stats->work_to_do = gcstate->work_to_do;
 }
 
 static void

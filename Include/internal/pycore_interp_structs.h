@@ -195,7 +195,11 @@ struct gc_generation_stats {
     Py_ssize_t objects_transitively_reachable;
     Py_ssize_t objects_not_transitively_reachable;
 
+    Py_ssize_t heap_size;
+    Py_ssize_t work_to_do;
+
     double duration;
+    double total_duration;
 };
 
 struct gc_generation_stats_buffer {
