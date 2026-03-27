@@ -4149,6 +4149,9 @@ then
 	*-*-darwin*)
 		ac_sys_system=Darwin
 		;;
+	*-gnu)
+		ac_sys_system=GNU
+		;;
 	*-*-vxworks*)
 	    ac_sys_system=VxWorks
 	    ;;
@@ -4389,7 +4392,7 @@ then :
 	yes)
 		case $ac_sys_system in
 			Darwin) enableval=/Library/Frameworks ;;
-			iOS)    enableval=Apple/iOS/Frameworks/\$\(MULTIARCH\) ;;
+			iOS)    enableval=Platforms/Apple/iOS/Frameworks/\$\(MULTIARCH\) ;;
 			*) as_fn_error $? "Unknown platform for framework build" "$LINENO" 5
 		esac
 	esac
@@ -4500,9 +4503,9 @@ then :
 
 				prefix=$PYTHONFRAMEWORKPREFIX
 				PYTHONFRAMEWORKINSTALLNAMEPREFIX="@rpath/$PYTHONFRAMEWORKDIR"
-				RESSRCDIR=Apple/iOS/Resources
+				RESSRCDIR=Platforms/Apple/iOS/Resources
 
-				ac_config_files="$ac_config_files Apple/iOS/Resources/Info.plist"
+				ac_config_files="$ac_config_files Platforms/Apple/iOS/Resources/Info.plist"
 
 				;;
 			*)
@@ -4618,6 +4621,9 @@ if test "$cross_compiling" = yes; then
 		*)
 			_host_ident=$host_cpu
 		esac
+		;;
+	*-gnu)
+		_host_ident=$host_cpu
 		;;
 	*-*-cygwin*)
 		_host_ident=
@@ -35618,7 +35624,7 @@ do
     "Mac/PythonLauncher/Makefile") CONFIG_FILES="$CONFIG_FILES Mac/PythonLauncher/Makefile" ;;
     "Mac/Resources/framework/Info.plist") CONFIG_FILES="$CONFIG_FILES Mac/Resources/framework/Info.plist" ;;
     "Mac/Resources/app/Info.plist") CONFIG_FILES="$CONFIG_FILES Mac/Resources/app/Info.plist" ;;
-    "Apple/iOS/Resources/Info.plist") CONFIG_FILES="$CONFIG_FILES Apple/iOS/Resources/Info.plist" ;;
+    "Platforms/Apple/iOS/Resources/Info.plist") CONFIG_FILES="$CONFIG_FILES Platforms/Apple/iOS/Resources/Info.plist" ;;
     "Makefile.pre") CONFIG_FILES="$CONFIG_FILES Makefile.pre" ;;
     "Misc/python.pc") CONFIG_FILES="$CONFIG_FILES Misc/python.pc" ;;
     "Misc/python-embed.pc") CONFIG_FILES="$CONFIG_FILES Misc/python-embed.pc" ;;

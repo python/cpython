@@ -31,7 +31,7 @@ class ArraySubclassWithKwargs(array.array):
     def __init__(self, typecode, newarg=None):
         array.array.__init__(self)
 
-typecodes = 'uwbBhHiIlLfdqQ'
+typecodes = 'uwbBhHiIlLfdqQFD'
 
 class MiscTest(unittest.TestCase):
 
@@ -113,6 +113,12 @@ UTF16_LE = 18
 UTF16_BE = 19
 UTF32_LE = 20
 UTF32_BE = 21
+IEEE_754_FLOAT_COMPLEX_LE = 22
+IEEE_754_FLOAT_COMPLEX_BE = 23
+IEEE_754_DOUBLE_COMPLEX_LE = 24
+IEEE_754_DOUBLE_COMPLEX_BE = 25
+
+MACHINE_FORMAT_CODE_MAX = 25
 
 
 class ArrayReconstructorTest(unittest.TestCase):
@@ -139,7 +145,7 @@ class ArrayReconstructorTest(unittest.TestCase):
         self.assertRaises(ValueError, array_reconstructor,
                           array.array, "b", UNKNOWN_FORMAT, b"")
         self.assertRaises(ValueError, array_reconstructor,
-                          array.array, "b", 22, b"")
+                          array.array, "b", MACHINE_FORMAT_CODE_MAX + 1, b"")
         self.assertRaises(ValueError, array_reconstructor,
                           array.array, "d", 16, b"a")
 
@@ -191,7 +197,15 @@ class ArrayReconstructorTest(unittest.TestCase):
             (['d'], IEEE_754_DOUBLE_LE, '<dddd',
              [9006104071832581.0, float('inf'), float('-inf'), -0.0]),
             (['d'], IEEE_754_DOUBLE_BE, '>dddd',
-             [9006104071832581.0, float('inf'), float('-inf'), -0.0])
+             [9006104071832581.0, float('inf'), float('-inf'), -0.0]),
+            (['F'], IEEE_754_FLOAT_COMPLEX_LE, '<FFFF',
+             [16711938.0j, float('inf'), complex('1-infj'), -0.0]),
+            (['F'], IEEE_754_FLOAT_COMPLEX_BE, '>FFFF',
+             [16711938.0j, float('inf'), complex('1-infj'), -0.0]),
+            (['D'], IEEE_754_DOUBLE_COMPLEX_LE, '<DDDD',
+             [9006104071832581.0j, float('inf'), complex('1-infj'), -0.0]),
+            (['D'], IEEE_754_DOUBLE_COMPLEX_BE, '>DDDD',
+             [9006104071832581.0j, float('inf'), complex('1-infj'), -0.0]),
         )
         for testcase in testcases:
             valid_typecodes, mformat_code, struct_fmt, values = testcase
@@ -279,7 +293,7 @@ class BaseTest:
             example = self.example
         a = array.array(self.typecode, example)
         self.assertRaises(TypeError, a.byteswap, 42)
-        if a.itemsize in (1, 2, 4, 8):
+        if a.itemsize in (1, 2, 4, 8, 16):
             b = array.array(self.typecode, example)
             b.byteswap()
             if a.itemsize==1:
@@ -1525,6 +1539,55 @@ class FPTest(NumberTest):
             b.byteswap()
             self.assertEqual(a, b)
 
+class CFPTest(NumberTest):
+    example = [-42j, 0, 42+1j, 1e5j, -1e10]
+    outside = 23
+
+    def assertEntryEqual(self, entry1, entry2):
+        self.assertAlmostEqual(entry1, entry2)
+
+    def test_cmp(self):
+        a = array.array(self.typecode, self.example)
+        self.assertIs(a == 42, False)
+        self.assertIs(a != 42, True)
+
+        self.assertIs(a == a, True)
+        self.assertIs(a != a, False)
+        self.assertIs(a < a, False)
+        self.assertIs(a <= a, True)
+        self.assertIs(a > a, False)
+        self.assertIs(a >= a, True)
+
+        self.assertIs(a == 2*a, False)
+        self.assertIs(a != 2*a, True)
+        self.assertIs(a < 2*a, True)
+        self.assertIs(a <= 2*a, True)
+        self.assertIs(a > 2*a, False)
+        self.assertIs(a >= 2*a, False)
+
+    def test_nan(self):
+        a = array.array(self.typecode, [float('nan')])
+        b = array.array(self.typecode, [float('nan')])
+        self.assertIs(a != b, True)
+        self.assertIs(a == b, False)
+
+    def test_byteswap(self):
+        a = array.array(self.typecode, self.example)
+        self.assertRaises(TypeError, a.byteswap, 42)
+        if a.itemsize in (1, 2, 4, 8):
+            b = array.array(self.typecode, self.example)
+            b.byteswap()
+            if a.itemsize == 1:
+                self.assertEqual(a, b)
+            else:
+                # On alphas treating the byte swapped bit patterns as
+                # floats/doubles results in floating-point exceptions
+                # => compare the 8bit string values instead
+                self.assertNotEqual(a.tobytes(), b.tobytes())
+            b.byteswap()
+            self.assertEqual(a, b)
+
+
 class FloatTest(FPTest, unittest.TestCase):
     typecode = 'f'
     minitemsize = 4
@@ -1549,6 +1612,15 @@ class DoubleTest(FPTest, unittest.TestCase):
             pass
         else:
             self.fail("Array of size > maxsize created - MemoryError expected")
+
+
+class ComplexFloatTest(CFPTest, unittest.TestCase):
+    typecode = 'F'
+    minitemsize = 8
+
+class ComplexDoubleTest(CFPTest, unittest.TestCase):
+    typecode = 'D'
+    minitemsize = 16
 
 
 class LargeArrayTest(unittest.TestCase):
