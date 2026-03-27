@@ -6658,7 +6658,6 @@ dictitems_xor_lock_held(PyObject *d1, PyObject *d2)
         }
         Py_CLEAR(val1);
     }
-    key = val1 = val2 = NULL;
 
     PyObject *remaining_pairs = PyObject_CallMethodNoArgs(
             temp_dict, &_Py_ID(items));
