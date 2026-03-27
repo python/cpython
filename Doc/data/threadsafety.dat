@@ -80,9 +80,9 @@ PyBytes_FromString:atomic:
 PyBytes_FromStringAndSize:atomic:
 PyBytes_DecodeEscape:atomic:
 
-# Creation from object - may call arbitrary code
-PyBytes_FromFormat:shared:
-PyBytes_FromFormatV:shared:
+# Creation from formatting C primitives - pure allocation, no shared state
+PyBytes_FromFormat:atomic:
+PyBytes_FromFormatV:atomic:
 PyBytes_FromObject:shared:
 
 # Size - uses atomic load on free-threaded builds
