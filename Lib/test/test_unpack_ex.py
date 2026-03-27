@@ -134,6 +134,22 @@ Dict display element unpacking
     ...
     TypeError: 'list' object is not a mapping
 
+    >>> class OnlyKeys:
+    ...     def keys(self):
+    ...         return ['key']
+    >>> {**OnlyKeys()}
+    Traceback (most recent call last):
+      ...
+    TypeError: 'OnlyKeys' object is not subscriptable
+
+    >>> class BrokenKeys:
+    ...     def keys(self):
+    ...         return 1
+    >>> {**BrokenKeys()}
+    Traceback (most recent call last):
+      ...
+    TypeError: test.test_unpack_ex.BrokenKeys.keys() must return an iterable, not int
+
     >>> len(eval("{" + ", ".join("**{{{}: {}}}".format(i, i)
     ...                          for i in range(1000)) + "}"))
     1000
@@ -559,6 +575,176 @@ Some size constraints (all fail.)
 '*rest', but it's 1<<24 and testing it takes too much memory.)
 
 """
+
+def test_errors_in_iter():
+    """
+    >>> class A:
+    ...     def __iter__(self):
+    ...         raise exc
+    ...
+    >>> exc = ZeroDivisionError('some error')
+    >>> [*A()]
+    Traceback (most recent call last):
+      ...
+    ZeroDivisionError: some error
+
+    >>> {*A()}
+    Traceback (most recent call last):
+      ...
+    ZeroDivisionError: some error
+
+    >>> exc = AttributeError('some error')
+    >>> [*A()]
+    Traceback (most recent call last):
+      ...
+    AttributeError: some error
+
+    >>> {*A()}
+    Traceback (most recent call last):
+      ...
+    AttributeError: some error
+
+    >>> exc = TypeError('some error')
+    >>> [*A()]
+    Traceback (most recent call last):
+      ...
+    TypeError: some error
+
+    >>> {*A()}
+    Traceback (most recent call last):
+      ...
+    TypeError: some error
+    """
+
+def test_errors_in_next():
+    """
+    >>> class I:
+    ...     def __iter__(self):
+    ...         return self
+    ...     def __next__(self):
+    ...         raise exc
+    ...
+    >>> class A:
+    ...     def __iter__(self):
+    ...         return I()
+    ...
+
+    >>> exc = ZeroDivisionError('some error')
+    >>> [*A()]
+    Traceback (most recent call last):
+      ...
+    ZeroDivisionError: some error
+
+    >>> {*A()}
+    Traceback (most recent call last):
+      ...
+    ZeroDivisionError: some error
+
+    >>> exc = AttributeError('some error')
+    >>> [*A()]
+    Traceback (most recent call last):
+      ...
+    AttributeError: some error
+
+    >>> {*A()}
+    Traceback (most recent call last):
+      ...
+    AttributeError: some error
+
+    >>> exc = TypeError('some error')
+    >>> [*A()]
+    Traceback (most recent call last):
+      ...
+    TypeError: some error
+
+    >>> {*A()}
+    Traceback (most recent call last):
+      ...
+    TypeError: some error
+    """
+
+def test_errors_in_keys():
+    """
+    >>> class D:
+    ...     def keys(self):
+    ...         raise exc
+    ...
+    >>> exc = ZeroDivisionError('some error')
+    >>> {**D()}
+    Traceback (most recent call last):
+      ...
+    ZeroDivisionError: some error
+
+    >>> exc = AttributeError('some error')
+    >>> {**D()}
+    Traceback (most recent call last):
+      ...
+    AttributeError: some error
+
+    >>> exc = TypeError('some error')
+    >>> {**D()}
+    Traceback (most recent call last):
+      ...
+    TypeError: some error
+    """
+
+def test_errors_in_keys_next():
+    """
+    >>> class I:
+    ...     def __iter__(self):
+    ...         return self
+    ...     def __next__(self):
+    ...         raise exc
+    ...
+    >>> class D:
+    ...     def keys(self):
+    ...         return I()
+    ...
+    >>> exc = ZeroDivisionError('some error')
+    >>> {**D()}
+    Traceback (most recent call last):
+      ...
+    ZeroDivisionError: some error
+
+    >>> exc = AttributeError('some error')
+    >>> {**D()}
+    Traceback (most recent call last):
+      ...
+    AttributeError: some error
+
+    >>> exc = TypeError('some error')
+    >>> {**D()}
+    Traceback (most recent call last):
+      ...
+    TypeError: some error
+    """
+
+def test_errors_in_getitem():
+    """
+    >>> class D:
+    ...     def keys(self):
+    ...         return ['key']
+    ...     def __getitem__(self, key):
+    ...         raise exc
+    ...
+    >>> exc = ZeroDivisionError('some error')
+    >>> {**D()}
+    Traceback (most recent call last):
+      ...
+    ZeroDivisionError: some error
+
+    >>> exc = AttributeError('some error')
+    >>> {**D()}
+    Traceback (most recent call last):
+      ...
+    AttributeError: some error
+
+    >>> exc = TypeError('some error')
+    >>> {**D()}
+    Traceback (most recent call last):
+      ...
+    TypeError: some error
+    """
 
 __test__ = {'doctests' : doctests}
 

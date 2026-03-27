@@ -1088,6 +1088,49 @@ class CommandLineAndEnvVarTests(unittest.TestCase):
         self.assertEqual(result.returncode, 0, f"stderr: {result.stderr}")
         self.assertIn("EAGER", result.stdout)
 
+    def test_cli_lazy_imports_none_disables_dunder_lazy_modules(self):
+        """-X lazy_imports=none should override __lazy_modules__."""
+        code = textwrap.dedent("""
+            import sys
+            __lazy_modules__ = ["json"]
+            import json
+            if 'json' in sys.modules:
+                print("EAGER")
+            else:
+                print("LAZY")
+        """)
+        result = subprocess.run(
+            [sys.executable, "-X", "lazy_imports=none", "-c", code],
+            capture_output=True,
+            text=True,
+        )
+        self.assertEqual(result.returncode, 0, f"stderr: {result.stderr}")
+        self.assertIn("EAGER", result.stdout)
+
+    def test_env_var_lazy_imports_none_disables_dunder_lazy_modules(self):
+        """PYTHON_LAZY_IMPORTS=none should override __lazy_modules__."""
+        code = textwrap.dedent("""
+            import sys
+            __lazy_modules__ = ["json"]
+            import json
+            if 'json' in sys.modules:
+                print("EAGER")
+            else:
+                print("LAZY")
+        """)
+        import os
+
+        env = os.environ.copy()
+        env["PYTHON_LAZY_IMPORTS"] = "none"
+        result = subprocess.run(
+            [sys.executable, "-c", code],
+            capture_output=True,
+            text=True,
+            env=env,
+        )
+        self.assertEqual(result.returncode, 0, f"stderr: {result.stderr}")
+        self.assertIn("EAGER", result.stdout)
+
     def test_cli_overrides_env_var(self):
         """Command-line option should take precedence over environment variable."""
         # PEP 810: -X lazy_imports takes precedence over PYTHON_LAZY_IMPORTS
