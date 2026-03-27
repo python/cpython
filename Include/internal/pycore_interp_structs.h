@@ -179,9 +179,20 @@ struct gc_generation {
 
 /* Running stats per generation */
 struct gc_generation_stats {
-    PyTime_t ts;
+    PyTime_t ts_start;
+    PyTime_t ts_stop;
+
+    /* heap_size on the start of the collection */
+    Py_ssize_t heap_size;
+
+    /* work_to_do on the start of the collection */
+    Py_ssize_t work_to_do;
+
     /* total number of collections */
     Py_ssize_t collections;
+
+    /* total number of visited objects */
+    Py_ssize_t object_visits;
 
     /* total number of collected objects */
     Py_ssize_t collected;
@@ -189,21 +200,20 @@ struct gc_generation_stats {
     Py_ssize_t uncollectable;
     // Total number of objects considered for collection and traversed:
     Py_ssize_t candidates;
-    // Duration of the collection in seconds:
 
-    Py_ssize_t object_visits;
     Py_ssize_t objects_transitively_reachable;
     Py_ssize_t objects_not_transitively_reachable;
-
-    Py_ssize_t heap_size;
-    Py_ssize_t work_to_do;
-
-    double duration;
-    double total_duration;
 };
 
-struct gc_generation_stats_buffer {
-    struct gc_generation_stats items[11];
+#define GC_YOUNG_STATS_SIZE 11
+#define GC_OLD_STATS_SIZE 3
+struct gc_young_stats_buffer {
+    struct gc_generation_stats items[GC_YOUNG_STATS_SIZE];
+    int8_t index;
+};
+
+struct gc_old_stats_buffer {
+    struct gc_generation_stats items[GC_OLD_STATS_SIZE];
     int8_t index;
 };
 
@@ -217,7 +227,8 @@ enum _GCPhase {
 #define NUM_GENERATIONS 3
 
 struct gc_stats {
-    struct gc_generation_stats_buffer gen[NUM_GENERATIONS];
+    struct gc_young_stats_buffer young;
+    struct gc_old_stats_buffer old[2];
 };
 
 struct _gc_runtime_state {

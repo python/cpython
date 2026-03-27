@@ -1394,18 +1394,33 @@ gc_list_set_space(PyGC_Head *list, int space)
 static struct gc_generation_stats *
 gc_get_stats(GCState *gcstate, int gen)
 {
-    struct gc_generation_stats_buffer *buffer = &gcstate->generation_stats.gen[gen];
-    buffer->index = (buffer->index + 1) % 11;
-    struct gc_generation_stats *stats = &buffer->items[buffer->index];
-    return stats;
+    if (gen == 0) {
+        struct gc_young_stats_buffer *buffer = &gcstate->generation_stats.young;
+        buffer->index = (buffer->index + 1) % GC_YOUNG_STATS_SIZE;
+        struct gc_generation_stats *stats = &buffer->items[buffer->index];
+        return stats;
+    }
+    else {
+        struct gc_old_stats_buffer *buffer = &gcstate->generation_stats.old[gen - 1];
+        buffer->index = (buffer->index + 1) % GC_OLD_STATS_SIZE;
+        struct gc_generation_stats *stats = &buffer->items[buffer->index];
+        return stats;
+    }
 }
 
 static struct gc_generation_stats *
 gc_get_prev_stats(GCState *gcstate, int gen)
 {
-    struct gc_generation_stats_buffer *buffer = &gcstate->generation_stats.gen[gen];
-    struct gc_generation_stats *stats = &buffer->items[buffer->index];
-    return stats;
+    if (gen == 0) {
+        struct gc_young_stats_buffer *buffer = &gcstate->generation_stats.young;
+        struct gc_generation_stats *stats = &buffer->items[buffer->index];
+        return stats;
+    }
+    else {
+        struct gc_old_stats_buffer *buffer = &gcstate->generation_stats.old[gen - 1];
+        struct gc_generation_stats *stats = &buffer->items[buffer->index];
+        return stats;
+    }
 }
 
 static void
@@ -1414,18 +1429,21 @@ add_stats(GCState *gcstate, int gen, struct gc_generation_stats *stats)
     struct gc_generation_stats *prev_stats = gc_get_prev_stats(gcstate, gen);
     struct gc_generation_stats *cur_stats = gc_get_stats(gcstate, gen);
 
-    cur_stats->ts = stats->ts;
-    cur_stats->collections = prev_stats->collections + 1;
-    cur_stats->object_visits = prev_stats->object_visits + stats->object_visits;
-    cur_stats->collected = prev_stats->collected + stats->collected;
-    cur_stats->objects_transitively_reachable = prev_stats->objects_transitively_reachable + stats->objects_transitively_reachable;
-    cur_stats->objects_not_transitively_reachable = prev_stats->objects_not_transitively_reachable + stats->objects_not_transitively_reachable;
-    cur_stats->uncollectable = prev_stats->uncollectable + stats->uncollectable;
-    cur_stats->candidates = prev_stats->candidates + stats->candidates;
-    cur_stats->duration = stats->duration;
-    cur_stats->total_duration = prev_stats->total_duration + stats->duration;
-    cur_stats->heap_size = gcstate->heap_size;
-    cur_stats->work_to_do = gcstate->work_to_do;
+    memcpy(cur_stats, prev_stats, sizeof(struct gc_generation_stats));
+
+    cur_stats->ts_start = stats->ts_start;
+    cur_stats->ts_stop = stats->ts_stop;
+    cur_stats->heap_size = stats->heap_size;
+    cur_stats->work_to_do = stats->work_to_do;
+
+    cur_stats->collections += 1;
+    cur_stats->object_visits += stats->object_visits;
+    cur_stats->collected += stats->collected;
+    cur_stats->uncollectable += stats->uncollectable;
+    cur_stats->candidates += stats->candidates;
+
+    cur_stats->objects_transitively_reachable += stats->objects_transitively_reachable;
+    cur_stats->objects_not_transitively_reachable += stats->objects_not_transitively_reachable;
 }
 
 static void
@@ -1907,12 +1925,13 @@ do_gc_callback(GCState *gcstate, const char *phase,
     assert(PyList_CheckExact(gcstate->callbacks));
     PyObject *info = NULL;
     if (PyList_GET_SIZE(gcstate->callbacks) != 0) {
+        double duration = PyTime_AsSecondsDouble(stats->ts_stop - stats->ts_start);
         info = Py_BuildValue("{sisnsnsnsd}",
             "generation", generation,
             "collected", stats->collected,
             "uncollectable", stats->uncollectable,
             "candidates", stats->candidates,
-            "duration", stats->duration);
+            "duration", duration);
         if (info == NULL) {
             PyErr_FormatUnraisable("Exception ignored while invoking gc callbacks");
             return;
@@ -2150,7 +2169,9 @@ _PyGC_Collect(PyThreadState *tstate, int generation, _PyGC_Reason reason)
     if (PyDTrace_GC_START_ENABLED()) {
         PyDTrace_GC_START(generation);
     }
-    (void)PyTime_PerfCounterRaw(&stats.ts);
+    stats.heap_size = gcstate->heap_size;
+    stats.work_to_do = gcstate->work_to_do;
+    (void)PyTime_PerfCounterRaw(&stats.ts_start);
     PyObject *exc = _PyErr_GetRaisedException(tstate);
     switch(generation) {
         case 0:
@@ -2165,9 +2186,7 @@ _PyGC_Collect(PyThreadState *tstate, int generation, _PyGC_Reason reason)
         default:
             Py_UNREACHABLE();
     }
-    PyTime_t stop;
-    (void)PyTime_PerfCounterRaw(&stop);
-    stats.duration = PyTime_AsSecondsDouble(stop - stats.ts);
+    (void)PyTime_PerfCounterRaw(&stats.ts_stop);
     add_stats(gcstate, generation, &stats);
     if (PyDTrace_GC_DONE_ENABLED()) {
         PyDTrace_GC_DONE(stats.uncollectable + stats.collected);
@@ -2190,9 +2209,10 @@ _PyGC_Collect(PyThreadState *tstate, int generation, _PyGC_Reason reason)
     _Py_atomic_store_int(&gcstate->collecting, 0);
 
     if (gcstate->debug & _PyGC_DEBUG_STATS) {
+        double duration = PyTime_AsSecondsDouble(stats.ts_stop - stats.ts_start);
         PySys_WriteStderr(
             "gc: done, %zd unreachable, %zd uncollectable, %.4fs elapsed\n",
-            stats.collected + stats.uncollectable, stats.uncollectable, stats.duration
+            stats.collected + stats.uncollectable, stats.uncollectable, duration
         );
     }
 
