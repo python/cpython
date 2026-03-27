@@ -194,7 +194,7 @@ class Optimizer:
     _re_small_const_1 = _RE_NEVER_MATCH
     _re_small_const_2 = _RE_NEVER_MATCH
     const_reloc = "<Not supported>"
-    _frame_pointer_prologue: typing.ClassVar[re.Pattern[str]] = _RE_NEVER_MATCH
+    _frame_pointer_modify: typing.ClassVar[re.Pattern[str]] = _RE_NEVER_MATCH
 
     def __post_init__(self) -> None:
         # Split the code into a linked list of basic blocks. A basic block is an
@@ -561,7 +561,7 @@ class Optimizer:
                 continue
             for inst in block.instructions:
                 if self.frame_pointers:
-                    assert self._frame_pointer_prologue.match(inst.text) is None, "Frame pointer should not be modified"
+                    assert self._frame_pointer_modify.match(inst.text) is None, "Frame pointer should not be modified"
 
     def run(self) -> None:
         """Run this optimizer."""
@@ -606,7 +606,7 @@ class OptimizerAArch64(Optimizer):  # pylint: disable = too-few-public-methods
         r"\s*(?P<instruction>ldr)\s+.*(?P<value>_JIT_OP(ARG|ERAND(0|1))_(16|32)).*"
     )
     const_reloc = "CUSTOM_AARCH64_CONST"
-    _frame_pointer_prologue = re.compile(r"\s*stp\s+x29.*")
+    _frame_pointer_modify = re.compile(r"\s*stp\s+x29.*")
 
     def _get_reg(self, inst: Instruction) -> str:
         _, rest = inst.text.split(inst.name)
@@ -662,4 +662,4 @@ class OptimizerX86(Optimizer):  # pylint: disable = too-few-public-methods
     _re_jump = re.compile(r"\s*jmp\s+(?P<target>[\w.]+)")
     # https://www.felixcloutier.com/x86/ret
     _re_return = re.compile(r"\s*retq?\b")
-    _frame_pointer_prologue = re.compile(r"\s*pushq\s+%rbp.*")
+    _frame_pointer_modify = re.compile(r"\s*movq?\s+%(\w+),\s+%rbp.*")
