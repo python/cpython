@@ -42,11 +42,11 @@ install_stdlib() {
     # If the XCframework has a shared lib folder, then it's a full framework.
     # Copy both the common and slice-specific part of the lib directory.
     # Otherwise, it's a single-arch framework; use the "full" lib folder.
+    # Don't include any libpython symlink; that can't be included at runtime
     if [ -d "$PROJECT_DIR/$PYTHON_XCFRAMEWORK_PATH/lib" ]; then
-        rsync -au --delete "$PROJECT_DIR/$PYTHON_XCFRAMEWORK_PATH/lib/" "$CODESIGNING_FOLDER_PATH/python/lib/"
-        rsync -au "$PROJECT_DIR/$PYTHON_XCFRAMEWORK_PATH/$SLICE_FOLDER/lib-$ARCHS/" "$CODESIGNING_FOLDER_PATH/python/lib/"
+        rsync -au --delete "$PROJECT_DIR/$PYTHON_XCFRAMEWORK_PATH/lib/" "$CODESIGNING_FOLDER_PATH/python/lib/" --exclude 'libpython*.dylib'
+        rsync -au "$PROJECT_DIR/$PYTHON_XCFRAMEWORK_PATH/$SLICE_FOLDER/lib-$ARCHS/" "$CODESIGNING_FOLDER_PATH/python/lib/" --exclude 'libpython*.dylib'
     else
-        # A single-arch framework will have a libpython symlink; that can't be included at runtime
         rsync -au --delete "$PROJECT_DIR/$PYTHON_XCFRAMEWORK_PATH/$SLICE_FOLDER/lib/" "$CODESIGNING_FOLDER_PATH/python/lib/" --exclude 'libpython*.dylib'
     fi
 }
@@ -140,7 +140,7 @@ install_python() {
     shift
 
     install_stdlib $PYTHON_XCFRAMEWORK_PATH
-    PYTHON_VER=$(ls -1 "$CODESIGNING_FOLDER_PATH/python/lib")
+    PYTHON_VER=$(ls -1 "$CODESIGNING_FOLDER_PATH/python/lib" | grep -E "^python3\.\d+$")
     echo "Install Python $PYTHON_VER standard library extension modules..."
     process_dylibs $PYTHON_XCFRAMEWORK_PATH python/lib/$PYTHON_VER/lib-dynload
 
