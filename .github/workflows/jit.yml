@@ -133,8 +133,8 @@ jobs:
         run: |
           brew update
           brew install llvm@${{ matrix.llvm }}
-          SDKROOT="$(xcrun --show-sdk-path)" \
-            ./configure --enable-experimental-jit ${{ matrix.debug && '--with-pydebug' || '--enable-optimizations --with-lto' }}
+          export SDKROOT="$(xcrun --show-sdk-path)"
+          ./configure --enable-experimental-jit ${{ matrix.debug && '--with-pydebug' || '--enable-optimizations --with-lto' }}
           make all --jobs 4
           ./python.exe -m test --multiprocess 0 --timeout 4500 --verbose2 --verbose3
 
