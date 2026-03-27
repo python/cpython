@@ -359,7 +359,7 @@ class TestReader(ScreenEqualMixin, TestCase):
         self.assertEqual(reader.pos, 7)
 
     def test_bow_ws_stops_at_whitespace(self):
-        # See https://github.com/python/cpython/issues/146044
+        # See https://github.com/python/cpython/issues/146044.
         reader = prepare_reader(prepare_console([]))
         reader.buffer = list("foo.bar baz")
         reader.pos = len(reader.buffer)
@@ -383,6 +383,12 @@ class TestReader(ScreenEqualMixin, TestCase):
     def test_bow_ws_with_tabs(self):
         reader = prepare_reader(prepare_console([]))
         reader.buffer = list("foo\tbar")
+        reader.pos = len(reader.buffer)
+        self.assertEqual(reader.bow_ws(), 4)
+
+    def test_bow_ws_with_newlines(self):
+        reader = prepare_reader(prepare_console([]))
+        reader.buffer = list("foo\nbar")
         reader.pos = len(reader.buffer)
         self.assertEqual(reader.bow_ws(), 4)
 
