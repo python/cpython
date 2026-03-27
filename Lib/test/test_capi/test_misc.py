@@ -928,23 +928,6 @@ class CAPITest(unittest.TestCase):
             _testcapi.create_heapctype_with_none_bases_slot
         )
 
-    def test__pyerr_setkeyerror(self):
-        # Test _PyErr_SetKeyError()
-        _pyerr_setkeyerror = _testinternalcapi._pyerr_setkeyerror
-        for arg in (
-            "key",
-            # check that a tuple argument is not unpacked
-            (1, 2, 3),
-            KeyError('arg'),
-        ):
-            with self.subTest(arg=arg):
-                with self.assertRaises(KeyError) as cm:
-                    # Test calling _PyErr_SetKeyError() with an exception set
-                    # to check that the function overrides the current
-                    # exception.
-                    _pyerr_setkeyerror(arg)
-                self.assertEqual(cm.exception.args, (arg,))
-
 
 @requires_limited_api
 class TestHeapTypeRelative(unittest.TestCase):

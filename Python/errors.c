@@ -246,7 +246,11 @@ PyErr_SetObject(PyObject *exception, PyObject *value)
     _PyErr_SetObject(tstate, exception, value);
 }
 
-/* Set a key error with the specified argument.
+/* Set a key error with the specified argument. This function should be used to
+ * raise a KeyError with an argument instead of PyErr_SetObject(PyExc_KeyError,
+ * arg) which has a special behavior. PyErr_SetObject() unpacks arg if it's a
+ * tuple, and it uses arg instead of creating a new exception if arg is an
+ * exception.
  *
  * If an exception is already set, override the exception. */
 void
