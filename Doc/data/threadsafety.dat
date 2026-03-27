@@ -107,3 +107,20 @@ _PyBytes_Resize:distinct:
 
 # Repr - atomic as bytes are immutable
 PyBytes_Repr:atomic:
+
+# Creation from object - may call arbitrary code
+PyByteArray_FromObject:shared:
+
+# Creation - pure allocation, no shared state
+PyByteArray_FromStringAndSize:atomic:
+
+# Concatenation - uses buffer protocol; safe as long as buffer is not mutated by another thread during the operation
+PyByteArray_Concat:shared:
+
+# Size - uses atomic load on free-threaded builds
+PyByteArray_Size:atomic:
+PyByteArray_GET_SIZE:atomic:
+
+# Raw data - no locking; mutating it is unsafe if the bytearray object is shared between threads
+PyByteArray_AsString:compatible:
+PyByteArray_AS_STRING:compatible:
