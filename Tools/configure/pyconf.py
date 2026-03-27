@@ -3233,19 +3233,25 @@ def pkg_check_modules(pkg_var: str, module_spec: str) -> Any:
 
 
 def check_emscripten_port(pkg_var: str, emport_args: str) -> None:
-    """Check for an Emscripten port (e.g. USE_ZLIB). Sets CFLAGS/LDFLAGS.
+    """Check for an Emscripten port (e.g. USE_ZLIB).
 
-    Only active when CC is emcc; otherwise a no-op.
+    Sets ``{pkg_var}_CFLAGS`` and ``{pkg_var}_LIBS`` to *emport_args*
+    when building with emcc and the user hasn't already provided values.
+    Matches autoconf's PY_CHECK_EMSCRIPTEN_PORT macro.
+    Only active when ac_sys_system is Emscripten; otherwise a no-op.
     """
-    if "emcc" not in CC:
+    if vars.ac_sys_system != "Emscripten":
         return
     flag = (
         f"-s{emport_args}" if not emport_args.startswith("-") else emport_args
     )
-    existing_cflags = substs.get("CFLAGS", "")
-    existing_ldflags = substs.get("LDFLAGS", "")
-    substs["CFLAGS"] = f"{existing_cflags} {flag}".strip()
-    substs["LDFLAGS"] = f"{existing_ldflags} {flag}".strip()
+    cflags_name = f"{pkg_var}_CFLAGS"
+    libs_name = f"{pkg_var}_LIBS"
+    # Only set if user hasn't already provided values (Vars.__getattr__
+    # returns "" for unset attributes, matching shell empty-variable checks).
+    if not getattr(vars, cflags_name) and not getattr(vars, libs_name):
+        setattr(vars, cflags_name, flag)
+        setattr(vars, libs_name, flag)
 
 
 # ---------------------------------------------------------------------------

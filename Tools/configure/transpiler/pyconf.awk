@@ -2006,9 +2006,18 @@ function pyconf_find_compiler(user_cc, user_cpp, cc, cpp, ver) {
         pyconf_ac_cv_prog_cc_g = "yes"
 }
 
-function pyconf_check_emscripten_port(port, name) {
-        # Stub for emscripten port checks
-        return 0
+function pyconf_check_emscripten_port(pkg_var, emport_args,    flag, cname, lname) {
+        # Set {pkg_var}_CFLAGS and {pkg_var}_LIBS to emport_args when
+        # building with Emscripten and user hasn't provided values.
+        if (V["ac_sys_system"] != "Emscripten") return
+        flag = emport_args
+        if (substr(flag, 1, 1) != "-") flag = "-s" flag
+        cname = pkg_var "_CFLAGS"
+        lname = pkg_var "_LIBS"
+        if (V[cname] == "" && V[lname] == "") {
+                V[cname] = flag
+                V[lname] = flag
+        }
 }
 
 function pyconf_ax_c_float_words_bigendian(on_big, on_little, on_unknown, src, conftest, exe, cmd, rc, has_big, has_little, pre, post) {
