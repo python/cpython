@@ -215,13 +215,36 @@ endif
 	@cp "$(abspath $(NANVIX_HOME))/bin/uservm.elf" $(TEST_STAGING)/sysroot/bin/ 2>/dev/null || true
 ifeq ($(PROCESS_MODE),standalone)
 	@cp "$(abspath $(NANVIX_HOME))/bin/mkramfs.elf" $(TEST_STAGING)/sysroot/bin/ 2>/dev/null || true
+	@# Trim staging to fit in ramfs: remove dev-only artifacts not needed at runtime
+	@rm -rf $(TEST_STAGING)/sysroot/lib/python3.12/config-3.12
+	@rm -rf $(TEST_STAGING)/sysroot/lib/python3.12/__pycache__
+	@rm -rf $(TEST_STAGING)/sysroot/lib/python3.12/idlelib
+	@rm -rf $(TEST_STAGING)/sysroot/lib/python3.12/tkinter
+	@rm -rf $(TEST_STAGING)/sysroot/lib/python3.12/turtledemo
+	@rm -rf $(TEST_STAGING)/sysroot/lib/python3.12/lib2to3
+	@rm -rf $(TEST_STAGING)/sysroot/lib/python3.12/ensurepip
+	@rm -rf $(TEST_STAGING)/sysroot/lib/python3.12/pydoc_data
+	@rm -rf $(TEST_STAGING)/sysroot/lib/python3.12/venv
+	@rm -rf $(TEST_STAGING)/sysroot/lib/python3.12/site-packages
+	@rm -rf $(TEST_STAGING)/sysroot/lib/python3.12/__phello__
+	@rm -f $(TEST_STAGING)/sysroot/lib/libpython3.12.a
+	@rm -rf $(TEST_STAGING)/sysroot/include
+	@rm -rf $(TEST_STAGING)/sysroot/share
+	@rm -rf $(TEST_STAGING)/sysroot/lib/pkgconfig
+	@rm -f $(TEST_STAGING)/sysroot/bin/2to3* $(TEST_STAGING)/sysroot/bin/idle3*
+	@rm -f $(TEST_STAGING)/sysroot/bin/pydoc3* $(TEST_STAGING)/sysroot/bin/python3-config
+	@rm -f $(TEST_STAGING)/sysroot/bin/python3.12-config $(TEST_STAGING)/sysroot/bin/python3
+	@find $(TEST_STAGING)/sysroot -name '__pycache__' -type d -exec rm -rf {} + 2>/dev/null || true
+	@# Strip debug symbols from the python binary
+	$(if $(wildcard $(TOOLCHAIN_PREFIX)/bin/i686-nanvix-strip),\
+		$(TOOLCHAIN_PREFIX)/bin/i686-nanvix-strip --strip-debug $(TEST_STAGING)/sysroot/bin/python3.12 2>/dev/null || true)
 	@echo "Test: Hello world (standalone)..."
 	cd $(TEST_STAGING)/sysroot && \
 		./bin/mkramfs.elf -o /tmp/rootfs.img . && \
 		timeout 120 ./bin/nanvixd.elf \
 		  -bin-dir ./bin -ramfs /tmp/rootfs.img \
 		  -- ./bin/python3.12 \
-		  "-B /sysroot/test_hello.py;PYTHONHOME=/sysroot PYTHONDONTWRITEBYTECODE=1" \
+		  "-B /test_hello.py;PYTHONHOME=/ PYTHONDONTWRITEBYTECODE=1" \
 		  < /dev/null > /tmp/cpython_test.log 2>&1; \
 		if grep -q 'CPYTHON_TEST_HELLO:' /tmp/cpython_test.log; then \
 			echo "  PASS: $$(grep 'CPYTHON_TEST_HELLO:' /tmp/cpython_test.log)"; \
