@@ -293,9 +293,9 @@ static void clearEntries(ProfilerObject *pObj)
     pObj->profilerEntries = EMPTY_ROTATING_TREE;
     /* release the memory hold by the ProfilerContexts */
     while (pObj->currentProfilerContext) {
-        ProfilerContext *c = pObj->currentProfilerContext;
-        pObj->currentProfilerContext = c->previous;
-        PyMem_Free(c);
+        ProfilerContext *pContext = pObj->currentProfilerContext;
+        pObj->currentProfilerContext = pContext->previous;
+        PyMem_Free(pContext);
     }
     while (pObj->freelistProfilerContext) {
         ProfilerContext *c = pObj->freelistProfilerContext;

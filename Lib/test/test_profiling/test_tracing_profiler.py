@@ -157,12 +157,12 @@ class CProfileTest(ProfileTest):
         def level1(profiler):
             level2(profiler)
 
-        p = _lsprof.Profiler()
-        p.enable()
+        profiler = _lsprof.Profiler()
+        profiler.enable()
         for _ in range(100):
-            level1(p)
-        p.disable()
-        p.clear()
+            level1(profiler)
+        profiler.disable()
+        profiler.clear()
 
     def test_bad_descriptor(self):
         # gh-132250
