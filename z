@@ -332,6 +332,7 @@ nanvix_make() {
     -f Makefile.nanvix
     CONFIG_NANVIX=y
     NANVIX_HOME="$NANVIX_HOME"
+    PROCESS_MODE="$NANVIX_PROCESS_MODE"
   )
 
   if [[ -n "$NANVIX_TOOLCHAIN" ]]; then
