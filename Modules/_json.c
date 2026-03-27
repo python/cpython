@@ -946,8 +946,8 @@ _parse_array_unicode(PyScannerObject *s, PyObject *memo, PyObject *pystr, Py_ssi
         goto bail;
     }
     *next_idx_ptr = idx + 1;
-    /* if array_hook is not None: rval = array_hook(rval) */
-    if (s->array_hook != Py_None) {
+    /* if array_hook is not None: return array_hook(rval) */
+    if (!Py_IsNone(s->array_hook)) {
         val = PyObject_CallOneArg(s->array_hook, rval);
         Py_DECREF(rval);
         return val;
