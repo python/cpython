@@ -440,7 +440,10 @@ def framework_path(host_triple: str, multiarch: str) -> Path:
     :param host_triple: The host triple (e.g., arm64-apple-ios-simulator)
     :param multiarch: The multiarch identifier (e.g., arm64-simulator)
     """
-    return CROSS_BUILD_DIR / f"{host_triple}/Platforms/Apple/iOS/Frameworks/{multiarch}"
+    return (
+        CROSS_BUILD_DIR
+        / f"{host_triple}/Platforms/Apple/iOS/Frameworks/{multiarch}"
+    )
 
 
 def package_version(prefix_path: Path) -> str:
