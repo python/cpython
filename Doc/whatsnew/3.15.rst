@@ -84,7 +84,8 @@ Summary -- Release highlights
   <whatsnew315-pybyteswriter>`
 * :ref:`The JIT compiler has been significantly upgraded <whatsnew315-jit>`
 * :ref:`Improved error messages <whatsnew315-improved-error-messages>`
-
+* :ref:`The official Windows 64-bit binaries now use the tail-calling interpreter
+  <whatsnew315-windows-tail-calling-interpreter>`
 
 New features
 ============
@@ -801,6 +802,17 @@ inspect
   for :func:`~inspect.getdoc`.
   (Contributed by Serhiy Storchaka in :gh:`132686`.)
 
+json
+----
+
+* Add the *array_hook* parameter to  :func:`~json.load` and
+  :func:`~json.loads` functions:
+  allow a callback for JSON literal array types to customize Python lists in
+  the resulting decoded object. Passing combined :class:`frozendict` to
+  *object_pairs_hook* param and :class:`tuple` to ``array_hook`` will yield a
+  deeply nested immutable Python structure representing the JSON data.
+  (Contributed by Joao S. O. Bueno in :gh:`146440`)
+
 
 locale
 ------
@@ -1027,11 +1039,6 @@ sys
 
 * Add :data:`sys.abi_info` namespace to improve access to ABI information.
   (Contributed by Klaus Zimmermann in :gh:`137476`.)
-
-* Add :data:`sys.float_info.iec_60559 <sys.float_info>`: a boolean flag,
-  indicating support the IEC 60559 floating-point standard (as specified by the
-  Annex F of C99).
-  (Contributed by Sergey B Kirpichev in :gh:`138580`.)
 
 
 tarfile
@@ -1287,18 +1294,6 @@ zlib
 
 Optimizations
 =============
-
-* Builds using Visual Studio 2026 (MSVC 18) may now use the new
-  :ref:`tail-calling interpreter <whatsnew314-tail-call-interpreter>`.
-  Results on Visual Studio 18.1.1 report between
-  `15-20% <https://github.com/faster-cpython/ideas/blob/main/results/5800X-msvc.pgo2-vs-msvc.pgo.tc.svg>`__
-  speedup on the geometric mean of pyperformance on Windows x86-64 over
-  the switch-case interpreter on an AMD Ryzen 7 5800X. We have
-  observed speedups ranging from 14% for large pure-Python libraries
-  to 40% for long-running small pure-Python scripts on Windows.
-  This was made possible by a new feature introduced in MSVC 18.
-  (Contributed by Chris Eibl, Ken Jin, and Brandt Bucher in :gh:`143068`.
-  Special thanks to the MSVC team including Hulon Jenkins.)
 
 * ``mimalloc`` is now used as the default allocator for
   for raw memory allocations such as via :c:func:`PyMem_RawMalloc`
@@ -1955,6 +1950,23 @@ Build changes
   Annotations are visible in ``/proc/<pid>/maps`` if the kernel supports the feature
   and :option:`-X dev <-X>` is passed to the Python or Python is built in :ref:`debug mode <debug-build>`.
   (Contributed by Donghee Na in :gh:`141770`.)
+
+.. _whatsnew315-windows-tail-calling-interpreter:
+
+* 64-bit builds using Visual Studio 2026 (MSVC 18) may now use the new
+  :ref:`tail-calling interpreter <whatsnew314-tail-call-interpreter>`.
+  Results on Visual Studio 18.1.1 report between
+  `15-20% <https://github.com/faster-cpython/ideas/blob/main/results/5800X-msvc.pgo2-vs-msvc.pgo.tc.svg>`__
+  speedup on the geometric mean of pyperformance on Windows x86-64 over
+  the switch-case interpreter on an AMD Ryzen 7 5800X. We have
+  observed speedups ranging from 14% for large pure-Python libraries
+  to 40% for long-running small pure-Python scripts on Windows.
+  This was made possible by a new feature introduced in MSVC 18,
+  which the official Windows 64-bit binaries on python.org__ now use.
+  (Contributed by Chris Eibl, Ken Jin, and Brandt Bucher in :gh:`143068`.
+  Special thanks to Steve Dower, and the MSVC team including Hulon Jenkins.)
+
+  __ https://www.python.org/downloads/windows/
 
 
 Porting to Python 3.15

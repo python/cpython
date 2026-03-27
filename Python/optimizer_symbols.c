@@ -1684,6 +1684,9 @@ static JitOptSymbol *
 make_bottom(JitOptContext *ctx)
 {
     JitOptSymbol *sym = sym_new(ctx);
+    if (sym == NULL) {
+        return out_of_space(ctx);
+    }
     sym->tag = JIT_SYM_BOTTOM_TAG;
     return sym;
 }
