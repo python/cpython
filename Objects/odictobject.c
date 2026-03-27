@@ -1156,7 +1156,7 @@ static PyObject *
 OrderedDict_popitem_impl(PyODictObject *self, int last)
 /*[clinic end generated code: output=98e7d986690d49eb input=8aafc7433e0a40e7]*/
 {
-    PyObject *key, *value, *item = NULL;
+    PyObject *key, *value;
     _ODictNode *node;
 
     /* pull the item */
