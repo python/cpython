@@ -243,26 +243,48 @@ ifeq ($(PROCESS_MODE),standalone)
 	@echo "Test: Hello world (standalone)..."
 	cd $(TEST_STAGING)/sysroot && \
 		./bin/mkramfs.elf -o /tmp/rootfs.img . && \
-		timeout 120 ./bin/nanvixd.elf \
-		  -bin-dir ./bin -ramfs /tmp/rootfs.img \
-		  -- ./bin/python3.12 \
-		  "-B /test_hello.py;PYTHONHOME=/ PYTHONDONTWRITEBYTECODE=1" \
-		  < /dev/null > /tmp/cpython_test.log 2>&1; \
-		if grep -q 'CPYTHON_TEST_HELLO:' /tmp/cpython_test.log; then \
-			echo "  PASS: $$(grep 'CPYTHON_TEST_HELLO:' /tmp/cpython_test.log)"; \
-		else \
-			echo "  FAIL: Hello test did not produce expected output"; cat /tmp/cpython_test.log; exit 1; \
-		fi
+		{ \
+			: > /tmp/cpython_test.log; \
+			start_time=$$(date +%s%N); \
+			timeout 120 ./bin/nanvixd.elf \
+			  -bin-dir ./bin -ramfs /tmp/rootfs.img \
+			  -- ./bin/python3.12 \
+			  "-B /test_hello.py;PYTHONHOME=/ PYTHONDONTWRITEBYTECODE=1" \
+			  < /dev/null > /tmp/cpython_test.log 2>&1; \
+			test_status=$$?; \
+			end_time=$$(date +%s%N); \
+			elapsed=$$(( (end_time - start_time) / 1000000 )); \
+			echo "  Execution time: $${elapsed} ms"; \
+			if [ $$test_status -ne 0 ]; then \
+				echo "  FAIL: Hello test timed out or exited with status $$test_status"; cat /tmp/cpython_test.log; exit 1; \
+			fi; \
+			if grep -q 'CPYTHON_TEST_HELLO:' /tmp/cpython_test.log; then \
+				echo "  PASS: $$(grep 'CPYTHON_TEST_HELLO:' /tmp/cpython_test.log)"; \
+			else \
+				echo "  FAIL: Hello test did not produce expected output"; cat /tmp/cpython_test.log; exit 1; \
+			fi; \
+		}
 	@rm -f /tmp/rootfs.img
 else
 	@echo "Test: Hello world..."
 	cd $(TEST_STAGING)/sysroot && \
-		timeout 120 ./bin/nanvixd.elf -- ./bin/python3.12 ./test_hello.py < /dev/null > /tmp/cpython_test.log 2>&1; \
-		if grep -q 'CPYTHON_TEST_HELLO:' /tmp/cpython_test.log; then \
-			echo "  PASS: $$(grep 'CPYTHON_TEST_HELLO:' /tmp/cpython_test.log)"; \
-		else \
-			echo "  FAIL: Hello test did not produce expected output"; cat /tmp/cpython_test.log; exit 1; \
-		fi
+		{ \
+			: > /tmp/cpython_test.log; \
+			start_time=$$(date +%s%N); \
+			timeout 120 ./bin/nanvixd.elf -- ./bin/python3.12 ./test_hello.py < /dev/null > /tmp/cpython_test.log 2>&1; \
+			test_status=$$?; \
+			end_time=$$(date +%s%N); \
+			elapsed=$$(( (end_time - start_time) / 1000000 )); \
+			echo "  Execution time: $${elapsed} ms"; \
+			if [ $$test_status -ne 0 ]; then \
+				echo "  FAIL: Hello test timed out or exited with status $$test_status"; cat /tmp/cpython_test.log; exit 1; \
+			fi; \
+			if grep -q 'CPYTHON_TEST_HELLO:' /tmp/cpython_test.log; then \
+				echo "  PASS: $$(grep 'CPYTHON_TEST_HELLO:' /tmp/cpython_test.log)"; \
+			else \
+				echo "  FAIL: Hello test did not produce expected output"; cat /tmp/cpython_test.log; exit 1; \
+			fi; \
+		}
 endif
 	@rm -rf $(TEST_STAGING) /tmp/cpython_test.log
 	@echo "		*** CPython tests PASSED ***"
