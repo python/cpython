@@ -13,8 +13,9 @@ from test.support.testcase import ExceptionIsLikeMixin
 
 from .test_misc import decode_stderr
 
-# Skip this test if the _testcapi module isn't available.
+# Skip this test if the _testcapi or _testinternalcapi module isn't available.
 _testcapi = import_helper.import_module('_testcapi')
+_testinternalcapi = import_helper.import_module('_testinternalcapi')
 
 NULL = None
 
