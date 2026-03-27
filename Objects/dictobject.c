@@ -6632,17 +6632,18 @@ dictitems_xor_lock_held(PyObject *d1, PyObject *d2)
         else {
             Py_INCREF(val1);
             to_delete = PyObject_RichCompareBool(val1, val2, Py_EQ);
+            Py_CLEAR(val1);
             if (to_delete < 0) {
                 goto error;
             }
         }
 
         if (to_delete) {
+            Py_CLEAR(val2);
             if (_PyDict_DelItem_KnownHash(temp_dict, key, hash) < 0) {
                 goto error;
             }
             Py_CLEAR(key);
-            Py_CLEAR(val2);
         }
         else {
             PyObject *pair = _PyTuple_FromPairSteal(key, val2);
@@ -6656,7 +6657,6 @@ dictitems_xor_lock_held(PyObject *d1, PyObject *d2)
             }
             Py_DECREF(pair);
         }
-        Py_CLEAR(val1);
     }
 
     PyObject *remaining_pairs = PyObject_CallMethodNoArgs(
