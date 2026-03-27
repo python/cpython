@@ -1340,16 +1340,25 @@ dummy_func(
 
         macro(CALL_INTRINSIC_1) = _CALL_INTRINSIC_1 + POP_TOP;
 
-        inst(CALL_INTRINSIC_2, (value2_st, value1_st -- res)) {
+        op(_CALL_INTRINSIC_2, (value2_st, value1_st -- res, vs1, vs2)) {
             assert(oparg <= MAX_INTRINSIC_2);
             PyObject *value1 = PyStackRef_AsPyObjectBorrow(value1_st);
             PyObject *value2 = PyStackRef_AsPyObjectBorrow(value2_st);
 
             PyObject *res_o = _PyIntrinsics_BinaryFunctions[oparg].func(tstate, value2, value1);
-            DECREF_INPUTS();
-            ERROR_IF(res_o == NULL);
+
+            if (res_o == NULL) {
+                ERROR_NO_POP();
+            }
+
             res = PyStackRef_FromPyObjectSteal(res_o);
+
+            vs1 = value1_st;
+            vs2 = value2_st;
+            INPUTS_DEAD();
         }
+
+        macro(CALL_INTRINSIC_2) = _CALL_INTRINSIC_2 + POP_TOP + POP_TOP;
 
         tier1 inst(RAISE_VARARGS, (args[oparg] -- )) {
             assert(oparg < 3);
@@ -2373,7 +2382,7 @@ dummy_func(
             NOP,
         };
 
-        inst(DICT_UPDATE, (dict, unused[oparg - 1], update -- dict, unused[oparg - 1])) {
+        op(_DICT_UPDATE, (dict, unused[oparg - 1], update -- dict, unused[oparg - 1], upd)) {
             PyObject *dict_o = PyStackRef_AsPyObjectBorrow(dict);
             PyObject *update_o = PyStackRef_AsPyObjectBorrow(update);
 
@@ -2381,15 +2390,25 @@ dummy_func(
             if (err < 0) {
                 int matches = _PyErr_ExceptionMatches(tstate, PyExc_AttributeError);
                 if (matches) {
-                    _PyErr_Format(tstate, PyExc_TypeError,
-                                    "'%.200s' object is not a mapping",
-                                    Py_TYPE(update_o)->tp_name);
+                    PyObject *exc = _PyErr_GetRaisedException(tstate);
+                    int has_keys = PyObject_HasAttrWithError(update_o, &_Py_ID(keys));
+                    if (has_keys == 0) {
+                        _PyErr_Format(tstate, PyExc_TypeError,
+                                        "'%T' object is not a mapping",
+                                        update_o);
+                        Py_DECREF(exc);
+                    }
+                    else {
+                        _PyErr_ChainExceptions1(exc);
+                    }
                 }
-                PyStackRef_CLOSE(update);
-                ERROR_IF(true);
+                ERROR_NO_POP();
             }
-            PyStackRef_CLOSE(update);
+            upd = update;
+            DEAD(update);
         }
+
+        macro(DICT_UPDATE) = _DICT_UPDATE + POP_TOP;
 
         op(_DICT_MERGE, (callable, unused, unused, dict, unused[oparg - 1], update -- callable, unused, unused, dict, unused[oparg - 1], u)) {
             PyObject *callable_o = PyStackRef_AsPyObjectBorrow(callable);
@@ -4460,18 +4479,24 @@ dummy_func(
             _CALL_BUILTIN_CLASS +
             _CHECK_PERIODIC_AT_END;
 
+        op(_GUARD_CALLABLE_BUILTIN_O, (callable, self_or_null, args[oparg] -- callable, self_or_null, args[oparg])) {
+            PyObject *callable_o = PyStackRef_AsPyObjectBorrow(callable);
+            EXIT_IF(!PyCFunction_CheckExact(callable_o));
+            EXIT_IF(PyCFunction_GET_FLAGS(callable_o) != METH_O);
+            int total_args = oparg;
+            if (!PyStackRef_IsNull(self_or_null)) {
+                total_args++;
+            }
+            EXIT_IF(total_args != 1);
+        }
+
         op(_CALL_BUILTIN_O, (callable, self_or_null, args[oparg] -- res, c, s)) {
             /* Builtin METH_O functions */
             PyObject *callable_o = PyStackRef_AsPyObjectBorrow(callable);
 
-            int total_args = oparg;
             if (!PyStackRef_IsNull(self_or_null)) {
                 args--;
-                total_args++;
             }
-            EXIT_IF(total_args != 1);
-            EXIT_IF(!PyCFunction_CheckExact(callable_o));
-            EXIT_IF(PyCFunction_GET_FLAGS(callable_o) != METH_O);
             // CPython promises to check all non-vectorcall function calls.
             EXIT_IF(_Py_ReachedRecursionLimit(tstate));
             STAT_INC(CALL, hit);
@@ -4493,10 +4518,17 @@ dummy_func(
             _RECORD_CALLABLE +
             unused/1 +
             unused/2 +
+            _GUARD_CALLABLE_BUILTIN_O +
             _CALL_BUILTIN_O +
             POP_TOP +
             POP_TOP +
             _CHECK_PERIODIC_AT_END;
+
+        op(_GUARD_CALLABLE_BUILTIN_FAST, (callable, unused, unused[oparg] -- callable, unused, unused[oparg])) {
+            PyObject *callable_o = PyStackRef_AsPyObjectBorrow(callable);
+            EXIT_IF(!PyCFunction_CheckExact(callable_o));
+            EXIT_IF(PyCFunction_GET_FLAGS(callable_o) != METH_FASTCALL);
+        }
 
         op(_CALL_BUILTIN_FAST, (callable, self_or_null, args[oparg] -- res)) {
             /* Builtin METH_FASTCALL functions, without keywords */
@@ -4506,9 +4538,6 @@ dummy_func(
                 arguments--;
                 total_args++;
             }
-            PyObject *callable_o = PyStackRef_AsPyObjectBorrow(callable);
-            EXIT_IF(!PyCFunction_CheckExact(callable_o));
-            EXIT_IF(PyCFunction_GET_FLAGS(callable_o) != METH_FASTCALL);
             STAT_INC(CALL, hit);
             PyObject *res_o = _Py_BuiltinCallFast_StackRefSteal(
                 callable,
@@ -4526,8 +4555,15 @@ dummy_func(
             _RECORD_CALLABLE +
             unused/1 +
             unused/2 +
+            _GUARD_CALLABLE_BUILTIN_FAST +
             _CALL_BUILTIN_FAST +
             _CHECK_PERIODIC_AT_END;
+
+        op(_GUARD_CALLABLE_BUILTIN_FAST_WITH_KEYWORDS, (callable, unused, unused[oparg] -- callable, unused, unused[oparg])) {
+            PyObject *callable_o = PyStackRef_AsPyObjectBorrow(callable);
+            EXIT_IF(!PyCFunction_CheckExact(callable_o));
+            EXIT_IF(PyCFunction_GET_FLAGS(callable_o) != (METH_FASTCALL | METH_KEYWORDS));
+        }
 
         op(_CALL_BUILTIN_FAST_WITH_KEYWORDS, (callable, self_or_null, args[oparg] -- res)) {
             /* Builtin METH_FASTCALL | METH_KEYWORDS functions */
@@ -4537,9 +4573,6 @@ dummy_func(
                 arguments--;
                 total_args++;
             }
-            PyObject *callable_o = PyStackRef_AsPyObjectBorrow(callable);
-            EXIT_IF(!PyCFunction_CheckExact(callable_o));
-            EXIT_IF(PyCFunction_GET_FLAGS(callable_o) != (METH_FASTCALL | METH_KEYWORDS));
             STAT_INC(CALL, hit);
             PyObject *res_o = _Py_BuiltinCallFastWithKeywords_StackRefSteal(callable, arguments, total_args);
             DEAD(args);
@@ -4553,6 +4586,7 @@ dummy_func(
             _RECORD_CALLABLE +
             unused/1 +
             unused/2 +
+            _GUARD_CALLABLE_BUILTIN_FAST_WITH_KEYWORDS +
             _CALL_BUILTIN_FAST_WITH_KEYWORDS +
             _CHECK_PERIODIC_AT_END;
 
@@ -4655,29 +4689,35 @@ dummy_func(
             none = PyStackRef_None;
         }
 
+        op(_GUARD_CALLABLE_METHOD_DESCRIPTOR_O, (callable, self_or_null, args[oparg] -- callable, self_or_null, args[oparg])) {
+            PyObject *callable_o = PyStackRef_AsPyObjectBorrow(callable);
+            PyMethodDescrObject *method = (PyMethodDescrObject *)callable_o;
+            EXIT_IF(!Py_IS_TYPE(method, &PyMethodDescr_Type));
+            EXIT_IF(method->d_method->ml_flags != METH_O);
+            int total_args = oparg;
+            if (!PyStackRef_IsNull(self_or_null)) {
+                total_args++;
+            }
+            EXIT_IF(total_args != 2);
+            PyObject *self = PyStackRef_AsPyObjectBorrow(
+                PyStackRef_IsNull(self_or_null) ? args[0] : self_or_null);
+            EXIT_IF(!Py_IS_TYPE(self, method->d_common.d_type));
+        }
+
          op(_CALL_METHOD_DESCRIPTOR_O, (callable, self_or_null, args[oparg] -- res, c, s, a)) {
             PyObject *callable_o = PyStackRef_AsPyObjectBorrow(callable);
+            PyMethodDescrObject *method = (PyMethodDescrObject *)callable_o;
 
-            int total_args = oparg;
             _PyStackRef *arguments = args;
             if (!PyStackRef_IsNull(self_or_null)) {
                 arguments--;
-                total_args++;
             }
-
-            PyMethodDescrObject *method = (PyMethodDescrObject *)callable_o;
-            EXIT_IF(total_args != 2);
-            EXIT_IF(!Py_IS_TYPE(method, &PyMethodDescr_Type));
-            PyMethodDef *meth = method->d_method;
-            EXIT_IF(meth->ml_flags != METH_O);
             // CPython promises to check all non-vectorcall function calls.
             EXIT_IF(_Py_ReachedRecursionLimit(tstate));
             _PyStackRef arg_stackref = arguments[1];
             _PyStackRef self_stackref = arguments[0];
-            EXIT_IF(!Py_IS_TYPE(PyStackRef_AsPyObjectBorrow(self_stackref),
-                                 method->d_common.d_type));
             STAT_INC(CALL, hit);
-            PyCFunction cfunc = meth->ml_meth;
+            PyCFunction cfunc = method->d_method->ml_meth;
             PyObject *res_o = _PyCFunction_TrampolineCall(cfunc,
                                   PyStackRef_AsPyObjectBorrow(self_stackref),
                                   PyStackRef_AsPyObjectBorrow(arg_stackref));
@@ -4697,15 +4737,18 @@ dummy_func(
             _RECORD_CALLABLE +
             unused/1 +
             unused/2 +
+            _GUARD_CALLABLE_METHOD_DESCRIPTOR_O +
             _CALL_METHOD_DESCRIPTOR_O +
             POP_TOP +
             POP_TOP +
             POP_TOP +
             _CHECK_PERIODIC_AT_END;
 
-        op(_CALL_METHOD_DESCRIPTOR_FAST_WITH_KEYWORDS, (callable, self_or_null, args[oparg] -- res)) {
+        op(_GUARD_CALLABLE_METHOD_DESCRIPTOR_FAST_WITH_KEYWORDS, (callable, self_or_null, args[oparg] -- callable, self_or_null, args[oparg])) {
             PyObject *callable_o = PyStackRef_AsPyObjectBorrow(callable);
-
+            PyMethodDescrObject *method = (PyMethodDescrObject *)callable_o;
+            EXIT_IF(!Py_IS_TYPE(method, &PyMethodDescr_Type));
+            EXIT_IF(method->d_method->ml_flags != (METH_FASTCALL|METH_KEYWORDS));
             int total_args = oparg;
             _PyStackRef *arguments = args;
             if (!PyStackRef_IsNull(self_or_null)) {
@@ -4713,18 +4756,26 @@ dummy_func(
                 total_args++;
             }
             EXIT_IF(total_args == 0);
+            PyObject *self = PyStackRef_AsPyObjectBorrow(arguments[0]);
+            EXIT_IF(!Py_IS_TYPE(self, method->d_common.d_type));
+        }
+
+        op(_CALL_METHOD_DESCRIPTOR_FAST_WITH_KEYWORDS, (callable, self_or_null, args[oparg] -- res)) {
+            PyObject *callable_o = PyStackRef_AsPyObjectBorrow(callable);
             PyMethodDescrObject *method = (PyMethodDescrObject *)callable_o;
-            EXIT_IF(!Py_IS_TYPE(method, &PyMethodDescr_Type));
-            PyMethodDef *meth = method->d_method;
-            EXIT_IF(meth->ml_flags != (METH_FASTCALL|METH_KEYWORDS));
-            PyTypeObject *d_type = method->d_common.d_type;
+
+            int total_args = oparg;
+            _PyStackRef *arguments = args;
+            if (!PyStackRef_IsNull(self_or_null)) {
+                arguments--;
+                total_args++;
+            }
             PyObject *self = PyStackRef_AsPyObjectBorrow(arguments[0]);
             assert(self != NULL);
-            EXIT_IF(!Py_IS_TYPE(self, d_type));
             STAT_INC(CALL, hit);
             PyObject *res_o = _PyCallMethodDescriptorFastWithKeywords_StackRefSteal(
                 callable,
-                meth,
+                method->d_method,
                 self,
                 arguments,
                 total_args
@@ -4740,30 +4791,39 @@ dummy_func(
             _RECORD_CALLABLE +
             unused/1 +
             unused/2 +
+            _GUARD_CALLABLE_METHOD_DESCRIPTOR_FAST_WITH_KEYWORDS +
             _CALL_METHOD_DESCRIPTOR_FAST_WITH_KEYWORDS +
             _CHECK_PERIODIC_AT_END;
 
-        op(_CALL_METHOD_DESCRIPTOR_NOARGS, (callable, self_or_null, args[oparg] -- res)) {
-            assert(oparg == 0 || oparg == 1);
+        op(_GUARD_CALLABLE_METHOD_DESCRIPTOR_NOARGS, (callable, self_or_null, args[oparg] -- callable, self_or_null, args[oparg])) {
             PyObject *callable_o = PyStackRef_AsPyObjectBorrow(callable);
-
+            PyMethodDescrObject *method = (PyMethodDescrObject *)callable_o;
+            EXIT_IF(!Py_IS_TYPE(method, &PyMethodDescr_Type));
+            EXIT_IF(method->d_method->ml_flags != METH_NOARGS);
             int total_args = oparg;
             if (!PyStackRef_IsNull(self_or_null)) {
-                args--;
                 total_args++;
             }
             EXIT_IF(total_args != 1);
+            PyObject *self = PyStackRef_AsPyObjectBorrow(
+                PyStackRef_IsNull(self_or_null) ? args[0] : self_or_null);
+            EXIT_IF(!Py_IS_TYPE(self, method->d_common.d_type));
+        }
+
+        op(_CALL_METHOD_DESCRIPTOR_NOARGS, (callable, self_or_null, args[oparg] -- res)) {
+            PyObject *callable_o = PyStackRef_AsPyObjectBorrow(callable);
             PyMethodDescrObject *method = (PyMethodDescrObject *)callable_o;
-            EXIT_IF(!Py_IS_TYPE(method, &PyMethodDescr_Type));
-            PyMethodDef *meth = method->d_method;
+
+            assert(oparg == 1 || !PyStackRef_IsNull(self_or_null));
+            if (!PyStackRef_IsNull(self_or_null)) {
+                args--;
+            }
             _PyStackRef self_stackref = args[0];
             PyObject *self = PyStackRef_AsPyObjectBorrow(self_stackref);
-            EXIT_IF(!Py_IS_TYPE(self, method->d_common.d_type));
-            EXIT_IF(meth->ml_flags != METH_NOARGS);
             // CPython promises to check all non-vectorcall function calls.
             EXIT_IF(_Py_ReachedRecursionLimit(tstate));
             STAT_INC(CALL, hit);
-            PyCFunction cfunc = meth->ml_meth;
+            PyCFunction cfunc = method->d_method->ml_meth;
             PyObject *res_o = _PyCFunction_TrampolineCall(cfunc, self, NULL);
             _Py_LeaveRecursiveCallTstate(tstate);
             assert((res_o != NULL) ^ (_PyErr_Occurred(tstate) != NULL));
@@ -4779,11 +4839,29 @@ dummy_func(
             _RECORD_CALLABLE +
             unused/1 +
             unused/2 +
+            _GUARD_CALLABLE_METHOD_DESCRIPTOR_NOARGS +
             _CALL_METHOD_DESCRIPTOR_NOARGS +
             _CHECK_PERIODIC_AT_END;
 
+        op(_GUARD_CALLABLE_METHOD_DESCRIPTOR_FAST, (callable, self_or_null, args[oparg] -- callable, self_or_null, args[oparg])) {
+            PyObject *callable_o = PyStackRef_AsPyObjectBorrow(callable);
+            PyMethodDescrObject *method = (PyMethodDescrObject *)callable_o;
+            /* Builtin METH_FASTCALL methods, without keywords */
+            EXIT_IF(!Py_IS_TYPE(method, &PyMethodDescr_Type));
+            EXIT_IF(method->d_method->ml_flags != METH_FASTCALL);
+            int total_args = oparg;
+            if (!PyStackRef_IsNull(self_or_null)) {
+                total_args++;
+            }
+            EXIT_IF(total_args == 0);
+            PyObject *self = PyStackRef_AsPyObjectBorrow(
+                PyStackRef_IsNull(self_or_null) ? args[0] : self_or_null);
+            EXIT_IF(!Py_IS_TYPE(self, method->d_common.d_type));
+        }
+
         op(_CALL_METHOD_DESCRIPTOR_FAST, (callable, self_or_null, args[oparg] -- res)) {
             PyObject *callable_o = PyStackRef_AsPyObjectBorrow(callable);
+            PyMethodDescrObject *method = (PyMethodDescrObject *)callable_o;
 
             int total_args = oparg;
             _PyStackRef *arguments = args;
@@ -4791,19 +4869,12 @@ dummy_func(
                 arguments--;
                 total_args++;
             }
-            EXIT_IF(total_args == 0);
-            PyMethodDescrObject *method = (PyMethodDescrObject *)callable_o;
-            /* Builtin METH_FASTCALL methods, without keywords */
-            EXIT_IF(!Py_IS_TYPE(method, &PyMethodDescr_Type));
-            PyMethodDef *meth = method->d_method;
-            EXIT_IF(meth->ml_flags != METH_FASTCALL);
             PyObject *self = PyStackRef_AsPyObjectBorrow(arguments[0]);
             assert(self != NULL);
-            EXIT_IF(!Py_IS_TYPE(self, method->d_common.d_type));
             STAT_INC(CALL, hit);
             PyObject *res_o = _PyCallMethodDescriptorFast_StackRefSteal(
                 callable,
-                meth,
+                method->d_method,
                 self,
                 arguments,
                 total_args
@@ -4818,6 +4889,7 @@ dummy_func(
         macro(CALL_METHOD_DESCRIPTOR_FAST) =
             unused/1 +
             unused/2 +
+            _GUARD_CALLABLE_METHOD_DESCRIPTOR_FAST +
             _CALL_METHOD_DESCRIPTOR_FAST +
             _CHECK_PERIODIC_AT_END;
 

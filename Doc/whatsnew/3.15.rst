@@ -598,6 +598,11 @@ Other language changes
   making it a :term:`generic type`.
   (Contributed by James Hilton-Balfe in :gh:`128335`.)
 
+* The class :class:`memoryview` now supports the :c:expr:`float complex` and
+  :c:expr:`double complex` C types: formatting characters ``'F'`` and ``'D'``
+  respectively.
+  (Contributed by Sergey B Kirpichev in :gh:`146151`.)
+
 
 New modules
 ===========
@@ -627,6 +632,14 @@ argparse
 * Added backtick markup support in description and epilog text to highlight
   inline code when color output is enabled.
   (Contributed by Savannah Ostrowski in :gh:`142390`.)
+
+
+array
+-----
+
+* Support the :c:expr:`float complex` and :c:expr:`double complex` C types:
+  formatting characters ``'F'`` and ``'D'`` respectively.
+  (Contributed by Sergey B Kirpichev in :gh:`146151`.)
 
 
 base64
