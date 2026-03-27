@@ -254,7 +254,7 @@ platform-dependent.
 +--------+--------------------------+--------------------+----------------+------------+
 | ``N``  | :c:type:`size_t`         | integer            |                | \(3)       |
 +--------+--------------------------+--------------------+----------------+------------+
-| ``e``  | \(6)                     | float              | 2              | \(4)       |
+| ``e``  | :c:expr:`_Float16`       | float              | 2              | \(4), \(6) |
 +--------+--------------------------+--------------------+----------------+------------+
 | ``f``  | :c:expr:`float`          | float              | 4              | \(4)       |
 +--------+--------------------------+--------------------+----------------+------------+
@@ -328,7 +328,9 @@ Notes:
    revision of the `IEEE 754 standard <ieee 754 standard_>`_. It has a sign
    bit, a 5-bit exponent and 11-bit precision (with 10 bits explicitly stored),
    and can represent numbers between approximately ``6.1e-05`` and ``6.5e+04``
-   at full precision. This type is not widely supported by C compilers: on a
+   at full precision. This type is not widely supported by C compilers:
+   it's available as :c:expr:`_Float16` type, if the compiler supports the Annex H
+   of the C23 standard.  On a
    typical machine, an unsigned short can be used for storage, but not for math
    operations. See the Wikipedia page on the `half-precision floating-point
    format <half precision format_>`_ for more information.
