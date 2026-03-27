@@ -2664,8 +2664,39 @@ class TestUopsOptimization(unittest.TestCase):
         self.assertIsNotNone(ex)
         uops = get_opnames(ex)
         self.assertIn("_CALL_BUILTIN_O", uops)
+        self.assertNotIn("_GUARD_CALLABLE_BUILTIN_O", uops)
         self.assertIn("_POP_TOP_NOP", uops)
         self.assertLessEqual(count_ops(ex, "_POP_TOP"), 4)
+
+    def test_call_builtin_fast(self):
+        def testfunc(n):
+            x = 0
+            for _ in range(n):
+                y = divmod(10, 3)
+                x += y[0]
+            return x
+
+        res, ex = self._run_with_optimizer(testfunc, TIER2_THRESHOLD)
+        self.assertEqual(res, TIER2_THRESHOLD * 3)
+        self.assertIsNotNone(ex)
+        uops = get_opnames(ex)
+        self.assertIn("_CALL_BUILTIN_FAST", uops)
+        self.assertNotIn("_GUARD_CALLABLE_BUILTIN_FAST", uops)
+
+    def test_call_builtin_fast_with_keywords(self):
+        def testfunc(n):
+            x = 0
+            for _ in range(n):
+                y = sorted([3, 1, 2])
+                x += y[0]
+            return x
+
+        res, ex = self._run_with_optimizer(testfunc, TIER2_THRESHOLD)
+        self.assertEqual(res, TIER2_THRESHOLD)
+        self.assertIsNotNone(ex)
+        uops = get_opnames(ex)
+        self.assertIn("_CALL_BUILTIN_FAST_WITH_KEYWORDS", uops)
+        self.assertNotIn("_GUARD_CALLABLE_BUILTIN_FAST_WITH_KEYWORDS", uops)
 
     def test_call_method_descriptor_o(self):
         def testfunc(n):
@@ -2681,8 +2712,56 @@ class TestUopsOptimization(unittest.TestCase):
         self.assertIsNotNone(ex)
         uops = get_opnames(ex)
         self.assertIn("_CALL_METHOD_DESCRIPTOR_O", uops)
+        self.assertNotIn("_GUARD_CALLABLE_METHOD_DESCRIPTOR_O", uops)
         self.assertIn("_POP_TOP_NOP", uops)
         self.assertLessEqual(count_ops(ex, "_POP_TOP"), 4)
+
+    def test_call_method_descriptor_noargs(self):
+        def testfunc(n):
+            x = 0
+            for _ in range(n):
+                y = "hello"
+                z = y.upper()
+                x += len(z)
+            return x
+
+        res, ex = self._run_with_optimizer(testfunc, TIER2_THRESHOLD)
+        self.assertEqual(res, TIER2_THRESHOLD * 5)
+        self.assertIsNotNone(ex)
+        uops = get_opnames(ex)
+        self.assertIn("_CALL_METHOD_DESCRIPTOR_NOARGS", uops)
+        self.assertNotIn("_GUARD_CALLABLE_METHOD_DESCRIPTOR_NOARGS", uops)
+
+    def test_call_method_descriptor_fast(self):
+        def testfunc(n):
+            x = 0
+            for _ in range(n):
+                y = (1, 2, 3)
+                z = y.index(2)
+                x += z
+            return x
+
+        res, ex = self._run_with_optimizer(testfunc, TIER2_THRESHOLD)
+        self.assertEqual(res, TIER2_THRESHOLD)
+        self.assertIsNotNone(ex)
+        uops = get_opnames(ex)
+        self.assertIn("_CALL_METHOD_DESCRIPTOR_FAST", uops)
+        self.assertNotIn("_GUARD_CALLABLE_METHOD_DESCRIPTOR_FAST", uops)
+
+    def test_call_method_descriptor_fast_with_keywords(self):
+        def testfunc(n):
+            x = 0
+            for _ in range(n):
+                y = "hello world"
+                a, b = y.split()
+                x += len(a)
+            return x
+        res, ex = self._run_with_optimizer(testfunc, TIER2_THRESHOLD)
+        self.assertEqual(res, TIER2_THRESHOLD * 5)
+        self.assertIsNotNone(ex)
+        uops = get_opnames(ex)
+        self.assertIn("_CALL_METHOD_DESCRIPTOR_FAST_WITH_KEYWORDS", uops)
+        self.assertNotIn("_GUARD_CALLABLE_METHOD_DESCRIPTOR_FAST_WITH_KEYWORDS", uops)
 
     def test_call_intrinsic_1(self):
         def testfunc(n):
@@ -3037,7 +3116,6 @@ class TestUopsOptimization(unittest.TestCase):
             for _ in range(n):
                 x += c.bit_length()
             return x
-
         res, ex = self._run_with_optimizer(f, TIER2_THRESHOLD)
         self.assertIsNotNone(ex)
         self.assertEqual(res, TIER2_THRESHOLD)
@@ -4080,8 +4158,8 @@ class TestUopsOptimization(unittest.TestCase):
     def test_binary_subscr_list_slice(self):
         def testfunc(n):
             x = 0
+            l = [1, 2, 3]
             for _ in range(n):
-                l = [1, 2, 3]
                 x += l[0:1][0]
             return x
 
@@ -4091,7 +4169,7 @@ class TestUopsOptimization(unittest.TestCase):
 
         self.assertIn("_BINARY_OP_SUBSCR_LIST_SLICE", uops)
         self.assertNotIn("_GUARD_TOS_LIST", uops)
-        self.assertEqual(count_ops(ex, "_POP_TOP"), 3)
+        self.assertEqual(count_ops(ex, "_POP_TOP"), 2)
         self.assertEqual(count_ops(ex, "_POP_TOP_NOP"), 4)
 
     def test_is_op(self):
@@ -4388,6 +4466,21 @@ class TestUopsOptimization(unittest.TestCase):
         uops = get_opnames(ex)
 
         self.assertIn("_DICT_MERGE", uops)
+        self.assertGreaterEqual(count_ops(ex, "_POP_TOP_NOP"), 1)
+        self.assertLessEqual(count_ops(ex, "_POP_TOP"), 2)
+
+    def test_list_extend(self):
+        def testfunc(n):
+            a = [1, 2, 3]
+            for _ in range(n):
+                x = [*a]
+            return x
+
+        res, ex = self._run_with_optimizer(testfunc, TIER2_THRESHOLD)
+        self.assertEqual(res, [1, 2, 3])
+        uops = get_opnames(ex)
+
+        self.assertIn("_LIST_EXTEND", uops)
         self.assertGreaterEqual(count_ops(ex, "_POP_TOP_NOP"), 1)
         self.assertLessEqual(count_ops(ex, "_POP_TOP"), 2)
 

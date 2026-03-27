@@ -115,10 +115,14 @@ enum machine_format_code {
     UTF16_LE = 18,
     UTF16_BE = 19,
     UTF32_LE = 20,
-    UTF32_BE = 21
+    UTF32_BE = 21,
+    IEEE_754_FLOAT_COMPLEX_LE = 22,
+    IEEE_754_FLOAT_COMPLEX_BE = 23,
+    IEEE_754_DOUBLE_COMPLEX_LE = 24,
+    IEEE_754_DOUBLE_COMPLEX_BE = 25
 };
 #define MACHINE_FORMAT_CODE_MIN 0
-#define MACHINE_FORMAT_CODE_MAX 21
+#define MACHINE_FORMAT_CODE_MAX 25
 
 
 /*
@@ -647,6 +651,64 @@ d_setitem(arrayobject *ap, Py_ssize_t i, PyObject *v)
     return 0;
 }
 
+static PyObject *
+cf_getitem(arrayobject *ap, Py_ssize_t i)
+{
+    float f[2];
+
+    memcpy(&f, ap->ob_item + i*sizeof(f), sizeof(f));
+    return PyComplex_FromDoubles(f[0], f[1]);
+}
+
+static int
+cf_setitem(arrayobject *ap, Py_ssize_t i, PyObject *v)
+{
+    Py_complex x;
+    float f[2];
+
+    if (!PyArg_Parse(v, "D;array item must be complex", &x)) {
+        return -1;
+    }
+
+    CHECK_ARRAY_BOUNDS(ap, i);
+
+    f[0] = (float)x.real;
+    f[1] = (float)x.imag;
+    if (i >= 0) {
+        memcpy(ap->ob_item + i*sizeof(f), &f, sizeof(f));
+    }
+    return 0;
+}
+
+static PyObject *
+cd_getitem(arrayobject *ap, Py_ssize_t i)
+{
+    double f[2];
+
+    memcpy(&f, ap->ob_item + i*sizeof(f), sizeof(f));
+    return PyComplex_FromDoubles(f[0], f[1]);
+}
+
+static int
+cd_setitem(arrayobject *ap, Py_ssize_t i, PyObject *v)
+{
+    Py_complex x;
+    double f[2];
+
+    if (!PyArg_Parse(v, "D;array item must be complex", &x)) {
+        return -1;
+    }
+
+    CHECK_ARRAY_BOUNDS(ap, i);
+
+    f[0] = x.real;
+    f[1] = x.imag;
+    if (i >= 0) {
+        memcpy(ap->ob_item + i*sizeof(f), &f, sizeof(f));
+    }
+    return 0;
+}
+
 #define DEFINE_COMPAREITEMS(code, type) \
     static int \
     code##_compareitems(const void *lhs, const void *rhs, Py_ssize_t length) \
@@ -691,6 +753,8 @@ static const struct arraydescr descriptors[] = {
     {'Q', sizeof(long long), QQ_getitem, QQ_setitem, QQ_compareitems, "Q", 1, 0},
     {'f', sizeof(float), f_getitem, f_setitem, NULL, "f", 0, 0},
     {'d', sizeof(double), d_getitem, d_setitem, NULL, "d", 0, 0},
+    {'F', 2*sizeof(float), cf_getitem, cf_setitem, NULL, "F", 0, 0},
+    {'D', 2*sizeof(double), cd_getitem, cd_setitem, NULL, "D", 0, 0},
     {'\0', 0, 0, 0, 0, 0, 0} /* Sentinel */
 };
 
@@ -1494,13 +1558,14 @@ array.array.byteswap
 
 Byteswap all items of the array.
 
-If the items in the array are not 1, 2, 4, or 8 bytes in size, RuntimeError is
-raised.
+If the items in the array are not 1, 2, 4, 8 or 16 bytes in size, RuntimeError
+is raised.  Note, that for complex types the order of
+components (the real part, followed by imaginary part) is preserved.
 [clinic start generated code]*/
 
 static PyObject *
 array_array_byteswap_impl(arrayobject *self)
-/*[clinic end generated code: output=5f8236cbdf0d90b5 input=9af1d1749000b14f]*/
+/*[clinic end generated code: output=5f8236cbdf0d90b5 input=aafda275f48191d0]*/
 {
     char *p;
     Py_ssize_t i;
@@ -1526,19 +1591,66 @@ array_array_byteswap_impl(arrayobject *self)
         }
         break;
     case 8:
+        if (self->ob_descr->typecode != 'F') {
+            for (p = self->ob_item, i = Py_SIZE(self); --i >= 0; p += 8) {
+                char p0 = p[0];
+                char p1 = p[1];
+                char p2 = p[2];
+                char p3 = p[3];
+                p[0] = p[7];
+                p[1] = p[6];
+                p[2] = p[5];
+                p[3] = p[4];
+                p[4] = p3;
+                p[5] = p2;
+                p[6] = p1;
+                p[7] = p0;
+            }
+        }
+        else {
+            for (p = self->ob_item, i = Py_SIZE(self); --i >= 0; p += 8) {
+                char t0 = p[0];
+                char t1 = p[1];
+                p[0] = p[3];
+                p[1] = p[2];
+                p[2] = t1;
+                p[3] = t0;
+                t0 = p[4];
+                t1 = p[5];
+                p[4] = p[7];
+                p[5] = p[6];
+                p[6] = t1;
+                p[7] = t0;
+            }
+        }
+        break;
+    case 16:
+        assert(self->ob_descr->typecode == 'D');
         for (p = self->ob_item, i = Py_SIZE(self); --i >= 0; p += 8) {
-            char p0 = p[0];
-            char p1 = p[1];
-            char p2 = p[2];
-            char p3 = p[3];
+            char t0 = p[0];
+            char t1 = p[1];
+            char t2 = p[2];
+            char t3 = p[3];
             p[0] = p[7];
             p[1] = p[6];
             p[2] = p[5];
             p[3] = p[4];
-            p[4] = p3;
-            p[5] = p2;
-            p[6] = p1;
-            p[7] = p0;
+            p[4] = t3;
+            p[5] = t2;
+            p[6] = t1;
+            p[7] = t0;
+            t0 = p[8];
+            t1 = p[9];
+            t2 = p[10];
+            t3 = p[11];
+            p[8] = p[15];
+            p[9] = p[14];
+            p[10] = p[13];
+            p[11] = p[12];
+            p[12] = t3;
+            p[13] = t2;
+            p[14] = t1;
+            p[15] = t0;
         }
         break;
     default:
@@ -1973,7 +2085,11 @@ static const struct mformatdescr {
     {4, 0, 0},                  /* 18: UTF16_LE */
     {4, 0, 1},                  /* 19: UTF16_BE */
     {8, 0, 0},                  /* 20: UTF32_LE */
-    {8, 0, 1}                   /* 21: UTF32_BE */
+    {8, 0, 1},                  /* 21: UTF32_BE */
+    {8, 0, 0},                  /* 22: IEEE_754_FLOAT_COMPLEX_LE */
+    {8, 0, 1},                  /* 23: IEEE_754_FLOAT_COMPLEX_BE */
+    {16, 0, 0},                 /* 24: IEEE_754_DOUBLE_COMPLEX_LE */
+    {16, 0, 1},                 /* 25: IEEE_754_DOUBLE_COMPLEX_BE */
 };
 
 
@@ -2013,6 +2129,14 @@ typecode_to_mformat_code(char typecode)
 
     case 'd':
         return _PY_FLOAT_BIG_ENDIAN ? IEEE_754_DOUBLE_BE : IEEE_754_DOUBLE_LE;
+
+    case 'F':
+        return _PY_FLOAT_BIG_ENDIAN ? \
+            IEEE_754_FLOAT_COMPLEX_BE : IEEE_754_FLOAT_COMPLEX_LE;
+
+    case 'D':
+        return _PY_FLOAT_BIG_ENDIAN ? \
+            IEEE_754_DOUBLE_COMPLEX_BE : IEEE_754_DOUBLE_COMPLEX_LE;
 
     /* Integers */
     case 'h':
@@ -2224,6 +2348,52 @@ array__array_reconstructor_impl(PyObject *module, PyTypeObject *arraytype,
                 return NULL;
             }
             PyList_SET_ITEM(converted_items, i, pyfloat);
+        }
+        break;
+    }
+    case IEEE_754_FLOAT_COMPLEX_LE:
+    case IEEE_754_FLOAT_COMPLEX_BE: {
+        Py_ssize_t i;
+        int le = (mformat_code == IEEE_754_FLOAT_COMPLEX_LE) ? 1 : 0;
+        Py_ssize_t itemcount = Py_SIZE(items) / 8;
+        const char *memstr = PyBytes_AS_STRING(items);
+
+        converted_items = PyList_New(itemcount);
+        if (converted_items == NULL) {
+            return NULL;
+        }
+        for (i = 0; i < itemcount; i++) {
+            PyObject *pycomplex = PyComplex_FromDoubles(
+                PyFloat_Unpack4(&memstr[i * 8], le),
+                PyFloat_Unpack4(&memstr[i * 8] + 4, le));
+            if (pycomplex == NULL) {
+                Py_DECREF(converted_items);
+                return NULL;
+            }
+            PyList_SET_ITEM(converted_items, i, pycomplex);
+        }
+        break;
+    }
+    case IEEE_754_DOUBLE_COMPLEX_LE:
+    case IEEE_754_DOUBLE_COMPLEX_BE: {
+        Py_ssize_t i;
+        int le = (mformat_code == IEEE_754_DOUBLE_COMPLEX_LE) ? 1 : 0;
+        Py_ssize_t itemcount = Py_SIZE(items) / 16;
+        const char *memstr = PyBytes_AS_STRING(items);
+
+        converted_items = PyList_New(itemcount);
+        if (converted_items == NULL) {
+            return NULL;
+        }
+        for (i = 0; i < itemcount; i++) {
+            PyObject *pycomplex = PyComplex_FromDoubles(
+                PyFloat_Unpack8(&memstr[i * 16], le),
+                PyFloat_Unpack8(&memstr[i * 16] + 8, le));
+            if (pycomplex == NULL) {
+                Py_DECREF(converted_items);
+                return NULL;
+            }
+            PyList_SET_ITEM(converted_items, i, pycomplex);
         }
         break;
     }
@@ -2932,7 +3102,7 @@ array_new(PyTypeObject *type, PyObject *args, PyObject *kwds)
 PyDoc_STRVAR(module_doc,
 "This module defines an object type which can efficiently represent\n\
 an array of basic values: characters, integers, floating-point\n\
-numbers.  Arrays are sequence types and behave very much like lists,\n\
+numbers, complex numbers.  Arrays are sequence types and behave very much like lists,\n\
 except that the type of objects stored in them is constrained.\n");
 
 PyDoc_STRVAR(arraytype_doc,
@@ -2961,6 +3131,8 @@ The following type codes are defined:\n\
     'Q'         unsigned integer   8 (see note)\n\
     'f'         floating-point     4\n\
     'd'         floating-point     8\n\
+    'F'         float complex      8\n\
+    'D'         double complex     16\n\
 \n\
 NOTE: The 'u' typecode corresponds to Python's unicode character. On\n\
 narrow builds this is 2-bytes on wide builds this is 4-bytes.\n\

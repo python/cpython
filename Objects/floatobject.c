@@ -68,8 +68,6 @@ static PyStructSequence_Field floatinfo_fields[] = {
     {"radix",           "FLT_RADIX -- radix of exponent"},
     {"rounds",          "FLT_ROUNDS -- rounding mode used for arithmetic "
                     "operations"},
-    {"iec_60559",   "test if implementation supports the IEC 60559 "
-                    "floating-point standard"},
     {0}
 };
 
@@ -77,7 +75,7 @@ static PyStructSequence_Desc floatinfo_desc = {
     "sys.float_info",           /* name */
     floatinfo__doc__,           /* doc */
     floatinfo_fields,           /* fields */
-    12
+    11
 };
 
 PyObject *
@@ -115,11 +113,6 @@ PyFloat_GetInfo(void)
     SetDblFlag(DBL_EPSILON);
     SetIntFlag(FLT_RADIX);
     SetIntFlag(FLT_ROUNDS);
-#ifdef __STDC_IEC_559__
-    SetFlag(PyBool_FromLong(1));
-#else
-    SetFlag(PyBool_FromLong(0));
-#endif
 #undef SetIntFlag
 #undef SetDblFlag
 #undef SetFlag
