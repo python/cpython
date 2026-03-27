@@ -1,20 +1,27 @@
 # Sample script for use by test_gdb.test_jit
 
+import _testinternalcapi
 import operator
-import sys
+
+
+WARMUP_ITERATIONS = _testinternalcapi.TIER2_THRESHOLD + 10
 
 
 def jit_bt_hot(depth, warming_up_caller=False):
-    if warming_up_caller:
-        return
     if depth == 0:
-        id(42)
+        if not warming_up_caller:
+            id(42)
         return
 
-    warming_up = True
-    while warming_up:
-        warming_up = sys._jit.is_enabled() & (not sys._jit.is_active())
-        operator.call(jit_bt_hot, depth - 1, warming_up)
+    for iteration in range(WARMUP_ITERATIONS):
+        operator.call(
+            jit_bt_hot,
+            depth - 1,
+            warming_up_caller or iteration + 1 != WARMUP_ITERATIONS,
+        )
 
 
-jit_bt_hot(10)
+# Warm the shared shim once without hitting builtin_id so the real run uses
+# the steady-state shim path when GDB breaks inside id(42).
+jit_bt_hot(1, warming_up_caller=True)
+jit_bt_hot(1)

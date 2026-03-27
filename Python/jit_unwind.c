@@ -655,11 +655,12 @@ struct jit_descriptor {
     struct jit_code_entry *first_entry;
 };
 
-static volatile struct jit_descriptor __jit_debug_descriptor = {
+Py_EXPORTED_SYMBOL volatile struct jit_descriptor __jit_debug_descriptor = {
     1, JIT_NOACTION, NULL, NULL
 };
 
-static void __attribute__((noinline)) __jit_debug_register_code(void)
+Py_EXPORTED_SYMBOL void __attribute__((noinline))
+__jit_debug_register_code(void)
 {
     /* Keep this call visible to debuggers and not optimized away. */
     (void)__jit_debug_descriptor.action_flag;
@@ -684,7 +685,7 @@ gdb_jit_machine_id(void)
 static void
 gdb_jit_register_code(
     const void *code_addr,
-    unsigned int code_size,
+    size_t code_size,
     const char *symname,
     const uint8_t *eh_frame,
     size_t eh_frame_size
@@ -858,9 +859,9 @@ gdb_jit_register_code(
 
 void
 _PyJitUnwind_GdbRegisterCode(const void *code_addr,
-                           unsigned int code_size,
-                           const char *entry,
-                           const char *filename)
+                             size_t code_size,
+                             const char *entry,
+                             const char *filename)
 {
 #if defined(__linux__) && defined(__ELF__)
     /* GDB expects a stable symbol name and absolute addresses in .eh_frame. */

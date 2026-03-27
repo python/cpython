@@ -19,7 +19,7 @@ size_t _PyJitUnwind_BuildEhFrame(uint8_t *buffer, size_t buffer_size,
                                  int absolute_addr);
 
 void _PyJitUnwind_GdbRegisterCode(const void *code_addr,
-                                  unsigned int code_size,
+                                  size_t code_size,
                                   const char *entry,
                                   const char *filename);
 

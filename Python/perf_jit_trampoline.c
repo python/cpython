@@ -531,7 +531,7 @@ static void* perf_map_jit_init(void) {
 static void perf_map_jit_write_entry_with_name(
     void *state,
     const void *code_addr,
-    unsigned int code_size,
+    size_t code_size,
     const char *entry,
     const char *filename
 )
@@ -724,7 +724,7 @@ static void perf_map_jit_write_entry_with_name(
  * and must not be changed without coordinating with core Python development.
  */
 static void perf_map_jit_write_entry(void *state, const void *code_addr,
-                                    unsigned int code_size, PyCodeObject *co)
+                                     size_t code_size, PyCodeObject *co)
 {
     const char *entry = "";
     const char *filename = "";
@@ -741,7 +741,7 @@ static void perf_map_jit_write_entry(void *state, const void *code_addr,
 }
 
 void
-_PyPerfJit_WriteNamedCode(const void *code_addr, unsigned int code_size,
+_PyPerfJit_WriteNamedCode(const void *code_addr, size_t code_size,
                           const char *entry, const char *filename)
 {
     perf_map_jit_write_entry_with_name(

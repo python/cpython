@@ -70,11 +70,11 @@ jit_record_code(const void *code_addr, size_t code_size,
     _PyPerfTrampoline_GetCallbacks(&callbacks);
     if (callbacks.write_state == _Py_perfmap_jit_callbacks.write_state) {
         _PyPerfJit_WriteNamedCode(
-            code_addr, (unsigned int)code_size, entry, filename);
+            code_addr, code_size, entry, filename);
         return;
     }
     _PyJitUnwind_GdbRegisterCode(
-        code_addr, (unsigned int)code_size, entry, filename);
+        code_addr, code_size, entry, filename);
 #else
     (void)code_addr;
     (void)code_size;
