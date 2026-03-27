@@ -10,7 +10,7 @@
 #
 # The simplest entry point is:
 #
-#   $ python Apple ci iOS
+#   $ python Platforms/Apple ci iOS
 #
 # which will:
 # * Clean any pre-existing build artefacts
@@ -57,7 +57,7 @@ EnvironmentT = dict[str, str]
 ArgsT = Sequence[str | Path]
 
 SCRIPT_NAME = Path(__file__).name
-PYTHON_DIR = Path(__file__).resolve().parent.parent
+PYTHON_DIR = Path(__file__).resolve().parent.parent.parent
 
 CROSS_BUILD_DIR = PYTHON_DIR / "cross-build"
 
@@ -140,7 +140,7 @@ def apple_env(host: str) -> EnvironmentT:
     """Construct an Apple development environment for the given host."""
     env = {
         "PATH": ":".join([
-            str(PYTHON_DIR / "Apple/iOS/Resources/bin"),
+            str(PYTHON_DIR / "Platforms/Apple/iOS/Resources/bin"),
             str(subdir(host) / "prefix"),
             "/usr/bin",
             "/bin",
@@ -440,7 +440,10 @@ def framework_path(host_triple: str, multiarch: str) -> Path:
     :param host_triple: The host triple (e.g., arm64-apple-ios-simulator)
     :param multiarch: The multiarch identifier (e.g., arm64-simulator)
     """
-    return CROSS_BUILD_DIR / f"{host_triple}/Apple/iOS/Frameworks/{multiarch}"
+    return (
+        CROSS_BUILD_DIR
+        / f"{host_triple}/Platforms/Apple/iOS/Frameworks/{multiarch}"
+    )
 
 
 def package_version(prefix_path: Path) -> str:
@@ -624,7 +627,7 @@ def create_xcframework(platform: str) -> str:
 
         # Copy in the cross-architecture pyconfig.h
         shutil.copy(
-            PYTHON_DIR / f"Apple/{platform}/Resources/pyconfig.h",
+            PYTHON_DIR / f"Platforms/Apple/{platform}/Resources/pyconfig.h",
             slice_framework / "Headers/pyconfig.h",
         )
 
@@ -661,7 +664,7 @@ def create_xcframework(platform: str) -> str:
             host_path = (
                 CROSS_BUILD_DIR
                 / host_triple
-                / "Apple/iOS/Frameworks"
+                / "Platforms/Apple/iOS/Frameworks"
                 / multiarch
             )
             host_framework = host_path / "Python.framework"
@@ -691,7 +694,7 @@ def create_xcframework(platform: str) -> str:
 
     print(" - build tools")
     shutil.copytree(
-        PYTHON_DIR / "Apple/testbed/Python.xcframework/build",
+        PYTHON_DIR / "Platforms/Apple/testbed/Python.xcframework/build",
         package_path / "Python.xcframework/build",
     )
 
@@ -711,7 +714,7 @@ def package(context: argparse.Namespace) -> None:
         print()
         run([
             sys.executable,
-            "Apple/testbed",
+            "Platforms/Apple/testbed",
             "clone",
             "--platform",
             context.platform,
@@ -806,13 +809,13 @@ def test(context: argparse.Namespace, host: str | None = None) -> None:  # noqa:
                 framework_path = (
                     CROSS_BUILD_DIR
                     / host
-                    / f"Apple/{context.platform}"
+                    / f"Platforms/Apple/{context.platform}"
                     / f"Frameworks/{apple_multiarch(host)}"
                 )
 
         run([
             sys.executable,
-            "Apple/testbed",
+            "Platforms/Apple/testbed",
             "clone",
             "--platform",
             context.platform,
