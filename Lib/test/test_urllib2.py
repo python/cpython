@@ -980,6 +980,23 @@ class HandlerTests(unittest.TestCase):
             self.assertEqual(req.unredirected_hdrs["Host"], "baz")
             self.assertEqual(req.unredirected_hdrs["Spam"], "foo")
 
+    def test_http_header_priority(self):
+        # gh-47005: regular headers set via add_header() must override
+        # unredirected headers with the same name in do_open(), consistent
+        # with get_header() and header_items().
+        h = urllib.request.AbstractHTTPHandler()
+        h.parent = MockOpener()
+
+        req = Request("http://example.com/", headers={"Content-Type": "application/json"})
+        req.timeout = None
+        req.add_unredirected_header("Content-Type", "application/x-www-form-urlencoded")
+
+        http = MockHTTPClass()
+        h.do_open(http, req)
+
+        sent_headers = dict(http.req_headers)
+        self.assertEqual(sent_headers["Content-Type"], "application/json")
+
     def test_http_body_file(self):
         # A regular file - chunked encoding is used unless Content Length is
         # already set.
