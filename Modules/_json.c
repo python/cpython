@@ -946,8 +946,8 @@ _parse_array_unicode(PyScannerObject *s, PyObject *memo, PyObject *pystr, Py_ssi
         goto bail;
     }
     *next_idx_ptr = idx + 1;
-    /* if array_hook is not None: return array_hook(rval) */
-    if (!Py_IsNone(s->array_hook)) {
+    /* if array_hook is not None: rval = array_hook(rval) */
+    if (s->array_hook != Py_None) {
         val = PyObject_CallOneArg(s->array_hook, rval);
         Py_DECREF(rval);
         return val;
@@ -1247,9 +1247,8 @@ scanner_new(PyTypeObject *type, PyObject *args, PyObject *kwds)
     PyObject *strict;
     static char *kwlist[] = {"context", NULL};
 
-    if (!PyArg_ParseTupleAndKeywords(args, kwds, "O:make_scanner", kwlist, &ctx)) {
+    if (!PyArg_ParseTupleAndKeywords(args, kwds, "O:make_scanner", kwlist, &ctx))
         return NULL;
-    }
 
     s = (PyScannerObject *)type->tp_alloc(type, 0);
     if (s == NULL) {
@@ -1258,38 +1257,30 @@ scanner_new(PyTypeObject *type, PyObject *args, PyObject *kwds)
 
     /* All of these will fail "gracefully" so we don't need to verify them */
     strict = PyObject_GetAttrString(ctx, "strict");
-    if (strict == NULL) {
+    if (strict == NULL)
         goto bail;
-    }
     s->strict = PyObject_IsTrue(strict);
     Py_DECREF(strict);
-    if (s->strict < 0) {
+    if (s->strict < 0)
         goto bail;
-    }
     s->object_hook = PyObject_GetAttrString(ctx, "object_hook");
-    if (s->object_hook == NULL) {
+    if (s->object_hook == NULL)
         goto bail;
-    }
     s->object_pairs_hook = PyObject_GetAttrString(ctx, "object_pairs_hook");
-    if (s->object_pairs_hook == NULL) {
+    if (s->object_pairs_hook == NULL)
         goto bail;
-    }
     s->array_hook = PyObject_GetAttrString(ctx, "array_hook");
-    if (s->array_hook == NULL) {
+    if (s->array_hook == NULL)
         goto bail;
-    }
     s->parse_float = PyObject_GetAttrString(ctx, "parse_float");
-    if (s->parse_float == NULL) {
+    if (s->parse_float == NULL)
         goto bail;
-    }
     s->parse_int = PyObject_GetAttrString(ctx, "parse_int");
-    if (s->parse_int == NULL) {
+    if (s->parse_int == NULL)
         goto bail;
-    }
     s->parse_constant = PyObject_GetAttrString(ctx, "parse_constant");
-    if (s->parse_constant == NULL) {
+    if (s->parse_constant == NULL)
         goto bail;
-    }
 
     return (PyObject *)s;
 
