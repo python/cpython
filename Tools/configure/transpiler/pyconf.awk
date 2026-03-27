@@ -591,7 +591,7 @@ function _pyconf_ac_includes_default(    result) {
         return result
 }
 
-function pyconf_check_header(header, prologue, default_inc, define, cache_key, source, cv, rc) {
+function pyconf_check_header(header, prologue, default_inc, define, cache_key, extra_cflags, source, cv, rc) {
         if (define == "") define = _pyconf_header_to_define(header)
         if (cache_key == "") cache_key = "ac_cv_header_" header
         gsub(/-/, "_dash_", cache_key)
@@ -607,7 +607,7 @@ function pyconf_check_header(header, prologue, default_inc, define, cache_key, s
                         source = _pyconf_confdefs() "\n" default_inc "\n#include <" header ">\nint main(void) { return 0; }"
                 else
                         source = _pyconf_confdefs() "\n" _pyconf_ac_includes_default() "#include <" header ">\nint main(void) { return 0; }"
-                rc = _pyconf_compile_test(source, "")
+                rc = _pyconf_compile_test(source, extra_cflags)
                 CACHE[cache_key] = rc ? "yes" : "no"
                 V[cache_key] = rc ? "yes" : "no"
                 pyconf_result(rc ? "yes" : "no")
@@ -925,7 +925,7 @@ function pyconf_check_decl(name, includes, define, source, inc, cv, rc, _darr, _
         }
 
         pyconf_checking("whether " name " is declared")
-        inc = _pyconf_ac_includes_default()
+        inc = ""
         if (includes != "") {
                 _dn = split(includes, _darr, " ")
                 for (_di = 1; _di <= _dn; _di++)
@@ -1417,7 +1417,10 @@ function pyconf_arg_with(name, default_val, help_text, metavar, var, false_is, k
 }
 
 function pyconf_env_var(name, help_text) {
-        # Record environment variable documentation
+        # Seed V[name] from the environment if not already set, mirroring
+        # Python's Vars.__getattr__ fallback to os.environ.
+        if (!(name in V) && name in ENV)
+                V[name] = ENV[name]
 }
 
 function pyconf_option_value(key) {

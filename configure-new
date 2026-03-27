@@ -602,7 +602,7 @@ function _pyconf_ac_includes_default(    result) {
         return result
 }
 
-function pyconf_check_header(header, prologue, default_inc, define, cache_key, source, cv, rc) {
+function pyconf_check_header(header, prologue, default_inc, define, cache_key, extra_cflags, source, cv, rc) {
         if (define == "") define = _pyconf_header_to_define(header)
         if (cache_key == "") cache_key = "ac_cv_header_" header
         gsub(/-/, "_dash_", cache_key)
@@ -618,7 +618,7 @@ function pyconf_check_header(header, prologue, default_inc, define, cache_key, s
                         source = _pyconf_confdefs() "\n" default_inc "\n#include <" header ">\nint main(void) { return 0; }"
                 else
                         source = _pyconf_confdefs() "\n" _pyconf_ac_includes_default() "#include <" header ">\nint main(void) { return 0; }"
-                rc = _pyconf_compile_test(source, "")
+                rc = _pyconf_compile_test(source, extra_cflags)
                 CACHE[cache_key] = rc ? "yes" : "no"
                 V[cache_key] = rc ? "yes" : "no"
                 pyconf_result(rc ? "yes" : "no")
@@ -936,7 +936,7 @@ function pyconf_check_decl(name, includes, define, source, inc, cv, rc, _darr, _
         }
 
         pyconf_checking("whether " name " is declared")
-        inc = _pyconf_ac_includes_default()
+        inc = ""
         if (includes != "") {
                 _dn = split(includes, _darr, " ")
                 for (_di = 1; _di <= _dn; _di++)
@@ -1428,7 +1428,10 @@ function pyconf_arg_with(name, default_val, help_text, metavar, var, false_is, k
 }
 
 function pyconf_env_var(name, help_text) {
-        # Record environment variable documentation
+        # Seed V[name] from the environment if not already set, mirroring
+        # Python's Vars.__getattr__ fallback to os.environ.
+        if (!(name in V) && name in ENV)
+                V[name] = ENV[name]
 }
 
 function pyconf_option_value(key) {
@@ -3218,7 +3221,7 @@ function u_detect_sqlite3(    _i_f, _n_f, check_cflags, enable_loadable_sqlite_e
 	sqlite_inc = " -I" pyconf_srcdir "/Modules/_sqlite"
 	check_cflags = V["LIBSQLITE3_CFLAGS"] sqlite_inc
 	V["LIBSQLITE3_CFLAGS"] = V["LIBSQLITE3_CFLAGS"] " -I$(srcdir)/Modules/_sqlite"
-	if (pyconf_check_header("sqlite3.h", "")) {
+	if (pyconf_check_header("sqlite3.h", "", "", "", "", check_cflags)) {
 		V["have_sqlite3"] = "yes"
 		if (pyconf_compile_check("", "#include <sqlite3.h>\n#if SQLITE_VERSION_NUMBER < 3015002\n#  error \"SQLite 3.15.2 or higher required\"\n#endif\nint main(void) {  return 0; }", check_cflags)) {
 			V["have_supported_sqlite3"] = "yes"
@@ -3890,13 +3893,17 @@ function u_setup_platform_defines() {
 	pyconf_define("_DARWIN_C_SOURCE", 1, 0, "Define on Darwin to activate all library features")
 }
 
-function u_setup_source_dirs(    builddir, out_of_tree, srcdir_abs, srcdir_raw, srcdir_rel) {
+function u_setup_source_dirs(    builddir, out_of_tree, srcdir, srcdir_abs, srcdir_raw) {
 	srcdir_raw = ((pyconf__srcdir_arg != "") ? pyconf__srcdir_arg : ((V["srcdir"] != "") ? V["srcdir"] : "."))
 	srcdir_abs = pyconf_abspath(srcdir_raw)
 	builddir = pyconf_abspath(".")
 	out_of_tree = ((srcdir_abs != builddir) ? "yes" : "no")
-	srcdir_rel = (((out_of_tree != "") && (out_of_tree != "no")) ? pyconf_relpath(srcdir_abs, builddir) : ".")
-	V["srcdir"] = srcdir_rel
+	if (((out_of_tree != "") && (out_of_tree != "no"))) {
+		srcdir = srcdir_raw
+	} else {
+		srcdir = "."
+	}
+	V["srcdir"] = srcdir
 	v_export("srcdir")
 	V["abs_srcdir"] = srcdir_abs
 	v_export("abs_srcdir")
@@ -4240,7 +4247,7 @@ function u_setup_framework(    ac_default_prefix, fw_raw, val) {
 			if ((V["ac_sys_system"] == "Darwin")) {
 				val = "/Library/Frameworks"
 			} else if ((V["ac_sys_system"] == "iOS")) {
-				val = "Apple/iOS/Frameworks/$(MULTIARCH)"
+				val = "Platforms/Apple/iOS/Frameworks/$(MULTIARCH)"
 			} else {
 				pyconf_error("error: Unknown platform for framework build")
 			}
@@ -4320,9 +4327,9 @@ function u__setup_framework_ios() {
 	V["INSTALLTARGETS"] = "libinstall inclinstall sharedinstall"
 	V["prefix"] = V["PYTHONFRAMEWORKPREFIX"]
 	V["PYTHONFRAMEWORKINSTALLNAMEPREFIX"] = "@rpath/" V["PYTHONFRAMEWORKDIR"]
-	V["RESSRCDIR"] = "Apple/iOS/Resources"
+	V["RESSRCDIR"] = "Platforms/Apple/iOS/Resources"
 	delete _va33
-	_va33[1] = "Apple/iOS/Resources/Info.plist"
+	_va33[1] = "Platforms/Apple/iOS/Resources/Info.plist"
 	_va33[0] = 1
 	pyconf_config_files(_va33)
 }
@@ -5939,11 +5946,11 @@ function u_setup_machdep(    SUNOS_VERSION, ac_md_release, ac_md_system, _split_
 
 function u_setup_host_prefix() {
 	if ((!((V["host_prefix"] != "") && (V["host_prefix"] != "no")))) {
-		V["host_prefix"] = (((V["ac_sys_system"] == "Emscripten") || (V["ac_sys_system"] == "WASI")) ? "/" : "${prefix}")
+		V["host_prefix"] = ((V["ac_sys_system"] == "Emscripten") ? "/" : "${prefix}")
 		v_export("host_prefix")
 	}
 	if ((!((V["host_exec_prefix"] != "") && (V["host_exec_prefix"] != "no")))) {
-		V["host_exec_prefix"] = (((V["ac_sys_system"] == "Emscripten") || (V["ac_sys_system"] == "WASI")) ? V["host_prefix"] : "${exec_prefix}")
+		V["host_exec_prefix"] = ((V["ac_sys_system"] == "Emscripten") ? V["host_prefix"] : "${exec_prefix}")
 	}
 	v_export("host_exec_prefix")
 }
@@ -7323,7 +7330,7 @@ function u_detect_gdbm() {
 	V["have_gdbm"] = "no"
 	pyconf_env_var("GDBM_CFLAGS", "C compiler flags for gdbm")
 	pyconf_env_var("GDBM_LIBS", "additional linker flags for gdbm")
-	if (pyconf_check_header("gdbm.h", "")) {
+	if (pyconf_check_header("gdbm.h", "", "", "", "", V["GDBM_CFLAGS"])) {
 		if (pyconf_check_lib("gdbm", "gdbm_open", V["GDBM_CFLAGS"], V["GDBM_LIBS"])) {
 			V["have_gdbm"] = "yes"
 			V["GDBM_LIBS"] = ((V["GDBM_LIBS"] != "") ? V["GDBM_LIBS"] : "-lgdbm")

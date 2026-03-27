@@ -2519,13 +2519,16 @@ class PyshToAwk:
         )
 
     def _build_check_header_expr(self, call: Call) -> A.FuncCall:
-        """Build pyconf_check_header(header, prologue, default_inc)."""
+        """Build pyconf_check_header(header, prologue, default_inc, define,
+        cache_key, extra_cflags)."""
         args: list[A.Expr] = [self._expr(a) for a in call.args]
         extra_cflags = call.kwargs.get("extra_cflags")
         if extra_cflags is not None:
-            # Append extra_cflags to CPPFLAGS-like position — use prologue
-            while len(args) < 2:
+            # Pad to position 6: header, prologue, default_inc, define,
+            # cache_key, extra_cflags
+            while len(args) < 5:
                 args.append(A.StringLit(""))
+            args.append(self._expr(extra_cflags))
         return A.FuncCall("pyconf_check_header", args)
 
     def _build_try_link_expr(self, call: Call) -> A.FuncCall:

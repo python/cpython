@@ -92,14 +92,14 @@ def setup_host_prefix(v):
         v.export(
             "host_prefix",
             "/"
-            if v.ac_sys_system in ("Emscripten", "WASI")
+            if v.ac_sys_system == "Emscripten"
             else "${prefix}",
         )
 
     if not v.host_exec_prefix:
         v.host_exec_prefix = (
             v.host_prefix
-            if v.ac_sys_system in ("Emscripten", "WASI")
+            if v.ac_sys_system == "Emscripten"
             else "${exec_prefix}"
         )
     v.export("host_exec_prefix")
