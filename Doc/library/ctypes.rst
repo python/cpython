@@ -221,87 +221,164 @@ Fundamental data types
 
 :mod:`!ctypes` defines a number of primitive C compatible data types:
 
-+----------------------+------------------------------------------+----------------------------+
-| ctypes type          | C type                                   | Python type                |
-+======================+==========================================+============================+
-| :class:`c_bool`      | :c:expr:`_Bool`                          | bool (1)                   |
-+----------------------+------------------------------------------+----------------------------+
-| :class:`c_char`      | :c:expr:`char`                           | 1-character bytes object   |
-+----------------------+------------------------------------------+----------------------------+
-| :class:`c_wchar`     | :c:type:`wchar_t`                        | 1-character string         |
-+----------------------+------------------------------------------+----------------------------+
-| :class:`c_byte`      | :c:expr:`char`                           | int                        |
-+----------------------+------------------------------------------+----------------------------+
-| :class:`c_ubyte`     | :c:expr:`unsigned char`                  | int                        |
-+----------------------+------------------------------------------+----------------------------+
-| :class:`c_short`     | :c:expr:`short`                          | int                        |
-+----------------------+------------------------------------------+----------------------------+
-| :class:`c_ushort`    | :c:expr:`unsigned short`                 | int                        |
-+----------------------+------------------------------------------+----------------------------+
-| :class:`c_int`       | :c:expr:`int`                            | int                        |
-+----------------------+------------------------------------------+----------------------------+
-| :class:`c_int8`      | :c:type:`int8_t`                         | int                        |
-+----------------------+------------------------------------------+----------------------------+
-| :class:`c_int16`     | :c:type:`int16_t`                        | int                        |
-+----------------------+------------------------------------------+----------------------------+
-| :class:`c_int32`     | :c:type:`int32_t`                        | int                        |
-+----------------------+------------------------------------------+----------------------------+
-| :class:`c_int64`     | :c:type:`int64_t`                        | int                        |
-+----------------------+------------------------------------------+----------------------------+
-| :class:`c_uint`      | :c:expr:`unsigned int`                   | int                        |
-+----------------------+------------------------------------------+----------------------------+
-| :class:`c_uint8`     | :c:type:`uint8_t`                        | int                        |
-+----------------------+------------------------------------------+----------------------------+
-| :class:`c_uint16`    | :c:type:`uint16_t`                       | int                        |
-+----------------------+------------------------------------------+----------------------------+
-| :class:`c_uint32`    | :c:type:`uint32_t`                       | int                        |
-+----------------------+------------------------------------------+----------------------------+
-| :class:`c_uint64`    | :c:type:`uint64_t`                       | int                        |
-+----------------------+------------------------------------------+----------------------------+
-| :class:`c_long`      | :c:expr:`long`                           | int                        |
-+----------------------+------------------------------------------+----------------------------+
-| :class:`c_ulong`     | :c:expr:`unsigned long`                  | int                        |
-+----------------------+------------------------------------------+----------------------------+
-| :class:`c_longlong`  | :c:expr:`__int64` or :c:expr:`long long` | int                        |
-+----------------------+------------------------------------------+----------------------------+
-| :class:`c_ulonglong` | :c:expr:`unsigned __int64` or            | int                        |
-|                      | :c:expr:`unsigned long long`             |                            |
-+----------------------+------------------------------------------+----------------------------+
-| :class:`c_size_t`    | :c:type:`size_t`                         | int                        |
-+----------------------+------------------------------------------+----------------------------+
-| :class:`c_ssize_t`   | :c:type:`ssize_t` or                     | int                        |
-|                      | :c:expr:`Py_ssize_t`                     |                            |
-+----------------------+------------------------------------------+----------------------------+
-| :class:`c_time_t`    | :c:type:`time_t`                         | int                        |
-+----------------------+------------------------------------------+----------------------------+
-| :class:`c_float`     | :c:expr:`float`                          | float                      |
-+----------------------+------------------------------------------+----------------------------+
-| :class:`c_double`    | :c:expr:`double`                         | float                      |
-+----------------------+------------------------------------------+----------------------------+
-| :class:`c_longdouble`| :c:expr:`long double`                    | float                      |
-+----------------------+------------------------------------------+----------------------------+
-| :class:`c_char_p`    | :c:expr:`char *` (NUL terminated)        | bytes object or ``None``   |
-+----------------------+------------------------------------------+----------------------------+
-| :class:`c_wchar_p`   | :c:expr:`wchar_t *` (NUL terminated)     | string or ``None``         |
-+----------------------+------------------------------------------+----------------------------+
-| :class:`c_void_p`    | :c:expr:`void *`                         | int or ``None``            |
-+----------------------+------------------------------------------+----------------------------+
+.. list-table::
+   :header-rows: 1
 
-(1)
-   The constructor accepts any object with a truth value.
+   * - ctypes type
+     - C type
+     - Python type
+     - :py:attr:`~_SimpleCData._type_`
+   * - :class:`c_bool`
+     - :c:expr:`_Bool`
+     - :py:class:`bool`
+     - ``'?'``
+   * - :class:`c_char`
+     - :c:expr:`char`
+     - 1-character :py:class:`bytes`
+     - ``'c'``
+   * - :class:`c_wchar`
+     - :c:type:`wchar_t`
+     - 1-character :py:class:`str`
+     - ``'u'``
+   * - :class:`c_byte`
+     - :c:expr:`char`
+     - :py:class:`int`
+     - ``'b'``
+   * - :class:`c_ubyte`
+     - :c:expr:`unsigned char`
+     - :py:class:`int`
+     - ``'B'``
+   * - :class:`c_short`
+     - :c:expr:`short`
+     - :py:class:`int`
+     - ``'h'``
+   * - :class:`c_ushort`
+     - :c:expr:`unsigned short`
+     - :py:class:`int`
+     - ``'H'``
+   * - :class:`c_int`
+     - :c:expr:`int`
+     - :py:class:`int`
+     - ``'i'`` \*
+   * - :class:`c_int8`
+     - :c:type:`int8_t`
+     - :py:class:`int`
+     - \*
+   * - :class:`c_int16`
+     - :c:type:`int16_t`
+     - :py:class:`int`
+     - \*
+   * - :class:`c_int32`
+     - :c:type:`int32_t`
+     - :py:class:`int`
+     - \*
+   * - :class:`c_int64`
+     - :c:type:`int64_t`
+     - :py:class:`int`
+     - \*
+   * - :class:`c_uint`
+     - :c:expr:`unsigned int`
+     - :py:class:`int`
+     - ``'I'`` \*
+   * - :class:`c_uint8`
+     - :c:type:`uint8_t`
+     - :py:class:`int`
+     - \*
+   * - :class:`c_uint16`
+     - :c:type:`uint16_t`
+     - :py:class:`int`
+     - \*
+   * - :class:`c_uint32`
+     - :c:type:`uint32_t`
+     - :py:class:`int`
+     - \*
+   * - :class:`c_uint64`
+     - :c:type:`uint64_t`
+     - :py:class:`int`
+     - \*
+   * - :class:`c_long`
+     - :c:expr:`long`
+     - :py:class:`int`
+     - ``'l'``
+   * - :class:`c_ulong`
+     - :c:expr:`unsigned long`
+     - :py:class:`int`
+     - ``'L'``
+   * - :class:`c_longlong`
+     - :c:expr:`long long`
+     - :py:class:`int`
+     - ``'q'`` \*
+   * - :class:`c_ulonglong`
+     - :c:expr:`unsigned long long`
+     - :py:class:`int`
+     - ``'Q'`` \*
+   * - :class:`c_size_t`
+     - :c:type:`size_t`
+     - :py:class:`int`
+     - \*
+   * - :class:`c_ssize_t`
+     - :c:type:`Py_ssize_t`
+     - :py:class:`int`
+     - \*
+   * - :class:`c_time_t`
+     - :c:type:`time_t`
+     - :py:class:`int`
+     - \*
+   * - :class:`c_float`
+     - :c:expr:`float`
+     - :py:class:`float`
+     - ``'f'``
+   * - :class:`c_double`
+     - :c:expr:`double`
+     - :py:class:`float`
+     - ``'d'``
+   * - :class:`c_longdouble`
+     - :c:expr:`long double`
+     - :py:class:`float`
+     - ``'g'`` \*
+   * - :class:`c_char_p`
+     - :c:expr:`char *` (NUL terminated)
+     - :py:class:`bytes` or ``None``
+     - ``'z'``
+   * - :class:`c_wchar_p`
+     - :c:expr:`wchar_t *` (NUL terminated)
+     - :py:class:`str` or ``None``
+     - ``'Z'``
+   * - :class:`c_void_p`
+     - :c:expr:`void *`
+     - :py:class:`int` or ``None``
+     - ``'P'``
+   * - :class:`py_object`
+     - :c:expr:`PyObject *`
+     - :py:class:`object`
+     - ``'O'``
+   * - :ref:`VARIANT_BOOL <ctypes-wintypes>`
+     - :c:expr:`short int`
+     - :py:class:`bool`
+     - ``'v'``
 
 Additionally, if IEC 60559 compatible complex arithmetic (Annex G) is supported
 in both C and ``libffi``, the following complex types are available:
 
-+----------------------------------+---------------------------------+-----------------+
-| ctypes type                      | C type                          | Python type     |
-+==================================+=================================+=================+
-| :class:`c_float_complex`         | :c:expr:`float complex`         | complex         |
-+----------------------------------+---------------------------------+-----------------+
-| :class:`c_double_complex`        | :c:expr:`double complex`        | complex         |
-+----------------------------------+---------------------------------+-----------------+
-| :class:`c_longdouble_complex`    | :c:expr:`long double complex`   | complex         |
-+----------------------------------+---------------------------------+-----------------+
+.. list-table::
+   :header-rows: 1
+
+   * - ctypes type
+     - C type
+     - Python type
+     - :py:attr:`~_SimpleCData._type_`
+   * - :class:`c_float_complex`
+     - :c:expr:`float complex`
+     - :py:class:`complex`
+     - ``'F'``
+   * - :class:`c_double_complex`
+     - :c:expr:`double complex`
+     - :py:class:`complex`
+     - ``'D'``
+   * - :class:`c_longdouble_complex`
+     - :c:expr:`long double complex`
+     - :py:class:`complex`
+     - ``'G'``
 
 
 All these types can be created by calling them with an optional initializer of
@@ -314,6 +391,16 @@ the correct type and value::
    >>> c_ushort(-3)
    c_ushort(65533)
    >>>
+
+The constructors for numeric types will convert input using
+:py:meth:`~object.__bool__`,
+:py:meth:`~object.__index__` (for ``int``),
+:py:meth:`~object.__float__` or :py:meth:`~object.__complex__`.
+This means :py:class:`~ctypes.c_bool` accepts any object with a truth value::
+
+   >>> empty_list = []
+   >>> c_bool(empty_list)
+   c_bool(False)
 
 Since these types are mutable, their value can also be changed afterwards::
 
@@ -1360,104 +1447,6 @@ is already known, on a case by case basis.
 ctypes reference
 ----------------
 
-
-.. _ctypes-finding-shared-libraries:
-
-Finding shared libraries
-^^^^^^^^^^^^^^^^^^^^^^^^
-
-When programming in a compiled language, shared libraries are accessed when
-compiling/linking a program, and when the program is run.
-
-The purpose of the :func:`~ctypes.util.find_library` function is to locate a library in a way
-similar to what the compiler or runtime loader does (on platforms with several
-versions of a shared library the most recent should be loaded), while the ctypes
-library loaders act like when a program is run, and call the runtime loader
-directly.
-
-The :mod:`!ctypes.util` module provides a function which can help to determine
-the library to load.
-
-
-.. data:: find_library(name)
-   :module: ctypes.util
-   :noindex:
-
-   Try to find a library and return a pathname.  *name* is the library name without
-   any prefix like *lib*, suffix like ``.so``, ``.dylib`` or version number (this
-   is the form used for the posix linker option :option:`!-l`).  If no library can
-   be found, returns ``None``.
-
-The exact functionality is system dependent.
-
-On Linux, :func:`~ctypes.util.find_library` tries to run external programs
-(``/sbin/ldconfig``, ``gcc``, ``objdump`` and ``ld``) to find the library file.
-It returns the filename of the library file.
-
-Note that if the output of these programs does not correspond to the dynamic
-linker used by Python, the result of this function may be misleading.
-
-.. versionchanged:: 3.6
-   On Linux, the value of the environment variable ``LD_LIBRARY_PATH`` is used
-   when searching for libraries, if a library cannot be found by any other means.
-
-Here are some examples::
-
-   >>> from ctypes.util import find_library
-   >>> find_library("m")
-   'libm.so.6'
-   >>> find_library("c")
-   'libc.so.6'
-   >>> find_library("bz2")
-   'libbz2.so.1.0'
-   >>>
-
-On macOS and Android, :func:`~ctypes.util.find_library` uses the system's
-standard naming schemes and paths to locate the library, and returns a full
-pathname if successful::
-
-   >>> from ctypes.util import find_library
-   >>> find_library("c")
-   '/usr/lib/libc.dylib'
-   >>> find_library("m")
-   '/usr/lib/libm.dylib'
-   >>> find_library("bz2")
-   '/usr/lib/libbz2.dylib'
-   >>> find_library("AGL")
-   '/System/Library/Frameworks/AGL.framework/AGL'
-   >>>
-
-On Windows, :func:`~ctypes.util.find_library` searches along the system search path, and
-returns the full pathname, but since there is no predefined naming scheme a call
-like ``find_library("c")`` will fail and return ``None``.
-
-If wrapping a shared library with :mod:`!ctypes`, it *may* be better to determine
-the shared library name at development time, and hardcode that into the wrapper
-module instead of using :func:`~ctypes.util.find_library` to locate the library at runtime.
-
-
-.. _ctypes-listing-loaded-shared-libraries:
-
-Listing loaded shared libraries
-^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-
-When writing code that relies on code loaded from shared libraries, it can be
-useful to know which shared libraries have already been loaded into the current
-process.
-
-The :mod:`!ctypes.util` module provides the :func:`~ctypes.util.dllist` function,
-which calls the different APIs provided by the various platforms to help determine
-which shared libraries have already been loaded into the current process.
-
-The exact output of this function will be system dependent. On most platforms,
-the first entry of this list represents the current process itself, which may
-be an empty string.
-For example, on glibc-based Linux, the return may look like::
-
-   >>> from ctypes.util import dllist
-   >>> dllist()
-   ['', 'linux-vdso.so.1', '/lib/x86_64-linux-gnu/libm.so.6', '/lib/x86_64-linux-gnu/libc.so.6', ... ]
-
 .. _ctypes-loading-shared-libraries:
 
 Loading shared libraries
@@ -1485,12 +1474,19 @@ way is to instantiate :py:class:`CDLL` or one of its subclasses:
    attribute, but it may be adjusted and/or validated.
 
    If *handle* is ``None``, the underlying platform's :manpage:`dlopen(3)` or
-   :c:func:`!LoadLibrary` function is used to load the library into
+   `LoadLibraryExW`_ function is used to load the library into
    the process, and to get a handle to it.
 
    *name* is the pathname of the shared library to open.
    If *name* does not contain a path separator, the library is found
    in a platform-specific way.
+
+   On Windows, the ``.DLL`` suffix may be missing. (For details, see
+   `LoadLibraryExW`_ documentation.)
+   Other platform-specific prefixes and suffixes (for example, ``lib``,
+   ``.so``, ``.dylib``, or version numbers) must be present in *name*;
+   they are not added automatically.
+   See :ref:`ctypes-finding-shared-libraries` for more information.
 
    On non-Windows systems, *name* can  be ``None``. In this case,
    :c:func:`!dlopen` is called with ``NULL``, which opens the main program
@@ -1536,7 +1532,7 @@ way is to instantiate :py:class:`CDLL` or one of its subclasses:
 
    The *winmode* parameter is used on Windows to specify how the library is loaded
    (since *mode* is ignored). It takes any value that is valid for the Win32 API
-   ``LoadLibraryEx`` flags parameter. When omitted, the default is to use the
+   `LoadLibraryExW`_ flags parameter. When omitted, the default is to use the
    flags that result in the most secure DLL load, which avoids issues such as DLL
    hijacking. Passing the full path to the DLL is the safest way to ensure the
    correct library and dependencies are loaded.
@@ -1586,6 +1582,8 @@ way is to instantiate :py:class:`CDLL` or one of its subclasses:
    .. attribute:: _name
 
       The name of the library passed in the constructor.
+
+.. _LoadLibraryExW: https://learn.microsoft.com/en-us/windows/win32/api/libloaderapi/nf-libloaderapi-loadlibraryexw
 
 .. class:: OleDLL
 
@@ -1665,39 +1663,36 @@ attribute of the loader instance.
 
 These prefabricated library loaders are available:
 
-.. data:: cdll
+   .. data:: cdll
 
-   Creates :class:`CDLL` instances.
-
-
-.. data:: windll
-
-   Creates :class:`WinDLL` instances.
-
-   .. availability:: Windows
+      Creates :class:`CDLL` instances.
 
 
-.. data:: oledll
+   .. data:: windll
 
-   Creates :class:`OleDLL` instances.
+      Creates :class:`WinDLL` instances.
 
-   .. availability:: Windows
-
-
-.. data:: pydll
-
-   Creates :class:`PyDLL` instances.
+      .. availability:: Windows
 
 
-For accessing the C Python api directly, a ready-to-use Python shared library
-object is available:
+   .. data:: oledll
 
-.. data:: pythonapi
+      Creates :class:`OleDLL` instances.
 
-   An instance of :class:`PyDLL` that exposes Python C API functions as
-   attributes.  Note that all these functions are assumed to return C
-   :c:expr:`int`, which is of course not always the truth, so you have to assign
-   the correct :attr:`!restype` attribute to use these functions.
+      .. availability:: Windows
+
+
+   .. data:: pydll
+
+      Creates :class:`PyDLL` instances.
+
+
+   .. data:: pythonapi
+
+      An instance of :class:`PyDLL` that exposes Python C API functions as
+      attributes.  Note that all these functions are assumed to return C
+      :c:expr:`int`, which is of course not always the truth, so you have to assign
+      the correct :attr:`!restype` attribute to use these functions.
 
 .. audit-event:: ctypes.dlopen name ctypes.LibraryLoader
 
@@ -1716,6 +1711,135 @@ object is available:
    In cases when only the library handle is available rather than the object,
    accessing a function raises an auditing event ``ctypes.dlsym/handle`` with
    arguments ``handle`` (the raw library handle) and ``name``.
+
+
+.. _ctypes-finding-shared-libraries:
+
+Finding shared libraries
+^^^^^^^^^^^^^^^^^^^^^^^^
+
+When programming in a compiled language, shared libraries are accessed when
+compiling/linking a program, and when the program is run.
+The programmer specifies a short name; the C compiler, linker, and
+runtime dynamic library loader then interact in system-specific ways to find
+the filename of the library to load.
+
+While the mapping from short names to filenames is not consistently exposed
+by platforms, the :mod:`!ctypes.util` module provides a function,
+:func:`!find_library`, that attempts to match it.
+However, as backwards compatibility concerns make it difficult to adjust
+its behavior for new platforms and configurations, the function
+is :term:`soft deprecated`.
+
+If wrapping a shared library with :mod:`!ctypes`, consider determining the
+shared library name at development time, and hardcoding it into the wrapper
+module instead of using :func:`!find_library` to locate the library
+at runtime.
+Also consider addding a configuration option or environment variable to let
+users select a library to use, and then perhaps use :func:`!find_library`
+as a default or fallback.
+
+.. function:: find_library(name)
+   :module: ctypes.util
+
+   Try to find a library and return a pathname.
+
+   *name* is the "short" library name without any prefix like ``lib``,
+   suffix like ``.so``, ``.dylib`` or version number.
+   (This is the form used for the posix linker option :option:`!-l`.)
+   The result is in a format suitable for passing to :py:class:`~ctypes.CDLL`.
+
+   If no library can be found, return ``None``.
+
+   The exact functionality is system dependent, and is *not guaranteed*
+   to match the behavior of the compiler, linker, and loader used for
+   (or by) Python.
+   It is recommended to only use this function as a default or fallback,
+
+   .. deprecated:: next
+
+      This function is :term:`soft deprecated`.
+      It is kept for use in cases where it works, but not expected to be
+      updated for additional platforms and configurations.
+
+On Linux, :func:`!find_library` tries to run external
+programs (``/sbin/ldconfig``, ``gcc``, ``objdump`` and ``ld``) to find the
+library file.
+If the output of these programs does not correspond to the dynamic
+linker used by Python, the result of this function may be misleading.
+
+.. versionchanged:: 3.6
+   On Linux, the value of the environment variable ``LD_LIBRARY_PATH`` is used
+   when searching for libraries, if a library cannot be found by any other means.
+
+Here are some examples::
+
+   >>> from ctypes.util import find_library
+   >>> find_library("m")
+   'libm.so.6'
+   >>> find_library("c")
+   'libc.so.6'
+   >>> find_library("bz2")
+   'libbz2.so.1.0'
+   >>>
+
+On macOS and Android, :func:`!find_library` uses the system's
+standard naming schemes and paths to locate the library, and returns a full
+pathname if successful::
+
+   >>> from ctypes.util import find_library
+   >>> find_library("c")
+   '/usr/lib/libc.dylib'
+   >>> find_library("m")
+   '/usr/lib/libm.dylib'
+   >>> find_library("bz2")
+   '/usr/lib/libbz2.dylib'
+   >>> find_library("AGL")
+   '/System/Library/Frameworks/AGL.framework/AGL'
+   >>>
+
+On Windows, :func:`!find_library` searches along the system search path, and
+returns the full pathname, but since there is no predefined naming scheme a call
+like ``find_library("c")`` will fail and return ``None``.
+
+.. function:: find_msvcrt()
+   :module: ctypes.util
+
+   Returns the filename of the VC runtime library used by Python,
+   and by the extension modules.
+
+   If the name of the library cannot be determined, ``None`` is returned.
+   Notably, this will happen for recent versions of the VC runtime library,
+   which are not directly loadable.
+
+   If you need to free memory, for example, allocated by an extension module
+   with a call to the ``free(void *)``, it is important that you use the
+   function in the same library that allocated the memory.
+
+   .. availability:: Windows
+
+
+.. _ctypes-listing-loaded-shared-libraries:
+
+Listing loaded shared libraries
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+When writing code that relies on code loaded from shared libraries, it can be
+useful to know which shared libraries have already been loaded into the current
+process.
+
+The :mod:`!ctypes.util` module provides the :func:`~ctypes.util.dllist` function,
+which calls the different APIs provided by the various platforms to help determine
+which shared libraries have already been loaded into the current process.
+
+The exact output of this function will be system dependent. On most platforms,
+the first entry of this list represents the current process itself, which may
+be an empty string.
+For example, on glibc-based Linux, the return may look like::
+
+   >>> from ctypes.util import dllist
+   >>> dllist()
+   ['', 'linux-vdso.so.1', '/lib/x86_64-linux-gnu/libm.so.6', '/lib/x86_64-linux-gnu/libc.so.6', ... ]
 
 .. _ctypes-foreign-functions:
 
@@ -2139,33 +2263,6 @@ Utility functions
    .. availability:: Windows
 
 
-.. function:: find_library(name)
-   :module: ctypes.util
-
-   Try to find a library and return a pathname.  *name* is the library name
-   without any prefix like ``lib``, suffix like ``.so``, ``.dylib`` or version
-   number (this is the form used for the posix linker option :option:`!-l`).  If
-   no library can be found, returns ``None``.
-
-   The exact functionality is system dependent.
-
-   See :ref:`ctypes-finding-shared-libraries` for complete documentation.
-
-
-.. function:: find_msvcrt()
-   :module: ctypes.util
-
-   Returns the filename of the VC runtime library used by Python,
-   and by the extension modules.  If the name of the library cannot be
-   determined, ``None`` is returned.
-
-   If you need to free memory, for example, allocated by an extension module
-   with a call to the ``free(void *)``, it is important that you use the
-   function in the same library that allocated the memory.
-
-   .. availability:: Windows
-
-
 .. function:: dllist()
    :module: ctypes.util
 
@@ -2468,6 +2565,29 @@ Fundamental data types
       original object return, always a new object is constructed.  The same is
       true for all other ctypes object instances.
 
+   Each subclass has a class attribute:
+
+   .. attribute:: _type_
+
+      Class attribute that contains an internal type code, as a
+      single-character string.
+      See :ref:`ctypes-fundamental-data-types` for a summary.
+
+      Types marked \* in the summary may be (or always are) aliases of a
+      different :class:`_SimpleCData` subclass, and will not necessarily
+      use the listed type code.
+      For example, if the platform's :c:expr:`long`, :c:expr:`long long`
+      and :c:expr:`time_t` C types are the same, then :class:`c_long`,
+      :class:`c_longlong` and :class:`c_time_t` all refer to a single class,
+      :class:`c_long`, whose :attr:`_type_` code is ``'l'``.
+      The ``'L'`` code will be unused.
+
+      .. seealso::
+
+         The :mod:`array` and :ref:`struct <format-characters>` modules,
+         as well as third-party modules like `numpy <https://numpy.org/doc/stable/reference/arrays.interface.html#object.__array_interface__>`__,
+         use similar -- but slightly different -- type codes.
+
 
 Fundamental data types, when returned as foreign function call results, or, for
 example, by retrieving structure field members or array items, are transparently
@@ -2589,6 +2709,8 @@ These are the fundamental ctypes data types:
 
    Represents the C :c:expr:`signed long long` datatype.  The constructor accepts
    an optional integer initializer; no overflow checking is done.
+   On platforms where ``sizeof(long long) == sizeof(long)`` it is an alias
+   to :class:`c_long`.
 
 
 .. class:: c_short
@@ -2600,11 +2722,15 @@ These are the fundamental ctypes data types:
 .. class:: c_size_t
 
    Represents the C :c:type:`size_t` datatype.
+   Usually an alias for another unsigned integer type.
 
 
 .. class:: c_ssize_t
 
-   Represents the C :c:type:`ssize_t` datatype.
+   Represents the :c:type:`Py_ssize_t` datatype.
+   This is a signed version of :c:type:`size_t`;
+   that is, the POSIX :c:type:`ssize_t` type.
+   Usually an alias for another integer type.
 
    .. versionadded:: 3.2
 
@@ -2612,6 +2738,7 @@ These are the fundamental ctypes data types:
 .. class:: c_time_t
 
    Represents the C :c:type:`time_t` datatype.
+   Usually an alias for another integer type.
 
    .. versionadded:: 3.12
 
@@ -2664,6 +2791,8 @@ These are the fundamental ctypes data types:
 
    Represents the C :c:expr:`unsigned long long` datatype.  The constructor
    accepts an optional integer initializer; no overflow checking is done.
+   On platforms where ``sizeof(long long) == sizeof(long)`` it is an alias
+   to :class:`c_long`.
 
 
 .. class:: c_ushort
@@ -2715,8 +2844,11 @@ These are the fundamental ctypes data types:
    .. versionchanged:: 3.14
       :class:`!py_object` is now a :term:`generic type`.
 
+.. _ctypes-wintypes:
+
 The :mod:`!ctypes.wintypes` module provides quite some other Windows specific
-data types, for example :c:type:`!HWND`, :c:type:`!WPARAM`, or :c:type:`!DWORD`.
+data types, for example :c:type:`!HWND`, :c:type:`!WPARAM`,
+:c:type:`!VARIANT_BOOL` or :c:type:`!DWORD`.
 Some useful structures like :c:type:`!MSG` or :c:type:`!RECT` are also defined.
 
 

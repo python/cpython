@@ -1085,6 +1085,13 @@ conflict.
    * ``pymalloc_debug``: same as ``pymalloc`` but also install debug hooks.
    * ``mimalloc_debug``: same as ``mimalloc`` but also install debug hooks.
 
+   .. note::
+
+      In the :term:`free-threaded <free threading>` build, the ``malloc``,
+      ``malloc_debug``, ``pymalloc``, and ``pymalloc_debug`` values are not
+      supported.  Only ``default``, ``debug``, ``mimalloc``, and
+      ``mimalloc_debug`` are accepted.
+
    .. versionadded:: 3.6
 
    .. versionchanged:: 3.7
@@ -1094,12 +1101,13 @@ conflict.
 .. envvar:: PYTHONMALLOCSTATS
 
    If set to a non-empty string, Python will print statistics of the
-   :ref:`pymalloc memory allocator <pymalloc>` every time a new pymalloc object
-   arena is created, and on shutdown.
+   :ref:`pymalloc memory allocator <pymalloc>` or the
+   :ref:`mimalloc memory allocator <mimalloc>` (whichever is in use)
+   every time a new object arena is created, and on shutdown.
 
    This variable is ignored if the :envvar:`PYTHONMALLOC` environment variable
    is used to force the :c:func:`malloc` allocator of the C library, or if
-   Python is configured without ``pymalloc`` support.
+   Python is configured without both ``pymalloc`` and ``mimalloc`` support.
 
    .. versionchanged:: 3.6
       This variable can now also be used on Python compiled in release mode.
@@ -1123,6 +1131,14 @@ conflict.
       copy-on-write faults triggered by :func:`os.fork` — deliver ``SIGBUS``
       and kill the process.  Only enable this in environments where the
       huge-page pool is properly sized and fork-safety is not a concern.
+
+      On Windows you need a special privilege. See the
+      `Windows documentation for large pages
+      <https://learn.microsoft.com/windows/win32/memory/large-page-support>`_
+      for details. Python will fail on startup if the required privilege
+      `SeLockMemoryPrivilege
+      <https://learn.microsoft.com/previous-versions/windows/it-pro/windows-10/security/threat-protection/security-policy-settings/lock-pages-in-memory>`_
+      is not held by the user.
 
    .. versionadded:: 3.15
 
