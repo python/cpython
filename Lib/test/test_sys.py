@@ -858,23 +858,34 @@ class SysModuleTest(unittest.TestCase):
                     '''))
                 self.assertTrue(sys._is_interned(s))
 
-    def test_sys_flags(self):
+    def test_sys_flags_indexable_attributes(self):
         self.assertTrue(sys.flags)
-        attrs = ("debug",
+        # We've stopped assigning sequence indices to new sys.flags attributes:
+        # https://github.com/python/cpython/issues/122575#issuecomment-2416497086
+        indexable_attrs = ("debug",
                  "inspect", "interactive", "optimize",
                  "dont_write_bytecode", "no_user_site", "no_site",
                  "ignore_environment", "verbose", "bytes_warning", "quiet",
                  "hash_randomization", "isolated", "dev_mode", "utf8_mode",
-                 "warn_default_encoding", "safe_path", "int_max_str_digits",
-                 "lazy_imports")
-        for attr in attrs:
+                 "warn_default_encoding", "safe_path", "int_max_str_digits")
+        for attr_idx, attr in enumerate(indexable_attrs):
             self.assertHasAttr(sys.flags, attr)
             attr_type = bool if attr in ("dev_mode", "safe_path") else int
             self.assertEqual(type(getattr(sys.flags, attr)), attr_type, attr)
+            attr_value = getattr(sys.flags, attr)
+            self.assertEqual(sys.flags[attr_idx], attr_value,
+                             msg=f"sys.flags .{attr} vs [{attr_idx}]")
         self.assertTrue(repr(sys.flags))
-        self.assertEqual(len(sys.flags), len(attrs))
+        self.assertEqual(len(sys.flags), 18, msg="Do not increase, see GH-122575")
 
         self.assertIn(sys.flags.utf8_mode, {0, 1, 2})
+
+    def test_sys_flags_name_only_attributes(self):
+        # non-tuple sequence fields (name only sys.flags attributes)
+        self.assertIsInstance(sys.flags.gil, int|type(None))
+        self.assertIsInstance(sys.flags.thread_inherit_context, int|type(None))
+        self.assertIsInstance(sys.flags.context_aware_warnings, int|type(None))
+        self.assertIsInstance(sys.flags.lazy_imports, int|type(None))
 
     def assert_raise_on_new_sys_type(self, sys_attr):
         # Users are intentionally prevented from creating new instances of
@@ -1908,10 +1919,16 @@ class SizeofTest(unittest.TestCase):
         # symtable entry
         # XXX
         # sys.flags
-        # FIXME: The +3 is for the 'gil', 'thread_inherit_context' and
-        # 'context_aware_warnings' flags and will not be necessary once
-        # gh-122575 is fixed
-        check(sys.flags, vsize('') + self.P + self.P * (3 + len(sys.flags)))
+        # FIXME: The non_sequence_fields adjustment is for these flags:
+        # - 'gil'
+        # - 'thread_inherit_context'
+        # - 'context_aware_warnings'
+        # - 'lazy_imports'
+        # Not needing to increment this every time we add a new field
+        # per GH-122575 would be nice...
+        # Q: What is the actual point of this sys.flags C size derived from PyStructSequence_Field array assertion?
+        non_sequence_fields = 4
+        check(sys.flags, vsize('') + self.P + self.P * (non_sequence_fields + len(sys.flags)))
 
     def test_asyncgen_hooks(self):
         old = sys.get_asyncgen_hooks()
