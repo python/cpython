@@ -192,7 +192,7 @@ def setup_framework(v):
             if v.ac_sys_system == "Darwin":
                 val = "/Library/Frameworks"
             elif v.ac_sys_system == "iOS":
-                val = "Apple/iOS/Frameworks/$(MULTIARCH)"
+                val = "Platforms/Apple/iOS/Frameworks/$(MULTIARCH)"
             else:
                 pyconf.error("error: Unknown platform for framework build")
 
@@ -280,8 +280,8 @@ def _setup_framework_ios(v):
     v.INSTALLTARGETS = "libinstall inclinstall sharedinstall"
     v.prefix = v.PYTHONFRAMEWORKPREFIX
     v.PYTHONFRAMEWORKINSTALLNAMEPREFIX = f"@rpath/{v.PYTHONFRAMEWORKDIR}"
-    v.RESSRCDIR = "Apple/iOS/Resources"
-    pyconf.config_files(["Apple/iOS/Resources/Info.plist"])
+    v.RESSRCDIR = "Platforms/Apple/iOS/Resources"
+    pyconf.config_files(["Platforms/Apple/iOS/Resources/Info.plist"])
 
 
 def _export_framework_vars(v):
