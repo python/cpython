@@ -1986,6 +1986,20 @@ gh_119213_getargs_impl(PyObject *module, PyObject *spam)
 }
 
 
+static PyObject *
+_pyerr_setkeyerror(PyObject *self, PyObject *arg)
+{
+    // Test that _PyErr_SetKeyError() overrides the current exception
+    // if an exception is set
+    PyErr_NoMemory();
+
+    _PyErr_SetKeyError(arg);
+
+    assert(PyErr_Occurred());
+    return NULL;
+}
+
+
 static PyMethodDef module_functions[] = {
     {"get_configs", get_configs, METH_NOARGS},
     {"get_recursion_depth", get_recursion_depth, METH_NOARGS},
@@ -2076,6 +2090,7 @@ static PyMethodDef module_functions[] = {
     {"uop_symbols_test", _Py_uop_symbols_test, METH_NOARGS},
 #endif
     GH_119213_GETARGS_METHODDEF
+    {"_pyerr_setkeyerror", _pyerr_setkeyerror, METH_O},
     {NULL, NULL} /* sentinel */
 };
 
