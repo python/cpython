@@ -1540,7 +1540,6 @@ float_as_integer_ratio_impl(PyObject *self)
         if (denominator == NULL)
             goto error;
     }
-
     Py_DECREF(py_exponent);
 
     return _PyTuple_FromPairSteal(numerator, denominator);

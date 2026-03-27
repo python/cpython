@@ -664,6 +664,7 @@ framelocalsproxy_items(PyObject *self, PyObject *Py_UNUSED(ignored))
     }
 
     return items;
+
 error:
     Py_DECREF(items);
     return NULL;
