@@ -306,6 +306,12 @@ _Py_AssertHoldsTstateFunc(const char *func)
 #define _Py_AssertHoldsTstate()
 #endif
 
+#if !_Py__has_builtin(__builtin_frame_address) && !defined(__GNUC__) && !defined(_MSC_VER)
+static uintptr_t return_pointer_as_int(char* p) {
+    return (uintptr_t)p;
+}
+#endif
+
 PyAPI_DATA(uintptr_t) _Py_get_machine_stack_pointer(void);
 
 static inline intptr_t
