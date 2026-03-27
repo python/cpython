@@ -1803,6 +1803,7 @@ const uint8_t _PyOpcode_Caches[256] = {
 PyAPI_DATA(const uint8_t) _PyOpcode_Deopt[256];
 #ifdef NEED_OPCODE_METADATA
 const uint8_t _PyOpcode_Deopt[256] = {
+    [119] = 119,
     [120] = 120,
     [121] = 121,
     [122] = 122,
@@ -2063,6 +2064,7 @@ const uint8_t _PyOpcode_Deopt[256] = {
 #endif // NEED_OPCODE_METADATA
 
 #define EXTRA_CASES \
+    case 119: \
     case 120: \
     case 121: \
     case 122: \
