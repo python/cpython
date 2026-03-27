@@ -358,7 +358,7 @@ Basic Usage
       conversion length limitation <int_max_str_digits>` to help avoid denial
       of service attacks.
 
-   .. versionchanged:: 3.15
+   .. versionchanged:: next
       Added the optional *array_hook* parameter.
 
 .. function:: loads(s, *, cls=None, object_hook=None, parse_float=None, parse_int=None, parse_constant=None, object_pairs_hook=None, array_hook=None, **kw)
