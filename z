@@ -357,16 +357,70 @@ cmd_build() {
 
 cmd_release() {
   local release_staging="$WORK_DIR/release"
-  local release_sysroot="$release_staging/sysroot"
-  local artifact_name="cpython-${NANVIX_PLATFORM}-${NANVIX_PROCESS_MODE}-${NANVIX_MEMORY_SIZE}"
+  local install_root="$release_staging/sysroot"
+  local artifact_base="cpython-${NANVIX_PLATFORM}-${NANVIX_PROCESS_MODE}-${NANVIX_MEMORY_SIZE}"
   local dist_dir="$ROOT_DIR/dist"
-  local tarball="$dist_dir/${artifact_name}.tar.bz2"
 
   # Build and install into a clean staging area
   rm -rf "$release_staging"
   nanvix_make install DESTDIR="$release_staging" "$@"
 
-  [[ -d "$release_sysroot" ]] || die "install did not produce a sysroot at $release_sysroot"
+  [[ -d "$install_root" ]] || die "install did not produce a sysroot at $install_root"
+
+  # Prepare two separate trees: sysroot (runtime) and buildroot (build deps)
+  local sysroot_dir="$release_staging/sysroot-pkg"
+  local buildroot_dir="$release_staging/buildroot-pkg"
+  mkdir -p "$sysroot_dir" "$buildroot_dir"
+
+  # ---------- buildroot: build dependencies ----------
+  # Headers
+  if [[ -d "$install_root/include" ]]; then
+    cp -a "$install_root/include" "$buildroot_dir/include"
+  fi
+  # Static library
+  mkdir -p "$buildroot_dir/lib"
+  [[ -d "$install_root/lib" ]] || die "install did not produce a lib directory at $install_root/lib"
+  find "$install_root/lib" -maxdepth 1 -name '*.a' -exec cp -a {} "$buildroot_dir/lib/" \;
+  # pkg-config files
+  if [[ -d "$install_root/lib/pkgconfig" ]]; then
+    cp -a "$install_root/lib/pkgconfig" "$buildroot_dir/lib/pkgconfig"
+  fi
+  # Build configuration
+  if [[ -d "$install_root/lib/python3.12/config-3.12" ]]; then
+    mkdir -p "$buildroot_dir/lib/python3.12"
+    cp -a "$install_root/lib/python3.12/config-3.12" "$buildroot_dir/lib/python3.12/config-3.12"
+  fi
+  # Config scripts and dev tools
+  mkdir -p "$buildroot_dir/bin"
+  for f in python3-config python3.12-config 2to3 2to3-3.12 idle3 idle3.12 pydoc3 pydoc3.12; do
+    [[ -f "$install_root/bin/$f" ]] && cp -a "$install_root/bin/$f" "$buildroot_dir/bin/"
+  done
+  # Documentation / man pages
+  if [[ -d "$install_root/share" ]]; then
+    cp -a "$install_root/share" "$buildroot_dir/share"
+  fi
+
+  # ---------- sysroot: runtime dependencies ----------
+  # Python binary
+  mkdir -p "$sysroot_dir/bin"
+  if [[ -x "$install_root/bin/python3.12" ]]; then
+    cp -a "$install_root/bin/python3.12" "$sysroot_dir/bin/"
+  else
+    die "expected Python runtime '$install_root/bin/python3.12' not found or not executable; cannot build sysroot"
+  fi
+  # Preserve the python3 symlink if present
+  if [[ -L "$install_root/bin/python3" ]]; then
+    cp -a "$install_root/bin/python3" "$sysroot_dir/bin/"
+  fi
+
+  # Standard library
+  mkdir -p "$sysroot_dir/lib"
+  if [[ -d "$install_root/lib/python3.12" ]]; then
+    cp -a "$install_root/lib/python3.12" "$sysroot_dir/lib/python3.12"
+  fi
+
+  # Remove build-only artifacts from sysroot
+  rm -rf "$sysroot_dir/lib/python3.12/config-3.12"
 
   # Strip debug symbols from the python binary to reduce size
   local strip_cmd=""
@@ -374,15 +428,15 @@ cmd_release() {
     strip_cmd="$NANVIX_TOOLCHAIN/bin/i686-nanvix-strip"
   fi
   if [[ -n "$strip_cmd" ]]; then
-    find "$release_sysroot" -name 'python3.*' -type f -executable -exec "$strip_cmd" --strip-debug {} \; 2>/dev/null || true
+    find "$sysroot_dir" -name 'python3.*' -type f -executable -exec "$strip_cmd" --strip-debug {} \; 2>/dev/null || true
   fi
 
-  # Remove __pycache__ directories to slim down the package
-  find "$release_sysroot" -name '__pycache__' -type d -exec rm -rf {} + 2>/dev/null || true
+  # Remove __pycache__ directories
+  find "$sysroot_dir" -name '__pycache__' -type d -exec rm -rf {} + 2>/dev/null || true
 
   # Remove test directories from stdlib (not needed at runtime)
-  find "$release_sysroot" -type d -name 'test' -path '*/lib/python3.12/*' -exec rm -rf {} + 2>/dev/null || true
-  find "$release_sysroot" -type d -name 'tests' -path '*/lib/python3.12/*' -exec rm -rf {} + 2>/dev/null || true
+  find "$sysroot_dir" -type d -name 'test' -path '*/lib/python3.12/*' -exec rm -rf {} + 2>/dev/null || true
+  find "$sysroot_dir" -type d -name 'tests' -path '*/lib/python3.12/*' -exec rm -rf {} + 2>/dev/null || true
 
   # Precompile stdlib .py files to .pyc for faster startup
   local host_python=""
@@ -392,19 +446,41 @@ cmd_release() {
     host_python="python3"
   fi
   if [[ -n "$host_python" ]]; then
-    log "precompiling stdlib"
-    "$host_python" -m compileall -q "$release_sysroot/lib/python3.12/" 2>/dev/null || true
+    local host_python_version=""
+    host_python_version="$("$host_python" - <<'EOF' 2>/dev/null || true
+import sys
+print("{}.{}".format(sys.version_info[0], sys.version_info[1]))
+EOF
+)"
+    if [[ "$host_python_version" == "3.12" ]]; then
+      log "precompiling stdlib with host Python $host_python_version"
+      "$host_python" -m compileall -q "$sysroot_dir/lib/python3.12/" 2>/dev/null || true
+    else
+      log "skipping stdlib precompile: host Python version '$host_python_version' does not match target 3.12"
+    fi
   fi
 
-  # Create the release tarball
+  # ---------- Create release tarballs ----------
   mkdir -p "$dist_dir"
-  tar -cjf "$tarball" -C "$release_staging" sysroot
+
+  local sysroot_tarball="$dist_dir/${artifact_base}.tar.bz2"
+  mv "$release_staging/sysroot-pkg" "$release_staging/sysroot"
+  tar -cjf "$sysroot_tarball" -C "$release_staging" sysroot
+  mv "$release_staging/sysroot" "$release_staging/sysroot-pkg"
+  local sysroot_size
+  sysroot_size=$(du -h "$sysroot_tarball" | cut -f1)
+
+  local buildroot_tarball="$dist_dir/${artifact_base}-buildroot.tar.bz2"
+  mv "$release_staging/buildroot-pkg" "$release_staging/sysroot"
+  tar -cjf "$buildroot_tarball" -C "$release_staging" sysroot
+  mv "$release_staging/sysroot" "$release_staging/buildroot-pkg"
+  local buildroot_size
+  buildroot_size=$(du -h "$buildroot_tarball" | cut -f1)
 
   rm -rf "$release_staging"
 
-  local size
-  size=$(du -h "$tarball" | cut -f1)
-  log "release tarball created: $tarball ($size)"
+  log "sysroot tarball created: $sysroot_tarball ($sysroot_size)"
+  log "buildroot tarball created: $buildroot_tarball ($buildroot_size)"
 }
 
 cmd_cleanup() {
