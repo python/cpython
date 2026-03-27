@@ -457,7 +457,11 @@ partial_vectorcall(PyObject *self, PyObject *const *args,
         for (Py_ssize_t i = 0; i < nkwds; ++i) {
             key = PyTuple_GET_ITEM(kwnames, i);
             val = args[nargs + i];
-            if (PyDict_Contains(pto->kw, key)) {
+            int contains = PyDict_Contains(pto->kw, key);
+            if (contains < 0) {
+                goto error;
+            }
+            else if (contains == 1) {
                 if (pto_kw_merged == NULL) {
                     pto_kw_merged = PyDict_Copy(pto->kw);
                     if (pto_kw_merged == NULL) {
@@ -2014,6 +2018,7 @@ _functools_free(void *module)
 }
 
 static struct PyModuleDef_Slot _functools_slots[] = {
+    _Py_ABI_SLOT,
     {Py_mod_exec, _functools_exec},
     {Py_mod_multiple_interpreters, Py_MOD_PER_INTERPRETER_GIL_SUPPORTED},
     {Py_mod_gil, Py_MOD_GIL_NOT_USED},

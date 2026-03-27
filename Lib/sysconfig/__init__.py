@@ -665,12 +665,10 @@ def get_platform():
 
     For other non-POSIX platforms, currently just returns :data:`sys.platform`."""
     if os.name == 'nt':
-        if 'amd64' in sys.version.lower():
-            return 'win-amd64'
-        if '(arm)' in sys.version.lower():
-            return 'win-arm32'
-        if '(arm64)' in sys.version.lower():
-            return 'win-arm64'
+        import _sysconfig
+        platform = _sysconfig.get_platform()
+        if platform:
+            return platform
         return sys.platform
 
     if os.name != "posix" or not hasattr(os, 'uname'):
@@ -696,11 +694,15 @@ def get_platform():
         release = get_config_var("ANDROID_API_LEVEL")
 
         # Wheel tags use the ABI names from Android's own tools.
+        # When Python is running on 32-bit ARM Android on a 64-bit ARM kernel,
+        # 'os.uname().machine' is 'armv8l'. Such devices run the same userspace
+        # code as 'armv7l' devices.
         machine = {
             "x86_64": "x86_64",
             "i686": "x86",
             "aarch64": "arm64_v8a",
             "armv7l": "armeabi_v7a",
+            "armv8l": "armeabi_v7a",
         }[machine]
     elif osname == "linux":
         # At least on Linux/Intel, 'machine' is the processor --
