@@ -239,15 +239,15 @@ jobs:
     needs: [build-and-test, release]
     if: >-
       ${{ always() &&
-          (github.event_name == 'repository_dispatch' || github.event_name == 'schedule' || github.event_name == 'push') &&
-          needs.build-and-test.result == 'failure' &&
-          needs.release.result == 'failure' }}
+          (github.event_name == 'schedule' || github.ref_name == github.event.repository.default_branch) &&
+          (needs.build-and-test.result == 'failure' || needs.release.result == 'failure') }}
     runs-on: ubuntu-latest
     steps:
       - name: Report failure issue
         uses: actions/github-script@v7
         env:
           BUILD_RESULT: ${{ needs.build-and-test.result }}
+          RELEASE_RESULT: ${{ needs.release.result }}
         with:
           github-token: ${{ secrets.GITHUB_TOKEN }}
           script: |
@@ -261,6 +261,7 @@ jobs:
               `- Run: [#${context.runNumber}](${runUrl})`,
               `- SHA: ${context.sha}`,
               `- build-and-test: ${process.env.BUILD_RESULT}`,
+              `- release: ${process.env.RELEASE_RESULT}`,
               '',
               'Please investigate and take any corrective actions.'
             ].join('\n');
