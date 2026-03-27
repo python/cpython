@@ -1148,8 +1148,10 @@ OrderedDict_popitem_impl(PyODictObject *self, int last)
     node = last ? _odict_LAST(self) : _odict_FIRST(self);
     key = Py_NewRef(_odictnode_KEY(node));
     value = _odict_popkey_hash((PyObject *)self, key, NULL, _odictnode_HASH(node));
-    if (value == NULL)
+    if (value == NULL) {
+        Py_DECREF(key);
         return NULL;
+    }
     item = PyTuple_Pack(2, key, value);
     Py_DECREF(key);
     Py_DECREF(value);
