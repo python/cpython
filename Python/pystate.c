@@ -3287,15 +3287,13 @@ _Py_GetMainConfig(void)
     return _PyInterpreterState_GetConfig(interp);
 }
 
-uintptr_t
+static uintptr_t return_pointer_as_int(char* p) {
+    return (uintptr_t)p;
+}
+
+Py_NO_INLINE uintptr_t
 _Py_get_machine_stack_pointer(void) {
-#if _Py__has_builtin(__builtin_frame_address) || defined(__GNUC__)
-    return (uintptr_t)__builtin_frame_address(0);
-#elif defined(_MSC_VER)
-    return (uintptr_t)_AddressOfReturnAddress();
-#else
     char here;
     /* Avoid compiler warning about returning stack address */
     return return_pointer_as_int(&here);
-#endif
 }
