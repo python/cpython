@@ -1349,6 +1349,35 @@ _PyType_LookupByVersion(unsigned int version)
 #ifdef Py_GIL_DISABLED
     return NULL;
 #else
+    switch (version) {
+        case _Py_TYPE_VERSION_INT:
+            return &PyLong_Type;
+        case _Py_TYPE_VERSION_FLOAT:
+            return &PyFloat_Type;
+        case _Py_TYPE_VERSION_LIST:
+            return &PyList_Type;
+        case _Py_TYPE_VERSION_TUPLE:
+            return &PyTuple_Type;
+        case _Py_TYPE_VERSION_STR:
+            return &PyUnicode_Type;
+        case _Py_TYPE_VERSION_SET:
+            return &PySet_Type;
+        case _Py_TYPE_VERSION_FROZEN_SET:
+            return &PyFrozenSet_Type;
+        case _Py_TYPE_VERSION_DICT:
+            return &PyDict_Type;
+        case _Py_TYPE_VERSION_BYTEARRAY:
+            return &PyByteArray_Type;
+        case _Py_TYPE_VERSION_BYTES:
+            return &PyBytes_Type;
+        case _Py_TYPE_VERSION_COMPLEX:
+            return &PyComplex_Type;
+        case _Py_TYPE_VERSION_FROZENDICT:
+            return &PyFrozenDict_Type;
+        default:
+            break;
+    }
+
     PyInterpreterState *interp = _PyInterpreterState_GET();
     PyTypeObject **slot =
         interp->types.type_version_cache
