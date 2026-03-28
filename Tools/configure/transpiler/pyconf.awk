@@ -362,19 +362,20 @@ function _shell_quote(s, r) {
 # Compiler checks
 # ---------------------------------------------------------------------------
 
-function _pyconf_confdefs(    result, k, i, name, val) {
-        result = ""
+# Write confdefs directly to file from the array, avoiding building a
+# large concatenated string in AWK memory.  This prevents memory
+# corruption in mawk with many repeated compile/link checks.
+function _pyconf_write_confdefs(file,    i, name, val) {
         for (i = 1; i <= _pyconf_defines_order_n; i++) {
                 name = _pyconf_defines_order[i]
                 if (name in DEFINES) {
                         val = DEFINES[name]
                         if (DEFINE_QUOTED[name])
-                                result = result "#define " name " \"" val "\"\n"
+                                printf "#define %s \"%s\"\n", name, val > file
                         else
-                                result = result "#define " name " " val "\n"
+                                printf "#define %s %s\n", name, val > file
                 }
         }
-        return result
 }
 
 function _split_cc_lib_flags(extra_flags, pre, post, n, arr, i) {
@@ -393,9 +394,14 @@ function _split_cc_lib_flags(extra_flags, pre, post, n, arr, i) {
         }
 }
 
-function _pyconf_run_cc(source, extra_flags, mode, conftest, cmd, rc, pre, post) {
+function _pyconf_run_cc(source, extra_flags, mode, with_confdefs, conftest, cmd, rc, pre, post) {
         conftest = _pyconf_tmpdir "/conftest.c"
-        printf "%s", source > conftest
+        if (with_confdefs) {
+                _pyconf_write_confdefs(conftest)
+                printf "\n%s", source >> conftest
+        } else {
+                printf "%s", source > conftest
+        }
         close(conftest)
 
         cmd = _pyconf_env_prefix()
@@ -415,8 +421,16 @@ function _pyconf_compile_test(source, extra_flags) {
         return (_pyconf_run_cc(source, extra_flags, "compile") == 0)
 }
 
+function _pyconf_compile_test_cd(source, extra_flags) {
+        return (_pyconf_run_cc(source, extra_flags, "compile", 1) == 0)
+}
+
 function _pyconf_link_test(source, extra_flags) {
         return (_pyconf_run_cc(source, extra_flags, "link") == 0)
+}
+
+function _pyconf_link_test_cd(source, extra_flags) {
+        return (_pyconf_run_cc(source, extra_flags, "link", 1) == 0)
 }
 
 # _pyconf_compute_int — compile-time binary search for an integer expression.
@@ -424,13 +438,13 @@ function _pyconf_link_test(source, extra_flags) {
 # Returns the integer value, or "" on failure.
 function _pyconf_compute_int(expr, includes, ac_lo, ac_hi, ac_mid, src) {
         # Step 1: determine sign
-        src = _pyconf_confdefs() "\n" includes "\nint main(void) {\n  static int test_array [1 - 2 * !((" expr ") >= 0)];\n  test_array[0] = 0;\n  return test_array[0];\n}\n"
-        if (_pyconf_compile_test(src)) {
+        src = includes "\nint main(void) {\n  static int test_array [1 - 2 * !((" expr ") >= 0)];\n  test_array[0] = 0;\n  return test_array[0];\n}\n"
+        if (_pyconf_compile_test_cd(src)) {
                 # Non-negative: search upward from 0
                 ac_lo = 0; ac_mid = 0
                 while (1) {
-                        src = _pyconf_confdefs() "\n" includes "\nint main(void) {\n  static int test_array [1 - 2 * !((" expr ") <= " ac_mid ")];\n  test_array[0] = 0;\n  return test_array[0];\n}\n"
-                        if (_pyconf_compile_test(src)) {
+                        src = includes "\nint main(void) {\n  static int test_array [1 - 2 * !((" expr ") <= " ac_mid ")];\n  test_array[0] = 0;\n  return test_array[0];\n}\n"
+                        if (_pyconf_compile_test_cd(src)) {
                                 ac_hi = ac_mid; break
                         }
                         ac_lo = ac_mid + 1
@@ -438,13 +452,13 @@ function _pyconf_compute_int(expr, includes, ac_lo, ac_hi, ac_mid, src) {
                         ac_mid = 2 * ac_mid + 1
                 }
         } else {
-                src = _pyconf_confdefs() "\n" includes "\nint main(void) {\n  static int test_array [1 - 2 * !((" expr ") < 0)];\n  test_array[0] = 0;\n  return test_array[0];\n}\n"
-                if (_pyconf_compile_test(src)) {
+                src = includes "\nint main(void) {\n  static int test_array [1 - 2 * !((" expr ") < 0)];\n  test_array[0] = 0;\n  return test_array[0];\n}\n"
+                if (_pyconf_compile_test_cd(src)) {
                         # Negative: search downward from -1
                         ac_hi = -1; ac_mid = -1
                         while (1) {
-                                src = _pyconf_confdefs() "\n" includes "\nint main(void) {\n  static int test_array [1 - 2 * !((" expr ") >= " ac_mid ")];\n  test_array[0] = 0;\n  return test_array[0];\n}\n"
-                                if (_pyconf_compile_test(src)) {
+                                src = includes "\nint main(void) {\n  static int test_array [1 - 2 * !((" expr ") >= " ac_mid ")];\n  test_array[0] = 0;\n  return test_array[0];\n}\n"
+                                if (_pyconf_compile_test_cd(src)) {
                                         ac_lo = ac_mid; break
                                 }
                                 ac_hi = ac_mid - 1
@@ -458,8 +472,8 @@ function _pyconf_compute_int(expr, includes, ac_lo, ac_hi, ac_mid, src) {
         # Step 2: binary search between lo and hi
         while (ac_lo != ac_hi) {
                 ac_mid = int((ac_hi - ac_lo) / 2) + ac_lo
-                src = _pyconf_confdefs() "\n" includes "\nint main(void) {\n  static int test_array [1 - 2 * !((" expr ") <= " ac_mid ")];\n  test_array[0] = 0;\n  return test_array[0];\n}\n"
-                if (_pyconf_compile_test(src))
+                src = includes "\nint main(void) {\n  static int test_array [1 - 2 * !((" expr ") <= " ac_mid ")];\n  test_array[0] = 0;\n  return test_array[0];\n}\n"
+                if (_pyconf_compile_test_cd(src))
                         ac_hi = ac_mid
                 else
                         ac_lo = ac_mid + 1
@@ -467,9 +481,14 @@ function _pyconf_compute_int(expr, includes, ac_lo, ac_hi, ac_mid, src) {
         return ac_lo
 }
 
-function _pyconf_run_test(source, extra_flags, conftest, cmd, rc, line, result, outf, pre, post) {
+function _pyconf_run_test(source, extra_flags, with_confdefs, conftest, cmd, rc, line, result, outf, pre, post) {
         conftest = _pyconf_tmpdir "/conftest.c"
-        printf "%s", source > conftest
+        if (with_confdefs) {
+                _pyconf_write_confdefs(conftest)
+                printf "\n%s", source >> conftest
+        } else {
+                printf "%s", source > conftest
+        }
         close(conftest)
 
         cmd = _pyconf_env_prefix()
@@ -500,7 +519,7 @@ function _pyconf_run_test(source, extra_flags, conftest, cmd, rc, line, result, 
 function pyconf_compile_check(desc, source, extra_flags, compiler, rc, saved_cc) {
         if (desc != "") pyconf_checking(desc)
         if (compiler != "") { saved_cc = V["CC"]; V["CC"] = compiler }
-        rc = _pyconf_compile_test(_pyconf_confdefs() "\n" source, extra_flags)
+        rc = _pyconf_compile_test_cd(source, extra_flags)
         if (compiler != "") V["CC"] = saved_cc
         if (desc != "") pyconf_result(rc ? "yes" : "no")
         return rc
@@ -509,7 +528,7 @@ function pyconf_compile_check(desc, source, extra_flags, compiler, rc, saved_cc)
 function pyconf_link_check(desc, source, extra_flags, compiler, rc, saved_cc) {
         if (desc != "") pyconf_checking(desc)
         if (compiler != "") { saved_cc = V["CC"]; V["CC"] = compiler }
-        rc = _pyconf_link_test(_pyconf_confdefs() "\n" source, extra_flags)
+        rc = _pyconf_link_test_cd(source, extra_flags)
         if (compiler != "") V["CC"] = saved_cc
         if (desc != "") pyconf_result(rc ? "yes" : "no")
         return rc
@@ -522,7 +541,7 @@ function pyconf_try_link(desc, source, extra_flags) {
 function pyconf_compile_link_check(desc, source, extra_flags, compiler, rc, result, saved_cc) {
         if (desc != "") pyconf_checking(desc)
         if (compiler != "") { saved_cc = V["CC"]; V["CC"] = compiler }
-        rc = _pyconf_link_test(_pyconf_confdefs() "\n" source, extra_flags)
+        rc = _pyconf_link_test_cd(source, extra_flags)
         if (compiler != "") V["CC"] = saved_cc
         if (rc)
                 result = "yes"
@@ -534,7 +553,7 @@ function pyconf_compile_link_check(desc, source, extra_flags, compiler, rc, resu
 
 function pyconf_run_check(desc, source, extra_cflags, extra_libs, rc, result) {
         if (desc != "") pyconf_checking(desc)
-        result = _pyconf_run_test(_pyconf_confdefs() "\n" source, extra_cflags " " extra_libs)
+        result = _pyconf_run_test(source, extra_cflags " " extra_libs, 1)
         rc = _pyconf_run_test_rc
         if (desc != "") {
                 if (rc == 0)
@@ -547,7 +566,7 @@ function pyconf_run_check(desc, source, extra_cflags, extra_libs, rc, result) {
 
 function pyconf_run_program_output(desc, source, extra_flags, result) {
         if (desc != "") pyconf_checking(desc)
-        result = _pyconf_run_test(_pyconf_confdefs() "\n" source, extra_flags)
+        result = _pyconf_run_test(source, extra_flags, 1)
         if (desc != "") pyconf_result(result != "" ? result : "failed")
         return result
 }
@@ -623,12 +642,12 @@ function pyconf_check_header(header, prologue, default_inc, define, cache_key, e
         } else {
                 pyconf_checking("for " header)
                 if (prologue != "")
-                        source = _pyconf_confdefs() "\n" prologue "\n#include <" header ">\nint main(void) { return 0; }"
+                        source = prologue "\n#include <" header ">\nint main(void) { return 0; }"
                 else if (default_inc != "")
-                        source = _pyconf_confdefs() "\n" default_inc "\n#include <" header ">\nint main(void) { return 0; }"
+                        source = default_inc "\n#include <" header ">\nint main(void) { return 0; }"
                 else
-                        source = _pyconf_confdefs() "\n" _pyconf_ac_includes_default() "#include <" header ">\nint main(void) { return 0; }"
-                rc = _pyconf_compile_test(source, extra_cflags)
+                        source = _pyconf_ac_includes_default() "#include <" header ">\nint main(void) { return 0; }"
+                rc = _pyconf_compile_test_cd(source, extra_cflags)
                 CACHE[cache_key] = rc ? "yes" : "no"
                 V[cache_key] = rc ? "yes" : "no"
                 pyconf_result(rc ? "yes" : "no")
@@ -687,13 +706,13 @@ function pyconf_check_func(fname, headers, define, source, inc, cv, rc, cache_ke
                 proto = ""
                 call = "(void)(&" fname ")"
                 inc = _pyconf_ac_includes_default() inc
-                source = _pyconf_confdefs() "\n" inc "\n" proto "int main(void) { " call "; return 0; }"
-                rc = _pyconf_compile_test(source, "")
+                source = inc "\n" proto "int main(void) { " call "; return 0; }"
+                rc = _pyconf_compile_test_cd(source, "")
         } else {
                 proto = "#ifdef __cplusplus\nextern \"C\"\n#endif\nchar " fname "();\n"
                 call = fname "()"
-                source = _pyconf_confdefs() "\n" proto "int main(void) { " call "; return 0; }"
-                rc = _pyconf_link_test(source, "")
+                source = proto "int main(void) { " call "; return 0; }"
+                rc = _pyconf_link_test_cd(source, "")
         }
         CACHE[cache_key] = rc ? "yes" : "no"
         V[cache_key] = rc ? "yes" : "no"
@@ -762,8 +781,8 @@ function pyconf_check_sizeof(type_name, default_val, headers, source, inc, resul
 
         result = ""
         if (pyconf_cross_compiling != "yes") {
-                source = _pyconf_confdefs() "\n" inc "\n#include <stdio.h>\nint main(void) { printf(\"%d\", (int)sizeof(" type_name ")); return 0; }"
-                result = _pyconf_run_test(source, "")
+                source = inc "\n#include <stdio.h>\nint main(void) { printf(\"%d\", (int)sizeof(" type_name ")); return 0; }"
+                result = _pyconf_run_test(source, "", 1)
         }
         if (result == "") {
                 # Cross-compiling or run failed: compile-time binary search
@@ -806,8 +825,8 @@ function pyconf_check_alignof(type_name, default_val, headers, source, inc, resu
 
         result = ""
         if (pyconf_cross_compiling != "yes") {
-                source = _pyconf_confdefs() "\n" inc "\n#include <stdio.h>\n#include <stddef.h>\nstruct _align_test { char c; " type_name " x; };\nint main(void) { printf(\"%d\", (int)offsetof(struct _align_test, x)); return 0; }"
-                result = _pyconf_run_test(source, "")
+                source = inc "\n#include <stdio.h>\n#include <stddef.h>\nstruct _align_test { char c; " type_name " x; };\nint main(void) { printf(\"%d\", (int)offsetof(struct _align_test, x)); return 0; }"
+                result = _pyconf_run_test(source, "", 1)
         }
         if (result == "") {
                 # Cross-compiling or run failed: compile-time binary search
@@ -842,8 +861,8 @@ function pyconf_check_type(type_name, headers, source, inc, cv, rc, define, n, a
                                 inc = inc "#include <" arr[i] ">\n"
         }
 
-        source = _pyconf_confdefs() "\n" inc "\n" type_name " _test_var;\nint main(void) { return 0; }"
-        rc = _pyconf_compile_test(source, "")
+        source = inc "\n" type_name " _test_var;\nint main(void) { return 0; }"
+        rc = _pyconf_compile_test_cd(source, "")
         CACHE[cv] = rc ? "yes" : "no"
         V[cv] = rc ? "yes" : "no"
         pyconf_result(rc ? "yes" : "no")
@@ -876,8 +895,8 @@ function pyconf_check_member(member, headers, define, struct_name, field, source
                                 inc = inc "#include <" arr[i] ">\n"
         }
 
-        source = _pyconf_confdefs() "\n" inc "\nint main(void) { " struct_name " s; (void)s." field "; return 0; }"
-        rc = _pyconf_compile_test(source, "")
+        source = inc "\nint main(void) { " struct_name " s; (void)s." field "; return 0; }"
+        rc = _pyconf_compile_test_cd(source, "")
         CACHE[cv] = rc ? "yes" : "no"
         V[cv] = rc ? "yes" : "no"
         pyconf_result(rc ? "yes" : "no")
@@ -928,8 +947,8 @@ function pyconf_check_define(macro, headers, source, inc, cv, rc, n, arr, i) {
                         if (arr[i] != "")
                                 inc = inc "#include <" arr[i] ">\n"
         }
-        source = _pyconf_confdefs() "\n" inc "\n#ifndef " macro "\n#error " macro " not defined\n#endif\nint main(void) { return 0; }"
-        rc = _pyconf_compile_test(source, "")
+        source = inc "\n#ifndef " macro "\n#error " macro " not defined\n#endif\nint main(void) { return 0; }"
+        rc = _pyconf_compile_test_cd(source, "")
         CACHE[cv] = rc ? "yes" : "no"
         V[cv] = rc ? "yes" : "no"
         pyconf_result(rc ? "yes" : "no")
@@ -953,8 +972,8 @@ function pyconf_check_decl(name, includes, define, source, inc, cv, rc, _darr, _
                         if (_darr[_di] != "")
                                 inc = inc "#include <" _darr[_di] ">\n"
         }
-        source = _pyconf_confdefs() "\n" inc "\nint main(void) {\n#ifndef " name "\n  (void)" name ";\n#endif\n  return 0;\n}"
-        rc = _pyconf_compile_test(source, "")
+        source = inc "\nint main(void) {\n#ifndef " name "\n  (void)" name ";\n#endif\n  return 0;\n}"
+        rc = _pyconf_compile_test_cd(source, "")
         CACHE[cv] = rc ? "yes" : "no"
         V[cv] = rc ? "yes" : "no"
         pyconf_result(rc ? "yes" : "no")
@@ -1005,17 +1024,17 @@ function pyconf_check_lib(lib, fname, extra_cflags, extra_libs, source, rc, flag
 
 function pyconf_search_libs(fname, libs, n, arr, i, source, rc) {
         pyconf_checking("for library containing " fname)
-        source = _pyconf_confdefs() "\nchar " fname "();\nint main(void) { return " fname "(); }"
+        source = "char " fname "();\nint main(void) { return " fname "(); }"
 
         # Try without any library first
-        if (_pyconf_link_test(source, "")) {
+        if (_pyconf_link_test_cd(source, "")) {
                 pyconf_result("none required")
                 return "none required"
         }
 
         n = split(libs, arr, " ")
         for (i = 1; i <= n; i++) {
-                if (arr[i] != "" && _pyconf_link_test(source, "-l" arr[i])) {
+                if (arr[i] != "" && _pyconf_link_test_cd(source, "-l" arr[i])) {
                         V["LIBS"] = "-l" arr[i] " " V["LIBS"]
                         pyconf_result("-l" arr[i])
                         return "-l" arr[i]
@@ -2128,9 +2147,9 @@ function pyconf_check_c_bigendian(    result_val, conftest, exe, cmd, rc, data, 
         # Stage 1: sys/param.h BYTE_ORDER macros
         if (result_val == "unknown") {
                 source = "#include <sys/types.h>\n#include <sys/param.h>\nint main(void) {\n#if ! (defined BYTE_ORDER && defined BIG_ENDIAN && defined LITTLE_ENDIAN && BYTE_ORDER && BIG_ENDIAN && LITTLE_ENDIAN)\n  bogus endian macros\n#endif\n  return 0;\n}\n"
-                if (_pyconf_compile_test(_pyconf_confdefs() "\n" source)) {
+                if (_pyconf_compile_test_cd(source)) {
                         source = "#include <sys/types.h>\n#include <sys/param.h>\nint main(void) {\n#if BYTE_ORDER != BIG_ENDIAN\n  not big endian\n#endif\n  return 0;\n}\n"
-                        if (_pyconf_compile_test(_pyconf_confdefs() "\n" source))
+                        if (_pyconf_compile_test_cd(source))
                                 result_val = "yes"
                         else
                                 result_val = "no"
@@ -2140,9 +2159,9 @@ function pyconf_check_c_bigendian(    result_val, conftest, exe, cmd, rc, data, 
         # Stage 2: limits.h _LITTLE_ENDIAN / _BIG_ENDIAN (e.g. Solaris)
         if (result_val == "unknown") {
                 source = "#include <limits.h>\nint main(void) {\n#if ! (defined _LITTLE_ENDIAN || defined _BIG_ENDIAN)\n  bogus endian macros\n#endif\n  return 0;\n}\n"
-                if (_pyconf_compile_test(_pyconf_confdefs() "\n" source)) {
+                if (_pyconf_compile_test_cd(source)) {
                         source = "#include <limits.h>\nint main(void) {\n#ifndef _BIG_ENDIAN\n  not big endian\n#endif\n  return 0;\n}\n"
-                        if (_pyconf_compile_test(_pyconf_confdefs() "\n" source))
+                        if (_pyconf_compile_test_cd(source))
                                 result_val = "yes"
                         else
                                 result_val = "no"
@@ -2156,7 +2175,8 @@ function pyconf_check_c_bigendian(    result_val, conftest, exe, cmd, rc, data, 
                         source = "unsigned short int ascii_mm[] =\n  { 0x4249, 0x4765, 0x6E44, 0x6961, 0x6E53, 0x7953, 0 };\nunsigned short int ascii_ii[] =\n  { 0x694C, 0x5454, 0x656C, 0x6E45, 0x6944, 0x6E61, 0 };\nint use_ascii(int i) {\n  return ascii_mm[i] + ascii_ii[i];\n}\nint main(int argc, char **argv) {\n  char *p = argv[0];\n  ascii_mm[1] = *p++; ascii_ii[1] = *p++;\n  return use_ascii(argc);\n}\n"
                         conftest = _pyconf_tmpdir "/conftest.c"
                         exe = _pyconf_tmpdir "/conftest"
-                        printf "%s", _pyconf_confdefs() "\n" source > conftest
+                        _pyconf_write_confdefs(conftest)
+                        printf "\n%s", source >> conftest
                         close(conftest)
                         cmd = _pyconf_env_prefix()
                         cmd = cmd V["CC"] " " V["CPPFLAGS"] " " V["CFLAGS"] " " V["LDFLAGS"] " " conftest " -o " exe " " V["LIBS"] " 2>/dev/null"
@@ -2171,8 +2191,8 @@ function pyconf_check_c_bigendian(    result_val, conftest, exe, cmd, rc, data, 
                         }
                         system("rm -f " conftest " " exe)
                 } else {
-                        source = _pyconf_confdefs() "\n#include <stdio.h>\nint main(void) {\n  unsigned int x = 1;\n  unsigned char *p = (unsigned char *)&x;\n  printf(\"%d\\n\", p[0] == 0 ? 1 : 0);\n  return 0;\n}\n"
-                        data = _pyconf_run_test(source, "")
+                        source = "#include <stdio.h>\nint main(void) {\n  unsigned int x = 1;\n  unsigned char *p = (unsigned char *)&x;\n  printf(\"%d\\n\", p[0] == 0 ? 1 : 0);\n  return 0;\n}\n"
+                        data = _pyconf_run_test(source, "", 1)
                         gsub(/[ \t\n]/, "", data)
                         if (data == "1")
                                 result_val = "yes"
