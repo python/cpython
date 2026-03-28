@@ -523,7 +523,7 @@ invalid_expat_handler_rv(const char *name)
 error:
     PyErr_Clear();
 done:
-    _PyErr_ChainExceptions1(exc);
+    PyErr_SetRaisedException(exc);
 }
 
 #define RC_HANDLER(RETURN_TYPE, NAME, PARAMS,       \
