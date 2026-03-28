@@ -722,7 +722,7 @@ codegen_setup_annotations_scope(compiler *c, location loc,
     assert(!SYMTABLE_ENTRY(c)->ste_has_docstring);
     _Py_DECLARE_STR(format, ".format");
     ADDOP_I(c, loc, LOAD_FAST, 0);
-    ADDOP_LOAD_CONST_NEW(c, loc, value_with_fake_globals); // macro handles decref of value_with_fake_globals
+    ADDOP_LOAD_CONST_NEW(c, loc, value_with_fake_globals);
     ADDOP_I(c, loc, COMPARE_OP, (Py_GT << 5) | compare_masks[Py_GT]);
     NEW_JUMP_TARGET_LABEL(c, body);
     ADDOP_JUMP(c, loc, POP_JUMP_IF_FALSE, body);
@@ -823,7 +823,7 @@ codegen_deferred_annotations_body(compiler *c, location loc,
 
         VISIT(c, expr, st->v.AnnAssign.annotation);
         ADDOP_I(c, LOC(st), COPY, 2);
-        ADDOP_LOAD_CONST_NEW(c, LOC(st), mangled); // macro handles decref of mangle
+        ADDOP_LOAD_CONST_NEW(c, LOC(st), mangled);
         // stack now contains <annos> <name> <annos> <value>
         ADDOP(c, loc, STORE_SUBSCR);
         // stack now contains <annos>
@@ -3287,8 +3287,7 @@ codegen_nameop(compiler *c, location loc,
 
     int scope = _PyST_GetScope(SYMTABLE_ENTRY(c), mangled);
     if (scope == -1) {
-        Py_DECREF(mangled);
-        return ERROR;
+        goto error;
     }
 
     _PyCompile_optype optype;
