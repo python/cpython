@@ -485,6 +485,9 @@ dummy_func(void) {
         res = sym_new_not_null(ctx);
         ds = dict_st;
         ss = sub_st;
+        if (sym_matches_type(dict_st, &PyFrozenDict_Type)) {
+            REPLACE_OPCODE_IF_EVALUATES_PURE(dict_st, sub_st, res);
+        }
     }
 
     op(_BINARY_OP_SUBSCR_LIST_SLICE, (list_st, sub_st -- res, ls, ss)) {

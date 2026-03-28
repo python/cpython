@@ -20,6 +20,10 @@ from _testinternalcapi import _PY_NSMALLPOSINTS, TIER2_THRESHOLD, TIER2_RESUME_T
 #For test of issue 136154
 GLOBAL_136154 = 42
 
+# For frozendict JIT tests
+FROZEN_DICT_CONST = frozendict(x=1, y=2)
+
+
 @contextlib.contextmanager
 def clear_executors(func):
     # Clear executors in func before and after running a block
@@ -4154,6 +4158,35 @@ class TestUopsOptimization(unittest.TestCase):
         self.assertLessEqual(count_ops(ex, "_POP_TOP"), 3)
         self.assertLessEqual(count_ops(ex, "_POP_TOP_INT"), 1)
         self.assertIn("_POP_TOP_NOP", uops)
+
+    def test_binary_subscr_frozendict_lowering(self):
+        def testfunc(n):
+            x = 0
+            for _ in range(n):
+                x += FROZEN_DICT_CONST['x']
+            return x
+
+        res, ex = self._run_with_optimizer(testfunc, TIER2_THRESHOLD)
+        self.assertEqual(res, TIER2_THRESHOLD)
+        self.assertIsNotNone(ex)
+        uops = get_opnames(ex)
+        self.assertIn("_INSERT_2_LOAD_CONST_INLINE_BORROW", uops)
+        self.assertNotIn("_BINARY_OP_SUBSCR_DICT", uops)
+
+    def test_binary_subscr_frozendict_const_fold(self):
+        def testfunc(n):
+            x = 0
+            for _ in range(n):
+                if FROZEN_DICT_CONST['x'] == 1:
+                    x += 1
+            return x
+
+        res, ex = self._run_with_optimizer(testfunc, TIER2_THRESHOLD)
+        self.assertEqual(res, TIER2_THRESHOLD)
+        self.assertIsNotNone(ex)
+        uops = get_opnames(ex)
+        # lookup result is folded to constant 1, so comparison is optimized away
+        self.assertNotIn("_COMPARE_OP_INT", uops)
 
     def test_binary_subscr_list_slice(self):
         def testfunc(n):
