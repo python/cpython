@@ -2180,7 +2180,7 @@ def compile_link_check(description: str, compiler: str, source: str) -> str:
         src = os.path.join(tmp, "conftest.c")
         exe = os.path.join(tmp, "conftest")
         with open(src, "w") as f:
-            f.write(source)
+            f.write(_confdefs_preamble() + source)
         cmd = f"{compiler} {shlex.quote(src)} -o {shlex.quote(exe)}"
         try:
             result_proc = subprocess.run(
@@ -2281,7 +2281,7 @@ def run_check_with_cc_flag(
         src = os.path.join(tmp, "conftest.c")
         exe = os.path.join(tmp, "conftest")
         with open(src, "w") as f:
-            f.write(source)
+            f.write(_confdefs_preamble() + source)
         try:
             if not _run_cc(src, exe, cflags=shlex.quote(flag)):
                 return False
@@ -2307,7 +2307,7 @@ def run_program_output(
         src = os.path.join(tmp, "conftest.c")
         exe = os.path.join(tmp, "conftest")
         with open(src, "w") as f:
-            f.write(source)
+            f.write(_confdefs_preamble() + source)
         cflags = f"{extra_cflags} {extra_ldflags}".strip()
         try:
             if not _run_cc(src, exe, cflags=cflags, libs=extra_libs):
