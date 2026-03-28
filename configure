@@ -12,5 +12,5 @@ if python3 -c 'from __future__ import annotations' >/dev/null 2>&1; then
     python3 "$SCRIPT_DIR/Tools/configure/configure.py" --srcdir="$SCRIPT_DIR" "$@"
 else
     echo "Using AWK/sh configure-new..."
-    "$SCRIPT_DIR/configure-new" "$@"
+    "$SCRIPT_DIR/configure-new" --srcdir="$SCRIPT_DIR" "$@"
 fi

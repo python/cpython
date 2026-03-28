@@ -1600,6 +1600,7 @@ function pyconf_parse_args(    i, arg, key, val, opt_key, eq_pos, config_args) {
                         # --prefix, --exec-prefix, --bindir, etc.
                         } else if (key == "srcdir") {
                                 _pyconf_srcdir = val
+                                pyconf__srcdir_arg = val
                         } else if (key == "help" || key == "h") {
                                 _pyconf_help_requested = 1
                         } else {
@@ -1796,12 +1797,18 @@ function _pyconf_write_pyconfig_h(    f, inf, line, name, val, indent, rest, out
         close(outf)
 }
 
-function _pyconf_process_config_files(    i, inf, outf, outdir, saved_abs_srcdir, saved_abs_builddir, slash_pos) {
+function _pyconf_process_config_files(    i, inf, outf, outdir, saved_abs_srcdir, saved_abs_builddir, slash_pos, sd) {
+        # Determine srcdir: prefer the transpiled pyconf_srcdir (set by
+        # u_setup_source_dirs), fall back to _pyconf_srcdir (from --srcdir arg).
+        sd = _pyconf_srcdir
+        if (pyconf_srcdir != "" && pyconf_srcdir != ".")
+                sd = pyconf_srcdir
         for (i = 1; i <= _pyconf_config_file_count; i++) {
                 outf = CONFIG_FILES[i]
-                inf = outf ".in"
-                if (inf == "")
-                        continue
+                if (sd != "" && sd != ".")
+                        inf = sd "/" outf ".in"
+                else
+                        inf = outf ".in"
                 # Skip if template does not exist (mirrors pyconf.py behaviour)
                 if (system("test -f " _shell_quote(inf)) != 0) {
                         pyconf_warn("config file template not found: " inf)
