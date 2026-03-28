@@ -48,12 +48,13 @@ Py_DEBUG_WIN32 = support.Py_DEBUG and sys.platform == 'win32'
 
 PROTOCOLS = sorted(ssl._PROTOCOL_NAMES)
 HOST = socket_helper.HOST
+IS_AWS_LC = "AWS-LC" in ssl.OPENSSL_VERSION
 IS_OPENSSL_3_0_0 = ssl.OPENSSL_VERSION_INFO >= (3, 0, 0)
 CAN_GET_SELECTED_OPENSSL_GROUP = ssl.OPENSSL_VERSION_INFO >= (3, 2)
 CAN_IGNORE_UNKNOWN_OPENSSL_GROUPS = ssl.OPENSSL_VERSION_INFO >= (3, 3)
 CAN_GET_AVAILABLE_OPENSSL_GROUPS = ssl.OPENSSL_VERSION_INFO >= (3, 5)
 CAN_GET_AVAILABLE_OPENSSL_SIGALGS = ssl.OPENSSL_VERSION_INFO >= (3, 4)
-CAN_SET_CLIENT_SIGALGS = "AWS-LC" not in ssl.OPENSSL_VERSION
+CAN_SET_CLIENT_SIGALGS = not IS_AWS_LC
 CAN_IGNORE_UNKNOWN_OPENSSL_SIGALGS = ssl.OPENSSL_VERSION_INFO >= (3, 3)
 CAN_GET_SELECTED_OPENSSL_SIGALG = ssl.OPENSSL_VERSION_INFO >= (3, 5)
 PY_SSL_DEFAULT_CIPHERS = sysconfig.get_config_var('PY_SSL_DEFAULT_CIPHERS')
@@ -1579,10 +1580,18 @@ class ContextTests(unittest.TestCase):
         # Try to continue the server's handshake by directly using
         # the internal SSL object. The latter is a weak reference
         # stored in the server context and has now a dead owner.
-        with self.assertRaisesRegex(ssl.SSLError, "callback failed") as cm:
+        with self.assertRaises(ssl.SSLError) as cm:
             server_impl.do_handshake()
         # The SNI C callback raised an exception before calling our callback.
         sni_callback.assert_not_called()
+
+        # In AWS-LC, any handshake failures reports SSL_R_PARSE_TLSEXT,
+        # while OpenSSL uses SSL_R_CALLBACK_FAILED on SNI callback failures.
+        if IS_AWS_LC:
+            libssl_error_reason = "PARSE_TLSEXT"
+        else:
+            libssl_error_reason = "callback failed"
+        self.assertIn(libssl_error_reason, str(cm.exception))
         self.assertEqual(cm.exception.errno, ssl.SSL_ERROR_SSL)
 
     def test_sni_callback_refcycle(self):
