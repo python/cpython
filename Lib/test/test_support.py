@@ -569,12 +569,19 @@ class TestSupport(unittest.TestCase):
             # -X options
             ['-X', 'dev'],
             ['-Wignore', '-X', 'dev'],
+            ['-X', 'cpu_count=4'],
+            ['-X', 'disable-remote-debug'],
             ['-X', 'faulthandler'],
             ['-X', 'importtime'],
             ['-X', 'importtime=2'],
+            ['-X', 'int_max_str_digits=1000'],
+            ['-X', 'lazy_imports=all'],
+            ['-X', 'no_debug_ranges'],
+            ['-X', 'pycache_prefix=/tmp/pycache'],
             ['-X', 'showrefcount'],
             ['-X', 'tracemalloc'],
             ['-X', 'tracemalloc=3'],
+            ['-X', 'warn_default_encoding'],
         ):
             with self.subTest(opts=opts):
                 self.check_options(opts, 'args_from_interpreter_flags')
