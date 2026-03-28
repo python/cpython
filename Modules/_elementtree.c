@@ -2840,8 +2840,6 @@ treebuilder_handle_data(TreeBuilderObject* self, PyObject* data)
 LOCAL(PyObject*)
 treebuilder_handle_end(TreeBuilderObject* self, PyObject* tag)
 {
-    PyObject* item;
-
     if (treebuilder_flush_data(self) < 0) {
         return NULL;
     }
@@ -2854,17 +2852,22 @@ treebuilder_handle_end(TreeBuilderObject* self, PyObject* tag)
         return NULL;
     }
 
-    item = self->last;
-    self->last = Py_NewRef(self->this);
-    Py_XSETREF(self->last_for_tail, self->last);
+    PyObject *last = self->last;
+    PyObject *last_for_tail = self->last_for_tail;
+    PyObject *this = self->this;
+    self->last = Py_NewRef(this);
+    self->last_for_tail = Py_NewRef(this);
     self->index--;
     self->this = Py_NewRef(PyList_GET_ITEM(self->stack, self->index));
-    Py_DECREF(item);
+    Py_DECREF(last);
+    Py_XDECREF(last_for_tail);
 
-    if (treebuilder_append_event(self, self->end_event_obj, self->last) < 0)
+    if (treebuilder_append_event(self, self->end_event_obj, self->last) < 0) {
+        Py_DECREF(this);
         return NULL;
+    }
 
-    return Py_NewRef(self->last);
+    return this;
 }
 
 LOCAL(PyObject*)
@@ -4530,6 +4533,7 @@ error:
 }
 
 static struct PyModuleDef_Slot elementtree_slots[] = {
+    _Py_ABI_SLOT,
     {Py_mod_exec, module_exec},
     {Py_mod_multiple_interpreters, Py_MOD_PER_INTERPRETER_GIL_SUPPORTED},
     {Py_mod_gil, Py_MOD_GIL_NOT_USED},

@@ -350,11 +350,18 @@ def write_library_config(prefix, name, config, quiet):
 def make_emscripten_libffi(context, working_dir):
     validate_emsdk_version(context.emsdk_cache)
     prefix = context.build_paths["prefix_dir"]
-    libffi_config = load_config_toml()["libffi"]
+    libffi_config = load_config_toml()["dependencies"]["libffi"]
+    with open(EMSCRIPTEN_DIR / "make_libffi.sh", "rb") as f:
+        libffi_config["make_libffi_shasum"] = hashlib.file_digest(f, "sha256").hexdigest()
     if not should_build_library(
         prefix, "libffi", libffi_config, context.quiet
     ):
         return
+
+    if context.check_up_to_date:
+        print("libffi out of date, expected to be up to date", file=sys.stderr)
+        sys.exit(1)
+
     url = libffi_config["url"]
     version = libffi_config["version"]
     shasum = libffi_config["shasum"]
@@ -378,9 +385,13 @@ def make_emscripten_libffi(context, working_dir):
 def make_mpdec(context, working_dir):
     validate_emsdk_version(context.emsdk_cache)
     prefix = context.build_paths["prefix_dir"]
-    mpdec_config = load_config_toml()["mpdec"]
+    mpdec_config = load_config_toml()["dependencies"]["mpdec"]
     if not should_build_library(prefix, "mpdec", mpdec_config, context.quiet):
         return
+
+    if context.check_up_to_date:
+        print("libmpdec out of date, expected to be up to date", file=sys.stderr)
+        sys.exit(1)
 
     url = mpdec_config["url"]
     version = mpdec_config["version"]
@@ -411,6 +422,11 @@ def make_mpdec(context, working_dir):
         quiet=context.quiet,
     )
     write_library_config(prefix, "mpdec", mpdec_config, context.quiet)
+
+
+def make_dependencies(context):
+    make_emscripten_libffi(context)
+    make_mpdec(context)
 
 
 def calculate_node_path():
@@ -573,7 +589,12 @@ def run_emscripten_python(context):
     if args and args[0] == "--":
         args = args[1:]
 
-    os.execv(str(exec_script), [str(exec_script)] + args)
+    if context.test:
+        args = load_config_toml()["test-args"] + args
+    elif context.pythoninfo:
+        args = load_config_toml()["pythoninfo-args"] + args
+
+    os.execv(str(exec_script), [str(exec_script), *args])
 
 
 def build_target(context):
@@ -665,6 +686,19 @@ def main():
         help="Clone libffi repo, configure and build it for emscripten",
     )
 
+    make_dependencies_cmd = subcommands.add_parser(
+        "make-dependencies",
+        help="Build all static library dependencies",
+    )
+
+    for cmd in [make_mpdec_cmd, make_libffi_cmd, make_dependencies_cmd]:
+        cmd.add_argument(
+            "--check-up-to-date",
+            action="store_true",
+            default=False,
+            help=("If passed, will fail if dependency is out of date"),
+        )
+
     make_build = subcommands.add_parser(
         "make-build-python", help="Run `make` for the build Python"
     )
@@ -686,14 +720,30 @@ def main():
         help="Run the built emscripten Python",
     )
     run.add_argument(
+        "--test",
+        action="store_true",
+        default=False,
+        help=(
+            "Add the default test arguments to the beginning of the command. "
+            "Default arguments loaded from Platforms/emscripten/config.toml"
+        ),
+    )
+    run.add_argument(
+        "--pythoninfo",
+        action="store_true",
+        default=False,
+        help="Run -m test.pythoninfo",
+    )
+    run.add_argument(
         "args",
         nargs=argparse.REMAINDER,
         help=(
             "Arguments to pass to the emscripten Python "
             "(use '--' to separate from run options)",
-        )
+        ),
     )
     add_cross_build_dir_option(run)
+
     clean = subcommands.add_parser(
         "clean", help="Delete files and directories created by this script"
     )
@@ -714,6 +764,7 @@ def main():
         configure_build,
         make_libffi_cmd,
         make_mpdec_cmd,
+        make_dependencies_cmd,
         make_build,
         configure_host,
         make_host,
@@ -769,6 +820,7 @@ def main():
     context = parser.parse_args()
     context.emsdk_cache = getattr(context, "emsdk_cache", None)
     context.cross_build_dir = getattr(context, "cross_build_dir", None)
+    context.check_up_to_date = getattr(context, "check_up_to_date", False)
 
     if context.emsdk_cache:
         context.emsdk_cache = Path(context.emsdk_cache).absolute()
@@ -781,6 +833,7 @@ def main():
         "install-emscripten": install_emscripten,
         "make-libffi": make_emscripten_libffi,
         "make-mpdec": make_mpdec,
+        "make-dependencies": make_dependencies,
         "configure-build-python": configure_build_python,
         "make-build-python": make_build_python,
         "configure-host": configure_emscripten_python,
