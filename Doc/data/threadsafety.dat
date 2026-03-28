@@ -124,3 +124,26 @@ PyByteArray_GET_SIZE:atomic:
 # Raw data - no locking; mutating it is unsafe if the bytearray object is shared between threads
 PyByteArray_AsString:compatible:
 PyByteArray_AS_STRING:compatible:
+
+# Creation - may iterate the iterable argument, calling arbitrary code
+# atomic for sets, dicts, and frozendicts.
+PySet_New:shared:
+PyFrozenSet_New:shared:
+
+# Size - uses atomic load on free-threaded builds
+PySet_Size:atomic:
+PySet_GET_SIZE:atomic:
+
+# Contains - lock-free, atomic with simple types
+PySet_Contains:shared:
+
+# Mutations - hold per-object lock for duration
+# atomic with simple types
+PySet_Add:shared:
+PySet_Discard:shared:
+
+# Pop - hold per-object lock for duration;
+PySet_Pop:atomic:
+
+# Clear - empties the set before clearing
+PySet_Clear:atomic:
