@@ -577,12 +577,17 @@ class TestSupport(unittest.TestCase):
             ['-X', 'int_max_str_digits=1000'],
             ['-X', 'lazy_imports=all'],
             ['-X', 'no_debug_ranges'],
-            ['-X', 'pycache_prefix=/tmp/pycache'],
             ['-X', 'showrefcount'],
             ['-X', 'tracemalloc'],
             ['-X', 'tracemalloc=3'],
             ['-X', 'warn_default_encoding'],
         ):
+            with self.subTest(opts=opts):
+                self.check_options(opts, 'args_from_interpreter_flags')
+
+        with os_helper.temp_dir() as temp_path:
+            prefix = os.path.join(temp_path, 'pycache')
+            opts = ['-X', f'pycache_prefix={prefix}']
             with self.subTest(opts=opts):
                 self.check_options(opts, 'args_from_interpreter_flags')
 
