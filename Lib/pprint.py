@@ -274,14 +274,26 @@ class PrettyPrinter:
     def _pprint_frozendict(self, object, stream, indent, allowance, context, level):
         write = stream.write
         cls = object.__class__
-        write(cls.__name__ + '(')
-        length = len(object)
-        if length:
-            self._pprint_dict(object, stream,
-                              indent + len(cls.__name__) + 1,
-                              allowance + 1,
-                              context, level)
-        write(')')
+        if not len(object):
+            write(repr(object))
+            return
+
+        write(self._format_block_start(cls.__name__ + "({", indent))
+        self._write_indent_padding(write)
+
+        if self._sort_dicts:
+            items = sorted(object.items(), key=_safe_tuple)
+        else:
+            items = object.items()
+        self._format_dict_items(
+            items,
+            stream,
+            self._child_indent(indent, len(cls.__name__) + 1),
+            allowance + 2,
+            context,
+            level,
+        )
+        write(self._format_block_end("})", indent))
 
     _dispatch[frozendict.__repr__] = _pprint_frozendict
 

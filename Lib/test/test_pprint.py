@@ -1664,6 +1664,20 @@ frozenset({
     (1, 2, 3)
 })""")
 
+    def test_expand_frozendict(self):
+        dummy_frozendict = frozendict(
+            {"foo": "bar", "baz": 123, "qux": [1, 2]}
+        )
+        self.assertEqual(
+            pprint.pformat(dummy_frozendict, width=20, indent=4, expand=True),
+            """\
+frozendict({
+    'baz': 123,
+    'foo': 'bar',
+    'qux': [1, 2]
+})""",
+        )
+
     def test_expand_bytes(self):
         dummy_bytes = b"Hello world! foo bar baz 123 456 789"
         self.assertEqual(pprint.pformat(dummy_bytes, width=20, indent=4,
