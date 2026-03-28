@@ -35,10 +35,34 @@ _SHELL_WRAPPER = """\
 # This is a POSIX shell wrapper around an embedded AWK program.
 # Run: /bin/sh configure [options]
 
+# _find_awk — pick a working AWK that is not gawk.
+# gawk 5.2.x (Ubuntu 24.04) has a crash bug ("double free or corruption")
+# triggered by heavy system() usage in large scripts.  mawk and one-true-awk
+# (nawk / BWK awk) are unaffected and faster, so prefer them.
+_find_awk() {
+    for _c in mawk nawk awk; do
+        # Locate $_c in PATH without relying on "command -v".
+        IFS=:
+        for _d in $PATH; do
+            if [ -x "${_d}/${_c}" ]; then
+                # Reject gawk — it sometimes masquerades as "awk" or "nawk".
+                case $("${_d}/${_c}" --version < /dev/null 2>&1) in
+                    *"GNU Awk"*) ;;
+                    *) echo "${_d}/${_c}"; return 0 ;;
+                esac
+            fi
+        done
+        unset IFS
+    done
+    # Last resort: bare "awk" (may be gawk, but better than nothing).
+    echo awk
+}
+_awk=$(_find_awk)
+
 _tmpf=$(mktemp "${TMPDIR:-/tmp}/configure.XXXXXXXXXX") || exit 1
 trap 'rm -f "$_tmpf"' EXIT
 sed '1,/^#---AWK-START---$/d' "$0" > "$_tmpf"
-exec awk -f "$_tmpf" -- "$@"
+exec "$_awk" -f "$_tmpf" -- "$@"
 #---AWK-START---
 """
 
