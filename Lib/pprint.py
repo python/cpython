@@ -321,19 +321,21 @@ class PrettyPrinter:
             key = _safe_tuple
         else:
             key = _safe_key
+
         write = stream.write
-        write(object.__class__.__name__ + '([')
-        if self._indent_per_level > 1:
-            write((self._indent_per_level - 1) * ' ')
-        length = len(object)
-        if length:
+        write(
+            self._format_block_start(object.__class__.__name__ + "([", indent)
+        )
+
+        if len(object):
             if self._sort_dicts:
                 entries = sorted(object, key=key)
             else:
                 entries = object
-            self._format_items(entries, stream, indent, allowance + 1,
-                               context, level)
-        write('])')
+            self._format_items(
+                entries, stream, indent, allowance + 2, context, level
+            )
+        write(self._format_block_end("])", indent))
 
     def _pprint_mapping_abc_view(self, object, stream, indent, allowance, context, level):
         """Pretty print mapping views from collections.abc."""

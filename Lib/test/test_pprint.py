@@ -1903,6 +1903,49 @@ deque([
 ]""")
 
 
+    def test_expand_dict_keys(self):
+        d = {"foo": 1, "bar": 2, "baz": 3, "qux": 4, "quux": 5}
+        self.assertEqual(
+            pprint.pformat(d.keys(), width=20, indent=4, expand=True),
+            """\
+dict_keys([
+    'bar',
+    'baz',
+    'foo',
+    'quux',
+    'qux'
+])""",
+        )
+
+    def test_expand_dict_values(self):
+        d = {"foo": 1, "bar": 2, "baz": 3, "qux": 4, "quux": 5}
+        self.assertEqual(
+            pprint.pformat(d.values(), width=20, indent=4, expand=True),
+            """\
+dict_values([
+    1,
+    2,
+    3,
+    4,
+    5
+])""",
+        )
+
+    def test_expand_dict_items(self):
+        d = {"foo": 1, "bar": 2, "baz": 3, "qux": 4, "quux": 5}
+        self.assertEqual(
+            pprint.pformat(d.items(), width=20, indent=4, expand=True),
+            """\
+dict_items([
+    ('bar', 2),
+    ('baz', 3),
+    ('foo', 1),
+    ('quux', 5),
+    ('qux', 4)
+])""",
+        )
+
+
 class DottedPrettyPrinter(pprint.PrettyPrinter):
 
     def format(self, object, context, maxlevels, level):
