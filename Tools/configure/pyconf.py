@@ -1244,7 +1244,7 @@ def _write_config_status() -> None:
 # It can regenerate output files from their .in templates and re-run
 # configure with --recheck.
 
-CONFIG_ARGS='{config_args}'
+CONFIG_ARGS="{config_args}"
 
 for arg in "$@"; do
   case "$arg" in
