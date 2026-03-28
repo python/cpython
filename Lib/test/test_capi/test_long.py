@@ -805,8 +805,11 @@ class LongTests(unittest.TestCase):
 
     def test_bug_143050(self):
         with support.adjust_int_max_str_digits(0):
+            # Bug coming from using _pylong.int_from_string(), that
+            # currently requires > 6000 decimal digits.
             int('-' + '0' * 7000, 10)
             _testcapi.test_immortal_small_ints()
+            # Test also nonzero small int
             int('-' + '0' * 7000 + '123', 10)
             _testcapi.test_immortal_small_ints()
 

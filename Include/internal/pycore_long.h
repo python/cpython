@@ -231,6 +231,7 @@ _PyLong_IsPositive(const PyLongObject *op)
     return (op->long_value.lv_tag & SIGN_MASK) == 0;
 }
 
+/* Return true if the argument is a small int */
 static inline bool
 _PyLong_HasImmortalTag(const PyLongObject *op)
 {
