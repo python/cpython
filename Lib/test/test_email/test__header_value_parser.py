@@ -2886,6 +2886,108 @@ class TestParser(TestParserMixin, TestEmailBase):
 
     # get_local_part
 
+    @params
+    def test_get_local_part(self, s, *args, local_part=None, **kw):
+        lp = self._test_parse(parser.get_local_part, C(s), *args, **kw)
+        if 'exception' in kw:
+            return
+        self.verify_terminal_types(
+            lp,
+            'dot',
+            'atext',
+            'ptext',
+            'fws',
+            'vtext',
+            )
+        if local_part != ...:
+            self.assertEqual(lp.local_part, local_part)
+
+    @params_map(with_namelist=True)
+    def adapt_get_dot_atom_tests_for_get_local_part(nl, s, *args, **kw):
+        r = kw.get('remainder')
+        if 'value' in kw:
+            local_part = kw['value']
+        else:
+            local_part = kw.get('stringified', s[:-len(r)] if r else s)
+        if not nl.has_any('ew_only', 'rfc2047_atom'):
+            # Except for the above two tests, the leading and trailing
+            # whitespace in the 'value' is the 'semantic blank' it produces
+            # for leading and trailing cfws, which local_part doesn't include.
+            # For those two ew tests the blank comes from inside the ew.
+            local_part = local_part.removeprefix(' ').removesuffix(' ')
+        kw['local_part'] = local_part
+        yield '', C(s, *args, **kw)
+
+    @params_map
+    def adapt_get_quoted_string_tests_for_get_local_part(*args, **kw):
+        if 'quoted_value' in kw:
+            kw['value'] = kw.pop('quoted_value')
+        if 'exception' not in kw:
+            kw['local_part'] = kw.pop('content')
+        yield '', C(*args, **kw)
+
+    params_test_get_local_part = old_api_only(
+
+        # An RFC compliant local part can be a dot atom or a quoted string, so
+        # it should pass some of the tests for those.
+
+        adapt_get_dot_atom_tests_for_get_local_part(
+            include_unless(
+                lambda n, *a, **k:
+                    n.has_any(
+                        # Get local part handles multiple atoms.
+                        'two_ew_two_atoms',
+                        'atom_ends_at_noncfws',
+                        # There are some things get_dot_atom raises for that
+                        # get_local_part treats as obs-local-part.
+                        'two_dots_raises',
+                        'trailing_dot_raises',
+                        'space_ends_dot_atom',
+                        # XXX XXX These tests should pass after the refactoring
+                        # of get_dot_atom.
+                        'two_ew_with_dot',
+                        'multiple_ew_no_ws',
+                        )
+                    or
+                        # get_local_part handles quoted strings (tested above),
+                        # and leading dots or \ are handled as obs-local-part.
+                        n.has_any(
+                            'up_to_special',
+                            'leading_special_raises',
+                            'no_atom_before_special',
+                            'no_atext_before_special_or_wsp',
+                            'atom_ends_at_special',
+                            'ends_at_special_after_comment',
+                            'ends_at_special',
+                            )
+                        and n.has_any(
+                            'reverse_solidus',
+                            'quotation_mark',
+                            'full_stop',
+                            ),
+                label='from_test_get_dot_atom',
+                )(params_test_get_dot_atom),
+            ),
+
+        adapt_get_quoted_string_tests_for_get_local_part(
+            include_unless(
+                lambda n, *a, **k: n.has_any(
+                    # These tests have an atom first; get_quoted_string raises,
+                    # but get_local_part parses the atom.  Atoms are tested above.
+                    'no_quoted_string',
+                    'no_leading_dquote_before_non_ws',
+                    # A local part only ends at specials other than " and .
+                    'qs_ends_at_noncfws',
+                    'ew_after_dquote',
+                    'encoded_word_after_dquote_with_no_ws',
+                    'end_dquote_mid_word',
+                    ),
+                label='from_test_get_quoted_string',
+                )(params_test_get_quoted_string),
+            ),
+
+        )
+
     def test_get_local_part_simple(self):
         local_part = self._test_get_x(parser.get_local_part,
             'dinsdale@python.org', 'dinsdale', 'dinsdale', [], '@python.org')
