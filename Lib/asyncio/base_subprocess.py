@@ -215,7 +215,7 @@ class BaseSubprocessTransport(transports.SubprocessTransport):
                 if proto is not None:
                     proto.pipe.close()
             for raw_pipe in (proc.stdin, proc.stdout, proc.stderr):
-                if raw_pipe is not None and not raw_pipe.closed:
+                if raw_pipe is not None:
                     raw_pipe.close()
             if waiter is not None and not waiter.cancelled():
                 waiter.set_exception(exc)
