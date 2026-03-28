@@ -13,10 +13,9 @@ on:
         type: boolean
         default: false
       interpreter:
-        description: Which interpreter to build
-        required: false
+        description: Which interpreter to build (switch-case or tail-call)
+        required: true
         type: string
-        default: switch-case
 
 env:
   FORCE_COLOR: 1
