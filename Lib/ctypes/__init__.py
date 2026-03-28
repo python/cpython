@@ -19,7 +19,9 @@ from _ctypes import CField
 from struct import calcsize as _calcsize
 
 if __version__ != _ctypes_version:
-    raise SystemError("Version number mismatch", __version__, _ctypes_version)
+    raise SystemError(
+        f"ctypes version mismatch: Python={__version__}, _ctypes={_ctypes_version}"
+)
 
 if _os.name == "nt":
     from _ctypes import COMError, CopyComPointer, FormatError
