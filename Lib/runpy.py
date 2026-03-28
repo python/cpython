@@ -110,10 +110,37 @@ def _get_possible_name_list(wrong_name):
         d = []
         for finder in sys.meta_path:
             if discover := getattr(finder, 'discover', None):
-                d += [spec.name for spec in discover(parent)]
+                try:
+                    d += [spec.name for spec in discover(parent) if _is_valid_spec(spec)]
+                except Exception:
+                    continue
         return d
     except Exception:
         return None
+
+
+def _is_valid_spec(spec):
+    if spec is None:
+        return False
+    mod_name = spec.name
+    if spec.submodule_search_locations is not None:
+        if mod_name == "__main__" or mod_name.endswith(".__main__"):
+            return False
+        main_module = mod_name + ".__main__"
+        try:
+            main_spec = importlib.util.find_spec(main_module)
+            if main_spec is None:
+                return False
+            return main_spec.submodule_search_locations is None and _is_valid_spec(main_spec)
+        except Exception:
+            return False
+    loader = spec.loader
+    if loader is None:
+        return False
+    try:
+        return loader.get_code(mod_name) is not None
+    except ImportError:
+        return False
 
 
 # Helper to get the full name, spec and code for a module
