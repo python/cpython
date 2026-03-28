@@ -2324,9 +2324,9 @@ class TestUopsOptimization(unittest.TestCase):
         # str, int, bytes, tuple and any python object which has generic hash
         def testfunc(n):
             x = 0
-            d = {'a': 1, 1: 2, b'a': 3, (1, 2): 4, _GENERIC_KEY: 5}
+            d = {'a': 1, 1: 2, b'b': 3, (1, 2): 4, _GENERIC_KEY: 5}
             for _ in range(n):
-                x += d['a'] + d[1] + d[b'a'] + d[(1, 2)] + d[_GENERIC_KEY]
+                x += d['a'] + d[1] + d[b'b'] + d[(1, 2)] + d[_GENERIC_KEY]
             return x
 
         res, ex = self._run_with_optimizer(testfunc, TIER2_THRESHOLD)
@@ -2339,14 +2339,14 @@ class TestUopsOptimization(unittest.TestCase):
     def test_store_subscr_dict_known_hash(self):
         # str, int, bytes, tuple and any python object which has generic hash
         def testfunc(n):
-            d = {'a': 0, 1: 0, b'a': 0, (1, 2): 0, _GENERIC_KEY: 0}
+            d = {'a': 0, 1: 0, b'b': 0, (1, 2): 0, _GENERIC_KEY: 0}
             for _ in range(n):
                 d['a'] += 1
                 d[1] += 2
-                d[b'a'] += 3
+                d[b'b'] += 3
                 d[(1, 2)] += 4
                 d[_GENERIC_KEY] += 5
-            return d['a'] + d[1] + d[b'a'] + d[(1, 2)] + d[_GENERIC_KEY]
+            return d['a'] + d[1] + d[b'b'] + d[(1, 2)] + d[_GENERIC_KEY]
 
         res, ex = self._run_with_optimizer(testfunc, TIER2_THRESHOLD)
         self.assertEqual(res, 15 * TIER2_THRESHOLD)
