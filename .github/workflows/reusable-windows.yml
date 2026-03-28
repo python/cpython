@@ -16,7 +16,7 @@ on:
         description: Which interpreter to build
         required: false
         type: string
-        default: regular
+        default: switch-case
 
 env:
   FORCE_COLOR: 1
@@ -43,7 +43,7 @@ jobs:
       run: >-
         .\\PCbuild\\build.bat
         -e -v
-        ${{ inputs.interpreter == 'regular' && '-d' || '--tail-call-interp -c Release' }}
+        ${{ inputs.interpreter == 'switch-case' && '-d' || '--tail-call-interp -c Release' }}
         -p "${ARCH}"
         ${{ fromJSON(inputs.free-threading) && '--disable-gil' || '' }}
       shell: bash
@@ -54,6 +54,6 @@ jobs:
         .\\PCbuild\\rt.bat
         -p "${ARCH}"
         -q --fast-ci
-        ${{ inputs.interpreter == 'regular' && '-d' || '' }}
+        ${{ inputs.interpreter == 'switch-case' && '-d' || '' }}
         ${{ fromJSON(inputs.free-threading) && '--disable-gil' || '' }}
       shell: bash
