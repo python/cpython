@@ -561,7 +561,6 @@ my_ ## NAME ## Handler PARAMS {                     \
     Py_DECREF(rv);                                  \
     if (PyErr_Occurred()) {                         \
         invalid_expat_handler_rv(#NAME);            \
-        return RETURN_VARIABLE;                     \
     }                                               \
     return RETURN_VARIABLE;                         \
 }
