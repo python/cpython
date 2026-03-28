@@ -1,1 +1,0 @@
-:c:macro:`!Py_MATH_El` and :c:macro:`!Py_MATH_PIl` are deprecated.

@@ -315,8 +315,12 @@ _set_char(const char *name, Py_UCS4 *target, PyObject *src, Py_UCS4 dflt)
 static int
 _set_str(const char *name, PyObject **target, PyObject *src, const char *dflt)
 {
-    if (src == NULL)
+    if (src == NULL) {
         *target = PyUnicode_DecodeASCII(dflt, strlen(dflt), NULL);
+        if (*target == NULL) {
+            return -1;
+        }
+    }
     else {
         if (!PyUnicode_Check(src)) {
             PyErr_Format(PyExc_TypeError,
@@ -497,13 +501,13 @@ dialect_new(PyTypeObject *type, PyObject *args, PyObject *kwargs)
     Py_XINCREF(skipinitialspace);
     Py_XINCREF(strict);
     if (dialect != NULL) {
-#define DIALECT_GETATTR(v, n)                            \
-        do {                                             \
-            if (v == NULL) {                             \
-                v = PyObject_GetAttrString(dialect, n);  \
-                if (v == NULL)                           \
-                    PyErr_Clear();                       \
-            }                                            \
+#define DIALECT_GETATTR(v, n)                                               \
+        do {                                                                \
+            if (v == NULL) {                                                \
+                if (PyObject_GetOptionalAttrString(dialect, n, &v) < 0) {   \
+                    goto err;                                               \
+                }                                                           \
+            }                                                               \
         } while (0)
         DIALECT_GETATTR(delimiter, "delimiter");
         DIALECT_GETATTR(doublequote, "doublequote");
@@ -918,7 +922,7 @@ parse_reset(ReaderObj *self)
 }
 
 static PyObject *
-Reader_iternext(PyObject *op)
+Reader_iternext_lock_held(PyObject *op)
 {
     ReaderObj *self = _ReaderObj_CAST(op);
 
@@ -983,6 +987,16 @@ Reader_iternext(PyObject *op)
     self->fields = NULL;
 err:
     return fields;
+}
+
+static PyObject *
+Reader_iternext(PyObject *op)
+{
+    PyObject *result;
+    Py_BEGIN_CRITICAL_SECTION(op);
+    result = Reader_iternext_lock_held(op);
+    Py_END_CRITICAL_SECTION();
+    return result;
 }
 
 static void
@@ -1303,15 +1317,8 @@ join_append_lineterminator(WriterObj *self)
     return 1;
 }
 
-PyDoc_STRVAR(csv_writerow_doc,
-"writerow($self, row, /)\n"
-"--\n\n"
-"Construct and write a CSV record from an iterable of fields.\n"
-"\n"
-"Non-string elements will be converted to string.");
-
 static PyObject *
-csv_writerow(PyObject *op, PyObject *seq)
+csv_writerow_lock_held(PyObject *op, PyObject *seq)
 {
     WriterObj *self = _WriterObj_CAST(op);
     DialectObj *dialect = self->dialect;
@@ -1411,6 +1418,23 @@ csv_writerow(PyObject *op, PyObject *seq)
     }
     result = PyObject_CallOneArg(self->write, line);
     Py_DECREF(line);
+    return result;
+}
+
+PyDoc_STRVAR(csv_writerow_doc,
+"writerow($self, row, /)\n"
+"--\n\n"
+"Construct and write a CSV record from an iterable of fields.\n"
+"\n"
+"Non-string elements will be converted to string.");
+
+static PyObject *
+csv_writerow(PyObject *op, PyObject *seq)
+{
+    PyObject *result;
+    Py_BEGIN_CRITICAL_SECTION(op);
+    result = csv_writerow_lock_held(op, seq);
+    Py_END_CRITICAL_SECTION();
     return result;
 }
 
@@ -1809,6 +1833,7 @@ csv_exec(PyObject *module) {
 }
 
 static PyModuleDef_Slot csv_slots[] = {
+    _Py_ABI_SLOT,
     {Py_mod_exec, csv_exec},
     {Py_mod_multiple_interpreters, Py_MOD_PER_INTERPRETER_GIL_SUPPORTED},
     {Py_mod_gil, Py_MOD_GIL_NOT_USED},

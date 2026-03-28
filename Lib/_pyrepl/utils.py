@@ -19,9 +19,9 @@ from .trace import trace
 ANSI_ESCAPE_SEQUENCE = re.compile(r"\x1b\[[ -@]*[A-~]")
 ZERO_WIDTH_BRACKET = re.compile(r"\x01.*?\x02")
 ZERO_WIDTH_TRANS = str.maketrans({"\x01": "", "\x02": ""})
-IDENTIFIERS_AFTER = {"def", "class"}
-KEYWORD_CONSTANTS = {"True", "False", "None"}
-BUILTINS = {str(name) for name in dir(builtins) if not name.startswith('_')}
+IDENTIFIERS_AFTER = frozenset({"def", "class"})
+KEYWORD_CONSTANTS = frozenset({"True", "False", "None"})
+BUILTINS = frozenset({str(name) for name in dir(builtins) if not name.startswith('_')})
 
 
 def THEME(**kwargs):
@@ -226,8 +226,8 @@ def gen_colors_from_token_stream(
                     yield ColorSpan(span, "builtin")
 
 
-keyword_first_sets_match = {"False", "None", "True", "await", "lambda", "not"}
-keyword_first_sets_case = {"False", "None", "True"}
+keyword_first_sets_match = frozenset({"False", "None", "True", "await", "lambda", "not"})
+keyword_first_sets_case = frozenset({"False", "None", "True"})
 
 
 def is_soft_keyword_used(*tokens: TI | None) -> bool:
@@ -276,6 +276,12 @@ def is_soft_keyword_used(*tokens: TI | None) -> bool:
             TI(T.NAME, string=s)
         ):
             return not keyword.iskeyword(s)
+        case (
+            None | TI(T.NEWLINE) | TI(T.INDENT) | TI(T.DEDENT) | TI(string=":" | ";"),
+            TI(string="lazy"),
+            TI(string="import") | TI(string="from")
+        ):
+            return True
         case _:
             return False
 

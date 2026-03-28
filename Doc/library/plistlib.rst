@@ -4,10 +4,6 @@
 .. module:: plistlib
    :synopsis: Generate and parse Apple plist files.
 
-.. moduleauthor:: Jack Jansen
-.. sectionauthor:: Georg Brandl <georg@python.org>
-.. (harvested from docstrings in the original file)
-
 **Source code:** :source:`Lib/plistlib.py`
 
 .. index::
@@ -184,7 +180,7 @@ Examples
 
 Generating a plist::
 
-    import datetime
+    import datetime as dt
     import plistlib
 
     pl = dict(
@@ -200,7 +196,7 @@ Generating a plist::
         ),
         someData = b"<binary gunk>",
         someMoreData = b"<lots of binary gunk>" * 10,
-        aDate = datetime.datetime.now()
+        aDate = dt.datetime.now()
     )
     print(plistlib.dumps(pl).decode())
 
