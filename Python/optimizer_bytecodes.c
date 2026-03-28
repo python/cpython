@@ -167,7 +167,8 @@ dummy_func(void) {
     op(_STORE_SUBSCR_DICT, (value, dict_st, sub -- st)) {
         PyObject *sub_o = sym_get_const(ctx, sub);
         if (sub_o != NULL) {
-            if (PyUnicode_CheckExact(sub_o) || PyLong_CheckExact(sub_o) || PyBytes_CheckExact(sub_o)) {
+            if (PyUnicode_CheckExact(sub_o) || PyLong_CheckExact(sub_o) || PyBytes_CheckExact(sub_o)
+                || PyFloat_CheckExact(sub_o) || PyComplex_CheckExact(sub_o)) {
                 // PyObject_Hash can't fail on these types
                 ADD_OP(_STORE_SUBSCR_DICT_KNOWN_HASH, 0, PyObject_Hash(sub_o));
             }
@@ -506,7 +507,8 @@ dummy_func(void) {
     op(_BINARY_OP_SUBSCR_DICT, (dict_st, sub_st -- res, ds, ss)) {
         PyObject *sub = sym_get_const(ctx, sub_st);
         if (sub != NULL) {
-            if (PyUnicode_CheckExact(sub) || PyLong_CheckExact(sub) || PyBytes_CheckExact(sub)) {
+            if (PyUnicode_CheckExact(sub) || PyLong_CheckExact(sub) || PyBytes_CheckExact(sub)
+                    || PyFloat_CheckExact(sub) || PyComplex_CheckExact(sub)) {
                 // PyObject_Hash can't fail on these types
                 ADD_OP(_BINARY_OP_SUBSCR_DICT_KNOWN_HASH, 0, PyObject_Hash(sub));
             }
