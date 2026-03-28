@@ -1316,6 +1316,22 @@
             break;
         }
 
+        case _BINARY_OP_SUBSCR_DICT_KNOWN_HASH: {
+            JitOptRef res;
+            JitOptRef ds;
+            JitOptRef ss;
+            res = sym_new_not_null(ctx);
+            ds = sym_new_not_null(ctx);
+            ss = sym_new_not_null(ctx);
+            CHECK_STACK_BOUNDS(1);
+            stack_pointer[-2] = res;
+            stack_pointer[-1] = ds;
+            stack_pointer[0] = ss;
+            stack_pointer += 1;
+            ASSERT_WITHIN_STACK_BOUNDS(__FILE__, __LINE__);
+            break;
+        }
+
         case _BINARY_OP_SUBSCR_DICT: {
             JitOptRef sub_st;
             JitOptRef dict_st;
@@ -1324,6 +1340,22 @@
             JitOptRef ss;
             sub_st = stack_pointer[-1];
             dict_st = stack_pointer[-2];
+            PyObject *sub = sym_get_const(ctx, sub_st);
+            if (sub != NULL) {
+                if (PyUnicode_CheckExact(sub) || PyLong_CheckExact(sub) || PyBytes_CheckExact(sub)) {
+                    ADD_OP(_BINARY_OP_SUBSCR_DICT_KNOWN_HASH, 0, PyObject_Hash(sub));
+                } else if (PyTuple_CheckExact(sub)) {
+                    Py_hash_t hash = ((PyTupleObject *)sub)->ob_hash;
+                    if (hash != -1) {
+                        ADD_OP(_BINARY_OP_SUBSCR_DICT_KNOWN_HASH, 0, hash);
+                    }
+                } else if (Py_TYPE(sub)->tp_hash == PyBaseObject_Type.tp_hash) {
+                    Py_hash_t hash = PyObject_Hash(sub);
+                    ADD_OP(_BINARY_OP_SUBSCR_DICT_KNOWN_HASH, 0, hash);
+                    PyType_Watch(TYPE_WATCHER_ID, Py_TYPE(sub));
+                    _Py_BloomFilter_Add(dependencies, Py_TYPE(sub));
+                }
+            }
             res = sym_new_not_null(ctx);
             ds = dict_st;
             ss = sub_st;
@@ -1471,13 +1503,42 @@
         }
 
         case _STORE_SUBSCR_DICT: {
+            JitOptRef sub;
             JitOptRef dict_st;
             JitOptRef value;
             JitOptRef st;
+            sub = stack_pointer[-1];
             dict_st = stack_pointer[-2];
             value = stack_pointer[-3];
+            PyObject *sub_o = sym_get_const(ctx, sub);
+            if (sub_o != NULL) {
+                if (PyUnicode_CheckExact(sub_o) || PyLong_CheckExact(sub_o) || PyBytes_CheckExact(sub_o)) {
+                    ADD_OP(_STORE_SUBSCR_DICT_KNOWN_HASH, 0, PyObject_Hash(sub_o));
+                } else if (PyTuple_CheckExact(sub_o)) {
+                    Py_hash_t hash = ((PyTupleObject *)sub_o)->ob_hash;
+                    if (hash != -1) {
+                        ADD_OP(_STORE_SUBSCR_DICT_KNOWN_HASH, 0, hash);
+                    }
+                } else if (Py_TYPE(sub_o)->tp_hash == PyObject_GenericHash) {
+                    Py_hash_t hash = PyObject_Hash(sub_o);
+                    ADD_OP(_STORE_SUBSCR_DICT_KNOWN_HASH, 0, hash);
+                    PyTypeObject *type = Py_TYPE(sub_o);
+                    PyType_Watch(TYPE_WATCHER_ID, (PyObject *)type);
+                    _Py_BloomFilter_Add(dependencies, type);
+                }
+            }
             (void)value;
             st = dict_st;
+            CHECK_STACK_BOUNDS(-2);
+            stack_pointer[-3] = st;
+            stack_pointer += -2;
+            ASSERT_WITHIN_STACK_BOUNDS(__FILE__, __LINE__);
+            break;
+        }
+
+        case _STORE_SUBSCR_DICT_KNOWN_HASH: {
+            JitOptRef st;
+            st = sym_new_not_null(ctx);
             CHECK_STACK_BOUNDS(-2);
             stack_pointer[-3] = st;
             stack_pointer += -2;

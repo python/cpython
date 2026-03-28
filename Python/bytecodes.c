@@ -1175,6 +1175,26 @@ dummy_func(
         macro(BINARY_OP_SUBSCR_DICT) =
             _GUARD_NOS_ANY_DICT + unused/5 + _BINARY_OP_SUBSCR_DICT + POP_TOP + POP_TOP;
 
+        tier2 op(_BINARY_OP_SUBSCR_DICT_KNOWN_HASH, (dict_st, sub_st, hash/4 -- res, ds, ss)) {
+            PyObject *sub = PyStackRef_AsPyObjectBorrow(sub_st);
+            PyObject *dict = PyStackRef_AsPyObjectBorrow(dict_st);
+
+            assert(PyAnyDict_CheckExact(dict));
+            STAT_INC(BINARY_OP, hit);
+            PyObject *res_o;
+            int rc = _PyDict_GetItemRef_KnownHash((PyDictObject *)dict, sub, (Py_hash_t)hash, &res_o);
+            if (rc == 0) {
+                _PyErr_SetKeyError(sub);
+            }
+            if (rc <= 0) {
+                ERROR_NO_POP();
+            }
+            res = PyStackRef_FromPyObjectSteal(res_o);
+            ds = dict_st;
+            ss = sub_st;
+            INPUTS_DEAD();
+        }
+
         op(_BINARY_OP_SUBSCR_DICT, (dict_st, sub_st -- res, ds, ss)) {
             PyObject *sub = PyStackRef_AsPyObjectBorrow(sub_st);
             PyObject *dict = PyStackRef_AsPyObjectBorrow(dict_st);
@@ -1311,6 +1331,24 @@ dummy_func(
             int err = _PyDict_SetItem_Take2((PyDictObject *)dict,
                                             PyStackRef_AsPyObjectSteal(sub),
                                             PyStackRef_AsPyObjectSteal(value));
+            if (err) {
+                PyStackRef_CLOSE(dict_st);
+                ERROR_IF(1);
+            }
+            DEAD(dict_st);
+            st = dict_st;
+        }
+
+        tier2 op(_STORE_SUBSCR_DICT_KNOWN_HASH, (value, dict_st, sub, hash/4 -- st)) {
+            PyObject *dict = PyStackRef_AsPyObjectBorrow(dict_st);
+
+            assert(PyDict_CheckExact(dict));
+            STAT_INC(STORE_SUBSCR, hit);
+            int err = _PyDict_SetItem_Take2_KnownHash((PyDictObject *)dict,
+                                                PyStackRef_AsPyObjectSteal(sub),
+                                                PyStackRef_AsPyObjectSteal(value),
+                                                (Py_hash_t)hash);
+
             if (err) {
                 PyStackRef_CLOSE(dict_st);
                 ERROR_IF(1);

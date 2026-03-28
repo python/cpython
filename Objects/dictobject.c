@@ -2727,20 +2727,12 @@ _PyDict_LoadBuiltinsFromGlobals(PyObject *globals)
 
 /* Consumes references to key and value */
 static int
-setitem_take2_lock_held(PyDictObject *mp, PyObject *key, PyObject *value)
+setitem_take2_lock_held_known_hash(PyDictObject *mp, PyObject *key, PyObject *value, Py_hash_t hash)
 {
     assert(PyAnyDict_Check(mp));
     assert(can_modify_dict(mp));
     assert(key);
     assert(value);
-
-    Py_hash_t hash = _PyObject_HashFast(key);
-    if (hash == -1) {
-        dict_unhashable_type((PyObject*)mp, key);
-        Py_DECREF(key);
-        Py_DECREF(value);
-        return -1;
-    }
 
     if (mp->ma_keys == Py_EMPTY_KEYS) {
         return insert_to_emptydict(mp, key, hash, value);
@@ -2749,12 +2741,36 @@ setitem_take2_lock_held(PyDictObject *mp, PyObject *key, PyObject *value)
     return insertdict(mp, key, hash, value);
 }
 
+static int
+setitem_take2_lock_held(PyDictObject *mp, PyObject *key, PyObject *value)
+{
+    Py_hash_t hash = _PyObject_HashFast(key);
+    if (hash == -1) {
+        dict_unhashable_type((PyObject*)mp, key);
+        Py_DECREF(key);
+        Py_DECREF(value);
+        return -1;
+    }
+
+    return setitem_take2_lock_held_known_hash(mp, key, value, hash);
+}
+
 int
 _PyDict_SetItem_Take2(PyDictObject *mp, PyObject *key, PyObject *value)
 {
     int res;
     Py_BEGIN_CRITICAL_SECTION(mp);
     res = setitem_take2_lock_held(mp, key, value);
+    Py_END_CRITICAL_SECTION();
+    return res;
+}
+
+int
+_PyDict_SetItem_Take2_KnownHash(PyDictObject *mp, PyObject *key, PyObject *value, Py_hash_t hash)
+{
+    int res;
+    Py_BEGIN_CRITICAL_SECTION(mp);
+    res = setitem_take2_lock_held_known_hash(mp, key, value, hash);
     Py_END_CRITICAL_SECTION();
     return res;
 }
