@@ -517,6 +517,7 @@ invalid_expat_handler_rv(const char *name)
     if (res == NULL) {
         goto error;
     }
+    Py_DECREF(res);
     goto done;
 
 error:
