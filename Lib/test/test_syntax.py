@@ -2267,6 +2267,16 @@ SyntaxError: expected comma between import clauses
 Traceback (most recent call last):
 SyntaxError: expected comma between import clauses
 
+# Check that we don't raise the "missing comma" error for invalid import targets.
+
+>>> import a b()
+Traceback (most recent call last):
+SyntaxError: invalid syntax
+
+>>> from x import a b[c]
+Traceback (most recent call last):
+SyntaxError: invalid syntax
+
 >>> (): int
 Traceback (most recent call last):
 SyntaxError: only single target (not tuple) can be annotated
