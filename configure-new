@@ -6390,7 +6390,7 @@ function u_check_structs(    _i_m, ac_cv_header_time_altzone, ac_cv_struct_addri
 		_al_30[6] = "struct statx.stx_atomic_write_unit_max_opt"
 		for (_i_m = 1; (_i_m <= 6); _i_m = (_i_m + 1)) {
 			m = _al_30[_i_m]
-			pyconf_check_member(m, "linux/stat.h")
+			pyconf_check_member(m, "")
 		}
 	}
 	pyconf_checking("for time.h that defines altzone")
@@ -7145,7 +7145,7 @@ function u_setup_ldshared(    _tmp_split, dt, dt_major, dt_minor, dt_parts, has_
 			V["LDSHARED"] = "$(CC) -shared"
 			V["LDCXXSHARED"] = "$(CXX) -shared"
 		} else if (_str_startswith(V["ac_sys_system"], "FreeBSD")) {
-			has_elf__elf_out = pyconf_shell_export("echo \"\" | " V["CC"] " -dM -E - | grep __ELF__", "_elf_out")
+			has_elf__elf_out = pyconf_shell_export("_elf_out=$(echo \"\" | " V["CC"] " -dM -E - | grep __ELF__)", "_elf_out")
 			if (((has_elf__elf_out != "") && (has_elf__elf_out != "no"))) {
 				V["LDSHARED"] = "$(CC) -shared"
 				V["LDCXXSHARED"] = "$(CXX) -shared"
@@ -7153,7 +7153,7 @@ function u_setup_ldshared(    _tmp_split, dt, dt_major, dt_minor, dt_parts, has_
 				V["LDSHARED"] = "ld -Bshareable"
 			}
 		} else if (_str_startswith(V["ac_sys_system"], "OpenBSD")) {
-			has_elf__elf_out = pyconf_shell_export("echo \"\" | " V["CC"] " -dM -E - | grep __ELF__", "_elf_out")
+			has_elf__elf_out = pyconf_shell_export("_elf_out=$(echo \"\" | " V["CC"] " -dM -E - | grep __ELF__)", "_elf_out")
 			if (((has_elf__elf_out != "") && (has_elf__elf_out != "no"))) {
 				V["LDSHARED"] = "$(CC) -shared $(CCSHARED)"
 				V["LDCXXSHARED"] = "$(CXX) -shared $(CCSHARED)"

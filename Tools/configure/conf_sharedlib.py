@@ -103,7 +103,7 @@ def setup_ldshared(v):
             v.LDCXXSHARED = "$(CXX) -shared"
         elif v.ac_sys_system.startswith("FreeBSD"):
             has_elf = pyconf.shell(
-                f'echo "" | {v.CC} -dM -E - | grep __ELF__',
+                f'_elf_out=$(echo "" | {v.CC} -dM -E - | grep __ELF__)',
                 exports=["_elf_out"],
             )
             if has_elf._elf_out:
@@ -113,7 +113,7 @@ def setup_ldshared(v):
                 v.LDSHARED = "ld -Bshareable"
         elif v.ac_sys_system.startswith("OpenBSD"):
             has_elf = pyconf.shell(
-                f'echo "" | {v.CC} -dM -E - | grep __ELF__',
+                f'_elf_out=$(echo "" | {v.CC} -dM -E - | grep __ELF__)',
                 exports=["_elf_out"],
             )
             if has_elf._elf_out:
