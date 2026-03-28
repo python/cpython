@@ -276,6 +276,52 @@ class ParseTest(unittest.TestCase):
         self.assertEqual(expat.ErrorString(cm.exception.code),
                           expat.errors.XML_ERROR_FINISHED)
 
+    @support.subTests("encoding", ("utf-8", "utf-16"))
+    def test_parse_reentrancy_with_encoding(self, encoding):
+        # See https://github.com/python/cpython/issues/146169.
+        parser = expat.ParserCreate(encoding=encoding)
+
+        CharacterDataHandler = lambda data: parser.Parse(data, False)
+        CharacterDataHandler = mock.Mock(wraps=CharacterDataHandler)
+        def StartElementHandler(name, attrs):
+            parser.CharacterDataHandler = CharacterDataHandler
+        parser.StartElementHandler = StartElementHandler
+
+        payload = "<a>x".encode(encoding)
+        msg = re.escape("cannot call Parse() from within a handler")
+        with self.assertRaisesRegex(RuntimeError, msg):
+            for i in range(len(payload)):
+                parser.Parse(payload[i:i+1], i == len(payload) - 1)
+        CharacterDataHandler.assert_called_once_with("x")
+
+    @support.subTests("encoding", ("utf-8", "utf-16"))
+    def test_parse_reentrancy_allowed_for_external_parser(self, encoding):
+        parser = expat.ParserCreate(encoding=encoding)
+        subparser = parser.ExternalEntityParserCreate(None, encoding)
+        payload_extstr = '<!ENTITY ext SYSTEM "entity.file">'
+
+        def ExternalEntityRefHandler(*args):
+            subparser.Parse(payload_extstr, True)
+            return 1  # return an integer to indicate that parsing continues
+        ExternalEntityRefHandler = mock.Mock(wraps=ExternalEntityRefHandler)
+
+        def StartElementHandler(*args):
+            parser.ExternalEntityRefHandler = ExternalEntityRefHandler
+        parser.StartElementHandler = StartElementHandler
+
+        payload = f"""\
+<?xml version="1.0" standalone="no"?>
+<!DOCTYPE quotations SYSTEM "quotations.dtd" [{payload_extstr}]>
+<root>&ext;</root>
+""".encode(encoding)
+
+        # Check that external parsers be called from parent's handlers.
+        for i in range(len(payload)):
+            parser.Parse(payload[i:i+1], i == len(payload) - 1)
+        external_ref_args = ('ext', None, 'entity.file', None)
+        ExternalEntityRefHandler.assert_called_once_with(*external_ref_args)
+
+
 class NamespaceSeparatorTest(unittest.TestCase):
     def test_legal(self):
         # Tests that make sure we get errors when the namespace_separator value

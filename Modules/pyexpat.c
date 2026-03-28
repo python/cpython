@@ -863,6 +863,12 @@ pyexpat_xmlparser_Parse_impl(xmlparseobject *self, PyTypeObject *cls,
     int rc;
     pyexpat_state *state = PyType_GetModuleState(cls);
 
+    if (self->in_callback) {
+        PyErr_SetString(PyExc_RuntimeError,
+                        "cannot call Parse() from within a handler");
+        return NULL;
+    }
+
     if (PyUnicode_Check(data)) {
         view.buf = NULL;
         s = PyUnicode_AsUTF8AndSize(data, &slen);
