@@ -166,7 +166,7 @@ jobs:
           - false
           - true
         interpreter:
-          - regular
+          - switch-case
         exclude:
           # Skip Win32 on free-threaded builds
           - { arch: Win32, free-threading: true }
