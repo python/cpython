@@ -377,6 +377,7 @@ class TestSysConfig(unittest.TestCase):
             'i686': 'x86',
             'aarch64': 'arm64_v8a',
             'armv7l': 'armeabi_v7a',
+            'armv8l': 'armeabi_v7a',
         }.items():
             with self.subTest(machine):
                 self._set_uname(('Linux', 'localhost', '3.18.91+',
@@ -589,6 +590,7 @@ class TestSysConfig(unittest.TestCase):
             "i686": "i686-linux-android",
             "aarch64": "aarch64-linux-android",
             "armv7l": "arm-linux-androideabi",
+            "armv8l": "arm-linux-androideabi",
         }[machine]
         self.assertTrue(suffix.endswith(f"-{expected_triplet}.so"),
                         f"{machine=}, {suffix=}")
