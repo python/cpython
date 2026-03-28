@@ -503,6 +503,28 @@ my_StartElementHandler(void *userData,
     }
 }
 
+static inline void
+invalid_expat_handler_rv(const char *name)
+{
+    PyObject *exc = PyErr_GetRaisedException();
+    assert(exc != NULL);
+    PyObject *note = PyUnicode_FromFormat("invalid '%s' event handler return value", name);
+    if (note == NULL) {
+        goto error;
+    }
+    PyObject *res = PyObject_CallMethodOneArg(exc, &_Py_ID(add_note), note);
+    Py_DECREF(note);
+    if (res == NULL) {
+        goto error;
+    }
+    goto done;
+
+error:
+    PyErr_Clear();
+done:
+    _PyErr_ChainExceptions1(exc);
+}
+
 #define RC_HANDLER(RETURN_TYPE, NAME, PARAMS,       \
                    INIT, PARSE_FORMAT, CONVERSION,  \
                    RETURN_VARIABLE, GETUSERDATA)    \
@@ -536,6 +558,10 @@ my_ ## NAME ## Handler PARAMS {                     \
     }                                               \
     CONVERSION                                      \
     Py_DECREF(rv);                                  \
+    if (PyErr_Occurred()) {                         \
+        invalid_expat_handler_rv(#NAME);            \
+        return RETURN_VARIABLE;                     \
+    }                                               \
     return RETURN_VARIABLE;                         \
 }
 
