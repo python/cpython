@@ -165,13 +165,19 @@ jobs:
         free-threading:
           - false
           - true
+        interpreter:
+          - regular
         exclude:
           # Skip Win32 on free-threaded builds
           - { arch: Win32, free-threading: true }
+        include:
+          - { arch: x64, free-threading: false, interpreter: tail-call }
+          - { arch: x64, free-threading: true,  interpreter: tail-call }
     uses: ./.github/workflows/reusable-windows.yml
     with:
       arch: ${{ matrix.arch }}
       free-threading: ${{ matrix.free-threading }}
+      interpreter: ${{ matrix.interpreter }}
 
   build-windows-msi:
     # ${{ '' } is a hack to nest jobs under the same sidebar category.
