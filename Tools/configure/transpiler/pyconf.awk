@@ -1802,6 +1802,11 @@ function _pyconf_process_config_files(    i, inf, outf, outdir, saved_abs_srcdir
                 inf = outf ".in"
                 if (inf == "")
                         continue
+                # Skip if template does not exist (mirrors pyconf.py behaviour)
+                if (system("test -f " _shell_quote(inf)) != 0) {
+                        pyconf_warn("config file template not found: " inf)
+                        continue
+                }
                 # Compute per-file abs_srcdir/abs_builddir like autoconf does:
                 # ac_abs_srcdir = abs_top_srcdir + dir-suffix-of-outfile
                 outdir = ""
@@ -1820,7 +1825,8 @@ function _pyconf_process_config_files(    i, inf, outf, outdir, saved_abs_srcdir
                 SUBST["abs_builddir"] = saved_abs_builddir
         }
         for (i = 1; i <= _pyconf_config_file_x_count; i++) {
-                system("chmod +x " _shell_quote(CONFIG_FILES_X[i]))
+                if (system("test -f " _shell_quote(CONFIG_FILES_X[i])) == 0)
+                        system("chmod +x " _shell_quote(CONFIG_FILES_X[i]))
         }
 }
 
