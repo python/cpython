@@ -282,7 +282,8 @@ _Py_uop_sym_is_safe_const(JitOptContext *ctx, JitOptRef sym)
     return (typ == &PyUnicode_Type) ||
            (typ == &PyFloat_Type) ||
            (typ == &_PyNone_Type) ||
-           (typ == &PyBool_Type);
+           (typ == &PyBool_Type) ||
+           (typ == &PyFrozenDict_Type);
 }
 
 void
@@ -1684,6 +1685,9 @@ static JitOptSymbol *
 make_bottom(JitOptContext *ctx)
 {
     JitOptSymbol *sym = sym_new(ctx);
+    if (sym == NULL) {
+        return out_of_space(ctx);
+    }
     sym->tag = JIT_SYM_BOTTOM_TAG;
     return sym;
 }

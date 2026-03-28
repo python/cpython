@@ -4555,13 +4555,12 @@ class AbstractPickleTests:
                     self.assertIn(expected, str(e))
 
     def fast_save_enter(self, create_data, minprotocol=0):
-        # gh-146059: Check that fast_save() is called when
+        # gh-146059: Check that fast_save_leave() is called when
         # fast_save_enter() is called.
         if not hasattr(self, "pickler"):
             self.skipTest("need Pickler class")
 
         data = [create_data(i) for i in range(FAST_NESTING_LIMIT * 2)]
-        data = {"key": data}
         protocols = range(minprotocol, pickle.HIGHEST_PROTOCOL + 1)
         for proto in protocols:
             with self.subTest(proto=proto):
@@ -4595,18 +4594,17 @@ class AbstractPickleTests:
     def test_fast_save_enter_dict(self):
         self.fast_save_enter(lambda i: {"key": i})
 
-    def deep_nested_struct(self, seed, create_nested,
+    def deep_nested_struct(self, create_nested,
                            minprotocol=0, compare_equal=True,
                            depth=FAST_NESTING_LIMIT * 2):
-        # gh-146059: Check that fast_save() is called when
+        # gh-146059: Check that fast_save_leave() is called when
         # fast_save_enter() is called.
         if not hasattr(self, "pickler"):
             self.skipTest("need Pickler class")
 
-        data = seed
+        data = None
         for i in range(depth):
             data = create_nested(data)
-        data = {"key": data}
         protocols = range(minprotocol, pickle.HIGHEST_PROTOCOL + 1)
         for proto in protocols:
             with self.subTest(proto=proto):
@@ -4622,29 +4620,27 @@ class AbstractPickleTests:
                     self.assertEqual(data2, data)
 
     def test_deep_nested_struct_tuple(self):
-        self.deep_nested_struct((1,), lambda data: (data,))
+        self.deep_nested_struct(lambda data: (data,))
 
     def test_deep_nested_struct_list(self):
-        self.deep_nested_struct([1], lambda data: [data])
+        self.deep_nested_struct(lambda data: [data])
 
     def test_deep_nested_struct_frozenset(self):
-        self.deep_nested_struct(frozenset((1,)),
-                                lambda data: frozenset((1, data)))
+        self.deep_nested_struct(lambda data: frozenset((1, data)))
 
     def test_deep_nested_struct_set(self):
-        self.deep_nested_struct({1}, lambda data: {K(data)},
+        self.deep_nested_struct(lambda data: {K(data)},
                                 depth=FAST_NESTING_LIMIT+1,
                                 compare_equal=False)
 
     def test_deep_nested_struct_frozendict(self):
         if self.py_version < (3, 15):
             self.skipTest('need frozendict')
-        self.deep_nested_struct(frozendict(x=1),
-                                lambda data: frozendict(x=data),
+        self.deep_nested_struct(lambda data: frozendict(x=data),
                                 minprotocol=2)
 
     def test_deep_nested_struct_dict(self):
-        self.deep_nested_struct({'x': 1}, lambda data: {'x': data})
+        self.deep_nested_struct(lambda data: {'x': data})
 
 
 class BigmemPickleTests:
