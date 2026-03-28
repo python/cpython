@@ -1216,6 +1216,8 @@ get_native_fmtchar(char *result, const char *fmt)
     case 'f': size = sizeof(float); break;
     case 'd': size = sizeof(double); break;
     case 'e': size = sizeof(float) / 2; break;
+    case 'F': size = 2*sizeof(float); break;
+    case 'D': size = 2*sizeof(double); break;
     case '?': size = sizeof(_Bool); break;
     case 'P': size = sizeof(void *); break;
     }
@@ -1260,6 +1262,8 @@ get_native_fmtstr(const char *fmt)
     case 'f': RETURN("f");
     case 'd': RETURN("d");
     case 'e': RETURN("e");
+    case 'F': RETURN("F");
+    case 'D': RETURN("D");
     case '?': RETURN("?");
     case 'P': RETURN("P");
     }
@@ -1785,7 +1789,7 @@ unpack_single(PyMemoryViewObject *self, const char *ptr, const char *fmt)
     long long lld;
     long ld;
     Py_ssize_t zd;
-    double d;
+    double d[2];
     unsigned char uc;
     void *p;
 
@@ -1823,9 +1827,20 @@ unpack_single(PyMemoryViewObject *self, const char *ptr, const char *fmt)
     case 'N': UNPACK_SINGLE(zu, ptr, size_t); goto convert_zu;
 
     /* floats */
-    case 'f': UNPACK_SINGLE(d, ptr, float); goto convert_double;
-    case 'd': UNPACK_SINGLE(d, ptr, double); goto convert_double;
-    case 'e': d = PyFloat_Unpack2(ptr, endian); goto convert_double;
+    case 'f': UNPACK_SINGLE(d[0], ptr, float); goto convert_double;
+    case 'd': UNPACK_SINGLE(d[0], ptr, double); goto convert_double;
+    case 'e': d[0] = PyFloat_Unpack2(ptr, endian); goto convert_double;
+
+    /* complexes */
+    case 'F':
+        d[0] = PyFloat_Unpack4(ptr, endian);
+        d[1] = PyFloat_Unpack4(ptr + sizeof(float), endian);
+        goto convert_double_complex;
+
+    case 'D':
+        d[0] = PyFloat_Unpack8(ptr, endian);
+        d[1] = PyFloat_Unpack8(ptr + sizeof(double), endian);
+        goto convert_double_complex;
 
     /* bytes object */
     case 'c': goto convert_bytes;
@@ -1853,7 +1868,9 @@ convert_zd:
 convert_zu:
     return PyLong_FromSize_t(zu);
 convert_double:
-    return PyFloat_FromDouble(d);
+    return PyFloat_FromDouble(d[0]);
+convert_double_complex:
+    return PyComplex_FromDoubles(d[0], d[1]);
 convert_bool:
     return PyBool_FromLong(ld);
 convert_bytes:
@@ -1885,6 +1902,7 @@ pack_single(PyMemoryViewObject *self, char *ptr, PyObject *item, const char *fmt
     long ld;
     Py_ssize_t zd;
     double d;
+    Py_complex c;
     void *p;
 
 #if PY_LITTLE_ENDIAN
@@ -1983,6 +2001,25 @@ pack_single(PyMemoryViewObject *self, char *ptr, PyObject *item, const char *fmt
             if (PyFloat_Pack2(d, ptr, endian) < 0) {
                 goto err_occurred;
             }
+        }
+        break;
+
+    /* complexes */
+    case 'F': case 'D':
+        c = PyComplex_AsCComplex(item);
+        if (c.real == -1.0 && PyErr_Occurred()) {
+            goto err_occurred;
+        }
+        CHECK_RELEASED_INT_AGAIN(self);
+        if (fmt[0] == 'D') {
+            double x[2] = {c.real, c.imag};
+
+            memcpy(ptr, &x, sizeof(x));
+        }
+        else {
+            float x[2] = {(float)c.real, (float)c.imag};
+
+            memcpy(ptr, &x, sizeof(x));
         }
         break;
 
@@ -3021,6 +3058,24 @@ unpack_cmp(const char *p, const char *q, char fmt,
         double u = PyFloat_Unpack2(p, endian);
         double v = PyFloat_Unpack2(q, endian);
         return (u == v);
+    }
+
+    /* complexes */
+    case 'F':
+    {
+         float x[2], y[2];
+
+         memcpy(&x, p, sizeof(x));
+         memcpy(&y, q, sizeof(y));
+         return (x[0] == y[0]) && (x[1] == y[1]);
+    }
+    case 'D':
+    {
+         double x[2], y[2];
+
+         memcpy(&x, p, sizeof(x));
+         memcpy(&y, q, sizeof(y));
+         return (x[0] == y[0]) && (x[1] == y[1]);
     }
 
     /* bytes object */

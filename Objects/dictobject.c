@@ -968,7 +968,9 @@ clone_combined_dict_keys(PyDictObject *orig)
     assert(orig->ma_keys != Py_EMPTY_KEYS);
     assert(orig->ma_keys->dk_refcnt == 1);
 
-    ASSERT_DICT_LOCKED(orig);
+    if (!PyFrozenDict_Check(orig)) {
+        ASSERT_DICT_LOCKED(orig);
+    }
 
     size_t keys_size = _PyDict_KeysSize(orig->ma_keys);
     PyDictKeysObject *keys = PyMem_Malloc(keys_size);
@@ -4322,7 +4324,10 @@ copy_lock_held(PyObject *o, int as_frozendict)
     PyObject *copy;
     PyDictObject *mp;
 
-    ASSERT_DICT_LOCKED(o);
+    // frozendict is immutable and so doesn't need critical section
+    if (!PyFrozenDict_Check(o)) {
+        ASSERT_DICT_LOCKED(o);
+    }
 
     mp = (PyDictObject *)o;
     if (mp->ma_used == 0) {
@@ -4445,9 +4450,14 @@ anydict_copy(PyObject *o)
     assert(PyAnyDict_Check(o));
 
     PyObject *res;
-    Py_BEGIN_CRITICAL_SECTION(o);
-    res = copy_lock_held(o, PyFrozenDict_Check(o));
-    Py_END_CRITICAL_SECTION();
+    if (PyFrozenDict_Check(o)) {
+        res = copy_lock_held(o, 1);
+    }
+    else {
+        Py_BEGIN_CRITICAL_SECTION(o);
+        res = copy_lock_held(o, 0);
+        Py_END_CRITICAL_SECTION();
+    }
     return res;
 }
 
@@ -4459,9 +4469,14 @@ _PyDict_CopyAsDict(PyObject *o)
     assert(PyAnyDict_Check(o));
 
     PyObject *res;
-    Py_BEGIN_CRITICAL_SECTION(o);
-    res = copy_lock_held(o, 0);
-    Py_END_CRITICAL_SECTION();
+    if (PyFrozenDict_Check(o)) {
+        res = copy_lock_held(o, 0);
+    }
+    else {
+        Py_BEGIN_CRITICAL_SECTION(o);
+        res = copy_lock_held(o, 0);
+        Py_END_CRITICAL_SECTION();
+    }
     return res;
 }
 
@@ -5439,7 +5454,7 @@ dictiter_new(PyDictObject *dict, PyTypeObject *itertype)
     }
     if (itertype == &PyDictIterItem_Type ||
         itertype == &PyDictRevIterItem_Type) {
-        di->di_result = PyTuple_Pack(2, Py_None, Py_None);
+        di->di_result = _PyTuple_FromPairSteal(Py_None, Py_None);
         if (di->di_result == NULL) {
             Py_DECREF(di);
             return NULL;
@@ -6005,14 +6020,7 @@ dictiter_iternextitem(PyObject *self)
             _PyTuple_Recycle(result);
         }
         else {
-            result = PyTuple_New(2);
-            if (result == NULL) {
-                Py_DECREF(key);
-                Py_DECREF(value);
-                return NULL;
-            }
-            PyTuple_SET_ITEM(result, 0, key);
-            PyTuple_SET_ITEM(result, 1, value);
+            result = _PyTuple_FromPairSteal(key, value);
         }
         return result;
     }
@@ -6131,12 +6139,7 @@ dictreviter_iter_lock_held(PyDictObject *d, PyObject *self)
             _PyTuple_Recycle(result);
         }
         else {
-            result = PyTuple_New(2);
-            if (result == NULL) {
-                return NULL;
-            }
-            PyTuple_SET_ITEM(result, 0, Py_NewRef(key));
-            PyTuple_SET_ITEM(result, 1, Py_NewRef(value));
+            result = _PyTuple_FromPair(key, value);
         }
         return result;
     }
@@ -6629,18 +6632,22 @@ dictitems_xor_lock_held(PyObject *d1, PyObject *d2)
         else {
             Py_INCREF(val1);
             to_delete = PyObject_RichCompareBool(val1, val2, Py_EQ);
+            Py_CLEAR(val1);
             if (to_delete < 0) {
                 goto error;
             }
         }
 
         if (to_delete) {
+            Py_CLEAR(val2);
             if (_PyDict_DelItem_KnownHash(temp_dict, key, hash) < 0) {
                 goto error;
             }
+            Py_CLEAR(key);
         }
         else {
-            PyObject *pair = PyTuple_Pack(2, key, val2);
+            PyObject *pair = _PyTuple_FromPairSteal(key, val2);
+            key = val2 = NULL;
             if (pair == NULL) {
                 goto error;
             }
@@ -6650,11 +6657,7 @@ dictitems_xor_lock_held(PyObject *d1, PyObject *d2)
             }
             Py_DECREF(pair);
         }
-        Py_DECREF(key);
-        Py_XDECREF(val1);
-        Py_DECREF(val2);
     }
-    key = val1 = val2 = NULL;
 
     PyObject *remaining_pairs = PyObject_CallMethodNoArgs(
             temp_dict, &_Py_ID(items));

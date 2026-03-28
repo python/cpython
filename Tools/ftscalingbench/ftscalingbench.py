@@ -258,11 +258,41 @@ def super_call():
         obj.method()
 
 
+class MyClassMethod:
+    @classmethod
+    def my_classmethod(cls):
+        return cls
+
+    @staticmethod
+    def my_staticmethod():
+        pass
+
+@register_benchmark
+def classmethod_call():
+    obj = MyClassMethod()
+    for _ in range(1000 * WORK_SCALE):
+        obj.my_classmethod()
+
+@register_benchmark
+def staticmethod_call():
+    obj = MyClassMethod()
+    for _ in range(1000 * WORK_SCALE):
+        obj.my_staticmethod()
+
 @register_benchmark
 def deepcopy():
     x = {'list': [1, 2], 'tuple': (1, None)}
     for i in range(40 * WORK_SCALE):
         copy.deepcopy(x)
+
+@register_benchmark
+def setattr_non_interned():
+    prefix = "prefix"
+    obj = MyObject()
+    for _ in range(1000 * WORK_SCALE):
+        setattr(obj, f"{prefix}_a", None)
+        setattr(obj, f"{prefix}_b", None)
+        setattr(obj, f"{prefix}_c", None)
 
 
 def bench_one_thread(func):
