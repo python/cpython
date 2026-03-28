@@ -2551,7 +2551,10 @@ def check_member(member: str, includes: list[str] | None = None) -> bool:
     if len(parts) != 2:
         return False
     struct_name, field = parts
-    inc_lines = "".join(f"#include <{h}>\n" for h in (includes or []))
+    if includes is not None:
+        inc_lines = "".join(f"#include <{h}>\n" for h in includes)
+    else:
+        inc_lines = _ac_includes_default()
     src = (
         f"{inc_lines}\n"
         f"int main(void) {{\n"

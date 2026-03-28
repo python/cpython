@@ -586,7 +586,7 @@ def check_structs(v):
             "struct statx.stx_dio_read_offset_align",
             "struct statx.stx_atomic_write_unit_max_opt",
         ):
-            pyconf.check_member(m, includes=["linux/stat.h"])
+            pyconf.check_member(m)
 
     # altzone in time.h
     pyconf.checking("for time.h that defines altzone")
