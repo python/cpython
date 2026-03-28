@@ -68,7 +68,7 @@ def setup_wasm_flags(v):
         _setup_wasi_flags(v)
 
     # Force/suppress ac_cv_func_dlopen for WASM dynamic linking
-    if v.enable_wasm_dynamic_linking is True:
+    if v.enable_wasm_dynamic_linking == "yes":
         v.ac_cv_func_dlopen = True
     elif v.enable_wasm_dynamic_linking is False:
         v.ac_cv_func_dlopen = False
@@ -95,7 +95,10 @@ def setup_wasm_flags(v):
 
 def _setup_emscripten_flags(v):
     """Set Emscripten-specific flags."""
-    v.wasm_debug = v.Py_DEBUG is True
+    # configure.ac: AS_VAR_IF([Py_DEBUG], [yes], [wasm_debug=yes], [wasm_debug=no])
+    # In autoconf Py_DEBUG is "true" not "yes", so this is currently always
+    # false.  We translate the comparison literally.
+    v.wasm_debug = v.Py_DEBUG == "yes"
 
     v.LINKFORSHARED += " -sALLOW_MEMORY_GROWTH -sINITIAL_MEMORY=20971520"
     v.LDFLAGS_NODIST += " -sWASM_BIGINT"
@@ -113,10 +116,10 @@ def _setup_emscripten_flags(v):
     v.LINKFORSHARED += " -sSTACK_SIZE=5MB"
     v.LINKFORSHARED += " -sTEXTDECODER=2"
 
-    if v.enable_wasm_dynamic_linking is True:
+    if v.enable_wasm_dynamic_linking == "yes":
         v.LINKFORSHARED += " -sMAIN_MODULE"
 
-    if v.enable_wasm_pthreads is True:
+    if v.enable_wasm_pthreads == "yes":
         v.CFLAGS_NODIST += " -pthread"
         v.LDFLAGS_NODIST += " -sUSE_PTHREADS"
         v.LINKFORSHARED += " -sPROXY_TO_PTHREAD"
@@ -150,7 +153,7 @@ def _setup_wasi_flags(v):
     )
     v.LIBS += " -lwasi-emulated-signal -lwasi-emulated-getpid -lwasi-emulated-process-clocks"
 
-    if v.enable_wasm_pthreads is True:
+    if v.enable_wasm_pthreads == "yes":
         v.CFLAGS_NODIST += " -target wasm32-wasi-threads -pthread"
         v.LDFLAGS_NODIST += (
             " -target wasm32-wasi-threads -pthread"

@@ -125,6 +125,27 @@ function _pyconf_print_cached(val) {
         printf "%s (cached)\n", val
 }
 
+# AC_CACHE_CHECK — check CACHE before running a probe.
+# Returns cached value on hit (prints "(cached) value"), "" on miss.
+function pyconf_cache_check(description, cache_var) {
+        pyconf_checking(description)
+        if (cache_var in CACHE) {
+                pyconf_result("(cached) " _pyconf_format_result(CACHE[cache_var]))
+                return CACHE[cache_var]
+        }
+        return ""
+}
+
+function pyconf_cache_store(cache_var, value) {
+        CACHE[cache_var] = value
+}
+
+function _pyconf_format_result(val) {
+        if (val == "yes") return "yes"
+        if (val == "no") return "no"
+        return val
+}
+
 function pyconf_warn(msg) {
         printf "WARNING: %s\n", msg > "/dev/stderr"
 }
@@ -1989,8 +2010,13 @@ function pyconf_find_compiler(user_cc, user_cpp, cc, cpp, ver) {
         }
         pyconf_CPP = cpp
         # Identify compiler via --version output
+        # Detect emcc before clang — emcc's version contains "clang"
         ver = _cmd_output(cc " --version 2>/dev/null")
-        if (tolower(ver) ~ /clang/) {
+        if (pyconf_basename(cc) == "emcc" || tolower(ver) ~ /emscripten/) {
+                pyconf_ac_cv_cc_name = "emcc"
+                pyconf_ac_cv_gcc_compat = "yes"
+                pyconf_GCC = "yes"
+        } else if (tolower(ver) ~ /clang/) {
                 pyconf_ac_cv_cc_name = "clang"
                 pyconf_ac_cv_gcc_compat = "yes"
                 pyconf_GCC = "yes"

@@ -1396,6 +1396,47 @@ def result(value: Any) -> None:
 checking_fn = checking  # alias used by link_check to avoid param shadowing
 
 
+def cache_check(description: str, cache_var: str) -> Any:
+    """AC_CACHE_CHECK — check the cache before running a probe.
+
+    Prints "checking <description>..." and looks up *cache_var* in the
+    cache (which may have been pre-seeded from CONFIG_SITE).
+
+    Returns the cached value on a hit (also prints "(cached) <value>")
+    or None on a miss.  The caller is responsible for running the actual
+    probe on a miss and storing the result with
+    ``cache_store(cache_var, value)`` followed by ``result(value)``.
+
+    Typical usage::
+
+        val = pyconf.cache_check("getaddrinfo bug", "ac_cv_buggy_getaddrinfo")
+        if val is None:
+            val = <run probe>
+            pyconf.cache_store("ac_cv_buggy_getaddrinfo", val)
+            pyconf.result(val)
+    """
+    checking(description)
+    cached = cache.get(cache_var)
+    if cached is not None:
+        result(f"(cached) {_format_result(cached)}")
+        return cached
+    return None
+
+
+def cache_store(cache_var: str, value: Any) -> None:
+    """Store *value* in the cache under *cache_var*."""
+    cache[cache_var] = value
+
+
+def _format_result(value: Any) -> str:
+    """Format a cache value for display (True→'yes', False→'no')."""
+    if value is True:
+        return "yes"
+    if value is False:
+        return "no"
+    return str(value)
+
+
 def _flush_result(value: Any) -> None:
     """Emit result(value) if a checking() is pending, otherwise do nothing.
 
@@ -1763,7 +1804,14 @@ def _identify_compiler() -> None:
     except (subprocess.CalledProcessError, OSError):
         ver = ""
 
-    if "clang" in ver.lower():
+    # Detect emcc (Emscripten) before clang — emcc's --version output
+    # contains "clang" but autoconf identifies it as "emcc" via the
+    # __EMSCRIPTEN__ preprocessor macro.
+    if cc_basename == "emcc" or "emscripten" in ver.lower():
+        ac_cv_cc_name = "emcc"
+        ac_cv_gcc_compat = True
+        GCC = True  # emcc is gcc-compatible
+    elif "clang" in ver.lower():
         ac_cv_cc_name = "clang"
         ac_cv_gcc_compat = True
         GCC = True  # clang is gcc-compatible
@@ -3207,7 +3255,20 @@ def pkg_check_modules(pkg_var: str, module_spec: str) -> Any:
     Returns a SimpleNamespace with .cflags and .libs on success, None if
     pkg-config is unavailable or the module is not found.
     Sets <PKG_VAR>_CFLAGS and <PKG_VAR>_LIBS in pyconf.substs.
+
+    Like autoconf's PKG_CHECK_MODULES, if the CFLAGS/LIBS variables are
+    already set (e.g. by check_emscripten_port or the user), the pkg-config
+    query is skipped and the existing values are used.
     """
+    cflags_name = f"{pkg_var}_CFLAGS"
+    libs_name = f"{pkg_var}_LIBS"
+    # If variables are already set (by user, environment, or emscripten port),
+    # honour them without querying pkg-config — matches autoconf behaviour.
+    existing_cflags = getattr(vars, cflags_name, "")
+    existing_libs = getattr(vars, libs_name, "")
+    if existing_cflags or existing_libs:
+        ns = types.SimpleNamespace(cflags=existing_cflags, libs=existing_libs)
+        return ns
     pkg_config = shutil.which("pkg-config")
     if not pkg_config:
         return None
@@ -3224,10 +3285,10 @@ def pkg_check_modules(pkg_var: str, module_spec: str) -> Any:
         ).strip()
     except subprocess.CalledProcessError:
         return None
-    substs[f"{pkg_var}_CFLAGS"] = cflags
-    substs[f"{pkg_var}_LIBS"] = libs
-    setattr(vars, f"{pkg_var}_CFLAGS", cflags)
-    setattr(vars, f"{pkg_var}_LIBS", libs)
+    substs[cflags_name] = cflags
+    substs[libs_name] = libs
+    setattr(vars, cflags_name, cflags)
+    setattr(vars, libs_name, libs)
     ns = types.SimpleNamespace(cflags=cflags, libs=libs)
     return ns
 

@@ -356,20 +356,26 @@ def check_getaddrinfo(v):
       return 1;
     }
     """
-        pyconf.checking("getaddrinfo bug")
-        if pyconf.cross_compiling:
-            if v.ac_sys_system in ("Linux-android", "iOS"):
-                ac_cv_buggy_getaddrinfo = False
-            elif v.enable_ipv6 != "":
-                ac_cv_buggy_getaddrinfo = (
-                    "no -- configured with --(en|dis)able-ipv6"
-                )
+        ac_cv_buggy_getaddrinfo = pyconf.cache_check(
+            "getaddrinfo bug", "ac_cv_buggy_getaddrinfo"
+        )
+        if ac_cv_buggy_getaddrinfo is None:
+            if pyconf.cross_compiling:
+                if v.ac_sys_system in ("Linux-android", "iOS"):
+                    ac_cv_buggy_getaddrinfo = False
+                elif v.enable_ipv6 != "":
+                    ac_cv_buggy_getaddrinfo = (
+                        "no -- configured with --(en|dis)able-ipv6"
+                    )
+                else:
+                    ac_cv_buggy_getaddrinfo = True
             else:
-                ac_cv_buggy_getaddrinfo = True
-        else:
-            ok = pyconf.run_check(GETADDRINFO_TEST)
-            ac_cv_buggy_getaddrinfo = not ok
-        pyconf.result(ac_cv_buggy_getaddrinfo)
+                ok = pyconf.run_check(GETADDRINFO_TEST)
+                ac_cv_buggy_getaddrinfo = not ok
+            pyconf.cache_store(
+                "ac_cv_buggy_getaddrinfo", ac_cv_buggy_getaddrinfo
+            )
+            pyconf.result(ac_cv_buggy_getaddrinfo)
     else:
         ac_cv_buggy_getaddrinfo = True
 

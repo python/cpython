@@ -163,11 +163,16 @@ def detect_sqlite3(v):
     """Detect sqlite3 and handle --enable-loadable-sqlite-extensions."""
     v.have_sqlite3 = False
     v.have_supported_sqlite3 = False
-    v.LIBSQLITE3_CFLAGS = ""
-    v.LIBSQLITE3_LIBS = "-lsqlite3"
 
-    # Emscripten port check (stub — pyconf.check_emscripten_port is a no-op)
+    # Emscripten port check — must run before defaults are set so that
+    # check_emscripten_port sees empty CFLAGS/LIBS and can set them.
     pyconf.check_emscripten_port("LIBSQLITE3", "-sUSE_SQLITE3")
+
+    # Set defaults only if not already provided (by emscripten port or user).
+    if not v.LIBSQLITE3_CFLAGS:
+        v.LIBSQLITE3_CFLAGS = ""
+    if not v.LIBSQLITE3_LIBS:
+        v.LIBSQLITE3_LIBS = "-lsqlite3"
 
     # pkg-config probe
     pkg = pyconf.find_prog("pkg-config")

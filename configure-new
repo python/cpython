@@ -136,6 +136,27 @@ function _pyconf_print_cached(val) {
         printf "%s (cached)\n", val
 }
 
+# AC_CACHE_CHECK — check CACHE before running a probe.
+# Returns cached value on hit (prints "(cached) value"), "" on miss.
+function pyconf_cache_check(description, cache_var) {
+        pyconf_checking(description)
+        if (cache_var in CACHE) {
+                pyconf_result("(cached) " _pyconf_format_result(CACHE[cache_var]))
+                return CACHE[cache_var]
+        }
+        return ""
+}
+
+function pyconf_cache_store(cache_var, value) {
+        CACHE[cache_var] = value
+}
+
+function _pyconf_format_result(val) {
+        if (val == "yes") return "yes"
+        if (val == "no") return "no"
+        return val
+}
+
 function pyconf_warn(msg) {
         printf "WARNING: %s\n", msg > "/dev/stderr"
 }
@@ -2000,8 +2021,13 @@ function pyconf_find_compiler(user_cc, user_cpp, cc, cpp, ver) {
         }
         pyconf_CPP = cpp
         # Identify compiler via --version output
+        # Detect emcc before clang — emcc's version contains "clang"
         ver = _cmd_output(cc " --version 2>/dev/null")
-        if (tolower(ver) ~ /clang/) {
+        if (pyconf_basename(cc) == "emcc" || tolower(ver) ~ /emscripten/) {
+                pyconf_ac_cv_cc_name = "emcc"
+                pyconf_ac_cv_gcc_compat = "yes"
+                pyconf_GCC = "yes"
+        } else if (tolower(ver) ~ /clang/) {
                 pyconf_ac_cv_cc_name = "clang"
                 pyconf_ac_cv_gcc_compat = "yes"
                 pyconf_GCC = "yes"
@@ -2017,9 +2043,18 @@ function pyconf_find_compiler(user_cc, user_cpp, cc, cpp, ver) {
         pyconf_ac_cv_prog_cc_g = "yes"
 }
 
-function pyconf_check_emscripten_port(port, name) {
-        # Stub for emscripten port checks
-        return 0
+function pyconf_check_emscripten_port(pkg_var, emport_args,    flag, cname, lname) {
+        # Set {pkg_var}_CFLAGS and {pkg_var}_LIBS to emport_args when
+        # building with Emscripten and user hasn't provided values.
+        if (V["ac_sys_system"] != "Emscripten") return
+        flag = emport_args
+        if (substr(flag, 1, 1) != "-") flag = "-s" flag
+        cname = pkg_var "_CFLAGS"
+        lname = pkg_var "_LIBS"
+        if (V[cname] == "" && V[lname] == "") {
+                V[cname] = flag
+                V[lname] = flag
+        }
 }
 
 function pyconf_ax_c_float_words_bigendian(on_big, on_little, on_unknown, src, conftest, exe, cmd, rc, has_big, has_little, pre, post) {
@@ -2038,13 +2073,13 @@ function pyconf_ax_c_float_words_bigendian(on_big, on_little, on_unknown, src, c
         cmd = cmd V["CC"] " " V["CPPFLAGS"] " " V["CFLAGS"] " " V["LDFLAGS"] " " conftest " -o " exe " " V["LIBS"] " 2>/dev/null"
         rc = system(cmd)
         if (rc != 0) {
-                system("rm -f " conftest " " exe)
+                system("rm -f " _pyconf_tmpdir "/conftest*")
                 _pyconf_retval = "unknown"
                 return
         }
-        has_big = (system("grep -c noonsees " exe " >/dev/null 2>&1") == 0)
-        has_little = (system("grep -c seesnoon " exe " >/dev/null 2>&1") == 0)
-        system("rm -f " conftest " " exe)
+        has_big = (system("grep -c noonsees " _pyconf_tmpdir "/conftest* >/dev/null 2>&1") == 0)
+        has_little = (system("grep -c seesnoon " _pyconf_tmpdir "/conftest* >/dev/null 2>&1") == 0)
+        system("rm -f " _pyconf_tmpdir "/conftest*")
         if (has_big && !has_little)
                 _pyconf_retval = "big"
         else if (has_little && !has_big)
@@ -3190,9 +3225,13 @@ function u_detect_sqlite3(    _i_f, _n_f, check_cflags, enable_loadable_sqlite_e
 	delete _as_8
 	V["have_sqlite3"] = "no"
 	V["have_supported_sqlite3"] = "no"
-	V["LIBSQLITE3_CFLAGS"] = ""
-	V["LIBSQLITE3_LIBS"] = "-lsqlite3"
 	pyconf_check_emscripten_port("LIBSQLITE3", "-sUSE_SQLITE3")
+	if ((!((V["LIBSQLITE3_CFLAGS"] != "") && (V["LIBSQLITE3_CFLAGS"] != "no")))) {
+		V["LIBSQLITE3_CFLAGS"] = ""
+	}
+	if ((!((V["LIBSQLITE3_LIBS"] != "") && (V["LIBSQLITE3_LIBS"] != "no")))) {
+		V["LIBSQLITE3_LIBS"] = "-lsqlite3"
+	}
 	pkg = pyconf_find_prog("pkg-config")
 	if (((pkg != "") && (pkg != "no"))) {
 		delete _va15
@@ -5397,26 +5436,29 @@ function u_check_netdb_socket_funcs(    _i_f, _pyconf_cond_grp_h, f, _al_23, _al
 	pyconf_check_func("setgroups", "unistd.h" " " _pyconf_cond_grp_h, "HAVE_SETGROUPS")
 }
 
-function u_check_getaddrinfo(    GETADDRINFO_TEST, ac_cv_buggy_getaddrinfo, ac_cv_func_getaddrinfo, ok) {
+function u_check_getaddrinfo(    GETADDRINFO_TEST, ac_cv_buggy_getaddrinfo, ac_cv_func_getaddrinfo, ok, pyconf) {
 	pyconf_checking("for getaddrinfo")
 	ac_cv_func_getaddrinfo = (pyconf_link_check("", "\n    #include <sys/types.h>\n    #include <sys/socket.h>\n    #include <netdb.h>\n    #include <stdio.h>\n    \nint main(void) { getaddrinfo(NULL, NULL, NULL, NULL); return 0; }") ? "yes" : "no")
 	pyconf_result((((ac_cv_func_getaddrinfo != "") && (ac_cv_func_getaddrinfo != "no")) ? "yes" : "no"))
 	if (((ac_cv_func_getaddrinfo != "") && (ac_cv_func_getaddrinfo != "no"))) {
 		GETADDRINFO_TEST = "\n    #include <stdio.h>\n    #include <sys/types.h>\n    #include <netdb.h>\n    #include <string.h>\n    #include <sys/socket.h>\n    #include <netinet/in.h>\n\n    int main(void)\n    {\n      int passive, gaierr, inet4 = 0, inet6 = 0;\n      struct addrinfo hints, *ai, *aitop;\n      char straddr[INET6_ADDRSTRLEN], strport[16];\n\n      for (passive = 0; passive <= 1; passive++) {\n        memset(&hints, 0, sizeof(hints));\n        hints.ai_family = AF_UNSPEC;\n        hints.ai_flags = passive ? AI_PASSIVE : 0;\n        hints.ai_socktype = SOCK_STREAM;\n        hints.ai_protocol = IPPROTO_TCP;\n        if ((gaierr = getaddrinfo(NULL, \"54321\", &hints, &aitop)) != 0) {\n          (void)gai_strerror(gaierr);\n          goto bad;\n        }\n        for (ai = aitop; ai; ai = ai->ai_next) {\n          if (ai->ai_addr == NULL ||\n              ai->ai_addrlen == 0 ||\n              getnameinfo(ai->ai_addr, ai->ai_addrlen,\n                          straddr, sizeof(straddr), strport, sizeof(strport),\n                          NI_NUMERICHOST|NI_NUMERICSERV) != 0) {\n            goto bad;\n          }\n          switch (ai->ai_family) {\n          case AF_INET:\n            if (strcmp(strport, \"54321\") != 0) goto bad;\n            if (passive) {\n              if (strcmp(straddr, \"0.0.0.0\") != 0) goto bad;\n            } else {\n              if (strcmp(straddr, \"127.0.0.1\") != 0) goto bad;\n            }\n            inet4++;\n            break;\n          case AF_INET6:\n            if (strcmp(strport, \"54321\") != 0) goto bad;\n            if (passive) {\n              if (strcmp(straddr, \"::\") != 0) goto bad;\n            } else {\n              if (strcmp(straddr, \"::1\") != 0) goto bad;\n            }\n            inet6++;\n            break;\n          case AF_UNSPEC:\n            goto bad;\n          default:\n            break;\n          }\n        }\n        freeaddrinfo(aitop);\n        aitop = NULL;\n      }\n      if (!(inet4 == 0 || inet4 == 2)) goto bad;\n      if (!(inet6 == 0 || inet6 == 2)) goto bad;\n      if (aitop) freeaddrinfo(aitop);\n      return 0;\n     bad:\n      if (aitop) freeaddrinfo(aitop);\n      return 1;\n    }\n    "
-		pyconf_checking("getaddrinfo bug")
-		if (((pyconf_cross_compiling != "") && (pyconf_cross_compiling != "no"))) {
-			if (((V["ac_sys_system"] == "Linux-android") || (V["ac_sys_system"] == "iOS"))) {
-				ac_cv_buggy_getaddrinfo = "no"
-			} else if ((V["enable_ipv6"] != "")) {
-				ac_cv_buggy_getaddrinfo = "no -- configured with --(en|dis)able-ipv6"
+		ac_cv_buggy_getaddrinfo = ""
+		if ((ac_cv_buggy_getaddrinfo == "")) {
+			if (((pyconf_cross_compiling != "") && (pyconf_cross_compiling != "no"))) {
+				if (((V["ac_sys_system"] == "Linux-android") || (V["ac_sys_system"] == "iOS"))) {
+					ac_cv_buggy_getaddrinfo = "no"
+				} else if ((V["enable_ipv6"] != "")) {
+					ac_cv_buggy_getaddrinfo = "no -- configured with --(en|dis)able-ipv6"
+				} else {
+					ac_cv_buggy_getaddrinfo = "yes"
+				}
 			} else {
-				ac_cv_buggy_getaddrinfo = "yes"
+				ok = (pyconf_run_check("", GETADDRINFO_TEST) ? "yes" : "no")
+				ac_cv_buggy_getaddrinfo = (((ok != "") && (ok != "no")) ? "no" : "yes")
 			}
-		} else {
-			ok = (pyconf_run_check("", GETADDRINFO_TEST) ? "yes" : "no")
-			ac_cv_buggy_getaddrinfo = (((ok != "") && (ok != "no")) ? "no" : "yes")
+			pyconf_cache_store("ac_cv_buggy_getaddrinfo", ac_cv_buggy_getaddrinfo)
+			pyconf_result(ac_cv_buggy_getaddrinfo)
 		}
-		pyconf_result(ac_cv_buggy_getaddrinfo)
 	} else {
 		ac_cv_buggy_getaddrinfo = "yes"
 	}

@@ -157,9 +157,11 @@ ALLOWED_PYCONF_CALLS = frozenset(
         "stdlib_module_simple",
         "stdlib_module_set_na",
         # Misc
-        "run",
-        "macro",
+        "cache_check",
+        "cache_store",
         "is_defined",
+        "macro",
+        "run",
     }
 )
 
