@@ -406,7 +406,10 @@ class PrettyPrinter:
         chunks = []
         lines = object.splitlines(True)
         if level == 1:
-            indent += 1
+            if self._expand:
+                indent += self._indent_per_level
+            else:
+                indent += 1
             allowance += 1
         max_width1 = max_width = self._width - indent
         for i, line in enumerate(lines):
@@ -442,13 +445,13 @@ class PrettyPrinter:
             write(rep)
             return
         if level == 1:
-            write('(')
+            write(self._format_block_start("(", indent))
         for i, rep in enumerate(chunks):
             if i > 0:
                 write('\n' + ' '*indent)
             write(rep)
         if level == 1:
-            write(')')
+            write(self._format_block_end(")", indent - self._indent_per_level))
 
     _dispatch[str.__repr__] = _pprint_str
 

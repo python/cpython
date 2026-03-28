@@ -1945,6 +1945,20 @@ dict_items([
 ])""",
         )
 
+    def test_expand_str(self):
+        s = "The quick brown fox jumped over the lazy dog " * 3
+        self.assertEqual(
+            pprint.pformat(s, width=40, indent=4, expand=True),
+            """\
+(
+    'The quick brown fox jumped over '
+    'the lazy dog The quick brown fox '
+    'jumped over the lazy dog The '
+    'quick brown fox jumped over the '
+    'lazy dog '
+)""",
+        )
+
 
 class DottedPrettyPrinter(pprint.PrettyPrinter):
 
