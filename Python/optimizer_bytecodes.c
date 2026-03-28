@@ -168,18 +168,23 @@ dummy_func(void) {
         PyObject *sub_o = sym_get_const(ctx, sub);
         if (sub_o != NULL) {
             if (PyUnicode_CheckExact(sub_o) || PyLong_CheckExact(sub_o) || PyBytes_CheckExact(sub_o)) {
+                // PyObject_Hash can't fail on these types
                 ADD_OP(_STORE_SUBSCR_DICT_KNOWN_HASH, 0, PyObject_Hash(sub_o));
-            } else if (PyTuple_CheckExact(sub_o)) {
+            }
+            else if (PyTuple_CheckExact(sub_o)) {
+                // only use known hash variant when hash of tuple is already computed
+                // since computing it can call arbitrary code
                 Py_hash_t hash = ((PyTupleObject *)sub_o)->ob_hash;
                 if (hash != -1) {
                     ADD_OP(_STORE_SUBSCR_DICT_KNOWN_HASH, 0, hash);
                 }
-            } else if (Py_TYPE(sub_o)->tp_hash == PyObject_GenericHash) {
+            }
+            else if (Py_TYPE(sub_o)->tp_hash == PyBaseObject_Type.tp_hash) {
+                // for user-defined objects which don't override tp_hash
                 Py_hash_t hash = PyObject_Hash(sub_o);
                 ADD_OP(_STORE_SUBSCR_DICT_KNOWN_HASH, 0, hash);
-                PyTypeObject *type = Py_TYPE(sub_o);
-                PyType_Watch(TYPE_WATCHER_ID, (PyObject *)type);
-                _Py_BloomFilter_Add(dependencies, type);
+                PyType_Watch(TYPE_WATCHER_ID, Py_TYPE(sub_o));
+                _Py_BloomFilter_Add(dependencies, Py_TYPE(sub_o));
             }
         }
         (void)value;
@@ -504,14 +509,16 @@ dummy_func(void) {
             if (PyUnicode_CheckExact(sub) || PyLong_CheckExact(sub) || PyBytes_CheckExact(sub)) {
                 // PyObject_Hash can't fail on these types
                 ADD_OP(_BINARY_OP_SUBSCR_DICT_KNOWN_HASH, 0, PyObject_Hash(sub));
-            } else if (PyTuple_CheckExact(sub)) {
+            }
+            else if (PyTuple_CheckExact(sub)) {
                 // only use known hash variant when hash of tuple is already computed
                 // since computing it can call arbitrary code
                 Py_hash_t hash = ((PyTupleObject *)sub)->ob_hash;
                 if (hash != -1) {
                     ADD_OP(_BINARY_OP_SUBSCR_DICT_KNOWN_HASH, 0, hash);
                 }
-            } else if (Py_TYPE(sub)->tp_hash == PyBaseObject_Type.tp_hash) {
+            }
+            else if (Py_TYPE(sub)->tp_hash == PyBaseObject_Type.tp_hash) {
                 // for user-defined objects which don't override tp_hash
                 Py_hash_t hash = PyObject_Hash(sub);
                 ADD_OP(_BINARY_OP_SUBSCR_DICT_KNOWN_HASH, 0, hash);
