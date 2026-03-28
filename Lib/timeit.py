@@ -373,6 +373,7 @@ def main(args=None, *, _wrap_timer=None):
     timings = [dt / number for dt in raw_timings]
 
     best = min(timings)
+    worst = max(timings)
     s = "" if number == 1 else "s"
     print(
         f"{number} loop{s}, best of {repeat}: "
@@ -380,8 +381,6 @@ def main(args=None, *, _wrap_timer=None):
         f"{theme.per_loop}per loop{reset}"
     )
 
-    best = min(timings)
-    worst = max(timings)
     if worst >= best * 4:
         import warnings
 
