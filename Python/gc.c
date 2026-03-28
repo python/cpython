@@ -534,6 +534,7 @@ struct visit_decref_context {
 static int
 visit_decref(PyObject *op, void *arg)
 {
+    OBJECT_STAT_INC(object_visits);
     struct visit_decref_context *ctx = (struct visit_decref_context *)arg;
     ctx->stats->object_visits += 1;
     _PyObject_ASSERT(ctx->parent, !_PyObject_IsFreed(op));
@@ -612,6 +613,7 @@ visit_reachable(PyObject *op, void *arg)
     struct visit_reachable_context *ctx = (struct visit_reachable_context *)arg;
     ctx->stats->object_visits += 1;
     PyGC_Head *reachable = ctx->head;
+    OBJECT_STAT_INC(object_visits);
     if (!_PyObject_IS_GC(op)) {
         return 0;
     }
@@ -855,6 +857,7 @@ visit_move(PyObject *op, void *arg)
     struct visit_reachable_context *ctx = (struct visit_reachable_context *)arg;
     PyGC_Head *tolist = ctx->head;
     ctx->stats->object_visits += 1;
+    OBJECT_STAT_INC(object_visits);
     if (_PyObject_IS_GC(op)) {
         PyGC_Head *gc = AS_GC(op);
         if (gc_is_collecting(gc)) {
@@ -1487,6 +1490,7 @@ struct container_and_flag {
 static int
 visit_add_to_container(PyObject *op, void *arg)
 {
+    OBJECT_STAT_INC(object_visits);
     struct container_and_flag *cf = (struct container_and_flag *)arg;
     cf->stats->object_visits += 1;
     int visited = cf->visited_space;
