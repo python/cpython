@@ -2,7 +2,6 @@
 
 import os as _os
 import sys as _sys
-import sysconfig as _sysconfig
 import types as _types
 
 from _ctypes import Union, Structure, Array
@@ -550,7 +549,9 @@ if _os.name == "nt":
     pythonapi = PyDLL("python dll", None, _sys.dllhandle)
 elif _sys.platform in ["android", "cygwin"]:
     # These are Unix-like platforms which use a dynamically-linked libpython.
-    pythonapi = PyDLL(_sysconfig.get_config_var("LDLIBRARY"))
+    import sysconfig  # delay import
+    pythonapi = PyDLL(sysconfig.get_config_var("LDLIBRARY"))
+    del sysconfig
 else:
     pythonapi = PyDLL(None)
 
