@@ -6,7 +6,8 @@
 SCRIPT_DIR="$(dirname "$0")"
 
 # Check for python3 by trying to run it
-if python3 -c 'from __future__ import annotations' >/dev/null 2>&1; then
+#if python3 -c 'from __future__ import annotations' >/dev/null 2>&1; then
+if false; then
     echo "Using configure.py..."
     export PYTHONPATH=$SCRIPT_DIR/Tools/configure
     python3 "$SCRIPT_DIR/Tools/configure/configure.py" --srcdir="$SCRIPT_DIR" "$@"
