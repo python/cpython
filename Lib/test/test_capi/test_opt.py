@@ -4188,6 +4188,36 @@ class TestUopsOptimization(unittest.TestCase):
         # lookup result is folded to constant 1, so comparison is optimized away
         self.assertNotIn("_COMPARE_OP_INT", uops)
 
+    def test_binary_subscr_local_frozendict_lowering(self):
+        def testfunc(n):
+            d = frozendict(x=1, y=2)
+            x = 0
+            for _ in range(n):
+                x += d['x']
+            return x
+
+        res, ex = self._run_with_optimizer(testfunc, TIER2_THRESHOLD)
+        self.assertEqual(res, TIER2_THRESHOLD)
+        self.assertIsNotNone(ex)
+        uops = get_opnames(ex)
+        self.assertIn("_INSERT_2_LOAD_CONST_INLINE_BORROW", uops)
+        self.assertNotIn("_BINARY_OP_SUBSCR_DICT", uops)
+
+    def test_binary_subscr_local_frozendict_const_fold(self):
+        def testfunc(n):
+            d = frozendict(x=1, y=2)
+            x = 0
+            for _ in range(n):
+                if d['x'] == 1:
+                    x += 1
+            return x
+
+        res, ex = self._run_with_optimizer(testfunc, TIER2_THRESHOLD)
+        self.assertEqual(res, TIER2_THRESHOLD)
+        self.assertIsNotNone(ex)
+        uops = get_opnames(ex)
+        self.assertNotIn("_COMPARE_OP_INT", uops)
+
     def test_binary_subscr_list_slice(self):
         def testfunc(n):
             x = 0

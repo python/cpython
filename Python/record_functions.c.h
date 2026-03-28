@@ -94,6 +94,7 @@ void _PyOpcode_RecordFunction_CODE(_PyInterpreterFrame *frame, _PyStackRef *stac
 #define _RECORD_4OS_INDEX 7
 const uint8_t _PyOpcode_RecordFunctionIndices[256] = {
         [TO_BOOL_ALWAYS_TRUE] = _RECORD_TOS_TYPE_INDEX,
+        [BINARY_OP_SUBSCR_DICT] = _RECORD_NOS_INDEX,
         [BINARY_OP_SUBSCR_GETITEM] = _RECORD_NOS_INDEX,
         [SEND_GEN] = _RECORD_3OS_GEN_FUNC_INDEX,
         [LOAD_ATTR_INSTANCE_VALUE] = _RECORD_TOS_TYPE_INDEX,

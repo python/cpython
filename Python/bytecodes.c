@@ -1172,7 +1172,12 @@ dummy_func(
             EXIT_IF(!PyFrozenDict_CheckExact(o));
         }
 
+        tier2 op(_GUARD_NOS_IS, (expected/4, nos, unused -- nos, unused)) {
+            EXIT_IF(PyStackRef_AsPyObjectBorrow(nos) != expected);
+        }
+
         macro(BINARY_OP_SUBSCR_DICT) =
+            _RECORD_NOS +
             _GUARD_NOS_ANY_DICT + unused/5 + _BINARY_OP_SUBSCR_DICT + POP_TOP + POP_TOP;
 
         op(_BINARY_OP_SUBSCR_DICT, (dict_st, sub_st -- res, ds, ss)) {

@@ -1638,6 +1638,17 @@ dummy_func(void) {
         if (tp == &PyDict_Type || tp == &PyFrozenDict_Type) {
             ADD_OP(_NOP, 0, 0);
         }
+        else {
+            PyObject *probable = sym_get_probable_value(nos);
+            if (probable != NULL && PyFrozenDict_CheckExact(probable)) {
+                ADD_OP(_GUARD_NOS_IS, 0, (uintptr_t)probable);
+                sym_set_const(nos, probable);
+            }
+        }
+    }
+
+    op(_GUARD_NOS_IS, (expected/4, nos, unused -- nos, unused)) {
+        sym_set_const(nos, expected);
     }
 
     op(_GUARD_TOS_ANY_DICT, (tos -- tos)) {

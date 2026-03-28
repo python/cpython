@@ -1270,6 +1270,13 @@
             if (tp == &PyDict_Type || tp == &PyFrozenDict_Type) {
                 ADD_OP(_NOP, 0, 0);
             }
+            else {
+                PyObject *probable = sym_get_probable_value(nos);
+                if (probable != NULL && PyFrozenDict_CheckExact(probable)) {
+                    ADD_OP(_GUARD_NOS_IS, 0, (uintptr_t)probable);
+                    sym_set_const(nos, probable);
+                }
+            }
             break;
         }
 
@@ -1313,6 +1320,14 @@
             else {
                 sym_set_type(tos, &PyFrozenDict_Type);
             }
+            break;
+        }
+
+        case _GUARD_NOS_IS: {
+            JitOptRef nos;
+            nos = stack_pointer[-2];
+            PyObject *expected = (PyObject *)this_instr->operand0;
+            sym_set_const(nos, expected);
             break;
         }
 

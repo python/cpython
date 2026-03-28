@@ -138,6 +138,7 @@ const uint32_t _PyUop_Flags[MAX_UOP_ID+1] = {
     [_GUARD_TOS_ANY_DICT] = HAS_EXIT_FLAG,
     [_GUARD_TOS_DICT] = HAS_EXIT_FLAG,
     [_GUARD_TOS_FROZENDICT] = HAS_EXIT_FLAG,
+    [_GUARD_NOS_IS] = HAS_EXIT_FLAG,
     [_BINARY_OP_SUBSCR_DICT] = HAS_ERROR_FLAG | HAS_ERROR_NO_POP_FLAG | HAS_ESCAPES_FLAG,
     [_BINARY_OP_SUBSCR_CHECK_FUNC] = HAS_EXIT_FLAG,
     [_BINARY_OP_SUBSCR_INIT_CALL] = 0,
@@ -1350,6 +1351,15 @@ const _PyUopCachingInfo _PyUop_Caching[MAX_UOP_ID+1] = {
             { 1, 1, _GUARD_TOS_FROZENDICT_r11 },
             { 2, 2, _GUARD_TOS_FROZENDICT_r22 },
             { 3, 3, _GUARD_TOS_FROZENDICT_r33 },
+        },
+    },
+    [_GUARD_NOS_IS] = {
+        .best = { 0, 1, 2, 3 },
+        .entries = {
+            { 2, 0, _GUARD_NOS_IS_r02 },
+            { 2, 1, _GUARD_NOS_IS_r12 },
+            { 2, 2, _GUARD_NOS_IS_r22 },
+            { 3, 3, _GUARD_NOS_IS_r33 },
         },
     },
     [_BINARY_OP_SUBSCR_DICT] = {
@@ -4022,6 +4032,10 @@ const uint16_t _PyUop_Uncached[MAX_UOP_REGS_ID+1] = {
     [_GUARD_TOS_FROZENDICT_r11] = _GUARD_TOS_FROZENDICT,
     [_GUARD_TOS_FROZENDICT_r22] = _GUARD_TOS_FROZENDICT,
     [_GUARD_TOS_FROZENDICT_r33] = _GUARD_TOS_FROZENDICT,
+    [_GUARD_NOS_IS_r02] = _GUARD_NOS_IS,
+    [_GUARD_NOS_IS_r12] = _GUARD_NOS_IS,
+    [_GUARD_NOS_IS_r22] = _GUARD_NOS_IS,
+    [_GUARD_NOS_IS_r33] = _GUARD_NOS_IS,
     [_BINARY_OP_SUBSCR_DICT_r23] = _BINARY_OP_SUBSCR_DICT,
     [_BINARY_OP_SUBSCR_CHECK_FUNC_r23] = _BINARY_OP_SUBSCR_CHECK_FUNC,
     [_BINARY_OP_SUBSCR_INIT_CALL_r01] = _BINARY_OP_SUBSCR_INIT_CALL,
@@ -5127,6 +5141,11 @@ const char *const _PyOpcode_uop_name[MAX_UOP_REGS_ID+1] = {
     [_GUARD_NOS_INT_r12] = "_GUARD_NOS_INT_r12",
     [_GUARD_NOS_INT_r22] = "_GUARD_NOS_INT_r22",
     [_GUARD_NOS_INT_r33] = "_GUARD_NOS_INT_r33",
+    [_GUARD_NOS_IS] = "_GUARD_NOS_IS",
+    [_GUARD_NOS_IS_r02] = "_GUARD_NOS_IS_r02",
+    [_GUARD_NOS_IS_r12] = "_GUARD_NOS_IS_r12",
+    [_GUARD_NOS_IS_r22] = "_GUARD_NOS_IS_r22",
+    [_GUARD_NOS_IS_r33] = "_GUARD_NOS_IS_r33",
     [_GUARD_NOS_LIST] = "_GUARD_NOS_LIST",
     [_GUARD_NOS_LIST_r02] = "_GUARD_NOS_LIST_r02",
     [_GUARD_NOS_LIST_r12] = "_GUARD_NOS_LIST_r12",
@@ -6039,6 +6058,8 @@ int _PyUop_num_popped(int opcode, int oparg)
         case _GUARD_TOS_DICT:
             return 0;
         case _GUARD_TOS_FROZENDICT:
+            return 0;
+        case _GUARD_NOS_IS:
             return 0;
         case _BINARY_OP_SUBSCR_DICT:
             return 2;
