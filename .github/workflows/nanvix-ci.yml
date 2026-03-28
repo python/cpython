@@ -50,6 +50,13 @@ jobs:
           echo "sha=$NANVIX_SHA" >> "$GITHUB_OUTPUT"
           echo "sha_full=$NANVIX_SHA_FULL" >> "$GITHUB_OUTPUT"
 
+      - name: Upload Nanvix Artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: nanvix-artifacts
+          path: nanvix-artifacts/
+          retention-days: 1
+
   build-and-test:
     needs: get-nanvix-info
     runs-on: ubuntu-latest
@@ -75,6 +82,36 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
+      - name: Download Nanvix Artifacts
+        uses: actions/download-artifact@v4
+        with:
+          name: nanvix-artifacts
+          path: nanvix-artifacts
+
+      - name: Resolve NANVIX_HOME
+        run: |
+          set -euo pipefail
+          ARCHIVE=$(find nanvix-artifacts -maxdepth 1 -type f -name '*.tar.bz2' \
+            | grep -E "${NANVIX_PLATFORM}.*${NANVIX_PROCESS_MODE}.*${NANVIX_MEMORY_SIZE}" | head -1 || true)
+          if [[ -z "$ARCHIVE" ]]; then
+            echo "::error::No Nanvix archive matches platform=${NANVIX_PLATFORM}, process-mode=${NANVIX_PROCESS_MODE}, memory=${NANVIX_MEMORY_SIZE}"
+            echo "Available Nanvix archives in nanvix-artifacts:"
+            find nanvix-artifacts -maxdepth 1 -type f -name '*.tar.bz2' -print || true
+            exit 1
+          fi
+          echo "Using Nanvix archive: $ARCHIVE"
+          EXTRACT_DIR="$(pwd)/.nanvix/extracted/nanvix"
+          mkdir -p "$EXTRACT_DIR"
+          tar -xjf "$ARCHIVE" -C "$EXTRACT_DIR"
+          BIN_DIR=$(find "$EXTRACT_DIR" -type f -name 'nanvixd.elf' -path '*/bin/*' -exec dirname {} \; | head -1)
+          if [[ -z "$BIN_DIR" ]]; then
+            echo "::error::Could not find nanvixd.elf in extracted artifacts"
+            exit 1
+          fi
+          NANVIX_HOME=$(dirname "$BIN_DIR")
+          echo "Resolved NANVIX_HOME=$NANVIX_HOME"
+          echo "NANVIX_HOME=$NANVIX_HOME" >> "$GITHUB_ENV"
+
       - name: Prepare Setup.local for L2
         run: |
           if [[ -f Modules/Setup.local ]]; then
@@ -84,6 +121,8 @@ jobs:
           fi
 
       - name: Setup
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
           curl -fsSL https://bootstrap.pypa.io/get-pip.py | python3 - --break-system-packages
           ./z setup
