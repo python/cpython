@@ -1,0 +1,2 @@
+:func:`PyBuffer_ToContiguous` now raises :exc:`ValueError` if
+``src->ndim`` is negative or greater than :c:macro:`PyBUF_MAX_NDIM`.
