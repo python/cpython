@@ -5926,6 +5926,8 @@ function u_setup_machdep(    SUNOS_VERSION, ac_md_release, ac_md_system, _split_
 				V["ac_sys_system"] = "iOS"
 			} else if (pyconf_fnmatch(V["host"], "*-*-darwin*")) {
 				V["ac_sys_system"] = "Darwin"
+			} else if (pyconf_fnmatch(V["host"], "*-gnu")) {
+				V["ac_sys_system"] = "GNU"
 			} else if (pyconf_fnmatch(V["host"], "*-*-vxworks*")) {
 				V["ac_sys_system"] = "VxWorks"
 			} else if (pyconf_fnmatch(V["host"], "*-*-emscripten")) {
@@ -6021,6 +6023,8 @@ function u_setup_host_platform(    _tmp_split, emcc_ver, host_device, host_ident
 			}
 		} else if (pyconf_fnmatch(V["host"], "*-*-darwin*")) {
 			host_ident = (_str_startswith(V["host_cpu"], "arm") ? "arm" : V["host_cpu"])
+		} else if (pyconf_fnmatch(V["host"], "*-gnu")) {
+			host_ident = V["host_cpu"]
 		} else if (pyconf_fnmatch(V["host"], "*-*-vxworks*")) {
 			host_ident = V["host_cpu"]
 		} else if (pyconf_fnmatch(V["host"], "*-*-emscripten")) {

@@ -32,6 +32,8 @@ def setup_machdep(v):
                 v.ac_sys_system = "iOS"
             elif pyconf.fnmatch(v.host, "*-*-darwin*"):
                 v.ac_sys_system = "Darwin"
+            elif pyconf.fnmatch(v.host, "*-gnu"):
+                v.ac_sys_system = "GNU"
             elif pyconf.fnmatch(v.host, "*-*-vxworks*"):
                 v.ac_sys_system = "VxWorks"
             elif pyconf.fnmatch(v.host, "*-*-emscripten"):
@@ -91,9 +93,7 @@ def setup_host_prefix(v):
     if not v.host_prefix:
         v.export(
             "host_prefix",
-            "/"
-            if v.ac_sys_system == "Emscripten"
-            else "${prefix}",
+            "/" if v.ac_sys_system == "Emscripten" else "${prefix}",
         )
 
     if not v.host_exec_prefix:
@@ -133,6 +133,8 @@ def setup_host_platform(v):
                 host_ident = f"{v.IPHONEOS_DEPLOYMENT_TARGET}-{v.host_cpu}-iphone{host_device}"
         elif pyconf.fnmatch(v.host, "*-*-darwin*"):
             host_ident = "arm" if v.host_cpu.startswith("arm") else v.host_cpu
+        elif pyconf.fnmatch(v.host, "*-gnu"):
+            host_ident = v.host_cpu
         elif pyconf.fnmatch(v.host, "*-*-vxworks*"):
             host_ident = v.host_cpu
         elif pyconf.fnmatch(v.host, "*-*-emscripten"):
