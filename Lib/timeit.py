@@ -268,6 +268,8 @@ def main(args=None, *, _wrap_timer=None):
         args = sys.argv[1:]
     import _colorize
     colorize = _colorize.can_colorize()
+    theme = _colorize.get_theme(force_color=colorize).timeit
+    reset = theme.reset
 
     try:
         opts, args = getopt.getopt(args, "n:u:s:r:pvh",
@@ -328,10 +330,13 @@ def main(args=None, *, _wrap_timer=None):
         callback = None
         if verbose:
             def callback(number, time_taken):
-                msg = "{num} loop{s} -> {secs:.{prec}g} secs"
-                plural = (number != 1)
-                print(msg.format(num=number, s='s' if plural else '',
-                                 secs=time_taken, prec=precision))
+                s = "" if number == 1 else "s"
+                print(
+                    f"{number} loop{s} "
+                    f"{theme.arrow}-> "
+                    f"{theme.timing}{time_taken:.{precision}g} secs{reset}"
+                )
+
         try:
             number, _ = t.autorange(callback)
         except:
@@ -362,24 +367,38 @@ def main(args=None, *, _wrap_timer=None):
         return "%.*g %s" % (precision, dt / scale, unit)
 
     if verbose:
-        print("raw times: %s" % ", ".join(map(format_time, raw_timings)))
+        raw = ", ".join(map(format_time, raw_timings))
+        print(f"raw times: {theme.timing}{raw}{reset}")
         print()
     timings = [dt / number for dt in raw_timings]
 
     best = min(timings)
-    print("%d loop%s, best of %d: %s per loop"
-          % (number, 's' if number != 1 else '',
-             repeat, format_time(best)))
+    s = "" if number == 1 else "s"
+    print(
+        f"{number} loop{s}, best of {repeat}: "
+        f"{theme.best}{format_time(best)} {reset}"
+        f"{theme.per_loop}per loop{reset}"
+    )
 
     best = min(timings)
     worst = max(timings)
     if worst >= best * 4:
         import warnings
-        warnings.warn_explicit("The test results are likely unreliable. "
-                               "The worst time (%s) was more than four times "
-                               "slower than the best time (%s)."
-                               % (format_time(worst), format_time(best)),
-                               UserWarning, '', 0)
+
+        print(file=sys.stderr)
+        warnings.warn_explicit(
+            f"{theme.warning}The test results are likely unreliable. "
+            f"The {theme.warning_worst}worst time ("
+            f"{theme.warning_worst_timing}{format_time(worst)}{reset}"
+            f"{theme.warning_worst})"
+            f"{theme.warning} was more than "
+            f"{theme.warning_worst}four times slower"
+            f"{theme.warning} than the "
+            f"{theme.warning_best}best time ("
+            f"{theme.warning_best_timing}{format_time(best)}{reset}"
+            f"{theme.warning_best}){theme.warning}.{reset}",
+            UserWarning, "", 0,
+        )
     return None
 
 

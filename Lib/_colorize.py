@@ -324,6 +324,20 @@ class Syntax(ThemeSection):
 
 
 @dataclass(frozen=True, kw_only=True)
+class Timeit(ThemeSection):
+    timing: str = ANSIColors.CYAN
+    best: str = ANSIColors.BOLD_GREEN
+    per_loop: str = ANSIColors.GREEN
+    arrow: str = ANSIColors.GREY
+    warning: str = ANSIColors.YELLOW
+    warning_worst: str = ANSIColors.MAGENTA
+    warning_worst_timing: str = ANSIColors.BOLD_MAGENTA
+    warning_best: str = ANSIColors.GREEN
+    warning_best_timing: str = ANSIColors.BOLD_GREEN
+    reset: str = ANSIColors.RESET
+
+
+@dataclass(frozen=True, kw_only=True)
 class Traceback(ThemeSection):
     type: str = ANSIColors.BOLD_MAGENTA
     message: str = ANSIColors.MAGENTA
@@ -356,6 +370,7 @@ class Theme:
     difflib: Difflib = field(default_factory=Difflib)
     live_profiler: LiveProfiler = field(default_factory=LiveProfiler)
     syntax: Syntax = field(default_factory=Syntax)
+    timeit: Timeit = field(default_factory=Timeit)
     traceback: Traceback = field(default_factory=Traceback)
     unittest: Unittest = field(default_factory=Unittest)
 
@@ -366,6 +381,7 @@ class Theme:
         difflib: Difflib | None = None,
         live_profiler: LiveProfiler | None = None,
         syntax: Syntax | None = None,
+        timeit: Timeit | None = None,
         traceback: Traceback | None = None,
         unittest: Unittest | None = None,
     ) -> Self:
@@ -379,6 +395,7 @@ class Theme:
             difflib=difflib or self.difflib,
             live_profiler=live_profiler or self.live_profiler,
             syntax=syntax or self.syntax,
+            timeit=timeit or self.timeit,
             traceback=traceback or self.traceback,
             unittest=unittest or self.unittest,
         )
@@ -396,6 +413,7 @@ class Theme:
             difflib=Difflib.no_colors(),
             live_profiler=LiveProfiler.no_colors(),
             syntax=Syntax.no_colors(),
+            timeit=Timeit.no_colors(),
             traceback=Traceback.no_colors(),
             unittest=Unittest.no_colors(),
         )
