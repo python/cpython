@@ -419,6 +419,16 @@ SyntaxError: case statement must be inside match statement
 Traceback (most recent call last):
 SyntaxError: invalid syntax. Perhaps you forgot a comma?
 
+# Make sure syntax error after match block doesn't raise a specialized
+# 'expected case statement' error.
+
+>>> match 1:
+...     case 1:
+...         pass
+... 1 2
+Traceback (most recent call last):
+SyntaxError: invalid syntax
+
 From compiler_complex_args():
 
 >>> def f(None=1):
@@ -3472,7 +3482,7 @@ while 1:
             "a = 1",
             "if a:",
             "else:",
-            "match 1:"
+            "match 1:",
             "pass",
             "return",
             "return 2",
