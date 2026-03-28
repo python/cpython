@@ -637,10 +637,13 @@ argparse
 array
 -----
 
-* Support half-floats (16-bit IEEE 754 binary interchange format, formatting
-  character ``'e'``), the :c:expr:`float complex` and :c:expr:`double complex`
-  C types (formatting characters ``'F'`` and ``'D'`` respectively).
-  (Contributed by Sergey B Kirpichev in :gh:`146151` and :gh:`146238`.)
+* Support the :c:expr:`float complex` and :c:expr:`double complex` C types:
+  formatting characters ``'F'`` and ``'D'`` respectively.
+  (Contributed by Sergey B Kirpichev in :gh:`146151`.)
+
+* Support half-floats (16-bit IEEE 754 binary interchange format): formatting
+  character ``'e'``.
+  (Contributed by Sergey B Kirpichev in :gh:`146238`.)
 
 
 base64
