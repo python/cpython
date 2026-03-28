@@ -1,0 +1,1 @@
+Fixed reference leaks in :mod:`socket` when audit hooks raise exceptions in :func:`socket.getaddrinfo` and :meth:`!socket.sendto`.

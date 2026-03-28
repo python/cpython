@@ -66,27 +66,31 @@ Summary -- Release highlights
 .. PEP-sized items next.
 
 * :pep:`810`: :ref:`Explicit lazy imports for faster startup times
-  <whatsnew315-pep810>`
+  <whatsnew315-lazy-imports>`
 * :pep:`814`: :ref:`Add frozendict built-in type
   <whatsnew315-frozendict>`
 * :pep:`799`: :ref:`A dedicated profiling package for organizing Python
   profiling tools <whatsnew315-profiling-package>`
 * :pep:`799`: :ref:`Tachyon: High frequency statistical sampling profiler
   <whatsnew315-sampling-profiler>`
-* :pep:`798`: :ref:`Unpacking in Comprehensions
+* :pep:`798`: :ref:`Unpacking in comprehensions
   <whatsnew315-unpacking-in-comprehensions>`
 * :pep:`686`: :ref:`Python now uses UTF-8 as the default encoding
   <whatsnew315-utf8-default>`
+* :pep:`728`: ``TypedDict`` with typed extra items
+* :pep:`747`: :ref:`Annotating type forms with TypeForm
+  <whatsnew315-typeform>`
 * :pep:`782`: :ref:`A new PyBytesWriter C API to create a Python bytes object
-  <whatsnew315-pep782>`
+  <whatsnew315-pybyteswriter>`
 * :ref:`The JIT compiler has been significantly upgraded <whatsnew315-jit>`
 * :ref:`Improved error messages <whatsnew315-improved-error-messages>`
-
+* :ref:`The official Windows 64-bit binaries now use the tail-calling interpreter
+  <whatsnew315-windows-tail-calling-interpreter>`
 
 New features
 ============
 
-.. _whatsnew315-pep810:
+.. _whatsnew315-lazy-imports:
 
 :pep:`810`: Explicit lazy imports
 ---------------------------------
@@ -120,12 +124,12 @@ name:
 .. code-block:: python
 
    lazy import json
-   lazy from datetime import datetime
+   lazy from pathlib import Path
 
-   print("Starting up...")  # json and datetime not loaded yet
+   print("Starting up...")  # json and pathlib not loaded yet
 
-   data = json.loads('{"key": "value"}')  # json gets loads here
-   now = datetime()  # datetime loads here
+   data = json.loads('{"key": "value"}')  # json loads here
+   p = Path(".")  # pathlib loads here
 
 This mechanism is particularly useful for applications that import many
 modules at the top level but may only use a subset of them in any given run.
@@ -189,9 +193,9 @@ raise :exc:`SyntaxError`).
 ----------------------------------------
 
 A new :term:`immutable` type, :class:`frozendict`, is added to the :mod:`builtins` module.
-It does not allow modification after creation. A ``frozendict`` is not a subclass of ``dict``;
-it inherits directly from ``object``. A ``frozendict`` is :term:`hashable`
-as long as all of its keys and values are hashable. A ``frozendict`` preserves
+It does not allow modification after creation. A :class:`!frozendict` is not a subclass of ``dict``;
+it inherits directly from ``object``. A :class:`!frozendict` is :term:`hashable`
+as long as all of its keys and values are hashable. A :class:`!frozendict` preserves
 insertion order, but comparison does not take order into account.
 
 For example::
@@ -210,6 +214,18 @@ For example::
     True
     >>> a == b
     True
+
+The following standard library modules have been updated to accept
+:class:`!frozendict`: :mod:`copy`, :mod:`decimal`, :mod:`json`, :mod:`marshal`,
+:mod:`pickle`, :mod:`pprint` and :mod:`xml.etree.ElementTree`.
+
+:func:`eval` and :func:`exec` accept :class:`!frozendict` for *globals*, and
+:func:`type` and :meth:`str.maketrans` accept :class:`!frozendict` for *dict*.
+
+Code checking for :class:`dict` type using ``isinstance(arg, dict)`` can be
+updated to ``isinstance(arg, (dict, frozendict))`` to accept also the
+:class:`!frozendict` type, or to ``isinstance(arg, collections.abc.Mapping)``
+to accept also other mapping types such as :class:`~types.MappingProxyType`.
 
 .. seealso:: :pep:`814` for the full specification and rationale.
 
@@ -583,6 +599,11 @@ Other language changes
   making it a :term:`generic type`.
   (Contributed by James Hilton-Balfe in :gh:`128335`.)
 
+* The class :class:`memoryview` now supports the :c:expr:`float complex` and
+  :c:expr:`double complex` C types: formatting characters ``'F'`` and ``'D'``
+  respectively.
+  (Contributed by Sergey B Kirpichev in :gh:`146151`.)
+
 
 New modules
 ===========
@@ -614,6 +635,14 @@ argparse
   (Contributed by Savannah Ostrowski in :gh:`142390`.)
 
 
+array
+-----
+
+* Support the :c:expr:`float complex` and :c:expr:`double complex` C types:
+  formatting characters ``'F'`` and ``'D'`` respectively.
+  (Contributed by Sergey B Kirpichev in :gh:`146151`.)
+
+
 base64
 ------
 
@@ -634,15 +663,24 @@ binascii
 
   - :func:`~binascii.b2a_ascii85` and :func:`~binascii.a2b_ascii85`
   - :func:`~binascii.b2a_base85` and :func:`~binascii.a2b_base85`
-  - :func:`~binascii.b2a_z85` and :func:`~binascii.a2b_z85`
 
   (Contributed by James Seo and Serhiy Storchaka in :gh:`101178`.)
 
 * Added the *wrapcol* parameter in :func:`~binascii.b2a_base64`.
   (Contributed by Serhiy Storchaka in :gh:`143214`.)
 
+* Added the *alphabet* parameter in :func:`~binascii.b2a_base64` and
+  :func:`~binascii.a2b_base64`.
+  (Contributed by Serhiy Storchaka in :gh:`145980`.)
+
 * Added the *ignorechars* parameter in :func:`~binascii.a2b_base64`.
   (Contributed by Serhiy Storchaka in :gh:`144001`.)
+
+* Added functions for Base32 encoding:
+
+  - :func:`~binascii.b2a_base32` and :func:`~binascii.a2b_base32`
+
+  (Contributed by James Seo in :gh:`146192`.)
 
 
 calendar
@@ -664,26 +702,6 @@ collections
   :meth:`!collections.Counter.__ixor__` to compute the symmetric difference
   between :class:`~collections.Counter` objects.
   (Contributed by Raymond Hettinger in :gh:`138682`.)
-
-
-collections.abc
----------------
-
-* :class:`collections.abc.ByteString` has been removed from
-  ``collections.abc.__all__``. :class:`!collections.abc.ByteString` has been
-  deprecated since Python 3.12, and is scheduled for removal in Python 3.17.
-
-* The following statements now cause ``DeprecationWarning``\ s to be emitted at
-  runtime:
-
-  * ``from collections.abc import ByteString``
-  * ``import collections.abc; collections.abc.ByteString``.
-
-  ``DeprecationWarning``\ s were already emitted if
-  :class:`collections.abc.ByteString` was subclassed or used as the second
-  argument to :func:`isinstance` or :func:`issubclass`, but warnings were not
-  previously emitted if it was merely imported or accessed from the
-  :mod:`!collections.abc` module.
 
 
 concurrent.futures
@@ -784,6 +802,17 @@ inspect
   for :func:`~inspect.getdoc`.
   (Contributed by Serhiy Storchaka in :gh:`132686`.)
 
+json
+----
+
+* Add the *array_hook* parameter to  :func:`~json.load` and
+  :func:`~json.loads` functions:
+  allow a callback for JSON literal array types to customize Python lists in
+  the resulting decoded object. Passing combined :class:`frozendict` to
+  *object_pairs_hook* param and :class:`tuple` to ``array_hook`` will yield a
+  deeply nested immutable Python structure representing the JSON data.
+  (Contributed by Joao S. O. Bueno in :gh:`146440`)
+
 
 locale
 ------
@@ -812,9 +841,20 @@ mimetypes
 
 * Add ``application/dicom`` MIME type for ``.dcm`` extension.
   (Contributed by Benedikt Johannes in :gh:`144217`.)
+* Add ``application/efi``. (Contributed by Charlie Lin in :gh:`145720`.)
 * Add ``application/node`` MIME type for ``.cjs`` extension.
   (Contributed by John Franey in :gh:`140937`.)
 * Add ``application/toml``. (Contributed by Gil Forcada in :gh:`139959`.)
+* Add ``application/sql`` and ``application/vnd.sqlite3``.
+  (Contributed by Charlie Lin in :gh:`145698`.)
+* Add the following MIME types:
+
+  - ``application/vnd.ms-cab-compressed`` for ``.cab`` extension
+  - ``application/vnd.ms-htmlhelp`` for ``.chm`` extension
+  - ``application/vnd.ms-officetheme`` for ``.thmx`` extension
+
+  (Contributed by Charlie Lin in :gh:`145718`.)
+
 * Add ``image/jxl``. (Contributed by Foolbar in :gh:`144213`.)
 * Rename ``application/x-texinfo`` to ``application/texinfo``.
   (Contributed by Charlie Lin in :gh:`140165`.)
@@ -892,6 +932,9 @@ shelve
 * Added new :meth:`!reorganize` method to :mod:`shelve` used to recover unused free
   space previously occupied by deleted entries.
   (Contributed by Andrea Oliveri in :gh:`134004`.)
+* Add support for custom serialization and deserialization functions
+  in the :mod:`shelve` module.
+  (Contributed by Furkan Onder in :gh:`99631`.)
 
 
 socket
@@ -922,7 +965,7 @@ ssl
 ---
 
 * Indicate through :data:`ssl.HAS_PSK_TLS13` whether the :mod:`ssl` module
-  supports "External PSKs" in TLSv1.3, as described in RFC 9258.
+  supports "External PSKs" in TLSv1.3, as described in :rfc:`9258`.
   (Contributed by Will Childs-Klein in :gh:`133624`.)
 
 * Added new methods for managing groups used for SSL key agreement
@@ -982,13 +1025,6 @@ subprocess
   If none of these mechanisms are available, the function falls back to the
   traditional busy loop (non-blocking call and short sleeps).
   (Contributed by Giampaolo Rodola in :gh:`83069`).
-
-
-symtable
---------
-
-* Add :meth:`symtable.Function.get_cells` and :meth:`symtable.Symbol.is_cell` methods.
-  (Contributed by Yashp002 in :gh:`143504`.)
 
 
 symtable
@@ -1115,12 +1151,46 @@ tomllib
 
 
 types
-------
+-----
 
 * Expose the write-through :func:`locals` proxy type
   as :data:`types.FrameLocalsProxyType`.
   This represents the type of the :attr:`frame.f_locals` attribute,
   as described in :pep:`667`.
+
+
+typing
+------
+
+.. _whatsnew315-typeform:
+
+* :pep:`747`: Add :data:`~typing.TypeForm`, a new special form for annotating
+  values that are themselves type expressions.
+  ``TypeForm[T]`` means "a type form object describing ``T`` (or a type
+  assignable to ``T``)". At runtime, ``TypeForm(x)`` simply returns ``x``,
+  which allows explicit annotation of type-form values without changing
+  behavior.
+
+  This helps libraries that accept user-provided type expressions
+  (for example ``int``, ``str | None``, :class:`~typing.TypedDict`
+  classes, or ``list[int]``) expose precise signatures:
+
+  .. code-block:: python
+
+     from typing import Any, TypeForm
+
+     def cast[T](typ: TypeForm[T], value: Any) -> T: ...
+
+  (Contributed by Jelle Zijlstra in :gh:`145033`.)
+
+* Code like ``class ExtraTypeVars(P1[S], Protocol[T, T2]): ...`` now raises
+  a :exc:`TypeError`, because ``S`` is not listed in ``Protocol`` parameters.
+  (Contributed by Nikita Sobolev in :gh:`137191`.)
+
+* Code like ``class B2(A[T2], Protocol[T1, T2]): ...`` now correctly handles
+  type parameters order: it is ``(T1, T2)``, not ``(T2, T1)``
+  as it was incorrectly inferred in runtime before.
+  (Contributed by Nikita Sobolev in :gh:`137191`.)
 
 
 unicodedata
@@ -1225,18 +1295,6 @@ zlib
 Optimizations
 =============
 
-* Builds using Visual Studio 2026 (MSVC 18) may now use the new
-  :ref:`tail-calling interpreter <whatsnew314-tail-call-interpreter>`.
-  Results on Visual Studio 18.1.1 report between
-  `15-20% <https://github.com/faster-cpython/ideas/blob/main/results/5800X-msvc.pgo2-vs-msvc.pgo.tc.svg>`__
-  speedup on the geometric mean of pyperformance on Windows x86-64 over
-  the switch-case interpreter on an AMD Ryzen 7 5800X. We have
-  observed speedups ranging from 14% for large pure-Python libraries
-  to 40% for long-running small pure-Python scripts on Windows.
-  This was made possible by a new feature introduced in MSVC 18.
-  (Contributed by Chris Eibl, Ken Jin, and Brandt Bucher in :gh:`143068`.
-  Special thanks to the MSVC team including Hulon Jenkins.)
-
 * ``mimalloc`` is now used as the default allocator for
   for raw memory allocations such as via :c:func:`PyMem_RawMalloc`
   for better performance on :term:`free-threaded builds <free-threaded build>`.
@@ -1255,6 +1313,10 @@ base64 & binascii
   two orders of magnitude less memory.
   (Contributed by James Seo and Serhiy Storchaka in :gh:`101178`.)
 
+* Implementation for Base32 has been rewritten in C.
+  Encoding and decoding is now two orders of magnitude faster.
+  (Contributed by James Seo in :gh:`146192`)
+
 
 csv
 ---
@@ -1266,15 +1328,15 @@ csv
 .. _whatsnew315-jit:
 
 Upgraded JIT compiler
-=====================
+---------------------
 
 Results from the `pyperformance <https://github.com/python/pyperformance>`__
 benchmark suite report
-`4-5% <https://raw.githubusercontent.com/facebookexperimental/free-threading-benchmarking/refs/heads/main/results/bm-20260110-3.15.0a3%2B-aa8578d-JIT/bm-20260110-vultr-x86_64-python-aa8578dc54df2af9daa3-3.15.0a3%2B-aa8578d-vs-base.svg>`__
+`5-6% <https://doesjitgobrrr.com/run/2026-03-11>`__
 geometric mean performance improvement for the JIT over the standard CPython
 interpreter built with all optimizations enabled on x86-64 Linux. On AArch64
 macOS, the JIT has a
-`7-8% <https://raw.githubusercontent.com/facebookexperimental/free-threading-benchmarking/refs/heads/main/results/bm-20260110-3.15.0a3%2B-aa8578d-JIT/bm-20260110-macm4pro-arm64-python-aa8578dc54df2af9daa3-3.15.0a3%2B-aa8578d-vs-base.svg>`__
+`8-9% <https://doesjitgobrrr.com/run/2026-03-11>`__
 speedup over the :ref:`tail calling interpreter <whatsnew314-tail-call-interpreter>`
 with all optimizations enabled. The speedups for JIT
 builds versus no JIT builds range from roughly 15% slowdown to over
@@ -1337,7 +1399,7 @@ The JIT avoids :term:`reference count`\ s where possible. This generally
 reduces the cost of most operations in Python.
 
 (Contributed by Ken Jin, Donghee Na, Zheao Li, Hai Zhu, Savannah Ostrowski,
-Reiden Ong, Noam Cohen, Tomas Roun, PuQing, and Cajetan Rodrigues in :gh:`134584`.)
+Reiden Ong, Noam Cohen, Tomas Roun, PuQing, Cajetan Rodrigues, and Sacul in :gh:`134584`.)
 
 .. rubric:: Better machine code generation
 
@@ -1354,6 +1416,14 @@ Diego Russo in :gh:`140683` and :gh:`142305`.)
 
 Removed
 ========
+
+collections.abc
+---------------
+
+* :class:`collections.abc.ByteString` has been removed from
+  ``collections.abc.__all__``. :class:`!collections.abc.ByteString` has been
+  deprecated since Python 3.12, and is scheduled for removal in Python 3.17.
+
 
 ctypes
 ------
@@ -1431,6 +1501,10 @@ threading
 typing
 ------
 
+* :class:`typing.ByteString` has been removed from ``typing.__all__``.
+  :class:`!typing.ByteString` has been deprecated since Python 3.9, and is
+  scheduled for removal in Python 3.17.
+
 * The undocumented keyword argument syntax for creating
   :class:`~typing.NamedTuple` classes (for example,
   ``Point = NamedTuple("Point", x=int, y=int)``) is no longer supported.
@@ -1443,36 +1517,24 @@ typing
   or ``TD = TypedDict("TD", {})`` instead.
   (Contributed by Bénédikt Tran in :gh:`133823`.)
 
-* Code like ``class ExtraTypeVars(P1[S], Protocol[T, T2]): ...`` now raises
-  a :exc:`TypeError`, because ``S`` is not listed in ``Protocol`` parameters.
-  (Contributed by Nikita Sobolev in :gh:`137191`.)
-
-* Code like ``class B2(A[T2], Protocol[T1, T2]): ...`` now correctly handles
-  type parameters order: it is ``(T1, T2)``, not ``(T2, T1)``
-  as it was incorrectly inferred in runtime before.
-  (Contributed by Nikita Sobolev in :gh:`137191`.)
-
-* :class:`typing.ByteString` has been removed from ``typing.__all__``.
-  :class:`!typing.ByteString` has been deprecated since Python 3.9, and is
-  scheduled for removal in Python 3.17.
-
-* The following statements now cause ``DeprecationWarning``\ s to be emitted at
-  runtime:
-
-  * ``from typing import ByteString``
-  * ``import typing; typing.ByteString``.
-
-  ``DeprecationWarning``\ s were already emitted if :class:`typing.ByteString`
-  was subclassed or used as the second argument to :func:`isinstance` or
-  :func:`issubclass`, but warnings were not previously emitted if it was merely
-  imported or accessed from the :mod:`!typing` module.
-
-* Deprecated :func:`!typing.no_type_check_decorator` has been removed.
-  (Contributed by Nikita Sobolev in :gh:`133601`.)
-
 
 wave
 ----
+
+* Added support for IEEE floating-point WAVE audio
+  (``WAVE_FORMAT_IEEE_FLOAT``) in :mod:`wave`.
+
+* Added :meth:`wave.Wave_read.getformat`, :meth:`wave.Wave_write.getformat`,
+  and :meth:`wave.Wave_write.setformat` for explicit frame format handling.
+
+* :meth:`wave.Wave_write.setparams` accepts both 7-item tuples including
+  ``format`` and 6-item tuples for backwards compatibility (defaulting to
+  ``WAVE_FORMAT_PCM``).
+
+* ``WAVE_FORMAT_IEEE_FLOAT`` output now includes a ``fact`` chunk,
+  as required for non-PCM WAVE formats.
+
+(Contributed by Lionel Koenig and Michiel W. Beijen in :gh:`60729`.)
 
 * Removed the ``getmark()``, ``setmark()`` and ``getmarkers()`` methods
   of the :class:`~wave.Wave_read` and :class:`~wave.Wave_write` classes,
@@ -1513,6 +1575,21 @@ New deprecations
 
     (Contributed by Nikita Sobolev in :gh:`136355`.)
 
+* :mod:`collections.abc`
+
+  * The following statements now cause ``DeprecationWarning``\ s to be emitted
+    at runtime:
+
+    * ``from collections.abc import ByteString``
+    * ``import collections.abc; collections.abc.ByteString``.
+
+    ``DeprecationWarning``\ s were already emitted if
+    :class:`collections.abc.ByteString` was subclassed or used as the second
+    argument to :func:`isinstance` or :func:`issubclass`, but warnings were not
+    previously emitted if it was merely imported or accessed from the
+    :mod:`!collections.abc` module.
+
+
 * :mod:`hashlib`:
 
   * In hash function constructors such as :func:`~hashlib.new` or the
@@ -1526,6 +1603,31 @@ New deprecations
     a positional argument for maximum backwards compatibility.
 
     (Contributed by Bénédikt Tran in :gh:`134978`.)
+
+* :mod:`struct`:
+
+  * Calling the ``Struct.__new__()`` without required argument now is
+    deprecated and will be removed in Python 3.20.  Calling
+    :meth:`~object.__init__` method on initialized :class:`~struct.Struct`
+    objects is deprecated and will be removed in Python 3.20.
+
+    (Contributed by Sergey B Kirpichev and Serhiy Storchaka in :gh:`143715`.)
+
+* :mod:`typing`:
+
+  * The following statements now cause ``DeprecationWarning``\ s to be emitted
+    at runtime:
+
+    * ``from typing import ByteString``
+    * ``import typing; typing.ByteString``.
+
+    ``DeprecationWarning``\ s were already emitted if :class:`typing.ByteString`
+    was subclassed or used as the second argument to :func:`isinstance` or
+    :func:`issubclass`, but warnings were not previously emitted if it was
+    merely imported or accessed from the :mod:`!typing` module.
+
+  * Deprecated :func:`!typing.no_type_check_decorator` has been removed.
+    (Contributed by Nikita Sobolev in :gh:`133601`.)
 
 * ``__version__``
 
@@ -1549,6 +1651,7 @@ New deprecations
     - :mod:`re`
     - :mod:`socketserver`
     - :mod:`tabnanny`
+    - :mod:`tarfile`
     - :mod:`tkinter.font`
     - :mod:`tkinter.ttk`
     - :mod:`wsgiref.simple_server`
@@ -1580,6 +1683,11 @@ C API changes
 New features
 ------------
 
+* Add :c:func:`PyArg_ParseArray` and :c:func:`PyArg_ParseArrayAndKeywords`
+  functions to parse arguments of functions using the :c:macro:`METH_FASTCALL`
+  calling convention.
+  (Contributed by Victor Stinner in :gh:`144175`.)
+
 * Add the following functions for the new :class:`frozendict` type:
 
   * :c:func:`PyAnyDict_Check`
@@ -1604,7 +1712,7 @@ New features
   and :c:data:`Py_mod_abi`.
   (Contributed by Petr Viktorin in :gh:`137210`.)
 
-.. _whatsnew315-pep782:
+.. _whatsnew315-pybyteswriter:
 
 * Implement :pep:`782`, the :ref:`PyBytesWriter API <pybyteswriter>`.
   Add functions:
@@ -1643,6 +1751,10 @@ New features
 
 * Add :c:func:`PyUnstable_SetImmortal` C-API function to mark objects as :term:`immortal`.
   (Contributed by Kumar Aditya in :gh:`143300`.)
+
+* Restore private provisional ``_Py_InitializeMain()`` function removed in
+  Python 3.14.
+  (Contributed by Victor Stinner in :gh:`142417`.)
 
 Changed C APIs
 --------------
@@ -1785,6 +1897,24 @@ Deprecated C APIs
   use the C11 standard ``<math.h>`` :c:macro:`!INFINITY` instead.
   (Contributed by Sergey B Kirpichev in :gh:`141004`.)
 
+* The following macros are :term:`soft deprecated`:
+
+  - :c:macro:`Py_ALIGNED`: Prefer ``alignas`` instead.
+  - :c:macro:`PY_FORMAT_SIZE_T`: Use ``"z"`` directly.
+  - :c:macro:`Py_LL` & :c:macro:`Py_ULL`:
+    Use standard suffixes, ``LL`` & ``ULL``.
+  - :c:macro:`PY_LONG_LONG`, :c:macro:`PY_LLONG_MIN`, :c:macro:`PY_LLONG_MAX`,
+    :c:macro:`PY_ULLONG_MAX`, :c:macro:`PY_INT32_T`, :c:macro:`PY_UINT32_T`,
+    :c:macro:`PY_INT64_T`, :c:macro:`PY_UINT64_T`, :c:macro:`PY_SIZE_MAX`:
+    Use C99 types/limits.
+  - :c:macro:`Py_UNICODE_SIZE`: Use ``sizeof(wchar_t)`` directly.
+  - :c:macro:`Py_VA_COPY`: Use ``va_copy`` directly.
+
+  The macro :c:macro:`Py_UNICODE_WIDE`, which was scheduled for removal,
+  is :term:`soft deprecated` instead.
+
+  (Contributed by Petr Viktorin in :gh:`146175`.)
+
 * :c:macro:`!Py_MATH_El` and :c:macro:`!Py_MATH_PIl` are deprecated
   since 3.15 and will be removed in 3.20.
   (Contributed by Sergey B Kirpichev in :gh:`141004`.)
@@ -1820,6 +1950,23 @@ Build changes
   Annotations are visible in ``/proc/<pid>/maps`` if the kernel supports the feature
   and :option:`-X dev <-X>` is passed to the Python or Python is built in :ref:`debug mode <debug-build>`.
   (Contributed by Donghee Na in :gh:`141770`.)
+
+.. _whatsnew315-windows-tail-calling-interpreter:
+
+* 64-bit builds using Visual Studio 2026 (MSVC 18) may now use the new
+  :ref:`tail-calling interpreter <whatsnew314-tail-call-interpreter>`.
+  Results on Visual Studio 18.1.1 report between
+  `15-20% <https://github.com/faster-cpython/ideas/blob/main/results/5800X-msvc.pgo2-vs-msvc.pgo.tc.svg>`__
+  speedup on the geometric mean of pyperformance on Windows x86-64 over
+  the switch-case interpreter on an AMD Ryzen 7 5800X. We have
+  observed speedups ranging from 14% for large pure-Python libraries
+  to 40% for long-running small pure-Python scripts on Windows.
+  This was made possible by a new feature introduced in MSVC 18,
+  which the official Windows 64-bit binaries on python.org__ now use.
+  (Contributed by Chris Eibl, Ken Jin, and Brandt Bucher in :gh:`143068`.
+  Special thanks to Steve Dower, and the MSVC team including Hulon Jenkins.)
+
+  __ https://www.python.org/downloads/windows/
 
 
 Porting to Python 3.15

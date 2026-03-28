@@ -698,6 +698,8 @@ The add_argument() method
 
    * deprecated_ - Whether or not use of the argument is deprecated.
 
+   The method returns an :class:`Action` object representing the argument.
+
 The following sections describe how each of these are used.
 
 
@@ -739,9 +741,9 @@ By default, :mod:`!argparse` automatically handles the internal naming and
 display names of arguments, simplifying the process without requiring
 additional configuration.
 As such, you do not need to specify the dest_ and metavar_ parameters.
-The dest_ parameter defaults to the argument name with underscores ``_``
-replacing hyphens ``-`` . The metavar_ parameter defaults to the
-upper-cased name. For example::
+For optional arguments, the dest_ parameter defaults to the argument name, with
+underscores ``_`` replacing hyphens ``-``. The metavar_ parameter defaults to
+the upper-cased name. For example::
 
    >>> parser = argparse.ArgumentParser(prog='PROG')
    >>> parser.add_argument('--foo-bar')

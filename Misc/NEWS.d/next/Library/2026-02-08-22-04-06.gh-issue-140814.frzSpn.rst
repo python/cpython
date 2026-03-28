@@ -1,0 +1,3 @@
+:func:`multiprocessing.freeze_support` no longer sets the default start method
+as a side effect, which previously caused a subsequent
+:func:`multiprocessing.set_start_method` call to raise :exc:`RuntimeError`.

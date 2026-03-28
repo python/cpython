@@ -42,6 +42,12 @@ Dictionary objects
    enforces read-only behavior.  This is normally used to create a view to
    prevent modification of the dictionary for non-dynamic class types.
 
+   The first argument can be a :class:`dict`, a :class:`frozendict`, or a
+   mapping.
+
+   .. versionchanged:: next
+      Also accept :class:`frozendict`.
+
 
 .. c:var:: PyTypeObject PyDictProxy_Type
 
@@ -68,6 +74,11 @@ Dictionary objects
    *key*, return ``1``, otherwise return ``0``.  On error, return ``-1``.
    This is equivalent to the Python expression ``key in p``.
 
+   The first argument can be a :class:`dict` or a :class:`frozendict`.
+
+   .. versionchanged:: next
+      Also accept :class:`frozendict`.
+
 
 .. c:function:: int PyDict_ContainsString(PyObject *p, const char *key)
 
@@ -75,16 +86,17 @@ Dictionary objects
    :c:expr:`const char*` UTF-8 encoded bytes string, rather than a
    :c:expr:`PyObject*`.
 
+   The first argument can be a :class:`dict` or a :class:`frozendict`.
+
    .. versionadded:: 3.13
+
+   .. versionchanged:: next
+      Also accept :class:`frozendict`.
 
 
 .. c:function:: PyObject* PyDict_Copy(PyObject *p)
 
    Return a new dictionary that contains the same key-value pairs as *p*.
-
-   .. versionchanged:: next
-      If *p* is a subclass of :class:`frozendict`, the result will be a
-      :class:`frozendict` instance instead of a :class:`dict` instance.
 
 .. c:function:: int PyDict_SetItem(PyObject *p, PyObject *key, PyObject *val)
 
@@ -126,7 +138,12 @@ Dictionary objects
    * If the key is missing, set *\*result* to ``NULL`` and return ``0``.
    * On error, raise an exception and return ``-1``.
 
+   The first argument can be a :class:`dict` or a :class:`frozendict`.
+
    .. versionadded:: 3.13
+
+   .. versionchanged:: next
+      Also accept :class:`frozendict`.
 
    See also the :c:func:`PyObject_GetItem` function.
 
@@ -136,6 +153,8 @@ Dictionary objects
    Return a :term:`borrowed reference` to the object from dictionary *p* which
    has a key *key*.  Return ``NULL`` if the key *key* is missing *without*
    setting an exception.
+
+   The first argument can be a :class:`dict` or a :class:`frozendict`.
 
    .. note::
 
@@ -147,6 +166,9 @@ Dictionary objects
       Calling this API without an :term:`attached thread state` had been allowed for historical
       reason. It is no longer allowed.
 
+   .. versionchanged:: next
+      Also accept :class:`frozendict`.
+
 
 .. c:function:: PyObject* PyDict_GetItemWithError(PyObject *p, PyObject *key)
 
@@ -154,6 +176,9 @@ Dictionary objects
    exceptions. Return ``NULL`` **with** an exception set if an exception
    occurred.  Return ``NULL`` **without** an exception set if the key
    wasn't present.
+
+   .. versionchanged:: next
+      Also accept :class:`frozendict`.
 
 
 .. c:function:: PyObject* PyDict_GetItemString(PyObject *p, const char *key)
@@ -170,6 +195,9 @@ Dictionary objects
       Prefer using the :c:func:`PyDict_GetItemWithError` function with your own
       :c:func:`PyUnicode_FromString` *key* instead.
 
+   .. versionchanged:: next
+      Also accept :class:`frozendict`.
+
 
 .. c:function:: int PyDict_GetItemStringRef(PyObject *p, const char *key, PyObject **result)
 
@@ -178,6 +206,9 @@ Dictionary objects
    :c:expr:`PyObject*`.
 
    .. versionadded:: 3.13
+
+   .. versionchanged:: next
+      Also accept :class:`frozendict`.
 
 
 .. c:function:: PyObject* PyDict_SetDefault(PyObject *p, PyObject *key, PyObject *defaultobj)
@@ -242,16 +273,31 @@ Dictionary objects
 
    Return a :c:type:`PyListObject` containing all the items from the dictionary.
 
+   The first argument can be a :class:`dict` or a :class:`frozendict`.
+
+   .. versionchanged:: next
+      Also accept :class:`frozendict`.
+
 
 .. c:function:: PyObject* PyDict_Keys(PyObject *p)
 
    Return a :c:type:`PyListObject` containing all the keys from the dictionary.
+
+   The first argument can be a :class:`dict` or a :class:`frozendict`.
+
+   .. versionchanged:: next
+      Also accept :class:`frozendict`.
 
 
 .. c:function:: PyObject* PyDict_Values(PyObject *p)
 
    Return a :c:type:`PyListObject` containing all the values from the dictionary
    *p*.
+
+   The first argument can be a :class:`dict` or a :class:`frozendict`.
+
+   .. versionchanged:: next
+      Also accept :class:`frozendict`.
 
 
 .. c:function:: Py_ssize_t PyDict_Size(PyObject *p)
@@ -261,10 +307,18 @@ Dictionary objects
    Return the number of items in the dictionary.  This is equivalent to
    ``len(p)`` on a dictionary.
 
+   The argument can be a :class:`dict` or a :class:`frozendict`.
+
+   .. versionchanged:: next
+      Also accept :class:`frozendict`.
+
 
 .. c:function:: Py_ssize_t PyDict_GET_SIZE(PyObject *p)
 
    Similar to :c:func:`PyDict_Size`, but without error checking.
+
+   .. versionchanged:: next
+      Also accept :class:`frozendict`.
 
 
 .. c:function:: int PyDict_Next(PyObject *p, Py_ssize_t *ppos, PyObject **pkey, PyObject **pvalue)
@@ -279,6 +333,8 @@ Dictionary objects
    them are borrowed.  *ppos* should not be altered during iteration. Its
    value represents offsets within the internal dictionary structure, and
    since the structure is sparse, the offsets are not consecutive.
+
+   The first argument can be a :class:`dict` or a :class:`frozendict`.
 
    For example::
 
@@ -313,7 +369,7 @@ Dictionary objects
       }
 
    The function is not thread-safe in the :term:`free-threaded <free threading>`
-   build without external synchronization.  You can use
+   build without external synchronization for a mutable :class:`dict`. You can use
    :c:macro:`Py_BEGIN_CRITICAL_SECTION` to lock the dictionary while iterating
    over it::
 
@@ -322,6 +378,8 @@ Dictionary objects
           ...
       }
       Py_END_CRITICAL_SECTION();
+
+   The function is thread-safe on a :class:`frozendict`.
 
    .. note::
 
@@ -332,6 +390,9 @@ Dictionary objects
       critical section or when the critical section can be suspended, create a
       :term:`strong reference <strong reference>` (for example, using
       :c:func:`Py_NewRef`).
+
+   .. versionchanged:: next
+      Also accept :class:`frozendict`.
 
 .. c:function:: int PyDict_Merge(PyObject *a, PyObject *b, int override)
 
@@ -499,7 +560,7 @@ Dictionary view objects
 Frozen dictionary objects
 ^^^^^^^^^^^^^^^^^^^^^^^^^
 
-.. versionadded:: next
+.. versionadded:: 3.15
 
 
 .. c:var:: PyTypeObject PyFrozenDict_Type

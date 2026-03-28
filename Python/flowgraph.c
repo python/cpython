@@ -2884,7 +2884,6 @@ optimize_load_fast(cfg_builder *g)
                 case GET_ANEXT:
                 case GET_ITER:
                 case GET_LEN:
-                case GET_YIELD_FROM_ITER:
                 case IMPORT_FROM:
                 case MATCH_KEYS:
                 case MATCH_MAPPING:
@@ -2919,7 +2918,16 @@ optimize_load_fast(cfg_builder *g)
                     break;
                 }
 
-                case END_SEND:
+                case END_SEND: {
+                    assert(_PyOpcode_num_popped(opcode, oparg) == 3);
+                    assert(_PyOpcode_num_pushed(opcode, oparg) == 1);
+                    ref tos = ref_stack_pop(&refs);
+                    ref_stack_pop(&refs);
+                    ref_stack_pop(&refs);
+                    PUSH_REF(tos.instr, tos.local);
+                    break;
+                }
+
                 case SET_FUNCTION_ATTRIBUTE: {
                     assert(_PyOpcode_num_popped(opcode, oparg) == 2);
                     assert(_PyOpcode_num_pushed(opcode, oparg) == 1);
