@@ -208,8 +208,13 @@ struct gc_generation_stats {
     double duration;
 };
 
+#ifdef Py_GIL_DISABLED
+#define GC_YOUNG_STATS_SIZE 1
+#define GC_OLD_STATS_SIZE 1
+#else
 #define GC_YOUNG_STATS_SIZE 11
 #define GC_OLD_STATS_SIZE 3
+#endif
 struct gc_young_stats_buffer {
     struct gc_generation_stats items[GC_YOUNG_STATS_SIZE];
     int8_t index;
