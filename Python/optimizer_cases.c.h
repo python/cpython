@@ -1327,6 +1327,54 @@
             res = sym_new_not_null(ctx);
             ds = dict_st;
             ss = sub_st;
+            if (sym_matches_type(dict_st, &PyFrozenDict_Type)) {
+                if (
+                    sym_is_safe_const(ctx, dict_st) &&
+                    sym_is_safe_const(ctx, sub_st)
+                ) {
+                    JitOptRef dict_st_sym = dict_st;
+                    JitOptRef sub_st_sym = sub_st;
+                    _PyStackRef dict_st = sym_get_const_as_stackref(ctx, dict_st_sym);
+                    _PyStackRef sub_st = sym_get_const_as_stackref(ctx, sub_st_sym);
+                    _PyStackRef res_stackref;
+                    _PyStackRef ds_stackref;
+                    _PyStackRef ss_stackref;
+                    /* Start of uop copied from bytecodes for constant evaluation */
+                    PyObject *sub = PyStackRef_AsPyObjectBorrow(sub_st);
+                    PyObject *dict = PyStackRef_AsPyObjectBorrow(dict_st);
+                    assert(PyAnyDict_CheckExact(dict));
+                    STAT_INC(BINARY_OP, hit);
+                    PyObject *res_o;
+                    int rc = PyDict_GetItemRef(dict, sub, &res_o);
+                    if (rc == 0) {
+                        _PyErr_SetKeyError(sub);
+                    }
+                    if (rc <= 0) {
+                        JUMP_TO_LABEL(error);
+                    }
+                    res_stackref = PyStackRef_FromPyObjectSteal(res_o);
+                    ds_stackref = dict_st;
+                    ss_stackref = sub_st;
+                    /* End of uop copied from bytecodes for constant evaluation */
+                    (void)ds_stackref;
+                    (void)ss_stackref;
+                    res = sym_new_const_steal(ctx, PyStackRef_AsPyObjectSteal(res_stackref));
+                    if (sym_is_const(ctx, res)) {
+                        PyObject *result = sym_get_const(ctx, res);
+                        if (_Py_IsImmortal(result)) {
+                            // Replace with _INSERT_2_LOAD_CONST_INLINE_BORROW since we have two inputs and an immortal result
+                            ADD_OP(_INSERT_2_LOAD_CONST_INLINE_BORROW, 0, (uintptr_t)result);
+                        }
+                    }
+                    CHECK_STACK_BOUNDS(1);
+                    stack_pointer[-2] = res;
+                    stack_pointer[-1] = ds;
+                    stack_pointer[0] = ss;
+                    stack_pointer += 1;
+                    ASSERT_WITHIN_STACK_BOUNDS(__FILE__, __LINE__);
+                    break;
+                }
+            }
             CHECK_STACK_BOUNDS(1);
             stack_pointer[-2] = res;
             stack_pointer[-1] = ds;

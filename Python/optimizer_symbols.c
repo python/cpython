@@ -282,7 +282,8 @@ _Py_uop_sym_is_safe_const(JitOptContext *ctx, JitOptRef sym)
     return (typ == &PyUnicode_Type) ||
            (typ == &PyFloat_Type) ||
            (typ == &_PyNone_Type) ||
-           (typ == &PyBool_Type);
+           (typ == &PyBool_Type) ||
+           (typ == &PyFrozenDict_Type);
 }
 
 void
