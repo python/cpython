@@ -1972,6 +1972,7 @@ def _lazy_load_getattr_static():
 
 _cleanups.append(_lazy_load_getattr_static.cache_clear)
 
+
 def _pickle_psargs(psargs):
     return ParamSpecArgs, (psargs.__origin__,)
 
@@ -2483,20 +2484,9 @@ def get_type_hints(obj, globalns=None, localns=None, include_extras=False,
         if isinstance(obj, types.ModuleType):
             globalns = obj.__dict__
         else:
-            nsobj = obj
             # Find globalns for the unwrapped object.
-            # Use an id-based visited set to detect and break on cycles in the
-            # __wrapped__ chain (e.g. f.__wrapped__ = f), matching the behavior
-            # of inspect.unwrap().
-            _seen_ids = {id(nsobj)}
-            while hasattr(nsobj, '__wrapped__'):
-                nsobj = nsobj.__wrapped__
-                _nsobj_id = id(nsobj)
-                if _nsobj_id in _seen_ids:
-                    raise ValueError(
-                        f'wrapper loop when unwrapping {obj!r}'
-                    )
-                _seen_ids.add(_nsobj_id)
+            import inspect
+            nsobj = inspect.unwrap(obj)
             globalns = getattr(nsobj, '__globals__', {})
         if localns is None:
             localns = globalns

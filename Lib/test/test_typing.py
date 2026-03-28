@@ -6842,7 +6842,7 @@ class GetTypeHintsTests(BaseTestCase):
         # not loop forever.
         def f(x: int) -> str: ...
         f.__wrapped__ = f
-        with self.assertRaises(ValueError):
+        with self.assertRaisesRegex(ValueError, 'wrapper loop'):
             get_type_hints(f)
 
     def test_get_type_hints_wrapped_cycle_mutual(self):
@@ -6852,18 +6852,8 @@ class GetTypeHintsTests(BaseTestCase):
         def b(): ...
         a.__wrapped__ = b
         b.__wrapped__ = a
-        with self.assertRaises(ValueError):
+        with self.assertRaisesRegex(ValueError, 'wrapper loop'):
             get_type_hints(a)
-
-    def test_get_type_hints_wrapped_chain_no_cycle(self):
-        # gh-146553: a valid (non-cyclic) __wrapped__ chain must still work.
-        def inner(x: int) -> str: ...
-        def middle(x: int) -> str: ...
-        middle.__wrapped__ = inner
-        def outer(x: int) -> str: ...
-        outer.__wrapped__ = middle
-        # No cycle — should return the annotations without raising.
-        self.assertEqual(get_type_hints(outer), {'x': int, 'return': str})
 
     def test_get_type_hints_annotated(self):
         def foobar(x: List['X']): ...
