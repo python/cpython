@@ -203,6 +203,9 @@ struct gc_generation_stats {
 
     Py_ssize_t objects_transitively_reachable;
     Py_ssize_t objects_not_transitively_reachable;
+
+    // Total duration of the collection in seconds:
+    double duration;
 };
 
 #define GC_YOUNG_STATS_SIZE 11

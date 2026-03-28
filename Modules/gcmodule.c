@@ -342,7 +342,6 @@ gc_get_stats_impl(PyObject *module)
 /*[clinic end generated code: output=a8ab1d8a5d26f3ab input=1ef4ed9d17b1a470]*/
 {
     int i;
-    double duration;
     struct gc_generation_stats stats[NUM_GENERATIONS], *st;
 
     /* To get consistent values despite allocations while constructing
@@ -359,13 +358,12 @@ gc_get_stats_impl(PyObject *module)
     for (i = 0; i < NUM_GENERATIONS; i++) {
         PyObject *dict;
         st = &stats[i];
-        duration = PyTime_AsSecondsDouble(st->ts_stop - st->ts_start);
         dict = Py_BuildValue("{snsnsnsnsd}",
                              "collections", st->collections,
                              "collected", st->collected,
                              "uncollectable", st->uncollectable,
                              "candidates", st->candidates,
-                             "duration", duration
+                             "duration", st->duration
                             );
         if (dict == NULL)
             goto error;

@@ -1447,6 +1447,8 @@ add_stats(GCState *gcstate, int gen, struct gc_generation_stats *stats)
 
     cur_stats->objects_transitively_reachable += stats->objects_transitively_reachable;
     cur_stats->objects_not_transitively_reachable += stats->objects_not_transitively_reachable;
+
+    cur_stats->duration += stats->duration;
 }
 
 static void
@@ -1929,13 +1931,12 @@ do_gc_callback(GCState *gcstate, const char *phase,
     assert(PyList_CheckExact(gcstate->callbacks));
     PyObject *info = NULL;
     if (PyList_GET_SIZE(gcstate->callbacks) != 0) {
-        double duration = PyTime_AsSecondsDouble(stats->ts_stop - stats->ts_start);
         info = Py_BuildValue("{sisnsnsnsd}",
             "generation", generation,
             "collected", stats->collected,
             "uncollectable", stats->uncollectable,
             "candidates", stats->candidates,
-            "duration", duration);
+            "duration", stats->duration);
         if (info == NULL) {
             PyErr_FormatUnraisable("Exception ignored while invoking gc callbacks");
             return;
@@ -2191,6 +2192,7 @@ _PyGC_Collect(PyThreadState *tstate, int generation, _PyGC_Reason reason)
             Py_UNREACHABLE();
     }
     (void)PyTime_PerfCounterRaw(&stats.ts_stop);
+    stats.duration = PyTime_AsSecondsDouble(stats.ts_stop - stats.ts_start);
     add_stats(gcstate, generation, &stats);
     if (PyDTrace_GC_DONE_ENABLED()) {
         PyDTrace_GC_DONE(stats.uncollectable + stats.collected);
@@ -2213,10 +2215,9 @@ _PyGC_Collect(PyThreadState *tstate, int generation, _PyGC_Reason reason)
     _Py_atomic_store_int(&gcstate->collecting, 0);
 
     if (gcstate->debug & _PyGC_DEBUG_STATS) {
-        double duration = PyTime_AsSecondsDouble(stats.ts_stop - stats.ts_start);
         PySys_WriteStderr(
             "gc: done, %zd unreachable, %zd uncollectable, %.4fs elapsed\n",
-            stats.collected + stats.uncollectable, stats.uncollectable, duration
+            stats.collected + stats.uncollectable, stats.uncollectable, stats.duration
         );
     }
 
