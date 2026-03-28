@@ -43,8 +43,10 @@ extensions = [
 
 # Skip if downstream redistributors haven't installed them
 _OPTIONAL_EXTENSIONS = (
+    'linklint.ext',
     'notfound.extension',
     'sphinxext.opengraph',
+    'sphinxcontrib.rsvgconverter',
 )
 for optional_ext in _OPTIONAL_EXTENSIONS:
     try:
@@ -175,6 +177,7 @@ nitpick_ignore = [
     ('c:type', '__int64'),
     ('c:type', 'unsigned __int64'),
     ('c:type', 'double'),
+    ('c:type', '_Float16'),
     # Standard C structures
     ('c:struct', 'in6_addr'),
     ('c:struct', 'in_addr'),
@@ -555,6 +558,7 @@ linkcheck_ignore = [
 # mapping unique short aliases to a base URL and a prefix.
 # https://www.sphinx-doc.org/en/master/usage/extensions/extlinks.html
 extlinks = {
+    "oss-fuzz": ("https://issues.oss-fuzz.com/issues/%s", "#%s"),
     "pypi": ("https://pypi.org/project/%s/", "%s"),
     "source": (SOURCE_URI, "%s"),
 }
@@ -566,6 +570,7 @@ extlinks_detect_hardcoded_links = True
 # Relative filename of the data files
 refcount_file = 'data/refcounts.dat'
 stable_abi_file = 'data/stable_abi.dat'
+threadsafety_file = 'data/threadsafety.dat'
 
 # Options for sphinxext-opengraph
 # -------------------------------
