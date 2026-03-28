@@ -201,7 +201,6 @@ def main():
                 '__file__': spec.origin,
                 '__name__': spec.name,
                 '__package__': None,
-                '__cached__': None,
             })
 
         try:

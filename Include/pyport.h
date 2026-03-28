@@ -446,7 +446,9 @@ extern "C" {
 /*
  * Specify alignment on compilers that support it.
  */
-#if defined(__GNUC__) && __GNUC__ >= 3
+#ifdef Py_BUILD_CORE
+// always use _Py_ALIGNED_DEF instead
+#elif defined(__GNUC__) && __GNUC__ >= 3
 #define Py_ALIGNED(x) __attribute__((aligned(x)))
 #else
 #define Py_ALIGNED(x)
@@ -567,8 +569,11 @@ extern "C" {
 //
 // Example: _Py_TYPEOF(x) x_copy = (x);
 //
-// The macro is only defined if GCC or clang compiler is used.
-#if defined(__GNUC__) || defined(__clang__)
+// On C23, use typeof(). Otherwise, the macro is only defined
+// if GCC or clang compiler is used.
+#if defined (__STDC_VERSION__) && __STDC_VERSION__ >= 202311L
+#  define _Py_TYPEOF(expr) typeof(expr)
+#elif defined(__GNUC__) || defined(__clang__)
 #  define _Py_TYPEOF(expr) __typeof__(expr)
 #endif
 

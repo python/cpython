@@ -2061,6 +2061,30 @@ SyntaxError: trailing comma not allowed without surrounding parentheses
 Traceback (most recent call last):
 SyntaxError: trailing comma not allowed without surrounding parentheses
 
+>>> with item,: pass
+Traceback (most recent call last):
+SyntaxError: the last 'with' item has a trailing comma
+
+>>> with item as x,: pass
+Traceback (most recent call last):
+SyntaxError: the last 'with' item has a trailing comma
+
+>>> with item1, item2,: pass
+Traceback (most recent call last):
+SyntaxError: the last 'with' item has a trailing comma
+
+>>> with item1 as x, item2,: pass
+Traceback (most recent call last):
+SyntaxError: the last 'with' item has a trailing comma
+
+>>> with item1 as x, item2 as y,: pass
+Traceback (most recent call last):
+SyntaxError: the last 'with' item has a trailing comma
+
+>>> with item1, item2 as y,: pass
+Traceback (most recent call last):
+SyntaxError: the last 'with' item has a trailing comma
+
 >>> import a from b
 Traceback (most recent call last):
 SyntaxError: Did you mean to use 'from ... import ...' instead?
@@ -2344,6 +2368,12 @@ Invalid pattern matching constructs:
     ...     ...
     Traceback (most recent call last):
     SyntaxError: positional patterns follow keyword patterns
+
+    >>> match ...:
+    ...   case Foo(y=1, x=2, y=3):
+    ...     ...
+    Traceback (most recent call last):
+    SyntaxError: attribute name repeated in class pattern: y
 
     >>> match ...:
     ...   case C(a=b, c, d=e, f, g=h, i, j=k, ...):
@@ -3336,6 +3366,20 @@ case(34)
             lineno=3
         )
 
+    def test_multiline_string_concat_missing_comma_points_to_last_string(self):
+        # gh-142236: For multi-line string concatenations with a missing comma,
+        # the error should point to the last string, not the first.
+        self._check_error(
+            "print(\n"
+            '    "line1"\n'
+            '    "line2"\n'
+            '    "line3"\n'
+            "    x=1\n"
+            ")",
+            "Perhaps you forgot a comma",
+            lineno=4,  # Points to "line3", the last string
+        )
+
     @support.cpython_only
     def test_syntax_error_on_deeply_nested_blocks(self):
         # This raises a SyntaxError, it used to raise a SystemError. Context
@@ -3460,6 +3504,128 @@ while 1:
             ("continue", "import ast")
         ]:
             self._check_error(f"x = {lhs_stmt} if 1 else {rhs_stmt}", msg)
+
+
+class LazyImportRestrictionTestCase(SyntaxErrorTestCase):
+    """Test syntax restrictions for lazy imports."""
+
+    def test_lazy_import_in_try_block(self):
+        """Test that lazy imports are not allowed inside try blocks."""
+        self._check_error("""\
+try:
+    lazy import os
+except:
+    pass
+""", "lazy import not allowed inside try/except blocks")
+
+        self._check_error("""\
+try:
+    lazy from sys import path
+except ImportError:
+    pass
+""", "lazy from ... import not allowed inside try/except blocks")
+
+    def test_lazy_import_in_trystar_block(self):
+        """Test that lazy imports are not allowed inside try* blocks."""
+        self._check_error("""\
+try:
+    lazy import json
+except* Exception:
+    pass
+""", "lazy import not allowed inside try/except blocks")
+
+        self._check_error("""\
+try:
+    lazy from collections import defaultdict
+except* ImportError:
+    pass
+""", "lazy from ... import not allowed inside try/except blocks")
+
+    def test_lazy_import_in_except_block(self):
+        """Test that lazy imports are not allowed inside except blocks."""
+        self._check_error("""\
+try:
+    sys.modules # trigger the except block
+except* Exception:
+   lazy import sys
+""", "lazy import not allowed inside try/except blocks")
+
+    def test_lazy_import_in_function(self):
+        """Test that lazy imports are not allowed inside functions."""
+        self._check_error("""\
+def func():
+    lazy import math
+""", "lazy import not allowed inside functions")
+
+        self._check_error("""\
+def func():
+    lazy from datetime import datetime
+""", "lazy from ... import not allowed inside functions")
+
+    def test_lazy_import_in_async_function(self):
+        """Test that lazy imports are not allowed inside async functions."""
+        self._check_error("""\
+async def async_func():
+    lazy import asyncio
+""", "lazy import not allowed inside functions")
+
+        self._check_error("""\
+async def async_func():
+    lazy from json import loads
+""", "lazy from ... import not allowed inside functions")
+
+    def test_lazy_import_in_class(self):
+        """Test that lazy imports are not allowed inside classes."""
+        self._check_error("""\
+class MyClass:
+    lazy import typing
+""", "lazy import not allowed inside classes")
+
+        self._check_error("""\
+class MyClass:
+    lazy from abc import ABC
+""", "lazy from ... import not allowed inside classes")
+
+    def test_lazy_import_star_forbidden(self):
+        """Test that 'lazy from ... import *' is forbidden everywhere."""
+        # At module level should also be forbidden
+        self._check_error("lazy from os import *",
+                         "lazy from ... import \\* is not allowed")
+
+        # Inside function should give lazy function error first
+        self._check_error("""\
+def func():
+    lazy from sys import *
+""", "lazy from ... import not allowed inside functions")
+
+    def test_lazy_import_nested_scopes(self):
+        """Test lazy imports in nested scopes."""
+        self._check_error("""\
+class Outer:
+    def method(self):
+        lazy import sys
+""", "lazy import not allowed inside functions")
+
+        self._check_error("""\
+def outer():
+    class Inner:
+        lazy import json
+""", "lazy import not allowed inside classes")
+
+        self._check_error("""\
+def outer():
+    def inner():
+        lazy from collections import deque
+""", "lazy from ... import not allowed inside functions")
+
+    def test_lazy_import_valid_cases(self):
+        """Test that lazy imports work at module level."""
+        # These should compile without errors
+        compile("lazy import os", "<test>", "exec")
+        compile("lazy from sys import path", "<test>", "exec")
+        compile("lazy import json as j", "<test>", "exec")
+        compile("lazy from datetime import datetime as dt", "<test>", "exec")
+
 
 def load_tests(loader, tests, pattern):
     tests.addTest(doctest.DocTestSuite())

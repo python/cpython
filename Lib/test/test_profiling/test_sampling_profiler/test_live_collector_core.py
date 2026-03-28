@@ -157,6 +157,70 @@ class TestLiveStatsCollectorFrameProcessing(unittest.TestCase):
         )
         self.assertNotIn(loc1, collector.per_thread_data[456].result)
 
+    def test_process_recursive_frames_counted_once(self):
+        """Test that recursive functions are counted once per sample."""
+        collector = LiveStatsCollector(1000)
+        # Simulate recursive function appearing 5 times in stack
+        frames = [
+            MockFrameInfo("test.py", 10, "recursive_func"),
+            MockFrameInfo("test.py", 10, "recursive_func"),
+            MockFrameInfo("test.py", 10, "recursive_func"),
+            MockFrameInfo("test.py", 10, "recursive_func"),
+            MockFrameInfo("test.py", 10, "recursive_func"),
+        ]
+        collector.process_frames(frames)
+
+        location = ("test.py", 10, "recursive_func")
+        # Should count as 1 cumulative (present in 1 sample), not 5
+        self.assertEqual(collector.result[location]["cumulative_calls"], 1)
+        self.assertEqual(collector.result[location]["direct_calls"], 1)
+
+    def test_process_recursive_frames_multiple_samples(self):
+        """Test cumulative counting across multiple samples with recursion."""
+        collector = LiveStatsCollector(1000)
+
+        # Sample 1: depth 3
+        frames1 = [
+            MockFrameInfo("test.py", 10, "recursive_func"),
+            MockFrameInfo("test.py", 10, "recursive_func"),
+            MockFrameInfo("test.py", 10, "recursive_func"),
+        ]
+        # Sample 2: depth 2
+        frames2 = [
+            MockFrameInfo("test.py", 10, "recursive_func"),
+            MockFrameInfo("test.py", 10, "recursive_func"),
+        ]
+
+        collector.process_frames(frames1)
+        collector.process_frames(frames2)
+
+        location = ("test.py", 10, "recursive_func")
+        # Should count as 2 (present in 2 samples), not 5
+        self.assertEqual(collector.result[location]["cumulative_calls"], 2)
+        self.assertEqual(collector.result[location]["direct_calls"], 2)
+
+    def test_process_mixed_recursive_nonrecursive(self):
+        """Test stack with both recursive and non-recursive functions."""
+        collector = LiveStatsCollector(1000)
+
+        # Stack: main -> foo (recursive x3) -> bar
+        frames = [
+            MockFrameInfo("test.py", 50, "bar"),
+            MockFrameInfo("test.py", 20, "foo"),
+            MockFrameInfo("test.py", 20, "foo"),
+            MockFrameInfo("test.py", 20, "foo"),
+            MockFrameInfo("test.py", 10, "main"),
+        ]
+        collector.process_frames(frames)
+
+        # foo: 1 cumulative despite 3 occurrences
+        self.assertEqual(collector.result[("test.py", 20, "foo")]["cumulative_calls"], 1)
+        self.assertEqual(collector.result[("test.py", 20, "foo")]["direct_calls"], 0)
+
+        # bar and main: 1 cumulative each
+        self.assertEqual(collector.result[("test.py", 50, "bar")]["cumulative_calls"], 1)
+        self.assertEqual(collector.result[("test.py", 10, "main")]["cumulative_calls"], 1)
+
 
 class TestLiveStatsCollectorCollect(unittest.TestCase):
     """Tests for the collect method."""
@@ -203,7 +267,13 @@ class TestLiveStatsCollectorCollect(unittest.TestCase):
         self.assertEqual(collector.failed_samples, 0)
 
     def test_collect_with_empty_frames(self):
-        """Test collect with empty frames."""
+        """Test collect with empty frames counts as successful.
+
+        A sample is considered successful if the profiler could read from the
+        target process, even if no frames matched the current filter (e.g.,
+        --mode exception when no thread has an active exception). The sample
+        itself worked; it just didn't produce frame data.
+        """
         collector = LiveStatsCollector(1000)
         thread_info = MockThreadInfo(123, [])
         interpreter_info = MockInterpreterInfo(0, [thread_info])
@@ -211,9 +281,44 @@ class TestLiveStatsCollectorCollect(unittest.TestCase):
 
         collector.collect(stack_frames)
 
-        # Empty frames still count as successful since collect() was called successfully
+        # Empty frames still count as successful - the sample worked even
+        # though no frames matched the filter
         self.assertEqual(collector.successful_samples, 1)
+        self.assertEqual(collector.total_samples, 1)
         self.assertEqual(collector.failed_samples, 0)
+
+    def test_sample_counts_invariant(self):
+        """Test that total_samples == successful_samples + failed_samples.
+
+        Empty frame data (e.g., from --mode exception with no active exception)
+        still counts as successful since the profiler could read process state.
+        """
+        collector = LiveStatsCollector(1000)
+
+        # Mix of samples with and without frame data
+        frames = [MockFrameInfo("test.py", 10, "func")]
+        thread_with_frames = MockThreadInfo(123, frames)
+        thread_empty = MockThreadInfo(456, [])
+        interp_with_frames = MockInterpreterInfo(0, [thread_with_frames])
+        interp_empty = MockInterpreterInfo(0, [thread_empty])
+
+        # Collect various samples
+        collector.collect([interp_with_frames])  # Has frames
+        collector.collect([interp_empty])         # No frames (filtered)
+        collector.collect([interp_with_frames])  # Has frames
+        collector.collect([interp_empty])         # No frames (filtered)
+        collector.collect([interp_empty])         # No frames (filtered)
+
+        # All 5 samples are successful (profiler could read process state)
+        self.assertEqual(collector.total_samples, 5)
+        self.assertEqual(collector.successful_samples, 5)
+        self.assertEqual(collector.failed_samples, 0)
+
+        # Invariant must hold
+        self.assertEqual(
+            collector.total_samples,
+            collector.successful_samples + collector.failed_samples
+        )
 
     def test_collect_skip_idle_threads(self):
         """Test that idle threads are skipped when skip_idle=True."""
@@ -257,6 +362,120 @@ class TestLiveStatsCollectorCollect(unittest.TestCase):
         self.assertIn(123, collector.thread_ids)
         self.assertIn(124, collector.thread_ids)
 
+    def test_collect_filtered_mode_percentage_calculation(self):
+        """Test that percentages use successful_samples, not total_samples.
+
+        With the current behavior, all samples are considered successful
+        (the profiler could read from the process), even when filters result
+        in no frame data. This means percentages are relative to all sampling
+        attempts that succeeded in reading process state.
+        """
+        collector = LiveStatsCollector(1000)
+
+        # Simulate 10 samples where only 2 had matching data (e.g., exception mode)
+        frames_with_data = [MockFrameInfo("test.py", 10, "exception_handler")]
+        thread_with_data = MockThreadInfo(123, frames_with_data)
+        interpreter_with_data = MockInterpreterInfo(0, [thread_with_data])
+
+        # Empty thread simulates filtered-out data at C level
+        thread_empty = MockThreadInfo(456, [])
+        interpreter_empty = MockInterpreterInfo(0, [thread_empty])
+
+        # 2 samples with data
+        collector.collect([interpreter_with_data])
+        collector.collect([interpreter_with_data])
+
+        # 8 samples without data (filtered out at C level, but sample still succeeded)
+        for _ in range(8):
+            collector.collect([interpreter_empty])
+
+        # All 10 samples are successful - the profiler could read from the process
+        self.assertEqual(collector.total_samples, 10)
+        self.assertEqual(collector.successful_samples, 10)
+
+        # Build stats and check percentage
+        stats_list = collector.build_stats_list()
+        self.assertEqual(len(stats_list), 1)
+
+        # The function appeared in 2 out of 10 successful samples = 20%
+        location = ("test.py", 10, "exception_handler")
+        self.assertEqual(collector.result[location]["direct_calls"], 2)
+
+    def test_percentage_values_use_successful_samples(self):
+        """Test that percentages are calculated from successful_samples.
+
+        This verifies the fix where percentages use successful_samples (samples with
+        frame data) instead of total_samples (all sampling attempts). Critical for
+        filtered modes like --mode exception.
+        """
+        collector = LiveStatsCollector(1000)
+
+        # Simulate scenario: 100 total samples, only 20 had frame data
+        collector.total_samples = 100
+        collector.successful_samples = 20
+
+        # Function appeared in 10 out of 20 successful samples
+        collector.result[("test.py", 10, "handler")] = {
+            "direct_calls": 10,
+            "cumulative_calls": 15,
+            "total_rec_calls": 0,
+        }
+
+        stats_list = collector.build_stats_list()
+        self.assertEqual(len(stats_list), 1)
+
+        stat = stats_list[0]
+        # Calculate expected percentages using successful_samples
+        expected_sample_pct = stat["direct_calls"] / collector.successful_samples * 100
+        expected_cumul_pct = stat["cumulative_calls"] / collector.successful_samples * 100
+
+        # Percentage should be 10/20 * 100 = 50%, NOT 10/100 * 100 = 10%
+        self.assertAlmostEqual(expected_sample_pct, 50.0)
+        # Cumulative percentage should be 15/20 * 100 = 75%, NOT 15/100 * 100 = 15%
+        self.assertAlmostEqual(expected_cumul_pct, 75.0)
+
+        # Verify sorting by percentage works correctly
+        collector.result[("test.py", 20, "other")] = {
+            "direct_calls": 5,  # 25% of successful samples
+            "cumulative_calls": 8,
+            "total_rec_calls": 0,
+        }
+        collector.sort_by = "sample_pct"
+        stats_list = collector.build_stats_list()
+        # handler (50%) should come before other (25%)
+        self.assertEqual(stats_list[0]["func"][2], "handler")
+        self.assertEqual(stats_list[1]["func"][2], "other")
+
+    def test_build_stats_list_zero_successful_samples(self):
+        """Test build_stats_list handles zero successful_samples without division by zero.
+
+        When all samples are filtered out (e.g., exception mode with no exceptions),
+        percentage calculations should return 0 without raising ZeroDivisionError.
+        """
+        collector = LiveStatsCollector(1000)
+
+        # Edge case: data exists but no successful samples
+        collector.result[("test.py", 10, "func")] = {
+            "direct_calls": 10,
+            "cumulative_calls": 10,
+            "total_rec_calls": 0,
+        }
+        collector.total_samples = 100
+        collector.successful_samples = 0  # All samples filtered out
+
+        # Should not raise ZeroDivisionError
+        stats_list = collector.build_stats_list()
+        self.assertEqual(len(stats_list), 1)
+
+        # Verify percentage-based sorting also works with zero successful_samples
+        collector.sort_by = "sample_pct"
+        stats_list = collector.build_stats_list()
+        self.assertEqual(len(stats_list), 1)
+
+        collector.sort_by = "cumul_pct"
+        stats_list = collector.build_stats_list()
+        self.assertEqual(len(stats_list), 1)
+
 
 class TestLiveStatsCollectorStatisticsBuilding(unittest.TestCase):
     """Tests for statistics building and sorting."""
@@ -281,6 +500,8 @@ class TestLiveStatsCollectorStatisticsBuilding(unittest.TestCase):
             "total_rec_calls": 0,
         }
         self.collector.total_samples = 300
+        # successful_samples is used for percentage calculations
+        self.collector.successful_samples = 300
 
     def test_build_stats_list(self):
         """Test that stats list is built correctly."""

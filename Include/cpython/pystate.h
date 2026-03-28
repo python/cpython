@@ -135,6 +135,13 @@ struct _ts {
     /* Pointer to currently executing frame. */
     struct _PyInterpreterFrame *current_frame;
 
+    /* Pointer to the base frame (bottommost sentinel frame).
+       Used by profilers to validate complete stack unwinding.
+       Points to the embedded base_frame in _PyThreadStateImpl.
+       The frame is embedded there rather than here because _PyInterpreterFrame
+       is defined in internal headers that cannot be exposed in the public API. */
+    struct _PyInterpreterFrame *base_frame;
+
     struct _PyInterpreterFrame *last_profiled_frame;
 
     Py_tracefunc c_profilefunc;
@@ -191,6 +198,7 @@ struct _ts {
     _PyStackChunk *datastack_chunk;
     PyObject **datastack_top;
     PyObject **datastack_limit;
+    _PyStackChunk *datastack_cached_chunk;
     /* XXX signal handlers should also be here */
 
     /* The following fields are here to avoid allocation during init.

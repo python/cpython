@@ -1711,7 +1711,7 @@ class TestFolding(TestHeaderBase):
             'singlewordthatwontfit')
         self.assertEqual(
             h.fold(policy=policy.default.clone(max_line_length=20)),
-            'Subject: \n'
+            'Subject:\n'
             ' =?utf-8?q?thisisa?=\n'
             ' =?utf-8?q?verylon?=\n'
             ' =?utf-8?q?glineco?=\n'
@@ -1727,7 +1727,7 @@ class TestFolding(TestHeaderBase):
             'singlewordthatwontfit plusanotherverylongwordthatwontfit')
         self.assertEqual(
             h.fold(policy=policy.default.clone(max_line_length=20)),
-            'Subject: \n'
+            'Subject:\n'
             ' =?utf-8?q?thisisa?=\n'
             ' =?utf-8?q?verylon?=\n'
             ' =?utf-8?q?glineco?=\n'
@@ -1820,6 +1820,19 @@ class TestFolding(TestHeaderBase):
         self.assertEqual(
             h.fold(policy=policy.default.clone(max_line_length=20)),
             'Message-ID:\n <ईमेलfromMessage@wők.com>\n')
+
+    def test_fold_references(self):
+        h = self.make_header(
+            'References',
+            '<referenceid1thatislongerthan@maxlinelength.com> '
+            '<referenceid2thatislongerthan@maxlinelength.com>'
+            )
+        self.assertEqual(
+            h.fold(policy=policy.default.clone(max_line_length=20)),
+            'References: '
+            '<referenceid1thatislongerthan@maxlinelength.com>\n'
+            ' <referenceid2thatislongerthan@maxlinelength.com>\n')
+
 
 if __name__ == '__main__':
     unittest.main()

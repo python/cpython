@@ -30,6 +30,7 @@ typedef struct _PyScannerObject {
     signed char strict;
     PyObject *object_hook;
     PyObject *object_pairs_hook;
+    PyObject *array_hook;
     PyObject *parse_float;
     PyObject *parse_int;
     PyObject *parse_constant;
@@ -41,6 +42,7 @@ static PyMemberDef scanner_members[] = {
     {"strict", Py_T_BOOL, offsetof(PyScannerObject, strict), Py_READONLY, "strict"},
     {"object_hook", _Py_T_OBJECT, offsetof(PyScannerObject, object_hook), Py_READONLY, "object_hook"},
     {"object_pairs_hook", _Py_T_OBJECT, offsetof(PyScannerObject, object_pairs_hook), Py_READONLY},
+    {"array_hook", _Py_T_OBJECT, offsetof(PyScannerObject, array_hook), Py_READONLY},
     {"parse_float", _Py_T_OBJECT, offsetof(PyScannerObject, parse_float), Py_READONLY, "parse_float"},
     {"parse_int", _Py_T_OBJECT, offsetof(PyScannerObject, parse_int), Py_READONLY, "parse_int"},
     {"parse_constant", _Py_T_OBJECT, offsetof(PyScannerObject, parse_constant), Py_READONLY, "parse_constant"},
@@ -423,11 +425,12 @@ raise_errmsg(const char *msg, PyObject *s, Py_ssize_t end)
 
     PyObject *exc;
     exc = PyObject_CallFunction(JSONDecodeError, "zOn", msg, s, end);
-    Py_DECREF(JSONDecodeError);
     if (exc) {
         PyErr_SetObject(JSONDecodeError, exc);
         Py_DECREF(exc);
     }
+
+    Py_DECREF(JSONDecodeError);
 }
 
 static void
@@ -719,6 +722,7 @@ scanner_traverse(PyObject *op, visitproc visit, void *arg)
     Py_VISIT(Py_TYPE(self));
     Py_VISIT(self->object_hook);
     Py_VISIT(self->object_pairs_hook);
+    Py_VISIT(self->array_hook);
     Py_VISIT(self->parse_float);
     Py_VISIT(self->parse_int);
     Py_VISIT(self->parse_constant);
@@ -731,6 +735,7 @@ scanner_clear(PyObject *op)
     PyScannerObject *self = PyScannerObject_CAST(op);
     Py_CLEAR(self->object_hook);
     Py_CLEAR(self->object_pairs_hook);
+    Py_CLEAR(self->array_hook);
     Py_CLEAR(self->parse_float);
     Py_CLEAR(self->parse_int);
     Py_CLEAR(self->parse_constant);
@@ -941,6 +946,12 @@ _parse_array_unicode(PyScannerObject *s, PyObject *memo, PyObject *pystr, Py_ssi
         goto bail;
     }
     *next_idx_ptr = idx + 1;
+    /* if array_hook is not None: return array_hook(rval) */
+    if (!Py_IsNone(s->array_hook)) {
+        val = PyObject_CallOneArg(s->array_hook, rval);
+        Py_DECREF(rval);
+        return val;
+    }
     return rval;
 bail:
     Py_XDECREF(val);
@@ -1258,6 +1269,10 @@ scanner_new(PyTypeObject *type, PyObject *args, PyObject *kwds)
     s->object_pairs_hook = PyObject_GetAttrString(ctx, "object_pairs_hook");
     if (s->object_pairs_hook == NULL)
         goto bail;
+    s->array_hook = PyObject_GetAttrString(ctx, "array_hook");
+    if (s->array_hook == NULL) {
+        goto bail;
+    }
     s->parse_float = PyObject_GetAttrString(ctx, "parse_float");
     if (s->parse_float == NULL)
         goto bail;
@@ -1459,6 +1474,7 @@ encoder_call(PyObject *op, PyObject *args, PyObject *kwds)
             return NULL;
         }
     }
+    indent_level = 0;
     if (encoder_listencode_obj(self, writer, obj, indent_level, indent_cache)) {
         PyUnicodeWriter_Discard(writer);
         Py_XDECREF(indent_cache);
@@ -1597,7 +1613,7 @@ encoder_listencode_obj(PyEncoderObject *s, PyUnicodeWriter *writer,
         _Py_LeaveRecursiveCall();
         return rv;
     }
-    else if (PyDict_Check(obj)) {
+    else if (PyAnyDict_Check(obj)) {
         if (_Py_EnterRecursiveCall(" while encoding a JSON object"))
             return -1;
         rv = encoder_listencode_dict(s, writer, obj, indent_level, indent_cache);
@@ -1836,7 +1852,7 @@ encoder_listencode_dict(PyEncoderObject *s, PyUnicodeWriter *writer,
             goto bail;
     }
 
-    if (s->sort_keys || !PyDict_CheckExact(dct)) {
+    if (s->sort_keys || !PyAnyDict_CheckExact(dct)) {
         PyObject *items = PyMapping_Items(dct);
         if (items == NULL || (s->sort_keys && PyList_Sort(items) < 0)) {
             Py_XDECREF(items);
@@ -2085,6 +2101,7 @@ _json_exec(PyObject *module)
 }
 
 static PyModuleDef_Slot _json_slots[] = {
+    _Py_ABI_SLOT,
     {Py_mod_exec, _json_exec},
     {Py_mod_multiple_interpreters, Py_MOD_PER_INTERPRETER_GIL_SUPPORTED},
     {Py_mod_gil, Py_MOD_GIL_NOT_USED},

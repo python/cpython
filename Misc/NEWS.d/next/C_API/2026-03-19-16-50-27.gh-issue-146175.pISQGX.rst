@@ -1,0 +1,12 @@
+The following macros are :term:`soft deprecated`:
+:c:macro:`Py_ALIGNED`,
+:c:macro:`PY_FORMAT_SIZE_T`,
+:c:macro:`Py_LL`, :c:macro:`Py_ULL`,
+:c:macro:`PY_LONG_LONG`, :c:macro:`PY_LLONG_MIN`, :c:macro:`PY_LLONG_MAX`,
+:c:macro:`PY_ULLONG_MAX`, :c:macro:`PY_INT32_T`, :c:macro:`PY_UINT32_T`,
+:c:macro:`PY_INT64_T`, :c:macro:`PY_UINT64_T`, :c:macro:`PY_SIZE_MAX`,
+:c:macro:`Py_UNICODE_SIZE`,
+:c:macro:`Py_VA_COPY`.
+
+The macro :c:macro:`Py_UNICODE_WIDE`, which was scheduled for removal, is
+:term:`soft deprecated` instead.

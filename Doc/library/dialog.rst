@@ -1,18 +1,17 @@
 Tkinter Dialogs
 ===============
 
-:mod:`tkinter.simpledialog` --- Standard Tkinter input dialogs
-^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+:mod:`!tkinter.simpledialog` --- Standard Tkinter input dialogs
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
 .. module:: tkinter.simpledialog
-   :platform: Tk
    :synopsis: Simple dialog windows
 
 **Source code:** :source:`Lib/tkinter/simpledialog.py`
 
 --------------
 
-The :mod:`tkinter.simpledialog` module contains convenience classes and
+The :mod:`!tkinter.simpledialog` module contains convenience classes and
 functions for creating simple modal dialogs to get a value from the user.
 
 
@@ -39,18 +38,17 @@ functions for creating simple modal dialogs to get a value from the user.
 
 
 
-:mod:`tkinter.filedialog` --- File selection dialogs
-^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+:mod:`!tkinter.filedialog` --- File selection dialogs
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
 .. module:: tkinter.filedialog
-   :platform: Tk
    :synopsis: Dialog classes for file selection
 
 **Source code:** :source:`Lib/tkinter/filedialog.py`
 
 --------------
 
-The :mod:`tkinter.filedialog` module provides classes and factory functions for
+The :mod:`!tkinter.filedialog` module provides classes and factory functions for
 creating file/directory selection windows.
 
 Native Load/Save Dialogs
@@ -204,18 +202,17 @@ These do not emulate the native look-and-feel of the platform.
       directory. Confirmation is required if an already existing file is
       selected.
 
-:mod:`tkinter.commondialog` --- Dialog window templates
-^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+:mod:`!tkinter.commondialog` --- Dialog window templates
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
 .. module:: tkinter.commondialog
-   :platform: Tk
    :synopsis: Tkinter base class for dialogs
 
 **Source code:** :source:`Lib/tkinter/commondialog.py`
 
 --------------
 
-The :mod:`tkinter.commondialog` module provides the :class:`Dialog` class that
+The :mod:`!tkinter.commondialog` module provides the :class:`Dialog` class that
 is the base class for dialogs defined in other supporting modules.
 
 .. class:: Dialog(master=None, **options)

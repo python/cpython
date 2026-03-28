@@ -639,6 +639,7 @@ static int test_init_from_config(void)
 
     putenv("PYTHONMALLOCSTATS=0");
     config.malloc_stats = 1;
+    config.pymalloc_hugepages = 1;
 
     putenv("PYTHONPYCACHEPREFIX=env_pycache_prefix");
     config_set_string(&config, &config.pycache_prefix, L"conf_pycache_prefix");
@@ -795,6 +796,7 @@ static void set_most_env_vars(void)
     putenv("PYTHONPROFILEIMPORTTIME=1");
     putenv("PYTHONNODEBUGRANGES=1");
     putenv("PYTHONMALLOCSTATS=1");
+    putenv("PYTHON_PYMALLOC_HUGEPAGES=1");
     putenv("PYTHONUTF8=1");
     putenv("PYTHONVERBOSE=1");
     putenv("PYTHONINSPECT=1");
@@ -1989,6 +1991,33 @@ static int test_init_run_main(void)
 }
 
 
+static int test_init_main(void)
+{
+    PyConfig config;
+    PyConfig_InitPythonConfig(&config);
+
+    configure_init_main(&config);
+    config._init_main = 0;
+    init_from_config_clear(&config);
+
+    /* sys.stdout don't exist yet: it is created by _Py_InitializeMain() */
+    int res = PyRun_SimpleString(
+        "import sys; "
+        "print('Run Python code before _Py_InitializeMain', "
+               "file=sys.stderr)");
+    if (res < 0) {
+        exit(1);
+    }
+
+    PyStatus status = _Py_InitializeMain();
+    if (PyStatus_Exception(status)) {
+        Py_ExitStatusException(status);
+    }
+
+    return Py_RunMain();
+}
+
+
 static int test_run_main(void)
 {
     PyConfig config;
@@ -2063,15 +2092,20 @@ static int check_use_frozen_modules(const char *rawval)
     if (rawval == NULL) {
         wcscpy(optval, L"frozen_modules");
     }
-    else if (swprintf(optval, 100,
-#if defined(_MSC_VER)
-        L"frozen_modules=%S",
-#else
-        L"frozen_modules=%s",
-#endif
-        rawval) < 0) {
-        error("rawval is too long");
-        return -1;
+    else {
+        wchar_t *val = Py_DecodeLocale(rawval, NULL);
+        if (val == NULL) {
+            error("unable to decode TESTFROZEN");
+            return -1;
+        }
+        wcscpy(optval, L"frozen_modules=");
+        if ((wcslen(optval) + wcslen(val)) >= Py_ARRAY_LENGTH(optval)) {
+            error("TESTFROZEN is too long");
+            PyMem_RawFree(val);
+            return -1;
+        }
+        wcscat(optval, val);
+        PyMem_RawFree(val);
     }
 
     PyConfig config;
@@ -2642,6 +2676,7 @@ static struct TestCase TestCases[] = {
     {"test_preinit_parse_argv", test_preinit_parse_argv},
     {"test_preinit_dont_parse_argv", test_preinit_dont_parse_argv},
     {"test_init_run_main", test_init_run_main},
+    {"test_init_main", test_init_main},
     {"test_init_sys_add", test_init_sys_add},
     {"test_init_setpath", test_init_setpath},
     {"test_init_setpath_config", test_init_setpath_config},
