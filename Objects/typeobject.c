@@ -19,6 +19,7 @@
 #include "pycore_pyerrors.h"      // _PyErr_Occurred()
 #include "pycore_pystate.h"       // _PyThreadState_GET()
 #include "pycore_symtable.h"      // _Py_Mangle()
+#include "pycore_tuple.h"         // _PyTuple_FromPair
 #include "pycore_typeobject.h"    // struct type_cache
 #include "pycore_unicodeobject.h" // _PyUnicode_Copy
 #include "pycore_unionobject.h"   // _Py_union_type_or
@@ -1811,7 +1812,7 @@ mro_hierarchy_for_complete_type(PyTypeObject *type, PyObject *temp)
         tuple = PyTuple_Pack(3, type, new_mro, old_mro);
     }
     else {
-        tuple = PyTuple_Pack(2, type, new_mro);
+        tuple = _PyTuple_FromPair((PyObject *)type, new_mro);
     }
 
     if (tuple != NULL) {
@@ -7855,7 +7856,7 @@ object_getstate_default(PyObject *obj, int required)
         if (PyDict_GET_SIZE(slots) > 0) {
             PyObject *state2;
 
-            state2 = PyTuple_Pack(2, state, slots);
+            state2 = _PyTuple_FromPair(state, slots);
             Py_DECREF(state);
             if (state2 == NULL) {
                 Py_DECREF(slotnames);

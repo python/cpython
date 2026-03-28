@@ -2802,23 +2802,25 @@ SyntaxError_init(PyObject *op, PyObject *args, PyObject *kwds)
             return -1;
         }
 
-        self->end_lineno = NULL;
-        self->end_offset = NULL;
+        PyObject *filename, *lineno, *offset, *text;
+        PyObject *end_lineno = NULL;
+        PyObject *end_offset = NULL;
+        PyObject *metadata = NULL;
         if (!PyArg_ParseTuple(info, "OOOO|OOO",
-                              &self->filename, &self->lineno,
-                              &self->offset, &self->text,
-                              &self->end_lineno, &self->end_offset, &self->metadata)) {
+                              &filename, &lineno,
+                              &offset, &text,
+                              &end_lineno, &end_offset, &metadata)) {
             Py_DECREF(info);
             return -1;
         }
 
-        Py_INCREF(self->filename);
-        Py_INCREF(self->lineno);
-        Py_INCREF(self->offset);
-        Py_INCREF(self->text);
-        Py_XINCREF(self->end_lineno);
-        Py_XINCREF(self->end_offset);
-        Py_XINCREF(self->metadata);
+        Py_XSETREF(self->filename, Py_NewRef(filename));
+        Py_XSETREF(self->lineno, Py_NewRef(lineno));
+        Py_XSETREF(self->offset, Py_NewRef(offset));
+        Py_XSETREF(self->text, Py_NewRef(text));
+        Py_XSETREF(self->end_lineno, Py_XNewRef(end_lineno));
+        Py_XSETREF(self->end_offset, Py_XNewRef(end_offset));
+        Py_XSETREF(self->metadata, Py_XNewRef(metadata));
         Py_DECREF(info);
 
         if (self->end_lineno != NULL && self->end_offset == NULL) {
