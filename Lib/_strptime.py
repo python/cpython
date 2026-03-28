@@ -7,7 +7,7 @@ CLASSES:
 
 FUNCTIONS:
     _getlang -- Figure out what language is being used for the locale
-    strptime -- Calculates the time struct represented by the passed-in string
+    _strptime -- Calculates the time struct represented by the passed-in string
 
 """
 import os
@@ -382,7 +382,10 @@ class TimeRE(dict):
             'Z': self.__seqToRE((tz for tz_names in self.locale_time.timezone
                                         for tz in tz_names),
                                 'Z'),
-            '%': '%'}
+            'n': r'\s*',
+            't': r'\s*',
+            '%': '%',
+        }
         if self.locale_time.LC_alt_digits is None:
             for d in 'dmyCHIMS':
                 mapping['O' + d] = r'(?P<%s>\d\d|\d| \d)' % d
@@ -418,6 +421,8 @@ class TimeRE(dict):
         mapping['W'] = mapping['U'].replace('U', 'W')
 
         base.__init__(mapping)
+        base.__setitem__('D', self.pattern('%m/%d/%y'))
+        base.__setitem__('F', self.pattern('%Y-%m-%d'))
         base.__setitem__('T', self.pattern('%H:%M:%S'))
         base.__setitem__('R', self.pattern('%H:%M'))
         base.__setitem__('r', self.pattern(self.locale_time.LC_time_ampm))
@@ -516,9 +521,10 @@ def _calc_julian_from_U_or_W(year, week_of_year, day_of_week, week_starts_Mon):
 
 
 def _strptime(data_string, format="%a %b %d %H:%M:%S %Y"):
-    """Return a 2-tuple consisting of a time struct and an int containing
-    the number of microseconds based on the input string and the
-    format string."""
+    """Return a 3-tuple consisting of a tuple with time components,
+    an int containing the number of microseconds, and an int
+    containing the microseconds part of the GMT offset, based on the
+    input string and the format string."""
 
     for index, arg in enumerate([data_string, format]):
         if not isinstance(arg, str):

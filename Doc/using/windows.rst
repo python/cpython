@@ -12,8 +12,6 @@
  Using Python on Windows
 *************************
 
-.. sectionauthor:: Steve Dower <steve.dower@python.org>
-
 This document aims to give an overview of Windows-specific behaviour you should
 know about when using Python on Microsoft Windows.
 
@@ -126,9 +124,8 @@ is also an unambiguous ``pymanager`` command. Scripted installs that are
 intending to use Python install manager should consider using ``pymanager``, due
 to the lower chance of encountering a conflict with existing installs. The only
 difference between the two commands is when running without any arguments:
-``py`` will install and launch your default interpreter, while ``pymanager``
-will display help (``pymanager exec ...`` provides equivalent behaviour to
-``py ...``).
+``py`` will launch your default interpreter, while ``pymanager`` will display
+help (``pymanager exec ...`` provides equivalent behaviour to ``py ...``).
 
 Each of these commands also has a windowed version that avoids creating a
 console window. These are ``pyw``, ``pythonw`` and ``pymanagerw``. A ``python3``
@@ -187,12 +184,11 @@ that virtual environment. In this scenario, the ``python`` command was likely
 already overridden and none of these checks occurred. However, this behaviour
 ensures that the ``py`` command can be used interchangeably.
 
-When you launch either ``python`` or ``py`` but do not have any runtimes
-installed, and the requested version is the default, it will be installed
-automatically and then launched. Otherwise, the requested version will be
-installed if automatic installation is configured (most likely by setting
-``PYTHON_MANAGER_AUTOMATIC_INSTALL`` to ``true``), or if the ``py exec`` or
-``pymanager exec`` forms of the command were used.
+When no runtimes are installed, any launch command will try to install the
+requested version and launch it. However, after any version is installed, only
+the ``py exec ...`` and ``pymanager exec ...`` commands will install if the
+requested version is absent. Other forms of commands will display an error and
+direct you to use ``py install`` first.
 
 
 Command help
@@ -289,13 +285,31 @@ work.
 Passing ``--dry-run`` will generate output and logs, but will not modify any
 installs.
 
+Passing ``--refresh`` will update all registrations for installed runtimes. This
+will recreate Start menu shortcuts, registry keys, and global aliases (such as
+``python3.14.exe`` or for any installed scripts). These are automatically
+refreshed on installation of any runtime, but may need to be manually refreshed
+after installing packages.
+
 In addition to the above options, the ``--target`` option will extract the
-runtime to the specified directory instead of doing a normal install. This is
-useful for embedding runtimes into larger applications.
+runtime to the specified directory instead of doing a normal install.
+This is useful for embedding runtimes into larger applications.
+Unlike a normal install, ``py`` will not be aware of the extracted runtime,
+and no Start menu or other shortcuts will be created.
+To launch the runtime, directly execute the main executable (typically
+``python.exe``) in the target directory.
 
 .. code::
 
    $> py install ... [-t=|--target=<PATH>] <TAG>
+
+The ``py exec`` command will install the requested runtime if it is not already
+present. This is controlled by the ``automatic_install`` configuration
+(:envvar:`PYTHON_MANAGER_AUTOMATIC_INSTALL`), and is enabled by default.
+If no runtimes are available at all, all launch commands will do an automatic
+install if the configuration setting allows. This is to ensure a good experience
+for new users, but should not generally be relied on rather than using the
+``py exec`` command or explicit install commands.
 
 
 .. _pymanager-offline:
@@ -378,10 +392,13 @@ overridden installs may resolve settings differently.
 
 A global configuration file may be configured by an administrator, and would be
 read first. The user configuration file is stored at
-:file:`%AppData%\\Python\\pymanager.json` (by default) and is read next,
+:file:`%AppData%\\Python\\pymanager.json`
+(note that this location is under ``Roaming``, not ``Local``) and is read next,
 overwriting any settings from earlier files. An additional configuration file
 may be specified as the ``PYTHON_MANAGER_CONFIG`` environment variable or the
 ``--config`` command line option (but not both).
+These locations may be modified by administrative customization options listed
+later.
 
 The following settings are those that are considered likely to be modified in
 normal use. Later sections list those that are intended for administrative
@@ -419,9 +436,11 @@ customization.
        By default, :file:`%TEMP%`.
 
    * - ``automatic_install``
-     - ``PYTHON_MANAGER_AUTOMATIC_INSTALL``
-     - True to allow automatic installs when specifying a particular runtime
-       to launch.
+     - .. envvar:: PYTHON_MANAGER_AUTOMATIC_INSTALL
+     - True to allow automatic installs when using ``py exec`` to launch (or
+       ``py`` when no runtimes are installed yet).
+       Other commands will not automatically install, regardless of this
+       setting.
        By default, true.
 
    * - ``include_unmanaged``
@@ -454,6 +473,14 @@ customization.
      - ``PYTHON_MANAGER_SOURCE_URL``
      - Override the index feed to obtain new installs from.
 
+   * - ``install.enable_entrypoints``
+     - (none)
+     - True to generate global commands for installed packages (such as
+       ``pip.exe``). These are defined by the packages themselves.
+       If set to false, only the Python interpreter has global commands created.
+       By default, true. You should run ``py install --refresh`` after changing
+       this setting.
+
    * - ``list.format``
      - ``PYTHON_MANAGER_LIST_FORMAT``
      - Specify the default format used by the ``py list`` command.
@@ -467,8 +494,8 @@ customization.
 
    * - ``global_dir``
      - (none)
-     - Specify the directory where global commands (such as ``python3.14.exe``)
-       are stored.
+     - Specify the directory where global commands (such as ``python3.14.exe``
+       and ``pip.exe``) are stored.
        This directory should be added to your :envvar:`PATH` to make the
        commands available from your terminal.
 
@@ -477,6 +504,7 @@ customization.
      - Specify the directory where downloaded files are stored.
        This directory is a temporary cache, and can be cleaned up from time to
        time.
+
 
 Dotted names should be nested inside JSON objects, for example, ``list.format``
 would be specified as ``{"list": {"format": "table"}}``.
@@ -724,6 +752,14 @@ directory containing the configuration file that specified them.
        (e.g. ``"pep514,start"``).
        Disabled shortcuts are not reactivated by ``enable_shortcut_kinds``.
 
+   * - ``install.hard_link_entrypoints``
+     - True to use hard links for global shortcuts to save disk space. If false,
+       each shortcut executable is copied instead. After changing this setting,
+       you must run ``py install --refresh --force`` to update existing
+       commands.
+       By default, true. Disabling this may be necessary for troubleshooting or
+       systems that have issues with file links.
+
    * - ``pep514_root``
      - Registry location to read and write PEP 514 entries into.
        By default, :file:`HKEY_CURRENT_USER\\Software\\Python`.
@@ -770,7 +806,7 @@ Troubleshooting
 
 If your Python install manager does not seem to be working correctly, please
 work through these tests and fixes to see if it helps. If not, please report an
-issue at `our bug tracker <https://github.com/python/cpython/issues>`_,
+issue at `our bug tracker <https://github.com/python/pymanager/issues>`_,
 including any relevant log files (written to your :file:`%TEMP%` directory by
 default).
 
@@ -799,6 +835,12 @@ default).
    * -
      - Check that the ``py`` and ``pymanager`` commands work.
 
+   * -
+     - Ensure your :envvar:`PATH` variable contains the entry for
+       ``%UserProfile%\AppData\Local\Microsoft\WindowsApps``.
+       The operating system includes this entry once by default, after other
+       user paths. If removed, shortcuts will not be found.
+
    * - ``py`` gives me a "command not found" error when I type it in my terminal.
      - Did you :ref:`install the Python install manager <pymanager>`?
 
@@ -808,6 +850,12 @@ default).
        If they already are, try disabling and re-enabling to refresh the command.
        The "Python (default windowed)" and "Python install manager" commands
        may also need refreshing.
+
+   * -
+     - Ensure your :envvar:`PATH` variable contains the entry for
+       ``%UserProfile%\AppData\Local\Microsoft\WindowsApps``.
+       The operating system includes this entry once by default, after other
+       user paths. If removed, shortcuts will not be found.
 
    * - ``py`` gives me a "can't open file" error when I type commands in my
        terminal.
@@ -839,7 +887,7 @@ default).
      - Prerelease and experimental installs that are not managed by the Python
        install manager may be chosen ahead of stable releases.
        Configure your default tag or uninstall the prerelease runtime
-       and reinstall using ``py install``.
+       and reinstall it using ``py install``.
 
    * - ``pythonw`` or ``pyw`` don't launch the same runtime as ``python`` or ``py``
      - Click Start, open "Manage app execution aliases", and check that your
@@ -851,12 +899,22 @@ default).
 
    * -
      - The package may be available but missing the generated executable.
-       We recommend using the ``python -m pip`` command instead,
-       or alternatively the ``python -m pip install --force pip`` command
-       will recreate the executables and show you the path to
-       add to :envvar:`PATH`.
-       These scripts are separated for each runtime, and so you may need to
-       add multiple paths.
+       We recommend using the ``python -m pip`` command instead.
+       Running ``py install --refresh`` and ensuring that the global shortcuts
+       directory is on :envvar:`PATH` (it will be shown in the command output if
+       it is not) should make commands such as ``pip`` (and other installed
+       packages) available.
+
+   * - I installed a package with ``pip`` but its command is not found.
+     - Have you activated a virtual environment?
+       Run the ``.venv\Scripts\activate`` script in your terminal to activate.
+
+   * -
+     - New packages do not automatically have global shortcuts created by the
+       Python install manager. Similarly, uninstalled packages do not have their
+       shortcuts removed.
+       Run ``py install --refresh`` to update the global shortcuts for newly
+       installed packages.
 
    * - Typing ``script-name.py`` in the terminal opens in a new window.
      - This is a known limitation of the operating system. Either specify ``py``
@@ -869,6 +927,20 @@ default).
        the `legacy launcher`_, or with the Python install manager when installed
        from the MSI.
 
+   * - I have installed the Python install manager multiple times.
+     - It is possible to install from the Store or WinGet, from the MSIX on
+       the Python website, and from the MSI, all at once.
+       They are all compatible and will share configuration and runtimes.
+
+   * -
+     - See the earlier :ref:`pymanager-advancedinstall` section for ways to
+       uninstall the install manager other than the typical Installed Apps
+       (Add and Remove Programs) settings page.
+
+   * - My old ``py.ini`` settings no longer work.
+     - The new Python install manager no longer supports this configuration file
+       or its settings, and so it will be ignored.
+       See :ref:`pymanager-config` for information about configuration settings.
 
 .. _windows-embeddable:
 
@@ -886,7 +958,7 @@ To install an embedded distribution, we recommend using ``py install`` with the
 
 .. code::
 
-   $> py install 3.14-embed --target=runtime
+   $> py install 3.14-embed --target=<directory>
 
 When extracted, the embedded distribution is (almost) fully isolated from the
 user's system, including environment variables, system registry settings, and

@@ -435,6 +435,7 @@ static int execfunc(PyObject *m)
 }
 
 static PyModuleDef_Slot main_slots[] = {
+    _Py_ABI_SLOT,
     {Py_mod_exec, execfunc},
     {Py_mod_multiple_interpreters, Py_MOD_PER_INTERPRETER_GIL_SUPPORTED},
     {Py_mod_gil, Py_MOD_GIL_NOT_USED},
@@ -481,6 +482,7 @@ createfunc_nonmodule(PyObject *spec, PyModuleDef *def)
 }
 
 static PyModuleDef_Slot slots_create_nonmodule[] = {
+    _Py_ABI_SLOT,
     {Py_mod_create, createfunc_nonmodule},
     {0, NULL},
 };
@@ -527,6 +529,7 @@ PyInit__testmultiphase_nonmodule_with_methods(void)
 /**** Non-ASCII-named modules ****/
 
 static PyModuleDef_Slot nonascii_slots[] = {
+    _Py_ABI_SLOT,
     {Py_mod_gil, Py_MOD_GIL_NOT_USED},
     {0, NULL},
 };
@@ -689,6 +692,7 @@ createfunc_noop(PyObject *spec, PyModuleDef *def)
 }
 
 static PyModuleDef_Slot slots_multiple_create_slots[] = {
+    _Py_ABI_SLOT,
     {Py_mod_create, createfunc_noop},
     {Py_mod_create, createfunc_noop},
     {0, NULL},
@@ -710,6 +714,7 @@ createfunc_null(PyObject *spec, PyModuleDef *def)
 }
 
 static PyModuleDef_Slot slots_create_null[] = {
+    _Py_ABI_SLOT,
     {Py_mod_create, createfunc_null},
     {0, NULL},
 };
@@ -752,6 +757,7 @@ createfunc_unreported_exception(PyObject *spec, PyModuleDef *def)
 }
 
 static PyModuleDef_Slot slots_create_unreported_exception[] = {
+    _Py_ABI_SLOT,
     {Py_mod_create, createfunc_unreported_exception},
     {0, NULL},
 };
@@ -766,6 +772,7 @@ PyInit__testmultiphase_create_unreported_exception(void)
 }
 
 static PyModuleDef_Slot slots_nonmodule_with_exec_slots[] = {
+    _Py_ABI_SLOT,
     {Py_mod_create, createfunc_nonmodule},
     {Py_mod_exec, execfunc},
     {Py_mod_multiple_interpreters, Py_MOD_PER_INTERPRETER_GIL_SUPPORTED},
@@ -789,6 +796,7 @@ execfunc_err(PyObject *mod)
 }
 
 static PyModuleDef_Slot slots_exec_err[] = {
+    _Py_ABI_SLOT,
     {Py_mod_exec, execfunc_err},
     {Py_mod_multiple_interpreters, Py_MOD_PER_INTERPRETER_GIL_SUPPORTED},
     {Py_mod_gil, Py_MOD_GIL_NOT_USED},
@@ -812,6 +820,7 @@ execfunc_raise(PyObject *spec)
 }
 
 static PyModuleDef_Slot slots_exec_raise[] = {
+    _Py_ABI_SLOT,
     {Py_mod_exec, execfunc_raise},
     {Py_mod_multiple_interpreters, Py_MOD_PER_INTERPRETER_GIL_SUPPORTED},
     {Py_mod_gil, Py_MOD_GIL_NOT_USED},
@@ -835,6 +844,7 @@ execfunc_unreported_exception(PyObject *mod)
 }
 
 static PyModuleDef_Slot slots_exec_unreported_exception[] = {
+    _Py_ABI_SLOT,
     {Py_mod_exec, execfunc_unreported_exception},
     {Py_mod_multiple_interpreters, Py_MOD_PER_INTERPRETER_GIL_SUPPORTED},
     {Py_mod_gil, Py_MOD_GIL_NOT_USED},
@@ -893,6 +903,7 @@ meth_state_access_exec(PyObject *m)
 }
 
 static PyModuleDef_Slot meth_state_access_slots[] = {
+    _Py_ABI_SLOT,
     {Py_mod_exec, meth_state_access_exec},
     {Py_mod_multiple_interpreters, Py_MOD_PER_INTERPRETER_GIL_SUPPORTED},
     {Py_mod_gil, Py_MOD_GIL_NOT_USED},
@@ -943,6 +954,7 @@ PyInit__test_module_state_shared(void)
 /* multiple interpreters support */
 
 static PyModuleDef_Slot slots_multiple_multiple_interpreters_slots[] = {
+    _Py_ABI_SLOT,
     {Py_mod_multiple_interpreters, Py_MOD_PER_INTERPRETER_GIL_SUPPORTED},
     {Py_mod_multiple_interpreters, Py_MOD_PER_INTERPRETER_GIL_SUPPORTED},
     {Py_mod_gil, Py_MOD_GIL_NOT_USED},
@@ -961,6 +973,7 @@ PyInit__testmultiphase_multiple_multiple_interpreters_slots(void)
 }
 
 static PyModuleDef_Slot non_isolated_slots[] = {
+    _Py_ABI_SLOT,
     {Py_mod_exec, execfunc},
     {Py_mod_multiple_interpreters, Py_MOD_MULTIPLE_INTERPRETERS_NOT_SUPPORTED},
     {Py_mod_gil, Py_MOD_GIL_NOT_USED},
@@ -979,6 +992,7 @@ PyInit__test_non_isolated(void)
 
 
 static PyModuleDef_Slot shared_gil_only_slots[] = {
+    _Py_ABI_SLOT,
     {Py_mod_exec, execfunc},
     /* Note that Py_MOD_MULTIPLE_INTERPRETERS_SUPPORTED is the default.
        We put it here explicitly to draw attention to the contrast
@@ -1000,6 +1014,7 @@ PyInit__test_shared_gil_only(void)
 
 
 static PyModuleDef_Slot no_multiple_interpreter_slot_slots[] = {
+    _Py_ABI_SLOT,
     {Py_mod_exec, execfunc},
     {Py_mod_gil, Py_MOD_GIL_NOT_USED},
     {0, NULL},

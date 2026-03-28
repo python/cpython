@@ -1156,7 +1156,7 @@ static PyObject *
 OrderedDict_popitem_impl(PyODictObject *self, int last)
 /*[clinic end generated code: output=98e7d986690d49eb input=8aafc7433e0a40e7]*/
 {
-    PyObject *key, *value, *item = NULL;
+    PyObject *key, *value;
     _ODictNode *node;
 
     /* pull the item */
@@ -1169,12 +1169,11 @@ OrderedDict_popitem_impl(PyODictObject *self, int last)
     node = last ? _odict_LAST(self) : _odict_FIRST(self);
     key = Py_NewRef(_odictnode_KEY(node));
     value = _odict_popkey_hash((PyObject *)self, key, NULL, _odictnode_HASH(node));
-    if (value == NULL)
+    if (value == NULL) {
+        Py_DECREF(key);
         return NULL;
-    item = PyTuple_Pack(2, key, value);
-    Py_DECREF(key);
-    Py_DECREF(value);
-    return item;
+    }
+    return _PyTuple_FromPairSteal(key, value);
 }
 
 /* keys() */
@@ -1807,7 +1806,7 @@ odictiter_iternext_lock_held(PyObject *op)
         if (!PyErr_Occurred())
             PyErr_SetObject(PyExc_KeyError, key);
         Py_DECREF(key);
-        goto done;
+        goto error;
     }
 
     /* Handle the values case. */
@@ -1828,21 +1827,19 @@ odictiter_iternext_lock_held(PyObject *op)
         // bpo-42536: The GC may have untracked this result tuple. Since we're
         // recycling it, make sure it's tracked again:
         _PyTuple_Recycle(result);
+        PyTuple_SET_ITEM(result, 0, key);  /* steals reference */
+        PyTuple_SET_ITEM(result, 1, value);  /* steals reference */
     }
     else {
-        result = PyTuple_New(2);
+        result = _PyTuple_FromPairSteal(key, value);
         if (result == NULL) {
-            Py_DECREF(key);
-            Py_DECREF(value);
-            goto done;
+            goto error;
         }
     }
 
-    PyTuple_SET_ITEM(result, 0, key);  /* steals reference */
-    PyTuple_SET_ITEM(result, 1, value);  /* steals reference */
     return result;
 
-done:
+error:
     Py_CLEAR(di->di_current);
     Py_CLEAR(di->di_odict);
     return NULL;
@@ -1933,7 +1930,7 @@ odictiter_new(PyODictObject *od, int kind)
         return NULL;
 
     if ((kind & _odict_ITER_ITEMS) == _odict_ITER_ITEMS) {
-        di->di_result = PyTuple_Pack(2, Py_None, Py_None);
+        di->di_result = _PyTuple_FromPairSteal(Py_None, Py_None);
         if (di->di_result == NULL) {
             Py_DECREF(di);
             return NULL;

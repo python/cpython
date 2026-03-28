@@ -97,11 +97,15 @@ import linecache
 import selectors
 import threading
 import _colorize
-import _pyrepl.utils
 
 from contextlib import ExitStack, closing, contextmanager
 from types import CodeType
 from warnings import deprecated
+
+try:
+    import _pyrepl.utils
+except ModuleNotFoundError:
+    _pyrepl = None
 
 
 class Restart(Exception):
@@ -183,19 +187,37 @@ class _ExecutableTarget:
 
 class _ScriptTarget(_ExecutableTarget):
     def __init__(self, target):
-        self._target = os.path.realpath(target)
+        self._check(target)
+        self._target = self._safe_realpath(target)
 
-        if not os.path.exists(self._target):
-            print(f'Error: {target} does not exist')
-            sys.exit(1)
-        if os.path.isdir(self._target):
-            print(f'Error: {target} is a directory')
-            sys.exit(1)
-
-        # If safe_path(-P) is not set, sys.path[0] is the directory
+        # If PYTHONSAFEPATH (-P) is not set, sys.path[0] is the directory
         # of pdb, and we should replace it with the directory of the script
         if not sys.flags.safe_path:
             sys.path[0] = os.path.dirname(self._target)
+
+    @staticmethod
+    def _check(target):
+        """
+        Check that target is plausibly a script.
+        """
+        if not os.path.exists(target):
+            print(f'Error: {target} does not exist')
+            sys.exit(1)
+        if os.path.isdir(target):
+            print(f'Error: {target} is a directory')
+            sys.exit(1)
+
+    @staticmethod
+    def _safe_realpath(path):
+        """
+        Return the canonical path (realpath) if it is accessible from the userspace.
+        Otherwise (for example, if the path is a symlink to an anonymous pipe),
+        return the original path.
+
+        See GH-142315.
+        """
+        realpath = os.path.realpath(path)
+        return realpath if os.path.exists(realpath) else path
 
     def __repr__(self):
         return self._target
@@ -346,7 +368,7 @@ class Pdb(bdb.Bdb, cmd.Cmd):
         bdb.Bdb.__init__(self, skip=skip, backend=backend if backend else get_default_backend())
         cmd.Cmd.__init__(self, completekey, stdin, stdout)
         sys.audit("pdb.Pdb")
-        if stdin:
+        if stdin is not None and stdin is not sys.stdin:
             self.use_rawinput = False
         self.prompt = '(Pdb) '
         self.aliases = {}
@@ -373,16 +395,21 @@ class Pdb(bdb.Bdb, cmd.Cmd):
         # Read ~/.pdbrc and ./.pdbrc
         self.rcLines = []
         if readrc:
+            home_rcfile = os.path.expanduser("~/.pdbrc")
+            local_rcfile = os.path.abspath(".pdbrc")
+
             try:
-                with open(os.path.expanduser('~/.pdbrc'), encoding='utf-8') as rcFile:
-                    self.rcLines.extend(rcFile)
+                with open(home_rcfile, encoding='utf-8') as rcfile:
+                    self.rcLines.extend(rcfile)
             except OSError:
                 pass
-            try:
-                with open(".pdbrc", encoding='utf-8') as rcFile:
-                    self.rcLines.extend(rcFile)
-            except OSError:
-                pass
+
+            if local_rcfile != home_rcfile:
+                try:
+                    with open(local_rcfile, encoding='utf-8') as rcfile:
+                        self.rcLines.extend(rcfile)
+                except OSError:
+                    pass
 
         self.commands = {} # associates a command list to breakpoint numbers
         self.commands_defining = False # True while in the process of defining
@@ -865,7 +892,7 @@ class Pdb(bdb.Bdb, cmd.Cmd):
         locals.update(pdb_eval["write_back"])
         eval_result = pdb_eval["result"]
         if eval_result is not None:
-            print(repr(eval_result))
+            self.message(repr(eval_result))
 
         return True
 
@@ -1074,7 +1101,7 @@ class Pdb(bdb.Bdb, cmd.Cmd):
         return False
 
     def _colorize_code(self, code):
-        if self.colorize:
+        if self.colorize and _pyrepl:
             colors = list(_pyrepl.utils.gen_colors(code))
             chars, _ = _pyrepl.utils.disp_str(code, colors=colors, force_color=True)
             code = "".join(chars)
@@ -1297,7 +1324,14 @@ class Pdb(bdb.Bdb, cmd.Cmd):
         reached.
         """
         if not arg:
-            bnum = len(bdb.Breakpoint.bpbynumber) - 1
+            for bp in reversed(bdb.Breakpoint.bpbynumber):
+                if bp is None:
+                    continue
+                bnum = bp.number
+                break
+            else:
+                self.error('cannot set commands: no existing breakpoint')
+                return
         else:
             try:
                 bnum = int(arg)
