@@ -1,0 +1,4 @@
+Fix :func:`typing.get_type_hints` hanging indefinitely when a callable has a
+circular ``__wrapped__`` chain (e.g. ``f.__wrapped__ = f``). A
+:exc:`ValueError` is now raised on cycle detection, matching the behavior of
+:func:`inspect.unwrap`.

@@ -2485,8 +2485,18 @@ def get_type_hints(obj, globalns=None, localns=None, include_extras=False,
         else:
             nsobj = obj
             # Find globalns for the unwrapped object.
+            # Use an id-based visited set to detect and break on cycles in the
+            # __wrapped__ chain (e.g. f.__wrapped__ = f), matching the behavior
+            # of inspect.unwrap().
+            _seen_ids = {id(nsobj)}
             while hasattr(nsobj, '__wrapped__'):
                 nsobj = nsobj.__wrapped__
+                _nsobj_id = id(nsobj)
+                if _nsobj_id in _seen_ids:
+                    raise ValueError(
+                        f'wrapper loop when unwrapping {obj!r}'
+                    )
+                _seen_ids.add(_nsobj_id)
             globalns = getattr(nsobj, '__globals__', {})
         if localns is None:
             localns = globalns
