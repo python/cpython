@@ -1,0 +1,3 @@
+Improve :exc:`SyntaxError` message when a statement other than a
+:keyword:`case` statement appears inside a :keyword:`match` statement.
+Patch by Brian Schubert.

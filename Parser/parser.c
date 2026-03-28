@@ -25613,6 +25613,7 @@ invalid_match_stmt_rule(Parser *p)
 // invalid_case_block:
 //     | "case" patterns guard? NEWLINE
 //     | "case" patterns guard? ':' NEWLINE !INDENT
+//     | !"case"
 static void *
 invalid_case_block_rule(Parser *p)
 {
@@ -25697,6 +25698,29 @@ invalid_case_block_rule(Parser *p)
         p->mark = _mark;
         D(fprintf(stderr, "%*c%s invalid_case_block[%d-%d]: %s failed!\n", p->level, ' ',
                   p->error_indicator ? "ERROR!" : "-", _mark, p->mark, "\"case\" patterns guard? ':' NEWLINE !INDENT"));
+    }
+    { // !"case"
+        if (p->error_indicator) {
+            p->level--;
+            return NULL;
+        }
+        D(fprintf(stderr, "%*c> invalid_case_block[%d-%d]: %s\n", p->level, ' ', _mark, p->mark, "!\"case\""));
+        if (
+            _PyPegen_lookahead_with_string(0, _PyPegen_expect_soft_keyword, p, "case")
+        )
+        {
+            D(fprintf(stderr, "%*c+ invalid_case_block[%d-%d]: %s succeeded!\n", p->level, ' ', _mark, p->mark, "!\"case\""));
+            _res = RAISE_SYNTAX_ERROR_ON_NEXT_TOKEN ( "expected 'case' statement inside 'match' statement" );
+            if ((_res == NULL || p->error_indicator) && PyErr_Occurred()) {
+                p->error_indicator = 1;
+                p->level--;
+                return NULL;
+            }
+            goto done;
+        }
+        p->mark = _mark;
+        D(fprintf(stderr, "%*c%s invalid_case_block[%d-%d]: %s failed!\n", p->level, ' ',
+                  p->error_indicator ? "ERROR!" : "-", _mark, p->mark, "!\"case\""));
     }
     _res = NULL;
   done:
