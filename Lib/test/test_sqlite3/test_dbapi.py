@@ -1905,12 +1905,24 @@ class MultiprocessTests(unittest.TestCase):
         unlink(TESTFN)
 
     def test_ctx_mgr_rollback_if_commit_failed(self):
-        # bpo-27334: ctx manager does not rollback if commit fails
+        # Ensure that context manager does not rollback if commit fails.
+        # See https://github.com/python/cpython/issues/71521.
+
+        wait_messages = ["database is locked"]
+        if sqlite.sqlite_version_info >= (3, 45):
+            # Around SQLite 3.45 or later, a read-only transaction plus
+            # a user-defined function do not block concurrent writers,
+            # so we allow the parent process to send "no error".
+            #
+            # See https://github.com/python/cpython/issues/143263.
+            wait_messages.append("no error")
+
         SCRIPT = f"""if 1:
             import sqlite3
             def wait():
                 print("started")
-                assert "database is locked" in input()
+                line = input()
+                assert any(message in line for message in {wait_messages})
 
             cx = sqlite3.connect("{TESTFN}", timeout={self.CONNECTION_TIMEOUT})
             cx.create_function("wait", 0, wait)
@@ -1921,11 +1933,11 @@ class MultiprocessTests(unittest.TestCase):
                 cx.executescript('''
                     -- start a transaction and wait for parent
                     begin transaction;
-                    select * from t;
+                    insert into t values("ok");
                     select wait();
                     rollback;
 
-                    -- start a new transaction; would fail if parent holds lock
+                    -- start a new transaction; may fail if parent holds lock
                     begin transaction;
                     select * from t;
                     rollback;
@@ -1948,7 +1960,7 @@ class MultiprocessTests(unittest.TestCase):
         self.assertEqual("started", proc.stdout.readline().strip())
 
         cx = sqlite.connect(TESTFN, timeout=self.CONNECTION_TIMEOUT)
-        try:  # context manager should correctly release the db lock
+        try:  # context manager should correctly release the db lock (if any)
             with cx:
                 cx.execute("insert into t values('test')")
         except sqlite.OperationalError as exc:
