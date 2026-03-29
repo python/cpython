@@ -2206,6 +2206,25 @@ SyntaxError: cannot assign to None
 Traceback (most recent call last):
 SyntaxError: cannot assign to None
 
+# Check that we don't raise a "cannot use name as import target" error
+# when there's a syntax error after the import target.
+
+>>> import a as b(-)
+Traceback (most recent call last):
+SyntaxError: invalid syntax
+
+>>> import a as b None
+Traceback (most recent call last):
+SyntaxError: invalid syntax
+
+>>> import a as b as c
+Traceback (most recent call last):
+SyntaxError: invalid syntax
+
+>>> from x import a as b None
+Traceback (most recent call last):
+SyntaxError: invalid syntax
+
 # Check that we dont raise the "trailing comma" error if there is more
 # input to the left of the valid part that we parsed.
 
