@@ -63,9 +63,14 @@ exec "$_awk" -f "$_tmpf" -- "$@"
 # ---------------------------------------------------------------------------
 
 function pyconf_init(    k) {
-        # Shadow ENVIRON into ENV[]
-        for (k in ENVIRON)
+        # Shadow ENVIRON into ENV[] and seed V[] so that environment
+        # variables are accessible as V["name"], mirroring both shell
+        # (where $VAR inherits from the environment) and Python's
+        # Vars.__getattr__ fallback to os.environ.
+        for (k in ENVIRON) {
                 ENV[k] = ENVIRON[k]
+                V[k] = ENVIRON[k]
+        }
         _pyconf_tmpdir = ""
         _pyconf_verbose = 0
         _pyconf_srcdir = "."
@@ -1184,7 +1189,7 @@ function pyconf_find_mkdir_p(    result, ver, dirs, n, i, p, prog, progs, cmd) {
 # String / path utilities
 # ---------------------------------------------------------------------------
 
-function pyconf_fnmatch(pattern, string) {
+function pyconf_fnmatch(string, pattern) {
         # Simple glob match using case
         # For exact match patterns, use == comparison
         # For patterns with *, use ~ with converted regex
