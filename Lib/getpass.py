@@ -28,7 +28,8 @@ class GetPassWarning(UserWarning): pass
 
 # Default POSIX control character mappings
 _POSIX_CTRL_CHARS = frozendict({
-    'ERASE': '\x7f',   # DEL/Backspace
+    'BS': '\x08',      # Backspace
+    'ERASE': '\x7f',   # DEL
     'KILL': '\x15',    # Ctrl+U - kill line
     'WERASE': '\x17',  # Ctrl+W - erase word
     'LNEXT': '\x16',   # Ctrl+V - literal next
@@ -251,13 +252,18 @@ class _PasswordLineEditor:
         self.literal_next = False
         self.ctrl = ctrl_chars
         self.dispatch = {
-            ctrl_chars['SOH']: self.handle_move_start,     # Ctrl+A
-            ctrl_chars['ENQ']: self.handle_move_end,       # Ctrl+E
-            ctrl_chars['VT']: self.handle_kill_forward,    # Ctrl+K
-            ctrl_chars['KILL']: self.handle_kill_line,     # Ctrl+U
-            ctrl_chars['WERASE']: self.handle_erase_word,  # Ctrl+W
-            ctrl_chars['ERASE']: self.handle_erase,        # DEL
-            '\b': self.handle_erase,                       # Backspace
+            ctrl_chars['SOH']: self.handle_move_start,      # Ctrl+A
+            ctrl_chars['ENQ']: self.handle_move_end,        # Ctrl+E
+            ctrl_chars['VT']: self.handle_kill_forward,     # Ctrl+K
+            ctrl_chars['KILL']: self.handle_kill_line,      # Ctrl+U
+            ctrl_chars['WERASE']: self.handle_erase_word,   # Ctrl+W
+            ctrl_chars['ERASE']: self.handle_erase,         # DEL
+            ctrl_chars['BS']: self.handle_erase,            # Backspace
+            # special characters
+            ctrl_chars['LNEXT']: self.handle_literal_next,  # Ctrl+V
+            ctrl_chars['EOF']: self.handle_eof,             # Ctrl+D
+            ctrl_chars['INTR']: self.handle_interrupt,      # Ctrl+C
+            '\x00': self.handle_nop,                        # ignore NUL
         }
 
     def refresh_display(self, prev_len=None):
@@ -284,6 +290,14 @@ class _PasswordLineEditor:
         else:
             self.stream.write(self.echo_char)
             self.stream.flush()
+
+    def is_eol(self, char):
+        """Check if *char* is a line terminator."""
+        return char in ('\r', '\n')
+
+    def is_eof(self, char):
+        """Check if *char* is a file terminator."""
+        return char == self.ctrl['EOF']
 
     def handle_move_start(self):
         """Move cursor to beginning (Ctrl+A)."""
@@ -332,6 +346,23 @@ class _PasswordLineEditor:
         del self.password[self.cursor_pos:old_cursor]
         self.refresh_display(prev_len)
 
+    def handle_literal_next(self):
+        """State transition to indicate that the next character is literal."""
+        assert self.literal_next is False
+        self.literal_next = True
+
+    def handle_eof(self):
+        """State transition to indicate that the pressed character was EOF."""
+        assert self.eof_pressed is False
+        self.eof_pressed = True
+
+    def handle_interrupt(self):
+        """Raise a KeyboardInterrupt after Ctrl+C has been received."""
+        raise KeyboardInterrupt
+
+    def handle_nop(self):
+        """Handler for an ignored character."""
+
     def handle(self, char):
         """Handle a single character input. Returns True if handled."""
         handler = self.dispatch.get(char)
@@ -345,25 +376,17 @@ class _PasswordLineEditor:
         while True:
             assert self.cursor_pos >= 0
             char = input.read(1)
-
-            # Check for line terminators
-            if char in ('\n', '\r'):
+            if self.is_eol(char):
                 break
+            # Handle literal next mode first as Ctrl+V quotes characters.
             elif self.literal_next:
-                # Handle literal next mode first as Ctrl+V quotes characters.
                 self.insert_char(char)
                 self.literal_next = False
-            # Check if it's the LNEXT character
-            elif char == self.ctrl['LNEXT']:
-                self.literal_next = True
-            # Check for special control characters
-            elif char == self.ctrl['INTR']:
-                raise KeyboardInterrupt
-            elif char == self.ctrl['EOF']:
+            # Handle EOF now as Ctrl+D must be pressed twice
+            # consecutively to stop reading from the input.
+            elif self.is_eof(char):
                 if self.eof_pressed:
                     break
-            elif char == '\x00':
-                pass
             elif self.handle(char):
                 # Dispatched to handler.
                 pass
@@ -371,7 +394,7 @@ class _PasswordLineEditor:
                 # Insert as normal character.
                 self.insert_char(char)
 
-            self.eof_pressed = (char == self.ctrl['EOF'])
+            self.eof_pressed = self.is_eof(char)
 
         return ''.join(self.password)
 
