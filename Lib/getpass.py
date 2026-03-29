@@ -239,6 +239,16 @@ def _raw_input(prompt="", stream=None, input=None, echo_char=None,
     return line
 
 
+def _readline_with_echo_char(stream, input, echo_char, term_ctrl_chars=None,
+                             prompt=""):
+    """Read password with echo character and line editing support."""
+    if term_ctrl_chars is None:
+        term_ctrl_chars = _POSIX_CTRL_CHARS
+
+    editor = _PasswordLineEditor(stream, echo_char, term_ctrl_chars, prompt)
+    return editor.readline(input)
+
+
 class _PasswordLineEditor:
     """Handles line editing for password input with echo character."""
 
@@ -397,16 +407,6 @@ class _PasswordLineEditor:
             self.eof_pressed = self.is_eof(char)
 
         return ''.join(self.password)
-
-
-def _readline_with_echo_char(stream, input, echo_char, term_ctrl_chars=None,
-                             prompt=""):
-    """Read password with echo character and line editing support."""
-    if term_ctrl_chars is None:
-        term_ctrl_chars = _POSIX_CTRL_CHARS
-
-    editor = _PasswordLineEditor(stream, echo_char, term_ctrl_chars, prompt)
-    return editor.readline(input)
 
 
 def getuser():
