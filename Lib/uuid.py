@@ -834,10 +834,9 @@ _last_timestamp_v7 = None
 _last_counter_v7 = 0  # 42-bit counter
 # Indicate whether one or more counter overflow(s) happened in the same frame.
 #
-# Since the timestamp is advanced after a counter overflow by design,
-# we must prevent advancing the timestamp again in the calls that
-# follow a call with a counter overflow and for which the logical
-# timestamp millisecond is the same.
+# Since the timestamp is incremented after a counter overflow by design,
+# we must prevent incrementing the timestamp again in consecutive calls
+# for which the logical timestamp millisecond remains the same.
 #
 # If the resampled counter hits an overflow again within the same time,
 # we want to advance the timestamp again and resample the timestamp.
