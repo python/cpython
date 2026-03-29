@@ -3382,9 +3382,7 @@ class TestUopsOptimization(unittest.TestCase):
         self.assertIn("_BINARY_OP_TRUEDIV_FLOAT_INPLACE_RIGHT", uops)
 
     def test_float_truediv_type_propagation(self):
-        # (a+b) / (c+d) - (e+f) / (g+h): all additions produce known-float
-        # results, so both divisions are specialized. The subtraction between
-        # the two division results should use inplace.
+        # Test the _BINARY_OP_TRUEDIV_FLOAT propagates type information
         def testfunc(args):
             a, b, n = args
             total = 0.0
@@ -3399,7 +3397,7 @@ class TestUopsOptimization(unittest.TestCase):
         self.assertAlmostEqual(res, expected)
         self.assertIsNotNone(ex)
         uops = get_opnames(ex)
-        self.assertIn("_BINARY_OP_TRUEDIV_FLOAT_INPLACE", uops)
+        self.assertIn("_BINARY_OP_TRUEDIV_FLOAT", uops)
         self.assertIn("_BINARY_OP_SUBTRACT_FLOAT_INPLACE", uops)
 
     def test_float_truediv_unique_result_enables_inplace(self):
