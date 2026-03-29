@@ -193,13 +193,13 @@ PrettyPrinter Objects
          'eggs',
          'lumberjack',
          'knights',
-         'ni'
+         'ni',
       ],
       'spam',
       'eggs',
       'lumberjack',
       'knights',
-      'ni'
+      'ni',
    ]
    >>> tup = ('spam', ('eggs', ('lumberjack', ('knights', ('ni', ('dead',
    ... ('parrot', ('fresh fruit',))))))))
@@ -465,7 +465,7 @@ Best results are achieved with a higher *indent* value::
          'Programming Language :: Python :: 3.2',
          'Programming Language :: Python :: 3.3',
          'Programming Language :: Python :: 3.4',
-         'Topic :: Software Development :: Build Tools'
+         'Topic :: Software Development :: Build Tools',
       ],
       'description': 'A sample Python project\n'
       '=======================\n'
@@ -503,7 +503,7 @@ Best results are achieved with a higher *indent* value::
       'project_url': 'https://pypi.org/project/sampleproject/',
       'project_urls': {
          'Download': 'UNKNOWN',
-         'Homepage': 'https://github.com/pypa/sampleproject'
+         'Homepage': 'https://github.com/pypa/sampleproject',
       },
       'provides_extra': None,
       'release_url': 'https://pypi.org/project/sampleproject/1.2.0/',
@@ -512,5 +512,5 @@ Best results are achieved with a higher *indent* value::
       'summary': 'A sample Python project',
       'version': '1.2.0',
       'yanked': False,
-      'yanked_reason': None
+      'yanked_reason': None,
    }
