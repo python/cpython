@@ -3523,3 +3523,38 @@ class PublicAPITests(unittest.TestCase):
 
 if __name__ == '__main__':
     unittest.main()
+
+class TestShutilZipTraversal(unittest.TestCase):
+    def setUp(self):
+        self.tmp_dir = tempfile.mkdtemp()
+        self.extract_dir = os.path.join(self.tmp_dir, "extract")
+        os.mkdir(self.extract_dir)
+
+    def tearDown(self):
+        shutil.rmtree(self.tmp_dir)
+
+    @unittest.skipUnless(sys.platform == 'win32', 'Windows-specific traversal test')
+    @support.requires_zlib()
+    def test_unpack_zipfile_traversal_windows_drive(self):
+        # Create a ZIP file with a drive-prefixed path
+        zip_path = os.path.join(self.tmp_dir, "test.zip")
+        with zipfile.ZipFile(zip_path, 'w') as zf:
+            # zipfile.extractall() should sanitize this to 'D/traversal.txt'
+            # relative to extract_dir.
+            zf.writestr("D:/traversal.txt", "found you")
+
+        # Prior to the fix, this might have attempted to write to D:/traversal.txt
+        # With the fix (using extractall()), it's safely joined.
+        shutil.unpack_archive(zip_path, self.extract_dir)
+
+        # Check that it didn't go to D:/
+        self.assertFalse(os.path.exists("D:/traversal.txt"))
+
+        # Check where it actually went
+        found = False
+        for root, dirs, files in os.walk(self.extract_dir):
+            if "traversal.txt" in files:
+                found = True
+                break
+        self.assertTrue(found, "Extracted file not found within extract_dir")
+
