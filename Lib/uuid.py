@@ -884,11 +884,11 @@ def uuid7():
         _last_counter_v7_overflow = False
     else:
         if timestamp_ms < _last_timestamp_v7:
+            # The clock went backwards or we are within the same timestamp
+            # after a counter overflow. We follow the RFC for in the former
+            # case. In the latter case, we re-use the already advanced
+            # timestamp (it was updated when we detected the overflow).
             if _last_counter_v7_overflow:
-                # The clock went backward but RFC asks to update the timestamp
-                # and advance the previous counter. We however do not want to
-                # advance the timestamp again if we already advanced it once
-                # due to an overflow (re-use the already advanced timestamp).
                 timestamp_ms = _last_timestamp_v7
             else:
                 timestamp_ms = _last_timestamp_v7 + 1
