@@ -832,6 +832,19 @@ def uuid6(node=None, clock_seq=None):
 
 _last_timestamp_v7 = None
 _last_counter_v7 = 0  # 42-bit counter
+# Indicate whether one or more counter overflow(s) happened in the same frame.
+#
+# Since the timestamp is advanced after a counter overflow by design,
+# we must prevent advancing the timestamp again in the calls that
+# follow a call with a counter overflow and for which the logical
+# timestamp millisecond is the same.
+#
+# If the resampled counter hits an overflow again within the same time,
+# we want to advance the timestamp again and resample the timestamp.
+#
+# See https://github.com/python/cpython/issues/138862.
+_last_counter_v7_overflow = False
+
 
 def _uuid7_get_counter_and_tail():
     rand = int.from_bytes(os.urandom(10))
@@ -862,23 +875,33 @@ def uuid7():
 
     global _last_timestamp_v7
     global _last_counter_v7
+    global _last_counter_v7_overflow
 
     nanoseconds = time.time_ns()
     timestamp_ms = nanoseconds // 1_000_000
 
     if _last_timestamp_v7 is None or timestamp_ms > _last_timestamp_v7:
         counter, tail = _uuid7_get_counter_and_tail()
+        _last_counter_v7_overflow = False
     else:
         if timestamp_ms < _last_timestamp_v7:
-            timestamp_ms = _last_timestamp_v7 + 1
+            if _last_counter_v7_overflow:
+                # The clock went backward but RFC asks to update the timestamp
+                # and advance the previous counter. We however do not want to
+                # advance the timestamp again if we already advanced it once
+                # due to an overflow (re-use the already advanced timestamp).
+                timestamp_ms = _last_timestamp_v7
+            else:
+                timestamp_ms = _last_timestamp_v7 + 1
         # advance the 42-bit counter
         counter = _last_counter_v7 + 1
         if counter > 0x3ff_ffff_ffff:
-            # advance the 48-bit timestamp
+            _last_counter_v7_overflow = True
             timestamp_ms += 1
             counter, tail = _uuid7_get_counter_and_tail()
         else:
             # 32-bit random data
+            _last_counter_v7_overflow = False
             tail = int.from_bytes(os.urandom(4))
 
     unix_ts_ms = timestamp_ms & 0xffff_ffff_ffff

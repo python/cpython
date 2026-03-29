@@ -950,6 +950,7 @@ class BaseTestUUID:
             self.uuid,
             _last_timestamp_v7=0,
             _last_counter_v7=0,
+            _last_counter_v7_overflow=False,
         ):
             # 1 Jan 2023 12:34:56.123_456_789
             timestamp_ns = 1672533296_123_456_789  # ns precision
@@ -1024,6 +1025,7 @@ class BaseTestUUID:
                 self.uuid,
                 _last_timestamp_v7=fake_last_timestamp_v7,
                 _last_counter_v7=counter,
+                _last_counter_v7_overflow=False,
             ),
             mock.patch('time.time_ns', return_value=timestamp_ns),
             mock.patch('os.urandom', return_value=tail_bytes) as urand
@@ -1049,9 +1051,13 @@ class BaseTestUUID:
         timestamp_ns = 1672533296_123_456_789  # ns precision
         timestamp_ms, _ = divmod(timestamp_ns, 1_000_000)
 
+        # By design, counters have their MSB set to 0 so they
+        # will not be able to doubly overflow (they are still
+        # 42-bit integers).
         new_counter_hi = random.getrandbits(11)
         new_counter_lo = random.getrandbits(30)
         new_counter = (new_counter_hi << 30) | new_counter_lo
+        new_counter &= 0x1ff_ffff_ffff
 
         tail = random.getrandbits(32)
         random_bits = (new_counter << 32) | tail
@@ -1063,11 +1069,14 @@ class BaseTestUUID:
                 _last_timestamp_v7=timestamp_ms,
                 # same timestamp, but force an overflow on the counter
                 _last_counter_v7=0x3ff_ffff_ffff,
+                _last_counter_v7_overflow=False,
             ),
             mock.patch('time.time_ns', return_value=timestamp_ns),
             mock.patch('os.urandom', return_value=random_data) as urand
         ):
+            self.assertFalse(self.uuid._last_counter_v7_overflow)
             u = self.uuid.uuid7()
+            self.assertTrue(self.uuid._last_counter_v7_overflow)
             urand.assert_called_with(10)
             equal(u.variant, self.uuid.RFC_4122)
             equal(u.version, 7)
@@ -1081,6 +1090,16 @@ class BaseTestUUID:
             equal((u.int >> 64) & 0xfff, new_counter_hi)
             equal((u.int >> 32) & 0x3fff_ffff, new_counter_lo)
             equal(u.int & 0xffff_ffff, tail)
+
+            # Reflect the global state changes from the previous UUIDv7 call.
+            # Check that the timestamp of future UUIDs created within
+            # the same logical millisecond does not advance after the
+            # counter overflowed.
+            #
+            # See https://github.com/python/cpython/issues/138862.
+            v = self.uuid.uuid7()
+            equal(v.time, unix_ts_ms)
+            self.assertFalse(self.uuid._last_counter_v7_overflow)
 
     def test_uuid8(self):
         equal = self.assertEqual
