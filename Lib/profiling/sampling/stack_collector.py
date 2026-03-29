@@ -449,6 +449,8 @@ class DiffFlamegraphCollector(FlamegraphCollector):
 
     def __init__(self, sample_interval_usec, *, baseline_binary_path, skip_idle=False):
         super().__init__(sample_interval_usec, skip_idle=skip_idle)
+        if not os.path.exists(baseline_binary_path):
+            raise ValueError(f"Baseline file not found: {baseline_binary_path}")
         self.baseline_binary_path = baseline_binary_path
         self._baseline_collector = None
         self._elided_paths = set()
@@ -477,7 +479,8 @@ class DiffFlamegraphCollector(FlamegraphCollector):
         stats = {}
 
         for func, node in root_node["children"].items():
-            func_key = (func[0], func[2])
+            filename, _lineno, funcname = func
+            func_key = (filename, funcname)
             path_key = path + (func_key,)
 
             total_samples = node.get("samples", 0)
@@ -508,15 +511,22 @@ class DiffFlamegraphCollector(FlamegraphCollector):
             self._load_baseline()
 
         current_flamegraph = super()._convert_to_flamegraph_format()
-        if self._total_samples == 0:
-            return current_flamegraph
 
         current_stats = self._aggregate_path_samples(self._root)
         baseline_stats = self._aggregate_path_samples(self._baseline_collector._root)
 
-        # Scale baseline values to make them comparable when sample counts differ
-        scale = (self._total_samples / self._baseline_collector._total_samples
-                if self._baseline_collector._total_samples > 0 else 1.0)
+        # Scale baseline values to make them comparable, accounting for both
+        # sample count differences and sample interval differences.
+        baseline_total = self._baseline_collector._total_samples
+        if baseline_total > 0 and self._total_samples > 0:
+            current_time = self._total_samples * self.sample_interval_usec
+            baseline_time = baseline_total * self._baseline_collector.sample_interval_usec
+            scale = current_time / baseline_time
+        elif baseline_total > 0:
+            # Current profile is empty - use interval-based scale for elided display
+            scale = self.sample_interval_usec / self._baseline_collector.sample_interval_usec
+        else:
+            scale = 1.0
 
         self._annotate_nodes_with_diff(current_flamegraph, current_stats, baseline_stats, scale)
         self._add_elided_flamegraph(current_flamegraph, current_stats, baseline_stats, scale)
@@ -575,7 +585,7 @@ class DiffFlamegraphCollector(FlamegraphCollector):
 
     def _add_elided_flamegraph(self, current_flamegraph, current_stats, baseline_stats, scale):
         """Calculate elided paths and add elided flamegraph to stats."""
-        self._elided_paths = set(baseline_stats.keys()) - set(current_stats.keys())
+        self._elided_paths = baseline_stats.keys() - current_stats.keys()
 
         current_flamegraph["stats"]["elided_count"] = len(self._elided_paths)
 
@@ -585,11 +595,24 @@ class DiffFlamegraphCollector(FlamegraphCollector):
                 current_flamegraph["stats"]["elided_flamegraph"] = elided_flamegraph
 
     def _build_elided_flamegraph(self, baseline_stats, scale):
-        """Build flamegraph containing only elided paths from baseline."""
+        """Build flamegraph containing only elided paths from baseline.
+
+        This re-runs the base conversion pipeline on the baseline collector
+        to produce a complete formatted flamegraph, then prunes it to keep
+        only elided paths.
+        """
         if not self._baseline_collector or not self._elided_paths:
             return None
 
-        baseline_data = self._baseline_collector._convert_to_flamegraph_format()
+        # Suppress source line collection for elided nodes - these functions
+        # no longer exist in the current profile, so source lines from the
+        # current machine's filesystem would be misleading or unavailable.
+        orig_get_source = self._baseline_collector._get_source_lines
+        self._baseline_collector._get_source_lines = lambda func: None
+        try:
+            baseline_data = self._baseline_collector._convert_to_flamegraph_format()
+        finally:
+            self._baseline_collector._get_source_lines = orig_get_source
 
         # Remove non-elided nodes and recalculate values
         if not self._extract_elided_nodes(baseline_data, path=()):
@@ -597,11 +620,14 @@ class DiffFlamegraphCollector(FlamegraphCollector):
 
         self._add_elided_metadata(baseline_data, baseline_stats, scale, path=())
 
-        baseline_data["stats"].update(self.stats)
+        # Merge only profiling metadata, not thread-level stats
+        for key in ("sample_interval_usec", "duration_sec", "sample_rate",
+                    "error_rate", "missed_samples", "mode"):
+            if key in self.stats:
+                baseline_data["stats"][key] = self.stats[key]
         baseline_data["stats"]["is_differential"] = True
         baseline_data["stats"]["baseline_samples"] = self._baseline_collector._total_samples
         baseline_data["stats"]["current_samples"] = self._total_samples
-        baseline_data["baseline_strings"] = self._baseline_collector._string_table.get_strings()
 
         return baseline_data
 
@@ -625,8 +651,9 @@ class DiffFlamegraphCollector(FlamegraphCollector):
                     total_value += child.get("value", 0)
             node["children"] = elided_children
 
-            # Recalculate value based on remaining children
-            if elided_children:
+            # Recalculate value for structural (non-elided) ancestor nodes;
+            # elided nodes keep their original value to preserve self-samples
+            if elided_children and not is_elided:
                 node["value"] = total_value
 
         # Keep this node if it's elided or has elided descendants
@@ -654,7 +681,14 @@ class DiffFlamegraphCollector(FlamegraphCollector):
             node["diff"] = 0
 
         node["self_time"] = 0
-        node["diff_pct"] = -100.0
+        # Elided paths have zero current self-time, so the change is always
+        # -100% when there was actual baseline self-time to lose.
+        # For internal nodes with no baseline self-time, use 0% to avoid
+        # misleading tooltips.
+        if baseline_self > 0:
+            node["diff_pct"] = -100.0
+        else:
+            node["diff_pct"] = 0.0
 
         if "children" in node and node["children"]:
             for child in node["children"]:

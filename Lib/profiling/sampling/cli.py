@@ -59,8 +59,8 @@ class CustomFormatter(
 class DiffFlamegraphAction(argparse.Action):
     """Custom action for --diff-flamegraph that sets both format and baseline path."""
     def __call__(self, parser, namespace, values, option_string=None):
-        setattr(namespace, 'format', 'diff_flamegraph')
-        setattr(namespace, 'diff_baseline', values)
+        namespace.format = 'diff_flamegraph'
+        namespace.diff_baseline = values
 
 
 _HELP_DESCRIPTION = """Sample a process's stack frames and generate profiling data.
@@ -490,7 +490,7 @@ def _add_format_options(parser, include_compression=True, include_binary=True):
             dest="format",
             help="Generate high-performance binary format (use 'replay' command to convert)",
         )
-    parser.set_defaults(format="pstats")
+    parser.set_defaults(format="pstats", diff_baseline=None)
 
     if include_compression:
         output_group.add_argument(
@@ -564,7 +564,7 @@ def _create_collector(format_type, sample_interval_usec, skip_idle, opcodes=Fals
     """Create the appropriate collector based on format type.
 
     Args:
-        format_type: The output format ('pstats', 'collapsed', 'flamegraph', 'gecko', 'heatmap', 'binary')
+        format_type: The output format ('pstats', 'collapsed', 'flamegraph', 'gecko', 'heatmap', 'binary', 'diff_flamegraph')
         sample_interval_usec: Sampling interval in microseconds
         skip_idle: Whether to skip idle samples
         opcodes: Whether to collect opcode information (only used by gecko format
@@ -981,7 +981,7 @@ def _handle_attach(args):
         args.format, args.sample_interval_usec, skip_idle, args.opcodes,
         output_file=output_file,
         compression=getattr(args, 'compression', 'auto'),
-        diff_baseline=getattr(args, 'diff_baseline', None)
+        diff_baseline=args.diff_baseline
     )
 
     with _get_child_monitor_context(args, args.pid):
@@ -1060,7 +1060,7 @@ def _handle_run(args):
         args.format, args.sample_interval_usec, skip_idle, args.opcodes,
         output_file=output_file,
         compression=getattr(args, 'compression', 'auto'),
-        diff_baseline=getattr(args, 'diff_baseline', None)
+        diff_baseline=args.diff_baseline
     )
 
     with _get_child_monitor_context(args, process.pid):
@@ -1211,7 +1211,7 @@ def _handle_replay(args):
 
         collector = _create_collector(
             args.format, interval, skip_idle=False,
-            diff_baseline=getattr(args, 'diff_baseline', None)
+            diff_baseline=args.diff_baseline
         )
 
         def progress_callback(current, total):

@@ -986,7 +986,7 @@ function setupElidedToggle(data) {
     return;
   }
 
-  elidedFlamegraphData = resolveStringIndices(elidedFlamegraph, elidedFlamegraph.baseline_strings);
+  elidedFlamegraphData = resolveStringIndices(elidedFlamegraph, elidedFlamegraph.strings);
 
   const toggleElided = document.getElementById('toggle-elided');
   if (toggleElided) {

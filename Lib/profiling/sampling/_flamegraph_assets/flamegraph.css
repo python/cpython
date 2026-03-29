@@ -28,6 +28,23 @@
   --diff-elided: #b39ddb;
 }
 
+/* Dark mode differential colors - adjusted for contrast against dark backgrounds */
+[data-theme="dark"] {
+  --diff-regression-deep: #ef5350;
+  --diff-regression-medium: #e57373;
+  --diff-regression-light: #ef9a9a;
+  --diff-regression-verylight: #ffcdd2;
+
+  --diff-improvement-deep: #42a5f5;
+  --diff-improvement-medium: #64b5f6;
+  --diff-improvement-light: #90caf9;
+  --diff-improvement-verylight: #bbdefb;
+
+  --diff-neutral: #757575;
+  --diff-new: #b39ddb;
+  --diff-elided: #ce93d8;
+}
+
 /* --------------------------------------------------------------------------
    Layout Overrides (Flamegraph-specific)
    -------------------------------------------------------------------------- */

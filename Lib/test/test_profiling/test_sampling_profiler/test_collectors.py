@@ -1386,7 +1386,7 @@ class TestSampleProfilerComponents(unittest.TestCase):
         self.assertIn("elided_flamegraph", data["stats"])
         elided = data["stats"]["elided_flamegraph"]
         self.assertTrue(elided["stats"]["is_differential"])
-        self.assertIn("baseline_strings", elided)
+        self.assertIn("strings", elided)
 
         elided_strings = elided.get("strings", [])
         children = elided.get("children", [])
@@ -1433,7 +1433,7 @@ class TestSampleProfilerComponents(unittest.TestCase):
         self.assertAlmostEqual(child["diff_pct"], 0.0, places=1)
 
     def test_diff_flamegraph_empty_current(self):
-        """Empty current profile returns early without crashing."""
+        """Empty current profile still produces differential metadata and elided paths."""
         baseline_frames = [
             MockInterpreterInfo(0, [
                 MockThreadInfo(1, [MockFrameInfo("file.py", 10, "func1")])
@@ -1446,6 +1446,10 @@ class TestSampleProfilerComponents(unittest.TestCase):
         data = diff._convert_to_flamegraph_format()
         self.assertIn("name", data)
         self.assertEqual(data["value"], 0)
+        # Differential metadata should still be populated
+        self.assertTrue(data["stats"]["is_differential"])
+        # All baseline paths should be elided since current is empty
+        self.assertGreater(data["stats"]["elided_count"], 0)
 
     def test_diff_flamegraph_empty_baseline(self):
         """Empty baseline with non-empty current uses scale=1.0 fallback."""
@@ -1585,7 +1589,7 @@ class TestSampleProfilerComponents(unittest.TestCase):
         self.assertIn("per_thread_stats", elided["stats"])
         self.assertIn("baseline_samples", elided["stats"])
         self.assertIn("current_samples", elided["stats"])
-        self.assertIn("baseline_strings", elided)
+        self.assertIn("strings", elided)
 
         elided_strings = elided.get("strings", [])
         children = elided.get("children", [])

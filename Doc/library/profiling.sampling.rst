@@ -1041,7 +1041,7 @@ Some call paths may disappear entirely between profiles. These are called
 **elided stacks** and occur when optimizations eliminate code paths or certain
 branches stop executing. If elided stacks are present, an elided toggle appears
 allowing you to switch between the main differential view and an elided-only
-view that shows just the removed paths (colored deep red).
+view that shows just the removed paths (colored purple).
 
 
 Gecko format
