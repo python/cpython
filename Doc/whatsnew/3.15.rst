@@ -1201,10 +1201,7 @@ tomllib
     Previously an inline table had to be on a single line and couldn't end
     with a trailing comma. This is now relaxed so that the following is valid:
 
-    .. syntax highlighting needs TOML 1.1.0 support in Pygments,
-       see https://github.com/pygments/pygments/issues/3026
-
-    .. code-block:: text
+    .. code-block:: toml
 
        tbl = {
           key      = "a string",
@@ -1216,7 +1213,7 @@ tomllib
   - Add ``\xHH`` notation to basic strings for codepoints under 255,
     and the ``\e`` escape for the escape character:
 
-    .. code-block:: text
+    .. code-block:: toml
 
        null = "null byte: \x00; letter a: \x61"
        csi = "\e["
@@ -1224,7 +1221,7 @@ tomllib
   - Seconds in datetime and time values are now optional.
     The following are now valid:
 
-    .. code-block:: text
+    .. code-block:: toml
 
        dt = 2010-02-03 14:15
        t  = 14:15
