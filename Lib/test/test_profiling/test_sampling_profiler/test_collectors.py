@@ -1444,6 +1444,36 @@ class TestSampleProfilerComponents(unittest.TestCase):
         self.assertIn("name", data)
         self.assertEqual(data["value"], 0)
 
+    def test_diff_flamegraph_empty_baseline(self):
+        """Empty baseline with non-empty current uses scale=1.0 fallback."""
+        diff = make_diff_collector_with_mock_baseline([])
+        diff.collect([
+            MockInterpreterInfo(0, [
+                MockThreadInfo(1, [
+                    MockFrameInfo("file.py", 10, "func1"),
+                    MockFrameInfo("file.py", 20, "func2"),
+                ])
+            ])
+        ])
+
+        data = diff._convert_to_flamegraph_format()
+        strings = data.get("strings", [])
+
+        self.assertTrue(data["stats"]["is_differential"])
+        self.assertEqual(data["stats"]["baseline_samples"], 0)
+        self.assertEqual(data["stats"]["current_samples"], 1)
+        self.assertAlmostEqual(data["stats"]["baseline_scale"], 1.0)
+        self.assertEqual(data["stats"]["elided_count"], 0)
+
+        children = data.get("children", [])
+        self.assertEqual(len(children), 1)
+        child = children[0]
+        self.assertIn("func1", resolve_name(child, strings))
+        self.assertEqual(child["self_time"], 1)
+        self.assertAlmostEqual(child["baseline"], 0.0)
+        self.assertAlmostEqual(child["diff"], 1.0)
+        self.assertAlmostEqual(child["diff_pct"], 100.0)
+
     def test_diff_flamegraph_export(self):
         """DiffFlamegraphCollector export produces differential HTML."""
         test_frames = [
