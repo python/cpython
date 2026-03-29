@@ -288,18 +288,21 @@ class _PasswordLineEditor:
     def handle_move_start(self):
         """Move cursor to beginning (Ctrl+A)."""
         self.cursor_pos = 0
+        self.refresh_display()
 
     def handle_move_end(self):
         """Move cursor to end (Ctrl+E)."""
         self.cursor_pos = len(self.password)
+        self.refresh_display()
 
     def handle_erase(self):
         """Delete character before cursor (Backspace/DEL)."""
-        if self.cursor_pos <= 0:
+        if self.cursor_pos == 0:
             return
-        prev_len = len(self.password)
-        del self.password[self.cursor_pos - 1]
+        assert self.cursor_pos > 0
         self.cursor_pos -= 1
+        prev_len = len(self.password)
+        del self.password[self.cursor_pos]
         self.refresh_display(prev_len)
 
     def handle_kill_line(self):
@@ -340,6 +343,7 @@ class _PasswordLineEditor:
     def readline(self, input):
         """Read a line of password input with echo character support."""
         while True:
+            assert self.cursor_pos >= 0
             char = input.read(1)
 
             # Check for line terminators
