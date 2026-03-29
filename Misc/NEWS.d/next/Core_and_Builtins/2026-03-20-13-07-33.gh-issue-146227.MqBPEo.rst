@@ -1,0 +1,3 @@
+Fix wrong type in ``_Py_atomic_load_uint16`` in the C11 atomics backend
+(``pyatomic_std.h``), which used a 32-bit atomic load instead of 16-bit.
+Found by Mohammed Zuhaib.

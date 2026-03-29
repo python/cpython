@@ -1,0 +1,1 @@
+Adds a null check to handle when the JIT optimizer runs out of space when dealing with contradictions in ``make_bottom``.

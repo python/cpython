@@ -19,6 +19,7 @@
 #include "pycore_pyerrors.h"      // _PyErr_Occurred()
 #include "pycore_pystate.h"       // _PyThreadState_GET()
 #include "pycore_symtable.h"      // _Py_Mangle()
+#include "pycore_tuple.h"         // _PyTuple_FromPair
 #include "pycore_typeobject.h"    // struct type_cache
 #include "pycore_unicodeobject.h" // _PyUnicode_Copy
 #include "pycore_unionobject.h"   // _Py_union_type_or
@@ -52,8 +53,8 @@ class object "PyObject *" "&PyBaseObject_Type"
     MCACHE_HASH(FT_ATOMIC_LOAD_UINT_RELAXED((type)->tp_version_tag),   \
                 ((Py_ssize_t)(name)) >> 3)
 #define MCACHE_CACHEABLE_NAME(name)                             \
-        PyUnicode_CheckExact(name) &&                           \
-        (PyUnicode_GET_LENGTH(name) <= MCACHE_MAX_ATTR_SIZE)
+        (PyUnicode_CheckExact(name) &&                           \
+         (PyUnicode_GET_LENGTH(name) <= MCACHE_MAX_ATTR_SIZE))
 
 #define NEXT_VERSION_TAG(interp) \
     (interp)->types.next_version_tag
@@ -1349,6 +1350,35 @@ _PyType_LookupByVersion(unsigned int version)
 #ifdef Py_GIL_DISABLED
     return NULL;
 #else
+    switch (version) {
+        case _Py_TYPE_VERSION_INT:
+            return &PyLong_Type;
+        case _Py_TYPE_VERSION_FLOAT:
+            return &PyFloat_Type;
+        case _Py_TYPE_VERSION_LIST:
+            return &PyList_Type;
+        case _Py_TYPE_VERSION_TUPLE:
+            return &PyTuple_Type;
+        case _Py_TYPE_VERSION_STR:
+            return &PyUnicode_Type;
+        case _Py_TYPE_VERSION_SET:
+            return &PySet_Type;
+        case _Py_TYPE_VERSION_FROZEN_SET:
+            return &PyFrozenSet_Type;
+        case _Py_TYPE_VERSION_DICT:
+            return &PyDict_Type;
+        case _Py_TYPE_VERSION_BYTEARRAY:
+            return &PyByteArray_Type;
+        case _Py_TYPE_VERSION_BYTES:
+            return &PyBytes_Type;
+        case _Py_TYPE_VERSION_COMPLEX:
+            return &PyComplex_Type;
+        case _Py_TYPE_VERSION_FROZENDICT:
+            return &PyFrozenDict_Type;
+        default:
+            break;
+    }
+
     PyInterpreterState *interp = _PyInterpreterState_GET();
     PyTypeObject **slot =
         interp->types.type_version_cache
@@ -1782,7 +1812,7 @@ mro_hierarchy_for_complete_type(PyTypeObject *type, PyObject *temp)
         tuple = PyTuple_Pack(3, type, new_mro, old_mro);
     }
     else {
-        tuple = PyTuple_Pack(2, type, new_mro);
+        tuple = _PyTuple_FromPair((PyObject *)type, new_mro);
     }
 
     if (tuple != NULL) {
@@ -6134,6 +6164,14 @@ _PyType_LookupRefAndVersion(PyTypeObject *type, PyObject *name, unsigned int *ve
     return PyStackRef_AsPyObjectSteal(out);
 }
 
+static int
+should_assign_version_tag(PyTypeObject *type, PyObject *name, unsigned int version_tag)
+{
+    return (version_tag == 0
+        && FT_ATOMIC_LOAD_UINT16_RELAXED(type->tp_versions_used) < MAX_VERSIONS_PER_CLASS
+        && MCACHE_CACHEABLE_NAME(name));
+}
+
 unsigned int
 _PyType_LookupStackRefAndVersion(PyTypeObject *type, PyObject *name, _PyStackRef *out)
 {
@@ -6182,24 +6220,20 @@ _PyType_LookupStackRefAndVersion(PyTypeObject *type, PyObject *name, _PyStackRef
     /* We may end up clearing live exceptions below, so make sure it's ours. */
     assert(!PyErr_Occurred());
 
-    // We need to atomically do the lookup and capture the version before
-    // anyone else can modify our mro or mutate the type.
-
     int res;
     PyInterpreterState *interp = _PyInterpreterState_GET();
-    int has_version = 0;
-    unsigned int assigned_version = 0;
 
-    BEGIN_TYPE_LOCK();
-    // We must assign the version before doing the lookup.  If
-    // find_name_in_mro() blocks and releases the critical section
-    // then the type version can change.
-    if (MCACHE_CACHEABLE_NAME(name)) {
-        has_version = assign_version_tag(interp, type);
-        assigned_version = type->tp_version_tag;
+    unsigned int version_tag = FT_ATOMIC_LOAD_UINT(type->tp_version_tag);
+    if (should_assign_version_tag(type, name, version_tag)) {
+        BEGIN_TYPE_LOCK();
+        assign_version_tag(interp, type);
+        version_tag = type->tp_version_tag;
+        res = find_name_in_mro(type, name, out);
+        END_TYPE_LOCK();
     }
-    res = find_name_in_mro(type, name, out);
-    END_TYPE_LOCK();
+    else {
+        res = find_name_in_mro(type, name, out);
+    }
 
     /* Only put NULL results into cache if there was no error. */
     if (res < 0) {
@@ -6207,16 +6241,18 @@ _PyType_LookupStackRefAndVersion(PyTypeObject *type, PyObject *name, _PyStackRef
         return 0;
     }
 
-    if (has_version) {
-        PyObject *res_obj = PyStackRef_AsPyObjectBorrow(*out);
-#if Py_GIL_DISABLED
-        update_cache_gil_disabled(entry, name, assigned_version, res_obj);
-#else
-        PyObject *old_value = update_cache(entry, name, assigned_version, res_obj);
-        Py_DECREF(old_value);
-#endif
+    if (version_tag == 0 || !MCACHE_CACHEABLE_NAME(name)) {
+        return 0;
     }
-    return has_version ? assigned_version : 0;
+
+    PyObject *res_obj = PyStackRef_AsPyObjectBorrow(*out);
+#if Py_GIL_DISABLED
+    update_cache_gil_disabled(entry, name, version_tag, res_obj);
+#else
+    PyObject *old_value = update_cache(entry, name, version_tag, res_obj);
+    Py_DECREF(old_value);
+#endif
+    return version_tag;
 }
 
 /* Internal API to look for a name through the MRO.
@@ -7820,7 +7856,7 @@ object_getstate_default(PyObject *obj, int required)
         if (PyDict_GET_SIZE(slots) > 0) {
             PyObject *state2;
 
-            state2 = PyTuple_Pack(2, state, slots);
+            state2 = _PyTuple_FromPair(state, slots);
             Py_DECREF(state);
             if (state2 == NULL) {
                 Py_DECREF(slotnames);
@@ -11731,7 +11767,7 @@ update_one_slot(PyTypeObject *type, pytype_slotdef *p, pytype_slotdef **next_p,
         if (Py_IS_TYPE(descr, &PyWrapperDescr_Type) &&
             ((PyWrapperDescrObject *)descr)->d_base->name_strobj == p->name_strobj) {
             void **tptr;
-            size_t index = (p - slotdefs) / sizeof(slotdefs[0]);
+            size_t index = (p - slotdefs);
             if (slotdefs_name_counts[index] == 1) {
                 tptr = slotptr(type, p->offset);
             }
@@ -12360,17 +12396,15 @@ _super_lookup_descr(PyTypeObject *su_type, PyTypeObject *su_obj_type, PyObject *
     PyObject *mro, *res;
     Py_ssize_t i, n;
 
-    BEGIN_TYPE_LOCK();
     mro = lookup_tp_mro(su_obj_type);
-    /* keep a strong reference to mro because su_obj_type->tp_mro can be
-       replaced during PyDict_GetItemRef(dict, name, &res) and because
-       another thread can modify it after we end the critical section
-       below  */
-    Py_XINCREF(mro);
-    END_TYPE_LOCK();
-
     if (mro == NULL)
         return NULL;
+
+    /* Keep a strong reference to mro because su_obj_type->tp_mro can be
+       replaced during PyDict_GetItemRef(dict, name, &res). */
+    PyThreadState *tstate = _PyThreadState_GET();
+    _PyCStackRef mro_ref;
+    _PyThreadState_PushCStackRefNew(tstate, &mro_ref, mro);
 
     assert(PyTuple_Check(mro));
     n = PyTuple_GET_SIZE(mro);
@@ -12382,7 +12416,7 @@ _super_lookup_descr(PyTypeObject *su_type, PyTypeObject *su_obj_type, PyObject *
     }
     i++;  /* skip su->type (if any)  */
     if (i >= n) {
-        Py_DECREF(mro);
+        _PyThreadState_PopCStackRef(tstate, &mro_ref);
         return NULL;
     }
 
@@ -12393,13 +12427,13 @@ _super_lookup_descr(PyTypeObject *su_type, PyTypeObject *su_obj_type, PyObject *
 
         if (PyDict_GetItemRef(dict, name, &res) != 0) {
             // found or error
-            Py_DECREF(mro);
+            _PyThreadState_PopCStackRef(tstate, &mro_ref);
             return res;
         }
 
         i++;
     } while (i < n);
-    Py_DECREF(mro);
+    _PyThreadState_PopCStackRef(tstate, &mro_ref);
     return NULL;
 }
 

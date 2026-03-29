@@ -9,7 +9,7 @@ import time
 from .collector import Collector, filter_internal_frames
 from .opcode_utils import get_opcode_info, format_opcode
 try:
-    from _remote_debugging import THREAD_STATUS_HAS_GIL, THREAD_STATUS_ON_CPU, THREAD_STATUS_UNKNOWN, THREAD_STATUS_GIL_REQUESTED, THREAD_STATUS_HAS_EXCEPTION
+    from _remote_debugging import THREAD_STATUS_HAS_GIL, THREAD_STATUS_ON_CPU, THREAD_STATUS_UNKNOWN, THREAD_STATUS_GIL_REQUESTED, THREAD_STATUS_HAS_EXCEPTION, THREAD_STATUS_MAIN_THREAD
 except ImportError:
     # Fallback if module not available (shouldn't happen in normal use)
     THREAD_STATUS_HAS_GIL = (1 << 0)
@@ -17,6 +17,7 @@ except ImportError:
     THREAD_STATUS_UNKNOWN = (1 << 2)
     THREAD_STATUS_GIL_REQUESTED = (1 << 3)
     THREAD_STATUS_HAS_EXCEPTION = (1 << 4)
+    THREAD_STATUS_MAIN_THREAD = (1 << 5)
 
 
 # Categories matching Firefox Profiler expectations
@@ -174,15 +175,16 @@ class GeckoCollector(Collector):
             for thread_info in interpreter_info.threads:
                 frames = filter_internal_frames(thread_info.frame_info)
                 tid = thread_info.thread_id
+                status_flags = thread_info.status
+                is_main_thread = bool(status_flags & THREAD_STATUS_MAIN_THREAD)
 
                 # Initialize thread if needed
                 if tid not in self.threads:
-                    self.threads[tid] = self._create_thread(tid)
+                    self.threads[tid] = self._create_thread(tid, is_main_thread)
 
                 thread_data = self.threads[tid]
 
                 # Decode status flags
-                status_flags = thread_info.status
                 has_gil = bool(status_flags & THREAD_STATUS_HAS_GIL)
                 on_cpu = bool(status_flags & THREAD_STATUS_ON_CPU)
                 gil_requested = bool(status_flags & THREAD_STATUS_GIL_REQUESTED)
@@ -288,18 +290,12 @@ class GeckoCollector(Collector):
 
         self.sample_count += len(times)
 
-    def _create_thread(self, tid):
+    def _create_thread(self, tid, is_main_thread):
         """Create a new thread structure with processed profile format."""
-
-        # Determine if this is the main thread
-        try:
-            is_main = tid == threading.main_thread().ident
-        except (RuntimeError, AttributeError):
-            is_main = False
 
         thread = {
             "name": f"Thread-{tid}",
-            "isMainThread": is_main,
+            "isMainThread": is_main_thread,
             "processStartupTime": 0,
             "processShutdownTime": None,
             "registerTime": 0,

@@ -571,15 +571,16 @@ reader_get_or_create_thread_state(BinaryReader *reader, uint64_t thread_id,
             return NULL;
         }
     } else if (reader->thread_state_count >= reader->thread_state_capacity) {
-        reader->thread_states = grow_array(reader->thread_states,
-                                           &reader->thread_state_capacity,
-                                           sizeof(ReaderThreadState));
-        if (!reader->thread_states) {
+        ReaderThreadState *new_states = grow_array(reader->thread_states,
+                                                   &reader->thread_state_capacity,
+                                                   sizeof(ReaderThreadState));
+        if (!new_states) {
             return NULL;
         }
+        reader->thread_states = new_states;
     }
 
-    ReaderThreadState *ts = &reader->thread_states[reader->thread_state_count++];
+    ReaderThreadState *ts = &reader->thread_states[reader->thread_state_count];
     memset(ts, 0, sizeof(ReaderThreadState));
     ts->thread_id = thread_id;
     ts->interpreter_id = interpreter_id;
@@ -590,6 +591,9 @@ reader_get_or_create_thread_state(BinaryReader *reader, uint64_t thread_id,
         PyErr_NoMemory();
         return NULL;
     }
+    // Increment count only after successful allocation to avoid
+    // leaving a half-initialized entry visible to future lookups
+    reader->thread_state_count++;
     return ts;
 }
 
@@ -604,7 +608,11 @@ static inline int
 decode_stack_full(ReaderThreadState *ts, const uint8_t *data,
                   size_t *offset, size_t max_size)
 {
+    size_t prev_offset = *offset;
     uint32_t depth = decode_varint_u32(data, offset, max_size);
+    if (*offset == prev_offset) {
+        return -1;
+    }
 
     /* Validate depth against capacity to prevent buffer overflow */
     if (depth > ts->current_stack_capacity) {
@@ -615,7 +623,11 @@ decode_stack_full(ReaderThreadState *ts, const uint8_t *data,
 
     ts->current_stack_depth = depth;
     for (uint32_t i = 0; i < depth; i++) {
+        size_t prev_offset = *offset;
         ts->current_stack[i] = decode_varint_u32(data, offset, max_size);
+        if (*offset == prev_offset) {
+            return -1;
+        }
     }
     return 0;
 }
@@ -627,8 +639,16 @@ static inline int
 decode_stack_suffix(ReaderThreadState *ts, const uint8_t *data,
                     size_t *offset, size_t max_size)
 {
+    size_t prev_offset = *offset;
     uint32_t shared = decode_varint_u32(data, offset, max_size);
+    if (*offset == prev_offset) {
+        return -1;
+    }
+    prev_offset = *offset;
     uint32_t new_count = decode_varint_u32(data, offset, max_size);
+    if (*offset == prev_offset) {
+        return -1;
+    }
 
     /* Validate shared doesn't exceed current stack depth */
     if (shared > ts->current_stack_depth) {
@@ -664,7 +684,11 @@ decode_stack_suffix(ReaderThreadState *ts, const uint8_t *data,
     }
 
     for (uint32_t i = 0; i < new_count; i++) {
+        size_t prev_offset = *offset;
         ts->current_stack[i] = decode_varint_u32(data, offset, max_size);
+        if (*offset == prev_offset) {
+            return -1;
+        }
     }
     ts->current_stack_depth = final_depth;
     return 0;
@@ -677,8 +701,16 @@ static inline int
 decode_stack_pop_push(ReaderThreadState *ts, const uint8_t *data,
                       size_t *offset, size_t max_size)
 {
+    size_t prev_offset = *offset;
     uint32_t pop = decode_varint_u32(data, offset, max_size);
+    if (*offset == prev_offset) {
+        return -1;
+    }
+    prev_offset = *offset;
     uint32_t push = decode_varint_u32(data, offset, max_size);
+    if (*offset == prev_offset) {
+        return -1;
+    }
     size_t keep = (ts->current_stack_depth > pop) ? ts->current_stack_depth - pop : 0;
 
     /* Validate final depth doesn't exceed capacity */
@@ -699,7 +731,12 @@ decode_stack_pop_push(ReaderThreadState *ts, const uint8_t *data,
     }
 
     for (uint32_t i = 0; i < push; i++) {
+        size_t prev_offset = *offset;
         ts->current_stack[i] = decode_varint_u32(data, offset, max_size);
+        /* If offset didn't advance, varint decoding failed */
+        if (*offset == prev_offset) {
+            return -1;
+        }
     }
     ts->current_stack_depth = final_depth;
     return 0;
@@ -1222,6 +1259,9 @@ binary_reader_close(BinaryReader *reader)
         reader->mapped_data = NULL;  /* Prevent use-after-free */
         reader->mapped_size = 0;
     }
+    /* Clear sample_data which may point into the now-unmapped region */
+    reader->sample_data = NULL;
+    reader->sample_data_size = 0;
     if (reader->fd >= 0) {
         close(reader->fd);
         reader->fd = -1;  /* Mark as closed */
