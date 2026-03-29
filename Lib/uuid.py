@@ -896,6 +896,7 @@ def uuid7():
         counter = _last_counter_v7 + 1
         if counter > 0x3ff_ffff_ffff:
             _last_counter_v7_overflow = True
+            # advance the 48-bit timestamp
             timestamp_ms += 1
             counter, tail = _uuid7_get_counter_and_tail()
         else:
