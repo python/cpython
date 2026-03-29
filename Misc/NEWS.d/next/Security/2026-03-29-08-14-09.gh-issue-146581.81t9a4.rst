@@ -1,0 +1,1 @@
+Fix a directory traversal vulnerability in shutil.unpack_archive for ZIP files on Windows by refactoring _unpack_zipfile to use zipfile.ZipFile.extractall. This leverages the built in, hardened path sanitization in the zipfile module to safely handle drive prefixed paths. Patch by Shrey Naithani.
