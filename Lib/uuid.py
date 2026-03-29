@@ -900,8 +900,8 @@ def uuid7():
             timestamp_ms += 1
             counter, tail = _uuid7_get_counter_and_tail()
         else:
-            # 32-bit random data
             _last_counter_v7_overflow = False
+            # 32-bit random data
             tail = int.from_bytes(os.urandom(4))
 
     unix_ts_ms = timestamp_ms & 0xffff_ffff_ffff
