@@ -881,6 +881,7 @@ def uuid7():
 
     if _last_timestamp_v7 is None or timestamp_ms > _last_timestamp_v7:
         counter, tail = _uuid7_get_counter_and_tail()
+        # Clear the overflow state every new millisecond.
         _last_counter_v7_overflow = False
     else:
         if timestamp_ms < _last_timestamp_v7:
