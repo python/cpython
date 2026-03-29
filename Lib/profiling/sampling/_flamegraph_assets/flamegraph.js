@@ -1276,7 +1276,7 @@ function accumulateInvertedNode(parent, stackFrame, leaf, isDifferential) {
       lineno: stackFrame.lineno,
       funcname: stackFrame.funcname,
       source: stackFrame.source,
-      opcodes: stackFrame.opcodes,
+      opcodes: null,
       threads: new Set()
     };
 
@@ -1295,6 +1295,15 @@ function accumulateInvertedNode(parent, stackFrame, leaf, isDifferential) {
   node.value += leaf.value;
   if (leaf.threads) {
     leaf.threads.forEach(t => node.threads.add(t));
+  }
+  if (stackFrame.opcodes) {
+    if (!node.opcodes) {
+      node.opcodes = { ...stackFrame.opcodes };
+    } else {
+      for (const [op, count] of Object.entries(stackFrame.opcodes)) {
+        node.opcodes[op] = (node.opcodes[op] || 0) + count;
+      }
+    }
   }
 
   if (isDifferential) {
