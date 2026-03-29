@@ -1093,13 +1093,14 @@ class BaseTestUUID:
 
             # Check that the timestamp of future UUIDs created within
             # the same logical millisecond does not advance after the
-            # counter overflowed. In addition, since the counter could
-            # be incremented, we are no more in an "overflow" state.
+            # counter overflowed. In addition, even if the counter could
+            # be incremented, we are still in an "overflow" state as the
+            # timestamp should not be modified unless we re-overflow.
             #
             # See https://github.com/python/cpython/issues/138862.
             v = self.uuid.uuid7()
             equal(v.time, unix_ts_ms)
-            self.assertFalse(self.uuid._last_counter_v7_overflow)
+            self.assertTrue(self.uuid._last_counter_v7_overflow)
 
     def test_uuid8(self):
         equal = self.assertEqual
