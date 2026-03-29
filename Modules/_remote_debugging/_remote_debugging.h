@@ -345,6 +345,12 @@ typedef struct {
     size_t count;
 } StackChunkList;
 
+typedef struct {
+    proc_handle_t handle;
+    uintptr_t runtime_start_address;
+    struct _Py_DebugOffsets debug_offsets;
+} RuntimeOffsets;
+
 /*
  * Context for frame chain traversal operations.
  */
@@ -388,6 +394,14 @@ typedef int (*set_entry_processor_func)(
     uintptr_t key_addr,
     void *context
 );
+
+typedef int (*interpreter_processor_func)(
+    RuntimeOffsets *offsets,
+    uintptr_t interpreter_state_addr,
+    unsigned long iid,
+    void *context
+);
+
 
 /* ============================================================================
  * STRUCTSEQ DESCRIPTORS (extern declarations)
@@ -585,6 +599,17 @@ extern PyObject* unwind_stack_for_thread(
 extern void _Py_RemoteDebug_InitThreadsState(RemoteUnwinderObject *unwinder, _Py_RemoteDebug_ThreadsState *st);
 extern int _Py_RemoteDebug_StopAllThreads(RemoteUnwinderObject *unwinder, _Py_RemoteDebug_ThreadsState *st);
 extern void _Py_RemoteDebug_ResumeAllThreads(RemoteUnwinderObject *unwinder, _Py_RemoteDebug_ThreadsState *st);
+
+/* ============================================================================
+ * INTERPRETER FUNCTION DECLARATIONS
+ * ============================================================================ */
+
+extern int
+iterate_interpreters(
+    RuntimeOffsets *offsets,
+    interpreter_processor_func processor,
+    void *context
+);
 
 /* ============================================================================
  * ASYNCIO FUNCTION DECLARATIONS
