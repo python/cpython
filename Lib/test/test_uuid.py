@@ -1091,10 +1091,10 @@ class BaseTestUUID:
             equal((u.int >> 32) & 0x3fff_ffff, new_counter_lo)
             equal(u.int & 0xffff_ffff, tail)
 
-            # Reflect the global state changes from the previous UUIDv7 call.
             # Check that the timestamp of future UUIDs created within
             # the same logical millisecond does not advance after the
-            # counter overflowed.
+            # counter overflowed. In addition, since the counter could
+            # be incremented, we are no more in an "overflow" state.
             #
             # See https://github.com/python/cpython/issues/138862.
             v = self.uuid.uuid7()
