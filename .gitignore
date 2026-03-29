@@ -160,5 +160,7 @@ Python/frozen_modules/MANIFEST
 .z.cache
 /.nanvix/*
 !/.nanvix/tests/
+!/.nanvix/z.py
+!/.nanvix/nanvix.toml
 .nanvix-configured
 python.elf

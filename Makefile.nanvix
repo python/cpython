@@ -20,6 +20,11 @@
 # Nanvix Docker image for cross-compilation (used as fallback if native toolchain not found)
 NANVIX_DOCKER_IMAGE ?= nanvix/toolchain:latest-minimal
 
+# Platform and deployment configuration (passed by nanvix-zutil / z.py)
+PLATFORM ?= hyperlight
+PROCESS_MODE ?= multi-process
+MEMORY_SIZE ?= 128mb
+
 # Nanvix cross-compilation configuration
 ifdef CONFIG_NANVIX
   NANVIX_TOOLCHAIN ?= /opt/nanvix
@@ -331,7 +336,7 @@ clean:
 # Distclean target - full cleanup
 distclean: clean
 	-make distclean 2>/dev/null || true
-	git clean -fdx -e Makefile.nanvix -e NANVIX.md -e .github -e .nanvix/tests -e z 2>/dev/null || true
+	git clean -fdx -e Makefile.nanvix -e NANVIX.md -e .github -e .nanvix/z.py -e .nanvix/nanvix.toml -e z -e z.sh -e z.ps1 2>/dev/null || true
 
 # Install target (for Nanvix sysroot)
 # Use DESTDIR for staged installs: make install DESTDIR=/path/to/staging
@@ -344,4 +349,101 @@ else
 	make install DESTDIR="$(DESTDIR)"
 endif
 
-.PHONY: all configure build clean distclean test install
+# Package staging directory
+RELEASE_STAGING = $(CURDIR)/.nanvix/release
+
+# Artifact base name for release tarballs
+ARTIFACT_BASE = cpython-$(PLATFORM)-$(PROCESS_MODE)-$(MEMORY_SIZE)
+
+# Package target: install into staging, split into sysroot and buildroot tarballs
+package: build
+	@echo "Packaging CPython release..."
+	@rm -rf $(RELEASE_STAGING)
+ifdef CONFIG_NANVIX_DOCKER
+	$(DOCKER_RUN) make install DESTDIR="$(DOCKER_WORKSPACE_PATH)/.nanvix/release"
+else
+	make install DESTDIR="$(RELEASE_STAGING)"
+endif
+	@test -d "$(RELEASE_STAGING)/sysroot" || { echo "Error: install did not produce $(RELEASE_STAGING)/sysroot"; exit 1; }
+	@# ---------- buildroot: build dependencies ----------
+	@mkdir -p $(RELEASE_STAGING)/buildroot-pkg/lib $(RELEASE_STAGING)/buildroot-pkg/bin
+	@test -d "$(RELEASE_STAGING)/sysroot/include" && \
+		cp -a "$(RELEASE_STAGING)/sysroot/include" "$(RELEASE_STAGING)/buildroot-pkg/include" || true
+	@find "$(RELEASE_STAGING)/sysroot/lib" -maxdepth 1 -name '*.a' -exec cp -a {} "$(RELEASE_STAGING)/buildroot-pkg/lib/" \; 2>/dev/null || true
+	@test -d "$(RELEASE_STAGING)/sysroot/lib/pkgconfig" && \
+		cp -a "$(RELEASE_STAGING)/sysroot/lib/pkgconfig" "$(RELEASE_STAGING)/buildroot-pkg/lib/pkgconfig" || true
+	@test -d "$(RELEASE_STAGING)/sysroot/lib/python3.12/config-3.12" && \
+		mkdir -p "$(RELEASE_STAGING)/buildroot-pkg/lib/python3.12" && \
+		cp -a "$(RELEASE_STAGING)/sysroot/lib/python3.12/config-3.12" "$(RELEASE_STAGING)/buildroot-pkg/lib/python3.12/config-3.12" || true
+	@for f in python3-config python3.12-config 2to3 2to3-3.12 idle3 idle3.12 pydoc3 pydoc3.12; do \
+		test -f "$(RELEASE_STAGING)/sysroot/bin/$$f" && cp -a "$(RELEASE_STAGING)/sysroot/bin/$$f" "$(RELEASE_STAGING)/buildroot-pkg/bin/" || true; \
+	done
+	@test -d "$(RELEASE_STAGING)/sysroot/share" && \
+		cp -a "$(RELEASE_STAGING)/sysroot/share" "$(RELEASE_STAGING)/buildroot-pkg/share" || true
+	@# ---------- sysroot: runtime dependencies ----------
+	@mkdir -p $(RELEASE_STAGING)/sysroot-pkg/bin $(RELEASE_STAGING)/sysroot-pkg/lib
+	@test -x "$(RELEASE_STAGING)/sysroot/bin/python3.12" || \
+		{ echo "Error: python3.12 binary not found in staging"; exit 1; }
+	@cp -a "$(RELEASE_STAGING)/sysroot/bin/python3.12" "$(RELEASE_STAGING)/sysroot-pkg/bin/"
+	@test -L "$(RELEASE_STAGING)/sysroot/bin/python3" && \
+		cp -a "$(RELEASE_STAGING)/sysroot/bin/python3" "$(RELEASE_STAGING)/sysroot-pkg/bin/" || true
+	@test -d "$(RELEASE_STAGING)/sysroot/lib/python3.12" && \
+		cp -a "$(RELEASE_STAGING)/sysroot/lib/python3.12" "$(RELEASE_STAGING)/sysroot-pkg/lib/python3.12" || true
+	@rm -rf "$(RELEASE_STAGING)/sysroot-pkg/lib/python3.12/config-3.12"
+	@# Strip debug symbols
+ifdef CONFIG_NANVIX_DOCKER
+	$(DOCKER_RUN) sh -c '\
+		if [ -x "$(DOCKER_TOOLCHAIN_PATH)/bin/i686-nanvix-strip" ]; then \
+			find "$(DOCKER_WORKSPACE_PATH)/.nanvix/release/sysroot-pkg" -name "python3.*" -type f -executable \
+				-exec "$(DOCKER_TOOLCHAIN_PATH)/bin/i686-nanvix-strip" --strip-debug {} \; 2>/dev/null || true; \
+		fi'
+else
+	$(if $(wildcard $(TOOLCHAIN_PREFIX)/bin/i686-nanvix-strip),\
+		find $(RELEASE_STAGING)/sysroot-pkg -name 'python3.*' -type f -executable \
+			-exec $(TOOLCHAIN_PREFIX)/bin/i686-nanvix-strip --strip-debug {} \; 2>/dev/null || true)
+endif
+	@# Clean runtime tree
+	@find "$(RELEASE_STAGING)/sysroot-pkg" -name '__pycache__' -type d -exec rm -rf {} + 2>/dev/null || true
+	@find "$(RELEASE_STAGING)/sysroot-pkg" -type d -name 'test' -path '*/lib/python3.12/*' -exec rm -rf {} + 2>/dev/null || true
+	@find "$(RELEASE_STAGING)/sysroot-pkg" -type d -name 'tests' -path '*/lib/python3.12/*' -exec rm -rf {} + 2>/dev/null || true
+	@# Precompile stdlib
+	@HOST_PYTHON=""; \
+	if [ -x "$(TOOLCHAIN_PREFIX)/bin/python3" ]; then HOST_PYTHON="$(TOOLCHAIN_PREFIX)/bin/python3"; \
+	elif command -v python3 >/dev/null 2>&1; then HOST_PYTHON="python3"; fi; \
+	if [ -n "$$HOST_PYTHON" ]; then \
+		HOST_VER=$$($$HOST_PYTHON -c 'import sys; print("{}.{}".format(sys.version_info[0], sys.version_info[1]))' 2>/dev/null || true); \
+		if [ "$$HOST_VER" = "3.12" ]; then \
+			echo "Precompiling stdlib with host Python $$HOST_VER"; \
+			$$HOST_PYTHON -m compileall -q "$(RELEASE_STAGING)/sysroot-pkg/lib/python3.12/" 2>/dev/null || true; \
+		else \
+			echo "Skipping stdlib precompile: host Python version '$$HOST_VER' does not match target 3.12"; \
+		fi; \
+	fi
+	@# ---------- Create release tarballs ----------
+	@mkdir -p $(CURDIR)/dist
+	@mv "$(RELEASE_STAGING)/sysroot-pkg" "$(RELEASE_STAGING)/sysroot"
+	tar -cjf "$(CURDIR)/dist/$(ARTIFACT_BASE).tar.bz2" -C "$(RELEASE_STAGING)" sysroot
+	@mv "$(RELEASE_STAGING)/sysroot" "$(RELEASE_STAGING)/sysroot-pkg"
+	@mv "$(RELEASE_STAGING)/buildroot-pkg" "$(RELEASE_STAGING)/sysroot"
+	tar -cjf "$(CURDIR)/dist/$(ARTIFACT_BASE)-buildroot.tar.bz2" -C "$(RELEASE_STAGING)" sysroot
+	@rm -rf $(RELEASE_STAGING)
+	@echo "Release tarballs created in dist/"
+	@ls -lh $(CURDIR)/dist/$(ARTIFACT_BASE)*.tar.bz2
+
+# Verify package target: validate release tarballs
+verify-package:
+	@echo "Verifying release tarballs..."
+	@test -f "$(CURDIR)/dist/$(ARTIFACT_BASE).tar.bz2" || \
+		{ echo "Error: sysroot tarball not found: dist/$(ARTIFACT_BASE).tar.bz2"; exit 1; }
+	@test -f "$(CURDIR)/dist/$(ARTIFACT_BASE)-buildroot.tar.bz2" || \
+		{ echo "Error: buildroot tarball not found: dist/$(ARTIFACT_BASE)-buildroot.tar.bz2"; exit 1; }
+	@tar -tjf "$(CURDIR)/dist/$(ARTIFACT_BASE).tar.bz2" > /dev/null || \
+		{ echo "Error: sysroot tarball is corrupt"; exit 1; }
+	@tar -tjf "$(CURDIR)/dist/$(ARTIFACT_BASE)-buildroot.tar.bz2" > /dev/null || \
+		{ echo "Error: buildroot tarball is corrupt"; exit 1; }
+	@# Verify sysroot contains the python binary
+	@tar -tjf "$(CURDIR)/dist/$(ARTIFACT_BASE).tar.bz2" | grep -q 'sysroot/bin/python3.12' || \
+		{ echo "Error: sysroot tarball missing python3.12 binary"; exit 1; }
+	@echo "		*** Package verification PASSED ***"
+
+.PHONY: all configure build clean distclean test install package verify-package
