@@ -1296,4 +1296,80 @@ _remote_debugging_is_python_process(PyObject *module, PyObject *const *args, Py_
 exit:
     return return_value;
 }
-/*[clinic end generated code: output=34f50b18f317b9b6 input=a9049054013a1b77]*/
+
+PyDoc_STRVAR(_remote_debugging_get_gc_stats__doc__,
+"get_gc_stats($module, /, pid, *, all_interpreters=False)\n"
+"--\n"
+"\n"
+"Get garbage statistics from external Python process.\n"
+"\n"
+"  all_interpreters\n"
+"    If True, return GC statistics from all interpreters.\n"
+"    If False, return only from main interpreter.");
+
+#define _REMOTE_DEBUGGING_GET_GC_STATS_METHODDEF    \
+    {"get_gc_stats", _PyCFunction_CAST(_remote_debugging_get_gc_stats), METH_FASTCALL|METH_KEYWORDS, _remote_debugging_get_gc_stats__doc__},
+
+static PyObject *
+_remote_debugging_get_gc_stats_impl(PyObject *module, int pid,
+                                    int all_interpreters);
+
+static PyObject *
+_remote_debugging_get_gc_stats(PyObject *module, PyObject *const *args, Py_ssize_t nargs, PyObject *kwnames)
+{
+    PyObject *return_value = NULL;
+    #if defined(Py_BUILD_CORE) && !defined(Py_BUILD_CORE_MODULE)
+
+    #define NUM_KEYWORDS 2
+    static struct {
+        PyGC_Head _this_is_not_used;
+        PyObject_VAR_HEAD
+        Py_hash_t ob_hash;
+        PyObject *ob_item[NUM_KEYWORDS];
+    } _kwtuple = {
+        .ob_base = PyVarObject_HEAD_INIT(&PyTuple_Type, NUM_KEYWORDS)
+        .ob_hash = -1,
+        .ob_item = { &_Py_ID(pid), &_Py_ID(all_interpreters), },
+    };
+    #undef NUM_KEYWORDS
+    #define KWTUPLE (&_kwtuple.ob_base.ob_base)
+
+    #else  // !Py_BUILD_CORE
+    #  define KWTUPLE NULL
+    #endif  // !Py_BUILD_CORE
+
+    static const char * const _keywords[] = {"pid", "all_interpreters", NULL};
+    static _PyArg_Parser _parser = {
+        .keywords = _keywords,
+        .fname = "get_gc_stats",
+        .kwtuple = KWTUPLE,
+    };
+    #undef KWTUPLE
+    PyObject *argsbuf[2];
+    Py_ssize_t noptargs = nargs + (kwnames ? PyTuple_GET_SIZE(kwnames) : 0) - 1;
+    int pid;
+    int all_interpreters = 0;
+
+    args = _PyArg_UnpackKeywords(args, nargs, NULL, kwnames, &_parser,
+            /*minpos*/ 1, /*maxpos*/ 1, /*minkw*/ 0, /*varpos*/ 0, argsbuf);
+    if (!args) {
+        goto exit;
+    }
+    pid = PyLong_AsInt(args[0]);
+    if (pid == -1 && PyErr_Occurred()) {
+        goto exit;
+    }
+    if (!noptargs) {
+        goto skip_optional_kwonly;
+    }
+    all_interpreters = PyObject_IsTrue(args[1]);
+    if (all_interpreters < 0) {
+        goto exit;
+    }
+skip_optional_kwonly:
+    return_value = _remote_debugging_get_gc_stats_impl(module, pid, all_interpreters);
+
+exit:
+    return return_value;
+}
+/*[clinic end generated code: output=674d05c5ec0e3aca input=a9049054013a1b77]*/
