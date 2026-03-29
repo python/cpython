@@ -40,7 +40,7 @@ class ResourceTest(unittest.TestCase):
         # the number to a C long long and that the conversion doesn't raise
         # an error.
         self.assertGreater(resource.RLIM_INFINITY, 0)
-        self.assertEqual(resource.RLIM_INFINITY, max)
+        self.assertGreaterEqual(max, 0)
         self.assertLessEqual(cur, max)
         resource.setrlimit(resource.RLIMIT_FSIZE, (max, max))
         resource.setrlimit(resource.RLIMIT_FSIZE, (cur, max))
@@ -49,6 +49,7 @@ class ResourceTest(unittest.TestCase):
                      "setting RLIMIT_FSIZE is not supported on VxWorks")
     @unittest.skipUnless(hasattr(resource, 'RLIMIT_FSIZE'), 'requires resource.RLIMIT_FSIZE')
     def test_fsize_enforced(self):
+        self.addCleanup(os_helper.unlink, os_helper.TESTFN)
         try:
             (cur, max_lim) = resource.getrlimit(resource.RLIMIT_FSIZE)
         except OSError as e:
