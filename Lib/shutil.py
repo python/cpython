@@ -1309,7 +1309,7 @@ def _ensure_directory(path):
     if not os.path.isdir(dirname):
         os.makedirs(dirname)
 
-def _unpack_zipfile(filename, extract_dir):
+def _unpack_zipfile(filename, extract_dir, **kwargs):
     """Unpack zip `filename` to `extract_dir`
     """
     import zipfile  # late import for breaking circular dependency
@@ -1317,27 +1317,9 @@ def _unpack_zipfile(filename, extract_dir):
     if not zipfile.is_zipfile(filename):
         raise ReadError("%s is not a zip file" % filename)
 
-    zip = zipfile.ZipFile(filename)
-    try:
-        for info in zip.infolist():
-            name = info.filename
+    with zipfile.ZipFile(filename) as zf:
+        zf.extractall(extract_dir)
 
-            # don't extract absolute paths or ones with .. in them
-            if name.startswith('/') or '..' in name:
-                continue
-
-            targetpath = os.path.join(extract_dir, *name.split('/'))
-            if not targetpath:
-                continue
-
-            _ensure_directory(targetpath)
-            if not name.endswith('/'):
-                # file
-                with zip.open(name, 'r') as source, \
-                        open(targetpath, 'wb') as target:
-                    copyfileobj(source, target)
-    finally:
-        zip.close()
 
 def _unpack_tarfile(filename, extract_dir, *, filter=None):
     """Unpack tar/tar.gz/tar.bz2/tar.xz/tar.zst `filename` to `extract_dir`
@@ -1668,3 +1650,4 @@ def __getattr__(name):
         )
         return RuntimeError
     raise AttributeError(f"module {__name__!r} has no attribute {name!r}")
+
