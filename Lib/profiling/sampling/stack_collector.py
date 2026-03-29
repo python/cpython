@@ -452,8 +452,6 @@ class DiffFlamegraphCollector(FlamegraphCollector):
         self.baseline_binary_path = baseline_binary_path
         self._baseline_collector = None
         self._elided_paths = set()
-
-
     def _load_baseline(self):
         """Load baseline profile from binary file."""
         from .binary_reader import BinaryReader
