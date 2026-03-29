@@ -1313,13 +1313,10 @@ def _unpack_zipfile(filename, extract_dir, **kwargs):
     """Unpack zip `filename` to `extract_dir`
     """
     import zipfile  # late import for breaking circular dependency
-
     if not zipfile.is_zipfile(filename):
         raise ReadError("%s is not a zip file" % filename)
-
     with zipfile.ZipFile(filename) as zf:
         zf.extractall(extract_dir)
-
 
 def _unpack_tarfile(filename, extract_dir, *, filter=None):
     """Unpack tar/tar.gz/tar.bz2/tar.xz/tar.zst `filename` to `extract_dir`
