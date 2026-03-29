@@ -1250,8 +1250,17 @@ tok_get_normal_mode(struct tok_state *tok, tokenizer_mode* current_tok, struct t
         goto again; /* Read next line */
     }
 
-    /* Punctuation character */
-    int is_punctuation = (c == ':' || c == '}' || c == '!' || c == '{');
+    /* Punctuation character.
+     * '!' is only treated as f-string/t-string punctuation (conversion
+     * specifier) when not followed by '=' (which would make it '!='). */
+    int is_punctuation = (c == ':' || c == '}' || c == '{');
+    if (c == '!') {
+        int ahead = tok_nextc(tok);
+        tok_backup(tok, ahead);
+        if (ahead != '=') {
+            is_punctuation = 1;
+        }
+    }
     if (is_punctuation && INSIDE_FSTRING(tok) && INSIDE_FSTRING_EXPR(current_tok)) {
         /* This code block gets executed before the curly_bracket_depth is incremented
          * by the `{` case, so for ensuring that we are on the 0th level, we need
