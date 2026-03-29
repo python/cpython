@@ -1,0 +1,3 @@
+The iOS XCframework build script now ensures libpython isn't included in
+installed app content, and is more robust in identifying standard library
+binary content that requires processing.

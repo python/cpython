@@ -19,6 +19,7 @@
 #include "pycore_pyerrors.h"      // _PyErr_Occurred()
 #include "pycore_pystate.h"       // _PyThreadState_GET()
 #include "pycore_symtable.h"      // _Py_Mangle()
+#include "pycore_tuple.h"         // _PyTuple_FromPair
 #include "pycore_typeobject.h"    // struct type_cache
 #include "pycore_unicodeobject.h" // _PyUnicode_Copy
 #include "pycore_unionobject.h"   // _Py_union_type_or
@@ -1349,6 +1350,35 @@ _PyType_LookupByVersion(unsigned int version)
 #ifdef Py_GIL_DISABLED
     return NULL;
 #else
+    switch (version) {
+        case _Py_TYPE_VERSION_INT:
+            return &PyLong_Type;
+        case _Py_TYPE_VERSION_FLOAT:
+            return &PyFloat_Type;
+        case _Py_TYPE_VERSION_LIST:
+            return &PyList_Type;
+        case _Py_TYPE_VERSION_TUPLE:
+            return &PyTuple_Type;
+        case _Py_TYPE_VERSION_STR:
+            return &PyUnicode_Type;
+        case _Py_TYPE_VERSION_SET:
+            return &PySet_Type;
+        case _Py_TYPE_VERSION_FROZEN_SET:
+            return &PyFrozenSet_Type;
+        case _Py_TYPE_VERSION_DICT:
+            return &PyDict_Type;
+        case _Py_TYPE_VERSION_BYTEARRAY:
+            return &PyByteArray_Type;
+        case _Py_TYPE_VERSION_BYTES:
+            return &PyBytes_Type;
+        case _Py_TYPE_VERSION_COMPLEX:
+            return &PyComplex_Type;
+        case _Py_TYPE_VERSION_FROZENDICT:
+            return &PyFrozenDict_Type;
+        default:
+            break;
+    }
+
     PyInterpreterState *interp = _PyInterpreterState_GET();
     PyTypeObject **slot =
         interp->types.type_version_cache
@@ -1782,7 +1812,7 @@ mro_hierarchy_for_complete_type(PyTypeObject *type, PyObject *temp)
         tuple = PyTuple_Pack(3, type, new_mro, old_mro);
     }
     else {
-        tuple = PyTuple_Pack(2, type, new_mro);
+        tuple = _PyTuple_FromPair((PyObject *)type, new_mro);
     }
 
     if (tuple != NULL) {
@@ -7826,7 +7856,7 @@ object_getstate_default(PyObject *obj, int required)
         if (PyDict_GET_SIZE(slots) > 0) {
             PyObject *state2;
 
-            state2 = PyTuple_Pack(2, state, slots);
+            state2 = _PyTuple_FromPair(state, slots);
             Py_DECREF(state);
             if (state2 == NULL) {
                 Py_DECREF(slotnames);

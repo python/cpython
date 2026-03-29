@@ -4377,6 +4377,12 @@ register_lazy_on_parent(PyThreadState *tstate, PyObject *name,
         Py_ssize_t dot = PyUnicode_FindChar(name, '.', 0,
                                             PyUnicode_GET_LENGTH(name), -1);
         if (dot < 0) {
+            PyObject *lazy_submodules = ensure_lazy_submodules(
+                (PyDictObject *)lazy_modules, name);
+            if (lazy_submodules == NULL) {
+                goto done;
+            }
+            Py_DECREF(lazy_submodules);
             ret = 0;
             goto done;
         }
