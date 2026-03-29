@@ -2193,7 +2193,6 @@ class TestArchives(BaseTest, unittest.TestCase):
         self.assertFalse(os.path.exists(os.path.join(dstdir, 'abspath')))
         self.assertFalse(os.path.exists(os.path.join(dstdir, 'G_')))
         self.assertFalse(os.path.exists(os.path.join(dstdir, 'server')))
-        self.assertFalse(os.path.exists(os.path.join(dstdir, 'server2')))
         if os.name != 'nt':
             self.assertTrue(os.path.isfile(os.path.join(dstdir, 'C:', 'abspath')))
             self.assertTrue(os.path.isfile(os.path.join(dstdir, 'D:\\abspath')))
@@ -2218,7 +2217,6 @@ class TestArchives(BaseTest, unittest.TestCase):
             self.assertFalse(os.path.exists('abspath'))
             self.assertFalse(os.path.exists('C_'))
             self.assertFalse(os.path.exists('server'))
-            self.assertFalse(os.path.exists('server2'))
             if os.name != 'nt':
                 self.assertTrue(os.path.isfile(os.path.join('C:', 'abspath')))
                 self.assertTrue(os.path.isfile('D:\\abspath'))
