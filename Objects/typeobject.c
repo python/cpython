@@ -11768,11 +11768,27 @@ update_one_slot(PyTypeObject *type, pytype_slotdef *p, pytype_slotdef **next_p,
             ((PyWrapperDescrObject *)descr)->d_base->name_strobj == p->name_strobj) {
             void **tptr;
             size_t index = (p - slotdefs);
-            if (slotdefs_name_counts[index] == 1) {
-                tptr = slotptr(type, p->offset);
+            if (slotdefs_name_counts[index] > 1) {
+                /* If multiple slotdefs have the same name,
+                 * if we need to check that only one of them has the slot filled
+                 * and return that, else return NULL.
+                 */
+                tptr = NULL;
+                for (pytype_slotdef *q = slotdefs; q->name_strobj; q++) {
+                    if (q->name_strobj != p->name_strobj)
+                        continue;
+                    void **qptr = slotptr(type, q->offset);
+                    if (qptr == NULL || *qptr == NULL)
+                        continue;
+                    if (tptr != NULL) {
+                        tptr = NULL;
+                        break;
+                    }
+                    tptr = qptr;
+                }
             }
             else {
-                tptr = NULL;
+                tptr = slotptr(type, p->offset);
             }
 
             if (tptr == NULL || tptr == ptr)
