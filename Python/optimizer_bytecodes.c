@@ -254,22 +254,8 @@ dummy_func(void) {
         bool rhs_int = sym_matches_type(rhs, &PyLong_Type);
         bool lhs_float = sym_matches_type(lhs, &PyFloat_Type);
         bool rhs_float = sym_matches_type(rhs, &PyFloat_Type);
-        // Specialize float/float true division in tier 2.
-        // Speculatively insert guards for operands not yet known to be
-        // float. Skip if both are known int (int/int handled below) or
-        // if either is a known non-int/float type (Fraction, Decimal, etc.)
         if ((oparg == NB_TRUE_DIVIDE || oparg == NB_INPLACE_TRUE_DIVIDE)
-                && !(lhs_int && rhs_int)
-                && !(!lhs_int && !lhs_float && sym_has_type(lhs))
-                && !(!rhs_int && !rhs_float && sym_has_type(rhs))) {
-            if (!rhs_float) {
-                ADD_OP(_GUARD_TOS_FLOAT, 0, 0);
-                sym_set_type(rhs, &PyFloat_Type);
-            }
-            if (!lhs_float) {
-                ADD_OP(_GUARD_NOS_FLOAT, 0, 0);
-                sym_set_type(lhs, &PyFloat_Type);
-            }
+                && lhs_float && rhs_float) {
             if (PyJitRef_IsUnique(lhs)) {
                 ADD_OP(_BINARY_OP_TRUEDIV_FLOAT_INPLACE, 0, 0);
                 l = sym_new_null(ctx);
@@ -289,7 +275,6 @@ dummy_func(void) {
         }
         else if ((oparg == NB_TRUE_DIVIDE || oparg == NB_INPLACE_TRUE_DIVIDE)
                 && (lhs_int || lhs_float) && (rhs_int || rhs_float)) {
-            // int / int always returns float. No guards needed.
             res = sym_new_type(ctx, &PyFloat_Type);
         }
         else if (!((lhs_int || lhs_float) && (rhs_int || rhs_float))) {

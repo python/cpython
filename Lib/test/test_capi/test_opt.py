@@ -3349,75 +3349,75 @@ class TestUopsOptimization(unittest.TestCase):
         self.assertNotIn("_UNARY_NEGATIVE_FLOAT_INPLACE", uops)
 
     def test_float_truediv_inplace_unique_lhs(self):
-        # (a + b) produces a unique float; dividing by c reuses it
+        # (a + b) / (c + d): LHS is unique float from add, RHS is unique
+        # float from add. The division reuses the LHS in place.
         def testfunc(args):
-            a, b, c, n = args
+            a, b, c, d, n = args
             total = 0.0
             for _ in range(n):
-                total += (a + b) / c
+                total += (a + b) / (c + d)
             return total
 
-        res, ex = self._run_with_optimizer(testfunc, (2.0, 3.0, 4.0, TIER2_THRESHOLD))
+        res, ex = self._run_with_optimizer(testfunc, (2.0, 3.0, 1.0, 3.0, TIER2_THRESHOLD))
         self.assertAlmostEqual(res, TIER2_THRESHOLD * 1.25)
         self.assertIsNotNone(ex)
         uops = get_opnames(ex)
         self.assertIn("_BINARY_OP_TRUEDIV_FLOAT_INPLACE", uops)
 
     def test_float_truediv_inplace_unique_rhs(self):
-        # (a + b) produces a unique float on the right side of /
+        # x = c + d stores to a local (not unique when reloaded).
+        # (a + b) is unique. The division should use inplace on the RHS.
         def testfunc(args):
-            a, b, c, n = args
+            a, b, c, d, n = args
             total = 0.0
             for _ in range(n):
-                total += c / (a + b)
+                x = c + d
+                total += x / (a + b)
             return total
 
-        res, ex = self._run_with_optimizer(testfunc, (2.0, 3.0, 4.0, TIER2_THRESHOLD))
-        self.assertAlmostEqual(res, TIER2_THRESHOLD * 0.8)
+        res, ex = self._run_with_optimizer(testfunc, (2.0, 3.0, 4.0, 5.0, TIER2_THRESHOLD))
+        self.assertAlmostEqual(res, TIER2_THRESHOLD * (9.0 / 5.0))
         self.assertIsNotNone(ex)
         uops = get_opnames(ex)
         self.assertIn("_BINARY_OP_TRUEDIV_FLOAT_INPLACE_RIGHT", uops)
 
     def test_float_truediv_type_propagation(self):
-        # (a/b) + (c/d): the optimizer speculatively inserts float guards
-        # for both divisions, specializing them to _BINARY_OP_TRUEDIV_FLOAT.
-        # Their results are unique floats, so the + uses inplace.
+        # (a+b) / (c+d) - (e+f) / (g+h): all additions produce known-float
+        # results, so both divisions are specialized. The subtraction between
+        # the two division results should use inplace.
         def testfunc(args):
-            a, b, c, d, n = args
+            a, b, n = args
             total = 0.0
             for _ in range(n):
-                total += (a / b) + (c / d)
+                x = (a + b) # type of x will specialize to float
+                total += x / x - x / x
             return total
 
-        res, ex = self._run_with_optimizer(testfunc, (10.0, 3.0, 4.0, 5.0, TIER2_THRESHOLD))
-        expected = TIER2_THRESHOLD * (10.0 / 3.0 + 4.0 / 5.0)
+        res, ex = self._run_with_optimizer(testfunc,
+            (2.0, 3.0, TIER2_THRESHOLD))
+        expected = TIER2_THRESHOLD * ((2.0 + 3.0) / (2.0 + 3.0) - (2.0 + 3.0) / (2.0 + 3.0))
         self.assertAlmostEqual(res, expected)
         self.assertIsNotNone(ex)
         uops = get_opnames(ex)
-        # Both divisions are specialized with speculative guards
-        self.assertIn("_BINARY_OP_TRUEDIV_FLOAT", uops)
-        # The + uses inplace (a/b result is unique)
-        self.assertIn("_BINARY_OP_ADD_FLOAT_INPLACE", uops)
-        # The += uses inplace (+ result is unique)
-        self.assertIn("_BINARY_OP_ADD_FLOAT_INPLACE_RIGHT", uops)
+        self.assertIn("_BINARY_OP_TRUEDIV_FLOAT_INPLACE", uops)
+        self.assertIn("_BINARY_OP_SUBTRACT_FLOAT_INPLACE", uops)
 
     def test_float_truediv_unique_result_enables_inplace(self):
-        # (a+b) / c / d: (a+b) is unique float, so the first / uses
-        # inplace. Its result is also unique, so the second / can use
-        # _BINARY_OP_TRUEDIV_FLOAT_INPLACE too.
+        # (a+b) / (c+d) / (e+f): chained divisions where each result
+        # is unique, enabling inplace for subsequent divisions.
         def testfunc(args):
-            a, b, c, d, n = args
+            a, b, c, d, e, f, n = args
             total = 0.0
             for _ in range(n):
-                total += (a + b) / c / d
+                total += (a + b) / (c + d) / (e + f)
             return total
 
-        res, ex = self._run_with_optimizer(testfunc, (2.0, 3.0, 4.0, 5.0, TIER2_THRESHOLD))
-        expected = TIER2_THRESHOLD * ((2.0 + 3.0) / 4.0 / 5.0)
+        res, ex = self._run_with_optimizer(testfunc,
+            (2.0, 3.0, 1.0, 1.0, 1.0, 1.0, TIER2_THRESHOLD))
+        expected = TIER2_THRESHOLD * ((2.0 + 3.0) / (1.0 + 1.0) / (1.0 + 1.0))
         self.assertAlmostEqual(res, expected)
         self.assertIsNotNone(ex)
         uops = get_opnames(ex)
-        # Both divisions should use inplace (chained uniqueness)
         self.assertIn("_BINARY_OP_TRUEDIV_FLOAT_INPLACE", uops)
 
     def test_float_add_chain_both_unique(self):
