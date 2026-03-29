@@ -1309,7 +1309,7 @@ def _ensure_directory(path):
     if not os.path.isdir(dirname):
         os.makedirs(dirname)
 
-def _unpack_zipfile(filename, extract_dir, **kwargs):
+def _unpack_zipfile(filename, extract_dir):
     """Unpack zip `filename` to `extract_dir`
     """
     import zipfile  # late import for breaking circular dependency
