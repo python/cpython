@@ -3519,20 +3519,15 @@ class PublicAPITests(unittest.TestCase):
         self.assertEqual(set(shutil.__all__), set(target_api))
         with self.assertWarns(DeprecationWarning):
             from shutil import ExecError  # noqa: F401
-
-
 if __name__ == '__main__':
     unittest.main()
-
 class TestShutilZipTraversal(unittest.TestCase):
     def setUp(self):
         self.tmp_dir = tempfile.mkdtemp()
         self.extract_dir = os.path.join(self.tmp_dir, "extract")
         os.mkdir(self.extract_dir)
-
     def tearDown(self):
         shutil.rmtree(self.tmp_dir)
-
     @unittest.skipUnless(sys.platform == 'win32', 'Windows-specific traversal test')
     @support.requires_zlib()
     def test_unpack_zipfile_traversal_windows_drive(self):
