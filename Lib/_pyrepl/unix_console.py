@@ -542,7 +542,7 @@ class UnixConsole(Console):
             while not self.event_queue.empty():
                 e2 = self.event_queue.get()
                 e.data += e2.data
-                e.raw += e.raw
+                e.raw += e2.raw
 
             amount = struct.unpack("i", ioctl(self.input_fd, FIONREAD, b"\0\0\0\0"))[0]
             trace("getpending({a})", a=amount)
