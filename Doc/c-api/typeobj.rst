@@ -1499,6 +1499,52 @@ and :c:data:`PyType_Type` effectively act as defaults.)
          It will be removed in a future version of CPython
 
 
+   .. c:macro:: Py_TPFLAGS_HAVE_VERSION_TAG
+
+      This is a :term:`soft deprecated` macro that does nothing.
+      Historically, this would indicate that the
+      :c:member:`~PyTypeObject.tp_version_tag` field was available and
+      initialized.
+
+
+   .. c:macro:: Py_TPFLAGS_INLINE_VALUES
+
+      This bit indicates that instances of this type will have an "inline values"
+      array (containing the object's attributes) placed directly after the end
+      of the object.
+
+      This requires that :c:macro:`Py_TPFLAGS_HAVE_GC` is set.
+
+      **Inheritance:**
+
+      This flag is not inherited.
+
+      .. versionadded:: 3.13
+
+
+   .. c:macro:: Py_TPFLAGS_IS_ABSTRACT
+
+      This bit indicates that this is an abstract type and therefore cannot
+      be instantiated.
+
+      **Inheritance:**
+
+      This flag is not inherited.
+
+      .. seealso::
+         :mod:`abc`
+
+
+   .. c:macro:: Py_TPFLAGS_HAVE_STACKLESS_EXTENSION
+
+      Internal. Do not set or unset this flag.
+      Historically, this was a reserved flag for use in Stackless Python.
+
+      .. warning::
+            This flag is present in header files, but is not be used.
+            This may be removed in a future version of CPython.
+
+
 .. c:member:: const char* PyTypeObject.tp_doc
 
    .. corresponding-type-slot:: Py_tp_doc
@@ -3011,6 +3057,24 @@ Buffer Object Structures
 
    (5) Return ``0``.
 
+   **Thread safety:**
+
+   In the :term:`free-threaded build`, implementations must ensure:
+
+   * The export counter increment in step (3) is atomic.
+
+   * The underlying buffer data remains valid and at a stable memory
+     location for the lifetime of all exports.
+
+   * For objects that support resizing or reallocation (such as
+     :class:`bytearray`), the export counter is checked atomically before
+     such operations, and :exc:`BufferError` is raised if exports exist.
+
+   * The function is safe to call concurrently from multiple threads.
+
+   See also :ref:`thread-safety-memoryview` for the Python-level
+   thread safety guarantees of :class:`memoryview` objects.
+
    If *exporter* is part of a chain or tree of buffer providers, two main
    schemes can be used:
 
@@ -3055,6 +3119,16 @@ Buffer Object Structures
    (1) Decrement an internal counter for the number of exports.
 
    (2) If the counter is ``0``, free all memory associated with *view*.
+
+   **Thread safety:**
+
+   In the :term:`free-threaded build`:
+
+   * The export counter decrement in step (1) must be atomic.
+
+   * Resource cleanup when the counter reaches zero must be done atomically,
+     as the final release may race with concurrent releases from other
+     threads and dellocation must only happen once.
 
    The exporter MUST use the :c:member:`~Py_buffer.internal` field to keep
    track of buffer-specific resources. This field is guaranteed to remain

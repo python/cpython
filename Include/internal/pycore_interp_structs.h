@@ -14,6 +14,7 @@ extern "C" {
 #include "pycore_structs.h"       // PyHamtObject
 #include "pycore_tstate.h"        // _PyThreadStateImpl
 #include "pycore_typedefs.h"      // _PyRuntimeState
+#include "pycore_uop.h"           // _PyBloomFilter
 
 #define CODE_MAX_WATCHERS 8
 #define CONTEXT_MAX_WATCHERS 8
@@ -176,29 +177,52 @@ struct gc_generation {
                   generations */
 };
 
-struct gc_collection_stats {
-    /* number of collected objects */
-    Py_ssize_t collected;
-    /* total number of uncollectable objects (put into gc.garbage) */
-    Py_ssize_t uncollectable;
-    // Total number of objects considered for collection and traversed:
-    Py_ssize_t candidates;
-    // Duration of the collection in seconds:
-    double duration;
-};
-
 /* Running stats per generation */
 struct gc_generation_stats {
+    PyTime_t ts_start;
+    PyTime_t ts_stop;
+
+    /* heap_size on the start of the collection */
+    Py_ssize_t heap_size;
+
+    /* work_to_do on the start of the collection */
+    Py_ssize_t work_to_do;
+
     /* total number of collections */
     Py_ssize_t collections;
+
+    /* total number of visited objects */
+    Py_ssize_t object_visits;
+
     /* total number of collected objects */
     Py_ssize_t collected;
     /* total number of uncollectable objects (put into gc.garbage) */
     Py_ssize_t uncollectable;
     // Total number of objects considered for collection and traversed:
     Py_ssize_t candidates;
-    // Duration of the collection in seconds:
+
+    Py_ssize_t objects_transitively_reachable;
+    Py_ssize_t objects_not_transitively_reachable;
+
+    // Total duration of the collection in seconds:
     double duration;
+};
+
+#ifdef Py_GIL_DISABLED
+#define GC_YOUNG_STATS_SIZE 1
+#define GC_OLD_STATS_SIZE 1
+#else
+#define GC_YOUNG_STATS_SIZE 11
+#define GC_OLD_STATS_SIZE 3
+#endif
+struct gc_young_stats_buffer {
+    struct gc_generation_stats items[GC_YOUNG_STATS_SIZE];
+    int8_t index;
+};
+
+struct gc_old_stats_buffer {
+    struct gc_generation_stats items[GC_OLD_STATS_SIZE];
+    int8_t index;
 };
 
 enum _GCPhase {
@@ -210,6 +234,11 @@ enum _GCPhase {
    signature of gc.collect and change the size of PyStats.gc_stats */
 #define NUM_GENERATIONS 3
 
+struct gc_stats {
+    struct gc_young_stats_buffer young;
+    struct gc_old_stats_buffer old[2];
+};
+
 struct _gc_runtime_state {
     /* Is automatic collection enabled? */
     int enabled;
@@ -219,7 +248,7 @@ struct _gc_runtime_state {
     struct gc_generation old[2];
     /* a permanent generation which won't be collected */
     struct gc_generation permanent_generation;
-    struct gc_generation_stats generation_stats[NUM_GENERATIONS];
+    struct gc_stats generation_stats;
     /* true if we are currently running the collector */
     int collecting;
     // The frame that started the current collection. It might be NULL even when
@@ -413,6 +442,9 @@ typedef struct _PyOptimizationConfig {
     uint16_t jump_backward_initial_value;
     uint16_t jump_backward_initial_backoff;
 
+    uint16_t resume_initial_value;
+    uint16_t resume_initial_backoff;
+
     // JIT optimization thresholds
     uint16_t side_exit_initial_value;
     uint16_t side_exit_initial_backoff;
@@ -496,7 +528,7 @@ struct _py_func_state {
 
 /* For now we hard-code this to a value for which we are confident
    all the static builtin types will fit (for all builds). */
-#define _Py_MAX_MANAGED_STATIC_BUILTIN_TYPES 201
+#define _Py_MAX_MANAGED_STATIC_BUILTIN_TYPES 202
 #define _Py_MAX_MANAGED_STATIC_EXT_TYPES 10
 #define _Py_MAX_MANAGED_STATIC_TYPES \
     (_Py_MAX_MANAGED_STATIC_BUILTIN_TYPES + _Py_MAX_MANAGED_STATIC_EXT_TYPES)
@@ -972,7 +1004,10 @@ struct _is {
 
     // Optimization configuration (thresholds and flags for JIT and interpreter)
     _PyOptimizationConfig opt_config;
-    struct _PyExecutorObject *executor_list_head;
+    _PyBloomFilter *executor_blooms;             // Contiguous bloom filter array
+    struct _PyExecutorObject **executor_ptrs;    // Corresponding executor pointer array
+    size_t executor_count;                       // Number of valid executors
+    size_t executor_capacity;                    // Array capacity
     struct _PyExecutorObject *executor_deletion_list_head;
     struct _PyExecutorObject *cold_executor;
     struct _PyExecutorObject *cold_dynamic_executor;

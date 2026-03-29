@@ -55,7 +55,7 @@ extern Py_ssize_t _PyDict_SizeOf_LockHeld(PyDictObject *);
    of a key wins, if override is 2, a KeyError with conflicting key as
    argument is raised.
 */
-PyAPI_FUNC(int) _PyDict_MergeEx(PyObject *mp, PyObject *other, int override);
+PyAPI_FUNC(int) _PyDict_MergeUniq(PyObject *mp, PyObject *other, PyObject **dupkey);
 
 extern void _PyDict_DebugMallocStats(FILE *out);
 
@@ -159,6 +159,9 @@ extern void _PyDict_Clear_LockHeld(PyObject *op);
 #ifdef Py_GIL_DISABLED
 PyAPI_FUNC(void) _PyDict_EnsureSharedOnRead(PyDictObject *mp);
 #endif
+
+// Export for '_elementtree' shared extension
+PyAPI_FUNC(PyObject*) _PyDict_CopyAsDict(PyObject *op);
 
 #define DKIX_EMPTY (-1)
 #define DKIX_DUMMY (-2)  /* Used internally */
@@ -370,7 +373,7 @@ _PyDict_UniqueId(PyDictObject *mp)
 static inline void
 _Py_INCREF_DICT(PyObject *op)
 {
-    assert(PyDict_Check(op));
+    assert(PyAnyDict_Check(op));
     Py_ssize_t id = _PyDict_UniqueId((PyDictObject *)op);
     _Py_THREAD_INCREF_OBJECT(op, id);
 }
@@ -378,7 +381,7 @@ _Py_INCREF_DICT(PyObject *op)
 static inline void
 _Py_DECREF_DICT(PyObject *op)
 {
-    assert(PyDict_Check(op));
+    assert(PyAnyDict_Check(op));
     Py_ssize_t id = _PyDict_UniqueId((PyDictObject *)op);
     _Py_THREAD_DECREF_OBJECT(op, id);
 }

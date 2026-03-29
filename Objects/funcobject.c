@@ -12,7 +12,6 @@
 #include "pycore_setobject.h"     // _PySet_NextEntry()
 #include "pycore_stats.h"
 #include "pycore_weakref.h"       // FT_CLEAR_WEAKREFS()
-#include "pycore_optimizer.h"     // _Py_Executors_InvalidateDependency
 
 static const char *
 func_event_name(PyFunction_WatchEvent event) {
@@ -150,7 +149,7 @@ PyObject *
 PyFunction_NewWithQualName(PyObject *code, PyObject *globals, PyObject *qualname)
 {
     assert(globals != NULL);
-    assert(PyDict_Check(globals));
+    assert(PyAnyDict_Check(globals));
     _Py_INCREF_DICT(globals);
 
     PyCodeObject *code_obj = (PyCodeObject *)code;
@@ -1470,6 +1469,7 @@ cm_new(PyTypeObject *type, PyObject *args, PyObject *kwds)
     if (cm == NULL) {
         return NULL;
     }
+    _PyObject_SetDeferredRefcount((PyObject *)cm);
     if (cm_set_callable(cm, callable) < 0) {
         Py_DECREF(cm);
         return NULL;
@@ -1904,6 +1904,13 @@ PyStaticMethod_New(PyObject *callable)
         return NULL;
     }
     return (PyObject *)sm;
+}
+
+PyObject *
+_PyClassMethod_GetFunc(PyObject *self)
+{
+    classmethod *cm = _PyClassMethod_CAST(self);
+    return cm->cm_callable;
 }
 
 PyObject *

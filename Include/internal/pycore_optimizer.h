@@ -128,8 +128,8 @@ typedef struct {
     bool cold;
     uint8_t pending_deletion;
     int32_t index;           // Index of ENTER_EXECUTOR (if code isn't NULL, below).
-    _PyBloomFilter bloom;
-    _PyExecutorLinkListNode links;
+    int32_t bloom_array_idx;        // Index in interp->executor_blooms/executor_ptrs.
+    _PyExecutorLinkListNode links;  // Used by deletion list.
     PyCodeObject *code;  // Weak (NULL if no corresponding ENTER_EXECUTOR).
 } _PyVMData;
 
@@ -157,11 +157,88 @@ typedef struct _PyExecutorObject {
 // Export for '_opcode' shared extension (JIT compiler).
 PyAPI_FUNC(_PyExecutorObject*) _Py_GetExecutor(PyCodeObject *code, int offset);
 
-void _Py_ExecutorInit(_PyExecutorObject *, const _PyBloomFilter *);
+int _Py_ExecutorInit(_PyExecutorObject *, const _PyBloomFilter *);
 void _Py_ExecutorDetach(_PyExecutorObject *);
-void _Py_BloomFilter_Init(_PyBloomFilter *);
-void _Py_BloomFilter_Add(_PyBloomFilter *bloom, void *obj);
 PyAPI_FUNC(void) _Py_Executor_DependsOn(_PyExecutorObject *executor, void *obj);
+
+/* We use a bloomfilter with k = 6, m = 256
+ * The choice of k and the following constants
+ * could do with a more rigorous analysis,
+ * but here is a simple analysis:
+ *
+ * We want to keep the false positive rate low.
+ * For n = 5 (a trace depends on 5 objects),
+ * we expect 30 bits set, giving a false positive
+ * rate of (30/256)**6 == 2.5e-6 which is plenty
+ * good enough.
+ *
+ * However with n = 10 we expect 60 bits set (worst case),
+ * giving a false positive of (60/256)**6 == 0.0001
+ *
+ * We choose k = 6, rather than a higher number as
+ * it means the false positive rate grows slower for high n.
+ *
+ * n = 5, k = 6 => fp = 2.6e-6
+ * n = 5, k = 8 => fp = 3.5e-7
+ * n = 10, k = 6 => fp = 1.6e-4
+ * n = 10, k = 8 => fp = 0.9e-4
+ * n = 15, k = 6 => fp = 0.18%
+ * n = 15, k = 8 => fp = 0.23%
+ * n = 20, k = 6 => fp = 1.1%
+ * n = 20, k = 8 => fp = 2.3%
+ *
+ * The above analysis assumes perfect hash functions,
+ * but those don't exist, so the real false positive
+ * rates may be worse.
+ */
+
+#define _Py_BLOOM_FILTER_K 6
+#define _Py_BLOOM_FILTER_SEED 20221211
+
+static inline uint64_t
+address_to_hash(void *ptr) {
+    assert(ptr != NULL);
+    uint64_t uhash = _Py_BLOOM_FILTER_SEED;
+    uintptr_t addr = (uintptr_t)ptr;
+    for (int i = 0; i < SIZEOF_VOID_P; i++) {
+        uhash ^= addr & 255;
+        uhash *= (uint64_t)PyHASH_MULTIPLIER;
+        addr >>= 8;
+    }
+    return uhash;
+}
+
+static inline void
+_Py_BloomFilter_Init(_PyBloomFilter *bloom)
+{
+    for (int i = 0; i < _Py_BLOOM_FILTER_WORDS; i++) {
+        bloom->bits[i] = 0;
+    }
+}
+
+static inline void
+_Py_BloomFilter_Add(_PyBloomFilter *bloom, void *ptr)
+{
+    uint64_t hash = address_to_hash(ptr);
+    assert(_Py_BLOOM_FILTER_K <= 8);
+    for (int i = 0; i < _Py_BLOOM_FILTER_K; i++) {
+        uint8_t bits = hash & 255;
+        bloom->bits[bits >> _Py_BLOOM_FILTER_WORD_SHIFT] |=
+            (_Py_bloom_filter_word_t)1 << (bits & (_Py_BLOOM_FILTER_BITS_PER_WORD - 1));
+        hash >>= 8;
+    }
+}
+
+static inline bool
+bloom_filter_may_contain(const _PyBloomFilter *bloom, const _PyBloomFilter *hashes)
+{
+    for (int i = 0; i < _Py_BLOOM_FILTER_WORDS; i++) {
+        if ((bloom->bits[i] & hashes->bits[i]) != hashes->bits[i]) {
+            return false;
+        }
+    }
+    return true;
+}
 
 #define _Py_MAX_ALLOWED_BUILTINS_MODIFICATIONS 3
 #define _Py_MAX_ALLOWED_GLOBALS_MODIFICATIONS 6
@@ -213,8 +290,12 @@ static inline uint16_t uop_get_error_target(const _PyUOpInstruction *inst)
 
 
 #define REF_IS_BORROWED 1
-#define REF_IS_INVALID  2
+#define REF_IS_UNIQUE   2
+#define REF_IS_INVALID  3
 #define REF_TAG_BITS    3
+
+#define REF_GET_TAG(x)   ((uintptr_t)(x) & (REF_TAG_BITS))
+#define REF_CLEAR_TAG(x) ((uintptr_t)(x) & (~REF_TAG_BITS))
 
 #define JIT_BITS_TO_PTR_MASKED(REF) ((JitOptSymbol *)(((REF).bits) & (~REF_TAG_BITS)))
 
@@ -236,13 +317,34 @@ PyJitRef_Wrap(JitOptSymbol *sym)
 static inline JitOptRef
 PyJitRef_WrapInvalid(void *ptr)
 {
-    return (JitOptRef){.bits=(uintptr_t)ptr | REF_IS_INVALID};
+    return (JitOptRef){.bits = REF_CLEAR_TAG((uintptr_t)ptr) | REF_IS_INVALID};
 }
 
 static inline bool
 PyJitRef_IsInvalid(JitOptRef ref)
 {
-    return (ref.bits & REF_IS_INVALID) == REF_IS_INVALID;
+    return REF_GET_TAG(ref.bits) == REF_IS_INVALID;
+}
+
+static inline JitOptRef
+PyJitRef_MakeUnique(JitOptRef ref)
+{
+    return (JitOptRef){ REF_CLEAR_TAG(ref.bits) | REF_IS_UNIQUE };
+}
+
+static inline bool
+PyJitRef_IsUnique(JitOptRef ref)
+{
+    return REF_GET_TAG(ref.bits) == REF_IS_UNIQUE;
+}
+
+static inline JitOptRef
+PyJitRef_StripBorrowInfo(JitOptRef ref)
+{
+    if (PyJitRef_IsUnique(ref)) {
+        return ref;
+    }
+    return (JitOptRef){ .bits = REF_CLEAR_TAG(ref.bits) };
 }
 
 static inline JitOptRef
@@ -252,9 +354,18 @@ PyJitRef_StripReferenceInfo(JitOptRef ref)
 }
 
 static inline JitOptRef
+PyJitRef_RemoveUnique(JitOptRef ref)
+{
+    if (PyJitRef_IsUnique(ref)) {
+        ref = PyJitRef_StripReferenceInfo(ref);
+    }
+    return ref;
+}
+
+static inline JitOptRef
 PyJitRef_Borrow(JitOptRef ref)
 {
-    return (JitOptRef){ .bits = ref.bits | REF_IS_BORROWED };
+    return (JitOptRef){ .bits = REF_CLEAR_TAG(ref.bits) | REF_IS_BORROWED };
 }
 
 static const JitOptRef PyJitRef_NULL = {.bits = REF_IS_BORROWED};
@@ -268,7 +379,7 @@ PyJitRef_IsNull(JitOptRef ref)
 static inline int
 PyJitRef_IsBorrowed(JitOptRef ref)
 {
-    return (ref.bits & REF_IS_BORROWED) == REF_IS_BORROWED;
+    return REF_GET_TAG(ref.bits) == REF_IS_BORROWED;
 }
 
 extern bool _Py_uop_sym_is_null(JitOptRef sym);
@@ -310,7 +421,10 @@ extern void _Py_uop_sym_set_recorded_type(JitOptContext *ctx, JitOptRef sym, PyT
 extern void _Py_uop_sym_set_recorded_gen_func(JitOptContext *ctx, JitOptRef ref, PyFunctionObject *value);
 extern PyCodeObject *_Py_uop_sym_get_probable_func_code(JitOptRef sym);
 extern PyObject *_Py_uop_sym_get_probable_value(JitOptRef sym);
+extern PyTypeObject *_Py_uop_sym_get_probable_type(JitOptRef sym);
 extern JitOptRef *_Py_uop_sym_set_stack_depth(JitOptContext *ctx, int stack_depth, JitOptRef *current_sp);
+extern uint32_t _Py_uop_sym_get_func_version(JitOptRef ref);
+bool _Py_uop_sym_set_func_version(JitOptContext *ctx, JitOptRef ref, uint32_t version);
 
 extern void _Py_uop_abstractcontext_init(JitOptContext *ctx, _PyBloomFilter *dependencies);
 extern void _Py_uop_abstractcontext_fini(JitOptContext *ctx);
@@ -360,6 +474,8 @@ _PyJit_TryInitializeTracing(PyThreadState *tstate, _PyInterpreterFrame *frame,
     int oparg, _PyExecutorObject *current_executor);
 
 PyAPI_FUNC(void) _PyJit_FinalizeTracing(PyThreadState *tstate, int err);
+PyAPI_FUNC(bool) _PyJit_EnterExecutorShouldStopTracing(int og_opcode);
+
 void _PyPrintExecutor(_PyExecutorObject *executor, const _PyUOpInstruction *marker);
 void _PyJit_TracerFree(_PyThreadStateImpl *_tstate);
 
