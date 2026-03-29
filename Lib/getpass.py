@@ -44,7 +44,9 @@ def _get_terminal_ctrl_chars(fd):
     """Extract control characters from terminal settings.
 
     Returns a dict mapping control char names to their str values.
-    Falls back to POSIX defaults if termios isn't available.
+
+    Falls back to POSIX defaults if termios is not available
+    or if the control character is not supported by termios.
     """
     ctrl = dict(_POSIX_CTRL_CHARS)
     try:
@@ -53,7 +55,8 @@ def _get_terminal_ctrl_chars(fd):
     except (termios.error, OSError):
         return ctrl
 
-    # Ctrl+A/E/K (SOH/ENQ/VT) are not in termios, use POSIX defaults
+    # Use defaults for Backspace (BS) and Ctrl+A/E/K (SOH/ENQ/VT)
+    # as they are not in the termios control characters array.
     for name in ('ERASE', 'KILL', 'WERASE', 'LNEXT', 'EOF', 'INTR'):
         cap = getattr(termios, f'V{name}')
         if cap < len(cc):
@@ -108,7 +111,7 @@ def unix_getpass(prompt='Password: ', stream=None, *, echo_char=None):
                 old = termios.tcgetattr(fd)     # a copy to save
                 new = old[:]
                 new[3] &= ~termios.ECHO  # 3 == 'lflags'
-                # Extract control characters before changing terminal mode
+                # Extract control characters before changing terminal mode.
                 term_ctrl_chars = None
                 if echo_char:
                     # ICANON enables canonical (line-buffered) mode where
@@ -117,7 +120,7 @@ def unix_getpass(prompt='Password: ', stream=None, *, echo_char=None):
                     new[3] &= ~termios.ICANON
                     # IEXTEN enables implementation-defined input processing
                     # such as LNEXT (Ctrl+V). Disable it so the terminal
-                    # driver doesn't intercept these characters before our
+                    # driver does not intercept these characters before our
                     # code can handle them.
                     new[3] &= ~termios.IEXTEN
                     term_ctrl_chars = _get_terminal_ctrl_chars(fd)
@@ -258,11 +261,13 @@ class _PasswordLineEditor:
         }
 
     def refresh_display(self, prev_len=None):
-        """Redraw the entire password line with *echo_char*."""
+        """Redraw the entire password line with *echo_char*.
+
+        If *prev_len* is not specified, the current password length is used.
+        """
         prompt_len = len(self.prompt)
-        # Use prev_len if given, otherwise current password length
         clear_len = prev_len if prev_len is not None else len(self.password)
-        # Clear the entire line (prompt + password) and rewrite
+        # Clear the entire line (prompt + password) and rewrite.
         self.stream.write('\r' + ' ' * (prompt_len + clear_len) + '\r')
         self.stream.write(self.prompt + self.echo_char * len(self.password))
         if self.cursor_pos < len(self.password):
@@ -273,7 +278,7 @@ class _PasswordLineEditor:
         """Insert *char* at cursor position."""
         self.password.insert(self.cursor_pos, char)
         self.cursor_pos += 1
-        # Only refresh if inserting in middle
+        # Only refresh if inserting in middle.
         if self.cursor_pos < len(self.password):
             self.refresh_display()
         else:
@@ -313,13 +318,13 @@ class _PasswordLineEditor:
     def handle_erase_word(self):
         """Erase previous word (Ctrl+W)."""
         old_cursor = self.cursor_pos
-        # Skip trailing spaces
+        # Calculate the starting position of the previous word,
+        # ignoring trailing whitespaces.
         while self.cursor_pos > 0 and self.password[self.cursor_pos - 1] == ' ':
             self.cursor_pos -= 1
-        # Skip the word
         while self.cursor_pos > 0 and self.password[self.cursor_pos - 1] != ' ':
             self.cursor_pos -= 1
-        # Remove the deleted portion
+        # Delete the previous word and refresh the screen.
         prev_len = len(self.password)
         del self.password[self.cursor_pos:old_cursor]
         self.refresh_display(prev_len)
@@ -340,8 +345,8 @@ class _PasswordLineEditor:
             # Check for line terminators
             if char in ('\n', '\r'):
                 break
-            # Handle literal next mode FIRST (Ctrl+V quotes next char)
             elif self.literal_next:
+                # Handle literal next mode first as Ctrl+V quotes characters.
                 self.insert_char(char)
                 self.literal_next = False
             # Check if it's the LNEXT character
@@ -356,10 +361,10 @@ class _PasswordLineEditor:
             elif char == '\x00':
                 pass
             elif self.handle(char):
-                # Dispatched to handler
+                # Dispatched to handler.
                 pass
             else:
-                # Insert as normal character
+                # Insert as normal character.
                 self.insert_char(char)
 
             self.eof_pressed = (char == self.ctrl['EOF'])
