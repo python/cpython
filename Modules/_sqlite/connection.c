@@ -1103,13 +1103,16 @@ static callback_context *
 create_callback_context(PyTypeObject *cls, PyObject *callable)
 {
     callback_context *ctx = PyMem_Malloc(sizeof(callback_context));
-    if (ctx != NULL) {
-        PyObject *module = PyType_GetModule(cls);
-        ctx->refcount = 1;
-        ctx->callable = Py_NewRef(callable);
-        ctx->module = Py_NewRef(module);
-        ctx->state = pysqlite_get_state(module);
+    if (ctx == NULL) {
+        PyErr_NoMemory();
+        return NULL;
     }
+
+    PyObject *module = PyType_GetModule(cls);
+    ctx->refcount = 1;
+    ctx->callable = Py_NewRef(callable);
+    ctx->module = Py_NewRef(module);
+    ctx->state = pysqlite_get_state(module);
     return ctx;
 }
 
@@ -2212,7 +2215,7 @@ pysqlite_connection_create_collation_impl(pysqlite_Connection *self,
          * the context before returning.
          */
         if (callable != Py_None) {
-            free_callback_context(ctx);
+            decref_callback_context(ctx);
         }
         _pysqlite_seterror(self->state, self->db);
         return NULL;
