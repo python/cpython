@@ -478,9 +478,9 @@ def _add_format_options(parser, include_compression=True, include_binary=True):
     )
     format_group.add_argument(
         "--diff-flamegraph",
-        metavar="BASELINE.bin",
+        metavar="BASELINE",
         action=DiffFlamegraphAction,
-        help="Generate differential flamegraph comparing current profile to BASELINE.bin binary file",
+        help="Generate differential flamegraph comparing current profile to BASELINE binary file",
     )
     if include_binary:
         format_group.add_argument(
