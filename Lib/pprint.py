@@ -370,7 +370,10 @@ class PrettyPrinter:
 
     def _pprint_tuple(self, object, stream, indent, allowance, context, level):
         stream.write(self._format_block_start('(', indent))
-        endchar = ',)' if len(object) == 1 else ')'
+        if len(object) == 1 and not self._expand:
+            endchar = ',)'
+        else:
+            endchar = ')'
         self._format_items(object, stream, indent, allowance + len(endchar),
                            context, level)
         stream.write(self._format_block_end(endchar, indent))
@@ -547,6 +550,8 @@ class PrettyPrinter:
             )
             if not last:
                 write(delimnl)
+            elif self._expand:
+                write(',')
 
     def _format_namespace_items(self, items, stream, indent, allowance, context, level):
         write = stream.write
@@ -571,6 +576,8 @@ class PrettyPrinter:
                 )
             if not last:
                 write(delimnl)
+            elif self._expand:
+                write(',')
 
     def _format_items(self, items, stream, indent, allowance, context, level):
         write = stream.write
@@ -611,6 +618,8 @@ class PrettyPrinter:
             self._format(ent, stream, indent,
                          allowance if last else 1,
                          context, level)
+            if last and self._expand:
+                write(',')
 
     def _repr(self, object, context, level):
         repr, readable, recursive = self.format(object, context.copy(),
@@ -679,6 +688,8 @@ class PrettyPrinter:
         for i, m in enumerate(object.maps):
             if i == len(object.maps) - 1:
                 self._format(m, stream, indent, allowance + 1, context, level)
+                if self._expand:
+                    stream.write(',')
                 stream.write(self._format_block_end(')', indent - self._indent_per_level))
             else:
                 self._format(m, stream, indent, 1, context, level)

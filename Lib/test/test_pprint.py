@@ -1544,7 +1544,7 @@ DummyDataclass(
     qux={'baz': 123, 'foo': 'bar'},
     quux=['foo', 'bar', 'baz'],
     corge=7,
-    garply=(1, 2, 3, 4)
+    garply=(1, 2, 3, 4),
 )""")
 
     def test_expand_dict(self):
@@ -1563,7 +1563,7 @@ DummyDataclass(
     'baz': 123,
     'qux': {'foo': 'bar', 'baz': 123},
     'quux': ['foo', 'bar', 'baz'],
-    'corge': 7
+    'corge': 7,
 }""")
 
     def test_expand_ordered_dict(self):
@@ -1580,7 +1580,7 @@ DummyDataclass(
 OrderedDict([
     ('foo', 1),
     ('bar', 12),
-    ('baz', 123)
+    ('baz', 123),
 ])""")
 
     def test_expand_list(self):
@@ -1597,7 +1597,7 @@ OrderedDict([
     'foo',
     'bar',
     'baz',
-    'qux'
+    'qux',
 ]""")
 
     def test_expand_tuple(self):
@@ -1618,7 +1618,15 @@ OrderedDict([
     'baz',
     4,
     5,
-    6
+    6,
+)""")
+
+    def test_expand_single_element_tuple(self):
+        self.assertEqual(
+            pprint.pformat((1,), width=1, indent=4, expand=True),
+            """\
+(
+    1,
 )""")
 
     def test_expand_set(self):
@@ -1637,7 +1645,7 @@ OrderedDict([
     'baz',
     'foo',
     'qux',
-    (1, 2, 3)
+    (1, 2, 3),
 }""")
 
     def test_expand_frozenset(self):
@@ -1661,7 +1669,7 @@ frozenset({
     'bar',
     'baz',
     'foo',
-    (1, 2, 3)
+    (1, 2, 3),
 })""")
 
     def test_expand_frozendict(self):
@@ -1674,7 +1682,7 @@ frozenset({
 frozendict({
     'baz': 123,
     'foo': 'bar',
-    'qux': [1, 2]
+    'qux': [1, 2],
 })""",
         )
 
@@ -1717,7 +1725,7 @@ mappingproxy({
     'corge': 7,
     'foo': 'bar',
     'quux': ['foo', 'bar', 'baz'],
-    'qux': {'baz': 123, 'foo': 'bar'}
+    'qux': {'baz': 123, 'foo': 'bar'},
 })""")
 
     def test_expand_namespace(self):
@@ -1740,8 +1748,8 @@ namespace(
     baz=namespace(
         x=321,
         y='string',
-        d={'bar': 'baz', 'foo': True}
-    )
+        d={'bar': 'baz', 'foo': True},
+    ),
 )""")
 
     def test_expand_defaultdict(self):
@@ -1755,7 +1763,7 @@ namespace(
 """\
 defaultdict(<class 'list'>, {
     'bar': {'baz': None, 'foo': 'bar'},
-    'foo': ['bar', 'baz', 'qux']
+    'foo': ['bar', 'baz', 'qux'],
 })""")
 
     def test_expand_counter(self):
@@ -1766,7 +1774,7 @@ Counter({
     'b': 4,
     'c': 3,
     'd': 2,
-    'e': 1
+    'e': 1,
 })"""
         self.assertEqual(pprint.pformat(dummy_counter, width=40, indent=4,
                                         expand=True), expected)
@@ -1777,7 +1785,7 @@ Counter({
   'b': 4,
   'c': 3,
   'd': 2,
-  'e': 1
+  'e': 1,
 })"""
         self.assertEqual(pprint.pformat(dummy_counter, width=20, indent=2,
                                         expand=True), expected2)
@@ -1810,11 +1818,11 @@ ChainMap(
             'quux': ['foo', 'bar', 'baz'],
             'qux': {
                 'baz': 123,
-                'foo': 'bar'
-            }
-        }
+                'foo': 'bar',
+            },
+        },
     },
-    {'garply': 'waldo'}
+    {'garply': 'waldo'},
 )""")
 
     def test_expand_deque(self):
@@ -1851,11 +1859,11 @@ deque([
         'corge': 7,
         'foo': 'bar',
         'quux': ['foo', 'bar', 'baz'],
-        'qux': {'baz': 123, 'foo': 'bar'}
+        'qux': {'baz': 123, 'foo': 'bar'},
     },
     'foo',
     'bar',
-    'baz'
+    'baz',
 ], maxlen=10)""")
 
     def test_expand_userdict(self):
@@ -1879,7 +1887,7 @@ deque([
     'corge': 7,
     'foo': 'bar',
     'quux': ['foo', 'bar', 'baz'],
-    'qux': {'baz': 123, 'foo': 'bar'}
+    'qux': {'baz': 123, 'foo': 'bar'},
 }""")
 
     def test_expand_userlist(self):
@@ -1899,9 +1907,8 @@ deque([
     'first',
     2,
     {'key': 'value'},
-    [4, 5, 6]
+    [4, 5, 6],
 ]""")
-
 
     def test_expand_dict_keys(self):
         d = {"foo": 1, "bar": 2, "baz": 3, "qux": 4, "quux": 5}
@@ -1913,7 +1920,7 @@ dict_keys([
     'baz',
     'foo',
     'quux',
-    'qux'
+    'qux',
 ])""",
         )
 
@@ -1927,7 +1934,7 @@ dict_values([
     2,
     3,
     4,
-    5
+    5,
 ])""",
         )
 
@@ -1941,7 +1948,7 @@ dict_items([
     ('baz', 3),
     ('foo', 1),
     ('quux', 5),
-    ('qux', 4)
+    ('qux', 4),
 ])""",
         )
 
