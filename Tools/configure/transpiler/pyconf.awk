@@ -558,6 +558,11 @@ function pyconf_compile_link_check(desc, source, extra_flags, compiler, rc, resu
 
 function pyconf_run_check(desc, source, extra_cflags, extra_libs, rc, result) {
         if (desc != "") pyconf_checking(desc)
+        # AC_RUN_IFELSE equivalent: skip when cross-compiling (return false)
+        if (pyconf_cross_compiling == "yes" || pyconf_cross_compiling == "maybe") {
+                if (desc != "") pyconf_result("no")
+                return 0
+        }
         result = _pyconf_run_test(source, extra_cflags " " extra_libs, 1)
         rc = _pyconf_run_test_rc
         if (desc != "") {
@@ -571,6 +576,11 @@ function pyconf_run_check(desc, source, extra_cflags, extra_libs, rc, result) {
 
 function pyconf_run_program_output(desc, source, extra_flags, result) {
         if (desc != "") pyconf_checking(desc)
+        # Skip when cross-compiling (return empty string)
+        if (pyconf_cross_compiling == "yes" || pyconf_cross_compiling == "maybe") {
+                if (desc != "") pyconf_result("")
+                return ""
+        }
         result = _pyconf_run_test(source, extra_flags, 1)
         if (desc != "") pyconf_result(result != "" ? result : "failed")
         return result
