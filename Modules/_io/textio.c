@@ -673,7 +673,7 @@ struct textio
     int detached;
     Py_ssize_t chunk_size;
     /* Use helpers _textiowrapper_buffer_* to access buffer; many
-       operations can set it to NULL (ref: gh-143008, gh-142594). */
+       operations can set it to NULL (see gh-143008, gh-142594). */
     PyObject *buffer;
     PyObject *encoding;
     PyObject *encoder;
@@ -734,7 +734,7 @@ struct textio
 /* Helpers to safely operate on self->buffer.
 
 self->buffer can be detached (set to NULL) by any user code that is called
-leading to NULL pointer dereferences (ex. gh-143008, gh-142594). Protect against
+leading to NULL pointer dereferences (see gh-143008, gh-142594). Protect against
 that by using helpers to check self->buffer validity at callsites. */
 static PyObject *
 _textiowrapper_buffer_safe(textio *self) {
@@ -742,12 +742,14 @@ _textiowrapper_buffer_safe(textio *self) {
        is called during construction and destruction where self->ok which
        CHECK_ATTACHED uses does not imply self->buffer state. */
     if (self->buffer == NULL) {
-        if (self->ok <= 0)
+        if (self->ok <= 0) {
             PyErr_SetString(PyExc_ValueError,
                 "I/O operation on uninitialized object");
-        else
+        }
+        else {
             PyErr_SetString(PyExc_ValueError,
                 "underlying buffer has been detached");
+        }
         return NULL;
     }
     return self->buffer;
