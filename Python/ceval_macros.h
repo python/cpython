@@ -562,3 +562,54 @@ gen_try_set_executing(PyGenObject *gen)
         ((PyFloatObject *)PyStackRef_AsPyObjectBorrow(TARGET))           \
             ->ob_fval = _dres;                                           \
     } while (0)
+
+// Inplace compact int operation. Computes left OP right and attempts to
+// store the result in TARGET (which must be uniquely referenced).
+// After the macro:
+//   _int_inplace_ok  = 1: TARGET was mutated in place, res = TARGET
+//   _int_inplace_ok  = 0: result is a small int or overflow; caller
+//                          must fall back to _PyCompactLong_* and EXIT_IF
+// _int_inplace_status after macro:
+//   0 = mutated TARGET in place (res = TARGET)
+//   1 = result is a small int stored in _int_inplace_smallref
+//   2 = overflow, caller must EXIT_IF
+#define INT_INPLACE_OP(left, right, TARGET, OP)                          \
+    int _int_inplace_status = 0;                                         \
+    _PyStackRef _int_inplace_smallref = PyStackRef_NULL;                 \
+    do {                                                                 \
+        PyObject *_left_o = PyStackRef_AsPyObjectBorrow(left);           \
+        PyObject *_right_o = PyStackRef_AsPyObjectBorrow(right);         \
+        assert(PyLong_CheckExact(_left_o));                              \
+        assert(PyLong_CheckExact(_right_o));                             \
+        assert(_PyLong_BothAreCompact((PyLongObject *)_left_o,           \
+                                     (PyLongObject *)_right_o));         \
+        assert(_PyObject_IsUniquelyReferenced(                           \
+            PyStackRef_AsPyObjectBorrow(TARGET)));                       \
+        STAT_INC(BINARY_OP, hit);                                        \
+        Py_ssize_t _left_val = _PyLong_CompactValue(                     \
+            (PyLongObject *)_left_o);                                    \
+        Py_ssize_t _right_val = _PyLong_CompactValue(                    \
+            (PyLongObject *)_right_o);                                   \
+        Py_ssize_t _result = _left_val OP _right_val;                   \
+        if (_result >= -_PY_NSMALLNEGINTS                                \
+                && _result < _PY_NSMALLPOSINTS) {                        \
+            _int_inplace_smallref = PyStackRef_FromPyObjectBorrow(       \
+                _PyLong_GetSmallInt(_result));                           \
+            _int_inplace_status = 1;                                     \
+        }                                                                \
+        else if ((twodigits)((stwodigits)_result) + PyLong_MASK          \
+                < (twodigits)PyLong_MASK + PyLong_BASE)                  \
+        {                                                                \
+            PyLongObject *_target = (PyLongObject *)                     \
+                PyStackRef_AsPyObjectBorrow(TARGET);                     \
+            Py_ssize_t _sign = _result < 0 ? -1 : 1;                    \
+            digit _abs = (digit)(_result < 0 ? -_result : _result);      \
+            _target->long_value.lv_tag =                                 \
+                (Py_ssize_t)_sign << _PyLong_NON_SIZE_BITS;              \
+            _target->long_value.ob_digit[0] = _abs;                      \
+        }                                                                \
+        else {                                                           \
+            _int_inplace_status = 2;                                     \
+        }                                                                \
+    } while (0)
+
