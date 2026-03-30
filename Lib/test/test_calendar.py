@@ -1063,6 +1063,7 @@ class LeapdaysTestCase(unittest.TestCase):
 def conv(s):
     return s.replace('\n', os.linesep).encode()
 
+@support.force_not_colorized_test_class
 class CommandLineTestCase(unittest.TestCase):
     def setUp(self):
         self.runners = [self.run_cli_ok, self.run_cmd_ok]

@@ -686,27 +686,60 @@ class _CLIDemoCalendar(TextCalendar):
         super().__init__(*args, **kwargs)
         self.highlight_day = highlight_day
 
+    def _get_theme(self):
+        from _colorize import get_theme
+
+        return get_theme(tty_file=sys.stdout)
+
+    def formatday(self, day, weekday, width, *, highlight_day=None):
+        """
+        Returns a formatted day.
+        """
+        if day == 0:
+            s = ''
+        else:
+            s = f'{day:2}'
+        s = s.center(width)
+        if day == highlight_day:
+            theme = self._get_theme().calendar
+            s = f"{theme.highlight}{s}{theme.reset}"
+        return s
+
     def formatweek(self, theweek, width, *, highlight_day=None):
         """
         Returns a single week in a string (no newline).
         """
-        if highlight_day:
-            from _colorize import get_colors
-
-            ansi = get_colors()
-            highlight = f"{ansi.BLACK}{ansi.BACKGROUND_YELLOW}"
-            reset = ansi.RESET
-        else:
-            highlight = reset = ""
-
         return ' '.join(
-            (
-                f"{highlight}{self.formatday(d, wd, width)}{reset}"
-                if d == highlight_day
-                else self.formatday(d, wd, width)
-            )
+            self.formatday(d, wd, width, highlight_day=highlight_day)
             for (d, wd) in theweek
         )
+
+    def formatweekheader(self, width):
+        """
+        Return a header for a week.
+        """
+        header = super().formatweekheader(width)
+        theme = self._get_theme().calendar
+        return f"{theme.weekday}{header}{theme.reset}"
+
+    def formatmonthname(self, theyear, themonth, width, withyear=True):
+        """
+        Return a formatted month name.
+        """
+        name = super().formatmonthname(theyear, themonth, width, withyear)
+        theme = self._get_theme().calendar
+        if (
+            self.highlight_day
+            and self.highlight_day.year == theyear
+            and self.highlight_day.month == themonth
+        ):
+            color = theme.highlight
+            name_only = name.strip()
+            colored_name = f"{color}{name_only}{theme.reset}"
+            return name.replace(name_only, colored_name, 1)
+        else:
+            color = theme.header
+        return f"{color}{name}{theme.reset}"
 
     def formatmonth(self, theyear, themonth, w=0, l=0):
         """
@@ -742,7 +775,9 @@ class _CLIDemoCalendar(TextCalendar):
         colwidth = (w + 1) * 7 - 1
         v = []
         a = v.append
-        a(repr(theyear).center(colwidth*m+c*(m-1)).rstrip())
+        theme = self._get_theme().calendar
+        year = repr(theyear).center(colwidth*m+c*(m-1)).rstrip()
+        a(f"{theme.header}{year}{theme.reset}")
         a('\n'*l)
         header = self.formatweekheader(w)
         for (i, row) in enumerate(self.yeardays2calendar(theyear, m)):
