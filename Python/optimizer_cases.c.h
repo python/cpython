@@ -4280,14 +4280,14 @@
 
         case _FORMAT_SIMPLE: {
             JitOptRef res;
-            res = sym_new_not_null(ctx);
+            res = sym_new_type(ctx, &PyUnicode_Type);
             stack_pointer[-1] = res;
             break;
         }
 
         case _FORMAT_WITH_SPEC: {
             JitOptRef res;
-            res = sym_new_not_null(ctx);
+            res = sym_new_type(ctx, &PyUnicode_Type);
             CHECK_STACK_BOUNDS(-1);
             stack_pointer[-2] = res;
             stack_pointer += -1;

@@ -1551,6 +1551,14 @@ dummy_func(void) {
         set = sym_new_type(ctx, &PySet_Type);
     }
 
+    op(_FORMAT_SIMPLE, (value -- res)) {
+        res = sym_new_type(ctx, &PyUnicode_Type);
+    }
+
+    op(_FORMAT_WITH_SPEC, (value, fmt_spec -- res)) {
+        res = sym_new_type(ctx, &PyUnicode_Type);
+    }
+
     op(_SET_UPDATE, (set, unused[oparg-1], iterable -- set, unused[oparg-1], i)) {
         (void)set;
         i = iterable;
