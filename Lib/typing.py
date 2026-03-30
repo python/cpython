@@ -1973,6 +1973,17 @@ def _lazy_load_getattr_static():
 _cleanups.append(_lazy_load_getattr_static.cache_clear)
 
 
+@functools.cache
+def _lazy_load_unwrap():
+    # Import unwrap lazily so as not to slow down the import of typing.py
+    # Cache the result so we don't slow down get_type_hints() unnecessarily
+    from inspect import unwrap
+    return unwrap
+
+
+_cleanups.append(_lazy_load_unwrap.cache_clear)
+
+
 def _pickle_psargs(psargs):
     return ParamSpecArgs, (psargs.__origin__,)
 
@@ -2485,8 +2496,7 @@ def get_type_hints(obj, globalns=None, localns=None, include_extras=False,
             globalns = obj.__dict__
         else:
             # Find globalns for the unwrapped object.
-            import inspect
-            nsobj = inspect.unwrap(obj)
+            nsobj = _lazy_load_unwrap()(obj)
             globalns = getattr(nsobj, '__globals__', {})
         if localns is None:
             localns = globalns
