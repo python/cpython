@@ -1216,14 +1216,14 @@ class UserDict(_collections_abc.MutableMapping):
     def __or__(self, other):
         if isinstance(other, UserDict):
             return self.__class__(self.data | other.data)
-        if isinstance(other, dict):
+        if isinstance(other, (dict, frozendict)):
             return self.__class__(self.data | other)
         return NotImplemented
 
     def __ror__(self, other):
         if isinstance(other, UserDict):
             return self.__class__(other.data | self.data)
-        if isinstance(other, dict):
+        if isinstance(other, (dict, frozendict)):
             return self.__class__(other | self.data)
         return NotImplemented
 
