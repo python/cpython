@@ -82,11 +82,11 @@ jobs:
             compiler: msvc
           - target: x86_64-apple-darwin/clang
             architecture: x86_64
-            runner: macos-15-intel
+            runner: macos-26-intel
             compiler: clang
           - target: aarch64-apple-darwin/clang
             architecture: aarch64
-            runner: macos-14
+            runner: macos-26
             compiler: clang
           - target: x86_64-unknown-linux-gnu/gcc
             architecture: x86_64
@@ -133,8 +133,8 @@ jobs:
         run: |
           brew update
           brew install llvm@${{ matrix.llvm }}
-          SDKROOT="$(xcrun --show-sdk-path)" \
-            ./configure --enable-experimental-jit ${{ matrix.debug && '--with-pydebug' || '--enable-optimizations --with-lto' }}
+          export SDKROOT="$(xcrun --show-sdk-path)"
+          ./configure --enable-experimental-jit ${{ matrix.debug && '--with-pydebug' || '--enable-optimizations --with-lto' }}
           make all --jobs 4
           ./python.exe -m test --multiprocess 0 --timeout 4500 --verbose2 --verbose3
 
