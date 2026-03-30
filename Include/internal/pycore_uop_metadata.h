@@ -138,6 +138,7 @@ const uint32_t _PyUop_Flags[MAX_UOP_ID+1] = {
     [_GUARD_TOS_ANY_DICT] = HAS_EXIT_FLAG,
     [_GUARD_TOS_DICT] = HAS_EXIT_FLAG,
     [_GUARD_TOS_FROZENDICT] = HAS_EXIT_FLAG,
+    [_BINARY_OP_SUBSCR_DICT_KNOWN_HASH] = HAS_ERROR_FLAG | HAS_ERROR_NO_POP_FLAG | HAS_ESCAPES_FLAG,
     [_BINARY_OP_SUBSCR_DICT] = HAS_ERROR_FLAG | HAS_ERROR_NO_POP_FLAG | HAS_ESCAPES_FLAG,
     [_BINARY_OP_SUBSCR_CHECK_FUNC] = HAS_EXIT_FLAG,
     [_BINARY_OP_SUBSCR_INIT_CALL] = 0,
@@ -146,6 +147,7 @@ const uint32_t _PyUop_Flags[MAX_UOP_ID+1] = {
     [_STORE_SUBSCR] = HAS_ERROR_FLAG | HAS_ESCAPES_FLAG,
     [_STORE_SUBSCR_LIST_INT] = HAS_DEOPT_FLAG | HAS_ESCAPES_FLAG,
     [_STORE_SUBSCR_DICT] = HAS_ERROR_FLAG | HAS_ESCAPES_FLAG,
+    [_STORE_SUBSCR_DICT_KNOWN_HASH] = HAS_ERROR_FLAG | HAS_ESCAPES_FLAG,
     [_DELETE_SUBSCR] = HAS_ERROR_FLAG | HAS_ESCAPES_FLAG,
     [_CALL_INTRINSIC_1] = HAS_ARG_FLAG | HAS_ERROR_FLAG | HAS_ERROR_NO_POP_FLAG | HAS_ESCAPES_FLAG,
     [_CALL_INTRINSIC_2] = HAS_ARG_FLAG | HAS_ERROR_FLAG | HAS_ERROR_NO_POP_FLAG | HAS_ESCAPES_FLAG,
@@ -1352,6 +1354,15 @@ const _PyUopCachingInfo _PyUop_Caching[MAX_UOP_ID+1] = {
             { 3, 3, _GUARD_TOS_FROZENDICT_r33 },
         },
     },
+    [_BINARY_OP_SUBSCR_DICT_KNOWN_HASH] = {
+        .best = { 2, 2, 2, 2 },
+        .entries = {
+            { -1, -1, -1 },
+            { -1, -1, -1 },
+            { 3, 2, _BINARY_OP_SUBSCR_DICT_KNOWN_HASH_r23 },
+            { -1, -1, -1 },
+        },
+    },
     [_BINARY_OP_SUBSCR_DICT] = {
         .best = { 2, 2, 2, 2 },
         .entries = {
@@ -1422,6 +1433,15 @@ const _PyUopCachingInfo _PyUop_Caching[MAX_UOP_ID+1] = {
             { -1, -1, -1 },
             { -1, -1, -1 },
             { 1, 3, _STORE_SUBSCR_DICT_r31 },
+        },
+    },
+    [_STORE_SUBSCR_DICT_KNOWN_HASH] = {
+        .best = { 3, 3, 3, 3 },
+        .entries = {
+            { -1, -1, -1 },
+            { -1, -1, -1 },
+            { -1, -1, -1 },
+            { 1, 3, _STORE_SUBSCR_DICT_KNOWN_HASH_r31 },
         },
     },
     [_DELETE_SUBSCR] = {
@@ -4022,6 +4042,7 @@ const uint16_t _PyUop_Uncached[MAX_UOP_REGS_ID+1] = {
     [_GUARD_TOS_FROZENDICT_r11] = _GUARD_TOS_FROZENDICT,
     [_GUARD_TOS_FROZENDICT_r22] = _GUARD_TOS_FROZENDICT,
     [_GUARD_TOS_FROZENDICT_r33] = _GUARD_TOS_FROZENDICT,
+    [_BINARY_OP_SUBSCR_DICT_KNOWN_HASH_r23] = _BINARY_OP_SUBSCR_DICT_KNOWN_HASH,
     [_BINARY_OP_SUBSCR_DICT_r23] = _BINARY_OP_SUBSCR_DICT,
     [_BINARY_OP_SUBSCR_CHECK_FUNC_r23] = _BINARY_OP_SUBSCR_CHECK_FUNC,
     [_BINARY_OP_SUBSCR_INIT_CALL_r01] = _BINARY_OP_SUBSCR_INIT_CALL,
@@ -4033,6 +4054,7 @@ const uint16_t _PyUop_Uncached[MAX_UOP_REGS_ID+1] = {
     [_STORE_SUBSCR_r30] = _STORE_SUBSCR,
     [_STORE_SUBSCR_LIST_INT_r32] = _STORE_SUBSCR_LIST_INT,
     [_STORE_SUBSCR_DICT_r31] = _STORE_SUBSCR_DICT,
+    [_STORE_SUBSCR_DICT_KNOWN_HASH_r31] = _STORE_SUBSCR_DICT_KNOWN_HASH,
     [_DELETE_SUBSCR_r20] = _DELETE_SUBSCR,
     [_CALL_INTRINSIC_1_r12] = _CALL_INTRINSIC_1,
     [_CALL_INTRINSIC_2_r23] = _CALL_INTRINSIC_2,
@@ -4639,6 +4661,8 @@ const char *const _PyOpcode_uop_name[MAX_UOP_REGS_ID+1] = {
     [_BINARY_OP_SUBSCR_CHECK_FUNC_r23] = "_BINARY_OP_SUBSCR_CHECK_FUNC_r23",
     [_BINARY_OP_SUBSCR_DICT] = "_BINARY_OP_SUBSCR_DICT",
     [_BINARY_OP_SUBSCR_DICT_r23] = "_BINARY_OP_SUBSCR_DICT_r23",
+    [_BINARY_OP_SUBSCR_DICT_KNOWN_HASH] = "_BINARY_OP_SUBSCR_DICT_KNOWN_HASH",
+    [_BINARY_OP_SUBSCR_DICT_KNOWN_HASH_r23] = "_BINARY_OP_SUBSCR_DICT_KNOWN_HASH_r23",
     [_BINARY_OP_SUBSCR_INIT_CALL] = "_BINARY_OP_SUBSCR_INIT_CALL",
     [_BINARY_OP_SUBSCR_INIT_CALL_r01] = "_BINARY_OP_SUBSCR_INIT_CALL_r01",
     [_BINARY_OP_SUBSCR_INIT_CALL_r11] = "_BINARY_OP_SUBSCR_INIT_CALL_r11",
@@ -5706,6 +5730,8 @@ const char *const _PyOpcode_uop_name[MAX_UOP_REGS_ID+1] = {
     [_STORE_SUBSCR_r30] = "_STORE_SUBSCR_r30",
     [_STORE_SUBSCR_DICT] = "_STORE_SUBSCR_DICT",
     [_STORE_SUBSCR_DICT_r31] = "_STORE_SUBSCR_DICT_r31",
+    [_STORE_SUBSCR_DICT_KNOWN_HASH] = "_STORE_SUBSCR_DICT_KNOWN_HASH",
+    [_STORE_SUBSCR_DICT_KNOWN_HASH_r31] = "_STORE_SUBSCR_DICT_KNOWN_HASH_r31",
     [_STORE_SUBSCR_LIST_INT] = "_STORE_SUBSCR_LIST_INT",
     [_STORE_SUBSCR_LIST_INT_r32] = "_STORE_SUBSCR_LIST_INT_r32",
     [_SWAP] = "_SWAP",
@@ -6040,6 +6066,8 @@ int _PyUop_num_popped(int opcode, int oparg)
             return 0;
         case _GUARD_TOS_FROZENDICT:
             return 0;
+        case _BINARY_OP_SUBSCR_DICT_KNOWN_HASH:
+            return 2;
         case _BINARY_OP_SUBSCR_DICT:
             return 2;
         case _BINARY_OP_SUBSCR_CHECK_FUNC:
@@ -6055,6 +6083,8 @@ int _PyUop_num_popped(int opcode, int oparg)
         case _STORE_SUBSCR_LIST_INT:
             return 3;
         case _STORE_SUBSCR_DICT:
+            return 3;
+        case _STORE_SUBSCR_DICT_KNOWN_HASH:
             return 3;
         case _DELETE_SUBSCR:
             return 2;
