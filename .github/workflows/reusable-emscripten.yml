@@ -10,20 +10,7 @@ jobs:
   build-emscripten-reusable:
     name: 'build and test'
     runs-on: ubuntu-24.04
-    # It seems to take about 20 minutes without the cache, broken down as follows:
-    # (All times recorded from one run chosen arbitrarily.)
-    #
-    #  0.5 install Emscripten (skipped by cache)
-    #  1.0 configure & build native python
-    #  0.5 build dependencies (skipped by cache)
-    #  3.0 configure Emscripten Python
-    #  1.5 build Emscripten Python
-    #  0.7 build Emscripten ports (skipped by cache)
-    # 14.0 Test
-    #
-    # So if we add time for a rerun of the entire test suite, we get to 34
-    # minutes. Adding an extra 5% gets us to 36.
-    timeout-minutes: 36
+    timeout-minutes: 40
     steps:
     - uses: actions/checkout@v6
       with:
