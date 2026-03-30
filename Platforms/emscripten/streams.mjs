@@ -112,7 +112,7 @@ const prepareBuffer = (buffer, offset, length) =>
 
 const TTY_OPS = {
   ioctl_tiocgwinsz(tty) {
-    return tty.devops.ioctl_tiocgwinsz();
+    return tty.devops.ioctl_tiocgwinsz?.();
   },
 };
 
@@ -146,6 +146,25 @@ const stream_ops = {
   },
 };
 
+function nodeFsync(fd) {
+  try {
+    fs.fsyncSync(fd);
+  } catch (e) {
+    if (e?.code === "EINVAL") {
+      return;
+    }
+    // On Mac, calling fsync when not isatty returns ENOTSUP
+    // On Windows, stdin/stdout/stderr may be closed, returning EBADF or EPERM
+    if (
+      e?.code === "ENOTSUP" || e?.code === "EBADF" || e?.code === "EPERM"
+    ) {
+      return;
+    }
+
+    throw e;
+  }
+}
+
 class NodeReader {
   constructor(nodeStream) {
     this.nodeStream = nodeStream;
@@ -168,10 +187,6 @@ class NodeReader {
 
   fsync() {
     nodeFsync(this.nodeStream.fd);
-  }
-
-  ioctl_tiocgwinsz() {
-    return [this.nodeStream.columns ?? 24, this.nodeStream.rows ?? 80];
   }
 }
 
