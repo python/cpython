@@ -61,6 +61,7 @@ class PstatsCollector(Collector):
     def export(self, filename):
         self.create_stats()
         self._dump_stats(filename)
+        return True
 
     def _dump_stats(self, file):
         stats_with_marker = dict(self.stats)
