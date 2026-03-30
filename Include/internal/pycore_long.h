@@ -240,6 +240,9 @@ _PyLong_HasImmortalTag(const PyLongObject *op)
     bool is_small_int = (op->long_value.lv_tag & IMMORTALITY_BIT_MASK) != 0;
     assert(PyLong_CheckExact(op) || (!is_small_int));
     assert(_Py_IsImmortal(op) || (!is_small_int));
+    assert((_PyLong_IsCompact(op)
+            && _PY_IS_SMALL_INT(_PyLong_CompactValue(op)))
+           || (!is_small_int));
     return is_small_int;
 }
 
