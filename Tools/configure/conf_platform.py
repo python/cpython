@@ -264,11 +264,16 @@ def setup_xopen_source(v):
         v.define_xopen_source = False
 
     if v.define_xopen_source:
+        # X/Open 8, incorporating POSIX.1-2024
         pyconf.define(
             "_XOPEN_SOURCE",
             800,
             "Define to the level of X/Open that your system supports",
         )
+        # On Tru64 Unix 4.0F, defining _XOPEN_SOURCE also requires
+        # definition of _XOPEN_SOURCE_EXTENDED and _POSIX_C_SOURCE, or else
+        # several APIs are not declared. Since this is also needed in some
+        # cases for HP-UX, we define it globally.
         pyconf.define(
             "_XOPEN_SOURCE_EXTENDED",
             1,
@@ -281,6 +286,7 @@ def setup_xopen_source(v):
         )
 
     if v.ac_sys_system.startswith(("hp", "HP")):
+        # On HP-UX mbstate_t requires _INCLUDE__STDC_A1_SOURCE
         pyconf.define(
             "_INCLUDE__STDC_A1_SOURCE",
             1,

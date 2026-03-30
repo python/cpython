@@ -528,7 +528,7 @@ def check_readline(v):
             else:
                 with_readline = False
 
-    # Strip -D_XOPEN_SOURCE=600 from READLINE_CFLAGS (pyconfig.h defines _XOPEN_SOURCE=700)
+    # Strip -D_XOPEN_SOURCE=600 from READLINE_CFLAGS (pyconfig.h defines _XOPEN_SOURCE=800)
     v.export(
         "READLINE_CFLAGS",
         v.READLINE_CFLAGS.replace("-D_XOPEN_SOURCE=600", "").strip(),
@@ -934,7 +934,7 @@ def check_curses(v):
                 _have_any_curses_h = True
                 break
         if _have_any_curses_h:
-            # Strip -D_XOPEN_SOURCE=600 (pyconfig.h sets 700)
+            # Strip -D_XOPEN_SOURCE=600 (pyconfig.h sets 800)
             curses_cflags = curses_cflags.replace(
                 "-D_XOPEN_SOURCE=600", ""
             ).strip()
