@@ -16,6 +16,7 @@ try:
         CollapsedStackCollector,
         FlamegraphCollector,
     )
+    from profiling.sampling.jsonl_collector import JsonlCollector
     from profiling.sampling.gecko_collector import GeckoCollector
     from profiling.sampling.collector import extract_lineno, normalize_location
     from profiling.sampling.opcode_utils import get_opcode_info, format_opcode
@@ -1664,6 +1665,86 @@ class TestSampleProfilerComponents(unittest.TestCase):
         self.assertEqual(cold_node["self_time"], 1)
         self.assertAlmostEqual(cold_node["diff"], -1.0)
         self.assertAlmostEqual(cold_node["diff_pct"], -50.0)
+
+    def test_jsonl_collector_basic(self):
+        collapsed_out = tempfile.NamedTemporaryFile(delete=False)
+        self.addCleanup(close_and_unlink, collapsed_out)
+
+        collector = JsonlCollector(1000)
+        run_id = collector.run_id
+
+        self.assertIsNotNone(run_id)
+
+        test_frames1 = [
+            MockInterpreterInfo(
+                0,
+                [
+                    MockThreadInfo(
+                        1, [MockFrameInfo("file.py", 10, "func1"), MockFrameInfo("file.py", 20, "func2")]
+                    )
+                ],
+            )
+        ]
+        test_frames2 = [
+            MockInterpreterInfo(
+                0,
+                [
+                    MockThreadInfo(
+                        1, [MockFrameInfo("file.py", 10, "func1"), MockFrameInfo("file.py", 20, "func2")]
+                    )
+                ],
+            )
+        ]  # Same stack
+        test_frames3 = [
+            MockInterpreterInfo(
+                0, [MockThreadInfo(1, [MockFrameInfo("other.py", 5, "other_func")])]
+            )
+        ]
+
+        collector.collect(test_frames1)
+        collector.collect(test_frames2)
+        collector.collect(test_frames3)
+
+        with captured_stdout(), captured_stderr():
+            collector.export(collapsed_out.name)
+
+        # Check file contents
+        with open(collapsed_out.name, "r") as f:
+            content = f.read()
+
+        lines = content.strip().split("\n")
+        self.assertEqual(len(lines), 5)
+
+        def jsonl(obj):
+            return json.dumps(obj, separators=(",", ":"))
+
+        expected = [
+            jsonl({"type": "meta", "v": 1, "run_id": run_id,
+                   "sample_interval_usec": 1000}),
+            jsonl({"type": "str_def", "v": 1, "run_id": run_id,
+                   "defs": [{"str_id": 1, "value": "func1"},
+                            {"str_id": 2, "value": "file.py"},
+                            {"str_id": 3, "value": "func2"},
+                            {"str_id": 4, "value": "other_func"},
+                            {"str_id": 5, "value": "other.py"}]}),
+            jsonl({"type": "frame_def", "v": 1, "run_id": run_id,
+                   "defs": [{"frame_id": 1, "path_str_id": 2, "func_str_id": 1,
+                             "line": 10, "end_line": 10},
+                            {"frame_id": 2, "path_str_id": 2, "func_str_id": 3,
+                             "line": 20, "end_line": 20},
+                            {"frame_id": 3, "path_str_id": 5, "func_str_id": 4,
+                             "line": 5, "end_line": 5}]}),
+            jsonl({"type": "agg", "v": 1, "run_id": run_id,
+                   "kind": "frame", "scope": "final", "samples_total": 3,
+                   "entries": [{"frame_id": 1, "self": 2, "cumulative": 2},
+                               {"frame_id": 2, "self": 0, "cumulative": 2},
+                               {"frame_id": 3, "self": 1, "cumulative": 1}]}),
+            jsonl({"type": "end", "v": 1, "run_id": run_id,
+                   "samples_total": 3}),
+        ]
+
+        for exp in expected:
+            self.assertIn(exp, lines)
 
 
 class TestRecursiveFunctionHandling(unittest.TestCase):
