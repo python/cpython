@@ -691,7 +691,7 @@ Functions
    .. versionadded:: 3.2
 
 
-.. function:: SubElement(parent, tag, attrib={}, **extra)
+.. function:: SubElement(parent, tag, /, attrib={}, **extra)
 
    Subelement factory.  This function creates an element instance, and appends
    it to an existing element.
@@ -704,6 +704,9 @@ Functions
 
    .. versionchanged:: 3.15
       *attrib* can now be a :class:`frozendict`.
+
+   .. versionchanged:: next
+      *parent* and *tag* are now positional-only parameters.
 
 
 .. function:: tostring(element, encoding="us-ascii", method="xml", *, \
@@ -880,7 +883,7 @@ Element Objects
    :noindex:
    :no-index:
 
-.. class:: Element(tag, attrib={}, **extra)
+.. class:: Element(tag, /, attrib={}, **extra)
 
    Element class.  This class defines the Element interface, and provides a
    reference implementation of this interface.
@@ -892,6 +895,9 @@ Element Objects
 
    .. versionchanged:: 3.15
       *attrib* can now be a :class:`frozendict`.
+
+   .. versionchanged:: next
+      *tag* is now a positional-only parameter.
 
 
    .. attribute:: tag
