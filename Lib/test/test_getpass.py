@@ -147,9 +147,45 @@ class GetpassRawinputTest(unittest.TestCase):
         # Ctrl+A should move cursor to start
         self.check_raw_input('end\x01start\n', 'startend')
 
+    def test_ctrl_a_cursor_position(self):
+        # After Ctrl+A, cursor is at position 0.
+        # Refresh writes backspaces to move cursor from end to start.
+        output = self.check_raw_input('abc\x01\n', 'abc')
+        self.assertEndsWith(output, 'Password: ***\x08\x08\x08')
+
+    def test_ctrl_a_on_empty(self):
+        # Ctrl+A on empty line should be a no-op
+        self.check_raw_input('\x01hello\n', 'hello')
+
+    def test_ctrl_a_already_at_start(self):
+        # Double Ctrl+A should be same as single Ctrl+A
+        self.check_raw_input('abc\x01\x01start\n', 'startabc')
+
+    def test_ctrl_a_then_backspace(self):
+        # Backspace after Ctrl+A should do nothing (cursor at 0)
+        self.check_raw_input('abc\x01\x7f\n', 'abc')
+
     def test_ctrl_e_move_to_end_with_echo_char(self):
         # Ctrl+E should move cursor to end
         self.check_raw_input('start\x01X\x05end\n', 'Xstartend')
+
+    def test_ctrl_e_cursor_position(self):
+        # After Ctrl+A then Ctrl+E, cursor is back at end.
+        # Refresh has no backspaces since cursor is at end.
+        output = self.check_raw_input('abc\x01\x05\n', 'abc')
+        self.assertEndsWith(output, 'Password: ***')
+
+    def test_ctrl_e_on_empty(self):
+        # Ctrl+E on empty line should be a no-op
+        self.check_raw_input('\x05hello\n', 'hello')
+
+    def test_ctrl_e_already_at_end(self):
+        # Ctrl+E when already at end should be a no-op
+        self.check_raw_input('abc\x05more\n', 'abcmore')
+
+    def test_ctrl_a_then_ctrl_e(self):
+        # Ctrl+A then Ctrl+E should return cursor to end, typing appends
+        self.check_raw_input('abc\x01\x05def\n', 'abcdef')
 
     def test_ctrl_k_kill_forward_with_echo_char(self):
         # Ctrl+K should kill from cursor to end
