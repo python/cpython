@@ -205,7 +205,7 @@ class NodeWriter {
   }
 
   ioctl_tiocgwinsz() {
-    return [this.nodeStream.columns ?? 24, this.nodeStream.rows ?? 80];
+    return [this.nodeStream.rows ?? 24, this.nodeStream.columns ?? 80];
   }
 }
 
