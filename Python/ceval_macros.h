@@ -563,7 +563,6 @@ gen_try_set_executing(PyGenObject *gen)
             ->ob_fval = _dres;                                           \
     } while (0)
 
-// Inplace compact int operation. Computes left OP right and attempts to
 // Inplace compact int operation. TARGET is expected to be uniquely
 // referenced at the optimizer level, but at runtime it may be a
 // cached small int singleton. We check _Py_IsImmortal on TARGET
@@ -591,10 +590,10 @@ gen_try_set_executing(PyGenObject *gen)
                 < (twodigits)PyLong_MASK + PyLong_BASE))                 \
         {                                                                \
             PyLongObject *_target = (PyLongObject *)_target_o;           \
-            Py_ssize_t _sign = _result < 0 ? -1 : 1;                    \
+            int _sign = _result < 0 ? -1 : 1;                           \
             digit _abs = (digit)(_result < 0 ? -_result : _result);      \
             _target->long_value.lv_tag =                                 \
-                (Py_ssize_t)_sign << _PyLong_NON_SIZE_BITS;              \
+                TAG_FROM_SIGN_AND_SIZE(_sign, 1);                        \
             _target->long_value.ob_digit[0] = _abs;                      \
             _int_inplace_ok = 1;                                         \
         }                                                                \
