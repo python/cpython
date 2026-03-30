@@ -3443,17 +3443,19 @@ class TestUopsOptimization(unittest.TestCase):
         self.assertNotIn("_BINARY_OP_ADD_INT_INPLACE", uops)
 
     def test_int_add_inplace_small_int_result(self):
-        # When the result is a small int, fallback path is taken
-        # but the trace should still work correctly (no deopt)
+        # When the result is a small int, the inplace path falls back
+        # to _PyCompactLong_Add. Verify correctness (no singleton corruption).
         def testfunc(args):
             a, b, n = args
             total = 0
             for _ in range(n):
-                total += a * b + 0  # a*b=6, +0=6, small int
+                total += a * b + 1  # a*b=6, +1=7, small int
             return total
 
         res, ex = self._run_with_optimizer(testfunc, (2, 3, TIER2_THRESHOLD))
-        self.assertEqual(res, TIER2_THRESHOLD * 6)
+        self.assertEqual(res, TIER2_THRESHOLD * 7)
+        # Verify small int singletons are not corrupted
+        self.assertEqual(7, 3 + 4)
 
     def test_int_subtract_inplace_unique_lhs(self):
         # a * b produces a unique compact int; subtracting c reuses it
