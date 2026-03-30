@@ -282,7 +282,8 @@ _Py_uop_sym_is_safe_const(JitOptContext *ctx, JitOptRef sym)
     return (typ == &PyUnicode_Type) ||
            (typ == &PyFloat_Type) ||
            (typ == &_PyNone_Type) ||
-           (typ == &PyBool_Type);
+           (typ == &PyBool_Type) ||
+           (typ == &PyFrozenDict_Type);
 }
 
 void
@@ -522,7 +523,7 @@ _Py_uop_sym_set_func_version(JitOptContext *ctx, JitOptRef ref, uint32_t version
         case JIT_SYM_PREDICATE_TAG:
         case JIT_SYM_TRUTHINESS_TAG:
             sym_set_bottom(ctx, sym);
-            return true;
+            return false;
         case JIT_SYM_RECORDED_VALUE_TAG: {
             PyObject *val = sym->recorded_value.value;
             if (Py_TYPE(val) != &PyFunction_Type ||
@@ -1521,7 +1522,7 @@ _Py_uop_frame_new(
 
     // Initialize with the initial state of all local variables
     for (int i = 0; i < arg_len; i++) {
-        frame->locals[i] = args[i];
+        frame->locals[i] = PyJitRef_RemoveUnique(args[i]);
     }
 
     // If the args are known, then it's safe to just initialize
@@ -1684,6 +1685,9 @@ static JitOptSymbol *
 make_bottom(JitOptContext *ctx)
 {
     JitOptSymbol *sym = sym_new(ctx);
+    if (sym == NULL) {
+        return out_of_space(ctx);
+    }
     sym->tag = JIT_SYM_BOTTOM_TAG;
     return sym;
 }

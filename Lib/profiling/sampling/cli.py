@@ -16,7 +16,7 @@ from contextlib import nullcontext
 from .errors import SamplingUnknownProcessError, SamplingModuleNotFoundError, SamplingScriptNotFoundError
 from .sample import sample, sample_live, _is_process_running
 from .pstats_collector import PstatsCollector
-from .stack_collector import CollapsedStackCollector, FlamegraphCollector
+from .stack_collector import CollapsedStackCollector, FlamegraphCollector, DiffFlamegraphCollector
 from .heatmap_collector import HeatmapCollector
 from .gecko_collector import GeckoCollector
 from .jsonl_collector import JsonlCollector
@@ -57,6 +57,13 @@ class CustomFormatter(
     pass
 
 
+class DiffFlamegraphAction(argparse.Action):
+    """Custom action for --diff-flamegraph that sets both format and baseline path."""
+    def __call__(self, parser, namespace, values, option_string=None):
+        namespace.format = 'diff_flamegraph'
+        namespace.diff_baseline = values
+
+
 _HELP_DESCRIPTION = """Sample a process's stack frames and generate profiling data.
 
 Examples:
@@ -86,6 +93,7 @@ FORMAT_EXTENSIONS = {
     "pstats": "pstats",
     "collapsed": "txt",
     "flamegraph": "html",
+    "diff_flamegraph": "html",
     "gecko": "json",
     "heatmap": "html",
     "jsonl": "jsonl",
@@ -96,6 +104,7 @@ COLLECTOR_MAP = {
     "pstats": PstatsCollector,
     "collapsed": CollapsedStackCollector,
     "flamegraph": FlamegraphCollector,
+    "diff_flamegraph": DiffFlamegraphCollector,
     "gecko": GeckoCollector,
     "heatmap": HeatmapCollector,
     "jsonl": JsonlCollector,
@@ -471,6 +480,12 @@ def _add_format_options(parser, include_compression=True, include_binary=True):
         help="Generate interactive HTML heatmap visualization with line-level sample counts",
     )
     format_group.add_argument(
+        "--diff-flamegraph",
+        metavar="BASELINE",
+        action=DiffFlamegraphAction,
+        help="Generate differential flamegraph comparing current profile to BASELINE binary file",
+    )
+    format_group.add_argument(
         "--jsonl",
         action="store_const",
         const="jsonl",
@@ -485,7 +500,7 @@ def _add_format_options(parser, include_compression=True, include_binary=True):
             dest="format",
             help="Generate high-performance binary format (use 'replay' command to convert)",
         )
-    parser.set_defaults(format="pstats")
+    parser.set_defaults(format="pstats", diff_baseline=None)
 
     if include_compression:
         output_group.add_argument(
@@ -555,12 +570,12 @@ def _sort_to_mode(sort_choice):
     return sort_map.get(sort_choice, SORT_MODE_NSAMPLES)
 
 def _create_collector(format_type, sample_interval_usec, skip_idle, opcodes=False,
-                      mode=None, output_file=None, compression='auto'):
+                      mode=None, output_file=None, compression='auto', diff_baseline=None):
     """Create the appropriate collector based on format type.
 
     Args:
         format_type: The output format ('pstats', 'collapsed', 'flamegraph',
-                    'gecko', 'heatmap', 'jsonl', 'binary')
+                    'gecko', 'heatmap', 'jsonl', 'binary', 'diff_flamegraph')
         sample_interval_usec: Sampling interval in microseconds
         skip_idle: Whether to skip idle samples
         opcodes: Whether to collect opcode information (only used by gecko format
@@ -568,6 +583,7 @@ def _create_collector(format_type, sample_interval_usec, skip_idle, opcodes=Fals
         mode: Profiling mode for collectors that expose it in metadata
         output_file: Output file path (required for binary format)
         compression: Compression type for binary format ('auto', 'zstd', 'none')
+        diff_baseline: Path to baseline binary file for differential flamegraph
 
     Returns:
         A collector instance of the appropriate type
@@ -575,6 +591,17 @@ def _create_collector(format_type, sample_interval_usec, skip_idle, opcodes=Fals
     collector_class = COLLECTOR_MAP.get(format_type)
     if collector_class is None:
         raise ValueError(f"Unknown format: {format_type}")
+
+    if format_type == "diff_flamegraph":
+        if diff_baseline is None:
+            raise ValueError("Differential flamegraph requires a baseline file")
+        if not os.path.exists(diff_baseline):
+            raise ValueError(f"Baseline file not found: {diff_baseline}")
+        return collector_class(
+            sample_interval_usec,
+            baseline_binary_path=diff_baseline,
+            skip_idle=skip_idle
+        )
 
     # Binary format requires output file and compression
     if format_type == "binary":
@@ -680,7 +707,7 @@ def _handle_output(collector, args, pid, mode):
         collector.export(filename)
 
         # Auto-open browser for HTML output if --browser flag is set
-        if args.format in ('flamegraph', 'heatmap') and getattr(args, 'browser', False):
+        if args.format in ('flamegraph', 'diff_flamegraph', 'heatmap') and getattr(args, 'browser', False):
             _open_in_browser(filename)
 
 
@@ -773,7 +800,7 @@ def _validate_args(args, parser):
         )
 
     # Validate --opcodes is only used with compatible formats
-    opcodes_compatible_formats = ("live", "gecko", "flamegraph", "heatmap", "binary")
+    opcodes_compatible_formats = ("live", "gecko", "flamegraph", "diff_flamegraph", "heatmap", "binary")
     if getattr(args, 'opcodes', False) and args.format not in opcodes_compatible_formats:
         parser.error(
             f"--opcodes is only compatible with {', '.join('--' + f for f in opcodes_compatible_formats)}."
@@ -970,7 +997,8 @@ def _handle_attach(args):
     collector = _create_collector(
         args.format, args.sample_interval_usec, skip_idle, args.opcodes, mode,
         output_file=output_file,
-        compression=getattr(args, 'compression', 'auto')
+        compression=getattr(args, 'compression', 'auto'),
+        diff_baseline=args.diff_baseline
     )
 
     with _get_child_monitor_context(args, args.pid):
@@ -1048,7 +1076,8 @@ def _handle_run(args):
     collector = _create_collector(
         args.format, args.sample_interval_usec, skip_idle, args.opcodes, mode,
         output_file=output_file,
-        compression=getattr(args, 'compression', 'auto')
+        compression=getattr(args, 'compression', 'auto'),
+        diff_baseline=args.diff_baseline
     )
 
     with _get_child_monitor_context(args, process.pid):
@@ -1197,7 +1226,10 @@ def _handle_replay(args):
         print(f"  Sample interval: {interval} us")
         print(f"  Compression: {'zstd' if info.get('compression_type', 0) == 1 else 'none'}")
 
-        collector = _create_collector(args.format, interval, skip_idle=False)
+        collector = _create_collector(
+            args.format, interval, skip_idle=False,
+            diff_baseline=args.diff_baseline
+        )
 
         def progress_callback(current, total):
             if total > 0:
@@ -1223,7 +1255,7 @@ def _handle_replay(args):
             collector.export(filename)
 
             # Auto-open browser for HTML output if --browser flag is set
-            if args.format in ('flamegraph', 'heatmap') and getattr(args, 'browser', False):
+            if args.format in ('flamegraph', 'diff_flamegraph', 'heatmap') and getattr(args, 'browser', False):
                 _open_in_browser(filename)
 
         print(f"Replayed {count} samples")

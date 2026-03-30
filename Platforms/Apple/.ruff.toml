@@ -1,4 +1,4 @@
-extend = "../.ruff.toml"  # Inherit the project-wide settings
+extend = "../../.ruff.toml"  # Inherit the project-wide settings
 
 [format]
 preview = true

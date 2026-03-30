@@ -62,7 +62,7 @@ The module defines the following:
 
    *sizehint* informs epoll about the expected number of events to be
    registered.  It must be positive, or ``-1`` to use the default. It is only
-   used on older systems where :c:func:`!epoll_create1` is not available;
+   used on older systems where :manpage:`epoll_create1(2)` is not available;
    otherwise it has no effect (though its value is still checked).
 
    *flags* is deprecated and completely ignored.  However, when supplied, its
@@ -88,6 +88,11 @@ The module defines the following:
    .. deprecated:: 3.4
       The *flags* parameter.  ``select.EPOLL_CLOEXEC`` is used by default now.
       Use :func:`os.set_inheritable` to make the file descriptor inheritable.
+
+   .. versionchanged:: next
+
+      When CPython is built, this function may be disabled using
+      :option:`--disable-epoll`.
 
 
 .. function:: poll()
