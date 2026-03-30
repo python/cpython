@@ -1591,8 +1591,8 @@ class CFPTest(NumberTest):
 
 
 class HalfFloatTest(FPTest, unittest.TestCase):
-    example = [-42.0, 0, 42, 1e3, -1e3]
-    smallerexample = [-42.0, 0, 42, 1e3, -2e3]
+    example = [-42.0, 0, 42, 1e2, -1e4]
+    smallerexample = [-42.0, 0, 42, 1e2, -2e4]
     biggerexample = [-42.0, 0, 42, 1e2, 1e4]
     typecode = 'e'
     minitemsize = 2
