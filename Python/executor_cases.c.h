@@ -4516,8 +4516,7 @@
             left = stack_pointer[-2];
             INT_INPLACE_OP(left, right, left, +);
             if (_int_inplace_ok) {
-                res = left;
-                l = PyStackRef_NULL;
+                res = PyStackRef_DUP(left);
             }
             else {
                 res = _PyCompactLong_Add((PyLongObject *)PyStackRef_AsPyObjectBorrow(left),
@@ -4527,8 +4526,8 @@
                     SET_CURRENT_CACHED_VALUES(0);
                     JUMP_TO_JUMP_TARGET();
                 }
-                l = left;
             }
+            l = left;
             r = right;
             _tos_cache2 = r;
             _tos_cache1 = l;
@@ -4553,8 +4552,7 @@
             left = stack_pointer[-1];
             INT_INPLACE_OP(left, right, left, +);
             if (_int_inplace_ok) {
-                res = left;
-                l = PyStackRef_NULL;
+                res = PyStackRef_DUP(left);
             }
             else {
                 res = _PyCompactLong_Add((PyLongObject *)PyStackRef_AsPyObjectBorrow(left),
@@ -4565,8 +4563,8 @@
                     SET_CURRENT_CACHED_VALUES(1);
                     JUMP_TO_JUMP_TARGET();
                 }
-                l = left;
             }
+            l = left;
             r = right;
             _tos_cache2 = r;
             _tos_cache1 = l;
@@ -4592,8 +4590,7 @@
             left = _stack_item_0;
             INT_INPLACE_OP(left, right, left, +);
             if (_int_inplace_ok) {
-                res = left;
-                l = PyStackRef_NULL;
+                res = PyStackRef_DUP(left);
             }
             else {
                 res = _PyCompactLong_Add((PyLongObject *)PyStackRef_AsPyObjectBorrow(left),
@@ -4605,8 +4602,8 @@
                     SET_CURRENT_CACHED_VALUES(2);
                     JUMP_TO_JUMP_TARGET();
                 }
-                l = left;
             }
+            l = left;
             r = right;
             _tos_cache2 = r;
             _tos_cache1 = l;
@@ -4628,8 +4625,7 @@
             left = stack_pointer[-2];
             INT_INPLACE_OP(left, right, left, -);
             if (_int_inplace_ok) {
-                res = left;
-                l = PyStackRef_NULL;
+                res = PyStackRef_DUP(left);
             }
             else {
                 res = _PyCompactLong_Subtract((PyLongObject *)PyStackRef_AsPyObjectBorrow(left),
@@ -4639,8 +4635,8 @@
                     SET_CURRENT_CACHED_VALUES(0);
                     JUMP_TO_JUMP_TARGET();
                 }
-                l = left;
             }
+            l = left;
             r = right;
             _tos_cache2 = r;
             _tos_cache1 = l;
@@ -4665,8 +4661,7 @@
             left = stack_pointer[-1];
             INT_INPLACE_OP(left, right, left, -);
             if (_int_inplace_ok) {
-                res = left;
-                l = PyStackRef_NULL;
+                res = PyStackRef_DUP(left);
             }
             else {
                 res = _PyCompactLong_Subtract((PyLongObject *)PyStackRef_AsPyObjectBorrow(left),
@@ -4677,8 +4672,8 @@
                     SET_CURRENT_CACHED_VALUES(1);
                     JUMP_TO_JUMP_TARGET();
                 }
-                l = left;
             }
+            l = left;
             r = right;
             _tos_cache2 = r;
             _tos_cache1 = l;
@@ -4704,8 +4699,7 @@
             left = _stack_item_0;
             INT_INPLACE_OP(left, right, left, -);
             if (_int_inplace_ok) {
-                res = left;
-                l = PyStackRef_NULL;
+                res = PyStackRef_DUP(left);
             }
             else {
                 res = _PyCompactLong_Subtract((PyLongObject *)PyStackRef_AsPyObjectBorrow(left),
@@ -4717,8 +4711,8 @@
                     SET_CURRENT_CACHED_VALUES(2);
                     JUMP_TO_JUMP_TARGET();
                 }
-                l = left;
             }
+            l = left;
             r = right;
             _tos_cache2 = r;
             _tos_cache1 = l;
@@ -4740,8 +4734,7 @@
             left = stack_pointer[-2];
             INT_INPLACE_OP(left, right, left, *);
             if (_int_inplace_ok) {
-                res = left;
-                l = PyStackRef_NULL;
+                res = PyStackRef_DUP(left);
             }
             else {
                 res = _PyCompactLong_Multiply((PyLongObject *)PyStackRef_AsPyObjectBorrow(left),
@@ -4751,8 +4744,8 @@
                     SET_CURRENT_CACHED_VALUES(0);
                     JUMP_TO_JUMP_TARGET();
                 }
-                l = left;
             }
+            l = left;
             r = right;
             _tos_cache2 = r;
             _tos_cache1 = l;
@@ -4777,8 +4770,7 @@
             left = stack_pointer[-1];
             INT_INPLACE_OP(left, right, left, *);
             if (_int_inplace_ok) {
-                res = left;
-                l = PyStackRef_NULL;
+                res = PyStackRef_DUP(left);
             }
             else {
                 res = _PyCompactLong_Multiply((PyLongObject *)PyStackRef_AsPyObjectBorrow(left),
@@ -4789,8 +4781,8 @@
                     SET_CURRENT_CACHED_VALUES(1);
                     JUMP_TO_JUMP_TARGET();
                 }
-                l = left;
             }
+            l = left;
             r = right;
             _tos_cache2 = r;
             _tos_cache1 = l;
@@ -4816,8 +4808,7 @@
             left = _stack_item_0;
             INT_INPLACE_OP(left, right, left, *);
             if (_int_inplace_ok) {
-                res = left;
-                l = PyStackRef_NULL;
+                res = PyStackRef_DUP(left);
             }
             else {
                 res = _PyCompactLong_Multiply((PyLongObject *)PyStackRef_AsPyObjectBorrow(left),
@@ -4829,8 +4820,8 @@
                     SET_CURRENT_CACHED_VALUES(2);
                     JUMP_TO_JUMP_TARGET();
                 }
-                l = left;
             }
+            l = left;
             r = right;
             _tos_cache2 = r;
             _tos_cache1 = l;
@@ -4852,8 +4843,7 @@
             left = stack_pointer[-2];
             INT_INPLACE_OP(left, right, right, +);
             if (_int_inplace_ok) {
-                res = right;
-                r = PyStackRef_NULL;
+                res = PyStackRef_DUP(right);
             }
             else {
                 res = _PyCompactLong_Add((PyLongObject *)PyStackRef_AsPyObjectBorrow(left),
@@ -4863,9 +4853,9 @@
                     SET_CURRENT_CACHED_VALUES(0);
                     JUMP_TO_JUMP_TARGET();
                 }
-                r = right;
             }
             l = left;
+            r = right;
             _tos_cache2 = r;
             _tos_cache1 = l;
             _tos_cache0 = res;
@@ -4889,8 +4879,7 @@
             left = stack_pointer[-1];
             INT_INPLACE_OP(left, right, right, +);
             if (_int_inplace_ok) {
-                res = right;
-                r = PyStackRef_NULL;
+                res = PyStackRef_DUP(right);
             }
             else {
                 res = _PyCompactLong_Add((PyLongObject *)PyStackRef_AsPyObjectBorrow(left),
@@ -4901,9 +4890,9 @@
                     SET_CURRENT_CACHED_VALUES(1);
                     JUMP_TO_JUMP_TARGET();
                 }
-                r = right;
             }
             l = left;
+            r = right;
             _tos_cache2 = r;
             _tos_cache1 = l;
             _tos_cache0 = res;
@@ -4928,8 +4917,7 @@
             left = _stack_item_0;
             INT_INPLACE_OP(left, right, right, +);
             if (_int_inplace_ok) {
-                res = right;
-                r = PyStackRef_NULL;
+                res = PyStackRef_DUP(right);
             }
             else {
                 res = _PyCompactLong_Add((PyLongObject *)PyStackRef_AsPyObjectBorrow(left),
@@ -4941,9 +4929,9 @@
                     SET_CURRENT_CACHED_VALUES(2);
                     JUMP_TO_JUMP_TARGET();
                 }
-                r = right;
             }
             l = left;
+            r = right;
             _tos_cache2 = r;
             _tos_cache1 = l;
             _tos_cache0 = res;
@@ -4964,8 +4952,7 @@
             left = stack_pointer[-2];
             INT_INPLACE_OP(left, right, right, -);
             if (_int_inplace_ok) {
-                res = right;
-                r = PyStackRef_NULL;
+                res = PyStackRef_DUP(right);
             }
             else {
                 res = _PyCompactLong_Subtract((PyLongObject *)PyStackRef_AsPyObjectBorrow(left),
@@ -4975,9 +4962,9 @@
                     SET_CURRENT_CACHED_VALUES(0);
                     JUMP_TO_JUMP_TARGET();
                 }
-                r = right;
             }
             l = left;
+            r = right;
             _tos_cache2 = r;
             _tos_cache1 = l;
             _tos_cache0 = res;
@@ -5001,8 +4988,7 @@
             left = stack_pointer[-1];
             INT_INPLACE_OP(left, right, right, -);
             if (_int_inplace_ok) {
-                res = right;
-                r = PyStackRef_NULL;
+                res = PyStackRef_DUP(right);
             }
             else {
                 res = _PyCompactLong_Subtract((PyLongObject *)PyStackRef_AsPyObjectBorrow(left),
@@ -5013,9 +4999,9 @@
                     SET_CURRENT_CACHED_VALUES(1);
                     JUMP_TO_JUMP_TARGET();
                 }
-                r = right;
             }
             l = left;
+            r = right;
             _tos_cache2 = r;
             _tos_cache1 = l;
             _tos_cache0 = res;
@@ -5040,8 +5026,7 @@
             left = _stack_item_0;
             INT_INPLACE_OP(left, right, right, -);
             if (_int_inplace_ok) {
-                res = right;
-                r = PyStackRef_NULL;
+                res = PyStackRef_DUP(right);
             }
             else {
                 res = _PyCompactLong_Subtract((PyLongObject *)PyStackRef_AsPyObjectBorrow(left),
@@ -5053,9 +5038,9 @@
                     SET_CURRENT_CACHED_VALUES(2);
                     JUMP_TO_JUMP_TARGET();
                 }
-                r = right;
             }
             l = left;
+            r = right;
             _tos_cache2 = r;
             _tos_cache1 = l;
             _tos_cache0 = res;
@@ -5076,8 +5061,7 @@
             left = stack_pointer[-2];
             INT_INPLACE_OP(left, right, right, *);
             if (_int_inplace_ok) {
-                res = right;
-                r = PyStackRef_NULL;
+                res = PyStackRef_DUP(right);
             }
             else {
                 res = _PyCompactLong_Multiply((PyLongObject *)PyStackRef_AsPyObjectBorrow(left),
@@ -5087,9 +5071,9 @@
                     SET_CURRENT_CACHED_VALUES(0);
                     JUMP_TO_JUMP_TARGET();
                 }
-                r = right;
             }
             l = left;
+            r = right;
             _tos_cache2 = r;
             _tos_cache1 = l;
             _tos_cache0 = res;
@@ -5113,8 +5097,7 @@
             left = stack_pointer[-1];
             INT_INPLACE_OP(left, right, right, *);
             if (_int_inplace_ok) {
-                res = right;
-                r = PyStackRef_NULL;
+                res = PyStackRef_DUP(right);
             }
             else {
                 res = _PyCompactLong_Multiply((PyLongObject *)PyStackRef_AsPyObjectBorrow(left),
@@ -5125,9 +5108,9 @@
                     SET_CURRENT_CACHED_VALUES(1);
                     JUMP_TO_JUMP_TARGET();
                 }
-                r = right;
             }
             l = left;
+            r = right;
             _tos_cache2 = r;
             _tos_cache1 = l;
             _tos_cache0 = res;
@@ -5152,8 +5135,7 @@
             left = _stack_item_0;
             INT_INPLACE_OP(left, right, right, *);
             if (_int_inplace_ok) {
-                res = right;
-                r = PyStackRef_NULL;
+                res = PyStackRef_DUP(right);
             }
             else {
                 res = _PyCompactLong_Multiply((PyLongObject *)PyStackRef_AsPyObjectBorrow(left),
@@ -5165,9 +5147,9 @@
                     SET_CURRENT_CACHED_VALUES(2);
                     JUMP_TO_JUMP_TARGET();
                 }
-                r = right;
             }
             l = left;
+            r = right;
             _tos_cache2 = r;
             _tos_cache1 = l;
             _tos_cache0 = res;

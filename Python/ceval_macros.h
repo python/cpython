@@ -589,12 +589,10 @@ gen_try_set_executing(PyGenObject *gen)
             && ((twodigits)((stwodigits)_result) + PyLong_MASK           \
                 < (twodigits)PyLong_MASK + PyLong_BASE))                 \
         {                                                                \
-            PyLongObject *_target = (PyLongObject *)_target_o;           \
-            int _sign = _result < 0 ? -1 : 1;                           \
-            digit _abs = (digit)(_result < 0 ? -_result : _result);      \
-            _target->long_value.lv_tag =                                 \
-                TAG_FROM_SIGN_AND_SIZE(_sign, 1);                        \
-            _target->long_value.ob_digit[0] = _abs;                      \
+            _PyLong_SetSignAndDigitCount(                                \
+                (PyLongObject *)_target_o, _result < 0 ? -1 : 1, 1);    \
+            ((PyLongObject *)_target_o)->long_value.ob_digit[0] =        \
+                (digit)(_result < 0 ? -_result : _result);               \
             _int_inplace_ok = 1;                                         \
         }                                                                \
     } while (0)
