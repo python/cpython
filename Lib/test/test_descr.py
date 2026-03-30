@@ -28,11 +28,6 @@ try:
 except ImportError:
     xxsubtype = None
 
-try:
-    import xxlimited
-except ImportError:
-    xxlimited = None
-
 
 class OperatorsTest(unittest.TestCase):
 
@@ -1808,8 +1803,7 @@ class ClassPropertiesAndMethods(unittest.TestCase):
             spam_cm.__get__(None, list)
         self.assertEqual(str(cm.exception), expected_errmsg)
 
-    @support.impl_detail("the module 'xxlimited' is internal")
-    @unittest.skipIf(xxlimited is None, "requires xxlimited module")
+    @support.cpython_only
     def test_method_get_meth_method_invalid_type(self):
         # gh-146615: method_get() for METH_METHOD descriptors used to pass
         # Py_TYPE(type)->tp_name as the %V fallback instead of the separate
@@ -1819,14 +1813,16 @@ class ClassPropertiesAndMethods(unittest.TestCase):
         #
         # METH_METHOD|METH_FASTCALL|METH_KEYWORDS is the only flag combination
         # that enters the affected branch in method_get().
-        xxo = xxlimited.Xxo()
-        descr = xxlimited.Xxo.demo
+        import io
+
+        obj = io.StringIO()
+        descr = io.TextIOBase.read
 
         with self.assertRaises(TypeError) as cm:
-            descr.__get__(xxo, "not_a_type")
+            descr.__get__(obj, "not_a_type")
         self.assertEqual(
             str(cm.exception),
-            "descriptor 'demo' needs a type, not 'str', as arg 2",
+            "descriptor 'read' needs a type, not 'str', as arg 2",
         )
 
     def test_staticmethods(self):
