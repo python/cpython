@@ -1411,7 +1411,7 @@ maybe_instr_make_load_smallint(cfg_instr *instr, PyObject *newconst,
         if (val == -1 && PyErr_Occurred()) {
             return -1;
         }
-        if (!overflow && _PY_IS_SMALL_INT(val)) {
+        if (!overflow && _PY_IS_SMALL_INT(val) && 0 <= val && val <= 255) {
             assert(_Py_IsImmortal(newconst));
             INSTR_SET_OP1(instr, LOAD_SMALL_INT, (int)val);
             return 1;

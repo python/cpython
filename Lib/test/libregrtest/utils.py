@@ -746,3 +746,9 @@ def _sanitize_xml_replace(regs):
 
 def sanitize_xml(text: str) -> str:
     return ILLEGAL_XML_CHARS_RE.sub(_sanitize_xml_replace, text)
+
+
+def display_title(title):
+    print(title)
+    print("#" * len(title))
+    print(flush=True)

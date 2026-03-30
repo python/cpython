@@ -55,7 +55,7 @@ extern Py_ssize_t _PyDict_SizeOf_LockHeld(PyDictObject *);
    of a key wins, if override is 2, a KeyError with conflicting key as
    argument is raised.
 */
-PyAPI_FUNC(int) _PyDict_MergeEx(PyObject *mp, PyObject *other, int override);
+PyAPI_FUNC(int) _PyDict_MergeUniq(PyObject *mp, PyObject *other, PyObject **dupkey);
 
 extern void _PyDict_DebugMallocStats(FILE *out);
 
