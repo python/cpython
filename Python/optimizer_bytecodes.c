@@ -165,6 +165,11 @@ dummy_func(void) {
     }
 
     op(_STORE_SUBSCR_DICT, (value, dict_st, sub -- st)) {
+        PyObject *sub_o = sym_get_const(ctx, sub);
+        if (sub_o != NULL) {
+            optimize_dict_known_hash(ctx, dependencies, this_instr,
+                                     sub_o, _STORE_SUBSCR_DICT_KNOWN_HASH);
+        }
         (void)value;
         st = dict_st;
     }
@@ -482,6 +487,11 @@ dummy_func(void) {
     }
 
     op(_BINARY_OP_SUBSCR_DICT, (dict_st, sub_st -- res, ds, ss)) {
+        PyObject *sub = sym_get_const(ctx, sub_st);
+        if (sub != NULL) {
+            optimize_dict_known_hash(ctx, dependencies, this_instr,
+                                     sub, _BINARY_OP_SUBSCR_DICT_KNOWN_HASH);
+        }
         res = sym_new_not_null(ctx);
         ds = dict_st;
         ss = sub_st;
