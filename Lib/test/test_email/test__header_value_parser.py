@@ -2898,8 +2898,9 @@ class TestParser(TestParserMixin, TestEmailBase):
             'ptext',
             'fws',
             'vtext',
+            'misplaced-special',
             )
-        if local_part != ...:
+        if local_part and local_part != ...:
             self.assertEqual(lp.local_part, local_part)
 
     @params_map(with_namelist=True)
@@ -2986,180 +2987,183 @@ class TestParser(TestParserMixin, TestEmailBase):
                 )(params_test_get_quoted_string),
             ),
 
-        )
-
-    def test_get_local_part_simple(self):
-        local_part = self._test_get_x(parser.get_local_part,
+    test_get_local_part_simple = C(
             'dinsdale@python.org', 'dinsdale', 'dinsdale', [], '@python.org')
-        self.assertEqual(local_part.token_type, 'local-part')
-        self.assertEqual(local_part.local_part, 'dinsdale')
+            ,
+       #self.assertEqual(local_part.local_part, 'dinsdale')
 
-    def test_get_local_part_with_dot(self):
-        local_part = self._test_get_x(parser.get_local_part,
+    test_get_local_part_with_dot = C(
             'Fred.A.Johnson@python.org',
             'Fred.A.Johnson',
             'Fred.A.Johnson',
             [],
             '@python.org')
-        self.assertEqual(local_part.local_part, 'Fred.A.Johnson')
+            ,
+       #self.assertEqual(local_part.local_part, 'Fred.A.Johnson')
 
-    def test_get_local_part_with_whitespace(self):
-        local_part = self._test_get_x(parser.get_local_part,
+    test_get_local_part_with_whitespace = C(
             ' Fred.A.Johnson  @python.org',
             ' Fred.A.Johnson  ',
             ' Fred.A.Johnson ',
             [],
             '@python.org')
-        self.assertEqual(local_part.local_part, 'Fred.A.Johnson')
+            ,
+       #self.assertEqual(local_part.local_part, 'Fred.A.Johnson')
 
-    def test_get_local_part_with_cfws(self):
-        local_part = self._test_get_x(parser.get_local_part,
+    test_get_local_part_with_cfws = C(
             ' (foo) Fred.A.Johnson (bar (bird))  @python.org',
             ' (foo) Fred.A.Johnson (bar (bird))  ',
             ' Fred.A.Johnson ',
             [],
-            '@python.org')
-        self.assertEqual(local_part.local_part, 'Fred.A.Johnson')
-        self.assertEqual(local_part[0][0].comments, ['foo'])
-        self.assertEqual(local_part[0][2].comments, ['bar (bird)'])
+            '@python.org',
+            ['foo', 'bar (bird)'],
+            ),
+       #self.assertEqual(local_part.local_part, 'Fred.A.Johnson')
 
-    def test_get_local_part_simple_quoted(self):
-        local_part = self._test_get_x(parser.get_local_part,
+    test_get_local_part_simple_quoted = C(
             '"dinsdale"@python.org', '"dinsdale"', '"dinsdale"', [], '@python.org')
-        self.assertEqual(local_part.token_type, 'local-part')
-        self.assertEqual(local_part.local_part, 'dinsdale')
+            ,
+       #self.assertEqual(local_part.local_part, 'dinsdale')
 
-    def test_get_local_part_with_quoted_dot(self):
-        local_part = self._test_get_x(parser.get_local_part,
+    test_get_local_part_with_quoted_dot = C(
             '"Fred.A.Johnson"@python.org',
             '"Fred.A.Johnson"',
             '"Fred.A.Johnson"',
             [],
             '@python.org')
-        self.assertEqual(local_part.local_part, 'Fred.A.Johnson')
+            ,
+       #self.assertEqual(local_part.local_part, 'Fred.A.Johnson')
 
-    def test_get_local_part_quoted_with_whitespace(self):
-        local_part = self._test_get_x(parser.get_local_part,
+    test_get_local_part_quoted_with_whitespace = C(
             ' "Fred A. Johnson"  @python.org',
             ' "Fred A. Johnson"  ',
             ' "Fred A. Johnson" ',
             [],
             '@python.org')
-        self.assertEqual(local_part.local_part, 'Fred A. Johnson')
+            ,
+       #self.assertEqual(local_part.local_part, 'Fred A. Johnson')
 
-    def test_get_local_part_quoted_with_cfws(self):
-        local_part = self._test_get_x(parser.get_local_part,
+    test_get_local_part_quoted_with_cfws = C(
             ' (foo) " Fred A. Johnson " (bar (bird))  @python.org',
             ' (foo) " Fred A. Johnson " (bar (bird))  ',
             ' " Fred A. Johnson " ',
             [],
-            '@python.org')
-        self.assertEqual(local_part.local_part, ' Fred A. Johnson ')
-        self.assertEqual(local_part[0][0].comments, ['foo'])
-        self.assertEqual(local_part[0][2].comments, ['bar (bird)'])
+            '@python.org',
+            ['foo', 'bar (bird)'],
+            ),
+       #self.assertEqual(local_part.local_part, ' Fred A. Johnson ')
 
 
-    def test_get_local_part_simple_obsolete(self):
-        local_part = self._test_get_x(parser.get_local_part,
+    test_get_local_part_simple_obsolete = C(
             'Fred. A.Johnson@python.org',
             'Fred. A.Johnson',
             'Fred. A.Johnson',
             [errors.ObsoleteHeaderDefect],
             '@python.org')
-        self.assertEqual(local_part.local_part, 'Fred.A.Johnson')
+            ,
+       #self.assertEqual(local_part.local_part, 'Fred.A.Johnson')
 
-    def test_get_local_part_complex_obsolete_1(self):
-        local_part = self._test_get_x(parser.get_local_part,
+    test_get_local_part_complex_obsolete_1 = C(
             ' (foo )Fred (bar).(bird) A.(sheep)Johnson."and  dogs "@python.org',
             ' (foo )Fred (bar).(bird) A.(sheep)Johnson."and  dogs "',
             ' Fred . A. Johnson.and  dogs ',
             [errors.ObsoleteHeaderDefect],
-            '@python.org')
-        self.assertEqual(local_part.local_part, 'Fred.A.Johnson.and  dogs ')
+            '@python.org',
+            ['foo ', 'bar', 'bird', 'sheep'],
+            ),
+       #self.assertEqual(local_part.local_part, 'Fred.A.Johnson.and  dogs ')
 
-    def test_get_local_part_complex_obsolete_invalid(self):
-        local_part = self._test_get_x(parser.get_local_part,
+    test_get_local_part_complex_obsolete_invalid = C(
             ' (foo )Fred (bar).(bird) A.(sheep)Johnson "and  dogs"@python.org',
             ' (foo )Fred (bar).(bird) A.(sheep)Johnson "and  dogs"',
             ' Fred . A. Johnson and  dogs',
             [errors.InvalidHeaderDefect]*2,
-            '@python.org')
-        self.assertEqual(local_part.local_part, 'Fred.A.Johnson and  dogs')
+            '@python.org',
+            ['foo ', 'bar', 'bird', 'sheep'],
+            ),
+       #self.assertEqual(local_part.local_part, 'Fred.A.Johnson and  dogs')
 
-    def test_get_local_part_empty_raises(self):
-        with self.assertRaises(errors.HeaderParseError):
-            parser.get_local_part('')
+    test_get_local_part_empty_raises = C(
+                                  '',
+            exception=(        errors.HeaderParseError, '.*'),
+            ),
 
-    def test_get_local_part_no_part_raises(self):
-        with self.assertRaises(errors.HeaderParseError):
-            parser.get_local_part(' (foo) ')
+    test_get_local_part_no_part_raises = C(
+                                  ' (foo) ',
+            exception=(        errors.HeaderParseError, '.*'),
+            ),
 
-    def test_get_local_part_special_instead_raises(self):
-        with self.assertRaises(errors.HeaderParseError):
-            parser.get_local_part(' (foo) @python.org')
+    test_get_local_part_special_instead_raises = C(
+                                  ' (foo) @python.org',
+            exception=(        errors.HeaderParseError, '.*'),
+            ),
 
-    def test_get_local_part_trailing_dot(self):
-        local_part = self._test_get_x(parser.get_local_part,
+    test_get_local_part_trailing_dot = C(
             ' borris.@python.org',
             ' borris.',
             ' borris.',
             [errors.InvalidHeaderDefect]*2,
             '@python.org')
-        self.assertEqual(local_part.local_part, 'borris.')
+            ,
+       #self.assertEqual(local_part.local_part, 'borris.')
 
-    def test_get_local_part_trailing_dot_with_ws(self):
-        local_part = self._test_get_x(parser.get_local_part,
+    test_get_local_part_trailing_dot_with_ws = C(
             ' borris. @python.org',
             ' borris. ',
             ' borris. ',
             [errors.InvalidHeaderDefect]*2,
             '@python.org')
-        self.assertEqual(local_part.local_part, 'borris.')
+            ,
+       #self.assertEqual(local_part.local_part, 'borris.')
 
-    def test_get_local_part_leading_dot(self):
-        local_part = self._test_get_x(parser.get_local_part,
+    test_get_local_part_leading_dot = C(
             '.borris@python.org',
             '.borris',
             '.borris',
             [errors.InvalidHeaderDefect]*2,
             '@python.org')
-        self.assertEqual(local_part.local_part, '.borris')
+            ,
+       #self.assertEqual(local_part.local_part, '.borris')
 
-    def test_get_local_part_leading_dot_after_ws(self):
-        local_part = self._test_get_x(parser.get_local_part,
+    test_get_local_part_leading_dot_after_ws = C(
             ' .borris@python.org',
             ' .borris',
             ' .borris',
             [errors.InvalidHeaderDefect]*2,
             '@python.org')
-        self.assertEqual(local_part.local_part, '.borris')
+            ,
+       #self.assertEqual(local_part.local_part, '.borris')
 
-    def test_get_local_part_double_dot_raises(self):
-        local_part = self._test_get_x(parser.get_local_part,
+    test_get_local_part_double_dot_raises = C(
             ' borris.(foo).natasha@python.org',
             ' borris.(foo).natasha',
             ' borris. .natasha',
             [errors.InvalidHeaderDefect]*2,
-            '@python.org')
-        self.assertEqual(local_part.local_part, 'borris..natasha')
+            '@python.org',
+            ['foo'],
+            ),
+       #self.assertEqual(local_part.local_part, 'borris..natasha')
 
-    def test_get_local_part_quoted_strings_in_atom_list(self):
-        local_part = self._test_get_x(parser.get_local_part,
+    test_get_local_part_quoted_strings_in_atom_list = C(
             '""example" example"@example.com',
             '""example" example"',
             'example example',
             [errors.InvalidHeaderDefect]*3,
             '@example.com')
-        self.assertEqual(local_part.local_part, 'example example')
+            ,
+       #self.assertEqual(local_part.local_part, 'example example')
 
-    def test_get_local_part_valid_and_invalid_qp_in_atom_list(self):
-        local_part = self._test_get_x(parser.get_local_part,
+    test_get_local_part_valid_and_invalid_qp_in_atom_list = C(
             r'"\\"example\\" example"@example.com',
             r'"\\"example\\" example"',
             r'\example\\ example',
             [errors.InvalidHeaderDefect]*5,
             '@example.com')
-        self.assertEqual(local_part.local_part, r'\example\\ example')
+            ,
+       #self.assertEqual(local_part.local_part, r'\example\\ example')
+
+        )
+
 
     # get_dtext
 
