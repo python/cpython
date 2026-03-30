@@ -3357,8 +3357,7 @@ sock_setsockopt(PyObject *self, PyObject *args)
     arglen = PyTuple_Size(args);
     if (arglen == 3 && optval == Py_None) {
         PyErr_Format(PyExc_TypeError,
-                     "setsockopt() requires 4 arguments when the third argument is None",
-                     arglen);
+                     "setsockopt() requires 4 arguments when the third argument is None");
         return NULL;
     }
     if (arglen == 4 && optval != Py_None) {

@@ -592,7 +592,7 @@ fill_and_set_sslerror(_sslmodulestate *state,
     }
     else {
         if (PyUnicodeWriter_Format(
-                writer, "unknown error (0x%x)", errcode) < 0) {
+                writer, "unknown error (0x%lx)", errcode) < 0) {
             goto fail;
         }
     }
@@ -4059,7 +4059,7 @@ set_min_max_proto_version(PySSLContext *self, PyObject *arg, int what)
             break;
         default:
             PyErr_Format(PyExc_ValueError,
-                     "Unsupported TLS/SSL version 0x%x", v);
+                     "Unsupported TLS/SSL version 0x%lx", v);
             return -1;
     }
 
@@ -4093,7 +4093,7 @@ set_min_max_proto_version(PySSLContext *self, PyObject *arg, int what)
     }
     if (result == 0) {
         PyErr_Format(PyExc_ValueError,
-                     "Unsupported protocol version 0x%x", v);
+                     "Unsupported protocol version 0x%lx", v);
         return -1;
     }
     return 0;

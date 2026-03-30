@@ -212,7 +212,7 @@ parse_task_name(
             set_exception_cause(unwinder, PyExc_RuntimeError, "Task name PyLong parsing failed");
             return NULL;
         }
-        return PyUnicode_FromFormat("Task-%d", res);
+        return PyUnicode_FromFormat("Task-%ld", res);
     }
 
     if(!(GET_MEMBER(unsigned long, type_obj, unwinder->debug_offsets.type_object.tp_flags) & Py_TPFLAGS_UNICODE_SUBCLASS)) {
