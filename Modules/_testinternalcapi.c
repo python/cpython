@@ -1220,7 +1220,7 @@ write_perf_map_entry(PyObject *self, PyObject *args)
         return NULL;
     }
 
-    int ret = PyUnstable_WritePerfMapEntry(code_addr, code_size, entry_name);
+    int ret = PyUnstable_WritePerfMapEntry(code_addr, (unsigned int)code_size, entry_name);
     if (ret < 0) {
         PyErr_SetFromErrno(PyExc_OSError);
         return NULL;
