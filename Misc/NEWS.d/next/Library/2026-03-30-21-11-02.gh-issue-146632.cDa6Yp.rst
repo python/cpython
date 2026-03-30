@@ -1,0 +1,1 @@
+Add type check and use try-except to fix traceback crash
