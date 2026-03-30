@@ -437,13 +437,15 @@ _PyEval_MatchKeys(PyThreadState *tstate, PyObject *map, PyObject *keys)
     // - Atomically check for a key and get its value without error handling.
     // - Don't cause key creation or resizing in dict subclasses like
     //   collections.defaultdict that define __missing__ (or similar).
-    _PyCStackRef cref;
-    _PyThreadState_PushCStackRef(tstate, &cref);
-    int meth_found = _PyObject_GetMethodStackRef(tstate, map, &_Py_ID(get), &cref.ref);
-    PyObject *get = PyStackRef_AsPyObjectBorrow(cref.ref);
-    if (get == NULL) {
+    _PyCStackRef self, method;
+    _PyThreadState_PushCStackRef(tstate, &self);
+    _PyThreadState_PushCStackRef(tstate, &method);
+    self.ref = PyStackRef_FromPyObjectBorrow(map);
+    int res = _PyObject_GetMethodStackRef(tstate, &self.ref, &_Py_ID(get), &method.ref);
+    if (res < 0) {
         goto fail;
     }
+    PyObject *get = PyStackRef_AsPyObjectBorrow(method.ref);
     seen = PySet_New(NULL);
     if (seen == NULL) {
         goto fail;
@@ -467,9 +469,10 @@ _PyEval_MatchKeys(PyThreadState *tstate, PyObject *map, PyObject *keys)
             }
             goto fail;
         }
-        PyObject *args[] = { map, key, dummy };
+        PyObject *self_obj = PyStackRef_AsPyObjectBorrow(self.ref);
+        PyObject *args[] = { self_obj, key, dummy };
         PyObject *value = NULL;
-        if (meth_found) {
+        if (!PyStackRef_IsNull(self.ref)) {
             value = PyObject_Vectorcall(get, args, 3, NULL);
         }
         else {
@@ -490,12 +493,14 @@ _PyEval_MatchKeys(PyThreadState *tstate, PyObject *map, PyObject *keys)
     }
     // Success:
 done:
-    _PyThreadState_PopCStackRef(tstate, &cref);
+    _PyThreadState_PopCStackRef(tstate, &method);
+    _PyThreadState_PopCStackRef(tstate, &self);
     Py_DECREF(seen);
     Py_DECREF(dummy);
     return values;
 fail:
-    _PyThreadState_PopCStackRef(tstate, &cref);
+    _PyThreadState_PopCStackRef(tstate, &method);
+    _PyThreadState_PopCStackRef(tstate, &self);
     Py_XDECREF(seen);
     Py_XDECREF(dummy);
     Py_XDECREF(values);
@@ -1020,26 +1025,17 @@ _Py_LoadAttr_StackRefSteal(
     PyThreadState *tstate, _PyStackRef owner,
     PyObject *name, _PyStackRef *self_or_null)
 {
-    _PyCStackRef method;
+    // Use _PyCStackRefs to ensure that both method and self are visible to
+    // the GC. Even though self_or_null is on the evaluation stack, it may be
+    // after the stackpointer and therefore not visible to the GC.
+    _PyCStackRef method, self;
     _PyThreadState_PushCStackRef(tstate, &method);
-    int is_meth = _PyObject_GetMethodStackRef(tstate, PyStackRef_AsPyObjectBorrow(owner), name, &method.ref);
-    if (is_meth) {
-        /* We can bypass temporary bound method object.
-           meth is unbound method and obj is self.
-           meth | self | arg1 | ... | argN
-         */
-        assert(!PyStackRef_IsNull(method.ref)); // No errors on this branch
-        self_or_null[0] = owner;  // Transfer ownership
-        return _PyThreadState_PopCStackRefSteal(tstate, &method);
-    }
-    /* meth is not an unbound method (but a regular attr, or
-       something was returned by a descriptor protocol).  Set
-       the second element of the stack to NULL, to signal
-       CALL that it's not a method call.
-       meth | NULL | arg1 | ... | argN
-    */
-    PyStackRef_CLOSE(owner);
-    self_or_null[0] = PyStackRef_NULL;
+    _PyThreadState_PushCStackRef(tstate, &self);
+    self.ref = owner;  // steal reference to owner
+    // NOTE: method.ref is initialized to PyStackRef_NULL and remains null on
+    // error, so we don't need to explicitly use the return code from the call.
+    _PyObject_GetMethodStackRef(tstate, &self.ref, name, &method.ref);
+    *self_or_null = _PyThreadState_PopCStackRefSteal(tstate, &self);
     return _PyThreadState_PopCStackRefSteal(tstate, &method);
 }
 
@@ -1168,6 +1164,55 @@ stop_tracing_and_jit(PyThreadState *tstate, _PyInterpreterFrame *frame)
 #include "opcode_targets.h"
 #include "generated_cases.c.h"
 #endif
+
+
+_PyStackRef
+_PyEval_GetIter(_PyStackRef iterable, _PyStackRef *index_or_null, int yield_from)
+{
+    PyTypeObject *tp = PyStackRef_TYPE(iterable);
+    if (tp == &PyTuple_Type || tp == &PyList_Type) {
+        /* Leave iterable on stack and pushed tagged 0 */
+        *index_or_null = PyStackRef_TagInt(0);
+        return iterable;
+    }
+    *index_or_null = PyStackRef_NULL;
+    if (tp->tp_iter == PyObject_SelfIter) {
+        return iterable;
+    }
+    if (yield_from && tp == &PyCoro_Type) {
+        assert(yield_from != GET_ITER_YIELD_FROM);
+        if (yield_from == GET_ITER_YIELD_FROM_CORO_CHECK) {
+            /* `iterable` is a coroutine and it is used in a 'yield from'
+            * expression of a regular generator. */
+            PyErr_SetString(PyExc_TypeError,
+                            "cannot 'yield from' a coroutine object "
+                            "in a non-coroutine generator");
+            PyStackRef_CLOSE(iterable);
+            return PyStackRef_ERROR;
+        }
+        return iterable;
+    }
+    /* Pop iterable, and push iterator then NULL */
+    PyObject *iter_o = PyObject_GetIter(PyStackRef_AsPyObjectBorrow(iterable));
+    PyStackRef_CLOSE(iterable);
+    if (iter_o == NULL) {
+        return PyStackRef_ERROR;
+    }
+    return PyStackRef_FromPyObjectSteal(iter_o);
+}
+
+Py_NO_INLINE int
+_Py_ReachedRecursionLimit(PyThreadState *tstate)  {
+    uintptr_t here_addr = _Py_get_machine_stack_pointer();
+    _PyThreadStateImpl *_tstate = (_PyThreadStateImpl *)tstate;
+    assert(_tstate->c_stack_hard_limit != 0);
+#if _Py_STACK_GROWS_DOWN
+    return here_addr <= _tstate->c_stack_soft_limit;
+#else
+    return here_addr >= _tstate->c_stack_soft_limit;
+#endif
+}
+
 
 #if (defined(__GNUC__) && __GNUC__ >= 10 && !defined(__clang__)) && defined(__x86_64__)
 /*
@@ -2241,15 +2286,19 @@ _PyEval_ExceptionGroupMatch(_PyInterpreterFrame *frame, PyObject* exc_value,
                 return -1;
             }
             PyFrameObject *f = _PyFrame_GetFrameObject(frame);
-            if (f != NULL) {
-                PyObject *tb = _PyTraceBack_FromFrame(NULL, f);
-                if (tb == NULL) {
-                    Py_DECREF(wrapped);
-                    return -1;
-                }
-                PyException_SetTraceback(wrapped, tb);
-                Py_DECREF(tb);
+            if (f == NULL) {
+                Py_DECREF(wrapped);
+                return -1;
             }
+
+            PyObject *tb = _PyTraceBack_FromFrame(NULL, f);
+            if (tb == NULL) {
+                Py_DECREF(wrapped);
+                return -1;
+            }
+            PyException_SetTraceback(wrapped, tb);
+            Py_DECREF(tb);
+
             *match = wrapped;
         }
         *rest = Py_NewRef(Py_None);
@@ -2624,6 +2673,11 @@ PyEval_GetLocals(void)
 
     if (PyFrameLocalsProxy_Check(locals)) {
         PyFrameObject *f = _PyFrame_GetFrameObject(current_frame);
+        if (f == NULL) {
+            Py_DECREF(locals);
+            return NULL;
+        }
+
         PyObject *ret = f->f_locals_cache;
         if (ret == NULL) {
             ret = PyDict_New();
@@ -3045,7 +3099,7 @@ _PyEval_LazyImportName(PyThreadState *tstate, PyObject *builtins,
             break;
     }
 
-    if (!lazy) {
+    if (!lazy && PyImport_GetLazyImportsMode() != PyImport_LAZY_NONE) {
         // See if __lazy_modules__ forces this to be lazy.
         lazy = check_lazy_import_compatibility(tstate, globals, name, level);
         if (lazy < 0) {
@@ -3402,40 +3456,36 @@ _Py_Check_ArgsIterable(PyThreadState *tstate, PyObject *func, PyObject *args)
 }
 
 void
-_PyEval_FormatKwargsError(PyThreadState *tstate, PyObject *func, PyObject *kwargs)
+_PyEval_FormatKwargsError(PyThreadState *tstate, PyObject *func, PyObject *kwargs, PyObject *dupkey)
 {
-    /* _PyDict_MergeEx raises attribute
+    if (dupkey != NULL) {
+        PyObject *funcstr = _PyObject_FunctionStr(func);
+        _PyErr_Format(
+            tstate, PyExc_TypeError,
+            "%V got multiple values for keyword argument '%S'",
+            funcstr, "finction", dupkey);
+        Py_XDECREF(funcstr);
+        return;
+    }
+    /* _PyDict_MergeUniq raises attribute
      * error (percolated from an attempt
      * to get 'keys' attribute) instead of
      * a type error if its second argument
      * is not a mapping.
      */
     if (_PyErr_ExceptionMatches(tstate, PyExc_AttributeError)) {
-        _PyErr_Format(
-            tstate, PyExc_TypeError,
-            "Value after ** must be a mapping, not %.200s",
-            Py_TYPE(kwargs)->tp_name);
-    }
-    else if (_PyErr_ExceptionMatches(tstate, PyExc_KeyError)) {
         PyObject *exc = _PyErr_GetRaisedException(tstate);
-        PyObject *args = PyException_GetArgs(exc);
-        if (PyTuple_Check(args) && PyTuple_GET_SIZE(args) == 1) {
-            _PyErr_Clear(tstate);
-            PyObject *funcstr = _PyObject_FunctionStr(func);
-            if (funcstr != NULL) {
-                PyObject *key = PyTuple_GET_ITEM(args, 0);
-                _PyErr_Format(
-                    tstate, PyExc_TypeError,
-                    "%U got multiple values for keyword argument '%S'",
-                    funcstr, key);
-                Py_DECREF(funcstr);
-            }
-            Py_XDECREF(exc);
+        int has_keys = PyObject_HasAttrWithError(kwargs, &_Py_ID(keys));
+        if (has_keys == 0) {
+            _PyErr_Format(
+                tstate, PyExc_TypeError,
+                "Value after ** must be a mapping, not %T",
+                kwargs);
+            Py_DECREF(exc);
         }
         else {
-            _PyErr_SetRaisedException(tstate, exc);
+            _PyErr_ChainExceptions1Tstate(tstate, exc);
         }
-        Py_DECREF(args);
     }
 }
 

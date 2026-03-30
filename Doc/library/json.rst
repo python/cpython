@@ -264,7 +264,7 @@ Basic Usage
 
 .. function:: load(fp, *, cls=None, object_hook=None, parse_float=None, \
                    parse_int=None, parse_constant=None, \
-                   object_pairs_hook=None, **kw)
+                   object_pairs_hook=None, array_hook=None, **kw)
 
    Deserialize *fp* to a Python object
    using the :ref:`JSON-to-Python conversion table <json-to-py-table>`.
@@ -300,6 +300,15 @@ Basic Usage
       If *object_hook* is also set, *object_pairs_hook* takes priority.
       Default ``None``.
    :type object_pairs_hook: :term:`callable` | None
+
+   :param array_hook:
+      If set, a function that is called with the result of
+      any JSON array literal decoded with as a Python list.
+      The return value of this function will be used
+      instead of the :class:`list`.
+      This feature can be used to implement custom decoders.
+      Default ``None``.
+   :type array_hook: :term:`callable` | None
 
    :param parse_float:
       If set, a function that is called with
@@ -349,7 +358,10 @@ Basic Usage
       conversion length limitation <int_max_str_digits>` to help avoid denial
       of service attacks.
 
-.. function:: loads(s, *, cls=None, object_hook=None, parse_float=None, parse_int=None, parse_constant=None, object_pairs_hook=None, **kw)
+   .. versionchanged:: next
+      Added the optional *array_hook* parameter.
+
+.. function:: loads(s, *, cls=None, object_hook=None, parse_float=None, parse_int=None, parse_constant=None, object_pairs_hook=None, array_hook=None, **kw)
 
    Identical to :func:`load`, but instead of a file-like object,
    deserialize *s* (a :class:`str`, :class:`bytes` or :class:`bytearray`
@@ -367,7 +379,7 @@ Basic Usage
 Encoders and Decoders
 ---------------------
 
-.. class:: JSONDecoder(*, object_hook=None, parse_float=None, parse_int=None, parse_constant=None, strict=True, object_pairs_hook=None)
+.. class:: JSONDecoder(*, object_hook=None, parse_float=None, parse_int=None, parse_constant=None, strict=True, object_pairs_hook=None, array_hook=None)
 
    Simple JSON decoder.
 
@@ -411,6 +423,14 @@ Encoders and Decoders
 
    .. versionchanged:: 3.1
       Added support for *object_pairs_hook*.
+
+   *array_hook* is an optional function that will be called with the
+   result of every JSON array decoded as a list. The return value of
+   *array_hook* will be used instead of the :class:`list`. This feature can be
+   used to implement custom decoders.
+
+   .. versionchanged:: next
+      Added support for *array_hook*.
 
    *parse_float* is an optional function that will be called with the string of
    every JSON float to be decoded.  By default, this is equivalent to
