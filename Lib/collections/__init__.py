@@ -328,14 +328,14 @@ class OrderedDict(dict):
         return self
 
     def __or__(self, other):
-        if not isinstance(other, dict):
+        if not isinstance(other, (dict, frozendict)):
             return NotImplemented
         new = self.__class__(self)
         new.update(other)
         return new
 
     def __ror__(self, other):
-        if not isinstance(other, dict):
+        if not isinstance(other, (dict, frozendict)):
             return NotImplemented
         new = self.__class__(other)
         new.update(self)
