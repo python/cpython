@@ -333,7 +333,7 @@ class FlamegraphCollector(StackTraceCollector):
 
             node = current["children"].get(func)
             if node is None:
-                node = {"samples": 0, "children": {}, "threads": set(), "opcodes": collections.Counter()}
+                node = {"samples": 0, "children": {}, "threads": set(), "opcodes": collections.Counter(), "self": 0}
                 current["children"][func] = node
             node["samples"] += weight
             node["threads"].add(thread_id)
@@ -342,6 +342,9 @@ class FlamegraphCollector(StackTraceCollector):
                 node["opcodes"][opcode] += weight
 
             current = node
+
+        if current is not self._root:
+            current["self"] += weight
 
     def _get_source_lines(self, func):
         filename, lineno, _ = func
@@ -380,6 +383,18 @@ class FlamegraphCollector(StackTraceCollector):
         base_js = (template_dir / "_shared_assets" / "base.js").read_text(encoding="utf-8")
         component_js = (template_dir / "_flamegraph_assets" / "flamegraph.js").read_text(encoding="utf-8")
         js_content = f"{base_js}\n{component_js}"
+
+        # Set title and subtitle based on whether this is a differential flamegraph
+        is_differential = data.get("stats", {}).get("is_differential", False)
+        if is_differential:
+            title = "Tachyon Profiler - Differential Flamegraph Report"
+            subtitle = "Differential Flamegraph Report"
+        else:
+            title = "Tachyon Profiler - Flamegraph Report"
+            subtitle = "Flamegraph Report"
+
+        html_template = html_template.replace("{{TITLE}}", title)
+        html_template = html_template.replace("{{SUBTITLE}}", subtitle)
 
         # Inline first-party CSS/JS
         html_template = html_template.replace(
@@ -427,3 +442,266 @@ class FlamegraphCollector(StackTraceCollector):
         )
 
         return html_content
+
+
+class DiffFlamegraphCollector(FlamegraphCollector):
+    """Differential flamegraph collector that compares against a baseline binary profile."""
+
+    def __init__(self, sample_interval_usec, *, baseline_binary_path, skip_idle=False):
+        super().__init__(sample_interval_usec, skip_idle=skip_idle)
+        if not os.path.exists(baseline_binary_path):
+            raise ValueError(f"Baseline file not found: {baseline_binary_path}")
+        self.baseline_binary_path = baseline_binary_path
+        self._baseline_collector = None
+        self._elided_paths = set()
+
+    def _load_baseline(self):
+        """Load baseline profile from binary file."""
+        from .binary_reader import BinaryReader
+
+        with BinaryReader(self.baseline_binary_path) as reader:
+            info = reader.get_info()
+
+            baseline_collector = FlamegraphCollector(
+                sample_interval_usec=info['sample_interval_us'],
+                skip_idle=self.skip_idle
+            )
+
+            reader.replay_samples(baseline_collector)
+
+        self._baseline_collector = baseline_collector
+
+    def _aggregate_path_samples(self, root_node, path=None):
+        """Aggregate samples by stack path, excluding line numbers for cross-profile matching."""
+        if path is None:
+            path = ()
+
+        stats = {}
+
+        for func, node in root_node["children"].items():
+            filename, _lineno, funcname = func
+            func_key = (filename, funcname)
+            path_key = path + (func_key,)
+
+            total_samples = node.get("samples", 0)
+            self_samples = node.get("self", 0)
+
+            if path_key in stats:
+                stats[path_key]["total"] += total_samples
+                stats[path_key]["self"] += self_samples
+            else:
+                stats[path_key] = {
+                    "total": total_samples,
+                    "self": self_samples
+                }
+
+            child_stats = self._aggregate_path_samples(node, path_key)
+            for key, data in child_stats.items():
+                if key in stats:
+                    stats[key]["total"] += data["total"]
+                    stats[key]["self"] += data["self"]
+                else:
+                    stats[key] = data
+
+        return stats
+
+    def _convert_to_flamegraph_format(self):
+        """Convert to flamegraph format with differential annotations."""
+        if self._baseline_collector is None:
+            self._load_baseline()
+
+        current_flamegraph = super()._convert_to_flamegraph_format()
+
+        current_stats = self._aggregate_path_samples(self._root)
+        baseline_stats = self._aggregate_path_samples(self._baseline_collector._root)
+
+        # Scale baseline values to make them comparable, accounting for both
+        # sample count differences and sample interval differences.
+        baseline_total = self._baseline_collector._total_samples
+        if baseline_total > 0 and self._total_samples > 0:
+            current_time = self._total_samples * self.sample_interval_usec
+            baseline_time = baseline_total * self._baseline_collector.sample_interval_usec
+            scale = current_time / baseline_time
+        elif baseline_total > 0:
+            # Current profile is empty - use interval-based scale for elided display
+            scale = self.sample_interval_usec / self._baseline_collector.sample_interval_usec
+        else:
+            scale = 1.0
+
+        self._annotate_nodes_with_diff(current_flamegraph, current_stats, baseline_stats, scale)
+        self._add_elided_flamegraph(current_flamegraph, current_stats, baseline_stats, scale)
+
+        return current_flamegraph
+
+    def _annotate_nodes_with_diff(self, current_flamegraph, current_stats, baseline_stats, scale):
+        """Annotate each node in the tree with diff metadata."""
+        if "stats" not in current_flamegraph:
+            current_flamegraph["stats"] = {}
+
+        current_flamegraph["stats"]["baseline_samples"] = self._baseline_collector._total_samples
+        current_flamegraph["stats"]["current_samples"] = self._total_samples
+        current_flamegraph["stats"]["baseline_scale"] = scale
+        current_flamegraph["stats"]["is_differential"] = True
+
+        if self._is_promoted_root(current_flamegraph):
+            self._add_diff_data_to_node(current_flamegraph, (), current_stats, baseline_stats, scale)
+        else:
+            for child in current_flamegraph["children"]:
+                self._add_diff_data_to_node(child, (), current_stats, baseline_stats, scale)
+
+    def _add_diff_data_to_node(self, node, path, current_stats, baseline_stats, scale):
+        """Recursively add diff metadata to nodes."""
+        func_key = self._extract_func_key(node, self._string_table)
+        path_key = path + (func_key,) if func_key else path
+
+        current_data = current_stats.get(path_key, {"total": 0, "self": 0})
+        baseline_data = baseline_stats.get(path_key, {"total": 0, "self": 0})
+
+        current_self = current_data["self"]
+        baseline_self = baseline_data["self"] * scale
+        baseline_total = baseline_data["total"] * scale
+
+        diff = current_self - baseline_self
+        if baseline_self > 0:
+            diff_pct = (diff / baseline_self) * 100.0
+        elif current_self > 0:
+            diff_pct = 100.0
+        else:
+            diff_pct = 0.0
+
+        node["baseline"] = baseline_self
+        node["baseline_total"] = baseline_total
+        node["self_time"] = current_self
+        node["diff"] = diff
+        node["diff_pct"] = diff_pct
+
+        if "children" in node and node["children"]:
+            for child in node["children"]:
+                self._add_diff_data_to_node(child, path_key, current_stats, baseline_stats, scale)
+
+    def _is_promoted_root(self, data):
+        """Check if the data represents a promoted root node."""
+        return "filename" in data and "funcname" in data
+
+    def _add_elided_flamegraph(self, current_flamegraph, current_stats, baseline_stats, scale):
+        """Calculate elided paths and add elided flamegraph to stats."""
+        self._elided_paths = baseline_stats.keys() - current_stats.keys()
+
+        current_flamegraph["stats"]["elided_count"] = len(self._elided_paths)
+
+        if self._elided_paths:
+            elided_flamegraph = self._build_elided_flamegraph(baseline_stats, scale)
+            if elided_flamegraph:
+                current_flamegraph["stats"]["elided_flamegraph"] = elided_flamegraph
+
+    def _build_elided_flamegraph(self, baseline_stats, scale):
+        """Build flamegraph containing only elided paths from baseline.
+
+        This re-runs the base conversion pipeline on the baseline collector
+        to produce a complete formatted flamegraph, then prunes it to keep
+        only elided paths.
+        """
+        if not self._baseline_collector or not self._elided_paths:
+            return None
+
+        # Suppress source line collection for elided nodes - these functions
+        # no longer exist in the current profile, so source lines from the
+        # current machine's filesystem would be misleading or unavailable.
+        orig_get_source = self._baseline_collector._get_source_lines
+        self._baseline_collector._get_source_lines = lambda func: None
+        try:
+            baseline_data = self._baseline_collector._convert_to_flamegraph_format()
+        finally:
+            self._baseline_collector._get_source_lines = orig_get_source
+
+        # Remove non-elided nodes and recalculate values
+        if not self._extract_elided_nodes(baseline_data, path=()):
+            return None
+
+        self._add_elided_metadata(baseline_data, baseline_stats, scale, path=())
+
+        # Merge only profiling metadata, not thread-level stats
+        for key in ("sample_interval_usec", "duration_sec", "sample_rate",
+                    "error_rate", "missed_samples", "mode"):
+            if key in self.stats:
+                baseline_data["stats"][key] = self.stats[key]
+        baseline_data["stats"]["is_differential"] = True
+        baseline_data["stats"]["baseline_samples"] = self._baseline_collector._total_samples
+        baseline_data["stats"]["current_samples"] = self._total_samples
+
+        return baseline_data
+
+    def _extract_elided_nodes(self, node, path):
+        """Remove non-elided nodes and recalculate values bottom-up."""
+        if not node:
+            return False
+
+        func_key = self._extract_func_key(node, self._baseline_collector._string_table)
+        current_path = path + (func_key,) if func_key else path
+
+        is_elided = current_path in self._elided_paths if func_key else False
+
+        if "children" in node:
+            # Filter children, keeping only those with elided descendants
+            elided_children = []
+            total_value = 0
+            for child in node["children"]:
+                if self._extract_elided_nodes(child, current_path):
+                    elided_children.append(child)
+                    total_value += child.get("value", 0)
+            node["children"] = elided_children
+
+            # Recalculate value for structural (non-elided) ancestor nodes;
+            # elided nodes keep their original value to preserve self-samples
+            if elided_children and not is_elided:
+                node["value"] = total_value
+
+        # Keep this node if it's elided or has elided descendants
+        return is_elided or bool(node.get("children"))
+
+    def _add_elided_metadata(self, node, baseline_stats, scale, path):
+        """Add differential metadata showing this path disappeared."""
+        if not node:
+            return
+
+        func_key = self._extract_func_key(node, self._baseline_collector._string_table)
+        current_path = path + (func_key,) if func_key else path
+
+        if func_key and current_path in baseline_stats:
+            baseline_data = baseline_stats[current_path]
+            baseline_self = baseline_data["self"] * scale
+            baseline_total = baseline_data["total"] * scale
+
+            node["baseline"] = baseline_self
+            node["baseline_total"] = baseline_total
+            node["diff"] = -baseline_self
+        else:
+            node["baseline"] = 0
+            node["baseline_total"] = 0
+            node["diff"] = 0
+
+        node["self_time"] = 0
+        # Elided paths have zero current self-time, so the change is always
+        # -100% when there was actual baseline self-time to lose.
+        # For internal nodes with no baseline self-time, use 0% to avoid
+        # misleading tooltips.
+        if baseline_self > 0:
+            node["diff_pct"] = -100.0
+        else:
+            node["diff_pct"] = 0.0
+
+        if "children" in node and node["children"]:
+            for child in node["children"]:
+                self._add_elided_metadata(child, baseline_stats, scale, current_path)
+
+    def _extract_func_key(self, node, string_table):
+        """Extract (filename, funcname) key from node, excluding line numbers.
+
+        Line numbers are excluded to match functions even if they moved.
+        Returns None for root nodes that don't have function information.
+        """
+        if "filename" not in node or "funcname" not in node:
+            return None
+        filename = string_table.get_string(node["filename"])
+        funcname = string_table.get_string(node["funcname"])
+        return (filename, funcname)

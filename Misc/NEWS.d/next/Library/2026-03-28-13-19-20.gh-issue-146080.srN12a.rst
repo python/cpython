@@ -1,0 +1,2 @@
+:mod:`ssl`: fix a crash when an SNI callback tries to use an SSL object that
+has already been garbage-collected. Patch by Bénédikt Tran.
