@@ -52,9 +52,10 @@ from datetime import datetime, timezone
 from os.path import basename, relpath
 from pathlib import Path
 from subprocess import CalledProcessError
+from typing import Union
 
 EnvironmentT = dict[str, str]
-ArgsT = Sequence[str | Path]
+ArgsT = Sequence[Union[str, Path]]
 
 SCRIPT_NAME = Path(__file__).name
 PYTHON_DIR = Path(__file__).resolve().parent.parent
