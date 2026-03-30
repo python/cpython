@@ -56,10 +56,10 @@ function handleEAGAIN(cb) {
     } catch (e) {
       if (e && e.code === "EAGAIN") {
         // Presumably this means we're in node and tried to read from/write to
-        // an O_NONBLOCK file descriptor. Synchronously sleep for 100ms as
-        // requested by EAGAIN and try again. In case for some reason we fail to
-        // sleep, propagate the error (it will turn into an EOFError).
-        if (syncSleep(100)) {
+        // an O_NONBLOCK file descriptor. Synchronously sleep for 10ms then try
+        // again. In case for some reason we fail to sleep, propagate the error
+        // (it will turn into an EOFError).
+        if (syncSleep(10)) {
           continue;
         }
       }
