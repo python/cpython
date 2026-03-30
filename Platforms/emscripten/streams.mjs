@@ -20,7 +20,7 @@
  *    https://github.com/emscripten-core/emscripten/blob/1aa7fb531f11e11e7ae49b75a24e1a8fe6fa4a7d/src/lib/libtty.js?plain=1#L104-L114
  *
  * Ideally some version of this should go upstream to Emscripten since it is not
- * in any way specific to Python. But I haven't gotten around to it yet.
+ * in any way specific to Python. But I (Hood) haven't gotten around to it yet.
  */
 
 import * as tty from "node:tty";
@@ -86,7 +86,7 @@ function readWriteHelper(stream, cb, method) {
   }
   if (nbytes === undefined) {
     // Prevent an infinite loop caused by incorrect code that doesn't return a
-    // value
+    // value.
     // Maybe we should set nbytes = buffer.length here instead?
     console.warn(
       `${method} returned undefined; a correct implementation must return a number`,
