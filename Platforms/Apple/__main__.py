@@ -52,10 +52,9 @@ from datetime import datetime, timezone
 from os.path import basename, relpath
 from pathlib import Path
 from subprocess import CalledProcessError
-from typing import Union
 
 EnvironmentT = dict[str, str]
-ArgsT = Sequence[Union[str, Path]]
+ArgsT = Sequence[str | Path]
 
 SCRIPT_NAME = Path(__file__).name
 PYTHON_DIR = Path(__file__).resolve().parent.parent.parent
@@ -772,7 +771,7 @@ def build(context: argparse.Namespace, host: str | None = None) -> None:
         ]:
             step(context, host=step_host)
 
-    if host in {"all", "hosts"}:
+    if host == "all":
         package(context)
 
 

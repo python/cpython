@@ -1,8 +1,5 @@
 extend = "../../.ruff.toml"  # Inherit the project-wide settings
 
-# iOS buildbot worker uses Python 3.9
-target-version = "py39"
-
 [format]
 preview = true
 docstring-code-format = true
