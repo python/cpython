@@ -5456,5 +5456,17 @@ class TestLazyImportSuggestions(unittest.TestCase):
         self.assertNotIn(b"BAR_MODULE_LOADED", stdout)
 
 
+class TestNoCrashInTracebackException(unittest.TestCase):
+    def test_module_not_found_error_with_bad_name(self):
+        exc = ModuleNotFoundError(name=NotImplemented)
+        try:
+            te = traceback.TracebackException.from_exception(exc)
+        except Exception as e:
+            self.fail(f"TracebackException raised unexpected exception: {e!r}")
+        else:
+            msg = "".join(te.format())
+            self.assertEqual(msg, "ModuleNotFoundError\n")
+
+
 if __name__ == "__main__":
     unittest.main()
