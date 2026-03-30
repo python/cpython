@@ -564,52 +564,49 @@ gen_try_set_executing(PyGenObject *gen)
     } while (0)
 
 // Inplace compact int operation. Computes left OP right and attempts to
-// store the result in TARGET (which must be uniquely referenced).
-// After the macro:
-//   _int_inplace_ok  = 1: TARGET was mutated in place, res = TARGET
-//   _int_inplace_ok  = 0: result is a small int or overflow; caller
-//                          must fall back to _PyCompactLong_* and EXIT_IF
-// _int_inplace_status after macro:
-//   0 = mutated TARGET in place (res = TARGET)
-//   1 = result is a small int stored in _int_inplace_smallref
-//   2 = overflow, caller must EXIT_IF
+// Inplace compact int operation. TARGET is expected to be uniquely
+// referenced at the optimizer level, but at runtime it may be a
+// cached small int singleton. We check _Py_IsImmortal on TARGET
+// to decide whether inplace mutation is safe.
+//
+// _int_inplace_ok after macro:
+//   1 = mutated TARGET in place (caller should set res = TARGET)
+//   0 = TARGET was immortal (small int); caller should use the
+//       standard _PyCompactLong_* function instead
 #define INT_INPLACE_OP(left, right, TARGET, OP)                          \
-    int _int_inplace_status = 0;                                         \
-    _PyStackRef _int_inplace_smallref = PyStackRef_NULL;                 \
+    int _int_inplace_ok = 0;                                             \
     do {                                                                 \
+        PyObject *_target_o = PyStackRef_AsPyObjectBorrow(TARGET);       \
+        if (_Py_IsImmortal(_target_o)) {                                 \
+            break;                                                       \
+        }                                                                \
         PyObject *_left_o = PyStackRef_AsPyObjectBorrow(left);           \
         PyObject *_right_o = PyStackRef_AsPyObjectBorrow(right);         \
         assert(PyLong_CheckExact(_left_o));                              \
         assert(PyLong_CheckExact(_right_o));                             \
         assert(_PyLong_BothAreCompact((PyLongObject *)_left_o,           \
                                      (PyLongObject *)_right_o));         \
-        assert(_PyObject_IsUniquelyReferenced(                           \
-            PyStackRef_AsPyObjectBorrow(TARGET)));                       \
+        assert(_PyObject_IsUniquelyReferenced(_target_o));               \
         STAT_INC(BINARY_OP, hit);                                        \
         Py_ssize_t _left_val = _PyLong_CompactValue(                     \
             (PyLongObject *)_left_o);                                    \
         Py_ssize_t _right_val = _PyLong_CompactValue(                    \
             (PyLongObject *)_right_o);                                   \
         Py_ssize_t _result = _left_val OP _right_val;                   \
-        if (_result >= -_PY_NSMALLNEGINTS                                \
-                && _result < _PY_NSMALLPOSINTS) {                        \
-            _int_inplace_smallref = PyStackRef_FromPyObjectBorrow(       \
-                _PyLong_GetSmallInt(_result));                           \
-            _int_inplace_status = 1;                                     \
-        }                                                                \
-        else if ((twodigits)((stwodigits)_result) + PyLong_MASK          \
+        /* Result must fit in a single digit and not be a small int */   \
+        if (((twodigits)((stwodigits)_result) + PyLong_MASK              \
                 < (twodigits)PyLong_MASK + PyLong_BASE)                  \
+            && (_result < -_PY_NSMALLNEGINTS                             \
+                || _result >= _PY_NSMALLPOSINTS))                        \
         {                                                                \
-            PyLongObject *_target = (PyLongObject *)                     \
-                PyStackRef_AsPyObjectBorrow(TARGET);                     \
+            PyLongObject *_target = (PyLongObject *)_target_o;           \
             Py_ssize_t _sign = _result < 0 ? -1 : 1;                    \
             digit _abs = (digit)(_result < 0 ? -_result : _result);      \
             _target->long_value.lv_tag =                                 \
                 (Py_ssize_t)_sign << _PyLong_NON_SIZE_BITS;              \
             _target->long_value.ob_digit[0] = _abs;                      \
+            _int_inplace_ok = 1;                                         \
         }                                                                \
-        else {                                                           \
-            _int_inplace_status = 2;                                     \
-        }                                                                \
+        /* else: result is small int or overflow — fall back */          \
     } while (0)
 

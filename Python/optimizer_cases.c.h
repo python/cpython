@@ -598,19 +598,13 @@
             left = stack_pointer[-2];
             if (PyJitRef_IsUnique(left)) {
                 ADD_OP(_BINARY_OP_MULTIPLY_INT_INPLACE, 0, 0);
-                l = sym_new_null(ctx);
-                r = right;
             }
             else if (PyJitRef_IsUnique(right)) {
                 ADD_OP(_BINARY_OP_MULTIPLY_INT_INPLACE_RIGHT, 0, 0);
-                l = left;
-                r = sym_new_null(ctx);
-            }
-            else {
-                l = left;
-                r = right;
             }
             res = PyJitRef_MakeUnique(sym_new_compact_int(ctx));
+            l = left;
+            r = right;
             if (
                 sym_is_safe_const(ctx, left) &&
                 sym_is_safe_const(ctx, right)
@@ -674,19 +668,13 @@
             left = stack_pointer[-2];
             if (PyJitRef_IsUnique(left)) {
                 ADD_OP(_BINARY_OP_ADD_INT_INPLACE, 0, 0);
-                l = sym_new_null(ctx);
-                r = right;
             }
             else if (PyJitRef_IsUnique(right)) {
                 ADD_OP(_BINARY_OP_ADD_INT_INPLACE_RIGHT, 0, 0);
-                l = left;
-                r = sym_new_null(ctx);
-            }
-            else {
-                l = left;
-                r = right;
             }
             res = PyJitRef_MakeUnique(sym_new_compact_int(ctx));
+            l = left;
+            r = right;
             if (
                 sym_is_safe_const(ctx, left) &&
                 sym_is_safe_const(ctx, right)
@@ -750,19 +738,13 @@
             left = stack_pointer[-2];
             if (PyJitRef_IsUnique(left)) {
                 ADD_OP(_BINARY_OP_SUBTRACT_INT_INPLACE, 0, 0);
-                l = sym_new_null(ctx);
-                r = right;
             }
             else if (PyJitRef_IsUnique(right)) {
                 ADD_OP(_BINARY_OP_SUBTRACT_INT_INPLACE_RIGHT, 0, 0);
-                l = left;
-                r = sym_new_null(ctx);
-            }
-            else {
-                l = left;
-                r = right;
             }
             res = PyJitRef_MakeUnique(sym_new_compact_int(ctx));
+            l = left;
+            r = right;
             if (
                 sym_is_safe_const(ctx, left) &&
                 sym_is_safe_const(ctx, right)
