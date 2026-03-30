@@ -598,6 +598,11 @@ extern "C" {
 #      define _Py_NO_SANITIZE_THREAD __attribute__((no_sanitize_thread))
 #    endif
 #  endif
+#  if __has_feature(undefined_behavior_sanitizer)
+#    if !defined(_Py_UNDEFINED_BEHAVIOR_SANITIZER)
+#      define _Py_UNDEFINED_BEHAVIOR_SANITIZER
+#    endif
+#  endif
 #elif defined(__GNUC__)
 #  if defined(__SANITIZE_ADDRESS__)
 #    define _Py_ADDRESS_SANITIZER
