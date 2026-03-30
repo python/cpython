@@ -5189,6 +5189,15 @@ class MiscTest(unittest.TestCase):
              b"or to enable your virtual environment?"), stderr
         )
 
+        code = """import abs"""
+        _, _, stderr = assert_python_failure('-S', '-c', code)
+        self.assertIn(b"Did you mean: 'abc'?", stderr)
+        self.assertIn(
+            (b"Site initialization is disabled, did you forget to "
+             b"add the site-packages directory to sys.path "
+             b"or to enable your virtual environment?"), stderr
+        )
+
     def test_missing_stdlib_module(self):
         code = """
             import sys

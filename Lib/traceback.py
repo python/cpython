@@ -13,7 +13,6 @@ import keyword
 import tokenize
 import io
 import importlib.util
-from importlib.machinery import ModuleSpec
 import pathlib
 import _colorize
 
@@ -1763,10 +1762,7 @@ def _compute_suggestion_error(exc_value, tb, wrong_name):
             d = []
             for finder in sys.meta_path:
                 if discover := getattr(finder, 'discover', None):
-                    try:
-                        d += [spec.name for spec in discover(parent) if isinstance(spec, ModuleSpec)]
-                    except Exception:
-                        continue
+                    d += [spec.name for spec in discover(parent)]
         except Exception:
             return None
     elif isinstance(exc_value, ImportError):
