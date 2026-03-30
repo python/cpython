@@ -12,6 +12,10 @@ on:
         required: false
         type: boolean
         default: false
+      interpreter:
+        description: Which interpreter to build (switch-case or tail-call)
+        required: true
+        type: string
 
 env:
   FORCE_COLOR: 1
@@ -20,7 +24,7 @@ env:
 
 jobs:
   build:
-    name: Build and test (${{ inputs.arch }})
+    name: Build and test (${{ inputs.arch }}, ${{ inputs.interpreter }})
     runs-on: ${{ inputs.arch == 'arm64' && 'windows-11-arm' || 'windows-2025-vs2026' }}
     timeout-minutes: 60
     env:
@@ -33,9 +37,12 @@ jobs:
       if: inputs.arch != 'Win32'
       run: echo "::add-matcher::.github/problem-matchers/msvc.json"
     - name: Build CPython
+      # msvc::musttail is not supported for debug builds, so we have to
+      # switch to release.
       run: >-
         .\\PCbuild\\build.bat
-        -e -d -v
+        -e -v
+        ${{ inputs.interpreter == 'switch-case' && '-d' || '--tail-call-interp -c Release' }}
         -p "${ARCH}"
         ${{ fromJSON(inputs.free-threading) && '--disable-gil' || '' }}
       shell: bash
@@ -45,6 +52,7 @@ jobs:
       run: >-
         .\\PCbuild\\rt.bat
         -p "${ARCH}"
-        -d -q --fast-ci
+        -q --fast-ci
+        ${{ inputs.interpreter == 'switch-case' && '-d' || '' }}
         ${{ fromJSON(inputs.free-threading) && '--disable-gil' || '' }}
       shell: bash
