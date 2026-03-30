@@ -11770,8 +11770,8 @@ update_one_slot(PyTypeObject *type, pytype_slotdef *p, pytype_slotdef **next_p,
             size_t index = (p - slotdefs);
             if (slotdefs_dups[index][0] > 1) {
                 tptr = NULL;
-                for (size_t i = 0; i < slotdefs_dups[index][0]; i++) {
-                    pytype_slotdef *q = &slotdefs[slotdefs_dups[index][i + 1]];
+                for (size_t i = 1; i <= slotdefs_dups[index][0]; i++) {
+                    pytype_slotdef *q = &slotdefs[slotdefs_dups[index][i]];
                     void **qptr = slotptr(type, q->offset);
                     if (qptr == NULL || *qptr == NULL)
                         continue;
