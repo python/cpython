@@ -71,15 +71,7 @@ class JsonlCollector(StackTraceCollector):
             self._write_chunked_defs(output, "str_def", self._strings)
             self._write_chunked_defs(output, "frame_def", self._frames)
             self._write_chunked_agg(output, self._iter_agg_entries())
-            self._write_message(
-                output,
-                {
-                    "type": "end",
-                    "v": 1,
-                    "run_id": self.run_id,
-                    "samples_total": self._samples_total,
-                },
-            )
+            self._write_message(output, self._build_end_record())
 
     def _build_meta_record(self):
         record = {
@@ -91,6 +83,16 @@ class JsonlCollector(StackTraceCollector):
 
         if self._mode is not None:
             record["mode"] = _MODE_NAMES.get(self._mode, str(self._mode))
+
+        return record
+
+    def _build_end_record(self):
+        record = {
+            "type": "end",
+            "v": 1,
+            "run_id": self.run_id,
+            "samples_total": self._samples_total,
+        }
 
         return record
 
