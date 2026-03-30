@@ -234,6 +234,23 @@ _PyTuple_FromPairSteal(PyObject *first, PyObject *second)
 
 /* Methods */
 
+/*
+ Free of a tuple where all contents have been stolen and
+ is now untracked by GC. This operation is thus non-escaping.
+ */
+void
+_PyStolenTuple_Free(PyObject *obj)
+{
+    assert(PyTuple_CheckExact(obj));
+    PyTupleObject *op = _PyTuple_CAST(obj);
+    assert(Py_SIZE(op) != 0);
+    assert(!_PyObject_GC_IS_TRACKED(obj));
+    // This will abort on the empty singleton (if there is one).
+    if (!maybe_freelist_push(op)) {
+        PyTuple_Type.tp_free((PyObject *)op);
+    }
+}
+
 static void
 tuple_dealloc(PyObject *self)
 {

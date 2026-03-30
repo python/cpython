@@ -25,7 +25,7 @@
 Using Mock
 ----------
 
-Mock Patching Methods
+Mock patching methods
 ~~~~~~~~~~~~~~~~~~~~~
 
 Common uses for :class:`Mock` objects include:
@@ -71,7 +71,7 @@ the ``something`` method:
 
 
 
-Mock for Method Calls on an Object
+Mock for method calls on an object
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 In the last example we patched a method directly on an object to check that it
@@ -101,7 +101,7 @@ accessing it in the test will create it, but :meth:`~Mock.assert_called_with`
 will raise a failure exception.
 
 
-Mocking Classes
+Mocking classes
 ~~~~~~~~~~~~~~~
 
 A common use case is to mock out classes instantiated by your code under test.
@@ -139,7 +139,7 @@ name is also propagated to attributes or methods of the mock:
     <MagicMock name='foo.method' id='...'>
 
 
-Tracking all Calls
+Tracking all calls
 ~~~~~~~~~~~~~~~~~~
 
 Often you want to track more than a single call to a method. The
@@ -176,7 +176,7 @@ possible to track nested calls where the parameters used to create ancestors are
     True
 
 
-Setting Return Values and Attributes
+Setting return values and attributes
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 Setting the return values on a mock object is trivially easy:
@@ -317,7 +317,7 @@ return an async function.
     >>> mock_instance.__aexit__.assert_awaited_once()
 
 
-Creating a Mock from an Existing Object
+Creating a mock from an existing object
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 One problem with over use of mocking is that it couples your tests to the
@@ -384,7 +384,7 @@ contents per file stored in a dictionary::
            assert file2.read() == "default"
 
 
-Patch Decorators
+Patch decorators
 ----------------
 
 .. note::
@@ -518,7 +518,7 @@ decorator individually to every method whose name starts with "test".
 
 .. _further-examples:
 
-Further Examples
+Further examples
 ----------------
 
 
@@ -614,13 +614,13 @@ attribute on the mock date class is then set to a lambda function that returns
 a real date. When the mock date class is called a real date will be
 constructed and returned by ``side_effect``. ::
 
-    >>> from datetime import date
+    >>> import datetime as dt
     >>> with patch('mymodule.date') as mock_date:
-    ...     mock_date.today.return_value = date(2010, 10, 8)
-    ...     mock_date.side_effect = lambda *args, **kw: date(*args, **kw)
+    ...     mock_date.today.return_value = dt.date(2010, 10, 8)
+    ...     mock_date.side_effect = lambda *args, **kw: dt.date(*args, **kw)
     ...
-    ...     assert mymodule.date.today() == date(2010, 10, 8)
-    ...     assert mymodule.date(2009, 6, 8) == date(2009, 6, 8)
+    ...     assert mymodule.date.today() == dt.date(2010, 10, 8)
+    ...     assert mymodule.date(2009, 6, 8) == dt.date(2009, 6, 8)
 
 Note that we don't patch :class:`datetime.date` globally, we patch ``date`` in the
 module that *uses* it. See :ref:`where to patch <where-to-patch>`.
@@ -638,7 +638,7 @@ is discussed in `this blog entry
 <https://williambert.online/2011/07/how-to-unit-testing-in-django-with-mocking-and-patching/>`_.
 
 
-Mocking a Generator Method
+Mocking a generator method
 ~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 A Python generator is a function or method that uses the :keyword:`yield` statement
@@ -739,7 +739,7 @@ exception is raised in the setUp then tearDown is not called.
     >>> MyTest('test_foo').run()
 
 
-Mocking Unbound Methods
+Mocking unbound methods
 ~~~~~~~~~~~~~~~~~~~~~~~
 
 Sometimes a test needs to patch an *unbound method*, which means patching the
@@ -937,7 +937,7 @@ and the ``return_value`` will use your subclass automatically. That means all
 children of a ``CopyingMock`` will also have the type ``CopyingMock``.
 
 
-Nesting Patches
+Nesting patches
 ~~~~~~~~~~~~~~~
 
 Using patch as a context manager is nice, but if you do multiple patches you

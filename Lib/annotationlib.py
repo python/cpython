@@ -919,7 +919,7 @@ def get_annotations(
     does not exist, the __annotate__ function is called. The
     FORWARDREF format uses __annotations__ if it exists and can be
     evaluated, and otherwise falls back to calling the __annotate__ function.
-    The SOURCE format tries __annotate__ first, and falls back to
+    The STRING format tries __annotate__ first, and falls back to
     using __annotations__, stringified using annotations_to_string().
 
     This function handles several details for you:
@@ -1037,13 +1037,26 @@ def get_annotations(
             obj_globals = obj_locals = unwrap = None
 
         if unwrap is not None:
+            # Use an id-based visited set to detect cycles in the __wrapped__
+            # and functools.partial.func chain (e.g. f.__wrapped__ = f).
+            # On cycle detection we stop and use whatever __globals__ we have
+            # found so far, mirroring the approach of inspect.unwrap().
+            _seen_ids = {id(unwrap)}
             while True:
                 if hasattr(unwrap, "__wrapped__"):
-                    unwrap = unwrap.__wrapped__
+                    candidate = unwrap.__wrapped__
+                    if id(candidate) in _seen_ids:
+                        break
+                    _seen_ids.add(id(candidate))
+                    unwrap = candidate
                     continue
                 if functools := sys.modules.get("functools"):
                     if isinstance(unwrap, functools.partial):
-                        unwrap = unwrap.func
+                        candidate = unwrap.func
+                        if id(candidate) in _seen_ids:
+                            break
+                        _seen_ids.add(id(candidate))
+                        unwrap = candidate
                         continue
                 break
             if hasattr(unwrap, "__globals__"):

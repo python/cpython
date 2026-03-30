@@ -34,6 +34,7 @@ import builtins
 import pkgutil
 from inspect import iscoroutinefunction
 import threading
+from annotationlib import Format
 from dataclasses import fields, is_dataclass
 from types import CodeType, ModuleType, MethodType
 from unittest.util import safe_repr
@@ -119,7 +120,7 @@ def _get_signature_object(func, as_instance, eat_self):
     else:
         sig_func = func
     try:
-        return func, inspect.signature(sig_func)
+        return func, inspect.signature(sig_func, annotation_format=Format.FORWARDREF)
     except ValueError:
         # Certain callable types are not supported by inspect.signature()
         return None

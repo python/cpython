@@ -1,0 +1,1 @@
+Errors when calling :func:`functools.partial` with a malformed keyword will no longer crash the interpreter.

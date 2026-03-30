@@ -393,6 +393,9 @@ def get_data(package, resource):
     # signature - an os.path format "filename" starting with the dirname of
     # the package's __file__
     parts = resource.split('/')
+    if os.path.isabs(resource) or '..' in parts:
+        raise ValueError("resource must be a relative path with no "
+                         "parent directory components")
     parts.insert(0, os.path.dirname(mod.__file__))
     resource_name = os.path.join(*parts)
     return loader.get_data(resource_name)
