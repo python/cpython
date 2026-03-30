@@ -10,6 +10,8 @@ sphinx==3.4.3
 docutils==0.17.1
 # Jinja version is pinned to a version compatible with Sphinx version <4.5.
 jinja2==3.0.3
+# Sphinx 3.4.3 uses imghdr which was removed from stdlib in Python 3.11
+standard-imghdr==3.13.0; python_version>3.10
 
 blurb
 
