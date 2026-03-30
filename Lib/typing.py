@@ -172,6 +172,16 @@ class _LazyAnnotationLib:
 _lazy_annotationlib = _LazyAnnotationLib()
 
 
+class _LazyInspect:
+    def __getattr__(self, attr):
+        global _lazy_inspect
+        import inspect
+        _lazy_inspect = inspect
+        return getattr(inspect, attr)
+
+_lazy_inspect = _LazyInspect()
+
+
 def _type_convert(arg, module=None, *, allow_special_forms=False, owner=None):
     """For converting None to type(None), and strings to ForwardRef."""
     if arg is None:
@@ -1962,28 +1972,6 @@ _PROTO_ALLOWLIST = {
 }
 
 
-@functools.cache
-def _lazy_load_getattr_static():
-    # Import getattr_static lazily so as not to slow down the import of typing.py
-    # Cache the result so we don't slow down _ProtocolMeta.__instancecheck__ unnecessarily
-    from inspect import getattr_static
-    return getattr_static
-
-
-_cleanups.append(_lazy_load_getattr_static.cache_clear)
-
-
-@functools.cache
-def _lazy_load_unwrap():
-    # Import unwrap lazily so as not to slow down the import of typing.py
-    # Cache the result so we don't slow down get_type_hints() unnecessarily
-    from inspect import unwrap
-    return unwrap
-
-
-_cleanups.append(_lazy_load_unwrap.cache_clear)
-
-
 def _pickle_psargs(psargs):
     return ParamSpecArgs, (psargs.__origin__,)
 
@@ -2116,7 +2104,7 @@ class _ProtocolMeta(ABCMeta):
         if _abc_instancecheck(cls, instance):
             return True
 
-        getattr_static = _lazy_load_getattr_static()
+        getattr_static = _lazy_inspect.getattr_static
         for attr in cls.__protocol_attrs__:
             try:
                 val = getattr_static(instance, attr)
@@ -2496,7 +2484,7 @@ def get_type_hints(obj, globalns=None, localns=None, include_extras=False,
             globalns = obj.__dict__
         else:
             # Find globalns for the unwrapped object.
-            nsobj = _lazy_load_unwrap()(obj)
+            nsobj = _lazy_inspect.unwrap(obj)
             globalns = getattr(nsobj, '__globals__', {})
         if localns is None:
             localns = globalns
