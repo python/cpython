@@ -518,6 +518,10 @@ def configure_emscripten_python(context, working_dir):
         EMSCRIPTEN_DIR / "node_entry.mjs", working_dir / "node_entry.mjs"
     )
 
+    shutil.copy(
+        EMSCRIPTEN_DIR / "streams.mjs", working_dir / "streams.mjs"
+    )
+
     node_entry = working_dir / "node_entry.mjs"
     exec_script = working_dir / "python.sh"
     exec_script.write_text(
