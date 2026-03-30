@@ -2421,9 +2421,9 @@ vgetargskeywordsfast_impl(PyObject *const *args, Py_ssize_t nargs,
         if (i < parser->min) {
             /* Less arguments than required */
             if (i < pos) {
-                Py_ssize_t min = Py_MIN(pos, parser->min);
+                int min = Py_MIN(pos, parser->min);
                 PyErr_Format(PyExc_TypeError,
-                             "%.200s%s takes %s %zd positional argument%s"
+                             "%.200s%s takes %s %d positional argument%s"
                              " (%zd given)",
                              (parser->fname == NULL) ? "function" : parser->fname,
                              (parser->fname == NULL) ? "" : "()",
