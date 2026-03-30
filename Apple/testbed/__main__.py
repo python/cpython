@@ -7,7 +7,6 @@ import shutil
 import subprocess
 import sys
 from pathlib import Path
-from typing import Union
 
 TEST_SLICES = {
     "iOS": "ios-arm64_x86_64-simulator",
@@ -263,7 +262,7 @@ def update_test_plan(testbed_path, platform, args):
 
 def run_testbed(
     platform: str,
-    simulator: Union[str, None],
+    simulator: str | None,
     args: list[str],
     verbose: bool = False,
 ):
