@@ -1666,7 +1666,7 @@ class TestSampleProfilerComponents(unittest.TestCase):
         self.assertAlmostEqual(cold_node["diff"], -1.0)
         self.assertAlmostEqual(cold_node["diff_pct"], -50.0)
 
-    def test_jsonl_collector_basic(self):
+    def test_jsonl_collector_export(self):
         collapsed_out = tempfile.NamedTemporaryFile(delete=False)
         self.addCleanup(close_and_unlink, collapsed_out)
 
