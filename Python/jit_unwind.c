@@ -535,7 +535,7 @@ static void elf_init_ehframe(ELFObjectContext* ctx, int absolute_addr) {
          * conventions and register usage patterns.
          */
 #ifdef __x86_64__
-        /* x86_64 calling convention unwinding rules with frame pointer */
+        /* x86_64 calling convention unwinding rules; keep CFA on %rbp */
 #  if defined(__CET__) && (__CET__ & 1)
         DWRF_U8(DWRF_CFA_advance_loc | 4);    // Advance past endbr64 (4 bytes)
 #  endif
@@ -547,10 +547,6 @@ static void elf_init_ehframe(ELFObjectContext* ctx, int absolute_addr) {
         DWRF_U8(DWRF_CFA_advance_loc | 3);    // Advance past mov %rsp,%rbp (3 bytes)
         DWRF_U8(DWRF_CFA_def_cfa_register);   // def_cfa_register r6
         DWRF_UV(DWRF_REG_BP);                 // Use base pointer register
-        DWRF_U8(DWRF_CFA_advance_loc | 3);    // Advance past call *%rcx (2 bytes) + pop %rbp (1 byte) = 3
-        DWRF_U8(DWRF_CFA_def_cfa);            // def_cfa r7 ofs 8
-        DWRF_UV(DWRF_REG_SP);                 // Use stack pointer register
-        DWRF_UV(8);                           // New offset: SP + 8
 #elif defined(__aarch64__) && defined(__AARCH64EL__) && !defined(__ILP32__)
         /* AArch64 calling convention unwinding rules */
         DWRF_U8(DWRF_CFA_advance_loc | 1);        // Advance by 1 instruction (4 bytes)
