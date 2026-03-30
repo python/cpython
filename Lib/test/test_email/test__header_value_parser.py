@@ -2900,8 +2900,7 @@ class TestParser(TestParserMixin, TestEmailBase):
             'vtext',
             'misplaced-special',
             )
-        if local_part and local_part != ...:
-            self.assertEqual(lp.local_part, local_part)
+        self.assertEqual(lp.local_part, local_part)
 
     @params_map(with_namelist=True)
     def adapt_get_dot_atom_tests_for_get_local_part(nl, s, *args, **kw):
@@ -2989,107 +2988,83 @@ class TestParser(TestParserMixin, TestEmailBase):
 
         simple = C(
             'dinsdale@python.org',
-            'dinsdale',
-            'dinsdale',
-            [],
-            '@python.org',
+            remainder='@python.org',
+            local_part='dinsdale',
             ),
-       #self.assertEqual(local_part.local_part, 'dinsdale')
 
         with_dot = C(
             'Fred.A.Johnson@python.org',
-            'Fred.A.Johnson',
-            'Fred.A.Johnson',
-            [],
-            '@python.org',
+            remainder='@python.org',
+            local_part='Fred.A.Johnson',
             ),
-       #self.assertEqual(local_part.local_part, 'Fred.A.Johnson')
 
         with_whitespace = C(
             ' Fred.A.Johnson  @python.org',
-            ' Fred.A.Johnson  ',
-            ' Fred.A.Johnson ',
-            [],
-            '@python.org',
+            value=' Fred.A.Johnson ',
+            remainder='@python.org',
+            local_part='Fred.A.Johnson',
             ),
-       #self.assertEqual(local_part.local_part, 'Fred.A.Johnson')
 
         with_cfws = C(
             ' (foo) Fred.A.Johnson (bar (bird))  @python.org',
-            ' (foo) Fred.A.Johnson (bar (bird))  ',
-            ' Fred.A.Johnson ',
-            [],
-            '@python.org',
-            ['foo', 'bar (bird)'],
+            value=' Fred.A.Johnson ',
+            remainder='@python.org',
+            comments=['foo', 'bar (bird)'],
+            local_part='Fred.A.Johnson',
             ),
-       #self.assertEqual(local_part.local_part, 'Fred.A.Johnson')
 
         simple_quoted = C(
             '"dinsdale"@python.org',
-            '"dinsdale"',
-            '"dinsdale"',
-            [],
-            '@python.org',
+            remainder='@python.org',
+            local_part='dinsdale',
             ),
-       #self.assertEqual(local_part.local_part, 'dinsdale')
 
         with_quoted_dot = C(
             '"Fred.A.Johnson"@python.org',
-            '"Fred.A.Johnson"',
-            '"Fred.A.Johnson"',
-            [],
-            '@python.org',
+            remainder='@python.org',
+            local_part='Fred.A.Johnson',
             ),
-       #self.assertEqual(local_part.local_part, 'Fred.A.Johnson')
 
         quoted_with_whitespace = C(
             ' "Fred A. Johnson"  @python.org',
-            ' "Fred A. Johnson"  ',
-            ' "Fred A. Johnson" ',
-            [],
-            '@python.org',
+            value=' "Fred A. Johnson" ',
+            remainder='@python.org',
+            local_part='Fred A. Johnson',
             ),
-       #self.assertEqual(local_part.local_part, 'Fred A. Johnson')
 
         quoted_with_cfws = C(
             ' (foo) " Fred A. Johnson " (bar (bird))  @python.org',
-            ' (foo) " Fred A. Johnson " (bar (bird))  ',
-            ' " Fred A. Johnson " ',
-            [],
-            '@python.org',
-            ['foo', 'bar (bird)'],
+            value=' " Fred A. Johnson " ',
+            remainder='@python.org',
+            comments=['foo', 'bar (bird)'],
+            local_part=' Fred A. Johnson ',
             ),
-       #self.assertEqual(local_part.local_part, ' Fred A. Johnson ')
 
 
         simple_obsolete = C(
             'Fred. A.Johnson@python.org',
-            'Fred. A.Johnson',
-            'Fred. A.Johnson',
-            [errors.ObsoleteHeaderDefect],
-            '@python.org',
+            defects=[errors.ObsoleteHeaderDefect],
+            remainder='@python.org',
+            local_part='Fred.A.Johnson',
             ),
-       #self.assertEqual(local_part.local_part, 'Fred.A.Johnson')
 
         complex_obsolete_1 = C(
             ' (foo )Fred (bar).(bird) A.(sheep)Johnson."and  dogs "@python.org',
-            ' (foo )Fred (bar).(bird) A.(sheep)Johnson."and  dogs "',
-            ' Fred . A. Johnson.and  dogs ',
-            [errors.ObsoleteHeaderDefect],
-            '@python.org',
-            ['foo ', 'bar', 'bird', 'sheep'],
+            value=' Fred . A. Johnson.and  dogs ',
+            defects=[errors.ObsoleteHeaderDefect],
+            remainder='@python.org',
+            comments=['foo ', 'bar', 'bird', 'sheep'],
+            local_part='Fred.A.Johnson.and  dogs ',
             ),
-       #self.assertEqual(local_part.local_part, 'Fred.A.Johnson.and  dogs ')
 
         complex_obsolete_invalid = C(
             ' (foo )Fred (bar).(bird) A.(sheep)Johnson "and  dogs"@python.org',
-            ' (foo )Fred (bar).(bird) A.(sheep)Johnson "and  dogs"',
-            ' Fred . A. Johnson and  dogs',
-            [errors.InvalidHeaderDefect]*2,
-            '@python.org',
-            ['foo ', 'bar', 'bird', 'sheep'],
+            value=' Fred . A. Johnson and  dogs',
+            defects=[errors.InvalidHeaderDefect]*2,
+            remainder='@python.org',
+            comments=['foo ', 'bar', 'bird', 'sheep'],
+            local_part='Fred.A.Johnson and  dogs',
             ),
-       #self.assertEqual(local_part.local_part, 'Fred.A.Johnson and  dogs')
 
         empty_raises = C(
             '',
@@ -3108,67 +3083,56 @@ class TestParser(TestParserMixin, TestEmailBase):
 
         trailing_dot = C(
             ' borris.@python.org',
-            ' borris.',
-            ' borris.',
-            [errors.InvalidHeaderDefect]*2,
-            '@python.org',
+            defects=[errors.InvalidHeaderDefect]*2,
+            remainder='@python.org',
+            local_part='borris.',
             ),
-       #self.assertEqual(local_part.local_part, 'borris.')
 
         trailing_dot_with_ws = C(
             ' borris. @python.org',
-            ' borris. ',
-            ' borris. ',
-            [errors.InvalidHeaderDefect]*2,
-            '@python.org',
+            defects=[errors.InvalidHeaderDefect]*2,
+            remainder='@python.org',
+            local_part='borris.',
             ),
-       #self.assertEqual(local_part.local_part, 'borris.')
 
         leading_dot = C(
             '.borris@python.org',
-            '.borris',
-            '.borris',
-            [errors.InvalidHeaderDefect]*2,
-            '@python.org',
+            defects=[errors.InvalidHeaderDefect]*2,
+            remainder='@python.org',
+            local_part='.borris',
             ),
-       #self.assertEqual(local_part.local_part, '.borris')
 
         leading_dot_after_ws = C(
             ' .borris@python.org',
-            ' .borris',
-            ' .borris',
-            [errors.InvalidHeaderDefect]*2,
-            '@python.org',
+            defects=[errors.InvalidHeaderDefect]*2,
+            remainder='@python.org',
+            local_part='.borris',
             ),
-       #self.assertEqual(local_part.local_part, '.borris')
 
         dots_around_comment = C(
             ' borris.(foo).natasha@python.org',
-            ' borris.(foo).natasha',
-            ' borris. .natasha',
-            [errors.InvalidHeaderDefect]*2,
-            '@python.org',
-            ['foo'],
+            value=' borris. .natasha',
+            defects=[errors.InvalidHeaderDefect]*2,
+            remainder='@python.org',
+            comments=['foo'],
+            local_part='borris..natasha',
             ),
-       #self.assertEqual(local_part.local_part, 'borris..natasha')
 
         quoted_strings_in_atom_list = C(
             '""example" example"@example.com',
-            '""example" example"',
-            'example example',
-            [errors.InvalidHeaderDefect]*3,
-            '@example.com',
+            value='example example',
+            defects=[errors.InvalidHeaderDefect]*3,
+            remainder='@example.com',
+            local_part="example example",
             ),
-       #self.assertEqual(local_part.local_part, 'example example')
 
         valid_and_invalid_qp_in_atom_list = C(
             r'"\\"example\\" example"@example.com',
-            r'"\\"example\\" example"',
-            r'\example\\ example',
-            [errors.InvalidHeaderDefect]*5,
-            '@example.com',
+            value=r'\example\\ example',
+            defects=[errors.InvalidHeaderDefect]*5,
+            remainder='@example.com',
+            local_part=r'\example\\ example',
             ),
-       #self.assertEqual(local_part.local_part, r'\example\\ example')
 
         )
 
