@@ -92,7 +92,7 @@ jobs:
         restore-keys: |
           ubuntu-doc-
     - name: 'Install Dependencies'
-      run: sudo ./.github/workflows/posix-deps-apt.sh && sudo apt-get install wamerican
+      run: sudo ./.github/workflows/posix-deps-apt.sh && sudo apt-get install --no-install-recommends wamerican
     - name: 'Configure CPython'
       run: ./configure --with-pydebug
     - name: 'Build CPython'

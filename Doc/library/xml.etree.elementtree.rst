@@ -4,8 +4,6 @@
 .. module:: xml.etree.ElementTree
    :synopsis: Implementation of the ElementTree API.
 
-.. moduleauthor:: Fredrik Lundh <fredrik@pythonware.com>
-
 **Source code:** :source:`Lib/xml/etree/ElementTree.py`
 
 --------------
@@ -704,6 +702,9 @@ Functions
    attributes.  *extra* contains additional attributes, given as keyword
    arguments.  Returns an element instance.
 
+   .. versionchanged:: 3.15
+      *attrib* can now be a :class:`frozendict`.
+
    .. versionchanged:: next
       *parent* and *tag* are now positional-only parameters.
 
@@ -891,6 +892,9 @@ Element Objects
    bytestrings or Unicode strings.  *tag* is the element name.  *attrib* is
    an optional dictionary, containing element attributes.  *extra* contains
    additional attributes, given as keyword arguments.
+
+   .. versionchanged:: 3.15
+      *attrib* can now be a :class:`frozendict`.
 
    .. versionchanged:: next
       *tag* is now a positional-only parameter.
