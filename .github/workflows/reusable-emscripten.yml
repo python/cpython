@@ -10,7 +10,7 @@ jobs:
   build-emscripten-reusable:
     name: 'build and test'
     runs-on: ubuntu-24.04
-    timeout-minutes: 60
+    timeout-minutes: 40
     steps:
     - uses: actions/checkout@v6
       with:
