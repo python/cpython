@@ -5361,6 +5361,31 @@ class ClassPropertiesAndMethods(unittest.TestCase):
         with self.assertRaisesRegex(NotImplementedError, "BAR"):
             B().foo
 
+    def test_gh146587(self):
+        # See https://github.com/python/cpython/issues/146587
+
+        class A:
+            def __radd__(self, other): ...
+
+        class B(tuple): ...
+
+        self.assertIsNone(() + A())
+        self.assertIsNone(B() + A())
+
+        from typing import NamedTuple
+
+        class T(NamedTuple):
+            x: int
+
+        class A:
+            def __init__(self, *args):
+                self.lst = list(args)
+            def __radd__(self, other):
+                return A(*self.lst, other)
+
+        self.assertEqual(((1,)+A()).lst, [(1,)])
+        self.assertEqual((T(x=1)+A()).lst, [T(x=1)])
+
 
 class DictProxyTests(unittest.TestCase):
     def setUp(self):
