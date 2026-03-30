@@ -703,7 +703,7 @@ test_edit_cost(PyObject *self, PyObject *Py_UNUSED(args))
 
 static int
 check_bytes_find(const char *haystack0, const char *needle0,
-                 int offset, Py_ssize_t expected)
+                 Py_ssize_t offset, Py_ssize_t expected)
 {
     Py_ssize_t len_haystack = strlen(haystack0);
     Py_ssize_t len_needle = strlen(needle0);
@@ -711,7 +711,7 @@ check_bytes_find(const char *haystack0, const char *needle0,
                                         needle0, len_needle, offset);
     if (result_1 != expected) {
         PyErr_Format(PyExc_AssertionError,
-                    "Incorrect result_1: '%s' in '%s' (offset=%d)",
+                    "Incorrect result_1: '%s' in '%s' (offset=%zd)",
                     needle0, haystack0, offset);
         return -1;
     }
@@ -735,7 +735,7 @@ check_bytes_find(const char *haystack0, const char *needle0,
     PyMem_Free(needle);
     if (result_2 != expected) {
         PyErr_Format(PyExc_AssertionError,
-                    "Incorrect result_2: '%s' in '%s' (offset=%d)",
+                    "Incorrect result_2: '%s' in '%s' (offset=%zd)",
                     needle0, haystack0, offset);
         return -1;
     }
