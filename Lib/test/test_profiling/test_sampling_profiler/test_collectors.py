@@ -1667,8 +1667,8 @@ class TestSampleProfilerComponents(unittest.TestCase):
         self.assertAlmostEqual(cold_node["diff_pct"], -50.0)
 
     def test_jsonl_collector_export(self):
-        collapsed_out = tempfile.NamedTemporaryFile(delete=False)
-        self.addCleanup(close_and_unlink, collapsed_out)
+        jsonl_out = tempfile.NamedTemporaryFile(delete=False)
+        self.addCleanup(close_and_unlink, jsonl_out)
 
         collector = JsonlCollector(1000)
         run_id = collector.run_id
@@ -1706,10 +1706,10 @@ class TestSampleProfilerComponents(unittest.TestCase):
         collector.collect(test_frames3)
 
         with captured_stdout(), captured_stderr():
-            collector.export(collapsed_out.name)
+            collector.export(jsonl_out.name)
 
         # Check file contents
-        with open(collapsed_out.name, "r") as f:
+        with open(jsonl_out.name, "r") as f:
             content = f.read()
 
         lines = content.strip().split("\n")
@@ -2147,8 +2147,8 @@ class TestLocationInCollectors(unittest.TestCase):
 
     def test_jsonl_collector_with_location_info(self):
         """Test JsonlCollector handles LocationInfo properly."""
-        collapsed_out = tempfile.NamedTemporaryFile(delete=False)
-        self.addCleanup(close_and_unlink, collapsed_out)
+        jsonl_out = tempfile.NamedTemporaryFile(delete=False)
+        self.addCleanup(close_and_unlink, jsonl_out)
 
         collector = JsonlCollector(sample_interval_usec=1000)
         run_id = collector.run_id
@@ -2164,10 +2164,10 @@ class TestLocationInCollectors(unittest.TestCase):
 
         # Should extract lineno from location
         with captured_stdout(), captured_stderr():
-            collector.export(collapsed_out.name)
+            collector.export(jsonl_out.name)
 
         # Check file contents
-        with open(collapsed_out.name, "r") as f:
+        with open(jsonl_out.name, "r") as f:
             content = f.read()
 
         lines = content.strip().split("\n")
@@ -2197,8 +2197,8 @@ class TestLocationInCollectors(unittest.TestCase):
 
     def test_jsonl_collector_with_none_location(self):
         """Test JsonlCollector handles None location (synthetic frames)."""
-        collapsed_out = tempfile.NamedTemporaryFile(delete=False)
-        self.addCleanup(close_and_unlink, collapsed_out)
+        jsonl_out = tempfile.NamedTemporaryFile(delete=False)
+        self.addCleanup(close_and_unlink, jsonl_out)
 
         collector = JsonlCollector(sample_interval_usec=1000)
         run_id = collector.run_id
@@ -2216,10 +2216,10 @@ class TestLocationInCollectors(unittest.TestCase):
 
         # Should handle None location as synthetic frame
         with captured_stdout(), captured_stderr():
-            collector.export(collapsed_out.name)
+            collector.export(jsonl_out.name)
 
         # Check file contents
-        with open(collapsed_out.name, "r") as f:
+        with open(jsonl_out.name, "r") as f:
             content = f.read()
 
         lines = content.strip().split("\n")
