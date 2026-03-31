@@ -367,8 +367,9 @@ class TestReader(ScreenEqualMixin, TestCase):
 
     def test_bow_ws_includes_punctuation_in_word(self):
         reader = prepare_reader(prepare_console([]))
-        reader.buffer = list("foo.bar(baz) qux")
-        reader.pos = 12
+        buf = "foo.bar(baz) qux"
+        reader.buffer = list(buf)
+        reader.pos = buf.index(")") + 1
         self.assertEqual(reader.bow_ws(), 0)
 
     def test_bow_vs_bow_ws(self):
