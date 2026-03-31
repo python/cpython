@@ -533,6 +533,22 @@ static void elf_init_ehframe(ELFObjectContext* ctx, int absolute_addr) {
          * These instructions describe how registers are saved and restored
          * during function calls. Each architecture has different calling
          * conventions and register usage patterns.
+         *
+         * GDB JIT invariant (absolute_addr == 1):
+         *
+         * We emit one synthetic FDE for the whole registered JIT region and
+         * treat that region as one logical native frame while unwinding. This
+         * relies on the generated executor stencils preserving the
+         * frame-pointer register across the whole region (%rbp on x86_64,
+         * x29 on AArch64). Individual stencils may still adjust SP or spill
+         * temporaries, but they must not clobber the frame pointer or move
+         * the recoverable caller state away from the frame layout described by
+         * the steady-state CFI below.
+         *
+         * If code generation changes so that executor stencils start touching
+         * the frame pointer, or the caller state is no longer recoverable from
+         * this frame layout, then this synthetic GDB CFI must be updated
+         * together with the stencil generator and tests.
          */
 #ifdef __x86_64__
         /* x86_64 calling convention unwinding rules; keep CFA on %rbp */
@@ -547,6 +563,12 @@ static void elf_init_ehframe(ELFObjectContext* ctx, int absolute_addr) {
         DWRF_U8(DWRF_CFA_advance_loc | 3);    // Advance past mov %rsp,%rbp (3 bytes)
         DWRF_U8(DWRF_CFA_def_cfa_register);   // def_cfa_register r6
         DWRF_UV(DWRF_REG_BP);                 // Use base pointer register
+        if (!absolute_addr) {
+            DWRF_U8(DWRF_CFA_advance_loc | 3);    // Advance past call *%rcx (2 bytes) + pop %rbp (1 byte) = 3
+            DWRF_U8(DWRF_CFA_def_cfa);            // def_cfa r7 ofs 8
+            DWRF_UV(DWRF_REG_SP);                 // Use stack pointer register
+            DWRF_UV(8);                           // New offset: SP + 8
+        }
 #elif defined(__aarch64__) && defined(__AARCH64EL__) && !defined(__ILP32__)
         /* AArch64 calling convention unwinding rules */
         DWRF_U8(DWRF_CFA_advance_loc | 1);        // Advance by 1 instruction (4 bytes)
@@ -562,14 +584,16 @@ static void elf_init_ehframe(ELFObjectContext* ctx, int absolute_addr) {
         DWRF_U8(DWRF_CFA_def_cfa_offset);         // CFA = SP + 0 (stack restored)
         DWRF_UV(0);                               // Back to original stack position
 
-        DWRF_U8(DWRF_CFA_def_cfa_register);       // CFA = FP (x29)
-        DWRF_UV(DWRF_REG_FP);
-        DWRF_U8(DWRF_CFA_def_cfa_offset);         // CFA = FP + 16
-        DWRF_UV(16);
-        DWRF_U8(DWRF_CFA_offset | DWRF_REG_FP);   // x29 saved
-        DWRF_UV(2);
-        DWRF_U8(DWRF_CFA_offset | DWRF_REG_RA);   // x30 saved
-        DWRF_UV(1);
+        if (absolute_addr) {
+            DWRF_U8(DWRF_CFA_def_cfa_register);       // CFA = FP (x29)
+            DWRF_UV(DWRF_REG_FP);
+            DWRF_U8(DWRF_CFA_def_cfa_offset);         // CFA = FP + 16
+            DWRF_UV(16);
+            DWRF_U8(DWRF_CFA_offset | DWRF_REG_FP);   // x29 saved
+            DWRF_UV(2);
+            DWRF_U8(DWRF_CFA_offset | DWRF_REG_RA);   // x30 saved
+            DWRF_UV(1);
+        }
 
 #else
 #    error "Unsupported target architecture"
