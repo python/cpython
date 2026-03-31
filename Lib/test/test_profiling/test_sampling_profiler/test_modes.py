@@ -238,8 +238,8 @@ cpu_thread.join()
         import tempfile
         import json
 
-        collapsed_out = tempfile.NamedTemporaryFile(delete=False)
-        self.addCleanup(close_and_unlink, collapsed_out)
+        jsonl_out = tempfile.NamedTemporaryFile(delete=False)
+        self.addCleanup(close_and_unlink, jsonl_out)
 
         # Create mock frames with different thread statuses
         class MockThreadInfoWithStatus:
@@ -287,10 +287,10 @@ cpu_thread.join()
 
         # Should only have functions from running threads (status 0)
         with captured_stdout(), captured_stderr():
-            collector_skip.export(collapsed_out.name)
+            collector_skip.export(jsonl_out.name)
 
         # Check file contents
-        with open(collapsed_out.name, "r") as f:
+        with open(jsonl_out.name, "r") as f:
             content = f.read()
 
         lines = content.strip().split("\n")
@@ -333,10 +333,10 @@ cpu_thread.join()
 
         # Should have functions from all threads
         with captured_stdout(), captured_stderr():
-            collector_no_skip.export(collapsed_out.name)
+            collector_no_skip.export(jsonl_out.name)
 
         # Check file contents
-        with open(collapsed_out.name, "r") as f:
+        with open(jsonl_out.name, "r") as f:
             content = f.read()
 
         lines = content.strip().split("\n")
