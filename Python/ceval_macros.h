@@ -568,13 +568,13 @@ gen_try_set_executing(PyGenObject *gen)
 // cached small int singleton. We check _Py_IsImmortal on TARGET
 // to decide whether inplace mutation is safe.
 //
-// After the macro:
-//   _int_inplace_ok = 1: mutated TARGET in place (caller uses TARGET as res)
-//   _int_inplace_ok = 0: _int_inplace_res holds the fallback result
-//                         (may be NULL on allocation failure)
+// After the macro, _int_inplace_res holds the result (may be NULL
+// on allocation failure). On success, TARGET was mutated in place
+// and _int_inplace_res is a DUP'd reference to it. On fallback
+// (small int target, small int result, or overflow), _int_inplace_res
+// is from FUNC (_PyCompactLong_Add etc.).
 // FUNC is the fallback function (_PyCompactLong_Add etc.)
 #define INT_INPLACE_OP(left, right, TARGET, OP, FUNC)                    \
-    int _int_inplace_ok = 0;                                             \
     _PyStackRef _int_inplace_res = PyStackRef_NULL;                      \
     do {                                                                 \
         PyObject *_target_o = PyStackRef_AsPyObjectBorrow(TARGET);       \
@@ -595,10 +595,11 @@ gen_try_set_executing(PyGenObject *gen)
                 (PyLongObject *)_target_o, _result < 0 ? -1 : 1, 1);    \
             ((PyLongObject *)_target_o)->long_value.ob_digit[0] =        \
                 (digit)(_result < 0 ? -_result : _result);               \
-            _int_inplace_ok = 1;                                         \
+            _int_inplace_res = PyStackRef_DUP(TARGET);                   \
+            break;                                                       \
         }                                                                \
     } while (0);                                                         \
-    if (!_int_inplace_ok) {                                              \
+    if (PyStackRef_IsNull(_int_inplace_res)) {                           \
         _int_inplace_res = FUNC(                                         \
             (PyLongObject *)PyStackRef_AsPyObjectBorrow(left),           \
             (PyLongObject *)PyStackRef_AsPyObjectBorrow(right));         \

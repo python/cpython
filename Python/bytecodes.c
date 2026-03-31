@@ -713,13 +713,8 @@ dummy_func(
         // the following _POP_TOP_INT becomes _POP_TOP_NOP. Tier 2 only.
         tier2 op(_BINARY_OP_ADD_INT_INPLACE, (left, right -- res, l, r)) {
             INT_INPLACE_OP(left, right, left, +, _PyCompactLong_Add);
-            EXIT_IF(!_int_inplace_ok && PyStackRef_IsNull(_int_inplace_res));
-            if (_int_inplace_ok) {
-                res = PyStackRef_DUP(left);
-            }
-            else {
-                res = _int_inplace_res;
-            }
+            EXIT_IF(PyStackRef_IsNull(_int_inplace_res));
+            res = _int_inplace_res;
             l = left;
             r = right;
             INPUTS_DEAD();
@@ -727,13 +722,8 @@ dummy_func(
 
         tier2 op(_BINARY_OP_SUBTRACT_INT_INPLACE, (left, right -- res, l, r)) {
             INT_INPLACE_OP(left, right, left, -, _PyCompactLong_Subtract);
-            EXIT_IF(!_int_inplace_ok && PyStackRef_IsNull(_int_inplace_res));
-            if (_int_inplace_ok) {
-                res = PyStackRef_DUP(left);
-            }
-            else {
-                res = _int_inplace_res;
-            }
+            EXIT_IF(PyStackRef_IsNull(_int_inplace_res));
+            res = _int_inplace_res;
             l = left;
             r = right;
             INPUTS_DEAD();
@@ -741,13 +731,8 @@ dummy_func(
 
         tier2 op(_BINARY_OP_MULTIPLY_INT_INPLACE, (left, right -- res, l, r)) {
             INT_INPLACE_OP(left, right, left, *, _PyCompactLong_Multiply);
-            EXIT_IF(!_int_inplace_ok && PyStackRef_IsNull(_int_inplace_res));
-            if (_int_inplace_ok) {
-                res = PyStackRef_DUP(left);
-            }
-            else {
-                res = _int_inplace_res;
-            }
+            EXIT_IF(PyStackRef_IsNull(_int_inplace_res));
+            res = _int_inplace_res;
             l = left;
             r = right;
             INPUTS_DEAD();
@@ -755,13 +740,8 @@ dummy_func(
 
         tier2 op(_BINARY_OP_ADD_INT_INPLACE_RIGHT, (left, right -- res, l, r)) {
             INT_INPLACE_OP(left, right, right, +, _PyCompactLong_Add);
-            EXIT_IF(!_int_inplace_ok && PyStackRef_IsNull(_int_inplace_res));
-            if (_int_inplace_ok) {
-                res = PyStackRef_DUP(right);
-            }
-            else {
-                res = _int_inplace_res;
-            }
+            EXIT_IF(PyStackRef_IsNull(_int_inplace_res));
+            res = _int_inplace_res;
             l = left;
             r = right;
             INPUTS_DEAD();
@@ -769,13 +749,8 @@ dummy_func(
 
         tier2 op(_BINARY_OP_SUBTRACT_INT_INPLACE_RIGHT, (left, right -- res, l, r)) {
             INT_INPLACE_OP(left, right, right, -, _PyCompactLong_Subtract);
-            EXIT_IF(!_int_inplace_ok && PyStackRef_IsNull(_int_inplace_res));
-            if (_int_inplace_ok) {
-                res = PyStackRef_DUP(right);
-            }
-            else {
-                res = _int_inplace_res;
-            }
+            EXIT_IF(PyStackRef_IsNull(_int_inplace_res));
+            res = _int_inplace_res;
             l = left;
             r = right;
             INPUTS_DEAD();
@@ -783,13 +758,8 @@ dummy_func(
 
         tier2 op(_BINARY_OP_MULTIPLY_INT_INPLACE_RIGHT, (left, right -- res, l, r)) {
             INT_INPLACE_OP(left, right, right, *, _PyCompactLong_Multiply);
-            EXIT_IF(!_int_inplace_ok && PyStackRef_IsNull(_int_inplace_res));
-            if (_int_inplace_ok) {
-                res = PyStackRef_DUP(right);
-            }
-            else {
-                res = _int_inplace_res;
-            }
+            EXIT_IF(PyStackRef_IsNull(_int_inplace_res));
+            res = _int_inplace_res;
             l = left;
             r = right;
             INPUTS_DEAD();

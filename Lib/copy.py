@@ -107,6 +107,10 @@ _copy_atomic_types = frozenset({types.NoneType, int, float, bool, complex, str, 
           weakref.ref, super})
 _copy_builtin_containers = frozenset({list, dict, set, bytearray})
 
+import _testcapi
+_testcapi.pyobject_enable_deferred_refcount(_copy_atomic_types)
+_testcapi.pyobject_enable_deferred_refcount(_copy_builtin_containers)
+
 def deepcopy(x, memo=None):
     """Deep copy operation on arbitrary Python objects.
 
@@ -167,6 +171,11 @@ _atomic_types = frozenset({types.NoneType, types.EllipsisType, types.NotImplemen
           types.BuiltinFunctionType, types.FunctionType, weakref.ref, property})
 
 _deepcopy_dispatch = d = {}
+
+#import _testcapi
+#_testcapi.pyobject_enable_deferred_refcount(_atomic_types)
+#_testcapi.pyobject_enable_deferred_refcount(_deepcopy_dispatch)
+
 
 
 def _deepcopy_list(x, memo, deepcopy=deepcopy):
