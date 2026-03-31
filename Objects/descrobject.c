@@ -1607,7 +1607,7 @@ property_set_name(PyObject *self, PyObject *args) {
     if (PyTuple_GET_SIZE(args) != 2) {
         PyErr_Format(
                 PyExc_TypeError,
-                "__set_name__() takes 2 positional arguments but %d were given",
+                "__set_name__() takes 2 positional arguments but %zd were given",
                 PyTuple_GET_SIZE(args));
         return NULL;
     }
