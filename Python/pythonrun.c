@@ -1382,11 +1382,11 @@ get_interactive_filename(PyObject *filename, Py_ssize_t count)
         if (middle == NULL) {
             return NULL;
         }
-        result = PyUnicode_FromFormat("<%U-%d>", middle, count);
+        result = PyUnicode_FromFormat("<%U-%zd>", middle, count);
         Py_DECREF(middle);
     } else {
         result = PyUnicode_FromFormat(
-            "%U-%d", filename, count);
+            "%U-%zd", filename, count);
     }
     return result;
 
