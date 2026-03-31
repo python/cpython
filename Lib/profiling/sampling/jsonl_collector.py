@@ -48,9 +48,6 @@ class JsonlCollector(StackTraceCollector):
         self._mode = mode
 
     def process_frames(self, frames, _thread_id, weight=1):
-        if not frames:
-            return
-
         self._samples_total += weight
         self._seen_frame_ids.clear()
 
