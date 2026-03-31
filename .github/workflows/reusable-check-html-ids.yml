@@ -1,4 +1,4 @@
-name: Reusable Check HTML IDs Check
+name: Reusable check HTML IDs
 
 on:
   workflow_call:
@@ -39,7 +39,7 @@ jobs:
           path: /tmp
       - name: 'Check for removed HTML IDs'
         run: >-
-          python Doc/tools/check-html-ids.py check
+          python Doc/tools/check-html-ids.py -v check
           /tmp/html-ids-base.json.gz /tmp/html-ids-head.json.gz
         # XXX: When an exclude file is added, update this to use it:
         # --exclude-file Doc/tools/removed-ids.txt
