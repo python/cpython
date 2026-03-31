@@ -159,7 +159,7 @@ Python/frozen_modules/MANIFEST
 
 .z.cache
 
-# Nanvix build state (keep .nanvix/z.py, nanvix.toml, tests/ tracked)
+# Nanvix build state (keep .nanvix/z.py tracked)
 .nanvix/venv/
 .nanvix/cache/
 .nanvix/sysroot/
