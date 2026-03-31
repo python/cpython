@@ -378,6 +378,31 @@ class LimitedAPIList(SphinxDirective):
         return [node]
 
 
+class VersionHexCheatsheet(SphinxDirective):
+    """Show results of Py_PACK_VERSION(3, x) for a few relevant Python versions
+
+    This is useful for defining version before Python.h is included.
+    It should auto-update to the version being documented, hence the extension.
+    """
+    has_content = False
+    required_arguments = 0
+    optional_arguments = 0
+    final_argument_whitespace = True
+
+    def run(self) -> list[nodes.Node]:
+        content = [
+            ".. code-block:: c",
+            "",
+        ]
+        current_minor = int(self.config.version.removeprefix('3.'))
+        for minor in range(current_minor - 5, current_minor + 1):
+            value = (3 << 24) | (minor << 16)
+            content.append(f'    {value:#x}  /* Py_PACK_VERSION(3.{minor}) */')
+        node = nodes.paragraph()
+        self.state.nested_parse(StringList(content), 0, node)
+        return [node]
+
+
 class CorrespondingTypeSlot(SphinxDirective):
     """Type slot annotations
 
@@ -443,6 +468,7 @@ def setup(app: Sphinx) -> ExtensionMetadata:
     app.add_config_value("stable_abi_file", "", "env", types={str})
     app.add_config_value("threadsafety_file", "", "env", types={str})
     app.add_directive("limited-api-list", LimitedAPIList)
+    app.add_directive("version-hex-cheatsheet", VersionHexCheatsheet)
     app.add_directive("corresponding-type-slot", CorrespondingTypeSlot)
     app.connect("builder-inited", init_annotations)
     app.connect("doctree-read", add_annotations)
