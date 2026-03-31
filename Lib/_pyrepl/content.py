@@ -59,14 +59,24 @@ def build_body_fragments(
     colors: list[ColorSpan] | None,
     start_index: int,
 ) -> tuple[ContentFragment, ...]:
+    if colors is None:
+        return tuple(
+            ContentFragment(
+                styled_char.text,
+                styled_char.width,
+                StyleRef(),
+            )
+            for styled_char in iter_display_chars(buffer, colors, start_index)
+        )
+
     theme = THEME()
     return tuple(
         ContentFragment(
             styled_char.text,
             styled_char.width,
             StyleRef.from_tag(styled_char.tag, theme[styled_char.tag])
-            if styled_char.tag else
-            StyleRef(),
+            if styled_char.tag
+            else StyleRef(),
         )
         for styled_char in iter_display_chars(buffer, colors, start_index)
     )
