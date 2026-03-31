@@ -296,6 +296,23 @@ class StencilGroup:
                 self._trampolines.add(ordinal)
                 hole.addend = ordinal
                 hole.symbol = None
+            # aarch64 trampolines for operand-based call targets (e.g. inlined cfunc)
+            elif (
+                hole.kind
+                in {"R_AARCH64_CALL26", "R_AARCH64_JUMP26", "ARM64_RELOC_BRANCH26"}
+                and hole.value in {HoleValue.OPERAND0, HoleValue.OPERAND1}
+            ):
+                value_expr = _HOLE_EXPRS[hole.value]
+                synth_name = f"_JIT_TRAMPOLINE_{hole.value.name}"
+                if synth_name in known_symbols:
+                    ordinal = known_symbols[synth_name]
+                else:
+                    ordinal = len(known_symbols)
+                    known_symbols[synth_name] = ordinal
+                self._trampolines.add(ordinal)
+                hole.func = "patch_aarch64_trampoline_addr"
+                hole.need_state = True
+                hole.custom_value = f"{ordinal}, {value_expr}"
             # x86_64 Darwin trampolines for external symbols
             elif (
                 hole.kind == "X86_64_RELOC_BRANCH"
