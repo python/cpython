@@ -16,7 +16,7 @@ from .collector import normalize_location
 from .stack_collector import StackTraceCollector
 
 
-_CHUNK_SIZE = 1000
+_CHUNK_SIZE = 256
 
 _MODE_NAMES = {
     PROFILING_MODE_WALL: "wall",
