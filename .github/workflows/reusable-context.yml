@@ -41,6 +41,9 @@ on:  # yamllint disable-line rule:truthy
       run-ubuntu:
         description: Whether to run the Ubuntu tests
         value: ${{ jobs.compute-changes.outputs.run-ubuntu }}  # bool
+      run-emscripten:
+        description: Whether to run the Emscripten tests
+        value: ${{ jobs.compute-changes.outputs.run-emscripten }}  # bool
       run-wasi:
         description: Whether to run the WASI tests
         value: ${{ jobs.compute-changes.outputs.run-wasi }}  # bool
@@ -65,6 +68,7 @@ jobs:
       run-macos: ${{ steps.changes.outputs.run-macos }}
       run-tests: ${{ steps.changes.outputs.run-tests }}
       run-ubuntu: ${{ steps.changes.outputs.run-ubuntu }}
+      run-emscripten: ${{ steps.changes.outputs.run-emscripten }}
       run-wasi: ${{ steps.changes.outputs.run-wasi }}
       run-windows-msi: ${{ steps.changes.outputs.run-windows-msi }}
       run-windows-tests: ${{ steps.changes.outputs.run-windows-tests }}

@@ -1,0 +1,1 @@
+In free-threaded build, fix race condition when calling :meth:`!__sizeof__` on a :class:`list`
