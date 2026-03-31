@@ -2006,9 +2006,48 @@ class TestUopsOptimization(unittest.TestCase):
         self.assertEqual(res, TIER2_THRESHOLD)
         self.assertIsNotNone(ex)
         uops = get_opnames(ex)
-        self.assertEqual(uops.count("_GUARD_NOS_DICT"), 0)
+        self.assertEqual(uops.count("_GUARD_NOS_DICT_SUBSCRIPT"), 0)
+        self.assertEqual(uops.count("_GUARD_NOS_DICT_STORE_SUBSCRIPT"), 0)
         self.assertEqual(uops.count("_STORE_SUBSCR_DICT"), 1)
         self.assertEqual(uops.count("_BINARY_OP_SUBSCR_DICT"), 1)
+
+    def test_dict_subclass_subscr(self):
+        import collections
+
+        def f(n):
+            x = 0
+            d = collections.defaultdict(int)
+            for _ in range(n):
+                d["key"] = 1
+                x += d["key"]
+            return x
+
+        res, ex = self._run_with_optimizer(f, TIER2_THRESHOLD)
+        self.assertEqual(res, TIER2_THRESHOLD)
+        self.assertIsNotNone(ex)
+        uops = get_opnames(ex)
+        self.assertIn("_STORE_SUBSCR_DICT", uops)
+        self.assertIn("_BINARY_OP_SUBSCR_DICT", uops)
+        self.assertNotIn("_GUARD_NOS_DICT_SUBSCRIPT", uops)
+        self.assertNotIn("_GUARD_NOS_DICT_STORE_SUBSCRIPT", uops)
+
+    def test_dict_subclass_subscr_with_override(self):
+        class MyDict(dict):
+            def __getitem__(self, key):
+                return 42
+
+        def f(n):
+            d = MyDict()
+            x = 0
+            for _ in range(n):
+                x += d["anything"]
+            return x
+
+        res, ex = self._run_with_optimizer(f, TIER2_THRESHOLD)
+        self.assertEqual(res, 42 * TIER2_THRESHOLD)
+        self.assertIsNotNone(ex)
+        uops = get_opnames(ex)
+        self.assertNotIn("_BINARY_OP_SUBSCR_DICT", uops)
 
     def test_remove_guard_for_known_type_list(self):
         def f(n):

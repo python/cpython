@@ -1157,6 +1157,18 @@ dummy_func(
             EXIT_IF(!PyAnyDict_CheckExact(o));
         }
 
+        op(_GUARD_NOS_DICT_SUBSCRIPT, (nos, unused -- nos, unused)) {
+            PyObject *o = PyStackRef_AsPyObjectBorrow(nos);
+            DEOPT_IF(!Py_TYPE(o)->tp_as_mapping);
+            DEOPT_IF(Py_TYPE(o)->tp_as_mapping->mp_subscript != _PyDict_Subscript);
+        }
+
+        op(_GUARD_NOS_DICT_STORE_SUBSCRIPT, (unused, nos, unused -- unused, nos, unused)) {
+            PyObject *o = PyStackRef_AsPyObjectBorrow(nos);
+            DEOPT_IF(!Py_TYPE(o)->tp_as_mapping);
+            DEOPT_IF(Py_TYPE(o)->tp_as_mapping->mp_ass_subscript != _PyDict_StoreSubscript);
+        }
+
         op(_GUARD_TOS_ANY_DICT, (tos -- tos)) {
             PyObject *o = PyStackRef_AsPyObjectBorrow(tos);
             EXIT_IF(!PyAnyDict_CheckExact(o));
@@ -1173,20 +1185,16 @@ dummy_func(
         }
 
         macro(BINARY_OP_SUBSCR_DICT) =
-            _GUARD_NOS_ANY_DICT + unused/5 + _BINARY_OP_SUBSCR_DICT + POP_TOP + POP_TOP;
+            _RECORD_NOS_TYPE +
+            _GUARD_NOS_DICT_SUBSCRIPT + unused/5 + _BINARY_OP_SUBSCR_DICT + POP_TOP + POP_TOP;
 
         op(_BINARY_OP_SUBSCR_DICT, (dict_st, sub_st -- res, ds, ss)) {
             PyObject *sub = PyStackRef_AsPyObjectBorrow(sub_st);
             PyObject *dict = PyStackRef_AsPyObjectBorrow(dict_st);
 
-            assert(PyAnyDict_CheckExact(dict));
             STAT_INC(BINARY_OP, hit);
-            PyObject *res_o;
-            int rc = PyDict_GetItemRef(dict, sub, &res_o);
-            if (rc == 0) {
-                _PyErr_SetKeyError(sub);
-            }
-            if (rc <= 0) {
+            PyObject *res_o = _PyDict_Subscript(dict, sub);
+            if (res_o == NULL) {
                 ERROR_NO_POP();
             }
             res = PyStackRef_FromPyObjectSteal(res_o);
@@ -1301,12 +1309,12 @@ dummy_func(
         }
 
         macro(STORE_SUBSCR_DICT) =
-            _GUARD_NOS_DICT + unused/1 + _STORE_SUBSCR_DICT + POP_TOP;
+            _RECORD_NOS_TYPE +
+            _GUARD_NOS_DICT_STORE_SUBSCRIPT + unused/1 + _STORE_SUBSCR_DICT + POP_TOP;
 
         op(_STORE_SUBSCR_DICT, (value, dict_st, sub -- st)) {
             PyObject *dict = PyStackRef_AsPyObjectBorrow(dict_st);
 
-            assert(PyDict_CheckExact(dict));
             STAT_INC(STORE_SUBSCR, hit);
             int err = _PyDict_SetItem_Take2((PyDictObject *)dict,
                                             PyStackRef_AsPyObjectSteal(sub),
@@ -5993,6 +6001,10 @@ dummy_func(
 
         tier2 op(_RECORD_TOS_TYPE, (tos -- tos)) {
             RECORD_VALUE(Py_TYPE(PyStackRef_AsPyObjectBorrow(tos)));
+        }
+
+        tier2 op(_RECORD_NOS_TYPE, (nos, tos -- nos, tos)) {
+            RECORD_VALUE(Py_TYPE(PyStackRef_AsPyObjectBorrow(nos)));
         }
 
         tier2 op(_RECORD_NOS, (nos, tos -- nos, tos)) {

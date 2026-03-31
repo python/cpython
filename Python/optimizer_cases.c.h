@@ -1273,6 +1273,40 @@
             break;
         }
 
+        case _GUARD_NOS_DICT_SUBSCRIPT: {
+            JitOptRef nos;
+            nos = stack_pointer[-2];
+            PyTypeObject *tp = sym_get_type(nos);
+            if (!tp) {
+                tp = sym_get_probable_type(nos);
+            }
+            if (tp && tp->tp_as_mapping &&
+                tp->tp_as_mapping->mp_subscript == _PyDict_Subscript)
+            {
+                PyType_Watch(TYPE_WATCHER_ID, (PyObject *)tp);
+                _Py_BloomFilter_Add(dependencies, tp);
+                ADD_OP(_NOP, 0, 0);
+            }
+            break;
+        }
+
+        case _GUARD_NOS_DICT_STORE_SUBSCRIPT: {
+            JitOptRef nos;
+            nos = stack_pointer[-2];
+            PyTypeObject *tp = sym_get_type(nos);
+            if (!tp) {
+                tp = sym_get_probable_type(nos);
+            }
+            if (tp && tp->tp_as_mapping &&
+                tp->tp_as_mapping->mp_ass_subscript == _PyDict_StoreSubscript)
+            {
+                PyType_Watch(TYPE_WATCHER_ID, (PyObject *)tp);
+                _Py_BloomFilter_Add(dependencies, tp);
+                ADD_OP(_NOP, 0, 0);
+            }
+            break;
+        }
+
         case _GUARD_TOS_ANY_DICT: {
             JitOptRef tos;
             tos = stack_pointer[-1];
@@ -1342,14 +1376,9 @@
                     /* Start of uop copied from bytecodes for constant evaluation */
                     PyObject *sub = PyStackRef_AsPyObjectBorrow(sub_st);
                     PyObject *dict = PyStackRef_AsPyObjectBorrow(dict_st);
-                    assert(PyAnyDict_CheckExact(dict));
                     STAT_INC(BINARY_OP, hit);
-                    PyObject *res_o;
-                    int rc = PyDict_GetItemRef(dict, sub, &res_o);
-                    if (rc == 0) {
-                        _PyErr_SetKeyError(sub);
-                    }
-                    if (rc <= 0) {
+                    PyObject *res_o = _PyDict_Subscript(dict, sub);
+                    if (res_o == NULL) {
                         JUMP_TO_LABEL(error);
                     }
                     res_stackref = PyStackRef_FromPyObjectSteal(res_o);
@@ -4865,6 +4894,14 @@
             tos = stack_pointer[-1];
             PyTypeObject *tp = (PyTypeObject *)this_instr->operand0;
             sym_set_recorded_type(tos, tp);
+            break;
+        }
+
+        case _RECORD_NOS_TYPE: {
+            JitOptRef nos;
+            nos = stack_pointer[-2];
+            PyTypeObject *tp = (PyTypeObject *)this_instr->operand0;
+            sym_set_recorded_type(nos, tp);
             break;
         }
 
