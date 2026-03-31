@@ -124,3 +124,32 @@ PyByteArray_GET_SIZE:atomic:
 # Raw data - no locking; mutating it is unsafe if the bytearray object is shared between threads
 PyByteArray_AsString:compatible:
 PyByteArray_AS_STRING:compatible:
+
+# Capsule objects (Doc/c-api/capsule.rst)
+
+# Type check - read ob_type pointer, always safe
+PyCapsule_CheckExact:atomic:
+
+# Creation - pure allocation, no shared state
+PyCapsule_New:atomic:
+
+# Validation - reads pointer and name fields; safe on distinct objects
+PyCapsule_IsValid:distinct:
+
+# Getters - read struct fields; safe on distinct objects but
+# concurrent access to the same capsule requires external synchronization
+PyCapsule_GetPointer:distinct:
+PyCapsule_GetName:distinct:
+PyCapsule_GetDestructor:distinct:
+PyCapsule_GetContext:distinct:
+
+# Setters - write struct fields; safe on distinct objects but
+# concurrent access to the same capsule requires external synchronization
+PyCapsule_SetPointer:distinct:
+PyCapsule_SetName:distinct:
+PyCapsule_SetDestructor:distinct:
+PyCapsule_SetContext:distinct:
+
+# Import - looks up a capsule from a module attribute and
+# calls PyCapsule_GetPointer; may call arbitrary code
+PyCapsule_Import:compatible:
