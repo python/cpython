@@ -635,6 +635,29 @@ init_interpreter(PyInterpreterState *interp,
                 "PYTHON_JIT_SIDE_EXIT_INITIAL_BACKOFF",
                 SIDE_EXIT_INITIAL_BACKOFF, 0, MAX_BACKOFF);
 
+    // Trace fitness configuration
+    init_policy(&interp->opt_config.fitness_initial,
+                "PYTHON_JIT_FITNESS_INITIAL",
+                FITNESS_INITIAL, 100, 10000);
+    init_policy(&interp->opt_config.fitness_initial_side,
+                "PYTHON_JIT_FITNESS_INITIAL_SIDE",
+                FITNESS_INITIAL_SIDE, 50, 5000);
+    init_policy(&interp->opt_config.fitness_per_instruction,
+                "PYTHON_JIT_FITNESS_PER_INSTRUCTION",
+                FITNESS_PER_INSTRUCTION, 0, 100);
+    init_policy(&interp->opt_config.fitness_branch_biased,
+                "PYTHON_JIT_FITNESS_BRANCH_BIASED",
+                FITNESS_BRANCH_BIASED, 0, 500);
+    init_policy(&interp->opt_config.fitness_branch_unbiased,
+                "PYTHON_JIT_FITNESS_BRANCH_UNBIASED",
+                FITNESS_BRANCH_UNBIASED, 0, 500);
+    init_policy(&interp->opt_config.fitness_backward_edge,
+                "PYTHON_JIT_FITNESS_BACKWARD_EDGE",
+                FITNESS_BACKWARD_EDGE, 0, 1000);
+    init_policy(&interp->opt_config.fitness_frame_entry,
+                "PYTHON_JIT_FITNESS_FRAME_ENTRY",
+                FITNESS_FRAME_ENTRY, 0, 1000);
+
     interp->opt_config.specialization_enabled = !is_env_enabled("PYTHON_SPECIALIZATION_OFF");
     interp->opt_config.uops_optimize_enabled = !is_env_disabled("PYTHON_UOPS_OPTIMIZE");
     if (interp != &runtime->_main_interpreter) {

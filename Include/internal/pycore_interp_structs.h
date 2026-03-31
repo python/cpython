@@ -449,6 +449,15 @@ typedef struct _PyOptimizationConfig {
     uint16_t side_exit_initial_value;
     uint16_t side_exit_initial_backoff;
 
+    // Trace fitness thresholds
+    uint16_t fitness_initial;
+    uint16_t fitness_initial_side;
+    uint16_t fitness_per_instruction;
+    uint16_t fitness_branch_biased;
+    uint16_t fitness_branch_unbiased;
+    uint16_t fitness_backward_edge;
+    uint16_t fitness_frame_entry;
+
     // Optimization flags
     bool specialization_enabled;
     bool uops_optimize_enabled;
