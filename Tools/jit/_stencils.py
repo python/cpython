@@ -303,12 +303,9 @@ class StencilGroup:
                 and hole.value in {HoleValue.OPERAND0, HoleValue.OPERAND1}
             ):
                 value_expr = _HOLE_EXPRS[hole.value]
-                synth_name = f"_JIT_TRAMPOLINE_{hole.value.name}"
-                if synth_name in known_symbols:
-                    ordinal = known_symbols[synth_name]
-                else:
-                    ordinal = len(known_symbols)
-                    known_symbols[synth_name] = ordinal
+                ordinal = len(known_symbols)
+                synth_name = f"_JIT_TRAMPOLINE_{hole.value.name}_{ordinal}"
+                known_symbols[synth_name] = ordinal
                 self._trampolines.add(ordinal)
                 hole.func = "patch_aarch64_trampoline_addr"
                 hole.need_state = True
