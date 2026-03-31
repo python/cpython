@@ -51,7 +51,8 @@ jobs:
           name: html-ids-head.json.gz
           path: /tmp
       - name: 'Check for removed HTML IDs'
-        run: >-
-          python Doc/tools/check-html-ids.py -v check
-          /tmp/html-ids-base.json.gz /tmp/html-ids-head.json.gz
-          $([ -f Doc/tools/removed-ids.txt ] && echo "--exclude-file Doc/tools/removed-ids.txt")
+        run: |
+          # shellcheck disable=SC2046
+          python Doc/tools/check-html-ids.py -v check \
+            /tmp/html-ids-base.json.gz /tmp/html-ids-head.json.gz \
+            $([ -f Doc/tools/removed-ids.txt ] && echo "--exclude-file Doc/tools/removed-ids.txt")
