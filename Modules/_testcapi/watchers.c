@@ -363,7 +363,7 @@ add_code_watcher(PyObject *self, PyObject *which_watcher)
         watcher_id = PyCode_AddWatcher(error_code_event_handler);
     }
     else {
-        PyErr_Format(PyExc_ValueError, "invalid watcher %d", which_l);
+        PyErr_Format(PyExc_ValueError, "invalid watcher %ld", which_l);
         return NULL;
     }
     if (watcher_id < 0) {
