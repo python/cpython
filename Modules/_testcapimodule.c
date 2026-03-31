@@ -106,7 +106,7 @@ test_sizeof_c_types(PyObject *self, PyObject *Py_UNUSED(ignored))
 #define CHECK_SIZEOF(TYPE, EXPECTED)         \
     if (EXPECTED != sizeof(TYPE))  {         \
         PyErr_Format(get_testerror(self),    \
-            "sizeof(%s) = %u instead of %u", \
+            "sizeof(%s) = %zu instead of %u", \
             #TYPE, sizeof(TYPE), EXPECTED);  \
         return (PyObject*)NULL;              \
     }
