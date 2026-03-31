@@ -2122,9 +2122,7 @@ class TestRecursiveFunctionHandling(unittest.TestCase):
         cumulative_calls = stats[1]
         self.assertEqual(cumulative_calls, 10)
 
-    def test_pstats_collector_different_lines_same_function_counted_separately(
-        self,
-    ):
+    def test_pstats_collector_different_lines_same_function_counted_separately(self):
         """Test that different line numbers in same function are tracked separately."""
         collector = PstatsCollector(sample_interval_usec=1000)
 
@@ -2331,7 +2329,8 @@ class TestLocationInCollectors(unittest.TestCase):
         frame = MockFrameInfo("app.py", 100, "process_data")
         frames = [
             MockInterpreterInfo(
-                0, [MockThreadInfo(1, [frame], status=THREAD_STATUS_HAS_GIL)]
+                0,
+                [MockThreadInfo(1, [frame], status=THREAD_STATUS_HAS_GIL)]
             )
         ]
         collector.collect(frames)
@@ -2339,15 +2338,8 @@ class TestLocationInCollectors(unittest.TestCase):
         data = collector._convert_to_flamegraph_format()
         # Verify the function name includes lineno from location
         strings = data.get("strings", [])
-        name_found = any(
-            "process_data" in s and "100" in s
-            for s in strings
-            if isinstance(s, str)
-        )
-        self.assertTrue(
-            name_found,
-            f"Expected to find 'process_data' with line 100 in {strings}",
-        )
+        name_found = any("process_data" in s and "100" in s for s in strings if isinstance(s, str))
+        self.assertTrue(name_found, f"Expected to find 'process_data' with line 100 in {strings}")
 
     def test_gecko_collector_with_location_info(self):
         """Test GeckoCollector handles LocationInfo properly."""
@@ -2356,7 +2348,8 @@ class TestLocationInCollectors(unittest.TestCase):
         frame = MockFrameInfo("server.py", 50, "handle_request")
         frames = [
             MockInterpreterInfo(
-                0, [MockThreadInfo(1, [frame], status=THREAD_STATUS_HAS_GIL)]
+                0,
+                [MockThreadInfo(1, [frame], status=THREAD_STATUS_HAS_GIL)]
             )
         ]
         collector.collect(frames)
