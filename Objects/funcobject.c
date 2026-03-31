@@ -681,7 +681,7 @@ func_set_code(PyObject *self, PyObject *value, void *Py_UNUSED(ignored))
     if (nclosure != nfree) {
         PyErr_Format(PyExc_ValueError,
                      "%U() requires a code object with %zd free vars,"
-                     " not %zd",
+                     " not %d",
                      op->func_name,
                      nclosure, nfree);
         return -1;
@@ -1067,7 +1067,7 @@ func_new_impl(PyTypeObject *type, PyCodeObject *code, PyObject *globals,
     nclosure = closure == Py_None ? 0 : PyTuple_GET_SIZE(closure);
     if (code->co_nfreevars != nclosure)
         return PyErr_Format(PyExc_ValueError,
-                            "%U requires closure of length %zd, not %zd",
+                            "%U requires closure of length %d, not %zd",
                             code->co_name, code->co_nfreevars, nclosure);
     if (nclosure) {
         Py_ssize_t i;
@@ -1479,6 +1479,7 @@ cm_new(PyTypeObject *type, PyObject *args, PyObject *kwds)
     }
     cm->cm_callable = Py_None;
     cm->cm_dict = NULL;
+    _PyObject_SetDeferredRefcount((PyObject *)cm);
     return (PyObject *)cm;
 }
 
@@ -1722,6 +1723,7 @@ sm_new(PyTypeObject *type, PyObject *args, PyObject *kwds)
     }
     sm->sm_callable = Py_None;
     sm->sm_dict = NULL;
+    _PyObject_SetDeferredRefcount((PyObject *)sm);
     return (PyObject *)sm;
 }
 
@@ -1888,4 +1890,18 @@ PyStaticMethod_New(PyObject *callable)
         sm->sm_callable = Py_NewRef(callable);
     }
     return (PyObject *)sm;
+}
+
+PyObject *
+_PyClassMethod_GetFunc(PyObject *self)
+{
+    classmethod *cm = _PyClassMethod_CAST(self);
+    return cm->cm_callable;
+}
+
+PyObject *
+_PyStaticMethod_GetFunc(PyObject *self)
+{
+    staticmethod *sm = _PyStaticMethod_CAST(self);
+    return sm->sm_callable;
 }

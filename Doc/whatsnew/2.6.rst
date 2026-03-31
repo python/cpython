@@ -2822,10 +2822,10 @@ Using the module is simple::
 
     import sys
     import plistlib
-    import datetime
+    import datetime as dt
 
     # Create data structure
-    data_struct = dict(lastAccessed=datetime.datetime.now(),
+    data_struct = dict(lastAccessed=dt.datetime.now(),
                        version=1,
                        categories=('Personal','Shared','Private'))
 

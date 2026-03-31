@@ -64,7 +64,7 @@ jobs:
       - name: Install dependencies
         run: |
             sudo ./.github/workflows/posix-deps-apt.sh
-            sudo apt-get install -yq abigail-tools
+            sudo apt-get install -yq --no-install-recommends abigail-tools
       - name: Build CPython
         env:
           CFLAGS: -g3 -O0
@@ -158,8 +158,6 @@ jobs:
         run: echo "IMAGE_OS_VERSION=${ImageOS}-${ImageVersion}" >> "$GITHUB_ENV"
       - name: Install dependencies
         run: sudo ./.github/workflows/posix-deps-apt.sh
-      - name: Add ccache to PATH
-        run: echo "PATH=/usr/lib/ccache:$PATH" >> "$GITHUB_ENV"
       - name: Configure CPython
         run: |
           # Build Python with the libpython dynamic library
@@ -242,16 +240,16 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        # macos-14 is M1, macos-15-intel is Intel.
-        # macos-15-intel only runs tests against the GIL-enabled CPython.
+        # macos-26 is Apple Silicon, macos-26-intel is Intel.
+        # macos-26-intel only runs tests against the GIL-enabled CPython.
         os:
-        - macos-14
-        - macos-15-intel
+        - macos-26
+        - macos-26-intel
         free-threading:
         - false
         - true
         exclude:
-        - os: macos-15-intel
+        - os: macos-26-intel
           free-threading: true
     uses: ./.github/workflows/reusable-macos.yml
     with:
@@ -291,7 +289,7 @@ jobs:
       os: ${{ matrix.os }}
 
   build-ubuntu-ssltests:
-    name: 'Ubuntu SSL tests with OpenSSL'
+    name: 'Ubuntu SSL tests'
     runs-on: ${{ matrix.os }}
     timeout-minutes: 60
     needs: build-context
@@ -300,16 +298,23 @@ jobs:
       fail-fast: false
       matrix:
         os: [ubuntu-24.04]
-        # Keep 1.1.1w in our list despite it being upstream EOL and otherwise
-        # unsupported as it most resembles other 1.1.1-work-a-like ssl APIs
-        # supported by important vendors such as AWS-LC.
-        openssl_ver: [1.1.1w, 3.0.19, 3.3.6, 3.4.4, 3.5.5, 3.6.1]
-        # See Tools/ssl/make_ssl_data.py for notes on adding a new version
+        ssllib:
+          # See Tools/ssl/make_ssl_data.py for notes on adding a new version
+          ## OpenSSL
+          # Keep 1.1.1w in our list despite it being upstream EOL and otherwise
+          # unsupported as it most resembles other 1.1.1-work-a-like ssl APIs
+          # supported by important vendors such as AWS-LC.
+          - { name: openssl, version: 1.1.1w }
+          - { name: openssl, version: 3.0.19 }
+          - { name: openssl, version: 3.3.6 }
+          - { name: openssl, version: 3.4.4 }
+          - { name: openssl, version: 3.5.5 }
+          - { name: openssl, version: 3.6.1 }
     env:
-      OPENSSL_VER: ${{ matrix.openssl_ver }}
+      SSLLIB_VER: ${{ matrix.ssllib.version }}
       MULTISSL_DIR: ${{ github.workspace }}/multissl
-      OPENSSL_DIR: ${{ github.workspace }}/multissl/openssl/${{ matrix.openssl_ver }}
-      LD_LIBRARY_PATH: ${{ github.workspace }}/multissl/openssl/${{ matrix.openssl_ver }}/lib
+      SSLLIB_DIR: ${{ github.workspace }}/multissl/${{ matrix.ssllib.name }}/${{ matrix.ssllib.version }}
+      LD_LIBRARY_PATH: ${{ github.workspace }}/multissl/${{ matrix.ssllib.name }}/${{ matrix.ssllib.version }}/lib
     steps:
     - uses: actions/checkout@v6
       with:
@@ -320,29 +325,37 @@ jobs:
       run: echo "::add-matcher::.github/problem-matchers/gcc.json"
     - name: Install dependencies
       run: sudo ./.github/workflows/posix-deps-apt.sh
-    - name: Configure OpenSSL env vars
-      run: |
-        echo "MULTISSL_DIR=${GITHUB_WORKSPACE}/multissl" >> "$GITHUB_ENV"
-        echo "OPENSSL_DIR=${GITHUB_WORKSPACE}/multissl/openssl/${OPENSSL_VER}" >> "$GITHUB_ENV"
-        echo "LD_LIBRARY_PATH=${GITHUB_WORKSPACE}/multissl/openssl/${OPENSSL_VER}/lib" >> "$GITHUB_ENV"
-    - name: 'Restore OpenSSL build'
-      id: cache-openssl
+    - name: 'Restore SSL library build'
+      id: cache-ssl-lib
       uses: actions/cache@v5
       with:
-        path: ./multissl/openssl/${{ env.OPENSSL_VER }}
-        key: ${{ matrix.os }}-multissl-openssl-${{ env.OPENSSL_VER }}
-    - name: Install OpenSSL
-      if: steps.cache-openssl.outputs.cache-hit != 'true'
-      run: python3 Tools/ssl/multissltests.py --steps=library --base-directory "$MULTISSL_DIR" --openssl "$OPENSSL_VER" --system Linux
-    - name: Add ccache to PATH
+        path: ./multissl/${{ matrix.ssllib.name }}/${{ matrix.ssllib.version }}
+        key: ${{ matrix.os }}-multissl-${{ matrix.ssllib.name }}-${{ matrix.ssllib.version }}
+    - name: Install SSL Library
+      if: steps.cache-ssl-lib.outputs.cache-hit != 'true'
       run: |
-        echo "PATH=/usr/lib/ccache:$PATH" >> "$GITHUB_ENV"
+        python3 Tools/ssl/multissltests.py \
+          --steps=library \
+          --base-directory "$MULTISSL_DIR" \
+          '--${{ matrix.ssllib.name }}' '${{ matrix.ssllib.version }}' \
+          --system Linux
     - name: Configure CPython
-      run: ./configure CFLAGS="-fdiagnostics-format=json" --config-cache --enable-slower-safety --with-pydebug --with-openssl="$OPENSSL_DIR"
+      run: |
+        ./configure CFLAGS="-fdiagnostics-format=json" \
+          --config-cache \
+          --enable-slower-safety \
+          --with-pydebug \
+          --with-openssl="$SSLLIB_DIR" \
+          --with-builtin-hashlib-hashes=blake2 \
+          --with-ssl-default-suites=openssl
     - name: Build CPython
       run: make -j4
     - name: Display build info
       run: make pythoninfo
+    - name: Verify python is linked to the right lib
+      run: |
+        ./python -c 'import ssl; print(ssl.OPENSSL_VERSION)' \
+          | grep -iE '${{ matrix.ssllib.name }}.*${{ matrix.ssllib.version }}'
     - name: SSL tests
       run: ./python Lib/test/ssltests.py
 
@@ -356,7 +369,7 @@ jobs:
       matrix:
         include:
           - arch: aarch64
-            runs-on: macos-14
+            runs-on: macos-26
           - arch: x86_64
             runs-on: ubuntu-24.04
 
@@ -390,6 +403,12 @@ jobs:
 
       - name: Build and test
         run: python3 Apple ci iOS --fast-ci --simulator 'iPhone SE (3rd generation),OS=17.5'
+
+  build-emscripten:
+    name: 'Emscripten'
+    needs: build-context
+    if: needs.build-context.outputs.run-emscripten == 'true'
+    uses: ./.github/workflows/reusable-emscripten.yml
 
   build-wasi:
     name: 'WASI'
@@ -428,9 +447,6 @@ jobs:
     - name: Install OpenSSL
       if: steps.cache-openssl.outputs.cache-hit != 'true'
       run: python3 Tools/ssl/multissltests.py --steps=library --base-directory "$MULTISSL_DIR" --openssl "$OPENSSL_VER" --system Linux
-    - name: Add ccache to PATH
-      run: |
-        echo "PATH=/usr/lib/ccache:$PATH" >> "$GITHUB_ENV"
     - name: Setup directory envs for out-of-tree builds
       run: |
         echo "CPYTHON_RO_SRCDIR=$(realpath -m "${GITHUB_WORKSPACE}"/../cpython-ro-srcdir)" >> "$GITHUB_ENV"
@@ -546,9 +562,6 @@ jobs:
     - name: Install OpenSSL
       if: steps.cache-openssl.outputs.cache-hit != 'true'
       run: python3 Tools/ssl/multissltests.py --steps=library --base-directory "$MULTISSL_DIR" --openssl "$OPENSSL_VER" --system Linux
-    - name: Add ccache to PATH
-      run: |
-        echo "PATH=/usr/lib/ccache:$PATH" >> "$GITHUB_ENV"
     - name: Configure CPython
       run: ./configure --config-cache --with-address-sanitizer --without-pymalloc
     - name: Build CPython
@@ -675,6 +688,7 @@ jobs:
     - build-ubuntu
     - build-ubuntu-ssltests
     - build-ios
+    - build-emscripten
     - build-wasi
     - test-hypothesis
     - build-asan
@@ -689,6 +703,7 @@ jobs:
       with:
         allowed-failures: >-
           build-android,
+          build-emscripten,
           build-windows-msi,
           build-ubuntu-ssltests,
           test-hypothesis,
@@ -725,5 +740,6 @@ jobs:
           }}
           ${{ !fromJSON(needs.build-context.outputs.run-android) && 'build-android,' || '' }}
           ${{ !fromJSON(needs.build-context.outputs.run-ios) && 'build-ios,' || '' }}
+          ${{ !fromJSON(needs.build-context.outputs.run-emscripten) && 'build-emscripten,' || '' }}
           ${{ !fromJSON(needs.build-context.outputs.run-wasi) && 'build-wasi,' || '' }}
         jobs: ${{ toJSON(needs) }}

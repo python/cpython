@@ -454,7 +454,7 @@ on x86-64 and AArch64 architectures.
 However, a future release of GCC is expected to support this as well.
 
 This feature is opt-in for now. Enabling profile-guided optimization is highly
-recommendeded when using the new interpreter as it is the only configuration
+recommended when using the new interpreter as it is the only configuration
 that has been tested and validated for improved performance.
 For further information, see :option:`--with-tail-call-interp`.
 

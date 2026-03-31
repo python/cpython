@@ -48,6 +48,7 @@ SUFFIXES_C_OR_CPP = frozenset({".c", ".h", ".cpp"})
 SUFFIXES_DOCUMENTATION = frozenset({".rst", ".md"})
 
 ANDROID_DIRS = frozenset({"Android"})
+EMSCRIPTEN_DIRS = frozenset({Path("Platforms", "emscripten")})
 IOS_DIRS = frozenset({"Apple", "iOS"})
 MACOS_DIRS = frozenset({"Mac"})
 WASI_DIRS = frozenset({Path("Tools", "wasm")})
@@ -106,6 +107,7 @@ class Outputs:
     run_ci_fuzz: bool = False
     run_ci_fuzz_stdlib: bool = False
     run_docs: bool = False
+    run_emscripten: bool = False
     run_ios: bool = False
     run_macos: bool = False
     run_tests: bool = False
@@ -125,6 +127,7 @@ def compute_changes() -> None:
         # Otherwise, just run the tests
         outputs = Outputs(
             run_android=True,
+            run_emscripten=True,
             run_ios=True,
             run_macos=True,
             run_tests=True,
@@ -194,6 +197,8 @@ def get_file_platform(file: Path) -> str | None:
         return "ios"
     if first_part in ANDROID_DIRS:
         return "android"
+    if len(file.parts) >= 2 and Path(*file.parts[:2]) in EMSCRIPTEN_DIRS:
+        return "emscripten"
     if len(file.parts) >= 2 and Path(*file.parts[:2]) in WASI_DIRS: # Tools/wasm/
         return "wasi"
     return None
@@ -225,19 +230,31 @@ def process_changed_files(changed_files: Set[Path]) -> Outputs:
 
         if file.parent == GITHUB_WORKFLOWS_PATH:
             if file.name in ("build.yml", "reusable-cifuzz.yml"):
-                run_tests = run_ci_fuzz = run_ci_fuzz_stdlib = True
+                run_tests = run_ci_fuzz = run_ci_fuzz_stdlib = run_windows_tests = True
                 has_platform_specific_change = False
+                continue
             if file.name == "reusable-docs.yml":
                 run_docs = True
+                continue
+            if file.name == "reusable-windows.yml":
+                run_tests = True
+                run_windows_tests = True
+                continue
             if file.name == "reusable-windows-msi.yml":
                 run_windows_msi = True
+                continue
             if file.name == "reusable-macos.yml":
                 run_tests = True
                 platforms_changed.add("macos")
+                continue
+            if file.name == "reusable-emscripten.yml":
+                run_tests = True
+                platforms_changed.add("emscripten")
+                continue
             if file.name == "reusable-wasi.yml":
                 run_tests = True
                 platforms_changed.add("wasi")
-            continue
+                continue
 
         if not doc_file and file not in RUN_TESTS_IGNORE:
             run_tests = True
@@ -274,18 +291,21 @@ def process_changed_files(changed_files: Set[Path]) -> Outputs:
     if run_tests:
         if not has_platform_specific_change or not platforms_changed:
             run_android = True
+            run_emscripten = True
             run_ios = True
             run_macos = True
             run_ubuntu = True
             run_wasi = True
         else:
             run_android = "android" in platforms_changed
+            run_emscripten = "emscripten" in platforms_changed
             run_ios = "ios" in platforms_changed
             run_macos = "macos" in platforms_changed
             run_ubuntu = False
             run_wasi = "wasi" in platforms_changed
     else:
         run_android = False
+        run_emscripten = False
         run_ios = False
         run_macos = False
         run_ubuntu = False
@@ -296,6 +316,7 @@ def process_changed_files(changed_files: Set[Path]) -> Outputs:
         run_ci_fuzz=run_ci_fuzz,
         run_ci_fuzz_stdlib=run_ci_fuzz_stdlib,
         run_docs=run_docs,
+        run_emscripten=run_emscripten,
         run_ios=run_ios,
         run_macos=run_macos,
         run_tests=run_tests,

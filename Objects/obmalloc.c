@@ -149,6 +149,12 @@ should_advance_qsbr_for_page(struct _qsbr_thread_state *qsbr, mi_page_t *page)
     }
     return false;
 }
+
+static _PyThreadStateImpl *
+tstate_from_heap(mi_heap_t *heap)
+{
+    return _Py_CONTAINER_OF(heap->tld, _PyThreadStateImpl, mimalloc.tld);
+}
 #endif
 
 static bool
@@ -157,23 +163,35 @@ _PyMem_mi_page_maybe_free(mi_page_t *page, mi_page_queue_t *pq, bool force)
 #ifdef Py_GIL_DISABLED
     assert(mi_page_all_free(page));
     if (page->use_qsbr) {
-        _PyThreadStateImpl *tstate = (_PyThreadStateImpl *)PyThreadState_GET();
-        if (page->qsbr_goal != 0 && _Py_qbsr_goal_reached(tstate->qsbr, page->qsbr_goal)) {
+        struct _qsbr_thread_state *qsbr = ((_PyThreadStateImpl *)PyThreadState_GET())->qsbr;
+        if (page->qsbr_goal != 0 && _Py_qbsr_goal_reached(qsbr, page->qsbr_goal)) {
             _PyMem_mi_page_clear_qsbr(page);
             _mi_page_free(page, pq, force);
             return true;
         }
 
+        // gh-145615: since we are not freeing this page yet, we want to
+        // make it available for allocations. Note that the QSBR goal and
+        // linked list node remain set even if the page is later used for
+        // an allocation. We only detect and clear the QSBR goal when the
+        // page becomes empty again (used == 0).
+        if (mi_page_is_in_full(page)) {
+            _mi_page_unfull(page);
+        }
+
         _PyMem_mi_page_clear_qsbr(page);
         page->retire_expire = 0;
 
-        if (should_advance_qsbr_for_page(tstate->qsbr, page)) {
-            page->qsbr_goal = _Py_qsbr_advance(tstate->qsbr->shared);
+        if (should_advance_qsbr_for_page(qsbr, page)) {
+            page->qsbr_goal = _Py_qsbr_advance(qsbr->shared);
         }
         else {
-            page->qsbr_goal = _Py_qsbr_shared_next(tstate->qsbr->shared);
+            page->qsbr_goal = _Py_qsbr_shared_next(qsbr->shared);
         }
 
+        // We may be freeing a page belonging to a different thread during a
+        // stop-the-world event. Find the _PyThreadStateImpl for the page.
+        _PyThreadStateImpl *tstate = tstate_from_heap(mi_page_heap(page));
         llist_insert_tail(&tstate->mimalloc.page_list, &page->qsbr_node);
         return false;
     }
@@ -190,7 +208,8 @@ _PyMem_mi_page_reclaimed(mi_page_t *page)
     if (page->qsbr_goal != 0) {
         if (mi_page_all_free(page)) {
             assert(page->qsbr_node.next == NULL);
-            _PyThreadStateImpl *tstate = (_PyThreadStateImpl *)PyThreadState_GET();
+            _PyThreadStateImpl *tstate = tstate_from_heap(mi_page_heap(page));
+            assert(tstate == (_PyThreadStateImpl *)_PyThreadState_GET());
             page->retire_expire = 0;
             llist_insert_tail(&tstate->mimalloc.page_list, &page->qsbr_node);
         }

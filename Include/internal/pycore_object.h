@@ -897,6 +897,9 @@ extern PyObject *_PyType_LookupRefAndVersion(PyTypeObject *, PyObject *,
 extern unsigned int
 _PyType_LookupStackRefAndVersion(PyTypeObject *type, PyObject *name, _PyStackRef *out);
 
+extern int _PyObject_GetMethodStackRef(PyThreadState *ts, _PyStackRef *self,
+                                       PyObject *name, _PyStackRef *method);
+
 // Cache the provided init method in the specialization cache of type if the
 // provided type version matches the current version of the type.
 //

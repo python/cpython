@@ -150,7 +150,7 @@ def setup_unraisable_hook() -> None:
     sys.unraisablehook = regrtest_unraisable_hook
 
 
-orig_threading_excepthook: Callable[..., None] | None = None
+orig_threading_excepthook: Callable[..., object] | None = None
 
 
 def regrtest_threading_excepthook(args) -> None:
@@ -433,12 +433,6 @@ def get_temp_dir(tmp_dir: StrPath | None = None) -> StrPath:
                         f"unexpectedly returned {tmp_dir!r} on WASI"
                     )
                 tmp_dir = os.path.join(tmp_dir, 'build')
-
-                # When get_temp_dir() is called in a worker process,
-                # get_temp_dir() path is different than in the parent process
-                # which is not a WASI process. So the parent does not create
-                # the same "tmp_dir" than the test worker process.
-                os.makedirs(tmp_dir, exist_ok=True)
         else:
             tmp_dir = tempfile.gettempdir()
 

@@ -1,0 +1,1 @@
+Document missing public :class:`wave.Wave_write` getter methods.

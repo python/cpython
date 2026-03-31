@@ -689,6 +689,25 @@ class ElementDeclHandlerTest(unittest.TestCase):
         parser.ElementDeclHandler = lambda _1, _2: None
         self.assertRaises(TypeError, parser.Parse, data, True)
 
+    @support.skip_if_unlimited_stack_size
+    @support.skip_emscripten_stack_overflow()
+    @support.skip_wasi_stack_overflow()
+    def test_deeply_nested_content_model(self):
+        # This should raise a RecursionError and not crash.
+        # See https://github.com/python/cpython/issues/145986.
+        N = 500_000
+        data = (
+            b'<!DOCTYPE root [\n<!ELEMENT root '
+            + b'(a, ' * N + b'a' + b')' * N
+            + b'>\n]>\n<root/>\n'
+        )
+
+        parser = expat.ParserCreate()
+        parser.ElementDeclHandler = lambda _1, _2: None
+        with support.infinite_recursion():
+            with self.assertRaises(RecursionError):
+                parser.Parse(data)
+
 class MalformedInputTest(unittest.TestCase):
     def test1(self):
         xml = b"\0\r\n"
@@ -810,6 +829,45 @@ class ParentParserLifetimeTest(unittest.TestCase):
         # while they are still being referenced by a related subparser.
         del parser
         del subparser
+
+
+class ExternalEntityParserCreateErrorTest(unittest.TestCase):
+    """ExternalEntityParserCreate error paths should not crash or leak
+    refcounts on the parent parser.
+
+    See https://github.com/python/cpython/issues/144984.
+    """
+
+    @classmethod
+    def setUpClass(cls):
+        cls.testcapi = import_helper.import_module('_testcapi')
+
+    @unittest.skipIf(support.Py_TRACE_REFS,
+                     'Py_TRACE_REFS conflicts with testcapi.set_nomemory')
+    def test_error_path_no_crash(self):
+        # When an allocation inside ExternalEntityParserCreate fails,
+        # the partially-initialized subparser is deallocated.  This
+        # must not dereference NULL handlers or double-decrement the
+        # parent parser's refcount.
+        parser = expat.ParserCreate()
+        parser.buffer_text = True
+        rc_before = sys.getrefcount(parser)
+
+        # We avoid self.assertRaises(MemoryError) here because the
+        # context manager itself needs memory allocations that fail
+        # while the nomemory hook is active.
+        self.testcapi.set_nomemory(1, 10)
+        raised = False
+        try:
+            parser.ExternalEntityParserCreate(None)
+        except MemoryError:
+            raised = True
+        finally:
+            self.testcapi.remove_mem_hooks()
+        self.assertTrue(raised, "MemoryError not raised")
+
+        rc_after = sys.getrefcount(parser)
+        self.assertEqual(rc_after, rc_before)
 
 
 class ReparseDeferralTest(unittest.TestCase):
@@ -999,7 +1057,9 @@ class AttackProtectionTestBase(abc.ABC):
         self.assert_root_parser_failure(setter, 123.45)
 
 
-@unittest.skipIf(expat.version_info < (2, 7, 2), "requires Expat >= 2.7.2")
+@unittest.skipIf(not hasattr(expat.XMLParserType,
+                             "SetAllocTrackerMaximumAmplification"),
+                 "requires Python compiled with Expat >= 2.7.2")
 class MemoryProtectionTest(AttackProtectionTestBase, unittest.TestCase):
 
     # NOTE: with the default Expat configuration, the billion laughs protection

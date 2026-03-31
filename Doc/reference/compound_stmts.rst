@@ -544,9 +544,9 @@ The following code::
 is semantically equivalent to::
 
     manager = (EXPRESSION)
-    enter = type(manager).__enter__
-    exit = type(manager).__exit__
-    value = enter(manager)
+    enter = manager.__enter__
+    exit = manager.__exit__
+    value = enter()
     hit_except = False
 
     try:
@@ -554,11 +554,14 @@ is semantically equivalent to::
         SUITE
     except:
         hit_except = True
-        if not exit(manager, *sys.exc_info()):
+        if not exit(*sys.exc_info()):
             raise
     finally:
         if not hit_except:
-            exit(manager, None, None, None)
+            exit(None, None, None)
+
+except that implicit :ref:`special method lookup <special-lookup>` is used
+for :meth:`~object.__enter__` and :meth:`~object.__exit__`.
 
 With more than one item, the context managers are processed as if multiple
 :keyword:`with` statements were nested::
@@ -1563,13 +1566,12 @@ The following code::
 
 Is semantically equivalent to::
 
-    iter = (ITER)
-    iter = type(iter).__aiter__(iter)
+    iter = (ITER).__aiter__()
     running = True
 
     while running:
         try:
-            TARGET = await type(iter).__anext__(iter)
+            TARGET = await iter.__anext__()
         except StopAsyncIteration:
             running = False
         else:
@@ -1577,7 +1579,8 @@ Is semantically equivalent to::
     else:
         SUITE2
 
-See also :meth:`~object.__aiter__` and :meth:`~object.__anext__` for details.
+except that implicit :ref:`special method lookup <special-lookup>` is used
+for :meth:`~object.__aiter__` and :meth:`~object.__anext__`.
 
 It is a :exc:`SyntaxError` to use an ``async for`` statement outside the
 body of a coroutine function.
@@ -1603,9 +1606,9 @@ The following code::
 is semantically equivalent to::
 
     manager = (EXPRESSION)
-    aenter = type(manager).__aenter__
-    aexit = type(manager).__aexit__
-    value = await aenter(manager)
+    aenter = manager.__aenter__
+    aexit = manager.__aexit__
+    value = await aenter()
     hit_except = False
 
     try:
@@ -1613,13 +1616,14 @@ is semantically equivalent to::
         SUITE
     except:
         hit_except = True
-        if not await aexit(manager, *sys.exc_info()):
+        if not await aexit(*sys.exc_info()):
             raise
     finally:
         if not hit_except:
-            await aexit(manager, None, None, None)
+            await aexit(None, None, None)
 
-See also :meth:`~object.__aenter__` and :meth:`~object.__aexit__` for details.
+except that implicit :ref:`special method lookup <special-lookup>` is used
+for :meth:`~object.__aenter__` and :meth:`~object.__aexit__`.
 
 It is a :exc:`SyntaxError` to use an ``async with`` statement outside the
 body of a coroutine function.

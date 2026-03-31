@@ -1,0 +1,2 @@
+Fix a crash in the free-threaded build when the dictionary argument to
+:meth:`str.maketrans` is concurrently modified.

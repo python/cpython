@@ -3845,8 +3845,8 @@ exit:
 
 PyDoc_STRVAR(os_posix_spawn__doc__,
 "posix_spawn($module, path, argv, env, /, *, file_actions=(),\n"
-"            setpgroup=<unrepresentable>, resetids=False, setsid=False,\n"
-"            setsigmask=(), setsigdef=(), scheduler=<unrepresentable>)\n"
+"            setpgroup=None, resetids=False, setsid=False,\n"
+"            setsigmask=(), setsigdef=(), scheduler=None)\n"
 "--\n"
 "\n"
 "Execute the program specified by path in a new process.\n"
@@ -3998,8 +3998,8 @@ exit:
 
 PyDoc_STRVAR(os_posix_spawnp__doc__,
 "posix_spawnp($module, path, argv, env, /, *, file_actions=(),\n"
-"             setpgroup=<unrepresentable>, resetids=False, setsid=False,\n"
-"             setsigmask=(), setsigdef=(), scheduler=<unrepresentable>)\n"
+"             setpgroup=None, resetids=False, setsid=False,\n"
+"             setsigmask=(), setsigdef=(), scheduler=None)\n"
 "--\n"
 "\n"
 "Execute the program specified by path in a new process.\n"
@@ -13476,4 +13476,4 @@ exit:
 #ifndef OS__EMSCRIPTEN_LOG_METHODDEF
     #define OS__EMSCRIPTEN_LOG_METHODDEF
 #endif /* !defined(OS__EMSCRIPTEN_LOG_METHODDEF) */
-/*[clinic end generated code: output=9e5f9b9ce732a534 input=a9049054013a1b77]*/
+/*[clinic end generated code: output=291f607b7a26ca5e input=a9049054013a1b77]*/

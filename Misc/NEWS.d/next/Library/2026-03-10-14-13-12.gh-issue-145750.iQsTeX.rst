@@ -1,0 +1,3 @@
+Avoid undefined behaviour from signed integer overflow when parsing format
+strings in the :mod:`struct` module. Found by OSS Fuzz in
+:oss-fuzz:`488466741`.

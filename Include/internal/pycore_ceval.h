@@ -383,6 +383,11 @@ extern int _PyRunRemoteDebugger(PyThreadState *tstate);
 #define SPECIAL___AEXIT__   3
 #define SPECIAL_MAX   3
 
+PyAPI_FUNC(_PyStackRef)
+_Py_LoadAttr_StackRefSteal(
+    PyThreadState *tstate, _PyStackRef owner,
+    PyObject *name, _PyStackRef *self_or_null);
+
 #ifdef __cplusplus
 }
 #endif

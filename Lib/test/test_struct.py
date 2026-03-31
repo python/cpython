@@ -397,6 +397,21 @@ class StructTest(ComplexesAreIdenticalMixin, unittest.TestCase):
         big = (1 << 25) - 1
         big = math.ldexp(big, 127 - 24)
         self.assertRaises(OverflowError, struct.pack, ">f", big)
+        self.assertRaises(OverflowError, struct.pack, "<f", big)
+        # same for native format, see gh-145633
+        self.assertRaises(OverflowError, struct.pack, "f", big)
+
+        # And for half-floats
+        big = (1 << 11) - 1
+        big = math.ldexp(big, 15 - 10)
+        packed = struct.pack(">e", big)
+        unpacked = struct.unpack(">e", packed)[0]
+        self.assertEqual(big, unpacked)
+        big = (1 << 12) - 1
+        big = math.ldexp(big, 15 - 11)
+        self.assertRaises(OverflowError, struct.pack, ">e", big)
+        self.assertRaises(OverflowError, struct.pack, "<e", big)
+        self.assertRaises(OverflowError, struct.pack, "e", big)
 
     def test_1530559(self):
         for code, byteorder in iter_integer_formats():
@@ -552,6 +567,15 @@ class StructTest(ComplexesAreIdenticalMixin, unittest.TestCase):
         hugecount2 = '{}b{}H'.format(sys.maxsize//2, sys.maxsize//2)
         self.assertRaises(struct.error, struct.calcsize, hugecount2)
 
+        hugecount3 = '{}i{}q'.format(sys.maxsize // 4, sys.maxsize // 8)
+        self.assertRaises(struct.error, struct.calcsize, hugecount3)
+
+        hugecount4 = '{}?s'.format(sys.maxsize)
+        self.assertRaises(struct.error, struct.calcsize, hugecount4)
+
+        hugecount5 = '{}?p'.format(sys.maxsize)
+        self.assertRaises(struct.error, struct.calcsize, hugecount5)
+
     def test_trailing_counter(self):
         store = array.array('b', b' '*100)
 
@@ -581,8 +605,24 @@ class StructTest(ComplexesAreIdenticalMixin, unittest.TestCase):
         # Issue 9422: there was a memory leak when reinitializing a
         # Struct instance.  This test can be used to detect the leak
         # when running with regrtest -L.
-        s = struct.Struct('i')
-        s.__init__('ii')
+        s = struct.Struct('>h')
+        s.__init__('>hh')
+        self.assertEqual(s.format, '>hh')
+        packed = b'\x00\x01\x00\x02'
+        self.assertEqual(s.pack(1, 2), packed)
+        self.assertEqual(s.unpack(packed), (1, 2))
+
+        with self.assertRaises(UnicodeEncodeError):
+            s.__init__('\udc00')
+        self.assertEqual(s.format, '>hh')
+        self.assertEqual(s.pack(1, 2), packed)
+        self.assertEqual(s.unpack(packed), (1, 2))
+
+        with self.assertRaises(struct.error):
+            s.__init__('$')
+        self.assertEqual(s.format, '>hh')
+        self.assertEqual(s.pack(1, 2), packed)
+        self.assertEqual(s.unpack(packed), (1, 2))
 
     def check_sizeof(self, format_str, number_of_codes):
         # The size of 'PyStructObject'
@@ -833,7 +873,27 @@ class StructTest(ComplexesAreIdenticalMixin, unittest.TestCase):
         self.assertRaises(RuntimeError, S.unpack, spam)
         self.assertRaises(RuntimeError, S.unpack_from, spam)
         self.assertRaises(RuntimeError, getattr, S, 'format')
+        self.assertRaises(RuntimeError, S.__sizeof__)
+        self.assertRaises(RuntimeError, repr, S)
         self.assertEqual(S.size, -1)
+
+    def test_float_round_trip(self):
+        for format in (
+            "f", "<f", ">f",
+            "d", "<d", ">d",
+            "e", "<e", ">e",
+        ):
+            with self.subTest(format=format):
+                f = struct.unpack(format, struct.pack(format, 1.5))[0]
+                self.assertEqual(f, 1.5)
+                f = struct.unpack(format, struct.pack(format, NAN))[0]
+                self.assertTrue(math.isnan(f), f)
+                f = struct.unpack(format, struct.pack(format, INF))[0]
+                self.assertTrue(math.isinf(f), f)
+                self.assertEqual(math.copysign(1.0, f), 1.0)
+                f = struct.unpack(format, struct.pack(format, -INF))[0]
+                self.assertTrue(math.isinf(f), f)
+                self.assertEqual(math.copysign(1.0, f), -1.0)
 
 
 class UnpackIteratorTest(unittest.TestCase):

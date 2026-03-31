@@ -120,6 +120,21 @@ class CollationTests(MemoryDatabaseMixin, unittest.TestCase):
         self.assertEqual(result[0][0], 'b')
         self.assertEqual(result[1][0], 'a')
 
+    def test_collation_register_when_busy(self):
+        # See https://github.com/python/cpython/issues/146090.
+        con = self.con
+        con.create_collation("mycoll", lambda x, y: (x > y) - (x < y))
+        con.execute("CREATE TABLE t(x TEXT)")
+        con.execute("INSERT INTO t VALUES (?)", ("a",))
+        con.execute("INSERT INTO t VALUES (?)", ("b",))
+        con.commit()
+
+        cursor = self.con.execute("SELECT x FROM t ORDER BY x COLLATE mycoll")
+        next(cursor)
+        # Replace the collation while the statement is active -> SQLITE_BUSY.
+        with self.assertRaises(sqlite.OperationalError) as cm:
+            self.con.create_collation("mycoll", lambda a, b: 0)
+
     def test_deregister_collation(self):
         """
         Register a collation, then deregister it. Make sure an error is raised if we try

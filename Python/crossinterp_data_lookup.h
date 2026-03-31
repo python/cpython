@@ -455,7 +455,7 @@ _PyBytes_GetXIDataWrapped(PyThreadState *tstate,
         return NULL;
     }
     if (size < sizeof(_PyBytes_data_t)) {
-        PyErr_Format(PyExc_ValueError, "expected size >= %d, got %d",
+        PyErr_Format(PyExc_ValueError, "expected size >= %zu, got %zu",
                      sizeof(_PyBytes_data_t), size);
         return NULL;
     }

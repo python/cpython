@@ -4,7 +4,7 @@ import sys
 from types import NoneType
 from typing import Any
 
-from libclinic import fail, Null, unspecified, unknown
+from libclinic import fail, NullType, unspecified, NULL, c_bytes_repr, c_unichar_repr
 from libclinic.function import (
     Function, Parameter,
     CALLABLE, STATIC_METHOD, CLASS_METHOD, METHOD_INIT, METHOD_NEW,
@@ -18,6 +18,9 @@ TypeSet = set[bltns.type[object]]
 
 
 class BaseUnsignedIntConverter(CConverter):
+    bitwise = False
+    default_type = int
+    c_ignored_default = '0'
 
     def use_converter(self) -> None:
         if self.converter:
@@ -74,12 +77,13 @@ class bool_converter(CConverter):
     def converter_init(self, *, accept: TypeSet = {object}) -> None:
         if accept == {int}:
             self.format_unit = 'i'
+            self.default_type = int  # type: ignore[assignment]
         elif accept != {object}:
             fail(f"bool_converter: illegal 'accept' argument {accept!r}")
-        if self.default is not unspecified and self.default is not unknown:
-            self.default = bool(self.default)
-            if self.c_default in {'Py_True', 'Py_False'}:
-                self.c_default = str(int(self.default))
+
+    def c_default_init(self) -> None:
+        assert isinstance(self.default, int)
+        self.c_default = str(int(self.default))
 
     def parse_arg(self, argname: str, displayname: str, *, limited_capi: bool) -> str | None:
         if self.format_unit == 'i':
@@ -107,6 +111,7 @@ class defining_class_converter(CConverter):
     this is the default converter used for the defining class.
     """
     type = 'PyTypeObject *'
+    default_type = ()
     format_unit = ''
     show_in_signature = False
     specified_type: str | None = None
@@ -123,7 +128,7 @@ class defining_class_converter(CConverter):
 
 class char_converter(CConverter):
     type = 'char'
-    default_type = (bytes, bytearray)
+    default_type = bytes
     format_unit = 'c'
     c_ignored_default = "'\0'"
 
@@ -132,9 +137,18 @@ class char_converter(CConverter):
             if len(self.default) != 1:
                 fail(f"char_converter: illegal default value {self.default!r}")
 
-            self.c_default = repr(bytes(self.default))[1:]
-            if self.c_default == '"\'"':
-                self.c_default = r"'\''"
+    def c_default_init(self) -> None:
+        default = self.default
+        assert isinstance(default, bytes)
+        if default == b"'":
+            self.c_default = r"'\''"
+        elif default == b'"':
+            self.c_default = r"""'"'"""
+        elif default == b'\0':
+            self.c_default = r"'\0'"
+        else:
+            r = c_bytes_repr(default)[1:-1]
+            self.c_default = "'" + r + "'"
 
     def parse_arg(self, argname: str, displayname: str, *, limited_capi: bool) -> str | None:
         if self.format_unit == 'c':
@@ -174,7 +188,6 @@ class char_converter(CConverter):
 @add_legacy_c_converter('B', bitwise=True)
 class unsigned_char_converter(CConverter):
     type = 'unsigned char'
-    default_type = int
     format_unit = 'b'
     c_ignored_default = "'\0'"
 
@@ -261,8 +274,6 @@ class short_converter(CConverter):
 
 class unsigned_short_converter(BaseUnsignedIntConverter):
     type = 'unsigned short'
-    default_type = int
-    c_ignored_default = "0"
 
     def converter_init(self, *, bitwise: bool = False) -> None:
         if bitwise:
@@ -294,10 +305,18 @@ class int_converter(CConverter):
     ) -> None:
         if accept == {str}:
             self.format_unit = 'C'
+            self.default_type = str  # type: ignore[assignment]
+            if isinstance(self.default, str):
+                if len(self.default) != 1:
+                    fail(f"int_converter: illegal default value {self.default!r}")
         elif accept != {int}:
             fail(f"int_converter: illegal 'accept' argument {accept!r}")
         if type is not None:
             self.type = type
+
+    def c_default_init(self) -> None:
+        if isinstance(self.default, str):
+            self.c_default = c_unichar_repr(self.default)
 
     def parse_arg(self, argname: str, displayname: str, *, limited_capi: bool) -> str | None:
         if self.format_unit == 'i':
@@ -332,8 +351,6 @@ class int_converter(CConverter):
 
 class unsigned_int_converter(BaseUnsignedIntConverter):
     type = 'unsigned int'
-    default_type = int
-    c_ignored_default = "0"
 
     def converter_init(self, *, bitwise: bool = False) -> None:
         if bitwise:
@@ -373,8 +390,6 @@ class long_converter(CConverter):
 
 class unsigned_long_converter(BaseUnsignedIntConverter):
     type = 'unsigned long'
-    default_type = int
-    c_ignored_default = "0"
 
     def converter_init(self, *, bitwise: bool = False) -> None:
         if bitwise:
@@ -417,8 +432,6 @@ class long_long_converter(CConverter):
 
 class unsigned_long_long_converter(BaseUnsignedIntConverter):
     type = 'unsigned long long'
-    default_type = int
-    c_ignored_default = "0"
 
     def converter_init(self, *, bitwise: bool = False) -> None:
         if bitwise:
@@ -443,12 +456,13 @@ class unsigned_long_long_converter(BaseUnsignedIntConverter):
 
 class Py_ssize_t_converter(CConverter):
     type = 'Py_ssize_t'
+    default_type = (int, NoneType)
     c_ignored_default = "0"
 
     def converter_init(self, *, accept: TypeSet = {int}) -> None:
         if accept == {int}:
             self.format_unit = 'n'
-            self.default_type = int
+            self.default_type = int  # type: ignore[assignment]
         elif accept == {int, NoneType}:
             self.converter = '_Py_convert_optional_to_ssize_t'
         else:
@@ -505,10 +519,13 @@ class Py_ssize_t_converter(CConverter):
 
 class slice_index_converter(CConverter):
     type = 'Py_ssize_t'
+    default_type = (int, NoneType)
+    c_ignored_default = "0"
 
     def converter_init(self, *, accept: TypeSet = {int, NoneType}) -> None:
         if accept == {int}:
             self.converter = '_PyEval_SliceIndexNotNone'
+            self.default_type = int  # type: ignore[assignment]
             self.nullable = False
         elif accept == {int, NoneType}:
             self.converter = '_PyEval_SliceIndex'
@@ -558,7 +575,6 @@ class slice_index_converter(CConverter):
 class size_t_converter(BaseUnsignedIntConverter):
     type = 'size_t'
     converter = '_PyLong_Size_t_Converter'
-    c_ignored_default = "0"
 
     def parse_arg(self, argname: str, displayname: str, *, limited_capi: bool) -> str | None:
         if self.format_unit == 'n':
@@ -677,6 +693,7 @@ class Py_complex_converter(CConverter):
 class object_converter(CConverter):
     type = 'PyObject *'
     format_unit = 'O'
+    c_ignored_default = 'NULL'
 
     def converter_init(
             self, *,
@@ -696,6 +713,10 @@ class object_converter(CConverter):
         if type is not None:
             self.type = type
 
+    def c_default_init(self) -> None:
+        default = self.default
+        if default is None or isinstance(default, bool):
+            self.c_default = "Py_" + repr(default)
 
 #
 # We define three conventions for buffer types in the 'accept' argument:
@@ -725,8 +746,9 @@ str_converter_argument_map: dict[StrConverterKeyType, str] = {}
 
 class str_converter(CConverter):
     type = 'const char *'
-    default_type = (str, Null, NoneType)
+    default_type = (str, bytes, NullType, NoneType)
     format_unit = 's'
+    c_ignored_default = 'NULL'
 
     def converter_init(
             self,
@@ -744,14 +766,16 @@ class str_converter(CConverter):
         self.format_unit = format_unit
         self.length = bool(zeroes)
         if encoding:
-            if self.default not in (Null, None, unspecified):
+            if self.default not in (NULL, None, unspecified):
                 fail("str_converter: Argument Clinic doesn't support default values for encoded strings")
             self.encoding = encoding
             self.type = 'char *'
             # sorry, clinic can't support preallocated buffers
             # for es# and et#
             self.c_default = "NULL"
-        if NoneType in accept and self.c_default == "Py_None":
+
+    def c_default_init(self) -> None:
+        if self.default is None:
             self.c_default = "NULL"
 
     def post_parsing(self) -> str:
@@ -864,6 +888,7 @@ class PyBytesObject_converter(CConverter):
     type = 'PyBytesObject *'
     format_unit = 'S'
     # accept = {bytes}
+    c_ignored_default = 'NULL'
 
     def parse_arg(self, argname: str, displayname: str, *, limited_capi: bool) -> str | None:
         if self.format_unit == 'S':
@@ -884,6 +909,7 @@ class PyByteArrayObject_converter(CConverter):
     type = 'PyByteArrayObject *'
     format_unit = 'Y'
     # accept = {bytearray}
+    c_ignored_default = 'NULL'
 
     def parse_arg(self, argname: str, displayname: str, *, limited_capi: bool) -> str | None:
         if self.format_unit == 'Y':
@@ -902,8 +928,9 @@ class PyByteArrayObject_converter(CConverter):
 
 class unicode_converter(CConverter):
     type = 'PyObject *'
-    default_type = (str, Null, NoneType)
+    default_type = (str, NullType, NoneType)
     format_unit = 'U'
+    c_ignored_default = 'NULL'
 
     def parse_arg(self, argname: str, displayname: str, *, limited_capi: bool) -> str | None:
         if self.format_unit == 'U':
@@ -922,11 +949,11 @@ class unicode_converter(CConverter):
 
 class _unicode_fs_converter_base(CConverter):
     type = 'PyObject *'
+    default_type = NullType
+    c_init_default = 'NULL'
 
-    def converter_init(self) -> None:
-        if self.default is not unspecified:
-            fail(f"{self.__class__.__name__} does not support default values")
-        self.c_default = 'NULL'
+    def c_default_init(self) -> None:
+        fail(f"{self.__class__.__name__} does not support default values")
 
     def cleanup(self) -> str:
         return f"Py_XDECREF({self.parser_name});"
@@ -946,7 +973,8 @@ class unicode_fs_decoded_converter(_unicode_fs_converter_base):
 @add_legacy_c_converter('Z#', accept={str, NoneType}, zeroes=True)
 class Py_UNICODE_converter(CConverter):
     type = 'const wchar_t *'
-    default_type = (str, Null, NoneType)
+    default_type = (str, NullType, NoneType)
+    c_ignored_default = 'NULL'
 
     def converter_init(
             self, *,
@@ -962,6 +990,7 @@ class Py_UNICODE_converter(CConverter):
             self.accept = accept
             if accept == {str}:
                 self.converter = '_PyUnicode_WideCharString_Converter'
+                self.default_type = (str, NullType)  # type: ignore[assignment]
             elif accept == {str, NoneType}:
                 self.converter = '_PyUnicode_WideCharString_Opt_Converter'
             else:
@@ -1017,28 +1046,34 @@ class Py_UNICODE_converter(CConverter):
 @add_legacy_c_converter('w*', accept={rwbuffer})
 class Py_buffer_converter(CConverter):
     type = 'Py_buffer'
+    default_type = (str, bytes, NullType, NoneType)
     format_unit = 'y*'
     impl_by_reference = True
-    c_ignored_default = "{NULL, NULL}"
+    c_init_default = "{NULL, NULL}"
 
     def converter_init(self, *, accept: TypeSet = {buffer}) -> None:
-        if self.default not in (unspecified, None):
-            fail("The only legal default value for Py_buffer is None.")
-
-        self.c_default = self.c_ignored_default
-
         if accept == {str, buffer, NoneType}:
-            format_unit = 'z*'
+            self.format_unit = 'z*'
+            self.default_type = (str, bytes, NullType, NoneType)
         elif accept == {str, buffer}:
-            format_unit = 's*'
+            self.format_unit = 's*'
+            self.default_type = (str, bytes, NullType)  # type: ignore[assignment]
         elif accept == {buffer}:
-            format_unit = 'y*'
+            self.format_unit = 'y*'
+            self.default_type = (bytes, NullType)  # type: ignore[assignment]
         elif accept == {rwbuffer}:
-            format_unit = 'w*'
+            self.format_unit = 'w*'
+            self.default_type = NullType  # type: ignore[assignment]
         else:
             fail("Py_buffer_converter: illegal combination of arguments")
 
-        self.format_unit = format_unit
+    def c_default_init(self) -> None:
+        default = self.default
+        if isinstance(default, bytes):
+            self.c_default = f'{{.buf = {c_bytes_repr(default)}, .obj = NULL, .len = {len(default)}}}'
+        elif isinstance(default, str):
+            default = default.encode()
+            self.c_default = f'{{.buf = {c_bytes_repr(default)}, .obj = NULL, .len = {len(default)}}}'
 
     def cleanup(self) -> str:
         name = self.name
@@ -1119,6 +1154,7 @@ class self_converter(CConverter):
     this is the default converter used for "self".
     """
     type: str | None = None
+    default_type = ()
     format_unit = ''
     specified_type: str | None = None
 
@@ -1233,6 +1269,7 @@ class self_converter(CConverter):
 # Converters for var-positional parameter.
 
 class VarPosCConverter(CConverter):
+    default_type = ()
     format_unit = ''
 
     def parse_arg(self, argname: str, displayname: str, *, limited_capi: bool) -> str | None:
@@ -1245,8 +1282,7 @@ class VarPosCConverter(CConverter):
 
 class varpos_tuple_converter(VarPosCConverter):
     type = 'PyObject *'
-    format_unit = ''
-    c_default = 'NULL'
+    c_init_default = 'NULL'
 
     def cleanup(self) -> str:
         return f"""Py_XDECREF({self.parser_name});\n"""
@@ -1304,7 +1340,6 @@ class varpos_tuple_converter(VarPosCConverter):
 class varpos_array_converter(VarPosCConverter):
     type = 'PyObject * const *'
     length = True
-    c_ignored_default = ''
 
     def parse_vararg(self, *, pos_only: int, min_pos: int, max_pos: int,
                      fastcall: bool, limited_capi: bool) -> str:
