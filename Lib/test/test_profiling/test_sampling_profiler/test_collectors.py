@@ -2767,9 +2767,7 @@ class TestInternalFrameFiltering(unittest.TestCase):
                         1,
                         [
                             MockFrameInfo("app.py", 50, "run"),
-                            MockFrameInfo(
-                                "/lib/_sync_coordinator.py", 100, "main"
-                            ),
+                            MockFrameInfo("/lib/_sync_coordinator.py", 100, "main"),
                             MockFrameInfo("<frozen runpy>", 87, "_run_code"),
                         ],
                         status=THREAD_STATUS_HAS_GIL,
