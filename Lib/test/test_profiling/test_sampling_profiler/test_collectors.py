@@ -1791,6 +1791,49 @@ class TestSampleProfilerComponents(unittest.TestCase):
         )
         self.assertEqual(samples_total, 3)
 
+    def test_jsonl_collector_splits_large_exports_into_chunks(self):
+        jsonl_out = tempfile.NamedTemporaryFile(delete=False)
+        self.addCleanup(close_and_unlink, jsonl_out)
+
+        collector = JsonlCollector(1000)
+
+        for i in range(257):
+            collector.collect(
+                [
+                    MockInterpreterInfo(
+                        0,
+                        [
+                            MockThreadInfo(
+                                1,
+                                [MockFrameInfo(f"file{i}.py", i + 1, f"func{i}")],
+                            )
+                        ],
+                    )
+                ]
+            )
+
+        collector.export(jsonl_out.name)
+
+        with open(jsonl_out.name, "r", encoding="utf-8") as f:
+            records = [json.loads(line) for line in f]
+
+        run_ids = {record["run_id"] for record in records}
+        self.assertEqual(len(run_ids), 1)
+        self.assertRegex(next(iter(run_ids)), r"^[0-9a-f]{32}$")
+
+        _, str_defs, frame_defs, agg_record, end_record = _jsonl_tables(records)
+        str_chunks = [record for record in records if record["type"] == "str_def"]
+        frame_chunks = [record for record in records if record["type"] == "frame_def"]
+        agg_chunks = [record for record in records if record["type"] == "agg"]
+
+        self.assertEqual([len(record["defs"]) for record in str_chunks], [256, 256, 2])
+        self.assertEqual([len(record["defs"]) for record in frame_chunks], [256, 1])
+        self.assertEqual([len(record["entries"]) for record in agg_chunks], [256, 1])
+        self.assertEqual(len(str_defs), 514)
+        self.assertEqual(len(frame_defs), 257)
+        self.assertEqual(agg_record["samples_total"], 257)
+        self.assertEqual(end_record["samples_total"], 257)
+
 
 class TestRecursiveFunctionHandling(unittest.TestCase):
     """Tests for correct handling of recursive functions in cumulative stats."""
