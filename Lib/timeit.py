@@ -387,15 +387,10 @@ def main(args=None, *, _wrap_timer=None):
         print(file=sys.stderr)
         warnings.warn_explicit(
             f"{theme.warning}The test results are likely unreliable. "
-            f"The {theme.warning_worst}worst time ("
-            f"{theme.warning_worst_timing}{format_time(worst)}{reset}"
-            f"{theme.warning_worst})"
-            f"{theme.warning} was more than "
-            f"{theme.warning_worst}four times slower"
-            f"{theme.warning} than the "
-            f"{theme.warning_best}best time ("
-            f"{theme.warning_best_timing}{format_time(best)}{reset}"
-            f"{theme.warning_best}){theme.warning}.{reset}",
+            f"The {theme.warning_worst}worst time ({format_time(worst)})"
+            f"{theme.warning} was more than four times slower than the "
+            f"{theme.warning_best}best time ({format_time(best)})"
+            f"{theme.warning}.{reset}",
             UserWarning, "", 0,
         )
     return None

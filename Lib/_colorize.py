@@ -331,9 +331,7 @@ class Timeit(ThemeSection):
     arrow: str = ANSIColors.GREY
     warning: str = ANSIColors.YELLOW
     warning_worst: str = ANSIColors.MAGENTA
-    warning_worst_timing: str = ANSIColors.BOLD_MAGENTA
     warning_best: str = ANSIColors.GREEN
-    warning_best_timing: str = ANSIColors.BOLD_GREEN
     reset: str = ANSIColors.RESET
 
 
