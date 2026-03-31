@@ -259,7 +259,7 @@ class ZipAppTest(unittest.TestCase):
         (source / '__main__.py').touch()
         target = io.BytesIO()
         zipapp.create_archive(str(source), target, interpreter='python')
-        self.assertTrue(target.getvalue().startswith(b'#!python\n'))
+        self.assertStartsWith(target.getvalue(), b'#!python\n')
 
     def test_read_shebang(self):
         # Test that we can read the shebang line correctly.
@@ -300,7 +300,7 @@ class ZipAppTest(unittest.TestCase):
         zipapp.create_archive(str(source), str(target), interpreter='python')
         new_target = io.BytesIO()
         zipapp.create_archive(str(target), new_target, interpreter='python2.7')
-        self.assertTrue(new_target.getvalue().startswith(b'#!python2.7\n'))
+        self.assertStartsWith(new_target.getvalue(), b'#!python2.7\n')
 
     def test_read_from_pathlike_obj(self):
         # Test that we can copy an archive using a path-like object
@@ -326,7 +326,7 @@ class ZipAppTest(unittest.TestCase):
         new_target = io.BytesIO()
         temp_archive.seek(0)
         zipapp.create_archive(temp_archive, new_target, interpreter='python2.7')
-        self.assertTrue(new_target.getvalue().startswith(b'#!python2.7\n'))
+        self.assertStartsWith(new_target.getvalue(), b'#!python2.7\n')
 
     def test_remove_shebang(self):
         # Test that we can remove the shebang from a file.

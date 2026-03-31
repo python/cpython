@@ -64,7 +64,8 @@ PyAPI_FUNC(void) _PyLong_ExactDealloc(PyObject *self);
 #  error "_PY_NSMALLPOSINTS must be greater than or equal to 257"
 #endif
 
-#define _PY_IS_SMALL_INT(val) ((val) >= 0 && (val) < 256 && (val) < _PY_NSMALLPOSINTS)
+#define _PY_IS_SMALL_INT(val) \
+    (-_PY_NSMALLNEGINTS <= (val) && (val) < _PY_NSMALLPOSINTS)
 
 // Return a reference to the immortal zero singleton.
 // The function cannot return NULL.
@@ -112,9 +113,9 @@ PyAPI_DATA(PyObject*) _PyLong_Rshift(PyObject *, int64_t);
 // Export for 'math' shared extension
 PyAPI_DATA(PyObject*) _PyLong_Lshift(PyObject *, int64_t);
 
-PyAPI_FUNC(PyObject*) _PyLong_Add(PyLongObject *left, PyLongObject *right);
-PyAPI_FUNC(PyObject*) _PyLong_Multiply(PyLongObject *left, PyLongObject *right);
-PyAPI_FUNC(PyObject*) _PyLong_Subtract(PyLongObject *left, PyLongObject *right);
+PyAPI_FUNC(_PyStackRef) _PyCompactLong_Add(PyLongObject *left, PyLongObject *right);
+PyAPI_FUNC(_PyStackRef) _PyCompactLong_Multiply(PyLongObject *left, PyLongObject *right);
+PyAPI_FUNC(_PyStackRef) _PyCompactLong_Subtract(PyLongObject *left, PyLongObject *right);
 
 // Export for 'binascii' shared extension.
 PyAPI_DATA(unsigned char) _PyLong_DigitValue[256];
@@ -135,7 +136,7 @@ extern int _PyLong_FormatWriter(
     int alternate);
 
 extern char* _PyLong_FormatBytesWriter(
-    _PyBytesWriter *writer,
+    PyBytesWriter *writer,
     char *str,
     PyObject *obj,
     int base,
@@ -213,7 +214,6 @@ _PyLong_BothAreCompact(const PyLongObject* a, const PyLongObject* b) {
     assert(PyLong_Check(b));
     return (a->long_value.lv_tag | b->long_value.lv_tag) < (2 << NON_SIZE_BITS);
 }
-
 static inline bool
 _PyLong_IsZero(const PyLongObject *op)
 {
@@ -230,6 +230,20 @@ static inline bool
 _PyLong_IsPositive(const PyLongObject *op)
 {
     return (op->long_value.lv_tag & SIGN_MASK) == 0;
+}
+
+/* Return true if the argument is a small int */
+static inline bool
+_PyLong_IsSmallInt(const PyLongObject *op)
+{
+    assert(PyLong_Check(op));
+    bool is_small_int = (op->long_value.lv_tag & IMMORTALITY_BIT_MASK) != 0;
+    assert(PyLong_CheckExact(op) || (!is_small_int));
+    assert(_Py_IsImmortal(op) || (!is_small_int));
+    assert((_PyLong_IsCompact(op)
+            && _PY_IS_SMALL_INT(_PyLong_CompactValue(op)))
+           || (!is_small_int));
+    return is_small_int;
 }
 
 static inline Py_ssize_t
@@ -293,7 +307,9 @@ _PyLong_SetDigitCount(PyLongObject *op, Py_ssize_t size)
 #define NON_SIZE_MASK ~(uintptr_t)((1 << NON_SIZE_BITS) - 1)
 
 static inline void
-_PyLong_FlipSign(PyLongObject *op) {
+_PyLong_FlipSign(PyLongObject *op)
+{
+    assert(!_PyLong_IsSmallInt(op));
     unsigned int flipped_sign = 2 - (op->long_value.lv_tag & SIGN_MASK);
     op->long_value.lv_tag &= NON_SIZE_MASK;
     op->long_value.lv_tag |= flipped_sign;
@@ -312,6 +328,12 @@ _PyLong_FlipSign(PyLongObject *op) {
 
 #define _PyLong_FALSE_TAG TAG_FROM_SIGN_AND_SIZE(0, 0)
 #define _PyLong_TRUE_TAG TAG_FROM_SIGN_AND_SIZE(1, 1)
+
+static inline int
+_PyLong_CheckExactAndCompact(PyObject *op)
+{
+    return PyLong_CheckExact(op) && _PyLong_IsCompact((const PyLongObject *)op);
+}
 
 #ifdef __cplusplus
 }

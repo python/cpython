@@ -412,7 +412,13 @@ def _init_non_posix(vars):
     vars['EXE'] = '.exe'
     vars['VERSION'] = _PY_VERSION_SHORT_NO_DOT
     vars['BINDIR'] = os.path.dirname(_safe_realpath(sys.executable))
-    vars['TZPATH'] = ''
+    # No standard path exists on Windows for this, but we'll check
+    # whether someone is imitating a POSIX-like layout
+    check_tzpath = os.path.join(vars['prefix'], 'share', 'zoneinfo')
+    if os.path.exists(check_tzpath):
+        vars['TZPATH'] = check_tzpath
+    else:
+        vars['TZPATH'] = ''
 
 #
 # public APIs
@@ -639,25 +645,30 @@ def get_platform():
     isn't particularly important.
 
     Examples of returned values:
-       linux-i586
-       linux-alpha (?)
+       linux-x86_64
+       linux-aarch64
        solaris-2.6-sun4u
 
-    Windows will return one of:
-       win-amd64 (64-bit Windows on AMD64 (aka x86_64, Intel64, EM64T, etc)
-       win-arm64 (64-bit Windows on ARM64 (aka AArch64)
-       win32 (all others - specifically, sys.platform is returned)
 
-    For other non-POSIX platforms, currently just returns 'sys.platform'.
+    Windows:
 
-    """
+    - win-amd64 (64-bit Windows on AMD64, aka x86_64, Intel64, and EM64T)
+    - win-arm64 (64-bit Windows on ARM64, aka AArch64)
+    - win32 (all others - specifically, sys.platform is returned)
+
+    POSIX based OS:
+
+    - linux-x86_64
+    - macosx-15.5-arm64
+    - macosx-26.0-universal2 (macOS on Apple Silicon or Intel)
+    - android-24-arm64_v8a
+
+    For other non-POSIX platforms, currently just returns :data:`sys.platform`."""
     if os.name == 'nt':
-        if 'amd64' in sys.version.lower():
-            return 'win-amd64'
-        if '(arm)' in sys.version.lower():
-            return 'win-arm32'
-        if '(arm64)' in sys.version.lower():
-            return 'win-arm64'
+        import _sysconfig
+        platform = _sysconfig.get_platform()
+        if platform:
+            return platform
         return sys.platform
 
     if os.name != "posix" or not hasattr(os, 'uname'):
@@ -683,11 +694,15 @@ def get_platform():
         release = get_config_var("ANDROID_API_LEVEL")
 
         # Wheel tags use the ABI names from Android's own tools.
+        # When Python is running on 32-bit ARM Android on a 64-bit ARM kernel,
+        # 'os.uname().machine' is 'armv8l'. Such devices run the same userspace
+        # code as 'armv7l' devices.
         machine = {
             "x86_64": "x86_64",
             "i686": "x86",
             "aarch64": "arm64_v8a",
             "armv7l": "armeabi_v7a",
+            "armv8l": "armeabi_v7a",
         }[machine]
     elif osname == "linux":
         # At least on Linux/Intel, 'machine' is the processor --

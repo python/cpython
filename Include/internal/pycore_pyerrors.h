@@ -11,8 +11,8 @@ extern "C" {
 
 /* Error handling definitions */
 
-extern _PyErr_StackItem* _PyErr_GetTopmostException(PyThreadState *tstate);
-extern PyObject* _PyErr_GetHandledException(PyThreadState *);
+PyAPI_FUNC(_PyErr_StackItem*) _PyErr_GetTopmostException(PyThreadState *tstate);
+PyAPI_FUNC(PyObject*) _PyErr_GetHandledException(PyThreadState *);
 extern void _PyErr_SetHandledException(PyThreadState *, PyObject *);
 extern void _PyErr_GetExcInfo(PyThreadState *, PyObject **, PyObject **, PyObject **);
 
@@ -94,13 +94,13 @@ extern void _PyErr_Fetch(
     PyObject **value,
     PyObject **traceback);
 
-extern PyObject* _PyErr_GetRaisedException(PyThreadState *tstate);
+PyAPI_FUNC(PyObject*) _PyErr_GetRaisedException(PyThreadState *tstate);
 
 PyAPI_FUNC(int) _PyErr_ExceptionMatches(
     PyThreadState *tstate,
     PyObject *exc);
 
-extern void _PyErr_SetRaisedException(PyThreadState *tstate, PyObject *exc);
+PyAPI_FUNC(void) _PyErr_SetRaisedException(PyThreadState *tstate, PyObject *exc);
 
 extern void _PyErr_Restore(
     PyThreadState *tstate,
@@ -108,7 +108,7 @@ extern void _PyErr_Restore(
     PyObject *value,
     PyObject *traceback);
 
-extern void _PyErr_SetObject(
+PyAPI_FUNC(void) _PyErr_SetObject(
     PyThreadState *tstate,
     PyObject *type,
     PyObject *value);
@@ -123,7 +123,8 @@ extern void _PyErr_SetNone(PyThreadState *tstate, PyObject *exception);
 extern PyObject* _PyErr_NoMemory(PyThreadState *tstate);
 
 extern int _PyErr_EmitSyntaxWarning(PyObject *msg, PyObject *filename, int lineno, int col_offset,
-                                    int end_lineno, int end_col_offset);
+                                    int end_lineno, int end_col_offset,
+                                    PyObject *module);
 extern void _PyErr_RaiseSyntaxError(PyObject *msg, PyObject *filename, int lineno, int col_offset,
                                     int end_lineno, int end_col_offset);
 

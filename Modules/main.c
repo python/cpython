@@ -269,13 +269,14 @@ error:
 
 
 static int
-pymain_start_pyrepl_no_main(void)
+pymain_start_pyrepl(int pythonstartup)
 {
     int res = 0;
     PyObject *console = NULL;
     PyObject *empty_tuple = NULL;
     PyObject *kwargs = NULL;
     PyObject *console_result = NULL;
+    PyObject *main_module = NULL;
 
     PyObject *pyrepl = PyImport_ImportModule("_pyrepl.main");
     if (pyrepl == NULL) {
@@ -299,7 +300,13 @@ pymain_start_pyrepl_no_main(void)
         res = pymain_exit_err_print();
         goto done;
     }
-    if (!PyDict_SetItemString(kwargs, "pythonstartup", _PyLong_GetOne())) {
+    main_module = PyImport_AddModuleRef("__main__");
+    if (main_module == NULL) {
+        res = pymain_exit_err_print();
+        goto done;
+    }
+    if (!PyDict_SetItemString(kwargs, "mainmodule", main_module)
+        && !PyDict_SetItemString(kwargs, "pythonstartup", pythonstartup ? Py_True : Py_False)) {
         console_result = PyObject_Call(console, empty_tuple, kwargs);
         if (console_result == NULL) {
             res = pymain_exit_err_print();
@@ -311,6 +318,7 @@ done:
     Py_XDECREF(empty_tuple);
     Py_XDECREF(console);
     Py_XDECREF(pyrepl);
+    Py_XDECREF(main_module);
     return res;
 }
 
@@ -489,18 +497,16 @@ error:
 static int
 pymain_run_interactive_hook(int *exitcode)
 {
-    PyObject *hook = PyImport_ImportModuleAttrString("sys",
-                                                     "__interactivehook__");
-    if (hook == NULL) {
-        if (PyErr_ExceptionMatches(PyExc_AttributeError)) {
-            // no sys.__interactivehook__ attribute
-            PyErr_Clear();
-            return 0;
-        }
+    PyObject *hook;
+    if (PySys_GetOptionalAttrString("__interactivehook__", &hook) < 0) {
         goto error;
+    }
+    if (hook == NULL) {
+        return 0;
     }
 
     if (PySys_Audit("cpython.run_interactivehook", "O", hook) < 0) {
+        Py_DECREF(hook);
         goto error;
     }
 
@@ -556,13 +562,25 @@ pymain_run_stdin(PyConfig *config)
         return pymain_exit_err_print();
     }
 
-    if (!isatty(fileno(stdin))
-        || _Py_GetEnv(config->use_environment, "PYTHON_BASIC_REPL")) {
-        PyCompilerFlags cf = _PyCompilerFlags_INIT;
-        int run = PyRun_AnyFileExFlags(stdin, "<stdin>", 0, &cf);
-        return (run != 0);
+    int run;
+    if (isatty(fileno(stdin))
+        && !_Py_GetEnv(config->use_environment, "PYTHON_BASIC_REPL")) {
+        PyObject *pyrepl = PyImport_ImportModule("_pyrepl");
+        if (pyrepl != NULL) {
+            run = pymain_start_pyrepl(0);
+            Py_DECREF(pyrepl);
+            return run;
+        }
+        if (!PyErr_ExceptionMatches(PyExc_ModuleNotFoundError)) {
+            fprintf(stderr, "Could not import _pyrepl.main\n");
+            return pymain_exit_err_print();
+        }
+        PyErr_Clear();
     }
-    return pymain_run_module(L"_pyrepl", 0);
+
+    PyCompilerFlags cf = _PyCompilerFlags_INIT;
+    run = PyRun_AnyFileExFlags(stdin, "<stdin>", 0, &cf);
+    return (run != 0);
 }
 
 
@@ -588,14 +606,24 @@ pymain_repl(PyConfig *config, int *exitcode)
         return;
     }
 
-    if (!isatty(fileno(stdin))
-        || _Py_GetEnv(config->use_environment, "PYTHON_BASIC_REPL")) {
-        PyCompilerFlags cf = _PyCompilerFlags_INIT;
-        int run = PyRun_AnyFileExFlags(stdin, "<stdin>", 0, &cf);
-        *exitcode = (run != 0);
-        return;
+    if (isatty(fileno(stdin))
+        && !_Py_GetEnv(config->use_environment, "PYTHON_BASIC_REPL")) {
+        PyObject *pyrepl = PyImport_ImportModule("_pyrepl");
+        if (pyrepl != NULL) {
+            int run = pymain_start_pyrepl(1);
+            *exitcode = (run != 0);
+            Py_DECREF(pyrepl);
+            return;
+        }
+        if (!PyErr_ExceptionMatches(PyExc_ModuleNotFoundError)) {
+            PyErr_Clear();
+            fprintf(stderr, "Could not import _pyrepl.main\n");
+            return;
+        }
+        PyErr_Clear();
     }
-    int run = pymain_start_pyrepl_no_main();
+    PyCompilerFlags cf = _PyCompilerFlags_INIT;
+    int run = PyRun_AnyFileExFlags(stdin, "<stdin>", 0, &cf);
     *exitcode = (run != 0);
     return;
 }

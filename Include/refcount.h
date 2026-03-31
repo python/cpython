@@ -1,5 +1,5 @@
-#ifndef Py_REFCOUNT_H
-#define Py_REFCOUNT_H
+#ifndef _Py_REFCOUNT_H
+#define _Py_REFCOUNT_H
 #ifdef __cplusplus
 extern "C" {
 #endif
@@ -19,9 +19,6 @@ immortal. The latter should be the only instances that require
 cleanup during runtime finalization.
 */
 
-#define _Py_STATICALLY_ALLOCATED_FLAG 4
-#define _Py_IMMORTAL_FLAGS 1
-
 #if SIZEOF_VOID_P > 4
 /*
 In 64+ bit systems, any object whose 32 bit reference count is >= 2**31
@@ -33,7 +30,7 @@ increase and decrease the objects reference count.
 
 In order to offer sufficient resilience to C extensions using the stable ABI
 compiled against 3.11 or earlier, we set the initial value near the
-middle of the range (2**31, 2**32). That way the the refcount can be
+middle of the range (2**31, 2**32). That way the refcount can be
 off by ~1 billion without affecting immortality.
 
 Reference count increases will use saturated arithmetic, taking advantage of
@@ -117,16 +114,19 @@ PyAPI_FUNC(Py_ssize_t) Py_REFCNT(PyObject *ob);
     }
     #if !defined(Py_LIMITED_API) || Py_LIMITED_API+0 < 0x030b0000
     #  define Py_REFCNT(ob) _Py_REFCNT(_PyObject_CAST(ob))
+    #else
+    #  define Py_REFCNT(ob) _Py_REFCNT(ob)
     #endif
 #endif
 
+#ifndef _Py_OPAQUE_PYOBJECT
 static inline Py_ALWAYS_INLINE int _Py_IsImmortal(PyObject *op)
 {
 #if defined(Py_GIL_DISABLED)
     return (_Py_atomic_load_uint32_relaxed(&op->ob_ref_local) ==
             _Py_IMMORTAL_REFCNT_LOCAL);
 #elif SIZEOF_VOID_P > 4
-    return _Py_CAST(PY_INT32_T, op->ob_refcnt) < 0;
+    return _Py_CAST(int32_t, op->ob_refcnt) < 0;
 #else
     return op->ob_refcnt >= _Py_IMMORTAL_MINIMUM_REFCNT;
 #endif
@@ -143,6 +143,7 @@ static inline Py_ALWAYS_INLINE int _Py_IsStaticImmortal(PyObject *op)
 #endif
 }
 #define _Py_IsStaticImmortal(op) _Py_IsStaticImmortal(_PyObject_CAST(op))
+#endif // !defined(_Py_OPAQUE_PYOBJECT)
 
 // Py_SET_REFCNT() implementation for stable ABI
 PyAPI_FUNC(void) _Py_SetRefcnt(PyObject *ob, Py_ssize_t refcnt);
@@ -163,7 +164,7 @@ static inline void Py_SET_REFCNT(PyObject *ob, Py_ssize_t refcnt) {
     }
 #ifndef Py_GIL_DISABLED
 #if SIZEOF_VOID_P > 4
-    ob->ob_refcnt = (PY_UINT32_T)refcnt;
+    ob->ob_refcnt = (uint32_t)refcnt;
 #else
     ob->ob_refcnt = refcnt;
 #endif
@@ -247,20 +248,6 @@ PyAPI_FUNC(void) Py_DecRef(PyObject *);
 PyAPI_FUNC(void) _Py_IncRef(PyObject *);
 PyAPI_FUNC(void) _Py_DecRef(PyObject *);
 
-#ifndef Py_GIL_DISABLED
-static inline Py_ALWAYS_INLINE void Py_INCREF_MORTAL(PyObject *op)
-{
-    assert(!_Py_IsStaticImmortal(op));
-    op->ob_refcnt++;
-    _Py_INCREF_STAT_INC();
-#if defined(Py_REF_DEBUG) && !defined(Py_LIMITED_API)
-    if (!_Py_IsImmortal(op)) {
-        _Py_INCREF_IncRefTotal();
-    }
-#endif
-}
-#endif
-
 static inline Py_ALWAYS_INLINE void Py_INCREF(PyObject *op)
 {
 #if defined(Py_LIMITED_API) && (Py_LIMITED_API+0 >= 0x030c0000 || defined(Py_REF_DEBUG))
@@ -291,7 +278,7 @@ static inline Py_ALWAYS_INLINE void Py_INCREF(PyObject *op)
         _Py_atomic_add_ssize(&op->ob_ref_shared, (1 << _Py_REF_SHARED_SHIFT));
     }
 #elif SIZEOF_VOID_P > 4
-    PY_UINT32_T cur_refcnt = op->ob_refcnt;
+    uint32_t cur_refcnt = op->ob_refcnt;
     if (cur_refcnt >= _Py_IMMORTAL_INITIAL_REFCNT) {
         // the object is immortal
         _Py_INCREF_IMMORTAL_STAT_INC();
@@ -400,7 +387,7 @@ static inline void Py_DECREF(const char *filename, int lineno, PyObject *op)
 #if SIZEOF_VOID_P > 4
     /* If an object has been freed, it will have a negative full refcnt
      * If it has not it been freed, will have a very large refcnt */
-    if (op->ob_refcnt_full <= 0 || op->ob_refcnt > (((PY_UINT32_T)-1) - (1<<20))) {
+    if (op->ob_refcnt_full <= 0 || op->ob_refcnt > (((uint32_t)-1) - (1<<20))) {
 #else
     if (op->ob_refcnt <= 0) {
 #endif
@@ -564,4 +551,4 @@ static inline PyObject* _Py_XNewRef(PyObject *obj)
 #ifdef __cplusplus
 }
 #endif
-#endif   // !Py_REFCOUNT_H
+#endif   // !_Py_REFCOUNT_H
