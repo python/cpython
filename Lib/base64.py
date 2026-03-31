@@ -265,7 +265,6 @@ def b16encode(s, *, wrapcol=0):
         wrapcol = 2
     return binascii.hexlify(s, bytes_per_sep=-(wrapcol//2), sep=b'\n').upper()
 
-_upper_hex_trans = bytes.maketrans(b'abcdef', b'ABCDEF')
 
 def b16decode(s, casefold=False, *, ignorechars=b''):
     """Decode the Base16 encoded bytes-like object or ASCII string s.
@@ -342,7 +341,7 @@ def b85encode(b, pad=False, *, wrapcol=0):
     """
     return binascii.b2a_base85(b, wrapcol=wrapcol, pad=pad)
 
-def b85decode(b, ignorechars=b''):
+def b85decode(b, *, ignorechars=b''):
     """Decode the base85-encoded bytes-like object or ASCII string b
 
     The result is returned as a bytes object.
@@ -361,7 +360,7 @@ def z85encode(s, pad=False, *, wrapcol=0):
     return binascii.b2a_base85(s, wrapcol=wrapcol, pad=pad,
                                alphabet=binascii.Z85_ALPHABET)
 
-def z85decode(s, ignorechars=b''):
+def z85decode(s, *, ignorechars=b''):
     """Decode the z85-encoded bytes-like object or ASCII string b
 
     The result is returned as a bytes object.
