@@ -38,11 +38,11 @@ jobs:
             Doc/tools/check-html-ids.py
             Doc/tools/removed-ids.txt
           sparse-checkout-cone-mode: false
-          path: /tmp/tools
+          path: pr-head
       - name: 'Use PR head tools'
         run: |
-          cp /tmp/tools/Doc/tools/check-html-ids.py Doc/tools/check-html-ids.py
-          [ -f /tmp/tools/Doc/tools/removed-ids.txt ] && cp /tmp/tools/Doc/tools/removed-ids.txt Doc/tools/removed-ids.txt
+          cp pr-head/Doc/tools/check-html-ids.py Doc/tools/check-html-ids.py
+          [ -f pr-head/Doc/tools/removed-ids.txt ] && cp pr-head/Doc/tools/removed-ids.txt Doc/tools/removed-ids.txt
       - name: 'Collect HTML IDs'
         run: python Doc/tools/check-html-ids.py collect Doc/build/html -o /tmp/html-ids-base.json.gz
       - name: 'Download PR head HTML IDs'
