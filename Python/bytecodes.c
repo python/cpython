@@ -709,98 +709,96 @@ dummy_func(
             _GUARD_TOS_INT + _GUARD_NOS_INT + unused/5 + _BINARY_OP_SUBTRACT_INT + _POP_TOP_INT + _POP_TOP_INT;
 
         // Inplace compact int ops: mutate the uniquely-referenced operand
-        // when possible. If TARGET is immortal (small int) or the result
-        // is a small int or overflows, fall back to _PyCompactLong_*.
-        // On mutation success, DUP the target so POP_TOP_INT can safely
-        // decref the original. Tier 2 only.
+        // when possible. The op handles decref of TARGET internally so
+        // the following _POP_TOP_INT becomes _POP_TOP_NOP. Tier 2 only.
         tier2 op(_BINARY_OP_ADD_INT_INPLACE, (left, right -- res, l, r)) {
-            INT_INPLACE_OP(left, right, left, +);
+            INT_INPLACE_OP(left, right, left, +, _PyCompactLong_Add);
+            r = right;
+            DEAD(right);
+            EXIT_IF(!_int_inplace_ok && PyStackRef_IsNull(_int_inplace_res));
             if (_int_inplace_ok) {
                 res = PyStackRef_DUP(left);
             }
             else {
-                res = _PyCompactLong_Add((PyLongObject *)PyStackRef_AsPyObjectBorrow(left),
-                                         (PyLongObject *)PyStackRef_AsPyObjectBorrow(right));
-                EXIT_IF(PyStackRef_IsNull(res));
+                res = _int_inplace_res;
             }
             l = left;
-            r = right;
-            INPUTS_DEAD();
+            DEAD(left);
         }
 
         tier2 op(_BINARY_OP_SUBTRACT_INT_INPLACE, (left, right -- res, l, r)) {
-            INT_INPLACE_OP(left, right, left, -);
+            INT_INPLACE_OP(left, right, left, -, _PyCompactLong_Subtract);
+            r = right;
+            DEAD(right);
+            EXIT_IF(!_int_inplace_ok && PyStackRef_IsNull(_int_inplace_res));
             if (_int_inplace_ok) {
                 res = PyStackRef_DUP(left);
             }
             else {
-                res = _PyCompactLong_Subtract((PyLongObject *)PyStackRef_AsPyObjectBorrow(left),
-                                              (PyLongObject *)PyStackRef_AsPyObjectBorrow(right));
-                EXIT_IF(PyStackRef_IsNull(res));
+                res = _int_inplace_res;
             }
             l = left;
-            r = right;
-            INPUTS_DEAD();
+            DEAD(left);
         }
 
         tier2 op(_BINARY_OP_MULTIPLY_INT_INPLACE, (left, right -- res, l, r)) {
-            INT_INPLACE_OP(left, right, left, *);
+            INT_INPLACE_OP(left, right, left, *, _PyCompactLong_Multiply);
+            r = right;
+            DEAD(right);
+            EXIT_IF(!_int_inplace_ok && PyStackRef_IsNull(_int_inplace_res));
             if (_int_inplace_ok) {
                 res = PyStackRef_DUP(left);
             }
             else {
-                res = _PyCompactLong_Multiply((PyLongObject *)PyStackRef_AsPyObjectBorrow(left),
-                                              (PyLongObject *)PyStackRef_AsPyObjectBorrow(right));
-                EXIT_IF(PyStackRef_IsNull(res));
+                res = _int_inplace_res;
             }
             l = left;
-            r = right;
-            INPUTS_DEAD();
+            DEAD(left);
         }
 
         tier2 op(_BINARY_OP_ADD_INT_INPLACE_RIGHT, (left, right -- res, l, r)) {
-            INT_INPLACE_OP(left, right, right, +);
+            INT_INPLACE_OP(left, right, right, +, _PyCompactLong_Add);
+            l = left;
+            DEAD(left);
+            EXIT_IF(!_int_inplace_ok && PyStackRef_IsNull(_int_inplace_res));
             if (_int_inplace_ok) {
                 res = PyStackRef_DUP(right);
             }
             else {
-                res = _PyCompactLong_Add((PyLongObject *)PyStackRef_AsPyObjectBorrow(left),
-                                         (PyLongObject *)PyStackRef_AsPyObjectBorrow(right));
-                EXIT_IF(PyStackRef_IsNull(res));
+                res = _int_inplace_res;
             }
-            l = left;
             r = right;
-            INPUTS_DEAD();
+            DEAD(right);
         }
 
         tier2 op(_BINARY_OP_SUBTRACT_INT_INPLACE_RIGHT, (left, right -- res, l, r)) {
-            INT_INPLACE_OP(left, right, right, -);
+            INT_INPLACE_OP(left, right, right, -, _PyCompactLong_Subtract);
+            l = left;
+            DEAD(left);
+            EXIT_IF(!_int_inplace_ok && PyStackRef_IsNull(_int_inplace_res));
             if (_int_inplace_ok) {
                 res = PyStackRef_DUP(right);
             }
             else {
-                res = _PyCompactLong_Subtract((PyLongObject *)PyStackRef_AsPyObjectBorrow(left),
-                                              (PyLongObject *)PyStackRef_AsPyObjectBorrow(right));
-                EXIT_IF(PyStackRef_IsNull(res));
+                res = _int_inplace_res;
             }
-            l = left;
             r = right;
-            INPUTS_DEAD();
+            DEAD(right);
         }
 
         tier2 op(_BINARY_OP_MULTIPLY_INT_INPLACE_RIGHT, (left, right -- res, l, r)) {
-            INT_INPLACE_OP(left, right, right, *);
+            INT_INPLACE_OP(left, right, right, *, _PyCompactLong_Multiply);
+            l = left;
+            DEAD(left);
+            EXIT_IF(!_int_inplace_ok && PyStackRef_IsNull(_int_inplace_res));
             if (_int_inplace_ok) {
                 res = PyStackRef_DUP(right);
             }
             else {
-                res = _PyCompactLong_Multiply((PyLongObject *)PyStackRef_AsPyObjectBorrow(left),
-                                              (PyLongObject *)PyStackRef_AsPyObjectBorrow(right));
-                EXIT_IF(PyStackRef_IsNull(res));
+                res = _int_inplace_res;
             }
-            l = left;
             r = right;
-            INPUTS_DEAD();
+            DEAD(right);
         }
 
         op(_GUARD_NOS_FLOAT, (left, unused -- left, unused)) {

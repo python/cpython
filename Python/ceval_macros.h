@@ -568,12 +568,14 @@ gen_try_set_executing(PyGenObject *gen)
 // cached small int singleton. We check _Py_IsImmortal on TARGET
 // to decide whether inplace mutation is safe.
 //
-// After the macro, exactly one of:
-//   _int_inplace_ok   = 1: mutated TARGET in place (res = TARGET)
-//   _int_inplace_ok   = 0: did not mutate; caller should call
-//                           _PyCompactLong_* as fallback
-#define INT_INPLACE_OP(left, right, TARGET, OP)                          \
+// After the macro:
+//   _int_inplace_ok = 1: mutated TARGET in place (caller uses TARGET as res)
+//   _int_inplace_ok = 0: _int_inplace_res holds the fallback result
+//                         (may be NULL on allocation failure)
+// FUNC is the fallback function (_PyCompactLong_Add etc.)
+#define INT_INPLACE_OP(left, right, TARGET, OP, FUNC)                    \
     int _int_inplace_ok = 0;                                             \
+    _PyStackRef _int_inplace_res = PyStackRef_NULL;                      \
     do {                                                                 \
         PyObject *_target_o = PyStackRef_AsPyObjectBorrow(TARGET);       \
         if (_Py_IsImmortal(_target_o)) {                                 \
@@ -595,5 +597,10 @@ gen_try_set_executing(PyGenObject *gen)
                 (digit)(_result < 0 ? -_result : _result);               \
             _int_inplace_ok = 1;                                         \
         }                                                                \
-    } while (0)
+    } while (0);                                                         \
+    if (!_int_inplace_ok) {                                              \
+        _int_inplace_res = FUNC(                                         \
+            (PyLongObject *)PyStackRef_AsPyObjectBorrow(left),           \
+            (PyLongObject *)PyStackRef_AsPyObjectBorrow(right));         \
+    }
 
