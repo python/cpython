@@ -2403,26 +2403,25 @@ bytes_maketrans_impl(Py_buffer *frm, Py_buffer *to)
 
 
 /*[clinic input]
-@permit_long_docstring_body
 bytes.replace
 
     old: Py_buffer
     new: Py_buffer
+    /
     count: Py_ssize_t = -1
         Maximum number of occurrences to replace.
         -1 (the default value) means replace all occurrences.
-    /
 
 Return a copy with all occurrences of substring old replaced by new.
 
-If the optional argument count is given, only the first count occurrences are
-replaced.
+If count is given, only the first count occurrences are replaced.
+If count is not specified or -1, then all occurrences are replaced.
 [clinic start generated code]*/
 
 static PyObject *
 bytes_replace_impl(PyBytesObject *self, Py_buffer *old, Py_buffer *new,
                    Py_ssize_t count)
-/*[clinic end generated code: output=994fa588b6b9c104 input=8b99a9ab32bc06a2]*/
+/*[clinic end generated code: output=994fa588b6b9c104 input=cdf3cf8639297745]*/
 {
     return stringlib_replace((PyObject *)self,
                              (const char *)old->buf, old->len,
