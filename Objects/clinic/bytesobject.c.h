@@ -1254,7 +1254,7 @@ PyDoc_STRVAR(bytes_hex__doc__,
     {"hex", _PyCFunction_CAST(bytes_hex), METH_FASTCALL|METH_KEYWORDS, bytes_hex__doc__},
 
 static PyObject *
-bytes_hex_impl(PyBytesObject *self, PyObject *sep, int bytes_per_sep);
+bytes_hex_impl(PyBytesObject *self, PyObject *sep, Py_ssize_t bytes_per_sep);
 
 static PyObject *
 bytes_hex(PyObject *self, PyObject *const *args, Py_ssize_t nargs, PyObject *kwnames)
@@ -1290,7 +1290,7 @@ bytes_hex(PyObject *self, PyObject *const *args, Py_ssize_t nargs, PyObject *kwn
     PyObject *argsbuf[2];
     Py_ssize_t noptargs = nargs + (kwnames ? PyTuple_GET_SIZE(kwnames) : 0) - 0;
     PyObject *sep = NULL;
-    int bytes_per_sep = 1;
+    Py_ssize_t bytes_per_sep = 1;
 
     args = _PyArg_UnpackKeywords(args, nargs, NULL, kwnames, &_parser,
             /*minpos*/ 0, /*maxpos*/ 2, /*minkw*/ 0, /*varpos*/ 0, argsbuf);
@@ -1306,9 +1306,17 @@ bytes_hex(PyObject *self, PyObject *const *args, Py_ssize_t nargs, PyObject *kwn
             goto skip_optional_pos;
         }
     }
-    bytes_per_sep = PyLong_AsInt(args[1]);
-    if (bytes_per_sep == -1 && PyErr_Occurred()) {
-        goto exit;
+    {
+        Py_ssize_t ival = -1;
+        PyObject *iobj = _PyNumber_Index(args[1]);
+        if (iobj != NULL) {
+            ival = PyLong_AsSsize_t(iobj);
+            Py_DECREF(iobj);
+        }
+        if (ival == -1 && PyErr_Occurred()) {
+            goto exit;
+        }
+        bytes_per_sep = ival;
     }
 skip_optional_pos:
     return_value = bytes_hex_impl((PyBytesObject *)self, sep, bytes_per_sep);
@@ -1411,4 +1419,4 @@ skip_optional_pos:
 exit:
     return return_value;
 }
-/*[clinic end generated code: output=08b9507244f73638 input=a9049054013a1b77]*/
+/*[clinic end generated code: output=accadabe56cdabb9 input=a9049054013a1b77]*/

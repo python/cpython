@@ -551,10 +551,10 @@ class BaseBytesTest:
         self.assertEqual(three_bytes.hex('*', -2), 'b901*ef')
         self.assertEqual(three_bytes.hex(sep=':', bytes_per_sep=2), 'b9:01ef')
         self.assertEqual(three_bytes.hex(sep='*', bytes_per_sep=-2), 'b901*ef')
-        for bytes_per_sep in 3, -3, 2**31-1, -(2**31-1):
+        for bytes_per_sep in 3, -3, sys.maxsize, -sys.maxsize:
             with self.subTest(bytes_per_sep=bytes_per_sep):
                 self.assertEqual(three_bytes.hex(':', bytes_per_sep), 'b901ef')
-        for bytes_per_sep in 2**31, -2**31, 2**1000, -2**1000:
+        for bytes_per_sep in sys.maxsize+1, -sys.maxsize-1, 2**1000, -2**1000:
             with self.subTest(bytes_per_sep=bytes_per_sep):
                 try:
                     self.assertEqual(three_bytes.hex(':', bytes_per_sep), 'b901ef')
