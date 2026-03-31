@@ -601,7 +601,7 @@ list_repr_impl(PyListObject *v)
        so must refetch the list size on each iteration. */
     for (Py_ssize_t i = 0; i < Py_SIZE(v); ++i) {
         /* Hold a strong reference since repr(item) can mutate the list */
-        item = Py_NewRef(v->ob_item[i]);
+        item = Py_XNewRef(v->ob_item[i]);
 
         if (i > 0) {
             if (PyUnicodeWriter_WriteChar(writer, ',') < 0) {
@@ -1437,9 +1437,9 @@ list_extend_dictitems(PyListObject *self, PyDictObject *dict)
     PyObject **dest = self->ob_item + m;
     Py_ssize_t pos = 0;
     Py_ssize_t i = 0;
-    PyObject *key_value[2];
-    while (_PyDict_Next((PyObject *)dict, &pos, &key_value[0], &key_value[1], NULL)) {
-        PyObject *item = PyTuple_FromArray(key_value, 2);
+    PyObject *key, *value;
+    while (_PyDict_Next((PyObject *)dict, &pos, &key, &value, NULL)) {
+        PyObject *item = _PyTuple_FromPair(key, value);
         if (item == NULL) {
             Py_SET_SIZE(self, m + i);
             return -1;
@@ -3283,10 +3283,8 @@ _PyList_AsTupleAndClear(PyListObject *self)
     Py_BEGIN_CRITICAL_SECTION(self);
     PyObject **items = self->ob_item;
     Py_ssize_t size = Py_SIZE(self);
-    self->ob_item = NULL;
     Py_SET_SIZE(self, 0);
     ret = _PyTuple_FromArraySteal(items, size);
-    free_list_items(items, false);
     Py_END_CRITICAL_SECTION();
     return ret;
 }

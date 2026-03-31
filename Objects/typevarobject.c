@@ -2,6 +2,7 @@
 #include "Python.h"
 #include "pycore_interpframe.h"   // _PyInterpreterFrame
 #include "pycore_object.h"        // _PyObject_GC_TRACK/UNTRACK, PyAnnotateFormat
+#include "pycore_tuple.h"         // _PyTuple_FromPair
 #include "pycore_typevarobject.h"
 #include "pycore_unicodeobject.h" // _PyUnicode_EqualToASCIIString()
 #include "pycore_unionobject.h"   // _Py_union_type_or, _Py_union_from_tuple
@@ -373,7 +374,7 @@ type_check(PyObject *arg, const char *msg)
 static PyObject *
 make_union(PyObject *self, PyObject *other)
 {
-    PyObject *args = PyTuple_Pack(2, self, other);
+    PyObject *args = _PyTuple_FromPair(self, other);
     if (args == NULL) {
         return NULL;
     }
@@ -817,7 +818,7 @@ typevar_typing_prepare_subst_impl(typevarobject *self, PyObject *alias,
     }
     Py_DECREF(params);
     PyErr_Format(PyExc_TypeError,
-                 "Too few arguments for %S; actual %d, expected at least %d",
+                 "Too few arguments for %S; actual %zd, expected at least %zd",
                  alias, args_len, i + 1);
     return NULL;
 }

@@ -293,6 +293,13 @@ class BaseXYTestCase(unittest.TestCase):
             eq(base64.b64decode(data_str, altchars=altchars_str), res)
             eq(base64.b64decode(data, altchars=altchars, ignorechars=b'\n'), res)
 
+        eq(base64.b64decode(b'/----', altchars=b'-+', ignorechars=b'/'), b'\xfb\xef\xbe')
+        eq(base64.b64decode(b'/----', altchars=b'+-', ignorechars=b'/'), b'\xff\xff\xff')
+        eq(base64.b64decode(b'+----', altchars=b'-/', ignorechars=b'+'), b'\xfb\xef\xbe')
+        eq(base64.b64decode(b'+----', altchars=b'/-', ignorechars=b'+'), b'\xff\xff\xff')
+        eq(base64.b64decode(b'+/+/', altchars=b'/+', ignorechars=b''), b'\xff\xef\xfe')
+        eq(base64.b64decode(b'/+/+', altchars=b'+/', ignorechars=b''), b'\xff\xef\xfe')
+
         self.assertRaises(ValueError, base64.b64decode, b'', altchars=b'+')
         self.assertRaises(ValueError, base64.b64decode, b'', altchars=b'+/-')
         self.assertRaises(ValueError, base64.b64decode, '', altchars='+')

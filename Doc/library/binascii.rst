@@ -48,11 +48,14 @@ The :mod:`!binascii` module defines the following functions:
       Added the *backtick* parameter.
 
 
-.. function:: a2b_base64(string, /, *, strict_mode=False)
-              a2b_base64(string, /, *, strict_mode=True, ignorechars)
+.. function:: a2b_base64(string, /, *, alphabet=BASE64_ALPHABET, strict_mode=False)
+              a2b_base64(string, /, *, ignorechars, alphabet=BASE64_ALPHABET, strict_mode=True)
 
    Convert a block of base64 data back to binary and return the binary data. More
    than one line may be passed at a time.
+
+   Optional *alphabet* must be a :class:`bytes` object of length 64 which
+   specifies an alternative alphabet.
 
    If *ignorechars* is specified, it should be a :term:`bytes-like object`
    containing characters to ignore from the input when *strict_mode* is true.
@@ -76,10 +79,10 @@ The :mod:`!binascii` module defines the following functions:
       Added the *strict_mode* parameter.
 
    .. versionchanged:: 3.15
-      Added the *ignorechars* parameter.
+      Added the *alphabet* and *ignorechars* parameters.
 
 
-.. function:: b2a_base64(data, *, wrapcol=0, newline=True)
+.. function:: b2a_base64(data, *, alphabet=BASE64_ALPHABET, wrapcol=0, newline=True)
 
    Convert binary data to a line(s) of ASCII characters in base64 coding,
    as specified in :rfc:`4648`.
@@ -95,7 +98,7 @@ The :mod:`!binascii` module defines the following functions:
       Added the *newline* parameter.
 
    .. versionchanged:: 3.15
-      Added the *wrapcol* parameter.
+      Added the *alphabet* and *wrapcol* parameters.
 
 
 .. function:: a2b_ascii85(string, /, *, foldspaces=False, adobe=False, ignorechars=b"")
@@ -148,7 +151,7 @@ The :mod:`!binascii` module defines the following functions:
    .. versionadded:: 3.15
 
 
-.. function:: a2b_base85(string, /)
+.. function:: a2b_base85(string, /, *, alphabet=BASE85_ALPHABET)
 
    Convert Base85 data back to binary and return the binary data.
    More than one line may be passed at a time.
@@ -158,51 +161,59 @@ The :mod:`!binascii` module defines the following functions:
    characters). Each group encodes 32 bits of binary data in the range from
    ``0`` to ``2 ** 32 - 1``, inclusive.
 
+   Optional *alphabet* must be a :class:`bytes` object of length 85 which
+   specifies an alternative alphabet.
+
    Invalid Base85 data will raise :exc:`binascii.Error`.
 
    .. versionadded:: 3.15
 
 
-.. function:: b2a_base85(data, /, *, pad=False)
+.. function:: b2a_base85(data, /, *, alphabet=BASE85_ALPHABET, pad=False)
 
    Convert binary data to a line of ASCII characters in Base85 coding.
    The return value is the converted line.
 
-   If *pad* is true, the input is padded with ``b'\0'`` so its length is a
-   multiple of 4 bytes before encoding.
-
-   .. versionadded:: 3.15
-
-
-.. function:: a2b_z85(string, /)
-
-   Convert Z85 data back to binary and return the binary data.
-   More than one line may be passed at a time.
-
-   Valid Z85 data contains characters from the Z85 alphabet in groups
-   of five (except for the final group, which may have from two to five
-   characters). Each group encodes 32 bits of binary data in the range from
-   ``0`` to ``2 ** 32 - 1``, inclusive.
-
-   See `Z85 specification <https://rfc.zeromq.org/spec/32/>`_ for more information.
-
-   Invalid Z85 data will raise :exc:`binascii.Error`.
-
-   .. versionadded:: 3.15
-
-
-.. function:: b2a_z85(data, /, *, pad=False)
-
-   Convert binary data to a line of ASCII characters in Z85 coding.
-   The return value is the converted line.
+   Optional *alphabet* must be a :term:`bytes-like object` of length 85 which
+   specifies an alternative alphabet.
 
    If *pad* is true, the input is padded with ``b'\0'`` so its length is a
    multiple of 4 bytes before encoding.
 
-   See `Z85 specification <https://rfc.zeromq.org/spec/32/>`_ for more information.
-
    .. versionadded:: 3.15
 
+
+.. function:: a2b_base32(string, /, *, alphabet=BASE32_ALPHABET)
+
+   Convert base32 data back to binary and return the binary data.
+
+   Valid base32 data contains characters from the base32 alphabet specified
+   in :rfc:`4648` in groups of eight (if necessary, the final group is padded
+   to eight characters with ``=``). Each group encodes 40 bits of binary data
+   in the range from ``0`` to ``2 ** 40 - 1``, inclusive.
+
+   .. note::
+      This function does not map lowercase characters (which are invalid in
+      standard base32) to their uppercase counterparts, nor does it
+      contextually map ``0`` to ``O`` and ``1`` to ``I``/``L`` as :rfc:`4648`
+      allows.
+
+   Optional *alphabet* must be a :class:`bytes` object of length 32 which
+   specifies an alternative alphabet.
+
+   Invalid base32 data will raise :exc:`binascii.Error`.
+
+   .. versionadded:: next
+
+.. function:: b2a_base32(data, /, *, alphabet=BASE32_ALPHABET)
+
+   Convert binary data to a line of ASCII characters in base32 coding,
+   as specified in :rfc:`4648`. The return value is the converted line.
+
+   Optional *alphabet* must be a :term:`bytes-like object` of length 32 which
+   specifies an alternative alphabet.
+
+   .. versionadded:: next
 
 .. function:: a2b_qp(data, header=False)
 
@@ -298,6 +309,69 @@ The :mod:`!binascii` module defines the following functions:
 
    Exception raised on incomplete data. These are usually not programming errors,
    but may be handled by reading a little more data and trying again.
+
+
+.. data:: BASE64_ALPHABET
+
+   The Base 64 alphabet according to :rfc:`4648`.
+
+   .. versionadded:: next
+
+.. data:: URLSAFE_BASE64_ALPHABET
+
+   The "URL and filename safe" Base 64 alphabet according to :rfc:`4648`.
+
+   .. versionadded:: next
+
+.. data:: UU_ALPHABET
+
+   The uuencoding alphabet.
+
+   .. versionadded:: next
+
+.. data:: CRYPT_ALPHABET
+
+   The Base 64 alphabet used in the :manpage:`crypt(3)` routine and in the GEDCOM format.
+
+   .. versionadded:: next
+
+.. data:: BINHEX_ALPHABET
+
+   The Base 64 alphabet used in BinHex 4 (HQX) within the classic Mac OS.
+
+   .. versionadded:: next
+
+.. data:: BASE85_ALPHABET
+
+   The Base85 alphabet.
+
+   .. versionadded:: next
+
+.. data:: ASCII85_ALPHABET
+
+   The Ascii85 alphabet.
+
+   .. versionadded:: next
+
+.. data:: Z85_ALPHABET
+
+   The `Z85 <https://rfc.zeromq.org/spec/32/>`_ alphabet.
+
+   .. versionadded:: next
+
+.. data:: BASE32_ALPHABET
+
+   The Base 32 alphabet according to :rfc:`4648`.
+
+   .. versionadded:: next
+
+.. data:: BASE32HEX_ALPHABET
+
+   The "Extended Hex" Base 32 alphabet according to :rfc:`4648`.
+   Data encoded with this alphabet maintains its sort order during bitwise
+   comparisons.
+
+   .. versionadded:: next
 
 
 .. seealso::

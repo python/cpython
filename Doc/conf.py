@@ -177,6 +177,7 @@ nitpick_ignore = [
     ('c:type', '__int64'),
     ('c:type', 'unsigned __int64'),
     ('c:type', 'double'),
+    ('c:type', '_Float16'),
     # Standard C structures
     ('c:struct', 'in6_addr'),
     ('c:struct', 'in_addr'),
@@ -569,6 +570,7 @@ extlinks_detect_hardcoded_links = True
 # Relative filename of the data files
 refcount_file = 'data/refcounts.dat'
 stable_abi_file = 'data/stable_abi.dat'
+threadsafety_file = 'data/threadsafety.dat'
 
 # Options for sphinxext-opengraph
 # -------------------------------

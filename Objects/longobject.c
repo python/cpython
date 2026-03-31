@@ -12,6 +12,7 @@
 #include "pycore_runtime.h"       // _PY_NSMALLPOSINTS
 #include "pycore_stackref.h"
 #include "pycore_structseq.h"     // _PyStructSequence_FiniBuiltin()
+#include "pycore_tuple.h"         // _PyTuple_FromPairSteal
 #include "pycore_unicodeobject.h" // _PyUnicode_Equal()
 
 #include <float.h>                // DBL_MANT_DIG
@@ -25,7 +26,7 @@ class int "PyObject *" "&PyLong_Type"
 
 #define medium_value(x) ((stwodigits)_PyLong_CompactValue(x))
 
-#define IS_SMALL_INT(ival) (-_PY_NSMALLNEGINTS <= (ival) && (ival) < _PY_NSMALLPOSINTS)
+#define IS_SMALL_INT(ival) _PY_IS_SMALL_INT(ival)
 #define IS_SMALL_UINT(ival) ((ival) < _PY_NSMALLPOSINTS)
 
 #define _MAX_STR_DIGITS_ERROR_FMT_TO_INT "Exceeds the limit (%d digits) for integer string conversion: value has %zd digits; use sys.set_int_max_str_digits() to increase the limit"
@@ -46,17 +47,6 @@ _Py_DECREF_INT(PyLongObject *op)
 {
     assert(PyLong_CheckExact(op));
     _Py_DECREF_SPECIALIZED((PyObject *)op, _PyLong_ExactDealloc);
-}
-
-static inline int
-/// Return 1 if the object is one of the immortal small ints
-_long_is_small_int(PyObject *op)
-{
-    assert(PyLong_Check(op));
-    PyLongObject *long_object = (PyLongObject *)op;
-    int is_small_int = (long_object->long_value.lv_tag & IMMORTALITY_BIT_MASK) != 0;
-    assert((!is_small_int) || PyLong_CheckExact(op));
-    return is_small_int;
 }
 
 static inline int
@@ -355,6 +345,8 @@ medium_from_stwodigits(stwodigits x)
 }
 
 
+/* If a freshly-allocated int is already shared, it must
+   be a small integer, so negating it must go to PyLong_FromLong */
 Py_LOCAL_INLINE(void)
 _PyLong_Negate(PyLongObject **x_p)
 {
@@ -366,10 +358,8 @@ _PyLong_Negate(PyLongObject **x_p)
         return;
     }
 
-    /* If a freshly-allocated int is already shared, it must
-    be a small integer, so negating it will fit a single digit */
-    assert(_long_is_small_int((PyObject *)x));
-    *x_p = (PyLongObject *)_PyLong_FromSTwoDigits(-medium_value(x));
+    *x_p = _PyLong_FromSTwoDigits(-medium_value(x));
+    Py_DECREF(x);
 }
 
 #define PYLONG_FROM_INT(UINT_TYPE, INT_TYPE, ival)                                  \
@@ -3633,6 +3623,16 @@ long_richcompare(PyObject *self, PyObject *other, int op)
     Py_RETURN_RICHCOMPARE(result, 0, op);
 }
 
+static inline int
+/// Return 1 if the object is one of the immortal small ints
+_long_is_small_int(PyObject *op)
+{
+    PyLongObject *long_object = (PyLongObject *)op;
+    int is_small_int = (long_object->long_value.lv_tag & IMMORTALITY_BIT_MASK) != 0;
+    assert((!is_small_int) || PyLong_CheckExact(op));
+    return is_small_int;
+}
+
 void
 _PyLong_ExactDealloc(PyObject *self)
 {
@@ -4879,23 +4879,12 @@ static PyObject *
 long_divmod(PyObject *a, PyObject *b)
 {
     PyLongObject *div, *mod;
-    PyObject *z;
-
     CHECK_BINOP(a, b);
 
     if (l_divmod((PyLongObject*)a, (PyLongObject*)b, &div, &mod) < 0) {
         return NULL;
     }
-    z = PyTuple_New(2);
-    if (z != NULL) {
-        PyTuple_SET_ITEM(z, 0, (PyObject *) div);
-        PyTuple_SET_ITEM(z, 1, (PyObject *) mod);
-    }
-    else {
-        Py_DECREF(div);
-        Py_DECREF(mod);
-    }
-    return z;
+    return _PyTuple_FromPairSteal((PyObject *)div, (PyObject *)mod);
 }
 
 
@@ -6119,7 +6108,7 @@ PyObject *
 _PyLong_DivmodNear(PyObject *a, PyObject *b)
 {
     PyLongObject *quo = NULL, *rem = NULL;
-    PyObject *twice_rem, *result, *temp;
+    PyObject *twice_rem, *temp;
     int quo_is_odd, quo_is_neg;
     Py_ssize_t cmp;
 
@@ -6185,14 +6174,7 @@ _PyLong_DivmodNear(PyObject *a, PyObject *b)
             goto error;
     }
 
-    result = PyTuple_New(2);
-    if (result == NULL)
-        goto error;
-
-    /* PyTuple_SET_ITEM steals references */
-    PyTuple_SET_ITEM(result, 0, (PyObject *)quo);
-    PyTuple_SET_ITEM(result, 1, (PyObject *)rem);
-    return result;
+    return _PyTuple_FromPairSteal((PyObject *)quo, (PyObject *)rem);
 
   error:
     Py_XDECREF(quo);
@@ -6369,14 +6351,11 @@ static PyObject *
 int_as_integer_ratio_impl(PyObject *self)
 /*[clinic end generated code: output=e60803ae1cc8621a input=384ff1766634bec2]*/
 {
-    PyObject *ratio_tuple;
     PyObject *numerator = long_long(self);
     if (numerator == NULL) {
         return NULL;
     }
-    ratio_tuple = PyTuple_Pack(2, numerator, _PyLong_GetOne());
-    Py_DECREF(numerator);
-    return ratio_tuple;
+    return _PyTuple_FromPairSteal(numerator, _PyLong_GetOne());
 }
 
 /*[clinic input]
