@@ -228,6 +228,7 @@ cpu_thread.join()
         self.assertIn("No samples were collected", output)
         self.assertIn("CPU mode", output)
 
+
 @requires_remote_subprocess_debugging()
 class TestGilModeFiltering(unittest.TestCase):
     """Test GIL mode filtering functionality (--mode=gil)."""
