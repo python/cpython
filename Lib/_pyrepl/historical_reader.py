@@ -264,6 +264,7 @@ class HistoricalReader(Reader):
             (r"\C-s", "forward-history-isearch"),
             (r"\M-r", "restore-history"),
             (r"\M-.", "yank-arg"),
+            (r"\M-_", "yank-arg"),
             (r"\<page down>", "history-search-forward"),
             (r"\x1b[6~", "history-search-forward"),
             (r"\<page up>", "history-search-backward"),
