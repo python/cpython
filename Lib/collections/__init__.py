@@ -452,7 +452,6 @@ def namedtuple(typename, field_names, *, rename=False, defaults=None, module=Non
 
     @classmethod
     def _make(cls, iterable):
-        #print(f'_make: {cls=} {iterable}')
         result = tuple_new(cls, iterable)
         if _len(result) != num_fields:
             raise TypeError(f'Expected {num_fields} arguments, got {len(result)}')
