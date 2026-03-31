@@ -2760,6 +2760,8 @@ class TestUopsOptimization(unittest.TestCase):
         self.assertIn("_CALL_METHOD_DESCRIPTOR_O_INLINE", uops)
         self.assertNotIn("_CALL_METHOD_DESCRIPTOR_O", uops)
         self.assertNotIn("_GUARD_CALLABLE_METHOD_DESCRIPTOR_O", uops)
+        self.assertIn("_POP_TOP_NOP", uops)
+        self.assertLessEqual(count_ops(ex, "_POP_TOP"), 4)
 
     def test_call_method_descriptor_noargs(self):
         def testfunc(n):
