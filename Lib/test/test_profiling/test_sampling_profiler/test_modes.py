@@ -371,11 +371,6 @@ cpu_thread.join()
         for exp in expected:
             self.assertIn(exp, lines)
 
-        # self.assertIn(active1_key, collector_no_skip.result)
-        # self.assertIn(active2_key, collector_no_skip.result)
-        # self.assertIn(
-        #     idle_key, collector_no_skip.result
-        # )  # Idle thread should be included
 
 @requires_remote_subprocess_debugging()
 class TestGilModeFiltering(unittest.TestCase):
