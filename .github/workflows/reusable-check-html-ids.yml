@@ -30,9 +30,22 @@ jobs:
         run: make -C Doc/ venv
       - name: 'Build HTML documentation'
         run: make -C Doc/ SPHINXOPTS="--quiet" html
+      - name: 'Check out PR head tools'
+        uses: actions/checkout@v6
+        with:
+          persist-credentials: false
+          sparse-checkout: |
+            Doc/tools/check-html-ids.py
+            Doc/tools/removed-ids.txt
+          sparse-checkout-cone-mode: false
+          path: /tmp/tools
+      - name: 'Use PR head tools'
+        run: |
+          cp /tmp/tools/Doc/tools/check-html-ids.py Doc/tools/check-html-ids.py
+          [ -f /tmp/tools/Doc/tools/removed-ids.txt ] && cp /tmp/tools/Doc/tools/removed-ids.txt Doc/tools/removed-ids.txt
       - name: 'Collect HTML IDs'
         run: python Doc/tools/check-html-ids.py collect Doc/build/html -o /tmp/html-ids-base.json.gz
-      - name: 'Download PR base HTML IDs'
+      - name: 'Download PR head HTML IDs'
         uses: actions/download-artifact@v8
         with:
           name: html-ids-head.json.gz
@@ -41,5 +54,4 @@ jobs:
         run: >-
           python Doc/tools/check-html-ids.py -v check
           /tmp/html-ids-base.json.gz /tmp/html-ids-head.json.gz
-        # XXX: When an exclude file is added, update this to use it:
-        # --exclude-file Doc/tools/removed-ids.txt
+          $([ -f Doc/tools/removed-ids.txt ] && echo "--exclude-file Doc/tools/removed-ids.txt")
