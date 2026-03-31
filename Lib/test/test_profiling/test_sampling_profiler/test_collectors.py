@@ -2145,6 +2145,56 @@ class TestLocationInCollectors(unittest.TestCase):
         # Verify function name is in string table
         self.assertIn("handle_request", string_array)
 
+    def test_jsonl_collector_with_location_info(self):
+        """Test JsonlCollector handles LocationInfo properly."""
+        collapsed_out = tempfile.NamedTemporaryFile(delete=False)
+        self.addCleanup(close_and_unlink, collapsed_out)
+
+        collector = JsonlCollector(sample_interval_usec=1000)
+        run_id = collector.run_id
+
+        # Frame with LocationInfo
+        frame = MockFrameInfo("test.py", 42, "my_function")
+        frames = [
+            MockInterpreterInfo(
+                0, [MockThreadInfo(1, [frame], status=THREAD_STATUS_HAS_GIL)]
+            )
+        ]
+        collector.collect(frames)
+
+        # Should extract lineno from location
+        with captured_stdout(), captured_stderr():
+            collector.export(collapsed_out.name)
+
+        # Check file contents
+        with open(collapsed_out.name, "r") as f:
+            content = f.read()
+
+        lines = content.strip().split("\n")
+        self.assertEqual(len(lines), 5)
+
+        def jsonl(obj):
+            return json.dumps(obj, separators=(",", ":"))
+
+        expected = [
+            jsonl({"type": "meta", "v": 1, "run_id": run_id,
+                   "sample_interval_usec": 1000}),
+            jsonl({"type": "str_def", "v": 1, "run_id": run_id,
+                   "defs": [{"str_id": 1, "value": "my_function"},
+                            {"str_id": 2, "value": "test.py"}]}),
+            jsonl({"type": "frame_def", "v": 1, "run_id": run_id,
+                   "defs": [{"frame_id": 1, "path_str_id": 2, "func_str_id": 1,
+                             "line": 42, "end_line": 42}]}),
+            jsonl({"type": "agg", "v": 1, "run_id": run_id,
+                   "kind": "frame", "scope": "final", "samples_total": 1,
+                   "entries": [{"frame_id": 1, "self": 1, "cumulative": 1}]}),
+            jsonl({"type": "end", "v": 1, "run_id": run_id,
+                   "samples_total": 1}),
+        ]
+
+        for exp in expected:
+            self.assertIn(exp, lines)
+
 
 class TestOpcodeHandling(unittest.TestCase):
     """Tests for opcode field handling in collectors."""
