@@ -23,41 +23,6 @@ env:
   LLVM_VERSION: 21
 
 jobs:
-  windows:
-    name: ${{ matrix.target }}
-    runs-on: ${{ matrix.runner }}
-    timeout-minutes: 60
-    strategy:
-      fail-fast: false
-      matrix:
-        include:
-          - target: x86_64-pc-windows-msvc/msvc
-            architecture: x64
-            runner: windows-2025-vs2026
-            build_flags: ""
-            run_tests: true
-          - target: x86_64-pc-windows-msvc/msvc-free-threading
-            architecture: x64
-            runner: windows-2025-vs2026
-            build_flags: --disable-gil
-            run_tests: false
-    steps:
-      - uses: actions/checkout@v6
-        with:
-          persist-credentials: false
-      - uses: actions/setup-python@v6
-        with:
-          python-version: '3.11'
-      - name: Build
-        shell: pwsh
-        run: |
-          ./PCbuild/build.bat --tail-call-interp ${{ matrix.build_flags }} -c Release -p ${{ matrix.architecture }}
-      - name: Test
-        if: matrix.run_tests
-        shell: pwsh
-        run: |
-          ./PCbuild/rt.bat -p ${{ matrix.architecture }} -q --multiprocess 0 --timeout 4500 --verbose2 --verbose3
-
   macos:
     name: ${{ matrix.target }}
     runs-on: ${{ matrix.runner }}

@@ -147,3 +147,31 @@ PySet_Pop:atomic:
 
 # Clear - empties the set before clearing
 PySet_Clear:atomic:
+# Capsule objects (Doc/c-api/capsule.rst)
+
+# Type check - read ob_type pointer, always safe
+PyCapsule_CheckExact:atomic:
+
+# Creation - pure allocation, no shared state
+PyCapsule_New:atomic:
+
+# Validation - reads pointer and name fields; safe on distinct objects
+PyCapsule_IsValid:distinct:
+
+# Getters - read struct fields; safe on distinct objects but
+# concurrent access to the same capsule requires external synchronization
+PyCapsule_GetPointer:distinct:
+PyCapsule_GetName:distinct:
+PyCapsule_GetDestructor:distinct:
+PyCapsule_GetContext:distinct:
+
+# Setters - write struct fields; safe on distinct objects but
+# concurrent access to the same capsule requires external synchronization
+PyCapsule_SetPointer:distinct:
+PyCapsule_SetName:distinct:
+PyCapsule_SetDestructor:distinct:
+PyCapsule_SetContext:distinct:
+
+# Import - looks up a capsule from a module attribute and
+# calls PyCapsule_GetPointer; may call arbitrary code
+PyCapsule_Import:compatible:

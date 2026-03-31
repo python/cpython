@@ -5184,28 +5184,28 @@ check_basicsize_includes_size_and_offsets(PyTypeObject* type)
 
     if (type->tp_base && type->tp_base->tp_basicsize > type->tp_basicsize) {
         PyErr_Format(PyExc_TypeError,
-                     "tp_basicsize for type '%s' (%d) is too small for base '%s' (%d)",
+                     "tp_basicsize for type '%s' (%zd) is too small for base '%s' (%zd)",
                      type->tp_name, type->tp_basicsize,
                      type->tp_base->tp_name, type->tp_base->tp_basicsize);
         return 0;
     }
     if (type->tp_weaklistoffset + (Py_ssize_t)sizeof(PyObject*) > max) {
         PyErr_Format(PyExc_TypeError,
-                     "weaklist offset %d is out of bounds for type '%s' (tp_basicsize = %d)",
+                     "weaklist offset %zd is out of bounds for type '%s' (tp_basicsize = %zd)",
                      type->tp_weaklistoffset,
                      type->tp_name, type->tp_basicsize);
         return 0;
     }
     if (type->tp_dictoffset + (Py_ssize_t)sizeof(PyObject*) > max) {
         PyErr_Format(PyExc_TypeError,
-                     "dict offset %d is out of bounds for type '%s' (tp_basicsize = %d)",
+                     "dict offset %zd is out of bounds for type '%s' (tp_basicsize = %zd)",
                      type->tp_dictoffset,
                      type->tp_name, type->tp_basicsize);
         return 0;
     }
     if (type->tp_vectorcall_offset + (Py_ssize_t)sizeof(vectorcallfunc*) > max) {
         PyErr_Format(PyExc_TypeError,
-                     "vectorcall offset %d is out of bounds for type '%s' (tp_basicsize = %d)",
+                     "vectorcall offset %zd is out of bounds for type '%s' (tp_basicsize = %zd)",
                      type->tp_vectorcall_offset,
                      type->tp_name, type->tp_basicsize);
         return 0;
@@ -11601,7 +11601,7 @@ static pytype_slotdef slotdefs[] = {
 /* Stores the number of times where slotdefs has elements with same name.
    This counter precalculated by _PyType_InitSlotDefs() when the main
    interpreter starts. */
-static uint8_t slotdefs_name_counts[Py_ARRAY_LENGTH(slotdefs)];
+static uint8_t slotdefs_dups[Py_ARRAY_LENGTH(slotdefs)][1 + MAX_EQUIV];
 
 /* Given a type pointer and an offset gotten from a slotdef entry, return a
    pointer to the actual slot.  This is not quite the same as simply adding
@@ -11768,11 +11768,22 @@ update_one_slot(PyTypeObject *type, pytype_slotdef *p, pytype_slotdef **next_p,
             ((PyWrapperDescrObject *)descr)->d_base->name_strobj == p->name_strobj) {
             void **tptr;
             size_t index = (p - slotdefs);
-            if (slotdefs_name_counts[index] == 1) {
-                tptr = slotptr(type, p->offset);
+            if (slotdefs_dups[index][0] > 1) {
+                tptr = NULL;
+                for (size_t i = 1; i <= slotdefs_dups[index][0]; i++) {
+                    pytype_slotdef *q = &slotdefs[slotdefs_dups[index][i]];
+                    void **qptr = slotptr(type, q->offset);
+                    if (qptr == NULL || *qptr == NULL)
+                        continue;
+                    if (tptr != NULL) {
+                        tptr = NULL;
+                        break;
+                    }
+                    tptr = qptr;
+                }
             }
             else {
-                tptr = NULL;
+                tptr = slotptr(type, offset);
             }
 
             if (tptr == NULL || tptr == ptr)
@@ -12034,7 +12045,7 @@ _PyType_InitSlotDefs(PyInterpreterState *interp)
         Py_CLEAR(bytearray);
     }
 
-    memset(slotdefs_name_counts, 0, sizeof(slotdefs_name_counts));
+    memset(slotdefs_dups, -1, sizeof(slotdefs_dups));
 
     Py_ssize_t pos = 0;
     PyObject *key = NULL;
@@ -12044,7 +12055,7 @@ _PyType_InitSlotDefs(PyInterpreterState *interp)
         uint8_t n = data[0];
         for (uint8_t i = 0; i < n; i++) {
             uint8_t idx = data[i + 1];
-            slotdefs_name_counts[idx] = n;
+            memcpy(&slotdefs_dups[idx], data, sizeof(uint8_t) * (n + 1));
         }
     }
 

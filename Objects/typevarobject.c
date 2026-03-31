@@ -818,7 +818,7 @@ typevar_typing_prepare_subst_impl(typevarobject *self, PyObject *alias,
     }
     Py_DECREF(params);
     PyErr_Format(PyExc_TypeError,
-                 "Too few arguments for %S; actual %d, expected at least %d",
+                 "Too few arguments for %S; actual %zd, expected at least %zd",
                  alias, args_len, i + 1);
     return NULL;
 }
