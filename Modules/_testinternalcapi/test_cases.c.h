@@ -3826,8 +3826,8 @@
                 PyObject *self = PyStackRef_AsPyObjectBorrow(arguments[0]);
                 assert(self != NULL);
                 STAT_INC(CALL, hit);
-                PyCFunctionFast cfunc = (PyCFunctionFast)method->d_method->ml_meth;
                 _PyFrame_SetStackPointer(frame, stack_pointer);
+                PyCFunctionFast cfunc = _PyCFunctionFast_CAST(method->d_method->ml_meth);
                 PyObject *res_o = _PyCallMethodDescriptorFast_StackRefSteal(
                     callable,
                     cfunc,
@@ -3923,8 +3923,8 @@
                 PyObject *self = PyStackRef_AsPyObjectBorrow(arguments[0]);
                 assert(self != NULL);
                 STAT_INC(CALL, hit);
-                PyCFunctionFastWithKeywords cfunc = (PyCFunctionFastWithKeywords)method->d_method->ml_meth;
                 _PyFrame_SetStackPointer(frame, stack_pointer);
+                PyCFunctionFastWithKeywords cfunc = _PyCFunctionFastWithKeywords_CAST(method->d_method->ml_meth);
                 PyObject *res_o = _PyCallMethodDescriptorFastWithKeywords_StackRefSteal(
                     callable,
                     cfunc,

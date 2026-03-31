@@ -4835,7 +4835,7 @@ dummy_func(
             PyObject *self = PyStackRef_AsPyObjectBorrow(arguments[0]);
             assert(self != NULL);
             STAT_INC(CALL, hit);
-            PyCFunctionFastWithKeywords cfunc = (PyCFunctionFastWithKeywords)method->d_method->ml_meth;
+            PyCFunctionFastWithKeywords cfunc = _PyCFunctionFastWithKeywords_CAST(method->d_method->ml_meth);
             PyObject *res_o = _PyCallMethodDescriptorFastWithKeywords_StackRefSteal(
                 callable,
                 cfunc,
@@ -4856,7 +4856,7 @@ dummy_func(
             STAT_INC(CALL, hit);
             PyObject *res_o = _PyCallMethodDescriptorFastWithKeywords_StackRefSteal(
                 callable,
-                (PyCFunctionFastWithKeywords)cfunc,
+                _PyCFunctionFastWithKeywords_CAST(cfunc),
                 self,
                 args,
                 oparg
@@ -4968,7 +4968,7 @@ dummy_func(
             PyObject *self = PyStackRef_AsPyObjectBorrow(arguments[0]);
             assert(self != NULL);
             STAT_INC(CALL, hit);
-            PyCFunctionFast cfunc = (PyCFunctionFast)method->d_method->ml_meth;
+            PyCFunctionFast cfunc = _PyCFunctionFast_CAST(method->d_method->ml_meth);
             PyObject *res_o = _PyCallMethodDescriptorFast_StackRefSteal(
                 callable,
                 cfunc,
@@ -4989,7 +4989,7 @@ dummy_func(
             STAT_INC(CALL, hit);
             PyObject *res_o = _PyCallMethodDescriptorFast_StackRefSteal(
                 callable,
-                (PyCFunctionFast)cfunc,
+                _PyCFunctionFast_CAST(cfunc),
                 self,
                 args,
                 oparg
