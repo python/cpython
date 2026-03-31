@@ -58,6 +58,25 @@ def find_child_by_name(children, strings, substr):
     return None
 
 
+def _jsonl_tables(records):
+    meta = next(record for record in records if record["type"] == "meta")
+    end = next(record for record in records if record["type"] == "end")
+    agg = next(record for record in records if record["type"] == "agg")
+    str_defs = {
+        item["str_id"]: item["value"]
+        for record in records
+        if record["type"] == "str_def"
+        for item in record["defs"]
+    }
+    frame_defs = [
+        item
+        for record in records
+        if record["type"] == "frame_def"
+        for item in record["defs"]
+    ]
+    return meta, str_defs, frame_defs, agg, end
+
+
 class TestSampleProfilerComponents(unittest.TestCase):
     """Unit tests for individual profiler components."""
 
@@ -1666,14 +1685,12 @@ class TestSampleProfilerComponents(unittest.TestCase):
         self.assertAlmostEqual(cold_node["diff"], -1.0)
         self.assertAlmostEqual(cold_node["diff_pct"], -50.0)
 
-    def test_jsonl_collector_export(self):
+    def test_jsonl_collector_export_exact_output(self):
         jsonl_out = tempfile.NamedTemporaryFile(delete=False)
         self.addCleanup(close_and_unlink, jsonl_out)
 
         collector = JsonlCollector(1000)
-        run_id = collector.run_id
-
-        self.assertIsNotNone(run_id)
+        collector.run_id = "run-123"
 
         test_frames1 = [
             MockInterpreterInfo(
@@ -1705,46 +1722,74 @@ class TestSampleProfilerComponents(unittest.TestCase):
         collector.collect(test_frames2)
         collector.collect(test_frames3)
 
-        with captured_stdout(), captured_stderr():
-            collector.export(jsonl_out.name)
+        collector.export(jsonl_out.name)
 
-        # Check file contents
-        with open(jsonl_out.name, "r") as f:
+        with open(jsonl_out.name, "r", encoding="utf-8") as f:
             content = f.read()
 
-        lines = content.strip().split("\n")
-        self.assertEqual(len(lines), 5)
+        self.assertEqual(
+            content,
+            (
+                '{"type":"meta","v":1,"run_id":"run-123","sample_interval_usec":1000}\n'
+                '{"type":"str_def","v":1,"run_id":"run-123","defs":[{"str_id":1,"value":"func1"},{"str_id":2,"value":"file.py"},{"str_id":3,"value":"func2"},{"str_id":4,"value":"other_func"},{"str_id":5,"value":"other.py"}]}\n'
+                '{"type":"frame_def","v":1,"run_id":"run-123","defs":[{"frame_id":1,"path_str_id":2,"func_str_id":1,"line":10,"end_line":10},{"frame_id":2,"path_str_id":2,"func_str_id":3,"line":20,"end_line":20},{"frame_id":3,"path_str_id":5,"func_str_id":4,"line":5,"end_line":5}]}\n'
+                '{"type":"agg","v":1,"run_id":"run-123","kind":"frame","scope":"final","samples_total":3,"entries":[{"frame_id":1,"self":2,"cumulative":2},{"frame_id":2,"self":0,"cumulative":2},{"frame_id":3,"self":1,"cumulative":1}]}\n'
+                '{"type":"end","v":1,"run_id":"run-123","samples_total":3}\n'
+            ),
+        )
 
-        def jsonl(obj):
-            return json.dumps(obj, separators=(",", ":"))
+    def test_jsonl_collector_skip_idle_filters_threads(self):
+        jsonl_out = tempfile.NamedTemporaryFile(delete=False)
+        self.addCleanup(close_and_unlink, jsonl_out)
 
-        expected = [
-            jsonl({"type": "meta", "v": 1, "run_id": run_id,
-                   "sample_interval_usec": 1000}),
-            jsonl({"type": "str_def", "v": 1, "run_id": run_id,
-                   "defs": [{"str_id": 1, "value": "func1"},
-                            {"str_id": 2, "value": "file.py"},
-                            {"str_id": 3, "value": "func2"},
-                            {"str_id": 4, "value": "other_func"},
-                            {"str_id": 5, "value": "other.py"}]}),
-            jsonl({"type": "frame_def", "v": 1, "run_id": run_id,
-                   "defs": [{"frame_id": 1, "path_str_id": 2, "func_str_id": 1,
-                             "line": 10, "end_line": 10},
-                            {"frame_id": 2, "path_str_id": 2, "func_str_id": 3,
-                             "line": 20, "end_line": 20},
-                            {"frame_id": 3, "path_str_id": 5, "func_str_id": 4,
-                             "line": 5, "end_line": 5}]}),
-            jsonl({"type": "agg", "v": 1, "run_id": run_id,
-                   "kind": "frame", "scope": "final", "samples_total": 3,
-                   "entries": [{"frame_id": 1, "self": 2, "cumulative": 2},
-                               {"frame_id": 2, "self": 0, "cumulative": 2},
-                               {"frame_id": 3, "self": 1, "cumulative": 1}]}),
-            jsonl({"type": "end", "v": 1, "run_id": run_id,
-                   "samples_total": 3}),
+        active_status = THREAD_STATUS_HAS_GIL | THREAD_STATUS_ON_CPU
+        frames = [
+            MockInterpreterInfo(
+                0,
+                [
+                    MockThreadInfo(
+                        1,
+                        [MockFrameInfo("active1.py", 10, "active_func1")],
+                        status=active_status,
+                    ),
+                    MockThreadInfo(
+                        2,
+                        [MockFrameInfo("idle.py", 20, "idle_func")],
+                        status=0,
+                    ),
+                    MockThreadInfo(
+                        3,
+                        [MockFrameInfo("active2.py", 30, "active_func2")],
+                        status=active_status,
+                    ),
+                ],
+            )
         ]
 
-        for exp in expected:
-            self.assertIn(exp, lines)
+        def export_summary(skip_idle):
+            collector = JsonlCollector(1000, skip_idle=skip_idle)
+            collector.collect(frames)
+            collector.export(jsonl_out.name)
+
+            with open(jsonl_out.name, "r", encoding="utf-8") as f:
+                records = [json.loads(line) for line in f]
+
+            _, str_defs, frame_defs, agg_record, _ = _jsonl_tables(records)
+            paths = {str_defs[item["path_str_id"]] for item in frame_defs}
+            funcs = {str_defs[item["func_str_id"]] for item in frame_defs}
+            return paths, funcs, agg_record["samples_total"]
+
+        paths, funcs, samples_total = export_summary(skip_idle=True)
+        self.assertEqual(paths, {"active1.py", "active2.py"})
+        self.assertEqual(funcs, {"active_func1", "active_func2"})
+        self.assertEqual(samples_total, 2)
+
+        paths, funcs, samples_total = export_summary(skip_idle=False)
+        self.assertEqual(paths, {"active1.py", "idle.py", "active2.py"})
+        self.assertEqual(
+            funcs, {"active_func1", "idle_func", "active_func2"}
+        )
+        self.assertEqual(samples_total, 3)
 
 
 class TestRecursiveFunctionHandling(unittest.TestCase):
@@ -2156,7 +2201,6 @@ class TestLocationInCollectors(unittest.TestCase):
         self.addCleanup(close_and_unlink, jsonl_out)
 
         collector = JsonlCollector(sample_interval_usec=1000)
-        run_id = collector.run_id
 
         # Frame with LocationInfo
         frame = MockFrameInfo("test.py", 42, "my_function")
@@ -2167,38 +2211,28 @@ class TestLocationInCollectors(unittest.TestCase):
         ]
         collector.collect(frames)
 
-        # Should extract lineno from location
-        with captured_stdout(), captured_stderr():
-            collector.export(jsonl_out.name)
+        collector.export(jsonl_out.name)
 
-        # Check file contents
-        with open(jsonl_out.name, "r") as f:
-            content = f.read()
+        with open(jsonl_out.name, "r", encoding="utf-8") as f:
+            records = [json.loads(line) for line in f]
 
-        lines = content.strip().split("\n")
-        self.assertEqual(len(lines), 5)
-
-        def jsonl(obj):
-            return json.dumps(obj, separators=(",", ":"))
-
-        expected = [
-            jsonl({"type": "meta", "v": 1, "run_id": run_id,
-                   "sample_interval_usec": 1000}),
-            jsonl({"type": "str_def", "v": 1, "run_id": run_id,
-                   "defs": [{"str_id": 1, "value": "my_function"},
-                            {"str_id": 2, "value": "test.py"}]}),
-            jsonl({"type": "frame_def", "v": 1, "run_id": run_id,
-                   "defs": [{"frame_id": 1, "path_str_id": 2, "func_str_id": 1,
-                             "line": 42, "end_line": 42}]}),
-            jsonl({"type": "agg", "v": 1, "run_id": run_id,
-                   "kind": "frame", "scope": "final", "samples_total": 1,
-                   "entries": [{"frame_id": 1, "self": 1, "cumulative": 1}]}),
-            jsonl({"type": "end", "v": 1, "run_id": run_id,
-                   "samples_total": 1}),
-        ]
-
-        for exp in expected:
-            self.assertIn(exp, lines)
+        meta, str_defs, frame_defs, agg, end = _jsonl_tables(records)
+        self.assertEqual(meta["sample_interval_usec"], 1000)
+        self.assertEqual(agg["samples_total"], 1)
+        self.assertEqual(end["samples_total"], 1)
+        self.assertEqual(len(frame_defs), 1)
+        self.assertEqual(str_defs[frame_defs[0]["path_str_id"]], "test.py")
+        self.assertEqual(str_defs[frame_defs[0]["func_str_id"]], "my_function")
+        self.assertEqual(
+            frame_defs[0],
+            {
+                "frame_id": 1,
+                "path_str_id": frame_defs[0]["path_str_id"],
+                "func_str_id": frame_defs[0]["func_str_id"],
+                "line": 42,
+                "end_line": 42,
+            },
+        )
 
     def test_jsonl_collector_with_none_location(self):
         """Test JsonlCollector handles None location (synthetic frames)."""
@@ -2206,7 +2240,6 @@ class TestLocationInCollectors(unittest.TestCase):
         self.addCleanup(close_and_unlink, jsonl_out)
 
         collector = JsonlCollector(sample_interval_usec=1000)
-        run_id = collector.run_id
 
         # Create frame with None location (like GC frame)
         frame = MockFrameInfo("~", 0, "<GC>")
@@ -2219,38 +2252,28 @@ class TestLocationInCollectors(unittest.TestCase):
         ]
         collector.collect(frames)
 
-        # Should handle None location as synthetic frame
-        with captured_stdout(), captured_stderr():
-            collector.export(jsonl_out.name)
+        collector.export(jsonl_out.name)
 
-        # Check file contents
-        with open(jsonl_out.name, "r") as f:
-            content = f.read()
+        with open(jsonl_out.name, "r", encoding="utf-8") as f:
+            records = [json.loads(line) for line in f]
 
-        lines = content.strip().split("\n")
-        self.assertEqual(len(lines), 5)
-
-        def jsonl(obj):
-            return json.dumps(obj, separators=(",", ":"))
-
-        expected = [
-            jsonl({"type": "meta", "v": 1, "run_id": run_id,
-                   "sample_interval_usec": 1000}),
-            jsonl({"type": "str_def", "v": 1, "run_id": run_id,
-                   "defs": [{"str_id": 1, "value": "<GC>"},
-                            {"str_id": 2, "value": "~"}]}),
-            jsonl({"type": "frame_def", "v": 1, "run_id": run_id,
-                   "defs": [{"frame_id": 1, "path_str_id": 2, "func_str_id": 1,
-                             "line": 0, "synthetic": True}]}),
-            jsonl({"type": "agg", "v": 1, "run_id": run_id,
-                   "kind": "frame", "scope": "final", "samples_total": 1,
-                   "entries": [{"frame_id": 1, "self": 1, "cumulative": 1}]}),
-            jsonl({"type": "end", "v": 1, "run_id": run_id,
-                   "samples_total": 1}),
-        ]
-
-        for exp in expected:
-            self.assertIn(exp, lines)
+        meta, str_defs, frame_defs, agg, end = _jsonl_tables(records)
+        self.assertEqual(meta["sample_interval_usec"], 1000)
+        self.assertEqual(agg["samples_total"], 1)
+        self.assertEqual(end["samples_total"], 1)
+        self.assertEqual(len(frame_defs), 1)
+        self.assertEqual(str_defs[frame_defs[0]["path_str_id"]], "~")
+        self.assertEqual(str_defs[frame_defs[0]["func_str_id"]], "<GC>")
+        self.assertEqual(
+            frame_defs[0],
+            {
+                "frame_id": 1,
+                "path_str_id": frame_defs[0]["path_str_id"],
+                "func_str_id": frame_defs[0]["func_str_id"],
+                "line": 0,
+                "synthetic": True,
+            },
+        )
 
 
 class TestOpcodeHandling(unittest.TestCase):
@@ -2484,18 +2507,7 @@ class TestCollectorFrameFormat(unittest.TestCase):
         with open(f.name, "r", encoding="utf-8") as fp:
             records = [json.loads(line) for line in fp]
 
-        str_defs = {
-            item["str_id"]: item["value"]
-            for record in records
-            if record["type"] == "str_def"
-            for item in record["defs"]
-        }
-        frame_defs = [
-            item
-            for record in records
-            if record["type"] == "frame_def"
-            for item in record["defs"]
-        ]
+        _, str_defs, frame_defs, _, _ = _jsonl_tables(records)
 
         self.assertEqual(len(frame_defs), 3)
 
@@ -2662,18 +2674,7 @@ class TestInternalFrameFiltering(unittest.TestCase):
         with open(jsonl_out.name, "r", encoding="utf-8") as f:
             records = [json.loads(line) for line in f]
 
-        str_defs = {
-            item["str_id"]: item["value"]
-            for record in records
-            if record["type"] == "str_def"
-            for item in record["defs"]
-        }
-        frame_defs = [
-            item
-            for record in records
-            if record["type"] == "frame_def"
-            for item in record["defs"]
-        ]
+        _, str_defs, frame_defs, _, _ = _jsonl_tables(records)
 
         paths = {str_defs[item["path_str_id"]] for item in frame_defs}
 
