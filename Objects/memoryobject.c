@@ -2472,7 +2472,7 @@ ptr_from_tuple(const Py_buffer *view, PyObject *tup)
 
     if (nindices > view->ndim) {
         PyErr_Format(PyExc_TypeError,
-                     "cannot index %zd-dimension view with %zd-element tuple",
+                     "cannot index %d-dimension view with %zd-element tuple",
                      view->ndim, nindices);
         return NULL;
     }
