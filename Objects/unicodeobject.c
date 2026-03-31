@@ -12579,7 +12579,7 @@ If count is not specified or -1, then all occurrences are replaced.
 static PyObject *
 unicode_replace_impl(PyObject *self, PyObject *old, PyObject *new,
                      Py_ssize_t count)
-/*[clinic end generated code: output=b63f1a8b5eebf448 input=92ae6270a91fd5da]*/
+/*[clinic end generated code: output=b63f1a8b5eebf448 input=d15a6886b05e2edc]*/
 {
     return replace(self, old, new, count);
 }
