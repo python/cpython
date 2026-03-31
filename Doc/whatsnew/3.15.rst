@@ -604,6 +604,9 @@ Other language changes
   respectively.
   (Contributed by Sergey B Kirpichev in :gh:`146151`.)
 
+* Allow the *count* argument of :meth:`bytes.replace` to be a keyword.
+  (Contributed by Stan Ulbrych in :gh:`147856`.)
+
 
 New modules
 ===========
