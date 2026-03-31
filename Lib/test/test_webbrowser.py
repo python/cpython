@@ -116,6 +116,11 @@ class ChromeCommandTest(CommandTestMixin, unittest.TestCase):
                        arguments=[URL],
                        kw=dict(new=999))
 
+    def test_reject_action_dash_prefixes(self):
+        browser = self.browser_class(name=CMD_NAME)
+        with self.assertRaises(ValueError):
+            browser.open('%action--incognito')
+
 
 class EdgeCommandTest(CommandTestMixin, unittest.TestCase):
 
