@@ -116,6 +116,15 @@ class JsonlCollector(StackTraceCollector):
 
         return record
 
+    def _iter_final_agg_entries(self):
+        for frame_record in self._frames:
+            frame_id = frame_record["frame_id"]
+            yield {
+                "frame_id": frame_id,
+                "self": self._frame_self[frame_id],
+                "cumulative": self._frame_cumulative[frame_id],
+            }
+
     def _get_or_create_frame_id(self, filename, location, funcname):
         synthetic = location is None
         location_fields = self._location_to_export_fields(location)
@@ -174,15 +183,6 @@ class JsonlCollector(StackTraceCollector):
         if end_col_offset >= 0:
             fields["end_col"] = end_col_offset
         return fields
-
-    def _iter_final_agg_entries(self):
-        for frame_record in self._frames:
-            frame_id = frame_record["frame_id"]
-            yield {
-                "frame_id": frame_id,
-                "self": self._frame_self[frame_id],
-                "cumulative": self._frame_cumulative[frame_id],
-            }
 
     def _write_chunked_records(
         self, output, base_record, chunk_field, entries
