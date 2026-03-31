@@ -88,7 +88,7 @@ class JsonlCollector(StackTraceCollector):
                     "samples_total": self._samples_total,
                 },
                 "entries",
-                self._iter_agg_entries(),
+                self._iter_final_agg_entries(),
             )
             self._write_message(output, self._build_end_record())
 
@@ -189,7 +189,7 @@ class JsonlCollector(StackTraceCollector):
             normalized["end_col"] = end_col_offset
         return normalized
 
-    def _iter_agg_entries(self):
+    def _iter_final_agg_entries(self):
         return [
             {
                 "frame_id": frame_record["frame_id"],
