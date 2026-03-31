@@ -2467,6 +2467,38 @@ class TestCollectorFrameFormat(unittest.TestCase):
         # Should have recorded 3 functions
         self.assertEqual(thread["funcTable"]["length"], 3)
 
+    def test_jsonl_collector_frame_format(self):
+        """Test JsonlCollector with 4-element frame format."""
+        collector = JsonlCollector(sample_interval_usec=1000)
+        collector.collect(self._make_sample_frames())
+
+        with tempfile.NamedTemporaryFile(delete=False) as f:
+            self.addClassCleanup(close_and_unlink, f)
+            collector.export(f.name)
+
+        with open(f.name, "r", encoding="utf-8") as fp:
+            records = [json.loads(line) for line in fp]
+
+        str_defs = {
+            item["str_id"]: item["value"]
+            for record in records
+            if record["type"] == "str_def"
+            for item in record["defs"]
+        }
+        frame_defs = [
+            item
+            for record in records
+            if record["type"] == "frame_def"
+            for item in record["defs"]
+        ]
+
+        self.assertEqual(len(frame_defs), 3)
+
+        paths = {str_defs[item["path_str_id"]] for item in frame_defs}
+        funcs = {str_defs[item["func_str_id"]] for item in frame_defs}
+
+        self.assertEqual(paths, {"app.py", "utils.py", "lib.py"})
+        self.assertEqual(funcs, {"main", "helper", "process"})
 
 class TestInternalFrameFiltering(unittest.TestCase):
     """Tests for filtering internal profiler frames from output."""
