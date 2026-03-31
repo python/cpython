@@ -2145,7 +2145,6 @@ class TestLocationInCollectors(unittest.TestCase):
         # Verify function name is in string table
         self.assertIn("handle_request", string_array)
 
-
     def test_jsonl_collector_with_location_info(self):
         """Test JsonlCollector handles LocationInfo properly."""
         collapsed_out = tempfile.NamedTemporaryFile(delete=False)
@@ -2195,7 +2194,6 @@ class TestLocationInCollectors(unittest.TestCase):
 
         for exp in expected:
             self.assertIn(exp, lines)
-
 
     def test_jsonl_collector_with_none_location(self):
         """Test JsonlCollector handles None location (synthetic frames)."""
