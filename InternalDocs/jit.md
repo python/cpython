@@ -24,7 +24,7 @@ executed more than some threshold number of times (see
 [`backoff_counter_triggers`](../Include/internal/pycore_backoff.h)).
 It then calls the function `_PyJit_TryInitializeTracing` in
 [`Python/optimizer.c`](../Python/optimizer.c), passing it the current
-[frame](frames.md), instruction pointer and interpreter state.
+[frame](frames.md), instruction pointer and state.
 The interpreter then switches into "tracing mode" via the macro
 `ENTER_TRACING()`. On platforms that support computed goto and tail-calling
 interpreters, the dispatch table is swapped out, while other platforms that do
@@ -38,7 +38,8 @@ During tracing mode, after each interpreter instruction's `DISPATCH()`,
 the interpreter jumps to the `TRACE_RECORD` instruction. This instruction
 records the previous instruction executed and also any live values of the next
 operation it may require. It then translates the previous instruction to
-a sequence of micro-ops. To ensure that the adaptive interpreter instructions
+a sequence of micro-ops using `_PyJit_translate_single_bytecode_to_trace`.
+To ensure that the adaptive interpreter instructions
 and cache entries are up-to-date, the trace recording interpreter always resets
 the adaptive counters of adaptive instructions it sees.
 This forces a re-specialization of any new instruction should an instruction
@@ -69,12 +70,7 @@ executor in `co_executors`.
 
 The micro-op (abbreviated `uop` to approximate `μop`) optimizer is defined in
 [`Python/optimizer.c`](../Python/optimizer.c) as `_PyOptimizer_Optimize`.
-It translates an instruction trace into a sequence of micro-ops by replacing
-each bytecode by an equivalent sequence of micro-ops (see
-`_PyOpcode_macro_expansion` in
-[pycore_opcode_metadata.h](../Include/internal/pycore_opcode_metadata.h)
-which is generated from [`Python/bytecodes.c`](../Python/bytecodes.c)).
-The micro-op sequence is then optimized by
+It takes a micro-op sequence from the trace recorder and optimizes with
 `_Py_uop_analyze_and_optimize` in
 [`Python/optimizer_analysis.c`](../Python/optimizer_analysis.c)
 and an instance of `_PyUOpExecutor_Type` is created to contain it.
