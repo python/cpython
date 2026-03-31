@@ -12,6 +12,7 @@ from .constants import (
     PROFILING_MODE_GIL,
     PROFILING_MODE_WALL,
 )
+from .collector import normalize_location
 from .stack_collector import StackTraceCollector
 
 
@@ -117,7 +118,7 @@ class JsonlCollector(StackTraceCollector):
 
     def _get_or_create_frame_id(self, filename, location, funcname):
         synthetic = location is None
-        location_fields = self._normalize_export_location(location)
+        location_fields = self._location_to_export_fields(location)
         func_str_id = self._intern_string(funcname)
         path_str_id = self._intern_string(filename)
 
@@ -160,34 +161,19 @@ class JsonlCollector(StackTraceCollector):
         return string_id
 
     @staticmethod
-    def _normalize_export_location(location):
-        if location is None:
-            return {"line": 0}
+    def _location_to_export_fields(location):
+        lineno, end_lineno, col_offset, end_col_offset = normalize_location(
+            location
+        )
 
-        if isinstance(location, int):
-            return {"line": max(location, 0)}
-
-        if not isinstance(location, tuple):
-            lineno = getattr(location, "lineno", 0)
-            location = (
-                lineno,
-                getattr(location, "end_lineno", lineno),
-                getattr(location, "col_offset", -1),
-                getattr(location, "end_col_offset", -1),
-            )
-
-        lineno, end_lineno, col_offset, end_col_offset = location
-        if not isinstance(lineno, int) or lineno <= 0:
-            return {"line": 0}
-
-        normalized = {"line": lineno}
-        if isinstance(end_lineno, int) and end_lineno > 0:
-            normalized["end_line"] = end_lineno
-        if isinstance(col_offset, int) and col_offset >= 0:
-            normalized["col"] = col_offset
-        if isinstance(end_col_offset, int) and end_col_offset >= 0:
-            normalized["end_col"] = end_col_offset
-        return normalized
+        fields = {"line": lineno}
+        if end_lineno > 0:
+            fields["end_line"] = end_lineno
+        if col_offset >= 0:
+            fields["col"] = col_offset
+        if end_col_offset >= 0:
+            fields["end_col"] = end_col_offset
+        return fields
 
     def _iter_final_agg_entries(self):
         for frame_record in self._frames:
