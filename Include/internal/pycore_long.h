@@ -236,9 +236,9 @@ _PyLong_IsSmallInt(const PyLongObject *op)
     if (_PyLong_IsCompact(op)) {
         Py_ssize_t value = _PyLong_CompactValue(op);
         if (_PY_IS_SMALL_INT(value)) {
-            PyLongObject *small;
-            small = &_PyLong_SMALL_INTS[_PY_NSMALLNEGINTS + value];
-            is_small_int = (op == small);
+            PyLongObject *small_obj;
+            small_obj = &_PyLong_SMALL_INTS[_PY_NSMALLNEGINTS + value];
+            is_small_int = (op == small_obj);
         }
     }
     assert(PyLong_CheckExact(op) || (!is_small_int));
