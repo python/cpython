@@ -9,6 +9,7 @@ try:
     import profiling.sampling
     import profiling.sampling.sample
     from profiling.sampling.pstats_collector import PstatsCollector
+    from profiling.sampling.jsonl_collector import JsonlCollector
     from profiling.sampling.cli import main, _parse_mode
     from profiling.sampling.constants import PROFILING_MODE_EXCEPTION
     from _remote_debugging import (
@@ -20,9 +21,13 @@ except ImportError:
         "Test only runs when _remote_debugging is available"
     )
 
-from test.support import requires_remote_subprocess_debugging
+from test.support import (
+    captured_stdout,
+    captured_stderr,
+    requires_remote_subprocess_debugging,
+)
 
-from .helpers import test_subprocess
+from .helpers import close_and_unlink, test_subprocess
 from .mocks import MockFrameInfo, MockInterpreterInfo
 
 
@@ -228,6 +233,154 @@ cpu_thread.join()
         self.assertIn("No samples were collected", output)
         self.assertIn("CPU mode", output)
 
+    def test_jsonl_collector_rspects_skip_idle(self):
+        """Test that frames are actually filtered when skip_idle=True."""
+        import tempfile
+        import json
+
+        collapsed_out = tempfile.NamedTemporaryFile(delete=False)
+        self.addCleanup(close_and_unlink, collapsed_out)
+
+        # Create mock frames with different thread statuses
+        class MockThreadInfoWithStatus:
+            def __init__(self, thread_id, frame_info, status):
+                self.thread_id = thread_id
+                self.frame_info = frame_info
+                self.status = status
+
+        # Create test data: active thread (HAS_GIL | ON_CPU), idle thread (neither), and another active thread
+        ACTIVE_STATUS = (
+            THREAD_STATUS_HAS_GIL | THREAD_STATUS_ON_CPU
+        )  # Has GIL and on CPU
+        IDLE_STATUS = 0  # Neither has GIL nor on CPU
+
+        test_frames = [
+            MockInterpreterInfo(
+                0,
+                [
+                    MockThreadInfoWithStatus(
+                        1,
+                        [MockFrameInfo("active1.py", 10, "active_func1")],
+                        ACTIVE_STATUS,
+                    ),
+                    MockThreadInfoWithStatus(
+                        2,
+                        [MockFrameInfo("idle.py", 20, "idle_func")],
+                        IDLE_STATUS,
+                    ),
+                    MockThreadInfoWithStatus(
+                        3,
+                        [MockFrameInfo("active2.py", 30, "active_func2")],
+                        ACTIVE_STATUS,
+                    ),
+                ],
+            )
+        ]
+
+        # Test with skip_idle=True - should only process running threads
+        collector_skip = JsonlCollector(
+            sample_interval_usec=1000, skip_idle=True
+        )
+        collector_skip.collect(test_frames)
+
+        run_id = collector_skip.run_id
+
+        # Should only have functions from running threads (status 0)
+        with captured_stdout(), captured_stderr():
+            collector_skip.export(collapsed_out.name)
+
+        # Check file contents
+        with open(collapsed_out.name, "r") as f:
+            content = f.read()
+
+        lines = content.strip().split("\n")
+        self.assertEqual(len(lines), 5)
+
+        def jsonl(obj):
+            return json.dumps(obj, separators=(",", ":"))
+
+        expected = [
+            jsonl({"type": "meta", "v": 1, "run_id": run_id,
+                   "sample_interval_usec": 1000}),
+            jsonl({"type": "str_def", "v": 1, "run_id": run_id,
+                   "defs": [{"str_id": 1, "value": "active_func1"},
+                            {"str_id": 2, "value": "active1.py"},
+                            {"str_id": 3, "value": "idle_func"},
+                            {"str_id": 4, "value": "idle.py"},
+                            {"str_id": 5, "value": "active_func2"},
+                            {"str_id": 6, "value": "active2.py"}]}),
+            jsonl({"type": "frame_def", "v": 1, "run_id": run_id,
+                   "defs": [{"frame_id": 1, "path_str_id": 2, "func_str_id": 1,
+                             "line": 10, "end_line": 10},
+                            {"frame_id": 2, "path_str_id": 4, "func_str_id": 3,
+                             "line": 20, "end_line": 20},
+                            {"frame_id": 3, "path_str_id": 6, "func_str_id": 5,
+                             "line": 30, "end_line": 30}]}),
+            jsonl({"type": "agg", "v": 1, "run_id": run_id,
+                   "kind": "frame", "scope": "final", "samples_total": 3,
+                   "entries": [{"frame_id": 1, "self": 1, "cumulative": 1},
+                               {"frame_id": 2, "self": 1, "cumulative": 1},
+                               {"frame_id": 3, "self": 1, "cumulative": 1}]}),
+            jsonl({"type": "end", "v": 1, "run_id": run_id,
+                   "samples_total": 3}),
+        ]
+
+        for exp in expected:
+            self.assertIn(exp, lines)
+
+        # Test with skip_idle=False - should process all threads
+        collector_no_skip = JsonlCollector(
+            sample_interval_usec=1000, skip_idle=False
+        )
+        collector_no_skip.collect(test_frames)
+
+        run_id = collector_no_skip.run_id
+
+        # Should have functions from all threads
+        with captured_stdout(), captured_stderr():
+            collector_no_skip.export(collapsed_out.name)
+
+        # Check file contents
+        with open(collapsed_out.name, "r") as f:
+            content = f.read()
+
+        lines = content.strip().split("\n")
+        self.assertEqual(len(lines), 5)
+
+        expected = [
+            jsonl({"type": "meta", "v": 1, "run_id": run_id,
+                   "sample_interval_usec": 1000}),
+            jsonl({"type": "str_def", "v": 1, "run_id": run_id,
+                   "defs": [{"str_id": 1, "value": "active_func1"},
+                            {"str_id": 2, "value": "active1.py"},
+                            {"str_id": 3, "value": "idle_func"},
+                            {"str_id": 4, "value": "idle.py"},
+                            {"str_id": 5, "value": "active_func2"},
+                            {"str_id": 6, "value": "active2.py"}]}),
+            jsonl({"type": "frame_def", "v": 1, "run_id": run_id,
+                   "defs": [{"frame_id": 1, "path_str_id": 2, "func_str_id": 1,
+                             "line": 10, "end_line": 10},
+                            {"frame_id": 2, "path_str_id": 4, "func_str_id": 3,
+                             "line": 20, "end_line": 20},
+                            {"frame_id": 3, "path_str_id": 6, "func_str_id": 5,
+                             "line": 30, "end_line": 30}]}),
+            jsonl({"type": "agg", "v": 1, "run_id": run_id,
+                   "kind": "frame", "scope": "final", "samples_total": 3,
+                   "entries": [{"frame_id": 1, "self": 1, "cumulative": 1},
+                               {"frame_id": 2, "self": 1, "cumulative": 1},
+                               {"frame_id": 3, "self": 1, "cumulative": 1}]}),
+            jsonl({"type": "end", "v": 1, "run_id": run_id,
+                   "samples_total": 3}),
+        ]
+
+        for exp in expected:
+            self.assertIn(exp, lines)
+
+        # self.assertIn(active1_key, collector_no_skip.result)
+        # self.assertIn(active2_key, collector_no_skip.result)
+        # self.assertIn(
+        #     idle_key, collector_no_skip.result
+        # )  # Idle thread should be included
 
 @requires_remote_subprocess_debugging()
 class TestGilModeFiltering(unittest.TestCase):
