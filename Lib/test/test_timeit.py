@@ -402,7 +402,10 @@ class TestTimeit(unittest.TestCase):
         self.assertEqual(s.getvalue(), expected)
 
 
-class TestTimeitColor(TestTimeit):
+class TestTimeitColor(unittest.TestCase):
+
+    fake_stmt = TestTimeit.fake_stmt
+    run_main = TestTimeit.run_main
 
     @force_colorized
     def test_main_colorized(self):
