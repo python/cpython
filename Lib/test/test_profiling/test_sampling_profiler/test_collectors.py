@@ -1738,6 +1738,80 @@ class TestSampleProfilerComponents(unittest.TestCase):
             ),
         )
 
+    def test_jsonl_collector_export_includes_mode_in_meta(self):
+        jsonl_out = tempfile.NamedTemporaryFile(delete=False)
+        self.addCleanup(close_and_unlink, jsonl_out)
+
+        collector = JsonlCollector(1000, mode=PROFILING_MODE_CPU)
+        collector.collect(
+            [
+                MockInterpreterInfo(
+                    0,
+                    [MockThreadInfo(1, [MockFrameInfo("file.py", 10, "func")])],
+                )
+            ]
+        )
+        collector.export(jsonl_out.name)
+
+        with open(jsonl_out.name, "r", encoding="utf-8") as f:
+            records = [json.loads(line) for line in f]
+
+        meta_record = next(record for record in records if record["type"] == "meta")
+        self.assertEqual(meta_record["mode"], "cpu")
+
+    def test_jsonl_collector_export_empty_profile(self):
+        jsonl_out = tempfile.NamedTemporaryFile(delete=False)
+        self.addCleanup(close_and_unlink, jsonl_out)
+
+        collector = JsonlCollector(1000)
+        collector.run_id = "run-123"
+        collector.export(jsonl_out.name)
+
+        with open(jsonl_out.name, "r", encoding="utf-8") as f:
+            records = [json.loads(line) for line in f]
+
+        self.assertEqual([record["type"] for record in records], ["meta", "end"])
+        self.assertEqual(records[0]["sample_interval_usec"], 1000)
+        self.assertEqual(records[0]["run_id"], "run-123")
+        self.assertEqual(records[1]["samples_total"], 0)
+        self.assertEqual(records[1]["run_id"], "run-123")
+
+    def test_jsonl_collector_recursive_frames_counted_once_per_sample(self):
+        jsonl_out = tempfile.NamedTemporaryFile(delete=False)
+        self.addCleanup(close_and_unlink, jsonl_out)
+
+        collector = JsonlCollector(1000)
+        collector.collect(
+            [
+                MockInterpreterInfo(
+                    0,
+                    [
+                        MockThreadInfo(
+                            1,
+                            [
+                                MockFrameInfo("recursive.py", 10, "recursive_func"),
+                                MockFrameInfo("recursive.py", 10, "recursive_func"),
+                                MockFrameInfo("recursive.py", 10, "recursive_func"),
+                            ],
+                        )
+                    ],
+                )
+            ]
+        )
+        collector.export(jsonl_out.name)
+
+        with open(jsonl_out.name, "r", encoding="utf-8") as f:
+            records = [json.loads(line) for line in f]
+
+        _, _, frame_defs, agg_record, end_record = _jsonl_tables(records)
+        self.assertEqual(len(frame_defs), 1)
+        self.assertEqual(
+            agg_record["entries"],
+            [{"frame_id": frame_defs[0]["frame_id"], "self": 1, "cumulative": 1}],
+        )
+        self.assertEqual(agg_record["samples_total"], 1)
+        self.assertEqual(end_record["samples_total"], 1)
+
     def test_jsonl_collector_skip_idle_filters_threads(self):
         jsonl_out = tempfile.NamedTemporaryFile(delete=False)
         self.addCleanup(close_and_unlink, jsonl_out)
