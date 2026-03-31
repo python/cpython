@@ -878,28 +878,30 @@ def timegm(tuple):
 
 def main(args=None):
     import argparse
-    parser = argparse.ArgumentParser(color=True)
+    parser = argparse.ArgumentParser(
+        formatter_class=argparse.ArgumentDefaultsHelpFormatter,
+    )
     textgroup = parser.add_argument_group('text only arguments')
     htmlgroup = parser.add_argument_group('html only arguments')
     textgroup.add_argument(
         "-w", "--width",
         type=int, default=2,
-        help="width of date column (default 2)"
+        help="width of date column"
     )
     textgroup.add_argument(
         "-l", "--lines",
         type=int, default=1,
-        help="number of lines for each week (default 1)"
+        help="number of lines for each week"
     )
     textgroup.add_argument(
         "-s", "--spacing",
         type=int, default=6,
-        help="spacing between months (default 6)"
+        help="spacing between months"
     )
     textgroup.add_argument(
         "-m", "--months",
         type=int, default=3,
-        help="months per row (default 3)"
+        help="months per row"
     )
     htmlgroup.add_argument(
         "-c", "--css",
@@ -914,7 +916,7 @@ def main(args=None):
     parser.add_argument(
         "-e", "--encoding",
         default=None,
-        help="encoding to use for output (default utf-8)"
+        help="encoding to use for output"
     )
     parser.add_argument(
         "-t", "--type",
@@ -925,7 +927,7 @@ def main(args=None):
     parser.add_argument(
         "-f", "--first-weekday",
         type=int, default=0,
-        help="weekday (0 is Monday, 6 is Sunday) to start each week (default 0)"
+        help="weekday (0 is Monday, 6 is Sunday) to start each week"
     )
     parser.add_argument(
         "year",
