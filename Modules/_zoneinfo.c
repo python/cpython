@@ -991,7 +991,7 @@ load_data(zoneinfo_state *state, PyZoneInfo_ZoneInfo *self, PyObject *file_obj)
     }
 
     if (!PyTuple_CheckExact(data_tuple)) {
-        PyErr_Format(PyExc_TypeError, "Invalid data result type: %r",
+        PyErr_Format(PyExc_TypeError, "Invalid data result type: %R",
                      data_tuple);
         goto error;
     }

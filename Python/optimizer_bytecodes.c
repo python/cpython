@@ -165,6 +165,11 @@ dummy_func(void) {
     }
 
     op(_STORE_SUBSCR_DICT, (value, dict_st, sub -- st)) {
+        PyObject *sub_o = sym_get_const(ctx, sub);
+        if (sub_o != NULL) {
+            optimize_dict_known_hash(ctx, dependencies, this_instr,
+                                     sub_o, _STORE_SUBSCR_DICT_KNOWN_HASH);
+        }
         (void)value;
         st = dict_st;
     }
@@ -482,9 +487,17 @@ dummy_func(void) {
     }
 
     op(_BINARY_OP_SUBSCR_DICT, (dict_st, sub_st -- res, ds, ss)) {
+        PyObject *sub = sym_get_const(ctx, sub_st);
+        if (sub != NULL) {
+            optimize_dict_known_hash(ctx, dependencies, this_instr,
+                                     sub, _BINARY_OP_SUBSCR_DICT_KNOWN_HASH);
+        }
         res = sym_new_not_null(ctx);
         ds = dict_st;
         ss = sub_st;
+        if (sym_matches_type(dict_st, &PyFrozenDict_Type)) {
+            REPLACE_OPCODE_IF_EVALUATES_PURE(dict_st, sub_st, res);
+        }
     }
 
     op(_BINARY_OP_SUBSCR_LIST_SLICE, (list_st, sub_st -- res, ls, ss)) {
@@ -1581,6 +1594,11 @@ dummy_func(void) {
     op(_SET_UPDATE, (set, unused[oparg-1], iterable -- set, unused[oparg-1], i)) {
         (void)set;
         i = iterable;
+    }
+
+    op(_LIST_EXTEND, (list_st, unused[oparg-1], iterable_st -- list_st, unused[oparg-1], i)) {
+        (void)list_st;
+        i = iterable_st;
     }
 
     op(_DICT_MERGE, (callable, unused, unused, dict, unused[oparg - 1], update -- callable, unused, unused, dict, unused[oparg - 1], u)) {

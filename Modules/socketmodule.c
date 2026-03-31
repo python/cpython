@@ -151,7 +151,7 @@ listen([n]) -- start listening for incoming connections\n\
 recv(buflen[, flags]) -- receive data\n\
 recv_into(buffer[, nbytes[, flags]]) -- receive data (into a buffer)\n\
 recvfrom(buflen[, flags]) -- receive data and sender\'s address\n\
-recvfrom_into(buffer[, nbytes, [, flags])\n\
+recvfrom_into(buffer[, nbytes, [, flags]])\n\
   -- receive data and sender\'s address (into a buffer)\n\
 sendall(data[, flags]) -- send all data\n\
 send(data[, flags]) -- send data, may not send all of it\n\
@@ -3357,8 +3357,7 @@ sock_setsockopt(PyObject *self, PyObject *args)
     arglen = PyTuple_Size(args);
     if (arglen == 3 && optval == Py_None) {
         PyErr_Format(PyExc_TypeError,
-                     "setsockopt() requires 4 arguments when the third argument is None",
-                     arglen);
+                     "setsockopt() requires 4 arguments when the third argument is None");
         return NULL;
     }
     if (arglen == 4 && optval != Py_None) {

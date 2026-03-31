@@ -52,11 +52,11 @@ portable to machines using other architectures.
 
 ### Building a multi-architecture iOS XCframework
 
-The `Apple` subfolder of the Python repository acts as a build script that
+The `Platforms/Apple` subfolder of the Python repository acts as a build script that
 can be used to coordinate the compilation of a complete iOS XCframework. To use
 it, run::
 
-  python Apple build iOS
+  python Platforms/Apple build iOS
 
 This will:
 
@@ -69,7 +69,7 @@ This will:
   the `Python.xcframework`, plus a copy of the Testbed app pre-configured to
   use the XCframework.
 
-The `Apple` build script has other entry points that will perform the
+The `Platforms/Apple` build script has other entry points that will perform the
 individual parts of the overall `build` target, plus targets to test the
 build, clean the `cross-build` folder of iOS build products, and perform a
 complete "build and test" CI run. The `--clean` flag can also be used on
@@ -78,7 +78,7 @@ building.
 
 ### Building a single-architecture framework
 
-If you're using the `Apple` build script, you won't need to build
+If you're using the `Platforms/Apple` build script, you won't need to build
 individual frameworks. However, if you do need to manually configure an iOS
 Python build for a single framework, the following options are available.
 
@@ -100,7 +100,7 @@ Python build for a single framework, the following options are available.
   > [!NOTE]
   > Unless you know what you're doing, changing the name of the Python
   > framework on iOS is not advised. If you use this option, you won't be able
-  > to run the `Apple` build script without making significant manual
+  > to run the `Platforms/Apple` build script without making significant manual
   > alterations, and you won't be able to use any binary packages unless you
   > compile them yourself using your own framework name.
 
@@ -119,7 +119,7 @@ provide the `--enable-framework` flag when configuring the build. The build
 also requires the use of cross-compilation. The minimal commands for building
 Python for the ARM64 iOS simulator will look something like:
 ```
-export PATH="$(pwd)/Apple/iOS/Resources/bin:/usr/bin:/bin:/usr/sbin:/sbin:/Library/Apple/usr/bin"
+export PATH="$(pwd)/Platforms/Apple/iOS/Resources/bin:/usr/bin:/bin:/usr/sbin:/sbin:/Library/Apple/usr/bin"
 ./configure \
     --enable-framework \
     --host=arm64-apple-ios-simulator \
@@ -131,7 +131,7 @@ make install
 
 In this invocation:
 
-* `Apple/iOS/Resources/bin` has been added to the path, providing some shims for the
+* `Platforms/Apple/iOS/Resources/bin` has been added to the path, providing some shims for the
   compilers and linkers needed by the build. Xcode requires the use of `xcrun`
   to invoke compiler tooling. However, if `xcrun` is pre-evaluated and the
   result passed to `configure`, these results can embed user- and
@@ -141,7 +141,7 @@ In this invocation:
   cause significant problems with many C configuration systems which assume that
   `CC` will be a single executable.
 
-  To work around this problem, the `Apple/iOS/Resources/bin` folder contains some
+  To work around this problem, the `Platforms/Apple/iOS/Resources/bin` folder contains some
   wrapper scripts that present as simple compilers and linkers, but wrap
   underlying calls to `xcrun`. This allows configure to use a `CC`
   definition without spaces, and without user- or version-specific paths, while
@@ -222,7 +222,7 @@ simulator build with a deployment target of 15.4.
 
 Once you have a built an XCframework, you can test that framework by running:
 
-  $ python Apple test iOS
+  $ python Platforms/Apple test iOS
 
 This test will attempt to find an "SE-class" simulator (i.e., an iPhone SE, or
 iPhone 16e, or similar), and run the test suite on the most recent version of
@@ -237,7 +237,7 @@ environment variable will be exposed to the iOS process at runtime.
 
 ### Testing a single-architecture framework
 
-The `Apple/testbed` folder that contains an Xcode project that is able to run
+The `Platforms/Apple/testbed` folder that contains an Xcode project that is able to run
 the Python test suite on Apple platforms. This project converts the Python test
 suite into a single test case in Xcode's XCTest framework. The single XCTest
 passes if the test suite passes.
@@ -245,7 +245,7 @@ passes if the test suite passes.
 To run the test suite, configure a Python build for an iOS simulator (i.e.,
 `--host=arm64-apple-ios-simulator` or `--host=x86_64-apple-ios-simulator`
 ), specifying a framework build (i.e. `--enable-framework`). Ensure that your
-`PATH` has been configured to include the `Apple/iOS/Resources/bin` folder and
+`PATH` has been configured to include the `Platforms/Apple/iOS/Resources/bin` folder and
 exclude any non-iOS tools, then run:
 ```
 make all
@@ -269,9 +269,9 @@ project, and then boot and prepare the iOS simulator.
 
 ### Debugging test failures
 
-Running `python Apple test iOS` generates a standalone version of the
-`Apple/testbed` project, and runs the full test suite. It does this using
-`Apple/testbed` itself - the folder is an executable module that can be used
+Running `python Platforms/Apple test iOS` generates a standalone version of the
+`Platforms/Apple/testbed` project, and runs the full test suite. It does this using
+`Platforms/Apple/testbed` itself - the folder is an executable module that can be used
 to create and run a clone of the testbed project. The standalone version of the
 testbed will be created in a directory named
 `cross-build/iOS-testbed.<timestamp>`.
@@ -287,7 +287,7 @@ testbed clone.
 If you've built your own XCframework, or you only want to test a single architecture,
 you can construct a standalone testbed instance by running:
 ```
-python Apple/testbed clone --platform iOS --framework <path/to/framework> my-testbed
+python Platforms/Apple/testbed clone --platform iOS --framework <path/to/framework> my-testbed
 ```
 
 The framework path can be the path path to a `Python.xcframework`, or the
