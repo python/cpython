@@ -31,7 +31,7 @@ class ArraySubclassWithKwargs(array.array):
     def __init__(self, typecode, newarg=None):
         array.array.__init__(self)
 
-typecodes = 'uwbBhHiIlLfdqQFD'
+typecodes = 'uwbBhHiIlLfdqQFDe'
 
 class MiscTest(unittest.TestCase):
 
@@ -117,8 +117,10 @@ IEEE_754_FLOAT_COMPLEX_LE = 22
 IEEE_754_FLOAT_COMPLEX_BE = 23
 IEEE_754_DOUBLE_COMPLEX_LE = 24
 IEEE_754_DOUBLE_COMPLEX_BE = 25
+IEEE_754_FLOAT16_LE = 26
+IEEE_754_FLOAT16_BE = 27
 
-MACHINE_FORMAT_CODE_MAX = 25
+MACHINE_FORMAT_CODE_MAX = 27
 
 
 class ArrayReconstructorTest(unittest.TestCase):
@@ -1587,6 +1589,13 @@ class CFPTest(NumberTest):
             b.byteswap()
             self.assertEqual(a, b)
 
+
+class HalfFloatTest(FPTest, unittest.TestCase):
+    example = [-42.0, 0, 42, 1e2, -1e4]
+    smallerexample = [-42.0, 0, 42, 1e2, -2e4]
+    biggerexample = [-42.0, 0, 42, 1e2, 1e4]
+    typecode = 'e'
+    minitemsize = 2
 
 class FloatTest(FPTest, unittest.TestCase):
     typecode = 'f'

@@ -119,10 +119,12 @@ enum machine_format_code {
     IEEE_754_FLOAT_COMPLEX_LE = 22,
     IEEE_754_FLOAT_COMPLEX_BE = 23,
     IEEE_754_DOUBLE_COMPLEX_LE = 24,
-    IEEE_754_DOUBLE_COMPLEX_BE = 25
+    IEEE_754_DOUBLE_COMPLEX_BE = 25,
+    IEEE_754_FLOAT16_LE = 26,
+    IEEE_754_FLOAT16_BE = 27
 };
 #define MACHINE_FORMAT_CODE_MIN 0
-#define MACHINE_FORMAT_CODE_MAX 25
+#define MACHINE_FORMAT_CODE_MAX 27
 
 
 /*
@@ -612,6 +614,32 @@ QQ_setitem(arrayobject *ap, Py_ssize_t i, PyObject *v)
 }
 
 static PyObject *
+e_getitem(arrayobject *ap, Py_ssize_t i)
+{
+    double x = PyFloat_Unpack2(ap->ob_item + sizeof(short)*i,
+                               PY_LITTLE_ENDIAN);
+
+    return PyFloat_FromDouble(x);
+}
+
+static int
+e_setitem(arrayobject *ap, Py_ssize_t i, PyObject *v)
+{
+    float x;
+    if (!PyArg_Parse(v, "f;array item must be float", &x)) {
+        return -1;
+    }
+
+    CHECK_ARRAY_BOUNDS(ap, i);
+
+    if (i >= 0) {
+        return PyFloat_Pack2(x, ap->ob_item + sizeof(short)*i,
+                             PY_LITTLE_ENDIAN);
+    }
+    return 0;
+}
+
+static PyObject *
 f_getitem(arrayobject *ap, Py_ssize_t i)
 {
     return PyFloat_FromDouble((double) ((float *)ap->ob_item)[i]);
@@ -751,6 +779,7 @@ static const struct arraydescr descriptors[] = {
     {'L', sizeof(long), LL_getitem, LL_setitem, LL_compareitems, "L", 1, 0},
     {'q', sizeof(long long), q_getitem, q_setitem, q_compareitems, "q", 1, 1},
     {'Q', sizeof(long long), QQ_getitem, QQ_setitem, QQ_compareitems, "Q", 1, 0},
+    {'e', sizeof(short), e_getitem, e_setitem, NULL, "e", 0, 0},
     {'f', sizeof(float), f_getitem, f_setitem, NULL, "f", 0, 0},
     {'d', sizeof(double), d_getitem, d_setitem, NULL, "d", 0, 0},
     {'F', 2*sizeof(float), cf_getitem, cf_setitem, NULL, "F", 0, 0},
@@ -2090,6 +2119,8 @@ static const struct mformatdescr {
     {8, 0, 1},                  /* 23: IEEE_754_FLOAT_COMPLEX_BE */
     {16, 0, 0},                 /* 24: IEEE_754_DOUBLE_COMPLEX_LE */
     {16, 0, 1},                 /* 25: IEEE_754_DOUBLE_COMPLEX_BE */
+    {2, 0, 0},                  /* 26: IEEE_754_FLOAT16_LE */
+    {2, 0, 1}                   /* 27: IEEE_754_FLOAT16_BE */
 };
 
 
@@ -2123,6 +2154,9 @@ typecode_to_mformat_code(char typecode)
 
     case 'w':
         return UTF32_LE + is_big_endian;
+
+    case 'e':
+        return _PY_FLOAT_BIG_ENDIAN ? IEEE_754_FLOAT16_BE : IEEE_754_FLOAT16_LE;
 
     case 'f':
         return _PY_FLOAT_BIG_ENDIAN ? IEEE_754_FLOAT_BE : IEEE_754_FLOAT_LE;
@@ -2309,6 +2343,27 @@ array__array_reconstructor_impl(PyObject *module, PyTypeObject *arraytype,
         return NULL;
     }
     switch (mformat_code) {
+    case IEEE_754_FLOAT16_LE:
+    case IEEE_754_FLOAT16_BE: {
+        Py_ssize_t i;
+        int le = (mformat_code == IEEE_754_FLOAT_LE) ? 1 : 0;
+        Py_ssize_t itemcount = Py_SIZE(items) / 2;
+        const char *memstr = PyBytes_AS_STRING(items);
+
+        converted_items = PyList_New(itemcount);
+        if (converted_items == NULL)
+            return NULL;
+        for (i = 0; i < itemcount; i++) {
+            PyObject *pyfloat = PyFloat_FromDouble(
+                PyFloat_Unpack2(&memstr[i * 2], le));
+            if (pyfloat == NULL) {
+                Py_DECREF(converted_items);
+                return NULL;
+            }
+            PyList_SET_ITEM(converted_items, i, pyfloat);
+        }
+        break;
+    }
     case IEEE_754_FLOAT_LE:
     case IEEE_754_FLOAT_BE: {
         Py_ssize_t i;
@@ -3129,6 +3184,7 @@ The following type codes are defined:\n\
     'L'         unsigned integer   4\n\
     'q'         signed integer     8 (see note)\n\
     'Q'         unsigned integer   8 (see note)\n\
+    'e'         16-bit IEEE floats 2\n\
     'f'         floating-point     4\n\
     'd'         floating-point     8\n\
     'F'         float complex      8\n\

@@ -1350,7 +1350,7 @@ binascii_a2b_base85_impl(PyObject *module, Py_buffer *data,
                 state = get_binascii_state(module);
                 if (state != NULL) {
                     PyErr_Format(state->Error,
-                                 "Base85 overflow in hunk starting at byte %d",
+                                 "Base85 overflow in hunk starting at byte %zd",
                                  (data->len - ascii_len) / 5 * 5);
                 }
                 goto error;
@@ -1361,7 +1361,7 @@ binascii_a2b_base85_impl(PyObject *module, Py_buffer *data,
         else {
             state = get_binascii_state(module);
             if (state != NULL) {
-                PyErr_Format(state->Error, "bad Base85 character at position %d",
+                PyErr_Format(state->Error, "bad Base85 character at position %zd",
                              data->len - ascii_len);
             }
             goto error;

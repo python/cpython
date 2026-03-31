@@ -771,7 +771,7 @@ def build(context: argparse.Namespace, host: str | None = None) -> None:
         ]:
             step(context, host=step_host)
 
-    if host in {"all", "hosts"}:
+    if host == "all":
         package(context)
 
 
