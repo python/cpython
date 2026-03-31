@@ -62,7 +62,8 @@ class FinderTests(abc.FinderTests):
     def test_abi3_extension_suffixes(self):
         suffixes = self.machinery.EXTENSION_SUFFIXES
         if 'win32' in sys.platform:
-            self.assertIn(".pyd", suffixes)
+            # Either "_d.pyd" or ".pyd" must be in suffixes
+            self.assertTrue({"_d.pyd", ".pyd"}.intersection(suffixes))
         elif 'cygwin' in sys.platform:
             pass
         else:
