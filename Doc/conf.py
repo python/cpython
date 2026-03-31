@@ -177,6 +177,7 @@ nitpick_ignore = [
     ('c:type', '__int64'),
     ('c:type', 'unsigned __int64'),
     ('c:type', 'double'),
+    ('c:type', '_Float16'),
     # Standard C structures
     ('c:struct', 'in6_addr'),
     ('c:struct', 'in_addr'),

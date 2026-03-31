@@ -86,6 +86,10 @@ extern "C" {
 #define RESUME_OPARG_LOCATION_MASK 0x3
 #define RESUME_OPARG_DEPTH1_MASK 0x4
 
+#define GET_ITER_YIELD_FROM 1
+#define GET_ITER_YIELD_FROM_NO_CHECK 2
+#define GET_ITER_YIELD_FROM_CORO_CHECK 3
+
 #ifdef __cplusplus
 }
 #endif

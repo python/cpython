@@ -342,6 +342,9 @@ then
 	*-*-darwin*)
 		ac_sys_system=Darwin
 		;;
+	*-gnu)
+		ac_sys_system=GNU
+		;;
 	*-*-vxworks*)
 	    ac_sys_system=VxWorks
 	    ;;
@@ -568,7 +571,7 @@ AC_ARG_ENABLE([framework],
 	yes)
 		case $ac_sys_system in
 			Darwin) enableval=/Library/Frameworks ;;
-			iOS)    enableval=Apple/iOS/Frameworks/\$\(MULTIARCH\) ;;
+			iOS)    enableval=Platforms/Apple/iOS/Frameworks/\$\(MULTIARCH\) ;;
 			*) AC_MSG_ERROR([Unknown platform for framework build])
 		esac
 	esac
@@ -675,9 +678,9 @@ AC_ARG_ENABLE([framework],
 
 				prefix=$PYTHONFRAMEWORKPREFIX
 				PYTHONFRAMEWORKINSTALLNAMEPREFIX="@rpath/$PYTHONFRAMEWORKDIR"
-				RESSRCDIR=Apple/iOS/Resources
+				RESSRCDIR=Platforms/Apple/iOS/Resources
 
-				AC_CONFIG_FILES([Apple/iOS/Resources/Info.plist])
+				AC_CONFIG_FILES([Platforms/Apple/iOS/Resources/Info.plist])
 				;;
 			*)
 				AC_MSG_ERROR([Unknown platform for framework build])
@@ -779,6 +782,9 @@ if test "$cross_compiling" = yes; then
 		*)
 			_host_ident=$host_cpu
 		esac
+		;;
+	*-gnu)
+		_host_ident=$host_cpu
 		;;
 	*-*-cygwin*)
 		_host_ident=
@@ -2359,7 +2365,7 @@ AS_CASE([$ac_sys_system],
 
     dnl Include file system support
     AS_VAR_APPEND([LINKFORSHARED], [" -sFORCE_FILESYSTEM -lidbfs.js -lnodefs.js -lproxyfs.js -lworkerfs.js"])
-    AS_VAR_APPEND([LINKFORSHARED], [" -sEXPORTED_RUNTIME_METHODS=FS,callMain,ENV,HEAPU32,TTY"])
+    AS_VAR_APPEND([LINKFORSHARED], [" -sEXPORTED_RUNTIME_METHODS=FS,callMain,ENV,HEAPU32,TTY,ERRNO_CODES"])
     AS_VAR_APPEND([LINKFORSHARED], [" -sEXPORTED_FUNCTIONS=_main,_Py_Version,__PyRuntime,_PyGILState_GetThisThreadState,__Py_DumpTraceback,__PyEM_EMSCRIPTEN_TRAMPOLINE_OFFSET"])
     AS_VAR_APPEND([LINKFORSHARED], [" -sSTACK_SIZE=5MB"])
     dnl Avoid bugs in JS fallback string decoding path
@@ -5383,8 +5389,20 @@ PY_CHECK_FUNC([symlink], [@%:@include <unistd.h>])
 PY_CHECK_FUNC([fchdir], [@%:@include <unistd.h>])
 PY_CHECK_FUNC([fsync], [@%:@include <unistd.h>])
 PY_CHECK_FUNC([fdatasync], [@%:@include <unistd.h>])
-PY_CHECK_FUNC([epoll_create], [@%:@include <sys/epoll.h>], [HAVE_EPOLL])
-PY_CHECK_FUNC([epoll_create1], [@%:@include <sys/epoll.h>])
+
+AC_MSG_CHECKING([for --disable-epoll])
+AC_ARG_ENABLE([epoll],
+  [AS_HELP_STRING([--disable-epoll], [disable epoll (default is yes if supported)])],
+  [AS_VAR_IF([enable_epoll], [no], [disable_epoll=yes], [disable_epoll=no])],
+  [disable_epoll=no]
+)
+AC_MSG_RESULT([$disable_epoll])
+if test "$disable_epoll" = "no"
+then
+  PY_CHECK_FUNC([epoll_create], [@%:@include <sys/epoll.h>], [HAVE_EPOLL])
+  PY_CHECK_FUNC([epoll_create1], [@%:@include <sys/epoll.h>])
+fi
+
 PY_CHECK_FUNC([kqueue],[
 #include <sys/types.h>
 #include <sys/event.h>

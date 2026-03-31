@@ -315,8 +315,12 @@ _set_char(const char *name, Py_UCS4 *target, PyObject *src, Py_UCS4 dflt)
 static int
 _set_str(const char *name, PyObject **target, PyObject *src, const char *dflt)
 {
-    if (src == NULL)
+    if (src == NULL) {
         *target = PyUnicode_DecodeASCII(dflt, strlen(dflt), NULL);
+        if (*target == NULL) {
+            return -1;
+        }
+    }
     else {
         if (!PyUnicode_Check(src)) {
             PyErr_Format(PyExc_TypeError,
@@ -1829,6 +1833,7 @@ csv_exec(PyObject *module) {
 }
 
 static PyModuleDef_Slot csv_slots[] = {
+    _Py_ABI_SLOT,
     {Py_mod_exec, csv_exec},
     {Py_mod_multiple_interpreters, Py_MOD_PER_INTERPRETER_GIL_SUPPORTED},
     {Py_mod_gil, Py_MOD_GIL_NOT_USED},

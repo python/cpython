@@ -964,6 +964,11 @@ Reassigning them to new values is unsupported:
    A negative value ``-N`` indicates that the child was terminated by signal
    ``N`` (POSIX only).
 
+   When ``shell=True``, the return code reflects the exit status of the shell
+   itself (e.g. ``/bin/sh``), which may map signals to codes such as
+   ``128+N``. See the documentation of the shell (for example, the Bash
+   manual's Exit Status) for details.
+
 
 Windows Popen Helpers
 ---------------------

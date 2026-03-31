@@ -543,3 +543,22 @@ gen_try_set_executing(PyGenObject *gen)
     }
     return false;
 }
+
+// Macro for inplace float binary ops (tier 2 only).
+// Mutates the uniquely-referenced TARGET operand in place.
+// TARGET must be either left or right.
+#define FLOAT_INPLACE_OP(left, right, TARGET, OP)                        \
+    do {                                                                 \
+        PyObject *left_o = PyStackRef_AsPyObjectBorrow(left);            \
+        PyObject *right_o = PyStackRef_AsPyObjectBorrow(right);          \
+        assert(PyFloat_CheckExact(left_o));                              \
+        assert(PyFloat_CheckExact(right_o));                             \
+        assert(_PyObject_IsUniquelyReferenced(                           \
+            PyStackRef_AsPyObjectBorrow(TARGET)));                       \
+        STAT_INC(BINARY_OP, hit);                                        \
+        double _dres =                                                   \
+            ((PyFloatObject *)left_o)->ob_fval                           \
+            OP ((PyFloatObject *)right_o)->ob_fval;                      \
+        ((PyFloatObject *)PyStackRef_AsPyObjectBorrow(TARGET))           \
+            ->ob_fval = _dres;                                           \
+    } while (0)

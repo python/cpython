@@ -2032,7 +2032,7 @@ _PyObject_GenericSetAttrWithDict(PyObject *obj, PyObject *name,
     }
 
     Py_INCREF(name);
-    Py_INCREF(tp);
+    _Py_INCREF_TYPE(tp);
 
     PyThreadState *tstate = _PyThreadState_GET();
     _PyCStackRef cref;
@@ -2107,7 +2107,7 @@ _PyObject_GenericSetAttrWithDict(PyObject *obj, PyObject *name,
     }
   done:
     _PyThreadState_PopCStackRef(tstate, &cref);
-    Py_DECREF(tp);
+    _Py_DECREF_TYPE(tp);
     Py_DECREF(name);
     return res;
 }
@@ -2761,13 +2761,6 @@ _Py_NewReferenceNoTotal(PyObject *op)
 void
 _Py_SetImmortalUntracked(PyObject *op)
 {
-#ifdef Py_DEBUG
-    // For strings, use _PyUnicode_InternImmortal instead.
-    if (PyUnicode_CheckExact(op)) {
-        assert(PyUnicode_CHECK_INTERNED(op) == SSTATE_INTERNED_IMMORTAL
-            || PyUnicode_CHECK_INTERNED(op) == SSTATE_INTERNED_IMMORTAL_STATIC);
-    }
-#endif
     // Check if already immortal to avoid degrading from static immortal to plain immortal
     if (_Py_IsImmortal(op)) {
         return;

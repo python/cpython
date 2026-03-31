@@ -15,20 +15,20 @@ More on Lists
 The :ref:`list <typesseq-list>` data type has some more methods. Here are all
 of the methods of list objects:
 
-.. method:: list.append(x)
+.. method:: list.append(value, /)
    :noindex:
 
    Add an item to the end of the list.  Similar to ``a[len(a):] = [x]``.
 
 
-.. method:: list.extend(iterable)
+.. method:: list.extend(iterable, /)
    :noindex:
 
    Extend the list by appending all the items from the iterable.  Similar to
    ``a[len(a):] = iterable``.
 
 
-.. method:: list.insert(i, x)
+.. method:: list.insert(index, value, /)
    :noindex:
 
    Insert an item at a given position.  The first argument is the index of the
@@ -36,14 +36,14 @@ of the methods of list objects:
    the list, and ``a.insert(len(a), x)`` is equivalent to ``a.append(x)``.
 
 
-.. method:: list.remove(x)
+.. method:: list.remove(value, /)
    :noindex:
 
-   Remove the first item from the list whose value is equal to *x*.  It raises a
+   Remove the first item from the list whose value is equal to *value*.  It raises a
    :exc:`ValueError` if there is no such item.
 
 
-.. method:: list.pop([i])
+.. method:: list.pop(index=-1, /)
    :noindex:
 
    Remove the item at the given position in the list, and return it.  If no index
@@ -58,10 +58,10 @@ of the methods of list objects:
    Remove all items from the list.  Similar to ``del a[:]``.
 
 
-.. method:: list.index(x[, start[, end]])
+.. method:: list.index(value[, start[, stop]])
    :noindex:
 
-   Return zero-based index of the first occurrence of *x* in the list.
+   Return zero-based index of the first occurrence of *value* in the list.
    Raises a :exc:`ValueError` if there is no such item.
 
    The optional arguments *start* and *end* are interpreted as in the slice
@@ -70,10 +70,10 @@ of the methods of list objects:
    sequence rather than the *start* argument.
 
 
-.. method:: list.count(x)
+.. method:: list.count(value, /)
    :noindex:
 
-   Return the number of times *x* appears in the list.
+   Return the number of times *value* appears in the list.
 
 
 .. method:: list.sort(*, key=None, reverse=False)
