@@ -233,7 +233,7 @@ cpu_thread.join()
         self.assertIn("No samples were collected", output)
         self.assertIn("CPU mode", output)
 
-    def test_jsonl_collector_rspects_skip_idle(self):
+    def test_jsonl_collector_respects_skip_idle(self):
         """Test that frames are actually filtered when skip_idle=True."""
         import tempfile
         import json
