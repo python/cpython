@@ -1,5 +1,6 @@
 """JSONL collector."""
 
+from collections import Counter
 import json
 import uuid
 from itertools import batched
@@ -38,8 +39,8 @@ class JsonlCollector(StackTraceCollector):
         self._frame_to_id = {}
         self._frames = []
 
-        self._frame_self = {}
-        self._frame_cumulative = {}
+        self._frame_self = Counter()
+        self._frame_cumulative = Counter()
         self._samples_total = 0
 
         self._mode = mode
@@ -56,21 +57,39 @@ class JsonlCollector(StackTraceCollector):
         ]
         leaf_frame_id = frame_ids[0]
 
-        self._frame_self[leaf_frame_id] = (
-            self._frame_self.get(leaf_frame_id, 0) + weight
-        )
+        self._frame_self[leaf_frame_id] += weight
 
         for frame_id in set(frame_ids):
-            self._frame_cumulative[frame_id] = (
-                self._frame_cumulative.get(frame_id, 0) + weight
-            )
+            self._frame_cumulative[frame_id] += weight
 
     def export(self, filename):
         with open(filename, "w", encoding="utf-8") as output:
             self._write_message(output, self._build_meta_record())
-            self._write_chunked_defs(output, "str_def", self._strings)
-            self._write_chunked_defs(output, "frame_def", self._frames)
-            self._write_chunked_agg(output, self._iter_agg_entries())
+            self._write_chunked_records(
+                output,
+                {"type": "str_def", "v": 1, "run_id": self.run_id},
+                "defs",
+                self._strings,
+            )
+            self._write_chunked_records(
+                output,
+                {"type": "frame_def", "v": 1, "run_id": self.run_id},
+                "defs",
+                self._frames,
+            )
+            self._write_chunked_records(
+                output,
+                {
+                    "type": "agg",
+                    "v": 1,
+                    "run_id": self.run_id,
+                    "kind": "frame",
+                    "scope": "final",
+                    "samples_total": self._samples_total,
+                },
+                "entries",
+                self._iter_agg_entries(),
+            )
             self._write_message(output, self._build_end_record())
 
     def _build_meta_record(self):
@@ -171,44 +190,18 @@ class JsonlCollector(StackTraceCollector):
         return normalized
 
     def _iter_agg_entries(self):
-        entries = []
-        for frame_record in self._frames:
-            frame_id = frame_record["frame_id"]
-            entries.append(
-                {
-                    "frame_id": frame_id,
-                    "self": self._frame_self.get(frame_id, 0),
-                    "cumulative": self._frame_cumulative.get(frame_id, 0),
-                }
-            )
-        return entries
+        return [
+            {
+                "frame_id": frame_record["frame_id"],
+                "self": self._frame_self[frame_record["frame_id"]],
+                "cumulative": self._frame_cumulative[frame_record["frame_id"]],
+            }
+            for frame_record in self._frames
+        ]
 
-    def _write_chunked_defs(self, output, record_type, entries):
+    def _write_chunked_records(self, output, base_record, chunk_field, entries):
         for chunk in batched(entries, _CHUNK_SIZE):
-            self._write_message(
-                output,
-                {
-                    "type": record_type,
-                    "v": 1,
-                    "run_id": self.run_id,
-                    "defs": chunk,
-                },
-            )
-
-    def _write_chunked_agg(self, output, entries):
-        for chunk in batched(entries, _CHUNK_SIZE):
-            self._write_message(
-                output,
-                {
-                    "type": "agg",
-                    "v": 1,
-                    "run_id": self.run_id,
-                    "kind": "frame",
-                    "scope": "final",
-                    "samples_total": self._samples_total,
-                    "entries": chunk,
-                },
-            )
+            self._write_message(output, {**base_record, chunk_field: chunk})
 
     @staticmethod
     def _write_message(output, record):
