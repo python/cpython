@@ -377,7 +377,7 @@ def main(args=None, *, _wrap_timer=None):
     s = "" if number == 1 else "s"
     print(
         f"{number} loop{s}, best of {repeat}: "
-        f"{theme.best}{format_time(best)} {reset}"
+        f"{theme.best}{format_time(best)}{reset} "
         f"{theme.per_loop}per loop{reset}"
     )
 
