@@ -626,12 +626,6 @@ def _strptime(data_string, format="%a %b %d %H:%M:%S %Y"):
             elif century == 0:
                 # ValueError fix, since MINYEAR = 1 in Lib/_pydatetime.py
                 year = 1
-            else:
-                # in line with other format directives, negative numbers
-                # are not supported by the regular expression;
-                # this branch will not trigger!
-                msg = f"Negative century unsupported ({found_dict[group_key]})"
-                raise ValueError(msg)
         elif group_key == 'Y':
             year = int(found_dict['Y'])
         elif group_key == 'G':
