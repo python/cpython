@@ -199,7 +199,9 @@ class JsonlCollector(StackTraceCollector):
             for frame_record in self._frames
         ]
 
-    def _write_chunked_records(self, output, base_record, chunk_field, entries):
+    def _write_chunked_records(
+        self, output, base_record, chunk_field, entries
+    ):
         for chunk in batched(entries, _CHUNK_SIZE):
             self._write_message(output, {**base_record, chunk_field: chunk})
 
