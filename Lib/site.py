@@ -242,14 +242,14 @@ def addsitedir(sitedir, known_paths=None):
     if not sitedircase in known_paths:
         sys.path.append(sitedir)        # Add path component
         known_paths.add(sitedircase)
-    try:
-        names = os.listdir(sitedir)
-    except OSError:
-        return
-    names = [name for name in names
-             if name.endswith(".pth") and not name.startswith(".")]
-    for name in sorted(names):
-        addpackage(sitedir, name, known_paths)
+        try:
+            names = os.listdir(sitedir)
+        except OSError:
+            return
+        names = [name for name in names
+                 if name.endswith(".pth") and not name.startswith(".")]
+        for name in sorted(names):
+            addpackage(sitedir, name, known_paths)
     if reset:
         known_paths = None
     return known_paths
