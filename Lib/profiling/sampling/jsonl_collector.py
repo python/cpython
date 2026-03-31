@@ -190,14 +190,13 @@ class JsonlCollector(StackTraceCollector):
         return normalized
 
     def _iter_final_agg_entries(self):
-        return [
-            {
-                "frame_id": frame_record["frame_id"],
-                "self": self._frame_self[frame_record["frame_id"]],
-                "cumulative": self._frame_cumulative[frame_record["frame_id"]],
+        for frame_record in self._frames:
+            frame_id = frame_record["frame_id"]
+            yield {
+                "frame_id": frame_id,
+                "self": self._frame_self[frame_id],
+                "cumulative": self._frame_cumulative[frame_id],
             }
-            for frame_record in self._frames
-        ]
 
     def _write_chunked_records(
         self, output, base_record, chunk_field, entries
