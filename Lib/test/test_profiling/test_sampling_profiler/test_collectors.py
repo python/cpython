@@ -2504,6 +2504,7 @@ class TestCollectorFrameFormat(unittest.TestCase):
         self.assertEqual(paths, {"app.py", "utils.py", "lib.py"})
         self.assertEqual(funcs, {"main", "helper", "process"})
 
+
 class TestInternalFrameFiltering(unittest.TestCase):
     """Tests for filtering internal profiler frames from output."""
 
