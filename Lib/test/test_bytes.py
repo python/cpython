@@ -878,6 +878,13 @@ class BaseBytesTest:
         self.assertEqual(b.replace(b'i', b'a'), b'massassappa')
         self.assertEqual(b.replace(b'ss', b'x'), b'mixixippi')
 
+    def test_replace_count_keyword(self):
+        b = self.type2test(b'aa')
+        self.assertEqual(b.replace(b'a', b'b', count=0), b'aa')
+        self.assertEqual(b.replace(b'a', b'b', count=1), b'ba')
+        self.assertEqual(b.replace(b'a', b'b', count=2), b'bb')
+        self.assertEqual(b.replace(b'a', b'b', count=3), b'bb')
+
     def test_replace_int_error(self):
         self.assertRaises(TypeError, self.type2test(b'a b').replace, 32, b'')
 
