@@ -13,6 +13,11 @@ found in the dictionary of type objects.
    Create a new get-set descriptor for extension type *type* from the
    :c:type:`PyGetSetDef` structure *getset*.
 
+   Get-set descriptors expose attributes implemented by C getter and setter
+   functions rather than stored directly in the instance. This is the same kind
+   of descriptor created for entries in :c:member:`~PyTypeObject.tp_getset`, and
+   it appears in Python as a :class:`types.GetSetDescriptorType` object.
+
    On success, return a :term:`strong reference` to the descriptor. Return
    ``NULL`` with an exception set on failure.
 
@@ -20,6 +25,11 @@ found in the dictionary of type objects.
 
    Create a new member descriptor for extension type *type* from the
    :c:type:`PyMemberDef` structure *member*.
+
+   Member descriptors expose fields in the type's C struct as Python
+   attributes. This is the same kind of descriptor created for entries in
+   :c:member:`~PyTypeObject.tp_members`, and it appears in Python as a
+   :class:`types.MemberDescriptorType` object.
 
    On success, return a :term:`strong reference` to the descriptor. Return
    ``NULL`` with an exception set on failure.
@@ -47,6 +57,11 @@ found in the dictionary of type objects.
    Create a new method descriptor for extension type *type* from the
    :c:type:`PyMethodDef` structure *meth*.
 
+   Method descriptors expose C functions as methods on a type. This is the same
+   kind of descriptor created for entries in
+   :c:member:`~PyTypeObject.tp_methods`, and it appears in Python as a
+   :class:`types.MethodDescriptorType` object.
+
    On success, return a :term:`strong reference` to the descriptor. Return
    ``NULL`` with an exception set on failure.
 
@@ -58,14 +73,25 @@ found in the dictionary of type objects.
    objects in Python.
 
 
+.. c:struct:: wrapperbase
+
+   Describes a slot wrapper used by :c:func:`PyDescr_NewWrapper`.
+
+   Each ``wrapperbase`` record stores the Python-visible name and metadata for a
+   special method implemented by a type slot, together with the wrapper
+   function used to adapt that slot to Python's calling convention.
+
 .. c:function:: PyObject* PyDescr_NewWrapper(PyTypeObject *type, struct wrapperbase *base, void *wrapped)
 
    Create a new wrapper descriptor for extension type *type* from the
-   ``struct wrapperbase`` structure *base* and the wrapped C function pointer
+   :c:struct:`wrapperbase` structure *base* and the wrapped slot function
+   pointer
    *wrapped*.
 
-   Wrapper descriptors are used internally to expose special methods
-   implemented by slot wrappers.
+   Wrapper descriptors expose special methods implemented by type slots. This
+   is the same kind of descriptor that CPython creates for slot-based special
+   methods such as ``__repr__`` or ``__add__``, and it appears in Python as a
+   :class:`types.WrapperDescriptorType` object.
 
    On success, return a :term:`strong reference` to the descriptor. Return
    ``NULL`` with an exception set on failure.
@@ -84,6 +110,11 @@ found in the dictionary of type objects.
    Create a new class method descriptor for extension type *type* from the
    :c:type:`PyMethodDef` structure *method*.
 
+   Class method descriptors expose C methods that receive the class rather than
+   an instance when accessed. This is the same kind of descriptor created for
+   ``METH_CLASS`` entries in :c:member:`~PyTypeObject.tp_methods`, and it
+   appears in Python as a :class:`types.ClassMethodDescriptorType` object.
+
    On success, return a :term:`strong reference` to the descriptor. Return
    ``NULL`` with an exception set on failure.
 
@@ -97,8 +128,12 @@ found in the dictionary of type objects.
 .. c:function:: PyObject* PyWrapper_New(PyObject *d, PyObject *self)
 
    Create a new bound wrapper object from the wrapper descriptor *d* and the
-   object *self*. The returned object appears in Python as a
-   :class:`types.MethodWrapperType` instance.
+   instance *self*.
+
+   This is the bound form of a wrapper descriptor created by
+   :c:func:`PyDescr_NewWrapper`. CPython creates these objects when a slot
+   wrapper is accessed through an instance, and they appear in Python as
+   :class:`types.MethodWrapperType` objects.
 
    On success, return a :term:`strong reference` to the wrapper object. Return
    ``NULL`` with an exception set on failure.
