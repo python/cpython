@@ -2608,12 +2608,8 @@ class TestCollectorFrameFormat(unittest.TestCase):
                         1,
                         [
                             MockFrameInfo("app.py", 100, "main", opcode=90),
-                            MockFrameInfo(
-                                "utils.py", 50, "helper", opcode=100
-                            ),
-                            MockFrameInfo(
-                                "lib.py", 25, "process", opcode=None
-                            ),
+                            MockFrameInfo("utils.py", 50, "helper", opcode=100),
+                            MockFrameInfo("lib.py", 25, "process", opcode=None),
                         ],
                         status=THREAD_STATUS_HAS_GIL,
                     )
@@ -2801,9 +2797,7 @@ class TestInternalFrameFiltering(unittest.TestCase):
                         1,
                         [
                             MockFrameInfo("app.py", 50, "run"),
-                            MockFrameInfo(
-                                "/lib/_sync_coordinator.py", 100, "main"
-                            ),
+                            MockFrameInfo("/lib/_sync_coordinator.py", 100, "main"),
                         ],
                         status=THREAD_STATUS_HAS_GIL,
                     )
