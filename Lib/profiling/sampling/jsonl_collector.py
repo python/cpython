@@ -43,6 +43,7 @@ class JsonlCollector(StackTraceCollector):
         self._frame_self = Counter()
         self._frame_cumulative = Counter()
         self._samples_total = 0
+        self._seen_frame_ids = set()
 
         self._mode = mode
 
@@ -51,17 +52,21 @@ class JsonlCollector(StackTraceCollector):
             return
 
         self._samples_total += weight
+        self._seen_frame_ids.clear()
 
-        frame_ids = [
-            self._get_or_create_frame_id(filename, location, funcname)
-            for filename, location, funcname, _opcode in frames
-        ]
-        leaf_frame_id = frame_ids[0]
+        for i, (filename, location, funcname, _opcode) in enumerate(frames):
+            frame_id = self._get_or_create_frame_id(filename, location, funcname)
+            is_leaf = (i == 0)
+            count_cumulative = frame_id not in self._seen_frame_ids
 
-        self._frame_self[leaf_frame_id] += weight
+            if count_cumulative:
+                self._seen_frame_ids.add(frame_id)
 
-        for frame_id in set(frame_ids):
-            self._frame_cumulative[frame_id] += weight
+            if is_leaf:
+                self._frame_self[frame_id] += weight
+
+            if count_cumulative:
+                self._frame_cumulative[frame_id] += weight
 
     def export(self, filename):
         with open(filename, "w", encoding="utf-8") as output:
