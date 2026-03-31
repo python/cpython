@@ -2627,3 +2627,54 @@ class TestInternalFrameFiltering(unittest.TestCase):
         for (call_tree, _), _ in collector.stack_counter.items():
             for filename, _, _ in call_tree:
                 self.assertNotIn("_sync_coordinator", filename)
+
+    def test_jsonl_collector_filters_internal_frames(self):
+        """Test that JsonlCollector filters out internal frames."""
+        jsonl_out = tempfile.NamedTemporaryFile(delete=False)
+        self.addCleanup(close_and_unlink, jsonl_out)
+
+        collector = JsonlCollector(sample_interval_usec=1000)
+
+        frames = [
+            MockInterpreterInfo(
+                0,
+                [
+                    MockThreadInfo(
+                        1,
+                        [
+                            MockFrameInfo("app.py", 50, "run"),
+                            MockFrameInfo("/lib/_sync_coordinator.py", 100, "main"),
+                            MockFrameInfo("<frozen runpy>", 87, "_run_code"),
+                        ],
+                        status=THREAD_STATUS_HAS_GIL,
+                    )
+                ],
+            )
+        ]
+
+        collector.collect(frames)
+        collector.export(jsonl_out.name)
+
+        with open(jsonl_out.name, "r", encoding="utf-8") as f:
+            records = [json.loads(line) for line in f]
+
+        str_defs = {
+            item["str_id"]: item["value"]
+            for record in records
+            if record["type"] == "str_def"
+            for item in record["defs"]
+        }
+        frame_defs = [
+            item
+            for record in records
+            if record["type"] == "frame_def"
+            for item in record["defs"]
+        ]
+
+        paths = {str_defs[item["path_str_id"]] for item in frame_defs}
+
+        self.assertIn("app.py", paths)
+        self.assertIn("<frozen runpy>", paths)
+
+        for path in paths:
+            self.assertNotIn("_sync_coordinator", path)
