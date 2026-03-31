@@ -65,11 +65,11 @@ function resolveStringIndices(node, table) {
   if (typeof resolved.funcname === 'number') {
     resolved.funcname = resolveString(resolved.funcname, table);
   }
-  if (typeof resolved.module_name === 'number') {
-    resolved.module_name = resolveString(resolved.module_name);
+  if (typeof resolved.module === 'number') {
+    resolved.module = resolveString(resolved.module, table);
   }
-  if (typeof resolved.name_module === 'number') {
-    resolved.name_module = resolveString(resolved.name_module);
+  if (typeof resolved.label === 'number') {
+    resolved.label = resolveString(resolved.label, table);
   }
 
   if (Array.isArray(resolved.source)) {
@@ -90,7 +90,7 @@ function escapeHtml(str) {
   return str.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;");
 }
 
-// Get display path based on user preference (module name or basename)
+// Get display path based on user preference (module or full path)
 function getDisplayName(moduleName, filename) {
   if (useModuleNames) {
     return moduleName || filename;
@@ -248,7 +248,7 @@ function setupLogos() {
 function updateStatusBar(nodeData, rootValue) {
   const funcname = resolveString(nodeData.funcname) || resolveString(nodeData.name) || "--";
   const filename = resolveString(nodeData.filename) || "";
-  const moduleName = resolveString(nodeData.module_name) || "";
+  const moduleName = resolveString(nodeData.module) || "";
   const lineno = nodeData.lineno;
   const timeMs = (nodeData.value / 1000).toFixed(2);
   const percent = rootValue > 0 ? ((nodeData.value / rootValue) * 100).toFixed(1) : "0.0";
@@ -322,7 +322,7 @@ function createPythonTooltip(data) {
 
     const funcname = resolveString(d.data.funcname) || resolveString(d.data.name);
     const filename = resolveString(d.data.filename) || "";
-    const moduleName = resolveString(d.data.module_name) || "";
+    const moduleName = resolveString(d.data.module) || "";
     const displayName = escapeHtml(useModuleNames ? (moduleName || filename) : filename);
     const isSpecialFrame = filename === "~";
 
@@ -609,7 +609,7 @@ function createFlamegraph(tooltip, rootValue, data) {
     .minFrameSize(1)
     .tooltip(tooltip)
     .inverted(true)
-    .getName(d => resolveString(useModuleNames ? d.data.name_module : d.data.name) || resolveString(d.data.name) || '')
+    .getName(d => resolveString(useModuleNames ? d.data.label : d.data.name) || resolveString(d.data.name) || '')
     .setColorMapper(function (d) {
       if (d.depth === 0) return 'transparent';
 
@@ -652,7 +652,7 @@ function updateSearchHighlight(searchTerm, searchInput) {
         const name = resolveString(d.data.name) || "";
         const funcname = resolveString(d.data.funcname) || "";
         const filename = resolveString(d.data.filename) || "";
-        const moduleName = resolveString(d.data.module_name) || "";
+        const moduleName = resolveString(d.data.module) || "";
         const displayName = getDisplayName(moduleName, filename);
         const lineno = d.data.lineno;
         const term = searchTerm.toLowerCase();
@@ -1071,7 +1071,7 @@ function populateStats(data) {
 
     let filename = resolveString(node.filename);
     let funcname = resolveString(node.funcname);
-    let moduleName = resolveString(node.module_name);
+    let moduleName = resolveString(node.module);
 
     if (!filename || !funcname) {
       const nameStr = resolveString(node.name);
@@ -1103,14 +1103,14 @@ function populateStats(data) {
         existing.directPercent = (existing.directSamples / totalSamples) * 100;
         if (directSamples > existing.maxSingleSamples) {
           existing.filename = filename;
-          existing.module_name = moduleName;
+          existing.module = moduleName;
           existing.lineno = node.lineno || '?';
           existing.maxSingleSamples = directSamples;
         }
       } else {
         functionMap.set(funcKey, {
           filename: filename,
-          module_name: moduleName,
+          module: moduleName,
           lineno: node.lineno || '?',
           funcname: funcname,
           directSamples,
@@ -1145,7 +1145,7 @@ function populateStats(data) {
       const h = hotSpots[i];
       const filename = h.filename || 'unknown';
       const lineno = h.lineno ?? '?';
-      const moduleName = h.module_name || 'unknown';
+      const moduleName = h.module || 'unknown';
       const isSpecialFrame = filename === '~' && (lineno === 0 || lineno === '?');
 
       let funcDisplay = h.funcname || 'unknown';
@@ -1173,7 +1173,7 @@ function populateStats(data) {
     if (card) {
       if (i < hotSpots.length && hotSpots[i]) {
         const h = hotSpots[i];
-        const moduleName = h.module_name || 'unknown';
+        const moduleName = h.module || 'unknown';
         const filename = h.filename || 'unknown';
         const displayName = getDisplayName(moduleName, filename);
         const hasValidLocation = displayName !== 'unknown' && h.lineno !== '?';
@@ -1309,12 +1309,12 @@ function accumulateInvertedNode(parent, stackFrame, leaf, isDifferential) {
   if (!parent.children[key]) {
     const newNode = {
       name: stackFrame.name,
-      name_module: stackFrame.name_module,
+      label: stackFrame.label,
       value: 0,
       self: 0,
       children: {},
       filename: stackFrame.filename,
-      module_name: stackFrame.module_name,
+      module: stackFrame.module,
       lineno: stackFrame.lineno,
       funcname: stackFrame.funcname,
       source: stackFrame.source,
@@ -1409,7 +1409,7 @@ function generateInvertedFlamegraph(data) {
 
   const invertedRoot = {
     name: data.name,
-    name_module: data.name_module,
+    label: data.label,
     value: data.value,
     children: {},
     stats: data.stats,
@@ -1437,14 +1437,7 @@ function toggleInvert() {
 function togglePathDisplay() {
   useModuleNames = !useModuleNames;
   updateToggleUI('toggle-path-display', useModuleNames);
-  const dataToRender = isInverted ? invertedData : normalData;
-  const filteredData = currentThreadFilter !== 'all'
-    ? filterDataByThread(dataToRender, parseInt(currentThreadFilter))
-    : dataToRender;
-
-  const tooltip = createPythonTooltip(filteredData);
-  const chart = createFlamegraph(tooltip, filteredData.value);
-  renderFlamegraph(chart, filteredData);
+  updateFlamegraphView();
 }
 
 // ============================================================================

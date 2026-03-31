@@ -224,18 +224,18 @@ class FlamegraphCollector(StackTraceCollector):
                 funcname_idx = self._string_table.intern(func[2])
                 module_name = self._get_module_name(func[0], path_info)
 
-                module_name_idx = self._string_table.intern(module_name)
+                module_idx = self._string_table.intern(module_name)
                 name_idx = self._string_table.intern(self._format_function_name(func))
-                name_module_idx = self._string_table.intern(self._format_module_name(func, module_name))
+                label_idx = self._string_table.intern(self._format_module_name(func, module_name))
 
                 child_entry = {
                     "name": name_idx,
-                    "name_module": name_module_idx,
+                    "label": label_idx,
                     "value": samples,
                     "self": node.get("self", 0),
                     "children": [],
                     "filename": filename_idx,
-                    "module_name": module_name_idx,
+                    "module": module_idx,
                     "lineno": func[1],
                     "funcname": funcname_idx,
                     "threads": sorted(list(node.get("threads", set()))),
