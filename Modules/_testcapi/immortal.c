@@ -31,13 +31,13 @@ test_immortal_small_ints(PyObject *self, PyObject *Py_UNUSED(ignored))
     for (int i = -5; i <= 1024; i++) {
         PyObject *obj = PyLong_FromLong(i);
         assert(verify_immortality(obj));
-        int has_int_immortal_bit = _PyLong_HasImmortalTag((PyLongObject *)obj);
+        int has_int_immortal_bit = _PyLong_IsSmallInt((PyLongObject *)obj);
         assert(has_int_immortal_bit);
     }
     for (int i = 1025; i <= 1030; i++) {
         PyObject *obj = PyLong_FromLong(i);
         assert(obj);
-        int has_int_immortal_bit = _PyLong_HasImmortalTag((PyLongObject *)obj);
+        int has_int_immortal_bit = _PyLong_IsSmallInt((PyLongObject *)obj);
         assert(!has_int_immortal_bit);
         Py_DECREF(obj);
     }

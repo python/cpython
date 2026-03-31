@@ -3627,7 +3627,7 @@ void
 _PyLong_ExactDealloc(PyObject *self)
 {
     assert(PyLong_CheckExact(self));
-    if (_PyLong_HasImmortalTag((PyLongObject *)self)) {
+    if (_PyLong_IsSmallInt((PyLongObject *)self)) {
         // See PEP 683, section Accidental De-Immortalizing for details
         _Py_SetImmortal(self);
         return;
@@ -3642,7 +3642,7 @@ _PyLong_ExactDealloc(PyObject *self)
 static void
 long_dealloc(PyObject *self)
 {
-    if (_PyLong_HasImmortalTag((PyLongObject *)self)) {
+    if (_PyLong_IsSmallInt((PyLongObject *)self)) {
         /* This should never get called, but we also don't want to SEGV if
          * we accidentally decref small Ints out of existence. Instead,
          * since small Ints are immortal, re-set the reference count.
