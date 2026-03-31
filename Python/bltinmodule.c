@@ -2973,7 +2973,7 @@ check:
         // ValueError: zip() argument 3 is shorter than arguments 1-2
         const char* plural = i == 1 ? " " : "s 1-";
         return PyErr_Format(PyExc_ValueError,
-                            "zip() argument %d is shorter than argument%s%d",
+                            "zip() argument %zd is shorter than argument%s%zd",
                             i + 1, plural, i);
     }
     for (i = 1; i < tuplesize; i++) {
@@ -2983,7 +2983,7 @@ check:
             Py_DECREF(item);
             const char* plural = i == 1 ? " " : "s 1-";
             return PyErr_Format(PyExc_ValueError,
-                                "zip() argument %d is longer than argument%s%d",
+                                "zip() argument %zd is longer than argument%s%zd",
                                 i + 1, plural, i);
         }
         if (PyErr_Occurred()) {
