@@ -35,7 +35,10 @@ def _dump_footer(
     yield f"static const void * const symbols_map[{max(len(symbols), 1)}] = {{"
     if symbols:
         for symbol, ordinal in symbols.items():
-            yield f"    [{ordinal}] = &{symbol},"
+            if symbol.startswith("_JIT_TRAMPOLINE_"):
+                yield f"    [{ordinal}] = 0,"
+            else:
+                yield f"    [{ordinal}] = &{symbol},"
     else:
         yield "    0"
     yield "};"
