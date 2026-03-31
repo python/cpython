@@ -55,8 +55,10 @@ class JsonlCollector(StackTraceCollector):
         self._seen_frame_ids.clear()
 
         for i, (filename, location, funcname, _opcode) in enumerate(frames):
-            frame_id = self._get_or_create_frame_id(filename, location, funcname)
-            is_leaf = (i == 0)
+            frame_id = self._get_or_create_frame_id(
+                filename, location, funcname
+            )
+            is_leaf = i == 0
             count_cumulative = frame_id not in self._seen_frame_ids
 
             if count_cumulative:
