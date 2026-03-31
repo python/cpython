@@ -63,6 +63,9 @@ extern void _PyLong_FiniTypes(PyInterpreterState *interp);
 #  error "_PY_NSMALLPOSINTS must be greater than or equal to 257"
 #endif
 
+#define _PY_IS_SMALL_INT(val) \
+    (-_PY_NSMALLNEGINTS <= (val) && (val) < _PY_NSMALLPOSINTS)
+
 // Return a reference to the immortal zero singleton.
 // The function cannot return NULL.
 static inline PyObject* _PyLong_GetZero(void)
@@ -224,6 +227,25 @@ _PyLong_IsPositive(const PyLongObject *op)
     return (op->long_value.lv_tag & SIGN_MASK) == 0;
 }
 
+/* Return true if the argument is a small int */
+static inline bool
+_PyLong_IsSmallInt(const PyLongObject *op)
+{
+    assert(PyLong_Check(op));
+    bool is_small_int = false;
+    if (_PyLong_IsCompact(op)) {
+        Py_ssize_t value = _PyLong_CompactValue(op);
+        if (_PY_IS_SMALL_INT(value)) {
+            PyLongObject *small_obj;
+            small_obj = &_PyLong_SMALL_INTS[_PY_NSMALLNEGINTS + value];
+            is_small_int = (op == small_obj);
+        }
+    }
+    assert(PyLong_CheckExact(op) || (!is_small_int));
+    assert(_Py_IsImmortal(op) || (!is_small_int));
+    return is_small_int;
+}
+
 static inline Py_ssize_t
 _PyLong_DigitCount(const PyLongObject *op)
 {
@@ -284,7 +306,9 @@ _PyLong_SetDigitCount(PyLongObject *op, Py_ssize_t size)
 #define NON_SIZE_MASK ~((1 << NON_SIZE_BITS) - 1)
 
 static inline void
-_PyLong_FlipSign(PyLongObject *op) {
+_PyLong_FlipSign(PyLongObject *op)
+{
+    assert(!_PyLong_IsSmallInt(op));
     unsigned int flipped_sign = 2 - (op->long_value.lv_tag & SIGN_MASK);
     op->long_value.lv_tag &= NON_SIZE_MASK;
     op->long_value.lv_tag |= flipped_sign;
