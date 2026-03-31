@@ -1697,7 +1697,11 @@ class TestSampleProfilerComponents(unittest.TestCase):
                 0,
                 [
                     MockThreadInfo(
-                        1, [MockFrameInfo("file.py", 10, "func1"), MockFrameInfo("file.py", 20, "func2")]
+                        1,
+                        [
+                            MockFrameInfo("file.py", 10, "func1"),
+                            MockFrameInfo("file.py", 20, "func2"),
+                        ],
                     )
                 ],
             )
@@ -1707,14 +1711,23 @@ class TestSampleProfilerComponents(unittest.TestCase):
                 0,
                 [
                     MockThreadInfo(
-                        1, [MockFrameInfo("file.py", 10, "func1"), MockFrameInfo("file.py", 20, "func2")]
+                        1,
+                        [
+                            MockFrameInfo("file.py", 10, "func1"),
+                            MockFrameInfo("file.py", 20, "func2"),
+                        ],
                     )
                 ],
             )
         ]  # Same stack
         test_frames3 = [
             MockInterpreterInfo(
-                0, [MockThreadInfo(1, [MockFrameInfo("other.py", 5, "other_func")])]
+                0,
+                [
+                    MockThreadInfo(
+                        1, [MockFrameInfo("other.py", 5, "other_func")]
+                    )
+                ],
             )
         ]
 
@@ -1747,7 +1760,11 @@ class TestSampleProfilerComponents(unittest.TestCase):
             [
                 MockInterpreterInfo(
                     0,
-                    [MockThreadInfo(1, [MockFrameInfo("file.py", 10, "func")])],
+                    [
+                        MockThreadInfo(
+                            1, [MockFrameInfo("file.py", 10, "func")]
+                        )
+                    ],
                 )
             ]
         )
@@ -1756,7 +1773,9 @@ class TestSampleProfilerComponents(unittest.TestCase):
         with open(jsonl_out.name, "r", encoding="utf-8") as f:
             records = [json.loads(line) for line in f]
 
-        meta_record = next(record for record in records if record["type"] == "meta")
+        meta_record = next(
+            record for record in records if record["type"] == "meta"
+        )
         self.assertEqual(meta_record["mode"], "cpu")
 
     def test_jsonl_collector_export_empty_profile(self):
@@ -1770,7 +1789,9 @@ class TestSampleProfilerComponents(unittest.TestCase):
         with open(jsonl_out.name, "r", encoding="utf-8") as f:
             records = [json.loads(line) for line in f]
 
-        self.assertEqual([record["type"] for record in records], ["meta", "end"])
+        self.assertEqual(
+            [record["type"] for record in records], ["meta", "end"]
+        )
         self.assertEqual(records[0]["sample_interval_usec"], 1000)
         self.assertEqual(records[0]["run_id"], "run-123")
         self.assertEqual(records[1]["samples_total"], 0)
@@ -1789,9 +1810,15 @@ class TestSampleProfilerComponents(unittest.TestCase):
                         MockThreadInfo(
                             1,
                             [
-                                MockFrameInfo("recursive.py", 10, "recursive_func"),
-                                MockFrameInfo("recursive.py", 10, "recursive_func"),
-                                MockFrameInfo("recursive.py", 10, "recursive_func"),
+                                MockFrameInfo(
+                                    "recursive.py", 10, "recursive_func"
+                                ),
+                                MockFrameInfo(
+                                    "recursive.py", 10, "recursive_func"
+                                ),
+                                MockFrameInfo(
+                                    "recursive.py", 10, "recursive_func"
+                                ),
                             ],
                         )
                     ],
@@ -1807,7 +1834,13 @@ class TestSampleProfilerComponents(unittest.TestCase):
         self.assertEqual(len(frame_defs), 1)
         self.assertEqual(
             agg_record["entries"],
-            [{"frame_id": frame_defs[0]["frame_id"], "self": 1, "cumulative": 1}],
+            [
+                {
+                    "frame_id": frame_defs[0]["frame_id"],
+                    "self": 1,
+                    "cumulative": 1,
+                }
+            ],
         )
         self.assertEqual(agg_record["samples_total"], 1)
         self.assertEqual(end_record["samples_total"], 1)
@@ -1860,9 +1893,7 @@ class TestSampleProfilerComponents(unittest.TestCase):
 
         paths, funcs, samples_total = export_summary(skip_idle=False)
         self.assertEqual(paths, {"active1.py", "idle.py", "active2.py"})
-        self.assertEqual(
-            funcs, {"active_func1", "idle_func", "active_func2"}
-        )
+        self.assertEqual(funcs, {"active_func1", "idle_func", "active_func2"})
         self.assertEqual(samples_total, 3)
 
     def test_jsonl_collector_splits_large_exports_into_chunks(self):
@@ -1879,7 +1910,11 @@ class TestSampleProfilerComponents(unittest.TestCase):
                         [
                             MockThreadInfo(
                                 1,
-                                [MockFrameInfo(f"file{i}.py", i + 1, f"func{i}")],
+                                [
+                                    MockFrameInfo(
+                                        f"file{i}.py", i + 1, f"func{i}"
+                                    )
+                                ],
                             )
                         ],
                     )
@@ -1895,14 +1930,26 @@ class TestSampleProfilerComponents(unittest.TestCase):
         self.assertEqual(len(run_ids), 1)
         self.assertRegex(next(iter(run_ids)), r"^[0-9a-f]{32}$")
 
-        _, str_defs, frame_defs, agg_record, end_record = _jsonl_tables(records)
-        str_chunks = [record for record in records if record["type"] == "str_def"]
-        frame_chunks = [record for record in records if record["type"] == "frame_def"]
+        _, str_defs, frame_defs, agg_record, end_record = _jsonl_tables(
+            records
+        )
+        str_chunks = [
+            record for record in records if record["type"] == "str_def"
+        ]
+        frame_chunks = [
+            record for record in records if record["type"] == "frame_def"
+        ]
         agg_chunks = [record for record in records if record["type"] == "agg"]
 
-        self.assertEqual([len(record["defs"]) for record in str_chunks], [256, 256, 2])
-        self.assertEqual([len(record["defs"]) for record in frame_chunks], [256, 1])
-        self.assertEqual([len(record["entries"]) for record in agg_chunks], [256, 1])
+        self.assertEqual(
+            [len(record["defs"]) for record in str_chunks], [256, 256, 2]
+        )
+        self.assertEqual(
+            [len(record["defs"]) for record in frame_chunks], [256, 1]
+        )
+        self.assertEqual(
+            [len(record["entries"]) for record in agg_chunks], [256, 1]
+        )
         self.assertEqual(len(str_defs), 514)
         self.assertEqual(len(frame_defs), 257)
         self.assertEqual(agg_record["samples_total"], 257)
@@ -2071,7 +2118,9 @@ class TestRecursiveFunctionHandling(unittest.TestCase):
         cumulative_calls = stats[1]
         self.assertEqual(cumulative_calls, 10)
 
-    def test_pstats_collector_different_lines_same_function_counted_separately(self):
+    def test_pstats_collector_different_lines_same_function_counted_separately(
+        self,
+    ):
         """Test that different line numbers in same function are tracked separately."""
         collector = PstatsCollector(sample_interval_usec=1000)
 
@@ -2278,8 +2327,7 @@ class TestLocationInCollectors(unittest.TestCase):
         frame = MockFrameInfo("app.py", 100, "process_data")
         frames = [
             MockInterpreterInfo(
-                0,
-                [MockThreadInfo(1, [frame], status=THREAD_STATUS_HAS_GIL)]
+                0, [MockThreadInfo(1, [frame], status=THREAD_STATUS_HAS_GIL)]
             )
         ]
         collector.collect(frames)
@@ -2287,8 +2335,15 @@ class TestLocationInCollectors(unittest.TestCase):
         data = collector._convert_to_flamegraph_format()
         # Verify the function name includes lineno from location
         strings = data.get("strings", [])
-        name_found = any("process_data" in s and "100" in s for s in strings if isinstance(s, str))
-        self.assertTrue(name_found, f"Expected to find 'process_data' with line 100 in {strings}")
+        name_found = any(
+            "process_data" in s and "100" in s
+            for s in strings
+            if isinstance(s, str)
+        )
+        self.assertTrue(
+            name_found,
+            f"Expected to find 'process_data' with line 100 in {strings}",
+        )
 
     def test_gecko_collector_with_location_info(self):
         """Test GeckoCollector handles LocationInfo properly."""
@@ -2297,8 +2352,7 @@ class TestLocationInCollectors(unittest.TestCase):
         frame = MockFrameInfo("server.py", 50, "handle_request")
         frames = [
             MockInterpreterInfo(
-                0,
-                [MockThreadInfo(1, [frame], status=THREAD_STATUS_HAS_GIL)]
+                0, [MockThreadInfo(1, [frame], status=THREAD_STATUS_HAS_GIL)]
             )
         ]
         collector.collect(frames)
@@ -2561,8 +2615,12 @@ class TestCollectorFrameFormat(unittest.TestCase):
                         1,
                         [
                             MockFrameInfo("app.py", 100, "main", opcode=90),
-                            MockFrameInfo("utils.py", 50, "helper", opcode=100),
-                            MockFrameInfo("lib.py", 25, "process", opcode=None),
+                            MockFrameInfo(
+                                "utils.py", 50, "helper", opcode=100
+                            ),
+                            MockFrameInfo(
+                                "lib.py", 25, "process", opcode=None
+                            ),
                         ],
                         status=THREAD_STATUS_HAS_GIL,
                     )
@@ -2720,7 +2778,9 @@ class TestInternalFrameFiltering(unittest.TestCase):
                         1,
                         [
                             MockFrameInfo("app.py", 50, "run"),
-                            MockFrameInfo("/lib/_sync_coordinator.py", 100, "main"),
+                            MockFrameInfo(
+                                "/lib/_sync_coordinator.py", 100, "main"
+                            ),
                             MockFrameInfo("<frozen runpy>", 87, "_run_code"),
                         ],
                         status=THREAD_STATUS_HAS_GIL,
@@ -2748,7 +2808,9 @@ class TestInternalFrameFiltering(unittest.TestCase):
                         1,
                         [
                             MockFrameInfo("app.py", 50, "run"),
-                            MockFrameInfo("/lib/_sync_coordinator.py", 100, "main"),
+                            MockFrameInfo(
+                                "/lib/_sync_coordinator.py", 100, "main"
+                            ),
                         ],
                         status=THREAD_STATUS_HAS_GIL,
                     )
