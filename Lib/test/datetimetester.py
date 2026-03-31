@@ -2237,8 +2237,7 @@ class TestDate(HarmlessMixedComparison, unittest.TestCase):
 
     def test_strptime_C_y_format(self):
         # verify %y correctly augmented by century %C
-        test_years = ('0001', '1687', '1991', '2026')
-        for y in test_years:
+        for y in ('0001', '1687', '1991', '2026'):
             with self.subTest(format_directive="%C%y", year=y):
                 self.assertEqual(
                     self.theclass.strptime(y, "%C%y"),

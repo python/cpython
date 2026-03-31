@@ -689,8 +689,7 @@ class StrptimeTests(unittest.TestCase):
 
     def test_strptime_C_format(self):
         # verify cent. 0, zero-padding, modern cent., last supported cent.
-        test_centuries = ('0', '01', '20', '99')
-        for c in test_centuries:
+        for c in ('0', '01', '20', '99'):
             expected_year = int(c) * 100 if int(c) != 0 else 1
             with self.subTest(format_directive="C", century=c):
                 self.assertEqual(
@@ -700,8 +699,7 @@ class StrptimeTests(unittest.TestCase):
 
     def test_strptime_C_y_format(self):
         # verify %y correctly augmented by century %C
-        test_years = ('0001', '1687', '1991', '2026')
-        for year in test_years:
+        for year in ('0001', '1687', '1991', '2026'):
             with self.subTest(format_directive="%C%y", year=year):
                 self.assertEqual(
                     time.strptime(year, '%C%y'),
