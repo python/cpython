@@ -11,7 +11,7 @@ from test import support
 from test.support import import_helper, warnings_helper
 from test.support import os_helper
 from test.support import refleak_helper
-from test.support import requires_root
+from test.support import requires_root_user
 from test.support import socket_helper
 import unittest
 import textwrap
@@ -1087,7 +1087,7 @@ class _TestSingleFile(TestMailbox):
 
         self.assertEqual(os.stat(self._path).st_mode, mode)
 
-    @requires_root
+    @requires_root_user
     @unittest.skipUnless(hasattr(os, 'chown'), 'requires os.chown')
     def test_ownership_after_flush(self):
         # See issue gh-117467

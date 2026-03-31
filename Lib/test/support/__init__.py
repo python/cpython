@@ -71,7 +71,8 @@ __all__ = [
     "BrokenIter",
     "in_systemd_nspawn_sync_suppressed",
     "run_no_yield_async_fn", "run_yielding_async_fn", "async_yield",
-    "reset_code", "on_github_actions", "requires_root", "requires_non_root",
+    "reset_code", "on_github_actions",
+    "requires_root_user", "requires_non_root_user",
     ]
 
 
@@ -3320,5 +3321,5 @@ def control_characters_c0() -> list[str]:
 
 
 _ROOT_IN_POSIX = hasattr(os, 'geteuid') and os.geteuid() == 0
-requires_root = unittest.skipUnless(_ROOT_IN_POSIX, "test needs root privilege")
-requires_non_root = unittest.skipIf(_ROOT_IN_POSIX, "test needs non-root account")
+requires_root_user = unittest.skipUnless(_ROOT_IN_POSIX, "test needs root privilege")
+requires_non_root_user = unittest.skipIf(_ROOT_IN_POSIX, "test needs non-root account")

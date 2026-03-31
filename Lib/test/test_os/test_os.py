@@ -33,8 +33,8 @@ from test import support
 from test.support import os_helper
 from test.support import socket_helper
 from test.support import infinite_recursion
-from test.support import requires_root
-from test.support import requires_non_root
+from test.support import requires_root_user
+from test.support import requires_non_root_user
 from test.support import warnings_helper
 from platform import win32_is_iot
 from .utils import create_file
@@ -2255,7 +2255,7 @@ class ChownFileTests(unittest.TestCase):
         gid = os.stat(os_helper.TESTFN).st_gid
         self.assertEqual(gid, gid_2)
 
-    @requires_root
+    @requires_root_user
     @unittest.skipUnless(len(all_users) > 1, "test needs more than one user")
     def test_chown_with_root(self):
         uid_1, uid_2 = all_users[:2]
@@ -2267,7 +2267,7 @@ class ChownFileTests(unittest.TestCase):
         uid = os.stat(os_helper.TESTFN).st_uid
         self.assertEqual(uid, uid_2)
 
-    @requires_non_root
+    @requires_non_root_user
     @unittest.skipUnless(len(all_users) > 1, "test needs and more than one user")
     def test_chown_without_permission(self):
         uid_1, uid_2 = all_users[:2]
