@@ -2633,8 +2633,6 @@ class TestInternalFrameFiltering(unittest.TestCase):
         jsonl_out = tempfile.NamedTemporaryFile(delete=False)
         self.addCleanup(close_and_unlink, jsonl_out)
 
-        collector = JsonlCollector(sample_interval_usec=1000)
-
         frames = [
             MockInterpreterInfo(
                 0,
@@ -2652,6 +2650,7 @@ class TestInternalFrameFiltering(unittest.TestCase):
             )
         ]
 
+        collector = JsonlCollector(sample_interval_usec=1000)
         collector.collect(frames)
         collector.export(jsonl_out.name)
 
