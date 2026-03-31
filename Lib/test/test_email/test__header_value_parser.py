@@ -3043,7 +3043,7 @@ class TestParser(TestParserMixin, TestEmailBase):
 
         simple_obsolete = C(
             'Fred. A.Johnson@python.org',
-            defects=[errors.ObsoleteHeaderDefect],
+            defects=[non_dot_atom_local_part_obs_defect],
             remainder='@python.org',
             local_part='Fred.A.Johnson',
             ),
@@ -3051,7 +3051,7 @@ class TestParser(TestParserMixin, TestEmailBase):
         complex_obsolete_1 = C(
             ' (foo )Fred (bar).(bird) A.(sheep)Johnson."and  dogs "@python.org',
             value=' Fred . A. Johnson.and  dogs ',
-            defects=[errors.ObsoleteHeaderDefect],
+            defects=[non_dot_atom_local_part_obs_defect],
             remainder='@python.org',
             comments=['foo ', 'bar', 'bird', 'sheep'],
             local_part='Fred.A.Johnson.and  dogs ',
@@ -3060,7 +3060,10 @@ class TestParser(TestParserMixin, TestEmailBase):
         complex_obsolete_invalid = C(
             ' (foo )Fred (bar).(bird) A.(sheep)Johnson "and  dogs"@python.org',
             value=' Fred . A. Johnson and  dogs',
-            defects=[errors.InvalidHeaderDefect]*2,
+            defects=[
+                not_even_obs_local_part_defect,
+                missing_dot_in_local_part_defect,
+                ],
             remainder='@python.org',
             comments=['foo ', 'bar', 'bird', 'sheep'],
             local_part='Fred.A.Johnson and  dogs',
@@ -3083,28 +3086,40 @@ class TestParser(TestParserMixin, TestEmailBase):
 
         trailing_dot = C(
             ' borris.@python.org',
-            defects=[errors.InvalidHeaderDefect]*2,
+            defects=[
+                not_even_obs_local_part_defect,
+                trailing_dot_in_local_part_defect,
+                ],
             remainder='@python.org',
             local_part='borris.',
             ),
 
         trailing_dot_with_ws = C(
             ' borris. @python.org',
-            defects=[errors.InvalidHeaderDefect]*2,
+            defects=[
+                not_even_obs_local_part_defect,
+                trailing_dot_in_local_part_defect,
+                ],
             remainder='@python.org',
             local_part='borris.',
             ),
 
         leading_dot = C(
             '.borris@python.org',
-            defects=[errors.InvalidHeaderDefect]*2,
+            defects=[
+                not_even_obs_local_part_defect,
+                leading_dot_in_local_part_defect,
+                ],
             remainder='@python.org',
             local_part='.borris',
             ),
 
         leading_dot_after_ws = C(
             ' .borris@python.org',
-            defects=[errors.InvalidHeaderDefect]*2,
+            defects=[
+                not_even_obs_local_part_defect,
+                leading_dot_in_local_part_defect,
+                ],
             remainder='@python.org',
             local_part='.borris',
             ),
@@ -3112,7 +3127,10 @@ class TestParser(TestParserMixin, TestEmailBase):
         dots_around_comment = C(
             ' borris.(foo).natasha@python.org',
             value=' borris. .natasha',
-            defects=[errors.InvalidHeaderDefect]*2,
+            defects=[
+                not_even_obs_local_part_defect,
+                repeated_dot_in_local_part_defect,
+                ],
             remainder='@python.org',
             comments=['foo'],
             local_part='borris..natasha',
@@ -3121,7 +3139,10 @@ class TestParser(TestParserMixin, TestEmailBase):
         quoted_strings_in_atom_list = C(
             '""example" example"@example.com',
             value='example example',
-            defects=[errors.InvalidHeaderDefect]*3,
+            defects=[
+                not_even_obs_local_part_defect,
+                *[missing_dot_in_local_part_defect]*2,
+                ],
             remainder='@example.com',
             local_part="example example",
             ),
@@ -3129,7 +3150,11 @@ class TestParser(TestParserMixin, TestEmailBase):
         valid_and_invalid_qp_in_atom_list = C(
             r'"\\"example\\" example"@example.com',
             value=r'\example\\ example',
-            defects=[errors.InvalidHeaderDefect]*5,
+            defects=[
+                not_even_obs_local_part_defect,
+                *[missing_dot_in_local_part_defect]*2,
+                *[misplaced_backslash_defect]*2,
+                ],
             remainder='@example.com',
             local_part=r'\example\\ example',
             ),
