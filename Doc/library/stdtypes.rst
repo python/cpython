@@ -3743,9 +3743,6 @@ arbitrary binary data.
    are replaced.  If *count* is not specified or ``-1``, then all occurrences
    are replaced.
 
-   .. versionchanged:: next
-      *count* is now supported as a keyword argument.
-
    The subsequence to search for and its replacement may be any
    :term:`bytes-like object`.
 
@@ -3753,6 +3750,9 @@ arbitrary binary data.
 
       The bytearray version of this method does *not* operate in place - it
       always produces a new object, even if no changes were made.
+
+   .. versionchanged:: next
+      *count* is now supported as a keyword argument.
 
 
 .. method:: bytes.rfind(sub[, start[, end]])
