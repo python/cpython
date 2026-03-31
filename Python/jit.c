@@ -598,15 +598,24 @@ patch_aarch64_trampoline_addr(unsigned char *location, int ordinal, uint64_t val
 {
     int64_t range = (int64_t)value - (int64_t)(uintptr_t)location;
 
+    // If we are in range of 28 signed bits, we patch the instruction with
+    // the address of the symbol.
     if (range >= -(1 << 27) && range < (1 << 27)) {
         patch_aarch64_26r(location, value);
         return;
     }
 
+    // Out of range - need a trampoline
     uint32_t *p = (uint32_t *)get_symbol_slot(ordinal, &state->trampolines, TRAMPOLINE_SIZE);
 
-    p[0] = 0x58000048; // ldr x8, 8
-    p[1] = 0xD61F0100; // br x8
+    /* Generate the trampoline
+       0: 58000048      ldr     x8, 8
+       4: d61f0100      br      x8
+       8: 00000000      // The next two words contain the 64-bit address to jump to.
+       c: 00000000
+    */
+    p[0] = 0x58000048;
+    p[1] = 0xD61F0100;
     p[2] = value & 0xffffffff;
     p[3] = value >> 32;
 
