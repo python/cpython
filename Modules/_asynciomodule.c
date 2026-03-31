@@ -1943,7 +1943,7 @@ enter_task(asyncio_state *state, PyObject *loop, PyObject *task)
             PyExc_RuntimeError,
             "Cannot enter into task %R while another " \
             "task %R is being executed.",
-            task, item, NULL);
+            task, item);
         Py_DECREF(item);
         return -1;
     }
@@ -2062,7 +2062,7 @@ _asyncio_Task___init___impl(TaskObj *self, PyObject *coro, PyObject *loop,
         self->task_log_destroy_pending = 0;
         PyErr_Format(PyExc_TypeError,
                      "a coroutine was expected, got %R",
-                     coro, NULL);
+                     coro);
         return -1;
     }
 
