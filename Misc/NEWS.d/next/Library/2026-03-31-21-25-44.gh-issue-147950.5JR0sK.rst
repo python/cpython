@@ -1,1 +1,1 @@
-Additionally bind ``yank-arg`` to ``M-_`` in pyrepl
+Bind ``yank-arg`` to :kbd:`M-_` in the REPL.
