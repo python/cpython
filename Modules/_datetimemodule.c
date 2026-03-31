@@ -6395,7 +6395,7 @@ datetime_str(PyObject *op)
 /*[clinic input]
 datetime.datetime.isoformat
 
-    sep: int(accept={str}, c_default="'T'", py_default="'T'") = ord('T')
+    sep: int(accept={str}) = 'T'
     timespec: str(c_default="NULL") = 'auto'
 
 Return the time formatted according to ISO.
@@ -6417,7 +6417,7 @@ terms of the time to include. Valid options are 'auto', 'hours',
 static PyObject *
 datetime_datetime_isoformat_impl(PyDateTime_DateTime *self, int sep,
                                  const char *timespec)
-/*[clinic end generated code: output=9b6ce1383189b0bf input=2fa2512172ccf5d5]*/
+/*[clinic end generated code: output=9b6ce1383189b0bf input=db935a57fa697c5e]*/
 {
     char buffer[100];
 
@@ -7656,7 +7656,7 @@ finally:
 }
 
 static PyModuleDef_Slot module_slots[] = {
-    _Py_INTERNAL_ABI_SLOT,
+    _Py_ABI_SLOT,
     {Py_mod_exec, _datetime_exec},
     {Py_mod_multiple_interpreters, Py_MOD_PER_INTERPRETER_GIL_SUPPORTED},
     {Py_mod_gil, Py_MOD_GIL_NOT_USED},

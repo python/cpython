@@ -669,7 +669,7 @@ provided.  They rely on the :mod:`zipfile` and :mod:`tarfile` modules.
       This function is now made thread-safe during creation of standard
       ``.zip`` and tar archives.
 
-   .. versionchanged:: next
+   .. versionchanged:: 3.15
       Accepts a :term:`path-like object` for *base_name*, *root_dir* and
       *base_dir*.
 

@@ -348,10 +348,12 @@ process_frame_chain(
             PyObject *extra_frame_info = make_frame_info(
                 unwinder, _Py_LATIN1_CHR('~'), Py_None, extra_frame, Py_None);
             if (extra_frame_info == NULL) {
+                Py_XDECREF(frame);
                 return -1;
             }
             if (PyList_Append(ctx->frame_info, extra_frame_info) < 0) {
                 Py_DECREF(extra_frame_info);
+                Py_XDECREF(frame);
                 set_exception_cause(unwinder, PyExc_RuntimeError, "Failed to append extra frame");
                 return -1;
             }

@@ -1003,6 +1003,47 @@ at the top indicate functions that consume significant time either directly
 or through their callees.
 
 
+Differential flame graphs
+~~~~~~~~~~~~~~~~~~~~~~~~~
+
+Differential flame graphs compare two profiling runs to highlight where
+performance changed. This helps identify regressions introduced by code changes
+and validate that optimizations achieved their intended effect::
+
+   # Capture baseline profile
+   python -m profiling.sampling run --binary -o baseline.bin script.py
+
+   # After modifying code, generate differential flamegraph
+   python -m profiling.sampling run --diff-flamegraph baseline.bin -o diff.html script.py
+
+The visualization draws the current profile with frame widths showing current
+time consumption, then applies color to indicate how each function changed
+relative to the baseline.
+
+**Color coding**:
+
+- **Red**: Functions consuming more time (regressions). Lighter shades indicate
+  modest increases, while darker shades show severe regressions.
+
+- **Blue**: Functions consuming less time (improvements). Lighter shades for
+  modest reductions, darker shades for significant speedups.
+
+- **Gray**: Minimal or no change.
+
+- **Purple**: New functions not present in the baseline.
+
+Frame colors indicate changes in **direct time** (time when the function was at
+the top of the stack, actively executing), not cumulative time including callees.
+Hovering over a frame shows comparison details including baseline time, current
+time, and the percentage change.
+
+Some call paths may disappear entirely between profiles. These are called
+**elided stacks** and occur when optimizations eliminate code paths or certain
+branches stop executing. If elided stacks are present, an elided toggle appears
+allowing you to switch between the main differential view and an elided-only
+view that shows just the removed paths (colored purple).
+
+
 Gecko format
 ------------
 
@@ -1194,10 +1235,12 @@ data, similar to the ``top`` command for system processes::
    python -m profiling.sampling run --live script.py
    python -m profiling.sampling attach --live 12345
 
-.. figure:: tachyon-live-mode-2.gif
-   :alt: Tachyon live mode showing all threads
-   :align: center
-   :width: 100%
+.. only:: not latex
+
+   .. figure:: tachyon-live-mode-2.gif
+      :alt: Tachyon live mode showing all threads
+      :align: center
+      :width: 100%
 
    Live mode displays real-time profiling statistics, showing combined
    data from multiple threads in a multi-threaded application.
@@ -1217,10 +1260,12 @@ main table, showing instruction-level statistics for the currently selected
 function. This panel displays which bytecode instructions are executing most
 frequently, including specialized variants and their base opcodes.
 
-.. figure:: tachyon-live-mode-1.gif
-   :alt: Tachyon live mode with opcode panel
-   :align: center
-   :width: 100%
+.. only:: not latex
+
+   .. figure:: tachyon-live-mode-1.gif
+      :alt: Tachyon live mode with opcode panel
+      :align: center
+      :width: 100%
 
    Live mode with ``--opcodes`` enabled shows an opcode panel with a bytecode
    instruction breakdown for the selected function.
@@ -1483,6 +1528,10 @@ Output options
 .. option:: --flamegraph
 
    Generate self-contained HTML flame graph.
+
+.. option:: --diff-flamegraph <baseline.bin>
+
+   Generate differential flamegraph comparing to a baseline binary profile.
 
 .. option:: --gecko
 

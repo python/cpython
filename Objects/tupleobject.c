@@ -202,8 +202,54 @@ PyTuple_Pack(Py_ssize_t n, ...)
     return (PyObject *)result;
 }
 
+PyObject *
+_PyTuple_FromPair(PyObject *first, PyObject *second)
+{
+    assert(first != NULL);
+    assert(second != NULL);
+
+    return _PyTuple_FromPairSteal(Py_NewRef(first), Py_NewRef(second));
+}
+
+PyObject *
+_PyTuple_FromPairSteal(PyObject *first, PyObject *second)
+{
+    assert(first != NULL);
+    assert(second != NULL);
+
+    PyTupleObject *op = tuple_alloc(2);
+    if (op == NULL) {
+        Py_DECREF(first);
+        Py_DECREF(second);
+        return NULL;
+    }
+    PyObject **items = op->ob_item;
+    items[0] = first;
+    items[1] = second;
+    if (maybe_tracked(first) || maybe_tracked(second)) {
+        _PyObject_GC_TRACK(op);
+    }
+    return (PyObject *)op;
+}
 
 /* Methods */
+
+/*
+ Free of a tuple where all contents have been stolen and
+ is now untracked by GC. This operation is thus non-escaping.
+ */
+void
+_PyStolenTuple_Free(PyObject *obj)
+{
+    assert(PyTuple_CheckExact(obj));
+    PyTupleObject *op = _PyTuple_CAST(obj);
+    assert(Py_SIZE(op) != 0);
+    assert(!_PyObject_GC_IS_TRACKED(obj));
+    // This will abort on the empty singleton (if there is one).
+    if (!maybe_freelist_push(op)) {
+        PyTuple_Type.tp_free((PyObject *)op);
+    }
+}
 
 static void
 tuple_dealloc(PyObject *self)

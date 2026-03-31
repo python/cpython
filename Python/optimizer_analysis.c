@@ -291,6 +291,8 @@ add_op(JitOptContext *ctx, _PyUOpInstruction *this_instr,
 #define sym_get_probable_func_code _Py_uop_sym_get_probable_func_code
 #define sym_get_probable_value _Py_uop_sym_get_probable_value
 #define sym_set_stack_depth(DEPTH, SP) _Py_uop_sym_set_stack_depth(ctx, DEPTH, SP)
+#define sym_get_func_version _Py_uop_sym_get_func_version
+#define sym_set_func_version _Py_uop_sym_set_func_version
 
 /* Comparison oparg masks */
 #define COMPARE_LT_MASK 2
@@ -347,6 +349,33 @@ optimize_to_bool(
 }
 
 static void
+optimize_dict_known_hash(
+    JitOptContext *ctx, _PyBloomFilter *dependencies, _PyUOpInstruction *this_instr,
+    PyObject *sub, uint16_t opcode)
+{
+    if (PyUnicode_CheckExact(sub) || PyLong_CheckExact(sub) || PyBytes_CheckExact(sub)
+            || PyFloat_CheckExact(sub) || PyComplex_CheckExact(sub)) {
+        // PyObject_Hash can't fail on these types
+        ADD_OP(opcode, 0, PyObject_Hash(sub));
+    }
+    else if (PyTuple_CheckExact(sub)) {
+        // only use known hash variant when hash of tuple is already computed
+        // since computing it can call arbitrary code
+        Py_hash_t hash = ((PyTupleObject *)sub)->ob_hash;
+        if (hash != -1) {
+            ADD_OP(opcode, 0, hash);
+        }
+    }
+    else if (Py_TYPE(sub)->tp_hash == PyBaseObject_Type.tp_hash) {
+        // for user-defined objects which don't override tp_hash
+        Py_hash_t hash = PyObject_Hash(sub);
+        ADD_OP(opcode, 0, hash);
+        PyType_Watch(TYPE_WATCHER_ID, (PyObject *)Py_TYPE(sub));
+        _Py_BloomFilter_Add(dependencies, Py_TYPE(sub));
+    }
+}
+
+static void
 eliminate_pop_guard(_PyUOpInstruction *this_instr, JitOptContext *ctx, bool exit)
 {
     ADD_OP(_POP_TOP, 0, 0);
@@ -365,7 +394,11 @@ lookup_attr(JitOptContext *ctx, _PyBloomFilter *dependencies, _PyUOpInstruction 
     if (type && PyType_Check(type)) {
         PyObject *lookup = _PyType_Lookup(type, name);
         if (lookup) {
-            int opcode = _Py_IsImmortal(lookup) ? immortal : mortal;
+            int opcode = mortal;
+            // if the object is immortal or the type is immutable, borrowing is safe
+            if (_Py_IsImmortal(lookup) || (type->tp_flags & Py_TPFLAGS_IMMUTABLETYPE)) {
+                opcode = immortal;
+            }
             ADD_OP(opcode, 0, (uintptr_t)lookup);
             PyType_Watch(TYPE_WATCHER_ID, (PyObject *)type);
             _Py_BloomFilter_Add(dependencies, type);

@@ -1,0 +1,1 @@
+Fix merging of :class:`collections.OrderedDict` and :class:`frozendict`.
