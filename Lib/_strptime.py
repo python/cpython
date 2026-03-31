@@ -621,11 +621,6 @@ def _strptime(data_string, format="%a %b %d %H:%M:%S %Y"):
             # C99 support for century in [0,99] (years 0-9999).
             century = parse_int(found_dict[group_key])
             year = century * 100
-            if century > 0:
-                year = century * 100
-            elif century == 0:
-                # ValueError fix, since MINYEAR = 1 in Lib/_pydatetime.py
-                year = 1
         elif group_key == 'Y':
             year = int(found_dict['Y'])
         elif group_key == 'G':

@@ -2226,9 +2226,9 @@ class TestDate(HarmlessMixedComparison, unittest.TestCase):
                     )
 
     def test_strptime_C_format(self):
-        # verify cent. 0, zero-padding, modern cent., last supported cent.
-        for c in ('0', '01', '20', '99'):
-            expected_year = int(c) * 100 if int(c) != 0 else 1
+        # verify zero-padding, modern cent., last supported cent.
+        for c in ('01', '20', '99'):
+            expected_year = int(c) * 100
             with self.subTest(format_directive="C", century=c):
                 self.assertEqual(
                     self.theclass.strptime(c, "%C"),
