@@ -31,3 +31,146 @@ jobs:
       caller-event-name: ${{ github.event_name }}
     secrets:
       GH_TOKEN: ${{ secrets.GH_TOKEN || secrets.GITHUB_TOKEN }}
+
+  # -------------------------------------------------------------------
+  # Create a Windows zip release asset for MXC consumption.
+  # The reusable workflow creates a GitHub release with .tar.bz2 assets.
+  # This job downloads the standalone tarball from that release, extracts
+  # python.elf + cpython-ramfs.img, packs them into a flat .zip, and
+  # uploads it to the same release.
+  # -------------------------------------------------------------------
+  windows-zip:
+    needs: ci
+    if: ${{ !cancelled() && github.event_name != 'pull_request' }}
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v5
+
+      - name: Install nanvix-zutil
+        env:
+          GH_TOKEN: ${{ secrets.GH_TOKEN || secrets.GITHUB_TOKEN }}
+        run: |
+          WHEEL_URL=$(gh api repos/nanvix/zutils/releases/tags/v0.5.0 \
+            --jq '.assets[] | select(.name | endswith(".whl")) | .browser_download_url' | head -n 1)
+          python3 -m pip install "$WHEEL_URL"
+
+      - name: Resolve release tag
+        id: meta
+        env:
+          GH_TOKEN: ${{ secrets.GH_TOKEN || secrets.GITHUB_TOKEN }}
+        run: |
+          set -euo pipefail
+          eval "$(nanvix-zutil resolve)"
+          RELEASE_TAG="${package_version}-nanvix-${nanvix_version}"
+          echo "release_tag=$RELEASE_TAG" >> "$GITHUB_OUTPUT"
+          echo "Release tag: $RELEASE_TAG"
+
+      - name: Download standalone tarball from release
+        env:
+          GH_TOKEN: ${{ secrets.GH_TOKEN || secrets.GITHUB_TOKEN }}
+          RELEASE_TAG: ${{ steps.meta.outputs.release_tag }}
+        run: |
+          set -euo pipefail
+          mkdir -p release-download
+
+          # Wait briefly for the release to be fully created
+          sleep 5
+
+          # Download standalone tarballs (exclude buildroot variant)
+          gh release download "$RELEASE_TAG" --pattern "*standalone*.tar.bz2" --dir release-download || true
+          ls -la release-download/
+
+      - name: Create Windows zip
+        env:
+          GH_TOKEN: ${{ secrets.GH_TOKEN || secrets.GITHUB_TOKEN }}
+        run: |
+          set -euo pipefail
+
+          # Find the main standalone tarball (not buildroot)
+          TARBALL=$(find release-download -name "*standalone*.tar.bz2" ! -name "*buildroot*" | head -1)
+          if [[ -z "$TARBALL" ]]; then
+            echo "::warning::No standalone tarball found (excluding buildroot)"
+            ls release-download/ 2>/dev/null || true
+            exit 0
+          fi
+          echo "Using tarball: $TARBALL"
+
+          mkdir -p extract windows-zip
+          tar -xjf "$TARBALL" -C extract
+
+          # Find the python binary — it's at sysroot/bin/python3.12
+          PYTHON_ELF=$(find extract -path "*/bin/python3.12" -type f | head -1)
+          if [[ -z "$PYTHON_ELF" ]]; then
+            PYTHON_ELF=$(find extract -name "python.elf" -type f | head -1)
+          fi
+
+          if [[ -z "$PYTHON_ELF" ]]; then
+            echo "::error::Could not find python binary in standalone tarball"
+            echo "Files in tarball:"
+            find extract -type f | head -20 || true
+            exit 1
+          fi
+
+          cp "$PYTHON_ELF" windows-zip/python.elf
+          echo "Included: python.elf ($(stat -c%s windows-zip/python.elf) bytes)"
+
+          # --- Build ramfs from the stdlib in the tarball ---
+          SYSROOT=$(find extract -type d -name "sysroot" | head -1)
+          PYLIB="${SYSROOT}/lib/python3.12"
+          if [[ -d "$PYLIB" ]]; then
+            echo "Building ramfs from stdlib at: $PYLIB"
+
+            # Trim stdlib (same as Makefile.nanvix ramfs target)
+            find "$SYSROOT" -name "__pycache__" -type d -exec rm -rf {} + 2>/dev/null || true
+            find "$SYSROOT" -name "*.pyc" -delete 2>/dev/null || true
+            find "$SYSROOT" -name "*.a" -delete 2>/dev/null || true
+            find "$SYSROOT" -name "*.h" -delete 2>/dev/null || true
+            rm -rf "$SYSROOT/bin" "$SYSROOT/include" "$SYSROOT/share" "$SYSROOT/lib/pkgconfig"
+            for d in test tests idlelib tkinter ensurepip lib2to3 distutils unittest \
+                     turtledemo pydoc_data config-3.12*; do
+              rm -rf "$PYLIB/$d" 2>/dev/null || true
+            done
+            find "$SYSROOT" -type d -name "config-3.12*" -exec rm -rf {} + 2>/dev/null || true
+
+            echo "Trimmed stdlib: $(find "$SYSROOT" -type f | wc -l) files"
+
+            # Get mkramfs from the NanVix standalone tarball
+            echo "Downloading NanVix release for mkramfs..."
+            curl -fsSL https://raw.githubusercontent.com/nanvix/nanvix/refs/heads/dev/scripts/get-nanvix.sh \
+              | bash -s -- --force nanvix-dl
+            MKRAMFS=""
+            NVX_TAR=$(find nanvix-dl -name "nanvix-microvm-standalone-*.tar.bz2" | head -1)
+            if [[ -n "$NVX_TAR" ]]; then
+              mkdir -p nanvix-extract
+              tar -xjf "$NVX_TAR" -C nanvix-extract
+              MKRAMFS=$(find nanvix-extract -name "mkramfs.elf" -type f | head -1)
+            fi
+
+            if [[ -n "$MKRAMFS" ]]; then
+              chmod +x "$MKRAMFS"
+              # mkramfs expects the parent dir so FAT32 has sysroot/ prefix
+              STAGING_PARENT=$(dirname "$SYSROOT")
+              "$MKRAMFS" -o windows-zip/cpython-ramfs.img "$STAGING_PARENT"
+              echo "Included: cpython-ramfs.img ($(stat -c%s windows-zip/cpython-ramfs.img) bytes)"
+            else
+              echo "::warning::mkramfs not found — zip will not contain ramfs"
+            fi
+          else
+            echo "::warning::No stdlib found in tarball — zip will not contain ramfs"
+          fi
+
+          ZIP_NAME="cpython-windows-microvm-standalone-128mb-${GITHUB_SHA::7}.zip"
+          (cd windows-zip && zip "../${ZIP_NAME}" *)
+          echo "zip_name=$ZIP_NAME" >> "$GITHUB_ENV"
+          echo "Created: $ZIP_NAME ($(stat -c%s "$ZIP_NAME") bytes)"
+          echo "Contents:"
+          unzip -l "$ZIP_NAME"
+
+      - name: Upload zip to release
+        if: ${{ env.zip_name != '' }}
+        env:
+          GH_TOKEN: ${{ secrets.GH_TOKEN || secrets.GITHUB_TOKEN }}
+          RELEASE_TAG: ${{ steps.meta.outputs.release_tag }}
+        run: |
+          gh release upload "$RELEASE_TAG" "${{ env.zip_name }}" --clobber
+          echo "Uploaded ${{ env.zip_name }} to release $RELEASE_TAG"
