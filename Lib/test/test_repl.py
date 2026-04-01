@@ -522,5 +522,6 @@ class TestAsyncioREPL(unittest.TestCase):
         self.assertIn(expected, output)
         self.assertIn("executed user code anyway", output)
 
+
 if __name__ == "__main__":
     unittest.main()
