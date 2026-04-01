@@ -1644,9 +1644,10 @@ New deprecations
   * Deprecated :func:`!typing.no_type_check_decorator` has been removed.
     (Contributed by Nikita Sobolev in :gh:`133601`.)
 
-* The ``__getformat__()`` class method of the :class:`float` is deprecated
-  and will be removed in Python 3.20.
-
+* The ``__getformat__()`` class method of the :class:`float` is deprecated and
+  will be removed in Python 3.20.  On CPython, ``float.__getformat__()`` always
+  return a string, prefixed with ``"IEEE"``: to build CPython, you need support
+  for IEEE 754 floating-point numbers since Python 3.11.
   (Contributed by Sergey B Kirpichev in :gh:`145633`.)
 
 * ``__version__``
