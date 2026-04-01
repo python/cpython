@@ -94,11 +94,16 @@ def _define_float_little():
 
 
 def _define_float_unknown():
-    pyconf.error(
-        "Unknown float word ordering. You need to manually "
-        "preset ax_cv_c_float_words_bigendian=no (or yes) "
-        "according to your system."
-    )
+    # Fallback for platforms where float endianness detection fails.
+    # Modern ARM (including iOS) uses little-endian IEEE 754 doubles.
+    if pyconf.fnmatch_any(pyconf.host_cpu, ["arm*", "aarch64"]):
+        _define_float_little()
+    else:
+        pyconf.error(
+            "Unknown float word ordering. You need to manually "
+            "preset ax_cv_c_float_words_bigendian=no (or yes) "
+            "according to your system."
+        )
 
 
 def check_gcc_asm_and_floating_point(v):
