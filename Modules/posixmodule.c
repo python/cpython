@@ -7884,7 +7884,7 @@ parse_file_actions(PyObject *file_actions,
                     Py_DECREF(path);
                     goto fail;
                 }
-                Py_XDECREF(cwd);
+                Py_XDECREF(*cwd);
                 *cwd = path;
                 break;
             }
