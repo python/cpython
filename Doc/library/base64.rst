@@ -51,7 +51,7 @@ The :rfc:`4648` encodings are suitable for encoding binary data so that it can b
 safely sent by email, used as parts of URLs, or included as part of an HTTP
 POST request.
 
-.. function:: b64encode(s, altchars=None, *, wrapcol=0)
+.. function:: b64encode(s, altchars=None, *, padded=True, wrapcol=0)
 
    Encode the :term:`bytes-like object` *s* using Base64 and return the encoded
    :class:`bytes`.
@@ -61,6 +61,10 @@ POST request.
    This allows an application to e.g. generate URL or filesystem safe Base64
    strings.  The default is ``None``, for which the standard Base64 alphabet is used.
 
+   If *padded* is true (default), pad the encoded data with the '='
+   character to a size multiple of 4.
+   If *padded* is false, do not add the pad characters.
+
    If *wrapcol* is non-zero, insert a newline (``b'\n'``) character
    after at most every *wrapcol* characters.
    If *wrapcol* is zero (default), do not insert any newlines.
@@ -69,11 +73,11 @@ POST request.
    :exc:`TypeError` if *altchars* is not a :term:`bytes-like object`.
 
    .. versionchanged:: 3.15
-      Added the *wrapcol* parameter.
+      Added the *padded* and *wrapcol* parameters.
 
 
-.. function:: b64decode(s, altchars=None, validate=False)
-              b64decode(s, altchars=None, validate=True, *, ignorechars)
+.. function:: b64decode(s, altchars=None, validate=False, *, padded=True)
+              b64decode(s, altchars=None, validate=True, *, ignorechars, padded=True)
 
    Decode the Base64 encoded :term:`bytes-like object` or ASCII string
    *s* and return the decoded :class:`bytes`.
@@ -81,6 +85,11 @@ POST request.
    Optional *altchars* must be a :term:`bytes-like object` or ASCII string
    of length 2 which specifies the alternative alphabet used instead of the
    ``+`` and ``/`` characters.
+
+   If *padded* is true, the last group of 4 base 64 alphabet characters must
+   be padded with the '=' character.
+   If *padded* is false, the '=' character is treated as other non-alphabet
+   characters (depending on the value of *validate* and *ignorechars*).
 
    A :exc:`binascii.Error` exception is raised
    if *s* is incorrectly padded.
@@ -106,7 +115,7 @@ POST request.
    For more information about the strict base64 check, see :func:`binascii.a2b_base64`
 
    .. versionchanged:: 3.15
-      Added the *ignorechars* parameter.
+      Added the *ignorechars* and *padded* parameters.
 
    .. deprecated:: 3.15
       Accepting the ``+`` and ``/`` characters with an alternative alphabet
@@ -125,16 +134,19 @@ POST request.
    Base64 alphabet and return the decoded :class:`bytes`.
 
 
-.. function:: urlsafe_b64encode(s)
+.. function:: urlsafe_b64encode(s, *, padded=True)
 
    Encode :term:`bytes-like object` *s* using the
    URL- and filesystem-safe alphabet, which
    substitutes ``-`` instead of ``+`` and ``_`` instead of ``/`` in the
    standard Base64 alphabet, and return the encoded :class:`bytes`.  The result
-   can still contain ``=``.
+   can still contain ``=`` if *padded* is true (default).
+
+   .. versionchanged:: next
+      Added the *padded* parameter.
 
 
-.. function:: urlsafe_b64decode(s)
+.. function:: urlsafe_b64decode(s, *, padded=False)
 
    Decode :term:`bytes-like object` or ASCII string *s*
    using the URL- and filesystem-safe
@@ -142,24 +154,32 @@ POST request.
    ``/`` in the standard Base64 alphabet, and return the decoded
    :class:`bytes`.
 
+   .. versionchanged:: next
+      Added the *padded* parameter.
+      Padding of input is no longer required by default.
+
    .. deprecated:: 3.15
       Accepting the ``+`` and ``/`` characters is now deprecated.
 
 
-.. function:: b32encode(s, *, wrapcol=0)
+.. function:: b32encode(s, *, padded=True, wrapcol=0)
 
    Encode the :term:`bytes-like object` *s* using Base32 and return the
    encoded :class:`bytes`.
+
+   If *padded* is true (default), pad the encoded data with the '='
+   character to a size multiple of 8.
+   If *padded* is false, do not add the pad characters.
 
    If *wrapcol* is non-zero, insert a newline (``b'\n'``) character
    after at most every *wrapcol* characters.
    If *wrapcol* is zero (default), do not add any newlines.
 
    .. versionchanged:: next
-      Added the *wrapcol* parameter.
+      Added the *padded* and *wrapcol* parameters.
 
 
-.. function:: b32decode(s, casefold=False, map01=None, *, ignorechars=b'')
+.. function:: b32decode(s, casefold=False, map01=None, *, padded=True, ignorechars=b'')
 
    Decode the Base32 encoded :term:`bytes-like object` or ASCII string *s* and
    return the decoded :class:`bytes`.
@@ -175,6 +195,11 @@ POST request.
    digit 0 is always mapped to the letter O).  For security purposes the default is
    ``None``, so that 0 and 1 are not allowed in the input.
 
+   If *padded* is true, the last group of 8 base 32 alphabet characters must
+   be padded with the '=' character.
+   If *padded* is false, the '=' character is treated as other non-alphabet
+   characters (depending on the value of *ignorechars*).
+
    *ignorechars* should be a :term:`bytes-like object` containing characters
    to ignore from the input.
 
@@ -183,10 +208,10 @@ POST request.
    input.
 
    .. versionchanged:: next
-      Added the *ignorechars* parameter.
+      Added the *ignorechars* and *padded* parameters.
 
 
-.. function:: b32hexencode(s, *, wrapcol=0)
+.. function:: b32hexencode(s, *, padded=True, wrapcol=0)
 
    Similar to :func:`b32encode` but uses the Extended Hex Alphabet, as defined in
    :rfc:`4648`.
@@ -194,10 +219,10 @@ POST request.
    .. versionadded:: 3.10
 
    .. versionchanged:: next
-      Added the *wrapcol* parameter.
+      Added the *padded* and *wrapcol* parameters.
 
 
-.. function:: b32hexdecode(s, casefold=False, *, ignorechars=b'')
+.. function:: b32hexdecode(s, casefold=False, *, padded=True, ignorechars=b'')
 
    Similar to :func:`b32decode` but uses the Extended Hex Alphabet, as defined in
    :rfc:`4648`.
@@ -210,7 +235,7 @@ POST request.
    .. versionadded:: 3.10
 
    .. versionchanged:: next
-      Added the *ignorechars* parameter.
+      Added the *ignorechars* and *padded* parameters.
 
 
 .. function:: b16encode(s, *, wrapcol=0)
