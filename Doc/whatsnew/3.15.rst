@@ -738,7 +738,7 @@ difflib
 
 * Users can now implement and/or provide custom ``Matcher`` and ``Diff``
   classes to functions and objects of :mod:`difflib`.
-  (Contributed by Tim Peters and Dominykas Grigoni in :gh:`145210`)
+  (Contributed by Dominykas Grigonis and Tim Peters in :gh:`145210`)
 
 
 functools
