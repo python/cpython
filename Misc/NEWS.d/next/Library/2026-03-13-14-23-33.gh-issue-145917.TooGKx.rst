@@ -4,3 +4,5 @@ Add the following to ``mimetypes``:
 * ``haptics/ivs``
 * ``haptics/hjif``
 * ``haptics/hmpg``
+
+(Contributed by Charlie Lin in :gh:`145918`.)
