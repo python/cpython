@@ -2041,10 +2041,15 @@ function _pyconf_subst_file(inf, outf, line, k, pat, val, pos, before, after, sk
                         pos = index(line, "@MODULE_BLOCK@")
                         before = substr(line, 1, pos - 1)
                         after = substr(line, pos + length("@MODULE_BLOCK@"))
-                        for (i = 1; i <= _module_block_n; i++) {
-                                b = (i == 1) ? before : ""
-                                a = (i == _module_block_n) ? after : ""
-                                printf "%s%s%s\n", b, _module_block_lines[i], a > outf
+                        if (_module_block_n > 0) {
+                                for (i = 1; i <= _module_block_n; i++) {
+                                        b = (i == 1) ? before : ""
+                                        a = (i == _module_block_n) ? after : ""
+                                        printf "%s%s%s\n", b, _module_block_lines[i], a > outf
+                                }
+                        } else {
+                                # No modules, just print the before and after parts
+                                printf "%s%s\n", before, after > outf
                         }
                         skip = 1
                 }
