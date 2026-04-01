@@ -389,7 +389,10 @@ endif
 		cp -a "$(RELEASE_STAGING)/sysroot/bin/python3" "$(RELEASE_STAGING)/sysroot-pkg/bin/" || true
 	@test -d "$(RELEASE_STAGING)/sysroot/lib/python3.12" && \
 		cp -a "$(RELEASE_STAGING)/sysroot/lib/python3.12" "$(RELEASE_STAGING)/sysroot-pkg/lib/python3.12" || true
-	@rm -rf "$(RELEASE_STAGING)/sysroot-pkg/lib/python3.12/config-3.12"
+	@rm -rf "$(RELEASE_STAGING)/sysroot-pkg/lib/python3.12/config-3.12"*
+	@rm -rf "$(RELEASE_STAGING)/sysroot-pkg/lib/libpython3"*
+	@rm -rf "$(RELEASE_STAGING)/sysroot-pkg/lib/pkgconfig"
+	@rm -rf "$(RELEASE_STAGING)/sysroot-pkg/include"
 	@# Strip debug symbols
 ifdef CONFIG_NANVIX_DOCKER
 	$(DOCKER_RUN) sh -c '\
@@ -402,8 +405,7 @@ else
 		find $(RELEASE_STAGING)/sysroot-pkg -name 'python3.*' -type f -executable \
 			-exec $(TOOLCHAIN_PREFIX)/bin/i686-nanvix-strip --strip-debug {} \; 2>/dev/null || true)
 endif
-	@# Clean runtime tree
-	@find "$(RELEASE_STAGING)/sysroot-pkg" -name '__pycache__' -type d -exec rm -rf {} + 2>/dev/null || true
+	@# Clean runtime tree (keep __pycache__ cleanup until after precompilation)
 	@find "$(RELEASE_STAGING)/sysroot-pkg" -type d -name 'test' -path '*/lib/python3.12/*' -exec rm -rf {} + 2>/dev/null || true
 	@find "$(RELEASE_STAGING)/sysroot-pkg" -type d -name 'tests' -path '*/lib/python3.12/*' -exec rm -rf {} + 2>/dev/null || true
 	@# Precompile stdlib
@@ -419,10 +421,40 @@ endif
 			echo "Skipping stdlib precompile: host Python version '$$HOST_VER' does not match target 3.12"; \
 		fi; \
 	fi
+	@# Remove __pycache__ AFTER precompilation to keep the ramfs lean.
+	@# NanVix CPython imports from .py source files, not .pyc bytecode caches.
+	@find "$(RELEASE_STAGING)/sysroot-pkg" -name '__pycache__' -type d -exec rm -rf {} + 2>/dev/null || true
+	@# ---------- Include python.elf binary ----------
+	@if [ -f "$(CURDIR)/python$(EXE)" ]; then \
+		mkdir -p "$(RELEASE_STAGING)/bin"; \
+		cp "$(CURDIR)/python$(EXE)" "$(RELEASE_STAGING)/bin/python.elf"; \
+		if [ -x "$(TOOLCHAIN_PREFIX)/bin/i686-nanvix-strip" ]; then \
+			"$(TOOLCHAIN_PREFIX)/bin/i686-nanvix-strip" --strip-all "$(RELEASE_STAGING)/bin/python.elf" 2>/dev/null || true; \
+		fi; \
+		echo "Included bin/python.elf ($$(du -h "$(RELEASE_STAGING)/bin/python.elf" | cut -f1))"; \
+	else \
+		echo "Warning: python$(EXE) not found — binary will not be included in release"; \
+	fi
+	@# ---------- Build cpython-ramfs.img ----------
+	@MKRAMFS="$(abspath $(NANVIX_HOME))/bin/mkramfs.elf"; \
+	if [ -x "$$MKRAMFS" ] && [ -d "$(RELEASE_STAGING)/sysroot-pkg" ]; then \
+		RAMFS_ROOT=$$(mktemp -d -t cpython-ramfs-root.XXXXXX); \
+		TMP_IMG=$$(mktemp -t cpython-ramfs.img.XXXXXX); \
+		ln -s "$(RELEASE_STAGING)/sysroot-pkg" "$$RAMFS_ROOT/sysroot"; \
+		"$$MKRAMFS" -o "$$TMP_IMG" "$$RAMFS_ROOT"; \
+		mv "$$TMP_IMG" "$(RELEASE_STAGING)/cpython-ramfs.img"; \
+		rm -rf "$$RAMFS_ROOT"; \
+		echo "Built cpython-ramfs.img ($$(du -h "$(RELEASE_STAGING)/cpython-ramfs.img" | cut -f1))"; \
+	else \
+		echo "Warning: mkramfs.elf not available — cpython-ramfs.img will not be included"; \
+	fi
 	@# ---------- Create release tarballs ----------
 	@mkdir -p $(CURDIR)/dist
 	@mv "$(RELEASE_STAGING)/sysroot-pkg" "$(RELEASE_STAGING)/sysroot"
-	tar -cjf "$(CURDIR)/dist/$(ARTIFACT_BASE).tar.bz2" -C "$(RELEASE_STAGING)" sysroot
+	@SYSROOT_TAR_ARGS="sysroot"; \
+	if [ -d "$(RELEASE_STAGING)/bin" ]; then SYSROOT_TAR_ARGS="$$SYSROOT_TAR_ARGS bin"; fi; \
+	if [ -f "$(RELEASE_STAGING)/cpython-ramfs.img" ]; then SYSROOT_TAR_ARGS="$$SYSROOT_TAR_ARGS cpython-ramfs.img"; fi; \
+	tar -cjf "$(CURDIR)/dist/$(ARTIFACT_BASE).tar.bz2" -C "$(RELEASE_STAGING)" $$SYSROOT_TAR_ARGS
 	@mv "$(RELEASE_STAGING)/sysroot" "$(RELEASE_STAGING)/sysroot-pkg"
 	@mv "$(RELEASE_STAGING)/buildroot-pkg" "$(RELEASE_STAGING)/sysroot"
 	tar -cjf "$(CURDIR)/dist/$(ARTIFACT_BASE)-buildroot.tar.bz2" -C "$(RELEASE_STAGING)" sysroot
