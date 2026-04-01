@@ -549,11 +549,6 @@ dynamic_exit_uop[MAX_UOP_ID + 1] = {
 };
 
 
-/* Exit quality constants for fitness-based trace termination.
- * Higher values mean better places to stop the trace. */
-#define EXIT_QUALITY_ENTER_EXECUTOR  500  // An executor already exists here
-#define EXIT_QUALITY_DEFAULT         200  // Ordinary bytecode position
-#define EXIT_QUALITY_SPECIALIZABLE    50  // Specializable instruction — avoid stopping here
 
 #ifdef Py_DEBUG
 #define DPRINTF(level, ...) \
@@ -613,15 +608,16 @@ compute_branch_bias(uint16_t history)
 /* Compute exit quality for the current trace position.
  * Higher values mean it's a better place to stop the trace. */
 static inline int32_t
-compute_exit_quality(_Py_CODEUNIT *target_instr, int opcode)
+compute_exit_quality(_Py_CODEUNIT *target_instr, int opcode,
+                     const _PyOptimizationConfig *cfg)
 {
     if (target_instr->op.code == ENTER_EXECUTOR) {
-        return EXIT_QUALITY_ENTER_EXECUTOR;
+        return (int32_t)cfg->exit_quality_enter_executor;
     }
     if (_PyOpcode_Caches[_PyOpcode_Deopt[opcode]] > 0) {
-        return EXIT_QUALITY_SPECIALIZABLE;
+        return (int32_t)cfg->exit_quality_specializable;
     }
-    return EXIT_QUALITY_DEFAULT;
+    return (int32_t)cfg->exit_quality_default;
 }
 
 /* Try to truncate the trace to the best recorded exit point.
@@ -674,7 +670,6 @@ update_trace_fitness(
         case JUMP_BACKWARD_NO_JIT:
             ts->fitness -= cfg->fitness_backward_edge;
             break;
-        /* JUMP_BACKWARD_NO_INTERRUPT: exempt from backward edge penalty (coroutines) */
         default:
             break;
     }
@@ -817,7 +812,6 @@ _PyJit_translate_single_bytecode_to_trace(
     if (frame != tracer->prev_state.instr_frame) {
         _PyJitTracerTranslatorState *ts_depth = &tracer->translator_state;
         if (frame->previous == tracer->prev_state.instr_frame) {
-            // Entered a deeper frame (function call inlined)
             ts_depth->frame_depth++;
             // Penalty scales with depth: shallow inlining is cheap,
             // deep inlining gets progressively more expensive.
@@ -825,7 +819,6 @@ _PyJit_translate_single_bytecode_to_trace(
                             * ts_depth->frame_depth;
             ts_depth->fitness -= penalty;
         } else if (ts_depth->frame_depth > 0) {
-            // Returned to a shallower frame
             ts_depth->frame_depth--;
         }
     }
@@ -838,7 +831,7 @@ _PyJit_translate_single_bytecode_to_trace(
             // prefer it over rewinding to last _SET_IP — this covers the
             // main unsupported path, not just the edge case.
             _PyJitTracerTranslatorState *ts_unsup = &tracer->translator_state;
-            if (ts_unsup->best_exit_quality > EXIT_QUALITY_DEFAULT &&
+            if (ts_unsup->best_exit_quality > (int32_t)tstate->interp->opt_config.exit_quality_default &&
                 try_best_exit_fallback(trace, ts_unsup, progress_needed)) {
                 ADD_TO_TRACE(_EXIT_TRACE, 0, 0, ts_unsup->best_exit_target);
                 uop_buffer_last(trace)->operand1 = true; // is_control_flow
@@ -876,37 +869,36 @@ _PyJit_translate_single_bytecode_to_trace(
     }
 
     // Fitness-based trace quality check (before reserving space for this instruction)
-    {
-        _PyJitTracerTranslatorState *ts = &tracer->translator_state;
-        int32_t eq = compute_exit_quality(target_instr, opcode);
+    _PyJitTracerTranslatorState *ts = &tracer->translator_state;
+    int32_t eq = compute_exit_quality(target_instr, opcode,
+                                        &tstate->interp->opt_config);
 
-        // Record best exit candidate.
-        // Only record after minimum progress to avoid truncating to near-empty traces.
-        if (eq > ts->best_exit_quality &&
-            uop_buffer_length(trace) > CODE_SIZE_NO_PROGRESS) {
-            ts->best_exit_quality = eq;
-            ts->best_exit_buffer_pos = uop_buffer_length(trace);
-            ts->best_exit_target = target;
-        }
+    // Record best exit candidate.
+    // Only record after minimum progress to avoid truncating to near-empty traces.
+    if (eq > ts->best_exit_quality &&
+        uop_buffer_length(trace) > CODE_SIZE_NO_PROGRESS) {
+        ts->best_exit_quality = eq;
+        ts->best_exit_buffer_pos = uop_buffer_length(trace);
+        ts->best_exit_target = target;
+    }
 
-        // Check if fitness is depleted — should we stop the trace?
-        if (ts->fitness < eq &&
-            !(progress_needed && uop_buffer_length(trace) < CODE_SIZE_NO_PROGRESS)) {
-            // Prefer stopping at the best recorded exit point
-            if (try_best_exit_fallback(trace, ts, progress_needed)) {
-                ADD_TO_TRACE(_EXIT_TRACE, 0, 0, ts->best_exit_target);
-                uop_buffer_last(trace)->operand1 = true; // is_control_flow
-            }
-            else {
-                // No valid best exit — stop at current position
-                ADD_TO_TRACE(_EXIT_TRACE, 0, 0, target);
-                uop_buffer_last(trace)->operand1 = true; // is_control_flow
-            }
-            OPT_STAT_INC(fitness_terminated_traces);
-            DPRINTF(2, "Fitness terminated: fitness=%d < exit_quality=%d\n",
-                    ts->fitness, eq);
-            goto done;
+    // Check if fitness is depleted — should we stop the trace?
+    if (ts->fitness < eq &&
+        !(progress_needed && uop_buffer_length(trace) < CODE_SIZE_NO_PROGRESS)) {
+        // Prefer stopping at the best recorded exit point
+        if (try_best_exit_fallback(trace, ts, progress_needed)) {
+            ADD_TO_TRACE(_EXIT_TRACE, 0, 0, ts->best_exit_target);
+            uop_buffer_last(trace)->operand1 = true; // is_control_flow
         }
+        else {
+            // No valid best exit — stop at current position
+            ADD_TO_TRACE(_EXIT_TRACE, 0, 0, target);
+            uop_buffer_last(trace)->operand1 = true; // is_control_flow
+        }
+        OPT_STAT_INC(fitness_terminated_traces);
+        DPRINTF(2, "Fitness terminated: fitness=%d < exit_quality=%d\n",
+                ts->fitness, eq);
+        goto done;
     }
 
     // One for possible _DEOPT, one because _CHECK_VALIDITY itself might _DEOPT

@@ -25,6 +25,13 @@ extern "C" {
 #define FITNESS_BACKWARD_EDGE         80
 #define FITNESS_FRAME_ENTRY           10
 
+/* Default exit quality constants for fitness-based trace termination.
+ * Higher values mean better places to stop the trace.
+ * These can be overridden via PYTHON_JIT_EXIT_QUALITY_* environment variables. */
+#define EXIT_QUALITY_ENTER_EXECUTOR  500
+#define EXIT_QUALITY_DEFAULT         200
+#define EXIT_QUALITY_SPECIALIZABLE    50
+
 
 typedef struct _PyJitUopBuffer {
     _PyUOpInstruction *start;

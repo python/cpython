@@ -458,6 +458,11 @@ typedef struct _PyOptimizationConfig {
     uint16_t fitness_backward_edge;
     uint16_t fitness_frame_entry;
 
+    // Exit quality thresholds for fitness-based trace termination
+    uint16_t exit_quality_enter_executor;
+    uint16_t exit_quality_default;
+    uint16_t exit_quality_specializable;
+
     // Optimization flags
     bool specialization_enabled;
     bool uops_optimize_enabled;

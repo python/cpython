@@ -658,6 +658,17 @@ init_interpreter(PyInterpreterState *interp,
                 "PYTHON_JIT_FITNESS_FRAME_ENTRY",
                 FITNESS_FRAME_ENTRY, 0, 1000);
 
+    // Exit quality thresholds
+    init_policy(&interp->opt_config.exit_quality_enter_executor,
+                "PYTHON_JIT_EXIT_QUALITY_ENTER_EXECUTOR",
+                EXIT_QUALITY_ENTER_EXECUTOR, 0, 10000);
+    init_policy(&interp->opt_config.exit_quality_default,
+                "PYTHON_JIT_EXIT_QUALITY_DEFAULT",
+                EXIT_QUALITY_DEFAULT, 0, 10000);
+    init_policy(&interp->opt_config.exit_quality_specializable,
+                "PYTHON_JIT_EXIT_QUALITY_SPECIALIZABLE",
+                EXIT_QUALITY_SPECIALIZABLE, 0, 10000);
+
     interp->opt_config.specialization_enabled = !is_env_enabled("PYTHON_SPECIALIZATION_OFF");
     interp->opt_config.uops_optimize_enabled = !is_env_disabled("PYTHON_UOPS_OPTIMIZE");
     if (interp != &runtime->_main_interpreter) {
