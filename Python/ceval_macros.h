@@ -577,24 +577,24 @@ gen_try_set_executing(PyGenObject *gen)
 #define INT_INPLACE_OP(left, right, TARGET, OP, FUNC)                    \
     _PyStackRef _int_inplace_res = PyStackRef_NULL;                      \
     do {                                                                 \
-        PyObject *_target_o = PyStackRef_AsPyObjectBorrow(TARGET);       \
-        if (_Py_IsImmortal(_target_o)) {                                 \
+        PyObject *target_o = PyStackRef_AsPyObjectBorrow(TARGET);        \
+        if (_Py_IsImmortal(target_o)) {                                  \
             break;                                                       \
         }                                                                \
-        assert(_PyObject_IsUniquelyReferenced(_target_o));               \
-        Py_ssize_t _left_val = _PyLong_CompactValue(                     \
+        assert(_PyObject_IsUniquelyReferenced(target_o));                \
+        Py_ssize_t left_val = _PyLong_CompactValue(                      \
             (PyLongObject *)PyStackRef_AsPyObjectBorrow(left));          \
-        Py_ssize_t _right_val = _PyLong_CompactValue(                    \
+        Py_ssize_t right_val = _PyLong_CompactValue(                     \
             (PyLongObject *)PyStackRef_AsPyObjectBorrow(right));         \
-        Py_ssize_t _result = _left_val OP _right_val;                   \
-        if (!_PY_IS_SMALL_INT(_result)                                   \
-            && ((twodigits)((stwodigits)_result) + PyLong_MASK           \
+        Py_ssize_t result = left_val OP right_val;                       \
+        if (!_PY_IS_SMALL_INT(result)                                    \
+            && ((twodigits)((stwodigits)result) + PyLong_MASK            \
                 < (twodigits)PyLong_MASK + PyLong_BASE))                 \
         {                                                                \
             _PyLong_SetSignAndDigitCount(                                \
-                (PyLongObject *)_target_o, _result < 0 ? -1 : 1, 1);    \
-            ((PyLongObject *)_target_o)->long_value.ob_digit[0] =        \
-                (digit)(_result < 0 ? -_result : _result);               \
+                (PyLongObject *)target_o, result < 0 ? -1 : 1, 1);       \
+            ((PyLongObject *)target_o)->long_value.ob_digit[0] =         \
+                (digit)(result < 0 ? -result : result);                  \
             _int_inplace_res = PyStackRef_DUP(TARGET);                   \
             break;                                                       \
         }                                                                \

@@ -82,13 +82,7 @@ static inline PyObject* _PyLong_FromUnsignedChar(unsigned char i)
     return (PyObject *)&_PyLong_SMALL_INTS[_PY_NSMALLNEGINTS+i];
 }
 
-// Return a reference to the cached small int singleton.
-// The caller must ensure -_PY_NSMALLNEGINTS <= value < _PY_NSMALLPOSINTS.
-static inline PyObject* _PyLong_GetSmallInt(Py_ssize_t value)
-{
-    assert(-_PY_NSMALLNEGINTS <= value && value < _PY_NSMALLPOSINTS);
-    return (PyObject *)&_PyLong_SMALL_INTS[_PY_NSMALLNEGINTS + (int)value];
-}
+
 
 // _PyLong_Frexp returns a double x and an exponent e such that the
 // true value is approximately equal to x * 2**e.  x is
