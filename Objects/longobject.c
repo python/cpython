@@ -6966,7 +6966,7 @@ PyLongWriter_Finish(PyLongWriter *writer)
         // Check ob_digit[0] digit for the number zero
         ndigits = 1;
     }
-    for (Py_ssize_t i=0; i < ndigits; i++) {
+    for (Py_ssize_t i = 0; i < ndigits; i++) {
         digit d = obj->long_value.ob_digit[i];
         assert(d < PyLong_BASE);
     }
