@@ -287,55 +287,79 @@ function _arr_join_quoted(arr, sep, n, i, result) {
 # back to ENVIRON[].  Mirrors what Python's pyconf.run() does with its
 # vars= parameter: the command template contains shell-style variable
 # references that must be resolved before execution.
-function _expand_cmd_vars(cmd, result, i, n, c, varname, brace) {
-        result = ""
-        n = length(cmd)
-        i = 1
-        while (i <= n) {
-                c = substr(cmd, i, 1)
-                if (c == "$" && i < n) {
-                        # Check for ${VAR} or $VAR
-                        if (substr(cmd, i + 1, 1) == "{") {
-                                brace = 1
-                                i += 2
-                                varname = ""
-                                while (i <= n && substr(cmd, i, 1) != "}") {
-                                        varname = varname substr(cmd, i, 1)
-                                        i++
-                                }
-                                if (i <= n) i++  # skip closing }
-                        } else {
-                                brace = 0
-                                i++
-                                varname = ""
-                                while (i <= n && substr(cmd, i, 1) ~ /[A-Za-z0-9_]/) {
-                                        varname = varname substr(cmd, i, 1)
-                                        i++
-                                }
-                        }
-                        if (varname == "") {
-                                result = result "$"
-                                if (brace) result = result "{"
-                        } else if (varname in V) {
-                                result = result V[varname]
-                        } else if (varname in ENVIRON) {
-                                result = result ENVIRON[varname]
-                        }
-                        # else: unknown var expands to empty (matches shell behaviour)
-                } else {
-                        result = result c
-                        i++
-                }
-        }
-        return result
+function _expand_cmd_vars(cmd, n, i, c, varname, brace, parts, pc) {
+	# Accumulate expanded command in array to avoid mawk string concatenation corruption
+	# (character-by-character concatenation in a large loop causes memory issues in mawk).
+	n = length(cmd)
+	i = 1
+	pc = 0  # parts count
+	while (i <= n) {
+		c = substr(cmd, i, 1)
+		if (c == "$" && i < n) {
+			# Check for ${VAR} or $VAR
+			if (substr(cmd, i + 1, 1) == "{") {
+				brace = 1
+				i += 2
+				varname = ""
+				while (i <= n && substr(cmd, i, 1) != "}") {
+					varname = varname substr(cmd, i, 1)
+					i++
+				}
+				if (i <= n) i++  # skip closing }
+			} else {
+				brace = 0
+				i++
+				varname = ""
+				while (i <= n && substr(cmd, i, 1) ~ /[A-Za-z0-9_]/) {
+					varname = varname substr(cmd, i, 1)
+					i++
+				}
+			}
+			if (varname == "") {
+				parts[++pc] = "$"
+				if (brace) parts[++pc] = "{"
+			} else if (varname in V) {
+				parts[++pc] = V[varname]
+			} else if (varname in ENVIRON) {
+				parts[++pc] = ENVIRON[varname]
+			}
+			# else: unknown var expands to empty (matches shell behaviour)
+		} else {
+			parts[++pc] = c
+			i++
+		}
+	}
+	# Join all parts once at the end
+	return _join_parts(parts, pc)
 }
 
-function _cmd_output(cmd, line, result) {
-        result = ""
-        while ((cmd | getline line) > 0)
-                result = result (result != "" ? "\n" : "") line
-        close(cmd)
-        return result
+function _join_parts(arr, n,    i, result) {
+	# Join array elements into a single string. Called once at end of
+	# _expand_cmd_vars to avoid character-by-character concatenation.
+	result = ""
+	for (i = 1; i <= n; i++)
+		result = result arr[i]
+	return result
+}
+
+function _cmd_output(cmd, line, lines, ln) {
+	# Accumulate command output lines in array to avoid mawk string concatenation
+	# corruption (large concatenation in loop causes memory issues in mawk).
+	ln = 0
+	while ((cmd | getline line) > 0)
+		lines[++ln] = line
+	close(cmd)
+	# Join all lines once at the end
+	return _join_lines(lines, ln)
+}
+
+function _join_lines(arr, n,    i, result) {
+	# Join array of lines with newline separators. Called once at end of
+	# _cmd_output to avoid repeated string concatenation in loop.
+	result = ""
+	for (i = 1; i <= n; i++)
+		result = result (i > 1 ? "\n" : "") arr[i]
+	return result
 }
 
 function _cmd_output_oneline(cmd, line) {
@@ -1404,14 +1428,27 @@ function pyconf_use_system_extensions() {
 # Environment save/restore
 # ---------------------------------------------------------------------------
 
-function pyconf_save_env(    k) {
-        _saved_env_depth++
-        for (k in V)
-                _saved_env_stack[_saved_env_depth, k] = V[k]
-        # Store the set of keys so we can restore exactly
-        _saved_env_keys[_saved_env_depth] = ""
-        for (k in V)
-                _saved_env_keys[_saved_env_depth] = _saved_env_keys[_saved_env_depth] k "\036"
+function pyconf_save_env(    k, keys, kc) {
+	_saved_env_depth++
+	for (k in V)
+		_saved_env_stack[_saved_env_depth, k] = V[k]
+	# Store the set of keys so we can restore exactly.
+	# Accumulate keys in array, then concatenate once to avoid mawk string
+	# concatenation corruption (repeated concatenation in loop causes memory issues).
+	kc = 0
+	for (k in V)
+		keys[++kc] = k
+	# Join keys with \036 separator
+	_saved_env_keys[_saved_env_depth] = _join_keys(keys, kc)
+}
+
+function _join_keys(arr, n,    i, result) {
+	# Join keys with \036 separator for environment save/restore.
+	# Called once per save to avoid repeated string concatenation in loop.
+	result = ""
+	for (i = 1; i <= n; i++)
+		result = result arr[i] "\036"
+	return result
 }
 
 function pyconf_restore_env(    k, n, keys, i) {
@@ -1738,23 +1775,23 @@ function pyconf_output(    i) {
         pyconf_cleanup()
 }
 
-function _pyconf_build_module_block(    i, key, uname, state, block, sep) {
-        block = ""
-        sep = ""
+function _pyconf_build_module_block(    i, key, uname, state) {
+        # Populate _module_block_lines array instead of concatenating into a string.
+        # This avoids building a large concatenated string in AWK memory, which causes
+        # memory corruption in mawk when many modules have CFLAGS/LDFLAGS.
+        _module_block_n = 0
         for (i = 1; i <= _stdlib_mod_count; i++) {
                 uname = _stdlib_mod_names[i]
                 key = "MODULE_" uname
                 state = SUBST[key "_STATE"]
-                block = block sep key "_STATE=" state
-                sep = "\n"
+                _module_block_lines[++_module_block_n] = key "_STATE=" state
                 if (_stdlib_mod_has_cflags[uname] == "yes" && state != "disabled" && state != "n/a" && state != "missing") {
-                        block = block sep key "_CFLAGS=" SUBST[key "_CFLAGS"]
+                        _module_block_lines[++_module_block_n] = key "_CFLAGS=" SUBST[key "_CFLAGS"]
                 }
                 if (_stdlib_mod_has_ldflags[uname] == "yes" && state != "disabled" && state != "n/a" && state != "missing") {
-                        block = block sep key "_LDFLAGS=" SUBST[key "_LDFLAGS"]
+                        _module_block_lines[++_module_block_n] = key "_LDFLAGS=" SUBST[key "_LDFLAGS"]
                 }
         }
-        SUBST["MODULE_BLOCK"] = block
 }
 
 function _pyconf_resolve_exports(    k) {
@@ -1995,27 +2032,42 @@ function _last_index(s, ch, i, last) {
         return last
 }
 
-function _pyconf_subst_file(inf, outf, line, k, pat, val, pos, before, after, skip) {
+function _pyconf_subst_file(inf, outf, line, k, pat, val, pos, before, after, skip, i, b, a) {
         while ((getline line < inf) > 0) {
                 skip = 0
-                # Replace @VAR@ patterns with SUBST values
-                for (k in SUBST) {
-                        pat = "@" k "@"
-                        while (index(line, pat) > 0) {
-                                val = SUBST[k]
-                                pos = index(line, pat)
-                                before = substr(line, 1, pos - 1)
-                                after = substr(line, pos + length(pat))
-                                # If the value contains newlines, emit directly and skip normal print
-                                if (index(val, "\n") > 0) {
-                                        printf "%s%s%s\n", before, val, after > outf
-                                        skip = 1
-                                        break
-                                } else {
-                                        line = before val after
-                                }
+                # Handle @MODULE_BLOCK@ specially: emit line-by-line to avoid
+                # building a large concatenated string in AWK memory (mawk safety).
+                if (index(line, "@MODULE_BLOCK@") > 0) {
+                        pos = index(line, "@MODULE_BLOCK@")
+                        before = substr(line, 1, pos - 1)
+                        after = substr(line, pos + length("@MODULE_BLOCK@"))
+                        for (i = 1; i <= _module_block_n; i++) {
+                                b = (i == 1) ? before : ""
+                                a = (i == _module_block_n) ? after : ""
+                                printf "%s%s%s\n", b, _module_block_lines[i], a > outf
                         }
-                        if (skip) break
+                        skip = 1
+                }
+                if (!skip) {
+                        # Replace @VAR@ patterns with SUBST values
+                        for (k in SUBST) {
+                                pat = "@" k "@"
+                                while (index(line, pat) > 0) {
+                                        val = SUBST[k]
+                                        pos = index(line, pat)
+                                        before = substr(line, 1, pos - 1)
+                                        after = substr(line, pos + length(pat))
+                                        # If the value contains newlines, emit directly and skip normal print
+                                        if (index(val, "\n") > 0) {
+                                                printf "%s%s%s\n", before, val, after > outf
+                                                skip = 1
+                                                break
+                                        } else {
+                                                line = before val after
+                                        }
+                                }
+                                if (skip) break
+                        }
                 }
                 if (!skip) {
                         # Neutralise VPATH when srcdir == "." (in-tree build):
