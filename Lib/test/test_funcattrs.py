@@ -486,6 +486,7 @@ class BuiltinFunctionPropertiesTest(unittest.TestCase):
 
         # builtin classmethod:
         self.assertEqual(dict.fromkeys.__qualname__, 'dict.fromkeys')
+        self.assertEqual(int.from_bytes.__qualname__, 'int.from_bytes')
 
         # builtin staticmethod:
         self.assertEqual(str.maketrans.__qualname__, 'str.maketrans')
@@ -507,6 +508,7 @@ class BuiltinFunctionPropertiesTest(unittest.TestCase):
 
         # builtin classmethod:
         self.assertIs(dict.fromkeys.__self__, dict)
+        self.assertIs(int.from_bytes.__self__, int)
 
         # builtin staticmethod:
         self.assertIsNone(str.maketrans.__self__)
