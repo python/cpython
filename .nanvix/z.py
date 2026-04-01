@@ -11,6 +11,7 @@ Usage:
     ./z clean     # Remove build artifacts
 """
 
+import os
 import shutil
 from pathlib import Path
 
@@ -24,6 +25,7 @@ _MAKE_VAR_PLATFORM = "PLATFORM"
 _MAKE_VAR_PROCESS_MODE = "PROCESS_MODE"
 _MAKE_VAR_MEMORY_SIZE = "MEMORY_SIZE"
 _MAKE_VAR_INSTALL_PREFIX = "INSTALL_PREFIX"
+_MAKE_VAR_RELEASE = "NANVIX_RELEASE"
 
 # CPython embeds --prefix into the binary (sys.prefix, sys.path).
 # Use /sysroot so that release tarballs don't contain ephemeral runner paths.
@@ -63,6 +65,9 @@ class CPythonBuild(ZScript):
 
         if with_install_prefix:
             args.append(f"{_MAKE_VAR_INSTALL_PREFIX}={_DEFAULT_INSTALL_PREFIX}")
+
+        release = os.environ.get(_MAKE_VAR_RELEASE, "no")
+        args.append(f"{_MAKE_VAR_RELEASE}={release}")
 
         args.extend(targets)
         return args
@@ -112,7 +117,12 @@ class CPythonBuild(ZScript):
         self.run(*self._make_args(*targets), cwd=self.repo_root)
 
     def release(self) -> None:
-        """Package the CPython release tarballs and verify them."""
+        """Package the CPython release tarballs and verify them.
+
+        Release builds always set NANVIX_RELEASE=yes to strip C test extension
+        modules and skip regrtest, producing a trimmed production artifact.
+        """
+        os.environ[_MAKE_VAR_RELEASE] = "yes"
         self.run(*self._make_args("package"), cwd=self.repo_root)
         self.run(*self._make_args("verify-package"), cwd=self.repo_root)
 
