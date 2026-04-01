@@ -47,10 +47,6 @@
 #endif
 
 #if defined(Py_GIL_DISABLED)
-#  if defined(Py_LIMITED_API) && !defined(_Py_OPAQUE_PYOBJECT)
-#    error "Py_LIMITED_API is not currently supported in the free-threaded build"
-#  endif
-
 #  if defined(_MSC_VER)
 #    include <intrin.h>             // __readgsqword()
 #  endif
