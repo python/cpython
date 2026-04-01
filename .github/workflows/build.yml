@@ -165,13 +165,21 @@ jobs:
         free-threading:
           - false
           - true
+        interpreter:
+          - switch-case
         exclude:
           # Skip Win32 on free-threaded builds
           - { arch: Win32, free-threading: true }
+        include:
+          # msvc::musttail is currently only supported on x64,
+          # and only supported on 3.15+.
+          - { arch: x64, free-threading: false, interpreter: tail-call }
+          - { arch: x64, free-threading: true,  interpreter: tail-call }
     uses: ./.github/workflows/reusable-windows.yml
     with:
       arch: ${{ matrix.arch }}
       free-threading: ${{ matrix.free-threading }}
+      interpreter: ${{ matrix.interpreter }}
 
   build-windows-msi:
     # ${{ '' } is a hack to nest jobs under the same sidebar category.
@@ -198,16 +206,16 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        # macos-14 is M1, macos-15-intel is Intel.
-        # macos-15-intel only runs tests against the GIL-enabled CPython.
+        # macos-26 is Apple Silicon, macos-26-intel is Intel.
+        # macos-26-intel only runs tests against the GIL-enabled CPython.
         os:
-        - macos-14
-        - macos-15-intel
+        - macos-26
+        - macos-26-intel
         free-threading:
         - false
         - true
         exclude:
-        - os: macos-15-intel
+        - os: macos-26-intel
           free-threading: true
     uses: ./.github/workflows/reusable-macos.yml
     with:
@@ -336,7 +344,7 @@ jobs:
       matrix:
         include:
           - arch: aarch64
-            runs-on: macos-14
+            runs-on: macos-26
           - arch: x86_64
             runs-on: ubuntu-24.04
 
@@ -369,7 +377,7 @@ jobs:
           sudo xcode-select --switch /Applications/Xcode_15.4.app
 
       - name: Build and test
-        run: python3 Apple ci iOS --fast-ci --simulator 'iPhone SE (3rd generation),OS=17.5'
+        run: python3 Platforms/Apple ci iOS --fast-ci --simulator 'iPhone SE (3rd generation),OS=17.5'
 
   build-emscripten:
     name: 'Emscripten'

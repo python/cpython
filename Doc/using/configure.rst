@@ -463,6 +463,17 @@ General Options
 
    ``pkg-config`` options.
 
+.. option:: --disable-epoll
+
+   Build without ``epoll``, meaning that :py:func:`select.epoll` will not be
+   present even if the system provides an
+   :manpage:`epoll_create <epoll_create(2)>` function.
+   This may be used on systems where :manpage:`!epoll_create` or
+   :manpage:`epoll_create1 <epoll_create1(2)>` is available
+   but incompatible with Linux semantics.
+
+   .. versionadded:: next
+
 
 C compiler options
 ------------------

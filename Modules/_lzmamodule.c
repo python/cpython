@@ -1594,6 +1594,7 @@ static PyMethodDef lzma_methods[] = {
 };
 
 static PyModuleDef_Slot lzma_slots[] = {
+    _Py_ABI_SLOT,
     {Py_mod_exec, lzma_exec},
     {Py_mod_multiple_interpreters, Py_MOD_PER_INTERPRETER_GIL_SUPPORTED},
     {Py_mod_gil, Py_MOD_GIL_NOT_USED},

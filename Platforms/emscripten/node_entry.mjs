@@ -1,5 +1,6 @@
 import EmscriptenModule from "./python.mjs";
 import fs from "node:fs";
+import { initializeStreams } from "./streams.mjs";
 
 if (process?.versions?.node) {
   const nodeVersion = Number(process.versions.node.split(".", 1)[0]);
@@ -39,6 +40,9 @@ const settings = {
     Object.assign(Module.ENV, process.env);
     delete Module.ENV.PATH;
   },
+  onRuntimeInitialized() {
+    initializeStreams(Module.FS);
+  },
   // Ensure that sys.executable, sys._base_executable, etc point to python.sh
   // not to this file. To properly handle symlinks, python.sh needs to compute
   // its own path.
@@ -49,7 +53,7 @@ const settings = {
 
 try {
   await EmscriptenModule(settings);
-} catch(e) {
+} catch (e) {
   // Show JavaScript exception and traceback
   console.warn(e);
   // Show Python exception and traceback

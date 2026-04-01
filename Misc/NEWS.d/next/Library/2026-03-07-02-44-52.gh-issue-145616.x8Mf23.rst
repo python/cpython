@@ -1,0 +1,1 @@
+Detect Android sysconfig ABI correctly on 32-bit ARM Android on 64-bit ARM kernel
