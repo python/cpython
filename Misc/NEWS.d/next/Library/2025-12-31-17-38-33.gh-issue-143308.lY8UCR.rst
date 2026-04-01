@@ -1,3 +1,0 @@
-:mod:`pickle`: fix use-after-free crashes when a :class:`~pickle.PickleBuffer`
-is concurrently mutated by a custom buffer callback during pickling.
-Patch by Bénédikt Tran and Aaron Wieczorek.

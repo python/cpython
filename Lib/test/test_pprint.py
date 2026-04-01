@@ -67,6 +67,13 @@ class dict3(dict):
     def __repr__(self):
         return dict.__repr__(self)
 
+class frozendict2(frozendict):
+    pass
+
+class frozendict3(frozendict):
+    def __repr__(self):
+        return frozendict.__repr__(self)
+
 class dict_custom_repr(dict):
     def __repr__(self):
         return '*'*len(dict.__repr__(self))
@@ -254,18 +261,22 @@ class QueryTestCase(unittest.TestCase):
                        set(), set2(), set3(),
                        frozenset(), frozenset2(), frozenset3(),
                        {}, dict2(), dict3(),
+                       frozendict(), frozendict2(), frozendict3(),
                        {}.keys(), {}.values(), {}.items(),
                        MappingView({}), KeysView({}), ItemsView({}), ValuesView({}),
                        self.assertTrue, pprint,
                        -6, -6, -6-6j, -1.5, "x", b"x", bytearray(b"x"),
                        (3,), [3], {3: 6},
-                       (1,2), [3,4], {5: 6},
+                       (1,2), [3,4],
                        tuple2((1,2)), tuple3((1,2)), tuple3(range(100)),
                        [3,4], list2([3,4]), list3([3,4]), list3(range(100)),
                        set({7}), set2({7}), set3({7}),
                        frozenset({8}), frozenset2({8}), frozenset3({8}),
-                       dict2({5: 6}), dict3({5: 6}),
+                       {5: 6}, dict2({5: 6}), dict3({5: 6}),
+                       frozendict({5: 6}), frozendict2({5: 6}), frozendict3({5: 6}),
                        {5: 6}.keys(), {5: 6}.values(), {5: 6}.items(),
+                       frozendict({5: 6}).keys(), frozendict({5: 6}).values(),
+                       frozendict({5: 6}).items(),
                        MappingView({5: 6}), KeysView({5: 6}),
                        ItemsView({5: 6}), ValuesView({5: 6}),
                        range(10, -11, -1),
@@ -330,19 +341,44 @@ class QueryTestCase(unittest.TestCase):
         for type in [dict, dict2]:
             self.assertEqual(pprint.pformat(type(o)), exp)
 
+        exp = """\
+frozendict({'RPM_cal': 0,
+            'RPM_cal2': 48059,
+            'Speed_cal': 0,
+            'controldesk_runtime_us': 0,
+            'main_code_runtime_us': 0,
+            'read_io_runtime_us': 0,
+            'write_io_runtime_us': 43690})"""
+        self.assertEqual(pprint.pformat(frozendict(o)), exp)
+        exp = """\
+frozendict2({'RPM_cal': 0,
+             'RPM_cal2': 48059,
+             'Speed_cal': 0,
+             'controldesk_runtime_us': 0,
+             'main_code_runtime_us': 0,
+             'read_io_runtime_us': 0,
+             'write_io_runtime_us': 43690})"""
+        self.assertEqual(pprint.pformat(frozendict2(o)), exp)
+
         o = range(100)
         exp = 'dict_keys([%s])' % ',\n '.join(map(str, o))
         keys = dict.fromkeys(o).keys()
+        self.assertEqual(pprint.pformat(keys), exp)
+        keys = frozendict.fromkeys(o).keys()
         self.assertEqual(pprint.pformat(keys), exp)
 
         o = range(100)
         exp = 'dict_values([%s])' % ',\n '.join(map(str, o))
         values = {v: v for v in o}.values()
         self.assertEqual(pprint.pformat(values), exp)
+        values = frozendict({v: v for v in o}).values()
+        self.assertEqual(pprint.pformat(values), exp)
 
         o = range(100)
         exp = 'dict_items([%s])' % ',\n '.join("(%s, %s)" % (i, i) for i in o)
         items = {v: v for v in o}.items()
+        self.assertEqual(pprint.pformat(items), exp)
+        items = frozendict({v: v for v in o}).items()
         self.assertEqual(pprint.pformat(items), exp)
 
         o = range(100)

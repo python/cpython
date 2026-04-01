@@ -733,22 +733,27 @@ class TestTranforms(BytecodeTestCase):
         with self.assertRaisesRegex(TypeError,
                     'not all arguments converted during string formatting'):
             eval("'%s' % (x, y)", {'x': 1, 'y': 2})
-        with self.assertRaisesRegex(ValueError, 'incomplete format'):
+        with self.assertRaisesRegex(ValueError, 'stray % at position 2'):
             eval("'%s%' % (x,)", {'x': 1234})
-        with self.assertRaisesRegex(ValueError, 'incomplete format'):
+        with self.assertRaisesRegex(ValueError, 'stray % at position 4'):
             eval("'%s%%%' % (x,)", {'x': 1234})
         with self.assertRaisesRegex(TypeError,
                     'not enough arguments for format string'):
             eval("'%s%z' % (x,)", {'x': 1234})
-        with self.assertRaisesRegex(ValueError, 'unsupported format character'):
+        with self.assertRaisesRegex(ValueError,
+                    'unsupported format %z at position 2'):
             eval("'%s%z' % (x, 5)", {'x': 1234})
-        with self.assertRaisesRegex(TypeError, 'a real number is required, not str'):
+        with self.assertRaisesRegex(TypeError,
+                'format argument 1: %d requires a real number, not str'):
             eval("'%d' % (x,)", {'x': '1234'})
-        with self.assertRaisesRegex(TypeError, 'an integer is required, not float'):
+        with self.assertRaisesRegex(TypeError,
+                'format argument 1: %x requires an integer, not float'):
             eval("'%x' % (x,)", {'x': 1234.56})
-        with self.assertRaisesRegex(TypeError, 'an integer is required, not str'):
+        with self.assertRaisesRegex(TypeError,
+                'format argument 1: %x requires an integer, not str'):
             eval("'%x' % (x,)", {'x': '1234'})
-        with self.assertRaisesRegex(TypeError, 'must be real number, not str'):
+        with self.assertRaisesRegex(TypeError,
+                'format argument 1: %f requires a real number, not str'):
             eval("'%f' % (x,)", {'x': '1234'})
         with self.assertRaisesRegex(TypeError,
                     'not enough arguments for format string'):
@@ -1465,7 +1470,7 @@ class DirectCfgOptimizerTests(CfgOptimizationTestCase):
             ('LOAD_SMALL_INT', 1, 0),
             ('LOAD_SMALL_INT', 2, 0),
             ('BUILD_LIST', 2, 0),
-            ('GET_ITER', None, 0),
+            ('GET_ITER', 0, 0),
             start := self.Label(),
             ('FOR_ITER', end := self.Label(), 0),
             ('STORE_FAST', 0, 0),
@@ -1478,7 +1483,7 @@ class DirectCfgOptimizerTests(CfgOptimizationTestCase):
         ]
         after = [
             ('LOAD_CONST', 1, 0),
-            ('GET_ITER', None, 0),
+            ('GET_ITER', 0, 0),
             start := self.Label(),
             ('FOR_ITER', end := self.Label(), 0),
             ('STORE_FAST', 0, 0),
@@ -1496,7 +1501,7 @@ class DirectCfgOptimizerTests(CfgOptimizationTestCase):
             ('LOAD_SMALL_INT', 1, 0),
             ('LOAD_NAME', 0, 0),
             ('BUILD_LIST', 2, 0),
-            ('GET_ITER', None, 0),
+            ('GET_ITER', 0, 0),
             start := self.Label(),
             ('FOR_ITER', end := self.Label(), 0),
             ('STORE_FAST', 0, 0),
@@ -1511,7 +1516,7 @@ class DirectCfgOptimizerTests(CfgOptimizationTestCase):
             ('LOAD_SMALL_INT', 1, 0),
             ('LOAD_NAME', 0, 0),
             ('BUILD_TUPLE', 2, 0),
-            ('GET_ITER', None, 0),
+            ('GET_ITER', 0, 0),
             start := self.Label(),
             ('FOR_ITER', end := self.Label(), 0),
             ('STORE_FAST', 0, 0),
@@ -1530,7 +1535,7 @@ class DirectCfgOptimizerTests(CfgOptimizationTestCase):
             ('LOAD_SMALL_INT', 1, 0),
             ('LOAD_SMALL_INT', 2, 0),
             ('BUILD_SET', 2, 0),
-            ('GET_ITER', None, 0),
+            ('GET_ITER', 0, 0),
             start := self.Label(),
             ('FOR_ITER', end := self.Label(), 0),
             ('STORE_FAST', 0, 0),
@@ -1543,7 +1548,7 @@ class DirectCfgOptimizerTests(CfgOptimizationTestCase):
         ]
         after = [
             ('LOAD_CONST', 1, 0),
-            ('GET_ITER', None, 0),
+            ('GET_ITER', 0, 0),
             start := self.Label(),
             ('FOR_ITER', end := self.Label(), 0),
             ('STORE_FAST', 0, 0),
@@ -1562,7 +1567,7 @@ class DirectCfgOptimizerTests(CfgOptimizationTestCase):
             ('LOAD_SMALL_INT', 1, 0),
             ('LOAD_NAME', 0, 0),
             ('BUILD_SET', 2, 0),
-            ('GET_ITER', None, 0),
+            ('GET_ITER', 0, 0),
             start := self.Label(),
             ('FOR_ITER', end := self.Label(), 0),
             ('STORE_FAST', 0, 0),
@@ -2351,7 +2356,7 @@ class DirectCfgOptimizerTests(CfgOptimizationTestCase):
             ("LOAD_FAST", 1, 4),
             ("LIST_EXTEND", 1, 5),
             ("CALL_INTRINSIC_1", INTRINSIC_LIST_TO_TUPLE, 6),
-            ("GET_ITER", None, 7),
+            ("GET_ITER", 0, 7),
             top := self.Label(),
             ("FOR_ITER", end := self.Label(), 8),
             ("STORE_FAST", 2, 9),
@@ -2369,7 +2374,7 @@ class DirectCfgOptimizerTests(CfgOptimizationTestCase):
             ("LOAD_FAST_BORROW", 1, 4),
             ("LIST_EXTEND", 1, 5),
             ("NOP", None, 6),  # ("CALL_INTRINSIC_1", INTRINSIC_LIST_TO_TUPLE, 6),
-            ("GET_ITER", None, 7),
+            ("GET_ITER", 0, 7),
             top := self.Label(),
             ("FOR_ITER", end := self.Label(), 8),
             ("STORE_FAST", 2, 9),
@@ -2672,20 +2677,20 @@ class OptimizeLoadFastTestCase(DirectCfgOptimizerTests):
         self.cfg_optimization_test(insts, expected, consts=[None])
 
     def test_get_yield_from_iter(self):
-        # GET_YIELD_FROM_ITER may leave its operand on the stack
         insts = [
             ("LOAD_FAST", 0, 1),
-            ("GET_YIELD_FROM_ITER", None, 2),
-            ("LOAD_CONST", 0, 3),
+            ("GET_ITER", 1, 2),
+            ("PUSH_NULL", None, 3),
+            ("LOAD_CONST", 0, 4),
             send := self.Label(),
-            ("SEND", end := self.Label(), 5),
-            ("YIELD_VALUE", 1, 6),
-            ("RESUME", 2, 7),
-            ("JUMP", send, 8),
+            ("SEND", end := self.Label(), 6),
+            ("YIELD_VALUE", 1, 7),
+            ("RESUME", 2, 8),
+            ("JUMP", send, 9),
             end,
-            ("END_SEND", None, 9),
-            ("LOAD_CONST", 0, 10),
-            ("RETURN_VALUE", None, 11),
+            ("END_SEND", None, 10),
+            ("LOAD_CONST", 0, 11),
+            ("RETURN_VALUE", None, 12),
         ]
         self.cfg_optimization_test(insts, insts, consts=[None])
 

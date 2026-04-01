@@ -78,20 +78,41 @@ from collections import deque
 from reprlib import Repr
 from traceback import format_exception_only
 
-from _pyrepl.pager import (get_pager, pipe_pager,
-                           plain_pager, tempfile_pager, tty_pager)
+try:
+    from _pyrepl.pager import (get_pager, pipe_pager,
+                               plain_pager, tempfile_pager, tty_pager)
 
-# Expose plain() as pydoc.plain()
-from _pyrepl.pager import plain  # noqa: F401
+    # Expose plain() as pydoc.plain()
+    from _pyrepl.pager import plain  # noqa: F401
 
+    # --------------------------------------------------------- old names
+    getpager = get_pager
+    pipepager = pipe_pager
+    plainpager = plain_pager
+    tempfilepager = tempfile_pager
+    ttypager = tty_pager
 
-# --------------------------------------------------------- old names
+except ModuleNotFoundError:
+    # Minimal alternatives for cases where _pyrepl is absent.
 
-getpager = get_pager
-pipepager = pipe_pager
-plainpager = plain_pager
-tempfilepager = tempfile_pager
-ttypager = tty_pager
+    def plain(text: str) -> str:
+        """Remove boldface formatting from text."""
+        return re.sub('.\b', '', text)
+
+    def plain_pager(text: str, title: str = '') -> None:
+        """Simply print unformatted text.  This is the ultimate fallback."""
+        encoding = getattr(sys.stdout, 'encoding', None) or 'utf-8'
+        text = text.encode(encoding, 'backslashreplace').decode(encoding)
+        text = plain(text)
+        sys.stdout.write(text)
+
+    def get_pager():
+        """Unconditionally return the plain pager, since _pyrepl is absent."""
+        return plain_pager
+
+    # --------------------------------------------------------- old names
+    getpager = get_pager
+    plainpager = plain_pager
 
 
 # --------------------------------------------------------- common routines
@@ -2004,10 +2025,11 @@ has the same effect as typing a particular string at the help> prompt.
         while True:
             try:
                 request = self.getline('help> ')
-                if not request: break
             except (KeyboardInterrupt, EOFError):
                 break
             request = request.strip()
+            if not request:
+                continue  # back to the prompt
 
             # Make sure significant trailing quoting marks of literals don't
             # get deleted while cleaning input

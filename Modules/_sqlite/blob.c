@@ -439,6 +439,10 @@ subscript_slice(pysqlite_Blob *self, PyObject *item)
         return NULL;
     }
 
+    if (len == 0) {
+        return PyBytes_FromStringAndSize(NULL, 0);
+    }
+
     if (step == 1) {
         return read_multiple(self, len, start);
     }
