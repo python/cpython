@@ -70,8 +70,8 @@
      - Py_LIMITED_API (defines the subset of API we expose)
      - _Py_OPAQUE_PYOBJECT (additionally hides what's ABI-incompatible between
        free-threaded & GIL)
-   (Don't use Py_TARGET_ABI3T directly; we merge into the above two here.
-    We do set it for users' convenience though.)
+     (Don't use Py_TARGET_ABI3T directly: it's currently only used to set these
+      2 macros. It's also available for users' convenience.)
  */
 #if defined(Py_LIMITED_API) && defined(Py_GIL_DISABLED) \
     && !defined(Py_TARGET_ABI3T)
