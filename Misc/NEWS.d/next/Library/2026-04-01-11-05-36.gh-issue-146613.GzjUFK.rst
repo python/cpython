@@ -1,4 +1,3 @@
 :mod:`itertools`: Fix re-entrant use-after-free in ``itertools.groupby()``
 that could lead to a segmentation fault when a user-defined ``__eq__``
-re-enters the grouper iterator. The same pattern was previously fixed
-in gh-143543.
+re-enters the grouper iterator.
