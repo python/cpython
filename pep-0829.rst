@@ -33,7 +33,7 @@ support two functions:
    anchored at the site-packages directory.
 
 #. **Executing code** -- lines starting with ``import`` (or
-   ``import\\t``) are executed immediate by passing the source string
+   ``import\\t``) are executed immediately by passing the source string
    to ``exec()``.
 
 This design has several problems:
@@ -107,7 +107,7 @@ File Naming and Discovery
   behavior.
 
 * If both ``<package>.site.toml`` and ``<package>.pth`` exist in the same
-  directory, only the ``.site.toml`` file is processed.
+  directory, only the ``<package>.site.toml`` file is processed.
 
 
 Processing Model
@@ -152,7 +152,7 @@ entry point imports and ``<package>.pth`` import lines.
 A ``<package>.site.toml`` file is defined to have three sections, all of which
 are optional:
 
-.. _code-block: toml
+.. code-block:: toml
 
     [metadata]
     schema_version = 1
@@ -181,9 +181,9 @@ Defined keys:
     The TOML file schema version number.  Must be the integer ``1`` for this
     specification.  If present, Python guarantees forward-compatible handling:
     future versions will either process the file according to the declared
-    schema or skip it with a clear diagnostic.  It is an error if the
-    ``schema_version`` is present but has an unsupported value, the entire
-    file is skipped.  If ``schema_version`` is omitted, the file is processed
+    schema or skip it with a clear diagnostic.  If the
+    ``schema_version`` is present but has an unsupported value, the
+    entire file is skipped.  If ``schema_version`` is omitted, the file is processed
     on a best-effort basis with no forward-compatibility guarantees.
 
 Recommended keys:
@@ -279,7 +279,15 @@ Errors are handled differently depending on the phase:
 Phase 1: Reading and Parsing
     If a ``<package>.site.toml`` file cannot be opened, decoded, or parsed as
     valid TOML, it is skipped and processing continues to the next file.
-    Errors are reported only when ``-v`` (verbose) is given.
+    Errors are reported only when ``-v`` (verbose) is given.  Importantly,
+    a ``<package>.site.toml`` file that fails to parse **still supersedes**
+    its corresponding ``<package>.pth`` file.  The existence of the
+    ``<package>.site.toml`` file is sufficient to suppress
+    ``<package>.pth`` processing, regardless of whether the TOML file
+    parses successfully.  This prevents confusing dual-execution
+    scenarios and ensures that a broken ``<package>.site.toml`` is
+    noticed rather than silently masked by fallback to the
+    ``<package>.pth`` file.
 
 Phase 2: Execution
     If a path entry or entry point raises an exception during processing, the
@@ -404,7 +412,7 @@ If your package currently ships a ``<package>.pth`` file, you can migrate to a
 ``<package>.site.toml`` file.  The equivalent of a ``<package>.pth`` file
 containing a directory name is:
 
-.. _code-block: toml
+.. code-block:: toml
 
     [paths]
     dirs = ["my_directory"]
@@ -412,7 +420,7 @@ containing a directory name is:
 The equivalent of a ``<package>.pth`` file containing ``import my_package``
 is:
 
-.. _code-block: toml
+.. code-block:: toml
 
     [entrypoints]
     init = ["my_package"]
@@ -420,7 +428,7 @@ is:
 If your ``<package>.pth`` file calls a specific function, use the
 ``module:callable`` syntax:
 
-.. _code-block: toml
+.. code-block:: toml
 
     [entrypoints]
     init = ["my_package.startup:initialize"]
@@ -429,7 +437,7 @@ If your ``<package>.pth`` file includes arbitrary code, put that code in a
 start up function and use the ``module:callable`` syntax.
 
 Both ``<package>.pth`` and ``<package>.site.toml`` can coexist during
-migration.  If both exist for the same package, only the ``.site.toml`` is
+migration.  If both exist for the same package, only the ``<package>.site.toml`` is
 processed.  Thus, it is recommended that packages compatible with older
 Pythons ship both files.
 

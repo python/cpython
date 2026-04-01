@@ -208,7 +208,7 @@ def _read_site_toml(sitedir, name):
         return None
 
     metadata = data.get("metadata", {})
-    # Validate the TOML schema version.  PEP XXX defines schema_version == 1.  Both the [metadata]
+    # Validate the TOML schema version.  PEP 829 defines schema_version == 1.  Both the [metadata]
     # section and [metadata].schema_version are optional, but if missing, future compatibility
     # cannot be guaranteed.
     if (schema_version := metadata.get("schema_version")) is not None:
