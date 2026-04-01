@@ -6,6 +6,7 @@ preserve
 #  include "pycore_gc.h"          // PyGC_Head
 #  include "pycore_runtime.h"     // _Py_ID()
 #endif
+#include "pycore_abstract.h"      // _PyNumber_Index()
 #include "pycore_long.h"          // _PyLong_Size_t_Converter()
 #include "pycore_modsupport.h"    // _PyArg_UnpackKeywords()
 
@@ -1060,7 +1061,7 @@ PyDoc_STRVAR(binascii_b2a_hex__doc__,
 
 static PyObject *
 binascii_b2a_hex_impl(PyObject *module, Py_buffer *data, PyObject *sep,
-                      int bytes_per_sep);
+                      Py_ssize_t bytes_per_sep);
 
 static PyObject *
 binascii_b2a_hex(PyObject *module, PyObject *const *args, Py_ssize_t nargs, PyObject *kwnames)
@@ -1097,7 +1098,7 @@ binascii_b2a_hex(PyObject *module, PyObject *const *args, Py_ssize_t nargs, PyOb
     Py_ssize_t noptargs = nargs + (kwnames ? PyTuple_GET_SIZE(kwnames) : 0) - 1;
     Py_buffer data = {NULL, NULL};
     PyObject *sep = NULL;
-    int bytes_per_sep = 1;
+    Py_ssize_t bytes_per_sep = 1;
 
     args = _PyArg_UnpackKeywords(args, nargs, NULL, kwnames, &_parser,
             /*minpos*/ 1, /*maxpos*/ 3, /*minkw*/ 0, /*varpos*/ 0, argsbuf);
@@ -1116,9 +1117,17 @@ binascii_b2a_hex(PyObject *module, PyObject *const *args, Py_ssize_t nargs, PyOb
             goto skip_optional_pos;
         }
     }
-    bytes_per_sep = PyLong_AsInt(args[2]);
-    if (bytes_per_sep == -1 && PyErr_Occurred()) {
-        goto exit;
+    {
+        Py_ssize_t ival = -1;
+        PyObject *iobj = _PyNumber_Index(args[2]);
+        if (iobj != NULL) {
+            ival = PyLong_AsSsize_t(iobj);
+            Py_DECREF(iobj);
+        }
+        if (ival == -1 && PyErr_Occurred()) {
+            goto exit;
+        }
+        bytes_per_sep = ival;
     }
 skip_optional_pos:
     return_value = binascii_b2a_hex_impl(module, &data, sep, bytes_per_sep);
@@ -1152,7 +1161,7 @@ PyDoc_STRVAR(binascii_hexlify__doc__,
 
 static PyObject *
 binascii_hexlify_impl(PyObject *module, Py_buffer *data, PyObject *sep,
-                      int bytes_per_sep);
+                      Py_ssize_t bytes_per_sep);
 
 static PyObject *
 binascii_hexlify(PyObject *module, PyObject *const *args, Py_ssize_t nargs, PyObject *kwnames)
@@ -1189,7 +1198,7 @@ binascii_hexlify(PyObject *module, PyObject *const *args, Py_ssize_t nargs, PyOb
     Py_ssize_t noptargs = nargs + (kwnames ? PyTuple_GET_SIZE(kwnames) : 0) - 1;
     Py_buffer data = {NULL, NULL};
     PyObject *sep = NULL;
-    int bytes_per_sep = 1;
+    Py_ssize_t bytes_per_sep = 1;
 
     args = _PyArg_UnpackKeywords(args, nargs, NULL, kwnames, &_parser,
             /*minpos*/ 1, /*maxpos*/ 3, /*minkw*/ 0, /*varpos*/ 0, argsbuf);
@@ -1208,9 +1217,17 @@ binascii_hexlify(PyObject *module, PyObject *const *args, Py_ssize_t nargs, PyOb
             goto skip_optional_pos;
         }
     }
-    bytes_per_sep = PyLong_AsInt(args[2]);
-    if (bytes_per_sep == -1 && PyErr_Occurred()) {
-        goto exit;
+    {
+        Py_ssize_t ival = -1;
+        PyObject *iobj = _PyNumber_Index(args[2]);
+        if (iobj != NULL) {
+            ival = PyLong_AsSsize_t(iobj);
+            Py_DECREF(iobj);
+        }
+        if (ival == -1 && PyErr_Occurred()) {
+            goto exit;
+        }
+        bytes_per_sep = ival;
     }
 skip_optional_pos:
     return_value = binascii_hexlify_impl(module, &data, sep, bytes_per_sep);
@@ -1564,4 +1581,4 @@ exit:
 
     return return_value;
 }
-/*[clinic end generated code: output=7afd570a9d5a3627 input=a9049054013a1b77]*/
+/*[clinic end generated code: output=197a0f70aa392d39 input=a9049054013a1b77]*/
