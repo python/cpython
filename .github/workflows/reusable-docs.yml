@@ -75,6 +75,22 @@ jobs:
           --fail-if-regression \
           --fail-if-improved \
           --fail-if-new-news-nit
+    - name: 'Collect HTML IDs'
+      if: github.event_name == 'pull_request'
+      run: python Doc/tools/check-html-ids.py collect Doc/build/html -o Doc/build/html-ids-head.json.gz
+    - name: 'Upload HTML IDs'
+      if: github.event_name == 'pull_request'
+      uses: actions/upload-artifact@v7
+      with:
+        name: html-ids-head
+        path: Doc/build/html-ids-head.json.gz
+        archive: false
+
+  check-html-ids:
+    name: 'Check for removed HTML IDs'
+    needs: build-doc
+    if: github.event_name == 'pull_request'
+    uses: ./.github/workflows/reusable-check-html-ids.yml
 
   # Run "doctest" on HEAD as new syntax doesn't exist in the latest stable release
   doctest:
