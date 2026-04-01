@@ -937,12 +937,15 @@ function pyconf_check_member(member, headers, define, struct_name, field, source
                 return (CACHE[cv] == "yes")
 
         pyconf_checking("for " member)
-        inc = _pyconf_ac_includes_default()
+        # Match Python version: use custom headers if provided, else use default headers
         if (headers != "") {
                 n = split(headers, arr, " ")
+                inc = ""
                 for (i = 1; i <= n; i++)
                         if (arr[i] != "")
                                 inc = inc "#include <" arr[i] ">\n"
+        } else {
+                inc = _pyconf_ac_includes_default()
         }
 
         source = inc "\nint main(void) { " struct_name " s; (void)s." field "; return 0; }"
@@ -6085,7 +6088,7 @@ function u_check_misc_runtime(    ac_cv_broken_nice, ac_cv_broken_poll, ac_cv_wo
 		pyconf_define("HAVE_BROKEN_POLL", 1, 0, "Define if poll() sets errno on invalid file descriptors.")
 	}
 	pyconf_checking("for working tzset()")
-	ac_cv_working_tzset = (pyconf_run_check("", "\n    #include <stdlib.h>\n    #include <time.h>\n    #include <string.h>\n\n    #if HAVE_TZNAME\n    extern char *tzname[];\n    #endif\n\n    int main(void)\n    {\n        time_t groundhogday = 1044144000; /* GMT-based */\n        time_t midyear = groundhogday + (365 * 24 * 3600 / 2);\n\n        putenv(\"TZ=UTC+0\");\n        tzset();\n        if (localtime(&groundhogday)->tm_hour != 0)\n            exit(1);\n    #if HAVE_TZNAME\n        if (strcmp(tzname[0], \"UTC\") ||\n            (tzname[1][0] != 0 && tzname[1][0] != ' '))\n            exit(1);\n    #endif\n\n        putenv(\"TZ=EST+5EDT,M4.1.0,M10.5.0\");\n        tzset();\n        if (localtime(&groundhogday)->tm_hour != 19)\n            exit(1);\n    #if HAVE_TZNAME\n        if (strcmp(tzname[0], \"EST\") || strcmp(tzname[1], \"EDT\"))\n            exit(1);\n    #endif\n\n        putenv(\"TZ=AEST-10AEDT-11,M10.5.0,M3.5.0\");\n        tzset();\n        if (localtime(&groundhogday)->tm_hour != 11)\n            exit(1);\n    #if HAVE_TZNAME\n        if (strcmp(tzname[0], \"AEST\") || strcmp(tzname[1], \"AEDT\"))\n            exit(1);\n    #endif\n\n    #if HAVE_STRUCT_TM_TM_ZONE\n        if (strcmp(localtime(&groundhogday)->tm_zone, \"AEDT\"))\n            exit(1);\n        if (strcmp(localtime(&midyear)->tm_zone, \"AEST\"))\n            exit(1);\n    #endif\n\n        exit(0);\n    }\n    ") ? "yes" : "no")
+	ac_cv_working_tzset = (pyconf_run_check("", "\n    #include <stdlib.h>\n    #include <time.h>\n    #include <string.h>\n\n    #if HAVE_TZNAME\n    extern char *tzname[];\n    #endif\n\n    int main(void)\n    {\n        time_t groundhogday = 1044144000; /* GMT-based */\n        time_t midyear = groundhogday + (365 * 24 * 3600 / 2);\n\n        putenv(\"TZ=UTC+0\");\n        tzset();\n        if (localtime(&groundhogday)->tm_hour != 0)\n            exit(1);\n    #if HAVE_TZNAME\n        /* For UTC, tzname[1] is sometimes \"\", sometimes \"   \" */\n        if (strcmp(tzname[0], \"UTC\") ||\n            (tzname[1][0] != 0 && tzname[1][0] != ' '))\n            exit(1);\n    #endif\n\n        putenv(\"TZ=EST+5EDT,M4.1.0,M10.5.0\");\n        tzset();\n        if (localtime(&groundhogday)->tm_hour != 19)\n            exit(1);\n    #if HAVE_TZNAME\n        if (strcmp(tzname[0], \"EST\") || strcmp(tzname[1], \"EDT\"))\n            exit(1);\n    #endif\n\n        putenv(\"TZ=AEST-10AEDT-11,M10.5.0,M3.5.0\");\n        tzset();\n        if (localtime(&groundhogday)->tm_hour != 11)\n            exit(1);\n    #if HAVE_TZNAME\n        if (strcmp(tzname[0], \"AEST\") || strcmp(tzname[1], \"AEDT\"))\n            exit(1);\n    #endif\n\n    #if HAVE_STRUCT_TM_TM_ZONE\n        if (strcmp(localtime(&groundhogday)->tm_zone, \"AEDT\"))\n            exit(1);\n        if (strcmp(localtime(&midyear)->tm_zone, \"AEST\"))\n            exit(1);\n    #endif\n\n        exit(0);\n    }\n    ") ? "yes" : "no")
 	pyconf_result(ac_cv_working_tzset)
 	if (((ac_cv_working_tzset != "") && (ac_cv_working_tzset != "no"))) {
 		pyconf_define("HAVE_WORKING_TZSET", 1, 0, "Define if tzset() actually switches the local timezone in a meaningful way.")

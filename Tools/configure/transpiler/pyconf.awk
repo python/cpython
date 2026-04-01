@@ -902,12 +902,15 @@ function pyconf_check_member(member, headers, define, struct_name, field, source
                 return (CACHE[cv] == "yes")
 
         pyconf_checking("for " member)
-        inc = _pyconf_ac_includes_default()
+        # Match Python version: use custom headers if provided, else use default headers
         if (headers != "") {
                 n = split(headers, arr, " ")
+                inc = ""
                 for (i = 1; i <= n; i++)
                         if (arr[i] != "")
                                 inc = inc "#include <" arr[i] ">\n"
+        } else {
+                inc = _pyconf_ac_includes_default()
         }
 
         source = inc "\nint main(void) { " struct_name " s; (void)s." field "; return 0; }"
