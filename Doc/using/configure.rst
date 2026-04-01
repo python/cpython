@@ -906,9 +906,11 @@ See also the :ref:`Python Development Mode <devmode>` and the
 :option:`--with-trace-refs` configure option.
 
 .. versionchanged:: 3.8
-   Release builds and debug builds are now ABI compatible: defining the
+   Release builds are now ABI compatible with debug builds: defining the
    ``Py_DEBUG`` macro no longer implies the ``Py_TRACE_REFS`` macro (see the
-   :option:`--with-trace-refs` option).
+   :option:`--with-trace-refs` option). However, debug builds still expose
+   more symbols than release builds and code built against a debug build is not
+   necessarily compatible with a release build.
 
 
 Debug options
