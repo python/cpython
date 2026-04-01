@@ -8,6 +8,7 @@ import time
 import unittest
 
 from test import support
+from test.support import import_helper
 from test.support.testcase import FloatsAreIdenticalMixin
 from test.support.numbers import (
     VALID_UNDERSCORE_LITERALS,
@@ -668,6 +669,18 @@ class GeneralFloatCases(unittest.TestCase):
         self.assertTrue(f <= i)
         self.assertFalse(f > i)
         self.assertFalse(f >= i)
+
+
+@unittest.skipUnless(hasattr(float, "__getformat__"), "requires __getformat__")
+class FormatFunctionsTestCase(unittest.TestCase):
+    @warnings_helper.ignore_warnings(category=DeprecationWarning)
+    def test_getformat(self):
+        self.assertIn(float.__getformat__('double'),
+                      ['unknown', 'IEEE, big-endian', 'IEEE, little-endian'])
+        self.assertIn(float.__getformat__('float'),
+                      ['unknown', 'IEEE, big-endian', 'IEEE, little-endian'])
+        self.assertRaises(ValueError, float.__getformat__, 'chicken')
+        self.assertRaises(TypeError, float.__getformat__, 1)
 
 
 BE_DOUBLE_INF = b'\x7f\xf0\x00\x00\x00\x00\x00\x00'
