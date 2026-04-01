@@ -1255,7 +1255,7 @@ class UserDict(_collections_abc.MutableMapping):
 
 
     # This method has a default implementation in MutableMapping, but dict's
-    # equivalent is first-in, first-out.
+    # equivalent is last-in, first-out instead of first-in, first-out.
     def popitem(self):
         return self.data.popitem()
 
