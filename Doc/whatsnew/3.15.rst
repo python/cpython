@@ -217,7 +217,8 @@ For example::
 
 The following standard library modules have been updated to accept
 :class:`!frozendict`: :mod:`copy`, :mod:`decimal`, :mod:`json`, :mod:`marshal`,
-:mod:`pickle`, :mod:`pprint` and :mod:`xml.etree.ElementTree`.
+:mod:`plistlib` (only for serialization), :mod:`pickle`, :mod:`pprint` and
+:mod:`xml.etree.ElementTree`.
 
 :func:`eval` and :func:`exec` accept :class:`!frozendict` for *globals*, and
 :func:`type` and :meth:`str.maketrans` accept :class:`!frozendict` for *dict*.
@@ -604,6 +605,9 @@ Other language changes
   respectively.
   (Contributed by Sergey B Kirpichev in :gh:`146151`.)
 
+* Allow the *count* argument of :meth:`bytes.replace` to be a keyword.
+  (Contributed by Stan Ulbrych in :gh:`147856`.)
+
 
 New modules
 ===========
@@ -641,6 +645,10 @@ array
 * Support the :c:expr:`float complex` and :c:expr:`double complex` C types:
   formatting characters ``'F'`` and ``'D'`` respectively.
   (Contributed by Sergey B Kirpichev in :gh:`146151`.)
+
+* Support half-floats (16-bit IEEE 754 binary interchange format): formatting
+  character ``'e'``.
+  (Contributed by Sergey B Kirpichev in :gh:`146238`.)
 
 
 base64
