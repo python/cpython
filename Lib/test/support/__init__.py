@@ -518,7 +518,11 @@ PIPE_MAX_SIZE = 4 * 1024 * 1024 + 1
 # for a discussion of this number.
 SOCK_MAX_SIZE = 16 * 1024 * 1024 + 1
 
+# This helper exists for alternative Python implementations, that use
+# the CPython test suite.
 def _have_ieee_doubles():
+    if sys.implementation.name == 'cpython':
+        return True
     import math
     import struct
     # Check parameters for encoding of floats; a quick exit
