@@ -285,6 +285,21 @@ _PyLong_SameSign(const PyLongObject *a, const PyLongObject *b)
     return (a->long_value.lv_tag & SIGN_MASK) == (b->long_value.lv_tag & SIGN_MASK);
 }
 
+/* Initialize a freshly-allocated int.
+ *
+ * Fast operations for single digit integers (including zero)
+ * assume that there is always at least one digit present.
+ * The digit has to be initialized explicitly to avoid
+ * use-of-uninitialized-value.
+ */
+static inline void
+_PyLong_Init(PyLongObject *op)
+{
+    assert(PyLong_Check(op));
+    op->long_value.lv_tag = 1; /* non-immortal zero */
+    op->long_value.ob_digit[0] = 0;
+}
+
 #define TAG_FROM_SIGN_AND_SIZE(sign, size) \
     ((uintptr_t)(1 - (sign)) | ((uintptr_t)(size) << NON_SIZE_BITS))
 
@@ -294,6 +309,7 @@ _PyLong_SetSignAndDigitCount(PyLongObject *op, int sign, Py_ssize_t size)
     assert(size >= 0);
     assert(-1 <= sign && sign <= 1);
     assert(sign != 0 || size == 0);
+    assert(!_PyLong_IsSmallInt(op));
     op->long_value.lv_tag = TAG_FROM_SIGN_AND_SIZE(sign, size);
 }
 
@@ -301,6 +317,7 @@ static inline void
 _PyLong_SetDigitCount(PyLongObject *op, Py_ssize_t size)
 {
     assert(size >= 0);
+    assert(!_PyLong_IsSmallInt(op));
     op->long_value.lv_tag = (((size_t)size) << NON_SIZE_BITS) | (op->long_value.lv_tag & SIGN_MASK);
 }
 
