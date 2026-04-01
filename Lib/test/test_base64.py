@@ -216,11 +216,9 @@ class BaseXYTestCase(unittest.TestCase):
         eq(func(data, wrapcol=80), expected)
         eq(func(b'', wrapcol=0), func(b''))
         eq(func(b'', wrapcol=1), func(b''))
-        if func is not base64.b16encode:
-            eq(func(data, wrapcol=sys.maxsize), expected)
+        eq(func(data, wrapcol=sys.maxsize), expected)
         if check_impl_detail():
-            if func is not base64.b16encode:
-                eq(func(data, wrapcol=sys.maxsize*2), expected)
+            eq(func(data, wrapcol=sys.maxsize*2), expected)
             with self.assertRaises(OverflowError):
                 func(data, wrapcol=2**1000)
         with self.assertRaises(ValueError):
