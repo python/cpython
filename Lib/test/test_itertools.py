@@ -757,7 +757,7 @@ class TestBasicOps(unittest.TestCase):
     def test_grouper_reentrant_eq_does_not_crash(self):
         # regression test for gh-146613
         grouper_iter = None
-        
+
         class Key:
             __hash__ = None
 
