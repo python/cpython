@@ -5216,11 +5216,12 @@ written in Python, such as a mail server's external command delivery program.
 
    .. versionchanged:: 3.13
       *env* parameter accepts ``None``.
+      ``os.POSIX_SPAWN_CLOSEFROM`` is available on platforms where
+      :c:func:`!posix_spawn_file_actions_addclosefrom_np` exists.
 
-   .. versionchanged:: 3.14
-      ``os.POSIX_SPAWN_CLOSEFROM`` and ``os.POSIX_SPAWN_CHDIR`` are available
-      on platforms where :c:func:`!posix_spawn_file_actions_addclosefrom_np`
-      and :c:func:`!posix_spawn_file_actions_addchdir_np` exist.
+   .. versionchanged:: 3.15
+      ``os.POSIX_SPAWN_CHDIR`` is available on platforms where
+      :c:func:`!posix_spawn_file_actions_addchdir_np` exist.
 
    .. availability:: Unix, not WASI, not Android, not iOS.
 
