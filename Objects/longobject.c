@@ -12,6 +12,7 @@
 #include "pycore_runtime.h"       // _PY_NSMALLPOSINTS
 #include "pycore_stackref.h"
 #include "pycore_structseq.h"     // _PyStructSequence_FiniBuiltin()
+#include "pycore_tuple.h"         // _PyTuple_FromPairSteal
 #include "pycore_unicodeobject.h" // _PyUnicode_Equal()
 
 #include <float.h>                // DBL_MANT_DIG
@@ -25,7 +26,7 @@ class int "PyObject *" "&PyLong_Type"
 
 #define medium_value(x) ((stwodigits)_PyLong_CompactValue(x))
 
-#define IS_SMALL_INT(ival) (-_PY_NSMALLNEGINTS <= (ival) && (ival) < _PY_NSMALLPOSINTS)
+#define IS_SMALL_INT(ival) _PY_IS_SMALL_INT(ival)
 #define IS_SMALL_UINT(ival) ((ival) < _PY_NSMALLPOSINTS)
 
 #define _MAX_STR_DIGITS_ERROR_FMT_TO_INT "Exceeds the limit (%d digits) for integer string conversion: value has %zd digits; use sys.set_int_max_str_digits() to increase the limit"
@@ -3118,11 +3119,11 @@ PyLong_FromString(const char *str, char **pend, int base)
     }
 
     /* Set sign and normalize */
-    if (sign < 0) {
-        _PyLong_FlipSign(z);
-    }
     long_normalize(z);
     z = maybe_small_long(z);
+    if (sign < 0) {
+        _PyLong_Negate(&z);
+    }
 
     if (pend != NULL) {
         *pend = (char *)str;
@@ -3622,21 +3623,11 @@ long_richcompare(PyObject *self, PyObject *other, int op)
     Py_RETURN_RICHCOMPARE(result, 0, op);
 }
 
-static inline int
-/// Return 1 if the object is one of the immortal small ints
-_long_is_small_int(PyObject *op)
-{
-    PyLongObject *long_object = (PyLongObject *)op;
-    int is_small_int = (long_object->long_value.lv_tag & IMMORTALITY_BIT_MASK) != 0;
-    assert((!is_small_int) || PyLong_CheckExact(op));
-    return is_small_int;
-}
-
 void
 _PyLong_ExactDealloc(PyObject *self)
 {
     assert(PyLong_CheckExact(self));
-    if (_long_is_small_int(self)) {
+    if (_PyLong_IsSmallInt((PyLongObject *)self)) {
         // See PEP 683, section Accidental De-Immortalizing for details
         _Py_SetImmortal(self);
         return;
@@ -3651,7 +3642,7 @@ _PyLong_ExactDealloc(PyObject *self)
 static void
 long_dealloc(PyObject *self)
 {
-    if (_long_is_small_int(self)) {
+    if (_PyLong_IsSmallInt((PyLongObject *)self)) {
         /* This should never get called, but we also don't want to SEGV if
          * we accidentally decref small Ints out of existence. Instead,
          * since small Ints are immortal, re-set the reference count.
@@ -4878,23 +4869,12 @@ static PyObject *
 long_divmod(PyObject *a, PyObject *b)
 {
     PyLongObject *div, *mod;
-    PyObject *z;
-
     CHECK_BINOP(a, b);
 
     if (l_divmod((PyLongObject*)a, (PyLongObject*)b, &div, &mod) < 0) {
         return NULL;
     }
-    z = PyTuple_New(2);
-    if (z != NULL) {
-        PyTuple_SET_ITEM(z, 0, (PyObject *) div);
-        PyTuple_SET_ITEM(z, 1, (PyObject *) mod);
-    }
-    else {
-        Py_DECREF(div);
-        Py_DECREF(mod);
-    }
-    return z;
+    return _PyTuple_FromPairSteal((PyObject *)div, (PyObject *)mod);
 }
 
 
@@ -5589,45 +5569,44 @@ long_bitwise(PyLongObject *a,
     Py_ssize_t size_a, size_b, size_z, i;
     PyLongObject *z;
 
+    PyLongObject *new_a = NULL;
+    PyLongObject *new_b = NULL;
+
     /* Bitwise operations for negative numbers operate as though
        on a two's complement representation.  So convert arguments
        from sign-magnitude to two's complement, and convert the
        result back to sign-magnitude at the end. */
 
-    /* If a is negative, replace it by its two's complement. */
     size_a = _PyLong_DigitCount(a);
+    size_b = _PyLong_DigitCount(b);
+    /* Swap a and b if necessary to ensure size_a >= size_b. */
+    if (size_a < size_b) {
+        z = a; a = b; b = z;
+        size_z = size_a; size_a = size_b; size_b = size_z;
+    }
+
+    /* If a is negative, replace it by its two's complement. */
     nega = _PyLong_IsNegative(a);
     if (nega) {
         z = long_alloc(size_a);
         if (z == NULL)
             return NULL;
         v_complement(z->long_value.ob_digit, a->long_value.ob_digit, size_a);
+        new_a = z; // reference to decrement instead of a itself
         a = z;
     }
-    else
-        /* Keep reference count consistent. */
-        Py_INCREF(a);
 
     /* Same for b. */
-    size_b = _PyLong_DigitCount(b);
     negb = _PyLong_IsNegative(b);
     if (negb) {
         z = long_alloc(size_b);
         if (z == NULL) {
-            Py_DECREF(a);
+            Py_XDECREF(new_a);
             return NULL;
         }
         v_complement(z->long_value.ob_digit, b->long_value.ob_digit, size_b);
+        new_b = z; // reference to decrement instead of b itself
         b = z;
-    }
-    else
-        Py_INCREF(b);
-
-    /* Swap a and b if necessary to ensure size_a >= size_b. */
-    if (size_a < size_b) {
-        z = a; a = b; b = z;
-        size_z = size_a; size_a = size_b; size_b = size_z;
-        negz = nega; nega = negb; negb = negz;
     }
 
     /* JRH: The original logic here was to allocate the result value (z)
@@ -5658,8 +5637,8 @@ long_bitwise(PyLongObject *a,
        the final two's complement of z doesn't overflow. */
     z = long_alloc(size_z + negz);
     if (z == NULL) {
-        Py_DECREF(a);
-        Py_DECREF(b);
+        Py_XDECREF(new_a);
+        Py_XDECREF(new_b);
         return NULL;
     }
 
@@ -5696,8 +5675,8 @@ long_bitwise(PyLongObject *a,
         v_complement(z->long_value.ob_digit, z->long_value.ob_digit, size_z+1);
     }
 
-    Py_DECREF(a);
-    Py_DECREF(b);
+    Py_XDECREF(new_a);
+    Py_XDECREF(new_b);
     return (PyObject *)maybe_small_long(long_normalize(z));
 }
 
@@ -6119,7 +6098,7 @@ PyObject *
 _PyLong_DivmodNear(PyObject *a, PyObject *b)
 {
     PyLongObject *quo = NULL, *rem = NULL;
-    PyObject *twice_rem, *result, *temp;
+    PyObject *twice_rem, *temp;
     int quo_is_odd, quo_is_neg;
     Py_ssize_t cmp;
 
@@ -6185,14 +6164,7 @@ _PyLong_DivmodNear(PyObject *a, PyObject *b)
             goto error;
     }
 
-    result = PyTuple_New(2);
-    if (result == NULL)
-        goto error;
-
-    /* PyTuple_SET_ITEM steals references */
-    PyTuple_SET_ITEM(result, 0, (PyObject *)quo);
-    PyTuple_SET_ITEM(result, 1, (PyObject *)rem);
-    return result;
+    return _PyTuple_FromPairSteal((PyObject *)quo, (PyObject *)rem);
 
   error:
     Py_XDECREF(quo);
@@ -6369,14 +6341,11 @@ static PyObject *
 int_as_integer_ratio_impl(PyObject *self)
 /*[clinic end generated code: output=e60803ae1cc8621a input=384ff1766634bec2]*/
 {
-    PyObject *ratio_tuple;
     PyObject *numerator = long_long(self);
     if (numerator == NULL) {
         return NULL;
     }
-    ratio_tuple = PyTuple_Pack(2, numerator, _PyLong_GetOne());
-    Py_DECREF(numerator);
-    return ratio_tuple;
+    return _PyTuple_FromPairSteal(numerator, _PyLong_GetOne());
 }
 
 /*[clinic input]
@@ -6476,14 +6445,33 @@ int_from_bytes_impl(PyTypeObject *type, PyObject *bytes_obj,
         return NULL;
     }
 
-    bytes = PyObject_Bytes(bytes_obj);
-    if (bytes == NULL)
-        return NULL;
-
-    long_obj = _PyLong_FromByteArray(
-        (unsigned char *)PyBytes_AS_STRING(bytes), Py_SIZE(bytes),
-        little_endian, is_signed);
-    Py_DECREF(bytes);
+    /* Fast-path exact bytes. */
+    if (PyBytes_CheckExact(bytes_obj)) {
+        long_obj = _PyLong_FromByteArray(
+            (unsigned char *)PyBytes_AS_STRING(bytes_obj), Py_SIZE(bytes_obj),
+            little_endian, is_signed);
+    }
+    /* Use buffer protocol to avoid copies. */
+    else if (PyObject_CheckBuffer(bytes_obj)) {
+        Py_buffer view;
+        if (PyObject_GetBuffer(bytes_obj, &view, PyBUF_SIMPLE) != 0) {
+            return NULL;
+        }
+        long_obj = _PyLong_FromByteArray(view.buf, view.len, little_endian,
+            is_signed);
+        PyBuffer_Release(&view);
+    }
+    else {
+        /* fallback: Construct a bytes then convert. */
+        bytes = PyObject_Bytes(bytes_obj);
+        if (bytes == NULL) {
+            return NULL;
+        }
+        long_obj = _PyLong_FromByteArray(
+            (unsigned char *)PyBytes_AS_STRING(bytes), Py_SIZE(bytes),
+            little_endian, is_signed);
+        Py_DECREF(bytes);
+    }
 
     if (long_obj != NULL && type != &PyLong_Type) {
         Py_SETREF(long_obj, PyObject_CallOneArg((PyObject *)type, long_obj));

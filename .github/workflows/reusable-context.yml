@@ -21,8 +21,11 @@ on:  # yamllint disable-line rule:truthy
         description: Whether to run the Android tests
         value: ${{ jobs.compute-changes.outputs.run-android }}  # bool
       run-ci-fuzz:
-        description: Whether to run the CIFuzz job
+        description: Whether to run the CIFuzz job for 'cpython' fuzzer
         value: ${{ jobs.compute-changes.outputs.run-ci-fuzz }}  # bool
+      run-ci-fuzz-stdlib:
+        description: Whether to run the CIFuzz job for 'python3-libraries' fuzzer
+        value: ${{ jobs.compute-changes.outputs.run-ci-fuzz-stdlib }}  # bool
       run-docs:
         description: Whether to build the docs
         value: ${{ jobs.compute-changes.outputs.run-docs }}  # bool
@@ -38,6 +41,9 @@ on:  # yamllint disable-line rule:truthy
       run-ubuntu:
         description: Whether to run the Ubuntu tests
         value: ${{ jobs.compute-changes.outputs.run-ubuntu }}  # bool
+      run-emscripten:
+        description: Whether to run the Emscripten tests
+        value: ${{ jobs.compute-changes.outputs.run-emscripten }}  # bool
       run-wasi:
         description: Whether to run the WASI tests
         value: ${{ jobs.compute-changes.outputs.run-wasi }}  # bool
@@ -56,24 +62,26 @@ jobs:
     outputs:
       run-android: ${{ steps.changes.outputs.run-android }}
       run-ci-fuzz: ${{ steps.changes.outputs.run-ci-fuzz }}
+      run-ci-fuzz-stdlib: ${{ steps.changes.outputs.run-ci-fuzz-stdlib }}
       run-docs: ${{ steps.changes.outputs.run-docs }}
       run-ios: ${{ steps.changes.outputs.run-ios }}
       run-macos: ${{ steps.changes.outputs.run-macos }}
       run-tests: ${{ steps.changes.outputs.run-tests }}
       run-ubuntu: ${{ steps.changes.outputs.run-ubuntu }}
+      run-emscripten: ${{ steps.changes.outputs.run-emscripten }}
       run-wasi: ${{ steps.changes.outputs.run-wasi }}
       run-windows-msi: ${{ steps.changes.outputs.run-windows-msi }}
       run-windows-tests: ${{ steps.changes.outputs.run-windows-tests }}
     steps:
     - name: Set up Python
-      uses: actions/setup-python@v5
+      uses: actions/setup-python@a309ff8b426b58ec0e2a45f0f869d46889d02405 # v6.2.0
       with:
         python-version: "3"
 
     - run: >-
         echo '${{ github.event_name }}'
 
-    - uses: actions/checkout@v4
+    - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
       with:
         persist-credentials: false
         ref: >-

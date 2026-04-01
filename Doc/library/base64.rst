@@ -51,7 +51,7 @@ The :rfc:`4648` encodings are suitable for encoding binary data so that it can b
 safely sent by email, used as parts of URLs, or included as part of an HTTP
 POST request.
 
-.. function:: b64encode(s, altchars=None)
+.. function:: b64encode(s, altchars=None, *, wrapcol=0)
 
    Encode the :term:`bytes-like object` *s* using Base64 and return the encoded
    :class:`bytes`.
@@ -61,11 +61,19 @@ POST request.
    This allows an application to e.g. generate URL or filesystem safe Base64
    strings.  The default is ``None``, for which the standard Base64 alphabet is used.
 
+   If *wrapcol* is non-zero, insert a newline (``b'\n'``) character
+   after at most every *wrapcol* characters.
+   If *wrapcol* is zero (default), do not insert any newlines.
+
    May assert or raise a :exc:`ValueError` if the length of *altchars* is not 2.  Raises a
    :exc:`TypeError` if *altchars* is not a :term:`bytes-like object`.
 
+   .. versionchanged:: 3.15
+      Added the *wrapcol* parameter.
+
 
 .. function:: b64decode(s, altchars=None, validate=False)
+              b64decode(s, altchars=None, validate=True, *, ignorechars)
 
    Decode the Base64 encoded :term:`bytes-like object` or ASCII string
    *s* and return the decoded :class:`bytes`.
@@ -77,15 +85,33 @@ POST request.
    A :exc:`binascii.Error` exception is raised
    if *s* is incorrectly padded.
 
-   If *validate* is ``False`` (the default), characters that are neither
-   in the normal base-64 alphabet nor the alternative alphabet are
-   discarded prior to the padding check.  If *validate* is ``True``,
-   these non-alphabet characters in the input result in a
-   :exc:`binascii.Error`.
+   If *ignorechars* is specified, it should be a :term:`bytes-like object`
+   containing characters to ignore from the input when *validate* is true.
+   If *ignorechars* contains the pad character ``'='``,  the pad characters
+   presented before the end of the encoded data and the excess pad characters
+   will be ignored.
+   The default value of *validate* is ``True`` if *ignorechars* is specified,
+   ``False`` otherwise.
+
+   If *validate* is false, characters that are neither
+   in the normal base-64 alphabet nor (if *ignorechars* is not specified)
+   the alternative alphabet are
+   discarded prior to the padding check, but the ``+`` and ``/`` characters
+   keep their meaning if they are not in *altchars* (they will be discarded
+   in future Python versions).
+
+   If *validate* is true, these non-alphabet characters in the input
+   result in a :exc:`binascii.Error`.
 
    For more information about the strict base64 check, see :func:`binascii.a2b_base64`
 
-   May assert or raise a :exc:`ValueError` if the length of *altchars* is not 2.
+   .. versionchanged:: 3.15
+      Added the *ignorechars* parameter.
+
+   .. deprecated:: 3.15
+      Accepting the ``+`` and ``/`` characters with an alternative alphabet
+      is now deprecated.
+
 
 .. function:: standard_b64encode(s)
 
@@ -116,14 +142,24 @@ POST request.
    ``/`` in the standard Base64 alphabet, and return the decoded
    :class:`bytes`.
 
+   .. deprecated:: 3.15
+      Accepting the ``+`` and ``/`` characters is now deprecated.
 
-.. function:: b32encode(s)
+
+.. function:: b32encode(s, *, wrapcol=0)
 
    Encode the :term:`bytes-like object` *s* using Base32 and return the
    encoded :class:`bytes`.
 
+   If *wrapcol* is non-zero, insert a newline (``b'\n'``) character
+   after at most every *wrapcol* characters.
+   If *wrapcol* is zero (default), do not add any newlines.
 
-.. function:: b32decode(s, casefold=False, map01=None)
+   .. versionchanged:: next
+      Added the *wrapcol* parameter.
+
+
+.. function:: b32decode(s, casefold=False, map01=None, *, ignorechars=b'')
 
    Decode the Base32 encoded :term:`bytes-like object` or ASCII string *s* and
    return the decoded :class:`bytes`.
@@ -139,20 +175,29 @@ POST request.
    digit 0 is always mapped to the letter O).  For security purposes the default is
    ``None``, so that 0 and 1 are not allowed in the input.
 
+   *ignorechars* should be a :term:`bytes-like object` containing characters
+   to ignore from the input.
+
    A :exc:`binascii.Error` is raised if *s* is
    incorrectly padded or if there are non-alphabet characters present in the
    input.
 
+   .. versionchanged:: next
+      Added the *ignorechars* parameter.
 
-.. function:: b32hexencode(s)
+
+.. function:: b32hexencode(s, *, wrapcol=0)
 
    Similar to :func:`b32encode` but uses the Extended Hex Alphabet, as defined in
    :rfc:`4648`.
 
    .. versionadded:: 3.10
 
+   .. versionchanged:: next
+      Added the *wrapcol* parameter.
 
-.. function:: b32hexdecode(s, casefold=False)
+
+.. function:: b32hexdecode(s, casefold=False, *, ignorechars=b'')
 
    Similar to :func:`b32decode` but uses the Extended Hex Alphabet, as defined in
    :rfc:`4648`.
@@ -164,14 +209,24 @@ POST request.
 
    .. versionadded:: 3.10
 
+   .. versionchanged:: next
+      Added the *ignorechars* parameter.
 
-.. function:: b16encode(s)
+
+.. function:: b16encode(s, *, wrapcol=0)
 
    Encode the :term:`bytes-like object` *s* using Base16 and return the
    encoded :class:`bytes`.
 
+   If *wrapcol* is non-zero, insert a newline (``b'\n'``) character
+   after at most every *wrapcol* characters.
+   If *wrapcol* is zero (default), do not add any newlines.
 
-.. function:: b16decode(s, casefold=False)
+   .. versionchanged:: next
+      Added the *wrapcol* parameter.
+
+
+.. function:: b16decode(s, casefold=False, *, ignorechars=b'')
 
    Decode the Base16 encoded :term:`bytes-like object` or ASCII string *s* and
    return the decoded :class:`bytes`.
@@ -180,9 +235,16 @@ POST request.
    lowercase alphabet is acceptable as input.  For security purposes, the default
    is ``False``.
 
+   *ignorechars* should be a :term:`bytes-like object` containing characters
+   to ignore from the input.
+
    A :exc:`binascii.Error` is raised if *s* is
    incorrectly padded or if there are non-alphabet characters present in the
    input.
+
+   .. versionchanged:: next
+      Added the *ignorechars* parameter.
+
 
 .. _base64-base-85:
 
@@ -214,12 +276,13 @@ Refer to the documentation of the individual functions for more information.
    instead of 4 consecutive spaces (ASCII 0x20) as supported by 'btoa'. This
    feature is not supported by the "standard" Ascii85 encoding.
 
-   *wrapcol* controls whether the output should have newline (``b'\n'``)
-   characters added to it. If this is non-zero, each output line will be
-   at most this many characters long, excluding the trailing newline.
+   If *wrapcol* is non-zero, insert a newline (``b'\n'``) character
+   after at most every *wrapcol* characters.
+   If *wrapcol* is zero (default), do not insert any newlines.
 
-   *pad* controls whether the input is padded to a multiple of 4
-   before encoding. Note that the ``btoa`` implementation always pads.
+   If *pad* is true, the input is padded with ``b'\0'`` so its length is a
+   multiple of 4 bytes before encoding.
+   Note that the ``btoa`` implementation always pads.
 
    *adobe* controls whether the encoded byte sequence is framed with ``<~``
    and ``~>``, which is used by the Adobe implementation.
@@ -239,15 +302,15 @@ Refer to the documentation of the individual functions for more information.
    *adobe* controls whether the input sequence is in Adobe Ascii85 format
    (i.e. is framed with <~ and ~>).
 
-   *ignorechars* should be a :term:`bytes-like object` or ASCII string
-   containing characters to ignore
-   from the input. This should only contain whitespace characters, and by
+   *ignorechars* should be a :term:`bytes-like object` containing characters
+   to ignore from the input.
+   This should only contain whitespace characters, and by
    default contains all whitespace characters in ASCII.
 
    .. versionadded:: 3.4
 
 
-.. function:: b85encode(b, pad=False)
+.. function:: b85encode(b, pad=False, *, wrapcol=0)
 
    Encode the :term:`bytes-like object` *b* using base85 (as used in e.g.
    git-style binary diffs) and return the encoded :class:`bytes`.
@@ -255,19 +318,32 @@ Refer to the documentation of the individual functions for more information.
    If *pad* is true, the input is padded with ``b'\0'`` so its length is a
    multiple of 4 bytes before encoding.
 
+   If *wrapcol* is non-zero, insert a newline (``b'\n'``) character
+   after at most every *wrapcol* characters.
+   If *wrapcol* is zero (default), do not add any newlines.
+
    .. versionadded:: 3.4
 
+   .. versionchanged:: next
+      Added the *wrapcol* parameter.
 
-.. function:: b85decode(b)
+
+.. function:: b85decode(b, *, ignorechars=b'')
 
    Decode the base85-encoded :term:`bytes-like object` or ASCII string *b* and
    return the decoded :class:`bytes`.  Padding is implicitly removed, if
    necessary.
 
+   *ignorechars* should be a :term:`bytes-like object` containing characters
+   to ignore from the input.
+
    .. versionadded:: 3.4
 
+   .. versionchanged:: next
+      Added the *ignorechars* parameter.
 
-.. function:: z85encode(s, pad=False)
+
+.. function:: z85encode(s, pad=False, *, wrapcol=0)
 
    Encode the :term:`bytes-like object` *s* using Z85 (as used in ZeroMQ)
    and return the encoded :class:`bytes`.  See `Z85  specification
@@ -276,19 +352,32 @@ Refer to the documentation of the individual functions for more information.
    If *pad* is true, the input is padded with ``b'\0'`` so its length is a
    multiple of 4 bytes before encoding.
 
+   If *wrapcol* is non-zero, insert a newline (``b'\n'``) character
+   after at most every *wrapcol* characters.
+   If *wrapcol* is zero (default), do not add any newlines.
+
    .. versionadded:: 3.13
 
-   .. versionchanged:: next
+   .. versionchanged:: 3.15
       The *pad* parameter was added.
 
+   .. versionchanged:: next
+      Added the *wrapcol* parameter.
 
-.. function:: z85decode(s)
+
+.. function:: z85decode(s, *, ignorechars=b'')
 
    Decode the Z85-encoded :term:`bytes-like object` or ASCII string *s* and
    return the decoded :class:`bytes`.  See `Z85  specification
    <https://rfc.zeromq.org/spec/32/>`_ for more information.
 
+   *ignorechars* should be a :term:`bytes-like object` containing characters
+   to ignore from the input.
+
    .. versionadded:: 3.13
+
+   .. versionchanged:: next
+      Added the *ignorechars* parameter.
 
 
 .. _base64-legacy:
