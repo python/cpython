@@ -313,7 +313,7 @@ _Py_get_machine_stack_pointer(void) {
 #if !defined(_MSC_VER) && defined(_M_ARM64)
     result = __getReg(31);
 #elif defined(_MSC_VER) && defined(_M_X64)
-    result = _AddressOfReturnAddress();
+    result = (uintptr_t)_AddressOfReturnAddress();
 #elif defined(__aarch64__)
     __asm__ ("mov %0, sp" : "=r" (result));
 #elif defined(__x86_64__)
