@@ -657,15 +657,27 @@ base64
 * Added the *pad* parameter in :func:`~base64.z85encode`.
   (Contributed by Hauke Dämpfling in :gh:`143103`.)
 
-* Added the *wrapcol* parameter in :func:`~base64.b64encode`.
-  (Contributed by Serhiy Storchaka in :gh:`143214`.)
+* Added the *wrapcol* parameter in :func:`~base64.b16encode`,
+  :func:`~base64.b32encode`, :func:`~base64.b32hexencode`,
+  :func:`~base64.b64encode`, :func:`~base64.b85encode`, and
+  :func:`~base64.z85encode`.
+  (Contributed by Serhiy Storchaka in :gh:`143214` and :gh:`146431`.)
 
-* Added the *ignorechars* parameter in :func:`~base64.b64decode`.
-  (Contributed by Serhiy Storchaka in :gh:`144001`.)
+* Added the *ignorechars* parameter in :func:`~base64.b16decode`,
+  :func:`~base64.b32decode`,  :func:`~base64.b32hexdecode`,
+  :func:`~base64.b64decode`, :func:`~base64.b85decode`, and
+  :func:`~base64.z85decode`.
+  (Contributed by Serhiy Storchaka in :gh:`144001` and :gh:`146431`.)
 
 
 binascii
 --------
+
+* Added functions for Base32 encoding:
+
+  - :func:`~binascii.b2a_base32` and :func:`~binascii.a2b_base32`
+
+  (Contributed by James Seo in :gh:`146192`.)
 
 * Added functions for Ascii85, Base85, and Z85 encoding:
 
@@ -681,14 +693,9 @@ binascii
   :func:`~binascii.a2b_base64`.
   (Contributed by Serhiy Storchaka in :gh:`145980`.)
 
-* Added the *ignorechars* parameter in :func:`~binascii.a2b_base64`.
-  (Contributed by Serhiy Storchaka in :gh:`144001`.)
-
-* Added functions for Base32 encoding:
-
-  - :func:`~binascii.b2a_base32` and :func:`~binascii.a2b_base32`
-
-  (Contributed by James Seo in :gh:`146192`.)
+* Added the *ignorechars* parameter in :func:`~binascii.a2b_hex`,
+  :func:`~binascii.unhexlify`, and :func:`~binascii.a2b_base64`.
+  (Contributed by Serhiy Storchaka in :gh:`144001` and :gh:`146431`.)
 
 
 calendar

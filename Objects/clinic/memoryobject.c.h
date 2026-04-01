@@ -6,6 +6,7 @@ preserve
 #  include "pycore_gc.h"          // PyGC_Head
 #  include "pycore_runtime.h"     // _Py_ID()
 #endif
+#include "pycore_abstract.h"      // _PyNumber_Index()
 #include "pycore_modsupport.h"    // _PyArg_UnpackKeywords()
 
 PyDoc_STRVAR(memoryview__doc__,
@@ -366,7 +367,7 @@ PyDoc_STRVAR(memoryview_hex__doc__,
 
 static PyObject *
 memoryview_hex_impl(PyMemoryViewObject *self, PyObject *sep,
-                    int bytes_per_sep);
+                    Py_ssize_t bytes_per_sep);
 
 static PyObject *
 memoryview_hex(PyObject *self, PyObject *const *args, Py_ssize_t nargs, PyObject *kwnames)
@@ -402,7 +403,7 @@ memoryview_hex(PyObject *self, PyObject *const *args, Py_ssize_t nargs, PyObject
     PyObject *argsbuf[2];
     Py_ssize_t noptargs = nargs + (kwnames ? PyTuple_GET_SIZE(kwnames) : 0) - 0;
     PyObject *sep = NULL;
-    int bytes_per_sep = 1;
+    Py_ssize_t bytes_per_sep = 1;
 
     args = _PyArg_UnpackKeywords(args, nargs, NULL, kwnames, &_parser,
             /*minpos*/ 0, /*maxpos*/ 2, /*minkw*/ 0, /*varpos*/ 0, argsbuf);
@@ -418,9 +419,17 @@ memoryview_hex(PyObject *self, PyObject *const *args, Py_ssize_t nargs, PyObject
             goto skip_optional_pos;
         }
     }
-    bytes_per_sep = PyLong_AsInt(args[1]);
-    if (bytes_per_sep == -1 && PyErr_Occurred()) {
-        goto exit;
+    {
+        Py_ssize_t ival = -1;
+        PyObject *iobj = _PyNumber_Index(args[1]);
+        if (iobj != NULL) {
+            ival = PyLong_AsSsize_t(iobj);
+            Py_DECREF(iobj);
+        }
+        if (ival == -1 && PyErr_Occurred()) {
+            goto exit;
+        }
+        bytes_per_sep = ival;
     }
 skip_optional_pos:
     return_value = memoryview_hex_impl((PyMemoryViewObject *)self, sep, bytes_per_sep);
@@ -496,4 +505,4 @@ skip_optional:
 exit:
     return return_value;
 }
-/*[clinic end generated code: output=154f4c04263ccb24 input=a9049054013a1b77]*/
+/*[clinic end generated code: output=348b6ddb98a1f412 input=a9049054013a1b77]*/

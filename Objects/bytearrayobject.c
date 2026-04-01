@@ -2640,7 +2640,7 @@ bytearray.hex
 
     sep: object = NULL
         An optional single character or byte to separate hex bytes.
-    bytes_per_sep: int = 1
+    bytes_per_sep: Py_ssize_t = 1
         How many bytes between separators.  Positive values count from the
         right, negative values count from the left.
 
@@ -2659,8 +2659,9 @@ Example:
 [clinic start generated code]*/
 
 static PyObject *
-bytearray_hex_impl(PyByteArrayObject *self, PyObject *sep, int bytes_per_sep)
-/*[clinic end generated code: output=29c4e5ef72c565a0 input=7784107de7048873]*/
+bytearray_hex_impl(PyByteArrayObject *self, PyObject *sep,
+                   Py_ssize_t bytes_per_sep)
+/*[clinic end generated code: output=c9563921aff1262b input=d2b23ef057cfcad5]*/
 {
     char* argbuf = PyByteArray_AS_STRING(self);
     Py_ssize_t arglen = PyByteArray_GET_SIZE(self);
