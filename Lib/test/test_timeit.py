@@ -414,7 +414,7 @@ class TestTimeitColor(unittest.TestCase):
         self.assertEqual(
             s,
             "1 loop, best of 5: "
-            f"{t.best}5.5 sec {t.reset}"
+            f"{t.best}5.5 sec{t.reset} "
             f"{t.per_loop}per loop{t.reset}\n",
         )
 
@@ -427,7 +427,7 @@ class TestTimeitColor(unittest.TestCase):
             f"1 loop {t.arrow}-> {t.timing}1 secs{t.reset}\n\n"
             "raw times: "
             f"{t.timing}1 sec, 1 sec, 1 sec, 1 sec, 1 sec{t.reset}\n\n"
-            f"1 loop, best of 5: {t.best}1 sec {t.reset}"
+            f"1 loop, best of 5: {t.best}1 sec{t.reset} "
             f"{t.per_loop}per loop{t.reset}\n",
         )
 
