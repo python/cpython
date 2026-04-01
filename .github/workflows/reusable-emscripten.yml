@@ -12,7 +12,7 @@ jobs:
     runs-on: ubuntu-24.04
     timeout-minutes: 40
     steps:
-    - uses: actions/checkout@v6
+    - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
       with:
         persist-credentials: false
     - name: "Read Emscripten config"
@@ -38,18 +38,18 @@ jobs:
         with open(os.environ["GITHUB_ENV"], "a") as f:
             f.write(f"EMSDK_CACHE={emsdk_cache}\n")
     - name: "Install Node.js"
-      uses: actions/setup-node@v6
+      uses: actions/setup-node@53b83947a5a98c8d113130e565377fae1a50d02f # v6.3.0
       with:
         node-version: ${{ steps.emscripten-config.outputs.node-version }}
     - name: "Cache Emscripten SDK"
       id: emsdk-cache
-      uses: actions/cache@v5
+      uses: actions/cache@668228422ae6a00e4ad889ee87cd7109ec5666a7 # v5.0.4
       with:
         path: ${{ env.EMSDK_CACHE }}
         key: emsdk-${{ steps.emscripten-config.outputs.emscripten-version }}-${{ steps.emscripten-config.outputs.deps-hash }}
         restore-keys: emsdk-${{ steps.emscripten-config.outputs.emscripten-version }}
     - name: "Install Python"
-      uses: actions/setup-python@v6
+      uses: actions/setup-python@a309ff8b426b58ec0e2a45f0f869d46889d02405 # v6.2.0
       with:
         python-version: '3.x'
     - name: "Runner image version"
