@@ -291,7 +291,7 @@ static inline void
 _PyLong_InitTag(PyLongObject *op)
 {
     assert(PyLong_Check(op));
-    op->long_value.lv_tag = 1; /* non-immortal zero */
+    op->long_value.lv_tag = SIGN_ZERO; /* non-immortal zero */
 }
 
 #define TAG_FROM_SIGN_AND_SIZE(sign, size) \
