@@ -76,40 +76,28 @@ jobs:
           # Wait briefly for the release to be fully created
           sleep 5
 
-          # Download the standalone tarball asset
-          ASSET_URL=$(gh release view "$RELEASE_TAG" --json assets \
-            --jq '.assets[] | select(.name | test("standalone.*\\.tar\\.bz2$")) | .url' \
-            | head -1)
-
-          if [[ -z "$ASSET_URL" ]]; then
-            echo "::warning::No standalone tarball found in release $RELEASE_TAG"
-            echo "Available assets:"
-            gh release view "$RELEASE_TAG" --json assets --jq '.assets[].name'
-            exit 0
-          fi
-
-          ASSET_NAME=$(gh release view "$RELEASE_TAG" --json assets \
-            --jq '.assets[] | select(.name | test("standalone.*\\.tar\\.bz2$")) | .name' \
-            | head -1)
-
-          echo "Downloading: $ASSET_NAME"
-          gh release download "$RELEASE_TAG" --pattern "*standalone*.tar.bz2" --dir release-download
+          # Download standalone tarballs (exclude buildroot variant)
+          gh release download "$RELEASE_TAG" --pattern "*standalone*.tar.bz2" --dir release-download || true
           ls -la release-download/
 
       - name: Create Windows zip
         run: |
           set -euo pipefail
-          TARBALL=$(find release-download -name "*standalone*.tar.bz2" | head -1)
+
+          # Find the main standalone tarball (not buildroot)
+          TARBALL=$(find release-download -name "*standalone*.tar.bz2" ! -name "*buildroot*" | head -1)
           if [[ -z "$TARBALL" ]]; then
-            echo "::warning::No standalone tarball to process"
+            echo "::warning::No standalone tarball found (excluding buildroot)"
+            ls release-download/ 2>/dev/null || true
             exit 0
           fi
+          echo "Using tarball: $TARBALL"
 
           mkdir -p extract windows-zip
           tar -xjf "$TARBALL" -C extract
 
-          # Find the python binary (may be named python3.12 or python.elf)
-          PYTHON_ELF=$(find extract -name "python3.12" -type f | head -1)
+          # Find the python binary — it's at sysroot/bin/python3.12
+          PYTHON_ELF=$(find extract -path "*/bin/python3.12" -type f | head -1)
           if [[ -z "$PYTHON_ELF" ]]; then
             PYTHON_ELF=$(find extract -name "python.elf" -type f | head -1)
           fi
@@ -119,7 +107,8 @@ jobs:
 
           if [[ -z "$PYTHON_ELF" ]]; then
             echo "::warning::Could not find python binary in standalone tarball"
-            find extract -type f | head -20
+            echo "Files in tarball:"
+            find extract -type f | head -20 || true
             exit 0
           fi
 
