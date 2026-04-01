@@ -908,5 +908,342 @@ class CommandLineTests(unittest.TestCase):
         self.assertEqual(output, excepted_output)
 
 
+class SiteTomlTests(unittest.TestCase):
+    """Tests for .site.toml file processing."""
+
+    def setUp(self):
+        self.sys_path = sys.path[:]
+        self.tmpdir = self.sitedir = tempfile.mkdtemp()
+        self.addCleanup(shutil.rmtree, self.tmpdir)
+
+    def tearDown(self):
+        sys.path[:] = self.sys_path
+
+    def _make_site_toml(self, content, name='testpkg'):
+        """Write a <name>.site.toml and return its name."""
+        basename = name + '.site.toml'
+        filepath = os.path.join(self.tmpdir, basename)
+        with open(filepath, 'w', encoding='utf-8') as f:
+            f.write(content)
+        return basename
+
+    def _make_pth(self, content, name='testpkg'):
+        """Write a <name>.pth file and return its name."""
+        basename = name + '.pth'
+        filepath = os.path.join(self.tmpdir, basename)
+        with open(filepath, 'w', encoding='utf-8') as f:
+            f.write(content)
+        return basename
+
+    # --- _read_site_toml tests ---
+
+    def test_read_site_toml_basic(self):
+        # Valid .site.toml with all sections.
+        subdir = os.path.join(self.tmpdir, 'subdir')
+        os.mkdir(subdir)
+        name = self._make_site_toml("""\
+[metadata]
+schema_version = 1
+package = "testpkg"
+
+[paths]
+dirs = ["subdir"]
+
+[entrypoints]
+init = ["os"]
+""")
+        tomldata = site._read_site_toml(self.sitedir, name)
+        self.assertIsNotNone(tomldata)
+        self.assertEqual(tomldata.filename, name)
+        self.assertEqual(tomldata.sitedir, self.sitedir)
+        self.assertEqual(tomldata.metadata, {
+            'schema_version': 1, 'package': 'testpkg'})
+        self.assertEqual(tomldata.dirs, ['subdir'])
+        self.assertEqual(tomldata.init, ['os'])
+
+    def test_read_site_toml_parse_error(self):
+        # Invalid pkg.site.toml content is skipped.
+        name = self._make_site_toml("not valid [[[toml")
+        tomldata = site._read_site_toml(self.sitedir, name)
+        self.assertIsNone(tomldata)
+
+    def test_read_site_toml_invalid_dirs_type(self):
+        # dirs must be a list of strings.
+        name = self._make_site_toml("""\
+[paths]
+dirs = "not_a_list"
+""")
+        tomldata = site._read_site_toml(self.sitedir, name)
+        self.assertEqual(tomldata.dirs, [])
+
+    def test_read_site_toml_invalid_init_type(self):
+        # init must be a list of strings
+        name = self._make_site_toml("""\
+[paths]
+dirs = ["subdir"]
+
+[entrypoints]
+init = 42
+""")
+        subdir = os.path.join(self.tmpdir, 'subdir')
+        os.mkdir(subdir)
+        tomldata = site._read_site_toml(self.sitedir, name)
+        self.assertIsNotNone(tomldata)
+        self.assertEqual(tomldata.dirs, ['subdir'])
+        self.assertEqual(tomldata.init, [])
+
+    def test_read_site_toml_empty_file(self):
+        # Empty .site.toml is a no-op.
+        name = self._make_site_toml("")
+        tomldata = site._read_site_toml(self.sitedir, name)
+        self.assertEqual(tomldata.metadata, [])
+        self.assertEqual(tomldata.dirs, [])
+        self.assertEqual(tomldata.init, [])
+
+    def test_read_site_toml_unknown_tables_ignored(self):
+        # Unknown tables should not cause errors.
+        name = self._make_site_toml("""\
+[metadata]
+schema_version = 1
+
+[unknown_section]
+key = "value"
+
+[entrypoints]
+init = ["os"]
+""")
+        tomldata = site._read_site_toml(self.sitedir, name)
+        self.assertIsNotNone(tomldata)
+        self.assertEqual(tomldata.metadata, {'schema_version': 1})
+        self.assertEqual(tomldata.init, ['os'])
+
+    def test_read_site_toml_nonexistent(self):
+        # Nonexistent file returns None.
+        tomldata = site._read_site_toml(self.tmpdir, 'nonexistent.site.toml')
+        self.assertIsNone(tomldata)
+
+    # --- Path processing tests ---
+
+    def test_process_paths_relative(self):
+        # Relative paths are joined with sitedir.
+        subdir = os.path.join(self.sitedir, 'mylib')
+        os.mkdir(subdir)
+        name = self._make_site_toml("""\
+[paths]
+dirs = ["mylib"]
+""")
+        known_paths = set()
+        tomldata = site._read_site_toml(self.sitedir, name)
+        site._process_site_toml_paths([tomldata], known_paths)
+        self.assertIn(subdir, sys.path)
+
+    def test_process_paths_absolute(self):
+        # Absolute paths are preserved as-is.
+        absdir = os.path.join(self.sitedir, 'abslib')
+        os.mkdir(absdir)
+        name = self._make_site_toml(
+            f'[paths]\ndirs = ["{absdir}"]\n')
+        known_paths = set()
+        tomldata = site._read_site_toml(self.sitedir, name)
+        site._process_site_toml_paths([tomldata], known_paths)
+        self.assertIn(absdir, sys.path)
+
+    def test_process_paths_sitedir_placeholder(self):
+        # The {sitedir} placeholder expands to the site-packages dir.
+        subdir = os.path.join(self.sitedir, 'extra')
+        os.mkdir(subdir)
+        name = self._make_site_toml("""\
+[paths]
+dirs = ["{sitedir}/extra"]
+""")
+        known_paths = set()
+        tomldata = site._read_site_toml(self.sitedir, name)
+        site._process_site_toml_paths([tomldata], known_paths)
+        self.assertIn(os.path.join(self.tmpdir, 'extra'), sys.path)
+
+    def test_process_paths_deduplication(self):
+        # Same path from two different files are only added once.
+        subdir = os.path.join(self.tmpdir, 'shared')
+        os.mkdir(subdir)
+        tomldata1 = site._SiteTOMLData(
+            'a.site.toml', self.tmpdir, [], ['shared'], [])
+        tomldata2 = site._SiteTOMLData(
+            'b.site.toml', self.tmpdir, [], ['shared'], [])
+        known_paths = set()
+        site._process_site_toml_paths([tomldata1, tomldata2], known_paths)
+        self.assertEqual(sys.path.count(subdir), 1)
+
+    def test_process_paths_nonexistent(self):
+        # Nonexistent directories are not added.
+        tomldata = site._SiteTOMLData(
+            'test.site.toml', self.tmpdir, [], ['nosuchdir'], [])
+        known_paths = set()
+        sys_path = sys.path[:]
+        site._process_site_toml_paths([tomldata], known_paths)
+        self.assertEqual(sys.path, sys_path)
+
+    # --- Entrypoint tests ---
+
+    def test_process_entrypoints_import_only(self):
+        # Import-only entrypoint (no callable).
+        mod_dir = os.path.join(self.sitedir, 'epmod')
+        os.mkdir(mod_dir)
+        init_file = os.path.join(mod_dir, '__init__.py')
+        with open(init_file, 'w') as f:
+            f.write("""\
+called = False
+def startup():
+    global called
+    called = True
+""")
+        sys.path.insert(0, self.sitedir)
+        self.addCleanup(sys.modules.pop, 'epmod', None)
+        tomldata = site._SiteTOMLData(
+            'test.site.toml', self.sitedir, [], [self.sitedir], ['epmod'])
+        site._process_site_toml_entrypoints([tomldata])
+        import epmod
+        self.assertFalse(epmod.called)
+
+    def test_process_entrypoints_with_callable(self):
+        # Entrypoint with callable is invoked.
+        #
+        # Create a module with a function that sets a flag.
+        mod_dir = os.path.join(self.sitedir, 'epmod')
+        os.mkdir(mod_dir)
+        init_file = os.path.join(mod_dir, '__init__.py')
+        with open(init_file, 'w') as f:
+            f.write("""\
+called = False
+def startup():
+    global called
+    called = True
+""")
+        sys.path.insert(0, self.sitedir)
+        self.addCleanup(sys.modules.pop, 'epmod', None)
+        tomldata = site._SiteTOMLData(
+            'test.site.toml', self.sitedir, [], [self.sitedir], ['epmod:startup'])
+        site._process_site_toml_entrypoints([tomldata])
+        import epmod
+        self.assertTrue(epmod.called)
+
+    def test_process_entrypoints_import_error(self):
+        # Import error prints traceback but continues.
+        tomldata = site._SiteTOMLData(
+            'test.site.toml', self.sitedir, [], self.sitedir,
+            ['nosuchmodule_xyz', 'os'])
+        with captured_stderr() as err:
+            site._process_site_toml_entrypoints([tomldata])
+        self.assertIn('nosuchmodule_xyz', err.getvalue())
+        self.assertIn('Traceback', err.getvalue())
+        # 'os' should still have been processed (no exception for it)
+
+    def test_process_entrypoints_callable_error(self):
+        # Callable that raises prints traceback but continues.
+        mod_dir = os.path.join(self.sitedir, 'badmod')
+        os.mkdir(mod_dir)
+        init_file = os.path.join(mod_dir, '__init__.py')
+        with open(init_file, 'w') as f:
+            f.write("""
+def fail():
+    raise RuntimeError("boom")
+""")
+        sys.path.insert(0, self.sitedir)
+        self.addCleanup(sys.modules.pop, 'badmod')
+        tomldata = site._SiteTOMLData(
+            'test.site.toml', self.tmpdir, None, None,
+            ['badmod:fail', 'os'])
+        with captured_stderr() as err:
+            site._process_site_toml_entrypoints([tomldata])
+        self.assertIn('RuntimeError', err.getvalue())
+        self.assertIn('boom', err.getvalue())
+
+    # --- addsitedir integration tests ---
+
+    def test_addsitedir_toml_supersedes_pth(self):
+        # When both foo.site.toml and foo.pth exist, only .toml is used.
+        #
+        # Start by creating two directories which will be the paths that both the foo.site.toml and
+        # foo.site.pth files will try to add respectively.
+        toml_dir = os.path.join(self.sitedir, 'tomlpath')
+        pth_dir = os.path.join(self.sitedir, 'pthpath')
+        os.mkdir(toml_dir)
+        os.mkdir(pth_dir)
+
+        self._make_site_toml("""\
+[paths]
+dirs = ["tomlpath"]
+""", name='foo')
+        self._make_pth("pthpath\n", name='foo')
+
+        site.addsitedir(self.sitedir, set())
+        self.assertIn(toml_dir, sys.path)
+        self.assertNotIn(pth_dir, sys.path)
+
+    def test_addsitedir_toml_and_pth_coexist(self):
+        # Different basenames: both .toml and .pth are processed.
+        toml_dir = os.path.join(self.sitedir, 'tomlpath')
+        pth_dir = os.path.join(self.sitedir, 'pthpath')
+        os.mkdir(toml_dir)
+        os.mkdir(pth_dir)
+
+        self._make_site_toml("""\
+[paths]
+dirs = ["tomlpath"]
+""", name='foo')
+        self._make_pth("pthpath\n", name='bar')
+
+        site.addsitedir(self.sitedir, set())
+        self.assertIn(toml_dir, sys.path)
+        self.assertIn(pth_dir, sys.path)
+
+    def test_addsitedir_paths_before_entrypoints(self):
+        # Paths from .site.toml are added before entrypoints execution.
+        #
+        # Create a module in a subdir that will only be importable if the path
+        # is added first.
+        mod_dir = os.path.join(self.sitedir, 'initlib')
+        os.mkdir(mod_dir)
+        mod_file = os.path.join(mod_dir, 'initmod.py')
+        with open(mod_file, 'w') as f:
+            f.write('loaded = True\n')
+
+        self._make_site_toml("""\
+[paths]
+dirs = ["initlib"]
+
+[entrypoints]
+init = ["initmod"]
+""")
+
+        self.addCleanup(sys.modules.pop, 'initmod')
+        site.addsitedir(self.sitedir, set())
+        import initmod
+        self.assertTrue(initmod.loaded)
+
+    def test_addsitedir_alphabetical_order(self):
+        # Multiple .site.toml files are processed alphabetically.
+        dir_a = os.path.join(self.tmpdir, 'aaa')
+        dir_b = os.path.join(self.tmpdir, 'bbb')
+        os.mkdir(dir_a)
+        os.mkdir(dir_b)
+
+        # Create zzz.site.toml first, then aaa.site.toml
+        self._make_site_toml("""\
+[paths]
+dirs = ['bbb']
+""", name='zzz')
+        self._make_site_toml("""\
+[paths]
+dirs = ['aaa']
+""", name='aaa')
+
+        site.addsitedir(self.sitedir, set())
+        # Both should be in sys.path; aaa before bbb since aaa.site.toml is
+        # processed before zzz.site.toml
+        idx_a = sys.path.index(dir_a)
+        idx_b = sys.path.index(dir_b)
+        self.assertLess(idx_a, idx_b)
+
+
 if __name__ == "__main__":
     unittest.main()

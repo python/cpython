@@ -79,6 +79,10 @@ import _io as io
 import stat
 import errno
 
+lazy import importlib
+lazy import tomllib
+lazy import traceback
+
 # Prefixes for site-packages; add additional prefixes like /usr/local here
 PREFIXES = [sys.prefix, sys.exec_prefix]
 # Enable per user site-packages directory
@@ -163,6 +167,130 @@ def _init_pathinfo():
     return d
 
 
+class _SiteTOMLData:
+    """Parsed data from a single .site.toml file."""
+    __slots__ = ('filename', 'sitedir', 'metadata', 'dirs', 'init')
+
+    def __init__(self, filename, sitedir, metadata, dirs, init):
+        self.filename = filename    # str: basename e.g. "foo.site.toml"
+        self.sitedir = sitedir      # str: absolute path to site-packages dir
+        self.metadata = metadata    # dict: raw [metadata] table (may be empty)
+        self.dirs = dirs            # list[str]: validated [paths].dirs (may be empty)
+        self.init = init            # list[str]: validated [entrypoints].init (may be empty)
+
+
+def _read_site_toml(sitedir, name):
+    """Parse a .site.toml file and return a _SiteTOMLData, or None on error."""
+    fullname = os.path.join(sitedir, name)
+
+    # Check that name.site.toml file exists and is not hidden.
+    try:
+        st = os.lstat(fullname)
+    except OSError:
+        return None
+    if ((getattr(st, 'st_flags', 0) & stat.UF_HIDDEN) or
+        (getattr(st, 'st_file_attributes', 0) & stat.FILE_ATTRIBUTE_HIDDEN)):
+        _trace(f"Skipping hidden .site.toml file: {fullname!r}")
+        return None
+
+    _trace(f"Processing .site.toml file: {fullname!r}")
+
+    try:
+        with io.open_code(fullname) as f:
+            raw = f.read()
+    except OSError:
+        return None
+
+    try:
+        data = tomllib.loads(raw.decode("utf-8"))
+    except Exception as exc:
+        _trace(f"Error parsing {fullname!r}: {exc}")
+        return None
+
+    metadata = data.get("metadata", [])
+
+    # Validate [paths].dirs
+    dirs = []
+    if (paths_table := data.get("paths")) is not None:
+        if (raw_dirs := paths_table.get("dirs")) is not None:
+            if (isinstance(raw_dirs, list) and
+                all(isinstance(d, str) for d in raw_dirs)):
+                dirs = raw_dirs
+            else:
+                _trace(f"Invalid 'dirs' in {fullname!r}: "
+                       f"expected list of strings")
+
+    # Validate [entrypoints].init
+    init = []
+    if (ep_table := data.get("entrypoints")) is not None:
+        if (raw_init := ep_table.get("init")) is not None:
+            if (isinstance(raw_init, list) and
+                all(isinstance(e, str) for e in raw_init)):
+                init = raw_init
+            else:
+                _trace(f"Invalid 'init' in {fullname!r}: "
+                       f"expected list of strings")
+
+    return _SiteTOMLData(name, sitedir, metadata, dirs, init)
+
+
+def _process_site_toml_paths(toml_data_list, known_paths):
+    """Process [paths] from all parsed .site.toml data."""
+    for td in toml_data_list:
+        for dir_entry in td.dirs:
+            try:
+                # The {sitedir} placeholder expands to the site directory where the pkg.site.toml
+                # file was found.  When placed at the beginning of the path, this is the explicit
+                # way to name directories relative to sitedir.
+                dir_entry = dir_entry.replace("{sitedir}", td.sitedir)
+                # For backward compatibility with .pth files, relative directories are implicitly
+                # anchored to sitedir.
+                if not os.path.isabs(dir_entry):
+                    dir_entry = os.path.join(td.sitedir, dir_entry)
+                dir, dircase = makepath(dir_entry)
+                if dircase not in known_paths and os.path.exists(dir):
+                    sys.path.append(dir)
+                    known_paths.add(dircase)
+            except Exception as exc:
+                fullname = os.path.join(td.sitedir, td.filename)
+                print(f"Error processing path {dir_entry!r} "
+                      f"from {fullname}:",
+                      file=sys.stderr)
+                for record in traceback.format_exception(exc):
+                    for line in record.splitlines():
+                        print('  ' + line, file=sys.stderr)
+
+
+def _process_site_toml_entrypoints(toml_data_list):
+    """Execute [entrypoints] from all parsed .site.toml data."""
+    for td in toml_data_list:
+        for entry in td.init:
+            try:
+                # Parse "package.module:callable" format.  When the optional :callable is not given,
+                # the entire string will end up in the last item, so swap things around.
+                modname, colon, funcname = entry.rpartition(':')
+                if colon != ':':
+                    modname = funcname
+                    funcname = None
+
+                _trace(f"Executing entrypoint: {entry!r} "
+                       f"from {td.filename!r}")
+
+                mod = importlib.import_module(modname)
+
+                # Call the callable if given.
+                if funcname is not None:
+                    func = getattr(mod, funcname)
+                    func()
+            except Exception as exc:
+                fullname = os.path.join(td.sitedir, td.filename)
+                print(f"Error in entrypoint {entry!r} from {fullname}:",
+                      file=sys.stderr)
+                for record in traceback.format_exception(exc):
+                    for line in record.splitlines():
+                        print('  ' + line, file=sys.stderr)
+
+
 def addpackage(sitedir, name, known_paths):
     """Process a .pth file within the site-packages directory:
        For each line in the file, either combine it with sitedir to a path
@@ -230,8 +358,8 @@ def addpackage(sitedir, name, known_paths):
 
 
 def addsitedir(sitedir, known_paths=None):
-    """Add 'sitedir' argument to sys.path if missing and handle .pth files in
-    'sitedir'"""
+    """Add 'sitedir' argument to sys.path if missing and handle .site.toml
+    and .pth files in 'sitedir'"""
     _trace(f"Adding directory: {sitedir!r}")
     if known_paths is None:
         known_paths = _init_pathinfo()
@@ -246,10 +374,40 @@ def addsitedir(sitedir, known_paths=None):
         names = os.listdir(sitedir)
     except OSError:
         return
-    names = [name for name in names
-             if name.endswith(".pth") and not name.startswith(".")]
-    for name in sorted(names):
+
+    # Phase 1: Discover and parse .site.toml files, sorted alphabetically.
+    toml_names = sorted(
+        name for name in names
+        if name.endswith(".site.toml") and not name.startswith(".")
+    )
+
+    toml_data_list = []
+    superseded_pth = set()
+
+    for name in toml_names:
+        # "foo.site.toml" supersedes "foo.pth"
+        base = name.removesuffix(".site.toml")
+        pth_name = base + ".pth"
+        if pth_name in names:
+            superseded_pth.add(pth_name)
+        td = _read_site_toml(sitedir, name)
+        if td is not None:
+            toml_data_list.append(td)
+
+    # Phase 2: Process all .site.toml data (paths first, then entrypoints)
+    if toml_data_list:
+        _process_site_toml_paths(toml_data_list, known_paths)
+        _process_site_toml_entrypoints(toml_data_list)
+
+    # Phase 3: Process remaining .pth files
+    pth_names = sorted(
+        name for name in names
+        if name.endswith(".pth") and not name.startswith(".")
+        and name not in superseded_pth
+    )
+    for name in pth_names:
         addpackage(sitedir, name, known_paths)
+
     if reset:
         known_paths = None
     return known_paths
