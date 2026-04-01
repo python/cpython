@@ -1106,7 +1106,7 @@ tok_get_normal_mode(struct tok_state *tok, tokenizer_mode* current_tok, struct t
                     tokenizer_mode *the_current_tok = TOK_GET_MODE(tok);
                     if (the_current_tok->f_string_quote == quote &&
                         the_current_tok->f_string_quote_size == quote_size) {
-                        return MAKE_TOKEN(_PyTokenizer_syntaxerror(tok, "f-string: expecting '}'", start));
+                        return MAKE_TOKEN(_PyTokenizer_syntaxerror(tok, "f-string: expecting '}'"));
                     }
                 }
 
