@@ -31,3 +31,118 @@ jobs:
       caller-event-name: ${{ github.event_name }}
     secrets:
       GH_TOKEN: ${{ secrets.GH_TOKEN || secrets.GITHUB_TOKEN }}
+
+  # -------------------------------------------------------------------
+  # Create a Windows zip release asset for MXC consumption.
+  # The reusable workflow creates a GitHub release with .tar.bz2 assets.
+  # This job downloads the standalone tarball from that release, extracts
+  # python.elf + cpython-ramfs.img, packs them into a flat .zip, and
+  # uploads it to the same release.
+  # -------------------------------------------------------------------
+  windows-zip:
+    needs: ci
+    if: ${{ !cancelled() && github.event_name != 'pull_request' }}
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v5
+
+      - name: Install nanvix-zutil
+        env:
+          GH_TOKEN: ${{ secrets.GH_TOKEN || secrets.GITHUB_TOKEN }}
+        run: |
+          WHEEL_URL=$(gh api repos/nanvix/zutils/releases/tags/v0.5.0 \
+            --jq '.assets[] | select(.name | endswith(".whl")) | .browser_download_url')
+          python3 -m pip install "$WHEEL_URL"
+
+      - name: Resolve release tag
+        id: meta
+        env:
+          GH_TOKEN: ${{ secrets.GH_TOKEN || secrets.GITHUB_TOKEN }}
+        run: |
+          set -euo pipefail
+          eval "$(nanvix-zutil resolve)"
+          RELEASE_TAG="${package_version}-nanvix-${nanvix_version}"
+          echo "release_tag=$RELEASE_TAG" >> "$GITHUB_OUTPUT"
+          echo "Release tag: $RELEASE_TAG"
+
+      - name: Download standalone tarball from release
+        env:
+          GH_TOKEN: ${{ secrets.GH_TOKEN || secrets.GITHUB_TOKEN }}
+          RELEASE_TAG: ${{ steps.meta.outputs.release_tag }}
+        run: |
+          set -euo pipefail
+          mkdir -p release-download
+
+          # Wait briefly for the release to be fully created
+          sleep 5
+
+          # Download the standalone tarball asset
+          ASSET_URL=$(gh release view "$RELEASE_TAG" --json assets \
+            --jq '.assets[] | select(.name | test("standalone.*\\.tar\\.bz2$")) | .url' \
+            | head -1)
+
+          if [[ -z "$ASSET_URL" ]]; then
+            echo "::warning::No standalone tarball found in release $RELEASE_TAG"
+            echo "Available assets:"
+            gh release view "$RELEASE_TAG" --json assets --jq '.assets[].name'
+            exit 0
+          fi
+
+          ASSET_NAME=$(gh release view "$RELEASE_TAG" --json assets \
+            --jq '.assets[] | select(.name | test("standalone.*\\.tar\\.bz2$")) | .name' \
+            | head -1)
+
+          echo "Downloading: $ASSET_NAME"
+          gh release download "$RELEASE_TAG" --pattern "*standalone*.tar.bz2" --dir release-download
+          ls -la release-download/
+
+      - name: Create Windows zip
+        run: |
+          set -euo pipefail
+          TARBALL=$(find release-download -name "*standalone*.tar.bz2" | head -1)
+          if [[ -z "$TARBALL" ]]; then
+            echo "::warning::No standalone tarball to process"
+            exit 0
+          fi
+
+          mkdir -p extract windows-zip
+          tar -xjf "$TARBALL" -C extract
+
+          # Find the python binary (may be named python3.12 or python.elf)
+          PYTHON_ELF=$(find extract -name "python3.12" -type f | head -1)
+          if [[ -z "$PYTHON_ELF" ]]; then
+            PYTHON_ELF=$(find extract -name "python.elf" -type f | head -1)
+          fi
+
+          # Find the ramfs image
+          RAMFS_IMG=$(find extract -name "*.img" -type f | head -1)
+
+          if [[ -z "$PYTHON_ELF" ]]; then
+            echo "::warning::Could not find python binary in standalone tarball"
+            find extract -type f | head -20
+            exit 0
+          fi
+
+          cp "$PYTHON_ELF" windows-zip/python.elf
+          echo "Included: python.elf ($(stat -c%s windows-zip/python.elf) bytes)"
+
+          if [[ -n "$RAMFS_IMG" ]]; then
+            cp "$RAMFS_IMG" windows-zip/cpython-ramfs.img
+            echo "Included: cpython-ramfs.img ($(stat -c%s windows-zip/cpython-ramfs.img) bytes)"
+          else
+            echo "::warning::No ramfs image found — zip will only contain python.elf"
+          fi
+
+          ZIP_NAME="cpython-windows-microvm-standalone-128mb-${GITHUB_SHA::7}.zip"
+          (cd windows-zip && zip "../${ZIP_NAME}" *)
+          echo "zip_name=$ZIP_NAME" >> "$GITHUB_ENV"
+          echo "Created: $ZIP_NAME ($(stat -c%s "$ZIP_NAME") bytes)"
+
+      - name: Upload zip to release
+        if: ${{ env.zip_name != '' }}
+        env:
+          GH_TOKEN: ${{ secrets.GH_TOKEN || secrets.GITHUB_TOKEN }}
+          RELEASE_TAG: ${{ steps.meta.outputs.release_tag }}
+        run: |
+          gh release upload "$RELEASE_TAG" "${{ env.zip_name }}" --clobber
+          echo "Uploaded ${{ env.zip_name }} to release $RELEASE_TAG"
