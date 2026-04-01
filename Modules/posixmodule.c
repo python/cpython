@@ -27,6 +27,7 @@
 #include "pycore_pystate.h"       // _PyInterpreterState_GET()
 #include "pycore_signal.h"        // Py_NSIG
 #include "pycore_time.h"          // _PyLong_FromTime_t()
+#include "pycore_tuple.h"         // _PyTuple_FromPairSteal
 #include "pycore_typeobject.h"    // _PyType_AddMethod()
 
 #ifndef MS_WINDOWS
@@ -11288,9 +11289,7 @@ build_itimerspec(const struct itimerspec* curr_value)
         Py_DECREF(value);
         return NULL;
     }
-    PyObject *tuple = PyTuple_Pack(2, value, interval);
-    Py_DECREF(interval);
-    Py_DECREF(value);
+    PyObject *tuple = _PyTuple_FromPairSteal(value, interval);
     return tuple;
 }
 
