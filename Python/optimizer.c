@@ -808,21 +808,6 @@ _PyJit_translate_single_bytecode_to_trace(
         goto unsupported;
     }
 
-    // Track frame depth changes for fitness (only for supported frame transitions)
-    if (frame != tracer->prev_state.instr_frame) {
-        _PyJitTracerTranslatorState *ts_depth = &tracer->translator_state;
-        if (frame->previous == tracer->prev_state.instr_frame) {
-            ts_depth->frame_depth++;
-            // Penalty scales with depth: shallow inlining is cheap,
-            // deep inlining gets progressively more expensive.
-            int32_t penalty = (int32_t)tstate->interp->opt_config.fitness_frame_entry
-                            * ts_depth->frame_depth;
-            ts_depth->fitness -= penalty;
-        } else if (ts_depth->frame_depth > 0) {
-            ts_depth->frame_depth--;
-        }
-    }
-
     if (oparg > 0xFFFF) {
         DPRINTF(2, "Unsupported: oparg too large\n");
         unsupported:
@@ -1088,6 +1073,28 @@ _PyJit_translate_single_bytecode_to_trace(
                     _Py_CODEUNIT *next = target_instr + 1 + _PyOpcode_Caches[_PyOpcode_Deopt[opcode]];
                     assert(next->op.code == STORE_FAST);
                     operand = next->op.arg;
+                }
+                else if (uop == _PUSH_FRAME) {
+                    _PyJitTracerTranslatorState *ts_depth = &tracer->translator_state;
+                    ts_depth->frame_depth++;
+                    if (ts_depth->frame_depth >= MAX_ABSTRACT_FRAME_DEPTH) {
+                        // The optimizer can't handle frames this deep,
+                        // so there's no point continuing the trace.
+                        DPRINTF(2, "Unsupported: frame depth %d >= MAX_ABSTRACT_FRAME_DEPTH\n",
+                                ts_depth->frame_depth);
+                        goto unsupported;
+                    }
+                    int32_t penalty = (int32_t)tstate->interp->opt_config.fitness_frame_entry
+                                    * ts_depth->frame_depth;
+                    ts_depth->fitness -= penalty;
+                }
+                else if (uop == _RETURN_VALUE || uop == _RETURN_GENERATOR || uop == _YIELD_VALUE) {
+                    _PyJitTracerTranslatorState *ts_depth = &tracer->translator_state;
+                    if (ts_depth->frame_depth <= 0) {
+                        // Underflow
+                        ts_depth->fitness -= (int32_t)tstate->interp->opt_config.fitness_frame_entry * 2;
+                    }
+                    ts_depth->frame_depth = ts_depth->frame_depth <= 0 ? 0 : ts_depth->frame_depth - 1;
                 }
                 else if (_PyUop_Flags[uop] & HAS_RECORDS_VALUE_FLAG) {
                     PyObject *recorded_value = tracer->prev_state.recorded_value;

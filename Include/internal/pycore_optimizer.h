@@ -17,9 +17,9 @@ extern "C" {
 
 /* Default fitness configuration values for trace quality control.
  * These can be overridden via PYTHON_JIT_FITNESS_* environment variables. */
-#define FITNESS_INITIAL             1000
-#define FITNESS_INITIAL_SIDE         800
 #define FITNESS_PER_INSTRUCTION        2
+#define FITNESS_INITIAL             (UOP_MAX_TRACE_LENGTH * FITNESS_PER_INSTRUCTION)
+#define FITNESS_INITIAL_SIDE         800
 #define FITNESS_BRANCH_BIASED          5
 #define FITNESS_BRANCH_UNBIASED       25
 #define FITNESS_BACKWARD_EDGE         80
