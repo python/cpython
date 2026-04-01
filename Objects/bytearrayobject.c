@@ -1752,27 +1752,26 @@ bytearray_maketrans_impl(Py_buffer *frm, Py_buffer *to)
 
 
 /*[clinic input]
-@permit_long_docstring_body
 @critical_section
 bytearray.replace
 
     old: Py_buffer
     new: Py_buffer
+    /
     count: Py_ssize_t = -1
         Maximum number of occurrences to replace.
         -1 (the default value) means replace all occurrences.
-    /
 
 Return a copy with all occurrences of substring old replaced by new.
 
-If the optional argument count is given, only the first count occurrences are
-replaced.
+If count is given, only the first count occurrences are replaced.
+If count is not specified or -1, then all occurrences are replaced.
 [clinic start generated code]*/
 
 static PyObject *
 bytearray_replace_impl(PyByteArrayObject *self, Py_buffer *old,
                        Py_buffer *new, Py_ssize_t count)
-/*[clinic end generated code: output=d39884c4dc59412a input=66afec32f4e095e0]*/
+/*[clinic end generated code: output=d39884c4dc59412a input=e2591806f954aec3]*/
 {
     return stringlib_replace((PyObject *)self,
                              (const char *)old->buf, old->len,
