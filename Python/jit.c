@@ -734,7 +734,7 @@ _PyJIT_Compile(_PyExecutorObject *executor, const _PyUOpInstruction trace[], siz
     return 0;
 }
 
-/* One-off compilation of the jit entry shim
+/* One-off compilation of the jit entry shim.
  * We compile this once only as it effectively a normal
  * function, but we need to use the JIT because it needs
  * to understand the jit-specific calling convention.
