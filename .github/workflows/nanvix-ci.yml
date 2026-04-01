@@ -51,7 +51,7 @@ jobs:
           GH_TOKEN: ${{ secrets.GH_TOKEN || secrets.GITHUB_TOKEN }}
         run: |
           WHEEL_URL=$(gh api repos/nanvix/zutils/releases/tags/v0.5.0 \
-            --jq '.assets[] | select(.name | endswith(".whl")) | .browser_download_url')
+            --jq '.assets[] | select(.name | endswith(".whl")) | .browser_download_url' | head -n 1)
           python3 -m pip install "$WHEEL_URL"
 
       - name: Resolve release tag
@@ -105,10 +105,10 @@ jobs:
           fi
 
           if [[ -z "$PYTHON_ELF" ]]; then
-            echo "::warning::Could not find python binary in standalone tarball"
+            echo "::error::Could not find python binary in standalone tarball"
             echo "Files in tarball:"
             find extract -type f | head -20 || true
-            exit 0
+            exit 1
           fi
 
           cp "$PYTHON_ELF" windows-zip/python.elf
@@ -138,6 +138,7 @@ jobs:
             echo "Downloading NanVix release for mkramfs..."
             curl -fsSL https://raw.githubusercontent.com/nanvix/nanvix/refs/heads/dev/scripts/get-nanvix.sh \
               | bash -s -- --force nanvix-dl
+            MKRAMFS=""
             NVX_TAR=$(find nanvix-dl -name "nanvix-microvm-standalone-*.tar.bz2" | head -1)
             if [[ -n "$NVX_TAR" ]]; then
               mkdir -p nanvix-extract
