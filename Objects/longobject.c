@@ -188,6 +188,9 @@ long_alloc(Py_ssize_t size)
         _PyLong_InitTag(result);
     }
     _PyLong_SetSignAndDigitCount(result, size != 0, size);
+    /* The digit has to be initialized explicitly to avoid
+     * use-of-uninitialized-value. */
+    result->long_value.ob_digit[0] = 0;
     return result;
 }
 
