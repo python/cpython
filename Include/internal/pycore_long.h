@@ -285,19 +285,12 @@ _PyLong_SameSign(const PyLongObject *a, const PyLongObject *b)
     return (a->long_value.lv_tag & SIGN_MASK) == (b->long_value.lv_tag & SIGN_MASK);
 }
 
-/* Initialize a freshly-allocated int.
- *
- * Fast operations for single digit integers (including zero)
- * assume that there is always at least one digit present.
- * The digit has to be initialized explicitly to avoid
- * use-of-uninitialized-value.
- */
+/* Initialize a freshly-allocated int. */
 static inline void
 _PyLong_InitTag(PyLongObject *op)
 {
     assert(PyLong_Check(op));
     op->long_value.lv_tag = 1; /* non-immortal zero */
-    op->long_value.ob_digit[0] = 0;
 }
 
 #define TAG_FROM_SIGN_AND_SIZE(sign, size) \
