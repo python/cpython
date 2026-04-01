@@ -8,7 +8,7 @@ import time
 import unittest
 
 from test import support
-from test.support import import_helper
+from test.support import warnings_helper
 from test.support.testcase import FloatsAreIdenticalMixin
 from test.support.numbers import (
     VALID_UNDERSCORE_LITERALS,
