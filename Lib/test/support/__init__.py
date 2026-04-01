@@ -42,7 +42,7 @@ __all__ = [
     "check_disallow_instantiation", "check_sanitizer", "skip_if_sanitizer",
     "requires_limited_api", "requires_specialization",
     # sys
-    "MS_WINDOWS", "is_jython", "is_android", "is_emscripten", "is_wasi",
+    "MS_WINDOWS", "is_jython", "is_android", "is_emscripten", "is_wasi", "is_nanvix",
     "check_impl_detail", "unix_shell", "setswitchinterval",
     # os
     "get_pagesize",
@@ -535,24 +535,27 @@ if sys.platform not in ('win32', 'vxworks'):
 else:
     unix_shell = None
 
-# wasm32-emscripten and -wasi are POSIX-like but do not
+# wasm32-emscripten, -wasi, and nanvix are POSIX-like but do not
 # have subprocess or fork support.
 is_emscripten = sys.platform == "emscripten"
 is_wasi = sys.platform == "wasi"
+is_nanvix = sys.platform == "nanvix"
 
-has_fork_support = hasattr(os, "fork") and not is_emscripten and not is_wasi
+# TODO: enable fork support once nanvix implements it
+# (https://github.com/nanvix/nanvix/issues/321)
+has_fork_support = hasattr(os, "fork") and not is_emscripten and not is_wasi and not is_nanvix
 
 def requires_fork():
     return unittest.skipUnless(has_fork_support, "requires working os.fork()")
 
-has_subprocess_support = not is_emscripten and not is_wasi
+has_subprocess_support = not is_emscripten and not is_wasi and not is_nanvix
 
 def requires_subprocess():
     """Used for subprocess, os.spawn calls, fd inheritance"""
     return unittest.skipUnless(has_subprocess_support, "requires subprocess support")
 
 # Emscripten's socket emulation and WASI sockets have limitations.
-has_socket_support = not is_emscripten and not is_wasi
+has_socket_support = not is_emscripten and not is_wasi and not is_nanvix
 
 def requires_working_socket(*, module=False):
     """Skip tests or modules that require working sockets
