@@ -6,15 +6,19 @@
 #endif
 
 #include "Python.h"
+#include "pycore_ceval.h"         // _PyEval_GetANext()
 #include "pycore_code.h"          // _PyCode_HAS_EXECUTORS()
 #include "pycore_crossinterp.h"   // _PyXIData_t
 #include "pycore_pyerrors.h"      // _PyErr_GetRaisedException()
 #include "pycore_interp.h"        // _PyInterpreterState_IDIncref()
+#include "pycore_genobject.h"     // _PyCoro_GetAwaitableIter()
 #include "pycore_modsupport.h"    // _PyArg_BadArgument()
 #include "pycore_namespace.h"     // _PyNamespace_New()
 #include "pycore_pybuffer.h"      // _PyBuffer_ReleaseInInterpreterAndRawFree()
 #include "pycore_pylifecycle.h"   // _PyInterpreterConfig_AsDict()
 #include "pycore_pystate.h"       // _PyInterpreterState_IsRunningMain()
+#include "pycore_runtime_structs.h"
+#include "pycore_pyatomic_ft_wrappers.h"
 
 #include "marshal.h"              // PyMarshal_ReadObjectFromString()
 
@@ -29,8 +33,9 @@
 
 /*[clinic input]
 module _interpreters
+class _interpreters.SharedObjectProxy "SharedObjectProxy *" "&PyType_Type"
 [clinic start generated code]*/
-/*[clinic end generated code: output=da39a3ee5e6b4b0d input=bfd967980a0de892]*/
+/*[clinic end generated code: output=da39a3ee5e6b4b0d input=4bb543de3f19aa0b]*/
 
 static PyInterpreterState *
 _get_current_interp(void)
@@ -317,8 +322,6 @@ register_memoryview_xid(PyObject *mod, PyTypeObject **p_state)
     return 0;
 }
 
-
-
 /* module state *************************************************************/
 
 typedef struct {
@@ -326,6 +329,7 @@ typedef struct {
 
     /* heap types */
     PyTypeObject *XIBufferViewType;
+    PyTypeObject *SharedObjectProxyType;
 } module_state;
 
 static inline module_state *
@@ -357,6 +361,7 @@ traverse_module_state(module_state *state, visitproc visit, void *arg)
 {
     /* heap types */
     Py_VISIT(state->XIBufferViewType);
+    Py_VISIT(state->SharedObjectProxyType);
 
     return 0;
 }
@@ -366,10 +371,989 @@ clear_module_state(module_state *state)
 {
     /* heap types */
     Py_CLEAR(state->XIBufferViewType);
+    Py_CLEAR(state->SharedObjectProxyType);
 
     return 0;
 }
 
+/* Shared object proxies. */
+
+typedef struct _Py_shared_object_proxy {
+    PyObject_HEAD
+    PyInterpreterState *interp;
+    PyObject *object;
+#ifdef Py_GIL_DISABLED
+    struct {
+        _Py_hashtable_t *table;
+        PyMutex mutex;
+    } thread_states;
+#else
+    _Py_hashtable_t *thread_states;
+#endif
+} SharedObjectProxy;
+
+static PyTypeObject *
+_get_current_sharedobjectproxy_type(void);
+#define SharedObjectProxy_CAST(op) ((SharedObjectProxy *)op)
+#define SharedObjectProxy_OBJECT(op) FT_ATOMIC_LOAD_PTR_RELAXED(SharedObjectProxy_CAST(op)->object)
+
+typedef struct {
+    PyThreadState *to_restore;
+    PyThreadState *for_call;
+} _PyXI_proxy_state;
+
+static int
+_sharedobjectproxy_enter(SharedObjectProxy *self, _PyXI_proxy_state *state)
+{
+    PyThreadState *tstate = _PyThreadState_GET();
+    assert(self != NULL);
+    assert(tstate != NULL);
+    if (tstate->interp == self->interp) {
+        // No need to switch; already in the correct interpreter
+        state->to_restore = NULL;
+        state->for_call = NULL;
+        return 0;
+    }
+    state->to_restore = tstate;
+    PyThreadState *for_call = _PyThreadState_NewForExec(self->interp);
+    state->for_call = for_call;
+    if (for_call == NULL) {
+        PyErr_NoMemory();
+        return -1;
+    }
+    _PyThreadState_Detach(tstate);
+    _PyThreadState_Attach(state->for_call);
+    assert(_PyInterpreterState_GET() == self->interp);
+    return 0;
+}
+
+static int
+_sharedobjectproxy_exit(SharedObjectProxy *self, _PyXI_proxy_state *state)
+{
+    assert(_PyInterpreterState_GET() == self->interp);
+    if (state->to_restore == NULL) {
+        // Nothing to do. We were already in the correct interpreter.
+        return PyErr_Occurred() == NULL ? 0 : -1;
+    }
+
+    PyThreadState *tstate = state->for_call;
+    int should_throw = 0;
+    if (_PyErr_Occurred(tstate)) {
+        // TODO: Serialize and transfer the exception to the calling
+        // interpreter.
+        PyErr_FormatUnraisable("Exception occured in interpreter");
+        should_throw = 1;
+    }
+
+    assert(state->for_call == _PyThreadState_GET());
+    PyThreadState_Swap(state->to_restore);
+    // If we created a new thread state, we don't want to delete it.
+    // It's likely that it will be used again, but if not, the interpreter
+    // will clean it up at the end anyway.
+
+    if (should_throw) {
+        _PyErr_SetString(state->to_restore, PyExc_RuntimeError, "exception in interpreter");
+        return -1;
+    }
+
+    return 0;
+}
+
+static SharedObjectProxy *
+sharedobjectproxy_alloc(PyTypeObject *type)
+{
+    assert(type != NULL);
+    assert(PyType_Check(type));
+    SharedObjectProxy *self = SharedObjectProxy_CAST(type->tp_alloc(type, 0));
+    if (self == NULL) {
+        return NULL;
+    }
+
+    self->interp = _PyInterpreterState_GET();
+#ifndef NDEBUG
+    self->object = NULL;
+#endif
+
+    return self;
+}
+
+/*[clinic input]
+@classmethod
+_interpreters.SharedObjectProxy.__new__ as sharedobjectproxy_new
+
+    obj: object,
+    /
+
+Create a new cross-interpreter proxy.
+[clinic start generated code]*/
+
+static PyObject *
+sharedobjectproxy_new_impl(PyTypeObject *type, PyObject *obj)
+/*[clinic end generated code: output=42ed0a0bc47ecedf input=fce004d93517c6df]*/
+{
+    SharedObjectProxy *self = sharedobjectproxy_alloc(type);
+    if (self == NULL) {
+        return NULL;
+    }
+
+    self->object = Py_NewRef(obj);
+    return (PyObject *)self;
+}
+
+PyObject *
+_sharedobjectproxy_create(PyObject *object, PyInterpreterState *owning_interp)
+{
+    assert(object != NULL);
+    assert(owning_interp != NULL);
+
+    PyTypeObject *type = _get_current_sharedobjectproxy_type();
+    if (type == NULL) {
+        return NULL;
+    }
+    assert(Py_TYPE(object) != type);
+    SharedObjectProxy *proxy = sharedobjectproxy_alloc(type);
+    if (proxy == NULL) {
+        return NULL;
+    }
+
+    assert(PyObject_GC_IsTracked((PyObject *)proxy));
+    proxy->object = NULL;
+    proxy->interp = owning_interp;
+
+    // We have to be in the correct interpreter to increment the object's
+    // reference count.
+    _PyXI_proxy_state state;
+    if (_sharedobjectproxy_enter(proxy, &state) < 0) {
+        Py_DECREF(proxy);
+        return NULL;
+    }
+
+    proxy->object = Py_NewRef(object);
+
+    if (_sharedobjectproxy_exit(proxy, &state)) {
+        Py_DECREF(proxy);
+        return NULL;
+    }
+
+    return (PyObject *)proxy;
+}
+
+
+static int
+sharedobjectproxy_clear(PyObject *op)
+{
+    SharedObjectProxy *self = SharedObjectProxy_CAST(op);
+    if (self->object == NULL) {
+        return 0;
+    }
+
+    _PyXI_proxy_state state;
+    if (_sharedobjectproxy_enter(self, &state) < 0) {
+        // The object leaks :(
+        return -1;
+    }
+    Py_CLEAR(self->object);
+    return _sharedobjectproxy_exit(self, &state);
+}
+
+static int
+sharedobjectproxy_traverse(PyObject *op, visitproc visit, void *arg)
+{
+    SharedObjectProxy *self = SharedObjectProxy_CAST(op);
+    if (self->interp != _PyInterpreterState_GET()) {
+        // Don't traverse from another interpreter
+        return 0;
+    }
+
+    Py_VISIT(self->object);
+    return 0;
+}
+
+static void
+sharedobjectproxy_dealloc(PyObject *op)
+{
+    SharedObjectProxy *self = SharedObjectProxy_CAST(op);
+    PyTypeObject *tp = Py_TYPE(self);
+    PyObject *err = PyErr_GetRaisedException();
+    if (sharedobjectproxy_clear(op) < 0) {
+        PyErr_FormatUnraisable("Exception in proxy destructor");
+    };
+    PyObject_GC_UnTrack(self);
+    tp->tp_free(self);
+    Py_DECREF(tp);
+    PyErr_SetRaisedException(err);
+}
+
+typedef struct {
+    _PyXIData_t *xidata;
+    PyObject *object_to_wrap;
+    PyInterpreterState *owner;
+} _PyXI_proxy_share;
+
+/* Use this in the calling interpreter. */
+static int
+_sharedobjectproxy_init_share(_PyXI_proxy_share *share,
+                              SharedObjectProxy *self, PyObject *op)
+{
+    assert(op != NULL);
+    assert(share != NULL);
+    _PyXIData_t *xidata = _PyXIData_New();
+    if (xidata == NULL) {
+        return -1;
+    }
+    share->owner = _PyInterpreterState_GET();
+
+    if (_PyObject_GetXIData(_PyThreadState_GET(), op,
+                            _PyXIDATA_XIDATA_ONLY, xidata) < 0) {
+        PyErr_Clear();
+        share->object_to_wrap = Py_NewRef(op);
+        share->xidata = NULL;
+        PyMem_RawFree(xidata);
+    } else {
+        share->object_to_wrap = NULL;
+        share->xidata = xidata;
+    }
+
+    return 0;
+}
+
+/* Use this in the switched interpreter. */
+static PyObject *
+_sharedobjectproxy_copy_for_interp(_PyXI_proxy_share *share)
+{
+    assert(share != NULL);
+    _PyXIData_t *xidata = share->xidata;
+    if (xidata == NULL) {
+        // Not shareable; use an object proxy
+        return _sharedobjectproxy_create(share->object_to_wrap, share->owner);
+    } else {
+        assert(share->object_to_wrap == NULL);
+        PyObject *result = _PyXIData_NewObject(xidata);
+        return result;
+    }
+}
+
+static void
+_sharedobjectproxy_finish_share(_PyXI_proxy_share *share)
+{
+    if (share->xidata != NULL) {
+        assert(share->object_to_wrap == NULL);
+        _PyXIData_Free(share->xidata);
+    } else {
+        assert(share->object_to_wrap != NULL);
+        Py_DECREF(share->object_to_wrap);
+    }
+#ifdef Py_DEBUG
+    share->xidata = NULL;
+    share->object_to_wrap = NULL;
+#endif
+}
+
+static PyObject *
+_sharedobjectproxy_wrap_result(SharedObjectProxy *self, PyObject *result,
+                               _PyXI_proxy_state *state)
+{
+    if (result == NULL) {
+        (void)_sharedobjectproxy_exit(self, state);
+        return NULL;
+    }
+
+    assert(result != NULL);
+    _PyXI_proxy_share shared_result;
+    if (_sharedobjectproxy_init_share(&shared_result, self, result) < 0) {
+        Py_DECREF(result);
+        (void)_sharedobjectproxy_exit(self, state);
+        return NULL;
+    }
+
+    Py_DECREF(result);
+    PyObject *ret;
+    if (state->to_restore != NULL) {
+        PyThreadState *save = PyThreadState_Swap(state->to_restore);
+        ret = _sharedobjectproxy_copy_for_interp(&shared_result);
+        PyThreadState_Swap(save);
+    } else {
+        ret = _sharedobjectproxy_copy_for_interp(&shared_result);
+    }
+
+    _sharedobjectproxy_finish_share(&shared_result);
+    if (_sharedobjectproxy_exit(self, state) < 0) {
+        return NULL;
+    }
+
+    return ret;
+}
+
+static _PyXI_proxy_share *
+_sharedobjectproxy_init_shared_args(PyObject *args, SharedObjectProxy *self)
+{
+    assert(PyTuple_Check(args));
+    Py_ssize_t args_size = PyTuple_GET_SIZE(args);
+    _PyXI_proxy_share *shared_args_state = PyMem_RawCalloc(args_size, sizeof(_PyXI_proxy_share));
+    if (shared_args_state == NULL) {
+        PyErr_NoMemory();
+        return NULL;
+    }
+
+    for (Py_ssize_t i = 0; i < args_size; ++i) {
+        PyObject *arg = PyTuple_GET_ITEM(args, i);
+        if (_sharedobjectproxy_init_share(&shared_args_state[i], self, arg) < 0) {
+            PyMem_RawFree(shared_args_state);
+            for (int x = 0; x < i; ++x) {
+                _sharedobjectproxy_finish_share(&shared_args_state[i]);
+            }
+            return NULL;
+        }
+    }
+    return shared_args_state;
+}
+
+static void
+_sharedobjectproxy_close_shared_args(PyObject *args, _PyXI_proxy_share *shared_args_state)
+{
+    Py_ssize_t args_size = PyTuple_GET_SIZE(args);
+    for (Py_ssize_t i = 0; i < args_size; ++i) {
+        _sharedobjectproxy_finish_share(&shared_args_state[i]);
+    }
+    PyMem_RawFree(shared_args_state);
+}
+
+static PyObject *
+_sharedobjectproxy_construct_shared_args(PyObject *args, _PyXI_proxy_share *shared_args_state)
+{
+    Py_ssize_t args_size = PyTuple_GET_SIZE(args);
+    PyObject *shared_args = PyTuple_New(args_size);
+    if (shared_args == NULL) {
+        return NULL;
+    }
+    for (Py_ssize_t i = 0; i < args_size; ++i) {
+        PyObject *shared = _sharedobjectproxy_copy_for_interp(&shared_args_state[i]);
+        if (shared == NULL) {
+            Py_DECREF(shared_args);
+            return NULL;
+        }
+        PyTuple_SET_ITEM(shared_args, i, shared);
+    }
+
+    return shared_args;
+}
+
+typedef struct {
+    const char *key;
+    Py_ssize_t key_length;
+    _PyXI_proxy_share value;
+} _SharedObjectProxy_dict_pair;
+
+static int
+_sharedobjectproxy_init_shared_kwargs(PyObject *kwargs, SharedObjectProxy *self,
+                                      _SharedObjectProxy_dict_pair **kwarg_pairs)
+{
+    if (kwargs == NULL) {
+        return 0;
+    }
+    Py_ssize_t kwarg_size = PyDict_GET_SIZE(kwargs);
+    *kwarg_pairs = PyMem_RawCalloc(kwarg_size, sizeof(_SharedObjectProxy_dict_pair));
+    if (*kwarg_pairs == NULL) {
+        PyErr_NoMemory();
+        return -1;
+    }
+
+    PyObject *key, *value;
+    Py_ssize_t pos = 0;
+    while (PyDict_Next(kwargs, &pos, &key, &value)) {
+        // XXX Can kwarg keys be dictionary subclasses?
+        assert(PyUnicode_Check(key));
+        Py_ssize_t index = pos - 1;
+        assert(index >= 0);
+        assert(index < kwarg_size);
+        _SharedObjectProxy_dict_pair *pair = kwarg_pairs[index];
+        assert(pair->key == NULL);
+        assert(pair->key_length == 0);
+        const char *key_str = PyUnicode_AsUTF8AndSize(key, &pair->key_length);
+        if (key_str == NULL) {
+            for (Py_ssize_t i = 0; i < pos; ++i) {
+                _sharedobjectproxy_finish_share(&kwarg_pairs[i]->value);
+            }
+            PyMem_RawFree(kwarg_pairs);
+            return -1;
+
+        }
+        pair->key = key_str;
+        if (_sharedobjectproxy_init_share(&pair->value, self, value) < 0) {
+            for (Py_ssize_t i = 0; i < pos; ++i) {
+                _sharedobjectproxy_finish_share(&kwarg_pairs[i]->value);
+            }
+            PyMem_RawFree(kwarg_pairs);
+            return -1;
+        }
+    }
+
+    return 0;
+}
+
+static PyObject *
+_sharedobjectproxy_construct_shared_kwargs(PyObject *kwargs, _SharedObjectProxy_dict_pair *pairs)
+{
+    if (kwargs == NULL) {
+        return NULL;
+    }
+    PyObject *shared_kwargs = PyDict_New();
+    if (shared_kwargs == NULL) {
+        return NULL;
+    }
+    for (Py_ssize_t i = 0; i < PyDict_GET_SIZE(kwargs); ++i) {
+        _SharedObjectProxy_dict_pair *pair = &pairs[i];
+        assert(pair->key != NULL);
+        PyObject *key = PyUnicode_FromStringAndSize(pair->key, pair->key_length);
+        if (key == NULL) {
+            Py_DECREF(shared_kwargs);
+            return NULL;
+        }
+        PyObject *shared_kwarg = _sharedobjectproxy_copy_for_interp(&pair->value);
+        if (shared_kwarg == NULL) {
+            Py_DECREF(shared_kwargs);
+            Py_DECREF(key);
+            return NULL;
+        }
+        int res = PyDict_SetItem(shared_kwargs, key, shared_kwarg);
+        Py_DECREF(key);
+        Py_DECREF(shared_kwarg);
+        if (res < 0) {
+            Py_DECREF(shared_kwargs);
+            return NULL;
+        }
+    }
+
+    return shared_kwargs;
+}
+
+static void
+_sharedobjectproxy_close_shared_kwargs(PyObject *kwargs, _SharedObjectProxy_dict_pair *pairs)
+{
+    if (kwargs == NULL) {
+        return;
+    }
+    Py_ssize_t size = PyDict_GET_SIZE(kwargs);
+    for (Py_ssize_t i = 0; i < size; ++i) {
+        _sharedobjectproxy_finish_share(&pairs[i].value);
+    }
+    PyMem_RawFree(pairs);
+}
+
+static PyObject *
+sharedobjectproxy_tp_call(PyObject *op, PyObject *args, PyObject *kwargs) {
+    SharedObjectProxy *self = SharedObjectProxy_CAST(op);
+    _PyXI_proxy_share *args_state = _sharedobjectproxy_init_shared_args(args, self);
+    if (args_state == NULL) {
+        return NULL;
+    }
+
+    _SharedObjectProxy_dict_pair *kwarg_pairs;
+    if (_sharedobjectproxy_init_shared_kwargs(kwargs, self, &kwarg_pairs) < 0) {
+        _sharedobjectproxy_close_shared_args(args, args_state);
+        return NULL;
+    }
+
+    _PyXI_proxy_state state;
+    if (_sharedobjectproxy_enter(self, &state) < 0) {
+        return NULL;
+    }
+
+    PyObject *shared_args = _sharedobjectproxy_construct_shared_args(args, args_state);
+    if (shared_args == NULL) {
+        (void)_sharedobjectproxy_exit(self, &state);
+        _sharedobjectproxy_close_shared_args(args, args_state);
+        _sharedobjectproxy_close_shared_kwargs(kwargs, kwarg_pairs);
+        return NULL;
+    }
+
+
+    PyObject *shared_kwargs = _sharedobjectproxy_construct_shared_kwargs(kwargs, kwarg_pairs);
+    if (shared_kwargs == NULL && PyErr_Occurred()) {
+        Py_DECREF(shared_args);
+        (void)_sharedobjectproxy_exit(self, &state);
+        _sharedobjectproxy_close_shared_args(args, args_state);
+        _sharedobjectproxy_close_shared_kwargs(kwargs, kwarg_pairs);
+        return NULL;
+    }
+
+    PyObject *res = PyObject_Call(SharedObjectProxy_OBJECT(self),
+                                  shared_args, shared_kwargs);
+    Py_DECREF(shared_args);
+    Py_XDECREF(shared_kwargs);
+
+    PyObject *ret = _sharedobjectproxy_wrap_result(self, res, &state);
+    _sharedobjectproxy_close_shared_args(args, args_state);
+    _sharedobjectproxy_close_shared_kwargs(kwargs, kwarg_pairs);
+    return ret;
+}
+
+static PyObject *
+_sharedobjectproxy_no_arg(PyObject *op, unaryfunc call)
+{
+    SharedObjectProxy *self = SharedObjectProxy_CAST(op);
+    _PyXI_proxy_state state;
+    if (_sharedobjectproxy_enter(self, &state) < 0) {
+        return NULL;
+    }
+
+    PyObject *result = call(SharedObjectProxy_OBJECT(op));
+    return _sharedobjectproxy_wrap_result(self, result, &state);
+}
+
+static PyObject *
+_sharedobjectproxy_single_share_common(SharedObjectProxy *self, PyObject *to_share,
+                                       _PyXI_proxy_state *state,
+                                       _PyXI_proxy_share *shared_arg)
+{
+    if (_sharedobjectproxy_init_share(shared_arg, self, to_share) < 0) {
+        return NULL;
+    }
+    if (_sharedobjectproxy_enter(self, state) < 0) {
+        _sharedobjectproxy_finish_share(shared_arg);
+        return NULL;
+    }
+    PyObject *shared_obj = _sharedobjectproxy_copy_for_interp(shared_arg);
+    if (shared_obj == NULL) {
+        (void)_sharedobjectproxy_exit(self, state);
+        _sharedobjectproxy_finish_share(shared_arg);
+        return NULL;
+    }
+    return shared_obj;
+}
+
+static PyObject *
+_sharedobjectproxy_single_share(PyObject *op, PyObject *other, binaryfunc call)
+{
+    SharedObjectProxy *self = SharedObjectProxy_CAST(op);
+    _PyXI_proxy_state state;
+    _PyXI_proxy_share shared_arg;
+    PyObject *shared_obj = _sharedobjectproxy_single_share_common(self, other,
+                                                                  &state, &shared_arg);
+    if (shared_obj == NULL) {
+        return NULL;
+    }
+    PyObject *result = call(SharedObjectProxy_OBJECT(op), shared_obj);
+    Py_DECREF(shared_obj);
+    PyObject *ret = _sharedobjectproxy_wrap_result(self, result, &state);
+    _sharedobjectproxy_finish_share(&shared_arg);
+    return ret;
+}
+
+static int
+_sharedobjectproxy_double_share_common(SharedObjectProxy *self,
+                                       _PyXI_proxy_state *state,
+                                       _PyXI_proxy_share *shared_first,
+                                       PyObject *first,
+                                       PyObject **first_ptr,
+                                       _PyXI_proxy_share *shared_second,
+                                       PyObject *second,
+                                       PyObject **second_ptr)
+{
+    if (_sharedobjectproxy_init_share(shared_first, self, first) < 0) {
+        return -1;
+    }
+    if (_sharedobjectproxy_init_share(shared_second, self, second) < 0) {
+        _sharedobjectproxy_finish_share(shared_first);
+        return -1;
+    }
+    if (_sharedobjectproxy_enter(self, state) < 0) {
+        _sharedobjectproxy_finish_share(shared_first);
+        _sharedobjectproxy_finish_share(shared_second);
+        return -1;
+    }
+    PyObject *first_obj = _sharedobjectproxy_copy_for_interp(shared_first);
+    if (first_obj == NULL) {
+        (void)_sharedobjectproxy_exit(self, state);
+        _sharedobjectproxy_finish_share(shared_first);
+        _sharedobjectproxy_finish_share(shared_second);
+        return -1;
+    }
+    PyObject *second_obj = _sharedobjectproxy_copy_for_interp(shared_second);
+    if (second_obj == NULL) {
+        Py_DECREF(first_obj);
+        (void)_sharedobjectproxy_exit(self, state);
+        _sharedobjectproxy_finish_share(shared_first);
+        _sharedobjectproxy_finish_share(shared_second);
+        return -1;
+    }
+
+    *first_ptr = first_obj;
+    *second_ptr = second_obj;
+    return 0;
+}
+
+static PyObject *
+_sharedobjectproxy_double_share(PyObject *op, PyObject *first,
+                                PyObject *second, ternaryfunc call)
+{
+    SharedObjectProxy *self = SharedObjectProxy_CAST(op);
+    _PyXI_proxy_state state;
+    _PyXI_proxy_share shared_first;
+    _PyXI_proxy_share shared_second;
+    PyObject *first_obj;
+    PyObject *second_obj;
+    if (_sharedobjectproxy_double_share_common(self, &state, &shared_first,
+                                               first, &first_obj, &shared_second,
+                                               second, &second_obj) < 0) {
+        return NULL;
+    }
+    PyObject *result = call(SharedObjectProxy_OBJECT(op), first_obj, second_obj);
+    Py_DECREF(first_obj);
+    Py_DECREF(second_obj);
+    PyObject *ret = _sharedobjectproxy_wrap_result(self, result, &state);
+    _sharedobjectproxy_finish_share(&shared_first);
+    _sharedobjectproxy_finish_share(&shared_second);
+    return ret;
+}
+
+static int
+_sharedobjectproxy_double_share_int(PyObject *op, PyObject *first,
+                                    PyObject *second, objobjargproc call)
+{
+
+    SharedObjectProxy *self = SharedObjectProxy_CAST(op);
+    _PyXI_proxy_state state;
+    _PyXI_proxy_share shared_first;
+    _PyXI_proxy_share shared_second;
+    PyObject *first_obj;
+    PyObject *second_obj;
+    if (_sharedobjectproxy_double_share_common(self, &state, &shared_first,
+                                               first, &first_obj, &shared_second,
+                                               second, &second_obj) < 0) {
+        return -1;
+    }
+    int result = call(SharedObjectProxy_OBJECT(op), first_obj, second_obj);
+    Py_DECREF(first_obj);
+    Py_DECREF(second_obj);
+    if (_sharedobjectproxy_exit(self, &state) < 0) {
+        _sharedobjectproxy_finish_share(&shared_first);
+        _sharedobjectproxy_finish_share(&shared_second);
+        return -1;
+    }
+    _sharedobjectproxy_finish_share(&shared_first);
+    _sharedobjectproxy_finish_share(&shared_second);
+    return result;
+}
+
+
+static PyObject *
+_sharedobjectproxy_ssize_arg(PyObject *op, Py_ssize_t count, ssizeargfunc call)
+{
+    SharedObjectProxy *self = SharedObjectProxy_CAST(op);
+    _PyXI_proxy_state state;
+    if (_sharedobjectproxy_enter(self, &state) < 0) {
+        return NULL;
+    }
+    PyObject *result = call(SharedObjectProxy_OBJECT(op), count);
+    return _sharedobjectproxy_wrap_result(self, result, &state);
+}
+
+static Py_ssize_t
+_sharedobjectproxy_ssize_result(PyObject *op, lenfunc call)
+{
+    SharedObjectProxy *self = SharedObjectProxy_CAST(op);
+    _PyXI_proxy_state state;
+    if (_sharedobjectproxy_enter(self, &state) < 0) {
+        return -1;
+    }
+    Py_ssize_t result = call(SharedObjectProxy_OBJECT(op));
+    if (_sharedobjectproxy_exit(self, &state) < 0) {
+        return -1;
+    }
+
+    return result;
+}
+
+
+#define _SharedObjectProxy_ONE_ARG(name, func)              \
+static PyObject *                                           \
+sharedobjectproxy_ ##name(PyObject *op, PyObject *other)    \
+{                                                           \
+    return _sharedobjectproxy_single_share(op, other, func);\
+}                                                           \
+
+#define _SharedObjectProxy_TWO_ARG(name, func)                              \
+static PyObject *                                                           \
+sharedobjectproxy_ ##name(PyObject *op, PyObject *first, PyObject *second)  \
+{                                                                           \
+    return _sharedobjectproxy_double_share(op, first, second, func);        \
+}                                                                           \
+
+#define _SharedObjectProxy_TWO_ARG_INT(name, func)                          \
+static int                                                                  \
+sharedobjectproxy_ ##name(PyObject *op, PyObject *first, PyObject *second)  \
+{                                                                           \
+    return _sharedobjectproxy_double_share_int(op, first, second, func);    \
+}                                                                           \
+
+#define _SharedObjectProxy_NO_ARG(name, func)   \
+static PyObject *                               \
+sharedobjectproxy_ ##name(PyObject *op)         \
+{                                               \
+    return _sharedobjectproxy_no_arg(op, func); \
+}                                               \
+
+#define _SharedObjectProxy_SSIZE_ARG(name, func)            \
+static PyObject *                                           \
+sharedobjectproxy_ ##name(PyObject *op, Py_ssize_t count)   \
+{                                                           \
+    return _sharedobjectproxy_ssize_arg(op, count, func);   \
+}
+
+#define _SharedObjectProxy_SSIZE_RETURN(name, func)     \
+static Py_ssize_t                                       \
+sharedobjectproxy_ ##name(PyObject *op)                 \
+{                                                       \
+    return _sharedobjectproxy_ssize_result(op, func);   \
+}
+
+_SharedObjectProxy_NO_ARG(tp_iter, PyObject_GetIter);
+_SharedObjectProxy_NO_ARG(tp_iternext, PyIter_Next);
+_SharedObjectProxy_NO_ARG(tp_str, PyObject_Str);
+_SharedObjectProxy_NO_ARG(tp_repr, PyObject_Repr);
+_SharedObjectProxy_ONE_ARG(tp_getattro, PyObject_GetAttr);
+_SharedObjectProxy_TWO_ARG_INT(tp_setattro, PyObject_SetAttr);
+
+static Py_hash_t
+sharedobjectproxy_tp_hash(PyObject *op)
+{
+    SharedObjectProxy *self = SharedObjectProxy_CAST(op);
+    _PyXI_proxy_state state;
+    if (_sharedobjectproxy_enter(self, &state) < 0) {
+        return -1;
+    }
+
+    Py_hash_t result = PyObject_Hash(SharedObjectProxy_OBJECT(op));
+
+    if (_sharedobjectproxy_exit(self, &state) < 0) {
+        return -1;
+    }
+
+    return result;
+}
+
+/* Number wrappers */
+_SharedObjectProxy_ONE_ARG(nb_add, PyNumber_Add);
+_SharedObjectProxy_ONE_ARG(nb_subtract, PyNumber_Subtract);
+_SharedObjectProxy_ONE_ARG(nb_multiply, PyNumber_Multiply);
+_SharedObjectProxy_ONE_ARG(nb_remainder, PyNumber_Remainder);
+_SharedObjectProxy_ONE_ARG(nb_divmod, PyNumber_Divmod);
+_SharedObjectProxy_TWO_ARG(nb_power, PyNumber_Power);
+_SharedObjectProxy_NO_ARG(nb_negative, PyNumber_Negative);
+_SharedObjectProxy_NO_ARG(nb_positive, PyNumber_Positive);
+_SharedObjectProxy_NO_ARG(nb_absolute, PyNumber_Absolute);
+_SharedObjectProxy_NO_ARG(nb_invert, PyNumber_Invert);
+_SharedObjectProxy_ONE_ARG(nb_lshift, PyNumber_Lshift);
+_SharedObjectProxy_ONE_ARG(nb_rshift, PyNumber_Rshift);
+_SharedObjectProxy_ONE_ARG(nb_and, PyNumber_And);
+_SharedObjectProxy_ONE_ARG(nb_xor, PyNumber_Xor);
+_SharedObjectProxy_ONE_ARG(nb_or, PyNumber_Or);
+_SharedObjectProxy_NO_ARG(nb_int, PyNumber_Long);
+_SharedObjectProxy_NO_ARG(nb_float, PyNumber_Float);
+_SharedObjectProxy_ONE_ARG(nb_inplace_add, PyNumber_InPlaceAdd);
+_SharedObjectProxy_ONE_ARG(nb_inplace_subtract, PyNumber_InPlaceSubtract);
+_SharedObjectProxy_ONE_ARG(nb_inplace_multiply, PyNumber_InPlaceMultiply);
+_SharedObjectProxy_ONE_ARG(nb_inplace_remainder, PyNumber_InPlaceRemainder);
+_SharedObjectProxy_TWO_ARG(nb_inplace_power, PyNumber_InPlacePower);
+_SharedObjectProxy_ONE_ARG(nb_inplace_lshift, PyNumber_InPlaceLshift);
+_SharedObjectProxy_ONE_ARG(nb_inplace_rshift, PyNumber_InPlaceRshift);
+_SharedObjectProxy_ONE_ARG(nb_inplace_and, PyNumber_InPlaceAnd);
+_SharedObjectProxy_ONE_ARG(nb_inplace_xor, PyNumber_InPlaceXor);
+_SharedObjectProxy_ONE_ARG(nb_inplace_or, PyNumber_InPlaceOr);
+_SharedObjectProxy_ONE_ARG(nb_floor_divide, PyNumber_FloorDivide);
+_SharedObjectProxy_ONE_ARG(nb_true_divide, PyNumber_TrueDivide);
+_SharedObjectProxy_ONE_ARG(nb_inplace_floor_divide, PyNumber_InPlaceFloorDivide);
+_SharedObjectProxy_ONE_ARG(nb_inplace_true_divide, PyNumber_InPlaceTrueDivide);
+_SharedObjectProxy_NO_ARG(nb_index, PyNumber_Index);
+_SharedObjectProxy_ONE_ARG(nb_matrix_multiply, PyNumber_MatrixMultiply);
+_SharedObjectProxy_ONE_ARG(nb_inplace_matrix_multiply, PyNumber_InPlaceMatrixMultiply);
+
+/* Async wrappers */
+_SharedObjectProxy_NO_ARG(am_await, _PyCoro_GetAwaitableIter);
+_SharedObjectProxy_NO_ARG(am_aiter, PyObject_GetAIter);
+_SharedObjectProxy_NO_ARG(am_anext, _PyEval_GetANext);
+
+/* Sequence wrappers */
+_SharedObjectProxy_SSIZE_RETURN(sq_length, PySequence_Size);
+_SharedObjectProxy_ONE_ARG(sq_concat, PySequence_Concat);
+_SharedObjectProxy_SSIZE_ARG(sq_repeat, PySequence_Repeat)
+_SharedObjectProxy_SSIZE_ARG(sq_item, PySequence_GetItem);
+_SharedObjectProxy_ONE_ARG(sq_inplace_concat, PySequence_InPlaceConcat);
+_SharedObjectProxy_SSIZE_ARG(sq_inplace_repeat, PySequence_InPlaceRepeat);
+
+static int
+sharedobjectproxy_sq_ass_item(PyObject *op, Py_ssize_t index, PyObject *item)
+{
+    SharedObjectProxy *self = SharedObjectProxy_CAST(op);
+    _PyXI_proxy_state state;
+    _PyXI_proxy_share shared_arg;
+    PyObject *shared_obj = _sharedobjectproxy_single_share_common(self, item,
+                                                                  &state, &shared_arg);
+    if (shared_obj == NULL) {
+        Py_DECREF(shared_obj);
+        (void)_sharedobjectproxy_exit(self, &state);
+        _sharedobjectproxy_finish_share(&shared_arg);
+        return -1;
+    }
+    int result = PySequence_SetItem(SharedObjectProxy_OBJECT(op), index, shared_obj);
+    Py_DECREF(shared_obj);
+    if (_sharedobjectproxy_exit(self, &state) < 0) {
+        _sharedobjectproxy_finish_share(&shared_arg);
+        return -1;
+    }
+    _sharedobjectproxy_finish_share(&shared_arg);
+    return result;
+}
+
+static int
+sharedobjectproxy_sq_contains(PyObject *op, PyObject *item)
+{
+    SharedObjectProxy *self = SharedObjectProxy_CAST(op);
+    _PyXI_proxy_state state;
+    _PyXI_proxy_share shared_arg;
+    PyObject *shared_obj = _sharedobjectproxy_single_share_common(self, item,
+                                                                  &state, &shared_arg);
+    if (shared_obj == NULL) {
+        Py_DECREF(shared_obj);
+        (void)_sharedobjectproxy_exit(self, &state);
+        _sharedobjectproxy_finish_share(&shared_arg);
+        return -1;
+    }
+    int result = PySequence_Contains(SharedObjectProxy_OBJECT(op), shared_obj);
+    Py_DECREF(shared_obj);
+    if (_sharedobjectproxy_exit(self, &state) < 0) {
+        _sharedobjectproxy_finish_share(&shared_arg);
+        return -1;
+    }
+    _sharedobjectproxy_finish_share(&shared_arg);
+    return result;
+}
+
+/* Mapping wrappers */
+
+_SharedObjectProxy_SSIZE_RETURN(mp_length, PyMapping_Length);
+_SharedObjectProxy_ONE_ARG(mp_subscript, PyObject_GetItem);
+_SharedObjectProxy_TWO_ARG_INT(mp_ass_subscript, PyObject_SetItem);
+
+#define _SharedObjectProxy_FIELD(name) {Py_ ##name, sharedobjectproxy_ ##name}
+
+static PyType_Slot SharedObjectProxy_slots[] = {
+    {Py_tp_new, sharedobjectproxy_new},
+    {Py_tp_traverse, sharedobjectproxy_traverse},
+    {Py_tp_clear, sharedobjectproxy_clear},
+    {Py_tp_dealloc, sharedobjectproxy_dealloc},
+    _SharedObjectProxy_FIELD(tp_getattro),
+    _SharedObjectProxy_FIELD(tp_setattro),
+    _SharedObjectProxy_FIELD(tp_call),
+    _SharedObjectProxy_FIELD(tp_repr),
+    _SharedObjectProxy_FIELD(tp_str),
+    _SharedObjectProxy_FIELD(tp_iter),
+    _SharedObjectProxy_FIELD(tp_iternext),
+    _SharedObjectProxy_FIELD(tp_hash),
+    _SharedObjectProxy_FIELD(mp_length),
+    _SharedObjectProxy_FIELD(mp_subscript),
+    _SharedObjectProxy_FIELD(mp_ass_subscript),
+    _SharedObjectProxy_FIELD(sq_concat),
+    _SharedObjectProxy_FIELD(sq_length),
+    _SharedObjectProxy_FIELD(sq_repeat),
+    _SharedObjectProxy_FIELD(sq_item),
+    _SharedObjectProxy_FIELD(sq_inplace_concat),
+    _SharedObjectProxy_FIELD(sq_inplace_repeat),
+    _SharedObjectProxy_FIELD(sq_ass_item),
+    _SharedObjectProxy_FIELD(sq_contains),
+    _SharedObjectProxy_FIELD(am_await),
+    _SharedObjectProxy_FIELD(am_aiter),
+    _SharedObjectProxy_FIELD(am_anext),
+    _SharedObjectProxy_FIELD(nb_add),
+    _SharedObjectProxy_FIELD(nb_subtract),
+    _SharedObjectProxy_FIELD(nb_multiply),
+    _SharedObjectProxy_FIELD(nb_remainder),
+    _SharedObjectProxy_FIELD(nb_power),
+    _SharedObjectProxy_FIELD(nb_divmod),
+    _SharedObjectProxy_FIELD(nb_negative),
+    _SharedObjectProxy_FIELD(nb_positive),
+    _SharedObjectProxy_FIELD(nb_absolute),
+    _SharedObjectProxy_FIELD(nb_invert),
+    _SharedObjectProxy_FIELD(nb_lshift),
+    _SharedObjectProxy_FIELD(nb_rshift),
+    _SharedObjectProxy_FIELD(nb_and),
+    _SharedObjectProxy_FIELD(nb_xor),
+    _SharedObjectProxy_FIELD(nb_or),
+    _SharedObjectProxy_FIELD(nb_int),
+    _SharedObjectProxy_FIELD(nb_float),
+    _SharedObjectProxy_FIELD(nb_inplace_add),
+    _SharedObjectProxy_FIELD(nb_inplace_subtract),
+    _SharedObjectProxy_FIELD(nb_inplace_multiply),
+    _SharedObjectProxy_FIELD(nb_inplace_remainder),
+    _SharedObjectProxy_FIELD(nb_inplace_power),
+    _SharedObjectProxy_FIELD(nb_inplace_lshift),
+    _SharedObjectProxy_FIELD(nb_inplace_rshift),
+    _SharedObjectProxy_FIELD(nb_inplace_and),
+    _SharedObjectProxy_FIELD(nb_inplace_xor),
+    _SharedObjectProxy_FIELD(nb_inplace_or),
+    _SharedObjectProxy_FIELD(nb_floor_divide),
+    _SharedObjectProxy_FIELD(nb_true_divide),
+    _SharedObjectProxy_FIELD(nb_inplace_floor_divide),
+    _SharedObjectProxy_FIELD(nb_inplace_true_divide),
+    _SharedObjectProxy_FIELD(nb_index),
+    _SharedObjectProxy_FIELD(nb_matrix_multiply),
+    _SharedObjectProxy_FIELD(nb_inplace_matrix_multiply),
+    {0, NULL},
+};
+
+static PyType_Spec SharedObjectProxy_spec = {
+    .name = MODULE_NAME_STR ".SharedObjectProxy",
+    .basicsize = sizeof(SharedObjectProxy),
+    .flags = (Py_TPFLAGS_DEFAULT | Py_TPFLAGS_IMMUTABLETYPE
+              | Py_TPFLAGS_HAVE_GC),
+    .slots = SharedObjectProxy_slots,
+};
+
+
+static PyObject *
+sharedobjectproxy_xid(_PyXIData_t *data)
+{
+    SharedObjectProxy *proxy = SharedObjectProxy_CAST(data->obj);
+    return _sharedobjectproxy_create(proxy->object, proxy->interp);
+}
+
+static void
+sharedobjectproxy_shared_free(void *data)
+{
+    SharedObjectProxy *proxy = SharedObjectProxy_CAST(data);
+    Py_DECREF(proxy);
+}
+
+static int
+sharedobjectproxy_shared(PyThreadState *tstate, PyObject *obj, _PyXIData_t *data)
+{
+    _PyXIData_Init(data, tstate->interp, NULL, obj, sharedobjectproxy_xid);
+    data->free = sharedobjectproxy_shared_free;
+    return 0;
+}
+
+static int
+register_sharedobjectproxy(PyObject *mod, PyTypeObject **p_state)
+{
+    assert(*p_state == NULL);
+    PyTypeObject *cls = (PyTypeObject *)PyType_FromModuleAndSpec(
+                mod, &SharedObjectProxy_spec, NULL);
+    if (cls == NULL) {
+        return -1;
+    }
+    if (PyModule_AddType(mod, cls) < 0) {
+        Py_DECREF(cls);
+        return -1;
+    }
+    *p_state = cls;
+
+    if (ensure_xid_class(cls, GETDATA(sharedobjectproxy_shared)) < 0) {
+        return -1;
+    }
+
+    return 0;
+}
 
 static PyTypeObject *
 _get_current_xibufferview_type(void)
@@ -381,6 +1365,16 @@ _get_current_xibufferview_type(void)
     return state->XIBufferViewType;
 }
 
+static PyTypeObject *
+_get_current_sharedobjectproxy_type(void)
+{
+    module_state *state = _get_current_module_state();
+    if (state == NULL) {
+        return NULL;
+    }
+
+    return state->SharedObjectProxyType;
+}
 
 /* interpreter-specific code ************************************************/
 
@@ -1553,6 +2547,59 @@ finally:
     return captured;
 }
 
+static PyObject *
+call_share_method_steal(PyThreadState *tstate, PyObject *method)
+{
+    assert(tstate != NULL);
+    assert(method != NULL);
+    PyObject *result = PyObject_CallNoArgs(method);
+    Py_DECREF(method);
+    if (result == NULL) {
+        return NULL;
+    }
+
+    if (_PyObject_CheckXIData(tstate, result) < 0) {
+        PyObject *exc = _PyErr_GetRaisedException(tstate);
+        _PyXIData_FormatNotShareableError(tstate, "__share__() returned unshareable object: %R", result);
+        PyObject *new_exc = _PyErr_GetRaisedException(tstate);
+        PyException_SetCause(new_exc, exc);
+        PyErr_SetRaisedException(new_exc);
+        Py_DECREF(result);
+        return NULL;
+    }
+
+    return result;
+}
+
+/*[clinic input]
+_interpreters.share
+    op: object,
+    /
+
+
+Wrap an object in a shareable proxy that allows cross-interpreter access.
+[clinic start generated code]*/
+
+static PyObject *
+_interpreters_share(PyObject *module, PyObject *op)
+/*[clinic end generated code: output=e2ce861ae3b58508 input=5fb300b5598bb7d2]*/
+{
+    PyThreadState *tstate = _PyThreadState_GET();
+    if (_PyObject_CheckXIData(tstate, op) == 0) {
+        return Py_NewRef(op);
+    }
+    PyErr_Clear();
+
+    PyObject *share_method;
+    if (PyObject_GetOptionalAttrString(op, "__share__", &share_method) < 0) {
+        return NULL;
+    }
+    if (share_method != NULL) {
+        return call_share_method_steal(tstate, share_method /* stolen */);
+    }
+
+    return _sharedobjectproxy_create(op, _PyInterpreterState_GET());
+}
 
 static PyMethodDef module_functions[] = {
     {"new_config",                _PyCFunction_CAST(interp_new_config),
@@ -1578,9 +2625,9 @@ static PyMethodDef module_functions[] = {
     _INTERPRETERS_DECREF_METHODDEF
 
     _INTERPRETERS_IS_SHAREABLE_METHODDEF
-
     _INTERPRETERS_CAPTURE_EXCEPTION_METHODDEF
 
+    _INTERPRETERS_SHARE_METHODDEF
     {NULL,                        NULL}           /* sentinel */
 };
 
@@ -1624,6 +2671,10 @@ module_exec(PyObject *mod)
     }
 
     if (register_memoryview_xid(mod, &state->XIBufferViewType) < 0) {
+        goto error;
+    }
+
+    if (register_sharedobjectproxy(mod, &state->SharedObjectProxyType) < 0) {
         goto error;
     }
 
