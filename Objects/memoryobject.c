@@ -2358,7 +2358,7 @@ memoryview.hex
 
     sep: object = NULL
         An optional single character or byte to separate hex bytes.
-    bytes_per_sep: int = 1
+    bytes_per_sep: Py_ssize_t = 1
         How many bytes between separators.  Positive values count from the
         right, negative values count from the left.
 
@@ -2378,8 +2378,8 @@ Example:
 
 static PyObject *
 memoryview_hex_impl(PyMemoryViewObject *self, PyObject *sep,
-                    int bytes_per_sep)
-/*[clinic end generated code: output=430ca760f94f3ca7 input=539f6a3a5fb56946]*/
+                    Py_ssize_t bytes_per_sep)
+/*[clinic end generated code: output=c9bb00c7a8e86056 input=dc48a56ed3b058ae]*/
 {
     Py_buffer *src = VIEW_ADDR(self);
 

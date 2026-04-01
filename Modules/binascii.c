@@ -2067,7 +2067,7 @@ binascii.b2a_hex
     data: Py_buffer
     sep: object = NULL
         An optional single character or byte to separate hex bytes.
-    bytes_per_sep: int = 1
+    bytes_per_sep: Py_ssize_t = 1
         How many bytes between separators.  Positive values count from the
         right, negative values count from the left.
 
@@ -2087,8 +2087,8 @@ b'b9_01ef'
 
 static PyObject *
 binascii_b2a_hex_impl(PyObject *module, Py_buffer *data, PyObject *sep,
-                      int bytes_per_sep)
-/*[clinic end generated code: output=a26937946a81d2c7 input=ec0ade6ba2e43543]*/
+                      Py_ssize_t bytes_per_sep)
+/*[clinic end generated code: output=7d703f866f74a813 input=6a1606f01a87118c]*/
 {
     return _Py_strhex_bytes_with_sep((const char *)data->buf, data->len,
                                      sep, bytes_per_sep);
@@ -2105,8 +2105,8 @@ available as "b2a_hex()".
 
 static PyObject *
 binascii_hexlify_impl(PyObject *module, Py_buffer *data, PyObject *sep,
-                      int bytes_per_sep)
-/*[clinic end generated code: output=d12aa1b001b15199 input=bc317bd4e241f76b]*/
+                      Py_ssize_t bytes_per_sep)
+/*[clinic end generated code: output=b99b3b39d234a3d4 input=bc317bd4e241f76b]*/
 {
     return _Py_strhex_bytes_with_sep((const char *)data->buf, data->len,
                                      sep, bytes_per_sep);
