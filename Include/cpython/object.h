@@ -229,7 +229,7 @@ struct _typeobject {
 
     destructor tp_finalize;
     vectorcallfunc tp_vectorcall;
-    iteritemfunc tp_iteritem;
+    iteritemfunc tp_iteritem; /* Virtual iterator next function */
 
 
     /* bitset of which type-watchers care about this type */
