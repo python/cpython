@@ -2215,6 +2215,16 @@ class SectionlessTestCase(unittest.TestCase):
         cfg.add_section(configparser.UNNAMED_SECTION)
         cfg.set(configparser.UNNAMED_SECTION, 'a', '1')
         self.assertEqual('1', cfg[configparser.UNNAMED_SECTION]['a'])
+        output = io.StringIO()
+        cfg.write(output)
+        self.assertEqual(output.getvalue(), 'a = 1\n\n')
+
+        cfg = configparser.ConfigParser(allow_unnamed_section=True)
+        cfg[configparser.UNNAMED_SECTION] = {'a': '1'}
+        self.assertEqual('1', cfg[configparser.UNNAMED_SECTION]['a'])
+        output = io.StringIO()
+        cfg.write(output)
+        self.assertEqual(output.getvalue(), 'a = 1\n\n')
 
     def test_disabled_error(self):
         with self.assertRaises(configparser.MissingSectionHeaderError):
@@ -2222,6 +2232,9 @@ class SectionlessTestCase(unittest.TestCase):
 
         with self.assertRaises(configparser.UnnamedSectionDisabledError):
             configparser.ConfigParser().add_section(configparser.UNNAMED_SECTION)
+
+        with self.assertRaises(configparser.UnnamedSectionDisabledError):
+            configparser.ConfigParser()[configparser.UNNAMED_SECTION] = {'a': '1'}
 
     def test_multiple_configs(self):
         cfg = configparser.ConfigParser(allow_unnamed_section=True)

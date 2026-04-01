@@ -133,7 +133,7 @@ This module provides the following function:
 
    Parse the headers from a file pointer *fp* representing a HTTP
    request/response. The file has to be a :class:`~io.BufferedIOBase` reader
-   (i.e. not text) and must provide a valid :rfc:`2822` style header.
+   (i.e. not text) and must provide a valid :rfc:`5322` style header.
 
    This function returns an instance of :class:`http.client.HTTPMessage`
    that holds the header fields, but no payload
@@ -319,6 +319,12 @@ HTTPConnection Objects
       :class:`str` or bytes-like object that is not also a file as the
       body representation.
 
+   .. note::
+
+      Note that you must have read the whole response or call :meth:`close`
+      if :meth:`getresponse` raised an non-:exc:`ConnectionError` exception
+      before you can send a new request to the server.
+
    .. versionchanged:: 3.2
       *body* can now be an iterable.
 
@@ -334,15 +340,14 @@ HTTPConnection Objects
    Should be called after a request is sent to get the response from the server.
    Returns an :class:`HTTPResponse` instance.
 
-   .. note::
-
-      Note that you must have read the whole response before you can send a new
-      request to the server.
-
    .. versionchanged:: 3.5
       If a :exc:`ConnectionError` or subclass is raised, the
       :class:`HTTPConnection` object will be ready to reconnect when
       a new request is sent.
+
+      Note that this does not apply to :exc:`OSError`\s raised by the underlying
+      socket. Instead the caller is responsible to call :meth:`close` on the
+      existing connection.
 
 
 .. method:: HTTPConnection.set_debuglevel(level)

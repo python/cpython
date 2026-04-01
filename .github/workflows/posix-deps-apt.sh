@@ -1,10 +1,9 @@
 #!/bin/sh
 apt-get update
 
-apt-get -yq install \
+apt-get -yq --no-install-recommends install \
     build-essential \
     pkg-config \
-    ccache \
     cmake \
     gdb \
     lcov \
@@ -32,4 +31,4 @@ apt-get -yq install \
 # https://deb.sury.org/
 sudo add-apt-repository ppa:ondrej/php
 apt-get update
-apt-get -yq install libmpdec-dev
+apt-get -yq --no-install-recommends install libmpdec-dev

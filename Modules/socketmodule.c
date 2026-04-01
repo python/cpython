@@ -151,7 +151,7 @@ listen([n]) -- start listening for incoming connections\n\
 recv(buflen[, flags]) -- receive data\n\
 recv_into(buffer[, nbytes[, flags]]) -- receive data (into a buffer)\n\
 recvfrom(buflen[, flags]) -- receive data and sender\'s address\n\
-recvfrom_into(buffer[, nbytes, [, flags])\n\
+recvfrom_into(buffer[, nbytes, [, flags]])\n\
   -- receive data and sender\'s address (into a buffer)\n\
 sendall(data[, flags]) -- send all data\n\
 send(data[, flags]) -- send data, may not send all of it\n\
@@ -2769,6 +2769,12 @@ getsockaddrlen(PySocketSockObject *s, socklen_t *len_ret)
        _Py_FALLTHROUGH;
 #endif /* AF_RDS */
 
+#ifdef AF_DIVERT
+    case AF_DIVERT:
+        /* FreeBSD divert(4) sockets use sockaddr_in: fall-through */
+       _Py_FALLTHROUGH;
+#endif /* AF_DIVERT */
+
     case AF_INET:
     {
         *len_ret = sizeof (struct sockaddr_in);
@@ -3351,8 +3357,7 @@ sock_setsockopt(PyObject *self, PyObject *args)
     arglen = PyTuple_Size(args);
     if (arglen == 3 && optval == Py_None) {
         PyErr_Format(PyExc_TypeError,
-                     "setsockopt() requires 4 arguments when the third argument is None",
-                     arglen);
+                     "setsockopt() requires 4 arguments when the third argument is None");
         return NULL;
     }
     if (arglen == 4 && optval != Py_None) {
@@ -4802,6 +4807,7 @@ sock_sendto(PyObject *self, PyObject *args)
     }
 
     if (PySys_Audit("socket.sendto", "OO", s, addro) < 0) {
+        PyBuffer_Release(&pbuf);
         return NULL;
     }
 
@@ -4977,11 +4983,13 @@ _socket_socket_sendmsg_impl(PySocketSockObject *s, PyObject *data_arg,
     if (cmsg_arg == NULL)
         ncmsgs = 0;
     else {
-        if ((cmsg_fast = PySequence_Fast(cmsg_arg,
-                                         "sendmsg() argument 2 must be an "
-                                         "iterable")) == NULL)
+        cmsg_fast = PySequence_Tuple(cmsg_arg);
+        if (cmsg_fast == NULL) {
+            PyErr_SetString(PyExc_TypeError,
+                "sendmsg() argument 2 must be an iterable");
             goto finally;
-        ncmsgs = PySequence_Fast_GET_SIZE(cmsg_fast);
+        }
+        ncmsgs = PyTuple_GET_SIZE(cmsg_fast);
     }
 
 #ifndef CMSG_SPACE
@@ -5001,8 +5009,9 @@ _socket_socket_sendmsg_impl(PySocketSockObject *s, PyObject *data_arg,
     controllen = controllen_last = 0;
     while (ncmsgbufs < ncmsgs) {
         size_t bufsize, space;
+        PyObject *item = PyTuple_GET_ITEM(cmsg_fast, ncmsgbufs);
 
-        if (!PyArg_Parse(PySequence_Fast_GET_ITEM(cmsg_fast, ncmsgbufs),
+        if (!PyArg_Parse(item,
                          "(iiy*):[sendmsg() ancillary data items]",
                          &cmsgs[ncmsgbufs].level,
                          &cmsgs[ncmsgbufs].type,
@@ -6252,7 +6261,7 @@ socket_gethostbyaddr(PyObject *self, PyObject *args)
        gethostbyaddr_r is 8-byte aligned, which at least llvm-gcc
        does not ensure. The attribute below instructs the compiler
        to maintain this alignment. */
-    char buf[16384] Py_ALIGNED(8);
+    _Py_ALIGNED_DEF(8, char) buf[16384];
     int buf_len = (sizeof buf) - 1;
     int errnop;
 #endif
@@ -6973,7 +6982,7 @@ socket_getaddrinfo(PyObject *self, PyObject *args, PyObject* kwargs)
 
     if (PySys_Audit("socket.getaddrinfo", "OOiii",
                     hobj, pobj, family, socktype, protocol) < 0) {
-        return NULL;
+        goto err;
     }
 
     memset(&hints, 0, sizeof(hints));
@@ -7294,10 +7303,10 @@ _socket_if_nametoindex_impl(PyObject *module, PyObject *oname)
     unsigned long index;
 #endif
 
+    errno = ENODEV;  // in case 'if_nametoindex' does not set errno
     index = if_nametoindex(PyBytes_AS_STRING(oname));
     if (index == 0) {
-        /* if_nametoindex() doesn't set errno */
-        PyErr_SetString(PyExc_OSError, "no interface with this name");
+        PyErr_SetFromErrno(PyExc_OSError);
         return NULL;
     }
 
@@ -7317,6 +7326,7 @@ static PyObject *
 _socket_if_indextoname_impl(PyObject *module, NET_IFINDEX index)
 /*[clinic end generated code: output=e48bc324993052e0 input=c93f753d0cf6d7d1]*/
 {
+    errno = ENXIO;  // in case 'if_indextoname' does not set errno
     char name[IF_NAMESIZE + 1];
     if (if_indextoname(index, name) == NULL) {
         PyErr_SetFromErrno(PyExc_OSError);
@@ -8900,6 +8910,9 @@ socket_exec(PyObject *m)
 #ifdef IPV6_HOPLIMIT
     ADD_INT_MACRO(m, IPV6_HOPLIMIT);
 #endif
+#ifdef IPV6_HDRINCL
+    ADD_INT_MACRO(m, IPV6_HDRINCL);
+#endif
 #ifdef IPV6_HOPOPTS
     ADD_INT_MACRO(m, IPV6_HOPOPTS);
 #endif
@@ -9292,6 +9305,7 @@ error:
 }
 
 static struct PyModuleDef_Slot socket_slots[] = {
+    _Py_ABI_SLOT,
     {Py_mod_exec, socket_exec},
     {Py_mod_multiple_interpreters, Py_MOD_PER_INTERPRETER_GIL_SUPPORTED},
     {Py_mod_gil, Py_MOD_GIL_NOT_USED},

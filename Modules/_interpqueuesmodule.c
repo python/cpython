@@ -436,7 +436,7 @@ _queueitem_clear_data(_queueitem *item)
         return;
     }
     // It was allocated in queue_put().
-    (void)_release_xid_data(item->data, XID_IGNORE_EXC & XID_FREE);
+    (void)_release_xid_data(item->data, XID_IGNORE_EXC | XID_FREE);
     item->data = NULL;
 }
 
@@ -1898,6 +1898,7 @@ error:
 }
 
 static struct PyModuleDef_Slot module_slots[] = {
+    _Py_ABI_SLOT,
     {Py_mod_exec, module_exec},
     {Py_mod_multiple_interpreters, Py_MOD_PER_INTERPRETER_GIL_SUPPORTED},
     {Py_mod_gil, Py_MOD_GIL_NOT_USED},

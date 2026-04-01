@@ -1,13 +1,24 @@
 Pending removal in Python 3.20
 ------------------------------
 
-* The ``__version__`` attribute has been deprecated in these standard library
-  modules and will be removed in Python 3.20.
-  Use :py:data:`sys.version_info` instead.
+* Calling the ``__new__()`` method of :class:`struct.Struct` without the
+  *format* argument is deprecated and will be removed in Python 3.20.  Calling
+  :meth:`~object.__init__` method on initialized :class:`~struct.Struct`
+  objects is deprecated and will be removed in Python 3.20.
+
+  (Contributed by Sergey B Kirpichev and Serhiy Storchaka in :gh:`143715`.)
+
+* The ``__version__``, ``version`` and ``VERSION`` attributes have been
+  deprecated in these standard library modules and will be removed in
+  Python 3.20. Use :py:data:`sys.version_info` instead.
 
   - :mod:`argparse`
   - :mod:`csv`
+  - :mod:`ctypes`
   - :mod:`!ctypes.macholib`
+  - :mod:`decimal` (use :data:`decimal.SPEC_VERSION` instead)
+  - :mod:`http.server`
+  - :mod:`imaplib`
   - :mod:`ipaddress`
   - :mod:`json`
   - :mod:`logging` (``__date__`` also deprecated)
@@ -17,8 +28,13 @@ Pending removal in Python 3.20
   - :mod:`re`
   - :mod:`socketserver`
   - :mod:`tabnanny`
+  - :mod:`tarfile`
   - :mod:`tkinter.font`
   - :mod:`tkinter.ttk`
+  - :mod:`wsgiref.simple_server`
+  - :mod:`xml.etree.ElementTree`
+  - :mod:`!xml.sax.expatreader`
+  - :mod:`xml.sax.handler`
   - :mod:`zlib`
 
   (Contributed by Hugo van Kemenade and Stan Ulbrych in :gh:`76007`.)
