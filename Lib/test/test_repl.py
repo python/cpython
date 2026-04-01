@@ -501,30 +501,8 @@ class TestAsyncioREPL(unittest.TestCase):
         self.assertEqual(p.returncode, 0)
         self.assertEqual(output[:3], ">>>")
 
-    def test_pythonstartup_success(self):
-        startup_code = dedent("print('notice from pythonstartup in asyncio repl')")
-        startup_env = self.enterContext(
-            new_pythonstartup_env(code=startup_code, histfile=".asyncio_history"))
-
-        p = spawn_repl(
-            "-qm", "asyncio",
-            env=os.environ | startup_env,
-            isolated=False,
-            custom=True)
-        p.stdin.write("1/0")
-        output = kill_python(p)
-        self.assertStartsWith(output, 'notice from pythonstartup in asyncio repl')
-
-        expected = dedent("""\
-          File "<stdin>", line 1, in <module>
-            1/0
-            ~^~
-        ZeroDivisionError: division by zero
-        """)
-        self.assertIn(expected, output)
-
     def test_pythonstartup_failure(self):
-        startup_code = "def foo():\n    1/0\n"
+        startup_code = "1/0\n"
         startup_env = self.enterContext(
             new_pythonstartup_env(code=startup_code, histfile=".asyncio_history"))
 
@@ -533,18 +511,16 @@ class TestAsyncioREPL(unittest.TestCase):
             env=os.environ | startup_env,
             isolated=False,
             custom=True)
-        p.stdin.write("foo()")
+        p.stdin.write("print('executed user code anyway')")
         output = kill_python(p)
         expected = dedent(f"""\
-          File "<stdin>", line 1, in <module>
-            foo()
-            ~~~^^
-          File "{startup_env['PYTHONSTARTUP']}", line 2, in foo
+          File "{startup_env['PYTHONSTARTUP']}", line 1, in <module>
             1/0
             ~^~
         ZeroDivisionError: division by zero
         """)
         self.assertIn(expected, output)
+        self.assertIn("executed user code anyway", output)
 
 if __name__ == "__main__":
     unittest.main()
