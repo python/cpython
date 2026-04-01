@@ -756,7 +756,7 @@ _PyJIT_Compile(_PyExecutorObject *executor, const _PyUOpInstruction trace[], siz
     executor->jit_size = total_size;
     jit_record_code(memory,
                     code_size + state.trampolines.size,
-                    "jit_executor",
+                    "jit_entry",
                     "<jit>");
     return 0;
 }
@@ -810,7 +810,7 @@ compile_shim(void)
     _Py_jit_shim_size = total_size;
     jit_record_code(memory,
                     code_size + state.trampolines.size,
-                    "jit_shim",
+                    "jit_entry",
                     "<jit>");
     return (_PyJitEntryFuncPtr)memory;
 }
