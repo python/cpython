@@ -81,6 +81,8 @@ jobs:
           ls -la release-download/
 
       - name: Create Windows zip
+        env:
+          GH_TOKEN: ${{ secrets.GH_TOKEN || secrets.GITHUB_TOKEN }}
         run: |
           set -euo pipefail
 
@@ -102,9 +104,6 @@ jobs:
             PYTHON_ELF=$(find extract -name "python.elf" -type f | head -1)
           fi
 
-          # Find the ramfs image
-          RAMFS_IMG=$(find extract -name "*.img" -type f | head -1)
-
           if [[ -z "$PYTHON_ELF" ]]; then
             echo "::warning::Could not find python binary in standalone tarball"
             echo "Files in tarball:"
@@ -115,17 +114,50 @@ jobs:
           cp "$PYTHON_ELF" windows-zip/python.elf
           echo "Included: python.elf ($(stat -c%s windows-zip/python.elf) bytes)"
 
-          if [[ -n "$RAMFS_IMG" ]]; then
-            cp "$RAMFS_IMG" windows-zip/cpython-ramfs.img
-            echo "Included: cpython-ramfs.img ($(stat -c%s windows-zip/cpython-ramfs.img) bytes)"
+          # --- Build ramfs from the stdlib in the tarball ---
+          SYSROOT=$(find extract -type d -name "sysroot" | head -1)
+          PYLIB="${SYSROOT}/lib/python3.12"
+          if [[ -d "$PYLIB" ]]; then
+            echo "Building ramfs from stdlib at: $PYLIB"
+
+            # Trim stdlib (same as Makefile.nanvix ramfs target)
+            find "$SYSROOT" -name "__pycache__" -type d -exec rm -rf {} + 2>/dev/null || true
+            find "$SYSROOT" -name "*.pyc" -delete 2>/dev/null || true
+            find "$SYSROOT" -name "*.a" -delete 2>/dev/null || true
+            find "$SYSROOT" -name "*.h" -delete 2>/dev/null || true
+            rm -rf "$SYSROOT/bin" "$SYSROOT/include" "$SYSROOT/share" "$SYSROOT/lib/pkgconfig"
+            for d in test tests idlelib tkinter ensurepip lib2to3 distutils unittest \
+                     turtledemo pydoc_data config-3.12*; do
+              rm -rf "$PYLIB/$d" 2>/dev/null || true
+            done
+            find "$SYSROOT" -type d -name "config-3.12*" -exec rm -rf {} + 2>/dev/null || true
+
+            echo "Trimmed stdlib: $(find "$SYSROOT" -type f | wc -l) files"
+
+            # Get mkramfs from the NanVix release
+            curl -fsSL https://raw.githubusercontent.com/nanvix/nanvix/refs/heads/dev/scripts/get-nanvix.sh \
+              | bash -s -- --force nanvix-dl
+            MKRAMFS=$(find nanvix-dl -name "mkramfs.elf" -o -name "mkramfs" | head -1)
+
+            if [[ -n "$MKRAMFS" ]]; then
+              chmod +x "$MKRAMFS"
+              # mkramfs expects the parent dir so FAT32 has sysroot/ prefix
+              STAGING_PARENT=$(dirname "$SYSROOT")
+              "$MKRAMFS" -o windows-zip/cpython-ramfs.img "$STAGING_PARENT"
+              echo "Included: cpython-ramfs.img ($(stat -c%s windows-zip/cpython-ramfs.img) bytes)"
+            else
+              echo "::warning::mkramfs not found — zip will not contain ramfs"
+            fi
           else
-            echo "::warning::No ramfs image found — zip will only contain python.elf"
+            echo "::warning::No stdlib found in tarball — zip will not contain ramfs"
           fi
 
           ZIP_NAME="cpython-windows-microvm-standalone-128mb-${GITHUB_SHA::7}.zip"
           (cd windows-zip && zip "../${ZIP_NAME}" *)
           echo "zip_name=$ZIP_NAME" >> "$GITHUB_ENV"
           echo "Created: $ZIP_NAME ($(stat -c%s "$ZIP_NAME") bytes)"
+          echo "Contents:"
+          unzip -l "$ZIP_NAME"
 
       - name: Upload zip to release
         if: ${{ env.zip_name != '' }}
