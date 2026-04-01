@@ -1723,7 +1723,8 @@ PyDoc_STRVAR(bytearray_hex__doc__,
     {"hex", _PyCFunction_CAST(bytearray_hex), METH_FASTCALL|METH_KEYWORDS, bytearray_hex__doc__},
 
 static PyObject *
-bytearray_hex_impl(PyByteArrayObject *self, PyObject *sep, int bytes_per_sep);
+bytearray_hex_impl(PyByteArrayObject *self, PyObject *sep,
+                   Py_ssize_t bytes_per_sep);
 
 static PyObject *
 bytearray_hex(PyObject *self, PyObject *const *args, Py_ssize_t nargs, PyObject *kwnames)
@@ -1759,7 +1760,7 @@ bytearray_hex(PyObject *self, PyObject *const *args, Py_ssize_t nargs, PyObject 
     PyObject *argsbuf[2];
     Py_ssize_t noptargs = nargs + (kwnames ? PyTuple_GET_SIZE(kwnames) : 0) - 0;
     PyObject *sep = NULL;
-    int bytes_per_sep = 1;
+    Py_ssize_t bytes_per_sep = 1;
 
     args = _PyArg_UnpackKeywords(args, nargs, NULL, kwnames, &_parser,
             /*minpos*/ 0, /*maxpos*/ 2, /*minkw*/ 0, /*varpos*/ 0, argsbuf);
@@ -1775,9 +1776,17 @@ bytearray_hex(PyObject *self, PyObject *const *args, Py_ssize_t nargs, PyObject 
             goto skip_optional_pos;
         }
     }
-    bytes_per_sep = PyLong_AsInt(args[1]);
-    if (bytes_per_sep == -1 && PyErr_Occurred()) {
-        goto exit;
+    {
+        Py_ssize_t ival = -1;
+        PyObject *iobj = _PyNumber_Index(args[1]);
+        if (iobj != NULL) {
+            ival = PyLong_AsSsize_t(iobj);
+            Py_DECREF(iobj);
+        }
+        if (ival == -1 && PyErr_Occurred()) {
+            goto exit;
+        }
+        bytes_per_sep = ival;
     }
 skip_optional_pos:
     Py_BEGIN_CRITICAL_SECTION(self);
@@ -1866,4 +1875,4 @@ bytearray_sizeof(PyObject *self, PyObject *Py_UNUSED(ignored))
 {
     return bytearray_sizeof_impl((PyByteArrayObject *)self);
 }
-/*[clinic end generated code: output=d4976faf6731b8da input=a9049054013a1b77]*/
+/*[clinic end generated code: output=2cacb323147202b9 input=a9049054013a1b77]*/

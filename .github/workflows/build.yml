@@ -64,7 +64,7 @@ jobs:
         run: |
           apt update && apt install git -yq
           git config --global --add safe.directory "$GITHUB_WORKSPACE"
-      - uses: actions/checkout@v6
+      - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
         with:
           fetch-depth: 1
           persist-credentials: false
@@ -101,10 +101,10 @@ jobs:
     needs: build-context
     if: needs.build-context.outputs.run-tests == 'true'
     steps:
-      - uses: actions/checkout@v6
+      - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
         with:
           persist-credentials: false
-      - uses: actions/setup-python@v6
+      - uses: actions/setup-python@a309ff8b426b58ec0e2a45f0f869d46889d02405 # v6.2.0
         with:
           python-version: '3.x'
       - name: Runner image version
@@ -291,7 +291,7 @@ jobs:
       SSLLIB_DIR: ${{ github.workspace }}/multissl/${{ matrix.ssllib.name }}/${{ matrix.ssllib.version }}
       LD_LIBRARY_PATH: ${{ github.workspace }}/multissl/${{ matrix.ssllib.name }}/${{ matrix.ssllib.version }}/lib
     steps:
-    - uses: actions/checkout@v6
+    - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
       with:
         persist-credentials: false
     - name: Runner image version
@@ -302,7 +302,7 @@ jobs:
       run: sudo ./.github/workflows/posix-deps-apt.sh
     - name: 'Restore SSL library build'
       id: cache-ssl-lib
-      uses: actions/cache@v5
+      uses: actions/cache@668228422ae6a00e4ad889ee87cd7109ec5666a7 # v5.0.4
       with:
         path: ./multissl/${{ matrix.ssllib.name }}/${{ matrix.ssllib.version }}
         key: ${{ matrix.os }}-multissl-${{ matrix.ssllib.name }}-${{ matrix.ssllib.version }}
@@ -350,7 +350,7 @@ jobs:
 
     runs-on: ${{ matrix.runs-on }}
     steps:
-      - uses: actions/checkout@v6
+      - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
         with:
           persist-credentials: false
       - name: Build and test
@@ -363,7 +363,7 @@ jobs:
     timeout-minutes: 60
     runs-on: macos-14
     steps:
-      - uses: actions/checkout@v6
+      - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
         with:
           persist-credentials: false
 
@@ -401,7 +401,7 @@ jobs:
       OPENSSL_VER: 3.5.5
       PYTHONSTRICTEXTENSIONBUILD: 1
     steps:
-    - uses: actions/checkout@v6
+    - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
       with:
         persist-credentials: false
     - name: Register gcc problem matcher
@@ -415,7 +415,7 @@ jobs:
         echo "LD_LIBRARY_PATH=${GITHUB_WORKSPACE}/multissl/openssl/${OPENSSL_VER}/lib" >> "$GITHUB_ENV"
     - name: 'Restore OpenSSL build'
       id: cache-openssl
-      uses: actions/cache@v5
+      uses: actions/cache@668228422ae6a00e4ad889ee87cd7109ec5666a7 # v5.0.4
       with:
         path: ./multissl/openssl/${{ env.OPENSSL_VER }}
         key: ${{ runner.os }}-multissl-openssl-${{ env.OPENSSL_VER }}
@@ -462,7 +462,7 @@ jobs:
         ./python -m venv "$VENV_LOC" && "$VENV_PYTHON" -m pip install -r "${GITHUB_WORKSPACE}/Tools/requirements-hypothesis.txt"
     - name: 'Restore Hypothesis database'
       id: cache-hypothesis-database
-      uses: actions/cache@v5
+      uses: actions/cache@668228422ae6a00e4ad889ee87cd7109ec5666a7 # v5.0.4
       with:
         path: ${{ env.CPYTHON_BUILDDIR }}/.hypothesis/
         key: hypothesis-database-${{ github.head_ref || github.run_id }}
@@ -489,7 +489,7 @@ jobs:
           -x test_subprocess \
           -x test_signal \
           -x test_sysconfig
-    - uses: actions/upload-artifact@v7
+    - uses: actions/upload-artifact@bbbca2ddaa5d8feaa63e36b76fdaad77386f024f # v7.0.0
       if: always()
       with:
         name: hypothesis-example-db
@@ -510,7 +510,7 @@ jobs:
       PYTHONSTRICTEXTENSIONBUILD: 1
       ASAN_OPTIONS: detect_leaks=0:allocator_may_return_null=1:handle_segv=0
     steps:
-    - uses: actions/checkout@v6
+    - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
       with:
         persist-credentials: false
     - name: Runner image version
@@ -520,7 +520,7 @@ jobs:
     - name: Install dependencies
       run: sudo ./.github/workflows/posix-deps-apt.sh
     - name: Set up GCC-10 for ASAN
-      uses: egor-tensin/setup-gcc@v2
+      uses: egor-tensin/setup-gcc@a2861a8b8538f49cf2850980acccf6b05a1b2ae4 # v2.0
       with:
         version: 10
     - name: Configure OpenSSL env vars
@@ -530,7 +530,7 @@ jobs:
         echo "LD_LIBRARY_PATH=${GITHUB_WORKSPACE}/multissl/openssl/${OPENSSL_VER}/lib" >> "$GITHUB_ENV"
     - name: 'Restore OpenSSL build'
       id: cache-openssl
-      uses: actions/cache@v5
+      uses: actions/cache@668228422ae6a00e4ad889ee87cd7109ec5666a7 # v5.0.4
       with:
         path: ./multissl/openssl/${{ env.OPENSSL_VER }}
         key: ${{ matrix.os }}-multissl-openssl-${{ env.OPENSSL_VER }}
@@ -577,7 +577,7 @@ jobs:
     needs: build-context
     if: needs.build-context.outputs.run-ubuntu == 'true'
     steps:
-      - uses: actions/checkout@v6
+      - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
         with:
           persist-credentials: false
       - name: Runner image version
