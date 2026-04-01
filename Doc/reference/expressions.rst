@@ -633,6 +633,8 @@ This may be used to override a set of defaults::
    >>> {**defaults, **overrides}
    {'color': 'yellow', 'count': 8}
 
+TODO:
+
 .. productionlist:: python-grammar
    dict_display: "{" [`dict_item_list` | `dict_comprehension`] "}"
    dict_item_list: `dict_item` ("," `dict_item`)* [","]
@@ -644,16 +646,15 @@ This may be used to override a set of defaults::
 
 
 .. index::
+   single: comprehensions
    single: for; in comprehensions
-   single: if; in comprehensions
-   single: async for; in comprehensions
 
 .. _comprehensions:
 
 Comprehensions
 --------------
 
-List, set and dictionary :dfn:`comprehensions` are a form of :ref:`displays`,
+List, set and dictionary :dfn:`comprehensions` are a form of :ref:`displays`
 where items are computed via a set of looping and filtering instructions
 rather than listed explicitly.
 
@@ -664,23 +665,70 @@ For example, a list of the first ten squares is::
    >>> [x**2 for x in range(10)]
    [0, 1, 4, 9, 16, 25, 36, 49, 64, 81]
 
-A set of lowercase letters::
+The comprehension is roughly equivalent to defining and calling the following
+function::
 
-   >>> {x.lower() for x in ('a', 'A', 'b', 'C')}
+   def make_list_of_squares(iterable):
+       result = []
+       for x in iterable:
+           result.append(x**2)
+       return result
+
+   make_list_of_squares(range(10))
+
+Set comprehensions work similarly.
+For example, here is a set of lowercase letters::
+
+   >>> {x.lower() for x in ['a', 'A', 'b', 'C']}
    {'c', 'a', 'b'}
 
-A dict mapping some function names to functions::
+This corresponds roughly to calling this function::
 
-   >>> {f.__name__: f for f in (print, hex, any)}
+   def make_lowercase_set(iterable):
+       result = set(iterable)
+       for x in :
+           result.append(x.lower())
+       return result
+
+   make_lowercase_set(['a', 'A', 'b', 'C'])
+
+Dictionary comprehensions start with a colon-separated key-value pair instead
+of an expression. For example::
+
+   >>> {f.__name__: f for f in [print, hex, any]}
    {'print': <built-in function print>,
     'hex': <built-in function hex>,
     'any': <built-in function any>}
 
-There are no *tuple comprehensions*; a similar syntax is instead used
-for :ref:`generator expressions <genexpr>`.
+This corresponds roughly to::
 
-Unpacking in comprehensions
-^^^^^^^^^^^^^^^^^^^^^^^^^^^
+   def make_dict_mapping_names_to_functions(iterable):
+       result = {}
+       for f in iterable:
+           result[f.__name__] = f
+       return result
+
+   iterable([print, hex, any])
+
+As in other kinds of dictionary displays, the same key may be specified
+multiple times.
+Earlier values are overwritten by ones that are evaluated later.
+
+There are no *tuple comprehensions*, but a similar syntax is instead used
+for :ref:`generator expressions <genexpr>`, from which you can construct
+a tuple like this::
+
+   >>> tuple(x**2 for x in range(10))
+   (0, 1, 4, 9, 16, 25, 36, 49, 64, 81)
+
+.. versionchanged:: 3.8
+   Prior to Python 3.8, in dict comprehensions, the evaluation order of key
+   and value was not well-defined.  In CPython, the value was evaluated before
+   the key.  Starting with 3.8, the key is evaluated before the value, as
+   proposed by :pep:`572`.
+
+
+.. index:: single: if; in comprehensions
 
 Filtering in comprehensions
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^
@@ -694,11 +742,28 @@ that start with `f` is::
    >>> [name for name in vars(math) if name.startswith('f')]
    ['fabs', 'factorial', 'floor', 'fma', 'fmod', 'frexp', 'fsum']
 
+This roughly corresponds to defining and calling the following function::
+
+   def get_math_f_names(iterable):
+       result = []
+       for name in iterable:
+           if name.startswith('f'):
+              result.append(name)
+       return result
+
+   get_math_f_names(vars(math))
+
+Filtering is a special case of more complex comprehensions.
+See the next section for a more formal description.
+
+
+.. _complex-comprehensions:
+
 Complex comprehensions
 ^^^^^^^^^^^^^^^^^^^^^^
 
-The :keyword:`!for` clause may be followed zero or more additional
-:keyword:`!for` or :keyword:`!if` clauses.
+Generally, a comprehension's initial :keyword:`!for` clause may be followed
+zero or more additional :keyword:`!for` or :keyword:`!if` clauses.
 For example, here is a list of names exposed by two Python modules
 that start with ``a``::
 
@@ -706,56 +771,112 @@ that start with ``a``::
    >>> import array
    >>> [
    ...     name
-   ...     for module in (array, math)
+   ...     for module in [array, math]
    ...     for name in vars(module)
    ...     if name.startswith('a')
    ... ]
    ['array', 'acos', 'acosh', 'asin', 'asinh', 'atan', 'atan2', 'atanh']
 
+This roughly corresponds to defining and calling::
 
-Asynchronous comprehensions
-^^^^^^^^^^^^^^^^^^^^^^^^^^^
+   def get_a_names(iterable):
+       result = []
+       for module in iterable:
+           for name in vars(module):
+               if name.startswith('a'):
+                   result.append(name)
+       return result
 
-TODO: When a comprehension is evaluated,
-TODO: - scopes
-TODO: async for (& await)
+   get_a_names([array, math])
 
-   >>> system_defaults = {'color': 'blue', 'count': 8}
-   >>> user_defaults = {'color': 'yellow'}
-   >>> overrides = {'count': 5}
+In this case, and in the simpler cases in the previous sections,
+the elements of the new container are those that would be produced by
+considering each of the :keyword:`!for` or :keyword:`!if` clauses a block,
+nesting from left to right, and evaluating the expression to produce an
+element (or dictionary entry) each time the innermost block is reached.
 
-   >>> {**d for d in (system_defaults, user_defaults, overrides)}
-   {'color': 'yellow', 'count': 5}
+Aside from the iterable expression in the leftmost :keyword:`!for` clause,
+the comprehension is executed in a separate implicitly nested scope.
+This ensures that names assigned to in the target list don't "leak" into
+the enclosing scope.
+For example::
 
-
-at least one
-:keyword:`!for` clause and zero or more :keyword:`!for` or :keyword:`!if`
-clauses.  In this case, the elements of the new container are those that would
-be produced by considering each of the :keyword:`!for` or :keyword:`!if`
-clauses a block, nesting from left to right, and evaluating the expression to
-produce an element each time the innermost block is reached.  If the expression
-is starred, the result will instead be unpacked to produce zero or more
-elements.
-
-However, aside from the iterable expression in the leftmost :keyword:`!for` clause,
-the comprehension is executed in a separate implicitly nested scope. This ensures
-that names assigned to in the target list don't "leak" into the enclosing scope.
+   >>> x = 'old value'
+   >>> [x**2 for x in range(10)]
+   >>> x
+   'old value'
 
 The iterable expression in the leftmost :keyword:`!for` clause is evaluated
 directly in the enclosing scope and then passed as an argument to the implicitly
-nested scope. Subsequent :keyword:`!for` clauses and any filter condition in the
+nested scope.
+
+Subsequent :keyword:`!for` clauses and any filter condition in the
 leftmost :keyword:`!for` clause cannot be evaluated in the enclosing scope as
-they may depend on the values obtained from the leftmost iterable. For example:
-``[x*y for x in range(10) for y in range(x, x+10)]``.
+they may depend on the values obtained from the leftmost iterable.
 
 To ensure the comprehension always results in a container of the appropriate
 type, ``yield`` and ``yield from`` expressions are prohibited in the implicitly
 nested scope.
 
+.. versionchanged:: 3.8
+   ``yield`` and ``yield from`` prohibited in the implicitly nested scope.
+
+
+Unpacking in comprehensions
+^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+If the expression of a list or set comprehension is starred, the result will
+be :ref:`unpacked <iterable-unpacking>` to produce
+zero or more elements.
+
+This is often used for "flattening" lists, for example::
+
+   >>> students = ['Petr', 'Blaise', 'Jarka']
+   >>> teachers = ['Salim', 'Bartosz']
+   >>> lists_of_people = [students, teachers]
+   >>> [*people for people in lists_of_people]
+   ['Petr', 'Blaise', 'Jarka', 'Salim', 'Bartosz']
+
+This comprehension roughly corresponds to::
+
+   def flatten_names(lists_of_people):
+       result = []
+       for people in lists_of_people:
+           result.extend(people)
+       return result
+
+In dict comprehensions, a double-starred expression will be evaluated and
+then unpacked using :ref:`dictionary unpacking <dict-unpacking>`,
+inserting zero or more key/value pairs into the new dictionary.
+As in other kinds of dictionary displays, if the same key is specified
+multiple times, the associated value in the resulting dictionary
+will be the last one specified.
+
+For example::
+
+   >>> system_defaults = {'color': 'blue', 'count': 8}
+   >>> user_defaults = {'color': 'yellow'}
+   >>> overrides = {'count': 5}
+
+   >>> configuration_sets = [system_defaults, user_defaults, overrides]
+
+   >>> {**d for d in configuration_sets}
+   {'color': 'yellow', 'count': 5}
+
+.. versionadded:: 3.15
+
+   Unpacking in comprehensions using the ``*`` and ``**`` operators
+   was introduced in :pep:`798`.
+
+
 .. index::
+   single: async for; in comprehensions
    single: await; in comprehensions
 
-Since Python 3.6, in an :keyword:`async def` function, an :keyword:`!async for`
+Asynchronous comprehensions
+^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+In an :keyword:`async def` function, an :keyword:`!async for`
 clause may be used to iterate over a :term:`asynchronous iterator`.
 A comprehension in an :keyword:`!async def` function may consist of either a
 :keyword:`!for` or :keyword:`!async for` clause following the leading
@@ -767,159 +888,33 @@ If a comprehension contains :keyword:`!async for` clauses, or if it contains
 the iterable expression in the leftmost :keyword:`!for` clause, it is called an
 :dfn:`asynchronous comprehension`. An asynchronous comprehension may suspend the
 execution of the coroutine function in which it appears.
-See also :pep:`530`.
+
+.. versionadded:: 3.6
+
+   Asynchronous comprehensions were introduced in :pep:`530`.
+
+.. versionchanged:: 3.11
+   Asynchronous comprehensions are now allowed inside comprehensions in
+   asynchronous functions. Outer comprehensions implicitly become
+   asynchronous.
 
 
-TODO
+Formal grammar for comprehensions
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
+.. grammar-snippet::
+   :group: python-grammar
 
+   listcomp:
+       | '[' `flexible_expression` `for_if_clause`+ ']'
+   setcomp:
+       | '{' `flexible_expression` `for_if_clause`+ '}'
+   dictcomp:
+       | '{' `dict_item` `for_if_clause`+ '}'
+       | '{' '**' `expression` `for_if_clause`+ '}'
 
-
-
-A dict comprehension may take one of two forms:
-
-- The first form  uses two expressions separated with a colon followed by the
-  usual "for" and "if" clauses.  When the comprehension is run, the resulting
-  key and value elements are inserted in the new dictionary in the order they
-  are produced.
-
-- The second form uses a single expression prefixed by the ``**`` dictionary
-  unpacking operator followed by the usual "for" and "if" clauses.  When the
-  comprehension is evaluated, the expression is evaluated and then unpacked,
-  inserting zero or more key/value pairs into the new dictionary.
-
-Both forms of dictionary comprehension retain the property that if the same key
-is specified multiple times, the associated value in the resulting dictionary
-will be the last one specified.
-
-.. index:: pair: immutable; object
-           hashable
-
-Restrictions on the types of the key values are listed earlier in section
-:ref:`types`.  (To summarize, the key type should be :term:`hashable`, which excludes
-all mutable objects.)  Clashes between duplicate keys are not detected; the last
-value (textually rightmost in the display) stored for a given key value
-prevails.
-
-.. versionchanged:: 3.8
-   Prior to Python 3.8, in dict comprehensions, the evaluation order of key
-   and value was not well-defined.  In CPython, the value was evaluated before
-   the key.  Starting with 3.8, the key is evaluated before the value, as
-   proposed by :pep:`572`.
-
-.. versionchanged:: 3.15
-   Unpacking with the ``**`` operator is now allowed in dictionary comprehensions.
-
-
-
-
-
-
-.. index:: single: comprehensions
-
-
-
-
-
-
-
-
-
-..
-
-   , each of them in two flavors:
-
-   * either the container contents are listed explicitly, or
-
-   * they are computed via a set of looping and filtering instructions, called a
-     :dfn:`comprehension`.
-
-   Common syntax elements for comprehensions are:
-
-   .. productionlist:: python-grammar
-      comprehension: `flexible_expression` `comp_for`
-      comp_for: ["async"] "for" `target_list` "in" `or_test` [`comp_iter`]
-      comp_iter: `comp_for` | `comp_if`
-      comp_if: "if" `or_test` [`comp_iter`]
-
-   The comprehension consists of a single expression followed by at least one
-   :keyword:`!for` clause and zero or more :keyword:`!for` or :keyword:`!if`
-   clauses.  In this case, the elements of the new container are those that would
-   be produced by considering each of the :keyword:`!for` or :keyword:`!if`
-   clauses a block, nesting from left to right, and evaluating the expression to
-   produce an element each time the innermost block is reached.  If the expression
-   is starred, the result will instead be unpacked to produce zero or more
-   elements.
-
-   However, aside from the iterable expression in the leftmost :keyword:`!for` clause,
-   the comprehension is executed in a separate implicitly nested scope. This ensures
-   that names assigned to in the target list don't "leak" into the enclosing scope.
-
-   The iterable expression in the leftmost :keyword:`!for` clause is evaluated
-   directly in the enclosing scope and then passed as an argument to the implicitly
-   nested scope. Subsequent :keyword:`!for` clauses and any filter condition in the
-   leftmost :keyword:`!for` clause cannot be evaluated in the enclosing scope as
-   they may depend on the values obtained from the leftmost iterable. For example:
-   ``[x*y for x in range(10) for y in range(x, x+10)]``.
-
-   To ensure the comprehension always results in a container of the appropriate
-   type, ``yield`` and ``yield from`` expressions are prohibited in the implicitly
-   nested scope.
-
-   .. index::
-      single: await; in comprehensions
-
-   Since Python 3.6, in an :keyword:`async def` function, an :keyword:`!async for`
-   clause may be used to iterate over a :term:`asynchronous iterator`.
-   A comprehension in an :keyword:`!async def` function may consist of either a
-   :keyword:`!for` or :keyword:`!async for` clause following the leading
-   expression, may contain additional :keyword:`!for` or :keyword:`!async for`
-   clauses, and may also use :keyword:`await` expressions.
-
-   If a comprehension contains :keyword:`!async for` clauses, or if it contains
-   :keyword:`!await` expressions or other asynchronous comprehensions anywhere except
-   the iterable expression in the leftmost :keyword:`!for` clause, it is called an
-   :dfn:`asynchronous comprehension`. An asynchronous comprehension may suspend the
-   execution of the coroutine function in which it appears.
-   See also :pep:`530`.
-
-   .. versionadded:: 3.6
-      Asynchronous comprehensions were introduced.
-
-   .. versionchanged:: 3.8
-      ``yield`` and ``yield from`` prohibited in the implicitly nested scope.
-
-   .. versionchanged:: 3.11
-      Asynchronous comprehensions are now allowed inside comprehensions in
-      asynchronous functions. Outer comprehensions implicitly become
-      asynchronous.
-
-   .. versionchanged:: 3.15
-      Unpacking with the ``*`` operator is now allowed in the expression.
-
-
-..
-
-
-
-   A list display yields a new list object, the contents being specified by either
-   a list of expressions or a comprehension.  When a comma-separated list of
-   expressions is supplied, its elements are evaluated from left to right and
-   placed into the list object in that order.  When a comprehension is supplied,
-   the list is constructed from the elements resulting from the comprehension.
-
-..
-
-
-   A set display is denoted by curly braces and distinguishable from dictionary
-   displays by the lack of colons separating keys and values:
-
-   A set display yields a new mutable set object, the contents being specified by
-   either a sequence of expressions or a comprehension.  When a comma-separated
-   list of expressions is supplied, its elements are evaluated from left to right
-   and added to the set object.  When a comprehension is supplied, the set is
-   constructed from the elements resulting from the comprehension.
-
+   for_if_clause:
+       | ['async'] 'for' `target_list` 'in' `or_test` ('if' `or_test`)*
 
 
 .. _genexpr:
