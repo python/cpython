@@ -1,0 +1,2 @@
+Fixed a bug where :meth:`select.epoll.close`, :meth:`select.kqueue.close`,
+and :meth:`select.devpoll.close` silently ignored errors.

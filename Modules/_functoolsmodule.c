@@ -457,7 +457,11 @@ partial_vectorcall(PyObject *self, PyObject *const *args,
         for (Py_ssize_t i = 0; i < nkwds; ++i) {
             key = PyTuple_GET_ITEM(kwnames, i);
             val = args[nargs + i];
-            if (PyDict_Contains(pto->kw, key)) {
+            int contains = PyDict_Contains(pto->kw, key);
+            if (contains < 0) {
+                goto error;
+            }
+            else if (contains == 1) {
                 if (pto_kw_merged == NULL) {
                     pto_kw_merged = PyDict_Copy(pto->kw);
                     if (pto_kw_merged == NULL) {
@@ -492,12 +496,15 @@ partial_vectorcall(PyObject *self, PyObject *const *args,
         /* Copy pto_keywords with overlapping call keywords merged
          * Note, tail is already coppied. */
         Py_ssize_t pos = 0, i = 0;
-        while (PyDict_Next(n_merges ? pto_kw_merged : pto->kw, &pos, &key, &val)) {
+        PyObject *keyword_dict = n_merges ? pto_kw_merged : pto->kw;
+        Py_BEGIN_CRITICAL_SECTION(keyword_dict);
+        while (PyDict_Next(keyword_dict, &pos, &key, &val)) {
             assert(i < pto_nkwds);
             PyTuple_SET_ITEM(tot_kwnames, i, Py_NewRef(key));
             stack[tot_nargs + i] = val;
             i++;
         }
+        Py_END_CRITICAL_SECTION();
         assert(i == pto_nkwds);
         Py_XDECREF(pto_kw_merged);
 
@@ -728,6 +735,8 @@ partial_repr(PyObject *self)
         }
     }
     /* Pack keyword arguments */
+    int error = 0;
+    Py_BEGIN_CRITICAL_SECTION(kw);
     for (i = 0; PyDict_Next(kw, &i, &key, &value);) {
         /* Prevent key.__str__ from deleting the value. */
         Py_INCREF(value);
@@ -735,8 +744,13 @@ partial_repr(PyObject *self)
                                                 key, value));
         Py_DECREF(value);
         if (arglist == NULL) {
-            goto done;
+            error = 1;
+            break;
         }
+    }
+    Py_END_CRITICAL_SECTION();
+    if (error) {
+        goto done;
     }
 
     mod = PyType_GetModuleName(Py_TYPE(pto));
@@ -2004,6 +2018,7 @@ _functools_free(void *module)
 }
 
 static struct PyModuleDef_Slot _functools_slots[] = {
+    _Py_ABI_SLOT,
     {Py_mod_exec, _functools_exec},
     {Py_mod_multiple_interpreters, Py_MOD_PER_INTERPRETER_GIL_SUPPORTED},
     {Py_mod_gil, Py_MOD_GIL_NOT_USED},
