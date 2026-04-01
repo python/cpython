@@ -187,9 +187,11 @@ long_alloc(Py_ssize_t size)
         _PyObject_Init((PyObject*)result, &PyLong_Type);
     }
     _PyLong_SetSignAndDigitCount(result, size != 0, size);
-    /* The digit has to be initialized explicitly to avoid
-     * use-of-uninitialized-value. */
-    result->long_value.ob_digit[0] = 0;
+#ifdef Py_DEBUG
+    // gh-147988: Fill digits with an invalid pattern to catch usage
+    // of uninitialized digits.
+    memset(result->long_value.ob_digit, 0xFF, ndigits * sizeof(digit));
+#endif
     return result;
 }
 
@@ -1094,6 +1096,7 @@ _PyLong_FromByteArray(const unsigned char* bytes, size_t n,
     int sign = is_signed ? -1: 1;
     if (idigit == 0) {
         sign = 0;
+        v->long_value.ob_digit[0] = 0;
     }
     _PyLong_SetSignAndDigitCount(v, sign, idigit);
     return (PyObject *)maybe_small_long(long_normalize(v));
@@ -2852,6 +2855,7 @@ long_from_non_binary_base(const char *start, const char *end, Py_ssize_t digits,
         *res = NULL;
         return 0;
     }
+    z->long_value.ob_digit[0] = 0;
     _PyLong_SetSignAndDigitCount(z, 0, 0);
 
     /* `convwidth` consecutive input digits are treated as a single
@@ -3365,6 +3369,7 @@ x_divrem(PyLongObject *v1, PyLongObject *w1, PyLongObject **prem)
         *prem = NULL;
         return NULL;
     }
+    a->long_value.ob_digit[0] = 0;
     v0 = v->long_value.ob_digit;
     w0 = w->long_value.ob_digit;
     wm1 = w0[size_w-1];
@@ -4141,10 +4146,6 @@ k_mul(PyLongObject *a, PyLongObject *b)
     /* 1. Allocate result space. */
     ret = long_alloc(asize + bsize);
     if (ret == NULL) goto fail;
-#ifdef Py_DEBUG
-    /* Fill with trash, to catch reference to uninitialized digits. */
-    memset(ret->long_value.ob_digit, 0xDF, _PyLong_DigitCount(ret) * sizeof(digit));
-#endif
 
     /* 2. t1 <- ah*bh, and copy into high digits of result. */
     if ((t1 = k_mul(ah, bh)) == NULL) goto fail;
@@ -5631,6 +5632,12 @@ long_bitwise(PyLongObject *a,
         break;
     default:
         Py_UNREACHABLE();
+    }
+
+    if ((size_z + negz) == 0) {
+        Py_XDECREF(new_a);
+        Py_XDECREF(new_b);
+        return get_small_int(0);
     }
 
     /* We allow an extra digit if z is negative, to make sure that
