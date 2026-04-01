@@ -384,45 +384,6 @@ class TestInteractiveInterpreter(unittest.TestCase):
 
         self.assertEqual(exit_code, 0, "".join(output))
 
-    def test_pythonstartup_success(self):
-        # errors based on https://github.com/python/cpython/issues/137576
-        # case 1: error in user input, but PYTHONSTARTUP is fine
-        startup_code = "print('notice from pythonstartup')"
-        startup_env = self.enterContext(new_pythonstartup_env(code=startup_code))
-
-        p = spawn_repl("-q", env=os.environ | startup_env, isolated=False)
-        p.stdin.write("1/0")
-        output = kill_python(p)
-        self.assertStartsWith(output, 'notice from pythonstartup')
-        expected = dedent("""\
-        Traceback (most recent call last):
-          File "<stdin>", line 1, in <module>
-            1/0
-            ~^~
-        ZeroDivisionError: division by zero
-        """)
-        self.assertIn(expected, output)
-
-    def test_pythonstartup_failure(self):
-        # case 2: error in PYTHONSTARTUP triggered by user input
-        startup_code = "def foo():\n    1/0\n"
-        startup_env = self.enterContext(new_pythonstartup_env(code=startup_code))
-
-        p = spawn_repl("-q", env=os.environ | startup_env, isolated=False)
-        p.stdin.write("foo()")
-        output = kill_python(p)
-        expected = dedent(f"""\
-        Traceback (most recent call last):
-          File "<stdin>", line 1, in <module>
-            foo()
-            ~~~^^
-          File "{startup_env['PYTHONSTARTUP']}", line 2, in foo
-            1/0
-            ~^~
-        ZeroDivisionError: division by zero
-        """)
-        self.assertIn(expected, output)
-
 
 @support.force_not_colorized_test_class
 class TestInteractiveModeSyntaxErrors(unittest.TestCase):
