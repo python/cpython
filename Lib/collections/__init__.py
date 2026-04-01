@@ -1253,6 +1253,13 @@ class UserDict(_collections_abc.MutableMapping):
         c.update(self)
         return c
 
+
+    # This method has a default implementation in MutableMapping, but dict's
+    # equivalent is first-in, first-out.
+    def popitem(self):
+        return self.data.popitem()
+
+
     @classmethod
     def fromkeys(cls, iterable, value=None):
         d = cls()
