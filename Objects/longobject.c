@@ -185,7 +185,7 @@ long_alloc(Py_ssize_t size)
             return NULL;
         }
         _PyObject_Init((PyObject*)result, &PyLong_Type);
-        _PyLong_Init(result);
+        _PyLong_InitTag(result);
     }
     _PyLong_SetSignAndDigitCount(result, size != 0, size);
     return result;
@@ -256,7 +256,7 @@ _PyLong_FromMedium(sdigit x)
             return NULL;
         }
         _PyObject_Init((PyObject*)v, &PyLong_Type);
-        _PyLong_Init(v);
+        _PyLong_InitTag(v);
     }
     digit abs_x = x < 0 ? -x : x;
     _PyLong_SetSignAndDigitCount(v, x<0?-1:1, 1);
@@ -336,7 +336,7 @@ medium_from_stwodigits(stwodigits x)
             return PyStackRef_NULL;
         }
         _PyObject_Init((PyObject*)v, &PyLong_Type);
-        _PyLong_Init(v);
+        _PyLong_InitTag(v);
     }
     digit abs_x = x < 0 ? (digit)(-x) : (digit)x;
     _PyLong_SetSignAndDigitCount(v, x<0?-1:1, 1);
@@ -6035,7 +6035,7 @@ long_subtype_new(PyTypeObject *type, PyObject *x, PyObject *obase)
     else {
         sign = _PyLong_NonCompactSign(tmp);
     }
-    _PyLong_Init(newobj);
+    _PyLong_InitTag(newobj);
     _PyLong_SetSignAndDigitCount(newobj, sign, size);
     memcpy(newobj->long_value.ob_digit, tmp->long_value.ob_digit,
            ndigits * sizeof(digit));

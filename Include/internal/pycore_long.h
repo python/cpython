@@ -293,7 +293,7 @@ _PyLong_SameSign(const PyLongObject *a, const PyLongObject *b)
  * use-of-uninitialized-value.
  */
 static inline void
-_PyLong_Init(PyLongObject *op)
+_PyLong_InitTag(PyLongObject *op)
 {
     assert(PyLong_Check(op));
     op->long_value.lv_tag = 1; /* non-immortal zero */
