@@ -614,6 +614,16 @@ class LongTests(unittest.TestCase):
                 self.assertEqual(expect_u, fromnativebytes(v_be, n, 4, 1),
                     f"PyLong_FromNativeBytes(buffer, {n}, <big|unsigned>)")
 
+    def test_bug_143050(self):
+        with support.adjust_int_max_str_digits(0):
+            # Bug coming from using _pylong.int_from_string(), that
+            # currently requires > 6000 decimal digits.
+            int('-' + '0' * 7000, 10)
+            _testcapi.test_immortal_small_ints()
+            # Test also nonzero small int
+            int('-' + '0' * 7000 + '123', 10)
+            _testcapi.test_immortal_small_ints()
+
 
 if __name__ == "__main__":
     unittest.main()
