@@ -171,19 +171,10 @@ PyMember_SetOne(char *addr, PyMemberDef *l, PyObject *v)
         PyErr_SetString(PyExc_AttributeError, "readonly attribute");
         return -1;
     }
-    if (v == NULL) {
-        if (l->type == Py_T_OBJECT_EX) {
-            /* Check if the attribute is set. */
-            if (*(PyObject **)addr == NULL) {
-                PyErr_SetString(PyExc_AttributeError, l->name);
-                return -1;
-            }
-        }
-        else if (l->type != _Py_T_OBJECT) {
-            PyErr_SetString(PyExc_TypeError,
-                            "can't delete numeric/char attribute");
-            return -1;
-        }
+    if (v == NULL && l->type != Py_T_OBJECT_EX && l->type != _Py_T_OBJECT) {
+        PyErr_SetString(PyExc_TypeError,
+                        "can't delete numeric/char attribute");
+        return -1;
     }
     switch (l->type) {
     case Py_T_BOOL:{
@@ -335,6 +326,19 @@ PyMember_SetOne(char *addr, PyMemberDef *l, PyObject *v)
         FT_ATOMIC_STORE_PTR_RELEASE(*(PyObject **)addr, Py_XNewRef(v));
         Py_END_CRITICAL_SECTION();
         Py_XDECREF(oldv);
+        if (v == NULL && oldv == NULL && l->type == Py_T_OBJECT_EX) {
+            // Pseudo-non-existing attribute is deleted: raise AttributeError.
+            // The attribute doesn't exist to Python, but CPython knows that it
+            // could have existed because it was declared in __slots__.
+            // _Py_T_OBJECT does not raise an exception here, and
+            // PyMember_GetOne will return Py_None instead of NULL.
+            PyErr_SetString(PyExc_AttributeError, l->name);
+            return -1;
+        }
+        // Other cases are already covered by the above:
+        // oldv == NULL && v != NULL: pseudo-non-existing attribute is set, ok
+        // oldv != NULL && v == NULL: existing attribute is deleted, ok
+        // oldv != NULL && v != NULL: existing attribute is set, ok
         break;
     case Py_T_CHAR: {
         const char *string;

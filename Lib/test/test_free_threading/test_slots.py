@@ -43,6 +43,51 @@ class TestSlots(TestCase):
 
         run_in_threads([writer, reader, reader, reader])
 
+    def test_del_object_is_atomic(self):
+        # Testing whether the implementation of `del slots_object.attribute`
+        # removes the attribute atomically, thus avoiding non-sequentially-
+        # consistent behaviors.
+        # https://github.com/python/cpython/issues/146270
+
+        class Spam:
+            __slots__ = [
+                "eggs",
+                "foo",
+            ]
+
+        spam = Spam()
+        iters = 1_000
+        non_seq_cst_behaviour_observed = False
+
+        def deleter():
+            barrier.wait()
+            try:
+                del spam.eggs
+            except AttributeError:
+                pass
+            else:
+                try:
+                    del spam.foo
+                except AttributeError:
+                    nonlocal non_seq_cst_behaviour_observed
+                    non_seq_cst_behaviour_observed = True
+                    # The fact that the else branch was reached implies that
+                    # the `del spam.eggs` call was successful. If that were
+                    # atomic, there is no way for two threads to enter the else
+                    # branch, therefore it must be that only one thread
+                    # attempts to `del spam.foo`. Thus, hitting an
+                    # AttributeError here is non-sequentially-consistent,
+                    # falsifying the assumption that `del spam.eggs` was
+                    # atomic. The test fails if this point is reached.
+
+        for _ in range(iters):
+            spam.eggs = 0
+            spam.foo = 0
+            barrier = _testcapi.SpinningBarrier(2)
+            # threading.Barrier would not create enough contention here
+            run_in_threads([deleter, deleter])
+            self.assertFalse(non_seq_cst_behaviour_observed)
+
     def test_T_BOOL(self):
         spam_old = _testcapi._test_structmembersType_OldAPI()
         spam_new = _testcapi._test_structmembersType_NewAPI()
