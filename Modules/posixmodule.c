@@ -7760,7 +7760,7 @@ fail:
 static int
 parse_file_actions(PyObject *file_actions,
                    posix_spawn_file_actions_t *file_actionsp,
-                   PyObject *temp_buffer, PyObject** cwd)
+                   PyObject *temp_buffer, PyObject* cwd_buffer)
 {
     PyObject *seq;
     PyObject *file_action = NULL;
@@ -7884,8 +7884,10 @@ parse_file_actions(PyObject *file_actions,
                     Py_DECREF(path);
                     goto fail;
                 }
-                Py_XDECREF(*cwd);
-                *cwd = path;
+                if (PyList_Append(cwd_buffer, path)) {
+                    Py_DECREF(path);
+                    goto fail;
+                }
                 break;
             }
 #endif
@@ -7925,7 +7927,7 @@ py_posix_spawn(int use_posix_spawnp, PyObject *module, path_t *path, PyObject *a
     Py_ssize_t argc, envc;
     PyObject *result = NULL;
     PyObject *temp_buffer = NULL;
-    PyObject *cwd = NULL;
+    PyObject *cwd_buffer = NULL;
     pid_t pid;
     int err_code;
 
@@ -7997,7 +7999,12 @@ py_posix_spawn(int use_posix_spawnp, PyObject *module, path_t *path, PyObject *a
         if (!temp_buffer) {
             goto exit;
         }
-        if (parse_file_actions(file_actions, &file_actions_buf, temp_buffer, &cwd)) {
+        /* TODO there can be multiple cwd actions .... */
+        cwd_buffer = PyList_New(0);
+        if (!cwd_buffer) {
+            goto exit;
+        }
+        if (parse_file_actions(file_actions, &file_actions_buf, temp_buffer, cwd_buffer)) {
             goto exit;
         }
         file_actionsp = &file_actions_buf;
@@ -8030,13 +8037,36 @@ py_posix_spawn(int use_posix_spawnp, PyObject *module, path_t *path, PyObject *a
     if (err_code) {
         errno = err_code;
 #ifdef HAVE_POSIX_SPAWN_FILE_ACTIONS_ADDCHDIR_NP
-        if (errno == ENOENT && cwd != NULL) {
-            /* ENOENT can occur when either the path of the executable or the
-             * cwd given via file_actions doesn't exist. Since it's not feasible
-             * to determine which of those paths caused the problem, we return
-             * an exception with both. */
-            PyErr_Format(PyExc_FileNotFoundError, "Either '%S' or '%s' doesn't exist.",
+        Py_ssize_t cwd_size = PyList_GET_SIZE(cwd_buffer);
+        if (errno == ENOENT && cwd_size > 0) {
+            /* ENOENT can occur when either the path of the executable or any of
+             * the cwds given via file_actions doesn't exist. Since it's not
+             * possible to determine which of those paths caused the problem,
+             * we return an exception with all of those. */
+
+            if (cwd_size == 1) {
+                /* the common case */
+                PyObject *cwd = PyList_GET_ITEM(cwd_buffer, 0);
+                PyErr_Format(PyExc_FileNotFoundError, "Either '%S' or '%s' doesn't exist.",
                          path->object, PyBytes_AS_STRING(cwd));
+            } else {
+                /* TODO ..... */
+                PyObject *separator = PyBytes_FromString(", ");
+                if (!separator) {
+                    goto exit;
+                }
+
+                PyObject *joined = PyObject_CallMethod(separator, "join", "O", cwd_buffer);
+                Py_DECREF(separator);
+                if (!joined) {
+                    goto exit;
+                }
+                PyErr_Format(PyExc_FileNotFoundError,
+                             "Either '%S' or one of (%s) doesn't exist.",
+                             path->object, PyBytes_AS_STRING(joined));
+
+                Py_DECREF(joined);
+            }
             goto exit;
         }
 #endif
@@ -8061,7 +8091,7 @@ exit:
     if (argvlist) {
         free_string_array(argvlist, argc);
     }
-    Py_XDECREF(cwd);
+    Py_XDECREF(cwd_buffer);
     Py_XDECREF(temp_buffer);
     return result;
 }
