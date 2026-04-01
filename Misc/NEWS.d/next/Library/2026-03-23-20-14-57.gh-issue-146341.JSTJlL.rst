@@ -9,3 +9,5 @@ Add the following MIME types corresponding to file extensions:
   - ``.blk`` and ``.bk2`` for ``video/vnd.radgamettools.bink``
   - ``.sswf`` and ``.ssw`` for ``video/vnd.sealed.swf``
   - ``.yt``    for ``video/vnd.youtube.yt``
+
+(Contributed by Charlie Lin in :gh:`146342`.)
