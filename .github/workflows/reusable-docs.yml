@@ -80,7 +80,7 @@ jobs:
       run: python Doc/tools/check-html-ids.py collect Doc/build/html -o Doc/build/html-ids-head.json.gz
     - name: 'Upload HTML IDs'
       if: github.event_name == 'pull_request'
-      uses: actions/upload-artifact@v7
+      uses: actions/upload-artifact@bbbca2ddaa5d8feaa63e36b76fdaad77386f024f # v7.0.0
       with:
         name: html-ids-head
         path: Doc/build/html-ids-head.json.gz
