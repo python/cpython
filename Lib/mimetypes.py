@@ -604,7 +604,6 @@ def _default_mime_types():
         '.ttf'    : 'font/ttf',
         '.woff'   : 'font/woff',
         '.woff2'  : 'font/woff2',
-        '.ivs'    : 'haptics/ivs',
         '.hjif'   : 'haptics/hjif',
         '.hmpg'   : 'haptics/hmpg',
         '.avif'   : 'image/avif',
