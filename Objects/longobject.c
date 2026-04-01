@@ -185,6 +185,7 @@ long_alloc(Py_ssize_t size)
             return NULL;
         }
         _PyObject_Init((PyObject*)result, &PyLong_Type);
+        _PyLong_InitTag(result);
     }
     _PyLong_SetSignAndDigitCount(result, size != 0, size);
     /* The digit has to be initialized explicitly to avoid
@@ -258,6 +259,7 @@ _PyLong_FromMedium(sdigit x)
             return NULL;
         }
         _PyObject_Init((PyObject*)v, &PyLong_Type);
+        _PyLong_InitTag(v);
     }
     digit abs_x = x < 0 ? -x : x;
     _PyLong_SetSignAndDigitCount(v, x<0?-1:1, 1);
@@ -337,6 +339,7 @@ medium_from_stwodigits(stwodigits x)
             return PyStackRef_NULL;
         }
         _PyObject_Init((PyObject*)v, &PyLong_Type);
+        _PyLong_InitTag(v);
     }
     digit abs_x = x < 0 ? (digit)(-x) : (digit)x;
     _PyLong_SetSignAndDigitCount(v, x<0?-1:1, 1);
@@ -6011,29 +6014,34 @@ static PyObject *
 long_subtype_new(PyTypeObject *type, PyObject *x, PyObject *obase)
 {
     PyLongObject *tmp, *newobj;
-    Py_ssize_t i, n;
+    Py_ssize_t size, ndigits;
+    int sign;
 
     assert(PyType_IsSubtype(type, &PyLong_Type));
     tmp = (PyLongObject *)long_new_impl(&PyLong_Type, x, obase);
     if (tmp == NULL)
         return NULL;
     assert(PyLong_Check(tmp));
-    n = _PyLong_DigitCount(tmp);
+    size = _PyLong_DigitCount(tmp);
     /* Fast operations for single digit integers (including zero)
      * assume that there is always at least one digit present. */
-    if (n == 0) {
-        n = 1;
-    }
-    newobj = (PyLongObject *)type->tp_alloc(type, n);
+    ndigits = size ? size : 1;
+    newobj = (PyLongObject *)type->tp_alloc(type, ndigits);
     if (newobj == NULL) {
         Py_DECREF(tmp);
         return NULL;
     }
     assert(PyLong_Check(newobj));
-    newobj->long_value.lv_tag = tmp->long_value.lv_tag & ~IMMORTALITY_BIT_MASK;
-    for (i = 0; i < n; i++) {
-        newobj->long_value.ob_digit[i] = tmp->long_value.ob_digit[i];
+    if (_PyLong_IsCompact(tmp)) {
+        sign = _PyLong_CompactSign(tmp);
     }
+    else {
+        sign = _PyLong_NonCompactSign(tmp);
+    }
+    _PyLong_InitTag(newobj);
+    _PyLong_SetSignAndDigitCount(newobj, sign, size);
+    memcpy(newobj->long_value.ob_digit, tmp->long_value.ob_digit,
+           ndigits * sizeof(digit));
     Py_DECREF(tmp);
     return (PyObject *)newobj;
 }
