@@ -134,8 +134,8 @@ _PyLong_CompactValue(const PyLongObject *op)
     assert(PyUnstable_Long_IsCompact(op));
     sign = 1 - (op->long_value.lv_tag & _PyLong_SIGN_MASK);
     if (sign == 0) {
-        // gh-147988: Make sure that the digit is zero,
-        // it helps detecting usage of uninitialized digits.
+        // gh-147988: Make sure that the digit is zero.
+        // It helps detecting the usage of uninitialized digits.
         assert(op->long_value.ob_digit[0] == 0);
     }
     return sign * (Py_ssize_t)op->long_value.ob_digit[0];

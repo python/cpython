@@ -6958,6 +6958,20 @@ PyLongWriter_Finish(PyLongWriter *writer)
     PyLongObject *obj = (PyLongObject *)writer;
     assert(Py_REFCNT(obj) == 1);
 
+#ifdef Py_DEBUG
+    // gh-147988: Detect uninitialized digits:
+    // long_alloc() fills digits with 0xFF byte pattern.
+    Py_ssize_t ndigits = _PyLong_DigitCount(obj);
+    if (ndigits == 0) {
+        // Check ob_digit[0] digit for the number zero
+        ndigits = 1;
+    }
+    for (Py_ssize_t i=0; i < ndigits; i++) {
+        digit d = obj->long_value.ob_digit[i];
+        assert(d < PyLong_BASE);
+    }
+#endif
+
     // Normalize and get singleton if possible
     obj = maybe_small_long(long_normalize(obj));
 
