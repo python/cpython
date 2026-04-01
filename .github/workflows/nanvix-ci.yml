@@ -134,10 +134,16 @@ jobs:
 
             echo "Trimmed stdlib: $(find "$SYSROOT" -type f | wc -l) files"
 
-            # Get mkramfs from the NanVix release
+            # Get mkramfs from the NanVix standalone tarball
+            echo "Downloading NanVix release for mkramfs..."
             curl -fsSL https://raw.githubusercontent.com/nanvix/nanvix/refs/heads/dev/scripts/get-nanvix.sh \
               | bash -s -- --force nanvix-dl
-            MKRAMFS=$(find nanvix-dl -name "mkramfs.elf" -o -name "mkramfs" | head -1)
+            NVX_TAR=$(find nanvix-dl -name "nanvix-microvm-standalone-*.tar.bz2" | head -1)
+            if [[ -n "$NVX_TAR" ]]; then
+              mkdir -p nanvix-extract
+              tar -xjf "$NVX_TAR" -C nanvix-extract
+              MKRAMFS=$(find nanvix-extract -name "mkramfs.elf" -type f | head -1)
+            fi
 
             if [[ -n "$MKRAMFS" ]]; then
               chmod +x "$MKRAMFS"
