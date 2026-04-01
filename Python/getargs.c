@@ -2203,7 +2203,7 @@ vgetargskeywordsfast_impl(PyObject *const *args, Py_ssize_t nargs,
             else {
                 keyword = PyTuple_GET_ITEM(kwtuple, i - pos);
                 PyErr_Format(PyExc_TypeError,  "%.200s%s missing required "
-                             "argument '%U' (pos %zd)",
+                             "argument '%U' (pos %d)",
                              (parser->fname == NULL) ? "function" : parser->fname,
                              (parser->fname == NULL) ? "" : "()",
                              keyword, i+1);
@@ -2244,7 +2244,7 @@ vgetargskeywordsfast_impl(PyObject *const *args, Py_ssize_t nargs,
                 /* arg present in tuple and in dict */
                 PyErr_Format(PyExc_TypeError,
                              "argument for %.200s%s given by name ('%U') "
-                             "and position (%zd)",
+                             "and position (%d)",
                              (parser->fname == NULL) ? "function" : parser->fname,
                              (parser->fname == NULL) ? "" : "()",
                              keyword, i+1);
