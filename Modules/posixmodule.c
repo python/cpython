@@ -7999,7 +7999,8 @@ py_posix_spawn(int use_posix_spawnp, PyObject *module, path_t *path, PyObject *a
         if (!temp_buffer) {
             goto exit;
         }
-        /* TODO there can be multiple cwd actions .... */
+        /* Use a list to capture all directories passed via POSIX_SPAWN_CHDIR
+         * action for potential exception creation below. */
         cwd_buffer = PyList_New(0);
         if (!cwd_buffer) {
             goto exit;
@@ -8045,12 +8046,13 @@ py_posix_spawn(int use_posix_spawnp, PyObject *module, path_t *path, PyObject *a
              * we return an exception with all of those. */
 
             if (cwd_size == 1) {
-                /* the common case */
                 PyObject *cwd = PyList_GET_ITEM(cwd_buffer, 0);
                 PyErr_Format(PyExc_FileNotFoundError, "Either '%S' or '%s' doesn't exist.",
                          path->object, PyBytes_AS_STRING(cwd));
             } else {
-                /* TODO ..... */
+                /* Multiple POSIX_SPAWN_CHDIR actions were used in a single
+                 * spawn. In this case, we have to build the expection message
+                 * from all possibly missing paths. */
                 PyObject *separator = PyBytes_FromString(", ");
                 if (!separator) {
                     goto exit;
