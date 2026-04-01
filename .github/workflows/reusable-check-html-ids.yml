@@ -15,11 +15,18 @@ jobs:
     runs-on: ubuntu-latest
     timeout-minutes: 30
     steps:
-      - name: 'Check out base commit'
+      - name: 'Find merge base'
+        id: merge-base
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          MERGE_BASE=$(gh api repos/${{ github.repository }}/compare/${{ github.event.pull_request.base.sha }}...${{ github.event.pull_request.head.sha }} --jq '.merge_base_commit.sha')
+          echo "sha=$MERGE_BASE" >> "$GITHUB_OUTPUT"
+      - name: 'Check out merge base'
         uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
         with:
           persist-credentials: false
-          ref: ${{ github.event.pull_request.base.sha }}
+          ref: ${{ steps.merge-base.outputs.sha }}
       - name: 'Set up Python'
         uses: actions/setup-python@a309ff8b426b58ec0e2a45f0f869d46889d02405 # v6.2.0
         with:
