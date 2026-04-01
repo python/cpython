@@ -1,0 +1,2 @@
+Nested :exc:`AttributeError` suggestions now include property-backed
+attributes on nested objects without executing the property getter.
