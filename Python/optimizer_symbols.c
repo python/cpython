@@ -265,6 +265,25 @@ _Py_uop_sym_get_const_as_stackref(JitOptContext *ctx, JitOptRef sym)
 }
 
 /*
+ Indicates whether the type is a known built-in type
+ that is safe to narrow.
+ */
+bool
+_Py_uop_sym_is_safe_type(JitOptRef sym)
+{
+    PyTypeObject *typ = _Py_uop_sym_get_type(sym);
+    if (typ == NULL) {
+        return false;
+    }
+    return (typ == &PyLong_Type) ||
+           (typ == &PyUnicode_Type) ||
+           (typ == &PyFloat_Type) ||
+           (typ == &_PyNone_Type) ||
+           (typ == &PyBool_Type) ||
+           (typ == &PyFrozenDict_Type);
+}
+
+/*
  Indicates whether the constant is safe to constant evaluate
  (without side effects).
  */

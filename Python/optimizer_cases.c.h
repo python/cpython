@@ -4279,15 +4279,27 @@
         }
 
         case _FORMAT_SIMPLE: {
+            JitOptRef value;
             JitOptRef res;
-            res = sym_new_type(ctx, &PyUnicode_Type);
+            value = stack_pointer[-1];
+            if (sym_is_safe_type(value)) {
+                res = sym_new_type(ctx, &PyUnicode_Type);
+            } else {
+                res = sym_new_not_null(ctx);
+            }
             stack_pointer[-1] = res;
             break;
         }
 
         case _FORMAT_WITH_SPEC: {
+            JitOptRef value;
             JitOptRef res;
-            res = sym_new_type(ctx, &PyUnicode_Type);
+            value = stack_pointer[-2];
+            if (sym_is_safe_type(value)) {
+                res = sym_new_type(ctx, &PyUnicode_Type);
+            } else {
+                res = sym_new_not_null(ctx);
+            }
             CHECK_STACK_BOUNDS(-1);
             stack_pointer[-2] = res;
             stack_pointer += -1;

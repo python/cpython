@@ -1552,11 +1552,19 @@ dummy_func(void) {
     }
 
     op(_FORMAT_SIMPLE, (value -- res)) {
-        res = sym_new_type(ctx, &PyUnicode_Type);
+        if (sym_is_safe_type(value)) {
+            res = sym_new_type(ctx, &PyUnicode_Type);
+        } else {
+            res = sym_new_not_null(ctx);
+        }
     }
 
     op(_FORMAT_WITH_SPEC, (value, fmt_spec -- res)) {
-        res = sym_new_type(ctx, &PyUnicode_Type);
+        if (sym_is_safe_type(value)) {
+            res = sym_new_type(ctx, &PyUnicode_Type);
+        } else {
+            res = sym_new_not_null(ctx);
+        }
     }
 
     op(_SET_UPDATE, (set, unused[oparg-1], iterable -- set, unused[oparg-1], i)) {

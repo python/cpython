@@ -1,2 +1,2 @@
 Allow the JIT to remove unicode guards after ``_FORMAT_SIMPLE`` and
-``_FORMAT_WITH_SPEC`` by setting the return type to string.
+``_FORMAT_WITH_SPEC`` when the input type is a known built-in type.
