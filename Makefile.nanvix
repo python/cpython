@@ -25,6 +25,26 @@ PLATFORM ?= hyperlight
 PROCESS_MODE ?= multi-process
 MEMORY_SIZE ?= 128mb
 
+# Set to 'yes' for release packaging: disables C test extension modules and
+# skips regrtest.  Dev builds (the default) compile test extensions and run
+# regrtest so that every `./z test` invocation exercises the test suite.
+# NOTE: changing this between builds requires 'make -f Makefile.nanvix distclean'
+# followed by a full rebuild so the new configure flags are picked up.
+NANVIX_RELEASE ?= no
+
+# Space-separated list of stdlib test modules to run via 'python3 -m test'.
+# Keep this list to pure-Python, non-networking tests known to pass on Nanvix.
+# Expand it as more tests are enabled (see issues linked from #320).
+#
+# Trimmed to validated-green modules only. The remaining modules fail due to
+# missing platform capabilities (fork/exec, tempdir, asyncio event loop) or
+# memory limits (test_json MemoryError). Those belong to #321 and #322 where
+# each module gets individual skip/xfail annotations before being re-added.
+#   Deferred: test_builtin test_dict test_list test_str test_tuple test_set
+#             test_bytes test_int test_json test_datetime test_os test_pathlib
+#             test_io
+NANVIX_TEST_LIST ?= test_float test_complex test_bool test_struct
+
 # Nanvix cross-compilation configuration
 ifdef CONFIG_NANVIX
   NANVIX_TOOLCHAIN ?= /opt/nanvix
@@ -153,7 +173,7 @@ CONFIGURE_OPTS = \
 	--build=x86_64-pc-linux-gnux32 \
 	--host=i686-nanvix \
 	--with-build-python="$(BUILD_PYTHON)" \
-	--disable-test-modules \
+	$(if $(filter yes,$(NANVIX_RELEASE)),--disable-test-modules,) \
 	--with-libc="$(LIBC)" \
 	--with-libm="$(LIBM)" \
 	--prefix="$(INSTALL_PREFIX)" \
@@ -257,6 +277,7 @@ ifeq ($(PROCESS_MODE),standalone)
 	@rm -rf $(TEST_STAGING)/sysroot/lib/python3.12/venv
 	@rm -rf $(TEST_STAGING)/sysroot/lib/python3.12/site-packages
 	@rm -rf $(TEST_STAGING)/sysroot/lib/python3.12/__phello__
+	@rm -rf $(TEST_STAGING)/sysroot/lib/python3.12/test
 	@rm -f $(TEST_STAGING)/sysroot/lib/libpython3.12.a
 	@rm -rf $(TEST_STAGING)/sysroot/include
 	@rm -rf $(TEST_STAGING)/sysroot/share
@@ -322,7 +343,28 @@ else
 			fi; \
 		}
 endif
-	@rm -rf $(TEST_STAGING) /tmp/cpython_test.log
+ifneq ($(NANVIX_RELEASE),yes)
+	@echo "Test: regrtest ($(words $(NANVIX_TEST_LIST)) modules)..."
+ifeq ($(PROCESS_MODE),standalone)
+	@echo "  SKIP: regrtest skipped for standalone mode (ramfs memory limit)"
+else
+	cd $(TEST_STAGING)/sysroot && \
+		{ \
+			: > /tmp/cpython_regrtest.log; \
+			timeout 600 ./bin/nanvixd.elf -- ./bin/python3.12 -m test \
+			  --timeout=120 $(NANVIX_TEST_LIST) \
+			  < /dev/null > /tmp/cpython_regrtest.log 2>&1; \
+			regrtest_status=$$?; \
+			if [ $$regrtest_status -ne 0 ]; then \
+				echo "  FAIL: regrtest exited with status $$regrtest_status"; cat /tmp/cpython_regrtest.log; exit 1; \
+			fi; \
+			echo "  PASS: regrtest completed"; \
+		}
+endif
+else
+	@echo "Test: regrtest skipped (NANVIX_RELEASE=yes)"
+endif
+	@rm -rf $(TEST_STAGING) /tmp/cpython_test.log /tmp/cpython_regrtest.log
 	@echo "		*** CPython tests PASSED ***"
 
 # Clean target
