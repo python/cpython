@@ -1,3 +1,2 @@
-:mod:`itertools`: Fix re-entrant use-after-free in ``itertools.groupby()``
-that could lead to a segmentation fault when a user-defined ``__eq__``
-re-enters the grouper iterator.
+:mod:`itertools`: Fix a crash in :func:`itertools.groupby` when
+the grouper iterator is concurrently mutated.
