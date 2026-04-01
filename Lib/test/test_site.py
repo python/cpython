@@ -961,6 +961,27 @@ init = ["os"]
         self.assertEqual(tomldata.dirs, ['subdir'])
         self.assertEqual(tomldata.init, ['os'])
 
+    def test_missing_schema_version_is_okay(self):
+        # It's okay for the schema_version to be missing, or even the [metadata] section entirely
+        # (which is tested below).  A missing schema_version just means that no future compatibility
+        # can be guaranteed.
+        name = self._make_site_toml("""\
+[metadata]
+""")
+        tomldata = site._read_site_toml(self.sitedir, name)
+        self.assertIsNotNone(tomldata)
+        self.assertEqual(tomldata.metadata, {})
+
+    def test_unexpected_schema_version_is_not_okay(self):
+        # If [metadata].schema_version exists, but isn't a supported number, then the entire TOML
+        # file is invalid and ignored.
+        name = self._make_site_toml("""\
+[metadata]
+schema_version = 801
+""")
+        tomldata = site._read_site_toml(self.sitedir, name)
+        self.assertIsNone(tomldata)
+
     def test_read_site_toml_parse_error(self):
         # Invalid pkg.site.toml content is skipped.
         name = self._make_site_toml("not valid [[[toml")
@@ -996,7 +1017,7 @@ init = 42
         # Empty .site.toml is a no-op.
         name = self._make_site_toml("")
         tomldata = site._read_site_toml(self.sitedir, name)
-        self.assertEqual(tomldata.metadata, [])
+        self.assertEqual(tomldata.metadata, {})
         self.assertEqual(tomldata.dirs, [])
         self.assertEqual(tomldata.init, [])
 

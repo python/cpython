@@ -207,7 +207,14 @@ def _read_site_toml(sitedir, name):
         _trace(f"Error parsing {fullname!r}: {exc}")
         return None
 
-    metadata = data.get("metadata", [])
+    metadata = data.get("metadata", {})
+    # Validate the TOML schema version.  PEP XXX defines schema_version == 1.  Both the [metadata]
+    # section and [metadata].schema_version are optional, but if missing, future compatibility
+    # cannot be guaranteed.
+    if (schema_version := metadata.get("schema_version")) is not None:
+        if schema_version != 1:
+            _trace(f"Unsupported [metadata].schema_version: {schema_version}")
+            return None
 
     # Validate [paths].dirs
     dirs = []
