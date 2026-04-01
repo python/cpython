@@ -1,0 +1,3 @@
+Fix a bug that could cause applications with specific allocation patterns to
+leak memory via Huge Pages if compiled with Huge Page support. Patch by
+Pablo Galindo
