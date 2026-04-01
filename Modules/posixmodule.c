@@ -8056,7 +8056,7 @@ py_posix_spawn(int use_posix_spawnp, PyObject *module, path_t *path, PyObject *a
                     goto exit;
                 }
 
-                PyObject *joined = PyObject_CallMethod(separator, "join", "O", cwd_buffer);
+                PyObject *joined = PyBytes_Join(separator, cwd_buffer);
                 Py_DECREF(separator);
                 if (!joined) {
                     goto exit;
