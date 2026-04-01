@@ -13,7 +13,8 @@ import pyconf
 
 
 def setup_shared_lib_suffix(v):
-    """Determine the shared library file extension."""
+    # SHLIB_SUFFIX is the extension of shared libraries (including the dot!)
+    # -- usually .so, .sl on HP-UX, .dll on Cygwin
     pyconf.checking("the extension of shared libraries")
     if not v.SHLIB_SUFFIX:
         if v.ac_sys_system.startswith(("hp", "HP")):
@@ -28,7 +29,10 @@ def setup_shared_lib_suffix(v):
 
 
 def setup_ldshared(v):
-    """Determine LDSHARED, LDCXXSHARED, and BLDSHARED flags."""
+    # LDSHARED is the ld *command* used to create shared library
+    # -- "cc -G" on SunOS 5.x.
+    # (Shared libraries in this instance are shared modules to be loaded into
+    # Python, as opposed to building Python itself as a shared library.)
     pyconf.checking("LDSHARED")
     if not v.LDSHARED:
         sr = f"{v.ac_sys_system}/{v.ac_sys_release}"
@@ -53,20 +57,24 @@ def setup_ldshared(v):
             v.LDSHARED = "$(CC) -bundle"
             v.LDCXXSHARED = "$(CXX) -bundle"
             if v.enable_framework:
+                # Link against the framework. All externals should be defined.
                 v.BLDSHARED = f"{v.LDSHARED} $(PYTHONFRAMEWORKDIR)/Versions/$(VERSION)/$(PYTHONFRAMEWORK)"
                 v.LDSHARED += " $(PYTHONFRAMEWORKPREFIX)/$(PYTHONFRAMEWORKDIR)/Versions/$(VERSION)/$(PYTHONFRAMEWORK)"
                 v.LDCXXSHARED += " $(PYTHONFRAMEWORKPREFIX)/$(PYTHONFRAMEWORKDIR)/Versions/$(VERSION)/$(PYTHONFRAMEWORK)"
             else:
+                # No framework. Ignore undefined symbols, assuming they come from Python
                 v.LDSHARED += " -undefined suppress"
                 v.LDCXXSHARED += " -undefined suppress"
         elif sr.startswith(("Darwin/1.4", "Darwin/5.", "Darwin/6.")):
             v.LDSHARED = "$(CC) -bundle"
             v.LDCXXSHARED = "$(CXX) -bundle"
             if v.enable_framework:
+                # Link against the framework. All externals should be defined.
                 v.BLDSHARED = f"{v.LDSHARED} $(PYTHONFRAMEWORKDIR)/Versions/$(VERSION)/$(PYTHONFRAMEWORK)"
                 v.LDSHARED += " $(PYTHONFRAMEWORKPREFIX)/$(PYTHONFRAMEWORKDIR)/Versions/$(VERSION)/$(PYTHONFRAMEWORK)"
                 v.LDCXXSHARED += " $(PYTHONFRAMEWORKPREFIX)/$(PYTHONFRAMEWORKDIR)/Versions/$(VERSION)/$(PYTHONFRAMEWORK)"
             else:
+                # No framework, use the Python app as bundle-loader
                 v.BLDSHARED = f"{v.LDSHARED} -bundle_loader $(BUILDPYTHON)"
                 v.LDSHARED += (
                     " -bundle_loader $(BINDIR)/python$(VERSION)$(EXE)"
@@ -75,6 +83,8 @@ def setup_ldshared(v):
                     " -bundle_loader $(BINDIR)/python$(VERSION)$(EXE)"
                 )
         elif sr.startswith("Darwin/"):
+            # Use -undefined dynamic_lookup whenever possible (10.3 and later).
+            # This allows an extension to be used in any Python
             dt = v.MACOSX_DEPLOYMENT_TARGET or ""
             dt_parts = dt.split(".")
             dt_major = int(dt_parts[0]) if dt_parts else 0
@@ -147,6 +157,8 @@ def setup_ldshared(v):
         else:
             v.LDSHARED = "ld"
 
+    # Emscripten's emconfigure sets LDSHARED. Set BLDSHARED outside the
+    # LDSHARED block to configure BLDSHARED for side module support.
     if v.enable_wasm_dynamic_linking and v.ac_sys_system == "Emscripten":
         v.BLDSHARED = "$(CC) -shared -sSIDE_MODULE=1"
 
@@ -159,7 +171,8 @@ def setup_ldshared(v):
 
 
 def setup_ccshared(v):
-    """Determine CCSHARED flag for position-independent code."""
+    # CCSHARED are the C *flags* used to create objects to go into a shared
+    # library (module) -- this is only needed for a few systems
     pyconf.checking("CCSHARED")
     if not v.CCSHARED:
         if v.ac_sys_system.startswith("SunOS"):
@@ -194,7 +207,8 @@ def setup_ccshared(v):
 
 
 def setup_linkforshared(v):
-    """Determine LINKFORSHARED flags for the main executable."""
+    # LINKFORSHARED are the flags passed to the $(CC) command that links
+    # the python executable -- this is only needed for a few systems
     pyconf.checking("LINKFORSHARED")
     if not v.LINKFORSHARED:
         sr = f"{v.ac_sys_system}/{v.ac_sys_release}"
@@ -207,9 +221,13 @@ def setup_linkforshared(v):
         elif v.ac_sys_system.startswith(("Linux", "GNU")):
             v.LINKFORSHARED = "-Xlinker -export-dynamic"
         elif v.ac_sys_system.startswith(("Darwin", "iOS")):
+            # -u libsys_s pulls in all symbols in libsys
             v.LINKFORSHARED = (
                 f"{v.extra_undefs} -framework CoreFoundation".strip()
             )
+            # Issue #18075: the default maximum stack size (8MBytes) is too
+            # small for the default recursion limit. Increase the stack size
+            # to ensure that tests don't crash
             stack_size = "4000000" if v.with_ubsan else "1000000"
             pyconf.define_unquoted(
                 "THREAD_STACK_SIZE",
@@ -251,6 +269,11 @@ def setup_linkforshared(v):
             if not v.enable_shared:
                 v.LINKFORSHARED = "-Wl,--out-implib=$(LDLIBRARY)"
         elif v.ac_sys_system.startswith("QNX"):
+            # -Wl,-E causes the symbols to be added to the dynamic
+            # symbol table so that they can be found when a module
+            # is loaded.  -N 2048K causes the stack size to be set
+            # to 2048 kilobytes so that the stack doesn't overflow
+            # when running test_compile.py.
             v.LINKFORSHARED = "-Wl,-E -N 2048K"
         elif v.ac_sys_system.startswith("VxWorks"):
             v.LINKFORSHARED = "-Wl,-export-dynamic"
@@ -269,16 +292,27 @@ def setup_shared_lib_exports(v):
     pyconf.checking("CFLAGSFORSHARED")
     if v.LIBRARY != v.LDLIBRARY:
         if v.ac_sys_system.startswith("CYGWIN"):
+            # Cygwin needs CCSHARED when building extension DLLs
+            # but not when building the interpreter DLL.
             v.CFLAGSFORSHARED = ""
         else:
             v.CFLAGSFORSHARED = "$(CCSHARED)"
     else:
         v.CFLAGSFORSHARED = ""
+    # WASM dynamic linking requires -fPIC.
     if v.enable_wasm_dynamic_linking:
         v.CFLAGSFORSHARED = "$(CCSHARED)"
     pyconf.result(v.CFLAGSFORSHARED)
     v.export("CFLAGSFORSHARED")
 
+    # SHLIBS are libraries (except -lc and -lm) to link to the python shared
+    # library (with --enable-shared).
+    # For platforms on which shared libraries are not allowed to have unresolved
+    # symbols, this must be set to $(LIBS) (expanded by make). We do this even
+    # if it is not required, since it creates a dependency of the shared library
+    # to LIBS. This, in turn, means that applications linking the shared libpython
+    # don't need to link LIBS explicitly. The default should be only changed
+    # on systems where this approach causes problems.
     pyconf.checking("SHLIBS")
     v.SHLIBS = "$(LIBS)"
     pyconf.result(v.SHLIBS)
@@ -289,12 +323,16 @@ def setup_dynload(v):
     """Select dynamic loading module and set MACHDEP_OBJS."""
     v.export("DLINCLDIR", ".")
 
+    # the dlopen() function means we might want to use dynload_shlib.o. some
+    # platforms have dlopen(), but don't want to use it.
     pyconf.check_func("dlopen")
     ac_cv_func_dlopen = pyconf.cache.get("ac_cv_func_dlopen", False)
     # Also update v in case Part 5 didn't set it
     if not v.is_set("ac_cv_func_dlopen"):
         v.ac_cv_func_dlopen = ac_cv_func_dlopen
 
+    # DYNLOADFILE specifies which dynload_*.o file we will use for dynamic
+    # loading of modules.
     pyconf.checking("DYNLOADFILE")
     v.DYNLOADFILE = ""
     if not v.DYNLOADFILE:
@@ -302,6 +340,8 @@ def setup_dynload(v):
         if pyconf.fnmatch(sys_rel, "[hH][pP]*"):
             v.DYNLOADFILE = "dynload_hpux.o"
         elif v.ac_cv_func_dlopen:
+            # use dynload_shlib.c and dlopen() if we have it; otherwise stub
+            # out any dynamic loading
             v.DYNLOADFILE = "dynload_shlib.o"
         else:
             v.DYNLOADFILE = "dynload_stub.o"
@@ -315,7 +355,7 @@ def setup_dynload(v):
             "Defined when any dynamic module loading is enabled.",
         )
 
-    # MACHDEP_OBJS
+    # MACHDEP_OBJS can be set to platform-specific object files needed by Python
     extra_machdep_objs = v.extra_machdep_objs
     pyconf.checking("MACHDEP_OBJS")
     v.MACHDEP_OBJS = ""

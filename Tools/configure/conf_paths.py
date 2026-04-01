@@ -25,6 +25,7 @@ def setup_install_paths(v):
     # ---------------------------------------------------------------------------
 
     v.export("PLATLIBDIR")
+    # XXX: We should probably calculate the default from libdir, if defined.
     v.PLATLIBDIR = "lib"
     pyconf.checking("for --with-platlibdir")
     with_platlibdir = WITH_PLATLIBDIR.value
@@ -41,7 +42,7 @@ def setup_install_paths(v):
         r"${exec_prefix}/${PLATLIBDIR}/python$(VERSION)$(ABI_THREAD)"
     )
 
-    # LIBPL (defined after ABIFLAGS and LDVERSION)
+    # LIBPL defined after ABIFLAGS and LDVERSION is defined.
     v.export("PY_ENABLE_SHARED")
     platform_triplet = v.PLATFORM_TRIPLET
     if not platform_triplet:
@@ -72,7 +73,7 @@ def check_misc_runtime(v):
     # Miscellaneous runtime checks
     # ---------------------------------------------------------------------------
 
-    # broken nice()
+    # check if nice() returns success/failure instead of the new priority
     pyconf.checking("for broken nice()")
     ac_cv_broken_nice = pyconf.run_check(
         r"""
@@ -97,7 +98,7 @@ def check_misc_runtime(v):
             "Define if nice() returns success/failure instead of the new priority.",
         )
 
-    # broken poll()
+    # check if poll() sets errno on invalid file descriptors
     pyconf.checking("for broken poll()")
     ac_cv_broken_poll = pyconf.run_check(
         r"""
@@ -129,7 +130,13 @@ def check_misc_runtime(v):
             "Define if poll() sets errno on invalid file descriptors.",
         )
 
-    # working tzset()
+    # check tzset(3) exists and works like we expect it to
+    # We need to ensure that tzset() not only does 'something' with localtime,
+    # but it works as documented in the library reference and as expected by
+    # the test suite. This includes making sure that tzname is set properly if
+    # tm->tm_zone does not exist since it is the alternative way of getting
+    # timezone info. Red Hat 6.2 doesn't understand the southern hemisphere
+    # after New Year's Day.
     pyconf.checking("for working tzset()")
     ac_cv_working_tzset = pyconf.run_check(
         r"""
@@ -151,6 +158,7 @@ def check_misc_runtime(v):
         if (localtime(&groundhogday)->tm_hour != 0)
             exit(1);
     #if HAVE_TZNAME
+        /* For UTC, tzname[1] is sometimes "", sometimes "   " */
         if (strcmp(tzname[0], "UTC") ||
             (tzname[1][0] != 0 && tzname[1][0] != ' '))
             exit(1);

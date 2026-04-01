@@ -115,7 +115,7 @@ WITH_DOC_STRINGS = pyconf.arg_with(
 
 
 def setup_disable_gil(v):
-    """Handle --disable-gil option."""
+    # Check for --disable-gil
     if DISABLE_GIL.process_bool(v):
         pyconf.define(
             "Py_GIL_DISABLED", 1, "Define if you want to disable the GIL"
@@ -125,7 +125,7 @@ def setup_disable_gil(v):
 
 
 def setup_pydebug(v):
-    """Handle --with-pydebug option."""
+    # Check for --with-pydebug
     if WITH_PYDEBUG.process_bool(v):
         pyconf.define(
             "Py_DEBUG",
@@ -136,7 +136,7 @@ def setup_pydebug(v):
 
 
 def setup_trace_refs(v):
-    """Handle --with-trace-refs option."""
+    # Check for --with-trace-refs
     WITH_TRACE_REFS.process_value(v)
 
     if WITH_TRACE_REFS.is_yes():
@@ -151,7 +151,7 @@ def setup_trace_refs(v):
 
 
 def setup_pystats(v):
-    """Handle --enable-pystats option."""
+    # Check for --enable-pystats
     ENABLE_PYSTATS.process_value(v)
 
     if ENABLE_PYSTATS.is_yes():
@@ -163,7 +163,7 @@ def setup_pystats(v):
 
 
 def setup_assertions(v):
-    """Handle --with-assertions option."""
+    # Check for --with-assertions (allows enabling assertions without Py_DEBUG)
     assertions_bool = WITH_ASSERTIONS.process_bool()
     v.assertions = "true" if assertions_bool else "false"
 
@@ -186,6 +186,7 @@ def setup_optimizations(v):
 
     if v.Py_OPT is True:
         if "-O0" in v.CFLAGS:
+            # Check for conflicting CFLAGS=-O0 and --enable-optimizations
             pyconf.warn(
                 "CFLAGS contains -O0 which may conflict with --enable-optimizations. "
                 "Consider removing -O0 from CFLAGS for optimal performance."
@@ -215,7 +216,7 @@ def setup_optimizations(v):
 
 
 def setup_experimental_jit(v):
-    """Handle --enable-experimental-jit, compiler-specific flags, NDEBUG, arch flags."""
+    # Handle --enable-experimental-jit, compiler-specific flags, NDEBUG, arch flags
     pyconf.checking("for --enable-experimental-jit")
     jit = ENABLE_EXPERIMENTAL_JIT.value
     if jit is None or jit is False or jit == "no":
@@ -256,6 +257,8 @@ def setup_experimental_jit(v):
     pyconf.result(f"{tier2_flags} {jit_flags}")
 
     if v.disable_gil and jit is not False:
+        # GH-133171: This configuration builds the JIT but never actually uses it,
+        # which is surprising (and strictly worse than not building it at all):
         pyconf.warn(
             "--enable-experimental-jit does not work correctly with --disable-gil."
         )
@@ -263,6 +266,7 @@ def setup_experimental_jit(v):
     if v.ac_cv_cc_name == "mpicc":
         pass
     elif v.ac_cv_cc_name == "icc":
+        # ICC needs -fp-model strict or floats behave badly
         v.CFLAGS_NODIST += " -fp-model strict"
     elif v.ac_cv_cc_name == "xlc":
         v.CFLAGS_NODIST += " -qalias=noansi -qmaxmem=-1"
@@ -275,10 +279,7 @@ def setup_experimental_jit(v):
 
 
 def check_jit_stencils(v):
-    # ---------------------------------------------------------------------------
     # JIT stencils header selection
-    # ---------------------------------------------------------------------------
-
     v.JIT_STENCILS_H = ""
     if ENABLE_EXPERIMENTAL_JIT.given and not ENABLE_EXPERIMENTAL_JIT.is_no():
         host = v.host
@@ -334,10 +335,7 @@ def setup_sanitizers(v):
 
 
 def check_tail_call_interp(v):
-    # ---------------------------------------------------------------------------
-    # --with-tail-call-interp
-    # ---------------------------------------------------------------------------
-
+    # Check for --with-tail-call-interp
     if WITH_TAIL_CALL_INTERP.is_yes():
         pyconf.define(
             "_Py_TAIL_CALL_INTERP",
@@ -353,10 +351,7 @@ def check_tail_call_interp(v):
 
 
 def check_remote_debug(v):
-    # ---------------------------------------------------------------------------
-    # --with-remote-debug
-    # ---------------------------------------------------------------------------
-
+    # Check for --with-remote-debug
     with_rd = WITH_REMOTE_DEBUG.value_or("yes")
     if with_rd == "yes":
         pyconf.define(
@@ -367,10 +362,7 @@ def check_remote_debug(v):
 
 
 def check_ensurepip(v):
-    # ---------------------------------------------------------------------------
-    # --with-ensurepip
-    # ---------------------------------------------------------------------------
-
+    # ensurepip option
     default_ensurepip = (
         False
         if v.ac_sys_system in ("Emscripten", "WASI", "iOS")
@@ -451,6 +443,8 @@ def setup_pymalloc(v):
     pyconf.checking("for --with-pymalloc-hugepages")
     with_pymalloc_hugepages = WITH_PYMALLOC_HUGEPAGES.value_or("no")
     if with_pymalloc_hugepages == "yes":
+        # configure only runs on Unix-like systems; Windows uses MEM_LARGE_PAGES
+        # via VirtualAlloc but does not use configure. Only check MAP_HUGETLB here.
         if pyconf.compile_check(
             preamble="#include <sys/mman.h>",
             body="int flags = MAP_PRIVATE | MAP_ANONYMOUS | MAP_HUGETLB;\n"
@@ -487,7 +481,7 @@ def setup_valgrind(v):
 
 
 def setup_dtrace(v):
-    """Handle --with-dtrace option."""
+    # Handle --with-dtrace option
     with_dtrace = WITH_DTRACE.process_value(None)
 
     v.export("DTRACE", "")
@@ -505,7 +499,13 @@ def setup_dtrace(v):
         )
         v.DTRACE_HEADERS = "Include/pydtrace_probes.h"
 
-        # Check if DTrace probes require linking (ELF generation via -G flag)
+        # On OS X, DTrace providers do not need to be explicitly compiled and
+        # linked into the binary. Correspondingly, dtrace(1) is missing the ELF
+        # generation flag '-G'. We check for presence of this flag, rather than
+        # hardcoding support by OS, in the interest of robustness.
+        #
+        # NetBSD DTrace requires the -x nolibs flag to avoid system library conflicts
+        # and uses header generation for testing instead of object generation.
         pyconf.checking("whether DTrace probes require linking")
         ac_cv_dtrace_link = False
         host = v.host
@@ -529,13 +529,14 @@ def setup_dtrace(v):
         if ac_cv_dtrace_link:
             v.DTRACE_OBJS = "Python/pydtrace.o"
 
-        # NetBSD-specific DTrace flags
+        # Set NetBSD-specific DTrace flags in DFLAGS
         if "netbsd" in host.lower():
             v.DFLAGS += " -x nolibs"
 
 
 def setup_perf_trampoline(v):
-    """Check and configure perf trampoline support."""
+    # perf trampoline is Linux and macOS specific and requires an arch-specific
+    # trampoline in assembly
     pyconf.checking("perf trampoline")
     if v.PLATFORM_TRIPLET in ("x86_64-linux-gnu", "aarch64-linux-gnu"):
         perf_trampoline = True
@@ -557,6 +558,7 @@ def setup_perf_trampoline(v):
         )
         PERF_TRAMPOLINE_OBJ = "Python/asm_trampoline.o"
         if v.Py_DEBUG is True:
+            # perf needs frame pointers for unwinding, include compiler option in debug builds
             v.BASECFLAGS += (
                 " -fno-omit-frame-pointer -mno-omit-leaf-frame-pointer"
             )

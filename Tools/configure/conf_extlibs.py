@@ -35,7 +35,7 @@ ENABLE_LOADABLE_SQLITE_EXTENSIONS = pyconf.arg_enable(
 
 
 def setup_expat(v):
-    """Handle --with-system-expat option."""
+    # Check for use of the system expat library
     with_system_expat = WITH_SYSTEM_EXPAT.process_value(None)
 
     if with_system_expat == "yes":
@@ -53,7 +53,7 @@ def setup_expat(v):
 
 
 def detect_libffi(v):
-    """Detect libffi and check ffi function availability."""
+    # Detect libffi and check ffi function availability
     v.have_libffi = "missing"
     v.LIBFFI_CFLAGS = ""
     v.LIBFFI_LIBS = ""
@@ -67,6 +67,7 @@ def detect_libffi(v):
             else "/usr/include/ffi/ffi.h"
         )
         if pyconf.path_is_file(ffi_h):
+            # use ffi from SDK root
             v.have_libffi = True
             v.LIBFFI_CFLAGS = (
                 f"-I{sdkroot}/usr/include/ffi -DUSING_APPLE_OS_LIBFFI=1"
@@ -97,6 +98,7 @@ def detect_libffi(v):
 
     if v.have_libffi is True:
         ctypes_malloc_closure = False
+        # when do we need USING_APPLE_OS_LIBFFI?
         if v.ac_sys_system in ("Darwin", "iOS"):
             ctypes_malloc_closure = True
         elif v.ac_sys_system == "sunos5":
@@ -124,6 +126,9 @@ def detect_libffi(v):
     v.export("LIBFFI_LIBS")
 
     # Check for libffi complex double support
+    # This is a workaround, since FFI_TARGET_HAS_COMPLEX_TYPE was defined in libffi v3.2.1,
+    # but real support was provided only in libffi v3.3.0.
+    # See https://github.com/python/cpython/issues/125206 for more details.
     pyconf.checking("libffi has complex type support")
     ac_cv_ffi_complex_double_supported = pyconf.run_check(
         """
@@ -164,6 +169,7 @@ def detect_sqlite3(v):
     v.have_sqlite3 = False
     v.have_supported_sqlite3 = False
 
+    # detect sqlite3 from Emscripten emport
     # Emscripten port check — must run before defaults are set so that
     # check_emscripten_port sees empty CFLAGS/LIBS and can set them.
     pyconf.check_emscripten_port("LIBSQLITE3", "-sUSE_SQLITE3")
@@ -190,6 +196,8 @@ def detect_sqlite3(v):
     # Use the real srcdir path for configure-time checks; $(srcdir) is a
     # Makefile reference that can't be used in shell commands (the shell
     # interprets it as command substitution).
+    # bpo-45774/GH-29507: The CPP check in AC_CHECK_HEADER can fail on FreeBSD,
+    # hence we use CPPFLAGS instead of CFLAGS.
     sqlite_inc = f" -I{pyconf.srcdir}/Modules/_sqlite"
     check_cflags = v.LIBSQLITE3_CFLAGS + sqlite_inc
     v.LIBSQLITE3_CFLAGS += r" -I$(srcdir)/Modules/_sqlite"
@@ -206,7 +214,8 @@ def detect_sqlite3(v):
             extra_cflags=check_cflags,
         ):
             v.have_supported_sqlite3 = True
-            # Check required sqlite3 functions
+            # Check that required functions are in place. A lot of stuff may be
+            # omitted with SQLITE_OMIT_* compile time defines.
             required_funcs = [
                 "sqlite3_bind_double",
                 "sqlite3_column_decltype",
@@ -226,7 +235,6 @@ def detect_sqlite3(v):
                 ):
                     v.have_supported_sqlite3 = False
                     break
-            # trace_v2 / trace fallback
             if not pyconf.check_lib(
                 "sqlite3", "sqlite3_trace_v2", extra_libs=v.LIBSQLITE3_LIBS
             ):
@@ -281,7 +289,7 @@ def detect_sqlite3(v):
 
 
 def detect_tcltk(v):
-    """Detect Tcl/Tk via pkg-config."""
+    # Detect Tcl/Tk, use pkg-config if available
     v.have_tcltk = False
     v.TCLTK_CFLAGS = ""
     v.TCLTK_LIBS = ""
@@ -304,7 +312,7 @@ def detect_tcltk(v):
                     v.TCLTK_CFLAGS, v.TCLTK_LIBS = _split_pkg_flags(parts)
                     break
 
-    # FreeBSD: add X11 dependency
+    # FreeBSD has an X11 dependency which is not implicitly resolved.
     if v.ac_sys_system.startswith("FreeBSD") and pkg:
         if pyconf.cmd([pkg, "--exists", "x11"]):
             status, output = pyconf.cmd_status(
@@ -317,6 +325,7 @@ def detect_tcltk(v):
                 v.TCLTK_LIBS += " " + _x11_libs
 
     # Try to link against Tcl/Tk (enforces minimum version 8.5.12)
+    # Also try pkg-config if available to get flags.
     if pyconf.link_check(
         "#include <tcl.h>\n"
         "#include <tk.h>\n"
@@ -460,9 +469,16 @@ WITH_READLINE = pyconf.arg_with(
 
 
 def check_readline(v):
-    # ---------------------------------------------------------------------------
-    # readline / editline
-    # ---------------------------------------------------------------------------
+    # Check for libreadline and libedit
+    # - libreadline provides "readline/readline.h" header and "libreadline"
+    #   shared library. pkg-config file is readline.pc
+    # - libedit provides "editline/readline.h" header and "libedit" shared
+    #   library. pkg-config file is libedit.pc
+    # - editline is not supported ("readline.h" and "libeditline" shared library)
+    #
+    # NOTE: In the past we checked if readline needs an additional termcap
+    # library (tinfo ncursesw ncurses termcap). We now assume that libreadline
+    # or readline.pc provide correct linker information.
 
     pyconf.define_template(
         "WITH_EDITLINE", "Define to build the readline module against libedit."
@@ -528,7 +544,7 @@ def check_readline(v):
             else:
                 with_readline = False
 
-    # Strip -D_XOPEN_SOURCE=600 from READLINE_CFLAGS (pyconfig.h defines _XOPEN_SOURCE=800)
+    # pyconfig.h defines _XOPEN_SOURCE=700
     v.export(
         "READLINE_CFLAGS",
         v.READLINE_CFLAGS.replace("-D_XOPEN_SOURCE=600", "").strip(),
@@ -561,7 +577,7 @@ def check_readline(v):
                     "readline/history.h",
                 ]
 
-            # readline 2.2
+            # check for readline 2.2
             if pyconf.check_decl(
                 "rl_completion_append_character", extra_includes=rl_includes
             ):
@@ -580,7 +596,7 @@ def check_readline(v):
                     "Define if you have rl_completion_suppress_append",
                 )
 
-            # readline 4.0
+            # check for readline 4.0
             librl = v.LIBREADLINE or "readline"
             pyconf.checking(f"for rl_pre_input_hook in -l{librl}")
             ac_cv_rl_pre_input_hook = pyconf.link_check(
@@ -596,6 +612,7 @@ def check_readline(v):
                     "Define if you have readline 4.0",
                 )
 
+            # also in 4.0
             pyconf.checking(
                 f"for rl_completion_display_matches_hook in -l{librl}"
             )
@@ -612,6 +629,7 @@ def check_readline(v):
                     "Define if you have readline 4.0",
                 )
 
+            # also in 4.0, but not in editline
             pyconf.checking(f"for rl_resize_terminal in -l{librl}")
             ac_cv_rl_resize_terminal = pyconf.link_check(
                 includes=rl_includes,
@@ -626,7 +644,7 @@ def check_readline(v):
                     "Define if you have readline 4.0",
                 )
 
-            # readline 4.2
+            # check for readline 4.2
             pyconf.checking(f"for rl_completion_matches in -l{librl}")
             ac_cv_rl_completion_matches = pyconf.link_check(
                 includes=rl_includes,
@@ -641,6 +659,7 @@ def check_readline(v):
                     "Define if you have readline 4.2",
                 )
 
+            # also in readline 4.2
             if pyconf.check_decl(
                 "rl_catch_signals", extra_includes=rl_includes
             ):
@@ -664,10 +683,11 @@ def check_readline(v):
                     "Define if readline supports append_history",
                 )
 
-            # rl_compdisp_func_t type (readline + newer editline, April 2023)
+            # in readline as well as newer editline (April 2023)
             pyconf.check_type("rl_compdisp_func_t", extra_includes=rl_includes)
 
-            # rl_startup_hook argument style
+            # Some editline versions declare rl_startup_hook as taking no args, others
+            # declare it as taking 2.
             pyconf.checking("if rl_startup_hook takes arguments")
             preamble_parts = []
             for h in rl_includes:
@@ -689,20 +709,19 @@ def check_readline(v):
 
 
 def check_compression_libraries(v):
-    # ---------------------------------------------------------------------------
-    # Compression libraries
-    # ---------------------------------------------------------------------------
+    # Check for compression libraries
     pyconf.define_template(
         "HAVE_ZLIB_COPY", "Define if the zlib library has inflateCopy"
     )
 
-    # zlib
+    # detect zlib from Emscripten emport
     pyconf.check_emscripten_port("ZLIB", "-sUSE_ZLIB")
     pkg = pyconf.pkg_check_modules("ZLIB", "zlib >= 1.2.2.1")
     if pkg:
         v.have_zlib = True
         v.ZLIB_CFLAGS = pkg.cflags
         v.ZLIB_LIBS = pkg.libs
+        # zlib 1.2.0 (2003) added inflateCopy
         pyconf.define("HAVE_ZLIB_COPY", 1)
     else:
         with pyconf.save_env():
@@ -728,14 +747,14 @@ def check_compression_libraries(v):
     v.export("ZLIB_CFLAGS")
     v.export("ZLIB_LIBS")
 
-    # binascii can use zlib for optimised crc32
+    # binascii can use zlib for optimized crc32.
     if v.have_zlib:
         v.BINASCII_CFLAGS = f"-DUSE_ZLIB_CRC32 {v.ZLIB_CFLAGS}".strip()
         v.BINASCII_LIBS = v.ZLIB_LIBS
     v.export("BINASCII_CFLAGS")
     v.export("BINASCII_LIBS")
 
-    # bzip2
+    # detect bzip2 from Emscripten emport
     pyconf.check_emscripten_port("BZIP2", "-sUSE_BZIP2")
     pkg = pyconf.pkg_check_modules("BZIP2", "bzip2")
     if pkg:
@@ -776,7 +795,7 @@ def check_compression_libraries(v):
     v.export("LIBLZMA_CFLAGS")
     v.export("LIBLZMA_LIBS")
 
-    # zstd >= 1.4.5 (stabilised ZDICT_finalizeDictionary)
+    # zstd 1.4.5 stabilised ZDICT_finalizeDictionary
     pkg = pyconf.pkg_check_modules("LIBZSTD", "libzstd >= 1.4.5")
     if pkg:
         v.have_libzstd = True
@@ -815,6 +834,7 @@ def check_compression_libraries(v):
     v.export("LIBZSTD_LIBS")
 
     # _remote_debugging module: optional zstd compression support
+    # The module always builds, but zstd compression is only available when libzstd is found
     if v.have_libzstd:
         v.REMOTE_DEBUGGING_CFLAGS = f"-DHAVE_ZSTD {v.LIBZSTD_CFLAGS}".strip()
         v.REMOTE_DEBUGGING_LIBS = v.LIBZSTD_LIBS
@@ -852,11 +872,10 @@ def _check_curses(v, lib, panel_lib):
 
 
 def check_curses(v):
-    # ---------------------------------------------------------------------------
-    # Curses / panel detection
-    # ---------------------------------------------------------------------------
+    # check for ncursesw/ncurses and panelw/panel
+    # NOTE: old curses is not detected.
 
-    # PY_CHECK_CURSES: try ncursesw/panelw first, then ncurses/panel.
+    # Check for ncursesw/panelw first. If that fails, try ncurses/panel.
     _check_curses(v, "ncursesw", "panelw")
     if not v.have_curses:
         _check_curses(v, "ncurses", "panel")
@@ -876,10 +895,8 @@ def check_curses(v):
             "panel.h",
         )
 
-        # Link fallback for curses (in case pkg-config gave no libs).
-        # Mirrors AC_SEARCH_LIBS([initscr], [ncursesw ncurses]) -- first checks if
-        # initscr is already available in current LIBS (which includes pkg-config
-        # results), then tries -lncursesw and -lncurses individually.
+        # Check that we're able to link with crucial curses/panel functions. This
+        # also serves as a fallback in case pkg-config failed.
         v.LIBS = f"{v.LIBS} {v.CURSES_LIBS} {v.PANEL_LIBS}".strip()
         ac_cv_search_initscr = pyconf.search_libs(
             "initscr", ["ncursesw", "ncurses"], required=False
@@ -921,6 +938,10 @@ def check_curses(v):
         # Note: autoconf's condition here is effectively always-true due to
         # a quoting bug (test "have_curses" != "no"), so the function checks
         # always run when any curses header is available.
+        # Issue #25720: ncurses has introduced the NCURSES_OPAQUE symbol making opaque
+        # structs since version 5.7.  If the macro is defined as zero before including
+        # [n]curses.h, ncurses will expose fields of the structs regardless of the
+        # configuration.
         _have_any_curses_h = False
         for h in (
             "HAVE_NCURSESW_NCURSES_H",
@@ -934,7 +955,8 @@ def check_curses(v):
                 _have_any_curses_h = True
                 break
         if _have_any_curses_h:
-            # Strip -D_XOPEN_SOURCE=600 (pyconfig.h sets 800)
+            # remove _XOPEN_SOURCE macro from curses cflags. pyconfig.h sets
+            # the macro to 700.
             curses_cflags = curses_cflags.replace(
                 "-D_XOPEN_SOURCE=600", ""
             ).strip()
@@ -942,6 +964,13 @@ def check_curses(v):
                 "-D_XOPEN_SOURCE=600", ""
             ).strip()
             if v.ac_sys_system == "Darwin":
+                # On macOS, there is no separate /usr/lib/libncursesw nor libpanelw.
+                # System-supplied ncurses combines libncurses/libpanel and supports wide
+                # characters, so we can use it like ncursesw.
+                # If a locally-supplied version of libncursesw is found, we will use that.
+                # There should also be a libpanelw.
+                # _XOPEN_SOURCE defines are usually excluded for macOS, but we need
+                # _XOPEN_SOURCE_EXTENDED here for ncurses wide char support.
                 curses_cflags = (
                     f"{curses_cflags} -D_XOPEN_SOURCE_EXTENDED=1".strip()
                 )
@@ -965,10 +994,10 @@ def check_curses(v):
 #endif
 """
 
-            # On Solaris, term.h requires curses.h -- check with curses includes
+            # On Solaris, term.h requires curses.h
             pyconf.check_header("term.h", extra_includes=CURSES_INCLUDES)
 
-            # HP/UX 11.0: mvwdelch may be a block, not an expression
+            # On HP/UX 11.0, mvwdelch is a block with a return statement
             if pyconf.compile_check(
                 preamble=CURSES_INCLUDES,
                 body="int rtn; rtn = mvwdelch(0,0,0);",
@@ -988,8 +1017,6 @@ def check_curses(v):
                     "Define if WINDOW in curses.h offers a field _flags.",
                 )
 
-            # PY_CHECK_CURSES_FUNC: probe individual curses functions via compile check
-            # (mirrors PY_CHECK_CURSES_FUNC in configure_8.ac lines 119-140)
             curses_funcs = [
                 "is_pad",
                 "is_term_resized",

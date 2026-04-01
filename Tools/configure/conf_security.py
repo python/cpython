@@ -64,6 +64,7 @@ int main(void) {
         )
 
     # getrandom() libc function (Solaris/glibc)
+    # the test was written for the Solaris function of <sys/random.h>
     if pyconf.link_check(
         "for the getrandom() function",
         """
@@ -221,9 +222,11 @@ def check_openssl(v):
         if "ssl" not in arg:
             LIBCRYPTO_LIBS.append(arg)
     v.LIBCRYPTO_LIBS = " ".join(LIBCRYPTO_LIBS)
+    # include libz for OpenSSL build flavors with compression support
     v.export("OPENSSL_INCLUDES")
     v.export("OPENSSL_LIBS")
     v.export("OPENSSL_LDFLAGS")
+    # AX_CHECK_OPENSSL does not export libcrypto-only libs
     v.export("LIBCRYPTO_LIBS")
 
     # Check OpenSSL ssl module APIs
@@ -385,6 +388,10 @@ def setup_hacl(v):
     # HACL* compilation flags
     # ---------------------------------------------------------------------------
 
+    # LIBHACL_FLAG_I: '-I' flags passed to $(CC) for HACL* and HACL*-based modules
+    # LIBHACL_FLAG_D: '-D' flags passed to $(CC) for HACL* and HACL*-based modules
+    # LIBHACL_CFLAGS: compiler flags passed for HACL* and HACL*-based modules
+    # LIBHACL_LDFLAGS: linker flags passed for HACL* and HACL*-based modules
     LIBHACL_FLAG_I = (
         "-I$(srcdir)/Modules/_hacl -I$(srcdir)/Modules/_hacl/include"
     )
@@ -408,6 +415,8 @@ def setup_hacl(v):
     )
 
     # SIMD128 (SSE)
+    # The SIMD files use aligned_alloc, which is not available on older versions of
+    # Android. The *mmintrin.h headers are x86-family-specific, so can't be used on WASI.
     if v.ac_sys_system not in ("Linux-android", "WASI") or (
         v.ANDROID_API_LEVEL and int(v.ANDROID_API_LEVEL) >= 28
     ):
@@ -420,6 +429,9 @@ def setup_hacl(v):
                 1,
                 "HACL* library can compile SIMD128 implementations",
             )
+            # macOS universal2 builds *support* the -msse etc flags because they're
+            # available on x86_64. However, performance of the HACL SIMD128 implementation
+            # isn't great, so it's disabled on ARM64.
             if use_hacl_universal2:
                 v.LIBHACL_BLAKE2_SIMD128_OBJS = (
                     "Modules/_hacl/Hacl_Hash_Blake2s_Simd128_universal2.o"
@@ -438,6 +450,11 @@ def setup_hacl(v):
     v.export("LIBHACL_BLAKE2_SIMD128_OBJS")
 
     # SIMD256 (AVX2)
+    # The SIMD files use aligned_alloc, which is not available on older versions of
+    # Android. The *mmintrin.h headers are x86-family-specific, so can't be used on WASI.
+    # Although AVX support is not guaranteed on Android
+    # (https://developer.android.com/ndk/guides/abis#86-64), this is safe because we do a
+    # runtime CPUID check.
     if v.ac_sys_system not in ("Linux-android", "WASI") or (
         v.ANDROID_API_LEVEL and int(v.ANDROID_API_LEVEL) >= 28
     ):
@@ -448,6 +465,10 @@ def setup_hacl(v):
                 1,
                 "HACL* library can compile SIMD256 implementations",
             )
+            # macOS universal2 builds *support* the -mavx2 compiler flag because it's
+            # available on x86_64; but the HACL SIMD256 build then fails because the
+            # implementation requires symbols that aren't available on ARM64. Use a
+            # wrapped implementation if we're building for universal2.
             if use_hacl_universal2:
                 v.LIBHACL_BLAKE2_SIMD256_OBJS = (
                     "Modules/_hacl/Hacl_Hash_Blake2b_Simd256_universal2.o"
@@ -466,6 +487,8 @@ def setup_hacl(v):
     v.export("LIBHACL_BLAKE2_SIMD256_OBJS")
 
     # HACL* library linking type (WASI -> static, else shared)
+    # Used to complete the "MODULE_<NAME>_LDEPS" Makefile variable.
+    # The LDEPS variable is a Makefile rule prerequisite.
     v.export(
         "LIBHACL_LDEPS_LIBTYPE",
         "STATIC" if v.ac_sys_system == "WASI" else "SHARED",
@@ -475,9 +498,16 @@ def setup_hacl(v):
     # HACL*-based cryptographic primitives  (PY_HACL_CREATE_MODULE)
     # ---------------------------------------------------------------------------
 
+    # By default we always compile these even when OpenSSL is available
+    # (see bpo-14693). The modules are small.
     _hacl_module(v, "MD5", "_md5", v.with_builtin_md5)
     _hacl_module(v, "SHA1", "_sha1", v.with_builtin_sha1)
     _hacl_module(v, "SHA2", "_sha2", v.with_builtin_sha2)
     _hacl_module(v, "SHA3", "_sha3", v.with_builtin_sha3)
     _hacl_module(v, "BLAKE2", "_blake2", v.with_builtin_blake2)
+    # HMAC builtin library does not need OpenSSL for now. In the future
+    # we might want to rely on OpenSSL EVP/NID interface or implement
+    # our own for algorithm resolution.
+    # For Emscripten, we disable HACL* HMAC as it is tricky to make it work.
+    # See https://github.com/python/cpython/issues/133042.
     _hacl_module(v, "HMAC", "_hmac", v.ac_sys_system != "Emscripten")

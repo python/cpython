@@ -32,6 +32,8 @@ def check_math_library(v):
     # ---------------------------------------------------------------------------
 
     v.export("LIBM")  # registered for Makefile substitution
+    # Linux requires this for correct floating-point operations
+    # (Note: AC_CHECK_FUNC with custom action, no HAVE_ define)
 
     if v.ac_sys_system != "Darwin":
         v.LIBM = "-lm"
@@ -104,7 +106,7 @@ def check_gcc_asm_and_floating_point(v):
     # GCC inline assembler checks
     # ---------------------------------------------------------------------------
 
-    # x64
+    # Check for x64 gcc inline assembler
     pyconf.checking("for x64 gcc inline assembler")
     ac_cv_gcc_asm_for_x64 = pyconf.link_check(
         body='__asm__ __volatile__ ("movq %rcx, %rax");',
@@ -122,12 +124,23 @@ def check_gcc_asm_and_floating_point(v):
     # Floating-point properties
     # ---------------------------------------------------------------------------
 
+    # Check for various properties of floating point
     pyconf.ax_c_float_words_bigendian(
         on_big=_define_float_big,
         on_little=_define_float_little,
         on_unknown=_define_float_unknown,
     )
 
+    # The short float repr introduced in Python 3.1 requires the
+    # correctly-rounded string <-> double conversion functions from
+    # Python/dtoa.c, which in turn require that the FPU uses 53-bit
+    # rounding; this is a problem on x86, where the x87 FPU has a default
+    # rounding precision of 64 bits. For gcc/x86, we can fix this by
+    # using inline assembler to get and set the x87 FPU control word.
+    #
+    # This inline assembler syntax may also work for suncc and icc,
+    # so we try it on all platforms.
+    #
     # x87 control word (gcc inline asm)
     pyconf.checking(
         "whether we can use gcc inline assembler to get and set x87 control word"
@@ -168,9 +181,14 @@ def check_gcc_asm_and_floating_point(v):
             "Define if we can use gcc inline assembler to get and set mc68881 fpcr",
         )
 
-    # x87-style double rounding
+    # Detect whether system arithmetic is subject to x87-style double
+    # rounding issues. The result of this test has little meaning on non
+    # IEEE 754 platforms. On IEEE 754, test should return 1 if rounding
+    # mode is round-to-nearest and double rounding issues are present, and
+    # 0 otherwise. See https://github.com/python/cpython/issues/47186 for more info.
     pyconf.checking("for x87-style double rounding")
     saved_cc = v.CC
+    # $BASECFLAGS may affect the result
     v.CC = f"{v.CC} {v.BASECFLAGS}".strip()
     ac_cv_x87_double_rounding = pyconf.run_check(
         r"""
@@ -207,7 +225,7 @@ def check_gcc_asm_and_floating_point(v):
 
 def check_c99_math(v):
     # ---------------------------------------------------------------------------
-    # C99 math functions (required)
+    # Check for mathematical functions (required)
     # ---------------------------------------------------------------------------
 
     libs_save = v.LIBS
@@ -264,6 +282,7 @@ def check_wchar(v):
     # wchar.h and wchar_t properties
     # ---------------------------------------------------------------------------
 
+    # Check for wchar.h
     if pyconf.check_header("wchar.h"):
         pyconf.define(
             "HAVE_WCHAR_H",
@@ -275,8 +294,10 @@ def check_wchar(v):
         v.wchar_h = False
 
     if v.wchar_h:
+        # Determine wchar_t size
         pyconf.check_sizeof("wchar_t", default=4, includes=["wchar.h"])
 
+        # Check whether wchar_t is signed or not
         pyconf.checking("whether wchar_t is signed")
         ac_cv_wchar_t_signed = pyconf.run_check(
             r"""
@@ -292,6 +313,7 @@ def check_wchar(v):
         pyconf.result(ac_cv_wchar_t_signed)
 
         pyconf.checking("whether wchar_t is usable")
+        # wchar_t is only usable if it maps to an unsigned type
         wchar_size = int(v.ac_cv_sizeof_wchar_t or "0")
         wchar_unsigned = not ac_cv_wchar_t_signed
         if wchar_size >= 2 and wchar_unsigned:
@@ -307,6 +329,9 @@ def check_wchar(v):
             pyconf.result("no")
 
     # Oracle Solaris: wchar_t is non-Unicode in non-Unicode locales
+    # bpo-43667: In Oracle Solaris, the internal form of wchar_t in
+    # non-Unicode locales is not Unicode and hence cannot be used directly.
+    # https://docs.oracle.com/cd/E37838_01/html/E61053/gmwke.html
     if v.ac_sys_system == "SunOS":
         if pyconf.path_is_file("/etc/os-release"):
             os_release_content = pyconf.read_file("/etc/os-release")
@@ -356,7 +381,7 @@ def detect_libmpdec(v):
     if with_system_libmpdec == "no":
         _use_bundled_libmpdec(v)
     else:
-        # Try pkg-config
+        # Try pkg-config first
         pkg = pyconf.find_prog("pkg-config")
         found_pkg = False
         if pkg:
@@ -397,11 +422,12 @@ def detect_libmpdec(v):
         else:
             v.have_mpdec = False
 
-    # Disable forced inlining in debug builds
+    # Disable forced inlining in debug builds, see GH-94847
     with_pydebug = v.Py_DEBUG
     if with_pydebug:
         v.LIBMPDEC_CFLAGS += " -DTEST_COVERAGE"
 
+    # Check whether _decimal should use a coroutine-local or thread-local context
     # --with-decimal-contextvar
     with_decimal_contextvar = WITH_DECIMAL_CONTEXTVAR.process_value(None)
     if with_decimal_contextvar != "no":
@@ -416,6 +442,8 @@ def detect_libmpdec(v):
         # Determine bundled libmpdec machine flavor
         pyconf.checking("decimal libmpdec machine")
         if v.ac_sys_system.startswith("Darwin"):
+            # universal here means: build libmpdec with the same arch options
+            # the python interpreter was built with
             libmpdec_machine = "universal"
         else:
             ac_cv_sizeof_size_t = int(v.ac_cv_sizeof_size_t or 8)
@@ -459,9 +487,14 @@ def detect_libmpdec(v):
             pyconf.fatal("_decimal: unsupported architecture")
 
         if v.have_ipa_pure_const_bug:
+            # Some versions of gcc miscompile inline asm:
+            # https://gcc.gnu.org/bugzilla/show_bug.cgi?id=46491
+            # https://gcc.gnu.org/ml/gcc/2010-11/msg00366.html
             v.LIBMPDEC_CFLAGS += " -fno-ipa-pure-const"
 
         if v.have_glibc_memmove_bug:
+            # _FORTIFY_SOURCE wrappers for memmove and bcopy are incorrect:
+            # https://sourceware.org/ml/libc-alpha/2010-12/msg00009.html
             v.LIBMPDEC_CFLAGS += " -U_FORTIFY_SOURCE"
 
     v.export("LIBMPDEC_CFLAGS")

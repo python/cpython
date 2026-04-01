@@ -212,8 +212,22 @@ def check_endianness_and_soabi(v):
 
 def setup_xopen_source(v):
     """Decide whether to define _XOPEN_SOURCE and related macros."""
+    # Some systems cannot stand _XOPEN_SOURCE being defined at all; they
+    # disable features if it is defined, without any means to access these
+    # features as extensions. For these systems, we skip the definition of
+    # _XOPEN_SOURCE. Before adding a system to the list to gain access to
+    # some feature, make sure there is no alternative way to access this
+    # feature. Also, when using wildcards, make sure you have verified the
+    # need for not defining _XOPEN_SOURCE on all systems matching the
+    # wildcard, and that the wildcard does not include future systems
+    # (which may remove their limitations).
     v.define_xopen_source = True
     sys_rel = f"{v.ac_sys_system}/{v.ac_sys_release}"
+    # On OpenBSD, select(2) is not available if _XOPEN_SOURCE is defined,
+    # even though select is a POSIX function. Reported by J. Ribbens.
+    # Reconfirmed for OpenBSD 3.3 by Zachary Hamm, for 3.4 by Jason Ish.
+    # In addition, Stefan Krah confirms that issue #1244610 exists through
+    # OpenBSD 4.6, but is fixed in 4.7.
     if pyconf.fnmatch_any(
         sys_rel,
         [
@@ -229,37 +243,70 @@ def setup_xopen_source(v):
         ],
     ):
         v.define_xopen_source = False
+        # OpenBSD undoes our definition of __BSD_VISIBLE if _XOPEN_SOURCE is
+        # also defined. This can be overridden by defining _BSD_SOURCE
+        # As this has a different meaning on Linux, only define it on OpenBSD
         pyconf.define(
             "_BSD_SOURCE",
             1,
             "Define on OpenBSD to activate all library features",
         )
     elif sys_rel.startswith("OpenBSD/"):
+        # OpenBSD undoes our definition of __BSD_VISIBLE if _XOPEN_SOURCE is
+        # also defined. This can be overridden by defining _BSD_SOURCE
+        # As this has a different meaning on Linux, only define it on OpenBSD
         pyconf.define(
             "_BSD_SOURCE",
             1,
             "Define on OpenBSD to activate all library features",
         )
+    # Defining _XOPEN_SOURCE on NetBSD version prior to the introduction of
+    # _NETBSD_SOURCE disables certain features (eg. setgroups). Reported by
+    # Marc Recht
     elif pyconf.fnmatch_any(sys_rel, ["NetBSD/1.5*", "NetBSD/1.6*"]):
         v.define_xopen_source = False
+    # From the perspective of Solaris, _XOPEN_SOURCE is not so much a
+    # request to enable features supported by the standard as a request
+    # to disable features not supported by the standard.  The best way
+    # for Python to use Solaris is simply to leave _XOPEN_SOURCE out
+    # entirely and define __EXTENSIONS__ instead.
     elif sys_rel.startswith("SunOS/"):
         v.define_xopen_source = False
+    # On UnixWare 7, u_long is never defined with _XOPEN_SOURCE,
+    # but used in /usr/include/netinet/tcp.h. Reported by Tim Rice.
+    # Reconfirmed for 7.1.4 by Martin v. Loewis.
     elif sys_rel.startswith("OpenUNIX/8.0.0") or pyconf.fnmatch(
         sys_rel, "UnixWare/7.1.[0-4]*"
     ):
         v.define_xopen_source = False
+    # On OpenServer 5, u_short is never defined with _XOPEN_SOURCE,
+    # but used in struct sockaddr.sa_family. Reported by Tim Rice.
     elif sys_rel.startswith("SCO_SV/3.2"):
         v.define_xopen_source = False
+    # On MacOS X 10.2, a bug in ncurses.h means that it craps out if
+    # _XOPEN_EXTENDED_SOURCE is defined. Apparently, this is fixed in 10.3, which
+    # identifies itself as Darwin/7.*
+    # On Mac OS X 10.4, defining _POSIX_C_SOURCE or _XOPEN_SOURCE
+    # disables platform specific features beyond repair.
+    # On Mac OS X 10.3, defining _POSIX_C_SOURCE or _XOPEN_SOURCE
+    # has no effect, don't bother defining them
     elif pyconf.fnmatch_any(
         sys_rel, ["Darwin/[6789].*", "Darwin/[12][0-9].*"]
     ):
         v.define_xopen_source = False
+    # On iOS, defining _POSIX_C_SOURCE also disables platform specific features.
     elif sys_rel.startswith("iOS/"):
         v.define_xopen_source = False
+    # On QNX 6.3.2, defining _XOPEN_SOURCE prevents netdb.h from
+    # defining NI_NUMERICHOST.
     elif sys_rel.startswith("QNX/6.3.2"):
         v.define_xopen_source = False
+    # On VxWorks, defining _XOPEN_SOURCE causes compile failures
+    # in network headers still using system V types.
     elif sys_rel.startswith("VxWorks/"):
         v.define_xopen_source = False
+    # On HP-UX, defining _XOPEN_SOURCE to 600 or greater hides
+    # chroot() and other functions
     elif v.ac_sys_system.startswith(("hp", "HP")):
         v.define_xopen_source = False
 
@@ -582,7 +629,9 @@ def check_structs(v):
     # Issue #21085: In Cygwin, siginfo_t does not have si_band field.
     pyconf.check_member("siginfo_t.si_band", includes=["signal.h"])
 
-    # struct statx members added after Linux 4.11
+    # Some systems have the definitions of the mask bits without having the
+    # corresponding members in struct statx.  Check for members added after Linux
+    # 4.11 (when statx itself was added).
     if v.ac_cv_func_statx is True:
         for m in (
             "struct statx.stx_mnt_id",
@@ -746,12 +795,17 @@ def check_posix_functions(v):
     if v.ac_sys_system.startswith("Linux"):
         pyconf.check_func("statx")
 
-    # lchmod: force off on Linux
+    # Force lchmod off for Linux. Linux disallows changing the mode of symbolic
+    # links. Some libc implementations have a stub lchmod implementation that always
+    # returns an error.
     machdep = v.MACHDEP
     if machdep != "linux":
         pyconf.check_func("lchmod")
 
-    # iOS: block certain functions
+    # iOS defines some system methods that can be linked (so they are
+    # found by configure), but either raise a compilation error (because the
+    # header definition prevents usage - autoconf doesn't use the headers), or
+    # raise an error if used at runtime. Force these symbols off.
     if v.ac_sys_system != "iOS":
         pyconf.check_funcs(["getentropy", "getgroups", "system"])
 
@@ -807,6 +861,7 @@ def check_special_functions(v):
     pyconf.check_func("getpagesize", headers=["unistd.h"])
 
     # flock: check declaration then library
+    # Linking with libbsd may be necessary on AIX for flock function.
     pyconf.checking("for flock declaration")
     if pyconf.compile_check(
         preamble="#include <sys/file.h>",
@@ -838,6 +893,8 @@ def check_special_functions(v):
         )
 
     # SOCKET_LIBS: check for inet_aton / hstrerror in libc vs. -lresolv
+    # On some systems (e.g. Solaris), hstrerror and inet_aton are in -lresolv
+    # On others, they are in the C library, so we take no action
     v.SOCKET_LIBS = ""
     if not pyconf.check_lib("c", "inet_aton"):
         if pyconf.check_lib("resolv", "inet_aton"):
@@ -849,6 +906,7 @@ def check_special_functions(v):
     v.export("SOCKET_LIBS")
 
     # chflags / lchflags
+    # On Tru64, chflags seems to be present, but calling it will exit Python
     pyconf.checking("for chflags")
     ac_cv_have_chflags = pyconf.run_check(
         "#include <sys/stat.h>\n#include <unistd.h>\n"
@@ -1025,11 +1083,14 @@ def check_headers(v):
             "Define to 1 if major, minor, and makedev are declared in <sys/sysmacros.h>.",
         )
 
+    # bluetooth/bluetooth.h has been known to not compile with -std=c99.
+    # http://permalink.gmane.org/gmane.linux.bluez.kernel/22294
     save_CFLAGS = v.CFLAGS
     v.CFLAGS = f"-std=c99 {v.CFLAGS}"
     pyconf.check_headers("bluetooth/bluetooth.h")
     v.CFLAGS = save_CFLAGS
 
+    # On Darwin (OS X) net/if.h requires sys/socket.h to be imported first.
     pyconf.check_headers(
         "net/if.h",
         prologue="""
@@ -1042,6 +1103,8 @@ def check_headers(v):
     """,
     )
 
+    # On Linux, netlink.h requires asm/types.h
+    # On FreeBSD, netlink.h is located in netlink/netlink.h
     pyconf.check_headers(
         "linux/netlink.h",
         "netlink/netlink.h",
@@ -1055,6 +1118,7 @@ def check_headers(v):
     """,
     )
 
+    # On Linux, qrtr.h requires asm/types.h
     pyconf.check_headers(
         "linux/qrtr.h",
         prologue="""
@@ -1076,6 +1140,8 @@ def check_headers(v):
     """,
     )
 
+    # On Linux, can.h, can/bcm.h, can/isotp.h, can/j1939.h, can/raw.h require sys/socket.h
+    # On NetBSD, netcan/can.h requires sys/socket.h
     pyconf.check_headers(
         "linux/can.h",
         "linux/can/bcm.h",

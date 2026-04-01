@@ -18,6 +18,10 @@ def generate_output(v):
     # Generate output files  (AC_CONFIG_FILES / AC_OUTPUT)
     # ---------------------------------------------------------------------------
 
+    # substitute multiline block, must come after last PY_STDLIB_MOD()
+    # AC_SUBST([MODULE_BLOCK])
+
+    # generate output files
     pyconf.config_files(
         [
             "Makefile.pre",
@@ -29,6 +33,7 @@ def generate_output(v):
         ]
     )
     pyconf.config_files(["Modules/ld_so_aix"], chmod_x=True)
+    # Generate files like pyconfig.h
     pyconf.output()  # writes pyconfig.h and Makefile
 
     # ---------------------------------------------------------------------------
@@ -45,6 +50,7 @@ def generate_output(v):
         # Use the srcdir substitution value (e.g. "." for in-place,
         # absolute path for out-of-tree) to match autoconf behaviour.
         srcdir_rel = v.srcdir or "."
+        # creating Makefile (via makesetup)
         if not pyconf.cmd(
             [
                 "/bin/sh",

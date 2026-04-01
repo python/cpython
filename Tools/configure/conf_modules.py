@@ -17,11 +17,16 @@ def setup_module_deps(v):
     # MODULE_DEPS_SHARED / LIBPYTHON
     # ---------------------------------------------------------------------------
 
+    # Configure the flags and dependencies used when compiling shared modules.
+    # Do not rename LIBPYTHON - it's accessed via sysconfig by package build
+    # systems (e.g. Meson) to decide whether to link extension modules against
+    # libpython.
     v.export("MODULE_DEPS_SHARED")
     v.export("LIBPYTHON")
     v.MODULE_DEPS_SHARED = "$(MODULE_DEPS_STATIC) $(EXPORTSYMS)"
     v.LIBPYTHON = ""
 
+    # On Android and Cygwin the shared libraries must be linked with libpython.
     android_api_level = v.ANDROID_API_LEVEL
     if v.PY_ENABLE_SHARED == 1 and (
         android_api_level or v.MACHDEP == "cygwin"
@@ -29,6 +34,7 @@ def setup_module_deps(v):
         v.MODULE_DEPS_SHARED = f"{v.MODULE_DEPS_SHARED} $(LDLIBRARY)"
         v.LIBPYTHON = r"$(BLDLIBRARY)"
 
+    # On iOS the shared libraries must be linked with the Python framework
     if v.ac_sys_system == "iOS":
         v.MODULE_DEPS_SHARED = (
             f"{v.MODULE_DEPS_SHARED} $(PYTHONFRAMEWORKDIR)/$(PYTHONFRAMEWORK)"
@@ -38,6 +44,7 @@ def setup_module_deps(v):
 def setup_freeze_module(v):
     """Set FREEZE_MODULE_BOOTSTRAP, FREEZE_MODULE, and related variables."""
     if v.cross_compiling:
+        # External build Python, freezing depends on Programs/_freeze_module.py
         FREEZE_MODULE_BOOTSTRAP = (
             "$(PYTHON_FOR_FREEZE) $(srcdir)/Programs/_freeze_module.py"
         )
@@ -46,6 +53,7 @@ def setup_freeze_module(v):
         FREEZE_MODULE_DEPS = "$(FREEZE_MODULE_BOOTSTRAP_DEPS)"
         PYTHON_FOR_BUILD_DEPS = ""
     else:
+        # Internal build tools also depend on Programs/_freeze_module and _bootstrap_python
         FREEZE_MODULE_BOOTSTRAP = "./Programs/_freeze_module"
         FREEZE_MODULE_BOOTSTRAP_DEPS = "Programs/_freeze_module"
         FREEZE_MODULE = (
@@ -176,11 +184,11 @@ def setup_stdlib_modules(v):
     # Stdlib extension modules
     # ---------------------------------------------------------------------------
 
-    # Bootstrap modules (Modules/Setup.bootstrap)
+    # Static modules in Modules/Setup.bootstrap
     pyconf.stdlib_module_simple("_io", cflags="-I$(srcdir)/Modules/_io")
     pyconf.stdlib_module_simple("time", ldflags=v.TIMEMODULE_LIB)
 
-    # Always-enabled
+    # Always enabled extension modules
     pyconf.stdlib_module_simple("array")
     pyconf.stdlib_module_simple("_math_integer")
     pyconf.stdlib_module_simple("_asyncio")
@@ -207,7 +215,7 @@ def setup_stdlib_modules(v):
     pyconf.stdlib_module_simple("_interpqueues")
     pyconf.stdlib_module_simple("_zoneinfo")
 
-    # multiprocessing
+    # Multiprocessing modules
     pyconf.stdlib_module(
         "_multiprocessing",
         supported=v.ac_cv_func_sem_unlink is True,
@@ -220,16 +228,18 @@ def setup_stdlib_modules(v):
         ldflags=v.POSIXSHMEM_LIBS,
     )
 
-    # libm-dependent
+    # Needs libm
     pyconf.stdlib_module_simple("_statistics", ldflags=v.LIBM)
     pyconf.stdlib_module_simple("cmath", ldflags=v.LIBM)
     pyconf.stdlib_module_simple("math", ldflags=v.LIBM)
+
+    # Needs libm and on some platforms librt
     pyconf.stdlib_module_simple(
         "_datetime",
         ldflags=f"{v.TIMEMODULE_LIB} {v.LIBM}".strip(),
     )
 
-    # Unix modules with platform dependencies
+    # Modules with some unix dependencies
     pyconf.stdlib_module(
         "fcntl",
         supported=(
@@ -255,7 +265,7 @@ def setup_stdlib_modules(v):
         ldflags=v.SOCKET_LIBS,
     )
 
-    # Platform-specific
+    # Platform-specific extensions
     pyconf.stdlib_module(
         "grp",
         supported=(
@@ -283,13 +293,14 @@ def setup_stdlib_modules(v):
     pyconf.stdlib_module("syslog", supported=v.ac_cv_header_syslog_h is True)
     pyconf.stdlib_module("termios", supported=v.ac_cv_header_termios_h is True)
 
-    # expat / elementtree
+    # Expat / elementtree
     pyconf.stdlib_module(
         "pyexpat",
         supported=v.ac_cv_header_sys_time_h is True,
         cflags=v.LIBEXPAT_CFLAGS,
         ldflags=v.LIBEXPAT_LDFLAGS,
     )
+    # _elementtree loads libexpat via CAPI hook in pyexpat
     pyconf.stdlib_module("_elementtree", cflags=v.LIBEXPAT_CFLAGS)
 
     # CJK codecs
@@ -384,13 +395,14 @@ def setup_remaining_modules(v):
         ldflags=v.LIBUUID_LIBS,
     )
 
-    # Compression
+    # Compression libs
     pyconf.stdlib_module(
         "zlib",
         supported=v.have_zlib is True,
         cflags=v.ZLIB_CFLAGS,
         ldflags=v.ZLIB_LIBS,
     )
+    # binascii can use zlib for optimized crc32
     pyconf.stdlib_module_simple(
         "binascii",
         cflags=v.BINASCII_CFLAGS,
@@ -433,7 +445,8 @@ def setup_remaining_modules(v):
         ldflags=f"{openssl_ldflags_common} {v.LIBCRYPTO_LIBS}".strip(),
     )
 
-    # Test modules
+    # Test modules, by default always compiled even when OpenSSL is available
+    # (see bpo-14693). The modules are small.
     pyconf.stdlib_module(
         "_testcapi",
         enabled=v.TEST_MODULES,
@@ -468,6 +481,7 @@ def setup_remaining_modules(v):
         cflags=v.LIBFFI_CFLAGS,
         ldflags=f"{v.LIBFFI_LIBS} {v.LIBM}".strip(),
     )
+    # Limited API template modules
     pyconf.stdlib_module(
         "xxlimited",
         enabled=v.TEST_MODULES,

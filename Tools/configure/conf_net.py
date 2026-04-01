@@ -32,6 +32,7 @@ ENABLE_IPV6 = pyconf.arg_enable(
 
 def check_network_libs(v):
     """Check for nsl, socket, network libraries and --with-libs."""
+    # Most SVR4 platforms (e.g. Solaris) need -lsocket and -lnsl.
     if pyconf.check_lib("nsl", "t_open"):
         v.LIBS = f"-lnsl {v.LIBS}"
     if pyconf.check_lib("socket", "socket"):
@@ -55,7 +56,7 @@ def check_network_libs(v):
 
 
 def check_ipv6(v):
-    """Handle --enable-ipv6 and IPv6 stack type detection."""
+    # Handle --enable-ipv6 and IPv6 stack type detection
     pyconf.checking("if --enable-ipv6 is specified")
 
     if ENABLE_IPV6.is_no():
@@ -66,7 +67,7 @@ def check_ipv6(v):
         pyconf.define("ENABLE_IPV6")
         v.ipv6 = True
     else:
-        # Auto-detect
+        # Auto-detect (the check does not work on cross compilation case...)
         if pyconf.compile_check(
             preamble="#include <sys/types.h>\n#include <sys/socket.h>",
             body="int domain = AF_INET6;",
@@ -112,16 +113,19 @@ def check_ipv6(v):
             "v6d",
             "zeta",
         ):
+            # http://www.kame.net/
             if i == "kame" and pyconf.check_define("netinet/in.h", "__KAME__"):
                 ipv6type = i
                 ipv6lib = "inet6"
                 ipv6libdir = "/usr/local/v6/lib"
                 ipv6trylibc = True
+            # Advanced IPv6 support was added to glibc 2.1 in 1999.
             elif i == "linux-glibc" and pyconf.check_define(
                 "features.h", "__GLIBC__"
             ):
                 ipv6type = i
                 ipv6trylibc = True
+            # http://www.v6.linux.or.jp/
             elif i == "linux-inet6" and pyconf.path_is_dir("/usr/inet6"):
                 ipv6type = i
                 ipv6lib = "inet6"
@@ -214,6 +218,8 @@ def check_can_sockets(v):
 
 
 def _check_netdb_func(func):
+    # On some systems (e.g. Solaris), hstrerror and inet_aton are in -lresolv
+    # On others, they are in the C library, so we take no action
     pyconf.check_func(func, includes=["netdb.h"])
 
 
@@ -262,7 +268,7 @@ def check_netdb_socket_funcs(v):
     ):
         _check_socket_func(f)
 
-    # setgroups — in unistd.h on some systems, grp.h on others
+    # On some systems, setgroups is in unistd.h, on others, in grp.h
     pyconf.check_func(
         "setgroups", includes=["unistd.h"], conditional_headers=["HAVE_GRP_H"]
     )
@@ -272,6 +278,8 @@ def check_getaddrinfo(v):
     # ---------------------------------------------------------------------------
     # getaddrinfo probe (full run-test)
     # ---------------------------------------------------------------------------
+    # On OSF/1 V5.1, getaddrinfo is available, but a define
+    # for [no]getaddrinfo in netdb.h.
 
     pyconf.checking("for getaddrinfo")
     ac_cv_func_getaddrinfo = pyconf.link_check(
@@ -404,6 +412,7 @@ def check_gethostbyname_r(v):
     # ---------------------------------------------------------------------------
     # gethostbyname_r (3, 5, or 6 argument variants)
     # ---------------------------------------------------------------------------
+    # sigh -- gethostbyname_r is a mess; it can have 3, 5 or 6 arguments :-(
 
     pyconf.define_template(
         "HAVE_GETHOSTBYNAME_R",

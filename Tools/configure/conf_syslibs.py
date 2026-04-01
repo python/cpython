@@ -22,6 +22,7 @@ WITH_DBMLIBORDER = pyconf.arg_with(
 def detect_gdbm(v):
     """Detect gdbm library."""
     v.have_gdbm = False
+    # NOTE: gdbm does not provide a pkgconf file.
     pyconf.env_var("GDBM_CFLAGS", "C compiler flags for gdbm")
     pyconf.env_var("GDBM_LIBS", "additional linker flags for gdbm")
 
@@ -52,6 +53,7 @@ def detect_dbm(v):
     # Only search for dbm_open if ndbm.h is present (mirrors AC_CHECK_HEADERS guard)
     # Wrap in save_env() to avoid leaking -lgdbm_compat into LIBS
     # (matches autoconf's WITH_SAVE_ENV).
+    # Check for _dbmmodule.c dependencies: ndbm, gdbm_compat, libdb
     ac_cv_search_dbm_open = False
     if pyconf.check_header("ndbm.h"):
         with pyconf.save_env():
@@ -72,6 +74,7 @@ def detect_dbm(v):
             v.have_ndbm = False
 
     # Check for gdbm/ndbm.h and gdbm-ndbm.h
+    # "gdbm-ndbm.h" and "gdbm/ndbm.h" are both normalized to "gdbm_ndbm_h"
     ac_cv_header_gdbm_slash_ndbm_h = pyconf.check_header("gdbm/ndbm.h")
     if ac_cv_header_gdbm_slash_ndbm_h:
         pyconf.define(
@@ -90,7 +93,8 @@ def detect_dbm(v):
         else:
             v.have_gdbm_compat = False
 
-    # libdb >= 5
+    # Check for libdb >= 5 with dbm_open()
+    # db.h re-defines the name of the function
     ac_cv_have_libdb = False
     if pyconf.check_header("db.h"):
         if pyconf.link_check(
@@ -160,14 +164,17 @@ def check_base_libraries(v):
     """Probe for sendfile, dl, dld libraries and backtrace/dladdr1 support."""
     if pyconf.check_lib("sendfile", "sendfile"):
         v.LIBS = f"-lsendfile {v.LIBS}"
+    # Dynamic linking for SunOS/Solaris and SYSV
     if pyconf.check_lib("dl", "dlopen"):
         v.LIBS = f"-ldl {v.LIBS}"
         pyconf.define(
             "HAVE_LIBDL", 1, "Define to 1 if you have the `dl' library (-ldl)."
         )
+    # Dynamic linking for HP-UX
     if pyconf.check_lib("dld", "shl_load"):
         v.LIBS = f"-ldld {v.LIBS}"
 
+    # For faulthandler
     ac_cv_require_ldl = False
     # Check all three headers (must evaluate all, not short-circuit)
     eh_results = []
@@ -175,6 +182,7 @@ def check_base_libraries(v):
         eh_results.append(pyconf.check_headers(h))
     if any(eh_results):
         if pyconf.check_funcs(["backtrace", "dladdr1"]):
+            # dladdr1 requires -ldl
             ac_cv_require_ldl = True
 
     if ac_cv_require_ldl:
@@ -184,8 +192,10 @@ def check_base_libraries(v):
 
 def check_remaining_libs(v):
     """Check sem_init, intl, AIX-specific, and aligned memory access."""
+    # pthread (first!) on Linux
     pyconf.search_libs("sem_init", ["pthread", "rt", "posix4"], required=False)
 
+    # Check if we need libintl for locale functions
     if pyconf.check_lib("intl", "textdomain"):
         pyconf.define(
             "WITH_LIBINTL",
@@ -206,6 +216,9 @@ def check_remaining_libs(v):
             pyconf.result("yes")
         else:
             pyconf.result("no")
+        # The AIX_BUILDDATE is obtained from the kernel fileset - bos.mp64
+        # BUILD_GNU_TYPE + AIX_BUILDDATE are used to construct the PEP425 tag
+        # of the build system.
         pyconf.checking("for the system builddate")
         AIX_BUILDDATE = pyconf.cmd_output(
             ["sh", "-c", "lslpp -Lcq bos.mp64 | awk -F: '{ print $NF }'"]
@@ -247,6 +260,20 @@ def check_libatomic(v):
     # ---------------------------------------------------------------------------
     # libatomic probe (must happen before AC_OUTPUT)
     # ---------------------------------------------------------------------------
+    # gh-109054: Check if -latomic is needed to get <pyatomic.h> atomic functions.
+    # On Linux aarch64, GCC may require programs and libraries to be linked
+    # explicitly to libatomic. Call _Py_atomic_or_uint64() which may require
+    # libatomic __atomic_fetch_or_8(), or not, depending on the C compiler and the
+    # compiler flags.
+    #
+    # gh-112779: On RISC-V, GCC 12 and earlier require libatomic support for 1-byte
+    # and 2-byte operations, but not for 8-byte operations.
+    #
+    # Avoid #include <Python.h> or #include <pyport.h>. The <Python.h> header
+    # requires <pyconfig.h> header which is only written below by AC_OUTPUT.
+    # If the check is done after AC_OUTPUT, modifying LIBS has no effect
+    # anymore.  <pyport.h> cannot be included alone, it's designed to be included
+    # by <Python.h>: it expects other includes and macros to be defined.
 
     with pyconf.save_env():
         v.CPPFLAGS = f"{v.BASECPPFLAGS} -I. -I{pyconf.srcdir}/Include {v.CPPFLAGS}".strip()
@@ -289,7 +316,7 @@ def check_stat_timestamps(v):
     # ---------------------------------------------------------------------------
     # Subsecond timestamps in struct stat
     # ---------------------------------------------------------------------------
-
+    # Look for subsecond timestamps in struct stat
     pyconf.checking("for tv_nsec in struct stat")
     ac_cv_stat_tv_nsec = pyconf.compile_check(
         includes=["sys/stat.h"],
@@ -304,6 +331,7 @@ def check_stat_timestamps(v):
             "Define if you have struct stat.st_mtim.tv_nsec",
         )
 
+    # Look for BSD style subsecond timestamps in struct stat
     pyconf.checking("for tv_nsec2 in struct stat")
     ac_cv_stat_tv_nsec2 = pyconf.compile_check(
         includes=["sys/stat.h"],

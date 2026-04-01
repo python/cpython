@@ -100,6 +100,7 @@ def setup_universalsdk(v):
     enable_universalsdk = None
     if usdk_raw is not None:
         if usdk_raw == "yes":
+            # Locate the best usable SDK, see Mac/README for more information
             val = pyconf.cmd_output(
                 ["/usr/bin/xcodebuild", "-version", "-sdk", "macosx", "Path"]
             )
@@ -132,6 +133,8 @@ def setup_universalsdk(v):
 
     v.export("ARCH_RUN_32BIT", "")
 
+    # For backward compatibility reasons we prefer to select '32-bit' if available,
+    # otherwise use 'intel'
     v.UNIVERSAL_ARCHS = "32-bit"
     if pyconf.platform_system() == "Darwin" and v.UNIVERSALSDK:
         dylib = pyconf.path_join([v.UNIVERSALSDK, "usr/lib/libSystem.dylib"])
@@ -248,6 +251,7 @@ def _setup_framework_darwin(v, val, ac_default_prefix):
     if val.startswith("/System"):
         v.FRAMEWORKINSTALLAPPSPREFIX = "/Applications"
         if v.prefix == "NONE":
+            # See configure.ac for details
             v.FRAMEWORKUNIXTOOLSPREFIX = "/usr"
     elif val.startswith("/Library"):
         v.FRAMEWORKINSTALLAPPSPREFIX = "/Applications"
@@ -255,11 +259,15 @@ def _setup_framework_darwin(v, val, ac_default_prefix):
         mdir = pyconf.path_parent(pyconf.path_parent(val))
         v.FRAMEWORKINSTALLAPPSPREFIX = f"{mdir}/Applications"
         if v.prefix == "NONE":
+            # User hasn't specified the --prefix option, but wants to install
+            # the framework in a non-default location, ensure that the compatibility
+            # links get installed relative to that prefix as well instead of in /usr/local.
             v.FRAMEWORKUNIXTOOLSPREFIX = mdir
 
     v.prefix = f"{v.PYTHONFRAMEWORKINSTALLDIR}/Versions/{v.VERSION}"
     v.PYTHONFRAMEWORKINSTALLNAMEPREFIX = v.prefix
     v.RESSRCDIR = "Mac/Resources/framework"
+    # Add files for Mac specific code to the list of output files
     pyconf.config_files(
         [
             "Mac/Makefile",
@@ -315,6 +323,7 @@ def setup_app_store_compliance(v):
     if asc_raw is not None and asc_raw != "no":
         if asc_raw == "yes":
             if v.ac_sys_system in ("Darwin", "iOS"):
+                # iOS is able to share the macOS patch
                 v.APP_STORE_COMPLIANCE_PATCH = (
                     "Mac/Resources/app-store-compliance.patch"
                 )
@@ -328,6 +337,7 @@ def setup_app_store_compliance(v):
             pyconf.result("applying custom app store compliance patch")
     else:
         if v.ac_sys_system == "iOS":
+            # Always apply the compliance patch on iOS; we can use the macOS patch
             v.APP_STORE_COMPLIANCE_PATCH = (
                 "Mac/Resources/app-store-compliance.patch"
             )
@@ -364,7 +374,11 @@ def setup_deployment_targets_and_flags(v):
 
 
 def setup_macos_compiler(v):
-    """macOS: detect SDKROOT and select compiler (gcc/clang)."""
+    """macOS: detect SDKROOT and select compiler (gcc/clang).
+
+    Compiler selection on macOS is more complicated than AC_PROG_CC can handle,
+    see Mac/README for more information.
+    """
     if v.ac_sys_system != "Darwin":
         return
 
@@ -455,11 +469,17 @@ def check_dyld(v):
 
 def _setup_darwin_flags(v):
     """Darwin-specific compiler flags, universal SDK, and deployment target."""
+    # -Wno-long-double, -no-cpp-precomp, and -mno-fused-madd
+    # used to be here, but non-Apple gcc doesn't accept them.
     if v.UNIVERSALSDK.endswith("/MacOSX10.4u.sdk"):
+        # Build using 10.4 SDK, force usage of gcc when the compiler is gcc,
+        # otherwise the user will get very confusing error messages when building on OSX 10.6
         v.CC = "gcc-4.0"
         v.CPP = "cpp-4.0"
     pyconf.result(v.CC)
 
+    # Error on unguarded use of new symbols, which will fail at runtime for
+    # users on older versions of macOS
     if pyconf.check_compile_flag(
         "-Wunguarded-availability", extra_flags=["-Werror"]
     ):
@@ -557,7 +577,21 @@ def _setup_universal_archs(v):
 
 
 def _setup_macos_deployment_target(v):
-    """Determine and set MACOSX_DEPLOYMENT_TARGET."""
+    """Determine and set MACOSX_DEPLOYMENT_TARGET.
+
+    Calculate an appropriate deployment target for this build:
+    The deployment target value is used explicitly to enable certain
+    features (such as builtin libedit support for readline) through the use
+    of Apple's Availability Macros and is used as a component of the string
+    returned by distutils.get_platform().
+
+    Use the value from:
+    1. the MACOSX_DEPLOYMENT_TARGET environment variable if specified
+    2. the operating system version of the build machine if >= 10.6
+    3. If running on OS X 10.3 through 10.5, use the legacy tests below
+       to pick either 10.3, 10.4, or 10.5 as the target.
+    4. If we are running on OS X 10.2 or earlier, good luck!
+    """
     pyconf.checking("which MACOSX_DEPLOYMENT_TARGET to use")
     sw = pyconf.cmd_output(["sw_vers", "-productVersion"])
     parts = sw.split(".")
@@ -566,6 +600,7 @@ def _setup_macos_deployment_target(v):
     cur_target = f"{cur_target_major}.{cur_target_minor}"
 
     if cur_target_major == 10 and 3 <= cur_target_minor <= 5:
+        # OS X 10.3 through 10.5
         cur_target = "10.3"
         if v.enable_universalsdk:
             if v.UNIVERSAL_ARCHS in (
@@ -574,15 +609,21 @@ def _setup_macos_deployment_target(v):
                 "intel",
                 "64-bit",
             ):
+                # These configurations were first supported in 10.5
                 cur_target = "10.5"
         else:
             arch = pyconf.cmd_output(["/usr/bin/arch"])
             if arch == "i386":
+                # 10.4 was the first release to support Intel archs
                 cur_target = "10.4"
 
     v.CONFIGURE_MACOSX_DEPLOYMENT_TARGET = (
         v.MACOSX_DEPLOYMENT_TARGET or cur_target
     )
+
+    # Make sure that MACOSX_DEPLOYMENT_TARGET is set in the environment with a
+    # value that is the same as what we'll use in the Makefile to ensure that
+    # we'll get the same compiler environment during configure and build time.
     v.MACOSX_DEPLOYMENT_TARGET = v.CONFIGURE_MACOSX_DEPLOYMENT_TARGET
     os.environ["MACOSX_DEPLOYMENT_TARGET"] = v.MACOSX_DEPLOYMENT_TARGET
     v.EXPORT_MACOSX_DEPLOYMENT_TARGET = ""

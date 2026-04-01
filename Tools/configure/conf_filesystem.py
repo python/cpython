@@ -34,7 +34,7 @@ def check_device_macros(v):
             "Define to 1 if you have the device macros.",
         )
 
-    # Always defined for backwards compatibility
+    # No longer used, now always defined for backwards compatibility
     pyconf.define(
         "SYS_SELECT_WITH_SYS_TIME",
         1,
@@ -55,6 +55,9 @@ def check_device_files(v):
         v.ac_cv_file__dev_ptmx = False
         v.ac_cv_file__dev_ptc = False
     else:
+        # Inform user how to proceed with files when cross compiling.
+        # Some cross-compile builds are predictable; they won't ever
+        # have /dev/ptmx or /dev/ptc, so we can set them explicitly.
         if v.cross_compiling:
             # autoconf uses ${ac_cv_file__dev_ptmx+set} — test whether the
             # variable has been provided at all (via CONFIG_SITE), not
@@ -103,6 +106,7 @@ def check_dirent(v):
     # dirent.d_type
     # ---------------------------------------------------------------------------
 
+    # Check if the dirent structure has a d_type field and DT_UNKNOWN is defined
     if pyconf.link_check(
         "if the dirent structure of a d_type field",
         """

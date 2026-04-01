@@ -19,6 +19,11 @@ _PTHREAD_TEST_SRC = """
 
 def check_pthreads(v):
     """Detect pthreads support and CXX thread flags."""
+    # On some compilers, pthreads are available without further options
+    # (e.g. MacOS X). On some of these systems, the compiler will not
+    # complain if unaccepted options are passed (e.g. gcc on Mac OS X).
+    # So we have to see first whether pthreads are available without
+    # options before we can check whether -Kpthread improves anything.
     ac_cv_pthread_is_default = pyconf.run_check(
         "whether pthreads are available without options",
         _PTHREAD_TEST_SRC,
@@ -31,6 +36,11 @@ def check_pthreads(v):
         ac_cv_kthread = False
         ac_cv_pthread = False
     else:
+        # -Kpthread, if available, provides the right #defines
+        # and linker options to make pthread_create available
+        # Some compilers won't report that they do not support -Kpthread,
+        # so we need to run a program to see whether it really made the
+        # function available.
         ac_cv_kpthread = pyconf.run_check_with_cc_flag(
             f"whether {v.CC} accepts -Kpthread",
             "-Kpthread",
@@ -39,6 +49,11 @@ def check_pthreads(v):
         )
 
     if not ac_cv_kpthread and not ac_cv_pthread_is_default:
+        # -Kthread, if available, provides the right #defines
+        # and linker options to make pthread_create available
+        # Some compilers won't report that they do not support -Kthread,
+        # so we need to run a program to see whether it really made the
+        # function available.
         ac_cv_kthread = pyconf.run_check_with_cc_flag(
             f"whether {v.CC} accepts -Kthread",
             "-Kthread",
@@ -49,6 +64,11 @@ def check_pthreads(v):
         ac_cv_kthread = False
 
     if not ac_cv_kthread and not ac_cv_pthread_is_default:
+        # -pthread, if available, provides the right #defines
+        # and linker options to make pthread_create available
+        # Some compilers won't report that they do not support -pthread,
+        # so we need to run a program to see whether it really made the
+        # function available.
         ac_cv_pthread = pyconf.run_check_with_cc_flag(
             f"whether {v.CC} accepts -pthread",
             "-pthread",
@@ -63,6 +83,8 @@ def check_pthreads(v):
     v.ac_cv_pthread = ac_cv_pthread
 
     if v.CXX:
+        # If we have set a CC compiler flag for thread support then
+        # check if it works for CXX, too.
         if ac_cv_kpthread:
             cxx_flag = "-Kpthread"
             ac_cv_cxx_thread = True
@@ -106,7 +128,7 @@ def setup_pthreads(v):
     )
 
     if ac_cv_pthread_is_default:
-        # _REENTRANT is defined unconditionally
+        # Defining _REENTRANT on system with POSIX threads should not hurt.
         pyconf.define("_REENTRANT")
         v.posix_threads = True
         if v.ac_sys_system == "SunOS":
@@ -130,6 +152,9 @@ def setup_pthreads(v):
         # Full fallback: probe pthread_create in various libs
         pyconf.define("_REENTRANT")
 
+        # According to the POSIX spec, a pthreads implementation must
+        # define _POSIX_THREADS in unistd.h. Some apparently don't
+        # (e.g. gnu pth with pthread emulation)
         unistd_defines_pthreads = False
         pyconf.checking("for _POSIX_THREADS in unistd.h")
         unistd_defines_pthreads = pyconf.check_define(
@@ -142,6 +167,9 @@ def setup_pthreads(v):
             "void *start_routine(void *arg) { exit(0); }\n"
             "int main(void) { pthread_create(NULL, NULL, start_routine, NULL); return 0; }\n"
         )
+        # Just looking for pthread_create in libpthread is not enough:
+        # on HP/UX, pthread.h renames pthread_create to a different symbol name.
+        # So we really have to include pthread.h, and then link.
         pyconf.checking("for pthread_create in -lpthread")
         if pyconf.link_check(prog, extra_libs="-lpthread"):
             pyconf.result("yes")
@@ -183,7 +211,7 @@ def setup_pthreads(v):
                 "Define if you have POSIX threads, and your system does not define that.",
             )
 
-        # Solaris semaphore bugs
+        # Bug 662787: Using semaphores causes unexplicable hangs on Solaris 8.
         sr = f"{v.ac_sys_system}/{v.ac_sys_release}"
         if sr == "SunOS/5.6":
             pyconf.define(
@@ -247,6 +275,11 @@ def check_posix_semaphores(v):
     # POSIX semaphores
     # ---------------------------------------------------------------------------
 
+    # For multiprocessing module, check that sem_open
+    # actually works.  For FreeBSD versions <= 7.2,
+    # the kernel module that provides POSIX semaphores
+    # isn't loaded by default, so an attempt to call
+    # sem_open results in a 'Signal 12' error.
     pyconf.checking("whether POSIX semaphores are enabled")
     ac_cv_posix_semaphores_enabled = pyconf.run_check(
         r"""
@@ -314,7 +347,7 @@ def check_posix_semaphores(v):
             "define to 1 if your sem_getvalue is broken.",
         )
 
-    # RTLD flags
+    # RTLD flags (check for declarations)
     pyconf.check_decls(
         [
             "RTLD_LAZY",
@@ -384,19 +417,20 @@ def check_thread_name_maxlen(v):
     # Thread name max length
     # ---------------------------------------------------------------------------
 
+    # gh-59705: Maximum length in bytes of a thread name
     sys = v.ac_sys_system
     if sys.startswith("Linux"):
         v._PYTHREAD_NAME_MAXLEN = "15"  # Linux and Android
     elif sys.startswith("SunOS"):
         v._PYTHREAD_NAME_MAXLEN = "31"
     elif sys.startswith("NetBSD"):
-        v._PYTHREAD_NAME_MAXLEN = "15"
+        v._PYTHREAD_NAME_MAXLEN = "15"  # gh-131268
     elif sys in ("Darwin", "iOS"):
         v._PYTHREAD_NAME_MAXLEN = "63"
     elif sys.startswith("FreeBSD"):
-        v._PYTHREAD_NAME_MAXLEN = "19"
+        v._PYTHREAD_NAME_MAXLEN = "19"  # gh-131268
     elif sys.startswith("OpenBSD"):
-        v._PYTHREAD_NAME_MAXLEN = "23"
+        v._PYTHREAD_NAME_MAXLEN = "23"  # gh-131268
     else:
         v._PYTHREAD_NAME_MAXLEN = ""
 

@@ -95,7 +95,7 @@ def setup_cxx(v):
 
 
 def setup_stack_direction(v):
-    """Determine stack growth direction."""
+    # Guess C stack growth direction
     v._Py_STACK_GROWS_DOWN = 0 if v.host.startswith("hppa") else 1
     pyconf.define(
         "_Py_STACK_GROWS_DOWN",
@@ -115,6 +115,8 @@ def check_compiler_bugs(v):
     # ---------------------------------------------------------------------------
     # glibc _FORTIFY_SOURCE / memmove bug
     # ---------------------------------------------------------------------------
+    # _FORTIFY_SOURCE wrappers for memmove and bcopy are incorrect:
+    # http://sourceware.org/ml/libc-alpha/2010-12/msg00009.html
 
     memmove_cflags = "-O2 -D_FORTIFY_SOURCE=2" if have_o2 else ""
     memmove_result = pyconf.run_check(
@@ -151,6 +153,9 @@ int main(void) {
     # ---------------------------------------------------------------------------
     # GCC ipa-pure-const inline asm bug
     # ---------------------------------------------------------------------------
+    # Some versions of gcc miscompile inline asm:
+    # http://gcc.gnu.org/bugzilla/show_bug.cgi?id=46491
+    # http://gcc.gnu.org/ml/gcc/2010-11/msg00366.html
 
     if v.ac_cv_gcc_asm_for_x87 is True:
         if v.ac_cv_cc_name == "gcc":
@@ -190,6 +195,8 @@ def check_sign_extension_and_getc(v):
     # ---------------------------------------------------------------------------
     # Sign-extension / right-shift
     # ---------------------------------------------------------------------------
+    # Check whether right shifting a negative integer extends the sign bit
+    # or fills with zeros (like the Cray J90, according to Tim Peters).
 
     pyconf.checking("whether right shift extends the sign bit")
     ac_cv_rshift_extends_sign = pyconf.run_check(
@@ -208,6 +215,7 @@ def check_sign_extension_and_getc(v):
     # ---------------------------------------------------------------------------
     # getc_unlocked and friends
     # ---------------------------------------------------------------------------
+    # check for getc_unlocked and related locking functions
 
     pyconf.checking("for getc_unlocked() and friends")
     ac_cv_have_getc_unlocked = pyconf.link_check(
@@ -406,6 +414,7 @@ def check_compiler_characteristics(v):
     # ---------------------------------------------------------------------------
     # Compiler characteristics
     # ---------------------------------------------------------------------------
+    # checks for compiler characteristics
 
     pyconf.check_c_const()
 
@@ -433,10 +442,10 @@ def check_compiler_characteristics(v):
             "Define if your compiler supports function prototype",
         )
 
-    # socketpair
+    # check for socketpair
     pyconf.check_func("socketpair", includes=["sys/types.h", "sys/socket.h"])
 
-    # sockaddr.sa_len
+    # check if sockaddr has sa_len member
     pyconf.checking("if sockaddr has sa_len member")
     ac_cv_struct_sockaddr_sa_len = pyconf.compile_check(
         preamble="#include <sys/types.h>\n#include <sys/socket.h>",
@@ -454,6 +463,7 @@ def check_mbstowcs(v):
     # ---------------------------------------------------------------------------
     # mbstowcs bug check
     # ---------------------------------------------------------------------------
+    # Check for broken mbstowcs implementation
 
     if pyconf.run_check(
         "for broken mbstowcs",
@@ -484,6 +494,7 @@ def check_computed_gotos(v):
     # ---------------------------------------------------------------------------
     # --with-computed-gotos
     # ---------------------------------------------------------------------------
+    # Check for --with-computed-gotos
 
     if WITH_COMPUTED_GOTOS.is_yes():
         pyconf.define(
@@ -499,6 +510,7 @@ def check_computed_gotos(v):
         )
 
     # Runtime probe: does the C compiler support computed gotos?
+    # ac_cv_computed_gotos: check whether the C compiler supports computed gotos
     cg_result = pyconf.run_check(
         f"whether {v.CC} supports computed gotos",
         """
@@ -523,7 +535,7 @@ LABEL2:
 
 
 def check_stdatomic(v):
-    """Check for stdatomic.h and builtin atomic functions."""
+    # Check for stdatomic.h and builtin atomic functions (required for mimalloc)
     pyconf.checking("for stdatomic.h")
     ac_cv_header_stdatomic_h = pyconf.link_check(
         "#include <stdatomic.h>\n"
@@ -568,6 +580,7 @@ def check_stdatomic(v):
     # Check for __builtin_shufflevector with 128-bit vector support on an
     # architecture where it compiles to worthwhile native SIMD instructions.
     # Used for SIMD-accelerated bytes.hex() in Python/pystrhex.c.
+    # Check if compiler supports __builtin_shufflevector with 128-bit vector support
     pyconf.checking("for __builtin_shufflevector")
     ac_cv_efficient_builtin_shufflevector = pyconf.link_check(
         source=(
@@ -615,6 +628,7 @@ def check_sizes(v):
     pyconf.check_alignof("max_align_t")
     # AC_TYPE_LONG_DOUBLE: check that long double exists (sizeof >= sizeof(double))
     # autoconf uses <=, not >: "sizeof(double) <= sizeof(long double)"
+    # Check that the C compiler supports long double.
     if pyconf.compile_check(
         preamble="",
         body="typedef int test_array[1 - 2 * !(sizeof(double) <= sizeof(long double))];",
@@ -653,6 +667,7 @@ def check_sizes(v):
     elif v.ac_cv_pthread:
         v.CC = f"{v.CC} -pthread"
 
+    # if have pthread_t then define SIZEOF_PTHREAD_T
     ac_cv_have_pthread_t = pyconf.compile_check(
         preamble="#include <pthread.h>",
         body="pthread_t x; x = *(pthread_t*)0;",
@@ -661,6 +676,7 @@ def check_sizes(v):
         pyconf.check_sizeof("pthread_t", headers=["pthread.h"])
 
     pyconf.check_sizeof("pthread_key_t", headers=["pthread.h"])
+    # Check if pthread_key_t is compatible with int
     if pyconf.sizeof("pthread_key_t") == pyconf.sizeof(
         "int"
     ) and pyconf.compile_check(

@@ -22,6 +22,10 @@ ENABLE_WASM_PTHREADS = pyconf.arg_enable(
 
 def setup_wasm_options(v):
     """Check for unsupported systems and handle WASM options."""
+    # On Emscripten dlopen() requires -s MAIN_MODULE and -fPIC. The flags
+    # disables dead code elimination and increases the size of the WASM module
+    # by about 1.5 to 2MB. MAIN_MODULE defines __wasm_mutable_globals__.
+    # See https://emscripten.org/docs/compiling/Dynamic-Linking.html
     sys_rel = f"{v.ac_sys_system}/{v.ac_sys_release}"
     if sys_rel.startswith(("atheos", "Linux/1")):
         pyconf.error(
@@ -98,10 +102,15 @@ def _setup_emscripten_flags(v):
     # configure.ac: AS_VAR_IF([Py_DEBUG], [yes], [wasm_debug=yes], [wasm_debug=no])
     # In autoconf Py_DEBUG is "true" not "yes", so this is currently always
     # false.  We translate the comparison literally.
+    # build with WASM debug info if either Py_DEBUG is set or the target is
+    # node-debug or browser-debug.
     v.wasm_debug = v.Py_DEBUG == "yes"
 
+    # Start with 20 MB and allow to grow
     v.LINKFORSHARED += " -sALLOW_MEMORY_GROWTH -sINITIAL_MEMORY=20971520"
+    # map int64_t and uint64_t to JS bigint
     v.LDFLAGS_NODIST += " -sWASM_BIGINT"
+    # Include file system support
     v.LINKFORSHARED += (
         " -sFORCE_FILESYSTEM -lidbfs.js -lnodefs.js -lproxyfs.js -lworkerfs.js"
     )
@@ -114,6 +123,7 @@ def _setup_emscripten_flags(v):
         "__PyEM_EMSCRIPTEN_TRAMPOLINE_OFFSET"
     )
     v.LINKFORSHARED += " -sSTACK_SIZE=5MB"
+    # Avoid bugs in JS fallback string decoding path
     v.LINKFORSHARED += " -sTEXTDECODER=2"
 
     if v.enable_wasm_dynamic_linking == "yes":
@@ -124,6 +134,7 @@ def _setup_emscripten_flags(v):
         v.LDFLAGS_NODIST += " -sUSE_PTHREADS"
         v.LINKFORSHARED += " -sPROXY_TO_PTHREAD"
 
+    # not completely sure whether or not we want -sEXIT_RUNTIME, keeping it for now.
     v.LDFLAGS_NODIST += " -sEXIT_RUNTIME"
     WASM_LINKFORSHARED_DEBUG = "-gseparate-dwarf --emit-symbol-map"
 
@@ -154,6 +165,14 @@ def _setup_wasi_flags(v):
     v.LIBS += " -lwasi-emulated-signal -lwasi-emulated-getpid -lwasi-emulated-process-clocks"
 
     if v.enable_wasm_pthreads == "yes":
+        # Note: update CFLAGS because ac_compile/ac_link needs this too.
+        # without this, configure fails to find pthread_create, sem_init,
+        # etc because they are only available in the sysroot for
+        # wasm32-wasi-threads.
+        # Note: wasi-threads requires --import-memory.
+        # Note: wasi requires --export-memory.
+        # Note: --export-memory is implicit unless --import-memory is given
+        # Note: this requires LLVM >= 16.
         v.CFLAGS_NODIST += " -target wasm32-wasi-threads -pthread"
         v.LDFLAGS_NODIST += (
             " -target wasm32-wasi-threads -pthread"
@@ -162,6 +181,9 @@ def _setup_wasi_flags(v):
             " -Wl,--max-memory=10485760"
         )
 
+    # gh-117645: Set the memory size to 40 MiB, the stack size to 16 MiB,
+    # and move the stack first.
+    # https://github.com/WebAssembly/wasi-libc/issues/233
     v.LDFLAGS_NODIST += " -z stack-size=16777216 -Wl,--stack-first -Wl,--initial-memory=41943040"
 
 

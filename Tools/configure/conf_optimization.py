@@ -36,11 +36,16 @@ def setup_profile_task(v):
 
 def locate_llvm_bin(v):
     """Locate LLVM bin directory for clang-based builds."""
+    # Make llvm-related checks work on systems where llvm tools are not installed with their
+    # normal names in the default $PATH (ie: Ubuntu).  They exist under the
+    # non-suffixed name in their versioned llvm directory.
     llvm_bin_dir = ""
     llvm_path = os.environ.get("PATH", "")
     if v.ac_cv_cc_name == "clang":
         clang_bin = pyconf.find_prog("clang")
         if clang_bin and pyconf.path_is_symlink(clang_bin):
+            # Some systems install clang elsewhere as a symlink to the real path
+            # which is where the related llvm tools are located.
             clang_dir = pyconf.path_parent(clang_bin)
             clang_target = pyconf.readlink(clang_bin)
             llvm_bin_dir = pyconf.path_join(
@@ -102,6 +107,7 @@ def _setup_lto_flags(v):
             pyconf.error(
                 "error: thin lto is not supported under gcc compiler."
             )
+        # flag to disable lto during linking
         v.LDFLAGS_NOLTO = "-fno-lto"
         if v.ac_sys_system.startswith("Darwin"):
             v.LTOFLAGS = (
@@ -112,6 +118,8 @@ def _setup_lto_flags(v):
             v.LTOFLAGS = "-flto -fuse-linker-plugin -ffat-lto-objects"
 
     if v.ac_cv_prog_cc_g:
+        # bpo-30345: Add -g to LDFLAGS when compiling with LTO
+        # to get debug symbols.
         v.LTOFLAGS += " -g"
 
     v.CFLAGS_NODIST += f" {v.LTOCFLAGS or v.LTOFLAGS}"
@@ -121,6 +129,8 @@ def _setup_lto_flags(v):
 def _setup_lto_clang(v):
     """Set LTO flags for clang compiler."""
     v.LDFLAGS_NOLTO = "-fno-lto"
+    # Clang linker requires -flto in order to link objects with LTO information.
+    # Thin LTO is faster and works for object files with full LTO information, too.
     if pyconf.check_compile_flag("-flto=thin"):
         v.LDFLAGS_NOLTO = "-flto=thin"
     else:
@@ -134,6 +144,7 @@ def _setup_lto_clang(v):
     v.export("LLVM_AR_FOUND")
 
     if v.ac_sys_system.startswith("Darwin") and LLVM_AR_FOUND == "not-found":
+        # The Apple-supplied ar in Xcode or the Command Line Tools is apparently sufficient
         xcrun_status, xcrun_out = pyconf.cmd_status(
             ["/usr/bin/xcrun", "-find", "ar"]
         )
@@ -152,6 +163,7 @@ def _setup_lto_clang(v):
 
     if v.ac_sys_system.startswith("Darwin"):
         if v.Py_LTO_POLICY == "default":
+            # Check that ThinLTO is accepted.
             if pyconf.check_compile_flag("-flto=thin"):
                 v.LTOFLAGS = '-flto=thin -Wl,-export_dynamic -Wl,-object_path_lto,"$@".lto'
                 v.LTOCFLAGS = "-flto=thin"
@@ -168,6 +180,7 @@ def _setup_lto_clang(v):
             v.LTOCFLAGS = f"-flto={v.Py_LTO_POLICY}"
     else:
         if v.Py_LTO_POLICY == "default":
+            # Check that ThinLTO is accepted
             if pyconf.check_compile_flag("-flto=thin"):
                 v.LTOFLAGS = "-flto=thin"
             else:
@@ -248,6 +261,7 @@ def setup_pgo_flags(v):
 
 def setup_bolt(v):
     """Handle --enable-bolt option."""
+    # BOLT optimization. Always configured after PGO since it always runs after PGO.
     bolt_enabled = ENABLE_BOLT.process_bool()
     v.Py_BOLT = "true" if bolt_enabled else "false"
 
@@ -270,11 +284,17 @@ def _setup_bolt_tools(v):
     v.DEF_MAKE_ALL_RULE = "bolt-opt"
     v.DEF_MAKE_RULE = "build_all"
 
+    # -fno-reorder-blocks-and-partition is required for bolt to work.
+    # Possibly GCC only.
     if pyconf.check_compile_flag("-fno-reorder-blocks-and-partition"):
         v.CFLAGS_NODIST += " -fno-reorder-blocks-and-partition"
 
+    # These flags are required for bolt to work:
     v.LDFLAGS_NODIST += " -Wl,--emit-relocs"
+
+    # These flags are required to get good performance from bolt:
     v.CFLAGS_NODIST += " -fno-pie"
+    # We want to add these no-pie flags to linking executables but not shared libraries:
     v.LINKCC += " -fno-pie -no-pie"
 
     v.LLVM_BOLT = pyconf.check_prog("llvm-bolt", path=v.llvm_path, default="")
@@ -309,6 +329,10 @@ def _setup_bolt_flags(v):
     )
     pyconf.checking("BOLT_COMMON_FLAGS")
     if not v.BOLT_COMMON_FLAGS:
+        # At least LLVM 19.x doesn't support computed gotos in PIC compiled code.
+        # Exclude functions containing computed gotos.
+        # TODO this may be fixed in LLVM 20.x via https://github.com/llvm/llvm-project/pull/120267.
+        # GCC's LTO creates .lto_priv.0 clones of these functions.
         v.BOLT_COMMON_FLAGS = (
             "-update-debug-sections "
             "-skip-funcs=_PyEval_EvalFrameDefault,"
