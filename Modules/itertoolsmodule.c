@@ -682,11 +682,8 @@ _grouper_next(PyObject *op)
        mutating gbo->currkey while we are comparing them.
        Take local snapshots and hold strong references so INCREF/DECREF
        apply to the same objects even under re-entrancy. */
-    PyObject *tgtkey = igo->tgtkey;
-    PyObject *currkey = gbo->currkey;
-
-    Py_INCREF(tgtkey);
-    Py_INCREF(currkey);
+    PyObject *tgtkey = Py_NewRef(igo->tgtkey);
+    PyObject *currkey = Py_NewRef(gbo->currkey);
     rcmp = PyObject_RichCompareBool(tgtkey, currkey, Py_EQ);
     Py_DECREF(tgtkey);
     Py_DECREF(currkey);
