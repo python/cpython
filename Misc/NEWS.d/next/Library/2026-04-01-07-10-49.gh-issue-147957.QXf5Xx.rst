@@ -1,1 +1,1 @@
-Causes the `popitem` method for `collections.UserDict` to pop in last-in, first-out order rather than first-in, first-out. The former has been the default for `dict` instances since Python 3.7, so this change will make subclasses of `UserDict` behave more similarly to `dict`.
+Causes the ``popitem`` method for ``collections.UserDict`` to pop in last-in, first-out order rather than first-in, first-out. The former has been the default for ``dict`` instances since Python 3.7, so this change will make subclasses of `UserDict` behave more like ``dict``.
