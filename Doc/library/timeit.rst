@@ -161,6 +161,7 @@ The module defines three convenience functions and a public class:
       .. versionchanged:: next
          The optional *target_time* parameter was added.
 
+
    .. method:: Timer.repeat(repeat=5, number=1000000)
 
       Call :meth:`.timeit` a few times.
