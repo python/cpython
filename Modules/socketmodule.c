@@ -6595,7 +6595,7 @@ socket_socketpair(PyObject *self, PyObject *args)
     s1 = new_sockobject(state, sv[1], family, type, proto);
     if (s1 == NULL)
         goto error;
-    return _PyTuple_FromPairSteal(s0, s1);
+    return _PyTuple_FromPairSteal((PyObject *)s0, (PyObject *)s1);
 
 error:
     if (s0 == NULL)
