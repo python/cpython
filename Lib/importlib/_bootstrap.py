@@ -942,9 +942,9 @@ class BuiltinImporter:
     def discover(cls, spec=None):
         if spec is not None: # assume that built-in modules have no submodule
             return
-        for i in sys.builtin_module_names:
-            if i_spec := cls.find_spec(i):
-                yield i_spec
+        for name in sys.builtin_module_names:
+            if mod_spec := cls.find_spec(name):
+                yield mod_spec
 
 
 class FrozenImporter:
