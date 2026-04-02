@@ -6,21 +6,25 @@ from __future__ import annotations
 
 from types import MappingProxyType
 
-from ._re import (
-    RE_DATETIME,
-    RE_LOCALTIME,
-    RE_NUMBER,
-    match_to_datetime,
-    match_to_localtime,
-    match_to_number,
-)
-
 TYPE_CHECKING = False
 if TYPE_CHECKING:
     from collections.abc import Iterable
     from typing import IO, Any, Final
 
     from ._types import Key, ParseFloat, Pos
+
+    _REGEX_IMPORTED = True
+    from ._re import (
+        RE_DATETIME,
+        RE_LOCALTIME,
+        RE_NUMBER,
+        match_to_datetime,
+        match_to_localtime,
+        match_to_number,
+    )
+else:
+    # Regular expressions are lazy imported to speed up startup time
+    _REGEX_IMPORTED = False
 
 ASCII_CTRL: Final = frozenset(chr(i) for i in range(32)) | frozenset(chr(127))
 
@@ -41,6 +45,7 @@ BARE_KEY_CHARS: Final = frozenset(
 )
 KEY_INITIAL_CHARS: Final = BARE_KEY_CHARS | frozenset("\"'")
 HEXDIGIT_CHARS: Final = frozenset("abcdef" "ABCDEF" "0123456789")
+_DECDIGIT_CHARS: Final = frozenset("0123456789")
 
 BASIC_STR_ESCAPE_REPLACEMENTS: Final = MappingProxyType(
     {
@@ -665,6 +670,25 @@ def parse_basic_str(src: str, pos: Pos, *, multiline: bool) -> tuple[Pos, str]:
         pos += 1
 
 
+def _parse_simple_number(
+    src: str, pos: Pos
+) -> None | tuple[Pos, int]:
+    start = pos
+    src = src.rstrip()
+    end = len(src)
+    while src[pos] in _DECDIGIT_CHARS:
+        pos += 1
+        if pos >= end:
+            break
+    else:
+        if src[pos] != "\n":
+            return None
+    digits = src[start:pos]
+    if digits.startswith("0") and len(digits) > 1:
+        return None
+    return pos, int(digits)
+
+
 def parse_value(
     src: str, pos: Pos, parse_float: ParseFloat
 ) -> tuple[Pos, Any]:
@@ -702,6 +726,25 @@ def parse_value(
     # Inline tables
     if char == "{":
         return parse_inline_table(src, pos, parse_float)
+
+    global _REGEX_IMPORTED, RE_DATETIME, RE_LOCALTIME, RE_NUMBER
+    global match_to_datetime, match_to_localtime, match_to_number
+    if not _REGEX_IMPORTED:
+        # Simple number parser avoiding regex
+        if char in _DECDIGIT_CHARS:
+            res = _parse_simple_number(src, pos)
+            if res is not None:
+                return res
+
+        from ._re import (
+            RE_DATETIME,
+            RE_LOCALTIME,
+            RE_NUMBER,
+            match_to_datetime,
+            match_to_localtime,
+            match_to_number,
+        )
+        _REGEX_IMPORTED = True
 
     # Dates and times
     datetime_match = RE_DATETIME.match(src, pos)

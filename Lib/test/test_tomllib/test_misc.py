@@ -124,3 +124,18 @@ class TestMiscellaneous(unittest.TestCase):
         never imported by tests.
         """
         importlib.import_module(f"{tomllib.__name__}._types")
+
+    def test_parse_simple_number(self):
+        parse_simple_number = tomllib._parser._parse_simple_number
+        self.assertEqual(parse_simple_number("123", 0), (3, 123))
+        self.assertEqual(parse_simple_number("123\n", 0), (3, 123))
+        self.assertEqual(parse_simple_number("0\n", 0), (1, 0))
+
+        self.assertIsNone(parse_simple_number("0123\n", 0))
+        self.assertIsNone(parse_simple_number("123-456\n", 0))
+        self.assertIsNone(parse_simple_number("123:456\n", 0))
+        self.assertIsNone(parse_simple_number("1.0\n", 0))
+        self.assertIsNone(parse_simple_number("1_000\n", 0))
+        self.assertIsNone(parse_simple_number("x123\n", 0))
+        self.assertIsNone(parse_simple_number("o123\n", 0))
+        self.assertIsNone(parse_simple_number("b100\n", 0))
