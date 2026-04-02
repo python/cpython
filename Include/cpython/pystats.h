@@ -145,7 +145,6 @@ typedef struct _optimization_stats {
     uint64_t trace_immediately_deopts;
     uint64_t executors_invalidated;
     uint64_t fitness_terminated_traces;
-    uint64_t best_exit_fallback;
     UOpStats opcode[PYSTATS_MAX_UOP_ID + 1];
     uint64_t unsupported_opcode[256];
     uint64_t trace_length_hist[_Py_UOP_HIST_SIZE];

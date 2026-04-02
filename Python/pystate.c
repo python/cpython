@@ -642,32 +642,14 @@ init_interpreter(PyInterpreterState *interp,
     init_policy(&interp->opt_config.fitness_initial_side,
                 "PYTHON_JIT_FITNESS_INITIAL_SIDE",
                 FITNESS_INITIAL_SIDE, 50, 5000);
-    init_policy(&interp->opt_config.fitness_per_instruction,
-                "PYTHON_JIT_FITNESS_PER_INSTRUCTION",
-                FITNESS_PER_INSTRUCTION, 0, 100);
-    init_policy(&interp->opt_config.fitness_branch_biased,
-                "PYTHON_JIT_FITNESS_BRANCH_BIASED",
-                FITNESS_BRANCH_BIASED, 0, 500);
-    init_policy(&interp->opt_config.fitness_branch_unbiased,
-                "PYTHON_JIT_FITNESS_BRANCH_UNBIASED",
-                FITNESS_BRANCH_UNBIASED, 0, 500);
-    init_policy(&interp->opt_config.fitness_backward_edge,
-                "PYTHON_JIT_FITNESS_BACKWARD_EDGE",
-                FITNESS_BACKWARD_EDGE, 0, 1000);
-    init_policy(&interp->opt_config.fitness_frame_entry,
-                "PYTHON_JIT_FITNESS_FRAME_ENTRY",
-                FITNESS_FRAME_ENTRY, 0, 1000);
-
-    // Exit quality thresholds
-    init_policy(&interp->opt_config.exit_quality_enter_executor,
-                "PYTHON_JIT_EXIT_QUALITY_ENTER_EXECUTOR",
-                EXIT_QUALITY_ENTER_EXECUTOR, 0, 10000);
-    init_policy(&interp->opt_config.exit_quality_default,
-                "PYTHON_JIT_EXIT_QUALITY_DEFAULT",
-                EXIT_QUALITY_DEFAULT, 0, 10000);
-    init_policy(&interp->opt_config.exit_quality_specializable,
-                "PYTHON_JIT_EXIT_QUALITY_SPECIALIZABLE",
-                EXIT_QUALITY_SPECIALIZABLE, 0, 10000);
+    /* The tracer starts at start_instr, so initial fitness must not be below
+     * the close-loop exit quality or tracing will terminate immediately. */
+    if (interp->opt_config.fitness_initial < EXIT_QUALITY_CLOSE_LOOP) {
+        interp->opt_config.fitness_initial = EXIT_QUALITY_CLOSE_LOOP;
+    }
+    if (interp->opt_config.fitness_initial_side < EXIT_QUALITY_CLOSE_LOOP) {
+        interp->opt_config.fitness_initial_side = EXIT_QUALITY_CLOSE_LOOP;
+    }
 
     interp->opt_config.specialization_enabled = !is_env_enabled("PYTHON_SPECIALIZATION_OFF");
     interp->opt_config.uops_optimize_enabled = !is_env_disabled("PYTHON_UOPS_OPTIMIZE");

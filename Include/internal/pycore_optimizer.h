@@ -16,18 +16,17 @@ extern "C" {
 #include <stdbool.h>
 
 /* Default fitness configuration values for trace quality control.
- * These can be overridden via PYTHON_JIT_FITNESS_* environment variables. */
+ * FITNESS_INITIAL and FITNESS_INITIAL_SIDE can be overridden via
+ * PYTHON_JIT_FITNESS_INITIAL and PYTHON_JIT_FITNESS_INITIAL_SIDE */
 #define FITNESS_PER_INSTRUCTION        2
-#define FITNESS_INITIAL             (UOP_MAX_TRACE_LENGTH * FITNESS_PER_INSTRUCTION)
+#define FITNESS_INITIAL             2000
 #define FITNESS_INITIAL_SIDE         800
-#define FITNESS_BRANCH_BIASED          5
-#define FITNESS_BRANCH_UNBIASED       25
+#define FITNESS_BRANCH_BASE            5
 #define FITNESS_BACKWARD_EDGE         80
-#define FITNESS_FRAME_ENTRY           10
 
-/* Default exit quality constants for fitness-based trace termination.
- * Higher values mean better places to stop the trace.
- * These can be overridden via PYTHON_JIT_EXIT_QUALITY_* environment variables. */
+/* Exit quality constants for fitness-based trace termination.
+ * Higher values mean better places to stop the trace. */
+#define EXIT_QUALITY_CLOSE_LOOP      800
 #define EXIT_QUALITY_ENTER_EXECUTOR  500
 #define EXIT_QUALITY_DEFAULT         200
 #define EXIT_QUALITY_SPECIALIZABLE    50
@@ -119,9 +118,6 @@ typedef struct _PyJitTracerPreviousState {
 
 typedef struct _PyJitTracerTranslatorState {
     int32_t fitness;              // Current trace fitness, starts high, decrements
-    int32_t best_exit_quality;    // Best exit quality seen so far
-    int best_exit_buffer_pos;     // Position in code_buffer of best exit (-1=none)
-    uint32_t best_exit_target;    // Bytecode target of best exit point
     int frame_depth;              // Current inline depth (0 = root frame)
 } _PyJitTracerTranslatorState;
 

@@ -452,16 +452,6 @@ typedef struct _PyOptimizationConfig {
     // Trace fitness thresholds
     uint16_t fitness_initial;
     uint16_t fitness_initial_side;
-    uint16_t fitness_per_instruction;
-    uint16_t fitness_branch_biased;
-    uint16_t fitness_branch_unbiased;
-    uint16_t fitness_backward_edge;
-    uint16_t fitness_frame_entry;
-
-    // Exit quality thresholds for fitness-based trace termination
-    uint16_t exit_quality_enter_executor;
-    uint16_t exit_quality_default;
-    uint16_t exit_quality_specializable;
 
     // Optimization flags
     bool specialization_enabled;
