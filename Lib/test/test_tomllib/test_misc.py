@@ -129,7 +129,7 @@ class TestMiscellaneous(unittest.TestCase):
         importlib.import_module(f"{tomllib.__name__}._types")
 
     def test_parse_simple_number(self):
-        parse_simple_number = tomllib._parser._parse_simple_number
+        parse_simple_number = tomllib._parser.parse_simple_number
         self.assertEqual(parse_simple_number("123", 0), (3, 123))
         self.assertEqual(parse_simple_number("123\n", 0), (3, 123))
         self.assertEqual(parse_simple_number("123 456", 0), (3, 123))
@@ -158,7 +158,7 @@ class TestMiscellaneous(unittest.TestCase):
         self.assertIsNone(parse_simple_number("b100\n", 0))
 
     def test_lazy_import(self):
-        # Test that _parse_simple_number() can parse the TOML file without
+        # Test that parse_simple_number() can parse the TOML file without
         # importing regular expressions (tomllib._re)
         filename = os_helper.TESTFN
         self.addCleanup(os_helper.unlink, filename)

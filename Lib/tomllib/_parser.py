@@ -41,9 +41,9 @@ BARE_KEY_CHARS: Final = frozenset(
 )
 KEY_INITIAL_CHARS: Final = BARE_KEY_CHARS | frozenset("\"'")
 HEXDIGIT_CHARS: Final = frozenset("abcdef" "ABCDEF" "0123456789")
-_DECDIGIT_CHARS: Final = frozenset("0123456789")
-_NUMBER_INITIAL_CHARS: Final = _DECDIGIT_CHARS | frozenset("+-")
-_NUMBER_END_CHARS: Final = frozenset(",]}") | TOML_WS_AND_NEWLINE
+DECDIGIT_CHARS: Final = frozenset("0123456789")
+NUMBER_INITIAL_CHARS: Final = DECDIGIT_CHARS | frozenset("+-")
+NUMBER_END_CHARS: Final = frozenset(",]}") | TOML_WS_AND_NEWLINE
 
 BASIC_STR_ESCAPE_REPLACEMENTS: Final = frozendict( # type: ignore[name-defined]
     {
@@ -668,17 +668,18 @@ def parse_basic_str(src: str, pos: Pos, *, multiline: bool) -> tuple[Pos, str]:
         pos += 1
 
 
-def _parse_simple_number(
+# Sub-set of RE_NUMBER: only support decimal integer without "_" separator
+def parse_simple_number(
     src: str, pos: Pos
 ) -> None | tuple[Pos, int]:
     start = pos
     end = len(src)
-    end_chars = _NUMBER_END_CHARS
+    end_chars = NUMBER_END_CHARS
     if src[pos] in '+-':
         pos += 1
         if pos >= end:
             return None
-        if src[pos] not in _DECDIGIT_CHARS:
+        if src[pos] not in DECDIGIT_CHARS:
             return None
 
     if src[pos] == '0':
@@ -687,7 +688,7 @@ def _parse_simple_number(
             return None
         return pos, 0
 
-    while src[pos] in _DECDIGIT_CHARS:
+    while src[pos] in DECDIGIT_CHARS:
         pos += 1
         if pos >= end:
             break
@@ -737,8 +738,8 @@ def parse_value(
 
     # First try a simple number parser which defers import tomllib._re
     # to speed up tomllib import time
-    if char in _NUMBER_INITIAL_CHARS:
-        res = _parse_simple_number(src, pos)
+    if char in NUMBER_INITIAL_CHARS:
+        res = parse_simple_number(src, pos)
         if res is not None:
             return res
 
