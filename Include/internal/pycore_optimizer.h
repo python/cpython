@@ -22,7 +22,7 @@ extern "C" {
 #define FITNESS_BRANCH_BASE         5
 #define FITNESS_INITIAL             (FITNESS_PER_INSTRUCTION * 1000)
 #define FITNESS_INITIAL_SIDE        (FITNESS_INITIAL / 2)
-#define FITNESS_BACKWARD_EDGE       (FITNESS_PER_INSTRUCTION / 10)
+#define FITNESS_BACKWARD_EDGE       (FITNESS_INITIAL / 10)
 
 /* Exit quality constants for fitness-based trace termination.
  * Higher values mean better places to stop the trace. */
