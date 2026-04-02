@@ -156,8 +156,6 @@ PyCapsule_Import:compatible:
 
 # Tuple objects
 
-PyTuple_CheckExact:atomic:
-
 # Creation - pure allocation, no shared state
 PyTuple_New:atomic:
 PyTuple_FromArray:atomic:
