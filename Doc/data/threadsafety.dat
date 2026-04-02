@@ -182,7 +182,7 @@ PyTuple_SetItem:compatible:
 PyTuple_SET_ITEM:compatible:
 
 # Resize - only usable on tuples with refcount 1
-_PyTuple_Resize:distinct:
+_PyTuple_Resize:compatible:
 
 # Struct Sequence objects
 
