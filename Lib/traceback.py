@@ -1755,7 +1755,7 @@ def _compute_suggestion_error(exc_value, tb, wrong_name):
                 parent = importlib.util.find_spec(parent_name)
             else:
                 parent = None
-            d = list(sys.builtin_module_names)
+            d = []
             for finder in sys.meta_path:
                 if discover := getattr(finder, 'discover', None):
                     d += [spec.name for spec in discover(parent)]
