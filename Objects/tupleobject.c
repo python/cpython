@@ -876,9 +876,8 @@ static PySequenceMethods tuple_as_sequence = {
 static PyObjectIndexPair
 tuple_iteritem(PyObject *obj, Py_ssize_t index)
 {
-    ;
     if (index >= PyTuple_GET_SIZE(obj)) {
-        return (PyObjectIndexPair) { .object = NULL, index = index };
+        return (PyObjectIndexPair) { .object = NULL, .index = index };
     }
     PyObject *result = PyTuple_GET_ITEM(obj, index);
     Py_INCREF(result);
