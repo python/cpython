@@ -58,6 +58,47 @@ _Py_RemoteDebug_GetAsyncioDebugAddress(proc_handle_t* handle)
     return address;
 }
 
+// The async debug offsets are read from the memory of the remote process and
+// must be treated as untrusted: a compromised or malicious target could
+// supply out-of-range values to overflow the fixed-size task_obj stack
+// buffers used by the parsing helpers below.
+static int
+validate_async_debug_offsets(struct _Py_AsyncioModuleDebugOffsets *offsets)
+{
+    uint64_t task_size = offsets->asyncio_task_object.size;
+    if (task_size == 0 || task_size > SIZEOF_TASK_OBJ) {
+        PyErr_Format(
+            PyExc_RuntimeError,
+            "Invalid AsyncioDebug offsets: task object size %" PRIu64
+            " is outside the supported range (1..%d)",
+            task_size, SIZEOF_TASK_OBJ);
+        return -1;
+    }
+
+#define CHECK_MEMBER(member, type)                                          \
+    do {                                                                    \
+        uint64_t off = offsets->asyncio_task_object.member;                 \
+        if (off > task_size || task_size - off < sizeof(type)) {           \
+            PyErr_Format(                                                   \
+                PyExc_RuntimeError,                                         \
+                "Invalid AsyncioDebug offsets: task object member '"       \
+                #member "' offset %" PRIu64 " is out of bounds for"         \
+                " task object size %" PRIu64,                               \
+                off, task_size);                                            \
+            return -1;                                                      \
+        }                                                                   \
+    } while (0)
+
+    CHECK_MEMBER(task_name, uintptr_t);
+    CHECK_MEMBER(task_awaited_by, uintptr_t);
+    CHECK_MEMBER(task_awaited_by_is_set, uint8_t);
+    CHECK_MEMBER(task_coro, uintptr_t);
+
+#undef CHECK_MEMBER
+
+    return 0;
+}
+
 int
 read_async_debug(RemoteUnwinderObject *unwinder)
 {
@@ -71,8 +112,13 @@ read_async_debug(RemoteUnwinderObject *unwinder)
     int result = _Py_RemoteDebug_PagedReadRemoteMemory(&unwinder->handle, async_debug_addr, size, &unwinder->async_debug_offsets);
     if (result < 0) {
         set_exception_cause(unwinder, PyExc_RuntimeError, "Failed to read AsyncioDebug offsets");
+        return -1;
     }
-    return result;
+    if (validate_async_debug_offsets(&unwinder->async_debug_offsets) < 0) {
+        set_exception_cause(unwinder, PyExc_RuntimeError, "Invalid AsyncioDebug offsets");
+        return -1;
+    }
+    return 0;
 }
 
 int
