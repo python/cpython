@@ -559,7 +559,7 @@ to be served.
 
 The :meth:`BaseHTTPRequestHandler.send_header` method assumes sanitized input
 and does not perform input validation such as checking for the presence of CRLF
-sequences. Untrusted input may result in CRLF injection attacks.
+sequences. Untrusted input may result in HTTP Header injection attacks.
 
 Earlier versions of Python did not scrub control characters from the
 log messages emitted to stderr from ``python -m http.server`` or the
