@@ -296,7 +296,7 @@ def build_targets(context):
         make_build_python(context)
 
     for host in HOSTS:
-        if context.target in {"all", "build", host}:
+        if context.target in {"all", "hosts", host}:
             configure_host_python(context, host)
             make_host_python(context, host)
 
