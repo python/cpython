@@ -1,0 +1,1 @@
+Add :option:`--disable-epoll` to ``configure``
