@@ -3,14 +3,20 @@
    Nick Mathewson
 '''
 
+import contextlib
 import importlib.machinery
+import io
+import os
 import sys
+import tempfile
 from contextlib import contextmanager
 from textwrap import dedent
 from types import FunctionType, MethodType, BuiltinFunctionType
 import pyclbr
 from unittest import TestCase, main as unittest_main
 from test.test_importlib import util as test_importlib_util
+from test.support import os_helper
+from unittest.mock import patch
 
 
 StaticMethodType = type(staticmethod(lambda: None))
@@ -282,6 +288,72 @@ class ReadmoduleTests(TestCase):
         with test_importlib_util.uncache(module_name):
             with self.assertRaises(ModuleNotFoundError):
                 pyclbr.readmodule_ex(module_name)
+
+
+class CommandLineTest(TestCase):
+
+    def setUp(self):
+        self.filename = tempfile.mktemp(suffix='.py')
+        self.addCleanup(os_helper.unlink, self.filename)
+
+    def _write_source(self, source):
+        with open(self.filename, 'w') as f:
+            f.write(dedent(source))
+
+    def _run_pyclbr(self, *args):
+        """Run pyclbr._main() with sys.argv patched, return stdout."""
+        argv = ['pyclbr'] + list(args)
+        output = io.StringIO()
+        with patch.object(sys, 'argv', argv):
+            with contextlib.redirect_stdout(output):
+                pyclbr._main()
+        return output.getvalue()
+
+    def test_file_path(self):
+        self._write_source("""\
+            class Spam:
+                def eggs(self):
+                    pass
+            def ham():
+                pass
+        """)
+        out = self._run_pyclbr(self.filename)
+        self.assertIn('class Spam', out)
+        self.assertIn('def ham', out)
+        # Nested method should be indented
+        self.assertIn('  def eggs', out)
+
+    def test_module_name(self):
+        out = self._run_pyclbr('pyclbr')
+        self.assertIn('class Class', out)
+        self.assertIn('class Function', out)
+        self.assertIn('def readmodule_ex', out)
+
+    def test_default_no_args(self):
+        # With no arguments, _main() defaults to analyzing pyclbr.py itself
+        out = self._run_pyclbr()
+        self.assertIn('class Class', out)
+        self.assertIn('def readmodule_ex', out)
+
+    def test_output_line_numbers(self):
+        self._write_source("""\
+            def foo():
+                pass
+            class Bar:
+                pass
+        """)
+        out = self._run_pyclbr(self.filename)
+        # Each output line for a def/class should end with a line number
+        for line in out.strip().splitlines():
+            parts = line.split()
+            self.assertTrue(
+                parts[-1].isdigit(),
+                f"Expected line number at end of: {line!r}"
+            )
+
+    def test_nonexistent_module(self):
+        with self.assertRaises(ModuleNotFoundError):
+            self._run_pyclbr('nonexistent_xyz_module_12345')
 
 
 if __name__ == "__main__":
