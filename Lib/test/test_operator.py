@@ -570,6 +570,34 @@ class OperatorTestCase:
         with self.assertRaises((AttributeError, TypeError)):
             operator.index(None)
 
+        self.assertRaises(TypeError, operator.index)
+        self.assertRaises(TypeError, operator.index, 1, 1)
+        self.assertEqual(operator.index(True), 1)
+        self.assertRaises(TypeError, operator.index, '42')
+        self.assertRaises(TypeError, operator.index, 42.0)
+        x = X()
+        x.__index__ = lambda: 1729
+        self.assertEqual(operator.index(x), 1)
+        class F:
+            def __index__(self):
+                return 42.0
+        self.assertRaises(TypeError, operator.index, F())
+        class I(int):
+            def __index__():
+                return 42
+        i = I()
+        self.assertIs(operator.index(i), int(i))
+        class D:
+            def __index__(self):
+                return I(42)
+        with self.assertWarns(DeprecationWarning):
+            self.assertEqual(operator.index(D()), 42)
+        class S:
+            @staticmethod
+            def __index__():
+                return 42
+        self.assertEqual(operator.index(S()), 42)
+
     def test_not_(self):
         operator = self.module
         class C:
