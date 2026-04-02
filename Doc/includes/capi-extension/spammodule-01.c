@@ -35,7 +35,10 @@ static PyMethodDef spam_methods[] = {
 
 /// Module slot table
 
+PyABIInfo_VAR(abi_info);
+
 static PyModuleDef_Slot spam_slots[] = {
+    {Py_mod_abi, &abi_info},
     {Py_mod_name, "spam"},
     {Py_mod_doc, "A wonderful module with an example function"},
     {Py_mod_methods, spam_methods},

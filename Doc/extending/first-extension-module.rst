@@ -265,11 +265,18 @@ Define this array just before your export hook:
 
 .. code-block:: c
 
+   PyABIInfo_VAR(abi_info);
+
    static PyModuleDef_Slot spam_slots[] = {
+      {Py_mod_abi, &abi_info},
       {Py_mod_name, "spam"},
       {Py_mod_doc, "A wonderful module with an example function"},
       {0, NULL}
    };
+
+The ``PyABIInfo_VAR(abi_info);`` macro and the :c:data:`Py_mod_abi` slot
+are a bit of boilerplate that helps prevent extensions compiled for
+a different version of Python from crashing the interpreter.
 
 For both :c:data:`Py_mod_name` and :c:data:`Py_mod_doc`, the values are C
 strings -- that is, NUL-terminated, UTF-8 encoded byte arrays.
