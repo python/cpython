@@ -1009,7 +1009,7 @@ binascii_b2a_base64_impl(PyObject *module, Py_buffer *data, int padded,
         assert(pads == 0);
     }
     for (; pads; pads--) {
-        *ascii_data++ = BASE32_PAD;
+        *ascii_data++ = BASE64_PAD;
     }
 
     if (wrapcol) {
