@@ -153,9 +153,9 @@ class TestMiscellaneous(unittest.TestCase):
         self.assertIsNone(parse_simple_number("12:32:00\n", 0))
         self.assertIsNone(parse_simple_number("1.0\n", 0))
         self.assertIsNone(parse_simple_number("1_000\n", 0))
-        self.assertIsNone(parse_simple_number("x123\n", 0))
-        self.assertIsNone(parse_simple_number("o123\n", 0))
-        self.assertIsNone(parse_simple_number("b100\n", 0))
+        self.assertIsNone(parse_simple_number("0x123\n", 0))
+        self.assertIsNone(parse_simple_number("0o123\n", 0))
+        self.assertIsNone(parse_simple_number("0b100\n", 0))
 
     def test_lazy_import(self):
         # Test that parse_simple_number() can parse the TOML file without
