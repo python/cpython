@@ -159,20 +159,20 @@ class BinASCIITest(unittest.TestCase):
     def test_base64_bad_padding(self):
         # Test malformed padding
         def _assertRegexTemplate(assert_regex, data,
-                                 non_strict_mode_expected_result):
+                                 non_strict_mode_expected_result, **kwargs):
             data = self.type2test(data)
             with self.assertRaisesRegex(binascii.Error, assert_regex):
-                binascii.a2b_base64(data, strict_mode=True)
+                binascii.a2b_base64(data, strict_mode=True, **kwargs)
             self.assertEqual(binascii.a2b_base64(data, strict_mode=False),
                              non_strict_mode_expected_result)
             self.assertEqual(binascii.a2b_base64(data, strict_mode=True,
-                                                 ignorechars=b'='),
+                                                 ignorechars=b' ='),
                              non_strict_mode_expected_result)
             self.assertEqual(binascii.a2b_base64(data),
                              non_strict_mode_expected_result)
 
-        def assertLeadingPadding(*args):
-            _assertRegexTemplate(r'(?i)Leading padding', *args)
+        def assertLeadingPadding(*args, **kwargs):
+            _assertRegexTemplate(r'(?i)Leading padding', *args, **kwargs)
 
         def assertDiscontinuousPadding(*args):
             _assertRegexTemplate(r'(?i)Discontinuous padding', *args)
@@ -200,6 +200,7 @@ class BinASCIITest(unittest.TestCase):
         assertLeadingPadding(b'===abcd', b'i\xb7\x1d')
         assertLeadingPadding(b'====abcd', b'i\xb7\x1d')
         assertLeadingPadding(b'=====abcd', b'i\xb7\x1d')
+        assertLeadingPadding(b' =abcd', b'i\xb7\x1d', ignorechars=b' ')
 
         assertInvalidLength(b'a=b==', b'i')
         assertInvalidLength(b'a=bc=', b'i\xb7')
@@ -763,9 +764,10 @@ class BinASCIITest(unittest.TestCase):
             p = 8 - len_8 if len_8 else 0
             return fixed + b"=" * p
 
-        def _assertRegexTemplate(assert_regex, data, good_padding_result=None):
+        def _assertRegexTemplate(assert_regex, data, good_padding_result=None,
+                                 **kwargs):
             with self.assertRaisesRegex(binascii.Error, assert_regex):
-                binascii.a2b_base32(self.type2test(data))
+                binascii.a2b_base32(self.type2test(data), **kwargs)
             if good_padding_result:
                 fixed = self.type2test(_fixPadding(data))
                 self.assertEqual(binascii.a2b_base32(fixed), good_padding_result)
@@ -779,8 +781,8 @@ class BinASCIITest(unittest.TestCase):
         def assertExcessPadding(*args):
             _assertRegexTemplate(r"(?i)Excess padding", *args)
 
-        def assertLeadingPadding(*args):
-            _assertRegexTemplate(r"(?i)Leading padding", *args)
+        def assertLeadingPadding(*args, **kwargs):
+            _assertRegexTemplate(r"(?i)Leading padding", *args, **kwargs)
 
         def assertIncorrectPadding(*args):
             _assertRegexTemplate(r"(?i)Incorrect padding", *args)
@@ -844,6 +846,7 @@ class BinASCIITest(unittest.TestCase):
         assertLeadingPadding(b"=======BEEFCAKE", b"\t\x08Q\x01D")
         assertLeadingPadding(b"========BEEFCAKE", b"\t\x08Q\x01D")
         assertLeadingPadding(b"=========BEEFCAKE", b"\t\x08Q\x01D")
+        assertLeadingPadding(b" =BEEFCAKE", ignorechars=b' ')
 
         assertIncorrectPadding(b"AB")
         assertIncorrectPadding(b"ABCD")
