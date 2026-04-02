@@ -685,6 +685,11 @@ remove it.
    Usually, there is only one variable of this type for each extension module
    defined this way.
 
+   In the :ref:`Stable ABI <stable-abi>` for Free-Threaded Builds (``abi3t``),
+   this struct is opaque, and unusable in practice.
+   The struct, including all members, is part of Stable ABI for
+   non-free-threaded builds (``abi3``).
+
    .. c:member:: PyModuleDef_Base m_base
 
       Always initialize this member to :c:macro:`PyModuleDef_HEAD_INIT`:
@@ -694,6 +699,11 @@ remove it.
       .. c:type:: PyModuleDef_Base
 
          The type of :c:member:`!PyModuleDef.m_base`.
+
+         In the :ref:`Stable ABI <stable-abi>` for Free-Threaded Builds
+         (``abi3t``), this struct is opaque, and unusable in practice.
+         The struct is part of Stable ABI for
+         non-free-threaded builds (``abi3``).
 
       .. c:macro:: PyModuleDef_HEAD_INIT
 

@@ -249,18 +249,17 @@ def _stable_abi_annotation(
         reftype="ref",
         refexplicit="False",
     )
-    struct_abi_kind = record.struct_abi_kind
-    if struct_abi_kind in {"opaque", "members"}:
-        ref_node += nodes.Text(sphinx_gettext("Limited API"))
-    else:
-        ref_node += nodes.Text(sphinx_gettext("Stable ABI"))
+    ref_node += nodes.Text(sphinx_gettext("Stable ABI"))
     emph_node += ref_node
+    struct_abi_kind = record.struct_abi_kind
     if struct_abi_kind == "opaque":
         emph_node += nodes.Text(" " + sphinx_gettext("(as an opaque struct)"))
     elif struct_abi_kind == "full-abi":
         emph_node += nodes.Text(
             " " + sphinx_gettext("(including all members)")
         )
+    elif struct_abi_kind in {"members", "abi3t-opaque"}:
+        emph_node += nodes.Text(" " + sphinx_gettext("(see below)"))
     if record.ifdef_note:
         emph_node += nodes.Text(f" {record.ifdef_note}")
     if stable_added == "3.2":
@@ -271,11 +270,7 @@ def _stable_abi_annotation(
             " " + sphinx_gettext("since version %s") % stable_added
         )
     emph_node += nodes.Text(".")
-    if struct_abi_kind == "members":
-        msg = " " + sphinx_gettext(
-            "(Only some members are part of the stable ABI.)"
-        )
-        emph_node += nodes.Text(msg)
+
     return emph_node
 
 
