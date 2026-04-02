@@ -219,17 +219,17 @@ def download(url, cache_dir):
     out_path = cache_dir / basename(url)
     cache_dir.mkdir(parents=True, exist_ok=True)
     if not out_path.is_file():
-        run(["curl", "-Lf", "--retry", "5", "--retry-all-errors", "-o", str(out_path), url])
+        run(["curl", "-Lf", "--retry", "5", "--retry-all-errors", "-o", out_path, url])
     else:
         print(f"Using cached version of {basename(url)}")
     return out_path
 
 
 def configure_host_python(context, host=None):
-    if context.clean:
-        clean(context.host)
     if host is None:
         host = context.host
+    if context.clean:
+        clean(host)
 
     host_dir = subdir(host, create=True)
     prefix_dir = host_dir / "prefix"
@@ -295,13 +295,10 @@ def build_targets(context):
         configure_build_python(context)
         make_build_python(context)
 
-    if context.target == "hosts":
-        for host in HOSTS:
+    for host in HOSTS:
+        if context.target in {"all", "build", host}:
             configure_host_python(context, host)
             make_host_python(context, host)
-    elif context.target not in {"all", "build"}:
-        configure_host_python(context, context.target)
-        make_host_python(context, context.target)
 
 
 def clean(host):
@@ -312,11 +309,9 @@ def clean_targets(context):
     if context.target in {"all", "build"}:
         clean("build")
 
-    if context.target in {"all", "hosts"}:
-        for host in HOSTS:
+    for host in HOSTS:
+        if context.target in {"all", "hosts", host}:
             clean(host)
-    elif context.target != "build":
-        clean(context.target)
 
 
 def setup_ci():
@@ -879,8 +874,9 @@ def parse_args():
 
     # Subcommands
     build = add_parser(
-        "build", help="Run configure-build, make-build, configure-host and "
-        "make-host")
+        "build",
+        help="Run configure and make for the selected target"
+    )
     configure_build = add_parser(
         "configure-build", help="Run `configure` for the build Python")
     make_build = add_parser(
@@ -890,7 +886,10 @@ def parse_args():
     make_host = add_parser(
         "make-host", help="Run `make` for Android")
 
-    clean = add_parser("clean", help="Delete all build directories")
+    clean = add_parser(
+        "clean",
+        help="Delete build directories for the selected target"
+    )
 
     add_parser("build-testbed", help="Build the testbed app")
     test = add_parser("test", help="Run the testbed app")
@@ -946,7 +945,7 @@ def parse_args():
             default="all",
             choices=["all", "build", "hosts"] + HOSTS,
             help=(
-                "The host triple to build (e.g., aarch64-linux-android), "
+                "The host triplet (e.g., aarch64-linux-android), "
                 "or 'build' for just the build platform, or 'hosts' for all "
                 "host platforms, or 'all' for the build platform and all "
                 "hosts. Defaults to 'all'"
