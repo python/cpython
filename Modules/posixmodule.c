@@ -11289,8 +11289,7 @@ build_itimerspec(const struct itimerspec* curr_value)
         Py_DECREF(value);
         return NULL;
     }
-    PyObject *tuple = _PyTuple_FromPairSteal(value, interval);
-    return tuple;
+    return _PyTuple_FromPairSteal(value, interval);
 }
 
 static PyObject *
