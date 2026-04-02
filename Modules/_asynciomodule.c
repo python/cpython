@@ -2244,7 +2244,7 @@ enter_task(_PyThreadStateImpl *ts, PyObject *loop, PyObject *task)
             PyExc_RuntimeError,
             "Cannot enter into task %R while another " \
             "task %R is being executed.",
-            task, ts->asyncio_running_task, NULL);
+            task, ts->asyncio_running_task);
         return -1;
     }
 
@@ -2265,7 +2265,7 @@ leave_task(_PyThreadStateImpl *ts, PyObject *loop, PyObject *task)
             PyExc_RuntimeError,
             "Invalid attempt to leave task %R while " \
             "task %R is entered.",
-            task, ts->asyncio_running_task ? ts->asyncio_running_task : Py_None, NULL);
+            task, ts->asyncio_running_task ? ts->asyncio_running_task : Py_None);
         return -1;
     }
     Py_CLEAR(ts->asyncio_running_task);
@@ -2328,7 +2328,7 @@ _asyncio_Task___init___impl(TaskObj *self, PyObject *coro, PyObject *loop,
         self->task_log_destroy_pending = 0;
         PyErr_Format(PyExc_TypeError,
                      "a coroutine was expected, got %R",
-                     coro, NULL);
+                     coro);
         return -1;
     }
 
