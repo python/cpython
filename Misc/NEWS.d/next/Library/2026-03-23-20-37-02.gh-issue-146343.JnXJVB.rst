@@ -1,29 +1,3 @@
-<<<<<<< HEAD
-
-Add the following MIME types with file extensions:
-
-  - ``.appcache`` and ``.manifest`` : ``text/cache-manifest``
-  - ``.ics`` and ``.ifb``    : ``text/calendar``
-  - ``.cql``    : ``text/cql``
-  - ``.csvs``   : ``text/csv-schema``
-  - ``.gff3``   : ``text/gff3``
-  - ``.cnd``    : ``text/jcr-cnd``
-  - ``.miz``    : ``text/mizar``
-  - ``.org``    : ``text/org``
-  - ``.provn``  : ``text/provenance-notation``
-  - ``.shaclc`` and ``.shc``    : ``text/shaclc``
-  - ``.shex``   : ``text/shex``
-  - ``.spdx``   : ``text/spdx``
-  - ``.ttl``    : ``text/turtle``
-  - ``.uri``  and ``.uris``   : ``text/uri-list``
-  - ``.vcard`` and ``.vcf``    : ``text/vcard``
-  - ``.ascii``  : ``text/vnd.ascii-art``
-  - ``.curl``   : ``text/vnd.curl``
-  - ``.gml``    : ``text/vnd.gml``
-  - ``.gv``     : ``text/vnd.graphviz``
-  - ``.wgsl``   : ``text/wgsl``
-  - ``.ent``    : ``text/xml-external-parsed-entity``
-=======
 Add the following MIME types with file extensions:
 
   - ``.appcache`` and ``.manifest`` for ``text/cache-manifest``
@@ -47,4 +21,4 @@ Add the following MIME types with file extensions:
   - ``.gv``     for ``text/vnd.graphviz``
   - ``.wgsl``   for ``text/wgsl``
   - ``.ent``    for ``text/xml-external-parsed-entity``
->>>>>>> 78179ae902 (Again...)
+
