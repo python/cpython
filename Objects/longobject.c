@@ -6961,7 +6961,8 @@ PyLongWriter_Finish(PyLongWriter *writer)
 #ifdef Py_DEBUG
     // gh-147988: Detect uninitialized digits: long_alloc() fills digits with
     // 0xFF byte pattern. It's posssible because PyLong_BASE is smaller than
-    // the maximum value of the C digit type (uint32_t or unsigned short).
+    // the maximum value of the C digit type (uint32_t or unsigned short):
+    // most significan bits are unused by the API.
     Py_ssize_t ndigits = _PyLong_DigitCount(obj);
     if (ndigits == 0) {
         // Check ob_digit[0] digit for the number zero
@@ -6969,7 +6970,7 @@ PyLongWriter_Finish(PyLongWriter *writer)
     }
     for (Py_ssize_t i = 0; i < ndigits; i++) {
         digit d = obj->long_value.ob_digit[i];
-        if (d >= PyLong_BASE) {
+        if (d & ~(digit)PyLong_MASK) {
             Py_DECREF(obj);
             PyErr_Format(PyExc_SystemError,
                          "PyLongWriter_Finish: digit %zd is uninitialized",
