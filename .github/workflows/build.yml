@@ -215,22 +215,6 @@ jobs:
       arch: ${{ matrix.arch }}
       free-threading: ${{ matrix.free-threading }}
 
-  build-windows-msi:
-    name: >-  # ${{ '' } is a hack to nest jobs under the same sidebar category
-      Windows MSI${{ '' }}
-    needs: build-context
-    if: fromJSON(needs.build-context.outputs.run-windows-msi)
-    strategy:
-      fail-fast: false
-      matrix:
-        arch:
-        - x86
-        - x64
-        - arm64
-    uses: ./.github/workflows/reusable-windows-msi.yml
-    with:
-      arch: ${{ matrix.arch }}
-
   build-macos:
     name: >-
       macOS
@@ -539,7 +523,6 @@ jobs:
     - check-autoconf-regen
     - check-generated-files
     - build-windows
-    - build-windows-msi
     - build-macos
     - build-ubuntu
     - build-ubuntu-ssltests
@@ -553,7 +536,6 @@ jobs:
       uses: re-actors/alls-green@05ac9388f0aebcb5727afa17fcccfecd6f8ec5fe
       with:
         allowed-failures: >-
-          build-windows-msi,
           build-ubuntu-ssltests,
           test-hypothesis,
         allowed-skips: >-
