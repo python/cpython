@@ -4043,8 +4043,6 @@ _decimal_Decimal_as_integer_ratio_impl(PyObject *self, PyTypeObject *cls)
         if (denominator == NULL) {
             goto error;
         }
-
-        return _PyTuple_FromPairSteal(numerator, denominator);
     }
     else {
         denominator = exponent;
@@ -4063,8 +4061,8 @@ _decimal_Decimal_as_integer_ratio_impl(PyObject *self, PyTypeObject *cls)
         if (denominator == NULL) {
             goto error;
         }
-        return _PyTuple_FromPairSteal(numerator, denominator);
     }
+    return _PyTuple_FromPairSteal(numerator, denominator);
 
 error:
     Py_XDECREF(exponent);
