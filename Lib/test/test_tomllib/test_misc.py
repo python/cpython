@@ -140,7 +140,6 @@ class TestMiscellaneous(unittest.TestCase):
         self.assertEqual(parse_simple_number("-0\n", 0), (2, 0))
         self.assertEqual(parse_simple_number("[23]\n", 1), (3, 23))
         self.assertEqual(parse_simple_number("[23, 24]\n", 1), (3, 23))
-        self.assertEqual(parse_simple_number("[23]\n", 1), (3, 23))
         self.assertEqual(parse_simple_number("{x = 42}\n", 5), (7, 42))
 
         self.assertIsNone(parse_simple_number("+", 0), None)
