@@ -4,6 +4,9 @@
 
 from __future__ import annotations
 
+# Defer loading regular expressions until we actually need them in
+# parse_value(). Before that, use try_simple_decimal() to parse simple
+# decimal numbers.
 __lazy_modules__ = ["tomllib._re"]
 
 from ._re import (
@@ -41,9 +44,17 @@ BARE_KEY_CHARS: Final = frozenset(
 )
 KEY_INITIAL_CHARS: Final = BARE_KEY_CHARS | frozenset("\"'")
 HEXDIGIT_CHARS: Final = frozenset("abcdef" "ABCDEF" "0123456789")
-DECDIGIT_CHARS: Final = frozenset("0123456789")
-NUMBER_INITIAL_CHARS: Final = DECDIGIT_CHARS | frozenset("+-")
-NUMBER_END_CHARS: Final = frozenset(",]}") | TOML_WS_AND_NEWLINE
+
+# If one of these follows a "simple decimal" it could mean that
+# the value is actually something else (float, datetime...), so
+# optimized parsing should be abandoned.
+ILLEGAL_AFTER_SIMPLE_DECIMAL: Final = frozenset(
+    "eE."  # decimal
+    "xbo"  # hex, bin, oct
+    "-"  # datetime
+    ":"  # localtime
+    "_0123456789"  # complex decimal
+)
 
 BASIC_STR_ESCAPE_REPLACEMENTS: Final = frozendict( # type: ignore[name-defined]
     {
@@ -668,34 +679,35 @@ def parse_basic_str(src: str, pos: Pos, *, multiline: bool) -> tuple[Pos, str]:
         pos += 1
 
 
-# Sub-set of RE_NUMBER: only support decimal integer without "_" separator
 def try_simple_decimal(
     src: str, pos: Pos
 ) -> None | tuple[Pos, int]:
-    start = pos
-    end = len(src)
-    end_chars = NUMBER_END_CHARS
-    if src[pos] in '+-':
-        pos += 1
-        if pos >= end:
-            return None
-        if src[pos] not in DECDIGIT_CHARS:
-            return None
+    """Parse a "simple" decimal integer.
 
-    if src[pos] == '0':
-        pos += 1
-        if pos < end and src[pos] not in end_chars:
-            return None
-        return pos, 0
+    An optimization that tries to parse a simple decimal integer
+    without underscores. Returns `None` if there's any uncertainty
+    on correctness.
+    """
+    start_pos = pos
 
-    while src[pos] in DECDIGIT_CHARS:
+    if src.startswith(("+", "-"), pos):
         pos += 1
-        if pos >= end:
-            break
+
+    if src.startswith("0", pos):
+        pos += 1
+    elif src.startswith(("1", "2", "3", "4", "5", "6", "7", "8", "9"), pos):
+        pos = skip_chars(src, pos, "0123456789")
     else:
-        if src[pos] not in end_chars:
-            return None
-    return pos, int(src[start:pos])
+        return None
+
+    try:
+        next_char = src[pos]
+    except IndexError:
+        next_char = None
+    if next_char in ILLEGAL_AFTER_SIMPLE_DECIMAL:
+        return None
+
+    return pos, int(src[start_pos:pos])
 
 
 def parse_value(
@@ -736,12 +748,12 @@ def parse_value(
     if char == "{":
         return parse_inline_table(src, pos, parse_float)
 
-    # First try a simple number parser which defers import tomllib._re
-    # to speed up tomllib import time
-    if char in NUMBER_INITIAL_CHARS:
-        res = try_simple_decimal(src, pos)
-        if res is not None:
-            return res
+    # Try a simple parser for decimal numbers. If it's able to parse all
+    # numbers, it avoids importing tomllib._re which has an impact on
+    # the tomllib startup time.
+    res = try_simple_decimal(src, pos)
+    if res is not None:
+        return res
 
     # Dates and times
     datetime_match = RE_DATETIME.match(src, pos)
