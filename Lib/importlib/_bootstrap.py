@@ -938,6 +938,14 @@ class BuiltinImporter:
         """Return False as built-in modules are never packages."""
         return False
 
+    @classmethod
+    def discover(cls, spec=None):
+        if spec is not None: # assume that built-in modules have no submodule
+            return
+        for i in sys.builtin_module_names:
+            if i_spec := cls.find_spec(i):
+                yield i_spec
+
 
 class FrozenImporter:
 
