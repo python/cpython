@@ -60,7 +60,7 @@ _Py_ReachedRecursionLimitWithMargin(PyThreadState *tstate, int margin_count)
 #elif defined(__hppa__) || defined(__powerpc64__)
 #  define Py_C_STACK_SIZE 2000000
 #else
-#  define Py_C_STACK_SIZE 4000000
+#  define Py_C_STACK_SIZE 5000000
 #endif
 
 #if defined(__EMSCRIPTEN__)
