@@ -80,9 +80,11 @@ Tuple Objects
    :c:func:`Py_NewRef(PyTuple_GetItem(...)) <Py_NewRef>`
    or :c:func:`PySequence_GetItem`.
 
+
 .. c:function:: PyObject* PyTuple_GET_ITEM(PyObject *p, Py_ssize_t pos)
 
    Like :c:func:`PyTuple_GetItem`, but does no checking of its arguments.
+
 
 .. c:function:: PyObject* PyTuple_GetSlice(PyObject *p, Py_ssize_t low, Py_ssize_t high)
 
@@ -109,7 +111,7 @@ Tuple Objects
 .. c:function:: void PyTuple_SET_ITEM(PyObject *p, Py_ssize_t pos, PyObject *o)
 
    Like :c:func:`PyTuple_SetItem`, but does no error checking, and should *only* be
-   used to fill in brand new tuples. Using it on an existing tuple is thread-unsafe.
+   used to fill in brand new tuples, using it on an existing tuple is thread-unsafe.
 
    Bounds checking is performed as an assertion if Python is built in
    :ref:`debug mode <debug-build>` or :option:`with assertions <--with-assertions>`.
@@ -120,6 +122,12 @@ Tuple Objects
       :c:func:`PyTuple_SetItem`, does *not* discard a reference to any item that
       is being replaced; any reference in the tuple at position *pos* will be
       leaked.
+
+   .. warning::
+
+      This macro should *only* be used on tuples that are newly created.
+      Using this macro on a tuple that is already in use (or in other words, has
+      a refcount > 1) could lead to undefined behavior.
 
 
 .. c:function:: int _PyTuple_Resize(PyObject **p, Py_ssize_t newsize)
@@ -134,11 +142,6 @@ Tuple Objects
    this function. If the object referenced by ``*p`` is replaced, the original
    ``*p`` is destroyed.  On failure, returns ``-1`` and sets ``*p`` to ``NULL``, and
    raises :exc:`MemoryError` or :exc:`SystemError`.
-
-   .. note::
-
-      In the :term:`free-threaded build`, this function must only be used on
-      tuples that are not yet visible to other threads.
 
 
 .. _struct-sequence-objects:
@@ -239,6 +242,7 @@ type.
 
    Bounds checking is performed as an assertion if Python is built in
    :ref:`debug mode <debug-build>` or :option:`with assertions <--with-assertions>`.
+
 
 .. c:function:: PyObject* PyStructSequence_GET_ITEM(PyObject *p, Py_ssize_t pos)
 
