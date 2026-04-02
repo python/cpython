@@ -607,7 +607,7 @@ compute_branch_penalty(uint16_t history, bool branch_taken)
     int off_trace = 16 - on_trace_count;
     /* Linear scaling: off_trace ranges from 0 (fully biased our way)
      * to 16 (fully biased against us), so the penalty ranges from
-     * FITNESS_BRANCH_BASE to FITNESS_BRANCH_BASE + 48. */
+     * FITNESS_BRANCH_BASE to FITNESS_BRANCH_BASE + 32. */
     return FITNESS_BRANCH_BASE + off_trace * 2;
 }
 
