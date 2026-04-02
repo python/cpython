@@ -194,7 +194,7 @@ double_from_timeval(struct timeval *tv)
 static PyObject *
 itimer_retval(struct itimerval *iv)
 {
-    PyObject *value = PyFloat_FromDouble(double_from_timeval(&iv->it_value))
+    PyObject *value = PyFloat_FromDouble(double_from_timeval(&iv->it_value));
     if (value == NULL) {
         return NULL;
     }
