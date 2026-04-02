@@ -1,0 +1,4 @@
+Accepted range for the *bytes_per_sep* argument of :meth:`bytes.hex`,
+:meth:`bytearray.hex`, :meth:`memoryview.hex`, and :func:`binascii.b2a_hex`
+is now increased, so passing ``sys.maxsize`` and ``-sys.maxsize`` is now
+valid.

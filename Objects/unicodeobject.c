@@ -12561,7 +12561,6 @@ PyUnicode_Replace(PyObject *str,
 }
 
 /*[clinic input]
-@permit_long_docstring_body
 str.replace as unicode_replace
 
     old: unicode
@@ -12573,14 +12572,14 @@ str.replace as unicode_replace
 
 Return a copy with all occurrences of substring old replaced by new.
 
-If the optional argument count is given, only the first count occurrences are
-replaced.
+If count is given, only the first count occurrences are replaced.
+If count is not specified or -1, then all occurrences are replaced.
 [clinic start generated code]*/
 
 static PyObject *
 unicode_replace_impl(PyObject *self, PyObject *old, PyObject *new,
                      Py_ssize_t count)
-/*[clinic end generated code: output=b63f1a8b5eebf448 input=f27ca92ac46b65a1]*/
+/*[clinic end generated code: output=b63f1a8b5eebf448 input=d15a6886b05e2edc]*/
 {
     return replace(self, old, new, count);
 }
