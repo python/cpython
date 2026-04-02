@@ -4,8 +4,6 @@
 
 from __future__ import annotations
 
-from types import MappingProxyType
-
 __lazy_modules__ = ["tomllib._re"]
 
 from ._re import (
@@ -47,7 +45,7 @@ _DECDIGIT_CHARS: Final = frozenset("0123456789")
 _NUMBER_INITIAL_CHARS: Final = _DECDIGIT_CHARS | frozenset("+-")
 _NUMBER_END_CHARS: Final = frozenset(",]}") | TOML_WS_AND_NEWLINE
 
-BASIC_STR_ESCAPE_REPLACEMENTS: Final = MappingProxyType(
+BASIC_STR_ESCAPE_REPLACEMENTS: Final = frozendict( # type: ignore[name-defined]
     {
         "\\b": "\u0008",  # backspace
         "\\t": "\u0009",  # tab
