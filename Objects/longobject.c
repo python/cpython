@@ -185,11 +185,14 @@ long_alloc(Py_ssize_t size)
             return NULL;
         }
         _PyObject_Init((PyObject*)result, &PyLong_Type);
+        _PyLong_InitTag(result);
     }
     _PyLong_SetSignAndDigitCount(result, size != 0, size);
-    /* The digit has to be initialized explicitly to avoid
-     * use-of-uninitialized-value. */
-    result->long_value.ob_digit[0] = 0;
+#ifdef Py_DEBUG
+    // gh-147988: Fill digits with an invalid pattern to catch usage
+    // of uninitialized digits.
+    memset(result->long_value.ob_digit, 0xFF, ndigits * sizeof(digit));
+#endif
     return result;
 }
 
@@ -258,6 +261,7 @@ _PyLong_FromMedium(sdigit x)
             return NULL;
         }
         _PyObject_Init((PyObject*)v, &PyLong_Type);
+        _PyLong_InitTag(v);
     }
     digit abs_x = x < 0 ? -x : x;
     _PyLong_SetSignAndDigitCount(v, x<0?-1:1, 1);
@@ -337,6 +341,7 @@ medium_from_stwodigits(stwodigits x)
             return PyStackRef_NULL;
         }
         _PyObject_Init((PyObject*)v, &PyLong_Type);
+        _PyLong_InitTag(v);
     }
     digit abs_x = x < 0 ? (digit)(-x) : (digit)x;
     _PyLong_SetSignAndDigitCount(v, x<0?-1:1, 1);
@@ -1094,6 +1099,7 @@ _PyLong_FromByteArray(const unsigned char* bytes, size_t n,
     int sign = is_signed ? -1: 1;
     if (idigit == 0) {
         sign = 0;
+        v->long_value.ob_digit[0] = 0;
     }
     _PyLong_SetSignAndDigitCount(v, sign, idigit);
     return (PyObject *)maybe_small_long(long_normalize(v));
@@ -2852,6 +2858,7 @@ long_from_non_binary_base(const char *start, const char *end, Py_ssize_t digits,
         *res = NULL;
         return 0;
     }
+    z->long_value.ob_digit[0] = 0;
     _PyLong_SetSignAndDigitCount(z, 0, 0);
 
     /* `convwidth` consecutive input digits are treated as a single
@@ -3365,6 +3372,7 @@ x_divrem(PyLongObject *v1, PyLongObject *w1, PyLongObject **prem)
         *prem = NULL;
         return NULL;
     }
+    a->long_value.ob_digit[0] = 0;
     v0 = v->long_value.ob_digit;
     w0 = w->long_value.ob_digit;
     wm1 = w0[size_w-1];
@@ -4141,10 +4149,6 @@ k_mul(PyLongObject *a, PyLongObject *b)
     /* 1. Allocate result space. */
     ret = long_alloc(asize + bsize);
     if (ret == NULL) goto fail;
-#ifdef Py_DEBUG
-    /* Fill with trash, to catch reference to uninitialized digits. */
-    memset(ret->long_value.ob_digit, 0xDF, _PyLong_DigitCount(ret) * sizeof(digit));
-#endif
 
     /* 2. t1 <- ah*bh, and copy into high digits of result. */
     if ((t1 = k_mul(ah, bh)) == NULL) goto fail;
@@ -5633,6 +5637,12 @@ long_bitwise(PyLongObject *a,
         Py_UNREACHABLE();
     }
 
+    if ((size_z + negz) == 0) {
+        Py_XDECREF(new_a);
+        Py_XDECREF(new_b);
+        return get_small_int(0);
+    }
+
     /* We allow an extra digit if z is negative, to make sure that
        the final two's complement of z doesn't overflow. */
     z = long_alloc(size_z + negz);
@@ -6011,29 +6021,34 @@ static PyObject *
 long_subtype_new(PyTypeObject *type, PyObject *x, PyObject *obase)
 {
     PyLongObject *tmp, *newobj;
-    Py_ssize_t i, n;
+    Py_ssize_t size, ndigits;
+    int sign;
 
     assert(PyType_IsSubtype(type, &PyLong_Type));
     tmp = (PyLongObject *)long_new_impl(&PyLong_Type, x, obase);
     if (tmp == NULL)
         return NULL;
     assert(PyLong_Check(tmp));
-    n = _PyLong_DigitCount(tmp);
+    size = _PyLong_DigitCount(tmp);
     /* Fast operations for single digit integers (including zero)
      * assume that there is always at least one digit present. */
-    if (n == 0) {
-        n = 1;
-    }
-    newobj = (PyLongObject *)type->tp_alloc(type, n);
+    ndigits = size ? size : 1;
+    newobj = (PyLongObject *)type->tp_alloc(type, ndigits);
     if (newobj == NULL) {
         Py_DECREF(tmp);
         return NULL;
     }
     assert(PyLong_Check(newobj));
-    newobj->long_value.lv_tag = tmp->long_value.lv_tag & ~IMMORTALITY_BIT_MASK;
-    for (i = 0; i < n; i++) {
-        newobj->long_value.ob_digit[i] = tmp->long_value.ob_digit[i];
+    if (_PyLong_IsCompact(tmp)) {
+        sign = _PyLong_CompactSign(tmp);
     }
+    else {
+        sign = _PyLong_NonCompactSign(tmp);
+    }
+    _PyLong_InitTag(newobj);
+    _PyLong_SetSignAndDigitCount(newobj, sign, size);
+    memcpy(newobj->long_value.ob_digit, tmp->long_value.ob_digit,
+           ndigits * sizeof(digit));
     Py_DECREF(tmp);
     return (PyObject *)newobj;
 }
@@ -6950,6 +6965,28 @@ PyLongWriter_Finish(PyLongWriter *writer)
 {
     PyLongObject *obj = (PyLongObject *)writer;
     assert(Py_REFCNT(obj) == 1);
+
+#ifdef Py_DEBUG
+    // gh-147988: Detect uninitialized digits: long_alloc() fills digits with
+    // 0xFF byte pattern. It's posssible because PyLong_BASE is smaller than
+    // the maximum value of the C digit type (uint32_t or unsigned short):
+    // most significan bits are unused by the API.
+    Py_ssize_t ndigits = _PyLong_DigitCount(obj);
+    if (ndigits == 0) {
+        // Check ob_digit[0] digit for the number zero
+        ndigits = 1;
+    }
+    for (Py_ssize_t i = 0; i < ndigits; i++) {
+        digit d = obj->long_value.ob_digit[i];
+        if (d & ~(digit)PyLong_MASK) {
+            Py_DECREF(obj);
+            PyErr_Format(PyExc_SystemError,
+                         "PyLongWriter_Finish: digit %zd is uninitialized",
+                         i);
+            return NULL;
+        }
+    }
+#endif
 
     // Normalize and get singleton if possible
     obj = maybe_small_long(long_normalize(obj));
