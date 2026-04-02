@@ -384,7 +384,7 @@ agen() for x in a)``.
 
 .. _whatsnew315-abi3t:
 
-:pep:`903`: ``abi3t`` -- Stable ABI for Free-Threaded Builds
+:pep:`803`: ``abi3t`` -- Stable ABI for Free-Threaded Builds
 ------------------------------------------------------------
 
 C extensions that target the :ref:`Stable ABI <stable-abi>` can now be
@@ -400,7 +400,7 @@ specifically:
   part of the instance struct; and
 - Switching from a ``PyInit_`` function to a new export hook,
   :c:func:`PyModExport_* <PyModExport_modulename>`, introduced for this
-  purpose in :pep:`903`.
+  purpose in :pep:`793`.
 
 Note that Stable ABI does not offer all functionality CPython has to offer.
 Extensions that cannot switch to ``abi3t`` should continue to build for
