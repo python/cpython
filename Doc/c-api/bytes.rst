@@ -127,6 +127,10 @@ called with a non-bytes parameter.
    Return the bytes representation of object *o* that implements the buffer
    protocol.
 
+   .. note::
+      If the object implements the buffer protocol, then the buffer
+      must not be mutated while the bytes object is being created.
+
 
 .. c:function:: Py_ssize_t PyBytes_Size(PyObject *o)
 
@@ -185,12 +189,19 @@ called with a non-bytes parameter.
    created, the old reference to *bytes* will still be discarded and the value
    of *\*bytes* will be set to ``NULL``; the appropriate exception will be set.
 
+   .. note::
+      If *newpart* implements the buffer protocol, then the buffer
+      must not be mutated while the new bytes object is being created.
 
 .. c:function:: void PyBytes_ConcatAndDel(PyObject **bytes, PyObject *newpart)
 
    Create a new bytes object in *\*bytes* containing the contents of *newpart*
    appended to *bytes*.  This version releases the :term:`strong reference`
    to *newpart* (i.e. decrements its reference count).
+
+   .. note::
+      If *newpart* implements the buffer protocol, then the buffer
+      must not be mutated while the new bytes object is being created.
 
 
 .. c:function:: PyObject* PyBytes_Join(PyObject *sep, PyObject *iterable)
@@ -210,6 +221,9 @@ called with a non-bytes parameter.
 
    .. versionadded:: 3.14
 
+   .. note::
+      If *iterable* objects implement the buffer protocol, then the buffers
+      must not be mutated while the new bytes object is being created.
 
 .. c:function:: int _PyBytes_Resize(PyObject **bytes, Py_ssize_t newsize)
 
