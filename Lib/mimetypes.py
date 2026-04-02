@@ -686,10 +686,10 @@ def _default_mime_types():
         '.qt'     : 'video/quicktime',
         '.pyv'    : 'video/vnd.ms-playready.media.pyv',
         '.blk'    : 'video/vnd.radgamettools.bink',
-        '.bk2'    : 'video/vnd.radgamettools.bink'.
+        '.bk2'    : 'video/vnd.radgamettools.bink',
         '.sswf'   : 'video/vnd.sealed.swf',
         '.ssw'    : 'video/vnd.sealed.swf',
-        '.yt'     : 'video/vnd.youtube.yt'.
+        '.yt'     : 'video/vnd.youtube.yt',
         '.webm'   : 'video/webm',
         '.avi'    : 'video/vnd.avi',
         '.m4v'    : 'video/x-m4v',
