@@ -6,25 +6,23 @@ from __future__ import annotations
 
 from types import MappingProxyType
 
+__lazy_modules__ = ["tomllib._re"]
+
+from ._re import (
+    RE_DATETIME,
+    RE_LOCALTIME,
+    RE_NUMBER,
+    match_to_datetime,
+    match_to_localtime,
+    match_to_number,
+)
+
 TYPE_CHECKING = False
 if TYPE_CHECKING:
     from collections.abc import Iterable
     from typing import IO, Any, Final
 
     from ._types import Key, ParseFloat, Pos
-
-    _REGEX_IMPORTED = True
-    from ._re import (
-        RE_DATETIME,
-        RE_LOCALTIME,
-        RE_NUMBER,
-        match_to_datetime,
-        match_to_localtime,
-        match_to_number,
-    )
-else:
-    # Regular expressions are lazy imported to speed up startup time
-    _REGEX_IMPORTED = False
 
 ASCII_CTRL: Final = frozenset(chr(i) for i in range(32)) | frozenset(chr(127))
 
@@ -727,24 +725,11 @@ def parse_value(
     if char == "{":
         return parse_inline_table(src, pos, parse_float)
 
-    global _REGEX_IMPORTED, RE_DATETIME, RE_LOCALTIME, RE_NUMBER
-    global match_to_datetime, match_to_localtime, match_to_number
-    if not _REGEX_IMPORTED:
-        # Simple number parser avoiding regex
-        if char in _DECDIGIT_CHARS:
-            res = _parse_simple_number(src, pos)
-            if res is not None:
-                return res
-
-        from ._re import (
-            RE_DATETIME,
-            RE_LOCALTIME,
-            RE_NUMBER,
-            match_to_datetime,
-            match_to_localtime,
-            match_to_number,
-        )
-        _REGEX_IMPORTED = True
+    # Simple number parser avoiding regex
+    if char in _DECDIGIT_CHARS:
+        res = _parse_simple_number(src, pos)
+        if res is not None:
+            return res
 
     # Dates and times
     datetime_match = RE_DATETIME.match(src, pos)

@@ -9,8 +9,11 @@ import importlib
 from pathlib import Path
 import sys
 import tempfile
+import textwrap
 import unittest
 from test import support
+from test.support import os_helper
+from test.support.script_helper import assert_python_ok
 
 from . import tomllib
 
@@ -139,3 +142,26 @@ class TestMiscellaneous(unittest.TestCase):
         self.assertIsNone(parse_simple_number("x123\n", 0))
         self.assertIsNone(parse_simple_number("o123\n", 0))
         self.assertIsNone(parse_simple_number("b100\n", 0))
+
+    def test_lazy_import(self):
+        # Test that _parse_simple_number() can parse the TOML file without
+        # importing regular expressions (tomllib._re)
+        filename = os_helper.TESTFN
+        self.addCleanup(os_helper.unlink, filename)
+        toml = textwrap.dedent("""
+            [metadata]
+            int = 123
+            list = [+1, -2, 3]
+            table = {x=1, y=2}
+        """)
+        with open(filename, "w") as fp:
+            fp.write(toml)
+
+        code = textwrap.dedent(f"""
+            import sys, tomllib
+            with open({filename!a}, "rb") as fp:
+                tomllib.load(fp)
+            print("lazy import?", 'tomllib._re' not in sys.modules)
+        """)
+        proc = assert_python_ok('-c', code)
+        self.assertIn(b'lazy import? True', proc.out)
