@@ -662,7 +662,7 @@ Miscellaneous options
      initialization. Python needs to be :ref:`built in debug mode <debug-build>`
      for this option to exist.  See also :envvar:`PYTHON_PRESITE`.
 
-     .. versionchange:: next
+     .. versionchanged:: next
         Accept also ``module:func`` entry point format.
 
      .. versionadded:: 3.13
@@ -1455,7 +1455,7 @@ Debug-mode variables
 
    Needs Python configured with the :option:`--with-pydebug` build option.
 
-   .. versionchange:: next
+   .. versionchanged:: next
       Accept also ``module:func`` entry point format.
 
    .. versionadded:: 3.13
